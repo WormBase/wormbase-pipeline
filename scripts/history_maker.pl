@@ -276,7 +276,9 @@ if ( $blast ) {
 
 ###########################################################
 # anomalies database locator frame
-if ( $anomaly && $chromosome ) {
+if ( $anomaly ) {
+  if (! defined $chromosome || $chromosome eq "") {die "Must specify -chromosome with -anomaly\n";}
+  if (! defined $user || $user eq "") {die "Must specify -user with -anomaly\n";}
 
   my $anomaly_detail_list;
 
@@ -323,8 +325,26 @@ if ( $anomaly && $chromosome ) {
 					   -padx => '5'
 					   );
 
+# test for popup menu for Anthony's anomaly weighting
+# see: http://rcswww.urz.tu-dresden.de/CS/perl/modules/Tk/Tk-BrowseEntry.htm
+  require Tk::BrowseEntry;
+  my $zero_weight;
+  my $zero_weight_list = $anomaly_find->BrowseEntry(-label => "Not this anomaly", 
+						    -background => 'wheat',
+						    -browsecmd => [\&reweight_anomalies, \$mysql, \$lab, \$chromosome, \$anomaly_list, \$anomaly_detail_list, \$zero_weight],
+						    -variable => \$zero_weight
+						    )->pack(-pady => '6',
+							    -padx => '6',
+							    -side => 'left',
+							    );
+
 # connect to the mysql database
   $mysql = &connect_to_database($lab);
+
+# populate the list of types that we may zero-weight
+# and create the weight 'view' table
+  &populate_zero_weight_list($mysql, $lab, $chromosome, \$zero_weight_list);
+
 
 # populate $anomaly_list here from database
   &populate_anomaly_window_list($mysql, $lab, $chromosome, \$anomaly_list);
@@ -662,18 +682,70 @@ sub connect_to_database {
 }
 
 #############################################################################
+#  &populate_zero_weight_list($mysql, $lab, $chromosome, \$zero_weight_list);
+# get the list of anomaly types that we can later use to reweight the types
+# sets up the VIEW table with initial weights
+
+sub populate_zero_weight_list {
+
+  my ($mysql, $lab, $chromosome, $zero_weight_list_ref) = @_;
+
+  # get the available anomaly types
+  my $query = qq{ SELECT type, COUNT(*) FROM anomaly WHERE chromosome = "$chromosome" AND centre = "$lab" AND active = 1 GROUP BY type; };
+  my $db_query = $mysql->prepare ( $query );
+  $db_query->execute();
+  $results = $db_query->fetchall_arrayref;
+
+  # put the types in the zero-weight list with their count
+  foreach my $result_row (@$results) {
+    # type count
+    $$zero_weight_list_ref->insert('end', $result_row->[0] . "          " . $result_row->[1]);
+  }
+
+  # set up the weight view table in the mysql database
+  # we have MYSQl version 4 which doesn't support VIEWs
+  # so have horrible cludge of tables with names formed from
+  # user-names which we have to explicitly drop before creating anew
+  my $view = "weight_$user";
+  # first test to see if this view table exists already and so should be deleted
+  $query = qq{ SHOW TABLES; };
+  $db_query = $mysql->prepare ( $query );
+  $db_query->execute();
+  $results = $db_query->fetchall_arrayref;
+  foreach my $result_row (@$results) {
+    if ($result_row->[0] eq $view) {
+      $mysql->do("DROP TABLE $view");
+      #print "dropped old view\n";
+    }
+  }
+  # now set up a fresh weight table with initial weights of '1' for each anomaly type
+  $mysql->do("CREATE TABLE $view (type varchar(32), weight int(1)) AS SELECT type FROM anomaly GROUP BY type;");
+  $mysql->do("UPDATE $view SET weight = 1;");
+
+
+
+}
+#############################################################################
 # get the information on the available (still active) windows sorted
 # by the sum of scores of anomalies in them
-# populate_anomaly_window_list($mysql, \$anomaly_list);
+# populate_anomaly_window_list($mysql, $lab, $chromosome, \$anomaly_list);
 
 sub populate_anomaly_window_list {
   my ($mysql, $lab, $chromosome, $anomaly_list_ref) = @_;
-  
+
+  # name of the temporary 'view' weighting table
+  my $view = "weight_$user";
+
   # get the highest scoring 10 kb windows of one sense or the other sorted by score descending
   # group by window, sense order by 2 desc - means make the
   # SUM(thing_score) sum up rows within distinct window and distinct
   # sense and sort the output by descending SUM(thing_score)
-  my $query = qq{ SELECT a.window, SUM(a.thing_score), a.sense, a.clone FROM anomaly AS a WHERE a.chromosome = "$chromosome" AND a.centre = "$lab" AND a.active = 1 GROUP BY window, sense ORDER BY 2 DESC };
+
+# there is no difference in speed between these two variants of this command:
+#
+  my $query = qq{ SELECT a.window, SUM(a.thing_score), a.sense, a.clone FROM anomaly AS a INNER JOIN $view AS w ON a.type = w.type    WHERE a.chromosome = "I" AND a.centre = "HX" AND a.active = 1 AND w.weight = 1 GROUP BY window, sense ORDER BY 2 DESC; };
+#
+#  my $query = qq{ SELECT a.window, SUM(a.thing_score * w.weight), a.sense, a.clone FROM anomaly AS a INNER JOIN $view AS w ON a.type = w.type     WHERE a.chromosome = "I" AND a.centre = "HX" AND a.active = 1 GROUP BY window, sense ORDER BY 2 DESC; };
 
   #print "chromosome=$chromosome\n";
   #print "lab=$lab\n";
@@ -690,6 +762,40 @@ sub populate_anomaly_window_list {
     # clone, sense, score, window
     $$anomaly_list_ref->insert('end', $chromosome . " " . $result_row->[3] . " Sense: " . $result_row->[2] . " Score: " . $result_row->[1] . " ID: " . $result_row->[0] );
   }
+
+}
+#############################################################################
+# this is called by the popup menu of anomalies to reweight to zero
+# it resets the list of anomalies in anomaly_list
+# it resets the list of anomalies in anomaly_detail_list
+# it sets the weight of the selected anomaly to be zero
+# it re-populates the anomaly_window_list
+
+
+sub reweight_anomalies {
+  my ($mysql_ref, $lab_ref, $chromosome_ref, $anomaly_list_ref, $anomaly_detail_list_ref, $zero_weight) = @_;
+
+  #print "In reweight_anomalies, zero_weight = $$zero_weight\n";
+
+  my ($type, $count) = split(/\s+/, $$zero_weight);
+
+  # name of the temporary 'view' weighting table
+  my $view = "weight_$user";
+
+  # delete whatever was in the anomaly list before
+  $$anomaly_list_ref->delete( 0, "end" );
+
+  # delete whatever was in the anomaly details list and results list before
+  $$anomaly_detail_list_ref->delete( 0, "end" );
+  @$results = ();
+
+  # set the weight of the selected anomaly to be zero
+  $$mysql_ref->do( qq{ UPDATE $view SET weight = 0  WHERE type = "$type"; } );
+
+  # re-populate the anomaly_window_list
+  &populate_anomaly_window_list($$mysql_ref, $$lab_ref, $$chromosome_ref, $anomaly_list_ref);
+
+
 
 }
 
@@ -755,6 +861,9 @@ sub goto_anomaly_window {
   my $selection = $$anomaly_window_list->curselection();
   my $clone = $anomaly_clone;
 
+  # name of the temporary 'view' weighting table
+  my $view = "weight_$user";
+
   # see if there is a clone specified, or whether we are picking a selection from the listbox
   if (defined $clone && $clone ne "" && defined $selection) {
 
@@ -767,8 +876,9 @@ sub goto_anomaly_window {
     &goto_location($clone, 1, 200000, '+', 0);
 
     # get and display the individual anomalies found in this clone
-    # pull out all anomalies in this clone except those marked as active = 0
-    $query = qq{ SELECT type, clone, clone_start, clone_end, chromosome_start, chromosome_end, sense, thing_id, thing_score, explanation, anomaly_id FROM anomaly WHERE clone = "$clone" AND active = 1 ORDER BY chromosome_start };
+    # pull out all anomalies in this clone except those marked as active = 0 and those with zero-weighted anomaly types
+    $query = qq{ SELECT a.type, a.clone, a.clone_start, a.clone_end, a.chromosome_start, a.chromosome_end, a.sense, a.thing_id, a.thing_score, a.explanation, a.anomaly_id FROM anomaly AS a INNER JOIN $view AS w ON a.type = w.type   WHERE a.clone = "$clone" AND a.active = 1 AND w.weight = 1 ORDER BY chromosome_start; };
+
 
   } elsif (defined $selection) {
 
@@ -792,8 +902,8 @@ sub goto_anomaly_window {
 
     # get and display the individual anomalies found in this anomalies window
     # extract the new details from the database
-    # pull out all anomalies in this window except those marked as active = 0
-    $query = qq{ SELECT type, clone, clone_start, clone_end, chromosome_start, chromosome_end, sense, thing_id, thing_score, explanation, anomaly_id FROM anomaly WHERE chromosome = "$chromosome" AND window = $window AND sense = "$sense" and active = 1 ORDER BY chromosome_start };
+    # pull out all anomalies in this window except those marked as active = 0 and those with zero-weighted anomaly types
+    $query = qq{ SELECT a.type, a.clone, a.clone_start, a.clone_end, a.chromosome_start, a.chromosome_end, a.sense, a.thing_id, a.thing_score, a.explanation, a.anomaly_id FROM anomaly AS a INNER JOIN $view AS w ON a.type = w.type   WHERE a.chromosome = "$chromosome" AND a.window = $window AND a.sense = "$sense" and a.active = 1 AND w.weight = 1 ORDER BY chromosome_start };
 
   } else {
 
