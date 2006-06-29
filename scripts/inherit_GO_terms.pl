@@ -5,7 +5,7 @@
 # map GO_terms to ?Sequence objects from ?Motif and ?Phenotype
 #
 # Last updated by: $Author: ar2 $     
-# Last updated on: $Date: 2006-02-23 17:29:05 $      
+# Last updated on: $Date: 2006-06-29 15:40:35 $      
 
 use strict;
 use warnings;
@@ -23,6 +23,7 @@ my ($help, $debug, $motif, $phenotype,$store);
 my $verbose;             # for toggling extra output
 my $maintainers = "All"; # who receives emails from script
 my $noload;              # generate results but do not load to autoace
+my $database;
 
 ##############################
 # command-line options       #
@@ -30,10 +31,11 @@ my $noload;              # generate results but do not load to autoace
 
 GetOptions ("help"      => \$help,
             "debug=s"   => \$debug,
-	    "phenotype" => \$phenotype,
-	    "motif"     => \$motif,
-	    "noload"    => \$noload,
-    	    "store:s"   => \$store
+			    "phenotype" => \$phenotype,
+	   		 "motif"     => \$motif,
+	    		"noload"    => \$noload,
+    	    	"store:s"   => \$store,
+    	    	"database:s" => \$database
     	);
 
 # Display help if required
@@ -54,11 +56,10 @@ my $log=Log_files->make_build_log($wb);
 ##############################
 
 my $tace      = $wb->tace;      # tace executable path
-my $dbpath    = $wb->autoace;                                      # Database path
+my $dbpath    = $database or wb->autoace;                                      # Database path
 
 my $out=$wb->acefiles."/inherited_GO_terms.ace";
 open (OUT,">$out");
-OUT->autoflush();
 
 ########################################
 # Connect with acedb server            #
@@ -72,22 +73,13 @@ my $db = Ace->connect(-path=>$dbpath,
 &motif($db)     if ($motif);
 &phenotype($db) if ($phenotype);
 
+close OUT;
 
 ##############################
 # read acefiles into autoace #
 ##############################
 
-unless ($noload || $debug) {
-
-  my $command = "pparse $out\nsave\nquit\n";
-    
-  open (TACE,"| $tace -tsuser inherit_GO_terms $dbpath") || die "Couldn't open tace connection to $dbpath\n";
-  print TACE $command;
-  close (TACE);  
-
-  $log->write_to("uploaded results into autoace\n\n");
-    
-}
+$wb->load_to_database($dbpath,$out,'inherit_GO_terms', $log) unless ($noload || $debug) ;
 
 ##############################
 # mail $maintainer report    #
@@ -147,31 +139,28 @@ sub motif {
 sub phenotype {
   my $db = shift;
   
-  my ($obj,$term,$rnai,$match,$rnaiobj) = "";
-  my (@GO_terms,@rnai,@CDS) = "";
-  
-  my $i = $db->fetch_many(-query=> 'find Phenotype "*"');  
-  while ($obj = $i->next) {
-    $motif = $obj;
-    @GO_terms = $obj->GO_term;
-    @rnai = $obj->RNAi;
-    
-    print "RNA : $motif\n" if ($verbose);
-    foreach $term (@GO_terms) {
-      print "contains GO_term : $term with " . scalar (@rnai) . " attached RNAi objects\n" if ($debug);
-      
-      foreach $rnai (@rnai) {
-	print "maps to RNAi $rnai " if ($debug);
-	my $rnaiobj = $db->fetch(RNAi=>$rnai);
-	@CDS = $rnaiobj->Predicted_gene;
-	
-	foreach $match (@CDS) {
-	  print "== $match\n" if ($debug);
-	  print OUT "\nCDS : \"$match\"\nGO_term $term IMP Inferred_automatically\n";
-	} # CDS
-      }   # RNAi
-    }     # GO_term
-  }       # Phenotype object
+  my $def = &write_phenotype_def;
+  my $tm_query = $wb->table_maker_query($dbpath,$def);
+  #my $acefile = $wb->acefiles."/inherit_GO_terms.ace";
+  #open ACE,">$acefile" or $log->log_and_die("cant write $acefile: $!\n");
+  while(<$tm_query>) {
+  		s/\"//g;  #remove "
+  		next if (/acedb/ or /\/\//);
+		my @data = split;
+	  	my ($cds, $phenotype,$go) = ($data[0], $data[2], $data[3]);
+	  	if($phenotype =~ /WBPheno/) {
+	  		$phenotype = &get_phenotype_name($phenotype);
+	  	}
+	  	else {next;}
+  		unless($cds and $phenotype and $go) {
+  			$log->write_to("bad data $_");
+  			next;
+  		}
+		print OUT "\nCDS : \"$cds\"\nGO_term \"$go\" IMP Inferred_automatically $phenotype\n" ;
+	}
+	#close ACE;
+	#tidy up
+	$wb->run_command("rm -f $def", $log);
 }
 
 
@@ -188,7 +177,68 @@ sub usage {
   }
 }
 
+sub get_phenotype_name {
+	my $id = shift;
+	my $obj = $db->fetch('Phenotype' => $id);
+	my $name = $obj->Primary_name;
+	return $name or $id;
+}
 
+# this will write out an acedb tablemaker defn to a temp file
+sub write_phenotype_def {
+	my $def = '/tmp/inherit_GO.def';
+	open TMP,">$def" or $log->log_and_die("cant write $def: $!\n");
+	my $txt = <<END;
+Sortcolumn 1
+
+Colonne 1
+Width 12
+Optional
+Visible
+Class
+Class elegans_CDS
+From 1
+
+Colonne 2
+Width 12
+Mandatory
+Visible
+Class
+Class RNAi
+From 1
+Tag RNAi_result
+
+Colonne 3
+Width 20
+Optional
+Visible
+Class
+Class Phenotype
+From 2
+Tag Phenotype
+
+Colonne 4
+Width 12
+Null
+Visible
+Show_Tag
+Right_of 3
+Tag  HERE  # Not
+
+Colonne 5
+Width 12
+Mandatory
+Visible
+Class
+Class GO_term
+From 3
+Tag GO_term
+END
+
+	print TMP $txt;
+	close TMP;
+	return $def;
+}
 
 __END__
 
