@@ -8,6 +8,14 @@ use Getopt::Long;
 require Tk::Dialog;
 use Coords_converter;
 use DBI;
+use Wormbase;
+
+ 
+######################################
+# variables and command-line options #
+######################################
+ 
+my ($help, $debug, $test, $verbose, $store, $wormbase);
 
 
 my $source;
@@ -22,6 +30,11 @@ my $anomaly;
 my $lab;
 
 GetOptions (
+            "debug=s"    => \$debug,
+            "test"       => \$test,
+            "verbose"    => \$verbose,
+            "store:s"    => \$store,
+
 	    "source:s"     => \$source,
 	    "design"       => \$design,
 	    "chromosome:s" => \$chromosome,
@@ -34,6 +47,26 @@ GetOptions (
 	    "lab=s"        => \$lab, # RW or HX
 	    "help|h"       => sub { system("perldoc $0"); exit(0);}
 	   );
+
+ 
+if ( $store ) {
+  $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
+} else {
+  $wormbase = Wormbase->new( -debug   => $debug,
+                             -test    => $test,
+                             );
+}
+       
+# always in test mode
+$test = 1;
+
+# keep things quiet
+$debug = $user if (! defined $debug);
+
+
+#################################
+
+
 
 die "$blast doesnt exist !\n" if ($blast and !(-e $blast));
 
@@ -77,6 +110,9 @@ $main_gui->geometry("${gui_width}x$gui_height");
 # this is the value used to construct the window IDs in the script 'find_anomalies.pl'
 my $WINDOW_SIZE = 10000;
 
+if (defined $chromosome) {
+  $chromosome =~ s/CHROMOSOME_//;
+}
 
 my $results;		# the globally-accesible anomaly details that are summarised in the anomalies detail window
 
@@ -108,7 +144,7 @@ if ( $intron && $chromosome ) {
 						  );
 
 
-  my $coords = Coords_converter->invoke;
+  my $coords = Coords_converter->invoke(undef, undef, $wormbase);
 
   my $file = "/nfs/WWWdev/SANGER_docs/htdocs/Projects/C_elegans/WORMBASE/development_release/GFF/CHROMOSOME_${chromosome}.check_intron_cam.gff";
   open (INTRONS, "<$file") or die "$file\n";
@@ -282,6 +318,8 @@ if ( $anomaly ) {
 
   my $anomaly_detail_list;
 
+  my $coords = Coords_converter->invoke(undef, undef, $wormbase);
+
 
   my $anomaly_find = $main_gui->Frame( -background => "wheat", # was cyan
 				       -label      => "Anomaly locator",
@@ -301,7 +339,7 @@ if ( $anomaly ) {
 
   my $go_to_window = $anomaly_find->Button ( -text    => "Go to anomaly region (or clone)",
 					     -background => "aquamarine3",
-					     -command => [\&goto_anomaly_window, \$anomaly_list, \$anomaly_detail_list]
+					     -command => [\&goto_anomaly_window, \$anomaly_list, \$anomaly_detail_list, \$coords]
 					      )->pack ( -side => 'right',
 							-pady => '2',
 							-padx => '6',
@@ -703,7 +741,7 @@ sub populate_zero_weight_list {
   }
 
   # set up the weight view table in the mysql database
-  # we have MYSQl version 4 which doesn't support VIEWs
+  # we have MYSQL version 4 which doesn't support VIEWs
   # so have horrible cludge of tables with names formed from
   # user-names which we have to explicitly drop before creating anew
   my $view = "weight_$user";
@@ -743,9 +781,9 @@ sub populate_anomaly_window_list {
 
 # there is no difference in speed between these two variants of this command:
 #
-  my $query = qq{ SELECT a.window, SUM(a.thing_score), a.sense, a.clone FROM anomaly AS a INNER JOIN $view AS w ON a.type = w.type    WHERE a.chromosome = "I" AND a.centre = "HX" AND a.active = 1 AND w.weight = 1 GROUP BY window, sense ORDER BY 2 DESC; };
+#  my $query = qq{ SELECT a.window, SUM(a.thing_score), a.sense, a.clone FROM anomaly AS a INNER JOIN $view AS w ON a.type = w.type    WHERE a.chromosome = "$chromosome" AND a.centre = "$lab" AND a.active = 1 AND w.weight = 1 GROUP BY window, sense ORDER BY 2 DESC; };
 #
-#  my $query = qq{ SELECT a.window, SUM(a.thing_score * w.weight), a.sense, a.clone FROM anomaly AS a INNER JOIN $view AS w ON a.type = w.type     WHERE a.chromosome = "I" AND a.centre = "HX" AND a.active = 1 GROUP BY window, sense ORDER BY 2 DESC; };
+  my $query = qq{ SELECT a.window, SUM(a.thing_score * w.weight), a.sense, a.clone FROM anomaly AS a INNER JOIN $view AS w ON a.type = w.type     WHERE a.chromosome = "$chromosome" AND a.centre = "$lab" AND a.active = 1 GROUP BY window, sense ORDER BY 2 DESC; };
 
   #print "chromosome=$chromosome\n";
   #print "lab=$lab\n";
@@ -850,6 +888,7 @@ sub ignore_anomaly_window {
 sub goto_anomaly_window {
   my $anomaly_window_list = shift;
   my $anomaly_detail_list = shift;
+  my $coords_ref = shift;
 
   my $query;
 
@@ -892,7 +931,11 @@ sub goto_anomaly_window {
     my $window_start = $selected[7] * $WINDOW_SIZE;
     my $window_end = ($selected[7] * $WINDOW_SIZE) + $WINDOW_SIZE - 1;
     my $sense = $selected[3];
-    &goto_location("CHROMOSOME_$chromosome", $window_start, $window_end, $sense, 0);
+
+    # camace (and stlace) doesn't have the CHROMOSOME_* Sequence objects in them
+    # so we now have to convert to clone coords
+    my @clone_coords = ${$coords_ref}->LocateSpan("CHROMOSOME_$chromosome", $window_start, $window_end );
+    &goto_location($clone_coords[0], $clone_coords[1], $clone_coords[2], $sense, 0);
 
     # insert the text '[Seen in this session]' at the end of the current select line (if it is not already there)
     if ($selected_value !~ /\[Seen/) {
