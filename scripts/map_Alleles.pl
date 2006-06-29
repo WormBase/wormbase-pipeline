@@ -6,8 +6,8 @@
 # This maps alleles to the genome based on their flanking sequences
 #
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2006-06-27 17:21:32 $
-# SubVersion :     $Revision: 1.41 $
+# Last updated on: $Date: 2006-06-29 10:42:59 $
+# SubVersion :     $Revision: 1.42 $
 
 use strict;
 use warnings;
@@ -388,7 +388,6 @@ sub map_alleles {
             }
             $allele2gene{"$name"} = \@affects_CDSs if ( $affects_CDSs[0] );
             &outputAllele( $name );
-            &outputSplice( $name, \%affects_Splice, $chromosome );
         }
         if ( @affects_Feature >= 1 ) {
             &outputFeature( $name, \@affects_Feature );
