@@ -196,7 +196,7 @@ if ($twinscan) {
   # CDS entry widgets
   my $gene_lbl = $gene_blesser->Label( -text => 'prediction name',
 				       -background => 'PaleTurquoise', # was green
-				       -foreground => 'white'
+				       -foreground => 'black'
 				       )->pack(-pady => '6',
 					       -padx => '6',
 					       -side => 'left',
