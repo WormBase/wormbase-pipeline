@@ -6,7 +6,7 @@
 #
 # Version: $Version: $
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2006-04-12 13:42:17 $
+# Last updated on: $Date: 2006-06-30 14:21:33 $
 
 use strict;
 use warnings;
@@ -39,6 +39,7 @@ my $chrom;         # specify a chromosome
 
 my $gffdir;        # use a specific GFF_SPLIT directory
 my $dbdir;         # connect to a different acedb
+my $noparse;	   # don't parse the ace file
 
 GetOptions(
     "debug=s"      => \$debug,
@@ -50,7 +51,8 @@ GetOptions(
     'store=s'      => \$store,
     'chromosome=s' => \$chrom,
     'gffdir=s'     => \$gffdir,
-    'dbdir=s'      => \$dbdir
+    'dbdir=s'      => \$dbdir,
+    'noparse'	   => \$noparse,
 );
 
 # Display help if required
@@ -301,7 +303,7 @@ close(OUTACE);
 #########################################################
 # read acefiles into autoace (unless running test mode) #
 #########################################################
-$wb->load_to_database( $dbdir, $acefile, "RNAi_mappings" ) if ($load);
+$wb->load_to_database( $dbdir, $acefile, "RNAi_mappings" ) if ($load && ! $noparse);
 
 ####################################
 # print some statistics to the log #
