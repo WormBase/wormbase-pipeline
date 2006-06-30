@@ -943,24 +943,17 @@ sub goto_anomaly_window {
       $$anomaly_window_list->insert($selection, "$selected_value [Seen in this session]");
     }
 
-    # we want to dislpay the list sorted by chromosome_start
-    # descending if we are in the reverse sense
-    my $desc = "";
-    if ($sense eq '-') {
-      $desc = "DESC";
-    }
-
     # get and display the individual anomalies found in this anomalies window
     # extract the new details from the database
     # pull out all anomalies in this window except those marked as active = 0 and those with zero-weighted anomaly types
-    $query = qq{ SELECT a.type, a.clone, a.clone_start, a.clone_end, a.chromosome_start, a.chromosome_end, a.sense, a.thing_id, a.thing_score, a.explanation, a.anomaly_id FROM anomaly AS a INNER JOIN $view AS w ON a.type = w.type   WHERE a.chromosome = "$chromosome" AND a.window = $window AND a.sense = "$sense" and a.active = 1 AND w.weight = 1 ORDER BY chromosome_start $desc};
+    $query = qq{ SELECT a.type, a.clone, a.clone_start, a.clone_end, a.chromosome_start, a.chromosome_end, a.sense, a.thing_id, a.thing_score, a.explanation, a.anomaly_id FROM anomaly AS a INNER JOIN $view AS w ON a.type = w.type   WHERE a.chromosome = "$chromosome" AND a.window = $window AND a.sense = "$sense" and a.active = 1 AND w.weight = 1 ORDER BY chromosome_start };
 
   } else {
 
     &confirm_message("NO SELECTION", "No current selection\n"); 
     return;
 
-  }				# end of test to see if looking at clone or listbox selection
+  }				# end of test to see if looking at clone or list selection
 
 
   # get the query and present the details on the lower listbox
@@ -1015,8 +1008,11 @@ sub box_merge {
  
   my @boxes = ();
 
+  my $last_sense;
+
   foreach my $anomaly (@{$ref_anomalies}) {
     my ($type, $clone, $clone_start, $clone_end, $chromosome_start, $chromosome_end, $sense, $thing_id, $thing_score, $explanation) = (@{$anomaly});
+    $last_sense = $sense;
 
     my $got_a_match = 0;
 
@@ -1105,9 +1101,13 @@ sub box_merge {
     }
   }
 
-  # sort by the reverse total_score
-  @boxes = sort { $a->{'chromosome_start'} <=> $b->{'chromosome_start'} } @boxes;
-                                                                                                                                                       
+  # sort by the start position
+  if ($last_sense eq '+') {
+    @boxes = sort { $a->{'chromosome_start'} <=> $b->{'chromosome_start'} } @boxes;
+  } else {
+    @boxes = sort { $b->{'chromosome_start'} <=> $a->{'chromosome_start'} } @boxes;
+  }
+                                                                                                                                            
   return @boxes;
 }
 
