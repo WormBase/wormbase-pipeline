@@ -4,8 +4,8 @@
 #
 # map GO_terms to ?Sequence objects from ?Motif and ?Phenotype
 #
-# Last updated by: $Author: ar2 $     
-# Last updated on: $Date: 2006-06-29 15:40:35 $      
+# Last updated by: $Author: mt3 $     
+# Last updated on: $Date: 2006-06-30 09:29:15 $      
 
 use strict;
 use warnings;
@@ -42,29 +42,29 @@ GetOptions ("help"      => \$help,
 &usage("Help") if ($help);
 
 # recreate configuration 
-my $wb;
-if ($store) { $wb = Storable::retrieve($store) or croak("cant restore wormbase from $store\n") }
-else { $wb = Wormbase->new( -debug => $debug, -test => $debug, ) }
+my $wormbase;
+if ($store) { $wormbase = Storable::retrieve($store) or croak("cant restore wormbase from $store\n") }
+else { $wormbase = Wormbase->new( -debug => $debug, -test => $debug, ) }
 
-# Variables Part II (depending on $wb) 
-$debug = $wb->debug if $wb->debug;    # Debug mode, output only goes to one user
+# Variables Part II (depending on $wormbase) 
+$debug = $wormbase->debug if $wormbase->debug;    # Debug mode, output only goes to one user
 
-my $log=Log_files->make_build_log($wb);
+my $log=Log_files->make_build_log($wormbase);
 
 ##############################
 # Paths etc                  #
 ##############################
 
-my $tace      = $wb->tace;      # tace executable path
-my $dbpath    = $database or wb->autoace;                                      # Database path
+my $tace      = $wormbase->tace;      # tace executable path
+# Database path
 
-my $out=$wb->acefiles."/inherited_GO_terms.ace";
+my $dbpath    = $wormbase->autoace;                                     
+my $out=$wormbase->acefiles."/inherited_GO_terms.ace";
 open (OUT,">$out");
 
 ########################################
 # Connect with acedb server            #
 ########################################
-
 my $db = Ace->connect(-path=>$dbpath,
                       -program =>$tace) || do { print "Connection failure: ",Ace->error; die();};
 
@@ -79,7 +79,7 @@ close OUT;
 # read acefiles into autoace #
 ##############################
 
-$wb->load_to_database($dbpath,$out,'inherit_GO_terms', $log) unless ($noload || $debug) ;
+$wormbase->load_to_database($dbpath,$out,'inherit_GO_terms', $log) unless ($noload || $debug) ;
 
 ##############################
 # mail $maintainer report    #
@@ -140,8 +140,8 @@ sub phenotype {
   my $db = shift;
   
   my $def = &write_phenotype_def;
-  my $tm_query = $wb->table_maker_query($dbpath,$def);
-  #my $acefile = $wb->acefiles."/inherit_GO_terms.ace";
+  my $tm_query = $wormbase->table_maker_query($dbpath,$def);
+  #my $acefile = $wormbase->acefiles."/inherit_GO_terms.ace";
   #open ACE,">$acefile" or $log->log_and_die("cant write $acefile: $!\n");
   while(<$tm_query>) {
   		s/\"//g;  #remove "
@@ -160,7 +160,7 @@ sub phenotype {
 	}
 	#close ACE;
 	#tidy up
-	$wb->run_command("rm -f $def", $log);
+	$wormbase->run_command("rm -f $def", $log);
 }
 
 
