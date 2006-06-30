@@ -413,14 +413,17 @@ if ( $anomaly ) {
 						     -anchor => "w"
 						     );
 
-  my $ignore_all_window = $anomaly_details->Button ( -text    => "Ignore ALL these anomalies!",
-						     -background => "red",
-						     -command => [\&ignore_anomaly_window, \$anomaly_list, \$anomaly_detail_list]
-					      )->pack ( -side => 'left',
-							-pady => '2',
-							-padx => '6',
-							-anchor => "center"
-							);
+## I found that this buton was too dangerous - it is too easy to click
+## this by mistake and wipe out a whole window of anomalies before you
+## have looked at them properly
+#  my $ignore_all_window = $anomaly_details->Button ( -text    => "Ignore ALL these anomalies!",
+#						     -background => "red",
+#						     -command => [\&ignore_anomaly_window, \$anomaly_list, \$anomaly_detail_list]
+#					      )->pack ( -side => 'left',
+#							-pady => '2',
+#							-padx => '6',
+#							-anchor => "center"
+#							);
 
   my $go_to_anomaly = $anomaly_details->Button ( -text    => "Go to this anomaly",
 						 -background => "aquamarine3",
