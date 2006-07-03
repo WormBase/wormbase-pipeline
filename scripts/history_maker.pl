@@ -1104,6 +1104,18 @@ sub box_merge {
     }
   }
 
+  # now do a quick pass through to remove any instances of a single
+  # TREMBL protein mismatch because these occur all too often and we
+  # really get sick of seeing them and marking them as inactive
+  foreach my $box (@boxes) {
+    if ($box->{'count'}  == 1 && 
+	$box->{'type'} eq 'UNMATCHED_PROTEIN' && 
+	$box->{'ID'} =~ /TR:/) {
+      $box->{'deleted'} = 1;
+    }
+  }
+
+
   # sort by the start position
   if ($last_sense eq '+') {
     @boxes = sort { $a->{'chromosome_start'} <=> $b->{'chromosome_start'} } @boxes;
