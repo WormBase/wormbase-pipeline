@@ -6,8 +6,8 @@
 # This maps alleles to the genome based on their flanking sequences
 #
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2006-06-29 10:42:59 $
-# SubVersion :     $Revision: 1.42 $
+# Last updated on: $Date: 2006-07-03 15:14:47 $
+# SubVersion :     $Revision: 1.43 $
 
 use strict;
 use warnings;
@@ -158,7 +158,7 @@ sub prep_db {
     my ($debug) = @_;
     my $tdbh = $debug ? GFF_sql->new() : GFF_sql->new( { -build => 1 } );    # as database handles cannot be shared across threads ...
     my $gffdir = $wb->gff_splits;
-    foreach my $c qw(I II III IV V) {
+    foreach my $c qw(I II III IV V X) {
         $tdbh->clean("CHROMOSOME_${c}");
         foreach my $file ( glob("$gffdir/CHROMOSOME_${c}_*.gff") ) {
             $tdbh->generate_tags($file);
@@ -308,30 +308,12 @@ sub map_alleles {
         push @affects_CDSs, grep { ( $_->{'source'} eq 'intron'                    && $_->{'feature'} eq 'Coding_transcript' ) } @hits;
         push @affects_CDSs, grep { ( $_->{'source'} eq 'gene'                      && $_->{'feature'} eq 'gene' ) } @hits;
 
-        # splice site stuff
-        # donor
-        push @{ $affects_Splice{Donor} },
-          grep { $_->{source} eq 'intron' && $_->{orientation} eq '+' && $start <= $_->{start} - 2 && $stop >= $_->{start} + 1 } @affects_CDSs;
-        push @{ $affects_Splice{Donor} },
-          grep { $_->{source} eq 'intron' && $_->{orientation} eq '-' && $start <= $_->{stop} - 1 && $stop >= $_->{stop} + 2 } @affects_CDSs;
-
-        # acceptor
-        push @{ $affects_Splice{Acceptor} },
-          grep { $_->{source} eq 'intron' && $_->{orientation} eq '+' && $start <= $_->{stop} - 1 && $stop >= $_->{stop} } @affects_CDSs;
-        push @{ $affects_Splice{Acceptor} },
-          grep { $_->{source} eq 'intron' && $_->{orientation} eq '-' && $start <= $_->{start} && $stop >= $_->{start} + 1 } @affects_CDSs;
-
         # same for Features
         push @affects_Feature, grep { ( $_->{'source'} eq 'SL1_acceptor_site' ) } @hits;
         push @affects_Feature, grep { ( $_->{'source'} eq 'SL2_acceptor_site' ) } @hits;
         push @affects_Feature, grep { ( $_->{'source'} eq 'polyA_signal_sequence' ) } @hits;
         push @affects_Feature, grep { ( $_->{'source'} eq 'polyA_site' ) } @hits;
 
-        #        cleanup affects_CDSs
-        #	 my %types;
-        #	 my @affected;
-        #        map {push @affected, $_ if ! $types{$_->{'source'}};$types{$_->{'source'}}=1} @affects_CDSs;
-        #        @affects_CDSs=@affected;
 
         if ( scalar(@affects_CDSs) >= 1 ) {
 
@@ -358,7 +340,8 @@ sub map_alleles {
                     $affects_genes{$gene}->{ $hit->{'source'} } = 1;
                 }
             }
-            my @affects_genes = keys(%affects_genes);
+            my @affects_genes = keys(%affects_genes); # list of WBGeneIDs
+
             print Dumper (@affects_CDSs) if $debug;    #bad
 
             # now compare both arrays (allele->gene connections already in database and
@@ -371,14 +354,12 @@ sub map_alleles {
                 # if it only == 1 then there is an error
                 if ( $count{$gene} == 1 ) {
                     if ( $affects_genes{$gene} ) {
-
                         # not so serious, but source database should be updated with connection
                         next                                                      if ( $allele->SNP );
                         print "WARNING: $name->$gene was mapped by script only\n" if ($verbose);
                         $log->write_to("WARNING: $name->$gene was mapped by script only\n");
                     }
                     else {
-
                         # more serious, source database has a bad allele->gene connection
                         print "ERROR: $name->$gene was in original database only\n" if ($verbose);
                         $log->write_to("ERROR: $name->$gene was in original database only\n");
@@ -387,7 +368,7 @@ sub map_alleles {
                 }
             }
             $allele2gene{"$name"} = \@affects_CDSs if ( $affects_CDSs[0] );
-            &outputAllele( $name );
+            &outputAllele( $name,$chromosome,$start,$stop );
         }
         if ( @affects_Feature >= 1 ) {
             &outputFeature( $name, \@affects_Feature );
@@ -403,7 +384,7 @@ sub map_alleles {
 #####################################################################################################
 
 sub outputAllele {
-    my ($allele) = @_;
+    my ($allele,$chromosome,$start,$stop) = @_;
     my %done;
 
     # only proceed if mapping routine returns the following three pieces of info
@@ -424,23 +405,24 @@ sub outputAllele {
 
                     ############## ######## #####
 
-                    if ( $cds =~ /([\w\.]*)\.(\d)$/ ) { $cds = $1 }
+		    #if ( $cds =~ /([\w\.]*)\.\d+$/ ) { $cds = $1 }
 
                     ############# ######### #####
 
                     #allele - WBGene connection
-                    next if $done{$cds} && $done{$cds}->{ $gff_cds->{'source'} };    #don't print duplicates
-                    $done{$cds}->{ $gff_cds->{'source'} } = 1;
-
-                    # crude hack
+ 
+                     # crude hack
                     if ( $gff_cds->{'source'} eq 'gene' ) {
+			next if $done{$cds} && $done{$cds}->{ 'gene' };    #don't print duplicates
+                    	$done{$cds}->{ 'gene' } = 1;
+
                         print OUT "Variation : $allele\n";
                         print OUT "Gene $cds\n\n";
                         next;
                     }
 
-                    next if ( !$worm_gene2geneID{$cds} );
                     my $WBGene = $worm_gene2geneID{$cds};
+                    next if ( !$WBGene);
 
                     my $type = $gff_cds->{'source'};
                     $type =~ s/^(\w)/\u$1/;
@@ -451,15 +433,25 @@ sub outputAllele {
                         $error_count++;
                         next;
                     }
+
                     elsif ( $worm_gene2class{$cds} eq "CDS" ) {
+			my $splice;
+			$splice=&outputSplice($start,$stop, $gff_cds, $chromosome) if ($type eq 'Intron');
+
+   			next if $done{$cds} && $done{$cds}->{ $gff_cds->{'source'}.$splice};    #don't print duplicates
+       
                         print OUT "Variation : $allele\n";
                         print OUT "Predicted_CDS $cds $type Inferred_automatically map_Alleles.pl\n\n";
-                    }
+			print OUT "Predicted_CDS $cds $splice" if $splice;
+                    	$done{$cds}->{ $gff_cds->{'source'}.$splice } = 1 if $splice;
+	   	    }
                     elsif ( $worm_gene2class{$cds} eq "Transcript" ) {
-                        print OUT "Variation : $allele\n";
+      			next if $done{$cds} && $done{$cds}->{ $gff_cds->{'source'} };    #don't print duplicates
+       		        print OUT "Variation : $allele\n";
                         $type = ' ' if $type =~ /.*_primary_transcript/;    #crude hack
                         print OUT "Transcript $cds $type Inferred_automatically map_Alleles.pl\n\n";
-                    }
+                     	$done{$cds}->{ $gff_cds->{'source'} } = 1;
+		    }
                     else {
                         $log->write_to("ERROR: $cds is not a CDS or Transcript\n");
                         $error_count++;
@@ -487,43 +479,26 @@ sub outputFeature {
 # to print splice
 ###############################
 sub outputSplice {
-    my ( $allele, $affects_Splice, $chromosome ) = @_;
+    my ( $start,$stop, $intron, $chromosome ) = @_;
+    my ($type,$sstart,$sstop);
+    # donor
+    return undef unless
+    ($start >= $intron->{start}-10 && $stop<= $intron->{start}+10) &&
+    ($start >= $intron->{stop}-10 && $stop<= $intron->{stop}+10);
 
-    # process splices
-    foreach my $key ( keys %{$affects_Splice} ) {
-        if ( $affects_Splice->{$key}[0] ) {
-	    my %sites;
-            print OUT "Variation : $allele\n";
-            foreach my $i ( @{ $affects_Splice->{$key} } ) {
-                my ( $start, $stop );
-                if ( $key eq 'Donor' ) {
-                    if ( $i->{orientation} eq '+' ) {
-                        $start = $i->{start} - 2;
-                        $stop  = $i->{start} + 1;
-                    }
-                    else {
-                        $start = $i->{stop} - 1;
-                        $stop  = $i->{stop} + 2;
-                    }
-                }
-                else {
-                    if ( $i->{orientation} eq '+' ) {
-                        $start = $i->{stop} - 1;
-                        $stop  = $i->{stop};
-                    }
-                    else {
-                        $start = $i->{start};
-                        $stop  = $i->{start} + 1;
-                    }
-                }
-
-                my $site = &get_seq( $extractor, $chromosome, $start, $stop ,$i->{orientation});
-                print OUT "Splice_site $key $site Inferred_automatically map_Alleles.pl\n" if (! $sites{$site});
-		$sites{$site}=1;
-            }
-	    print OUT "\n";
-        }
+    if ($start <= $intron->{start}+1 && $stop >= $intron->{start}){
+	$type=$intron->{orientation} eq '+'?'Donor':'Acceptor';
+	$sstop=$intron->{start}+1;
+	$sstart=$intron->{start};
     }
+    elsif ($start <= $intron->{stop} && $stop >= $intron->{stop}-1){
+	$type=($intron->{orientation} eq '-')?'Donor':'Acceptor';
+	$sstop=$intron->{stop};
+	$sstart=$intron->{stop}-1;
+    }
+    else {return undef}
+    my $site = &get_seq( $extractor, $chromosome, $sstart, $sstop ,$intron->{orientation});
+    return "Splice_site $type $site Inferred_automatically map_Alleles.pl\n";
 }
 
 ####################################################################################
