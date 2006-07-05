@@ -114,7 +114,8 @@ if (defined $chromosome) {
   $chromosome =~ s/CHROMOSOME_//;
 }
 
-my $results;		# the globally-accesible anomaly details that are summarised in the anomalies detail window
+my $results; # the globally-accesible anomaly details that are summarised in the anomalies detail window
+my $check;			# state of the check button for the weights
 
 ################################################################
 #intron locator frame
@@ -237,6 +238,7 @@ if ($twinscan) {
 					       -padx => '6',
 					       -side => 'left',
 					       );
+
   my $gene_val = $gene_blesser->Entry( -width => '10',
 				       -background => 'white',
 				       -textvariable=> \$form_gene,
@@ -317,6 +319,7 @@ if ( $anomaly ) {
   if (! defined $user || $user eq "") {die "Must specify -user with -anomaly\n";}
 
   my $anomaly_detail_list;
+  my $zero_weight_label;
 
   my $coords = Coords_converter->invoke(undef, undef, $wormbase);
 
@@ -355,6 +358,7 @@ if ( $anomaly ) {
 						     -padx => '6',
 						     -side => 'left',
 						     );
+
   my $clone_val = $anomaly_find->Entry( -width => '10',
 				   -background => 'white',
 				   -textvariable=> \$anomaly_clone,
@@ -363,16 +367,36 @@ if ( $anomaly ) {
 					   -padx => '5'
 					   );
 
+  # start the re-weighting menu stuff
+  my $zero_weight;		# variable set by pop-up menu selection
+
+  my $check_button = $anomaly_find->Checkbutton( -text => '',
+						 -background => 'wheat',
+						 -variable => \$check,
+						 -command =>  [\&toggle_weighting, \$zero_weight_label],
+						 )->pack(-pady => '6',
+							 -padx => '6',
+							 -side => 'left',
+							 );
+
+  $zero_weight_label = $anomaly_find->Label( -text => 'Not this anomaly',
+					     -background => 'wheat',
+					     -foreground => 'black'
+					     )->pack(-pady => '6',
+						     -padx => '0',
+						     -side => 'left',
+						     );
+
 # test for popup menu for Anthony's anomaly weighting
 # see: http://rcswww.urz.tu-dresden.de/CS/perl/modules/Tk/Tk-BrowseEntry.htm
   require Tk::BrowseEntry;
-  my $zero_weight;
-  my $zero_weight_list = $anomaly_find->BrowseEntry(-label => "Not this anomaly", 
+  my $zero_weight_list = $anomaly_find->BrowseEntry(-label => '',
 						    -background => 'wheat',
-						    -browsecmd => [\&reweight_anomalies, \$mysql, \$lab, \$chromosome, \$anomaly_list, \$anomaly_detail_list, \$zero_weight],
+						    -listwidth => '350',
+						    -browsecmd => [\&reweight_anomalies, \$mysql, \$lab, \$chromosome, \$anomaly_list, \$anomaly_detail_list, \$zero_weight, \$check],
 						    -variable => \$zero_weight
 						    )->pack(-pady => '6',
-							    -padx => '6',
+							    -padx => '2',
 							    -side => 'left',
 							    );
 
@@ -805,6 +829,28 @@ sub populate_anomaly_window_list {
   }
 
 }
+
+#############################################################################
+# this is called when the check button beside the re-weighting popup menu is pressed
+# it changes the label on the popup menu
+
+sub toggle_weighting {
+
+  my ($zero_weight_list) = @_;
+
+  #print "In toggle_weighting\n";
+
+  if ($check) {
+    $$zero_weight_list->configure(-text => 'Only this anomaly');
+    #print "check on\n";
+  } else {
+    $$zero_weight_list->configure(-text => 'Not this anomaly');
+    #print "check off\n";
+
+  }
+
+}
+
 #############################################################################
 # this is called by the popup menu of anomalies to reweight to zero
 # it resets the list of anomalies in anomaly_list
@@ -814,11 +860,11 @@ sub populate_anomaly_window_list {
 
 
 sub reweight_anomalies {
-  my ($mysql_ref, $lab_ref, $chromosome_ref, $anomaly_list_ref, $anomaly_detail_list_ref, $zero_weight) = @_;
+  my ($mysql_ref, $lab_ref, $chromosome_ref, $anomaly_list_ref, $anomaly_detail_list_ref, $zero_weight_ref, $check_ref) = @_;
 
-  #print "In reweight_anomalies, zero_weight = $$zero_weight\n";
+  #print "In reweight_anomalies, zero_weight = $$zero_weight_ref check = $$check_ref\n";
 
-  my ($type, $count) = split(/\s+/, $$zero_weight);
+  my ($type, $count) = split(/\s+/, $$zero_weight_ref);
 
   # name of the temporary 'view' weighting table
   my $view = "weight_$user";
@@ -830,8 +876,15 @@ sub reweight_anomalies {
   $$anomaly_detail_list_ref->delete( 0, "end" );
   @$results = ();
 
-  # set the weight of the selected anomaly to be zero
-  $$mysql_ref->do( qq{ UPDATE $view SET weight = 0  WHERE type = "$type"; } );
+  if ($$check_ref) {		# only this anomaly
+    # set the weight of all anomalies to be zero
+    $$mysql_ref->do( qq{ UPDATE $view SET weight = 0; } );
+    # reset the weight of the selected anomaly
+    $$mysql_ref->do( qq{ UPDATE $view SET weight = 1  WHERE type = "$type"; } );
+  } else {			# not this anomaly
+    # set the weight of the selected anomaly to be zero
+    $$mysql_ref->do( qq{ UPDATE $view SET weight = 0  WHERE type = "$type"; } );
+  }
 
   # re-populate the anomaly_window_list
   &populate_anomaly_window_list($$mysql_ref, $$lab_ref, $$chromosome_ref, $anomaly_list_ref);
@@ -1011,7 +1064,7 @@ sub box_merge {
  
   my @boxes = ();
 
-  my $last_sense;
+  my $last_sense = '';
 
   foreach my $anomaly (@{$ref_anomalies}) {
     my ($type, $clone, $clone_start, $clone_end, $chromosome_start, $chromosome_end, $sense, $thing_id, $thing_score, $explanation) = (@{$anomaly});
