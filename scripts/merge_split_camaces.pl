@@ -5,7 +5,7 @@
 # A script to make multiple copies of camace for curation, and merge them back again
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2006-03-02 11:54:08 $
+# Last edited on: $Date: 2006-07-06 11:53:04 $
 
 
 use strict;
@@ -21,6 +21,7 @@ use Getopt::Long;
 my $all;                   # All
 my $pad;                   # Use Paul's split
 my $gw3;                   # Use Gary's split
+my $ar2;                   # Use Anthony's split
 my $merge;                 # Merging databases
 my $split;                 # Splitting databases
 my $update;                # Update current database
@@ -35,6 +36,7 @@ GetOptions (
             "all"        => \$all,
 	    "pad"        => \$pad,
 	    "gw3"        => \$gw3,
+	    "ar2"        => \$ar2,
 	    "merge"      => \$merge,
 	    "split"      => \$split,
 	    "update"     => \$update,
@@ -74,6 +76,7 @@ my @classes = ('Transposon', 'Transcript', 'CDS', 'Sequence', 'Feature', 'Featur
 push(@databases,"orig");
 push(@databases,"pad") if ($pad || $all);
 push(@databases,"gw3") if ($gw3 || $all);
+push(@databases,"ar2") if ($ar2 || $all);
 
 # directory paths
 our $canonical = '/nfs/disk100/wormpub/DATABASES/camace';
@@ -203,7 +206,7 @@ sub update_camace {
   system ("load_blat2db.pl -all -dbdir $canonical") && die "Failed to run load_blat2db.pl\n";
 
   #check Canonical Database to see if there are any errors prior to the build starting.
-  system ("camcheck.pl") && die "Failed to run camcheck.pl\n";
+ # system ("camcheck.pl") && die "Failed to run camcheck.pl\n";
 }
 
 #(3)Data dispersion#
