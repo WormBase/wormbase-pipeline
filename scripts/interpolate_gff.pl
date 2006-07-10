@@ -15,7 +15,7 @@
 #      COMPANY:
 #      VERSION:  1.0
 #      CREATED:  13/02/06 09:37:00 GMT
-#     REVISION:  $Revision: 1.12 $
+#     REVISION:  $Revision: 1.13 $
 #===============================================================================
 
 # BACS / SNPS / GENEs
@@ -58,6 +58,8 @@ my $chromdir = $wormbase->{'gff_splits'};
 my $outdir   = "$acedb/acefiles/";
 ##############################################################################################
 #generate a new mapper based on the files (also needs to point to better gene/gene files)
+
+unlink "$acedb/logs/rev_physicals.yml" if ($prep);
 my $mapper = Physical_mapper->new( $acedb, glob("$chromdir/CHROMOSOME_*_gene.gff") );
 
 # check the mappings
