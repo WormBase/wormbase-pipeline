@@ -15,7 +15,7 @@
 #      COMPANY:
 #      VERSION:  1.0
 #      CREATED:  13/02/06 09:37:00 GMT
-#     REVISION:  $Revision: 1.13 $
+#     REVISION:  $Revision: 1.14 $
 #===============================================================================
 
 # BACS / SNPS / GENEs
@@ -66,7 +66,7 @@ my $mapper = Physical_mapper->new( $acedb, glob("$chromdir/CHROMOSOME_*_gene.gff
 if ($prep) {
 	$mapper->check_mapping($log,$acedb);
 	$log->mail( );
-	exit;
+	exit(0);
 }
 
 ###############################################################################################
