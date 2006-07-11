@@ -864,6 +864,7 @@ sub blat        { $self = shift; return $self->{'blat'}; }
 sub farm_dump   { $self = shift; return $self->{'farm_dump'}; }
 sub compare     { $self = shift; return $self->{'compare'}; }
 sub checks      { $self = shift; return $self->{'checks'}; }
+sub build_data  { $self = shift; return $self->{'build_data'}; }
 
 # this can be modified by calling script
 sub common_data {
