@@ -2,7 +2,7 @@
 #
 # EMBLdump.pl :  makes modified EMBL dumps from camace.
 # 
-#  Last updated on: $Date: 2006-07-12 18:44:50 $
+#  Last updated on: $Date: 2006-07-12 19:19:17 $
 #  Last updated by: $Author: pad $
 
 use strict;
@@ -198,7 +198,7 @@ while (<EMBL>) {
     #      print OUT "RX   MEDLINE; 99069613.\n"; # Stripped by EMBL
     print OUT "RX   PUBMED; 9851916.\n";
     print OUT "RG   WormBase Consortium\n";
-    print OUT "RA   The C. elegans Sequencing Consortium;\n"; may be required?
+    print OUT "RA   The C. elegans Sequencing Consortium;\n";
     print OUT "RT   \"Genome sequence of the nematode C. elegans: a platform for investigating\n";
     print OUT "RT   biology\";\n";
     print OUT "RL   Science 282(5396):2012-2018(1998).\n";
