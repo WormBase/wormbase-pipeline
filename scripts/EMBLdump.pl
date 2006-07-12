@@ -1,8 +1,8 @@
 #!/usr/local/bin/perl5.8.0 -w
 #
-# EMBLDump.pl :  makes EMBL dumps from camace.
+# EMBLdump.pl :  makes modified EMBL dumps from camace.
 # 
-#  Last updated on: $Date: 2006-05-23 08:45:48 $
+#  Last updated on: $Date: 2006-07-12 18:44:50 $
 #  Last updated by: $Author: pad $
 
 use strict;
@@ -22,6 +22,7 @@ my $debug;
 my $store;
 my $wormbase;
 my $quicktest;
+my $version;
 
 GetOptions (
 	    "test"         => \$test,
@@ -29,6 +30,7 @@ GetOptions (
 	    "store:s"      => \$store,
 	    "quicktest"    => \$quicktest,
 	    "single=s"     => \$single,
+	    "version=s"    => \$version,
 	    );
 
 
@@ -61,12 +63,13 @@ if($debug){
 my $basedir        = $wormbase->wormpub;
 my $giface         = $wormbase->giface;
 my $dbdir          = $wormbase->database('camace');
-print "You are embl dumping from $dbdir\n\n";
-$log->write_to("You are embl dumping from $dbdir\n\n");
 my $tace           = $wormbase->tace;
 my $outfilename    = "$basedir/tmp/EMBLdump.$$";
 #my $current_DB     = $wormbase->database('current');
 my $mod_file       = "$basedir/tmp/EMBLdump.mod";
+#my (%clone2accession, %clone2type, %cds2cgc,);
+my $dir;
+$log->write_to("You are embl dumping from $dbdir\n\n");
 
 
 #############################################
@@ -108,13 +111,24 @@ close (READ);
 #########################
 
 # This is needed to fix missing sequence version and accession info in dumped EMBL files
+# Where to get data from? If the build has been released COMMON_DATA has been removed, 
+# Therefore need to be able to specify the latest/last build COMMON_DATA.
+
+if ($version) {
+$dir = $wormbase->database("WS$version")."/COMMON_DATA";
+print "***$dir\n"
+}
+
+else {
+  $dir = $wormbase->common_data;
+}
 
 #CommonData hash Key: Genome sequence Value: Sequence version integer
-my %clone2accession = $wormbase->FetchData('clone2accession');
+my %clone2accession = $wormbase->FetchData('clone2accession', undef, "$dir");
 #CommonData hash Key: Clone/Sequence name Value: Type information (cosmid|fosmid|yac|Other);
-my %clone2type = $wormbase->FetchData('clone2type');
-my %cds2cgc  = $wormbase->FetchData('cds2cgc');
-my %cds2gene = $wormbase->FetchData('cds2wbgene_id');
+my %clone2type = $wormbase->FetchData('clone2type', undef, "$dir");
+my %cds2cgc  = $wormbase->FetchData('cds2cgc', undef, "$dir");
+#my %cds2gene = $wormbase->FetchData('cds2wbgene_id');
 
 
 ######################################################################
@@ -127,33 +141,35 @@ open (EMBL, "<$outfilename.embl") or die "Can't process EMBL dump file\n";
 my $id = "";
 my $cds;
 my $clone;
+my $ID2;
 
 our $reference_remove = 0;
 our $author_change;
 
 while (<EMBL>) {
-  # print ID line and next XX. store id
-  if(/^ID\s+CE(\S+)/){
+  # Store the necessary default ID line elements ready for use in the new style EMBL ID lines.
+  if(/^ID\s+CE(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)/){
+    $ID2 = "XXX; linear; genomic $3 STD; "."$4 "."$5 "."$6";
     $id = $1;
-    print OUT "${_}XX\n";
     next;
   }
-  # print ID line and next XX
+  # print new format ID line and AC lines with XX lines once the accession lookup has been done.
   if( /^AC/ ) {
+    print "$_\n";
+    print OUT "ID   $clone2accession{$id}; $ID2\nXX\n";
     print OUT "AC   $clone2accession{$id};\nXX\n";
     next;
   }
   # DE   Caenorhabditis elegans cosmid C05G5    
   if (/^DE   Caenorhabditis elegans cosmid (\S+)/) {
     $clone = $1;
-
     # can now reset $id
     $id = "";
 
     if (!defined($clone2type{$clone})){
       print OUT "DE   Caenorhabditis elegans clone $clone\n";
       print "WARNING: no clone type for $_";
-	$log->write_to("WARNING: no clone type for $_");
+      $log->write_to("WARNING: no clone type for $_");
     }
     elsif ($clone2type{$clone} eq "other") {
       print OUT "DE   Caenorhabditis elegans clone $clone\n";
@@ -177,64 +193,63 @@ while (<EMBL>) {
 
   # print OC line and next XX, tag for WormBase inclusion
   if (/^RP\s+(\S+)/) {
-      $author_change = $1;
-      print OUT "$_";
-      print OUT "RX   MEDLINE; 99069613.\n";
-      print OUT "RX   PUBMED; 9851916.\n";
-      print OUT "RG   WormBase Consortium\n";
-      print OUT "RA   ;\n";
-      print OUT "RT   \"Genome sequence of the nematode C. elegans: a platform for investigating\n";
-      print OUT "RT   biology\";\n";
-      print OUT "RL   Science 282(5396):2012-2018(1998).\n";
-      print OUT "XX\n";
-      print OUT "RN   [2]\n";
-      print OUT "$_";
-      next;
+    $author_change = $1;
+    print OUT "$_";
+    #      print OUT "RX   MEDLINE; 99069613.\n"; # Stripped by EMBL
+    print OUT "RX   PUBMED; 9851916.\n";
+    print OUT "RG   WormBase Consortium\n";
+    print OUT "RA   The C. elegans Sequencing Consortium;\n"; may be required?
+    print OUT "RT   \"Genome sequence of the nematode C. elegans: a platform for investigating\n";
+    print OUT "RT   biology\";\n";
+    print OUT "RL   Science 282(5396):2012-2018(1998).\n";
+    print OUT "XX\n";
+    print OUT "RN   [2]\n";
+    print OUT "$_";
+    next;
   }
   if (/^RN   \[2\]/) {
-      $reference_remove = 6;
-      next;
+    $reference_remove = 6;
+    next;
   }
-
+  
   if ($reference_remove > 0) {
-      $reference_remove--;
-      next;
+    $reference_remove--;
+    next;
   }
   if (/^RL   E-mail: jes/) {
-      next;
+    next;
   }
   # locus_tag name.....
   if (/\/gene=\"(\S+)\"/) {
-      $cds = $1;
-      if ($cds2cgc{$cds}) {
-	  print OUT "FT                   /gene=\"" . $cds2cgc{$cds}  ."\"\n";
-	  print OUT "FT                   /locus_tag=\"$cds\"\n";
-	  next;
-      }
-      else {
-	  print OUT "FT                   /locus_tag=\"$cds\"\n";
-	  next;
-      }
+    $cds = $1;
+    if ($cds2cgc{$cds}) {
+      print OUT "FT                   /gene=\"" . $cds2cgc{$cds}  ."\"\n";
+      print OUT "FT                   /locus_tag=\"$cds\"\n";
+      next;
+    }
+    else {
+      print OUT "FT                   /locus_tag=\"$cds\"\n";
+      next;
+    }
   }	  
   next if (/^CC   For a graphical/);
   next if (/^CC   see:-/);
   if (/^CC   name=/) {
-      print OUT "CC   For a graphical representation of this sequence and its analysis\n";
-      print OUT "CC   see:- http://www.wormbase.org/perl/ace/elegans/seq/sequence?\n";
-      print OUT "CC   name=$clone;class=Sequence\n";
-      $reference_remove = 1;
-      next;
+    print OUT "CC   For a graphical representation of this sequence and its analysis\n";
+    print OUT "CC   see:- http://www.wormbase.org/perl/ace/elegans/seq/sequence?\n";
+    print OUT "CC   name=$clone;class=Sequence\n";
+    $reference_remove = 1;
+    next;
   }
-
+  
   # standard_name......
-
   # don't print out first few lines until they have been converted 
   # can only do this when it gets to DE line
   print OUT if ($id eq "");
 }
 close EMBL;
 close OUT;
-                                                          
+
 # copy modified copy back onto output file
 
 my $status = move("$mod_file","$outfilename.embl");
@@ -246,10 +261,4 @@ $log->mail("$maintainers");
 
 exit(0);
 
-
-
-
-
-
-
-
+__END__
