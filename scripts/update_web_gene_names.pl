@@ -4,13 +4,14 @@
 # completely rewritten by Keith Bradnam from list_loci_designations
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2006-05-25 15:35:01 $
+# Last updated on: $Date: 2006-07-13 14:28:02 $
 #
 # This script should be run under a cron job and simply update the webpages that show
 # current gene names and sequence connections.  Gets info from geneace.  
 
 use strict;
 use lib '/nfs/disk100/wormpub/wormbase/scripts';
+use lib '/nfs/disk100/wormpub/lib/perl5/site_perl/5.8.7';
 use Wormbase;
 use Ace;
 use Carp;
