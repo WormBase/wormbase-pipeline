@@ -6,8 +6,8 @@
 # This maps alleles to the genome based on their flanking sequences
 #
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2006-07-14 08:58:53 $
-# SubVersion :     $Revision: 1.44 $
+# Last updated on: $Date: 2006-07-14 10:41:42 $
+# SubVersion :     $Revision: 1.45 $
 
 use strict;
 use warnings;
@@ -440,8 +440,7 @@ sub outputAllele {
                         $splice = &outputSplice( $start, $stop, $gff_cds, $chromosome ) if ( $type eq 'Intron' );
                         $frameshift = &outputFrameshift( $start, $stop, $allele_data{$allele}[0] )
                           if ( $type eq 'Coding_exon'
-                            && ( $allele_data{$allele}[0] eq 'Insertion_allele' || $allele_data{$allele}[0] eq 'Deletion_allele' )
-                            && ( ($start - $stop) < 3 ) );
+                            && ( $allele_data{$allele}[0] eq 'Insertion_allele' || $allele_data{$allele}[0] eq 'Deletion_allele' ) && ( abs($start - $stop) < 3 ) );
 			$substitution = &outputSubstitution( $start, $stop)
                           if ( $type eq 'Coding_exon' && $allele_data{$allele}[0] eq 'Substitution_allele' && ( $start - $stop <= 3 ) );
 
