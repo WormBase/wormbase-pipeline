@@ -6,8 +6,8 @@
 # This maps alleles to the genome based on their flanking sequences
 #
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2006-07-03 15:14:47 $
-# SubVersion :     $Revision: 1.43 $
+# Last updated on: $Date: 2006-07-14 08:58:53 $
+# SubVersion :     $Revision: 1.44 $
 
 use strict;
 use warnings;
@@ -40,7 +40,7 @@ my $verbose;           # verbose mode, extra output to screen
 my $store;             # defines stored configuration~/src/perl/mapper/map_Alleles.pl
 my $test;
 my $outdir;            # acefile output directory
-my $noupdate;		# don't update the mysql database
+my $noupdate;          # don't update the mysql database
 
 GetOptions(
     'debug=s'    => \$debug,
@@ -114,7 +114,7 @@ my %allele_data;                                                   # allele data
 
 my $log = Log_files->make_build_log($wb);                          # create log file, open output file handles
 
-my $extractor = Sequence_extract->invoke( $database, undef,$wb );
+my $extractor = Sequence_extract->invoke( $database, undef, $wb );
 ###############################################################################################
 #
 #                                   MAIN part of script
@@ -122,11 +122,11 @@ my $extractor = Sequence_extract->invoke( $database, undef,$wb );
 ###############################################################################################
 
 my $pthread;
-$pthread= threads->create( 'prep_db', $debug ) unless $noupdate;                # hmm ... takes quite a while if there are alot of gff files
-&process_list if ($list);                                          # read in list of alleles to map if -list is specified
-&check_original_mappings;                                          # make hash of allele->gene connections already in database
-&map_alleles( $dbh, $pthread );                                    # map alleles, the main routine
-&load_alleles_to_database unless ($no_parse);                      # load acefile to autoace (unless -no_parse specified)
+$pthread = threads->create( 'prep_db', $debug ) unless $noupdate;    # hmm ... takes quite a while if there are alot of gff files
+&process_list if ($list);                                            # read in list of alleles to map if -list is specified
+&check_original_mappings;                                            # make hash of allele->gene connections already in database
+&map_alleles( $dbh, $pthread );                                      # map alleles, the main routine
+&load_alleles_to_database unless ($no_parse);                        # load acefile to autoace (unless -no_parse specified)
 
 #####################################
 # tidy up, email log, and exit
@@ -246,7 +246,7 @@ sub map_alleles {
             $error_count++;
             next ALLELE;
         }
-
+        $allele_data{$name}[0] = $allele->Method;
         $allele_data{$name}[1] = $left;
         $allele_data{$name}[2] = $right;
 
@@ -293,7 +293,7 @@ sub map_alleles {
             ( $chromosome, $stop )  = $mapper->Coords_2chrom_coords( $map[0], $map[2] );
         }
 
-        $rdy = $prep_thread->join() if (($rdy != 1) && $prep_thread);
+        $rdy = $prep_thread->join() if ( ( $rdy != 1 ) && $prep_thread );
         my @hits = $gffdb->get_chr( $chromosome, { 'start' => $start, 'stop' => $stop, } );    # glorious change introducing GFF database
 
         # WBGene stuff
@@ -313,7 +313,6 @@ sub map_alleles {
         push @affects_Feature, grep { ( $_->{'source'} eq 'SL2_acceptor_site' ) } @hits;
         push @affects_Feature, grep { ( $_->{'source'} eq 'polyA_signal_sequence' ) } @hits;
         push @affects_Feature, grep { ( $_->{'source'} eq 'polyA_site' ) } @hits;
-
 
         if ( scalar(@affects_CDSs) >= 1 ) {
 
@@ -340,9 +339,9 @@ sub map_alleles {
                     $affects_genes{$gene}->{ $hit->{'source'} } = 1;
                 }
             }
-            my @affects_genes = keys(%affects_genes); # list of WBGeneIDs
+            my @affects_genes = keys(%affects_genes);    # list of WBGeneIDs
 
-            print Dumper (@affects_CDSs) if $debug;    #bad
+            print Dumper (@affects_CDSs) if $debug;      #bad
 
             # now compare both arrays (allele->gene connections already in database and
             # allele->gene connections made by script) to look for differences
@@ -354,12 +353,14 @@ sub map_alleles {
                 # if it only == 1 then there is an error
                 if ( $count{$gene} == 1 ) {
                     if ( $affects_genes{$gene} ) {
+
                         # not so serious, but source database should be updated with connection
                         next                                                      if ( $allele->SNP );
                         print "WARNING: $name->$gene was mapped by script only\n" if ($verbose);
                         $log->write_to("WARNING: $name->$gene was mapped by script only\n");
                     }
                     else {
+
                         # more serious, source database has a bad allele->gene connection
                         print "ERROR: $name->$gene was in original database only\n" if ($verbose);
                         $log->write_to("ERROR: $name->$gene was in original database only\n");
@@ -368,7 +369,7 @@ sub map_alleles {
                 }
             }
             $allele2gene{"$name"} = \@affects_CDSs if ( $affects_CDSs[0] );
-            &outputAllele( $name,$chromosome,$start,$stop );
+            &outputAllele( $name, $chromosome, $start, $stop );
         }
         if ( @affects_Feature >= 1 ) {
             &outputFeature( $name, \@affects_Feature );
@@ -384,7 +385,7 @@ sub map_alleles {
 #####################################################################################################
 
 sub outputAllele {
-    my ($allele,$chromosome,$start,$stop) = @_;
+    my ( $allele, $chromosome, $start, $stop ) = @_;
     my %done;
 
     # only proceed if mapping routine returns the following three pieces of info
@@ -405,16 +406,16 @@ sub outputAllele {
 
                     ############## ######## #####
 
-		    #if ( $cds =~ /([\w\.]*)\.\d+$/ ) { $cds = $1 }
+                    #if ( $cds =~ /([\w\.]*)\.\d+$/ ) { $cds = $1 }
 
                     ############# ######### #####
 
                     #allele - WBGene connection
- 
-                     # crude hack
+
+                    # crude hack
                     if ( $gff_cds->{'source'} eq 'gene' ) {
-			next if $done{$cds} && $done{$cds}->{ 'gene' };    #don't print duplicates
-                    	$done{$cds}->{ 'gene' } = 1;
+                        next if $done{$cds} && $done{$cds}->{'gene'};    #don't print duplicates
+                        $done{$cds}->{'gene'} = 1;
 
                         print OUT "Variation : $allele\n";
                         print OUT "Gene $cds\n\n";
@@ -422,7 +423,7 @@ sub outputAllele {
                     }
 
                     my $WBGene = $worm_gene2geneID{$cds};
-                    next if ( !$WBGene);
+                    next if ( !$WBGene );
 
                     my $type = $gff_cds->{'source'};
                     $type =~ s/^(\w)/\u$1/;
@@ -435,23 +436,28 @@ sub outputAllele {
                     }
 
                     elsif ( $worm_gene2class{$cds} eq "CDS" ) {
-			my $splice;
-			$splice=&outputSplice($start,$stop, $gff_cds, $chromosome) if ($type eq 'Intron');
+                        my ( $splice, $frameshift,$substitution);
+                        $splice = &outputSplice( $start, $stop, $gff_cds, $chromosome ) if ( $type eq 'Intron' );
+                        $frameshift = &outputFrameshift( $start, $stop, $allele_data{$allele}[0] )
+                          if ( $type eq 'Coding_exon'
+                            && ( $allele_data{$allele}[0] eq 'Insertion_allele' || $allele_data{$allele}[0] eq 'Deletion_allele' )
+                            && ( ($start - $stop) < 3 ) );
+			$substitution = &outputSubstitution( $start, $stop)
+                          if ( $type eq 'Coding_exon' && $allele_data{$allele}[0] eq 'Substitution_allele' && ( $start - $stop <= 3 ) );
 
-   			next if $done{$cds} && $done{$cds}->{ $gff_cds->{'source'}.$splice};    #don't print duplicates
-       
+
                         print OUT "Variation : $allele\n";
                         print OUT "Predicted_CDS $cds $type Inferred_automatically map_Alleles.pl\n\n";
-			print OUT "Predicted_CDS $cds $splice" if $splice;
-                    	$done{$cds}->{ $gff_cds->{'source'}.$splice } = 1 if $splice;
-	   	    }
+                        print OUT "Predicted_CDS $cds $frameshift" if $frameshift;
+                        print OUT "Predicted_CDS $cds $splice" if $splice;
+                    }
                     elsif ( $worm_gene2class{$cds} eq "Transcript" ) {
-      			next if $done{$cds} && $done{$cds}->{ $gff_cds->{'source'} };    #don't print duplicates
-       		        print OUT "Variation : $allele\n";
-                        $type = ' ' if $type =~ /.*_primary_transcript/;    #crude hack
-                        print OUT "Transcript $cds $type Inferred_automatically map_Alleles.pl\n\n";
-                     	$done{$cds}->{ $gff_cds->{'source'} } = 1;
-		    }
+                        next if $done{$cds} && $done{$cds}->{ $gff_cds->{'source'} };              #don't print duplicates
+                        print OUT "Variation : $allele\n";
+                        $type = ' ' if $type =~ /.*_primary_transcript/;                           #crude hack
+                        print OUT "Transcript $cds $type\n\n";
+                        $done{$cds}->{ $gff_cds->{'source'} } = 1;
+                    }
                     else {
                         $log->write_to("ERROR: $cds is not a CDS or Transcript\n");
                         $error_count++;
@@ -460,6 +466,22 @@ sub outputAllele {
             }
         }
     }
+}
+
+sub outputSubstitution {
+	my ($start,$stop,$from,$top)=@_;
+	return;
+}
+
+
+##########################
+# to print frameshifts
+##########################
+sub outputFrameshift {
+    my ( $start, $stop, $type ) = @_;
+    my $size=abs($start-$stop);
+    $type=~s/_allele//;
+    return "Frameshift \"($size bp $type)\" Inferred_automatically map_Alleles.pl\n";
 }
 
 ######################################################################################
@@ -479,25 +501,25 @@ sub outputFeature {
 # to print splice
 ###############################
 sub outputSplice {
-    my ( $start,$stop, $intron, $chromosome ) = @_;
-    my ($type,$sstart,$sstop);
-    # donor
-    return undef unless
-    ($start >= $intron->{start}-10 && $stop<= $intron->{start}+10) &&
-    ($start >= $intron->{stop}-10 && $stop<= $intron->{stop}+10);
+    my ( $type, $sstart, $sstop );
+    my ( $start, $stop, $intron, $chromosome ) = @_;
 
-    if ($start <= $intron->{start}+1 && $stop >= $intron->{start}){
-	$type=$intron->{orientation} eq '+'?'Donor':'Acceptor';
-	$sstop=$intron->{start}+1;
-	$sstart=$intron->{start};
+    # donor
+    return undef unless ( $start >( $intron->{start} - 11) && $stop < ($intron->{start} + 11) )
+      || ( $start > $intron->{stop} - 11 && $stop < $intron->{stop} + 11 );
+
+    if ( $start <= $intron->{start} + 1 && $stop >= $intron->{start} ) {
+        $type   = $intron->{orientation} eq '+' ? 'Donor' : 'Acceptor';
+        $sstop  = $intron->{start} + 1;
+        $sstart = $intron->{start};
     }
-    elsif ($start <= $intron->{stop} && $stop >= $intron->{stop}-1){
-	$type=($intron->{orientation} eq '-')?'Donor':'Acceptor';
-	$sstop=$intron->{stop};
-	$sstart=$intron->{stop}-1;
+    elsif ( $start <= $intron->{stop} && $stop >= $intron->{stop} - 1 ) {
+        $type   = ( $intron->{orientation} eq '-' ) ? 'Donor' : 'Acceptor';
+        $sstop  = $intron->{stop};
+        $sstart = $intron->{stop} - 1;
     }
-    else {return undef}
-    my $site = &get_seq( $extractor, $chromosome, $sstart, $sstop ,$intron->{orientation});
+    else { return undef }
+    my $site = &get_seq( $extractor, $chromosome, $sstart, $sstop, $intron->{orientation} );
     return "Splice_site $type $site Inferred_automatically map_Alleles.pl\n";
 }
 
@@ -522,10 +544,11 @@ sub get_seq {
     # convert to computer coords
     $pos1--;
     $pos2--;
-    my ($p1,$p2)=sort {$a<=>$b} ($pos1,$pos2);
+    my ( $p1, $p2 ) = sort { $a <=> $b } ( $pos1, $pos2 );
+
     # are we in reverse sense? (i.e. reversed order of positions)
-    my $bla= substr( $seq, $p1, $p2-$p1+1 );
-    $bla=$extractor->DNA_revcomp($bla) if ( $orientation eq '-' ); 
+    my $bla = substr( $seq, $p1, $p2 - $p1 + 1 );
+    $bla = $extractor->DNA_revcomp($bla) if ( $orientation eq '-' );
     return $bla;
 }
 
