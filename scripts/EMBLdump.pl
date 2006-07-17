@@ -2,7 +2,7 @@
 #
 # EMBLdump.pl :  makes modified EMBL dumps from camace.
 # 
-#  Last updated on: $Date: 2006-07-12 19:19:17 $
+#  Last updated on: $Date: 2006-07-17 14:39:19 $
 #  Last updated by: $Author: pad $
 
 use strict;
@@ -65,10 +65,9 @@ my $giface         = $wormbase->giface;
 my $dbdir          = $wormbase->database('camace');
 my $tace           = $wormbase->tace;
 my $outfilename    = "$basedir/tmp/EMBLdump.$$";
-#my $current_DB     = $wormbase->database('current');
 my $mod_file       = "$basedir/tmp/EMBLdump.mod";
-#my (%clone2accession, %clone2type, %cds2cgc,);
 my $dir;
+
 $log->write_to("You are embl dumping from $dbdir\n\n");
 
 
@@ -77,31 +76,31 @@ $log->write_to("You are embl dumping from $dbdir\n\n");
 #############################################
 
 my $command;
-if (!$single) {
-$command  = "nosave\n"; # Don't really want to do this
-$command .= "query find CDS where Method = \"Genefinder\"\nkill\n";# remove Genefinder predictions
-$command .= "query find CDS where Method = \"twinscan\"\nkill\n";# remove twinscan predictions
-$command .= "query find Genome_sequence From_laboratory = HX AND Finished AND DNA\ngif EMBL $outfilename\n";# find Genome_sequences and EMBL dump
-$command .= "quit\nn\n";# say you don't want to save and exit
-}
-
-# quicktest mode only works on B0250
-if ($quicktest) {
-    $command    = "query find Genome_sequence B0250\ngif EMBL $outfilename\nquit\n";
+if ($quicktest) {  # quicktest mode only works on B0250
+  $single = "B0250";
 }
 
 if ($single) {
   $command  = "nosave\n"; # Don't really want to do this
   $command .= "query find CDS where Method = \"Genefinder\"\nkill\n";# remove Genefinder predictions
   $command .= "query find CDS where Method = \"twinscan\"\nkill\n";# remove twinscan predictions
-  $command .= "query find Genome_sequence $single From_laboratory = HX AND Finished AND DNA\ngif EMBL $outfilename\n";# find Genome_sequences and EMBL dump
+  $command .= "query find Genome_sequence $single From_laboratory = HX AND Finished AND DNA\ngif EMBL $outfilename\n";# find sequence and dump
   $command .= "quit\nn\n";# say you don't want to save and exit
 }
 
+else {
+  $command  = "nosave\n"; # Don't really want to do this
+  $command .= "query find CDS where Method = \"Genefinder\"\nkill\n";# remove Genefinder predictions
+  $command .= "query find CDS where Method = \"twinscan\"\nkill\n";# remove twinscan predictions
+  $command .= "query find Genome_sequence From_laboratory = HX AND Finished AND DNA\ngif EMBL $outfilename\n";# find sequence and dump
+  $command .= "quit\nn\n";# say you don't want to save and exit
+}
+
+print "$command\n";
 open (READ, "echo '$command' | $giface $dbdir |") or die ("Could not open $giface $dbdir\n"); 
 while (<READ>) {
-    next if ($_ =~ /\/\//);
-    next if ($_ =~ /acedb/);
+  next if ($_ =~ /\/\//);
+  next if ($_ =~ /acedb/);
 }
 close (READ);
 
@@ -155,7 +154,6 @@ while (<EMBL>) {
   }
   # print new format ID line and AC lines with XX lines once the accession lookup has been done.
   if( /^AC/ ) {
-    print "$_\n";
     print OUT "ID   $clone2accession{$id}; $ID2\nXX\n";
     print OUT "AC   $clone2accession{$id};\nXX\n";
     next;
@@ -198,7 +196,7 @@ while (<EMBL>) {
     #      print OUT "RX   MEDLINE; 99069613.\n"; # Stripped by EMBL
     print OUT "RX   PUBMED; 9851916.\n";
     print OUT "RG   WormBase Consortium\n";
-    print OUT "RA   The C. elegans Sequencing Consortium;\n";
+    print OUT "RA   ;\n";
     print OUT "RT   \"Genome sequence of the nematode C. elegans: a platform for investigating\n";
     print OUT "RT   biology\";\n";
     print OUT "RL   Science 282(5396):2012-2018(1998).\n";

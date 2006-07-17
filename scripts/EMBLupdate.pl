@@ -2,24 +2,15 @@
 #
 # EMBLUpdate.pl
 #
-# by Dan Lawson, Allesandro, and Steve Jones
-#
-# [010619 dl] Horrible hack for date stamp - needs rewriting !!!!
-# [ag3 0006] Re-writing of the original Steve Jones script
-#
-# This program will:-
-#	
-#	1) Check to see if the new version is different to before
-#
-#	2) If different, will write the new version into the cosmid/embl
-#	 e.g. ZK1058.951111.embl and symbolically link this to ZK1058.current.embl
-#		 	
-#       3) Copy the version to ~wormpub/analysis/TO_SUBMIT.  
-#
+# This is a script to dump out all genomic canonical clones in embl format.
+# Compare them to those submitted to embl in the past and if necessary:
+#     * Update the record on file
+#     * Place the new records in ~wormpub/analysis/TO_SUBMIT ready for submission.
+#     and
+#     * Update all necessary files on disk.
 #
 # Last updated by: $Author: pad $     
-# Last updated on: $Date: 2005-12-20 14:19:51 $      
-
+# Last updated on: $Date: 2006-07-17 14:39:19 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -28,28 +19,19 @@ use Getopt::Long;
 use File::Copy;
 use Storable;
 
-##############
-# variables  #
-##############
-
-my $name;
-my $first;
-my $second;
-my $wormbase;
-my $store;
-
 #command line options
-my ($test ,$debug ,$help, $file);
+my ($test ,$debug ,$help, $file, $suball, $store);
 GetOptions (
 	    "debug=s"   => \$debug,
 	    "file=s"    => \$file,
 	    "help"      => \$help,
 	    "test"      => \$test,
-	    "store:s"  =>  \$store,
+	    "store:s"   => \$store,
+	    "suball"    => \$suball,
 	   );
 
-
 #Build wormbase storable
+my $wormbase;
 if( $store ) {
   $wormbase = retrieve( $store ) or croak("cant restore wormbase from $store\n");
 }
@@ -59,56 +41,38 @@ else {
 			   );
 }
 
-
 # establish log file.
 my $log = Log_files->make_build_log($wormbase);
 
-#who will receive log file?
-my $maintainers = "All";
+&usage("Help") if ($help); # help page
+&usage("Debug") if ((defined $debug) && ($debug eq "")); # no debug name
+$log->write_to("You have selected to re-submit all Genomic clones\n-------------------------------------------------\n\n") if ($suball);
 
-#Use debug mode?
-if($debug){
-  print "DEBUG = \"$debug\"\n\n";
-  ($maintainers = $debug . '\@sanger.ac.uk');
-}
-
-###############################
-# Variables using Wormbase.pm #
-###############################
-
-# help page
-&usage("Help") if ($help);
-
-# no debug name
-&usage("Debug") if ((defined $debug) && ($debug eq ""));
-
-# valid file specified?
-die "$file does not exist\n\n" if (! -e $file);
+$log->log_and_die("$file does not exist\n") if (! -e $file); # valid file specified?
 
 # Set up top level base directory which is different if in test mode
 my $basedir   = $wormbase->wormpub;
 
-#&create_log_files;
+# define global variables
+my ($compare,$cosmid, $cosnum, $date, $cossub);
 
-$log->write_to("\nList of ERRORS\n-----------------\n");
-
-
+# Timeing [010619 dl] Horrible hack for date stamp - needs rewriting !!!!
 my ($sec,$min,$hour,$mday,$mon,$year);
 ($sec,$min,$hour,$mday,$mon,$year)=localtime(time);
 $mon++;
 if ($mon < 10) {$mon="0".$mon;}
 if ($mday < 10) {$mday="0".$mday;}
 $year = $year-100;
-
 my $datestamp = "0" . $year . $mon . $mday;
 
-my($cosmid, $cosnum);
+###################################################################################
+#                               Main body of script                               #
+###################################################################################
 
 open(IN,"<$file") || die "Could not open $file\n";
-
 while (<IN>) {
   # if detect the beginning of an entry start a new file
-  if (/^ID\s+CE(\S+)/) {
+  if (/^ID\s+\w+\;\s+XXX;/) {
     $cosmid=$1;
     open(TEMP,">temp$$");
     $cosnum++;
@@ -118,107 +82,115 @@ while (<IN>) {
 
   # printout the whole file
   print TEMP $_;
-  
+
   # if detect the end of an entry, close the temp file and begin
   if (/^\/\/$/) { 
     close TEMP;
 
-    #------------------------------------
-    # Get the current date for the cosmid
-    #
-    open(CURRENT, "grep ^$cosmid\/  $basedir/analysis/cosmids/current.versions  |"); 
-    my $date;
-    while (<CURRENT>) {
-      if (/^\S+\/(\d+)/) { 
-	$date=$1; 
-      } 
-      else  { 
-	print "** WARNING - NO CURRENT VERSIONS ENTRY FOR $cosmid\n"; 
-	next;
+    &getCurrentDate_dir;       # Extract the current date dir for each clone.
+
+    if (!$suball) {
+      &CreateCosmidDirStructure; # If there is a new genomic clone, create dir structure.
+      &Check_current_version;    # Is there a current.embl file for this sequence.
+
+      my $compare = &detectdifference($cosmid,$date);
+
+      if ($compare==1) {
+	print "$cosmid differs\n";
+	$log->write_to("$cosmid differs\n");
+	$cossub++;
+	&PrepareCosmidSubmission;
       }
-    }
-    close CURRENT;
-    
-    #------------------------------------------------------------------------
-    # If there never has been a cosmid entry so far then may wish to make one
-    #
-    
-    if (!-e "$basedir/analysis/cosmids/$cosmid/$date/embl/$cosmid.embl") {
-      print "This cosmid has not been submitted before\n";
-      print "Shall I make a $cosmid.embl file and make this the $cosmid.current.file and submit? (y or n)\n";
-      my $answer=<STDIN>;
-      if ($answer eq "y\n") {
-	my $status = copy("temp$$", "$basedir/analysis/cosmids/$cosmid/$date/embl/$cosmid.embl");
-	$log->write_to("ERROR: Couldn't copy file: $!\n") if ($status == 0);
-	system "ln -s $basedir/analysis/cosmids/$cosmid/$date/embl/$cosmid.embl $basedir/analysis/cosmids/$cosmid/$date/embl/$cosmid.current.embl";
-	copy("temp$$", "$basedir/analysis/TO_SUBMIT/$cosmid.$datestamp.embl");	 
-	$log->write_to("ERROR: Couldn't copy file: $!\n") if ($status == 0);
-      } 
       else {
-	print "** WARNING - COSMID $cosmid DOES NOT HAVE A $cosmid.embl FILE AND HAS NOT BEEN SUBMITTED\n";
+	$log->write_to("Cosmid $cosmid is up to date\n\n");
+	unlink "temp$$";
 	next;
       }
     }
-    
-    
-    #------------------------------------------------------------------
-    # Is there a current.embl file for this sequence in the appropriate 
-    # place - if not quit now and sort this out 	
-    #
-
-    if (-e "$basedir/analysis/cosmids/$cosmid/$date/embl/$cosmid.current.embl"){ 
-      print "Current file for $cosmid found (number $cosnum)\n";
-    } 
-    else {
-      print "NO CURRENT FILE FOR COSMID $cosmid\n";
-      print "Program has stopped. Cosmids which need resubmission up until now have been placed\n"; 
-      print "in ~wormpub/analysis/TO_SUBMIT\n"; 
-      print "You may need to just run make_current.embl to sort this out\n";
-      unlink "temp$$";
-      exit;
+    elsif ($suball) {
+      &suball;
     }
-
-
-    #------------------------------------------------
-    # Is this different from the current.embl version 
-    #
-    
-    my $compare = &detectdifference($cosmid,$date);
-    if ($compare==1) {print "$cosmid differs\n";} 
-    
-    #--- -----------------------------------------------------------------
-    # If there is a difference then copy the temp file to the approp. dir
-    # and make a symbolic link to cosmid.current.embl
-    # Report the change and place in TO_SUBMIT directory. 
-
-    if ($compare==1) {
-      my $status = copy("temp$$", "$basedir/analysis/cosmids/$cosmid/$date/embl/$cosmid.$datestamp.embl");
-      $log->write_to("ERROR: Couldn't copy file: $!\n") if ($status == 0);
-      system "ln -fs $basedir/analysis/cosmids/$cosmid/$date/embl/$cosmid.$datestamp.embl $basedir/analysis/cosmids/$cosmid/$date/embl/$cosmid.current.embl";
-      $status = move("temp$$", "$basedir/analysis/TO_SUBMIT/$cosmid.$datestamp.embl");
-      $log->write_to("ERROR: Couldn't move file: $!\n") if ($status == 0);
-      print "$cosmid should be resubmitted and is in TO_SUBMIT.\n";
-    } 
-    else {
-      print "Cosmid $cosmid is up to date\n";
-      unlink "temp$$";
-    } 
-    next;
   }
-  
 }
-$log->write_to("\nOUTPUT: .embl files can be found  in ~wormpub/analysis/TO_SUBMIT\n\n");
 close(IN);
-$log->mail("$maintainers");
-
+$log->write_to("\nThere were $cosnum record(s) checked in this round of EMBL updating\n\n$cossub need re-submitting\n\n\n\n");
+$log->mail();
 exit(0);
 
-#----------------------------
-# Detect whether the new file 
-# is different from the old one
-# using diff
-#
-sub detectdifference {		 
+##################################################################################
+#                                   Subroutines                                  #
+##################################################################################
+
+sub getCurrentDate_dir   {
+  # Get the current datedir for the cosmid
+  open(CURRENT, "grep ^$cosmid\/  $basedir/analysis/cosmids/current.versions  |"); 
+  while (<CURRENT>) {
+    if (/^\S+\/(\d+)/) {
+      $date=$1;
+      $log->write_to("The current date dir for cosmid $cosmid id $date.\n");
+    }
+    else  { 
+      $log->write_to ("** WARNING - NO CURRENT VERSIONS ENTRY FOR $cosmid\n"); 
+      next;
+    }
+  }
+  close CURRENT;
+}
+
+sub CreateCosmidDirStructure {
+  # If there never has been a cosmid entry so far then may wish to make one#
+  if (!-e "$basedir/analysis/cosmids/$cosmid/$date/embl/$cosmid.embl") {
+    print "This cosmid has not been submitted before\n";
+    print "Shall I make a $cosmid.embl file and make this the $cosmid.current.file and submit? (y or n)\n";
+    my $answer=<STDIN>;
+    if ($answer eq "y\n") {
+      $log->write_to("\nCreating $cosmid.embl and $cosmid.current.file\n");
+      my $status = copy("temp$$", "$basedir/analysis/cosmids/$cosmid/$date/embl/$cosmid.embl");
+      $log->write_to("ERROR: Couldn't copy file: $!\n") if ($status == 0);
+      system "ln -s $basedir/analysis/cosmids/$cosmid/$date/embl/$cosmid.embl $basedir/analysis/cosmids/$cosmid/$date/embl/$cosmid.current.embl";
+      copy("temp$$", "$basedir/analysis/TO_SUBMIT/$cosmid.$datestamp.embl");	 
+      $log->write_to("ERROR: Couldn't copy file: $!\n") if ($status == 0);
+    }
+    else {
+      print "** WARNING - COSMID $cosmid DOES NOT HAVE A $cosmid.embl FILE AND HAS NOT BEEN SUBMITTED\n" if ($debug);
+      $log->write_to ("** WARNING - COSMID $cosmid DOES NOT HAVE A $cosmid.embl FILE AND HAS NOT BEEN SUBMITTED\n\n");
+      next;
+    }
+  }
+}
+
+sub Check_current_version {
+  # Check to see if there are differences between the dumped record and the record on file.
+  if (-e "$basedir/analysis/cosmids/$cosmid/$date/embl/$cosmid.current.embl"){ 
+    print "Current file for $cosmid found (number $cosnum)\n" if ($debug);
+    $log->write_to("Current file for $cosmid found (number $cosnum)\n");
+  } 
+  else {
+    $log->write_to("\nNO CURRENT FILE FOR COSMID $cosmid\n");
+    $log->write_to("Program has stopped. Cosmids which need resubmission up until now have been placed\n"); 
+    $log->write_to("in ~wormpub/analysis/TO_SUBMIT\n"); 
+    $log->write_to("You may need to just run make_current.embl to sort this out\n");
+    $log->log_and_die("There has been an error processing $cosmid.....please investigate!\n");
+    unlink "temp$$";
+    exit;
+  }
+}
+
+sub PrepareCosmidSubmission {
+  # If there is a difference then copy the temp file to the appropriate dir.
+  my $status = copy("temp$$", "$basedir/analysis/cosmids/$cosmid/$date/embl/$cosmid.$datestamp.embl");
+  $log->write_to("ERROR: Couldn't copy file: $!\n") if ($status == 0);
+  # Make a symbolic link to cosmid.current.embl
+  system "ln -fs $basedir/analysis/cosmids/$cosmid/$date/embl/$cosmid.$datestamp.embl $basedir/analysis/cosmids/$cosmid/$date/embl/$cosmid.current.embl";
+  # Report the change and copy to the TO_SUBMIT directory.
+  $status = move("temp$$", "$basedir/analysis/TO_SUBMIT/$cosmid.$datestamp.embl");
+  $log->write_to("ERROR: Couldn't move file: $!\n") if ($status == 0);
+  $log->write_to("$cosmid should be resubmitted and is in TO_SUBMIT.\n");
+  $log->write_to("\nOUTPUT: .embl files can be found  in ~wormpub/analysis/TO_SUBMIT\n\n");
+}
+
+sub detectdifference {
+  # Detect whether the new file is different from the old one using diff
   my $difference = 0;
   open (DIFFOUT,"diff temp$$ $basedir/analysis/cosmids/$_[0]/$_[1]/embl/$cosmid.current.embl |");
   while (<DIFFOUT>) {
@@ -226,18 +198,25 @@ sub detectdifference {
       $difference=1;
     }
   }
-  return($difference);					   
+  return($difference);
   close(DIFFOUT);
+}
+
+sub suball {
+  $log->write_to("Copying $basedir/analysis/cosmids/$cosmid/$date/embl/$cosmid.current.embl\n\n");
+  my $status = copy("$basedir/analysis/cosmids/$cosmid/$date/embl/$cosmid.current.embl", "$basedir/analysis/TO_SUBMIT/$cosmid.$datestamp.embl");
+  $cossub++;
+  $log->write_to("ERROR: Couldn't copy file: $!\n") if ($status == 0);
+  #system "cp $basedir/analysis/cosmids/$cosmid/$date/embl/$cosmid.current.embl", "$basedir/analysis/TO_SUBMIT/$cosmid.$datestamp.embl";
 }
 
 sub usage {
   my $error = shift;
-  
-  if ($error eq "Help") {
-    # Normal help menu
-    system ('perldoc',$0);
-    exit (0);
-  }
+    if ($error eq "Help") {
+      # Normal help menu
+      system ('perldoc',$0);
+      exit (0);
+    }
   elsif ($error eq "Debug") {
     # No debug bod named
     print "You haven't supplied your name\nI won't run in debug mode
@@ -246,3 +225,4 @@ sub usage {
   }
 }
 
+__END__
