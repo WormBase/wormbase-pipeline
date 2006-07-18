@@ -9,8 +9,8 @@
 # solely in the wormpep.history file.
 # 
 #
-# Last updated by: $Author: ar2 $                     
-# Last updated on: $Date: 2006-02-23 14:22:02 $     
+# Last updated by: $Author: mh6 $                     
+# Last updated on: $Date: 2006-07-18 09:56:04 $     
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -426,7 +426,7 @@ sub reappearedPeptide {
 sub reappearedAsIsoform {
     $CE_live{$CE} = 1;
     #check if becoming isoform is same release as removal - if so modify history to show conversion rather than reappearance
-    if( defined("$CE_history{$CE}{$in}{$stem}") ) {
+    if( defined($CE_history{$CE}{$in}{$stem}) ) {
 	if( ("$CE_history{$CE}{$in}{$stem}" eq "removed") || ($CE_history{$CE}{$in}{$stem} =~ m/replaced/ ) ) {
 	    $CE_history{$CE}{$in}{$stem} = "converted to isoform $gene";
 	}
