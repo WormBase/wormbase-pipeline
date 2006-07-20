@@ -5,7 +5,7 @@
 # A script to make multiple copies of camace for curation, and merge them back again
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2006-07-06 11:53:04 $
+# Last edited on: $Date: 2006-07-20 11:29:38 $
 
 
 use strict;
@@ -32,20 +32,20 @@ my $store;                # Storable not needed as this is not a build script!
 my $test;
 my $wormbase,
 
-GetOptions (
-            "all"        => \$all,
-	    "pad"        => \$pad,
-	    "gw3"        => \$gw3,
-	    "ar2"        => \$ar2,
-	    "merge"      => \$merge,
-	    "split"      => \$split,
-	    "update"     => \$update,
-	    "help"       => \$help,
-	    "debug"      => \$debug,
-	    "version:s"  => \$version,
-	    #"store"      => \$store,
-	    #"test"       => \$test,
-	   );
+  GetOptions (
+	      "all"        => \$all,
+	      "pad"        => \$pad,
+	      "gw3"        => \$gw3,
+	      "ar2"        => \$ar2,
+	      "merge"      => \$merge,
+	      "split"      => \$split,
+	      "update"     => \$update,
+	      "help"       => \$help,
+	      "debug"      => \$debug,
+	      "version:s"  => \$version,
+	      #"store"      => \$store,
+	      #"test"       => \$test,
+	     );
 
 
 
@@ -58,7 +58,7 @@ if ($store) {
 else {
   $wormbase = Wormbase->new( -debug => $debug,
 			     -test => $test,
-			     );
+			   );
 }
 
 my $tace = $wormbase->tace;
@@ -71,6 +71,7 @@ my @databases; #array to store what splits are to be merged.
 my $path_new = ();
 my $path_ref = ();
 my @classes = ('Transposon', 'Transcript', 'CDS', 'Sequence', 'Feature', 'Feature_data', 'Pseudogene', 'dna');
+my $split_db;
 
 # load @databases array with user database names.
 push(@databases,"orig");
@@ -81,7 +82,6 @@ push(@databases,"ar2") if ($ar2 || $all);
 # directory paths
 our $canonical = '/nfs/disk100/wormpub/DATABASES/camace';
 our $directory   = "/nfs/disk100/wormpub/camace_orig/WS${WS_version}-WS${WS_next}";
-our $camace_orig = "/nfs/disk100/wormpub/camace_orig";
 
 ## (1) Merge split databases #1 - do the diffs ##
 if ($merge) {
@@ -109,7 +109,6 @@ if ($merge) {
       system ("reformat_acediff $directory/${class}_diff_${database}.ace   > $directory/update_${class}_${database}.ace") && die "Failed to run reformat ace file for $directory/${class}_diff_${database}.ace\n";
     }
   }
-
   print "Phase 1 finished and all files can be found in $directory\n";
 }
 
@@ -123,7 +122,7 @@ if ($update) {
 ## (3) TransferDB calls to move Canonical Database to the split databases ##
 if ($split) {
   print "Removing old split databases and Copying $canonical database to the split camaces\n";
-  shift (@databases);
+  if ($debug){shift (@databases)};
   &split_databases;
   print "Phase 3 finished. All ~wormpub split camaces can now be used\n\nCheck all TransferDB log files for \"ended SUCCESSFULLY\"\n";
   exit(0);
@@ -149,7 +148,7 @@ sub dump_camace {
 
     $camace_path = "/nfs/disk100/wormpub/camace_${database}";
     $ENV{'ACEDB'} = $camace_path;
-
+    
     foreach my $class (@classes) {
       print "dumping $class class from camace_${database}\n";
       $path = "$directory/" . "${class}_${database}.ace";
@@ -163,9 +162,9 @@ sub dump_camace {
 sub dumpace {
   my $class    = shift;
   my $filepath = shift;
-
+  
   my $command = "nosave\nquery find $class\nshow -a -f $filepath\nquit\n";
-
+  
   # dump out from ACEDB
   print "\nFilename: $filepath\n";
   open (TACE,"| $tace") or die "Failed to open database connection\n";
@@ -191,7 +190,7 @@ sub update_camace {
   # upload processed diff files into Canonical Database.
   print "Upload diff files to $canonical";
   $ENV{'ACEDB'} = $canonical;
-
+  
   foreach my $database (@databases) {
     foreach my $class (@classes) {
       &loadace("$directory/update_${class}_${database}.ace","${database}");
@@ -206,29 +205,30 @@ sub update_camace {
   system ("load_blat2db.pl -all -dbdir $canonical") && die "Failed to run load_blat2db.pl\n";
 
   #check Canonical Database to see if there are any errors prior to the build starting.
- # system ("camcheck.pl") && die "Failed to run camcheck.pl\n";
+  # system ("camcheck.pl") && die "Failed to run camcheck.pl\n";
 }
 
 #(3)Data dispersion#
 sub split_databases {
-  # it has been decided that it is better to remove the database directory to make transfer db more stable #
-  # initialise camace_orig and copy data from Canonical Database.
-  system("rm -rf /nfs/disk100/wormpub/camace_orig/database") && die "Failed to remove camace_orig/database\n";
-  system ("TransferDB.pl -start $canonical -end $camace_orig -split -database -wspec -name camace_orig_WS$WS_version");
 
-  #Do the same for each split database but transfer data from camace_orig.
+# Code changed so that all split databases are re-initialised prior to the canonical database being copied over the top of them, each split has it's own database.wrm file that contains the correct name for the split.  This then populated the top banner when the database is made.
+
   foreach my $database (@databases) {
-    print "Removing $database\n";
-    system("rm -rf /nfs/disk100/wormpub/camace_${database}/database") && die "Failed to remove camace_${database}/database\n";
+    print "Destroying $database\n";
+    system("rm -rf /nfs/disk100/wormpub/camace_${database}/database/ACEDB.wrm") && die "Failed to remove camace_${database}/database/ACEDB.wrm\n";
+    my $split_db = "/nfs/disk100/wormpub/camace_${database}";
+    my $command = "y\nquit\n";
+    open (TACE,"| $tace -tsuser merge_split $split_db") or die "Failed to open database connection\n";
+    print TACE $command;
+    close TACE;
     print "Transfering $canonical to camace_$database\n";
-    system ("TransferDB.pl -start $camace_orig -end ~wormpub/camace_${database} -split -database -wspec -name camace_${database}_WS$WS_version");
+    system ("TransferDB.pl -start $canonical -end ~wormpub/camace_${database} -split -database -wspec");
   }
   print "CAMACE SPLITS UPDATED\n";
 }
 
 sub usage {
   my $error = shift;
-
   if ($error eq "Help") {
     # Normal help menu
     system ('perldoc',$0);
