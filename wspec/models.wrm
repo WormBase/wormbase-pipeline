@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: ar2 $
-// Last edited on: $Date: 2006-06-12 13:55:27 $
+// Last edited on: $Date: 2006-07-21 08:05:50 $
 
 
 
@@ -299,7 +299,7 @@
                           Antibody ?Antibody XREF Gene
                           Microarray_results ?Microarray_results XREF Gene
 			  Expression_cluster ?Expression_cluster XREF Gene #Evidence	//Igor: create clusters of Genes from microarray exps
-			  SAGE_transcript ?SAGE_transcript XREF Gene
+			  SAGE_tag ?SAGE_tag XREF Gene #SAGE_mapping_info 
 			  Y2H_bait   ?Y2H XREF Bait_overlapping_gene // for yeast two hybrid data
 			  Y2H_target ?Y2H XREF Target_overlapping_gene
 			  3d_data ?3d_data XREF Gene // for NESGC structure information
@@ -861,8 +861,6 @@
                        Feature_object ?Feature XREF Sequence UNIQUE Int UNIQUE Int #SMap_info	       // dl feature play
 		       Feature_data ?Feature_data XREF Sequence UNIQUE Int UNIQUE Int #SMap_info
 		       Homol_data ?Homol_data XREF Sequence UNIQUE Int UNIQUE Int #SMap_info
-		       SAGE_tag ?SAGE_tag XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info               // both for Igor's new data set 
-		       SAGE_transcript ?SAGE_transcript XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info // [040206 krb]
 	  Structure  From Source UNIQUE ?Sequence XREF Subsequence
 			  Source_exons Int UNIQUE Int // start at 1 
 			  // WARNING: is this still needed when ?CDS class is present???
@@ -1102,7 +1100,7 @@
                 Concise_description ?Text #Evidence
 		Brief_identification UNIQUE ?Text #Evidence
 		Confidential_remark ?Text
-		SAGE_transcript ?SAGE_transcript XREF Predicted_gene // new for SAGE data
+		SAGE_tag ?SAGE_tag XREF Predicted_CDS #SAGE_mapping_info
 		Y2H_bait   ?Y2H XREF Bait_overlapping_CDS // for yeast two hybrid data
 		Y2H_target ?Y2H XREF Target_overlapping_CDS
 		3d_data ?3d_data XREF CDS
@@ -1146,7 +1144,7 @@
                         Concise_description ?Text #Evidence
                         Brief_identification UNIQUE Text                           // [020306 kj]
                         Confidential_remark ?Text
-			SAGE_transcript ?SAGE_transcript XREF Transcript // new for SAGE data
+			SAGE_tag ?SAGE_tag XREF Transcript #SAGE_mapping_info
                         Remark ?Text #Evidence
                 Properties Transcript UNIQUE  mRNA UNIQUE Processed_mRNA
                                                           Unprocessed_mRNA
@@ -1203,7 +1201,7 @@
                         Concise_description ?Text #Evidence
                         GO_term ?GO_term XREF Pseudogene ?GO_code #Evidence
                         Reference ?Paper XREF Pseudogene // added [011030 krb]
-			SAGE_transcript ?SAGE_transcript XREF Pseudogene
+			SAGE_tag ?SAGE_tag XREF Pseudogene #SAGE_mapping_info
 			Microarray_results ?Microarray_results XREF Pseudogene  //added for Microarray_results
 			Remark ?Text #Evidence	  
 		Associated_feature ?Feature XREF Associated_with_pseudogene #Evidence
@@ -1322,7 +1320,8 @@
 		  RNAi_homol ?RNAi XREF Homol_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info //added for RNAi mapping
 		  Structure_homol ?Structure_data XREF Homol_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info               //ar2_struct
 		  Expr_homol ?Expr_pattern XREF Homol_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info //added for Expr_pattern mapping [ar2 27-APR-2006]
-                  MSPeptide_homol ?Mass_spec_peptide XREF Homol_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info //[ar2 07-JUN-2006]                                                                           
+                  MSPeptide_homol ?Mass_spec_peptide XREF Homol_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info //[ar2 07-JUN-2006]
+		  SAGE_homol ?SAGE_tag XREF Homol_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info                           
 
 
 ?Feature_data SMap S_parent UNIQUE Sequence UNIQUE ?Sequence XREF Feature_data
@@ -2227,22 +2226,27 @@
 //      SAGE_tag model
 //      contains sequence and mapping information for a tag
 //////////////////////////////////////////////////////////////////
-
-?SAGE_tag	Evidence #Evidence
-                SMap S_parent UNIQUE Canonical_parent UNIQUE ?Sequence XREF SAGE_tag // used for tags uniquely mapped 
-							// to the genome, may not correspond to any SAGE_transcript
-                Method                  UNIQUE ?Method  //for GFF dumping
+?SAGE_tag       Evidence #Evidence
+                Homol Homol_homol ?Homol_data XREF SAGE_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
                 Tag_sequence            UNIQUE Text     //tag sequence including the restriction site
-                Anchoring_enzyme        UNIQUE ?Motif   //NlaIII most commonly 
+                Anchoring_enzyme        UNIQUE ?Motif   //NlaIII most commonly
                 Tag_length              UNIQUE Int      //14 most commonly
-		Most_three_prime // added for tags which are the most 3' in a transcript
-                SAGE_transcript         ?SAGE_transcript XREF SAGE_tag #Evidence        //used to map tags to 'conceptual
-							 // transcripts', a tag could be mapped to multiple SAGE transcripts
-                Unambiguously_mapped //boolean; describes whether tag is unambiguously mapped to one SAGE transcript 
-				     // or to splice isoforms of the same gene at the same genomic location
+                Most_three_prime        // added for tags which are the most 3' in a transcript
+                Unambiguously_mapped    //boolean; describes whether tag is unambiguously mapped to one SAGE transcript or to splice isoforms of the same gene at the same genomic location
+                Corresponds_to  Predicted_CDS   ?CDS XREF SAGE_tag #SAGE_mapping_info
+                                Gene            ?Gene XREF SAGE_tag #SAGE_mapping_info
+                                Transcript      ?Transcript XREF SAGE_tag #SAGE_mapping_info
+                                Pseudogene      ?Pseudogene XREF SAGE_tag #SAGE_mapping_info
                 Results ?SAGE_experiment UNIQUE #SAGE_data //contains SAGE data for all experiments using the tag
-                Remark  ?Text #Evidence
+                Remark ?Text #Evidence
+                Method UNIQUE ?Method  //for GFF dumping
 
+#SAGE_mapping_info Transcript_source      UNIQUE ?Text            //Coding RNA, Mitochondrial, Other...
+                   Position               UNIQUE Int              //the number of the SAGE anchoring enzyme restriction site from the 3' end of the cDNA molecule
+                   Strand                 UNIQUE Sense            //sense/antisense
+                                                 Antisense
+                   Most_three_prime
+                   Unambiguously_mapped
 
 #SAGE_data      Result          Frequency               UNIQUE Int      //tag count
                                 Total_tag_count         UNIQUE Int      //sum of all tag counts in the experiment
@@ -2254,36 +2258,6 @@
 		Expression_cluster ?Expression_cluster XREF SAGE_tag    //Replaces ?Cluster connection
                 Sequence_quality  UNIQUE Float            //most commonly cumulative phred scores associated with the tag 
 						// sequences; not in ?SAGE_tag since it will vary from experiment to experiment
-
-
-
-///////////////////////////////////////////////////////////////////////////////////////////////////////
-//      SAGE_transcript model                                                                           
-//      necessary due to the fact that SAGE mapping is done on the 'conceptual transcriptome'                           
-//      which contains 3' and 5' UTRs that may not be based on experimental data necesserily
-//      if not used, many tags will not be mapped to any genes
-//      Corresponds_to tags are filled in based on SAGE mapping
-//      SAGE_tag can be associated with multiple SAGE_transcript objects                                                               
-////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-?SAGE_transcript Evidence #Evidence
-                 SMap S_parent UNIQUE Canonical_parent UNIQUE ?Sequence XREF SAGE_transcript  //for real and conceptual transcripts
-											      // mapped to the genome
-                 Method                 UNIQUE ?Method          //for GFF dumping
-                 Transcript_source      UNIQUE ?Text            //Coding RNA, Mitochondrial, Other...
-                 Position               UNIQUE Int              //the number of the SAGE anchoring enzyme restriction site from the
-								// 3' end of the cDNA molecule
-                 Strand                 UNIQUE Sense            //sense/antisense
-                                               Antisense
-                 SAGE_tag               ?SAGE_tag XREF SAGE_transcript #Evidence
-		 Most_three_prime // to match same tag in ?SAGE_tag
-                 Unique_to_tag     //boolean; describes whether the transcript is unique to the corresponding tag; 
-				   // complements Unambiguously_mapped tag in SAGE_tag model for ease of querying
-                 Corresponds_to Predicted_gene  ?CDS XREF SAGE_transcript #Evidence             // these connections are made
-                                Gene            ?Gene XREF SAGE_transcript #Evidence             //based on SAGE tag mapping
-                                Transcript      ?Transcript XREF SAGE_transcript #Evidence      //
-                                Pseudogene      ?Pseudogene XREF SAGE_transcript #Evidence
-                 Remark ?Text   #Evidence
 
 
 
