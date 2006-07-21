@@ -59,9 +59,9 @@ my $mother = $m->submit("interpolate_gff.pl -prep $flags");
 my $myid   = $mother->id;
 
 foreach my $i qw( I II III IV V X ) {
-    $m->submit( -w => "done($myid)", "interpolate_gff.pl -chrom $i $flags -allele" );
-    $m->submit( -w => "done($myid)", "interpolate_gff.pl -chrom $i $flags -gene" );
-    $m->submit( -w => "done($myid)", "interpolate_gff.pl -chrom $i $flags -clone" );
+    $m->submit( -w => "ended($myid)", "interpolate_gff.pl -chrom $i $flags -allele" );
+    $m->submit( -w => "ended($myid)", "interpolate_gff.pl -chrom $i $flags -gene" );
+    $m->submit( -w => "ended($myid)", "interpolate_gff.pl -chrom $i $flags -clone" );
 }
 
 $m->wait_all_children( history => 1 );
