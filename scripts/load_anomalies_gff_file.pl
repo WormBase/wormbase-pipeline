@@ -4,12 +4,12 @@
 # 
 # by Gary Williams                        
 #
-# This looks for anomalous thnigs such as protein homologies not
-# matching a CDS and stores the ersults in the mysql database
+# This reads a GFF file of anomalous thnigs such as protein homologies not
+# matching a CDS and stores the results in the mysql database
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2006-06-26 12:32:20 $      
+# Last updated on: $Date: 2006-07-24 09:13:08 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -35,7 +35,7 @@ GetOptions ("help"       => \$help,
 	    "test"       => \$test,
 	    "verbose"    => \$verbose,
 	    "store:s"    => \$store,
-	    "database:s" => \$database,	    # use the specified database instead of autoace
+	    "database:s" => \$database,	    # use the specified database instead of currentdb
 	    "input:s"   => \$input, # the name of the input GFF file
 	    "gff_source:s"   => \$gff_source, # the 'source' column of the GFF file
 	    "gff_type:s"     => \$gff_type, # the 'type' column of the GFF file
@@ -138,16 +138,21 @@ my $go_faster_by_ignoring_db_checks = 0;
 if (defined $db_key_id) {
   print "db_key_id=$db_key_id\n";
 } else {
-  # reset the daatbase key value
+  # reset the database key value
   $db_key_id = 0; 
   print "db_key_id has been reset to 0\n";
   $go_faster_by_ignoring_db_checks = 1;	# don't need to check records in the database because there are none
 }
 
-$database = $wormbase->autoace if (!defined $database || $database eq "");
+$database = $currentdb if (!defined $database || $database eq "");
 
 my $coords = Coords_converter->invoke($database, 0, $wormbase);
-my %clonelab = $wormbase->FetchData("clone2centre", undef, "$database/COMMON_DATA");
+
+# open an ACE connection
+print "Connecting to Ace\n";
+my $ace = Ace->connect (-path => $database,
+                       -program => $tace) || die "cannot connect to database at $database\n";
+
 
 
 my %GFF_data =   (
@@ -163,6 +168,9 @@ my %GFF_data =   (
 
 # disconnect from the mysql database
 $mysql->disconnect || die "error disconnecting from database", $DBI::errstr;
+
+# close the ACE connection
+$ace->close;
 
 $log->mail();
 
@@ -232,16 +240,8 @@ sub output_to_database {
 
   # get the clone and lab for this location
   my ($clone, $clone_start, $clone_end) = $coords->LocateSpan($chromosome, $chrom_start, $chrom_end);
-  my $lab = $clonelab{$clone};          # get the lab that sequenced this clone
-  if ($clone =~ /CHROMOSOME/) {
-    $lab = "HX/RW";
-  } elsif ($clone =~ /SUPERLINK_(\S\S)/) {
-    if ($1 eq "CB") {
-      $lab = "HX";
-    } else {
-      $lab = "RW";
-    }
-  }
+  my $lab =  &get_lab($clone);          # get the lab that sequenced this clone
+
  
   # calculate the window value as blocks of 10 kb
   my $window =  int($chrom_start/10000);
@@ -250,7 +250,7 @@ sub output_to_database {
   # need to be overwritten, preserving the status.
 
   my $nearest_db_key_id = -1;
-  my $nearest = 100;	# this size of distance will cause a new record to be inserted if it is not changed to <= 20
+  my $nearest = 21;	# this size of distance will cause a new record to be inserted if it is not changed to <= 20
 
   if (! $go_faster_by_ignoring_db_checks) {
     # see if there is something there already
@@ -281,20 +281,46 @@ sub output_to_database {
   # as a result of genome sequence changes or
   # changes in the blast database size.
   # so we should update the existing record
-  if ($nearest <= 20) {
-    $mysql->do(qq{ UPDATE anomaly SET   clone="$clone", clone_start=$clone_start, clone_end=$clone_end, centre="$lab", chromosome_start=$chrom_start, chromosome_end=$chrom_end, thing_score=$anomaly_score, explanation="$explanation"   WHERE anomaly_id = $nearest_db_key_id; });
-    # NB we do not write the status record for this anomaly_id
-
+  if ($test) {
+    print "In test mode - so not updating the mysql database\n";
   } else {
+    if ($nearest <= 20) {
+      $mysql->do(qq{ UPDATE anomaly SET   clone="$clone", clone_start=$clone_start, clone_end=$clone_end, centre="$lab", chromosome_start=$chrom_start, chromosome_end=$chrom_end, thing_score=$anomaly_score, explanation="$explanation"   WHERE anomaly_id = $nearest_db_key_id; });
+      # NB we do not write the status record for this anomaly_id
 
-    # we want a new record inserted
-    # write the data to the database
-    $db_key_id++;
-    $mysql->do(qq{ insert into anomaly values ($db_key_id, "$anomaly_type", "$clone", $clone_start, $clone_end, "$lab", "$chromosome", $chrom_start, $chrom_end, "$chrom_strand", "$anomaly_id", $anomaly_score, "$explanation", $window, 1, NULL); });
-    #print "*** inserting new record\n";
+    } else {
 
+      # we want a new record inserted
+      # write the data to the database
+      $db_key_id++;
+      $mysql->do(qq{ insert into anomaly values ($db_key_id, "$anomaly_type", "$clone", $clone_start, $clone_end, "$lab", "$chromosome", $chrom_start, $chrom_end, "$chrom_strand", "$anomaly_id", $anomaly_score, "$explanation", $window, 1, NULL); });
+      #print "*** inserting new record\n";
+    }
   }
 
+}
+
+##########################################
+# get the lab for a clone or superlink
+
+sub get_lab {
+
+  my ($clone) = @_;
+
+  if ($clone =~ /CHROMOSOME/) {return "HX/RW";}
+  if ($clone =~ /cTel/i) {return "HX";}
+  if ($clone =~ /^SUPERLINK_RW/) {return "RW";}
+  if ($clone =~ /^SUPERLINK_CB/) {return "HX";}
+
+  my $sequence_obj = $ace->fetch(Sequence => $clone);
+  my $source = $sequence_obj->Source;
+
+  if ($source =~ /CHROMOSOME/) {return "HX/RW";}
+  if ($source =~ /cTel/i) {return "HX";}
+  if ($source =~ /^SUPERLINK_RW/) {return "RW";}
+  if ($source =~ /^SUPERLINK_CB/) {return "HX";}
+
+  return "HX/RW";
 }
 
 ##########################################
@@ -425,7 +451,8 @@ load_anomalies_gff.pl  OPTIONAL arguments:
 
 =over 4
 
-=item -test, Test mode, generate the acefile but do not upload themrun the script, but don't change anything
+=item -test,  Test mode, run the script, but don't change anything in the mysql database.
+
 
 =back
 

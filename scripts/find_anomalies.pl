@@ -4,12 +4,12 @@
 # 
 # by Gary Williams                        
 #
-# This looks for anomalous thnigs such as protein homologies not
+# This looks for anomalous things such as protein homologies not
 # matching a CDS and stores the results in the mysql database
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2006-06-26 12:53:35 $      
+# Last updated on: $Date: 2006-07-24 09:12:22 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -61,32 +61,11 @@ my $log = Log_files->make_build_log($wormbase);
 # Set up some useful paths      #
 #################################
 
-# Set up top level base directories (these are different if in test mode)
-my $basedir         = $wormbase->basedir;     # BASE DIR
-my $ace_dir         = $wormbase->autoace;     # AUTOACE DATABASE DIR
-my $wormpep_dir     = $wormbase->wormpep;     # CURRENT WORMPEP
-my $wormrna_dir     = $wormbase->wormrna;     # CURRENT WORMRNA
-my $common_data_dir = $wormbase->common_data; # AUTOACE COMMON_DATA
-my $chromosomes_dir = $wormbase->chromosomes; # AUTOACE CHROMSOMES
-my $reports_dir     = $wormbase->reports;     # AUTOACE REPORTS
-my $gff_dir         = $wormbase->gff;         # AUTOACE GFF
-my $gff_splits_dir  = $wormbase->gff_splits;  # AUTOACE GFF SPLIT
-my $logs_dir        = $wormbase->logs;        # AUTOACE LOGS
-
 # some database paths
-my $geneace   = $wormbase->database('geneace');
-my $camace    = $wormbase->database('camace');
 my $currentdb = $wormbase->database('current');
-my $stlace    = $wormbase->database('stlace');
-my $citace    = $wormbase->database('citace');
-my $cshace    = $wormbase->database('cshace');
-my $brigace   = $wormbase->database('brigace');
 
 # other paths
-my $ftp_upload_dir  = $wormbase->ftp_upload;  # "/nfs/ftp_uploads/wormbase"
 my $tace            = $wormbase->tace;        # TACE PATH
-my $giface          = $wormbase->giface;      # GIFACE PATH
-
 
 
 ##########################
@@ -108,16 +87,15 @@ my $go_faster_by_ignoring_db_checks = 0;
 if (defined $db_key_id) {
   print "db_key_id=$db_key_id\n";
 } else {
-  # reset the daatbase key value
+  # reset the database key value
   $db_key_id = 0; 
   print "db_key_id has been reset to 0\n";
   $go_faster_by_ignoring_db_checks = 1;	# don't need to check records in the database because there are none
 }
 
-$database = $wormbase->autoace if (!defined $database || $database eq "");
+$database = $currentdb if (!defined $database || $database eq "");
 
 my $coords = Coords_converter->invoke($database, 0, $wormbase);
-my %clonelab = $wormbase->FetchData("clone2centre", undef, "$database/COMMON_DATA");
 
 # open an ACE connection to parse details for mapping to genome
 print "Connecting to Ace\n";
@@ -133,12 +111,22 @@ foreach my $chromosome (@chromosomes) {
 
   $log->write_to("Processing chromosome $chromosome\n");
                                                                                                    
-  # get the exon data
-  print "reading exons\n";
+  # get the data
+
+  print "reading coding transcripts\n";
+  my @coding_transcripts = &get_coding_transcripts($database, $chromosome);
+
+  print "reading coding transcript exons\n";
   my @exons = &get_coding_exons($database, $chromosome);
+
 
   print "reading pseudogenes\n";
   my @pseudogenes = &get_pseudogenes($database, $chromosome);
+
+## not used
+##  print "reading pseudogene exons";
+##  my @pseudogene_exons = &get_pseudogene_exons($database, $chromosome);
+
 
   print "reading transposons\n";
   my @transposons = &get_transposons($database, $chromosome);
@@ -146,11 +134,9 @@ foreach my $chromosome (@chromosomes) {
   print "reading transposon coding exons\n";
   my @transposon_exons = &get_transposon_exons($database, $chromosome);
 
-  print "reading coding transcripts\n";
-  my @coding_transcripts = &get_coding_transcripts($database, $chromosome);
 
   print "reading noncoding transcripts exons\n";
-  my @noncoding_transcripts = &get_noncoding_transcripts($database, $chromosome);
+  my @noncoding_transcript_exons = &get_noncoding_transcript_exons($database, $chromosome);
 
   print "reading rRNA transcripts\n";
   my @rRNA = &get_rRNA($database, $chromosome);
@@ -177,8 +163,11 @@ foreach my $chromosome (@chromosomes) {
   my @genefinder = &get_genefinder($database, $chromosome);
 
   # get the EST BLAT homology data
+  # get the Sequence object with the tag 'Show_in_reverse_orientation'
+  print "get the Sequence objects with the tag 'Show_in_reverse_orientation'\n";
+  my %Show_in_reverse_orientation = &get_Show_in_reverse_orientation();
   print "reading est data\n";
-  my @est = &get_est($database, $chromosome);
+  my @est = &get_est($database, $chromosome, %Show_in_reverse_orientation);
 
 
 
@@ -186,16 +175,17 @@ foreach my $chromosome (@chromosomes) {
   # get the homologies showing no match to any exon or pseudogene
   # and those with a match to a coding exon
   print "finding protein homologies not overlapping exons\n";
-  my $matched_protein_aref = &get_protein_differences(\@exons, \@pseudogenes, \@homologies, \@transposons, \@transposon_exons, \@noncoding_transcripts, \@rRNA, $chromosome);
+  my $matched_protein_aref = &get_protein_differences(\@exons, \@pseudogenes, \@homologies, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, $chromosome);
 
   print "finding frameshifts\n";
   &get_frameshifts($matched_protein_aref, $chromosome);
 
-  print "finding split/merged genes based on protein homology\n";
+  print "finding genees to be split/merged based on protein homology\n";
   &get_protein_split_merged($matched_protein_aref, $chromosome);
 
-  print "read confirmed_introns and other GFF files\n";
-  &get_GFF_files($chromosome);
+  # this looks at the ESTs  finds those not attached to a transcript
+  print "finding ESTs sites not attached to a transcript\n";
+  &get_unattached_EST(\@est, $chromosome);
 
   # this looks at the EST TSL sites and finds those not attached to genes
   print "finding TSL sites not attached to genes\n";
@@ -203,25 +193,38 @@ foreach my $chromosome (@chromosomes) {
 
   # this finds TEC-RED TSL sites more than 100 bases upstream that are not mentioned in the remarks or evidence
   print "finding isolated TSL sites\n";
-  &get_isolated_TSL(\@TSL_SL1, \@TSL_SL2, \@coding_transcripts, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcripts, \@rRNA, $chromosome);
+  &get_isolated_TSL(\@TSL_SL1, \@TSL_SL2, \@coding_transcripts, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, $chromosome);
 
   # get SAGE tags that don't match a gene with score based on frequency
   print "finding non-overlapping SAGE_transcripts\n";
-  &get_unmatched_SAGE(\@exons, \@pseudogenes, \@SAGE_transcripts, \@transposons, \@transposon_exons, \@noncoding_transcripts, \@rRNA, $chromosome);
+  &get_unmatched_SAGE(\@exons, \@pseudogenes, \@SAGE_transcripts, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, $chromosome);
 
   print "finding twinscan exons not overlapping curated regions\n";
-  &get_unmatched_twinscan_exons(\@twinscan, \@exons, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcripts, \@rRNA, $chromosome);
+  &get_unmatched_twinscan_exons(\@twinscan, \@exons, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, $chromosome);
 
   print "finding genefinder exons not overlapping curated regions\n";
-  &get_unmatched_genefinder_exons(\@genefinder, \@exons, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcripts, \@rRNA, $chromosome);
+  &get_unmatched_genefinder_exons(\@genefinder, \@exons, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, $chromosome);
 
-  # ESTs not matching exons
-  # and those with a match to a coding exon
-  print "finding EST homologies not overlapping exons\n";
-  my $matched_EST_aref = &get_EST_differences(\@exons, \@pseudogenes, \@est, \@transposons, \@transposon_exons, \@noncoding_transcripts, \@rRNA, $chromosome);
 
-  print "finding split/merged genes based on EST homology\n";
-  &get_EST_split_merged($matched_EST_aref, $chromosome);
+
+#################################################
+# these don't work very well - don't use
+
+#  print "finding genes to be split based on protein homology groups\n";
+#  &get_protein_split($matched_protein_aref, $chromosome);
+
+##  print "read confirmed_introns and other GFF files\n";
+## this is probably easier to do explicitly using the script 'load_anomalies_gff_file.pl'
+##  &get_GFF_files($chromosome);
+
+##  # ESTs not matching exons
+##  # and those with a match to a coding exon
+##  print "finding EST homologies not overlapping exons\n";
+##  my $matched_EST_aref = &get_EST_differences(\@exons, \@pseudogenes, \@est, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, $chromosome);
+
+##  print "finding split/merged genes based on EST homology\n";
+##  &get_EST_split_merged($matched_EST_aref, $chromosome, %Show_in_reverse_orientation);
+#################################################
 
 }
 
@@ -268,7 +271,7 @@ sub get_coding_exons {
 
 ##########################################
 # read the pseudogenes
-#  my @coding_transcripts = &get_coding_transcripts($database, $chromosome);
+#  my @pseudogenes = &get_pseudogenes($database, $chromosome);
 
 sub get_pseudogenes {
   my ($database, $chromosome) = @_;
@@ -279,6 +282,30 @@ sub get_pseudogenes {
      file			=> "CHROMOSOME_${chromosome}_Pseudogene.gff",
      gff_source			=> "Pseudogene",
      gff_type			=> "Pseudogene",
+     anomaly_type		=> "",
+     ID_after			=> "Pseudogene\\s+",
+     action                     => ["return_result"],
+   );
+
+  return &read_GFF_file(\%GFF_data);
+
+}
+
+
+##########################################
+# read the exons of pseudogenes
+#  my @pseudogene_exons = &get_pseudogene_exons($database, $chromosome);
+
+
+sub get_pseudogene_exons {
+  my ($database, $chromosome) = @_;
+
+  my %GFF_data = 
+   (
+     directory			=> "$database/GFF_SPLITS/",
+     file			=> "CHROMOSOME_${chromosome}_Pseudogene.gff",
+     gff_source			=> "Pseudogene",
+     gff_type			=> "exon",
      anomaly_type		=> "",
      ID_after			=> "Pseudogene\\s+",
      action                     => ["return_result"],
@@ -361,10 +388,10 @@ sub get_coding_transcripts {
 
 
 ##########################################
-# get the noncoding transcript data
-#  my @transcripts = get_noncoding_transcripts($database, $chromosome);
+# get the noncoding transcript exon data
+#  my @transcripts = get_noncoding_transcript_exons($database, $chromosome);
 
-sub get_noncoding_transcripts {
+sub get_noncoding_transcript_exons {
   my ($database, $chromosome) = @_;
 
   my %GFF_data = 
@@ -544,11 +571,39 @@ sub get_genefinder {
 }
 
 ##########################################
+# get the Sequence objects with the tag 'Show_in_reverse_orientation'
+
+sub get_Show_in_reverse_orientation {
+
+  my %result;
+
+  my $cmd = "query find Sequence\nwhere Show_in_reverse_orientation\nlist";
+ 
+                        
+  open (TACE, "echo '$cmd' | $tace $currentdb |");
+  while (my $line = <TACE>) {
+    chomp $line;
+    next if ($line =~ /acedb\>/);
+    next if ($line =~ /\/\//);
+    #print "ID=$line\n";
+    my ($id) = ($line =~ /(\S+)/); # remove any preceding or trailing space
+    if (defined $id) {
+      $result{$id} = 1;
+    }
+  }
+  close TACE;
+
+
+  return %result;
+}
+
+
+##########################################
 # get the EST BLAT homologies - (only BLAT_EST_BEST, the BLAT_EST_OTHER doesn't have a sense associated with it)
-#  my @est = &get_est($database, $chromosome);
+#  my @est = &get_est($database, $chromosome, %Show_in_reverse_orientation);
 
 sub get_est {
-  my ($database, $chromosome) = @_;
+  my ($database, $chromosome, %Show_in_reverse_orientation) = @_;
 
 
   my %GFF_data = 
@@ -572,21 +627,23 @@ sub get_est {
   # the ESTs in the curation tool, we get the dispaly coming up the
   # right way round.
   #
-  # This will not be infallible, because there are some ESTs where the
-  # orientation has been produced incorrectly and changed by manually
-  # setting some tag or other in the EST object and there are some
-  # ESTs where your can't see if they are 3' from their ID name, but
-  # it should work more often than not.
 
   my @ests = &read_GFF_file(\%GFF_data);
   my @result;
 
   foreach my $est (@ests) {
-    #my $protein_id = $est->[0];
-    #my $chrom_strand = $est->[3];
-    if ($est->[0] =~ /\.3$/) {
-      $est->[3] = (($est->[3] eq '+') ? '-' : '+'); # flip the sense
+
+    if (exists $Show_in_reverse_orientation{$est->[0]}) {  # we have the tag 'Show_in_reverse_orientation
+      #print "REVERSED: $est->[0]\n";
+      if ($est->[3] eq '+') {
+	$est->[3] = '-';
+      } elsif ($est->[3] eq '-') {
+	$est->[3] = '+';
+      }
+    } else {			
+      #print "OK: $est->[0]\n";
     }
+
     push @result, $est;
   }
 
@@ -602,7 +659,7 @@ sub get_est {
 #  my @matched_homologies = get_differences(\@transcripts, \@pseudogenes, \@protein_coverage);
 
 sub get_protein_differences {
-  my ($exons_aref, $pseudogenes_aref, $homologies_aref, $transposons_aref, $transposon_exons_aref, $noncoding_transcripts_aref, $rRNA_aref, $chromosome) = @_;
+  my ($exons_aref, $pseudogenes_aref, $homologies_aref, $transposons_aref, $transposon_exons_aref, $noncoding_transcript_exons_aref, $rRNA_aref, $chromosome) = @_;
 
   my @homologies = @{$homologies_aref};
 
@@ -646,7 +703,7 @@ sub get_protein_differences {
       $got_a_match = 1;
     }
 
-    if (&match($homology, $noncoding_transcripts_aref, \%nonco_match)) {
+    if (&match($homology, $noncoding_transcript_exons_aref, \%nonco_match)) {
       $got_a_match = 1;
     }
 
@@ -684,10 +741,10 @@ sub get_protein_differences {
 ##########################################
 # get the EST homologies with no matching exons or pseudogenes or transposons
 # and those which do match exons or transposons (but not pseudogenes)
-# my $matched_EST_aref = &get_EST_differences(\@exons, \@pseudogenes, \@est, \@transposons, \@transposon_exons, \@noncoding_transcripts, $chromosome);
+# my $matched_EST_aref = &get_EST_differences(\@exons, \@pseudogenes, \@est, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, $chromosome);
 
 sub get_EST_differences {
-  my ($exons_aref, $pseudogenes_aref, $est_aref, $transposons_aref, $transposon_exons_aref, $noncoding_transcripts_aref, $rRNA_aref, $chromosome) = @_;
+  my ($exons_aref, $pseudogenes_aref, $est_aref, $transposons_aref, $transposon_exons_aref, $noncoding_transcript_exons_aref, $rRNA_aref, $chromosome) = @_;
 
   my @est = @{$est_aref};
 
@@ -730,7 +787,7 @@ sub get_EST_differences {
       $got_a_match = 1;
     }
 
-    if (&match($homology, $noncoding_transcripts_aref, \%nonco_match)) {
+    if (&match($homology, $noncoding_transcript_exons_aref, \%nonco_match)) {
       $got_a_match = 1;
     }
 
@@ -921,7 +978,7 @@ sub get_protein_split_merged {
 	$got_a_new_exon = 0;
       }
 
-      # see if the protein HSP order is unchanged - a possible case for merging if continued over nito the next gene
+      # see if the protein HSP order is unchanged - a possible case for merging if continued over into the next gene
       # same sense, non-overlapping on the chromosome and jump in HSP start
       #
       # We want to avoid picking up the case where there are two duplicated single-exon genes
@@ -990,21 +1047,291 @@ sub get_protein_split_merged {
 
 }
 
+
+##########################################
+
+#  my &get_protein_split($matched_aref, $chromosome);
+
+# find groups of homology that indicate that the genes they match should be split
+# look for genes that have two or more non-overlapping groups of homology from different sets of genes
+
+sub get_protein_split {
+  my ($matched_aref, $chromosome) = @_;
+
+  my @matched = @{$matched_aref};
+
+  my $prev_transcript = "";
+
+  my @brigpep = ();
+  my @rempep = ();
+  my @wormpep = ();
+
+  # sort the homologies grouped by matching transcript and then protein_id
+  my @homologies = sort {$a->[7] cmp $b->[7] or $a->[0] cmp $b->[0]} @matched;
+
+  foreach my $homology (@homologies) { # $protein_id, $chrom_start, $chrom_end, $chrom_strand, $hit_start, $hit_end, $protein_score, $matching_transcript
+
+    my $protein_id = $homology->[0];
+    my $chrom_start = $homology->[1];
+    my $chrom_end = $homology->[2];
+    my $chrom_strand = $homology->[3];
+    my $hit_start = $homology->[4];
+    my $hit_end = $homology->[5];
+    my $protein_score = $homology->[6];
+    my $matching_transcript = $homology->[7];
+
+    # don't look at protein homologies with a score below 10
+    if ($protein_score <= 10) {next;}
+
+    #  check if these are isoforms of the same gene and if so then treat them as the same gene
+    if ($matching_transcript =~ /(\S+\.\d+)[a-z]/) {
+      $matching_transcript = $1;
+    }
+    # and change the strange transcript names like H25P06.1.1, H25P06.1.2 to H25P06.1
+    if ($matching_transcript =~ /(\S+\.\d+)\.\d+/) {
+      $matching_transcript = $1;
+    }
+
+    # do we have a new matching transcript? If so, see if the transcript we were doing should be split
+    if ($matching_transcript ne $prev_transcript) {
+
+      print "Got all homologies for $prev_transcript\n";
+
+      # check if there are two or more different boxes with more than one protein in them and score over the box cutoff
+      # if so, then output a database record for each contributing protein in the boxes
+      my @box_results;
+      if (@box_results = split_check(@brigpep)) {
+	foreach my $pep (@box_results) {
+	  my $pep_protein_id = $pep->[0];
+	  my $pep_chrom_start = $pep->[1];
+	  my $pep_chrom_end = $pep->[2];
+	  my $pep_chrom_strand = $pep->[3];
+	  my $pep_protein_score = $pep->[6];
+	  my $pep_matching_transcript = $pep->[7];
+	  my $anomaly_score = $pep_protein_score/1000;
+	  if ($anomaly_score > 1) {$anomaly_score = 1;}
+	  if ($anomaly_score < 0) {$anomaly_score = 0;}
+	  print "SPLIT gene ANOMALY $pep_protein_id, $pep_chrom_start, $pep_chrom_end, $pep_chrom_strand, $anomaly_score, 'split $pep_matching_transcript'\n";
+	  #output_to_database("SPLIT_GENE_BY_PROTEIN_GROUPS", $chromosome, $pep_protein_id, $pep_chrom_start, $pep_chrom_end, $pep_chrom_strand, $pep_anomaly_score, "split $pep_matching_transcript");
+
+	}
+      }
+
+      if (@box_results = split_check(@rempep)) {
+	foreach my $pep (@box_results) {
+	  my $pep_protein_id = $pep->[0];
+	  my $pep_chrom_start = $pep->[1];
+	  my $pep_chrom_end = $pep->[2];
+	  my $pep_chrom_strand = $pep->[3];
+	  my $pep_protein_score = $pep->[6];
+	  my $pep_matching_transcript = $pep->[7];
+	  my $anomaly_score = $pep_protein_score/1000;
+	  if ($anomaly_score > 1) {$anomaly_score = 1;}
+	  if ($anomaly_score < 0) {$anomaly_score = 0;}
+	  print "SPLIT gene ANOMALY $pep_protein_id, $pep_chrom_start, $pep_chrom_end, $pep_chrom_strand, $anomaly_score, 'split $pep_matching_transcript'\n";
+	  #output_to_database("SPLIT_GENE_BY_PROTEIN_GROUPS", $chromosome, $pep_protein_id, $pep_chrom_start, $pep_chrom_end, $pep_chrom_strand, $pep_anomaly_score, "split $pep_matching_transcript");
+
+
+	}
+      }
+
+      if (@box_results = split_check(@wormpep)) {
+	foreach my $pep (@box_results) {
+	  my $pep_protein_id = $pep->[0];
+	  my $pep_chrom_start = $pep->[1];
+	  my $pep_chrom_end = $pep->[2];
+	  my $pep_chrom_strand = $pep->[3];
+	  my $pep_protein_score = $pep->[6];
+	  my $pep_matching_transcript = $pep->[7];
+	  my $anomaly_score = $pep_protein_score/1000;
+	  if ($anomaly_score > 1) {$anomaly_score = 1;}
+	  if ($anomaly_score < 0) {$anomaly_score = 0;}
+	  print "SPLIT gene ANOMALY $pep_protein_id, $pep_chrom_start, $pep_chrom_end, $pep_chrom_strand, $anomaly_score, 'split $pep_matching_transcript'\n";
+	  #output_to_database("SPLIT_GENE_BY_PROTEIN_GROUPS", $chromosome, $pep_protein_id, $pep_chrom_start, $pep_chrom_end, $pep_chrom_strand, $pep_anomaly_score, "split $pep_matching_transcript");
+	}
+      }
+
+
+
+      # initialise the new lists to be put into boxes
+      @brigpep = ();
+      @rempep = ();
+      @wormpep = ();
+    }
+
+    # only want to store details from briggsae, remanei and elegans
+    if ($protein_id =~ /^BP:/) {
+	
+      # add this protein to the list of homologies to be put into boxes
+      push @brigpep, $homology;
+
+    } elsif ($protein_id =~ /^RP:/) {
+
+      # add this protein to the list of homologies to be put into boxes
+      push @rempep, $homology;
+
+    } elsif ($protein_id =~ /^WP:/) {
+      
+      # add this protein to the list of homologies to be put into boxes
+      push @wormpep, $homology;
+    }
+    
+    $prev_transcript = $matching_transcript;
+  }
+
+}
+
+##########################################
+#    @box_results = split_check(@wormpep);
+# put the homologies into non-overlapping boxes
+# find non-overlapping ranges of proteins that do not share protein IDs
+# the boxes of protein homology must have at least two different proteins in them and must have a total Blast score greater than 100
+# return the list of proteins that contribute to the two or more boxes
+
+sub split_check {
+  my (@peplist) = @_;
+
+  my @box_result = ();
+
+
+  my @boxes = ();
+ 
+  my $last_sense = '';
+ 
+  foreach my $homology (@peplist) {
+    my $protein_id = $homology->[0];
+    my $chrom_start = $homology->[1];
+    my $chrom_end = $homology->[2];
+    my $sense = $homology->[3];
+    my $hit_start = $homology->[4];
+    my $hit_end = $homology->[5];
+    my $protein_score = $homology->[6];
+    my $matching_transcript = $homology->[7];
+
+    print "$protein_id $chrom_start $chrom_end\n";
+
+    $last_sense = $sense;
+ 
+    my $got_a_match = 0;
+
+    print "Have @boxes boxes in the list\n";
+
+    foreach my $box (@boxes) {
+      # find an existing box to merge to
+      # merge if it contains a previous block of this protein's homology or it has substantial overlap to this block of homology
+      print "$protein_id Box   " . $box->{'chrom_start'} . " " . $box->{'chrom_end'} . " " . $box->{'clone'} . " IDs:  " . @{$box->{'ID'}} . "\n";
+      if ((grep /$protein_id/, @{$box->{'ID'}} ||
+	  $box->{'chrom_start'} <= $chrom_end && $box->{'chrom_end'} >= $chrom_start) &&
+          ! exists $box->{'deleted'}) {
+                                                                                                                                              
+        print "*** Box $box->{'chrom_start'}..$box->{'chrom_end'}, matches $protein_id, $chrom_start, $chrom_end, $protein_score\n";
+                                                                                                                                              
+	# add this homology to the box
+        $box->{'count'}++;        # add to the count of matches in this box
+        $box->{'total_score'} += $protein_score;        # add to the sum of the alignment scores
+        push @{$box->{'ID'}}, ($protein_id);        # add to the protein IDs
+                                                                                                                                              
+        # update start/end
+        if ($box->{'chrom_start'} > $chrom_start) {$box->{'chrom_start'} = $chrom_start;}
+        if ($box->{'chrom_end'} < $chrom_end) {$box->{'chrom_end'} = $chrom_end;}
+                                                                                                                                              
+        $got_a_match = 1;
+                                                                                                                                              
+        # check to see if we now need to merge two overlapping boxes
+        my $past_first_box = 0;
+        foreach my $other_box (@boxes) {
+         if (! $past_first_box) {
+            # see if this is our current $box
+            if ($other_box->{'chrom_start'} == $box->{'chrom_start'} &&
+                $other_box->{'chrom_end'} == $box->{'chrom_end'} &&
+                ! exists $other_box->{'deleted'}
+                ) {
+              $past_first_box = 1;
+            }
+            next;
+          };
+                                                                                                                                              
+          # now start checks for overlaps of boxes
+          if ((grep /$protein_id/, @{other_$box->{'ID'}} ||
+	       $other_box->{'chrom_start'} <= $box->{'chrom_end'} && $other_box->{'chrom_end'} >= $box->{'chrom_start'}) &&
+              ! exists $other_box->{'deleted'}
+              ) {
+            $box->{'count'} += $other_box->{'count'};
+            $box->{'total_score'} += $other_box->{'total_score'};
+            push @{$box->{'ID'}},  @{$other_box->{'ID'}};
+            if ($box->{'chrom_start'} > $other_box->{'chrom_start'}) {$box->{'chrom_start'} = $other_box->{'chrom_start'}};
+            if ($box->{'chrom_end'} < $other_box->{'chrom_end'}) {$box->{'chrom_end'} = $other_box->{'chrom_end'}};
+            # delete the other box
+            print "deleted $other_box->{'type'} $other_box->{'chrom_start'} $other_box->{'chrom_end'} \n";
+            $other_box->{'deleted'} = 1; # mark this box as deleted
+          }
+        }
+      }
+    }
+                                                                                                                                              
+                                                                                                                                              
+    # no existing boxes found, so start a new one
+    if (! $got_a_match) {
+      print "New box for $protein_id, $chrom_start, $chrom_end, $protein_score\n";
+      # want to store: $chromosome_start, $chromosome_end, $sense, $protein_id, $protein_score
+      my $new_box = {};             # reference to hash
+      $new_box->{'sense'} = $sense;
+      $new_box->{'chrom_start'} = $chrom_start;
+      $new_box->{'chrom_end'} = $chrom_end;
+      $new_box->{'total_score'} = $protein_score;
+      push @{$new_box->{'ID'}}, ($protein_id);
+      $new_box->{'count'} = 1;
+      push @boxes, $new_box;
+    }
+  }
+                                                                                                                                              
+# now look at each box to see if it has passed our tests
+  my $count_of_boxes_passing_tests = 0;
+  foreach my $box (@boxes) {
+    if (! exists $box->{'deleted'} &&
+	$box->{'total_score'} > 100 &&
+	$box->{'count'} > 1
+	) {
+      $box->{'passed_test'} = 1;
+      print "Box passed test with $box->{'chrom_start'}..$box->{'chrom_end'} IDs @{$box->{'ID'}}\n";
+    }
+  }
+
+# now look to see if we have more than one box and return the details of the IDs in those boxes
+  print "Found $count_of_boxes_passing_tests boxes passing test\n";
+  if ($count_of_boxes_passing_tests > 2) {
+    foreach my $box (@boxes) {
+      if (exists $box->{'passed_test'}) {
+	# foreach of the IDs in this box, put the details in @box_result
+	foreach my $id (@{$box->{'ID'}}) {
+	  foreach my $homology (@peplist) {
+	    if ($homology->[0] eq $id) {
+	      push @box_result, $homology;
+	    }
+	  }
+	}
+      }
+    }
+  }
+
+  return @box_result
+}
+
 ##########################################
 #
-#  &get_EST_split_merged($matched_EST_aref, $chromosome);
+#  &get_EST_split_merged($matched_EST_aref, $chromosome, %Show_in_reverse_orientation);
 
 # find groups of homology that indicate that the genes they match should be split or merged
 # look for non-overlapping HSPs that jump back down the position in the protein that is aligned as you move along the chromosome -> split
-# look for matches to exons with HSPs that do not jump back down the position in the protein that is aligned as you move along the chromosome -> merge
+# look for matches to transcripts with HSPs that do not jump back down the position in the protein that is aligned as you move along the chromosome -> merge
 
 sub get_EST_split_merged {
-  my ($matched_EST_aref, $chromosome) = @_;
+  my ($matched_EST_aref, $chromosome, %Show_in_reverse_orientation) = @_;
 
   my @matched = @{$matched_EST_aref};
 
   my $prev_EST_id = "";	# use to collect alignments for a EST's homology when looking for frameshifts
-  my $prev_exon = "";
+  my $prev_transcript = "";
   my $prev_hit_start = -1;
   my $prev_hit_end = -1;
   my $prev_chrom_start = -1;
@@ -1012,15 +1339,15 @@ sub get_EST_split_merged {
   my $prev_score = 0;
   my $prev_chrom_strand = "";
 
-  my $got_a_new_exon;
+  my $got_a_new_transcript;
   my $got_a_big_decrease_in_HSP_start;
   my $got_a_continuation_of_the_HSPs;
-
+ 
 
   # sort the homologies grouped by EST ID and then chromosomal position
   my @homologies = sort {$a->[0] cmp $b->[0] or $a->[1] <=> $b->[1]} @matched;
 
-  foreach my $homology (@homologies) { # $EST_id, $chrom_start, $chrom_end, $chrom_strand, $hit_start, $hit_end, $EST_score, $matching_exon
+  foreach my $homology (@homologies) { # $EST_id, $chrom_start, $chrom_end, $chrom_strand, $hit_start, $hit_end, $EST_score, $matching_transcript
 
     my $EST_id = $homology->[0];
     my $chrom_start = $homology->[1];
@@ -1029,28 +1356,28 @@ sub get_EST_split_merged {
     my $hit_start = $homology->[4];
     my $hit_end = $homology->[5];
     my $EST_score = $homology->[6];
-    my $matching_exon = $homology->[7];
+    my $matching_transcript = $homology->[7];
 
     #  check if these are isoforms of the same gene and if so then treat them as the same gene
-    if ($matching_exon =~ /(\S+\.\d+)[a-z]/) {
-      $matching_exon = $1;
+    if ($matching_transcript =~ /(\S+\.\d+)[a-z]/) {
+      $matching_transcript = $1;
     }
     # and change the strange transcript names like H25P06.1.1, H25P06.1.2 to H25P06.1
-    if ($matching_exon =~ /(\S+\.\d+)\.\d+/) {
-      $matching_exon = $1;
+    if ($matching_transcript =~ /(\S+\.\d+)\.\d+/) {
+      $matching_transcript = $1;
     }
 
-    #print "Matched: $EST_id, $chrom_start, $chrom_end, $chrom_strand, $hit_start, $hit_end, $EST_score, $matching_exon\n";
+    #print "Matched: $EST_id, $chrom_start, $chrom_end, $chrom_strand, $hit_start, $hit_end, $EST_score, $matching_transcript\n";
 
     # look for homologies which cover two genes or genes which cover a repeated homology
     if ($EST_id eq $prev_EST_id && $chrom_strand eq $prev_chrom_strand) {
 
-      # see if exon has changed
-      if ($prev_exon ne "" && $prev_exon ne $matching_exon) {
-	$got_a_new_exon = 1;
-	#print "Merge? prev $prev_exon this $matching_exon\n";
+      # see if transcript has changed
+      if ($prev_transcript ne "" && $prev_transcript ne $matching_transcript) {
+	$got_a_new_transcript = 1;
+	#print "Merge? prev $prev_transcript this $matching_transcript\n";
       } else {
-	$got_a_new_exon = 0;
+	$got_a_new_transcript = 0;
       }
 
       # see if the EST HSP order is unchanged - a possible case for merging if continued over into the next gene
@@ -1069,7 +1396,7 @@ sub get_EST_split_merged {
       # So we look for cases where the start continues as greater than
       # the previous mid point for evidence of a possible merge.
       #
-      if ($EST_id =~ /\.3$/) {	# flip the logic of these around
+      if (exists $Show_in_reverse_orientation{$EST_id}) {	# flip the logic of these around
 	my $prev_midpoint = $prev_hit_start + ($prev_hit_end - $prev_hit_start)/2;
 	my $midpoint = $hit_start + ($hit_end - $hit_start)/2;
 	if (($chrom_strand eq '+' && $prev_chrom_end < $chrom_start && $hit_start < $prev_midpoint) ||
@@ -1113,7 +1440,7 @@ sub get_EST_split_merged {
       # we have a merge if the pattern of HSPs shows a continuation of
       # the EST matching in order and this is a new gene and the
       # distance between the alignments is less than 10 kb
-      if ($got_a_new_exon && $got_a_continuation_of_the_HSPs && $chrom_start - $prev_chrom_end < 10000) {
+      if ($got_a_new_transcript && $got_a_continuation_of_the_HSPs && ($chrom_start - $prev_chrom_end) < 10000) {
 	# output to database
 	# make the anomaly score based on the EST alignment score normalised between 0 and 1
 	# the BLAT scores are between 0 and 100
@@ -1121,13 +1448,13 @@ sub get_EST_split_merged {
 	my $anomaly_score = ($EST_score+$prev_score)/200;
 	if ($anomaly_score > 1) {$anomaly_score = 1;}
 	if ($anomaly_score < 0) {$anomaly_score = 0;}
-	#print "MERGE genes ANOMALY $prev_exon and $matching_exon\t$EST_id, $prev_chrom_start, $chrom_end, $chrom_strand, $anomaly_score, 'merge $prev_exon and $matching_exon'\n";
-	&output_to_database("MERGE_GENES_BY_EST", $chromosome, $EST_id, $prev_chrom_start, $chrom_end, $chrom_strand, $anomaly_score, "merge $prev_exon and $matching_exon");
+	#print "MERGE genes ANOMALY $prev_transcript and $matching_transcript\t$EST_id, $prev_chrom_start, $chrom_end, $chrom_strand, $anomaly_score, 'merge $prev_transcript and $matching_transcript'\n";
+	&output_to_database("MERGE_GENES_BY_EST", $chromosome, $EST_id, $prev_chrom_start, $chrom_end, $chrom_strand, $anomaly_score, "merge $prev_transcript and $matching_transcript");
 
 
       }
 
-      if ($got_a_big_decrease_in_HSP_start && ! $got_a_new_exon) {
+      if ($got_a_big_decrease_in_HSP_start && ! $got_a_new_transcript) {
 	# output to database
 	# make the anomaly score based on the EST alignment score normalised between 0 and 1
 	# the BLAT scores are between 0 and 100
@@ -1135,12 +1462,12 @@ sub get_EST_split_merged {
 	my $anomaly_score = ($EST_score+$prev_score)/200;
 	if ($anomaly_score > 1) {$anomaly_score = 1;}
 	if ($anomaly_score < 0) {$anomaly_score = 0;}
-	#print "SPLIT gene ANOMALY $matching_exon\t$EST_id, $prev_chrom_start, $chrom_end, $chrom_strand, $anomaly_score, 'split $matching_exon'\n";
-	&output_to_database("SPLIT_GENES_BY_EST", $chromosome, $EST_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score, "split $matching_exon");
+	#print "SPLIT gene ANOMALY $matching_transcript\t$EST_id, $prev_chrom_start, $chrom_end, $chrom_strand, $anomaly_score, 'split $matching_transcript'\n";
+	&output_to_database("SPLIT_GENES_BY_EST", $chromosome, $EST_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score, "split $matching_transcript");
       }
     }
 
-    $prev_exon = $matching_exon;
+    $prev_transcript = $matching_transcript;
     $prev_hit_start = $hit_start;
     $prev_hit_end = $hit_end;
     $prev_score = $EST_score;
@@ -1152,11 +1479,40 @@ sub get_EST_split_merged {
 
 }
 
+##########################################
+# find ESTs that have no association with a transcript in their object
+#  &get_unattached_EST(\@est, $chromosome)
+
+sub get_unattached_EST {
+  my ($est_aref, $chromosome) = @_;
+
+  my $anomaly_score = 1.0;	# we must look at this with high priority
+
+  foreach my $EST (@$est_aref) { # $id, $start, $end, $sense
+
+    my $EST_id = $EST->[0];
+    my $chrom_start = $EST->[1];
+    my $chrom_end = $EST->[2];
+    my $chrom_strand = $EST->[3];
+    #print "EST: $EST_id, $chrom_start, $chrom_end, $chrom_strand\n";
+
+    my $sequence_obj = $ace->fetch(Sequence => $EST_id);
+
+    my @transcripts = $sequence_obj->get('Matching_transcript');
+    if ($#transcripts == -1) {
+      #print "Not associated with a transcript\n";
+      #print "NOT ASSOCIATED: $EST_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score\n";
+      &output_to_database("UNATTACHED_EST", $chromosome, $EST_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score, 'EST not attached to any transcript');
+    }
+  }
+
+}
+
 
 
 ##########################################
 # find TSL sites that are defined by an EST but have no association with a transcript in their object
-#  &get_unattached_TSL(\@TSL_SL1, \@TSL_SL2)
+#  &get_unattached_TSL(\@TSL_SL1, \@TSL_SL2, $chromosome)
 
 sub get_unattached_TSL {
   my ($SL1_aref, $SL2_aref, $chromosome) = @_;
@@ -1203,17 +1559,17 @@ sub get_unattached_TSL {
 
 ##########################################
 # get TSL sites that do not match a coding transcript or pseudogene
-#  &get_isolated_TSL(\@TSL_SL1, \@TSL_SL2, \@coding_transcript, \@transposons, \@transposon_exons, \@noncoding_transcripts, $chromosome);
+#  &get_isolated_TSL(\@TSL_SL1, \@TSL_SL2, \@coding_transcript, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, $chromosome);
 
 sub get_isolated_TSL {
 
-  my ($SL1_aref, $SL2_aref, $transcripts_aref, $pseudogenes_aref, $transposons_aref, $transposon_exons_aref, $noncoding_transcripts_aref, $rRNA_aref, $chromosome) = @_;
+  my ($SL1_aref, $SL2_aref, $transcripts_aref, $pseudogenes_aref, $transposons_aref, $transposon_exons_aref, $noncoding_transcript_exons_aref, $rRNA_aref, $chromosome) = @_;
 
   my @SL1 = @$SL1_aref;
   my @SL2 = @$SL2_aref;
   my @SL = sort {$a->[1] <=> $b->[1]} (@SL1, @SL2); # merge and sort the two TSL lists
 
-  my %transcripts_match = &init_match(near => 20, same_sense => 1); # allow the TSL to be within 20 bases of the transcript to give a match
+  my %transcripts_match = &init_match(near => 75, same_sense => 1); # allow the TSL to be within 75 bases of the transcript to give a match
   my %pseud_match = &init_match(same_sense => 1);
   my %trans_match = &init_match(same_sense => 1);
   my %trane_match = &init_match(same_sense => 1);
@@ -1240,7 +1596,7 @@ sub get_isolated_TSL {
       $got_a_match = 1;
     }
 
-    if (&match($tsl, $noncoding_transcripts_aref, \%nonco_match)) {
+    if (&match($tsl, $noncoding_transcript_exons_aref, \%nonco_match)) {
       $got_a_match = 1;
     }
 
@@ -1266,12 +1622,12 @@ sub get_isolated_TSL {
 
 ##########################################
 # get twinscan exons that do not match a coding transcript or pseudogene
-# &get_unmatched_twinscan_exons(\@twinscan, \@exons, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcripts, $chromosome)
+# &get_unmatched_twinscan_exons(\@twinscan, \@exons, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, $chromosome)
 
 
 sub get_unmatched_twinscan_exons {
 
-  my ($twinscan_aref, $exons_aref, $pseudogenes_aref, $transposons_aref, $transposon_exons_aref, $noncoding_transcripts_aref, $rRNA_aref, $chromosome) = @_;
+  my ($twinscan_aref, $exons_aref, $pseudogenes_aref, $transposons_aref, $transposon_exons_aref, $noncoding_transcript_exons_aref, $rRNA_aref, $chromosome) = @_;
 
   my %exons_match = &init_match(same_sense => 1);
   my %pseud_match = &init_match(same_sense => 1);
@@ -1300,7 +1656,7 @@ sub get_unmatched_twinscan_exons {
       $got_a_match = 1;
     }
 
-    if (&match($twinscan, $noncoding_transcripts_aref, \%nonco_match)) {
+    if (&match($twinscan, $noncoding_transcript_exons_aref, \%nonco_match)) {
       $got_a_match = 1;
     }
 
@@ -1327,12 +1683,12 @@ sub get_unmatched_twinscan_exons {
 
 ##########################################
 # get genefinder exons that do not match a coding transcript or pseudogene
-# &get_unmatched_genefinder_exons(\@genefinder, \@exons, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcripts, $chromosome)
+# &get_unmatched_genefinder_exons(\@genefinder, \@exons, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, $chromosome)
 
 
 sub get_unmatched_genefinder_exons {
 
-  my ($genefinder_aref, $exons_aref, $pseudogenes_aref, $transposons_aref, $transposon_exons_aref, $noncoding_transcripts_aref, $rRNA_aref, $chromosome) = @_;
+  my ($genefinder_aref, $exons_aref, $pseudogenes_aref, $transposons_aref, $transposon_exons_aref, $noncoding_transcript_exons_aref, $rRNA_aref, $chromosome) = @_;
 
   my %exons_match = &init_match(same_sense => 1);
   my %pseud_match = &init_match(same_sense => 1);
@@ -1361,7 +1717,7 @@ sub get_unmatched_genefinder_exons {
       $got_a_match = 1;
     }
 
-    if (&match($genefinder, $noncoding_transcripts_aref, \%nonco_match)) {
+    if (&match($genefinder, $noncoding_transcript_exons_aref, \%nonco_match)) {
       $got_a_match = 1;
     }
 
@@ -1518,7 +1874,7 @@ sub match {
 
 sub get_unmatched_SAGE {
 
-  my ($exons_aref, $pseudogenes_aref, $SAGE_transcripts_aref, $transposons_aref, $transposon_exons_aref, $noncoding_transcripts_aref, $rRNA_aref, $chromosome) = @_;
+  my ($exons_aref, $pseudogenes_aref, $SAGE_transcripts_aref, $transposons_aref, $transposon_exons_aref, $noncoding_transcript_exons_aref, $rRNA_aref, $chromosome) = @_;
 
   my @SAGE_transcripts = @{$SAGE_transcripts_aref};
 
@@ -1549,7 +1905,7 @@ sub get_unmatched_SAGE {
       $got_a_match = 1;
     }
 
-    if (&match($sage, $noncoding_transcripts_aref, \%nonco_match)) {
+    if (&match($sage, $noncoding_transcript_exons_aref, \%nonco_match)) {
       $got_a_match = 1;
     }
 
@@ -1564,8 +1920,7 @@ sub get_unmatched_SAGE {
       my $chrom_end = $sage->[2];
       my $chrom_strand = $sage->[3];
 
-      # find the relative abundance of each observation of the SAGE_tags for this SAGE_transcript - this didn't work!
-#      my $anomaly_score = SAGE_score($SAGE_id);
+
       my $anomaly_score = 0.1;	# ... so just set the score to be this
       #print "NOT got a match ANOMALY: $protein_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score\n";
       &output_to_database("UNMATCHED_SAGE", $chromosome, $SAGE_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score, '');
@@ -1575,88 +1930,12 @@ sub get_unmatched_SAGE {
 }
 
 ##########################################
-# this never worked properly - not used
-#
-# find the relative abundance of each observation of the SAGE_tags for this SAGE_transcript
-# and multiple by 10,000 to give a score for the SAGE				
-# my $anomaly_score = SAGE_score($SAGE_id);
-# 
-# the sage_tag data looks like:
-#
-#SAGE_tag : "SAGE:agagaacagt"
-#Method   "SAGE_tag"
-#Tag_sequence     "CATGAGAGAACAGT"
-#Anchoring_enzyme         "NlaIII"
-#Tag_length       14
-#SAGE_transcript  "2RSSE:agagaacagt"
-#Unambiguously_mapped
-#Results  "[cgc4805]:dauer" Frequency 3
-#Results  "[cgc4805]:dauer" Total_tag_count 132582
-#Results  "[cgc4805]:dauer" Relative_abundance 0.000023
-#Results  "[cgc4805]:mixed" Frequency 1
-#Results  "[cgc4805]:mixed" Total_tag_count 137502
-#Results  "[cgc4805]:mixed" Relative_abundance 0.000007
-#
-# something like this might work:
-# at('Results')->right(3)->down(2) and then maybe ->right()->name
-#
-# or possibly:
-# get('Results', 3)->down(2) and then ->right()->name
-#
-#
-
-
-
-#sub SAGE_score {
-#
-#  my ($SAGE_id) = @_;
-#
-#  # get SAGE_tag for this SAGE_transcript
-#  #print "Ace fetch->$SAGE_id\n";
-#  my $SAGE_TR_obj = $ace->fetch("SAGE_transcript" => $SAGE_id);
-#  # debug
-#  if (! defined $SAGE_TR_obj) {
-#    print "Can't fetch SAGE_transcript object for $SAGE_id\n";
-#    return (0.1);		# return a default value
-#  }
-#
-#  # get the SAGE_tag
-#  my $SAGE_TAG = $SAGE_TR_obj->SAGE_tag;
-#  #print "SAGE_TAG $SAGE_TAG\n";
-#
-#  my $SAGE_TAG_obj = $ace->fetch("SAGE_tag" => $SAGE_TAG);
-#  if (! defined $SAGE_TAG_obj) {
-#    print "Can't fetch SAGE_tag object for $SAGE_id\n";
-#    return (0.1);		# return a default value
-#  }
-#
-#  # debug
-#  my @results = $SAGE_TAG_obj->get('Results', 4);
-#  foreach my $result_text (@results) {
-#    #print "$result_text\n";
-#  }
-#
-#  return (0.1);
-#
-#  # get the sum of the relative abundances * 10,000 for each library of SAGE_tags
-#  my @relative_abundance = $SAGE_TAG_obj->Relative_abundance;
-#
-#  my $result = 0;
-#  foreach my $relative_abundance (@relative_abundance) {
-#    $result += ($relative_abundance * 10000);
-#    #print "relative_abundance = $relative_abundance\n";
-#  }
-#
-#  return $result;
-#}
-
-##########################################
 # get GFF files from various locations
-
+# this is probably easier to do explicitly using the script 'load_anomalies_gff_file.pl'
 sub get_GFF_files {
   my ($chromosome) = @_;
 
-  # eventually this data shuold probably be read from a data file somewhere
+ 
   my @GFF_data = 
   (
    {
@@ -1772,17 +2051,9 @@ sub output_to_database {
 
   # get the clone and lab for this location
   my ($clone, $clone_start, $clone_end) = $coords->LocateSpan($chromosome, $chrom_start, $chrom_end);
-  my $lab = $clonelab{$clone};          # get the lab that sequenced this clone
-  if ($clone =~ /CHROMOSOME/) {
-    $lab = "HX/RW";
-  } elsif ($clone =~ /SUPERLINK_(\S\S)/) {
-    if ($1 eq "CB") {
-      $lab = "HX";
-    } else {
-      $lab = "RW";
-    }
-  }
- 
+  my $lab =  &get_lab($clone);          # get the lab that sequenced this clone
+  #print "clone $clone is in lab $lab\n";
+
   # calculate the window value as blocks of 10 kb
   my $window =  int($chrom_start/10000);
 
@@ -1790,7 +2061,7 @@ sub output_to_database {
   # need to be overwritten, preserving the status.
 
   my $nearest_db_key_id = -1;
-  my $nearest = 100;	# this size of distance will cause a new record to be inserted if it is not changed to <= 20
+  my $nearest = 21;	# this default size of distance will cause a new record to be inserted if it is not changed in the test below to be <= 20
 
   if (! $go_faster_by_ignoring_db_checks) {
     # see if there is something there already
@@ -1816,25 +2087,51 @@ sub output_to_database {
 
 
 
-  # is the distance less than 20 bases?
+  # is the distance in $nearest less than 20 bases, rather than the default size of 100?
   # if it is not zero this is probably a move of the anomaly 
   # as a result of genome sequence changes or
   # changes in the blast database size.
   # so we should update the existing record
-  if ($nearest <= 20) {
-    $mysql->do(qq{ UPDATE anomaly SET   clone="$clone", clone_start=$clone_start, clone_end=$clone_end, centre="$lab", chromosome_start=$chrom_start, chromosome_end=$chrom_end, thing_score=$anomaly_score, explanation="$explanation"   WHERE anomaly_id = $nearest_db_key_id; });
-    # NB we do not write the status record for this anomaly_id
-
+  if ($test) {
+    print "In test mode - so not updating the mysql database\n";
   } else {
+    if ($nearest <= 20) {
+      $mysql->do(qq{ UPDATE anomaly SET   clone="$clone", clone_start=$clone_start, clone_end=$clone_end, centre="$lab", chromosome_start=$chrom_start, chromosome_end=$chrom_end, thing_score=$anomaly_score, explanation="$explanation"   WHERE anomaly_id = $nearest_db_key_id; });
+      # NB we do not write the status record for this anomaly_id
 
-    # we want a new record inserted
-    # write the data to the database
-    $db_key_id++;
-    $mysql->do(qq{ insert into anomaly values ($db_key_id, "$anomaly_type", "$clone", $clone_start, $clone_end, "$lab", "$chromosome", $chrom_start, $chrom_end, "$chrom_strand", "$anomaly_id", $anomaly_score, "$explanation", $window, 1, NULL); });
-    #print "*** inserting new record\n";
+    } else {
 
+      # we want a new record inserted
+      # write the data to the database
+      $db_key_id++;
+      $mysql->do(qq{ insert into anomaly values ($db_key_id, "$anomaly_type", "$clone", $clone_start, $clone_end, "$lab", "$chromosome", $chrom_start, $chrom_end, "$chrom_strand", "$anomaly_id", $anomaly_score, "$explanation", $window, 1, NULL); });
+      #print "*** inserting new record\n";
+    }
   }
 
+}
+
+##########################################
+# get the lab for a clone or superlink
+
+sub get_lab {
+
+  my ($clone) = @_;
+
+  if ($clone =~ /CHROMOSOME/) {return "HX/RW";}
+  if ($clone =~ /cTel/i) {return "HX";}
+  if ($clone =~ /^SUPERLINK_RW/) {return "RW";}
+  if ($clone =~ /^SUPERLINK_CB/) {return "HX";}
+
+  my $sequence_obj = $ace->fetch(Sequence => $clone);
+  my $source = $sequence_obj->Source;
+
+  if ($source =~ /CHROMOSOME/) {return "HX/RW";}
+  if ($source =~ /cTel/i) {return "HX";}
+  if ($source =~ /^SUPERLINK_RW/) {return "RW";}
+  if ($source =~ /^SUPERLINK_CB/) {return "HX";}
+
+  return "HX/RW";
 }
 
 ##########################################
@@ -1876,8 +2173,8 @@ __END__
 
 This script populates the worm_anomaly mysql database with data describing some types of anomalies.
 
-It can be run periodicaly e.g. every build especially useful if there
-have been corrections made to the genomic sequence
+It can be run periodicaly e.g. every build which is especially useful
+if there have been corrections made to the genomic sequence
 
 These anomalies can be inspected using the script:
 
@@ -1915,7 +2212,7 @@ The default is to use autoace.
 
 =over 4
 
-=item -test, Test mode, generate the acefile but do not upload themrun the script, but don't change anything
+=item -test, Test mode, run the script, but don't change anything in the mysql database.
 
 =back
 
@@ -1930,7 +2227,7 @@ The default is to use autoace.
 
 =over 4
 
-=item This script must run on a machine which can see the /wormsrv2 disk.
+=item There must be a mysql database server running.
 
 =back
 
