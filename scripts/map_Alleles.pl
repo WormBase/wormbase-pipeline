@@ -6,8 +6,8 @@
 # This maps alleles to the genome based on their flanking sequences
 #
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2006-07-14 10:41:42 $
-# SubVersion :     $Revision: 1.45 $
+# Last updated on: $Date: 2006-07-26 14:54:23 $
+# SubVersion :     $Revision: 1.46 $
 
 use strict;
 use warnings;
@@ -314,7 +314,6 @@ sub map_alleles {
         push @affects_Feature, grep { ( $_->{'source'} eq 'polyA_signal_sequence' ) } @hits;
         push @affects_Feature, grep { ( $_->{'source'} eq 'polyA_site' ) } @hits;
 
-        if ( scalar(@affects_CDSs) >= 1 ) {
 
             # make (unique) array of gene names corresponding to @affects_CDSs
             # first make a hash, then use the keys of the hash to set new array
@@ -370,7 +369,6 @@ sub map_alleles {
             }
             $allele2gene{"$name"} = \@affects_CDSs if ( $affects_CDSs[0] );
             &outputAllele( $name, $chromosome, $start, $stop );
-        }
         if ( @affects_Feature >= 1 ) {
             &outputFeature( $name, \@affects_Feature );
             print Dumper (@affects_Feature) if $debug;
@@ -446,9 +444,10 @@ sub outputAllele {
 
 
                         print OUT "Variation : $allele\n";
-                        print OUT "Predicted_CDS $cds $type Inferred_automatically map_Alleles.pl\n\n";
+                        print OUT "Predicted_CDS $cds $type Inferred_automatically map_Alleles.pl\n";
                         print OUT "Predicted_CDS $cds $frameshift" if $frameshift;
                         print OUT "Predicted_CDS $cds $splice" if $splice;
+			print OUT "\n";
                     }
                     elsif ( $worm_gene2class{$cds} eq "Transcript" ) {
                         next if $done{$cds} && $done{$cds}->{ $gff_cds->{'source'} };              #don't print duplicates
