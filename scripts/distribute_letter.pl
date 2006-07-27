@@ -4,12 +4,12 @@
 #
 # by Anthony Rogers
 #
-# copies release letter to ~ftp/pub/wormbase/WSxx
+# copies release letter to ~ftp/pub2/wormbase/WSxx
 #                          ~wormpub/BUILD/autoace/release/
 #                          /nfs/WWW/SANGER_docs/htdocs/Projects/C_elegans/WORMBASE/current/release_notes.txt/
 #
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2006-07-27 16:17:02 $
+# Last updated on: $Date: 2006-07-27 16:20:53 $
 
 
 use strict;                                      
@@ -119,14 +119,14 @@ $wormbase->mail_maintainer( $name, $to, $release_letter);
 # FTP site data is there but sym link needs to be updated so people can easily point to it
 $log->write_to("Updating symlink on FTP site\n");
 
-my $targetdir = "/nfs/disk69/ftp/pub/wormbase";    # default directory, can be overidden
+my $targetdir = "/nfs/disk69/ftp/pub2/wormbase";    # default directory, can be overidden
 
 # delete the old symbolic link and make the new one
 $wormbase->run_command("rm -f $targetdir/development_release", $log);
 $wormbase->run_command("cd $targetdir; ln -s $release development_release", $log);
 
 # update wormpep_dev symbolic link in wormpep ftp site
-my $wormpep_dir = glob("~ftp/pub/databases/wormpep"); 
+my $wormpep_dir = glob("~ftp/pub2/databases/wormpep"); 
 $wormbase->run_command("rm -f $wormpep_dir/wormpep_dev", $log);
 $wormbase->run_command("ln -fs $wormpep_dir/wormpep${release_number}/wormpep${release_number} $wormpep_dir/wormpep_dev", $log);
 
