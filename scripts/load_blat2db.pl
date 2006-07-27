@@ -6,7 +6,7 @@
 # 19.02.02 Kerstin Jekosch
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2006-03-02 11:53:10 $
+# Last edited on: $Date: 2006-07-27 09:52:55 $
 use strict;
 use Getopt::Long;
 use lib $ENV{'CVS_DIR'};
@@ -37,13 +37,14 @@ die "You do not have write access for $dbdir\n" if ($access eq "no");
 
 
 my $dbname;
-if ($dbdir =~ /\/(\w+ace)/) {
+#if ($dbdir =~ /\/(\w+ace)/) {
+if ($dbdir =~ /\/(\w+cam)/) {
     $dbname = $1;
 }
 else {
 	die print STDERR "$dbdir not valid\n";
 }
-
+print "$dbname\n";
 &delete($dbname) if ($delete || $all);
 &load($dbname)   if ($load   || $all);
 
@@ -54,17 +55,12 @@ exit(0);
 sub delete {
 
 my $command=<<END;
-query find Sequence "SUPERLINK*"
-follow Homol_data
-kill 
+query find Homol_data "BLAT_*"
+kill
 clear
-query find Sequence "SUPERLINK*"
-follow Feature_data
-kill 
+query find Feature_data "Confirmed_intron*"
+kill
 clear
-query find Sequence "SUPERLINK*"
-edit -D Homol_data
-edit -D Feature_data
 save
 quit
 END
@@ -107,7 +103,8 @@ save
 quit
 END
 }
-elsif ($dbname =~ /camace/) {
+#elsif ($dbname =~ /camace/) {
+elsif ($dbname =~ /PADcam/) {
 $command=<<END;
 pparse $blat_dir/virtual_objects.camace.blat.est.ace 
 pparse $blat_dir/virtual_objects.camace.blat.ost.ace 
