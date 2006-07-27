@@ -9,7 +9,7 @@
 #                          /nfs/WWW/SANGER_docs/htdocs/Projects/C_elegans/WORMBASE/current/release_notes.txt/
 #
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2006-07-27 16:20:53 $
+# Last updated on: $Date: 2006-07-27 16:26:18 $
 
 
 use strict;                                      
@@ -126,7 +126,7 @@ $wormbase->run_command("rm -f $targetdir/development_release", $log);
 $wormbase->run_command("cd $targetdir; ln -s $release development_release", $log);
 
 # update wormpep_dev symbolic link in wormpep ftp site
-my $wormpep_dir = glob("~ftp/pub2/databases/wormpep"); 
+my $wormpep_dir = glob("~ftp/pub/databases/wormpep"); 
 $wormbase->run_command("rm -f $wormpep_dir/wormpep_dev", $log);
 $wormbase->run_command("ln -fs $wormpep_dir/wormpep${release_number}/wormpep${release_number} $wormpep_dir/wormpep_dev", $log);
 
