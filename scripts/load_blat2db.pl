@@ -6,7 +6,8 @@
 # 19.02.02 Kerstin Jekosch
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2006-07-27 09:52:55 $
+# Last edited on: $Date: 2006-07-27 09:55:31 $
+
 use strict;
 use Getopt::Long;
 use lib $ENV{'CVS_DIR'};
@@ -37,8 +38,7 @@ die "You do not have write access for $dbdir\n" if ($access eq "no");
 
 
 my $dbname;
-#if ($dbdir =~ /\/(\w+ace)/) {
-if ($dbdir =~ /\/(\w+cam)/) {
+if ($dbdir =~ /\/(\w+ace)/) {
     $dbname = $1;
 }
 else {
@@ -103,8 +103,7 @@ save
 quit
 END
 }
-#elsif ($dbname =~ /camace/) {
-elsif ($dbname =~ /PADcam/) {
+elsif ($dbname =~ /camace/) {
 $command=<<END;
 pparse $blat_dir/virtual_objects.camace.blat.est.ace 
 pparse $blat_dir/virtual_objects.camace.blat.ost.ace 
