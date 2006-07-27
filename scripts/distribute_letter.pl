@@ -8,8 +8,8 @@
 #                          ~wormpub/BUILD/autoace/release/
 #                          /nfs/WWW/SANGER_docs/htdocs/Projects/C_elegans/WORMBASE/current/release_notes.txt/
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2006-05-17 08:57:14 $
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2006-07-27 16:17:02 $
 
 
 use strict;                                      
@@ -87,7 +87,7 @@ $log->write_to("about to spread the word . . . \n");
 
 # copy the letter around
 $log->write_to("copying to ftp site . . . . ");
-my ($ftp_dir) = glob("~ftp/pub/wormbase");       
+my ($ftp_dir) = glob("~ftp/pub2/wormbase");       
       # ftp-site
       &_copy( "$repdir/letter.${release}", "$ftp_dir/${release}/letter.${release}" ) || die "couldnt copy to $ftp_dir\n";
       $log->write_to("DONE.\n");
