@@ -5,8 +5,8 @@
 # Counts the number of objects in an ACEDB database for each Class stated in the config file
 # Compares this number to those from a second database.
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2006-05-26 11:29:02 $
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2006-07-27 08:59:25 $
 
 
 use strict;
@@ -194,8 +194,8 @@ print OUT  " +------------------------+---------+---------+---------+---------+-
 $log->write_to("\nCreating 'current.out' and 'current.dbcomp'\n",$log);
 $wormbase->run_command("rm -f ".$wormbase->compare."/current.out",$log);
 $wormbase->run_command("rm -f ".$wormbase->compare."/current.dbcomp",$log);
-$wormbase->run_command("ln -s ".$wormbase->compare."/$errfile ".$wormbase->compare."/current.out",$log);
-$wormbase->run_command("ln -s ".$wormbase->compare."/$outfile ".$wormbase->compare."/current.dbcomp",$log);
+$wormbase->run_command("ln -s $errfile ".$wormbase->compare."/current.out",$log);
+$wormbase->run_command("ln -s $outfile ".$wormbase->compare."/current.dbcomp",$log);
 
 
 close (OUT);
