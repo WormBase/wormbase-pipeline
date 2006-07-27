@@ -5,7 +5,7 @@
 # by Anthony Rogers                             
 #
 # Last updated by: $Author: ar2 $               
-# Last updated on: $Date: 2006-06-15 14:46:19 $
+# Last updated on: $Date: 2006-07-27 09:26:31 $
 
 # Generates a release letter at the end of build.
 #
@@ -125,7 +125,7 @@ if( defined($opt_l)) {
   print CC $text;
   close(CC);
 
-  my @release_files = ("$reports_dir/dbases","$reports_dir/composition","$reports_dir/chromosome_changes","$reports_dir/genedata","$reports_dir/wormpep");
+  my @release_files = ("$reports_dir/composition","$reports_dir/chromosome_changes","$reports_dir/genedata","$reports_dir/wormpep");
   
   #include all the pre-generated reports
   my $file = shift(@release_files);
