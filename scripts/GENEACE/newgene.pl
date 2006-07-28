@@ -7,7 +7,7 @@
 # simple script for creating new (sequence based) Gene objects 
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2006-02-21 14:30:40 $
+# Last edited on: $Date: 2006-07-28 12:38:16 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -38,7 +38,7 @@ GetOptions ("input=s"   => \$input,
             "seq=s"     => \$seq,
 	    "cgc=s"     => \$cgc,
 	    "who=i"     => \$who,
-	    "id=i"      => \$id,
+	    "id=s"      => \$id,
 	    "email"     => \$email,
 	    "load"      => \$load,
 	    "verbose"   => \$verbose,
@@ -242,11 +242,11 @@ sub process_gene{
    
     # get new gene ID, unless specified by -id
     if($id){
-      $gene_id = "WBGene" . sprintf("%08d",$id);
+      $gene_id = $id =~ /WBGene/ ? $id : "WBGene" . sprintf("%08d",$id);
     }
     else{
       $gene_max++;
-      $gene_id = "WBGene" . sprintf("%08d",$gene_max);
+      $gene_id = $id =~ /WBGene/ ? $id : "WBGene" . sprintf("%08d",$id);
     }
 
     print "$seq does not exist, creating new Gene object $gene_id\n";
