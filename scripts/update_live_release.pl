@@ -5,8 +5,8 @@
 # by Anthony Rogers
 #
 # Updates the local webpages in synch with the main website
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2006-05-30 14:00:15 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2006-07-28 09:08:22 $
 
 
 use strict;
@@ -75,7 +75,7 @@ $wormbase->run_command("cd $wormpep_ftp_root; ln -fs wormpep${prev_release}/worm
 ##################################################################
 # Update Sanger WORMBASE ftp site to change live_release symlink
 ##################################################################
-$wormbase->run_command("cd $wormbase_ftp_dir; rm -f live_release; ln -fs WS${release} live_release",$log);
+$wormbase->run_command("cd $wormbase_ftp_dir; rm -f live_release; ln -fs wormpep${release} live_release",$log);
 
 
 
