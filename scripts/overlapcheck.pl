@@ -7,8 +7,8 @@
 # checks whether genes overlap, ESTs match introns and repeats match exons                                   
 # sorts output for stl and cam clones
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2006-02-17 11:32:47 $
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2006-08-02 16:22:45 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -534,7 +534,7 @@ sub sort_by_gene {
     my %final_output;
 	
     foreach my $out (@output) {
-    	my $both  = $out->[1].":".$out->[0].":".$out->[2].":".$out->[3];
+    	my $both  = $out->[1].":".$out->[0].":".$out->[2].":".$out->[3] if ($out->[0] && $out->[1] && $out->[2]); # dirty fix to skip noninitialized references
         $final_output{$both}++,
     }
     return %final_output;

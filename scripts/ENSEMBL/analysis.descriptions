@@ -1,0 +1,45 @@
+Ab_initio_RepeatMask	Interspersed repeats and low complexity sequence identified by RepeatMasker using ab_initio repeat profiles specific to the species (http://www.repeatmasker.org/)
+affyalign Probe sequences from Affymetrix microarrays aligned to the genome using Exonerate (G. Slater et al., BMC Bioinformatics. 2005 6:31)
+AlignAffy	Probe sequences from Affymetrix microarrays aligned to the genome using Exonerate (G. Slater et al., BMC Bioinformatics. 2005 6:31)
+AlignAffyProbes	Probe sequences from Affymetrix microarrays aligned to the genome using Exonerate (G. Slater et al., BMC Bioinformatics. 2005 6:31)
+allele  Feature imported from FlyBase (http://www.flybase.org)
+BACends	End sequences of BAC library clones used in the sequencing project aligned to the genome using SSAHA2 (http://www.sanger.ac.uk/Software/analysis/SSAHA2/)
+BrigPep		C. briggsae proteins aligned by WU-BlastX
+celegans_est	Caenorhabditis elegans ESTs from dbEST aligned to the genome using BLAT
+celegans_mrna	Caenorhabditis elegans aligned to the genome using BLAT
+CpG	Prediction of CpG islands by a program identical to newcpgreport (G. Miklem, http://helix.nih.gov/docs/online/emboss/newcpgreport.html)
+Dust	Low-complexity DNA sequence identified by Dust
+ensembl	Genes were annotated by the Ensembl automatic analysis pipeline using either a GeneWise/Exonerate model from a database protein or a set of aligned cDNAs followed by an ORF prediction. GeneWise/Exonerate models are further combined with available aligned cDNAs to annotate UTRs (For more information see V.Curwen et al., Genome Res. 2004 14:942-50)
+FlyBase		FlyBase proteins aligned by WU-BlastX
+fosmid		Vancouver Fosmid available from GeneService
+genbank		other ests from EMBL/GenBank
+Human-IPR	Human IPR proteins aligned by WU-BlastX
+insertion_site  Feature imported from FlyBase gff files (http://www.flybase.org) 
+knownGeneDensity	Known gene density features in a database as calculated by gene_density_calc.pl 
+mapping	Yeast genes aligned against genome using exonerate (Not used).
+Marker	UniSTS markers aligned to the genome using e-PCR (G. Schuler, Genome. Res. 1997 7:541-550)
+ncRNA	Ensembl ncRNA genes are predicted using covariance models and sequences from <a href=http://www.sanger.ac.uk/Software/Rfam/index.shtml>RFAM<a> and <a href=http://microrna.sanger.ac.uk/sequences/index.shtml>miRBase<a>.
+oligo	Feature imported from FlyBase (http://www.flybase.org)
+Operon	Multi-gene feature imported from Wormbase annotation (http://www.wormbase.org).
+other_est	ESTs of various organism from EMBL aligned to the genome using BLAT
+PercentageRepeat	Percentage of repetitive elements for top level seq_regions.
+PercentGC	Percentage of G/C bases in the sequence.
+PercentRepeat	GC content for top level seq_regions.
+Pseudogene	Pseudogene identified from the original gene set (predicted by GeneWise/Exonerate) on the basis of frameshifted introns (introns of less than 10bp) and intron repeat content (introns of more than 80% repeat)
+RemaneiPep	C. remanei proteins aligned by WU-BlastX
+RepeatMask	Interspersed repeats and low complexity sequence identified by RepeatMasker (http://www.repeatmasker.org/)
+RNAi	Aligned probes from RNA interference experiments.
+scaffold        Feature imported from FlyBase (http://www.flybase.org)
+Seg	Identification of peptide low complexity sequences by Seg (J. C. Wooten et al., Comput. Chem. 1993 17:149-163)
+SGD	S. cerevisiae proteins aligned by WU-BlastX
+Supp_RepeatMask	Interspersed repeats and low complexity sequence identified by RepeatMasker using a supplemental repeat database specific to the species (http://www.repeatmasker.org/)
+Swissprot	Swissprot proteins aligned by WU-BlastX
+transcription_start_site               Feature imported from FlyBase (http://www.flybase.org)
+transposable_element                   Feature imported from FlyBase (http://www.flybase.org)
+transposable_element_insertion_site    Feature imported from FlyBase (http://www.flybase.org)
+TrEMBL		TrEMBL proteins aligned by WU-BlastX
+TRF	Tandem repeats identified by Tandem Repeats Finder (G. Benson, Nuc. Acids Res. 1999 27:573-580)
+tRNAscan	Prediction of tRNAs in genomic sequence by tRNAscan-SE (T. Lowe et al., Nucleic Acids Res. 1997 25:955-64)
+wormbase	This gene was annotated by Wormbase (http://www.wormbase.org) through a process of automatic and manual curation.
+WormPep		C. elegans proteins aligned by WU-BlastX
+WormPep	Worm peptides aligned to the genome.

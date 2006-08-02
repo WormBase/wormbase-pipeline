@@ -1,0 +1,27 @@
+1.) Fake Modules and Analysis
+----------------------------------------
+update the wormpipe stuff from subversion:
+cd ~mh6/src/perl/ensembl/
+svn co
+rake deploy
+
+the analysis table is populated from the analysis.conf file, which in turn provides the logic_name for the get_adaptor_by_logic_name .
+So far i think the name is important, the rest is for the pipeline
+
+rule.conf
+make sure to remove all stuff you removed from analysis.conf
+
+To fill the analysis_description table, the load_analysis_description needs to be run with an flatfile containing the descriptions.
+
+2.) setup
+----------------------
+wormbase_to_ensembl setup
+
+make sure WormBaseConf is correctly set and the ensembl-conf directory is existing with an proper analysis.conf
+don't forget the hardcoded chromosome lengths in the WormBaseConf.pm
+
+x.) Bugs & features
+--------------------
+Ensembl uses some DBI::mysql code that is not in line with the latest DBI::mysql :-(
+Protein and Peptide is somehow used in no meaningful way for class names DnaPepAlignFeature BUT get_ProteinAlignFeatureAdaptor
+BioPerl version is of course not the last one

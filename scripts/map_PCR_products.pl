@@ -97,13 +97,13 @@ foreach my $chromosome (@chromosomes) {
 
     ################
     # GFF database part
-    $map->clean("CHROMOSOME_$chromosome");                                     # reset the chromosome table
+   $map->clean("CHROMOSOME_$chromosome");                                     # reset the chromosome table
 
-    foreach my $end ('curated', 'Non_coding_transcript', 'Pseudogene' ) {
-        my $file = "$gffdir/CHROMOSOME_${chromosome}_${end}.gff";
-        $map->generate_tags($file);
-        $map->load_gff( $file, "CHROMOSOME_$chromosome" );
-    }
+   foreach my $end ('curated', 'Non_coding_transcript', 'Pseudogene' ) {
+       my $file = "$gffdir/CHROMOSOME_${chromosome}_${end}.gff";
+       $map->generate_tags($file);
+       $map->load_gff( $file, "CHROMOSOME_$chromosome" );
+   }
 
     # Get PCR_product info from split GFF file
     &get_PCRs_from_GFF( $chromosome, 'Orfeome',   \%output, $map );

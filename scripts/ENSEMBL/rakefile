@@ -1,0 +1,55 @@
+# to deploy stuff to /tmp/www/.....
+require 'yaml'
+require 'fileutils'
+
+file='/var/tmp/share/ens_sqldump_2'
+mysqldir='/var/tmp/mysql/bin/'
+desc "dump the mysql to /var/tmp/share/ens_sqldump (deskpro)"
+task :dump do
+	File.unlink(file) if File.exist?(file)
+	File.unlink("#{file}.bz2") if File.exist?("#{file}.bz2")
+
+	sh "#{mysqldir}mysqldump --add-drop-table -u wormadmin -a -h ecs1f --password=worms -B worm_WB160 > #{file}"
+
+#	sh "#{mysqldir}mysqldump --add-drop-table --add-drop-database -u wormadmin -a -h ecs1f --password=worms -B worm_WB158 > #{file}"
+	sh "bzip2 -9 #{file}"
+end
+
+desc "restore from dump at /var/tmp/share/ens_sqldump (deskpr)"
+task :restore do
+	sh "bzcat #{file}.bz2 |#{mysqldir}mysql -u wormadmin --password=worms -h ecs1f worm_WB158"
+end
+
+
+desc "deploy files to ~wormpipe"
+task :deploy
+FileList['*.*','WormFeature/*'].each do |fn|
+	targetdir='/nfs/acari/wormpipe/ensembl/ensembl-pipeline/scripts/DataConversion/wormbase/'
+	targetfile = File.join(targetdir, fn)
+
+	file targetfile => [fn] do
+		cp fn,targetfile
+	end
+
+	task :deploy => [targetfile]
+end
+
+desc "make a compara tarball"
+task :dump_compara do
+	conf=YAML.load_file('ensembl_lite.conf')
+	Dir.chdir('/tmp/compara') do
+		conf.each_key{|org|
+			db=conf[org]['database']
+			file="#{db['dbname']}.sql"
+			sh "#{mysqldir}mysqldump --add-drop-table --add-drop-database -u wormadmin -a -h ecs1f --password=worms -B #{db['dbname']} > #{file}"
+		}
+		sh "#{mysqldir}mysqldump --add-drop-table --add-drop-database -u wormadmin -a -h ecs1f --password=worms -B worm_compara > worm_compara.sql"
+	end
+	Dir.chdir('/tmp') do
+		File.unlink("compara.tar.bz2") if File.exists?("compara.tar.bz2")
+		sh "tar cvf compara.tar compara/*"
+		sh "bzip2 -9 compara.tar"
+		FileList['compara/*'].each{|f|File.unlink(f)}
+	end
+end
+

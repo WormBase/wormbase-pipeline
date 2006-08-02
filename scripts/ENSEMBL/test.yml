@@ -1,0 +1,1065 @@
+--- !perl/Wormy
+-analysis: ~
+-slice: ~
+hits:
+  BP:CBP01069:
+    - -analysis: wublastx
+      -end: 11688
+      -hseqname: BP:CBP01069
+      -hstart: 1
+      -hstop: 16
+      -hstrand: 1
+      -score: 3.675
+      -slice: CHROMOSOME_I
+      -start: 11641
+      -strand: 1
+    - -analysis: wublastx
+      -end: 15156
+      -hseqname: BP:CBP01069
+      -hstart: 17
+      -hstop: 83
+      -hstrand: 1
+      -score: 79.233
+      -slice: CHROMOSOME_I
+      -start: 14950
+      -strand: 1
+    - -analysis: wublastx
+      -end: 16582
+      -hseqname: BP:CBP01069
+      -hstart: 76
+      -hstop: 121
+      -hstrand: 1
+      -score: 43.712
+      -slice: CHROMOSOME_I
+      -start: 16445
+      -strand: 1
+  ENSEMBL:ENSP00000261167:
+    - -analysis: wublastx
+      -end: 23089
+      -hseqname: ENSEMBL:ENSP00000261167
+      -hstart: 359
+      -hstop: 468
+      -hstrand: 1
+      -score: 28.961
+      -slice: CHROMOSOME_I
+      -start: 22784
+      -strand: 1
+  ENSEMBL:ENSP00000288841:
+    - -analysis: wublastx
+      -end: 13313
+      -hseqname: ENSEMBL:ENSP00000288841
+      -hstart: 725
+      -hstop: 742
+      -hstrand: 1
+      -score: 1.868
+      -slice: CHROMOSOME_I
+      -start: 13263
+      -strand: 1
+    - -analysis: wublastx
+      -end: 23092
+      -hseqname: ENSEMBL:ENSP00000288841
+      -hstart: 972
+      -hstop: 1049
+      -hstrand: 1
+      -score: 35.584
+      -slice: CHROMOSOME_I
+      -start: 22883
+      -strand: 1
+  ENSEMBL:ENSP00000346143:
+    - -analysis: wublastx
+      -end: 23122
+      -hseqname: ENSEMBL:ENSP00000346143
+      -hstart: 376
+      -hstop: 448
+      -hstrand: 1
+      -score: 36.487
+      -slice: CHROMOSOME_I
+      -start: 22883
+      -strand: 1
+  FLYBASE:CG15741-PA:
+    - -analysis: wublastx
+      -end: 23160
+      -hseqname: FLYBASE:CG15741-PA
+      -hstart: 10
+      -hstop: 95
+      -hstrand: 1
+      -score: 14.512
+      -slice: CHROMOSOME_I
+      -start: 22894
+      -strand: 1
+  RP:cr01.sctg4129.wum.1.1:
+    - -analysis: wublastx
+      -end: 11532
+      -hseqname: RP:cr01.sctg4129.wum.1.1
+      -hstart: 1
+      -hstop: 52
+      -hstrand: 1
+      -score: 10.297
+      -slice: CHROMOSOME_I
+      -start: 11371
+      -strand: 1
+    - -analysis: wublastx
+      -end: 23146
+      -hseqname: RP:cr01.sctg4129.wum.1.1
+      -hstart: 100
+      -hstop: 198
+      -hstrand: 1
+      -score: 22.339
+      -slice: CHROMOSOME_I
+      -start: 22880
+      -strand: 1
+  RP:cr01.sctg8.wum.122.1:
+    - -analysis: wublastx
+      -end: 11688
+      -hseqname: RP:cr01.sctg8.wum.122.1
+      -hstart: 1
+      -hstop: 16
+      -hstrand: 1
+      -score: 1.266
+      -slice: CHROMOSOME_I
+      -start: 11641
+      -strand: 1
+    - -analysis: wublastx
+      -end: 15159
+      -hseqname: RP:cr01.sctg8.wum.122.1
+      -hstart: 17
+      -hstop: 81
+      -hstrand: 1
+      -score: 72.912
+      -slice: CHROMOSOME_I
+      -start: 14950
+      -strand: 1
+    - -analysis: wublastx
+      -end: 16579
+      -hseqname: RP:cr01.sctg8.wum.122.1
+      -hstart: 73
+      -hstop: 117
+      -hstrand: 1
+      -score: 41.604
+      -slice: CHROMOSOME_I
+      -start: 16445
+      -strand: 1
+  SGD:YHL028W:
+    - -analysis: wublastx
+      -end: 23298
+      -hseqname: SGD:YHL028W
+      -hstart: 208
+      -hstop: 346
+      -hstrand: 1
+      -score: 25.65
+      -slice: CHROMOSOME_I
+      -start: 22867
+      -strand: 1
+  SGD:YKR092C:
+    - -analysis: wublastx
+      -end: 23127
+      -hseqname: SGD:YKR092C
+      -hstart: 31
+      -hstop: 117
+      -hstrand: 1
+      -score: 14.211
+      -slice: CHROMOSOME_I
+      -start: 22867
+      -strand: 1
+  SW:O08550:
+    - -analysis: wublastx
+      -end: 23119
+      -hseqname: SW:O08550
+      -hstart: 4
+      -hstop: 98
+      -hstrand: 1
+      -score: 29.262
+      -slice: CHROMOSOME_I
+      -start: 22796
+      -strand: 1
+  SW:P21997:
+    - -analysis: wublastx
+      -end: 23095
+      -hseqname: SW:P21997
+      -hstart: 249
+      -hstop: 315
+      -hstrand: 1
+      -score: 40.4
+      -slice: CHROMOSOME_I
+      -start: 22877
+      -strand: 1
+    - -analysis: wublastx
+      -end: 23137
+      -hseqname: SW:P21997
+      -hstart: 240
+      -hstop: 321
+      -hstrand: 1
+      -score: 42.206
+      -slice: CHROMOSOME_I
+      -start: 22880
+      -strand: 1
+  SW:P30397:
+    - -analysis: wublastx
+      -end: 9747
+      -hseqname: SW:P30397
+      -hstart: 151
+      -hstop: 220
+      -hstrand: 1
+      -score: 14.813
+      -slice: CHROMOSOME_I
+      -start: 9535
+      -strand: 1
+    - -analysis: wublastx
+      -end: 18695
+      -hseqname: SW:P30397
+      -hstart: 212
+      -hstop: 269
+      -hstrand: 1
+      -score: 10.899
+      -slice: CHROMOSOME_I
+      -start: 18522
+      -strand: 1
+    - -analysis: wublastx
+      -end: 19814
+      -hseqname: SW:P30397
+      -hstart: 254
+      -hstop: 400
+      -hstrand: 1
+      -score: 6.685
+      -slice: CHROMOSOME_I
+      -start: 19371
+      -strand: 1
+    - -analysis: wublastx
+      -end: 23502
+      -hseqname: SW:P30397
+      -hstart: 425
+      -hstop: 516
+      -hstrand: 1
+      -score: 7.287
+      -slice: CHROMOSOME_I
+      -start: 23221
+      -strand: 1
+  SW:P31916:
+    - -analysis: wublastx
+      -end: 4974
+      -hseqname: SW:P31916
+      -hstart: 16
+      -hstop: 37
+      -hstrand: 1
+      -score: 3.675
+      -slice: CHROMOSOME_I
+      -start: 4909
+      -strand: 1
+    - -analysis: wublastx
+      -end: 10108
+      -hseqname: SW:P31916
+      -hstart: 46
+      -hstop: 148
+      -hstrand: 1
+      -score: 5.782
+      -slice: CHROMOSOME_I
+      -start: 9815
+      -strand: 1
+    - -analysis: wublastx
+      -end: 20246
+      -hseqname: SW:P31916
+      -hstart: 163
+      -hstop: 613
+      -hstrand: 1
+      -score: 26.252
+      -slice: CHROMOSOME_I
+      -start: 18906
+      -strand: 1
+  SW:P40603:
+    - -analysis: wublastx
+      -end: 23116
+      -hseqname: SW:P40603
+      -hstart: 5
+      -hstop: 86
+      -hstrand: 1
+      -score: 35.885
+      -slice: CHROMOSOME_I
+      -start: 22880
+      -strand: 1
+  SW:Q01443:
+    - -analysis: wublastx
+      -end: 23119
+      -hseqname: SW:Q01443
+      -hstart: 359
+      -hstop: 468
+      -hstrand: 1
+      -score: 28.961
+      -slice: CHROMOSOME_I
+      -start: 22790
+      -strand: 1
+  SW:Q03211:
+    - -analysis: wublastx
+      -end: 11262
+      -hseqname: SW:Q03211
+      -hstart: 147
+      -hstop: 154
+      -hstrand: 1
+      -score: 0.664
+      -slice: CHROMOSOME_I
+      -start: 11239
+      -strand: 1
+    - -analysis: wublastx
+      -end: 23089
+      -hseqname: SW:Q03211
+      -hstart: 156
+      -hstop: 242
+      -hstrand: 1
+      -score: 35.283
+      -slice: CHROMOSOME_I
+      -start: 22847
+      -strand: 1
+  SW:Q9S8M0:
+    - -analysis: wublastx
+      -end: 23107
+      -hseqname: SW:Q9S8M0
+      -hstart: 127
+      -hstop: 211
+      -hstrand: 1
+      -score: 38.895
+      -slice: CHROMOSOME_I
+      -start: 22820
+      -strand: 1
+  TR:O48809:
+    - -analysis: wublastx
+      -end: 11315
+      -hseqname: TR:O48809
+      -hstart: 339
+      -hstop: 416
+      -hstrand: 1
+      -score: 10.297
+      -slice: CHROMOSOME_I
+      -start: 11067
+      -strand: 1
+    - -analysis: wublastx
+      -end: 23137
+      -hseqname: TR:O48809
+      -hstart: 462
+      -hstop: 554
+      -hstrand: 1
+      -score: 24.446
+      -slice: CHROMOSOME_I
+      -start: 22892
+      -strand: 1
+  TR:O74947:
+    - -analysis: wublastx
+      -end: 23157
+      -hseqname: TR:O74947
+      -hstart: 104
+      -hstop: 202
+      -hstrand: 1
+      -score: 18.726
+      -slice: CHROMOSOME_I
+      -start: 22849
+      -strand: 1
+  TR:O94317:
+    - -analysis: wublastx
+      -end: 23187
+      -hseqname: TR:O94317
+      -hstart: 242
+      -hstop: 339
+      -hstrand: 1
+      -score: 21.134
+      -slice: CHROMOSOME_I
+      -start: 22876
+      -strand: 1
+  TR:Q34937:
+    - -analysis: wublastx
+      -end: 19925
+      -hseqname: TR:Q34937
+      -hstart: 23
+      -hstop: 79
+      -hstrand: 1
+      -score: 3.976
+      -slice: CHROMOSOME_I
+      -start: 19782
+      -strand: 1
+  TR:Q3D424:
+    - -analysis: wublastx
+      -end: 23337
+      -hseqname: TR:Q3D424
+      -hstart: 1134
+      -hstop: 1292
+      -hstrand: 1
+      -score: 24.446
+      -slice: CHROMOSOME_I
+      -start: 22867
+      -strand: 1
+  TR:Q3HTK2:
+    - -analysis: wublastx
+      -end: 11256
+      -hseqname: TR:Q3HTK2
+      -hstart: 125
+      -hstop: 178
+      -hstrand: 1
+      -score: 9.093
+      -slice: CHROMOSOME_I
+      -start: 11098
+      -strand: 1
+    - -analysis: wublastx
+      -end: 23089
+      -hseqname: TR:Q3HTK2
+      -hstart: 184
+      -hstop: 251
+      -hstrand: 1
+      -score: 42.206
+      -slice: CHROMOSOME_I
+      -start: 22883
+      -strand: 1
+    - -analysis: wublastx
+      -end: 23089
+      -hseqname: TR:Q3HTK2
+      -hstart: 177
+      -hstop: 243
+      -hstrand: 1
+      -score: 42.206
+      -slice: CHROMOSOME_I
+      -start: 22883
+      -strand: 1
+  TR:Q3HTK6:
+    - -analysis: wublastx
+      -end: 23119
+      -hseqname: TR:Q3HTK6
+      -hstart: 258
+      -hstop: 337
+      -hstrand: 1
+      -score: 47.023
+      -slice: CHROMOSOME_I
+      -start: 22883
+      -strand: 1
+  TR:Q3MJK9:
+    - -analysis: wublastx
+      -end: 23145
+      -hseqname: TR:Q3MJK9
+      -hstart: 19
+      -hstop: 111
+      -hstrand: 1
+      -score: 13.007
+      -slice: CHROMOSOME_I
+      -start: 22864
+      -strand: 1
+  TR:Q4A2B5:
+    - -analysis: wublastx
+      -end: 11262
+      -hseqname: TR:Q4A2B5
+      -hstart: 405
+      -hstop: 416
+      -hstrand: 1
+      -score: 2.17
+      -slice: CHROMOSOME_I
+      -start: 11227
+      -strand: 1
+    - -analysis: wublastx
+      -end: 23089
+      -hseqname: TR:Q4A2B5
+      -hstart: 2163
+      -hstop: 2230
+      -hstrand: 1
+      -score: 47.023
+      -slice: CHROMOSOME_I
+      -start: 22883
+      -strand: 1
+  TR:Q4BQL7:
+    - -analysis: wublastx
+      -end: 23403
+      -hseqname: TR:Q4BQL7
+      -hstart: 1269
+      -hstop: 1454
+      -hstrand: 1
+      -score: 22.64
+      -slice: CHROMOSOME_I
+      -start: 22864
+      -strand: 1
+  TR:Q4G016:
+    - -analysis: wublastx
+      -end: 11532
+      -hseqname: TR:Q4G016
+      -hstart: 157
+      -hstop: 215
+      -hstrand: 1
+      -score: 8.491
+      -slice: CHROMOSOME_I
+      -start: 11380
+      -strand: 1
+    - -analysis: wublastx
+      -end: 23077
+      -hseqname: TR:Q4G016
+      -hstart: 207
+      -hstop: 261
+      -hstrand: 1
+      -score: 21.736
+      -slice: CHROMOSOME_I
+      -start: 22913
+      -strand: 1
+  TR:Q4IJ14:
+    - -analysis: wublastx
+      -end: 23083
+      -hseqname: TR:Q4IJ14
+      -hstart: 117
+      -hstop: 221
+      -hstrand: 1
+      -score: 21.435
+      -slice: CHROMOSOME_I
+      -start: 22757
+      -strand: 1
+  TR:Q4U2V7:
+    - -analysis: wublastx
+      -end: 23212
+      -hseqname: TR:Q4U2V7
+      -hstart: 215
+      -hstop: 326
+      -hstrand: 1
+      -score: 41.604
+      -slice: CHROMOSOME_I
+      -start: 22877
+      -strand: 1
+  TR:Q51CW9:
+    - -analysis: wublastx
+      -end: 11270
+      -hseqname: TR:Q51CW9
+      -hstart: 609
+      -hstop: 627
+      -hstrand: 1
+      -score: 2.17
+      -slice: CHROMOSOME_I
+      -start: 11214
+      -strand: 1
+    - -analysis: wublastx
+      -end: 23089
+      -hseqname: TR:Q51CW9
+      -hstart: 631
+      -hstop: 699
+      -hstrand: 1
+      -score: 31.971
+      -slice: CHROMOSOME_I
+      -start: 22883
+      -strand: 1
+  TR:Q54DW7:
+    - -analysis: wublastx
+      -end: 11254
+      -hseqname: TR:Q54DW7
+      -hstart: 458
+      -hstop: 533
+      -hstrand: 1
+      -score: 3.675
+      -slice: CHROMOSOME_I
+      -start: 11024
+      -strand: 1
+    - -analysis: wublastx
+      -end: 23107
+      -hseqname: TR:Q54DW7
+      -hstart: 787
+      -hstop: 896
+      -hstrand: 1
+      -score: 35.283
+      -slice: CHROMOSOME_I
+      -start: 22790
+      -strand: 1
+  TR:Q54NC8:
+    - -analysis: wublastx
+      -end: 22861
+      -hseqname: TR:Q54NC8
+      -hstart: 92
+      -hstop: 119
+      -hstrand: 1
+      -score: 7.889
+      -slice: CHROMOSOME_I
+      -start: 22778
+      -strand: 1
+    - -analysis: wublastx
+      -end: 23259
+      -hseqname: TR:Q54NC8
+      -hstart: 1025
+      -hstop: 1165
+      -hstrand: 1
+      -score: 17.522
+      -slice: CHROMOSOME_I
+      -start: 22864
+      -strand: 1
+  TR:Q54Y29:
+    - -analysis: wublastx
+      -end: 9762
+      -hseqname: TR:Q54Y29
+      -hstart: 2
+      -hstop: 74
+      -hstrand: 1
+      -score: 7.889
+      -slice: CHROMOSOME_I
+      -start: 9538
+      -strand: 1
+    - -analysis: wublastx
+      -end: 22861
+      -hseqname: TR:Q54Y29
+      -hstart: 79
+      -hstop: 103
+      -hstrand: 1
+      -score: 7.588
+      -slice: CHROMOSOME_I
+      -start: 22787
+      -strand: 1
+    - -analysis: wublastx
+      -end: 23112
+      -hseqname: TR:Q54Y29
+      -hstart: 232
+      -hstop: 323
+      -hstrand: 1
+      -score: 18.425
+      -slice: CHROMOSOME_I
+      -start: 22837
+      -strand: 1
+  TR:Q55EV9:
+    - -analysis: wublastx
+      -end: 10036
+      -hseqname: TR:Q55EV9
+      -hstart: 41
+      -hstop: 88
+      -hstrand: 1
+      -score: 11.501
+      -slice: CHROMOSOME_I
+      -start: 9887
+      -strand: 1
+    - -analysis: wublastx
+      -end: 19958
+      -hseqname: TR:Q55EV9
+      -hstart: 45
+      -hstop: 91
+      -hstrand: 1
+      -score: 11.501
+      -slice: CHROMOSOME_I
+      -start: 19800
+      -strand: 1
+    - -analysis: wublastx
+      -end: 23185
+      -hseqname: TR:Q55EV9
+      -hstart: 690
+      -hstop: 789
+      -hstrand: 1
+      -score: 16.017
+      -slice: CHROMOSOME_I
+      -start: 22889
+      -strand: 1
+  TR:Q55RV4:
+    - -analysis: wublastx
+      -end: 11256
+      -hseqname: TR:Q55RV4
+      -hstart: 281
+      -hstop: 290
+      -hstrand: 1
+      -score: 1.567
+      -slice: CHROMOSOME_I
+      -start: 11227
+      -strand: 1
+    - -analysis: wublastx
+      -end: 23143
+      -hseqname: TR:Q55RV4
+      -hstart: 311
+      -hstop: 409
+      -hstrand: 1
+      -score: 22.941
+      -slice: CHROMOSOME_I
+      -start: 22883
+      -strand: 1
+  TR:Q59SG9:
+    - -analysis: wublastx
+      -end: 23145
+      -hseqname: TR:Q59SG9
+      -hstart: 226
+      -hstop: 321
+      -hstrand: 1
+      -score: 18.124
+      -slice: CHROMOSOME_I
+      -start: 22867
+      -strand: 1
+  TR:Q59T41:
+    - -analysis: wublastx
+      -end: 7850
+      -hseqname: TR:Q59T41
+      -hstart: 307
+      -hstop: 331
+      -hstrand: 1
+      -score: 1.868
+      -slice: CHROMOSOME_I
+      -start: 7776
+      -strand: 1
+    - -analysis: wublastx
+      -end: 23089
+      -hseqname: TR:Q59T41
+      -hstart: 346
+      -hstop: 444
+      -hstrand: 1
+      -score: 38.293
+      -slice: CHROMOSOME_I
+      -start: 22787
+      -strand: 1
+  TR:Q5BAA9:
+    - -analysis: wublastx
+      -end: 23086
+      -hseqname: TR:Q5BAA9
+      -hstart: 168
+      -hstop: 241
+      -hstrand: 1
+      -score: 22.64
+      -slice: CHROMOSOME_I
+      -start: 22880
+      -strand: 1
+  TR:Q5EF55:
+    - -analysis: wublastx
+      -end: 23386
+      -hseqname: TR:Q5EF55
+      -hstart: 360
+      -hstop: 513
+      -hstrand: 1
+      -score: 24.145
+      -slice: CHROMOSOME_I
+      -start: 22883
+      -strand: 1
+  TR:Q5KGA7:
+    - -analysis: wublastx
+      -end: 11256
+      -hseqname: TR:Q5KGA7
+      -hstart: 205
+      -hstop: 214
+      -hstrand: 1
+      -score: 1.567
+      -slice: CHROMOSOME_I
+      -start: 11227
+      -strand: 1
+    - -analysis: wublastx
+      -end: 23143
+      -hseqname: TR:Q5KGA7
+      -hstart: 235
+      -hstop: 333
+      -hstrand: 1
+      -score: 22.941
+      -slice: CHROMOSOME_I
+      -start: 22883
+      -strand: 1
+  TR:Q5TP16:
+    - -analysis: wublastx
+      -end: 23110
+      -hseqname: TR:Q5TP16
+      -hstart: 1
+      -hstop: 75
+      -hstrand: 1
+      -score: 23.242
+      -slice: CHROMOSOME_I
+      -start: 22892
+      -strand: 1
+  TR:Q6BSZ9:
+    - -analysis: wublastx
+      -end: 23145
+      -hseqname: TR:Q6BSZ9
+      -hstart: 118
+      -hstop: 208
+      -hstrand: 1
+      -score: 19.027
+      -slice: CHROMOSOME_I
+      -start: 22867
+      -strand: 1
+  TR:Q6C9I8:
+    - -analysis: wublastx
+      -end: 23089
+      -hseqname: TR:Q6C9I8
+      -hstart: 1044
+      -hstop: 1111
+      -hstrand: 1
+      -score: 25.349
+      -slice: CHROMOSOME_I
+      -start: 22904
+      -strand: 1
+  TR:Q6P0Z5:
+    - -analysis: wublastx
+      -end: 23098
+      -hseqname: TR:Q6P0Z5
+      -hstart: 151
+      -hstop: 222
+      -hstrand: 1
+      -score: 21.435
+      -slice: CHROMOSOME_I
+      -start: 22877
+      -strand: 1
+  TR:Q6PNA4:
+    - -analysis: wublastx
+      -end: 9705
+      -hseqname: TR:Q6PNA4
+      -hstart: 2
+      -hstop: 53
+      -hstrand: 1
+      -score: 9.394
+      -slice: CHROMOSOME_I
+      -start: 9520
+      -strand: 1
+    - -analysis: wublastx
+      -end: 10030
+      -hseqname: TR:Q6PNA4
+      -hstart: 130
+      -hstop: 183
+      -hstrand: 1
+      -score: 6.685
+      -slice: CHROMOSOME_I
+      -start: 9866
+      -strand: 1
+    - -analysis: wublastx
+      -end: 21287
+      -hseqname: TR:Q6PNA4
+      -hstart: 113
+      -hstop: 160
+      -hstrand: 1
+      -score: 6.083
+      -slice: CHROMOSOME_I
+      -start: 21159
+      -strand: 1
+  TR:Q6ZD62:
+    - -analysis: wublastx
+      -end: 23107
+      -hseqname: TR:Q6ZD62
+      -hstart: 20
+      -hstop: 105
+      -hstrand: 1
+      -score: 36.487
+      -slice: CHROMOSOME_I
+      -start: 22853
+      -strand: 1
+  TR:Q70NW5:
+    - -analysis: wublastx
+      -end: 10042
+      -hseqname: TR:Q70NW5
+      -hstart: 25
+      -hstop: 81
+      -hstrand: 1
+      -score: 9.996
+      -slice: CHROMOSOME_I
+      -start: 9890
+      -strand: 1
+    - -analysis: wublastx
+      -end: 18983
+      -hseqname: TR:Q70NW5
+      -hstart: 143
+      -hstop: 170
+      -hstrand: 1
+      -score: 6.986
+      -slice: CHROMOSOME_I
+      -start: 18900
+      -strand: 1
+    - -analysis: wublastx
+      -end: 21274
+      -hseqname: TR:Q70NW5
+      -hstart: 312
+      -hstop: 364
+      -hstrand: 1
+      -score: 1.266
+      -slice: CHROMOSOME_I
+      -start: 21107
+      -strand: 1
+  TR:Q7SZN7:
+    - -analysis: wublastx
+      -end: 23098
+      -hseqname: TR:Q7SZN7
+      -hstart: 151
+      -hstop: 222
+      -hstrand: 1
+      -score: 21.435
+      -slice: CHROMOSOME_I
+      -start: 22877
+      -strand: 1
+  TR:Q7UE67:
+    - -analysis: wublastx
+      -end: 23187
+      -hseqname: TR:Q7UE67
+      -hstart: 17
+      -hstop: 121
+      -hstrand: 1
+      -score: 12.706
+      -slice: CHROMOSOME_I
+      -start: 22867
+      -strand: 1
+  TR:Q7YYM5:
+    - -analysis: wublastx
+      -end: 23107
+      -hseqname: TR:Q7YYM5
+      -hstart: 7
+      -hstop: 81
+      -hstrand: 1
+      -score: 23.844
+      -slice: CHROMOSOME_I
+      -start: 22883
+      -strand: 1
+  TR:Q86HN1:
+    - -analysis: wublastx
+      -end: 15225
+      -hseqname: TR:Q86HN1
+      -hstart: 62
+      -hstop: 142
+      -hstrand: 1
+      -score: 3.675
+      -slice: CHROMOSOME_I
+      -start: 14977
+      -strand: 1
+    - -analysis: wublastx
+      -end: 16391
+      -hseqname: TR:Q86HN1
+      -hstart: 551
+      -hstop: 594
+      -hstrand: 1
+      -score: 0.363
+      -slice: CHROMOSOME_I
+      -start: 16239
+      -strand: 1
+    - -analysis: wublastx
+      -end: 23143
+      -hseqname: TR:Q86HN1
+      -hstart: 763
+      -hstop: 878
+      -hstrand: 1
+      -score: 24.446
+      -slice: CHROMOSOME_I
+      -start: 22790
+      -strand: 1
+  TR:Q8B589:
+    - -analysis: wublastx
+      -end: 20272
+      -hseqname: TR:Q8B589
+      -hstart: 19
+      -hstop: 234
+      -hstrand: 1
+      -score: 23.242
+      -slice: CHROMOSOME_I
+      -start: 19634
+      -strand: 1
+  TR:Q8L7W3:
+    - -analysis: wublastx
+      -end: 15071
+      -hseqname: TR:Q8L7W3
+      -hstart: 214
+      -hstop: 250
+      -hstrand: 1
+      -score: 2.772
+      -slice: CHROMOSOME_I
+      -start: 14961
+      -strand: 1
+    - -analysis: wublastx
+      -end: 23200
+      -hseqname: TR:Q8L7W3
+      -hstart: 293
+      -hstop: 407
+      -hstrand: 1
+      -score: 22.339
+      -slice: CHROMOSOME_I
+      -start: 22877
+      -strand: 1
+  TR:Q8N0M6:
+    - -analysis: wublastx
+      -end: 23091
+      -hseqname: TR:Q8N0M6
+      -hstart: 222
+      -hstop: 299
+      -hstrand: 1
+      -score: 20.532
+      -slice: CHROMOSOME_I
+      -start: 22867
+      -strand: 1
+  TR:Q948Y6:
+    - -analysis: wublastx
+      -end: 23119
+      -hseqname: TR:Q948Y6
+      -hstart: 539
+      -hstop: 612
+      -hstrand: 1
+      -score: 46.421
+      -slice: CHROMOSOME_I
+      -start: 22892
+      -strand: 1
+  TR:Q9FXA1:
+    - -analysis: wublastx
+      -end: 8880
+      -hseqname: TR:Q9FXA1
+      -hstart: 5
+      -hstop: 30
+      -hstrand: 1
+      -score: 0.363
+      -slice: CHROMOSOME_I
+      -start: 8803
+      -strand: 1
+    - -analysis: wublastx
+      -end: 23242
+      -hseqname: TR:Q9FXA1
+      -hstart: 62
+      -hstop: 163
+      -hstrand: 1
+      -score: 36.186
+      -slice: CHROMOSOME_I
+      -start: 22892
+      -strand: 1
+  TR:Q9FYB2:
+    - -analysis: wublastx
+      -end: 15071
+      -hseqname: TR:Q9FYB2
+      -hstart: 230
+      -hstop: 266
+      -hstrand: 1
+      -score: 2.772
+      -slice: CHROMOSOME_I
+      -start: 14961
+      -strand: 1
+    - -analysis: wublastx
+      -end: 23200
+      -hseqname: TR:Q9FYB2
+      -hstart: 309
+      -hstop: 423
+      -hstrand: 1
+      -score: 22.339
+      -slice: CHROMOSOME_I
+      -start: 22877
+      -strand: 1
+  TR:Q9SBM1:
+    - -analysis: wublastx
+      -end: 11529
+      -hseqname: TR:Q9SBM1
+      -hstart: 63
+      -hstop: 70
+      -hstrand: 1
+      -score: 0.965
+      -slice: CHROMOSOME_I
+      -start: 11506
+      -strand: 1
+    - -analysis: wublastx
+      -end: 23161
+      -hseqname: TR:Q9SBM1
+      -hstart: 309
+      -hstop: 401
+      -hstrand: 1
+      -score: 45.518
+      -slice: CHROMOSOME_I
+      -start: 22883
+      -strand: 1
+  TR:Q9XQQ2:
+    - -analysis: wublastx
+      -end: 9744
+      -hseqname: TR:Q9XQQ2
+      -hstart: 34
+      -hstop: 100
+      -hstrand: 1
+      -score: 17.823
+      -slice: CHROMOSOME_I
+      -start: 9541
+      -strand: 1
+  WP:CE26209:
+    - -analysis: wublastx
+      -end: 23107
+      -hseqname: WP:CE26209
+      -hstart: 214
+      -hstop: 297
+      -hstrand: 1
+      -score: 39.798
+      -slice: CHROMOSOME_I
+      -start: 22877
+      -strand: 1
+    - -analysis: wublastx
+      -end: 23119
+      -hseqname: WP:CE26209
+      -hstart: 248
+      -hstop: 344
+      -hstrand: 1
+      -score: 39.196
+      -slice: CHROMOSOME_I
+      -start: 22883
+      -strand: 1

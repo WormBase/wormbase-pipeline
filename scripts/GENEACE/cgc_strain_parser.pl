@@ -7,8 +7,8 @@
 # Script to convert cgc strain file into ace file for geneace
 # Page download and update upload to geneace has been automated [ck1]
 
-# Last updated by: $Author: mt3 $
-# Last updated on: $Date: 2006-04-04 15:59:04 $
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2006-08-02 16:22:45 $
 
 use strict;
 use Getopt::Long;
@@ -150,7 +150,8 @@ while(<INPUT>){
 
   m/\s+Strain: (.*?)Species:/;
   my $strain = $1;
-
+  print $_ if ! defined($strain) && $verbose;
+  print "$big_counter : $strain\n" if $verbose;
   # skip object if no strain name
   next if(!defined($strain));
 

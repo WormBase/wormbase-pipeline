@@ -59,6 +59,7 @@ open FILE2, $file2 or die "$file2: $!";
 # $line1 holds next line from file1; @f1 holds fields of $line1
 # $line2 holds next line from file2; @f2 holds fields of $line2
 
+my ($n1,$n2);
 ($line1,@f1) = getline(*FILE1,$file1,\$n1);
 ($line2,@f2) = getline(*FILE2,$file2,\$n2);
 

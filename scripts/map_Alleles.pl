@@ -6,8 +6,8 @@
 # This maps alleles to the genome based on their flanking sequences
 #
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2006-07-26 14:54:23 $
-# SubVersion :     $Revision: 1.46 $
+# Last updated on: $Date: 2006-08-02 16:22:45 $
+# SubVersion :     $Revision: 1.47 $
 
 use strict;
 use warnings;
@@ -19,7 +19,9 @@ use Wormbase;
 use Ace;
 use Getopt::Long;
 use Data::Dumper;
+use Memoize;
 use threads;
+memoize('Sequence_extract::Sub_sequence');
 
 my @opts = @ARGV;
 
