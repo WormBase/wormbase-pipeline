@@ -1,4 +1,3 @@
-
 //
 //
 // WormBase methods file
@@ -365,7 +364,6 @@ GFF_feature "translated_nucleotide_match"
 Remark "This method describes EST contigs of non-elegans nematode species from the Edinburgh NemBase project"
 // Need GFF_source and GFF_feature?
 
-
 Method : "WABA_coding"
 Colour "DARKGREEN"
 GFF_source "waba_coding"
@@ -644,16 +642,25 @@ GFF_feature     "reagent"
 Width    1.000000
 Right_priority	 3.150000
 
-Method :        "SAGE_tag"
-Remark          "A short diagnostic sequence tag,  serial analysis of gene expression (SAGE), that allows the quantitative and simultaneous analysis of a large number of transcripts."
+Method  "SAGE_tag"
+Remark  "A short diagnostic sequence tag, serial analysis of gene expression (SAGE), that allows the quantitative and simultaneous analysis of a large number of transcripts. A SAGE tag can be mapped to multiple transcripts and genomic locations."
 GFF_source      "SAGE_tag"
 GFF_feature     "SAGE_tag"
 
-Method :        "SAGE_transcript"
-Remark          "A sequence derived from a 'conceptual transcriptome' that is used for mapping SAGE tags to the genome. A single SAGE tag can be associated with multiple SAGE transcripts."
-GFF_source      "SAGE_transcript"
-GFF_feature     "transcript"
+Method  "SAGE_tag_unambiguously_mapped"
+Remark  "A SAGE tag that is mapped to a single transcript or to multiple transcripts corresponding to a single gene. An unambiguously mapped SAGE tag has a unique genomic location."
+GFF_source      "SAGE_tag_unambiguously_mapped"
+GFF_feature     "SAGE_tag"
 
+Method  "SAGE_tag_most_three_prime"
+Remark  "A SAGE tag that is mapped to multiple transcripts but is most likely derived from the one, to which it is mapped closest to the 3' end due to the SAGE experimental procedure. Proximity to the 3' end is determined based on the number of anchoring enzyme restriction sites (the 3' most site corresponds to position 1)."
+GFF_source      "SAGE_tag_most_three_prime"
+GFF_feature     "SAGE_tag"
+
+Method  "SAGE_tag_genomic_unique"
+Remark  "A SAGE tag that is not mapped to any transcript but is mapped to a unique genomic location."
+GFF_source      "SAGE_tag_genomic_unique"
+GFF_feature     "SAGE_tag"
 
 
 Method : "cDNA_for_RNAi"
@@ -671,6 +678,14 @@ Right_priority 3.2
 Show_text
 GFF_source "Expr_profile"
 GFF_feature	 "experimental_result_region"
+
+Method : "Expr_pattern"
+GFF_source	"Expr_pattern"
+GFF_feature	"reagent"
+Colour "RED"
+Right_priority 4
+Width 1.000000
+Strand_sensitive Show_up_strand 
 
 Method : "Orfeome"
 Colour	BLUE
@@ -1106,6 +1121,41 @@ Show_text
 GFF_source	 "SL2"
 GFF_feature	 "SL2_acceptor_site"
 
+Method : "TSL"
+Remark	 "Indeterminate trans-splice acceptor site."
+Colour	 ORANGE
+Width	 2.0
+Right_priority 2.3
+Show_text
+
+Method : "vector"
+Remark	 "Vector contamination"
+Colour	 YELLOW
+Width	 2.0
+Right_priority 2.2
+Show_text
+
+Method : "low_complexity"
+Remark	 "low_complexity repeat"
+Colour	 RED
+Width	 2.0
+Right_priority 2.2
+Show_text
+
+Method : "NDB"
+Remark	 "GFF method for Nucleotide DataBase entries"
+Display No_display
+
+Method : "polyA"
+Colour	 CERISE
+Strand_sensitive
+Width	 1.000000
+Right_priority	 2.200000
+Show_up_strand
+Show_text
+GFF_feature "polyA"
+Remark	 "polyA run on Transcript sequence."
+
 Method : "polyA_site"
 Colour	 CERISE
 Strand_sensitive	
@@ -1148,11 +1198,39 @@ Remark	 "manually curated binding site feature"
 Method : "Oligo_cap"
 Remark	 "Oligo-cap sequence used in EST library generation. This feature is marked up for removal from the transcript sequence prior to mapping to the genome."
 
-Method : "poly_nucleotide""
+Method : "poly_nucleotide"
 Remark	 "Poly-nucleotide runs found in EST sequence reads. This feature is marked up for removal from the transcript sequence prior to mapping to the genome."
 
 Method : "rRNA_contamination"
 Remark	 "rRNA contamination of the EST sequence reads. This feature is marked up for removal from the transcript sequence prior to mapping to the genome."
+
+Method : "BLAT_discrepancy"
+Remark "Sequence of unknown origin or poorquality, that causes missalignment to the genome when sequence is placed using BLAT software."
+Colour "BLACK"
+Width 2.0
+Right_priority 2.2
+Show_text
+
+Method : "chimeric"
+Remark "Chimeric EST sequence, this method is used to exclude the smallest fragment from BLAT analysis."
+Colour "BLACK"
+Width 2.0
+Right_priority 2.2
+Show_text
+
+Method : Vancouver_fosmid
+GFF_source Vancouver_fosmid
+GFF_feature region
+No_display
+Remark "Method for the Vancouver fosmid clones"
+
+Method : mass_spec_genome
+Colour CYAN
+Frame_sensitive
+Strand_sensitive
+Right_priority 4.49
+Width 1
+Remark "Mass Spectrometry peptide matching a protein."
 
 
 
@@ -1176,5 +1254,4 @@ Bumpable
 Right_priority	 2.100000
 Show_text	
 EMBL_feature	 "CDS"
-
 
