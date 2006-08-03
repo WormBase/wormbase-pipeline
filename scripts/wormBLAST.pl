@@ -1,11 +1,11 @@
-#!/usr/local/bin/perl5.6.1 -w
+#!/nfs/disk100/wormpub/bin/perl
 #
 # wormBLAST.pl
 # 
 # written by Anthony Rogers
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2006-05-17 08:46:25 $
+# Last edited by: $Author: mh6 $
+# Last edited on: $Date: 2006-08-03 09:45:21 $
 
 
 use DBI;
