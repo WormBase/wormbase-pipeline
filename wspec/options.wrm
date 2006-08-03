@@ -67,7 +67,7 @@ _VMotif            -V -D WWW
 _VOperon           -V
 _VOligo		   -V
 _VUTR		   -V -D FMAP
-
+_VSAGE_tag	   -V -D FMAP
 
 // literature 
 
@@ -120,7 +120,6 @@ _VPhenotype	   -T Primary_name
 _VRNAi             -V
 _VSK_map	   -V
 _VTransgene        -V
-
 
 // microarray related
 
