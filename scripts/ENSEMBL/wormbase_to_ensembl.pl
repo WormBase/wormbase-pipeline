@@ -73,7 +73,7 @@ my $WB_DBHOST     = "ecs1f";
 my $WB_DBPORT     = "3306";		
 my $WB_DBNAME     = 'worm_WB160';#$ENV{'USER'}."_caenorhabditis_elegans_core_".$release;
 my $WB_DBUSER     = "wormadmin";		
-my $WB_DBPASS     = "worms";		
+my $WB_DBPASS     = "XXXX";		
 
 use lib '~/ensembl/ensembl-pipeline/scripts/DataConversion/wormbase';
 

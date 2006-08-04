@@ -72,7 +72,7 @@ use vars qw( %WormBaseConf );
 		 WB_DBNAME  => 'worm_WB160',
 		 WB_DBHOST  => 'ecs1f',
 		 WB_DBUSER  => 'wormadmin',
-		 WB_DBPASS  => 'worms',
+		 WB_DBPASS  => 'XXX',
 		 WB_DBPORT  => '3306',
 
 		 # if want the debug statements in wormbase to ensembl scripts printed

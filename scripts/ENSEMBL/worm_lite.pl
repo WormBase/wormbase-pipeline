@@ -66,7 +66,7 @@ sub setupdb {
     system("$mysql -e 'INSERT INTO meta (meta_key,meta_value) VALUES (\"genebuild.version\",\"$version\");' $db->{dbname}") && die;
     system("$mysql -e 'INSERT INTO analysis (created,logic_name,module) VALUES ( NOW(),\"wormbase\",\"wormbase\");INSERT INTO analysis_description VALUES(1,\"imported from WormBase\",\"WormGene\");' $db->{dbname}") && die;
     system("$mysql $db->{dbname} <attrib_type.sql") && die;
-    system("/nfs/team71/worm/mh6/bin/perl /nfs/acari/wormpipe/ensembl/ensembl-pipeline/scripts/load_taxonomy.pl -name \"Caenorhabditis $species\" -taxondbhost ecs2 -taxondbport 3365 -taxondbname ncbi_taxonomy -lcdbhost ecs1f -lcdbport 3306 -lcdbname worm_ensembl_$species -lcdbuser wormadmin -lcdbpass worms") && die;
+    system("/nfs/team71/worm/mh6/bin/perl /nfs/acari/wormpipe/ensembl/ensembl-pipeline/scripts/load_taxonomy.pl -name \"Caenorhabditis $species\" -taxondbhost ecs2 -taxondbport 3365 -taxondbname ncbi_taxonomy -lcdbhost ecs1f -lcdbport 3306 -lcdbname worm_ensembl_$species -lcdbuser wormadmin -lcdbpass ${\$config->{database}->{password}}") && die;
 
     if ($status) { die("Error while building the database.") }
 }
