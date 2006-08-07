@@ -22,6 +22,8 @@ my $member_adaptor = $compara_db->get_MemberAdaptor();
 # fetch a Member
 my $member = $member_adaptor->fetch_by_source_stable_id( 'ENSEMBLGENE', $ARGV[0] );
 
+$member->print_member;
+
 # then you get the homologies where the member is involved
 my $homology_adaptor = $compara_db->get_HomologyAdaptor();
 my $homologies       = $homology_adaptor->fetch_all_by_Member_method_link_type( $member, 'ENSEMBL_ORTHOLOGUES' );
