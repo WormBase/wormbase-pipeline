@@ -90,7 +90,7 @@ my @chromosomes = $test
 ################
 use Class::Struct;
 struct( Exon => [ start => '$', stop => '$', type => '$', id => '$' ] );
-struct( Gene => [ start => '$', stop => '$', exons => '@' ] );
+struct( Gene => [ start => '$', stop => '$', orientation => '$',parent => '$', exons => '@' ] );
 
 ################
 # Open logfile #
