@@ -5,9 +5,9 @@
 #
 # This maps alleles to the genome based on their flanking sequences
 #
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2006-08-02 16:22:45 $
-# SubVersion :     $Revision: 1.47 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2006-08-08 15:11:43 $
+# SubVersion :     $Revision: 1.48 $
 
 use strict;
 use warnings;
@@ -183,7 +183,7 @@ sub map_alleles {
     # First get allele info from database
     my $db = Ace->connect( -path => $database ) || do { print "$database Connection failure: ", Ace->error; die(); };
     my $mapper = Feature_mapper->new( $database, undef, $wb );
-    my @alleles = $db->fetch( -query => 'Find Variation WHERE Flanking_sequences' );    #very slow :-(
+    my @alleles = $db->fetch( -query => 'Find Variation WHERE Flanking_sequences AND species = "Caenorhabditis elegans"' );    #very slow :-(
 
     open( OUT, ">$ace_file" ) or die "cant open $ace_file\n";
 
