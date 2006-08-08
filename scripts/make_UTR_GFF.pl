@@ -15,7 +15,7 @@
 #      COMPANY:
 #      VERSION:  2 
 #      CREATED:  21/02/06 14:11:30 GMT
-#     REVISION:  $Revision: 1.13 $ 
+#     REVISION:  $Revision: 1.14 $ 
 #===============================================================================
 
 use strict;
@@ -52,7 +52,7 @@ if ($chrom) {
     push( @chromosome, $chrom );
 }
 else {
-    @chromosome = qw( I II III IV V X );
+    @chromosome = qw( I II III IV V X MtDNA);
 }
 
 # globale setup setup
