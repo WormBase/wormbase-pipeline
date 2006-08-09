@@ -417,7 +417,10 @@ exit(0);
 	}
       }
       # output best matches
-      my @to_output = qw(wublastp_worm wublastp_human wublastp_briggsae wublastp_fly wublastp_yeast wublastp_slimswissprot wublastp_slimtrembl);
+      my @to_output;
+      foreach (sort {$a<=>$b} keys %processIds2prot_analysis ) {
+      	push(@to_output,$processIds2prot_analysis{$_}) if ($processIds2prot_analysis{$_} =~ /wublast/);
+     	}	
       print BEST "$pid";
       foreach my $ana (@to_output) {
 	if ($BEST{$ana}) {
