@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: ar2 $
-// Last edited on: $Date: 2006-07-21 08:05:50 $
+// Last edited on: $Date: 2006-08-09 15:03:07 $
 
 
 
@@ -2486,7 +2486,7 @@
                         Editor ?Text            //used for books put in as whole objects
                         Page  UNIQUE  Text UNIQUE Text
                         Volume UNIQUE Text Text
-                        Year UNIQUE Int
+                        Year UNIQUE Datetype   //changed from Int for Tristan to help WormBook links
                         In_book #Paper
                         Contained_in ?Paper XREF Contains       // old form
         Author ?Author XREF Paper #Affiliation
