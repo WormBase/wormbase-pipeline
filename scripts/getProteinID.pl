@@ -8,7 +8,7 @@
 # written by Dan Lawson
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2006-02-24 15:28:39 $
+# Last edited on: $Date: 2006-08-10 09:05:36 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -118,7 +118,7 @@ my ($dbxref_ac,$dbxref_id,$dbxref_db);
 # genome entry
 # AC006633        10      AAK68374        1       3313183671      F35B3.3     Q966K1   F35B3.3
 
-open (FILE, "<$file") || die "Can't open the protein_ID file\n";
+open (FILE, "<$file") || $log->log_and_die("Can't open the protein_ID file\n");
 while (<FILE>) {
     chomp;
     next if ($_ eq "");
