@@ -6,8 +6,8 @@
 #
 # Exporter to map blat data to genome and to find the best match for each EST, mRNA, OST, etc.
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2006-03-10 11:04:12 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2006-08-14 15:41:30 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -311,6 +311,10 @@ while (<BLAT>) {
 	  }		
       }		
       
+      # 1 out of 8000,000 cDNAs ends up with 0 as a start and breaks the mapping, this hack is to stop it
+      $virtualstart++ if($virtualstart == 0);
+      $query_start++ if ($query_start == 0);
+
       # write to output file
       print ACE "Homol_data : \"$virtual\"\n";
       if ($type eq "nematode" || $type eq "washu" || $type eq "nembase") {
@@ -566,9 +570,8 @@ unless ($nematode || $washu || $nembase) {
   }
 }
 
-##############################
-# hasta luego                #
-##############################
+#compress acefiles so that all object data is loaded together.
+$wormbase->run_script("acecompress.pl -file $blat_dir/autoace.best.$type.ace -homol", $log);
 
 $log->mail;
 print "Finished.\n" if ($verbose);
