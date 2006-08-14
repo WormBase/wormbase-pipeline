@@ -6,8 +6,8 @@
 #
 # This is a example of a good script template
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2006-04-12 13:41:48 $
+# Last updated by: $Author: pad $
+# Last updated on: $Date: 2006-08-14 15:53:15 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -161,7 +161,7 @@ sub read_acedb_queries {
 
     $queries[$i]{'DESC'}   = "Inverted repeat Feature_data without features";
     $queries[$i]{'QUERY'}  = 'find Feature_data *inverted !feature';
-    $queries[$i]{'RESULT'} = 505;
+    $queries[$i]{'RESULT'} = 188;
 
     $i++;
     $queries[$i]{'DESC'}   = "TRF repeat Feature_data without features";
