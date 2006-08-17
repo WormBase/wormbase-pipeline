@@ -5,7 +5,7 @@
 # A script to make multiple copies of camace for curation, and merge them back again
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2006-07-20 11:29:38 $
+# Last edited on: $Date: 2006-08-17 15:53:05 $
 
 
 use strict;
@@ -202,7 +202,11 @@ sub update_camace {
   
   # upload BLAT results to database
   print "Update BLAT results in $canonical\n";
-  system ("load_blat2db.pl -all -dbdir $canonical") && die "Failed to run load_blat2db.pl\n";
+  $wormbase->run_script("load_blat2db.pl -all -dbdir $canonical") && die "Failed to run load_blat2db.pl\n";
+
+  # Update and load blastx results to the database
+  print "Update blastx results in $canonical\n";
+  $wormbase->run_script("/nfs.disk100/wormpub/wormbase/scripts/misc/split_blastx_by_centre.pl -version $WS_version -update") && die "Failed to update the blastx data in camace using split_blastx_by_centre.pl\n";
 
   #check Canonical Database to see if there are any errors prior to the build starting.
   # system ("camcheck.pl") && die "Failed to run camcheck.pl\n";
