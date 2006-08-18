@@ -6,7 +6,7 @@
 # 19.02.02 Kerstin Jekosch
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2006-07-27 09:55:31 $
+# Last edited on: $Date: 2006-08-18 16:20:41 $
 
 use strict;
 use Getopt::Long;
@@ -27,7 +27,20 @@ $wormbase = Wormbase->new( -debug => $debug,
 			     );
 
 my $tace =  $wormbase->tace;
-my $blat_dir = "/nfs/disk100/wormpub/BUILD/autoace/BLAT";
+my $blat_dir;
+
+# has the build finished?? script needs to look at /nfs/disk100/wormpub/BUILD/autoace/BLAT, if it doesnt exist use current_db/BLAT!!
+if (!-d $wormbase->blat."/virtual_objects.camace.blat.est.ace"){
+  print "The build must have finished you are now going to use " .$wormbase->database('current')."/BLAT\n\n";
+  #$log->write_to( "The build must have finished you are now going to load data from current_db\n");
+  $blat_dir = ($wormbase->database('current')."/BLAT");
+}  
+elsif (-d $wormbase->blat."virtual_objects.camace.blat.est.ace"){
+  print "The build is still there.....\n\n";
+  $blat_dir = $wormbase->blat;
+}
+
+
 
 print STDERR "Give the full path for the database you want to modify!\n" unless ($dbdir);
 print STDERR "usage load_blat2db.pl <-options: load/delete or all for both> -dbdir <path to your database>\n" if ($help);

@@ -139,7 +139,7 @@ close $out;
 close $cam_out;
 close $stl_out;
 
-$log->mail($wormbase);
+#$log->mail("pad\@sanger.ac.uk");
 
 exit(0);
 

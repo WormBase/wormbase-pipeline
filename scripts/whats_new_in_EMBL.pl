@@ -6,8 +6,8 @@
 #
 # checks EMBL for new EST or mRNA entries
 #
-# Last updated by: $Author: ar2 $                      
-# Last updated on: $Date: 2006-06-15 08:54:41 $        
+# Last updated by: $Author: pad $                      
+# Last updated on: $Date: 2006-08-18 16:20:41 $        
 
 use strict;
 use Getopt::Long;
@@ -20,14 +20,16 @@ use Modules::Features;
 # Variables                  #
 ##############################
 
-my ($help, $debug, $days, $wormbase, $test);
+my ($help, $debug, $days, $wormbase, $test, $version);
 my $maintainers = "All";
 my $getz   = "/usr/local/pubseq/bin/getzc"; # getz binary
 
 GetOptions ("help"     => \$help,
             "debug=s"  => \$debug,
             "days=s"   => \$days,
-	    "test"     => \$test);
+	    "test"     => \$test,
+	    "version:s"=> \$version);
+
 	   
 
 # help page	   
@@ -51,14 +53,20 @@ my $log = Log_files->make_build_log($wormbase);
 
 our $buildtime       = 21;                                                # length of build in days
 my $date             = &get_date;
-
+my $next_build = $version +1;
 my $new_elegans_mRNA = 0;                                                 # Counts for the various classes
 my $new_elegans_EST  = 0;
 my $new_nematode_EST = 0;
 my $non_elegans_ESTs = 0;
 my $new_EMBL_CDS     = 0;
+my $outdir;
 
-my $outdir  = ($debug) ? '/tmp/' : '/nfs/disk100/wormpub/camace_orig';
+if ($version){
+  $outdir  = "/nfs/disk100/wormpub/camace_orig/WS$version\-WS$next_build";
+}
+else{  
+  $outdir  = ($debug) ? '/tmp/' : '/nfs/disk100/wormpub/camace_orig';
+}
 
 our $acc;                 # EMBL accession
 our $id;                  # EMBL ID
@@ -222,7 +230,7 @@ if ($new_elegans_EST > 0) {
 		print OUT_ACE "Database EMBL NDB_SV $sv\n";
 		print OUT_ACE "Protein_id $acc $protid $protver\n";
 		print OUT_ACE "Species \"Caenorhabditis elegans\"\n";
-		print OUT_ACE "Title \"$def\"\nMethod elegans_EST\n";
+		print OUT_ACE "Title \"$def\"\nMethod EST_elegans\n";
 		print OUT_ACE "\nDNA \"$acc\"\n";
 	    }
 	}
@@ -330,8 +338,7 @@ sub get_date {
 		     'Nov' => '11',
 		     'Dec' => '12'
 		    );
-    
-      
+ 
     my $t = time - ($days * 86400);
     my $play = scalar localtime $t;
     my ($month,$day,$year) = $play =~ (/\S+\s+(\S+)\s+(\d+)\s+\S+\s+(\d+)/);
