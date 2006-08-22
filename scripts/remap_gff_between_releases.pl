@@ -9,7 +9,7 @@
 #
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2006-06-06 09:29:56 $      
+# Last updated on: $Date: 2006-08-22 10:07:56 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -94,7 +94,7 @@ while (my $line = <GFF>) {
 
       my ($chromosome, $start, $end, $sense) = ($f[0], $f[3], $f[4], $f[6]);
       print "chrom, start, end=$chromosome, $start, $end\n" if ($verbose);
-      ($f[3], $f[4], $indel, $change) = Remap_Sequence_Change::remap_ace($chromosome, $start, $end, $release1, $release2, @mapping_data);
+      ($f[3], $f[4], $indel, $change) = Remap_Sequence_Change::remap_gff($chromosome, $start, $end, $release1, $release2, @mapping_data);
  
       if ($indel) {
 	$log->write_to("There is an indel in the sequence in CHROMOSOME $chromosome, $start, $end - no change made!\n");
