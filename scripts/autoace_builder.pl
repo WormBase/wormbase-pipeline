@@ -7,7 +7,7 @@
 # Usage : autoace_builder.pl [-options]
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2006-06-06 08:16:20 $
+# Last edited on: $Date: 2006-08-24 17:02:48 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -197,7 +197,8 @@ sub first_dumps {
         }
         close(AGP);
     }
-    $log->write_to("ERRORS ( $agp_errors ) in agp file\n");
+    
+	$log->write_to("ERRORS ( $agp_errors ) in agp file\n");
 }
 
 sub map_features {
@@ -257,7 +258,20 @@ sub remap_misc_dynamic {
   if (-e $backup_fosmids) {$log->log_and_die("$backup_fosmids already exists - please move it to be $fosmids before running this again\n");}
   $wormbase->run_command("cp $fosmids $backup_fosmids", $log);
   $wormbase->run_script( "remap_fosmids_between_releases.pl -input $backup_fosmids -out $fosmids", $log);
-
+   
+  # remap and copy over the SUPPLEMENTARY_GFF dir from BUILD_DATA
+  my $sup_dir = $wormbase->build_data."/SUPPLEMENTARY_GFF";
+  my $release = $wormbase->version;
+  my $old_release = $release - 1;
+  opendir(DIR,$sup_dir) or $log->log_and_die("cant open $sup_dir: $!\n");
+  while ( my $file = readdir( DIR ) ) {
+  		next unless( $file =~ /gff$/ );
+	  	$wormbase->run_script("remap_gff_between_releases.pl -gff $sup_dir/$file -output /tmp/remap_GFF -release1 $old_release -release2 $release", $log);
+	  	$wormbase->run_command("mv /tmp/remap_GFF $sup_dir/$file", $log);
+  	}
+  	closedir DIR;
+  	$wormbase->run_command("cp -R ".$wormbase->build_data."/SUPPLEMENTARY_GFF ".$wormbase->chromosomes."/");
+   
   # remap waba (takes a long time ~24 hours)
 #  my $waba = $wormbase->misc_dynamic."/waba.ace";
 #  my $backup_waba = "$waba.$previous_release";
