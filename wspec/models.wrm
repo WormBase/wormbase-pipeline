@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: ar2 $
-// Last edited on: $Date: 2006-08-09 15:03:07 $
+// Last edited on: $Date: 2006-08-29 08:43:19 $
 
 
 
@@ -261,6 +261,7 @@
                                 Dead #Evidence   
         Gene_info Gene_class UNIQUE ?Gene_class XREF Genes
                   Laboratory ?Laboratory
+		  Cloned_by #Evidence      //[29 Aug 2006 ar2 - added for mt3 for acreditation of person who cloned gene
                   Reference_allele ?Variation #Evidence
                   Allele ?Variation XREF Gene #Evidence
                   Phenotype ?Text #Evidence
@@ -689,6 +690,7 @@
 	  Inferred_automatically Text                                 // bless the data via a script
 	  Date_last_updated UNIQUE DateType                           // Stores last update timestamp
 	  Feature_evidence ?Feature				      // Reference a Feature - eg for creation of isoform based on TEC-RED SL2
+	  Laboratory_evidence ?Laboratory                             // Reference a Lab
 
 ////////////////////////////////////////////////////////
 //
