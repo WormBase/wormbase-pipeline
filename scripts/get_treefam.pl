@@ -60,10 +60,10 @@ use DBI;
 # GET THE LONG NAMES OF THE TREEFAM GENES FROM THE MYSQL DATABASE:
 
 my %WORM                      = (); # HASH TABLE TO KEEP A LIST OF WORM GENES IN TREEFAM.
-my $database                  = 'treefam_2';
+my $database                  = 'treefam_3';
 
-$log->write_to("connecting to treefam database : \tmysql:treefam_2:db.treefam.org:3308\n");
-my $dbh                       = DBI->connect("dbi:mysql:treefam_2:db.treefam.org:3308", 'anonymous', '') || return;
+$log->write_to("connecting to treefam database : \tmysql:treefam_3:db.treefam.org:3308\n");
+my $dbh                       = DBI->connect("dbi:mysql:treefam_3:db.treefam.org:3308", 'anonymous', '') || return;
 my $table_w                   = 'genes';
 # THIS TABLE HAS THE ID AND DISPLAY ID. SOMETIMES THE DISPLAY ID IS
 # THE UNIPROT NAME, SOMETIMES THE ID IS:
@@ -93,7 +93,7 @@ $rc                        = "";
 # THEM FROM THE MYSQL DATABASE:
 
 $database                  = 'treefam';
-$dbh                       = DBI->connect("dbi:mysql:treefam_2:db.treefam.org:3308", 'anonymous', '') || return;
+$dbh                       = DBI->connect("dbi:mysql:treefam_3:db.treefam.org:3308", 'anonymous', '') || return;
 # FIRST READ IN TREEFAM-A AND THEN TREEFAM-B:
 
 my %FAMILY                    = (); # HASH TABLE TO KEEP A RECORD OF THE TREEFAM FAMILIES THAT A WORM GENE IS IN.
@@ -114,7 +114,7 @@ for (my $i = 1; $i <= 2; $i++)
    # TRANSCRIPT IS IN THE SEED/FULL TREE:
    # eg., ENSMUST00000049178.2 TF105085 FULL
 
-   my $st                     = "SELECT ID, AC, FLAG from $table_w"; 
+   my $st                     = "SELECT ID, AC, FLAG from $table_w where ID like 'T10A3.1%'"; 
    my $sth                    = $dbh->prepare($st) or die "Cannot prepare $st: $dbh->errstr\n";
    my $rv                     = $sth->execute or die "Cannot execute the query: $sth->errstr";
    if ($rv >= 1)
@@ -170,7 +170,7 @@ foreach my $ID (keys %FAMILY)
      $gene_obj = $db->fetch(Gene_name => "$gene");
    }
    if ($gene_obj) {
-     $gene_obj = $gene_obj->Sequence_name_for;
+     $gene_obj = $gene_obj->Molecular_name_for;
    }
    if ( $gene_obj ) {
      if ( my $cds = $gene_obj->Corresponding_CDS ) {
