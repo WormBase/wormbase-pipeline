@@ -156,7 +156,9 @@ _VGO_term	   -V
 _VSO_term	   -V
 _VGO_code	   -V
 
-
+// Mass Spec class
+_VMass_spec_experiment  -V
+_VMass_spec_peptide     -V -D FMAP
 
 
 
