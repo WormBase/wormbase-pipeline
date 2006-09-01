@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl -w
-# Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2006-05-17 08:53:40 $      
+# Last updated by: $Author: wormpub $     
+# Last updated on: $Date: 2006-09-01 14:42:02 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -59,7 +59,7 @@ sub parse_misc_files {
 		       $wormbase->misc_dynamic."/misc_TEC_RED_homol.ace"        => "TEC_RED"               ,
 		       $wormbase->misc_dynamic."/WS145_refseq.ace"              =>  'refseq_IDs'           ,
 		       $wormbase->misc_dynamic."/WS145_aceview.ace"             =>  'aceview_IDs'          ,
-		       $wormbase->misc_static."/ortholog_WS131.ace"             => "briggsae_orthologs"    ,
+#		       $wormbase->misc_static."/ortholog_WS131.ace"             => "briggsae_orthologs"    ,
 		       $wormbase->misc_static."/misc_TEC_RED_sequence_data.ace" => "TEC_RED"           ,
 		       $wormbase->acefiles."/other_nematode_ESTs.ace"           => 'nematode_ESTs'         ,
 		       $wormbase->acefiles."/nembase_nematode_contigs.ace"      => 'nembase_ESTs'          ,
