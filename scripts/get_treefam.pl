@@ -114,7 +114,7 @@ for (my $i = 1; $i <= 2; $i++)
    # TRANSCRIPT IS IN THE SEED/FULL TREE:
    # eg., ENSMUST00000049178.2 TF105085 FULL
 
-   my $st                     = "SELECT ID, AC, FLAG from $table_w'"; 
+   my $st                     = "SELECT ID, AC, FLAG from $table_w"; 
    my $sth                    = $dbh->prepare($st) or die "Cannot prepare $st: $dbh->errstr\n";
    my $rv                     = $sth->execute or die "Cannot execute the query: $sth->errstr";
    if ($rv >= 1)
