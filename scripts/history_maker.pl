@@ -727,15 +727,15 @@ sub connect_to_database {
 
   if ($lab eq "HX") {
 
-    $dbsn = "DBI:mysql:database=worm_anomaly;host=ecs1f";
+    $dbsn = "DBI:mysql:database=worm_anomaly;host=ia64b";
     $dbuser = "wormadmin";
     $dbpass = "worms";
 
   } else {			# for St. Louis
 
-    $dbsn = "DBI:mysql:database=worm_anomaly;host=XXXXX";
-    $dbuser = "XXXXXX";
-    $dbpass = "XXXXXX";
+    $dbsn = "DBI:mysql:database=worm_anomaly;host=ia64b";
+    $dbuser = "wormadmin";
+    $dbpass = "worms";
 
   }
 

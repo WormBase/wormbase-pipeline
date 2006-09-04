@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2006-07-24 09:12:22 $      
+# Last updated on: $Date: 2006-09-04 12:20:16 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -73,7 +73,7 @@ my $tace            = $wormbase->tace;        # TACE PATH
 ##########################
 
 # mysql database parameters
-my $dbsn = "DBI:mysql:database=worm_anomaly;host=ecs1f";
+my $dbsn = "DBI:mysql:database=worm_anomaly;host=ia64b";
 my $dbuser = "wormadmin";
 my $dbpass = "worms";
 
