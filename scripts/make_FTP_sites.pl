@@ -7,8 +7,8 @@
 # 
 # Originally written by Dan Lawson
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2006-05-25 12:50:24 $
+# Last updated by: $Author: wormpub $
+# Last updated on: $Date: 2006-09-06 13:14:21 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -186,7 +186,7 @@ sub copy_chromosome_files{
 
   opendir (DNAGFF,"$ace_dir/CHROMOSOMES") or croak ("Could not open directory $ace_dir/CHROMOSOMES");
   while (defined($filename = readdir(DNAGFF))) {
-    if (($filename eq ".")||($filename eq "..")) { next;}
+    if (($filename eq ".")||($filename eq "..")||($filename eq "SUPPLEMENTARY_GFF")) { next;}
     $wormbase->run_command("scp $ace_dir/CHROMOSOMES/$filename $targetdir/$WS_name/CHROMOSOMES/$filename", $log);
     my $O_SIZE = (stat("$ace_dir/CHROMOSOMES/$filename"))[7];
     my $N_SIZE = (stat("$targetdir/$WS_name/CHROMOSOMES/$filename"))[7];
@@ -196,6 +196,21 @@ sub copy_chromosome_files{
     } 
   }
   closedir DNAGFF;
+
+  $wormbase->run_command("mkdir $targetdir/$WS_name/CHROMOSOMES/SUPPLEMENTARY_GFF", $log) unless -e "$targetdir/$WS_name/CHROMOSOMES/SUPPLEMENTARY_GFF";
+    opendir (DNAGFFSUP,"$ace_dir/CHROMOSOMES/SUPPLEMENTARY_GFF") or croak ("Could not open directory $ace_dir/CHROMOSOMES/SUPPLEMENTARY_GFF");
+  while (defined($filename = readdir(DNAGFFSUP))) {
+    if (($filename eq ".")||($filename eq "..")) { next;}
+    $wormbase->run_command("scp $ace_dir/CHROMOSOMES/SUPPLEMENTARY_GFF/$filename $targetdir/$WS_name/CHROMOSOMES/SUPPLEMENTARY_GFF/$filename", $log);
+    my $O_SIZE = (stat("$ace_dir/CHROMOSOMES/SUPPLEMENTARY_GFF/$filename"))[7];
+    my $N_SIZE = (stat("$targetdir/$WS_name/CHROMOSOMES/SUPPLEMENTARY_GFF/$filename"))[7];
+    if ($O_SIZE != $N_SIZE) {
+      $log->write_to("\tError: $filename SRC: $O_SIZE TGT: $N_SIZE - different file sizes, please check\n");
+      croak "Couldn't copy SUPPLEMENTARY_GFF/$filename\n";
+    } 
+  }
+  closedir DNAGFFSUP;
+
   $runtime = $wormbase->runtime;
   $log->write_to("$runtime: Finished copying\n\n");
 }
