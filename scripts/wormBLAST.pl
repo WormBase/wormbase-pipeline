@@ -4,8 +4,8 @@
 # 
 # written by Anthony Rogers
 #
-# Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2006-08-03 09:45:21 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2006-09-06 10:49:10 $
 
 
 use DBI;
@@ -83,7 +83,7 @@ if( $run_pipeline ) {
   $blastx = 1; $blastp =1;
 }
 
-die "please give a build version number ie  wormBLAST -version 114\n" unless $WS_version;
+$WS_version = $wormbase->get_wormbase_version;
 my $WS_old = $WS_version - 1;
 my $scripts_dir = $ENV{'CVS_DIR'};
 #process Ids
@@ -220,7 +220,7 @@ if( $mail )
 
 
 # mysql database parameters
-my $dbhost = "ecs1f";
+my $dbhost = "ia64b";
 my $dbuser = "wormadmin";
 my $dbname = "worm_dna";
 my $dbpass = "worms";
@@ -233,7 +233,8 @@ my $worm_pep;   #wormprot Db handle
 # update mySQL database
 if( $update_mySQL )
   {
-    print "Updating mysql databases\n";
+    print "Updating mysql databases with new clone and protein info\n";
+    $log->write_to("Updating mysql databases\n-=-=-=-=-=-=-=-=-=-=-\n");
     #make worm_dna connection
     $worm_dna = DBI -> connect("DBI:mysql:$dbname:$dbhost", $dbuser, $dbpass, {RaiseError => 1})
       || die "cannot connect to db, $DBI::errstr";
@@ -267,12 +268,13 @@ if( $update_mySQL )
     
     #Make a concatenation of all six agp files from the last release to ~/Elegans  e.g.
     print "\tconcatenating agp files\n";
+    $log->write_to("concatenating agp files\n");
     # this is a bit iffy as 
     $wormbase->run_command("cat ". $wormbase->autoace."/CHROMOSOMES/*.agp > $wormpipe_dir/Elegans/WS$WS_version.agp", $log);
     
     #load information about any new clones
     print "\tloading information about any new clones in to $dbname\n";
-    $wormbase->run_script("BLAST_scripts/agp2ensembl.pl -dbname worm_dna -dbhost ecs1f -dbuser wormadmin -dbpass worms -agp $wormpipe_dir/Elegans/WS$WS_version.agp -write -v -strict -fasta ".$wormbase->autoace."/allcmid", $log);
+    $wormbase->run_script("BLAST_scripts/agp2ensembl.pl -dbname worm_dna -dbhost ia64b -dbuser wormadmin -dbpass worms -agp $wormpipe_dir/Elegans/WS$WS_version.agp -write -v -strict -fasta ".$wormbase->autoace."/allcmid", $log);
     
     #check that the number of clones in the clone table equals the number of contigs and dna objects
     my ($clone_count, $contig_count, $dna_count);
@@ -290,9 +292,7 @@ if( $update_mySQL )
 
     print "checking clone contig and dna counts . . .";
     if( ($clone_count != $contig_count) or ($contig_count != $dna_count ) ){
-      print "\nthe number of clones, contigs and DNAs is inconsistant\n
-clones = $clone_count\ncontigs = $contig_count\ndna = $dna_count\n";
-      exit(0);
+	$log->log_and_die("\nthe number of clones, contigs and DNAs is inconsistant\nclones = $clone_count\ncontigs = $contig_count\ndna = $dna_count\n");
     }
     else {
       print "OK\n";
@@ -311,6 +311,7 @@ clones = $clone_count\ncontigs = $contig_count\ndna = $dna_count\n";
 
     #add new peptides to MySQL database
     print "\n\nAdding new peptides to $dbname\n";
+    $log->write_to("adding new proteins to $dbname\n");
     #make protein database connection
     $dbname = "worm_pep";
     $worm_pep = DBI -> connect("DBI:mysql:$dbname:$dbhost", $dbuser, $dbpass, {RaiseError => 1})
@@ -330,10 +331,10 @@ clones = $clone_count\ncontigs = $contig_count\ndna = $dna_count\n";
     @results = &single_line_query( $query, $worm_pep );
     my $new_topCE = $results[0];
     if( "$old_topCE" eq "$new_topCE" ) {
-      print "\tNO new peptides were added to the $dbname mysql database\n";
+      $log->write_to("\tNO new peptides were added to the $dbname mysql database\n");
     }
     else {
-      print "\tnew highest proteinId is $new_topCE (old was $old_topCE )\n";
+      $log->write_to("\tnew highest proteinId is $new_topCE (old was $old_topCE )\n");
     }
 
     $worm_pep->disconnect;
@@ -523,18 +524,12 @@ if($setup_mySQL){
 my $bdir = "/nfs/farm/Worms/Ensembl/ensembl-pipeline/modules/Bio/EnsEMBL/Pipeline";
 
 if( $blastx ) {
-  die "can't run pipeline whilst wormsrv2 is mounted - please exit and try again\n" if (-e "/wormsrv2");
-
-  &run_RuleManager('worm_dna','dna');
+   &run_RuleManager('worm_dna','dna');
 }
 
 if( $blastp ){
-
-  die "can't run pipeline whilst wormsrv2 is mounted - please exit and try again\n" if (-e "/wormsrv2");
-
   &run_RuleManager('worm_pep','pep');
   &run_RuleManager('worm_brigpep','pep');
-
 }
 
 
@@ -546,13 +541,6 @@ if( $prep_dump ) {
   if( -e $wormbase->gff_splits."/CHROMOSOME_X_curated.gff") {
     $wormbase->run_command("cat ".$wormbase->gff_splits."/CHROMOSOME_*_curated.gff | $scripts_dir/BLAST_scripts/gff2cds.pl > /nfs/acari/wormpipe/Elegans/cds$WS_version.gff", $log);
     $wormbase->run_command("cat ".$wormbase->gff_splits."/CHROMOSOME_*_Genomic_canonical.gff   | $scripts_dir/BLAST_scripts/gff2cos.pl > /nfs/acari/wormpipe/Elegans/cos$WS_version.gff",$log);
-#not reqd    $wormbase->run_command("cp /wormsrv2/WORMPEP/wormpep$WS_version/wormpep.diff$WS_version $wormpipe_dir/dumps/", $log);
-#    $wormbase->run_command("cp /wormsrv2/WORMPEP/wormpep$WS_version/new_entries.WS$WS_version $wormpipe_dir/dumps/", $log);
-#    $wormbase->run_command("cp $autoace/COMMON_DATA/wormpep2cds.dat $wormpipe_dir/dumps/", $log);
-#    $wormbase->run_command("cp $autoace/COMMON_DATA/cds2wormpep.dat $wormpipe_dir/dumps/", $log);
-#    $wormbase->run_command("cp $autoace/COMMON_DATA/accession2clone.dat $wormpipe_dir/dumps/", $log);
-#    $wormbase->run_command("cp $autoace/COMMON_DATA/clonesize.dat $wormpipe_dir/dumps/", $log);
-#not reqd    $wormbase->run_command("cp $autoace/COMMON_DATA/clonesize.dat /nfs/disk100/wormpub/DATABASES/autoace/COMMON_DATA/", $log);
     
     system("touch $wormpipe_dir/DUMP_PREP_RUN");
   }
@@ -566,7 +554,7 @@ if( $dump_data )
   {
     $log->log_and_die("The -dump option is not in use\n\n");
     unless ( -e "$wormpipe_dir/DUMP_PREP_RUN" ) {
-      print "Please run wormBLAST.pl -prep_dump version $WS_version    before dumping\n\nTo dump you CAN NOT have wormsrv2 mounted\n\n";
+      print "Please run wormBLAST.pl -prep_dump version $WS_version    before dumping\n\n";
       exit(0);
     }
 
@@ -686,22 +674,7 @@ sub wait_for_pipeline_to_finish
     return;
   }
 
-sub check_wormsrv2_conflicts
-  {
-    if( ( -e "/wormsrv2" ) && ($update_databases || $blastx || $blastp || $dump_data) )
-      {
-	print "no can do - to run the blast pipeline wormsrv2 can NOT be mounted.  Your options conflict with this.\nthe following options REQUIRE wormsrv2 to not be mounted \n\t-databases\n\t-blastx\t-blastp\t-dump\t-run\t-testpipe\t-run_brig\t-cleanup\n\n";
-	exit (1);
-      }
-    elsif( !(-e "/wormsrv2") && ($chromosomes || $wormpep  || $update_mySQL || $prep_dump) ) {
-      print "The following option need access to wormsrv2 and it aint there (rsh wormsrv2 )\n";
-      print "-chromosomes\t-wormpep\t-databases\t-updatemysql\t-prep_dump\n";
-      exit(1);
-    }
-    else {
-      print "wormsrv2 requirements and command line options checked and seem OK \n";
-    }
-  }
+
 
 sub update_database
   {
@@ -804,16 +777,14 @@ B<NONE>
 
 I<wormBLAST.pl  Overview:>
 
-This script is a collection of subroutines that automate the BLAST part of the Wormbase build process.  It keeps track of which databases are being used in the files ~wormpipe/BlastDB/databases_used_WSXX and databases_used_WSXX-1.  There are certain problems with this at the moment mounting acari and wormsrv2.  Most of this can be run from wormsrv2, but when actually running and dumping do this on acari.  The Wormbase.pm module is used by this script, so until all the Pipeline scripts are under CVS we'll have to live with it.
+This script is a collection of subroutines that automate the BLAST part of the Wormbase build process.  It keeps track of which databases are being used in the files ~wormpipe/BlastDB/databases_used_WSXX and databases_used_WSXX-1.
 
 
 I<wormBLAST.pl  OPTIONAL arguments:>
 
-B<-version XX>    Certain parts of this script dont work if wormsrv2 is mounted which makes getting the current build version via Wormbase.pm difficult!  So, now Wormbase.pm is not used at all and you have to enter the version of the database being built on the command line.  If you dont the script will stop and tell you so.
+B<-chromosomes> Runs ~wormpipe/Pipeline/copy_files_to_acari.pl -c to copy the newly formed chromosomes from the build and cats them in to one
 
-B<-chromosomes> Runs ~wormpipe/Pipeline/copy_files_to_acari.pl -c to copy the newly formed chromosomes from /wormsrv2 and cats them in to one
-
-B<-wormpep>      Runs ~wormpipe/Pipeline/copy_files_to_acari.pl -c to take the new wormpepXX file from /wormsrv2/WORMPEP and creates a BLASTable database (setdb)
+B<-wormpep>      Runs ~wormpipe/Pipeline/copy_files_to_acari.pl -c to take the new wormpepXX file from WORMPEP and creates a BLASTable database (setdb)
 
 B<-databases>    Checks existing database files (slimtremblXX.pep etc) against what was used last time and updates them.  It takes the new .pep file and runs setdb.  Modifies the databases_used_WSXX file to reflect changes.  This will ensure that the update propegates to the remainder of the process.
 
@@ -822,8 +793,6 @@ B<-mail>           Creates and sends a mail to systems to distribute new databas
 B<-updatemysql>    Updates any new databases to be used in MySQL.  
 
 B<-setup>          Prepares MySQL for the pipeline run.  Performs the 'delete' commands so that new data is included in the run
-
-B<you must NOT have wormsrv2 mounted when running blast jobs>
 
 B<-run>            Actually starts the BLAST analyses.  Does a single analysis at a time based on what new databases are being used, plus a couple of "do everything runs" to finish it all off.
 The BLAST pipeline is limited so that we can only have one RuleManager running at a time.  These means that even if all the balstx jobs have been submitted we cant start the blastp run until they have all gone through.  Therefore the script allows the running of these separately by using the -blastx and -blastp options.  Both can be entered together (same as -run).  If this is done the script will monitor the progress of the blastx jobs (done 1st) and only start the blastp run when this has finished.
