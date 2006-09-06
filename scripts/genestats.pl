@@ -6,8 +6,8 @@
 #
 # Usage : genestatsr.pl [-options]
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2006-02-17 11:32:47 $
+# Last edited by: $Author: wormpub $
+# Last edited on: $Date: 2006-09-06 15:41:34 $
  
 
 use strict;                                      
@@ -83,7 +83,7 @@ $command .= "query where RNAi_result\n";
 $command .= "spop\nspush\n";
 $command .= "query where Microarray_results\n";
 $command .= "spop\nspush\n";
-$command .= "query where SAGE_transcript\n";
+$command .= "query where SAGE_tag\n";
 $command .= "quit\n";
 
 # database connection
