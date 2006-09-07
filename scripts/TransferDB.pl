@@ -4,7 +4,7 @@
 #
 # by ag3 [991221]
 #
-# Last updated on: $Date: 2006-04-18 12:53:28 $
+# Last updated on: $Date: 2006-09-07 15:23:42 $
 # Last updated by: $Author: pad $
 
 # transferdb moves acedb database files across filesystems.
@@ -54,7 +54,7 @@ my $S_all;             # -all: all of the above
 my $file;              # ???
 my $retry = 5;         # for making repeat attempts to copy a file
 my $test;              # test mode, logs go to ~wormpub/TEST_BUILD/logs
-my $split;             # -split: changes cp function for models.wrm if splitting camace
+my $split;             # -split: changes cp function for models.wrm and database.wrm if splitting camace
 my $store;
 my $wormbase;
 
@@ -233,7 +233,7 @@ elsif ($backup &&(-d $bck_subdir)) {
 $log->write_to( "\n=============================================\n");
 if( @failed_files ) {
   $log->write_to( "TransferDB process $$ ended in FAILURE  at ",$wormbase->runtime,"\n\n");
-  $log->write_to( "\n\nThe following ",scalar @failed_files," files were NOT copied correctly \n");
+  $log->write_to( "\n\nThe following " .scalar @failed_files. " files were NOT copied correctly \n");
   foreach ( @failed_files ) {
     $log->write_to( "\t$_\n");
   }
@@ -359,7 +359,13 @@ sub process_file {
 	my $cp_val;
 
 	if( ($filename =~ m/models\.wrm$/) && (!$split) ){
+	  $log->write_to( "differs in cp method\n\n\n");
 	  $cp_val = system("\/usr/bin/cp -R $s_file $e_file") 
+	}
+	# Want to keep the current database.wrm in each split database so that each has a unique name.
+	elsif( ($filename =~ m/database\.wrm$/) && ($split) ){
+	 $log->write_to( "job done\n\n\n\n\n\n");
+	  next;
 	}
 	else{
 	  $cp_val = system("\/usr/apps/bin/scp $s_file $e_file");
