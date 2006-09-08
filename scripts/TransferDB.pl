@@ -4,7 +4,7 @@
 #
 # by ag3 [991221]
 #
-# Last updated on: $Date: 2006-09-07 15:23:42 $
+# Last updated on: $Date: 2006-09-08 16:01:41 $
 # Last updated by: $Author: pad $
 
 # transferdb moves acedb database files across filesystems.
@@ -239,7 +239,7 @@ if( @failed_files ) {
   }
 }
 else {
-  $log->write_to( "TransferDB process $$ ended SUCCESSFULLY at ",$wormbase->runtime,"\n");
+  $log->write_to( "TransferDB process $$ ended SUCCESSFULLY at ". $wormbase->runtime ."\n");
 }
 $log->mail;
 exit 0;
@@ -330,6 +330,11 @@ sub process_file {
   if ((-d $s_file) || ($filename =~ /^\./) || ($filename =~ /lock.wrm/)){ 
     $log->write_to( " .. SKIPPING file $filename \n");
   } 
+
+# Want to keep the current database.wrm in each split database so that each has a unique name.
+  elsif( ($filename =~ m/database\.wrm$/) && ($split) ){
+    $log->write_to( " .. SKIPPING file $filename \n");
+  }
   else {
     # if you are copying displays.wrm and -name was specified, you can update
     # the contents of the file itself to ad6~d the new name
@@ -362,11 +367,7 @@ sub process_file {
 	  $log->write_to( "differs in cp method\n\n\n");
 	  $cp_val = system("\/usr/bin/cp -R $s_file $e_file") 
 	}
-	# Want to keep the current database.wrm in each split database so that each has a unique name.
-	elsif( ($filename =~ m/database\.wrm$/) && ($split) ){
-	 $log->write_to( "job done\n\n\n\n\n\n");
-	  next;
-	}
+	
 	else{
 	  $cp_val = system("\/usr/apps/bin/scp $s_file $e_file");
 	}
