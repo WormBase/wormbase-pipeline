@@ -194,7 +194,7 @@ sub connect {
   my $self = bless { domain   => undef,
 		     session  => undef,
 		   },$class;
-  my $db = $self->dbh($dsn,$name,$password) or $class->throw(BADCONN);
+  my $db = $self->dbh($dsn, $name, $password) or $class->throw(BADCONN);
   $self;
 }
 
@@ -621,7 +621,7 @@ sub _createExistingObject {
 
   #get object_id of new thing
   my $object_id = $self->_internal_id("$ext_id");
-  print "$ext_id => $object_id\n";
+  #print "$ext_id => $object_id\n";
 
   #fill in the identifier_log
   $query = "INSERT INTO identifier_log values ( \"$object_id\", 1, \"import\", \"" . $object->{'who'} . "\", \"" . $object->{'when'} ."\", 0, 1, NULL)";
@@ -1679,7 +1679,7 @@ END
   $dbh->do($query,undef,$id,$typeid,$name)
     or $self->throw(DBERR);
 
-  $self->_add_history('delName',$public_id,$nametype,$name,undef,$domain) unless $no_history;
+  $self->_add_history('delName',$public_id,$typeid,$name,undef,$domain) unless $no_history;
 }
 
 sub _internal_id {
@@ -1807,7 +1807,8 @@ insert into last_identifier
   values (?,?)
 END
       $query = 'INSERT INTO last_identifier VALUES(?,?)';
-      my $result = $dbh->do($query,undef,$domain_id,$last_object->[0]);
+      my $last_id = $last_object->[0] +1;
+      my $result = $dbh->do($query,undef,$domain_id,$last_id);
       return $last_object->[0];
     }
   }
