@@ -3,7 +3,7 @@
 use lib "../lib";
 use strict;
 
-use vars qw($USER $PASS $DB $VALID_USERS $VALID_API_USERS $VALID_CGCNAME_USERS $SSO_USER $MAIL_NOTIFY_LIST $LIVE);
+use vars qw($USER $PASS $DB $VALID_USERS $VALID_API_USERS $VALID_CGCNAME_USERS $SSO_USER $MAIL_NOTIFY_LIST $MAILS $LIVE);
 
 use SangerPaths qw(core);
 use SangerWeb;
@@ -11,26 +11,29 @@ use NameDB_handler;
 use Data::Dumper;
 use CGI::Carp qw(fatalsToBrowser warningsToBrowser);
 use Website::Utilities::Mail;
+use File::Path;
 $| = 1;
-$DB 	= 'wbgene_id;mcs2a';
-$PASS = "wormpub";
-$USER	= "wormpub";
+
+# determine if live or WWWdev and select database accordingly
+if( -e '/nfs/WWWdev/SANGER_docs/htdocs'){
+	$DB = 'test_wbgene_id;mcs2a';
+}
+else {
+	$DB = 'wbgene_id;mcs2a';
+}
 
 ## a list of valid  IDs to use this resources
 $VALID_USERS = {
-					'avc' 		=> 1,
-					'ar2' 		=> 1,
-					'pad' 		=> 1,
-					'mt3' 		=> 1,
-					'gw3' 		=> 1,
-					'mh6' 		=> 1,
-		
-					
-					'tbieri' 	=> 1,
-					'jspieth' 	=> 1,
-					'dblasiar' 	=> 1,
-					'pozersky' 	=> 1,
-					
+					# these are the users WBPerson id
+					'ar2' 		=> 1847,
+					'pad' 		=> 1983,
+					'mt3' 		=> 2970,
+					'gw3' 		=> 4025,
+					'mh6' 		=> 4036,
+					'tbieri' 	=> 1849,
+					'jspieth' 	=> 615,
+					'dblasiar' 	=> 1843,
+					'pozersky' 	=> 1867,
 					'stlouis' 	=> 1,
 					'caltech' 	=> 1,
 					'cshl' 		=> 1,
@@ -40,7 +43,7 @@ $VALID_USERS = {
 ## a list of valid SSO login names for each DB operation
 $VALID_API_USERS = {
 		'query'		=> [qw(avc ar2 pad gw3 mh6 mt3 tbieri jspieth dblasiar pozersky stlouis caltech cshl sanger)],
-
+      'load_file'		=> [qw(avc ar2 pad gw3 mh6 mt3 tbieri jspieth dblasiar pozersky stlouis caltech cshl sanger)],
 		'merge_genes'	=> [qw(avc ar2 pad gw3 mt3 tbieri jspieth dblasiar pozersky)],
 		'split_gene'	=> [qw(avc ar2 pad gw3 mt3 tbieri jspieth dblasiar pozersky)],
 		'new_gene'		=> [qw(avc ar2 pad gw3 mt3 tbieri jspieth dblasiar pozersky)],
@@ -48,8 +51,7 @@ $VALID_API_USERS = {
 		'add_name'		=> [qw(avc ar2 pad gw3 mt3 tbieri jspieth dblasiar pozersky)],
 		'remove_name'	=> [qw(avc ar2 pad gw3 mt3 tbieri jspieth dblasiar pozersky)],
 		'change_class'	=> [qw(avc ar2 pad gw3 mt3 tbieri jspieth dblasiar pozersky)],
-		'load_file'		=> [qw(ar2 tbieri dblasiar)],
-		'dump_all'     => [qw(ar2 tbieri dblasiar)],
+		'dump_all'     => [qw(ar2 pad gw3 mt3 tbieri dblasiar pozersky)],
 
 };
 
@@ -57,6 +59,23 @@ $VALID_API_USERS = {
 $VALID_CGCNAME_USERS = {
 		'mt3'			=> 1,
 		'ar2'			=> 1,
+};
+
+$MAILS = {
+	'ar2'			=>	'ar2@sanger.ac.uk',
+	'pad'			=>	'pad@sanger.ac.uk',
+	'gw3'			=>	'gw3@sanger.ac.uk',
+	'mh6'			=>	'mh6@sanger.ac.uk',
+	'mt3'			=>	'mt3@sanger.ac.uk',
+	'tbieri'		=>	'tbieri@watson.wustl.edu',
+	'jspieth'	=>	'jspieth@watson.wustl.edu',
+	'dblasiar'	=>	'dblasiar@watson.wustl.edu',
+	'pozersky'	=>	'pozersky@watson.wustl.edu',
+	'stlouis'	=>	'stlouis@wormbase.org',
+	'caltech'	=>	'caltech@wormbase.org',
+	'cshl'		=>	'cshl@wormbase.org',
+	'sanger'		=>	'sanger@wormbase.org',
+	'cgc'       => 'mt3@sanger.ac.uk'
 };
 
 ## a list of people to mail when a DB operation occurs
@@ -71,8 +90,8 @@ sub main {
 	my $web = 1;
  	my $path = SangerWeb->document_root();
 	my $sw = SangerWeb->new( {
-				'title'  => "WormBase NameDB",
-				'banner' => "Wormbase Gene Name Management<br><font color=red> TEST ONLY - changes will not result in any changes to data in WormBase. You must make requests for new geneIDs, mergers, splits etc in the usual way</font>",
+				'title'  => "WormBase NameDB $DB",
+				'banner' => "Wormbase Gene Name Management<br><font color=red>This system is now LIVE! Be carefull!</font>",
 				'inifile'=> "$path/Projects/C_elegans/header.ini",
 				'author' => 'avc',
 				'onload' => 'init()',
@@ -80,6 +99,10 @@ sub main {
 
 
 	$SSO_USER = $sw->username(); ## for SSO
+	#$SSO_USER =~ m/(\w+)/;
+	#$SSO_USER = $1;
+	$PASS = $SSO_USER;
+	$USER = $SSO_USER;
 		
 	if(!$SSO_USER) {
 		my $url  = "http://$ENV{'HTTP_X_FORWARDED_HOST'}$ENV{'SCRIPT_NAME'}?$ENV{'QUERY_STRING'}";
@@ -102,13 +125,12 @@ sub main {
 	print $sw->header();
 	
   	if (!defined $VALID_USERS->{$SSO_USER}) {
-		print qq(<h3>Sorry, you are not authorised to access this resource. Please contact the Wormbase team</h3>);
+		print qq(<h3>Sorry, you $SSO_USER are not authorised to access this resource. Please contact the Wormbase team</h3>);
 		print $sw->footer();
 		return;
 	} else {
-		print qq(Authenticated database user: "$SSO_USER"<BR>
-
-		);
+		print qq(Authenticated database user: "$SSO_USER"<BR>		);
+		#send_mail('webserver', $MAILS->{'ar2'}, "user $SSO_USER", "is using nameserver");
 	}
 
 	## get CGI parameters
@@ -189,9 +211,9 @@ sub send_mail {
 	#"GENE MERGE\nUSER : $SSO_USER\nLIVE:retained geneID $gene_id\nDEAD: killed geneID $merge_id");
 	
 	Website::Utilities::Mail->new({
-    'to'      => $MAIL_NOTIFY_LIST,
+    'to'      => $to,
     'from'    => $from,
-    'subject' => "NAMEDB: $subject",
+    'subject' => ($DB =~ 'test' ? 'TEST : ' : " ")."NAMEDB: $subject",
     'message' => $message,
 	})->send(); 
 }
@@ -279,10 +301,10 @@ sub merge_genes
     } else {
       print  "attempting to merge -$merge_gene | $gene_gene-<br>";
       my $db = get_db_connection();
-		if( $db->merge_genes($gene_gene, $merge_gene) ) {
+		if( my $ids = $db->merge_genes($gene_gene, $merge_gene) ) {
 			print "Merge complete, $merge_gene is DEAD and has been merged into gene $gene_gene <br>";
 			#notify
-			send_mail("webserver",$MAIL_NOTIFY_LIST,"Merged gene $gene_gene : $merge_gene", "GENE MERGE\nUSER : $SSO_USER\nLIVE:retained geneID for $gene_gene\nDEAD: killed geneID $merge_gene");
+			send_mail("webserver",[$MAILS->{$SSO_USER},$MAILS->{'cgc'}],"Merged gene $gene_gene : $merge_gene", "GENE MERGE\nUSER : $SSO_USER\nLIVE:retained geneID for $gene_gene (".$ids->[0].")\nDEAD: killed geneID $merge_gene (".$ids->[1].")\n");
       }
      	else {
 			print "Sorry, the gene merge failed<br>";
@@ -309,18 +331,19 @@ sub split_gene {
 		<INPUT TYPE="hidden" NAME="type" VALUE="CDS">
 		<br><br>
 		<INPUT TYPE="submit" VALUE="Split">
+		<br>if you're making a pseudogene, create it as a CDS then remove the CDS name<br>
 		</form>
-		);
+		);#'
  
 	} else {
 	
 		my $db = get_db_connection();
 		my $new_id =$db->split_gene($name, $type, $gene_id);
 		if( $new_id ){
-			send_mail("webserver",$MAIL_NOTIFY_LIST,"Split gene $gene_id", "USER : $SSO_USER\nACTION : Split $gene_id\nNEW geneId : $new_id\nNEW CDS : $type $name");
+			send_mail("webserver",[$MAILS->{$SSO_USER},$MAILS->{'cgc'}],"Split gene $gene_id", "USER : $SSO_USER\nACTION : Split $gene_id\nNEW geneId : $new_id\nNEW CDS : $type $name\n\nsplitgene.pl -old $gene_id -new $name -who ". $$VALID_USERS{$SSO_USER} ." -id $new_id\n");
 
 			#report to screen
-			$new_id = 'secret' unless ( $LIVE or defined $$VALID_CGCNAME_USERS{$SSO_USER});
+			#$new_id = 'secret' unless ( $LIVE or defined $$VALID_CGCNAME_USERS{$SSO_USER});
 			print qq(Split $gene_id creating $new_id with CDS name "$name"<br>);
 		}
 		else {
@@ -337,9 +360,11 @@ sub kill_gene {
 
 		print qq(
 		<h3>Delete an existing WBGene</h3>
+		<br><font color=red>*</font> If you are about to kill a gene as part of a gene merge <b>STOP</b><br>
+		you DO NOT have to kill the merged gene separately<br>
 		<form action="$ENV{'SCRIPT_NAME'}" method="GET">
 		<BR><BR>
-		Remove the WBGene <INPUT TYPE="text" NAME="id" SIZE="20" MAXLENGTH="14">
+		Gene ID to kill [eg WBGene00001234] <INPUT TYPE="text" NAME="id" SIZE="20" MAXLENGTH="14">
 		from the database<BR>
                 Please give reason for removal (<font color=red>required</font>)<br> <INPUT TYPE="text" NAME="remark" SIZE="100" MAXLENGTH="200"><BR>
 		<INPUT TYPE="hidden" NAME="action" VALUE="kill_gene">
@@ -355,7 +380,7 @@ sub kill_gene {
 		if ($db->kill_gene($gene_id)){
 			print qq(Gene "$gene_id" has been killed because \"$remark\"<br>);
 			
-			send_mail("webserver",$MAIL_NOTIFY_LIST,"Kill request $gene_id", "USER :$SSO_USER\nWBGeneID : $gene_id\nAction : KILL\nRemark : $remark");
+			send_mail("webserver",[$MAILS->{$SSO_USER},$MAILS->{'cgc'}],"Kill request $gene_id", "USER :$SSO_USER\nWBGeneID : $gene_id\nAction : KILL\nRemark : $remark");
 			#send to caltech to
 			#send_mail("webserver",'ar2',"Kill request $gene_id", "CALTECH MAIL\nGene killed please update your annotation\n:\nUSER :$SSO_USER\nWBGeneID : $gene_id\nAction : KILL\nRemark : $remark");
 		}
@@ -378,10 +403,11 @@ sub remove_name {
 		Remove the name 
 		<SELECT NAME="type">
 		  <OPTION SELECTED>CDS
+		  <OPTION>Sequence
 		  <OPTION>CGC
 		  <OPTION>other
 		</SELECT>
-		<INPUT TYPE="text" NAME="delete_name" SIZE="15" MAXLENGTH="10">
+		<INPUT TYPE="text" NAME="delete_name" SIZE="15" MAXLENGTH="15">
 		from gene: 
 		<INPUT TYPE="text" NAME="id" SIZE="13" MAXLENGTH="14">
 		<INPUT TYPE="hidden" NAME="action" VALUE="remove_name">
@@ -392,13 +418,19 @@ sub remove_name {
     } 
     else {
 	 	my $db = get_db_connection();
+	 	if ( ($type eq "CGC") and (!exists $VALID_CGCNAME_USERS->{$SSO_USER}) ){
+			print qq(
+			<b>Sorry, you are not authorised to remove GCG gene names from the database</b>
+			<BR><BR>
+			);
+		}
 	 	$gene_id = &convert_to_geneID($db,$gene_id);
 	 	print "$gene_id $name $type";
       if($db->remove_name($gene_id, $type, $name)) {
-      	print "removed $name from $gene_id";
+      	print "<br>removed $name from $gene_id";
       	#print remaining names
       	$db->printAllNames($gene_id);
-		   send_mail("webserver",$MAIL_NOTIFY_LIST,"Remove gene name", "$SSO_USER removed a gene name (gene $gene_id of type $type had name $name removed)");
+		   send_mail("webserver",$SSO_USER,"Remove gene name", "$SSO_USER removed a gene name (gene $gene_id had name $type $name removed)");
       }
       else {
 	  		print "name removal failed<br>Names for $gene_id";
@@ -430,7 +462,7 @@ sub add_name {
 		}
 		print qq(
 			</SELECT><br>
-			Name to add: <INPUT TYPE="text" NAME="new_name" SIZE="15" MAXLENGTH="10" VALUE=""><br>
+			Name to add: <INPUT TYPE="text" NAME="new_name" SIZE="15" MAXLENGTH="15" VALUE=""><br>
 			for gene (WBGeneID or Sequence_name): <INPUT TYPE="text" NAME="id" SIZE="13" MAXLENGTH="14" VALUE=""><br>
 			<INPUT TYPE="hidden" NAME="action" VALUE="add_name">
 			<br><br>
@@ -448,9 +480,9 @@ sub add_name {
 		} else {	
 			my $db = get_db_connection();
 		 	$gene_id = &convert_to_geneID($db,$gene_id);
-			if( $db->add_name($gene_id,$name, $type) ) {
+			if( defined ($db->add_name($gene_id,$name, $type)) ) {
 				print qq(Added "$name" as $type name for gene $gene_id<br>);
-				send_mail("webserver",$MAIL_NOTIFY_LIST,"$type added to $gene_id", "USER : $SSO_USER\nWBGeneID : $gene_id\nName added : $name $type\n");
+				send_mail("webserver",[$MAILS->{$SSO_USER},$MAILS->{'cgc'}],"$type added to $gene_id", "USER : $SSO_USER\nWBGeneID : $gene_id\nName added : $name $type\n");
 			}
 			else {
 				print "<p>FAILED: cant add name $name to $gene_id</p>";
@@ -484,7 +516,7 @@ sub new_gene {
 		}
 		print qq(
 		</SELECT>
-		<INPUT TYPE="text" NAME="new_name" SIZE="15" MAXLENGTH="10" VALUE="">
+		<INPUT TYPE="text" NAME="new_name" SIZE="15" MAXLENGTH="15" VALUE="">
 		<INPUT TYPE="hidden" NAME="action" VALUE="new_gene">
 		<br><br>
     	<INPUT TYPE="submit" VALUE="Create">
@@ -501,9 +533,19 @@ sub new_gene {
 		}
 		
 		if(my $id = $db->new_gene($name, $type) ) {
-			send_mail("webserver",$MAIL_NOTIFY_LIST, " WBGeneID request $name $SSO_USER","User : $SSO_USER\nType : $type\nName : $name\nID : $id");
+			my $who = $VALID_USERS->{$SSO_USER};
+			my $msg; 
+			$msg = "WBGeneID request $name $SSO_USER","User : $SSO_USER\nType : $passed_type\nName : $name\nID : $id\n";
+			if($type eq 'CGC') {
+				my ($gene_class) = $name =~ /(\w+)-\d+/;
+				$msg .= "\n\nGene : $id\nVersion 1\nCGC_name $name\nPerson_evidence\nPublic_name $name\nSpecies \"Caenorhabditis elegans\"\nHistory Version_change 1 now WBPerson".$VALID_USERS->{$SSO_USER}." Created\nLive\nMethod Gene\nGene_class $gene_class\n";
+ 			}
+ 			else {
+				$msg .= "\nnewgene.pl -seq $name -who $who -load -id $id\n\n";# line to run script to update geneace
+			}
+			send_mail("webserver",[$MAILS->{$SSO_USER},$MAILS->{'cgc'}], "WBGeneID request $name $SSO_USER",$msg );
 			#report to screen
-			$id = 'secret' unless ( $LIVE or defined $$VALID_CGCNAME_USERS{$SSO_USER});
+			#$id = 'secret' unless ( $LIVE or defined $$VALID_CGCNAME_USERS{$SSO_USER});
 			print "The new id for $type: $name is $id\n";
 			print qq(
 			<hr align="left">
@@ -511,7 +553,6 @@ sub new_gene {
 			);
 			#this is so that curators can create pseudogenes or ncRNA and notify geneace in a single step.
 			if(( $passed_type eq 'PSEUDO') or ( $passed_type eq 'NCRNA')){
-				&change_class($name,$passed_type);
 				&remove_name($name,'CDS',$id);
 			}
 		}
@@ -562,6 +603,7 @@ sub query {
 		<hr align="left">
 		<BR><BR><BR>
 		);
+		#send_mail("webserver",[$MAILS->{$SSO_USER}],"query", "$SSO_USER queried for $gene");
 	}
 
 }
@@ -647,13 +689,39 @@ sub change_class {
 	}
 	else {
 		my $db = get_db_connection();
-		my $gene = $db->idGetByTypedName('CDS', $cds);
-		if ( $gene ) {
-			# just send a mail - no change to database
-			#$self->send_mail('Nameserver',
-			send_mail("webserver",$MAIL_NOTIFY_LIST,"$cds to $class", "$cds converted to $class - $SSO_USER\nThis does not affect Nameserver DB\nPlease REPLY to confirm you have seen this message");
+		if($class eq 'CDS') {
+			my $gene = $db->idGetByAnyName($cds);
+			if ( $gene->[0] ) {
+				#changed to a CDS - add CDS name
+				$db->validate_name($cds, 'CDS');
+				$db->addName($gene->[0],'CDS' =>$cds);
+				send_mail("webserver",[$MAILS->{$SSO_USER},$MAILS->{'cgc'}],"$cds to $class", "$cds converted to $class - $SSO_USER\nThis does not affect Nameserver DB\nPlease REPLY to confirm you have seen this message");
+				print "changing $cds to $class<br>You should get an acknowledgement from the curator who handles this soon.";
+			}
+			else {
+				print "$cds is not a valid gene name - no changes have been made<br>";
+			}
 		}
-		print "changing $cds to $class<br>You should get an aknowledgement from the curator who handles this soon.";
+		#changing a pseudo, nc_trans or transposon to a CDS
+		else {
+			#just entails adding a CDS name and notifying geneace 
+			$db->validate_name($cds, 'Sequence');
+			my $gene = $db->idGetByTypedName('CDS', $cds); #these classes wont have CDS names
+
+			if ( $gene->[0] ) {		
+				#kill transposon genes
+				if( $class eq 'transposon') {
+					&kill_gene($gene->[0], "made in to transposon");
+				}
+				#$self->send_mail('Nameserver',
+				$db->delName($gene->[0],'CDS',$cds);
+				send_mail("webserver",[$MAILS->{$SSO_USER},$MAILS->{'cgc'}],"$cds to $class", "$cds converted to $class - $SSO_USER\nPlease REPLY to confirm you have seen this message");
+				print "changing $cds to $class<br>You should get an acknowledgement from the curator who handles this soon.";
+			}
+			else {
+				print "$cds is not a valid $class name - no changes have been made<br>";
+			}
+		}
 	}
 }
 
@@ -692,8 +760,9 @@ END
 		$sth->finish;
 
 		#write a new version of webpage for stl
-		my $path = SangerWeb->document_root();
-		my $gene2mol = "$path/Projects/C_elegans/LOCI/genes2molecularnamestest.txt";
+		my $path = SangerWeb->document_root()."/tmp/Projects/C_elegans/LOCI";
+		mkpath $path unless -e $path;
+		my $gene2mol = "$path/genes2molecularnamestest.txt";
 		open (M2G,">$gene2mol") or die "cant open $gene2mol : $!\n";
 		foreach my $gene (sort keys %gene_data) {
 			print M2G "\n$gene";
@@ -702,8 +771,8 @@ END
 			}	
 		}
 		close M2G;	
-		print qq(<a href="http://wwwdev.sanger.ac.uk/Projects/C_elegans/LOCI/genes2molecularnamestest.txt">Updated here</a>);
-		print qq( <meta http-equiv="REFRESH" content="0; URL=http://wwwdev.sanger.ac.uk/Projects/C_elegans/LOCI/genes2molecularnamestest.txt">);
+		print qq(<a href="http://www.sanger.ac.uk/tmp/Projects/C_elegans/LOCI/genes2molecularnamestest.txt">Updated here</a>);
+		print qq( <meta http-equiv="REFRESH" content="0; URL=http://www.sanger.ac.uk/tmp/Projects/C_elegans/LOCI/genes2molecularnamestest.txt">);
 	}
 	else {
 		print qq( 
