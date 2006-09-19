@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: ar2 $
-// Last edited on: $Date: 2006-08-29 08:43:19 $
+// Last edited on: $Date: 2006-09-19 08:14:28 $
 
 
 
@@ -2067,6 +2067,7 @@
            Remark ?Text #Evidence
            Related_phenotypes Specialisation_of ?Phenotype XREF Generalisation_of
                               Generalisation_of ?Phenotype XREF Specialisation_of
+			      Dead Alternate_phenotype ?Phenotype
            Attribute_of       RNAi 	?RNAi XREF Phenotype
 			      Variation	?Variation XREF Phenotype
                               Transgene	?Transgene XREF Phenotype	// Added by Carol
@@ -2786,12 +2787,15 @@
                     Intron #Evidence
                     Coding_exon #Evidence
                     Noncoding_exon #Evidence 
+		    Promoter #Evidence
+		    UTR_3 #Evidence
+		    UTR_5 #Evidence 
 
 
 
 
 
-?Gene_cluster Title UNIQUE ?Text                                        // Information on the Gene cluster
+?Gene_cluster Title UNIQUE ?Text                                        // Information on the Gene cluster 
               Description ?Text
               Contains_gene ?Gene XREF In_cluster
 
