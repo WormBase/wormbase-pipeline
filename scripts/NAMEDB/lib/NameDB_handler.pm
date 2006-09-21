@@ -110,64 +110,17 @@ sub add_name {
 	$db->validate_name($name, $type)    or return undef;
 	$db->validate_id($gene_id)          or return undef;
 	$db->check_pre_exists($name, $type) or return undef;
-	my $add_seq_name = 0;
-	eval {
-      #if this is a new isoform we want to check it matches existing CDS names ie dont add ABC.1a to CDE.2
-      if( $type eq "CDS") {
-			my $seq_name = $db->idTypedNames($gene_id,'Sequence');
-			#if there is a sequence name check the new name is same "sequence"
-			if( $seq_name->[0] ) {
-				my $regex = $seq_name->[0] . "[a-z]";
-				#print "testing ".$seq_name->[0]." against $regex";
-				if($seq_name->[0] and !($name =~ /$regex/) ) {
-					$db->dienice("$name is not an isoform of ".$seq_name->[0]);
-					die("bad name");
-				}
-				# all is well -> add the name
-			}
-			else {
-				#have to do it like this as we dont want to add seq_name until CDS name has been accepted
-				$add_seq_name = 1; 
-			}
-      }
-      $db->addName($gene_id,$type => $name);
-      if( $add_seq_name == 1) {
-      	my ($seq_name) = $name =~ /^(\w+\.\d+)/;
-      	$db->addName($gene_id,'Sequence' => $seq_name);
-      }
-    };
-    if ($@) {
+   if( $db->addName($gene_id,$type => $name) ) {
+     	$db->_update_public_name($gene_id);
+    	return $name;  
+   }
+   else {
       $db->dienice("$name not added to $gene_id");
       return undef;
     }
-    else {
-    	$db->_update_public_name($gene_id);
-    	return $name;
-    }
-  }
+ }
 
-=head2 isoform_exists
 
-Check if the passed name is an isoform of an existing gene
-
- Parameters : name string and type string
- Return     : name or undef
- 
-=cut
-
-sub isoform_exists
-  {
-    my $db = shift;
-    my $name = shift;
-    my $type = shift;
-    if ( $name =~ /^(\w+\.\d+)[a-z]/) {
-      my $id = $db->idGetByTypedName($type,$1);
-      if ( $id->[0] ) {
-			return $id->[0];
-      }
-    }
-    return undef;
-  }
 
 =head2 validate_name
 
@@ -188,16 +141,15 @@ sub validate_name
     if( grep {$_ eq $type} @types) {
       #check name structure matches format eg CDS = clone.no
       my %name_checks = ( 
-      		"CDS" => '^([A-Z0-9_]+)\.\d+\w?$',
 			  	"CGC" => '^[a-z]{3,4}-[1-9]\d*(\.\d+)?$',	
 			  	"Sequence" => '^([A-Z0-9_]+)\.\d+$',
-			  	"Public_name" => '(?:^[A-Z0-9_]+\.\d+$)|(?:^[a-z]{3,4}-[1-9]\d*(?:\.\d+)?$)'  #CDS or CGC
-			);
+				"Public_name" => '^[a-z]{3,4}-[1-9]\d*(\.\d+)?$|^([A-Z0-9_]+)\.\d+$',
+		);
       unless( $name =~ /$name_checks{$type}/ ) {
 			$db->dienice("$name is incorrect format for $type");
 			return undef;
 		}
-		if($type eq 'CDS' and !(defined $db->{'clones'}->{uc($1)}) ) {
+		if($type eq 'Sequence' and !(defined $db->{'clones'}->{uc($1)}) ) {
 			$db->dienice("$name isnt on a valid clone $1");
 			return undef;
 		}
@@ -249,13 +201,6 @@ sub check_pre_exists
     if(defined $id->[0] ){
       $db->dienice("$name already exists as ".$id->[0]);
       return undef;
-    }
-    unless( $type eq 'Public_name') { # Public_name can be same as Sequence_name
-	    my $seq_id = $db->idGetByTypedName('Sequence' => $name); #just to be safe confirm there isnt a ncRNA withthis name
-   	 if(defined $seq_id->[0] ){
-   	  $db->dienice("$name already exists as Sequence ".$seq_id->[0]);
-   	  return undef;
-   	 }
     }
     return $name;
   }
@@ -371,12 +316,12 @@ sub merge_genes {
 	my $names1 = $db->idAllNames($gene_id);
 	my $names2 = $db->idAllNames($merge_id);
 
-	if( $db->user ne 'mt3') {
+	unless( ($db->user eq 'mt3') or ($db->user eq 'ar2') ){
 		if( $$names2{'CGC'} ) {
 			if ($$names1{'CGC'} ) {
 				#both genes have CGC name - confirm with geneace 
 				$db->dienice("FAILED: Both genes have CGC names".$$names1{'CGC'}." and ".$$names2{'CGC'}.".  The correct course of action should be determined by the CGC admin (mt3)<br>
-					Please contact Mary Ann to resolve this");
+					Please contact Geneace curator to resolve this");
 			}
 			else {
 				#gene being eaten has a CGC name and eater doesnt
@@ -385,26 +330,17 @@ sub merge_genes {
 			return undef;
 		}
 	}
-	# warn mt3 that a gene with a CGC name has been killed
-	elsif( $$names2{'CGC'} ) { 
+	# warn that a gene with a CGC name has been killed
+	if( $$names2{'CGC'} ) { 
 		print "$merge_id had a CGC name : $$names2{'CGC'}<br>";
 	}
 	#always remove names from merged id
 	$db->remove_all_names($merge_id);
 	#if this is a merger between a CGC gene and a sequence we need to transfer the Seq & CDS names to
 	# the CGC gene id.
-	unless( $$names1{'CDS'} or $$names1{'Sequence'} ){
+	unless( $$names1{'Sequence'} ) {
    	$db->addName($gene_id,'Sequence' => $$names2{'Sequence'}) if ($$names2{'Sequence'});
-   	#need to deal with array or scalar CDS value.
-   	if( ref $$names2{'CDS'} =~ /ARRAY/ ) {
-   		foreach ( @{$names2->{'CDS'}}) {
-   			$db->addName($gene_id,'CDS' => $_);
-   		}
-   	}
-   	else {
-	   	$db->addName($gene_id,'CDS', $$names2{'CDS'});
-	   }   	
-	}
+  	}
 	#do the merge
    if ($db->idMerge($merge_id,$gene_id)) {
    	return ([$gene_id,$merge_id]);
@@ -522,16 +458,8 @@ sub new_gene {
 	
 	$db->validate_name($name, $type)    or return undef;
 	$db->check_pre_exists($name, $type) or return undef;
-	if( my $id = $db->isoform_exists($name, $type) ) {
-	  $db->dienice("$name is an isoform of $id  Please confirm and add $name as another name for $id");
-	};
+	
 	my $id = $db->make_new_obj($name, $type);
-	if( $type eq 'CDS') {
-		#fill in the Sequence_name too
-		my ($seq_name) = $name =~ /(.*)[a-z]?$/;
-		$db->add_name($id, $seq_name, "Sequence");
-		print "added Seq_name $seq_name to $id<br>";
-	}
 	$db->_update_public_name($id);
 	return $id ? $id : undef;
 }
