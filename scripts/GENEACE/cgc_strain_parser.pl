@@ -8,7 +8,7 @@
 # Page download and update upload to geneace has been automated [ck1]
 
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2006-09-26 12:05:55 $
+# Last updated on: $Date: 2006-09-26 12:24:35 $
 
 use strict;
 use Getopt::Long;
@@ -180,7 +180,7 @@ while(<INPUT>){
   my $clone;
 
   # find simple locus allele combinations e.g. spt-3(hc184)
-  my $reg_exp=qr/([Ca-z\-]{3,6}\-\d+\.{0,1}\d*)\(([a-z]{1,2}\d+)\)/;
+  my $reg_exp=qr/^([Ca-z\-]{3,6}\-\d+\.{0,1}\d*)\(([a-z]{1,2}\d+)\)/;
   while($genotype =~ m/$reg_exp/){
     my $gene = $1;
     my $allele = $2;
