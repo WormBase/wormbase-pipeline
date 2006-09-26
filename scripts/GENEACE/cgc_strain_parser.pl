@@ -8,7 +8,7 @@
 # Page download and update upload to geneace has been automated [ck1]
 
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2006-08-02 16:22:45 $
+# Last updated on: $Date: 2006-09-26 12:05:55 $
 
 use strict;
 use Getopt::Long;
@@ -180,33 +180,37 @@ while(<INPUT>){
   my $clone;
 
   # find simple locus allele combinations e.g. spt-3(hc184)
-  while($genotype =~ m/([Ca-z\-]{3,6}\-\d+)\(([a-z]{1,2}\d+)\)/){
+  my $reg_exp=qr/([Ca-z\-]{3,6}\-\d+\.{0,1}\d*)\(([a-z]{1,2}\d+)\)/;
+  while($genotype =~ m/$reg_exp/){
     my $gene = $1;
     my $allele = $2;
     &check_details($gene,$allele,$strain,$species);   
-    $genotype =~ s/[Ca-z\-]{3,6}\-\d+\([a-z]{1,2}\d+\)//;
+    $genotype =~ s/$reg_exp//;
   }
 
   # find chromosomal aberrations e.g. szT1
-  while($genotype =~ m/([a-z]{1,2}(Dp|Df|In|T|C)\d+)/){
+  $reg_exp=qr/([a-z]{1,2}(Dp|Df|In|T|C)\d+)/;
+  while($genotype =~ m/$reg_exp/){
     my $rearrangement = $1;
     print STRAIN "Rearrangement \"$rearrangement\"\n";
     print DELETE_STRAIN  "-D Rearrangement \"$rearrangement\"\n";
-    $genotype =~ s/[a-z]{1,2}(Dp|Df|In|T|C)\d+//;
+    $genotype =~ s/$reg_exp//;
   }
 
   # find transgenes e.g. zhEx11
-  while($genotype =~ m/([a-z]{1,2}(Ex|Is)\d+)/){
+  $reg_exp=qr/([a-z]{1,2}(Ex|Is)\d+)/;
+  while($genotype =~ m/$reg_exp/){
     my $transgene = $1;
     print STRAIN "Transgene \"$transgene\"\n";
     print DELETE_STRAIN  "-D Transgene \"$transgene\"\n";
 
-    $genotype =~ s/[a-z]{1,2}(Ex|Is)\d+//;
+    $genotype =~ s/$reg_exp//;
   }
 
 
   # find double barrelled alleles (revertants) e.g. daf-12(rh61rh412) 
-  while($genotype =~ m/([Ca-z\-]{3,6}\-\d+)\(([a-z]{1,2}\d+)([a-z]{1,2}\d+)\)/){
+  $reg_exp=qr/([Ca-z\-]{3,6}\-\d+\.{0,1}\d*)\(([a-z]{1,2}\d+)([a-z]{1,2}\d+)\)/;
+  while($genotype =~ m/$reg_exp/){
     my $gene = $1;
     # need to split up allele name into two fields
     my $allele1 = $2;
@@ -214,8 +218,20 @@ while(<INPUT>){
 
     &check_details($gene,$allele1,$strain,$species);
     &check_details($gene,$allele2,$strain,$species);
-    $genotype =~ s/[Ca-z\-]{3,6}\-\d+\([a-z]{1,2}\d+[a-z]{1,2}\d+\)//;
+    $genotype =~ s/$reg_exp//;
   }
+
+  # alleles affecting 2 genes like arf-1.1&F45E4.7(ok1840)
+  $reg_exp=qr/([\w\.\-]+)&([\w\.\-]+)\(([a-z]{1,2}\d+)\)/;
+  while($genotype =~ m/$reg_exp/){
+    my $gene1 = $1;
+    my $gene2 = $2;
+    my $allele = $3;
+    &check_details($gene1,$allele,$strain,$species);   
+    &check_details($gene2,$allele,$strain,$species);   
+    $genotype =~ s/$reg_exp//;
+  }
+
 
 
   # find alleles attached to non-approved, or unusual gene names e.g. let-?(h661)
