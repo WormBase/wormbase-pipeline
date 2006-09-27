@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2006-04-18 14:14:42 $
+# Last updated on: $Date: 2006-09-27 16:21:49 $
 
 use strict;
 use lib "/nfs/disk100/wormpub/wormbase/scripts";
@@ -1037,6 +1037,7 @@ sub process_strain_class {
   print"\n\nChecking Strain class for errors:\n";
   print LOG "\n\nChecking Strain class for errors:\n";
   print LOG "---------------------------------\n";
+  print LOG "Loads of alleles are still connected to lin-15\n";
 
   my @strains = $db->fetch('Strain','*');
   foreach my $strain (@strains){
@@ -1120,7 +1121,7 @@ sub process_strain_class {
 	    my @LOci = @{$allele_locus{$allele}};
 	    my %LOci;
 	    foreach (@LOci){$LOci{$_}++};
-	    if (!exists $LOci{$locus} ){
+	    if( ($locus ne 'lin-15') and (!exists $LOci{$locus}) ){
 	      print LOG "ERROR: Strain $strain has $locus($allele) in genotype: ";
 	      print LOG "change each $locus to @{$allele_locus{$allele}}\n";
 	    }
