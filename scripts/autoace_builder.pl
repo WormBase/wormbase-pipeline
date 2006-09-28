@@ -7,7 +7,7 @@
 # Usage : autoace_builder.pl [-options]
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2006-08-24 17:02:48 $
+# Last edited on: $Date: 2006-09-28 08:39:29 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -147,10 +147,13 @@ $wormbase->run_script( 'cluster_gene_connection.pl'              , $log) if $clu
 
 $wormbase->run_script( "interpolation_manager.pl"                , $log) if $interpolate;
 $wormbase->run_script( "make_agp_file.pl"                        , $log) if $agp;
+
+#several GFF manipulation steps
 $wormbase->run_script( "landmark_genes2gff.pl"                   , $log) if $gff_munge;
 $wormbase->run_script( "GFFmunger.pl -all"                       , $log) if $gff_munge;
-&make_extras                                                             if $extras;
+$wormbase->run_script( "over_load_SNP_gff.pl"                    , $log) if $gff_munge;
 
+&make_extras                                                             if $extras;
 #run some checks
 $wormbase->run_script( "post_build_checks.pl -a"                 , $log) if $check;
 $wormbase->run_script( "data_checks.pl -ace -gff"                , $log) if $data_check;
