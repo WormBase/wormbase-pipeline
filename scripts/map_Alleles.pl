@@ -11,14 +11,16 @@ use Wormbase;
 use Getopt::Long;
 use IO::File;    
 
-my ( $debug, $store, $outdir,$allele ,$noload);
+my ( $debug, $store, $outdir,$allele ,$noload,$database);
 
 GetOptions(
-    'debug=s' => \$debug,
-    'store=s' => \$store,
+    'debug=s'  => \$debug,
+    'store=s'  => \$store,
 	'outdir=s' => \$outdir,
 	'allele=s' => \$allele,
-	'noload'	   => \$noload,
+	'noload'   => \$noload,
+	'noupdate' => \$noload,
+	'database' => \$database,
 );
 
 # WormBase template
@@ -29,7 +31,7 @@ if ($store) {
     $wb = Storable::retrieve($store)
       or croak("cannot restore wormbase from $store");
 }
-else { $wb = Wormbase->new( -debug => $debug, -test => $debug ) }
+else { $wb = Wormbase->new( -debug => $debug, -test => $debug, -autoace => $database ) }
 
 my $log = Log_files->make_build_log($wb);
 MapAlleles::setup($log,$wb);
@@ -49,6 +51,9 @@ my $alleles = $allele? MapAlleles::get_allele($allele) : MapAlleles::get_all_all
 # map them
 my $mapped_alleles = MapAlleles::map($alleles);
 undef $alleles;# could theoretically undef the alleles here 
+
+# for other databases don't run through the GFF_SPLITs
+&finish() if $database;
 
 my $fh = new IO::File ">$acefile";
 # create mapping Ace file
@@ -80,6 +85,11 @@ MapAlleles::print_utr($hit_utrs,$fh);
 # load to ace and close filehandle
 MapAlleles::load_ace($fh,$acefile) unless $noload;
 
+&finish();
+
 # send the report
-if (MapAlleles::get_errors()){$log->mail( $maintainer, "BUILD REPORT: map_Alleles.pl ${\MapAlleles::get_errors()} ERRORS" )}
-else {$log->mail( $maintainer, 'BUILD REPORT: map_Alleles.pl')}
+sub finish {
+	if (MapAlleles::get_errors()){$log->mail( $maintainer, "BUILD REPORT: map_Alleles.pl ${\MapAlleles::get_errors()} ERRORS" )}
+	else {$log->mail( $maintainer, 'BUILD REPORT: map_Alleles.pl')}
+	exit 0;
+}
