@@ -41,14 +41,15 @@ my $next_build = ($version + 1);
 
 #my $blast_dir = $wormbase->acefiles;
 my $blast_dir = "/acari/work2a/wormpipe/dumps/blastx";
+my $temp_dir = "/nfs/disk100/wormpub/camace_orig/WS$version-WS$next_build/tmp";
+$wormbase->run_command("mkdir $temp_dir", $log);
 my $outdir = "/nfs/disk100/wormpub/camace_orig/WS$version-WS$next_build";
 print "/nfs/disk100/wormpub/camace_orig/WS$version-WS$next_build\n\n\n" if ($test);
 
 #copy old COMMON_DATA file over to COMMON_DATA dir
 $wormbase->run_command("cp " .$wormbase->misc_static."/clone2centre.dat " .$wormbase->common_data."/", $log);
 print "cp " .$wormbase->misc_static."/clone2centre.dat " .$wormbase->common_data."/\n\n" if ($test);
-# Is acari mounted?
-$wormbase->run_command("touch /acari/work2a/wormpipe/dumps/blastx/", $log) and $log->log_and_die (" Acari is not mounted!!");
+
 my %clone2centre = $wormbase->FetchData("clone2centre") or $log->log_and_die ("ERROR: Cannot find COMMON_DATA/clone2centre.dat\n");
 my $out;
 # tace executable path
@@ -78,6 +79,7 @@ open ($stl_out,">$outdir/STL_blastx.ace") || die "ERROR Can\'t open STL output $
 open ($cam_out,">$outdir/CAM_blastx.ace") || die "ERROR Can\'t open CAM output $outdir/CAM_blastx.ace\n";
 $log->write_to("\t\tPROCESSING DATA\n\t\t================================================================\n");
 foreach my $file ( @files2split ){
+  $wormbase->run_command("scp ecs4:$blast_dir/$file $temp_dir/", $log);
 my $clone = "";
 my $type = "";
 $log->write_to("\nProcessing $blast_dir/$file\n");
@@ -85,7 +87,7 @@ if ($file =~ (/(\S+)_blastx.ace/)){
 $type = $1;
 #print "$type\n\n";
 }
-  open ($blast_file, "<$blast_dir/$file" ) or $log->log_and_die ("can\'t open input file $file\t$!\n");
+  open ($blast_file, "<$temp_dir/$file" ) or $log->log_and_die ("can\'t open input file $file\t$!\n");
   #Sequence : "cTel33B"
   $out = $cam_out;
   while (<$blast_file>) {
@@ -125,6 +127,7 @@ $type = $1;
       }
     }
   }
+  $wormbase->run_command("rm $temp_dir/$file\n\n", $log);
 }
 
 $log->write_to("\nSplit Output file can be found under $outdir/CAM_blastx.ace - STL_blastx.ace\n");
@@ -139,7 +142,7 @@ close $out;
 close $cam_out;
 close $stl_out;
 
-#$log->mail("pad\@sanger.ac.uk");
+$log->mail("pad\@sanger.ac.uk");
 
 exit(0);
 
