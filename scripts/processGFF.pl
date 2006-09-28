@@ -6,8 +6,8 @@
 #
 # handles post processing of GFF files
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2006-03-03 10:22:50 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2006-09-28 10:43:19 $
 
 
 use lib $ENV{CVS_DIR};
@@ -18,7 +18,7 @@ use Storable;
 use Log_files;
 
 my ($help, $debug, $test, $quicktest, $database, $store );
-my ($utr, $clone_acc, $gene_acc, $nematode);
+my ($utr, $clone_acc, $gene_acc, $nematode, $mass_spec);
 my ($input, $output);
 GetOptions (
 	    "help"          => \$help,
@@ -32,6 +32,7 @@ GetOptions (
 	    "clone_acc"     => \$clone_acc,
 	    "gene_acc"      => \$gene_acc,
 	    "nematode"      => \$nematode,
+	    "mass_spec"     => \$mass_spec,
 
 	    "input:s"       => \$input,
 	    "output:s"      => \$output,
@@ -54,6 +55,8 @@ my @chroms = qw( I II III IV V X MtDNA);
 @chroms = qw(III) if $quicktest;
 
 $wormbase->run_script('add_species_to_BLAT_GFF.pl', $log) if $nematode;
+$wormbase->run_script('add_info_to_MassSpec_GFF.pl', $log) if $mass_spec;
+
 if( $input and $output ){
   &GFF_with_UTR($input, $output)               if $utr;
   &GFF_clones_with_accessions($input, $output) if $clone_acc;
