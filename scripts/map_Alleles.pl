@@ -9,9 +9,26 @@ use lib "$ENV{CVS_DIR}/Modules";
 use map_Alleles;
 use Wormbase;
 use Getopt::Long;
-use IO::File;    
+use IO::File;              
 
-my ( $debug, $store, $outdir,$allele ,$noload,$database);
+sub print_usage{
+print  <<USAGE;
+map_Allele.pl options:
+	-debug USER_NAME    sets email address and debug mode
+	-store FILE_NAME    use a Storable wormbase configuration file
+	-outdir DIR_NAME    print allele_mapping_VERSION.ace to DIR_NAME
+	-allele ALLELE_NAME check only ALLELE_NAME instead of all
+	-noload             don't update AceDB
+	-noupdate           same as -noload
+	-database DATABASE_DIRECTORY      use a different AceDB
+	-weak_checks        relax sequence sanity checks
+	-help               print this message
+USAGE
+
+exit 1;	
+}
+
+my ( $debug, $store, $outdir,$allele ,$noload,$database,$weak_checks,$help);
 
 GetOptions(
     'debug=s'  => \$debug,
@@ -20,13 +37,15 @@ GetOptions(
 	'allele=s' => \$allele,
 	'noload'   => \$noload,
 	'noupdate' => \$noload,
-	'database' => \$database,
-);
+	'database=s' => \$database,
+	'weak_checks' => \$weak_checks,
+	'help'		=> \$help,
+) or &print_usage();
 
+&print_usage if $help;
 # WormBase template
 my $maintainer = 'All';
 my $wb;
-$debug=$ENV{LOGNAME} if $debug==1;
 
 if ($store) {
     $wb = Storable::retrieve($store)
@@ -35,7 +54,8 @@ if ($store) {
 else { $wb = Wormbase->new( -debug => $debug, -test => $debug, -autoace => $database ) }
 
 my $log = Log_files->make_build_log($wb);
-MapAlleles::setup($log,$wb);
+MapAlleles::setup($log,$wb) unless $database;
+MapAlleles::set_wb_log($log,$wb,$weak_checks) if $database;
 
 my $release=$wb->get_wormbase_version;
 my $acefile=( $outdir ? $outdir : $wb->acefiles ) . "/allele_mapping.WS$release.ace";

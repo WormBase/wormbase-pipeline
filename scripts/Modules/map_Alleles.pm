@@ -36,7 +36,7 @@ memoize('Sequence_extract::Sub_sequence');
 use gff_model;
 
 # needs to be attached in main code
-my ($log,$wb,$errors,$extractor);
+my ($log,$wb,$errors,$extractor,$weak_checks);
 
 my ($index); # mem_index test
 
@@ -68,6 +68,21 @@ sub setup{
 	$index=Mem_index::build;
 	$extractor=Sequence_extract->invoke($wb->autoace,undef,$wb);
    	return 1;
+}
+
+=head2 setup
+
+	Title	: set_wb_log
+	Usage	: MapAlleles::set_wb_log($log,$wormbase)
+	Function: sets up package wide variables ONLY
+	Returns	: 1 on success
+	Args	: logfiles object , wormbase object
+
+=cut
+
+sub set_wb_log {
+	($log,$wb,$weak_checks)=@_;
+	return 1
 }
 
 =head2 get_all_alleles
@@ -128,7 +143,7 @@ sub _filter_alleles {
         if ( ! defined $allele->Sequence ) { # not connected to a sequence
 			$log->write_to("ERROR: $name has missing Sequence tag\n");$errors++
 			}
-        elsif ( !defined $allele->Sequence->Source ) {  # connected sequence has no source
+        elsif ( !defined $allele->Sequence->Source && !defined $weak_checks) {  # connected sequence has no source
             $log->write_to("ERROR: $name connects to ${\$allele->Sequence} which has no Source tag\n");$errors++
         }
         elsif (!defined $allele->Flanking_sequences){
