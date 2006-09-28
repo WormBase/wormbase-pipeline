@@ -3,7 +3,7 @@
 # This is to add Confirmed / Predicted Status and RFLP to SNP gff lines as requested by Todd
 #
 # Last updated by: $Author: ar2 $     
-# Last updated on: $Date: 2006-09-01 14:14:04 $      
+# Last updated on: $Date: 2006-09-28 08:34:17 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -70,19 +70,21 @@ my $dir = $wormbase->chromosomes;
 my $stat = 0;
 foreach my $chrom (@chroms) {
 	open(GFF,"<$dir/CHROMOSOME_${chrom}.gff") or $log->log_and_die("cant open $dir/CHROMOSOME_${chrom}.gff");
+	open(NEW,">$dir/CHROMOSOME_${chrom}.gff.tmp") or $log->log_and_die("cant open $chrom tmp file\n");
 	while( <GFF> ) {
 		chomp;	
-		print "$_";
+		print NEW "$_";
 		#CHROMOSOME_V    Allele  SNP     155950  155951  .       +       .       Variation "uCE5-508"
 		#I       Allele  SNP     126950  126950  .       +       .       Variation "pkP1003"  ;  Status "Confirmed_SNP" ; RFLP "Yes"
 		if( /SNP/ and /Allele/) {
 			my ($allele) = /Variation \"(.+)\"$/;
-			print " ; Status \"",$SNP{$allele}->{'confirm'},"\"" if $SNP{$allele}->{'confirm'};
-			print " ; RFLP ", (defined $SNP{$allele}->{'RFLP'}? '"Yes"' : '"No"');
+			print NEW " ; Status \"",$SNP{$allele}->{'confirm'},"\"" if $SNP{$allele}->{'confirm'};
+			print NEW " ; RFLP ", (defined $SNP{$allele}->{'RFLP'}? '"Yes"' : '"No"');
 			$stat++;
 		}
-		print "\n";
+		print NEW "\n";
 	}
+	$wormbase->run_command("mv -f $dir/CHROMOSOME_${chrom}.gff.tmp $dir/CHROMOSOME_${chrom}.gff", $log);
 }
 
 # Close log files and exit
