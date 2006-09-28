@@ -3,7 +3,7 @@
 # map_operons.pl
 
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2006-03-24 16:59:57 $
+# Last edited on: $Date: 2006-09-28 11:26:07 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -43,7 +43,7 @@ foreach (@chromosomes){
     next if /^\#/;
     my @data = split;
     next unless ($data[2] eq 'gene');
-    $data[9] =~ s/\"//g;
+    $data[9] =~ s/\"//g;#"
     my $gene = $data[9];
     $gene_span{$gene}->{'chrom'} = $data[0];
     $gene_span{$gene}->{'start'} = $data[3];
@@ -56,6 +56,7 @@ open (OUT,">$acefile") or $log->log_and_die("cant open $acefile : $!\n");
 my $db = Ace->connect(-path => $wb->autoace) or $log->log_and_die("cant connect to ".$wb->autoace." :".Ace->error."\n");
 my @operons = $db->fetch('Operon' => '*');
 foreach my $operon(@operons) {
+	next if $operon->Merged_into;
   my @genes = map($_->name, $operon->Contains_gene);
   my ($op_start, $op_end, $op_strand, $op_chrom);
   foreach my $gene (@genes) {
