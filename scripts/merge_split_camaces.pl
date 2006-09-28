@@ -5,13 +5,14 @@
 # A script to make multiple copies of camace for curation, and merge them back again
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2006-08-18 16:20:41 $
+# Last edited on: $Date: 2006-09-28 15:53:00 $
 
 
 use strict;
 use lib $ENV{'CVS_DIR'};
 use Wormbase;
 use Getopt::Long;
+use Log_files;
 #use Storable;
 
 ##############################
@@ -43,8 +44,8 @@ my $wormbase,
 	      "help"       => \$help,
 	      "debug"      => \$debug,
 	      "version:s"  => \$version,
-	      #"store"      => \$store,
-	      #"test"       => \$test,
+	      "store"      => \$store,
+	      "test"       => \$test,
 	     );
 
 
@@ -60,6 +61,8 @@ else {
 			     -test => $test,
 			   );
 }
+
+my $log = Log_files->make_build_log($wormbase);
 
 my $tace = $wormbase->tace;
 my $WS_version = $version;
@@ -89,7 +92,7 @@ our $directory   = "/nfs/disk100/wormpub/camace_orig/WS${WS_version}-WS${next_bu
 
 if ($merge) {
 
-  print "Make a new directory : '$directory'\n" if ($debug);
+  print "New directory : '$directory'\n\n" if ($debug);
   mkdir ($directory) or die "Failed to create ${directory}\n";
 
   print "You are merging Data from " . (join '-',@databases) ."\n\n";
@@ -106,8 +109,8 @@ if ($merge) {
     foreach my $class (@classes) {
       my $path_new = $directory . "/${class}_${database}.ace";
       my $path_ref = $directory . "/${class}_orig.ace";
-      system ("acediff $path_ref $path_new > $directory/${class}_diff_${database}.ace") || die "Failed to run acediff for ${path_new}\n";
-      system ("reformat_acediff $directory/${class}_diff_${database}.ace   > $directory/update_${class}_${database}.ace") || die "Failed to run reformat ace file for $directory/${class}_diff_${database}.ace\n";
+      $wormbase->run_command("csh -c \"/nfs/disk100/wormpub/ACEDB/bin_ALPHA//acediff $path_ref $path_new >! $directory/${class}_diff_${database}.ace\"", $log) && die "Failed to run acediff for ${path_new}\n";
+      $wormbase->run_command("csh -c \"reformat_acediff $directory/${class}_diff_${database}.ace >! $directory/update_${class}_${database}.ace\"", $log) && die "Failed to run reformat ace file for $directory/${class}_diff_${database}.ace\n";
     }
   }
   print "Phase 1 finished and all files can be found in $directory\n";
@@ -129,10 +132,9 @@ if ($update) {
 
 if ($split) {
   print "Removing old split databases and Copying $canonical database to the split camaces\n";
-  if ($debug){shift (@databases)};
+#  if ($debug){shift (@databases)};
   &split_databases;
   print "Phase 3 finished. All ~wormpub split camaces can now be used\n\nCheck all TransferDB log files for \"ended SUCCESSFULLY\"\n";
-#  exit(0);
 }
 
 print "Diaskeda same Poli\n"; #we had alot of fun#
@@ -220,7 +222,7 @@ sub update_camace {
   ## Old way of uplading EST & mRNA data  ##
   ##########################################
   #print "Upload new mRNAs in $canonical\n";
-  #&loadace("/nfs/disk100/wormpub/analysis/ESTs/elegans_mRNAs.ace",'NDB_data') or die "Failed to load new mRNA data";  
+  #&loadace("/nfs/disk100/wormpub/analysis/ESTs/elegans_mRNAs.ace",'NDB_data') or die "Failed to load new mRNA data";
   #print "Upload new ESTss in $canonical\n";
   #&loadace("/nfs/disk100/wormpub/analysis/ESTs/elegans_ESTs.ace",'NDB_data') or die "Failed to load new mRNA data";
   
@@ -228,30 +230,32 @@ sub update_camace {
   ## upload BLAT results to database ##
   #####################################
   print "\n\nUpdate BLAT results in $canonical\n";
-  # debugging system ("perl /nfs/team71/worm/pad/WORMBASE_CVS/scripts/load_blat2db.pl -all -dbdir $canonical") or die "Failed to run load_blat2db.pl\n";
-  $wormbase->run_script("load_blat2db.pl -all -dbdir $canonical"); or die "Failed to run load_blat2db.pl\n";
+  system ("perl /nfs/team71/worm/pad/WORMBASE_CVS/scripts/load_blat2db.pl -all -dbdir $canonical") or die "Failed to run load_blat2db.pl\n";
+  $wormbase->run_script("load_blat2db.pl -all -dbdir $canonical") && die "Failed to run load_blat2db.pl\n";
   
   ####################################################
   ## Update and load blastx results to the database ##
   ####################################################
   print "Update blastx results in $canonical\n";
-  # debugging  system ("perl /nfs/team71/worm/pad/WORMBASE_CVS/scripts/misc/split_blastx_by_centre.pl -version $WS_version") or die "Failed to generate newblastx data for camace using split_blastx_by_centre.pl\n";
-  $wormbase->run_script("misc/split_blastx_by_centre.pl -version $WS_version") or die "Failed to generate newblastx data for camace using split_blastx_by_centre.pl\n";
-  &loadace("$directory/CAM_blastx.ace", 'merge_split_blastx')  or die "Failed to load new blastx_data\n";
-  print "Updated blastx datain $canonical\n\n";
+  system ("perl /nfs/team71/worm/pad/WORMBASE_CVS/scripts/misc/split_blastx_by_centre.pl -version $WS_version") or die "Failed to generate newblastx data for camace using split_blastx_by_centre.pl\n";
+  $wormbase->run_command("ssh ecs2") && die "failed to mount britannic\n";
+  $wormbase->run_script("misc/split_blastx_by_centre.pl -version $WS_version") && die "Failed to generate newblastx data for camace using split_blastx_by_centre.pl\n";
+  $wormbase-run_command("exit") && die "failed to drop britannic\n";
+  &loadace("$directory/CAM_blastx.ace", 'merge_split_blastx') or die "Failed to load new blastx_data\n";
+  print "Updated blastx data in $canonical\n\n";
 
   ##################################################################################
   ## Update Gene IDs, Protein ID's and check the sequence versions of our clones. ##
   ##################################################################################
   print "\n\nRunning Gene_ID_update.pl to refresh WBGene ID\'s Protein_ID\'s and Clone sequence versions.\n\n";
-  $wormbase->run_script("GeneID_updater.pl -geneID -proteinID -version $WS_version -update") or die "Failed to run Gene_ID_updater.pl\n";
+  $wormbase->run_script("GeneID_updater.pl -geneID -proteinID -version $WS_version -update") && die "Failed to run Gene_ID_updater.pl\n";
   print "Updated WBGene ID\'s Protein_ID\'s and Clone sequence versions.\n";
 
   #######################################################
   ## Get new ESTs/mRNAs from EMBL and load into camace ##
   #######################################################
   print "\n\nRunning whats_new_in_EMBL.pl to get new ESTs/mRNAs from EMBL\n\n";
-  $wormbase->run_script("whats_new_in_EMBL.pl") or die "Failed to run whats_new_in_embl.pl\n";
+  $wormbase->run_script("whats_new_in_EMBL.pl -version $version") && die "Failed to run whats_new_in_embl.pl\n";
   &loadace("$directory/new_mRNA.ace", 'merge_split_mRNAs') or die "Failed to load new mRNA Data\n";
   print "Imported new mRNA data into camace.\n";
   print "*****************You will need to manually alter the EST file as we re-name the ESTs after their yk id.******************\n\n";
@@ -272,7 +276,7 @@ sub split_databases {
 
   foreach my $database (@databases) {
     print "Destroying $database\n";
-    system("rm -rf /nfs/disk100/wormpub/camace_${database}/database/ACEDB.wrm") || die "Failed to remove camace_${database}/database/ACEDB.wrm\n";
+    $wormbase->run_command("rm -rf /nfs/disk100/wormpub/camace_${database}/database/ACEDB.wrm", $log) && die "Failed to remove /nfs/disk100/wormpub/camace_${database}/database/ACEDB.wrm\n";
     my $split_db = "/nfs/disk100/wormpub/camace_${database}";
     my $command = "y\nquit\n";
     open (TACE,"| $tace -tsuser merge_split $split_db") or die "Failed to open database connection\n";
@@ -280,7 +284,7 @@ sub split_databases {
     close TACE;
     print "Transfering $canonical to camace_$database\n";
     system ("TransferDB.pl -start $canonical -end ~wormpub/camace_${database} -split -database -wspec");
-  }
+    }
   print "CAMACE SPLITS UPDATED\n";
 }
 
