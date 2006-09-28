@@ -26,6 +26,7 @@ GetOptions(
 # WormBase template
 my $maintainer = 'All';
 my $wb;
+$debug=$ENV{LOGNAME} if $debug==1;
 
 if ($store) {
     $wb = Storable::retrieve($store)
