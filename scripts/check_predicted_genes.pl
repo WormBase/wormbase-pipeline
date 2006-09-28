@@ -4,7 +4,7 @@
 #
 # by Keith Bradnam
 #
-# Last updated on: $Date: 2006-04-11 14:23:33 $
+# Last updated on: $Date: 2006-09-28 15:58:46 $
 # Last updated by: $Author: pad $
 #
 # see pod documentation at end of file for more information about this script
@@ -98,7 +98,7 @@ foreach my $gene_model ( @Predictions ) {
     my $intron_size = ($exon_coord1[$i] - $exon_coord2[$i-1] -1);
     print "ERROR: $gene_model has a small intron ($intron_size bp)\n" if (($intron_size < 34)  && $verbose && ($method_test eq 'curated'));
     push(@error4,"WARNING: $gene_model has a very small intron ($intron_size bp)\n") if (($intron_size < 34) && (!$basic) && ($method_test eq 'curated'));
-    push(@error5,"WARNING: $gene_model has a small intron ($intron_size bp)\n") if (($intron_size > 33) && ($intron_size < 39) && (!$basic) && ($method_test eq 'curated'));
+    push(@error5,"WARNING: $gene_model has a small intron ($intron_size bp)\n") if (($intron_size > 33) && ($intron_size < 39) && (!$basic) && $verbose && ($method_test eq 'curated'));
   }
 	
   for ($i=0; $i<@exon_coord1; $i++) {
@@ -277,7 +277,7 @@ sub test_gene_sequence_for_errors{
 	    
   # check for length errors(CDS specific)
   my $warning;
-  if (($gene_model_length < 100) && ($method_test eq 'curated')) {
+  if (($gene_model_length < 75) && ($method_test eq 'curated')) {
     $warning = "WARNING: $gene_model is very short ($gene_model_length bp), ";
     print "WARNING: $gene_model is very short ($gene_model_length bp), " if $verbose;
 		
@@ -292,7 +292,7 @@ sub test_gene_sequence_for_errors{
       print "gene is predicted\n" if $verbose;
     }
     push(@error3, $warning) unless ($basic);
-  } elsif (($gene_model_length < 150) && ($method_test eq 'curated')) {
+  } elsif (($gene_model_length < 100) && ($method_test eq 'curated')) {
     if (defined($gene_model->at('Properties.Coding.Confirmed_by'))) {
       $warning = "WARNING: $gene_model is short ($gene_model_length bp) and is Confirmed\n";
       print "WARNING: $gene_model is short ($gene_model_length bp) and is Confirmed\n" if $verbose;
