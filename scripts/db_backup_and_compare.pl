@@ -5,7 +5,7 @@
 # backup database and compare to last backed up database to look for lost data
 #
 # Last updated by: $Author: pad $     
-# Last updated on: $Date: 2006-04-18 12:53:28 $      
+# Last updated on: $Date: 2006-09-28 16:10:17 $      
 
 use strict;
 #use lib $ENV{'CVS_DIR'};
@@ -68,9 +68,9 @@ exit (0);
 
 
 ##############################################################
-#
-#              T H E   S U B R O U T I N E S
-#
+#                                                            #
+#              T H E   S U B R O U T I N E S                 #
+#                                                            #
 ##############################################################
 
 
@@ -125,12 +125,9 @@ sub find_and_make_backups{
     # keep TransferDB logs in backup directory
     chdir("$backup_dir") || $log->write_to("Couldn't cd to $backup_dir\n");
     $log->write_to("Making new backup - ${db}_backup\.${date}\n");
-    my $return = $wormbase->run_script("TransferDB.pl -start $base_dir/$db -end ${backup_dir}/${db}_backup\.$date -database -wspec -name ${db}\.$date", $log);
+    $wormbase->run_script("TransferDB.pl -start $base_dir/$db -end ${backup_dir}/${db}_backup\.$date -database -wspec -name ${db}\.$date", $log) && die "ERROR: Couldn't run TransferDB.pl correctly, \nusing the command:\nperl TransferDB.pl -start $base_dir/$db -end ${backup_dir}/${db}_backup\.${date} -database -wspec -name ${db}\.${date} for TransferDB.\n";
     $log->write_to("\nYou have made ${db}_backup\.${date} which is a copy of $base_dir/$db\n");
     $log->write_to("\nThe command:\nperl TransferDB.pl\n-start $base_dir/$db \n-end ${backup_dir}/${db}_backup\.${date}\n-database \n-wspec \n-name ${db}\.${date}\nwas used in this run.\n\n");
-    if($return != 0){
-      $log->log_and_die("ERROR: Couldn't run TransferDB.pl correctly, \nusing the command:\nperl TransferDB.pl -start $base_dir/$db -end ${backup_dir}/${db}_backup\.${date} -database -wspec -name ${db}\.${date} for TransferDB.\n");
-    }
     # Now need to remove the oldest database (assuming that there are now five backups).
     if (scalar(@backups) > "3"){
       $log->write_to("Removing oldest backup - ${db}_backup\.${backups[3]}\n\n");
