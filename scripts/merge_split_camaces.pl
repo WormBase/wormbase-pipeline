@@ -5,7 +5,7 @@
 # A script to make multiple copies of camace for curation, and merge them back again
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2006-09-28 15:53:00 $
+# Last edited on: $Date: 2006-09-29 09:22:02 $
 
 
 use strict;
@@ -230,17 +230,13 @@ sub update_camace {
   ## upload BLAT results to database ##
   #####################################
   print "\n\nUpdate BLAT results in $canonical\n";
-  system ("perl /nfs/team71/worm/pad/WORMBASE_CVS/scripts/load_blat2db.pl -all -dbdir $canonical") or die "Failed to run load_blat2db.pl\n";
-  $wormbase->run_script("load_blat2db.pl -all -dbdir $canonical") && die "Failed to run load_blat2db.pl\n";
+    $wormbase->run_script("load_blat2db.pl -all -dbdir $canonical") && die "Failed to run load_blat2db.pl\n";
   
   ####################################################
   ## Update and load blastx results to the database ##
   ####################################################
   print "Update blastx results in $canonical\n";
-  system ("perl /nfs/team71/worm/pad/WORMBASE_CVS/scripts/misc/split_blastx_by_centre.pl -version $WS_version") or die "Failed to generate newblastx data for camace using split_blastx_by_centre.pl\n";
-  $wormbase->run_command("ssh ecs2") && die "failed to mount britannic\n";
   $wormbase->run_script("misc/split_blastx_by_centre.pl -version $WS_version") && die "Failed to generate newblastx data for camace using split_blastx_by_centre.pl\n";
-  $wormbase-run_command("exit") && die "failed to drop britannic\n";
   &loadace("$directory/CAM_blastx.ace", 'merge_split_blastx') or die "Failed to load new blastx_data\n";
   print "Updated blastx data in $canonical\n\n";
 
