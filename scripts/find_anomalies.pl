@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2006-09-04 12:20:16 $      
+# Last updated on: $Date: 2006-10-02 08:24:20 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -35,7 +35,7 @@ GetOptions ("help"       => \$help,
 	    "test"       => \$test,
 	    "verbose"    => \$verbose,
 	    "store:s"    => \$store,
-	    "database:s" => \$database,	    # use the specified database instead of autoace
+	    "database:s" => \$database,	    # use the specified database instead of currentdb
 	    );
 
 if ( $store ) {
@@ -169,7 +169,12 @@ foreach my $chromosome (@chromosomes) {
   print "reading est data\n";
   my @est = &get_est($database, $chromosome, %Show_in_reverse_orientation);
 
-
+  # get the WABA coding data
+  print "reading WABA coding regions\n";
+  my @waba_coding = get_waba_coding($database, $chromosome);
+  
+  print "reading repeat masked regions\n";
+  my @repeatmasked = get_repeatmasked($database, $chromosome);
 
 
   # get the homologies showing no match to any exon or pseudogene
@@ -180,12 +185,11 @@ foreach my $chromosome (@chromosomes) {
   print "finding frameshifts\n";
   &get_frameshifts($matched_protein_aref, $chromosome);
 
-  print "finding genees to be split/merged based on protein homology\n";
+  print "finding genes to be split/merged based on protein homology\n";
   &get_protein_split_merged($matched_protein_aref, $chromosome);
 
-  # this looks at the ESTs  finds those not attached to a transcript
-  print "finding ESTs sites not attached to a transcript\n";
-  &get_unattached_EST(\@est, $chromosome);
+  print "finding genes to be split based on protein homology groups\n";
+  &get_protein_split($matched_protein_aref, $chromosome);
 
   # this looks at the EST TSL sites and finds those not attached to genes
   print "finding TSL sites not attached to genes\n";
@@ -205,13 +209,22 @@ foreach my $chromosome (@chromosomes) {
   print "finding genefinder exons not overlapping curated regions\n";
   &get_unmatched_genefinder_exons(\@genefinder, \@exons, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, $chromosome);
 
+  print "finding WABA coding regions not overlapping curated regions\n";
+  &get_unmatched_waba_coding(\@waba_coding, \@exons, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, \@repeatmasked, $chromosome);
+
+  print "finding CDS exons overlapping repeatmasker regions\n";
+  &get_matched_repeatmasker(\@exons, \@repeatmasked, $chromosome);
+
+  print "finding CDS exons overlapping other genes\n";
+  &get_matched_exons(\@exons, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, $chromosome);
 
 
 #################################################
 # these don't work very well - don't use
 
-#  print "finding genes to be split based on protein homology groups\n";
-#  &get_protein_split($matched_protein_aref, $chromosome);
+##  this looks at the ESTs  finds those not attached to a transcript
+##  print "finding ESTs sites not attached to a transcript\n";
+##  &get_unattached_EST(\@est, $chromosome);
 
 ##  print "read confirmed_introns and other GFF files\n";
 ## this is probably easier to do explicitly using the script 'load_anomalies_gff_file.pl'
@@ -571,6 +584,53 @@ sub get_genefinder {
 }
 
 ##########################################
+# get the WABA coding regions
+#  my @waba_coding = get_waba_coding($database, $chromosome);
+
+sub get_waba_coding {
+  my ($database, $chromosome) = @_;
+
+
+  my %GFF_data = 
+   (
+     directory			=> "$database/CHROMOSOMES/", # NB we are reading the full gff file, not the split ones here
+     file			=> "CHROMOSOME_${chromosome}.gff",
+     gff_source			=> "waba_coding",
+     gff_type			=> "nucleotide_match",
+     homology			=> "1",	# this is a GFF with homology data that we need to store
+     anomaly_type		=> "",
+     ID_after			=> "Target\\s+\"Sequence:",
+     action                     => ["return_result"],
+   );
+
+  return &read_GFF_file(\%GFF_data);
+
+}
+##########################################
+# get the RepeatMasked regions
+#  my @repeatmasked = get_repeatmasked($database, $chromosome);
+#CHROMOSOME_I    RepeatMasker    repeat_region   15072245        15072418        1563    .       .       Target "Motif:Ce000094" 180 7
+
+sub get_repeatmasked {
+  my ($database, $chromosome) = @_;
+
+
+  my %GFF_data = 
+   (
+     directory			=> "$database/CHROMOSOMES/", # NB we are reading the full gff file, not the split ones here
+     file			=> "CHROMOSOME_${chromosome}.gff",
+     gff_source			=> "RepeatMasker",
+     gff_type			=> "repeat_region",
+     anomaly_type		=> "",
+     ID_after			=> "Target\\s+\"Motif:",
+     action                     => ["return_result"],
+   );
+
+  return &read_GFF_file(\%GFF_data);
+
+}
+
+##########################################
 # get the Sequence objects with the tag 'Show_in_reverse_orientation'
 
 sub get_Show_in_reverse_orientation {
@@ -624,7 +684,7 @@ sub get_est {
   #
   # The GFF file holds the original sense though, so we do an explicit
   # flip of the sense of any 3' reads so that when we come to display
-  # the ESTs in the curation tool, we get the dispaly coming up the
+  # the ESTs in the curation tool, we get the display coming up the
   # right way round.
   #
 
@@ -696,7 +756,7 @@ sub get_protein_differences {
     if (&match($homology, $transposons_aref, \%trans_match)) {
       $got_a_match = 1;
       $got_a_match_to_coding_exon = 1;
-      $matching_exon = $exons_match{'matching_ids'};
+      $matching_exon = $trans_match{'matching_ids'};
     }
 
     if (&match($homology, $transposon_exons_aref, \%trane_match)) {
@@ -780,7 +840,7 @@ sub get_EST_differences {
     if (&match($homology, $transposons_aref, \%trans_match)) {
       $got_a_match = 1;
       $got_a_match_to_coding_exon = 1;
-      $matching_exon = $exons_match{'matching_ids'};
+      $matching_exon = $trans_match{'matching_ids'};
     }
 
     if (&match($homology, $transposon_exons_aref, \%trane_match)) {
@@ -1093,7 +1153,7 @@ sub get_protein_split {
     }
 
     # do we have a new matching transcript? If so, see if the transcript we were doing should be split
-    if ($matching_transcript ne $prev_transcript) {
+    if ($matching_transcript ne $prev_transcript && $prev_transcript ne "") {
 
       print "Got all homologies for $prev_transcript\n";
 
@@ -1112,28 +1172,31 @@ sub get_protein_split {
 	  if ($anomaly_score > 1) {$anomaly_score = 1;}
 	  if ($anomaly_score < 0) {$anomaly_score = 0;}
 	  print "SPLIT gene ANOMALY $pep_protein_id, $pep_chrom_start, $pep_chrom_end, $pep_chrom_strand, $anomaly_score, 'split $pep_matching_transcript'\n";
-	  #output_to_database("SPLIT_GENE_BY_PROTEIN_GROUPS", $chromosome, $pep_protein_id, $pep_chrom_start, $pep_chrom_end, $pep_chrom_strand, $pep_anomaly_score, "split $pep_matching_transcript");
+	  output_to_database("SPLIT_GENE_BY_PROTEIN_GROUPS", $chromosome, $pep_protein_id, $pep_chrom_start, $pep_chrom_end, $pep_chrom_strand, $anomaly_score, "split $pep_matching_transcript");
 
 	}
       }
 
-      if (@box_results = split_check(@rempep)) {
-	foreach my $pep (@box_results) {
-	  my $pep_protein_id = $pep->[0];
-	  my $pep_chrom_start = $pep->[1];
-	  my $pep_chrom_end = $pep->[2];
-	  my $pep_chrom_strand = $pep->[3];
-	  my $pep_protein_score = $pep->[6];
-	  my $pep_matching_transcript = $pep->[7];
-	  my $anomaly_score = $pep_protein_score/1000;
-	  if ($anomaly_score > 1) {$anomaly_score = 1;}
-	  if ($anomaly_score < 0) {$anomaly_score = 0;}
-	  print "SPLIT gene ANOMALY $pep_protein_id, $pep_chrom_start, $pep_chrom_end, $pep_chrom_strand, $anomaly_score, 'split $pep_matching_transcript'\n";
-	  #output_to_database("SPLIT_GENE_BY_PROTEIN_GROUPS", $chromosome, $pep_protein_id, $pep_chrom_start, $pep_chrom_end, $pep_chrom_strand, $pep_anomaly_score, "split $pep_matching_transcript");
+# don't use the C.remanei proteins becasue they are so fragmented that
+# they produce hundreds of false positive results
+
+#      if (@box_results = split_check(@rempep)) {
+#	foreach my $pep (@box_results) {
+#	  my $pep_protein_id = $pep->[0];
+#	  my $pep_chrom_start = $pep->[1];
+#	  my $pep_chrom_end = $pep->[2];
+#	  my $pep_chrom_strand = $pep->[3];
+#	  my $pep_protein_score = $pep->[6];
+#	  my $pep_matching_transcript = $pep->[7];
+#	  my $anomaly_score = $pep_protein_score/1000;
+#	  if ($anomaly_score > 1) {$anomaly_score = 1;}
+#	  if ($anomaly_score < 0) {$anomaly_score = 0;}
+#	  print "SPLIT gene ANOMALY $pep_protein_id, $pep_chrom_start, $pep_chrom_end, $pep_chrom_strand, $anomaly_score, 'split $pep_matching_transcript'\n";
+#	  output_to_database("SPLIT_GENE_BY_PROTEIN_GROUPS", $chromosome, $pep_protein_id, $pep_chrom_start, $pep_chrom_end, $pep_chrom_strand, $anomaly_score, "split $pep_matching_transcript");
 
 
-	}
-      }
+#	}
+#      }
 
       if (@box_results = split_check(@wormpep)) {
 	foreach my $pep (@box_results) {
@@ -1147,7 +1210,7 @@ sub get_protein_split {
 	  if ($anomaly_score > 1) {$anomaly_score = 1;}
 	  if ($anomaly_score < 0) {$anomaly_score = 0;}
 	  print "SPLIT gene ANOMALY $pep_protein_id, $pep_chrom_start, $pep_chrom_end, $pep_chrom_strand, $anomaly_score, 'split $pep_matching_transcript'\n";
-	  #output_to_database("SPLIT_GENE_BY_PROTEIN_GROUPS", $chromosome, $pep_protein_id, $pep_chrom_start, $pep_chrom_end, $pep_chrom_strand, $pep_anomaly_score, "split $pep_matching_transcript");
+	  output_to_database("SPLIT_GENE_BY_PROTEIN_GROUPS", $chromosome, $pep_protein_id, $pep_chrom_start, $pep_chrom_end, $pep_chrom_strand, $anomaly_score, "split $pep_matching_transcript");
 	}
       }
 
@@ -1165,10 +1228,13 @@ sub get_protein_split {
       # add this protein to the list of homologies to be put into boxes
       push @brigpep, $homology;
 
-    } elsif ($protein_id =~ /^RP:/) {
+#    } elsif ($protein_id =~ /^RP:/) {
 
+# don't use the C.remanei proteins becasue they are so fragmented that
+# they produce hundreds of false positive results
+      
       # add this protein to the list of homologies to be put into boxes
-      push @rempep, $homology;
+#      push @rempep, $homology;
 
     } elsif ($protein_id =~ /^WP:/) {
       
@@ -1208,23 +1274,23 @@ sub split_check {
     my $protein_score = $homology->[6];
     my $matching_transcript = $homology->[7];
 
-    print "$protein_id $chrom_start $chrom_end\n";
+    #print "$protein_id $chrom_start $chrom_end\n";
 
     $last_sense = $sense;
  
     my $got_a_match = 0;
 
-    print "Have @boxes boxes in the list\n";
+    #print "Have @boxes boxes in the list\n";
 
     foreach my $box (@boxes) {
       # find an existing box to merge to
-      # merge if it contains a previous block of this protein's homology or it has substantial overlap to this block of homology
-      print "$protein_id Box   " . $box->{'chrom_start'} . " " . $box->{'chrom_end'} . " " . $box->{'clone'} . " IDs:  " . @{$box->{'ID'}} . "\n";
-      if ((grep /$protein_id/, @{$box->{'ID'}} ||
+      # merge if it contains a previous block of this protein's homology or it has an overlap to this block of homology
+      #print "$protein_id Box   " . $box->{'chrom_start'} . " " . $box->{'chrom_end'} . " IDs:  " , @{$box->{'ID'}} , "\n";
+      if (((grep /$protein_id/, @{$box->{'ID'}}) ||
 	  $box->{'chrom_start'} <= $chrom_end && $box->{'chrom_end'} >= $chrom_start) &&
           ! exists $box->{'deleted'}) {
                                                                                                                                               
-        print "*** Box $box->{'chrom_start'}..$box->{'chrom_end'}, matches $protein_id, $chrom_start, $chrom_end, $protein_score\n";
+        #print "*** Box $box->{'chrom_start'}..$box->{'chrom_end'}, matches $protein_id, $chrom_start, $chrom_end, $protein_score\n";
                                                                                                                                               
 	# add this homology to the box
         $box->{'count'}++;        # add to the count of matches in this box
@@ -1252,7 +1318,7 @@ sub split_check {
           };
                                                                                                                                               
           # now start checks for overlaps of boxes
-          if ((grep /$protein_id/, @{other_$box->{'ID'}} ||
+          if (((grep /$protein_id/, @{$other_box->{'ID'}}) ||
 	       $other_box->{'chrom_start'} <= $box->{'chrom_end'} && $other_box->{'chrom_end'} >= $box->{'chrom_start'}) &&
               ! exists $other_box->{'deleted'}
               ) {
@@ -1262,7 +1328,7 @@ sub split_check {
             if ($box->{'chrom_start'} > $other_box->{'chrom_start'}) {$box->{'chrom_start'} = $other_box->{'chrom_start'}};
             if ($box->{'chrom_end'} < $other_box->{'chrom_end'}) {$box->{'chrom_end'} = $other_box->{'chrom_end'}};
             # delete the other box
-            print "deleted $other_box->{'type'} $other_box->{'chrom_start'} $other_box->{'chrom_end'} \n";
+            #print "deleted $other_box->{'type'} $other_box->{'chrom_start'} $other_box->{'chrom_end'} \n";
             $other_box->{'deleted'} = 1; # mark this box as deleted
           }
         }
@@ -1272,7 +1338,7 @@ sub split_check {
                                                                                                                                               
     # no existing boxes found, so start a new one
     if (! $got_a_match) {
-      print "New box for $protein_id, $chrom_start, $chrom_end, $protein_score\n";
+      #print "New box for $protein_id, $chrom_start, $chrom_end, $protein_score\n";
       # want to store: $chromosome_start, $chromosome_end, $sense, $protein_id, $protein_score
       my $new_box = {};             # reference to hash
       $new_box->{'sense'} = $sense;
@@ -1292,13 +1358,14 @@ sub split_check {
 	$box->{'total_score'} > 100 &&
 	$box->{'count'} > 1
 	) {
+      $count_of_boxes_passing_tests++;
       $box->{'passed_test'} = 1;
-      print "Box passed test with $box->{'chrom_start'}..$box->{'chrom_end'} IDs @{$box->{'ID'}}\n";
+      #print "Box passed test with $box->{'chrom_start'}..$box->{'chrom_end'} IDs @{$box->{'ID'}}\n";
     }
   }
 
 # now look to see if we have more than one box and return the details of the IDs in those boxes
-  print "Found $count_of_boxes_passing_tests boxes passing test\n";
+  #print "Found $count_of_boxes_passing_tests boxes passing test\n";
   if ($count_of_boxes_passing_tests > 2) {
     foreach my $box (@boxes) {
       if (exists $box->{'passed_test'}) {
@@ -1741,133 +1808,6 @@ sub get_unmatched_genefinder_exons {
 
 }
 
-
-##########################################
-# resets the match state before a search
-# my %state = &init_match(param => arg, ...);
-# Args:
-#      near => distance - set distance within which a near match is considered to be a match
-#      near_5 => distance - ditto for 5' end of our objects
-#      near_3 => distance - ditto for 3' end of our objects
-#      same_sense => boolean - say it must have both in the same sense for a match
-
-sub init_match {
-  my (@params) = @_;
-
-  my %state = (last_used  => 0, # reset last other-list's line 
-	       last_used_forward => 0, # reset last other-list's line for the forward sense
-	       last_used_reverse => 0, # reset last other-list's line for the reverse sense
-	       near_5     => 0, # assume we don't allow near 5' matches to count as a match
-	       near_3     => 0,	# ditto for 3'
-	       same_sense => 0,	# assume we want to allow a match to an object in either sense, set to true if want the same sense only
-	       );
-
-  while (@params) {
-    my $param = shift @params;
-    if ($param eq "near") {
-      my $near = shift @params;
-      $state{'near_5'} = $near;
-      $state{'near_3'} = $near;
-    } elsif ($param eq "near_5") {
-      my $near_5 = shift @params;
-      $state{'near_5'} = $near_5;
-    } elsif ($param eq "near_3") {
-      my $near_3 = shift @params;
-      $state{'near_3'} = $near_3;
-    } elsif ($param eq "same_sense") {
-      my $same_sense = shift @params;
-      $state{'same_sense'} = $same_sense;
-
-    }
-
-  }
-      
-  return %state;
-
-}
-
-##########################################
-# routine to do generalised matching of the region in this_line versus all of the regions in @other_list
-# $result = &match($this_line, \@other_list, \%state);
-# 
-# Args:
-#      $this_line - ref to array holding ID, chrom_start, chrom_end, chrom_strand and possibly other values on the end
-#      $other_list - ref to array of arrays sorted by start position - each of which holds ID, chrom_start, chrom_end, chrom_strand and possibly other values on the end
-#      $state - ref to hash holding state of the search and controlling parameters for the search and ID of matching results
-#             last_used - must be initialised to 0
-#             near_5 - the amount of bases for nearby other regions to count as an overlap at the 5' end (negative if want to ignore small overlaps)
-#             near_3 - the amount of bases for nearby other regions to count as an overlap allowed at the 3' end (negative if want to ignore small overlaps)
-#             matching_ids - returned space-delimited string of other IDs that match
-# 
-# Returns: 1 if match found, 0 if no match found
-#          the status hash holds the IDs of the exons matched in 'matching_ids'
-
-sub match {
-
-  my ($this_line, $other_list, $state) = @_;
-  my $got_a_match = 0;		# result of the match - no match found yet
-
-  my $id = $this_line->[0];
-  my $chrom_start = $this_line->[1];
-  my $chrom_end = $this_line->[2];
-  my $chrom_strand = $this_line->[3];
-  #print "THIS LINE: $id $chrom_start $chrom_end $chrom_strand\n";
-
-  my $near_3;
-  my $near_5;
-  if ($chrom_strand eq '+') {
-    $near_3 = $state->{'near_3'};
-    $near_5 = $state->{'near_5'};
-  } else {			# swap the values around in the reverse sense
-    $near_3 = $state->{'near_5'};
-    $near_5 = $state->{'near_3'};
-  }
-
-  $state->{'matching_ids'} = ""; # no matching IDs found yet
-
-  # if searching for same-sense matches, then set last_used to be the minimum of last_used_forward and last_used_reverse
-  if ($state->{'same_sense'}) {
-    $state->{'last_used'} = $state->{'last_used_forward'};
-    if ($state->{'last_used_reverse'} < $state->{'last_used_forward'}) {$state->{'last_used'} = $state->{'last_used_reverse'};}
-  }
-
-  #print "last_used $state->{'last_used'}\n";
-
-  for (my $other_start = 0, my $i = $state->{'last_used'}; $other_start < $chrom_end && defined $other_list->[$i]; $i++) {
-    my $other = $other_list->[$i];
-    # test if there is an overlap (allowing possible nearby matches) and optionally test if the senses are the same
-    #print "OTHER LINE: $other->[0] $other->[1] $other->[2] $other->[3]\n";
-    if ($other->[1] <= $chrom_end + $near_3 && $other->[2] >= $chrom_start - $near_5 && ($state->{'same_sense'}?($chrom_strand eq $other->[3]):1)) {
-
-      # see if we are testing for them to be in the same sense
-      if ($state->{'same_sense'}) {
-	if ($chrom_strand eq '+') {
-	  # remember where we got up to in this sense
-	  $state->{'last_used_forward'} = $i;
-	} else {
-	  $state->{'last_used_reverse'} = $i;
-	}
-      }
-
-      $got_a_match = 1;
-      $state->{'matching_ids'} .= $other->[0];
-      $state->{'last_used'} = $i;
-      #print "got a match with $other->[0] at $other->[1] $other->[2]\n";
-      last;
-
-
-    } else {
-      #print "no match\n";
-    }
-    $other_start = $other->[1];
-  }
-  #print "out of OTHER loop\n";
-
-  return $got_a_match;
-
-}
-
-
 ##########################################
 # find the SAGE transcripts that don't overlap the coding exons and pseudogenes
 #  &get_unmatched_SAGE(\@coding_transcripts, \@SAGE_transcripts);
@@ -1928,6 +1868,329 @@ sub get_unmatched_SAGE {
   }
 
 }
+
+
+
+##########################################
+# get genefinder exons that do not match a coding transcript or pseudogene
+#  &get_unmatched_waba_coding(\@waba_coding, \@exons, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, \@repeatmasked, $chromosome);
+
+
+
+sub get_unmatched_waba_coding {
+
+  my ($waba_aref, $exons_aref, $pseudogenes_aref, $transposons_aref, $transposon_exons_aref, $noncoding_transcript_exons_aref, $rRNA_aref, $repeatmasked_aref, $chromosome) = @_;
+
+  my %exons_match = &init_match();
+  my %pseud_match = &init_match();
+  my %trans_match = &init_match();
+  my %trane_match = &init_match();
+  my %nonco_match = &init_match();
+  my %rrna_match = &init_match();
+  my %repeat_match = &init_match();
+
+  foreach my $waba (@{$waba_aref}) { # $waba_id, $chrom_start, $chrom_end, $chrom_strand
+
+    my $got_a_match = 0;
+  
+    if (&match($waba, $exons_aref, \%exons_match)) {
+      $got_a_match = 1;
+    }
+
+    if (&match($waba, $pseudogenes_aref, \%pseud_match)) {
+      $got_a_match = 1;
+    }
+
+    if (&match($waba, $transposons_aref, \%trans_match)) {
+      $got_a_match = 1;
+    }
+
+    if (&match($waba, $transposon_exons_aref, \%trane_match)) {
+      $got_a_match = 1;
+    }
+
+    if (&match($waba, $noncoding_transcript_exons_aref, \%nonco_match)) {
+      $got_a_match = 1;
+    }
+
+    if (&match($waba, $rRNA_aref, \%rrna_match)) {
+      $got_a_match = 1;
+    }
+
+    if (&match($waba, $repeatmasked_aref, \%repeat_match)) {
+      $got_a_match = 1;
+    }
+
+    # output unmatched WABA sites to the database
+    if (! $got_a_match) {
+      my $WABA_id = $waba->[0];
+      my $chrom_start = $waba->[1];
+      my $chrom_end = $waba->[2];
+      my $chrom_strand = $waba->[3];
+      my $waba_score = $waba->[6];
+
+      # make the anomaly score based on the waba score normalised between 0 and 1
+      # the waba scores seem to be between 0 and about 200
+      # we really are not interested in scores of less than 100
+      if ($waba_score < 100) {next;}
+      my $anomaly_score = $waba_score/200;
+      if ($anomaly_score > 1) {$anomaly_score = 1;}
+      if ($anomaly_score < 0) {$anomaly_score = 0;}
+
+      #print "WABA NOT got a match ANOMALY: $WABA_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score\n";
+      &output_to_database("UNMATCHED_WABA", $chromosome, $WABA_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score, '');
+    }
+  }
+
+}
+##########################################
+# get exons that overlap an exons or coding transcript or pseudogene etc on the opposite sense
+#  &get_matched_exons(\@exons, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, $chromosome);
+
+
+
+sub get_matched_exons {
+
+  my ($exons_aref, $pseudogenes_aref, $transposons_aref, $transposon_exons_aref, $noncoding_transcript_exons_aref, $rRNA_aref, $chromosome) = @_;
+
+  my %exons_match = &init_match(other_sense => 1);
+  my %pseud_match = &init_match(other_sense => 1);
+  my %trans_match = &init_match(other_sense => 1);
+  my %trane_match = &init_match(other_sense => 1);
+  my %nonco_match = &init_match(other_sense => 1);
+  my %rrna_match = &init_match(other_sense => 1);
+
+  foreach my $exon (@{$exons_aref}) { # $exon_id, $chrom_start, $chrom_end, $chrom_strand
+
+    my $got_a_match = 0;
+    my $matching_thing;
+
+    if (&match($exon, $exons_aref, \%exons_match)) { # look for matches of exons against exons
+      $got_a_match = 1;
+      $matching_thing = "Overlaps gene: " . $exons_match{'matching_ids'};
+    }
+
+    if (&match($exon, $pseudogenes_aref, \%pseud_match)) {
+      $got_a_match = 1;
+      $matching_thing = "Overlaps pseudogene: " . $pseud_match{'matching_ids'};
+    }
+
+    if (&match($exon, $transposons_aref, \%trans_match)) {
+      $got_a_match = 1;
+      $matching_thing = "Overlaps transposon: " . $trans_match{'matching_ids'};
+    }
+
+    if (&match($exon, $transposon_exons_aref, \%trane_match)) {
+      $got_a_match = 1;
+      $matching_thing = "Overlaps transposon: " . $trane_match{'matching_ids'};
+    }
+
+    if (&match($exon, $noncoding_transcript_exons_aref, \%nonco_match)) {
+      $got_a_match = 1;
+      $matching_thing = "Overlaps non-coding transcript: " . $nonco_match{'matching_ids'};
+    }
+
+    if (&match($exon, $rRNA_aref, \%rrna_match)) {
+      $got_a_match = 1;
+      $matching_thing = "Overlaps rRNA: " . $rrna_match{'matching_ids'};
+    }
+
+    # output matched EXON sites to the database
+    if ($got_a_match) {
+      my $exon_id = $exon->[0];
+      my $chrom_start = $exon->[1];
+      my $chrom_end = $exon->[2];
+      my $chrom_strand = $exon->[3];
+      my $exon_score = $exon->[6];
+
+      my $anomaly_score = 1;
+
+      #print "EXON overlapping other thing ANOMALY: $exon_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score\n";
+      &output_to_database("OVERLAPPING_EXONS", $chromosome, $exon_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score, $matching_thing);
+    }
+  }
+
+}
+
+##########################################
+# find coding exons that match repeatmasked regions 
+#  &get_matched_repeatmasker(\@exons, \@repeatmasked, $chromosome);
+
+
+sub get_matched_repeatmasker {
+
+  my ($exons_aref, $repeatmasked_aref, $chromosome) = @_;
+
+  my %exons_match = &init_match();
+  my %repeat_match = &init_match();
+
+  foreach my $exon (@{$exons_aref}) { # $exon_id, $chrom_start, $chrom_end, $chrom_strand
+
+    my $got_a_match = 0;
+  
+    if (&match($exon, $repeatmasked_aref, \%repeat_match)) {
+      $got_a_match = 1;
+    }
+
+    # output matched exons to the database
+    if ($got_a_match) {
+      my $exon_id = $exon->[0];
+      my $chrom_start = $exon->[1];
+      my $chrom_end = $exon->[2];
+      my $chrom_strand = $exon->[3];
+      my $exon_score = $exon->[6];
+
+      my $anomaly_score = 1;
+
+      #print "REPEAT got a match ANOMALY: $exon_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score\n";
+      &output_to_database("REPEAT_OVERLAPS_EXON", $chromosome, $exon_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score, '');
+    }
+  }
+
+}
+
+
+##########################################
+# resets the match state before a search
+# my %state = &init_match(param => arg, ...);
+# Args:
+#      near => distance - set distance within which a near match is considered to be a match
+#      near_5 => distance - ditto for 5' end of our objects
+#      near_3 => distance - ditto for 3' end of our objects
+#      same_sense => boolean - say it must have both in the same sense for a match
+
+sub init_match {
+  my (@params) = @_;
+
+  my %state = (last_used  => 0, # reset last other-list's line 
+	       last_used_forward => 0, # reset last other-list's line for the forward sense
+	       last_used_reverse => 0, # reset last other-list's line for the reverse sense
+	       near_5     => 0, # assume we don't allow near 5' matches to count as a match
+	       near_3     => 0,	# ditto for 3'
+	       same_sense => 0,	# assume we want to allow a match to an object in either sense, set to true if want the same sense only
+	       other_sense => 0, # assume we want to allow a match to an object in either sense, set to true if want the opposite sense only
+	       );
+
+  while (@params) {
+    my $param = shift @params;
+    if ($param eq "near") {
+      my $near = shift @params;
+      $state{'near_5'} = $near;
+      $state{'near_3'} = $near;
+    } elsif ($param eq "near_5") {
+      my $near_5 = shift @params;
+      $state{'near_5'} = $near_5;
+    } elsif ($param eq "near_3") {
+      my $near_3 = shift @params;
+      $state{'near_3'} = $near_3;
+    } elsif ($param eq "same_sense") {
+      my $same_sense = shift @params;
+      $state{'same_sense'} = $same_sense;
+    } elsif ($param eq "other_sense") {
+      my $other_sense = shift @params;
+      $state{'other_sense'} = $other_sense;
+
+    }
+
+    # sanity check
+    if ($state{'same_sense'} == 1 && $state{'other_sense'} == 1) {
+      die "You can't choose for a match to only things on the same sense and only things on the opposite sense!\n";
+    }
+
+  }
+      
+  return %state;
+
+}
+
+##########################################
+# routine to do generalised matching of the region in this_line versus all of the regions in @other_list
+# $result = &match($this_line, \@other_list, \%state);
+# 
+# Args:
+#      $this_line - ref to array holding ID, chrom_start, chrom_end, chrom_strand and possibly other values on the end
+#      $other_list - ref to array of arrays sorted by start position - each of which holds ID, chrom_start, chrom_end, chrom_strand and possibly other values on the end
+#      $state - ref to hash holding state of the search and controlling parameters for the search and ID of matching results
+#             last_used - must be initialised to 0
+#             near_5 - the amount of bases for nearby other regions to count as an overlap at the 5' end (negative if want to ignore small overlaps)
+#             near_3 - the amount of bases for nearby other regions to count as an overlap allowed at the 3' end (negative if want to ignore small overlaps)
+#             same_sense - 1 if want only matches in same sense
+#             other_sense - 1 if want only matches in opposite sense
+#
+#             matching_ids - returned space-delimited string of other IDs that match
+# 
+# Returns: 1 if match found, 0 if no match found
+#          the status hash holds the IDs of the exons matched in 'matching_ids'
+
+sub match {
+
+  my ($this_line, $other_list, $state) = @_;
+  my $got_a_match = 0;		# result of the match - no match found yet
+
+  my $id = $this_line->[0];
+  my $chrom_start = $this_line->[1];
+  my $chrom_end = $this_line->[2];
+  my $chrom_strand = $this_line->[3];
+  #print "THIS LINE: $id $chrom_start $chrom_end $chrom_strand\n";
+
+  my $near_3;
+  my $near_5;
+  if ($chrom_strand eq '+') {
+    $near_3 = $state->{'near_3'};
+    $near_5 = $state->{'near_5'};
+  } else {			# swap the values around in the reverse sense
+    $near_3 = $state->{'near_5'};
+    $near_5 = $state->{'near_3'};
+  }
+
+  $state->{'matching_ids'} = ""; # no matching IDs found yet
+
+  # if searching for same/opposite sense matches, then set last_used to be the minimum of last_used_forward and last_used_reverse
+  if ($state->{'same_sense'} || $state->{'other_sense'}) {
+    $state->{'last_used'} = $state->{'last_used_forward'};
+    if ($state->{'last_used_reverse'} < $state->{'last_used_forward'}) {$state->{'last_used'} = $state->{'last_used_reverse'};}
+  }
+
+  #print "last_used $state->{'last_used'}\n";
+
+  for (my $other_start = 0, my $i = $state->{'last_used'}; $other_start < $chrom_end && defined $other_list->[$i]; $i++) {
+    my $other = $other_list->[$i];
+    # test if there is an overlap (allowing possible nearby matches) and optionally test if the senses are the same or not
+    #print "OTHER LINE: $other->[0] $other->[1] $other->[2] $other->[3]\n";
+    if ($other->[1] <= $chrom_end + $near_3 && 
+	$other->[2] >= $chrom_start - $near_5 && 
+	($state->{'same_sense'}?($chrom_strand eq $other->[3]):1) &&
+	($state->{'other_sense'}?($chrom_strand ne $other->[3]):1)
+	) {
+
+      # see if we are testing for them to be in the same/opposite sense 
+      if ($state->{'same_sense'} || $state->{'other_sense'}) {
+	if ($chrom_strand eq '+') {
+	  # remember where we got up to in this sense
+	  $state->{'last_used_forward'} = $i;
+	} else {
+	  $state->{'last_used_reverse'} = $i;
+	}
+      }
+
+      $got_a_match = 1;
+      $state->{'matching_ids'} .= $other->[0];
+      $state->{'last_used'} = $i;
+      #print "got a match with $other->[0] at $other->[1] $other->[2]\n";
+      last;
+
+
+    } else {
+      #print "no match\n";
+    }
+    $other_start = $other->[1];
+  }
+  #print "out of OTHER loop\n";
+
+  return $got_a_match;
+
+}
+
 
 ##########################################
 # get GFF files from various locations
@@ -2087,7 +2350,7 @@ sub output_to_database {
 
 
 
-  # is the distance in $nearest less than 20 bases, rather than the default size of 100?
+  # is the distance in $nearest less than 20 bases, rather than the default size of 21?
   # if it is not zero this is probably a move of the anomaly 
   # as a result of genome sequence changes or
   # changes in the blast database size.
