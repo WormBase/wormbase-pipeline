@@ -812,8 +812,8 @@ sub populate_anomaly_window_list {
 #
   my $query = qq{ SELECT a.window, SUM(a.thing_score * w.weight), a.sense, a.clone FROM anomaly AS a INNER JOIN $view AS w ON a.type = w.type     WHERE a.chromosome = "$chromosome" AND a.centre = "$lab" AND a.active = 1 GROUP BY window, sense ORDER BY 2 DESC; };
 
-  #print "chromosome=$chromosome\n";
-  #print "lab=$lab\n";
+  print "chromosome=$chromosome\n";
+  print "lab=$lab\n";
   #print "query=$query\n";
   #print "\n";
 
@@ -823,10 +823,39 @@ sub populate_anomaly_window_list {
 
   $results = $db_query->fetchall_arrayref;
 
+  my $over_10;
+  my $over_5;
+  my $over_2;
+  my $over_1;
+  my $over_half;
+  my $under_half;
   foreach my $result_row (@$results) {
     # clone, sense, score, window
     $$anomaly_list_ref->insert('end', $chromosome . " " . $result_row->[3] . " Sense: " . $result_row->[2] . " Score: " . $result_row->[1] . " ID: " . $result_row->[0] );
+
+    # count the numbers in various score bins
+    if ($result_row->[1] > 10) {
+      $over_10++;
+    } elsif ($result_row->[1] > 5) {
+      $over_5++;
+    } elsif ($result_row->[1] > 2) {
+      $over_2++;
+    } elsif ($result_row->[1] > 1) {
+      $over_1++;
+    } elsif ($result_row->[1] > 0.5) {
+      $over_half++;
+    } elsif ($result_row->[1] <= 0.5) {
+      $under_half++;
+    }
   }
+
+  print "Number of 10Kb windows: ". scalar @$results . "\n";
+  print "\tscore over 10:       $over_10\n";
+  print "\tscore 5 to 10:       $over_5\n";
+  print "\tscore 2 to 5:        $over_2\n";
+  print "\tscore 1 to 2:        $over_1\n";
+  print "\tscore 0.5 to 1:      $over_half\n";
+  print "\tscore less than 0.5: $under_half\n";
 
 }
 
