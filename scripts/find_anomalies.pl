@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2006-10-02 08:24:20 $      
+# Last updated on: $Date: 2006-10-02 11:09:40 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -739,6 +739,9 @@ sub get_protein_differences {
 
   foreach my $homology (@homologies) { # $protein_id, $chrom_start, $chrom_end, $chrom_strand
 
+    # don't want the low-scoring trembl proteins - they are not informative
+    if ($homology->[0] =~ /TR:/ &&  $homology->[6] < 0.2) {next;}
+
     my $got_a_match = 0;	        # not yet seen a match to anything
     my $got_a_match_to_coding_exon = 0;	# not yet seen a match to a coding exon
     my $matching_exon = "";	        # the name of the exon that matches;
@@ -783,6 +786,7 @@ sub get_protein_differences {
       my $anomaly_score = $protein_score/1000;
       if ($anomaly_score > 1) {$anomaly_score = 1;}
       if ($anomaly_score < 0) {$anomaly_score = 0;}
+
       #print "NOT got a match ANOMALY: $protein_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score\n";
       &output_to_database("UNMATCHED_PROTEIN", $chromosome, $protein_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score, '');
     }
