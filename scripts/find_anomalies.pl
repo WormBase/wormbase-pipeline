@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2006-10-02 11:09:40 $      
+# Last updated on: $Date: 2006-10-02 12:36:59 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -241,6 +241,22 @@ foreach my $chromosome (@chromosomes) {
 
 }
 
+
+# now delete things that have not been updated in this run that you
+# would expect to have been updated like protein-homology-based
+# anomalies that might have gone away.  This also deletes anomalies
+# that we are no longer putting into the database and which can be
+# removed.
+
+&delete_anomalies("UNMATCHED_PROTEINS");
+&delete_anomalies("SPLIT_GENES_BY_PROTEIN");
+&delete_anomalies("SPLIT_GENE_BY_PROTEIN_GROUPS");
+&delete_anomalies("SPLIT_GENES_BY_EST");
+&delete_anomalies("MERGE_GENES_BY_EST");
+&delete_anomalies("UNMATCHED_EST");
+&delete_anomalies("UNATTACHED_EST");
+&delete_anomalies("FRAMESHIFTED_PROTEIN");
+&delete_anomalies("OVERLAPPING_EXONS");
 
 
 # disconnect from the mysql database
@@ -2402,7 +2418,31 @@ sub get_lab {
 }
 
 ##########################################
+# now delete things that have not been updated in this run that you
+# would expect to have been updated like protein-homology-based
+# anomalies that might have gone away.  This also deletes anomalies
+# that we are no longer putting into the database and which can now be
+# removed.
+#
+# This means that an anomaly based on something like a similarity to a
+# protein where the protein is no longer existing will be removed from
+# the database
 
+sub delete_anomalies{
+
+  my ($type) = @_;
+
+  # Allow a generous 5 days for this program to have been running.
+  #
+  # Delete anything that hasn't been marked as to be ignored that is
+  # of the required type and which has not been updated in the last
+  # few days i.e that this program hasn't just updated.
+
+  $mysql->do(qq{ DELETE FROM anomaly WHERE type = "$type" AND active = 0 AND DATE_SUB(CURDATE(),INTERVAL 5 DAY) > date });
+
+}
+
+##########################################
 sub usage {
   my $error = shift;
 
