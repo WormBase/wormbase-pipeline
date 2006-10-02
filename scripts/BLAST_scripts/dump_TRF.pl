@@ -51,7 +51,7 @@ my %clonesize;
 $wormbase->FetchData("clonesize", \%clonesize);
 
 # mysql database parameters
-my $dbhost = "ecs1f";
+my $dbhost = "ia64b";
 my $dbuser = "wormro";
 my $dbname = "worm_dna";
 $dbname .= "_test" if $test;
@@ -147,7 +147,7 @@ sub GetRepeatInfo
 sub help
   {
     print "===============================================\n$0\n
-Extract TRF  data from worm_dna on ecs1f\n\n
+Extract TRF  data from worm_dna on ia64b\n\n
 Writes ace file $output\n
 \t\t-test appends _test to output filename.
 

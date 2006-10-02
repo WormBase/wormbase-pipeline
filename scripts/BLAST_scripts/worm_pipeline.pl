@@ -32,7 +32,7 @@ unless ($fasta) {
 ###############################
 # define some variables
 
-my $host = "ecs1f";
+my $host = "ia64b";
 $dbname = $brig ? "worm_brigpep" : "worm_pep" unless $dbname; #if -brig opt, use worm_brigprot else use worm_pep
 my $user = "wormadmin";
 my $pass = "worms";
