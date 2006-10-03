@@ -2,8 +2,8 @@
 #
 # prepare_primary_databases.pl
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2006-05-17 08:50:35 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2006-10-03 16:39:13 $
 
 use strict;
 my $scriptdir = $ENV{'CVS_DIR'};
@@ -49,8 +49,6 @@ my $log = Log_files->make_build_log($wormbase);
 
 my %databases;
 $databases{'stlace'}->{'search'} = 'stl/stlace*';
-#$databases{'brigdb'}->{'search'} = 'stl/brigdb*';
-#$databases{'brigdb'}->{'option'} = 'brigace'; # for this database the option passed to unpack is not db name <sigh>
 $databases{'citace'}->{'search'} = 'caltech/citace*';
 $databases{'cshace'}->{'search'} = 'csh/csh*';
 
@@ -82,9 +80,9 @@ unless ($options eq "") {
 }
 
 # transfer camace and geneace  and brigace to correct PRIMARIES dir
-$log->write_to("Transfering geneace and camace and brigace\n");
+$log->write_to("Transfering geneace and camace\n");
 
-foreach ( qw(camace geneace brigace) ){
+foreach ( qw(camace geneace ) ){
   next if (defined $database and ($database ne $_));
   $wormbase->delete_files_from($wormbase->primary("$_"),'*','+');
   $wormbase->run_script("TransferDB.pl -start ".$wormbase->database("$_"). " -end ".$wormbase->primary("$_") ." -database -wspec", $log);
@@ -93,7 +91,7 @@ foreach ( qw(camace geneace brigace) ){
 #system("cp -R misc_static $autoace/acefiles/primary  #check whats happened here - looks like partial edit
 
 #################################################
-# Check that the database have unpack correctly #
+# Check that the databases have unpack correctly #
 #################################################
 
 $log->write_to("writing Primary_databases_used_in_build\n");
@@ -104,6 +102,17 @@ foreach my $primary ( keys %databases){
   print LAST_VER "$primary : ".$databases{$primary}->{'ftp_date'}."\n";
 }
 close LAST_VER;
+
+#copy over the biggsae GFF and proteins
+if ( !defined($database) or ($database and ($database eq 'briggsae') ) ) {
+	$log->write_to("copying over briggsae data from stl upload\n");
+	my $ver = $wormbase->version;
+	my $brig_upload = $wormbase->ftp_upload."/stl/brigace${ver}.tar";
+	my $tmp_dir = $wormbase->primary("briggsae")."/temp_unpack_dir";
+	$wormbase->run_command("tar -xvf $brig_upload -C $tmp_dir", $log);
+	$wormbase->run_command("gtar zxvf $tmp_dir/briggff${ver}.tar.gz -C ".$wormbase->chromosomes,$log);
+	$wormbase->run_command("gtar zxvf $tmp_dir/brigpep${ver}.tar.gz -C ".$wormbase->brigpep,$log);
+}	
 
 $log->mail;
 exit(0);

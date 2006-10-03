@@ -848,6 +848,7 @@ sub wormpub     { $self = shift; return $self->{'wormpub'}; }
 sub basedir     { $self = shift; return $self->{'basedir'}; }
 sub autoace     { $self = shift; return $self->{'autoace'}; }
 sub wormpep     { $self = shift; return $self->{'wormpep'}; }
+sub brigpep     { $self = shift; return $self->{'brigpep'}; }
 sub wormrna     { $self = shift; return $self->{'wormrna'}; }
 sub gff         { $self = shift; return $self->{'gff'}; }
 sub gff_splits  { $self = shift; return $self->{'gff_splits'}; }
@@ -948,8 +949,9 @@ sub establish_paths {
 
     $self->{'basedir'}    = $basedir;
     $self->{'ftp_upload'} = "/nfs/ftp_uploads/wormbase";
-    $self->{'wormpep'}    = $basedir . "/WORMPEP/wormpep" . $self->get_wormbase_version;
     $self->{'wormrna'}    = $basedir . "/WORMRNA/wormrna" . $self->get_wormbase_version;
+    $self->{'wormpep'}    = $basedir . "/WORMPEP/wormpep" . $self->get_wormbase_version;
+    $self->{'brigpep'}    = $basedir . "/WORMPEP/brigpep" . $self->get_wormbase_version;
 
     $self->{'logs'}        = $self->autoace . "/logs";
     $self->{'common_data'} = $self->autoace . "/COMMON_DATA";
@@ -991,7 +993,8 @@ sub establish_paths {
     # create dirs if missing
     mkpath( $self->logs )        unless ( -e $self->logs );
     mkpath( $self->common_data ) unless ( -e $self->common_data );
-    mkpath( $self->wormpep )     unless ( -e $self->wormpep );  ;
+    mkpath( $self->wormpep )     unless ( -e $self->wormpep );  
+    mkpath( $self->brigpep )     unless ( -e $self->brigpep );
     mkpath( $self->wormrna )     unless ( -e $self->wormrna ); 
     mkpath( $self->chromosomes ) unless ( -e $self->chromosomes );
     mkpath( $self->transcripts ) unless ( -e $self->transcripts );

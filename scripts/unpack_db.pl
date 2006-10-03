@@ -13,7 +13,7 @@
 # the Caltech database (citace)
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2006-01-25 15:45:08 $
+# Last updated on: $Date: 2006-10-03 16:39:13 $
 
 
 #################################################################################
@@ -44,7 +44,6 @@ my $store;
 
 GetOptions (
             "help"      => \$help,
-            "brigace=s" => \$brigace,
             "citace=s"  => \$citace,
             "cshace=s"  => \$cshace,
             "stlace=s"  => \$stlace,
@@ -76,7 +75,6 @@ my $log = Log_files->make_build_log($wormbase);
 # loop through main routine for each database to be unpacked #
 ##############################################################
 
-&unpack_stuff("brigace",$brigace) if ($brigace);
 &unpack_stuff("citace",$citace)   if ($citace);
 &unpack_stuff("cshace",$cshace)   if ($cshace);
 &unpack_stuff("stlace",$stlace)   if ($stlace);
@@ -94,13 +92,6 @@ sub unpack_stuff{
   my $logs    = $wormbase->logs;
 
   # set up correct locations
-  if ($database eq "brigace"){
-    $ftp     = "$ftp_dir/stl";
-    $dbdir   = "$primaries/brigace";
-    $logfile = "$logs/unpack_briggsae.$rundate.$$";
-    $dbname  = "brigdb";
-  }
-
   if ($database eq "cshace"){
     $ftp     = "$ftp_dir/csh";
     $dbdir   = "$primaries/cshace";
@@ -284,6 +275,7 @@ END
   $log->write_to( "\n$database build complete at ".$wormbase->runtime."\n");
 }
 
+
 $log->mail;
 
 # say goodnight Brian
@@ -327,6 +319,7 @@ sub usage {
     system ('perldoc',$0);
     exit;	
 }
+
 
 __END__
 
