@@ -8,7 +8,7 @@
 # Page download and update upload to geneace has been automated [ck1]
 
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2006-09-26 12:24:35 $
+# Last updated on: $Date: 2006-10-03 15:24:49 $
 
 use strict;
 use Getopt::Long;
@@ -155,7 +155,7 @@ while(<INPUT>){
   # skip object if no strain name
   next if(!defined($strain));
 
-  $strain =~ s/\s+//g;
+  $strain =~ s/\s+$//g;
   if ($strain){
     print STRAIN "\n\nStrain : \"$strain\"\n";
     print DELETE_STRAIN "\n\nStrain : \"$strain\"\n";
