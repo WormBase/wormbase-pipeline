@@ -1476,7 +1476,7 @@ sub progress {
 
       foreach my $lab (@labs) {
 
-	# get the data with the days since 2 Oct 2006
+	# get the data with the count of days since 2 Oct 2006
 	$query = qq{ SELECT DATEDIFF(p.date,'2006-10-02'), over_10, over_5, over_2, over_1, over_half, over_quarter, under_quarter FROM progress AS p WHERE p.chromosome = "$chr" AND p.centre = "$lab" ORDER BY 1 };
 	my $db_query = $mysql->prepare ( $query );
 	$db_query->execute();
@@ -1503,16 +1503,15 @@ sub progress {
 	}
 	
 	# convert count value arrays to have one value per day
-	foreach my $arr_ref (\@over_10, \@over_5, \@over_2, \@over_1, \@over_half, \@over_quarter, \@under_quarter) {
-	  my @new_array = ();
-	  my $last_day = 1;
-	  
-	}
-
-	#print "draw graphs here ++++\n";	
-	#print "$chr $lab dates @dates\n";
-	#print "$chr $lab > 10 @over_10\n";
-	#print "$chr $lab < 0.25 @under_quarter\n";
+	@over_10 = &date_convert(\@over_10, \@dates);
+#	@over_5	= &date_convert(\@over_5, \@dates);
+#	@over_2 = &date_convert(\@over_2, \@dates);
+#	@over_1 = &date_convert(\@over_1, \@dates);
+#	@over_half = &date_convert(\@over_half, \@dates);
+#	@over_quarter = &date_convert(\@over_quarter, \@dates);
+#	@under_quarter = &date_convert(\@under_quarter, \@dates);
+	
+	# get data to draw in graphs	
 	my $to_register = {
 	  '> 10'  => [@over_10],
 	  ' > 5'  => [@over_5],	# these spaces are to force the sort order for the key to be in this order
@@ -1558,6 +1557,48 @@ sub progress {
 
   } # end of graph stuff
 
+
+}
+############################################################################
+# The progress values are stored in the database at irregular dates
+# the Tk::Graph stuff doesn't seem to be able to deal with this sensibly
+# therefore we have to create a repeated value for each day in between 
+# the noted dates so that we get a graph that sensibly displays the
+# data changing smoothly over time.
+#
+# @under_quarter = &date_convert(\@under_quarter, \@dates);
+
+
+sub date_convert {
+  my ($values_aref, $dates_aref) = @_;
+
+  my @values = @{$values_aref};
+  my @dates = @{$dates_aref};
+  my @new_values;
+
+  my $prev_day = -1;
+  my $prev_value;
+  my $value;
+  foreach my $day (@dates) {
+    $value = shift @values;
+    #print "in day $day value $value\n";
+
+    if ($prev_day == $day) {next;}
+    if ($prev_day != -1) {
+      for (my $i = $prev_day+1; $i < $day; $i++) {
+	push @new_values, $prev_value;
+	#print "out day $i value $prev_value\n";
+      }
+    }
+
+    push @new_values, $value;
+    #print "out day $day value $value\n";
+
+    $prev_day = $day;
+    $prev_value = $value;
+  }
+
+  return @new_values;
 
 }
 ############################################################################
