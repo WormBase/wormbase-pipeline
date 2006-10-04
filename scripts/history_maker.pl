@@ -1444,21 +1444,32 @@ sub progress {
     # set up the window to hold the graphs
     my $D = MainWindow->new;
     $D->optionAdd('*BorderWidth' => 1); # make the style better with a thinner border
-    my $top = $D->Frame(-background => 'gray',
-			-height => 800,
-			)->pack(-side => 'top',
-						     -fill => 'x');
 
-    # this canvas wraps up all of the chromosomes and is scrollable
-#    my $canvas = $D->Scrolled('Canvas',-scrollbars=>"oe") -> pack;
+    my $frame1 = $D->Frame(-background =>'white')->pack();
+    my $close_button = $frame1->Button(-text => "Close progress window",
+				       -background => "bisque",
+				       -command => [$D => 'destroy'],
+				       )->pack ( -side => 'left',
+						 -pady => '2',
+						 -padx => '6',
+						 -anchor => "w"
+						 );
+
+
+    # this frame wraps up all of the chromosomes and is scrollable
+    use Tk::Pane;
+    my $top = $D->Scrolled("Frame", 
+			   -scrollbars => "osoe",
+			   -height => 800,
+			   -width  => 800,
+			   )->pack(-side => 'top',
+				   -fill => 'x',
+				   );
+
 
     # get the data for each of the graphs
     foreach my $chr (@chromosomes) {
 
-      # get a new frame to hold a chromosome's two graphs
-#      my $chrom_canvas = $canvas->Canvas(-background => 'gray',
-#				  )->pack(-side => 'top',
-#							-fill => 'x'); 
       my $chrom_canvas = $top->Canvas(-background => 'gray',
 				  )->pack(-side => 'top',
 							-fill => 'x'); 
@@ -1504,7 +1515,7 @@ sub progress {
 	#print "$chr $lab < 0.25 @under_quarter\n";
 	my $to_register = {
 	  '> 10'  => [@over_10],
-	  ' > 5'  => [@over_5],
+	  ' > 5'  => [@over_5],	# these spaces are to force the sort order for the key to be in this order
 	  '  > 2.5'  => [@over_2],
 	  '   > 1'  => [@over_1],
 	  '    > 0.5'  => [@over_half],
@@ -1515,7 +1526,7 @@ sub progress {
         # this seems to just set the last y data value to go to - weird!
 	my $data = {
 	  '> 10'  => $over_10[-1], # get the last value
-	  ' > 5'  => $over_5[-1],
+	  ' > 5'  => $over_5[-1],  # these spaces are to force the sort order for the key to be in this order
 	  '  > 2'  => $over_2[-1],
 	  '   > 1'  => $over_1[-1],
 	  '    > 0.5'  => $over_half[-1],
