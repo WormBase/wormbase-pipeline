@@ -400,6 +400,20 @@ if ( $anomaly ) {
 							    -side => 'left',
 							    );
 
+  # create button to run Progress display
+  my $display_graphs = 1;
+  my $progress_button = $anomaly_find->Button ( -text    => "Progress",
+					     -background => "bisque",
+					     -command => [\&progress, \$display_graphs]
+					      )->pack ( -side => 'right',
+							-pady => '2',
+							-padx => '6',
+							-anchor => "e"
+							);
+
+  
+
+
 # connect to the mysql database
   $mysql = &connect_to_database($lab);
 
@@ -437,7 +451,7 @@ if ( $anomaly ) {
 						     -anchor => "w"
 						     );
 
-## I found that this buton was too dangerous - it is too easy to click
+## I found that this button was too dangerous - it is too easy to click
 ## this by mistake and wipe out a whole window of anomalies before you
 ## have looked at them properly
 #  my $ignore_all_window = $anomaly_details->Button ( -text    => "Ignore ALL these anomalies!",
@@ -457,6 +471,12 @@ if ( $anomaly ) {
 							-padx => '6',
 							-anchor => "e"
 							);
+
+
+  # calculate the progress so far for all chromosomes
+  # don't display any graphs
+  my $dont_display_graphs = 0;
+  &progress(\$dont_display_graphs);
 
 }
 
@@ -812,6 +832,7 @@ sub populate_anomaly_window_list {
 #
   my $query = qq{ SELECT a.window, SUM(a.thing_score * w.weight), a.sense, a.clone FROM anomaly AS a INNER JOIN $view AS w ON a.type = w.type     WHERE a.chromosome = "$chromosome" AND a.centre = "$lab" AND a.active = 1 GROUP BY window, sense ORDER BY 2 DESC; };
 
+  print "\n";
   print "chromosome=$chromosome\n";
   print "lab=$lab\n";
   #print "query=$query\n";
@@ -828,7 +849,8 @@ sub populate_anomaly_window_list {
   my $over_2;
   my $over_1;
   my $over_half;
-  my $under_half;
+  my $over_quarter;
+  my $under_quarter;
   foreach my $result_row (@$results) {
     # clone, sense, score, window
     $$anomaly_list_ref->insert('end', $chromosome . " " . $result_row->[3] . " Sense: " . $result_row->[2] . " Score: " . $result_row->[1] . " ID: " . $result_row->[0] );
@@ -838,24 +860,27 @@ sub populate_anomaly_window_list {
       $over_10++;
     } elsif ($result_row->[1] > 5) {
       $over_5++;
-    } elsif ($result_row->[1] > 2) {
+    } elsif ($result_row->[1] > 2.5) {
       $over_2++;
     } elsif ($result_row->[1] > 1) {
       $over_1++;
     } elsif ($result_row->[1] > 0.5) {
       $over_half++;
-    } elsif ($result_row->[1] <= 0.5) {
-      $under_half++;
+    } elsif ($result_row->[1] > 0.25) {
+      $over_quarter++;
+    } elsif ($result_row->[1] <= 0.25) {
+      $under_quarter++;
     }
   }
 
   print "Number of 10Kb windows: ". scalar @$results . "\n";
-  print "\tscore over 10:       $over_10\n";
-  print "\tscore 5 to 10:       $over_5\n";
-  print "\tscore 2 to 5:        $over_2\n";
-  print "\tscore 1 to 2:        $over_1\n";
-  print "\tscore 0.5 to 1:      $over_half\n";
-  print "\tscore less than 0.5: $under_half\n";
+  print "\twindows with score over 10:        $over_10\n";
+  print "\twindows with score 5 to 10:        $over_5\n";
+  print "\twindows with score 2.5 to 5:       $over_2\n";
+  print "\twindows with score 1 to 2.5:       $over_1\n";
+  print "\twindows with score 0.5 to 1:       $over_half\n";
+  print "\twindows with score 0.25 to 0.5:    $over_quarter\n";
+  print "\twindows with score less than 0.25: $under_quarter\n";
 
 }
 
@@ -1329,6 +1354,201 @@ sub goto_location
 
   }
 
+############################################################################
+# look at the progress made in working through the scores of the windows
+
+sub progress {
+
+  my ($graphs_ref) = @_;
+
+  # update the 'progress' table there is guarantee that this table
+  # alredy exists, so check and create it if necessary.
+
+  my $got_progress_table = 0;
+
+  # first test to see if this progress table exists already
+  my $query = qq{ SHOW TABLES; };
+  my $db_query = $mysql->prepare ( $query );
+  $db_query->execute();
+  my $results = $db_query->fetchall_arrayref;
+  foreach my $result_row (@$results) {
+    if ($result_row->[0] eq 'progress') {
+      $got_progress_table = 1;
+    }
+  }
+
+  # if we have no progress table then create it
+  if (! $got_progress_table) {
+    $mysql->do("CREATE TABLE progress (date timestamp(8), chromosome varchar(3), centre varchar(2), over_10 int, over_5 int, over_2 int, over_1 int, over_half int, over_quarter int, under_quarter int);");
+  }
+
+  # update the progress table
+  my @chromosomes  = qw(I II III IV V X);
+  my @labs = qw(RW HX);
+
+  foreach my $chr (@chromosomes) {
+    foreach my $lab (@labs) {
+
+      # assume all weights are 1 and get the scores of the windows
+      my $query = qq{ SELECT SUM(a.thing_score) FROM anomaly AS a WHERE a.chromosome = "$chr" AND a.centre = "$lab" AND a.active = 1 GROUP BY window, sense; };
+      my $db_query = $mysql->prepare ( $query );
+      $db_query->execute();
+      $results = $db_query->fetchall_arrayref;
+
+      my $over_10 = 0;
+      my $over_5 = 0;
+      my $over_2 = 0;
+      my $over_1 = 0;
+      my $over_half = 0;
+      my $over_quarter = 0;
+      my $under_quarter = 0;
+
+      foreach my $result_row (@$results) {
+
+	# count the numbers in various score bins
+	if ($result_row->[0] > 10) {
+	  $over_10++;
+	} elsif ($result_row->[0] > 5) {
+	  $over_5++;
+	} elsif ($result_row->[0] > 2.5) {
+	  $over_2++;
+	} elsif ($result_row->[0] > 1) {
+	  $over_1++;
+	} elsif ($result_row->[0] > 0.5) {
+	  $over_half++;
+	} elsif ($result_row->[0] > 0.25) {
+	  $over_quarter++;
+	} elsif ($result_row->[0] <= 0.25) {
+	  $under_quarter++;
+	}
+      }
+
+      #  print "\tinserting for $chr, $lab  over 10:        $over_10\n";
+      #  print "\tinserting for $chr, $lab  5 to 10:        $over_5\n";
+      #  print "\tinserting for $chr, $lab  2.5 to 5:       $over_2\n";
+      #  print "\tinserting for $chr, $lab  1 to 2.5:       $over_1\n";
+      #  print "\tinserting for $chr, $lab  0.5 to 1:       $over_half\n";
+      #  print "\tinserting for $chr, $lab  0.25 to 0.5:    $over_quarter\n";
+      #  print "\tinserting for $chr, $lab  less than 0.25: $under_quarter\n";
+
+      # insert the values for this part of the chromosome into the 'progress' table
+      $mysql->do(qq{ INSERT INTO progress (chromosome, centre, over_10, over_5, over_2, over_1, over_half, over_quarter, under_quarter) VALUES("$chr", "$lab", $over_10, $over_5, $over_2, $over_1, $over_half, $over_quarter, $under_quarter); });
+
+    }
+  }
+
+  # draw graphs of progress
+  if ($$graphs_ref == 1) {
+    use Tk::Graph;
+
+    # set up the window to hold the graphs
+    my $D = MainWindow->new;
+    $D->optionAdd('*BorderWidth' => 1); # make the style better with a thinner border
+    my $top = $D->Frame(-background => 'gray',
+			-height => 800,
+			)->pack(-side => 'top',
+						     -fill => 'x');
+
+    # this canvas wraps up all of the chromosomes and is scrollable
+#    my $canvas = $D->Scrolled('Canvas',-scrollbars=>"oe") -> pack;
+
+    # get the data for each of the graphs
+    foreach my $chr (@chromosomes) {
+
+      # get a new frame to hold a chromosome's two graphs
+#      my $chrom_canvas = $canvas->Canvas(-background => 'gray',
+#				  )->pack(-side => 'top',
+#							-fill => 'x'); 
+      my $chrom_canvas = $top->Canvas(-background => 'gray',
+				  )->pack(-side => 'top',
+							-fill => 'x'); 
+
+      foreach my $lab (@labs) {
+
+	# get the data with the days since 2 Oct 2006
+	$query = qq{ SELECT DATEDIFF(p.date,'2006-10-02'), over_10, over_5, over_2, over_1, over_half, over_quarter, under_quarter FROM progress AS p WHERE p.chromosome = "$chr" AND p.centre = "$lab" ORDER BY 1 };
+	my $db_query = $mysql->prepare ( $query );
+	$db_query->execute();
+	$results = $db_query->fetchall_arrayref;
+
+	my @over_10=();
+	my @over_5=();
+	my @over_2=();
+	my @over_1=();
+	my @over_half=();
+	my @over_quarter=();
+	my @under_quarter=();
+	my @dates=();
+
+	foreach my $result_row (@$results) {
+	  push @dates, $result_row->[0]; # get the date (days since 2 Oct 2006)
+	  push @over_10, $result_row->[1];
+	  push @over_5, $result_row->[2];
+	  push @over_2, $result_row->[3];
+	  push @over_1, $result_row->[4];
+	  push @over_half, $result_row->[5];
+	  push @over_quarter, $result_row->[6];
+	  push @under_quarter, $result_row->[7];
+	}
+	
+	# convert count value arrays to have one value per day
+	foreach my $arr_ref (\@over_10, \@over_5, \@over_2, \@over_1, \@over_half, \@over_quarter, \@under_quarter) {
+	  my @new_array = ();
+	  my $last_day = 1;
+	  
+	}
+
+	#print "draw graphs here ++++\n";	
+	#print "$chr $lab dates @dates\n";
+	#print "$chr $lab > 10 @over_10\n";
+	#print "$chr $lab < 0.25 @under_quarter\n";
+	my $to_register = {
+	  '> 10'  => [@over_10],
+	  ' > 5'  => [@over_5],
+	  '  > 2.5'  => [@over_2],
+	  '   > 1'  => [@over_1],
+	  '    > 0.5'  => [@over_half],
+	  '     > 0.25'  => [@over_quarter],
+	  '      < 0.25'  => [@under_quarter],
+	};
+
+        # this seems to just set the last y data value to go to - weird!
+	my $data = {
+	  '> 10'  => $over_10[-1], # get the last value
+	  ' > 5'  => $over_5[-1],
+	  '  > 2'  => $over_2[-1],
+	  '   > 1'  => $over_1[-1],
+	  '    > 0.5'  => $over_half[-1],
+	  '     > 0.25'  => $over_quarter[-1],
+	  '      < 0.25'  => $under_quarter[-1],
+	};
+
+        # place RW graphs to the left and HX to the right
+	my $side = "left";
+	if ($lab eq "HX") {$side = "right";}
+
+	my $graph = $chrom_canvas->Graph(
+					 -type	=> 'Line',
+					 -max 	=> 700,
+					 -wire     => 0, # no wire grid in background
+					 -title    => "chromosome $chr $lab"
+					 )->pack(#-expand => 1, 
+						 -side => $side,
+						 );
+
+	$graph->register($to_register);
+	$graph->variable($data);
+
+      }
+    }
+    MainLoop;
+    
+
+
+  } # end of graph stuff
+
+
+}
 ############################################################################
 
 sub confirm_message
