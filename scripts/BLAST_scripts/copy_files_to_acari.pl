@@ -4,20 +4,19 @@
 #
 # dl
 #
-# copy the latest dna and wormpep files from wormsrv2 to acari
+# copy the latest dna and wormpep files from the wormpub build structure to a machine available to the farm
+# This machine used to be called acari - hence the script name :)
 
 use strict;
 use lib $ENV{'CVS_DIR'};
 use Wormbase;
 use Getopt::Long;
-use vars qw($opt_c $opt_w);
-# $opt_w copy wormpep data
-# $opt_c copy chromosomes
 use Log_files;
 
-my ($wormpep, $chroms, $test, $debug, $store);
+my ($wormpep, $brigpep, $chroms, $test, $debug, $store);
 GetOptions (
 	    'wormpep:i' => \$wormpep,
+	    'brigpep'   => \$brigpep,
 	    'chrom'     => \$chroms,
 	    "debug=s"   => \$debug,
 	    "test"      => \$test,
@@ -52,22 +51,25 @@ if ( $chroms )
     $log->write_to("Finished copying DNA to acari\n\n-------------------------------------------------------\n");
   }
 
-if( $wormpep )
-  {
-    our $WS_version = $wormbase->get_wormbase_version;
-    
-    my $wp_file = "wormpep" . $WS_version . ".pep";
-    my $wp_old  = "wormpep" . ($WS_version - 1) . ".pep";
-    
-    $wormbase->run_command("cp ".$wormbase->wormpep."/wormpep$WS_version $dir/wormpep${WS_version}.pep",$log);
+&copy_worm_proteins('wormpep') if $wormpep ;
+&copy_worm_proteins('brigpep') if $brigpep ;
 
-    
-    $log->write_to("Removed old version of wormpep . . ");
-    $wormbase->run_command("rm -f $dir/${wp_old}*",$log) ;
-
-    $log->write_to("Wormpep copied and ready for action\n\n-------------------------------------------------------\n");
-    print "finished\n";
-  }
 
 $log->mail;
 exit(0);
+
+#this is to copy a worm protein set that we update through curation eg elegans
+sub copy_worm_proteins {
+	my $pep_set = shift;  # wormpep, brigpep etc
+	my $WS_version = $wormbase->get_wormbase_version;
+  	my $wp_file = "$pep_set" . $WS_version . ".pep";
+   my $wp_old  = "$pep_set" . ($WS_version - 1) . ".pep";
+    
+   $wormbase->run_command("cp ".$wormbase->$pep_set."/$pep_set$WS_version $dir/$pep_set${WS_version}.pep",$log);
+    
+   $log->write_to("Removed old version of $pep_set . . ");
+   $wormbase->run_command("rm -f $dir/${wp_old}*",$log) ;
+
+   $log->write_to("$pep_set copied and ready for action\n\n-------------------------------------------------------\n");
+   print "finished\n";
+}
