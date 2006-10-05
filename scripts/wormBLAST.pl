@@ -5,7 +5,7 @@
 # written by Anthony Rogers
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2006-10-05 14:40:11 $
+# Last edited on: $Date: 2006-10-05 15:03:25 $
 
 
 use DBI;
@@ -329,7 +329,7 @@ if( $update_mySQL )
       $log->log_and_die("new_entries.WS$WS_version does not exist! \nThis should have been made in autoace_minder -buildpep\n");
     }
     
-	 $wormbase->run_script("BLAST_scripts/worm_pipeline.pl -fasta ".$wormbase->brigpep."/brigpep$WS_version");    
+	 $wormbase->run_script("BLAST_scripts/worm_pipeline.pl -fasta ".$wormbase->brigpep."/brigpep$WS_version -brig");    
 
     #check for updated ids
     @results = &single_line_query( $query, $worm_pep );
