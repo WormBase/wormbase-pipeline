@@ -5,7 +5,7 @@
 # written by Anthony Rogers
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2006-09-06 10:49:10 $
+# Last edited on: $Date: 2006-10-05 09:24:38 $
 
 
 use DBI;
@@ -23,7 +23,7 @@ use Storable;
 #######################################
 
 my $chromosomes;
-my $wormpep;
+my ($wormpep, $brigpep);
 my $update_databases;
 my $update_mySQL;
 my $setup_mySQL;
@@ -46,6 +46,7 @@ my $store;
 
 GetOptions("chromosomes" => \$chromosomes,
 	   "wormpep"     => \$wormpep,
+	   "brigpep"     => \$brigpep,
 	   "databases"   => \$update_databases,
 	   "updatemysql" => \$update_mySQL,
 	   "setup"       => \$setup_mySQL,
@@ -123,6 +124,7 @@ $wormbase->run_script("BLAST_scripts/copy_files_to_acari.pl -chrom", $log) if ($
 
 #get new wormpep
 $wormbase->run_script("BLAST_scripts/copy_files_to_acari.pl -wormpep ".$wormbase->get_wormbase_version, $log) if ($wormpep);
+$wormbase->run_script("BLAST_scripts/copy_files_to_acari.pl -brigpep ".$wormbase->get_wormbase_version, $log) if ($brigpep);
 
 
 my %currentDBs;   #ALSO used in setup_mySQL 
