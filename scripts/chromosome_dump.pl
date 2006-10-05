@@ -7,8 +7,8 @@
 # A script for dumping dna and/or gff files for chromosome objects in autoace
 # see pod for more details
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2006-05-25 12:35:32 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2006-10-05 11:08:52 $
 
 
 use strict;
@@ -182,19 +182,22 @@ sub composition{
   $log->write_to("Generating composition.all\n");	
 
   chdir $dump_dir;
-
-  if($quicktest){
-    system("/bin/cat CHROMOSOME_III.dna | /nfs/disk100/wormpub/bin.ALPHA/composition > composition.all") && die "Couldn't create composition file\n";
+  
+  my $command = "/bin/cat ";
+  my @chroms = qw( I II III IV V X);
+  @chroms = qw(III) if $quicktest;
+  foreach ( @chroms ){
+  	$command .= "$dump_dir/CHROMOSOME_${_}.dna ";
   }
-  else{
-    system("/bin/cat CHROMOSOME_I.dna CHROMOSOME_II.dna CHROMOSOME_III.dna CHROMOSOME_IV.dna CHROMOSOME_V.dna CHROMOSOME_X.dna | /nfs/disk100/wormpub/bin.ALPHA/composition > composition.all") && die "Couldn't create composition file\n";
-  }
-
+  $command .= " | /nfs/disk100/wormpub/bin.ALPHA/composition > $dump_dir/composition.all";
+  
+  $wormbase->run_command($command, $log);
+  
   $log->write_to("Generating totals file\n");
   my $total = 0;
   my $final_total = 0;
   my $minus = 0;
-  open(IN,"$dump_dir/composition.all") || die "Couldn't open composition.all\n";
+  open(IN,"$dump_dir/composition.all") or $log->log_and_die("Couldn't open composition.all\n");
   while(<IN>){
     if(/.*, (\d*) total/){
       $total = $1;
@@ -207,7 +210,7 @@ sub composition{
   }
   close(IN);
   $final_total = $total - $minus;
-  system("echo $total $final_total > totals") && die "Couldn't create totals file\n";
+  $wormbase->run_command("echo $total $final_total > totals");
   
   # can't do this in test mode as the Wormbase.pm subroutine looks in /wormsrv2
   $wormbase->release_composition;
