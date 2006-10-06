@@ -1526,7 +1526,7 @@ sub progress {
 	my $data = {
 	  '> 10'  => $over_10[-1], # get the last value
 	  ' > 5'  => $over_5[-1],  # these spaces are to force the sort order for the key to be in this order
-	  '  > 2'  => $over_2[-1],
+	  '  > 2.5'  => $over_2[-1],
 	  '   > 1'  => $over_1[-1],
 	  '    > 0.5'  => $over_half[-1],
 	  '     > 0.25'  => $over_quarter[-1],
