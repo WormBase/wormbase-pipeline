@@ -1,6 +1,6 @@
 // Spread sheet definition for the ACeDB software 
 // User: wormpub
-// Date: 2005-08-10_11:18:46
+// Date: 2006-10-05_11:03:14
 
 // %n (%%n in the graphic) are parameter to be given on the command line in tace
 // or by default by the Parameters given in this file
@@ -22,38 +22,38 @@ Width 12
 Mandatory 
 Hidden 
 Class 
-Class Database 
+Class Laboratory 
 From 1 
-Tag Database      
-Condition EMBL
+Tag From_laboratory  
+Condition HX
  
 Colonne 3 
 Width 12 
-Optional 
-Visible 
+Mandatory 
+Hidden 
 Class 
-Class Database_field 
-Right_of 2 
-Tag HERE   
+Class Database 
+From 1 
+Tag Database 
  
 Colonne 4 
 Width 12 
 Mandatory 
-Visible 
+Hidden 
 Class 
-Class Accession_number 
+Class Database_field 
 Right_of 3 
-Tag HERE       
+Tag  HERE  
+Condition NDB_SV
  
 Colonne 5 
 Width 12 
 Mandatory 
 Visible 
 Class 
-Class Laboratory 
-From 1 
-Tag From_laboratory 
-Condition HX
+Class Accession_number 
+Right_of 4 
+Tag  HERE  
  
  
 
