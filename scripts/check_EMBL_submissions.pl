@@ -7,7 +7,7 @@
 # clones. Entries which have failed to load or return are highlighted
 # and changes in sequence version are notified.
 
-# Last updated on: $Date: 2006-03-03 11:49:27 $
+# Last updated on: $Date: 2006-10-06 13:14:12 $
 # Last updated by: $Author: pad $
 
 use strict;
@@ -27,12 +27,14 @@ my ($embl_file,$maintainer,$wormbase,$store);
 my $debug;                 # Debug option
 my $help;                  # Help menu
 my $file;                  # EMBL file
+my $verbose;
 
 GetOptions (
             "debug:s"    => \$debug,
             "help"       => \$help,
 	    "file:s"     => \$embl_file,
-	    "store:s"      => \$store,
+	    "store:s"    => \$store,
+	    "verbose"    => \$verbose,
 	   );
 
  ########################################
@@ -63,9 +65,13 @@ else {
 my $dbdir = glob "/nfs/disk100/wormpub/DATABASES/camace";
 my $tace = $wormbase->tace;
 my $submitted_file = "/nfs/disk100/wormpub/analysis/TO_SUBMIT/submitted_to_EMBL";
-
 my (%clone2id,%id2sv,%embl_acc,%embl_status,%embl_sv);
-
+my $out_file = "/nfs/disk100/wormpub/analysis/TO_SUBMIT/SV_update_from_embl";
+my $errors1 = 0;
+my $errors2 = 0;
+my $errors3 = 0;
+my $updates = 0;
+my $loaded = 0;
 
  ########################################
  # simple consistency checks            #
@@ -76,16 +82,13 @@ my (%clone2id,%id2sv,%embl_acc,%embl_status,%embl_sv);
 &usage(2) unless (-e $submitted_file);
 
  ########################################
- # Open logfile                         #
+ # Open logfile and out_put file         #
  ########################################
 
+&usage(3) if (-e $out_file);
+open (OUT, ">$out_file") or die "Cannot open output file $out_file\n";
 
 my $log= Log_files->make_build_log($wormbase);
-
-#system ("/bin/touch $log");
-#open (LOG,">>$log");
-#LOG->autoflush;
-
 $log->write_to("# check_EMBL_submissions\n\n");     
 $log->write_to("# run details    : ".$wormbase->rundate.".".$wormbase->runtime."\n");
 $log->write_to("\n");
@@ -97,28 +100,24 @@ $log->write_to("\n");
 $ENV{'ACEDB'} = $dbdir;
 
 my $command = "Table-maker -p $dbdir/wquery/SCRIPT:check_EMBL_submissions.def\nquit\n";
-
 my ($sv,$id,$name);
 
 open (TACE, "echo '$command' | $tace | ");
 while (<TACE>) {
-    s/acedb\> //g;
-    print "$_\n" if ($debug);
-    chomp;
-    next if ($_ eq "");
-    next if (/\/\//);
-
-    s/\"//g;
-    if (/(\S+)\s+(\S+)\s+(\S+)/) {
-	($clone2id{$1} = $3) if ($2 eq "NDB_ID"); # ACEDB_clone => NDB_ID  
-	if ($2 eq "NDB_SV") { # NDB_ID => NDB_SV
-	    $id   = $1;
-	    $sv   = $3;
-	    $name = $sv =~ (/\S+\.(\d+)/);
-	    $id2sv{$id} = $name;
-	  } 
-
-    }
+  s/acedb\> //g;
+  print "$_\n" if ($verbose);
+  chomp;
+  next if ($_ eq "");
+  next if (/\/\//);
+  
+  s/\"//g;
+  if (/(\S+)\s+(\S+).(\d+)/) {
+    ($clone2id{$1} = $2); # ACEDB_clone => NDB_ID  	
+    $id   = $2;
+    $sv   = $3;
+    $name = $1;
+    ($id2sv{$id} = $sv);
+  }
 }
 close TACE;
 
@@ -130,21 +129,33 @@ $log->write_to("Populated hashes with data for " . scalar (keys %clone2id) . " c
 
 open (EMBL, "<$embl_file") || die "Cannot open EMBL returns\n";
 while (<EMBL>) {
-    next unless (/^CE/);
-    if (/NOT LOADED/) {
-	(/^(\S+)/);
-	$embl_status{$1} = "NOT_LOADED";
-	next;
-    }
-    (/^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\d+)$/); 
+  chomp;
+  print "$_\n" if ($verbose);
+
+  if ($_ =~ /^(\S+)\s+(\S+)\s+\-\s+(\S+)\s+(\d+)$/) {
+  #$1 = ID
+  #$2 = ID
+  #$3 = Status
+  #$4 = SV
     $embl_acc{$1}    = $2;
-    $embl_status{$1} = $4;
-    $embl_sv{$1}     = $5;
+    $embl_status{$1} = $3;
+    $embl_sv{$1}     = $4;
+    print "EMBL_AC:$2\nEMBL_Status:$3\nEMBL_SV:$4\n" if ($verbose);
     print "processed $1\n" if ($debug);
+    next;
+  }
+  elsif ($_ =~ /^(\S+)\s+(\S+)\s+\-\s+(\S+)\s+(\S+)\s+(\d+)$/) {
+    $embl_acc{$1}    = $2;
+    $embl_status{$1} = "Not_Loaded";
+    $embl_sv{$1}     = $5;
+    print "EMBL_AC:$2\nEMBL_Status:$3\nEMBL_SV:$4\n" if ($verbose);
+    print "processed $1\n" if ($debug);
+    next;
+  }
 }
-close EMBL;
 
 $log->write_to("Populated hashes with data for " . scalar (keys %embl_status) . " entries\n\n\n");
+print ("Populated hashes with data for " . scalar (keys %embl_status) . " entries\n\n\n") if ($debug);
 
  #############################################################
  # submitted clones from ~wormpub/analysis/TO_SUBMIT         #
@@ -153,44 +164,61 @@ $log->write_to("Populated hashes with data for " . scalar (keys %embl_status) . 
  
 open (SUBMITTED, "<$submitted_file") || die "Cannot open submit_TO_SUBMIT log file\n";;
 while (<SUBMITTED>) {
-    ($name) = (/^(\S+)/);
-    if (!defined $clone2id{$name}) {$log->write_to("eek .. no ID for clone $name\n");}
-    $id = $clone2id{$name};
+  ($name) = (/^(\S+)/);
+  if (!defined $clone2id{$name}) {$log->write_to("eek .. no ID for clone $name\n");}
+  $id = $clone2id{$name};
+  $log->write_to("# $name   \tSubmitted_to_EMBL - ");
+  if (!defined $embl_status{$id}) {
+    $log->write_to("not returned\n");
+    $errors1++;
+    next;
+  }
+  elsif ($embl_status{$id} eq "Finished") {
+    $log->write_to("loaded  \t");
+    $loaded++;
+  }
+  elsif ($embl_status{$id} eq "Not_Loaded") {
+    $log->write_to("***failed to load***\t\n");
+    $errors2++;
+    next;
+  }
+  elsif ($embl_status{$id} ne "Finished" or" Not_Loaded") {
+    $log->write_to("***unknown status ($embl_status{$id})***\n");
+    $errors3++;
+    next;
+  }
+  if (defined $embl_sv{$id} && $embl_sv{$id} ne $id2sv{$id}) {
+    $log->write_to("Update sequence version CAM:$id2sv{$id} EMBL:$embl_sv{$id}\n");
 
-    $log->write_to("# $name   \tSubmitted_to_EMBL\t");
-
-    if (!defined $embl_status{$id}) {
-	$log->write_to("not returned\n");
-	next;
-    }
-    elsif ($embl_status{$id} eq "Finished") {
-	$log->write_to("loaded  \t");
-    }
-    elsif ($embl_status{$id} eq "NOT_LOADED") {
-	$log->write_to("failed to load\n");
-	next;
-    }
-    
-    if ($embl_sv{$id} ne $id2sv{$name}) {
-	$log->write_to("Update sequence version\n");
-    }
-    else {
-	$log->write_to("Sequence version unchanged\n");
-    }
+    print OUT "Sequence : \"$name\"\n-D Database  EMBL  NDB_SV\n\nSequence : \"$name\"\nDatabase  EMBL  NDB_SV  $id.$embl_sv{$id}\n\n";
+    $updates++;
+    next
+  }
+  else {
+    $log->write_to("SV unchanged $embl_sv{$id}:$id2sv{$id}\n");
+  }
 }
-close SUBMITTED;
+$log->write_to("--------------------------------------------------------------------\n$loaded clones loaded successfully\n");
+$log->write_to("$updates clone(s) have an new SV from EMBL\n");
+$log->write_to("$errors1 clones were not returned\n");
+$log->write_to("$errors2 clones Failed to load\n");
+$log->write_to("$errors3 clones returned with an incorrect error code?\n--------------------------------------------------------------------\n\n");
+
+$log->write_to("The update file $out_file needs to be loaded into camace") if ($updates > 0);
+
+$log->write_to("check_EMBL_submissions.pl has Finished.\n");
 
 ###############################
 # Mail log to curator         #
 ###############################
-
 $log->mail($maintainer);
-#&mail_maintainer("check_EMBL_submissions",$maintainer,$log);
 
-###################################################
-# hasta luego                                     #
-###################################################
 print "\ncheck_EMBL_submissions.pl has Finished.\nPlease check the log email\n";
+
+
+close EMBL;
+close SUBMITTED;
+close OUT;
 exit(0);
 
 sub usage {
@@ -209,7 +237,11 @@ sub usage {
 	print "The submitted_to_EMBL summary file does not exist\n\n";
         exit(0);
     }
-}
+    elsif ($error == 3) {
+	print "Output file $out_file already exists...please remove\n\n";
+        exit(0);
+    }
+  }
 
 __END__
 
@@ -234,7 +266,7 @@ check_EMBL_submissions.pl mandatory arguments:
 
 =over 4
 
-=item -file <filename>, EMBL summary e-mail (exported from Pine)
+=item -file <filename>, EMBL summary e-mail (exported from Pine/Mozilla mail)
 
 =back
 
@@ -260,14 +292,21 @@ as reference for the entries submitted to the EBI.
 
 =back
 
-The log file at /nfs/disk100/wormpub/DATABASES/logs/check_EMBL_submissions.$$ contains the output
-from the script. An example of this output is given below.
+The emailed log file contains the output from the script. 
+An example of this output is given below:
 
-C01G10        Submitted_to_EMBL       loaded          Sequence version unchanged
-C01G12        Submitted_to_EMBL       loaded          Update sequence version
-C01G6         Submitted_to_EMBL       not returned
-C01H6         Submitted_to_EMBL       loaded          Sequence version unchanged
-C02B4         Submitted_to_EMBL       not returned
+VY10G11R   	Submitted_to_EMBL - loaded  	SV unchanged 1:1
+Y105E8A   	Submitted_to_EMBL - loaded  	Update sequence version CAM:4 EMBL:5
+Y115F2A         Submitted_to_EMBL - ***failed to load***
+Y57G11C   	Submitted_to_EMBL - not returned
+Y45F10A   	Submitted_to_EMBL - ***unknown status (<value>)***
+--------------------------------------------------------------------
+2 clones loaded successfully
+1 clone(s) have an new SV from EMBL
+1 clone(s) were not returned
+1 clone(s) Failed to load
+1 clone(s) returned with an incorrect error code?
+--------------------------------------------------------------------
 
 =head1 EXAMPLES:
 
@@ -282,5 +321,7 @@ Daniel Lawson
 Email dl1@sanger.ac.uk
 
 =cut
+
+
 
 
