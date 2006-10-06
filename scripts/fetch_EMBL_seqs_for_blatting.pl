@@ -6,8 +6,8 @@
 # 
 # Attempt to unify all of the diverse scripts to fetch ESTs, OSTs, mRNAs etc. used by blat 
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2005-12-16 11:18:55 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2006-10-06 15:14:18 $
 
 use strict;
 use lib "/wormsrv2/scripts/";
@@ -421,14 +421,13 @@ sub make_nematode_ests{
   my %contig_est_gbacc;
   open (WASHU_ESTS, "< $dir/$washu_ests_file ") || die "Can't open $washu_ests_file\n";
   while (<WASHU_ESTS>) {
-    my @f = split;
-    if (defined $f[4]) {
-      $contig_est_gbacc{$f[4]} = 1;
-    }
+    chomp;
+    $contig_est_gbacc{$_} = 1;
   }
   close (WASHU_ESTS);
   open (NEMBASE_ESTS, "< $dir/$nembase_ests_file ") || die "Can't open $nembase_ests_file\n";
   while (<NEMBASE_ESTS>) {
+    chomp;
     next if (/^;/);		# ignore comment lines
     $contig_est_gbacc{$_} = 1;
   }
