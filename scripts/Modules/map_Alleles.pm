@@ -139,23 +139,24 @@ sub _filter_alleles {
 
     foreach my $allele (@{$alleles}) {
         my $name = $allele->name;
+		my $remark = $allele->Remark;
 		
         if ( ! defined $allele->Sequence ) { # not connected to a sequence
-			$log->write_to("ERROR: $name has missing Sequence tag\n");$errors++
+			$log->write_to("ERROR: $name has missing Sequence tag (Remark: $remark)\n");$errors++
 			}
         elsif ( !defined $allele->Sequence->Source && !defined $weak_checks) {  # connected sequence has no source
-            $log->write_to("ERROR: $name connects to ${\$allele->Sequence} which has no Source tag\n");$errors++
+            $log->write_to("ERROR: $name connects to ${\$allele->Sequence} which has no Source tag (Remark: $remark)\n");$errors++
         }
         elsif (!defined $allele->Flanking_sequences){
-	    	$log->write_to("ERROR: $name has no left Flanking_sequence\n");$errors++
+	    	$log->write_to("ERROR: $name has no left Flanking_sequence (Remark: $remark)\n");$errors++
 		}                                                                        
 		# no right flanking sequence
         elsif (!defined $allele->Flanking_sequences->right || ! defined $allele->Flanking_sequences->right->name ) {
-                    $log->write_to("ERROR: $name has no right Flanking_sequence\n");$errors++
+                    $log->write_to("ERROR: $name has no right Flanking_sequence (Remark: $remark)\n");$errors++
         }                           
 		# empty flanking sequence
         elsif (!defined $allele->Flanking_sequences->name ) {
-                    $log->write_to("ERROR: $name has no left Flanking_sequence\n");$errors++
+                    $log->write_to("ERROR: $name has no left Flanking_sequence (Remark: $remark)\n");$errors++
         } 
 		else { push @good_alles, $allele }
     }
@@ -182,7 +183,7 @@ sub map {
 		# $chromosome_name,$start,$stop
 		my @map=$mapper->map_feature($x->Sequence->name,$x->Flanking_sequences->name,$x->Flanking_sequences->right->name);
 		if ($map[0] eq '0'){
-			$log->write_to("ERROR: Couldn't map ${\$x->name} to sequence ${\$x->Sequence->name} with ${\$x->Flanking_sequences->name} and ${\$x->Flanking_sequences->right->name}\n");
+			$log->write_to("ERROR: Couldn't map ${\$x->name} to sequence ${\$x->Sequence->name} with ${\$x->Flanking_sequences->name} and ${\$x->Flanking_sequences->right->name} (Remark: ${\$x->Remark})\n");
 			$errors++;
 			next
 		}
@@ -305,7 +306,7 @@ sub get_cds {
 					
 					# insanity check: insane tags are ignored and reported as warnings
 					if (!$v->{allele}->Type_of_mutation->right || !$v->{allele}->Type_of_mutation->right->right){
-						$log->write_to("WARNING: $k is missing FROM and/or TO\n");
+						$log->write_to("WARNING: $k is missing FROM and/or TO (Remark: ${\$v->{allele}->Remark})\n");
                         $errors++;
 				   		next;
 					}
@@ -370,7 +371,7 @@ sub get_cds {
 							$cds{$hit->{name}}{"Nonsense Opal_UGA \"$other_aa to opal stop (${\int($cds_position/3+1)})\""}{$k}=1;
 							print "Nonsense Opal_UAA: " if $wb->debug;
 						}
-						else {$log->write_to("ERROR: whatever stop $stop_codon is in $k, it is not Amber/Opal/Ochre\n");$errors++}
+						else {$log->write_to("ERROR: whatever stop $stop_codon is in $k, it is not Amber/Opal/Ochre (Remark: ${\$v->{allele}->Remark})\n");$errors++}
 					}
 				 	# missense
 					else{
@@ -505,8 +506,10 @@ sub compare {
 		}
 	}
 	while(my($allele,$v)=each %check){
-		while(my ($gene,$y)=each %$v){
-			if ($y==1) {$log->write_to("ERROR: $allele -> $gene connection is only in gene_ace\n");$errors++}
+		while(my ($gene,$y)=each %$v){           
+			if ($y==1) {
+				my $remark=$old->{$allele}->{allele}->Remark;
+				$log->write_to("ERROR: $allele -> $gene connection is only in geneace (Remark: $remark)\n");$errors++}
 			elsif($y==2){$log->write_to("WARNING: $allele -> $gene connection created by script\n")}
 			elsif($y==3){}
 			else{die "comparison failed\n"}
