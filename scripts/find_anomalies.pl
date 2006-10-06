@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2006-10-02 12:36:59 $      
+# Last updated on: $Date: 2006-10-06 14:28:58 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -218,6 +218,9 @@ foreach my $chromosome (@chromosomes) {
   print "finding CDS exons overlapping other genes\n";
   &get_matched_exons(\@exons, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, $chromosome);
 
+  print "finding short CDS exons\n";
+  &get_short_exons(\@exons, $chromosome);
+
 
 #################################################
 # these don't work very well - don't use
@@ -257,6 +260,7 @@ foreach my $chromosome (@chromosomes) {
 &delete_anomalies("UNATTACHED_EST");
 &delete_anomalies("FRAMESHIFTED_PROTEIN");
 &delete_anomalies("OVERLAPPING_EXONS");
+&delete_anomalies("SHORT_EXON");
 
 
 # disconnect from the mysql database
@@ -2030,6 +2034,30 @@ sub get_matched_exons {
     }
   }
 
+}
+
+##########################################
+# Finding short CDS exons
+# note any exons shorter than 30 bases
+#  &get_short_exons(\@exons, $chromosome);
+
+sub get_short_exons {
+  my ($exons_aref, $chromosome) = @_;
+
+  foreach my $exon (@{$exons_aref}) { # $exon_id, $chrom_start, $chrom_end, $chrom_strand
+
+    my $exon_id = $exon->[0];
+    my $chrom_start = $exon->[1];
+    my $chrom_end = $exon->[2];
+    my $chrom_strand = $exon->[3];
+    my $exon_score = $exon->[6];
+
+    my $anomaly_score = 1;
+
+    if ($chrom_end - $chrom_start + 1< 30) { # note any exons shorter than 30 bases
+      &output_to_database("SHORT_EXON", $chromosome, $exon_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score, '');
+    }
+  }
 }
 
 ##########################################
