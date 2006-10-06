@@ -844,13 +844,13 @@ sub populate_anomaly_window_list {
 
   $results = $db_query->fetchall_arrayref;
 
-  my $over_10;
-  my $over_5;
-  my $over_2;
-  my $over_1;
-  my $over_half;
-  my $over_quarter;
-  my $under_quarter;
+  my $over_10 = 0;
+  my $over_5 = 0;
+  my $over_2 = 0;
+  my $over_1 = 0;
+  my $over_half = 0;
+  my $over_quarter = 0;
+  my $under_quarter = 0;
   foreach my $result_row (@$results) {
     # clone, sense, score, window
     $$anomaly_list_ref->insert('end', $chromosome . " " . $result_row->[3] . " Sense: " . $result_row->[2] . " Score: " . $result_row->[1] . " ID: " . $result_row->[0] );
@@ -1504,12 +1504,12 @@ sub progress {
 	
 	# convert count value arrays to have one value per day
 	@over_10 = &date_convert(\@over_10, \@dates);
-#	@over_5	= &date_convert(\@over_5, \@dates);
-#	@over_2 = &date_convert(\@over_2, \@dates);
-#	@over_1 = &date_convert(\@over_1, \@dates);
-#	@over_half = &date_convert(\@over_half, \@dates);
-#	@over_quarter = &date_convert(\@over_quarter, \@dates);
-#	@under_quarter = &date_convert(\@under_quarter, \@dates);
+	@over_5	= &date_convert(\@over_5, \@dates);
+	@over_2 = &date_convert(\@over_2, \@dates);
+	@over_1 = &date_convert(\@over_1, \@dates);
+	@over_half = &date_convert(\@over_half, \@dates);
+	@over_quarter = &date_convert(\@over_quarter, \@dates);
+	@under_quarter = &date_convert(\@under_quarter, \@dates);
 	
 	# get data to draw in graphs	
 	my $to_register = {
@@ -1541,8 +1541,9 @@ sub progress {
 					 -type	=> 'Line',
 					 -max 	=> 700,
 					 -wire     => 0, # no wire grid in background
-					 -title    => "chromosome $chr $lab"
-					 )->pack(#-expand => 1, 
+					 -title    => "chromosome $chr $lab",
+					 -linewidth => 2,
+					 )->pack(
 						 -side => $side,
 						 );
 
