@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2006-10-06 14:28:58 $      
+# Last updated on: $Date: 2006-10-09 08:33:38 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -760,7 +760,7 @@ sub get_protein_differences {
   foreach my $homology (@homologies) { # $protein_id, $chrom_start, $chrom_end, $chrom_strand
 
     # don't want the low-scoring trembl proteins - they are not informative
-    if ($homology->[0] =~ /TR:/ &&  $homology->[6] < 0.2) {next;}
+    if ($homology->[0] =~ /TR:/ &&  $homology->[6] < 200) {next;}
 
     my $got_a_match = 0;	        # not yet seen a match to anything
     my $got_a_match_to_coding_exon = 0;	# not yet seen a match to a coding exon
