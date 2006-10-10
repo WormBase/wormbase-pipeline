@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2006-10-09 08:33:38 $      
+# Last updated on: $Date: 2006-10-10 16:07:01 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -2057,6 +2057,38 @@ sub get_short_exons {
     if ($chrom_end - $chrom_start + 1< 30) { # note any exons shorter than 30 bases
       &output_to_database("SHORT_EXON", $chromosome, $exon_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score, '');
     }
+  }
+}
+
+##########################################
+# Finding short CDS introns
+# note any introns shorter than 30 bases
+#  &get_short_introns(\@exons, $chromosome);
+
+sub get_short_introns {
+  my ($exons_aref, $chromosome) = @_;
+
+  my $prev_end = 0;
+  my $prev_exon = "";
+
+  foreach my $exon (@{$exons_aref}) { # $exon_id, $chrom_start, $chrom_end, $chrom_strand
+
+    my $exon_id = $exon->[0];
+    my $chrom_start = $exon->[1];
+    my $chrom_end = $exon->[2];
+    my $chrom_strand = $exon->[3];
+    my $exon_score = $exon->[6];
+
+    my $anomaly_score = 1;
+
+    # not the first exon in the chromosome
+    # and the previous exon came from this CDS
+    # and the intron is < 30 bases
+    if ($prev_end != 0 && $prev_exon eq $exon_id && $chrom_start - $prev_end + 1< 30) { # note any introns shorter than 30 bases
+      &output_to_database("SHORT_INTRON", $chromosome, $exon_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score, '');
+    }
+    $prev_end = $chrom_end;
+    $prev_exon = $exon_id;
   }
 }
 
