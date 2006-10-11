@@ -24,7 +24,7 @@ GetOptions(
 );
 
 $dbname = "worm_dna" unless $dbname;
-$dbhost = "ecs1f" unless $dbhost;
+$dbhost = "ia64b" unless $dbhost;
 $dbuser = "wormro" unless $dbuser;
 
 unless ($dbname && $dbuser && $dbhost) {
@@ -140,7 +140,7 @@ foreach my $clone ( @{$clones} ) {
 
   -dbname  ( worm_dna )
   -dbuser  ( wormro )
-  -dbhost  ( ecs1f )
+  -dbhost  ( ia64b )
 
 
 Ouput written to /acari/work2a/wormpipe/dumps so needs to be run on a machine that can see here eg ecs4

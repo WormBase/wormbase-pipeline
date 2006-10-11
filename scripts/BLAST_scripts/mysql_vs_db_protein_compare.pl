@@ -24,7 +24,7 @@ die "cant find $fasta\n" unless ( -e "$fasta" );
 my $log = Log_files->make_build_log("$debug");
 
 # mysql database parameters
-my $dbhost = "ecs1f";
+my $dbhost = "ia64b";
 my $dbuser = "wormadmin";
 my $dbname = "worm_pep";
 my $dbpass = "worms";
