@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2006-10-10 16:07:01 $      
+# Last updated on: $Date: 2006-10-11 13:16:57 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -2388,6 +2388,8 @@ sub read_GFF_file {
 }
 
 ##########################################
+# checks if there is sense = + or - and if not, outputs two anomaly records, one for each sense.
+# else it just outputs one record for the specified sense.
 
 sub output_to_database {
   my ($anomaly_type, $chromosome, $anomaly_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score, $explanation ) = @_;
@@ -2399,6 +2401,27 @@ sub output_to_database {
 
   # calculate the window value as blocks of 10 kb
   my $window =  int($chrom_start/10000);
+
+  # if there is no strand information, put one anomaly in for each strand
+  if ($chrom_strand ne '+' && $chrom_strand ne '-') {
+    &tidy_up_senseless_records($anomaly_type, $chromosome, $anomaly_id, $chrom_start, $chrom_end, '.', $window, $anomaly_score, $explanation, $clone, $clone_start, $clone_end, $lab);
+    &put_anomaly_record_in_database($anomaly_type, $chromosome, $anomaly_id, $chrom_start, $chrom_end, '+', $window, $anomaly_score, $explanation, $clone, $clone_start, $clone_end, $lab);
+    &put_anomaly_record_in_database($anomaly_type, $chromosome, $anomaly_id, $chrom_start, $chrom_end, '-', $window, $anomaly_score, $explanation, $clone, $clone_start, $clone_end, $lab);
+
+  } else {
+    &put_anomaly_record_in_database($anomaly_type, $chromosome, $anomaly_id, $chrom_start, $chrom_end, $chrom_strand, $window, $anomaly_score, $explanation, $clone, $clone_start, $clone_end, $lab);
+
+  }
+}
+
+##########################################
+# output the record to the database.
+# checks if there is a record there already and doesn't change the 'ignore' flag if there is
+# already a record in existence.
+
+sub put_anomaly_record_in_database {
+
+  my ($anomaly_type, $chromosome, $anomaly_id, $chrom_start, $chrom_end, $chrom_strand, $window, $anomaly_score, $explanation, $clone, $clone_start, $clone_end, $lab) = @_;
 
   # need to do a check for a very similar previous record that may
   # need to be overwritten, preserving the status.
@@ -2439,7 +2462,7 @@ sub output_to_database {
     print "In test mode - so not updating the mysql database\n";
   } else {
     if ($nearest <= 20) {
-      $mysql->do(qq{ UPDATE anomaly SET   clone="$clone", clone_start=$clone_start, clone_end=$clone_end, centre="$lab", chromosome_start=$chrom_start, chromosome_end=$chrom_end, thing_score=$anomaly_score, explanation="$explanation"   WHERE anomaly_id = $nearest_db_key_id; });
+      $mysql->do(qq{ UPDATE anomaly SET clone="$clone", clone_start=$clone_start, clone_end=$clone_end, centre="$lab", chromosome_start=$chrom_start, chromosome_end=$chrom_end, thing_score=$anomaly_score, explanation="$explanation"   WHERE anomaly_id = $nearest_db_key_id; });
       # NB we do not write the status record for this anomaly_id
 
     } else {
@@ -2453,7 +2476,45 @@ sub output_to_database {
   }
 
 }
+##########################################
+# there have been a lot of records put in the database that have a sense
+# as '.'  we want to change these to be two records with a sense '+
+# and a sense '-' (this routine will not be required after the first
+# time it has been run and cleaned up the database)
 
+sub tidy_up_senseless_records {
+
+  my ($anomaly_type, $chromosome, $anomaly_id, $chrom_start, $chrom_end, $chrom_strand, $window, $anomaly_score, $explanation, $clone, $clone_start, $clone_end, $lab) = @_;
+
+  my $old_db_key_id;
+  my $active;
+
+  my $db_query = $mysql->prepare ( qq{ SELECT anomaly_id, active FROM anomaly WHERE type = "$anomaly_type" AND chromosome = "$chromosome" AND sense = "." AND chromosome_start = $chrom_start AND chromosome_end = $chrom_end AND thing_id = "$anomaly_id" });
+
+  $db_query->execute();
+  my $ref_results = $db_query->fetchall_arrayref;
+
+  # find the nearest one to the current data
+  #print "\tstart search for $anomaly_id\n";
+  foreach my $result_row (@$ref_results) {
+    $old_db_key_id = $result_row->[0];
+    $active = $result_row->[1];
+    
+    # we want two new records inserted
+    $db_key_id++;
+    #print qq{ INSERT INTO anomaly VALUES ($db_key_id, "$anomaly_type", "$clone", $clone_start, $clone_end, "$lab", "$chromosome", $chrom_start, $chrom_end, "+", "$anomaly_id", $anomaly_score, "$explanation", $window, $active, NULL); \n  };
+
+    $mysql->do(qq{ INSERT INTO anomaly VALUES ($db_key_id, "$anomaly_type", "$clone", $clone_start, $clone_end, "$lab", "$chromosome", $chrom_start, $chrom_end, "+", "$anomaly_id", $anomaly_score, "$explanation", $window, $active, NULL); });
+    $db_key_id++;
+    $mysql->do(qq{ INSERT INTO anomaly VALUES ($db_key_id, "$anomaly_type", "$clone", $clone_start, $clone_end, "$lab", "$chromosome", $chrom_start, $chrom_end, "-", "$anomaly_id", $anomaly_score, "$explanation", $window, $active, NULL); });
+      
+    
+    # and we want to delete the old record with no sense
+    #print qq{ DELETE FROM anomaly WHERE anomaly_id = $old_db_key_id; \n  };
+
+    $mysql->do(qq{ DELETE FROM anomaly WHERE anomaly_id = $old_db_key_id; });
+  }
+}
 ##########################################
 # get the lab for a clone or superlink
 
@@ -2493,12 +2554,12 @@ sub delete_anomalies{
   my ($type) = @_;
 
   # Allow a generous 5 days for this program to have been running.
-  #
-  # Delete anything that hasn't been marked as to be ignored that is
-  # of the required type and which has not been updated in the last
-  # few days i.e that this program hasn't just updated.
+  # Delete anything that hasn't been marked as to be ignored (still
+  # active = 1) that is of the required type and which has not been
+  # updated in the last few days i.e that this program hasn't just
+  # updated.
 
-  $mysql->do(qq{ DELETE FROM anomaly WHERE type = "$type" AND active = 0 AND DATE_SUB(CURDATE(),INTERVAL 5 DAY) > date });
+  $mysql->do(qq{ DELETE FROM anomaly WHERE type = "$type" AND active = 1 AND DATE_SUB(CURDATE(),INTERVAL 5 DAY) > date });
 
 }
 
