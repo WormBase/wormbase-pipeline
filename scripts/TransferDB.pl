@@ -4,8 +4,8 @@
 #
 # by ag3 [991221]
 #
-# Last updated on: $Date: 2006-09-08 16:01:41 $
-# Last updated by: $Author: pad $
+# Last updated on: $Date: 2006-10-11 16:01:40 $
+# Last updated by: $Author: gw3 $
 
 # transferdb moves acedb database files across filesystems.
 # Creates a temporary database.BCK 
@@ -237,6 +237,8 @@ if( @failed_files ) {
   foreach ( @failed_files ) {
     $log->write_to( "\t$_\n");
   }
+  $log->mail;
+  exit 1;			# return error status
 }
 else {
   $log->write_to( "TransferDB process $$ ended SUCCESSFULLY at ". $wormbase->runtime ."\n");
