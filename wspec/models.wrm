@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: ar2 $
-// Last edited on: $Date: 2006-09-19 08:14:28 $
+// Last edited on: $Date: 2006-10-11 08:51:01 $
 
 
 
@@ -1605,7 +1605,8 @@
                         Western Text // added for Wen 
                         RT_PCR Text // added for Wen
 		Pattern ?Text
-		Picture ?Picture XREF Expr_pattern	
+		Picture ?Picture XREF Expr_pattern
+		MovieURL Text //Added by wen for link to movie URLs. 
                 Remark ?Text #Evidence
                 Experiment	Laboratory ?Laboratory
 				Author ?Author 
