@@ -6,7 +6,7 @@
 # dl
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2006-10-13 11:04:28 $
+# Last updated on: $Date: 2006-10-13 12:54:46 $
  
 $!=1;
 use strict;
@@ -233,7 +233,7 @@ foreach $seq (keys %isGenomeSequence) {
 foreach $seq (keys %CDSStart) {
     next if ($isGenomeSequence{$seq});
     
-    if ($seq =~ /(\S+)\.\d+/) {
+    if ($seq =~ /(\S+)\.\d+ || (\S+)\.gc\d+/) {	# allow genefinder-style IDs to be read
 	$parent = $1; 
     }
     else { 
