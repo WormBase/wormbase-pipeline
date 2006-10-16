@@ -6,7 +6,7 @@
 # dl
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2006-10-13 12:54:46 $
+# Last updated on: $Date: 2006-10-16 16:11:20 $
  
 $!=1;
 use strict;
@@ -233,10 +233,11 @@ foreach $seq (keys %isGenomeSequence) {
 foreach $seq (keys %CDSStart) {
     next if ($isGenomeSequence{$seq});
     
-    if ($seq =~ /(\S+)\.\d+ || (\S+)\.gc\d+/) {	# allow genefinder-style IDs to be read
+    if ($seq =~ /(\S+)\.\d+/) {
 	$parent = $1; 
-    }
-    else { 
+    } elsif ($seq =~ /(\S+)\.gc\d+/) {	# allow genefinder-style IDs to be read
+	$parent = $1; 
+    } else { 
 	$log->write_to("no dot in subsequence name $seq\n");
 	next; 
     }
