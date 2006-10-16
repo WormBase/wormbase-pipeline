@@ -35,6 +35,26 @@ sub new
 
 #################################################################################
 
+# DEMO constructor
+#
+# should become: initialize(-organism => Elegans,......) 
+
+sub initialize {
+	my $class = shift;
+	my %params=@_;
+
+	my @allowed_organisms=qw(Elegans Briggsae Remanei);
+
+	my $self;
+	my $ORGANISM=($params{'-organism'}||'Elegans'); # fixed at the moment
+
+	die "invalid organism: $ORGANISM" if ! grep {$_ eq $ORGANISM} @allowed_organisms;
+
+	$self=$ORGANISM->_new(\%params);
+	return $self;
+}
+
+#######################################################################
 
 sub get_wormbase_version {
   my $self = shift;
