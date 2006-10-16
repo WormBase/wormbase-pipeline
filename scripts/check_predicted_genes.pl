@@ -4,7 +4,7 @@
 #
 # by Keith Bradnam
 #
-# Last updated on: $Date: 2006-09-28 15:58:46 $
+# Last updated on: $Date: 2006-10-16 13:17:33 $
 # Last updated by: $Author: pad $
 #
 # see pod documentation at end of file for more information about this script
@@ -21,12 +21,12 @@ use Storable;
 
 my ($verbose, $db_path, $basic, $test, $debug, $store);
 
-GetOptions ("verbose"    => \$verbose,
-	    "database=s" => \$db_path,
-	    "basic"      => \$basic,
-	    "debug:s"    => \$debug,
-	    "test"       => \$test,
-	    "store:s"    => \$store
+GetOptions ("verbose"    => \$verbose, # prints screen output.
+	    "database=s" => \$db_path, # Path to the database you want to check.
+	    "basic"      => \$basic,   # Ignores some of the checks.
+	    "debug:s"    => \$debug,   # turns on more printing and errorlogging
+	    "test"       => \$test,    # only checks the CDSs from 1 clone in the database.
+	    "store:s"    => \$store    # 
 	   );
 
 my $wormbase;
@@ -75,8 +75,16 @@ foreach $CDSfilter (@CDSfilter) {
 ################################
 # Fetch Gene Models (All_genes)
 ################################
-
-my @Predictions = $db->fetch (-query => 'FIND All_genes');
+my @Predictions;
+if ($test) {
+  @Predictions = $db->fetch('All_genes','C09G9*');
+  foreach my $Predictions(@Predictions) {
+    print $Predictions->name."\n";
+  }
+}
+else {
+@Predictions = $db->fetch (-query => 'FIND All_genes');
+}
 my $gene_model_count=@Predictions;
 $log->write_to("Checking $gene_model_count Predictions in $db_path\n\n");
 print "\nChecking $gene_model_count Predictions in '$db_path'\n\n" if $verbose;
@@ -96,9 +104,11 @@ foreach my $gene_model ( @Predictions ) {
   
   for ($i=1; $i<@exon_coord2;$i++) {
     my $intron_size = ($exon_coord1[$i] - $exon_coord2[$i-1] -1);
-    print "ERROR: $gene_model has a small intron ($intron_size bp)\n" if (($intron_size < 34)  && $verbose && ($method_test eq 'curated'));
-    push(@error4,"WARNING: $gene_model has a very small intron ($intron_size bp)\n") if (($intron_size < 34) && (!$basic) && ($method_test eq 'curated'));
-    push(@error5,"WARNING: $gene_model has a small intron ($intron_size bp)\n") if (($intron_size > 33) && ($intron_size < 39) && (!$basic) && $verbose && ($method_test eq 'curated'));
+    if (($intron_size < 34) && ($method_test eq 'curated')) {
+      print "ERROR: $gene_model has a small intron ($intron_size bp)\n";
+      push(@error4,"ERROR: $gene_model has a very small intron ($intron_size bp)\n")
+    }
+    push(@error5,"WARNING: $gene_model has a small intron ($intron_size bp)\n") if (($intron_size > 33) && ($intron_size < 39) && (!$basic) && ($method_test eq 'curated'));
   }
 	
   for ($i=0; $i<@exon_coord1; $i++) {
@@ -118,13 +128,13 @@ foreach my $gene_model ( @Predictions ) {
 
   if (($gene_model->get('Start_not_found')) && ($method_test eq 'curated')) {
     $start_tag = "present";
-    push(@error2,"ERROR: $gene_model Start_not_found tag present\n") unless ($basic);
+    push(@error2,"ERROR: $gene_model Start_not_found tag present\n");
     print "ERROR: $gene_model Start_not_found tag present\n" if $verbose;
   }
 
   if (($gene_model->get('End_not_found')) && ($method_test eq 'curated')) {
     $end_tag = "present";
-    push(@error2,"ERROR: $gene_model End_not_found tag present\n") unless ($basic);
+    push(@error2,"ERROR: $gene_model End_not_found tag present\n");
     print "ERROR: $gene_model End_not_found tag present\n" if $verbose;
   }
 
@@ -136,6 +146,7 @@ foreach my $gene_model ( @Predictions ) {
 
   #Test for erroneous Isoform tags.(CDS specific)
   if (($gene_model->name =~ (/\b\w+\.[0-9]{1,2}\b/)) && ($method_test ne 'history')) {
+
     my $Isoform = $gene_model->at('Properties.Isoform');
     push(@error3, "ERROR: $gene_model contains an invalid Isoform tag\n") if $Isoform;
   }
@@ -276,36 +287,43 @@ sub test_gene_sequence_for_errors{
   ($Lab) = ($gene_model->get('From_laboratory'));
 	    
   # check for length errors(CDS specific)
-  my $warning;
-  if (($gene_model_length < 75) && ($method_test eq 'curated')) {
-    $warning = "WARNING: $gene_model is very short ($gene_model_length bp), ";
-    print "WARNING: $gene_model is very short ($gene_model_length bp), " if $verbose;
-		
-    if (defined($gene_model->at('Properties.Coding.Confirmed_by'))) {
-      $warning .= "gene is Confirmed\n";
-      print "gene is Confirmed\n" if $verbose;
-    } elsif (defined($gene_model->at('Visible.Matching_cDNA'))) {
-      $warning .= "gene is Partially_confirmed\n";
-      print "gene is Partially_confirmed\n" if $verbose;
-    } else {
-      $warning .= "gene is Predicted\n";
-      print "gene is predicted\n" if $verbose;
+  if (!$basic) {
+    my $warning;
+    if (($gene_model_length < 75) && ($method_test eq 'curated')) {
+      $warning = "WARNING: $gene_model is very short ($gene_model_length bp),";
+      print "WARNING: $gene_model is very short ($gene_model_length bp), " if $verbose;
+      if (defined($gene_model->at('Properties.Coding.Confirmed_by'))) {
+	$warning .= "gene is Confirmed\n";
+	print "gene is Confirmed\n" if $verbose;
+      }
+      elsif (defined($gene_model->at('Visible.Matching_cDNA'))) {
+	$warning .= "gene is Partially_confirmed\n";
+	print "gene is Partially_confirmed\n" if $verbose;
+      } 
+      else {
+	$warning .= "gene is Predicted\n";
+	print "gene is predicted\n" if $verbose;
+      }
+      push(@error3, $warning) unless ($basic);
     }
-    push(@error3, $warning) unless ($basic);
-  } elsif (($gene_model_length < 100) && ($method_test eq 'curated')) {
-    if (defined($gene_model->at('Properties.Coding.Confirmed_by'))) {
-      $warning = "WARNING: $gene_model is short ($gene_model_length bp) and is Confirmed\n";
-      print "WARNING: $gene_model is short ($gene_model_length bp) and is Confirmed\n" if $verbose;
-    } elsif (defined($gene_model->at('Visible.Matching_cDNA'))) {
-      $warning .= "WARNING: $gene_model is short ($gene_model_length bp) and is Partially_confirmed\n";
-      print "WARNING: $gene_model is short ($gene_model_length bp) and is Partially_confirmed\n" if $verbose;
-    } else {
-      $warning .= "WARNING: $gene_model is short ($gene_model_length bp) and is Predicted\n";
-      print "WARNING: $gene_model is short ($gene_model_length bp) and is Predicted\n" if $verbose;
+    elsif (($gene_model_length < 100) && ($method_test eq 'curated')) {
+      if (defined($gene_model->at('Properties.Coding.Confirmed_by'))) {
+	$warning = "WARNING: $gene_model is short ($gene_model_length bp) and is Confirmed\n";
+	print "WARNING: $gene_model is short ($gene_model_length bp) and is Confirmed\n" if $verbose;
+      }
+      elsif (defined($gene_model->at('Visible.Matching_cDNA'))) {
+	$warning .= "WARNING: $gene_model is short ($gene_model_length bp) and is Partially_confirmed\n";
+	print "WARNING: $gene_model is short ($gene_model_length bp) and is Partially_confirmed\n" if $verbose;
+      }
+      else {
+	$warning .= "WARNING: $gene_model is short ($gene_model_length bp) and is Predicted\n";
+	print "WARNING: $gene_model is short ($gene_model_length bp) and is Predicted\n" if $verbose;
+      }
+      push(@error5, $warning);
     }
-    push(@error5, $warning) unless ($basic);
   }
-	    
+  
+  # Is the gene prediction complete?
   if (($remainder != 0) && ($method_test eq 'curated')) {
     if (($end_tag ne "present") && ($start_tag ne "present")) {
       push(@error1,"ERROR: $gene_model length ($gene_model_length bp) not divisible by 3, Start_not_found & End_not_found tags MISSING\n");
@@ -313,10 +331,9 @@ sub test_gene_sequence_for_errors{
     } else {
       push(@error2,"ERROR: $gene_model length ($gene_model_length bp) not divisible by 3, Start_not_found and/or End_not_found tag present\n");
       print "ERROR: $gene_model length ($gene_model_length bp) not divisible by 3, Start_not_found and/or End_not_found tag present\n" if $verbose;
-    }   
-  }   
-	    
-	    
+    }
+  }
+
   # look for incorrect stop codons (CDS specific)
   if (($stop_codon ne 'taa') && ($stop_codon ne 'tga') && ($stop_codon ne 'tag') && ($method_test eq 'curated') && ($Lab eq "HX")) {
     if ($end_tag ne "present") {
@@ -327,8 +344,7 @@ sub test_gene_sequence_for_errors{
       print "ERROR: $gene_model '$stop_codon' is not a valid stop codon. End_not_found tag present\n" if $verbose;
     }
   }
-      
-      
+
   # look for incorrect start codons(CDS specific)
   if (($start_codon ne 'atg') && ($method_test eq 'curated') && ($Lab eq "HX")) {
     if (($start_tag ne "present")) {
@@ -340,11 +356,9 @@ sub test_gene_sequence_for_errors{
     }
   }
 
-  
   # check for internal stop codons (CDS specific)
   my $i;
   my $j;
-
   for ($i=0; $i<$gene_model_length-3;$i+=3) {
     # hold position of codon in $j
     $j=$i+1;
@@ -358,7 +372,7 @@ sub test_gene_sequence_for_errors{
 	print "ERROR: $gene_model internal stop codon at position $j ...$previous_sequence $offending_codon $following_sequence...\n" if $verbose;
       }
     }
-  }			       
+  }
   
   # look for non-ACTG characters
   if ($dna =~ /[^acgt]/i) {
@@ -366,7 +380,6 @@ sub test_gene_sequence_for_errors{
     push(@error2, "ERROR: $gene_model DNA sequence contains the following non-ATCG characters: $dna\n"); 
     print "ERROR: $gene_model DNA sequence contains the following non-ATCG characters: $dna\n" if $verbose;
   }
-
 }
 
 
