@@ -26,12 +26,15 @@ sub _new {
 	bless $self,$class;
 }
 
-sub organism {my $self=shift;print 'I am a C.'.ref($self)."\n"}
-
-package Wormbase;
-sub worm {print "I am a worm\n"}
 
 if (__FILE__ eq $0){
+	package Elegans;
+
+	sub organism {my $self=shift;print 'I am a C.'.ref($self)."\n"}
+
+	package Wormbase;
+
+	sub worm {print "I am a worm\n"}
 
 	my $a=Wormbase->initialize('-organism' => 'Elegans');
 	$a->worm;
