@@ -6,7 +6,7 @@
 # dl
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2006-10-16 16:11:20 $
+# Last updated on: $Date: 2006-10-17 12:42:44 $
  
 $!=1;
 use strict;
@@ -108,12 +108,20 @@ my (%TransposonSource,%TransposonStart,%TransposonEnd);
 my (%TranscriptSource,%TranscriptStart,%TranscriptEnd);
 my ($it,$obj,$seq,$start,$end);
 
+my $error = 0;			# error status to return from program
+
 $it = $camdb->fetch_many(Genome_sequence => '*') ;
 while ($obj = $it->next) {
-  if (! defined $obj) {warn "Genome_sequence not defined\n";}
+  if (! defined $obj) {
+    $log->write_to("Genome_sequence not defined\n");
+    $error = 1;
+  }
     $isGenomeSequence{$obj} = 1 ;
     $length{$obj}           = $obj->DNA(2) ;
-    if (!$length{$obj})     { warn "No length for $obj\n" ; }
+    if (!$length{$obj})     { 
+      $log->write_to("No length for $obj\n") ; 
+      $error = 1;
+    }
     $right{$obj}            = $obj->Overlap_right ;
     $rightOffset{$obj}      = $obj->Overlap_right(2) ;
     $left{$obj}             = $obj->Overlap_left ;
@@ -129,9 +137,15 @@ while ($obj = $it->next) {
 $it = $camdb->fetch_many(Sequence => 'SUPERLINK*') ;
 while ($obj = $it->next) {
     foreach $a ($obj->at('Structure.Subsequence')) {
-      if (! defined $a) {warn "superlink Structure.Subsequence not defined\n";}
+      if (! defined $a) {
+	$log->write_to("superlink Structure.Subsequence not defined\n"); 
+	$error = 1;
+      }
       ($seq, $start, $end) = $a->row;
-      if (! defined $seq || ! defined $start || ! defined $end) {warn "Structure.Subsequence row not defined\n";}
+      if (! defined $seq || ! defined $start || ! defined $end) {
+	$log->write_to("Structure.Subsequence row not defined\n"); 
+	$error = 1;
+      }
       $currSource{$seq}    = $obj;
       $currStart{$seq}     = $start;
       $currEnd{$seq}       = $end;
@@ -141,9 +155,15 @@ while ($obj = $it->next) {
     }
 
     foreach $a ($obj->at('SMap.S_child.CDS_child')) {
-      if (! defined $a) {warn "superlink SMap.S_child.CDS_child not defined\n";}
+      if (! defined $a) {
+	$log->write_to("superlink SMap.S_child.CDS_child not defined\n");
+	$error = 1;
+      }
       ($seq, $start, $end) = $a->row;
-      if (! defined $seq || ! defined $start || ! defined $end) {warn "SMap.S_child.CDS_child row not defined\n";}
+      if (! defined $seq || ! defined $start || ! defined $end) {
+	$log->write_to("SMap.S_child.CDS_child row not defined\n");
+	$error = 1;
+      }
       $CDSSource{$seq}    = $obj;
       $CDSStart{$seq}     = $start;
       $CDSEnd{$seq}       = $end;
@@ -152,9 +172,15 @@ while ($obj = $it->next) {
     }
 
     foreach $a ($obj->at('SMap.S_child.Pseudogene')) {
-      if (! defined $a) {warn "superlink SMap.S_child.Pseudogene not defined\n";}
+      if (! defined $a) {
+	$log->write_to("superlink SMap.S_child.Pseudogene not defined\n");
+	$error = 1;
+      }
       ($seq, $start, $end) = $a->row;
-      if (! defined $seq || ! defined $start || ! defined $end) {warn "SMap.S_child.Pseudogene row not defined\n";}
+      if (! defined $seq || ! defined $start || ! defined $end) {
+	$log->write_to("SMap.S_child.Pseudogene row not defined\n");
+	$error = 1;
+      }
       $PseudoSource{$seq}    = $obj;
       $PseudoStart{$seq}     = $start;
       $PseudoEnd{$seq}       = $end;
@@ -163,9 +189,15 @@ while ($obj = $it->next) {
     }
 
     foreach $a ($obj->at('SMap.S_child.Transcript')) {
-      if (! defined $a) {warn "superlink SMap.S_child.Transcript not defined\n";}
+      if (! defined $a) {
+	$log->write_to("superlink SMap.S_child.Transcript not defined\n");
+	$error = 1;
+      }
       ($seq, $start, $end) = $a->row;
-      if (! defined $seq || ! defined $start || ! defined $end) {warn "SMap.S_child.Transcript row not defined\n";}
+      if (! defined $seq || ! defined $start || ! defined $end) {
+	$log->write_to("SMap.S_child.Transcript row not defined\n");
+	$error = 1;
+      }
       $TranscriptSource{$seq}    = $obj;
       $TranscriptStart{$seq}     = $start;
       $TranscriptEnd{$seq}       = $end;
@@ -174,9 +206,15 @@ while ($obj = $it->next) {
     }
 
     foreach $a ($obj->at('SMap.S_child.Transposon')) {
-      if (! defined $a) {warn "superlink SMap.S_child.Transposon not defined\n";}
+      if (! defined $a) {
+	$log->write_to("superlink SMap.S_child.Transposon not defined\n");
+	$error = 1;
+      }
       ($seq, $start, $end) = $a->row;
-      if (! defined $seq || ! defined $start || ! defined $end) {warn "SMap.S_child.Transposon row not defined\n";}
+      if (! defined $seq || ! defined $start || ! defined $end) {
+	$log->write_to("SMap.S_child.Transposon row not defined\n");
+	$error = 1;
+      }
       $TransposonSource{$seq}    = $obj;
       $TransposonStart{$seq}     = $start;
       $TransposonEnd{$seq}       = $end;
@@ -239,6 +277,7 @@ foreach $seq (keys %CDSStart) {
 	$parent = $1; 
     } else { 
 	$log->write_to("no dot in subsequence name $seq\n");
+	$error = 1;
 	next; 
     }
     
@@ -249,17 +288,20 @@ foreach $seq (keys %CDSStart) {
     if (!$currStart{$parent}) { 
       if ($seq !~ /.tw$/) {	# don't complain about the twinscan CDSs - just ignore them
 	$log->write_to("no coord in link for parent $parent of $seq\n");
+	$error = 1;
       }
       next;
     }
     # next if parent and child map to different links
     if (!($CDSSource{$seq} eq $currSource{$parent})) { 
 	$log->write_to("parent $parent and child $seq in different links\n"); 
+	$error = 1;
 	next;
     }
     # next if parent has no home to go to
     if (!$link{$parent}) {
 	$log->write_to("no new link for parent $parent of $seq\n");
+	$error = 1;
 	next;
     }
     # next if sequence is a superlink
@@ -281,22 +323,26 @@ foreach $seq (keys %PseudoStart) {
     }
     else { 
 	$log->write_to("no dot in subsequence name $seq\n");
+	$error = 1;
 	next; 
     }
     
     # next if no coordinate for parent clone
     if (!$currStart{$parent}) { 
 	$log->write_to("no coord in link for parent $parent of $seq\n");
+	$error = 1;
 	next;
     }
     # next if parent and child map to different links
     if (!($PseudoSource{$seq} eq $currSource{$parent})) { 
 	$log->write_to("parent $parent and child $seq in different links\n"); 
+	$error = 1;
 	next;
     }
     # next if parent has no home to go to
     if (!$link{$parent}) {
 	$log->write_to("no new link for parent $parent of $seq\n");
+	$error = 1;
 	next;
     }
     # next if sequence is a superlink
@@ -320,22 +366,26 @@ foreach $seq (keys %TransposonStart) {
     }
     else { 
 	$log->write_to("no dot in subsequence name $seq\n");
+	$error = 1;
 	next; 
     }
     
     # next if no coordinate for parent clone
     if (!$currStart{$parent}) { 
 	$log->write_to("no coord in link for parent $parent of $seq\n");
+	$error = 1;
 	next;
     }
     # next if parent and child map to different links
     if (!($TransposonSource{$seq} eq $currSource{$parent})) { 
 	$log->write_to("parent $parent and child $seq in different links\n"); 
+	$error = 1;
 	next;
     }
     # next if parent has no home to go to
     if (!$link{$parent}) {
 	$log->write_to("no new link for parent $parent of $seq\n");
+	$error = 1;
 	next;
     }
     # next if sequence is a superlink
@@ -358,22 +408,26 @@ foreach $seq (keys %TranscriptStart) {
     }
     else { 
 	$log->write_to("no dot in subsequence name $seq\n");
+	$error = 1;
 	next; 
     }
     
     # next if no coordinate for parent clone
     if (!$currStart{$parent}) { 
 	$log->write_to("no coord in link for parent $parent of $seq\n");
+	$error = 1;
 	next;
     }
     # next if parent and child map to different links
     if (!($TranscriptSource{$seq} eq $currSource{$parent})) { 
 	$log->write_to("parent $parent and child $seq in different links\n"); 
+	$error = 1;
 	next;
     }
     # next if parent has no home to go to
     if (!$link{$parent}) {
 	$log->write_to("no new link for parent $parent of $seq\n");
+	$error = 1;
 	next;
     }
     # next if sequence is a superlink
@@ -395,7 +449,10 @@ foreach $seq (keys %TranscriptStart) {
 ###########################################
 
 foreach $seq (keys %currSource) {
-    if (!$link{$seq}) { $log->write_to("$seq not put back into a link\n"); }
+    if (!$link{$seq}) { 
+      $log->write_to("$seq not put back into a link\n"); 
+      $error = 1;
+    }
 }
 
 
@@ -407,7 +464,7 @@ close (ACE);
 # Close log files and exit
 $log->mail();
 print "Finished.\n" if ($verbose);
-exit(0);
+exit($error);			# return the error status
 
 
 ############# end of file ################
