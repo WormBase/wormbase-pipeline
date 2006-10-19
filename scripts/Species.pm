@@ -167,3 +167,70 @@ if ( __FILE__ eq $0 ) {
 }
 1;
 
+
+__END__
+
+=pod
+
+=head1 NAME Species.pm
+
+=head1 DESCRIPTION extends Wormbase.pm
+
+Species.pm provides Elegans, Briggsae and Remanei classes, which are inherited from Wormbase
+and Species. Species provides generics for the more specific child classes.
+
+runs tests if not used as module.
+
+=head1 Species
+
+=head2 flatten_params($hashref)
+
+flattens an hash into an array
+
+=head2  get_chromosome_names([-prefix => 1 / PREFIX , -mito => 1])
+
+returns list of chromosomes including mitochondria (-mito => 1),
+default prefix (-prefix => 1) or a custom prefix (-prefix => 'blablub_')
+
+uses mock methods if calles from within Species
+
+=head2 _new([params,...])
+
+calls the Wormbase constructor and blesses into the new class.
+
+=head2 mock_methods (should be overwritten in the child classes)
+
+=over 3 
+
+=item
+chromosome_names
+
+=item 
+mt_name
+
+=item 
+chromosome_prefix
+
+=back
+
+=head1 Elegans
+
+inherits from Species and Wormbase
+
+just overwrites the mock methods from Species
+
+=head1 Briggsae
+
+inherits from Species and Wormbase
+
+changes basedirectory to: $basedir/autoace/briggsae
+does use the CB1 assembly names.
+
+=head1 Remanei
+
+inherits from Species and Wormbase
+
+uses '/nfs/disk100/wormpub/DATABASES/remanei/supercontigs.fa'
+to get the sequence names by stripping prefix='Contig' from them.
+
+=cut 
