@@ -12,9 +12,9 @@ use Log_files;
 use File::Path;
 use File::stat;
 use Storable;
+use Species;
 
-
-sub new
+sub initialize
   {
     my $class = shift;
     my %params = @_;
@@ -39,7 +39,7 @@ sub new
 #
 # should become: initialize(-organism => Elegans,......) 
 
-sub initialize {
+sub new {
 	my $class = shift;
 	my %params=@_;
 
