@@ -5,7 +5,7 @@
 # A script to make multiple copies of camace for curation, and merge them back again
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2006-09-29 09:22:02 $
+# Last edited on: $Date: 2006-10-19 14:59:27 $
 
 
 use strict;
@@ -31,7 +31,8 @@ my $help;                  # Help menu
 my $version;               # Removes final wormsrv2 dependancy.
 my $store;                # Storable not needed as this is not a build script!
 my $test;
-my $wormbase,
+my $wormbase;
+my $extra;                 #remove the GeneIDupdater call as this is run otside this script.
 
   GetOptions (
 	      "all"        => \$all,
@@ -46,6 +47,7 @@ my $wormbase,
 	      "version:s"  => \$version,
 	      "store"      => \$store,
 	      "test"       => \$test,
+	      "extra"      => \$extra,
 	     );
 
 
@@ -243,10 +245,11 @@ sub update_camace {
   ##################################################################################
   ## Update Gene IDs, Protein ID's and check the sequence versions of our clones. ##
   ##################################################################################
-  print "\n\nRunning Gene_ID_update.pl to refresh WBGene ID\'s Protein_ID\'s and Clone sequence versions.\n\n";
-  $wormbase->run_script("GeneID_updater.pl -geneID -proteinID -version $WS_version -update") && die "Failed to run Gene_ID_updater.pl\n";
-  print "Updated WBGene ID\'s Protein_ID\'s and Clone sequence versions.\n";
-
+  if ($extra) {
+    print "\n\nRunning Gene_ID_update.pl to refresh WBGeneID\'s, Protein_ID\'s and Clone sequence versions.\n\n";
+    $wormbase->run_script("GeneID_updater.pl -geneID -proteinID -version $WS_version -update") && die "Failed to run Gene_ID_updater.pl\n";
+    print "Updated WBGene ID\'s Protein_ID\'s and Clone sequence versions.\n";
+  }
   #######################################################
   ## Get new ESTs/mRNAs from EMBL and load into camace ##
   #######################################################
