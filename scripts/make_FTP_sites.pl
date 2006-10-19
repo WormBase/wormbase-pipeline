@@ -7,8 +7,8 @@
 # 
 # Originally written by Dan Lawson
 #
-# Last updated by: $Author: wormpub $
-# Last updated on: $Date: 2006-09-06 13:14:21 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2006-10-19 14:29:46 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -285,6 +285,10 @@ sub copy_wormpep_files{
   $tgz_file .= ".gz";
   $wormbase->run_command("mv $tgz_file $targetdir/$WS_name", $log);
 
+	$log->write_to("zip and copy brigpep\n");
+	my $brigpep = $wormbase->brigpep;
+	$wormbase->run_command("gzip zcvf $brigpep/brigpep$WS.tgz $brigpep/*",$log);
+ 	$wormbase->run_command("mv $brigpep/brigpep$WS.tgz $targetdir/$WS_name", $log);
 
   $runtime = $wormbase->runtime;
   $log->write_to("$runtime: Finished copying\n\n");
