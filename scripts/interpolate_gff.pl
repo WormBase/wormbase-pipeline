@@ -15,7 +15,7 @@
 #      COMPANY:
 #      VERSION:  1.0
 #      CREATED:  13/02/06 09:37:00 GMT
-#     REVISION:  $Revision: 1.14 $
+#     REVISION:  $Revision: 1.15 $
 #===============================================================================
 
 # BACS / SNPS / GENEs
@@ -27,6 +27,8 @@ use Wormbase;
 use Getopt::Long;
 use IO::File;
 use File::Basename;
+
+my $errors=0; # store globally errors
 
 my $args="@ARGV"; #to store the argv
 my ( $store, $test, $prep, $debug, $alleles, $genes, $clones, $all, $help, $wormbase,$chromosome );    #options
@@ -50,12 +52,13 @@ if ($store) { $wormbase = Storable::retrieve($store) or croak("Can't restore wor
 else { $wormbase = Wormbase->new( -debug => $debug, -test => $test ) }
 
 my $log         = Log_files->make_build_log($wormbase);    # prewarning will be misused in a global way
-my ($scriptname)=fileparse($0);
+my ($scriptname)= fileparse($0);
 $log->{SCRIPT}="$scriptname : [$args]";
 
-my $acedb    = $wormbase->{'autoace'};
-my $chromdir = $wormbase->{'gff_splits'};
-my $outdir   = "$acedb/acefiles/";
+my $maintainer= $debug? "$debug\@sanger.ac.uk" : 'All';
+my $acedb     = $wormbase->{'autoace'};
+my $chromdir  = $wormbase->{'gff_splits'};
+my $outdir    = "$acedb/acefiles/";
 ##############################################################################################
 #generate a new mapper based on the files (also needs to point to better gene/gene files)
 
@@ -65,7 +68,9 @@ my $mapper = Physical_mapper->new( $acedb, glob("$chromdir/CHROMOSOME_*_gene.gff
 # check the mappings
 if ($prep) {
 	$mapper->check_mapping($log,$acedb);
-	$log->mail( );
+	if ($errors){$log->mail( $maintainer, "BUILD REPORT: interpolate_gff.pl -prepare had $errors ERRORS" )}
+        else {$log->mail( $maintainer, 'BUILD REPORT: interpolate_gff.pl')}
+
 	exit(0);
 }
 
@@ -177,7 +182,8 @@ sub check_mapping {
 				print $revh "----------------------------------\n";
 				print $revh "$key: $i\t",$self->{pmap}->{$key}->{$i}->[0],"\t",$self->{pmap}->{$key}->{$i}->[1]," ERROR (conflict with last line) \n";
 				$logger->write_to("$key: $i\t".$self->{pmap}->{$key}->{$i}->[0]."\t".$self->{pmap}->{$key}->{$i}->[1]." ERROR (conflict with last line) \n");
-				print $revh "----------------------------------\n"
+				print $revh "----------------------------------\n";
+				$errors++;
 			}
 			else {	print $revh "$key: $i\t",$self->{pmap}->{$key}->{$i}->[0],"\t",$self->{pmap}->{$key}->{$i}->[1],"\n"}
 
