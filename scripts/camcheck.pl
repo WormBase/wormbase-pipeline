@@ -6,8 +6,8 @@
 #
 # Usage: camcheck.pl
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2006-03-21 15:16:05 $
+# Last updated by: $Author: pad $
+# Last updated on: $Date: 2006-10-23 16:31:21 $
 #
 # see pod documentation (i.e. 'perldoc camcheck.pl') for more information.
 #
@@ -29,12 +29,6 @@ use Log_files;
 use Storable;
 
 ##############################
-# Script variables (run)     #
-##############################
-
-my $maintainers = "All";
-
-##############################
 # command-line options       #
 ##############################
 my ($help,$verbose,$debug,$test,$Weekly,$Montly,$Database,$Low,$email,);
@@ -49,7 +43,7 @@ GetOptions(
 	   'm'        => \$Montly,  #  -m, Montly checks are active
 	   'db:s'     => \$Database,#  -db select which database to run against
 	   'l'        => \$Low,     #  -l, low level checks - not all the small intron gubbins
-	   'e'        => \$email,   #  -e, Specifiy a mail recepient so that only the person responsible for a spilt database will be notified
+	   'e:s'      => \$email,   #  -e, Specifiy a mail recepient so that only the person responsible for a spilt database will be notified
 	   'store:s'  => \$store,
 	  );
 
@@ -71,19 +65,24 @@ if ( $store ) {
 
 my $tace    = $wormbase->tace;                            # tace executable path
 my $dbpath  = "/nfs/disk100/wormpub/DATABASES/camace";               # Database path
+my $maintainers;
 
 if ($Database) {
     $dbpath = $Database;
     &usage('bad database path') unless (-e "$dbpath/database/ACEDB.wrm");
 }
 
-# only email a specific person responsible for a database
+###########################################################
+# only email a specific person responsible for a database #
+###########################################################
+
 if($email){
   if(($email eq "gw3") || ($email eq "pad")){ 
-     $maintainers = $email;
+    $maintainers = "$email\@sanger.ac.uk";
+    print "Email recipient \= $maintainers\n\n" if $verbose;
   }
   else{
-     $maintainers = "wormbase\@sanger.ac.uk";
+    $maintainers = "wormbase\@sanger.ac.uk";
   }
 }
 
@@ -294,6 +293,9 @@ sub CheckPredictedGenes {
   $log->write_to("runnning CheckPredictedGenes\n");
   if ($Low) {
     $wormbase->run_script("check_predicted_genes.pl -database $dbpath -basic", $log);
+  }
+  elsif ($debug){
+    $wormbase->run_script("check_predicted_genes.pl -database $dbpath -debug $debug" , $log);
   }
   else {
     $wormbase->run_script("check_predicted_genes.pl -database $dbpath" , $log);
