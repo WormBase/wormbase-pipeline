@@ -7,7 +7,7 @@
 # clones. Entries which have failed to load or return are highlighted
 # and changes in sequence version are notified.
 
-# Last updated on: $Date: 2006-10-06 13:14:12 $
+# Last updated on: $Date: 2006-10-23 14:23:58 $
 # Last updated by: $Author: pad $
 
 use strict;
@@ -66,7 +66,7 @@ my $dbdir = glob "/nfs/disk100/wormpub/DATABASES/camace";
 my $tace = $wormbase->tace;
 my $submitted_file = "/nfs/disk100/wormpub/analysis/TO_SUBMIT/submitted_to_EMBL";
 my (%clone2id,%id2sv,%embl_acc,%embl_status,%embl_sv);
-my $out_file = "/nfs/disk100/wormpub/analysis/TO_SUBMIT/SV_update_from_embl";
+my $out_file = "/nfs/disk100/wormpub/analysis/TO_SUBMIT/SV_update.ace";
 my $errors1 = 0;
 my $errors2 = 0;
 my $errors3 = 0;
