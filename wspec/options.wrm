@@ -154,7 +154,7 @@ _VHomology_group   -V
 _VMovie            -H
 _VGO_term	   -V
 _VSO_term	   -V
-_VGO_code	   -V
+_VGO_code	   -V -T Term
 
 // Mass Spec class
 _VMass_spec_experiment  -V
