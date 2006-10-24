@@ -232,7 +232,9 @@ sub copy_check {
   my $match = "";
   my $O_SIZE = (stat("$file1"))[7];
   my $N_SIZE = (stat("$file2"))[7];
-    
+  
+  return 0 unless ((-e $file1) && (-e $file2));
+
   if ($O_SIZE != $N_SIZE) {
     $match = 0;
   } else {
