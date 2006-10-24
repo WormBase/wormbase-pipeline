@@ -13,7 +13,7 @@
 # the Caltech database (citace)
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2006-10-03 16:39:13 $
+# Last updated on: $Date: 2006-10-24 09:29:58 $
 
 
 #################################################################################
@@ -47,6 +47,7 @@ GetOptions (
             "citace=s"  => \$citace,
             "cshace=s"  => \$cshace,
             "stlace=s"  => \$stlace,
+            "brigace=s" => \$brigace,
             "test"      => \$test,
 	    "debug:s"   => \$debug,
 	    "database|basedir:s"  => \$basedir,
@@ -78,6 +79,7 @@ my $log = Log_files->make_build_log($wormbase);
 &unpack_stuff("citace",$citace)   if ($citace);
 &unpack_stuff("cshace",$cshace)   if ($cshace);
 &unpack_stuff("stlace",$stlace)   if ($stlace);
+&unpack_stuff("brigace",$stlace)   if ($brigace);
 
 
 sub unpack_stuff{
@@ -114,6 +116,12 @@ sub unpack_stuff{
     $dbname  = "citace_dump";
   }
 
+  if ($database eq "brigace"){
+    $ftp     = "$ftp_dir/stl";
+    $dbdir   = "$primaries/brigace";
+    $logfile = "$logs/unpack_brigace.$rundate.$$";
+    $dbname  = "brigace";
+  }
   ##############################
   # open logfile               #
   ##############################
