@@ -13,7 +13,7 @@
 # 4) Makes current_DB (copy of latest release) in ~wormpub/DATABASES
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2006-06-16 13:25:25 $
+# Last updated on: $Date: 2006-10-24 08:47:50 $
 
 
 use strict;
@@ -63,7 +63,8 @@ if ($test) {
 my $log = Log_files->make_build_log($wormbase);
 
 
-
+my $lockfile = $wormbase->autoace."/FTP_LOCK";
+$log->log_and_die("FTP_LOCK present indicating that make_FTP_sites.pl failed/nfix this before continuing/n/n$lockfile\n") if -e ($lockfile);
 
 #################################################################################
 # variables                                                                     #

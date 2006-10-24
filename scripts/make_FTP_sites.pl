@@ -8,7 +8,7 @@
 # Originally written by Dan Lawson
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2006-10-19 14:29:46 $
+# Last updated on: $Date: 2006-10-24 08:47:50 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -99,6 +99,14 @@ my $runtime;
 # Main                                                                          #
 #################################################################################
 
+#if this fails its really important that the next step doesnt run - create lockat start and remove at end
+# will be checked by finish_build.pl
+
+my $lockfile = $wormbase->autoace."/FTP_LOCK";
+$log->write_to("writing lock file\n");
+open (FTP_LOCK,"<$lockfile") or $log->log_and_die("cant write logfile $!\n");
+print FTP_LOCK "If this file exists something has failed in make_ftp_site.pl\n DO NOT continue until you know what happend and have fixed it\n\n";
+close FTP_LOCK;
 
 &copy_release_files if ($release);    # make a new directory for the WS release and copy across release files
 
@@ -128,7 +136,7 @@ my $runtime;
 
 
 # warn about errors in subject line if there were any
-my $errors = $log->report_errors;
+$wormbase->run_command("rm -f $lockfile",$log);
 $log->mail;
 print "Finished.\n" if ($verbose);
 exit (0);
