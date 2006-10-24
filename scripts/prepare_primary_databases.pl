@@ -3,7 +3,7 @@
 # prepare_primary_databases.pl
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2006-10-03 16:39:13 $
+# Last edited on: $Date: 2006-10-24 08:56:38 $
 
 use strict;
 my $scriptdir = $ENV{'CVS_DIR'};
@@ -12,6 +12,7 @@ use Wormbase;
 use Getopt::Long;
 use Log_files;
 use Storable;
+use File::Path;
 
 
 #################################################################################
@@ -104,14 +105,17 @@ foreach my $primary ( keys %databases){
 close LAST_VER;
 
 #copy over the biggsae GFF and proteins
-if ( !defined($database) or ($database and ($database eq 'briggsae') ) ) {
+if ( !defined($database) or ($database and ($database eq 'brigace') ) ) {
 	$log->write_to("copying over briggsae data from stl upload\n");
 	my $ver = $wormbase->version;
 	my $brig_upload = $wormbase->ftp_upload."/stl/brigace${ver}.tar";
-	my $tmp_dir = $wormbase->primary("briggsae")."/temp_unpack_dir";
+	$log->log_and_die("$brig_upload missing\n") unless (-e $brig_upload);
+	
+	my $tmp_dir = $wormbase->primary("brigace")."/temp_unpack_dir";
+	mkdir $tmp_dir unless -e $tmp_dir;
 	$wormbase->run_command("tar -xvf $brig_upload -C $tmp_dir", $log);
 	$wormbase->run_command("gtar zxvf $tmp_dir/briggff${ver}.tar.gz -C ".$wormbase->chromosomes,$log);
-	$wormbase->run_command("gtar zxvf $tmp_dir/brigpep${ver}.tar.gz -C ".$wormbase->brigpep,$log);
+	$wormbase->run_command("gtar zsxvf $tmp_dir/brigpep${ver}.tar.gz -C ".$wormbase->basedir."/WORMPEP",$log);
 }	
 
 $log->mail;
