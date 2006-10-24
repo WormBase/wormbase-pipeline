@@ -230,10 +230,10 @@ sub copy_check {
   my $self = shift;
   my ($file1,$file2) = @_;
   my $match = "";
-  my $O_SIZE = (stat("$file1"))[7];
-  my $N_SIZE = (stat("$file2"))[7];
+  my $O_SIZE = (-s $file1);
+  my $N_SIZE = (-s $file2);
   
-  return 0 unless ((-e $file1) && (-e $file2));
+  return 0 unless ($O_SIZE && $N_SIZE);
 
   if ($O_SIZE != $N_SIZE) {
     $match = 0;
