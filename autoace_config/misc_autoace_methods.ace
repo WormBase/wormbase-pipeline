@@ -858,6 +858,16 @@ EMBL_feature	 "misc_RNA"
 GFF_source "RNA"
 GFF_feature "transcript"
 
+Method : "ncRNA"
+Colour	 GREEN
+Show_up_strand	
+Width	 2.000000
+Right_priority	 2.100000
+Show_text	
+EMBL_feature	 "ncRNA"
+GFF_source "ncRNA"
+GFF_feature "ncRNA_primary_transcript"
+Remark  "An mRNA sequence that does not encode for a protein rather the RNA molecule is the gene product."
 
 Method : "rRNA"
 Colour   GREEN
@@ -1225,13 +1235,11 @@ No_display
 Remark "Method for the Vancouver fosmid clones"
 
 Method : mass_spec_genome
-Colour CYAN
-Frame_sensitive
-Strand_sensitive
-Right_priority 4.49
+Colour BROWN
+Right_priority 1.5
 Width 1
+GFF_feature "translated_nucleotide_match"
 Remark "Mass Spectrometry peptide matching a protein."
-
 
 
 ///////////////////////////////////////////////////////////////////
