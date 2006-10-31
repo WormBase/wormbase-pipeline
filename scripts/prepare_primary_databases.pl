@@ -3,7 +3,7 @@
 # prepare_primary_databases.pl
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2006-10-24 09:13:05 $
+# Last edited on: $Date: 2006-10-31 14:38:00 $
 
 use strict;
 my $scriptdir = $ENV{'CVS_DIR'};
@@ -109,8 +109,8 @@ close LAST_VER;
 if ( !defined($database) or ($database and ($database eq 'brigace') ) ) {
 	$log->write_to("copying over briggsae data from stl upload\n");
 	my $ver = $wormbase->version;
-	$wormbase->run_command("cp -R ".$wormbase->primary('brigace')."/briggff$ver ". $wormbase->chromosomes."/",$log);
-	$wormbase->run_command("cp -f ".$wormbase->primary('brigace')."/brigpep$ver/* ". $wormbase->brigpep,$log);
+	$wormbase->run_command("cp -R ".$wormbase->primary('brigace')."/temp_unpack_dir/briggff$ver ". $wormbase->chromosomes."/",$log);
+	$wormbase->run_command("cp -f ".$wormbase->primary('brigace')."/temp_unpack_dir/brigpep$ver/* ". $wormbase->brigpep,$log);
 }	
 
 $log->mail;
