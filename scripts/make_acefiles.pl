@@ -8,7 +8,7 @@
 # autoace.
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2005-12-21 15:37:44 $
+# Last updated on: $Date: 2006-11-01 14:26:18 $
 
 #################################################################################
 # Variables                                                                     #
@@ -39,12 +39,12 @@ my $basedir;
 my $store;
 
 GetOptions ("debug=s"    => \$debug,
-	    "help"       => \$help,
-	    "database=s" => \$database,
-	    "db:s"       => \$db,
-	    "test"       => \$test,
-	    "store:s"    => \$store
-	   );
+	    		"help"       => \$help,
+	   	 	"database=s" => \$database,
+	    		"db:s"       => \$db,
+	    		"test"       => \$test,
+	    		"store:s"    => \$store
+	   	);
 
 my $wormbase;
 if( $store ) {
@@ -86,7 +86,7 @@ my  $WS_version = $wormbase->get_wormbase_version_name;
 
 # single database mode
 if ($db) {
-    &usage("Bad_database_name") unless (($db eq "camace") || ($db eq "stlace") || ($db eq "briggsae") || ($db eq "cshace") || ($db eq "caltech") || ($db eq "geneace"));
+    &usage("Bad_database_name") unless (($db eq "camace") || ($db eq "stlace") || ($db eq "brigace") || ($db eq "cshace") || ($db eq "caltech") || ($db eq "geneace"));
 }
 
 
