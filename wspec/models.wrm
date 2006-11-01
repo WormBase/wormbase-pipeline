@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: ar2 $
-// Last edited on: $Date: 2006-10-11 08:51:01 $
+// Last edited on: $Date: 2006-11-01 16:46:32 $
 
 
 
@@ -2372,22 +2372,21 @@
         CGC_representative_for ?Laboratory XREF Representative
         Laboratory ?Laboratory XREF Registered_lab_members
         Address #Address
-        Tracking        Old_laboratory ?Laboratory XREF Past_lab_members
-                                // Lab(s) the person previously worked in
-                        Last_verified UNIQUE DateType
-                                // Last time the name/contact information
-                                // in this record was actively verified
-                        Last_attempt_to_contact UNIQUE DateType UNIQUE Text
-                                // Text is method of attempt to contact
+        Tracking        Old_laboratory ?Laboratory XREF Past_lab_members      // Lab(s) the person previously worked in
+                        Last_verified UNIQUE DateType                         // Last time the name/contact information in this record was actively verified
+                        Last_attempt_to_contact UNIQUE DateType UNIQUE Text   // Text is method of attempt to contact
                         Old_address DateType #Address   // for history
 			Left_the_field Text
+			History	       Merged_into	 UNIQUE ?Person XREF Acquires_merge
+				       Acquires_merge	 ?Person XREF Merged_into
+			Status  Valid
+				Invalid
         Comment Text
  	Lineage Supervised    ?Person XREF Supervised_by #Role
                 Supervised_by ?Person XREF Supervised #Role
                 Worked_with   ?Person XREF Worked_with #Role
         Publication     Paper ?Paper XREF Person
-                        Publishes_as ?Author    // confirmed author names (curated)
-                                                // can't XREF because of paper model
+                        Publishes_as ?Author    // confirmed author names (curated) can't XREF because of paper model
                         Possibly_publishes_as ?Author XREF Possible_person
                                                 // curated for Author->Paper->Person
                                                 // connection but not yet verified by
@@ -2480,8 +2479,11 @@
 		Medline_name ?Paper_name XREF Medline_name_for
 		Meeting_abstract ?Paper_name XREF Meeting_abstract_name
 		WBG_abstract    ?Paper_name XREF WBG_abstract_name
-		Old_WBPaper ?Paper_name XREF Old_WBPaper_name
 		Other_name ?Paper_name XREF Other_name_for // e.g. agriola etc ...
+	History Merged_into UNIQUE ?Paper XREF Acquires_merge
+	        Acquires_merge ?Paper XREF Merged_into
+	Status  Valid
+		Invalid
 	Nematode_paper ?Species // for flagging worm specific papers, ?Species part is optional
 	Erratum #Paper
 	Reference       Title UNIQUE ?Text
@@ -2542,7 +2544,6 @@
             Medline_name_for ?Paper XREF Medline_name
             Meeting_abstract_name ?Paper XREF Meeting_abstract
             WBG_abstract_name     ?Paper XREF WBG_abstract
-	    Old_WBPaper_name      ?Paper XREF Old_WBPaper
             Other_name_for ?Paper XREF Other_name
 
 
@@ -2647,7 +2648,7 @@
                            Other_regulated         ?Text                              #Boolean
                  Result    Positive_regulate #GR_condition
                            Negative_regulate #GR_condition
-			   Does_not_regulate // addded to capture negative data [040220 krb]
+			   Does_not_regulate #GR_condition // addded to capture negative data [040220 krb]
                  Remark    ?Text #Evidence
                  Reference ?Paper XREF Gene_regulation
 
