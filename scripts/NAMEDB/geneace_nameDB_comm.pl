@@ -120,6 +120,7 @@ sub check_gene {
 				$log->error("ERROR: $gene live or dead ? ns".$ace_genes{"$gene"}->{'sts'}." g".$server_genes{"$gene"}->{'sts'}."\n");
 				return;
 			}
+			return if ($ace_genes{"$gene"}->{'sts'} == 0) ; #dont check dead genes.
 			# for each name type eg cgc, seq
 			my ($i,$type);	
 			while( ($i,$type) = each(%name_types) ){
