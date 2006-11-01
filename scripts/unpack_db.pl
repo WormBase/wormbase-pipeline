@@ -13,7 +13,7 @@
 # the Caltech database (citace)
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2006-10-24 09:29:58 $
+# Last updated on: $Date: 2006-11-01 14:06:11 $
 
 
 #################################################################################
@@ -79,7 +79,7 @@ my $log = Log_files->make_build_log($wormbase);
 &unpack_stuff("citace",$citace)   if ($citace);
 &unpack_stuff("cshace",$cshace)   if ($cshace);
 &unpack_stuff("stlace",$stlace)   if ($stlace);
-&unpack_stuff("brigace",$stlace)   if ($brigace);
+&unpack_stuff("brigace",$brigace) if ($brigace);
 
 
 sub unpack_stuff{
@@ -171,11 +171,8 @@ sub unpack_stuff{
   $msg = "ERROR : Copy '".$dbname."_$today.tar.gz' to $unpack_dir FAILED\n"     if ($match == 0);
   $log->write_to("$msg");
 
-  system ("/bin/gzip -fd ${dbname}_${today}.tar.gz") && die "Couldn't run gzip command\n";
-  $log->write_to("uncompress file\n");
-
-  system ("/bin/tar -xvf ${dbname}_${today}.tar");
-  $log->write_to("untar file\n\n");
+  $wormbase->run_command("/usr/local/bin/gtar zxvf ${dbname}_${today}.tar.gz", $log);
+  $log->write_to("unzip and untar file\n\n");
 
 
   # add list of ace files to be loaded into array
