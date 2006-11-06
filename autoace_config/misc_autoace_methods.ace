@@ -930,6 +930,16 @@ EMBL_feature     "misc_RNA"
 GFF_source "stRNA"
 GFF_feature "stRNA_primary_transcript"
 
+Method : "snlRNA"
+Colour   GREEN
+Show_up_strand  
+Width    2.000000
+Right_priority   2.350000
+Show_text       
+EMBL_feature     "snlRNA"
+GFF_source "snlRNA"
+GFF_feature "snlRNA_primary_transcript"
+
 Method : "RNAi"
 Width    1.000000
 Right_priority	 3.100000
