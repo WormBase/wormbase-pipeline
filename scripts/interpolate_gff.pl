@@ -15,7 +15,7 @@
 #      COMPANY:
 #      VERSION:  1.0
 #      CREATED:  13/02/06 09:37:00 GMT
-#     REVISION:  $Revision: 1.15 $
+#     REVISION:  $Revision: 1.16 $
 #===============================================================================
 
 # BACS / SNPS / GENEs
@@ -68,7 +68,7 @@ my $mapper = Physical_mapper->new( $acedb, glob("$chromdir/CHROMOSOME_*_gene.gff
 # check the mappings
 if ($prep) {
 	$mapper->check_mapping($log,$acedb);
-	if ($errors){$log->mail( $maintainer, "BUILD REPORT: interpolate_gff.pl -prepare had $errors ERRORS" )}
+	if ($errors){$log->mail( $maintainer, "ERROR REPORT: interpolate_gff.pl -prepare had $errors ERRORS" )}
         else {$log->mail( $maintainer, 'BUILD REPORT: interpolate_gff.pl')}
 
 	exit(0);
