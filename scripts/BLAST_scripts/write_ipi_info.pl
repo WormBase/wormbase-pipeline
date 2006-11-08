@@ -4,7 +4,7 @@ use lib $ENV{'CVS_DIR'};
 
 use strict;
 use Getopt::Long;
-use DB_File;
+use GDBM_File;
 use Wormbase;
 use Log_files;
 
@@ -61,10 +61,10 @@ unless (-s "$acc2db" and -s "$desc"  and -s "$peptide") {
 }
 
 # These databases are written by parse_SWTREns_proteins.pl whenever a new data set is used
-dbmopen my %ACC2DB, "$acc2db",     0666 or $log->log_and_die("cannot open $acc2db\n");
-dbmopen my %DESC, "$desc",         0666 or $log->log_and_die("cannot open DBM file $desc\n");
-dbmopen my %PEPTIDE, "$peptide",   0666 or $log->log_and_die("cant open DBM file $peptide\n");
-dbmopen my %DATABASE, "$database", 0666 or $log->log_and_die("cant open DBM file $database\n");
+tie my %ACC2DB,'GDBM_File', "$acc2db",&GDBM_WRCREAT,     0666 or $log->log_and_die("cannot open $acc2db\n");
+tie my %DESC,'GDBM_File', "$desc",&GDBM_WRCREAT,         0666 or $log->log_and_die("cannot open DBM file $desc\n");
+tie my %PEPTIDE,'GDBM_File', "$peptide",&GDBM_WRCREAT,   0666 or $log->log_and_die("cant open DBM file $peptide\n");
+tie my %DATABASE,'GDBM_File', "$database",&GDBM_WRCREAT, 0666 or $log->log_and_die("cant open DBM file $database\n");
 
 # These are a couple of helper data sets to add in swissprot ids and SWALL / ENSEMBL gene names
 
@@ -157,10 +157,10 @@ while (<LIST>) {
   
 }
 
-dbmclose %ACC2DB;
-dbmclose %DESC;
-dbmclose %PEPTIDE;
-dbmclose %DATABASE;
+untie %ACC2DB;
+untie %DESC;
+untie %PEPTIDE;
+untie %DATABASE;
 
 $log->mail();
 

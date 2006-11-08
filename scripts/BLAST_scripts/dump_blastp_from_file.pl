@@ -4,7 +4,7 @@ use lib $ENV{'CVS_DIR'};
 use DBI;
 use strict;
 use Getopt::Long;
-use DB_File;
+use GDBM_File;
 use Wormbase;
 use Storable;
 use Log_files;
@@ -124,16 +124,16 @@ my %database2species = ( 'worm_pep'     => 'Caenorhabditis elegans',
 
 my $QUERY_SPECIES = $database2species{"$database"};
  
-#connect to DB_File databases for species determination and establish hashes
+#connect to GDBM_File databases for species determination and establish hashes
 
 my $db_files = "/acari/work2a/wormpipe/swall_data";
 my (%SWISSORG, %TREMBLORG);
-dbmopen %SWISSORG, "$db_files/swissprot2org", 0666 or die "cannot open swissprot2org DBM file $db_files/swissprot2org";
+tie %SWISSORG, 'GDBM_File',"$db_files/swissprot2org",&GDBM_WRCREAT,0666 or die "cannot open swissprot2org DBM file $db_files/swissprot2org";
 unless (-s "$db_files/swissprot2des") {
   die "swissprot2des not found or empty";
 }
 
-dbmopen %TREMBLORG, "$db_files/trembl2org", 0666 or die "cannot open trembl2org DBM file";
+tie %TREMBLORG, 'GDBM_File',"$db_files/trembl2org",&GDBM_WRCREAT ,0666 or die "cannot open trembl2org DBM file";
 unless (-s "$db_files/trembl2des") {
   die "trembl2des not found or empty";
 }
@@ -155,7 +155,7 @@ open (OUT,">$output") or die "cant open $output\n";
 print "opening $recip_file";
 open (RECIP,">$recip_file") or die "cant open recip file $recip_file: $!\n";
 
-dbmopen our %ACC2DB, "$wormpipe_dir/dumps/acc2db.dbm", 0666 or warn "cannot open acc2db \n";
+tie our %ACC2DB, 'GDBM_File',"$wormpipe_dir/dumps/acc2db.dbm",&GDBM_WRCREAT ,0666 or warn "cannot open acc2db \n";
 
 my $count;
 my $count_limit = 10;
@@ -294,9 +294,9 @@ while (<BLAST>) {
   }
 $log->write_to(" : finished\n\n______END_____");
 
-dbmclose %ACC2DB;
-dbmclose %SWISSORG;
-dbmclose %TREMBLORG;
+untie %ACC2DB;
+untie %SWISSORG;
+untie %TREMBLORG;
 
 print "\nEnd of dump/\n";
 $log->mail;

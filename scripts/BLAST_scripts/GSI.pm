@@ -47,17 +47,18 @@ sub  writeFileRecord
 {
     local *FH = shift;
     my ($file, $nfile, $fmt) = @_;
-	print FH pack "a64nN", $file, $nfile, $fmt;
+    print FH pack "a64nN", $file, $nfile, $fmt;
 }
 
 ###########################################################
-# writeKey: write a key
-sub  writeKeyRecord
-{
-    local *FH = shift;
-    my ($key, $nfile, $offset) = @_;
-    print FH pack "a64nN", $key, $nfile, $offset;
-}
+# writeKey: write a key => the same as above
+*writeKeyRecord=\&writeFileRecord;
+#sub  writeKeyRecord
+#{
+#    local *FH = shift;
+#    my ($key, $nfile, $offset) = @_;
+#    print FH pack "a64nN", $key, $nfile, $offset;
+#}
 
 ###########################################################
 # Functions to search a gsi indexed file                  #
@@ -90,7 +91,7 @@ sub getOffset
 	my $key = shift;
 	my $record;
         my ($name, $file_number, $offset);
-        my ($seqfile, $file_number, $fmt);
+        my ($seqfile, $fmt);
 	my $left  = $nfiles + 1;
 	my $right = $nfiles + $nkeys;
 	my $mid   = int(($left + $right)/2);

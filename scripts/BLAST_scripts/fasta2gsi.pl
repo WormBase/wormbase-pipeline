@@ -1,14 +1,9 @@
 #!/usr/local/ensembl/bin/perl -w
-
 # ms2@sanger.ac.uk
-
 # make a gsi index (using S. Eddy's GSI.pm) of one or several fasta files
 
-BEGIN {
-    unshift (@INC , "/nfs/acari/wormpipe/scripts/BLAST_scripts");
-}
-
 use strict;
+use lib "$ENV{'CVS_DIR'}/BLAST_scripts";
 use GSI;
 use Getopt::Std;
 use vars qw($opt_f $opt_l $opt_o);
@@ -52,7 +47,7 @@ while (<F>) {
             die "duplicated key: $1\n";
 	}
         else {
-            $seen{$id};
+		$seen{$id}=1;
 	}
         $nkeys++;
         $key2offset{$id} = $offset;
@@ -61,7 +56,7 @@ while (<F>) {
     $offset = tell;
 }
 close F;
-%seen = "";
+undef %seen;
 
 # write the GSI file
 if ($opt_o) {
@@ -122,7 +117,7 @@ foreach my $file (@files) {
                 die "duplicated key in $file: $1\n";
 	    }
             else {
-                $seen{$id};
+		    $seen{$id}=1;
 	    }
             $nkeys++;
             $key2offset{$id} = $offset;

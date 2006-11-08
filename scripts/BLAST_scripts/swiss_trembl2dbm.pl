@@ -7,7 +7,7 @@
 
 use strict;
 use Getopt::Std;
-use DB_File;
+use GDBM_File;
 use vars qw($opt_s $opt_t $opt_v);
 #swissprot trembl verbose
 
@@ -39,9 +39,9 @@ elsif ($opt_s) {
   `rm $output_dir/swissprot2des` if (-e "$output_dir/swissprot2des" );
   `rm $output_dir/swissprot2key` if (-e "$output_dir/swissprot2key" );
   
-  dbmopen %ORG, "$output_dir/swissprot2org", 0666 or die "cannot open DBM file";
-  dbmopen %DES, "$output_dir/swissprot2des", 0666 or die "cannot open DBM file";
-  dbmopen %KEY, "$output_dir/swissprot2key", 0666 or die "cannot open DBM file";
+  tie %ORG,'GDBM_File',"$output_dir/swissprot2org",&GDBM_WRCREAT, 0666 or die "cannot open DBM file";
+  tie %DES,'GDBM_File',"$output_dir/swissprot2des",&GDBM_WRCREAT, 0666 or die "cannot open DBM file";
+  tie %KEY,'GDBM_File',"$output_dir/swissprot2key",&GDBM_WRCREAT, 0666 or die "cannot open DBM file";
 }
 elsif ($opt_t) {
   
@@ -49,9 +49,9 @@ elsif ($opt_t) {
   `rm $output_dir/trembl2des` if (-e "$output_dir/trembl2des" );
   `rm $output_dir/trembl2key` if (-e "$output_dir/trembl2key" );
   
-  dbmopen %ORG, "$output_dir/trembl2org", 0666 or die "cannot open DBM file";
-  dbmopen %DES, "$output_dir/trembl2des", 0666 or die "cannot open DBM file";
-  dbmopen %KEY, "$output_dir/trembl2key", 0666 or die "cannot open DBM file";
+  tie %ORG,'GDBM_File', "$output_dir/trembl2org",&GDBM_WRCREAT, 0666 or die "cannot open DBM file";
+  tie %DES,'GDBM_File', "$output_dir/trembl2des",&GDBM_WRCREAT, 0666 or die "cannot open DBM file";
+  tie %KEY,'GDBM_File', "$output_dir/trembl2key",&GDBM_WRCREAT, 0666 or die "cannot open DBM file";
 }
 else {
     die "$usage";
@@ -146,9 +146,9 @@ while (my $line = <>) {
     }
 }
 
-dbmclose %ORG;
-dbmclose %DES;
-dbmclose %KEY;
+untie %ORG;
+untie %DES;
+untie %KEY;
 
 
 

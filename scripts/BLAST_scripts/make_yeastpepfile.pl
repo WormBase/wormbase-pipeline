@@ -6,8 +6,8 @@
 # 
 # Converts yeastX.pep file to ace file, copies to wormsrv2, adds SGD as Accession field
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2004-02-04 16:24:21 $
+# Last edited by: $Author: mh6 $
+# Last edited on: $Date: 2006-11-08 15:52:37 $
 
 
 use strict;
@@ -31,7 +31,7 @@ my $pepfile  = "$blastdir/yeast${version}.pep.tmp";
 
 
 # this bit creates a DBM database of ORF => description
-use DB_File;
+use GDBM_File;
 
 my $DB_dir = "/tmp";
 # DBM files 
@@ -42,7 +42,7 @@ if( -e $ace_info_dbm ) {  #make sure starting with new dbase
   `rm -f $ace_info_dbm` && die "cant remove $ace_info_dbm: $!\n";
 }
 my %YEAST_DESC;
-dbmopen  (%YEAST_DESC ,"$ace_info_dbm", 0777) or die "cant open $ace_info_dbm :$!\n";
+tie  (%YEAST_DESC ,'GDBM_File',"$ace_info_dbm", &GDBM_WRCREAT,0777) or die "cant open $ace_info_dbm :$!\n";
 
 # get the latest info
 `wget -O $DB_dir/yeast ftp://genome-ftp.stanford.edu/yeast/data_download/gene_registry/registry.genenames.tab`;
@@ -113,6 +113,6 @@ system("mv $pepfile $source_file") && die "Couldn't overwrite original peptide f
 system("scp $acedir/yeast.ace wormsrv2:/wormsrv2/wormbase/ensembl_dumps")  && die "Couldn't copy acefile\n";
 
 
-
+untie %YEAST_DESC;
 exit(0);
 

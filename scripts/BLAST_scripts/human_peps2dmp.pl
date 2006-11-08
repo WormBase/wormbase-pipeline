@@ -1,11 +1,11 @@
 #!/usr/local/ensembl/bin/perl -w
 #
-# Last updated by: $Author: wormpipe $
-# Last updated on: $Date: 2004-01-27 17:15:56 $
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2006-11-08 15:52:37 $
 
 use strict;
 use Getopt::Long;
-use DB_File;
+use GDBM_File;
 
 my ($help, $debug, $file);
 GetOptions ("help"      => \$help,
@@ -29,7 +29,7 @@ my $ace_info_dbm = "$DB_dir/ace_info.dbm";
 my $sequence_dbm = "$DB_dir/sequence.dbm";
 my %ACE_INFO;
 my %SEQUENCE;
-tie  (%ACE_INFO , 'DB_File',"$ace_info_dbm") or die "cant open $ace_info_dbm :$!\n";
+tie  (%ACE_INFO , 'GDBM_File',"$ace_info_dbm",&GDBM_WRCREAT,0660) or die "cant open $ace_info_dbm :$!\n";
 
 $ACE_INFO{'ant'} = "ROGERS";
 #tie  %SEQUENCE , "$sequence_dbm", 0666 or die "cant open sequence_dbm$ :$!\n";
@@ -132,6 +132,7 @@ while (<DATA>) {
 
 
 print "finished\n";
+untie %ACE_INFO;
 exit(0);
 
 sub getSwissGeneName

@@ -4,7 +4,7 @@
 
 use strict;
 use Getopt::Std;
-use DB_File;
+use GDBM_File;
 use vars qw($opt_s $opt_t);
 
 getopts ("st");
@@ -37,14 +37,14 @@ elsif ($opt_s) {
     unless (-s "$input_dir/swissprot2org") {
         die "$input_dir/swiss2org not found or empty";
     }
-    dbmopen %HASH, "$input_dir/swissprot2org", 0666 or die "cannot open DBM file";
+    tie %HASH,'GDBM_File', "$input_dir/swissprot2org",&GDBM_WRCREAT, 0666 or die "cannot open DBM file";
     $output = "$output_dir/slimswissprot";
 }
 elsif ($opt_t) {
     unless (-s "$input_dir/trembl2org") {
         die "$input_dir/trembl2org not found or empty";
     }
-    dbmopen %HASH, "$input_dir/trembl2org", 0666 or die "cannot open DBM file";
+    tie %HASH,'GDBM_File', "$input_dir/trembl2org",&GDBM_WRCREAT, 0666 or die "cannot open DBM file";
     $output = "$output_dir/slimtrembl";
 }
 else {
@@ -52,7 +52,7 @@ else {
 }
 
 read_fasta (\*STDIN);
-dbmclose %HASH;
+untie %HASH;
 
 sub read_fasta {
     local (*FILE) = @_;

@@ -9,7 +9,7 @@ use lib $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'}."/BLAST_scripts";
 use strict;
 use Getopt::Long;
-use DB_File;
+use GDBM_File;
 use GSI;
 use Wormbase;
 
@@ -101,29 +101,29 @@ if ($swiss) {
   unless (-s "$db_files/swissprot2org") {
     die "swissprot2org not found or empty";
   }
-  dbmopen %ORG, "$db_files/swissprot2org", 0666 or die "cannot open swissprot2org DBM file $db_files/swissprot2org";
+  tie %ORG,'GDBM_File', "$db_files/swissprot2org",&GDBM_WRCREAT, 0666 or die "cannot open swissprot2org DBM file $db_files/swissprot2org";
   unless (-s "$db_files/swissprot2des") {
     die "swissprot2des not found or empty";
   }
-  dbmopen %DES, "$db_files/swissprot2des", 0666 or die "cannot open swissprot2des DBM file $db_files/swissprot2des";
+  tie %DES,'GDBM_File', "$db_files/swissprot2des",&GDBM_WRCREAT, 0666 or die "cannot open swissprot2des DBM file $db_files/swissprot2des";
   &output_list($swiss_list_txt,$input2output{"$swiss_list_txt"});
-  dbmclose %ORG;
-  dbmclose %DES;
+  untie %ORG;
+  untie %DES;
 }
 
 if ($trembl) {
   unless (-s "$db_files/trembl2org") {
     die "trembl2org not found or empty";
   }
-  dbmopen %ORG, "$db_files/trembl2org", 0666 or die "cannot open trembl2org DBM file";
+  tie %ORG,'GDBM_File', "$db_files/trembl2org",&GDBM_WRCREAT, 0666 or die "cannot open trembl2org DBM file";
   unless (-s "$db_files/trembl2des") {
     die "trembl2des not found or empty";
   }
-  dbmopen %DES, "$db_files/trembl2des", 0666 or die "cannot open trembl2des DBM file";
+  tie %DES,'GDBM_File', "$db_files/trembl2des",&GDBM_WRCREAT, 0666 or die "cannot open trembl2des DBM file";
   push( @lists_to_dump,$trembl_list_txt);
   &output_list($trembl_list_txt,$input2output{"$trembl_list_txt"});
-  dbmclose %ORG;
-  dbmclose %DES;
+  untie %ORG;
+  untie %DES;
 }
 
 system("cat $output_swiss $output_trembl > $ensembl_info_file");

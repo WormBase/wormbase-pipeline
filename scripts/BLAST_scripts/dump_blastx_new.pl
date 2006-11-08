@@ -8,7 +8,7 @@ use lib $ENV{'CVS_DIR'};
 use strict;
 use DBI;
 use Getopt::Long;
-use DB_File;
+use GDBM_File;
 use Wormbase;
 use Storable;
 use Log_files;
@@ -79,7 +79,7 @@ $org2acedb{human} = "never_used"; #this should always be done in sub getPrefix. 
 
 
 my %worm_dna_processIds = ( 'worm'          => '2',
-			    'briggae'       => '3',
+			    'briggsae'       => '3',
 			    'human'         => '4',
 			    'yeast'         => '5',
 			    'fly'           => '6',
@@ -219,7 +219,7 @@ my %accession2name;
 $wormbase->FetchData("accession2clone",\%accession2name);
 
 # Open DBM to find out database of HID
-dbmopen my %ACC2DB, "/acari/work2a/wormpipe/dumps/acc2db.dbm", 0666 or $log->log_and_die("cannot open acc2db \n");
+tie my %ACC2DB, 'GDBM_File',"/acari/work2a/wormpipe/dumps/acc2db.dbm",&GDBM_WRCREAT, 0666 or $log->log_and_die("cannot open acc2db \n");
 open (IPI_LIST, ">/acari/work2a/wormpipe/dumps/ipi_hits_list_x") or $log->log_and_die("cant open hitlist\n");
 
 
@@ -678,7 +678,7 @@ foreach my $aref (@$ref) {
 $sth_c->finish;
 $sth_f->finish;
 $dbh->disconnect;
-
+untie %ACC2DB;
 close IPI_LIST;
 
 foreach ( keys %output_ACE ) {

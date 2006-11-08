@@ -1,26 +1,27 @@
 #!/usr/local/ensembl/bin/perl -w                  
 #
-# Last updated by: $Author: ar2 $     
-# Last updated on: $Date: 2005-04-18 14:24:05 $      
+# Last updated by: $Author: mh6 $     
+# Last updated on: $Date: 2006-11-08 15:52:37 $      
 
 use strict;
 use Getopt::Long;
-use DB_File;
+use GDBM_File;
 
 
 my ($help, $debug, $file);
-$file = shift;
 GetOptions ("help"      => \$help,
-            "debug=s"   => \$debug);
+            "debug=s"   => \$debug,
+	    "file=s"    => \$file,
+    );
 
 die "\nYou need to give me a fasta file of the ipi_human proteins with the date appended eg ipi_human_03_05 (5th March)\n
 Get this from ftp://ftp.ebi.ac.uk/pub/databases/IPI/current/ipi.HUMAN.fasta.gz\n\n" unless (defined $file);
 
-#make sure on ecs1 -> otherwise DB_File fails.
+#make sure on ecs1 -> otherwise GDBM_File fails.
 my $host = `hostname`;
 chomp $host;
 unless ( $host =~ /ecs1/ ) {
-  die "You must run this from an ecs1 machine, otherwise DB_File causes a segmentation fault\n\n";
+  die "You must run this from an ecs1 machine, otherwise GDBM_File causes a segmentation fault\n\n";
 }
 
 #extract date from file name
@@ -28,6 +29,7 @@ $file =~ /ipi_human(_\d+_\d+)/;
 
 my $datestamp = $1;
 my $output_dir = "/acari/work2a/wormpipe/dumps";
+print "processing $file\n" if $debug;
 my $fasta = glob("~wormpipe/BlastDB/ipi_human$datestamp.pep");
 
 if( $debug ) {
@@ -56,10 +58,10 @@ open (FASTA, ">$fasta") or die "cant write $fasta\n";
 `rm -f $output_dir/peptide.dbm` if ( -e "$output_dir/peptide.dbm" );
 `rm -f $output_dir/databases.dbm` if ( -e "$output_dir/databases.dbm" );
 
-dbmopen my %ACC2DB, "$output_dir/acc2db.dbm", 0777 or die "cannot open acc2db in $output_dir \n";
-dbmopen my %DESC, "$output_dir/desc.dbm", 0777 or die "cannot open desc in $output_dir \n";
-dbmopen my %PEPTIDE, "$output_dir/peptide.dbm", 0777 or die "cannot open peptide in $output_dir \n";
-dbmopen my %DATABASES, "$output_dir/databases.dbm", 0777 or die "cannot open databases in $output_dir \n";
+tie my %ACC2DB, 'GDBM_File',"$output_dir/acc2db.dbm", &GDBM_WRCREAT,0777 or die "cannot open acc2db in $output_dir \n";
+tie my %DESC, 'GDBM_File',"$output_dir/desc.dbm",&GDBM_WRCREAT, 0777 or die "cannot open desc in $output_dir \n";
+tie my %PEPTIDE,'GDBM_File', "$output_dir/peptide.dbm",&GDBM_WRCREAT, 0777 or die "cannot open peptide in $output_dir \n";
+tie my %DATABASES,'GDBM_File', "$output_dir/databases.dbm",&GDBM_WRCREAT, 0777 or die "cannot open databases in $output_dir \n";
 
 my $prim_DB_id;
 my $prim_DB;
@@ -150,17 +152,18 @@ while (<DATA>) {
 
 
 
-dbmclose %ACC2DB;
-dbmclose %DESC;
-dbmclose %PEPTIDE;
-dbmclose %DATABASES;
+untie %ACC2DB;
+untie %DESC;
+untie %PEPTIDE;
+untie %DATABASES;
 
 exit(0);
 
 sub check 
   {
-    dbmopen my %DATA, "/acari/work2a/wormpipe/dumps/acc2db.dbm",0777 or die "fail";
+    tie my %DATA, 'GDBM_File',"/acari/work2a/wormpipe/dumps/acc2db.dbm",&GDBM_WRCREAT,0777 or die "fail";
     foreach (keys %DATA){
       print "$_ $DATA{$_}\n";
     }
+    untie %DATA;
   }
