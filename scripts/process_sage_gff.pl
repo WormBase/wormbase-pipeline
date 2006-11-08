@@ -1,6 +1,6 @@
 #!/nfs/disk100/wormpub/bin/perl -w
 #
-# $Id: process_sage_gff.pl,v 1.1 2006-11-01 15:06:05 ar2 Exp $;
+# $Id: process_sage_gff.pl,v 1.2 2006-11-08 12:10:00 mh6 Exp $;
 #
 # process the raw Sanger GFF dump to add data to SAGE tags
 # Sheldon McKay <mckays@cshl.edu>
@@ -9,6 +9,7 @@
 use lib $ENV{'CVS_DIR'};
 use strict;
 use Ace;
+use Storable;
 use Wormbase;
 use Log_files;
 use Getopt::Long;
