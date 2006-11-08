@@ -7,7 +7,7 @@
 # This is a script to aid making changes to the sequence of a clone.
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2006-11-08 10:28:23 $      
+# Last updated on: $Date: 2006-11-08 10:37:22 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -1875,7 +1875,7 @@ sub get_prev_dat {
     print "*** -noload specified: NOT MOVING $file.new TO BE $file\n"; 
     system("mv $file.new $file.test");
   } else {
-    system("mv $file $file.old");
+    system("mv $file $file.old.$clone");
     system("mv $file.new $file");
   }
 
