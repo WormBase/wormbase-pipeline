@@ -8,7 +8,7 @@
 # Originally written by Dan Lawson
 #
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2006-11-09 11:50:38 $
+# Last updated on: $Date: 2006-11-09 14:37:30 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -194,7 +194,8 @@ sub copy_chromosome_files{
 
   opendir (DNAGFF,"$ace_dir/CHROMOSOMES") or croak ("Could not open directory $ace_dir/CHROMOSOMES");
   while (defined($filename = readdir(DNAGFF))) {
-    if (($filename eq ".")||($filename eq "..")||($filename eq "SUPPLEMENTARY_GFF")) { next;}
+    if (($filename eq ".")||($filename eq "..")||($filename eq "SUPPLEMENTARY_GFF")) { next}
+    next if  -d "$ace_dir/CHROMOSOMES/$filename";
     $wormbase->run_command("scp $ace_dir/CHROMOSOMES/$filename $targetdir/$WS_name/CHROMOSOMES/$filename", $log);
     my $O_SIZE = (stat("$ace_dir/CHROMOSOMES/$filename"))[7];
     my $N_SIZE = (stat("$targetdir/$WS_name/CHROMOSOMES/$filename"))[7];
@@ -295,8 +296,8 @@ sub copy_wormpep_files{
 
 	$log->write_to("zip and copy brigpep\n");
 	my $brigpep = $wormbase->brigpep;
-	$wormbase->run_command("gzip zcvf $brigpep/brigpep$WS.tgz $brigpep/*",$log);
- 	$wormbase->run_command("mv $brigpep/brigpep$WS.tgz $targetdir/$WS_name", $log);
+	$wormbase->run_command("gzip $brigpep/brigpep$WS",$log);
+ 	$wormbase->run_command("mv $brigpep/brigpep$WS.gz $targetdir/$WS_name", $log);
 
   $runtime = $wormbase->runtime;
   $log->write_to("$runtime: Finished copying\n\n");
