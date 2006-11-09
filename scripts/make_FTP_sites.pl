@@ -7,8 +7,8 @@
 # 
 # Originally written by Dan Lawson
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2006-10-24 08:47:50 $
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2006-11-09 11:50:38 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -104,7 +104,7 @@ my $runtime;
 
 my $lockfile = $wormbase->autoace."/FTP_LOCK";
 $log->write_to("writing lock file\n");
-open (FTP_LOCK,"<$lockfile") or $log->log_and_die("cant write logfile $!\n");
+open (FTP_LOCK,">$lockfile") or $log->log_and_die("cant write logfile $!\n");
 print FTP_LOCK "If this file exists something has failed in make_ftp_site.pl\n DO NOT continue until you know what happend and have fixed it\n\n";
 close FTP_LOCK;
 
