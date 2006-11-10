@@ -4,8 +4,8 @@
 #
 # map GO_terms to ?Sequence objects from ?Motif and ?Phenotype
 #
-# Last updated by: $Author: mt3 $     
-# Last updated on: $Date: 2006-06-30 09:29:15 $      
+# Last updated by: $Author: ar2 $     
+# Last updated on: $Date: 2006-11-10 15:30:28 $      
 
 use strict;
 use warnings;
@@ -58,19 +58,24 @@ my $log=Log_files->make_build_log($wormbase);
 my $tace      = $wormbase->tace;      # tace executable path
 # Database path
 
-my $dbpath    = $wormbase->autoace;                                     
+my $dbpath    = $wormbase->autoace;   
+$dbpath = $database if (defined $database);
+
+my %cds2gene;
+$wormbase->FetchData('cds2wbgene_id',\%cds2gene);                                
+
 my $out=$wormbase->acefiles."/inherited_GO_terms.ace";
 open (OUT,">$out");
 
 ########################################
 # Connect with acedb server            #
 ########################################
-my $db = Ace->connect(-path=>$dbpath,
-                      -program =>$tace) || do { print "Connection failure: ",Ace->error; die();};
+my $db = 1;#Ace->connect(-path=>$dbpath,
+            #          -program =>$tace) || do { print "Connection failure: ",Ace->error; die();};
 
 
 
-&motif($db)     if ($motif);
+&motif($dbpath)     if ($motif);
 &phenotype($db) if ($phenotype);
 
 close OUT;
@@ -103,33 +108,16 @@ exit(0);
 ########################################################################################
 
 sub motif {
-    my $db = shift;
-    
-    my ($motif,$obj,$term,$protein,$match,$pepobj) = "";
-    my (@GO_terms,@pep_homols,@CDS) = "";
-
-    my $i = $db->fetch_many(-query=> 'find Motif "INTERPRO*"');  
-    while ($obj = $i->next) {
-	$motif = $obj;
-	@GO_terms = $obj->GO_term;
-	@pep_homols = $obj->Pep_homol;
+	my $db = shift;
+	my $def = "$db/wquery/SCRIPT:inherit_GO_terms.def";
 	
-	print "\nMotif : $motif\n";
-	foreach $term (@GO_terms) {
-	    print "contains GO_term : $term with " . scalar (@pep_homols) . " attached Protein objects\n" if ($debug);
-	    
-	    foreach $protein (@pep_homols) {
-		print "maps to Protein: $protein " if ($debug);
-		my $pepobj = $db->fetch(Protein=>$protein);
-		@CDS = $pepobj->Corresponding_CDS;
-		
-		foreach $match (@CDS) {
-		    print "== $match\n" if ($debug);
-		    print OUT "\nCDS : \"$match\"\nGO_term $term IEA Inferred_automatically\n";
-		} # CDS
-	    }     # Protein
-	}         # GO_term
-    }             # Motif object
+	my $query = $wormbase->	table_maker_query($db, $def);
+	while(<$query>) {
+		s/\"//g;#"
+		my($motif,$GO,$protein,$cds,$gene) = split;
+		print OUT "\nGene : $gene\nGO_term \"$GO\" inferred_automatically \"$motif\"\n";
+		print OUT "\nCDS  : \"$cds\"\nGO_term \"$GO\" inferred_automatically \"$motif\"\n";
+	}
 }
 
 ########################################################################################
