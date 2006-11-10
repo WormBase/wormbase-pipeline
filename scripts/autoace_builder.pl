@@ -6,8 +6,8 @@
 #
 # Usage : autoace_builder.pl [-options]
 #
-# Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2006-11-08 11:19:06 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2006-11-10 15:33:16 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -117,7 +117,6 @@ $wormbase->run_script( 'WBGene_span.pl'                   , $log ) if $gene_span
 &make_UTR($log)                                                    if $utr;
 
 $wormbase->run_script( 'find_intergenic.pl'               , $log ) if $intergenic;
-$wormbase->run_script( 'inherit_GO_terms.pl -phenotype'   , $log ) if $GO_term;
 
 ##  Horrid Geneace related stuff  ##########
 #make_pseudo_map_positions.pl -load
@@ -141,6 +140,7 @@ $wormbase->run_script( 'write_DB_remark.pl'                      , $log) if $rem
 $wormbase->run_script( 'molecular_names_for_genes.pl'            , $log) if $names;
 $wormbase->run_script( 'get_treefam.pl'                          , $log) if $treefam;
 $wormbase->run_script( 'cluster_gene_connection.pl'              , $log) if $cluster;
+$wormbase->run_script( 'inherit_GO_terms.pl -phenotype -motif', $log ) if $GO_term;
 
 # $build_dumpGFF.pl; (final) is run chronologically here but previous call will operate
 # $wormbase->run_script( "processGFF.pl -$processGFF",        $log ) if $processGFF;    #nematode - to add species to nematode BLATs
