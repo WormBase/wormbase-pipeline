@@ -1,7 +1,7 @@
 #!/usr/local/ensembl/bin/perl -w                  
 #
-# Last updated by: $Author: mh6 $     
-# Last updated on: $Date: 2006-11-08 15:52:37 $      
+# Last updated by: $Author: gw3 $     
+# Last updated on: $Date: 2006-11-13 14:27:25 $      
 
 use strict;
 use Getopt::Long;
@@ -17,18 +17,18 @@ GetOptions ("help"      => \$help,
 die "\nYou need to give me a fasta file of the ipi_human proteins with the date appended eg ipi_human_03_05 (5th March)\n
 Get this from ftp://ftp.ebi.ac.uk/pub/databases/IPI/current/ipi.HUMAN.fasta.gz\n\n" unless (defined $file);
 
-#make sure on ecs1 -> otherwise GDBM_File fails.
+#make sure on farm-login  -> otherwise GDBM_File fails.
 my $host = `hostname`;
 chomp $host;
-unless ( $host =~ /ecs1/ ) {
-  die "You must run this from an ecs1 machine, otherwise GDBM_File causes a segmentation fault\n\n";
+unless ( $host =~ /^bc/ ) {
+  die "You must run this from an farm-login machine, otherwise GDBM_File causes a segmentation fault\n\n";
 }
 
 #extract date from file name
 $file =~ /ipi_human(_\d+_\d+)/;
 
 my $datestamp = $1;
-my $output_dir = "/acari/work2a/wormpipe/dumps";
+my $output_dir = "/lustre/work1/ensembl/wormpipe/dumps/";
 print "processing $file\n" if $debug;
 my $fasta = glob("~wormpipe/BlastDB/ipi_human$datestamp.pep");
 
@@ -161,7 +161,7 @@ exit(0);
 
 sub check 
   {
-    tie my %DATA, 'GDBM_File',"/acari/work2a/wormpipe/dumps/acc2db.dbm",&GDBM_WRCREAT,0777 or die "fail";
+    tie my %DATA, 'GDBM_File',"/lustre/work1/ensembl/wormpipe/dumps/acc2db.dbm",&GDBM_WRCREAT,0777 or die "fail";
     foreach (keys %DATA){
       print "$_ $DATA{$_}\n";
     }
