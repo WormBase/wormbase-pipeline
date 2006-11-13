@@ -20,15 +20,15 @@ GetOptions (	"help"       => \$help,
 		"store:s"    => \$store,
 		"database:s" => \$database,
 		"def:s"      => \$def
-           );
+		);
 
 my $wormbase;
 if ( $store ) {
-  $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
+    $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
 } else {
-  $wormbase = Wormbase->new( -debug   => $debug,
-                             -test    => $test,
-			     );
+    $wormbase = Wormbase->new( -debug   => $debug,
+			       -test    => $test,
+			       );
 }
 
 
@@ -36,22 +36,30 @@ if ( $store ) {
 my $log = Log_files->make_build_log($wormbase);
 
 #connect to database and read in data
-my $acedb = $database or $wormbase->database('camace');
+my $acedb = ($database or $wormbase->database('camace'));
 $def = "$acedb/wquery/SCRIPT:camace_nameDB_comm.def" unless $def;
 my $TABLE = $wormbase->table_maker_query($acedb, $def);
 
 my %ace_genes;
 while( <$TABLE> ){
-	next if (/>/ or /\/\// );
-	s/\"//g;  # remove "
-	my($gene, $cds, $transcript, $pseudo) = split(/\s/);
-	next unless ($cds or $transcript or $pseudo);
-	#$ace_genes{"$gene"}->{'cds'}->{"$cds"}        = 1 if $cds;
-	$ace_genes{"$gene"}->{'tra'}->{"$transcript"} = 1 if $transcript;
-	$ace_genes{"$gene"}->{'pse'}->{"$pseudo"}     = 1 if $pseudo;
+    next if (/>/ or /\/\// );
+    s/\"//g;  # remove "
+    my($gene, $cds, $transcript, $pseudo) = split(/\s/);
+    next unless ($cds or $transcript or $pseudo);
+
+    #$ace_genes{"$gene"}->{'cds'}->{"$cds"}        = 1 if $cds;
+    my $seq_name = ($cds or $transcript or $pseudo);
+    $seq_name =~ s/[a-z]$//; #remove isoform indication
+    if( $ace_genes{"$gene"}->{'name'} and ($ace_genes{"$gene"}->{'name'} ne $seq_name) ) {
+	$log->write_to("$gene has multiple sequence names ".$ace_genes{"$gene"}->{'name'}." and $seq_name\n");
+	next;
+    }
+    else {
+	
+	$ace_genes{"$gene"}->{'name'} = $seq_name;
 	$ace_genes{"$gene"}->{'sts'} = ($cds or $transcript or $pseudo) ?  1 : 0; #live if it has one these nametypes
+    }
 }
-           
 #connect to name server and set domain to 'Gene'
 my $DB    	= 'wbgene_id;mcs2a';
 my $PASS 	= "wormpub";
@@ -73,25 +81,24 @@ my $query = "SELECT primary_identifier.object_public_id,
 #| object_public_id |  live       | name_type_id | name
 #| WBGene00044331   |           1 |            2 | T20B3.15      |  no longer used
 #| WBGene00044331   |           1 |            3 | T20B3.15      |
-				 
+
 my $sth = $db->dbh->prepare($query);
 $sth->execute();
 
 my %name_types = (
-		  '2' => 'cds',
 		  '3' => 'seq'
 		  );
 
 my %server_genes;					 
 while (my ( $gene, $live, $name, $name_type ) = $sth->fetchrow_array){
-	$server_genes{$gene}->{ $name_types{$name_type} }->{"$name"} = 1;
-	$server_genes{$gene}->{ 'sts' } = $live;
+    $server_genes{$gene}->{ 'name'} = $name;
+    $server_genes{$gene}->{ 'sts' } = $live;
 }
 
 
 foreach my $gene (keys %ace_genes) {
-	&check_gene($gene);
-	delete($ace_genes{$gene}) if $ace_genes{$gene};
+    &check_gene($gene);
+    delete($ace_genes{$gene}) if $ace_genes{$gene};
 }
 
 $log->mail;
@@ -103,30 +110,20 @@ sub check_gene {
     #check presence in both sets
     if( $ace_genes{"$gene"} ){
 	if( $server_genes{"$gene"} ){
-	    # check Live 
+        # check Live 
 	    if ($ace_genes{"$gene"}->{'sts'} != $server_genes{"$gene"}->{'sts'}){
 		$log->write_to("ERROR: $gene live or dead ? ace".$ace_genes{"$gene"}->{'sts'}." ns".$server_genes{"$gene"}->{'sts'}."\n");
 		return;
 	    }
-	    # for each name type eg cgc, seq
-	    foreach my $type ('seq') {
-		foreach my $cds (keys %{$ace_genes{"$gene"}->{"$type"} } ) {
-		    unless ( $server_genes{"$gene"}->{"$type"}->{"$cds"} ) {
-			$log->write_to("ERROR: $gene - ${type}_name missing in server\n");
-			next;
-		    }
+	    if($server_genes{"$gene"}->{'name'} ){
+		if($server_genes{"$gene"}->{'name'} eq $ace_genes{"$gene"}->{'name'}) {
+                    #correct
+		    return;
 		}
 	    }
-	    #server will have seq names for all CDS, acedb wont. 
-#	    foreach my $seq (keys %{$server_genes{"$gene"}->{'seq'}}) {
-	#	next if ($ace_genes{"$gene"}->{'cds'} );
-		#unless ($ace_genes{"$gene"}->{'seq'}->{"$seq"} ) {
-	 #   $log->write_to("ERROR: $gene - only Sequence_name in server\n");
-#		}
-#	    }
-	    
-	    #print STDERR "$gene ok\n" if $debug;
-	    return;
+	    else{ 
+		$log->write_to("ERROR: no name for $gene in nameserver\n");
+	    }
 	}
 	else {
 	    $log->write_to("ERROR: $gene missing from server\n");
