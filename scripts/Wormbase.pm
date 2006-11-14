@@ -953,7 +953,7 @@ sub establish_paths {
     my $wormpipe= glob("~wormpipe");
     $self->{'autoace'} = $wormpipe;
     $self->{'acefiles'}    = $self->autoace . "/acefiles";
-    $self->{'dump_dir'}    = '/nfs/acari/work2a/wormpipe/dumps';
+    $self->{'dump_dir'}    = '/lustre/work1/ensembl/wormpipe/dumps';
   }
   else {
     my $basedir;
@@ -1010,7 +1010,7 @@ sub establish_paths {
     $self->{'misc_dynamic'} = $self->{'build_data'} . "/MISC_DYNAMIC";
     $self->{'compare'}      = $self->{'build_data'} . "/COMPARE";
 
-    $self->{'farm_dump'}    = '/acari/work2a/wormpipe/dumps';
+    $self->{'farm_dump'}    = '/lustre/work1/ensembl/wormpipe/dumps';
 
     # create dirs if missing
     mkpath( $self->logs )        unless ( -e $self->logs );
