@@ -1,10 +1,11 @@
 #!/usr/local/ensembl/bin/perl -w                  
 #
-# Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2006-11-13 14:27:25 $      
+# Last updated by: $Author: mh6 $     
+# Last updated on: $Date: 2006-11-14 14:42:25 $      
 
 use strict;
 use Getopt::Long;
+use File::Copy;
 use GDBM_File;
 
 
@@ -52,16 +53,14 @@ open (FASTA, ">$fasta") or die "cant write $fasta\n";
 # new UniProt style 
 # UniProt/Swiss-Prot:O95180-2|UniProt/TrEMBL:Q9NYY7;Q9NYY6
 
-# remove previous versions of the databases
-`rm -f $output_dir/acc2db.dbm` if ( -e "$output_dir/acc2db.dbm" );
-`rm -f $output_dir/desc.dbm` if ( -e "$output_dir/desc.dbm" );
-`rm -f $output_dir/peptide.dbm` if ( -e "$output_dir/peptide.dbm" );
-`rm -f $output_dir/databases.dbm` if ( -e "$output_dir/databases.dbm" );
+# delete any lefovers 
+map {unlink "/tmp/$_"} qw(acc2db.dbm desc.dbm peptide.dbm detebase.dm);
 
-tie my %ACC2DB, 'GDBM_File',"$output_dir/acc2db.dbm", &GDBM_WRCREAT,0777 or die "cannot open acc2db in $output_dir \n";
-tie my %DESC, 'GDBM_File',"$output_dir/desc.dbm",&GDBM_WRCREAT, 0777 or die "cannot open desc in $output_dir \n";
-tie my %PEPTIDE,'GDBM_File', "$output_dir/peptide.dbm",&GDBM_WRCREAT, 0777 or die "cannot open peptide in $output_dir \n";
-tie my %DATABASES,'GDBM_File', "$output_dir/databases.dbm",&GDBM_WRCREAT, 0777 or die "cannot open databases in $output_dir \n";
+# remove previous versions of the databases
+tie my %ACC2DB, 'GDBM_File',"/tmp/acc2db.dbm", &GDBM_WRCREAT,0777 or die "cannot open /tmp/acc2db.dbm\n";
+tie my %DESC, 'GDBM_File',"/tmp/desc.dbm",&GDBM_WRCREAT, 0777 or die "cannot open /tmp/desc.dbm \n";
+tie my %PEPTIDE,'GDBM_File', "/tmp/peptide.dbm",&GDBM_WRCREAT, 0777 or die "cannot open /tmp/peptide.dbm\n";
+tie my %DATABASES,'GDBM_File', "/tmp/databases.dbm",&GDBM_WRCREAT, 0777 or die "cannot open /tmp/databases.dbm\n";
 
 my $prim_DB_id;
 my $prim_DB;
@@ -157,13 +156,25 @@ untie %DESC;
 untie %PEPTIDE;
 untie %DATABASES;
 
+&cleanup($output_dir);
+
 exit(0);
 
-sub check 
-  {
+sub check {
     tie my %DATA, 'GDBM_File',"/lustre/work1/ensembl/wormpipe/dumps/acc2db.dbm",&GDBM_WRCREAT,0777 or die "fail";
     foreach (keys %DATA){
       print "$_ $DATA{$_}\n";
     }
     untie %DATA;
-  }
+}
+
+
+# moves the databases from tmp to $outputdir
+sub cleanup {
+	my $to_dir = shift;
+	my @dbfiles=qw(acc2db.dbm desc.dbm peptide.dbm detebase.dm);
+	map {cp("/tmp/$_","$to_dir/$_") or die "Copy failed: $!"} @dbfiles;
+	map {unlink "/tmp/$_"} @dbfiles;
+}
+
+
