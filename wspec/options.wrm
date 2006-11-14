@@ -152,9 +152,9 @@ _VGene_regulation  -V
 _VGenetic_code     -V
 _VHomology_group   -V
 _VMovie            -H
-_VGO_term	   -V
+_VGO_term	   -V -T Term
 _VSO_term	   -V
-_VGO_code	   -V -T Term
+_VGO_code	   -V
 
 // Mass Spec class
 _VMass_spec_experiment  -V
