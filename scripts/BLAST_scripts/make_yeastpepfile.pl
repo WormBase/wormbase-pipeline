@@ -6,8 +6,8 @@
 # 
 # Converts yeastX.pep file to ace file, copies to wormsrv2, adds SGD as Accession field
 #
-# Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2006-11-08 15:52:37 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2006-11-14 10:07:16 $
 
 
 use strict;
@@ -108,9 +108,6 @@ print "\n$source_file is now converted to $pepfile..\n" if ($verbose);
 
 # Now overwrite source file with newly formatted file
 system("mv $pepfile $source_file") && die "Couldn't overwrite original peptide file\n";
-
-# copy acefile across to /wormsrv2/wormbase/ensembl_dumps
-system("scp $acedir/yeast.ace wormsrv2:/wormsrv2/wormbase/ensembl_dumps")  && die "Couldn't copy acefile\n";
 
 
 untie %YEAST_DESC;
