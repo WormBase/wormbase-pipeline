@@ -14,7 +14,7 @@ use vars qw($opt_s $opt_t $opt_v);
 getopts ("stv");
 my $verbose = $opt_v;
 
-my $output_dir = "/acari/work2a/wormpipe/swall_data";
+my $output_dir = "/lustre/work1/ensembl/wormpipe/swall_data";
 
 my %ORG;
 my %DES;

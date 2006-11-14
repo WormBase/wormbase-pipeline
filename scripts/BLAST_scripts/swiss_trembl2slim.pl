@@ -25,8 +25,8 @@ $exclude{'Human immunodeficiency virus'} = 1;
 $exclude{'Caenorhabditis briggsae'}      = 1;
 
 our $output; # file to write
-my $output_dir = "/acari/work2a/wormpipe/swall_data";
-my $input_dir = "/acari/work2a/wormpipe/swall_data";
+my $output_dir = "/lustre/work1/ensembl/wormpipe/swall_data";
+my $input_dir = "/lustre/work1/esnembl/wormpipe/swall_data";
 
 my %HASH;
 
