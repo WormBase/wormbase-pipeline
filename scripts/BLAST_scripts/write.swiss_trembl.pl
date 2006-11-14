@@ -226,4 +226,4 @@ This script creates ace files containing the details of any proteins that have b
 
 The input list are simply a list of ID's of matching proteins.
 
-The .gsi databases are written by fasta2gsi.pl -f /acari/work2a/wormpipe/swall_data/slimswissprot whenever the swissprot/trembl are updated.
+The .gsi databases are written by fasta2gsi.pl -f /lustre/work1/ensembl/wormpipe/swall_data/slimswissprot whenever the swissprot/trembl are updated.
