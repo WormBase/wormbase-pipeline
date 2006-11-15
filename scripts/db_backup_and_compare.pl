@@ -5,7 +5,7 @@
 # backup database and compare to last backed up database to look for lost data
 #
 # Last updated by: $Author: pad $     
-# Last updated on: $Date: 2006-09-28 16:10:17 $      
+# Last updated on: $Date: 2006-11-15 14:38:11 $      
 
 use strict;
 #use lib $ENV{'CVS_DIR'};
@@ -51,7 +51,7 @@ my $exec        = $wormbase->tace;
 &check_options($db);
 
 # Look to see what backups are already there, make new backup if appropriate
-&find_and_make_backups($db) unless $just_compare;
+&find_and_make_backups($db) unless ($just_compare);
 
 
 # Compare new backup to previous backup, eeport any data that has disappeared
