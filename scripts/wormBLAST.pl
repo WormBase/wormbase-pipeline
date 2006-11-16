@@ -4,8 +4,8 @@
 # 
 # written by Anthony Rogers
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2006-10-05 15:03:25 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2006-11-16 11:31:35 $
 
 
 use DBI;
@@ -578,7 +578,7 @@ if( $dump_data )
     $wormbase->run_script("BLAST_scripts/dump_interpro_motif.pl" ,$log );
     $wormbase->run_script("BLAST_scripts/dump_interpro_motif.pl -database worm_brigpep" ,$log );
 
-    # Dump extra info for SWALL proteins that have matches. Info retrieved from the dbm databases on /acari/work2a/wormpipe/
+    # Dump extra info for SWALL proteins that have matches. Info retrieved from the dbm databases on /lustre/work1/ensembl/wormpipe/
     print "Creating acefile of SWALL proteins with homologies\n";
     $wormbase->run_script("BLAST_scripts/write.swiss_trembl.pl -swiss -trembl" ,$log );
 
@@ -590,7 +590,7 @@ if( $dump_data )
 if( $cleanup ) {
   print "clearing up files generated in this build\n";
 # files to move to ~wormpub/last-build/
-#   /acari/work2a/wormpipe/dumps/
+#   /lustre/work1/ensembl/wormpipe/dumps/
 #    ipi_hits_list
 #    trembllist.txt
 #    swisslist.txt
@@ -604,10 +604,10 @@ if( $cleanup ) {
 #    ids.txt
 
 # to delete
-#   /acari/work2a/wormpipe/dumps/
+#   /lustre/work1/ensembl/wormpipe/dumps/
 #      *.ace
 #      *.log
-  my $clear_dump = "/acari/work2a/wormpipe/dumps";
+  my $clear_dump = "/lustre/work1/ensembl/wormpipe/dumps";
   print "Removing . . . \n";
   print "\t$clear_dump/*.ace\n";  system("rm -f $clear_dump/*.ace") && warn "cant remove ace files from $clear_dump";
   print "\t$clear_dump/*.log\n";  system("rm -f $clear_dump/*.log") && warn "cant remove log files from $clear_dump";
@@ -624,9 +624,9 @@ if( $cleanup ) {
 
   print "\nRemoving the $wormpipe_dir/DUMP_PREP_RUN lock file\n"; system("rm -f $wormpipe_dir/DUMP_PREP_RUN") && warn "cant remove $wormpipe_dir/DUMP_PREP_RUN\n";
 
-  print "\nRemoving farm output and error files from /acari/scatch5/ensembl/Worms/*\n"; 
+  print "\nRemoving farm output and error files from /lustre/scratch1/ensembl/wormpipe/*\n"; 
 
-  my $scratch_dir = "/acari/scratch1/ensembl/Worms";
+  my $scratch_dir = "/lustre/scratch1/ensembl/wormpipe";
   my @directories = qw( 0 1 2 3 4 5 6 7 8 9 );
 
   foreach my $directory ( @directories ) {
