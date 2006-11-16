@@ -49,7 +49,7 @@ my $dbname = $database;
 my $maintainers = "All";
 my $rundate    = `date +%y%m%d`; chomp $rundate;
 my $wormpipe = glob("~wormpipe");
-my $wormpipe_dir = "/acari/work2a/wormpipe";
+my $wormpipe_dir = "/lustre/work1/ensembl/wormpipe";
 
 my $best_hits = "$wormpipe_dir/dumps/${database}_best_blastp_hits";
 my $ipi_file = "$wormpipe_dir/dumps/${database}_ipi_hits_list";
@@ -126,7 +126,7 @@ my $QUERY_SPECIES = $database2species{"$database"};
  
 #connect to GDBM_File databases for species determination and establish hashes
 
-my $db_files = "/acari/work2a/wormpipe/swall_data";
+my $db_files = "/lustre/work1/ensembl/wormpipe/swall_data";
 my (%SWISSORG, %TREMBLORG);
 tie %SWISSORG, 'GDBM_File',"$db_files/swissprot2org",&GDBM_WRCREAT,0666 or die "cannot open swissprot2org DBM file $db_files/swissprot2org";
 unless (-s "$db_files/swissprot2des") {

@@ -32,7 +32,7 @@ if ( $store ) {
 my $log = Log_files->make_build_log($wormbase);
 
 
-my $dump_dir = "/acari/work2a/wormpipe/dumps";
+my $dump_dir = "/lustre/work1/ensembl/wormpipe/dumps";
 $dump_dir = glob("~wormpub/TEST_BUILD/") if $test;
 my $acedb_database;
 my $output = "$dump_dir/TRF.ace";
