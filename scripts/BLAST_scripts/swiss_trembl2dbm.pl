@@ -158,15 +158,15 @@ untie %KEY;
 # now copy the database files from /tmp to the directory where they will be stored
 if ($opt_s) {
   
-  `cp -f $tmp_dir/swissprot2org $output_dir`;
-  `cp -f $tmp_dir/swissprot2des $output_dir`;
-  `cp -f $tmp_dir/swissprot2key $output_dir`;
+  `mv -f $tmp_dir/swissprot2org $output_dir`;
+  `mv -f $tmp_dir/swissprot2des $output_dir`;
+  `mv -f $tmp_dir/swissprot2key $output_dir`;
   
 }
 elsif ($opt_t) {
   
-  `cp -f $tmp_dir/trembl2org $output_dir`;
-  `cp -f $tmp_dir/trembl2des $output_dir`;
-  `cp -f $tmp_dir/trembl2key $output_dir`;
+  `mv -f $tmp_dir/trembl2org $output_dir`;
+  `mv -f $tmp_dir/trembl2des $output_dir`;
+  `mv -f $tmp_dir/trembl2key $output_dir`;
   
 }
