@@ -115,7 +115,7 @@ unless ( -e $agp_file and -e $wormpep_file and -e $cds_file and -e $cos_file ) {
 }
 
 # create output files
-my $dump_dir = "/acari/work2a/wormpipe/dumps/blastx";
+my $dump_dir = "/lustre/work1/ensembl/wormpipe/dumps/blastx";
 
 # create a hash of output file handles keyed off orgs
 # this will allow the outputting by org
@@ -219,8 +219,8 @@ my %accession2name;
 $wormbase->FetchData("accession2clone",\%accession2name);
 
 # Open DBM to find out database of HID
-tie my %ACC2DB, 'GDBM_File',"/acari/work2a/wormpipe/dumps/acc2db.dbm",&GDBM_WRCREAT, 0666 or $log->log_and_die("cannot open acc2db \n");
-open (IPI_LIST, ">/acari/work2a/wormpipe/dumps/ipi_hits_list_x") or $log->log_and_die("cant open hitlist\n");
+tie my %ACC2DB, 'GDBM_File',"/lustre/work1/ensembl/wormpipe/dumps/acc2db.dbm",&GDBM_WRCREAT, 0666 or $log->log_and_die("cannot open acc2db \n");
+open (IPI_LIST, ">/lustre/work1/ensembl/wormpipe/dumps/ipi_hits_list_x") or $log->log_and_die("cant open hitlist\n");
 
 
 
@@ -686,7 +686,7 @@ foreach ( keys %output_ACE ) {
 }
 
 $log->write_to("cat'ing individual files in to ${dbname}_blastx.ace\n");
-system( "cat $dump_dir/*_blastx.ace > /acari/work2a/wormpipe/dumps/${dbname}_blastx.ace");
+system( "cat $dump_dir/*_blastx.ace > /lustre/work1/ensembl/wormpipe/dumps/${dbname}_blastx.ace");
 
 print "\nEnd of dump \n";
 
