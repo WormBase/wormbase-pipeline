@@ -49,7 +49,7 @@ my $ensembl_info_file = "$wormpipe_dump/ensembl_protein_info.ace";
 my $swiss_list_txt    = "$wormpipe_dump/swisslist.txt";
 my $trembl_list_txt   = "$wormpipe_dump/trembllist.txt";
 
-my $db_files        = "/acari/work2a/wormpipe/swall_data";
+my $db_files        = "/lustre/work1/ensembl/wormpipe/swall_data";
 
 my @blastp_databases = qw(worm_pep worm_brigpep);
 my $blast_files = "$wormpipe_dump/*blastp.ace $wormpipe_dump/*blastx.ace ";

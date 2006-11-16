@@ -4,8 +4,8 @@
 #
 # Dumps InterPro protein motifs from ensembl mysql (protein) database to an ace file
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2006-10-02 15:13:50 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2006-11-16 11:45:10 $
 
 
 use strict;
@@ -389,8 +389,7 @@ sub get_ip_mappings {
   # ftp.ebi.ac.uk/pub/databases/interpro/interpro.xml.gz
 
   # store it here
-#  my $dir = "/wormsrv2/tmp";	
-  my $dir = "/acari/scratch1/worm";
+  my $dir = "/lustre/scratch1/ensembl/wormpipe";
   my $file = "$dir/interpro.xml";
 
   # get the interpro file from the EBI
@@ -516,7 +515,7 @@ script_template.pl  OPTIONAL arguments:
  
 =over 4
  
-=item This script must be run where it can see /acari/scratch1/worm/ as it puts the temporary interpro.xml file in there.
+=item This script must be run where it can see /lustre/scratch1/ensembl/wormpipe/ as it puts the temporary interpro.xml file in there.
  
 =back
  
