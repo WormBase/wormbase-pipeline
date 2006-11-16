@@ -14,7 +14,9 @@ use vars qw($opt_s $opt_t $opt_v);
 getopts ("stv");
 my $verbose = $opt_v;
 
+# store the database files in swall_data, but make them in /tmp as this goes MUCH faster
 my $output_dir = "/lustre/work1/ensembl/wormpipe/swall_data";
+my $tmp_dir = "/tmp";
 
 my %ORG;
 my %DES;
@@ -35,23 +37,23 @@ if ($opt_s && $opt_t) {
 }
 elsif ($opt_s) {
   
-  `rm $output_dir/swissprot2org` if (-e "$output_dir/swissprot2org" );
-  `rm $output_dir/swissprot2des` if (-e "$output_dir/swissprot2des" );
-  `rm $output_dir/swissprot2key` if (-e "$output_dir/swissprot2key" );
+  `rm $tmp_dir/swissprot2org` if (-e "$tmp_dir/swissprot2org" );
+  `rm $tmp_dir/swissprot2des` if (-e "$tmp_dir/swissprot2des" );
+  `rm $tmp_dir/swissprot2key` if (-e "$tmp_dir/swissprot2key" );
   
-  tie %ORG,'GDBM_File',"$output_dir/swissprot2org",&GDBM_WRCREAT, 0666 or die "cannot open DBM file";
-  tie %DES,'GDBM_File',"$output_dir/swissprot2des",&GDBM_WRCREAT, 0666 or die "cannot open DBM file";
-  tie %KEY,'GDBM_File',"$output_dir/swissprot2key",&GDBM_WRCREAT, 0666 or die "cannot open DBM file";
+  tie %ORG,'GDBM_File',"$tmp_dir/swissprot2org",&GDBM_WRCREAT, 0666 or die "cannot open DBM file";
+  tie %DES,'GDBM_File',"$tmp_dir/swissprot2des",&GDBM_WRCREAT, 0666 or die "cannot open DBM file";
+  tie %KEY,'GDBM_File',"$tmp_dir/swissprot2key",&GDBM_WRCREAT, 0666 or die "cannot open DBM file";
 }
 elsif ($opt_t) {
   
-  `rm $output_dir/trembl2org` if (-e "$output_dir/trembl2org" );
-  `rm $output_dir/trembl2des` if (-e "$output_dir/trembl2des" );
-  `rm $output_dir/trembl2key` if (-e "$output_dir/trembl2key" );
+  `rm $tmp_dir/trembl2org` if (-e "$tmp_dir/trembl2org" );
+  `rm $tmp_dir/trembl2des` if (-e "$tmp_dir/trembl2des" );
+  `rm $tmp_dir/trembl2key` if (-e "$tmp_dir/trembl2key" );
   
-  tie %ORG,'GDBM_File', "$output_dir/trembl2org",&GDBM_WRCREAT, 0666 or die "cannot open DBM file";
-  tie %DES,'GDBM_File', "$output_dir/trembl2des",&GDBM_WRCREAT, 0666 or die "cannot open DBM file";
-  tie %KEY,'GDBM_File', "$output_dir/trembl2key",&GDBM_WRCREAT, 0666 or die "cannot open DBM file";
+  tie %ORG,'GDBM_File', "$tmp_dir/trembl2org",&GDBM_WRCREAT, 0666 or die "cannot open DBM file";
+  tie %DES,'GDBM_File', "$tmp_dir/trembl2des",&GDBM_WRCREAT, 0666 or die "cannot open DBM file";
+  tie %KEY,'GDBM_File', "$tmp_dir/trembl2key",&GDBM_WRCREAT, 0666 or die "cannot open DBM file";
 }
 else {
     die "$usage";
@@ -153,4 +155,18 @@ untie %KEY;
 
 
 
-
+# now copy the database files from /tmp to the directory where they will be stored
+if ($opt_s) {
+  
+  `cp -f $tmp_dir/swissprot2org $output_dir`;
+  `cp -f $tmp_dir/swissprot2des $output_dir`;
+  `cp -f $tmp_dir/swissprot2key $output_dir`;
+  
+}
+elsif ($opt_t) {
+  
+  `cp -f $tmp_dir/trembl2org $output_dir`;
+  `cp -f $tmp_dir/trembl2des $output_dir`;
+  `cp -f $tmp_dir/trembl2key $output_dir`;
+  
+}
