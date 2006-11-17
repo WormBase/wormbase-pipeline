@@ -2,7 +2,7 @@
 #
 # EMBLdump.pl :  makes modified EMBL dumps from camace.
 # 
-#  Last updated on: $Date: 2006-07-17 14:39:19 $
+#  Last updated on: $Date: 2006-11-17 12:13:32 $
 #  Last updated by: $Author: pad $
 
 use strict;
@@ -23,6 +23,7 @@ my $store;
 my $wormbase;
 my $quicktest;
 my $version;
+my $database;
 
 GetOptions (
 	    "test"         => \$test,
@@ -31,6 +32,7 @@ GetOptions (
 	    "quicktest"    => \$quicktest,
 	    "single=s"     => \$single,
 	    "version=s"    => \$version,
+	    "database=s"   => \$database, # Requires full path to database eg.c /nfs/disk100/wormpub/DATABASES/BACKUPS/camace_backup.061116
 	    );
 
 
@@ -62,7 +64,9 @@ if($debug){
 
 my $basedir        = $wormbase->wormpub;
 my $giface         = $wormbase->giface;
-my $dbdir          = $wormbase->database('camace');
+my $dbdir;
+if ($database) {$dbdir = $database;}
+else {$dbdir          = $wormbase->database('camace');}
 my $tace           = $wormbase->tace;
 my $outfilename    = "$basedir/tmp/EMBLdump.$$";
 my $mod_file       = "$basedir/tmp/EMBLdump.mod";
