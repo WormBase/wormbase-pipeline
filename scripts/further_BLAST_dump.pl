@@ -2,12 +2,12 @@
 #
 # further_BLAST_dump.pl
 #
-# script to copy files resulting from blast pipeline on acari to build directories
+# script to copy files resulting from blast pipeline on farm-login to build directories
 #
 # Author: Chao-Kung CHen
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2006-05-17 08:55:10 $
+# Last updated on: $Date: 2006-11-17 15:10:58 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -36,7 +36,7 @@ if ( $store ) {
 
 my $log = Log_files->make_build_log($wormbase);
 
-my $source_dir    = "/acari/work2a/wormpipe/dumps";
+my $source_dir    = "/lustre/work1/ensembl/wormpipe/dumps";
 my $target_dir = $wormbase->acefiles;
 
 my $farm_ace = glob("~wormpipe/ace_files") ;  # this is the only place where a path is specified outside of Wormbase.pm as cant access wormpipe and wormpub acefiles at same time
@@ -66,7 +66,7 @@ foreach my $file (@files){
   }
   elsif ( -e "$source_dir/$file" ) {
     $log->write_to("scping new version of $file\n");
-    $wormbase->run_command("scp acari:${source_dir}/${file} ${target_dir}/${file}", $log);
+    $wormbase->run_command("scp farm-login:${source_dir}/${file} ${target_dir}/${file}", $log);
   }
   else {
     $log->write_to($file." does not exist\n");
