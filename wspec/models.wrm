@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: ar2 $
-// Last edited on: $Date: 2006-11-01 16:46:32 $
+// Last edited on: $Date: 2006-11-17 16:23:18 $
 
 
 
@@ -271,6 +271,7 @@
                   GO_term ?GO_term XREF Gene ?GO_code #Evidence
                   Contained_in_operon ?Operon XREF Contains_gene
                   Ortholog ?Gene XREF Ortholog ?Species #Evidence
+		  Ortholog_other  ?Database ?Database_field UNIQUE ?Accession_number ?Species #Evidence // to allow Orthologues links to none ?Gene genes eg remanei (ar2 Nov06)
                   Structured_description Provisional_description ?Text #Evidence         // added for Erich [020322 krb]
                                          Detailed_description ?Text #Evidence            // added for Erich [020322 krb]
                                          Concise_description ?Text #Evidence             // added for Erich [020523 krb]
@@ -1275,6 +1276,7 @@
                                    HOPS_group    // Sonnhammer
                                    RIO_group     // Eddy
 				   InParanoid_group
+				   OrthoMCL_group     //erich Nov06
                 GO_term ?GO_term XREF Homology_group
                 Protein ?Protein XREF Homology_group
                 Remark ?Text #Evidence
