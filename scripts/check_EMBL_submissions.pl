@@ -7,7 +7,7 @@
 # clones. Entries which have failed to load or return are highlighted
 # and changes in sequence version are notified.
 
-# Last updated on: $Date: 2006-10-23 14:23:58 $
+# Last updated on: $Date: 2006-11-20 16:32:18 $
 # Last updated by: $Author: pad $
 
 use strict;
@@ -132,7 +132,7 @@ while (<EMBL>) {
   chomp;
   print "$_\n" if ($verbose);
 
-  if ($_ =~ /^(\S+)\s+(\S+)\s+\-\s+(\S+)\s+(\d+)$/) {
+if ($_ =~ /^(\S+)\s+(\S+)\s+\-\s+(\S+)\s+(\d+)$/) {
   #$1 = ID
   #$2 = ID
   #$3 = Status
@@ -144,10 +144,10 @@ while (<EMBL>) {
     print "processed $1\n" if ($debug);
     next;
   }
-  elsif ($_ =~ /^(\S+)\s+(\S+)\s+\-\s+(\S+)\s+(\S+)\s+(\d+)$/) {
+  elsif ($_ =~ /^(\S+)\s+(\S+)\s+\-\s+(\S+\s\S+)\s+(-)$/) {
     $embl_acc{$1}    = $2;
-    $embl_status{$1} = "Not_Loaded";
-    $embl_sv{$1}     = $5;
+    $embl_status{$1} = $3;
+    $embl_sv{$1}     = undef;
     print "EMBL_AC:$2\nEMBL_Status:$3\nEMBL_SV:$4\n" if ($verbose);
     print "processed $1\n" if ($debug);
     next;
@@ -177,7 +177,7 @@ while (<SUBMITTED>) {
     $log->write_to("loaded  \t");
     $loaded++;
   }
-  elsif ($embl_status{$id} eq "Not_Loaded") {
+  elsif ($embl_status{$id} eq "Not\ Loaded") {
     $log->write_to("***failed to load***\t\n");
     $errors2++;
     next;
