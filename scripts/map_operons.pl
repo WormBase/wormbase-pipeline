@@ -2,8 +2,8 @@
 #
 # map_operons.pl
 
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2006-09-28 11:26:07 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2006-11-21 16:33:56 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -57,6 +57,7 @@ my $db = Ace->connect(-path => $wb->autoace) or $log->log_and_die("cant connect 
 my @operons = $db->fetch('Operon' => '*');
 foreach my $operon(@operons) {
 	next if $operon->Merged_into;
+	next if ($operon->Method eq "history");
   my @genes = map($_->name, $operon->Contains_gene);
   my ($op_start, $op_end, $op_strand, $op_chrom);
   foreach my $gene (@genes) {
