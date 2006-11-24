@@ -1,7 +1,7 @@
 #!/usr/local/ensembl/bin/perl -w                  
 #
-# Last updated by: $Author: mh6 $     
-# Last updated on: $Date: 2006-11-14 14:42:25 $      
+# Last updated by: $Author: gw3 $     
+# Last updated on: $Date: 2006-11-24 17:28:29 $      
 
 use strict;
 use Getopt::Long;
@@ -69,7 +69,7 @@ my $dont_read_pep;
 while (<DATA>) {
 
   if( /^>/ ) {
-    my @data = split(/\s+/,$'); # everything after the >
+    my @data = split(/\s+/,$'); # '
     my @databases = split(/\|/,$data[0]);
     my %databases;
     
@@ -172,9 +172,11 @@ sub check {
 # moves the databases from tmp to $outputdir
 sub cleanup {
 	my $to_dir = shift;
-	my @dbfiles=qw(acc2db.dbm desc.dbm peptide.dbm detebase.dm);
-	map {cp("/tmp/$_","$to_dir/$_") or die "Copy failed: $!"} @dbfiles;
-	map {unlink "/tmp/$_"} @dbfiles;
+	my @dbfiles=qw(acc2db.dbm desc.dbm peptide.dbm databases.dbm);
+	foreach my $f (@dbfiles) {
+	  system("cp(/tmp/$f $to_dir/$f");
+	  unlink "/tmp/$f";
+	}
 }
 
 
