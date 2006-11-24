@@ -13,7 +13,7 @@
 #      COMPANY:
 #     $Version:  $
 #      CREATED: 2006-02-27
-#        $Date: 2006-08-22 09:38:00 $
+#        $Date: 2006-11-24 10:43:20 $
 #===============================================================================
 package Remap_Sequence_Change;
 
@@ -78,6 +78,51 @@ sub read_mapping_data {
   }
                                                                                                                                                             
   return @mapping_data;
+}
+
+
+##########################################################
+# 
+# Name:      remap_test
+# Usage:     $changed = remap_test($release1, $release2, @mapping_data);
+# Function: test to see if there have been indel or reverse of
+#           orientation changes between the given versions.
+#           If so then we will need to run the remapping programs.
+# Args:      $release1, $release2, the first and last wormbase release
+#                  numbers to use e.g. 140, 150 to convert data made using wormbase
+#                  release WS140 to the coordinates of release WS150
+#            @mapping_data - data as returned by read_mapping_data
+# Returns:   1 if there have been changes, 0 if not
+
+
+sub remap_test {
+  my ($release1, $release2, @mapping_data) = @_;
+
+  my $changed = 0;
+
+  foreach my $release (($release1+1) .. $release2) {
+              
+    foreach my $chromosome (keys %{$mapping_data[$release]}) {
+      if (exists $mapping_data[$release]{$chromosome}) {
+	foreach  my $fields (@{$mapping_data[$release]{$chromosome}}) {
+
+# The mismatch_start value is the start of the mismatch, it is the first position which doesn't match.
+# The mismatch_end value is the base past the end of the mismatch region, the first base which matches again
+# ($mismatch_start1, $mismatch_end1, $len1, $mismatch_start2, $mismatch_end2, $len2, $flipped)
+	  my ($mismatch_start1, $mismatch_end1, $len1, $mismatch_start2, $mismatch_end2, $len2, $flipped) = @$fields;
+
+	  # if a region has been flipped in orientation then we will need to remap anythng in that region
+	  if ($flipped) {$changed = 1;}
+
+	  # if a region has had an indel then we will need to remap anything downstream of it
+	  if ($len1 != $len2)  {$changed = 1;}
+
+	}
+      }
+    }
+  }
+
+  return $changed;
 }
 
 
