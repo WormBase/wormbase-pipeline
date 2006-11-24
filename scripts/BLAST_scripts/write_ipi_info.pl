@@ -170,7 +170,7 @@ sub getSwissGeneName
   {
     my $s2g = shift;
     my $a2i = shift;
-    open (GETZ, "/usr/local/ensemblbin/getz -f \"ID PrimAccNumber DBxref GeneName\" \"[swissprot-NCBI_TaxId#9606:9606]\" | ");
+    open (GETZ, "/usr/local/ensembl/bin/getz -f \"ID PrimAccNumber DBxref GeneName\" \"[swissprot-NCBI_TaxId#9606:9606]\" | ");
     my ($id, $acn, $gene, $backup_gene);
     my %counts;
     while (<GETZ>) {
