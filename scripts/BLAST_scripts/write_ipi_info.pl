@@ -170,7 +170,7 @@ sub getSwissGeneName
   {
     my $s2g = shift;
     my $a2i = shift;
-    open (GETZ, "/usr/local/pubseq/bin/getz -f \"ID PrimAccNumber DBxref GeneName\" \"[swissprot-NCBI_TaxId#9606:9606]\" | ");
+    open (GETZ, "/usr/local/ensemblbin/getz -f \"ID PrimAccNumber DBxref GeneName\" \"[swissprot-NCBI_TaxId#9606:9606]\" | ");
     my ($id, $acn, $gene, $backup_gene);
     my %counts;
     while (<GETZ>) {
@@ -219,7 +219,7 @@ sub getSwissGeneName
 sub makeENSgenes 
   {
     my $p2g = shift;
-    open (ENS, "/usr/local/pubseq/bin/getz -f \"ID Gene\" \"[ensemblpep_human-ID:*]\" | ");
+    open (ENS, "/usr/local/ensembl/bin/getz -f \"ID Gene\" \"[ensemblpep_human-ID:*]\" | ");
     #>ENSP00000329982 pep:known chromosome:NCBI35:1:660959:661897:-1 gene:ENSG00000185097 transcript:ENST00000332831
     #>ENSP00000263506 pep:novel chromosome:NCBI35:1:16764182:16779878:-1 gene:ENSG00000116219 transcript:ENST00000263506
     while (<ENS>) {
