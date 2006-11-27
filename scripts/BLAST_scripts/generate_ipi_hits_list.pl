@@ -8,11 +8,12 @@ BEGIN {
 use strict;
 
 my $wormpipe = glob("~wormpipe");
-my $wormpipe_dump = "/acari/work2a/wormpipe/dumps";
+my $wormpipe_dump = "/lustre/work1/ensembl/wormpipe/dumps";
 
 #Pep_homol "TR:Q9BZ18" wublastp_human 36.337242 765 939 29 195 Align 886 142
 
-open (DATA,"cat $wormpipe_dump/blastp_ensembl.ace $wormpipe_dump/blastx_ensembl.ace |");
+# open (DATA,"cat $wormpipe_dump/blastp_ensembl.ace $wormpipe_dump/blastx_ensembl.ace |");
+open (DATA,"cat $wormpipe_dump/worm_brigpep_blastp.ace $wormpipe_dump/worm_dna_blastx.ace $wormpipe_dump/worm_pep_blastp.ace |");
 my %uniquify;
 while (<DATA>) {
   if( /human/ ) {
@@ -27,7 +28,7 @@ close DATA;
 
 open (LIST,">$wormpipe_dump/ipi_hits_list") or die "cant open output file $wormpipe_dump/ipi_hits_list";
 
-foreach( keys %uniquify ) {
+foreach(keys %uniquify) {
   print LIST "$_\n";
 }
 close LIST;
