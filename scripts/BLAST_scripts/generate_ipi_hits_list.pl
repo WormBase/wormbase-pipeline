@@ -18,6 +18,7 @@ my %uniquify;
 while (<DATA>) {
   if( /human/ ) {
     next if /WP:CE/; # reciprocal match
+    next if /CBP/; # reciprocal match
     s/\"//g;
     my @data = split(/\s+/,$_);
     $uniquify{ (split(/:/,$data[1]))[1] } = 1;
