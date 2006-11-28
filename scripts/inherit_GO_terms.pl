@@ -4,8 +4,8 @@
 #
 # map GO_terms to ?Sequence objects from ?Motif and ?Phenotype
 #
-# Last updated by: $Author: ar2 $     
-# Last updated on: $Date: 2006-11-10 15:30:28 $      
+# Last updated by: $Author: gw3 $     
+# Last updated on: $Date: 2006-11-28 13:21:04 $      
 
 use strict;
 use warnings;
@@ -115,6 +115,7 @@ sub motif {
 	while(<$query>) {
 		s/\"//g;#"
 		my($motif,$GO,$protein,$cds,$gene) = split;
+		next if ($motif eq "acedb>");
 		print OUT "\nGene : $gene\nGO_term \"$GO\" inferred_automatically \"$motif\"\n";
 		print OUT "\nCDS  : \"$cds\"\nGO_term \"$GO\" inferred_automatically \"$motif\"\n";
 	}
