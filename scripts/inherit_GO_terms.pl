@@ -5,7 +5,7 @@
 # map GO_terms to ?Sequence objects from ?Motif and ?Phenotype
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2006-11-28 15:07:13 $      
+# Last updated on: $Date: 2006-11-28 16:06:27 $      
 
 use strict;
 use warnings;
@@ -117,8 +117,8 @@ sub motif {
   		next if (/acedb/ or /\/\//);
 		my($motif,$GO,$protein,$cds,$gene) = split;
 		next if (! defined $gene || ! defined $cds || ! defined $GO || ! defined $motif);
-		print OUT "\nGene : $gene\nGO_term \"$GO\" inferred_automatically \"$motif\"\n";
-		print OUT "\nCDS  : \"$cds\"\nGO_term \"$GO\" inferred_automatically \"$motif\"\n";
+		print OUT "\nGene : $gene\nGO_term \"$GO\" IEA inferred_automatically \"$motif\"\n";
+		print OUT "\nCDS  : \"$cds\"\nGO_term \"$GO\" IEA inferred_automatically \"$motif\"\n";
 	}
 }
 
