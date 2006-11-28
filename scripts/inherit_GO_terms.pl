@@ -5,7 +5,7 @@
 # map GO_terms to ?Sequence objects from ?Motif and ?Phenotype
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2006-11-28 13:49:32 $      
+# Last updated on: $Date: 2006-11-28 14:09:43 $      
 
 use strict;
 use warnings;
@@ -137,6 +137,7 @@ sub phenotype {
   		next if (/acedb/ or /\/\//);
 		my @data = split;
 	  	my ($cds, $phenotype,$go) = ($data[0], $data[2], $data[3]);
+		next if (! defined $phenotype);
 	  	if($phenotype =~ /WBPheno/) {
 	  		$phenotype = &get_phenotype_name($phenotype);
 	  	}
