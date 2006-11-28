@@ -5,7 +5,7 @@
 # map GO_terms to ?Sequence objects from ?Motif and ?Phenotype
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2006-11-28 13:21:04 $      
+# Last updated on: $Date: 2006-11-28 13:23:32 $      
 
 use strict;
 use warnings;
@@ -114,8 +114,8 @@ sub motif {
 	my $query = $wormbase->	table_maker_query($db, $def);
 	while(<$query>) {
 		s/\"//g;#"
+  		next if (/acedb/ or /\/\//);
 		my($motif,$GO,$protein,$cds,$gene) = split;
-		next if ($motif eq "acedb>");
 		print OUT "\nGene : $gene\nGO_term \"$GO\" inferred_automatically \"$motif\"\n";
 		print OUT "\nCDS  : \"$cds\"\nGO_term \"$GO\" inferred_automatically \"$motif\"\n";
 	}
