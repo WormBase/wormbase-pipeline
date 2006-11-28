@@ -5,7 +5,7 @@
 # map GO_terms to ?Sequence objects from ?Motif and ?Phenotype
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2006-11-28 13:23:32 $      
+# Last updated on: $Date: 2006-11-28 13:49:32 $      
 
 use strict;
 use warnings;
@@ -70,8 +70,8 @@ open (OUT,">$out");
 ########################################
 # Connect with acedb server            #
 ########################################
-my $db = 1;#Ace->connect(-path=>$dbpath,
-            #          -program =>$tace) || do { print "Connection failure: ",Ace->error; die();};
+my $db = Ace->connect(-path=>$dbpath,
+                      -program =>$tace) || do { print "Connection failure: ",Ace->error; die();};
 
 
 
