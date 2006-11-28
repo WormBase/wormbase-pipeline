@@ -3,7 +3,7 @@
 use DBI;
 use strict;
 use Getopt::Long;
-use DB_File;
+use GDBM_File;
 
 #######################################
 # command-line options                #
@@ -224,7 +224,7 @@ open (OUT,">$output") or die "cant open $output\n";
 print "opening $recip_file";
 open (RECIP,">$recip_file") or die "cant open recip file $recip_file: $!\n";
 
-dbmopen our %ACC2DB, "$wormpipe_dir/dumps/acc2db.dbm", 0666 or warn "cannot open acc2db \n";
+tie our %ACC2DB,'GDBM_File', "$wormpipe_dir/dumps/acc2db.dbm",,&GDBM_WRCREAT, 0666 or warn "cannot open acc2db \n";
 
 my $count;
 my $count_limit = 10;
@@ -349,7 +349,7 @@ print "\nEnd of dump - moving $output to /wormsrv2/wormbase/ensembl_dumps/\n";
 # Copy resulting file to wormsrv2 - leave in original place for subsequent script write.swiss_trembl
 # `/usr/bin/rcp $output /wormsrv2/wormbase/ensembl_dumps/`;
 
-dbmclose %ACC2DB;
+untie%ACC2DB;
 
 
 exit(0);
