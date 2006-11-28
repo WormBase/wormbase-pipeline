@@ -1,7 +1,7 @@
 #!/usr/local/ensembl/bin/perl -w                  
 #
-# Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2006-11-24 17:28:29 $      
+# Last updated by: $Author: wormpipe $     
+# Last updated on: $Date: 2006-11-28 13:35:35 $      
 
 use strict;
 use Getopt::Long;
@@ -174,8 +174,7 @@ sub cleanup {
 	my $to_dir = shift;
 	my @dbfiles=qw(acc2db.dbm desc.dbm peptide.dbm databases.dbm);
 	foreach my $f (@dbfiles) {
-	  system("cp(/tmp/$f $to_dir/$f");
-	  unlink "/tmp/$f";
+	  system("mv /tmp/$f $to_dir/$f");
 	}
 }
 
