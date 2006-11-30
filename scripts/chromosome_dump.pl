@@ -7,8 +7,8 @@
 # A script for dumping dna and/or gff files for chromosome objects in autoace
 # see pod for more details
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2006-10-05 11:08:52 $
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2006-11-30 17:03:57 $
 
 
 use strict;
@@ -106,39 +106,31 @@ exit(0);
 # dump dna files
 #########################
 
-sub dump_dna{
-  my $command=<<END;
-find sequence CHROMOSOME_I
-dna -f $dump_dir/CHROMOSOME_I.dna
-find sequence CHROMOSOME_II
-dna -f $dump_dir/CHROMOSOME_II.dna
-find sequence CHROMOSOME_III
-dna -f $dump_dir/CHROMOSOME_III.dna
-find sequence CHROMOSOME_IV
-dna -f $dump_dir/CHROMOSOME_IV.dna
-find sequence CHROMOSOME_V
-dna -f $dump_dir/CHROMOSOME_V.dna
-find sequence CHROMOSOME_X
-dna -f $dump_dir/CHROMOSOME_X.dna
-find sequence CHROMOSOME_MtDNA
-dna -f $dump_dir/CHROMOSOME_MtDNA.dna
-quit
-END
+sub dump_dna {
 
-if($quicktest){
-  $command = "find sequence CHROMOSOME_III\ndna -f $dump_dir/CHROMOSOME_III.dna\nquit";
-}
+  my $command;
+
+  # command generation
+  if($quicktest) {
+   $command = "find sequence CHROMOSOME_III\ndna -f $dump_dir/CHROMOSOME_III.dna\n";
+  }
+  else {
+    foreach my $c ($wormbase->get_chromosome_names(-mito => 1,-prefix=> 1)) {
+	$command.="find sequence $c\ndna -f $dump_dir/$c.dna\n"; # a bit iffy, as it does a memcopy for every .=
+	}
+  }
+  $command.='quit';
 
   &execute_ace_command($command,$tace,$database);
 
   $log->write_to("Removing blank first lines");
   undef $/;
-  foreach (qw(I II III IV V X MtDNA)) {
-    open( CHROM,"<$dump_dir/CHROMOSOME_$_.dna") or $log->log_and_die("cant open $dump_dir/CHROMOSOME_$_.dna to read: $!\n");
+  foreach ($wormbase->get_chromosome_names(-mito => 1,-prefix=> 1)) {
+    open( CHROM,"<$dump_dir/$_.dna") or $log->log_and_die("cant open $dump_dir/$_.dna to read: $!\n");
     my $chrom = <CHROM>;
     close CHROM;
     $chrom =~ s/^\n//;
-    open( CHROM,">$dump_dir/CHROMOSOME_$_.dna") or $log->log_and_die("cant open $dump_dir/CHROMOSOME_$_.dna to write: $!\n");
+    open( CHROM,">$dump_dir/$_.dna") or $log->log_and_die("cant open $dump_dir/$_.dna to write: $!\n");
     print CHROM $chrom;
     close CHROM;
   }
@@ -151,22 +143,18 @@ if($quicktest){
 # dump gff files
 #########################
 
-sub dump_gff{
-  my $command=<<END;
-gif seqget CHROMOSOME_I ; seqfeatures -version 2 -file $dump_dir/CHROMOSOME_I.gff
-gif seqget CHROMOSOME_II ; seqfeatures -version 2 -file $dump_dir/CHROMOSOME_II.gff
-gif seqget CHROMOSOME_III ; seqfeatures -version 2 -file $dump_dir/CHROMOSOME_III.gff
-gif seqget CHROMOSOME_IV ; seqfeatures -version 2 -file $dump_dir/CHROMOSOME_IV.gff
-gif seqget CHROMOSOME_V ; seqfeatures -version 2 -file $dump_dir/CHROMOSOME_V.gff
-gif seqget CHROMOSOME_X ; seqfeatures -version 2 -file $dump_dir/CHROMOSOME_X.gff
-gif seqget CHROMOSOME_MtDNA ; seqfeatures -version 2 -file $dump_dir/CHROMOSOME_MtDNA.gff
-quit
-END
+sub dump_gff {
 
-if($quicktest){
-  $command = "gif seqget CHROMOSOME_III ; seqfeatures -version 2 -file $dump_dir/CHROMOSOME_III.gff";
-
-}
+ my $command;
+ if($quicktest) {
+	 $command = "gif seqget CHROMOSOME_III ; seqfeatures -version 2 -file $dump_dir/CHROMOSOME_III.gff";
+ }
+ else {
+	foreach my $c ($wormbase->get_chromosome_names(-mito => 1,-prefix=> 1)) {
+		$command.="gif seqget $c ; seqfeatures -version 2 -file $dump_dir/$c.gff\n"; # a bit iffy, as it does a memcopy for every .=
+  	}
+ }
+ $command.='quit';
 
   &execute_ace_command($command,$giface,$database);
   $log->write_to("Finished dumping GFF files\n\n");
@@ -177,17 +165,17 @@ if($quicktest){
 # produce dna composition files
 ###################################
 
-sub composition{
+sub composition {
 
   $log->write_to("Generating composition.all\n");	
 
   chdir $dump_dir;
   
   my $command = "/bin/cat ";
-  my @chroms = qw( I II III IV V X);
-  @chroms = qw(III) if $quicktest;
+  my @chroms = $quicktest? qw(III) : $wormbase->get_chromosome_names();
+  my $prefix= $wormbase->chromosome_prefix();
   foreach ( @chroms ){
-  	$command .= "$dump_dir/CHROMOSOME_${_}.dna ";
+  	$command .= "$dump_dir/$prefix"."$_.dna ";
   }
   $command .= " | /nfs/disk100/wormpub/bin.ALPHA/composition > $dump_dir/composition.all";
   
@@ -220,14 +208,14 @@ sub composition{
 # zip up files
 ###########################
 
-sub zip_files{
-  my @chromosomes = ("I", "II", "III", "IV", "V", "X", "MtDNA");
-  @chromosomes = ("III") if ($quicktest);
-  
+sub zip_files {
+  my @chromosomes = $quicktest ? qw(III):wormbase->generated(-mito => 1);
+  my $prefix= $wormbase->chromosome_prefix();
+
   foreach my $chr (@chromosomes){
-    my $dna_file = "$dump_dir"."/CHROMOSOME_".$chr.".dna";
-    my $gff_file = "$dump_dir"."/CHROMOSOME_".$chr.".gff";
-    my $msk_file = "$dump_dir"."/CHROMOSOME_".$chr."_masked.dna";
+    my $dna_file = "$dump_dir"."/$prefix".$chr.".dna";
+    my $gff_file = "$dump_dir"."/$prefix".$chr.".gff";
+    my $msk_file = "$dump_dir"."/$prefix".$chr."_masked.dna";
 
     if ($zipdna){
       if (-e $dna_file.".gz" ) {
