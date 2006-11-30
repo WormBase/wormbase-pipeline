@@ -6,9 +6,9 @@
 #
 # handles post processing of GFF files
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2006-09-28 10:43:19 $
-
+# Last edited by: $Author: mh6 $
+# Last edited on: $Date: 2006-11-30 14:59:11 $
+#
 
 use lib $ENV{CVS_DIR};
 use Wormbase;
@@ -51,7 +51,7 @@ else {
 my $log = Log_files->make_build_log($wormbase);
 
 $database = $wormbase->autoace unless $database;
-my @chroms = qw( I II III IV V X MtDNA);
+my @chroms = $wormbase->get_chromosome_names(-mito => 1);
 @chroms = qw(III) if $quicktest;
 
 $wormbase->run_script('add_species_to_BLAT_GFF.pl', $log) if $nematode;
@@ -63,18 +63,19 @@ if( $input and $output ){
   &GFF_genes_with_accessions($input, $output)  if $gene_acc;
 }
 else {
+  my $prefix=$wormbase->chromosome_prefix;
   if( $utr ) {
     foreach my $chrom ( @chroms ) {
-      my $in = $wormbase->gff_splits."/CHROMOSOME_${chrom}_UTR.gff";
-      my $out = $wormbase->gff_splits."/CHROMOSOME_${chrom}_UTR_CDS.gff";
+      my $in = $wormbase->gff_splits."/$prefix"."${chrom}_UTR.gff";
+      my $out = $wormbase->gff_splits."/$prefix"."${chrom}_UTR_CDS.gff";
       &GFF_with_UTR( $in, $out );
     }
   }
   if( $clone_acc ) {
     my $db = Ace->connect(-path=>$database) || do { print "Connection failure to $database: ",Ace->error; die();};
     foreach my $chrom ( @chroms ) {
-      my $in = $wormbase->gff_splits."/CHROMOSOME_${chrom}_Genomic_canonical.gff";
-      my $out = $wormbase->gff_splits."/CHROMOSOME_${chrom}_clone_acc.gff";
+      my $in = $wormbase->gff_splits."/$prefix"."${chrom}_Genomic_canonical.gff";
+      my $out = $wormbase->gff_splits."/$prefix"."${chrom}_clone_acc.gff";
       &GFF_clones_with_accessions( $in, $out, $db );
     }
     $db->close;
@@ -82,8 +83,8 @@ else {
   if( $gene_acc ) {
     my $db = Ace->connect(-path=>$database) || do { print "Connection failure to $database: ",Ace->error; die();};
     foreach my $chrom ( @chroms ) {
-      my $in = $wormbase->gff_splits."/CHROMOSOME_${chrom}_CDS.gff";
-      my $out = $wormbase->gff_splits."/CHROMOSOME_${chrom}_CDS_acc.gff";
+      my $in = $wormbase->gff_splits."/$prefix"."${chrom}_CDS.gff";
+      my $out = $wormbase->gff_splits."/$prefix"."${chrom}_CDS_acc.gff";
       &GFF_genes_with_accessions( $in, $out, $db );
     }
     $db->close;
@@ -214,3 +215,14 @@ sub GFF_genes_with_accessions{
   close (GFF);
   close (OUT);
 }
+
+__END__
+
+=pod
+
+=head1 Briggsae Warning
+
+The brigace DB_info is not populated, so no accessions and versions are printed.
+
+
+=cut
