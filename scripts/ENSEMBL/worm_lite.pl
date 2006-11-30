@@ -32,7 +32,7 @@ use Bio::EnsEMBL::DBSQL::DBAdaptor;
 use WormBase;
 use DBI qw(:sql_types);
 
-my ( $debug, $species, $setup, $dna, $genes );
+my ( $debug, $species, $setup, $dna, $genes, $version );
 
 GetOptions(
     'species=s'  => \$species,
@@ -40,10 +40,13 @@ GetOptions(
     'load_dna'   => \$dna,
     'load_genes' => \$genes,
     'debug'      => \$debug,
+    'version'    => \$version,
 );
 
 my $config = ( YAML::LoadFile("ensembl_lite.conf") )->{$species};
 my $cvsDIR = '/nfs/acari/wormpipe/ensembl/';
+
+$config->{version}=$version if $version;
 
 our $gff_types="curated coding_exon";
 
