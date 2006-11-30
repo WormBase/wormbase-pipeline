@@ -7,7 +7,7 @@
 # Usage : autoace_builder.pl [-options]
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2006-11-30 13:41:06 $
+# Last edited on: $Date: 2006-11-30 14:16:23 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -263,6 +263,17 @@ sub remap_misc_dynamic {
   $wormbase->run_command("cp $fosmids $backup_fosmids", $log);
   $wormbase->run_script( "remap_fosmids_between_releases.pl -input $backup_fosmids -out $fosmids", $log);
    
+  # remap Mass Spec
+  foreach my $ms_file qw(misc_mass_spec_MichaelHengartner.ace misc_mass_spec_NatalieWielsch.ace misc_mass_spec_StevenHusson.ace) {
+    my $ms = $wormbase->misc_dynamic."/$ms_file";
+    my $backup_ms = "$ms.$previous_release";
+
+    if (-e $backup_ms) {$log->log_and_die("$backup_ms already exists - please move it to be $ms before running this again\n");}
+    $wormbase->run_command("cp $ms $backup_ms", $log);
+    $wormbase->run_script( "remap_mass_spec_between_releases.pl -input $backup_ms -out $ms", $log);
+  }
+
+
   # remap and copy over the SUPPLEMENTARY_GFF dir from BUILD_DATA
   my $sup_dir = $wormbase->build_data."/SUPPLEMENTARY_GFF";
   my $release = $wormbase->version;
