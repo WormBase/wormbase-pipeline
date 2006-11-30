@@ -2,8 +2,8 @@
 #
 # This is to add Confirmed / Predicted Status and RFLP to SNP gff lines as requested by Todd
 #
-# Last updated by: $Author: ar2 $     
-# Last updated on: $Date: 2006-09-28 08:34:17 $      
+# Last updated by: $Author: gw3 $     
+# Last updated on: $Date: 2006-11-30 13:38:56 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -59,7 +59,9 @@ my %SNP;
 my $table = $wormbase->table_maker_query($wormbase->autoace, &write_def_file);
 while(<$table>) {
 	s/\"//g; #"
+	next if (/acedb/ or /\/\//);
 	my ($snp, $conf, $pred, $rflp, $from_species) = split(/\t/,$_);
+	next if (! defined $from_species);
 	next unless ($from_species =~ /$species/);
 	$SNP{$snp}->{'confirm'} = ($conf or $pred);
 	$SNP{$snp}->{'RFLP'} = 1 if ($rflp =~ /\w/);
