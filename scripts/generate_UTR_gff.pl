@@ -31,7 +31,7 @@ my $wormpub = glob("~wormpub");
 my $datdir = "$wormpub/analysis/UTR";
 my $GFFdir = "wormsrv2:/wormsrv2/autoace/GFF_SPLITS/GFF_SPLITS";
 
-my @chromosomes = $chromosome ? split(/,/,join(',',$chromosome)) : qw( I II III IV V X );
+my @chromosomes = $chromosome ? split(/,/,join(',',$chromosome)) : qw( I II III IV V X MtDNA);
 
 my $errors = 0;
 
