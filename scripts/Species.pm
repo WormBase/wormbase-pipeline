@@ -85,7 +85,8 @@ sub _new {
 }
 
 sub chromosome_prefix {'chr'}
-sub chromosome_names {qw(I I_random II II_random III III_random IV IV_random V V_random X X_random Un)} # CB1
+#sub chromosome_names {qw(I I_random II II_random III III_random IV IV_random V V_random X X_random Un)} # CB1
+sub chromosome_names {qw(I I_random II II_random III III_random IV IV_random V V_random X Un)} # CB3
 
 #########################################
 package Remanei;

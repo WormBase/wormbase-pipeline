@@ -7,9 +7,8 @@ use strict;
 use Log_files;
 use Storable;
 
-my ($debug, $test, $database);
+my ($debug, $test, $database,$species);
 
-my @chroms = qw( I II III IV V X MtDNA);
 my $dump_dir;
 my $dumpGFFscript = $ENV{'CVS_DIR'}."/GFF_method_dump.pl";
 my $scratch_dir = "/tmp";
@@ -25,7 +24,8 @@ GetOptions (
 	    "dump_dir:s"    => \$dump_dir,
 	    "methods:s"     => \$methods,
 	    "chromosomes:s" => \$chrom_choice,
-	    "store:s"       => \$store
+	    "store:s"       => \$store,
+	    "species:s"	    => \$species, # for debug purposes
 	   );
 my $wormbase;
 if( $store ) {
@@ -34,11 +34,13 @@ if( $store ) {
 else {
   $wormbase = Wormbase->new( -debug   => $debug,
 			     -test    => $test,
+			     -organism => $species
 			   );
 }
 
 my $log = Log_files->make_build_log($wormbase);
 
+my @chroms = $wormbase->get_chromosome_names(-mito => 1);
 $wormbase->checkLSF;
 
 my @methods     = split(/,/,join(',',$methods)) if $methods;

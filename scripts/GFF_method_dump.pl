@@ -7,7 +7,7 @@
 # Selectively dump GFF for certain acedb methods
 #
 # Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2006-03-03 16:56:27 $
+# Last edited on: $Date: 2006-11-30 11:46:33 $
 
 
 use lib $ENV{CVS_DIR};
@@ -99,16 +99,19 @@ sub check_options {
   unless($list or @clones ) {
 
     # -chromosomes
-    my %chroms = qw(I 1 II 1 III 1 IV 1 V 1 X 1 MtDNA 1);
-    my @chrom_keys = keys %chroms;
+     
+    my @chrom =  $wormbase->get_chromosome_names(-mito => 1, -prefix => 1);
+
+    my %chroms = map {$_ => 1} $wormbase->get_chromosome_names(-mito => 1);
+  
     unless (@chromosomes ) {
-      @sequences= map("CHROMOSOME_"."$_",@chrom_keys);
+      @sequences= @chrom;
       print "Dumping for all chromosomes\n";
     } 
     else {
       foreach (@chromosomes) {
 	if ( $chroms{$_} ) {
-	  push( @sequences,"CHROMOSOME_"."$_");
+	  push( @sequences,$wormbase->chromosome_prefix."$_");
 	}
 	else {
 	  die "$_ is not a valid chromosome\n";
