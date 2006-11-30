@@ -7,8 +7,8 @@
 
 # 031023 dl1
 
-# Last edited by: $Author: pad $
-# Last edited on: $Date: 2006-06-01 10:40:04 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2006-11-30 14:41:35 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -270,6 +270,7 @@ sub fetch_features {
   my $tm_data = $wormbase->table_maker_query($database,"$database/wquery/SCRIPT:transcriptmasker.def");
   while( <$tm_data> ) {
     s/\"//g;
+    next if (/acedb/ or /\/\// or /^$/);
     my ($seq, $type, $start, $end) = split;
     if ($seq and $type and $start and $end) {
       $seq2feature{$seq}->{$type} = [($start, $end)];
