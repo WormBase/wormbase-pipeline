@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/local/ensembl/bin/perl -w
 #===============================================================================
 #
 #         FILE:  worm_lite.pl
@@ -7,10 +7,6 @@
 #
 #  DESCRIPTION:
 #
-#      OPTIONS:  ---
-# REQUIREMENTS:  ---
-#         BUGS:  ---
-#        NOTES:  ---
 #       AUTHOR:   (), <>
 #      COMPANY:
 #      VERSION:  1.0
@@ -32,7 +28,7 @@ use Bio::EnsEMBL::DBSQL::DBAdaptor;
 use WormBase;
 use DBI qw(:sql_types);
 
-my ( $debug, $species, $setup, $dna, $genes, $version );
+my ( $debug, $species, $setup, $dna, $genes );
 
 GetOptions(
     'species=s'  => \$species,
@@ -40,13 +36,10 @@ GetOptions(
     'load_dna'   => \$dna,
     'load_genes' => \$genes,
     'debug'      => \$debug,
-    'version'    => \$version,
 );
 
 my $config = ( YAML::LoadFile("ensembl_lite.conf") )->{$species};
 my $cvsDIR = '/nfs/acari/wormpipe/ensembl/';
-
-$config->{version}=$version if $version;
 
 our $gff_types="curated coding_exon";
 
@@ -54,23 +47,37 @@ our $gff_types="curated coding_exon";
 &load_dna($config)   if $dna;
 &load_genes($config) if $genes;
 
-# create database from schema
+##################################
+# create database from schema     
+#    
+# hardcoded paths:
+#      /nfs/acari/wormpipe/ensembl/ensembl-pipeline/scripts/DataConversion/wormbase/attrib_type.sql
+#	   /nfs/acari/wormpipe/ensembl/ensembl-pipeline/scripts/load_taxonomy.pl 
+#
+# taxondb: ecs2 -taxondbport 3365 -taxondbname ncbi_taxonomy
+
 sub setupdb {
     my ( $db, $version ) = @_;
     my $status = 0;
-    print ">>creating new database $db->{dbname}\n" ;
+    print ">>creating new database $db->{dbname} on $db->{host}\n" ;
     my $mysql = "mysql -h $db->{host} -P $db->{port} -u $db->{user} --password=$db->{password}";
     system("$mysql -e \"DROP DATABASE IF EXISTS $db->{dbname};\"") && die;
     system("$mysql -e \"create database $db->{dbname};\"") && die;
-    system( "$mysql $db->{dbname} < " . $cvsDIR . "ensembl-pipeline/sql/table.sql" ) && die;
+    print "loading table.sql from ensembl\n";
     system( "$mysql $db->{dbname} < " . $cvsDIR . "ensembl/sql/table.sql" ) && die;
+    print "loading table.sql from ensembl-pipeline\n";
+    system( "$mysql $db->{dbname} < " . $cvsDIR . "ensembl-pipeline/sql/table.sql" ) && die;
     system("$mysql -e 'INSERT INTO coord_system VALUES (1,\"scaffold\",\"$version\",1,\"default_version,top_level\");' $db->{dbname}") && die;
     system("$mysql -e 'INSERT INTO coord_system VALUES (2,\"superlink\",\"$version\",2,\"default_version,sequence_level\");' $db->{dbname}") && die;
     system("$mysql -e 'INSERT INTO meta (meta_key,meta_value) VALUES (\"genebuild.version\",\"$version\");' $db->{dbname}") && die;
-    system("$mysql -e 'INSERT INTO analysis (created,logic_name,module) VALUES ( NOW(),\"wormbase\",\"wormbase\");INSERT INTO analysis_description VALUES(1,\"imported from WormBase\",\"WormGene\");' $db->{dbname}") && die;
-    system("$mysql $db->{dbname} <attrib_type.sql") && die;
-    system("/nfs/team71/worm/mh6/bin/perl /nfs/acari/wormpipe/ensembl/ensembl-pipeline/scripts/load_taxonomy.pl -name \"Caenorhabditis $species\" -taxondbhost ecs2 -taxondbport 3365 -taxondbname ncbi_taxonomy -lcdbhost ecs1f -lcdbport 3306 -lcdbname worm_ensembl_$species -lcdbuser wormadmin -lcdbpass ${\$config->{database}->{password}}") && die;
-
+    system("$mysql -e 'INSERT INTO analysis (created,logic_name,module) VALUES ( NOW(),\"wormbase\",\"wormbase\");' $db->{dbname}") && die;
+    system("$mysql -e 'INSERT INTO analysis_description (analysis_id,description,display_label) VALUES (1,\"imported from WormBase\",\"WormGene\");' $db->{dbname}") && die;
+    system("$mysql $db->{dbname} </nfs/acari/wormpipe/ensembl/ensembl-pipeline/scripts/DataConversion/wormbase/attrib_type.sql") && die;
+    system("/usr/local/ensembl/bin/perl /nfs/acari/wormpipe/ensembl/ensembl-pipeline/scripts/load_taxonomy.pl -name \"Caenorhabditis $species\" -taxondbhost ia64f -taxondbport 3306 -taxondbname ncbi_taxonomy -lcdbhost $db->{host} -lcdbport $db->{port} -lcdbname $db->{dbname} -lcdbuser $db->{user} -lcdbpass $db->{password}") && die;
+#    system("$mysql $db->{dbname} </nfs/acari/wormpipe/ensembl/ensembl-pipeline/scripts/DataConversion/wormbase/taxonomy.sql") && die;
+#    system("$mysql -e 'INSERT INTO meta (meta_key,meta_value) VALUES (\"species.classification\",\"$species\");' $db->{dbname}") && die;
+#    system("$mysql -e 'INSERT INTO meta (meta_key,meta_value) VALUES (\"species.taxonomy_id\",\"$config->{taxon_id}\");' $db->{dbname}") && die;
+ 
     if ($status) { die("Error while building the database.") }
 }
 
@@ -130,8 +137,17 @@ sub load_genes {
     );
     my $analysis = $db->get_AnalysisAdaptor()->fetch_by_logic_name('wormbase');
 
+	# elegans hack for build
+	if ($species eq 'elegans') {
+		foreach my $chr (glob $config->{fasta}){
+			my($path,$name)=($chr=~/(^.*)\/CHROMOSOMES\/(.*?)\.\w+/);
+			`mkdir /tmp/compara` if ! -e '/tmp/compara';
+			system("cat $path/GFF_SPLITS/${\$name}_gene.gff $path/GFF_SPLITS/${\$name}_curated.gff > /tmp/compara/${\$name}.gff") && die 'cannot concatenate GFFs';
+		}
+	}
+
     foreach my $file ( glob $config->{gff} ) {
-        next if $file =~ /masked|CSHL|BLAT_BAC_END|briggsae/;
+        next if $file =~ /masked|CSHL|BLAT_BAC_END|briggsae|MtDNA/;
         $file=~/.*\/(.*)\.gff/;
 	print "parsing $1 from $file\n";
         my $slice = $db->get_SliceAdaptor->fetch_by_region('Scaffold',$1);
@@ -139,8 +155,11 @@ sub load_genes {
         &write_genes( $genes, $db );
     }
     $db->dbc->do('UPDATE gene SET biotype="protein_coding"');
+
+	# elegans cleanup
+	(system('rm -rf /tmp/compara') && die "could not clean up /tmp/compara") if $species eq 'elegans';
 }
-#  /(\w+\.\d+)[a-z A-Z]*/
+
 package WormBase;
 
 # redefine subroutine to use different tags
@@ -156,7 +175,7 @@ sub process_file {
 
         next LOOP if ( /^#/ || $chr =~ /sequence-region/ || ( !$status && !$type ) );
         my $line = $status . " " . $type;
-        $gene =~ s/\"//g;
+        $gene =~ s/\"//g if $gene;
         if ( ( $line eq 'Coding_transcript five_prime_UTR' ) or ( $line eq 'Coding_transcript three_prime_UTR' ) ) {
             $transcript = $gene;
 
@@ -176,9 +195,8 @@ sub process_file {
             next LOOP;
         }
         elsif ( $line ne $gff_types ) { next LOOP }    # <= here goes the change needs tp become $line eq "$bla $blub"
-
-        if ( !$genes{$gene} ) { $genes{$gene} = []; push( @{ $genes{$gene} }, $element ) }
-        else { push( @{ $genes{$gene} }, $element ) }
+        $genes{$gene}||= []; 
+	push( @{ $genes{$gene} }, $element );
     }
     print STDERR "Have " . keys(%genes) . " genes (CDS), " . keys(%five_prime) . " have 5' UTR and " . keys(%three_prime) . " have 3' UTR information\n";
     return \%genes, \%five_prime, \%three_prime;
