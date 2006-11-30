@@ -1,6 +1,6 @@
 #!/nfs/disk100/wormpub/bin/perl -w
 #
-# $Id: process_sage_gff.pl,v 1.3 2006-11-30 14:35:58 gw3 Exp $;
+# $Id: process_sage_gff.pl,v 1.4 2006-11-30 17:21:24 gw3 Exp $;
 #
 # process the raw Sanger GFF dump to add data to SAGE tags
 # Sheldon McKay <mckays@cshl.edu>
@@ -16,13 +16,15 @@ use Getopt::Long;
 
 my ($help, $debug, $test, $verbose, $store, $wormbase);
 my $gff;
+my $chromosome;
 
-GetOptions ("help"       => \$help,
-            "debug=s"    => \$debug,
-	    "test"       => \$test,
-	    "verbose"    => \$verbose,
-	    "store:s"    => \$store,
-	    "gff:s"      => \$gff
+GetOptions ("help"         => \$help,
+            "debug=s"      => \$debug,
+	    "test"         => \$test,
+	    "verbose"      => \$verbose,
+	    "store:s"      => \$store,
+	    "gff:s"        => \$gff,
+	    "chromosome:s" => \$chromosome, # optional single chromosome to be processed
 	    );
 
 if ( $store ) {
@@ -45,7 +47,12 @@ my $s_reg = qr/SAGE_tag:(SAGE:[a-z]+)/;
 
 my $go;
 
-my @chroms = $wormbase->get_chromosome_names(-mito =>1, -prefix => 1);
+my @chroms;
+if ($chromosome) {
+  @chroms = ($chromosome);
+} else {
+  @chroms = $wormbase->get_chromosome_names(-mito =>1, -prefix => 1);
+}
 my $gff_path = $wormbase->chromosomes;
 
 foreach my $chrom (@chroms){
@@ -86,8 +93,12 @@ foreach my $chrom (@chroms){
     $wormbase->run_command("mv -f $tmp_file $file", $log);
 }
 
+# get a clean exit status by closing and undef'ing things
+$db->close;
+$wormbase = undef;
 $log->mail;
-exit;
+$log = undef;
+exit(0);
 
 sub markup {
   my $tag = shift;
