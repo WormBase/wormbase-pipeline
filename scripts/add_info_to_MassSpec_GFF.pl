@@ -7,7 +7,7 @@
 # This add some extraneous information to the MassSpec peptides lines in the GFF file
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2006-09-19 08:42:11 $      
+# Last updated on: $Date: 2006-11-30 17:24:55 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -193,7 +193,7 @@ $log->write_to("\n\nStatistics\n");
 $log->write_to("----------\n\n");
 $log->write_to("Changed $count lines\n");
 
-
+$db->close;
 $log->mail();
 print "Finished.\n" if ($verbose);
 exit(0);
