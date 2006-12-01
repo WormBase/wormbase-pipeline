@@ -8,7 +8,7 @@
 # relevant WormBase and Wormpep web pages.
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2006-05-25 15:29:36 $      
+# Last updated on: $Date: 2006-12-01 13:35:56 $      
 
 
 #################################################################################
@@ -702,13 +702,13 @@ sub copy_GFF_files{
   my @gff_files = ("clone_acc");
   foreach my $chrom (@chrom) {
     foreach my $file (@gff_files){
-      $wb->run_command("sort -u $gff/CHROMOSOME_${chrom}_$file.gff | gff_sort > $www/$WS_name/GFF/CHROMOSOME_${chrom}_$file.gff", $log) or 
+      $wb->run_command("sort -u $gff/CHROMOSOME_${chrom}_$file.gff | gff_sort > $www/$WS_name/GFF/CHROMOSOME_${chrom}_$file.gff", $log) && 
 	$log->write_to("Couldn't copy CHROMOSOME_${chrom}_$file.gff\n", $log);
     }
   }
 
   $log->write_to("Copying across GFF files from $dbpath/CHECKS/\n");
-  $wb->run_command("cp $dbpath/CHECKS/*.gff $www/$WS_name/GFF/", $log) or $log->write_to("Could not copy GFF files from autoace/CHECKS $!\n");
+  $wb->run_command("cp $dbpath/CHECKS/*.gff $www/$WS_name/GFF/", $log) && $log->write_to("Could not copy GFF files from autoace/CHECKS $!\n");
 }
 
 
