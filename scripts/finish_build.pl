@@ -12,8 +12,8 @@
 # 3) Archives old GFF_SPLITS directory
 # 4) Makes current_DB (copy of latest release) in ~wormpub/DATABASES
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2006-10-24 08:47:50 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2006-12-01 10:45:26 $
 
 
 use strict;
@@ -160,10 +160,14 @@ sub archive_old_releases{
   $log->write_to("\nCreating $WS_old_name.tar.gz\n");
 
   my $tar = $wormbase->database("$WS_old_name").".tar";
-  $wormbase->run_command("tar -cvf $tar ".$wormbase->database("$WS_old_name"), $log);
-  $wormbase->run_command("gzip $tar", $log);
-  $wormbase->run_command("mv $tar.gz /nfs/wormarchive/", $log);
-  $wormbase->run_command("rm -rf ".$wormbase->database("$WS_old_name"), $log);
+  $wormbase->run_command("tar -cvf $tar ".$wormbase->database("$WS_old_name"), $log) && 
+      $log->log_and_die("ERROR in tar -cvf $tar\n");
+  $wormbase->run_command("gzip $tar", $log) && 
+      $log->log_and_die("ERROR in gzip $tar\n");
+  $wormbase->run_command("mv $tar.gz /nfs/wormarchive/", $log) && 
+      $log->log_and_die("ERROR in mv $tar.gz /nfs/wormarchive/\n");
+  $wormbase->run_command("rm -rf ".$wormbase->database("$WS_old_name"), $log) && 
+      $log->log_and_die("ERROR in rm -rf " . $wormbase->database("$WS_old_name") . "\n");
 }
 
 #################################################################################
