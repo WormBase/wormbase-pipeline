@@ -8,7 +8,7 @@
 # see pod for more details
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2006-12-01 12:14:01 $
+# Last updated on: $Date: 2006-12-01 12:19:33 $
 
 
 use strict;
@@ -209,7 +209,7 @@ sub composition {
 ###########################
 
 sub zip_files {
-  my @chromosomes = $quicktest ? qw(III):wormbase->get_chromosome_names(-mito => 1);
+  my @chromosomes = $quicktest ? qw(III):$wormbase->get_chromosome_names(-mito => 1);
   my $prefix= $wormbase->chromosome_prefix();
 
   foreach my $chr (@chromosomes){
