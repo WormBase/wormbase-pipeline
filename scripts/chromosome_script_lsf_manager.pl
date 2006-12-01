@@ -36,6 +36,10 @@ GetOptions(
     "mitochondrion"    => \$mito,  # if set then the mitochondrion is included in the set of chromosomes
 );
 
+
+# Display help if required
+&usage("Help") if ($help);
+
 # recreate configuration ##########
 my $wormbase;
 my $flags = "";
@@ -61,7 +65,7 @@ my $m      = LSF::JobManager->new();
 my @chroms = $wormbase->get_chromosome_names(-mito =>$mito, -prefix => $prefix);
 
 foreach my $chrom ( @chroms ) {
-  my $mother = $m->submit("$command -chrom $chrom $flags");
+  my $mother = $m->submit("$command -chromosome $chrom $flags");
 }
 
 $m->wait_all_children( history => 1 );
@@ -76,3 +80,133 @@ $m->clear;                    # clear out the job manager to reuse.
 #################
 
 $log->mail();
+
+exit(0);
+
+
+##############################################################
+#
+# Subroutines
+#
+##############################################################
+
+##########################################
+sub usage {
+  my $error = shift;
+
+  if ($error eq "Help") {
+    # Normal help menu
+    system ('perldoc',$0);
+    exit (0);
+  }
+}
+
+##########################################
+
+
+
+
+# Add perl documentation in POD format
+# This should expand on your brief description above and 
+# add details of any options that can be used with the program.  
+# Such documentation can be viewed using the perldoc command.
+
+
+__END__
+
+=pod
+
+=head2 NAME - chromosome_script_lsf_manager.pl
+
+=head1 USAGE
+
+=over 4
+
+=item chromosome_script_lsf_manager.pl [-options]
+
+=back
+
+This script runs a command once for each chromosome by appending '
+-chromosome ' and then the name of the chromosome on a command-line
+which is submitted at an LSF job to the normal queue.
+
+chromosome_script_lsf_manager.pl MANDATORY arguments:
+
+=over 4
+
+=item -command, Command to run.
+
+=back
+
+This is the script that is run under LSF, once for each chromosome. It is expected that this script understands the argument '-chromosome' on its command-line.
+
+chromosome_script_lsf_manager.pl  OPTIONAL arguments:
+
+=over 4
+
+=item -prefix
+
+=back
+
+If this is set then 'CHROMOSOME_' is prefixed to the name of the
+chromosome when it is placed on the command-line of the script to be
+run
+
+=over 4
+
+=item -mitochondrion
+
+=back
+
+If this is set then the mitochondrion is included in the list of chromsomes.
+
+=over 4
+
+=item -h, Help
+
+=back
+
+This help message.
+
+=over 4
+ 
+=item -debug, Debug mode
+ 
+=back
+
+Set this to the username who should receive the emailed log
+messages. The default is that everyone in the group receives them.
+
+=over 4
+
+=item -test
+
+=back
+
+Test mode, run the script, but don't change anything.
+
+=over 4
+    
+=item -verbose
+
+=back
+
+Output lots of chatty test messages.
+
+=head1 REQUIREMENTS
+
+=over 4
+
+=item None at present.
+
+=back
+
+=head1 AUTHOR
+
+=over 4
+
+=item Gary Williams (gw3@sanger.ac.uk)
+
+=back
+
+=cut
