@@ -7,7 +7,7 @@
 # Usage: camcheck.pl
 #
 # Last updated by: $Author: pad $
-# Last updated on: $Date: 2006-10-23 16:31:21 $
+# Last updated on: $Date: 2006-12-01 11:41:33 $
 #
 # see pod documentation (i.e. 'perldoc camcheck.pl') for more information.
 #
@@ -293,9 +293,6 @@ sub CheckPredictedGenes {
   $log->write_to("runnning CheckPredictedGenes\n");
   if ($Low) {
     $wormbase->run_script("check_predicted_genes.pl -database $dbpath -basic", $log);
-  }
-  elsif ($debug){
-    $wormbase->run_script("check_predicted_genes.pl -database $dbpath -debug $debug" , $log);
   }
   else {
     $wormbase->run_script("check_predicted_genes.pl -database $dbpath" , $log);
