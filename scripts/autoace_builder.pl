@@ -6,8 +6,8 @@
 #
 # Usage : autoace_builder.pl [-options]
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2006-11-30 17:31:49 $
+# Last edited by: $Author: mh6 $
+# Last edited on: $Date: 2006-12-01 17:19:23 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -166,7 +166,7 @@ $wormbase->run_script( "build_release_files.pl"                  , $log) if $bui
 $wormbase->run_script( "distribute_letter.pl"                    , $log) if $release;
 
 $wormbase->run_script("finish_build.pl"                          , $log) if $finish_build;
-$wormbase->run_script("update_gffdb.csh"                         , $log) if $finish_build;
+$wormbase->run_command("update_gffdb.csh"                         , $log) if $finish_build;
 
 if ($load) {
     $log->write_to("loading $load to ".$wormbase->autoace."\n");
