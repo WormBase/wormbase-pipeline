@@ -5,7 +5,7 @@
 # written by Anthony Rogers
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2006-11-16 11:31:35 $
+# Last edited on: $Date: 2006-12-01 16:51:10 $
 
 
 use DBI;
@@ -75,9 +75,11 @@ if ( $store ) {
 			     );
 }
 
-
-# establish log file.
-my $log = Log_files->make_build_log($wormbase);
+my $log;
+if (! $cleanup) {
+  # establish log file. Can't do this if the BUILD/autoace directory has been moved to DATABASES
+  $log = Log_files->make_build_log($wormbase);
+}
 
 # you can do either or both blast anaylses
 if( $run_pipeline ) {
@@ -635,6 +637,7 @@ if( $cleanup ) {
     system("chgrp worm $scratch_dir/$directory");  # and make it writable by 'worm'
   }
   print "\n\nCLEAN UP COMPLETED\n\n";
+  exit(0);
 }
 
 
