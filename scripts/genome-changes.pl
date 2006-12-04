@@ -7,7 +7,7 @@
 # This is a script to aid making changes to the sequence of a clone.
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2006-11-09 09:58:19 $      
+# Last updated on: $Date: 2006-12-04 13:37:05 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -322,9 +322,10 @@ close (IN);
 
 
 #  - dump out superlink sequences and check for non AGCT bases
-  &check_superlink_sequence() || die "ERRORS were found in the superlink sequences\n";
+&check_superlink_sequence() || die "ERRORS were found in the superlink sequences\n";
 
 # create ~wormpub/analysis/cosmids/$clone/YYMMDD directories to store the clone sequences
+my $clonedates = "/tmp/makeclonedates.ace";
 open (IN, "< $infile") || die "Can't open the input file $infile\n";
 while (my $input_line = <IN>) {
   chomp $input_line;
@@ -332,9 +333,16 @@ while (my $input_line = <IN>) {
   if ($input_line =~ /^#/) {next;}    # skip comments
   my ($clone, $change_type, $change_sequence) = split /\s+/, $input_line; 
   print "Writing sequence for clone $clone\n";
-  &write_clone_sequence($clone, $change_type, $change_sequence, $noload);
+  &write_clone_sequence($clone, $change_type, $change_sequence, $noload, $clonedates);
 }
 close (IN);
+
+# load the resulting $super ace file into newdatabase
+print "load ace file of clone dates '$clonedates' into new database\n";
+my $command = "pparse $clonedates\nsave\nquit\n";
+open( WRITEDAT, "| $tace -tsuser 'genome_changes' $new_database " ) || die "Couldn't open pipe to database $new_database\n";
+print WRITEDAT $command;
+close(WRITEDAT);
 
 # close the ACE connection
 $ace->close;
@@ -342,7 +350,7 @@ $ace->close;
 
 $log->mail();
 
-  exit(0);
+exit(0);
 
 
 
@@ -1767,7 +1775,7 @@ sub DNA_string_reverse {
 # ~wormpub/analysis/cosmids/clone/YYMMDD
 
 sub write_clone_sequence {
-  my ($clone, $change_type, $change_region, $noload) = @_;
+  my ($clone, $change_type, $change_region, $noload, $clonedates) = @_;
 
   my $dir = "/nfs/disk100/wormpub/analysis/cosmids/$clone/";
   my $dat = `date +%y%m%d`;
@@ -1817,6 +1825,12 @@ sub write_clone_sequence {
   if (-d "$dir/$prev_dat/embl") {
     system("cp -rf $dir/$prev_dat/embl $dir/$dat");
   }
+
+# write the ace file to change the clone seuence date to match the clone's sequence directory date
+  open (CD, ">> $clonedates") || die "cant open the clone date ace file '$clonedates'\n";
+  print "\nSequence $clone\n";
+  print "Date_directory $dat\n\n";
+  close (CD);
 
 }
 
