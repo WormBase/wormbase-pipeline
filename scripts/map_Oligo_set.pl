@@ -138,6 +138,9 @@ foreach my $chromosome (@chromosomes) {
 
     # Get exon info from split transcript exon GFF file
     Map_Helper::get_from_gff( "$gffdir/CHROMOSOME_${chromosome}_Non_coding_transcript.gff", 'Transcript', qw{exon}, \%genes );
+
+    # Get exon info from split ncRNA exon GFF file
+    Map_Helper::get_from_gff( "$gffdir/CHROMOSOME_${chromosome}_ncRNA.gff", 'Transcript', qw{exon}, \%genes );
 #######################
     print "Finished GFF loop\n" if ($verbose);
 

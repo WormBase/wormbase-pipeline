@@ -5,8 +5,8 @@
 # by Kerstin Jekosch
 #
 # Version: $Version: $
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2006-06-30 14:21:33 $
+# Last updated by: $Author: pad $
+# Last updated on: $Date: 2006-12-05 10:41:52 $
 
 use strict;
 use warnings;
@@ -115,7 +115,7 @@ foreach my $chromosome (@chromosomes) {
     # GFF database part
     $map->clean("CHROMOSOME_$chromosome");    # reset the chromosome table
 
-    foreach my $end ( 'Expr_profile', 'curated', 'Non_coding_transcript', 'Pseudogene' ) {
+    foreach my $end ( 'Expr_profile', 'curated', 'Non_coding_transcript', 'Pseudogene', 'ncRNA' ) {
         my $file = "$gffdir/CHROMOSOME_${chromosome}_${end}.gff";
         $map->generate_tags($file);
         $map->load_gff( $file, "CHROMOSOME_$chromosome" );
@@ -351,6 +351,7 @@ sub to_exon {
     if    ( $hit->{feature} eq 'curated'               && $hit->{source} eq 'exon' ) { $type = 'CDS' }
     elsif ( $hit->{feature} eq 'Pseudogene'            && $hit->{source} eq 'exon' ) { $type = 'Pseudogene' }
     elsif ( $hit->{feature} eq 'Non_coding_transcript' && $hit->{source} eq 'exon' ) { $type = 'Transcript' }
+    elsif ( $hit->{feature} eq 'ncRNA'                 && $hit->{source} eq 'exon' ) { $type = 'Transcript' }
     elsif ( $hit->{feature} eq 'Expr_profile' ) { $type = 'Expr_profile' }
     else { $type = "feature:" . $hit->{feature} . " source:" . $hit->{source} }
     my $exon = Exon->new( id => get_id( $hit->{fluff} ), start => $hit->{start}, stop => $hit->{stop}, type => $type );
