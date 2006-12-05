@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl -w
-# Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2006-03-13 17:41:24 $
+# Last edited by: $Author: pad $
+# Last edited on: $Date: 2006-12-05 10:44:59 $
 
 use strict;
 use lib  $ENV{'CVS_DIR'};
@@ -80,6 +80,7 @@ init snoRNA
 init tRNA
 init stRNA
 init snRNA
+init ncRNA
 init GenePairs
 init Oligo_set
 init SAGE_transcript

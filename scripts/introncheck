@@ -6,8 +6,8 @@
 #
 # Usage: introncheck [-options]
 #
-# Last updated by: $Author: mh6 $     
-# Last updated on: $Date: 2006-04-12 11:18:19 $      
+# Last updated by: $Author: pad $     
+# Last updated on: $Date: 2006-12-05 10:44:59 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -239,11 +239,12 @@ sub make_intron_files {
 
     #determine file to output to by methods
     my %method2file = ( 'Coding_transcript'     => $gene,
-			'Non_coding_transcript' => $gene,
+			'non_coding_transcript' => $gene,
 			'Pseudogene'            => $gene,
 			'Transposon_CDS'        => $gene,
 			'tRNAscan-SE-1.23'      => $gene,
-			'.'                     => $est
+			'.'                     => $est,
+			'ncRNA'                 => $gene,
 		      );
 
     #read in the gff file intron lines

@@ -201,7 +201,7 @@ sub check_overlapping_CDS
       my $gff_dir = $self->{'DATABASE'}."/GFF_SPLITS";  # hard path not using Wormbase.pm
       croak "no GFF files in $gff_dir\n" unless (-e "$gff_dir");
       my @chromosomes = qw( I II III IV V X );
-      my @methods = qw(curated miRNA snoRNA tRNAscan-SE-1.23 snRNA rRNA Non_coding_transcript scRNA);
+      my @methods = qw(curated miRNA snoRNA tRNAscan-SE-1.23 snRNA rRNA non_coding_transcript scRNA ncRNA);
 
       foreach my $chrom (@chromosomes) {
 	foreach my $method (@methods) {	  
@@ -221,6 +221,7 @@ sub check_overlapping_CDS
 		($data[1] eq "snRNA"                 && $data[2] eq "snRNA_primary_transcript") ||
 		($data[1] eq "rRNA"                  && $data[2] eq "rRNA_primary_transcript") ||
 		($data[1] eq "Non_coding_transcript" && $data[2] eq "nc_primary_transcript") ||
+		($data[1] eq "ncRNA"                 && $data[2] eq "ncRNA_primary_transcript") ||
 		($data[1] eq "scRNA"                 && $data[2] eq "scRNA_primary_transcript")) {
 	      $data[9] =~ s/\"//g;
 	      my $gene = $data[9];
