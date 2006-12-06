@@ -15,8 +15,8 @@
 # foreach? ./inspect-old-releases.pl -debug gw3 -version $r -database1 ~wormpub/gary/Archeology/WS{$q} -database2 ~wormpub/gary/Archeology/WS{$r}
 # foreach? end
 #
-# Last updated by: $Author: mh6 $     
-# Last updated on: $Date: 2006-05-31 16:26:39 $      
+# Last updated by: $Author: gw3 $     
+# Last updated on: $Date: 2006-12-06 10:28:13 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -413,6 +413,7 @@ sub read_chromosome() {
   $seq =~ s/\n//g;              # remove newline characters
   close (SEQ);
   $/ = $old_rs;                 # restore the old value of the record separator
+  if (! length $seq) {$log->log_and_die("no sequence found in file $file");}
   return $seq;
 }
 
