@@ -7,8 +7,8 @@
 # A script for dumping dna and/or gff files for chromosome objects in autoace
 # see pod for more details
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2006-12-01 12:19:33 $
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2006-12-06 13:45:09 $
 
 
 use strict;
@@ -265,11 +265,14 @@ sub zip_files {
 sub execute_ace_command {
   my ($command,$exec,$dir)=@_;
   open (WRITEDB,"| $exec $dir ") or do {
-    $log->log_and_die("execute_ace_command failed\n");
+    $log->log_and_die("could not find $exec\n"); # throws only errors if it can't find the command
     die();
   };
   print WRITEDB $command;
-  close (WRITEDB);
+  close (WRITEDB) or do {
+	  $log->log_and_die("execute_ace_command failed\n"); # throws only errors if the command failed
+	  die($!);
+  }
 }
 
 ######################################################
