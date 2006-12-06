@@ -6,8 +6,8 @@
 #
 # Exporter to map blat data to genome and to find the best match for each EST, mRNA, OST, etc.
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2006-08-14 15:41:30 $
+# Last edited by: $Author: pad $
+# Last edited on: $Date: 2006-12-06 15:51:09 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -570,8 +570,10 @@ unless ($nematode || $washu || $nembase) {
   }
 }
 
-#compress acefiles so that all object data is loaded together.
+#compress acefiles so that all object data is loaded together, expanded to run on all homol
 $wormbase->run_script("acecompress.pl -file $blat_dir/autoace.best.$type.ace -homol", $log);
+$wormbase->run_script("acecompress.pl -file $blat_dir/autoace.blat.$type.ace -homol", $log);
+$wormbase->run_script("acecompress.pl -file $blat_dir/autoace.$type.ace -homol", $log);
 
 $log->mail;
 print "Finished.\n" if ($verbose);
