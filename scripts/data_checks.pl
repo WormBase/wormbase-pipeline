@@ -6,8 +6,8 @@
 #
 # This is a example of a good script template
 #
-# Last updated by: $Author: pad $
-# Last updated on: $Date: 2006-12-05 10:44:59 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2006-12-06 11:26:45 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -141,7 +141,7 @@ sub read_acedb_queries {
     $i++;
     $queries[$i]{'DESC'}   = "The number of wormpep without pep_homol";
     $queries[$i]{'QUERY'}  = 'find wormpep !pep_homol';
-    $queries[$i]{'RESULT'} = 40;
+    $queries[$i]{'RESULT'} = 21;
 
     $i++;
     $queries[$i]{'DESC'}   = "tRNAs not attached to parent properly";
@@ -181,7 +181,7 @@ sub read_acedb_queries {
     $i++;
     $queries[$i]{'DESC'}   = "variation gene connection";
     $queries[$i]{'QUERY'}  = 'find Variation Gene';
-    $queries[$i]{'RESULT'} = 21489;
+    $queries[$i]{'RESULT'} = 25000;
 
     $i++;
     $queries[$i]{'DESC'}   = "genes with structured description";
@@ -198,6 +198,16 @@ sub read_acedb_queries {
     $queries[$i]{'QUERY'}  = 'find CDS !Source_exons; method';
     $queries[$i]{'RESULT'} = 0;
     
+    $i++;
+    $queries[$i]{'DESC'}   = "Operons without parent ";
+    $queries[$i]{'QUERY'}  = 'find Operon !History AND !Canonical_parent';
+    $queries[$i]{'RESULT'} =  0;
+     
+    $i++;
+    $queries[$i]{'DESC'}   = "GO_term without Term or Definition";
+    $queries[$i]{'QUERY'}  = 'find GO_term !(Term or Definition)';
+    $queries[$i]{'RESULT'} =  0;     
+      
     #	$i++;
     #	$queries[$i]{'DESC'}   = "";
     #	$queries[$i]{'QUERY'}  = '';
@@ -365,6 +375,11 @@ __END__
 
 This script runs checks to ensure that data is correct. 
 
+There are two types of checks; one that runs a query and checks the number of objects returned and 
+one that compares the number of objects of a type with how many are in the GFF files.
+
+
+
 script_template.pl MANDATORY arguments:
 
 =over 4
@@ -373,7 +388,7 @@ script_template.pl MANDATORY arguments:
 
 =back
 
-script_template.pl  OPTIONAL arguments:
+data_checks.pl  OPTIONAL arguments:
 
 =over 4
 
