@@ -4,8 +4,8 @@
 #
 # map GO_terms to ?Sequence objects from ?Motif and ?Phenotype
 #
-# Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2006-11-28 16:06:27 $      
+# Last updated by: $Author: ar2 $     
+# Last updated on: $Date: 2006-12-07 10:13:18 $      
 
 use strict;
 use warnings;
@@ -137,17 +137,18 @@ sub phenotype {
   		s/\"//g;  #remove "
   		next if (/acedb/ or /\/\//);
 		my @data = split;
-	  	my ($cds, $phenotype,$go) = ($data[0], $data[2], $data[3]);
+	  	my ($cds, $rnai, $phenotype_id,$go) = ($data[0], $data[1], $data[2], $data[3]);
 		next if (! defined $phenotype);
-	  	if($phenotype =~ /WBPheno/) {
-	  		$phenotype = &get_phenotype_name($phenotype);
+		my $phenotype; 
+	  	if($phenotype_id =~ /WBPheno/) {
+	  		$phenotype = &get_phenotype_name($phenotype_id);
 	  	}
 	  	else {next;}
-  		unless($cds and $phenotype and $go) {
+  		unless($cds and $phenotype_id and $go) {
   			$log->write_to("bad data $_");
   			next;
   		}
-		print OUT "\nCDS : \"$cds\"\nGO_term \"$go\" IMP Inferred_automatically $phenotype\n" ;
+		print OUT "\nCDS : \"$cds\"\nGO_term \"$go\" IMP Inferred_automatically \"$phenotype ($phenotype_id|$rnai)\"\n" ;
 	}
 	#close ACE;
 	#tidy up
