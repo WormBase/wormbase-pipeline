@@ -6,8 +6,8 @@
 #
 # by Anon
 #
-# Last updated by: $Author: pad $                      
-# Last updated on: $Date: 2006-04-26 09:33:03 $        
+# Last updated by: $Author: mh6 $                      
+# Last updated on: $Date: 2006-12-07 09:52:08 $        
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -125,6 +125,7 @@ while (my $obj = $i->next) {
   if (@transcripts) {
     foreach my $transcript (@transcripts) {
       my $gene = $obj->Overlaps_transcript->Gene;
+      $gene =  $obj->Overlaps_transcript->Corresponding_CDS->Gene unless ($gene);
       print OUTPUT "\nMicroarray_results : \"$microarray_results\"\n";
       print OUTPUT "Transcript \"$transcript\"\n";
       print OUTPUT "Gene $gene\n" if (defined $gene);
