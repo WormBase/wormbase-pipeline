@@ -9,7 +9,7 @@
 #
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2006-08-22 11:03:43 $      
+# Last updated on: $Date: 2006-12-07 11:37:42 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -93,13 +93,16 @@ while (my $line = <GFF>) {
   my @f = split /\t/, $line;
 
       my ($chromosome, $start, $end, $sense) = ($f[0], $f[3], $f[4], $f[6]);
+      $chromosome =~ s/^chr_//;
+      if ($chromosome !~ /^CHROMOSOME_/) {$chromosome = "CHROMOSOME_$chromosome"};
+
       print "chrom, start, end=$chromosome, $start, $end\n" if ($verbose);
       ($f[3], $f[4], $f[6], $indel, $change) = Remap_Sequence_Change::remap_gff($chromosome, $start, $end, $sense, $release1, $release2, @mapping_data);
  
       if ($indel) {
-	$log->write_to("There is an indel in the sequence in CHROMOSOME $chromosome, $start, $end - no change made!\n");
+	$log->write_to("There is an indel in the sequence in CHROMOSOME $chromosome, $start, $end\n");
       } elsif ($change) {
-	$log->write_to("There is a change in the sequence in CHROMOSOME $chromosome, $start, $end - no change made!\n");
+	$log->write_to("There is a change in the sequence in CHROMOSOME $chromosome, $start, $end\n");
       }
 
       $line = join "\t", @f;
