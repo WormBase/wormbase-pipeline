@@ -8,8 +8,8 @@
 # and produce a fasta file of these sequence to load into the wormprot
 # mysql database prior for the pre-build pipeline.
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2006-01-05 17:36:26 $
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2006-12-08 13:06:29 $
 
 
 #################################################################################
@@ -65,13 +65,9 @@ my $log = Log_files->make_build_log($wormbase);
  # Script variables (run)     #
  ##############################
 
-my $release; 
-$release = $wormbase->get_wormbase_version; 
-my $old_release  = $release -1;
+my $release = $wormbase->get_wormbase_version; 
 
-my $release_name; 
-$release_name = $wormbase->get_wormbase_version_name; 
-
+my $release_name = $wormbase->get_wormbase_version_name; 
 
 
 ##########################################
@@ -80,10 +76,16 @@ $release_name = $wormbase->get_wormbase_version_name;
 
 # Set up top level base directory which is different if in test mode
 # Make all other directories relative to this
-my $basedir         = $wormbase->basedir;     # BASE DIR
+my $basedir         = $wormbase->wormpep;     # BASE DIR => changed to WB->wormpep
 
-our $dbfile     = "$basedir/WORMPEP/wormpep${release}/wp.fasta${release}";
-our $old_dbfile = "$basedir/WORMPEP/wormpep${old_release}/wp.fasta${old_release}";
+# briggsae part 1
+our $dbfile     = "$basedir/wp.fasta${release}";
+
+# need to get previous build WORMPEP
+my ( $stem, $old_release ) = $basedir =~ /(.*pep)(\d+)/;
+my $wpdir = "$stem" . --$old_release;
+
+our $old_dbfile = "$wpdir/wp.fasta${old_release}";
 
 # make a hash of wormpep IDs -> peptide sequence for current and previous versions
 # of wormpep
@@ -107,8 +109,10 @@ my %proteins_outputted;
  # Main Loop                   #
  ###############################
 
-open (NEW,  ">$basedir/WORMPEP/wormpep${release}/new_entries.$release_name") || die "Couldn't write output file\n";;
-open (DIFF, "<$basedir/WORMPEP/wormpep${release}/wormpep.diff${release}") || die "Couldn't read from diff file\n";
+
+# briggsae part2
+open (NEW,  ">$basedir/new_entries.$release_name") || die "Couldn't write output file\n";
+open (DIFF, "<$basedir/wormpep.diff${release}") || die "Couldn't read from diff file\n";
 while (<DIFF>) {    
   my ($new_acc,$seq);
     if( (/changed:\t\S+\s+\S+ --> (\S+)/) || (/new:\t\S+\s+(\S+)/) || (/reappeared:\t\S+\s+(\S+)/)) {
@@ -148,25 +152,27 @@ sub usage {
 }
 
 ##########################################
-
+#
+# more briggsae prefix things
 
 sub make_hash {
   my $id;
   my $seq;
+  my $prefix=$wormbase->pep_prefix;
   open (WP, "<$dbfile") || die "Couldn't read from file\n";
   while (<WP>) {
     if (/^>(\S+)/) {
       chomp;
       my $new_id = $1;
       if ($id) {
-	$id =~ /CE0*([1-9]\d*)/ ; 
+	$id =~ /${prefix}0*([1-9]\d*)/ ; 
 	$wormpep{$id} = $seq;
       }
       $id = $new_id ; $seq = "" ;
     } 
     elsif (eof) {
       if ($id) {
-	$id =~ /CE0*([1-9]\d*)/ ;
+	$id =~ /${prefix}0*([1-9]\d*)/ ;
 	$seq .= $_ ;
 	$wormpep{$id} = $seq;
       }
@@ -184,20 +190,22 @@ sub make_hash {
 sub make_old_wormpep_hash {
   my $id;
   my $seq;
+  my $prefix=$wormbase->pep_prefix;
+
   open (WP, "<$old_dbfile") || die "Couldn't read from file\n";
   while (<WP>) {
     if (/^>(\S+)/) {
       chomp;
       my $new_id = $1;
       if ($id) {
-	$id =~ /CE0*([1-9]\d*)/ ; 
+	$id =~ /${prefix}0*([1-9]\d*)/ ; 
 	$old_wormpep{$id} = $seq;
       }
       $id = $new_id ; $seq = "" ;
     } 
     elsif (eof) {
       if ($id) {
-	$id =~ /CE0*([1-9]\d*)/ ;
+	$id =~ /${prefix}0*([1-9]\d*)/ ;
 	$seq .= $_ ;
 	$old_wormpep{$id} = $seq;
       }
