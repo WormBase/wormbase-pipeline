@@ -7,7 +7,7 @@
 # Exporter to map blat data to genome and to find the best match for each EST, mRNA, OST, etc.
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2006-12-06 15:51:09 $
+# Last edited on: $Date: 2006-12-08 15:17:29 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -164,7 +164,7 @@ foreach my $stlclone (@stlclones) {
 $log->write_to($wormbase->runtime.": Start mapping\n\n");
 
 # open input and output filehandles
-open(ACE,  ">$blat_dir/autoace.$type.ace")  or die "Cannot open $blat_dir/autoace.${type}.ace $!\n";
+open(ACE,  ">$blat_dir/autoace.$type.ace_uncompressed")  or die "Cannot open $blat_dir/autoace.${type}.ace_uncompressed $!\n";
 open(BLAT, "<$blat_dir/${type}_out.psl")    or die "Cannot open $blat_dir/${type}_out.psl $!\n";
 
 my $number_of_replacements = 0;
@@ -365,11 +365,11 @@ if ($est || $ost) {
 # produce outfile for best matches #
 ####################################
 if ($nematode || $washu || $nembase) {
-  $wormbase->run_command("mv $blat_dir/autoace.$type.ace $blat_dir/autoace.blat.$type.ace", $log);
+  $wormbase->run_command("mv $blat_dir/autoace.$type.ace_uncompressed $blat_dir/autoace.blat.$type.ace_uncompressed", $log);
 } else {
-  open (AUTBEST, ">$blat_dir/autoace.best.$type.ace");
-  open (STLBEST, ">$blat_dir/stlace.best.$type.ace");
-  open (CAMBEST, ">$blat_dir/camace.best.$type.ace");
+  open (AUTBEST, ">$blat_dir/autoace.best.$type.ace_uncompressed");
+  open (STLBEST, ">$blat_dir/stlace.best.$type.ace_uncompressed");
+  open (CAMBEST, ">$blat_dir/camace.best.$type.ace_uncompressed");
 
   foreach my $found (sort keys %best) {
     if (exists $best{$found}) {
@@ -395,6 +395,7 @@ if ($nematode || $washu || $nembase) {
 	      printf STLBEST "DNA_homol\t\"%s\"\t\"$word{$type}_BEST\"\t%.1f\t%d\t%d\t%d\t%d\n\n",$found,$score,$virtualstart,$virtualend,$query_start,$query_end;
 	    }	  
 	  }
+
 		
 	  #############################
 	  # produce confirmed introns #
@@ -444,9 +445,9 @@ if ($nematode || $washu || $nembase) {
 
 unless ($nematode || $washu || $nembase) {
   # Open new (final) output files for autoace, camace, and stlace
-  open (OUT_autoace, ">$blat_dir/autoace.blat.$type.ace") or die "$!";
-  open (OUT_camace,  ">$blat_dir/camace.blat.$type.ace")  or die "$!";
-  open (OUT_stlace,  ">$blat_dir/stlace.blat.$type.ace")  or die "$!";
+  open (OUT_autoace, ">$blat_dir/autoace.blat.$type.ace_uncompressed") or die "$!";
+  open (OUT_camace,  ">$blat_dir/camace.blat.$type.ace_uncompressed")  or die "$!";
+  open (OUT_stlace,  ">$blat_dir/stlace.blat.$type.ace_uncompressed")  or die "$!";
 
   # Change input separator to paragraph mode, but store what it old mode in $oldlinesep
   my $oldlinesep = $/;
@@ -456,7 +457,7 @@ unless ($nematode || $washu || $nembase) {
   my $superlink = "";
 
   # assign 
-  open(ABEST,  "<$blat_dir/autoace.best.$type.ace");
+  open(ABEST,  "<$blat_dir/autoace.best.$type.ace_uncompressed");
   while (<ABEST>) {
     if ($_ =~ /^Homol_data/) {
       # flag each blat hit which is best (all of them) - set $line{$_} to 1
@@ -485,7 +486,7 @@ unless ($nematode || $washu || $nembase) {
   # output those blat OTHER hits which are not flagged as BLAT_BEST in the .best.ace file
   # Does this by comparing entries in %line hash
 
-  open(AOTHER, "<$blat_dir/autoace.$type.ace");
+  open(AOTHER, "<$blat_dir/autoace.$type.ace_uncompressed");
   while (<AOTHER>) {
     if ($_ =~ /^Homol_data/) {
       my $line = $_;
@@ -570,10 +571,22 @@ unless ($nematode || $washu || $nembase) {
   }
 }
 
+
 #compress acefiles so that all object data is loaded together, expanded to run on all homol
-$wormbase->run_script("acecompress.pl -file $blat_dir/autoace.best.$type.ace -homol", $log);
-$wormbase->run_script("acecompress.pl -file $blat_dir/autoace.blat.$type.ace -homol", $log);
-$wormbase->run_script("acecompress.pl -file $blat_dir/autoace.$type.ace -homol", $log);
+my @filenames = ("autoace.$type.ace", "autoace.best.$type.ace", "autoace.blat.$type.ace", "camace.best.$type.ace", "camace.blat.$type.ace", "stlace.best.$type.ace", "stlace.blat.$type.ace");
+my $filename;
+$log->write_to("\n#########################################\nCompressing DNA_homolo acefiles\n#########################################\n");
+foreach $filename (@filenames) {
+#  if (-e ("$blat_dir/${filename}"."_uncompressed") ) {
+    $log->write_to("Compressing ${filename}"."_uncompressed\n");
+    $wormbase->run_script("acecompress.pl $blat_dir/${filename}_uncompressed -homol > $blat_dir/$filename", $log);
+    $log->write_to("Compressed........\n");
+#  }
+}
+
+#$wormbase->run_script("acecompress.pl -file $blat_dir/autoace.best.$type.ace -homol", $log);
+#$wormbase->run_script("acecompress.pl -file $blat_dir/autoace.blat.$type.ace -homol", $log);
+#$wormbase->run_script("acecompress.pl -file $blat_dir/autoace.$type.ace -homol", $log);
 
 $log->mail;
 print "Finished.\n" if ($verbose);
