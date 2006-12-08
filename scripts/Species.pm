@@ -51,7 +51,7 @@ sub _new {
 sub chromosome_names {return 'none'}
 sub mt_name {return undef}
 sub chromosome_prefix {'PREFIX_'}
-
+sub pep_prefix {return undef}
 
 ########################################
 package Elegans;
@@ -61,6 +61,7 @@ our @ISA = qw(Wormbase Species);
 sub chromosome_prefix {'CHROMOSOME_'}
 sub chromosome_names {qw(I II III IV V X)}
 sub mt_name {'MtDNA'}
+sub pep_prefix {'CE'}
 
 
 ########################################
@@ -71,15 +72,18 @@ sub _new {
     my $class = shift;
     my %param = %{ shift(@_) };
 
-    my $basedir='/nfs/disk100/wormpub';
+    my $build_dir='/nfs/disk100/wormpub';
+    $build_dir.=$param{'-test'}?'/TEST_BUILD':'/BUILD';
 
     # additional parameters
-    $param{'-autoace'}="$basedir/BUILD/autoace/briggsae";
-    $param{'-autoace'}="$basedir/TEST_BUILD/autoace/briggsae" if ($param{'-test'});
+    $param{'-autoace'}="$build_dir/autoace/briggsae";
 
     my $self = $class->initialize( $class->flatten_params( \%param ) );
 
     # stuff post object creation goes here
+
+    # overriding wormpep directory with brigpep
+    $self->{'wormpep'}  = $self->brigpep;
 
     bless $self, $class;
 }
@@ -87,6 +91,8 @@ sub _new {
 sub chromosome_prefix {'chr'}
 #sub chromosome_names {qw(I I_random II II_random III III_random IV IV_random V V_random X X_random Un)} # CB1
 sub chromosome_names {qw(I I_random II II_random III III_random IV IV_random V V_random X Un)} # CB3
+
+sub pep_prefix {'CBP'}
 
 #########################################
 package Remanei;
