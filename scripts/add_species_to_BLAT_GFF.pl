@@ -6,8 +6,8 @@
 #
 # This is a example of a good script template
 #
-# Last updated by: $Author: ar2 $     
-# Last updated on: $Date: 2006-02-17 11:32:47 $      
+# Last updated by: $Author: gw3 $     
+# Last updated on: $Date: 2006-12-12 16:08:18 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -132,7 +132,7 @@ close TACE;
 my $count;
 
 # loop through the chromosomes
-  my @chromosomes = qw( I II III IV V X );                            # chromosomes
+  my @chromosomes =  $wormbase->get_chromosome_names(-mito => 1, -prefix => 0);
   foreach my $chromosome (@chromosomes) {
     print "Reading chromosome $chromosome\n" if ($verbose);
 
