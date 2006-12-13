@@ -29,7 +29,8 @@ my $dbname = $database;
 my $maintainers = "All";
 my $rundate    = `date +%y%m%d`; chomp $rundate;
 my $wormpipe = glob("~wormpipe");
-my $wormpipe_dir = "/acari/work2a/wormpipe";
+#my $wormpipe_dir = "/acari/work2a/wormpipe";
+my $wormpipe_dir = "/lustre/work1/ensembl/wormpipe";
 
 my $best_hits = "$wormpipe_dir/dumps/${database}_best_blastp_hits";
 my $ipi_file = "$wormpipe_dir/dumps/${database}_ipi_hits_list";
