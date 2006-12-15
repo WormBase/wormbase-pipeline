@@ -7,7 +7,7 @@
 # This is a script to aid making changes to the sequence of a clone.
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2006-12-04 13:37:05 $      
+# Last updated on: $Date: 2006-12-15 16:09:14 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -262,7 +262,7 @@ while (my $input_line = <IN>) {
     # load ace file into new database
     print "load ace file of changes into new database\n";
     my $command = "pparse $acefile\nsave\nquit\n";
-    open( WRITEDB, "| $tace -tsuser 'genome_changes' $new_database " ) || die "Couldn't open pipe to database $new_database\n";
+    open( WRITEDB, "| $tace -tsuser 'genome_changes.pl' $new_database " ) || die "Couldn't open pipe to database $new_database\n";
     print WRITEDB $command;
     close(WRITEDB);
   }
@@ -302,7 +302,7 @@ while (my $input_line = <IN>) {
     # load the resulting $super ace file into newdatabase
     print "load ace file of superlinks '$super' into new database\n";
     my $command = "pparse $super\nsave\nquit\n";
-    open( WRITEDB, "| $tace -tsuser 'genome_changes' $new_database " ) || die "Couldn't open pipe to database $new_database\n";
+    open( WRITEDB, "| $tace -tsuser 'genome_changes.pl' $new_database " ) || die "Couldn't open pipe to database $new_database\n";
     print WRITEDB $command;
     close(WRITEDB);
     
@@ -340,7 +340,7 @@ close (IN);
 # load the resulting $super ace file into newdatabase
 print "load ace file of clone dates '$clonedates' into new database\n";
 my $command = "pparse $clonedates\nsave\nquit\n";
-open( WRITEDAT, "| $tace -tsuser 'genome_changes' $new_database " ) || die "Couldn't open pipe to database $new_database\n";
+open( WRITEDAT, "| $tace -tsuser 'genome_changes.pl' $new_database " ) || die "Couldn't open pipe to database $new_database\n";
 print WRITEDAT $command;
 close(WRITEDAT);
 
@@ -1662,7 +1662,7 @@ sub add_remark {
   #get date for remark
   my ($day, $mon, $yr)  = (localtime)[3,4,5];
   my $date = sprintf("%02d%02d%02d",$yr-100, $mon+1, $day);
-  my $remark = "DB_remark \"[$date $ENV{USER}] Sequence correction: $change_type ";
+  my $remark = "DB_remark \"[$date] Sequence correction: $change_type ";
 
   if ($count_bases > 0) {
     if ($count_bases < 20) {
