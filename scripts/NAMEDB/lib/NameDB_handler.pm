@@ -1,3 +1,6 @@
+package NameDB_handler;
+
+
 =head1 
 
 NameDB_handler
@@ -19,12 +22,7 @@ my $split   = $db->split_genes($cds_name, $name_type,$gene_id);
 
 
 
-#author ar2
-package NameDB_handler;
-use Carp;
-use NameDB;
-use strict;
-our @ISA = qw( NameDB );
+
 
 sub new
   {
@@ -100,14 +98,14 @@ Add a name to an existing gene
 =cut
  
 sub add_name {
-	my ($db, $gene_id, $name, $type) = @_;
+	my ($db, $gene_id, $name, $type, $brig) = @_;
 	unless ($db and $gene_id and $name and $type) {
 		$db->dienice("bad parameters");
 		return undef;
 	}
 	
 	#confirm GeneID and name are valid
-	$db->validate_name($name, $type)    or return undef;
+	$db->validate_name($name, $type, $brig)    or return undef;
 	$db->validate_id($gene_id)          or return undef;
 	$db->check_pre_exists($name, $type) or return undef;
    if( $db->addName($gene_id,$type => $name) ) {
@@ -136,20 +134,28 @@ sub validate_name
     my $db = shift;
     my $name = shift;
     my $type = shift;
+    my $brig = shift;
     #is this a valid name tpye?
     my @types = $db->getNameTypes;
-    if( grep {$_ eq $type} @types) {
+    if( grep {$_ eq $type} @types) {    		
       #check name structure matches format eg CDS = clone.no
       my %name_checks = ( 
 			  	"CGC" => '^[a-z]{3,4}-[1-9]\d*(\.\d+)?$',	
 			  	"Sequence" => '^([A-Z0-9_]+)\.\d+$',
 				"Public_name" => '^[a-z]{3,4}-[1-9]\d*(\.\d+)?$|^([A-Z0-9_]+)\.\d+$',
 		);
+    	if( $brig ) {
+    		%name_checks = (
+    			"CGC" => '^cb-[a-z]{3,4}-[1-9]\d*(\.\d+)?$',	
+			  	"Sequence" => '^CBG\d{5}$',
+				"Public_name" => '^cb-[a-z]{3,4}-[1-9]\d*(\.\d+)?$|^CBG\d{5}$',
+			);
+		}
       unless( $name =~ /$name_checks{$type}/ ) {
 			$db->dienice("$name is incorrect format for $type");
 			return undef;
 		}
-		if($type eq 'Sequence' and !(defined $db->{'clones'}->{uc($1)}) ) {
+		if(!defined($brig) and ($type eq 'Sequence') and !(defined $db->{'clones'}->{uc($1)}) ) {
 			$db->dienice("$name isnt on a valid clone $1");
 			return undef;
 		}
@@ -367,7 +373,7 @@ Split a GeneID
 
 
 sub split_gene {
-	my ($db,$name,$type,$gene) = @_;
+	my ($db,$name,$type,$gene,$brig) = @_;
 	unless ($type && $name && $gene){
 		$db->dienice("bad parameters");
 		return undef;
@@ -375,11 +381,11 @@ sub split_gene {
    my $gene_id  = ($db->idGetByAnyName($gene)->[0]  or $gene);  #allow use of any name or gene_id
  
 	$db->validate_id($gene_id) or return undef;
-   $db->validate_name($name, $type) or return undef;
+   $db->validate_name($name, $type, $brig) or return undef;
 	$db->check_pre_exists($name, $type) or return undef;
 	my $id = $db->idSplit($gene_id);		## hmm, does this work?
 	if( $id =~ /WBGene/ ) {
-		$db->add_name($id, $name, $type);
+		$db->add_name($id, $name, $type, $brig);
 		return "$id";
 	}
 	else {
@@ -454,9 +460,9 @@ Create a new GeneID
 =cut
 
 sub new_gene {
-	my ($db, $name, $type) = @_;
+	my ($db, $name, $type, $brig) = @_;
 	
-	$db->validate_name($name, $type)    or return undef;
+	$db->validate_name($name, $type, $brig)    or return undef;
 	$db->check_pre_exists($name, $type) or return undef;
 	
 	my $id = $db->make_new_obj($name, $type);
