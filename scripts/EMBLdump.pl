@@ -2,7 +2,7 @@
 #
 # EMBLdump.pl :  makes modified EMBL dumps from camace.
 # 
-#  Last updated on: $Date: 2006-11-17 12:13:32 $
+#  Last updated on: $Date: 2006-12-19 16:17:22 $
 #  Last updated by: $Author: pad $
 
 use strict;
@@ -243,6 +243,13 @@ while (<EMBL>) {
     $reference_remove = 1;
     next;
   }
+  #FT   ncRNA(5 characters eg.T05E11 swap for misc_RNA(8 characters)
+  if (/^FT\s+ncRNA/) {
+    s/ncRNA   /misc_RNA/g;
+    print OUT "$_";
+    next;
+  }
+  
   
   # standard_name......
   # don't print out first few lines until they have been converted 
