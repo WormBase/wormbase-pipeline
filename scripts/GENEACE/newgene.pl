@@ -7,7 +7,7 @@
 # simple script for creating new (sequence based) Gene objects 
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2006-07-28 12:38:16 $
+# Last edited on: $Date: 2006-12-20 11:59:26 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -33,6 +33,7 @@ my $load;        # load results to geneace (default is to just write an ace file
 my $verbose;     # toggle extra (helpful?) output to screen
 my $test;
 my $update_nameDB;
+my $species = 'elegans';  #default to elegans if not specified
 
 GetOptions ("input=s"   => \$input,
             "seq=s"     => \$seq,
@@ -43,8 +44,8 @@ GetOptions ("input=s"   => \$input,
 	    "load"      => \$load,
 	    "verbose"   => \$verbose,
 	    "test"      => \$test,
-	    "namedb"    => \$update_nameDB
-
+	    "namedb"    => \$update_nameDB,
+		 "species=s"   => \$species
 	    );
 
 my $wormbase = Wormbase->new();
@@ -53,6 +54,14 @@ my $wormbase = Wormbase->new();
 # warn about incorrect usage of command line options
 #####################################################
 
+my %species_data;
+$species_data{'elegans'}->{'regex'}  = '^\w+\.\d{1,2}$';
+$species_data{'briggsae'}->{'regex'} = '^CBG\d{5}$';
+
+unless( $species_data{"$species"} ) {
+	my @list = keys %species_data;
+	die "$species not valid\nTry one of these: @list\n";
+}
 die "-seq option not valid if -input is specified\n"     if ($input && $seq);
 die "-cgc option not valid if -input is specified\n"     if ($input && $cgc);
 die "-cgc option not valid if -seq is not specified\n"   if ($cgc && !$seq);
@@ -60,7 +69,7 @@ die "You must specify either -input <file> or -seq <sequence> -cgc <cgc name>\n"
 die "-cgc option is not a valid type of CGC name\n"      if ($cgc && ($cgc !~ m/^[a-z]{3,4}\-\d{1,3}$/));
 die "-who option must be an integer\n"                   if ($who && ($who !~ m/^\d+$/));
 die "can't use -id option if processing input file\n"    if ($id && $input);
-die "-seq option is not a valid type of sequence name\n" if ($seq && ($seq !~ m/^\w+\.\d{1,2}$/));
+die "-seq option is not a valid type of sequence name\n" if ($seq && ($seq !~ /$species_data{"$species"}->{'regex'}/));
 
 # set CGC field to null string if not specified
 $cgc = "NULL" if (!$cgc);
@@ -255,10 +264,10 @@ sub process_gene{
     print OUT "Live\n";
     print OUT "Version 1\n";
     print OUT "Sequence_name $seq\n";
-    print OUT "Species \"Caenorhabditis elegans\"\n";
+    print OUT "Species \"Caenorhabditis $species\"\n";
     print OUT "History Version_change 1 now $person Event Created\n";
     print OUT "Method Gene\n";
-    print OUT "Positive_clone $p_clone Inferred_automatically \"From sequence, transcript, pseudogene data\"\n";
+    print OUT "Positive_clone $p_clone Inferred_automatically \"From sequence, transcript, pseudogene data\"\n" if ($species eq 'elegans');
 
     # set CGC name if it exists and set public name based on CGC name or sequence name
     if($cgc && ($cgc ne "NULL")){
