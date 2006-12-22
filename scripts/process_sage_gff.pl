@@ -1,6 +1,6 @@
 #!/nfs/disk100/wormpub/bin/perl -w
 #
-# $Id: process_sage_gff.pl,v 1.4 2006-11-30 17:21:24 gw3 Exp $;
+# $Id: process_sage_gff.pl,v 1.5 2006-12-22 11:14:55 gw3 Exp $;
 #
 # process the raw Sanger GFF dump to add data to SAGE tags
 # Sheldon McKay <mckays@cshl.edu>
@@ -39,7 +39,9 @@ if ( $store ) {
 # establish log file.
 my $log = Log_files->make_build_log($wormbase);
 
-my $db = Ace->connect( -path => $wormbase->database('current') );
+#my $db = Ace->connect( -path => $wormbase->database('current') ); # surely some mistake!
+my $db = Ace->connect( -path => $wormbase->autoace );
+
 
 my $c_reg = qr/CHROMOSOME_/;
 my $s_reg = qr/SAGE_tag:(SAGE:[a-z]+)/;
@@ -104,6 +106,10 @@ sub markup {
   my $tag = shift;
   my $src = shift;
   my $r = $db->fetch(SAGE_tag => $tag);
+  if (! defined $r) {
+    $log->log_and_die("Can't find SAGE_tag : $tag\n");
+#    return "count 0", (), ();
+  }
   my @genes    = ($r->Gene,$r->Transcript,$r->Pseudogene,$r->Predicted_CDS);
   my @unambig  = grep { scalar $_->get('Unambiguously_mapped')} @genes;
   my @three_p  = grep { scalar $_->get('Most_three_prime') } @genes;
