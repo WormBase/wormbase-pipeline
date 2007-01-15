@@ -10,8 +10,8 @@
 #
 # Usage : agp2dna.pl [-options]
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2006-06-21 10:20:58 $
+# Last edited by: $Author: pad $
+# Last edited on: $Date: 2007-01-15 09:28:07 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -31,8 +31,7 @@ use vars qw ($seq_len $sv_acc $sv_ver );
 my $debug;              # Verbose debug mode
 my $help;               # Help/Usage page
 my $chrom;              # Single chromosome mode - provide chromosome name
-my $pfetch;             # Fetch sequences using pfetch
-my $getz;               # Fetch sequences using getz
+my $mfetch;             # Fetch sequences using mfetch
 my $test;               # use test environment in ~wormpub/TEST_BUILD
 my $quicktest;          # same as -test but only uses one chromosome
 my $verbose;
@@ -40,8 +39,7 @@ my $store;
 my $wormbase;
 
 GetOptions (
-            "pfetch"      => \$pfetch,
-            "getz"        => \$getz,
+            "mfetch"      => \$mfetch,
 	    "debug=s"     => \$debug,
             "help"        => \$help,
 	    "chrom=s"     => \$chrom,
@@ -88,10 +86,6 @@ my @gff_files = ('I','II','III','IV','V','X');
 @gff_files = ('III') if ($quicktest);
 
 
-# Set pfetch as the default retreival option
-if (!$getz) {$pfetch = 1};
-
-
 # single chromosome mode
 if ($chrom) {
   @gff_files = ();
@@ -118,7 +112,7 @@ foreach my $chromosome (@gff_files) {
   close DNA;
   
   # variables used in agp file loop
-  my ($acc,$sv,$seq_ndb,$from,$to,$span,$start,$new_seq);
+  my ($acc,$sv,$seq_ndb,$from,$to,$span,$start,$new_seq,$accsv);
   my ($EMBL_acc,$EMBL_sv,$EMBL_seq,$EMBL_slice);
   my ($wormbase_slice,$wormbase_len,$agp_len);
   
@@ -135,16 +129,12 @@ foreach my $chromosome (@gff_files) {
       $to    = $f[7] ;                 # sequence coords to string slice
       $start = $f[6] - 1;
       $span  = $f[7] - $f[6] + 1;
-      
+#      $accsv = "$acc.$sv";
+#      print "1) Assigned value = $accsv\n" if $debug;
       # fetch the EMBL entry
       ($EMBL_acc,$EMBL_sv,$EMBL_seq,$EMBL_slice) = "" ;
       
-      if ($pfetch) {
-	($EMBL_acc,$EMBL_sv,$EMBL_seq) = &sequence_pfetch($acc);
-      }
-      elsif ($getz) {
-	($EMBL_acc,$EMBL_sv,$EMBL_seq) = &sequence_getz($acc);
-      }
+      ($EMBL_acc,$EMBL_sv,$EMBL_seq) = &sequence_mfetch($acc);
       
       $EMBL_slice = substr($EMBL_seq,$start,$span);
       
@@ -155,7 +145,7 @@ foreach my $chromosome (@gff_files) {
       }
       
       # check against WormBase sequence
-      $wormbase_slice = substr($wormbase_seq,($f[1]-1),$span);
+      $wormbase_slice = substr ($wormbase_seq,($f[1]-1),$span);
       $wormbase_len   = length ($wormbase_slice);
       $agp_len        = length ($EMBL_slice);
       
@@ -177,6 +167,7 @@ foreach my $chromosome (@gff_files) {
       
       # Sequence difference
       if ($EMBL_slice ne $wormbase_slice) {
+	#print "EMBL $acc = $EMBL_slice\nWormBase $acc = $wormbase_slice\n" if $debug;
 	print AGPLOG "ERROR: you are not adding the same sequence for $acc\n"; 
 	my ($count_a,$count_c,$count_g,$count_t,$count_n) = $wormbase->DNA_string_composition($wormbase_slice);
 	print AGPLOG "ERROR: WormBase [$acc] : A=$count_a C=$count_c G=$count_g T=$count_t N=$count_n\n";
@@ -211,47 +202,24 @@ print "Finished.\n" if ($verbose);
 exit(0);
 
 
-
-
- ########################################
- # getz query accession for sequence    #
- ########################################
-
-sub sequence_getz {
+sub sequence_mfetch {
     
     my $acc = shift;
+#    print "2) lookup value = $acc\n" if $debug;
     my ($EMBL_acc,$EMBL_sv,$EMBL_seq);
     
-    open (SEQUENCE, "getz -d -sf fasta -f \'seqversion\' \"[{emblrelease emblnew}-acc:$acc] ! ([emblrelease-acc:$acc] < emblnew)\" |");
-    while (<SEQUENCE>) {
-	chomp;
-        # deal with header line
- 	if (/^SV\s+(\S+)\.(\d+)/) {
-	    ($EMBL_acc,$EMBL_sv) = ($1,$2);
-	    $EMBL_seq = "";
-	    next;
-	}
-	next if (/^>/);
-	$EMBL_seq .= $_;
-    }
-    close SEQUENCE;
-
-    return($EMBL_acc,$EMBL_sv,$EMBL_seq);
-}
-
-sub sequence_pfetch {
-    
-    my $acc = shift;
-    my ($EMBL_acc,$EMBL_sv,$EMBL_seq);
-    
-    open (SEQUENCE, "/usr/local/pubseq/bin/pfetch $acc |");
+    open (SEQUENCE, "/usr/local/pubseq/scripts/mfetch -d embl -v fasta -i \"sv:$acc*\" |");
     while (<SEQUENCE>) {
 	chomp;
 	# deal with header line
+	if (/no match/){
+	  $log->write_to("$acc could not be retrieved from EMBL.\n");
+	  next;
+	}
 	if (/>(\S+)\.(\d+)/) {
-	    ($EMBL_acc,$EMBL_sv) = ($1,$2);
-	    $EMBL_seq = "";
-	    next;
+	  ($EMBL_acc,$EMBL_sv) = ($1,$2);
+	  $EMBL_seq = "";
+	  next;
 	}
 	# replace UPPER->lower case chars
 	s/G/g/g;
@@ -260,11 +228,11 @@ sub sequence_pfetch {
 	s/C/c/g;
 	s/N/n/g;
 	$EMBL_seq .= $_;
-    }
+      }
     close SEQUENCE;
-
+    
     return($EMBL_acc,$EMBL_sv,$EMBL_seq);
-}
+  }
 
 
  ########################################
@@ -332,9 +300,7 @@ agp2dna.pl optional arguments:
 
 =item -chrom [txt], Single chromosome mode. Valid options (I,II,III,IV,V and X)
 
-=item -pfetch, Retrieve sequence data using pfetch (default)
-
-=item -getz, Retrieve sequence data using getz
+=item -mfetch, Retrieve sequence data using mfetch
 
 =item -help, Help page
 
