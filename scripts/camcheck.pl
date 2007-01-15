@@ -7,7 +7,7 @@
 # Usage: camcheck.pl
 #
 # Last updated by: $Author: pad $
-# Last updated on: $Date: 2006-12-01 11:41:33 $
+# Last updated on: $Date: 2007-01-15 14:11:41 $
 #
 # see pod documentation (i.e. 'perldoc camcheck.pl') for more information.
 #
@@ -71,6 +71,7 @@ if ($Database) {
     $dbpath = $Database;
     &usage('bad database path') unless (-e "$dbpath/database/ACEDB.wrm");
 }
+print "\n$dbpath is being checked.......\n\n" if $debug;
 
 ###########################################################
 # only email a specific person responsible for a database #
@@ -251,7 +252,7 @@ sub CloneTests {
 	if ($Weekly) {
 	    print " | Sequence versions" if ($verbose);
 	    &check_sequence_version($obj);
-	}
+	  }
 	
 	######################################################################
 	# last check complete, tidy up                                       #
@@ -395,49 +396,46 @@ sub checkchars {
     }
 }
 
-#######################################################################
-# Check sequence version between camace and EMBL                      #
-#######################################################################
-
+########################################################################
+# Check sequence version between camace and EMBL via mfetch libraries. #
+########################################################################
 sub check_sequence_version {
-    local (*F);
-    my $obj = shift;
-    my $server = "srs.sanger.ac.uk";
+my ($EMBL_acc,$EMBL_sv,$ACE_ver);
+  my $obj = shift;
+  
+  # get details from camace
+  my ($acc) = $obj->at('DB_info.Database.EMBL.NDB_AC');
+  my ($ver) = $obj->at('DB_info.Database.EMBL.NDB_SV');
+  
+if ($ver =~ /\S+.(\d+)/) {
+  $ACE_ver = $1;
+}
+# fetch the ID line for the most rescent acc, not version exclusive.
+open (SEQUENCE, "/usr/local/pubseq/scripts/mfetch -d embl -f id  -i \"sv:$acc*\" |");
 
-    # get details from camace
-    my ($acc) = $obj->at('DB_info.Database.EMBL.NDB_AC');
-    my ($ver) = $obj->at('DB_info.Database.EMBL.NDB_SV');
-
-    # get details from EMBL
-    my ($EM_acc,$EM_seqver);
-    my $querycontent="-e+([EMBLNEW-acc:'$acc'])|(([EMBL-acc:'$acc'])!(EMBL<EMBLNEW))";
-    my $request = "/srsbin/cgi-bin/wgetz?$querycontent";
-
-    if (!defined(open_TCP_connection(*F,$server,80))) {
-	print "Error connecting to srs.sanger.ac.uk server for object $obj\n";
-	exit(-1);
-    }
-    print F "GET $request HTTP/1.0\n\n";
-    print F "Accept: */*\n";
-    print F "User-Agent: socketsrs/1.0\n\n";
- 
-    while (my $return_line=<F>) {
-#    print "$return_line";
-	if ($return_line =~ /^SV\s+(\S+)\.(\d+)/) {
-	    ($EM_acc,$EM_seqver) = ($1,$2);
-	    last;
-	}
-    }
-    
-    if ($EM_seqver != $ver) {
-	$log->write_to("Sequence version discrepent $obj [camace = $ver | EMBL = $EM_seqver]\n");
-    }
-
+while (<SEQUENCE>) {
+  # deal with header line
+  chomp;
+  
+  #if the mfetch query fails you get "no match"
+  if (/no match/){
+    $log->write_to("$acc could not be retrieved from EMBL.\n");
+    next;
+  }
+  #ID   Z19152; SV 1; linear; genomic DNA; STD; INV; 40909 BP.
+  if (/ID   (\S+); SV (\d+);/) {
+    ($EMBL_acc,$EMBL_sv) = ($1,$2);
+    next;
+  }
+}
+if (($EMBL_sv = $ACE_ver) && ($verbose)) {print "Sequence version matches for $acc [camace = $ACE_ver | EMBL = $EMBL_sv]\n";}
+if ($EMBL_sv != $ACE_ver) {$log->write_to("WARNING: Sequence version discrepent $obj [camace = $ACE_ver | EMBL = $EMBL_sv]\n");}
+close SEQUENCE;
 }
 
- ########################################################
- # Output: successful network connection in file handle #
- ########################################################
+########################################################
+# Output: successful network connection in file handle #
+########################################################
 
 sub open_TCP_connection  {
     my ($FS,$dest,$port) = @_;
