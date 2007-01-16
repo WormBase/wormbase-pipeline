@@ -28,6 +28,8 @@ GetOptions (
 #dbxref=FlyBase:FBpp0078997,GB_protein:AAF52455.2,FlyBase_Annotation_IDs:CG10206-PA,FlyBase:FBgn0026196;
 # MD5=927705a12a71536536d1eea6c514361a; parent=FBtr0079369; release=r4.3; species=Dmel; length=511;
 
+#>FBpp0072157 type=protein; loc=2R:join(19970258..19970592,19970994..19971107,19971175..19971808,19971862..19972342,19972455..19973683); ID=FBpp0072157; name=CG16786-PB; parent=FBgn0034974,FBtr0072248; dbxref=GB_protein:AAM68305.1,FlyBase:FBpp0072157,FlyBase_Annotation_IDs:CG16786-PB,GB_protein:AAM68305; MD5=6356cb499a107083f645b73322b5bd50; release=r5.1; species=Dmel; length=779;
+
 
 my $blastdir    = "/nfs/acari/wormpipe/BlastDB";
 my $acedir      = "/nfs/acari/wormpipe/ace_files";
@@ -59,12 +61,10 @@ while (<SOURCE>){
     my %fields = /(\w+)=(\S+)/g;
 
     $FBname = $fields{'name'} if $fields{'name'} ;
+    ($FBgn) = $fields{'parent'} =~ /(FBgn\d+)/;
     foreach ( split(/,/,$fields{'dbxref'}) ) {
     	my($key, $value) = split(/:/);
-    	if( $key eq "FlyBase" and $value =~ /FBgn\d+/) {
-    		$FBgn = $value;
-    	}
-    	elsif( $key eq 'FlyBase_Annotation_IDs') {
+ 		if( $key eq 'FlyBase_Annotation_IDs') {
     		$gadID = $value;
     	}
     }
