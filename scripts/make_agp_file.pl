@@ -4,8 +4,8 @@
 #
 # by Dan Lawson (dl1@sanger.ac.uk)
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2006-06-21 10:20:58 $
+# Last edited by: $Author: pad $
+# Last edited on: $Date: 2007-01-17 17:13:35 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -68,29 +68,15 @@ my @gff_files = ('I','II','III','IV','V','X');
 @gff_files = ('III') if ($quicktest);
 
 
-##############################
-# getz query to build hashes #
- ##############################
-
-# ID   AF016448   standard; DNA; INV; 44427 BP.
-# SV   AF016448.1
+################################
+# mfetch query to build hashes #
+################################
 
 our %seqver = ();
 our %seqlen = ();
 
-#open (SEQUENCES, "getz -f \'id seqversion\' \"([emblnew-org:Caenorhabditis elegans] \& [emblnew-div:INV]) | ([embl-org:Caenorhabditis elegans] \& [embl-div:INV]) | ([emblrelease-org:Caenorhabditis elegans] \& [emblrelease-div:INV])\" |");
-#while (<SEQUENCES>) {
-#    if (/^ID\s+(\S+)\s+standard\; DNA\; INV\; (\d+)/) {
-#	$seqlen{$1} = $2;
-#    }
-#    if (/^SV\s+(\S+)\.(\d+)/) {
-#      $seqver{$1} = $2;
-#    }
-#}
-#close(SEQUENCES);
-
-open (SEQUENCES, "getz -f \'id\' \"([emblstandard-Molecule:genomic dna] \& [emblstandard-Division:std] \& [emblstandard-Organism:Caenorhabditis elegans*])\" | ");
-#ID   AC006607; SV 1; linear; genomic DNA; STD; INV; 40255 BP.
+open (SEQUENCES, "/usr/local/pubseq/scripts/mfetch -d embl -f id -i \"mol:genomic dna\&org:Caenorhabditis elegans\&div:std\" | ");
+#Returns ID   AC006607; SV 1; linear; genomic DNA; STD; INV; 40255 BP.
 while (<SEQUENCES>) {
     s/\;//g;
     my @info = split;
@@ -104,7 +90,7 @@ while (<SEQUENCES>) {
 }
 close(SEQUENCES);
 
-print "Finished assigning to hash\n";
+print "Finished assigning to hash\n" if $debug;
 
 #################################################################################
 # Main Loop                                                                     #
@@ -179,22 +165,20 @@ foreach my $chromosome (@gff_files) {
     $acc{$i}   = $acc;
     $span{$i}  = $stop - $start + 1;
     
-#	printf "%8s [%8d => %8d : %6d] $acc{$i}.$sv_ver\n", $clone{$i}, $start{$i}, $stop{$i}, $span{$i};
-
-    # fudge to try to get sequence version using pfetch if getz fails
+    # fudge to try to get sequence version using mfetch via a different query if 1st mfetch fails
     if($seqver{$acc} eq ""){
-      my $getz_acc = `/usr/local/pubseq/bin/pfetch $acc | grep ">"`;
-      $getz_acc =~ s/.*\.(\d+)\s+.*/$1/;
-      $ver{$1} = $getz_acc;
+      print "There has been a problem retrieving one or more entries" if $debug;
+      my $embl_acc = `/usr/local/pubseq/bin/mfetch -d embl -i \"sv:$acc.\*\" | grep ">"`;
+      $embl_acc =~ s/.*\.(\d+)\s+.*/$1/;
+      $ver{$1} = $embl_acc;
     }
     else{
       $ver{$i}    = $seqver{$acc};
     }
-
+    
     $last_stop  = $stop;
     $last_start = $start;
     $i++;
-    
   }
     
   close GFF;
@@ -240,21 +224,12 @@ foreach my $chromosome (@gff_files) {
 $log->mail();
 print "Finished.\n" if ($verbose);
 exit(0);
-   
- ##############################
- # hasta luego                #
- ##############################
-
-exit(0);
 
 
 #################################################################################
 ### Subroutines                                                               ###
 #################################################################################
 
-
-
-##########################################
 
 sub usage {
   my $error = shift;
