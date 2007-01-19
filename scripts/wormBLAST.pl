@@ -4,8 +4,8 @@
 # 
 # written by Anthony Rogers
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2006-12-01 16:51:10 $
+# Last edited by: $Author: pad $
+# Last edited on: $Date: 2007-01-19 16:29:23 $
 
 
 use DBI;
@@ -135,7 +135,7 @@ my @updated_DBs;  #used by get_updated_database_list sub - when run this array i
 my $last_build_DBs = "$wormpipe_dir/BlastDB/databases_used_WS$WS_old";
 my $database_to_use = "$wormpipe_dir/BlastDB/databases_used_WS$WS_version";
 
-
+unless ($cleanup) {
 open (OLD_DB,"<$last_build_DBs") or die "cant find $last_build_DBs";
 while (<OLD_DB>) {
   chomp;
@@ -144,6 +144,7 @@ while (<OLD_DB>) {
   }
 }
 close OLD_DB;
+		 }
 
 #check for updated Databases
 if ( $update_databases ){
