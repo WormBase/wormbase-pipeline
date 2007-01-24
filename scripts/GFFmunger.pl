@@ -5,7 +5,7 @@
 # by Dan Lawson
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2006-03-03 10:05:00 $
+# Last updated on: $Date: 2007-01-24 15:18:57 $
 #
 # Usage GFFmunger.pl [-options]
 
@@ -181,8 +181,10 @@ foreach my $file (@gff_files) {
   }
   
   $log->write_to("\n");
+  
+  
+	&check_its_worked($gffpath) if $all;
 }
-
 
 
 # Tidy up
@@ -196,6 +198,30 @@ exit(0);
 # subroutines                 #
 ###############################
 
+sub check_its_worked {
+	my $file = shift;
+	my $landmark = qx{grep landmark $file | wc -l }; #qx{} captures system command output.
+	my $fiveprime = qx{grep five_prime  $file | wc -l };
+	my $partially = qx{grep Partially  $file | wc -l };
+	
+	my $msg;
+	if ($landmark < 10) {
+		$msg .= "landmark genes are not present\n";
+	}
+	if ( $fiveprime  < 10 ) {
+		$msg .= "UTRs and are not present\n";
+	}
+	if ( $partially  < 10 ) {
+		$msg .= "CDS overloading not present\n";
+	}	
+	
+	if( defined ($msg) ) {
+		$log->log_and_die("GFFmunging failed : $msg");
+	}
+	else {
+		$log->write_to("GFFmunging appears to have worked\n");
+	}
+}
 
 sub addtoGFF {
     
@@ -313,7 +339,7 @@ __END__
 
 This script splits the large GFF files produced during the build process into
 smaller files based on a named set of database classes to be split into.
-Output written to /wormsrv2/autoace/GFF_SPLITS/WSxx
+Output written to autoace/GFF_SPLITS/WSxx
 
 =over 4
 
