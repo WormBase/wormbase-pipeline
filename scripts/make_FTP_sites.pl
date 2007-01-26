@@ -7,14 +7,67 @@
 # 
 # Originally written by Dan Lawson
 #
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2006-11-09 14:37:30 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2007-01-26 15:05:30 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
 ##########################################################################################
 
+=pod
 
+=head1 NAME - make_FTP_sites.pl
+
+=back
+
+
+=head1 USAGE
+
+=over 4
+
+=item make_FTP_sites.pl
+
+=back
+
+
+This script does :
+
+ [01] - make a new directory for the WS release
+ [02] - copy the WS release files to the target directory
+ [03] - make a new directory for the chromosome DNA/GFF/AGP files
+ [04] - copy the chromosome DNA/GFF/AGP files to the target directory
+ [05] - copy the models.wrm file across (also present in the database.*.tar.gz files)
+ [06] - copy the relevant dbcomp file across
+ [07] - copy across latest wormpep release
+ [08] - make wormpep FTP site
+ [09] - copy WormRNA release across
+ [10] - extract confirmed genes from autoace and make a file on FTP site
+ [11] - delete the old symbolic link and make the new one
+ [12] - delete the old WS release version directory
+ [13] - makes a file of cDNA2orf connections
+ [14] - makes a file of all gene IDs with CGC names and Sequence names (where present)
+ [15] - exit gracefully
+
+
+=over 4
+
+=item MANDATORY arguments:
+
+none
+
+=back
+
+=over 4
+
+=item OPTIONAL arguments:
+
+-help (this help page)
+
+
+=head1 AUTHOR - Originally written by Dan Lawson (dl1@sanger.ac.uk) with extensive rewrite
+and upgrade by Keith Bradnam (krb@sanger.ac.uk)
+
+=cut
 use strict;
 use lib $ENV{'CVS_DIR'};
 use Wormbase;
@@ -41,6 +94,7 @@ my $cDNA;    # only copy cDNA2orf file
 my $geneIDs; # only copy file of gene IDs
 my $pcr;     # only copy file of PCR products
 my $homols;  # only copy best blast hits 
+my $manifest;# check everything has been copied.
 my $all;     # copy everything across
 
 GetOptions ("help"     => \$help,
@@ -57,6 +111,7 @@ GetOptions ("help"     => \$help,
 	    "geneIDs"  => \$geneIDs,
 	    "pcr"      => \$pcr,
 	    "homols"   => \$homols,
+	    "manifest"=> \$manifest,
 	    "all"      => \$all);
 
 
@@ -82,7 +137,7 @@ my $log = Log_files->make_build_log($wormbase);
 
 
 # using -all option?
-($release=$chroms=$misc=$wormpep=$genes=$cDNA=$geneIDs=$pcr=$homols = 1 ) if ($all);
+($release=$chroms=$misc=$wormpep=$genes=$cDNA=$geneIDs=$pcr=$homols=$manifest = 1 ) if ($all);
 
 my $base_dir = $wormbase->basedir;    # The BUILD directory
 my $ace_dir = $wormbase->autoace;     # AUTOACE DATABASE DIR
@@ -104,7 +159,9 @@ my $runtime;
 
 my $lockfile = $wormbase->autoace."/FTP_LOCK";
 $log->write_to("writing lock file\n");
-open (FTP_LOCK,">$lockfile") or $log->log_and_die("cant write logfile $!\n");
+
+open (FTP_LOCK,">$lockfile") or $log->log_and_die("cant write lockfile $!\n");
+
 print FTP_LOCK "If this file exists something has failed in make_ftp_site.pl\n DO NOT continue until you know what happend and have fixed it\n\n";
 close FTP_LOCK;
 
@@ -126,7 +183,7 @@ close FTP_LOCK;
 
 &copy_homol_data if ($homols);        # copies best blast hits files across
 
-
+&check_manifest if ($manifest);       # compares whats on the FTP site with what should be
 
 ################################
 #
@@ -136,7 +193,7 @@ close FTP_LOCK;
 
 
 # warn about errors in subject line if there were any
-$wormbase->run_command("rm -f $lockfile",$log);
+$wormbase->run_command("rm -f $lockfile",$log) if ($log->report_errors == 0);
 $log->mail;
 print "Finished.\n" if ($verbose);
 exit (0);
@@ -539,64 +596,115 @@ sub usage {
 ##################################################################################
 
 
+sub check_manifest {
+	my $rel = '169';#$wormbase->get_wormbase_version;
+	my $ftp_dir = $wormbase->ftp_site."/WS$rel";
+	my $path = $ftp_dir;
+	my $count;
+	while(<DATA>) {
+		next unless /\w/;
+		chomp;
+		s/REL/$rel/g;
+		if(/\.\/(\S+)/) {
+			$path = "$ftp_dir/$1";
+			next;
+		}
+		my $file = $_;
+		if( -s "$path/$file") {
+			$count++
+		}
+		else {
+			$log->error("ERROR: $file has a problem\n");
+		}
+	}
+	$log->write_to("$count files in place on FTP site\n");
+}
 
 
+__DATA__
+affy_oligo_mapping.gz
+agil_oligo_mapping.gz
+best_blastp_hits.WSREL.gz
+best_blastp_hits_brigpep.WSREL.gz
+brigdnaREL.bz2
+brigpepREL.gz
+cDNA2orf.WSREL.gz
+confirmed_genes.WSREL.gz
+files_in_tar
+geneIDs.WSREL.gz
+gsc_oligo_mapping.gz
+letter.WSREL
+md5sum.REL
+md5sum.WSREL
+models.wrm.WSREL
+pcr_product2gene.WSREL.gz
+wormpepREL.tar.gz
+wormrnaREL.tar.gz
 
-__END__
+./CHROMOSOMES
+CHROMOSOME_I.agp
+CHROMOSOME_I.dna.gz
+CHROMOSOME_I.gff.gz
+CHROMOSOME_II.agp
+CHROMOSOME_II.dna.gz
+CHROMOSOME_II.gff.gz
+CHROMOSOME_III.agp
+CHROMOSOME_III.dna.gz
+CHROMOSOME_III.gff.gz
+CHROMOSOME_III_masked.dna.gz
+CHROMOSOME_II_masked.dna.gz
+CHROMOSOME_IV.agp
+CHROMOSOME_IV.dna.gz
+CHROMOSOME_IV.gff.gz
+CHROMOSOME_IV_masked.dna.gz
+CHROMOSOME_I_masked.dna.gz
+CHROMOSOME_MtDNA.dna.gz
+CHROMOSOME_MtDNA.gff.gz
+CHROMOSOME_V.agp
+CHROMOSOME_V.dna.gz
+CHROMOSOME_V.gff.gz
+CHROMOSOME_V_masked.dna.gz
+CHROMOSOME_X.agp
+CHROMOSOME_X.dna.gz
+CHROMOSOME_X.gff.gz
+CHROMOSOME_X_masked.dna.gz
+SUPPLEMENTARY_GFF
+briggffREL
+composition.all
+intergenic_sequences.dna.gz
+totals
 
-=pod
+./CHROMOSOMES/SUPPLEMENTARY_GFF
+RNAz.gff
+genemark.gff
+mSplicer_orf.gff
+mSplicer_transcript.gff
+miranda.gff
+pictar.gff
 
-=head1 NAME - make_FTP_sites.pl
+./CHROMOSOMES/briggffREL
+chrI.gff
+chrII.gff
+chrIII.gff
+chrIII_random.gff
+chrII_random.gff
+chrIV.gff
+chrIV_random.gff
+chrI_random.gff
+chrUn.gff
+chrV.gff
+chrV_random.gff
+chrX.gff
 
-=back
+./ONTOLOGY
+anatomy_association.WSREL.wb
+anatomy_ontology.WSREL.obo
+gene_association.WSREL.cb.wb
+gene_association.WSREL.ce.wb
+gene_association.WSREL.wb
+gene_ontology.WSREL.obo
+phenotype_association.WSREL.wb
+phenotype_ontology.WSREL.obo
 
-
-=head1 USAGE
-
-=over 4
-
-=item make_FTP_sites.pl
-
-=back
-
-
-This script does :
-
- [01] - make a new directory for the WS release
- [02] - copy the WS release files to the target directory
- [03] - make a new directory for the chromosome DNA/GFF/AGP files
- [04] - copy the chromosome DNA/GFF/AGP files to the target directory
- [05] - copy the models.wrm file across (also present in the database.*.tar.gz files)
- [06] - copy the relevant dbcomp file across
- [07] - copy across latest wormpep release
- [08] - make wormpep FTP site
- [09] - copy WormRNA release across
- [10] - extract confirmed genes from autoace and make a file on FTP site
- [11] - delete the old symbolic link and make the new one
- [12] - delete the old WS release version directory
- [13] - makes a file of cDNA2orf connections
- [14] - makes a file of all gene IDs with CGC names and Sequence names (where present)
- [15] - exit gracefully
-
-
-=over 4
-
-=item MANDATORY arguments:
-
-none
-
-=back
-
-=over 4
-
-=item OPTIONAL arguments:
-
--help (this help page)
-
-
-=head1 AUTHOR - Originally written by Dan Lawson (dl1@sanger.ac.uk) with extensive rewrite
-and upgrade by Keith Bradnam (krb@sanger.ac.uk)
-
-=cut
 
 
