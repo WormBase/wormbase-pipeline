@@ -1,4 +1,4 @@
-#!/usr/bin/perl 
+#!/nfs/disk100/wormpub/bin/perl 
 
 use lib $ENV{'CVS_DIR'};
 use strict;
