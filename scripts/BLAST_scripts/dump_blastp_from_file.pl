@@ -135,6 +135,7 @@ my %file_mapping = (
 	"$wormpipe_dir/dumps/acc2db.dbm" => '/tmp/acc2db.dbm',
 );
 while (my($from,$to)=each %file_mapping ){
+	unlink $to if -e $to;
 	copy $from,$to or die "Copy of $from to $to failed: $!";
 }
 
@@ -166,7 +167,7 @@ open (OUT,">$output") or die "cant open $output\n";
 print "opening $recip_file";
 open (RECIP,">$recip_file") or die "cant open recip file $recip_file: $!\n";
 
-tie our %ACC2DB, 'GDBM_File',"/tmp/dumps/acc2db.dbm",&GDBM_WRCREAT ,0666 or warn "cannot open /tmp/acc2db \n";
+tie our %ACC2DB, 'GDBM_File',"/tmp/acc2db.dbm",&GDBM_WRCREAT ,0666 or warn "cannot open /tmp/acc2db.dbm \n";
 
 my $count;
 my $count_limit = 10;
