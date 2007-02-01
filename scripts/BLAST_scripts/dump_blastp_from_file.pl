@@ -8,6 +8,7 @@ use GDBM_File;
 use Wormbase;
 use Storable;
 use Log_files;
+use File::Copy;
 
 
 
@@ -127,13 +128,23 @@ my $QUERY_SPECIES = $database2species{"$database"};
 #connect to GDBM_File databases for species determination and establish hashes
 
 my $db_files = "/lustre/work1/ensembl/wormpipe/swall_data";
+
+my %file_mapping = ( 
+	"$db_files/swissprot2org" => '/tmp/swissprot2org',
+	"$db_files/trembl2org"    => '/tmp/trembl2org',
+	"$wormpipe_dir/dumps/acc2db.dbm" => '/tmp/acc2db.dbm',
+);
+while (my($from,$to)=each %file_mapping ){
+	copy $from,$to or die "Copy of $from to $to failed: $!";
+}
+
 my (%SWISSORG, %TREMBLORG);
-tie %SWISSORG, 'GDBM_File',"$db_files/swissprot2org",&GDBM_WRCREAT,0666 or die "cannot open swissprot2org DBM file $db_files/swissprot2org";
+tie %SWISSORG, 'GDBM_File',"/tmp/swissprot2org",&GDBM_WRCREAT,0666 or die "cannot open swissprot2org DBM file /tmp/swissprot2org";
 unless (-s "$db_files/swissprot2des") {
   die "swissprot2des not found or empty";
 }
 
-tie %TREMBLORG, 'GDBM_File',"$db_files/trembl2org",&GDBM_WRCREAT ,0666 or die "cannot open trembl2org DBM file";
+tie %TREMBLORG, 'GDBM_File',"/tmp/trembl2org",&GDBM_WRCREAT ,0666 or die "cannot open /tmp/trembl2org DBM file";
 unless (-s "$db_files/trembl2des") {
   die "trembl2des not found or empty";
 }
@@ -155,7 +166,7 @@ open (OUT,">$output") or die "cant open $output\n";
 print "opening $recip_file";
 open (RECIP,">$recip_file") or die "cant open recip file $recip_file: $!\n";
 
-tie our %ACC2DB, 'GDBM_File',"$wormpipe_dir/dumps/acc2db.dbm",&GDBM_WRCREAT ,0666 or warn "cannot open acc2db \n";
+tie our %ACC2DB, 'GDBM_File',"/tmp/dumps/acc2db.dbm",&GDBM_WRCREAT ,0666 or warn "cannot open /tmp/acc2db \n";
 
 my $count;
 my $count_limit = 10;
@@ -297,6 +308,11 @@ $log->write_to(" : finished\n\n______END_____");
 untie %ACC2DB;
 untie %SWISSORG;
 untie %TREMBLORG;
+
+while (my($from,$to)=each %file_mapping ){
+	 unlink $to or die "delete of $to failed: $!";
+}
+
 
 print "\nEnd of dump/\n";
 $log->mail;
