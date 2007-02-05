@@ -8,7 +8,7 @@
 # written by Dan Lawson
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2006-08-10 09:05:36 $
+# Last edited on: $Date: 2007-02-05 12:29:29 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -176,7 +176,7 @@ while (<FILE>) {
     print OUT "Protein_id \"$acc2clone{$f[0]}\" $f[2] $f[3]\n";
     if ( $swall{$f[2]}{Database} ) {
 	print OUT "Database $databases{ $swall{$f[2]}{Database} } ",$db_ids_acc{ $swall{$f[2]}{Database}."_id" }," $swall{$f[2]}{Identifier}\n"	
-                     if ( ($swall{$f[2]}{Identifier}) and  ($swall{$f[2]}{Identifier} ne $swall{$f[2]}{Accession}) ); #creates tons of uninitialized values
+                     if ( ($swall{$f[2]}{Identifier}) and $swall{$f[2]}{Accession} and ($swall{$f[2]}{Identifier} ne $swall{$f[2]}{Accession}) ); #creates tons of uninitialized values
 	print OUT "Database $databases{ $swall{$f[2]}{Database} } ",$db_ids_acc{ $swall{$f[2]}{Database}."_ac" }," $swall{$f[2]}{Accession}\n";
     }
 
@@ -252,7 +252,8 @@ sub getswalldata {
 
     $/ = "ID";
 
-    open (LOOK, "/usr/local/pubseq/bin/getzc -f 'id acc dbxref'  \"[SWALL-organism:Caenorhabditis elegans]\" |");
+    #open (LOOK, "/usr/local/pubseq/bin/getzc -f 'id acc dbxref'  \"[SWALL-organism:Caenorhabditis elegans]\" |");
+    open (LOOK, "mfetch -f 'id acc prd' -i \"org:Caenorhabditis elegans\" |");
     while (<LOOK>) {
 	$text = "ID" . $_;         # add the leading 'ID'
 	chop $text;                # remove the trailing 'ID'
