@@ -7,7 +7,7 @@
 # Builds a wormpep data set from the current autoace database
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2006-05-26 09:54:38 $
+# Last updated on: $Date: 2007-02-05 12:06:33 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -78,18 +78,18 @@ $log->log_and_die("=> You are running initial and full at same time\n\n") if ($i
 my $tace = $wormbase->tace; 
 my $release = $wormbase->get_wormbase_version;
 
-my %peptide2number;   # peptide sequence is key, CE number (and just the number) is value
-my @number2peptide;   # stores peptide sequence at array positions corresponding to CE numbers
-my @number2accession; # stores full Wormpep accessions (e.g. CE04323) in array, indexed as above
-my @CDSs;             # stores list of CDS object names from autoace
-my %cds2number;       # stores cds name (e.g. AH6.1) as key, Wormpep number (e.g. 4323) as value
-my %cds2cgc_name;     # cds name and corresponding CGC name name
-my %cds2gene;         # cds name and corresponding Gene ID (e.g. WBGene00012312)
-my %cds2id;           # 'Brief_identification' field for each CDS
-my %cds_status;       # 'Confirmed', 'Partially_confirmed', 'Predicted' status for each CDS
-my %cds2protein_id;   # protein ID for each CDS
-my %cds2protein_ac;   # Trembl/Swissprot protein accession for each CDS
-my %cds2protein_db;   # TREMBL/TREMBLNEW/SWISSPROT
+my %peptide2number;   # peptide sequence is key, CE number (and just the number) is value            //setup
+my @number2peptide;   # stores peptide sequence at array positions corresponding to CE numbers       //setup
+my @number2accession; # stores full Wormpep accessions (e.g. CE04323) in array, indexed as above     //setup
+my @CDSs;             # stores list of CDS object names from autoace                                 //write_wormpep_dna
+my %cds2number;       # stores cds name (e.g. AH6.1) as key, Wormpep number (e.g. 4323) as value     //write_wormpep_dna
+my %cds2cgc_name;     # cds name and corresponding CGC name name                                     //retrieve_cds_data
+my %cds2gene;         # cds name and corresponding Gene ID (e.g. WBGene00012312)                     //retrieve_cds_data
+my %cds2id;           # 'Brief_identification' field for each CDS                                    //retrieve_cds_data
+my %cds_status;       # 'Confirmed', 'Partially_confirmed', 'Predicted' status for each CDS          //retrieve_cds_data
+my %cds2protein_id;   # protein ID for each CDS                                                      //retrieve_cds_data
+my %cds2protein_ac;   # Trembl/Swissprot protein accession for each CDS                              //retrieve_cds_data
+my %cds2protein_db;   # TREMBL/TREMBLNEW/SWISSPROT                                                   //retrieve_cds_data
 my $wpmax = 0;        # holds highest CE number in Wormpep (old release proteins + new)
 my $old_wpmax;        # holds highest CE number in Wormpep (just in old release)
 
@@ -148,16 +148,17 @@ if ($initial) {
   #generate file to ad new peptides to mySQL database.
   $wormbase->run_script("new_wormpep_entries.pl", $log);
 
-}
-
-if ($final) {
-
-
   # count the isoforms of each CDS (stats for release letter)
   &count_isoforms;
 
   # write wormpep accession file
   &write_wormpep_accession;
+}
+
+if ($final) {
+
+
+
 
   $wormbase->run_command("build_pepace.pl", $log);
 
@@ -257,7 +258,7 @@ sub setup{
 
 	$peptide .= $_ ;
 	$number2peptide[$number] = $peptide;
-	unless (exists ($peptide2number{$peptide})) { 
+	unless (exists ($peptide2number{$peptide})) {
 	  $peptide2number{$peptide} = $number;
 	  $number2accession[$number] = $id;
 	} else {
