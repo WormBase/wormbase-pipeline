@@ -6,7 +6,7 @@
 # 19.02.02 Kerstin Jekosch
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2007-02-08 15:32:37 $
+# Last edited on: $Date: 2007-02-08 15:52:25 $
 
 use strict;
 use Getopt::Long;
@@ -94,7 +94,7 @@ clear
 save
 quit
 END
-    open (DB, "| $tace $dbdir |") || die "Couldn't open $dbdir\n";
+    open (DB, "| $tace $dbdir") || die "Couldn't open $dbdir\n";
     print DB $command;
     close DB;
     
@@ -184,7 +184,7 @@ save
 quit
 END
 }
-    open (LOAD, "| $tace $dbdir |") || die "Couldn't open $dbdir\n";
+    open (LOAD, "| $tace $dbdir") || die "Couldn't open $dbdir\n";
     print LOAD $command;
     close LOAD;
     
