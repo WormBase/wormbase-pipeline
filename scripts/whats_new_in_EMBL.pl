@@ -6,8 +6,8 @@
 #
 # checks EMBL for new EST or mRNA entries
 #
-# Last updated by: $Author: pad $                      
-# Last updated on: $Date: 2006-09-07 15:06:02 $        
+# Last updated by: $Author: gw3 $                      
+# Last updated on: $Date: 2007-02-08 16:35:37 $        
 
 use strict;
 use Getopt::Long;
@@ -15,30 +15,40 @@ use lib $ENV{'CVS_DIR'};
 use Wormbase;
 use Time::Local;
 use Modules::Features;
+use Carp;
+use Log_files;
+use Storable;
 
 ##############################
 # Variables                  #
 ##############################
 
-my ($help, $debug, $days, $wormbase, $test, $version);
+my ($help, $debug, $days, $wormbase, $test, $version, $store);
 my $maintainers = "All";
 my $getz   = "/usr/local/pubseq/bin/getzc"; # getz binary
 
-GetOptions ("help"     => \$help,
+GetOptions (
+	    "help"     => \$help,
             "debug=s"  => \$debug,
             "days=s"   => \$days,
 	    "test"     => \$test,
-	    "version:s"=> \$version);
+	    "version:s"=> \$version,
+	    "store:s"  => \$store,
+	    );
 
 	   
 
 # help page	   
 &usage("Help") if ($help);
 
-$wormbase = Wormbase->new( -debug => $debug,
+if ($store) {
+  $wormbase = retrieve($store) or croak ("Can't restore wormbase from $store\n");
+}
+else {
+  $wormbase = Wormbase->new( -debug => $debug,
                              -test => $test,
                              );
-	   
+}
 
 # no debug name
 if ($debug) {
