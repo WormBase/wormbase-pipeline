@@ -4,8 +4,8 @@
 # 
 # A script to make multiple copies of camace for curation, and merge them back again
 #
-# Last edited by: $Author: pad $
-# Last edited on: $Date: 2006-10-19 14:59:27 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2007-02-08 15:25:58 $
 
 
 use strict;
@@ -232,13 +232,13 @@ sub update_camace {
   ## upload BLAT results to database ##
   #####################################
   print "\n\nUpdate BLAT results in $canonical\n";
-    $wormbase->run_script("load_blat2db.pl -all -dbdir $canonical") && die "Failed to run load_blat2db.pl\n";
+    $wormbase->run_script("load_blat2db.pl -all -dbdir $canonical", $log) && die "Failed to run load_blat2db.pl\n";
   
   ####################################################
   ## Update and load blastx results to the database ##
   ####################################################
   print "Update blastx results in $canonical\n";
-  $wormbase->run_script("misc/split_blastx_by_centre.pl -version $WS_version") && die "Failed to generate newblastx data for camace using split_blastx_by_centre.pl\n";
+  $wormbase->run_script("misc/split_blastx_by_centre.pl -version $WS_version", $log) && die "Failed to generate newblastx data for camace using split_blastx_by_centre.pl\n";
   &loadace("$directory/CAM_blastx.ace", 'merge_split_blastx') or die "Failed to load new blastx_data\n";
   print "Updated blastx data in $canonical\n\n";
 
@@ -247,14 +247,14 @@ sub update_camace {
   ##################################################################################
   if ($extra) {
     print "\n\nRunning Gene_ID_update.pl to refresh WBGeneID\'s, Protein_ID\'s and Clone sequence versions.\n\n";
-    $wormbase->run_script("GeneID_updater.pl -geneID -proteinID -version $WS_version -update") && die "Failed to run Gene_ID_updater.pl\n";
+    $wormbase->run_script("GeneID_updater.pl -geneID -proteinID -version $WS_version -update", $log) && die "Failed to run Gene_ID_updater.pl\n";
     print "Updated WBGene ID\'s Protein_ID\'s and Clone sequence versions.\n";
   }
   #######################################################
   ## Get new ESTs/mRNAs from EMBL and load into camace ##
   #######################################################
   print "\n\nRunning whats_new_in_EMBL.pl to get new ESTs/mRNAs from EMBL\n\n";
-  $wormbase->run_script("whats_new_in_EMBL.pl -version $version") && die "Failed to run whats_new_in_embl.pl\n";
+  $wormbase->run_script("whats_new_in_EMBL.pl -version $version", $log) && die "Failed to run whats_new_in_embl.pl\n";
   &loadace("$directory/new_mRNA.ace", 'merge_split_mRNAs') or die "Failed to load new mRNA Data\n";
   print "Imported new mRNA data into camace.\n";
   print "*****************You will need to manually alter the EST file as we re-name the ESTs after their yk id.******************\n\n";
