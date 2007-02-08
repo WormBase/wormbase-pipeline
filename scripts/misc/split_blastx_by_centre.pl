@@ -1,13 +1,17 @@
 #!/usr/bin/perl5.8.0 -w
 
+use strict;
 my $scriptdir =  $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
 use Wormbase;
 use File::Basename;
 use Log_files;
 use Getopt::Long;
+use Carp;
+use Log_files;
+use Storable;
 
-my ($debug, $version,$wormbase,$test,$update,$noprpcess);
+my ($debug, $version,$wormbase,$test,$update,$noprpcess,$store,$files,$noprocess);
 
 GetOptions(
 	   'test'          => \$test,       #test build
@@ -17,6 +21,7 @@ GetOptions(
 	   'files:s'       => \$files,      # stores a list of comma seperated filesnames for processing.
 	   'update'        => \$update,     # Load the camace file into the canonical database.
 	   'noprocess'     => \$noprocess,  # Don't process the files.
+	   "store:s"       => \$store,
 	  );
 
 
@@ -55,61 +60,73 @@ my $out;
 # tace executable path
 my $tace = $wormbase->tace;
 
-if (!$noprocess){
-if ($files) {
-my @files2split = split (/\,/,$files);
-}
+my $stl_out;
+my $cam_out;
 
-else {
+if (!$noprocess){
+  my @files2split;
+  if ($files) {
+    @files2split = split (/\,/,$files);
+  } else {
+
 #TEC_RED
-push (@files2split,"briggsae_blastx.ace");
-push (@files2split,"fly_blastx.ace");
-push (@files2split,"human_blastx.ace");
-push (@files2split,"remanei_blastx.ace");
-push (@files2split,"slimswissprot_blastx.ace");
-push (@files2split,"slimtrembl_blastx.ace");
-push (@files2split,"worm_blastx.ace");
-push (@files2split,"yeast_blastx.ace");
+    push (@files2split,"briggsae_blastx.ace");
+    push (@files2split,"fly_blastx.ace");
+    push (@files2split,"human_blastx.ace");
+    push (@files2split,"remanei_blastx.ace");
+    push (@files2split,"slimswissprot_blastx.ace");
+    push (@files2split,"slimtrembl_blastx.ace");
+    push (@files2split,"worm_blastx.ace");
+    push (@files2split,"yeast_blastx.ace");
 #RepeatMasker
 #waba
 #TRF.ace missing from WS162
-}
-
-open ($stl_out,">$outdir/STL_blastx.ace") || die "ERROR Can\'t open STL output $outdir/STL_blastx.ace\n";
-open ($cam_out,">$outdir/CAM_blastx.ace") || die "ERROR Can\'t open CAM output $outdir/CAM_blastx.ace\n";
-$log->write_to("\t\tPROCESSING DATA\n\t\t================================================================\n");
-foreach my $file ( @files2split ){
-  $wormbase->run_command("scp ecs4:$blast_dir/$file $temp_dir/", $log);
-my $clone = "";
-my $type = "";
-$log->write_to("\nProcessing $blast_dir/$file\n");
-if ($file =~ (/(\S+)_blastx.ace/)){
-$type = $1;
+  }
+  open ($stl_out,">$outdir/STL_blastx.ace") || die "ERROR Can\'t open STL output $outdir/STL_blastx.ace\n";
+  open ($cam_out,">$outdir/CAM_blastx.ace") || die "ERROR Can\'t open CAM output $outdir/CAM_blastx.ace\n";
+  $log->write_to("\t\tPROCESSING DATA\n\t\t================================================================\n");
+  foreach my $file ( @files2split ){
+    $wormbase->run_command("scp ecs4:$blast_dir/$file $temp_dir/", $log);
+    my $clone = "";
+    my $type = "";
+    $log->write_to("\nProcessing $blast_dir/$file\n");
+    if ($file =~ (/(\S+)_blastx.ace/)){
+      $type = $1;
 #print "$type\n\n";
-}
-  open ($blast_file, "<$temp_dir/$file" ) or $log->log_and_die ("can\'t open input file $file\t$!\n");
-  #Sequence : "cTel33B"
-  $out = $cam_out;
-  while (<$blast_file>) {
-    if( /Sequence \: \"(.*)\"/) {
-      $clone = $1; 
-      if ($clone) {
-	if($clone2centre{$clone} eq "HX") {
-	  $out = $cam_out;
-	}
-	elsif( $clone2centre{$clone} eq "RW") {
-	  $out = $stl_out;
-	}
-	else {
-	  $log->write_to("ERROR: NO CENTRE FOR $clone\n");
-	  $out = STDOUT;
+    }
+    my $blast_file;
+    open ($blast_file, "<$temp_dir/$file" ) or $log->log_and_die ("can\'t open input file $file\t$!\n");
+    #Sequence : "cTel33B"
+    $out = $cam_out;
+    while (<$blast_file>) {
+      if( /Sequence \: \"(.*)\"/) {
+	$clone = $1; 
+	if ($clone) {
+	  if($clone2centre{$clone} eq "HX") {
+	    $out = $cam_out;
+	  }
+	  elsif( $clone2centre{$clone} eq "RW") {
+	    $out = $stl_out;
+	  }
+	  else {
+	    $log->write_to("ERROR: NO CENTRE FOR $clone\n");
+	    $out = *STDOUT;
+	  }
 	}
       }
-    }
 
-    #test clone C30G7
-    if ($test) {
-      if ($clone =~ ("F58E6") ) {
+      #test clone C30G7
+      if ($test) {
+	if ($clone =~ ("F58E6") ) {
+	  if ($_ =~ /^Sequence : \"/) {
+	    print $out "-D Homol_data $clone:wublastx_$type\n\n$_";
+	  }
+	  else {
+	    print $out $_;
+	  }
+	}
+      }
+      else {
 	if ($_ =~ /^Sequence : \"/) {
 	  print $out "-D Homol_data $clone:wublastx_$type\n\n$_";
 	}
@@ -118,19 +135,10 @@ $type = $1;
 	}
       }
     }
-    else {
-      if ($_ =~ /^Sequence : \"/) {
-	print $out "-D Homol_data $clone:wublastx_$type\n\n$_";
-      }
-      else {
-	print $out $_;
-      }
-    }
+    $wormbase->run_command("rm $temp_dir/$file\n\n", $log);
   }
-  $wormbase->run_command("rm $temp_dir/$file\n\n", $log);
-}
 
-$log->write_to("\nSplit Output file can be found under $outdir/CAM_blastx.ace - STL_blastx.ace\n");
+  $log->write_to("\nSplit Output file can be found under $outdir/CAM_blastx.ace - STL_blastx.ace\n");
 }
 
 &load_data if ($update);
