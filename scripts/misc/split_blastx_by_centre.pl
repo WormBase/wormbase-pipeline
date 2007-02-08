@@ -45,7 +45,8 @@ my $log = Log_files->make_build_log($wormbase);
 my $next_build = ($version + 1);
 
 #my $blast_dir = $wormbase->acefiles;
-my $blast_dir = "/acari/work2a/wormpipe/dumps/blastx";
+#my $blast_dir = "/acari/work2a/wormpipe/dumps/blastx";
+my $blast_dir = "/lustre/work1/ensembl/wormpipe/dumps/blastx/";
 my $temp_dir = "/nfs/disk100/wormpub/camace_orig/WS$version-WS$next_build/tmp";
 $wormbase->run_command("mkdir $temp_dir", $log);
 my $outdir = "/nfs/disk100/wormpub/camace_orig/WS$version-WS$next_build";
@@ -86,7 +87,8 @@ if (!$noprocess){
   open ($cam_out,">$outdir/CAM_blastx.ace") || die "ERROR Can\'t open CAM output $outdir/CAM_blastx.ace\n";
   $log->write_to("\t\tPROCESSING DATA\n\t\t================================================================\n");
   foreach my $file ( @files2split ){
-    $wormbase->run_command("scp ecs4:$blast_dir/$file $temp_dir/", $log);
+#    $wormbase->run_command("scp ecs4:$blast_dir/$file $temp_dir/", $log);
+    $wormbase->run_command("scp farm-login:$blast_dir/$file $temp_dir/", $log);
     my $clone = "";
     my $type = "";
     $log->write_to("\nProcessing $blast_dir/$file\n");
