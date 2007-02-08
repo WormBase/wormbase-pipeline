@@ -8,7 +8,7 @@
 # Originally written by Dan Lawson
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2007-01-26 15:05:30 $
+# Last updated on: $Date: 2007-02-08 15:45:17 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -597,7 +597,7 @@ sub usage {
 
 
 sub check_manifest {
-	my $rel = '169';#$wormbase->get_wormbase_version;
+	my $rel = $wormbase->get_wormbase_version;
 	my $ftp_dir = $wormbase->ftp_site."/WS$rel";
 	my $path = $ftp_dir;
 	my $count;
