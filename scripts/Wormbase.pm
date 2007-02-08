@@ -791,6 +791,7 @@ sub gff_splits  { $self = shift; return $self->{'gff_splits'}; }
 sub chromosomes { $self = shift; return $self->{'chromosomes'}; }
 sub logs        { $self = shift; return $self->{'logs'}; }
 sub ftp_upload  { $self = shift; return $self->{'ftp_upload'}; }
+sub ftp_site    { $self = shift; return $self->{'ftp_site'}; }
 sub reports     { $self = shift; return $self->{'reports'}; }
 sub misc_static { $self = shift; return $self->{'misc_static'}; }
 sub misc_dynamic{ $self = shift; return $self->{'misc_dynamic'}; }
@@ -885,6 +886,7 @@ sub establish_paths {
 
     $self->{'basedir'}    = $basedir;
     $self->{'ftp_upload'} = "/nfs/ftp_uploads/wormbase";
+    $self->{'ftp_site'}   = "/nfs/disk69/ftp/pub2/wormbase";
     $self->{'wormrna'}    = $basedir . "/WORMRNA/wormrna" . $self->get_wormbase_version;
     $self->{'wormpep'}    = $basedir . "/WORMPEP/wormpep" . $self->get_wormbase_version;
     $self->{'brigpep'}    = $basedir . "/WORMPEP/brigpep" . $self->get_wormbase_version;
