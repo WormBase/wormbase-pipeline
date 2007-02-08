@@ -5,27 +5,41 @@
 # deletes existent BLAT data and /or reads in BLAT data for a given database
 # 19.02.02 Kerstin Jekosch
 #
-# Last edited by: $Author: pad $
-# Last edited on: $Date: 2006-08-18 16:20:41 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2007-02-08 15:32:37 $
 
 use strict;
 use Getopt::Long;
 use lib $ENV{'CVS_DIR'};
 use Wormbase;
+use Carp;
+use Log_files;
+use Storable;
 
-my ($load,$delete,$dbdir,$help,$all,$wormbase,$test,$debug);
+my ($load,$delete,$dbdir,$help,$all,$wormbase,$test,$debug,$store);
 GetOptions (
 	    "load"    => \$load,
 	    "delete"  => \$delete,
 	    "all"     => \$all,
 	    "dbdir=s" => \$dbdir,
 	    "h"	      => \$help,
-	    "debug=s" => \$debug);
+	    "debug=s" => \$debug,
+	    "test"    => \$test,
+	    "store:s" => \$store,
+	    );
 
-$wormbase = Wormbase->new( -debug => $debug,
-			     -test => $test,
-			     );
 
+if ( $store ) {
+  $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
+} else {
+  $wormbase = Wormbase->new( -debug   => $debug,
+                             -test    => $test,
+                             );
+}
+
+# establish log file.
+my $log = Log_files->make_build_log($wormbase);
+                                                                                                                              
 my $tace =  $wormbase->tace;
 my $blat_dir;
 
@@ -61,7 +75,10 @@ print "$dbname\n";
 &delete($dbname) if ($delete || $all);
 &load($dbname)   if ($load   || $all);
 
+
+$log->mail();
 exit(0);
+
 
 #############################################
 
