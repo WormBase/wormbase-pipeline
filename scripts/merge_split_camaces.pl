@@ -5,7 +5,7 @@
 # A script to make multiple copies of camace for curation, and merge them back again
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2007-02-08 16:27:09 $
+# Last edited on: $Date: 2007-02-08 16:31:33 $
 
 # had a few errors when I tried to run this:
 #merge_split_camaces.pl -update -all -version 171 > /nfs/disk100/wormpub/cam
@@ -291,7 +291,7 @@ sub update_camace {
   ##########################################
   ## Check Canonical Database for errors. ##
   ##########################################
-  $wormbase->run_script("camcheck.pl -e pad -db /nfs/disk100/wormpub/DATABASES/camace", $log) && die "Failed to run camcheck.pl\n";
+  $wormbase->run_script("camcheck.pl -e gw3 -db /nfs/disk100/wormpub/DATABASES/camace", $log) && die "Failed to run camcheck.pl\n";
 }
 
 ####################
