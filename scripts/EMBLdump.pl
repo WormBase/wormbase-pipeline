@@ -2,8 +2,8 @@
 #
 # EMBLdump.pl :  makes modified EMBL dumps from camace.
 # 
-#  Last updated on: $Date: 2006-12-19 16:17:22 $
-#  Last updated by: $Author: pad $
+#  Last updated on: $Date: 2007-02-09 15:50:16 $
+#  Last updated by: $Author: gw3 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -210,7 +210,7 @@ while (<EMBL>) {
     next;
   }
   if (/^RN   \[2\]/) {
-    $reference_remove = 6;
+    $reference_remove = 5;
     next;
   }
   
