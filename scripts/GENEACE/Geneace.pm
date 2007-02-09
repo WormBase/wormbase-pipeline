@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl5.8.0 -w
-# Last updated by $Author: wormpub $
-# Last updated on: $Date: 2006-02-13 15:15:13 $
+# Last updated by $Author: ar2 $
+# Last updated on: $Date: 2007-02-09 13:58:40 $
 
 package Geneace;
 
@@ -9,6 +9,7 @@ use Ace;
 use Wormbase;
 use Coords_converter;
 use strict;
+use Data::Dumper;
 
 # constant stuff (hopefully not modified anywhere)
 my $def_dir = '/nfs/disk100/wormpub/DATABASES/geneace/wquery';           # location of table-maker definitions
@@ -19,10 +20,9 @@ sub init {
   my ($class,$wormbase) = @_;
   
   $wormbase= Wormbase->new() if !($wormbase); # crude hack
-  my $this= {
-	  tace => $wormbase->tace
-  	};
+  my $this= {};
   # set class variables
+  $this->{'wormbase'} = $wormbase;
   bless($this, $class);
 }
 
@@ -41,58 +41,55 @@ sub test_geneace {return  '/nfs/disk100/wormpub/DATABASES/TEST_DBs/CK1TEST'}
 sub gene_info {
   my ($this, $db, $option) = @_;
   shift;
+  my $gi_file  = $this->{'wormbase'}->common_data."/gene_info.dat";
+ 	my $seq_file = $this->{'wormbase'}->common_data."/seq_gene_info.dat";
 
-  $db = "/nfs/disk100/wormpub/DATABASES/geneace" if !$db;
-  print "----- Doing Gene id <-> Gene_name conversion based on $db ... -----\n\n";
-
-  my $outfile = "$geneace_dir/CHECKS/gene_info.tmp"; `chmod 777 $outfile`;
   my (%gene_info, %seqs_to_Gene_id);
 
-  my $gene_info="Table-maker -o $outfile -p \"$def_dir/geneace_gene_info.def\"\nquit\n";
+  if( -e  $gi_file and -e $seq_file) {
+    $this->{'wormbase'}->FetchData('gene_info',\%gene_info);
+    $this->{'wormbase'}->FetchData('seq_gene_info',\%seqs_to_Gene_id);
+  }
+  else {
+    $db = "/nfs/disk100/wormpub/DATABASES/geneace" if !$db;
+    print "----- Doing Gene id <-> Gene_name conversion based on $db ... -----\n\n";
 
-  open (FH, "echo '$gene_info' | $this->{tace} $db |") || die "Couldn't access $db\n";
-  while(<FH>){}
+    my $outfile = "$geneace_dir/CHECKS/gene_info.tmp";
+	$this->{'wormbase'}->run_command("rm -f $outfile");
+	 my $gene_info_def="$def_dir/geneace_gene_info.def";
 
-  my @gene_info = `cut -f 1,2 $outfile`;
-  foreach (@gene_info){
-    chomp $_;
-    my ($gene, $cgc_name) = split(/\s+/, $_);
-    $gene =~ s/\"//g;
-    $cgc_name =~ s/\"//g;
-    $gene_info{$gene}{'CGC_name'} = $cgc_name if $cgc_name;
-    $gene_info{$cgc_name}{'Gene'} = $gene     if $cgc_name;
+    my $fh = $this->{'wormbase'}->table_maker_query($db,$gene_info_def);
+    while (<$fh>) {
+    	next if /acedb/;
+		s/\"//g;#"
+    	my @gene_info = split("\t",$_);
+      chomp $_;
+      my ($gene, $cgc_name,$seq_name,$other_name, $public_name) = @gene_info;
+      $gene =~ s/\"//g;
+      $cgc_name =~ s/\"//g;
+      $gene_info{$gene}{'CGC_name'} 		= $cgc_name 		if $cgc_name;
+      $gene_info{$cgc_name}{'Gene'} 		= $gene     		if $cgc_name;
+      $gene_info{$gene}{'Sequence_name'} 	= $seq_name 		if $seq_name;
+      $gene_info{$seq_name}{'Gene'}      	= $gene     		if $seq_name;
+      push(@{$gene_info{$gene}{'Other_name'}}, $other_name) if $other_name;
+      $gene_info{$other_name}{'Gene'} 		= $gene     		if $other_name;
+      $gene_info{$gene}{'Public_name'} 	= $public_name 	if $public_name;
+      $gene_info{$public_name}{'Gene'} 	= $gene     		if $public_name;
+    }
+
+    # store these to save time recreating them all the time
+    $gi_file = $this->{'wormbase'}->common_data."/gene_info.dat";
+    open( GI,">$gi_file");
+    print GI Data::Dumper->Dump([\%gene_info]);
+    close GI;
+
+    $seq_file = $this->{'wormbase'}->common_data."/seq_gene_info.dat";
+    open( SI,">$seq_file");
+    print SI Data::Dumper->Dump([\%seqs_to_Gene_id]);
+    close SI;
   }
 
-  @gene_info = `cut -f 1,3 $outfile`;
-  foreach (@gene_info){
-    chomp $_;
-    my ($gene, $seq_name) = split(/\s+/, $_);
-    $gene =~ s/\"//g;
-    $seq_name =~ s/\"//g;
-    $gene_info{$gene}{'Sequence_name'} = $seq_name if $seq_name;
-    $gene_info{$seq_name}{'Gene'}      = $gene     if $seq_name;
-  }
-
-  @gene_info = `cut -f 1,4 $outfile`;
-  foreach (@gene_info){
-    chomp $_;
-    my ($gene, $other_name) = split(/\s+/, $_);
-    $gene =~ s/\"//g;
-    $other_name =~ s/\"//g;
-    push(@{$gene_info{$gene}{'Other_name'}}, $other_name) if $other_name;
-    $gene_info{$other_name}{'Gene'} = $gene               if $other_name;
-  }
-
-  @gene_info = `cut -f 1,5 $outfile`;
-  foreach (@gene_info){
-    chomp $_;
-    my ($gene, $public_name) = split(/\s+/, $_);
-    $gene =~ s/\"//g;
-    $public_name =~ s/\"//g;
-    $gene_info{$gene}{'Public_name'} = $public_name if $public_name;
-    $gene_info{$public_name}{'Gene'} = $gene        if $public_name;
-  }
-
+  #return refs to hash(s)
   return (\%gene_info, \%seqs_to_Gene_id) if $option;
   return %gene_info if !$option;
 }
