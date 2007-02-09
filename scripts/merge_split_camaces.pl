@@ -5,7 +5,7 @@
 # A script to make multiple copies of camace for curation, and merge them back again
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2007-02-08 16:31:33 $
+# Last edited on: $Date: 2007-02-09 10:30:21 $
 
 # had a few errors when I tried to run this:
 #merge_split_camaces.pl -update -all -version 171 > /nfs/disk100/wormpub/cam
@@ -282,11 +282,11 @@ sub update_camace {
   #######################################################
   ## Get new ESTs/mRNAs from EMBL and load into camace ##
   #######################################################
-  print "\n\nRunning whats_new_in_EMBL.pl to get new ESTs/mRNAs from EMBL\n\n";
-  $wormbase->run_script("whats_new_in_EMBL.pl -version $version", $log) && die "Failed to run whats_new_in_embl.pl\n";
-  &loadace("$directory/new_mRNA.ace", 'merge_split_mRNAs') or die "Failed to load new mRNA Data\n";
-  print "Imported new mRNA data into camace.\n";
-  print "*****************You will need to manually alter the EST file as we re-name the ESTs after their yk id.******************\n\n";
+#  print "\n\nRunning whats_new_in_EMBL.pl to get new ESTs/mRNAs from EMBL\n\n";
+#  $wormbase->run_script("whats_new_in_EMBL.pl -version $version", $log) && die "Failed to run whats_new_in_embl.pl\n";
+#  &loadace("$directory/new_mRNA.ace", 'merge_split_mRNAs') or die "Failed to load new mRNA Data\n";
+#  print "Imported new mRNA data into camace.\n";
+#  print "*****************You will need to manually alter the EST file as we re-name the ESTs after their yk id.******************\n\n";
   
   ##########################################
   ## Check Canonical Database for errors. ##
