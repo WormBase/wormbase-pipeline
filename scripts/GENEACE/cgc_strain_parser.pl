@@ -7,8 +7,8 @@
 # Script to convert cgc strain file into ace file for geneace
 # Page download and update upload to geneace has been automated [ck1]
 
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2006-10-03 15:24:49 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2007-02-09 14:01:15 $
 
 use strict;
 use Getopt::Long;
@@ -36,7 +36,7 @@ GetOptions ("help"       => \$help,
 
 &usage if ($help);
 my $user = `whoami`; chomp $user;
-if ($user ne "wormpub"){
+if (!$test and $user ne "wormpub"){
   print "\nYou have to be wormpub to run this script!\n\n";
   exit(0);
 }
@@ -97,7 +97,7 @@ close(PAPER);
 ############################################
 # get hash to convert CGC name to Gene ID
 ############################################
-my $ga = init Geneace();
+my $ga = init Geneace($wormbase);
 my %Gene_info = $ga -> gene_info();
 my $last_gene_id_number = $ga ->get_last_gene_id();
 
@@ -153,7 +153,7 @@ while(<INPUT>){
   print $_ if ! defined($strain) && $verbose;
   print "$big_counter : $strain\n" if $verbose;
   # skip object if no strain name
-  next if(!defined($strain));
+  next unless ($strain =~ /\w/);
 
   $strain =~ s/\s+$//g;
   if ($strain){
@@ -261,7 +261,7 @@ while(<INPUT>){
   $description =~ s/\s{2,}/ /g;
   $description =~ s/\s+$//g;
   # get rid of any quotation marks
-  $description =~ s/\"//g; 
+  $description =~ s/\"//g; #"
   # change any URLs present else the double back slash will be treated as a comment
   $description =~ s/http:\/\//URL: /g;
   print STRAIN "Remark \"$description\" Inferred_automatically \"From CGC strain data\"\n" unless ($description eq "");
