@@ -6,8 +6,8 @@
 #
 # Script to refresh various information including WBGene ID's, protein_ids, clone SV's in a chosen database from a chosen reference database.
 #
-# Last updated by: $Author: pad $
-# Last updated on: $Date: 2006-09-07 15:36:11 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2007-02-09 14:25:39 $
 
 use strict;
 my $scriptdir =  $ENV{'CVS_DIR'};
@@ -390,7 +390,7 @@ sub load_data {
   $command   .= "query find curated_CDS\nedit -D Protein_ID\nclear\n" if ($proteinID || $all);
   $command   .= "pparse $output_file2\n" if ($proteinID || $all);
   $command   .= "pparse $output_file3\n" if ($sv || $all);
-  open (DB, "| $tace $targetDB -tsuser merge_split_$next_build |") || die "Couldn't open $targetDB\n";
+  open (DB, "| $tace $targetDB -tsuser merge_split_$next_build") || die "Couldn't open $targetDB\n";
   print DB $command;
   close DB;
 
