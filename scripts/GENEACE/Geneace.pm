@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl5.8.0 -w
 # Last updated by $Author: ar2 $
-# Last updated on: $Date: 2007-02-09 13:58:40 $
+# Last updated on: $Date: 2007-02-09 14:00:07 $
 
 package Geneace;
 
@@ -42,13 +42,11 @@ sub gene_info {
   my ($this, $db, $option) = @_;
   shift;
   my $gi_file  = $this->{'wormbase'}->common_data."/gene_info.dat";
- 	my $seq_file = $this->{'wormbase'}->common_data."/seq_gene_info.dat";
 
-  my (%gene_info, %seqs_to_Gene_id);
+  my (%gene_info);
 
-  if( -e  $gi_file and -e $seq_file) {
+  if( -e  $gi_file ) {
     $this->{'wormbase'}->FetchData('gene_info',\%gene_info);
-    $this->{'wormbase'}->FetchData('seq_gene_info',\%seqs_to_Gene_id);
   }
   else {
     $db = "/nfs/disk100/wormpub/DATABASES/geneace" if !$db;
@@ -83,15 +81,10 @@ sub gene_info {
     print GI Data::Dumper->Dump([\%gene_info]);
     close GI;
 
-    $seq_file = $this->{'wormbase'}->common_data."/seq_gene_info.dat";
-    open( SI,">$seq_file");
-    print SI Data::Dumper->Dump([\%seqs_to_Gene_id]);
-    close SI;
   }
 
   #return refs to hash(s)
-  return (\%gene_info, \%seqs_to_Gene_id) if $option;
-  return %gene_info if !$option;
+  return %gene_info ;
 }
 
 sub parse_inferred_multi_pt_obj {
