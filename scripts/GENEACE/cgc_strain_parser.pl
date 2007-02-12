@@ -7,8 +7,8 @@
 # Script to convert cgc strain file into ace file for geneace
 # Page download and update upload to geneace has been automated [ck1]
 
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2007-02-09 14:01:15 $
+# Last updated by: $Author: mt3 $
+# Last updated on: $Date: 2007-02-12 14:12:30 $
 
 use strict;
 use Getopt::Long;
@@ -265,7 +265,7 @@ while(<INPUT>){
   # change any URLs present else the double back slash will be treated as a comment
   $description =~ s/http:\/\//URL: /g;
   print STRAIN "Remark \"$description\" Inferred_automatically \"From CGC strain data\"\n" unless ($description eq "");
-  print DELETE_STRAIN  "-D Remark \"$description\" Inferred_automatically \"From CGC strain data\"\n" unless ($description eq "");
+  print DELETE_STRAIN  "-D Remark \n" unless ($description eq ""); 
 
 
   m/Mutagen: (.*?)Outcrossed:/;
