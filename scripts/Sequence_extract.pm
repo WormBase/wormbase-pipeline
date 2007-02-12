@@ -192,7 +192,6 @@ sub Sub_sequence
     }
   }
 
-
 =head2
 
   Title   :   DNA_revcomp
@@ -207,8 +206,13 @@ sub Sub_sequence
 sub DNA_revcomp
   {
     my $self = shift;
-    my $revseq = &DNA_rev(shift);
-    $revseq = &DNA_comp($revseq);
+    my $revseq = reverse shift;
+    $revseq =~ tr/a/x/;
+    $revseq =~ tr/t/a/;
+    $revseq =~ tr/x/t/;
+    $revseq =~ tr/g/x/;
+    $revseq =~ tr/c/g/;
+    $revseq =~ tr/x/c/;
     return ($revseq);
   }
 
