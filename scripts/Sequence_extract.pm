@@ -207,14 +207,51 @@ sub Sub_sequence
 sub DNA_revcomp
   {
     my $self = shift;
-    my $revseq = reverse shift;
-    $revseq =~ tr/a/x/;
-    $revseq =~ tr/t/a/;
-    $revseq =~ tr/x/t/;
-    $revseq =~ tr/g/x/;
-    $revseq =~ tr/c/g/;
-    $revseq =~ tr/x/c/;
+    my $revseq = &DNA_rev(shift);
+    $revseq = &DNA_comp($revseq);
     return ($revseq);
+  }
+
+=head2
+
+  Title   :   DNA_rev
+  Usage   :   my $rev = $seq_obj->($seq)
+  Function:   reverse DNA seq
+  Returns :   DNA sequence as string
+  Args    :   DNA sequence as string
+
+=cut
+
+
+sub DNA_rev
+  {
+    my $self = shift;
+    my $revseq = reverse shift;
+    return ($revseq);
+  }
+
+=head2
+
+  Title   :   DNA_comp
+  Usage   :   my $comp = $seq_obj->($seq)
+  Function:   complement DNA seq
+  Returns :   DNA sequence as string
+  Args    :   DNA sequence as string
+
+=cut
+
+
+sub DNA_comp
+  {
+    my $self = shift;
+    my $seq = shift;
+    $seq =~ tr/a/x/;
+    $seq =~ tr/t/a/;
+    $seq =~ tr/x/t/;
+    $seq =~ tr/g/x/;
+    $seq =~ tr/c/g/;
+    $seq =~ tr/x/c/;
+    return ($seq);
   }
 
 1;
