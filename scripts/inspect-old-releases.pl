@@ -16,7 +16,7 @@
 # foreach? end
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2006-12-06 10:28:13 $      
+# Last updated on: $Date: 2007-02-14 09:46:53 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -82,6 +82,7 @@ foreach my $chromosome (@chromosomes) {
 
   print "Chromosome: $chromosome\n";
   print OUT "Chromosome: $chromosome\n";
+  $log->write_to("Chromosome: $chromosome\n");
 
   my @chromosome_pair = &get_chromosomes($chromosome, $database1, $database2);
   @differences = &compare_chromosomes(@chromosome_pair);
@@ -93,13 +94,15 @@ foreach my $chromosome (@chromosomes) {
     ($mismatch_start1, $mismatch_end1, $len1, $mismatch_start2, $mismatch_end2, $len2, $flipped) = @$diffs;
     print "old= $mismatch_start1, $mismatch_end1 len=$len1\tnew= $mismatch_start2, $mismatch_end2 len=$len2 flipped=$flipped\n";
     print OUT "$mismatch_start1\t$mismatch_end1\t$len1\t$mismatch_start2\t$mismatch_end2\t$len2\t$flipped\n";
+    $log->write_to("$mismatch_start1\t$mismatch_end1\t$len1\t$mismatch_start2\t$mismatch_end2\t$len2\t$flipped\n");
   }
 }
 
 close (OUT);
 
 # Close log files and exit
-$log->write_to("Finished.\n");
+
+$log->write_to("\nFinished.\n");
 
 $log->mail();
 exit(0);
