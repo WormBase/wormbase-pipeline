@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: ar2 $
-// Last edited on: $Date: 2006-12-15 11:52:27 $
+// Last edited on: $Date: 2007-02-15 18:16:56 $
 
 
 
@@ -1995,7 +1995,7 @@
 	DB_info    Database ?Database ?Database_field ?Accession_number //to link out to Phenobank ar2 02-DEC-05 //removed UNIQUE as reqs multiple connections
 	Species UNIQUE ?Species
 	Gene_regulation ?Gene_regulation XREF RNAi  // this tag is used when an RNAi experiment describes gene regulation ar2 29-MAR-06 for igor
-        Reference ?Paper XREF RNAi
+        Reference UNIQUE ?Paper XREF RNAi //[070215 ar2] made reference unique so Paper sort of equates to a Study class for Will S
         Phenotype ?Phenotype XREF RNAi #Phenotype_info
         Expr_profile ?Expr_profile XREF RNAi_result // connection added during build [030106 krb]
         Remark ?Text #Evidence
