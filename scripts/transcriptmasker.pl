@@ -8,7 +8,7 @@
 # 031023 dl1
 
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2007-02-15 14:19:40 $
+# Last edited on: $Date: 2007-02-15 14:35:47 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -40,6 +40,7 @@ my $mrna;     # mRNA data
 my $ncrna;    # ncRNA data
 my $est;      # EST data
 my $ost;      # OST data
+my $nematode; # non-washu or nembase ests.  Just to get them dumped from database - not masked.
 my $all;      # all of the above
 my $file;
 
@@ -49,6 +50,7 @@ GetOptions (
 	    "ncrna"          => \$ncrna,
 	    "est"            => \$est,
 	    "ost"            => \$ost,
+	    "nematode"       => \$nematode,
 	    "debug:s"        => \$debug,
 	    "help"           => \$help,
 	    "database:s"     => \$database,
@@ -139,7 +141,7 @@ $log->write_to($wormbase->runtime." : masked $masked EST sequences\n") if ($est 
 $masked = &MaskSequence('ost')   if ($ost || $all);
 $log->write_to($wormbase->runtime." : masked $masked OST sequences\n") if ($ost || $all);
 
-$masked = &MaskSequence('nematode')   if ($nematode || $all);
+$masked = &write_sequence_file('nematode')   if ($nematode || $all);
 $log->write_to($wormbase->runtime." : masked $masked OST sequences\n") if ($ost || $all);
 
 $log->write_to("\n=============================================\n\n");
