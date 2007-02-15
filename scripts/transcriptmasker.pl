@@ -7,8 +7,8 @@
 
 # 031023 dl1
 
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2006-11-30 14:41:35 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2007-02-15 14:19:40 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -16,6 +16,7 @@
 
 use strict;
 use lib $ENV{'CVS_DIR'};
+use Bio::SeqIO;
 use Wormbase;
 use IO::Handle;
 use Ace;
@@ -79,7 +80,8 @@ our %datafiles = (
 		  "mrna"  => "elegans_mRNAs",
 		  "ncrna" => "elegans_ncRNAs",
 		  "est"   => "elegans_ESTs",
-		  "ost"   => "elegans_OSTs"
+		  "ost"   => "elegans_OSTs",
+		  "nematode"=>"other_nematode_ESTs"
 		 );
 
 # valid Feature_data methods
@@ -125,16 +127,19 @@ my $db = Ace->connect(	-path=>$database,
 			-program =>$tace) || $log->log_and_die("Connection failure: ".Ace->error."\n");
 
 # which data file to parse
-$masked = &MaskSequence($datafiles{mrna}) if ($mrna || $all);
+$masked = &MaskSequence('mrna') if ($mrna || $all);
 $log->write_to($wormbase->runtime." : masked $masked mRNA sequences\n") if ($mrna || $all);
 
-$masked = &MaskSequence($datafiles{ncrna}) if ($ncrna || $all);
+$masked = &MaskSequence('ncrna') if ($ncrna || $all);
 $log->write_to($wormbase->runtime." : masked $masked ncRNA sequences\n") if ($ncrna || $all);
 
-$masked = &MaskSequence($datafiles{est})  if ($est || $all);
+$masked = &MaskSequence('est')  if ($est || $all);
 $log->write_to($wormbase->runtime." : masked $masked EST sequences\n") if ($est || $all);
 
-$masked = &MaskSequence($datafiles{ost})   if ($ost || $all);
+$masked = &MaskSequence('ost')   if ($ost || $all);
+$log->write_to($wormbase->runtime." : masked $masked OST sequences\n") if ($ost || $all);
+
+$masked = &MaskSequence('nematode')   if ($nematode || $all);
 $log->write_to($wormbase->runtime." : masked $masked OST sequences\n") if ($ost || $all);
 
 $log->write_to("\n=============================================\n\n");
@@ -152,12 +157,28 @@ exit(0);
 ######################## Subroutines #######################
 ############################################################
 
+sub write_sequence_file {
+	my %queries = (	'ost' 	=> 'query find sequence *OST* where cDNA_EST AND NOT Ignore',
+					'est' 	=> 'query find sequence !*OST* where cDNA_EST AND NOT Ignore',
+					'mrna'	=> 'query find sequence where mRNA AND NOT Ignore',
+					'ncrna'	=> 'query find sequence where RNA AND NOT mRNA',
+					'nematode'=>'query find sequence where method = EST_nematode'
+				);
+	my $type = shift;
+	my $file = "$EST_dir/".$datafiles{"$type"};
+	my $command = "quiet -on\n".$queries{"$type"}."\ndna -f $file\nquit\n";
+	$wormbase->run_command("echo '$command' | $tace $database", $log);
+}
+
+
+
 #_ MaskSequence -#
 # 
 # pass type of transcript data to be masked (e.g. mRNA, EST etc)
 
 sub MaskSequence {
   my $data   = shift;#gets populated by value from system call.
+  &write_sequence_file($data);
   my $masked = 0;
   #left ignored and ignore after merge as they seem to be meant for different things - ignored seems to be doing nothing though!
   my $ignored = 0;
@@ -167,81 +188,44 @@ sub MaskSequence {
   $/ = ">";
   
   # assign output file
-  my $output_file = $file ? $file."masked" : "$blat_dir/$data.masked";
+  my $output_file = $file ? $file."masked" : "$blat_dir/".$datafiles{$data}.".masked";
   open (OUTPUT, ">$output_file") || $log->log_and_die("ERROR: Can't open output file: $output_file");
   
   # input file loop structure
-  my $skip = 1;
-  
-  my $file2mask = $file ? $file : "$EST_dir/$data";  
-  open (INPUT, "<$file2mask")     || $log->log_and_die("ERROR: Can't open input file: $file2mask");
- SEQ: while (<INPUT>) {
-    chomp;
-    next if ($_ eq "");		# catch empty lines
-    if ($skip == 1) {		# skip first bad entry
-      $skip--;
-      next;
-    }
-    next unless /\w/; #skip blank lines
-    if (/^(\S+)\s+\S+.+\n/) {	# deal with accessions {$acc} and WormBase internal names {$id}
-      $acc = $1;
-      if (defined $EST_name{$acc}) {
-	$id  = $EST_name{$acc};
-      } 
-      else {
-	#		print "// ERROR: No accession-id connection for this sequence [$acc]\n" if ($wormbase->debug);
-	$EST_name{$acc} = $acc;
-	$id = $acc;
-      }
-    }
-    
-    my $seq = "$'";		# assign the rest of the string to $seq
-    $seq =~ s/[^gatcn]//g;	# remove non-gatcn characters (i.e. newlines)
-    my $seqmasked = $seq;		# copy sequence to masked file and
-    my $seqlength = length ($seq);	# calculate the length of the sequence
-	 
-    # fetch the sequence object from the database. push the feature_data objects to memory
-    my $obj = $db->fetch(Sequence=>$id);
-    if (!defined ($obj)) {
-      $log->write_to("ERROR: Could not fetch sequence $id \n\n");
-      next;
-    }
-
-    # Is the Ignore tag set?
-    if (defined $obj->Ignore) {
-      print "\n// Ignore tag set for $acc $id\n\n" if ($debug);
-      next SEQ;
-    }	
-	
+  my $file2mask = $file ? $file : "$EST_dir/".$datafiles{$data};  
+  my $seq_in = Bio::SeqIO->new(-file => "$file2mask" , '-format' => 'Fasta');
+ SEQ: while (my $seqobj = $seq_in->next_seq) {
+    my $seqmasked = $seqobj->seq;		# copy sequence to masked file and
+    my $seqlength = length ($seqmasked);	# calculate the length of the sequence
+	my $id = $seqobj->id;
     if( $seq2feature{$id} ) {
       foreach my $feature (keys %{$seq2feature{$id}}) {
       	my $coords = $seq2feature{$id}->{$feature};
-	if (defined($feature)) {
-	  next unless ($valid_methods{$feature}); # only mask valid Feature_data methods
-	  my ($method,$start,$stop,$length,$remark);
-	  my ($cut_to,$cut_from,$cut_length);
-	  $start = $coords->[0]; # start coord
-	  $stop  = $coords->[1]; # stop coord
-	  $cut_to     = $start - 1; # manipulations for clipping 
-	  $cut_from   = $stop;
-	  $cut_length = $stop - $start + 1;
-	  if ($cut_to < 0 ) {
-	    $cut_to = 0;
-	  }			# fudge to ensure non-negative clipping coords
+		if (defined($feature)) {
+	  	next unless ($valid_methods{$feature}); # only mask valid Feature_data methods
+	  	my ($method,$start,$stop,$length,$remark);
+	  	my ($cut_to,$cut_from,$cut_length);
+	  	$start = $coords->[0]; # start coord
+	  	$stop  = $coords->[1]; # stop coord
+	  	$cut_to     = $start - 1; # manipulations for clipping 
+	  	$cut_from   = $stop;
+	  	$cut_length = $stop - $start + 1;
+	  	if ($cut_to < 0 ) {
+	  	  $cut_to = 0;
+	  	}			# fudge to ensure non-negative clipping coords
 	  
-	  print "$acc [$id]: '$feature' $start -> $stop [$cut_to : $cut_from ($cut_length)]\n" if ($wormbase->debug);
-	  print "// # $acc [$id] $feature:" . (substr($seq,$cut_to,$cut_length)) . " [$start - $stop]\n\n" if ($debug);
-	  my $newseq = (substr($seqmasked,0,$cut_to)) . ('n' x $cut_length)  . (substr($seqmasked,$cut_from));
-	  $seqmasked = $newseq;
-	}
+	  	print "$id: '$feature' $start -> $stop [$cut_to : $cut_from ($cut_length)]\n" if ($wormbase->debug);
+	  	print "// # $acc [$id] $feature:" . (substr($seq,$cut_to,$cut_length)) . " [$start - $stop]\n\n" if ($debug);
+	 	my $newseq = (substr($seqmasked,0,$cut_to)) . ('n' x $cut_length)  . (substr($seqmasked,$cut_from));
+	 	$seqmasked = $newseq;
+		}
 	# increment count of sequences masked
-	$masked++;
+		$masked++;
       }		
     }
     # output masked sequence
-    print OUTPUT ">$acc $id\n$seqmasked\n";
+    print OUTPUT ">$id\n$seqmasked\n";
   }
-  close INPUT;
   $/ = "\n";
   close OUTPUT;
   return ($masked);
@@ -279,7 +263,7 @@ sub fetch_features {
       $log->error("something wrong with $seq:$type\n");
     }
   }
-  $log->write_to(scalar(keys %seq2feature), " sequences to be masked\n");
+  $log->write_to( scalar(keys %seq2feature) ." sequences to be masked\n");
 }
 
 __END__
