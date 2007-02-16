@@ -610,7 +610,11 @@ sub test_user_wormpub {
   if ( "$name" eq "wormpub" ) {
     print "running scripts as user wormpub . . . \n\n";
     return;
-  } else {
+  } 
+  elsif ($name eq "wormpipe"){
+	  return 1;
+	}	
+  else {
     print
       "You are doing this as $name NOT wormpub ! \n\n If you are going to alter autoace in any way it will break.\nDo you want to continue? (y/n). . ";
     my $response = <STDIN>;
@@ -958,7 +962,9 @@ sub run_script {
 
   my $store = $self->autoace . "/wormbase.store";
   store( $self, $store );
-  $self->run_command( "chmod -f 775 $store", $log);
+  
+  #if user wormpipe this always gives an ERROR and confuses log msgs
+  $self->run_command( "chmod -f 775 $store", $log) unless ($self->test_user_wormpub == 1);
   my $command = "perl $ENV{'CVS_DIR'}/$script -store $store";
   print "$command\n" if $self->test;
   return $self->run_command( "$command", $log );
