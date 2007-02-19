@@ -4,8 +4,8 @@
 #
 # Dumps InterPro protein motifs from ensembl mysql (protein) database to an ace file
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2006-11-16 11:45:10 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2007-02-19 16:53:26 $
 
 
 use strict;
@@ -86,7 +86,7 @@ if ($method ) {
 # and the logic names (as specified in @methods) that search those databases
 my %method_database = (
 		       'prosite'     => 'PROSITE',
-		       'prints'      => 'PRINTS',
+#		       'prints'      => 'PRINTS',
 		       'profile'     => 'PROFILE',
 		       'prodom'      => 'PRODOM',
 		       'hmmsmart'    => 'SMART',
