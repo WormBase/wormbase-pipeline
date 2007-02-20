@@ -7,8 +7,8 @@
 # A script for dumping dna and/or gff files for chromosome objects in autoace
 # see pod for more details
 #
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2006-12-06 13:45:09 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2007-02-20 10:11:37 $
 
 
 use strict;
@@ -199,9 +199,7 @@ sub composition {
   close(IN);
   $final_total = $total - $minus;
   $wormbase->run_command("echo $total $final_total > totals");
-  
-  # can't do this in test mode as the Wormbase.pm subroutine looks in /wormsrv2
-  $wormbase->release_composition;
+  $wormbase->release_composition($log);
 }
 
 ##########################
