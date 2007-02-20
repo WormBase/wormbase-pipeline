@@ -7,10 +7,10 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2006-09-27 16:21:49 $
+# Last updated on: $Date: 2007-02-20 09:29:12 $
 
 use strict;
-use lib "/nfs/disk100/wormpub/wormbase/scripts";
+use lib $ENV{"CVS_DIR"};
 use Wormbase;
 use Ace;
 use Ace::Object;
@@ -23,7 +23,7 @@ use File::Path;
 # command line options                            # 
 ###################################################
 
-my ($help, $debug, $class, @classes, $database, $ace, $verbose);
+my ($help, $debug, $test, $class, @classes, $database, $ace, $verbose);
 my $weekly;
 
 GetOptions ("help"        => \$help,
@@ -32,13 +32,14 @@ GetOptions ("help"        => \$help,
 	    "database=s"  => \$database,
             "ace"         => \$ace,
 	    "verbose"     => \$verbose,
-	    "weekly"      => \$weekly
+	    "weekly"      => \$weekly,
+	    	"test"    => \$test
 	   );
 
 ###################################################
 # Miscellaneous important variables               # 
 ###################################################
-my $wb = Wormbase->new();
+my $wb = Wormbase->new(-test => $test, -debug => $debug );
 # choose database to query: default is /nfs/disk100/wormpub/DATABASES/geneace
 $database = "/nfs/disk100/wormpub/DATABASES/geneace" unless $database;
 print "Using database $database.\n\n";
@@ -101,11 +102,10 @@ my $db = Ace->connect(-path  => $database,
 		      -program =>$tace) || do { print LOG "Connection failure: ",Ace->error; die();};
 
 
-my $ga = init Geneace();
+my $ga = init Geneace($wb);
 # hash for converting locus/seq. names <-> gene_id
 my @Gene_info = $ga -> gene_info($database, "seq2id");
 my %Gene_info = %{$Gene_info[0]};
-my %seqs_to_gene_id = %{$Gene_info[1]};
 
 
 # Process separate classes if specified on the command line else process all classes, 
@@ -942,12 +942,12 @@ sub process_allele_class{
       }
     }
     # now check for structure of Missense field
-    else {
-      my $missense = $allele->Missense;
-      if ($missense !~ m/^[A-Z]\(\d+\) to [A-Z]$/) {
-	print LOG "ERROR: $allele has an incorrect Missense value ($missense)\n";
-      }
-    }
+ #   else {
+ #     my $missense = $allele->Missense;
+ #     if ($missense !~ m/^[A-Z]\(\d+\) to [A-Z]$/) {
+#	print LOG "ERROR: $allele has an incorrect Missense value ($missense)\n";
+ #     }
+ #   }
 
     # Check for CGC_name tag missing
     if (!defined($allele->CGC_name)) {
@@ -1062,21 +1062,18 @@ sub process_strain_class {
 	my @items=split(/ /,$extract);
 
 	foreach (@items){
-	  if( exists $seqs_to_gene_id{$_} ){
-	    my @gene_ids= @{$seqs_to_gene_id{$_}};
-	    @gene_ids = $ga->get_unique_from_array(@gene_ids); 
-	    if ($cgc eq "CGC"){
-	      foreach my $e (@gene_ids){
-		print LOG "WARNING: CGC Strain $strain has sequence_name $_ in Genotype, which can now become $Gene_info{$e}{'CGC_name'}\n" if $Gene_info{$e}{'CGC_name'};
-	      }
+	  if( my $wbgeneID = $Gene_info{$_} ){
+	    if( $Gene_info{"$wbgeneID"}{'CGC_name'}) {
+		    if ($cgc eq "CGC"){	
+				print LOG "WARNING: CGC Strain $strain has sequence_name $_ in Genotype, which can now become $Gene_info{$wbgeneID}{'CGC_name'}\n";
+	      	}
 	    }
 	    else {
-	      foreach my $e (@gene_ids){
-		print LOG "WARNING: Non_CGC Strain $strain has sequence_name $_ in Genotype, which can now become $Gene_info{$e}{'CGC_name'}\n" if $Gene_info{$e}{'CGC_name'};
-	      }
+	    	print LOG "WARNING: Non_CGC Strain $strain has sequence_name $_ in Genotype, which can now become $Gene_info{$wbgeneID}{'CGC_name'}\n";
+	    }
 	    }
 	  }
-	}
+	
       }
     }
   }

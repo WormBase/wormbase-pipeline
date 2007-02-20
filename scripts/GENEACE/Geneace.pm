@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl5.8.0 -w
 # Last updated by $Author: ar2 $
-# Last updated on: $Date: 2007-02-09 14:00:07 $
+# Last updated on: $Date: 2007-02-20 09:29:12 $
 
 package Geneace;
 
@@ -41,19 +41,17 @@ sub test_geneace {return  '/nfs/disk100/wormpub/DATABASES/TEST_DBs/CK1TEST'}
 sub gene_info {
   my ($this, $db, $option) = @_;
   shift;
-  my $gi_file  = $this->{'wormbase'}->common_data."/gene_info.dat";
+  my $gi_file  = $this->{'wormbase'}->database('geneace')."/gene_info.dat";
 
   my (%gene_info);
 
-  if( -e  $gi_file ) {
+  if( $this->{'wormbase'}->debug and -z  $gi_file ) {
     $this->{'wormbase'}->FetchData('gene_info',\%gene_info);
   }
   else {
     $db = "/nfs/disk100/wormpub/DATABASES/geneace" if !$db;
     print "----- Doing Gene id <-> Gene_name conversion based on $db ... -----\n\n";
 
-    my $outfile = "$geneace_dir/CHECKS/gene_info.tmp";
-	$this->{'wormbase'}->run_command("rm -f $outfile");
 	 my $gene_info_def="$def_dir/geneace_gene_info.def";
 
     my $fh = $this->{'wormbase'}->table_maker_query($db,$gene_info_def);
@@ -75,16 +73,16 @@ sub gene_info {
       $gene_info{$public_name}{'Gene'} 	= $gene     		if $public_name;
     }
 
-    # store these to save time recreating them all the time
-    $gi_file = $this->{'wormbase'}->common_data."/gene_info.dat";
-    open( GI,">$gi_file");
-    print GI Data::Dumper->Dump([\%gene_info]);
-    close GI;
-
+	if( $this->{'wormbase'}->debug ) {
+	    # store these to save time recreating them all the time
+    	open( GI,">$gi_file");
+   		print GI Data::Dumper->Dump([\%gene_info]);
+    	close GI;
+	}
   }
 
   #return refs to hash(s)
-  return %gene_info ;
+  return \%gene_info ;
 }
 
 sub parse_inferred_multi_pt_obj {
