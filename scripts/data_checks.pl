@@ -6,8 +6,8 @@
 #
 # This is a example of a good script template
 #
-# Last updated by: $Author: pad $
-# Last updated on: $Date: 2007-01-17 17:25:23 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2007-02-22 10:27:13 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -346,6 +346,11 @@ sub read_GFF_queries {
     $queries[$i]{'DESC'}  = "ncRNAs";
     $queries[$i]{'GFF'}   = "nc_primary_transcript";
     $queries[$i]{'QUERY'} = 'find elegans_RNA_genes ncRNA';
+
+    $i++;
+    $queries[$i]{'DESC'}   = "Mass Spectrometry peptides";
+    $queries[$i]{'GFF'}    = "mass_spec_genome";
+    $queries[$i]{'EXPECT'} = '55204';
 
     #	$i++;
     #	$queries[$i]{'DESC'}  = "";
