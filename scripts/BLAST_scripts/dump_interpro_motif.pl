@@ -5,7 +5,7 @@
 # Dumps InterPro protein motifs from ensembl mysql (protein) database to an ace file
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2007-02-19 16:53:26 $
+# Last updated on: $Date: 2007-02-22 12:00:59 $
 
 
 use strict;
@@ -78,7 +78,8 @@ if ($method ) {
 # don't use 'superfamily': it finds lots of hits per protein
 # 'profile' is still having problems writing to the database
 #  @methods= qw(hmmpfam prints profile pirsf hmmtigr hmmsmart );
-  @methods= qw(hmmpfam prints pirsf hmmtigr hmmsmart prosite profile);
+# removed prints
+  @methods= qw(hmmpfam pirsf hmmtigr hmmsmart prosite profile);
 }
 
 
