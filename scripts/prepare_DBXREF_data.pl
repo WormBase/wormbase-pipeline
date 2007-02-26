@@ -5,10 +5,12 @@ use Wormbase;
 use Ace;
 use Storable;
 
+
 my $store = '/nfs/disk100/wormpub/BUILD/autoace/wormbase.store';
 my $wormbase = retrieve( $store );
-my $database = $wormbase->autoace;#$ENV{'CURRENT'};
-my %clone2acc = $wormbase->FetchData('clone2accession');
+my $database = shift or $wormbase->autoace;#$ENV{'CURRENT'};
+my %clone2acc;
+$wormbase->FetchData('clone2accession',\%clone2acc,"$database/COMMON_DATA");
 
 my $db = Ace->connect( -path=> $database) or die Ace->error;
 
