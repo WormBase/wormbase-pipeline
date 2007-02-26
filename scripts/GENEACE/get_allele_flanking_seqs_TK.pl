@@ -4,8 +4,8 @@
 #
 # by Chao-Kung Chen [030625]
 
-# Last updated on: $Date: 2005-12-09 13:35:15 $
-# Last updated by: $Author: mt3 $
+# Last updated on: $Date: 2007-02-26 15:12:24 $
+# Last updated by: $Author: ar2 $
 
 use Tk;
 use strict;
@@ -16,6 +16,16 @@ use Wormbase;
 use TextANSIColor;
 use Tk::DialogBox;
 use GENEACE::Geneace;
+use Getopt::Long;
+
+my ($database,$debug, $version, $design);
+
+GetOptions (
+	 'database:s'  => \$database,
+	 'debug:s'     => \$debug,
+	 'version:s'   => \$version,
+	 'design'      => \$design
+	);
 
 
 ##################################################
@@ -23,9 +33,10 @@ use GENEACE::Geneace;
 ##################################################
 
 my $paper_name;          # Will store paper object names in form 'WBPaperXXXXXXXX'
+my $wbgene;
 my $tace = &tace;        # gets default path to tace binary
-my $database = "/nfs/disk100/wormpub/DATABASES/current_DB";
-my $WB_version = &get_wormbase_version() -1; # get release number for last release (i.e. not current one)
+$database = "/nfs/disk100/wormpub/DATABASES/current_DB" unless $database;
+my $WB_version = $version or (&get_wormbase_version()); # get release number for last release (i.e. not current one)
 my $top;
 
 # check that GFF splits directory exists for the version that you are looking at
@@ -47,35 +58,29 @@ my $exon_table_dir = "/nfs/disk100/wormpub/DATABASES/geneace/ALLELE_DATA/EXON_TA
 # if not, then need to make new Exon_Table file
 print "\nLast available WormBase release was WS$WB_version\n";
 print "Looking for $exon_table_dir/ExonTable_$WB_version...\n";
+unless ( $design ){
+  if (! -e "$exon_table_dir/ExonTable_$WB_version"){
+    print "File does not exist, creating ExonTable_$WB_version file...\n\n";
 
-if (! -e "$exon_table_dir/ExonTable_$WB_version"){
-  print "File does not exist, creating ExonTable_$WB_version file...\n\n";
+    $top = MainWindow->new();
+    $top->configure (title => "Updating datasets . . .", background => "white");
 
-  $top = MainWindow->new();
-  $top->configure (title => "Updating datasets . . .", background => "white");
+    $top->geometry("450x120+350+300");
 
-  $top->geometry("450x120+350+300");
+    my $message_frame = $top ->Frame(relief => 'groove', borderwidth => 2)
+      ->pack(side => 'top', anchor => 'n',expand => 1, fill => 'x');
 
-  my $message_frame = $top ->Frame(relief => 'groove', borderwidth => 2)
-                           ->pack(side => 'top', anchor => 'n',expand => 1, fill => 'x');
-
-  $message_frame -> Label(text=>"\nNew Wormbase release (WS$WB_version) available.\n\n   Need to update exon table of all CDS/Transcripts\nand 6 chromosomal DNA sequencs.\n\nThis usually takes ~45 sec.\nAnother window will then popup for curation\n", fg=>"blue")
+    $message_frame -> Label(text=>"\nNew Wormbase release (WS$WB_version) available.\n\n   Need to update exon table of all CDS/Transcripts\nand 6 chromosomal DNA sequencs.\n\nThis usually takes ~45 sec.\nAnother window will then popup for curation\n", fg=>"blue")
                  -> pack(side => "left");
 
-  $message_frame -> Button(text => "Update", activebackground => "green", activeforeground => "black", command => \&update)
+    $message_frame -> Button(text => "Update", activebackground => "green", activeforeground => "black", command => \&update)
                  -> pack(side => "left", expand => 1);
-  MainLoop();
+    MainLoop();
+  }
+  else{
+    print "Found it!\n\n";
+  }
 }
-else{
-  print "Found it!\n\n";
-}
-
-###############################################
-# get hash for Gene_name <-> Gene id conversion
-###############################################
-
-my $ga = init Geneace;
-my %Gene_info = $ga -> gene_info();
 
 
 #######################
@@ -85,7 +90,7 @@ my %Gene_info = $ga -> gene_info();
 #----------- top level frame ----------
 
 my $mw = MainWindow->new();
-$mw->configure (title => "Allele Flanking Sequences Retriever by Chao-Kung Chen Version 1.0 (2003/06/20)",
+$mw->configure (title => "Allele Curation Tool)",
                 background => "white",
                );
 
@@ -146,26 +151,101 @@ $param_frame -> Label(text => "Eg: 4R79.1 -aa 332Q ok12 abc-1 1232   OR   4R79.1
 
 #----------- entry box ----------
 
-my $params;
+my ($cds,$mol_type,$variation,$position, $residue_change, $ref);
 
 my @info;  # will store amino acid before and after mutation along with coordinate of mutation
 
 my $entry_frame = $mw ->Frame(relief => 'groove', borderwidth => 2)
                     ->pack(side => 'top', anchor => 'n', after => $param_frame, expand => 1, fill => 'x');
 
-my $entry = $entry_frame->Entry(textvariable => \$params, bg => "white", fg => "black", width => 60)->pack(side =>"left");
+#-------- CDS ----------
+$entry_frame->Label(text => "CDS: ")->pack(-pady => '6',
+				       -padx => '6',
+				       -side => 'left',
+				      );;
+$entry_frame->Entry(textvariable => \$cds, bg => "white", fg => "black", width => 10)->pack(side =>"left");
 
-$entry_frame->Button(text => "RUN", command => \&run)
-          -> pack(side => "left", fill => "x", expand => 1);
+#-------- Molcule -------
+my $dna_radio = $entry_frame->Radiobutton(text => "DNA",
+					  variable => \$mol_type,
+					  value => 'DNA'
+					 )->pack( -side => 'left',
+						);
+my $aa_radio = $entry_frame->Radiobutton(text => "Amino Acid",
+					  variable => \$mol_type,
+					  value => 'aa'
+					 )->pack(-side => 'left',
+						);
+$aa_radio->select;
 
-$entry_frame->Button(text => "Reset parameters", command => \&Reset)
-          -> pack(side => "left", fill => "x", expand => 1);
+#------- Variation -------
 
+my $var_frame = $entry_frame ->Frame(relief => 'groove', borderwidth => 2)
+  ->pack(side => 'left', anchor => 'n', expand => 1, fill => 'x');
+
+$var_frame->Label(text => "Variation name: ")->pack(-pady => '6',
+				       -padx => '6',
+				       -side => 'left',
+				      );
+$var_frame->Entry(textvariable => \$variation, bg => "white", fg => "black", width => 10)->pack(side =>"left");
+
+
+#------- Amino/base change  -------
+my $residue_frame = $entry_frame ->Frame(relief => 'groove', borderwidth => 2)
+  ->pack(side => 'left', anchor => 'n', expand => 1, fill => 'x');
+
+$residue_frame->Label(text => "Amino acd / Base: ")->pack(-pady => '6',
+				       -padx => '6',
+				       -side => 'left',
+				      );
+$residue_frame->Entry(textvariable => \$residue_change, bg => "white", fg => "black", width => 3)->pack(side =>"left");
+
+#------- coordinate -----
+
+my $postn_frame = $entry_frame ->Frame(relief => 'groove', borderwidth => 2)
+  ->pack(side => 'left', anchor => 'n', expand => 1, fill => 'x');
+
+$postn_frame->Label(text => "coord :")->pack(-pady => '6',
+				       -padx => '6',
+				       -side => 'left',
+				      );
+
+$postn_frame->Entry(textvariable => \$position, bg => "white", fg => "black", width => 8)->pack(side =>"left");
 
 #----------- button frame ----------
 
+my $btn_frame1 = $mw ->Frame(relief => 'groove', borderwidth => 2)
+  ->pack(side => 'top', anchor => 'n', after => $entry_frame, expand => 1, fill => 'x');
+
+#------- paper_id -----
+
+my $ref_frame = $btn_frame1 ->Frame(relief => 'groove', borderwidth => 1)
+  ->pack(side => 'left', anchor => 'n', expand => 1, fill => 'x');
+
+$ref_frame->Label(text => "WBPaper id:")->pack(-pady => '6',
+				       -padx => '6',
+				       -side => 'left',
+				      );
+
+$ref_frame->Entry(textvariable => \$ref, bg => "white", fg => "black", width => 8)->pack(side =>"left");
+
+##------- Run/Reset Buttons  -------
+
+#my $run_frame = $btn_frame->Frame(relief => 'groove', borderwidth => 2)
+#  ->pack(side => 'left', anchor => 'n', expand => 1, fill => 'x');
+
+$btn_frame1->Button(text => "RUN", command => \&run)
+          -> pack(side => "left", fill => "x", expand => 1);
+
+$btn_frame1->Button(text => "Reset parameters", command => \&Reset)
+          -> pack(side => "left", fill => "x", expand => 1);
+
+#----------- 2 button frame ----------
+
 my $btn_frame = $mw ->Frame(relief => 'groove', borderwidth => 2)
-                    ->pack(side => 'top', anchor => 'n', after => $entry_frame, expand => 1, fill => 'x');
+  ->pack(side => 'top', anchor => 'n', after => $btn_frame1, expand => 1, fill => 'x');
+
+
 
 my $label_1 = $btn_frame->Label(text => ""); # not displayed
 my $label_2 = $btn_frame->Label(text => ""); # not displayed
@@ -255,13 +335,26 @@ MainLoop();
 
 #----------- END OF WIDGET LAYOUT ----------
 
+    while ($design ) {
+      sleep 20;
+    }
+
+
+###############################################
+# get hash for Gene_name <-> Gene id conversion
+###############################################
+
+my $ga = init Geneace;
+my %Gene_info = $ga -> gene_info();
+my %cds2gene = &FetchData('cds2wbgene_id');
+
 
 ##################
 # global variables
 ##################
 
-my ($cds_or_locus, $aa_or_dna, $mutation, $allele, $cgc_name, $position, $cds,
-    @output, @ace, @out, @DNA, @prot, %aminoacid2codon, @CDS_coords, $molecule, $filename);
+my (#ck1_vars - $cds_or_locus, $aa_or_dna, $mutation, $allele, $cgc_name, $position, $cds,
+    @output, @ace, @out, @DNA, @prot, %aminoacid2codon, @CDS_coords, $filename);
 
 
 ######################################################
@@ -393,13 +486,16 @@ sub upload_ace_GA{
 }
 
 sub Reset{
-   $entry -> delete('0.1', 'end');
+   #$entry -> delete('0.1', 'end');
 }
 
 
 sub run {
-
-  my $text = $entry -> cget(-textvariable);
+  foreach( ($cds, $mol_type, $residue_change,$position , $variation, $ref) ) {
+    do {print "undef var\n";  return 1;}  unless $_;
+  }
+  return 1;
+  my $text ="1";# convert to separate field = $entry -> cget(-textvariable);
 
   # look up genetic code of aa
   %aminoacid2codon = (
@@ -448,37 +544,32 @@ sub run {
   else {
     my $ref;
     @info=();
-    ($cds_or_locus, $aa_or_dna, $mutation, $allele, $cgc_name, $ref) = split(/\s+/, $params);
-    $run_window -> insert('end', "$cds_or_locus, $aa_or_dna, $mutation, $allele, $cgc_name, $ref");
+    # ck1 code($cds_or_locus, $aa_or_dna, $mutation, $allele, $cgc_name, $ref) = split(/\s+/, $params);
+    $run_window -> insert('end', "$cds, $mol_type, $residue_change,$position , $variation, $ref");
 
-    # effectively split the $mutation field to store the position of the mutation in $position and the nature of
-    # the mutation in $mutation
-    $position = $mutation;
-    $position =~ s/\D//g;
-    $mutation =~ s/\d+//;
     # check whether three letters have been specified (in -DNA mode) rather than one, and if so look up correpsonding
     # amino acid from hash
-    if ($mutation =~ /\w{3,4}/){$mutation = $codon2aminoacid{lc($mutation)}}
-    $mutation = uc($mutation);
-    push(@info, uc($mutation));
+    if ($residue_change =~ /\w{3,4}/){$residue_change = $codon2aminoacid{lc($residue_change)}}
+    $residue_change = uc($residue_change);
+    push(@info, uc($residue_change));
 
     # set $paper_name from parameter given by $ref
     my $id_padded = sprintf "%08d" , $ref;
     $paper_name = "WBPaper$id_padded";
 
     # Set molecule type
-    if ($aa_or_dna eq "-aa" || $aa_or_dna eq "-AA"){$molecule = "aa"} else {$molecule = "DNA"}
+    #ck1 code - if ($a eq "-aa" || $aa_or_dna eq "-AA"){$molecule = "aa"} else {$molecule = "DNA"}
 
     # make cds name uppercase apart from any trailing isoform suffixes
-    if ($cds_or_locus =~ /(.+\.\d+)(\w)/){
+    if ($cds =~ /(.+\.\d+)(\w)/){
       my $variant = $2; my $seq = uc($1);
       $cds = $seq.$variant; 
     }
     else {
-      $cds = uc($cds_or_locus);
+      $cds = uc($cds);
     }
   }
-
+  $wbgene = $cds2gene{"$cds"};
   ####################################################
   # get DNA sequence (exon/intron) of a CDS/Transcript
   ####################################################
@@ -519,11 +610,11 @@ sub run {
 
   @DNA = split(//, $DNA);
 
-  if ($molecule eq "DNA"){
+  if ($mol_type eq "DNA"){
 
     $cds =~ /(.+)\..+/;
     my $seq = $1;
-
+      
     my @dna_L = @DNA[$position-1..$position+28];
     my @dna_R = @DNA[$position+30..$position+59];
     my $dna_L = join('', @DNA[$position-1..$position+28]);
@@ -538,10 +629,10 @@ sub run {
     $run_window -> insert('end', "$red $DNA[$position+29]");
     $run_window -> insert('end', " $dna_R");
 
-    $ace_window->insert('end', "\nGene : \"$Gene_info{$cgc_name}{'Gene'}\"  \/\/$cgc_name\n");
-    $ace_window->insert('end', "\/\/Allele \"$allele\" Paper_evidence \"$paper_name\"\n");
+    $ace_window->insert('end', "\nGene : \"$wbgene\"\n");
+    $ace_window->insert('end', "\/\/Allele \"$variation\" Paper_evidence \"$paper_name\"\n");
 
-    $ace_window->insert('end', "\nVariation : \"$allele\"\n");
+    $ace_window->insert('end', "\nVariation : \"$variation\"\n");
     $ace_window->insert('end', "\/\/Evidence Paper_evidence \"$paper_name\"\n");
     $ace_window->insert('end', "Flanking_sequences \"$dna_L\" \"$dna_R\"\n");
     $ace_window->insert('end', "Sequence \"$seq\"\n");
@@ -584,7 +675,7 @@ sub run {
     # retrieving flank seq of a specified codon or mutation site via exons_to_codons routine
     ########################################################################################
 
-    &exons_to_codons($cds, \@exons, \@DNA, \@prot, $mutation, $position, $allele, $cgc_name);
+    &exons_to_codons($cds, \@exons, \@DNA, \@prot, $residue_change, $position, $variation);
   }
 }
 
@@ -903,8 +994,8 @@ sub exons_to_codons {
   }
 
    $label_1 -> configure(text => "@ace");
-   $label_2 -> configure(text => "$allele");
-   $label_3 -> configure(text => "$cgc_name");
+   $label_2 -> configure(text => "$variation");
+   $label_3 -> configure(text => "$cds");
 
    $cds =~ /(.+)\..+/;
    my $parent = $1;
@@ -1007,14 +1098,14 @@ sub write_ace {
 
   my ($Lf, $Rf, $allele, $cgc_name, $seq) = @_;
 
-  $ace_window->insert('end', "\nGene : \"$Gene_info{$cgc_name}{'Gene'}\"\n");
+  $ace_window->insert('end', "\nGene : \"$wbgene\"\n");
   $ace_window->insert('end', "Variation \"$allele\" Paper_evidence \"$paper_name\"\n");
   
   $ace_window->insert('end', "\nVariation : \"$allele\"\n");
   $ace_window->insert('end', "Evidence Paper_evidence \"$paper_name\"\n");
   $ace_window->insert('end', "Sequence \"$seq\"\n");
   $ace_window->insert('end', "Flanking_sequences \"$Lf\" \"$Rf\"\n");
-  $ace_window->insert('end', "Gene  \"$Gene_info{$cgc_name}{'Gene'}\"  \/\/$cgc_name\n");
+  $ace_window->insert('end', "Gene  \"$wbgene\"  \/\/$cgc_name\n");
   $ace_window->insert('end', "Species \"Caenorhabditis elegans\"\n");
 
   $ace_window->insert('end', "Substitution \"[\/]\"\n");
