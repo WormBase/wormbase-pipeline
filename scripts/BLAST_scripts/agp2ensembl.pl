@@ -50,8 +50,8 @@ Insert list of bugs here!
 
 =cut
 
-use lib '/nfs/farm/Worms/Ensembl/ensembl-pipeline/modules';
-use lib '/nfs/farm/Worms/Ensembl/ensembl/modules';
+use lib '/nfs/acari/wormpipe/BUILD/ensembl-pipeline/modules';
+use lib '/nfs/acari/wormpipe/BUILD/ensembl/modules';
 use lib '/nfs/disk100/humpub/modules/PerlModules';
 use lib $ENV{'CVS_DIR'};
 
@@ -64,6 +64,8 @@ use Bio::EnsEMBL::Pipeline::DBSQL::DBAdaptor;
 use Bio::EnsEMBL::Clone;
 use Bio::EnsEMBL::RawContig;
 use Wormbase;
+use Storable;
+
 
 my($id, $acc, $ver, $phase, $contigs);
 my($agp, $single, $seqio, $seq, $fasta, $strict);
