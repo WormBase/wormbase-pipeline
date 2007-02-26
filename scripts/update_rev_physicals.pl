@@ -2,27 +2,41 @@
 
 # Author: Chao-Kung Chen
 # Last updated by $Author: ar2 $
-# Last updated on: $Date: 2005-12-16 11:18:55 $ 
+# Last updated on: $Date: 2007-02-26 14:52:43 $ 
 
 use strict;
-use lib "/wormsrv2/scripts";
+use lib $ENV{'CVS_DIR'};
 use Wormbase;
 use Ace;
 use Tk;
 use Tk::DialogBox;
 use Getopt::Long;
 use GENEACE::Geneace;
+use Wormbase;
+use Storable;
 
-my $tace = &tace;
 
-my ($panel, $comp, $rev, $version, $debug);
+my ($panel, $comp, $rev, $version, $debug, $store, $test);
+
 GetOptions ("p|panel:s"   => \$panel,    # number of rows (panels) to create
             "c|comp=s"    => \$comp,     # cmp_gmap_with_coord_order_WSXXX.date.pid
 	    "r|rev=s"     => \$rev,      # reverse_physicals_WSXXX.date.pid
 	    "v|version=s" => \$version,  # WS version, eg. 115
 	    "d|debug"     => \$debug,    # will use test db for upload, otherwise use autoace
+	    "store:s"     => \$store,
+	    "test"        => \$test
 	   );
 
+############################
+# recreate configuration   #
+############################
+my $wb;
+if ($store) { $wb = Storable::retrieve($store) or croak("cant restore wormbase from $store\n") }
+else { $wb = Wormbase->new( -debug => $debug, -test => $test, ) }
+
+my $log = Log_files->make_build_log($wb);
+
+my $tace = $wb->tace;
 
 # ----- main frame -----
 my $mw = MainWindow -> new();
@@ -30,42 +44,42 @@ $mw -> configure(title => "Update marker Loci genetics map                      
 $mw->resizable(0,0);
 
 # ----- example frame with label -----
-my $example_frm = $mw ->Frame(relief => 'groove', borderwidth => 2)
-                      ->pack(side => 'top', anchor => 'n', expand => 1, fill => 'x');
+my $example_frm = $mw->Frame(-relief => 'groove', -borderwidth => 2)
+                      ->pack(-side => 'top', -anchor => 'n', -expand => 1, -fill => 'x');
 
 
-$example_frm -> Label(text => "You need to correct $panel reverse physical(s)", bg => "black", fg => "white")
-             -> pack(side => "top", anchor => "n", fill => "x", expand => 1);
+$example_frm -> Label(-text => "You need to correct $panel reverse physical(s)", -bg => "black", -fg => "white")
+             -> pack(-side => "top", -anchor => "n", -fill => "x", -expand => 1);
 
 my $usg = "Start by clicking [ View rev. physicals ] \& [ View genetics map ], then:";
-$example_frm -> Label(text => $usg, bg => "black", fg => "orange")
-             -> pack(side => "top", anchor => "n", fill => "x", expand => 1);
+$example_frm -> Label(-text => $usg, -background => "black", -fg => "orange")
+             -> pack(-side => "top", -anchor => "n", -fill => "x", -expand => 1);
 
 my $usage = "1: Enter locus, chromosome and new/old map positions\n2: As one rev. phys can affect two loci, click [ Add row ] for more panels\n3: Click upload AUTOACE when done";
-$example_frm -> Label(text => $usage, bg => "black", fg => "orange")
-             -> pack(side => "top", anchor => "n", fill => "x", expand => 1);
+$example_frm -> Label(-text => $usage, -background => "black", -fg => "orange")
+             -> pack(-side => "top", -anchor => "n", -fill => "x", -expand => 1);
 
-$example_frm -> Label(text => "All changes made will be mailed to CGC", bg => "black", fg => "white")
-             -> pack(side => "top", anchor => "n", fill => "x", expand => 1);
+$example_frm -> Label(-text => "All changes made will be mailed to CGC", -background => "black", -fg => "white")
+             -> pack(-side => "top", -anchor => "n", -fill => "x", -expand => 1);
 
 #----- button frame with buttons -----
-my $button_frm = $mw ->Frame(relief => 'groove', borderwidth => 2)
-                    ->pack(side => 'top', anchor => 'n', expand => 1, fill => 'x');
+my $button_frm = $mw ->Frame(-relief => 'groove', -borderwidth => 2)
+                    ->pack(-side => 'top', -anchor => 'n', -expand => 1, -fill => 'x');
 
-$button_frm->Button(text => "View rev. physicals",  activebackground => "white", activeforeground => "blue", command => \&view_rev_physicals)
-           -> pack(side => "left",  fill => "x", expand => 1);
+$button_frm->Button(-text => "View rev. physicals",  -activebackground => "white", -activeforeground => "blue", -command => \&view_rev_physicals)
+           -> pack(-side => "left",  -fill => "x", -expand => 1);
 
-$button_frm->Button(text => "View genetics map",  activebackground => "white", activeforeground => "blue", command => \&view_gmap)
-           -> pack(side => "left",  fill => "x", expand => 1);
+$button_frm->Button(-text => "View genetics map",  -activebackground => "white", -activeforeground => "blue", -command => \&view_gmap)
+           -> pack(-side => "left",  -fill => "x", -expand => 1);
 
-my $add_btn = $button_frm->Button(text => "Add row",  activebackground => "white", activeforeground => "blue", command => \&add_row)
-                            -> pack(side => "left",  fill => "x", expand => 1);
+my $add_btn = $button_frm->Button(-text => "Add row",  -activebackground => "white", -activeforeground => "blue", -command => \&add_row)
+                            -> pack(-side => "left",  -fill => "x", -expand => 1);
 
-my $upload_btn = $button_frm->Button(text => "Upload AUTOACE",  activebackground => "white", activeforeground => "red", command => \&load_autoace)
-                            -> pack(side => "left",  fill => "x", expand => 1);
+my $upload_btn = $button_frm->Button(-text => "Upload AUTOACE",  -activebackground => "white", -activeforeground => "red", -command => \&load_autoace)
+                            -> pack(-side => "left",  -fill => "x", -expand => 1);
 
-my $exit_btn = $button_frm->Button(text => "EXIT",  activebackground => "white", activeforeground => "red", command => sub{exit(0)})
-                          -> pack(side => "left",  fill => "x", expand => 1);
+my $exit_btn = $button_frm->Button(-text => "EXIT",  -activebackground => "white", -activeforeground => "red", -command => sub{exit(0)})
+                          -> pack(-side => "left",  -fill => "x", -expand => 1);
 
 # ----- lexical variables -----
 my ($locus, $chrom, $map, $oldmap, %locus_map, @objs);
@@ -92,7 +106,7 @@ sub view_rev_physicals {
   open(IN, $rev);
   my $text;
   while(<IN>){$text .= $_}; close IN;
-  my $box = $mw1 -> Scrolled("Text", -scrollbars => "e", width => 100, height => 20)
+  my $box = $mw1 -> Scrolled("Text", -scrollbars => "e", -width => 100, height => 20)
                 -> pack(); # takes "Text" inside ()
 
   $box->insert('end', $text);
@@ -108,7 +122,7 @@ sub view_gmap {
   open(IN, $comp);
   my $text;
   while(<IN>){$text .= $_}; #close IN;
-  my $box = $mw2 -> Scrolled("Text", -scrollbars => "e", width => 70, height => 20)
+  my $box = $mw2 -> Scrolled("Text", -scrollbars => "e", -width => 70, height => 20)
                  -> pack(); # takes "Text" inside ()
   $box->insert('end', $text);
   $mw2->resizable(0,0);
@@ -120,32 +134,32 @@ sub loci_map_panel {
   my $panel = shift;
   my ($param_locus, $param_map, $param_oldmap, $param_chrom);
 
-  my $block = $mw ->Frame(relief => 'groove', borderwidth => 2)
-                  ->pack(side => 'top', anchor => 'n', after => $example_frm, expand => 1, fill => 'x');
+  my $block = $mw ->Frame(-relief => 'groove', -borderwidth => 2)
+                  ->pack(-side => 'top', -anchor => 'n', -after => $example_frm, -expand => 1, -fill => 'x');
 
-  $block -> Label(text => "Locus", fg => "black")
-         -> pack(side => "left", anchor => "n", fill => "x", expand => 1);
+  $block -> Label(-text => "Locus", -foreground => "black")
+         -> pack(-side => "left", -anchor => "n", -fill => "x", -expand => 1);
 
-  $locus = $block -> Entry(textvariable => \$param_locus, bg => "white", fg => "black", width => 10)
-                  ->pack(side =>"left");
+  $locus = $block -> Entry(-textvariable => \$param_locus, -background => "white", -foreground => "black", -width => 10)
+                  ->pack(-side =>"left");
 
-  $block -> Label(text => "Chrom", fg => "black")
-         -> pack(side => "left", anchor => "n", fill => "x", expand => 1);
+  $block -> Label(-text => "Chrom", -foreground => "black")
+         -> pack(-side => "left", -anchor => "n", -fill => "x", -expand => 1);
 
-  $chrom = $block -> Entry(textvariable => \$param_chrom, bg => "white", fg => "black", width => 3)
-                  ->pack(side =>"left");
+  $chrom = $block -> Entry(-textvariable => \$param_chrom, -background => "white", -foreground => "black", -width => 3)
+                  ->pack(-side =>"left");
 
-  $block -> Label(text => "Old Map", fg => "black")
-         ->pack(side => "left", anchor => "n", fill => "x", expand => 1);
+  $block -> Label(-text => "Old Map", -foreground => "black")
+         ->pack(-side => "left", -anchor => "n", -fill => "x", -expand => 1);
 
-  $oldmap = $block -> Entry(textvariable => \$param_oldmap, bg => "white", fg => "black", width => 10)
-                   ->pack(side =>"left");
+  $oldmap = $block -> Entry(-textvariable => \$param_oldmap, -background => "white", -foreground => "black", -width => 10)
+                   ->pack(-side =>"left");
 
-  $block -> Label(text => "New Map", fg => "black")
-         ->pack(side => "left", anchor => "n", fill => "x", expand => 1);
+  $block -> Label(-text => "New Map", -foreground => "black")
+         ->pack(-side => "left", -anchor => "n", -fill => "x", -expand => 1);
 
-  $map = $block -> Entry(textvariable => \$param_map, bg => "white", fg => "black", width => 10)
-                ->pack(side =>"left");
+  $map = $block -> Entry(-textvariable => \$param_map, -background => "white", -foreground => "black", -width => 10)
+                ->pack(-side =>"left");
 
 
   # put all objs in an array for later cget query
@@ -166,7 +180,7 @@ sub add_row {
 
 sub load_autoace {
 
-  my $map_dir = "/wormsrv2/autoace/MAPPINGS/INTERPOLATED_MAP";
+  my $map_dir = $wb->autoace."/MAPPINGS/INTERPOLATED_MAP";
   my $updt = "$map_dir/rev_physical_update_WS$version";
   open(CGC, ">>$map_dir/rev_physical_CGC_WS$version") || die $!;
   open(UPDT, ">$updt") || die $!;
@@ -209,9 +223,8 @@ save
 quit
 END
 
-  my $autoace = "/wormsrv2/autoace/" if !$debug;
-  $autoace = "/nfs/disk100/wormpub/DATABASES/TEST_DBs/CK1TEST/" if $debug;
-  my $log = "/wormsrv2/logs/upload_rev_phys_correction_$version";
+  my $autoace = $wb->autoace;
+  my $log = $wb->logs."/upload_rev_phys_correction_$version";
 
   open (Load_GA,"| $tace $autoace > $log") || die "Failed to upload to Geneace";
   print Load_GA $command;
@@ -223,7 +236,7 @@ END
 
   $dialog->geometry("800x500");
   $dialog->resizable(0,0);
-  my $txt=$dialog->Scrolled("Text",  -scrollbars=>"ow", height=>60, width=> 170)->pack(side => "left", anchor => "w");
+  my $txt=$dialog->Scrolled("Text",  -scrollbars=>"ow", height=>60, -width=> 170)->pack(-side => "left", -anchor => "w");
   open(LOG, "$log");
   while(<LOG>){$txt -> insert('end', "$_")}
   $dialog->Show();
