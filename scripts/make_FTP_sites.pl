@@ -8,7 +8,7 @@
 # Originally written by Dan Lawson
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2007-02-08 15:45:17 $
+# Last updated on: $Date: 2007-02-26 14:45:33 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -246,36 +246,37 @@ sub copy_chromosome_files{
 
   $runtime = $wormbase->runtime;
   $log->write_to("$runtime: copying chromosome files\n");
-  my $filename;
-  $wormbase->run_command("mkdir $targetdir/$WS_name/CHROMOSOMES", $log) unless -e "$targetdir/$WS_name/CHROMOSOMES";
+ # my $filename;
+ # $wormbase->run_command("mkdir $targetdir/$WS_name/CHROMOSOMES", $log) unless -e "$targetdir/$WS_name/CHROMOSOMES";
 
-  opendir (DNAGFF,"$ace_dir/CHROMOSOMES") or croak ("Could not open directory $ace_dir/CHROMOSOMES");
-  while (defined($filename = readdir(DNAGFF))) {
-    if (($filename eq ".")||($filename eq "..")||($filename eq "SUPPLEMENTARY_GFF")) { next}
-    next if  -d "$ace_dir/CHROMOSOMES/$filename";
-    $wormbase->run_command("scp $ace_dir/CHROMOSOMES/$filename $targetdir/$WS_name/CHROMOSOMES/$filename", $log);
-    my $O_SIZE = (stat("$ace_dir/CHROMOSOMES/$filename"))[7];
-    my $N_SIZE = (stat("$targetdir/$WS_name/CHROMOSOMES/$filename"))[7];
-    if ($O_SIZE != $N_SIZE) {
-      $log->write_to("\tError: $filename SRC: $O_SIZE TGT: $N_SIZE - different file sizes, please check\n");
-      croak "Couldn't copy $filename\n";
-    } 
-  }
-  closedir DNAGFF;
+ # opendir (DNAGFF,"$ace_dir/CHROMOSOMES") or croak ("Could not open directory $ace_dir/CHROMOSOMES");
+ # while (defined($filename = readdir(DNAGFF))) {
+ #   if (($filename eq ".")||($filename eq "..")) { next}
+ #   next if  -d "$ace_dir/CHROMOSOMES/$filename";
+  #  $wormbase->run_command("scp $ace_dir/CHROMOSOMES/$filename $targetdir/$WS_name/CHROMOSOMES/$filename", $log);
+  #  my $O_SIZE = (stat("$ace_dir/CHROMOSOMES/$filename"))[7];
+ #   my $N_SIZE = (stat("$targetdir/$WS_name/CHROMOSOMES/$filename"))[7];
+ #   if ($O_SIZE != $N_SIZE) {
+ #     $log->write_to("\tError: $filename SRC: $O_SIZE TGT: $N_SIZE - different file sizes, please check\n");
+ #     croak "Couldn't copy $filename\n";
+ #   } 
+ # }
+#  closedir DNAGFF;
 
-  $wormbase->run_command("mkdir $targetdir/$WS_name/CHROMOSOMES/SUPPLEMENTARY_GFF", $log) unless -e "$targetdir/$WS_name/CHROMOSOMES/SUPPLEMENTARY_GFF";
-    opendir (DNAGFFSUP,"$ace_dir/CHROMOSOMES/SUPPLEMENTARY_GFF") or croak ("Could not open directory $ace_dir/CHROMOSOMES/SUPPLEMENTARY_GFF");
-  while (defined($filename = readdir(DNAGFFSUP))) {
-    if (($filename eq ".")||($filename eq "..")) { next;}
-    $wormbase->run_command("scp $ace_dir/CHROMOSOMES/SUPPLEMENTARY_GFF/$filename $targetdir/$WS_name/CHROMOSOMES/SUPPLEMENTARY_GFF/$filename", $log);
-    my $O_SIZE = (stat("$ace_dir/CHROMOSOMES/SUPPLEMENTARY_GFF/$filename"))[7];
-    my $N_SIZE = (stat("$targetdir/$WS_name/CHROMOSOMES/SUPPLEMENTARY_GFF/$filename"))[7];
-    if ($O_SIZE != $N_SIZE) {
-      $log->write_to("\tError: $filename SRC: $O_SIZE TGT: $N_SIZE - different file sizes, please check\n");
-      croak "Couldn't copy SUPPLEMENTARY_GFF/$filename\n";
-    } 
-  }
-  closedir DNAGFFSUP;
+	$wormbase->run_command("cp -R $ace_dir/CHROMOSOMES $targetdir/$WS_name/CHROMOSOMES");
+#  $wormbase->run_command("mkdir $targetdir/$WS_name/CHROMOSOMES/SUPPLEMENTARY_GFF", $log) unless -e "$targetdir/$WS_name/CHROMOSOMES/SUPPLEMENTARY_GFF";
+#    opendir (DNAGFFSUP,"$ace_dir/CHROMOSOMES/SUPPLEMENTARY_GFF") or croak ("Could not open directory $ace_dir/CHROMOSOMES/SUPPLEMENTARY_GFF");
+#  while (defined($filename = readdir(DNAGFFSUP))) {
+#    if (($filename eq ".")||($filename eq "..")) { next;}
+#    $wormbase->run_command("scp $ace_dir/CHROMOSOMES/SUPPLEMENTARY_GFF/$filename $targetdir/$WS_name/CHROMOSOMES/SUPPLEMENTARY_GFF/$filename", $log);
+#    my $O_SIZE = (stat("$ace_dir/CHROMOSOMES/SUPPLEMENTARY_GFF/$filename"))[7];
+#    my $N_SIZE = (stat("$targetdir/$WS_name/CHROMOSOMES/SUPPLEMENTARY_GFF/$filename"))[7];
+#    if ($O_SIZE != $N_SIZE) {
+#      $log->write_to("\tError: $filename SRC: $O_SIZE TGT: $N_SIZE - different file sizes, please check\n");
+#      croak "Couldn't copy SUPPLEMENTARY_GFF/$filename\n";
+#    } 
+ # }
+ # closedir DNAGFFSUP;
 
   $runtime = $wormbase->runtime;
   $log->write_to("$runtime: Finished copying\n\n");
@@ -626,15 +627,12 @@ affy_oligo_mapping.gz
 agil_oligo_mapping.gz
 best_blastp_hits.WSREL.gz
 best_blastp_hits_brigpep.WSREL.gz
-brigdnaREL.bz2
 brigpepREL.gz
 cDNA2orf.WSREL.gz
 confirmed_genes.WSREL.gz
 files_in_tar
 geneIDs.WSREL.gz
 gsc_oligo_mapping.gz
-letter.WSREL
-md5sum.REL
 md5sum.WSREL
 models.wrm.WSREL
 pcr_product2gene.WSREL.gz
