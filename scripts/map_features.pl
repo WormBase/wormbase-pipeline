@@ -9,7 +9,7 @@
 #
 #
 # Last updated by: $Author: ar2 $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2006-01-11 14:33:15 $        # quickly see when script was last changed and by whom
+# Last updated on: $Date: 2007-02-26 14:49:43 $        # quickly see when script was last changed and by whom
 
 
 $|=1;
@@ -166,7 +166,7 @@ foreach my $query (@features2map) {
   }
   close TACE;
 
-  $wb->load_to_database($wb->autoace,"$outdir/feature_${query}.ace","${feature}_mapping");
+  $wb->load_to_database($wb->autoace,"$outdir/feature_${query}.ace","feature_mapping");
 }
 
 
