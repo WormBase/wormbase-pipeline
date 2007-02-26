@@ -7,8 +7,8 @@
 # This script calculates interpolated genetic map positions for CDS, Transcripts
 # and Pseudogenes lying between and outside genetic markers.
 #
-# Last updated on: $Date: 2006-02-20 09:58:37 $
-# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2007-02-26 15:13:32 $
+# Last updated by: $Author: ar2 $
 
 use strict;
 use warnings;
@@ -17,6 +17,8 @@ use Wormbase;
 use Cwd 'chdir';
 use Getopt::Long;
 use GENEACE::Geneace;
+use File::Path;
+use Log_files;
 
 ###################################################
 # variables and command-line options with aliases #
@@ -44,6 +46,8 @@ my $wb;
 if ($store) { $wb = Storable::retrieve($store) or croak("cant restore wormbase from $store\n") }
 else { $wb = Wormbase->new( -debug => $debug, -test => $test, ) }
 
+my $log = Log_files->make_build_log($wb);
+
 ###########################################
 # Variables Part II (depending on $wb)    #
 ###########################################
@@ -52,12 +56,12 @@ $debug = $wb->debug if $wb->debug;    # Debug mode, output only goes to one user
 
 my $basedir = $wb->basedir;
 
-my $gff_dir = "$basedir/autoace/GFF_SPLITS/";
-my $output  = "$basedir/autoace/MAPPINGS/INTERPOLATED_MAP";
+my $gff_dir = $wb->gff_splits;
+my $output  = $wb->autoace."/MAPPINGS/INTERPOLATED_MAP";
+mkpath $output unless -e $output;
 
 my $rundate    = $wb->rundate;
 my $start      = $wb->runtime;
-my $script_dir = "$ENV{'CVS_DIR'}/GENEACE";
 my $tace       = $wb->tace;
 
 if ($help) { system( 'perldoc', $0 ); exit(0) }
@@ -66,15 +70,10 @@ if ($help) { system( 'perldoc', $0 ); exit(0) }
 my $version = $wb->get_wormbase_version;
 
 # Use specified database for path but default to using autoace if -database not specified
-if ($database) {
-    my $prev_version = $version - 1;
-    $gff_location = "$basedir/autoace/GFF_SPLITS/WS" . "$prev_version";
-}
-else {
-    $database     = $wb->autoace;
-    $gff_location = "$database/GFF_SPLITS/";
-}
-print "\nUsing $database as database path for genetics marker loci\n";
+$database = $wb->autoace;
+$gff_location = $wb->gff_splits; #why gff_dir and gff_locations ar2
+
+$log->write_to("\nUsing $database as database path for genetics marker loci\n");
 
 my ( $revfile, $diffile );
 
@@ -156,7 +155,7 @@ my @gff_files_pseudogene = &dataset( $gff_location, "pseudogene" );
 
 #########################################################################################
 # parsing CDS gff stuff (looks somehow redundant)
-print "\nParsing CDS coords from gff files . . .\n";
+$log->write_to("\nParsing CDS coords from gff files . . .\n");
 my $cds_count = 0;
 my $variants  = 0;
 
@@ -185,7 +184,7 @@ foreach my $file (@gff_files_cds) {
 }
 
 # parsing transcripts from gff
-print "\nParsing transcript coords from gff files . . .\n";
+$log->write_to("\nParsing transcript coords from gff files . . .\n");
 my $rna_count = 0;
 
 foreach (@gff_files_rna) {
@@ -213,7 +212,7 @@ foreach (@gff_files_rna) {
 }
 
 # parsing pseudogenes
-print "\nParsing pseudogene coords from gff files . . .\n";
+$log->write_to("\nParsing pseudogene coords from gff files . . .\n");
 my $pseudogene_count = 0;
 
 foreach (@gff_files_pseudogene) {
@@ -242,7 +241,7 @@ foreach (@gff_files_pseudogene) {
 # mean of isoforms is the mean of the left and right coords of the longest variant
 ###########################################################################################
 
-print "\nDoing interpolation . . .\n";
+$log->write_to("\nDoing interpolation . . .\n");
 
 my $chromo;
 
@@ -303,7 +302,7 @@ my %chrom_pos = %{$chrom_pos};
 ##############################################
 
 if ($diff) {
-    $diffile = "$database/logs/mapping_diff." . $rundate;
+    $diffile = $wb->logs."/mapping_diff." . $rundate;
     system("chmod 777 $diffile");
     open( DIFF, ">$diffile" ) || die $!;
 
@@ -342,7 +341,7 @@ my %class = %{ &get_classes( $database, $tace ) };
 
 # for debugging only
 if ($debug) {
-    open( CL, ">$basedir/autoace/MAPPINGS/INTERPOLATED_MAP/type" );
+    open( CL, ">$output/type" ) or $log->log_and_die("cant open $output/type $!\n");
     foreach ( sort keys %class ) {
         print CL "$_ -> $class{$_}  (1-1)\n";
     }
@@ -376,7 +375,7 @@ my $error_check = 0;
 my $rev_phys    = ();
 my $count_rev   = 0;
 
-print "\nGenerating ace files . . .\n";
+$log->write_to("\nGenerating ace files . . .\n");
 
 @chroms = qw(I II III IV V X);
 foreach $chrom (@chroms) {
@@ -624,7 +623,7 @@ if ( !$debug ) {
     print "Deleting old interpolated map and uploading new ones to $database\n";
 
     my $tace = $wb->tace;
-    my $log  = "$basedir/logs/load_gmap_to_autoace" . "_WS$version.$rundate.$$";
+    my $log  = $wb->logs."/load_gmap_to_autoace" . "_WS$version.$rundate.$$";
 
     my $command = <<END;
 find elegans_CDS * where Interpolated_map_position
@@ -649,13 +648,13 @@ END
     close LOAD_A;
 
     system("chmod 777 $log");
-    print "\nCheck $log to double check file uploading to $database went OK\n";
+    print "\nCheck $log to double check file uploading to $database OK\n";
 }
 
 # Finish and exit (call the tk stuff if needed)
 if ( $error_check == 1 ) {
     print "\nERROR: $count_rev reverse physical(s) were found and need you to do some corrections.\n";
-    system("perl5.6.1 $script_dir\/update_rev_physicals.pl -panel $count_rev -rev $revfile -comp $cmp_file -v $version") if ! $test;
+    $wb->run_script("update_rev_physicals.pl -panel $count_rev -rev $revfile -comp $cmp_file -v $version") unless $wb->test;
 }
 
 else {
@@ -977,11 +976,7 @@ sub get_clen {
 #
 sub get_classes {
     my ( $database, $tace ) = @_;
-    my $db = Ace->connect(
-        -path    => $database,
-        -program => $tace
-      )
-      || do { print "Connection failure: ", Ace->error; die(); };
+    my $db = Ace->connect( -path    => $database )or $log->log_and_die( "Connection failure: ".Ace->error);
 
     my @genes = $db->fetch( -query => 'find worm_genes' );
 
