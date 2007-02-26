@@ -8,7 +8,7 @@
 # 031023 dl1
 
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2007-02-15 14:35:47 $
+# Last edited on: $Date: 2007-02-26 14:51:59 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -142,7 +142,7 @@ $masked = &MaskSequence('ost')   if ($ost || $all);
 $log->write_to($wormbase->runtime." : masked $masked OST sequences\n") if ($ost || $all);
 
 $masked = &write_sequence_file('nematode')   if ($nematode || $all);
-$log->write_to($wormbase->runtime." : masked $masked OST sequences\n") if ($ost || $all);
+$log->write_to($wormbase->runtime." : wrote nematode EST sequences\n") if ($ost || $all);
 
 $log->write_to("\n=============================================\n\n");
 
@@ -164,7 +164,7 @@ sub write_sequence_file {
 					'est' 	=> 'query find sequence !*OST* where cDNA_EST AND NOT Ignore',
 					'mrna'	=> 'query find sequence where mRNA AND NOT Ignore',
 					'ncrna'	=> 'query find sequence where RNA AND NOT mRNA',
-					'nematode'=>'query find sequence where method = EST_nematode'
+					'nematode'=>'query find sequence where !cDNA_EST; !TSL_tag; !Genomic_canonical; method = EST_nematode'
 				);
 	my $type = shift;
 	my $file = "$EST_dir/".$datafiles{"$type"};
