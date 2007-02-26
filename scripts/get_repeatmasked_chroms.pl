@@ -20,8 +20,8 @@ use Carp;
 use Log_files;
 use Storable;
 
-use lib '/nfs/farm/Worms/Ensembl/ensembl-pipeline/modules';
-use lib '/nfs/farm/Worms/Ensembl/ensembl/modules';
+use lib '/nfs/acari/wormpipe/BUILD/ensembl-pipeline/modules';
+use lib '/nfs/acari/wormpipe/BUILD/ensembl/modules';
 use lib '/nfs/disk100/humpub/modules/PerlModules';
 
 use Bio::EnsEMBL::Pipeline::DBSQL::DBAdaptor;
