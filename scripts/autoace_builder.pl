@@ -6,8 +6,8 @@
 #
 # Usage : autoace_builder.pl [-options]
 #
-# Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2006-12-01 17:19:23 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2007-02-26 14:41:46 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -28,7 +28,7 @@ my ( $gff_dump,     $processGFF, $gff_split );
 my $gene_span;
 my ( $load, $tsuser, $map_features, $remap_misc_dynamic, $map, $transcripts, $intergenic, $data_sets, $nem_contigs);
 my ( $GO_term, $rna , $dbcomp, $confirm, $operon ,$repeats, $remarks, $names, $treefam, $cluster);
-my ( $utr, $agp, $gff_munge, $extras ,$interpolate, $check);
+my ( $utr, $agp, $gff_munge, $extras , $ontologies, $interpolate, $check);
 my ( $data_check, $buildrelease, $public,$finish_build, $release);
 
 
@@ -73,6 +73,7 @@ GetOptions(
 	   'agp'            => \$agp,
 	   'gff_munge'      => \$gff_munge,
 	   'extras'         => \$extras,
+	   'ontologies'     => \$ontologies,
 	   'buildrelease'   => \$buildrelease,
 	   'public'         => \$public,
 	   'finish_build'   => \$finish_build,
