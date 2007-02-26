@@ -7,8 +7,8 @@
 # A script to finish the last part of the weekly build by updating all of the
 # relevant WormBase and Wormpep web pages.
 #
-# Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2006-12-01 13:35:56 $      
+# Last updated by: $Author: ar2 $     
+# Last updated on: $Date: 2007-02-26 14:53:31 $      
 
 
 #################################################################################
@@ -135,12 +135,13 @@ my $log = Log_files->make_build_log($wb);
 # final bit of tidying up
 #########################
 
-# update 'current' symlink on dev site
-$log->write_to("\nChanging 'current symbolic link to point to new release\n"); 	
-chdir("$www") || $log->write_to("Couldn't chdir to $www\n");
-system("rm -f $www/current") && croak "Couldn't remove 'current' symlink\n"; 	 
-system("ln -s $WS_name current") && croak "Couldn't create new symlink\n";
-
+unless ($test or $debug) {
+	# update 'current' symlink on dev site
+	$log->write_to("\nChanging 'current symbolic link to point to new release\n"); 	
+	chdir("$www") || $log->write_to("Couldn't chdir to $www\n");	
+	system("rm -f $www/current") && croak "Couldn't remove 'current' symlink\n"; 	 
+	system("ln -s $WS_name current") && croak "Couldn't create new symlink\n";
+}
 
 $log->write_to("\n\nC'est finis\n\naus is\n\n");
 
@@ -538,7 +539,7 @@ sub create_wormpep_page{
   # get details from file prepared for reports.
   my $wp_alt;
   my $wormpeplog  = $wb->reports."/wormpep";
-  open (WP_2, "<$wormpeplog") || croak "Failed to open wormpep.log\n";
+  open (WP_2, "<$wormpeplog") || croak "Failed to open wormpep.log\n:$!";
   while (<WP_2>) {
     if (/(\d+) alternate splice forms/) {
       ($wp_alt) = ($1);
@@ -562,7 +563,7 @@ sub create_wormpep_page{
   
 
   my (@changed, @lost, @new, @reappeared);
-  open (WP_3, "<".$wb->wormpep."/wormpep.diff${WS_current}") || croak "Failed to open wormpep.history\n";
+  open (WP_3, "<".$wb->wormpep."/wormpep.diff${WS_current}") or $log->write_to("Failed to open wormpep.diff\n");
 
   while (<WP_3>) {
     (push (@changed,$_)) if (/changed:/);
