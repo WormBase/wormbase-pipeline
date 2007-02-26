@@ -5,8 +5,8 @@
 # Counts the number of objects in an ACEDB database for each Class stated in the config file
 # Compares this number to those from a second database.
 #
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2006-07-27 08:59:25 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2007-02-26 14:42:17 $
 
 
 use strict;
@@ -401,7 +401,6 @@ sub full_run {
 		   "Rearrangement",
 		   "RNAi",
 		   "SAGE_tag",
-		   "SAGE_transcript",
 		   "SAGE_experiment",
 		   "Sequence",
 		   "SK_map",
