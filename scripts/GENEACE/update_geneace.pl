@@ -3,15 +3,18 @@
 use Tk;
 use strict;
 use Cwd;
-use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
+use lib $ENV{'CVS_DIR'};
 use Wormbase;
 use GENEACE::Geneace;
+use Wormbase;
 
+
+my $wormbase = Wormbase->new(-test => 1, -debug => 'ar2');
 ################
 # database paths
 ################
 
-my $tace = &tace;
+my $tace = $wormbase->tace;
 my $ga_dir = "/nfs/disk100/wormpub/DATABASES/geneace";
 
 #######################
@@ -723,7 +726,7 @@ sub gene_mapping {
   sub update_lab {
     open (IN, $filename) || die "Can't read in file!";
 
-    my %person_id = $gaobj->get_WBPersonID();
+    my %person_id = "1";#$gaobj->get_WBPersonID();
 
     my ($gene_class, @Update, $locus, $seq, $rest, @parts, $num_parts,$cgc_paper, $paper,
 	$head, $tail, @variants, $i, $person, $pmid, $other_name, @evidence, $evidence, @persons);
