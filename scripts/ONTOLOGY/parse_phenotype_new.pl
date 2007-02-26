@@ -16,7 +16,6 @@ my ($rnai, $ref, %genes, %pheno, %auth);
 $|=9;
 
 
-my %opts=();
 GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
 	  	  	"test"       => \$test,
@@ -29,7 +28,7 @@ GetOptions ("help"       => \$help,
 my $program_name=$0=~/([^\/]+)$/ ? $1 : '';
 
 
-if ($opts{h}) {
+if ($help) {
     print "usage: $program_name -output output -database database/n";
     print "       -help              help - print this message\n";
     print "       -output <output>     output file\n";
