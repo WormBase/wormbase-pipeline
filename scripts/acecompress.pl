@@ -7,10 +7,14 @@
 # Usage : acecompress.pl [-options]
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2005-12-16 11:18:54 $
+# Last edited on: $Date: 2007-02-26 14:40:50 $
+use lib $ENV{'CVS_DIR'};
 
 use strict;
 use Getopt::Long;
+use Storable;
+use Wormbase;
+use Log_files;
 
 my $homol;         # homol data   BLAT files
 my $feature;       # feature data Good_intron files    
@@ -18,20 +22,36 @@ my %objects;       # hash for number of homol lines per object
 my $ace_object;  
 my %acedata;
 
+my ($test, $debug, $store, $file, $bk);
 
 GetOptions (
-	    "homol"       => \$homol,
-	    "feature"     => \$feature
+	    "homol"    => \$homol,
+	    "feature"  => \$feature,
+	    "test"     => \$test,
+	    "store:s"  => \$store,
+	    "debug:s"  => \$debug,
+	    "bk"       => \$bk,       #keep original as .bk
+	    "file:s"   => \$file
 	    );
+my $wormbase;
 
-my $file = shift;
+if( $store ) {
+  $wormbase = retrieve( $store ) or croak("cant restore wormbase from $store\n");
+}
+else {
+  $wormbase = Wormbase->new( -debug   => $debug,
+			     -test    => $test,
+			   );
+}
 
-open (FILE, "<$file");
+my $log = Log_files->make_build_log($wormbase);
+
+open (FILE, "<$file") or $log->log_and_die("cant open $file : $!\n");
 while (<FILE>) {
 
     # BLAT homology data
     if ($homol) {
-	if (/Homol_data : \"(\S+)\"/) {
+		if (/Homol_data : \"(\S+)\"/) {
 	    $ace_object = $1;
 	    $objects{$ace_object}++;
 	    next;
@@ -57,23 +77,33 @@ close FILE;
 
 # print output
 
-foreach my $obj (keys %objects) {
-    print "\n// $obj\n\n";
+my $outfile = "/tmp/acecompress.$$";
 
-    # homol (BLAT homology)
-    if ($homol) {
-	print "Homol_data : \"$obj\"\n";
-	foreach my $line (@{$acedata{$obj}{DNA_homol}}) {
-	    print "$line";
-	}
-    }
-    # feature (confirmed_intron)
-    elsif ($feature) {
-	print "Feature_data : \"$obj\"\n";
-	foreach my $line (@{$acedata{$obj}{Confirmed_intron}}) {
-	    print "$line";
-	}
-    }  
+open( ACE,">$outfile") or $log->log_and_die("cant write to $outfile");
+	foreach my $obj (keys %objects) {
+   	print ACE "\n// $obj\n\n";
+
+   	# homol (BLAT homology)
+   	my $line;
+   	if ($homol) {
+			print ACE "Homol_data : \"$obj\"\n";
+			foreach $line (@{$acedata{$obj}{DNA_homol}}) {
+	    		print ACE "$line";
+			}
+    	}
+    	# feature (confirmed_intron)
+    	elsif ($feature) {
+			print ACE "Feature_data : \"$obj\"\n";
+			foreach $line (@{$acedata{$obj}{Confirmed_intron}}) {
+	    	print ACE "$line";
+		}
+	}  
 }
+close ACE;
 
+#replace original, retaining if bk option set
+$wormbase->run_command("mv $file $file.bk", $log) if ($bk);
+$wormbase->run_command("mv -f $outfile $file",$log);
+
+$log->mail;
 exit(0);
