@@ -16,7 +16,7 @@
 ##########################################################
 #
 # Last updated by: $Author: ar2 $                     
-# Last updated on: $Date: 2005-12-21 12:39:19 $       
+# Last updated on: $Date: 2007-02-26 14:43:57 $       
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -100,32 +100,32 @@ our $fh;
 open ($fh, ">$out") or $log->log_and_die( "cant open $out\n" );
 
 
-print $fh "\nSequence CHROMOSOME_I\nMethod Link\n" ; $pos = 1 ;
+print $fh "\nSequence CHROMOSOME_I\nMethod Link\nSpecies \"Caenorhabditis elegans\"" ; $pos = 1 ;
 &add ("SUPERLINK_RW1");     &overlap ("C30F12") ;
 &add ("SUPERLINK_CB_I");    &overlap ("H10E24") ;
 &add ("SUPERLINK_RW1R");    &overlap ("F49D11") ;
 &add ("SUPERLINK_CB_IR");
 
-print $fh "\nSequence CHROMOSOME_II\nMethod Link\n" ; $pos = 1 ;
+print $fh "\nSequence CHROMOSOME_II\nMethod Link\nSpecies \"Caenorhabditis elegans\"" ; $pos = 1 ;
 &add ("SUPERLINK_RW2");     &overlap ("C06A8") ;
 &add ("SUPERLINK_CB_II");   &overlap ("Y53F4B");
 &add ("SUPERLINK_RW2R");
 
-print  $fh "\nSequence CHROMOSOME_III\nMethod Link\n" ; $pos = 1 ;
+print  $fh "\nSequence CHROMOSOME_III\nMethod Link\nSpecies \"Caenorhabditis elegans\"" ; $pos = 1 ;
 &add ("SUPERLINK_RW3A");    &overlap ("Y53G8AR") ;   
 &add ("SUPERLINK_CB_IIIL"); &overlap ("C38D4") ;
 &add ("SUPERLINK_RW3B");    &overlap ("PAR3") ;
 &add ("SUPERLINK_CB_IIIR");
  
-print  $fh "\nSequence CHROMOSOME_IV\nMethod Link\n" ; $pos = 1 ;
+print  $fh "\nSequence CHROMOSOME_IV\nMethod Link\nSpecies \"Caenorhabditis elegans\"" ; $pos = 1 ;
 &add ("SUPERLINK_RW4");     &overlap ("H23L24") ;
 &add ("SUPERLINK_CB_IV");
 
-print  $fh "\nSequence CHROMOSOME_V\nMethod Link\n" ; $pos = 1 ;
+print  $fh "\nSequence CHROMOSOME_V\nMethod Link\nSpecies \"Caenorhabditis elegans\"" ; $pos = 1 ;
 &add ("SUPERLINK_RW5");     &overlap ("H24G06") ;
 &add ("SUPERLINK_CB_V");
 
-print $fh "\nSequence CHROMOSOME_X\nMethod Link\n" ; $pos = 1 ;
+print $fh "\nSequence CHROMOSOME_X\nMethod Link\nSpecies \"Caenorhabditis elegans\"" ; $pos = 1 ;
 &add ("SUPERLINK_RWXL");    &overlap ("C23F12") ;
 &add ("SUPERLINK_CB_X");    &overlap ("C11G6") ;
 &add ("SUPERLINK_RWXR"); 
