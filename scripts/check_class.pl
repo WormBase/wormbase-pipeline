@@ -6,7 +6,7 @@
 # Compares this number to those from a second database.
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2007-02-28 14:04:41 $
+# Last updated on: $Date: 2007-02-28 14:30:01 $
 
 
 use strict;
@@ -123,6 +123,7 @@ foreach my $class (@classes) {
       $count2 < $count1 * 0.9 || 
       $count2 > $count1 * 1.1) {
     $err = "***** POSSIBLE ERROR *****";
+    $log->error;
   }
 
   $log->write_to(sprintf("%-12s\t%7d\t%7d\t%7d\t%s\n", $class,$count1,$count2,$diff,$err));
