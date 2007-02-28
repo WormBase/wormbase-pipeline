@@ -5,7 +5,7 @@
 # map GO_terms to ?Sequence objects from ?Motif and ?Phenotype
 #
 # Last updated by: $Author: ar2 $     
-# Last updated on: $Date: 2006-12-07 10:13:18 $      
+# Last updated on: $Date: 2007-02-28 14:10:27 $      
 
 use strict;
 use warnings;
@@ -137,7 +137,7 @@ sub phenotype {
   		s/\"//g;  #remove "
   		next if (/acedb/ or /\/\//);
 		my @data = split;
-	  	my ($cds, $rnai, $phenotype_id,$go) = ($data[0], $data[1], $data[2], $data[3]);
+	  	my ($cds, $rnai, $phenotype_id,$go, $gene) = ($data[0], $data[1], $data[2], $data[3], $data[4]);
 		next if (! defined $phenotype);
 		my $phenotype; 
 	  	if($phenotype_id =~ /WBPheno/) {
@@ -148,7 +148,7 @@ sub phenotype {
   			$log->write_to("bad data $_");
   			next;
   		}
-		print OUT "\nCDS : \"$cds\"\nGO_term \"$go\" IMP Inferred_automatically \"$phenotype ($phenotype_id|$rnai)\"\n" ;
+		print OUT "\nCDS : \"$cds\"\nGO_term \"$go\" IMP Inferred_automatically \"$phenotype ($phenotype_id|$rnai)\"\n" ;	print OUT "\nGene : \"$gene\"\nGO_term \"$go\" IMP Inferred_automatically \"$phenotype ($phenotype_id|$rnai)\"\n" ;
 	}
 	#close ACE;
 	#tidy up
@@ -225,6 +225,15 @@ Class
 Class GO_term
 From 3
 Tag GO_term
+
+Colonne 6
+Width 12
+Optional
+Visible
+Class
+Class Gene
+From 1
+Tag Gene
 END
 
 	print TMP $txt;
