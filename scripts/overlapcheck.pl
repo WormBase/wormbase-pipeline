@@ -7,8 +7,8 @@
 # checks whether genes overlap, ESTs match introns and repeats match exons                                   
 # sorts output for stl and cam clones
 #
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2006-08-02 16:22:45 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2007-03-02 11:55:23 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -81,11 +81,14 @@ my $repolend   = '10';
 # I. get clone out of databases #
 #################################
     
-# NB at some time this should be changed to extract this information out of database('camace')
+# added check to extract this information out of database('camace') or database('currentdb')
 # instead of the primary('camace') and primary('stlace'), because someone might be changing the
 # primary databases at the end of the build.
 
 my $camace = $wormbase->primary('camace');
+if (! -f "$camace/database/ACEDB.wrm") {
+  $camace = $wormbase->database('camace');  
+}
 my $camdb  = Ace->connect(-path => $camace) || die "Couldn't connect to camace\n", Ace->error;
 
 my @camclones = $camdb->fetch(-query => 'FIND Genome_Sequence');
@@ -98,9 +101,16 @@ foreach my $camclone (@camclones) {
 }
 
 my $stlace = $wormbase->primary('stlace');
+if (! -f "$stlace/database/ACEDB.wrm") {
+  $stlace = $wormbase->database('current');  
+}
 my $stldb    = Ace->connect(-path => $stlace) || die "Couldn't connect to stlace\n", Ace->error;
 my @stlclones = $stldb->fetch(-query => 'FIND Genome_Sequence');
 foreach my $stlclone (@stlclones) {
+  my $string = $stlclone->Source(1);
+  if ((defined $string) && ($string =~ /_CB/)) {
+    next;
+  }
   $stlace{$stlclone} = 1;
 }
 
