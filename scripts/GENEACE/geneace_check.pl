@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2007-02-20 09:29:12 $
+# Last updated on: $Date: 2007-03-02 12:38:54 $
 
 use strict;
 use lib $ENV{"CVS_DIR"};
@@ -104,8 +104,8 @@ my $db = Ace->connect(-path  => $database,
 
 my $ga = init Geneace($wb);
 # hash for converting locus/seq. names <-> gene_id
-my @Gene_info = $ga -> gene_info($database, "seq2id");
-my %Gene_info = %{$Gene_info[0]};
+my $Gene_info = $ga -> gene_info($database, "seq2id");
+my %Gene_info = %{$Gene_info};
 
 
 # Process separate classes if specified on the command line else process all classes, 
