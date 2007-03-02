@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl5.8.0 -w
 # Last updated by $Author: ar2 $
-# Last updated on: $Date: 2007-02-20 09:29:12 $
+# Last updated on: $Date: 2007-03-02 12:39:41 $
 
 package Geneace;
 
@@ -56,10 +56,10 @@ sub gene_info {
 
     my $fh = $this->{'wormbase'}->table_maker_query($db,$gene_info_def);
     while (<$fh>) {
-    	next if /acedb/;
-		s/\"//g;#"
-    	my @gene_info = split("\t",$_);
-      chomp $_;
+      chomp;
+      next if /acedb/;
+      s/\"//g;#"
+      my @gene_info = split("\t",$_);
       my ($gene, $cgc_name,$seq_name,$other_name, $public_name) = @gene_info;
       $gene =~ s/\"//g;
       $cgc_name =~ s/\"//g;
