@@ -4,8 +4,8 @@
 # 
 # written by Anthony Rogers
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2007-02-14 14:40:00 $
+# Last edited by: $Author: mh6 $
+# Last edited on: $Date: 2007-03-08 16:13:57 $
 
 
 use DBI;
@@ -16,6 +16,7 @@ use lib $ENV{'CVS_DIR'}."/BLAST_scripts";
 use Wormbase;
 use Getopt::Long;
 use File::Path;
+use File::Copy;
 use Storable;
 
 #######################################
@@ -187,40 +188,33 @@ if ( $update_databases ){
 
 
 #@updated_DBs = qw(ensembl gadfly yeast slimswissprot slimtrembl);
-if( $mail )
-  {
+if( $mail ) {
+    my $blastdbdir="/data/blastdb/Worms";
     &get_updated_database_list;
     
-    #generate distribution request based on updated databases
-    my $letter = "$wormpipe_dir/distribute_on_farm_mail";
-    open (LETTER,">$letter") or die "cant open $letter to write new distribution request\n";
-    print LETTER "This is a script generated email from the wormpipe Blast analysis pipeline.\nAny problems should be addessed to worm\@sanger.ac.uk.\n
-=====================================================
-\n";
-    print LETTER "The following can be removed from /data/blastdb/Worms.\n\n";
+    # delete updated databases from /data/blastdb/Worms
     foreach (@updated_DBs){
-      print LETTER "$_*\n";
+      $log->write_to("deleting blastdbdir/$_*\n");
+      (unlink glob "$blastdbdir/$_*") or $log->write_to("WARNING: cannot delete $blastdbdir/$_*\n");
     }
-    #print LETTER "wormpep*\n";
-    print LETTER "CHROMOSOME_*.dna\n";
-    
-    print LETTER "-------------------------------------------------------\n\nand replaced with the following files from ~wormpipe/BlastDB/\n\n";
-    foreach (@updated_DBs){
-      print LETTER "$currentDBs{$_}*\n\n";
-    }
-    
-    #print LETTER "wormpep$WS_version.pep\nwormpep$WS_version.pep.ahd\nwormpep$WS_version.pep.atb\nwormpep$WS_version.pep.bsq\n\n";
-    print LETTER "CHROMOSOME_I.dna\nCHROMOSOME_II.dna\nCHROMOSOME_III.dna\nCHROMOSOME_IV.dna\nCHROMOSOME_V.dna\nCHROMOSOME_X.dna\n\n";
-    
-    print LETTER "-------------------------------------------------------\n\n";
-    print LETTER "Thanks\n\n ________ END ________";
-    close LETTER;
+    $log->write_to("deleting $blastdbdir/CHROMOSOME_*.dna\n");
+    (unlink glob "$blastdbdir/CHROMOSOME_*.dna") or $log->write_to("WARNING: cannot delete $blastdbdir/CHROMOSOME_*.dna\n");
   
-    my $name = "Wormpipe database distribution request";
-    my $maintainer = "isg-help\@sanger.ac.uk, sanger\@wormbase.org";     # mail to ssg and all Sanger WormBase
-    print "mailing distibution request to $maintainer\n";
-    $wormbase->mail_maintainer($name,$maintainer,$letter);
-  }
+    # copy blastdbs
+    foreach (@updated_DBs){
+      foreach my $file_name( glob "$wormpipe_dir/BlastDB/$currentDBs{$_}*") {
+	      $log->write_to("copying $file_name to $blastdbdir/\n");
+	      copy("$file_name","$blastdbdir/") or $log->write_to("ERROR: cannot copy $file_name\n") ;
+      }
+    }
+
+    # copy chromosomes    
+    foreach my $chr ($wormbase->get_chromosome_names('-prefix' => 1,)){
+	    my $file_name="$wormpipe_dir/BlastDB/$chr.dna";
+	      $log->write_to("copying $file_name to $blastdbdir/");
+	      copy($file_name,"$blastdbdir/") or $log->write_to("cannot copy $file_name\n") ;
+    }
+}
 
 
 
