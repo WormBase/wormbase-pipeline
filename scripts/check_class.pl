@@ -6,7 +6,7 @@
 # Compares this number to those from a second database.
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2007-02-28 14:30:01 $
+# Last updated on: $Date: 2007-03-08 14:52:31 $
 
 
 use strict;
@@ -28,18 +28,26 @@ $|=1;
 
 my ($help, $debug, $test, $verbose, $store, $wormbase);
 my ($database, $database1, $database2, $classes);
-our ($db_1, $db_2, $dbname_1, $dbname_2);
+my ($db_1, $db_2, $dbname_1, $dbname_2);
+my ($stlace, $camace, $genace, $csh, $caltech, $misc_static, $brigace);
 
 GetOptions (
 	    "help"          => \$help,
             "debug=s"       => \$debug,
 	    "test"          => \$test,
 	    "verbose"       => \$verbose,
-	    "store:s"         => \$store,
+	    "store:s"       => \$store,
 	    "database=s"    => \$database,
-	    "database1=s"    => \$database1,
+	    "database1=s"   => \$database1,
 	    "database2=s"   => \$database2,
-	    "classes=s"        => \$classes,
+	    "classes=s"     => \$classes,
+	    "stlace"        => \$stlace,
+	    "camace"        => \$camace,
+	    "genace"        => \$genace,
+	    "csh"           => \$csh,
+	    "caltech"       => \$caltech,
+	    "misc_static"   => \$misc_static,
+	    "brigace"       => \$brigace,
 	    );
 
 
@@ -100,13 +108,26 @@ if ($database2) {
 # Main part of script
 #########################################################################
 
-my @classes = split /[\s,;]/, $classes;
+my @classes = ();
+@classes = split /,/, $classes if (defined $classes);
+
+# get the collected sets of classes
+ @classes = (@classes, &set_classes('stlace')) if ($stlace);
+ @classes = (@classes, &set_classes('camace')) if ($camace);
+ @classes = (@classes, &set_classes('genace')) if ($genace);
+ @classes = (@classes, &set_classes('csh')) if ($csh);
+ @classes = (@classes, &set_classes('caltech')) if ($caltech);
+ @classes = (@classes, &set_classes('misc_static')) if ($misc_static);
+ @classes = (@classes, &set_classes('brigace')) if ($brigace);
 
 $log->write_to("Checking $dbname_1 vs $dbname_2 for classes:\n@classes\n\n");
 
 my ($class_count_1, $class_count_2) = &count_classes($db_1, $db_2, @classes);
 
-$log->write_to(sprintf("%-12s\t%-7s\t%-7s\t%-7s\n", "CLASS",$dbname_1,$dbname_2,"Difference"));
+$log->write_to(sprintf("%-22s %7s %7s %7s\n", "CLASS",$dbname_1,$dbname_2,"Difference"));
+
+# don't want to report duplicate classes
+my %seen;
 
 my $count = 0;
 foreach my $class (@classes) {
@@ -126,7 +147,11 @@ foreach my $class (@classes) {
     $log->error;
   }
 
-  $log->write_to(sprintf("%-12s\t%7d\t%7d\t%7d\t%s\n", $class,$count1,$count2,$diff,$err));
+  # don't want to report duplicate classes
+  if ($seen{$class}) {next;}
+  $seen{$class} = 1;
+
+  $log->write_to(sprintf("%-22s %7d %7d %7d %s\n", $class,$count1,$count2,$diff,$err));
   $count++;
 }
 
@@ -172,7 +197,7 @@ sub count_classes {
   # Formulate query
   my $command;
   foreach my $class (@classes) {
-    $command .= "query find '$class'\n";
+    $command .= "query find $class\n";
   }
   $command .= "quit\n";
 
@@ -180,7 +205,7 @@ sub count_classes {
   ####################################
   # Count objects in first database
   ####################################
-    
+  #print "Command = $command\n";
   # open tace connection and count how many objects in each class
   open (TACE, "echo '$command' | $exec $db_1 | ");
   while (<TACE>) {
@@ -204,6 +229,168 @@ sub count_classes {
     
 }
 
+
+###############################################
+# set the classes to check
+
+sub set_classes {
+
+  my ($mode) = @_;
+
+  my @classes;
+
+#
+# The following are useful sets of classes that are loaded from the
+# primary databases they will be missing some objects that are loaded
+# later, so some classes are commented out to avoid alarming the
+# Builder.
+#
+
+  if ($mode eq "stlace") {
+    @classes = (
+#		  "CDS", 
+#		  "DNA",
+		  "Transposon",
+		  "Transcript", 
+		  "Genetic_code", 
+		  "Pseudogene", 
+		  "Variation", 
+		  "Oligo", 
+		  "PCR_product"
+		  );
+    
+  } elsif ($mode eq "camace") {
+    @classes = (
+#		  "Sequence", 
+#		  "CDS", 
+#		  "DNA", 
+#		  "Motif", 
+		  "Transposon", 
+		  "Transcript", 
+#		  "Feature_data", 
+#		  "Sequence", 
+		  "Genetic_code", 
+		  "Pseudogene", 
+		  "Feature", 
+		  "LongText"
+		  );
+
+
+  } elsif ($mode eq "genace") {
+    @classes = (
+		  "2_point_data",
+		  "Clone",
+		  "Contig",
+		  "Gene_class",
+		  "Grid",
+		  "Laboratory",
+		  "Locus",
+		  "Gene",
+		  "Map",
+		  "Multi_pt_data",
+		  "Oligo",
+		  "PCR_product",
+		  "Picture",
+		  "Pos_neg_data",
+		  "Rearrangement",
+		  "Strain",
+		  "Variation",
+		  "View",
+#		  "Sequence",
+		  "Operon",
+		  "Database"
+		  );
+
+
+  } elsif ($mode eq "csh") {
+    @classes = ( 
+#		 "Sequence", 
+		 "LongText", 
+		 "Movie", 
+		 "Oligo", 
+		 "PCR_product", 
+		 "Structure_data", 
+#		 "Peptide", 
+#		 "Protein", 
+		 "Y2H"
+		 );
+
+
+  } elsif ($mode eq "caltech") {
+    @classes = (
+		  "Transgene",
+		  "Expr_pattern",
+		  "Life_stage",
+		  "Cell",
+		  "Cell_group",
+		  "Paper",
+		  "Paper_name",
+		  "Journal",
+		  "Author",
+		  "Person",
+		  "LongText",
+		  "Oligo",
+		  "PCR_product",
+#		  "Sequence",
+#		  "CDS",
+		  "Phenotype",
+		  "Expr_profile",
+		  "SK_map",
+		  "Tree",
+		  "TreeNode",
+		  "Microarray",
+		  "Microarray_results",
+		  "Microarray_experiment",
+		  "Condition",
+		  "Expression_cluster",
+		  "Oligo_set",
+		  "Anatomy_name",
+		  "Anatomy_term",
+		  "Homology_group",
+		  "Antibody",
+		  "RNAi",
+#		  "Homol_data",
+		  "SAGE_tag",
+		  "SAGE_experiment",
+		  "Gene_regulation",
+		  "Gene",
+		  "GO_term",
+		  "Transcript",
+		  "Pseudogene",
+		  "Interaction",
+		  "Variation",
+		  "Database",
+		  );
+
+
+  } elsif ($mode eq "misc_static") {
+    @classes = (
+		  "GO_code",
+		  "Method",
+		  "Sequence MTCE*",
+		  "Oligo",
+		  );
+
+
+  } elsif ($mode eq "brigace") {
+    @classes = (
+#		  "Sequence",
+#		  "DNA",
+		  "Transcript",
+#		  "Feature_data",
+#		  "CDS",
+#		  "Protein",
+#		  "Peptide",
+		  "Variation",
+		  );
+
+  }
+
+
+  return @classes;
+
+
+}
 
 ###############################################
 
@@ -239,7 +426,20 @@ as necessary when classes are added/removed to the database.
 
 -debug and -help are standard Wormbase script options.
 
--classes are a comma-delimited list of classes to check
+-camace
+-stlace
+-genace
+-csh
+-caltech
+-misc_static
+-brigace test the set of classes that are loaded from the primary
+databases. (Some classes from the primary databases are omitted
+because further objects of those classes are loaded later on and a
+test of the numbers immediately after loading the primary databases
+objects would give a apparent error.)
+
+
+-classes are a comma-delimited list of explicit classes to check
 
 -database allows you to specify the path of a database which will
 then be compared to the BUILD/autoace directory.
