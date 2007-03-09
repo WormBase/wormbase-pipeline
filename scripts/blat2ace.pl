@@ -6,8 +6,8 @@
 #
 # Exporter to map blat data to genome and to find the best match for each EST, mRNA, OST, etc.
 #
-# Last edited by: $Author: pad $
-# Last edited on: $Date: 2006-12-08 15:17:29 $
+# Last edited by: $Author: mh6 $
+# Last edited on: $Date: 2007-03-09 14:55:55 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -579,7 +579,7 @@ $log->write_to("\n#########################################\nCompressing DNA_hom
 foreach $filename (@filenames) {
 #  if (-e ("$blat_dir/${filename}"."_uncompressed") ) {
     $log->write_to("Compressing ${filename}"."_uncompressed\n");
-    $wormbase->run_script("acecompress.pl $blat_dir/${filename}_uncompressed -homol > $blat_dir/$filename", $log);
+    $wormbase->run_script("acecompress.pl -file $blat_dir/${filename}_uncompressed -homol > $blat_dir/$filename", $log);
     $log->write_to("Compressed........\n");
 #  }
 }
