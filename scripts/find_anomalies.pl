@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2006-10-11 13:16:57 $      
+# Last updated on: $Date: 2007-03-09 11:28:44 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -2395,7 +2395,7 @@ sub output_to_database {
   my ($anomaly_type, $chromosome, $anomaly_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score, $explanation ) = @_;
 
   # get the clone and lab for this location
-  my ($clone, $clone_start, $clone_end) = $coords->LocateSpan($chromosome, $chrom_start, $chrom_end);
+  my ($clone, $clone_start, $clone_end) = $coords->LocateSpan("CHROMOSOME_$chromosome", $chrom_start, $chrom_end);
   my $lab =  &get_lab($clone);          # get the lab that sequenced this clone
   #print "clone $clone is in lab $lab\n";
 
@@ -2553,13 +2553,13 @@ sub delete_anomalies{
 
   my ($type) = @_;
 
-  # Allow a generous 5 days for this program to have been running.
+  # Allow a generous 1 day1 for this program to have been running.
   # Delete anything that hasn't been marked as to be ignored (still
   # active = 1) that is of the required type and which has not been
-  # updated in the last few days i.e that this program hasn't just
+  # updated in the last one day i.e that this program hasn't just
   # updated.
 
-  $mysql->do(qq{ DELETE FROM anomaly WHERE type = "$type" AND active = 1 AND DATE_SUB(CURDATE(),INTERVAL 5 DAY) > date });
+  $mysql->do(qq{ DELETE FROM anomaly WHERE type = "$type" AND active = 1 AND DATE_SUB(CURDATE(),INTERVAL 1 DAY) > date });
 
 }
 
