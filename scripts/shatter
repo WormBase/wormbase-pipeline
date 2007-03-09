@@ -21,6 +21,8 @@ open (OUTPUT, ">${output_name}_${output_count}") || die "can't open file ${outpu
 open (FILE, "<$file") or die "cant open $file :$!\n";
 while (<FILE>) {
     $line = $_;
+    
+    s/^\n$//; #cleanup emplty lines
 
     if (/^>(\S+)/) {
 
