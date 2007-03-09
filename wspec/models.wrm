@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: ar2 $
-// Last edited on: $Date: 2007-02-15 18:16:56 $
+// Last edited on: $Date: 2007-03-09 10:44:22 $
 
 
 
@@ -249,6 +249,7 @@
 			Molecular_name         ?Gene_name XREF Molecular_name_for  // for linking to full CDS names, wormpep etc.
                         Other_name             ?Gene_name XREF Other_name_for #Evidence // other unapproved CGC-style gene names
                         Public_name     UNIQUE ?Gene_name XREF Public_name_for // the one name that should be used
+		  DB_info Database ?Database ?Database_field ?Accession_number //For Darin genbank genpep ids
                   Species UNIQUE ?Species
                   History Version_change Int UNIQUE DateType UNIQUE ?Person #Gene_history_action
                           Merged_into UNIQUE ?Gene XREF Acquires_merge
@@ -302,10 +303,11 @@
                           Microarray_results ?Microarray_results XREF Gene
 			  Expression_cluster ?Expression_cluster XREF Gene #Evidence	//Igor: create clusters of Genes from microarray exps
 			  SAGE_tag ?SAGE_tag XREF Gene #SAGE_mapping_info 
-			  Y2H_bait   ?Y2H XREF Bait_overlapping_gene // for yeast two hybrid data
-			  Y2H_target ?Y2H XREF Target_overlapping_gene
+			  YH_bait   ?YH XREF Bait_overlapping_gene #Evidence// for yeast two hybrid data
+			  YH_target ?YH XREF Target_overlapping_gene #Evidence
 			  3d_data ?3d_data XREF Gene // for NESGC structure information
 			  Interaction ?Interaction XREF Interactor
+			  Anatomy_function ?Anatomy_function XREF Gene
         Map_info  Map UNIQUE ?Map XREF Gene #Map_position
                   Well_ordered          // "on the line"
                   Hide_under ?Gene XREF Representative_for
@@ -772,6 +774,7 @@
 
 ?AO_code Description ?Text
 	 Remark ?Text #Evidence
+	 Attribute_of Anatomy_function ?Anatomy_function XREF Assay //addition
 
 
 //Affiliation Text	// Authors' affiliation if available
@@ -955,8 +958,8 @@
 	  Defines_feature ?Feature XREF Defined_by_sequence #Evidence       // Feature data model [dl 030304]
 	  Assembly_tags	Text Int Int Text                                   // type, start, stop, comment
 	  Gene_regulation Cis_regulator    ?Gene_regulation XREF Cis_regulator_seq // new for Wen
-	  Y2H_bait   ?Y2H XREF Sequence_bait // for yeast two hybrid data
-	  Y2H_target ?Y2H XREF Sequence_target
+	  YH_bait   ?YH XREF Sequence_bait #Evidence// for yeast two hybrid data
+	  YH_target ?YH XREF Sequence_target #Evidence
 	  Homol	DNA_homol ?Sequence XREF DNA_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
 		Pep_homol ?Protein XREF DNA_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
 		Motif_homol ?Motif XREF DNA_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
@@ -1104,8 +1107,8 @@
 		Brief_identification UNIQUE ?Text #Evidence
 		Confidential_remark ?Text
 		SAGE_tag ?SAGE_tag XREF Predicted_CDS #SAGE_mapping_info
-		Y2H_bait   ?Y2H XREF Bait_overlapping_CDS // for yeast two hybrid data
-		Y2H_target ?Y2H XREF Target_overlapping_CDS
+		YH_bait   ?YH XREF Bait_overlapping_CDS #Evidence// for yeast two hybrid data
+		YH_target ?YH XREF Target_overlapping_CDS #Evidence
 		3d_data ?3d_data XREF CDS
 	        //Structure_data ?Structure_data XREF Corresponding_CDS #Evidence
                 Remark ?Text #Evidence
@@ -1831,6 +1834,8 @@
 				Expression_cluster ?Expression_cluster XREF Anatomy_term #Evidence 
                                 GO_term ?GO_term XREF Anatomy_term ?AO_code #Evidence
                                 Reference       ?Paper  XREF Anatomy_term
+				Function Anatomy_function ?Anatomy_function XREF Involved
+					 Anatomy_function_not ?Anatomy_function XREF Not_involved
                 Attribute_index Expr_ancestor ?Expr_pattern  //attribute assigned to broader terms
                                 Expr_descendent ?Expr_pattern
                                 GO_ancestor ?GO_term         //attribute assigned to narrower terms
@@ -1838,6 +1843,27 @@
                 Index   Ancestor ?Anatomy_term XREF Descendent  //store ancestors of relationship IS_A and PART_OF
                         Descendent ?Anatomy_term XREF Ancestor  //store descendents of relationship IS_A and PART_OF
                 Remark  ?Text #Evidence
+
+// Anatomy_function class for Raymond 
+// allow the connection between ?Anatomy_term, ?Phenotype (proxy of biological function), and
+// ?Gene and still give some information about the experiment itself.
+//name shall be "WBbtf0001"
+
+?Anatomy_function Assay ?AO_code XREF Anatomy_function ?Condition
+                  Phenotype UNIQUE ?Phenotype XREF Anatomy_function #Anatomy_function_info
+                  Gene UNIQUE ?Gene XREF Anatomy_function #Evidence //use Published_as tag
+                  Body_part Involved ?Anatomy_term XREF Anatomy_function #Anatomy_function_info
+                            Not_involved ?Anatomy_term XREF Anatomy_function_not #Anatomy_function_info
+                  Remark Text #Evidence
+                  Reference UNIQUE ?Paper XREF Anatomy_function
+
+#Anatomy_function_info Autonomous Text
+                       Nonautonomous Text
+                       Sufficient Text
+                       Insufficient Text
+                       Necessary Text
+                       Unnecessary Text
+                       Remark Text
 
 
 
@@ -2053,8 +2079,8 @@
 	     Variation ?Variation XREF PCR_product // For KO allele data [krb 021217]// ar2 PCR_products used in RFLPs etc
 	     Microarray_results ?Microarray_results XREF PCR_product //added for Microarray_results class
 	     Clone ?Clone XREF PCR_product  // added [krb 031126]
-	     Y2H_bait   ?Y2H XREF PCR_bait // for yeast two hybrid data
-	     Y2H_target ?Y2H XREF PCR_target
+	     YH_bait   ?YH XREF PCR_bait #Evidence // for yeast two hybrid data
+	     YH_target ?YH XREF PCR_target #Evidence
 	     RNAi ?RNAi XREF PCR_product
 	     Remark ?Text #Evidence
  	     Method UNIQUE ?Method
@@ -2075,6 +2101,7 @@
            Attribute_of       RNAi 	?RNAi XREF Phenotype
 			      Variation	?Variation XREF Phenotype
                               Transgene	?Transgene XREF Phenotype	// Added by Carol
+			      Anatomy_function ?Anatomy_function XREF Phenotype
 	   Associated_with    GO_term   ?GO_term   XREF Phenotype   ?GO_code  #Evidence	// Tag Associated_with changed by Carol
 
 
@@ -2294,25 +2321,32 @@
 /////////////////////////////////////////////////////////////////
 
 
-?Y2H Evidence #Evidence
-     Interactor Bait PCR_bait UNIQUE ?PCR_product XREF Y2H_bait
-                     Sequence_bait UNIQUE ?Sequence XREF Y2H_bait
-                     Bait_overlapping_CDS ?CDS XREF Y2H_bait
-                     Bait_overlapping_gene ?Gene XREF Y2H_bait
-                Target PCR_target UNIQUE ?PCR_product XREF Y2H_target
-                       Sequence_target UNIQUE ?Sequence XREF Y2H_target
-                       Target_overlapping_CDS ?CDS XREF Y2H_target
-                       Target_overlapping_gene ?Gene XREF Y2H_target
-     Library_screened  UNIQUE Text
-     Interactome_type UNIQUE  Interactome_core_1
-                              Interactome_core_2
-                              Interactome_noncore
-     Origin From_laboratory UNIQUE ?Laboratory
-     Reference ?Paper XREF Y2H
-     Remark ?Text #Evidence
 
+?YH Evidence #Evidence
+    Interactor Bait PCR_bait UNIQUE ?PCR_product XREF YH_bait
+		    Sequence_bait UNIQUE ?Sequence XREF YH_bait
+		    Bait_overlapping_CDS ?CDS XREF YH_bait #Evidence
+		    Bait_overlapping_gene ?Gene XREF YH_bait #Evidence
+	       Target PCR_target UNIQUE ?PCR_product XREF YH_target
+		      Sequence_target UNIQUE ?Sequence XREF YH_target
+		      Target_overlapping_CDS ?CDS XREF YH_target #Evidence
+		      Target_overlapping_gene ?Gene XREF YH_target #Evidence
+    Library_screened Text INT //wrmcDNA or TF libraries times_found
+    Experiment_type UNIQUE Y2H
+			   Y1H
+    Interactome_type UNIQUE Interactome_core_1
+			    Interactome_core_2
+			    Interactome_noncore
+			    Directed_Y1H Text
+    Origin From_laboratory UNIQUE ?Laboratory
+    Reference ?Paper XREF YH
+    Remark ?Text #Evidence
 
-
+//?Gene YH_bait ?YH XREF Bait_overlapping_gene #Evidence
+//YH_target ?YH XREF Target_overlapping_gene #Evidence
+//?CDS
+//YH_bait ?YH XREF Bait_overlapping_CDS #Evidence
+//YH_target ?YH XREF Target_overlapping_CDS #Evidence
 
 ///////////////////////////////////////////////////////////////////////////////////////
 //
@@ -2534,9 +2568,10 @@
 		  Gene_regulation ?Gene_regulation XREF Reference // added [030804 krb]
 		  Microarray_experiment ?Microarray_experiment XREF Reference //added for Microarray_experiment model
 		  Anatomy_term ?Anatomy_term XREF Reference #Evidence
+		  Anatomy_function ?Anatomy_function XREF Reference
 		  Antibody ?Antibody XREF Reference #Evidence // added [031120 krb]
 		  SAGE_experiment ?SAGE_experiment XREF Reference
-		  Y2H ?Y2H XREF Reference
+		  YH ?YH XREF Reference
 		  Interaction ?Interaction XREF Paper
 		  Mass_spec_experiment ?Mass_spec_experiment XREF Reference
         Keyword ?Keyword
