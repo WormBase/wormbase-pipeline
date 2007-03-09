@@ -6,8 +6,8 @@
 #
 # Usage : acecompress.pl [-options]
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2007-02-26 14:40:50 $
+# Last edited by: $Author: mh6 $
+# Last edited on: $Date: 2007-03-09 15:15:58 $
 use lib $ENV{'CVS_DIR'};
 
 use strict;
@@ -22,7 +22,7 @@ my %objects;       # hash for number of homol lines per object
 my $ace_object;  
 my %acedata;
 
-my ($test, $debug, $store, $file, $bk);
+my ($test, $debug, $store, $file, $bk,$build);
 
 GetOptions (
 	    "homol"    => \$homol,
@@ -31,8 +31,11 @@ GetOptions (
 	    "store:s"  => \$store,
 	    "debug:s"  => \$debug,
 	    "bk"       => \$bk,       #keep original as .bk
-	    "file:s"   => \$file
-	    );
+	    "file:s"   => \$file,
+	    "build"    => \$build
+	    )
+		    or die("invalid commandline option\n");
+	    ;
 my $wormbase;
 
 if( $store ) {
@@ -103,6 +106,7 @@ close ACE;
 
 #replace original, retaining if bk option set
 $wormbase->run_command("mv $file $file.bk", $log) if ($bk);
+$file=~s/_uncompressed// if $build;
 $wormbase->run_command("mv -f $outfile $file",$log);
 
 $log->mail;
