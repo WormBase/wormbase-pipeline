@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2007-03-02 12:38:54 $
+# Last updated on: $Date: 2007-03-09 11:30:47 $
 
 use strict;
 use lib $ENV{"CVS_DIR"};
@@ -1064,20 +1064,20 @@ sub process_strain_class {
 	foreach (@items){
 	  if( my $wbgeneID = $Gene_info{$_} ){
 	    if( $Gene_info{"$wbgeneID"}{'CGC_name'}) {
-		    if ($cgc eq "CGC"){	
-				print LOG "WARNING: CGC Strain $strain has sequence_name $_ in Genotype, which can now become $Gene_info{$wbgeneID}{'CGC_name'}\n";
-	      	}
-	    }
-	    else {
-	    	print LOG "WARNING: Non_CGC Strain $strain has sequence_name $_ in Genotype, which can now become $Gene_info{$wbgeneID}{'CGC_name'}\n";
-	    }
+	      if ($cgc eq "CGC"){	
+		print LOG "WARNING: CGC Strain $strain has sequence_name $_ in Genotype, which can now become $Gene_info{$wbgeneID}{'CGC_name'}\n";
+	      }
+	      else {
+		print LOG "WARNING: Non_CGC Strain $strain has sequence_name $_ in Genotype, which can now become $Gene_info{$wbgeneID}{'CGC_name'}\n";
+	      }
 	    }
 	  }
+	}
 	
       }
     }
   }
-
+  
   my ($locus, %allele_locus, %strain_genotype, $cds, %locus_cds, $main, $allele);
 
   my $get_genotype_in_strain="Table-maker -p \"$def_dir/strain_genotype.def\"\nquit\n";
