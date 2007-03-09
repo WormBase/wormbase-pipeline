@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl5.8.0 -w
 # Last updated by $Author: ar2 $
-# Last updated on: $Date: 2007-03-02 12:39:41 $
+# Last updated on: $Date: 2007-03-09 11:31:12 $
 
 package Geneace;
 
@@ -72,13 +72,14 @@ sub gene_info {
       $gene_info{$gene}{'Public_name'} 	= $public_name 	if $public_name;
       $gene_info{$public_name}{'Gene'} 	= $gene     		if $public_name;
     }
-
-	if( $this->{'wormbase'}->debug ) {
-	    # store these to save time recreating them all the time
-    	open( GI,">$gi_file");
-   		print GI Data::Dumper->Dump([\%gene_info]);
-    	close GI;
-	}
+    
+    if( $this->{'wormbase'}->debug ) {
+      # store these to save time recreating them all the time
+      open( GI,">$gi_file");
+      print GI Data::Dumper->Dump([\%gene_info]);
+      close GI;
+      $this->{'wormbase'}->run_command("chmod 777 $gi_file");
+    }
   }
 
   #return refs to hash(s)
