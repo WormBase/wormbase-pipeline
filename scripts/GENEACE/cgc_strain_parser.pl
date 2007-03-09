@@ -7,8 +7,8 @@
 # Script to convert cgc strain file into ace file for geneace
 # Page download and update upload to geneace has been automated [ck1]
 
-# Last updated by: $Author: mt3 $
-# Last updated on: $Date: 2007-02-12 14:12:30 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2007-03-09 15:47:19 $
 
 use strict;
 use Getopt::Long;
@@ -98,7 +98,7 @@ close(PAPER);
 # get hash to convert CGC name to Gene ID
 ############################################
 my $ga = init Geneace($wormbase);
-my %Gene_info = $ga -> gene_info();
+my %Gene_info = %{$ga -> gene_info()};
 my $last_gene_id_number = $ga ->get_last_gene_id();
 
 
