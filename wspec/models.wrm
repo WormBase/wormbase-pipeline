@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: ar2 $
-// Last edited on: $Date: 2007-03-20 16:55:45 $
+// Last edited on: $Date: 2007-03-20 17:00:21 $
 
 
 
@@ -2334,10 +2334,10 @@
     Library_screened Text INT //wrmcDNA or TF libraries times_found
     Experiment_type UNIQUE Y2H
 			   Y1H
+			   Directed_Y1H Text
     Interactome_type UNIQUE Interactome_core_1
 			    Interactome_core_2
 			    Interactome_noncore
-			    Directed_Y1H Text
     Origin From_laboratory UNIQUE ?Laboratory
     Reference ?Paper XREF YH
     Remark ?Text #Evidence
