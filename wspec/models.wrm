@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: ar2 $
-// Last edited on: $Date: 2007-03-09 10:44:22 $
+// Last edited on: $Date: 2007-03-20 16:55:45 $
 
 
 
@@ -303,8 +303,8 @@
                           Microarray_results ?Microarray_results XREF Gene
 			  Expression_cluster ?Expression_cluster XREF Gene #Evidence	//Igor: create clusters of Genes from microarray exps
 			  SAGE_tag ?SAGE_tag XREF Gene #SAGE_mapping_info 
-			  YH_bait   ?YH XREF Bait_overlapping_gene #Evidence// for yeast two hybrid data
-			  YH_target ?YH XREF Target_overlapping_gene #Evidence
+			  YH_bait   ?YH XREF Bait_overlapping_gene ?Text// for yeast two hybrid data
+			  YH_target ?YH XREF Target_overlapping_gene ?Text
 			  3d_data ?3d_data XREF Gene // for NESGC structure information
 			  Interaction ?Interaction XREF Interactor
 			  Anatomy_function ?Anatomy_function XREF Gene
@@ -958,8 +958,8 @@
 	  Defines_feature ?Feature XREF Defined_by_sequence #Evidence       // Feature data model [dl 030304]
 	  Assembly_tags	Text Int Int Text                                   // type, start, stop, comment
 	  Gene_regulation Cis_regulator    ?Gene_regulation XREF Cis_regulator_seq // new for Wen
-	  YH_bait   ?YH XREF Sequence_bait #Evidence// for yeast two hybrid data
-	  YH_target ?YH XREF Sequence_target #Evidence
+	  YH_bait   ?YH XREF Sequence_bait ?Text// for yeast two hybrid data
+	  YH_target ?YH XREF Sequence_target ?Text
 	  Homol	DNA_homol ?Sequence XREF DNA_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
 		Pep_homol ?Protein XREF DNA_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
 		Motif_homol ?Motif XREF DNA_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
@@ -1107,8 +1107,8 @@
 		Brief_identification UNIQUE ?Text #Evidence
 		Confidential_remark ?Text
 		SAGE_tag ?SAGE_tag XREF Predicted_CDS #SAGE_mapping_info
-		YH_bait   ?YH XREF Bait_overlapping_CDS #Evidence// for yeast two hybrid data
-		YH_target ?YH XREF Target_overlapping_CDS #Evidence
+		YH_bait   ?YH XREF Bait_overlapping_CDS ?Text// for yeast two hybrid data
+		YH_target ?YH XREF Target_overlapping_CDS ?Text
 		3d_data ?3d_data XREF CDS
 	        //Structure_data ?Structure_data XREF Corresponding_CDS #Evidence
                 Remark ?Text #Evidence
@@ -2079,8 +2079,8 @@
 	     Variation ?Variation XREF PCR_product // For KO allele data [krb 021217]// ar2 PCR_products used in RFLPs etc
 	     Microarray_results ?Microarray_results XREF PCR_product //added for Microarray_results class
 	     Clone ?Clone XREF PCR_product  // added [krb 031126]
-	     YH_bait   ?YH XREF PCR_bait #Evidence // for yeast two hybrid data
-	     YH_target ?YH XREF PCR_target #Evidence
+	     YH_bait   ?YH XREF PCR_bait ?Text // for yeast two hybrid data
+	     YH_target ?YH XREF PCR_target ?Text
 	     RNAi ?RNAi XREF PCR_product
 	     Remark ?Text #Evidence
  	     Method UNIQUE ?Method
@@ -2571,7 +2571,7 @@
 		  Anatomy_function ?Anatomy_function XREF Reference
 		  Antibody ?Antibody XREF Reference #Evidence // added [031120 krb]
 		  SAGE_experiment ?SAGE_experiment XREF Reference
-		  YH ?YH XREF Reference
+		  YH ?YH XREF Reference ?Text
 		  Interaction ?Interaction XREF Paper
 		  Mass_spec_experiment ?Mass_spec_experiment XREF Reference
         Keyword ?Keyword
