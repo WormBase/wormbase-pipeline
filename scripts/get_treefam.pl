@@ -60,10 +60,10 @@ use DBI;
 # GET THE LONG NAMES OF THE TREEFAM GENES FROM THE MYSQL DATABASE:
 
 my %WORM                      = (); # HASH TABLE TO KEEP A LIST OF WORM GENES IN TREEFAM.
-my $database                  = 'treefam_3';
+my $database                  = 'treefam_4';
 
-$log->write_to("connecting to treefam database : \tmysql:treefam_3:db.treefam.org:3308\n");
-my $dbh                       = DBI->connect("dbi:mysql:treefam_3:db.treefam.org:3308", 'anonymous', '') || return;
+$log->write_to("connecting to treefam database : \tmysql:treefam_4:db.treefam.org:3308\n");
+my $dbh                       = DBI->connect("dbi:mysql:treefam_4:db.treefam.org:3308", 'anonymous', '') || return;
 my $table_w                   = 'genes';
 # THIS TABLE HAS THE ID AND DISPLAY ID. SOMETIMES THE DISPLAY ID IS
 # THE UNIPROT NAME, SOMETIMES THE ID IS:
@@ -93,7 +93,7 @@ $rc                        = "";
 # THEM FROM THE MYSQL DATABASE:
 
 $database                  = 'treefam';
-$dbh                       = DBI->connect("dbi:mysql:treefam_3:db.treefam.org:3308", 'anonymous', '') || return;
+$dbh                       = DBI->connect("dbi:mysql:treefam_4:db.treefam.org:3308", 'anonymous', '') || return;
 # FIRST READ IN TREEFAM-A AND THEN TREEFAM-B:
 
 my %FAMILY                    = (); # HASH TABLE TO KEEP A RECORD OF THE TREEFAM FAMILIES THAT A WORM GENE IS IN.
