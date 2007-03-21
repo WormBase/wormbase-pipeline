@@ -807,6 +807,7 @@ sub farm_dump   { $self = shift; return $self->{'farm_dump'}; }
 sub compare     { $self = shift; return $self->{'compare'}; }
 sub checks      { $self = shift; return $self->{'checks'}; }
 sub build_data  { $self = shift; return $self->{'build_data'}; }
+sub ontology    { $self = shift; return $self->{'ontology'}; }
 
 # this can be modified by calling script
 sub common_data {
@@ -906,6 +907,7 @@ sub establish_paths {
     $self->{'primaries'}   = $self->basedir . "/PRIMARIES";
     $self->{'blat'}        = $self->autoace . "/BLAT";
     $self->{'checks'}      = $self->autoace . "/CHECKS";
+    $self->{'ontology'}    = $self->autoace . "/ONTOLOGY";
 
     $self->{'tace'}   = glob("~wormpub/ACEDB/bin_ALPHA/tace");
     $self->{'giface'} = glob("~wormpub/ACEDB/bin_ALPHA/giface");
