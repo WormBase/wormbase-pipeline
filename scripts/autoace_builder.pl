@@ -7,7 +7,7 @@
 # Usage : autoace_builder.pl [-options]
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2007-02-26 14:41:46 $
+# Last edited on: $Date: 2007-03-21 11:48:00 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -156,7 +156,7 @@ $wormbase->run_script( "over_load_SNP_gff.pl"                    , $log) if $gff
 #$wormbase->run_script( "process_sage_gff.pl"                     , $log) if $gff_munge;
 # run process_sage_gff.pl under LSF and wait for each chromosome run to finish
 $wormbase->run_script( "chromosome_script_lsf_manager.pl -command 'process_sage_gff.pl' -mito -prefix", $log) if $gff_munge;
-
+&ontologies																 if $ontologies;
 &make_extras                                                             if $extras;
 #run some checks
 $wormbase->run_script( "post_build_checks.pl -a"                 , $log) if $check;
@@ -324,6 +324,12 @@ sub get_repeats {
   $wormbase->run_script("run_inverted.pl -all" , $log);
 }
 
+
+sub ontologies {
+	$wormbase->run_script( "ONTOLOGY/parse_expr_pattern_new.pl", $log);
+	$wormbase->run_script( "ONTOLOGY/parse_go_terms_new.pl -rnai -gene", $log);
+	$wormbase->run_script( "ONTOLOGY/parse_phenotype_new.pl", $log);
+}
 
 sub make_extras {
   my $version = $wormbase->get_wormbase_version;

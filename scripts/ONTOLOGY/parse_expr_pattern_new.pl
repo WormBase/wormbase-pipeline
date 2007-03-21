@@ -17,10 +17,11 @@ my ($output, $acedbpath);
 
 GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
-	  	  "test"       => \$test,
-	    "verbose"    => \$verbose,
-	    "store:s"      => \$store,
-	    "database:s"  => \$acedbpath
+	  	  	"test"       => \$test,
+	    	"verbose"    => \$verbose,
+	    	"store:s"    => \$store,
+	    	"database:s" => \$acedbpath,
+	    	"output:s" 	 => \$output
 	    );
 
 if ($help) {
@@ -58,17 +59,11 @@ foreach (@aql_results) {
 warn scalar keys %names , " genes read\n";
 
 my $out;
-if ($output) {
-    open($out, ">$output") or $log->log_and_die("cannot open $output : $!\n");
-}
-else {
-    $out=*STDOUT;
-}
+$output = $wormbase->ontology."/anatomy_association.".$wormbase->get_wormbase_version_name.".wb" unless $output;
+open($out, ">$output") or $log->log_and_die("cannot open $output : $!\n");	
 
 my $query="find Expr_pattern Anatomy_term";
-
 my $it=$db->fetch_many(-query=>$query);
-
 
 my $count=0;
 while (my $obj=$it->next) {

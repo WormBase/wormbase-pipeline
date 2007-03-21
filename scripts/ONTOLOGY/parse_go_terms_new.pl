@@ -1,4 +1,4 @@
- #!/nfs/disk100/wormpub/bin/perl -w
+ #!/nfs/disk100/wormpub/bin/perl
           
 use lib $ENV{'CVS_DIR'};
 use strict;
@@ -23,7 +23,8 @@ GetOptions ("help"       => \$help,
 	    	"store:s"    => \$store,
 	    	"database:s" => \$acedbpath,
 	    	"rnai"   	 => \$rnai,
-	    	"gene"		 => \$gene
+	    	"gene"		 => \$gene,
+	    	"output:s"   => \$output,
 	    );
 
 my $program_name=$0=~/([^\/]+)$/ ? $1 : '';
@@ -88,16 +89,11 @@ warn scalar keys %papers , " papers read\n";
 my %names=();
 
 my $out;
-if ($output) {
-    open($out, ">$output") or $log->log_and_die("cannot open $output : $!\n");
-}
-else {
-    $out=*STDOUT;
-}
+$output = $wormbase->ontology."/gene_association.".$wormbase->get_wormbase_version_name.".wb" unless $output;
+open($out, ">$output") or $log->log_and_die("cannot open $output : $!\n");
 
 my $count=0;
 my $line_count=0;
-
 
 if ($gene) {   
     my $query="find gene go_term";
@@ -161,7 +157,7 @@ if ($gene) {
 		}
 		my $a=$aspect{lc $go_type};
 		my $type="gene";
-		print $output "WB\t$obj\t$public_name\t\t$term\t$ref\t$tmp[3]\t$with\t$a\t\t\t$type\t$taxon\t$date\tWB\n";
+		print $out "WB\t$obj\t$public_name\t\t$term\t$ref\t$tmp[3]\t$with\t$a\t\t\t$type\t$taxon\t$date\tWB\n";
 		$line_count++;
 	    }
 	}
@@ -224,7 +220,7 @@ if ($rnai) {
 		    next;
 		}
 		my $taxon="taxon:6239";
-		if ($species=~/briggsae/) {
+		if (defined $species and $species=~/briggsae/) { #future problems!
 		    $taxon="taxon:6238";
 		}
 		my $type="gene";
@@ -248,7 +244,7 @@ if ($rnai) {
 		foreach my $term (keys %{$phen2go{$phen}}) {
 		    my $go_type=$db->fetch('GO_term', $term)->Type;
 		    my $a=$aspect{lc $go_type};
-		    print $output "WB\t$gene\t$public_name\t\t$term\t$ref_field\tIMP\t$with\t$a\t\t$syn\t$type\t$taxon\t$date\tWB\n";
+		    print $out "WB\t$gene\t$public_name\t\t$term\t$ref_field\tIMP\t$with\t$a\t\t$syn\t$type\t$taxon\t$date\tWB\n";
 		    $line_count++;
 		}
 	    }
@@ -259,6 +255,11 @@ if ($rnai) {
     warn "$count RNAi objects processed\n";
     warn "$line_count lines generated\n";
 }
+
+#separate species for gene associations
+$wormbase->run_command("grep 'taxon:6239' $output > $output.ce", $log);
+$wormbase->run_command("grep 'taxon:6238' $output > $output.cb", $log);
+
 $log->mail;
 exit();
 

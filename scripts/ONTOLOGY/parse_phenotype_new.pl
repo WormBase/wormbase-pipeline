@@ -1,4 +1,4 @@
-#!/nfs/disk100/wormpub/bin/perl -w
+#!/nfs/disk100/wormpub/bin/perl
           
 use lib $ENV{'CVS_DIR'};
 use strict;
@@ -76,22 +76,12 @@ foreach (@aql_results) {
 }
 warn scalar keys %variations , " variations read\n";
 
-
-
-
-
 my $out;
-if ($output) {
-    open($out, ">$output") or $log->log_and_die("cannot open $output : $!\n");
-}
-else {
-    $out=*STDOUT;
-}
+$output = $wormbase->ontology."/phenotype_association.".$wormbase->get_wormbase_version_name.".wb" unless $output;
+open($out, ">$output") or $log->log_and_die("cannot open $output : $!\n");
 
 my $query="find Variation Phenotype";
-
 my $it=$db->fetch_many(-query=>$query);
-
 
 my $count=0;
 while (my $obj=$it->next) {
@@ -129,7 +119,7 @@ while (my $obj=$it->next) {
 	    foreach my $p (keys %pheno) {
 		my $q=$pheno{$p}[1] ? 'NOT' : '';
 		my $paper=$pheno{$p}[2] ? $pheno{$p}[2] : '';
-		print $output "WB\t$g\t$names{$g}\t$q\t$p\t$paper\tVariation\t$var\t\t\t\t\t\t$date\tWB\n";
+		print $out "WB\t$g\t$names{$g}\t$q\t$p\t$paper\tVariation\t$var\t\t\t\t\t\t$date\tWB\n";
 	    }
 	}
     }
@@ -169,7 +159,7 @@ while (my $obj=$it->next) {
     foreach my $g (@genes) {
 	foreach my $p (keys %pheno) {
 	    my $q=$pheno{$p}[1] ? 'NOT' : '';
-	    print $output "WB\t$g\t$names{$g}\t$q\t$p\t$ref\tRNAi\t$obj\t\t\t\t\t\t$date\tWB\n";
+	    print $out "WB\t$g\t$names{$g}\t$q\t$p\t$ref\tRNAi\t$obj\t\t\t\t\t\t$date\tWB\n";
 	}
     }
 }
