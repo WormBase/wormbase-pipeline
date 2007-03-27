@@ -78,7 +78,7 @@ sub main {
   my $path = SangerWeb->document_root();
   my $sw = SangerWeb->new( {
 				
-			    'banner' => "Wormbase Feature Name Management<br><font color=red>This system is TEST only</font>",
+			    'banner' => "Wormbase Feature Name Management<br><font color=red></font>",
 			    'inifile'=> "$path/Projects/C_elegans/header.ini",
 			    'author' => 'avc',
 			    'onload' => 'init()',
@@ -342,19 +342,14 @@ sub main {
 	print "The remark is a <font color=red>required field</font><br>";
       }
     }
-  }			
-
-  
-
-  		
+  }
+		
   sub query {
-      ##run the query
       my $db = get_db_connection();
       my $query = " select object_public_id from primary_identifier where domain_id=3 order by object_public_id desc limit 1";
       my $last_object = $db->dbh->selectcol_arrayref($query,undef)->[0];
 
       print "the last Feature ID used was $last_object";
-
   }
 
 
