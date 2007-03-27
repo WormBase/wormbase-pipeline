@@ -6,7 +6,7 @@
 # Compares this number to those from a second database.
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2007-03-08 14:52:31 $
+# Last updated on: $Date: 2007-03-27 14:24:25 $
 
 
 use strict;
@@ -29,7 +29,7 @@ $|=1;
 my ($help, $debug, $test, $verbose, $store, $wormbase);
 my ($database, $database1, $database2, $classes);
 my ($db_1, $db_2, $dbname_1, $dbname_2);
-my ($stlace, $camace, $genace, $csh, $caltech, $misc_static, $brigace);
+my ($stlace, $camace, $genace, $csh, $caltech, $misc_static, $brigace, $incomplete);
 
 GetOptions (
 	    "help"          => \$help,
@@ -48,6 +48,7 @@ GetOptions (
 	    "caltech"       => \$caltech,
 	    "misc_static"   => \$misc_static,
 	    "brigace"       => \$brigace,
+	    "incomplete"    => \$incomplete,
 	    );
 
 
@@ -119,6 +120,7 @@ my @classes = ();
  @classes = (@classes, &set_classes('caltech')) if ($caltech);
  @classes = (@classes, &set_classes('misc_static')) if ($misc_static);
  @classes = (@classes, &set_classes('brigace')) if ($brigace);
+ @classes = (@classes, &set_classes('incomplete')) if ($incomplete);
 
 $log->write_to("Checking $dbname_1 vs $dbname_2 for classes:\n@classes\n\n");
 
@@ -140,9 +142,12 @@ foreach my $class (@classes) {
   my $count2 = $$class_count_2[$count];
   my $diff = $count2 - $count1;
   my $err = "";
-  if ($count2 == 0 || 
-      $count2 < $count1 * 0.9 || 
-      $count2 > $count1 * 1.1) {
+  if ($count2 == 0) {
+    $err = "***** POSSIBLE ERROR *****";
+    $log->error;
+  } elsif (!$incomplete &&	# we expect the 'incomplete' classes to be less than in currentdb
+      ($count2 < $count1 * 0.9 || 
+      $count2 > $count1 * 1.1)) {
     $err = "***** POSSIBLE ERROR *****";
     $log->error;
   }
@@ -384,6 +389,22 @@ sub set_classes {
 		  "Variation",
 		  );
 
+
+# these classes have are partially loaded in autoace_builder.pl -build
+# but there will be more instances of them added later in the Build - they
+# should not be empty, but they will not have as many members as the
+# corresponding currentdb class.
+  } elsif ($mode eq "incomplete") { 
+    @classes = (
+		"CDS", 
+		"DNA",
+		"Sequence", 
+		"Motif", 
+		"Feature_data", 
+		"Peptide", 
+		"Protein", 
+		"Homol_data",
+		);
   }
 
 
