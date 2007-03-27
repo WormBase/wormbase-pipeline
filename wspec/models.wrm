@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: ar2 $
-// Last edited on: $Date: 2007-03-20 17:00:21 $
+// Last edited on: $Date: 2007-03-27 16:29:19 $
 
 
 
@@ -306,7 +306,7 @@
 			  YH_bait   ?YH XREF Bait_overlapping_gene ?Text// for yeast two hybrid data
 			  YH_target ?YH XREF Target_overlapping_gene ?Text
 			  3d_data ?3d_data XREF Gene // for NESGC structure information
-			  Interaction ?Interaction XREF Interactor
+			  Interaction ?Interaction
 			  Anatomy_function ?Anatomy_function XREF Gene
         Map_info  Map UNIQUE ?Map XREF Gene #Map_position
                   Well_ordered          // "on the line"
@@ -362,11 +362,36 @@
 // new Interaction class for Andrei
 // WBInteraction00000001             
 
-?Interaction Evidence #Evidence
-	     Interactor ?Gene XREF Interaction #Interaction_type
-             Paper ?Paper XREF Interaction        
-	     DB_info Database ?Database ?Database_field ?Accession_number //addition for WeiWei 
-	     Remark  ?Text   #Evidence
+//New Interaction Model replaces the old interaction model. The main enhancements are information about the interactors and the phenotypes
+//relevant to the interaction. For the directional interactions (tags:Regulatory, Suppression, Enhancement, Epistasis) the directionality
+//of the interaction is described by the tags Effector and Effected as follows: Effector "Regulates" ("Suppresses", "Enhances", or "IsEpistatic To") Effected.
+//for the rest of the interactions (the non-directional kind) Effector and Effected are considered equivalent.
+?Interaction   Evidence #Evidence
+               Interactor    ?Gene    XREF Interaction    #Interactor_info
+               Interaction_type    Genetic    #Interaction_info
+				   Regulatory    #Interaction_info
+                                   No_interaction    #Interaction_info
+				   Predicted_interaction    #Interaction_info
+				   Physical_interaction    #Interaction_info
+                                   Suppression    #Interaction_info
+                                   Enhancement    #Interaction_info
+                                   Synthetic    #Interaction_info
+                                   Epistasis    #Interaction_info
+                                   Mutual_enhancement    #Interaction_info
+                                   Mutual_suppression    #Interaction_info
+               Paper ?Paper XREF Interaction
+               DB_info Database ?Database ?Database_field ?Accession_number
+               Remark  ?Text   #Evidence
+
+#Interactor_info    Variation    ?Variation    XREF    Interactor
+		    Transgene ?Transgene XREF   Interactor
+		    Remark  ?Text   #Evidence    //info about the reagents that the model can't capture goes here (e.g. co_suppression, RNA_reagent, etc.)
+
+#Interaction_info    Interaction_RNAi ?RNAi XREF Interaction
+		     Effector ?Gene //master, upstream
+		     Effected ?Gene //subject, downstream
+		     Interaction_phenotype ?Phenotype XREF Interaction
+
                                                                                                             
 #Interaction_type Genetic
                   Regulation
@@ -1969,6 +1994,7 @@
 		Rescue ?Gene XREF Rescued_by_Transgene ?Variation XREF Rescued_by_Transgene
 		Expr_pattern ?Expr_pattern XREF Transgene                                        // Related Expr_pattern
 		Gene_regulation ?Gene_regulation XREF Transgene
+		Interactor ?Interaction
 		Reference ?Paper XREF Transgene                                                  // papers refered to the transgene.
 		Species UNIQUE ?Species                                                          // added by krb for consistency with other classes 021030
 		Remark ?Text #Evidence                                                           // More comments on the transgene
@@ -2021,6 +2047,7 @@
 	DB_info    Database ?Database ?Database_field ?Accession_number //to link out to Phenobank ar2 02-DEC-05 //removed UNIQUE as reqs multiple connections
 	Species UNIQUE ?Species
 	Gene_regulation ?Gene_regulation XREF RNAi  // this tag is used when an RNAi experiment describes gene regulation ar2 29-MAR-06 for igor
+	Interaction ?Interaction
         Reference UNIQUE ?Paper XREF RNAi //[070215 ar2] made reference unique so Paper sort of equates to a Study class for Will S
         Phenotype ?Phenotype XREF RNAi #Phenotype_info
         Expr_profile ?Expr_profile XREF RNAi_result // connection added during build [030106 krb]
@@ -2102,6 +2129,7 @@
 			      Variation	?Variation XREF Phenotype
                               Transgene	?Transgene XREF Phenotype	// Added by Carol
 			      Anatomy_function ?Anatomy_function XREF Phenotype
+			      Interaction ?Interaction
 	   Associated_with    GO_term   ?GO_term   XREF Phenotype   ?GO_code  #Evidence	// Tag Associated_with changed by Carol
 
 
@@ -2710,6 +2738,7 @@
 		       Anatomy_term		?Anatomy_term //Added by wen 02132006
                        Subcellular_localization ?Text 
 
+//Variation class
 ?Variation Evidence #Evidence
 	   Name CGC_name	UNIQUE ?Variation_name XREF CGC_name_for
 		Exelixis_ID     UNIQUE ?Variation_name XREF Exelixis_ID_for
@@ -2757,6 +2786,7 @@
 		   Transcript    ?Transcript XREF Variation #Molecular_change
 		   Pseudogene    ?Pseudogene XREF Variation #Molecular_change
 		   Feature       ?Feature    XREF Associated_with_variation
+		   Interactor	 ?Interaction
            Isolation Date    DateType
                      Mutagen UNIQUE Text #Evidence
                      Forward_genetics Text #Evidence  // New tags to capture the basis of the experiment that isolated
