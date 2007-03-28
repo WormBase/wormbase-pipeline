@@ -6,7 +6,7 @@
 # Compares this number to those from a second database.
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2007-03-27 14:24:25 $
+# Last updated on: $Date: 2007-03-28 16:27:45 $
 
 
 use strict;
@@ -50,7 +50,6 @@ GetOptions (
 	    "brigace"       => \$brigace,
 	    "incomplete"    => \$incomplete,
 	    );
-
 
 if ( $store ) {
   $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
@@ -151,13 +150,13 @@ foreach my $class (@classes) {
     $err = "***** POSSIBLE ERROR *****";
     $log->error;
   }
+  $count++;
 
   # don't want to report duplicate classes
   if ($seen{$class}) {next;}
   $seen{$class} = 1;
 
   $log->write_to(sprintf("%-22s %7d %7d %7d %s\n", $class,$count1,$count2,$diff,$err));
-  $count++;
 }
 
 
@@ -199,6 +198,9 @@ sub count_classes {
   my @class_count1;
   my @class_count2;
 
+  my $count1=0;
+  my $count2=0;
+
   # Formulate query
   my $command;
   foreach my $class (@classes) {
@@ -215,6 +217,7 @@ sub count_classes {
   open (TACE, "echo '$command' | $exec $db_1 | ");
   while (<TACE>) {
     (push @class_count1, $1) if (/^\/\/ (\d+) Active Objects/);
+    $count1++ if (/^\/\/ (\d+) Active Objects/);
   }
   close (TACE);
     
@@ -227,8 +230,11 @@ sub count_classes {
   open (TACE, "echo '$command' | $exec $db_2 | ");
   while (<TACE>) {
     (push @class_count2, $1) if (/^\/\/ (\d+) Active Objects/);
+    $count2++ if (/^\/\/ (\d+) Active Objects/);
   }
   close (TACE);
+
+  if ($count1 != $count2) {die "There are different numbers of classes in the two databases ($count1, $count2)\npossibly some results are not being returned?\n";}
 
   return (\@class_count1, \@class_count2);
     
@@ -317,7 +323,6 @@ sub set_classes {
 		 "Structure_data", 
 #		 "Peptide", 
 #		 "Protein", 
-		 "Y2H"
 		 );
 
 
