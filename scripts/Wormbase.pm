@@ -609,7 +609,7 @@ sub test_user_wormpub {
   chomp $name;
   if ( "$name" eq "wormpub" ) {
     print "running scripts as user wormpub . . . \n\n";
-    return;
+    return 1;
   } 
   elsif ($name eq "wormpipe"){
 	  return 1;
@@ -624,7 +624,7 @@ sub test_user_wormpub {
     } else {
       print
 	"OK - on your head be it !\nBack to the script . .\n#########################################################\n\n\n";
-      return;
+      return 0;
     }
   }
 }
