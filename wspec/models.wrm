@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: ar2 $
-// Last edited on: $Date: 2007-03-27 16:29:19 $
+// Last edited on: $Date: 2007-04-03 09:39:38 $
 
 
 
@@ -1634,6 +1634,8 @@
 			Northern Text // added for Wen [krb 030425]
                         Western Text // added for Wen 
                         RT_PCR Text // added for Wen
+			Localizome ?Text //added by Wen
+		Expression_cluster ?Expression_cluster XREF Expr_pattern //added by Wen.for localizome
 		Pattern ?Text
 		Picture ?Picture XREF Expr_pattern
 		MovieURL Text //Added by wen for link to movie URLs. 
@@ -1962,8 +1964,8 @@
       StandAloneDisplay Text
 
 
-//transgene from Wen Chen 12/00
-
+//transgene class from Wen Chen 12/00
+	    
 ?Transgene      Evidence #Evidence
 		Summary UNIQUE ?Text //Searchable description of the transgene
 		Driven_by Driven_by_CDS_promoter   ?CDS  XREF Drives_transgene Text //driving promoter
@@ -1988,6 +1990,7 @@
 		Location ?Laboratory #Lab_Location //Which Labs have the transgene.
 		Strain ?Strain XREF Transgene //All strains in CGC with the transgene.
 		Map ?Map  #Map_position 
+		Map_evidence #Evidence //For wen - many papers refer to Transgene. This will allow curators to track which is used.
 		Mapping_data 2_point ?2_point_data 
 			     Multi_point ?Multi_pt_data
 		Phenotype ?Phenotype XREF Transgene #Phenotype_info // [2006-04-20 ar2] changed for Carols Phenotype changes
@@ -2261,6 +2264,7 @@
 		     Microarray_results ?Microarray_results  Text #Evidence  //added for Microarray_results model
 		     SAGE_tag ?SAGE_tag Text #Evidence
 		     Gene ?Gene XREF Expression_cluster #Evidence           //Igor: populated during build based on Microarray_results mapping
+		     Expr_pattern       ?Expr_pattern XREF Expression_cluster #Evidence //added by Wen originally for Localizome
 		     Remark ?Text #Evidence    
 		     Anatomy_term ?Anatomy_term XREF Expression_cluster #Evidence //Igor: to describe microarray experiments involving expression profiling in a particular tissue or cell Dec 06
 
@@ -2452,7 +2456,8 @@
  	Lineage Supervised    ?Person XREF Supervised_by #Role
                 Supervised_by ?Person XREF Supervised #Role
                 Worked_with   ?Person XREF Worked_with #Role
-        Publication     Paper ?Paper XREF Person
+        Publication     Paper ?Paper XREF Person #Evidence
+			Not_paper ?Paper XREF Not_person #Evidence
                         Publishes_as ?Author    // confirmed author names (curated) can't XREF because of paper model
                         Possibly_publishes_as ?Author XREF Possible_person
                                                 // curated for Author->Paper->Person
@@ -2563,7 +2568,8 @@
                         In_book #Paper
                         Contained_in ?Paper XREF Contains       // old form
         Author ?Author XREF Paper #Affiliation
-        Person ?Person XREF Paper
+        Person ?Person XREF Paper #Evidence
+	Not_person ?Person XREF Not_Paper #Evidence
         Affiliation Text        // Authors' affiliation if available
         Brief_citation UNIQUE Text
         Abstract ?LongText
