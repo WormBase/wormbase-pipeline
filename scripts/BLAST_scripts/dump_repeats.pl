@@ -84,7 +84,7 @@ foreach my $pair (@$ref_results) {
     $int_id2clone{$int_id} = $clone;
   }
   else {
-    $log->write_to->("no clone found for acc $acc : internal_id $int_id\n");
+    $log->write_to("no clone found for acc $acc : internal_id $int_id\n");
   }
 }
 
