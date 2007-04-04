@@ -7,7 +7,7 @@
 # Author: Chao-Kung CHen
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2006-11-17 15:10:58 $
+# Last updated on: $Date: 2007-04-04 14:54:29 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -62,7 +62,7 @@ my @files        = (
 foreach my $file (@files){
   if (( $file eq "waba.ace") && (-e "/nfs/acari/wormpipe/ace_files/waba.ace")){
     $log->write_to("scping new version of $file\n");
-    $wormbase->run_command("scp acari:/nfs/acari/wormpipe/ace_files/waba.ace ${target_dir}/waba.ace", $log);
+    $wormbase->run_command("scp farm-login:/nfs/acari/wormpipe/ace_files/waba.ace ${target_dir}/waba.ace", $log);
   }
   elsif ( -e "$source_dir/$file" ) {
     $log->write_to("scping new version of $file\n");
