@@ -6,7 +6,7 @@
 # Compares this number to those from a second database.
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2007-03-30 14:37:31 $
+# Last updated on: $Date: 2007-04-04 16:29:55 $
 
 
 use strict;
@@ -29,7 +29,7 @@ $|=1;
 my ($help, $debug, $test, $verbose, $store, $wormbase);
 my ($database, $database1, $database2, $classes);
 my ($db_1, $db_2, $dbname_1, $dbname_2);
-my ($stlace, $camace, $genace, $csh, $caltech, $misc_static, $brigace, $incomplete);
+my ($stlace, $camace, $genace, $csh, $caltech, $misc_static, $brigace, $incomplete, $data_sets);
 
 GetOptions (
 	    "help"          => \$help,
@@ -49,6 +49,7 @@ GetOptions (
 	    "misc_static"   => \$misc_static,
 	    "brigace"       => \$brigace,
 	    "incomplete"    => \$incomplete,
+	    "data_sets"     => \$data_sets,
 	    );
 
 if ( $store ) {
@@ -120,6 +121,7 @@ my @classes = ();
  @classes = (@classes, &set_classes('misc_static')) if ($misc_static);
  @classes = (@classes, &set_classes('brigace')) if ($brigace);
  @classes = (@classes, &set_classes('incomplete')) if ($incomplete);
+ @classes = (@classes, &set_classes('data_sets')) if ($data_sets);
 
 $log->write_to("Checking $dbname_1 vs $dbname_2 for classes:\n@classes\n\n");
 
@@ -412,7 +414,26 @@ sub set_classes {
 		"Homol_data",
 		"Transcript",
 		);
-  }
+
+# these classes should all be fully loaded after running autoace_builder -data_sets
+  } elsif ($mode eq "data_sets") { 
+    @classes = (
+		"CDS", 
+		"DNA",
+		"Sequence", 
+		"Motif", 
+		"Feature_data", 
+		"Peptide", 
+		"Protein", 
+		"Homol_data",
+		"Transcript",
+		"Mass_spec_peptide",
+		"Mass_Spec_experiment",
+		"Gene",
+		"Feature",
+		"Motif",
+		"Method",
+		);  }
 
 
   return @classes;
