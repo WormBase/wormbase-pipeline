@@ -7,8 +7,8 @@
 # This script interogates an ACEDB database and returns all pfam/Interpro/blastx 
 # data as appropriate and generates a suitable DB_remark
 #
-# Last updated on: $Date: 2006-06-09 13:43:44 $
-# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2007-04-05 14:10:11 $
+# Last updated by: $Author: gw3 $
 
 
 ### DB_remark is generated as follows:  ###
@@ -435,14 +435,21 @@ TRANSCRIPT: while ( my $transcript = $transcripts->next ) {
     ($description = $transcript->Transcript(2)) if ($transcript->Transcript(2)); # text field, not always present
   }
   else{
-    $log->write_to("ERROR: $transcript has no Transcript tag\n");
-    print "ERROR: $transcript has no Transcript tag\n";
+    $type = "";			# non-coding transcript isoforms have no tag after 'Transcript'
   }
 
   # set empty text field if $description is empty to prevent -w warnings
   $description = "" if (!defined($description));
 
-  if ($method eq 'tRNAscan-SE-1.23') { # tRNAs
+  if ($type eq '') { # non-coding transcript isoforms have no tag after 'Transcript'
+    if ($cgc_name) {
+      $full_string .= "C. elegans non-coding isoform $cgc_name";
+    } 
+    else {
+      $full_string .= "C. elegans predicted non-coding isoform";
+    } 
+  }   
+  elsif ($method eq 'tRNAscan-SE-1.23') { # tRNAs
     if ($cgc_name) {
       $full_string .= "C. elegans tRNA $cgc_name";
     } 
