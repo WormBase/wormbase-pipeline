@@ -6,8 +6,8 @@
 #
 # Usage : make_keysets.pl [-options]
 #
-# Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2006-04-12 09:08:39 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2007-04-11 11:26:58 $
 
 #################################################################################
 # variables                                                                     #
@@ -139,7 +139,7 @@ if (($touched) || ($all)) {
 if (($history) || ($all)) {
     print "Tace query for wormpep_mods_since_WSnn\n" if ($debug);
 
-    my @releases = (77,100,110,120,130,140,150);
+    my @releases = (77,100,110,120,130,140,150,160,170);
     push (@releases,$history-1);
 
     foreach my $i (@releases) {
