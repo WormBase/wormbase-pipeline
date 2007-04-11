@@ -43,6 +43,12 @@ if ( $store ) {
 # establish log file.
 my $log = Log_files->make_build_log($wormbase);
 
+my $year  = (1900 + (localtime)[5]);
+my $month = (1 + (localtime)[4]);
+my $day   = (localtime)[3];
+
+$date=sprintf("%04d%02d%02d", $year, $month, $day);
+
 $acedbpath=$wormbase->autoace unless $acedbpath;
 my $tace= $wormbase->tace;
 
@@ -71,9 +77,6 @@ while (my $obj=$it->next) {
     if ($count % 1000 == 0) {
 	warn "$count objects processed\n";
     }
-    my $year;
-    my $month;
-    my $date;
     my @lines=split("\n", $obj->asAce);
     foreach (@lines) {
 	if (/^Expr_pattern/) {
@@ -108,10 +111,7 @@ while (my $obj=$it->next) {
 	    $auth{$tmp}++;
 	}
 	elsif (/^Experiment\s+Date/) {
-	  ($year, $month)=$_=~/(\d+)-(\d+)/ ? ($1, $2) : ('', '');
-	  next unless $year;
-	  next unless $month;
-	  $date = "$year${month}01";
+
 	}
 	
     }
