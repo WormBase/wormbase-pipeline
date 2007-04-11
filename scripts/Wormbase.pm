@@ -941,8 +941,9 @@ sub establish_paths {
     mkpath( $self->brigpep )     unless ( -e $self->brigpep );
     mkpath( $self->wormrna )     unless ( -e $self->wormrna ); 
     mkpath( $self->chromosomes ) unless ( -e $self->chromosomes );
-    mkpath( $self->transcripts ) unless ( -e $self->transcripts );
+    mkpath( $self->transcripts ) unless ( -e $self->transcripts ); 
     mkpath( $self->reports )     unless ( -e $self->reports );
+    mkpath( $self->ontology )    unless ( -e $self->ontology );
     mkpath( $self->gff )         unless ( -e $self->gff );
     mkpath( $self->gff_splits )  unless ( -e $self->gff_splits );
     mkpath( $self->primaries )   unless ( -e $self->primaries );
