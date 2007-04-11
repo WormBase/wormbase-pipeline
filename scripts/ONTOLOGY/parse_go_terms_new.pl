@@ -55,6 +55,10 @@ my %aspect=(molecular_function=>'F',
 	    cellular_component=>'C'
 	    );
 	    
+my $year  = (1900 + (localtime)[5]);
+my $month = (1 + (localtime)[4]);
+my $day   = (localtime)[3];
+$date=sprintf("%04d%02d%02d", $year, $month, $day);
 
 $acedbpath = $wormbase->autoace unless $acedbpath;
 warn "connecting to database... ";
