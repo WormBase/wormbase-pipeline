@@ -7,8 +7,8 @@
 # 
 # Originally written by Dan Lawson
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2007-02-26 14:45:33 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2007-04-12 15:19:07 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -263,7 +263,7 @@ sub copy_chromosome_files{
  # }
 #  closedir DNAGFF;
 
-	$wormbase->run_command("cp -R $ace_dir/CHROMOSOMES $targetdir/$WS_name/CHROMOSOMES");
+	$wormbase->run_command("cp -R $ace_dir/CHROMOSOMES $targetdir/$WS_name/CHROMOSOMES", $log);
 #  $wormbase->run_command("mkdir $targetdir/$WS_name/CHROMOSOMES/SUPPLEMENTARY_GFF", $log) unless -e "$targetdir/$WS_name/CHROMOSOMES/SUPPLEMENTARY_GFF";
 #    opendir (DNAGFFSUP,"$ace_dir/CHROMOSOMES/SUPPLEMENTARY_GFF") or croak ("Could not open directory $ace_dir/CHROMOSOMES/SUPPLEMENTARY_GFF");
 #  while (defined($filename = readdir(DNAGFFSUP))) {
