@@ -4,37 +4,12 @@
 # 
 # A script to make multiple copies of camace for curation, and merge them back again
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2007-02-09 10:30:21 $
-
-# had a few errors when I tried to run this:
-#merge_split_camaces.pl -update -all -version 171 > /nfs/disk100/wormpub/cam
-#ace_orig/WS171-WS172/load_data.txt
-#No log obj passed to run_command by Wormbase
-#No log obj passed to run_command by Wormbase
-#Unknown option: store
-#Can't open bidirectional pipe at /nfs/disk100/wormpub/wormbase/scripts/load_blat2db.pl line 80.
-#Can't open bidirectional pipe at /nfs/disk100/wormpub/wormbase/scripts/load_blat2db.pl line 170.
-#No log obj passed to run_command by Wormbase
-#No log obj passed to run_command by Wormbase
-#Unknown option: store
-#using /nfs/disk100/wormpub/BUILD/autoace/COMMON_DATA for COMMON_DATA
-#warning: Connecting to ecs4 failed: No address associated to the name
-#can't open input file briggsae_blastx.ace       No such file or directory
-# 
-#Died at /nfs/disk100/wormpub/wormbase/scripts/Log_files.pm line 167.
-#DESTROYing at 14:54:10
-#====================
-#No log obj passed to run_command by Wormbase
-#No log obj passed to run_command by Wormbase
-#Unknown option: store
-#sh: /usr/local/pubseq/bin/getzc: not found
-#sh: /usr/local/pubseq/bin/getzc: not found
-#sh: /usr/local/pubseq/bin/getzc: not found
-#sh: /usr/local/pubseq/bin/getzc: not found
-#Double size is not compatible at ../../lib/Storable.pm (autosplit into ../../lib/auto/Storable/_retrieve.al) line 328, at /nfs/disk100/wormpub/wormbase/scripts/check_predicted_genes.pl line 33
-#Failed to run camcheck.pl
-#DESTROYing at 15:06:28
+# Last edited by: $Author: pad $
+# Last edited on: $Date: 2007-04-12 14:43:37 $
+#
+# Persisting errors.
+#running csh -c "reformat_acediff file 1 file2"
+#Use of uninitialized value in concatenation (.) or string at /nfs/disk100/wormpub/wormbase/scripts/reformat_acediff line 121.
 #====================
 
 use strict;
@@ -58,10 +33,11 @@ my $update;                # Update current database
 my $debug;                 # Debug option
 my $help;                  # Help menu
 my $version;               # Removes final wormsrv2 dependancy.
-my $store;                # Storable not needed as this is not a build script!
+my $store;                 # Storable not needed as this is not a build script!
 my $test;
 my $wormbase;
-my $extra;                 #remove the GeneIDupdater call as this is run otside this script.
+my $extra;                 # remove the GeneIDupdater call as this is run outside this script.
+my $email;                 # Option for child scripts that can tace a user email option.
 
   GetOptions (
 	      "all"        => \$all,
@@ -72,11 +48,12 @@ my $extra;                 #remove the GeneIDupdater call as this is run otside 
 	      "split"      => \$split,
 	      "update"     => \$update,
 	      "help"       => \$help,
-	      "debug"      => \$debug,
+	      "debug:s"    => \$debug,
 	      "version:s"  => \$version,
 	      "store"      => \$store,
 	      "test"       => \$test,
 	      "extra"      => \$extra,
+	      "email:s"    => \$email,
 	     );
 
 
@@ -291,7 +268,12 @@ sub update_camace {
   ##########################################
   ## Check Canonical Database for errors. ##
   ##########################################
-  $wormbase->run_script("camcheck.pl -e gw3 -db /nfs/disk100/wormpub/DATABASES/camace", $log) && die "Failed to run camcheck.pl\n";
+  if ($email) {
+    $wormbase->run_script("camcheck.pl -db /nfs/disk100/wormpub/DATABASES/camace -e $email", $log) && die "Failed to run camcheck.pl\n";
+  }
+  else {  
+    $wormbase->run_script("camcheck.pl -db /nfs/disk100/wormpub/DATABASES/camace", $log) && die "Failed to run camcheck.pl\n";
+  }
 }
 
 ####################

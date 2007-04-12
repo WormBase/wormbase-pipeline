@@ -6,8 +6,8 @@
 #
 # A script to find (and classify) potentially short, spurious genes (default = <50 aa)
 #
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2005-12-19 18:27:35 $
+# Last updated by: $Author: pad $
+# Last updated on: $Date: 2007-04-12 14:43:37 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -28,7 +28,7 @@ my $maintainers = "All";                                     # who will receive 
 my $help;        # Help/Usage page
 my $build;       # flag to say whether this is a build script or run outside of build
 my $verbose;     # turn on extra output
-my $debug;       # For sending output to just one person
+my $debug:s;       # For sending output to just one person
 my $database;    # which database to use?
 my $cutoff;      # what length of gene should you use as the cutoff?
 my $test;        # use test environment
