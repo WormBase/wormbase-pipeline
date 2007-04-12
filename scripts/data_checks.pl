@@ -7,7 +7,7 @@
 # This is a example of a good script template
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2007-02-23 11:09:45 $
+# Last updated on: $Date: 2007-04-12 10:10:52 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -141,7 +141,7 @@ sub read_acedb_queries {
     $i++;
     $queries[$i]{'DESC'}   = "The number of wormpep without pep_homol";
     $queries[$i]{'QUERY'}  = 'find wormpep !pep_homol';
-    $queries[$i]{'RESULT'} = 21;
+    $queries[$i]{'RESULT'} = 26;
 
     $i++;
     $queries[$i]{'DESC'}   = "tRNAs not attached to parent properly";
