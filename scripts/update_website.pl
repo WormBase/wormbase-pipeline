@@ -7,8 +7,8 @@
 # A script to finish the last part of the weekly build by updating all of the
 # relevant WormBase and Wormpep web pages.
 #
-# Last updated by: $Author: ar2 $     
-# Last updated on: $Date: 2007-02-26 14:53:31 $      
+# Last updated by: $Author: gw3 $     
+# Last updated on: $Date: 2007-04-13 09:24:03 $      
 
 
 #################################################################################
@@ -526,7 +526,7 @@ sub create_wormpep_page{
   $log->write_to("Opening log file ".$wb->wormpep."/wormpep_current.log'\n");
 
   my ($wp_seq,$wp_let);
- open (WP_1, "<".$wb->wormpep."/wormpep_current.log") || croak "Failed to open wormpep.log\n";
+ open (WP_1, "<".$wb->wormpep."/wormpep_current.log") || croak "Failed to open WORMPEP/wormpep_current.log\n";
   while (<WP_1>) {
     # No. of sequences (letters) written:  22,221  (9,696,145)
     if (/No\. of sequences \(letters\) written:  (\d+,\d+)  \((\d+,\d+,\d+)\)/) {
@@ -539,7 +539,7 @@ sub create_wormpep_page{
   # get details from file prepared for reports.
   my $wp_alt;
   my $wormpeplog  = $wb->reports."/wormpep";
-  open (WP_2, "<$wormpeplog") || croak "Failed to open wormpep.log\n:$!";
+  open (WP_2, "<$wormpeplog") || croak "Failed to open REPORTS/wormpep.log\n:$!";
   while (<WP_2>) {
     if (/(\d+) alternate splice forms/) {
       ($wp_alt) = ($1);
