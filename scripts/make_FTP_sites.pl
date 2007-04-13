@@ -8,7 +8,7 @@
 # Originally written by Dan Lawson
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2007-04-12 15:19:07 $
+# Last updated on: $Date: 2007-04-13 08:57:03 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -87,6 +87,7 @@ my ($help, $debug, $test, $verbose, $store, $wormbase);
 
 my $release; # only copy across release files
 my $chroms;  # only copy across chromosome files
+my $ont;     # only copy across ontology files
 my $misc;    # only copy misc files
 my $wormpep; # only copy wormpep files
 my $genes;   # only copy confirmed genes
@@ -104,6 +105,7 @@ GetOptions ("help"     => \$help,
 	    "store:s"    => \$store,
 	    "release"  => \$release,
 	    "chroms"   => \$chroms,
+	    "ont"      => \$ont,
 	    "misc"     => \$misc,
 	    "wormpep"  => \$wormpep,
 	    "genes"    => \$genes,
@@ -137,10 +139,11 @@ my $log = Log_files->make_build_log($wormbase);
 
 
 # using -all option?
-($release=$chroms=$misc=$wormpep=$genes=$cDNA=$geneIDs=$pcr=$homols=$manifest = 1 ) if ($all);
+($release=$chroms=$misc=$wormpep=$genes=$cDNA=$geneIDs=$pcr=$homols=$manifest=$ont = 1 ) if ($all);
 
 my $base_dir = $wormbase->basedir;    # The BUILD directory
 my $ace_dir = $wormbase->autoace;     # AUTOACE DATABASE DIR
+my $citace_dir = $wormbase->primary->citace;
 my $targetdir = "/nfs/disk69/ftp/pub/wormbase";  # default directory, can be overidden
 
 my $WS              = $wormbase->get_wormbase_version();      # e.g.   132
@@ -168,6 +171,8 @@ close FTP_LOCK;
 &copy_release_files if ($release);    # make a new directory for the WS release and copy across release files
 
 &copy_chromosome_files if ($chroms);  # make a new /CHROMOSOMES directory for the DNA, GFF, and agp files and copy files across
+
+&copy_ontology_files if ($ont);       # make a new /ONTOLOGY directory and copy files across
 
 &copy_misc_files if ($misc);          # copy across models.wrm and other misc. files, e.g. wormRNA
 
@@ -263,7 +268,8 @@ sub copy_chromosome_files{
  # }
 #  closedir DNAGFF;
 
-	$wormbase->run_command("cp -R $ace_dir/CHROMOSOMES $targetdir/$WS_name/CHROMOSOMES", $log);
+  $wormbase->run_command("cp -R $ace_dir/CHROMOSOMES $targetdir/$WS_name/CHROMOSOMES", $log);
+
 #  $wormbase->run_command("mkdir $targetdir/$WS_name/CHROMOSOMES/SUPPLEMENTARY_GFF", $log) unless -e "$targetdir/$WS_name/CHROMOSOMES/SUPPLEMENTARY_GFF";
 #    opendir (DNAGFFSUP,"$ace_dir/CHROMOSOMES/SUPPLEMENTARY_GFF") or croak ("Could not open directory $ace_dir/CHROMOSOMES/SUPPLEMENTARY_GFF");
 #  while (defined($filename = readdir(DNAGFFSUP))) {
@@ -277,6 +283,24 @@ sub copy_chromosome_files{
 #    } 
  # }
  # closedir DNAGFFSUP;
+
+  $runtime = $wormbase->runtime;
+  $log->write_to("$runtime: Finished copying\n\n");
+}
+
+############################################
+# copy across ontology files
+############################################
+
+sub copy_ontology_files {
+
+  $runtime = $wormbase->runtime;
+  $log->write_to("$runtime: copying ontology files\n");
+
+  my $obo_dir = "$citace_dir/temp_unpack_dir/home/citace/Data_for_${WS_name}/Data_for_Ontology/*";
+
+  $wormbase->run_command("cp $obo_dir/*.obo $ace_dir/ONTOLOGY", $log);
+  $wormbase->run_command("cp -R $ace_dir/ONTOLOGY $targetdir/$WS_name/ONTOLOGY", $log);
 
   $runtime = $wormbase->runtime;
   $log->write_to("$runtime: Finished copying\n\n");
@@ -697,8 +721,8 @@ chrX.gff
 ./ONTOLOGY
 anatomy_association.WSREL.wb
 anatomy_ontology.WSREL.obo
-gene_association.WSREL.cb.wb
-gene_association.WSREL.ce.wb
+gene_association.WSREL.wb.cb
+gene_association.WSREL.wb.ce
 gene_association.WSREL.wb
 gene_ontology.WSREL.obo
 phenotype_association.WSREL.wb
