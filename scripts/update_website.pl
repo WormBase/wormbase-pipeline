@@ -8,7 +8,7 @@
 # relevant WormBase and Wormpep web pages.
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2007-04-13 09:24:03 $      
+# Last updated on: $Date: 2007-04-13 09:26:38 $      
 
 
 #################################################################################
@@ -539,7 +539,7 @@ sub create_wormpep_page{
   # get details from file prepared for reports.
   my $wp_alt;
   my $wormpeplog  = $wb->reports."/wormpep";
-  open (WP_2, "<$wormpeplog") || croak "Failed to open REPORTS/wormpep.log\n:$!";
+  open (WP_2, "<$wormpeplog") || croak "Failed to open REPORTS/wormpep\n:$!";
   while (<WP_2>) {
     if (/(\d+) alternate splice forms/) {
       ($wp_alt) = ($1);
