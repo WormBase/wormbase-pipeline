@@ -8,7 +8,7 @@
 # Originally written by Dan Lawson
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2007-04-13 09:01:39 $
+# Last updated on: $Date: 2007-04-13 09:03:10 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -297,7 +297,7 @@ sub copy_ontology_files {
   $runtime = $wormbase->runtime;
   $log->write_to("$runtime: copying ontology files\n");
 
-  my $obo_dir = "$citace_dir/temp_unpack_dir/home/citace/Data_for_${WS_name}/Data_for_Ontology/*";
+  my $obo_dir = "$citace_dir/temp_unpack_dir/home/citace/Data_for_${WS_name}/Data_for_Ontology/";
 
   $wormbase->run_command("cp $obo_dir/*.obo $ace_dir/ONTOLOGY", $log);
   $wormbase->run_command("cp -R $ace_dir/ONTOLOGY $targetdir/$WS_name/ONTOLOGY", $log);
