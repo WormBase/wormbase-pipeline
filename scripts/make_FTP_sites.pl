@@ -8,7 +8,7 @@
 # Originally written by Dan Lawson
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2007-04-13 08:57:03 $
+# Last updated on: $Date: 2007-04-13 09:01:39 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -143,7 +143,7 @@ my $log = Log_files->make_build_log($wormbase);
 
 my $base_dir = $wormbase->basedir;    # The BUILD directory
 my $ace_dir = $wormbase->autoace;     # AUTOACE DATABASE DIR
-my $citace_dir = $wormbase->primary->citace;
+my $citace_dir = $wormbase->primaries."/citace";
 my $targetdir = "/nfs/disk69/ftp/pub/wormbase";  # default directory, can be overidden
 
 my $WS              = $wormbase->get_wormbase_version();      # e.g.   132
