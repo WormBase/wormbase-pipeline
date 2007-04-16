@@ -1,6 +1,6 @@
 #!/nfs/disk100/wormpub/bin/perl -w
 
-use lib '/nfs/WWWdev/SANGER_docs/cgi-bin/Projects/C_elegans/lib';
+use lib '/nfs/WWWdev/SANGER_docs/lib/Projects/C_elegans/';
 use lib $ENV{'CVS_DIR'};
 
 use strict;
@@ -64,6 +64,7 @@ my $query = 'SELECT primary_identifier.object_public_id,
 				 FROM   primary_identifier,secondary_identifier 
 				 WHERE  primary_identifier.object_id = secondary_identifier.object_id 
 				 AND   (secondary_identifier.name_type_id = 3 OR secondary_identifier.name_type_id = 1) 
+				 AND    primary_identifier.domain_id = 1
 				 ORDER BY object_public_id';
 # results
 #| object_public_id | name_type_id | name
@@ -84,7 +85,8 @@ while (my ( $gene, $name_type, $name ) = $sth->fetchrow_array){
 
 #This is to get dead and briggsae genes that dont have names.
 $query = 'SELECT object_public_id, object_live
-			 FROM   primary_identifier
+			 FROM   primary_identifier 
+			 WHERE domain_id = 1
 			 ORDER BY object_public_id';
 
 $sth = $db->dbh->prepare($query);

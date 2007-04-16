@@ -1,6 +1,6 @@
 #!/nfs/disk100/wormpub/bin/perl -w
 
-use lib '/nfs/WWWdev/SANGER_docs/cgi-bin/Projects/C_elegans/lib';
+use lib '/nfs/WWWdev/SANGER_docs/lib/Projects/C_elegans/';
 use lib $ENV{'CVS_DIR'};
 
 use strict;
