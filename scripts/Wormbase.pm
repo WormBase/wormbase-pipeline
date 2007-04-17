@@ -881,7 +881,7 @@ sub establish_paths {
 
     # if a specified non-build database is being used
     if( $self->autoace ){
-      ($basedir) = $self->autoace =~ /(.*)\/\w+$/;
+      ($basedir) = $self->autoace =~ /(.*)\/\w+\/{0,1}$/;
     }
     else {
       $basedir = $self->wormpub . "/BUILD";
