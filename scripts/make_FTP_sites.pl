@@ -7,8 +7,8 @@
 # 
 # Originally written by Dan Lawson
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2007-04-13 09:03:10 $
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2007-04-17 13:59:51 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -97,6 +97,7 @@ my $pcr;     # only copy file of PCR products
 my $homols;  # only copy best blast hits 
 my $manifest;# check everything has been copied.
 my $all;     # copy everything across
+my $dump_ko; # create the knockout consortium file
 
 GetOptions ("help"     => \$help,
 	    "debug=s"  => \$debug,
@@ -114,6 +115,7 @@ GetOptions ("help"     => \$help,
 	    "pcr"      => \$pcr,
 	    "homols"   => \$homols,
 	    "manifest"=> \$manifest,
+	    "knockout" => \$dump_ko,
 	    "all"      => \$all);
 
 
@@ -139,7 +141,7 @@ my $log = Log_files->make_build_log($wormbase);
 
 
 # using -all option?
-($release=$chroms=$misc=$wormpep=$genes=$cDNA=$geneIDs=$pcr=$homols=$manifest=$ont = 1 ) if ($all);
+($release=$dump_ko=$chroms=$misc=$wormpep=$genes=$cDNA=$geneIDs=$pcr=$homols=$manifest=$ont = 1 ) if ($all);
 
 my $base_dir = $wormbase->basedir;    # The BUILD directory
 my $ace_dir = $wormbase->autoace;     # AUTOACE DATABASE DIR
@@ -189,6 +191,8 @@ close FTP_LOCK;
 &copy_homol_data if ($homols);        # copies best blast hits files across
 
 &check_manifest if ($manifest);       # compares whats on the FTP site with what should be
+
+&extract_ko if ($dump_ko);            # dumps KO-consortium data to FTP site
 
 ################################
 #
@@ -414,6 +418,22 @@ sub extract_confirmed_genes{
   $runtime = $wormbase->runtime;
   $log->write_to("$runtime: Finished extracting\n\n");
   return(0);
+}
+
+#######################################
+# extracting knockout consortium data
+#######################################
+
+sub extract_ko {
+
+	$runtime = $wormbase->runtime;
+  	$log->write_to("$runtime: Extracting Knockout Consortium Data\n");
+
+	my $outfile= "\"|bzip2 -9 -c > ${targetdir}/$WS_name/knockout_consortium_alleles.$WS_name.bz2\"";
+	$wormbase->run_script("dump_ko.pl -file $outfile");
+
+  	$runtime = $wormbase->runtime;
+  	$log->write_to("$runtime: Finished dumping\n\n");
 }
 
 ################################################################################
