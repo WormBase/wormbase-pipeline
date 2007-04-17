@@ -12,8 +12,9 @@ use Getopt::Long;
 use lib $ENV{CVS_DIR};
 use Wormbase;
 use IO::File;
+use strict;
 	
-my ($store,$test,$debug,$database,$file);
+my ($store,$test,$debug,$database,$file,$wormbase);
 GetOptions(
 		"store=s"    => \$store,
 		"test"       => \$test,
@@ -33,7 +34,7 @@ my $jeff = new Jeff $database,$wormbase || die 'cannot create connections to $da
 $jeff->get_all_alleles;
 $log->write_to("dumping ".(scalar $jeff->get_alleles)." knockout consortium alleles\n");
 
-my $oufile= new IO::File "$file", "w" || die "cannot open $filez\n";
+my $outfile= new IO::File "|bzip2 -9 -c > $file" if $file;
 
 $jeff->print_alleles($outfile);
 $outfile->close;
@@ -165,7 +166,7 @@ If the script is called directly, it will use the main block and dump the data.
 =head1 USAGE
 
 dump_ko.pl [-store WORMBASE_STORABLE] [-test] [-debug USERNAME] [-database DATABASE_DIRECTORY] [-file OUTFILE]
-It will default to BUILD / *STDOUT if no options are set. A nice trick is to use -file "|bzip2 -9 -c > jeff.out.bz" to print to a bzip2 compressed file.
+It will default to BUILD / *STDOUT if no options are set and the outputfile will be bzip2 compressed.
 
 =head1 CONSTRUCTIR
 
