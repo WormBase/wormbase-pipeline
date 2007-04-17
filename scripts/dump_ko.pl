@@ -31,7 +31,7 @@ my $log = Log_files->make_build_log($wormbase);
 
 my $jeff = new Jeff $database,$wormbase || die 'cannot create connections to $database\n';
 $jeff->get_all_alleles;
-$log->write_to("dumping ".(length $jeff->get_alleles)." knockout consortium alleles\n");
+$log->write_to("dumping ".(scalar $jeff->get_alleles)." knockout consortium alleles\n");
 
 my $oufile= new IO::File "$file", "w" || die "cannot open $filez\n";
 
