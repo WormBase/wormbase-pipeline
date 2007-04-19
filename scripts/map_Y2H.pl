@@ -6,8 +6,8 @@
 #
 # by Dan Lawson
 #
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2006-04-04 08:33:27 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2007-04-19 09:14:41 $
 
 use strict;
 use warnings;
@@ -63,7 +63,7 @@ if ($debug) {
     ( $maintainers = $debug . '\@sanger.ac.uk' );
 }
 
-$output = $output ? $output : "$dbdir/acefiles/Y2H_connections.ace";    # output file path
+$output = $output ? $output : "$dbdir/acefiles/YH_connections.ace";    # output file path
 print "// Test mode:\n// searching against $dbdir\n// output written to $output\n\n" if $test;
 my $log = Log_files->make_build_log($wb);
 
@@ -94,21 +94,21 @@ open( OUTPUT, ">$output" ) || die "Can't open output file $output\n";
 my $db = Ace->connect( -path    => "$dbdir", -program => $tace)
   || do { print "Connection failure: ", Ace->error; die(); };
 
-my @Y2H = $db->fetch( -class => 'Y2H', -name  => '*');
+my @YH = $db->fetch( -class => 'YH', -name  => '*');
 
-# Loop through each Y2H object
-foreach my $Y2H (@Y2H) {
+# Loop through each YH object
+foreach my $YH (@YH) {
 
-    print "// Y2H : \"$Y2H\"\n" if ($verbose);
+    print "// YH : \"$YH\"\n" if ($verbose);
 
-    if ( defined( $Y2H->PCR_bait ) ) {
-        $bait = $Y2H->PCR_bait;
+    if ( defined( $YH->PCR_bait ) ) {
+        $bait = $YH->PCR_bait;
 
         $PCR = $db->fetch( PCR_product => $bait );
 
         if ( defined( $PCR->Overlaps_CDS ) ) {
             @CDS_bait = $PCR->Overlaps_CDS;
-            print OUTPUT "\nY2H : \"$Y2H\"\n";
+            print OUTPUT "\nYH : \"$YH\"\n";
 
             foreach $i (@CDS_bait) {
                 print OUTPUT "Bait_overlapping_CDS $i\n";
@@ -124,14 +124,14 @@ foreach my $Y2H (@Y2H) {
         }
     }
 
-    if ( defined( $Y2H->Sequence_target ) ) {
-        $target = $Y2H->Sequence_target;
+    if ( defined( $YH->Sequence_target ) ) {
+        $target = $YH->Sequence_target;
 
         $seq = $db->fetch( Sequence => $target );
 
         if ( defined( $seq->Matching_CDS ) ) {
             @CDS_target = $seq->Matching_CDS;
-            print OUTPUT "\nY2H : \"$Y2H\"\n";
+            print OUTPUT "\nYH : \"$YH\"\n";
 
             foreach $i (@CDS_target) {
                 print OUTPUT "Target_overlapping_CDS $i\n";
@@ -144,7 +144,7 @@ foreach my $Y2H (@Y2H) {
             $seq->DESTROY();
         }
     }
-    $Y2H->DESTROY();
+    $YH->DESTROY();
 }
 
 $db->close;
