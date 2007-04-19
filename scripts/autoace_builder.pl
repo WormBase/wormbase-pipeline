@@ -7,7 +7,7 @@
 # Usage : autoace_builder.pl [-options]
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2007-04-18 10:29:34 $
+# Last edited on: $Date: 2007-04-19 09:09:05 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -223,7 +223,7 @@ sub map_features {
     $wormbase->run_script( 'map_Alleles.pl', $log );
 
     # Y2H objects
-  #  $wormbase->run_script( 'map_Y2H.pl -load', $log );
+    $wormbase->run_script( 'map_Y2H.pl -load', $log );
 
     # microarray connections
     $wormbase->run_script( 'map_microarray.pl -load', $log );
