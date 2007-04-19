@@ -4,8 +4,8 @@
 # 
 # written by Anthony Rogers
 #
-# Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2007-03-08 16:13:57 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2007-04-19 10:34:54 $
 
 
 use DBI;
@@ -32,7 +32,7 @@ my $run_pipeline;
 my $run_brig;
 my $dont_SQL;
 my $dump_data;
-my $mail;
+my $distribute;
 my $test_pipeline;
 my $WPver;   #  Wormpep version is passed as command line option
 my $blastx;
@@ -56,7 +56,7 @@ GetOptions("chromosomes" => \$chromosomes,
 	   "nosql"       => \$dont_SQL,
 	   "prep_dump"   => \$prep_dump,
 	   "dump"        => \$dump_data,
-	   "mail"        => \$mail,
+	   "distribute"  => \$distribute,
 	   "testpipe"    => \$test_pipeline,
 	   "version=s"   => \$WS_version,
 	   "blastp"      => \$blastp,
@@ -160,13 +160,13 @@ if ( $update_databases ){
 	print "updating wormpep to version $WS_version anyway - make sure the data is there !\n";
 	$whole_file = "wormpep".$WS_version.".pep";
 	$currentDBs{$1} = "$whole_file";
-	$wormbase->run_command("xdformat -p $wormpipe_dir/BlastDB/$whole_file", $log);
+	$wormbase->run_command("/usr/local/ensembl/bin/xdformat -p $wormpipe_dir/BlastDB/$whole_file", $log);
 	next;
       }
       if( "$whole_file" ne "$currentDBs{$1}" ) {
 	#make blastable database
 	print "\tmaking blastable database for $1\n";
-	$wormbase->run_command("xdformat -p $wormpipe_dir/BlastDB/$whole_file", $log);
+	$wormbase->run_command("/usr/local/ensembl/bin/xdformat -p $wormpipe_dir/BlastDB/$whole_file", $log);
 	push( @updated_DBs,$1 );
 	#change hash entry ready to rewrite external_dbs
 	$currentDBs{$1} = "$whole_file";
@@ -188,7 +188,7 @@ if ( $update_databases ){
 
 
 #@updated_DBs = qw(ensembl gadfly yeast slimswissprot slimtrembl);
-if( $mail ) {
+if( $distribute) {
     my $blastdbdir="/data/blastdb/Worms";
     &get_updated_database_list;
     
@@ -767,7 +767,7 @@ __END__
   
 =over 4
  
-=item wormBLAST.pl [-chromosomes -wormpep -databases -datemysql -setup -run -nosql -dump -mail]
+=item wormBLAST.pl [-chromosomes -wormpep -databases -datemysql -setup -run -nosql -dump -distribute]
   
 =back
   
@@ -790,7 +790,7 @@ B<-wormpep>      Runs ~wormpipe/Pipeline/copy_files_to_acari.pl -c to take the n
 
 B<-databases>    Checks existing database files (slimtremblXX.pep etc) against what was used last time and updates them.  It takes the new .pep file and runs setdb.  Modifies the databases_used_WSXX file to reflect changes.  This will ensure that the update propegates to the remainder of the process.
 
-B<-mail>           Creates and sends a mail to systems to distribute new databases over the farm.  Compares the database files used in this and the previous build to tell system which files to remove and what to replace them with.
+B<-distribute>   Distribute new databases over the farm.  Compares the database files used in this and the previous build to tell system which files to remove and what to replace them with.
 
 B<-updatemysql>    Updates any new databases to be used in MySQL.  
 
