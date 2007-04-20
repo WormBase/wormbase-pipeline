@@ -7,11 +7,11 @@
 # simple script for creating new (sequence based) Gene objects 
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2006-12-20 11:59:26 $
+# Last edited on: $Date: 2007-04-20 09:44:05 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
-use lib "/nfs/WWWdev/SANGER_docs/cgi-bin/Projects/C_elegans/lib";
+use lib "/nfs/WWWdev/SANGER_docs/lib/Projects/C_elegans/";
 
 use Wormbase;
 use Getopt::Long;
