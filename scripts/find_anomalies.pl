@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2007-03-09 11:28:44 $      
+# Last updated on: $Date: 2007-04-27 08:29:58 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -221,6 +221,9 @@ foreach my $chromosome (@chromosomes) {
   print "finding short CDS exons\n";
   &get_short_exons(\@exons, $chromosome);
 
+  print "read confirmed_introns and other GFF files\n";
+  &get_GFF_files($chromosome);
+
 
 #################################################
 # these don't work very well - don't use
@@ -228,10 +231,6 @@ foreach my $chromosome (@chromosomes) {
 ##  this looks at the ESTs  finds those not attached to a transcript
 ##  print "finding ESTs sites not attached to a transcript\n";
 ##  &get_unattached_EST(\@est, $chromosome);
-
-##  print "read confirmed_introns and other GFF files\n";
-## this is probably easier to do explicitly using the script 'load_anomalies_gff_file.pl'
-##  &get_GFF_files($chromosome);
 
 ##  # ESTs not matching exons
 ##  # and those with a match to a coding exon
