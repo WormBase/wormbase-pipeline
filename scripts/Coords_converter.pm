@@ -204,53 +204,53 @@ sub invoke
 
 =cut
 
-sub Chrom2CloneCoord
-  {
-    my $self = shift;
-    my $input_parent = shift;
-    my $coord = shift;
-    my $opt_match = shift;
-    my @superlinks;
-    my $parent;
+#sub Chrom2CloneCoord
+#  {
+#    my $self = shift;
+#    my $input_parent = shift;
+#    my $coord = shift;
+#    my $opt_match = shift;
+#    my @superlinks;
+#    my $parent;
 
-    unless( "$input_parent" =~ /SUPER/ ) {
-      # parent is a chromosome so lets find the right slink
-      my $chrom = $input_parent;
-      $chrom = "CHROMOSOME_$chrom" unless $chrom =~ /CHROMOSOME/;
+#    unless( "$input_parent" =~ /SUPER/ ) {
+#      # parent is a chromosome so lets find the right slink
+#      my $chrom = $input_parent;
+#      $chrom = "CHROMOSOME_$chrom" unless $chrom =~ /CHROMOSOME/;
 
-      # the superlinks can overlap, so get all superlinks that can match the $coord
-      foreach my $slink ( keys %{$self->{"$chrom"}->{'SUPERLINK'}} ) {
-	if($self->{"$chrom"}->{'SUPERLINK'}->{$slink}->[0] <= $coord and
-	   $self->{"$chrom"}->{'SUPERLINK'}->{$slink}->[1] >= $coord
-	   ) {
-	  push @superlinks, $slink;
-	}
-      }
-    }
+#      # the superlinks can overlap, so get all superlinks that can match the $coord
+#      foreach my $slink ( keys %{$self->{"$chrom"}->{'SUPERLINK'}} ) {
+#	if($self->{"$chrom"}->{'SUPERLINK'}->{$slink}->[0] <= $coord and
+#	   $self->{"$chrom"}->{'SUPERLINK'}->{$slink}->[1] >= $coord
+#	   ) {
+#	  push @superlinks, $slink;
+#	}
+#      }
+#    }
 
-    foreach $next_superlink (@superlinks) { # try all possible superlinks to find our preferred clone
-      if ("$input_parent" =~ /SUPER/ ) {    # we are converting from input superlink coordinates
-	$parent = $input_parent;            # $coord should already be in this superlink coordinates
-      } else {
-	$parent = $next_superlink;
-	my $sl_start = $self->{"$chrom"}->{'SUPERLINK'}->{"$parent"}->[0];
-	$coord = $coord - $sl_start + 1;	# so $coord is now the coordinate in the $parent superlink
-	# if there is a valid third parameter, return the superlink and superlink coordinate
-	if (defined $opt_match && $opt_match eq "SUPERLINK") {return ($parent, $coord);} # want the superlink and this is the first match
-	if (defined $opt_match && $opt_match eq $next_superlink) {return ($parent, $coord);} # want a superlink and this is the one we want
-      }
+#    foreach $next_superlink (@superlinks) { # try all possible superlinks to find our preferred clone
+#      if ("$input_parent" =~ /SUPER/ ) {    # we are converting from input superlink coordinates
+#	$parent = $input_parent;            # $coord should already be in this superlink coordinates
+#      } else {
+#	$parent = $next_superlink;
+#	my $sl_start = $self->{"$chrom"}->{'SUPERLINK'}->{"$parent"}->[0];
+#	$coord = $coord - $sl_start + 1;	# so $coord is now the coordinate in the $parent superlink
+#	# if there is a valid third parameter, return the superlink and superlink coordinate
+#	if (defined $opt_match && $opt_match eq "SUPERLINK") {return ($parent, $coord);} # want the superlink and this is the first match
+#	if (defined $opt_match && $opt_match eq $next_superlink) {return ($parent, $coord);} # want a superlink and this is the one we want
+#      }
       
-      foreach $clone (keys %{$self->{'SUPERLINK'}->{"$parent"}} ) {
-	if ((defined $opt_match && $opt_match eq $clone) ||                   # is this the clone we wish to use?
-	    ($self->{'SUPERLINK'}->{"$parent"}->{"$clone"}->[0] <= $coord and # is this the first clone that it is possible to use?
-	     $self->{'SUPERLINK'}->{"$parent"}->{"$clone"}->[1] => $coord)
-	    ){
-	  my $clonecoord = $coord - $self->{'SUPERLINK'}->{"$parent"}->{"$clone"}->[0] + 1;
-	  return ($clone, $clonecoord);
-	}
-      }
-    }
-  }
+#      foreach my $clone (keys %{$self->{'SUPERLINK'}->{"$parent"}} ) {
+#	if ((defined $opt_match && $opt_match eq $clone) ||                   # is this the clone we wish to use?
+#	    ($self->{'SUPERLINK'}->{"$parent"}->{"$clone"}->[0] <= $coord and # is this the first clone that it is possible to use?
+#	     $self->{'SUPERLINK'}->{"$parent"}->{"$clone"}->[1] => $coord)
+#	    ){
+#	  my $clonecoord = $coord - $self->{'SUPERLINK'}->{"$parent"}->{"$clone"}->[0] + 1;
+#	  return ($clone, $clonecoord);
+#	}
+#      }
+#    }
+#  }
 
 
 =head2 GetCloneFromCoord
