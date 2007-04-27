@@ -40,6 +40,10 @@ $jeff->print_alleles($outfile);
 $outfile->close;
 $log->write_to("finished dumping to $file\n");
 
+my $mailto=$debug?"$debug\@sanger.ac.uk":"All";
+$log->mail($mailto,"BUILD REPORT: dump_ko.pl");
+
+
 # class definitions
 
 package Jeff;
