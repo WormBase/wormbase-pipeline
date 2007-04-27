@@ -173,8 +173,8 @@ sub invoke
     $chrom = "CHROMOSOME_$chrom" unless $chrom =~ /CHROMOSOME/;
 
     foreach my $slink ( keys %{$self->{"$chrom"}->{'SUPERLINK'}} ) {
-      if($self->{"$chrom"}->{'SUPERLINK'}->{$slink}->[0] < $coord and
-	 $self->{"$chrom"}->{'SUPERLINK'}->{$slink}->[1] > $coord
+      if($self->{"$chrom"}->{'SUPERLINK'}->{$slink}->[0] <= $coord and
+	 $self->{"$chrom"}->{'SUPERLINK'}->{$slink}->[1] >= $coord
 	) {
 	return $slink;
       }
@@ -182,6 +182,75 @@ sub invoke
     return 0;
   }
 
+
+
+=head2 Chrom2CloneCoord
+
+    Title   :   Chrom2CloneCoord
+    Usage   :   my ($clone, $clonecoord) = $coords->Chrom2CloneCoord('III',1200000) # position on a clone
+                my ($clone, $clonecoord) = $coords->Chrom2CloneCoord('III',1200000,"AH6") # position on this clone
+                my ($clone, $clonecoord) = $coords->Chrom2CloneCoord('SUPERLINK_CB_IIIL',1200) # position on a clone
+                my ($clone, $clonecoord) = $coords->Chrom2CloneCoord('SUPERLINK_CB_IIIL',1200,"AH6") # position on this clone
+    		my ($superlink, $superlinkcoord) = $coords->Chrom2CloneCoord('III',1200000,"SUPERLINK") # position on a superlink
+    		my ($superlink, $superlinkcoord) = $coords->Chrom2CloneCoord('III',1200000,"SUPERLINK_CB_IIIL") # position on this superlink
+    Function:   Convert a chromosomal (or superlink) coordinate to a coordinate on a clone (or superlink)
+    Returns :   clone as string eg "AH6", 
+                coordinate on that clone as int
+    Args    :   1) chromosome as string eg "III", or superlink name as string
+                2) chromosomal coordinate as int, or superlink coordinate as int
+                3) optional string "SUPERLINK" to return a superlink name and coordinate instead of a clone, or:
+    		     optional name of a clone that you wish to force the use of 
+                     (the clone positions overlap slightly and you may already have a preference which clone to use)
+
+=cut
+
+sub Chrom2CloneCoord
+  {
+    my $self = shift;
+    my $input_parent = shift;
+    my $coord = shift;
+    my $opt_match = shift;
+    my @superlinks;
+    my $parent;
+
+    unless( "$input_parent" =~ /SUPER/ ) {
+      # parent is a chromosome so lets find the right slink
+      my $chrom = $input_parent;
+      $chrom = "CHROMOSOME_$chrom" unless $chrom =~ /CHROMOSOME/;
+
+      # the superlinks can overlap, so get all superlinks that can match the $coord
+      foreach my $slink ( keys %{$self->{"$chrom"}->{'SUPERLINK'}} ) {
+	if($self->{"$chrom"}->{'SUPERLINK'}->{$slink}->[0] <= $coord and
+	   $self->{"$chrom"}->{'SUPERLINK'}->{$slink}->[1] >= $coord
+	   ) {
+	  push @superlinks, $slink;
+	}
+      }
+    }
+
+    foreach $next_superlink (@superlinks) { # try all possible superlinks to find our preferred clone
+      if ("$input_parent" =~ /SUPER/ ) {    # we are converting from input superlink coordinates
+	$parent = $input_parent;            # $coord should already be in this superlink coordinates
+      } else {
+	$parent = $next_superlink;
+	my $sl_start = $self->{"$chrom"}->{'SUPERLINK'}->{"$parent"}->[0];
+	$coord = $coord - $sl_start + 1;	# so $coord is now the coordinate in the $parent superlink
+	# if there is a valid third parameter, return the superlink and superlink coordinate
+	if (defined $opt_match && $opt_match eq "SUPERLINK") {return ($parent, $coord);} # want the superlink and this is the first match
+	if (defined $opt_match && $opt_match eq $next_superlink) {return ($parent, $coord);} # want a superlink and this is the one we want
+      }
+      
+      foreach $clone (keys %{$self->{'SUPERLINK'}->{"$parent"}} ) {
+	if ((defined $opt_match && $opt_match eq $clone) ||                   # is this the clone we wish to use?
+	    ($self->{'SUPERLINK'}->{"$parent"}->{"$clone"}->[0] <= $coord and # is this the first clone that it is possible to use?
+	     $self->{'SUPERLINK'}->{"$parent"}->{"$clone"}->[1] => $coord)
+	    ){
+	  my $clonecoord = $coord - $self->{'SUPERLINK'}->{"$parent"}->{"$clone"}->[0] + 1;
+	  return ($clone, $clonecoord);
+	}
+      }
+    }
+  }
 
 
 =head2 GetCloneFromCoord
@@ -199,24 +268,20 @@ sub GetCloneFromCoord
     my $self = shift;
     my $parent = shift;
     my $coord = shift;
-    my $chrom;
 
     unless( "$parent" =~ /SUPER/ ) {
       # parent is a chromosome so lets find the right slink
-      $chrom = $parent;
+      my $chrom = $parent;
       $chrom = "CHROMOSOME_$chrom" unless $chrom =~ /CHROMOSOME/;
 
       $parent = $self->GetSuperlinkFromCoord("$parent", $coord);
       my $sl_start = $self->{"$chrom"}->{'SUPERLINK'}->{"$parent"}->[0];
-      $coord -= $sl_start;
+      $coord = $coord - $sl_start + 1;	# so $coord is now the coordinate in the $parent superlink
     }
 
-    # get data with SUPERLINK as parent
-    $chrom = $self->{SUPERLINK2CHROM}->{"$parent"} unless $chrom;
-
     foreach $clone (keys %{$self->{'SUPERLINK'}->{"$parent"}} ) {
-      if( $self->{'SUPERLINK'}->{"$parent"}->{"$clone"}->[0] < $coord and
-	  $self->{'SUPERLINK'}->{"$parent"}->{"$clone"}->[1] > $coord
+      if( $self->{'SUPERLINK'}->{"$parent"}->{"$clone"}->[0] <= $coord and
+	  $self->{'SUPERLINK'}->{"$parent"}->{"$clone"}->[1] >= $coord
 	){
 	return $clone;
       }
@@ -449,7 +514,7 @@ sub Coords_2chrom_coords
 
     Title   :   Superlink_length
     Usage   :   $coords->Superlink_length("SUPERLINK_RWXL");
-    Function:   returns the length of the specified superlink
+    Function:   returns the length of the specified superlink or chromosome
     Returns :   length of superlink
     Args    :   name of superlink
 
@@ -460,10 +525,17 @@ sub Superlink_length
     my ($self, $seq) = @_;
     my $len = undef;
 
-    if($seq =~ /SUPERLINK/ ) {
+    if ($seq =~ /SUPERLINK/ ) {
       my $chrom = $self->seq_obj_to_chrom($seq);
       $len = $self->{"$chrom"}->{'SUPERLINK'}->{$seq}->[1] - 
 	     $self->{"$chrom"}->{'SUPERLINK'}->{$seq}->[0] + 1;
+    } elsif ($seq =~ /CHROMOSOME/) {
+      $len = 0;
+      foreach my $slink ( keys %{$self->{"$seq"}->{'SUPERLINK'}} ) {
+	if ($len < $self->{"$seq"}->{'SUPERLINK'}->{$slink}->[1]) {
+	  $len = $self->{"$seq"}->{'SUPERLINK'}->{$slink}->[1];
+	}
+      }
     }
 
     return $len;
