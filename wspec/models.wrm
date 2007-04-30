@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: ar2 $
-// Last edited on: $Date: 2007-04-03 09:39:38 $
+// Last edited on: $Date: 2007-04-30 14:34:37 $
 
 
 
@@ -2066,6 +2066,7 @@
 			Quantity_description ?Text #Evidence //Remark to describe what quantity describes, below
 			Quantity        UNIQUE  Int UNIQUE      Int     #Evidence
 			Not      	#Evidence
+			Anatomy_term	?Anatomy_term #Evidence 
                 	Penetrance      	Incomplete      Text    #Evidence
                                 		Low             Text    #Evidence
                                 		High            Text    #Evidence
@@ -2085,12 +2086,16 @@
                 	Other_allele_type UNIQUE  Wild_type	#Evidence
                                                	  Isoallele     #Evidence  
 						  Mixed      	#Evidence       
-                	Temperature_sensitive   Heat_sensitive  Text             #Evidence
-                                        	Cold_sensitive  Text             #Evidence
+                	Temperature_sensitive   Heat_sensitive  Int            #Evidence
+                                        	Cold_sensitive  Int            #Evidence
                 	Maternal        UNIQUE  Strictly_maternal       #Evidence
                                         	With_maternal_effect    #Evidence
                 	Paternal        #Evidence
-                	Phenotype_assay ?Condition
+			Phenotype_assay Life_stage  ?Life_stage	 #Evidence
+					Strain	    ?Strain	 #Evidence
+					Treatment   ?Treatment	 #Evidence
+					Temperature ?Temperature #Evidence
+					Genotype    ?Genotype	 #Evidence 
 
 
 
@@ -2282,9 +2287,6 @@
 	   Cell_type       ?Cell // added for Experiment (Microarray_results)
            Treatment       ?Text // added for Experiment (Microarray_results)
 	   SAGE_experiment ?SAGE_experiment XREF Sample
-	   RNAi      	   ?RNAi
-           Transgene       ?Transgene
-	   Variation	   ?Variation
            Remark          ?Text #Evidence
 
 
