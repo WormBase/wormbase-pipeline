@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: ar2 $
-// Last edited on: $Date: 2007-04-30 14:34:37 $
+// Last edited on: $Date: 2007-05-01 08:05:42 $
 
 
 
@@ -2086,8 +2086,8 @@
                 	Other_allele_type UNIQUE  Wild_type	#Evidence
                                                	  Isoallele     #Evidence  
 						  Mixed      	#Evidence       
-                	Temperature_sensitive   Heat_sensitive  Int            #Evidence
-                                        	Cold_sensitive  Int            #Evidence
+                	Temperature_sensitive   Heat_sensitive  Text            #Evidence
+                                        	Cold_sensitive  Text            #Evidence
                 	Maternal        UNIQUE  Strictly_maternal       #Evidence
                                         	With_maternal_effect    #Evidence
                 	Paternal        #Evidence
