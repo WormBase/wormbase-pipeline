@@ -15,7 +15,7 @@
 #      COMPANY:
 #      VERSION:  1.0
 #      CREATED:  13/02/06 09:37:00 GMT
-#     REVISION:  $Revision: 1.17 $
+#     REVISION:  $Revision: 1.18 $
 # includes code by: $Author: mh6 $
 #===============================================================================
 
@@ -216,6 +216,8 @@ sub check_mapping {
 
     # print it to some dark place
     my $revh = IO::File->new( "$acedir/logs/rev_phys.log", "w" );
+    $logger->write_to("writing genetic map fixes to $acedir/acefile/genetic_map_fixes.ace\n");
+    my $acefile = IO::File->new("$acedir/acefile/genetic_map_fixes.ace",'w');
     $logger->write_to("have a look at $acedir/logs/rev_phys.log to resolve:\n");
     $logger->make_line;
 
@@ -240,16 +242,24 @@ sub check_mapping {
             )
           }
 
-          # call genetic fix function
+        # call genetic fix function
 
-          & fix_gmap( \@genes );
-
-        ##
+        &fix_gmap( \@genes );       
 
         foreach my $col (@genes) {
-            next if $col->[2] == $col->[4];
-            $self->{pmap}->{$key}->{ $col->[1] }->[1] = $col->[2]; # change gmap
+           next if $col->[2] == $col->[4];
+           $self->{pmap}->{$key}->{ $col->[1] }->[1] = $col->[2]; # change gmap
+          my $_chrom = $key;
+          my $_pos   = $col->[2];
+		  my $_gene  = $col->[3];
+
+		  # create acefile
+		  print $acefile "\n";
+		  print $acefile "Gene : $_gene\n";
+		  print $acefile "Map $_chrom Position $_pos\n";
         }
+
+        ##
 
         my $last;
         foreach my $i ( @{ $self->{smap}->{$key} } ) {   # sorted pmap positions

@@ -85,6 +85,9 @@ if ( !$noload ) {
     foreach my $file ( glob("$acedir/interpolated_clone_*.ace") ) {
         $wb->load_to_database( $wb->autoace, $file, "interpolate_clones", $log );
     }
+	if (-e "$acedir/genetic_map_fixes.ace"){
+		$wb->load_to_database($wb->autoace,"$acedir/genetic_map_fixes.ace","genetic_map_corrections",$log);
+	}
 }
 
 $wb->run_script("make_pseudo_map_positions.pl -load", $log) unless $nopseudo;
