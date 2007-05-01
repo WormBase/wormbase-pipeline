@@ -6,7 +6,7 @@
 # Compares this number to those from a second database.
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2007-02-26 14:42:17 $
+# Last updated on: $Date: 2007-05-01 09:05:26 $
 
 
 use strict;
@@ -27,24 +27,23 @@ $|=1;
 ######################################
 
 my ($help, $debug, $test, $verbose, $store, $wormbase);
-my ($database, $database2, $all, $midway, $wee);
+my ($database, $database2, $midway, $wee);
 our ($errfile,$outfile); 
 our ($db_1, $db_2, $dbname_1, $dbname_2);
 
 GetOptions (
 	    "help"          => \$help,
-            "debug=s"       => \$debug,
+        "debug=s"       => \$debug,
 	    "test"          => \$test,
 	    "verbose"       => \$verbose,
 	    "store:s"         => \$store,
 	    "database=s"    => \$database,
 	    "database2=s"   => \$database2,
-	    "all"           => \$all,
 	    "wee"           => \$wee,
 	    "midway"        => \$midway,
 	    );
 
-
+$full = 1 unless ($midway or $wee);
 if ( $store ) {
   $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
 } else {
@@ -123,23 +122,10 @@ print OUT  " +------------------------+---------+---------+---------+---------+-
 
 my @TotalClasses;
 
-
-#@TotalClasses = &full_run if ($all);
-#@TotalClasses = &mid_run if ($midway);
-
-
 # run midway list if asked too, else default to the full list
-if ($midway) {
-    @TotalClasses = &mid_run;
-}
-elsif ($wee) {
-    @TotalClasses = &wee_run;
-}
-else {
-    @TotalClasses = &full_run;
-}
-
-
+my  @TotalClasses = &wee_run;
+push(@TotalClasses, &mid_run)  if ($midway or $full);
+push(@TotalClasses, &full_run) if ($full);
 
 #######################
 # Main loop
@@ -328,94 +314,17 @@ sub diff {
 sub full_run {
 
     my @classes = (
-		   "2_point_data",
 		   "Accession_number",
-		   "Anatomy_name",
-		   "Anatomy_term",
-		   "Antibody",
-		   "Author",
-		   "briggsae_CDS",
-		   "briggsae_genomic",
-		   "cDNA_sequence",
-		   "CDS",
-		   "Cell",
-		   "Cell_group",
-		   "Class",
-		   "Clone",
-		   "Coding_transcripts",
-		   "Comment",
-		   "Condition",
-		   "Contig",
-		   "Database",
-		   "Display",
-		   "DNA",
-		   "elegans_CDS",
-		   "elegans_pseudogenes",
-		   "elegans_RNA_genes",
 		   "Expression_cluster",
-		   "Expr_pattern",
-		   "Expr_profile",
-		   "Feature",
-		   "Feature_data",
-		   "Gene",
-		   "Gene_class",
-		   "Gene_name",
-		   "Gene_regulation",
-		   "Genome_Sequence",
 		   "GO_code",
-		   "GO_term",
-		   "Homology_group",
-		   "Homol_data",
-		   "Interaction",
-		   "Journal",
-		   "Keyword",
-		   "Laboratory",
-		   "Life_stage",
-		   "Lineage",
-		   "Locus",
-		   "LongText",
-		   "Map",
-		   "Method",
-		   "Microarray_experiment",
-		   "Microarray_results",
-		   "Model",
-		   "Motif",
-		   "Movie",
-		   "Multi_pt_data",
-		   "NDB_Sequence",
-		   "nematode_ESTs",
-		   "Oligo",
-		   "Oligo_set",
 		   "Operon",
-		   "Paper",
-		   "Paper_name",
-		   "PCR_product",
 		   "Peptide",
-		   "Person",
-		   "Person_name",
-		   "Phenotype",
-		   "Picture",
-		   "Pos_neg_data",
 		   "Protein",
-		   "Pseudogene",
-		   "Rearrangement",
-		   "RNAi",
-		   "SAGE_tag",
-		   "SAGE_experiment",
-		   "Sequence",
-		   "SK_map",
-		   "SO_term",
 		   "Species",
-		   "Strain",
 		   "Structure_data",
-		   "Table",
-		   "Transcript",
-		   "Transgene",
-		   "Transposon",
 		   "Transposon_CDS",
 		   "Transposon_family",
 		   "Variation",
-		   "Y2H"
 		   );
 
     return (@classes);
@@ -425,8 +334,7 @@ sub full_run {
 sub mid_run {
 
     my @classes = (
-		   "2_point_data",
-		   "3d_data",
+		"2_point_data",
 		   "Anatomy_name",
 		   "Anatomy_term",
 		   "Antibody",
@@ -447,9 +355,6 @@ sub mid_run {
 		   "Database",
 		   "Display",
 		   "DNA",
-		   "elegans_CDS",
-		   "elegans_pseudogenes",
-		   "elegans_RNA_genes",
 		   "Expr_pattern",
 		   "Expr_profile",
 		   "Feature",
@@ -488,13 +393,13 @@ sub mid_run {
 		   "Person",
 		   "Person_name",
 		   "Phenotype",
+		   "Phenotype_name",
 		   "Picture",
 		   "Pos_neg_data",
 		   "Pseudogene",
 		   "Rearrangement",
 		   "RNAi",
 		   "SAGE_tag",
-		   "SAGE_transcript",
 		   "SAGE_experiment",
 		   "Sequence",
 		   "SK_map",
@@ -503,9 +408,8 @@ sub mid_run {
 		   "Table",
 		   "Transcript",
 		   "Transgene",
-		   "Transposon",
 		   "Variation",
-		   "Y2H"
+		   "YH"
 		   );
 
     return (@classes);
