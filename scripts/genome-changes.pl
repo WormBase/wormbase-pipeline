@@ -7,7 +7,7 @@
 # This is a script to aid making changes to the sequence of a clone.
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2006-12-15 16:09:14 $      
+# Last updated on: $Date: 2007-05-02 14:19:27 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -1826,7 +1826,7 @@ sub write_clone_sequence {
     system("cp -rf $dir/$prev_dat/embl $dir/$dat");
   }
 
-# write the ace file to change the clone seuence date to match the clone's sequence directory date
+# write the ace file to change the clone sequence date to match the clone's sequence directory date
   open (CD, ">> $clonedates") || die "cant open the clone date ace file '$clonedates'\n";
   print "\nSequence $clone\n";
   print "Date_directory $dat\n\n";
@@ -2017,6 +2017,12 @@ C34B4    Insertion    ttgagtttgatggttcaactgaaatTggtcagtgtc
 C34B4    Insertion    ggtcagtgtcTttcttcactttgcctgaaacttgga
 F21G4    Insertion    accattgggaattcccggagGaaaagtgtgatgttttctttaaat
 
+A subsitution is simply a deletion followed by an insertion where the
+clone name and the flanking sequences are the same:
+
+# this is a substitution of 'G' by 'ACT'
+AC3      Deletion     agtcgagtcgtagtcgtGgatcggtagcgatgcgtgtgtt
+AC3      Insertion    agtcgagtcgtagtcgtACTgatcggtagcgatgcgtgtgtt
 
 
 script_template.pl MANDATORY arguments:
