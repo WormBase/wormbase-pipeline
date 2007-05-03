@@ -13,6 +13,7 @@ use lib $ENV{CVS_DIR};
 use lib '/software/worm/lib/site_perl';
 use Wormbase;
 use IO::File;
+use Storable;
 # use YAML::Syck;
 # $YAML::Syck::ImplicitTyping = 1;
 # use CGI qw/:standard/;
@@ -28,7 +29,7 @@ GetOptions(
 ) || die `perldoc $0`;
 	
 
-if ($store) { $wormbase = retrieve($store) or croak("Can't restore wormbase from $store\n")} 
+if ($store) { $wormbase = Storable::retrieve($store) or croak("Can't restore wormbase from $store\n")} 
 else {$wormbase = Wormbase->new( -debug => $debug, -test => $test,-autoace=> $database)}
 
 $database = $wormbase->autoace unless $database;
