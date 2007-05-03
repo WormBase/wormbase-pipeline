@@ -381,12 +381,10 @@ sub LocateSpan
       $seq = $chrom;
       undef $chrom;
     SLINKS:
-#      foreach my $slink (keys %{$self->{'SUPERLINK'}} ) {
-#	foreach my $clone (keys %{$self->{SUPERLINK}->{$slink}} ) {
+      foreach my $slink (keys %{$self->{'SUPERLINK'}} ) {
+	foreach my $clone (keys %{$self->{SUPERLINK}->{$slink}} ) {
 
-#	  if( "$clone" eq "$seq" ) {
-            $slink = $self->get_SuperlinkFromClone($seq);
-
+	  if( "$clone" eq "$seq" ) {
 	    $chrom = $self->_getChromFromSlink("$slink");
 
 	    # modify the starting coordinate
@@ -396,9 +394,9 @@ sub LocateSpan
 	    $x += $offset;
 	    $y += $offset;
 	    last SLINKS;
-#	  } 
-#	}
-#      }
+	  } 
+	}
+      }
     }
 
     if( $chrom =~ /SUPERLINK/ ) {
