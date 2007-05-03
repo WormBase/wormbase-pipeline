@@ -242,7 +242,7 @@ sub CloneOffset
     my $sl_start = $self->{"$chromosome"}->{'SUPERLINK'}->{"$superlink"}->[0];
 
     if ($clone =~ /SUPER/) {
-      return $sl_start;
+      return ($chromosome, $sl_start);
     }
 
     my $clonecoord = $sl_start + $self->{'SUPERLINK'}->{"$superlink"}->{"$clone"}->[0] - 1;
