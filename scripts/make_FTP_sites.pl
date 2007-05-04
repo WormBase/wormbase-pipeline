@@ -8,7 +8,7 @@
 # Originally written by Dan Lawson
 #
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2007-05-03 15:55:01 $
+# Last updated on: $Date: 2007-05-04 15:35:44 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -429,10 +429,11 @@ sub extract_ko {
 	$runtime = $wormbase->runtime;
   	$log->write_to("$runtime: Extracting Knockout Consortium Data\n");
 
-	my $outfile= "\"|bzip2 -9 -c > ${targetdir}/$WS_name/knockout_consortium_alleles.$WS_name.bz2\"";
+	my $outfile= "${targetdir}/$WS_name/knockout_consortium_alleles.$WS_name.xml.bz2";
+
 	$wormbase->run_script("dump_ko.pl -file $outfile",$log);
 
-  	$runtime = $wormbase->runtime;
+	$runtime = $wormbase->runtime;
   	$log->write_to("$runtime: Finished dumping\n\n");
 }
 
