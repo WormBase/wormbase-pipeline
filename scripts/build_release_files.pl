@@ -6,8 +6,8 @@
 #
 # This is a example of a good script template
 #
-# Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2006-05-25 13:43:01 $      
+# Last updated by: $Author: ar2 $     
+# Last updated on: $Date: 2007-05-04 13:15:29 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -91,7 +91,6 @@ sub buildrelease{
   $log->write_to("Making distribution files for $WS_version\n\n");
   
   $wormbase->run_command("/bin/touch $dbpath/release/files_in_tar", $log);
-  $wormbase->run_command("/bin/touch $dbpath/release/md5sum.${WS_version}", $log);
   
   my @tarfiles;
   $tarfiles[0] = "wspec/cachesize.wrm  wspec/constraints.wrm wspec/copyright wspec/database.wrm wspec/displays.wrm wspec/help.wrm wspec/layout.wrm wspec/models.wrm wspec/options.wrm wspec/passwd.wrm wspec/psfonts.wrm wspec/subclasses.wrm wspec/xfonts.wrm wgf wquery database/log.wrm database/database.map database/ACEDB.wrm" ;
@@ -103,7 +102,7 @@ sub buildrelease{
   $wormbase->delete_files_from("$dbpath/release","database\.$WS_version\..*\.tar","-");
 
   for (my $i = 0; $i < @tarfiles; ++$i) {
-    $wormbase->run_command("cd $dbpath; tar -hcf $dbpath/release/database.$WS_version.4-$i.tar $tarfiles[$i]\"", $log);
+    $wormbase->run_command("cd $dbpath; tar -hcf $dbpath/release/database.$WS_version.4-$i.tar $tarfiles[$i]\"", $log);#"
     
     # list files in the tar archive
     $wormbase->run_command("tar -tf $dbpath/release/database.$WS_version.4-$i.tar >> $dbpath/release/files_in_tar", $log);
@@ -119,7 +118,7 @@ sub buildrelease{
   }
   #check md5sums
   $wormbase->run_command("cd ".$wormbase->autoace."/release; md5sum -c md5sum.WS$WS_version", $log);
-  # zip up the dna and gff files
+    # zip up the dna and gff files
   $wormbase->run_script("chromosome_dump.pl --zipdna --zipgff", $log);
   $wormbase->run_script( "release_letter.pl -c -d"               , $log);
 }
