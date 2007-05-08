@@ -155,6 +155,7 @@ sub invoke
     $self->{'CLONE2CHROM'}->{'MTCE'} = "MtDNA";
     $self->{'SUPERLINK'}->{"MTCE"}->{'MTCE'} = $self->{'CHROMOSOME_MtDNA'}->{'SUPERLINK'}->{'MTCE'};
     $self->{'CLONE2SUPERLINK'}->{'MTCE'} = 'MTCE';
+    $self->{'SUPERLINK2CHROM'}->{"MTCE"} = "CHROMOSOME_MtDNA";
 
     %{$self->{"numerals"}} = ( 
 			      "1" => "I",
@@ -573,27 +574,10 @@ sub seq_obj_to_chrom
 sub Coords_2chrom_coords
   {
     my ($self, $seq, $coord) = @_;
-    my $chrom = $self->seq_obj_to_chrom($seq);
 
-    if( $seq =~ /CHROMOSOME/ ) {
-      # do nothing passed args are output
-    }
-    elsif( $seq =~ /SUPERLINK/ ) {
-      $coord += $self->{"$chrom"}->{'SUPERLINK'}->{$seq}->[0] - 1;
-    }
-    else {
-    SLINKS:
-      foreach my $slink (keys %{$self->{'SUPERLINK'}} ) {
-	foreach my $clone (keys %{$self->{SUPERLINK}->{$slink}} ) {
+    my ($chrom, $offset) = $self->CloneOffset($seq);
+    $coord += $offset - 1;
 
-	  if( "$clone" eq "$seq" ) {
-	    $coord += $self->{"$chrom"}->{SUPERLINK}->{"$slink"}->[0] -1 ; # superlink base coords
-	    $coord += $self->{SUPERLINK}->{"$slink"}->{"$clone"}->[0] - 1; # clone base coords
-	    last SLINKS;
-	  } 
-	}
-      }
-    }
     return ($chrom, $coord);
   }
 
