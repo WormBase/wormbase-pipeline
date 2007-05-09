@@ -6,7 +6,7 @@
 # Compares this number to those from a second database.
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2007-04-04 16:29:55 $
+# Last updated on: $Date: 2007-05-09 09:12:14 $
 
 
 use strict;
@@ -292,7 +292,7 @@ sub set_classes {
   } elsif ($mode eq "genace") {
     @classes = (
 		  "2_point_data",
-		  "Clone",
+#		  "Clone",
 		  "Contig",
 		  "Gene_class",
 		  "Grid",
@@ -405,6 +405,7 @@ sub set_classes {
   } elsif ($mode eq "incomplete") { 
     @classes = (
 		"CDS", 
+		"Clone",
 		"DNA",
 		"Sequence", 
 		"Motif", 
