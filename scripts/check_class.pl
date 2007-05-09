@@ -6,7 +6,7 @@
 # Compares this number to those from a second database.
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2007-05-09 09:12:14 $
+# Last updated on: $Date: 2007-05-09 09:16:22 $
 
 
 use strict;
@@ -420,6 +420,7 @@ sub set_classes {
   } elsif ($mode eq "data_sets") { 
     @classes = (
 		"CDS", 
+		"Clone",
 		"DNA",
 		"Sequence", 
 		"Motif", 
