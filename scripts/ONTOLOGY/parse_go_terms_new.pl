@@ -155,13 +155,20 @@ if ($gene) {
 		if ($tmp[4] eq 'Inferred_automatically') {
 		    $with=$tmp[5];
 		}
+		if ($tmp[5]=~/WBRNAi/) {     # do not parse RNAi GO terms via genes - it's done separately via phenotypes
+		    next;
+		}
+		my $syn="";
+		if ($public_name ne $seq_name_hash{$obj}) {
+		    $syn=$seq_name_hash{$obj};
+		}
 		my $taxon="taxon:6239";
 		if ($species=~/briggsae/) {
 		    $taxon="taxon:6238";
 		}
 		my $a=$aspect{lc $go_type};
 		my $type="gene";
-		print $out "WB\t$obj\t$public_name\t\t$term\t$ref\t$tmp[3]\t$with\t$a\t\t\t$type\t$taxon\t$date\tWB\n";
+		print $out "WB\t$obj\t$public_name\t\t$term\t$ref\t$tmp[3]\t$with\t$a\t\t$syn\t$type\t$taxon\t$date\tWB\n";
 		$line_count++;
 	    }
 	}
