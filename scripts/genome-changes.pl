@@ -7,7 +7,7 @@
 # This is a script to aid making changes to the sequence of a clone.
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2007-05-02 14:19:27 $      
+# Last updated on: $Date: 2007-05-14 13:53:40 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -492,6 +492,38 @@ sub make_changes_to_DNA {
       }				
       $count++;
     }
+
+  ###############
+  # SHIFT-OVERLAP - this is where we wish to shift the superlink boundary without making a real insertion
+  ###############
+
+  } elsif (lc($change_type) eq 'shift-overlap') {
+    $match_pos = index $dna, lc($removed);
+    if ($match_pos == -1) {
+      return 2;			# error returned - sequence not found
+    }
+    # check the region is unique
+    if ((my $pos2 = index $dna, lc($removed), $match_pos+1) != -1) {
+      print "The sequence $removed is not unique in $clone e.g. positions: $match_pos and $pos2\nNo changes were made to $clone\n";
+      return 1;			# error returned      
+    }
+
+    my $count = 0;
+    foreach my $pos (@positions) {
+      if ($pos == 1) {
+	my $chr = uc(substr($region, $count, 1));
+	#print "insert $chr at pos $match_pos + $count\n";
+	# store the start and end positions of the change in the hash ref
+	if (! exists $change->{'start_pos'}) {$change->{'start_pos'} = $match_pos + $count + 1;}
+	$change->{'end_pos'} = $match_pos + $count + 1;
+	$change->{'count_bases'}++;
+	substr($dna, $match_pos + $count, 0) = lc(substr($region, $count, 1));
+      }				
+      $count++;
+    }
+
+
+
 
   } else {
     $log->write_to( "*** The type of change '$change_type' is not recognised\nNo changes were made to $clone\n");
@@ -1594,7 +1626,21 @@ sub change_clone_overlaps {
       if ($end_pos <= $prev_overlap) {
 	$log->write_to( "*** A change has been attempted in the region $clone:$start_pos..$end_pos overlapping the clone before $clone,\n");
 	$log->write_to( "You should investigate this change to see if it is real.\n\n");
-	return 1;
+	if ($change_type ne "shift-overlap") {
+	  return 1;
+	} else {
+	  # print the superlink shift to ace file
+	  my $or = $prev_overlap_right - $count_bases;
+#	  push @{$change->{'ace-delete'}{"Sequence : \"$prev_clone\""}}, "-D $line"; 
+#	  push @{$change->{'ace-add'}{"Sequence : \"$prev_clone\""}}, "Overlap_right $clone $or"; 
+	  print "#######################################################################\n";
+	  print "You will probably have to ask St. Louis to add the following to stlace:\n\n";
+	  print "Sequence : \"$prev_clone\"\n";
+	  print "-D $line\n\n";
+	  print "Sequence : \"$prev_clone\"\n";
+	  print "Overlap_right $clone $or\n\n";
+	  print "#######################################################################\n";
+	}
       }
 
 
@@ -2006,7 +2052,7 @@ affected by the change accordingly.
 
 The format of the input data file is three columns.
 The first column is the name of the clone.
-The second column is the type of change, either 'insertion' or 'deletion'.
+The second column is the type of change, either 'insertion' or 'deletion' or 'shift-overlap'.
 The third column is the lowercase flanking sequences of the bases to be changed with the bases to be changed in uppercase.
 Comments lines start with '#'.
 Blank lines are ignored.
@@ -2023,6 +2069,26 @@ clone name and the flanking sequences are the same:
 # this is a substitution of 'G' by 'ACT'
 AC3      Deletion     agtcgagtcgtagtcgtGgatcggtagcgatgcgtgtgtt
 AC3      Insertion    agtcgagtcgtagtcgtACTgatcggtagcgatgcgtgtgtt
+
+
+A 'shift-overlap' change does not change the genomic sequence.  It
+changes the boundary of a superlink by changing the position of the
+start of the first clone on this superlink by changing the
+overlap_right value in the last clone of the previous superlink.  This
+previous superlink will probably belong to St. Louis, so you will be
+told to ask them to change their clone's overlap_right value.  Because
+your superlink and clone now have some extra sequence at their start,
+they will need everything in them shifted up as if there had been a
+genomic insertion.
+
+An example of a 'shift-overlap' change input file is:
+
+Y95D11A shift-overlap   TTATATATTTTTTTGGAAATTTATAACTCTTAAAAAAATTCAATTTTTTCAAATAAATAAAATTTCAGATGGCTTCTCAACCGGAGCTCATAATGGTTGACGAGCAAGTCGTCGCTTATGAAGTAGAAATTGATAGTTTTGATGTAAAATATGATGAAGAGGAACATGATGGTCAAGGGACACAAGATGAACCATTTTCTCATGGTACGGAACAGTTTTACGCTGAAAAATTCCAGAATTCCAAAAAATGAAACCTAAAATAGTGATAAAAAGGCGTTTTGAATATTAAATTGAAGAAAAAAATCAGCAAAAATTGTTCAAAATCAAGAATTTTAACGGAAAAGTGTAAAATCTTCTCCACGGGGAGTACACATGCTTCGTAAATCGACATATGGTCAATTTTAAAGTTTTGAAAATTGAAATGCCGGCAAAAAATCTTTTCTTGTTTTTTTTTCGCAAAAAATTCAATTTTCGAAAAAATAATTATAGAAAATTGCATTTTTTGACCGAAAAGTCAATAAAAATAACAGAAAAAATCGATAAACCGTTGAAAAATTTTTTTTTAATTCAAAAATTCAGAAATTCTTAAAATTCAAATTTCCAGATGAGCCAAGCACCAGCGGTTATCACCATCACTACCAATTTCCCAATGACGTGGATCCAAATGATGTTTATTTATTCGATGAGGTATCAATTATCCGAAATTTGGCGATTTTTGAGCCAAAACTACGGTACCCGGTCTCGACACGACAATTTTTGTTAAATTAAAAAAGGTGTGCGCCTTTGAAGGTTACTGTAGTTTCGAACTTTTGCTGATTTTTCATATTTTTTCGTTGAAAACAAAAGTATTTATTTGTTGAAAATCAGAAAATATTATCTTCGCGTCGAGACCTATTACCATTCTATTTTTGCCGCAAAAAACAAAATTTCCTTTAAAAAAAAGCTAATTTTTCCAAGTTTTTCCAGGAAACTGATCAAATTCATCAGCTCGACCCGAATCAACTCAAAAATAATGAAGAAATTGACGATGTCGAATATATTGATCAATCTGTGCCTTCCACGTCATCAATGATGACGTCACTGCCGTCAACGGTGGCTCCAGTTCAGCCAAATACGTATTACAGACGGAAATCTGGAGGCCCAACTGCAACTGGAAATGAAAAACCGAATTATAGGCCGTTGGCGTTCCAAACGGTTCGtaaaataaaaaaaatgtccatgtgtcgatt
+
+(That is all on one line. The 'taaaataaaaaaaatgtccatgtgtcgatt' is the
+old start of your clone with the sequence before it being the sequence
+on the previous clone on the previous superlink that we wish to
+include as part of your superlink and clone.)
 
 
 script_template.pl MANDATORY arguments:
