@@ -2,8 +2,8 @@
 #
 # EMBLdump.pl :  makes modified EMBL dumps from camace.
 # 
-#  Last updated on: $Date: 2007-02-09 15:50:16 $
-#  Last updated by: $Author: gw3 $
+#  Last updated on: $Date: 2007-05-14 16:02:31 $
+#  Last updated by: $Author: pad $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -71,6 +71,16 @@ my $tace           = $wormbase->tace;
 my $outfilename    = "$basedir/tmp/EMBLdump.$$";
 my $mod_file       = "$basedir/tmp/EMBLdump.mod";
 my $dir;
+my %specialclones;
+
+$specialclones{'CU457737'} = "AC006622";
+$specialclones{'CU457738'} = "AC006690";
+$specialclones{'CU457739'} = "AF043691";
+$specialclones{'CU457740'} = "AF098988";
+$specialclones{'CU457741'} = "AF043695";
+$specialclones{'CU457742'} = "AF045637";
+$specialclones{'CU457743'} = "AF003149";
+$specialclones{'CU457744'} = "AF099926";
 
 $log->write_to("You are embl dumping from $dbdir\n\n");
 
@@ -86,16 +96,16 @@ if ($quicktest) {  # quicktest mode only works on B0250
 
 if ($single) {
   $command  = "nosave\n"; # Don't really want to do this
-  $command .= "query find CDS where Method = \"Genefinder\"\nkill\n";# remove Genefinder predictions
-  $command .= "query find CDS where Method = \"twinscan\"\nkill\n";# remove twinscan predictions
+  $command .= "query find CDS where Method = \"Genefinder\"\nkill\ny\n";# remove Genefinder predictions
+  $command .= "query find CDS where Method = \"twinscan\"\nkill\ny\n";# remove twinscan predictions
   $command .= "query find Genome_sequence $single From_laboratory = HX AND Finished AND DNA\ngif EMBL $outfilename\n";# find sequence and dump
   $command .= "quit\nn\n";# say you don't want to save and exit
 }
 
 else {
   $command  = "nosave\n"; # Don't really want to do this
-  $command .= "query find CDS where Method = \"Genefinder\"\nkill\n";# remove Genefinder predictions
-  $command .= "query find CDS where Method = \"twinscan\"\nkill\n";# remove twinscan predictions
+  $command .= "query find CDS where Method = \"Genefinder\"\nkill\ny\n";# remove Genefinder predictions
+  $command .= "query find CDS where Method = \"twinscan\"\nkill\ny\n";# remove twinscan predictions
   $command .= "query find Genome_sequence From_laboratory = HX AND Finished AND DNA\ngif EMBL $outfilename\n";# find sequence and dump
   $command .= "quit\nn\n";# say you don't want to save and exit
 }
@@ -158,8 +168,19 @@ while (<EMBL>) {
   }
   # print new format ID line and AC lines with XX lines once the accession lookup has been done.
   if( /^AC/ ) {
+    my $acc = $clone2accession{$id};
     print OUT "ID   $clone2accession{$id}; $ID2\nXX\n";
-    print OUT "AC   $clone2accession{$id};\nXX\n";
+
+#AC * _AC006622
+#AC   CU457737; AC006622;
+
+    if (defined$specialclones{$acc}) {
+      print OUT "AC * _$specialclones{$acc}\n";
+      print OUT "AC   $clone2accession{$id}; $specialclones{$acc};\nXX\n";
+    }
+    else { 
+      print OUT "AC   $clone2accession{$id};\nXX\n";
+    }
     next;
   }
   # DE   Caenorhabditis elegans cosmid C05G5    
@@ -167,7 +188,7 @@ while (<EMBL>) {
     $clone = $1;
     # can now reset $id
     $id = "";
-
+    
     if (!defined($clone2type{$clone})){
       print OUT "DE   Caenorhabditis elegans clone $clone\n";
       print "WARNING: no clone type for $_";
