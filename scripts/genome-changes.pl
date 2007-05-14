@@ -7,7 +7,7 @@
 # This is a script to aid making changes to the sequence of a clone.
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2007-05-14 13:53:40 $      
+# Last updated on: $Date: 2007-05-14 13:58:44 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -1631,12 +1631,12 @@ sub change_clone_overlaps {
 	} else {
 	  # print the superlink shift to ace file
 	  my $or = $prev_overlap_right - $count_bases;
-#	  push @{$change->{'ace-delete'}{"Sequence : \"$prev_clone\""}}, "-D $line"; 
+#	  push @{$change->{'ace-delete'}{"Sequence : \"$prev_clone\""}}, "-D Overlap_right $clone $prev_overlap_right"; 
 #	  push @{$change->{'ace-add'}{"Sequence : \"$prev_clone\""}}, "Overlap_right $clone $or"; 
 	  print "#######################################################################\n";
 	  print "You will probably have to ask St. Louis to add the following to stlace:\n\n";
 	  print "Sequence : \"$prev_clone\"\n";
-	  print "-D $line\n\n";
+	  print "-D Overlap_right $clone $prev_overlap_right\n\n";
 	  print "Sequence : \"$prev_clone\"\n";
 	  print "Overlap_right $clone $or\n\n";
 	  print "#######################################################################\n";
