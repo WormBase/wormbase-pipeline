@@ -7,7 +7,7 @@
 # clones. Entries which have failed to load or return are highlighted
 # and changes in sequence version are notified.
 
-# Last updated on: $Date: 2006-11-20 16:32:18 $
+# Last updated on: $Date: 2007-05-15 13:53:35 $
 # Last updated by: $Author: pad $
 
 use strict;
@@ -18,7 +18,7 @@ use Wormbase;
 use Log_files;
 use Storable;
 
-my ($embl_file,$maintainer,$wormbase,$store);
+my ($embl_file,$maintainer,$wormbase,$store,$test,);
 
 ##############################
 # command-line options       #
@@ -35,6 +35,7 @@ GetOptions (
 	    "file:s"     => \$embl_file,
 	    "store:s"    => \$store,
 	    "verbose"    => \$verbose,
+            "test"       => \$test,
 	   );
 
  ########################################
@@ -46,6 +47,7 @@ if( $store ) {
 }
 else {
   $wormbase = Wormbase->new( -debug   => $debug,
+			     -test    => $test,
                            );
 }
 
@@ -89,7 +91,7 @@ my $loaded = 0;
 open (OUT, ">$out_file") or die "Cannot open output file $out_file\n";
 
 my $log= Log_files->make_build_log($wormbase);
-$log->write_to("# check_EMBL_submissions\n\n");     
+$log->write_to("# check_EMBL_submissions\n\n");
 $log->write_to("# run details    : ".$wormbase->rundate.".".$wormbase->runtime."\n");
 $log->write_to("\n");
 
@@ -109,7 +111,7 @@ while (<TACE>) {
   chomp;
   next if ($_ eq "");
   next if (/\/\//);
-  
+
   s/\"//g;
   if (/(\S+)\s+(\S+).(\d+)/) {
     ($clone2id{$1} = $2); # ACEDB_clone => NDB_ID  	
@@ -131,12 +133,8 @@ open (EMBL, "<$embl_file") || die "Cannot open EMBL returns\n";
 while (<EMBL>) {
   chomp;
   print "$_\n" if ($verbose);
-
+  # Z81068         Z81068           -                                              Finished   1
 if ($_ =~ /^(\S+)\s+(\S+)\s+\-\s+(\S+)\s+(\d+)$/) {
-  #$1 = ID
-  #$2 = ID
-  #$3 = Status
-  #$4 = SV
     $embl_acc{$1}    = $2;
     $embl_status{$1} = $3;
     $embl_sv{$1}     = $4;
@@ -144,10 +142,21 @@ if ($_ =~ /^(\S+)\s+(\S+)\s+\-\s+(\S+)\s+(\d+)$/) {
     print "processed $1\n" if ($debug);
     next;
   }
+  # Entries that haven't loaded for some reason.
   elsif ($_ =~ /^(\S+)\s+(\S+)\s+\-\s+(\S+\s\S+)\s+(-)$/) {
     $embl_acc{$1}    = $2;
     $embl_status{$1} = $3;
     $embl_sv{$1}     = undef;
+    print "EMBL_AC:$2\nEMBL_Status:$3\nEMBL_SV:$4\n" if ($verbose);
+    print "processed $1\n" if ($debug);
+    next;
+  }
+  # EMBL lines with hidden tokens
+  # 0  'CU457739       CU457739         _AF043691                                      Finished   1'
+  elsif ($_ =~ /^(\S+)\s+(\S+)\s+\S+\s+(\S+)\s+(\d+)$/) {
+    $embl_acc{$1}    = $2;
+    $embl_status{$1} = $3;
+    $embl_sv{$1}     = $4;
     print "EMBL_AC:$2\nEMBL_Status:$3\nEMBL_SV:$4\n" if ($verbose);
     print "processed $1\n" if ($debug);
     next;
@@ -206,20 +215,22 @@ $log->write_to("$errors3 clones returned with an incorrect error code?\n--------
 
 $log->write_to("The update file $out_file needs to be loaded into camace") if ($updates > 0);
 
-$log->write_to("check_EMBL_submissions.pl has Finished.\n");
+$log->write_to("check_EMBL_submissions.pl has Finished.\nUpdated sequence version info can be found here -> $out_file\n");
 
 ###############################
 # Mail log to curator         #
 ###############################
 $log->mail($maintainer);
 
-print "\ncheck_EMBL_submissions.pl has Finished.\nPlease check the log email\n";
-
-
+#Tidy-up#
 close EMBL;
 close SUBMITTED;
 close OUT;
 exit(0);
+
+##############################
+#        Subroutines         #
+##############################
 
 sub usage {
     my $error = shift;
@@ -238,8 +249,9 @@ sub usage {
         exit(0);
     }
     elsif ($error == 3) {
-	print "Output file $out_file already exists...please remove\n\n";
-        exit(0);
+	print "\nERROR: Output file $out_file already exists!\nPlease specify a file name - e.g. SV_update_". $wormbase->rundate. ".ace\n\n[INPUT]1:";
+	my $tmp = <STDIN>;
+	$out_file = "/nfs/disk100/wormpub/analysis/TO_SUBMIT/$tmp";
     }
   }
 
