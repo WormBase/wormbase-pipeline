@@ -6,8 +6,8 @@
 #
 # Usage : autoace_builder.pl [-options]
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2007-04-19 09:09:05 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2007-05-15 14:54:37 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -267,7 +267,7 @@ sub remap_misc_dynamic {
   $wormbase->run_script( "remap_fosmids_between_releases.pl -input $backup_fosmids -out $fosmids", $log);
    
   # remap Mass Spec
-  foreach my $ms_file qw(misc_mass_spec_MichaelHengartner.ace misc_mass_spec_NatalieWielsch.ace misc_mass_spec_StevenHusson.ace) {
+  foreach my $ms_file qw(misc_mass_spec_MichaelHengartner.ace misc_mass_spec_NatalieWielsch.ace misc_mass_spec_StevenHusson.ace misc_mass_spec_GenniferMerrihew.ace) {
     my $ms = $wormbase->misc_dynamic."/$ms_file";
     my $backup_ms = "$ms.$previous_release";
 
