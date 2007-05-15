@@ -7,7 +7,7 @@
 # Usage : autoace_builder.pl [-options]
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2007-05-15 14:54:37 $
+# Last edited on: $Date: 2007-05-15 15:43:10 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -241,6 +241,9 @@ sub remap_misc_dynamic {
 
   my $release = $wormbase->get_wormbase_version;
   my $previous_release = $release - 1;
+
+  # test to see if we need to run the remapping programs
+  if (! $wormbase->run_script( "test_remap_between_releases.pl -release1 $previous_release -release2 $release", $log ) ) { return; }
 
   # remap twinscan
   my $twinscan = $wormbase->misc_dynamic."/misc_twinscan.ace";
