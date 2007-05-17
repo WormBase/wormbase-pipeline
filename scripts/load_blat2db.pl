@@ -1,12 +1,12 @@
-#!/usr/local/bin/perl5.6.1 -w
+#!/usr/local/bin/perl5.8.0 -w
 #
 # usage load_blat2db.pl <-options: load/delete or none for both> -dbdir <path to your database> 
 #
 # deletes existent BLAT data and /or reads in BLAT data for a given database
 # 19.02.02 Kerstin Jekosch
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2007-02-08 15:52:25 $
+# Last edited by: $Author: pad $
+# Last edited on: $Date: 2007-05-17 16:10:30 $
 
 use strict;
 use Getopt::Long;
@@ -44,12 +44,12 @@ my $tace =  $wormbase->tace;
 my $blat_dir;
 
 # has the build finished?? script needs to look at /nfs/disk100/wormpub/BUILD/autoace/BLAT, if it doesnt exist use current_db/BLAT!!
-if (!-d $wormbase->blat."/virtual_objects.camace.blat.est.ace"){
+if (!-e $wormbase->blat."/virtual_objects.camace.blat.est.ace"){
   print "The build must have finished you are now going to use " .$wormbase->database('current')."/BLAT\n\n";
   #$log->write_to( "The build must have finished you are now going to load data from current_db\n");
   $blat_dir = ($wormbase->database('current')."/BLAT");
 }  
-elsif (-d $wormbase->blat."virtual_objects.camace.blat.est.ace"){
+elsif (-e $wormbase->blat."/virtual_objects.camace.blat.est.ace"){
   print "The build is still there.....\n\n";
   $blat_dir = $wormbase->blat;
 }
