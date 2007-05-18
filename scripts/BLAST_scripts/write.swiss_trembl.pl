@@ -12,6 +12,7 @@ use Getopt::Long;
 use GDBM_File;
 use GSI;
 use Wormbase;
+use File::Copy;
 
 my ($swiss, $trembl, $debug, $database, $list, $old, $species);
 my ($test, $store);
@@ -97,29 +98,40 @@ unless ($swiss || $trembl) {
     die "usage -swiss for swissprot, -trembl for trembl, -database directory where .gsi database file is\n";
 }
 
+my %file_mapping = ( 
+	"$db_files/swissprot2org" => '/tmp/swissprot2org',
+	"$db_files/trembl2org"    => '/tmp/trembl2org',
+	"$db_files/swissprot2des" => '/tmp/swissprot2des',
+	"$db_files/trembl2des"    => '/tmp/trembl2des',
+);
+while (my($from,$to)=each %file_mapping ){
+	unlink $to if -e $to;
+	copy $from,$to or die "Copy of $from to $to failed: $!";
+}
+
 if ($swiss) {
-  unless (-s "$db_files/swissprot2org") {
+  unless (-s "tmp/swissprot2org") {
     die "swissprot2org not found or empty";
   }
-  tie %ORG,'GDBM_File', "$db_files/swissprot2org",&GDBM_WRCREAT, 0666 or die "cannot open swissprot2org DBM file $db_files/swissprot2org";
-  unless (-s "$db_files/swissprot2des") {
+  tie %ORG,'GDBM_File', "/tmp/swissprot2org",&GDBM_WRCREAT, 0666 or die "cannot open swissprot2org DBM file $db_files/swissprot2org";
+  unless (-s "/tmp/swissprot2des") {
     die "swissprot2des not found or empty";
   }
-  tie %DES,'GDBM_File', "$db_files/swissprot2des",&GDBM_WRCREAT, 0666 or die "cannot open swissprot2des DBM file $db_files/swissprot2des";
+  tie %DES,'GDBM_File', "/tmp/swissprot2des",&GDBM_WRCREAT, 0666 or die "cannot open swissprot2des DBM file $db_files/swissprot2des";
   &output_list($swiss_list_txt,$input2output{"$swiss_list_txt"});
   untie %ORG;
   untie %DES;
 }
 
 if ($trembl) {
-  unless (-s "$db_files/trembl2org") {
+  unless (-s "/tmp/trembl2org") {
     die "trembl2org not found or empty";
   }
-  tie %ORG,'GDBM_File', "$db_files/trembl2org",&GDBM_WRCREAT, 0666 or die "cannot open trembl2org DBM file";
-  unless (-s "$db_files/trembl2des") {
+  tie %ORG,'GDBM_File', "/tmp/trembl2org",&GDBM_WRCREAT, 0666 or die "cannot open trembl2org DBM file";
+  unless (-s "/tmp/trembl2des") {
     die "trembl2des not found or empty";
   }
-  tie %DES,'GDBM_File', "$db_files/trembl2des",&GDBM_WRCREAT, 0666 or die "cannot open trembl2des DBM file";
+  tie %DES,'GDBM_File', "/tmp/trembl2des",&GDBM_WRCREAT, 0666 or die "cannot open trembl2des DBM file";
   push( @lists_to_dump,$trembl_list_txt);
   &output_list($trembl_list_txt,$input2output{"$trembl_list_txt"});
   untie %ORG;
