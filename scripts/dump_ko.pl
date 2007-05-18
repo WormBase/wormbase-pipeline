@@ -39,7 +39,7 @@ my $jeff = new Jeff $database,$wormbase || die 'cannot create connections to $da
 $jeff->get_all_alleles;
 $log->write_to("dumping ".(scalar $jeff->get_alleles)." knockout consortium alleles\n");
 
-my $outfile= new IO::File "|bzip2 -9 -c > $file" if $file;
+my $outfile= new IO::File "|/software/worm/bin/tidy -xml|bzip2 -9 -c > $file" if $file;
 
 $jeff->print_alleles($outfile);
 $outfile->close;
