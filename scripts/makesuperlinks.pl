@@ -5,8 +5,8 @@
 # constructs superlink objects for camace based on Overlap_right tags
 # dl
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2006-10-17 12:42:44 $
+# Last updated by: $Author: pad $
+# Last updated on: $Date: 2007-05-18 13:45:00 $
  
 $!=1;
 use strict;
@@ -162,6 +162,8 @@ while ($obj = $it->next) {
       ($seq, $start, $end) = $a->row;
       if (! defined $seq || ! defined $start || ! defined $end) {
 	$log->write_to("SMap.S_child.CDS_child row not defined\n");
+	$log->write_to($obj->name."\n");
+	if (defined$seq) {$log->write_to("$seq\n")}
 	$error = 1;
       }
       $CDSSource{$seq}    = $obj;
