@@ -7,7 +7,7 @@
 # This is a script to aid making changes to the sequence of a clone.
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2007-05-14 13:58:44 $      
+# Last updated on: $Date: 2007-05-18 13:26:42 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -262,7 +262,7 @@ while (my $input_line = <IN>) {
     # load ace file into new database
     print "load ace file of changes into new database\n";
     my $command = "pparse $acefile\nsave\nquit\n";
-    open( WRITEDB, "| $tace -tsuser 'genome_changes.pl' $new_database " ) || die "Couldn't open pipe to database $new_database\n";
+    open( WRITEDB, "| $tace -tsuser 'genome-changes.pl' $new_database " ) || die "Couldn't open pipe to database $new_database\n";
     print WRITEDB $command;
     close(WRITEDB);
   }
