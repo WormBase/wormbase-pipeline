@@ -6,7 +6,7 @@
 # dl
 #
 # Last updated by: $Author: pad $
-# Last updated on: $Date: 2007-05-18 13:45:00 $
+# Last updated on: $Date: 2007-05-18 13:58:48 $
  
 $!=1;
 use strict;
@@ -162,8 +162,8 @@ while ($obj = $it->next) {
       ($seq, $start, $end) = $a->row;
       if (! defined $seq || ! defined $start || ! defined $end) {
 	$log->write_to("SMap.S_child.CDS_child row not defined\n");
-	$log->write_to($obj->name."\n");
-	if (defined$seq) {$log->write_to("$seq\n")}
+	$log->write_to("Sequence".$obj->name."has errors\n");
+	if (defined$seq) {$log->write_to("This object is probably to blame $seq\n")}
 	$error = 1;
       }
       $CDSSource{$seq}    = $obj;
