@@ -6,7 +6,7 @@ use Ace;
 use Storable;
 
 
-my $store = '/nfs/disk100/wormpub/BUILD/autoace/wormbase.store';
+my $store = shift;#'/nfs/disk100/wormpub/BUILD/autoace/wormbase.store';
 my $wormbase = retrieve( $store );
 my $database = shift or $wormbase->autoace;#$ENV{'CURRENT'};
 my %clone2acc;
