@@ -7,7 +7,7 @@
 # This is a example of a good script template
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2007-04-12 10:10:52 $
+# Last updated on: $Date: 2007-05-18 10:49:07 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -350,7 +350,7 @@ sub read_GFF_queries {
     $i++;
     $queries[$i]{'DESC'}   = "Mass Spectrometry peptides";
     $queries[$i]{'GFF'}    = "mass_spec_genome";
-    $queries[$i]{'EXPECT'} = '55225';
+    $queries[$i]{'EXPECT'} = '94974';
 
     #	$i++;
     #	$queries[$i]{'DESC'}  = "";
