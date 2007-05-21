@@ -7,7 +7,7 @@
 # This is a script to aid making changes to the sequence of a clone.
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2007-05-21 16:03:32 $      
+# Last updated on: $Date: 2007-05-21 16:06:48 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -1874,8 +1874,8 @@ sub write_clone_sequence {
 
 # write the ace file to change the clone sequence date to match the clone's sequence directory date
   open (CD, ">> $clonedates") || die "cant open the clone date ace file '$clonedates'\n";
-  print "\nSequence $clone\n";
-  print "Date_directory $dat\n\n";
+  print CD "\nSequence $clone\n";
+  print CD "Date_directory $dat\n\n";
   close (CD);
 
 }
