@@ -7,7 +7,7 @@
 # This is a script to aid making changes to the sequence of a clone.
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2007-05-21 10:54:54 $      
+# Last updated on: $Date: 2007-05-21 16:03:32 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -1938,7 +1938,7 @@ sub get_prev_dat {
     my $time = `date +%y%m%d_%H:%m:%S`;
     chomp $time;
     my $olddir = "/nfs/disk100/wormpub/analysis/cosmids/old_current.versions/";
-    system("mv $file $olddir/$file.$time");
+    system("mv $file $olddir/current.versions.$time");
     system("mv $file.new $file");
   }
 
