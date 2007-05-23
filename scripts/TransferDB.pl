@@ -4,8 +4,8 @@
 #
 # by ag3 [991221]
 #
-# Last updated on: $Date: 2007-05-23 13:33:11 $
-# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2007-05-23 16:37:31 $
+# Last updated by: $Author: pad $
 
 # transferdb moves acedb database files across filesystems.
 # Creates a temporary database.BCK 
@@ -366,7 +366,7 @@ sub process_file {
 
 	if( ($filename =~ m/models\.wrm$/) && (!$split) ){
 	  $log->write_to( "differs in cp method\n\n\n");
-	  $cp_val = system("\/usr/bin/scp -R $s_file $e_file") 
+	  $cp_val = system("\/usr/bin/scp -r $s_file $e_file") 
 	}
 	
 	else{
