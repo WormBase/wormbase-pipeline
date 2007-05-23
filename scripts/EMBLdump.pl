@@ -2,7 +2,7 @@
 #
 # EMBLdump.pl :  makes modified EMBL dumps from camace.
 # 
-#  Last updated on: $Date: 2007-05-14 16:02:31 $
+#  Last updated on: $Date: 2007-05-23 10:55:57 $
 #  Last updated by: $Author: pad $
 
 use strict;
@@ -32,7 +32,7 @@ GetOptions (
 	    "quicktest"    => \$quicktest,
 	    "single=s"     => \$single,
 	    "version=s"    => \$version,
-	    "database=s"   => \$database, # Requires full path to database eg.c /nfs/disk100/wormpub/DATABASES/BACKUPS/camace_backup.061116
+	    "database=s"   => \$database, # Requires full path to database eg.c /lustre/cbi4/work1/wormpub/DATABASES/BACKUPS/camace_backup.061116
 	    );
 
 
