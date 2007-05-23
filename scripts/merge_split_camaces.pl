@@ -1,22 +1,22 @@
-#!/usr/local/bin/perl5.8.0 -w
+#!/software/bin/perl -w
 #
 # merge_split_camaces.pl
 # 
 # A script to make multiple copies of camace for curation, and merge them back again
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2007-04-12 14:43:37 $
+# Last edited on: $Date: 2007-05-23 10:50:25 $
 #
 # Persisting errors.
 #running csh -c "reformat_acediff file 1 file2"
-#Use of uninitialized value in concatenation (.) or string at /nfs/disk100/wormpub/wormbase/scripts/reformat_acediff line 121.
+#Use of uninitialized value in concatenation (.) or string at /reformat_acediff line 121.
 #====================
 
 use strict;
 use lib $ENV{'CVS_DIR'};
 use Wormbase;
 use Getopt::Long;
-use Log_files;
+#adduse Log_files;
 #use Storable;
 
 ##############################
@@ -70,7 +70,7 @@ else {
 			   );
 }
 
-my $log = Log_files->make_build_log($wormbase);
+#addmy $log = Log_files->make_build_log($wormbase);
 
 my $tace = $wormbase->tace;
 my $WS_version = $version;
@@ -79,8 +79,8 @@ my $next_build = $WS_version + 1;
 print "WS_version : $WS_version\tWS_next : $next_build\n" if ($debug);
 
 my @databases; #array to store what splits are to be merged.
-my $path_new = ();
-my $path_ref = ();
+#my $path_new = ();
+#my $path_ref = ();
 my @classes = ('Transposon', 'Transcript', 'CDS', 'Sequence', 'Feature', 'Feature_data', 'Pseudogene', 'dna');
 my $split_db;
 
@@ -91,8 +91,10 @@ push(@databases,"gw3") if ($gw3 || $all);
 push(@databases,"ar2") if ($ar2 || $all);
 
 # directory paths
-our $canonical = '/nfs/disk100/wormpub/DATABASES/camace';
-our $directory   = "/nfs/disk100/wormpub/camace_orig/WS${WS_version}-WS${next_build}";
+my $wormpub = $wormbase->wormpub;
+our $canonical = $wormbase->database('camace');
+our $directory   = $wormpub."/camace_orig/WS${WS_version}-WS${next_build}";
+print "OUTPUT_DIR: ".$wormpub."/camace_orig/WS${WS_version}-WS${next_build}\n\n";
 
 #################################################
 ## (1) Merge split databases #1 - do the diffs ##
@@ -117,8 +119,8 @@ if ($merge) {
     foreach my $class (@classes) {
       my $path_new = $directory . "/${class}_${database}.ace";
       my $path_ref = $directory . "/${class}_orig.ace";
-      $wormbase->run_command("csh -c \"/nfs/disk100/wormpub/ACEDB/bin_ALPHA//acediff $path_ref $path_new >! $directory/${class}_diff_${database}.ace\"", $log) && die "Failed to run acediff for ${path_new}\n";
-      $wormbase->run_command("csh -c \"reformat_acediff $directory/${class}_diff_${database}.ace >! $directory/update_${class}_${database}.ace\"", $log) && die "Failed to run reformat ace file for $directory/${class}_diff_${database}.ace\n";
+      $wormbase->run_command("csh -c \"/software/worm/bin/acedb/acediff $path_ref $path_new >! $directory/${class}_diff_${database}.ace\"");#add, $log) && die "Failed to run acediff for ${path_new}\n";
+      $wormbase->run_command("csh -c \"reformat_acediff $directory/${class}_diff_${database}.ace >! $directory/update_${class}_${database}.ace\"");#add, $log) && die "Failed to run reformat ace file for $directory/${class}_diff_${database}.ace\n";
     }
   }
   print "Phase 1 finished and all files can be found in $directory\n";
@@ -167,7 +169,7 @@ sub dump_camace {
 
   foreach my $database (@databases) {
 
-    $camace_path = "/nfs/disk100/wormpub/camace_${database}";
+    $camace_path = $wormpub."/camace_${database}";
     $ENV{'ACEDB'} = $camace_path;
     
     foreach my $class (@classes) {
@@ -226,25 +228,17 @@ sub update_camace {
       &loadace("$directory/update_${class}_${database}.ace","${database}");
     }
   }
-  ##########################################
-  ## Old way of uplading EST & mRNA data  ##
-  ##########################################
-  #print "Upload new mRNAs in $canonical\n";
-  #&loadace("/nfs/disk100/wormpub/analysis/ESTs/elegans_mRNAs.ace",'NDB_data') or die "Failed to load new mRNA data";
-  #print "Upload new ESTss in $canonical\n";
-  #&loadace("/nfs/disk100/wormpub/analysis/ESTs/elegans_ESTs.ace",'NDB_data') or die "Failed to load new mRNA data";
-  
   #####################################
   ## upload BLAT results to database ##
   #####################################
   print "\n\nUpdate BLAT results in $canonical\n";
-    $wormbase->run_script("load_blat2db.pl -all -dbdir $canonical", $log) && die "Failed to run load_blat2db.pl\n";
+    $wormbase->run_script("load_blat2db.pl -all -dbdir $canonical");#add, $log) && die "Failed to run load_blat2db.pl\n";
   
   ####################################################
   ## Update and load blastx results to the database ##
   ####################################################
   print "Update blastx results in $canonical\n";
-  $wormbase->run_script("misc/split_blastx_by_centre.pl -version $WS_version", $log) && die "Failed to generate newblastx data for camace using split_blastx_by_centre.pl\n";
+  $wormbase->run_script("misc/split_blastx_by_centre.pl -version $WS_version");#add, $log) && die "Failed to generate newblastx data for camace using split_blastx_by_centre.pl\n";
   &loadace("$directory/CAM_blastx.ace", 'merge_split_blastx') or die "Failed to load new blastx_data\n";
   print "Updated blastx data in $canonical\n\n";
 
@@ -253,7 +247,7 @@ sub update_camace {
   ##################################################################################
   if ($extra) {
     print "\n\nRunning Gene_ID_update.pl to refresh WBGeneID\'s, Protein_ID\'s and Clone sequence versions.\n\n";
-    $wormbase->run_script("GeneID_updater.pl -geneID -proteinID -version $WS_version -update", $log) && die "Failed to run Gene_ID_updater.pl\n";
+    $wormbase->run_script("GeneID_updater.pl -geneID -proteinID -version $WS_version -update");#add, $log) && die "Failed to run Gene_ID_updater.pl\n";
     print "Updated WBGene ID\'s Protein_ID\'s and Clone sequence versions.\n";
   }
   #######################################################
@@ -269,10 +263,10 @@ sub update_camace {
   ## Check Canonical Database for errors. ##
   ##########################################
   if ($email) {
-    $wormbase->run_script("camcheck.pl -db /nfs/disk100/wormpub/DATABASES/camace -e $email", $log) && die "Failed to run camcheck.pl\n";
+    $wormbase->run_script("camcheck.pl -db". $wormbase->camace. "-e $email");#add, $log) && die "Failed to run camcheck.pl\n";
   }
   else {  
-    $wormbase->run_script("camcheck.pl -db /nfs/disk100/wormpub/DATABASES/camace", $log) && die "Failed to run camcheck.pl\n";
+    $wormbase->run_script("camcheck.pl -db". $wormbase->camace);#add, $log) && die "Failed to run camcheck.pl\n";
   }
 }
 
@@ -286,14 +280,14 @@ sub split_databases {
 
   foreach my $database (@databases) {
     print "Destroying $database\n";
-    $wormbase->run_command("rm -rf /nfs/disk100/wormpub/camace_${database}/database/ACEDB.wrm", $log) && die "Failed to remove /nfs/disk100/wormpub/camace_${database}/database/ACEDB.wrm\n";
-    my $split_db = "/nfs/disk100/wormpub/camace_${database}";
+    $wormbase->run_command("rm -rf ".$wormpub."/camace_${database}/database/ACEDB.wrm");#add, $log) && die "Failed to remove ".$wormpub."/camace_${database}/database/ACEDB.wrm\n";
+    my $split_db = $wormpub."/camace_${database}";
     my $command = "y\nquit\n";
     open (TACE,"| $tace -tsuser merge_split $split_db") or die "Failed to open database connection\n";
     print TACE $command;
     close TACE;
     print "Transfering $canonical to camace_$database\n";
-    system ("TransferDB.pl -start $canonical -end ~wormpub/camace_${database} -split -database -wspec");
+    system ("TransferDB.pl -start $canonical -end" .$wormpub."/camace_${database} -split -database -wspec");
     }
   print "CAMACE SPLITS UPDATED\n";
 }
