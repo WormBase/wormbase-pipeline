@@ -8,7 +8,7 @@
 # This makes the autoace database from its composite sources.
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2006-03-29 13:30:08 $
+# Last edited on: $Date: 2007-05-23 13:33:11 $
 
 use strict;
 use lib  $ENV{'CVS_DIR'};
@@ -459,7 +459,7 @@ sub allcmid
 sub mail_reminder 
   {
     my $builder = $wormbase->debug ? $wormbase->debug : "wormbase";
-    open (EMAIL,  "|/bin/mailx -s \"WormBase build reminder\" \"$builder\@sanger.ac.uk\" ");
+    open (EMAIL,  "|/usr/bin/mailx -s \"WormBase build reminder\" \"$builder\@sanger.ac.uk\" ");
     print EMAIL "Dear builder,\n\n";
     print EMAIL "You have just run autoace_minder.pl -build.  This will probably take 5-6 hours\n";
     print EMAIL "to run.  You should therefore start work on the blast pipeline. So put down that\n";

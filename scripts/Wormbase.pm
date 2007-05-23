@@ -2,10 +2,11 @@
 # adapted from babel.pl
 # put together by krb, but mostly using stuff in babel.pl which
 # was done by dl1 et al.
+# SPECIES BRANCH
 
 package Wormbase;
-
-use lib $ENV{'CVS_DIR'};
+use strict;
+# use lib $ENV{'CVS_DIR'};
 use Carp;
 use Ace;
 use Log_files;
@@ -14,44 +15,42 @@ use File::stat;
 use Storable;
 use Species;
 
-sub initialize
-  {
-    my $class = shift;
-    my %params = @_;
-    my $self = {};
-    bless $self , $class;
+our @allowed_organisms=qw(Elegans Briggsae Remanei Brenneri Japonica); #class data
+sub initialize {
+  my $class = shift;
+  my %params = @_;
+  my $self = {};
+  bless $self , $class;
 
-    # populate passed parameters ( will overwrite defaults if set )
-    foreach ( keys %params ) {
-      my $key = $_;
-      $key =~ s/-//;
-      $self->{$key} = $params{$_};
-    }
-    $self->{'version'} = 666 if( $self->test);
-    print STDERR "Using ".$self->{'autoace'}."\n" if( $self->{'autoace'} );
-    $self->establish_paths;
-    return $self;
+  # populate passed parameters ( will overwrite defaults if set )
+  foreach ( keys %params ) {
+    my $key = $_;
+    $key =~ s/-//;
+    $self->{$key} = $params{$_};
   }
+  $self->{'version'} = 666 if( $self->test);
+  print STDERR "Using ".$self->{'autoace'}."\n" if( $self->{'autoace'} );
+  $self->establish_paths;
+  return $self;
+}
 
 #################################################################################
 
 # DEMO constructor
 #
 # should become: initialize(-organism => Elegans,......) 
-
 sub new {
-	my $class = shift;
-	my %params=@_;
+  my $class = shift;
+  my %params=@_;
 
-	my @allowed_organisms=qw(Elegans Briggsae Remanei);
+  my $self;
+  my $ORGANISM=($params{'-organism'}||'Elegans'); # fixed at the moment
+  $ORGANISM = "\u$ORGANISM";	#make sure 1st letter caps
+  die "invalid organism: $ORGANISM" if ! grep {$_ eq $ORGANISM} @allowed_organisms;
 
-	my $self;
-	my $ORGANISM=($params{'-organism'}||'Elegans'); # fixed at the moment
-
-	die "invalid organism: $ORGANISM" if ! grep {$_ eq $ORGANISM} @allowed_organisms;
-
-	$self=$ORGANISM->_new(\%params);
-	return $self;
+  $params{'-species'} = lc $ORGANISM;
+  $self=$ORGANISM->_new(\%params);
+  return $self;
 }
 
 #######################################################################
@@ -65,9 +64,8 @@ sub get_wormbase_version {
       chomp($WS_version);
       $WS_version =~ s/.*WS//;
       $self->version($WS_version);
-    }
-    else {
-	$self->version(666);
+    } else {
+      $self->version(666);
     }
   }
 
@@ -212,6 +210,7 @@ sub get_script_version {
   my $self = shift;
   my $script = shift;
   my $script_dir = $ENV{'CVS_DIR'};
+  my $version;
   open (GET_SCRIPT_LIST, "/bin/ls -l $script_dir/$script |");
   while (<GET_SCRIPT_LIST>) {
     chomp;
@@ -268,33 +267,6 @@ sub mail_maintainer {
 
 #################################################################################
 
-sub celeaccession 
-  {
-    my $self = shift;
-    local (*text_ace);
-    my $seq = shift;
-    local ($exec);
-    local ($command);
-    local ($accession);
-    $ENV{'ACEDB'} = $self->autoace;
-    $command = <<EOF;
-    find sequence $seq
-    show DB_info
-    quit
-EOF
-
-    open( text_ace, "echo '$command' | $tace  | " );
-    while (<text_ace>) {
-      if (/\s+Database\s+EMBL\s+NDB_AC\s+(\S+)/) {
-	$accession=$1;
-      }
-    }
-    close text_ace;
-    return $accession;
-  }
-
-#################################################################################
-
 sub DNA_string_reverse {
   my $self = shift;
   my $revseq = reverse shift;
@@ -326,6 +298,7 @@ sub DNA_string_composition {
 
 sub gff_sort {
   my $self = shift;
+  my(@a, @n, @s, @e, @f);
   while (<>) {
     s/#.*//;
     next unless /\S/;
@@ -336,7 +309,7 @@ sub gff_sort {
     push @e, $f[4];
   }
 
-  foreach $i ( sort { $n[$a] cmp $n[$b] or $s[$a] <=> $s[$b] or $e[$a] <=> $e[$b] } 0 .. $#a ) {
+  foreach my $i ( sort { $n[$a] cmp $n[$b] or $s[$a] <=> $s[$b] or $e[$a] <=> $e[$b] } 0 .. $#a ) {
     print $a[$i];
   }
 }
@@ -428,7 +401,7 @@ sub find_file_last_modified {
   my $self     = shift;
   my $filename = shift;
   open( FILE, "<$filename" ) || die "cant open file $filename\n";
-  my @fileinfo = stat FILE;
+  my @fileinfo = stat $filename;
   my @date     = localtime( $fileinfo[9] );
   close(FILE);
   my $year = sprintf( "%d-%02d-%02d\n", $date[5] + 1900, $date[4] + 1, $date[3] );
@@ -446,6 +419,7 @@ sub find_file_last_modified {
 sub release_composition
   {
     my $self = shift;
+    my $log = shift;
     #get the old info from current_DB
     my $ver     = $self->get_wormbase_version;
     my $old_ver = $ver - 1;
@@ -610,25 +584,28 @@ sub test_user_wormpub {
   if ( "$name" eq "wormpub" ) {
     print "running scripts as user wormpub . . . \n\n";
     return 1;
-  } 
-  elsif ($name eq "wormpipe"){
-	  return 1;
-	}	
+  }
+  elsif ($name eq "wormpipe") {
+    return 1;
+  }
+  elsif ($self->test) {
+    print "running in Test\n";
+    return 1;
+  }
   else {
-    print
-      "You are doing this as $name NOT wormpub ! \n\n If you are going to alter autoace in any way it will break.\nDo you want to continue? (y/n). . ";
+    print "You are doing this as $name NOT wormpub ! \n\n If you are going to alter autoace in any way it will break.\nDo you want to continue? (y/n). . ";
     my $response = <STDIN>;
     chomp $response;
     if ( "$response" eq "n" ) {
       die "probably for the best !\n";
-    } else {
+    }
+    else {
       print
 	"OK - on your head be it !\nBack to the script . .\n#########################################################\n\n\n";
       return 0;
     }
   }
-}
-
+ }
 #############################################
 sub runtime {
   my $self    = shift;
@@ -662,11 +639,11 @@ sub giface {
 
 sub check_write_access {
 
-    my $self         = shift;
-    my $database     = shift;
-    my $write_access = "yes";
+  my $self         = shift;
+  my $database     = shift;
+  my $write_access = "yes";
 
-    $write_access = "no" if ( -e "${database}/database/lock.wrm" );
+  $write_access = "no" if ( -e "${database}/database/lock.wrm" );
   return ($write_access);
 
 }
@@ -718,7 +695,7 @@ sub load_to_database {
   my $log      = shift;
 
   unless ( -e "$file" and -e $database) {
-    if( $log) {
+    if ( $log) {
       $log->error;
       $log->write_to("Couldn't find file named: $file or database $database\n");
     }
@@ -727,7 +704,7 @@ sub load_to_database {
   }
 
   my $st = stat($file);
-  if( $st->size > 50000000 ) {
+  if ( $st->size > 50000000 ) {
     $log->write_to("backing up block files before loading $file\n") if $log;
     my $db_dir = $database."/database";
     my $tar_file = "backup.".time.".tgz";
@@ -739,7 +716,7 @@ sub load_to_database {
     my %details;
     my @sorted;
     @sorted = sort @backups;
-    pop @sorted; pop @sorted; # remove the newest two
+    pop @sorted; pop @sorted;	# remove the newest two
     # . . and delete the rest
     foreach (@sorted) {
       unlink;
@@ -747,18 +724,18 @@ sub load_to_database {
   }
 
   #check whether write access is possible.
-  if( $self->check_write_access($database) eq 'no') {
+  if ( $self->check_write_access($database) eq 'no') {
     print STDERR "cant get write access to $database\n";
     if ($log) {
-    	$log->log_and_die("cant get write access to $database\n");
-    }else {
-    	die;
+      $log->log_and_die("cant get write access to $database\n");
+    } else {
+      die;
     }
   }
 
   # tsuser is optional but if set, should replace any dots with underscores just in case
   # if not set im using the filename with dots replaced by '_'
-    unless ($tsuser) {
+  unless ($tsuser) {
 
     # remove trailing path of filename
     $tsuser = $file;
@@ -782,36 +759,43 @@ sub wormpep_files {
 	   "wormpep.diff" );
 }
 
-sub test        { $self = shift; return $self->{'test'}; }
-sub debug       { $self = shift; return $self->{'debug'}; }
-sub wormpub     { $self = shift; return $self->{'wormpub'}; }
-sub basedir     { $self = shift; return $self->{'basedir'}; }
-sub autoace     { $self = shift; return $self->{'autoace'}; }
-sub wormpep     { $self = shift; return $self->{'wormpep'}; }
-sub brigpep     { $self = shift; return $self->{'brigpep'}; }
-sub wormrna     { $self = shift; return $self->{'wormrna'}; }
-sub gff         { $self = shift; return $self->{'gff'}; }
-sub gff_splits  { $self = shift; return $self->{'gff_splits'}; }
-sub chromosomes { $self = shift; return $self->{'chromosomes'}; }
-sub logs        { $self = shift; return $self->{'logs'}; }
-sub ftp_upload  { $self = shift; return $self->{'ftp_upload'}; }
-sub ftp_site    { $self = shift; return $self->{'ftp_site'}; }
-sub reports     { $self = shift; return $self->{'reports'}; }
-sub misc_static { $self = shift; return $self->{'misc_static'}; }
-sub misc_dynamic{ $self = shift; return $self->{'misc_dynamic'}; }
-sub primaries   { $self = shift; return $self->{'primaries'}; }
-sub acefiles    { $self = shift; return $self->{'acefiles'}; }
-sub transcripts { $self = shift; return $self->{'transcripts'}; }
-sub blat        { $self = shift; return $self->{'blat'}; }
-sub farm_dump   { $self = shift; return $self->{'farm_dump'}; }
-sub compare     { $self = shift; return $self->{'compare'}; }
-sub checks      { $self = shift; return $self->{'checks'}; }
-sub build_data  { $self = shift; return $self->{'build_data'}; }
-sub ontology    { $self = shift; return $self->{'ontology'}; }
 
-# this can be modified by calling script
+sub test        { my $self = shift; return $self->{'test'}; }
+sub debug       { my $self = shift; return $self->{'debug'}; }
+sub wormpub     { my $self = shift; return $self->{'wormpub'}; }
+sub basedir     { my $self = shift; return $self->{'basedir'}; }
+sub autoace     { my $self = shift; return $self->{'autoace'}; }
+sub wormpep     { my $self = shift; return $self->{'wormpep'}; }
+sub peproot     { my $self = shift; return $self->{'peproot'}; }
+sub brigpep     { my $self = shift; return $self->{'brigpep'}; }
+sub wormrna     { my $self = shift; return $self->{'wormrna'}; }
+sub gff         { my $self = shift; return $self->{'gff'}; }
+sub gff_splits  { my $self = shift; return $self->{'gff_splits'}; }
+sub chromosomes { my $self = shift; return $self->{'chromosomes'}; }
+sub logs        { my $self = shift; return $self->{'logs'}; }
+sub ftp_upload  { my $self = shift; return $self->{'ftp_upload'}; }
+sub ftp_site    { my $self = shift; return $self->{'ftp_site'}; }
+sub reports     { my $self = shift; return $self->{'reports'}; }
+sub misc_static { my $self = shift; return $self->{'misc_static'}; }
+sub misc_dynamic{ my $self = shift; return $self->{'misc_dynamic'}; }
+sub primaries   { my $self = shift; return $self->{'primaries'}; }
+sub acefiles    { my $self = shift; return $self->{'acefiles'}; }
+sub transcripts { my $self = shift; return $self->{'transcripts'}; }
+sub blat        { my $self = shift; return $self->{'blat'}; }
+sub farm_dump   { my $self = shift; return $self->{'farm_dump'}; }
+sub compare     { my $self = shift; return $self->{'compare'}; }
+sub checks      { my $self = shift; return $self->{'checks'}; }
+sub build_data  { my $self = shift; return $self->{'build_data'}; }
+sub ontology    { my $self = shift; return $self->{'ontology'}; }
+sub orgdb       { my $self = shift; return $self->{'orgdb'}; }
+sub cdna_dir    { my $self = shift; return $self->{'cdna_dir'};}
+sub maskedcdna  { my $self = shift; return $self->{'maskedcdna'} ;}
+sub genome_seq  { my $self = shift; return $self->autoace."/genome_seq";}
+
+
+		  # this can be modified by calling script
 sub common_data {
-  $self = shift;
+  my $self = shift;
   my $path = shift;
   if ($path) {
     if ( -e $path ) {
@@ -852,13 +836,13 @@ sub primary {
 
 # setter methods
 sub set_test { 
-  $self = shift; 
+  my $self = shift; 
   $self->{'test'} = shift; 
   # adjust the paths to point to the TEST_BUILD versions
   $self->establish_paths;
 }
 sub set_debug { 
-  $self = shift; 
+  my $self = shift; 
   $self->{'debug'} = shift; 
 }
 
@@ -869,48 +853,51 @@ sub establish_paths {
   # multiple paths of the build (main and farm) reading/writing the same wormbase.store file . Store the farm version in ~wormpipe
   # and might as well use path retrieval routines as with main build.
 
-  if( $self->{'farm'} ){
+  if ( $self->{'farm'} ) {
     my $wormpipe= glob("~wormpipe");
     $self->{'autoace'} = $wormpipe;
     $self->{'acefiles'}    = $self->autoace . "/acefiles";
     $self->{'dump_dir'}    = '/lustre/work1/ensembl/wormpipe/dumps';
-  }
-  else {
+  } else {
     my $basedir;
-    ( $self->{'wormpub'} ) = glob("~wormpub");
+    ( $self->{'wormpub'} ) = '/lustre/cbi4/work1/wormpub';
 
     # if a specified non-build database is being used
-    if( $self->autoace ){
-      ($basedir) = $self->autoace =~ /(.*)\/\w+\/{0,1}$/;
-    }
-    else {
+
+    if ( $self->autoace ) {
+      ($basedir) = $self->autoace =~ /(.*)\/\w+$/;
+      $self->{'orgdb'} = $self->{'autoace'};
+    } else {
       $basedir = $self->wormpub . "/BUILD";
       $basedir = $self->wormpub . "/TEST_BUILD" if $self->test;
-      $self->{'autoace'}    = "$basedir/autoace";
+      $self->{'autoace'}    = $self->species eq 'elegans' ? "$basedir/autoace" : "$basedir/".$self->species;
+      $self->{'orgdb'}      = $self->{'autoace'}; #."/".$self->{'organism'};
     }
 
     $self->{'basedir'}    = $basedir;
     $self->{'ftp_upload'} = "/nfs/ftp_uploads/wormbase";
     $self->{'ftp_site'}   = "/nfs/disk69/ftp/pub2/wormbase";
+    
+    #species specific paths
+    $self->{'peproot'}    = $basedir . "/WORMPEP";
     $self->{'wormrna'}    = $basedir . "/WORMRNA/wormrna" . $self->get_wormbase_version;
     $self->{'wormpep'}    = $basedir . "/WORMPEP/wormpep" . $self->get_wormbase_version;
     $self->{'brigpep'}    = $basedir . "/WORMPEP/brigpep" . $self->get_wormbase_version;
 
-    $self->{'logs'}        = $self->autoace . "/logs";
-    $self->{'common_data'} = $self->autoace . "/COMMON_DATA";
-    $self->{'chromosomes'} = $self->autoace . "/CHROMOSOMES";
-    $self->{'transcripts'} = $self->autoace . "/TRANSCRIPTS";
-    $self->{'reports'}     = $self->autoace . "/REPORTS";
-    $self->{'acefiles'}    = $self->autoace . "/acefiles";
+    $self->{'logs'}        = $self->orgdb . "/logs";
+    $self->{'common_data'} = $self->orgdb . "/COMMON_DATA";
+    $self->{'chromosomes'} = $self->orgdb . "/CHROMOSOMES";
+    $self->{'transcripts'} = $self->orgdb . "/TRANSCRIPTS";
+    $self->{'reports'}     = $self->orgdb . "/REPORTS";
+    $self->{'acefiles'}    = $self->orgdb . "/acefiles";
     $self->{'gff'}         = $self->chromosomes; #to maintain backwards compatibility 
-    $self->{'gff_splits'}  = $self->autoace . "/GFF_SPLITS";
+    $self->{'gff_splits'}  = $self->orgdb . "/GFF_SPLITS";
     $self->{'primaries'}   = $self->basedir . "/PRIMARIES";
     $self->{'blat'}        = $self->autoace . "/BLAT";
     $self->{'checks'}      = $self->autoace . "/CHECKS";
     $self->{'ontology'}    = $self->autoace . "/ONTOLOGY";
-
-    $self->{'tace'}   = glob("~wormpub/ACEDB/bin_ALPHA/tace");
-    $self->{'giface'} = glob("~wormpub/ACEDB/bin_ALPHA/giface");
+    $self->{'tace'}   = '/software/worm/bin/acedb/tace';
+    $self->{'giface'} = '/software/worm/bin/acedb/giface';
 
     $self->{'databases'}->{'geneace'} = $self->wormpub . "/DATABASES/geneace";
     $self->{'databases'}->{'camace'}  = $self->wormpub . "/DATABASES/camace";
@@ -931,6 +918,8 @@ sub establish_paths {
     $self->{'misc_static'} = $self->{'build_data'} . "/MISC_STATIC";
     $self->{'misc_dynamic'} = $self->{'build_data'} . "/MISC_DYNAMIC";
     $self->{'compare'}      = $self->{'build_data'} . "/COMPARE";
+    $self->{'cdna_dir'}    = $self->{'build_data'} . "/cDNA/".$self->{'species'};
+    $self->{'maskedcdna'}  = $basedir . "/cDNA/".$self->{'species'};
 
     $self->{'farm_dump'}    = '/lustre/work1/ensembl/wormpipe/dumps';
 
@@ -949,12 +938,7 @@ sub establish_paths {
     mkpath( $self->primaries )   unless ( -e $self->primaries );
     mkpath( $self->acefiles )    unless ( -e $self->acefiles );
     mkpath( $self->blat )        unless ( -e $self->blat );
-    mkpath( $self->checks )        unless ( -e $self->checks );
-
-#    system("chmod -R g+w ".$self->autoace);
-#    system("chmod -R g+w ".$self->wormpep);
-#    system("chmod -R g+w ".$self->wormrna);
-#    system("chmod -R g+w ".$self->primaries);
+    mkpath( $self->checks )      unless ( -e $self->checks );
   }
 }
 
@@ -963,7 +947,8 @@ sub run_script {
   my $script = shift;
   my $log    = shift;
 
-  my $store = $self->autoace . "/wormbase.store";
+  my $species = ref $self;
+  my $store = $self->autoace . "/$species.store";
   store( $self, $store );
   
   #if user wormpipe this always gives an ERROR and confuses log msgs
@@ -971,6 +956,34 @@ sub run_script {
   my $command = "perl $ENV{'CVS_DIR'}/$script -store $store";
   print "$command\n" if $self->test;
   return $self->run_command( "$command", $log );
+}
+
+sub bsub_script  {
+	my $self   = shift;
+  	my $script = shift;
+  	my $script_sp = shift; #species that called script is to operate on.
+  	my $log    = shift;
+  	my $species = ref $self;
+  	my $store;
+  	my $wbobj;
+  	if(lc $species eq lc $script_sp) {  	
+		$store = $self->autoace . "/$species.store";
+		$wbobj = $self;
+	}
+	else {
+		#create a WormBase Species object to retain test / debug status
+		my $wb = Wormbase->new ('-test' => $self->test,
+								'-debug' => $self->debug,
+								'-organism' => lc($script_sp)
+								);
+		$store = $wb->autoace . "/". (ref $wb) .".store";
+		$wbobj=$wb;
+	}
+  	
+	store($wbobj,$store) unless -e $store;
+  	my $command = "bsub $ENV{'CVS_DIR'}/$script -store $store";
+  	print "$command\n" if $self->test;
+  	return $self->run_command( "$command", $log );
 }
 
 
@@ -982,7 +995,7 @@ sub run_command {
   $log->write_to("running $command\n") if $log;
   my $return_status = system("$command");
   if ( ( $return_status >> 8 ) != 0 ) {
-    if( $log ) {
+    if ( $log ) {
       $log->write_to(" WARNING: $command returned non-zero ($return_status)\n");
       $log->error;
     }
@@ -1023,8 +1036,8 @@ sub wait_for_LSF {
 sub checkLSF
   {
     my ($self, $log) = @_;
-    unless ( -e "/usr/local/lsf/bin/bsub"){
-      if ($log){
+    unless ( -e "/usr/local/lsf"){
+      if ($log) {
 	$log->log_and_die("You need to be on cbi1 or other LSF enabled system to run this");
       } else {
 	die "You need to be on cbi1 or other LSF enabled system to run this";
@@ -1033,11 +1046,28 @@ sub checkLSF
   }
 
 sub table_maker_query {
-	my($self, $database, $def) = @_;
-	my $fh;
-	open( $fh, "echo \"Table-maker -p $def\" | ". $self->tace." $database |" ) || die "Couldn't access $database\n";
-	return $fh;
+  my($self, $database, $def) = @_;
+  my $fh;
+  open( $fh, "echo \"Table-maker -p $def\" | ". $self->tace." $database |" ) || die "Couldn't access $database\n";
+  return $fh;
 }
+
+sub species_accessors {
+	my $self = shift;
+	my %accessors;
+	foreach my $species (@allowed_organisms ){
+		next if (lc($species) eq $self->species); #$wormbase already exists for own species.
+		my $wb = Wormbase->new( -debug   => $self->debug,
+			     -test     => $self->test,
+			     -organism => $species
+			   );
+		$accessors{lc $species} = $wb;
+	}
+	return %accessors;
+}
+
+sub species {my $self = shift; return $self->{'species'};}
+
 ################################################################################
 #Return a true value
 ################################################################################

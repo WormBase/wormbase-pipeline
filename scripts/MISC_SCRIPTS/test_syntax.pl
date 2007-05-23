@@ -1,7 +1,7 @@
-#!/usr/local/bin/perl5.8.0 -w
+#!/software/bin/perl
 
 my $directory = shift;
-$directory = "/wormsrv2/scripts" unless $directory;
+die "no dir to test\n" unless $directory;
 
 opendir(DIR,$directory);
 my @files = readdir( DIR );

@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.8.0 -w
+#/software/bin/perl -w
 #
 # blat2ace.pl
 # 
@@ -6,8 +6,8 @@
 #
 # Exporter to map blat data to genome and to find the best match for each EST, mRNA, OST, etc.
 #
-# Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2007-03-09 15:17:10 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2007-05-23 13:33:11 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -22,26 +22,30 @@ use Storable;
 #########################
 
 my ($est, $mrna, $ncrna, $ost, $tc1, $nematode, $embl, $camace, $intron, $washu, $nembase);
-my ($help, $debug, $test, $verbose, $store, $wormbase);
-my $database;
+my ($help, $debug, $test, $verbose, $store, $wormbase, $species);
+my ($database, $virtualobjs, $type, $qspecies);
 
 GetOptions (
 	    "help"       => \$help,
-            "debug=s"    => \$debug,
+	    "debug=s"    => \$debug,
 	    "test"       => \$test,
 	    "verbose"    => \$verbose,
 	    "store:s"    => \$store,
+	    "species:s"  => \$species,
 	    "database:s" => \$database,
-            "est"        => \$est,
-            "mrna"       => \$mrna,
-            "ncrna"      => \$ncrna,
-            "ost"        => \$ost,
-            "tc1"        => \$tc1,
-            "nematode"   => \$nematode,
+	    "est"        => \$est,
+	    "mrna"       => \$mrna,
+	    "ncrna"      => \$ncrna,
+	    "ost"        => \$ost,
+	    "tc1"        => \$tc1,
+	    "nematode"   => \$nematode,
 	    "nembase"    => \$nembase,
 	    "washu"      => \$washu,
-            "embl"       => \$embl,
+	    "embl"       => \$embl,
 	    "intron"     => \$intron,
+	    "virtual"    => \$virtualobjs,
+	    "type:s"     => \$type,
+	    "qspecies:s" => \$qspecies #query species
 	   );
 
 
@@ -50,18 +54,9 @@ if ( $store ) {
 } else {
   $wormbase = Wormbase->new( -debug   => $debug,
                              -test    => $test,
+                             -organism => $species
 			     );
 }
-
-# Display help if required
-&usage(0) if ($help);
-
-# in test mode?
-if ($test) {
-  print "In test mode\n" if ($verbose);
-
-}
-
 # establish log file.
 my $log = Log_files->make_build_log($wormbase);
 
@@ -71,28 +66,21 @@ my $log = Log_files->make_build_log($wormbase);
 #############################
 
 # set database paths, default to autoace unless -camace
-my $ace_dir         = $wormbase->autoace;     # AUTOACE DATABASE DIR
+my $ace_dir   = $wormbase->autoace;     # AUTOACE DATABASE DIR
 my $blat_dir  = $wormbase->blat;
-my $canonical = $wormbase->database('camace');
-
-if ($camace) {
-    $blat_dir  = "$canonical/BLAT";
-}
 
 #############################
 # CommonData hash retrieval #
 #############################
-
-my %NDBaccession2est = $wormbase->FetchData('NDBaccession2est');     # EST accession => name
-my %estorientation   = $wormbase->FetchData('estorientation');       # EST accession => orientation [5|3]
-
+my %NDBaccession2est;
+my %estorientation;
+unless ($species){ #this should change if other species need this too.
+	%NDBaccession2est = $wormbase->FetchData('NDBaccession2est');     # EST accession => name
+	%estorientation   = $wormbase->FetchData('estorientation');       # EST accession => orientation [5|3]
+}
 my %hash;
 my (%best,%other,%bestclone,%match,%ci);
 
-our %camace;
-our %stlace;
-
-our $type = "";
 our %word = (
 	     est      => 'BLAT_EST',
 	     ost      => 'BLAT_OST',
@@ -101,62 +89,11 @@ our %word = (
 	     embl     => 'BLAT_EMBL',
 	     tc1      => 'BLAT_TC1',
 	     nematode => 'BLAT_NEMATODE',
-	     nembase    => 'BLAT_NEMBASE',
+	     nembase  => 'BLAT_NEMBASE',
 	     washu    => 'BLAT_WASHU'
 	     );
 
-
-########################################
-# command-line options & ramifications #
-########################################
-
-# Exit if no data type choosen [EST|mRNA|EMBL|NEMATODE|OST|WASHU|NEMBASE]
-# or if multiple data types are chosen
-
-
-$log->log_and_die("no type specified\n") unless 
-    ($est || $mrna || $ost || $ncrna || $tc1 || $nematode || $embl || $washu || $nembase);
-
-
-my $flags = 0;
-$flags++ if $est;
-$flags++ if $ost;
-$flags++ if $mrna;
-$flags++ if $ncrna;
-$flags++ if $embl;
-$flags++ if $tc1;
-$flags++ if $nematode;
-$flags++ if $nembase;
-$flags++ if $washu;
-&usage(2) if ($flags > 1);
-
-# assign type variable
-($type = 'est')      if ($est);
-($type = 'ost')      if ($ost);
-($type = 'mrna')     if ($mrna);
-($type = 'ncrna')    if ($ncrna);
-($type = 'embl')     if ($embl);
-($type = 'tc1')      if ($tc1);
-($type = 'nematode') if ($nematode);
-($type = 'nembase')  if ($nembase);
-($type = 'washu')    if ($washu);
-
-#########################################
-# get links for database                #
-#########################################
-
-# parse links for camace
-my @camclones = qw(SUPERLINK_CB_I SUPERLINK_CB_II SUPERLINK_CB_IIIL SUPERLINK_CB_IIIR SUPERLINK_CB_IR SUPERLINK_CB_IV SUPERLINK_CB_V SUPERLINK_CB_X); 
-foreach my $camclone (@camclones) {
-  $camace{$camclone} = 1;
-}
-
-# parse links for stlace
-my @stlclones = qw(SUPERLINK_RW1 SUPERLINK_RW1R SUPERLINK_RW2 SUPERLINK_RW3A SUPERLINK_RW3B SUPERLINK_RW4 SUPERLINK_RW5 SUPERLINK_RWXL SUPERLINK_RWXR);
-foreach my $stlclone (@stlclones) {
-  $stlace{$stlclone} = 1;
-}
-
+$log->log_and_die("no type specified\n") unless $type;
 
 ##########################################################################################
 # map the blat hits to ace - i.e. process blat output (*.psl) file into set of ace files #
@@ -164,14 +101,15 @@ foreach my $stlclone (@stlclones) {
 $log->write_to($wormbase->runtime.": Start mapping\n\n");
 
 # open input and output filehandles
-open(ACE,  ">$blat_dir/autoace.$type.ace_uncompressed")  or die "Cannot open $blat_dir/autoace.${type}.ace_uncompressed $!\n";
-open(BLAT, "<$blat_dir/${type}_out.psl")    or die "Cannot open $blat_dir/${type}_out.psl $!\n";
+open(ACE,  ">$blat_dir/autoace.${qspecies}_$type.ace")  or die "Cannot open $blat_dir/autoace.${qspecies}_${type}.ace $!\n";
+open(BLAT, "<$blat_dir/${qspecies}_${type}_out.psl")    or die "Cannot open $blat_dir/${qspecies}_${type}_out.psl $!\n";
 
 my $number_of_replacements = 0;
 my %reported_this_query_before;
-
+my %make_virt_obj;
 # loop through each blat hit
 while (<BLAT>) {
+	my $method = $qspecies eq $wormbase->species ? "BLAT_${type}_OTHER" : "BLAT_Caen_${type}_OTHER";
   next unless (/^\d/);
   my @f            = split "\t";
 
@@ -180,7 +118,7 @@ while (<BLAT>) {
   my $query        = $f[9];                    # query sequence name
   my $query_size   = $f[10];                   # query sequence length
   my $superlink    = $f[13];                   # name of superlink that was used as blat target sequence
-  my $slsize       = $f[14];                   # superlink size
+  my $slsize       = $f[14];                   # target seq size (used to be superlink hence sl)
   my $lastvirt     = int($slsize/100000) + 1;  # for tracking how many virtual sequences have been created???
   my $matchstart   = $f[15];                   # target (superlink) start coordinate...
   my $matchend     = $f[16];                   # ...and end coordinate
@@ -189,6 +127,7 @@ while (<BLAT>) {
   my @query_starts = split (/,/, $f[19]);      # start coordinates of each query block
   my @slink_starts = split (/,/, $f[20]);      # start coordinates of each target (superlink) block
 
+  $make_virt_obj{$superlink} = $slsize  if($virtualobjs);# store which sequence to make virtual objects for 
   # replace EST name (usually accession number) by yk... name 
   if ( ($est || $ost) && (exists $NDBaccession2est{$query}) ) {
     my $estname  = $NDBaccession2est{$query};
@@ -220,16 +159,16 @@ while (<BLAT>) {
   }  
   
   if ($startvirtual == $endvirtual) {
-      $virtual = "$word{$type}:${superlink}_${startvirtual}";
+      $virtual = "BLAT_${type}:${superlink}_${startvirtual}";
   }	
   elsif (($startvirtual == ($endvirtual - 1)) && (($matchend%100000) <= 50000)) {
-      $virtual = "$word{$type}:${superlink}_${startvirtual}";
+      $virtual = "BLAT_${type}:${superlink}_${startvirtual}";
   }
   else {
     if (! exists $reported_this_query_before{$query}) {
       $reported_this_query_before{$query} = 1; # don't want to report this one again
-      $log->write_to("$query wasn't assigned to a virtual object as match size was too big\n");
-      $log->write_to("Start is $matchstart, end is $matchend on $superlink\n\n");
+      $log->write_to("$query wasn't assigned to a virtual object as match size was too big\n") if $wormbase->debug;
+      $log->write_to("Start is $matchstart, end is $matchend on $superlink\n\n") if $wormbase->debug;
     }
     next;
   }
@@ -274,7 +213,8 @@ while (<BLAT>) {
       my ($query_start,$query_end);
       
         # blatx 6-frame translation v 6-frame translation
-      if ($nematode || $washu || $nembase) {
+#      if ($nematode || $washu || $nembase) {
+	  if( $wormbase->species ne $qspecies) {
 	  my $temp;
 	  if (($strand eq '++') || ($strand eq '-+')) {
 	      $query_start = $query_starts[$x] +1;
@@ -318,13 +258,13 @@ while (<BLAT>) {
       # write to output file
       print ACE "Homol_data : \"$virtual\"\n";
       if ($type eq "nematode" || $type eq "washu" || $type eq "nembase") {
-	  printf ACE "DNA_homol\t\"%s\"\t\"$word{$type}\"\t%.1f\t%d\t%d\t%d\t%d\n\n",$query,$score,$virtualstart,$virtualend,$query_start,$query_end;
+	  printf ACE "DNA_homol\t\"%s\"\t\"BLAT_${type}\"\t%.1f\t%d\t%d\t%d\t%d\n\n",$query,$score,$virtualstart,$virtualend,$query_start,$query_end;
 	  
 #      print "// ERROR: $query [$strand] $virtualstart $virtualend $query_start $query_end ::: [$debug_start,$debug_end]  $newcalc - $calc {$slink_starts[$x]}\n" unless ((defined $virtualstart) && (defined $virtualend));
 	  
       }
       else {
-	  printf ACE "DNA_homol\t\"%s\"\t\"$word{$type}_OTHER\"\t%.1f\t%d\t%d\t%d\t%d\n\n",$query,$score,$virtualstart,$virtualend,$query_start,$query_end;
+	  	      printf ACE "DNA_homol\t\"%s\"\t$method\t%.1f\t%d\t%d\t%d\t%d\n\n",$query,$score,$virtualstart,$virtualend,$query_start,$query_end;
       }
       push @exons, [$virtualstart,$virtualend,$query_start,$query_end];				
   }
@@ -351,10 +291,11 @@ while (<BLAT>) {
       $best{$query}->{'score'} = $score;
       @{$best{$query}->{'entry'}} = ({'clone' => $virtual,'link' => $superlink,'exons' => \@exons});
   }
+
 }
 close(BLAT);
 close(ACE);
-#close (OUTBLAT);
+&make_virt_objs($type) if $virtualobjs;
 
 # concise report
 if ($est || $ost) {
@@ -365,12 +306,10 @@ if ($est || $ost) {
 # produce outfile for best matches #
 ####################################
 if ($nematode || $washu || $nembase) {
-  $wormbase->run_command("mv $blat_dir/autoace.$type.ace_uncompressed $blat_dir/autoace.blat.$type.ace_uncompressed", $log);
+  $wormbase->run_command("mv $blat_dir/autoace.$type.ace $blat_dir/autoace.blat.$type.ace", $log);
 } else {
-  open (AUTBEST, ">$blat_dir/autoace.best.$type.ace_uncompressed");
-  open (STLBEST, ">$blat_dir/stlace.best.$type.ace_uncompressed");
-  open (CAMBEST, ">$blat_dir/camace.best.$type.ace_uncompressed");
-
+  open (AUTBEST, ">$blat_dir/autoace.best.${qspecies}_$type.ace");
+  my $method = $qspecies eq $wormbase->species ? "BLAT_${type}_BEST" : "BLAT_Caen_${type}_BEST";
   foreach my $found (sort keys %best) {
     if (exists $best{$found}) {
       foreach my $entry (@{$best{$found}->{'entry'}}) {
@@ -386,14 +325,7 @@ if ($nematode || $washu || $nembase) {
 		    
 	    # print output for autoace, camace, and stlace
 	    print  AUTBEST "Homol_data : \"$virtual\"\n";
-	    printf AUTBEST "DNA_homol\t\"%s\"\t\"$word{$type}_BEST\"\t%.1f\t%d\t%d\t%d\t%d\n\n",$found,$score,$virtualstart,$virtualend,$query_start,$query_end;
-	    if ($camace{$superlink}) {
-	      print  CAMBEST "Homol_data : \"$virtual\"\n";
-	      printf CAMBEST "DNA_homol\t\"%s\"\t\"$word{$type}_BEST\"\t%.1f\t%d\t%d\t%d\t%d\n\n",$found,$score,$virtualstart,$virtualend,$query_start,$query_end;
-	    } elsif ($stlace{$superlink}) {
-	      print  STLBEST "Homol_data : \"$virtual\"\n";
-	      printf STLBEST "DNA_homol\t\"%s\"\t\"$word{$type}_BEST\"\t%.1f\t%d\t%d\t%d\t%d\n\n",$found,$score,$virtualstart,$virtualend,$query_start,$query_end;
-	    }	  
+	    printf AUTBEST "DNA_homol\t\"%s\"\t$method\t%.1f\t%d\t%d\t%d\t%d\n\n",$found,$score,$virtualstart,$virtualend,$query_start,$query_end;
 	  }
 
 		
@@ -436,8 +368,6 @@ if ($nematode || $washu || $nembase) {
     }
   }
   close(AUTBEST);
-  close(CAMBEST);
-  close(STLBEST);
 }
 ########################################################
 # produce final BLAT output (including BEST and OTHER) #
@@ -445,9 +375,7 @@ if ($nematode || $washu || $nembase) {
 
 unless ($nematode || $washu || $nembase) {
   # Open new (final) output files for autoace, camace, and stlace
-  open (OUT_autoace, ">$blat_dir/autoace.blat.$type.ace_uncompressed") or die "$!";
-  open (OUT_camace,  ">$blat_dir/camace.blat.$type.ace_uncompressed")  or die "$!";
-  open (OUT_stlace,  ">$blat_dir/stlace.blat.$type.ace_uncompressed")  or die "$!";
+  open (OUT_autoace, ">$blat_dir/autoace.blat.${qspecies}_$type.ace") or $log->log_and_die("cant open $blat_dir/autoace.blat.${qspecies}_$type.ace :$!");
 
   # Change input separator to paragraph mode, but store what it old mode in $oldlinesep
   my $oldlinesep = $/;
@@ -457,26 +385,17 @@ unless ($nematode || $washu || $nembase) {
   my $superlink = "";
 
   # assign 
-  open(ABEST,  "<$blat_dir/autoace.best.$type.ace_uncompressed");
+  open(ABEST,  "<$blat_dir/autoace.best.${qspecies}_$type.ace") or $log->log_and_die("cant open $blat_dir/autoace.best.${qspecies}_$type.ace !$\n");
   while (<ABEST>) {
     if ($_ =~ /^Homol_data/) {
       # flag each blat hit which is best (all of them) - set $line{$_} to 1
       # %line thus stores keys which are combos of virtual object name + blat hit details
       $line{$_} = 1;
-      ($superlink) = (/\"$word{$type}\:(\S+)\_\d+\"/);
+      ($superlink) = (/\"BLAT_${type}\:(\S+)\_\d+\"/);
 
       # Print blat best hits to final output file
       print OUT_autoace "// Source $superlink\n\n";
       print OUT_autoace $_;
-    
-      # camace
-      if ($camace{$superlink}) {
-	print OUT_camace $_;
-      }
-      # and stlace
-      elsif ($stlace{$superlink}) {
-	print OUT_stlace $_;
-      }
     }
   }
   close ABEST;
@@ -486,31 +405,16 @@ unless ($nematode || $washu || $nembase) {
   # output those blat OTHER hits which are not flagged as BLAT_BEST in the .best.ace file
   # Does this by comparing entries in %line hash
 
-  open(AOTHER, "<$blat_dir/autoace.$type.ace_uncompressed");
+  open(AOTHER, "<$blat_dir/autoace.${qspecies}_$type.ace");
   while (<AOTHER>) {
     if ($_ =~ /^Homol_data/) {
       my $line = $_;
       # for comparison to %line hash, need to change OTHER to BEST in $_
-      s/BLAT_EST_OTHER/BLAT_EST_BEST/g     if ($est);
-      s/BLAT_OST_OTHER/BLAT_OST_BEST/g     if ($ost); 
-      s/BLAT_mRNA_OTHER/BLAT_mRNA_BEST/g   if ($mrna);
-      s/BLAT_ncRNA_OTHER/BLAT_ncRNA_BEST/g if ($ncrna);
-      s/BLAT_EMBL_OTHER/BLAT_EMBL_BEST/g   if ($embl);
-      s/BLAT_TC1_OTHER/BLAT_TC1_BEST/g     if ($tc1);
-    
+      s/OTHER/BEST/g;
       # Only output BLAT_OTHER hits in first output file which we now know NOT to
       # really be BEST hits
       unless (exists $line{$_}) {
-	print OUT_autoace $line;
-      
-	# camace
-	if ($camace{$superlink}) {
-	  print OUT_camace $line;
-	}
-	# and stlace
-	elsif ($stlace{$superlink}) {
-	  print OUT_stlace $line;
-	}
+		print OUT_autoace $line;
       
       }	
     }
@@ -526,39 +430,27 @@ unless ($nematode || $washu || $nembase) {
 
   if ($intron) {
     
-    open(CI_auto, ">$blat_dir/autoace.ci.${type}.ace");
-    open(CI_cam,  ">$blat_dir/camace.ci.${type}.ace");
-    open(CI_stl,  ">$blat_dir/stlace.ci.${type}.ace");
+    open(CI_auto, ">$blat_dir/autoace.ci.${qspecies}_${type}.ace");
   
     foreach my $link (sort keys %ci) {
       my %double;
 	
       print CI_auto "\nSequence : \"$link\"\n";
-      print CI_stl  "\nSequence : \"$link\"\n" if ($stlace{$link});
-      print CI_cam  "\nSequence : \"$link\"\n" if ($camace{$link});
 	
       for (my $i = 0; $i < @{$ci{$link}}; $i++) {
 	my $merge = $ci{$link}->[$i][0].":".$ci{$link}->[$i][1];
 	if (!exists $double{$merge}) {
 	  if ($mrna) {
 	    printf CI_auto "Confirmed_intron %d %d mRNA $ci{$link}->[$i][2]\n",  $ci{$link}->[$i][0], $ci{$link}->[$i][1];
-	    (printf CI_cam "Confirmed_intron %d %d mRNA $ci{$link}->[$i][2]\n",  $ci{$link}->[$i][0], $ci{$link}->[$i][1]) if ($camace{$link});
-	    (printf CI_stl "Confirmed_intron %d %d mRNA $ci{$link}->[$i][2]\n",  $ci{$link}->[$i][0], $ci{$link}->[$i][1]) if ($stlace{$link});
-	  }
+}
 	  if ($embl) {
 	    printf CI_auto "Confirmed_intron %d %d Homol $ci{$link}->[$i][2]\n",  $ci{$link}->[$i][0], $ci{$link}->[$i][1];
-	    (printf CI_cam "Confirmed_intron %d %d Homol $ci{$link}->[$i][2]\n",  $ci{$link}->[$i][0], $ci{$link}->[$i][1]) if ($camace{$link});
-	    (printf CI_stl "Confirmed_intron %d %d Homol $ci{$link}->[$i][2]\n",  $ci{$link}->[$i][0], $ci{$link}->[$i][1]) if ($stlace{$link});
-	  }
+  }
 	  if ($est) {
 	    printf CI_auto "Confirmed_intron %d %d EST $ci{$link}->[$i][2]\n",  $ci{$link}->[$i][0], $ci{$link}->[$i][1];
-	    (printf CI_cam "Confirmed_intron %d %d EST $ci{$link}->[$i][2]\n",  $ci{$link}->[$i][0], $ci{$link}->[$i][1]) if ($camace{$link});
-	    (printf CI_stl "Confirmed_intron %d %d EST $ci{$link}->[$i][2]\n",  $ci{$link}->[$i][0], $ci{$link}->[$i][1]) if ($stlace{$link});
 	  }
 	  if ($ost) {
 	    printf CI_auto "Confirmed_intron %d %d EST $ci{$link}->[$i][2]\n",  $ci{$link}->[$i][0], $ci{$link}->[$i][1];
-	    (printf CI_cam "Confirmed_intron %d %d EST $ci{$link}->[$i][2]\n",  $ci{$link}->[$i][0], $ci{$link}->[$i][1]) if ($camace{$link});
-	    (printf CI_stl "Confirmed_intron %d %d EST $ci{$link}->[$i][2]\n",  $ci{$link}->[$i][0], $ci{$link}->[$i][1]) if ($stlace{$link});
 	  }
 	  $double{$merge} = 1;
 	}
@@ -566,27 +458,21 @@ unless ($nematode || $washu || $nembase) {
     }
     
     close CI_auto;
-    close CI_cam;
-    close CI_stl;
   }
 }
 
 
 #compress acefiles so that all object data is loaded together, expanded to run on all homol
-my @filenames = ("autoace.$type.ace", "autoace.best.$type.ace", "autoace.blat.$type.ace", "camace.best.$type.ace", "camace.blat.$type.ace", "stlace.best.$type.ace", "stlace.blat.$type.ace");
+my @filenames = ("autoace.${qspecies}_$type.ace", "autoace.best.${qspecies}_$type.ace", "autoace.blat.${qspecies}_$type.ace", );
 my $filename;
 $log->write_to("\n#########################################\nCompressing DNA_homolo acefiles\n#########################################\n");
 foreach $filename (@filenames) {
-#  if (-e ("$blat_dir/${filename}"."_uncompressed") ) {
+  if (-e ("$blat_dir/${filename}"."_uncompressed") ) {
     $log->write_to("Compressing ${filename}"."_uncompressed\n");
     $wormbase->run_script("acecompress.pl -file $blat_dir/${filename}_uncompressed -homol -build", $log);
     $log->write_to("Compressed........\n");
-#  }
+  }
 }
-
-#$wormbase->run_script("acecompress.pl -file $blat_dir/autoace.best.$type.ace -homol", $log);
-#$wormbase->run_script("acecompress.pl -file $blat_dir/autoace.blat.$type.ace -homol", $log);
-#$wormbase->run_script("acecompress.pl -file $blat_dir/autoace.$type.ace -homol", $log);
 
 $log->mail;
 print "Finished.\n" if ($verbose);
@@ -634,6 +520,54 @@ sub usage {
     }
 }
 
+#############################
+# virtual object generation #
+#############################
+
+sub make_virt_objs {
+    
+  my $data = shift;
+  local (*OUT_autoace_homol);
+  local (*OUT_autoace_feat);
+  my ($name,$length,$total,$first,$second,$m,$n);
+  
+  # autoace
+  open (OUT_autoace_homol, ">$blat_dir/virtual_objects.autoace.blat.$data.ace") or die "$!";
+  open (OUT_autoace_feat,  ">$blat_dir/virtual_objects.autoace.ci.$data.ace")   or die "$!";
+  
+  foreach my $name (keys %make_virt_obj) {
+	$length = $make_virt_obj{$name};
+    $total = int($length/100000) +1;
+      # autoace
+    print OUT_autoace_homol "Sequence : \"$name\"\n";
+    print OUT_autoace_feat  "Sequence : \"$name\"\n";
+
+    for ($n = 0; $n <= $total; $n++) {
+		$m      = $n + 1;
+		$first  = ($n*100000) + 1;
+		$second = $first + 149999;
+		if (($length - $first) < 100000) {
+			$second = $length;
+		  # autoace
+	  		print OUT_autoace_homol "S_child Homol_data $word{$data}:$name"."_$m $first $second\n";
+	  		print OUT_autoace_feat  "S_child Feature_data Confirmed_intron_$data:$name"."_$m $first $second\n";
+
+	  		last;
+		}					
+		else {
+	  		($second = $length) if ($second >  $length);
+	  		# autoace
+	  		print OUT_autoace_homol "S_child Homol_data $word{$data}:$name"."_$m $first $second\n";
+	  		print OUT_autoace_feat  "S_child Feature_data Confirmed_intron_$data:$name"."_$m $first $second\n";
+		}
+	}
+    print OUT_autoace_homol "\n";
+    print OUT_autoace_feat  "\n";
+  }
+  close OUT_autoace_homol;
+  close OUT_autoace_feat;
+
+}
 
 
 __END__

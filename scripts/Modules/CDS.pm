@@ -37,7 +37,7 @@ Anthony  ar2@sanger.ac.uk
 
 package CDS;
 
-use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'} ;
+use lib $ENV{'CVS_DIR'} ;
 use Carp;
 use Modules::SequenceObj;
 use Modules::Transcript;
@@ -94,7 +94,7 @@ sub new
 
     Title   :   map_cDNA
     Usage   :   $cds->map_cDNA( $cdna )
-    Function:   check if the passed sequence object matches the exon structure if itself.  If it matches the cds but not any existing transcript then a new transcript will be constructed
+    Function:   check if the passed sequence object matches the exon structure of itself.  If it matches the cds but not any existing transcript then a new transcript will be constructed
     Returns :   1 if match 0 otherwise
     Args    :   sequence_object
 
@@ -119,7 +119,8 @@ sub map_cDNA
 	$matches_me = 1;
       }
     }
-
+	
+	# cDNA doesn't match existing transcript
     if( $matches_me == 0 ) {
       # check against just CDS structure  
       if( $self->start > $cdna->end ) {
@@ -136,30 +137,9 @@ sub map_cDNA
 	  if( $cdna->check_exon_match( $self )) {
 	    # if this cdna matches the CDS but not the existing transcripts create a new one
 	    # append .x to indicate multiple transcripts for same CDS.
-	    my $transcript_count = scalar($self->transcripts);
-	    my $new_name;
-	    if( $transcript_count == 1 ) {
-	      # rename the original as .1
-	      $new_name = $self->name . ".$transcript_count";
-	      my @transcripts = $self->transcripts;
-	      $transcripts[0]->name("$new_name");
-	    }
-	    $transcript_count++;
-	    $new_name = $self->name . ".$transcript_count";
-	    
-	    my $transcript = Transcript->new( $new_name, $self);
-	    $transcript->chromosome( $self->chromosome );
-
-	    # this will add the new cDNA through the correct method, ensuring that exons are extended accordingly.
-	    $transcript->map_cDNA($cdna);
-	    # now recheck cDNAs already matched to CDS to new transcript
-#	    my $matched_cDNAs = $self->matching_cDNAs;
-#	    foreach my $match ( @{$matched_cDNAs} ) {
-#	      $transcript->map_cDNA($match);
-#	    }
-
+		my $new_transcript = $self->create_new_transcript($cdna);
 	    # add new transcript to CDS obj
-	    $self->transcripts($transcript);
+	    $self->transcripts($new_transcript);
 	    $matches_me = 1;
 	  }
 	}
@@ -169,6 +149,88 @@ sub map_cDNA
     return $matches_me;
   }
 
+
+=head2 create_new_transcript
+
+    Title   :   create_new_transcript
+    Usage   :   $cds->create_new_transcript
+    Function:   create a new transcript based on a cDNA
+    Returns :   Trancript object
+    Args    :   SequenceObj
+
+=cut
+
+sub create_new_transcript {
+	my $self = shift;
+	my $cdna = shift;
+	my $transcript_count = scalar($self->transcripts);
+	my $new_name;
+	if( $transcript_count == 1 ) {
+		# rename the original as .1
+	    $new_name = $self->name . ".$transcript_count";
+	    my @transcripts = $self->transcripts;
+	    $transcripts[0]->name("$new_name");
+	}
+	$transcript_count++;
+	$new_name = $self->name . ".$transcript_count";
+	    
+	my $transcript = Transcript->new( $new_name, $self);
+	$transcript->chromosome( $self->chromosome );
+
+	# this will add the new cDNA through the correct method, ensuring that exons are extended accordingly.
+	$transcript->map_cDNA($cdna);
+	return $transcript;
+}
+
+
+=head2 map_paired_read
+
+    Title   :   map_paired_read
+    Usage   :   $cds->map_paired_read
+    Function:   maps a pair of ESTs to a CDS
+    Returns :   1 or 0
+    Args    :   paired_read object
+
+=cut
+
+sub map_paired_read {
+	my $self = shift;
+	my $pair = shift;
+	my $match = 0;
+	foreach my $transcript ( $self->transcripts ) {
+		my $ests = $pair->reads;
+		#map_cDNA normally adds the cDNA
+		my ($r1, $r2);
+		$r1 = $transcript->map_cDNA($ests->[0],'dont_add');
+		$r2 = $transcript->map_cDNA($ests->[1],'dont_add');
+			
+		if( $r1 and $r2 ){
+			#paired reads both match 
+			$self->_addRead_pair($transcript,$ests);		
+			$match = 1;	
+			$pair->mapped(1);
+		}
+		#if the failed match is 3'utr but doesn't overlap
+		elsif ($r1 or $r2) {
+			my $failed = defined $r1 ? $ests->[1] : $ests->[0];
+			my $succeed = defined $r2 ? $ests->[0]: $ests->[1];
+			if ($failed->start - 100 < $transcript->end ) {
+				$transcript->add_3_UTR($failed);
+				$transcript->add_matching_cDNA($succeed);
+				$match = 1;
+			}
+		}
+	}
+	return $match;
+}
+
+sub _addRead_pair {
+	my ($self, $transcript, $ests) = @_;
+	$transcript->add_matching_cDNA( $ests->[0] );
+	$transcript->add_matching_cDNA( $ests->[1] );
+	$ests->[0]->mapped($self);
+	$ests->[1]->mapped($self);
+}
 =head2 transcripts
 
     Title   :   transcripts
@@ -259,7 +321,7 @@ sub report
     }
 
     foreach (@{$self->{'matching_cdna'}}) {
-      print $fh "\nSequence :\"",$_->name,"\n";
+      print $fh "\nSequence :\"",$_->name,"\n";#"
       print $fh "Matching_CDS ",$self->name," Inferred_Automatically \"transcript_builder.pl\"\n";
     }
 
@@ -319,5 +381,12 @@ sub gene_end
     }
     return $self->{'gene_end'};
   }
-
+  
+  
+sub check_across_transcripts {
+	my $self = shift;
+	foreach my $transcript ( $self->transcripts ) {
+		
+	}
+}
 1;

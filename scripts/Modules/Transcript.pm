@@ -1,6 +1,6 @@
 package Transcript;
 
-use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'} ;
+use lib $ENV{'CVS_DIR'} ;
 use Carp;
 use strict;
 use Modules::SequenceObj;
@@ -36,6 +36,7 @@ sub map_cDNA
   {
     my $self = shift;
     my $cdna = shift;
+    my $dont_add = shift;
 
     # check for overlap
     if( $self->start > $cdna->end ) {
@@ -51,11 +52,11 @@ sub map_cDNA
       #check exon matching
       my $match = $self->check_exon_match( $cdna );
       if( $match == 1 ) {
-	$match = $cdna->check_exon_match( $self );
-	unless ($match == 0) { 
-	  $self->add_matching_cDNA( $cdna );
-	  $match = 1;
-	}
+			$match = $cdna->check_exon_match( $self );
+			unless ($match == 0) { 
+			  $self->add_matching_cDNA( $cdna ) unless $dont_add;
+			  $match = 1;
+			}
       }
       return $match;
     }
@@ -131,15 +132,15 @@ sub add_matching_cDNA
       }
       #extending 3'UTR with non-overlapping cDNAs
       elsif( $match_code == 12) {
-	if ( $cdna->start == $exon->[0]) { 
-	  #extend existing
-	  my $last_exon_start = $self->last_exon->[0];
-	  $self->{'exons'}->{"$last_exon_start"} = $exon->[1];
-	}
-	else {
-	  #add new exon
-	  $self->{'exons'}->{"$exon->[0]"} = $exon->[1];
-	}
+		#if ( $cdna->start == $exon->[0]) { 
+	  		#extend existing
+	  		my $last_exon_start = $self->last_exon->[0];
+	  		$self->{'exons'}->{"$last_exon_start"} = $exon->[1];
+		#}
+	#	else {
+	  		#add new exon
+	 # 		$self->{'exons'}->{"$exon->[0]"} = $exon->[1];
+	#	}
       }
       elsif( $match_code == 14 ) {
 	$self->exon_data->{"$exon->[0]"} = $exon->[1];

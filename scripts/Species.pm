@@ -10,7 +10,6 @@ use Carp;
 use Wormbase;
 
 package Species;
-
 sub flatten_params {
     shift;    # get rid of the class name
     my %param_hash = %{ shift() };
@@ -48,7 +47,23 @@ sub _new {
 
 
 # methods to overwrite
-sub chromosome_names {return 'none'}
+# pulls the names from a fasta file
+sub chromosome_names {
+	my $self=shift;
+
+	unless ($self->{'chromosome_names'}) {
+		use IO::File;
+		my $species = lc(ref($self));
+		my $inf= new IO::File $self->wormpub."/DATABASES/$species/CHROMOSOMES/supercontigs.fa",'r' || croak(@$); #reference file
+		my $prefix=$self->chromosome_prefix;
+		my @ids;
+		while(<$inf>){ push @ids,"$1" if $_=~/^>$prefix(\S+)/}
+		$inf->close;
+		$self->{'chromosome_names'}=\@ids;
+	}
+	return @{$self->{'chromosome_names'}}
+}
+
 sub mt_name {return undef}
 sub chromosome_prefix {'PREFIX_'}
 sub pep_prefix {return undef}
@@ -62,7 +77,9 @@ sub chromosome_prefix {'CHROMOSOME_'}
 sub chromosome_names {qw(I II III IV V X)}
 sub mt_name {'MtDNA'}
 sub pep_prefix {'CE'}
-
+sub pepdir_prefix{'worm'};
+sub cds_regex{qr/^[A-Z0-9_]+\.[1-9]\d?[A-Za-z]?$/};
+sub ncbi_tax_id {'6239'};
 
 ########################################
 package Briggsae;
@@ -71,13 +88,6 @@ our @ISA = qw(Wormbase Species);
 sub _new {
     my $class = shift;
     my %param = %{ shift(@_) };
-
-    my $build_dir='/nfs/disk100/wormpub';
-    $build_dir.=$param{'-test'}?'/TEST_BUILD':'/BUILD';
-
-    # additional parameters
-    $param{'-autoace'}="$build_dir/autoace/briggsae";
-
     my $self = $class->initialize( $class->flatten_params( \%param ) );
 
     # stuff post object creation goes here
@@ -93,6 +103,15 @@ sub chromosome_prefix {'chr'}
 sub chromosome_names {qw(I I_random II II_random III III_random IV IV_random V V_random X Un)} # CB3
 
 sub pep_prefix {'CBP'}
+sub pepdir_prefix{'brig'};
+sub cds_regex{qr/^CBG\d{5}$/};
+sub ncbi_tax_id {'6238'};
+
+sub wormpep_files {
+  my $self = shift;
+  return ( "brigpep", "brigpep.accession", "brigpep.dna", "brigpep.history", "brigpep.fasta", "brigpep.table",
+	   "brigpep.diff" );
+}
 
 #########################################
 package Remanei;
@@ -104,9 +123,29 @@ sub _new {
 	
     my $class = shift;
     my %param = %{ shift(@_) };
+    my $self = $class->initialize( $class->flatten_params( \%param ) );
+
+    # add stuff post object creation goes here
+
+    bless $self, $class;
+}
+
+sub chromosome_prefix {'Contig'}
+sub pep_prefix {'CRP'}
+sub pepdir_prefix{'rema'};
+sub ncbi_tax_id {'31234'};
+
+#######################################################
+package Brenneri;
+use Carp;
+our @ISA = qw(Wormbase Species);
+
+sub _new {	
+    my $class = shift;
+    my %param = %{ shift(@_) };
 
     # additional parameters
-    $param{'-autoace'}='/nfs/disk100/wormpub/TEST_BUILD/autoace/remanei';
+    #$param{'-autoace'}='/nfs/disk100/wormpub/TEST_BUILD/autoace/brenneri';
 
     my $self = $class->initialize( $class->flatten_params( \%param ) );
 
@@ -116,25 +155,38 @@ sub _new {
 }
 
 sub chromosome_prefix {'Contig'}
-
-# pulls the names from a fasta file
-sub chromosome_names {
-	my $self=shift;
-
-	unless ($self->{'chromosome_names'}) {
-		use IO::File;
-
-		my $inf= new IO::File '/nfs/disk100/wormpub/DATABASES/remanei/supercontigs.fa','r' || croak(@$); #reference file
-		my $prefix=$self->chromosome_prefix;
-		my @ids;
-		while(<$inf>){ push @ids,"$1" if $_=~/>$prefix(.+)\n/}
-		$inf->close;
-		$self->{'chromosome_names'}=\@ids;
-	}
-	return @{$self->{'chromosome_names'}}
-}
+sub pep_prefix {'CM'}
+sub pepdir_prefix{'bre'};
+sub ncbi_tax_id {'135651'};
 
 #######################################################
+
+package Japonica;
+use Carp;
+our @ISA = qw(Wormbase Species);
+
+sub _new {	
+    my $class = shift;
+    my %param = %{ shift(@_) };
+
+    # additional parameters
+    $param{'-autoace'}='/nfs/disk100/wormpub/TEST_BUILD/autoace/japonica';
+
+    my $self = $class->initialize( $class->flatten_params( \%param ) );
+
+    # add stuff post object creation goes here
+
+    bless $self, $class;
+}
+
+sub chromosome_prefix {'Contig'}
+sub pep_prefix {'JA'}
+sub pepdir_prefix{'jap'};
+sub ncbi_tax_id {'281687'};
+
+#######################################################
+
+
 
 if ( __FILE__ eq $0 ) {
 
@@ -163,7 +215,7 @@ if ( __FILE__ eq $0 ) {
     eval{my $a = Wormbase->new(-test => 1);&test($a)};
     print "$@\n" if ($@);
 
-    foreach my $orgs (qw(Elegans Briggsae Remanei TeddyBear)){
+    foreach my $orgs (qw(Elegans Briggsae Remanei Brenneri Japonica)){
 	    eval{
 		    my $a = Wormbase->new( '-organism' => $orgs,-test => 1);
 		    &test($a);
@@ -199,7 +251,7 @@ flattens an hash into an array
 returns list of chromosomes including mitochondria (-mito => 1),
 default prefix (-prefix => 1) or a custom prefix (-prefix => 'blablub_')
 
-uses mock methods if calles from within Species
+uses mock methods if called from within Species
 
 =head2 _new([params,...])
 

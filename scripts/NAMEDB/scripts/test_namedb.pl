@@ -3,13 +3,13 @@
 
 use strict;
 
-use constant USERNAME => 'lstein';
-use constant PASSWD   => undef;
+use constant USERNAME => 'wormpub';
+use constant PASSWD   => 'wormpub';
 
 use lib '../lib','./lib','./blib';
 use NameDB;
 
-my $db = NameDB->connect('name_test',USERNAME,PASSWD);
+my $db = NameDB->connect('wbgene_id:mcs2a',USERNAME,PASSWD);
 $db->initialize(1);  # start with a completely clean slate
 
 $db->addDomain(Protein => 'P%010d');
@@ -24,7 +24,7 @@ print $db->getDomain,"\n";
 print $db->getTemplate,"\n";
 
 $db->setDomain('Gene');
-$db->setTemplate('G%010d','Gene');
+$db->setTemplate('WBGene%08d','Gene');
 print $db->getTemplate('Gene'),"\n";
 
 my $result;
@@ -38,6 +38,7 @@ $result  = $db->addNameType('WTP',0,1);
 
 $result  = $db->setDomain('Gene');
 $result  = $db->addNameType('CGC',1,1);
+$result  = $db->addNameType('CDS',0,1);
 $result  = $db->addNameType('GenBank',1,0);
 $result  = $db->addNameType('Locus',0,1);
 $result  = $db->addNameType('WTP',0,0);

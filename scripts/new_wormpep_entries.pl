@@ -8,8 +8,8 @@
 # and produce a fasta file of these sequence to load into the wormprot
 # mysql database prior for the pre-build pipeline.
 #
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2006-12-08 13:06:29 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2007-05-23 13:33:11 $
 
 
 #################################################################################
@@ -66,7 +66,7 @@ my $log = Log_files->make_build_log($wormbase);
  ##############################
 
 my $release = $wormbase->get_wormbase_version; 
-
+my $old_release = $release - 1;
 my $release_name = $wormbase->get_wormbase_version_name; 
 
 
@@ -78,14 +78,16 @@ my $release_name = $wormbase->get_wormbase_version_name;
 # Make all other directories relative to this
 my $basedir         = $wormbase->wormpep;     # BASE DIR => changed to WB->wormpep
 
-# briggsae part 1
-our $dbfile     = "$basedir/wp.fasta${release}";
 
 # need to get previous build WORMPEP
-my ( $stem, $old_release ) = $basedir =~ /(.*pep)(\d+)/;
-my $wpdir = "$stem" . --$old_release;
+my $PEP_FILE_STEM = $wormbase->pepdir_prefix . "pep"; #wormpep
+my $PEP_PREFIX    = $wormbase->pep_prefix;#CE
+$basedir =~ /(.*)(\d{3})$/;
+my $wpdir =  $1 . ($2 - 1);
 
-our $old_dbfile = "$wpdir/wp.fasta${old_release}";
+# briggsae part 1
+our $dbfile     = "$basedir/${PEP_FILE_STEM}.fasta${release}";
+our $old_dbfile = "$wpdir/${PEP_FILE_STEM}.fasta${old_release}";
 
 # make a hash of wormpep IDs -> peptide sequence for current and previous versions
 # of wormpep
@@ -101,7 +103,7 @@ my $new_wp_size = keys(%wormpep);
 
 
 if($old_wp_size > $new_wp_size){
-  die "ERROR: WS${release} wp.fasta file appears to have fewer entries than WS${old_release} wp.fasta file!\n\n";
+  $log->log_and_die("ERROR: WS${release} wp.fasta file appears to have fewer entries than WS${old_release} wp.fasta file!\n\n");
 }
 
 my %proteins_outputted;
@@ -111,8 +113,9 @@ my %proteins_outputted;
 
 
 # briggsae part2
-open (NEW,  ">$basedir/new_entries.$release_name") || die "Couldn't write output file\n";
-open (DIFF, "<$basedir/wormpep.diff${release}") || die "Couldn't read from diff file\n";
+open (NEW,  ">$basedir/new_entries.$release_name") || $log->log_and_die( "Couldn't write output file\n");
+open (DIFF, "<$basedir/wormpep.diff${release}") || $log->log_and_die( "Couldn't read from diff file\n");
+my $new_count =0;
 while (<DIFF>) {    
   my ($new_acc,$seq);
     if( (/changed:\t\S+\s+\S+ --> (\S+)/) || (/new:\t\S+\s+(\S+)/) || (/reappeared:\t\S+\s+(\S+)/)) {
@@ -121,11 +124,13 @@ while (<DIFF>) {
       next if $proteins_outputted{$new_acc};
       print NEW ">$new_acc\n$wormpep{$new_acc}";
       $proteins_outputted{$new_acc}++;
+      $new_count++;
     }
 }
 close(DIFF);
 close(NEW);
 
+$log->write_to("written $new_count new proteins to file\n");
 $log->mail();
 print "Finished.\n" if ($verbose);
 exit(0);
@@ -159,7 +164,7 @@ sub make_hash {
   my $id;
   my $seq;
   my $prefix=$wormbase->pep_prefix;
-  open (WP, "<$dbfile") || die "Couldn't read from file\n";
+  open (WP, "<$dbfile") || $log->log_and_die( "Couldn't read from file\n");
   while (<WP>) {
     if (/^>(\S+)/) {
       chomp;
@@ -192,7 +197,7 @@ sub make_old_wormpep_hash {
   my $seq;
   my $prefix=$wormbase->pep_prefix;
 
-  open (WP, "<$old_dbfile") || die "Couldn't read from file\n";
+  open (WP, "<$old_dbfile") || $log->log_and_die( "Couldn't read from file $old_dbfile :$! \n");
   while (<WP>) {
     if (/^>(\S+)/) {
       chomp;

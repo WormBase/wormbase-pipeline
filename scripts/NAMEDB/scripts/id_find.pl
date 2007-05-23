@@ -2,7 +2,7 @@
 
 
 use strict;
-use lib '../blib/lib';
+use lib '../lib','./lib','./blib';
 use NameDB;
 use Getopt::Long;
 
@@ -32,7 +32,7 @@ $USER ||= $ENV{NAMEDB_USER};
 $PASS ||= $ENV{NAMEDB_PASS};
 
 $DB or die "Must provide a --database option";
-$DB = "dbi:$DB" unless $DB =~ /^dbi:/;
+#$DB = "dbi:$DB" unless $DB =~ /^dbi:/;
 $USER ||= $ENV{USER};
 my $db = NameDB->connect($DB,$USER,$PASS);
 

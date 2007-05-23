@@ -21,14 +21,16 @@ GetOptions (
 
 die "cant find $fasta\n" unless ( -e "$fasta" );
 
-my $log = Log_files->make_build_log("$debug");
+my $wormbase = Wormbase->new( 'debug'   => 'ar2',
+                             'test'    => '1',);
+
+my $log = Log_files->make_build_log($wormbase);
 
 # mysql database parameters
 my $dbhost = "ia64b";
 my $dbuser = "wormadmin";
-my $dbname = "worm_pep";
+my $dbname = "worm_brigpep";
 my $dbpass = "worms";
-
 
 my $msg = "checking $dbname against $fasta\n";
 $msg .= "will fix any errors found\n";

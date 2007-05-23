@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.8.0 -w
+#!/software/bin/perl -w
 #
 # transcriptmasker.pl
 #
@@ -8,7 +8,7 @@
 # 031023 dl1
 
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2007-02-26 14:51:59 $
+# Last edited on: $Date: 2007-05-23 13:33:11 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -16,6 +16,7 @@
 
 use strict;
 use lib $ENV{'CVS_DIR'};
+use lib '/software/worm/lib/site_perl/bioperl-live';
 use Bio::SeqIO;
 use Wormbase;
 use IO::Handle;
@@ -44,6 +45,8 @@ my $nematode; # non-washu or nembase ests.  Just to get them dumped from databas
 my $all;      # all of the above
 my $file;
 
+my ($species, $mol_type);
+
 GetOptions (
 	    "all"            => \$all,
 	    "mrna"           => \$mrna,
@@ -57,6 +60,9 @@ GetOptions (
 	    "test"           => \$test,
 	    "store:s"        => \$store,
 	    "file:s"         => \$file,
+	    
+	    "species:s"      => \$species,
+	    "mol_type:s"     => \$mol_type
 	   );
 
 # Help pod if needed
@@ -68,23 +74,16 @@ if( $store ) {
 }
 else {
   $wormbase = Wormbase->new( -debug   => $debug,
-			     -test    => $test,
-			   );
+			     			-test     => $test,
+			     			-organism => $species
+						   );
 }
 
 my $log = Log_files->make_build_log($wormbase);
 
 
 # datafiles for input
-my $EST_dir = $wormbase->wormpub."/analysis/ESTs";
-
-our %datafiles = (
-		  "mrna"  => "elegans_mRNAs",
-		  "ncrna" => "elegans_ncRNAs",
-		  "est"   => "elegans_ESTs",
-		  "ost"   => "elegans_OSTs",
-		  "nematode"=>"other_nematode_ESTs"
-		 );
+my $EST_dir = $wormbase->cdna_dir;
 
 # valid Feature_data methods
 my %valid_methods = (
@@ -99,11 +98,14 @@ my %valid_methods = (
 		     "rRNA_contamination"=> 1, # rRNA_contamination of library.
 		     "Oligo_cap"         => 1 # Oligo cap sequence masking.
 		    );
+		    
 # transcript accessions to names from a hash in common data
-
-print "// Reading EST_names.dat hash\n\n" if ($debug);
-our %EST_name = $wormbase->FetchData('NDBaccession2est');
-print "// Finished reading EST_names.dat hash\n\n" if ($debug);
+our %EST_name;
+if($wormbase->species eq 'elegans') {
+  $log->write_to("// Reading EST_names.dat hash\n\n");
+  %EST_name = $wormbase->FetchData('NDBaccession2est');
+  $log->write_to("// Finished reading EST_names.dat hash\n\n");
+}
 
 # which database
 $database = $wormbase->autoace unless $database;
@@ -129,21 +131,7 @@ my $db = Ace->connect(	-path=>$database,
 			-program =>$tace) || $log->log_and_die("Connection failure: ".Ace->error."\n");
 
 # which data file to parse
-$masked = &MaskSequence('mrna') if ($mrna || $all);
-$log->write_to($wormbase->runtime." : masked $masked mRNA sequences\n") if ($mrna || $all);
-
-$masked = &MaskSequence('ncrna') if ($ncrna || $all);
-$log->write_to($wormbase->runtime." : masked $masked ncRNA sequences\n") if ($ncrna || $all);
-
-$masked = &MaskSequence('est')  if ($est || $all);
-$log->write_to($wormbase->runtime." : masked $masked EST sequences\n") if ($est || $all);
-
-$masked = &MaskSequence('ost')   if ($ost || $all);
-$log->write_to($wormbase->runtime." : masked $masked OST sequences\n") if ($ost || $all);
-
-$masked = &write_sequence_file('nematode')   if ($nematode || $all);
-$log->write_to($wormbase->runtime." : wrote nematode EST sequences\n") if ($ost || $all);
-
+$masked = &MaskSequence($species, $mol_type);
 $log->write_to("\n=============================================\n\n");
 
 #########################################
@@ -159,28 +147,13 @@ exit(0);
 ######################## Subroutines #######################
 ############################################################
 
-sub write_sequence_file {
-	my %queries = (	'ost' 	=> 'query find sequence *OST* where cDNA_EST AND NOT Ignore',
-					'est' 	=> 'query find sequence !*OST* where cDNA_EST AND NOT Ignore',
-					'mrna'	=> 'query find sequence where mRNA AND NOT Ignore',
-					'ncrna'	=> 'query find sequence where RNA AND NOT mRNA',
-					'nematode'=>'query find sequence where !cDNA_EST; !TSL_tag; !Genomic_canonical; method = EST_nematode'
-				);
-	my $type = shift;
-	my $file = "$EST_dir/".$datafiles{"$type"};
-	my $command = "quiet -on\n".$queries{"$type"}."\ndna -f $file\nquit\n";
-	$wormbase->run_command("echo '$command' | $tace $database", $log);
-}
-
-
-
 #_ MaskSequence -#
 # 
 # pass type of transcript data to be masked (e.g. mRNA, EST etc)
 
 sub MaskSequence {
-  my $data   = shift;#gets populated by value from system call.
-  &write_sequence_file($data);
+  my $species  = shift;
+  my $mol_type = shift;
   my $masked = 0;
   #left ignored and ignore after merge as they seem to be meant for different things - ignored seems to be doing nothing though!
   my $ignored = 0;
@@ -190,11 +163,11 @@ sub MaskSequence {
   $/ = ">";
   
   # assign output file
-  my $output_file = $file ? $file."masked" : "$blat_dir/".$datafiles{$data}.".masked";
+  my $output_file = $file ? $file."masked" : $wormbase->maskedcdna."/$mol_type.masked";
   open (OUTPUT, ">$output_file") || $log->log_and_die("ERROR: Can't open output file: $output_file");
   
   # input file loop structure
-  my $file2mask = $file ? $file : "$EST_dir/".$datafiles{$data};  
+  my $file2mask = $file ? $file : $wormbase->cdna_dir."/$mol_type";
   my $seq_in = Bio::SeqIO->new(-file => "$file2mask" , '-format' => 'Fasta');
  SEQ: while (my $seqobj = $seq_in->next_seq) {
     my $seqmasked = $seqobj->seq;		# copy sequence to masked file and
@@ -217,7 +190,7 @@ sub MaskSequence {
 	  	}			# fudge to ensure non-negative clipping coords
 	  
 	  	print "$id: '$feature' $start -> $stop [$cut_to : $cut_from ($cut_length)]\n" if ($wormbase->debug);
-	  	print "// # $acc [$id] $feature:" . (substr($seq,$cut_to,$cut_length)) . " [$start - $stop]\n\n" if ($debug);
+	  	print "// # $acc [$id] $feature:" . (substr($seqmasked,$cut_to,$cut_length)) . " [$start - $stop]\n\n" if ($debug);
 	 	my $newseq = (substr($seqmasked,0,$cut_to)) . ('n' x $cut_length)  . (substr($seqmasked,$cut_from));
 	 	$seqmasked = $newseq;
 		}
@@ -253,9 +226,9 @@ sub usage {
 
 
 sub fetch_features {
-  my $tm_data = $wormbase->table_maker_query($database,"$database/wquery/SCRIPT:transcriptmasker.def");
+  my $tm_data = $wormbase->table_maker_query($database,$wormbase->basedir."wquery/SCRIPT:transcriptmasker.def");
   while( <$tm_data> ) {
-    s/\"//g;
+    s/\"//g;  #"
     next if (/acedb/ or /\/\// or /^$/);
     my ($seq, $type, $start, $end) = split;
     if ($seq and $type and $start and $end) {
@@ -265,7 +238,7 @@ sub fetch_features {
       $log->error("something wrong with $seq:$type\n");
     }
   }
-  $log->write_to( scalar(keys %seq2feature) ." sequences to be masked\n");
+	 $log->write_to( scalar(keys %seq2feature) ." sequences to be masked\n");
 }
 
 __END__

@@ -1,7 +1,8 @@
 #!/usr/local/bin/perl5.8.0 -w
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2006-04-25 12:40:23 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2007-05-23 13:33:11 $
+
 
 use lib $ENV{'CVS_DIR'};
 
@@ -18,13 +19,14 @@ my ($mask, $dump, $run, $postprocess, $ace, $load, $process, $virtual);
 my @types;
 my $all;
 my $store;
+my ($species, $qspecies);
 
 GetOptions (
 	    'debug:s'     => \$debug,
 	    'test'        => \$test,
 	    'database:s'  => \$database,
 	    'store:s'     => \$store,
-
+	    'species:s'   => \$species,  #target species (ie genome seq)
 	    'mask'        => \$mask,
 	    'dump'        => \$dump,
 	    'process'     => \$process,
@@ -33,9 +35,9 @@ GetOptions (
 	    'postprocess' => \$postprocess,
 	    'ace'         => \$ace,
 	    'load'        => \$load,
-
 	    'types:s'     => \@types,
-	    'all'         => \$all
+	    'all'         => \$all,
+	    'qspecies:s'  => \$qspecies    #query species (ie cDNA seq)
 	   );
 
 my $wormbase;
@@ -44,7 +46,8 @@ if( $store ) {
 }
 else {
   $wormbase = Wormbase->new( -debug   => $debug,
-			     -test    => $test,
+			     -test     => $test,
+			     -organism => $species
 			   );
 }
 
@@ -52,72 +55,129 @@ else {
 my $log = Log_files->make_build_log($wormbase);
 
 my $wormpub = $wormbase->wormpub;
-my $EST_dir = "$wormpub/analysis/ESTs";
-
 $database = $wormbase->autoace unless $database;
 my $blat_dir = $wormbase->blat;
 
-#make sure passed type is valid.
-@types = split(/,/,join(',',@types));
-my @alltypes = qw( est mrna ncrna ost nematode embl tc1 washu nembase );
-foreach my $t(@types) {
-  $log->log_and_die("invalid type passed to $0 : $t\n") unless (grep {$t eq $_} @alltypes);
+#The mol_types available for each species is different
+#defaults lists - can be overridden by -types
+my %mol_types = ( 'elegans'   => [qw(ESTs mRNA ncRNA OSTs tc1 )],
+				  'briggsae'  => [qw( mRNA )],
+				  'remanei'   => [qw( mRNA )],
+				  'brenneri'  => [qw( mRNA )],
+				  'japonica'  => [qw( mRNA )]
+				);
+
+my @nematodes = qw(nematode washu nembase);
+
+#remove other species if single one specified
+if( $qspecies ){
+	if( grep(/$qspecies/, keys %mol_types)) {
+		foreach (keys %mol_types){
+			delete $mol_types{$_} unless ($qspecies eq $_);
+		}
+	}
+	else {
+		$log->log_and_die("we only deal in Caenorhabditidae species!\n");
+	}
 }
-@types = @alltypes if ($all or !(@types));
+	
+#set specific mol_types if specified.
+if(@types) {
+	foreach (keys %mol_types){
+		($mol_types{$_}) = @types;
+	}
+	@nematodes = ();
+}		
 
-
-
+# mask the sequences based on Feature_data within the species database (or autoace for elegans.)
 if( $mask ) {
-  my $opts = '-'.join(" -",@types);
-  $log->write_to("running transcriptmasker.pl -$opts\n");
-  $wormbase->run_script("transcriptmasker.pl -$opts", $log);
-
-  # copy non-masked sequence type to database BLAT dir
-  $log->write_to("copying nematode_ESTs, TC1s and embl_cds to $EST_dir\n");
-
-  $wormbase->run_command("scp $EST_dir/other_nematode_ESTs      $blat_dir/", $log);
-  $wormbase->run_command("scp $EST_dir/nembase_nematode_contigs $blat_dir/", $log);
-  $wormbase->run_command("scp $EST_dir/washu_nematode_contigs   $blat_dir/", $log);
-  $wormbase->run_command("scp $EST_dir/elegans_TC1s             $blat_dir/", $log);
-  $wormbase->run_command("scp $EST_dir/elegans_embl_cds         $blat_dir/", $log);
+	foreach my $species ( keys %mol_types ) {
+		foreach my $moltype (@{$mol_types{$species}}) {
+			$wormbase->bsub_script("transcriptmasker.pl -species $species -mol_type $moltype", $species, $log);
+		}
+	}
+	
+	#copy the nematode ESTs from BUILD_DATA
+	foreach (@nematodes) {
+		copy($wormbase->build_data."/cDNA/$_/ESTs", $wormbase->basedir."/cDNA/$_/ESTs.masked");
+	}
 }
-
 
 # Now make blat target database using autoace (will be needed for all possible blat jobs)
-# This also makes a backup copy of the old psl files (in case you need them to refer to)
 
 &dump_dna if $dump;
 
-# run all blat jobs on distributed cluster ( eg cbi1 )
+
+# run all blat jobs on cluster ( eg cbi4 )
 if ( $run ) {
-  foreach my $type ( @types ){
-    $log->write_to("blatting $type\n");
-    $wormbase->run_script("batch_BLAT.pl -$type -blat", $log);
-  }
+	#create Wormbase.pm objects for each species to access cdna directores
+	my %accessors = $wormbase->species_accessors;
+	
+	# run other species
+	foreach my $species (keys %accessors) { #doesn't include own species.
+		my $cdna_dir = $accessors{$species}->maskedcdna;
+		foreach my $moltype ( @{$mol_types{$accessors{$species}->species}} ) {
+			my $split_count = 1;
+			
+			&check_and_shatter($accessors{$species}->maskedcdna, "$moltype.masked");
+			foreach my $seq_file (glob ($accessors{$species}->maskedcdna."/$moltype.masked*")) {
+				my $cmd = "bsub -J ".$accessors{$species}->pepdir_prefix."_$moltype \"/software/worm/bin/blat/blat -noHead -t=dnax -q=dnax ";
+				$cmd .= $wormbase->genome_seq ." $seq_file ";
+				$cmd .= $wormbase->blat."/${species}_${moltype}_${split_count}.psl\"";
+				$wormbase->run_command($cmd, $log);
+				$split_count++;
+			}
+		}
+	}			
+	
+	#run own species.
+	foreach my $moltype (@{$mol_types{$wormbase->species}} ){
+		my $split_count = 1;
+		my $seq_dir = $wormbase->maskedcdna;
+		foreach my $seq_file (glob ($seq_dir."/$moltype.masked*")) {
+			my $cmd = "bsub -J ".$wormbase->pepdir_prefix."_$moltype \"/software/worm/bin/blat/blat -noHead ";
+			$cmd .= $wormbase->genome_seq ." $seq_file ";
+			$cmd .= $wormbase->blat."/".$wormbase->species."_${moltype}_${split_count}.psl\"";
+			$wormbase->run_command($cmd, $log);	
+			$split_count++;	
+		}		
+	}
+	#run other nematodes 
+	foreach my $moltype (@nematodes ){
+		my $split_count = 1;
+		my $seq_dir = $wormbase->basedir."/cDNA/$moltype";
+		foreach my $seq_file (glob ($seq_dir."/$moltype*")) {
+			my $cmd = "bsub -J ".$wormbase->pepdir_prefix."_$moltype \"/software/worm/bin/blat/blat -noHead -q=dnax -t=dnax ";
+			$cmd .= $wormbase->genome_seq ." $seq_file ";
+			$cmd .= $wormbase->blat."/_${moltype}_${split_count}.psl\"";
+			$wormbase->run_command($cmd, $log);	
+			$split_count++;	
+		}		
+	}	
+	
 }
 
 if( $postprocess ) {
   # merge psl files and convert to ace format
   $log->write_to("merging PSL files \n");
-  system("cat $blat_dir/nematodeEST_* | perl -ne 'print if (/^[0-9]/)' > $blat_dir/nematode_out.psl"); # /d causes compiler warning (?)
-  system("cat $blat_dir/elegansEST_*  | perl -ne 'print if (/^[0-9]/)' > $blat_dir/est_out.psl");
-}
-
-if ( $process or $virtual ) {
-  foreach my $option (@types ) {
-    #create virtual objects
-    $wormbase->run_script("blat_them_all.pl -virtual -$option", $log) if $virtual;
-    $wormbase->run_script("blat_them_all.pl -process -$option", $log) if $process;
+  my $blat_dir = $wormbase->blat;
+  my $species = $wormbase->species;
+  foreach my $species (keys %mol_types) {
+  	foreach my $moltype ( @{$mol_types{$species}}){
+ 	 $wormbase->run_command("cat $blat_dir/${species}_${moltype}_*   > $blat_dir/${species}_${moltype}_out.psl", $log); # /d causes compiler warning (?)
+    }
   }
 }
 
-#if( $ace ) {
-#  foreach my $type ( @types ) {
-#    my $cmd = "blat2ace.pl -$type";
-#    $cmd .= " -intron" if (( $type eq "mrna") or ($type eq "est") or ($type eq "ost") );
-#    $wormbase->run_script("$cmd", $log);
-#  }
-#}
+if ( $process or $virtual ) {
+	foreach my $species (keys %mol_types) {
+	  foreach my $type (@{$mol_types{$species}} ) {
+    	#create virtual objects
+    	$wormbase->run_script("blat2ace.pl -virtual -type $type -qspecies $species", $log) if $virtual;
+    	$wormbase->run_script("blat2ace.pl -type $type -qspecies $species", $log) if $process;
+     }
+   }
+}
 
 if( $load ) {
   foreach my $type (@types){
@@ -148,6 +208,16 @@ exit(0);
 
 ###############################################################################################################
 
+sub check_and_shatter {
+	my $dir = shift;
+	my $file = shift;
+	
+	my $seq_count = qx(grep -c '>' $dir/$file);
+	if( $seq_count > 5000) {
+		$wormbase->run_command("shatter $dir/$file 5000 $dir/$file", $log);
+		$wormbase->run_command("rm -f $dir/$file");
+	}
+}
 
 #############################################################################
 # dump_dna                                                                  #
@@ -156,43 +226,21 @@ exit(0);
 #############################################################################
 
 sub dump_dna {
+  # this really just makes sure the list of sequence files to BLAT against is written. Used the seq files under the organism database.
 
-  $log->write_to("dumping DNA from $database\n");
-  local (*CHANGE,*NEW);
+  my %accessors = $wormbase->species_accessors;
+  foreach my $species ( keys %accessors ) {
+    # genome sequence dna files are either .dna or .fa
+    my @files = glob($accessors{$species}->chromosomes."/*.dna");
+    push(@files,glob($accessors{$species}->chromosomes."/*.fa"));
 
-  my $command;
-  my $giface = $wormbase->giface;
-
-  $command  = "query find Sequence \"CHROMOSOME*\"\n";
-  $command .= "show -a -f $blat_dir/chromosome.ace\n";
-  $command .= "follow Subsequence\n";
-  $command .= "show -a -f $blat_dir/superlinks.ace\n";
-  $command .= "dna -f $blat_dir/autoace.first\nquit\n";
-
-  # tace dump chromosomal DNA and superlinks file
-  $wormbase->run_command("echo '$command' | $giface $database", $log);
-
-  # Change '-'s in chromosome sequences into 'n's because blat excludes '-'
-  # Not strictly needed anymore but left in for safety
-  my $sequence;
-
-  open (CHANGE, "<$blat_dir/autoace.first");
-  open (NEW, ">$blat_dir/autoace.fa");
-  while (<CHANGE>) {
-    chomp;
-    next unless (/\w+/); # remove blank lines acedb puts in at start of seq dumps.
-    $sequence = $_;
-    $sequence =~ tr/-/n/;
-    print NEW "$sequence\n";
+    open(GENOME,">".$accessors{$species}->autoace."/genome_seq") or $log->log_and_die("cant open genome sequence file".$accessors{$species}->autoace."/genome_seq: $!\n");
+    foreach (@files){
+      print GENOME "$_\n";
+    }
+    close GENOME;
   }
-  close(CHANGE);
-  close(NEW);
-
-  # remove intermediary sequence file
-  unlink ("${blat_dir}/autoace.first") if (-e "${blat_dir}/autoace.first");
-
 }
-
 __END__
 
 =pod

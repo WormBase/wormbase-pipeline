@@ -5,7 +5,7 @@
 # Anthony Rogers
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2006-02-15 14:10:38 $
+# Last edited on: $Date: 2007-05-23 13:33:11 $
  
 
 use strict;
@@ -66,7 +66,7 @@ else {
 }
 
 my $log = Log_files->make_build_log($wormbase);
-my $wormpub = glob("~wormpub");
+my $wormpub = $wormbase->wormpub;
 
 $log->log_and_die("failed do run blat and process / virtual at same time\n") if ($blat and ( $process or $virtual ));
 
@@ -91,10 +91,10 @@ if ( $blat ) {
     &run_bsub("elegans_ncRNAs.masked", "ncrna_out.psl") if $ncrna;
     
     # Nembase contigs
-    &run_bsub( "nembase_nematode_contigs", "nembase_out.psl", "-t=dnax -q=dnax" ) if $nembase;
+    &split_run( "nembase_nematode_contigs", "nembase_out.psl", "-t=dnax -q=dnax" ) if $nembase;
     
     # WashU contigs
-    &run_bsub( "washu_nematode_contigs", "washu_out.psl", "-t=dnax -q=dnax" ) if $washu;
+    &split_run( "washu_nematode_contigs", "washu_out.psl", "-t=dnax -q=dnax" ) if $washu;
     
     # splitting Nematode_ESTs
     &split_run( "nematode" ) if ( $nematode );
@@ -142,7 +142,7 @@ sub run_bsub
 
     my ($job_name) = $source =~ /_(\w+)/;
     $job_name = "BLAT_"."$job_name";
-    my $blat       = "$wormpub/bin.ALPHA/blat";
+    my $blat       = "/software/worm/bin/blat/blat";
     my $autoace_fa = $wormbase->blat."/autoace.fa";
     #input and output in same place now
     my $EST_dir    = $wormbase->blat;
@@ -188,14 +188,31 @@ sub split_run
       $source_file = $wormbase->blat."/other_nematode_ESTs";
       $opts        = "-t=dnax -q=dnax"
     }
+    elsif ($type eq "washu" ) {
+      $shattered_dir = "shattered_washu";
+      $shatter_tree = "$ESTdir/$shattered_dir";
+      $name_stem   = "$shatter_tree/washu";
+      $source_file = $wormbase->blat."/washu_nematode_contigs";
+      $opts        = "-t=dnax -q=dnax"
+    }
+    elsif ($type eq "nembase" ) {
+      $shattered_dir = "shattered_nembase";
+      $shatter_tree = "$ESTdir/$shattered_dir";
+      $name_stem   = "$shatter_tree/nembase";
+      $source_file = $wormbase->blat."/nembase_nematode_contigs";
+      $opts        = "-t=dnax -q=dnax"
+    }
     else {
       $log->log_and_die("no type passed to split_run\n");
     }
-
-    mkdir( $shatter_tree ) unless ( -e $shatter_tree );
-
-    $wormbase->run_command("perl $ENV{'CVS_DIR'}/shatter $source_file 25000 $name_stem") and $log->log_and_die("cant shatter $source_file : $!\n");
-
+    
+	unless ( -e $shatter_tree ) {
+	   mkdir( $shatter_tree ) ;
+	   $wormbase->run_command("perl $ENV{'CVS_DIR'}/shatter $source_file 25000 $name_stem") and $log->log_and_die("cant shatter $source_file : $!\n");
+	}
+	else {
+		$log->write_to("cDNA file already shattered - using existing files\n";
+	}
     opendir(DIR,"$shatter_tree");
 
     while ( my $file = readdir( DIR ) ) {

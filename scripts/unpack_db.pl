@@ -13,7 +13,7 @@
 # the Caltech database (citace)
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2006-11-01 14:06:11 $
+# Last updated on: $Date: 2007-05-23 13:33:11 $
 
 
 #################################################################################
@@ -171,7 +171,7 @@ sub unpack_stuff{
   $msg = "ERROR : Copy '".$dbname."_$today.tar.gz' to $unpack_dir FAILED\n"     if ($match == 0);
   $log->write_to("$msg");
 
-  $wormbase->run_command("/usr/local/bin/gtar zxvf ${dbname}_${today}.tar.gz", $log);
+  $wormbase->run_command("/bin/tar zxvf ${dbname}_${today}.tar.gz", $log);
   $log->write_to("unzip and untar file\n\n");
 
 

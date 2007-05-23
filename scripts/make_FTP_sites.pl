@@ -7,8 +7,8 @@
 # 
 # Originally written by Dan Lawson
 #
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2007-05-04 15:35:44 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2007-05-23 13:33:11 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -420,6 +420,7 @@ sub extract_confirmed_genes{
   return(0);
 }
 
+
 #######################################
 # extracting knockout consortium data
 #######################################
@@ -436,6 +437,7 @@ sub extract_ko {
 	$runtime = $wormbase->runtime;
   	$log->write_to("$runtime: Finished dumping\n\n");
 }
+
 
 ################################################################################
 # make list of cDNA -> orf connections

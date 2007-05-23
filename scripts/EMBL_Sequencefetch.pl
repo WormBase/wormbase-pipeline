@@ -4,8 +4,8 @@
 #
 # Usage : EMBL_Sequencefetch.pl [-options]
 #
-# Last edited by: $Author: pad $
-# Last edited on: $Date: 2007-05-09 12:51:58 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2007-05-23 13:33:11 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};

@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.8.0 -w
+#!/software/bin/perl -w
 #
 # blat_them_all.pl
 # 
@@ -7,8 +7,8 @@
 # Gets sequences ready for blatting, blats sequences, processes blat output, makes confirmed introns
 # and virtual objects to hang the data onto
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2006-05-17 09:03:11 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2007-05-23 13:33:11 $
 
 
 use strict;
@@ -24,7 +24,7 @@ use Storable;
 # Misc variables and paths   #
 ##############################
 
-my ($help, $debug, $test, $verbose , $dbpath);
+my ($help, $debug, $test, $verbose , $dbpath, $species);
 my ($est, $mrna, $ncrna, $ost, $nematode, $embl,, $washu, $nembase, $blat, $tc1);
 my ($process, $virtual, $dump, $camace, $fine, $nointron);
 my $store;
@@ -37,6 +37,7 @@ GetOptions ("help"       => \$help,
             "debug:s"    => \$debug,
 	    "test"       => \$test,
 	    "verbose"    => \$verbose,
+	    "species:s"  => \$species
 	    "database"   => \$dbpath,
 	    "store:s"    => \$store,
 	    "est"        => \$est,
@@ -69,6 +70,7 @@ if( $store ) {
 else {
   $wormbase = Wormbase->new( -debug   => $debug,
 			     -test    => $test,
+			     -organism => $species
 			   );
 }
 my $log         = Log_files->make_build_log($wormbase);
@@ -81,7 +83,6 @@ $dbpath = $wormbase->autoace unless $dbpath;
 
 our $blat_dir   = "$dbpath/BLAT";             # default BLAT directory, can get changed if -camace used
 our %homedb;                                  # for storing superlink->lab connections
-our $blatex     = "$wormpub/bin.ALPHA/blat";
 our $giface     = $wormbase->giface;
 our %word = (
 	     est      => 'BLAT_EST',
@@ -95,7 +96,7 @@ our %word = (
 	     washu    => 'BLAT_WASHU'
 	     );
 
-our $seq  = "$blat_dir/autoace.fa";
+our $seq  = $wormbase->genome_seq;
 
 # Help pod documentation
 &usage("Help") if ($help);
@@ -159,37 +160,6 @@ $query   .= 'washu_nematode_contigs' if ($washu);  # Contigs from Nematode.net -
 ###########################################################################
 
 
-
-# Write sequence data (chromsomes) from autoace/camace
-&dump_dna if ($dump);
-    
-
-# BLAT the query data type 
-# BLATTING now done by batch_BLAT.pl unless you're doing camace
-# BLAT the query data type 
-if ($blat and $camace) {
-  
-  &usage(5) unless (-e "$seq");   # Check that autoace.fa exists
-  
-  my $runtime = &runtime;
-  $log->write_to("$runtime: Running blat and putting the results in "."$blat_dir/${data}_out.psl"."\n");
-  
-
-  # BLAT system call
-  # nematode ESTs and NemBase and WashU contigs handled differently
-  # use -fine for mrna sequences is specified
-  if ($nematode || $washu || $nembase) {
-    system("$blatex $seq $query -t=dnax -q=dnax $blat_dir/${data}_out.psl") && croak "Blat failed $!\n";
-  }
-  elsif($fine) {
-    system("$blatex -fine $seq $query $blat_dir/${data}_out.psl") && croak "Blat failed $!\n";
-  }
-  else{
-    system("$blatex $seq $query $blat_dir/${data}_out.psl") && croak "Blat failed $!\n";
-  }
-}
-
-
 ####################################################################
 # process blat output (*.psl) file and convert results to acefile
 # by running blat2ace
@@ -221,10 +191,8 @@ if ($process) {
     # produce confirmed introns for all but nematode, tc1, embl and ncRNA data
     unless( $nointron ){
       unless ( ($nematode) || ($tc1) || ($embl) || ($ncrna)|| ($washu) || ($nembase) ) {
-	print "Producing confirmed introns using $data data\n" if $verbose;
-	&confirm_introns('autoace',"$data");
-	&confirm_introns('camace', "$data");
-	&confirm_introns('stlace', "$data");
+		print "Producing confirmed introns using $data data\n" if $verbose;
+		&confirm_introns('autoace',"$data");
       }
     }
   }
@@ -240,7 +208,6 @@ if ($virtual) {
     
     print "// Assign laboratories to superlinks*\n";
     # First assign laboratories to each superlink object (stores in %homedb)
-    &sequence_to_lab;
     &virtual_objects_blat($data);
 }
 
@@ -261,88 +228,6 @@ exit(0);
 #                     T H E    S U B R O U T I N E S                            #
 #                                                                               #
 #################################################################################
-
-sub sequence_to_lab {
-  # Connect superlink objects to their corresponding laboratory object
-  # store in global %homedb
-  local (*LINK);
-  my $name;
-  
-  $log->write_to("Assign LINK* objects to laboratory\n\n");
-  # deal with the superlink objects
-  open (LINK, "<$blat_dir/superlinks.ace") || croak "Couldn't open $blat_dir/superlinks.ace $!";
-  while (<LINK>) {
-      
-      if (/^Sequence\s+\:\s+\"(\S+)\"/) {
-	  $name = $1;
-#	  print "// New sequence is $name\n";
-	  next;
-      }
-      if (/^From_laboratory\s+\"(\S+)\"/) {
-	  $homedb{$name} = $1;
-	 $log->write_to("assigning ".$1." to ".$name."\n");
-#	  print "assigning $1 to $name\n";
-	  undef ($name);
-	  next;
-      }
-  }
-  close(LINK);
-  
-}
-
-
-#############################################################################
-# dump_dna                                                                  #
-# gets data out of autoace/camace, runs tace query for chromosome DNA files #
-# and chromosome link files.                                                #
-#############################################################################
-
-#MOVED THIS IN TO BLAT_CONTROLLER.PL
-sub dump_dna {
-
-  local (*CHANGE,*NEW);
-
-  my $command;
-
-  $command  = "query find Sequence \"CHROMOSOME*\"\n";
-  $command .= "show -a -f $blat_dir/chromosome.ace\n";
-  $command .= "follow Subsequence\n";
-  $command .= "show -a -f $blat_dir/superlinks.ace\n";
-  $command .= "dna -f $blat_dir/autoace.first\nquit\n";
-
-  # tace dump chromosomal DNA and superlinks file
-  $wormbase->run_command("echo '$command' | $giface $dbpath", $log);
-
-  # Check that superlinks file created ok
-  &usage(11) unless (-e "${blat_dir}/superlinks.ace");
-
-  # Change '-'s in chromosome sequences into 'n's because blat excludes '-'
-  # Not strictly needed anymore but left in for safety
-  my $sequence;
-
-  open (CHANGE, "<$blat_dir/autoace.first");
-  open (NEW, ">$seq");
-  while (<CHANGE>) {
-    chomp;
-    $sequence = $_;
-    $sequence =~ tr/-/n/;
-    print NEW "$sequence\n";
-  }
-  close(CHANGE);
-  close(NEW);
-  
-  # remove intermediary sequence file
-  unlink ("${blat_dir}/autoace.first") if (-e "${blat_dir}/autoace.first");
-
-  # make back-up copies of the psl files
-  foreach my $type (sort keys %word) {
-      &run_command("cp -f $blat_dir/${type}_out.psl $blat_dir/${type}_old.psl", $log);
-  }
-
-}
-
-#########################################################################################################
-
 
 
 sub confirm_introns {
@@ -518,19 +403,13 @@ sub confirm_introns {
 sub virtual_objects_blat {
     
   my ($data) = shift;
-  local (*OUT_autoace_homol,*OUT_camace_homol,*OUT_stlace_homol);
-  local (*OUT_autoace_feat,*OUT_camace_feat,*OUT_stlace_feat);
+  local (*OUT_autoace_homol);
+  local (*OUT_autoace_feat);
   my ($name,$length,$total,$first,$second,$m,$n);
   
   # autoace
   open (OUT_autoace_homol, ">$blat_dir/virtual_objects.autoace.blat.$data.ace") or die "$!";
   open (OUT_autoace_feat,  ">$blat_dir/virtual_objects.autoace.ci.$data.ace")   or die "$!";
-  # camace
-  open (OUT_camace_homol,  ">$blat_dir/virtual_objects.camace.blat.$data.ace")  or die "$!";
-  open (OUT_camace_feat,   ">$blat_dir/virtual_objects.camace.ci.$data.ace")    or die "$!";
-  # stlace
-  open (OUT_stlace_homol,  ">$blat_dir/virtual_objects.stlace.blat.$data.ace")  or die "$!";
-  open (OUT_stlace_feat,   ">$blat_dir/virtual_objects.stlace.ci.$data.ace")    or die "$!";
   
   open (ACE, "<$blat_dir/chromosome.ace") || die &usage(11);
   while (<ACE>) {
@@ -542,15 +421,6 @@ sub virtual_objects_blat {
       print OUT_autoace_homol "Sequence : \"$name\"\n";
       print OUT_autoace_feat  "Sequence : \"$name\"\n";
 
-      # Have to ignore MTCE sequence as there is no lab (RW or HX) associated with it
-      unless($name eq "MTCE"){
-	# camace
-	print OUT_camace_homol  "Sequence : \"$name\"\n" if ($homedb{$name} eq "HX");
-	print OUT_camace_feat   "Sequence : \"$name\"\n" if ($homedb{$name} eq "HX");
-	# stlace
-	print OUT_stlace_homol  "Sequence : \"$name\"\n" if ($homedb{$name} eq "RW");
-	print OUT_stlace_feat   "Sequence : \"$name\"\n" if ($homedb{$name} eq "RW");
-      }
       for ($n = 0; $n <= $total; $n++) {
 	$m      = $n + 1;
 	$first  = ($n*100000) + 1;
@@ -561,14 +431,6 @@ sub virtual_objects_blat {
 	  print OUT_autoace_homol "S_child Homol_data $word{$data}:$name"."_$m $first $second\n";
 	  print OUT_autoace_feat  "S_child Feature_data Confirmed_intron_$data:$name"."_$m $first $second\n";
 
-	  unless($name eq "MTCE"){
-	    # camace
-	    print OUT_camace_homol  "S_child Homol_data $word{$data}:$name"."_$m $first $second\n"             if ($homedb{$name} eq "HX");
-	    print OUT_camace_feat   "S_child Feature_data Confirmed_intron_$data:$name"."_$m $first $second\n" if ($homedb{$name} eq "HX");
-	    # stlace
-	    print OUT_stlace_homol  "S_child Homol_data $word{$data}:$name"."_$m $first $second\n"             if ($homedb{$name} eq "RW");
-	    print OUT_stlace_feat   "S_child Feature_data Confirmed_intron_$data:$name"."_$m $first $second\n" if ($homedb{$name} eq "RW");
-	  }
 	  last;
 	}					
 	else {
@@ -576,32 +438,16 @@ sub virtual_objects_blat {
 	  # autoace
 	  print OUT_autoace_homol "S_child Homol_data $word{$data}:$name"."_$m $first $second\n";
 	  print OUT_autoace_feat  "S_child Feature_data Confirmed_intron_$data:$name"."_$m $first $second\n";
-	  # camace
-	  print OUT_camace_homol  "S_child Homol_data $word{$data}:$name"."_$m $first $second\n"             if ($homedb{$name} eq "HX");
-	  print OUT_camace_feat   "S_child Feature_data Confirmed_intron_$data:$name"."_$m $first $second\n" if ($homedb{$name} eq "HX");
-	  # stlace
-	  print OUT_stlace_homol  "S_child Homol_data $word{$data}:$name"."_$m $first $second\n"             if ($homedb{$name} eq "RW");
-	  print OUT_stlace_feat   "S_child Feature_data Confirmed_intron_$data:$name"."_$m $first $second\n" if ($homedb{$name} eq "RW");
-	}
+}
       }
       print OUT_autoace_homol "\n";
       print OUT_autoace_feat  "\n";
 
-      unless($name eq "MTCE"){
-	print OUT_camace_homol  "\n" if ($homedb{$name} eq "HX");
-	print OUT_camace_feat   "\n" if ($homedb{$name} eq "HX");
-	print OUT_stlace_homol  "\n" if ($homedb{$name} eq "RW");
-	print OUT_stlace_feat   "\n" if ($homedb{$name} eq "RW");
-      }
     }
   }
   close ACE;
   close OUT_autoace_homol;
   close OUT_autoace_feat;
-  close OUT_camace_homol;
-  close OUT_camace_feat;
-  close OUT_stlace_homol;
-  close OUT_stlace_feat;
   
   # clean up if you are dealing with parasitic nematode conensus or TC1 insertion data
   # dl 040315 - this is crazy. we make all of the files and then delete the ones we don't want.
@@ -609,8 +455,6 @@ sub virtual_objects_blat {
 
   if ( ($data eq "nematode") || ($data eq "tc1") || ($data eq "ncrna") || ($data eq "embl") || ($data eq "washu") || ($data eq "nembase")) {
     unlink ("$blat_dir/virtual_objects.autoace.ci.$data.ace");
-    unlink ("$blat_dir/virtual_objects.camace.ci.$data.ace");
-    unlink ("$blat_dir/virtual_objects.stlace.ci.$data.ace");
   }
 
 }

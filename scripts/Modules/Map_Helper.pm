@@ -8,11 +8,11 @@
 #        FILES:  ---
 #         BUGS:  ---
 #        NOTES: heavily depending on some structs as explained in perldoc
-#      $Author: mh6 $
+#      $Author: ar2 $
 #      COMPANY:
 #     $Version:  $
 #      CREATED:  14/11/05 14:33:43 GMT
-#        $Date: 2006-08-02 16:22:45 $
+#        $Date: 2007-05-23 13:33:11 $
 #===============================================================================
 package Map_Helper;
 
@@ -72,8 +72,6 @@ sub map_it {
         my $PCRstop  = $$pcr{$testPCR}->[1];
 
         foreach my $gene (@$sorted_genes) {
-#            print "oligo $testPCR from $PCRstart to $PCRstop Gene $gene from ", $$genes{$gene}->start, " to ",
-#              $$genes{$gene}->stop, "\n";
             if ( $PCRstart > $$genes{$gene}->stop ) {
                 next;
             }
@@ -98,28 +96,7 @@ sub map_it {
     }
 }
 
-#########################
-# map_it using SQL
-sub map_it2 {
 
-    # actually should be %output,%query,$chromosome,@types
-    my ( $output, $query, $chromosomes, $types ) = @_;
-    foreach my $qid ( keys %$query ) {
-        my @goods;
-        my $start = $$query{$qid}->[0];
-        my $stop  = $$query{$qid}->[1];
-
-        # grab between start+stop on chromosome
-        #	my @hits = get_chr($chromosome,{'start' => $start,'stop' => $stop,'feature' => 'curated','source' => 'exon'});
-        # needs to be more generic
-
-        # cleanup fluff
-        # $fluff =~ /(\w+) \"(\S+)\"/ );
-        # $1 = type, $2= id
-    }
-}
-
-1;
 
 #######################
 # gff description line extraction
@@ -132,6 +109,8 @@ sub desc_line {
     my $id   = $2;
     return ( $id, $type );
 }
+
+1;
 
 __END__
 
@@ -179,6 +158,6 @@ struct( Gene => [ start => '$', stop => '$', exons => '@' ] );
 =back
 
 =head3 AUTHOR
-$Author: mh6 $
+$Author: ar2 $
 
 =cut
