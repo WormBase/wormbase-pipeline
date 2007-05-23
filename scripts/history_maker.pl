@@ -71,7 +71,7 @@ $debug = $user if (! defined $debug);
 die "$blast doesnt exist !\n" if ($blast and !(-e $blast));
 
 # This is the database used a reference for generating histories NOT the one that will be changed
-my $database = $source ? $source : glob("~wormpub/camace_orig");
+my $database = $source ? $source : glob("/lustre/cbi4/work1/wormpub/camace_orig");
 
 # assume the lab is HX if not specified
 if (! defined $lab || $lab eq "") {
@@ -79,7 +79,7 @@ if (! defined $lab || $lab eq "") {
 } 
 
 # pass path to latest version of wormbase
-my $version = &get_history_version("/nfs/disk100/wormpub/DATABASES/current_DB");
+my $version = &get_history_version("/lustre/cbi4/work1/wormpub/DATABASES/current_DB");
 
 # file where temp ace files written
 my $session_file = "/tmp/history_session.$version";
@@ -474,7 +474,7 @@ if ( $anomaly ) {
 
 
   # calculate the progress so far for all chromosomes
-  # don't display any graphs
+  # don't display any graph
   my $dont_display_graphs = 0;
   &progress(\$dont_display_graphs);
 
@@ -1540,9 +1540,11 @@ sub progress {
 	my $graph = $chrom_canvas->Graph(
 					 -type	=> 'Line',
 					 -max 	=> 700,
-					 -wire     => 0, # no wire grid in background
 					 -title    => "chromosome $chr $lab",
-					 -linewidth => 2,
+					 -linewidth => 3,
+					 -headroom => 5,
+					 #-legend => 0,
+					 -look => 100, # display the last 100 days (maybe try making this 0 or undef to get all of the data)
 					 )->pack(
 						 -side => $side,
 						 );
