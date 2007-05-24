@@ -7,7 +7,7 @@
 # This is a script to aid making changes to the sequence of a clone.
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2007-05-21 16:06:48 $      
+# Last updated on: $Date: 2007-05-24 09:23:38 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -1823,7 +1823,7 @@ sub DNA_string_reverse {
 sub write_clone_sequence {
   my ($clone, $change_type, $change_region, $noload, $clonedates) = @_;
 
-  my $dir = "/nfs/disk100/wormpub/analysis/cosmids/$clone/";
+  my $dir = "/lustre/cbi4/work1/wormpub/analysis/cosmids/$clone/";
   my $dat = `date +%y%m%d`;
   chomp $dat;
   my $subdir = "$dir/$dat";
@@ -1914,7 +1914,7 @@ sub get_prev_dat {
   my ($clone, $dat, $noload) = @_;
 
   my $prev_dat;
-  my $file = "/nfs/disk100/wormpub/analysis/cosmids/current.versions";
+  my $file = "/lustre/cbi4/work1/wormpub/analysis/cosmids/current.versions";
 
   open (INPUT, "< $file") || die "Can't open file $file\n";
   open (NEW, "> $file.new") || die "Can't open file $file.new\n";
@@ -1937,7 +1937,7 @@ sub get_prev_dat {
   } else {
     my $time = `date +%y%m%d_%H:%m:%S`;
     chomp $time;
-    my $olddir = "/nfs/disk100/wormpub/analysis/cosmids/old_current.versions/";
+    my $olddir = "/lustre/cbi4/work1/wormpub/analysis/cosmids/old_current.versions/";
     system("mv $file $olddir/current.versions.$time");
     system("mv $file.new $file");
   }
