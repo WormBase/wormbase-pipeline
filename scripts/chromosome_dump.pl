@@ -1,3 +1,4 @@
+#!/software/bin/perl -w
 #!/usr/local/bin/perl5.8.0 -w
 #
 # chromosome_dump.pl 
@@ -7,8 +8,8 @@
 # A script for dumping dna and/or gff files for chromosome objects in autoace
 # see pod for more details
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2007-02-20 10:11:37 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2007-05-24 14:40:22 $
 
 
 use strict;
@@ -171,35 +172,97 @@ sub composition {
 
   chdir $dump_dir;
   
-  my $command = "/bin/cat ";
   my @chroms = $quicktest? qw(III) : $wormbase->get_chromosome_names();
   my $prefix= $wormbase->chromosome_prefix();
-  foreach ( @chroms ){
-  	$command .= "$dump_dir/$prefix"."$_.dna ";
-  }
-  $command .= " | /nfs/disk100/wormpub/bin.ALPHA/composition > $dump_dir/composition.all";
-  
-  $wormbase->run_command($command, $log);
-  
+
+  my $total;
+  my $ns;
+  my $gaps;
+  my $as;
+  my $cs;
+  my $gs;
+  my $ts;
+
   $log->write_to("Generating totals file\n");
-  my $total = 0;
-  my $final_total = 0;
-  my $minus = 0;
-  open(IN,"$dump_dir/composition.all") or $log->log_and_die("Couldn't open composition.all\n");
-  while(<IN>){
-    if(/.*, (\d*) total/){
-      $total = $1;
-      next;
-    }			
-    if(/.*\- (\d*)/){
-      $minus = $1; 
-      last;
-    }
+
+  foreach my $chr (@chroms) {
+
+    my $file = "$dump_dir/$prefix"."$chr.dna";
+
+    #print "read $file\n";
+    my $seq = &read_chromosome($file);
+
+    my ($a, $c, $g, $t, $gap, $n, $length_dna) = &get_composition($seq);
+    $as += $a;
+    $cs += $c;
+    $gs += $g;
+    $ts += $t;
+    $total += $length_dna;
+    $ns += $n;
+    $gaps += $gap;
   }
-  close(IN);
-  $final_total = $total - $minus;
+
+  open(OUT, ">$dump_dir/composition.all") or $log->log_and_die("Couldn't open composition.all\n");
+  print OUT " $total total\n";
+  print OUT " a $as\n";
+  print OUT " c $cs\n";
+  print OUT " g $gs\n";
+  print OUT " t $ts\n";
+  print OUT " - $gaps\n";
+  print OUT " n $ns\n";
+  close(OUT);
+
+  my $final_total = $total - $gaps;
+
   $wormbase->run_command("echo $total $final_total > totals");
   $wormbase->release_composition($log);
+}
+
+##########################################
+# get the composition of a sequence
+
+sub get_composition {
+  my ($dna) = @_;
+
+  my ($a, $c, $g, $t, $gap, $n, $length_dna);
+
+  $a = $dna =~ tr/[aA]/A/;
+  $c = $dna =~ tr/[cC]/C/;
+  $g = $dna =~ tr/[gG]/G/;
+  $t = $dna =~ tr/[tT]/T/;
+  $gap = $dna =~ tr/\-/-/;
+
+  # the Ns are whatever is not ACGT-
+  $length_dna = $n = length $dna;
+  $n -= $a;
+  $n -= $c;
+  $n -= $g;
+  $n -= $t;
+  $n -= $gap;
+
+  return ($a, $c, $g, $t, $gap, $n, $length_dna);
+
+}
+
+##########################################
+# read chromosome from file
+#  my $chrom_seq = &read_chromosome($chromosome);
+
+sub read_chromosome {
+  my ($chromosome) = @_;
+
+  #print "read chromosome $chromosome\n";
+
+  $/ = "";
+  open (SEQ, $chromosome) or die "Can't open the dna file for $chromosome : $!\n";
+  my $seq = <SEQ>;
+  close SEQ;
+  $/ = "\n";
+
+  $seq =~ s/>CHROMOSOME_\w+//;
+  $seq =~ s/\n//g;
+
+  return $seq
 }
 
 ##########################
