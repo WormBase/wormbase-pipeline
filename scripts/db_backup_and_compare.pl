@@ -1,15 +1,14 @@
-#!/usr/local/bin/perl5.6.1 -w
+#!/software/bin/perl -w
 #
 # db_backup_and_compare.pl
 #
 # backup database and compare to last backed up database to look for lost data
 #
 # Last updated by: $Author: pad $     
-# Last updated on: $Date: 2006-11-15 14:38:11 $      
+# Last updated on: $Date: 2007-05-24 13:15:26 $      
 
 use strict;
-#use lib $ENV{'CVS_DIR'};
-use lib "/nfs/disk100/wormpub/wormbase/scripts";
+use lib $ENV{'CVS_DIR'};
 use Wormbase;
 use IO::Handle;
 use Getopt::Long;
