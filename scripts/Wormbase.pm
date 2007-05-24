@@ -466,11 +466,12 @@ sub release_composition
       $change_data{$key} = $new_data{$key} - $old_data{$key};
     }
 
-    my @order = ( "a", "c", "g", "t", "n", "Total" ); # gaps removed
+    my @order = ( "a", "c", "g", "t", "n", "-", "Total" ); # gaps removed
     foreach (@order) {
       if ( "$_" eq "Total" ) {
 	print COMP_ANALYSIS "\n";
       }
+      if (! exists $old_data{$_}) {print "no data for $_\n"; next}
       printf COMP_ANALYSIS ( "%-5s\t%-8d\t%-8d\t%+4d\n", $_, $new_data{$_}, $old_data{$_}, $change_data{$_} );
     }
 
