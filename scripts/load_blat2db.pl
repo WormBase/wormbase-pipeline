@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.8.0 -w
+#!/software/bin/perl -w
 #
 # usage load_blat2db.pl <-options: load/delete or none for both> -dbdir <path to your database> 
 #
@@ -6,7 +6,7 @@
 # 19.02.02 Kerstin Jekosch
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2007-05-17 16:10:30 $
+# Last edited on: $Date: 2007-05-24 13:23:19 $
 
 use strict;
 use Getopt::Long;
@@ -43,7 +43,7 @@ my $log = Log_files->make_build_log($wormbase);
 my $tace =  $wormbase->tace;
 my $blat_dir;
 
-# has the build finished?? script needs to look at /nfs/disk100/wormpub/BUILD/autoace/BLAT, if it doesnt exist use current_db/BLAT!!
+# has the build finished?? script needs to look at ~wormpub/BUILD/autoace/BLAT, if it doesnt exist use current_db/BLAT!!
 if (!-e $wormbase->blat."/virtual_objects.camace.blat.est.ace"){
   print "The build must have finished you are now going to use " .$wormbase->database('current')."/BLAT\n\n";
   #$log->write_to( "The build must have finished you are now going to load data from current_db\n");
@@ -53,8 +53,6 @@ elsif (-e $wormbase->blat."/virtual_objects.camace.blat.est.ace"){
   print "The build is still there.....\n\n";
   $blat_dir = $wormbase->blat;
 }
-
-
 
 print STDERR "Give the full path for the database you want to modify!\n" unless ($dbdir);
 print STDERR "usage load_blat2db.pl <-options: load/delete or all for both> -dbdir <path to your database>\n" if ($help);
