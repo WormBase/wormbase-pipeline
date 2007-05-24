@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.8.0 
+#!/software/bin/perl -w
 #
 # makesuperlinks.pl
 #
@@ -6,7 +6,7 @@
 # dl
 #
 # Last updated by: $Author: pad $
-# Last updated on: $Date: 2007-05-18 13:58:48 $
+# Last updated on: $Date: 2007-05-24 13:50:34 $
  
 $!=1;
 use strict;
@@ -47,9 +47,6 @@ if ( $store ) {
                              );
 }
  
-# Display help if required
-&usage("Help") if ($help);
-
 # in test mode?
 if ($test) {
   print "In test mode\n" if ($verbose);
@@ -86,11 +83,10 @@ open (ACE, ">$acefile") || die "Can't open file $acefile\n";
 
 my $tace = $wormbase->tace;
 
-
-my $campath = "/nfs/disk100/wormpub/DATABASES/camace";
+my $campath = $wormbase->database('camace');
 ($campath = $db) if ($db);
 # check database path
-&usage("Bad_database_name") unless (-e "$campath/database/database.map");
+unless (-e "$campath/database/database.map") {$log->log_and_die("Failed to connect to $campath\n")};
 warn "Acessing database $campath\n" if ($verbose);
 
 # connect to database
@@ -471,32 +467,6 @@ exit($error);			# return the error status
 
 ############# end of file ################
 
-
-
-#######################################################################
-# Help and error trap outputs                                         #
-#######################################################################
- 
-sub usage {
-    my $error = shift;
-    
-    if ($error eq "Bad_database_name") {
-        # Named database mode: database name not recognised
-        print "\nNo database of this name exists ('$db')\n";
-	exit(0);
-    }
-    elsif ($error eq "Help") {
-        # Normal help menu
-        system ('perldoc',$0);
-        exit (0);
-    }
-}
-
-
-
-
-
-
 __END__
 
 =pod
@@ -528,7 +498,7 @@ makesuperlinks OPTIONAL arguments:
 
 =over 4
 
-=item B<-db text>, database mode. Only dumps acefiles for the named database. The default is /nfs/disk100/wormpub/DATABASES/camace
+=item B<-db text>, database mode. Only dumps acefiles for the named database. The default is ~wormpub/DATABASES/camace
 
 =item B<-debug>, send output to specified user only 
 
