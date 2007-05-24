@@ -1,17 +1,16 @@
-#!/usr/local/bin/perl5.6.1 -w
+#!/software/bin/perl -w
 #
 # check_predicted_genes.pl
 #
 # by Keith Bradnam
 #
-# Last updated on: $Date: 2006-10-16 13:17:33 $
+# Last updated on: $Date: 2007-05-24 13:07:48 $
 # Last updated by: $Author: pad $
 #
 # see pod documentation at end of file for more information about this script
 
 use strict;
-#use lib $ENV{'CVS_DIR'};
-use lib "/nfs/disk100/wormpub/wormbase/scripts";
+use lib $ENV{'CVS_DIR'};
 use Wormbase;
 use Ace;
 use IO::Handle;
@@ -19,14 +18,15 @@ use Getopt::Long;
 use Log_files;
 use Storable;
 
-my ($verbose, $db_path, $basic, $test, $debug, $store);
+my ($verbose, $db_path, $basic, $test1, $debug, $store, $test,);
 
 GetOptions ("verbose"    => \$verbose, # prints screen output.
 	    "database=s" => \$db_path, # Path to the database you want to check.
 	    "basic"      => \$basic,   # Ignores some of the checks.
 	    "debug:s"    => \$debug,   # turns on more printing and errorlogging
-	    "test"       => \$test,    # only checks the CDSs from 1 clone in the database.
-	    "store:s"    => \$store    # 
+	    "test1"      => \$test1,   # only checks the CDSs from 1 clone in the database.
+	    "store:s"    => \$store,   # 
+	    "test"       => \$test,    # Test build
 	   );
 
 my $wormbase;
@@ -76,7 +76,7 @@ foreach $CDSfilter (@CDSfilter) {
 # Fetch Gene Models (All_genes)
 ################################
 my @Predictions;
-if ($test) {
+if ($test1) {
   @Predictions = $db->fetch('All_genes','C09G9*');
   foreach my $Predictions(@Predictions) {
     print $Predictions->name."\n";
@@ -122,29 +122,29 @@ foreach my $gene_model ( @Predictions ) {
     }
   }
 
-  # check that 'Start_not_found' and 'End_not_found' tags present? (CDS specific)
+  # check that 'Start_not_found' and 'End_not_found' tags present? (CDS specific.....extended to all genes :) )
   my $start_tag = "";
   my $end_tag = "";
 
-  if (($gene_model->get('Start_not_found')) && ($method_test eq 'curated')) {
+  if ($gene_model->get('Start_not_found')) {
     $start_tag = "present";
     push(@error2,"ERROR: $gene_model Start_not_found tag present\n");
     print "ERROR: $gene_model Start_not_found tag present\n" if $verbose;
   }
 
-  if (($gene_model->get('End_not_found')) && ($method_test eq 'curated')) {
+  if ($gene_model->get('End_not_found')) {
     $end_tag = "present";
     push(@error2,"ERROR: $gene_model End_not_found tag present\n");
     print "ERROR: $gene_model End_not_found tag present\n" if $verbose;
   }
 
-  #All Isoforms should have the Isoform tag set. (CDS specific)
+  #All Isoforms should have the Isoform tag set.
   if (($gene_model->name =~ (/\w+\.\d+[a-z]$/)) && ($method_test ne 'history')) {
     my $Isoform = $gene_model->at('Properties.Isoform');
     push(@error3, "ERROR: $gene_model requires an Isoform\n") if !$Isoform;
   }
 
-  #Test for erroneous Isoform tags.(CDS specific)
+  #Test for erroneous Isoform tags.
   if (($gene_model->name =~ (/\b\w+\.[0-9]{1,2}\b/)) && ($method_test ne 'history')) {
 
     my $Isoform = $gene_model->at('Properties.Isoform');
@@ -266,7 +266,6 @@ exit(0);
 #################################################################
 
 sub test_gene_sequence_for_errors{
-	    
   my $gene_model = shift;
   my $start_tag = shift;
   my $end_tag = shift;
@@ -412,7 +411,7 @@ The script emails the top 20 problems each day (sorted by severity).
 =item MANDATORY arguments: -database <database_path>
 
 This argument must be a path to a valid acedb database, e.g.
-check_predicted_genes.pl -database /nfs/disk100/wormpub/DATABASES/camace
+check_predicted_genes.pl -database /lustre/cbi4/work1/wormpub/DATABASES/camace
 
 =back
 
@@ -422,7 +421,7 @@ check_predicted_genes.pl -database /nfs/disk100/wormpub/DATABASES/camace
 
 If the file specified by -log already exists, the script will append the output to that file.
 Otherwise it will attempt to write to a new file by that name.  If no log file is specified,
-the script will generate a log file in /nfs/disk100/wormpub/logs.
+the script will generate a log file in /lustre/cbi4/work1/wormpub/BUILD/logs.
 
 If -verbose is specified, output will be written to screen as well as to the log file
 
