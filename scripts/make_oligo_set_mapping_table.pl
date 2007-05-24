@@ -1,3 +1,4 @@
+#!/software/bin/perl -w
 #!/nfs/disk100/wormpub/bin/perl 
 
 use lib $ENV{'CVS_DIR'};
