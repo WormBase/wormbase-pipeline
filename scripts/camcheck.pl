@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.8.0 -w
+#!/software/bin/perl -w
 #
 # dbcheck.pl
 #
@@ -7,7 +7,7 @@
 # Usage: camcheck.pl
 #
 # Last updated by: $Author: pad $
-# Last updated on: $Date: 2007-01-15 14:11:41 $
+# Last updated on: $Date: 2007-05-24 09:35:37 $
 #
 # see pod documentation (i.e. 'perldoc camcheck.pl') for more information.
 #
@@ -31,20 +31,20 @@ use Storable;
 ##############################
 # command-line options       #
 ##############################
-my ($help,$verbose,$debug,$test,$Weekly,$Montly,$Database,$Low,$email,);
+my ($help,$verbose,$debug,$test,$Weekly,$Montly,$database,$Low,$email,);
 my $store;
 
 GetOptions(
-	   'h'        => \$help,    #  -h, Help
-	   'v'        => \$verbose, #  -v, Verbose option.
-	   'debug:s'  => \$debug,   #  -debug, debug option
-	   'test'     => \$test,    #  -test, TEST_BUILD env used.
-	   'w'        => \$Weekly,  #  -w, Weekly checks are active
-	   'm'        => \$Montly,  #  -m, Montly checks are active
-	   'db:s'     => \$Database,#  -db select which database to run against
-	   'l'        => \$Low,     #  -l, low level checks - not all the small intron gubbins
-	   'e:s'      => \$email,   #  -e, Specifiy a mail recepient so that only the person responsible for a spilt database will be notified
-	   'store:s'  => \$store,
+	   'h'          => \$help,    #  -h, Help
+	   'v'          => \$verbose, #  -v, Verbose option.
+	   'debug:s'    => \$debug,   #  -debug, debug option
+	   'test'       => \$test,    #  -test, TEST_BUILD env used.
+	   'w'          => \$Weekly,  #  -w, Weekly checks are active
+	   'm'          => \$Montly,  #  -m, Montly checks are active
+	   'database:s' => \$database,#  -db select which database to run against
+	   'low'        => \$Low,     #  -l, low level checks - not all the small intron gubbins
+	   'email:s'    => \$email,   #  -e, Specifiy a mail recepient so that only the person responsible for a spilt database will be notified
+	   'store:s'    => \$store,
 	  );
 
 
@@ -64,11 +64,11 @@ if ( $store ) {
 ##############################
 
 my $tace    = $wormbase->tace;                            # tace executable path
-my $dbpath  = "/nfs/disk100/wormpub/DATABASES/camace";               # Database path
+my $dbpath  = $wormbase->database('camace');              # db path
 my $maintainers;
 
-if ($Database) {
-    $dbpath = $Database;
+if ($database) {
+    $dbpath = $database;
     &usage('bad database path') unless (-e "$dbpath/database/ACEDB.wrm");
 }
 print "\n$dbpath is being checked.......\n\n" if $debug;
@@ -151,7 +151,7 @@ exit(0);
 
 sub CloneTests {
 
-    my $clonepath = "/nfs/disk100/wormpub/analysis/cosmids";
+    my $clonepath = "/lustre/cbi4/work1/wormpub/analysis/cosmids";
     my $clonefile = "$clonepath"."/current.versions";
     
     open (CLONEFILE,"<$clonefile") || die "Couldn't open $clonefile for reading\n";
@@ -173,7 +173,7 @@ sub CloneTests {
 	
 	my $seqpath = "$clonepath"."/"."$line"."/"."$clone.seq";
 	
-	open SEQPATH,"<$seqpath" || do {$log->write_to("$clone  \t:NOT_IN_DIRECTORY $seqpath\n"); next; };
+	open (SEQPATH,"<$seqpath") || do {$log->write_to("$clone  \t:NOT_IN_DIRECTORY $seqpath\n"); next; };
 	my $line1;
 	while (defined($line1=<SEQPATH>)) {  
 	    chomp($line1);
@@ -480,7 +480,7 @@ sub usage {
         exec ('perldoc',$0);
     }
     elsif ($error eq "bad database path") {
-	print "The database path is invalid. No ACEDB.wrm file found at $Database\n\n";
+	print "The database path is invalid. No ACEDB.wrm file found at $database\n\n";
         &run_details;
         exit(0);
     }
