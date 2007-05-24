@@ -1,3 +1,4 @@
+#!/software/bin/perl -w
 #!/usr/local/bin/perl5.8.0 -w
 #
 # script_template.pl                           
@@ -6,8 +7,8 @@
 #
 # This is a example of a good script template
 #
-# Last updated by: $Author: ar2 $     
-# Last updated on: $Date: 2007-05-04 13:15:29 $      
+# Last updated by: $Author: gw3 $     
+# Last updated on: $Date: 2007-05-24 10:51:22 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -114,7 +115,7 @@ sub buildrelease{
     $wormbase->run_command("/bin/gzip -t $dbpath/release/database.$WS_version.4-$i.tar.gz >> $dbpath/release/files_in_tar", $log);
     
     # calculate md5sum for the gzip file
-    $wormbase->run_command("/nfs/disk100/wormpub/bin.ALPHA/md5sum $dbpath/release/database.$WS_version.4-$i.tar.gz >> $dbpath/release/md5sum.WS$WS_version", $log);
+    $wormbase->run_command("/usr/bin/md5sum/md5sum $dbpath/release/database.$WS_version.4-$i.tar.gz >> $dbpath/release/md5sum.WS$WS_version", $log);
   }
   #check md5sums
   $wormbase->run_command("cd ".$wormbase->autoace."/release; md5sum -c md5sum.WS$WS_version", $log);
