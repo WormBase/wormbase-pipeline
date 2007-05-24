@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.6.1 -w
+#!/software/bin/perl -w
 #
 # submit_TO_SUBMIT_contents
 # Steven Jones, 1995, Sanger Centre.
@@ -9,16 +9,16 @@
 # 020123 : dan : modified to make a report file, gzip the EMBL entry
 #                after submission and use Perl5.6 with strict
 #
-# Last updated by: $Author: ar2 $                      
-# Last updated on: $Date: 2005-12-16 11:18:55 $        
+# Last updated by: $Author: pad $                      
+# Last updated on: $Date: 2007-05-24 14:03:04 $        
 
 $|=1;
 use strict;
 use Getopt::Long;
-use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
+use lib -e $ENV{'CVS_DIR'};
 use Wormbase;
 
-my $submitdir = "/nfs/disk100/wormpub/analysis/TO_SUBMIT";
+my $submitdir = "/lustre/cbi4/work1/wormpub/analysis/TO_SUBMIT";
 my (@filenames);
 
  ##############################
@@ -32,7 +32,7 @@ my $name;
 # touch logfile for run details
 if ($0 =~ /\//) {($name) = $0 =~ m/\/([^\/]+)$/;}
 else {$name = $0;}
-system ("touch /wormsrv2/logs/history/$name.`date +%y%m%d`");
+system("touch /lustre/build/logs/history/$name.`date +%y%m%d`");
 my $logfile = "$submitdir/submitted_to_EMBL";
 	   
 ###################################################
