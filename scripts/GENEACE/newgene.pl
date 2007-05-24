@@ -7,7 +7,7 @@
 # simple script for creating new (sequence based) Gene objects 
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2007-04-20 09:44:05 $
+# Last edited on: $Date: 2007-05-24 16:04:19 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -45,7 +45,7 @@ GetOptions ("input=s"   => \$input,
 	    "verbose"   => \$verbose,
 	    "test"      => \$test,
 	    "namedb"    => \$update_nameDB,
-		 "species=s"   => \$species
+	    "species=s" => \$species
 	    );
 
 my $wormbase = Wormbase->new();
@@ -57,6 +57,11 @@ my $wormbase = Wormbase->new();
 my %species_data;
 $species_data{'elegans'}->{'regex'}  = '^\w+\.\d{1,2}$';
 $species_data{'briggsae'}->{'regex'} = '^CBG\d{5}$';
+$species_data{'remanei'} = '1';
+$species_data{'brenneri'} = '1';
+$species_data{'japonica'} = '1';
+
+
 
 unless( $species_data{"$species"} ) {
 	my @list = keys %species_data;
@@ -64,12 +69,16 @@ unless( $species_data{"$species"} ) {
 }
 die "-seq option not valid if -input is specified\n"     if ($input && $seq);
 die "-cgc option not valid if -input is specified\n"     if ($input && $cgc);
+
 die "-cgc option not valid if -seq is not specified\n"   if ($cgc && !$seq);
 die "You must specify either -input <file> or -seq <sequence> -cgc <cgc name>\n" if (!$seq && !$input);
-die "-cgc option is not a valid type of CGC name\n"      if ($cgc && ($cgc !~ m/^[a-z]{3,4}\-\d{1,3}$/));
+
+die "-cgc option is not a valid type of CGC name\n"      if (($species ne 'briggsae')and $cgc && ($cgc !~ m/[a-z]{3,4}\-\d{1,3}$/));
+
 die "-who option must be an integer\n"                   if ($who && ($who !~ m/^\d+$/));
 die "can't use -id option if processing input file\n"    if ($id && $input);
-die "-seq option is not a valid type of sequence name\n" if ($seq && ($seq !~ /$species_data{"$species"}->{'regex'}/));
+
+die "-seq option is not a valid type of sequence name\n" if ($species_data{"$species"}->{'regex'} and $seq && ($seq !~ /$species_data{"$species"}->{'regex'}/));
 
 # set CGC field to null string if not specified
 $cgc = "NULL" if (!$cgc);
