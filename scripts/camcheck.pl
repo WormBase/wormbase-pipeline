@@ -7,7 +7,7 @@
 # Usage: camcheck.pl
 #
 # Last updated by: $Author: pad $
-# Last updated on: $Date: 2007-05-24 12:33:56 $
+# Last updated on: $Date: 2007-05-24 13:04:30 $
 #
 # see pod documentation (i.e. 'perldoc camcheck.pl') for more information.
 #
@@ -71,7 +71,7 @@ my $runtime = $wormbase->runtime;
 
 if ($database) {
     $dbpath = $database;
-    $log->log_and_die("Connection failure: ".Ace->error()) unless (-e "$dbpath/database/ACEDB.wrm");
+    unless (-e "$dbpath/database/ACEDB.wrm") {$log->log_and_die("Failed to connect to $dbpath\n")};
 }
 print "\n$dbpath is being checked.......\n\n" if $debug;
 
