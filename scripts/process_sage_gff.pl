@@ -1,6 +1,6 @@
-#!/nfs/disk100/wormpub/bin/perl -w
+#!/software/bin/perl -w
 #
-# $Id: process_sage_gff.pl,v 1.5 2006-12-22 11:14:55 gw3 Exp $;
+# $Id: process_sage_gff.pl,v 1.6 2007-05-24 15:20:12 gw3 Exp $;
 #
 # process the raw Sanger GFF dump to add data to SAGE tags
 # Sheldon McKay <mckays@cshl.edu>
