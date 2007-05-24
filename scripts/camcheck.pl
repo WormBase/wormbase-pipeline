@@ -7,7 +7,7 @@
 # Usage: camcheck.pl
 #
 # Last updated by: $Author: pad $
-# Last updated on: $Date: 2007-05-24 09:35:37 $
+# Last updated on: $Date: 2007-05-24 12:33:56 $
 #
 # see pod documentation (i.e. 'perldoc camcheck.pl') for more information.
 #
@@ -57,19 +57,21 @@ if ( $store ) {
 			     );
 }
 
-&usage(0) if ($help); # perldoc help message
-
 ##############################
 # Paths etc                  #
 ##############################
-
+my $log = Log_files->make_build_log($wormbase);
 my $tace    = $wormbase->tace;                            # tace executable path
 my $dbpath  = $wormbase->database('camace');              # db path
 my $maintainers;
+my $dbname = $dbpath;
+$dbname =~ s/.*camace(.*)/camace$1/;
+my $rundate = $wormbase->rundate;
+my $runtime = $wormbase->runtime;
 
 if ($database) {
     $dbpath = $database;
-    &usage('bad database path') unless (-e "$dbpath/database/ACEDB.wrm");
+    $log->log_and_die("Connection failure: ".Ace->error()) unless (-e "$dbpath/database/ACEDB.wrm");
 }
 print "\n$dbpath is being checked.......\n\n" if $debug;
 
@@ -95,16 +97,6 @@ if($debug){
 
 # Verbose mode on?
 print "// Verbose mode selected\n\n" if ($verbose);
-
-
-########################################
-# Open logfile                         #
-########################################
-my $dbname = $dbpath;
-$dbname =~ s/.*camace(.*)/camace$1/;
-my $rundate = $wormbase->rundate;
-my $runtime = $wormbase->runtime;
-my $log = Log_files->make_build_log($wormbase);
 
 $log->write_to("# camcheck.pl\n");     
 $log->write_to("# run details $dbname  : $rundate $runtime\n");
@@ -465,27 +457,6 @@ sub run_details {
     print "\n";
 }
 
-
-sub usage {
-    my $error = shift;
-
-    if ($error == 1) {
-        # No WormBase release number file
-        print "The WormBase release number cannot be parsed\n\n";
-        &run_details;
-        exit(0);
-    }
-    elsif ($error == 0) {
-        # Normal help menu
-        exec ('perldoc',$0);
-    }
-    elsif ($error eq "bad database path") {
-	print "The database path is invalid. No ACEDB.wrm file found at $database\n\n";
-        &run_details;
-        exit(0);
-    }
-
-}
 
 
 __END__
