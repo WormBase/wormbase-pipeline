@@ -7,8 +7,8 @@
 # 
 # Originally written by Dan Lawson
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2007-05-23 13:33:11 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2007-05-24 15:08:27 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -352,7 +352,7 @@ sub copy_wormpep_files{
   $runtime = $wormbase->runtime;
   $log->write_to("$runtime: copying wormpep files\n");
 
-  my $wormpub_dir = "/nfs/disk100/wormpub/WORMPEP";
+  my $wormpub_dir = "/lustre/cbi4/work1/wormpub/WORMPEP";
   my $wp_source_dir = $wormbase->wormpep;
   my $wormpep_ftp_root = glob("~ftp/pub/databases/wormpep");
   my $wp_ftp_dir = "$wormpep_ftp_root/wormpep$WS";
