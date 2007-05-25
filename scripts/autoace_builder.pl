@@ -7,7 +7,7 @@
 # Usage : autoace_builder.pl [-options]
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2007-05-15 15:43:10 $
+# Last edited on: $Date: 2007-05-25 12:41:08 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -233,6 +233,10 @@ sub map_features {
 
     # writes tables listing microarrays to genes
     $wormbase->run_script( 'make_oligo_set_mapping_table.pl -all', $log );
+
+    # maps SAGE tags to the genes and to the genome
+    $wormbase->run_script( 'map_tags.pl -load', $log );
+    
 }
 
 #__ end map_features __#
