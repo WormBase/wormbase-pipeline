@@ -10,8 +10,8 @@
 #
 # Usage : agp2dna.pl [-options]
 #
-# Last edited by: $Author: pad $
-# Last edited on: $Date: 2007-01-15 09:28:07 $
+# Last edited by: $Author: mh6 $
+# Last edited on: $Date: 2007-05-25 10:26:33 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -208,7 +208,7 @@ sub sequence_mfetch {
 #    print "2) lookup value = $acc\n" if $debug;
     my ($EMBL_acc,$EMBL_sv,$EMBL_seq);
     
-    open (SEQUENCE, "/usr/local/pubseq/scripts/mfetch -d embl -v fasta -i \"sv:$acc*\" |");
+    open (SEQUENCE, "mfetch -d embl -v fasta -i \"sv:$acc*\" |");
     while (<SEQUENCE>) {
 	chomp;
 	# deal with header line
