@@ -30,7 +30,7 @@ use LSF::JobManager;
 
 my ( $help, $debug, $test, $store );
 my $verbose;    # for toggling extra output
-my $output;			# file to output ace results to
+my $load;
 
 ##############################
 # command-line options       #
@@ -41,7 +41,7 @@ GetOptions(
     "debug=s"   => \$debug,
     "test"      => \$test,
     "store:s"   => \$store,
-    "output:s"  => \$output,
+    "load"      => \$load,
 );
 
 # Display help if required
@@ -101,6 +101,7 @@ my $ace_dir = $wormbase->autoace;     # AUTOACE DATABASE DIR
 #my $database_path = $currentdb;     # full path to local AceDB database; change as appropriate
 my $database_path = $ace_dir;     # full path to local AceDB database; change as appropriate
 my $program = $wormbase->tace;  # full path to tace; change as appropriate
+my $output = $wormbase->acefiles."/map_tags.ace"; # output file path
 
 print "connecting to server...";
 my $db = Ace->connect(-path => $database_path,  -program => $program) || die print "Connection failure: ", Ace->error;  # local database
@@ -524,12 +525,18 @@ foreach my $tag (keys %tags) {          # go through all tags read from tags.ace
 	
 }
 
-print "$i tags processed\n";
-print "$mapped_to_transcript tags are mapped to transcripts\n";
-print "$mapped_to_reverse tags are mapped to antisense strand of transcripts\n";
-print "$mapped_to_genome tags are mapped to genome\n";
-print scalar keys %all_mapped, " tags mapped total\n";
+print $log->write_to("$i tags processed\n");
+print $log->write_to("$mapped_to_transcript tags are mapped to transcripts\n");
+print $log->write_to("$mapped_to_reverse tags are mapped to antisense strand of transcripts\n");
+print $log->write_to("$mapped_to_genome tags are mapped to genome\n");
+my $final_total = scalar keys %all_mapped;
+$log->write_to("$final_total tags mapped total\n");
 
+
+# Upload file to autoace
+if ($load) {
+  $wormbase->load_to_database($database_path, $output, "map_tags.pl", $log);
+}
 
 # get a clean exit status by closing and undef'ing things
 $log->mail();
