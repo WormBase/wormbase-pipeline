@@ -4,8 +4,8 @@
 #
 # by Dan Lawson (dl1@sanger.ac.uk)
 #
-# Last edited by: $Author: pad $
-# Last edited on: $Date: 2007-01-17 17:13:35 $
+# Last edited by: $Author: mh6 $
+# Last edited on: $Date: 2007-05-25 10:18:11 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -75,7 +75,7 @@ my @gff_files = ('I','II','III','IV','V','X');
 our %seqver = ();
 our %seqlen = ();
 
-open (SEQUENCES, "/usr/local/pubseq/scripts/mfetch -d embl -f id -i \"mol:genomic dna\&org:Caenorhabditis elegans\&div:std\" | ");
+open (SEQUENCES, "mfetch -d embl -f id -i \"mol:genomic dna\&org:Caenorhabditis elegans\&div:std\" | ");
 #Returns ID   AC006607; SV 1; linear; genomic DNA; STD; INV; 40255 BP.
 while (<SEQUENCES>) {
     s/\;//g;
