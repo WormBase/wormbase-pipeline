@@ -10,7 +10,7 @@
 #                after submission and use Perl5.6 with strict
 #
 # Last updated by: $Author: pad $                      
-# Last updated on: $Date: 2007-05-29 12:57:10 $        
+# Last updated on: $Date: 2007-05-29 13:34:19 $        
 
 $|=1;
 use strict;
@@ -41,7 +41,7 @@ my $debug;      # Debug mode, verbose output to dl1 only
 
 GetOptions (
             "debug=s"   => \$debug,
-            "help"      => \$help
+            "help"      => \$help,
             );
 
 # help page	   
@@ -77,6 +77,7 @@ exit if (scalar(@filenames) == 0);
 
 # confirm you want to do this
 print "\nAll of these will be submitted to celegans\@ebi.ac.uk\n\n";
+print "-debug has also been selected so you \"$debug\", will get a copy :)\n\n" if $debug;
 print "Do you wish to proceed???(y or n)\n\n";
 
 my $answer=<STDIN>;
@@ -97,8 +98,11 @@ while (<LIST>) {
 	(/^(\S+)\.\S+\.\S+/);
 	print LOG "$1\n";
 	system ("/usr/bin/mail celegans\@ebi.ac.uk < $submitdir/$_");
+	if ($debug) {
+	  system ("/usr/bin/mail $debug\@sanger.ac.uk --subject=CLONE_SUBMISSION_${_} < $submitdir/$_");
+	}
 	system ("/bin/gzip $submitdir/$_");
-    }
+      }
 }
 close LIST;
 close LOG;
@@ -151,7 +155,7 @@ submit_TO_SUBMIT_contents optional arguments:
 
 =item -h, Help page
 
-=item -d, Verbose/Debug mode
+=item -debug, Verbose/Debug mode
 
 =back
 
@@ -175,13 +179,13 @@ current run.
 
 =over 4
 
-=item submit_TO_SUBMIT_contents 
+=item submit_TO_SUBMIT_contents -debug pad
 
 =back
 
 Submits all files with the .embl suffix in the ~wormpub/analysis/TO_SUBMIT
 directory. The clone name for each file submitted is appended to the file
-submitted_to_EMBL
+submitted_to_EMBL, the above option will also email the submissions to the debug user i.e. pad.
 
 =head1 AUTHOR - Daniel Lawson (modifications from the original of Steve Jones)
 
