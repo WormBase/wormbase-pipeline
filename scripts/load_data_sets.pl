@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl -w
-# Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2007-05-16 08:30:19 $      
+# Last updated by: $Author: mh6 $     
+# Last updated on: $Date: 2007-05-29 11:41:46 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -9,6 +9,8 @@ use Getopt::Long;
 use Carp;
 use Log_files;
 use Storable;
+use File::Copy "cp";
+
 
 ######################################
 # variables and command-line options # 
@@ -100,8 +102,12 @@ sub parse_homol_data {
 		    "inverted_repeats.ace"
 		   );
 
+  $log->write_to("\nCopying WABA to acedir \n==============================\n");
+
+  cp($wormbase->misc_dynamic.'/waba.ace',$wormbase->acefiles) ;
 
   $log->write_to("\nLoading homol data\n==============================\n");
+  
   foreach my $file ( @files2Load ) {
     my $tsuser = substr($file,0,-4); #file name without ace
     $log->write_to("\tloading $file -tsuser -$tsuser\n");
