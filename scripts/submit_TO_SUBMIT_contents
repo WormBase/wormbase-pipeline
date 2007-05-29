@@ -10,7 +10,7 @@
 #                after submission and use Perl5.6 with strict
 #
 # Last updated by: $Author: pad $                      
-# Last updated on: $Date: 2007-05-29 11:11:25 $        
+# Last updated on: $Date: 2007-05-29 12:57:10 $        
 
 $|=1;
 use strict;
@@ -30,9 +30,6 @@ my $rundate     = `date +%y%m%d`; chomp $rundate;
 my $name;
 
 # touch logfile for run details
-if ($0 =~ /\//) {($name) = $0 =~ m/\/([^\/]+)$/;}
-else {$name = $0;}
-system("touch /lustre/build/logs/history/$name.`date +%y%m%d`");
 my $logfile = "$submitdir/submitted_to_EMBL";
 	   
 ###################################################
