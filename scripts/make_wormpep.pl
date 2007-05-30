@@ -6,8 +6,8 @@
 #
 # Builds a wormpep data set from the current autoace database
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2007-05-23 13:33:11 $
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2007-05-30 14:42:06 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -215,7 +215,8 @@ sub setup{
   my @duplicates;  # for tracking duplicate protein sequences
   
 
-  open (WP , "$wpdir/$PEP_FILE_STEM.fasta$old_release") || $log->log_and_die("=> Failed to open the old fasta for protein release $old_release\n\n");
+  open (WP , "$wpdir/$PEP_FILE_STEM.fasta$old_release") || 
+  $log->log_and_die("=> Failed to open the old fasta for protein release $old_release ($wpdir/$PEP_FILE_STEM.fasta$old_release)\n\n");
   while (<WP>) {
     chomp;
     # is it the FASTA header line?
