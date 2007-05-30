@@ -856,9 +856,11 @@ sub establish_paths {
 
   if ( $self->{'farm'} ) {
     my $wormpipe= glob("~wormpipe");
-    $self->{'autoace'} = $wormpipe;
+    $self->{'autoace'}     = $wormpipe;
     $self->{'acefiles'}    = $self->autoace . "/acefiles";
     $self->{'dump_dir'}    = '/lustre/work1/ensembl/wormpipe/dumps';
+    $self->{'orgdb'}       =  $wormpipe;
+    $self->{'logs'}        = "$wormpipe/logs";
   } else {
     my $basedir;
     ( $self->{'wormpub'} ) = '/lustre/cbi4/work1/wormpub';
