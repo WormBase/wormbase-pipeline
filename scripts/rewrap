@@ -1,5 +1,4 @@
-#!/usr/local/bin/perl5.6.1 -w
-
+#!/software/bin/perl
 
 my $initial = 0;
 my $seq;
