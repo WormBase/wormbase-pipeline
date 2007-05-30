@@ -1,4 +1,4 @@
-#!/usr/local/ensembl/bin/perl -w
+#!/software/bin/perl
 #
 # copy_files_to_acari.pl
 #
