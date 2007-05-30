@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: ar2 $
-// Last edited on: $Date: 2007-05-01 08:05:42 $
+// Last edited on: $Date: 2007-05-30 13:28:20 $
 
 
 
@@ -2093,9 +2093,9 @@
                 	Paternal        #Evidence
 			Phenotype_assay Life_stage  ?Life_stage	 #Evidence
 					Strain	    ?Strain	 #Evidence
-					Treatment   ?Treatment	 #Evidence
-					Temperature ?Temperature #Evidence
-					Genotype    ?Genotype	 #Evidence 
+					Treatment   ?Text	 #Evidence
+					Temperature ?Text	 #Evidence
+					Genotype    ?Text	 #Evidence 
 
 
 
