@@ -5,7 +5,7 @@
 # written by Anthony Rogers
 #
 # Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2007-05-30 15:53:44 $
+# Last edited on: $Date: 2007-05-30 15:57:40 $
 
 
 use DBI;
@@ -74,6 +74,7 @@ if ( $store ) {
   $wormbase = Wormbase->new( 'debug'   => $debug,
                              'test'    => $test,
 			     'farm'    => 1,
+			     'version' => $version,
 			     );
 }
 
