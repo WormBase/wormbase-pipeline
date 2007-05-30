@@ -4,8 +4,8 @@
 # 
 # written by Anthony Rogers
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2007-04-19 10:34:54 $
+# Last edited by: $Author: mh6 $
+# Last edited on: $Date: 2007-05-30 15:53:44 $
 
 
 use DBI;
@@ -73,6 +73,7 @@ if ( $store ) {
 } else {
   $wormbase = Wormbase->new( 'debug'   => $debug,
                              'test'    => $test,
+			     'farm'    => 1,
 			     );
 }
 
@@ -122,12 +123,12 @@ my %wormprotprocessIds = (
 			 );
 
 #get new chromosomes
-$wormbase->run_script("BLAST_scripts/copy_files_to_acari.pl -chrom", $log) if ($chromosomes);
+$wormbase->run_command("ssh cbi4 ~/scripts/BLAST_scripts/copy_files_to_acari.pl -chrom", $log) if ($chromosomes);
 
 
 #get new wormpep
-$wormbase->run_script("BLAST_scripts/copy_files_to_acari.pl -wormpep ".$wormbase->get_wormbase_version, $log) if ($wormpep);
-$wormbase->run_script("BLAST_scripts/copy_files_to_acari.pl -brigpep ".$wormbase->get_wormbase_version, $log) if ($brigpep);
+$wormbase->run_command("ssh cbi4 ~/scripts/BLAST_scripts/copy_files_to_acari.pl -wormpep ".$wormbase->get_wormbase_version, $log) if ($wormpep);
+$wormbase->run_command("ssh cbi4 ~/scripts/BLAST_scripts/copy_files_to_acari.pl -brigpep ".$wormbase->get_wormbase_version, $log) if ($brigpep);
 
 
 my %currentDBs;   #ALSO used in setup_mySQL 
