@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.8.0 -w
+#/software/bin/perl -w
 #
 # make_acefiles.pl 
 #
@@ -7,8 +7,8 @@
 # Generates the .acefiles from the primary databases as a prelim for building
 # autoace.
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2006-11-01 14:26:18 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2007-05-31 14:32:04 $
 
 #################################################################################
 # Variables                                                                     #
@@ -124,7 +124,7 @@ exit (0);
 sub mknewacefiles {
     
   my ($dbname,$dbdir,$targetdir,$exe,$object,$criteria,$follow);
-  my ($filename,$extrafile,$filepath,$command,$outfile,$tag,@deletes,$include);
+  my ($filename,$extrafile,$filepath,$command,$outfile,$tag,@deletes,$include,@removes);
   
   local (*CONFIG);
   
@@ -159,13 +159,25 @@ sub mknewacefiles {
     # nuts and bolts of acefile generation
     # format:  database object criteria
     
-    # clear out the @deletes array eachtime
+    # clear out the @deletes array each time
     undef (@deletes);
+    
+    # clear out the @removes array each time
+    undef (@removes);
     
     # parse filename
     ($filename) = (/^\S+\s+(\S+)/);
     $filepath   = "$targetdir/$filename";
     $extrafile  = "$targetdir/$filename.extra";
+
+    # get any removes specification
+    if (/\((\S+.+)\)$/) {
+      @removes = split (/\s/,$1);
+      s/\((\S+.+)\)$//;		# remove the removes
+      s/\s+$//;    		# remove trailing whitespace
+      my $msg = "Adding " . scalar (@removes) . " regexp patterns to remove array\n";
+      $log->write_to("$msg");
+    }
 
     print "Noting filename:$filename\n" if ($wormbase->debug);
 
@@ -191,7 +203,7 @@ sub mknewacefiles {
 	foreach my $delete (@deletes) {
 	  $command .= "eedit -D $delete\n";
 	}
-	$command .= "show -a -T -f $filepath\nquit\n";
+	$command .= "show -a -T\nquit\n";
       } 
       elsif (/^\S+\s+\S+\s+(\S+)\s+(\S+.+)\s+\[/) {
 	$object   = $1; 
@@ -201,7 +213,7 @@ sub mknewacefiles {
 	foreach my $delete (@deletes) {
 	  $command .= "eedit -D $delete\n";
 	}
-	$command .= "show -a -T -f $filepath\nquit\n";
+	$command .= "show -a -T\nquit\n";
       }
     }
     # queries requiring tag inclusion
@@ -221,13 +233,13 @@ sub mknewacefiles {
 	  
 	  unless ($follow) {
 	      $command = "nosave\nquery find $object\n";
-	      $command .= "show -a -T $include -f $filepath\nquit\n";
+	      $command .= "show -a -T $include\nquit\n";
 	  } 
 	  else {
 	      $command = "nosave\nquery find $object\n";
-	      $command .= "show -a -T $include -f $filepath\n";
+	      $command .= "show -a -T $include\n";
 	      $command .= "follow $include\n";
-	      $command .= "show -a -T -f $extrafile\nquit\n";
+	      $command .= "show -a -T\nquit\n";
 	  }
 	  
       } 
@@ -237,13 +249,13 @@ sub mknewacefiles {
 	  
 	  unless ($follow) {
 	      $command ="nosave\nquery find $object where ($criteria)\n";
-	      $command .= "show -a -T $include -f $filepath\nquit\n";
+	      $command .= "show -a -T $include\nquit\n";
 	  }
 	  else {
 	      $command ="nosave\nquery find $object where ($criteria)\n";
-	      $command .= "show -a -T $include -f $filepath\n";
+	      $command .= "show -a -T $include\n";
 	      $command .= "follow $include\n";
-	      $command .= "show -a -T -f $extrafile\nquit\n";
+	      $command .= "show -a -T\nquit\n";
 	  }
       }
   }
@@ -254,11 +266,11 @@ sub mknewacefiles {
 	$criteria = ""; 
 	if ($object eq "DNA") {
 	  $command   = "nosave\nquery find Sequence\nfollow DNA\n";
-	  $command  .= "show -a -T -f $filepath\nquit\n";
+	  $command  .= "show -a -T\nquit\n";
 	}
 	else {
 	  $command   = "nosave\nquery find $object\n";
-	  $command  .= "show -a -T -f $filepath\nquit\n";
+	  $command  .= "show -a -T\nquit\n";
 	}
       }
       elsif (/^\S+\s+\S+\s+(\S+)\s+(\S+.+)$/) {
@@ -267,11 +279,11 @@ sub mknewacefiles {
 	
 	if ($object eq "DNA") {
 	  $command   = "nosave\nquery find Sequence where ($criteria)\nfollow DNA\n";
-	  $command  .= "show -a -T -f $filepath\nquit\n";
+	  $command  .= "show -a -T\nquit\n";
 	}
 	else {
 	  $command   ="nosave\nquery find $object where ($criteria)\n";
-	  $command  .= "show -a -T -f $filepath\nquit\n";
+	  $command  .= "show -a -T\nquit\n";
 	}
       }
     }
@@ -282,9 +294,28 @@ sub mknewacefiles {
 
     $log->write_to(": Dumping $object class\n");
 
-    open (TACE,"| $exe");
-    print TACE $command;
+    open (OUT, "> $filepath") || die "Can't open $filename";
+    open (TACE,"echo '$command' | $exe |");
+    while (my $line = <TACE>) {
+      next if ($line =~ /acedb\>/);
+      next if ($line =~ /\/\//);
+      # remove any lines matching any of the @removes specifications
+      if (@removes) {
+	my $found = 0;
+	foreach my $expr (@removes) {
+	  if ($line =~ /$expr/) {
+	    $found = 1;
+	  }
+	}
+	if (! $found) {
+	  print OUT $line;
+	}
+      } else {
+	print OUT $line;
+      }
+    }
     close TACE;
+    close (OUT);
 
 
     # Check file was made (if class is empty no output file will be made from tace, and downstream
