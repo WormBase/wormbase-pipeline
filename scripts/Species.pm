@@ -78,7 +78,7 @@ sub chromosome_names {qw(I II III IV V X)}
 sub mt_name {'MtDNA'}
 sub pep_prefix {'CE'}
 sub pepdir_prefix{'worm'};
-sub cds_regex{qr/^[A-Z0-9_]+\.[1-9]\d?[A-Za-z]?$/};
+sub cds_regex{qr/^[A-Z0-9_cel]+\.[1-9]\d?[A-Za-z]?$/};  #the cel is for telomeric clone CDSs cTel54X.1
 sub ncbi_tax_id {'6239'};
 
 ########################################
