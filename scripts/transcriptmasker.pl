@@ -8,7 +8,7 @@
 # 031023 dl1
 
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2007-05-23 13:33:11 $
+# Last edited on: $Date: 2007-05-31 14:50:02 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -164,6 +164,7 @@ sub MaskSequence {
   
   # assign output file
   my $output_file = $file ? $file."masked" : $wormbase->maskedcdna."/$mol_type.masked";
+  mkdir ($wormbase->maskedcdna) unless -e $wormbase->maskedcdna;
   open (OUTPUT, ">$output_file") || $log->log_and_die("ERROR: Can't open output file: $output_file");
   
   # input file loop structure
