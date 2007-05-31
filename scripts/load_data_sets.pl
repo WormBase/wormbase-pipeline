@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl -w
-# Last updated by: $Author: mh6 $     
-# Last updated on: $Date: 2007-05-29 11:41:46 $      
+# Last updated by: $Author: ar2 $     
+# Last updated on: $Date: 2007-05-31 14:33:02 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -50,10 +50,6 @@ $log->mail();
 exit(0);
 
 sub parse_misc_files {
-  my @nem_files = ("other_nematode_ESTs.ace", "nembase_nematode_contigs.ace", "washu_nematode_contigs.ace");
-  foreach (@nem_files) {
-    $wormbase->run_command("cp ".$wormbase->wormpub."/analysis/ESTs/$_ ".$wormbase->acefiles."/", $log) unless -e ($wormbase->acefiles."/$_");
-  }
   my %files_to_load = (
 		       $wormbase->misc_dynamic."/misc_genefinder.ace"           => "genefinder_predictions",
 		       $wormbase->misc_dynamic."/misc_twinscan.ace"             => "twinscan_predictions"  ,
@@ -63,13 +59,13 @@ sub parse_misc_files {
 		       $wormbase->misc_dynamic."/WS145_aceview.ace"             =>  'aceview_IDs'          ,
 		       $wormbase->misc_static."/ensembl_orthologs.ace"          => "ensembl_orthologs"     ,
 		       $wormbase->misc_static."/misc_TEC_RED_sequence_data.ace" => "TEC_RED"               ,
+		       $wormbase->misc_static."/nembase_nematode_contigs.ace"   => "nembase_ace"           ,
+		       $wormbase->misc_static."/other_nematode_ESTs.ace"        => "other_nematode_ace"    ,
+		       $wormbase->misc_static."/washu_nematode_contigs.ace"     => "washu_nem_ace"         ,
 		       $wormbase->misc_dynamic."/misc_mass_spec_MichaelHengartner.ace" => "mass_spec"      ,
 		       $wormbase->misc_dynamic."/misc_mass_spec_GenniferMerrihew.ace"  => "mass_spec"      ,
 		       $wormbase->misc_dynamic."/misc_mass_spec_StevenHusson.ace"      => "mass_spec"      ,
 		       $wormbase->misc_dynamic."/misc_mass_spec_NatalieWielsch.ace"    => "mass_spec"      ,
-		       $wormbase->acefiles."/other_nematode_ESTs.ace"           => 'nematode_ESTs'         ,
-		       $wormbase->acefiles."/nembase_nematode_contigs.ace"      => 'nembase_ESTs'          ,
-		       $wormbase->acefiles."/washu_nematode_contigs.ace"        => 'washu_ESTs'            ,
 		       $wormbase->wormpub."/analysis/GI_numbers/GI_numbers.ace" => "gi_number"             ,
 		       $wormbase->misc_dynamic.'/fosmids.ace'                   => 'vancouver_fosmids'
 		      );
