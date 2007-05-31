@@ -5,7 +5,7 @@
 # written by Anthony Rogers
 #
 # Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2007-05-30 15:59:33 $
+# Last edited on: $Date: 2007-05-31 13:22:05 $
 
 
 use DBI;
@@ -68,12 +68,14 @@ GetOptions("chromosomes" => \$chromosomes,
 	  );
 
 my $wormbase;
+my $farm=$update_mySQL?0:1;
+
 if ( $store ) {
   $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
 } else {
   $wormbase = Wormbase->new( 'debug'   => $debug,
                              'test'    => $test,
-			     'farm'    => 1,
+			     'farm'    => $farm,
 			     'version' => $WS_version,
 			     );
 }
@@ -270,7 +272,7 @@ if( $update_mySQL )
     #Make a concatenation of all six agp files from the last release to ~/Elegans  e.g.
     print "\tconcatenating agp files\n";
     $log->write_to("concatenating agp files\n");
-    # this is a bit iffy as 
+    # this is a bit iffy as ->autoace is somewhere else :-(
     $wormbase->run_command("cat ". $wormbase->autoace."/CHROMOSOMES/*.agp > $wormpipe_dir/Elegans/WS$WS_version.agp", $log);
     
     #load information about any new clones
