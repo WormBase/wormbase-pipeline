@@ -169,9 +169,6 @@ sub _new {
     my $class = shift;
     my %param = %{ shift(@_) };
 
-    # additional parameters
-    $param{'-autoace'}='/nfs/disk100/wormpub/TEST_BUILD/autoace/japonica';
-
     my $self = $class->initialize( $class->flatten_params( \%param ) );
 
     # add stuff post object creation goes here
