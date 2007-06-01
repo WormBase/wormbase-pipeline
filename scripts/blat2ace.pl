@@ -7,7 +7,7 @@
 # Exporter to map blat data to genome and to find the best match for each EST, mRNA, OST, etc.
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2007-05-23 13:33:11 $
+# Last edited on: $Date: 2007-06-01 10:07:05 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -339,7 +339,7 @@ if ($nematode || $washu || $nembase) {
 	      my $last   = $y - 1;
 	      my $first  =  (${$entry->{"exons"}}[$last][1] + 1) + (($n-1)*100000);
 	      my $second =  (${$entry->{'exons'}}[$y][0]    - 1) + (($n-1)*100000);
-	      $estorientation{$found} = 5 if ($mrna || $embl);
+	      $estorientation{$found} = 5 if ($type eq 'mRNA');
 	      if (${$entry->{'exons'}}[0][2] < ${$entry->{'exons'}}[0][3]) {
 		if ((${$entry->{'exons'}}[$y][2] == ${$entry->{'exons'}}[$last][3] + 1) && (($second - $first) > 2)) {
 		  if (exists $estorientation{$found} && $estorientation{$found} eq '3') {
@@ -440,20 +440,9 @@ unless ($nematode || $washu || $nembase) {
       for (my $i = 0; $i < @{$ci{$link}}; $i++) {
 	my $merge = $ci{$link}->[$i][0].":".$ci{$link}->[$i][1];
 	if (!exists $double{$merge}) {
-	  if ($mrna) {
-	    printf CI_auto "Confirmed_intron %d %d mRNA $ci{$link}->[$i][2]\n",  $ci{$link}->[$i][0], $ci{$link}->[$i][1];
-}
-	  if ($embl) {
-	    printf CI_auto "Confirmed_intron %d %d Homol $ci{$link}->[$i][2]\n",  $ci{$link}->[$i][0], $ci{$link}->[$i][1];
-  }
-	  if ($est) {
-	    printf CI_auto "Confirmed_intron %d %d EST $ci{$link}->[$i][2]\n",  $ci{$link}->[$i][0], $ci{$link}->[$i][1];
-	  }
-	  if ($ost) {
-	    printf CI_auto "Confirmed_intron %d %d EST $ci{$link}->[$i][2]\n",  $ci{$link}->[$i][0], $ci{$link}->[$i][1];
-	  }
-	  $double{$merge} = 1;
+	  printf CI_auto "Confirmed_intron %d %d $type $ci{$link}->[$i][2]\n",  $ci{$link}->[$i][0], $ci{$link}->[$i][1];
 	}
+	$double{$merge} = 1;
       }
     }
     
@@ -467,6 +456,7 @@ my @filenames = ("autoace.${qspecies}_$type.ace", "autoace.best.${qspecies}_$typ
 my $filename;
 $log->write_to("\n#########################################\nCompressing DNA_homolo acefiles\n#########################################\n");
 foreach $filename (@filenames) {
+  $wormbase->run_command("/bin/mv $blat_dir/$filename $blat_dir/${filename}"."_uncompressed",$log);
   if (-e ("$blat_dir/${filename}"."_uncompressed") ) {
     $log->write_to("Compressing ${filename}"."_uncompressed\n");
     $wormbase->run_script("acecompress.pl -file $blat_dir/${filename}_uncompressed -homol -build", $log);
@@ -549,7 +539,7 @@ sub make_virt_objs {
 		if (($length - $first) < 100000) {
 			$second = $length;
 		  # autoace
-	  		print OUT_autoace_homol "S_child Homol_data $word{$data}:$name"."_$m $first $second\n";
+	  		print OUT_autoace_homol "S_child Homol_data BLAT_$data:$name"."_$m $first $second\n";
 	  		print OUT_autoace_feat  "S_child Feature_data Confirmed_intron_$data:$name"."_$m $first $second\n";
 
 	  		last;
@@ -557,7 +547,7 @@ sub make_virt_objs {
 		else {
 	  		($second = $length) if ($second >  $length);
 	  		# autoace
-	  		print OUT_autoace_homol "S_child Homol_data $word{$data}:$name"."_$m $first $second\n";
+	  		print OUT_autoace_homol "S_child Homol_data BLAT_$data:$name"."_$m $first $second\n";
 	  		print OUT_autoace_feat  "S_child Feature_data Confirmed_intron_$data:$name"."_$m $first $second\n";
 		}
 	}

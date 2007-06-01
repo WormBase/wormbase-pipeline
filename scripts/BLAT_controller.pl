@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl5.8.0 -w
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2007-05-23 13:33:11 $
+# Last edited on: $Date: 2007-06-01 10:07:05 $
 
 
 use lib $ENV{'CVS_DIR'};
@@ -19,7 +19,7 @@ my ($mask, $dump, $run, $postprocess, $ace, $load, $process, $virtual);
 my @types;
 my $all;
 my $store;
-my ($species, $qspecies);
+my ($species, $qspecies, $nematode);
 
 GetOptions (
 	    'debug:s'     => \$debug,
@@ -37,7 +37,8 @@ GetOptions (
 	    'load'        => \$load,
 	    'types:s'     => \@types,
 	    'all'         => \$all,
-	    'qspecies:s'  => \$qspecies    #query species (ie cDNA seq)
+	    'qspecies:s'  => \$qspecies,    #query species (ie cDNA seq)
+	    'nematode'    => \$nematode
 	   );
 
 my $wormbase;
@@ -51,7 +52,7 @@ else {
 			   );
 }
 
-
+$species = $wormbase->species;#for load
 my $log = Log_files->make_build_log($wormbase);
 
 my $wormpub = $wormbase->wormpub;
@@ -61,10 +62,10 @@ my $blat_dir = $wormbase->blat;
 #The mol_types available for each species is different
 #defaults lists - can be overridden by -types
 my %mol_types = ( 'elegans'   => [qw(ESTs mRNA ncRNA OSTs tc1 )],
-				  'briggsae'  => [qw( mRNA )],
-				  'remanei'   => [qw( mRNA )],
-				  'brenneri'  => [qw( mRNA )],
-				  'japonica'  => [qw( mRNA )]
+				  'briggsae'  => [qw( mRNA ESTs )],
+				  'remanei'   => [qw( mRNA ESTs )],
+				  'brenneri'  => [qw( mRNA ESTs )],
+				  'japonica'  => [qw( mRNA ESTs )]
 				);
 
 my @nematodes = qw(nematode washu nembase);
@@ -87,7 +88,14 @@ if(@types) {
 		($mol_types{$_}) = @types;
 	}
 	@nematodes = ();
-}		
+}
+
+#only do the "other nematode" stuff
+if($nematode) {
+  foreach (keys %mol_types){
+    delete $mol_types{$_};
+  }
+}
 
 # mask the sequences based on Feature_data within the species database (or autoace for elegans.)
 if( $mask ) {
@@ -99,7 +107,8 @@ if( $mask ) {
 	
 	#copy the nematode ESTs from BUILD_DATA
 	foreach (@nematodes) {
-		copy($wormbase->build_data."/cDNA/$_/ESTs", $wormbase->basedir."/cDNA/$_/ESTs.masked");
+	  mkdir ($wormbase->basedir."/cDNA/$_") unless  -e ($wormbase->basedir."/cDNA/$_");
+	  copy($wormbase->build_data."/cDNA/$_/ESTs", $wormbase->basedir."/cDNA/$_/ESTs.masked");
 	}
 }
 
@@ -134,6 +143,7 @@ if ( $run ) {
 	foreach my $moltype (@{$mol_types{$wormbase->species}} ){
 		my $split_count = 1;
 		my $seq_dir = $wormbase->maskedcdna;
+		&check_and_shatter($wormbase->maskedcdna, "$moltype.masked");
 		foreach my $seq_file (glob ($seq_dir."/$moltype.masked*")) {
 			my $cmd = "bsub -J ".$wormbase->pepdir_prefix."_$moltype \"/software/worm/bin/blat/blat -noHead ";
 			$cmd .= $wormbase->genome_seq ." $seq_file ";
@@ -146,10 +156,11 @@ if ( $run ) {
 	foreach my $moltype (@nematodes ){
 		my $split_count = 1;
 		my $seq_dir = $wormbase->basedir."/cDNA/$moltype";
-		foreach my $seq_file (glob ($seq_dir."/$moltype*")) {
+		&check_and_shatter($seq_dir, "ESTs.masked");
+		foreach my $seq_file (glob ($seq_dir."/EST*")) {
 			my $cmd = "bsub -J ".$wormbase->pepdir_prefix."_$moltype \"/software/worm/bin/blat/blat -noHead -q=dnax -t=dnax ";
 			$cmd .= $wormbase->genome_seq ." $seq_file ";
-			$cmd .= $wormbase->blat."/_${moltype}_${split_count}.psl\"";
+			$cmd .= $wormbase->blat."/${moltype}_${split_count}.psl\"";
 			$wormbase->run_command($cmd, $log);	
 			$split_count++;	
 		}		
@@ -197,8 +208,8 @@ if( $load ) {
     }
 
     # BLAT results
-    $file = "$blat_dir/autoace.blat.$type.ace";
-    $wormbase->load_to_database($database, $file, "blat_${type}_data");
+    $file = "$blat_dir/autoace.blat.${species}_$type.ace";
+    $wormbase->load_to_database($database, $file, "blat_${species}_${type}_data");
   }
 }
 
@@ -213,9 +224,9 @@ sub check_and_shatter {
 	my $file = shift;
 	
 	my $seq_count = qx(grep -c '>' $dir/$file);
-	if( $seq_count > 5000) {
-		$wormbase->run_command("shatter $dir/$file 5000 $dir/$file", $log);
-		$wormbase->run_command("rm -f $dir/$file");
+	if( $seq_count > 10000) {
+		$wormbase->run_script("shatter $dir/$file 5000 $dir/$file", $log);
+		$wormbase->run_command("rm -f $dir/$file", $log);
 	}
 }
 
@@ -229,6 +240,7 @@ sub dump_dna {
   # this really just makes sure the list of sequence files to BLAT against is written. Used the seq files under the organism database.
 
   my %accessors = $wormbase->species_accessors;
+  $accessors{$wormbase->species} = $wormbase;
   foreach my $species ( keys %accessors ) {
     # genome sequence dna files are either .dna or .fa
     my @files = glob($accessors{$species}->chromosomes."/*.dna");
