@@ -7,7 +7,7 @@
 # Usage : autoace_builder.pl [-options]
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2007-05-25 12:41:08 $
+# Last edited on: $Date: 2007-06-01 11:01:03 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -282,6 +282,9 @@ sub remap_misc_dynamic {
     $wormbase->run_command("cp $ms $backup_ms", $log);
     $wormbase->run_script( "remap_mass_spec_between_releases.pl -input $backup_ms -out $ms", $log);
   }
+
+  # the TEC-REDs and placed back on the genome by using the location of the Features they define
+  $wormbase->run_script( "map_tec-reds.pl", $log);
 
 
   # remap and copy over the SUPPLEMENTARY_GFF dir from BUILD_DATA
