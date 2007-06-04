@@ -4,8 +4,8 @@
 #
 # by ag3 [991221]
 #
-# Last updated on: $Date: 2007-05-23 16:37:31 $
-# Last updated by: $Author: pad $
+# Last updated on: $Date: 2007-06-04 15:34:44 $
+# Last updated by: $Author: gw3 $
 
 # transferdb moves acedb database files across filesystems.
 # Creates a temporary database.BCK 
@@ -209,6 +209,26 @@ foreach my $dir (@TOBEMOVED){
     $log->write_to( "$dir doesn't exist, skipping to next category\n");
   }
   else{
+    # if we are copying onto the lustre filesystem and this directory
+    # name is 'database' then set the stripe size for large files
+    my $sub = $dir;
+    $sub =~ s/$srcdir//;
+    my $e_subdir="$enddir"."$sub";
+    $e_subdir =~ s/\/\//\//;
+
+    if ($enddir =~ /lustre/ && $sub eq "/database") {
+      if (!-d $e_subdir){
+	unless(mkdir($e_subdir,07777)){
+	  $log->write_to( "ERROR: Could not mkdir subdir $e_subdir: $!\n");
+	  croak "ERROR: Could not mkdir subdir $e_subdir: $!\n";
+	}
+	$log->write_to( "CREATED SUBDIR $e_subdir\n");
+      }
+
+      $wormbase->run_command("lfs setstripe $e_subdir 0 -1 -1", $log);
+    }
+
+    # copy each file in this directory across
     find (\&process_file,$dir);
   }
 }
@@ -326,7 +346,6 @@ sub process_file {
     $log->write_to( "CREATED SUBDIR $e_subdir\n");
   }
   my $e_file="$e_subdir"."/"."$filename";
-
 
   if ((-d $s_file) || ($filename =~ /^\./) || ($filename =~ /lock.wrm/)){ 
     $log->write_to( " .. SKIPPING file $filename \n");
