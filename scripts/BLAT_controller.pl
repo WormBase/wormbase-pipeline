@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl5.8.0 -w
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2007-06-01 10:07:05 $
+# Last edited on: $Date: 2007-06-04 13:04:32 $
 
 
 use lib $ENV{'CVS_DIR'};
@@ -61,11 +61,11 @@ my $blat_dir = $wormbase->blat;
 
 #The mol_types available for each species is different
 #defaults lists - can be overridden by -types
-my %mol_types = ( 'elegans'   => [qw(ESTs mRNA ncRNA OSTs tc1 )],
-				  'briggsae'  => [qw( mRNA ESTs )],
-				  'remanei'   => [qw( mRNA ESTs )],
-				  'brenneri'  => [qw( mRNA ESTs )],
-				  'japonica'  => [qw( mRNA ESTs )]
+my %mol_types = ( 'elegans'   => [qw(EST mRNA ncRNA OST tc1 )],
+				  'briggsae'  => [qw( mRNA EST )],
+				  'remanei'   => [qw( mRNA EST )],
+				  'brenneri'  => [qw( mRNA EST )],
+				  'japonica'  => [qw( mRNA EST )]
 				);
 
 my @nematodes = qw(nematode washu nembase);
@@ -108,7 +108,7 @@ if( $mask ) {
 	#copy the nematode ESTs from BUILD_DATA
 	foreach (@nematodes) {
 	  mkdir ($wormbase->basedir."/cDNA/$_") unless  -e ($wormbase->basedir."/cDNA/$_");
-	  copy($wormbase->build_data."/cDNA/$_/ESTs", $wormbase->basedir."/cDNA/$_/ESTs.masked");
+	  copy($wormbase->build_data."/cDNA/$_/EST", $wormbase->basedir."/cDNA/$_/EST.masked");
 	}
 }
 
@@ -156,7 +156,7 @@ if ( $run ) {
 	foreach my $moltype (@nematodes ){
 		my $split_count = 1;
 		my $seq_dir = $wormbase->basedir."/cDNA/$moltype";
-		&check_and_shatter($seq_dir, "ESTs.masked");
+		&check_and_shatter($seq_dir, "EST.masked");
 		foreach my $seq_file (glob ($seq_dir."/EST*")) {
 			my $cmd = "bsub -J ".$wormbase->pepdir_prefix."_$moltype \"/software/worm/bin/blat/blat -noHead -q=dnax -t=dnax ";
 			$cmd .= $wormbase->genome_seq ." $seq_file ";
@@ -191,25 +191,27 @@ if ( $process or $virtual ) {
 }
 
 if( $load ) {
-  foreach my $type (@types){
-    $log->write_to("loading BLAT data - $type\n");
+  foreach my $species (keys %mol_types){
+    foreach my $type (@{$mol_types{$species}}){
+      $log->write_to("loading BLAT data - $type\n");
 
-    # virtual objs
-    my $file =  "$blat_dir/virtual_objects.autoace.blat.$type.ace";
-    $wormbase->load_to_database( $database, $file,"virtual_objects_$type");
+      # virtual objs
+      my $file =  "$blat_dir/virtual_objects.autoace.blat.$type.ace";
+      $wormbase->load_to_database( $database, $file,"virtual_objects_$type");
 
-    # Don't need to add confirmed introns from nematode data (because there are none!)
-    unless ( ($type eq "nematode") || ($type eq "washu") || ($type eq "nembase") || ($type eq "tc1") || ($type eq "embl")|| ($type eq "ncrna") ) {
-      $file = "$blat_dir/virtual_objects.autoace.ci.$type.ace"; 
-      $wormbase->load_to_database($database, $file, "blat_confirmed_introns_$type");
+      # Don't need to add confirmed introns from nematode data (because there are none!)
+      unless ( ($type eq "nematode") || ($type eq "washu") || ($type eq "nembase") || ($type eq "tc1") || ($type eq "embl")|| ($type eq "ncrna") ) {
+	$file = "$blat_dir/virtual_objects.autoace.ci.$type.ace"; 
+	$wormbase->load_to_database($database, $file, "blat_confirmed_introns_$type");
+	
+	$file = "$blat_dir/autoace.good_introns.$type.ace";
+	$wormbase->load_to_database($database, $file, "blat_good_introns_$type");
+      }
 
-      $file = "$blat_dir/autoace.good_introns.$type.ace";
-      $wormbase->load_to_database($database, $file, "blat_good_introns_$type");
+      # BLAT results
+      $file = "$blat_dir/autoace.blat.${species}_$type.ace";
+      $wormbase->load_to_database($database, $file, "blat_${species}_${type}_data");
     }
-
-    # BLAT results
-    $file = "$blat_dir/autoace.blat.${species}_$type.ace";
-    $wormbase->load_to_database($database, $file, "blat_${species}_${type}_data");
   }
 }
 
