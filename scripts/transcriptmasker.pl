@@ -8,7 +8,7 @@
 # 031023 dl1
 
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2007-05-31 14:50:02 $
+# Last edited on: $Date: 2007-06-04 13:41:52 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -227,7 +227,7 @@ sub usage {
 
 
 sub fetch_features {
-  my $tm_data = $wormbase->table_maker_query($database,$wormbase->basedir."wquery/SCRIPT:transcriptmasker.def");
+  my $tm_data = $wormbase->table_maker_query($database,$wormbase->basedir."/wquery/SCRIPT:transcriptmasker.def");
   while( <$tm_data> ) {
     s/\"//g;  #"
     next if (/acedb/ or /\/\// or /^$/);
