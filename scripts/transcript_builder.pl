@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.8.0 -w
+#!/nfs/disk100/wormpub/bin/perl -w
 #
 # transcript_builder.pl
 # 
@@ -7,7 +7,7 @@
 # Script to make ?Transcript objects
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2007-06-04 12:52:42 $
+# Last updated on: $Date: 2007-06-04 12:58:09 $
 use strict;
 use lib $ENV{'CVS_DIR'};
 use Getopt::Long;
