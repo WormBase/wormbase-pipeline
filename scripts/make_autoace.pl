@@ -7,8 +7,8 @@
 #
 # This makes the autoace database from its composite sources.
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2007-05-23 13:33:11 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2007-06-04 16:33:42 $
 
 use strict;
 use lib  $ENV{'CVS_DIR'};
@@ -487,13 +487,24 @@ sub createdirs {
     if (-d $present_dir) {
       $log->write_to( "\t** $present_dir - already present\n");
       print "** Skipping $present_dir - already present\n";
-      next;
-    }
-    else {
+    } else {
       $log->write_to("making $present_dir\n");
       mkpath($present_dir);
-    }			
+    }
+
   }
+
+  # It is assumed that we are creating autoace on the lustre
+  # filesystem.  lustre can be tuned to stripe files across the
+  # filesystem, this results in improved performance if the file if
+  # large. We wish to do this for the directory containing the
+  # database block.*.wrm files, otherwise there is a reduced
+  # performance when the database block files are updated.
+
+  # This can be removed if lustre is no longer being used.
+  $wormbase->run_command("lfs setstripe $db 0 -1 -1", $log);
+
+
 }
 
 
