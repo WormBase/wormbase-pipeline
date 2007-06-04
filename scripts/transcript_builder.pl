@@ -1,4 +1,4 @@
-#!/nfs/disk100/wormpub/bin/perl -w
+#!/usr/local/bin/perl5.8.0 -w
 #
 # transcript_builder.pl
 # 
@@ -7,7 +7,7 @@
 # Script to make ?Transcript objects
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2007-05-23 13:33:11 $
+# Last updated on: $Date: 2007-06-04 12:52:42 $
 use strict;
 use lib $ENV{'CVS_DIR'};
 use Getopt::Long;
@@ -18,7 +18,6 @@ use Modules::SequenceObj;
 use Modules::Transcript;
 use Modules::CDS;
 use Modules::Strand_transformer;
-use Modules::PairedRead;
 use File::Path;
 use Storable;
 
@@ -127,7 +126,7 @@ foreach my $chrom ( @chromosomes ) {
     next if( $data[1] eq "history" );
     #  GENE STRUCTURE
     if ( $data[1] eq "curated" ) {
-      $data[9] =~ s/\"//g;#"
+      $data[9] =~ s/\"//g;
       next if( defined $test_cds and ($data[9] ne $test_cds)) ;
       if ( $data[2] eq "CDS" ) {
 	# GENE SPAN
@@ -149,7 +148,7 @@ foreach my $chrom ( @chromosomes ) {
       next if (/#/); 		 # miss header
       next unless (/BEST/);
       my @data = split;
-      $data[9] =~ s/\"//g;#"
+      $data[9] =~ s/\"//g;
       $data[9] =~ s/Sequence:// ;
       $cDNA{$data[9]}{$data[3]} = $data[4];
       # keep min max span of cDNA
@@ -165,7 +164,7 @@ foreach my $chrom ( @chromosomes ) {
   }
 
   #Chromomsome info
-  $gff_file = $gff_dir."/CHROMOSOME_${chrom}_Link.gff";#"
+  $gff_file = $gff_dir."/CHROMOSOME_${chrom}_Link.gff";
   open (GFF,"<$gff_file") or $log->log_and_die("cant open gff_file :$!\n");  
   #create Strand_transformer for '-' strand coord reversal
   CHROM:while( <GFF> ){
@@ -177,14 +176,14 @@ foreach my $chrom ( @chromosomes ) {
   }
     
   # add feature_data to cDNA
-  #CHROMOSOME_I  SL1  SL1_acceptor_site   182772  182773 .  -  .  Feature "WBsf016344"  "
+  #CHROMOSOME_I  SL1  SL1_acceptor_site   182772  182773 .  -  .  Feature "WBsf016344"
   my @feature_types = qw(SL1 SL2 polyA_site polyA_signal_sequence);
   foreach my $Type (@feature_types){
     my $gff_file = "$gff_dir/CHROMOSOME_${chrom}_${Type}.gff";
     open(GFF, "<$gff_file") or $log->log_and_die("cant open $gff_file : $!\n");
     while( <GFF> ){
       my @data = split;
-      if ( $data[9] and $data[9] =~ /(WBsf\d+)/) { #Feature "WBsf003597  "
+      if ( $data[9] and $data[9] =~ /(WBsf\d+)/) { #Feature "WBsf003597"
 	my $feat_id = $1;
 	my $dnas = $feature_data{$feat_id};
 	if ( $dnas ) {
@@ -212,7 +211,7 @@ foreach my $chrom ( @chromosomes ) {
   }
 
   close GFF;
-  #"
+  
   &load_EST_data(\%cDNA_span, $chrom);
   # &checkData(\$gff,\$%cDNA_span, \%genes_span); # this just checks that there is some BLAT and gene data in the GFF file
   &eradicateSingleBaseDiff(\%cDNA);
@@ -220,7 +219,7 @@ foreach my $chrom ( @chromosomes ) {
   #create transcript obj for each CDS
   # fwd strand cds will be in block first then rev strand
   foreach (sort { $fwd_cds{$a} <=> $fwd_cds{$b} } keys  %fwd_cds ) {
-    ##next if $genes_span{$_}->[2] eq "-"; #only do fwd strand for now
+    #next if $genes_span{$_}->[2] eq "-"; #only do fwd strand for now
     my $cds = CDS->new( $_, $genes_exons{$_}, $genes_span{$_}->[2], $chrom, $transformer );
     push( @cds_objs, $cds);
     $cds->array_index("$index");
@@ -273,66 +272,35 @@ foreach my $chrom ( @chromosomes ) {
   %cDNA = ();
   %cDNA_span = ();
 
-  ####################################
+  ################################################
   #            DATA LOADED           #
-  ####################################
-
-	#move readpairs to separate store
-	my @readpairs;
-	foreach my $CDNA ( @cdna_objs) {
-		if( my $rp = $cdna_objs[$cDNA_index{$CDNA->paired_read}] ) {
-			my $paired_read = PairedRead->new($CDNA, $rp);
-			push(@readpairs, $paired_read) if defined $paired_read;
-		}
-	}
-
-READPAIRS:
-	foreach my $pair (@readpairs) {
-		next if ($pair->reads->[1]->mapped);
-		my $gene;
-		foreach my $cds ( @cds_objs ) {
-			if( $gene and $cds->name !~ /$gene/) {	#ie not an isoform
-				next READPAIRS;
-			}
-			if( $cds->map_paired_read($pair) != 0){
-				($gene) = $cds->name =~ /(\w+\.\d+)/;
-			}
-		}
-	}
+  ################################################
 
 
  CDNA:
   foreach my $CDNA ( @cdna_objs) {
     next if ( defined $est and $CDNA->name ne "$est"); #debug line
-	next if $CDNA->paired_read; # should already be taken care of
+
     #sanity check features on cDNA ie SLs are at start
     next if ( &sanity_check_features( $CDNA ) == 0 );
 
     foreach my $cds ( @cds_objs ) {
       if ( $cds->map_cDNA($CDNA) ) {
-			$CDNA->mapped($cds );
-			next CDNA;
+	$CDNA->mapped($cds );
+	next CDNA;
       }
     }
     last if $est;
   }
 
-  
+  # tie up read pairs
+  foreach my $cdna ( @cds_objs ) {
+    my $name = $cdna->name;
+    if ($cDNA_index{$name}) {
+    }
+  }
+      
   print "Second round additions\n";
-  
-READPAIRS2:
-	foreach my $pair (@readpairs) {
-		next if ($pair->reads->[1]->mapped);
-		my $gene;
-		foreach my $cds ( @cds_objs ) {
-			if( $gene and $cds->name !~ /$gene/) {	#ie not an isoform
-				next READPAIRS;
-			}
-			if( $cds->map_paired_read($pair) != 0){
-				($gene) = $cds->name =~ /(\w+\.\d+)/;
-			}
-		}
-	}
 
   foreach my $CDNA ( @cdna_objs) {
     next if ( defined $est and $CDNA->name ne "$est"); #debug line
@@ -410,11 +378,11 @@ READPAIRS2:
     }
   }
 
+
   my $out_file = "$transcript_dir/chromosome_$chrom.ace";
   print "writing output to $out_file\n";
   open (FH,">$out_file") or $log->log_and_die("cant open $out_file\n");
   foreach my $cds (@cds_objs ) {
-  	$cds->check_across_transcripts; # make sure ests added to one are connected to all where appropriate
     print "reporting : ",$cds->name,"\n" if $wormbase->debug;
     $cds->report(*FH, $coords, $transformer);
   }
