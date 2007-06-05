@@ -6,8 +6,8 @@
 #
 # wrapper script for running transcript_builder.pl
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2006-05-17 09:04:41 $
+# Last edited by: $Author: mh6 $
+# Last edited on: $Date: 2007-06-05 08:37:02 $
 
 use lib $ENV{CVS_DIR};
 use Wormbase;
@@ -91,7 +91,7 @@ $wormbase->wait_for_LSF;
 
 $log->write_to("all batch jobs done - cating outputs to ".$wormbase->transcripts."/transcripts.ace\n");
 $wormbase->run_command("cp " .$wormbase->misc_dynamic."/MtDNA_Transcripts.ace ".$wormbase->transcripts."/chromosome_MtDNA.ace", $log); #hard coded cp of fixed MtDNA Transcripts.
-$wormbase->run_command("cat ".$wormbase->transcripts."/*.ace > ".$wormbase->transcripts."/transcripts.ace", $log);
+$wormbase->run_command("cat ".$wormbase->transcripts."/chromosome_*.ace > ".$wormbase->transcripts."/transcripts.ace", $log);
 
 $log->write_to("loading file to ".$wormbase->autoace."\n");
 $wormbase->load_to_database($wormbase->autoace,$wormbase->transcripts."/transcripts.ace",'transcript_builder', $log);
