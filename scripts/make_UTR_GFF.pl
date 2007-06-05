@@ -1,4 +1,4 @@
-#!/nfs/disk100/wormpub/bin/perl 
+#!/software/bin/perl
 #===============================================================================
 #
 #         FILE:  make_UTR_GFF.pl
@@ -15,7 +15,7 @@
 #      COMPANY:
 #      VERSION:  2 
 #      CREATED:  21/02/06 14:11:30 GMT
-#     REVISION:  $Revision: 1.14 $ 
+#     REVISION:  $Revision: 1.15 $ 
 #===============================================================================
 
 use strict;
@@ -52,7 +52,7 @@ if ($chrom) {
     push( @chromosome, $chrom );
 }
 else {
-    @chromosome = qw( I II III IV V X MtDNA);
+    @chromosome = $wormbase->get_chromosome_names(-mito => 1);
 }
 
 # globale setup setup
@@ -64,7 +64,8 @@ my %cds_cache;  # crude hack to speed up the cds lookup
 # main
 foreach my $chr (@chromosome) {
     %cds_cache=(); # clean out old data
-    my $long_name = "CHROMOSOME_$chr";
+    my $prefix=$wormbase->chromosome_prefix;
+    my $long_name = $prefix.$chr;
 
     $log->write_to("Processing $long_name\n");
 
