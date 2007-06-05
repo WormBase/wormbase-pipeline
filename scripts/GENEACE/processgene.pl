@@ -8,8 +8,8 @@ use strict;
 my $WBGene;
 my $genename;
 my $person_id;
-my $genenamefile = "newgenes.txt";
-my $output = "newgene.ace";
+my $genenamefile = "processgene.txt";
+my $output = "processgene.ace";
 my @acefile_values;
 my $i;
 
@@ -46,7 +46,7 @@ print ( OUTFILE "Gene : $WBGene\n" );
 print ( OUTFILE "Version 2\n" );
 
 # Add History - includes genename
-print ( OUTFILE "History now WBPerson0002970 CGC_name $genename\n");
+print ( OUTFILE "History Version_change 2 now WBPerson2970 CGC_name $genename\n");
 
 # Add CGC_name and person_evidence
 print ( OUTFILE "CGC_name $genename Person_evidence $person_id\n");
