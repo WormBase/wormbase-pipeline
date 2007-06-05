@@ -15,7 +15,7 @@
 #      COMPANY:
 #      VERSION:  2 
 #      CREATED:  21/02/06 14:11:30 GMT
-#     REVISION:  $Revision: 1.15 $ 
+#     REVISION:  $Revision: 1.16 $ 
 #===============================================================================
 
 use strict;
@@ -176,7 +176,7 @@ sub make_gff {
         my $type;
         if    ( $start < $cds[0] ) { $type = ( $orientation eq '+' ) ? 'five'  : 'three' }
         elsif ( $stop > $cds[1] )  { $type = ( $orientation eq '+' ) ? 'three' : 'five' }
-        else { $log->write_to("urghs: start/stop CDS coordinates seem to be messed up\n") }
+        else { $log->write_to("urghs: $name start/stop CDS coordinates seem to be messed up\n") }
         return &utr( $chrom, $name, $start, $stop, $type, $orientation );
     }
 }
