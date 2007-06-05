@@ -6,8 +6,8 @@
 #
 # Usage : autoace_builder.pl [-options]
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2007-06-01 11:01:03 $
+# Last edited by: $Author: mh6 $
+# Last edited on: $Date: 2007-06-05 11:01:29 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -315,9 +315,9 @@ sub remap_misc_dynamic {
 
 sub make_UTR {
   my ($log)=@_;
-  foreach (qw( I II III IV V X MtDNA) ) {
+  foreach ($wormbase->get_chromosome_names(-mito => 1) ) {
 	  # crude ... should be beautified
-	  my $store = $wormbase->autoace . "/wormbase.store";
+	  my $store = $wormbase->autoace . '/'. ref($wormbase) . '.store';
 	  $wormbase->run_command("bsub -J make_UTRs -o /dev/null make_UTR_GFF.pl -chromosome $_ -store $store",$log)
   }
 }
