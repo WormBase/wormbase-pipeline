@@ -861,6 +861,7 @@ sub establish_paths {
     $self->{'dump_dir'}    = '/lustre/work1/ensembl/wormpipe/dumps';
     $self->{'orgdb'}       =  $wormpipe;
     $self->{'logs'}        = "$wormpipe/logs";
+    $self->{'common_data'} = $self->orgdb . "/COMMON_DATA";
   } else {
     my $basedir;
     ( $self->{'wormpub'} ) = '/lustre/cbi4/work1/wormpub';
