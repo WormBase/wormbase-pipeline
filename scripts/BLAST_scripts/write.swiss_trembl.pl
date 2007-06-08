@@ -110,7 +110,7 @@ while (my($from,$to)=each %file_mapping ){
 }
 
 if ($swiss) {
-  unless (-s "tmp/swissprot2org") {
+  unless (-s "/tmp/swissprot2org") {
     die "swissprot2org not found or empty";
   }
   tie %ORG,'GDBM_File', "/tmp/swissprot2org",&GDBM_WRCREAT, 0666 or die "cannot open swissprot2org DBM file $db_files/swissprot2org";
