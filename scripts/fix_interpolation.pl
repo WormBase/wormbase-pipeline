@@ -6,8 +6,8 @@
 #
 # This fixes the gene interpolation paoitions.
 #
-# Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2007-05-24 14:56:30 $      
+# Last updated by: $Author: mh6 $     
+# Last updated on: $Date: 2007-06-08 14:10:23 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -32,7 +32,7 @@ GetOptions ("help"       => \$help,
 	    "test"       => \$test,
 	    "verbose"    => \$verbose,
 	    "store:s"      => \$store,
-	    );
+	    )||die("cannot parse commandline\n");
 
 
 if ( $store ) {
@@ -71,7 +71,7 @@ my $tace            = $wormbase->tace;        # TACE PATH
 ##########################
 
 my @genes;
-my $input = "/lustre/cbi4/work1/wormpub/BUILD/autoace/logs/rev_phys.log";
+my $input = $wormbase->autoace."/logs/rev_phys.log";
 #my $input = "rev_phys.log";
 open(IN, "< $input") || die "Can't open $input\n";
 while (my $line = <IN>) {
