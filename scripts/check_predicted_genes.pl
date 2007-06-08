@@ -4,7 +4,7 @@
 #
 # by Keith Bradnam
 #
-# Last updated on: $Date: 2007-05-24 13:07:48 $
+# Last updated on: $Date: 2007-06-08 14:17:49 $
 # Last updated by: $Author: pad $
 #
 # see pod documentation at end of file for more information about this script
@@ -411,7 +411,7 @@ The script emails the top 20 problems each day (sorted by severity).
 =item MANDATORY arguments: -database <database_path>
 
 This argument must be a path to a valid acedb database, e.g.
-check_predicted_genes.pl -database /lustre/cbi4/work1/wormpub/DATABASES/camace
+check_predicted_genes.pl -database ~wormpub/DATABASES/camace
 
 =back
 
@@ -421,7 +421,7 @@ check_predicted_genes.pl -database /lustre/cbi4/work1/wormpub/DATABASES/camace
 
 If the file specified by -log already exists, the script will append the output to that file.
 Otherwise it will attempt to write to a new file by that name.  If no log file is specified,
-the script will generate a log file in /lustre/cbi4/work1/wormpub/BUILD/logs.
+the script will generate a log file in ~wormpub/BUILD/logs.
 
 If -verbose is specified, output will be written to screen as well as to the log file
 
