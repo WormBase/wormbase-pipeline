@@ -15,7 +15,7 @@
 
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2007-06-08 08:28:50 $      
+# Last updated on: $Date: 2007-06-08 09:12:29 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -96,6 +96,7 @@ print "done\n";
 
 my @chroms;
 if ($chromosome) {
+  if ($chromosome !~ /CHROMOSOME_/) {$chromosome = "CHROMOSOME_" . $chromosome}
   @chroms = ($chromosome);
 } else {
   @chroms = $wormbase->get_chromosome_names(-mito =>1, -prefix => 1);
