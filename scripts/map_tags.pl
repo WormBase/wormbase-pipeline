@@ -24,8 +24,8 @@ use Ace;
 use Sequence_extract;
 use Coords_converter;
 use Getopt::Long;
-use LSF RaiseError => 0, PrintError => 1, PrintOutput => 0;
-use LSF::JobManager;
+#use LSF RaiseError => 0, PrintError => 1, PrintOutput => 0;
+#use LSF::JobManager;
 
 
 my ( $help, $debug, $test, $store );
@@ -69,22 +69,23 @@ my $log = Log_files->make_build_log($wormbase);
 #
 ###########################################################################
 
-my $m = LSF::JobManager->new();
+#my $m = LSF::JobManager->new();
 
 my @chroms = $wormbase->get_chromosome_names(-mito => 1, -prefix => 1);
 
 foreach my $chrom ( @chroms ) {
-  my $mother = $m->submit("$ENV{'CVS_DIR'}/get_sequences_gff.pl -chromosome $chrom $flags");
+#  my $mother = $m->submit("$ENV{'CVS_DIR'}/get_sequences_gff.pl -chromosome $chrom $flags");
+  $wormbase->run_script("get_sequences_gff.pl -chromosome $chrom", $log);
 }
 
-$m->wait_all_children( history => 1 );
+#$m->wait_all_children( history => 1 );
 print "All get_sequences_gff.pl children have completed!\n";
 
-foreach my $job ( $m->jobs ) {    # much quicker if history is pre-cached
-  $log->log_and_die("$job exited non zero\n") if $job->history->exit_status != 0;
-}
+#foreach my $job ( $m->jobs ) {    # much quicker if history is pre-cached
+#  $log->log_and_die("$job exited non zero\n") if $job->history->exit_status != 0;
+#}
 
-$m->clear;                    # clear out the job manager
+#$m->clear;                    # clear out the job manager
 
 
 ###########################################################################
