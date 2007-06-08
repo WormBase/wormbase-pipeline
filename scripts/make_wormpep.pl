@@ -7,7 +7,7 @@
 # Builds a wormpep data set from the current autoace database
 #
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2007-06-08 14:58:57 $
+# Last updated on: $Date: 2007-06-08 16:18:39 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -161,7 +161,7 @@ if ($initial) {
 
 if ($final) {
 
-  $wormbase->run_command("build_pepace.pl", $log);
+  $wormbase->run_script("build_pepace.pl", $log);
 
   # update common data
   $wormbase->run_script("update_Common_data.pl --build --cds2wormpep", $log);
