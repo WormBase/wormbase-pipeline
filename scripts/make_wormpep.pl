@@ -7,7 +7,7 @@
 # Builds a wormpep data set from the current autoace database
 #
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2007-05-30 14:42:06 $
+# Last updated on: $Date: 2007-06-08 12:39:32 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -468,7 +468,7 @@ sub write_wormpep_fasta{
   }
   close(WPFASTA);
 
-  my $status = system ("rewrap $new_wpdir/wp.fasta_unwrap$release > $new_wpdir/${PEP_FILE_STEM}.fasta$release");
+  my $status = system ("perl $ENV{'CVS_DIR'}/rewrap $new_wpdir/wp.fasta_unwrap$release > $new_wpdir/${PEP_FILE_STEM}.fasta$release");
   if(($status >>8) != 0){
     $log->write_to("ERROR: rewrap command failed. \$\? = $status\n");
   }
@@ -566,7 +566,7 @@ sub write_main_wormpep_and_table{
   if($final){
     copy("$new_wpdir/wormpep$release", "$new_wpdir/${PEP_FILE_STEM}_current") or 
 	    $log->write_to("ERROR: Couldn't copy file: $!\n");
-    $wormbase->run_command("/usr/local/pubseq/bin/setdb $new_wpdir/${PEP_FILE_STEM}_current > $new_wpdir/${PEP_FILE_STEM}_current.log", $log);
+    $wormbase->run_command("/software/farm/bin/setdb $new_wpdir/${PEP_FILE_STEM}_current > $new_wpdir/${PEP_FILE_STEM}_current.log", $log);
   }
 
   unlink ("$new_wpdir/wormpep_unwrap$release")  || $log->write_to("cannot delete $new_wpdir/wormpep_unwrap$release\n");
