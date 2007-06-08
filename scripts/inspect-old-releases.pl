@@ -17,7 +17,7 @@
 # foreach? end
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2007-05-24 09:08:57 $      
+# Last updated on: $Date: 2007-06-08 14:02:42 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -72,7 +72,8 @@ my $log = Log_files->make_build_log($wormbase);
 # MAIN BODY OF SCRIPT
 ##########################
 
-my $outfile = "/lustre/cbi4/work1/wormpub/CHROMOSOME_DIFFERENCES/sequence_differences.WS$version";
+#my $outfile = "/lustre/cbi4/work1/wormpub/CHROMOSOME_DIFFERENCES/sequence_differences.WS$version";
+my $outfile = "/nfs/disk100/wormpub/CHROMOSOME_DIFFERENCES/sequence_differences.WS$version";
 
 open (OUT, "> $outfile") || die "Can't open $outfile";
 
