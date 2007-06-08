@@ -13,7 +13,7 @@
 #      COMPANY:
 #     $Version:  $
 #      CREATED: 2006-02-27
-#        $Date: 2007-06-08 14:06:02 $
+#        $Date: 2007-06-08 14:20:45 $
 #===============================================================================
 package Remap_Sequence_Change;
 
@@ -54,8 +54,8 @@ sub read_mapping_data {
                                                                                                                                                             
   foreach my $release (($release1+1) .. $release2) {
     my %chroms;
-#    my $infile = "/lustre/cbi4/work1/wormpub/CHROMOSOME_DIFFERENCES/sequence_differences.WS$release";
-    my $infile = "/nfs/disk100/wormpub/CHROMOSOME_DIFFERENCES/sequence_differences.WS$release";
+    my $infile = "/lustre/cbi4/work1/wormpub/CHROMOSOME_DIFFERENCES/sequence_differences.WS$release";
+#    my $infile = "/nfs/disk100/wormpub/CHROMOSOME_DIFFERENCES/sequence_differences.WS$release";
     open (IN, "< $infile") || die "Can't open $infile\n";
     my $chrom;
     while (my $line = <IN>) {
