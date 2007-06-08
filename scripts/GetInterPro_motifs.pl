@@ -6,8 +6,8 @@
 #
 # Gets latest Interpro:GO mappings from XXXX and puts info in to ace file
 #
-# Last updated by: $Author: ar2 $                      
-# Last updated on: $Date: 2005-12-21 15:57:07 $         
+# Last updated by: $Author: mh6 $                      
+# Last updated on: $Date: 2007-06-08 12:42:30 $         
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -48,7 +48,7 @@ my $log = Log_files->make_build_log($wormbase);
 #Get the latest version
 my $motifs = "/tmp/interpro_motifs.html";
 $log->write_to(": Running 'wget' to get interpro file from EBI\n");
-`/usr/local/bin/wget -O $motifs ftp://ftp.ebi.ac.uk/pub/databases/interpro/entry.list` and $log->log_and_die("$0 Couldnt get listing.html\n");
+`/usr/bin/wget -O $motifs ftp://ftp.ebi.ac.uk/pub/databases/interpro/entry.list` and $log->log_and_die("$0 Couldnt get listing.html\n");
 
 my $ip_ace_file = $wormbase->acefiles."/interpro_motifs.ace";
 open (I2G,"<$motifs") or $log->log_and_die("cant open $motifs\n");
