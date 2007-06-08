@@ -864,7 +864,7 @@ sub establish_paths {
     $self->{'common_data'} = $self->orgdb . "/COMMON_DATA";
   } else {
     my $basedir;
-    ( $self->{'wormpub'} ) = '/lustre/cbi4/work1/wormpub';
+    ( $self->{'wormpub'} ) = glob("~wormpub");
 
     # if a specified non-build database is being used
 
