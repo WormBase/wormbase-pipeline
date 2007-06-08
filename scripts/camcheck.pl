@@ -7,7 +7,7 @@
 # Usage: camcheck.pl
 #
 # Last updated by: $Author: pad $
-# Last updated on: $Date: 2007-05-24 13:04:30 $
+# Last updated on: $Date: 2007-06-08 14:09:45 $
 #
 # see pod documentation (i.e. 'perldoc camcheck.pl') for more information.
 #
@@ -143,7 +143,7 @@ exit(0);
 
 sub CloneTests {
 
-    my $clonepath = "/lustre/cbi4/work1/wormpub/analysis/cosmids";
+    my $clonepath = "~wormpub/analysis/cosmids";
     my $clonefile = "$clonepath"."/current.versions";
     
     open (CLONEFILE,"<$clonefile") || die "Couldn't open $clonefile for reading\n";
