@@ -1,4 +1,4 @@
-#!/nfs/disk100/wormpub/bin/perl -w
+#!/software/bin/perl -w
 #
 # get_sequences_gff.pl
 # 
@@ -15,7 +15,7 @@
 
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2007-05-09 15:00:42 $      
+# Last updated on: $Date: 2007-06-08 08:28:50 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
