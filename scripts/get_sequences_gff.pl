@@ -15,7 +15,7 @@
 
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2007-06-08 09:12:29 $      
+# Last updated on: $Date: 2007-06-08 10:36:50 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -223,6 +223,7 @@ sub process_chromosome {
 #    print ".";
 
     my ($source, $type, $start, $stop, $strand, $id) = @{$genes[$i]};
+    print "$source, $type, $start, $stop, $strand, $id\n" if ($verbose);
 
     my $seq = '';
 
@@ -230,7 +231,10 @@ sub process_chromosome {
       $class="Transcript";
 
       my $obj = $db->fetch($class => $id);
+      if (! defined $obj) {print "Can't find $class $id\n"; next;} # sanity check
       my $cds_ace = $obj->Corresponding_CDS;
+#      my $cds_ace = $obj->at('Visible.Corresponding_CDS[1]');
+      if (! defined $cds_ace) {print "Can't find Corresponding_CDS of $class $id\n"; next;} # sanity check
       my ($cds_clone, $cds_start, $cds_stop) = &get_details($cds_ace);
 
       # set up the UTR flags
@@ -549,7 +553,8 @@ sub get_clone_len {
 sub get_details {
   my ($obj) = @_;
 
-  my $clone = $obj->at('SMap.S_parent.Sequence[1]'); # get the clone/superlink/chromosome this object is on
+#  my $clone = $obj->at('SMap.S_parent.Sequence[1]'); # get the clone/superlink/chromosome this object is on
+  my $clone = $obj->Sequence; # get the clone/superlink/chromosome this object is on
 
   my $quoted_obj = $obj->name();
   $quoted_obj =~ s/\./\\./g;		# replace . with \.
