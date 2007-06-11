@@ -6,8 +6,8 @@
 #
 # This takes a BUILD_DATA/MISC_DYNAMIC/*mass_spec*.ace file and converts any coordinates that have changed between releases
 #
-# Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2006-12-14 14:23:45 $      
+# Last updated by: $Author: mh6 $     
+# Last updated on: $Date: 2007-06-11 08:56:23 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -127,7 +127,7 @@ my $prev_clone_id = "";
 my $clone_id;
 my $new_clone_id;
 my ($indel, $change);
-my %clonesize       = $wormbase->FetchData('clonesize', "$ace_dir/COMMON_DATA"); 
+my %clonesize       = $wormbase->FetchData('clonesize'); 
 my $clone_length;
 
 my %clones_seen;		# for writing out the Homol_data lines at the end
