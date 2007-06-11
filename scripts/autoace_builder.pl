@@ -6,8 +6,8 @@
 #
 # Usage : autoace_builder.pl [-options]
 #
-# Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2007-06-05 11:09:00 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2007-06-11 15:14:39 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -289,16 +289,22 @@ sub remap_misc_dynamic {
 
   # remap and copy over the SUPPLEMENTARY_GFF dir from BUILD_DATA
   my $sup_dir = $wormbase->build_data."/SUPPLEMENTARY_GFF";
+  my $backup_dir = "$sup_dir/BACKUP";
   my $release = $wormbase->version;
   my $old_release = $release - 1;
   opendir(DIR,$sup_dir) or $log->log_and_die("cant open $sup_dir: $!\n");
   while ( my $file = readdir( DIR ) ) {
-  		next unless( $file =~ /gff$/ );
-	  	$wormbase->run_script("remap_gff_between_releases.pl -gff $sup_dir/$file -output /tmp/remap_GFF -release1 $old_release -release2 $release", $log);
-	  	$wormbase->run_command("mv /tmp/remap_GFF $sup_dir/$file", $log);
-  	}
-  	closedir DIR;
-  	$wormbase->run_command("cp -R ".$wormbase->build_data."/SUPPLEMENTARY_GFF ".$wormbase->chromosomes."/");
+    next unless( $file =~ /gff$/ );
+    my $gff = "$sup_dir/$file";
+    my $backup_gff = "$backup_dir/$file.$old_release";
+    if (-e $backup_gff) {
+      $log->log_and_die("$backup_gff already exists - please move it to be $gff before running this again\n");
+    }
+    $wormbase->run_command("cp $gff $backup_gff", $log);
+    $wormbase->run_script("remap_gff_between_releases.pl -gff $backup_gff -output $gff -release1 $old_release -release2 $release", $log);
+  }
+  closedir DIR;
+  $wormbase->run_command("cp -R ".$wormbase->build_data."/SUPPLEMENTARY_GFF ".$wormbase->chromosomes."/");
    
   # remap waba (takes a long time ~24 hours)
 #  my $waba = $wormbase->misc_dynamic."/waba.ace";
