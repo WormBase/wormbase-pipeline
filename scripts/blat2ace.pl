@@ -7,7 +7,7 @@
 # Exporter to map blat data to genome and to find the best match for each EST, mRNA, OST, etc.
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2007-06-01 10:07:05 $
+# Last edited on: $Date: 2007-06-11 11:18:50 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -68,6 +68,7 @@ my $log = Log_files->make_build_log($wormbase);
 # set database paths, default to autoace unless -camace
 my $ace_dir   = $wormbase->autoace;     # AUTOACE DATABASE DIR
 my $blat_dir  = $wormbase->blat;
+my @nematodes = qw(nematode washu nembase);
 
 #############################
 # CommonData hash retrieval #
@@ -80,18 +81,6 @@ unless ($species){ #this should change if other species need this too.
 }
 my %hash;
 my (%best,%other,%bestclone,%match,%ci);
-
-our %word = (
-	     est      => 'BLAT_EST',
-	     ost      => 'BLAT_OST',
-	     mrna     => 'BLAT_mRNA',
-	     ncrna    => 'BLAT_ncRNA',
-	     embl     => 'BLAT_EMBL',
-	     tc1      => 'BLAT_TC1',
-	     nematode => 'BLAT_NEMATODE',
-	     nembase  => 'BLAT_NEMBASE',
-	     washu    => 'BLAT_WASHU'
-	     );
 
 $log->log_and_die("no type specified\n") unless $type;
 
@@ -108,8 +97,11 @@ my $number_of_replacements = 0;
 my %reported_this_query_before;
 my %make_virt_obj;
 # loop through each blat hit
+my $method = $qspecies eq $wormbase->species ? "BLAT_${type}_OTHER" : "BLAT_Caen_${type}_OTHER";
+$method = "BLAT_".uc($qspecies) if grep(/$qspecies/, @nematodes);
+
 while (<BLAT>) {
-	my $method = $qspecies eq $wormbase->species ? "BLAT_${type}_OTHER" : "BLAT_Caen_${type}_OTHER";
+
   next unless (/^\d/);
   my @f            = split "\t";
 
@@ -310,6 +302,7 @@ if ($nematode || $washu || $nembase) {
 } else {
   open (AUTBEST, ">$blat_dir/autoace.best.${qspecies}_$type.ace");
   my $method = $qspecies eq $wormbase->species ? "BLAT_${type}_BEST" : "BLAT_Caen_${type}_BEST";
+  $method = "BLAT_".uc($qspecies) if grep(/$qspecies/, @nematodes);
   foreach my $found (sort keys %best) {
     if (exists $best{$found}) {
       foreach my $entry (@{$best{$found}->{'entry'}}) {

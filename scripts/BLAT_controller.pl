@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl5.8.0 -w
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2007-06-04 13:04:32 $
+# Last edited on: $Date: 2007-06-11 11:18:50 $
 
 
 use lib $ENV{'CVS_DIR'};
@@ -62,10 +62,13 @@ my $blat_dir = $wormbase->blat;
 #The mol_types available for each species is different
 #defaults lists - can be overridden by -types
 my %mol_types = ( 'elegans'   => [qw(EST mRNA ncRNA OST tc1 )],
-				  'briggsae'  => [qw( mRNA EST )],
+				  'briggsae'  => [qw( mRNA )],
 				  'remanei'   => [qw( mRNA EST )],
 				  'brenneri'  => [qw( mRNA EST )],
-				  'japonica'  => [qw( mRNA EST )]
+				  'japonica'  => [qw( mRNA EST )],
+				  'nematode'  => [qw( EST )],
+				  'nembase'   => [qw( EST  )],
+				  'washu'     => [qw( EST      )],
 				);
 
 my @nematodes = qw(nematode washu nembase);
@@ -85,15 +88,16 @@ if( $qspecies ){
 #set specific mol_types if specified.
 if(@types) {
 	foreach (keys %mol_types){
-		($mol_types{$_}) = @types;
+		($mol_types{$_}) = (@types);
 	}
 	@nematodes = ();
 }
 
 #only do the "other nematode" stuff
 if($nematode) {
-  foreach (keys %mol_types){
-    delete $mol_types{$_};
+  foreach my $mt (keys %mol_types){
+  	next if (grep /$mt/ ,@nematodes);
+    delete $mol_types{$mt};
   }
 }
 
