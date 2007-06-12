@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2007-04-27 08:29:58 $      
+# Last updated on: $Date: 2007-06-12 13:24:09 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -220,6 +220,9 @@ foreach my $chromosome (@chromosomes) {
 
   print "finding short CDS exons\n";
   &get_short_exons(\@exons, $chromosome);
+
+  print "finding EST/genome mismatches\n";
+  &get_est_mismatches(\@est, $chromosome);
 
   print "read confirmed_introns and other GFF files\n";
   &get_GFF_files($chromosome);
@@ -1178,7 +1181,7 @@ sub get_protein_split {
     # do we have a new matching transcript? If so, see if the transcript we were doing should be split
     if ($matching_transcript ne $prev_transcript && $prev_transcript ne "") {
 
-      print "Got all homologies for $prev_transcript\n";
+      #print "Got all homologies for $prev_transcript\n";
 
       # check if there are two or more different boxes with more than one protein in them and score over the box cutoff
       # if so, then output a database record for each contributing protein in the boxes
@@ -1194,7 +1197,7 @@ sub get_protein_split {
 	  my $anomaly_score = $pep_protein_score/1000;
 	  if ($anomaly_score > 1) {$anomaly_score = 1;}
 	  if ($anomaly_score < 0) {$anomaly_score = 0;}
-	  print "SPLIT gene ANOMALY $pep_protein_id, $pep_chrom_start, $pep_chrom_end, $pep_chrom_strand, $anomaly_score, 'split $pep_matching_transcript'\n";
+	  #print "SPLIT gene ANOMALY $pep_protein_id, $pep_chrom_start, $pep_chrom_end, $pep_chrom_strand, $anomaly_score, 'split $pep_matching_transcript'\n";
 	  output_to_database("SPLIT_GENE_BY_PROTEIN_GROUPS", $chromosome, $pep_protein_id, $pep_chrom_start, $pep_chrom_end, $pep_chrom_strand, $anomaly_score, "split $pep_matching_transcript");
 
 	}
@@ -1232,7 +1235,7 @@ sub get_protein_split {
 	  my $anomaly_score = $pep_protein_score/1000;
 	  if ($anomaly_score > 1) {$anomaly_score = 1;}
 	  if ($anomaly_score < 0) {$anomaly_score = 0;}
-	  print "SPLIT gene ANOMALY $pep_protein_id, $pep_chrom_start, $pep_chrom_end, $pep_chrom_strand, $anomaly_score, 'split $pep_matching_transcript'\n";
+	  #print "SPLIT gene ANOMALY $pep_protein_id, $pep_chrom_start, $pep_chrom_end, $pep_chrom_strand, $anomaly_score, 'split $pep_matching_transcript'\n";
 	  output_to_database("SPLIT_GENE_BY_PROTEIN_GROUPS", $chromosome, $pep_protein_id, $pep_chrom_start, $pep_chrom_end, $pep_chrom_strand, $anomaly_score, "split $pep_matching_transcript");
 	}
       }
@@ -2055,6 +2058,102 @@ sub get_short_exons {
 
     if ($chrom_end - $chrom_start + 1< 30) { # note any exons shorter than 30 bases
       &output_to_database("SHORT_EXON", $chromosome, $exon_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score, '');
+    }
+  }
+}
+
+##########################################
+# Finding EST/genome mismatches
+# note any 1 to 3 base misalignment that is seen in two or more ESTs
+# this might indicate a genomic sequencing error or some RNA editing
+# &get_est_mismatches(\@est, $chromosome);
+
+sub get_est_mismatches {
+  my ($est_aref, $chromosome) = @_;
+  my @ests = @{$est_aref};
+
+  my $prev_EST_id = "";	
+  my $prev_chrom_start = -1;
+  my $prev_chrom_end = -1;
+  my $prev_score = 0;
+  my $prev_chrom_strand = "";
+  my $prev_hit_start = -1;
+  my $prev_hit_end = -1;
+
+
+  
+  # sort the homologies grouped by EST ID and then chromosomal position
+  my @sorted_ests = sort {$a->[0] cmp $b->[0] or $a->[1] <=> $b->[1]} @ests;
+
+  my %mismatch_counts;
+  foreach my $alignment (@sorted_ests) { # $EST_id, $chrom_start, $chrom_end, $chrom_strand, $hit_start, $hit_end, $EST_score, $matching_transcript
+
+    my $EST_id = $alignment->[0];
+    my $chrom_start = $alignment->[1];
+    my $chrom_end = $alignment->[2];
+    my $chrom_strand = $alignment->[3];
+    my $hit_start = $alignment->[4];
+    my $hit_end = $alignment->[5];
+    my $EST_score = $alignment->[6];
+
+    if ($prev_EST_id eq $EST_id && # the same EST as the previous hit
+	$EST_score > 99.0 &&	# good quality
+	$chrom_end - $chrom_start > 30 && # a decent length
+	$prev_chrom_end - $prev_chrom_start > 30) { # the previous hit was a decent length
+      if ((($hit_start - $prev_hit_end == 1) && ($chrom_start - $prev_chrom_end) < 4) ||
+	  (($hit_start - $prev_hit_end < 4) && ($chrom_start - $prev_chrom_end) == 1)) {
+	my $key = "$chrom_start-$chrom_end";
+	$mismatch_counts{$key}{count}++;
+	$mismatch_counts{$key}{EST_id} = $EST_id;
+	$mismatch_counts{$key}{chrom_start} = $chrom_start;
+	$mismatch_counts{$key}{chrom_end} = $chrom_end;
+	$mismatch_counts{$key}{chrom_strand} = $chrom_strand;
+	$mismatch_counts{$key}{overlaps} = 0;
+      }
+    }
+
+    $prev_EST_id = $EST_id;
+    $prev_chrom_start = $chrom_start;
+    $prev_chrom_end = $chrom_end;
+    $prev_chrom_strand = $chrom_strand;
+    $prev_hit_start = $hit_start;
+    $prev_hit_end = $hit_end;
+    $prev_score = $EST_score;
+  }
+
+  # we now have the set of small misalignments in %mismatch_counts
+
+  # get rid of the singleton misalignments
+  foreach my $key (keys %mismatch_counts) {
+    if ($mismatch_counts{$key}{count} == 1) {
+      delete $mismatch_counts{$key};
+    }
+  }
+
+
+  # now count how many good alignments overlap with them
+  foreach my $alignment (@sorted_ests) { # $EST_id, $chrom_start, $chrom_end, $chrom_strand, $hit_start, $hit_end, $EST_score, $matching_transcript
+
+    my $chrom_start = $alignment->[1];
+    my $chrom_end = $alignment->[2];
+    my $chrom_strand = $alignment->[3];
+
+    foreach my $key (keys %mismatch_counts) {
+      if ($chrom_start < $mismatch_counts{$key}{chrom_start} && 
+	  $chrom_end > $mismatch_counts{$key}{chrom_start} &&
+	  $chrom_strand eq $mismatch_counts{$key}{chrom_strand}) {
+	$mismatch_counts{$key}{overlaps}++;
+      }
+    }
+  }
+
+  foreach my $key (keys %mismatch_counts) {
+    if ($mismatch_counts{$key}{count} > 1) { # this should now always be true
+      # get score as proportion of ESTs there that have the misalignment
+      my $anomaly_score = $mismatch_counts{$key}{count}/($mismatch_counts{$key}{overlaps} + $mismatch_counts{$key}{count});
+      #print "MISMATCHED_EST ", $chromosome, " ID ", $mismatch_counts{$key}{EST_id}, " start ", $mismatch_counts{$key}{chrom_start}, " end ", $mismatch_counts{$key}{chrom_end}, " strand ", $mismatch_counts{$key}{chrom_strand}, "score $anomaly_score\n";
+      &output_to_database("MISMATCHED_EST", $chromosome, $mismatch_counts{$key}{EST_id}, $mismatch_counts{$key}{chrom_start}, $mismatch_counts{$key}{chrom_end}, $mismatch_counts{$key}{chrom_strand}, $anomaly_score, 'possible genomic sequence error or evidence of RNA editing');
+      
     }
   }
 }
