@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2007-06-12 13:24:09 $      
+# Last updated on: $Date: 2007-06-12 13:51:38 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -2151,9 +2151,10 @@ sub get_est_mismatches {
     if ($mismatch_counts{$key}{count} > 1) { # this should now always be true
       # get score as proportion of ESTs there that have the misalignment
       my $anomaly_score = $mismatch_counts{$key}{count}/($mismatch_counts{$key}{overlaps} + $mismatch_counts{$key}{count});
-      #print "MISMATCHED_EST ", $chromosome, " ID ", $mismatch_counts{$key}{EST_id}, " start ", $mismatch_counts{$key}{chrom_start}, " end ", $mismatch_counts{$key}{chrom_end}, " strand ", $mismatch_counts{$key}{chrom_strand}, "score $anomaly_score\n";
-      &output_to_database("MISMATCHED_EST", $chromosome, $mismatch_counts{$key}{EST_id}, $mismatch_counts{$key}{chrom_start}, $mismatch_counts{$key}{chrom_end}, $mismatch_counts{$key}{chrom_strand}, $anomaly_score, 'possible genomic sequence error or evidence of RNA editing');
-      
+      if ($anomaly_score >= 0.5) { # we don't want the dubious cases
+	#print "MISMATCHED_EST ", $chromosome, " ID ", $mismatch_counts{$key}{EST_id}, " start ", $mismatch_counts{$key}{chrom_start}, " end ", $mismatch_counts{$key}{chrom_end}, " strand ", $mismatch_counts{$key}{chrom_strand}, "score $anomaly_score\n";
+	&output_to_database("MISMATCHED_EST", $chromosome, $mismatch_counts{$key}{EST_id}, $mismatch_counts{$key}{chrom_start}, $mismatch_counts{$key}{chrom_end}, $mismatch_counts{$key}{chrom_strand}, $anomaly_score, 'possible genomic sequence error or evidence of RNA editing');
+      }
     }
   }
 }
