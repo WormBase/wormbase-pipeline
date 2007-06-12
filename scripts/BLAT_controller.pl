@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl5.8.0 -w
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2007-06-12 13:33:29 $
+# Last edited on: $Date: 2007-06-12 13:36:57 $
 
 
 use lib $ENV{'CVS_DIR'};
@@ -190,8 +190,8 @@ if ( $process or $virtual ) {
 	foreach my $species (keys %mol_types) {
 	  foreach my $type (@{$mol_types{$species}} ) {
     	#create virtual objects
-#    	$wormbase->run_script("blat2ace.pl -virtual -type $type -qspecies $species", $log) if $virtual;
- #   	$wormbase->run_script("blat2ace.pl -type $type -qspecies $species", $log) if $process;
+    	$wormbase->run_script("blat2ace.pl -virtual -type $type -qspecies $species", $log) if $virtual;
+    	$wormbase->run_script("blat2ace.pl -type $type -qspecies $species", $log) if $process;
     	&confirm_introns($type) if (($wormbase->species eq $species) and $intron);
      }
    }
