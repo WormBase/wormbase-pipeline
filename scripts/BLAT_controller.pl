@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl5.8.0 -w
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2007-06-11 11:18:50 $
+# Last edited on: $Date: 2007-06-12 13:33:29 $
 
 
 use lib $ENV{'CVS_DIR'};
@@ -13,9 +13,10 @@ use File::Copy;
 use File::Path;
 use Log_files;
 use Storable;
+use Sequence_extract;
 
 my ($test, $database, $debug);
-my ($mask, $dump, $run, $postprocess, $ace, $load, $process, $virtual);
+my ($mask, $dump, $run, $postprocess, $ace, $load, $process, $virtual, $intron);
 my @types;
 my $all;
 my $store;
@@ -38,7 +39,8 @@ GetOptions (
 	    'types:s'     => \@types,
 	    'all'         => \$all,
 	    'qspecies:s'  => \$qspecies,    #query species (ie cDNA seq)
-	    'nematode'    => \$nematode
+	    'nematode'    => \$nematode,
+	    'intron'      => \$intron
 	   );
 
 my $wormbase;
@@ -54,7 +56,7 @@ else {
 
 $species = $wormbase->species;#for load
 my $log = Log_files->make_build_log($wormbase);
-
+my $seq_obj      = Sequence_extract->invoke(undef, undef, $wormbase) if $intron;
 my $wormpub = $wormbase->wormpub;
 $database = $wormbase->autoace unless $database;
 my $blat_dir = $wormbase->blat;
@@ -88,7 +90,7 @@ if( $qspecies ){
 #set specific mol_types if specified.
 if(@types) {
 	foreach (keys %mol_types){
-		($mol_types{$_}) = (@types);
+		($mol_types{$_}) = [(@types)];
 	}
 	@nematodes = ();
 }
@@ -188,11 +190,13 @@ if ( $process or $virtual ) {
 	foreach my $species (keys %mol_types) {
 	  foreach my $type (@{$mol_types{$species}} ) {
     	#create virtual objects
-    	$wormbase->run_script("blat2ace.pl -virtual -type $type -qspecies $species", $log) if $virtual;
-    	$wormbase->run_script("blat2ace.pl -type $type -qspecies $species", $log) if $process;
+#    	$wormbase->run_script("blat2ace.pl -virtual -type $type -qspecies $species", $log) if $virtual;
+ #   	$wormbase->run_script("blat2ace.pl -type $type -qspecies $species", $log) if $process;
+    	&confirm_introns($type) if (($wormbase->species eq $species) and $intron);
      }
    }
 }
+
 
 if( $load ) {
   foreach my $species (keys %mol_types){
@@ -218,6 +222,136 @@ if( $load ) {
     }
   }
 }
+
+
+#confirm introns
+sub confirm_introns {
+
+  my $type = shift;
+  local (*GOOD,*BAD);
+  
+  # open the output files
+  open (GOOD, ">$blat_dir/autoace.good_introns.$type.ace") or die "$!";
+  open (BAD,  ">$blat_dir/autoace.bad_introns.$type.ace")  or die "$!";
+  
+  my ($link,@introns,$dna,$switch,$tag);
+ 
+  $tag = ($type eq 'EST' or $type eq 'OST') ? 'EST' : 'cDNA';
+  
+  
+  $/ = "";
+  	
+  	
+  open (CI, "<$blat_dir/autoace.ci.${qspecies}_${type}.ace")  or $log->log_and_die("Cannot open $blat_dir/autoace.ci.${qspecies}_${type}.ace $!\n");
+  while (<CI>) {
+    next unless /^\S/;
+    if (/Sequence : \"(\S+)\"/) {
+      $link = $1;
+      print "Sequence : $link\n";
+      @introns = split /\n/, $_;
+       
+      # evaluate introns #
+      $/ = "";
+      foreach my $test (@introns) {
+	if ($test =~ /Confirmed_intron/) {
+	    my @f = split / /, $test;
+	  
+	  #######################################
+	  # get the donor and acceptor sequence #
+	  #######################################
+	  
+	    my ($first,$last,$start,$end,$pastfirst,$prelast);
+	    if ($f[1] < $f[2]) {
+		($first,$last,$pastfirst,$prelast) = ($f[1]-1,$f[2]-1,$f[1],$f[2]-2);
+	    }
+	    else {
+		($first,$last,$pastfirst,$prelast) = ($f[2]-1,$f[1]-1,$f[2],$f[1]-2);
+	    }	
+	    
+	    $start = $seq_obj->Sub_sequence($link,$first,2);
+	    $end   = $seq_obj->Sub_sequence($link,$prelast,2);
+	  
+#	    print "Coords start $f[1] => $start, end $f[2] => $end\n";
+	  
+	  ##################
+	  # map to S_child #
+	  ##################
+	  
+	  my $lastvirt = int((length $seq_obj->Sub_sequence($link)) /100000) + 1;
+	  my ($startvirt,$endvirt,$virtual);
+	  if ((int($first/100000) + 1 ) > $lastvirt) {
+	    $startvirt = $lastvirt;
+	  }
+	  else {
+	    $startvirt = int($first/100000) + 1;
+	  }
+	  if ((int($last/100000) + 1 ) > $lastvirt) {
+	    $endvirt = $lastvirt;
+	  }
+	  else {
+	    $endvirt = int($first/100000) + 1;
+	  }
+	  
+	  if ($startvirt == $endvirt) { 
+	    $virtual = "Confirmed_intron_$type:" .$link."_".$startvirt;
+	   }
+	  elsif (($startvirt == ($endvirt - 1)) && (($last%100000) <= 50000)) {
+	    $virtual = "Confirmed_intron_$type:" .$link."_".$startvirt;
+	  }
+	  
+	  #################
+	  # check introns #
+	  #################
+	  
+	    my $firstcalc = int($f[1]/100000);
+	    my $seccalc   = int($f[2]/100000);
+	    print STDERR "Problem with $test\n" unless (defined $firstcalc && defined $seccalc); 
+	    my ($one,$two);
+	    if ($firstcalc == $seccalc) {
+		$one = $f[1]%100000;
+		$two = $f[2]%100000;
+	    }
+	    elsif ($firstcalc == ($seccalc-1)) {
+		$one = $f[1]%100000;
+		$two = $f[2]%100000 + 100000;
+		print STDERR "$virtual: $one $two\n";
+	    }
+	    elsif (($firstcalc-1) == $seccalc) {
+		$one = $f[1]%100000 + 100000;
+		$two = $f[2]%100000;
+		print STDERR "$virtual: $one $two\n";
+	    } 
+	    print STDERR "Problem with $test\n" unless (defined $one && defined $two); 
+	    
+	    if ( ( (($start eq 'gt') || ($start eq 'gc')) && ($end eq 'ag')) ||
+		 (  ($start eq 'ct') && (($end eq 'ac') || ($end eq 'gc')) ) ) {	 
+		print GOOD "Feature_data : \"$virtual\"\n";
+		
+		# check to see intron length. If less than 25 bp then mark up as False
+		# dl 040414
+		
+		if (abs ($one - $two) <= 25) {
+		    print GOOD "Confirmed_intron $one $two False $f[4]\n\n";
+		}
+		else {
+		    print GOOD "Confirmed_intron $one $two $tag $f[4]\n\n";
+		}
+	    }
+	    else {
+		print BAD "Feature_data : \"$virtual\"\n";
+		print BAD "Confirmed_intron $one $two $tag $f[4]\n\n";		
+	    }
+	}
+    }
+  }
+}
+  close CI;
+  
+  close GOOD;
+  close BAD;
+  
+}
+
 
 $log->mail;
 exit(0);
