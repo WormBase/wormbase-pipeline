@@ -62,13 +62,13 @@ sub invoke
 
     # inherit from Coords_converter to get all the coord info
     my $self = Coords_converter->invoke($database, $refresh, $wormbase);
-
     bless $self, $class;
 
+	$database = $self->{'DATABASE'} unless $database; #defaults to current_DB in CC if not set.
     # get the chromosomal sequences
     my $tace = $wormbase->tace; # <= hmpf
     my @chromosome = qw( I II III IV V X MtDNA);
-    my $seq_file = "$database/CHROMOSOMES/CHROMOSOME_I.dna";
+    my $seq_file = $self->{'DATABASE'}."/CHROMOSOMES/CHROMOSOME_I.dna";
     unless( -e "$seq_file" ) {
       open (ACE, "| $tace $database") or croak "cant connect to $database :$!\n";
 
@@ -178,6 +178,7 @@ sub Sub_sequence
 
     if( $chrom ) {
       $length = length($self->{SEQUENCE}->{"$chrom"}) unless $length; #full sequence of object.
+      return $self->{SEQUENCE}->{"$chrom"} unless ($start and $length);#return whole seq if no coords passed
       $subseq = substr( ($self->{SEQUENCE}->{"$chrom"} ),$start, $length+(2*$extend) ); #extend either end
     }
     else {
@@ -257,5 +258,7 @@ sub DNA_comp
     $seq =~ tr/x/c/;
     return ($seq);
   }
+
+
 
 1;
