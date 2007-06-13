@@ -1,11 +1,11 @@
-#!/usr/local/bin/perl5.8.0 -w
+#!/software/bin/perl -w
 #
 # check_split_camaces.pl
 #
 # Cronjob integrity check controls for split camace databases.
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2006-03-24 16:24:07 $
+# Last updated by: $Author: pad $
+# Last updated on: $Date: 2007-06-13 11:28:45 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -36,13 +36,13 @@ my $log = Log_files->make_build_log($wormbase);
 
 my $rundate = $wormbase->rundate;
 my $runtime = $wormbase->runtime;
-my $path = "/nfs/disk100/wormpub";
+my $path = "~wormpub";
 my $age = 1;
 
 # is today monday?  If so set age to be 3 to ignore weekend
 $age = 3 if (`date +%u` == 1);
 
-my @users = ("gw3", "pad");
+my @users = ("pad", "gw3", "ar2");
 
 foreach my $user (@users) {
 
@@ -64,7 +64,7 @@ foreach my $user (@users) {
     }
     else{
       $log->write_to("running camcheck.pl\n\n");
-      $wormbase->run_script("camcheck.pl -db $path/camace_${user} -l -e $user" , $log);
+      $wormbase->run_script("camcheck.pl -database ~wormpub/camace_${user} -low -email $user" , $log);
     }
   }
   else{
