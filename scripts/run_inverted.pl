@@ -121,19 +121,19 @@ foreach my $clone (@clones2process) {
     #
     # Feature Inverted        3810    3831    90      "loop 353"
 
-    open (INV, "inverted /tmp/inverted_temp.$$ | ");
+    open (INV, "einverted /tmp/inverted_temp.$$ -outfile stdout -gap 12 -threshold 50 -match 3 -mismatch -4 -outseq /dev/null -auto| ");
     while (<INV>) {
 	
 	chomp;
 	next if ($_ eq "");     # Shortcut empty lines
 	
 	# Main data 
-	if (/^Score (\d+)\: \S+ \( (\d+)\%\) matches\, (\d+) gaps/) {
+	if (/^$clone: Score (\d+)\: \S+ \( (\d+)\%\) matches\, (\d+) gaps/) {
 	    ($score, $percent,$gaps) = ($1,$2,$3);
 	    $tag = 1;
 	    next;
 	}
-	elsif (/^Score (\d+)\: \S+ \(100\%\) matches\, (\d+) gaps/) {
+	elsif (/^$clone: Score (\d+)\: \S+ \(100\%\) matches\, (\d+) gaps/) {
 	    ($score, $percent,$gaps) = ($1,"100",$3);
 	    $tag = 1;
 	    next;
