@@ -71,7 +71,7 @@ $debug = $user if (! defined $debug);
 die "$blast doesnt exist !\n" if ($blast and !(-e $blast));
 
 # This is the database used a reference for generating histories NOT the one that will be changed
-my $database = $source ? $source : glob("/lustre/cbi4/work1/wormpub/camace_orig");
+my $database = $source ? $source : glob("/.automount/evs-users2/root/wormpub/camace_orig");
 
 # assume the lab is HX if not specified
 if (! defined $lab || $lab eq "") {
@@ -79,7 +79,7 @@ if (! defined $lab || $lab eq "") {
 } 
 
 # pass path to latest version of wormbase
-my $version = &get_history_version("/lustre/cbi4/work1/wormpub/DATABASES/current_DB");
+my $version = &get_history_version("/.automount/evs-users2/root/wormpub/DATABASES/current_DB");
 
 # file where temp ace files written
 my $session_file = "/tmp/history_session.$version";
