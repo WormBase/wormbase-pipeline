@@ -7,7 +7,7 @@
 # Usage: camcheck.pl
 #
 # Last updated by: $Author: pad $
-# Last updated on: $Date: 2007-06-08 14:09:45 $
+# Last updated on: $Date: 2007-06-13 11:11:31 $
 #
 # see pod documentation (i.e. 'perldoc camcheck.pl') for more information.
 #
@@ -41,7 +41,7 @@ GetOptions(
 	   'test'       => \$test,    #  -test, TEST_BUILD env used.
 	   'w'          => \$Weekly,  #  -w, Weekly checks are active
 	   'm'          => \$Montly,  #  -m, Montly checks are active
-	   'database:s' => \$database,#  -db select which database to run against
+	   'database:s' => \$database,#  -database select which database to run against
 	   'low'        => \$Low,     #  -l, low level checks - not all the small intron gubbins
 	   'email:s'    => \$email,   #  -e, Specifiy a mail recepient so that only the person responsible for a spilt database will be notified
 	   'store:s'    => \$store,
@@ -143,7 +143,7 @@ exit(0);
 
 sub CloneTests {
 
-    my $clonepath = "~wormpub/analysis/cosmids";
+    my $clonepath = glob("~wormpub/analysis/cosmids");
     my $clonefile = "$clonepath"."/current.versions";
     
     open (CLONEFILE,"<$clonefile") || die "Couldn't open $clonefile for reading\n";
