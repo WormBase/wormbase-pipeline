@@ -5,8 +5,8 @@
 # Counts the number of objects in an ACEDB database for each Class stated in the config file
 # Compares this number to those from a second database.
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2007-05-01 09:05:26 $
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2007-06-13 19:41:37 $
 
 
 use strict;
@@ -27,7 +27,7 @@ $|=1;
 ######################################
 
 my ($help, $debug, $test, $verbose, $store, $wormbase);
-my ($database, $database2, $midway, $wee);
+my ($database, $database2, $midway, $wee,$full);
 our ($errfile,$outfile); 
 our ($db_1, $db_2, $dbname_1, $dbname_2);
 
