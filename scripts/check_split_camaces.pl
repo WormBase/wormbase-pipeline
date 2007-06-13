@@ -5,7 +5,7 @@
 # Cronjob integrity check controls for split camace databases.
 #
 # Last updated by: $Author: pad $
-# Last updated on: $Date: 2007-06-13 11:28:45 $
+# Last updated on: $Date: 2007-06-13 11:38:14 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -36,7 +36,7 @@ my $log = Log_files->make_build_log($wormbase);
 
 my $rundate = $wormbase->rundate;
 my $runtime = $wormbase->runtime;
-my $path = "~wormpub";
+my $path = glob("~wormpub");
 my $age = 1;
 
 # is today monday?  If so set age to be 3 to ignore weekend
@@ -64,7 +64,7 @@ foreach my $user (@users) {
     }
     else{
       $log->write_to("running camcheck.pl\n\n");
-      $wormbase->run_script("camcheck.pl -database ~wormpub/camace_${user} -low -email $user" , $log);
+      $wormbase->run_script("camcheck.pl -database /.automount/evs-users2/root/wormpub/camace_${user} -low -email $user" , $log);
     }
   }
   else{
