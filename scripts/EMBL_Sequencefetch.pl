@@ -1,11 +1,11 @@
-#!/nfs/disk100/wormpub/bin/perl -w
+#!/software/bin/perl -w
 #
-# EMBL_Sequencefetch.pl
+# EMBL_Sequencefetch_species.pl
 #
 # Usage : EMBL_Sequencefetch.pl [-options]
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2007-05-23 13:33:11 $
+# Last edited by: $Author: pad $
+# Last edited on: $Date: 2007-06-13 15:59:00 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -17,95 +17,70 @@ use Carp;
 use Log_files;
 use Storable;
 use Modules::Features;
+use Species;
 
 ######################################
 # variables and command-line options #
 ######################################
 
-my ($help, $debug, $test, $verbose, $store, $wormbase, $version, $organism, $output,$longtext,$dna,$database,$inc);
+my ($help, $debug, $test, $verbose, $store, $wormbase, $version, $organism, $output, $longtext, $dna, $database, $inc, $species,);
 
 GetOptions ("help"       => \$help, #
             "debug=s"    => \$debug, # debug option, turns on more printing and only email specified user.
             "test"       => \$test, # only genomic RNAs will be used for a quick test.
             "verbose"    => \$verbose, # additional printing
-            "store:s"    => \$store,
-	    "version=s"  => \$version, # Specifies a build version for using common data etc.
+            "store:s"    => \$store, # wormbase storable object
 	    "organism=s" => \$organism, # Specify an organism
-	    "output=s"   => \$output, # Specify output directory.
 	    "longtext"   => \$longtext, # Create longtext objects.
 	    "dna"        => \$dna, # Create a seperate DNA file.
 	    "database=s" => \$database, #database are you downloading sequence data for.
-	    "inc"        => \$inc #just query emblnew.
+	    "inc"        => \$inc, #just query emblnew.
 	   );
 
 if ( $store ) {
   $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
 } else {
-  $wormbase = Wormbase->new( -debug   => $debug,
-                             -test    => $test,
+  $wormbase = Wormbase->new( -debug    => $debug,
+                             -test     => $test,
+			     -organism => $species,
 			   );
 }
 
-# Display help if required
-&usage("Help") if ($help);
 
+#################################
+# Set up some useful stuff      #
+#################################
 # establish log file.
 my $log = Log_files->make_build_log($wormbase);
-
-#################################
-# Set up some useful paths      #
-#################################
-my $logs_dir        = $wormbase->logs; # AUTOACE LOGS
-my $sourceDB;
-
-if ($database) {
-  $sourceDB = $database;
-} 
-else {
-  $sourceDB = $wormbase->database('camace');
-}
-
-my $output_dir;
-if (defined $output) {
-  $output_dir = $output;
-} 
-else {
-  $output_dir = $sourceDB."/EMBL_sequence_info";
-  $wormbase->run_command ("mkdir $output_dir", $log) if (!-e $output_dir);
-}
-
-# other paths
-my $mfetch = "/usr/local/pubseq/scripts/mfetch"; #mfetch script
-
-
-##########################
-# MAIN BODY OF SCRIPT
-##########################
+my $mfetch = "/software/bin/mfetch"; #mfetch script
+my $tace = $wormbase->tace; # TACE PATH
+# output dirs
+my   $output_dir = $wormbase->database('camace')."/EMBL_sequence_info";
+$wormbase->run_command ("mkdir $output_dir", $log) if (!-e $output_dir);
 
 # main stuff goes here
 my (%acc_sv2sequence,%method2sequence,%feature2seq);
-my %molecule2rnatype;
-my $name;
+my $molecule;
 my @molecules;
 my @species;
 my %acc2molecule;
-
-#Species hash
-#push(@species,"Caenorhabditis briggsae") if (!defined $organism);
-push(@species,"Caenorhabditis elegans") if (!defined $organism);
-push(@species,"$organism") if ($organism);
+my $new_sequence;
+my $acefile;
+my $dnafile;
+my $Longtextfile;
 
 
 #Molecules types
 #molecule type to Type tag data hash. key:molecule value:type
-$molecule2rnatype{'genomic RNA'} = "ncRNA";
-$molecule2rnatype{'mRNA'} = "ESTormRNA";
-$molecule2rnatype{'other RNA'} = "ncRNA"; 
-$molecule2rnatype{'pre-RNA'} = "ESTorRNA";
-$molecule2rnatype{'rRNA'} = "rRNA";
-$molecule2rnatype{'snRNA'} = "snRNA";
-$molecule2rnatype{'unassigned RNA'} = "ncRNA";
-$molecule2rnatype{'tRNA'} = "tRNA";
+my %molecule2rnatype = ( 'genomic RNA' => "ncRNA",
+			 'mRNA' => "ESTormRNA",
+			 'other RNA' => "ncRNA",
+			 'pre-RNA' => "ESTorRNA",
+			 'rRNA' => "rRNA",
+			 'snRNA' => "snRNA",
+			 'unassigned RNA' => "ncRNA",
+			 'tRNA' => "tRNA",
+		       );
 
 if ($test) {
   @molecules  = ("mRNA");
@@ -130,49 +105,135 @@ WARNING: You are retrieving EMBL sequences as a full update (This will take a lo
 ---------------------------------------------------------------------------------------------------------\n";
 }
 
-##########################################################################
-# Retrieve datahash of Sequence entries from camace and associated data. #
-##########################################################################
-$log->write_to("Fetching sequence data from $sourceDB\n");
-&fetch_database_info;
 
+##########################
+# MAIN BODY OF SCRIPT
+##########################
 
-###########
-# Species #
-###########
-foreach my $species (@species) {
-  if ($species =~ (/(\S+)\s+(\S+)/)) {
-    $name = "$1_$2";
-    #print "$name\n";
+my %species = ($wormbase->species_accessors);
+$species{$wormbase->species} = $wormbase;
+
+foreach my $organism(keys %species) {
+  $log->write_to("============================================\nProcessing: $organism\n============================================\n");
+  my $sourceDB;
+  if ($organism eq "elegans") {
+    $sourceDB = $wormbase->database('camace');
   }
-  $log->write_to("\n============================================\nProcessing $name\n============================================\n");
-
-##### Need to add database stuff here, so that each database can be updated seperately.....when we have all of them here. #####
-
-  #################
-  # Molecule type #
-  #################
-  foreach my $molecule (@molecules) {
-    my $molname;
-    my $count;
+  else {$sourceDB = $wormbase->database($organism);}
+  # Fetch sequence data from primary database.
+  $log->write_to("Fetching sequence data from $sourceDB:\n");
+  &fetch_database_info ($sourceDB) if (-e $sourceDB);
+  foreach $molecule(@molecules) {
+    $log->write_to("============================================\nProcessing: $molecule\n");
     my @entries;
-    if ($molecule =~ (/(\S+)\s+(\S+)/)) {
-      $molname = "$1_$2";
-    } else {
-      $molname = $molecule;
+    # fetch a list of the organism sequencae info from embl or emblnew.
+    $log->write_to("Fetching Sequence data from EMBL: $organism - $molecule\n");
+    &get_embl_data (\@entries, $molecule, $organism);
+    # Retrieve the full object and process.
+    if (scalar@entries > 0) {
+      $log->write_to("Fetching NEW EMBL data: $organism - $molecule\n");
+      &get_new_data (\@entries, $molecule, $organism);
     }
-    $log->write_to("\n============================================\nProcessing: $molecule\n\n");
+    # if there isn't any, just print this line in the log.
+    if (scalar@entries < 1) {
+      $log->write_to("No NEW EMBL data:$organism - $molecule\n");
+    }
+    # Load the data back to the primary database.
+    $log->write_to("Loading $organism data into primary database\n");
+    &load_data ($sourceDB, $molecule, $organism);
+    $log->write_to("Processed: $molecule\n============================================\n");
+  }
+  # Dump the data back to BUILD_DATA/cDNA/organism/
+  $log->write_to("Dumping BLAT sequences($organism)\n");
+  &dump_BLAT_data ($sourceDB, $organism, \%species);
+  $log->write_to("Processed: $organism\n============================================\n\n");
+}
+$log->write_to ("WORK DONE------------FINISHED\n\n");
+#Close log/files and exit
+$log->mail();
+exit(0);
 
-    #############################################
-    # Limit the work to new or updated entries. #
-    #############################################
-    if ($inc) {
-      open (SEQUENCES, "$mfetch -d emblnew -i \"mol:$molecule&org:$species\" |");
-      print "Incremental update selected <mfetch -d emblnew -i \"mol:$molecule&org:$species\">\n";
+
+
+
+###################################################
+#                 SUBROUTINES                     #
+###################################################
+
+
+#######################
+# fetch_database_info #
+#######################
+
+sub fetch_database_info {
+  my $sub_sourceDB = shift;
+  my $def_dir = $wormbase->database('camace')."/wquery";
+  my $tablemaker_query =  "${def_dir}/SCRIPT:estfetch.def";
+  my $command = "Table-maker -p $tablemaker_query\nquit\n";
+
+  open (TACE, "echo '$command' | $tace $sub_sourceDB |");
+  while (<TACE>) {
+    my $status;
+    chomp;
+    s/\"//g;
+    next if ($_ eq "");
+    next if (/acedb\>/);
+
+    if ((/^\S+\t(\S+).(\d+)\t(\S+)\t(\S+)/) or (/^\S+\t(\S+).(\d+)\t(\S+)\t/)) {
+      unless($1 and $2 and $3) {
+	$log->error("$_\n");
+	next;
+      }
+      # split the line into various fields
+      my $sequenceacc = $1;
+      my $acc_sv = $2;
+      my $method = $3;
+      my $feature;
+
+      if (defined$4) {
+	$feature = $4;
+#	print "Sequence: $sequenceacc has the feature $4\n\n"
+      }
+      if (defined$feature) {
+	$status = "yes";
+      } 
+      else {
+	$status = "No";
+      }
+
+      # add data to hash(s) sequence_accession_no is key, status/method/acc_sv is value
+#      %sequencedata = (
+#		       SEQUENCE => {
+#				    sequence2acc_sv => '$acc_sv',
+#				    sequence2method => '$method',
+#				    sequence2feature => '$status',
+#				   }
+#		      );
+      $acc_sv2sequence{$sequenceacc} = $acc_sv;
+      $method2sequence{$sequenceacc} = $method;
+      $feature2seq{$sequenceacc} = $status;
     }
-    else {
-      open (SEQUENCES, "$mfetch -d embl -i \"mol:$molecule&org:$species\" |");
-      print "Default Full update selected <mfetch -d embl -i \"mol:$molecule&org:$species\">\n";
+  }
+  close TACE;
+  $log->write_to("DB: Got it!!\n\n");
+}
+
+#################
+# get_embl_data #
+#################
+
+sub get_embl_data {
+  my $entries = shift;
+  my $molecule = shift;
+  my $species = shift;
+#  my (@entries, $count, $molname);
+  if ($inc) {
+    open (SEQUENCES, "$mfetch -d emblnew -i \"mol:$molecule&org:Caenorhabditis $species\" |");
+    print "Incremental update selected <mfetch -d emblnew -i \"mol:$molecule&org:Caenorhabditis $species\">\n";
+  }
+  else {
+      open (SEQUENCES, "$mfetch -d embl -i \"mol:$molecule&org:Caenorhabditis $species\" |");
+      print "Default Full update selected <mfetch -d embl -i \"mol:$molecule&org:Caenorhabditis $species\">\n";
     }
     while (<SEQUENCES>) {
       chomp;
@@ -182,21 +243,21 @@ foreach my $species (@species) {
       #eg. ID   AX254400; SV 1; linear; unassigned RNA; PAT; INV; 1161 BP.
       # drop the -f switch from mfetch gives AF273797.1
       elsif (my($accR,$svR) = /(\S+)\.(\d+)/) {
-      #elsif (my($accR,$svR) = /^ID\s+(\S+)\;\s+\SV\s+(\d+)\;\s+/) {
+	#elsif (my($accR,$svR) = /^ID\s+(\S+)\;\s+\SV\s+(\d+)\;\s+/) {
 	print "$accR.$svR\n" if ($verbose);
-
+	
 	# Store data about the sequence is datahash.
 	# add to hash. Accession is key, molecule is value
 	$acc2molecule{$accR} = ($molecule2rnatype{$molecule});
 
 	#Is this entry already in the database?
 	if (defined $acc_sv2sequence{$accR}) { # If yes
-	  print "CAMACE:$acc_sv2sequence{$accR} EMBL:$svR\n" if ($verbose);
+	  print "PRIMARY:$acc_sv2sequence{$accR} EMBL:$svR\n" if ($verbose);
 	  if ($acc_sv2sequence{$accR} == $svR) { # If the SV is the same don't do anything
-	    $log->write_to("$accR Sequence Versions match CAMACE:$acc_sv2sequence{$accR} EMBL:$svR\n") if $verbose;
+	    $log->write_to("$accR Sequence Versions match PRIMARY:$acc_sv2sequence{$accR} EMBL:$svR\n") if $verbose;
 	  } else {		# If the SV is different update it!!
-	    push(@entries,"$accR\.$svR");
-	    $log->write_to("$accR - Sequence Versions don\'t match CAMACE:$acc_sv2sequence{$accR} EMBL:$svR\n");
+	    push(@$entries,"$accR\.$svR");
+	    $log->write_to("$accR - Sequence Versions don\'t match PRIMARY:$acc_sv2sequence{$accR} EMBL:$svR\n");
 	    $log->write_to("Updated entry $accR fetch it!\n");
 	  }
 	  if ($feature2seq{$accR} eq "Yes") { # be careful of feature_data.
@@ -205,14 +266,14 @@ foreach my $species (@species) {
 	  }
 	} else {
 	  $log->write_to("New entry $accR fetch it!\n");
-	  push(@entries,"$accR\.$svR");
+	  push(@$entries,"$accR\.$svR");
 	}
       }
     }				# while SEQUENCE
     close (SEQUENCES);
-    $count = (@entries);
-    $log->write_to("$count entrie(s) in the $species $molecule subclass need to be retrieved from embl\n");
-    $log->write_to("\nProcessed: $molecule\n============================================\n");
+#    $count = (@entries);
+    $log->write_to(scalar@$entries." entrie(s) in the $species $molecule subclass need to be retrieved from embl\n");
+    $log->write_to("EMBL: Got it!!\n");
 
     ###################################################################################
     # Let the real work commence - fetch the entire entry for new sequences from embl #
@@ -226,104 +287,46 @@ foreach my $species (@species) {
     #T00346.1   ID   T00346;   SV 1; linear; mRNA;        EST; INV; 318  BP. (CEESE35) Stratagene est exception
     #AF273829.1 ID   AF273829; SV 1; linear; mRNA;        STD; INV; 1183 BP. Standard mRNA NDB
     #L25083.1   ID   L25083;   SV 1; linear; genomic DNA; STD; INV; 412  BP. Standard DNA NDB
-    
-    if ($count > 0) {
-      $log->write_to("\nWorking to get new data.........\n\n");
-      &get_embl_data (\@entries, $molname);
-    }
-  }				#close foreach molecule loop and on to the molecule type.
-  $log->write_to ("============================================\nFinished Processing $species\n============================================\n");
-}				#close foreach species loop and on to the next species.
-
-$log->write_to ("WORK DONE------------FINISHED\n\n");
-#Close log/files and exit
-$log->mail();
-exit(0);
-
-
-###################
-# ==Subroutines== #
-###################
-
-sub fetch_database_info {
-  my $tace = $wormbase->tace; # TACE PATH
-  my $def_dir = "$sourceDB/wquery";
-  my $tablemaker_query =  "${def_dir}/SCRIPT:estfetch.def";
-  my $command = "Table-maker -p $tablemaker_query\nquit\n";
-
-  open (TACE, "echo '$command' | $tace $sourceDB |");
-  while (<TACE>) {
-    my $status;
-    chomp;
-    s/\"//g;
-    next if ($_ eq "");
-    next if (/acedb\>/);
-
-    if ((/^\S+\t(\S+).(\d+)\t(\S+)\t(\S+)/) or (/^\S+\t(\S+).(\d+)\t(\S+)\t/)) {
-
-      unless($1 and $2 and $3) {
-	$log->error("$_\n");
-	next;
-      }
-      # split the line into various fields
-      my $sequenceacc = $1;
-      my $acc_sv = $2;
-      my $method = $3;
-      my $feature;
-
-      if (defined$4) {
-	$feature = $4;
-      }				#print "Sequence: $sequence has the feature $4\n\n"}
-      if (defined$feature) {
-	$status = "yes";
-      } else {
-	$status = "No";
-      }
-      # add data to hash(s) sequence_accession_no is key, status/method/acc_sv is value
-      $acc_sv2sequence{$sequenceacc} = $acc_sv;
-      $method2sequence{$sequenceacc} = $method;
-      $feature2seq{$sequenceacc} = $status;
-    }
-  }
-  close TACE;
-  $log->write_to("=>\n=>\n=>\nGot it!!\n\n");
 }
 
-sub get_embl_data {
-  my $new_sequence;
+################
+# get_new_data #
+################
+# Basically queries EMBL for all $subentries passed from 1st query and writes out the associated output files.
+sub get_new_data {
   my $subentries = shift;
   my $submol = shift;
-  my ($acefile, $dnafile, $Longtextfile);
+  my $suborganism = shift;
+
   #Output files
-  $acefile = "$output_dir/new_${name}_$submol.ace";
+  $acefile = "$output_dir/new_${suborganism}_$submol.ace";
   $wormbase->run_command ("rm $acefile", $log) if (-e $acefile);
 
   if ($dna) {
-    $dnafile = "$output_dir/new_${name}_$submol.dna";
+    $dnafile = "$output_dir/new_${suborganism}_$submol.dna";
     $wormbase->run_command ("rm $dnafile", $log) if (-e $dnafile);
   }
   if ($longtext) {
-    $Longtextfile = "$output_dir/new_${name}_${submol}_longtext.txt";
+    $Longtextfile = "$output_dir/new_${suborganism}_${submol}_longtext.txt";
     $wormbase->run_command ("rm $Longtextfile", $log) if (-e $Longtextfile);
   }
-  
+
   # Remove stale data if it exists on disk.
-  #$wormbase->run_command ("rm $acefile", $log) if (-e $acefile);
-  #$wormbase->run_command ("rm $dnafile", $log) if (-e $dnafile);
-  #$wormbase->run_command ("rm $Longtextfile", $log) if (-e $Longtextfile);
+  $wormbase->run_command ("rm $acefile", $log) if (-e $acefile);
+  $wormbase->run_command ("rm $dnafile", $log) if (-e $dnafile);
+  $wormbase->run_command ("rm $Longtextfile", $log) if (-e $Longtextfile);
 							
   #open output file for full entries.
   open (OUT_ACE,  ">$acefile");
+  print "$acefile opened!!\n" if $debug;
   open (OUT_DNA,  ">$dnafile") if defined($dna);
   open (OUT_LONG, ">$Longtextfile") if defined($longtext);
 
   foreach $new_sequence (@{$subentries}) {
-    my $seq;
-    my $status;
-    my ($protid,$protver,@description,$idF,$svF,$idF2,$type,$def,$sequencelength);
-    
+    my ($seq,$status,$protid,$protver,@description,$idF,$svF,$idF2,$type,$def,$sequencelength);
+
     #     $new_sequence = "DQ342049"; #get 1 entry DQ342049.1
-    open (NEW_SEQUENCE, "$mfetch -d embl -v full $new_sequence\" |");
+    open (NEW_SEQUENCE, "$mfetch -d embl -v full $new_sequence |");
     while (<NEW_SEQUENCE>) {
       #my $idF2;
       #Extract ID and Sequence Version.
@@ -399,7 +402,7 @@ sub get_embl_data {
 	print OUT_ACE "Database EMBL NDB_SV $idF\.$svF\n";
 	print OUT_ACE "DB_annotation EMBL $idF\n";
 	print OUT_ACE "Protein_id $idF $protid $protver\n" if (defined$protid && defined$protver);
-	print OUT_ACE "Species \"Caenorhabditis elegans\"\n";
+	print OUT_ACE "Species \"Caenorhabditis $suborganism\"\n";
 	print OUT_ACE "Title \"@description\"\n";
 
 	# Properties depend on the molecule subdivision of embl that the sequence was fetched from.
@@ -412,9 +415,7 @@ sub get_embl_data {
 	  #mRNAs
 	  else {
 	    #molecule type
-	    my $moleculetype = ($acc2molecule{$idF2});
-	    my $rna_value = $moleculetype;
-#	    my $rna_value = ($molecule2rnatype{$moleculetype});
+	    my $rna_value = ($acc2molecule{$idF2});
 	    print OUT_ACE "Properties RNA $rna_value\n" unless ($rna_value eq "ESTormRNA");
 	    if ($rna_value eq "ESTormRNA") {
 	      print OUT_ACE "Properties RNA mRNA\n";
@@ -424,8 +425,8 @@ sub get_embl_data {
 	  if ($type eq "STD") {
 	    print OUT_ACE "Method \"NDB\"\n";
 	  }
-	  if ($type eq "EST") {
-	    print OUT_ACE "Method \"EST_elegans\"\n";
+	  elsif ($type eq "EST") {
+	    print OUT_ACE "Method \"EST_$suborganism\"\n";
 	  }
 	} elsif (!defined $type) {
 	  print OUT_ACE "Method \"NDB\"\n";
@@ -448,48 +449,100 @@ sub get_embl_data {
   close (OUT_DNA) if $dna;
   close (OUT_LONG) if $longtext;
   $log->write_to("\n\nOutput Files:\n");
-  $log->write_to("Ace file for $name $submol => $acefile\n");
-  $log->write_to ("DNA file for $name $submol => $dnafile\n") if ($dna);
-  $log->write_to ("LongText file for $name $submol => $Longtextfile\n\n") if $longtext;
+  $log->write_to("Ace file for $suborganism $submol => $acefile\n");
+  $log->write_to ("DNA file for $suborganism $submol => $dnafile\n") if ($dna);
+  $log->write_to ("LongText file for $suborganism $submol => $Longtextfile\n\n") if $longtext;
 }
 
+##############################
+# Load New Data Into Primary #
+##############################
+#Loads new data into primary database.
+sub load_data {
+  my $sub_sourceDB = shift;
+  my $submol = shift;
+  my $suborganism = shift;
 
-sub usage {
-  my $error = shift;
-  
-  if ($error eq "Help") {
-    # Normal help menu
-    system ('perldoc',$0);
-    exit (0);
+  $acefile = "$output_dir/new_${suborganism}_$submol.ace";
+  $wormbase->load_to_database($sub_sourceDB, $acefile, "EMBL_sequence_fetch.pl", $log) if (-e $acefile);
+  $log->write_to("Loading $acefile into $sub_sourceDB\n\n") if (-e $acefile);
+
+  if ($longtext) {
+    $Longtextfile = "$output_dir/new_${suborganism}_${submol}_longtext.txt";
+    $wormbase->load_to_database($sub_sourceDB, $Longtextfile, "EMBL_sequence_fetch.pl", $log) if (-e $Longtextfile);
+    $log->write_to("Loading $Longtextfile into $sub_sourceDB\n\n") if (-e $Longtextfile);
   }
 }
 
-##########################################
+##########################
+# dump data for BLATing  #
+##########################
 
+sub dump_BLAT_data {
+  my $dbdir = shift;
+  my $subspecies = shift;
+  my $EST_dir = $species{$subspecies}{cdna_dir};
+  
+  $log->write_to("Dumping $subspecies from $dbdir\n\n");
+  
+  # Remove stale data if it exists on disk.
+  $wormbase->run_command ("rm $EST_dir/mRNA", $log) if (-e $EST_dir."/mRNA");
+  $log->write_to("Removed $EST_dir/mRNA\n\n")  if (-e $EST_dir."/mRNA" && $debug);
+  $wormbase->run_command ("rm $EST_dir/ncRNA", $log) if (-e $EST_dir."/ncRNA");
+  $log->write_to("Removed $EST_dir/ncRNA\n\n")  if (-e $EST_dir."/ncRNA" && $debug);
+  $wormbase->run_command ("rm $EST_dir/EST", $log) if (-e $EST_dir."/EST");
+  $log->write_to("Removed $EST_dir/EST\n\n")  if (-e $EST_dir."/EST" && $debug);
+  $wormbase->run_command ("rm $EST_dir/OST", $log) if (-e $EST_dir."/OST");
+  $log->write_to("Removed $EST_dir/OST\n\n")  if (-e $EST_dir."/OST" && $debug);
+  $wormbase->run_command ("rm $EST_dir/tc1", $log) if (-e $EST_dir."/tc1");
+  $log->write_to("Removed $EST_dir/tc1\n\n")  if (-e $EST_dir."/tc1" && $debug);
 
-# Add perl documentation in POD format
-# This should expad on your brief description above and
-#  add details of any options that can be used with the program.
-# Such documentation can be viewed using the perldoc command.
+  my $command=<<END;
+query find Sequence where method = NDB & Properties AND NEXT AND NEXT = mRNA\n
+Dna -mismatch $EST_dir/mRNA\n
+clear\n
+query find Sequence where method = NDB & Properties AND NEXT AND NEXT != mRNA\n
+Dna -mismatch $EST_dir/ncRNA\n
+clear\n
+query find Sequence where method = EST_$subspecies & !OST\n
+Dna -mismatch $EST_dir/EST\n
+clear\n
+query find Sequence where method = EST_$subspecies & OST\n
+Dna -mismatch $EST_dir/OST\n
+clear\n
+query find Sequence TC*\n
+Dna -mismatch $EST_dir/tc1\n
+clear\n
+quit\n
+END
+print $command if ($debug);
+  open (DB, "| $tace $dbdir") || die "Couldn't open $dbdir\n";
+  print DB $command;
+  close DB;
+
+  $log->write_to("Finished $subspecies\n\n");
+}
 
 
 __END__
 
 =pod
 
-=head2 NAME - estfetch.pl
+=head2 NAME - EMBL_Sequencefetch_species.pl
 
 =head1 USAGE
 
 =over 4
 
-=item script_template.pl  [-options]
+=item EMBL_Sequencefetch_species.pl  [-options]
 
 =back
 
 This script does...blah blah blah
 
-script_template.pl MANDATORY arguments:
+EMBL_Sequencefetch_species.pl
+
+MANDATORY arguments:
 
 =over 4
 
@@ -513,13 +566,13 @@ script_template.pl  OPTIONAL arguments:
 
 =over 4
 
-=item -test, Test mode, run the script, but dont change anything.
+=item -test, Test mode.
 
 =back
 
 =over 4
 
-=item -verbose, output lots of chatty test messages
+=item -species, only performs syncronisation for given species
 
 =back
 
@@ -535,7 +588,7 @@ script_template.pl  OPTIONAL arguments:
 
 =over 4
 
-=item Keith Bradnam (krb@sanger.ac.uk)
+=item Paul Davis (pad@sanger.ac.uk)
 
 =back
 
