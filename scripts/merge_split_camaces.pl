@@ -5,7 +5,7 @@
 # A script to make multiple copies of camace for curation, and merge them back again
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2007-06-14 10:49:13 $
+# Last edited on: $Date: 2007-06-14 10:52:33 $
 #
 # Persisting errors.
 #running csh -c "reformat_acediff file 1 file2"
@@ -103,12 +103,12 @@ print "OUTPUT_DIR: ".$wormpub."/camace_orig/WS${WS_version}-WS${next_build}\n\n"
 if ($merge) {
 
   print "New directory : '$directory'\n\n" if ($debug);
-#  mkdir ($directory) or die "Failed to create ${directory}\n";
+  mkdir ($directory) or die "Failed to create ${directory}\n";
 
   print "You are merging Data from " . (join '-',@databases) ."\n\n";
 
   # dumps the Pseudogene, Transcript, Feature and Sequence classes from the database
-  #&dump_camace;
+  &dump_camace;
 
   ##   All of the raw data is now dumped to files    ##
 
