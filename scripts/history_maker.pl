@@ -79,7 +79,7 @@ if (! defined $lab || $lab eq "") {
 } 
 
 # pass path to latest version of wormbase
-my $version = &get_history_version("/.automount/evs-users2/root/wormpub/DATABASES/current_DB");
+my $version = $wormbase->get_dev_version;
 
 # file where temp ace files written
 my $session_file = "/tmp/history_session.$version";

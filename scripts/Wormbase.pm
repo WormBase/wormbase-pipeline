@@ -81,7 +81,22 @@ sub get_wormbase_version_name
     return("WS$version");
   }
 
+sub get_dev_version {
+  my $self = shift;
+  unless ( $self->{'version'} ) {
+    my $dir = $self->database('current');
+    if ( -e ("$dir/wspec/database.wrm") ) {
+      my $WS_version = `grep "NAME WS" $dir/wspec/database.wrm`;
+      chomp($WS_version);
+      $WS_version =~ s/.*WS//;
+      $self->version($WS_version);
+    } else {
+      $self->version(666);
+    }
+  }
 
+  return ( $self->{'version'} );
+}
 ###################################################################################
 
 sub version {
