@@ -6,8 +6,8 @@
 #
 # Usage : autoace_builder.pl [-options]
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2007-06-11 15:14:39 $
+# Last edited by: $Author: mh6 $
+# Last edited on: $Date: 2007-06-14 15:31:41 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -155,8 +155,8 @@ $wormbase->run_script( "GFFmunger.pl -all"                       , $log) if $gff
 $wormbase->run_script( "over_load_SNP_gff.pl"                    , $log) if $gff_munge;
 #$wormbase->run_script( "process_sage_gff.pl"                     , $log) if $gff_munge;
 # run process_sage_gff.pl under LSF and wait for each chromosome run to finish
-$wormbase->run_script( "chromosome_script_lsf_manager.pl -command 'process_sage_gff.pl' -mito -prefix", $log) if $gff_munge;
-&ontologies																 if $ontologies;
+$wormbase->run_script( "chromosome_script_lsf_manager.pl -command '/software/bin/perl $ENV{'CVS_DIR'}/process_sage_gff.pl' -mito -prefix", $log) if $gff_munge;
+&ontologies								if $ontologies;
 &make_extras                                                             if $extras;
 #run some checks
 $wormbase->run_script( "post_build_checks.pl -a"                 , $log) if $check;
