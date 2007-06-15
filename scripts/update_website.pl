@@ -7,8 +7,8 @@
 # A script to finish the last part of the weekly build by updating all of the
 # relevant WormBase and Wormpep web pages.
 #
-# Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2007-04-13 09:26:38 $      
+# Last updated by: $Author: mh6 $     
+# Last updated on: $Date: 2007-06-15 15:25:19 $      
 
 
 #################################################################################
@@ -703,7 +703,7 @@ sub copy_GFF_files{
   my @gff_files = ("clone_acc");
   foreach my $chrom (@chrom) {
     foreach my $file (@gff_files){
-      $wb->run_command("sort -u $gff/CHROMOSOME_${chrom}_$file.gff | gff_sort > $www/$WS_name/GFF/CHROMOSOME_${chrom}_$file.gff", $log) && 
+      $wb->run_command("sort -u $gff/CHROMOSOME_${chrom}_$file.gff | /software/bin/perl $ENV{CVS_DIR}/gff_sort > $www/$WS_name/GFF/CHROMOSOME_${chrom}_$file.gff", $log) && 
 	$log->write_to("Couldn't copy CHROMOSOME_${chrom}_$file.gff\n", $log);
     }
   }
