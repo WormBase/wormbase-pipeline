@@ -771,7 +771,7 @@ sub load_to_database {
 
 sub wormpep_files {
   my $self = shift;
-  return ( "wormpep", "wormpep.accession", "wormpep.dna", "wormpep.history", "wp.fasta", "wormpep.table",
+  return ( "wormpep", "wormpep.accession", "wormpep.dna", "wormpep.history", "wormpep.fasta", "wormpep.table",
 	   "wormpep.diff" );
 }
 
