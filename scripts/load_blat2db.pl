@@ -6,7 +6,7 @@
 # 19.02.02 Kerstin Jekosch
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2007-05-24 13:23:19 $
+# Last edited on: $Date: 2007-06-15 14:04:48 $
 
 use strict;
 use Getopt::Long;
@@ -42,16 +42,18 @@ my $log = Log_files->make_build_log($wormbase);
                                                                                                                               
 my $tace =  $wormbase->tace;
 my $blat_dir;
+my $acefiles;
 
 # has the build finished?? script needs to look at ~wormpub/BUILD/autoace/BLAT, if it doesnt exist use current_db/BLAT!!
-if (!-e $wormbase->blat."/virtual_objects.camace.blat.est.ace"){
+if (!-e $wormbase->blat."/virtual_objects.autoace.blat.EST.ace"){
   print "The build must have finished you are now going to use " .$wormbase->database('current')."/BLAT\n\n";
   #$log->write_to( "The build must have finished you are now going to load data from current_db\n");
   $blat_dir = ($wormbase->database('current')."/BLAT");
 }  
-elsif (-e $wormbase->blat."/virtual_objects.camace.blat.est.ace"){
+elsif (-e $wormbase->blat."/virtual_objects.autoace.blat.EST.ace"){
   print "The build is still there.....\n\n";
   $blat_dir = $wormbase->blat;
+  $acefiles = $wormbase->acefiles;
 }
 
 print STDERR "Give the full path for the database you want to modify!\n" unless ($dbdir);
@@ -95,7 +97,7 @@ END
     open (DB, "| $tace $dbdir") || die "Couldn't open $dbdir\n";
     print DB $command;
     close DB;
-    
+    $log->write_to("BLAT Homold data and Confirmed_introns have been removed.\n");
 }
 
 sub load {
@@ -103,10 +105,9 @@ sub load {
 my $command;
 if ($dbname =~ /autoace/) {
 $command=<<END;
-pparse $blat_dir/virtual_objects.autoace.blat.est.ace 
-pparse $blat_dir/virtual_objects.autoace.blat.ost.ace 
-pparse $blat_dir/virtual_objects.autoace.blat.mrna.ace 
-pparse $blat_dir/virtual_objects.autoace.blat.embl.ace 
+pparse $blat_dir/virtual_objects.autoace.blat.EST.ace 
+pparse $blat_dir/virtual_objects.autoace.blat.OST.ace 
+pparse $blat_dir/virtual_objects.autoace.blat.mRNA.ace 
 pparse $blat_dir/virtual_objects.autoace.blat.nembase.ace 
 pparse $blat_dir/virtual_objects.autoace.blat.washu.ace 
 pparse $blat_dir/virtual_objects.autoace.blat.nematode.ace 
@@ -133,26 +134,25 @@ END
 }
 elsif ($dbname =~ /camace/) {
 $command=<<END;
-pparse $blat_dir/virtual_objects.camace.blat.est.ace 
-pparse $blat_dir/virtual_objects.camace.blat.ost.ace 
-pparse $blat_dir/virtual_objects.camace.blat.mrna.ace 
-pparse $blat_dir/virtual_objects.camace.blat.embl.ace 
-pparse $blat_dir/virtual_objects.camace.blat.nembase.ace 
-pparse $blat_dir/virtual_objects.camace.blat.washu.ace 
-pparse $blat_dir/virtual_objects.camace.blat.nematode.ace 
-pparse $blat_dir/virtual_objects.camace.ci.est.ace 
-pparse $blat_dir/virtual_objects.camace.ci.ost.ace 
-pparse $blat_dir/virtual_objects.camace.ci.mrna.ace 
+pparse $acefiles/chromlinks.ace
+pparse $blat_dir/virtual_objects.autoace.blat.EST.ace 
+pparse $blat_dir/virtual_objects.autoace.blat.OST.ace
+pparse $blat_dir/virtual_objects.autoace.blat.mRNA.ace 
+pparse $blat_dir/virtual_objects.autoace.blat.ncRNA.ace
+pparse $blat_dir/virtual_objects.autoace.ci.EST.ace 
+pparse $blat_dir/virtual_objects.autoace.ci.OST.ace 
+pparse $blat_dir/virtual_objects.autoace.ci.mRNA.ace 
+pparse $blat_dir/virtual_objects.autoace.ci.ncRNA.ace
 save
-pparse $blat_dir/camace.blat.ost.ace            
-pparse $blat_dir/camace.blat.mrna.ace 
-pparse $blat_dir/camace.blat.embl.ace 
-pparse $blat_dir/camace.good_introns.est.ace 
-pparse $blat_dir/camace.good_introns.ost.ace 
-pparse $blat_dir/camace.good_introns.mrna.ace 
+pparse $blat_dir/autoace.blat.elegans_EST.ace
+pparse $blat_dir/autoace.blat.elegans_OST.ace
+pparse $blat_dir/autoace.blat.elegans_mRNA.ace
+pparse $blat_dir/autoace.blat.elegans_ncRNA.ace
+pparse $blat_dir/autoace.good_introns.EST.ace 
+pparse $blat_dir/autoace.good_introns.OST.ace
+pparse $blat_dir/autoace.good_introns.mRNA.ace
+pparse $blat_dir/autoace.good_introns.ncRNA.ace
 save 
-pparse $blat_dir/camace.blat.est.ace            
-save
 quit
 END
 }
@@ -185,6 +185,7 @@ END
     open (LOAD, "| $tace $dbdir") || die "Couldn't open $dbdir\n";
     print LOAD $command;
     close LOAD;
+$log->write_to("BLAT Homold data and Confirmed_introns have been Updated.\n");
     
 }
 
