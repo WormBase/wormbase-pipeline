@@ -7,8 +7,8 @@
 # 
 # Originally written by Dan Lawson
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2007-06-08 13:58:42 $
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2007-06-15 12:54:47 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -362,27 +362,25 @@ sub copy_wormpep_files{
   
   foreach my $file ( @wormpep_files ){
   # copy the wormpep release files across
-    $wormbase->run_command("scp $wp_source_dir/$file$WS $wp_ftp_dir/$file$WS", $log);
+    $wormbase->run_command("cp $wp_source_dir/$file$WS $wp_ftp_dir/$file$WS", $log);
     &CheckSize("$wp_source_dir/$file$WS","$wp_ftp_dir/$file$WS");
   }
 
   # tar up the latest wormpep release and copy across
-  my $tgz_file = "$wp_source_dir/wormpep$WS.tar";
-  my $command = "/bin/tar -c -h -P \"$base_dir/WORMPEP/\" -f $tgz_file";
+  my $tgz_file = "$wp_source_dir/wormpep$WS.tar.gz";
+  my $command = "/bin/tar -c -z -h -P \"$base_dir/WORMPEP/\" -f $tgz_file";
 
   # grab list of wormpep file names from subroutine
   foreach my $file (@wormpep_files){
       $command .= " $wp_source_dir/$file$WS";
   }
   $wormbase->run_command("$command", $log);
-  $wormbase->run_command("/bin/gzip $tgz_file", $log);
-  $tgz_file .= ".gz";
   $wormbase->run_command("mv $tgz_file $targetdir/$WS_name", $log);
 
-	$log->write_to("zip and copy brigpep\n");
-	my $brigpep = $wormbase->brigpep;
-	$wormbase->run_command("gzip $brigpep/brigpep$WS",$log);
- 	$wormbase->run_command("mv $brigpep/brigpep$WS.gz $targetdir/$WS_name", $log);
+  $log->write_to("zip and copy brigpep\n");
+  my $brigpep = $wormbase->brigpep;
+  $wormbase->run_command("gzip $brigpep/brigpep$WS",$log);
+  $wormbase->run_command("mv $brigpep/brigpep$WS.gz $targetdir/$WS_name", $log);
 
   $runtime = $wormbase->runtime;
   $log->write_to("$runtime: Finished copying\n\n");
