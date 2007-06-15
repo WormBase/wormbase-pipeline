@@ -1,5 +1,4 @@
 #!/software/bin/perl -w
-#!/usr/local/bin/perl5.8.0 -w
 #
 # script_template.pl                           
 # 
@@ -7,8 +6,8 @@
 #
 # This is a example of a good script template
 #
-# Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2007-05-24 10:51:22 $      
+# Last updated by: $Author: mh6 $     
+# Last updated on: $Date: 2007-06-15 11:05:57 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -103,7 +102,7 @@ sub buildrelease{
   $wormbase->delete_files_from("$dbpath/release","database\.$WS_version\..*\.tar","-");
 
   for (my $i = 0; $i < @tarfiles; ++$i) {
-    $wormbase->run_command("cd $dbpath; tar -hcf $dbpath/release/database.$WS_version.4-$i.tar $tarfiles[$i]\"", $log);#"
+    $wormbase->run_command("cd $dbpath; tar -hcf $dbpath/release/database.$WS_version.4-$i.tar $tarfiles[$i]", $log);#"
     
     # list files in the tar archive
     $wormbase->run_command("tar -tf $dbpath/release/database.$WS_version.4-$i.tar >> $dbpath/release/files_in_tar", $log);
@@ -115,7 +114,7 @@ sub buildrelease{
     $wormbase->run_command("/bin/gzip -t $dbpath/release/database.$WS_version.4-$i.tar.gz >> $dbpath/release/files_in_tar", $log);
     
     # calculate md5sum for the gzip file
-    $wormbase->run_command("/usr/bin/md5sum/md5sum $dbpath/release/database.$WS_version.4-$i.tar.gz >> $dbpath/release/md5sum.WS$WS_version", $log);
+    $wormbase->run_command("/usr/bin/md5sum $dbpath/release/database.$WS_version.4-$i.tar.gz >> $dbpath/release/md5sum.WS$WS_version", $log);
   }
   #check md5sums
   $wormbase->run_command("cd ".$wormbase->autoace."/release; md5sum -c md5sum.WS$WS_version", $log);
