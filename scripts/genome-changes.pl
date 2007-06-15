@@ -7,7 +7,7 @@
 # This is a script to aid making changes to the sequence of a clone.
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2007-06-15 15:28:06 $      
+# Last updated on: $Date: 2007-06-15 15:45:32 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -275,7 +275,7 @@ while (my $input_line = <IN>) {
     my $superlink_errors = $wormbase->run_script( "makesuperlinks.pl -db $new_database -acefile $super", $log);
 
     #  - check we have one of each superlink
-    my @superlinks = `grep -p 'From_laboratory' $super | grep 'Sequence' | sort -n`;
+    my @superlinks = `grep SUPERLINK $super | sort -u  | sort -n`;
     if (scalar @superlinks != 8) {
       print "\nERROR, the following superlinks names have been found:\n@superlinks\n\n";
       $superlink_errors = 1;
