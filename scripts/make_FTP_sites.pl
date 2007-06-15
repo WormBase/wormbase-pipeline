@@ -8,7 +8,7 @@
 # Originally written by Dan Lawson
 #
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2007-06-15 12:54:47 $
+# Last updated on: $Date: 2007-06-15 13:22:09 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -368,11 +368,11 @@ sub copy_wormpep_files{
 
   # tar up the latest wormpep release and copy across
   my $tgz_file = "$wp_source_dir/wormpep$WS.tar.gz";
-  my $command = "/bin/tar -c -z -h -P \"$base_dir/WORMPEP/\" -f $tgz_file";
+  my $command = "tar -c -z -h -P -C \"$base_dir/WORMPEP/\" -f $tgz_file";
 
   # grab list of wormpep file names from subroutine
   foreach my $file (@wormpep_files){
-      $command .= " $wp_source_dir/$file$WS";
+      $command .= " wormpep$WS/$file$WS";
   }
   $wormbase->run_command("$command", $log);
   $wormbase->run_command("mv $tgz_file $targetdir/$WS_name", $log);
