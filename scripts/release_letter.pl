@@ -4,8 +4,8 @@
 # 
 # by Anthony Rogers                             
 #
-# Last updated by: $Author: ar2 $               
-# Last updated on: $Date: 2007-02-20 10:11:37 $
+# Last updated by: $Author: mh6 $               
+# Last updated on: $Date: 2007-06-15 12:31:04 $
 
 # Generates a release letter at the end of build.
 #
@@ -34,7 +34,7 @@ use Modules::Remap_Sequence_Change;
 ######################################
 
 my ($help, $debug, $test, $verbose, $store, $wormbase);
-my ($opt_c, $opt_d, $opt_l);
+my ($opt_c, $opt_l);
 
 GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
@@ -42,7 +42,6 @@ GetOptions ("help"       => \$help,
 	    "verbose"    => \$verbose,
 	    "store:s"      => \$store,
 	    "c"          => \$opt_c,
-	    "d"          => \$opt_d,
 	    "l"          => \$opt_l,
 	    );
 
