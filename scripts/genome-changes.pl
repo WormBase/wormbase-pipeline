@@ -7,7 +7,7 @@
 # This is a script to aid making changes to the sequence of a clone.
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2007-06-08 14:22:16 $      
+# Last updated on: $Date: 2007-06-15 15:28:06 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -1120,7 +1120,8 @@ sub change_feature_data_on_superlink {
 
   my $have_changed_the_features = 0;
 
-  foreach my $line (grep /^$type/, @lines) {
+  my @grepped_lines = grep /^$type/, @lines;
+  foreach my $line (@grepped_lines) {
     chomp $line;
 
 
@@ -1202,7 +1203,7 @@ sub change_feature_data_on_superlink {
   }
 
   # sanity check for when doing superlinks
-  if (! $have_changed_the_features) {
+  if (@grepped_lines && ! $have_changed_the_features) {
 
     $log->write_to( "*** For some reason we did not manage to change the feature_data
 lengths of the superlink ${clone}'s last virtual feature-data block.
@@ -1300,7 +1301,8 @@ sub change_homol_data_on_superlink {
 
   my $have_changed_the_homols = 0;
 
-  foreach my $line (grep /^$type/, @lines) {
+  my @grepped_lines = grep /^$type/, @lines;
+  foreach my $line (@grepped_lines) {
     chomp $line;
 
     #print "$line";
@@ -1390,7 +1392,7 @@ sub change_homol_data_on_superlink {
   }
 
   # sanity check for when doing superlinks
-  if (! $have_changed_the_homols) {
+  if (@grepped_lines && ! $have_changed_the_homols) {
 
     $log->write_to( "*** For some reason we did not manage to change the homol_data
 lengths of the superlink ${clone}'s last virtual block.
