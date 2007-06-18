@@ -8,7 +8,7 @@
 # 031023 dl1
 
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2007-06-04 13:41:52 $
+# Last edited on: $Date: 2007-06-18 15:27:44 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -80,7 +80,7 @@ else {
 }
 
 my $log = Log_files->make_build_log($wormbase);
-
+$log->write_to("mol_type must be specifies\n") unless $mol_type;
 
 # datafiles for input
 my $EST_dir = $wormbase->cdna_dir;
@@ -164,7 +164,7 @@ sub MaskSequence {
   
   # assign output file
   my $output_file = $file ? $file."masked" : $wormbase->maskedcdna."/$mol_type.masked";
-  mkdir ($wormbase->maskedcdna) unless -e $wormbase->maskedcdna;
+  mkpath ($wormbase->maskedcdna) unless -e $wormbase->maskedcdna;
   open (OUTPUT, ">$output_file") || $log->log_and_die("ERROR: Can't open output file: $output_file");
   
   # input file loop structure
