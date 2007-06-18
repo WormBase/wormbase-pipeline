@@ -7,7 +7,7 @@
 # This is a script to aid making changes to the sequence of a clone.
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2007-06-18 13:06:14 $      
+# Last updated on: $Date: 2007-06-18 13:29:48 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -781,12 +781,11 @@ sub shift_gene_models {
     if (&change_homol_data_on_chrom($change, "Homol_data", @chrom_slurp)) {return 1;}
   }
 
-#  # get and change Confirmed_intron - definitely want to update this
-#  print "change Chrom Confirmed_intron\n";
-#  if (&change_confirmed_intron($change, "Confirmed_intron", @chrom_slurp)) {return 1;}
-
-
-
+  # get the length of the affected superlink on the chromosome object and
+  # update its lengths
+   print "change Chromosome superlink lengths\n";
+  if (&change_superlink_length_on_chrom($change, $superlink, @chrom_slurp)) {return 1;}
+  
 
 
 
@@ -1639,6 +1638,60 @@ Check this. No changes were made.\n");
 
   return 0;
 }
+
+
+##########################################
+# $result = &change_superlink_length_on_chrom($change, $superlink, @chrom_slurp)
+# change the chromosome's Subsequence superlink line to reflect the new superlink length
+# return non-zero if hit a problem
+
+sub change_superlink_length_on_chrom {
+
+  my ($change, $superlink, @lines) = @_;
+
+  my $chrom = $change->{'clone'};
+  my $region = $change->{'region'};
+  my $change_type = $change->{'change_type'};
+  my $start_pos = $change->{'start_pos'};
+  my $end_pos = $change->{'end_pos'};
+  my $count_bases = $change->{'count_bases'};
+
+  my $have_changed_the_length = 0;
+
+  my @grepped_lines = grep /^Subsequence/, @lines;
+  foreach my $line (@grepped_lines) {
+    chomp $line;
+
+    #print "$line";
+
+    my ($id, $sl_start, $sl_end) = ($line =~ /^Subsequence\s+\"(\S+)\"\s+(\d+)\s+(\d+)/);
+    next if (! defined $sl_start || ! defined $sl_end);
+
+    if ($id eq $superlink) {
+      $sl_end += $count_bases;
+      # print to ace file
+      push @{$change->{'ace-delete'}{"Sequence : \"$chrom\""}}, "-D $line"; 
+      #print "$line\n";
+      push @{$change->{'ace-add'}{"Sequence : \"$chrom\""}}, "Subsequence $id $sl_start $sl_end"; 
+      #print "Homol_data $id $homol_start $homol_end\n";
+      $have_changed_the_length = 1;
+    }
+
+  }
+
+  # sanity check for when doing chroms
+  if (@grepped_lines && ! $have_changed_the_length) {
+
+    $log->write_to( "*** For some reason we did not manage to change the superlink
+length of the chrom ${chrom}.
+Check this. No changes were made.\n");
+    return 1;
+  }
+
+  return 0;
+}
+
+
 
 ##########################################
 # $result = &change_confirmed_intron($change, $clone, @lines);
