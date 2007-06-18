@@ -37,7 +37,7 @@ Anthony  ar2@sanger.ac.uk
 
 package CDS;
 
-use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'} ;
+use lib $ENV{'CVS_DIR'} ;
 use Carp;
 use Modules::SequenceObj;
 use Modules::Transcript;
