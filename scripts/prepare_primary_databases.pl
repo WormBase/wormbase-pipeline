@@ -3,7 +3,7 @@
 # prepare_primary_databases.pl
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2007-02-14 13:53:37 $
+# Last edited on: $Date: 2007-06-18 15:27:05 $
 
 use strict;
 my $scriptdir = $ENV{'CVS_DIR'};
@@ -26,14 +26,14 @@ use File::Path;
 #
 # Does         : [01] - checks the Primary_database_used_in_build data
 
-my ($test,$debug,$database, $store, $wormbase);
+my ($test,$debug,$database, $store, $wormbase, $caen);
 
 GetOptions ( 
 	    "test"       => \$test,
 	    'debug:s'    => \$debug,
 	    'database:s' => \$database,
-	    'store:s'    => \$store
-	    
+	    'store:s'    => \$store,
+	    'caen'      => \$caen,
 	   );
 
 if( $store ) {
@@ -53,6 +53,20 @@ $databases{'stlace'}->{'search'} = 'stl/stlace*';
 $databases{'brigace'}->{'search'}= 'stl/brigace*';
 $databases{'citace'}->{'search'} = 'caltech/citace*';
 $databases{'cshace'}->{'search'} = 'csh/csh*';
+
+
+# establish databases for other caen sp
+unless( $caen ) {
+	$log->write_to("Copying Caenorhabditea databases . . \n");
+	my (%access) = $wormbase->species_accessors;
+	delete $access{'briggsae'}; # special coz of StLouis
+	foreach my $species (keys %access) {
+		$log->write_to("\t$species\n");
+		my $start = $wormbase->database("$species");
+		my $end = $access{$species}->autoace;
+		$wormbase->run_script("TransferDB.pl -start $start -end $end -database -wspec", $log);
+	}
+}
 
 &FTP_versions;
 &last_versions;
@@ -112,6 +126,8 @@ if ( !defined($database) or ($database and ($database eq 'brigace') ) ) {
 	$wormbase->run_command("cp -R ".$wormbase->primary('brigace')."/temp_unpack_dir/briggff$ver ". $wormbase->chromosomes."/",$log);
 	$wormbase->run_command("cp -f ".$wormbase->primary('brigace')."/temp_unpack_dir/brigpep$ver/* ". $wormbase->brigpep."/",$log);
 }	
+
+
 
 $log->mail;
 exit(0);
