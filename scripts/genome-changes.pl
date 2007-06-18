@@ -7,7 +7,7 @@
 # This is a script to aid making changes to the sequence of a clone.
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2007-06-18 10:59:27 $      
+# Last updated on: $Date: 2007-06-18 13:06:14 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -740,6 +740,56 @@ sub shift_gene_models {
   if (&change_confirmed_intron($change, "Confirmed_intron", @super_slurp)) {return 1;}
 
 
+
+  ##############################
+  #
+  # Chromosome data to be changed
+  #
+  ##############################
+  
+
+  # get the name of the Chromosome
+  ($source_line) = (grep /Source/, @super_slurp);
+  my ($chrom) = ($source_line =~ /Source\s+\"(\S+)\"/);
+
+  # open tace connection to chrom sequence and slurp up the contents
+  $cmd = "find Sequence \"$chrom\"\nshow -a\nquit\n";
+  open (TACE, "echo '$cmd' | $tace $new_database |");
+  my @chrom_slurp = <TACE>;
+  close TACE;
+
+  #print "Contents of $chrom:\n";
+  #print @chrom_slurp;
+
+  # convert to using chrom coordinates instead of clone
+  # coordinates for the changed region
+  # and change the clone name to be the chrom name so that the
+  # subroutines can be re-used easily
+  if (&use_chrom_coords($change, $superlink, $chrom, @chrom_slurp)) {return 1;};
+
+  # shift all objects on the chrom downstream of the changed region
+
+  # get into and change Feature_data - not important, just useful for display purposes
+  print "change Chrom Feature_data\n";
+  if (&change_feature_data_on_chrom($change, "Feature_data", @chrom_slurp)) {return 1;}
+
+  # get into and change Homol_data - not important, just useful for display purposes
+  print "change Chrom Homol_data\n";
+  if ($nohomol) {
+    print "NOT DONE DURING TESTING BECAUSE IT TAKES SO LONG\n";
+  } else {
+    if (&change_homol_data_on_chrom($change, "Homol_data", @chrom_slurp)) {return 1;}
+  }
+
+#  # get and change Confirmed_intron - definitely want to update this
+#  print "change Chrom Confirmed_intron\n";
+#  if (&change_confirmed_intron($change, "Confirmed_intron", @chrom_slurp)) {return 1;}
+
+
+
+
+
+
 # these are not in camace - ignore them - they are mapped elsewhere - think about informing other sites?
 #  # get and change Gene_child
 #  # get and change Nongenomic
@@ -1218,6 +1268,96 @@ Check this. No changes were made.\n");
 
 
 ##########################################
+# $result = &change_feature_data_on_chrom($change, @lines);
+# change the chroms's Feature_data line to reflect the new clone length
+# change the positions in the Feature_data object to reflect the changes
+# return non-zero if hit a problem
+
+sub change_feature_data_on_chrom {
+
+  my ($change, $type, @lines) = @_;
+
+  my $clone = $change->{'clone'};
+  my $region = $change->{'region'};
+  my $change_type = $change->{'change_type'};
+  my $start_pos = $change->{'start_pos'};
+  my $end_pos = $change->{'end_pos'};
+  my $count_bases = $change->{'count_bases'};
+
+  my $have_changed_the_features = 0;
+
+  my @grepped_lines = grep /^$type/, @lines;
+  foreach my $line (@grepped_lines) {
+    chomp $line;
+
+
+    #print "$line";
+
+    my ($id, $feat_start, $feat_end) = ($line =~ /^$type\s+\"(\S+)\"\s+(\d+)\s+(\d+)/);
+    next if (! defined $feat_start || ! defined $feat_end);
+
+    # if we have a chrom, then only change the last feature-data of a
+    # set of virtual blocks
+
+    #print "looking for chrom last feature-data in $line\n";
+    #print "ID $id, feat_start $feat_start, feat_end $feat_end\n";
+    if ($feat_end == $change->{chrom_length}) {
+      #print "Found the last feature-data in the chrom for $id\n";
+      # update the clone length
+      $feat_end += $count_bases;
+      # print to ace file
+      push @{$change->{'ace-delete'}{"Sequence : \"$clone\""}}, "-D $line"; 
+      #print "$line\n";
+      push @{$change->{'ace-add'}{"Sequence : \"$clone\""}}, "Feature_data $id $feat_start $feat_end"; 
+      #print "Feature_data $id $feat_start $feat_end\n";
+      $have_changed_the_features = 1;
+    }
+
+    # change the start and end positions if they are past the changed
+    # region - we need not get too excited about changes occurring in
+    # the middle of the feature_data object
+    #print " feat_end $feat_end  start_pos $start_pos\n";
+    if ($feat_end > $start_pos) { # only work on this feature_data object if any of it is past the changed region
+
+      # try to get the data in the Feature-data virtual block faster by using ACE rather than tace
+      my $feature_obj = $ace->fetch(Feature_data => $id);
+      foreach my $intron_obj ($feature_obj->at('Splices.Confirmed_intron')) {
+	my ($intron_start, $intron_end, $intron_type, $intron_id) = $intron_obj->row;
+	my $feat = "Confirmed_intron $intron_start $intron_end $intron_type $intron_id";
+	#print "$feat\n";
+	if (! defined $intron_start || ! defined $intron_end) {next;}
+        # don't worry about getting a change in the middle of a feature correct
+	if ($feat_start + $intron_start - 1 > $start_pos || # test if have a feature past the start pos of the change
+	    $feat_start + $intron_end - 1 > $start_pos) {  
+	  $intron_start += $count_bases;
+	  $intron_end += $count_bases;
+	  my $new_feat = "Confirmed_intron $intron_start $intron_end $intron_type $intron_id";
+	  #print "$new_feat\n";
+	  push @{$change->{'ace-delete'}{"Feature_data : \"$id\""}}, "-D $feat"; # create output to be written to the ace file
+	  push @{$change->{'ace-add'}{"Feature_data : \"$id\""}}, "$new_feat"; # create output to be written to the ace file
+	}
+      }
+
+    }
+
+  }
+
+  # sanity check for when doing chroms
+  if (@grepped_lines && ! $have_changed_the_features) {
+
+    $log->write_to( "*** For some reason we did not manage to change the feature_data
+lengths of the chrom ${clone}'s last virtual feature-data block.
+Check this. No changes were made.\n");
+    return 1;
+  }
+
+  return 0;
+}
+
+
+
+
+##########################################
 # $result = &change_homol_data_on_clone($change, @lines);
 # change the clone's Homol_data lines to reflect the new clone length
 # change the positions in the Feature_data object to reflect the changes
@@ -1396,6 +1536,103 @@ sub change_homol_data_on_superlink {
 
     $log->write_to( "*** For some reason we did not manage to change the homol_data
 lengths of the superlink ${clone}'s last virtual block.
+Check this. No changes were made.\n");
+    return 1;
+  }
+
+  return 0;
+}
+
+##########################################
+# $result = &change_homol_data_on_chrom($change, @lines);
+# change the clone's Homol_data lines to reflect the new clone length
+# change the positions in the Feature_data object to reflect the changes
+# return non-zero if hit a problem
+
+sub change_homol_data_on_chrom {
+
+  my ($change, $type, @lines) = @_;
+
+  my $clone = $change->{'clone'};
+  my $region = $change->{'region'};
+  my $change_type = $change->{'change_type'};
+  my $start_pos = $change->{'start_pos'};
+  my $end_pos = $change->{'end_pos'};
+  my $count_bases = $change->{'count_bases'};
+
+  my $have_changed_the_homols = 0;
+
+  my @grepped_lines = grep /^$type/, @lines;
+  foreach my $line (@grepped_lines) {
+    chomp $line;
+
+    #print "$line";
+
+    my ($id, $homol_start, $homol_end) = ($line =~ /^$type\s+\"(\S+)\"\s+(\d+)\s+(\d+)/);
+    next if (! defined $homol_start || ! defined $homol_end);
+
+# if we have a chrom, then only change the last homol-data of a
+# set of virtual blocks
+    #print "looking for chrom last homol in $line\n";
+    #print "ID $id, homol_start $homol_start, homol_end $homol_end\n";
+    if ($homol_end == $change->{chrom_length}) {
+      #print "Found the last homol in the chrom for $id\n";
+      # update the clone length
+      $homol_end += $count_bases;
+      # print to ace file
+      push @{$change->{'ace-delete'}{"Sequence : \"$clone\""}}, "-D $line"; 
+      #print "$line\n";
+      push @{$change->{'ace-add'}{"Sequence : \"$clone\""}}, "Homol_data $id $homol_start $homol_end"; 
+      #print "Homol_data $id $homol_start $homol_end\n";
+      $have_changed_the_homols = 1;
+    }
+
+    # change the start and end positions if they are past the changed
+    # region - we need not get too excited about changes occurring in
+    # the middle of the homol_data object
+    if ($homol_end > $start_pos) { # only work on this homol_data object if any of it is past the changed region
+
+      # open tace connection to homol_data object and slurp up the contents
+      my $cmd = "find Homol_data $id\nshow -a\nquit\n";
+      open (TACE, "echo '$cmd' | $tace $new_database |");
+      my @slurp = <TACE>;
+      close TACE;
+
+      foreach my $homol (grep /homol/, @slurp) {
+	chomp $homol;
+	my @split = split /\s+/, $homol;
+	if (! defined $split[4] || ! defined $split[5]) {next;} # if the start or end position is not present in the Homol_data object, skip it
+	#print "$homol\n" if ($split[1] eq "\"yk82a9.5\"");
+        # don't worry about getting a change in the middle of a homol correct
+	if ($homol_start + $split[4] - 1 > $start_pos || # test if have a homol past the start pos of the change
+	    $homol_start + $split[5] - 1 > $start_pos) { 
+	  #print "Changing this line\n" if ($split[1] eq "\"yk82a9.5\"");
+
+	  $split[4] += $count_bases;
+	  $split[5] += $count_bases;
+	  # deal with the AlignPep bits, if present
+	  if (defined $split[8] && $split[8] =~ /Align/) {
+	    $split[9] += $count_bases;
+	  }
+	  my $new_homol = join " ", @split;
+	  push @{$change->{'ace-delete'}{"Homol_data : \"$id\""}}, "-D $homol"; # create output to be written to the ace file
+	  #print "$homol\n";
+	  push @{$change->{'ace-add'}{"Homol_data : \"$id\""}}, "$new_homol"; # create output to be written to the ace file
+	  #print "$new_homol\n";
+	}
+      }
+
+
+
+
+    }
+  }
+
+  # sanity check for when doing chroms
+  if (@grepped_lines && ! $have_changed_the_homols) {
+
+    $log->write_to( "*** For some reason we did not manage to change the homol_data
+lengths of the chrom ${clone}'s last virtual block.
 Check this. No changes were made.\n");
     return 1;
   }
@@ -1792,6 +2029,66 @@ sub use_superlink_coords {
 
   $log->write_to( "*** The position of the clone $clone was not found in the superlink $superlink.\n");
   $log->write_to( "The coordinates of objects in the superlink cannot therefore be adjusted.\n");
+  return 1;
+}
+
+
+##########################################
+# change the stored start and end positions of the changed region from
+# the superlink coords to the chrom coords
+
+#  &use_chrom_coords($change, $superlink, $chrom, @slurp);
+
+sub use_chrom_coords {
+
+  my ($change, $superlink, $chrom, @lines) = @_;
+
+  my $clone = $change->{'clone'};
+
+  # get the position of the end of the last superlink on this chrom
+  # so that we can get the length of the chrom
+  $change->{chrom_length} = 0;
+  foreach my $line (grep /Subsequence/, @lines) {
+    if ($line =~ /Subsequence\s+\S+\s+\d+\s+(\d+)/) {
+      if ($1 > $change->{chrom_length} ) {
+	$change->{chrom_length} = $1; 
+      }
+    }
+  }
+  
+  foreach my $line (grep /Subsequence/, @lines) {
+    chomp $line;
+
+    #print "$line\n";
+
+    my @split = split /\s+/, $line; 
+    # if the start or end position is not present, skip it
+    if (! defined $split[1] || ! defined $split[2] || ! defined $split[3]) {next;} 
+    if ($split[1] eq "\"$clone\"") {
+      # now we have the start position of the superlink on the chrom in $split[2]
+      # use this to change the position of the changed region to chrom coords
+      $change->{'start_pos_on_superlink'} = $change->{'start_pos'};
+      $change->{'end_pos_on_superlink'} = $change->{'end_pos'};
+      $change->{'start_pos'} = $change->{'start_pos'} + $split[2] - 1;
+      $change->{'end_pos'} = $change->{'end_pos'} + $split[2] - 1;
+
+
+      $change->{'superlink_start_on_chrom'} = $split[2];
+      $change->{'superlink_end_on_chrom'} = $split[3];
+
+      # change the name of the clone to that of the chrom for ease of
+      # using the subroutines that expect a clone name
+      $change->{'clone'} = $chrom;
+
+      # and note that we are using the chrom
+      $change->{'chrom'} = 1;
+
+      return 0;
+    }
+  }
+
+  $log->write_to( "*** The position of the superlink $superlink was not found in the chrom $chrom.\n");
+  $log->write_to( "The coordinates of objects in the chrom cannot therefore be adjusted.\n");
   return 1;
 }
 
