@@ -8,7 +8,7 @@
 # and virtual objects to hang the data onto
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2007-05-23 13:33:11 $
+# Last edited on: $Date: 2007-06-18 15:21:32 $
 
 
 use strict;
@@ -37,7 +37,7 @@ GetOptions ("help"       => \$help,
             "debug:s"    => \$debug,
 	    "test"       => \$test,
 	    "verbose"    => \$verbose,
-	    "species:s"  => \$species
+	    "species:s"  => \$species,
 	    "database"   => \$dbpath,
 	    "store:s"    => \$store,
 	    "est"        => \$est,

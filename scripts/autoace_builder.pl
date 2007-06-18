@@ -6,8 +6,8 @@
 #
 # Usage : autoace_builder.pl [-options]
 #
-# Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2007-06-14 15:31:41 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2007-06-18 15:21:32 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -23,7 +23,7 @@ use Storable;
 my ( $debug, $test, $database );
 my ( $initiate, $prepare_databases, $acefile, $build, $first_dumps );
 my ( $make_wormpep, $finish_wormpep );
-my ( $run_blat,     $finish_blat );
+my ( $prep_blat, $run_blat,     $finish_blat );
 my ( $gff_dump,     $processGFF, $gff_split );
 my $gene_span;
 my ( $load, $tsuser, $map_features, $remap_misc_dynamic, $map, $transcripts, $intergenic, $data_sets, $nem_contigs);
@@ -48,6 +48,7 @@ GetOptions(
 	   'gff_split'      => \$gff_split,
 	   'gene_span'      => \$gene_span,
 	   'load=s'         => \$load,
+	   'prep_blat'      => \$prep_blat,
 	   'run_blat'       => \$run_blat,
 	   'finish_blat'    => \$finish_blat,
 	   'tsuser=s'       => \$tsuser,
@@ -106,9 +107,12 @@ $wormbase->run_script( 'map_features.pl -all',              $log ) if $map_featu
 
 
 #########   BLAT  ############
-$wormbase->run_script( 'BLAT_controller.pl -mask -dump -run', $log ) if $run_blat;
+$wormbase->run_script( 'BLAT_controller.pl -mask -dump', $log ) if $prep_blat;
+#//--------------------------- batch job submission -------------------------//
+$wormbase->run_script( 'BLAT_controller.pl -run', $log )        if $run_blat;
 #//--------------------------- batch job submission -------------------------//
 $wormbase->run_script( 'BLAT_controller.pl -virtual -process -postprocess -ace -load', $log ) if $finish_blat;
+#//--------------------------- batch job submission -------------------------//
 # $build_dumpGFF.pl; (blat) is run chronologically here but previous call will operate
 
 $wormbase->run_script( 'batch_transcript_build.pl', $log) if $transcripts;

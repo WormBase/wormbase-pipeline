@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl5.8.0 -w
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2007-06-12 13:52:59 $
+# Last edited on: $Date: 2007-06-18 15:21:32 $
 
 
 use lib $ENV{'CVS_DIR'};
@@ -16,7 +16,7 @@ use Storable;
 use Sequence_extract;
 
 my ($test, $database, $debug);
-my ($mask, $dump, $run, $postprocess, $ace, $load, $process, $virtual, $intron);
+my ($mask, $dump, $run, $postprocess, $load, $process, $virtual, $intron);
 my @types;
 my $all;
 my $store;
@@ -34,7 +34,6 @@ GetOptions (
 	    'virtual'     => \$virtual,
 	    'run'         => \$run,
 	    'postprocess' => \$postprocess,
-	    'ace'         => \$ace,
 	    'load'        => \$load,
 	    'types:s'     => \@types,
 	    'all'         => \$all,
@@ -65,12 +64,12 @@ my $blat_dir = $wormbase->blat;
 #defaults lists - can be overridden by -types
 my %mol_types = ( 'elegans'   => [qw(EST mRNA ncRNA OST tc1 )],
 				  'briggsae'  => [qw( mRNA )],
-				  'remanei'   => [qw( mRNA EST )],
-				  'brenneri'  => [qw( mRNA EST )],
-				  'japonica'  => [qw( mRNA EST )],
+				  'remanei'   => [qw( mRNA )],
+				  'brenneri'  => [qw( mRNA )],
+				  'japonica'  => [qw( mRNA )],
 				  'nematode'  => [qw( EST )],
-				  'nembase'   => [qw( EST  )],
-				  'washu'     => [qw( EST      )],
+				  'nembase'   => [qw( EST )],
+				  'washu'     => [qw( EST )],
 				);
 
 my @nematodes = qw(nematode washu nembase);
@@ -106,6 +105,7 @@ if($nematode) {
 # mask the sequences based on Feature_data within the species database (or autoace for elegans.)
 if( $mask ) {
 	foreach my $species ( keys %mol_types ) {
+		next if (grep /$species/, @nematodes);
 		foreach my $moltype (@{$mol_types{$species}}) {
 			$wormbase->bsub_script("transcriptmasker.pl -species $species -mol_type $moltype", $species, $log);
 		}
@@ -113,7 +113,7 @@ if( $mask ) {
 	
 	#copy the nematode ESTs from BUILD_DATA
 	foreach (@nematodes) {
-	  mkdir ($wormbase->basedir."/cDNA/$_") unless  -e ($wormbase->basedir."/cDNA/$_");
+	  mkpath ($wormbase->basedir."/cDNA/$_") unless  -e ($wormbase->basedir."/cDNA/$_");
 	  copy($wormbase->build_data."/cDNA/$_/EST", $wormbase->basedir."/cDNA/$_/EST.masked");
 	}
 }
@@ -168,10 +168,9 @@ if ( $run ) {
 			$cmd .= $wormbase->genome_seq ." $seq_file ";
 			$cmd .= $wormbase->blat."/${moltype}_${split_count}.psl\"";
 			$wormbase->run_command($cmd, $log);	
-			$split_count++;	
+			$split_count++;				
 		}		
-	}	
-	
+	}			
 }
 
 if( $postprocess ) {
@@ -190,8 +189,8 @@ if ( $process or $virtual ) {
 	foreach my $species (keys %mol_types) {
 	  foreach my $type (@{$mol_types{$species}} ) {
     	#create virtual objects
-    	$wormbase->run_script("blat2ace.pl -virtual -type $type -qspecies $qspecies", $log) if $virtual;
-    	$wormbase->run_script("blat2ace.pl -type $type -qspecies $qspecies -intron", $log) if $process;
+    	$wormbase->run_script("blat2ace.pl -virtual -type $type -qspecies $species", $log) if $virtual;
+    	$wormbase->run_script("blat2ace.pl -type $type -qspecies $species -intron", $log) if $process;
     	&confirm_introns($type) if (($wormbase->species eq $species) and $intron);
      }
    }
