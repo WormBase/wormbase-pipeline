@@ -132,7 +132,14 @@ for (my $i = 1; $i <= 2; $i++)
             {
                # REMEMBER THE FAMILIES THAT THIS WORM GENE IS IN:
                if (!($FAMILY{$ID})) { $FAMILY{$ID} = $AC;                 }
-               else                 { $FAMILY{$ID} = $FAMILY{$ID}.",".$AC;}
+               else {
+               	# as of treefam_4 they include an experimental clustering method 
+               	# used to populate treefam-c families.  These all begin TF5 and we only
+               	# want these if there is no A or B family
+               	unless($AC =~ /^TF5/) {
+               		$FAMILY{$ID} = $FAMILY{$ID} = $AC;
+               	}
+               }
             }
          } 
       }
