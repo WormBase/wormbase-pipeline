@@ -7,7 +7,7 @@
 # This is a script to aid making changes to the sequence of a clone.
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2007-06-15 15:45:32 $      
+# Last updated on: $Date: 2007-06-18 10:59:27 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -1056,7 +1056,7 @@ sub change_feature_data_on_clone {
   foreach my $line (grep /^$type/, @lines) {
     chomp $line;
 
-    my ($id, $clone_length) = ($line =~ /^$type\s+\"(\S+)\"\s+\1\s+(\d+)/);
+    my ($id, $clone_length) = ($line =~ /^$type\s+\"(\S+)\"\s+1\s+(\d+)/);
     next if (! defined $clone_length);
 
     #print "in change_feature_data(), line = $line\n";
