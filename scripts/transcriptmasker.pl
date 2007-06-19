@@ -7,8 +7,8 @@
 
 # 031023 dl1
 
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2007-06-18 15:27:44 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2007-06-19 13:54:40 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -158,7 +158,9 @@ sub MaskSequence {
   #left ignored and ignore after merge as they seem to be meant for different things - ignored seems to be doing nothing though!
   my $ignored = 0;
   my $ignore ;
-  
+
+  $log->write_to("masking $mol_type for $species\n");
+
   # set input record seperator
   $/ = ">";
   
