@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl5.8.0 -w
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2007-06-18 15:21:32 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2007-06-19 12:36:29 $
 
 
 use lib $ENV{'CVS_DIR'};
@@ -114,7 +114,7 @@ if( $mask ) {
 	#copy the nematode ESTs from BUILD_DATA
 	foreach (@nematodes) {
 	  mkpath ($wormbase->basedir."/cDNA/$_") unless  -e ($wormbase->basedir."/cDNA/$_");
-	  copy($wormbase->build_data."/cDNA/$_/EST", $wormbase->basedir."/cDNA/$_/EST.masked");
+	  copy($wormbase->build_data."/cDNA/$_/EST", $wormbase->basedir."/cDNA/$_/EST.masked") if (-e $wormbase->basedir."/cDNA/$_/EST.masked");
 	}
 }
 
