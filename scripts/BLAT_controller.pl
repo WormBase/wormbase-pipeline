@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl5.8.0 -w
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2007-06-19 12:44:22 $
+# Last edited on: $Date: 2007-06-19 13:22:38 $
 
 
 use lib $ENV{'CVS_DIR'};
@@ -63,10 +63,10 @@ my $blat_dir = $wormbase->blat;
 #The mol_types available for each species is different
 #defaults lists - can be overridden by -types
 my %mol_types = ( 'elegans'   => [qw(EST mRNA ncRNA OST tc1 )],
-				  'briggsae'  => [qw( mRNA )],
-				  'remanei'   => [qw( mRNA )],
+				  'briggsae'  => [qw( mRNA EST )],
+				  'remanei'   => [qw( mRNA EST )],
 				  'brenneri'  => [qw( mRNA )],
-				  'japonica'  => [qw( mRNA )],
+				  'japonica'  => [qw( mRNA EST )],
 				  'nematode'  => [qw( EST )],
 				  'nembase'   => [qw( EST )],
 				  'washu'     => [qw( EST )],
