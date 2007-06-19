@@ -5,7 +5,7 @@
 # Usage : EMBL_Sequencefetch.pl [-options]
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2007-06-13 15:59:00 $
+# Last edited on: $Date: 2007-06-19 15:30:58 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -504,10 +504,10 @@ clear\n
 query find Sequence where method = NDB & Properties AND NEXT AND NEXT != mRNA\n
 Dna -mismatch $EST_dir/ncRNA\n
 clear\n
-query find Sequence where method = EST_$subspecies & !OST\n
+query find Sequence where method = EST_$subspecies & !OST*\n
 Dna -mismatch $EST_dir/EST\n
 clear\n
-query find Sequence where method = EST_$subspecies & OST\n
+query find Sequence where method = EST_$subspecies & OST*\n
 Dna -mismatch $EST_dir/OST\n
 clear\n
 query find Sequence TC*\n
