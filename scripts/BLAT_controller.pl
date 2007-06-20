@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl5.8.0 -w
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2007-06-20 09:18:02 $
+# Last edited on: $Date: 2007-06-20 10:09:07 $
 
 
 use lib $ENV{'CVS_DIR'};
@@ -241,6 +241,10 @@ sub confirm_introns {
   
   $/ = "";
   	
+  # set qspecies to be just 'elegans' for now
+  # is this meant to iterate over all species?
+  # if so, then we need separate $blat_dir/autoace.{good,bad}_introns.$type.ace files for each species
+  my $qspecies = 'elegans';
   	
   open (CI, "<$blat_dir/autoace.ci.${qspecies}_${type}.ace")  or $log->log_and_die("Cannot open $blat_dir/autoace.ci.${qspecies}_${type}.ace $!\n");
   while (<CI>) {
