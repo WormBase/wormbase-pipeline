@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl5.8.0 -w
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2007-06-19 16:22:27 $
+# Last edited on: $Date: 2007-06-20 09:18:02 $
 
 
 use lib $ENV{'CVS_DIR'};
@@ -167,7 +167,7 @@ if ( $run ) {
 		foreach my $seq_file (glob ($seq_dir."/EST*")) {
 			my $cmd = "bsub -J ".$wormbase->pepdir_prefix."_$moltype \"/software/worm/bin/blat/blat -noHead -q=dnax -t=dnax ";
 			$cmd .= $wormbase->genome_seq ." $seq_file ";
-			$cmd .= $wormbase->blat."/${moltype}_${split_count}.psl\"";
+			$cmd .= $wormbase->blat."/${moltype}_EST_${split_count}.psl\"";
 			$wormbase->run_command($cmd, $log);	
 			$split_count++;				
 		}		
