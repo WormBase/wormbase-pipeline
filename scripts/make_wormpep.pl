@@ -6,8 +6,8 @@
 #
 # Builds a wormpep data set from the current autoace database
 #
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2007-06-08 18:35:32 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2007-06-22 09:03:35 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -488,7 +488,7 @@ sub write_main_wormpep_and_table{
 
   $log->write_to($wormbase->runtime." : Build ${PEP_FILE_STEM} & ${PEP_FILE_STEM}.table files\n\n");
   
-  open (FASTA , ">$new_wpdir/wormpep_unwrap$release") || $log->log_and_die("cannot create wormpep_unwrap$release\n");
+  open (FASTA , ">$new_wpdir/wormpep_unwrap$release") || $log->log_and_die("cannot create $new_wpdir/wormpep_unwrap$release\n");
 
   FASTA->autoflush();
 
