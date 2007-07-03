@@ -11,12 +11,12 @@
 # REQUIREMENTS:  ---
 #         BUGS:  ---
 #        NOTES:  ---
-#       AUTHOR:  $Author: gw3 $
+#       AUTHOR:  $Author: mh6 $
 #      COMPANY:
 #      VERSION:  1.0
 #      CREATED:  13/02/06 09:37:00 GMT
-#     REVISION:  $Revision: 1.20 $
-# includes code by: $Author: gw3 $
+#     REVISION:  $Revision: 1.21 $
+# includes code by: $Author: mh6 $
 #===============================================================================
 
 # BACS / SNPS / GENEs
@@ -247,16 +247,16 @@ sub check_mapping {
         &fix_gmap( \@genes );       
 
         foreach my $col (@genes) {
-           next if $col->[2] == $col->[4];
-           $self->{pmap}->{$key}->{ $col->[1] }->[1] = $col->[2]; # change gmap
+          next if $col->[2] == $col->[4];
+          $self->{pmap}->{$key}->{ $col->[1] }->[0] = $col->[2]; # change gmap
           my $_chrom = $key;
-          my $_pos   = $col->[2];
-		  my $_gene  = $col->[3];
+	  my $_pos   = $col->[2];
+	  my $_gene  = $col->[3];
 
-		  # create acefile
-		  print $acefile "\n";
-		  print $acefile "Gene : $_gene\n";
-		  print $acefile "Map $_chrom Position $_pos\n";
+          # create acefile
+	  print $acefile "\n";
+	  print $acefile "Gene : $_gene\n";
+	  print $acefile "Map $_chrom Position $_pos\n";
         }
 
         ##
