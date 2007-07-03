@@ -11,12 +11,12 @@
 # REQUIREMENTS:  ---
 #         BUGS:  ---
 #        NOTES:  ---
-#       AUTHOR:  $Author: mh6 $
+#       AUTHOR:  $Author: gw3 $
 #      COMPANY:
 #      VERSION:  1.0
 #      CREATED:  13/02/06 09:37:00 GMT
-#     REVISION:  $Revision: 1.19 $
-# includes code by: $Author: mh6 $
+#     REVISION:  $Revision: 1.20 $
+# includes code by: $Author: gw3 $
 #===============================================================================
 
 # BACS / SNPS / GENEs
@@ -216,8 +216,8 @@ sub check_mapping {
 
     # print it to some dark place
     my $revh = IO::File->new( "$acedir/logs/rev_phys.log", "w" );
-    $logger->write_to("writing genetic map fixes to $acedir/acefile/genetic_map_fixes.ace\n");
-    my $acefile = IO::File->new("$acedir/acefile/genetic_map_fixes.ace",'w');
+    $logger->write_to("writing genetic map fixes to $acedir/acefiles/genetic_map_fixes.ace\n");
+    my $acefile = IO::File->new("$acedir/acefiles/genetic_map_fixes.ace",'w');
     $logger->write_to("have a look at $acedir/logs/rev_phys.log to resolve:\n");
     $logger->make_line;
 
