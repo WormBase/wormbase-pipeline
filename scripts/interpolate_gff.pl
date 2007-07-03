@@ -15,7 +15,7 @@
 #      COMPANY:
 #      VERSION:  1.0
 #      CREATED:  13/02/06 09:37:00 GMT
-#     REVISION:  $Revision: 1.18 $
+#     REVISION:  $Revision: 1.19 $
 # includes code by: $Author: mh6 $
 #===============================================================================
 
@@ -206,9 +206,9 @@ sub x_to_ace {
     }
 }
 
-sub save{
+sub save {
 	my($self,$file)=@_;
-	YAML::DumpFile( $file, $self->{pmap} );
+	YAML::DumpFile( $file, %{$self->{pmap}} );
 }
 
 sub check_mapping {
