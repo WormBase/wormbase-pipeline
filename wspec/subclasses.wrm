@@ -62,18 +62,17 @@ Filter "Method = Transposon_CDS"
 Class elegans_RNA_genes
 Visible
 Is_a_subclass_of Transcript
-Filter "(NOT Method = Coding_transcript) AND (NOT Method = history) AND (Species = C*elegans)"
+Filter "(NOT Method = Coding_transcript) AND (NOT Method = history) AND (NOT Method = non_coding_transcript) AND (Species = C*elegans)"
 
 Class briggsae_RNA_genes
 Visible
 Is_a_subclass_of Transcript
-Filter "(NOT Method = Coding_transcript) AND (NOT Method = history) AND (Species = C*briggsae)"
+Filter "(NOT Method = Coding_transcript) AND (NOT Method = history) AND (NOT Method = non_coding_transcript) AND (Species = C*briggsae)"
 
 Class Coding_transcripts
 Visible
 Is_a_subclass_of Transcript
 Filter "(Method = Coding_transcript) AND (Species = C*elegans)"
-
 
 // ?Pseudogene subclasseses
 Class elegans_pseudogenes
@@ -173,7 +172,7 @@ Is_a_subclass_of Tree
 Filter "Cell_Lineage"
 
 // First attempt to use new 'composite class' to merge together various
-// gene like classes for C. elegans genes
+// gene like classes for C. elegans genes minus non_coding_transcript isoform
 
 Class worm_genes
 Visible
