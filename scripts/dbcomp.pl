@@ -5,8 +5,8 @@
 # Counts the number of objects in an ACEDB database for each Class stated in the config file
 # Compares this number to those from a second database.
 #
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2007-06-13 19:41:37 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2007-07-03 12:44:31 $
 
 
 use strict;
@@ -123,7 +123,7 @@ print OUT  " +------------------------+---------+---------+---------+---------+-
 my @TotalClasses;
 
 # run midway list if asked too, else default to the full list
-my  @TotalClasses = &wee_run;
+@TotalClasses = &wee_run;
 push(@TotalClasses, &mid_run)  if ($midway or $full);
 push(@TotalClasses, &full_run) if ($full);
 
