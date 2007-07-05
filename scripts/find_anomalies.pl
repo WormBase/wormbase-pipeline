@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2007-07-05 15:30:00 $      
+# Last updated on: $Date: 2007-07-05 15:37:33 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -108,7 +108,7 @@ my @chromosomes = qw( I II III IV V X );
 foreach my $chromosome (@chromosomes) {
 
   # if we are running this on autoace, write out the anomalies GFF file
-  my $gff_file = $wormbase->{'gff_splits'} . "/curation_anomalies_$chromosome.gff";
+  my $gff_file = $wormbase->{'gff_splits'} . "/CHROMOSOME_${chromosome}_curation_anomalies.gff";
   if ($database eq $wormbase->{'autoace'}) {
     open (OUTPUT_GFF, ">$gff_file") || die "Can't open $gff_file";
   }
@@ -2537,7 +2537,7 @@ sub put_anomaly_record_in_database {
 
   # output the data to the GFF file
   if ($database eq $wormbase->{'autoace'}) {
-    print OUTPUT_GFF "CHROMOSOME_$chromosome\tcuration_anomaly\t$anomaly_type\t$chrom_start\t$chrom_end\t$anomaly_score\t$chrom_strand\t.\tEvidence \"$explanation\"\n";
+    print OUTPUT_GFF "CHROMOSOME_$chromosome\tcuration_anomaly\t$anomaly_type\t$chrom_start\t$chrom_end\t$anomaly_score\t$chrom_strand\t.\tEvidence \"$anomaly_id\"\n";
   }
 
 
