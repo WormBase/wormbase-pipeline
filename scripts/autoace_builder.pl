@@ -6,8 +6,8 @@
 #
 # Usage : autoace_builder.pl [-options]
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2007-06-18 15:21:32 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2007-07-05 13:21:33 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -251,74 +251,90 @@ sub remap_misc_dynamic {
   my $previous_release = $release - 1;
 
   # test to see if we need to run the remapping programs
-  if (! $wormbase->run_script( "test_remap_between_releases.pl -release1 $previous_release -release2 $release", $log ) ) { return; }
+  $wormbase->run_script( "test_remap_between_releases.pl -release1 $previous_release -release2 $release", $log );
+  my $flag = "/tmp/remap_elegans_data";
+  open(FLAG, "< $flag") || die "Could not open the file $flag\n";
+  my $answer = <FLAG>;
+  close(FLAG);
+  chomp $answer;
 
-  # remap twinscan
-  my $twinscan = $wormbase->misc_dynamic."/misc_twinscan.ace";
-  my $backup_twinscan = "$twinscan.$previous_release";
+  if ($answer eq "yes") {	# we do want to remap the data
 
-  if (-e $backup_twinscan) {$log->log_and_die("$backup_twinscan already exists - please move it to be $twinscan before running this again\n");}
-  $wormbase->run_command("cp $twinscan $backup_twinscan", $log);
-  $wormbase->run_script( "remap_twinscan_between_releases.pl -release1 $previous_release -release2 $release -twinscan $backup_twinscan -out $twinscan", $log);
-
-  # remap genefinder
-  my $genefinder = $wormbase->misc_dynamic."/misc_genefinder.ace";
-  my $backup_genefinder = "$genefinder.$previous_release";
-
-  if (-e $backup_genefinder) {$log->log_and_die("$backup_genefinder already exists - please move it to be $genefinder before running this again\n");}
-  $wormbase->run_command("cp $genefinder $backup_genefinder", $log);
-  $wormbase->run_script( "remap_genefinder_between_releases.pl -input $backup_genefinder -out $genefinder", $log);
-
-  # remap fosmids
-  my $fosmids = $wormbase->misc_dynamic."/fosmids.ace";
-  my $backup_fosmids = "$fosmids.$previous_release";
-
-  if (-e $backup_fosmids) {$log->log_and_die("$backup_fosmids already exists - please move it to be $fosmids before running this again\n");}
-  $wormbase->run_command("cp $fosmids $backup_fosmids", $log);
-  $wormbase->run_script( "remap_fosmids_between_releases.pl -input $backup_fosmids -out $fosmids", $log);
-   
-  # remap Mass Spec
-  foreach my $ms_file qw(misc_mass_spec_MichaelHengartner.ace misc_mass_spec_NatalieWielsch.ace misc_mass_spec_StevenHusson.ace misc_mass_spec_GenniferMerrihew.ace) {
-    my $ms = $wormbase->misc_dynamic."/$ms_file";
-    my $backup_ms = "$ms.$previous_release";
-
-    if (-e $backup_ms) {$log->log_and_die("$backup_ms already exists - please move it to be $ms before running this again\n");}
-    $wormbase->run_command("cp $ms $backup_ms", $log);
-    $wormbase->run_script( "remap_mass_spec_between_releases.pl -input $backup_ms -out $ms", $log);
-  }
-
-  # the TEC-REDs and placed back on the genome by using the location of the Features they define
-  $wormbase->run_script( "map_tec-reds.pl", $log);
-
-
-  # remap and copy over the SUPPLEMENTARY_GFF dir from BUILD_DATA
-  my $sup_dir = $wormbase->build_data."/SUPPLEMENTARY_GFF";
-  my $backup_dir = "$sup_dir/BACKUP";
-  my $release = $wormbase->version;
-  my $old_release = $release - 1;
-  opendir(DIR,$sup_dir) or $log->log_and_die("cant open $sup_dir: $!\n");
-  while ( my $file = readdir( DIR ) ) {
-    next unless( $file =~ /gff$/ );
-    my $gff = "$sup_dir/$file";
-    my $backup_gff = "$backup_dir/$file.$old_release";
-    if (-e $backup_gff) {
-      $log->log_and_die("$backup_gff already exists - please move it to be $gff before running this again\n");
+    # remap twinscan
+    my $twinscan = $wormbase->misc_dynamic."/misc_twinscan.ace";
+    my $backup_twinscan = "$twinscan.$previous_release";
+    if (-e $backup_twinscan) {
+      $wormbase->run_command("mv -f $backup_twinscan $twinscan", $log);
     }
-    $wormbase->run_command("cp $gff $backup_gff", $log);
-    $wormbase->run_script("remap_gff_between_releases.pl -gff $backup_gff -output $gff -release1 $old_release -release2 $release", $log);
+    $wormbase->run_command("cp $twinscan $backup_twinscan", $log);
+    $wormbase->run_script( "remap_twinscan_between_releases.pl -release1 $previous_release -release2 $release -twinscan $backup_twinscan -out $twinscan", $log);
+
+    # remap genefinder
+    my $genefinder = $wormbase->misc_dynamic."/misc_genefinder.ace";
+    my $backup_genefinder = "$genefinder.$previous_release";
+    if (-e $backup_genefinder) {
+      $wormbase->run_command("mv -f $backup_genefinder $genefinder", $log);
+    }
+    $wormbase->run_command("cp $genefinder $backup_genefinder", $log);
+    $wormbase->run_script( "remap_genefinder_between_releases.pl -input $backup_genefinder -out $genefinder", $log);
+
+    # remap fosmids
+    my $fosmids = $wormbase->misc_dynamic."/fosmids.ace";
+    my $backup_fosmids = "$fosmids.$previous_release";
+    if (-e $backup_fosmids) {
+      $wormbase->run_command("mv -f $backup_fosmids $fosmids", $log);
+    }
+    $wormbase->run_command("cp $fosmids $backup_fosmids", $log);
+    $wormbase->run_script( "remap_fosmids_between_releases.pl -input $backup_fosmids -out $fosmids", $log);
+   
+    # remap Mass Spec
+    foreach my $ms_file qw(misc_mass_spec_MichaelHengartner.ace misc_mass_spec_NatalieWielsch.ace misc_mass_spec_StevenHusson.ace misc_mass_spec_GenniferMerrihew.ace) {
+      my $ms = $wormbase->misc_dynamic."/$ms_file";
+      my $backup_ms = "$ms.$previous_release";
+      if (-e $backup_ms) {
+	$wormbase->run_command("mv -f $backup_ms $ms", $log);
+      }
+      $wormbase->run_command("cp $ms $backup_ms", $log);
+      $wormbase->run_script( "remap_mass_spec_between_releases.pl -input $backup_ms -out $ms", $log);
+    }
+
+    # the TEC-REDs are placed back on the genome by using the location of the Features they define
+    $wormbase->run_script( "map_tec-reds.pl", $log);
+
+
+    # remap and copy over the SUPPLEMENTARY_GFF dir from BUILD_DATA
+    my $sup_dir = $wormbase->build_data."/SUPPLEMENTARY_GFF";
+    my $backup_dir = "$sup_dir/BACKUP";
+    my $release = $wormbase->version;
+    my $old_release = $release - 1;
+    opendir(DIR,$sup_dir) or $log->log_and_die("cant open $sup_dir: $!\n");
+    while ( my $file = readdir( DIR ) ) {
+      next unless( $file =~ /gff$/ );
+      my $gff = "$sup_dir/$file";
+      my $backup_gff = "$backup_dir/$file.$old_release";
+      if (-e $backup_gff) {
+	$wormbase->run_command("mv -f $backup_gff $gff", $log);
+      }
+      $wormbase->run_command("cp $gff $backup_gff", $log);
+      $wormbase->run_script("remap_gff_between_releases.pl -gff $backup_gff -output $gff -release1 $old_release -release2 $release", $log);
+    }
+    closedir DIR;
+
+  # remap waba (takes a long time ~24 hours)
+#    my $waba = $wormbase->misc_dynamic."/waba.ace";
+#    my $backup_waba = "$waba.$previous_release";
+#    if (-e $backup_waba) {
+#      $wormbase->run_command("mv -f $backup_waba $waba", $log);
+#    }
+#    $wormbase->run_command("cp $waba $backup_waba", $log);
+#    $wormbase->run_script( "remap_waba_between_releases.pl -input $backup_waba -out $waba", $log);
+
+
   }
-  closedir DIR;
+
+  # the SUPPLEMENTARY_GFF directory is copied over whether or not it has been remapped
   $wormbase->run_command("cp -R ".$wormbase->build_data."/SUPPLEMENTARY_GFF ".$wormbase->chromosomes."/");
    
-  # remap waba (takes a long time ~24 hours)
-#  my $waba = $wormbase->misc_dynamic."/waba.ace";
-#  my $backup_waba = "$waba.$previous_release";
-#
-#  if (-e $backup_waba) {$log->log_and_die("$backup_waba already exists - please move it to be $waba before running this again\n");}
-#  $wormbase->run_command("cp $waba $backup_waba", $log);
-#  $wormbase->run_script( "remap_waba_between_releases.pl -input $backup_waba -out $waba", $log);
-
-
 }
 
 #__ end remap_misc_dynamic __#
