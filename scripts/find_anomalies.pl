@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2007-06-12 13:51:38 $      
+# Last updated on: $Date: 2007-07-05 15:19:41 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -103,11 +103,16 @@ my $ace = Ace->connect (-path => $database,
                        -program => $tace) || die "cannot connect to database at $database\n";
 
 
-
-
 my @chromosomes = qw( I II III IV V X );
 
 foreach my $chromosome (@chromosomes) {
+
+  # if we are running this on autoace, write out the anomalies GFF file
+  my $gff_file = $wormbase->{'gff_splits'} . "/curation_anomalies_$chromosome.gff";
+  if ($database eq $wormbase->{'autoace'}) {
+    open (OUTPUT_GFF, ">$gff_file") || die "Can't open $gff_file";
+  }
+
 
   $log->write_to("Processing chromosome $chromosome\n");
                                                                                                    
@@ -244,6 +249,11 @@ foreach my $chromosome (@chromosomes) {
 ##  &get_EST_split_merged($matched_EST_aref, $chromosome, %Show_in_reverse_orientation);
 #################################################
 
+
+  # close the ouput GFF file
+  if ($database eq $wormbase->{'autoace'}) {
+    close (OUTPUT_GFF);
+  }
 }
 
 
@@ -2521,6 +2531,14 @@ sub output_to_database {
 sub put_anomaly_record_in_database {
 
   my ($anomaly_type, $chromosome, $anomaly_id, $chrom_start, $chrom_end, $chrom_strand, $window, $anomaly_score, $explanation, $clone, $clone_start, $clone_end, $lab) = @_;
+
+
+  # output the data to the GFF file
+  if ($database eq $wormbase->{'autoace'}) {
+    print OUTPUT_GFF "CHROMOSOME_$chromosome\tcuration_anomaly\t$anomaly_type\t$chrom_start\t$chrom_end\t$anomaly_score\t$chrom_strand\t.\tEvidence \"$explanation\"\n";
+  }
+
+
 
   # need to do a check for a very similar previous record that may
   # need to be overwritten, preserving the status.
