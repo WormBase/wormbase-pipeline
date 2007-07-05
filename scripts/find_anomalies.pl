@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2007-07-05 15:19:41 $      
+# Last updated on: $Date: 2007-07-05 15:30:00 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -2446,7 +2446,9 @@ sub read_GFF_file {
   my ($id, $hit_start, $hit_end);
 
   foreach my $file (@files) {
-    open (GFF, "< $file") || die "Can't open $file\n";
+    if (! open (GFF, "<$file")) {	# try to open the GFF file
+      open (GFF, "/bin/gunzip -c $file.gz |") || die "Can't open file $file\n"; # ... or try to open the gzipped GFF file
+    }
     while (my $line = <GFF>) {
       chomp $line;
       if ($line =~ /^\s*$/) {next;}
