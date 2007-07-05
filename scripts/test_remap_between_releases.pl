@@ -9,7 +9,7 @@
 #
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2007-05-15 15:30:26 $      
+# Last updated on: $Date: 2007-07-05 13:05:28 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -70,20 +70,29 @@ if (! defined $release1 || ! defined $release2) {
 
 my @mapping_data = Remap_Sequence_Change::read_mapping_data($release1, $release2);
 
+my $flag = "/tmp/remap_elegans_data";
+
 if (Remap_Sequence_Change::remap_test($release1, $release2, @mapping_data)) {
   # there are changes
   $log->write_to("WARNING: There have been genomic sequence changes.\nThe remapping programs will therefore be run.\nThis may take some time.\n");
 
-  $log->mail();
-  exit(1);
+  # set a flag for the remapping scripts to be run
+  open(FLAG, "> $flag")|| die "Could not create the file $flag\n";
+  print FLAG "yes\n";
+  close(FLAG);
 
 } else {
   # there are no changes
   $log->write_to("There are no genomic sequence changes.\nThe remapping programs will not be run.\n");
 
-  $log->mail();
-  exit(0);
+  # set a flag for the remapping scripts to NOT be run
+  open(FLAG, "> $flag")|| die "Could not create the file $flag\n";
+  print FLAG "no\n";
+  close(FLAG);
 }
+
+$log->mail();
+exit(0);
 
 
 
