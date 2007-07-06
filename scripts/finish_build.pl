@@ -6,14 +6,14 @@
 #
 # Usage : finish_build.pl [-options]
 #
-# 1) checks to see if there are three existing (and unpacked) WS releases in /wormsrv2
-#    If there are, then it archives the oldest release away into /nfs/wormarchive
+# 1) checks to see if there are three existing (and unpacked) WS releases in ~wormpub/DATABASES/
+#    If there are, then it archives the oldest release away into $archive_dir
 # 2) Does a similar thing with Wormpep releases in /wormsrv2/WORMPEP
 # 3) Archives old GFF_SPLITS directory
 # 4) Makes current_DB (copy of latest release) in ~wormpub/DATABASES
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2007-04-16 15:22:20 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2007-07-06 14:10:19 $
 
 
 use strict;
@@ -39,7 +39,7 @@ GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
 	    "test"       => \$test,
 	    "verbose"    => \$verbose,
-	    "store:s"      => \$store,
+	    "store:s"    => \$store,
 	    );
 
 
@@ -148,14 +148,17 @@ exit(0);
 sub archive_old_releases{
   my $WS_old_name = shift;
   my $WS_old_path = $wormbase->database("$WS_old_name");
+
+  my $archive_dir = "/lustre/cbi4/work1/wormpub/wormarchive";
+
   unless ($WS_old_path) {
     $log->write_to("cant find database for $WS_old_path - not archiving\n");
     $log->error;
     return 1;
   }
-  $log->write_to("backing up $WS_old_path to /nfs/wormarchive/$WS_old_name.tar.gz\n");
+  $log->write_to("backing up $WS_old_path to $archive_dir/$WS_old_name.tar.gz\n");
 
-  # turn the old release into a tarball, move into /nfs/wormarchive and remove old directory
+  # turn the old release into a tarball, move into $archive_dir and remove old directory
   $log->write_to("\nCreating $WS_old_name.tar.gz\n");
 
   my $tar = $wormbase->database("$WS_old_name").".tar";
@@ -163,8 +166,8 @@ sub archive_old_releases{
       $log->log_and_die("ERROR in tar -cvf $tar\n");
   $wormbase->run_command("gzip $tar", $log) && 
       $log->log_and_die("ERROR in gzip $tar\n");
-  $wormbase->run_command("mv $tar.gz /nfs/wormarchive/", $log) && 
-      $log->log_and_die("ERROR in mv $tar.gz /nfs/wormarchive/\n");
+  $wormbase->run_command("mv $tar.gz $archive_dir", $log) && 
+      $log->log_and_die("ERROR in mv $tar.gz $archive_dir\n");
   $wormbase->run_command("rm -rf ".$wormbase->database("$WS_old_name"), $log) && 
       $log->log_and_die("ERROR in rm -rf " . $wormbase->database("$WS_old_name") . "\n");
 }
