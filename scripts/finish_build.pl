@@ -13,7 +13,7 @@
 # 4) Makes current_DB (copy of latest release) in ~wormpub/DATABASES
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2007-07-06 14:10:19 $
+# Last updated on: $Date: 2007-07-06 14:47:04 $
 
 
 use strict;
@@ -101,6 +101,10 @@ my $new_dir = $wormbase->wormpub."/DATABASES/".$wormbase->get_wormbase_version_n
 $wormbase->run_command("mv ".$wormbase->autoace ." ". $new_dir, $log);
 
 # update symlink current_DB to new build
+# It looks like on linux the 'ln -sf' command silently fails if the link
+# is already there - we have to explicitly delete the existing link first.
+# This is stupid :-(
+$wormbase->run_command("rm ".$wormbase->database('current'), $log);
 $wormbase->run_command("ln -sf ".$new_dir." ".$wormbase->database('current'),$log);
 
 
