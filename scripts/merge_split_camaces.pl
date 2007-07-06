@@ -5,7 +5,7 @@
 # A script to make multiple copies of camace for curation, and merge them back again
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2007-06-14 11:13:21 $
+# Last edited on: $Date: 2007-07-06 11:31:43 $
 #
 # Persisting errors.
 #running csh -c "reformat_acediff file 1 file2"
@@ -38,6 +38,7 @@ my $test;
 my $wormbase;
 my $extra;                 # remove the GeneIDupdater call as this is run outside this script.
 my $email;                 # Option for child scripts that can tace a user email option.
+my $nodump;                # don't dump from split camaces.
 
   GetOptions (
 	      "all"        => \$all,
@@ -54,6 +55,7 @@ my $email;                 # Option for child scripts that can tace a user email
 	      "test"       => \$test,
 	      "extra"      => \$extra,
 	      "email:s"    => \$email,
+	      "nodump"     => \$nodump,
 	     );
 
 
@@ -101,14 +103,19 @@ print "OUTPUT_DIR: ".$wormpub."/camace_orig/WS${WS_version}-WS${next_build}\n\n"
 #################################################
 
 if ($merge) {
-
-  print "New directory : '$directory'\n\n" if ($debug);
-  mkdir ($directory) or die "Failed to create ${directory}\n";
+  
+  if (!-e $directory) {
+    print "New directory : '$directory'\n\n" if ($debug);
+    mkdir ($directory) or die "Failed to create ${directory}\n";
+  }
+  else {
+print "Using existing directory : '$directory'\n\n" if ($debug);
+}
 
   print "You are merging Data from " . (join '-',@databases) ."\n\n";
 
   # dumps the Pseudogene, Transcript, Feature and Sequence classes from the database
-  &dump_camace;
+  &dump_camace unless ($nodump);
 
   ##   All of the raw data is now dumped to files    ##
 
@@ -120,7 +127,7 @@ if ($merge) {
     foreach my $class (@classes) {
       my $path_new = $directory . "/${class}_${database}.ace";
       my $path_ref = $directory . "/${class}_orig.ace";
-      #$wormbase->run_command("csh -c \"/software/worm/bin/acedb/acediff $path_ref $path_new >! $directory/${class}_diff_${database}.ace\"", $log) && die "Failed to run acediff for ${path_new}\n";
+      $wormbase->run_command("csh -c \"/software/worm/bin/acedb/acediff $path_ref $path_new >! $directory/${class}_diff_${database}.ace\"", $log) && die "Failed to run acediff for ${path_new}\n";
       $wormbase->run_script("reformat_acediff -file $directory/${class}_diff_${database}.ace -fileout $directory/update_${class}_${database}.ace", $log) && die "Failed to run reformat ace file for $directory/${class}_diff_${database}.ace\n";
     }
   }
