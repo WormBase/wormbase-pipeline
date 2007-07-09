@@ -97,6 +97,7 @@ sub read_file {
   if ($verbose) {
     open (SEQ, $file) or die "Can't open the dna file for $file : $!\n";
     my $count = 0;
+    print "line count : non-nucleic line\n";
     while (my $line = <SEQ>) {
       $count++;
       $a = $line =~ tr/[aA]/A/;
@@ -119,7 +120,7 @@ sub read_file {
   $/ = "\n";
 
 
-  $seq =~ s/>.+\n//;
+  $seq =~ s/>.*\n//g;
   $seq =~ s/\n//g;
 
   return $seq
