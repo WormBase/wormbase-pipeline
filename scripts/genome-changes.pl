@@ -7,7 +7,7 @@
 # This is a script to aid making changes to the sequence of a clone.
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2007-06-18 13:29:48 $      
+# Last updated on: $Date: 2007-07-09 09:21:42 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -536,6 +536,8 @@ sub make_changes_to_DNA {
     return 1;			# error returned
   }
 
+# reformat the DNA sequence into lines of 60 characters
+  $dna = &reformat($dna);
 
 # write the dna back to the database
   push @{$change->{'ace-add'}{"DNA : \"$clone\""}}, "$dna"; # create output to be written to the ace file
@@ -2361,6 +2363,24 @@ sub check_superlink_sequence {
 
   return $result;
 }
+
+##########################################
+# reformat a DNA string into lines of 60 characters
+
+sub reformat {
+    my $in_string = shift;
+    my $out_string = "";
+
+    my $string_len = length ($in_string);
+    my $lines = int ($string_len / 60) ;
+
+    for (my $i = 0; $i <= $lines; $i++) {
+        $out_string = $out_string . substr($in_string,($i*60),60) . "\n";
+    }
+    return ($out_string);
+}
+
+
 ##########################################
 
 sub usage {
