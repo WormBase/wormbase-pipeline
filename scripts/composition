@@ -1,5 +1,20 @@
 #!/software/bin/perl -w
 
+use Getopt::Long;
+my ($help, $verbose);
+
+GetOptions ("help"       => \$help,
+	    "verbose"    => \$verbose,
+           );
+
+if ($help) {
+  print "Usage: composition [options] fasta_file(s)\n";
+  print "Options:\n";
+  print "\t-help : this help\n";
+  print "\t-verbose : debug info\n";
+  exit(0);
+}
+
 my @files = @ARGV;
 foreach my $file (@files) {
 #  print $file,"\n";
@@ -78,11 +93,31 @@ sub get_composition {
 sub read_file {
   my ($file) = @_;
 
+  # verbose troubleshooting bit
+  if ($verbose) {
+    open (SEQ, $file) or die "Can't open the dna file for $file : $!\n";
+    my $count = 0;
+    while (my $line = <SEQ>) {
+      $count++;
+      $a = $line =~ tr/[aA]/A/;
+      $c = $line =~ tr/[cC]/C/;
+      $g = $line =~ tr/[gG]/G/;
+      $t = $line =~ tr/[tT]/T/;
+      if ($a+$c+$g+$t+1 != length($line)) {
+	print "$count : $line";
+      } 
+    }
+    close SEQ;
+    print "\n";
+  }
+
+  # normal file read
   $/ = "";
   open (SEQ, $file) or die "Can't open the dna file for $file : $!\n";
   my $seq = <SEQ>;
   close SEQ;
   $/ = "\n";
+
 
   $seq =~ s/>.+\n//;
   $seq =~ s/\n//g;
