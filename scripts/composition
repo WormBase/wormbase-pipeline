@@ -1,0 +1,91 @@
+#!/software/bin/perl -w
+
+my @files = @ARGV;
+foreach my $file (@files) {
+#  print $file,"\n";
+  &composition(@files);
+}
+
+
+###################################
+
+sub composition {
+  my (@files) = @_;
+
+  my $total;
+  my $ns;
+  my $gaps;
+  my $as;
+  my $cs;
+  my $gs;
+  my $ts;
+
+  foreach my $file (@files) {
+
+
+    #print "read $file\n";
+    my $seq = &read_file($file);
+
+    my ($a, $c, $g, $t, $gap, $n, $length_dna) = &get_composition($seq);
+    $as += $a;
+    $cs += $c;
+    $gs += $g;
+    $ts += $t;
+    $total += $length_dna;
+    $ns += $n;
+    $gaps += $gap;
+  }
+
+  print " $total total\n";
+  print " a $as\n";
+  print " c $cs\n";
+  print " g $gs\n";
+  print " t $ts\n";
+  print " - $gaps\n";
+  print " n $ns\n";
+
+}
+
+##########################################
+# get the composition of a sequence
+
+sub get_composition {
+  my ($dna) = @_;
+
+  my ($a, $c, $g, $t, $gap, $n, $length_dna);
+
+  $a = $dna =~ tr/[aA]/A/;
+  $c = $dna =~ tr/[cC]/C/;
+  $g = $dna =~ tr/[gG]/G/;
+  $t = $dna =~ tr/[tT]/T/;
+  $gap = $dna =~ tr/\-/-/;
+
+  # the Ns are whatever is not ACGT-
+  $length_dna = $n = length $dna;
+  $n -= $a;
+  $n -= $c;
+  $n -= $g;
+  $n -= $t;
+  $n -= $gap;
+
+  return ($a, $c, $g, $t, $gap, $n, $length_dna);
+
+}
+
+##########################################
+# read file
+
+sub read_file {
+  my ($file) = @_;
+
+  $/ = "";
+  open (SEQ, $file) or die "Can't open the dna file for $file : $!\n";
+  my $seq = <SEQ>;
+  close SEQ;
+  $/ = "\n";
+
+  $seq =~ s/>.+\n//;
+  $seq =~ s/\n//g;
+
+  return $seq
+}
