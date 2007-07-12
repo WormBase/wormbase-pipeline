@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2007-07-05 15:37:33 $      
+# Last updated on: $Date: 2007-07-12 11:39:36 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -273,6 +273,7 @@ foreach my $chromosome (@chromosomes) {
 &delete_anomalies("FRAMESHIFTED_PROTEIN");
 &delete_anomalies("OVERLAPPING_EXONS");
 &delete_anomalies("SHORT_EXON");
+&delete_anomalies("UNMATCHED_WABA");
 
 
 # disconnect from the mysql database
