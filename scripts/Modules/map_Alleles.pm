@@ -141,26 +141,39 @@ sub _filter_alleles {
         my $name = $allele->name;
 		my $remark = $allele->Remark;
 		
-        if ( ! defined $allele->Sequence ) { # not connected to a sequence
+	# has no sequence connection
+        if ( ! defined $allele->Sequence ) {
 			$log->write_to("ERROR: $name has missing Sequence tag (Remark: $remark)\n");$errors++
 			}
-        elsif ( !defined $allele->Sequence->Source && !defined $weak_checks) {  # connected sequence has no source
+	
+	# connected sequence has no source
+        elsif ( !defined $allele->Sequence->Source && !defined $weak_checks) { 
             $log->write_to("ERROR: $name connects to ${\$allele->Sequence} which has no Source tag (Remark: $remark)\n");$errors++
         }
+
+	# no left flanking sequence
         elsif (!defined $allele->Flanking_sequences){
 	    	$log->write_to("ERROR: $name has no left Flanking_sequence (Remark: $remark)\n");$errors++
 		}                                                                        
-		# no right flanking sequence
+
+	# no right flanking sequence
         elsif (!defined $allele->Flanking_sequences->right || ! defined $allele->Flanking_sequences->right->name ) {
                     $log->write_to("ERROR: $name has no right Flanking_sequence (Remark: $remark)\n");$errors++
-        }                           
-		# empty flanking sequence
+        }       
+
+	# empty flanking sequence
         elsif (!defined $allele->Flanking_sequences->name ) {
                     $log->write_to("ERROR: $name has no left Flanking_sequence (Remark: $remark)\n");$errors++
-        } 
-		else { push @good_alles, $allele }
+        }
+
+	# has spaces or numbers in the DNA sequence strings
+        elsif (($allele->Type_of_mutation eq 'Substitution') && 
+		($allele->Type_of_mutation->right=~/\d|\s/ || $allele->Type_of_mutation->right->right=~/\d|\s/)){
+		$log->write_to("ERROR: $name has numbers an/or spaces in the from/to tags (Remark: $remark)\n");$errors++
+	}
+	else { push @good_alles, $allele }
     }
-	return \@good_alles;
+    return \@good_alles;
 }
 
 =head2 map
@@ -370,6 +383,10 @@ sub get_cds {
 						elsif (uc $stop_codon eq 'TGA'){
 							$cds{$hit->{name}}{"Nonsense Opal_UGA \"$other_aa to opal stop (${\int($cds_position/3+1)})\""}{$k}=1;
 							print "Nonsense Opal_UAA: " if $wb->debug;
+						}
+						elsif (uc $stop_codon eq 'RAG'){
+							$cds{$hit->{name}}{"Nonsense Amber_or_Opal \"$other_aa to amber or opal stop (${\int($cds_position/3+1)})\""}{$k}=1;
+
 						}
 						else {$log->write_to("ERROR: whatever stop $stop_codon is in $k, it is not Amber/Opal/Ochre (Remark: ${\$v->{allele}->Remark})\n");$errors++}
 					}
