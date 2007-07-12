@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2007-07-12 11:39:36 $      
+# Last updated on: $Date: 2007-07-12 12:58:55 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -263,7 +263,7 @@ foreach my $chromosome (@chromosomes) {
 # that we are no longer putting into the database and which can be
 # removed.
 
-&delete_anomalies("UNMATCHED_PROTEINS");
+&delete_anomalies("UNMATCHED_PROTEIN");
 &delete_anomalies("SPLIT_GENES_BY_PROTEIN");
 &delete_anomalies("SPLIT_GENE_BY_PROTEIN_GROUPS");
 &delete_anomalies("SPLIT_GENES_BY_EST");
