@@ -8,7 +8,7 @@
 # autoace.
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2007-05-31 14:32:04 $
+# Last updated on: $Date: 2007-07-13 15:30:53 $
 
 #################################################################################
 # Variables                                                                     #
@@ -124,7 +124,7 @@ exit (0);
 sub mknewacefiles {
     
   my ($dbname,$dbdir,$targetdir,$exe,$object,$criteria,$follow);
-  my ($filename,$extrafile,$filepath,$command,$outfile,$tag,@deletes,$include,@removes);
+  my ($filename,$extrafile,$filepath,$command,$outfile,$tag,@deletes,$include,@filters);
   
   local (*CONFIG);
   
@@ -162,20 +162,20 @@ sub mknewacefiles {
     # clear out the @deletes array each time
     undef (@deletes);
     
-    # clear out the @removes array each time
-    undef (@removes);
+    # clear out the @filters array each time
+    undef (@filters);
     
     # parse filename
     ($filename) = (/^\S+\s+(\S+)/);
     $filepath   = "$targetdir/$filename";
     $extrafile  = "$targetdir/$filename.extra";
 
-    # get any removes specification
+    # get any filters specification - anything in the file that doesn't match this will not be output
     if (/\((\S+.+)\)$/) {
-      @removes = split (/\s/,$1);
-      s/\((\S+.+)\)$//;		# remove the removes
+      @filters = split (/\s/,$1);
+      s/\((\S+.+)\)$//;		# remove the filters
       s/\s+$//;    		# remove trailing whitespace
-      my $msg = "Adding " . scalar (@removes) . " regexp patterns to remove array\n";
+      my $msg = "Adding " . scalar (@filters) . " regexp patterns of filters array\n";
       $log->write_to("$msg");
     }
 
@@ -294,21 +294,29 @@ sub mknewacefiles {
 
     $log->write_to(": Dumping $object class\n");
 
-    open (OUT, "> $filepath") || die "Can't open $filename";
+    my $filtered_count = 0;
+    my $removed_count = 0;
+
+    open (OUT, "> $filepath") || die "Can't open $filepath";
     open (TACE,"echo '$command' | $exe |");
     while (my $line = <TACE>) {
       next if ($line =~ /acedb\>/);
       next if ($line =~ /\/\//);
-      # remove any lines matching any of the @removes specifications
-      if (@removes) {
+      # remove any lines not matching any of the @filters specifications
+      if (@filters) {
 	my $found = 0;
-	foreach my $expr (@removes) {
+	foreach my $expr (@filters) {
 	  if ($line =~ /$expr/) {
 	    $found = 1;
 	  }
 	}
-	if (! $found) {
+	if ($line =~ /$object\s+\:\s+/) { # if this is the object spcification line, print it
+	  print OUT "\n$line";
+	} elsif ($found) { # if we found what we were filtering for, print it
 	  print OUT $line;
+	  $filtered_count++;
+	} else {
+	  $removed_count++;
 	}
       } else {
 	print OUT $line;
@@ -317,6 +325,9 @@ sub mknewacefiles {
     close TACE;
     close (OUT);
 
+    if (@filters) {
+      $log->write_to("Wrote $filtered_count lines, removed $removed_count lines\n");
+    }
 
     # Check file was made (if class is empty no output file will be made from tace, and downstream
     # checks/processing can be skipped)
