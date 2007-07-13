@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: ar2 $
-// Last edited on: $Date: 2007-05-30 13:28:20 $
+// Last edited on: $Date: 2007-07-13 15:33:24 $
 
 
 
@@ -2756,6 +2756,7 @@
 		Public_name	UNIQUE ?Variation_name XREF Public_name_for
 	   Sequence_details SMap S_parent UNIQUE Sequence UNIQUE ?Sequence XREF Allele
 			    Flanking_sequences UNIQUE Text UNIQUE Text
+			    CGH_deleted_probes UNIQUE Text UNIQUE Text
 			    Type_of_mutation Substitution UNIQUE Text Text #Evidence // wild type and mutant sequence
 					     Insertion    UNIQUE Text      #Evidence
 					     Deletion     UNIQUE Text      #Evidence  
@@ -2772,6 +2773,7 @@
 			  RFLP Reference_strain_digest	 Text Text Text // storing site, enzyme, and band size
 			       Polymorphic_strain_digest Text Text Text 
 			  Transposon_insertion ?Transposon_family XREF In_variation //links to new class
+			  Natural_variant
 	   Origin Species UNIQUE ?Species
 		  Strain	 ?Strain XREF Variation
 		  Laboratory ?Laboratory XREF Alleles
