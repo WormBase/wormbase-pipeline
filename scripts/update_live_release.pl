@@ -5,8 +5,8 @@
 # by Anthony Rogers
 #
 # Updates the local webpages in synch with the main website
-# Last updated by: $Author: pad $
-# Last updated on: $Date: 2006-12-05 16:35:56 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2007-07-13 11:02:20 $
 
 
 use strict;
@@ -90,7 +90,7 @@ my $webpublish = "/usr/local/bin/webpublish";
 
 # Now update WORMBASE current link
 $wormbase->run_command("cd $www/WORMBASE; rm -f current; ln -fs WS${release} current", $log) && $log->write_to("Couldn't update 'current' symlink\n", $log);
-$wormbase->run_command("cd $www/WORMBASE; webpublish -q -r current", $log) && $log->write_to("Couldn't run webpublish on current symlink files\n", $log);
+$wormbase->run_command("cd $www/WORMBASE; $webpublish -q -r current", $log) && $log->write_to("Couldn't run webpublish on current symlink files\n", $log);
 
 # Now need to update big dbcomp output in data directory
 $wormbase->run_command("cd /nfs/WWWdev/SANGER_docs/data/Projects/C_elegans; $webpublish -q WS.dbcomp_output", $log) && $log->write_to("Couldn't webpublish data directory\n");
