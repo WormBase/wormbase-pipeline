@@ -7,7 +7,7 @@
 # This is a example of a good script template
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2006-12-12 16:08:18 $      
+# Last updated on: $Date: 2007-07-16 14:08:39 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -150,7 +150,7 @@ my $count;
       @f = split /\t/, $line;
       my $id;
 
-# is this a BLAT_WASHU or BLAT_NEMBASE or BLAT_NEMATODE line?
+# is this a BLAT_WASHU or BLAT_NEMBASE or BLAT_NEMATODE or BLAT_Caen_EST_* line?
       if ($f[1] eq 'BLAT_WASHU') {
 	# get the ID name
 	($id) = ($f[8] =~ /Target \"Sequence:(\S+)\"/);
@@ -180,7 +180,17 @@ my $count;
 	} else {
 	  #print "BLAT_NEMATODE species doesn't exist for $id\n";
 	}
-      }
+      } elsif ($f[1] =~ /BLAT_Caen_EST_/) { # BLAT_Caen_EST_BEST or BLAT_Caen_EST_OTHER
+	# get the ID name
+	($id) = ($f[8] =~ /Target \"Sequence:(\S+)\"/);
+
+	if (exists $species{'BLAT_NEMATODE'}->{$id}) { # the {'BLAT_NEMATODE'} hash holds the EMBL data which BLAT_Caen_EST_* uses as well
+	  $line = $line . " ; Species \"" . $species{'BLAT_NEMATODE'}->{$id} . "\"";
+	  $count++;
+	  #print "$line\n" if ($verbose);
+	} else {
+	  print "BLAT_Caen_EST species doesn't exist for $id\n";
+	}      }
 
 
 # write out the line
