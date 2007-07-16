@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2007-07-12 12:58:55 $      
+# Last updated on: $Date: 2007-07-16 13:09:52 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -108,7 +108,8 @@ my @chromosomes = qw( I II III IV V X );
 foreach my $chromosome (@chromosomes) {
 
   # if we are running this on autoace, write out the anomalies GFF file
-  my $gff_file = $wormbase->{'gff_splits'} . "/CHROMOSOME_${chromosome}_curation_anomalies.gff";
+#  my $gff_file = $wormbase->{'gff_splits'} . "/CHROMOSOME_${chromosome}_curation_anomalies.gff";
+  my $gff_file = $wormbase->{'chromosomes'} . "/SUPPLEMENTARY_GFF/CHROMOSOME_${chromosome}_curation_anomalies.gff";
   if ($database eq $wormbase->{'autoace'}) {
     open (OUTPUT_GFF, ">$gff_file") || die "Can't open $gff_file";
   }
@@ -2536,6 +2537,9 @@ sub put_anomaly_record_in_database {
   my ($anomaly_type, $chromosome, $anomaly_id, $chrom_start, $chrom_end, $chrom_strand, $window, $anomaly_score, $explanation, $clone, $clone_start, $clone_end, $lab) = @_;
 
 
+  # ignore this if the score is less than 0.1
+  if ($anomaly_score < 0.1) {return;}
+
   # output the data to the GFF file
   if ($database eq $wormbase->{'autoace'}) {
     print OUTPUT_GFF "CHROMOSOME_$chromosome\tcuration_anomaly\t$anomaly_type\t$chrom_start\t$chrom_end\t$anomaly_score\t$chrom_strand\t.\tEvidence \"$anomaly_id\"\n";
@@ -2673,7 +2677,7 @@ sub delete_anomalies{
 
   my ($type) = @_;
 
-  # Allow a generous 1 day1 for this program to have been running.
+  # Allow a generous 1 day for this program to have been running.
   # Delete anything that hasn't been marked as to be ignored (still
   # active = 1) that is of the required type and which has not been
   # updated in the last one day i.e that this program hasn't just
