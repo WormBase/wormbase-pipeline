@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2007-07-16 13:09:52 $      
+# Last updated on: $Date: 2007-07-16 16:19:28 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -207,7 +207,7 @@ foreach my $chromosome (@chromosomes) {
 
   # get SAGE tags that don't match a gene with score based on frequency
   print "finding non-overlapping SAGE_transcripts\n";
-  &get_unmatched_SAGE(\@exons, \@pseudogenes, \@SAGE_transcripts, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, $chromosome);
+  &get_unmatched_SAGE(\@coding_transcripts, \@pseudogenes, \@SAGE_transcripts, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, $chromosome);
 
   print "finding twinscan exons not overlapping curated regions\n";
   &get_unmatched_twinscan_exons(\@twinscan, \@exons, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, $chromosome);
@@ -275,6 +275,7 @@ foreach my $chromosome (@chromosomes) {
 &delete_anomalies("OVERLAPPING_EXONS");
 &delete_anomalies("SHORT_EXON");
 &delete_anomalies("UNMATCHED_WABA");
+&delete_anomalies("UNMATCHED_SAGE");
 
 
 # disconnect from the mysql database
@@ -1847,16 +1848,16 @@ sub get_unmatched_genefinder_exons {
 }
 
 ##########################################
-# find the SAGE transcripts that don't overlap the coding exons and pseudogenes
+# find the SAGE transcripts that don't overlap the coding transcripts and pseudogenes
 #  &get_unmatched_SAGE(\@coding_transcripts, \@SAGE_transcripts);
 
 sub get_unmatched_SAGE {
 
-  my ($exons_aref, $pseudogenes_aref, $SAGE_transcripts_aref, $transposons_aref, $transposon_exons_aref, $noncoding_transcript_exons_aref, $rRNA_aref, $chromosome) = @_;
+  my ($coding_transcripts_aref, $pseudogenes_aref, $SAGE_transcripts_aref, $transposons_aref, $transposon_exons_aref, $noncoding_transcript_exons_aref, $rRNA_aref, $chromosome) = @_;
 
   my @SAGE_transcripts = @{$SAGE_transcripts_aref};
 
-  my %exons_match = &init_match();
+  my %coding_transcripts_match = &init_match();
   my %pseud_match = &init_match();
   my %trans_match = &init_match();
   my %trane_match = &init_match();
@@ -1867,7 +1868,7 @@ sub get_unmatched_SAGE {
 
     my $got_a_match = 0;
   
-    if (&match($sage, $exons_aref, \%exons_match)) {
+    if (&match($sage, $coding_transcripts_aref, \%coding_transcripts_match)) {
       $got_a_match = 1;
     }
 
@@ -1899,7 +1900,7 @@ sub get_unmatched_SAGE {
       my $chrom_strand = $sage->[3];
 
 
-      my $anomaly_score = 0.1;	# ... so just set the score to be this
+      my $anomaly_score = 1;	
       #print "NOT got a match ANOMALY: $protein_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score\n";
       &output_to_database("UNMATCHED_SAGE", $chromosome, $SAGE_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score, '');
     }
