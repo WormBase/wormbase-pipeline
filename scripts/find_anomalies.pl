@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2007-07-16 16:19:28 $      
+# Last updated on: $Date: 2007-07-20 09:35:30 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -215,8 +215,9 @@ foreach my $chromosome (@chromosomes) {
   print "finding genefinder exons not overlapping curated regions\n";
   &get_unmatched_genefinder_exons(\@genefinder, \@exons, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, $chromosome);
 
-  print "finding WABA coding regions not overlapping curated regions\n";
-  &get_unmatched_waba_coding(\@waba_coding, \@exons, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, \@repeatmasked, $chromosome);
+### DON'T UNCOMMENT THIS UNTIL WE HAVE GOT SENSIBLE SCORES IN THE WABA GFF FILE AGAIN
+#  print "finding WABA coding regions not overlapping curated regions\n";
+#  &get_unmatched_waba_coding(\@waba_coding, \@exons, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, \@repeatmasked, $chromosome);
 
   print "finding CDS exons overlapping repeatmasker regions\n";
   &get_matched_repeatmasker(\@exons, \@repeatmasked, $chromosome);
@@ -276,6 +277,8 @@ foreach my $chromosome (@chromosomes) {
 &delete_anomalies("SHORT_EXON");
 &delete_anomalies("UNMATCHED_WABA");
 &delete_anomalies("UNMATCHED_SAGE");
+&delete_anomalies("REPEAT_OVERLAPS_EXON");
+&delete_anomalies("MERGE_GENE_BY_PROTEIN");
 
 
 # disconnect from the mysql database
