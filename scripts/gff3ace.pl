@@ -5,7 +5,7 @@
 # To not remap, set the release to be 0.
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2007-07-19 13:37:05 $      
+# Last updated on: $Date: 2007-07-20 09:37:31 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -39,7 +39,6 @@ GetOptions ("help"       => \$help,
 	    "species:s"  => \$species,
 	    );
 
-$debug = "gw3";
 
 if ( $store ) {
   $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
