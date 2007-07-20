@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2007-07-20 09:35:30 $      
+# Last updated on: $Date: 2007-07-20 11:02:15 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -2541,8 +2541,8 @@ sub put_anomaly_record_in_database {
   my ($anomaly_type, $chromosome, $anomaly_id, $chrom_start, $chrom_end, $chrom_strand, $window, $anomaly_score, $explanation, $clone, $clone_start, $clone_end, $lab) = @_;
 
 
-  # ignore this if the score is less than 0.1
-  if ($anomaly_score < 0.1) {return;}
+  # ignore this if the score is less than 0.01
+  if ($anomaly_score < 0.01) {return;}
 
   # output the data to the GFF file
   if ($database eq $wormbase->{'autoace'}) {
