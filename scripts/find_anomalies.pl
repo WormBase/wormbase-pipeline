@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2007-07-20 11:02:15 $      
+# Last updated on: $Date: 2007-07-23 15:10:45 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -22,6 +22,7 @@ use Ace;
 #use Sequence_extract;
 use Coords_converter;
 use DBI;
+use Modules::PWM;
 
 ######################################
 # variables and command-line options # 
@@ -177,10 +178,10 @@ foreach my $chromosome (@chromosomes) {
 
   # get the WABA coding data
   print "reading WABA coding regions\n";
-  my @waba_coding = get_waba_coding($database, $chromosome);
+  my @waba_coding = &get_waba_coding($database, $chromosome);
   
   print "reading repeat masked regions\n";
-  my @repeatmasked = get_repeatmasked($database, $chromosome);
+  my @repeatmasked = &get_repeatmasked($database, $chromosome);
 
 
   # get the homologies showing no match to any exon or pseudogene
@@ -231,8 +232,13 @@ foreach my $chromosome (@chromosomes) {
   print "finding EST/genome mismatches\n";
   &get_est_mismatches(\@est, $chromosome);
 
+  print "finding weak exon splice sites";
+  &get_weak_exon_splice_sites(\@exons, $chromosome);
+
   print "read confirmed_introns and other GFF files\n";
   &get_GFF_files($chromosome);
+
+  
 
 
 #################################################
@@ -2174,7 +2180,94 @@ sub get_est_mismatches {
     }
   }
 }
+##########################################
+# Finding weak exon splice sites
+# note any splice sites with a score < 1.0
+# get_weak_exon_splice_sites(\@exons, $chromosome);
 
+ sub get_weak_exon_splice_sites {
+   my ($exons_aref, $chromosome) = @_;
+
+   my $pwm = PWM->new;
+   my $seq_file = "$database/CHROMOSOMES/CHROMOSOME_$chromosome.dna";
+   my $seq = read_file($seq_file);
+
+   my $prev_end = 0;
+   my $prev_exon = "";
+
+   foreach my $exon (@{$exons_aref}) { # $exon_id, $chrom_start, $chrom_end, $chrom_strand
+
+     my $exon_id = $exon->[0];
+     my $chrom_start = $exon->[1];
+     my $chrom_end = $exon->[2];
+     my $chrom_strand = $exon->[3];
+     my $exon_score = $exon->[6];
+
+     my $anomaly_score = 1;
+
+     # we want: 
+     # not the first exon in the chromosome
+     # and the previous exon came from this CDS
+     # and the splice site
+     if ($prev_end != 0 && $prev_exon eq $exon_id) {
+       my $score_5;
+       my $score_3;
+       if ($chrom_strand eq '+') {
+	 $score_5 = $pwm->splice5($seq, $prev_end-1, '+'); # -1 to convert from acedb sequence pos to perl string coords
+	 $score_3 = $pwm->splice3($seq, $chrom_start-2, '+'); # -1 to convert from acedb sequence pos to perl string coords
+
+	 #print "5' site: $score_5\n";
+	 if ($score_5 < 0.75) {
+	   &output_to_database("WEAK_INTRON_SPLICE_SITE", $chromosome, $exon_id, $prev_end, $prev_end+1, $chrom_strand, $anomaly_score, '');
+	 }
+	 #print "3' site: $score_3\n";
+	 if ($score_3 < 0.75) {
+	   &output_to_database("WEAK_INTRON_SPLICE_SITE", $chromosome, $exon_id, $chrom_start-1, $chrom_start, $chrom_strand, $anomaly_score, '');
+	 }
+       } else {			# reverse sense
+	 $score_5 = $pwm->splice5($seq, $chrom_start-1, '-'); # -1 to convert from acedb sequence pos to perl string coords
+	 $score_3 = $pwm->splice3($seq, $prev_end, '-'); # -1 to convert from acedb sequence pos to perl string coords
+	 
+	 #my $s5 = substr($seq, $chrom_start-3, 2);
+	 #print "\t\t\t5' seq: $s5\n";
+	 
+	 #my $s3 = substr($seq, $prev_end, 2);
+	 #print "3' seq: $s3\n";
+
+	 #print "5' site: $score_5\n";
+	 if ($score_5 < 0.75) {
+	   &output_to_database("WEAK_INTRON_SPLICE_SITE", $chromosome, $exon_id, $chrom_start-1, $chrom_start, $chrom_strand, $anomaly_score, '');
+	 }
+	 #print "3' site: $score_3\n";
+	 if ($score_3 < 0.75) {
+	   &output_to_database("WEAK_INTRON_SPLICE_SITE", $chromosome, $exon_id, $prev_end, $prev_end+1, $chrom_strand, $anomaly_score, '');
+	 }
+       }
+
+     }
+     $prev_end = $chrom_end;
+     $prev_exon = $exon_id;
+   }
+
+ }
+
+##########################################
+# read file
+
+sub read_file {
+  my ($file) = @_;
+
+  $/ = "";
+  open (SEQ, $file) or die "Can't open the dna file for $file : $!\n";
+  my $seq = <SEQ>;
+  close SEQ;
+  $/ = "\n";
+
+  $seq =~ s/^>.*\n//;		# remove one initial title line
+  $seq =~ s/\n//g;
+
+  return $seq
+}
 ##########################################
 # Finding short CDS introns
 # note any introns shorter than 30 bases
@@ -2196,6 +2289,7 @@ sub get_short_introns {
 
     my $anomaly_score = 1;
 
+    # we want: 
     # not the first exon in the chromosome
     # and the previous exon came from this CDS
     # and the intron is < 30 bases
