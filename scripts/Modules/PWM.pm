@@ -7,7 +7,7 @@
 # Do position scoring matrix evaluation (PWM, PSM, PSSM) of a sequence.
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2007-07-20 15:32:17 $      
+# Last updated on: $Date: 2007-07-23 11:11:54 $      
 
 =pod
 
@@ -29,13 +29,19 @@
     score for a base being the site of a 3' splice site, a 5' splice
     site or a START codon.
 
-    It uses the matrix data from ACEDB in the wgf directory.
+    It uses the matrix data from ACEDB in the /wgf directory.
 
     The correction of the logodds matrix with background probabilities
     is done using a simple constant ratio for each of the four bases.
 
-    These routines will fail it anything other than A,C,G,T is in the
-    sequence.
+    The position in the sequence uses normal perl coordinates starting
+    at zero.
+
+    Splice cut sites occur just after the base being looked at (in
+    the reverse sense it is just before the base being looked at.)
+
+    These routines will fail it anything other than A,C,G,T,N,- is in
+    the sequence.
 
 =head1 CONTACT
 
@@ -116,7 +122,7 @@ sub _init_background_probs {
 
     Title   :   _init_splice3
     Usage   :   $self->_init_splice3;
-    Function:   initialises the counts matrix for the 3' splice sites
+    Function:   initialises the counts matrix for the 3-prime splice sites
     Returns :   
     Args    :   
 
@@ -137,6 +143,7 @@ sub _init_splice3 {
   $matrix3{'t'} = [3061, 3068, 3110, 3109, 3127, 3157, 2958, 2829, 2512, 2523, 2980, 3317, 3636, 3542, 3643, 3403, 3353, 3453, 4699, 7336, 7957, 5731, 1110, 0, 0, 1017, 2957, 2264, 1990, 2162, 2095];
 
   $self->{splice3} = $self->_get_logodds(%matrix3);
+  $self->{rev_splice3} = $self->_get_revcomp($self->{splice3});
 }
 
 
@@ -144,7 +151,7 @@ sub _init_splice3 {
 
     Title   :   _init_splice5
     Usage   :   $self->_init_splice5;
-    Function:   initialises the counts matrix for the 5' splice sites
+    Function:   initialises the counts matrix for the 5-prime splice sites
     Returns :   
     Args    :   
 
@@ -165,6 +172,7 @@ sub _init_splice5 {
   $matrix5{'t'} = [2319, 2477, 2300, 1376, 1412, 1200, 0, 8178, 1348, 1446, 954, 5170, 4270, 3969, 4024, 3683, 3320, 3302, 3358, 3309, 3243, 3310, 3279, 3300, 3318, 3163, 3203, 3218, 3095, 3119, 3068];
   
   $self->{splice5} = $self->_get_logodds(%matrix5);
+  $self->{rev_splice5} = $self->_get_revcomp($self->{splice5});
 }
 
 
@@ -193,6 +201,8 @@ sub _init_atg {
   $matrix_atg{'t'} = [13, 11, 17, 14, 15,  3,  2, 10,  9,  0, 48,  0, 10,  4, 12, 10, 18,  7, 11, 13,  8];
 
   $self->{atg} = $self->_get_logodds(%matrix_atg);
+  $self->{rev_atg} = $self->_get_revcomp($self->{atg});
+
 }
 
 
@@ -231,6 +241,33 @@ sub _get_logodds {
 }
 
 
+=head2 
+
+    Title   :   _get_revcomp
+    Usage   :   $self->{rev_splice5} = $self->_get_revcomp($self->{splice5});
+    Function:   gets the log-odds matrix for the reverse sense
+    Returns :   the hash-ref of the reverse complement log-odds matrix
+    Args    :   the hash-ref of the log-odds matrix to be converted
+
+=cut
+
+sub _get_revcomp {
+  my ($self, $matrix_href) = @_;
+  my %matrix = %{$matrix_href};
+  
+  my %revcomp;
+  my $len = @{$matrix{'a'}} - 1;
+  $revcomp{'startoffset'} = - $matrix{'endoffset'};
+  $revcomp{'endoffset'} = - $matrix{'startoffset'};
+  $revcomp{'a'} = [reverse @{$matrix{'t'}}];
+  $revcomp{'c'} = [reverse @{$matrix{'g'}}];
+  $revcomp{'g'} = [reverse @{$matrix{'c'}}];
+  $revcomp{'t'} = [reverse @{$matrix{'a'}}];
+
+  return \%revcomp;
+}
+
+
 
 =head2 
 
@@ -238,7 +275,9 @@ sub _get_logodds {
     Usage   :   $result = $self->_evaluate($self->{splice3}, $seq, $pos);
     Function:   evaluates the log-odds matrix against the given sequence at the given position
     Returns :   the score of the evaluation
-    Args    :   hash-ref of the log-odds matrix, sequence to evaluate, position in the sequence to look at
+    Args    :   hash-ref of the log-odds matrix, 
+                sequence to evaluate, 
+                position in the sequence to look at,
 
 =cut
 
@@ -247,50 +286,65 @@ sub _evaluate {
   my ($self, $matrix_href, $seq, $pos) = @_;
 
   my %matrix = %{$matrix_href};
+  my $result = 0;
 
   if ($pos + $matrix{'startoffset'} < 0) {return -999;}
   if ($pos + $matrix{'endoffset'} > length($seq) - 1) {return -999;}
 
-  my $result = 0;
-
   for (my $i = 0; $i < @{$matrix{'a'}}; $i++) {
     my $next_position = $pos + $matrix{'startoffset'} + $i;
     my $chr = lc substr($seq, $next_position, 1);
+    if ($chr eq 'n' || $chr eq '-') {return -999;}
     $result += $matrix{$chr}->[$i];
   }
 
   return $result;
-
 }
 
 =head2 
 
     Title   :   splice3
     Usage   :   $result = $pwm->splice3($sequence, $position);
-    Function:   returns the score for a 3' splice site after the given position in the sequence
+    Function:   returns the score for a 3-prime splice site after the given position in the sequence
     Returns :   the splice site score
-    Args    :   sequence to evaluate, position in the sequence to look at
+    Args    :   sequence to evaluate, 
+                position in the sequence to look at (starting from zero)
+                [optional] sense '+' or '-' ('+' is the default)
 
 =cut
 
 sub splice3 {
-  my ($self, $seq, $pos) = @_;
-  return $self->_evaluate($self->{splice3}, $seq, $pos);
+  my ($self, $seq, $pos, $sense) = @_;
+  if (!defined $sense) {$sense = '+';}
+
+  if ($sense eq '+') {
+    return $self->_evaluate($self->{splice3}, $seq, $pos);
+  } else {
+    return $self->_evaluate($self->{rev_splice3}, $seq, $pos);
+  }
 }
 
 =head2 
 
     Title   :   splice5
     Usage   :   $result = $pwm->splice5($sequence, $position);
-    Function:   returns the score for a 5' splice site after the given position in the sequence
+    Function:   returns the score for a 5-prime splice site after the given position in the sequence
     Returns :   the splice site score
-    Args    :   sequence to evaluate, position in the sequence to look at
+    Args    :   sequence to evaluate, 
+                position in the sequence to look at (starting from zero)
+                [optional] sense '+' or '-' ('+' is the default)
 
 =cut
 
 sub splice5 {
-  my ($self, $seq, $pos) = @_;
-  return $self->_evaluate($self->{splice5}, $seq, $pos);
+  my ($self, $seq, $pos, $sense) = @_;
+  if (!defined $sense) {$sense = '+';}
+
+  if ($sense eq '+') {
+    return $self->_evaluate($self->{splice5}, $seq, $pos);
+  } else {
+    return $self->_evaluate($self->{rev_splice5}, $seq, $pos);
+  }
 }
 
 =head2 
@@ -299,13 +353,21 @@ sub splice5 {
     Usage   :   $result = $pwm->atg($sequence, $position);
     Function:   returns the score for a START codon starting at the given position in the sequence
     Returns :   the START codon score
-    Args    :   sequence to evaluate, position in the sequence to look at
+    Args    :   sequence to evaluate, 
+                position in the sequence to look at (starting from zero)
+                [optional] sense '+' or '-' ('+' is the default)
 
 =cut
 
 sub atg {
-  my ($self, $seq, $pos) = @_;
-  return $self->_evaluate($self->{atg}, $seq, $pos);
+  my ($self, $seq, $pos, $sense) = @_;
+  if (!defined $sense) {$sense = '+';}
+
+  if ($sense eq '+') {
+    return $self->_evaluate($self->{atg}, $seq, $pos);
+  } else {
+    return $self->_evaluate($self->{rev_atg}, $seq, $pos);
+  }
 }
 
 1;
