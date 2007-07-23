@@ -7,7 +7,7 @@
 # Do position scoring matrix evaluation (PWM, PSM, PSSM) of a sequence.
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2007-07-23 11:11:54 $      
+# Last updated on: $Date: 2007-07-23 12:25:07 $      
 
 =pod
 
@@ -22,6 +22,8 @@
  my $result = splice3($sequence, $position);
 
  my $result = splice5($sequence, $position);
+
+ my $result = atg($sequence, $position);
 
 =head1 DESCRIPTION
 
@@ -114,6 +116,8 @@ sub _init_background_probs {
   $background_prob{'c'} = 14383/$total;
   $background_prob{'g'} = 14380/$total;
   $background_prob{'t'} = 26285/$total;
+  $background_prob{'n'} = 0;
+  $background_prob{'-'} = 0;
     
   $self->{background_prob} = \%background_prob;
 }
@@ -369,5 +373,87 @@ sub atg {
     return $self->_evaluate($self->{rev_atg}, $seq, $pos);
   }
 }
+
+
+=head2 
+
+    Title   :   setup_matrix
+    Usage   :   $pwm->setup_matrix("mymatrix", @alignment);
+    Function:   sets up the PWM called $name based on the aligned (no spaces) set of sequences
+    Returns :   
+    Args    :   name of matrix
+                arary of sequences of examples of the motif to use to create the array
+=cut
+sub setup_matrix {
+  my ($self, $name, @seqs) = @_;
+
+  # get the matrix of counts
+  my %count_matrix;
+  foreach my $seq (@seqs) {
+    my $i = 0;
+    foreach my $base (split //, $seq) {
+      $count_matrix{lc $base}->[$i++]++;
+    }
+  }
+  $count_matrix{'startoffset'} = 0;  # offset from splice site to start of matrix
+  $count_matrix{'endoffset'} = @{$count_matrix{'a'}} - 1;	# offset from splice site to end of matrix
+  
+  # make the log-odds matrix and its reverse complement
+  $self->{$name} = $self->_get_logodds(%count_matrix);
+  $self->{"rev_$name"} = $self->_get_revcomp($self->{$name});
+}
+
+=head2 
+
+    Title   :   get
+    Usage   :   $result = $pwm->get("mymatrix", $seq, $pos);
+    Function:   returns the score for a named matrix at a specified position
+    Returns :   the evaluated matrix score
+    Args    :   name of the matrix,
+                sequence to evaluate, 
+                position in the sequence to look at (starting from zero)
+                [optional] sense '+' or '-' ('+' is the default)
+
+=cut
+
+sub get {
+  my ($self, $name, $seq, $pos, $sense) = @_;
+  if (!defined $sense) {$sense = '+';}
+
+  if ($sense eq '+') {
+    return $self->_evaluate($self->{$name}, $seq, $pos);
+  } else {
+    return $self->_evaluate($self->{"rev_$name"}, $seq, $pos);
+  }
+}
+
+=head2 
+
+    Title   :   get
+    Usage   :   $result = $pwm->atg($sequence, $threshold);
+    Function:   returns a list of lists of position and score where the score is >= $threshold
+    Returns :   the lists of lists of position and score
+    Args    :   name of the matrix,
+                sequence to evaluate, 
+                threshold of score to return
+                [optional] sense '+' or '-' ('+' is the default)
+
+=cut
+
+sub search {
+  my ($self, $name, $seq, $threshold, $sense) = @_;
+  if (!defined $sense) {$sense = '+';}
+
+  my @result;
+  for (my $pos = 0; $pos < length $seq; $pos++) {
+    my $result = $self->get($name, $seq, $pos, $sense);
+    if ($result >= $threshold) {
+      push @result, [$pos, $result];
+    }
+  }
+
+  return @result;
+}
+
 
 1;
