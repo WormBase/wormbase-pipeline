@@ -5,7 +5,7 @@
 # Usage : EMBL_Sequencefetch.pl [-options]
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2007-06-19 15:30:58 $
+# Last edited on: $Date: 2007-07-26 17:05:35 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -23,7 +23,7 @@ use Species;
 # variables and command-line options #
 ######################################
 
-my ($help, $debug, $test, $verbose, $store, $wormbase, $version, $organism, $output, $longtext, $dna, $database, $inc, $species,);
+my ($help, $debug, $test, $verbose, $store, $wormbase, $version, $organism, $output, $longtext, $dna, $database, $inc, $species, $dump_only);
 
 GetOptions ("help"       => \$help, #
             "debug=s"    => \$debug, # debug option, turns on more printing and only email specified user.
@@ -35,6 +35,7 @@ GetOptions ("help"       => \$help, #
 	    "dna"        => \$dna, # Create a seperate DNA file.
 	    "database=s" => \$database, #database are you downloading sequence data for.
 	    "inc"        => \$inc, #just query emblnew.
+	    "dump_only"  => \$dump_only # only dumps the Transcript data from the primary databases, not EMBL connection is made.
 	   );
 
 if ( $store ) {
@@ -122,17 +123,17 @@ foreach my $organism(keys %species) {
   else {$sourceDB = $wormbase->database($organism);}
   # Fetch sequence data from primary database.
   $log->write_to("Fetching sequence data from $sourceDB:\n");
-  &fetch_database_info ($sourceDB) if (-e $sourceDB);
+  &fetch_database_info ($sourceDB) if ((-e $sourceDB) & (!defined $dump_only));
   foreach $molecule(@molecules) {
     $log->write_to("============================================\nProcessing: $molecule\n");
     my @entries;
     # fetch a list of the organism sequencae info from embl or emblnew.
     $log->write_to("Fetching Sequence data from EMBL: $organism - $molecule\n");
-    &get_embl_data (\@entries, $molecule, $organism);
+    &get_embl_data (\@entries, $molecule, $organism) if (!defined $dump_only);
     # Retrieve the full object and process.
     if (scalar@entries > 0) {
       $log->write_to("Fetching NEW EMBL data: $organism - $molecule\n");
-      &get_new_data (\@entries, $molecule, $organism);
+      &get_new_data (\@entries, $molecule, $organism) if (!defined $dump_only);
     }
     # if there isn't any, just print this line in the log.
     if (scalar@entries < 1) {
@@ -140,7 +141,7 @@ foreach my $organism(keys %species) {
     }
     # Load the data back to the primary database.
     $log->write_to("Loading $organism data into primary database\n");
-    &load_data ($sourceDB, $molecule, $organism);
+    &load_data ($sourceDB, $molecule, $organism) if (!defined $dump_only);
     $log->write_to("Processed: $molecule\n============================================\n");
   }
   # Dump the data back to BUILD_DATA/cDNA/organism/
@@ -498,10 +499,10 @@ sub dump_BLAT_data {
   $log->write_to("Removed $EST_dir/tc1\n\n")  if (-e $EST_dir."/tc1" && $debug);
 
   my $command=<<END;
-query find Sequence where method = NDB & Properties AND NEXT AND NEXT = mRNA\n
+query find Sequence where method = NDB & RNA AND NEXT = mRNA\n
 Dna -mismatch $EST_dir/mRNA\n
 clear\n
-query find Sequence where method = NDB & Properties AND NEXT AND NEXT != mRNA\n
+query find Sequence where method = NDB & RNA AND NEXT != mRNA\n
 Dna -mismatch $EST_dir/ncRNA\n
 clear\n
 query find Sequence where method = EST_$subspecies & !OST*\n
