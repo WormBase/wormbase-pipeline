@@ -7,8 +7,8 @@
 #
 # This makes the autoace database from its composite sources.
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2007-06-19 08:33:38 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2007-07-31 08:34:47 $
 
 use strict;
 use lib  $ENV{'CVS_DIR'};
@@ -144,7 +144,7 @@ exit (0);
 
 sub DbWrite {
     my ($command,$exec,$dir,$name)=@_;
-    open (WRITEDB,"| $exec $dir >> STDERR") or $log->log_and_die("$name DbWrite failed\n");
+    open (WRITEDB,"| $exec $dir") or $log->log_and_die("$name DbWrite failed\n");
     print WRITEDB $command;
     close WRITEDB;
 }
