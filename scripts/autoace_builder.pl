@@ -6,8 +6,8 @@
 #
 # Usage : autoace_builder.pl [-options]
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2007-07-05 13:21:33 $
+# Last edited by: $Author: mt3 $
+# Last edited on: $Date: 2007-08-01 09:09:14 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -379,4 +379,5 @@ sub public_sites {
   $wormbase->run_script( "make_FTP_sites.pl -all", $log);
   $wormbase->run_script( "update_website.pl -all", $log);
   $wormbase->run_script( "release_letter.pl -l"  , $log);
+  $wormbase->run_script( "update_web_gene_names.pl", $log);
 }
