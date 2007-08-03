@@ -372,21 +372,23 @@ sub get_cds {
 					   my $stop_codon=$table->is_ter_codon($from_codon)?$from_codon:$to_codon;
 					   my $other_codon=$table->is_ter_codon($from_codon)?uc $to_codon:uc $from_codon;
 					   my $other_aa=$table->translate($other_codon);
-					   if (uc $stop_codon eq 'TAG'){
+					   if (uc($stop_codon) =~ /[TWYKHDB]AG/ ){
 						    $cds{$hit->{name}}{"Nonsense Amber_UAG \"$other_aa to amber stop (${\int($cds_position/3+1)})\""}{$k}=1;
 							print "Nonsense Amber_UAG: " if $wb->debug;    	
 						}
-						elsif (uc $stop_codon eq 'TAA'){
+						elsif (uc($stop_codon) =~ /[TWYKHDB]AA/){
 							$cds{$hit->{name}}{"Nonsense Ochre_UAA \"$other_aa to ochre stop (${\int($cds_position/3+1)})\""}{$k}=1;
 							print "Nonsense Ochre_UAA: " if $wb->debug;
 						}
-						elsif (uc $stop_codon eq 'TGA'){
+						elsif (uc($stop_codon) =~ /[TWYKHDB]GA/){
 							$cds{$hit->{name}}{"Nonsense Opal_UGA \"$other_aa to opal stop (${\int($cds_position/3+1)})\""}{$k}=1;
 							print "Nonsense Opal_UAA: " if $wb->debug;
 						}
-						elsif (uc $stop_codon eq 'RAG'){
-							$cds{$hit->{name}}{"Nonsense Amber_or_Opal \"$other_aa to amber or opal stop (${\int($cds_position/3+1)})\""}{$k}=1;
-
+						elsif (uc($stop_codon) eq 'TAR'){
+							$cds{$hit->{name}}{"Nonsense Amber_UAG_or_Ochre_UAA \"$other_aa to amber or ochre stop (${\int($cds_position/3+1)})\""}{$k}=1;
+						}
+						elsif (uc($stop_codon) eq 'TRA') {
+							$cds{$hit->{name}}{"Nonsense Ochre_UAA_or_Opal_UGA \"$other_aa to opal or ochre stop (${\int($cds_position/3+1)})\""}{$k}=1;
 						}
 						else {$log->write_to("ERROR: whatever stop $stop_codon is in $k, it is not Amber/Opal/Ochre (Remark: ${\$v->{allele}->Remark})\n");$errors++}
 					}
