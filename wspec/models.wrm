@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: ar2 $
-// Last edited on: $Date: 2007-07-13 15:33:24 $
+// Last edited on: $Date: 2007-08-03 09:05:58 $
 
 
 
@@ -719,6 +719,7 @@
 	  Date_last_updated UNIQUE DateType                           // Stores last update timestamp
 	  Feature_evidence ?Feature				      // Reference a Feature - eg for creation of isoform based on TEC-RED SL2
 	  Laboratory_evidence ?Laboratory                             // Reference a Lab
+	  Analysis						      // Reference an analysis
 
 ////////////////////////////////////////////////////////
 //
@@ -1022,6 +1023,8 @@
 
 #Splice_confirmation cDNA ?Sequence // ?Sequence link to flag which cDNA is confirming
                      EST ?Sequence  // or falsifying the intron in question, added [031121 krb]
+		     OST
+		     mRNA
 		     Homology
 		     UTR ?Sequence
 		     False ?Sequence 
@@ -1188,6 +1191,8 @@
                                               stRNA UNIQUE Text            // [010723 dl]
                                               miRNA UNIQUE Text            // [020306 kj]
                                               ncRNA UNIQUE Text            // true non-coding RNAs
+					      snlRNA UNIQUE Text	   //small nuclear like 
+					      u21RNA UNIQUE Text	   //21U-RNA
 		           Isoform #Evidence                               // Set if this is a RNA isoform
 			   Ignore #Evidence                                // Set for putative NMD targets which we do not want to see in wormrna
                            Start_not_found                                 // [020306 kj]
@@ -2444,6 +2449,7 @@
                 Also_known_as   ?Person_name XREF Other_name_of // new XREF added [030310 krb]
         CGC_representative_for ?Laboratory XREF Representative
         Laboratory ?Laboratory XREF Registered_lab_members
+	Conducted ?Analysis XREF Conducted_by
         Address #Address
         Tracking        Old_laboratory ?Laboratory XREF Past_lab_members      // Lab(s) the person previously worked in
                         Last_verified UNIQUE DateType                         // Last time the name/contact information in this record was actively verified
@@ -2571,6 +2577,7 @@
                         Contained_in ?Paper XREF Contains       // old form
         Author ?Author XREF Paper #Affiliation
         Person ?Person XREF Paper #Evidence
+	Describes_analysis ?Analysis XREF Reference
 	Not_person ?Person XREF Not_Paper #Evidence
         Affiliation Text        // Authors' affiliation if available
         Brief_citation UNIQUE Text
@@ -2863,6 +2870,8 @@
                     Nonsense UNIQUE Amber_UAG Text #Evidence
                                     Ochre_UAA Text #Evidence
                                     Opal_UGA  Text #Evidence
+				    Ochre_UAA_or_Opal_UGA Text #Evidence
+				    Amber_UAG_or_Ochre_UAA Text #Evidence
                     Splice_site UNIQUE  Donor    Text #Evidence
                                         Acceptor Text #Evidence
                     Frameshift Text #Evidence
@@ -2977,6 +2986,14 @@
                  Matches_database_uniquely
                  Matches Protein ?Protein  XREF  Contains_peptide    // matched protein
 
+// the main Analysis class
+?Analysis    Source_database ?Database
+             Based_on_WB_Release Int
+             Based_on_DB_Release Text
+             Description ?Text
+             Reference ?Paper XREF Describes_analysis
+             Conducted_by ?Person XREF Conducted		// not always the same as the author of the paper - eg Erich running OrthoMCL
+             URL Text					// eg www.treefam.org  (or would this be covered by Source_database?)
 
 		   
 ////////////////////////
