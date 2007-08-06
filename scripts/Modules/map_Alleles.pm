@@ -139,7 +139,9 @@ sub _filter_alleles {
 
     foreach my $allele (@{$alleles}) {
         my $name = $allele->name;
-		my $remark = $allele->Remark;
+	my $remark = $allele->Remark;
+
+	# print STDERR "checking $name\n";
 		
 	# has no sequence connection
         if ( ! defined $allele->Sequence ) {
@@ -165,7 +167,10 @@ sub _filter_alleles {
         elsif (!defined $allele->Flanking_sequences->name ) {
                     $log->write_to("ERROR: $name has no left Flanking_sequence (Remark: $remark)\n");$errors++
         }
-
+        elsif ($allele->Type_of_mutation eq 'Substitution' && !defined $allele->Type_of_mutation->right){
+                    $log->write_to("WARNING: $name has no from in the substitution tag (Remark: $remark)\n");
+	}
+	
 	# has spaces or numbers in the DNA sequence strings
         elsif (($allele->Type_of_mutation eq 'Substitution') && 
 		($allele->Type_of_mutation->right=~/\d|\s/ || $allele->Type_of_mutation->right->right=~/\d|\s/)){
