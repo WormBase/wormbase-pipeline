@@ -6,8 +6,8 @@
 #
 # by Dan Lawson
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2007-04-19 09:14:41 $
+# Last updated by: $Author: pad $
+# Last updated on: $Date: 2007-08-08 10:55:59 $
 
 use strict;
 use warnings;
@@ -155,16 +155,11 @@ close(OUTPUT);    # close the output filehandle
 # hasta luego #
 ###############
 if ($load) {
-    $log->write_to("Loading file to autoace\n");
-    my $command = "autoace_builder.pl -load $output -tsuser map_y2h_script";
-
-    my $status = system($command);
-    if ( ( $status >> 8 ) != 0 ) {
-        $log->write_to("ERROR: Loading $output file failed \$\? = $status\n");
-    }
+  $log->write_to("Loading file to autoace\n");
+  $wb->load_to_database( $wb->autoace, $output, 'map_y2h_script', $log );
 }
 
-$log->mail( "$maintainers", "BUILD REPORT: $0" );
+  $log->mail( "$maintainers", "BUILD REPORT: $0" );
 
 exit(0);
 

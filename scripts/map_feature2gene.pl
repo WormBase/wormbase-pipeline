@@ -8,8 +8,8 @@
 #
 # Usage : map_feature2gene.pl [-options]
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2006-02-10 10:58:58 $
+# Last edited by: $Author: pad $
+# Last edited on: $Date: 2007-08-08 10:55:59 $
 #################################################
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -134,14 +134,11 @@ $db->close;
 
 # Upload file to autoace (if you have been asked to)
 if ($load) {
-    $log->write_to("Loading file to autoace\n");
-    my $command = "autoace_builder.pl -load $output -tsuser TSL_CDS_connect";
 
-    my $status = system($command);
-    if ( ( $status >> 8 ) != 0 ) {
-        $log->write_to("ERROR: Loading $output file failed \$\? = $status\n");
-    }
+  $log->write_to("Loading file to autoace\n");
+  $wb->load_to_database( $wb->autoace, $output, 'TSL_CDS_connect', $log );
 }
+
 $log->mail();
 exit(0);
 
