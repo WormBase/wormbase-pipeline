@@ -6,8 +6,8 @@
 #
 # Builds a wormrna data set from the current autoace database
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2006-01-17 14:14:52 $
+# Last updated by: $Author: pad $
+# Last updated on: $Date: 2007-08-09 11:06:16 $
 
 
 #################################################################################
@@ -77,7 +77,7 @@ $ENV{'ACEDB'} = $dbdir;
 
 my $db = Ace->connect (-path => $dbdir, -program => $tace) || $log->log_anddie("Couldn't connect to $dbdir\n");
 # Get RNA genes, but not other Transcript objects
-my @transcripts = $db->fetch (-query => 'FIND elegans_RNA_genes where NOT Ignore');
+my @transcripts = $db->fetch (-query => 'FIND elegans_RNA_genes'); #Filtered composite Transcripts(NOT Method = Coding_transcript/history/non_coding_transcript).
 
 @transcripts = sort @transcripts;
 my $count = scalar(@transcripts);
