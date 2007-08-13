@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2007-07-23 15:10:45 $      
+# Last updated on: $Date: 2007-08-13 09:23:09 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -216,9 +216,8 @@ foreach my $chromosome (@chromosomes) {
   print "finding genefinder exons not overlapping curated regions\n";
   &get_unmatched_genefinder_exons(\@genefinder, \@exons, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, $chromosome);
 
-### DON'T UNCOMMENT THIS UNTIL WE HAVE GOT SENSIBLE SCORES IN THE WABA GFF FILE AGAIN
-#  print "finding WABA coding regions not overlapping curated regions\n";
-#  &get_unmatched_waba_coding(\@waba_coding, \@exons, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, \@repeatmasked, $chromosome);
+  print "finding WABA coding regions not overlapping curated regions\n";
+  &get_unmatched_waba_coding(\@waba_coding, \@exons, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, \@repeatmasked, $chromosome);
 
   print "finding CDS exons overlapping repeatmasker regions\n";
   &get_matched_repeatmasker(\@exons, \@repeatmasked, $chromosome);
