@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: ar2 $
-// Last edited on: $Date: 2007-08-03 09:05:58 $
+// Last edited on: $Date: 2007-08-13 14:26:44 $
 
 
 
@@ -719,7 +719,7 @@
 	  Date_last_updated UNIQUE DateType                           // Stores last update timestamp
 	  Feature_evidence ?Feature				      // Reference a Feature - eg for creation of isoform based on TEC-RED SL2
 	  Laboratory_evidence ?Laboratory                             // Reference a Lab
-	  Analysis						      // Reference an analysis
+	  From_analysis ?Analysis				      // Reference an analysis
 
 ////////////////////////////////////////////////////////
 //
