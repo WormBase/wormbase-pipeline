@@ -1038,7 +1038,7 @@ sub goto_anomaly_window {
     # use the window * 10 K to get the chromosomal location to go to
     my $chromosome = $selected[0];
     my $window = $selected[7];
-    my $window_start = $selected[7] * $WINDOW_SIZE;
+    my $window_start = $selected[7] * $WINDOW_SIZE + 1;
     my $window_end = ($selected[7] * $WINDOW_SIZE) + $WINDOW_SIZE - 1;
     my $sense = $selected[3];
 
