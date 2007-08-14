@@ -625,6 +625,15 @@ sub GetCloneFromCoords
     my $parent2;
     my $sl_start;
 
+    if ($coord1 < 1) {
+      carp "Chromosomal coordinate of less than 1 (coord1 = $coord1) passed to GetCloneFromCoords\n";
+      $coord1 = 1;
+    }
+    if ($coord2 < 1) {
+      carp "Chromosomal coordinate of less than 1 (coord2 = $coord2) passed to GetCloneFromCoords\n";
+      $coord2 = 1;
+    }
+
     if ($self->{'species'} eq 'elegans') {
       # only elegans has superlinks that are different to the chromosomes
       # only the mitochondrial superlink MTCE has a name that does not
