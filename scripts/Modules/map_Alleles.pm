@@ -26,10 +26,12 @@ use Memoize;
 
 # CPAN
 use Ace;
-use lib '/nfs/acari/wormpipe/enseml/bioper-live';
+use lib '/software/worm/lib/bioperl-live';
 use Bio::Tools::CodonTable;
 
 # Wormbase
+use lib $ENV{CVS_DIR};
+use lib "$ENV{CVS_DIR}/Modules";
 use Feature_mapper;
 use Sequence_extract;
 memoize('Sequence_extract::Sub_sequence'); 
@@ -706,10 +708,157 @@ sub print_utr{
 	}
 }
 
+# load pseudogenes
+sub load_pseudogenes{
+	my @files = glob "${\$wb->gff_splits}/*Pseudogene.gff" ;
+	my %pgenes;
+	foreach my $file(@files){
+		my $inf=new IO::File $file, 'r';
+		print "processing: $file\n" if $wb->debug;
+		while (<$inf>) {
+			next if /\#/;
+			next unless /Pseudogene/;
+			s/\"//g;
+			my @fields=split;
+			my ($chromosome,$start,$stop,$type1,$type2,$gene)=($fields[0],$fields[3],$fields[4],$fields[1],$fields[2],$fields[-1]);
+			next unless ($type1 eq 'Pseudogene' && $type2 eq 'Pseudogene');
+			my $field={
+				chromosome => $chromosome,
+				start	   => $start,
+				stop	   => $stop,
+				pgene      => $gene,
+			};
+			$pgenes{$chromosome}||=[];
+			push @{$pgenes{$chromosome}}, $field;
+		}
+	}
+	return \%pgenes;
+}
+             
+=head2 search_pseudogene
+
+		Title	: search_pseudogene
+		Usage	: MapAlleles::search_pseudogene(alleles,hashref from load_pseudogene)
+		Function: map alleles to pseudogeness
+		Returns	: hash->allele->transcript->type
+		Args	: list of alleles,hashref of pseudogenes
+
+=cut
+
+# search pseudogenes
+sub search_pseudogenes{                          
+	my ($alleles,$pgenes)=@_;
+	my %allele_pgenes;
+	while(my($k,$v)=each(%{$alleles})){
+		my @hits = grep {$_->{start}<=$v->{stop} && $_->{stop}>=$v->{start}} @{$$pgenes{$v->{chromosome}}};
+		foreach my $hit(@hits){
+			$allele_pgenes{$k}{$hit->{pgene}}=1;
+			print "$k -> ${\$hit->{pgene}}\n" if $wb->debug;
+		}
+	}
+	return \%allele_pgenes;
+}
+
+=head2 print_pseudogene
+
+		Title	: print_pseudogene
+		Usage	: MapAlleles::print_pseudogene(hashref of allele->utr hits,filehandle)
+		Function: print Allele->Pseudogene connections into ace format
+		Returns	: nothing
+		Args	: hashref of allele->pseudogene hits,filehandle
+
+=cut
+
+# print Pseudogene
+sub print_pseudogenes{
+	my ($hits,$fh)=@_;
+	while( my($allele_name, $pgenes) = each %$hits){
+		print $fh 'Variation : "',$allele_name,"\"\n";
+		foreach my $p_gene (keys %$pgenes){
+				print $fh "Pseudogene $p_gene Inferred_automatically map_Alleles.pl\n";
+		}
+		print $fh "\n";
+	}
+}
+
+
 # search through non_coding Transcripts
-# load
-# search
-# print
+
+# load ncrna
+sub load_ncrnas{
+	my @files = glob "${\$wb->gff_splits}/*RNA.gff" ;
+	my %nc_rnas;
+	foreach my $file(@files){
+		my $inf=new IO::File $file, 'r';
+		print "processing: $file\n" if $wb->debug;
+		while (<$inf>) {
+			next if /\#/;
+			next if ! /primary_transcript/;
+			s/\"//g;
+			my @fields=split;
+			my ($chromosome,$start,$stop,$transcript)=($fields[0],$fields[3],$fields[4],$fields[-1]);
+			my $field={
+				chromosome => $chromosome,
+				start	   => $start,
+				stop	   => $stop,
+				transcript => $transcript,
+			};
+			$nc_rnas{$chromosome}||=[];
+			push @{$nc_rnas{$chromosome}}, $field;
+		}
+	}
+	return \%nc_rnas;
+}
+             
+=head2 search_ncrna
+
+		Title	: search_ncrnas
+		Usage	: MapAlleles::search_ncrnas(alleles,hashref from load_ncrna)
+		Function: map alleles to ncrnas
+		Returns	: hash->allele->transcript->1
+		Args	: list of alleles,hashref of ncrna
+
+=cut
+
+# search ncrnas
+sub search_ncrnas{                          
+	my ($alleles,$ncrnas)=@_;
+	my %allele_ncrnas;
+	while(my($k,$v)=each(%{$alleles})){
+		my @hits = grep {$_->{start}<=$v->{stop} && $_->{stop}>=$v->{start}} @{$$ncrnas{$v->{chromosome}}};
+		foreach my $hit(@hits){
+			$allele_ncrnas{$k}{$hit->{transcript}}=1;
+			print "$k -> ${\$hit->{transcript}}\n" if $wb->debug;
+		}
+	}
+	return \%allele_ncrnas;
+}
+
+=head2 print_ncrna
+
+		Title	: print_ncrnas
+		Usage	: MapAlleles::print_ncrnas(hashref of allele->ncrna hits,filehandle)
+		Function: print Allele->ncrna connections into ace format
+		Returns	: nothing
+		Args	: hashref of allele->ncrna hits,filehandle
+
+=cut
+
+# print non coding RNAs
+sub print_ncrnas{
+	my ($hits,$fh)=@_;
+	while( my($allele_name, $ncrnas) = each %$hits){
+		print $fh 'Variation : "',$allele_name,"\"\n";
+		foreach my $ncrna (keys %$ncrnas){
+				print $fh "Transcript $ncrna Inferred_automatically map_Alleles.pl\n";
+		}
+		print $fh "\n";
+	}
+}
+
+
+
+
 
 =head2 load_ace
 

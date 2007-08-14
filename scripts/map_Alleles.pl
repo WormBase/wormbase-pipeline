@@ -84,9 +84,11 @@ while( my($key,$allele)=each %$mapped_alleles){
 
 # get overlaps with genes
 # gene_name->[allele_names,...]
+
 my $genes=MapAlleles::get_genes($mapped_alleles);
 
 # create the gene Ace file
+
 my $inversegenes=MapAlleles::print_genes($genes,$fh);
 
 # compare old<->new genes
@@ -102,6 +104,21 @@ MapAlleles::print_cds($cds,$fh);
 my $utrs=MapAlleles::load_utr;
 my $hit_utrs=MapAlleles::search_utr($mapped_alleles,$utrs);
 MapAlleles::print_utr($hit_utrs,$fh);
+$utrs = $hit_utrs = undef; # cleanup memory
+
+# get overlaps with Pseudogenes                        
+# pseudogene_name->allele_name->1
+my $pgenes=MapAlleles::load_pseudogenes;
+my $hit_pgenes=MapAlleles::search_pseudogenes($mapped_alleles,$pgenes);
+MapAlleles::print_pseudogenes($hit_pgenes,$fh);
+$pgenes = $hit_pgenes = undef; # cleanup memory
+
+# get overlaps with non-coding transcripts                        
+# transcript_name->allele_name->1
+my $nc_rnas=MapAlleles::load_ncrnas;
+my $hit_ncrnas=MapAlleles::search_ncrnas($mapped_alleles,$nc_rnas);
+MapAlleles::print_ncrnas($hit_ncrnas,$fh);
+$hit_ncrnas = $hit_ncrnas = undef; # cleanup memory
  
 # load to ace and close filehandle
 MapAlleles::load_ace($fh,$acefile) unless $noload;
