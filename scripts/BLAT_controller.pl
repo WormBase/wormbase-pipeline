@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl5.8.0 -w
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2007-06-20 10:09:07 $
+# Last edited by: $Author: pad $
+# Last edited on: $Date: 2007-08-15 10:35:52 $
 
 
 use lib $ENV{'CVS_DIR'};
@@ -55,10 +55,10 @@ else {
 
 $species = $wormbase->species;#for load
 my $log = Log_files->make_build_log($wormbase);
-my $seq_obj      = Sequence_extract->invoke(undef, undef, $wormbase) if $intron;
 my $wormpub = $wormbase->wormpub;
 $database = $wormbase->autoace unless $database;
 my $blat_dir = $wormbase->blat;
+my $seq_obj      = Sequence_extract->invoke($database, undef, $wormbase) if $intron;
 
 #The mol_types available for each species is different
 #defaults lists - can be overridden by -types
@@ -251,7 +251,7 @@ sub confirm_introns {
     next unless /^\S/;
     if (/Sequence : \"(\S+)\"/) {
       $link = $1;
-      print "Sequence : $link\n";
+      print "Sequence : $link\n" if $debug;
       @introns = split /\n/, $_;
        
       # evaluate introns #
@@ -275,7 +275,7 @@ sub confirm_introns {
 	    $start = $seq_obj->Sub_sequence($link,$first,2);
 	    $end   = $seq_obj->Sub_sequence($link,$prelast,2);
 	  
-#	    print "Coords start $f[1] => $start, end $f[2] => $end\n";
+	    print "Coords start $f[1] => $start, end $f[2] => $end\n" if $debug;
 	  
 	  ##################
 	  # map to S_child #
