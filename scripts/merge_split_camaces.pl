@@ -4,8 +4,8 @@
 # 
 # A script to make multiple copies of camace for curation, and merge them back again
 #
-# Last edited by: $Author: pad $
-# Last edited on: $Date: 2007-07-06 11:31:43 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2007-08-17 11:10:23 $
 #
 # Persisting errors.
 #running csh -c "reformat_acediff file 1 file2"
@@ -271,10 +271,10 @@ sub update_camace {
   ## Check Canonical Database for errors. ##
   ##########################################
   if ($email) {
-    $wormbase->run_script("camcheck.pl -database". $wormbase->database('camace'). "-e $email", $log) && die "Failed to run camcheck.pl\n";
+    $wormbase->run_script("camcheck.pl -database ". $wormbase->database('camace'). "-e $email", $log) && die "Failed to run camcheck.pl\n";
   }
   else {  
-    $wormbase->run_script("camcheck.pl -database". $wormbase->database('camace'), $log) && die "Failed to run camcheck.pl\n";
+    $wormbase->run_script("camcheck.pl -database ". $wormbase->database('camace'), $log) && die "Failed to run camcheck.pl\n";
   }
 }
 
