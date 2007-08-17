@@ -7,8 +7,8 @@
 # 
 # Originally written by Dan Lawson
 #
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2007-06-15 13:22:09 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2007-08-17 13:33:02 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -331,6 +331,13 @@ sub copy_misc_files{
   chdir "$dest" or croak "Couldn't cd $dest\n";
   $wormbase->run_command("/bin/tar -cf $targetdir/$WS_name/wormrna$WS.tar README wormrna$WS.rna", $log);
   $wormbase->run_command("/bin/gzip $targetdir/$WS_name/wormrna$WS.tar", $log);
+
+  # tar, zip, and copy BrigRNA files
+  $log->write_to("tar, zip and copy brigrna\n");
+  $dest = "$base_dir/PRIMARIES/brigace/temp_unpack_dir/brigrna$WS";
+  chdir "$dest" or croak "Couldn't cd $dest\n";
+  $wormbase->run_command("/bin/tar -cf $targetdir/$WS_name/brigrna$WS.tar README brigrna$WS.rna", $log);
+  $wormbase->run_command("/bin/gzip $targetdir/$WS_name/brigrna$WS.tar",$log);
 
   # zip and copy the microarray oligo mapping files.
   chdir "$ace_dir";
