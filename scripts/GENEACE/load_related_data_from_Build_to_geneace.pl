@@ -8,7 +8,7 @@
 # RUN this script anytime during the build or after the build when get_interpolated_map 
 # and update_inferred multi-pt data are done
 #
-# Last updated on: $Date: 2006-04-25 14:14:26 $
+# Last updated on: $Date: 2007-08-17 15:52:30 $
 # Last updated by: $Author: ar2 $
 
 
@@ -39,12 +39,20 @@ my $log = Log_files->make_build_log($wormbase);
 ##############################
 # ----- preparing data -----
 ##############################
+my $command;
+
+#dump papers from Analysis objects before they get deleted.
+my $analysis_papers = $geneace."/analysis_papers.ace";
+$command = "query find Analysis\nshow -a -t Reference -f $analysis_papers";
+open (GA,"| $tace $geneace") or $log->log_and_die("Failed to get analysis papers from $geneace\n");
+print GA $command;
+close GA;
 
 # (2) interpolated map data
 $log->write_to("Loading interpolated map data\n");
 #Generate the file from autoace first
 my $int_map_pos = $wormbase->acefiles."/interpolated_map_position.ace";
-my $command  = "query find Gene Interpolated_map_position\nshow -a -t Interpolated_map_position -f $int_map_pos\nquit";
+$command  = "query find Gene Interpolated_map_position\nshow -a -t Interpolated_map_position -f $int_map_pos\nquit";
 
 open (INT_A,"| $tace ".$wormbase->autoace) or $log->log_and_die("Failed to get data from autoace\n");
 print INT_A $command;
@@ -104,6 +112,9 @@ close GA;
 $log->write_to("Adding new paper data\n");
 my $paper = $wormbase->acefiles."/primaries/caltech/caltech_Paper.ace";
 $wormbase->load_to_database($geneace, $paper,"caltech_Paper");
+
+#load the analysis papers back
+$wormbase->load_to_database($geneace, $analysis_papers,"analysis_Paper");
 
 $log->mail();
 exit(0);
