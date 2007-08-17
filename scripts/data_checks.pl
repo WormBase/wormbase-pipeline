@@ -6,8 +6,8 @@
 #
 # This is a example of a good script template
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2007-05-18 10:49:07 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2007-08-17 08:40:02 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -121,7 +121,7 @@ sub read_acedb_queries {
     my $i = 0;
     $queries[$i]{'DESC'}   = "The number of RNAi experiments with more than one associated Gene";
     $queries[$i]{'QUERY'}  = 'find rnai COUNT gene > 1 AND uniquely_mapped';
-    $queries[$i]{'RESULT'} = 1528;
+    $queries[$i]{'RESULT'} = 2034;
 
     $i++;
     $queries[$i]{'DESC'}   = "The number of RNAi results with connections to genes";
@@ -131,7 +131,7 @@ sub read_acedb_queries {
     $i++;
     $queries[$i]{'DESC'}   = "The number of microarray results with connections to genes";
     $queries[$i]{'QUERY'}  = 'find microarray_results gene';
-    $queries[$i]{'RESULT'} = 58800;
+    $queries[$i]{'RESULT'} = 77748;
 
     $i++;
     $queries[$i]{'DESC'}   = "PCR products overlapping CDS";
@@ -186,7 +186,7 @@ sub read_acedb_queries {
     $i++;
     $queries[$i]{'DESC'}   = "genes with structured description";
     $queries[$i]{'QUERY'}  = 'find Gene Structured_description';
-    $queries[$i]{'RESULT'} = 4157;
+    $queries[$i]{'RESULT'} = 5000;
 
     $i++;
     $queries[$i]{'DESC'}   = "genes with GO_term";
