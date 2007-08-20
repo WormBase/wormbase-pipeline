@@ -23,7 +23,7 @@ my $analysis_logic_name = shift;
 my $analysis_adaptor    = $db->get_AnalysisAdaptor();
 my $analysis            = $analysis_adaptor->fetch_by_logic_name($analysis_logic_name);
 
-if ( !$analysis ) {
+if ( !$analysis && !($analysis_logic_name eq 'selenocystein')){
     die "COULD NOT GET ANALYSIS ADAPTOR FOR $analysis_logic_name";
 }
 
@@ -32,7 +32,7 @@ foreach my $chromosome_info ( @{$WB_CHR_INFO} ) {
     if ( $chromosome_info->{'chr_name'} && $chromosome_info->{'agp_file'} && $chromosome_info->{'gff_file'} ) {
         print "handling " . $chromosome_info->{'chr_name'} . " with files " . $chromosome_info->{'agp_file'} . " and " . $chromosome_info->{'gff_file'} . "\n" if ($WB_DEBUG);
 
-        my $chr = $db->get_SliceAdaptor->fetch_by_region( 'Chromosome', $chromosome_info->{'chr_name'}, 1, ( $chromosome_info->{'length'}, 1, $WB_NEW_COORD_SYSTEM_VERSION ) );
+        my $chr = $db->get_SliceAdaptor->fetch_by_region( 'chromosome', $chromosome_info->{'chr_name'}, 1, ( $chromosome_info->{'length'}, 1, $WB_NEW_COORD_SYSTEM_VERSION ) );
 
         #MtDNA does not have Expr_profile, RNAi or Operon so may cause hassles for these
         next if ( ( $chromosome_info->{'chr_name'} eq 'MtDNA' )
@@ -151,6 +151,20 @@ foreach my $chromosome_info ( @{$WB_CHR_INFO} ) {
                 }
                 close(TRANSLATE);
             }
+	    case 'selenocystein' {
+		            #check translations
+
+                my @genes = grep {$_->biotype eq 'protein_coding'} @{ $chr->get_all_Genes };
+                open( TRANSLATE, "+>>" . $WB_NON_TRANSLATE ) or die "couldn't open " . $WB_NON_TRANSLATE . " $!";
+                foreach my $gene (@genes) {
+                    my $translation = &translation_check($gene,$db);
+                    next if ($translation);
+                    print TRANSLATE $gene->stable_id . " from " . $chromosome_info->{'chr_name'} . " doesn't translate\n";
+                }
+                close(TRANSLATE);
+
+	    }
+
             else {
                 print "\n ANALYSIS NOT DEFINED ($analysis_logic_name)!\n";
                 exit 1;
