@@ -61,3 +61,49 @@ print (OUTFILE "Gene_class $gene_class\n\n");
 }
 close ( OUTFILE );
 print ( "\nFinished.\n" );
+
+=pod
+
+=head2 NAME - processgene.pl
+
+=head1 USAGE
+
+=over 4
+
+=item processgene.pl 
+
+=back
+
+=head1 DESCRIPTION
+
+A script designed to create an .ace file of the tags needed in Gene objects 
+when CGC_names are assigned.
+The script requires a file called processgene.txt as input. The file must
+be in the format of GeneID CGC_name WBPerson e.g. 
+
+WBGene00021073 nol-1 WBPerson733
+
+The script must be run from the directory where processgene.txt resides and takes processgene.txt 
+as input and writes the output into processgene.ace
+
+e.g 
+
+> perl ~wormpub/wormbase/scripts/GENEACE/processgene.pl
+
+The output processgene.txt would look like this:
+
+ Gene : WBGene00021073
+ Version 2
+ History Version_change 2 now WBPerson2970 CGC_name nol-1
+ CGC_name nol-1 Person_evidence WBPerson733
+ Public_name nol-1
+ Gene_class nol
+
+The script assumes the Version to be 2 (based on the most common update), and
+this MUST be checked before loading into Geneace.
+
+=head1 AUTHOR Mary Ann Tuli (mt3@sanger.ac.uk)
+
+=back
+
+=cut
