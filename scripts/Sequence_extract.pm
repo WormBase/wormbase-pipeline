@@ -64,11 +64,11 @@ sub invoke
     my $self = Coords_converter->invoke($database, $refresh, $wormbase);
     bless $self, $class;
 
-	$database = $self->{'DATABASE'} unless $database; #defaults to current_DB in CC if not set.
+    $database = $wormbase->database('current') unless $database; #defaults to current_DB in CC if not set.
     # get the chromosomal sequences
     my $tace = $wormbase->tace; # <= hmpf
     my @chromosome = qw( I II III IV V X MtDNA);
-    my $seq_file = $self->{'DATABASE'}."/CHROMOSOMES/CHROMOSOME_I.dna";
+    my $seq_file = $database."/CHROMOSOMES/CHROMOSOME_I.dna";
     unless( -e "$seq_file" ) {
       open (ACE, "| $tace $database") or croak "cant connect to $database :$!\n";
 
