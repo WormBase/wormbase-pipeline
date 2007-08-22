@@ -7,8 +7,8 @@
 #
 # This makes the autoace database from its composite sources.
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2007-07-31 08:34:47 $
+# Last edited by: $Author: pad $
+# Last edited on: $Date: 2007-08-22 11:24:56 $
 
 use strict;
 use lib  $ENV{'CVS_DIR'};
@@ -106,6 +106,9 @@ my $errors = 0; # for tracking system call related errors
 # remove temp genes
 &remove_pariah_gene() if( $all or $tmpgene );
 
+# remove tiling array data from autoace.
+&remove_tiling_data;
+
 # Read in the physical map and make all maps
 &physical_map_stuff() if( $all or $pmap );
 
@@ -183,6 +186,17 @@ sub remove_pariah_gene {
 }
 
 
+################################################
+# Remove all trace of tiling array data!!!
+
+sub remove_tiling_data {
+  $log->write_to($wormbase->runtime." : Removing tiling array data.\n");
+  my $command = "query find Sequence \"*tiling*\"\nkill\n";
+  $command .= " query find Homol_data \"*tiling_array*\"\nkill\n";
+  $command    .= "save\nquit\n";
+  &DbWrite($command,$tace,$autoacedir,"tiling_array_removal_tool");
+  $log->write_to($wormbase->runtime." : Finished.\n\n");
+}
 
 
 ###################################################
