@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2007-08-28 12:45:10 $      
+# Last updated on: $Date: 2007-08-28 16:31:16 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -220,8 +220,9 @@ foreach my $chromosome (@chromosomes) {
   print "finding genefinder exons not overlapping CDS exons\n";
   &get_unmatched_genefinder_exons(\@genefinder, \@cds_exons, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, $chromosome);
 
-  print "finding WABA coding regions not overlapping CDS exons\n";
-  &get_unmatched_waba_coding(\@waba_coding, \@cds_exons, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, \@repeatmasked, $chromosome);
+### having problems with WABA coords off end of chromosome
+###  print "finding WABA coding regions not overlapping CDS exons\n";
+###  &get_unmatched_waba_coding(\@waba_coding, \@cds_exons, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, \@repeatmasked, $chromosome);
 
   print "finding CDS exons overlapping repeatmasker regions\n";
   &get_matched_repeatmasker(\@cds_exons, \@repeatmasked, $chromosome);
