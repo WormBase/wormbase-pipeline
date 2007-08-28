@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2007-08-13 09:23:09 $      
+# Last updated on: $Date: 2007-08-28 12:45:10 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -123,8 +123,12 @@ foreach my $chromosome (@chromosomes) {
   print "reading coding transcripts\n";
   my @coding_transcripts = &get_coding_transcripts($database, $chromosome);
 
-  print "reading coding transcript exons\n";
-  my @exons = &get_coding_exons($database, $chromosome);
+#  print "reading coding transcript exons\n";
+#  my @exons = &get_coding_exons($database, $chromosome);
+
+
+  print "reading CDS exons\n";
+  my @cds_exons = &get_cds_exons($database, $chromosome);
 
 
   print "reading pseudogenes\n";
@@ -186,8 +190,8 @@ foreach my $chromosome (@chromosomes) {
 
   # get the homologies showing no match to any exon or pseudogene
   # and those with a match to a coding exon
-  print "finding protein homologies not overlapping exons\n";
-  my $matched_protein_aref = &get_protein_differences(\@exons, \@pseudogenes, \@homologies, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, $chromosome);
+  print "finding protein homologies not overlapping CDS exons\n";
+  my $matched_protein_aref = &get_protein_differences(\@cds_exons, \@pseudogenes, \@homologies, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, $chromosome);
 
   print "finding frameshifts\n";
   &get_frameshifts($matched_protein_aref, $chromosome);
@@ -210,29 +214,29 @@ foreach my $chromosome (@chromosomes) {
   print "finding non-overlapping SAGE_transcripts\n";
   &get_unmatched_SAGE(\@coding_transcripts, \@pseudogenes, \@SAGE_transcripts, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, $chromosome);
 
-  print "finding twinscan exons not overlapping curated regions\n";
-  &get_unmatched_twinscan_exons(\@twinscan, \@exons, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, $chromosome);
+  print "finding twinscan exons not overlapping CDS exons\n";
+  &get_unmatched_twinscan_exons(\@twinscan, \@cds_exons, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, $chromosome);
 
-  print "finding genefinder exons not overlapping curated regions\n";
-  &get_unmatched_genefinder_exons(\@genefinder, \@exons, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, $chromosome);
+  print "finding genefinder exons not overlapping CDS exons\n";
+  &get_unmatched_genefinder_exons(\@genefinder, \@cds_exons, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, $chromosome);
 
-  print "finding WABA coding regions not overlapping curated regions\n";
-  &get_unmatched_waba_coding(\@waba_coding, \@exons, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, \@repeatmasked, $chromosome);
+  print "finding WABA coding regions not overlapping CDS exons\n";
+  &get_unmatched_waba_coding(\@waba_coding, \@cds_exons, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, \@repeatmasked, $chromosome);
 
   print "finding CDS exons overlapping repeatmasker regions\n";
-  &get_matched_repeatmasker(\@exons, \@repeatmasked, $chromosome);
+  &get_matched_repeatmasker(\@cds_exons, \@repeatmasked, $chromosome);
 
   print "finding CDS exons overlapping other genes\n";
-  &get_matched_exons(\@exons, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, $chromosome);
+  &get_matched_exons(\@cds_exons, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, $chromosome);
 
   print "finding short CDS exons\n";
-  &get_short_exons(\@exons, $chromosome);
+  &get_short_exons(\@cds_exons, $chromosome);
 
   print "finding EST/genome mismatches\n";
   &get_est_mismatches(\@est, $chromosome);
 
-  print "finding weak exon splice sites";
-  &get_weak_exon_splice_sites(\@exons, $chromosome);
+  print "finding weak CDS exon splice sites";
+  &get_weak_exon_splice_sites(\@cds_exons, $chromosome);
 
   print "read confirmed_introns and other GFF files\n";
   &get_GFF_files($chromosome);
@@ -304,7 +308,7 @@ exit(0);
 #
 ##############################################################
 
-# get the coding exons
+# get the coding transcript exons
 
 sub get_coding_exons {
 
@@ -318,6 +322,28 @@ sub get_coding_exons {
      gff_type			=> "exon",
      anomaly_type		=> "",
      ID_after			=> "Transcript\\s+",
+     action                     => ["return_result"],
+   );
+
+  return &read_GFF_file(\%GFF_data);
+
+}
+
+##########################################
+# get the CDS exons
+
+sub get_cds_exons {
+
+  my ($database, $chromosome) = @_;
+
+  my %GFF_data = 
+   (
+     directory			=> "$database/GFF_SPLITS/",
+     file			=> "CHROMOSOME_${chromosome}_curated.gff",
+     gff_source			=> "curated",
+     gff_type			=> "exon",
+     anomaly_type		=> "",
+     ID_after			=> "CDS\\s+",
      action                     => ["return_result"],
    );
 
@@ -1991,14 +2017,14 @@ sub get_unmatched_waba_coding {
 
 }
 ##########################################
-# get exons that overlap an exons or coding transcript or pseudogene etc on the opposite sense
-#  &get_matched_exons(\@exons, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, $chromosome);
+# get CDS exons that overlap a CDS exon on the opposite sense
+#  &get_matched_exons(\@cds_exons, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, $chromosome);
 
 
 
 sub get_matched_exons {
 
-  my ($exons_aref, $pseudogenes_aref, $transposons_aref, $transposon_exons_aref, $noncoding_transcript_exons_aref, $rRNA_aref, $chromosome) = @_;
+  my ($cds_exons_aref, $pseudogenes_aref, $transposons_aref, $transposon_exons_aref, $noncoding_transcript_exons_aref, $rRNA_aref, $chromosome) = @_;
 
   my %exons_match = &init_match(other_sense => 1);
   my %pseud_match = &init_match(other_sense => 1);
@@ -2007,12 +2033,12 @@ sub get_matched_exons {
   my %nonco_match = &init_match(other_sense => 1);
   my %rrna_match = &init_match(other_sense => 1);
 
-  foreach my $exon (@{$exons_aref}) { # $exon_id, $chrom_start, $chrom_end, $chrom_strand
+  foreach my $exon (@{$cds_exons_aref}) { # $exon_id, $chrom_start, $chrom_end, $chrom_strand
 
     my $got_a_match = 0;
     my $matching_thing;
 
-    if (&match($exon, $exons_aref, \%exons_match)) { # look for matches of exons against exons
+    if (&match($exon, $cds_exons_aref, \%exons_match)) { # look for matches of exons against exons
       $got_a_match = 1;
       $matching_thing = "Overlaps gene: " . $exons_match{'matching_ids'};
     }
