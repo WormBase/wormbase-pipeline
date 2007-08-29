@@ -6,8 +6,8 @@
 #
 # Gets latest Interpro:GO mappings from XXXX and puts info in to ace file
 #
-# Last updated by: $Author: mh6 $                      
-# Last updated on: $Date: 2007-06-08 12:42:30 $         
+# Last updated by: $Author: gw3 $                      
+# Last updated on: $Date: 2007-08-29 08:59:18 $         
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -63,7 +63,7 @@ while (<I2G>){
   chomp;
   my @info = split;
   $ip = shift @info;
-  next if( (!defined $ip) or (/entries/) ); # header lines
+  next if( (!defined $ip) or ($ip !~ /^IPR/) ); # header lines
   #Motif : "INTERPRO:IPR000006"
   #Title    "Class I metallothionein"
   #Database         "INTERPRO" "INTERPRO_ID" "IPR000006"
