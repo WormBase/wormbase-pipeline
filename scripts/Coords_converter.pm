@@ -633,6 +633,14 @@ sub GetCloneFromCoords
       carp "Chromosomal coordinate of less than 1 (coord2 = $coord2) passed to GetCloneFromCoords\n";
       $coord2 = 1;
     }
+    if ($self->isa_chromosome($parent) && $coord1 > $self->Superlink_length($parent)) {
+      carp "Chromosomal coordinate greater than length of chromosome (coord1 = $coord1) passed to GetCloneFromCoords\n";
+      $coord1 = 1;
+    }
+    if ($self->isa_chromosome($parent) && $coord2 > $self->Superlink_length($parent)) {
+      carp "Chromosomal coordinate greater than length of chromosome (coord2 = $coord2) passed to GetCloneFromCoords\n";
+      $coord2 = 1;
+    }
 
     if ($self->{'species'} eq 'elegans') {
       # only elegans has superlinks that are different to the chromosomes
