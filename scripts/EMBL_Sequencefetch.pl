@@ -5,7 +5,7 @@
 # Usage : EMBL_Sequencefetch.pl [-options]
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2007-07-26 17:05:35 $
+# Last edited on: $Date: 2007-08-29 14:00:58 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -499,16 +499,16 @@ sub dump_BLAT_data {
   $log->write_to("Removed $EST_dir/tc1\n\n")  if (-e $EST_dir."/tc1" && $debug);
 
   my $command=<<END;
-query find Sequence where method = NDB & RNA AND NEXT = mRNA\n
+query find Sequence where method = NDB & RNA AND NEXT = mRNA & !Ignore\n
 Dna -mismatch $EST_dir/mRNA\n
 clear\n
-query find Sequence where method = NDB & RNA AND NEXT != mRNA\n
+query find Sequence where method = NDB & RNA AND NEXT != mRNA & !Ignore\n
 Dna -mismatch $EST_dir/ncRNA\n
 clear\n
-query find Sequence where method = EST_$subspecies & !OST*\n
+query find Sequence where method = EST_$subspecies & !OST* & !Ignore\n
 Dna -mismatch $EST_dir/EST\n
 clear\n
-query find Sequence where method = EST_$subspecies & OST*\n
+query find Sequence where method = EST_$subspecies & OST* & !Ignore\n
 Dna -mismatch $EST_dir/OST\n
 clear\n
 query find Sequence TC*\n
