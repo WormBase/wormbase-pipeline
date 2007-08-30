@@ -6,8 +6,8 @@
 #
 # Selectively dump GFF for certain acedb methods
 #
-# Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2006-11-30 11:46:33 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2007-08-30 10:46:20 $
 
 
 use lib $ENV{CVS_DIR};
@@ -16,7 +16,7 @@ use Getopt::Long;
 use strict;
 use Storable;
 
-my ($help, $debug, $test, $quicktest, $database, @methods, @chromosomes, $dump_dir, @clones, $list );
+my ($help, $debug, $test, $quicktest, $database, $species, @methods, @chromosomes, $dump_dir, @clones, $list );
 my @sequences;
 my $store;
 GetOptions (
@@ -24,6 +24,7 @@ GetOptions (
 	    "debug=s"       => \$debug,
 	    "test"          => \$test,
 	    "store:s"       => \$store,
+	    "species:s"     => \$species,
 	    "quicktest"     => \$quicktest,
 	    "database:s"    => \$database,
 	    "dump_dir:s"    => \$dump_dir,
@@ -45,6 +46,7 @@ if( $store ) {
 else {
   $wormbase = Wormbase->new( -debug   => $debug,
 			     -test    => $test,
+			     -organism=> $species
 			   );
 }
 
