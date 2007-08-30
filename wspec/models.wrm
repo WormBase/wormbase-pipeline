@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: ar2 $
-// Last edited on: $Date: 2007-08-13 14:26:44 $
+// Last edited on: $Date: 2007-08-30 10:26:03 $
 
 
 
@@ -1375,6 +1375,9 @@
 	 DNA_text UNIQUE ?Text       // for storing the sequence of the feature...can use IUPAC codes to be able
 				     // store consensus sequences, e.g. binding site consensus sequence
 	 Origin     Species UNIQUE ?Species  //added by pad, as we are moving towards multi species readyness.
+	 History    Merged_into	   UNIQUE    ?Feature XREF Acquires_merge #Evidence
+		    Acquires_merge UNIQUE    ?Feature XREF Merged_into #Evidence
+		    Deprecated	   Text	     #Evidence 
          Visible    Description ?Text
 		    SO_term ?SO_term XREF Feature
 	 Defined_by Defined_by_sequence ?Sequence XREF Defines_feature #Evidence
@@ -2756,8 +2759,6 @@
 //Variation class
 ?Variation Evidence #Evidence
 	   Name CGC_name	UNIQUE ?Variation_name XREF CGC_name_for
-		Exelixis_ID     UNIQUE ?Variation_name XREF Exelixis_ID_for
-		WashU_ID	UNIQUE ?Variation_name XREF WashU_ID_for
 		Other_name	       ?Variation_name XREF Other_name_for #Evidence
                 Rearrangement	       ?Rearrangement  XREF Variation // some alleles are really rearrangements
 		Public_name	UNIQUE ?Variation_name XREF Public_name_for
@@ -2861,8 +2862,7 @@
 ?Variation_name CGC_name_for       ?Variation XREF CGC_name
                 Other_name_for     ?Variation XREF Other_name // main reason for this class
                 Public_name_for    ?Variation XREF Public_name // the main name for a gene
-                WashU_ID_for	  UNIQUE ?Variation XREF WashU_ID 
-		Exelixis_ID_for   UNIQUE ?Variation XREF Exelixis_ID
+
 
 // hash to contain detailed changes caused by mutations [2006-02-17 ar2]
 #Molecular_change   Missense Int    Text #Evidence
@@ -2872,6 +2872,7 @@
                                     Opal_UGA  Text #Evidence
 				    Ochre_UAA_or_Opal_UGA Text #Evidence
 				    Amber_UAG_or_Ochre_UAA Text #Evidence
+				    Amber_UAG_or_Opal_UGA Text #Evidence 
                     Splice_site UNIQUE  Donor    Text #Evidence
                                         Acceptor Text #Evidence
                     Frameshift Text #Evidence
