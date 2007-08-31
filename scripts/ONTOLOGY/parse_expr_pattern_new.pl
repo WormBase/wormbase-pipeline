@@ -133,6 +133,21 @@ while (my $obj=$it->next) {
     %at=();
     %auth=();
 }
+close($out);
+
+
+##################
+# Check the files
+##################
+
+
+$wormbase->check_file($output, $log,
+minsize => 5000000,
+maxsize => 10000000,
+lines => ['^WB\tWBGene\d+\t\S+\t\S*\t\S+\t\S*\tExpr_pattern\t\S+']
+);
+
+
 
 $log->mail;
 exit;
