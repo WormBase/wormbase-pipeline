@@ -702,6 +702,116 @@ sub delete_files_from {
   return $fail_warn ? $delete_count : $fail_warn; # undef if failed else no. files removed;
 }
 
+sub check_file {
+
+  my ($self, $file, $log, %criteria)     = @_;
+
+  unless ( -e $file) {
+    if ( $log) {
+      $log->error;
+      $log->write_to("Couldn't find file named: $file\n");
+    }
+    carp "Couldn't find file named: $file\n";
+    return 1;
+  }
+
+  my @problems;
+
+  if (!-r $file) {
+    push @problems,  "file is not readable";
+  }
+
+  if (!-w $file) {
+    push @problems,  "file is not writeable";
+  }
+
+  my $size;
+  if (exists $criteria{minsize}) {
+    $size = (-s $file);
+    if ($size < $criteria{minsize}) {
+      push @problems,  "file size ($size) less than required minimum ($criteria{minsize})";
+    }
+    delete $criteria{minsize};
+  }
+  if (exists $criteria{maxsize}) {
+    $size = (-s $file) unless $size;
+    if ($size > $criteria{maxsize}) {
+      push @problems, "file size ($size) greater than required maximum ($criteria{maxsize})";
+    }
+    delete $criteria{maxsize};
+  }
+  my $lines;
+  if (exists $criteria{minlines}) {
+    ($lines) = (`wc -l $file` =~ /(\d+)/);
+    if ($lines < $criteria{minlines}) {
+      push @problems, "number of lines ($lines) less than required minimum ($criteria{minlines})";
+    }
+    delete $criteria{minlines};
+  }
+  if (exists $criteria{maxlines}) {
+    ($lines) = (`wc -l $file` =~ /(\d+)/) unless $lines;
+    if ($lines > $criteria{maxlines}) {
+      push @problems, "number of lines ($lines) greater than required maximum ($criteria{maxlines})";
+    }
+    delete $criteria{maxlines};
+  }
+  
+  if (exists $criteria{line1} || exists $criteria{line2} || exists $criteria{lines}) {
+    open (CHECK_FILE, "< $file") || die "Can't open $file\n";
+    my $line_count = 0;
+      while ($line_count++, my $line = <CHECK_FILE>) {
+      if ($line_count == 1 && exists $criteria{line1}) {
+	if ($line !~ /$criteria{line1}/) {
+	  push @problems, "line $line_count doesn't match criterion 'line1 => $criteria{line1}'";
+	  last;
+	}
+      }
+      if ($line_count == 2 && exists $criteria{line2}) {
+	if ($line !~ /$criteria{line2}/) {
+	  push @problems, "line $line_count doesn't match criterion 'line2 => $criteria{line2}'";
+	  last;
+	}
+      }
+      if ($line_count > 2 && !exists $criteria{lines}) {last;}
+      if (exists $criteria{lines}) {
+	my $line_ok = 0;
+	foreach my $regex (@{$criteria{lines}}) {
+	  if ($line =~ /$regex/) {
+	    $line_ok = 1;
+	    last;
+	  }
+	}
+	if (!$line_ok) {
+	  push @problems, "line $line_count doesn't match criterion 'lines => [@{$criteria{lines}}]'";
+	  last;
+	}
+      }
+    }
+    close (CHECK_FILE);
+    delete $criteria{line1};
+    delete $criteria{line2};
+    delete $criteria{lines};
+  }
+
+  foreach my $c (keys %criteria) {
+    push @problems, "unknown criterion in check_file() '$c=>$criteria{$c}'";
+  }
+
+  foreach my $problem (@problems) {
+      if ($log) {
+	$log->error;
+	$log->write_to("ERROR: $problem found when checking file '$file'\n");
+      }
+      carp "ERROR: $problem found when checking file '$file'\n";
+  }
+  return @problems;
+}
+
+
+
+
+
+
 sub load_to_database {
 
   my $self     = shift;
@@ -1266,6 +1376,44 @@ check_write_access
 
 Takes a path to an acedb database and returns "yes" if no database/lock.wrm file is present
 (i.e. yes, you have write access) and returns "no" if such a file is present.
+
+=back 
+
+=over 4
+
+=item *
+
+check_file
+
+Checks the existence of the specified file, checks that it is readable
+and writeable and optionally checks other things. Note that this can
+be used to check on a directory as well as normal files.
+
+Example:
+$wormbase->check_file("file.out", $log, 
+		      minsize => 10, 
+		      maxsize => 10000,
+		      minlines => 10,
+		      maxlines => 1000,
+		      line1 => '^\S+\s+\S+',
+		      line2 => '^#',
+		      lines => ['^#', '^\s$', '^[a-z]+'],
+		      );
+
+
+Arguments:
+    - filename to check
+    - $log
+    - optional hash containing one or more of the following:
+      minsize => integer number of bytes
+      maxsize => integer number of bytes
+      minlines => integer number of lines
+      maxlines => integer number of lines
+      line1 => regular expression that line 1 of the file must match
+      line2 => regular expression that line 2 of the file must match
+      lines => [reference of list of regular expressions, all lines must match at least one of these]
+
+Returns the number of errors found and sets the error flag
 
 =back 
 
