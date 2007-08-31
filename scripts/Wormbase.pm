@@ -721,8 +721,12 @@ sub check_file {
     push @problems,  "file is not readable";
   }
 
-  if (!-w $file) {
-    push @problems,  "file is not writeable";
+  if (!exists $criteria{readonly}) {
+    if (!-w $file) {
+      push @problems,  "file is not writeable";
+    }
+  } else {
+    delete $criteria{readonly};
   }
 
   my $size;
@@ -1405,6 +1409,7 @@ Arguments:
     - filename to check
     - $log
     - optional hash containing one or more of the following:
+      readonly => 1 (allow the file to be readaonly)
       minsize => integer number of bytes
       maxsize => integer number of bytes
       minlines => integer number of lines
