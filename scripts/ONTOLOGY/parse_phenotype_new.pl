@@ -164,6 +164,21 @@ while (my $obj=$it->next) {
     }
 }
 
+close($out);
+
+
+##################
+# Check the files
+##################
+
+
+$wormbase->check_file($output, $log,
+minsize => 30000000,
+maxsize => 60000000,
+lines => ['^WB\tWBGene\d+\t\S+\t\(NOT|)\tWBPhenotype\d+\t\S*\t\S+'],
+);
+
+
 $log->mail;
 exit();
 
