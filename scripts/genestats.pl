@@ -6,8 +6,8 @@
 #
 # Usage : genestatsr.pl [-options]
 #
-# Last edited by: $Author: wormpub $
-# Last edited on: $Date: 2006-09-06 15:41:34 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2007-09-03 09:03:15 $
  
 
 use strict;                                      
@@ -132,6 +132,19 @@ print OUT "RNAi_result                 "  . $values[5] . " (" . $percent_RNAi_re
 print OUT "Microarray_results          "  . $values[6] . " (" . $percent_microarray_result . "%)\n";
 print OUT "SAGE_transcript             "  . $values[7] . " (" . $percent_SAGE_transcript . "%)\n";
 close OUT;
+
+##################
+# Check the files
+##################
+
+$wormbase->check_file("$reports_dir/genedata", $log,
+minlines => 9,
+maxlines => 9,
+line1 => '^Gene data set \(Live C.elegans genes \d+\)',
+line2 => '^\-+',
+lines => ['^\S+\s+\d+\s+\(\d+\.\d\%\)', '^\S+\s+\S+\s+\S+\s+\d+\s+\(\d+\.\d\%\)'],
+);
+
 
 $log->mail();
 print "Finished.\n" if ($verbose);
