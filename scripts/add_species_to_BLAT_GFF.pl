@@ -7,7 +7,7 @@
 # This is a example of a good script template
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2007-07-16 14:08:39 $      
+# Last updated on: $Date: 2007-09-03 11:40:57 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -215,6 +215,18 @@ my $count;
 $log->write_to("\n\nStatistics\n");
 $log->write_to("----------\n\n");
 $log->write_to("Changed $count lines\n");
+
+##################
+# Check the files
+##################
+# CHROMOSOME_MtDNA is the smallest at ~1500000
+foreach my $chromosome (@chromosomes) {
+  $wormbase->check_file("$gff_dir/CHROMOSOME_${chromosome}.gff", $log,
+			minsize => 1500000,
+			lines => ['^##',
+				  "^CHROMOSOME_${chromosome}\\s+\\S+\\s+\\S+\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+"],
+			);
+}
 
 
 $log->mail();
