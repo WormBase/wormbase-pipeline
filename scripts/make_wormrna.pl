@@ -7,7 +7,7 @@
 # Builds a wormrna data set from the current autoace database
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2007-08-31 14:38:37 $
+# Last updated on: $Date: 2007-09-03 14:10:04 $
 
 
 #################################################################################
@@ -183,11 +183,11 @@ $db->close;
 # Check the files
 ##################
 
-$wormbase->check_file($new_wrdir/README, $log,
+$wormbase->check_file("$new_wrdir/README", $log,
 minsize => 400,
 maxsize => 500,
 );
-$wormbase->check_file($new_wrdir/wormrna$release.rna, $log,
+$wormbase->check_file("$new_wrdir/wormrna$release.rna", $log,
 readonly => 1,
 minsize => 400000,
 maxsize => 800000,
