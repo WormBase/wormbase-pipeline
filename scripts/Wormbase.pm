@@ -709,9 +709,9 @@ sub check_file {
   unless ( -e $file) {
     if ( $log) {
       $log->error;
-      $log->write_to("Couldn't find file named: $file\n");
+      $log->write_to("ERROR: Couldn't find file named: $file\n");
     }
-    carp "Couldn't find file named: $file\n";
+    carp "ERROR: Couldn't find file named: $file\n";
     return 1;
   }
 
@@ -761,8 +761,24 @@ sub check_file {
     delete $criteria{maxsize};
   }
   my $lines;
-  if (exists $criteria{minlines}) {
+  if (exists $criteria{samelines}) {
     ($lines) = (`wc -l $file` =~ /(\d+)/);
+    my ($second_file_lines) = (`wc -l $criteria{samelines}` =~ /(\d+)/);
+    if ($second_file_lines != $lines) {
+      push @problems,  "number of lines ($lines) not equal to that of file '$criteria{samelines}' ($second_file_lines)";
+    }
+    delete $criteria{samelines};
+  }
+  if (exists $criteria{similarlines}) {
+    ($lines) = (`wc -l $file` =~ /(\d+)/) unless $lines;
+    my ($second_file_lines) = (`wc -l $criteria{similarlines}` =~ /(\d+)/) unless $lines;
+    if ($second_file_lines < $lines * 0.9 || $second_file_lines > $lines * 1.1) {
+      push @problems,  "number of lines ($lines) not similar to that of file '$criteria{similarlines}' ($second_file_lines)";
+    }
+    delete $criteria{similarlines};
+  }
+  if (exists $criteria{minlines}) {
+    ($lines) = (`wc -l $file` =~ /(\d+)/) unless $lines;
     if ($lines < $criteria{minlines}) {
       push @problems, "number of lines ($lines) less than required minimum ($criteria{minlines})";
     }
