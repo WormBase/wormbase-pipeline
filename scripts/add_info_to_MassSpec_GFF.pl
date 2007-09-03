@@ -7,7 +7,7 @@
 # This add some extraneous information to the MassSpec peptides lines in the GFF file
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2006-11-30 17:24:55 $      
+# Last updated on: $Date: 2007-09-03 12:37:16 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -192,6 +192,20 @@ my $protein_history_aref = &get_protein_history;
 $log->write_to("\n\nStatistics\n");
 $log->write_to("----------\n\n");
 $log->write_to("Changed $count lines\n");
+
+##################
+# Check the files
+##################
+
+# CHROMOSOME_MtDNA is the smallest at ~1500000
+foreach my $chromosome (@chromosomes) {
+  $wormbase->check_file("$gff_dir/CHROMOSOME_${chromosome}.gff", $log,
+                        minsize => 1500000,
+                        lines => ['^##',
+                                  "^CHROMOSOME_${chromosome}\\s+\\S+\\s+\\S+\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+"],
+                        );
+}
+
 
 $db->close;
 $log->mail();
