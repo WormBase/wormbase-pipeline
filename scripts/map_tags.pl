@@ -526,10 +526,10 @@ foreach my $tag (keys %tags) {          # go through all tags read from tags.ace
 	
 }
 
-print $log->write_to("$i tags processed\n");
-print $log->write_to("$mapped_to_transcript tags are mapped to transcripts\n");
-print $log->write_to("$mapped_to_reverse tags are mapped to antisense strand of transcripts\n");
-print $log->write_to("$mapped_to_genome tags are mapped to genome\n");
+$log->write_to("$i tags processed\n");
+$log->write_to("$mapped_to_transcript tags are mapped to transcripts\n");
+$log->write_to("$mapped_to_reverse tags are mapped to antisense strand of transcripts\n");
+$log->write_to("$mapped_to_genome tags are mapped to genome\n");
 my $final_total = scalar keys %all_mapped;
 $log->write_to("$final_total tags mapped total\n");
 
