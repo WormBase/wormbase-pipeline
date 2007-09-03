@@ -7,7 +7,7 @@
 # Selectively dump GFF for certain acedb methods
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2007-09-03 11:26:32 $
+# Last edited on: $Date: 2007-09-03 16:35:50 $
 
 
 use lib $ENV{CVS_DIR};
@@ -105,9 +105,18 @@ foreach my $sequence ( @sequences ) {
 			   );
    }
  } else { 
-   # we assume that these are the full chromosome dumps, so CHROMOSOME_MtDNA is the smallest at ~1500000
+   # we assume that these are the full chromosome dumps (before processing and munging)
+   my %sizes = (
+		'CHROMOSOME_I'       => 150000000,
+		'CHROMOSOME_II'      => 150000000,
+		'CHROMOSOME_III'     => 150000000,
+		'CHROMOSOME_IV'      => 180000000,
+		'CHROMOSOME_V'       => 190000000,
+		'CHROMOSOME_X'       => 120000000,
+		'CHROMOSOME_MtDNA'   =>  11000000,
+		);
    $wormbase->check_file("$dump_dir/$sequence.gff", $log,
-			 minsize => 1500000,
+			 minsize => $sizes{$sequence},
 			 lines => ['^##', 
 				   "^${sequence}\\s+\\S+\\s+\\S+\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+"],
 			 );   
