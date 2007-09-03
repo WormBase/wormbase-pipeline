@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2007-08-29 10:08:52 $      
+# Last updated on: $Date: 2007-09-03 14:06:05 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -297,8 +297,24 @@ $mysql->disconnect || die "error disconnecting from database", $DBI::errstr;
 # close the ACE connection
 $ace->close;
 
-$log->mail();
 
+##################
+# Check the files
+##################
+
+if ($database eq $wormbase->{'autoace'}) {
+  foreach my $chromosome (@chromosomes) {
+    my $gff_file = $wormbase->{'chromosomes'} . "/SUPPLEMENTARY_GFF/CHROMOSOME_${chromosome}_curation_anomalies.gff";
+    $wormbase->check_file($gff_file, $log,
+			  minsize => 1000000,
+			  maxsize => 4000000,
+			  lines => ['^##',
+				    "^CHROMOSOME_${chromosome}\\s+curation_anomaly\\s+\\S+\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+\\s+Evidence\\s+\\S+"],
+			  );
+  }
+}
+
+$log->mail();
 print "Finished.\n" if ($verbose);
 exit(0);
 
