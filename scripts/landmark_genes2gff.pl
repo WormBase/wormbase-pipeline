@@ -6,8 +6,8 @@
 #
 # script for creating extra GFF lines to indicate those genes that are landmark genes
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2006-03-03 09:52:51 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2007-09-03 13:13:42 $
 use strict;
 use lib $ENV{'CVS_DIR'};
 use Wormbase;
@@ -108,6 +108,20 @@ foreach (@chromosomes) {
     close GFF;
     close(OUT) || die "Couldn't close output file\n";
 }
+
+##################
+# Check the files
+##################
+
+my $gff_dir = $wormbase->gff_splits;
+foreach my $chromosome (@chromosomes) {
+  $wormbase->check_file("$gff_dir/CHROMOSOME_${chromosome}_landmarks.gff", $log,
+                        minsize => 900,
+			maxsize => 2000,
+                        lines => ["^CHROMOSOME_${chromosome}\\s+landmark\\s+gene\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+]\\s+\\S+\\s+Locus\\s+\\S+"],
+                        );
+}
+
 
 # tidy up and exit
 $log->mail();
