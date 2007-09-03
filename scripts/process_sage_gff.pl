@@ -1,6 +1,6 @@
 #!/software/bin/perl -w
 #
-# $Id: process_sage_gff.pl,v 1.6 2007-05-24 15:20:12 gw3 Exp $;
+# $Id: process_sage_gff.pl,v 1.7 2007-09-03 13:53:51 gw3 Exp $;
 #
 # process the raw Sanger GFF dump to add data to SAGE tags
 # Sheldon McKay <mckays@cshl.edu>
@@ -94,6 +94,22 @@ foreach my $chrom (@chroms){
     close TMP or  $log->error("Problem closing $tmp_file: !$\n");
     $wormbase->run_command("mv -f $tmp_file $file", $log);
 }
+
+
+##################
+# Check the files
+##################
+
+# CHROMOSOME_MtDNA is the smallest at ~1500000
+foreach my $chrom (@chroms) {
+  $wormbase->check_file("${gff_path}/${chrom}.gff", $log,
+                        minsize => 1500000,
+                        lines => ['^##',
+                                  "^${chrom}\\s+\\S+\\s+\\S+\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+"],
+                        );
+}
+
+
 
 # get a clean exit status by closing and undef'ing things
 $db->close;
