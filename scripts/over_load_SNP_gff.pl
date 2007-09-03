@@ -3,7 +3,7 @@
 # This is to add Confirmed / Predicted Status and RFLP to SNP gff lines as requested by Todd
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2006-11-30 13:38:56 $      
+# Last updated on: $Date: 2007-09-03 13:47:10 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -88,6 +88,19 @@ foreach my $chrom (@chroms) {
 	}
 	$wormbase->run_command("mv -f $dir/CHROMOSOME_${chrom}.gff.tmp $dir/CHROMOSOME_${chrom}.gff", $log);
 }
+
+##################
+# Check the files
+##################
+
+foreach my $chrom (@chroms) {
+  $wormbase->check_file("$dir/CHROMOSOME_${chrom}.gff", $log,
+                        minsize => 1500000,
+                        lines => ['^##',
+                                  "^CHROMOSOME_${chrom}\\s+\\S+\\s+\\S+\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+"],
+                        );
+}
+
 
 # Close log files and exit
 $log->write_to("\n\nChanged $stat lines\n");
