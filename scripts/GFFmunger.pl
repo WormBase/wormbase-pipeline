@@ -4,8 +4,8 @@
 # 
 # by Dan Lawson
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2007-01-24 15:18:57 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2007-09-03 13:42:32 $
 #
 # Usage GFFmunger.pl [-options]
 
@@ -182,8 +182,19 @@ foreach my $file (@gff_files) {
   
   $log->write_to("\n");
   
-  
-	&check_its_worked($gffpath) if $all;
+  &check_its_worked($gffpath) if $all;
+}
+
+##################
+# Check the files
+##################
+
+foreach  my $file (@gff_files) {
+  $wormbase->check_file("$gffdir/${file}.gff", $log,
+                        minsize => 1500000,
+                        lines => ['^##',
+                                  "^$file\\s+\\S+\\s+\\S+\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+"],
+                        );
 }
 
 
