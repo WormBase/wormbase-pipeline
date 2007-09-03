@@ -730,8 +730,24 @@ sub check_file {
   }
 
   my $size;
-  if (exists $criteria{minsize}) {
+  if (exists $criteria{samesize}) {
+    $size = (-s $file) unless $size;
+    my $second_file_size = (-s $criteria{samesize});
+    if ($second_file_size != $size) {
+      push @problems,  "file size ($size) not equal to that of file '$criteria{samesize}' ($second_file_size)";
+    }
+    delete $criteria{samesize};
+  }
+  if (exists $criteria{similarsize}) {
     $size = (-s $file);
+    my $second_file_size = (-s $criteria{similarsize});
+    if ($second_file_size < $size * 0.9 || $second_file_size > $size * 1.1) {
+      push @problems,  "file size ($size) not similar to that of file '$criteria{similarsize}' ($second_file_size)";
+    }
+    delete $criteria{similarsize};
+  }
+  if (exists $criteria{minsize}) {
+    $size = (-s $file) unless $size;
     if ($size < $criteria{minsize}) {
       push @problems,  "file size ($size) less than required minimum ($criteria{minsize})";
     }
@@ -1411,7 +1427,9 @@ Arguments:
     - filename to check
     - $log
     - optional hash containing one or more of the following:
-      readonly => 1 (allow the file to be readaonly)
+      readonly => 1 (allow the file to be readonly)
+      samesize => file_name to compare to
+      similarsize => file_name to compare to (within 10% of the size)
       minsize => integer number of bytes
       maxsize => integer number of bytes
       minlines => integer number of lines
