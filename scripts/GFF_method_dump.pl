@@ -6,8 +6,8 @@
 #
 # Selectively dump GFF for certain acedb methods
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2007-08-30 10:46:20 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2007-09-03 11:26:32 $
 
 
 use lib $ENV{CVS_DIR};
@@ -50,6 +50,7 @@ else {
 			   );
 }
 
+my $log = Log_files->make_build_log($wormbase);
 
 
 @methods     = split(/,/,join(',',@methods));
@@ -91,9 +92,39 @@ foreach my $sequence ( @sequences ) {
 
 close WRITEDB;
 
+##################
+# Check the files
+##################
+foreach my $sequence ( @sequences ) {
+ if ( @methods ) {
+   foreach my $method ( @methods ) {
+     $wormbase->check_file("$dump_dir/${sequence}_${method}.gff", $log,
+			   lines => ['^##', 
+				     "^${sequence}\\s+(Link|${method})\\s+\\S+\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+\\s+\\S+",
+				     "^${sequence}\\s+\\.\\s+\\S+\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+"],
+			   );
+   }
+ } else { 
+   # we assume that these are the full chromosome dumps, so CHROMOSOME_MtDNA is the smallest at ~1500000
+   $wormbase->check_file("$dump_dir/$sequence.gff", $log,
+			 minsize => 1500000,
+			 lines => ['^##', 
+				   "^${sequence}\\s+\\S+\\s+\\S+\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+"],
+			 );   
+ }
+}
+
+
+
 # remove write test
 system("rm -f $dump_dir/dump");
+
+$log->mail();
 exit(0);
+
+
+
+#############################################################################################
 
 sub check_options {
 
