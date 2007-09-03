@@ -769,12 +769,14 @@ sub check_file {
 	  push @problems, "line $line_count doesn't match criterion 'line1 => $criteria{line1}'";
 	  last;
 	}
+	next;			# don't do 'lines' check on line 1 if 'line1' check exists
       }
       if ($line_count == 2 && exists $criteria{line2}) {
 	if ($line !~ /$criteria{line2}/) {
 	  push @problems, "line $line_count doesn't match criterion 'line2 => $criteria{line2}'";
 	  last;
 	}
+	next;			# don't do 'lines' check on line 2 if 'line2' check exists
       }
       if ($line_count > 2 && !exists $criteria{lines}) {last;}
       if (exists $criteria{lines}) {
@@ -1416,7 +1418,7 @@ Arguments:
       maxlines => integer number of lines
       line1 => regular expression that line 1 of the file must match
       line2 => regular expression that line 2 of the file must match
-      lines => [reference of list of regular expressions, all lines must match at least one of these]
+      lines => [reference of list of regular expressions, all other lines must match at least one of these]
 
 Returns the number of errors found and sets the error flag
 
