@@ -4,8 +4,8 @@
 #
 # by Dan Lawson (dl1@sanger.ac.uk)
 #
-# Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2007-05-25 10:18:11 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2007-09-03 12:55:08 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -220,6 +220,18 @@ foreach my $chromosome (@gff_files) {
   $log->write_to("ERROR: Couldn't copy file: $!\n") if ($status == 0);
 }
 
+##################
+# Check the files
+##################
+
+foreach my $chromosome (@gff_files) {
+
+  $wormbase->check_file("$outdir/CHROMOSOME_$chromosome.agp", $log,
+                        minsize => 18000,
+			maxsize => 33000,
+                        lines => ["^${chromosome}\\s+\\d+\\s+\\d+\\s+\\d+\\s+F\\s+\\S+\\s+1\\s+\\d+\\s+\\+"],
+                        );
+}
 
 $log->mail();
 print "Finished.\n" if ($verbose);
