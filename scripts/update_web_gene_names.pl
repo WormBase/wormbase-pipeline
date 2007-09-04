@@ -3,8 +3,8 @@
 #
 # completely rewritten by Keith Bradnam from list_loci_designations
 #
-# Last updated by: $Author: mt3 $
-# Last updated on: $Date: 2007-06-07 10:34:09 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2007-09-04 13:17:42 $
 #
 # This script should be run under a cron job and simply update the webpages that show
 # current gene names and sequence connections.  Gets info from geneace.  
@@ -80,6 +80,23 @@ $wormbase->run_command("/usr/local/bin/webpublish -q *.shtml", $log) or $log->wr
 $wormbase->run_command("/usr/local/bin/webpublish -q *.txt", $log)   or $log->write_to("Couldn't run webpublish on text file\n");
 
 $log->write_to("check http://www.sanger.ac.uk/Projects/C_elegans/LOCI/genes2molecular_names.txt is up to date\n");
+
+
+##################
+# Check the files
+##################
+  $wormbase->check_file("$www/loci_all.txt", $log,
+                  minsize => 660000);
+  foreach my $letter ("a".."z") {
+    $wormbase->check_file("$www/loci_designations_${letter}.shtml", $log,
+			  minsize => 1000);
+  }
+  $wormbase->check_file("$www/genes2molecular_names.txt", $log,
+                  minsize => 700000);
+
+  $wormbase->check_file("$www/molecular_names2genes.txt", $log,
+                  minsize => 700000);
+
 
 $log->mail;
 exit(0);
