@@ -7,8 +7,8 @@
 # A script to finish the last part of the weekly build by updating all of the
 # relevant WormBase and Wormpep web pages.
 #
-# Last updated by: $Author: mh6 $     
-# Last updated on: $Date: 2007-06-15 15:25:19 $      
+# Last updated by: $Author: gw3 $     
+# Last updated on: $Date: 2007-09-04 12:22:19 $      
 
 
 #################################################################################
@@ -21,6 +21,7 @@ use Getopt::Long;
 use Symbol 'gensym';
 use Ace;
 use Carp;
+use File::Basename;
 
 ##############################
 # command-line options       #
@@ -49,22 +50,22 @@ unless (defined $ARGV[0]) {
 }
 
 GetOptions ("all"            => \$all,
-	  			"header"         => \$header,
-	    		"dna"            => \$dna,
-	    		"finished"       => \$finished,
+	    "header"         => \$header,
+	    "dna"            => \$dna,
+	    "finished"       => \$finished,
             "dbcomp"         => \$dbcomp,
             "wormpepdiff"    => \$wormpep_diff,
-	    		"copygff"        => \$copyGFF,
+	    "copygff"        => \$copyGFF,
             "debug=s"        => \$debug,
-	    		"test"           => \$test,
+	    "test"           => \$test,
             "help"           => \$help,
-            "h"              => \$help,
-	    		"dirs"           => \$directories,
-		      "overlap"        => \$overlap,
-	    		"est"            => \$EST_files,
-	    		"create_gff"     => \$create_GFF,
-	    		"wormpep"        => \$update_wormpep,
-	    		'store=s'	     => \$store
+            "h"              => \$help,	# 
+	    "dirs"           => \$directories,
+	    "overlap"        => \$overlap,
+	    "est"            => \$EST_files,
+	    "create_gff"     => \$create_GFF,
+	    "wormpep"        => \$update_wormpep,
+	    'store=s'	     => \$store
 	   );
 
 
@@ -143,12 +144,104 @@ unless ($test or $debug) {
 	system("ln -s $WS_name current") && croak "Couldn't create new symlink\n";
 }
 
-$log->write_to("\n\nC'est finis\n\naus is\n\n");
+##################
+# Check the files
+##################
+
+if ($all || $directories) {
+  $wb->check_file("$www/$WS_name", $log);
+  $wb->check_file("$www/$WS_name/Checks", $log);
+  $wb->check_file("$www/$WS_name/GFF", $log);
+}
+if ($all || $header) {
+  $wb->check_file("$www/$WS_name/release_header.shtml", $log, 
+		  minsize => 42, 
+		  maxsize => 42);
+}
+if ($all || $dna) {
+  $wb->check_file("$www/$WS_name/DNA_table.shtml", $log, 
+		  minsize => 3247,
+		  maxsize => 3247);
+}
+if ($all || $dbcomp) {
+  $wb->check_file("$www/$WS_name/dbcomp.shtml", $log, 
+		  minsize => 48050,
+		  maxsize => 48050);
+}
+if ($all || $wormpep_diff) {
+  $wb->check_file("$www/$WS_name/wormpep_diff.shtml", $log, 
+		  minsize => 1000,
+		  maxsize => 10000);
+}
+if ($all || $overlap) {
+  $wb->check_file("$www/$WS_name/Checks/header.ini", $log);
+ my @filenames = qw( overlapping_genes_cam overlapping_genes_stl EST_in_intron_cam EST_in_intron_stl repeat_in_exon_cam repeat_in_exon_stl );
+   foreach my $file (@filenames) {
+    my $line_total;
+    my @line_stats;
+
+    foreach my $chrom (@chrom) {
+      next unless (-s "$dbpath/CHECKS/CHROMOSOME_$chrom.$file");
+      $wb->check_file("$www/$WS_name/Checks/", $log,
+		      samessize => "$dbpath/CHECKS/CHROMOSOME_$chrom.$file");
+    }
+    $wb->check_file("$www/$WS_name/Checks/$file.html", $log,
+		    minsize => 10,);
+  }
+}
+if ($all || $EST_files) {
+  $wb->check_file("$www/$WS_name/Checks/EST_analysis.html", $log,
+		  minsize => 800,);
+  $wb->check_file("$www/$WS_name/Checks/EST_no_accession.shtml", $log);
+  $wb->check_file("$www/$WS_name/Checks/EST_unassigned.shtml", $log);
+  $wb->check_file("$www/$WS_name/Checks/EST_mismatched.shtml", $log);
+}
+if ($all || $copyGFF) {
+  foreach my $gff_file (glob("$dbpath/CHECKS/*.gff")) {
+    my ($file_name, $dummy1, $dummy2) = File::fileparse($gff_file);
+    $wb->check_file("$www/$WS_name/GFF/$file_name", $log,
+		    samesize => $gff_file);
+  }
+  foreach my $chrom (@chrom) {
+    $wb->check_file("$www/$WS_name/GFF/CHROMOSOME_${chrom}_clone_acc.gff", $log,
+		    samesize => "$gff/CHROMOSOME_${chrom}_clone_acc.gff");
+  }
+}
+if ($all || $create_GFF) {
+  $wb->check_file("$www/$WS_name/Checks/GFF_introns_confirmed_CDS_cam.html", $log,
+		  minsize => 10,);
+  $wb->check_file("$www/$WS_name/Checks/GFF_introns_confirmed_CDS_stl.html", $log,
+		  minsize => 10,);
+}
+if ($all || $update_wormpep) {
+  $wb->check_file("$www/$WS_name/Checks/header.ini", $log);
+  $wb->check_file("$www/$WS_name/release_paragraph.shtml", $log,
+		  minsize => 10,);		
+  $wb->check_file("$www/$WS_name/current_release.shtml", $log,
+		  minsize => 33,		
+		  maxsize => 36,);		
+  $wb->check_file("$www/$WS_name/wormpep_release.txt", $log,
+		  minsize => 3490,);		
+  $wb->check_file("$www/$WS_name/releases.shtml", $log,
+		  minsize => 70000,);		
+  $wb->check_file("$www/$WS_name/wormpep.shtml", $log,
+		  samesize => "$www/$WS_previous_name/wormpep.shtml");
+  $wb->check_file("$www/$WS_name/wormpep_changes.shtml", $log,
+		  samesize => "$www/$WS_previous_name/wormpep_changes.shtml");
+  $wb->check_file("$www/$WS_name/wormpep_download.shtml", $log,
+		  samesize => "$www/$WS_previous_name/wormpep_download.shtml");
+  $wb->check_file("$www/$WS_name/wormpep_format.shtml", $log,
+		  samesize => "$www/$WS_previous_name/wormpep_format.shtml");
+  $wb->check_file("$www/$WS_name/wormpep_moreinfo.shtml", $log,
+		  samesize => "$www/$WS_previous_name/wormpep_moreinfo.shtml");
+  
+}
+
+
+$log->write_to("\n\nFinished\n");
 
 # mail log
 $log->mail( "$maintainers", "BUILD REPORT: $0" );
-
-
 exit(0);
 
 
@@ -668,7 +761,8 @@ print EST_HTML qq(<!--#include virtual="/perl/header" -->\n);
 
   $log->write_to("updating EST_analysis.shtml from $www/$WS_previous/Checks to $www/$WS_name/Checks, adding new info\n"); 
 
-  open(EST_OLD, "<$www/$WS_previous_name/Checks/EST_analysis.html") || carp "Couldn't read old version of EST_analysis.html\n";
+#  open(EST_OLD, "<$www/$WS_previous_name/Checks/EST_analysis.html") || carp "Couldn't read old version of EST_analysis.html\n";
+  open(EST_OLD, "<$www/WS155/Checks/EST_analysis.html") || carp "Couldn't read old version of EST_analysis.html\n";
   open(EST_NEW, ">$www/$WS_name/Checks/EST_analysis.html") || croak "Couldn't create new version of EST_analysis.html\n";
 
   my $count=0;
