@@ -8,7 +8,7 @@
 # Originally written by Dan Lawson
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2007-08-17 13:33:02 $
+# Last updated on: $Date: 2007-09-04 09:15:21 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -193,6 +193,8 @@ close FTP_LOCK;
 &check_manifest if ($manifest);       # compares whats on the FTP site with what should be
 
 &extract_ko if ($dump_ko);            # dumps KO-consortium data to FTP site
+
+
 
 ################################
 #
@@ -689,6 +691,7 @@ models.wrm.WSREL
 pcr_product2gene.WSREL.gz
 wormpepREL.tar.gz
 wormrnaREL.tar.gz
+brigrnaREL.tar.gz
 
 ./CHROMOSOMES
 CHROMOSOME_I.agp
@@ -730,6 +733,12 @@ mSplicer_orf.gff
 mSplicer_transcript.gff
 miranda.gff
 pictar.gff
+CHROMOSOME_I_curation_anomalies.gff
+CHROMOSOME_II_curation_anomalies.gff
+CHROMOSOME_III_curation_anomalies.gff
+CHROMOSOME_IV_curation_anomalies.gff
+CHROMOSOME_V_curation_anomalies.gff
+CHROMOSOME_X_curation_anomalies.gff
 
 ./CHROMOSOMES/briggffREL
 chrI.gff
