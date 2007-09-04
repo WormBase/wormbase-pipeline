@@ -702,6 +702,10 @@ sub delete_files_from {
   return $fail_warn ? $delete_count : $fail_warn; # undef if failed else no. files removed;
 }
 
+####################################
+# do various checks on a file
+####################################
+
 sub check_file {
 
   my ($self, $file, $log, %criteria)     = @_;
@@ -792,10 +796,22 @@ sub check_file {
     delete $criteria{maxlines};
   }
   
-  if (exists $criteria{line1} || exists $criteria{line2} || exists $criteria{lines}) {
+  if (exists $criteria{requires} || exists $criteria{line1} || exists $criteria{line2} || exists $criteria{lines}) {
     open (CHECK_FILE, "< $file") || die "Can't open $file\n";
     my $line_count = 0;
-      while ($line_count++, my $line = <CHECK_FILE>) {
+    while ($line_count++, my $line = <CHECK_FILE>) {
+
+      if (exists $criteria{requires}) {
+	my $re_count = 0;
+	foreach my $regex (@{$criteria{requires}}) { # we need to find at least one of each of these regexps in the file
+	  if ($line =~ /$regex/) {
+	    splice @{$criteria{requires}}, $re_count, 1; # remove the successful regexp frmo the array
+	  }
+	  $re_count++;
+	}
+	if (@{$criteria{requires}} == 0 && !(exists $criteria{line1} || exists $criteria{line2} || exists $criteria{lines})) {last;}
+      }
+
       if ($line_count == 1 && exists $criteria{line1}) {
 	if ($line !~ /$criteria{line1}/) {
 	  push @problems, "line $line_count doesn't match criterion 'line1 => $criteria{line1}'";
@@ -810,10 +826,10 @@ sub check_file {
 	}
 	next;			# don't do 'lines' check on line 2 if 'line2' check exists
       }
-      if ($line_count > 2 && !exists $criteria{lines}) {last;}
+      if ($line_count > 2 && !exists $criteria{lines} && !@{$criteria{requires}}) {last;}
       if (exists $criteria{lines}) {
 	my $line_ok = 0;
-	foreach my $regex (@{$criteria{lines}}) {
+	foreach my $regex (@{$criteria{lines}}) { # each line in the file must match one of these regexps
 	  if ($line =~ /$regex/) {
 	    $line_ok = 1;
 	    last;
@@ -826,6 +842,13 @@ sub check_file {
       }
     }
     close (CHECK_FILE);
+
+    # check if there are any 'requires' regexps which didn't match
+    if (exists $criteria{requires} && @{$criteria{requires}}) {
+      push @problems, "the criterion 'requires => [@{$criteria{requires}}]' did not match any line";
+    }
+
+    delete $criteria{requires};
     delete $criteria{line1};
     delete $criteria{line2};
     delete $criteria{lines};
@@ -1453,6 +1476,7 @@ Arguments:
       line1 => regular expression that line 1 of the file must match
       line2 => regular expression that line 2 of the file must match
       lines => [reference of list of regular expressions, all other lines must match at least one of these]
+      requires => [reference of list of regular expressions, there must be at least one match of each regular expression in the file]
 
 Returns the number of errors found and sets the error flag
 
