@@ -8,8 +8,8 @@
 #                          ~wormpub/BUILD/autoace/release/
 #                          /nfs/WWW/SANGER_docs/htdocs/Projects/C_elegans/WORMBASE/current/release_notes.txt/
 #
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2006-07-27 16:26:18 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2007-09-04 13:33:55 $
 
 
 use strict;                                      
@@ -146,6 +146,20 @@ $wormbase->run_command("ln -fs $release development_release", $log);
 my $webpublish = "/usr/local/bin/webpublish";
 $wormbase->run_command("$webpublish  -q -r $release", $log)            && $log->write_to("Couldn't run webpublish on release directory\n");
 $wormbase->run_command("$webpublish  -q -r development_release", $log) && $log->write_to("Couldn't run webpublish on dev sym link\n");
+
+
+##################
+# Check the files
+##################
+$wormbase->check_file("$ftp_dir/${release}/letter.${release}", $log,
+		      samesize => "$repdir/letter.${release}");
+$wormbase->check_file("$acedir/release/letter.${release}", $log,
+		      samesize => "$repdir/letter.${release}");
+$wormbase->check_file("${www}/WORMBASE/${release}/release_notes.txt", $log,
+		      samesize => "$repdir/letter.${release}");
+$wormbase->check_file("$targetdir/development_release", $log);
+$wormbase->check_file("$wormpep_dir/wormpep_dev", $log);
+$wormbase->check_file("$www/WORMBASE/development_release", $log);
 
 
 $log->mail();
