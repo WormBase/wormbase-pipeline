@@ -318,16 +318,18 @@ sub get_cds {
 				unless ($v->{allele}->Method eq 'Deletion_and_insertion_allele'){
 					my $dsize=$v->{stop}-$v->{start}+1;
 					my $isize=length $v->{allele}->Insertion;
-					$cds{$hit->{name}}{"Frameshift \" $dsize bp Deletion\""}{$k}=1 if ($v->{stop}-$v->{start}<3)&&($v->{allele}->Method eq 'Deletion_allele')&&($dsize < 10);
-					$cds{$hit->{name}}{"Frameshift \"$isize bp Insertion\""}{$k}=1 if ($v->{allele}->Insertion)&&((length $v->{allele}->Insertion)%3!=0)&&(length $v->{allele}->Insertion < 10);
+					$cds{$hit->{name}}{"Frameshift \" $dsize bp Deletion\""}{$k}=1 
+					    if ($v->{stop}-$v->{start}<3)&&($v->{allele}->Method eq 'Deletion_allele')&&($dsize < 10);
+					$cds{$hit->{name}}{"Frameshift \"$isize bp Insertion\""}{$k}=1 
+					    if ($v->{allele}->Insertion)&&((length $v->{allele}->Insertion)%3!=0)&&(length $v->{allele}->Insertion < 10);
 				}                                                     
 				# coding_exon -> space for substitutions (silent mutations / stops / AA changes)
-				if ($v->{start}-$v->{stop}==0 && $v->{allele}->Type_of_mutation eq 'Substitution'){
+				if ($v->{start}-$v->{stop} < 3 && $v->{allele}->Type_of_mutation eq 'Substitution'){
 					
 					# insanity check: insane tags are ignored and reported as warnings
 					if (!$v->{allele}->Type_of_mutation->right || !$v->{allele}->Type_of_mutation->right->right){
 						$log->write_to("WARNING: $k is missing FROM and/or TO (Remark: ${\$v->{allele}->Remark})\n");
-                        $errors++;
+                                                $errors++;
 				   		next;
 					}
 					
@@ -339,7 +341,7 @@ sub get_cds {
 					map{$sequence=join("",$sequence,&get_seq($_->{chromosome},$_->{start},$_->{stop},$_->{orientation}))} @coding_exons;
 					
 					# get position in cds
-                    my $cds_position=0;
+                                        my $cds_position=0;
 					my $exon=1;
 					foreach my $c_exon(@coding_exons){
 						if ($v->{'start'}<=$c_exon->{'stop'}&&$v->{'stop'}>=$c_exon->{'start'}){
@@ -353,20 +355,30 @@ sub get_cds {
 					}
 					print "SNP $k at CDS position $cds_position (${\int($cds_position/3+1)})" if $wb->debug;
 					
+                                        # start of the codon part
+
 					my $offset=$cds_position-(($cds_position-1) % 3); #start of frame 1based
 
 					my $table=Bio::Tools::CodonTable->new(-id=>1);
 					
+					my $frame = ($cds_position-1) % 3 ; # ( 0 1 2 ) is in reality frame-1
+
 					my $from_na="${\$v->{allele}->Type_of_mutation->right}";
 					my $from_codon=substr($sequence,$offset-1,3);
-					substr($from_codon,($cds_position-1) % 3,1,$from_na);
+
+					next unless ($frame + length($from_na) < 4); # has to fit in the codon
+
+					substr($from_codon,$frame,length($from_na),$from_na);
 					my $from_aa=$table->translate($from_codon);
 					
 					my $to_na="${\$v->{allele}->Type_of_mutation->right->right}";
 					my $to_codon=$from_codon;
-					substr($to_codon,($cds_position-1) % 3,1,$to_na);
+
+                                        next unless ($frame +length($to_na) < 4);
+
+					substr($to_codon,$frame,length($to_na),$to_na);
 					my $to_aa=$table->translate($to_codon);
-					
+
 					
 					
 					# silent mutation
