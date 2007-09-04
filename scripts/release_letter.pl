@@ -4,8 +4,8 @@
 # 
 # by Anthony Rogers                             
 #
-# Last updated by: $Author: mh6 $               
-# Last updated on: $Date: 2007-06-15 12:31:04 $
+# Last updated by: $Author: gw3 $               
+# Last updated on: $Date: 2007-09-04 12:51:25 $
 
 # Generates a release letter at the end of build.
 #
@@ -265,10 +265,20 @@ if( defined($opt_l)) {
   
   
   print RL "____________  END _____________\n";
-  
+  close(RL);
+
+
   print "DONT FORGET TO FILL IN THE LAST FEW FIELDS IN THE LETTER\n found at $release_letter\n";
   
+
+##################
+# Check the files
+##################
+
+  $wormbase->check_file($release_letter, $log,
+                  minsize => 5500);
 }
+
 
 
 # say goodbye
