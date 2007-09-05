@@ -5,7 +5,7 @@
 # Usage : EMBL_Sequencefetch.pl [-options]
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2007-08-29 14:00:58 $
+# Last edited on: $Date: 2007-09-05 15:33:44 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -483,20 +483,15 @@ sub dump_BLAT_data {
   my $dbdir = shift;
   my $subspecies = shift;
   my $EST_dir = $species{$subspecies}{cdna_dir};
-  
+
   $log->write_to("Dumping $subspecies from $dbdir\n\n");
-  
+
   # Remove stale data if it exists on disk.
-  $wormbase->run_command ("rm $EST_dir/mRNA", $log) if (-e $EST_dir."/mRNA");
-  $log->write_to("Removed $EST_dir/mRNA\n\n")  if (-e $EST_dir."/mRNA" && $debug);
-  $wormbase->run_command ("rm $EST_dir/ncRNA", $log) if (-e $EST_dir."/ncRNA");
-  $log->write_to("Removed $EST_dir/ncRNA\n\n")  if (-e $EST_dir."/ncRNA" && $debug);
-  $wormbase->run_command ("rm $EST_dir/EST", $log) if (-e $EST_dir."/EST");
-  $log->write_to("Removed $EST_dir/EST\n\n")  if (-e $EST_dir."/EST" && $debug);
-  $wormbase->run_command ("rm $EST_dir/OST", $log) if (-e $EST_dir."/OST");
-  $log->write_to("Removed $EST_dir/OST\n\n")  if (-e $EST_dir."/OST" && $debug);
-  $wormbase->run_command ("rm $EST_dir/tc1", $log) if (-e $EST_dir."/tc1");
-  $log->write_to("Removed $EST_dir/tc1\n\n")  if (-e $EST_dir."/tc1" && $debug);
+  my @types = ('mRNA','ncRNA','EST','OST','tc1','RST');
+  foreach my $type (@types) {
+    $wormbase->run_command ("rm $EST_dir/${type}", $log) if (-e $EST_dir."/${type}");
+    $log->write_to("Removed $EST_dir/${type}\n\n")  if (-e $EST_dir."/${type}" && $debug);
+  }
 
   my $command=<<END;
 query find Sequence where method = NDB & RNA AND NEXT = mRNA & !Ignore\n
@@ -505,22 +500,25 @@ clear\n
 query find Sequence where method = NDB & RNA AND NEXT != mRNA & !Ignore\n
 Dna -mismatch $EST_dir/ncRNA\n
 clear\n
-query find Sequence where method = EST_$subspecies & !OST* & !Ignore\n
+query find Sequence where method = EST_$subspecies & !OST* & !Ignore & !RST*\n
 Dna -mismatch $EST_dir/EST\n
 clear\n
 query find Sequence where method = EST_$subspecies & OST* & !Ignore\n
 Dna -mismatch $EST_dir/OST\n
+clear\n
+query find Sequence where method = EST_$subspecies & RST* & !Ignore\n
+Dna -mismatch $EST_dir/RST\n
 clear\n
 query find Sequence TC*\n
 Dna -mismatch $EST_dir/tc1\n
 clear\n
 quit\n
 END
-print $command if ($debug);
+  print $command if ($debug);
   open (DB, "| $tace $dbdir") || die "Couldn't open $dbdir\n";
   print DB $command;
   close DB;
-
+  
   $log->write_to("Finished $subspecies\n\n");
 }
 
