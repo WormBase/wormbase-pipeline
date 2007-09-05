@@ -5,7 +5,7 @@
 # To not remap, set the release to be 0.
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2007-07-20 09:37:31 $      
+# Last updated on: $Date: 2007-09-05 15:45:25 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -69,8 +69,8 @@ die "-method name must be set to give the name of the Method in the ace file\n" 
 
 $species = "Caenorhabditis elegans" unless $species;
 
-# the default release to remap from is WS160
-$release = 160 unless $release;
+# the default remapping action is not to remap from a past release
+$release = 0 unless $release;
 
 #################################
 
@@ -92,7 +92,7 @@ open (OUT, ">$output") || die "Can't open $output\n";
 
 while (my $line = <IN>) {
   
-  if ($line =~ /^##/) {next;}
+  if ($line =~ /^#/) {next;}
 
   my @fields = split /\s+/, $line;
 
@@ -100,12 +100,12 @@ while (my $line = <IN>) {
   $sources{$fields[1]} = 1;	# keep a note of the sources
   if (defined $source && $fields[1] ne $source) {next;}
 
-  # ignore everything except the CDS and mRNA
-  if ($fields[2] ne "CDS" && $fields[2] ne "mRNA") {next;}
+  # ignore everything except the CDS and mRNA/transcript
+  if ($fields[2] ne "CDS" && $fields[2] ne "mRNA" && $fields[2] ne "transcript") {next;}
 
   my ($clone, $start, $end);
 
-  if ($fields[2] eq "mRNA") {
+  if ($fields[2] eq "mRNA" || $fields[2] eq "transcript") {
     my @other = split /;/, $fields[8];
     my @id = map { /ID=(\S+)/ ? $1 : ()} @other; 
 
@@ -312,7 +312,7 @@ script_template.pl  OPTIONAL arguments:
 
 =over 4
 
-=item -release version_number to remap the genomic positions from. It is assumed by default that the positions should be remapped from WS160. You can specify a different release number to remap from. Yuo can turn off remaping altogether by specifying a release number of zero.
+=item -release version_number to remap the genomic positions from. It is assumed by default that there is no remapping. 
 
 =back
 
@@ -324,7 +324,7 @@ script_template.pl  OPTIONAL arguments:
 
 =over 4
 
-=item -species double_species_name. By default, this script will write ACE data specifying the species as 'Caenorhabditis elegans'. This specifies a different species.
+=item -species Linaean_species_name. By default, this script will write ACE data specifying the species as 'Caenorhabditis elegans'. This specifies a different species.
 
 =back
 
