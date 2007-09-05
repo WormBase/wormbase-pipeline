@@ -7,7 +7,7 @@
 # script for creating extra GFF lines to indicate those genes that are landmark genes
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2007-09-03 13:13:42 $
+# Last edited on: $Date: 2007-09-05 10:55:25 $
 use strict;
 use lib $ENV{'CVS_DIR'};
 use Wormbase;
@@ -75,22 +75,22 @@ $database = $wormbase->autoace if !$database;
 # now loop through GFF files to look for existing gene spans
 my @chromosomes = qw( I II III IV V X );
 
-foreach (@chromosomes) {
+foreach my $chromosome (@chromosomes) {
 
-    $log->write_to("Processing chromosome $_\n");
+    $log->write_to("Processing chromosome $chromosome\n");
 
     # open input/output streams
-    open( OUT, ">".$wormbase->gff_splits."/CHROMOSOME_${_}_landmarks.gff" ) || die "Cannot open output file\n";
-    open( GFF, "<".$wormbase->chromosomes."/CHROMOSOME_${_}.gff" ) || die "Can't read CHROMOSOME_${_}.gff file\n";
+    open( OUT, ">".$wormbase->gff_splits."/CHROMOSOME_${chromosome}_landmarks.gff" ) || die "Cannot open output file\n";
+    open( GFF, "<".$wormbase->chromosomes."/CHROMOSOME_${chromosome}.gff" ) || die "Can't read CHROMOSOME_${_}.gff file\n";
 
-    while (<GFF>) {
+    while (my $line = <GFF>) {
 
         # only want to match the following lines
         # CHROMOSOME_II   gene    gene    23347   24428   .       +       .       Gene "WBGene00005017"
-        next unless ( /gene/ && /WBGene/ );
+        next unless ( $line =~ /gene/ && $line =~ /WBGene/ );
 
         # more exact check by splitting line and checking fields
-        my @data = split(/\t/);
+        my @data = split(/\t/, $line);
         next unless ( $data[1] eq "gene" && $data[2] eq "gene" );
 
         # modify 9th GFF column to look up in hash to get CGC name (or Public name)
