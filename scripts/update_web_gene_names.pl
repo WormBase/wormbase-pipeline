@@ -4,7 +4,7 @@
 # completely rewritten by Keith Bradnam from list_loci_designations
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2007-09-04 13:17:42 $
+# Last updated on: $Date: 2007-09-06 14:27:06 $
 #
 # This script should be run under a cron job and simply update the webpages that show
 # current gene names and sequence connections.  Gets info from geneace.  
@@ -316,7 +316,7 @@ sub make_gene_lists{
 
     print GENE2MOL "$key\t$gene2molecular_name{$key}\n";	      
   }
-  print TEXT "last updated $date (YYYY-MM-DD)\n";
+  print GENE2MOL "last updated $date (YYYY-MM-DD)\n";
   close(GENE2MOL);
 
 
@@ -324,7 +324,7 @@ sub make_gene_lists{
   foreach my $key (sort keys %molecular_name2gene){
     print MOL2GENE "$key\t$molecular_name2gene{$key}\n";
   }
-  print TEXT "last updated $date (YYYY-MM-DD)\n";
+  print MOL2GENE "last updated $date (YYYY-MM-DD)\n";
   close(MOL2GENE);
 }
 
