@@ -8,7 +8,7 @@
 # relevant WormBase and Wormpep web pages.
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2007-09-06 12:21:02 $      
+# Last updated on: $Date: 2007-09-06 12:42:52 $      
 
 
 #################################################################################
@@ -182,7 +182,7 @@ if ($all || $overlap) {
 
     foreach my $chrom (@chrom) {
       next unless (-s "$dbpath/CHECKS/CHROMOSOME_$chrom.$file");
-      $wb->check_file("$www/$WS_name/Checks/", $log,
+      $wb->check_file("$www/$WS_name/Checks/CHROMOSOME_$chrom.$file", $log,
 		      samesize => "$dbpath/CHECKS/CHROMOSOME_$chrom.$file");
     }
     $wb->check_file("$www/$WS_name/Checks/$file.html", $log,
@@ -501,7 +501,7 @@ sub create_dbcomp {
   
   open (DBCOMP, "wc -l $compare_path/current.dbcomp |");
   while (<DBCOMP>) {
-      ($dbcomplen) = (/^\s+(\d+)/);
+      ($dbcomplen) = (/^\s*(\d+)/);
   }
   close DBCOMP;
   
@@ -761,8 +761,7 @@ print EST_HTML qq(<!--#include virtual="/perl/header" -->\n);
 
   $log->write_to("updating EST_analysis.shtml from $www/$WS_previous/Checks to $www/$WS_name/Checks, adding new info\n"); 
 
-#  open(EST_OLD, "<$www/$WS_previous_name/Checks/EST_analysis.html") || carp "Couldn't read old version of EST_analysis.html\n";
-  open(EST_OLD, "<$www/WS155/Checks/EST_analysis.html") || carp "Couldn't read old version of EST_analysis.html\n";
+  open(EST_OLD, "<$www/$WS_previous_name/Checks/EST_analysis.html") || carp "Couldn't read old version of EST_analysis.html\n";
   open(EST_NEW, ">$www/$WS_name/Checks/EST_analysis.html") || croak "Couldn't create new version of EST_analysis.html\n";
 
   my $count=0;
