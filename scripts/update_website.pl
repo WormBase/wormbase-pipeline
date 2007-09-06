@@ -8,7 +8,7 @@
 # relevant WormBase and Wormpep web pages.
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2007-09-06 11:01:38 $      
+# Last updated on: $Date: 2007-09-06 12:21:02 $      
 
 
 #################################################################################
@@ -160,8 +160,8 @@ if ($all || $header) {
 }
 if ($all || $dna) {
   $wb->check_file("$www/$WS_name/DNA_table.shtml", $log, 
-		  minsize => 3247,
-		  maxsize => 3247);
+		  minsize => 3200,
+		  maxsize => 3300);
 }
 if ($all || $dbcomp) {
   $wb->check_file("$www/$WS_name/dbcomp.shtml", $log, 
@@ -175,7 +175,7 @@ if ($all || $wormpep_diff) {
 }
 if ($all || $overlap) {
   $wb->check_file("$www/$WS_name/Checks/header.ini", $log);
- my @filenames = qw( overlapping_genes_cam overlapping_genes_stl EST_in_intron_cam EST_in_intron_stl repeat_in_exon_cam repeat_in_exon_stl );
+  my @filenames = qw( overlapping_genes_cam overlapping_genes_stl EST_in_intron_cam EST_in_intron_stl repeat_in_exon_cam repeat_in_exon_stl );
    foreach my $file (@filenames) {
     my $line_total;
     my @line_stats;
@@ -183,7 +183,7 @@ if ($all || $overlap) {
     foreach my $chrom (@chrom) {
       next unless (-s "$dbpath/CHECKS/CHROMOSOME_$chrom.$file");
       $wb->check_file("$www/$WS_name/Checks/", $log,
-		      samessize => "$dbpath/CHECKS/CHROMOSOME_$chrom.$file");
+		      samesize => "$dbpath/CHECKS/CHROMOSOME_$chrom.$file");
     }
     $wb->check_file("$www/$WS_name/Checks/$file.html", $log,
 		    minsize => 10,);
@@ -198,7 +198,7 @@ if ($all || $EST_files) {
 }
 if ($all || $copyGFF) {
   foreach my $gff_file (glob("$dbpath/CHECKS/*.gff")) {
-    my ($file_name, $dummy1, $dummy2) = File::fileparse($gff_file);
+    my ($file_name, $dummy1, $dummy2) = fileparse($gff_file);
     $wb->check_file("$www/$WS_name/GFF/$file_name", $log,
 		    samesize => $gff_file);
   }
