@@ -8,7 +8,7 @@
 # relevant WormBase and Wormpep web pages.
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2007-09-04 12:22:19 $      
+# Last updated on: $Date: 2007-09-06 11:01:38 $      
 
 
 #################################################################################
@@ -385,7 +385,7 @@ sub create_DNA_table {
   
   open (COMPOSITION, "<$chromdir/composition.all") || croak "Failed to open composition.all\n";
   while (<COMPOSITION>) {
-    $DNA_tot = $1 if (/6 sequences >= 0, (\d+) total/);
+    $DNA_tot = $1 if (/(\d+) total/);
     ($DNA_d,$DNA_dp) = ($1,$2) if (/  - (\d+)\s+(\d+) %/);
     ($DNA_n,$DNA_np) = ($1,$2) if (/  n (\d+)\s+(\d+) %/);
     ($DNA_g,$DNA_gp) = ($1,$2) if (/  g (\d+)\s+(\d+) %/);
