@@ -8,7 +8,7 @@
 # Originally written by Dan Lawson
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2007-09-04 09:15:21 $
+# Last updated on: $Date: 2007-09-07 10:30:49 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -332,18 +332,18 @@ sub copy_misc_files{
   my $dest = "$base_dir/WORMRNA/wormrna$WS";
   chdir "$dest" or croak "Couldn't cd $dest\n";
   $wormbase->run_command("/bin/tar -cf $targetdir/$WS_name/wormrna$WS.tar README wormrna$WS.rna", $log);
-  $wormbase->run_command("/bin/gzip $targetdir/$WS_name/wormrna$WS.tar", $log);
+  $wormbase->run_command("/bin/gzip -f $targetdir/$WS_name/wormrna$WS.tar", $log);
 
   # tar, zip, and copy BrigRNA files
   $log->write_to("tar, zip and copy brigrna\n");
   $dest = "$base_dir/PRIMARIES/brigace/temp_unpack_dir/brigrna$WS";
   chdir "$dest" or croak "Couldn't cd $dest\n";
   $wormbase->run_command("/bin/tar -cf $targetdir/$WS_name/brigrna$WS.tar README brigrna$WS.rna", $log);
-  $wormbase->run_command("/bin/gzip $targetdir/$WS_name/brigrna$WS.tar",$log);
+  $wormbase->run_command("/bin/gzip -f $targetdir/$WS_name/brigrna$WS.tar",$log);
 
   # zip and copy the microarray oligo mapping files.
   chdir "$ace_dir";
-  $wormbase->run_command("/bin/gzip *oligo_mapping", $log);
+  $wormbase->run_command("/bin/gzip -f *oligo_mapping", $log);
   $wormbase->run_command("cp *oligo_mapping.gz $targetdir/$WS_name/", $log);
 
   $runtime = $wormbase->runtime;
@@ -384,12 +384,12 @@ sub copy_wormpep_files{
       $command .= " wormpep$WS/$file$WS";
   }
   $wormbase->run_command("$command", $log);
-  $wormbase->run_command("mv $tgz_file $targetdir/$WS_name", $log);
+  $wormbase->run_command("cp $tgz_file $targetdir/$WS_name", $log);
 
   $log->write_to("zip and copy brigpep\n");
   my $brigpep = $wormbase->brigpep;
-  $wormbase->run_command("gzip $brigpep/brigpep$WS",$log);
-  $wormbase->run_command("mv $brigpep/brigpep$WS.gz $targetdir/$WS_name", $log);
+  $wormbase->run_command("/bin/gzip -f $brigpep/brigpep$WS",$log);
+  $wormbase->run_command("cp $brigpep/brigpep$WS.gz $targetdir/$WS_name", $log);
 
   $runtime = $wormbase->runtime;
   $log->write_to("$runtime: Finished copying\n\n");
@@ -417,7 +417,7 @@ sub extract_confirmed_genes{
   }
 
   close(OUT);
-  $wormbase->run_command("/bin/gzip ${targetdir}/$WS_name/confirmed_genes.$WS_name", $log);
+  $wormbase->run_command("/bin/gzip -f ${targetdir}/$WS_name/confirmed_genes.$WS_name", $log);
 
   $db->close;
 
@@ -486,7 +486,7 @@ EOF
   }
   close(OUT);
 
-  $wormbase->run_command("/bin/gzip $out", $log);
+  $wormbase->run_command("/bin/gzip -f $out", $log);
 
   $runtime = $wormbase->runtime;
   $log->write_to("$runtime: Finished making files\n\n");  
@@ -520,7 +520,7 @@ sub make_geneID_list {
   close(TACE);
   close(OUT);
 
-  $wormbase->run_command("/bin/gzip $out", $log);
+  $wormbase->run_command("/bin/gzip -f $out", $log);
   
   $runtime = $wormbase->runtime;
   $log->write_to("$runtime: Finished making list\n\n");
@@ -592,7 +592,7 @@ sub make_pcr_list {
 
   close(OUT);
 
-  $wormbase->run_command("/bin/gzip $out", $log);
+  $wormbase->run_command("/bin/gzip -f $out", $log);
 
   $runtime = $wormbase->runtime;
   $log->write_to("$runtime: Finished making list\n\n");
