@@ -1,4 +1,4 @@
-#!/nfs/disk100/wormpub/bin/perl -w
+#!/software/bin/perl -w
 #
 # transcript_builder.pl
 # 
@@ -7,7 +7,7 @@
 # Script to make ?Transcript objects
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2007-06-04 12:58:09 $
+# Last updated on: $Date: 2007-09-07 15:31:00 $
 use strict;
 use lib $ENV{'CVS_DIR'};
 use Getopt::Long;
@@ -140,7 +140,7 @@ foreach my $chrom ( @chromosomes ) {
   close GFF;
 
   # read BLAT data
-  my @BLAT_methods = qw( BLAT_EST_BEST BLAT_mRNA_BEST BLAT_OST_BEST );
+  my @BLAT_methods = qw( BLAT_EST_BEST BLAT_mRNA_BEST BLAT_OST_BEST BLAT_RST_BEST);
   foreach my $method (@BLAT_methods) {
     $gff_file = $gff_dir."/CHROMOSOME_${chrom}_${method}.gff";
     open( GFF,"<$gff_file") or $log->log_and_die("cant open $gff_file : $!\n");
