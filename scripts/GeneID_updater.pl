@@ -7,7 +7,7 @@
 # Script to refresh various information including WBGene ID's, protein_ids, clone SV's in a chosen database from a chosen reference database.
 #
 # Last updated by: $Author: pad $
-# Last updated on: $Date: 2007-05-23 11:17:54 $
+# Last updated on: $Date: 2007-09-07 08:25:42 $
 
 use strict;
 my $scriptdir =  $ENV{'CVS_DIR'};
@@ -106,7 +106,12 @@ if ($database) {
   $database = "$canonical";
 }
 if ($proteinID || $all) {
-  $sourceDB2 = $wormbase->database('current');
+  if (defined ($sourceDB2)) {
+    $sourceDB2 = $sourceDB2;
+  }
+  else {
+    $sourceDB2 = $wormbase->database('current');
+  }
 }
 
 
