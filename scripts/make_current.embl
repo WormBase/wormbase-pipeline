@@ -1,32 +1,93 @@
-#!/usr/local/bin/perl
-
+#!/software/bin/perl
+# make_current.embl
 # This script will look in all the most up to date cosmid directory
 # and check if there is a cosmid.current.embl link. If not it will
-# link the cosmid.embl file to it (This is always the initial embl
-# submission), however, if there is no cosmid.embl file to link it
-# will report this. 
+# link the latest cosmid.date.embl file to it, however, if there is 
+# no cosmid.embl file to link it will report this. 
 #
-# Steven Jones, Sanger Centre, November 1995.
+# Created by Steven Jones, Sanger Centre, November 1995.
+# Updated by Paul Davis, Sanger Institute May 2007.
 
+use strict;
+use lib $ENV{'CVS_DIR'};
+use Getopt::Long;
+use Log_files;
+use Wormbase;
+use Storable;
 
-open(cosmids,<~wormpub/analysis/cosmids/current.versions>);
+my ($refreshlinks, $debug, $test, $store, $wormbase);
 
-while (<cosmids>) {
-if (/(\S+)\/(\d+)/) {$cosmid=$1;$date=$2;}
+GetOptions (
+              "l"           => \$refreshlinks,
+              "debug:s"     => \$debug,
+              "test"        => \$test,
+	      "store:s"     => \$store,
+);
 
-#Does the cosmid already have a current.embl file
-if (-e "/nfs/disk100/wormpub/analysis/cosmids/$cosmid/$date/embl/$cosmid.current.embl") {
-    print "cosmid $cosmid has a current.embl file\n";
-} else {print "$cosmid does not have a current.embl file\n";
-
-if (-e "/nfs/disk100/wormpub/analysis/cosmids/$cosmid/$date/embl/$cosmid.embl") {
-    print "$cosmid has a $cosmid.embl file\n";
-#If there is no current.embl file but a cosmid.embl
-#then link the cosmid.embl file the current.embl
-    print "attempting to link $cosmid.embl to $cosmid.current.embl\n";
-    system("ln -s /nfs/disk100/wormpub/analysis/cosmids/$cosmid/$date/embl/$cosmid.embl /nfs/disk100/wormpub/analysis/cosmids/$cosmid/$date/embl/$cosmid.current.embl");
-} else {
-    print "** Warning - $cosmid does not have a $cosmid.embl file\n";}
-    }
+if ($store) {
+  $wormbase = retrieve($store) or croak ("Can't restore wormbase from $store\n");
+}
+else {
+  $wormbase = Wormbase->new( -debug => $debug,
+                             -test => $test,
+                           );
 }
 
+my $log = Log_files->make_build_log($wormbase);
+
+my $basedir = glob("~wormpub/analysis/cosmids");
+my @errors;
+my @ok;
+my ($cosmid, $date, @check, $errorscount);
+my $file = "$basedir/current.versions";
+open(cosmids,"<$file") or die "Can't open $basedir/current.versions\n";
+$log->write_to("File_IN: Opening $basedir/current.versions\n\n");
+
+while (<cosmids>) {
+  if (/(\S+)\/(\d+)/) {
+    $cosmid=$1;$date=$2;
+  }
+  $log->write_to( "\nCosmid: $cosmid is currently set to Date_dir $date\n");
+  
+  #Does the cosmid already have a current.embl file
+  if (-e "$basedir/$cosmid/$date/embl/$cosmid.current.embl") {
+    $log->write_to( "cosmid $cosmid has a current.embl file \n");
+    push(@ok,"$cosmid");
+  } 
+  else {
+    $log->write_to( "$cosmid does not have a current.embl file $cosmid.current.embl\n");
+    push(@check,"$cosmid");
+    #find latest embl file
+    my $dir = "$basedir/$cosmid/$date/embl";
+    my @embl_files = <$dir/$cosmid.0*>;
+    my $latest = (@embl_files[-1]);
+    if (-e "$latest") {
+      $log->write_to( "Latest: $cosmid emble file = $latest\n");
+      #If there is no current.embl file but a cosmid.embl
+      #then link the cosmid.embl file the current.embl
+      $log->write_to( "attempting to link $latest to $cosmid.current.embl\n");
+      system("ln -s $latest $basedir/$cosmid/$date/embl/$cosmid.current.embl");
+    }
+    else {
+      $log->write_to( "** Warning - $cosmid does not have an emble flat file\n");
+      push(@errors,"$cosmid")
+    }
+    if ($refreshlinks) {
+      system("ln -s $latest $basedir/$cosmid/$date/embl/$cosmid.current.embl");
+    }
+  }
+}
+
+my $okcount=@ok;
+my $errorcount=@errors;
+my $checkcount=@check;
+
+$log->write_to( "\n\n-------------------------------------------\n           Cosmid Summary\n-------------------------------------------\n");
+$log->write_to( "OK:             $okcount passed testing\n\n");
+$log->write_to( "Check Linkage:  $checkcount cosmids had their current link updated.\n@check\n");
+$log->write_to( "ERROR::No File: $errorcount cosmids to investigate!\n@errors\n-------------------------------------------\n\n\n");
+$log->write_to( "Diaskeda same Poli\n"); #we had alot of fun#
+$log->mail($wormbase);
+exit(0);
+
+__END__
