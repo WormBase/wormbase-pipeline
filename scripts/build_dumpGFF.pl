@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl -w
-# Last edited by: $Author: pad $
-# Last edited on: $Date: 2006-12-05 10:44:59 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2007-09-07 15:49:45 $
 
 use strict;
 use lib  $ENV{'CVS_DIR'};
@@ -95,6 +95,8 @@ blat BLAT_EST_OTHER
 blat BLAT_NEMATODE
 blat BLAT_OST_BEST
 blat BLAT_OST_OTHER
+blat BLAT_RST_BEST
+blat BLAT_RST_OTHER
 blat BLAT_TC1_BEST
 blat BLAT_TC1_OTHER
 blat BLAT_mRNA_BEST
