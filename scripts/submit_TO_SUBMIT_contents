@@ -10,7 +10,7 @@
 #                after submission and use Perl5.6 with strict
 #
 # Last updated by: $Author: pad $                      
-# Last updated on: $Date: 2007-05-29 13:34:19 $        
+# Last updated on: $Date: 2007-09-07 14:10:33 $        
 
 $|=1;
 use strict;
@@ -18,7 +18,8 @@ use Getopt::Long;
 use lib $ENV{'CVS_DIR'};
 use Wormbase;
 
-my $submitdir = "/lustre/cbi4/work1/wormpub/analysis/TO_SUBMIT";
+my $submitdir = glob("~wormpub/analysis/TO_SUBMIT");
+print "$submitdir\n\n";
 my (@filenames);
 
  ##############################
