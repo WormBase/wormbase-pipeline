@@ -2,7 +2,7 @@
 #
 # EMBLdump.pl :  makes modified EMBL dumps from camace.
 # 
-#  Last updated on: $Date: 2007-06-08 14:20:12 $
+#  Last updated on: $Date: 2007-09-07 14:05:45 $
 #  Last updated by: $Author: pad $
 
 use strict;
@@ -137,6 +137,12 @@ else {
 }
 
 #CommonData hash Key: Genome sequence Value: Sequence version integer
+if (!(-e "/nfs/disk100/wormpub/BUILD/autoace/COMMON_DATA/clone2accession.dat")) {
+print "Copying COMMON_DATA around as the build has finished!!!\n";
+system ("scp ~/DATABASES/current_DB/COMMON_DATA/clone2accession.dat  /nfs/disk100/wormpub/BUILD/autoace/COMMON_DATA/");
+system ("scp ~/DATABASES/current_DB/COMMON_DATA/clone2type.dat /nfs/disk100/wormpub/BUILD/autoace/COMMON_DATA/");
+system ("scp ~/DATABASES/current_DB/COMMON_DATA/cds2cgc.dat /nfs/disk100/wormpub/BUILD/autoace/COMMON_DATA/");
+}
 my %clone2accession = $wormbase->FetchData('clone2accession', undef, "$dir");
 #CommonData hash Key: Clone/Sequence name Value: Type information (cosmid|fosmid|yac|Other);
 my %clone2type = $wormbase->FetchData('clone2type', undef, "$dir");
