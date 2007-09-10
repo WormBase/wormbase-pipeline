@@ -9,7 +9,7 @@
 # transcripts to find the most probably orientation.
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2007-09-10 12:06:08 $      
+# Last updated on: $Date: 2007-09-10 13:10:26 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -46,9 +46,6 @@ GetOptions ("help"       => \$help,
 	    "gff_type"      => \$gff_type,
 	    "ID_after"      => \$ID_after);
 
-
-#$test = 1;
-$debug = "gw3";
 
 if ( $store ) {
   $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
@@ -96,7 +93,7 @@ foreach my $chromosome ($wormbase->get_chromosome_names(-mito => 1, -prefix => 0
   my %gene_reverse = ();
 
   # read the chromosmal sequence
-  print "read chromosome $chromosome\n" if ($verbose);
+  $log->write_to("\n\nChromosome $chromosome\n");
   my $seq = read_chromosome($chromosome);
 
   # read in the lists of GFF data or the specified GFF file
@@ -320,13 +317,13 @@ foreach my $chromosome ($wormbase->get_chromosome_names(-mito => 1, -prefix => 0
   # we are happy that the existing orientation of these is OK
   # if no existing orientation, we make the default: EST_5
   my $count_out = 0;
-  $log->write_to("\nThe following are confirmed in the default 5' orientation\n\n");
+  $log->write_to("\n\nThe following are confirmed in their default orientation\n\n");
   foreach my $id (keys %splice_ok, keys %gene_ok) {
     if (!exists $Show_in_reverse_orientation{$id}) {
       print ACE "\nSequence : $id\n";
       print ACE "EST_5\n";
       $log->write_to("$id\t");
-      if ($count_out % 5) {$log->write_to("\n");}
+      if (($count_out % 5) == 4) {$log->write_to("\n");}
       $count_out++;
     }
   }
@@ -334,7 +331,7 @@ foreach my $chromosome ($wormbase->get_chromosome_names(-mito => 1, -prefix => 0
   # we need to swap the orientation of these
   # they may already have an orientation that needs to be deleted
   $count_out = 0;
-  $log->write_to("\nThe following have their orientation reversed\n\n");
+  $log->write_to("\n\nThe following have their orientation reversed\n\n");
   foreach my $id (keys %splice_reverse, keys %gene_reverse) {
     if (!exists $Show_in_reverse_orientation{$id} || $Show_in_reverse_orientation{$id} == 5) {
       print ACE "\nSequence : $id\n";
@@ -352,14 +349,16 @@ foreach my $chromosome ($wormbase->get_chromosome_names(-mito => 1, -prefix => 0
       print ACE "EST_5\n";
     }
     $log->write_to("$id\t");
-    if ($count_out % 5) {$log->write_to("\n");}
+    if (($count_out % 5) == 4) {$log->write_to("\n");}
     $count_out++;
   }
   close(ACE);
 
   # now load the output ACE file into camace
-  if ($load) {
+  if ($load && !$test) {
     $wormbase->load_to_database($wormbase->database("camace"), $output, "assign_orientation.pl", $log);
+  } else {
+    print "\n\n$output will not be loaded into DATABASES/camace\n";
   }
 
 }
