@@ -7,8 +7,8 @@
 # Script to convert cgc strain file into ace file for geneace
 # Page download and update upload to geneace has been automated [ck1]
 
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2007-03-09 15:47:19 $
+# Last updated by: $Author: mt3 $
+# Last updated on: $Date: 2007-09-10 10:45:07 $
 
 use strict;
 use Getopt::Long;
@@ -66,7 +66,7 @@ my $rundate     = $wormbase->rundate;
 ##########################
 
 my $input_file = "$path/cgc_strain_list_$rundate";
-system("wget -O $input_file http://biosci.umn.edu/CGC/Strains/gophstrnt.txt") && die "Unable to download strain data file from CGC website\n\n";
+system("wget -O $input_file http://biosci.umn.edu/CGC/strains/gophstrnt.txt") && die "Unable to download strain data file from CGC website\n\n";
 
 
 ###############################################
