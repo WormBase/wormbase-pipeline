@@ -703,12 +703,94 @@ sub delete_files_from {
 }
 
 ####################################
-# do various checks on a file
+# do various checks on the files output from a script
+# (or part of a script) - the tests are read from the config file
+# ~wormpub/BUILD/autoace_config/autoace.config
+####################################
+
+sub check_files {
+  my ($self, $log, $part) = @_;
+
+  # read the filenames and criteria from the config file
+  my $config = $self->basedir . "/autoace_config/check_file.config";
+  open(FCCONFIG, "<$config") || $log->log_and_die("Can't open $config\n");
+
+  my $species = $self->species;
+  my %criteria;
+  my $found_species = '';
+  my $found_script = 0;
+  my $found_a_file = 0;
+  my $file;
+  while (my $line = <FCCONFIG>) {
+    chomp $line;
+    if ($line =~ /^#/ || $line =~ /^\s+$/) {  
+      next;
+    } elsif ($line =~ /^SPECIES/) {
+      $found_species = '';
+      $found_script = 0;
+      if ($line =~ /^SPECIES\s+$species/) {
+	$found_species = 'species';
+      }
+      if ($line =~ /^SPECIES\s+default/) {
+	$found_species = 'default';
+      }
+    } elsif ($found_script && $line !~ /^SCRIPT/) {
+      if ($line =~ /^\s*FILE/) {
+	($file) = $line =~ /^\s*FILE\s+(\S+)/;
+	$file =~ s/wormbase->/self->/; # convert filenames with '$wormbase->' in to '$self->'
+	if ($file =~ /(\$\S+\-\>[\w_\(\)\']+)(\/\S+)/) {
+	  $file = eval($1) . $2;         # and expand to the full path
+	}
+	# don't want to do a default test it we already have the tests
+	# that are specific for this species
+	if ($found_species eq 'default' &&
+	    exists $criteria{$file}) {next;}
+	$found_a_file = 1;
+	$criteria{$file}{exists} = 1;
+      } elsif ($line =~ /^\s+(\S+)\s+(\S+)/) {
+	my $key = $1;
+	my $value = $2;
+	# get and store the tests for this file
+	if ($key eq 'lines' || $key eq 'requires') {
+	  push @{$criteria{$file}{$key}}, $value;
+	} else {
+	  $criteria{$file}{$key} = $value;
+	}
+      }
+    } elsif ($found_species) {
+      if ($line =~ /^SCRIPT/) {
+	$found_script = 0;
+	if ($line =~ /^SCRIPT\s+$0\s*$/ || 
+	    (defined $part && $line =~ /^SCRIPT\s+$0\s+$part$/)) {
+	  $found_script = 1;
+	}
+      }
+    }
+  }
+  close(FCCONFIG);
+
+  # complain if we didn't find an entry for this script
+  if (!$found_a_file) {
+    if ( $log) {
+      $log->write_to("WARNING: Couldn't find any files to test in $config\n");
+    }
+    carp "WARNING: Couldn''t find any files to test in $config\n";
+    return 1;
+  }
+
+  my $errors = 0;
+  foreach my $file (keys %criteria) {
+    $errors++ if ($self->check_file($file, $log, %{$criteria{$file}}));
+  }
+  
+  return $errors;		# number of files failing tests
+}
+
 ####################################
 
 sub check_file {
 
-  my ($self, $file, $log, %criteria)     = @_;
+  my ($self, $file, $log, %criteria) = @_;
 
   unless ( -e $file) {
     if ( $log) {
@@ -718,6 +800,7 @@ sub check_file {
     carp "ERROR: Couldn't find file named: $file\n";
     return 1;
   }
+  delete $criteria{exists};
 
   my @problems;
 
@@ -734,9 +817,10 @@ sub check_file {
   }
 
   my $size;
+  my $second_file_size;
   if (exists $criteria{samesize}) {
     $size = (-s $file) unless $size;
-    my $second_file_size = (-s $criteria{samesize});
+    $second_file_size = (-s $criteria{samesize});
     if ($second_file_size != $size) {
       push @problems,  "file size ($size) not equal to that of file '$criteria{samesize}' ($second_file_size)";
     }
@@ -744,7 +828,7 @@ sub check_file {
   }
   if (exists $criteria{similarsize}) {
     $size = (-s $file);
-    my $second_file_size = (-s $criteria{similarsize});
+    $second_file_size = (-s $criteria{similarsize});
     if ($second_file_size < $size * 0.9 || $second_file_size > $size * 1.1) {
       push @problems,  "file size ($size) not similar to that of file '$criteria{similarsize}' ($second_file_size)";
     }
@@ -765,9 +849,10 @@ sub check_file {
     delete $criteria{maxsize};
   }
   my $lines;
+  my $second_file_lines;
   if (exists $criteria{samelines}) {
     ($lines) = (`wc -l $file` =~ /(\d+)/);
-    my ($second_file_lines) = (`wc -l $criteria{samelines}` =~ /(\d+)/);
+    ($second_file_lines) = (`wc -l $criteria{samelines}` =~ /(\d+)/);
     if ($second_file_lines != $lines) {
       push @problems,  "number of lines ($lines) not equal to that of file '$criteria{samelines}' ($second_file_lines)";
     }
@@ -775,7 +860,7 @@ sub check_file {
   }
   if (exists $criteria{similarlines}) {
     ($lines) = (`wc -l $file` =~ /(\d+)/) unless $lines;
-    my ($second_file_lines) = (`wc -l $criteria{similarlines}` =~ /(\d+)/) unless $lines;
+    ($second_file_lines) = (`wc -l $criteria{similarlines}` =~ /(\d+)/) unless $lines;
     if ($second_file_lines < $lines * 0.9 || $second_file_lines > $lines * 1.1) {
       push @problems,  "number of lines ($lines) not similar to that of file '$criteria{similarlines}' ($second_file_lines)";
     }
@@ -865,11 +950,14 @@ sub check_file {
       }
       carp "ERROR: $problem found when checking file '$file'\n";
   }
+
+  if (!@problems) {$log->write_to("Check file: '$file' OK\n");}
   return @problems;
 }
 
 
 
+####################################
 
 
 
@@ -940,6 +1028,7 @@ sub load_to_database {
   close(WRITEDB);
 }
 
+####################################
 sub wormpep_files {
   my $self = shift;
   return ( "wormpep", "wormpep.accession", "wormpep.dna", "wormpep.history", "wormpep.fasta", "wormpep.table",
@@ -981,6 +1070,7 @@ sub genome_seq  { my $self = shift; return $self->autoace."/genome_seq";}
 
 
 		  # this can be modified by calling script
+####################################
 sub common_data {
   my $self = shift;
   my $path = shift;
@@ -994,6 +1084,7 @@ sub common_data {
   return $self->{'common_data'};
 }
 
+####################################
 sub database {
   my $self     = shift;
   my $database = shift;
@@ -1013,6 +1104,7 @@ sub database {
   }
 }
 
+####################################
 sub primary {
   my $self = shift;
   my $database = shift;
@@ -1021,6 +1113,7 @@ sub primary {
   return $path;
 }
 
+####################################
 # setter methods
 sub set_test { 
   my $self = shift; 
@@ -1132,6 +1225,7 @@ sub establish_paths {
   }
 }
 
+####################################
 sub run_script {
   my $self   = shift;
   my $script = shift;
@@ -1148,6 +1242,7 @@ sub run_script {
   return $self->run_command( "$command", $log );
 }
 
+####################################
 sub bsub_script  {
 	my $self   = shift;
   	my $script = shift;
@@ -1177,6 +1272,7 @@ sub bsub_script  {
 }
 
 
+####################################
 sub run_command {
   my $self    = shift;
   my $command = shift;
@@ -1196,6 +1292,7 @@ sub run_command {
   }
 }
 
+####################################
 sub wait_for_LSF {
   my $self = shift;
   sleep 10;
@@ -1223,6 +1320,7 @@ sub wait_for_LSF {
   }
 }
 
+####################################
 sub checkLSF
   {
     my ($self, $log) = @_;
@@ -1235,6 +1333,7 @@ sub checkLSF
     }
   }
 
+####################################
 sub table_maker_query {
   my($self, $database, $def) = @_;
   my $fh;
@@ -1242,6 +1341,7 @@ sub table_maker_query {
   return $fh;
 }
 
+####################################
 sub species_accessors {
 	my $self = shift;
 	my %accessors;
