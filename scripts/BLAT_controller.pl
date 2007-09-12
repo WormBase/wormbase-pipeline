@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl5.8.0 -w
 #
-# Last edited by: $Author: pad $
-# Last edited on: $Date: 2007-08-15 10:35:52 $
+# Last edited by: $Author: mh6 $
+# Last edited on: $Date: 2007-09-12 10:47:26 $
 
 
 use lib $ENV{'CVS_DIR'};
@@ -62,7 +62,7 @@ my $seq_obj      = Sequence_extract->invoke($database, undef, $wormbase) if $int
 
 #The mol_types available for each species is different
 #defaults lists - can be overridden by -types
-my %mol_types = ( 'elegans'   => [qw(EST mRNA ncRNA OST tc1 )],
+my %mol_types = ( 'elegans'   => [qw(EST mRNA ncRNA OST tc1 RST)],
 				  'briggsae'  => [qw( mRNA EST )],
 				  'remanei'   => [qw( mRNA EST )],
 				  'brenneri'  => [qw( mRNA )],
@@ -234,9 +234,9 @@ sub confirm_introns {
   open (GOOD, ">$blat_dir/autoace.good_introns.$type.ace") or die "$!";
   open (BAD,  ">$blat_dir/autoace.bad_introns.$type.ace")  or die "$!";
   
-  my ($link,@introns,$dna,$switch,$tag);
+  my ($link,@introns,$dna,$switch);
  
-  $tag = ($type eq 'EST' or $type eq 'OST') ? 'EST' : 'cDNA';
+  my $tag = ($type eq 'RST') ? 'OST' : $type;
   
   
   $/ = "";
