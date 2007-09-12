@@ -7,7 +7,7 @@
 # This is a example of a good script template
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2007-08-17 08:40:02 $
+# Last updated on: $Date: 2007-09-12 14:57:36 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -207,7 +207,12 @@ sub read_acedb_queries {
     $queries[$i]{'DESC'}   = "GO_term without Term or Definition";
     $queries[$i]{'QUERY'}  = 'find GO_term !(Term or Definition)';
     $queries[$i]{'RESULT'} =  0;     
-      
+       
+    $i++;
+    $queries[$i]{'DESC'}   = "Homol mapped Expression Patterns";
+    $queries[$i]{'QUERY'}  = 'Expr_pattern where Homol_homol';
+    $queries[$i]{'RESULT'} = 4506 ;    
+     
     #	$i++;
     #	$queries[$i]{'DESC'}   = "";
     #	$queries[$i]{'QUERY'}  = '';
@@ -352,6 +357,16 @@ sub read_GFF_queries {
     $queries[$i]{'GFF'}    = "mass_spec_genome";
     $queries[$i]{'EXPECT'} = '94974';
 
+    $i++;
+    $queries[$i]{'DESC'}  = "Expr_pattern mapped Expression Patterns";
+    $queries[$i]{'GFF'}   = "Expr_pattern";
+    $queries[$i]{'EXPECT'}= 2531;
+
+    $i++;
+    $queries[$i]{'DESC'}  = "Chronogram mappings";
+    $queries[$i]{'GFF'}   = "Chronogram";
+    $queries[$i]{'EXPECT'}= 1973;    
+    
     #	$i++;
     #	$queries[$i]{'DESC'}  = "";
     #	$queries[$i]{'GFF'}   = "";
