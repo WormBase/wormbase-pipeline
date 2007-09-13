@@ -7,7 +7,7 @@
 # This takes a BUILD_DATA/MISC_DYNAMIC/*expression*.ace file and converts any coordinates that have changed between releases
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2007-09-13 09:55:00 $      
+# Last updated on: $Date: 2007-09-13 09:59:11 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -63,19 +63,16 @@ my $log = Log_files->make_build_log($wormbase);
 #################################
 
 # Set up top level base directories (these are different if in test mode)
-###my $ace_dir         = $wormbase->autoace;     # AUTOACE DATABASE DIR
-my $ace_dir         = $wormbase->database('WS181');
+my $ace_dir         = $wormbase->autoace;     # AUTOACE DATABASE DIR
 
 # some database paths
-###my $currentdb = $wormbase->database('current');
-my $currentdb = $wormbase->database('WS180');
+my $currentdb = $wormbase->database('current');
 
 ##########################
 # read in the mapping data
 ##########################
 
-###my $version = $wormbase->get_wormbase_version;
-my $version = 181;
+my $version = $wormbase->get_wormbase_version;
 print "Getting mapping data for WS$version\n";
 my @mapping_data = Remap_Sequence_Change::read_mapping_data($version - 1, $version);
  
