@@ -6,8 +6,8 @@
 #
 # Usage : autoace_builder.pl [-options]
 #
-# Last edited by: $Author: pad $
-# Last edited on: $Date: 2007-08-15 10:44:51 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2007-09-13 13:24:38 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -260,45 +260,46 @@ sub remap_misc_dynamic {
 
   if ($answer eq "yes") {	# we do want to remap the data
 
+    # remap ace files with homol_data mapped to clones
+    my %clone_data = (
+			'misc_21urna_homol.ace'                 => '21_urna',
+			'misc_Expression_pattern_homol.ace'     => 'expression_pattern',
+			'misc_mass_spec_MichaelHengartner.ace'  => 'mass_spec',
+			'misc_mass_spec_NatalieWielsch.ace'     => 'mass_spec',
+			'misc_mass_spec_StevenHusson.ace'       => 'mass_spec',
+			'misc_mass_spec_GenniferMerrihew.ace'   => 'mass_spec',
+			);
+    foreach my $clone_data_file (keys %clone_data) {
+      my $data_file = $wormbase->misc_dynamic."/$clone_data_file";
+      my $backup_file = $wormbase->misc_dynamic."/BACKUP/$clone_data_file.$previous_release";
+      if (-e $backup_file) {$wormbase->run_command("mv -f $backup_file $data_file", $log);}
+      $wormbase->run_command("mv -f $data_file $backup_file", $log);
+      $wormbase->run_script( "remap_clone_homol_data.pl -input $backup_file -out $data_file -data_type $clone_data{$clone_data_file}", $log);
+    }
+
+
     # remap twinscan
     my $twinscan = $wormbase->misc_dynamic."/misc_twinscan.ace";
-    my $backup_twinscan = "$twinscan.$previous_release";
-    if (-e $backup_twinscan) {
-      $wormbase->run_command("mv -f $backup_twinscan $twinscan", $log);
-    }
-    $wormbase->run_command("cp $twinscan $backup_twinscan", $log);
+    my $backup_twinscan = $wormbase->misc_dynamic."/BACKUP/$twinscan.$previous_release";
+    if (-e $backup_twinscan) {$wormbase->run_command("mv -f $backup_twinscan $twinscan", $log);}
+    $wormbase->run_command("mv -f $twinscan $backup_twinscan", $log);
     $wormbase->run_script( "remap_twinscan_between_releases.pl -release1 $previous_release -release2 $release -twinscan $backup_twinscan -out $twinscan", $log);
 
     # remap genefinder
     my $genefinder = $wormbase->misc_dynamic."/misc_genefinder.ace";
-    my $backup_genefinder = "$genefinder.$previous_release";
-    if (-e $backup_genefinder) {
-      $wormbase->run_command("mv -f $backup_genefinder $genefinder", $log);
-    }
-    $wormbase->run_command("cp $genefinder $backup_genefinder", $log);
+    my $backup_genefinder = $wormbase->misc_dynamic."/BACKUP/$genefinder.$previous_release";
+    if (-e $backup_genefinder) {$wormbase->run_command("mv -f $backup_genefinder $genefinder", $log);}
+    $wormbase->run_command("mv -f $genefinder $backup_genefinder", $log);
     $wormbase->run_script( "remap_genefinder_between_releases.pl -input $backup_genefinder -out $genefinder", $log);
 
     # remap fosmids
     my $fosmids = $wormbase->misc_dynamic."/fosmids.ace";
-    my $backup_fosmids = "$fosmids.$previous_release";
-    if (-e $backup_fosmids) {
-      $wormbase->run_command("mv -f $backup_fosmids $fosmids", $log);
-    }
-    $wormbase->run_command("cp $fosmids $backup_fosmids", $log);
+    my $backup_fosmids = $wormbase->misc_dynamic."/BACKUP/$fosmids.$previous_release";
+    if (-e $backup_fosmids) {$wormbase->run_command("mv -f $backup_fosmids $fosmids", $log);}
+    $wormbase->run_command("mv -f $fosmids $backup_fosmids", $log);
     $wormbase->run_script( "remap_fosmids_between_releases.pl -input $backup_fosmids -out $fosmids", $log);
    
-    # remap Mass Spec
-    foreach my $ms_file qw(misc_mass_spec_MichaelHengartner.ace misc_mass_spec_NatalieWielsch.ace misc_mass_spec_StevenHusson.ace misc_mass_spec_GenniferMerrihew.ace) {
-      my $ms = $wormbase->misc_dynamic."/$ms_file";
-      my $backup_ms = "$ms.$previous_release";
-      if (-e $backup_ms) {
-	$wormbase->run_command("mv -f $backup_ms $ms", $log);
-      }
-      $wormbase->run_command("cp $ms $backup_ms", $log);
-      $wormbase->run_script( "remap_mass_spec_between_releases.pl -input $backup_ms -out $ms", $log);
-    }
-
-    # the TEC-REDs are placed back on the genome by using the location of the Features they define
+    # the TEC-REDs are placed back on the genome by using the location of the Features they defined
     $wormbase->run_script( "map_tec-reds.pl", $log);
 
 
@@ -312,23 +313,11 @@ sub remap_misc_dynamic {
       next unless( $file =~ /gff$/ );
       my $gff = "$sup_dir/$file";
       my $backup_gff = "$backup_dir/$file.$old_release";
-      if (-e $backup_gff) {
-	$wormbase->run_command("mv -f $backup_gff $gff", $log);
-      }
-      $wormbase->run_command("cp $gff $backup_gff", $log);
+      if (-e $backup_gff) {$wormbase->run_command("mv -f $backup_gff $gff", $log);}
+      $wormbase->run_command("mv -f $gff $backup_gff", $log);
       $wormbase->run_script("remap_gff_between_releases.pl -gff $backup_gff -output $gff -release1 $old_release -release2 $release", $log);
     }
     closedir DIR;
-
-  # remap waba (takes a long time ~24 hours)
-#    my $waba = $wormbase->misc_dynamic."/waba.ace";
-#    my $backup_waba = "$waba.$previous_release";
-#    if (-e $backup_waba) {
-#      $wormbase->run_command("mv -f $backup_waba $waba", $log);
-#    }
-#    $wormbase->run_command("cp $waba $backup_waba", $log);
-#    $wormbase->run_script( "remap_waba_between_releases.pl -input $backup_waba -out $waba", $log);
-
 
   }
 
