@@ -7,7 +7,7 @@
 # Usage : autoace_builder.pl [-options]
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2007-09-13 13:24:38 $
+# Last edited on: $Date: 2007-09-13 13:38:18 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -280,21 +280,21 @@ sub remap_misc_dynamic {
 
     # remap twinscan
     my $twinscan = $wormbase->misc_dynamic."/misc_twinscan.ace";
-    my $backup_twinscan = $wormbase->misc_dynamic."/BACKUP/$twinscan.$previous_release";
+    my $backup_twinscan = $wormbase->misc_dynamic."/BACKUP/misc_twinscan.ace.$previous_release";
     if (-e $backup_twinscan) {$wormbase->run_command("mv -f $backup_twinscan $twinscan", $log);}
     $wormbase->run_command("mv -f $twinscan $backup_twinscan", $log);
     $wormbase->run_script( "remap_twinscan_between_releases.pl -release1 $previous_release -release2 $release -twinscan $backup_twinscan -out $twinscan", $log);
 
     # remap genefinder
     my $genefinder = $wormbase->misc_dynamic."/misc_genefinder.ace";
-    my $backup_genefinder = $wormbase->misc_dynamic."/BACKUP/$genefinder.$previous_release";
+    my $backup_genefinder = $wormbase->misc_dynamic."/BACKUP/misc_genefinder.ace.$previous_release";
     if (-e $backup_genefinder) {$wormbase->run_command("mv -f $backup_genefinder $genefinder", $log);}
     $wormbase->run_command("mv -f $genefinder $backup_genefinder", $log);
     $wormbase->run_script( "remap_genefinder_between_releases.pl -input $backup_genefinder -out $genefinder", $log);
 
     # remap fosmids
     my $fosmids = $wormbase->misc_dynamic."/fosmids.ace";
-    my $backup_fosmids = $wormbase->misc_dynamic."/BACKUP/$fosmids.$previous_release";
+    my $backup_fosmids = $wormbase->misc_dynamic."/BACKUP/fosmids.ace.$previous_release";
     if (-e $backup_fosmids) {$wormbase->run_command("mv -f $backup_fosmids $fosmids", $log);}
     $wormbase->run_command("mv -f $fosmids $backup_fosmids", $log);
     $wormbase->run_script( "remap_fosmids_between_releases.pl -input $backup_fosmids -out $fosmids", $log);
@@ -322,7 +322,7 @@ sub remap_misc_dynamic {
   }
 
   # the SUPPLEMENTARY_GFF directory is copied over whether or not it has been remapped
-  $wormbase->run_command("cp -R ".$wormbase->build_data."/SUPPLEMENTARY_GFF ".$wormbase->chromosomes."/");
+  $wormbase->run_command("cp -R ".$wormbase->build_data."/SUPPLEMENTARY_GFF ".$wormbase->chromosomes."/", $log);
    
 }
 
