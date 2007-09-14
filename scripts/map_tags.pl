@@ -615,10 +615,7 @@ sub map_sage_tag_genome {
 	$mapping_type='Unambiguously_mapped';
     }
 
-    print OUT "SAGE_tag : \"$tag\"\n";
-    if ($mapping_type) {
-    }
-    print OUT "\n";
+    print OUT "SAGE_tag : \"$tag\"\n\n";
 
     my $taglen=length ($$tagsref{$tag}{seq});
 
@@ -699,18 +696,13 @@ sub map_sage_tag {
 	    else {
 		$exons{${${$seqref}{$_}{rellimits}}[$l]}{type}='end';
 		$exons{${${$seqref}{$_}{rellimits}}[$l]}{number}=$l
-		    
 		}
 	}
-	if (!$exons{$start}) {
-	    $exons{$start}{type}='start';
-	}
-	if (!$exons{$stop}) {
-	    $exons{$stop}{type}='stop';
-	}
+	if (!$exons{$start}) { $exons{$start}{type}='start'}
+	if (!$exons{$stop}) { $exons{$stop}{type}='stop'}
+
 	my $c=0;
-	my $prev;
-	my ($startdiff, $stopdiff);
+	my ($prev,$startdiff, $stopdiff);
 	my @self=();
 	my @gc=();
 	foreach my $b (sort {$a <=> $b} keys %exons) {
@@ -726,22 +718,18 @@ sub map_sage_tag {
 		else {
 		    $startdiff=$b-$prev;
 		}
+
 		push @self, $b;
-		if (${$seqref}{$_}{strand} == 1) {
-		    push @gc, ${${$seqref}{$_}{limits}}[$exons{$prev}{number}] + $startdiff;
-		}
-		else {
-		    push @gc, ${${$seqref}{$_}{limits}}[$exons{$prev}{number}] - $startdiff;
-		}
+
+		if (${$seqref}{$_}{strand} == 1) { push @gc, ${${$seqref}{$_}{limits}}[$exons{$prev}{number}] + $startdiff}
+		else { push @gc, ${${$seqref}{$_}{limits}}[$exons{$prev}{number}] - $startdiff}
+
 		$c++;
+
 		if ($exons{$b}{type} eq 'end') {
 		    push @self, $b;
-		    if (${$seqref}{$_}{strand} == 1) {
-			push @gc, ${${$seqref}{$_}{limits}}[$exons{$prev}{number}] + $startdiff;
-		    }
-		    else {
-			push @gc, ${${$seqref}{$_}{limits}}[$exons{$prev}{number}] - $startdiff;
-		    }
+		    if (${$seqref}{$_}{strand} == 1) { push @gc, ${${$seqref}{$_}{limits}}[$exons{$prev}{number}] + $startdiff}
+		    else { push @gc, ${${$seqref}{$_}{limits}}[$exons{$prev}{number}] - $startdiff}
 		    $c++;
 		}
 		
@@ -753,75 +741,54 @@ sub map_sage_tag {
 		$prev=$b;
 	    }
 	    elsif ($b == $stop) {
-		if ($exons{$b}{type} eq 'begin') {
-		    $stopdiff=0;
-		}
-		else {
-		    $stopdiff=$b-$prev;
-		}
+
+		if ($exons{$b}{type} eq 'begin') { $stopdiff=0}
+		else { $stopdiff=$b-$prev}
+
 		push @self, $b;
-		if (${$seqref}{$_}{strand} == 1) {
-		    push @gc, ${${$seqref}{$_}{limits}}[$exons{$prev}{number}] + $stopdiff;
-		}
-		else {
-		    push @gc, ${${$seqref}{$_}{limits}}[$exons{$prev}{number}] - $stopdiff;
-		}
+
+		if (${$seqref}{$_}{strand} == 1) { push @gc, ${${$seqref}{$_}{limits}}[$exons{$prev}{number}] + $stopdiff}
+		else { push @gc, ${${$seqref}{$_}{limits}}[$exons{$prev}{number}] - $stopdiff}
+
 		$c++;
+		
 		if ($exons{$b}{type} eq 'begin') {
 		    push @self, $b;
-		    if (${$seqref}{$_}{strand} == 1) {
-			push @gc, ${${$seqref}{$_}{limits}}[$exons{$prev}{number}] + $stopdiff;
-		    }
-		    else {
-			push @gc, ${${$seqref}{$_}{limits}}[$exons{$prev}{number}] - $stopdiff;
-		    }
+
+		    if (${$seqref}{$_}{strand} == 1) { push @gc, ${${$seqref}{$_}{limits}}[$exons{$prev}{number}] + $stopdiff}
+		    else { push @gc, ${${$seqref}{$_}{limits}}[$exons{$prev}{number}] - $stopdiff}
+
 		    $c++;
 		}
-		
 		last;
 	    }
-	    else {
-		next;
-	    }
-	}
+	    else { next}
+	} # exon loop end
 	
 	@{$homol_mapping{$_}{self}}=@self;
 	@{$homol_mapping{$_}{gc}}=@gc;
+
 	foreach my $tmp (@self) {
 	    push @{$homol_mapping{$_}{tag}}, ($tmp-$self[0]+1);
 	}
 	
-	
-	
-	
-	
-	
-	
-	print OUT "SAGE_tag : \"$tag\"\n";
+	print OUT "SAGE_tag : \"$tag\"\n"; # start of the SAGE_tag object
+
 	if (${$seqref}{$_}{type} eq 'Coding transcript') {
 	    my $gene=$ct{$_};
 	    if (!$gene) {
 		print "cannot fetch gene for $_\n";
 		next;
 	    }
-	    else {
-		push @{$genes{$gene}}, $_, ${$mapref}{$_}[0];
-	    }
+	    else { push @{$genes{$gene}}, $_, ${$mapref}{$_}[0]}
+
 	    print OUT "Transcript\t\"$_\"\tPosition\t${$mapref}{$_}[0]\n";
 	    print OUT "Transcript\t\"$_\"\tStrand\t$strand\n";
-	    if (/MTCE/) {
-		print OUT "Transcript\t\"$_\"\tTranscript_source\t\"Coding RNA (mitochondrial)\"\n";
-	    }
-	    else {
-		print OUT "Transcript\t\"$_\"\tTranscript_source\t\"Coding RNA\"\n";
-	    }
+	    if (/MTCE/) { print OUT "Transcript\t\"$_\"\tTranscript_source\t\"Coding RNA (mitochondrial)\"\n"}
+	    else { print OUT "Transcript\t\"$_\"\tTranscript_source\t\"Coding RNA\"\n"}
 	    print OUT "Gene\t\"$gene\"\tStrand\t$strand\n";
-	    if (/MTCE/) {
-		print OUT "Gene\t\"$gene\"\tTranscript_source\t\"Coding RNA (mitochondrial)\"\n";
-	    }
-	    else {
-		print OUT "Gene\t\"$gene\"\tTranscript_source\t\"Coding RNA\"\n";
-	    }
+	    if (/MTCE/) { print OUT "Gene\t\"$gene\"\tTranscript_source\t\"Coding RNA (mitochondrial)\"\n"}
+	    else { print OUT "Gene\t\"$gene\"\tTranscript_source\t\"Coding RNA\"\n"; }
 	    print OUT "\n";
 
 	    print OUT "Transcript : \"$_\"\n";
@@ -838,24 +805,14 @@ sub map_sage_tag {
 		print "cannot fetch gene for $_\n";
 		next;
 	    }
-	    else {
-		push @{$genes{$gene}}, $_, ${$mapref}{$_}[0];
-	    }
+	    else { push @{$genes{$gene}}, $_, ${$mapref}{$_}[0]}
 	    print OUT "Transcript\t\"$_\"\tPosition\t${$mapref}{$_}[0]\n";
 	    print OUT "Transcript\t\"$_\"\tStrand\t$strand\n";
-	    if (/MTCE/) {
-		print OUT "Transcript\t\"$_\"\tTranscript_source\t\"Non-coding RNA (mitochondrial)\"\n";
-	    }
-	    else {
-		print OUT "Transcript\t\"$_\"\tTranscript_source\t\"Non-coding RNA\"\n";
-	    }
+	    if (/MTCE/) { print OUT "Transcript\t\"$_\"\tTranscript_source\t\"Non-coding RNA (mitochondrial)\"\n"}
+	    else { print OUT "Transcript\t\"$_\"\tTranscript_source\t\"Non-coding RNA\"\n"}
 	    print OUT "Gene\t\"$gene\"\tStrand\t$strand\n";
-	    if (/MTCE/) {
-		print OUT "Gene\t\"$gene\"\tTranscript_source\t\"Non-coding RNA (mitochondrial)\"\n";
-	    }
-	    else {
-		print OUT "Gene\t\"$gene\"\tTranscript_source\t\"Non-coding RNA\"\n";
-	    }
+	    if (/MTCE/) { print OUT "Gene\t\"$gene\"\tTranscript_source\t\"Non-coding RNA (mitochondrial)\"\n"}
+	    else { print OUT "Gene\t\"$gene\"\tTranscript_source\t\"Non-coding RNA\"\n"}
 	    print OUT "\n";
 
 	    print OUT "Transcript : \"$_\"\n";
@@ -872,9 +829,8 @@ sub map_sage_tag {
 		print "cannot fetch gene for $_\n";
 		next;
 	    }
-	    else {
-		push @{$genes{$gene}}, $_, ${$mapref}{$_}[0];
-	    }
+	    else { push @{$genes{$gene}}, $_, ${$mapref}{$_}[0]; }
+
 	    print OUT "Pseudogene\t\"$_\"\tPosition\t${$mapref}{$_}[0]\n";
 	    print OUT "Pseudogene\t\"$_\"\tStrand\t$strand\n";
 	    print OUT "Pseudogene\t\"$_\"\tTranscript_source\t\"Pseudogene\"\n";
@@ -890,6 +846,7 @@ sub map_sage_tag {
 	    print OUT "SAGE_tag\t\"$tag\"\tStrand\t$strand\n";
 	    print OUT "\n";
 	}
+	print OUT "\n"; # end of Corresponding_cds
     }
     
     if ($type eq 'transcript') {
@@ -964,7 +921,7 @@ sub map_sage_tag {
 		print OUT "\n";
 	    }
 	}
-	print OUT "\n";
+	print OUT "\n"; # end of Corresponding_transcript
     }
     
     foreach my $tr (keys %homol_mapping) {
