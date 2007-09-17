@@ -7,7 +7,7 @@
 # Do fast overlap matching of positions of two sets of things.
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2007-09-05 09:53:46 $      
+# Last updated on: $Date: 2007-09-17 08:38:27 $      
 
 =pod
 
@@ -469,6 +469,35 @@ sub get_mRNA_BEST {
      file			=> "CHROMOSOME_${chromosome}_BLAT_mRNA_BEST.gff",
      gff_source			=> "BLAT_mRNA_BEST",
      gff_type			=> "cDNA_match",
+     ID_after			=> "Target\\s+\"Sequence:",
+     reverse_orientation        => 1,
+     homology                   => 1,
+   );
+
+  return $self->read_GFF_file(\%GFF_data);
+
+}
+
+=head2
+
+    Title   :   get_RST_BEST
+    Usage   :   my @gff = $ovlp->get_RST_BEST($chromosome)
+    Function:   reads the GFF data for RST BEST
+    Returns :   list of lists for GFF data
+    Args    :   chromosome number
+
+=cut
+
+sub get_RST_BEST {
+  my $self = shift;
+  my ($chromosome) = @_;
+
+  my %GFF_data = 
+   (
+     directory			=> $self->{wormbase}->gff_splits,
+     file			=> "CHROMOSOME_${chromosome}_BLAT_RST_BEST.gff",
+     gff_source			=> "BLAT_RST_BEST",
+     gff_type			=> "expressed_sequence_match",
      ID_after			=> "Target\\s+\"Sequence:",
      reverse_orientation        => 1,
      homology                   => 1,
