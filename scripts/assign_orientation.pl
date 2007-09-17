@@ -9,7 +9,7 @@
 # transcripts to find the most probably orientation.
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2007-09-17 09:05:31 $      
+# Last updated on: $Date: 2007-09-17 09:28:13 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -40,11 +40,11 @@ GetOptions ("help"       => \$help,
 	    "store:s"    => \$store,
 	    "load"       => \$load,
 	    "all"        => \$all, # do all EST sequences, not just the ones with no orientation
-	    "gff_directory" => \$gff_directory,	# stuff to specify a specific GFF file to search
-	    "gff_file"      => \$gff_file,
-	    "gff_source"    => \$gff_source,
-	    "gff_type"      => \$gff_type,
-	    "ID_after"      => \$ID_after);
+	    "gff_directory:s" => \$gff_directory,	# stuff to specify a specific GFF file to search
+	    "gff_file:s"      => \$gff_file,
+	    "gff_source:s"    => \$gff_source,
+	    "gff_type:s"      => \$gff_type,
+	    "ID_after:s"      => \$ID_after);
 
 
 if ( $store ) {
@@ -104,13 +104,18 @@ foreach my $chromosome ($wormbase->get_chromosome_names(-mito => 1, -prefix => 0
 
   # if a specific GFF file is given, read that in instead of the normal EST etc sequences to check
   if ($gff_directory && $gff_file && $gff_source && $gff_type && $ID_after) {
-    @est_hsp = $ovlp->read_GFF_file(directory=>$gff_directory,
-				    gff_file=>$prefix . $chromosome . "_" . $gff_file, 
-				    gff_source=>$gff_source, 
-				    gff_type=>$gff_type,
-				    ID_after=>$ID_after, 
-				    reverse_orientation=>1,
-				    homology=>1);
+    print "gff_file = $gff_file\n";
+    my %GFF_data = (
+		    directory=>$gff_directory,
+		    file=>$prefix . $chromosome . "_" . $gff_file, 
+		    gff_source=>$gff_source, 
+		    gff_type=>$gff_type,
+		    ID_after=>$ID_after, 
+		    reverse_orientation=>1,
+		    homology=>1
+		    );
+    print "gff_file in hash=" . $GFF_data{file} . "\n";
+    @est_hsp = $ovlp->read_GFF_file(\%GFF_data);
   } else {
     @est_hsp = $ovlp->get_EST_BEST($chromosome); # get main list of EST entries to search with
     push @est_hsp, $ovlp->get_OST_BEST($chromosome); # and add on the list of OSTs ..
