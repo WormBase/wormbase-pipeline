@@ -7,7 +7,7 @@
 # wrapper script for running transcript_builder.pl
 #
 # Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2007-06-05 08:37:02 $
+# Last edited on: $Date: 2007-09-17 15:01:29 $
 
 use lib $ENV{CVS_DIR};
 use Wormbase;
@@ -51,12 +51,11 @@ $wormbase->checkLSF($log);
 
 $database = $wormbase->autoace unless $database;
 unless ( $no_run ){
-  my @chromosomes = split(/,/,join(',',$chrom_choice));
+  my @chromosomes = $wormbase->get_chromosome_names(); # mo MtDNA
+  @chromosomes = split(/,/,join(',',$chrom_choice)) if $chrom_choice;
 
   $gff_dir  = $wormbase->gff unless $gff_dir;
   $dump_dir = $wormbase->transcripts unless $dump_dir;
-  #MtDNA removed from @chromosomes as the MtDNA Transcripts have been hand curated.
-  @chromosomes = qw(I II III IV V X) unless @chromosomes;
 
   # make a Coords_converter to write the coords files. Otherwise all 6 processes try and do it.
   my $coords = Coords_converter->invoke($database,1, $wormbase);
