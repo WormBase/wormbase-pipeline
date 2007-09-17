@@ -9,7 +9,7 @@
 # transcripts to find the most probably orientation.
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2007-09-17 08:41:43 $      
+# Last updated on: $Date: 2007-09-17 08:54:24 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -84,6 +84,8 @@ print "find EST orientation\n" if ($verbose);
 my %Show_in_reverse_orientation = $wormbase->FetchData('estorientation');
 my $pwm = PWM->new;
 
+my $prefix=$wormbase->chromosome_prefix;
+
 # loop through the chromosomes
 foreach my $chromosome ($wormbase->get_chromosome_names(-mito => 1, -prefix => 0)) {
 
@@ -103,7 +105,7 @@ foreach my $chromosome ($wormbase->get_chromosome_names(-mito => 1, -prefix => 0
   # if a specific GFF file is given, read that in instead of the normal EST etc sequences to check
   if ($gff_directory && $gff_file && $gff_source && $gff_type && $ID_after) {
     @est_hsp = $ovlp->read_GFF_file(directory=>$gff_directory,
-				    gff_file=>$gff_file, 
+				    gff_file=>$wormbase->prefix . $chromosome . "_" . $gff_file, 
 				    gff_source=>$gff_source, 
 				    gff_type=>$gff_type,
 				    ID_after=>$ID_after, 
@@ -573,7 +575,7 @@ script_template.pl  OPTIONAL arguments:
 
 =over 4
 
-=item -gff_file, if a specific GFF file is to be read in, this is the file name.
+=item -gff_file, if a specific GFF file is to be read in, this is the file name (without the chromosome prefix and number eg 'BLAT_mRNA_OTHER.gff').
 
 =back
 
