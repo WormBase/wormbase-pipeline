@@ -9,7 +9,7 @@
 # transcripts to find the most probably orientation.
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2007-09-10 13:10:26 $      
+# Last updated on: $Date: 2007-09-17 08:41:43 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -112,7 +112,8 @@ foreach my $chromosome ($wormbase->get_chromosome_names(-mito => 1, -prefix => 0
   } else {
     @est_hsp = $ovlp->get_EST_BEST($chromosome); # get main list of EST entries to search with
     push @est_hsp, $ovlp->get_OST_BEST($chromosome); # and add on the list of OSTs ..
-    push @est_hsp, $ovlp->get_mRNA_BEST($chromosome); # and the list of mRNAs
+    push @est_hsp, $ovlp->get_mRNA_BEST($chromosome); # and the list of mRNAs ...
+    push @est_hsp, $ovlp->get_RST_BEST($chromosome); # and the list of RSTs
   }
   @est_hsp = sort {$a->[1] <=> $b->[1]} @est_hsp; # and ensure it is sorted by chromosomal start position
 
