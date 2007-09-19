@@ -2,13 +2,13 @@
 #
 # splitgene_brig.pl
 #
-# by Keith Bradnam
+# by Mary Ann Tuli
 #
 # simple script for creating new (sequence based) Gene objects when splitting 
 # existing Caenorhabditis briggsae gene 
 #
 # Last edited by: $Author: mt3 $
-# Last edited on: $Date: 2007-09-19 15:53:33 $
+# Last edited on: $Date: 2007-09-19 15:57:46 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
