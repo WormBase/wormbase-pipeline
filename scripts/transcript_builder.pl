@@ -6,8 +6,8 @@
 #
 # Script to make ?Transcript objects
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2007-09-07 15:31:00 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2007-09-20 08:32:14 $
 use strict;
 use lib $ENV{'CVS_DIR'};
 use Getopt::Long;
@@ -479,7 +479,7 @@ sub load_EST_data
     my %est_orient;
     $wormbase->FetchData("estorientation",\%est_orient);
     foreach my $EST ( keys %est_orient ) {
-      if ( $$cDNA_span{$EST} ) {
+      if ( exists $$cDNA_span{$EST} && defined $$cDNA_span{$EST}->[2]) {
 	my $GFF_strand = $$cDNA_span{$EST}->[2];
 	my $read_dir = $est_orient{$EST};
       CASE:{
