@@ -369,11 +369,11 @@ sub get_cds {
                                         # enforce some assertion
 					next unless ($frame + length($from_na) < 4); # has to fit in the codon
 					unless ($frame <= 2 && $frame >= 0){ # has to be 0 1 2
-						$log->write_to("BUG: $allele has a strange frame ($frame)\n");
+						$log->write_to("BUG: $k has a strange frame ($frame)\n");
 						next;
 					}
 					unless(length($from_codon)==3){ # codons have to be 3bp long
-						$log->write_to("BUG: $allele has a strange mutated codon ($from_codon)\n");
+						$log->write_to("BUG: $k has a strange mutated codon ($from_codon)\n");
 						next;
 					}
 
