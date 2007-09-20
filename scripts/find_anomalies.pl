@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2007-09-03 14:06:05 $      
+# Last updated on: $Date: 2007-09-20 15:10:28 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -119,7 +119,6 @@ foreach my $chromosome (@chromosomes) {
   $log->write_to("Processing chromosome $chromosome\n");
                                                                                                    
   # get the data
-
   print "reading coding transcripts\n";
   my @coding_transcripts = &get_coding_transcripts($database, $chromosome);
 
@@ -187,6 +186,11 @@ foreach my $chromosome (@chromosomes) {
   print "reading repeat masked regions\n";
   my @repeatmasked = &get_repeatmasked($database, $chromosome);
 
+  print "reading UTRs\n";
+  my @UTRs_5 = &get_5_UTRs($database, $chromosome);
+  my @UTRs_3 = &get_3_UTRs($database, $chromosome);
+  
+
 
   # get the homologies showing no match to any exon or pseudogene
   # and those with a match to a coding exon
@@ -235,8 +239,12 @@ foreach my $chromosome (@chromosomes) {
   print "finding EST/genome mismatches\n";
   &get_est_mismatches(\@est, $chromosome);
 
-  print "finding weak CDS exon splice sites";
+  print "finding weak CDS exon splice sites\n";
   &get_weak_exon_splice_sites(\@cds_exons, $chromosome);
+
+  print "finding multiple UTR introns\n";
+  &get_multiple_utr_introns(\@UTRs_5, $chromosome);
+  &get_multiple_utr_introns(\@UTRs_3, $chromosome);
 
   print "read confirmed_introns and other GFF files\n";
   &get_GFF_files($chromosome);
@@ -289,6 +297,8 @@ foreach my $chromosome (@chromosomes) {
 &delete_anomalies("REPEAT_OVERLAPS_EXON");
 &delete_anomalies("MERGE_GENE_BY_PROTEIN");
 &delete_anomalies("WEAK_INTRON_SPLICE_SITE");
+&delete_anomalies("UNMATCHED_TWINSCAN");
+&delete_anomalies("UNMATCHED_GENEFINDER");
 
 
 # disconnect from the mysql database
@@ -709,6 +719,54 @@ sub get_repeatmasked {
      gff_type			=> "repeat_region",
      anomaly_type		=> "",
      ID_after			=> "Target\\s+\"Motif:",
+     action                     => ["return_result"],
+   );
+
+  return &read_GFF_file(\%GFF_data);
+
+}
+
+##########################################
+# get the 5' UTRs
+#  my @repeatmasked = get_5_UTRs($database, $chromosome);
+#CHROMOSOME_X    Coding_transcript       five_prime_UTR  2715086 2715173 .       -       .       Transcript "T02C5.5d.3"
+
+sub get_5_UTRs {
+  my ($database, $chromosome) = @_;
+
+
+  my %GFF_data = 
+   (
+     directory			=> "$database/GFF_SPLITS/",
+     file			=> "CHROMOSOME_${chromosome}_UTR.gff",
+     gff_source			=> "Coding_transcript",
+     gff_type			=> "five_prime_UTR",
+     anomaly_type		=> "",
+     ID_after			=> 'Transcript\s+',
+     action                     => ["return_result"],
+   );
+
+  return &read_GFF_file(\%GFF_data);
+
+}
+
+##########################################
+# get the 3' UTRs
+#  my @repeatmasked = get_3_UTRs($database, $chromosome);
+#CHROMOSOME_X    Coding_transcript       three_prime_UTR  2715086 2715173 .       -       .       Transcript "T02C5.5d.3"
+
+sub get_3_UTRs {
+  my ($database, $chromosome) = @_;
+
+
+  my %GFF_data = 
+   (
+     directory			=> "$database/GFF_SPLITS/",
+     file			=> "CHROMOSOME_${chromosome}_UTR.gff",
+     gff_source			=> "Coding_transcript",
+     gff_type			=> "three_prime_UTR",
+     anomaly_type		=> "",
+     ID_after			=> 'Transcript\s+',
      action                     => ["return_result"],
    );
 
@@ -2380,6 +2438,61 @@ sub get_matched_repeatmasker {
 
 }
 
+##########################################
+# get the UTRs which have got 3 or more exons
+sub get_multiple_utr_introns {
+
+  my ($UTR_aref, $chromosome) = @_;
+
+
+  my %output;
+  my %output_start;
+  my %output_end;
+  my %output_strand;
+
+  my $count;
+  my $prev = "";
+
+  foreach my $utr (@{$UTR_aref}) { # $id, $chrom_start, $chrom_end, $chrom_strand
+
+    # output multiple UTR exons to the database
+    my $id = $utr->[0];
+    my $chrom_start = $utr->[1];
+    my $chrom_end = $utr->[2];
+    my $chrom_strand = $utr->[3];
+
+    # we don't want to see UTRs from isoform transcripts - there are too many mangled UTRs in them
+    if ($id !~ /^\S+\.\d+$/) {next;} 
+
+    if ($prev ne $id) {
+      $prev = $id;
+      $count = 0;
+    }
+    $count++;
+    if ($count > 2) {
+      $output{$id} = $count;
+      if ($count == 3) {$output_start{$id} = $chrom_start;}
+      $output_end{$id} = $chrom_end;
+      $output_strand{$id} = $chrom_strand;
+    }
+  }
+
+  # now output the ones we have found
+  foreach my $id (keys %output) {
+    &output_to_database("INTRONS_IN_UTR", $chromosome, $id, $output_start{$id}, $output_end{$id}, $output_strand{$id}, $output{$id}, '');
+  }
+
+}
+
+
+####################################################################################
+####################################################################################
+####################################################################################
+####################################################################################
+
+
+
+
 
 ##########################################
 # resets the match state before a search
@@ -2521,7 +2634,6 @@ sub match {
   return $got_a_match;
 
 }
-
 
 ##########################################
 # get GFF files from various locations
