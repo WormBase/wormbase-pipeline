@@ -220,7 +220,7 @@ sub report
     print $fh "Method Coding_transcript\n";  
 
     foreach (@{$self->{'matching_cdna'}}) {
-      print $fh "\nSequence :\"",$_->name,"\n";
+      print $fh "\nSequence : \"",$_->name,"\"\n";
       print $fh "Matching_transcript ",$self->name," Inferred_Automatically \"transcript_builder.pl\"\n";
     }
   }

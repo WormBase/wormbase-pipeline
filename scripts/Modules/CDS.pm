@@ -259,7 +259,7 @@ sub report
     }
 
     foreach (@{$self->{'matching_cdna'}}) {
-      print $fh "\nSequence :\"",$_->name,"\n";
+      print $fh "\nSequence : \"",$_->name,"\"\n";
       print $fh "Matching_CDS ",$self->name," Inferred_Automatically \"transcript_builder.pl\"\n";
     }
 
