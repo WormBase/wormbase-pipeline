@@ -6,8 +6,8 @@
 #
 # Script to run consistency checks on the geneace database
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2007-03-09 11:30:47 $
+# Last updated by: $Author: mt3 $
+# Last updated on: $Date: 2007-09-20 13:31:47 $
 
 use strict;
 use lib $ENV{"CVS_DIR"};
@@ -278,7 +278,7 @@ sub process_gene_class{
   # Look for Species tag but no Species field after it
   foreach my $gene ($db->fetch(-query=>"Find Gene WHERE Species AND NOT NEXT")){
     print LOG "ERROR: $gene has a 'Species' tag but no value\n";
-  }
+ }
 
   # checks that a genes with alleles are not dead (i.e. merged into something else)
   foreach my $gene ($db->fetch(-query=>"Find Gene WHERE NOT Live AND Allele")){
@@ -388,6 +388,9 @@ sub test_locus_for_errors{
   if( defined $gene_id->Gene_class && defined $gene_id->CGC_name ){
     my $cgc_name = $gene_id->CGC_name;
     my $gc_name = $cgc_name;
+    if ( $gc_name =~ /C\w\w/){
+	$gc_name =~ s/C\w\w-//;
+       }
     $gc_name =~ s/-.+//;
     my $gc = $gene_id->Gene_class;
 
@@ -952,6 +955,11 @@ sub process_allele_class{
     # Check for CGC_name tag missing
     if (!defined($allele->CGC_name)) {
 	print LOG "ERROR: $allele has no CGC_name tag\n";
+    }
+
+    # Check for Public_name tag missing
+    if (!defined($allele->Public_name)) {
+	print LOG "ERROR: $allele has no Public_name tag\n";
     }
 
     # Check for Status tag missing
