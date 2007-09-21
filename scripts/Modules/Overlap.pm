@@ -7,7 +7,7 @@
 # Do fast overlap matching of positions of two sets of things.
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2007-09-17 08:38:27 $      
+# Last updated on: $Date: 2007-09-21 13:00:23 $      
 
 =pod
 
@@ -278,15 +278,25 @@ sub read_GFF_file {
   my ($id, $hit_start, $hit_end);
 
   foreach my $file (@files) {
-    open (GFF, "< $file") || die "Can't open $file\n";
-    while (my $line = <GFF>) {
+
+    # see if we have to read in the files from disk, or can we reuse a previous read?
+    if (! exists $self->{files}{$file}) {
+      open (GFF, "< $file") || die "Can't open $file\n";
+      my @file = <GFF>;
+      close (GFF);
+      $self->{files}{$file} = \@file;
+    }
+
+#    open (GFF, "< $file") || die "Can't open $file\n";
+#    while (my $line = <GFF>) {
+    foreach my $line (@{$self->{files}{$file}}) {
       chomp $line;
       if ($line =~ /^\s*$/) {next;}
       if ($line =~ /^#/) {next;}  
       my @f = split /\t/, $line;
       my ($chromosome, $source, $type, $start, $end, $sense) = ($f[0], $f[1], $f[2], $f[3], $f[4], $f[6]);
-      if ($GFF_data->{gff_source} ne $source) {next;}
-      if ($GFF_data->{gff_type} ne $type) {next;}
+      if ($GFF_data->{gff_source} ne "" && $GFF_data->{gff_source} ne $source) {next;}
+      if ($GFF_data->{gff_type} ne "" && $GFF_data->{gff_type} ne $type) {next;}
       if (exists $GFF_data->{homology}) {	# do we need to store the homology data?
 	($id, $hit_start, $hit_end) = ($f[8] =~ /$GFF_data->{ID_after}(\S+)\s+(\d+)\s+(\d+)/);
 	if ($f[5] =~ /\d+/) {$score = $f[5]}; # if the score is numeric, store it
@@ -303,7 +313,7 @@ sub read_GFF_file {
 	push @result, [$id, $start, $end, $sense];		
       }
     }
-    close (GFF);
+#    close (GFF);
   }
       
   # The 3' reads of the ESTs/OSTs/mRNAs BLAT results are really in the reverse sense to
@@ -818,7 +828,7 @@ sub get_pseudogene {
 
 =head2
 
-    Title   :   get_rRNA_transcipts
+    Title   :   get_rRNA_transcripts
     Usage   :   my @gff = $ovlp->get_rRNA_transcipts($chromosome)
     Function:   reads the GFF data for rRNA transcipts
     Returns :   list of lists for GFF data
@@ -826,7 +836,7 @@ sub get_pseudogene {
 
 =cut
 
-sub get_rRNA_transcipts {
+sub get_rRNA_transcripts {
   my $self = shift;
   my ($chromosome) = @_;
 
@@ -918,7 +928,7 @@ sub get_genefinder_exons {
      directory			=> $self->{wormbase}->chromosomes,
      file			=> "CHROMOSOME_${chromosome}.gff",
      gff_source			=> "Genefinder",
-     gff_type			=> "exon",
+     gff_type			=> "coding_exon",
      ID_after			=> "CDS\\s+",
    );
 
@@ -972,13 +982,287 @@ sub get_twinscan_exons {
      directory			=> $self->{wormbase}->chromosomes,
      file			=> "CHROMOSOME_${chromosome}.gff",
      gff_source			=> "twinscan",
-     gff_type			=> "exon",
+     gff_type			=> "coding_exon",
      ID_after			=> "CDS\\s+",
    );
 
   return $self->read_GFF_file(\%GFF_data);
 
 }
+
+=head2
+
+    Title   :   get_transposons
+    Usage   :   my @gff = $ovlp->get_transposons($chromosome)
+    Function:   reads the GFF data for transposons
+    Returns :   list of lists for GFF data
+    Args    :   chromosome number
+
+=cut
+
+sub get_transposons {
+  my $self = shift;
+  my ($chromosome) = @_;
+
+  my %GFF_data = 
+   (
+     directory			=> $self->{wormbase}->gff_splits,
+     file			=> "CHROMOSOME_${chromosome}_Transposon.gff",
+     gff_source			=> "Transposon",
+     gff_type			=> "transposable_element",
+     ID_after			=> "Transposon\\s+",
+   );
+
+  return $self->read_GFF_file(\%GFF_data);
+
+}
+
+=head2
+
+    Title   :   get_transposon_exons
+    Usage   :   my @gff = $ovlp->get_transposon_exons($chromosome)
+    Function:   reads the GFF data for transposon exons
+    Returns :   list of lists for GFF data
+    Args    :   chromosome number
+
+=cut
+
+sub get_transposon_exons {
+  my $self = shift;
+  my ($chromosome) = @_;
+
+  my %GFF_data = 
+   (
+     directory			=> $self->{wormbase}->gff_splits,
+     file			=> "CHROMOSOME_${chromosome}_Transposon_CDS.gff",
+     gff_source			=> "Transposon_CDS",
+     gff_type			=> "coding_exon",
+     ID_after			=> "CDS\\s+",
+   );
+
+  return $self->read_GFF_file(\%GFF_data);
+
+}
+
+=head2
+
+    Title   :   get_TSL_SL1
+    Usage   :   my @gff = $ovlp->get_TSL_SL1($chromosome)
+    Function:   reads the GFF data for TSL SL1
+    Returns :   list of lists for GFF data
+    Args    :   chromosome number
+
+=cut
+
+sub get_TSL_SL1 {
+  my $self = shift;
+  my ($chromosome) = @_;
+
+  my %GFF_data = 
+   (
+     directory			=> $self->{wormbase}->gff_splits,
+     file			=> "CHROMOSOME_${chromosome}_SL1.gff",
+     gff_source			=> "SL1",
+     gff_type			=> "SL1_acceptor_site",
+     ID_after			=> 'Feature\s+',
+   );
+
+  return $self->read_GFF_file(\%GFF_data);
+
+}
+
+=head2
+
+    Title   :   get_TSL_SL2
+    Usage   :   my @gff = $ovlp->get_TSL_SL2($chromosome)
+    Function:   reads the GFF data for TSL SL2
+    Returns :   list of lists for GFF data
+    Args    :   chromosome number
+
+=cut
+
+sub get_TSL_SL2 {
+  my $self = shift;
+  my ($chromosome) = @_;
+
+  my %GFF_data = 
+   (
+     directory			=> $self->{wormbase}->gff_splits,
+     file			=> "CHROMOSOME_${chromosome}_SL2.gff",
+     gff_source			=> "SL2",
+     gff_type			=> "SL2_acceptor_site",
+     ID_after			=> 'Feature\s+',
+   );
+
+  return $self->read_GFF_file(\%GFF_data);
+
+}
+
+=head2
+
+    Title   :   get_SAGE_transcripts
+    Usage   :   my @gff = $ovlp->get_SAGE_transcripts($chromosome)
+    Function:   reads the GFF data for SAGE transcripts
+    Returns :   list of lists for GFF data
+    Args    :   chromosome number
+
+=cut
+
+sub get_SAGE_transcripts {
+  my $self = shift;
+  my ($chromosome) = @_;
+
+  my %GFF_data = 
+   (
+     directory			=> $self->{wormbase}->gff_splits,
+     file			=> "CHROMOSOME_${chromosome}_SAGE_transcript.gff",
+     gff_source			=> "SAGE_transcript",
+     gff_type			=> "transcript",
+     ID_after			=> "SAGE_transcript\\s+",
+   );
+
+  return $self->read_GFF_file(\%GFF_data);
+
+}
+
+=head2
+
+    Title   :   get_blastx_homologies
+    Usage   :   my @gff = $ovlp->get_blastx_homologies($chromosome)
+    Function:   reads the GFF data for the protein blastx homologies
+    Returns :   list of lists for GFF data
+    Args    :   chromosome number
+
+=cut
+
+sub get_blastx_homologies {
+  my $self = shift;
+  my ($chromosome) = @_;
+
+  my %GFF_data = 
+   (
+     directory			=> $self->{wormbase}->chromosomes,
+     file			=> "CHROMOSOME_${chromosome}.gff",
+     gff_source			=> "wublastx",
+     gff_type			=> "protein_match",
+     homology			=> "1",	# this is a GFF with homology data that we need to store
+     ID_after			=> "Target\\s+\"Protein:",
+   );
+
+  return $self->read_GFF_file(\%GFF_data);
+
+}
+
+=head2
+
+    Title   :   get_waba_coding
+    Usage   :   my @gff = $ovlp->get_waba_coding($chromosome)
+    Function:   reads the GFF data for the WABA coding potential
+    Returns :   list of lists for GFF data
+    Args    :   chromosome number
+
+=cut
+
+sub get_waba_coding {
+  my $self = shift;
+  my ($chromosome) = @_;
+
+  my %GFF_data = 
+   (
+     directory			=> $self->{wormbase}->chromosomes,
+     file			=> "CHROMOSOME_${chromosome}.gff",
+     gff_source			=> "waba_coding",
+     gff_type			=> "nucleotide_match",
+     homology			=> "1",	# this is a GFF with homology data that we need to store
+     ID_after			=> "Target\\s+\"Sequence:",
+   );
+
+  return $self->read_GFF_file(\%GFF_data);
+
+}
+
+=head2
+
+    Title   :   get_repeatmasked
+    Usage   :   my @gff = $ovlp->get_repeatmasked($chromosome)
+    Function:   reads the GFF data for the RepeatMasked regions
+    Returns :   list of lists for GFF data
+    Args    :   chromosome number
+
+=cut
+
+sub get_repeatmasked {
+  my $self = shift;
+  my ($chromosome) = @_;
+
+  my %GFF_data = 
+   (
+     directory			=> $self->{wormbase}->chromosomes,
+     file			=> "CHROMOSOME_${chromosome}.gff",
+     gff_source			=> "RepeatMasker",
+     gff_type			=> "repeat_region",
+     ID_after			=> "Target\\s+\"Motif:",
+   );
+
+  return $self->read_GFF_file(\%GFF_data);
+
+}
+
+=head2
+
+    Title   :   get_5_UTRs
+    Usage   :   my @gff = $ovlp->get_5_UTRs($chromosome)
+    Function:   reads the GFF data for the 5-prime UTRs
+    Returns :   list of lists for GFF data
+    Args    :   chromosome number
+
+=cut
+
+sub get_5_UTRs {
+  my $self = shift;
+  my ($chromosome) = @_;
+
+  my %GFF_data = 
+   (
+     directory			=> $self->{wormbase}->gff_splits,
+     file			=> "CHROMOSOME_${chromosome}_UTR.gff",
+     gff_source			=> "Coding_transcript",
+     gff_type			=> "five_prime_UTR",
+     ID_after			=> 'Transcript\s+',
+   );
+
+  return $self->read_GFF_file(\%GFF_data);
+
+}
+
+=head2
+
+    Title   :   get_3_UTRs
+    Usage   :   my @gff = $ovlp->get_3_UTRs($chromosome)
+    Function:   reads the GFF data for the 3-prime UTRs
+    Returns :   list of lists for GFF data
+    Args    :   chromosome number
+
+=cut
+
+sub get_3_UTRs {
+  my $self = shift;
+  my ($chromosome) = @_;
+
+  my %GFF_data = 
+   (
+     directory			=> $self->{wormbase}->gff_splits,
+     file			=> "CHROMOSOME_${chromosome}_UTR.gff",
+     gff_source			=> "Coding_transcript",
+     gff_type			=> "three_prime_UTR",
+     ID_after			=> 'Transcript\s+',
+   );
+
+  return $self->read_GFF_file(\%GFF_data);
+
+}
+
+############################################################################
 
 =head2
 
