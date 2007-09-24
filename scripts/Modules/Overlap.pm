@@ -7,7 +7,7 @@
 # Do fast overlap matching of positions of two sets of things.
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2007-09-21 13:00:23 $      
+# Last updated on: $Date: 2007-09-24 13:07:59 $      
 
 =pod
 
@@ -400,6 +400,69 @@ sub get_span {
   # return result sorted by chromosomal start position
   return sort {$a->[1] <=> $b->[1]} @out;
 }
+
+=head2
+
+    Title   :   get_paired_span
+    Usage   :   my @est_paired_span = $ovlp->get_paired_span(@est);
+    Function:   get chromosomal position span from start to finish of all of HSPs including from any pairs of sequences
+    Returns :   list of lists for GFF data of full span of IDs including paired reads from start to end
+    Args    :   list of lists for GFF data of HSP hits
+
+=cut
+
+sub get_paired_span {
+  my $self = shift;
+  my (@input) = @_;
+
+  my %pairs;
+
+  # load paired read info
+  my $pairs = $self->{wormbase}->autoace."/EST_pairs.txt";    
+  open ( PAIRS, "<$pairs") or die("Cant open $pairs :\t$!\n");
+  while ( <PAIRS> ) {
+    chomp;
+    s/\"//g;
+    s/Sequence://g;
+    next if( ( $_ =~ /acedb/) or ($_ =~ /\/\//) or $_ =~ /^\s*$/);
+    my @data = split;
+    $pairs{$data[0]} =  $data[1];
+    $pairs{$data[1]} =  $data[0];
+  }
+  close PAIRS;
+
+  my %store;
+  # go through ests
+  # if the pair of this est has its start,end stored then expand the stored start,end
+  # else if this est has its start,end stored then expand the stored start,end
+  # else store this est
+  foreach my $est (@input) {
+    my $id = $est->[0];
+    my $pair = $pairs{$id};
+    if (defined $pair && exists $store{$pair}) {
+      my $start = $store{$pair}->[1];
+      my $end = $store{$pair}->[2];
+      if ($est->[1] > $start) {$store{$pair}->[1] = $est->[1];} # get greatest span
+      if ($est->[2] < $end) {$store{$pair}->[2] = $est->[2];}
+      
+    } elsif (exists $store{$id}) {
+      my $start = $store{$id}->[1];
+      my $end = $store{$id}->[2];
+      if ($est->[1] > $start) {$store{$id}->[1] = $est->[1];} # get greatest span
+      if ($est->[2] < $end) {$store{$id}->[2] = $est->[2];}
+
+    } else {
+      $store{$id} = $est;
+    }
+  }
+
+  my @out = values %store;
+
+  # return result sorted by chromosomal start position
+  return sort {$a->[1] <=> $b->[1]} @out;
+
+}
+
 
 =head2
 
