@@ -18,11 +18,11 @@ $|=9;
 
 GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
-	  	  	"test"       => \$test,
-	    	"verbose"    => \$verbose,
-	    	"store:s"    => \$store,
-	    	"database:s" => \$acedbpath,
-	    	"output:s"   => \$output
+	    "test"       => \$test,
+	    "verbose"    => \$verbose,
+	    "store:s"    => \$store,
+	    "database:s" => \$acedbpath,
+	    "output:s"   => \$output
 	    );
 
 my $program_name=$0=~/([^\/]+)$/ ? $1 : '';
@@ -63,14 +63,14 @@ my $db = Ace->connect(-path => $acedbpath,  -program => $tace) or $log->log_and_
 warn "done\n";
 
 my %names=();
-my @aql_results=$db->aql("select a, a->public_name from a in class gene");
+my @aql_results=$db->aql('select a, a->public_name from a in class gene');
 foreach (@aql_results) {
     $names{$_->[0]}=$_->[1];
 }
 warn scalar keys %names , " genes read\n";
 
 my %variations=();
-@aql_results=$db->aql("select a, a->gene from a in class variation where exists a->gene");
+@aql_results=$db->aql('select a, a->gene from a in class variation where exists a->gene');
 foreach (@aql_results) {
     push @{$variations{$_->[0]}}, $_->[1];
 }
@@ -80,8 +80,7 @@ my $out;
 $output = $wormbase->ontology."/phenotype_association.".$wormbase->get_wormbase_version_name.".wb" unless $output;
 open($out, ">$output") or $log->log_and_die("cannot open $output : $!\n");
 
-my $query="find Variation Phenotype";
-my $it=$db->fetch_many(-query=>$query);
+my $it=$db->fetch_many(-query=>'find Variation Phenotype');
 
 my $count=0;
 while (my $obj=$it->next) {
@@ -128,9 +127,7 @@ while (my $obj=$it->next) {
     %pheno=();
 }
 
-$query="find RNAi Phenotype";
-
-$it=$db->fetch_many(-query=>$query);
+$it=$db->fetch_many(-query=>'find RNAi Phenotype');
 $count=0;
 while (my $obj=$it->next) {
     next unless $obj->isObject();
@@ -143,7 +140,7 @@ while (my $obj=$it->next) {
     my @genes=();
     my %pheno=();
     foreach (@genes_tmp) {
-	if ($_->right(2) eq "RNAi_primary") {
+	if ($_->right(2) eq 'RNAi_primary') {
 	    push @genes, $_;
 	}
     }
@@ -151,9 +148,8 @@ while (my $obj=$it->next) {
     my @phen_array_tmp=$obj->Phenotype;
     foreach (@phen_array_tmp) {
 	my $not=grep {/Not/} $_->tags();
-	if ($not) {
-	    $pheno{$_}[1]='NOT';
-	}
+
+	$pheno{$_}[1]='NOT' if $not;
 	$pheno{$_}[0]++;
     }
     foreach my $g (@genes) {
@@ -178,6 +174,7 @@ maxsize => 60000000,
 lines => ['^WB\tWBGene\d+\t\S+\t(NOT|)\tWBPhenotype\d+\t\S*\t\S+'],
 );
 
+$db->close;
 
 $log->mail;
 exit();

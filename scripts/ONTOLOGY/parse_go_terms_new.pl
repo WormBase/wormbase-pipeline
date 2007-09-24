@@ -18,13 +18,13 @@ $|=9;
 my %opts=();
 GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
-	  	  	"test"       => \$test,
-	    	"verbose"    => \$verbose,
-	    	"store:s"    => \$store,
-	    	"database:s" => \$acedbpath,
-	    	"rnai"   	 => \$rnai,
-	    	"gene"		 => \$gene,
-	    	"output:s"   => \$output,
+	    "test"       => \$test,
+	    "verbose"    => \$verbose,
+	    "store:s"    => \$store,
+	    "database:s" => \$acedbpath,
+	    "rnai"   	 => \$rnai,
+	    "gene"		 => \$gene,
+	    "output:s"   => \$output,
 	    );
 
 my $program_name=$0=~/([^\/]+)$/ ? $1 : '';
@@ -67,7 +67,7 @@ warn "done\n";
 
 
 my %name_hash=();
-my @aql_results=$db->aql("select a, a->public_name from a in class gene");
+my @aql_results=$db->aql('select a, a->public_name from a in class gene');
 foreach (@aql_results) {
     $name_hash{$_->[0]}=$_->[1];
 }
@@ -75,7 +75,7 @@ warn scalar keys %name_hash , " gene public names read\n";
 
 
 my %seq_name_hash=();
-@aql_results=$db->aql("select a, a->sequence_name from a in class gene");
+@aql_results=$db->aql('select a, a->sequence_name from a in class gene');
 foreach (@aql_results) {
     $seq_name_hash{$_->[0]}=$_->[1];
 }
@@ -83,7 +83,7 @@ warn scalar keys %seq_name_hash , " gene sequence names read\n";
 
 
 my %papers=();
-@aql_results=$db->aql("select a, a->pmid from a in class paper");
+@aql_results=$db->aql('select a, a->pmid from a in class paper');
 foreach (@aql_results) {
     $papers{$_->[0]}=$_->[1];
 }
@@ -100,8 +100,7 @@ my $count=0;
 my $line_count=0;
 
 if ($gene) {   
-    my $query="find gene go_term";
-    my $it=$db->fetch_many(-query=>$query);
+    my $it=$db->fetch_many(-query=>'find gene go_term');
     
    
     while (my $obj=$it->next) {
@@ -193,10 +192,7 @@ if ($rnai) {
     }
     warn scalar keys %phen2go, " phenotypes read\n";
     
-    my $query="find phenotype go_term; follow rnai";
-    
-    my $it=$db->fetch_many(-query=>$query);
-    
+    my $it=$db->fetch_many(-query=>'find phenotype go_term; follow rnai');
     
     while (my $obj=$it->next) {
 	next unless $obj->isObject();
@@ -208,10 +204,8 @@ if ($rnai) {
 	my @genes_tmp=$obj->Gene;
 	my @genes=();
 	foreach (@genes_tmp) {
-	    if ($_->right(2) eq "RNAi_primary") {
+	    if ($_->right(2) eq 'RNAi_primary') {
 		push @genes, $_;
-	    }
-	    else {
 	    }
 	}
 	my $species=$obj->Species;
@@ -220,8 +214,6 @@ if ($rnai) {
 	my @phen_array=();
 	foreach (@phen_array_tmp) {
 	    my $not=grep {/Not/} $_->tags();
-	    if ($not) {
-	    }
 	    push @phen_array, $_ unless $not;
 	}
 	
@@ -297,7 +289,7 @@ maxsize => 12000000,
 lines => ['^WB\tWBGene\d+\t\S+\t\tGO\:\d+'],
 );
 
-
+$db->close;
 
 $log->mail;
 exit();

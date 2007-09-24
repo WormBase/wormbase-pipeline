@@ -17,11 +17,11 @@ my ($output, $acedbpath);
 
 GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
-	  	  	"test"       => \$test,
-	    	"verbose"    => \$verbose,
-	    	"store:s"    => \$store,
-	    	"database:s" => \$acedbpath,
-	    	"output:s" 	 => \$output
+            "test"       => \$test,
+	    "verbose"    => \$verbose,
+	    "store:s"    => \$store,
+	    "database:s" => \$acedbpath,
+	    "output:s" 	 => \$output
 	    );
 
 if ($help) {
@@ -68,8 +68,7 @@ my $out;
 $output = $wormbase->ontology."/anatomy_association.".$wormbase->get_wormbase_version_name.".wb" unless $output;
 open($out, ">$output") or $log->log_and_die("cannot open $output : $!\n");	
 
-my $query="find Expr_pattern Anatomy_term";
-my $it=$db->fetch_many(-query=>$query);
+my $it=$db->fetch_many(-query=>'find Expr_pattern Anatomy_term');
 
 my $count=0;
 while (my $obj=$it->next) {
@@ -147,7 +146,7 @@ maxsize => 10000000,
 lines => ['^WB\tWBGene\d+\t\S+\t\S*\t\S+\t\S*\tExpr_pattern\t\S+']
 );
 
-
+$db->close; # *(£% Ace destructor
 
 $log->mail;
 exit;
