@@ -4,7 +4,7 @@
 #
 # by Keith Bradnam
 #
-# Last updated on: $Date: 2007-06-08 14:17:49 $
+# Last updated on: $Date: 2007-09-24 13:30:14 $
 # Last updated by: $Author: pad $
 #
 # see pod documentation at end of file for more information about this script
@@ -77,7 +77,7 @@ foreach $CDSfilter (@CDSfilter) {
 ################################
 my @Predictions;
 if ($test1) {
-  @Predictions = $db->fetch('All_genes','C09G9*');
+  @Predictions = $db->fetch('All_genes','Y32B12C*');
   foreach my $Predictions(@Predictions) {
     print $Predictions->name."\n";
   }
@@ -95,6 +95,7 @@ print "\nChecking $gene_model_count Predictions in '$db_path'\n\n" if $verbose;
 
 CHECK_GENE:
 foreach my $gene_model ( @Predictions ) {
+  #next unless ($gene_model eq "Y32B12C.2b"); #stop the script at a specified gene. debug line
   print STDOUT "$gene_model\n" if $verbose;
   my $method_test = ($gene_model->Method);
   my @exon_coord1 = sort by_number ($gene_model->get('Source_exons',1));
@@ -104,12 +105,13 @@ foreach my $gene_model ( @Predictions ) {
   
   for ($i=1; $i<@exon_coord2;$i++) {
     my $intron_size = ($exon_coord1[$i] - $exon_coord2[$i-1] -1);
-    if (($intron_size < 34) && ($method_test eq 'curated')) {
+    if (($intron_size < 34) && ($method_test->name eq 'curated')) {
       print "ERROR: $gene_model has a small intron ($intron_size bp)\n";
       push(@error4,"ERROR: $gene_model has a very small intron ($intron_size bp)\n")
     }
     push(@error5,"WARNING: $gene_model has a small intron ($intron_size bp)\n") if (($intron_size > 33) && ($intron_size < 39) && (!$basic) && ($method_test eq 'curated'));
   }
+  #print "$gene_model\n"; bebug line
 	
   for ($i=0; $i<@exon_coord1; $i++) {
     my $start = $exon_coord1[$i];
@@ -209,7 +211,7 @@ foreach my $gene_model ( @Predictions ) {
   my $Genehist_ID = $gene_model->at('Visible.Gene_history.[1]');
 	
   #curated Gene modles eg. C14C10.3  C14C10.33 and C14C10.3a have to have an 8 digit gene id.
-  if ($gene_model->name =~ (/\w+\d+\.\d+\w?$/)) {
+  if ($gene_model->name =~ /\w+\.\d+\w?$/) {
     if (defined $Gene_ID) {
       push(@error2, "ERROR: The Gene ID '$Gene_ID' in $gene_model is invalid!\n") unless ($Gene_ID =~ /WBGene[0-9]{8}/);
     } else {
