@@ -7,7 +7,7 @@
 # This is a example of a good script template
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2007-09-12 14:57:36 $
+# Last updated on: $Date: 2007-09-25 13:23:38 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -210,7 +210,7 @@ sub read_acedb_queries {
        
     $i++;
     $queries[$i]{'DESC'}   = "Homol mapped Expression Patterns";
-    $queries[$i]{'QUERY'}  = 'Expr_pattern where Homol_homol';
+    $queries[$i]{'QUERY'}  = 'find Expr_pattern where Homol_homol';
     $queries[$i]{'RESULT'} = 4506 ;    
      
     #	$i++;
