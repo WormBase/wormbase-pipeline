@@ -16,11 +16,7 @@ if ($help) {
 }
 
 my @files = @ARGV;
-foreach my $file (@files) {
-#  print $file,"\n";
-  &composition(@files);
-}
-
+&composition(@files);
 
 ###################################
 
