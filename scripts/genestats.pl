@@ -6,8 +6,8 @@
 #
 # Usage : genestatsr.pl [-options]
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2007-09-03 09:03:15 $
+# Last edited by: $Author: mh6 $
+# Last edited on: $Date: 2007-09-25 08:29:48 $
  
 
 use strict;                                      
@@ -142,7 +142,7 @@ minlines => 9,
 maxlines => 9,
 line1 => '^Gene data set \(Live C.elegans genes \d+\)',
 line2 => '^\-+',
-lines => ['^\S+\s+\d+\s+\(\d+\.\d\%\)', '^\S+\s+\S+\s+\S+\s+\d+\s+\(\d+\.\d\%\)'],
+lines => ['^\S+\s+\d+\s+\(\d+(\.\d)*\%\)', '^\S+\s+\S+\s+\S+\s+\d+\s+\(\d+(\.\d)\%\)'],
 );
 
 
