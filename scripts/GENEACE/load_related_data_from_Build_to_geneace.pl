@@ -8,8 +8,8 @@
 # RUN this script anytime during the build or after the build when get_interpolated_map 
 # and update_inferred multi-pt data are done
 #
-# Last updated on: $Date: 2007-08-17 15:52:30 $
-# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2007-09-26 10:47:32 $
+# Last updated by: $Author: mt3 $
 
 
 use strict;
@@ -101,14 +101,7 @@ my $person = $wormbase->acefiles."/primaries/caltech/caltech_Person.ace";
 $wormbase->load_to_database($geneace, $person,"caltech_Person");
 
 
-# new Person data will have been dumped from citace
-#need to remove previous data
-$command = "find Paper\nkill\nsave\nquit";
-open (GA,"| $tace -tsuser \"remove_papers\" $geneace") or $log->log_and_die("Failed to edit to Geneace - paper removal\n");
-print GA $command;
-close GA;
-
-#load the new stuff
+# new Paper data will have been dumped from citace
 $log->write_to("Adding new paper data\n");
 my $paper = $wormbase->acefiles."/primaries/caltech/caltech_Paper.ace";
 $wormbase->load_to_database($geneace, $paper,"caltech_Paper");
