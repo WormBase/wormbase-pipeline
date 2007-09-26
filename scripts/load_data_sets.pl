@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl -w
-# Last updated by: $Author: ar2 $     
-# Last updated on: $Date: 2007-09-25 16:02:53 $      
+# Last updated by: $Author: gw3 $     
+# Last updated on: $Date: 2007-09-26 12:32:34 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -65,6 +65,7 @@ sub parse_misc_files {
 		       $wormbase->misc_dynamic."/misc_mass_spec_MichaelHengartner.ace" => "mass_spec"      ,
 		       $wormbase->misc_dynamic."/misc_mass_spec_GenniferMerrihew.ace"  => "mass_spec"      ,
 		       $wormbase->misc_dynamic."/misc_mass_spec_StevenHusson.ace"      => "mass_spec"      ,
+		       $wormbase->misc_dynamic."/misc_mass_spec_StevenHusson_3.ace"    => "mass_spec"      ,
 		       $wormbase->misc_dynamic."/misc_mass_spec_NatalieWielsch.ace"    => "mass_spec"      ,
 		       $wormbase->wormpub."/analysis/GI_numbers/GI_numbers.ace" => "gi_number"             ,
 		       $wormbase->misc_dynamic.'/misc_mtce_protein_IDs.ace'     => 'mtce_protein_IDs'      ,
