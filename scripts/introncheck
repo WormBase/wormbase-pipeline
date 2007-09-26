@@ -7,7 +7,7 @@
 # Usage: introncheck [-options]
 #
 # Last updated by: $Author: pad $     
-# Last updated on: $Date: 2006-12-05 10:44:59 $      
+# Last updated on: $Date: 2007-09-26 11:45:52 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -25,21 +25,23 @@ $| = 1;
 # command-line options       #
 ##############################
 
-my ($help, $debug, $test, $verbose, $store, $wormbase);
+my ($help, $debug, $test, $verbose, $store, $wormbase, $dbr, $gff,);
 
 GetOptions ("help"       => \$help,
-            "debug=s"    => \$debug,
-	    "test"       => \$test,
+            "debug=s"    => \$debug,# debug option
+	    "test"       => \$test, # test build and also only runs on CHROM III
 	    "verbose"    => \$verbose,
-	    "store:s"      => \$store,
-	    );
+	    "store:s"    => \$store,
+	    "db:s"       => \$dbr,   # database to query
+	    "gff:s"      => \$gff,  # gff files to use
+	   );
 
 if ( $store ) {
   $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
 } else {
   $wormbase = Wormbase->new( -debug   => $debug,
                              -test    => $test,
-			     );
+			   );
 }
 
 # Display help if required
@@ -55,13 +57,26 @@ my $log = Log_files->make_build_log($wormbase);
 my $rundate = $wormbase->rundate;
 my $runtime = $wormbase->runtime;
 
- ##############################
- # Paths etc                  #
- ##############################
-
+##############################
+# Paths etc                  #
+##############################
+my $dbdir;
 my $tace   = $wormbase->tace;    # tace executable path
-my $dbdir  = $wormbase->autoace; # Database path
-my $gffdir = $wormbase->gff_splits;
+
+if ($dbr) {
+  $dbdir  = $dbr;
+}
+else{
+  $dbdir  = $wormbase->autoace; # Database path
+}
+
+my $gffdir;
+if ($gff) {
+  $gffdir = $gff;
+}
+else {
+  $gff = $wormbase->gff_splits;
+}
 
 my @chromosomes = ('IV','II','III','I', 'V','X');
 @chromosomes = qw( III ) if $wormbase->test;
@@ -77,26 +92,35 @@ our $coords = Coords_converter->invoke($dbdir,undef, $wormbase);         # invok
 my $db = Ace->connect(-path=>$dbdir) or $log->log_and_die("Couldn't connect to $dbdir\t".Ace->error."\n");
 
 foreach my $chromosome (@chromosomes) {
-
-	&make_intron_files($chromosome);	
+  &make_intron_files($chromosome);	
   my (@coords, @introns);
   
   print "Checking GFF file: 'CHROMOSOME_${chromosome}'\n";
 
-  open (OUT_CAM, ">".$wormbase->checks."/CHROMOSOME_${chromosome}.check_intron_cam.gff");
-  open (OUT_STL, ">".$wormbase->checks."/CHROMOSOME_${chromosome}.check_intron_stl.gff");
-
+  if ($debug) {
+    open (OUT_CAM, ">CHROMOSOME_${chromosome}.check_intron_cam.gff");
+    print "Opening CHROMOSOME_${chromosome}.check_intron_cam.gff\n";
+    open (OUT_STL, ">CHROMOSOME_${chromosome}.check_intron_stl.gff");
+    print "Opening CHROMOSOME_${chromosome}.check_intron_stl.gff";
+  }
+  else {
+    open (OUT_CAM, ">".$wormbase->checks."/CHROMOSOME_${chromosome}.check_intron_cam.gff");
+    open (OUT_STL, ">".$wormbase->checks."/CHROMOSOME_${chromosome}.check_intron_stl.gff");
+  }
   #######################################
   # make a hash for all curated introns #
   #######################################
 
   print "Make a hash for all curated introns on chromosome $chromosome\n";
+  
   open (GFF_in, "$ENV{'CVS_DIR'}/gff_sort $gffdir/CHROMOSOME_${chromosome}_gene_introns.gff |") || die "Failed to open gff file at $gffdir/CHROMOSOME_${chromosome}_genes_introns.gff\n\n";
+  print "Opening $gffdir/CHROMOSOME_${chromosome}_gene_introns.gff\n\n" if ($debug);
   
   while (<GFF_in>) {
     chomp;
     s/\#.*//;
     next unless /\S/;
+    #print "$_\n";
     my @f = split /\t/;
     push (@introns,"$f[3] $f[4] $f[8]");
   }	
@@ -111,68 +135,68 @@ foreach my $chromosome (@chromosomes) {
   open (GFF, "$ENV{'CVS_DIR'}/gff_sort $gffdir/CHROMOSOME_${chromosome}_est_introns.gff |") || die "Failed to open gff file at $gffdir/CHROMOSOME_${chromosome}_est_introns.gff \n\n";
   
   while (<GFF>) {       	
-      chomp;
-      s/\#.*//;
-      next unless /\S/;
+    chomp;
+    s/\#.*//;
+    next unless /\S/;
       
-      # split the GFF line
-      my @f = split /\t/;
+    # split the GFF line
+    my @f = split /\t/;
       
-      # reset match tag
-      my $match = 0;
-      my $line = $_;     
+    # reset match tag
+    my $match = 0;
+    my $line = $_;     
+    
+    # Confirmed_introns not in gene models
       
-      # Confirmed_introns not in gene models
+    # ignore some marked introns
+    if ($debug) {print "discard as false : $line\n" if ($f[8] =~ /Confirmed_false/);} 
+    next if ($f[8] =~ /Confirmed_false/);                # Bad BLAT mapping
+    if ($debug) {print "discard as inconsistent : $line\n" if ($f[8] =~ /Confirmed_inconsistent/);} 
+    next if ($f[8] =~ /Confirmed_inconsistent/);         # Can't make a valid CDS prediction from this
+    if ($debug) {print "discard as UTR : $line\n" if ($f[8] =~ /Confirmed_UTR/);}
+    next if ($f[8] =~ /Confirmed_UTR/);
+ 
       
-      # ignore some marked introns
-#    print "discard as false : $line\n" if ($f[8] =~ /Confirmed_false/); 
-      next if ($f[8] =~ /Confirmed_false/);                # Bad BLAT mapping
-#    print "discard as inconsistent : $line\n" if ($f[8] =~ /Confirmed_inconsistent/); 
-      next if ($f[8] =~ /Confirmed_inconsistent/);         # Can't make a valid CDS prediction from this
+    if ( ( ($f[2] eq "intron") && ($f[1] eq ".") && (not $f[8] =~ /Confirmed_UTR/) ) || 
+	 ( ($f[1] eq "NDB_CDS") && (($f[8] =~ /Confirmed_EST/) || ($f[8] =~ /Confirmed_cDNA/) ) ) ) {
       
-#	 ( ($f[2] eq "intron") && ($f[1] eq "Coding_transcript") ) || 
-      
-      
-      if ( ( ($f[2] eq "intron") && ($f[1] eq ".") && (not $f[8] =~ /Confirmed_UTR/) ) || 
-	   ( ($f[1] eq "NDB_CDS") && (($f[8] =~ /Confirmed_EST/) || ($f[8] =~ /Confirmed_cDNA/) ) ) ) {
+      print "Parse : $line\n" if ($debug);
 	  
-#      print "Parse : $line\n";
-	  
-	  # print "Check through known intron coordinates: $f[3] $f[4]\n";
-	  
-	  foreach my $look (@introns) {
-	      my ($start,$stop,$seq) = split (/ /, $look);
-#	 print "  => $start $stop $seq\n";
-	      if (($f[3] == $start) && ($f[4] == $stop) ) {
-		  # found match
-		  $match = 1;
-#	   print " !! found match !!\n";
-		  last;
-	      }
-	  }
-	  
-	  unless ($match == 1) {	
-	      
-	      my @data = $coords->LocateSpan($f[0], $f[3], $f[4]);
-	      print "$f[0] $f[3] $f[4] Maps to $data[0] from $data[1] - $data[2]\n" if $verbose;
-	      
-	      my $obj = $db->fetch(Sequence=>$data[0]);
-	      my $lab;
-	      unless (!defined ($obj)) {
-		  $lab=$obj->From_laboratory(1);
-		  $obj->DESTROY();
-	      }
-	      if ($lab eq "HX") {
-		  print OUT_CAM "$line\tClone:$data[0] $data[1] $data[2]\tLab:$lab\n";
-	      }
-	      elsif ($lab eq "RW") {
-		  print OUT_STL "$line\tClone:$data[0] $data[1] $data[2]\tLab:$lab\n";
-	      }
-	      $lab = "";
-	      $confirmed_intron{$chromosome}++;
-	  }
-	  # end of parse loop  
+      # print "Check through known intron coordinates: $f[3] $f[4]\n";
+      
+      foreach my $look (@introns) {
+	my ($start,$stop,$seq) = split (/ /, $look);
+	#	 print "  => $start $stop $seq\n";
+	if (($f[3] == $start) && ($f[4] == $stop) ) {
+	  # found match
+	  $match = 1;
+	  # print " !! found match !!\n";
+	  last;
+	}
       }
+	  
+      unless ($match == 1) {	
+	      
+	my @data = $coords->LocateSpan($f[0], $f[3], $f[4]);
+	print "$f[0] $f[3] $f[4] Maps to $data[0] from $data[1] - $data[2]\n" if $verbose;
+	
+	my $obj = $db->fetch(Sequence=>$data[0]);
+	my $lab;
+	unless (!defined ($obj)) {
+	  $lab=$obj->From_laboratory(1);
+	  $obj->DESTROY();
+	}
+	if ($lab eq "HX") {
+	  print OUT_CAM "$line\tClone:$data[0] $data[1] $data[2]\tLab:$lab\n";
+	}
+	elsif ($lab eq "RW") {
+		  print OUT_STL "$line\tClone:$data[0] $data[1] $data[2]\tLab:$lab\n";
+		}
+	$lab = "";
+	$confirmed_intron{$chromosome}++;
+      }
+      # end of parse loop  
+    }
   }
   close GFF;
   
@@ -204,61 +228,69 @@ sub numerically {
 #######################################################################
 
 sub run_details {
-    print "# introncheck\n";     
-    print "# run details    : $rundate $runtime\n";
-    print "\n";
+  print "# introncheck\n";     
+  print "# run details    : $rundate $runtime\n";
+  print "\n";
 }
 
 ##########################################
 
 sub usage {
-    my $error = shift;
-
-    if ($error == 1) {
-        # No WormBase release number file
-        print "The WormBase release number cannot be parsed\n";
-        &run_details;
-        exit(0);
-    }
-    elsif ($error == 0) {
-        # Normal help menu
-        system ('perldoc',$0);
-        exit (0);
-    }
+  my $error = shift;
+  
+  if ($error == 1) {
+    # No WormBase release number file
+    print "The WormBase release number cannot be parsed\n";
+    &run_details;
+    exit(0);
+  }
+  elsif ($error == 0) {
+    # Normal help menu
+    system ('perldoc',$0);
+    exit (0);
+  }
 }
 
 # This creates a file of confirmed introns and file of introns in gene models for each chromosomes
 sub make_intron_files {
   $log->write_to("making intron files\n");
-    my $chrom = shift;
-    my $est_introns  = $wormbase->gff_splits."/CHROMOSOME_${chrom}_est_introns.gff";
-    my $gene_introns = $wormbase->gff_splits."/CHROMOSOME_${chrom}_gene_introns.gff";
-    my ($est, $gene);
-    open $est , ">$est_introns"  or $log->log_and_die("cant write $est_introns: $!\n");
-    open $gene, ">$gene_introns" or $log->log_and_die("cant write $gene_introns: $!\n");
+  my $chrom = shift;
+  my $est_introns  = $gffdir."/CHROMOSOME_${chrom}_est_introns.gff";
+  my $gene_introns = $gffdir."/CHROMOSOME_${chrom}_gene_introns.gff";
+  my ($est, $gene);
+  open $est , ">$est_introns"  or $log->log_and_die("cant write $est_introns: $!\n");
+  open $gene, ">$gene_introns" or $log->log_and_die("cant write $gene_introns: $!\n");
+  
+  #determine file to output to by methods
+  my %method2file = ( 'non_coding_transcript' => $gene,
+		      'Pseudogene'            => $gene,
+		      'Transposon_CDS'        => $gene,
+		      'tRNAscan-SE-1.23'      => $gene,
+		      '.'                     => $est,
+		      'ncRNA'                 => $gene,
+		      'curated'        => $gene,
+		    );
+  
+  #read in the gff file intron lines
+  open GFF,("grep intron ".$wormbase->chromosomes."/CHROMOSOME_${chrom}.gff |") 
+    or $log->log_and_die("cant grep ".$wormbase->chromosomes."/CHROMOSOME_${chrom}.gff");
 
-    #determine file to output to by methods
-    my %method2file = ( 'Coding_transcript'     => $gene,
-			'non_coding_transcript' => $gene,
-			'Pseudogene'            => $gene,
-			'Transposon_CDS'        => $gene,
-			'tRNAscan-SE-1.23'      => $gene,
-			'.'                     => $est,
-			'ncRNA'                 => $gene,
-		      );
-
-    #read in the gff file intron lines
-    open GFF,("grep intron ".$wormbase->chromosomes."/CHROMOSOME_${chrom}.gff |") 
-      or $log->log_and_die("cant grep ".$wormbase->chromosomes."/CHROMOSOME_${chrom}.gff");
-
-    while( <GFF> ){
-      my @data = split;
-      if( $method2file{$data[1]} ) {
-			print { $method2file{$data[1]} } $_;
+  while( <GFF> ){
+    my @data = split;
+    #    next unless ($data[3] eq "16252");
+    
+    if (($data[1] eq "twinscan") or ($data[1] eq "genefinder")) {
+      if ($_ =~ (/Confirmed_\S+/)) {
+	print { $method2file{"."} } $_;
       }
+      else {next};
+    }
+    
+    elsif($method2file{$data[1]}) {
+      print { $method2file{$data[1]} } $_;
     }
   }
-
+}
 
 __END__
 
