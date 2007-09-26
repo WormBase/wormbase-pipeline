@@ -7,7 +7,7 @@
 # Selectively dump GFF for certain acedb methods
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2007-09-12 14:16:35 $
+# Last edited on: $Date: 2007-09-26 09:10:43 $
 
 
 use lib $ENV{CVS_DIR};
@@ -113,7 +113,7 @@ foreach my $sequence ( @sequences ) {
 		'CHROMOSOME_IV'      => 180000000,
 		'CHROMOSOME_V'       => 190000000,
 		'CHROMOSOME_X'       => 120000000,
-		'CHROMOSOME_MtDNA'   =>  11000000,
+		'CHROMOSOME_MtDNA'   =>   1500000,
 		);
    $wormbase->check_file("$dump_dir/$sequence.gff", $log,
 			 minsize => $sizes{$sequence},
