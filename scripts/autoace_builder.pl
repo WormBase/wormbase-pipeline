@@ -7,7 +7,7 @@
 # Usage : autoace_builder.pl [-options]
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2007-09-13 13:38:18 $
+# Last edited on: $Date: 2007-09-26 12:30:34 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -262,13 +262,14 @@ sub remap_misc_dynamic {
 
     # remap ace files with homol_data mapped to clones
     my %clone_data = (
-			'misc_21urna_homol.ace'                 => '21_urna',
-			'misc_Expression_pattern_homol.ace'     => 'expression_pattern',
-			'misc_mass_spec_MichaelHengartner.ace'  => 'mass_spec',
-			'misc_mass_spec_NatalieWielsch.ace'     => 'mass_spec',
-			'misc_mass_spec_StevenHusson.ace'       => 'mass_spec',
-			'misc_mass_spec_GenniferMerrihew.ace'   => 'mass_spec',
-			);
+		      'misc_21urna_homol.ace'                 => '21_urna',
+		      'misc_Expression_pattern_homol.ace'     => 'expression_pattern',
+		      'misc_mass_spec_MichaelHengartner.ace'  => 'mass_spec',
+		      'misc_mass_spec_NatalieWielsch.ace'     => 'mass_spec',
+		      'misc_mass_spec_StevenHusson.ace'       => 'mass_spec',
+		      'misc_mass_spec_StevenHusson_3.ace'     => 'mass_spec',
+		      'misc_mass_spec_GenniferMerrihew.ace'   => 'mass_spec',
+		      );
     foreach my $clone_data_file (keys %clone_data) {
       my $data_file = $wormbase->misc_dynamic."/$clone_data_file";
       my $backup_file = $wormbase->misc_dynamic."/BACKUP/$clone_data_file.$previous_release";
