@@ -7,7 +7,7 @@
 # Usage: introncheck [-options]
 #
 # Last updated by: $Author: pad $     
-# Last updated on: $Date: 2007-09-26 11:45:52 $      
+# Last updated on: $Date: 2007-09-27 11:52:07 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -25,7 +25,7 @@ $| = 1;
 # command-line options       #
 ##############################
 
-my ($help, $debug, $test, $verbose, $store, $wormbase, $dbr, $gff,);
+my ($help, $debug, $test, $verbose, $store, $wormbase, $dbr, $gff, $test1);
 
 GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,# debug option
@@ -34,6 +34,7 @@ GetOptions ("help"       => \$help,
 	    "store:s"    => \$store,
 	    "db:s"       => \$dbr,   # database to query
 	    "gff:s"      => \$gff,  # gff files to use
+	    "test1:s"      => \$test1, #test one chromosome
 	   );
 
 if ( $store ) {
@@ -75,11 +76,16 @@ if ($gff) {
   $gffdir = $gff;
 }
 else {
-  $gff = $wormbase->gff_splits;
+  $gffdir = $wormbase->gff_splits;
 }
-
-my @chromosomes = ('IV','II','III','I', 'V','X');
-@chromosomes = qw( III ) if $wormbase->test;
+my @chromosomes;
+if ($test1) {
+@chromosomes = qw( III );
+}
+else {
+@chromosomes = ('IV','II','III','I', 'V','X');
+}
+#@chromosomes = qw( III ) if $wormbase->test;
 my %confirmed_intron = ();
 
 our $coords = Coords_converter->invoke($dbdir,undef, $wormbase);         # invoke coordinate parser
@@ -149,18 +155,18 @@ foreach my $chromosome (@chromosomes) {
     # Confirmed_introns not in gene models
       
     # ignore some marked introns
-    if ($debug) {print "discard as false : $line\n" if ($f[8] =~ /Confirmed_false/);} 
+    if ($verbose) {print "discard as false : $line\n" if ($f[8] =~ /Confirmed_false/);} 
     next if ($f[8] =~ /Confirmed_false/);                # Bad BLAT mapping
-    if ($debug) {print "discard as inconsistent : $line\n" if ($f[8] =~ /Confirmed_inconsistent/);} 
+    if ($verbose) {print "discard as inconsistent : $line\n" if ($f[8] =~ /Confirmed_inconsistent/);} 
     next if ($f[8] =~ /Confirmed_inconsistent/);         # Can't make a valid CDS prediction from this
-    if ($debug) {print "discard as UTR : $line\n" if ($f[8] =~ /Confirmed_UTR/);}
+    if ($verbose) {print "discard as UTR : $line\n" if ($f[8] =~ /Confirmed_UTR/);}
     next if ($f[8] =~ /Confirmed_UTR/);
  
       
-    if ( ( ($f[2] eq "intron") && ($f[1] eq ".") && (not $f[8] =~ /Confirmed_UTR/) ) || 
+    if ( ( ($f[2] eq "intron") && (($f[1] eq ".") or ($f[1] eq "Genefinder") or ($f[1] eq "twinscan")) && (not $f[8] =~ /Confirmed_UTR/) ) || 
 	 ( ($f[1] eq "NDB_CDS") && (($f[8] =~ /Confirmed_EST/) || ($f[8] =~ /Confirmed_cDNA/) ) ) ) {
       
-      print "Parse : $line\n" if ($debug);
+      print "Parse : $line\n" if ($verbose);
 	  
       # print "Check through known intron coordinates: $f[3] $f[4]\n";
       
@@ -170,7 +176,7 @@ foreach my $chromosome (@chromosomes) {
 	if (($f[3] == $start) && ($f[4] == $stop) ) {
 	  # found match
 	  $match = 1;
-	  # print " !! found match !!\n";
+	  print " !! found match !!\n" if $verbose;
 	  last;
 	}
       }
@@ -262,7 +268,7 @@ sub make_intron_files {
   open $gene, ">$gene_introns" or $log->log_and_die("cant write $gene_introns: $!\n");
   
   #determine file to output to by methods
-  my %method2file = ( 'non_coding_transcript' => $gene,
+  my %method2file = ( 'Non_coding_transcript' => $gene,
 		      'Pseudogene'            => $gene,
 		      'Transposon_CDS'        => $gene,
 		      'tRNAscan-SE-1.23'      => $gene,
@@ -279,7 +285,7 @@ sub make_intron_files {
     my @data = split;
     #    next unless ($data[3] eq "16252");
     
-    if (($data[1] eq "twinscan") or ($data[1] eq "genefinder")) {
+    if (($data[1] eq "twinscan") or ($data[1] eq "Genefinder")) {
       if ($_ =~ (/Confirmed_\S+/)) {
 	print { $method2file{"."} } $_;
       }
