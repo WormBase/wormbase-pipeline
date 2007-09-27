@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2007-09-20 15:10:28 $      
+# Last updated on: $Date: 2007-09-27 11:33:17 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -115,7 +115,6 @@ foreach my $chromosome (@chromosomes) {
     open (OUTPUT_GFF, ">$gff_file") || die "Can't open $gff_file";
   }
 
-
   $log->write_to("Processing chromosome $chromosome\n");
                                                                                                    
   # get the data
@@ -166,7 +165,10 @@ foreach my $chromosome (@chromosomes) {
 
   # get the twinscan data
   print "reading twinscan exons\n";
-  my @twinscan = &get_twinscan($database, $chromosome);
+  my @twinscan_exons = &get_twinscan_exons($database, $chromosome);
+
+  print "reading twinscan transcripts\n";
+  my @twinscan_transcripts = &get_twinscan_transcripts($database, $chromosome);
 
   # get the genefinder data
   print "reading genefinder exons\n";
@@ -219,7 +221,7 @@ foreach my $chromosome (@chromosomes) {
   &get_unmatched_SAGE(\@coding_transcripts, \@pseudogenes, \@SAGE_transcripts, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, $chromosome);
 
   print "finding twinscan exons not overlapping CDS exons\n";
-  &get_unmatched_twinscan_exons(\@twinscan, \@cds_exons, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, $chromosome);
+  &get_unmatched_twinscan_exons(\@twinscan_exons, \@cds_exons, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, $chromosome);
 
   print "finding genefinder exons not overlapping CDS exons\n";
   &get_unmatched_genefinder_exons(\@genefinder, \@cds_exons, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, $chromosome);
@@ -266,6 +268,10 @@ foreach my $chromosome (@chromosomes) {
 
 ##  print "finding split/merged genes based on EST homology\n";
 ##  &get_EST_split_merged($matched_EST_aref, $chromosome, %Show_in_reverse_orientation);
+
+##  print "finding genes to be split/merged based on twinscan\n";
+##  &get_twinscan_split_merged(\@twinscan_transcripts, \@coding_transcripts, $chromosome);
+
 #################################################
 
 
@@ -281,7 +287,6 @@ foreach my $chromosome (@chromosomes) {
 # anomalies that might have gone away.  This also deletes anomalies
 # that we are no longer putting into the database and which can be
 # removed.
-
 &delete_anomalies("UNMATCHED_PROTEIN");
 &delete_anomalies("SPLIT_GENES_BY_PROTEIN");
 &delete_anomalies("SPLIT_GENE_BY_PROTEIN_GROUPS");
@@ -299,6 +304,7 @@ foreach my $chromosome (@chromosomes) {
 &delete_anomalies("WEAK_INTRON_SPLICE_SITE");
 &delete_anomalies("UNMATCHED_TWINSCAN");
 &delete_anomalies("UNMATCHED_GENEFINDER");
+&delete_anomalies("CONFIRMED_INTRONS");
 
 
 # disconnect from the mysql database
@@ -634,9 +640,9 @@ sub get_SAGE_transcripts {
 
 ##########################################
 # get the twinscan exons
-#  my @twinscan = get_twinscan($database, $chromosome);
+#  my @twinscan = get_twinscan_exons($database, $chromosome);
 
-sub get_twinscan {
+sub get_twinscan_exons {
   my ($database, $chromosome) = @_;
 
 
@@ -646,6 +652,30 @@ sub get_twinscan {
      file			=> "CHROMOSOME_${chromosome}.gff",
      gff_source			=> "twinscan",
      gff_type			=> "coding_exon",
+     anomaly_type		=> "",
+     ID_after			=> "CDS\\s+",
+     action                     => ["return_result"],
+   );
+
+  return &read_GFF_file(\%GFF_data);
+
+}
+
+
+##########################################
+# get the twinscan transcripts
+#  my @twinscan = get_twinscan_transcripts($database, $chromosome);
+
+sub get_twinscan_transcripts {
+  my ($database, $chromosome) = @_;
+
+
+  my %GFF_data = 
+   (
+     directory			=> "$database/CHROMOSOMES/", # NB we are reading the full gff file, not the split ones here
+     file			=> "CHROMOSOME_${chromosome}.gff",
+     gff_source			=> "twinscan",
+     gff_type			=> "CDS",
      anomaly_type		=> "",
      ID_after			=> "CDS\\s+",
      action                     => ["return_result"],
@@ -2484,6 +2514,70 @@ sub get_multiple_utr_introns {
 
 }
 
+##########################################
+# get genes to be split/merged based on twinscan
+
+sub get_twinscan_split_merged {
+
+  my ($twinscan_aref, $trans_aref, $chromosome) = @_;
+
+
+  my %twin_match = &init_match();
+
+  foreach my $trans (@{$trans_aref}) { # $trans_id, $chrom_start, $chrom_end, $chrom_strand
+
+    my $got_a_match = 0;
+    my $matching_ids;
+
+    if (&match($trans, $twinscan_aref, \%twin_match)) {
+      $matching_ids = $twin_match{matching_ids};
+      my @number = split(/\s+/, $matching_ids);
+      print "SPLIT $trans->[0] @number\n";
+      if (@number > 1) {$got_a_match = 1;}
+    }
+
+    # output matched transcripts to the database
+    if ($got_a_match) {
+      my $trans_id = $trans->[0];
+      my $chrom_start = $trans->[1];
+      my $chrom_end = $trans->[2];
+      my $chrom_strand = $trans->[3];
+
+      my $anomaly_score = 1;
+
+      &output_to_database("SPLIT_GENE_BY_TWINSCAN", $chromosome, $trans_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score, 'Twinscan: $matching_ids');
+    }
+  }
+
+  my %trans_match = &init_match();
+
+  foreach my $twin (@{$twinscan_aref}) { # $twin_id, $chrom_start, $chrom_end, $chrom_strand
+
+    my $got_a_match = 0;
+    my $matching_ids;
+
+    if (&match($twin, $trans_aref, \%trans_match)) {
+      $matching_ids = $trans_match{matching_ids};
+      my @number = split(/\s+/, $matching_ids);
+      print "MERGE $twin->[0] @number\n";
+      if (@number > 1) {$got_a_match = 1; print "************************************************************\n";}
+    }
+
+    # output matched twinscans to the database
+    if ($got_a_match) {
+      my $twin_id = $twin->[0];
+      my $chrom_start = $twin->[1];
+      my $chrom_end = $twin->[2];
+      my $chrom_strand = $twin->[3];
+
+      my $anomaly_score = 1;
+
+      &output_to_database("MERGE_GENES_BY_TWINSCAN", $chromosome, $twin_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score, 'Transcripts: $matching_ids');
+    }
+  }
+
+}
+
 
 ####################################################################################
 ####################################################################################
@@ -2618,6 +2712,7 @@ sub match {
       }
 
       $got_a_match = 1;
+      if ($state->{'matching_ids'} ne "") {$state->{'matching_ids'} .= " ";}
       $state->{'matching_ids'} .= $other->[0];
       $state->{'last_used'} = $i;
       #print "got a match with $other->[0] at $other->[1] $other->[2]\n";
@@ -2642,10 +2737,20 @@ sub get_GFF_files {
   my ($chromosome) = @_;
 
  
+  ##
+  ## could change the location to look in the CHECKS directory to get the current Build's data when reading in autoace information.
+  ##
+  my $dir;
+  if ($database eq $wormbase->{'autoace'}) {
+    $dir = '/nfs/disk100/wormpub/BUILD/autoace/CHECKS/';
+  } else {
+    $dir = '/nfs/WWWdev/SANGER_docs/htdocs/Projects/C_elegans/WORMBASE/development_release/GFF/'; # web directory
+  }
+
   my @GFF_data = 
   (
    {
-     directory			=> "/nfs/WWWdev/SANGER_docs/htdocs/Projects/C_elegans/WORMBASE/development_release/GFF/",
+     directory			=> $dir,
      file			=> "CHROMOSOME_${chromosome}.check_intron_*.gff",
      gff_source			=> "",
      gff_type			=> "intron",
@@ -2655,7 +2760,7 @@ sub get_GFF_files {
    },
 
    {
-     directory			=> "/nfs/WWWdev/SANGER_docs/htdocs/Projects/C_elegans/WORMBASE/development_release/GFF/",
+     directory			=> $dir,
      file			=> "CHROMOSOME_${chromosome}.check_intron_*.gff",
      gff_source			=> "",
      gff_type			=> "intron",
@@ -2665,7 +2770,7 @@ sub get_GFF_files {
    },
 
 #   {
-#     directory			=> "/nfs/WWWdev/SANGER_docs/htdocs/Projects/C_elegans/WORMBASE/development_release/Checks/",
+#     directory			=> $dir,
 #     file			=> "",
 #     gff_source	       	=> "",
 #     gff_type			=> "",
