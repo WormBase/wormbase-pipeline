@@ -7,7 +7,7 @@
 # Usage : genestatsr.pl [-options]
 #
 # Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2007-09-25 08:29:48 $
+# Last edited on: $Date: 2007-09-27 13:21:02 $
  
 
 use strict;                                      
@@ -125,9 +125,9 @@ open (OUT, ">$reports_dir/genedata") || die "Failed to open output file\n";
 print OUT "Gene data set (Live C.elegans genes $values[0])\n";
 print OUT "------------------------------------------\n";
 print OUT "Molecular_info              "  . $values[1] . " (" . $percent_molecular_info . "%)\n";
-print OUT "Concise_description          " . $values[2] . " (" . $percent_concise_description . "%)\n";
-print OUT "Reference                    " . $values[3] . " (" . $percent_reference . "%)\n";
-print OUT "CGC_approved Gene name       " . $values[4] . " (" . $percent_CGC_name . "%)\n";
+print OUT "Concise_description         " . $values[2] . " (" . $percent_concise_description . "%)\n";
+print OUT "Reference                   " . $values[3] . " (" . $percent_reference . "%)\n";
+print OUT "WormBase_approved Gene name " . $values[4] . " (" . $percent_CGC_name . "%)\n";
 print OUT "RNAi_result                 "  . $values[5] . " (" . $percent_RNAi_result . "%)\n";
 print OUT "Microarray_results          "  . $values[6] . " (" . $percent_microarray_result . "%)\n";
 print OUT "SAGE_transcript             "  . $values[7] . " (" . $percent_SAGE_transcript . "%)\n";

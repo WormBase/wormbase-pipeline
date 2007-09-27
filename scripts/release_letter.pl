@@ -4,8 +4,8 @@
 # 
 # by Anthony Rogers                             
 #
-# Last updated by: $Author: gw3 $               
-# Last updated on: $Date: 2007-09-04 12:51:25 $
+# Last updated by: $Author: mh6 $               
+# Last updated on: $Date: 2007-09-27 13:21:02 $
 
 # Generates a release letter at the end of build.
 #
@@ -178,9 +178,9 @@ if( defined($opt_l)) {
   print  RL "---------------------------------------\n";
   printf RL "Protein_id           %6d (%2.1f%%)\n", $wp_status{Protein_ID}, (($wp_status{Protein_ID}/$wp_status{Total}) * 100);
   print  RL "\n\n\n";
-  print  RL "Gene <-> CDS,Transcript,Pseudogene connections (cgc-approved)\n";
+  print  RL "Gene <-> CDS,Transcript,Pseudogene connections (WormBase-approved)\n";
   print  RL "---------------------------------------------\n";
-  printf RL "Entries with CGC-approved Gene name %6d\n", $wp_status{Gene};
+  printf RL "Entries with WormBase-approved Gene name %6d\n", $wp_status{Gene};
   print  RL "\n\n";
   
 #  # Get the GeneModel corrections
