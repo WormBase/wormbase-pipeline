@@ -7,8 +7,8 @@
 # A script to finish the last part of the weekly build by updating all of the
 # relevant WormBase and Wormpep web pages.
 #
-# Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2007-09-06 12:42:52 $      
+# Last updated by: $Author: mh6 $     
+# Last updated on: $Date: 2007-09-28 13:14:15 $      
 
 
 #################################################################################
@@ -22,6 +22,10 @@ use Symbol 'gensym';
 use Ace;
 use Carp;
 use File::Basename;
+use IO::File;
+use Switch;
+use threads;
+use Thread::Queue;
 
 ##############################
 # command-line options       #
@@ -791,16 +795,58 @@ sub copy_GFF_files{
 
   $log->write_to("Copying across GFF files from $gff\n");
 
-  #simple double foreach loop to loop through each chromosome and file name
-#  my @gff_files = ("clone_ends", "clone_path", "exon", "clone_acc", "CDS", "repeats", "intron", "rna");
-  my @gff_files = ("clone_acc");
   foreach my $chrom (@chrom) {
-    foreach my $file (@gff_files){
-      $wb->run_command("sort -u $gff/CHROMOSOME_${chrom}_$file.gff | /software/bin/perl $ENV{CVS_DIR}/gff_sort > $www/$WS_name/GFF/CHROMOSOME_${chrom}_$file.gff", $log) && 
-	$log->write_to("Couldn't copy CHROMOSOME_${chrom}_$file.gff\n", $log);
-    }
+      $wb->run_command(
+	      "sort -u $gff/CHROMOSOME_${chrom}_clone_acc.gff | /software/bin/perl $ENV{CVS_DIR}/gff_sort > $www/$WS_name/GFF/CHROMOSOME_${chrom}_clone_acc.gff", $log)
+      && $log->write_to("Couldn't copy CHROMOSOME_${chrom}_clone_acc.gff\n", $log);
   }
 
+  # to recreate some GFF files
+
+  my @types =('clone_acc','clone_ends','repeats','CDS','rna','confirmed_CDS','exon','intron','UTR');
+  my $queue=Thread::Queue->new; 
+
+  foreach my $type(@types) {
+	  foreach my $chrom (@chrom) {
+		  $queue->enqueue("$type,$chrom");
+	  }
+  }
+  my @workers;
+  push @workers,threads->create('gff_worker');
+  push @workers,threads->create('gff_worker');
+  push @workers,threads->create('gff_worker');
+  push @workers,threads->create('gff_worker');
+  map {$_->join} @workers;
+
+  sub gff_worker {	
+     while (my $string = $queue->dequeue_nb){ # pop a file from the queue and return undef if empty
+	printf ("processing $string in thread: %i\n",threads->tid());
+        my ($type,$chrom)=split(',',$string);
+
+             my $inf = new IO::File "$chromdir/CHROMOSOME_${chrom}.gff",'r';
+             my $outf= new IO::File "$www/$WS_name/GFF/CHROMOSOME_${chrom}.$type.gff",'w';
+             while (<$inf>){
+		     my @F=split;
+		     switch($type){
+			  case ('clone_ends'){   print $outf $_ if /Clone_(left|right)_end/}
+			  case ('repeats'){      print $outf $_ if ($F[2] && $F[2]=~/repeat/)}
+			  case ('CDS'){          print $outf $_ if ($F[1] && $F[1]=~/Gene/)}
+			  case ('rna'){          print $outf $_ if ($F[2] && $F[2]=~/RNA_primary_transcript/)}
+			  case ('confirmed_CDS'){print $outf $_ if /intron.*Confirmed/}
+			  case ('exon'){         print $outf $_ if ($F[2] && $F[2]=~/exon/)}
+			  case ('intron'){       print $outf $_ if ($F[2] && $F[2]=~/intron/)}
+			  case ('UTR'){          print $outf $_ if ($F[2] && $F[2]=~/UTR/)}
+			  case ('clone_acc')     { print $outf $_ if ($F[1] && $F[2]
+					and $F[1] eq 'Genomic_canonical' && $F[2] eq 'region')}
+			  else {}
+	             }
+	     }
+     }
+  }
+
+
+  ##############
+  
   $log->write_to("Copying across GFF files from $dbpath/CHECKS/\n");
   $wb->run_command("cp $dbpath/CHECKS/*.gff $www/$WS_name/GFF/", $log) && $log->write_to("Could not copy GFF files from autoace/CHECKS $!\n");
 }
