@@ -5,11 +5,10 @@
 # Usage : EMBL_Sequencefetch.pl [-options]
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2007-09-05 15:33:44 $
+# Last edited on: $Date: 2007-09-28 15:57:19 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
-
 use strict;
 use Wormbase;
 use Getopt::Long;
@@ -23,7 +22,7 @@ use Species;
 # variables and command-line options #
 ######################################
 
-my ($help, $debug, $test, $verbose, $store, $wormbase, $version, $organism, $output, $longtext, $dna, $database, $inc, $species, $dump_only);
+my ($help, $debug, $test, $verbose, $store, $wormbase, $version, $organism, $output, $nolongtext, $dna, $database, $inc, $species, $dump_only);
 
 GetOptions ("help"       => \$help, #
             "debug=s"    => \$debug, # debug option, turns on more printing and only email specified user.
@@ -31,11 +30,11 @@ GetOptions ("help"       => \$help, #
             "verbose"    => \$verbose, # additional printing
             "store:s"    => \$store, # wormbase storable object
 	    "organism=s" => \$organism, # Specify an organism
-	    "longtext"   => \$longtext, # Create longtext objects.
 	    "dna"        => \$dna, # Create a seperate DNA file.
 	    "database=s" => \$database, #database are you downloading sequence data for.
 	    "inc"        => \$inc, #just query emblnew.
-	    "dump_only"  => \$dump_only # only dumps the Transcript data from the primary databases, not EMBL connection is made.
+	    "dump_only"  => \$dump_only, # only dumps the Transcript data from the primary databases, not EMBL connection is made.
+	    "nolongtext" => \$nolongtext # don't dump longtext
 	   );
 
 if ( $store ) {
@@ -46,7 +45,6 @@ if ( $store ) {
 			     -organism => $species,
 			   );
 }
-
 
 #################################
 # Set up some useful stuff      #
@@ -69,7 +67,7 @@ my $new_sequence;
 my $acefile;
 my $dnafile;
 my $Longtextfile;
-
+my $miscdir = "/.automount/evs-users2/root/wormpub/BUILD_DATA/MISC_DYNAMIC";
 
 #Molecules types
 #molecule type to Type tag data hash. key:molecule value:type
@@ -82,6 +80,16 @@ my %molecule2rnatype = ( 'genomic RNA' => "ncRNA",
 			 'unassigned RNA' => "ncRNA",
 			 'tRNA' => "tRNA",
 		       );
+
+my %species2taxonid = (
+		       'elegans'           => "6239",
+		       'briggsae'          => "6238",
+		       'remanei'           => "31234",
+		       'japonica'          => "281687",
+		       'brenneri'          => "135651",
+		       'pristionchus'      => "54126",
+		       'heterorhabditis'   => "37862",
+		      );
 
 if ($test) {
   @molecules  = ("mRNA");
@@ -114,11 +122,18 @@ WARNING: You are retrieving EMBL sequences as a full update (This will take a lo
 my %species = ($wormbase->species_accessors);
 $species{$wormbase->species} = $wormbase;
 
-foreach my $organism(keys %species) {
+#foreach my $organism(keys %species) {
+foreach my $organism(keys %species2taxonid) {
   $log->write_to("============================================\nProcessing: $organism\n============================================\n");
   my $sourceDB;
   if ($organism eq "elegans") {
     $sourceDB = $wormbase->database('camace');
+  }
+  elsif ($organism eq "heterorhabditis") {
+    $sourceDB = glob "~wormpub/DATABASES/heterorhabditis";
+  }
+  elsif ($organism eq "pristionchus"){
+    $sourceDB = glob "~wormpub/DATABASES/pristionchus";
   }
   else {$sourceDB = $wormbase->database($organism);}
   # Fetch sequence data from primary database.
@@ -147,8 +162,17 @@ foreach my $organism(keys %species) {
   # Dump the data back to BUILD_DATA/cDNA/organism/
   $log->write_to("Dumping BLAT sequences($organism)\n");
   &dump_BLAT_data ($sourceDB, $organism, \%species);
-  $log->write_to("Processed: $organism\n============================================\n\n");
+  $log->write_to("============================================\nProcessed: $organism\n============================================\n\n");
 }
+
+  # Cat all of the EST/mRNA sequence files into a single file for loading into the build and remove the files..
+$log->write_to("Refreshing Organism sequence data for next build..........\n\n");
+$wormbase->run_command ("rm $miscdir/Caenorhabditae_sequence_data_to_load.ace", $log) if (-e "$miscdir/Caenorhabditae_sequence_data_to_load.ace");
+$wormbase->run_command ("rm $miscdir/elegans_*_data_tmp.ace", $log); #elegans data comes from camace.
+$wormbase->run_command ("cat $miscdir/*_mRNA_data_tmp.ace > $miscdir/Caenorhabditae_sequence_data_to_load.ace", $log);
+$wormbase->run_command ("cat $miscdir/*_EST_data_tmp.ace >> $miscdir/Caenorhabditae_sequence_data_to_load.ace", $log);
+$wormbase->run_command ("rm $miscdir/*_data_tmp.ace", $log);
+$log->write_to("\nRefreshed........ ;) \n\n");
 $log->write_to ("WORK DONE------------FINISHED\n\n");
 #Close log/files and exit
 $log->mail();
@@ -229,12 +253,16 @@ sub get_embl_data {
   my $species = shift;
 #  my (@entries, $count, $molname);
   if ($inc) {
-    open (SEQUENCES, "$mfetch -d emblnew -i \"mol:$molecule&org:Caenorhabditis $species\" |");
-    print "Incremental update selected <mfetch -d emblnew -i \"mol:$molecule&org:Caenorhabditis $species\">\n";
+    open (SEQUENCES, "$mfetch -d emblnew -i \"mol:$molecule&txi:$species2taxonid{$species}\" |");
+    print "Incremental update selected <mfetch -d emblnew -i \"mol:$molecule&txi:$species2taxonid{$species}\">\n";
+    #open (SEQUENCES, "$mfetch -d emblnew -i \"mol:$molecule&org:Caenorhabditis $species\" |");
+    #print "Incremental update selected <mfetch -d emblnew -i \"mol:$molecule&org:Caenorhabditis $species\"\n";
   }
   else {
-      open (SEQUENCES, "$mfetch -d embl -i \"mol:$molecule&org:Caenorhabditis $species\" |");
-      print "Default Full update selected <mfetch -d embl -i \"mol:$molecule&org:Caenorhabditis $species\">\n";
+    open (SEQUENCES, "$mfetch -d embl -i \"mol:$molecule&txi:$species2taxonid{$species}\" |");
+    print "Default Full update selected <mfetch -d embl -i \"mol:$molecule&txi:$species2taxonid{$species}>\"\n";
+    #open (SEQUENCES, "$mfetch -d embl -i \"mol:$molecule&org:Caenorhabditis $species\" |");
+    #print "Default Full update selected <mfetch -d embl -i \"mol:$molecule&org:Caenorhabditis $species\"\n";
     }
     while (<SEQUENCES>) {
       chomp;
@@ -298,20 +326,23 @@ sub get_new_data {
   my $subentries = shift;
   my $submol = shift;
   my $suborganism = shift;
-
+  my $submol_mod;
+  if ($submol eq "genomic RNA") {$submol_mod = "genomic_RNA";}
+  elsif ($submol eq "other RNA") {$submol_mod = "other_RNA";}
+  elsif ($submol eq "unassigned RNA") {$submol_mod = "unassigned_RNA";}
+  else {$submol_mod = $submol;}
   #Output files
-  $acefile = "$output_dir/new_${suborganism}_$submol.ace";
+  $acefile = "$output_dir/new_${suborganism}_$submol_mod.ace";
   $wormbase->run_command ("rm $acefile", $log) if (-e $acefile);
 
   if ($dna) {
-    $dnafile = "$output_dir/new_${suborganism}_$submol.dna";
+    $dnafile = "$output_dir/new_${suborganism}_$submol_mod.dna";
     $wormbase->run_command ("rm $dnafile", $log) if (-e $dnafile);
   }
-  if ($longtext) {
-    $Longtextfile = "$output_dir/new_${suborganism}_${submol}_longtext.txt";
-    $wormbase->run_command ("rm $Longtextfile", $log) if (-e $Longtextfile);
-  }
 
+  $Longtextfile = "$output_dir/new_${suborganism}_${submol_mod}_longtext.txt";
+  $wormbase->run_command ("rm $Longtextfile", $log) if (-e $Longtextfile); 
+  
   # Remove stale data if it exists on disk.
   $wormbase->run_command ("rm $acefile", $log) if (-e $acefile);
   $wormbase->run_command ("rm $dnafile", $log) if (-e $dnafile);
@@ -321,7 +352,7 @@ sub get_new_data {
   open (OUT_ACE,  ">$acefile");
   print "$acefile opened!!\n" if $debug;
   open (OUT_DNA,  ">$dnafile") if defined($dna);
-  open (OUT_LONG, ">$Longtextfile") if defined($longtext);
+  open (OUT_LONG, ">$Longtextfile") unless (defined $nolongtext);
 
   foreach $new_sequence (@{$subentries}) {
     my ($seq,$status,$protid,$protver,@description,$idF,$svF,$idF2,$type,$def,$sequencelength);
@@ -333,12 +364,12 @@ sub get_new_data {
       #Extract ID and Sequence Version.
       if ((/^ID\s+(\S+)\;\s+\SV\s+(\d+)\;\s+.+mRNA.+(EST)/) or (/^ID\s+(\S+)\;\s+\SV\s+(\d+)\;\s+.+mRNA.+(STD)/)) { #mRNA or EST
 	#        if (/^ID\s+(\S+)\;\s+\SV\s+(\d+)\;\s+/) {
-	print OUT_LONG "\nLongText : \"$1\"\n" if $longtext;
+	print OUT_LONG "\nLongText : \"$1\"\n" unless (defined $nolongtext);
 	$idF = $1;
 	$svF = $2;
 	$type = $3;
       } elsif (/^ID\s+(\S+)\;\s+\SV\s+(\d+)\;\s+/) { #Non-EST/mRNA entries
-	print OUT_LONG "\nLongText : \"$1\"\n" if $longtext;
+	print OUT_LONG "\nLongText : \"$1\"\n" unless (defined $nolongtext);
 	$idF = $1;
 	$svF = $2;
       }
@@ -380,7 +411,7 @@ sub get_new_data {
 	$status = 1;		#set status to 1 for identifying start of sequence.
 	print "$status\n" if ($verbose);
       }
-      print OUT_LONG "$_" if $longtext; #print out the embl entry line unmodified to the LongText file
+      print OUT_LONG "$_" unless (defined $nolongtext); #print out the embl entry line unmodified to the LongText file
       if (/^\s/) {
 	s/\s+//g;
 	s/\d+//g;
@@ -393,7 +424,7 @@ sub get_new_data {
       if (/^\/\//) {		#end of embl entry
 	$status = 0;
 	$DEline1 = 0;
-	print OUT_LONG "***LongTextEnd***\n" if $longtext;
+	print OUT_LONG "***LongTextEnd***\n" unless (defined $nolongtext);
 	print "$status\n" if ($verbose);
 	print OUT_ACE "\nSequence : \"$idF2\"\n";
 	#	print OUT_ACE "DNA $idF2 $sequencelength\n";
@@ -403,7 +434,9 @@ sub get_new_data {
 	print OUT_ACE "Database EMBL NDB_SV $idF\.$svF\n";
 	print OUT_ACE "DB_annotation EMBL $idF\n";
 	print OUT_ACE "Protein_id $idF $protid $protver\n" if (defined$protid && defined$protver);
-	print OUT_ACE "Species \"Caenorhabditis $suborganism\"\n";
+	if ($suborganism eq "pristionchus") {print OUT_ACE "Species \"Pristionchus pacificus\"\n";}
+	elsif ($suborganism eq "heterorhabditis") { print OUT_ACE "Species \"Heterorhabditis bacteriophora\"\n";}
+	else {print OUT_ACE "Species \"Caenorhabditis $suborganism\"\n";}
 	print OUT_ACE "Title \"@description\"\n";
 
 	# Properties depend on the molecule subdivision of embl that the sequence was fetched from.
@@ -448,11 +481,11 @@ sub get_new_data {
   #Close files
   close (OUT_ACE);
   close (OUT_DNA) if $dna;
-  close (OUT_LONG) if $longtext;
+  close (OUT_LONG) unless (defined $nolongtext);
   $log->write_to("\n\nOutput Files:\n");
-  $log->write_to("Ace file for $suborganism $submol => $acefile\n");
-  $log->write_to ("DNA file for $suborganism $submol => $dnafile\n") if ($dna);
-  $log->write_to ("LongText file for $suborganism $submol => $Longtextfile\n\n") if $longtext;
+  $log->write_to("Ace file for $suborganism $submol_mod => $acefile\n");
+  $log->write_to ("DNA file for $suborganism $submol_mod => $dnafile\n") if ($dna);
+  $log->write_to ("LongText file for $suborganism $submol_mod => $Longtextfile\n\n") unless (defined $nolongtext);
 }
 
 ##############################
@@ -463,13 +496,18 @@ sub load_data {
   my $sub_sourceDB = shift;
   my $submol = shift;
   my $suborganism = shift;
+  my $submol_mod;
+  if ($submol eq "genomic RNA") {$submol_mod = "genomic_RNA";}
+  elsif ($submol eq "other RNA") {$submol_mod = "other_RNA";}
+  elsif ($submol eq "unassigned RNA") {$submol_mod = "unassigned_RNA";}
+  else {$submol_mod = $submol;}
 
-  $acefile = "$output_dir/new_${suborganism}_$submol.ace";
+  $acefile = "$output_dir/new_${suborganism}_$submol_mod.ace";
   $wormbase->load_to_database($sub_sourceDB, $acefile, "EMBL_sequence_fetch.pl", $log) if (-e $acefile);
   $log->write_to("Loading $acefile into $sub_sourceDB\n\n") if (-e $acefile);
 
-  if ($longtext) {
-    $Longtextfile = "$output_dir/new_${suborganism}_${submol}_longtext.txt";
+  unless (defined $nolongtext) {
+    $Longtextfile = "$output_dir/new_${suborganism}_${submol_mod}_longtext.txt";
     $wormbase->load_to_database($sub_sourceDB, $Longtextfile, "EMBL_sequence_fetch.pl", $log) if (-e $Longtextfile);
     $log->write_to("Loading $Longtextfile into $sub_sourceDB\n\n") if (-e $Longtextfile);
   }
@@ -482,7 +520,11 @@ sub load_data {
 sub dump_BLAT_data {
   my $dbdir = shift;
   my $subspecies = shift;
-  my $EST_dir = $species{$subspecies}{cdna_dir};
+  my $EST_dir;
+  if ($subspecies eq "heterorhabditis" or $subspecies eq "pristionchus") {
+    $EST_dir = $wormbase->basedir."_DATA/cDNA/$subspecies";
+  }
+  else {$EST_dir = $species{$subspecies}{cdna_dir};}
 
   $log->write_to("Dumping $subspecies from $dbdir\n\n");
 
@@ -512,13 +554,18 @@ clear\n
 query find Sequence TC*\n
 Dna -mismatch $EST_dir/tc1\n
 clear\n
+query find Sequence where method = "*EST*"\n
+Write $miscdir/${subspecies}_EST_data_tmp.ace\n
+clear\n
+query find Sequence where method = "*NDB*"\n
+Write $miscdir/${subspecies}_mRNA_data_tmp.ace\n
+clear\n
 quit\n
 END
   print $command if ($debug);
   open (DB, "| $tace $dbdir") || die "Couldn't open $dbdir\n";
   print DB $command;
   close DB;
-  
   $log->write_to("Finished $subspecies\n\n");
 }
 
