@@ -3,18 +3,19 @@ use strict;
 use Getopt::Long;
 
 my ($init, $database, $target);
-my ($debug);
+my ($debug, $live, $user, $pass);
 GetOptions ( 
 	    "init" => \$init,
 	    'database:s' => \$database,
 	    'gene:s'     => \$target,
-	    'debug:s'    => \$debug
+	    'debug:s'    => \$debug,
+	    'live'       => \$live,
+	    'pass:s'     => \$pass,
+	    'user:s'     => \$user
 	   );
 
-use constant USERNAME => 'wormpub';
-use constant PASSWD   => 'wormpub';
 
-use lib '../lib','./lib','./blib';
+use lib '/nfs/WWWdev/SANGER_docs/lib/Projects/C_elegans';
 use lib $ENV{'CVS_DIR'};
 
 use Wormbase;
@@ -23,7 +24,9 @@ use HTTP::Date;
 
 $database = glob("~wormpub/DATABASES/current_DB") unless $database;
 
-my $db = NameDB->connect('wbgene_id:mcs2a',USERNAME,PASSWD);
+#default to test database: specific -live at your peril!
+my $ns = $live ? 'wbgene_id:mcs2a' : 'test_wbgene_id:mcs2a';
+my $db = NameDB->connect($ns,$user,$pass);
 if( $init ) {
   $db->initialize(1) if $init;  # start with a completely clean slate
   # create domains to be stored
@@ -99,7 +102,7 @@ while ( my $gene = $WBGenes->next ) {
 	push( @{$import_gene{'names'}->{'Public_name'}},( $cgc_name ? $cgc_name : $seq_name) );
 	push( @{$import_gene{'names'}->{'Sequence'}}, $seq_name);
 	#push( @{$import_gene{'names'}->{'Mol_name'}}, @mol_names);
-	push( @{$import_gene{'names'}->{'CDS'}}, @CDS_names);
+	#push( @{$import_gene{'names'}->{'CDS'}}, @CDS_names);
 	$import_gene{'live'}    = $live;
 	my $internal_id = $db->import_object(\%import_gene );
       } 
