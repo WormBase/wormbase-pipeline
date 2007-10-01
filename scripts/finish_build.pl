@@ -12,8 +12,8 @@
 # 3) Archives old GFF_SPLITS directory
 # 4) Makes current_DB (copy of latest release) in ~wormpub/DATABASES
 #
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2007-09-27 14:20:23 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2007-10-01 15:35:51 $
 
 
 use strict;
@@ -92,8 +92,6 @@ my $WS_old_path = $wormbase->database("$WS_old_name");
 my $old_wormpep = "$basedir/WORMPEP/wormpep".($WS_current-3);
 
 #####################################################################################
-
-# &archive_old_releases ($WS_old_name); # freaky read-only crud
 
 my $new_dir = $wormbase->wormpub."/DATABASES/".$wormbase->get_wormbase_version_name;
 
