@@ -6,8 +6,8 @@
 #
 # Builds a wormpep data set from the current autoace database
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2007-06-22 09:03:35 $
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2007-10-02 13:29:32 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -128,7 +128,7 @@ my $PEP_PREFIX    = $wormbase->pep_prefix;
 
 # now query autoace to get details of latest set of CDS names, writes wormpep.dnaXXX file
 # also fills in hashes used elsewhere
-#&write_wormpep_dna unless $table;
+&write_wormpep_dna unless $table;
 
 # grab protein information for each CDS from autoace, using Table-Maker
 # in -initial mode, this is just getting CGC name and Brief_identification information
@@ -592,11 +592,11 @@ sub write_wormpep_history_and_diff{
     $line{$cds} = $line;
 
     if (!exists($cds2number{$cds})){
-      if (!defined $end) {
+      if ($end eq '') {
 			print HISTORY "$cds\t$wpid\t$start\t$release\n";
 			print DIFF "lost:\t$cds\t$wpid\n";
       } 
-      else{
+      else {
 		print HISTORY "$cds\t$wpid\t$start\t$end\n";
       }
     }
