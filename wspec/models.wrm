@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: ar2 $
-// Last edited on: $Date: 2007-09-21 08:51:16 $
+// Last edited on: $Date: 2007-10-09 13:33:09 $
 
 
 
@@ -1377,7 +1377,7 @@
 				     // store consensus sequences, e.g. binding site consensus sequence
 	 Origin     Species UNIQUE ?Species  //added by pad, as we are moving towards multi species readyness.
 	 History    Merged_into	   UNIQUE    ?Feature XREF Acquires_merge #Evidence
-		    Acquires_merge UNIQUE    ?Feature XREF Merged_into #Evidence
+		    Acquires_merge ?Feature XREF Merged_into #Evidence
 		    Deprecated	   Text	     #Evidence 
          Visible    Description ?Text
 		    SO_term ?SO_term XREF Feature
@@ -2166,9 +2166,9 @@
 	Reference ?Paper XREF Operon
 	Method UNIQUE ?Method
 	History    Merged_into      UNIQUE ?Operon XREF Acquires_merge #Evidence
-		   Acquires_merge   UNIQUE ?Operon XREF Merged_into #Evidence
+		   Acquires_merge   ?Operon XREF Merged_into #Evidence
 		   Split_from       UNIQUE ?Operon XREF Split_into #Evidence
-		   Split_into       UNIQUE ?Operon XREF Split_from #Evidence
+		   Split_into       ?Operon XREF Split_from #Evidence
 		   Deprecated	    Text   #Evidence //pad - for operons no longer believed.
 	Remark Text #Evidence
 
@@ -2883,6 +2883,8 @@
 		    Promoter #Evidence
 		    UTR_3 #Evidence
 		    UTR_5 #Evidence 
+		    Regulatory_feature #Evidence
+		    Genomic_neighbourhood #Evidence
 
 
 
