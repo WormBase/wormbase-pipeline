@@ -1,7 +1,7 @@
 #!/software/bin/perl -w
 
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2007-10-09 09:44:30 $
+# Last updated on: $Date: 2007-10-11 10:05:48 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -87,7 +87,7 @@ foreach (@$ref_results) {
 	if( $aa2pepid{$seq} ){
 		my $pepid = $aa2pepid{$seq};
 		print ACE "\nProtein : \"WP:$pepid\"\n";
-		print ACE "Motif_homol Active_site \"$method\" $residue $residue\n"; 
+		print ACE "Motif_homol Active_site \"$method\" 0 $residue $residue 1 1\n"; 
 	}
 	else {
 		$log->write_to("$seq_id sequence not in current set\n");
