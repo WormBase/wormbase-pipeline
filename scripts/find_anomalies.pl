@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2007-09-27 11:33:17 $      
+# Last updated on: $Date: 2007-10-11 15:24:13 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -305,6 +305,9 @@ foreach my $chromosome (@chromosomes) {
 &delete_anomalies("UNMATCHED_TWINSCAN");
 &delete_anomalies("UNMATCHED_GENEFINDER");
 &delete_anomalies("CONFIRMED_INTRONS");
+&delete_anomalies("CONFIRMED_EST_INTRONS");
+&delete_anomalies("CONFIRMED_cDNA_INTRONS");
+&delete_anomalies("INTRONS_IN_UTR");
 
 
 # disconnect from the mysql database
@@ -2492,7 +2495,7 @@ sub get_multiple_utr_introns {
     my $chrom_strand = $utr->[3];
 
     # we don't want to see UTRs from isoform transcripts - there are too many mangled UTRs in them
-    if ($id !~ /^\S+\.\d+$/) {next;} 
+    if ($id !~ /^\S+\.\d+$/ || $id =~ /^\S+\.\d+[a-z]\.\d+$/) {next;} 
 
     if ($prev ne $id) {
       $prev = $id;
