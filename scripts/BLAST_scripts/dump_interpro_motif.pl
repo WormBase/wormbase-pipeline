@@ -4,8 +4,8 @@
 #
 # Dumps InterPro protein motifs from ensembl mysql (protein) database to an ace file
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2007-02-22 12:00:59 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2007-10-12 12:20:47 $
 
 
 use strict;
@@ -75,11 +75,9 @@ if ($method ) {
 # add new methods (logic_names, as defined in the mysql database 'analysis' table, column 'logic_name') 
 # as they are added to the pipeline
 #
-# don't use 'superfamily': it finds lots of hits per protein
-# 'profile' is still having problems writing to the database
 #  @methods= qw(hmmpfam prints profile pirsf hmmtigr hmmsmart );
-# removed prints
-  @methods= qw(hmmpfam pirsf hmmtigr hmmsmart prosite profile);
+#  @methods= qw(hmmpfam pirsf hmmtigr hmmsmart prosite profile);
+  @methods= qw(prosite prints profile blastprodom hmmsmart hmmpanther hmmpfam hmmtigr pirsf superfamily gene3d);
 }
 
 
@@ -87,14 +85,13 @@ if ($method ) {
 # and the logic names (as specified in @methods) that search those databases
 my %method_database = (
 		       'prosite'     => 'PROSITE',
-#		       'prints'      => 'PRINTS',
+		       'prints'      => 'PRINTS',
 		       'profile'     => 'PROFILE',
-		       'prodom'      => 'PRODOM',
+		       'blastprodom' => 'PRODOM',
 		       'hmmsmart'    => 'SMART',
 		       'hmmpanther'  => 'PANTHER',
 		       'hmmpfam'     => 'PFAM',
 		       'hmmtigr'     => 'TIGRFAMs',
-		       'scanregexp'  => 'PROSITE',
 		       'coils'       => 'COIL',
 		       'seg'         => 'SEG',
 		       'tmhmm'       => 'TMHMM',
@@ -166,6 +163,9 @@ my $sth_f = $dbh->prepare ( q{ SELECT protein_id, seq_start, seq_end, hit_id, hi
 				   AND analysis_id = ?
                              } );
 
+# counts extracted for each method
+my %counts;
+
 # get the motifs
 my %motifs;
 foreach my $method (@methods) {
@@ -173,10 +173,8 @@ foreach my $method (@methods) {
   print "processing $method: $method2analysis{$method}\n" if ($verbose);
   $sth_f->execute ($method2analysis{$method});
   my $ref = $sth_f->fetchall_arrayref;
-  my $method_count = scalar(@$ref);
-
-  print "$method: found $method_count hits\n" if ($verbose);
-  $log->write_to("$method: found $method_count hits\n");
+  $counts{$method} = scalar(@$ref);
+  print "We found $counts{$method} results for $method\n";
 
   foreach my $aref (@$ref) {
     my ($prot, $start, $end, $hid, $hstart, $hend, $score, $evalue) = @$aref;
@@ -193,7 +191,7 @@ foreach my $method (@methods) {
       my @hit = ( $ip_id, $start, $end, $hstart, $hend, $score, $evalue );
       push @{$motifs{$prot}}, [ @hit ];
     } else {
-#      print "$database ID $hid is not in InterPro\n" if ($verbose);
+      print "$database ID $hid is not in InterPro\n" if ($verbose);
     }
   }
 }
@@ -302,7 +300,7 @@ foreach my $prot (sort {$a cmp $b} keys %merged) {
     foreach my $hit (@{$merged{$prot}}) {
       my ($ip_id, $start, $end, $hstart, $hend, $score, $evalue) = @$hit;
       my $line = "Motif_homol \"INTERPRO:$ip_id\" \"interpro\" $evalue $start $end $hstart $hend";
-      #print "$line\n" if ($verbose);
+      print "$line\n" if ($verbose);
       print ACE "$line\n";
     }
 }
@@ -329,11 +327,20 @@ foreach my $domains (sort {$a <=> $b} keys %domain_counts) {
   $log->write_to("$domains\t\t$domain_counts{$domains}\n");
 }
 
-$log->write_to("\n\nEnd of InterPro Motif dump\n");
-print "\nEnd of InterPro Motif dump\n";
+
+foreach my $method (keys %counts) {
+  if ($counts{$method} == 0) {
+    print "ERROR: ";
+  }
+  print "$method: found $counts{$method} hits\n";
+  if ($counts{$method} == 0) {
+    $log->write_to("ERROR: ");
+    $log->error;
+  }
+  $log->write_to("$method: found $counts{$method} hits\n");
+}
 
 $log->mail;
-
 exit(0);
 
 ##############################################################
