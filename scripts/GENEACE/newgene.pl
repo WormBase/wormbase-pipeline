@@ -6,8 +6,8 @@
 #
 # simple script for creating new (sequence based) Gene objects 
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2007-05-24 16:04:19 $
+# Last edited by: $Author: mt3 $
+# Last edited on: $Date: 2007-10-15 16:45:45 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -149,7 +149,7 @@ if ($input){
     print "\n\n$seq - $cgc\n" if ($verbose);
 
     # skip bad looking sequence names
-    if ($seq !~ m/^\w+\.(\d{1,2}|\d{1,2}[a-z])$/){
+    if ($seq !~ m/^\w+\.(\d{1,2,3}|\d{1,2,3}[a-z])$/){
       print "ERROR: Bad sequence name, skipping\n";
       next;
     }
