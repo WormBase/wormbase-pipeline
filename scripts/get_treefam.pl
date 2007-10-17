@@ -60,23 +60,23 @@ use DBI;
 # GET THE LONG NAMES OF THE TREEFAM GENES FROM THE MYSQL DATABASE:
 
 my %WORM                      = (); # HASH TABLE TO KEEP A LIST OF WORM GENES IN TREEFAM.
-my $database                  = 'treefam_4';
+my $database                  = 'treefam_5';
 
-$log->write_to("connecting to treefam database : \tmysql:treefam_4:db.treefam.org:3308\n");
-my $dbh                       = DBI->connect("dbi:mysql:treefam_4:db.treefam.org:3308", 'anonymous', '') || return;
+$log->write_to("connecting to treefam database : \tmysql:$database:db.treefam.org:3308\n");
+my $dbh                       = DBI->connect_cached("dbi:mysql:$database:db.treefam.org:3308", 'anonymous', '') || return;
 my $table_w                   = 'genes';
 # THIS TABLE HAS THE ID AND DISPLAY ID. SOMETIMES THE DISPLAY ID IS
 # THE UNIPROT NAME, SOMETIMES THE ID IS:
-my $st                        = "SELECT ID, TAX_ID from $table_w"; 
+my $st                        = "SELECT ID, TAX_ID from $table_w WHERE TAX_ID IN (6239, 6238)"; 
 my $sth                       = $dbh->prepare($st) or die "Cannot prepare $st: $dbh->errstr\n";
 my$rv                        = $sth->execute or die "Cannot execute the query: $sth->errstr";
 if ($rv >= 1)
 {
    while ((my @array) = $sth->fetchrow_array)    {
       my $ID                  = $array[0];  # eg., AH3.1 for a C. elegans gene or
-                                         #      WBGene00024691 for a C. briggsae gene
+                                            #      WBGene00024691 for a C. briggsae gene
       my $TAX_ID              = $array[1];  # eg., 6239 for a C. elegans gene or
-                                         #      6238 for a C. briggsae gene 
+                                            #      6238 for a C. briggsae gene 
       if ($TAX_ID == 6239 || $TAX_ID == 6238) # IT IS A C. ELEGANS OR C. BRIGGSAE GENE
       {
          # REMEMBER THAT THIS WORM GENE IS IN TREEFAM:
@@ -92,29 +92,33 @@ $rc                        = "";
 # GET THE NAMES OF ALL THE TREEFAM FAMILIES AND THE GENES THAT ARE IN
 # THEM FROM THE MYSQL DATABASE:
 
-$database                  = 'treefam';
-$dbh                       = DBI->connect("dbi:mysql:treefam_4:db.treefam.org:3308", 'anonymous', '') || return;
+# $database                  = 'treefam';
+$dbh                       = DBI->connect_cached("dbi:mysql:$database:db.treefam.org:3308", 'anonymous', '') || return;
 # FIRST READ IN TREEFAM-A AND THEN TREEFAM-B:
 
 my %FAMILY                    = (); # HASH TABLE TO KEEP A RECORD OF THE TREEFAM FAMILIES THAT A WORM GENE IS IN.
-for (my $i = 1; $i <= 2; $i++)
+for (my $i = 1; $i <= 3; $i++)
 {
    # SPECIFY THE TABLE:
 
    if    ($i == 1) # LOOK AT TREEFAM-A:
    {
-      $table_w             = 'famA_gene';
+      $table_w             = 'fam_genes where FAM_TYPE="A"';
    }
    elsif ($i == 2) # LOOK AT TREEFAM-B:
    {
-      $table_w             = 'famB_gene';
+      $table_w             = 'fam_genes where FAM_TYPE="B"';
+   }
+   elsif ($i == 3) # LOOK AT TREEFAM-C:
+   {
+      $table_w             = 'fam_genes where FAM_TYPE="C"';
    }
 
    # THE FIRST THREE COLUMNS IN THE TABLE famB_gene/famA_gene ARE THE TRANSCRIPT NAME, FAMILY NAME AND WHETHER THE
    # TRANSCRIPT IS IN THE SEED/FULL TREE:
    # eg., ENSMUST00000049178.2 TF105085 FULL
 
-   my $st                     = "SELECT ID, AC, FLAG from $table_w"; 
+   my $st                     = "SELECT ID, AC, FLAG FROM $table_w AND FLAG=\"FULL\""; 
    my $sth                    = $dbh->prepare($st) or die "Cannot prepare $st: $dbh->errstr\n";
    my $rv                     = $sth->execute or die "Cannot execute the query: $sth->errstr";
    if ($rv >= 1)
@@ -122,26 +126,23 @@ for (my $i = 1; $i <= 2; $i++)
       while ((my @array) = $sth->fetchrow_array)    {
          my $ID               = $array[0];  # eg., F40G9.2.1 for a C. elegans gene OR WBGene00027163 for a C. briggsae gene.
          my $AC               = $array[1];  # eg., TF105085, NAME OF THE TREEFAM FAMILY.
-         my $FLAG             = $array[2];  # eg., FULL OR BOTH
+         my $FLAG             = $array[2];  # eg., FULL OR SEED
 
  
-         if (($FLAG eq 'FULL' || $FLAG eq 'BOTH')) # WE ARE ONLY INTERESTED IN THE FULL TREES.
-         {
-            # CHECK IF IT IS A C. BRIGGSAE OR C. ELEGANS GENE:
-            if ($WORM{$ID})
-            {
-               # REMEMBER THE FAMILIES THAT THIS WORM GENE IS IN:
-               if (!($FAMILY{$ID})) { $FAMILY{$ID} = $AC;                 }
-               else {
-               	# as of treefam_4 they include an experimental clustering method 
-               	# used to populate treefam-c families.  These all begin TF5 and we only
-               	# want these if there is no A or B family
-               	unless($AC =~ /^TF5/) {
-               		$FAMILY{$ID} = $FAMILY{$ID} = $AC;
-               	}
+         # CHECK IF IT IS A C. BRIGGSAE OR C. ELEGANS GENE:
+         if ($WORM{$ID}) {
+               # REMEMBER THE FAMILY THAT THIS WORM GENE IS IN:
+	       if (!$FAMILY{$ID}){
+                 $FAMILY{$ID} = $AC;
                }
-            }
-         } 
+               # as of treefam_4 they include an experimental clustering method 
+               # used to populate treefam-c families.  These all begin TF5 and we only
+               # want these if there is no A or B family
+	       else {
+                 $FAMILY{$ID} = "$FAMILY{$ID},$AC" unless($AC =~ /^TF5/);
+	       }
+          }
+          
       }
    }
 }
@@ -166,7 +167,7 @@ foreach my $ID (keys %FAMILY)
   my $family                 = $FAMILY{$ID};
   my @family                 = split(/\,/,$family); # THIS IS A LIST OF THE FAMILIES THAT A WORM GENE APPEARS IN.
   my $no_families            = $#family + 1; # THIS IS THE NUMBER OF FAMILIES THAT A WORM GENE APPEARS IN.
-  #print "$ID $no_families $family\n"; 
+  print "$ID families: $no_families ($family)\n"; 
   my $gene = $ID;
   my $gene_obj;
   $gene = $gene =~ /(\w+\.\w+)\.\d+/ ? $1 : $gene;
