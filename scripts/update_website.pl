@@ -8,7 +8,7 @@
 # relevant WormBase and Wormpep web pages.
 #
 # Last updated by: $Author: mh6 $     
-# Last updated on: $Date: 2007-09-28 13:14:15 $      
+# Last updated on: $Date: 2007-10-17 14:02:48 $      
 
 
 #################################################################################
@@ -823,9 +823,9 @@ sub copy_GFF_files{
 	printf ("processing $string in thread: %i\n",threads->tid());
         my ($type,$chrom)=split(',',$string);
 
-             my $inf = new IO::File "$chromdir/CHROMOSOME_${chrom}.gff",'r';
+             open INF ,"zcat $chromdir/CHROMOSOME_${chrom}.gff.gz|" || die "ERROR: @!\n";
              my $outf= new IO::File "$www/$WS_name/GFF/CHROMOSOME_${chrom}.$type.gff",'w';
-             while (<$inf>){
+             while (<INF>){
 		     my @F=split;
 		     switch($type){
 			  case ('clone_ends'){   print $outf $_ if /Clone_(left|right)_end/}
@@ -841,6 +841,7 @@ sub copy_GFF_files{
 			  else {}
 	             }
 	     }
+	     close INF;
      }
   }
 
