@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2007-10-18 11:00:26 $      
+# Last updated on: $Date: 2007-10-18 13:41:48 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -1787,7 +1787,8 @@ sub get_unattached_TSL {
     my $got_an_EST = 0;
     foreach my $sequence (@sequences) {
       #print "> $sequence\n";
-      if (! $sequence->TSL_tag) { # ignore TEC-RED sequences
+      my $seq_obj = $ace->fetch('Sequence' => $sequence);
+      if (!$seq_obj->fetch('TSL_tag')) { # ignore TEC-RED sequences
 	$got_an_EST = 1;
 	last;
       }
