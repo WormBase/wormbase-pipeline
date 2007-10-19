@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl5.8.0 -w
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2007-10-19 12:14:32 $
+# Last edited on: $Date: 2007-10-19 14:27:31 $
 
 
 use lib $ENV{'CVS_DIR'};
@@ -367,6 +367,7 @@ sub check_and_shatter {
 	my $dir = shift;
 	my $file = shift;
 	
+	$wormbase->run_command("rm -f $dir/${file}_*", $log);
 	my $seq_count = qx(grep -c '>' $dir/$file);
 	if( $seq_count > 10000) {
 		$wormbase->run_script("shatter $dir/$file 5000 $dir/$file", $log);
