@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl5.8.0 -w
 #
-# Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2007-09-12 10:47:26 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2007-10-19 12:14:32 $
 
 
 use lib $ENV{'CVS_DIR'};
@@ -181,7 +181,7 @@ if( $postprocess ) {
   my $species = $wormbase->species;
   foreach my $species (keys %mol_types) {
   	foreach my $moltype ( @{$mol_types{$species}}){
- 	 $wormbase->run_command("cat $blat_dir/${species}_${moltype}_*   > $blat_dir/${species}_${moltype}_out.psl", $log); # /d causes compiler warning (?)
+ 	 $wormbase->run_command("cat $blat_dir/${species}_${moltype}_* |sort -u  > $blat_dir/${species}_${moltype}_out.psl", $log); # /d causes compiler warning (?)
     }
   }
 }
