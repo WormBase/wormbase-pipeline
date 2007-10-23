@@ -884,6 +884,9 @@ sub _new {
     bless $self, $class;
 }
 sub ncbi_tax_id {'37862'};
+sub chromosome_prefix {'Contig'}
+sub pep_prefix {'HB'}
+sub pepdir_prefix{'het'};
 
 ######################################################
 
@@ -903,7 +906,9 @@ sub _new {
     bless $self, $class;
 }
 sub ncbi_tax_id {'54126'};
-
+sub chromosome_prefix {'Contig'}
+sub pep_prefix {'PP'}
+sub pepdir_prefix{'pris'};
 
 #######################################################
 
