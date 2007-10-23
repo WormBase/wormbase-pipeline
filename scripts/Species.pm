@@ -113,6 +113,7 @@ sub wormpep_files {
 	   "brigpep.diff" );
 }
 
+
 #########################################
 package Remanei;
 use Carp;
@@ -867,6 +868,46 @@ sub ncbi_tax_id {'281687'};
 
 #######################################################
 
+package Heterorhabditis;
+use Carp;
+our @ISA = qw(Wormbase Species);
+
+sub _new {
+    carp('WARNING: Heterorhabditis bacteriophora is not yet fully integrated in the build');
+	
+    my $class = shift;
+    my %param = %{ shift(@_) };
+    my $self = $class->initialize( $class->flatten_params( \%param ) );
+
+    # add stuff post object creation goes here
+
+    bless $self, $class;
+}
+sub ncbi_tax_id {'37862'};
+
+######################################################
+
+package Pristionchus;
+use Carp;
+our @ISA = qw(Wormbase Species);
+
+sub _new {
+    carp('WARNING: Pristionchus bacteriophora is not yet fully integrated in the build');
+	
+    my $class = shift;
+    my %param = %{ shift(@_) };
+    my $self = $class->initialize( $class->flatten_params( \%param ) );
+
+    # add stuff post object creation goes here
+
+    bless $self, $class;
+}
+sub ncbi_tax_id {'54126'};
+
+
+#######################################################
+
+
 
 
 if ( __FILE__ eq $0 ) {
@@ -896,7 +937,7 @@ if ( __FILE__ eq $0 ) {
     eval{my $a = Wormbase->new(-test => 1);&test($a)};
     print "$@\n" if ($@);
 
-    foreach my $orgs (qw(Elegans Briggsae Remanei Brenneri Japonica)){
+    foreach my $orgs (qw(Elegans Briggsae Remanei Brenneri Japonica Heterorhabditis Pristionchus)){
 	    eval{
 		    my $a = Wormbase->new( '-organism' => $orgs,-test => 1);
 		    &test($a);

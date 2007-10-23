@@ -15,7 +15,7 @@ use File::stat;
 use Storable;
 use Species;
 
-our @allowed_organisms=qw(Elegans Briggsae Remanei Brenneri Japonica); #class data
+our @allowed_organisms=qw(Elegans Briggsae Remanei Brenneri Japonica Heterorhabditis Pristionchus); #class data
 sub initialize {
   my $class = shift;
   my %params = @_;
