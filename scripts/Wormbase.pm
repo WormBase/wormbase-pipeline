@@ -899,14 +899,14 @@ sub check_file {
 
       if ($line_count == 1 && exists $criteria{line1}) {
 	if ($line !~ /$criteria{line1}/) {
-	  push @problems, "line $line_count doesn't match criterion 'line1 => /$criteria{line1}/'";
+	  push @problems, "line $line_count:\n$line\ndoesn't match criterion 'line1 => /$criteria{line1}/'";
 	  last;
 	}
 	next;			# don't do 'lines' check on line 1 if 'line1' check exists
       }
       if ($line_count == 2 && exists $criteria{line2}) {
 	if ($line !~ /$criteria{line2}/) {
-	  push @problems, "line $line_count doesn't match criterion 'line2 => /$criteria{line2}/'";
+	  push @problems, "line $line_count:\n$line\ndoesn't match criterion 'line2 => /$criteria{line2}/'";
 	  last;
 	}
 	next;			# don't do 'lines' check on line 2 if 'line2' check exists
@@ -922,7 +922,7 @@ sub check_file {
 	}
 	if (!$line_ok) {
 	  my $regexp = '/'.join('/ /',@{$criteria{lines}}).'/'; # for easier readability
-	  push @problems, "line $line_count doesn't match criterion 'lines => [$regexp]]'";
+	  push @problems, "line $line_count:\n$line\ndoesn't match criterion 'lines => [$regexp]]'";
 	  last;
 	}
       }
