@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl5.8.0 -w
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2007-10-19 14:27:31 $
+# Last edited by: $Author: pad $
+# Last edited on: $Date: 2007-10-23 13:17:17 $
 
 
 use lib $ENV{'CVS_DIR'};
@@ -62,14 +62,16 @@ my $seq_obj      = Sequence_extract->invoke($database, undef, $wormbase) if $int
 
 #The mol_types available for each species is different
 #defaults lists - can be overridden by -types
-my %mol_types = ( 'elegans'   => [qw(EST mRNA ncRNA OST tc1 RST)],
-				  'briggsae'  => [qw( mRNA EST )],
-				  'remanei'   => [qw( mRNA EST )],
-				  'brenneri'  => [qw( mRNA )],
-				  'japonica'  => [qw( mRNA EST )],
-				  'nematode'  => [qw( EST )],
-				  'nembase'   => [qw( EST )],
-				  'washu'     => [qw( EST )],
+my %mol_types = ( 'elegans'          => [qw( EST mRNA ncRNA OST tc1 RST )],
+		  'briggsae'         => [qw( mRNA EST )],
+		  'remanei'          => [qw( mRNA EST )],
+		  'brenneri'         => [qw( mRNA )],
+		  'japonica'         => [qw( mRNA EST )],
+		  'heterorhabditis'  => [qw( mRNA EST )],
+		  'pristionchus'     => [qw( EST mRNA )],
+		  'nematode'         => [qw( EST )],
+		  'nembase'          => [qw( EST )],
+		  'washu'            => [qw( EST )],
 				);
 
 my @nematodes = qw(nematode washu nembase);
