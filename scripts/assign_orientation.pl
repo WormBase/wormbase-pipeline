@@ -9,7 +9,7 @@
 # transcripts to find the most probably orientation.
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2007-09-17 09:28:13 $      
+# Last updated on: $Date: 2007-10-29 13:07:57 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -74,7 +74,8 @@ my $log = Log_files->make_build_log($wormbase);
 
 
 # get the Overlap object
-my $ovlp = Overlap->new($wormbase);
+my $database = $wormbase->autoace;
+my $ovlp = Overlap->new($database, $wormbase);
 
 print "find ignored sequences\n" if ($verbose);
 my %ignore = &get_Ignore();
