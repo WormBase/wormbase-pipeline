@@ -6,8 +6,8 @@
 #
 # Exporter to map blat data to genome and to find the best match for each EST, mRNA, OST, etc.
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2007-10-19 13:47:31 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2007-10-29 13:17:17 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -75,9 +75,17 @@ my @nematodes = qw(nematode washu nembase);
 #############################
 my %NDBaccession2est;
 my %estorientation;
-unless ($species){ #this should change if other species need this too.
-	%NDBaccession2est = $wormbase->FetchData('NDBaccession2est');     # EST accession => name
-	%estorientation   = $wormbase->FetchData('estorientation');       # EST accession => orientation [5|3]
+if ($qspecies eq 'elegans'){ #this should change if other species need this too.
+# if we're processing elegans cDNAs we need to use the elegans common data to convert acc -> yk
+	my $accessor = $wormbase;
+	unless ($wormbase->species eq 'elegans') {
+		$accessor = Wormbase->new( 	-debug   => $wormbase->debug,
+                             		-test    => $wormbase->test,
+                            		-organism => 'elegans'
+                             );
+    }
+	%NDBaccession2est = $accessor->FetchData('NDBaccession2est');     # EST accession => name
+	%estorientation   = $accessor->FetchData('estorientation');       # EST accession => orientation [5|3]
 }
 my %hash;
 my (%best,%other,%bestclone,%match,%ci);
@@ -159,8 +167,8 @@ while (<BLAT>) {
   else {
     if (! exists $reported_this_query_before{$query}) {
       $reported_this_query_before{$query} = 1; # don't want to report this one again
-      $log->write_to("$query wasn't assigned to a virtual object as match size was too big\n") if $wormbase->debug;
-      $log->write_to("Start is $matchstart, end is $matchend on $superlink\n\n") if $wormbase->debug;
+    # $log->write_to("$query wasn't assigned to a virtual object as match size was too big\n") if $wormbase->debug;
+    #  $log->write_to("Start is $matchstart, end is $matchend on $superlink\n\n") if $wormbase->debug;
     }
     next;
   }
@@ -193,7 +201,7 @@ while (<BLAT>) {
       my $virtualend = $virtualstart + $lengths[$x] -1;
       
       if ($calc != $newcalc) {
-	  $log->write_to("// MISMATCH: $query [$strand] $virtualstart $virtualend :: [virtual slice $calc -> $newcalc, offset ".($matchend%100000)."]\n\n");
+	  #$log->write_to("// MISMATCH: $query [$strand] $virtualstart $virtualend :: [virtual slice $calc -> $newcalc, offset ".($matchend%100000)."]\n\n");
       }
 
       if (!defined $virtualstart) {
@@ -341,7 +349,7 @@ if ($nematode || $washu || $nembase) {
 		  } elsif (exists $estorientation{$found} && $estorientation{$found} eq '5') {
 		    push @{$ci{$superlink}}, [$first,$second,$found];
 		  } else {
-		    $log->write_to("WARNING: Direction not found for $found\n\n");
+		    #$log->write_to("WARNING: Direction not found for $found\n\n");
 		  }
 		}
 	      } elsif (${$entry->{'exons'}}[0][2] > ${$entry->{'exons'}}[0][3]) {
