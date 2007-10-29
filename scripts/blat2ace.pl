@@ -6,8 +6,8 @@
 #
 # Exporter to map blat data to genome and to find the best match for each EST, mRNA, OST, etc.
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2007-10-29 13:17:17 $
+# Last edited by: $Author: pad $
+# Last edited on: $Date: 2007-10-29 13:43:13 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -315,7 +315,7 @@ if ($nematode || $washu || $nembase) {
     if (exists $best{$found}) {
       foreach my $entry (@{$best{$found}->{'entry'}}) {
 # comment this out to allow two or more $entry's with equal scores to all be 'BEST'
-#	if (@{$best{$found}->{'entry'}} < 2) {
+	if (@{$best{$found}->{'entry'}} < 2) {
 	  my $virtual   = $entry->{'clone'};
 	  my $superlink = $entry->{'link'};
 	  foreach my $ex (@{$entry->{'exons'}}) {
@@ -365,7 +365,7 @@ if ($nematode || $washu || $nembase) {
 	      }
 	    }
 	  }
-#	}
+	}
       }
     }
   }
