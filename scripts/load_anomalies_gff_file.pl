@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2006-09-04 12:21:41 $      
+# Last updated on: $Date: 2007-10-29 12:23:01 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -70,7 +70,7 @@ if (!defined $input || $input eq "") {
   die "no input GFF file specified with -input\n";
 }
 
-if (!defined $gff_source || $gff_source eq "") {
+if (!defined $gff_source) {
   die "no GFF source (second column of GFF file) specified with -gff_source\n";
 }
 
