@@ -34,6 +34,7 @@ use lib $ENV{CVS_DIR};
 use lib "$ENV{CVS_DIR}/Modules";
 use Feature_mapper;
 use Sequence_extract;
+use Coords_converter;
 memoize('Sequence_extract::Sub_sequence'); 
 use gff_model;
 
@@ -151,9 +152,9 @@ sub _filter_alleles {
 			}
 	
 	# connected sequence has no source
-        elsif ( !defined $allele->Sequence->Source && !defined $weak_checks) { 
-            $log->write_to("ERROR: $name connects to ${\$allele->Sequence} which has no Source tag (Remark: $remark)\n");$errors++
-        }
+#        elsif ( !defined $allele->Sequence->Source && !defined $weak_checks) { 
+#            $log->write_to("ERROR: $name connects to ${\$allele->Sequence} which has no Source tag (Remark: $remark)\n");$errors++
+#        }
 
 	# no left flanking sequence
         elsif (!defined $allele->Flanking_sequences){
@@ -198,7 +199,8 @@ sub map {
 	my ($alleles)=@_;
 	my %alleles;
 	my $mapper = Feature_mapper->new( $wb->autoace, undef, $wb );
-	
+        my $coords = Coords_converter->invoke( $wb->autoace, 1, $wb );
+
 	foreach my $x (@$alleles) {
 		# $chromosome_name,$start,$stop
 		my @map=$mapper->map_feature($x->Sequence->name,$x->Flanking_sequences->name,$x->Flanking_sequences->right->name);
@@ -223,10 +225,15 @@ sub map {
 			$stop=$tmp;
 			$orientation='-';
 		}
-		
-		$alleles{$x->name}={allele => $x, chromosome =>$chromosome, start=>$start, stop=>$stop, clone => $map[0],clone_start => $map[1], 
-			clone_stop => $map[2],orientation => $orientation};
-		print "${\$x->name} ($chromosome ($orientation): $start - $stop)\n" if $wb->debug;
+
+		# in case that the parent is the chromosome
+		if ($chromosome eq $map[0]){
+		 ($map[0],$map[1],$map[2]) = $coords->LocateSpan( $chromosome,$start,$stop);			
+		}
+		$alleles{$x->name}={allele => $x, chromosome =>$chromosome, start=>$start, stop=>$stop, 
+			clone => $map[0],clone_start => $map[1], clone_stop => $map[2],orientation => $orientation};
+
+		print "${\$x->name} ($chromosome ($orientation): $start - $stop) clone: $map[0] $map[1]-$map[2]\n" if $wb->debug;
 	}
 	return \%alleles
 }
