@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2007-10-18 13:41:48 $      
+# Last updated on: $Date: 2007-10-30 14:22:52 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -208,9 +208,9 @@ foreach my $chromosome (@chromosomes) {
   print "finding genes to be split based on protein homology groups\n";
   &get_protein_split($matched_protein_aref, $chromosome);
 
-  # this looks at the EST TSL sites and finds those not attached to genes
-  print "finding TSL sites not attached to genes\n";
-  &get_unattached_TSL(\@TSL_SL1, \@TSL_SL2, $chromosome);
+#  # this looks at the EST TSL sites and finds those not attached to genes
+#  print "finding TSL sites not attached to genes\n";
+#  &get_unattached_TSL(\@TSL_SL1, \@TSL_SL2, $chromosome);
 
   # this finds TEC-RED TSL sites more than 100 bases upstream that are not mentioned in the remarks or evidence
   print "finding isolated TSL sites\n";
@@ -294,13 +294,14 @@ foreach my $chromosome (@chromosomes) {
 &delete_anomalies("MERGE_GENES_BY_EST");
 &delete_anomalies("UNMATCHED_EST");
 &delete_anomalies("UNATTACHED_EST");
+&delete_anomalies("UNATTACHED_TSL");
 &delete_anomalies("FRAMESHIFTED_PROTEIN");
 &delete_anomalies("OVERLAPPING_EXONS");
 &delete_anomalies("SHORT_EXON");
 &delete_anomalies("UNMATCHED_WABA");
 &delete_anomalies("UNMATCHED_SAGE");
 &delete_anomalies("REPEAT_OVERLAPS_EXON");
-&delete_anomalies("MERGE_GENE_BY_PROTEIN");
+&delete_anomalies("MERGE_GENES_BY_PROTEIN");
 &delete_anomalies("WEAK_INTRON_SPLICE_SITE");
 &delete_anomalies("UNMATCHED_TWINSCAN");
 &delete_anomalies("UNMATCHED_GENEFINDER");
