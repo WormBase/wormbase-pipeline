@@ -7,7 +7,7 @@
 # Selectively dump GFF for certain acedb methods
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2007-10-02 08:24:38 $
+# Last edited on: $Date: 2007-10-30 13:46:06 $
 
 
 use lib $ENV{CVS_DIR};
@@ -119,6 +119,7 @@ foreach my $sequence ( @sequences ) {
 			 minsize => $sizes{$sequence},
 			 lines => ['^##', 
 				   "^${sequence}\\s+\\S+\\s+\\S+\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+"],
+			 gff => 1,
 			 );   
  }
 }
