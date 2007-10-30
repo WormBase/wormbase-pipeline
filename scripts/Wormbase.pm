@@ -939,6 +939,72 @@ sub check_file {
     delete $criteria{line2};
     delete $criteria{lines};
   }
+  if (exists $criteria{gff}) {
+    my ($sequence_name, $sequence_start, $sequence_end);
+    my $MAX_FEATURE_LENGTH = 100000;
+    open (CHECK_FILE, "< $file") || die "Can't open $file\n";
+    my $line_count = 0;
+    while ($line_count++, my $line = <CHECK_FILE>) {
+      ##sequence-region CHROMOSOME_X 1 17718851
+      if ($line =~ /^\#\#sequence-region\s+(\S+)\s+(\d+)\s+(\d+)/) {
+	($sequence_name, $sequence_start, $sequence_end) = ($1, $2, $3);
+	next;
+      }
+      #CHROMOSOME_X    Link    region  1       17718851        .       +       .       Sequence "CHROMOSOME_X"
+      if (defined $sequence_name && $line =~ /^${sequence_name}\s+Link\s+region\s+(\d+)\s+(\d+)/) {
+	next;
+      }
+
+      if ($line =~ /^\#/) {next;}
+
+      if (my ($gff_source, $gff_start, $gff_end) = ($line =~ /^\S+\s+(\S+)\s+\S+\s+(\d+)\s+(\d+)\s+\S+\s+[-+\.]\s+[012\.]/)) {
+	if ($gff_end < $gff_start) {
+	  push @problems, "line $line_count:\n$line\nGFF feature start is before the feature end";
+	  last;
+	}
+	# there are 'Genomic_canonical' features longer than 100 Kb
+	# there are 'BLAT_NEMATODE' features longer than 100 Kb
+	# there are 'Vancouver_fosmid' features longer than 100 Kb
+	# F47F6.1c.1 is 107835 bases
+	# WBGene00018572 is 107835 bases 
+	# Locus lin-42 is 107835 bases
+	# Oligo_set Aff_Y116F11.ZZ33 is 105 Kb
+	# F16H9.2 is 102695 bases
+	# WBGene00008901 is 102695 bases
+	my $feature_length = $gff_end - $gff_start;
+	if ($feature_length > $MAX_FEATURE_LENGTH && 
+	    $gff_source ne 'Genomic_canonical' &&
+	    $gff_source ne 'BLAT_NEMATODE' &&
+	    $gff_source ne 'Vancouver_fosmid' &&
+	    !($line =~ /F47F6.1c.1/) &&
+	    !($line =~ /WBGene00018572/) &&
+	    !($line =~ /Locus\s+lin-42/) &&
+	    !($line =~ /Aff_Y116F11.ZZ33/) &&
+	    !($line =~ /F16H9.2/) &&
+	    !($line =~ /WBGene00008901/) 
+	    ) { 
+	  push @problems, "line $line_count:\n$line\nGFF feature is longer than $MAX_FEATURE_LENGTH bases ($feature_length bases)";
+# report all length errors
+#	  last;
+	}
+	if (defined $sequence_end && $gff_end > $sequence_end) {
+	  push @problems, "line $line_count:\n$line\nfeature is off the end of the sequence";
+	  last;
+	}
+	if ((defined $sequence_start && $gff_start < $sequence_start) || $gff_start < 1) {
+	  push @problems, "line $line_count:\n$line\nfeature is before the start of the sequence";
+	  last;
+	}
+      } else {
+	push @problems, "line $line_count:\n$line\nis a malformed GFF line";
+	last;
+      }
+    }
+    close (CHECK_FILE);
+    delete $criteria{gff};
+  }
+  
+
 
   foreach my $c (keys %criteria) {
     push @problems, "unknown criterion in check_file() '$c=>$criteria{$c}'";
