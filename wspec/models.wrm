@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: ar2 $
-// Last edited on: $Date: 2007-10-09 13:33:09 $
+// Last edited on: $Date: 2007-10-30 10:42:24 $
 
 
 
@@ -1391,11 +1391,25 @@
                       Associated_with_pseudogene ?Pseudogene XREF Associated_feature #Evidence // richard
                       Associated_with_transposon ?Transposon XREF Associated_feature #Evidence //richard
 		      Associated_with_variation  ?Variation  XREF Feature #Evidence  
+		      Associated_with_Position_Matrix ?Position_Matrix XREF Associated_feature #Evidence
 	 Bound_by_product_of ?Gene XREF Gene_product_binds #Evidence //pad added this to show what gene it binds
 	 Annotation UNIQUE ?LongText		// added for data attribution [030220 dl]
 	 Confidential_remark ?Text //pad
 	 Remark ?Text #Evidence
          Method UNIQUE ?Method
+
+
+//Position_Matrix class
+//General data model for known or inferred binding sites of transcription factors to DNA, accomodating either a straight position-frequency matrix (PFM), or a position-specific weight matrix 
+
+?Position_Matrix  Description  ?Text #Evidence
+                  Type  UNIQUE Frequency
+                               Weight
+                  Background_model Text UNIQUE Float
+                  Site_values      Text UNIQUE Float REPEAT
+                  Threshold        Float
+                  Associated_feature ?Feature XREF Associated_with_Position_Matrix #Evidence
+                  Remark ?Text  #Evidence
 
 
 ?Oligo  Sequence UNIQUE Text  // verbatim sequence 
@@ -2237,7 +2251,7 @@
                                                         PS                                   // present sometimes - marginal call
                                                         NP                                   // never present
 			Expression_cluster ?Expression_cluster XREF Microarray_results       // one way XREF used to populate Cluster class (prev ?Cluster)
-                        Remark          ?Text #Evidence
+                        Remark          Text #Evidence
 
 
 //New class. Used by ?Microarray_results.
@@ -2247,7 +2261,7 @@
                                 Sample_B     UNIQUE      ?Condition     //for PCR product-base (SMD-type) chips
                                 Microarray_sample UNIQUE ?Condition     //for oligo-based (Affymetrix-type) chips
                         Reference  ?Paper XREF Microarray_experiment
-                        Remark     ?Text        #Evidence
+                        Remark     Text        #Evidence
 
 
 //Will eventually replace Microarray_aff class. 
@@ -2260,7 +2274,7 @@
 		Overlaps_CDS 	    ?CDS 	XREF Corresponding_oligo_set #Evidence
 		Overlaps_transcript ?Transcript XREF Corresponding_oligo_set #Evidence
 		Overlaps_pseudogene ?Pseudogene XREF Corresponding_oligo_set #Evidence
-                Remark ?Text    #Evidence
+                Remark Text    #Evidence
 		Method UNIQUE ?Method
 
 
