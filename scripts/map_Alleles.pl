@@ -76,10 +76,11 @@ undef $alleles;# could theoretically undef the alleles here
 # for other databases don't run through the GFF_SPLITs
 &finish() if $database;
 
-my $fh = new IO::File ">$acefile";
+my $fh = new IO::File ">$acefile" || die($!);
 # create mapping Ace file
 while( my($key,$allele)=each %$mapped_alleles){
 	print $fh "Sequence : \"$allele->{clone}\"\nAllele $key $allele->{clone_start} $allele->{clone_stop}\n\n";
+	print $fh "Variation : \"$key\"\nSequence  $allele->{clone}\n\n"
 }
 
 # get overlaps with genes
