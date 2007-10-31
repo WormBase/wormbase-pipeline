@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: mt3 $
-# Last updated on: $Date: 2007-09-20 13:31:47 $
+# Last updated on: $Date: 2007-10-31 15:18:06 $
 
 use strict;
 use lib $ENV{"CVS_DIR"};
@@ -290,6 +290,10 @@ sub process_gene_class{
       print LOG "ERROR: Oh my sainted Aunt! $gene is dead but is still connected to a reference\n";
   }
 
+  # checks that a gene with orthologs are not dead (i.e merged into something else or changed into transposon_CDS)
+  foreach my $gene ($db->fetch(-query=>"Find Gene WHERE NOT Live AND Ortholog")){
+      print LOG "ERROR: Zut alors! $gene is dead but is still connected to an ortholog\n";
+  }
 
   # checks that a Gene doesn't have both Map and Interpolated_map_position tags
   foreach my $gene ($db->fetch(-query=>"Find Gene WHERE Map AND Interpolated_map_position")){
