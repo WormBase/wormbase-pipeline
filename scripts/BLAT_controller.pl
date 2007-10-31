@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl5.8.0 -w
 #
-# Last edited by: $Author: pad $
-# Last edited on: $Date: 2007-10-23 13:17:17 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2007-10-31 10:06:56 $
 
 
 use lib $ENV{'CVS_DIR'};
@@ -238,8 +238,6 @@ sub confirm_introns {
   
   my ($link,@introns,$dna,$switch);
  
-  my $tag = ($type eq 'RST') ? 'OST' : $type;
-  
   
   $/ = "";
   	
@@ -340,12 +338,12 @@ sub confirm_introns {
 		    print GOOD "Confirmed_intron $one $two False $f[4]\n\n";
 		}
 		else {
-		    print GOOD "Confirmed_intron $one $two $tag $f[4]\n\n";
+		    print GOOD "Confirmed_intron $one $two $type $f[4]\n\n";
 		}
 	    }
 	    else {
 		print BAD "Feature_data : \"$virtual\"\n";
-		print BAD "Confirmed_intron $one $two $tag $f[4]\n\n";		
+		print BAD "Confirmed_intron $one $two $type $f[4]\n\n";		
 	    }
 	}
     }
