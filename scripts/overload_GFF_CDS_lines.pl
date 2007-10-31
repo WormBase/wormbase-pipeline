@@ -5,7 +5,7 @@
 # by Dan Lawson
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2006-03-03 09:36:25 $
+# Last updated on: $Date: 2007-10-31 13:29:24 $
 #
 
 #
@@ -90,75 +90,32 @@ my %status;
 my $line;
 my %locus;
 my %briefID;
+my %RNAgenes;
+my %seqname2geneid;
 
-open (WORMPEP, "<$wormpep_dir/wormpep${release}");
-while (<WORMPEP>) {
-    if (/^>(\S+) (\S+) (WBGene\d+) (\S+.+)\s+status\:(\S+)/) {
-	$CDS           = $1;
-	$wormpep{$CDS} = $2;
-	$geneID{$CDS}  = $3;
-	$status{$CDS}  = $5;
-	
-	$line = $4;
-	
-	if ($line =~ /locus:(\S+)\s+(\S+.+)/) {
-	    $locus{$CDS}   = $1;
-	    $briefID{$CDS} = $2;
-	}
-	elsif ($line =~ /locus:(\S+)$/) {
-	    $locus{$CDS}   = $1;
-	}
-	else {
-	    $briefID{$CDS} = $line;
-	}
-    }
-    elsif (/^>(\S+) (\S+) (WBGene\d+) status\:(\S+)/) {
-	$CDS           = $1;
-	$wormpep{$CDS} = $2;
-	$geneID{$CDS}  = $3;
-	$status{$CDS}  = $4;
-    }
-    
-}
-close WORMPEP;
+&get_RNA_info;
+&get_wormpep_info;
 
+$wormbase->FetchData("worm_gene2geneID_name",\%seqname2geneid);
 # test output from wormpep
 #foreach $i (sort keys %wormpep) {
 #    print "CDS: $i\t$wormpep{$i}\t$geneID{$i}\t$locus{$i}\t$status{$i}\t\'$briefID{$i}\'\n";
 #}
 
 # parse GFF lines
-my @files;
+my @gff_files;
 
 if (defined($chrom)){
-    unless (grep { $chrom eq $_ } ('I','II','III','IV','V','X','MtDNA')) {
-	die "ERROR: $chrom is an incorrect chromosome number, please use I, II, III etc.\n";
-    }
-    @files = (
-	      "CHROMOSOME_${chrom}"
-	      );
+    push(@gff_files,$chrom);
 }
 else {
-    @files = (
-              'CHROMOSOME_I',
-              'CHROMOSOME_II',
-              'CHROMOSOME_III',
-              'CHROMOSOME_IV',
-              'CHROMOSOME_V',
-              'CHROMOSOME_X',
-              'CHROMOSOME_MtDNA'
-              );
+    @gff_files = $wormbase->get_chromosome_names('-prefix' => 1, '-mito' => 1);
 }
-
-our @gff_files = sort @files;
-undef @files;
 
 foreach my $file (@gff_files) {
     
     # Check for existance of GFFfile
-    unless (-e "$gffdir/$file.gff") {
-        &usage("No GFF file");
-    }
+	$log->log_and_die("$file doesnt exist\n") unless (-e "$gffdir/$file.gff") ;
  
     open (OUT, ">$gffdir/${file}.CSHL.gff");
 
@@ -166,26 +123,35 @@ foreach my $file (@gff_files) {
     while (<GFF>) {
 	chomp;
 	
-	#skip header lines of file
-	unless  (/^\S+\s+curated\s+CDS/) {
-	    print OUT "$_\n";
-	    next;
+		#skip header lines of file
+		unless  (/^\S+\s+(curated|miRNA|ncRNA|snRNA|snoRNA|tRNAscan-SE-1\.23)\s+(miRNA_primary_transcript|CDS|ncRNA_primary_transcript|snRNA_primary_transcript|snoRNA_primary_transcript)/) {
+		    print OUT "$_\n";
+		    next;
+		}
+	
+		my ($chromosome,$source,$feature,$start,$stop,$score,$strand,$other,$name) = split /\t/;
+	
+		if( $source eq 'curated') {
+			my ($i) = $name =~ (/CDS \"(\S+)\"/);
+	
+			print OUT "$chromosome\t$source\t$feature\t$start\t$stop\t$score\t$strand\t$other\tCDS \"$i\" ;";
+			print OUT " Note \"$briefID{$i}\" ;"        if ($briefID{$i} ne "");
+			print OUT " WormPep \"WP:$wormpep{$i}\" ; " if ($wormpep{$i} ne "");
+			print OUT " Note \"$locus{$i}\" ; "         if ($locus{$i} ne "");
+			print OUT " Status \"$status{$i}\" ; "      if ($status{$i} ne "");
+			print OUT " Gene \"$geneID{$i}\" ; "        if ($geneID{$i} ne "");
+	    }
+	    else {
+	    	#non-coding genes
+	    	my ($transcript) = $name =~ (/Transcript \"(\S+)\"/);
+	    	print OUT "$chromosome\t$source\t$feature\t$start\t$stop\t$score\t$strand\t$other\tTranscript \"$transcript\" ;";
+	    	print OUT " Note \"".$RNAgenes{$transcript}->{'remark'}."\" ; " if $RNAgenes{$transcript}->{'remark'} ;
+	    	print OUT " Note \"".$RNAgenes{$transcript}->{'locus'}."\" ; "  if $RNAgenes{$transcript}->{'locus'} ;;
+	    	print OUT " Gene \"".$seqname2geneid{$transcript}."\" ; "  if $seqname2geneid{$transcript} ;
+	    }
+		print OUT "\n";
 	}
-	
-	my ($chromosome,$source,$feature,$start,$stop,$score,$strand,$other,$name) = split /\t/;
-	
-	my ($i) = $name =~ (/CDS \"(\S+)\"/);
-	
-	print OUT "$chromosome\t$source\t$feature\t$start\t$stop\t$score\t$strand\t$other\tCDS \"$i\" ;";
-	print OUT " Note \"$briefID{$i}\" ;"        if ($briefID{$i} ne "");
-	print OUT " WormPep \"WP:$wormpep{$i}\" ; " if ($wormpep{$i} ne "");
-	print OUT " Note \"$locus{$i}\" ; "         if ($locus{$i} ne "");
-	print OUT " Status \"$status{$i}\" ; "      if ($status{$i} ne "");
-	print OUT " Gene \"$geneID{$i}\" ; "        if ($geneID{$i} ne "");
-	print OUT "\n";
-    }
     close GFF; #_ end of input GFF file
-
     close OUT; #_ end of output GFF file
 }
 
@@ -200,6 +166,66 @@ exit(0);
 #
 ##############################################################
 
+sub get_RNA_info {
+	my $rna_file = $wormbase->wormrna."/wormrna".$wormbase->get_wormbase_version.".rna";
+	open (RNA,"<$rna_file") or $log->log_and_die("cant open $rna_file\t$!\n");
+	while(<RNA>) {
+		#I couldnt think of a way to do this in one regex!
+		my ($locus, $remark, $cds);
+		if(/locus:(\S+)/){
+			$locus = $1;
+			/>(\S+)\s+(.*)\s+locus/;
+			$cds = $1;
+			$remark = $2;
+		}
+		elsif(/>(\S+)\s+(.*)$/) {
+			$cds = $1;
+			$remark = $2;
+		}
+		$RNAgenes{$cds}->{'remark'} = $remark if $remark;
+		$RNAgenes{$cds}->{'locus'} = $locus if $locus;
+	}
+	close RNA;
+}
+
+
+sub get_wormpep_info {
+	my $file = $wormbase->wormpep."/".$wormbase->pepdir_prefix."pep".$wormbase->get_wormbase_version;
+	open (WORMPEP, "<$wormpep_dir/wormpep${release}") or $log->log_and_die("cant open $file $!\n");
+	while (<WORMPEP>) {
+	    if (/^>(\S+) (\S+) (WBGene\d+) (\S+.+)\s+status\:(\S+)/) {
+			$CDS           = $1;
+			$wormpep{$CDS} = $2;
+			$geneID{$CDS}  = $3;
+			$status{$CDS}  = $5;
+		
+			$line = $4;
+		
+			if ($line =~ /locus:(\S+)\s+(\S+.+)/) {
+			    $locus{$CDS}   = $1;
+			    $briefID{$CDS} = $2;
+			}
+			elsif ($line =~ /locus:(\S+)$/) {
+			    $locus{$CDS}   = $1;
+			}
+			else {
+			    $briefID{$CDS} = $line;
+			}
+	    }
+	    elsif (/^>(\S+) (\S+) (WBGene\d+) status\:(\S+)/) {
+			$CDS           = $1;
+			$wormpep{$CDS} = $2;
+			$geneID{$CDS}  = $3;
+			$status{$CDS}  = $4;
+	    }
+    
+	}
+	close WORMPEP;
+}
+
+
+
+
 sub usage {
  my $error = shift;
  
@@ -208,11 +234,7 @@ sub usage {
     system ('perldoc',$0);
     exit (0);
   }
-  elsif ($error eq "No GFF file") {
-      # No GFF file to work from
-      print "One (or more) GFF files are absent from $gffdir\n\n";
-      exit(0);
-  }
+
 }
 
 =pod

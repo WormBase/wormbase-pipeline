@@ -4,8 +4,8 @@
 # 
 # by Dan Lawson
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2007-09-03 13:42:32 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2007-10-31 13:29:24 $
 #
 # Usage GFFmunger.pl [-options]
 
@@ -93,30 +93,16 @@ if ($version) {
 
 $datadir = $wormbase->gff_splits unless $datadir;
 $gffdir  = $wormbase->gff        unless $gffdir;
-my @files;
+my @gff_files;
 
 # prepare array of file names and sort names
+
 if (defined($chrom)){
-    unless (grep { $chrom eq $_ } ('I','II','III','IV','V','X','MtDNA')) {
-	die "ERROR: $chrom is an incorrect chromosome number, please use I, II, III etc.\n";
-    }
-    @files = (
-	      "CHROMOSOME_${chrom}"
-	      );
+    push(@gff_files,$chrom);
 }
 else {
-    @files = (
-	      'CHROMOSOME_I',
-	      'CHROMOSOME_II',
-	      'CHROMOSOME_III',
-	      'CHROMOSOME_IV',
-	      'CHROMOSOME_V',
-	      'CHROMOSOME_X',
-	      );
+    @gff_files = $wormbase->get_chromosome_names('-prefix' => 1, '-mito' => 1);
 }
-
-our @gff_files = sort @files; 
-undef @files; 
 
 # check to see if full chromosome gff dump files exist
 foreach my $file (@gff_files) {
