@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl -w
-# Last updated by: $Author: mt3 $     
-# Last updated on: $Date: 2007-10-11 15:16:39 $      
+# Last updated by: $Author: mh6 $     
+# Last updated on: $Date: 2007-11-01 11:51:12 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -55,7 +55,6 @@ sub parse_misc_files {
 		       $wormbase->misc_dynamic."/misc_twinscan.ace"             => "twinscan_predictions"  ,
 		       $wormbase->misc_dynamic."/misc_TEC_RED_homol_data.ace"   => "TEC_RED"               ,
 		       $wormbase->misc_dynamic."/misc_TEC_RED_homol.ace"        => "TEC_RED"               ,
-		       $wormbase->misc_dynamic."/WS180_refseq.ace"              =>  'refseq_IDs'           ,
 		       $wormbase->misc_dynamic."/WS145_aceview.ace"             =>  'aceview_IDs'          ,
 		       $wormbase->misc_static."/ensembl_orthologs.ace"          => "ensembl_orthologs"     ,
 		       $wormbase->misc_static."/misc_TEC_RED_sequence_data.ace" => "TEC_RED"               ,
