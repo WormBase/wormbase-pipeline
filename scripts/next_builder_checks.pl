@@ -6,8 +6,8 @@
 # A simple script to send a check list to the person who will be performing the next
 # build to check the current build
 #
-# Last updated by: $Author: pad $
-# Last updated on: $Date: 2006-04-12 13:51:42 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2007-11-06 09:46:58 $
 use strict;
 use warnings;
 use lib $ENV{'CVS_DIR'};
@@ -102,21 +102,10 @@ check at least one protein from the ~wormpub/BUILD/WORMPEP/wormpepXXX/new_entrie
 4b) Now that we have a curated set of brigpep, should do this periodically for
 C. briggase protein objects too...these now have their own set of blastp hits
 
-5) Open a keyset of all genome sequences and then query them for:
- 'Transcript AND NEXT AND NOT NEXT'
-I.e. tRNAs not attached properly to parent sequence.  This has happened before and you
-should notify the responsible group (HX or RW) to fix them for next build
-
 6) Check PFAM Motif objects have a title tag. It is a problem if there are more than about 20.
 
 7) Run composition *.dna in the CHROMOSOMES directory.  Make sure this is the same as it was
 at the start of the build.  Bad Homol objects can lead to errors esp when chromosome length has been reduced
-
-8) Confirm that GFFmunger.pl has done its job ie.
- grep landmark /wormpub/BUILD/autoace/CHROMOSOMES/CHROMOSOME_III.gff | head
- grep five_prime /wormpub/BUILD/autoace/CHROMOSOMES/CHROMOSOME_III.gff | head
- grep Partially /wormpub/BUILD/autoace/CHROMOSOMES/CHROMOSOME_III.gff  | head and check these are overloaded CDS lines.
-      These should have about 10 columns if overloaded and only about 5 or 6 if there are problems.
 
 Thats all...for now!  If you are satisfied the build is ok, please inform the person
 building the database. Please continue to add to this list as appropriate.
