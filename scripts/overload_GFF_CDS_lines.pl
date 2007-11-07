@@ -5,7 +5,7 @@
 # by Dan Lawson
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2007-10-31 13:29:24 $
+# Last updated on: $Date: 2007-11-07 12:03:21 $
 #
 
 #
@@ -124,7 +124,7 @@ foreach my $file (@gff_files) {
 	chomp;
 	
 		#skip header lines of file
-		unless  (/^\S+\s+(curated|miRNA|ncRNA|snRNA|snoRNA|tRNAscan-SE-1\.23)\s+(miRNA_primary_transcript|CDS|ncRNA_primary_transcript|snRNA_primary_transcript|snoRNA_primary_transcript)/) {
+		unless  (/^\S+\s+(curated|miRNA|ncRNA|snRNA|snlRNA|snoRNA|tRNAscan-SE-1\.23|snl)\s+(\w+primary_transcript|CDS)/) {
 		    print OUT "$_\n";
 		    next;
 		}
