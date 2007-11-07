@@ -7,7 +7,7 @@
 # Gets latest PFAM motifs from sanger/pub and puts info in to ace file
 #
 # Last updated by: $Author: ar2 $                      
-# Last updated on: $Date: 2006-02-23 14:30:45 $         
+# Last updated on: $Date: 2007-11-07 11:26:54 $         
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -97,7 +97,6 @@ while (<PFAM>){
   if ($_ =~ /^\/\//){
     if (defined $pfam){
       $pfcount++;
-      print "$pfam went fine\n";
       print PFAMOUT "Motif : \"PFAM:$pfam\"\n";
       print PFAMOUT "Title \"$text\"\n";
       print PFAMOUT "Database \"Pfam\" \"Pfam_ID\" \"$pfam\"\n";
