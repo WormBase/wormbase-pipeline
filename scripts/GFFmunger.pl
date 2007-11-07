@@ -4,8 +4,8 @@
 # 
 # by Dan Lawson
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2007-10-31 13:29:24 $
+# Last updated by: $Author: pad $
+# Last updated on: $Date: 2007-11-07 11:36:19 $
 #
 # Usage GFFmunger.pl [-options]
 
@@ -168,7 +168,9 @@ foreach my $file (@gff_files) {
   
   $log->write_to("\n");
   
-  &check_its_worked($gffpath) if $all;
+  unless ($file =~ (/MtDNA/)) {
+    &check_its_worked($gffpath) if $all;
+  }
 }
 
 ##################
