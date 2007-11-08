@@ -7,8 +7,8 @@
 
 # 031023 dl1
 
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2007-10-01 15:38:59 $
+# Last edited by: $Author: pad $
+# Last edited on: $Date: 2007-11-08 11:30:21 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -48,19 +48,18 @@ my $file;
 my ($species, $mol_type);
 
 GetOptions (
-	    "all"            => \$all,
-	    "mrna"           => \$mrna,
-	    "ncrna"          => \$ncrna,
-	    "est"            => \$est,
-	    "ost"            => \$ost,
-	    "nematode"       => \$nematode,
+	    "all"            => \$all,#not a valid option
+	    "mrna"           => \$mrna,#not a valid option
+	    "ncrna"          => \$ncrna, #not a valid option
+	    "est"            => \$est, #not a valid option
+	    "ost"            => \$ost,#not a valid option
+	    "nematode"       => \$nematode,#not a valid option
 	    "debug:s"        => \$debug,
 	    "help"           => \$help,
 	    "database:s"     => \$database,
 	    "test"           => \$test,
 	    "store:s"        => \$store,
 	    "file:s"         => \$file,
-	    
 	    "species:s"      => \$species,
 	    "mol_type:s"     => \$mol_type
 	   );
@@ -123,8 +122,11 @@ my $masked;                                           # No of entries masked
 my $ignore;
 my %seq2feature;                                      #stores feature data info
 
+#remove all old masked data
+&remove_masked_files($species, $mol_type);
+
 #get all of the Feature_data via table maker
-&fetch_features;	
+#&fetch_features;	
 
 # connect to database
 print  "\nOpening $database for masking ..\n" if ($wormbase->debug);
@@ -147,6 +149,20 @@ exit(0);
 ############################################################
 ######################## Subroutines #######################
 ############################################################
+
+
+
+sub remove_masked_files {
+  my $species  = shift;
+  my $mol_type = shift;
+  if ((-e $wormbase->maskedcdna."/$mol_type.masked") or (-e $wormbase->maskedcdna."/$mol_type.masked_1")) {
+    $log->write_to("Removing old $mol_type masked files for $species\n");
+    $wormbase->run_command ("rm ".$wormbase->maskedcdna."/$mol_type.masked*", $log);
+  }
+  else {
+    $log->write_to("No old $mol_type masked files for $species to be removed\n");
+  }
+}
 
 #_ MaskSequence -#
 # 
