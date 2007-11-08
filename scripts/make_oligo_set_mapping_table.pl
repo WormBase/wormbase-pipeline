@@ -92,7 +92,7 @@ my %type_remark = ('affy' => "Affymetrix",
   my ($cds_count, $tr_count, $pseudo_count, $no_count, $coding_count, $non_coding_count) = (0,0,0,0,0,0);
 
   open(OUT,">".$wormbase->autoace."/${type}_oligo_mapping") or $log->log_and_die("cant open ${type}_oligo_mapping :$!\n");
-  print OUT "Oligo_set\tWBGeneID\tGene_sequence_name\tGene_type\tMicroarray_type\tRemark\n";
+  print OUT "Oligo_set\tWBGeneID\tGene_sequence_name\tGene_type\tMicroarray_type\tTargeted_isoforms\tRemark\n";
   while (my $obj=$it->next) {
 
     my @rem=$obj->Remark;
@@ -123,9 +123,9 @@ my %type_remark = ('affy' => "Affymetrix",
     }
     if (! @cds and ! @transcript and ! @pseudogene) {
       if (scalar @rem == 1) {
-	print OUT "$obj\tno overlapping gene\t\t\t$type_remark{$type}\t\n";
+	print OUT "$obj\tno overlapping gene\t\t\t$type_remark{$type}\t\t\n";
       } elsif (scalar @rem > 1) {
-	print OUT "$obj\tno overlapping gene\t\t\t$type_remark{$type}\t";
+	print OUT "$obj\tno overlapping gene\t\t\t$type_remark{$type}\t\t";
 
 	foreach (@rem) {
 	  if (/microarray/) {
@@ -135,7 +135,7 @@ my %type_remark = ('affy' => "Affymetrix",
 	}
 	print OUT "\n";
       } else {
-	print OUT "$obj\tno overlapping gene\t\t\t\t\n";
+	print OUT "$obj\tno overlapping gene\t\t\t\t\t\n";
       }
 
       $no_count++;
@@ -147,7 +147,7 @@ my %type_remark = ('affy' => "Affymetrix",
 	if (! $seq_name) {
 	  $seq_name=$gene->Public_name;
 	}
-	push (@{$gene_hash{$gene}}, $seq_name, "CDS");
+	push (@{$gene_hash{$gene}}, $seq_name, "CDS", $_);
       }
       foreach (@transcript) {
 	if ($_->Gene) {
@@ -156,7 +156,7 @@ my %type_remark = ('affy' => "Affymetrix",
 	  if (! $seq_name) {
 	    $seq_name=$gene->Public_name;
 	  }
-	  push (@{$gene_hash{$gene}}, $seq_name, "Non-coding transcript");
+	  push (@{$gene_hash{$gene}}, $seq_name, "Non-coding transcript", $_);
 	  $non_coding_count++;
 	} else {
 	  $gene=$_->Corresponding_CDS->Gene;
@@ -164,7 +164,7 @@ my %type_remark = ('affy' => "Affymetrix",
 	  if (! $seq_name) {
 	    $seq_name=$gene->Public_name;
 	  }
-	  push (@{$gene_hash{$gene}}, $seq_name, "CDS");
+	  push (@{$gene_hash{$gene}}, $seq_name, "CDS", $_);
 	  $coding_count++;
 	}
       }
@@ -174,7 +174,7 @@ my %type_remark = ('affy' => "Affymetrix",
 	if (! $seq_name) {
 	  $seq_name=$gene->Public_name;
 	}
-	push (@{$gene_hash{$gene}}, $seq_name, "Pseudogene");
+	push (@{$gene_hash{$gene}}, $seq_name, "Pseudogene", $_);
       }
       if (scalar keys %gene_hash == 0) {
 	print "$obj does not have a corresponding gene!\n";
@@ -185,9 +185,30 @@ my %type_remark = ('affy' => "Affymetrix",
 	  print "$obj\t$_\t$gene_hash{$_}[0]\t$gene_hash{$_}[1]\n";
 	}
 	if (scalar @rem == 1) {
-	  print OUT "$obj\t$_\t$gene_hash{$_}[0]\t$gene_hash{$_}[1]\t$type_remark{$type}\t\n";
+	  print OUT "$obj\t$_\t$gene_hash{$_}[0]\t$gene_hash{$_}[1]\t$type_remark{$type}\t";
+	  my $i=0;
+	  my @iso_array=();
+	  foreach my $iso (@{$gene_hash{$_}}) {
+	      $i++;
+	      if ($i % 3 == 0) {
+		  push(@iso_array, $iso);
+	      }
+	  }
+	  print OUT join("|", @iso_array);
+	  print OUT "\t\n";
 	} elsif (scalar @rem > 1) {
 	  print OUT "$obj\t$_\t$gene_hash{$_}[0]\t$gene_hash{$_}[1]\t$type_remark{$type}\t";
+
+	  my $i=0;
+	  my @iso_array=();
+	  foreach my $iso (@{$gene_hash{$_}}) {
+	      $i++;
+	      if ($i % 3 == 0) {
+		  push(@iso_array, $iso);
+	      }
+	  }
+	  print OUT join("|", @iso_array);
+	  print OUT "\t";
 
 	  foreach (@rem) {
 	    if (/microarray/) {
@@ -197,7 +218,17 @@ my %type_remark = ('affy' => "Affymetrix",
 	  }
 	  print OUT "\n";
 	} else {
-	  print OUT "$obj\t$_\t$gene_hash{$_}[0]\t$gene_hash{$_}[1]\t\t\n";
+	  print OUT "$obj\t$_\t$gene_hash{$_}[0]\t$gene_hash{$_}[1]\t";
+	  my $i=0;
+	  my @iso_array=();
+	  foreach my $iso (@{$gene_hash{$_}}) {
+	      $i++;
+	      if ($i % 3 == 0) {
+		  push(@iso_array, $iso);
+	      }
+	  }
+	  print OUT join("|", @iso_array);
+	  print OUT "\t\n";
 	}
       }
     }
