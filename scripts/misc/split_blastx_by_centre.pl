@@ -152,7 +152,7 @@ close $out;
 close $cam_out;
 close $stl_out;
 
-$log->mail("pad\@sanger.ac.uk");
+$log->mail;
 
 exit(0);
 
