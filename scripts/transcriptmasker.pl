@@ -8,7 +8,7 @@
 # 031023 dl1
 
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2007-11-08 11:30:21 $
+# Last edited on: $Date: 2007-11-08 11:32:20 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -126,7 +126,7 @@ my %seq2feature;                                      #stores feature data info
 &remove_masked_files($species, $mol_type);
 
 #get all of the Feature_data via table maker
-#&fetch_features;	
+&fetch_features;	
 
 # connect to database
 print  "\nOpening $database for masking ..\n" if ($wormbase->debug);
