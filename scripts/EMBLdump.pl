@@ -2,7 +2,7 @@
 #
 # EMBLdump.pl :  makes modified EMBL dumps from camace.
 # 
-#  Last updated on: $Date: 2007-09-07 14:05:45 $
+#  Last updated on: $Date: 2007-11-08 17:10:17 $
 #  Last updated by: $Author: pad $
 
 use strict;
@@ -62,17 +62,18 @@ if($debug){
 # misc. variables             #
 ###############################
 
-my $basedir        = $wormbase->wormpub;
-my $giface         = $wormbase->giface;
+my $basedir = $wormbase->wormpub;
+my $giface = $wormbase->giface;
 my $dbdir;
 if ($database) {$dbdir = $database;}
-else {$dbdir          = $wormbase->database('camace');}
-my $tace           = $wormbase->tace;
-my $outfilename    = "$basedir/tmp/EMBLdump.$$";
-my $mod_file       = "$basedir/tmp/EMBLdump.mod";
+else {$dbdir = $wormbase->database('camace');}
+my $refdb = $wormbase->database('current');
+my $tace = $wormbase->tace;
+
+my $outfilename = "$basedir/tmp/EMBLdump.$$";
+my $mod_file = "$basedir/tmp/EMBLdump.mod";
 my $dir;
 my %specialclones;
-
 $specialclones{'CU457737'} = "AC006622";
 $specialclones{'CU457738'} = "AC006690";
 $specialclones{'CU457739'} = "AF043691";
@@ -119,6 +120,7 @@ while (<READ>) {
 close (READ);
 
 
+
 #########################
 # Get COMMONDATA hashes #
 #########################
@@ -147,7 +149,7 @@ my %clone2accession = $wormbase->FetchData('clone2accession', undef, "$dir");
 #CommonData hash Key: Clone/Sequence name Value: Type information (cosmid|fosmid|yac|Other);
 my %clone2type = $wormbase->FetchData('clone2type', undef, "$dir");
 my %cds2cgc  = $wormbase->FetchData('cds2cgc', undef, "$dir");
-#my %cds2gene = $wormbase->FetchData('cds2wbgene_id');
+#my %cds2gene = $wormbase->FetchData('cds2wbgene_id', undef "$dir");
 
 
 ######################################################################
@@ -270,14 +272,25 @@ while (<EMBL>) {
     $reference_remove = 1;
     next;
   }
-  #FT   ncRNA(5 characters eg.T05E11 swap for misc_RNA(8 characters)
-  if (/^FT\s+ncRNA/) {
-    s/ncRNA   /misc_RNA/g;
+
+
+  ###########################################################
+  ## Feature Table edits that are necessary for submission.##
+  ###########################################################
+
+  #FT   ncRNA(5 char -> 8 characters misc_RNA)
+  if (/^FT\s+(\w{2}RNA)/) {
+    s/$1   /misc_RNA/g;
     print OUT "$_";
     next;
   }
-  
-  
+  #FT   snoRNA(6 char -> 8 characters misc_RNA)
+  elsif (/^FT\s+(\w{3}RNA)/) {
+    s/snoRNA  /misc_RNA/g;
+    print OUT "$_";
+    next;
+  }
+
   # standard_name......
   # don't print out first few lines until they have been converted 
   # can only do this when it gets to DE line
@@ -293,8 +306,8 @@ print "ERROR: Couldn't move file: $!\n" if ($status == 0);
 
 print "\nOutfile is $outfilename.*\n\n";
 
-$log->mail("$maintainers");
+$log->mail();
 
-exit(0);
+exit(0); 
 
 __END__
