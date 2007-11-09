@@ -222,7 +222,7 @@ sub chromosome_names {
 	my @contigs;
 	my $i = 0;
 	while($i < 5060){
-		push(@contigs,&chromosome_prefix."$i");
+		push(@contigs, "$i");
 		$i++;
 	}
 	return @contigs;
@@ -278,9 +278,9 @@ sub _new {
 
 sub chromosome_names {
   my @supercontigs;
-  for (my $i = 12391; $i <= 15560; $i++) {push @supercontigs, &chromosome_prefix . $i;}
-  for (my $i = 1379380; $i <= 1387615; $i++) {push @supercontigs, &chromosome_prefix . $i;}
-  for (my $i = 1; $i <= 18591; $i++) {push @supercontigs, &chromosome_prefix . 'Degenerate' . $i;}
+  for (my $i = 12391; $i <= 15560; $i++) {push @supercontigs, $i;}
+  for (my $i = 1379380; $i <= 1387615; $i++) {push @supercontigs, $i;}
+  for (my $i = 1; $i <= 18591; $i++) {push @supercontigs, 'Degenerate' . $i;}
 
   return @supercontigs;
 }
