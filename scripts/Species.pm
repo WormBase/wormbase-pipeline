@@ -139,13 +139,12 @@ sub _new {
 sub full_name {'Caenorhabditis remanei'}
 sub chromosome_prefix {'Supercontig'}
 sub chromosome_names {
-	my $contigs = 0;
+	my @supercontigs;
 	my $i;
 	while($i < 9660){
-		$contigs .= "$i ";
-		$i++;
+		push @supercontigs, $i++;
 	}
-	return $contigs;
+	return @supercontigs;
 }
 
 sub pep_prefix {'CRP'}
@@ -275,6 +274,15 @@ sub _new {
     # add stuff post object creation goes here
 
     bless $self, $class;
+}
+
+sub chromosome_names {
+  my @supercontigs;
+  for (my $i = 12391; $i <= 15560; $i++) {push @supercontigs, &chromosome_prefix . $i;}
+  for (my $i = 1379380; $i <= 1387615; $i++) {push @supercontigs, &chromosome_prefix . $i;}
+  for (my $i = 1; $i <= 18591; $i++) {push @supercontigs, &chromosome_prefix . 'Degenerate' . $i;}
+
+  return @supercontigs;
 }
 
 sub full_name {'Brugia malayi'}
