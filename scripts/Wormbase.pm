@@ -15,7 +15,10 @@ use File::stat;
 use Storable;
 use Species;
 
-our @allowed_organisms=qw(Elegans Briggsae Remanei Brenneri Japonica Heterorhabditis Pristionchus); #class data
+our @core_organisms=qw(Elegans Briggsae Remanei Brenneri Japonica Heterorhabditis Pristionchus);
+our @tier3_organisms=qw(Brugia);
+our @allowed_organisms=qw(@core_organisms, @tier3_organisms); #class data
+
 sub initialize {
   my $class = shift;
   my %params = @_;
@@ -1409,10 +1412,27 @@ sub table_maker_query {
 }
 
 ####################################
+# accessor for the 'core' species
 sub species_accessors {
 	my $self = shift;
 	my %accessors;
-	foreach my $species (@allowed_organisms ){
+	foreach my $species (@core_organisms ){
+		next if (lc($species) eq $self->species); #$wormbase already exists for own species.
+		my $wb = Wormbase->new( -debug   => $self->debug,
+			     -test     => $self->test,
+			     -organism => $species
+			   );
+		$accessors{lc $species} = $wb;
+	}
+	return %accessors;
+}
+
+####################################
+# accessor for the 'tier3' species
+sub tier3_species_accessors {
+	my $self = shift;
+	my %accessors;
+	foreach my $species (@tier3_organisms ){
 		next if (lc($species) eq $self->species); #$wormbase already exists for own species.
 		my $wb = Wormbase->new( -debug   => $self->debug,
 			     -test     => $self->test,
