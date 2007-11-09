@@ -140,7 +140,7 @@ sub full_name {'Caenorhabditis remanei'}
 sub chromosome_prefix {'Supercontig'}
 sub chromosome_names {
 	my @supercontigs;
-	my $i;
+	my $i = 0;
 	while($i < 9660){
 		push @supercontigs, $i++;
 	}
