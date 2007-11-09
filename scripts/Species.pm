@@ -69,6 +69,11 @@ sub chromosome_prefix {'PREFIX_'}
 sub pep_prefix {return undef}
 
 ########################################
+#
+# Core species
+#
+#########################################
+
 package Elegans;
 
 our @ISA = qw(Wormbase Species);
@@ -168,7 +173,7 @@ sub _new {
 }
 
 sub chromosome_prefix {'Contig'}
-sub pep_prefix {'CM'}
+sub pep_prefix {'CN'}
 sub pepdir_prefix{'bre'};
 sub ncbi_tax_id {'135651'};
 sub full_name {'Caenorhabditis brenneri'}
@@ -245,13 +250,41 @@ sub _new {
 
     bless $self, $class;
 }
+sub full_name {'Heterorhabditis bacteriophora'}
 sub ncbi_tax_id {'37862'};
 sub chromosome_prefix {'Contig'}
 sub pep_prefix {'HB'}
 sub pepdir_prefix{'het'};
 
 ######################################################
+#
+# Tier3 species
+#
+######################################################
 
+package Brugia;
+use Carp;
+our @ISA = qw(Wormbase Species);
+
+sub _new {	
+    my $class = shift;
+    my %param = %{ shift(@_) };
+
+    my $self = $class->initialize( $class->flatten_params( \%param ) );
+
+    # add stuff post object creation goes here
+
+    bless $self, $class;
+}
+
+sub full_name {'Brugia malayi'}
+sub chromosome_prefix {'Supercontig'}
+sub pep_prefix {'BM'}
+sub pepdir_prefix{'brug'};
+sub ncbi_tax_id {'6279'};
+
+
+#######################################################
 
 #######################################################
 
@@ -283,7 +316,7 @@ if ( __FILE__ eq $0 ) {
     print "$@\n" if ($@);
 
 
-    foreach my $orgs (qw(Elegans Briggsae Remanei Brenneri Japonica Heterorhabditis Pristionchus)){
+    foreach my $orgs (qw(Elegans Briggsae Remanei Brenneri Japonica Heterorhabditis Pristionchus Brugia)){
 	    eval{
 		    my $a = Wormbase->new( '-organism' => $orgs,-test => 1);
 		    &test($a);
