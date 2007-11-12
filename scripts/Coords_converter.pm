@@ -360,7 +360,67 @@ sub invoke
 
       return undef;
 
-    } else {			# unknown species
+    ##########################
+    # 
+    # brugia
+    # 
+    ##########################
+
+    } elsif ($species eq 'brugia') {
+
+      # read data from the AGP file
+      if ( $refresh ) {
+	print "refreshing coordinates for $database\n";
+	my $agp_file = "$database/AGP/supercontigs.agp";
+	
+	my $prev_supercontig = "";
+	my $prev_contig = "";
+	my $gap_count = 0;
+	open (SL, ">$SL_coords_file") || croak "Can't open $SL_coords_file\n";
+	open (AGP, "<$agp_file") || croak "Can't open $agp_file\n";
+	while (my $line = <AGP>) {
+	  my ($supercontig, $pos1, $pos2, $number, $type, $contig, $start, $len, $strand) = split /\s+/, $line;
+	  if ($type eq "N") {	# this is a gap, not a true contig
+	    $contig = $prev_contig . ".GAP_" . ++$gap_count; # make up a unique name for this gap-contig
+	    $strand = '+';
+	  }
+	  if ($prev_supercontig ne $supercontig) { # starting a new supercontig
+	    # we fake the extra layer of superlink data by duplicating the superlink and clone coords
+	    # this makes it easier to use the existing elegans routines
+	    print SL "\nSequence : \"$supercontig\"\n"; 
+	    $prev_contig = "";
+	  }
+	  if ($strand eq '+') {
+	    print SL "Subsequence \"$contig\" $pos1 $pos2\n";
+	  } else {
+	    print SL "Subsequence \"$contig\" $pos2 $pos1\n";
+	  }
+	  $prev_contig = $contig;
+	  $prev_supercontig = $supercontig;
+	}
+	close (AGP);
+	close (SL);
+
+	system("cp $SL_coords_file $clone_coords_file") and croak "cant cp $SL_coords_file\n" ;
+	system("chmod 777 $clone_coords_file") and carp "cant chmod on $clone_coords_file - This could cause problems in future" ;
+
+      }
+
+      # now read and load the data
+      &_read_data_file($database, $species, $self);
+
+
+
+
+
+
+    ##########################
+    # 
+    # unknown species
+    # 
+    ##########################
+
+    } else {
 
       croak "Do not know how to read in coordinate data for the unknown species: $species\n";
 
