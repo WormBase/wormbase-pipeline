@@ -45,9 +45,19 @@ my @chroms = $wormbase->get_chromosome_names(-mito => 1);
 $wormbase->checkLSF;
 
 my @methods     = split(/,/,join(',',$methods)) if $methods;
+
+if (scalar @chroms > 50){
+	my @bins;
+	my $i=0;
+	while ($i<scalar @chroms){
+		push (@{$bins[$i % 64]},$chroms[$i]);
+		$i++;
+	}
+	map {$_=join(',',@$_)} @bins;
+	@chroms = @bins;
+}
+
 my @chromosomes = $chrom_choice ? split(/,/,join(',',$chrom_choice)):@chroms;
-
-
 
 $database = $wormbase->autoace    unless $database;
 $dump_dir = $wormbase->gff_splits unless $dump_dir;
@@ -63,23 +73,25 @@ else {
 }
 
 $log->write_to("bsub commands . . . . \n\n");
+my $submitchunk=0;
 foreach my $chrom ( @chromosomes ) {
   if ( @methods ) {
     foreach my $method ( @methods ) {
-      my $err = "$scratch_dir/wormpubGFFdump.$chrom.$method.err";
-      my $out = "$scratch_dir/wormpubGFFdump.$chrom.$method.out";
+      my $err = scalar(@chromosomes) < 50 ? "$scratch_dir/wormpubGFFdump.$chrom.$method.err" : "$scratch_dir/wormpubGFFdump.$submitchunk.$method.err";
+      my $out = scalar(@chromosomes) < 50 ? "$scratch_dir/wormpubGFFdump.$chrom.$method.out" :  "$scratch_dir/wormpubGFFdump.$submitchunk.$method.out";
       my $bsub = "bsub -e $err -o $out \"perl $dumpGFFscript -store $store -database $database -dump_dir $dump_dir -chromosome $chrom -method $method\"";
       $log->write_to("$bsub\n");
       $wormbase->run_command("$bsub", $log);
     }
   }
   else {
-    my $err = "$scratch_dir/wormpubGFFdump.$chrom.err";
-    my $out = "$scratch_dir/wormpubGFFdump.$chrom.out";
+    my $err = scalar(@chromosomes) < 50 ? "$scratch_dir/wormpubGFFdump.$chrom.err": "$scratch_dir/wormpubGFFdump.$submitchunk.err";
+    my $out = scalar(@chromosomes) < 50 ? "$scratch_dir/wormpubGFFdump.$chrom.out" :"$scratch_dir/wormpubGFFdump.$submitchunk.out";
     my $bsub = "bsub -e $err -o $out \"perl $dumpGFFscript -store $store -database $database -dump_dir $dump_dir -chromosome $chrom\"";
     $log->write_to("$bsub\n");
     $wormbase->run_command("$bsub", $log);
   }
+  $submitchunk++;
 }
 
 $log->mail;
