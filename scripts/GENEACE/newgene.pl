@@ -6,8 +6,8 @@
 #
 # simple script for creating new (sequence based) Gene objects 
 #
-# Last edited by: $Author: mt3 $
-# Last edited on: $Date: 2007-10-15 17:13:56 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2007-11-12 11:08:54 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -48,7 +48,7 @@ GetOptions ("input=s"   => \$input,
 	    "species=s" => \$species
 	    );
 
-my $wormbase = Wormbase->new();
+my $wormbase = Wormbase->new('-organism' => $species);
 
 #####################################################
 # warn about incorrect usage of command line options
@@ -73,12 +73,12 @@ die "-cgc option not valid if -input is specified\n"     if ($input && $cgc);
 die "-cgc option not valid if -seq is not specified\n"   if ($cgc && !$seq);
 die "You must specify either -input <file> or -seq <sequence> -cgc <cgc name>\n" if (!$seq && !$input);
 
-die "-cgc option is not a valid type of CGC name\n"      if (($species ne 'briggsae')and $cgc && ($cgc !~ m/[a-z]{3,4}\-\d{1,3}$/));
+die "-cgc option is not a valid type of CGC name\n"      if ($cgc && ($cgc !~ m/[a-z]{3,4}\-\d{1,3}(\.\d+)?$/));
 
 die "-who option must be an integer\n"                   if ($who && ($who !~ m/^\d+$/));
 die "can't use -id option if processing input file\n"    if ($id && $input);
 
-die "-seq option is not a valid type of sequence name\n" if ($species_data{"$species"}->{'regex'} and $seq && ($seq !~ /$species_data{"$species"}->{'regex'}/));
+die "-seq option is not a valid type of sequence name\n" if ($seq && ($seq !~ $wormbase->cds_regex));
 
 # set CGC field to null string if not specified
 $cgc = "NULL" if (!$cgc);
@@ -173,7 +173,7 @@ close(OUT);
 # load information to geneace if -load is specified
 if ($load){
   my $command = "pparse $database/newgene.ace\nsave\nquit\n";
-  open (GENEACE,"| $tace -tsuser \"mt3\" $database") || die "Failed to open pipe to $database\n";
+  open (GENEACE,"| $tace -tsuser mt3 $database") || die "Failed to open pipe to $database\n";
   print GENEACE $command;
   close GENEACE;
 }
@@ -232,10 +232,10 @@ sub process_gene{
 
       # new version number
       print "Creating version $new_version: CGC_name = $cgc\n" if ($verbose);
-      print OUT "Gene $gene\n";
+      print OUT "\nGene $gene\n";
       print OUT "Version $new_version\n";
-      print OUT "History Version_change $new_version now $person Name_change CGC_name $cgc\n";
-      print OUT "CGC_name $cgc\n";
+      print OUT "History Version_change $new_version now $person Name_change CGC_name \"$cgc\"\n";
+      print OUT "CGC_name \"$cgc\"\n";
 
       # need to also Gene_class link unless it already exists
       my $gene_class;
@@ -269,10 +269,10 @@ sub process_gene{
 
     print "$seq does not exist, creating new Gene object $gene_id\n";
     
-    print OUT "Gene : $gene_id\n";
+    print OUT "\nGene : $gene_id\n";
     print OUT "Live\n";
     print OUT "Version 1\n";
-    print OUT "Sequence_name $seq\n";
+    print OUT "Sequence_name \"$seq\"\n";
     print OUT "Species \"Caenorhabditis $species\"\n";
     print OUT "History Version_change 1 now $person Event Created\n";
     print OUT "Method Gene\n";
@@ -280,11 +280,11 @@ sub process_gene{
 
     # set CGC name if it exists and set public name based on CGC name or sequence name
     if($cgc && ($cgc ne "NULL")){
-      print OUT "CGC_name $cgc\n";
-      print OUT "Public_name $cgc\n\n";
+      print OUT "CGC_name \"$cgc\"\n";
+      print OUT "Public_name \"$cgc\"\n\n";
     }
     else{
-      print OUT "Public_name $seq\n\n";      
+      print OUT "Public_name \"$seq\"\n\n";      
     }
   }
 
