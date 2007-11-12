@@ -276,15 +276,6 @@ sub _new {
     bless $self, $class;
 }
 
-sub chromosome_names {
-  my @supercontigs;
-  for (my $i = 12391; $i <= 15560; $i++) {push @supercontigs, $i;}
-  for (my $i = 1379380; $i <= 1387615; $i++) {push @supercontigs, $i;}
-  for (my $i = 1; $i <= 18591; $i++) {push @supercontigs, 'Degenerate' . $i;}
-
-  return @supercontigs;
-}
-
 sub full_name {'Brugia malayi'}
 sub chromosome_prefix {'Supercontig'}
 sub pep_prefix {'BM'}
