@@ -57,9 +57,6 @@ if ( $store ) {
                              );
 }
        
-# always in test mode
-$test = 1;
-
 # keep things quiet
 $debug = $user if (! defined $debug);
 
@@ -79,7 +76,7 @@ if (! defined $lab || $lab eq "") {
 } 
 
 # pass path to latest version of wormbase
-my $version = $wormbase->get_dev_version;
+my $version = &get_history_version($wormbase->database('current'));
 
 # file where temp ace files written
 my $session_file = "/tmp/history_session.$version";
@@ -1641,7 +1638,7 @@ sub error_warning
   }
 
 ############################################################################
-# gets the version of the latest database - confirm this is valid for your setup
+# gets the version of the currentDB database
 sub get_history_version
   {
     my $database = shift;
