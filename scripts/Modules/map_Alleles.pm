@@ -551,7 +551,7 @@ sub compare {
 	my %check;
 	foreach my $allele(keys %$old){
 		foreach my $gene($old->{$allele}->{allele}->Gene){
-			$check{$allele}{$gene}=1;
+			$check{$allele}{$gene}=1 unless (qq/${\$old->{$allele}->{allele}->at("Affects.Gene.$gene")->col(1)}/ eq 'Genomic_neighbourhood');
 		}
 	}
 	foreach my $allele(keys %$new){
