@@ -515,7 +515,7 @@ sub _read_data_file {
 	if( $y < $x ) {
 	  $sense = "-";
 	  swap($self, \$x, \$y);
-	  print "reverse sense found for $species $supercontig contig $contig\n";
+	  #print "reverse sense found for $species $supercontig contig $contig\n";
 	}
 	$self->{'SENSE'}->{$contig} = $sense; # store the sense of the contig
 	$self->{'LENGTH'}->{$contig} = $y - $x + 1; # store the length of the contig
@@ -1078,7 +1078,7 @@ sub Superlink_length
     Title   :   get_clones_in_superlink
     Usage   :   $coords->get_clones_in_superlink($superlink)
     Function:   returns a list of clones and their positions in the superlink
-    Returns :   returns a list of [clone, start_pos, end_pos] ordered by start_pos
+    Returns :   returns a list of [clone, start_pos, end_pos] ordered by start_pos, sense ('+' or '-')
     Args    :   name of superlink
     Non-elegans : returns a list of contigs and their positions in the supercontig
 =cut
@@ -1090,7 +1090,7 @@ sub get_clones_in_superlink {
   if (!@clones) {croak "$superlink is not a valid superlink\n";}
   my @sorted_clones = sort {$self->{SUPERLINK}->{$superlink}->{$a}->[1] <=> $self->{SUPERLINK}->{$superlink}->{$b}->[1]} @clones;
   foreach my $clone (@sorted_clones) {
-    push @result, [($clone, $self->{SUPERLINK}->{$superlink}->{$clone}->[0], $self->{SUPERLINK}->{$superlink}->{$clone}->[1])];
+    push @result, [($clone, $self->{SUPERLINK}->{$superlink}->{$clone}->[0], $self->{SUPERLINK}->{$superlink}->{$clone}->[1]), $self->{'SENSE'}->{$clone}];
   }
   return @result;
 }
