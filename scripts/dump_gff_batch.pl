@@ -36,7 +36,7 @@ else {
 			     -test    => $test,
 			     -organism => $species
 			   );
-  $store = $wormbase->autoace . "/wormbase.store";
+  $store = $wormbase->autoace . "/".ref($wormbase).".store";
 }
 
 my $log = Log_files->make_build_log($wormbase);
