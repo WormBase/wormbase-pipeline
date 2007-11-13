@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2007-11-12 16:57:27 $      
+# Last updated on: $Date: 2007-11-13 16:49:28 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -107,6 +107,7 @@ print "Connecting to Ace\n";
 my $ace = Ace->connect (-path => $database,
                        -program => $tace) || die "cannot connect to database at $database\n";
 
+my %clonesize = $wormbase->FetchData('clonesize');
 
 # now delete things that have not been updated in this run that you
 # would expect to have been updated like protein-homology-based
@@ -136,6 +137,20 @@ my $ace = Ace->connect (-path => $database,
 &delete_anomalies("CONFIRMED_cDNA_INTRONS");
 &delete_anomalies("INTRONS_IN_UTR");
 
+my $ace_output = $wormbase->wormpub . "/CURATION_DATA/anomalies.ace";
+if ($species) { $ace_output = $wormbase->wormpub . "/CURATION_DATA/anomalies_" . lc $species . ".ace";}
+open (OUT, "> $ace_output") || die "Can't open $ace_output to write the Method\n";
+print OUT "\n\n";
+print OUT "Method : \"curation_anomaly\"\n";
+print OUT "Colour   RED\n";
+print OUT "Strand_sensitive Show_up_strand\n";
+print OUT "Right_priority   1.45\n";
+print OUT "Width   2\n";
+print OUT "Score_by_width\n";
+print OUT "Score_bounds 0.01 1.0\n";
+print OUT "Remark \"This method is used by acedb to display curation anomaly regions\"\n";
+print OUT "\n\n";
+close(OUT);
 
 my @chromosomes = $wormbase->get_chromosome_names(-mito => 0, -prefix => 0);
 
@@ -1253,8 +1268,8 @@ sub get_protein_split_merged {
 
       # we have a merge if the pattern of HSPs shows a continuation of
       # the protein matching in order and this is a new gene and the
-      # distance between the alignments is less than 10 kb
-      if ($got_a_new_exon && $got_a_continuation_of_the_HSPs && $chrom_start - $prev_chrom_end < 10000) {
+      # distance between the alignments is less than 5 kb
+      if ($got_a_new_exon && $got_a_continuation_of_the_HSPs && $chrom_start - $prev_chrom_end < 5000) {
 	# output to database
 	# make the anomaly score based on the protein alignment score normalised between 0 and 1
 	# the BLAST scores seem to be between 0 and 1000
@@ -1263,8 +1278,9 @@ sub get_protein_split_merged {
 	if ($anomaly_score > 1) {$anomaly_score = 1;}
 	if ($anomaly_score < 0) {$anomaly_score = 0;}
 	#print "MERGE genes ANOMALY $prev_exon and $matching_exon\t$protein_id, $prev_chrom_start, $chrom_end, $chrom_strand, $anomaly_score, 'merge $prev_exon and $matching_exon'\n";
-	&output_to_database("MERGE_GENES_BY_PROTEIN", $chromosome, $protein_id, $prev_chrom_start, $chrom_end, $chrom_strand, $anomaly_score, "merge $prev_exon and $matching_exon");
-
+	if ($anomaly_score > 0.1) {
+	  &output_to_database("MERGE_GENES_BY_PROTEIN", $chromosome, $protein_id, $prev_chrom_start, $chrom_end, $chrom_strand, $anomaly_score, "merge $prev_exon and $matching_exon");
+	}
 
       }
 
@@ -2906,12 +2922,55 @@ sub put_anomaly_record_in_database {
   # ignore this if the score is less than 0.01
   if ($anomaly_score < 0.01) {return;}
 
+  #################################
   # output the data to the GFF file
+  #################################
+
   if ($database eq $wormbase->{'autoace'}) {
     print OUTPUT_GFF "CHROMOSOME_$chromosome\tcuration_anomaly\t$anomaly_type\t$chrom_start\t$chrom_end\t$anomaly_score\t$chrom_strand\t.\tEvidence \"$anomaly_id\"\n";
   }
 
+  ####################################
+  # output the anomaly to the ace file
+  ####################################
 
+  open (OUT, ">> $ace_output") || die "Can't open $ace_output\n";
+  print OUT "\n\n";
+
+  # get length of the clone
+  my $clone_len = $coords->Superlink_length($clone);
+
+  #Sequence : "AC3"
+  #Homol_data "AC3:curation_anomaly" 1 38951
+
+  print OUT "\nSequence : \"$clone\"\n";
+  print OUT "Homol_data \"$clone:curation_anomaly\" 1 $clone_len\n\n";
+
+  #Homol_data : "AC3:curation_anomaly"
+  #Sequence "AC3"
+  #Motif_homol "curation_anomaly" curation_anomaly 15   189   215  1      15
+
+  my $anomaly_len = $chrom_end - $chrom_start + 1;
+
+  print OUT "\nHomol_data : \"$clone:curation_anomaly\"\n";
+  print OUT "Sequence \"$clone\"\n";
+  if ($chrom_strand eq '+') {
+    print OUT "Motif_homol \"$anomaly_type:$anomaly_id:curation_anomaly\" \"curation_anomaly\" $anomaly_score $clone_start $clone_end 1 $anomaly_len\n\n";
+  } else {
+    print OUT "Motif_homol \"$anomaly_type:$anomaly_id:curation_anomaly\" \"curation_anomaly\" $anomaly_score $clone_start $clone_end $anomaly_len 1\n\n";
+  }
+      
+  #Motif : "signal_peptide_motif"
+  #Homol_homol "AC3:signal_peptide"
+
+  print OUT "\nMotif : \"$anomaly_type:$anomaly_id:curation_anomaly\"\n";
+  print OUT "Homol_homol \"$clone:curation_anomaly\"\n\n";
+    
+  close(OUT);
+
+  ########################################
+  # write the anomaly data to the database
+  ########################################
 
   # need to do a check for a very similar previous record that may
   # need to be overwritten, preserving the status.
@@ -2940,8 +2999,6 @@ sub put_anomaly_record_in_database {
       }
     }
   }
-
-
 
   # is the distance in $nearest less than 20 bases, rather than the default size of 21?
   # if it is not zero this is probably a move of the anomaly 
@@ -3027,7 +3084,7 @@ sub get_lab {
 
   return "HX/RW";
 }
-
+##########################################
 ##########################################
 # now delete things that have not been updated in this run that you
 # would expect to have been updated like protein-homology-based
