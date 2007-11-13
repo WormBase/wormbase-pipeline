@@ -220,7 +220,7 @@ sub process_file {
             $transcript = $gene;
 
             #remove transcript-specific part: Y105E8B.1a.2
-            $gene =~ s/(\.\w+)\.\d+$/$1/;
+            $gene =~ s/(\.\w+)\.\d+$/$1/ unless $species eq 'brugia'; # for that if i will go to hell :-(
             my $position = $type;
             if ( $position =~ /^five/ ) {
                 $five_prime{$gene} = {} if ( !$five_prime{$gene} );

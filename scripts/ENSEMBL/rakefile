@@ -1,0 +1,187 @@
+# to deploy stuff to /tmp/www/.....
+require 'yaml'
+require 'fileutils'
+
+file='/var/tmp/share/ens_sqldump_2'
+mysqldir='/var/tmp/mysql/bin/'
+
+desc 'check if the directories are cleaned up'
+task :check_clean do
+	files=Dir.glob('/lustre/work1/ensembl/wormpipe/compara/Caenorhabditis*')
+	die('the last run was not cleaned up!') unless files.size == 0
+end
+
+# can't setup path, so that needs to be made before
+desc 'setup environment variables'
+task :env_setup do
+	old=ENV['PERL5LIB']
+	additional='.:/software/worm/lib:/software/worm/ensembl/ensembl-compara/modules:/software/worm/ensembl/ensembl-analysis/modules:/software/worm/ensembl/ensembl-pipeline/scripts/DataConversion/wormbase:/software/worm/ensembl/ensembl-hive/modules:/software/worm/lib/bioperl-run:/software/worm/ensembl/ensembl/modules:/software/worm/ensembl/ensembl-pipeline/modules:/software/worm/lib/bioperl-live:'
+	ENV['PERL5LIB']=additional+old
+	ENV['LAGAN_DIR']='/usr/local/ensembl/lagan-1.21'
+	ENV['ZOE']='/usr/local/ensembl/Zoe'
+end
+
+desc 'update the configuration file'
+task :update_conf do
+        yml_file='ensembl_lite.conf'
+	yml=YAML::load_file(yml_file)
+	yml['elegans']['version']="WS#{Dir.glob("/nfs/disk100/wormpub/DATABASES/WS*").sort[-2].scan(/\d+$/)[0].to_i+1}"
+	File.open(yml_file,'w') do |out|
+		YAML.dump(yml,out)
+	end
+end
+
+# small shorthand
+def build_db(db_name)
+	sh "perl worm_lite.pl -species #{db_name} -setup -load_dna -load_gene"
+end
+
+desc 'build elegans database'
+task :build_elegans => [:env_setup] do
+	build_db(:elegans)
+end
+
+desc 'build briggsae database'
+task :build_briggsae => [:env_setup] do
+	build_db(:briggsae)
+end
+
+desc 'build brenneri database'
+task :build_brenneri => [:env_setup] do
+	build_db(:brenneri)
+end
+
+desc 'build remanei database'
+task :build_remanei => [:env_setup] do
+	build_db(:remanei)
+end
+
+desc 'build brugia database'
+task :build_brugia => [:env_setup] do
+	build_db(:brugia)
+end
+
+
+desc 'build homology database'
+task :build_homology => [:env_setup] do
+	conf='my_compara.conf'
+	yml=YAML::load_file('ensembl_lite.conf')
+        db=yml['elegans']['database']
+
+        sh "mysql -h #{db['host']} -P#{db['port']} -u #{db['user']} -p#{db['password']} -e 'DROP DATABASE IF EXISTS worm_compara;CREATE DATABASE worm_compara;'"
+	`cat /software/worm/ensembl/ensembl-hive/sql/tables.sql /software/worm/ensembl/ensembl-compara/sql/table.sql /software/worm/ensembl/ensembl-compara/sql/pipeline-tables.sql |mysql -h ia64b -P3306 -u wormadmin -pworms worm_compara`
+	sh "/software/worm/ensembl/ensembl-compara/scripts/pipeline/comparaLoadGenomes.pl -conf #{conf}"
+	sh "/software/worm/ensembl/ensembl-compara/scripts/pipeline/loadHomologySystem.pl -conf #{conf}"
+	sh "bzcat /nfs/acari/wormpipe/ensembl/ensembl-compara/scripts/pipeline/ncbi_taxon.sql.bz2 |mysql -h ia64b -P3306 -u wormadmin -pworms worm_compara"
+end
+
+desc 'build PECAN database'
+task :build_pecan => [:env_setup] do
+        conf='pecan.conf'
+	yml=YAML::load_file('ensembl_lite.conf')
+        db=yml['elegans']['database']
+
+	sh "mysql -h #{db['host']} -P#{db['port']} -u #{db['user']} -p#{db['password']} -e 'DROP DATABASE IF EXISTS worm_compara_lagan;CREATE DATABASE worm_compara_lagan;'"
+	sh "cat /software/worm/ensembl/ensembl-hive/sql/tables.sql /software/worm/ensembl/ensembl-compara/sql/table.sql /software/worm/ensembl/ensembl-compara/sql/pipeline-tables.sql |mysql -h ia64b -u wormadmin -pworms worm_compara_lagan"
+	sh "/software/worm/ensembl/ensembl-compara/scripts/pipeline/comparaLoadGenomes.pl -conf #{conf}"
+	sh "/software/worm/ensembl/ensembl-compara/scripts/pipeline/loadMultipleAlignerSystem.pl -conf #{conf}"
+end
+
+
+# hive shorthand
+def run_beehive(db_name)
+	sh %Q(beekeeper.pl -url mysql://wormadmin:worms@ia64b:3306/#{db_name} -loop -lsf_option '-R"rusage[myia64b=10:duration=10:decay=1] select[myia64b<400]" -W 120')
+end
+
+
+desc 'run homology beehive'
+task :run_homology => [:env_setup] do
+	run_beehive('worm_compara')
+end
+
+desc 'run pecan beehive'
+task :run_pecan => [:env_setup] do
+	run_beehive('worm_compara_lagan')
+end
+
+desc 'dump homology ace file'
+task :dump_homology => [:env_setup] do
+#	sh 'perl get_all_elegans_orthologues.pl > ~wormpub/BUILD/autoace/acefiles/compara.ace'
+	sh 'perl get_all_elegans_orthologues.pl > /tmp/delete_me'
+end
+
+desc 'dump pecan files'
+task :dump_pecan => [:env_setup] do
+	FileUtils.mkdir_p('/tmp/compara')
+ 
+ 	ENV['ENSEMBL_REGISTRY'] = './E_registry.pl'
+
+	sh 'perl getsynteny.pl > /tmp/compara/pecan.gff'   # dump gff
+
+	['I','II','III','IV','V','X'].each {|c|
+	   sh "perl dump_clustal.pl CHROMOSOME_#{c} > /tmp/compara/pecan_chromosome_#{c}.clw" # dump clustal
+	}
+end
+
+desc 'cleanup the compara work directories'
+task :cleanup do
+	sh 'rm -rf /lustre/scratch1/ensembl/wormpipe/compara/logs/*'      # remove the logs
+	sh 'rm -f /lustre/work1/ensembl/wormpipe/compara/Caenorhabditis*' # remove the blast databases
+end
+
+desc "deploy files to ~wormpipe"
+task :deploy
+FileList['*.*'].each do |fn|
+	targetdir='/software/worm/ensembl/ensembl-pipeline/scripts/DataConversion/wormbase/'
+	targetfile = File.join(targetdir, fn)
+
+	file targetfile => [fn] do
+		cp fn,targetfile
+	end
+
+	task :deploy => [targetfile]
+end
+
+desc "make a compara tarball"
+task :dump_compara do
+	conf=YAML.load_file('ensembl_lite.conf')
+
+	mysqldir='' #'/var/tmp/mysql-5.1.16-beta-linux-i686-glibc23/bin/' # oops only works on the deskpro
+	# dump_options='--add-drop-table --add-drop-database -u wormadmin -a -h ia64b --password=worms'
+	dump_options='--add-drop-table -u wormadmin -a -h ia64b --password=worms'
+
+	to_dump =[ 'briggsae','elegans','remanei','brenneri']
+
+	FileUtils.mkdir_p('/tmp/compara')
+	FileUtils.cd('/tmp/compara') do
+		conf.each_key{|org|
+			next unless to_dump.include?(org)
+			db=conf[org]['database']
+			file="#{db['dbname']}.sql"
+			sh "#{mysqldir}mysqldump #{dump_options} -B #{db['dbname']} > #{file}"
+		}
+		sh "#{mysqldir}mysqldump #{dump_options} -B worm_compara > worm_compara.sql"
+		sh "#{mysqldir}mysqldump #{dump_options} -B worm_compara_lagan > worm_compara_lagan.sql"
+	end
+	FileUtils.cd('/tmp') do
+		File.unlink("compara.tar.bz2") if File.exists?("compara.tar.bz2")
+		sh "tar cvf compara.tar compara/*"
+		sh "bzip2 -9 compara.tar"
+		FileList['compara/*'].each{|f|File.unlink(f)}
+	end
+end
+
+desc 'copy release files'
+task :copy_release do
+	# the ace files
+	# the gff
+	# the mysql dumps
+end
+
+desc 'build and setup all databases'
+task :build => [:check_clean,:env_setup,:build_elegans,:build_briggsae,:build_homology,:run_homology,:dump_homology,:build_pecan,:run_pecan,:cleanup]
+
+desc 'dump all databases into the various flatfiles'
+task :dump => [:dump_pecan,:dump_compara,:copy_release]
+
+task :default => [:build,:dump]

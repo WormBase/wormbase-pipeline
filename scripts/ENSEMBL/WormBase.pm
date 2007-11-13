@@ -27,8 +27,8 @@ wormbase-hel@wormbase.org about data issues
 
 =cut
 
-use lib '/nfs/acari/wormpipe/ensembl/ensembl-pipeline/scripts/DataConversion/wormbase';
-use lib '/nfs/acari/wormpipe/ensembl/ensembl/modules';
+#use lib '/nfs/acari/wormpipe/ensembl/ensembl-pipeline/scripts/DataConversion/wormbase';
+#use lib '/nfs/acari/wormpipe/ensembl/ensembl/modules';
 
 package WormBase;
 require Exporter;
@@ -150,7 +150,10 @@ sub agp_parse {
         #I	47490	107680	3	F	AC024796.1	1	60191	+
         #print;
         #print "\n";
-        my ( $chr, $chr_start, $chr_end, $gap, $contig, $raw_start, $raw_end, $raw_ori ) = (split)[ 0, 1, 2, 4, 5, 6, 7, 8 ];
+        my ( $chr, $chr_start, $chr_end, $ordinate,$type, $contig, $raw_start, $raw_end, $raw_ori ) = split;
+
+	next if (! $type) || ($type eq 'N');
+
         if ( !$contig =~ /\S+\.\d+/ ) {
             next;
         }
@@ -795,7 +798,7 @@ sub create_transcripts {
 
         #print STDERR "\nWorking on $transcript.(".$exons[0]->strand.") ";
         #get the gene-name
-        $gene_name= ( $transcript =~ /(.*\w+\.\d+)[a-z A-Z]*/ )?$1:$transcript;
+        $gene_name= ( $transcript =~ /(.*?\w+\.\d+)[a-z A-Z]*\.*\d*/ )?$1:$transcript;
 
         $transcript_id = $transcript;
         print STDERR "\nNote: Gene name= " . $gene_name . " Transcript_id= " . $transcript_id . " (for transcript " . $transcript . ")";
