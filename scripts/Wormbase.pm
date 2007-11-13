@@ -33,7 +33,7 @@ sub initialize {
   }
   $self->{'version'} = 666 if( $self->test);
   print STDERR "Using ".$self->{'autoace'}."\n" if( $self->{'autoace'} );
-  $self->establish_paths;
+  #$self->establish_paths;
   return $self;
 }
 
@@ -53,6 +53,7 @@ sub new {
 
   $params{'-species'} = lc $ORGANISM;
   $self=$ORGANISM->_new(\%params);
+  $self->establish_paths;
   return $self;
 }
 
@@ -1234,8 +1235,7 @@ sub establish_paths {
     #species specific paths
     $self->{'peproot'}    = $basedir . "/WORMPEP";
     $self->{'wormrna'}    = $basedir . "/WORMRNA/wormrna" . $self->get_wormbase_version;
-    $self->{'wormpep'}    = $basedir . "/WORMPEP/wormpep" . $self->get_wormbase_version;
-    $self->{'brigpep'}    = $basedir . "/WORMPEP/brigpep" . $self->get_wormbase_version;
+    $self->{'wormpep'}    = $basedir . "/WORMPEP/".$self->pepdir_prefix."pep" . $self->get_wormbase_version;
 
     $self->{'logs'}        = $self->orgdb . "/logs";
     $self->{'common_data'} = $self->orgdb . "/COMMON_DATA";
@@ -1279,8 +1279,7 @@ sub establish_paths {
     # create dirs if missing
     mkpath( $self->logs )        unless ( -e $self->logs );
     mkpath( $self->common_data ) unless ( -e $self->common_data );
-    mkpath( $self->wormpep )     unless ( -e $self->wormpep );  
-    mkpath( $self->brigpep )     unless ( -e $self->brigpep );
+    mkpath( $self->wormpep )     unless ( -e $self->wormpep );
     mkpath( $self->wormrna )     unless ( -e $self->wormrna ); 
     mkpath( $self->chromosomes ) unless ( -e $self->chromosomes );
     mkpath( $self->transcripts ) unless ( -e $self->transcripts ); 
@@ -1445,6 +1444,23 @@ sub tier3_species_accessors {
 
 sub species {my $self = shift; return $self->{'species'};}
 
+sub format_sequence
+{
+	my $self = shift;
+	my $seq = shift;
+	my $length = shift;
+	my $new_seq;
+	
+	$length = $length ? $length : 60;
+	my $left;
+	$new_seq = $seq if (length($seq) < $length);
+	while ($seq =~ /(\w{$length})/g){
+		$new_seq .= $&."\n";
+		$left = $';#'
+	}
+	$new_seq .= $left if ($left);
+	return $new_seq;
+}
 ################################################################################
 #Return a true value
 ################################################################################
