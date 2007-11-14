@@ -7,8 +7,8 @@
 # 
 # Originally written by Dan Lawson
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2007-09-07 10:30:49 $
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2007-11-14 16:34:39 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -348,6 +348,9 @@ sub copy_misc_files{
 
   $runtime = $wormbase->runtime;
   $log->write_to("$runtime: Finished copying\n\n");
+
+  # copy the compara tarball
+  $wormbase->run_command("cp $base_dir/autoace/compara.tar.bz2 $targetdir/$WS_name/",$log);
 
 }
 
