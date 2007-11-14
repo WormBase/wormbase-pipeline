@@ -137,7 +137,7 @@ sub _new {
 }
 
 sub full_name {'Caenorhabditis remanei'}
-sub chromosome_prefix {'Contig'}
+sub chromosome_prefix {'Crem_Contig'}
 sub chromosome_names {
 	my @supercontigs;
 	my $i = 0;
