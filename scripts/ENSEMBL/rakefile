@@ -7,8 +7,8 @@ mysqldir='/var/tmp/mysql/bin/'
 
 desc 'check if the directories are cleaned up'
 task :check_clean do
-	files=Dir.glob('/lustre/work1/ensembl/wormpipe/compara/Caenorhabditis*')
-	die('the last run was not cleaned up!') unless files.size == 0
+	files=Dir.glob('/lustre/scratch1/ensembl/wormpipe/compara/Caenorhabditis*')
+	raise('the last run was not cleaned up!') unless files.size == 0
 end
 
 # can't setup path, so that needs to be made before
@@ -107,7 +107,7 @@ end
 desc 'dump homology ace file'
 task :dump_homology => [:env_setup] do
 #	sh 'perl get_all_elegans_orthologues.pl > ~wormpub/BUILD/autoace/acefiles/compara.ace'
-	sh 'perl get_all_elegans_orthologues.pl > /tmp/delete_me'
+	sh 'perl get_all_elegans_orthologues.pl > /tmp/compara.ace'
 end
 
 desc 'dump pecan files'
@@ -127,6 +127,8 @@ desc 'cleanup the compara work directories'
 task :cleanup do
 	sh 'rm -rf /lustre/scratch1/ensembl/wormpipe/compara/logs/*'      # remove the logs
 	sh 'rm -f /lustre/work1/ensembl/wormpipe/compara/Caenorhabditis*' # remove the blast databases
+	sh 'rm -f /tmp/compara.ace' # remove the compara ace file
+	sh 'rm -rf /tmp/compara'    # remove the compara dump directory
 end
 
 desc "deploy files to ~wormpipe"
@@ -173,15 +175,15 @@ end
 
 desc 'copy release files'
 task :copy_release do
-	# the ace files
-	# the gff
-	# the mysql dumps
+	target_dir='/nfs/disk100/wormpub/BUILD/autoace/'
+	cp '/tmp/compara.ace',"#{target_dir}acefiles/"
+	cp '/tmp/compara.tar.bz2',target_dir
 end
 
 desc 'build and setup all databases'
 task :build => [:check_clean,:env_setup,:build_elegans,:build_briggsae,:build_homology,:run_homology,:dump_homology,:build_pecan,:run_pecan,:cleanup]
 
 desc 'dump all databases into the various flatfiles'
-task :dump => [:dump_pecan,:dump_compara,:copy_release]
+task :dump => [:dump_pecan,:dump_compara,:copy_release,:cleanup]
 
 task :default => [:build,:dump]
