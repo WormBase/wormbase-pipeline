@@ -4,7 +4,7 @@
 #
 # by ag3 [991221]
 #
-# Last updated on: $Date: 2007-06-04 15:34:44 $
+# Last updated on: $Date: 2007-11-15 09:37:08 $
 # Last updated by: $Author: gw3 $
 
 # transferdb moves acedb database files across filesystems.
@@ -50,6 +50,7 @@ my $S_wdata;           # -wdata ??? what is this
 my $S_chromosomes;     # -chromosomes: copies CHROMOSOMES dir
 my $S_release;         # -release 
 my $S_common;          # -common : copies COMMON_DATA
+my $S_agp;             # -agp : copies AGP dir
 my $S_all;             # -all: all of the above
 my $file;              # ???
 my $retry = 5;         # for making repeat attempts to copy a file
@@ -75,6 +76,7 @@ GetOptions (
 	    "wdata"       => \$S_wdata,
 	    "chromosomes" => \$S_chromosomes,
 	    "release"     => \$S_release,
+	    "agp"         => \$S_agp,
 	    "common"      => \$S_common,
 	    "help"        => \$help,
 	    "verbose"     => \$verbose,
@@ -168,6 +170,7 @@ my $chromosomes = "$srcdir"."/CHROMOSOMES";
 my $release     = "$srcdir"."/release";
 my $acefiles    = "$srcdir"."/acefiles";
 my $common_data = "$srcdir"."/COMMON_DATA";
+my $agp         = "$srcdir"."/AGP";
 
 # set what is to be copiedin @TOBEMOVED
 my @TOBEMOVED;
@@ -184,6 +187,7 @@ push (@TOBEMOVED,"$chromosomes") if ($S_chromosomes || $S_all);
 push (@TOBEMOVED,"$release")     if ($S_release     || $S_all);
 push (@TOBEMOVED,"$acefiles")    if ($S_acefiles    || $S_all);
 push (@TOBEMOVED,"$common_data") if ($S_common      || $S_all);
+push (@TOBEMOVED,"$agp")         if ($S_agp         || $S_all);
 
 $log->write_to( "Directories to be copied: @TOBEMOVED \n");
 
@@ -357,7 +361,7 @@ sub process_file {
   }
   else {
     # if you are copying displays.wrm and -name was specified, you can update
-    # the contents of the file itself to ad6~d the new name
+    # the contents of the file itself to add the new name
     if (($filename =~ m/displays.wrm$/) && $dbname){
       $log->write_to( "Updating displays.wrm ...\n");
       open (INFILE,"cat $s_file|");
@@ -526,9 +530,11 @@ in alternative to the -all switch:
 
 =item -chromosomes =>  CHROMOSOMES subdir
 
-=item -release =>  release subdir
+=item -agp       =>  AGP subdir
 
-=item -acefiles => acefiles subdir
+=item -release   =>  release subdir
+
+=item -acefiles  => acefiles subdir
 
 =back
 
