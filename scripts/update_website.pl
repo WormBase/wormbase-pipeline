@@ -8,7 +8,7 @@
 # relevant WormBase and Wormpep web pages.
 #
 # Last updated by: $Author: mh6 $     
-# Last updated on: $Date: 2007-10-17 14:02:48 $      
+# Last updated on: $Date: 2007-11-15 15:05:34 $      
 
 
 #################################################################################
@@ -144,8 +144,11 @@ unless ($test or $debug) {
 	# update 'current' symlink on dev site
 	$log->write_to("\nChanging 'current symbolic link to point to new release\n"); 	
 	chdir("$www") || $log->write_to("Couldn't chdir to $www\n");	
-	system("rm -f $www/current") && croak "Couldn't remove 'current' symlink\n"; 	 
+	system("rm -f $www/current") && croak "Couldn't remove 'current' symlink\n";
+	system("rm -f $wwwdata/WORMBASE/current") && croak "Couldn't remove 'current' symlink in the data directory\n";
 	system("ln -s $WS_name current") && croak "Couldn't create new symlink\n";
+	system("cd  $wwwdata/WORMBASE/ && ln -s $WS_name current") && croak "Couldn't create new symlink in the data directory\n";
+        chdir("$www") || $log->write_to("Couldn't chdir to $www\n");
 }
 
 ##################
@@ -795,9 +798,11 @@ sub copy_GFF_files{
 
   $log->write_to("Copying across GFF files from $gff\n");
 
+  $wb->run_command("mkdir -p $wwwdata/WORMBASE/$WS_name/GFF/",$log);
+
   foreach my $chrom (@chrom) {
       $wb->run_command(
-	      "sort -u $gff/CHROMOSOME_${chrom}_clone_acc.gff | /software/bin/perl $ENV{CVS_DIR}/gff_sort > $www/$WS_name/GFF/CHROMOSOME_${chrom}_clone_acc.gff", $log)
+	      "sort -u $gff/CHROMOSOME_${chrom}_clone_acc.gff | /software/bin/perl $ENV{CVS_DIR}/gff_sort > $wwwdata/WORMBASE/$WS_name/GFF/CHROMOSOME_${chrom}_clone_acc.gff", $log)
       && $log->write_to("Couldn't copy CHROMOSOME_${chrom}_clone_acc.gff\n", $log);
   }
 
@@ -824,7 +829,7 @@ sub copy_GFF_files{
         my ($type,$chrom)=split(',',$string);
 
              open INF ,"zcat $chromdir/CHROMOSOME_${chrom}.gff.gz|" || die "ERROR: @!\n";
-             my $outf= new IO::File "$www/$WS_name/GFF/CHROMOSOME_${chrom}.$type.gff",'w';
+             my $outf= new IO::File "$wwwdata/WORMBASE/$WS_name/GFF/CHROMOSOME_${chrom}.$type.gff",'w';
              while (<INF>){
 		     my @F=split;
 		     switch($type){
