@@ -44,7 +44,8 @@ my $cvsDIR = $test
   ? ( YAML::LoadFile("ensembl_lite.conf") )->{test}->{cvsdir}
   : ( YAML::LoadFile("ensembl_lite.conf") )->{generics}->{cvsdir};
 
-our $gff_types = "curated coding_exon";
+our $gff_types = ($config->{gff_types} || "curated coding_exon");
+
 
 &setupdb( $config->{database}, $config->{version} ) if $setup;
 &load_dna($config)   if $dna;
@@ -111,7 +112,7 @@ sub load_dna {
         print "processing $file\n" if $debug;
         while ( my $seq = $seqs->next_seq() ) {
             print $seq->display_id(), "\t", $seq->length(), "\n" if $debug;
-
+            $seq->{'seq'}=~s/[^acgtnACGTN]/n/g; # removes ambiguity codes
             my $cslice = &store_slice( $db, $seq->display_name(), 1, $seq->length, 1, $cs );
 
             # do something else if size > 16MB
