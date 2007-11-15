@@ -142,6 +142,7 @@ sub chromosome_names {
 	my @supercontigs;
 	my $i = 0;
 	while($i < 9660){
+		next if $i==5540;
 		push @supercontigs, $i++;
 	}
 	return @supercontigs;
