@@ -186,4 +186,4 @@ task :build => [:check_clean,:env_setup,:build_elegans,:build_briggsae,:build_ho
 desc 'dump all databases into the various flatfiles'
 task :dump => [:dump_pecan,:dump_compara,:copy_release,:cleanup]
 
-task :default => [:build,:dump]
+task :default => [:update_conf,:build,:dump]
