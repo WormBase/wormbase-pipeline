@@ -34,10 +34,11 @@ Internal methods are usually preceded with a _
 package Sequence_extract;
 
 use lib $ENV{'CVS_DIR'};
-
+use lib '/software/worm/lib/bioperl-live';
 use Carp;
 use Wormbase;
 use Coords_converter;
+use Bio::SeqIO;    
 
 @ISA = ('Coords_converter');
 
@@ -67,34 +68,46 @@ sub invoke
     $database = $wormbase->database('current') unless $database; #defaults to current_DB in CC if not set.
     # get the chromosomal sequences
     my $tace = $wormbase->tace; # <= hmpf
-    my @chromosome = qw( I II III IV V X MtDNA);
-    my $seq_file = $database."/CHROMOSOMES/CHROMOSOME_I.dna";
-    unless( -e "$seq_file" ) {
-      open (ACE, "| $tace $database") or croak "cant connect to $database :$!\n";
+    
+    my @chromosome = $wormbase->chromosome_names;
+    if (scalar @chromosome > 100){
+    #contig assemblies	
+    	my $supercontig_seq = $wormbase->chromosomes."/supercontigs.fa";
+    	my $seqs = Bio::SeqIO->new(-file => $supercontig_seq, -format => "fasta");
+    	while(my $seq = $seqs->next_seq) {
+    		$self->{'SEQUENCE'}->{$seq->id} = $seq->seq;
+    	}
+    }
+    else {
+    #chromosome based assemblies
+   		my $seq_file = $database."/CHROMOSOMES/CHROMOSOME_I.dna";
+    	unless( -e "$seq_file" ) {
+      	open (ACE, "| $tace $database") or croak "cant connect to $database :$!\n";
 
-      foreach my $chrom ( @chromosome ) {
-	print "writing DNA seq for chromosome_$chrom\n";
-	      my $command = <<EOF;
-	clear
-	  find sequence CHROMOSOME_$chrom
-	    dna -f $database/CHROMOSOMES/CHROMOSOME_$chrom.dna
+	    foreach my $chrom ( @chromosome ) {
+			print "writing DNA seq for chromosome_$chrom\n";
+		      my $command = <<EOF;
+				clear
+				find sequence CHROMOSOME_$chrom
+			    dna -f $database/CHROMOSOMES/CHROMOSOME_$chrom.dna
 EOF
-        print ACE $command;
-      }
-      close ACE;
-    }
-    foreach (@chromosome) {
-      # read seq into $self
-      $/ = "";
-      open (SEQ, "$database/CHROMOSOMES/CHROMOSOME_$_.dna") or croak "cant open the dna file for $_:$!\n";
-      my $seq = <SEQ>;
-      close SEQ;
-      $/ = "\n";
-      $seq =~ s/>CHROMOSOME_\w+//;
-      $seq =~ s/\n//g;
-      $self->{'SEQUENCE'}->{"CHROMOSOME_$_"} = $seq;
-    }
-    return $self;
+	        print ACE $command;
+	      }
+	      close ACE;
+	    }
+	    foreach (@chromosome) {
+	      # read seq into $self
+	      $/ = "";
+	      open (SEQ, "$database/CHROMOSOMES/CHROMOSOME_$_.dna") or croak "cant open the dna file for $_:$!\n";
+	      my $seq = <SEQ>;
+	      close SEQ;
+	      $/ = "\n";
+	      $seq =~ s/>CHROMOSOME_\w+//;
+	      $seq =~ s/\n//g;
+	      $self->{'SEQUENCE'}->{"CHROMOSOME_$_"} = $seq;
+	    }
+	 }
+	 return $self;
   }
 
 
