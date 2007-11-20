@@ -112,7 +112,7 @@ sub load_dna {
         print "processing $file\n" if $debug;
         while ( my $seq = $seqs->next_seq() ) {
             print $seq->display_id(), "\t", $seq->length(), "\n" if $debug;
-            $seq->{'seq'}=~s/[^acgtnACGTN]/n/g; # removes ambiguity codes
+            $seq->{'primary_seq'}->{'seq'}=~s/[^acgtnACGTN]/n/g; # removes ambiguity codes
             my $cslice = &store_slice( $db, $seq->display_name(), 1, $seq->length, 1, $cs );
 
             # do something else if size > 16MB
