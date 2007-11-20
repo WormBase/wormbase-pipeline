@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2007-11-13 16:49:28 $      
+# Last updated on: $Date: 2007-11-20 15:56:24 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -122,6 +122,7 @@ my %clonesize = $wormbase->FetchData('clonesize');
 &delete_anomalies("UNMATCHED_EST");
 &delete_anomalies("UNATTACHED_EST");
 &delete_anomalies("UNATTACHED_TSL");
+&delete_anomalies("UNMATCHED_TSL");
 &delete_anomalies("FRAMESHIFTED_PROTEIN");
 &delete_anomalies("OVERLAPPING_EXONS");
 &delete_anomalies("SHORT_EXON");
