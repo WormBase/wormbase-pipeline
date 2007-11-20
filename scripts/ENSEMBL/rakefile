@@ -187,7 +187,7 @@ end
 desc 'cleanup the compara work directories'
 task :cleanup do
 	sh 'rm -rf /lustre/scratch1/ensembl/wormpipe/compara/logs/*'      # remove the logs
-	sh 'rm -f /lustre/work1/ensembl/wormpipe/compara/Caenorhabditis*' # remove the blast databases
+	sh 'rm -f /lustre/scratch1/ensembl/wormpipe/compara/Caenorhabditis*' # remove the blast databases
 	sh 'rm -f /tmp/compara.ace' # remove the compara ace file
 	sh 'rm -rf /tmp/compara'    # remove the compara dump directory
 end
