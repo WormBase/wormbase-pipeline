@@ -5,7 +5,7 @@
 # map GO_terms to ?Sequence objects from ?Motif and ?Phenotype
 #
 # Last updated by: $Author: ar2 $     
-# Last updated on: $Date: 2007-02-28 14:10:27 $      
+# Last updated on: $Date: 2007-11-20 17:06:08 $      
 
 use strict;
 use warnings;
@@ -19,7 +19,7 @@ use Ace;
 # Script variables (run)     #
 ##############################
 
-my ($help, $debug, $motif, $phenotype,$store);
+my ($help, $debug, $motif, $phenotype, $tmhmm, $store);
 my $verbose;             # for toggling extra output
 my $maintainers = "All"; # who receives emails from script
 my $noload;              # generate results but do not load to autoace
@@ -32,10 +32,11 @@ my $database;
 GetOptions ("help"      => \$help,
             "debug=s"   => \$debug,
 			    "phenotype" => \$phenotype,
+			    "tmhmm"		=> \$tmhmm,
 	   		 "motif"     => \$motif,
 	    		"noload"    => \$noload,
     	    	"store:s"   => \$store,
-    	    	"database:s" => \$database
+    	    	"database:s" => \$database,
     	);
 
 # Display help if required
@@ -76,7 +77,8 @@ my $db = Ace->connect(-path=>$dbpath,
 
 
 &motif($dbpath)     if ($motif);
-&phenotype($db) if ($phenotype);
+&phenotype($db) 	if ($phenotype);
+&tmhmmGO 			if ($tmhmm);
 
 close OUT;
 
@@ -125,6 +127,14 @@ sub motif {
 ########################################################################################
 # phenotype to sequence mappings                                                       #
 ########################################################################################
+
+sub tmhmmGO {
+	my $query = "find protein where species = \"".$wormbase->full_name."\" where Feature AND NEXT = \"tmhmm\"; follow Corresponding_CDS; follow Gene";
+	my $genes = $db->fetch_many(-query => $query);
+	while(my $gene = $genes->next){
+		print OUT "\nGene : ".$gene->name."\nGO_term \"GO:0016021\"\n";
+	}
+}
 
 sub phenotype {
   my $db = shift;
