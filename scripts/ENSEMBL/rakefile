@@ -10,7 +10,7 @@ require 'fileutils'
 desc 'check if the directories are cleaned up'
 task :check_clean do
 	files=Dir.glob('/lustre/scratch1/ensembl/wormpipe/compara/Caenorhabditis*')
-	raise('the last run was not cleaned up!') unless files.size == 0
+	raise("the last run was not cleaned up! delete:\n#{files.join("\n")}") unless files.size == 0
 end
 
 # that is the basic environment setup task
