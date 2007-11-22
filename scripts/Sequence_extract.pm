@@ -69,7 +69,7 @@ sub invoke
     # get the chromosomal sequences
     my $tace = $wormbase->tace; # <= hmpf
     
-    my @chromosome = $wormbase->chromosome_names;
+    my @chromosome = $wormbase->get_chromosome_names(-mito => 1);
     if (scalar @chromosome > 100){
     #contig assemblies	
     	my $supercontig_seq = $wormbase->chromosomes."/supercontigs.fa";
