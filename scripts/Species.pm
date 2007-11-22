@@ -278,7 +278,7 @@ sub _new {
 }
 
 sub full_name {'Brugia malayi'}
-sub chromosome_prefix {'Supercontig'}
+sub chromosome_prefix {'Bmal_supercontig'}
 sub pep_prefix {'BM'}
 sub pepdir_prefix{'brug'};
 sub ncbi_tax_id {'6279'};
