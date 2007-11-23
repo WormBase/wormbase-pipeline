@@ -8,7 +8,7 @@
 # in ace
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2007-11-14 16:12:13 $      
+# Last updated on: $Date: 2007-11-23 11:50:26 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -281,7 +281,8 @@ foreach my $experiment_id (keys %experiment) {
   print OUT "\n";
   print OUT "Mass_spec_experiment : \"$experiment_id\"\n";
   print OUT "Species \"Caenorhabditis elegans\"\n";
-  print OUT "Life_stage \"mixed stage\"\n";
+  print OUT "Strain \"N2\" \n";
+  print OUT "Life_stage \"all stages\"\n";
   print OUT "Sub_cellular_localization \"whole organism\"\n";
   print OUT "Digestion \"Trypsin\"\n";
   print OUT "Instrumentation \"QTOF\"\n";
@@ -292,12 +293,11 @@ foreach my $experiment_id (keys %experiment) {
   print OUT "//Reference \"(WBPaper ID)\" \n";
   print OUT "//Database \"(A brief description of the sequence database used to search against)\"\n";
   print OUT "//Program \"(Mascot or SEQUEST etc.)\"\n";
-  print OUT "//Laboratory \" \n";
-  print OUT "//Strain \" \n";
-  print OUT "//Genotype \" \n";
-  print OUT "//Anatomy_term \"\n";
-  print OUT "//Cell_type \" \n";
-  print OUT "//Ionisation_source \" \n";
+  print OUT "//Laboratory \"\" \n";
+  print OUT "//Genotype \"\" \n";
+  print OUT "//Anatomy_term \"\"\n";
+  print OUT "//Cell_type \"\" \n";
+  print OUT "//Ionisation_source \"\" \n";
   print OUT "//Minimum_ion_proportion \n";
   print OUT "//False_discovery_rate \n";
 
