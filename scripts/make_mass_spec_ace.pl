@@ -8,7 +8,7 @@
 # in ace
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2007-11-23 11:50:26 $      
+# Last updated on: $Date: 2007-11-23 13:27:50 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -312,7 +312,7 @@ foreach my $experiment_id (keys %experiment) {
       print OUT "Mass_spec_peptide : \"MSP:$ms_peptide\"\n";
       print OUT "Peptide \"MSP:$ms_peptide\"\n";
       print OUT "Protein_seq \"MSP:$ms_peptide\"\n";	  
-      print OUT "Peptide_is_natural\n" if ($natural);
+      print OUT "Petide_is_natural\n" if ($natural); # note spelling mistake
       print OUT "Mass_spec_experiments \"$experiment_id\" Matches_database_uniquely\n" if (exists $peptide_count{$ms_peptide} && $peptide_count{$ms_peptide} == 1);
       
       # and output the Peptide sequence object 
