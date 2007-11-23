@@ -4,8 +4,8 @@
 # 
 # A script to make multiple copies of camace for curation, and merge them back again
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2007-08-17 11:10:23 $
+# Last edited by: $Author: pad $
+# Last edited on: $Date: 2007-11-23 14:30:50 $
 #
 # Persisting errors.
 #running csh -c "reformat_acediff file 1 file2"
@@ -152,23 +152,60 @@ if ($split) {
   print "Removing old split databases and Copying $canonical database to the split camaces\n";
 #  if ($debug){shift (@databases)};
   &split_databases;
-  print "Phase 3 finished. All ~wormpub split camaces can now be used\n\nCheck all TransferDB log files for \"ended SUCCESSFULLY\"\n";
+  
+# Remove data we don't want in the build.
+    &remove_data("camace",);
+
+print "Phase 3 finished. All ~wormpub split camaces can now be used\n\nCheck all TransferDB log files for \"ended SUCCESSFULLY\"\n";
 }
 
 print "Diaskeda same Poli\n"; #we had alot of fun#
 $log->mail();
 exit(0);
 
-######################
-  #################
-  #  Subroutines  #
-  #################
-######################
 
-##################################
-#(1)dump files from camace splits#
-##################################
 
+##################################################################################################################################################
+                                                                #################
+                                                                #  Subroutines  #
+                                                                #################
+##################################################################################################################################################
+
+
+
+##########################################################
+#3) remove secret data.                                  #
+##########################################################
+sub remove_data {
+  my $sub_database = shift;
+  my $database_path = $wormpub."DATABASES/${sub_database}";
+  $ENV{'ACEDB'} = $database_path;
+  my $command;
+  #remove homol tiling data.
+  $command  = "query find Homol_data *tiling*\n";
+  $command .= "kill\n";
+  $command .= "y\n";
+  #remove sequence tiling data.
+  $command .= "query find Sequence *tiling*\n";
+  $command .= "kill\n";
+  $command .= "y\n";
+  #remove anomoly motif data.
+  $command .= "query find Motif *curation_anomaly\n";
+  $command .= "kill\n";
+  $command .= "y\n";
+  #Save the database.
+  $command .= "save\n";
+  $command .= "quit\n";
+#  $command = "query find Homol_data *tiling*\nkill\ny\nquery find Sequence *tiling*\nkill\ny\nquery find Motif *curation_anomaly\nkill\ny\nsave\nquit\n";
+  print "Removing tiling array data.\n";
+  open (TACE,"| $tace") or die "Failed to open database connection\n";
+  print TACE $command;
+  close TACE;
+}
+
+##########################################################
+#(1) remove secret data and dump files from camace splits#
+##########################################################
 sub dump_camace {
   #dumps out subset of classes from camace splits and processes the files to be loaded back to Canonical Database
   #array of classes to be dumped
@@ -240,7 +277,7 @@ sub update_camace {
   ## upload BLAT results to database ##
   #####################################
   print "\n\nUpdate BLAT results in $canonical\n";
-    $wormbase->run_script("load_blat2db.pl -all -dbdir $canonical", $log) && die "Failed to run load_blat2db.pl\n";
+  $wormbase->run_script("load_blat2db.pl -all -dbdir $canonical", $log) && die "Failed to run load_blat2db.pl\n";
   
   ####################################################
   ## Update and load blastx results to the database ##
@@ -250,6 +287,15 @@ sub update_camace {
   &loadace("$directory/CAM_blastx.ace", 'merge_split_blastx') or die "Failed to load new blastx_data\n";
   print "Updated blastx data in $canonical\n\n";
 
+  #############################################################
+  ## Remove old and update new anomaly and tiling array data ##
+  #############################################################
+  &remove_data("camace",);
+  &loadace($wormpub."/CURATION_DATA/anomalies.ace", 'curation anomaly data') or die "Failed to load new curation data\n";
+  print "Updated anomaly data in $canonical\n\n";
+  #&loadace($wormpub."/tiling.ace", 'tiling array data') or die "Failed to load tiling array data\n";
+  #print "Updated tiling array data in $canonical\n\n";
+
   ##################################################################################
   ## Update Gene IDs, Protein ID's and check the sequence versions of our clones. ##
   ##################################################################################
@@ -258,6 +304,7 @@ sub update_camace {
     $wormbase->run_script("GeneID_updater.pl -geneID -proteinID -version $WS_version -update", $log) && die "Failed to run Gene_ID_updater.pl\n";
     print "Updated WBGene ID\'s Protein_ID\'s and Clone sequence versions.\n";
   }
+
   #######################################################
   ## Get new ESTs/mRNAs from EMBL and load into camace ##
   #######################################################
@@ -266,7 +313,7 @@ sub update_camace {
 #  &loadace("$directory/new_mRNA.ace", 'merge_split_mRNAs') or die "Failed to load new mRNA Data\n";
 #  print "Imported new mRNA data into camace.\n";
 #  print "*****************You will need to manually alter the EST file as we re-name the ESTs after their yk id.******************\n\n";
-  
+
   ##########################################
   ## Check Canonical Database for errors. ##
   ##########################################
