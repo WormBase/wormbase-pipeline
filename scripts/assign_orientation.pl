@@ -9,9 +9,9 @@
 # transcripts to find the most probably orientation.
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2007-10-29 13:07:57 $      
+# Last updated on: $Date: 2007-11-26 15:43:03 $      
 
-use strict;                                      
+use strict;
 use lib $ENV{'CVS_DIR'};
 use Wormbase;
 use Getopt::Long;
@@ -31,14 +31,13 @@ use Modules::PWM;
 ######################################
 
 my ($help, $debug, $test, $verbose, $store, $wormbase);
-my ($load, $all, $gff_directory, $gff_file, $gff_source, $gff_type, $ID_after);
+my ($all, $gff_directory, $gff_file, $gff_source, $gff_type, $ID_after);
 
 GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
 	    "test"       => \$test,
 	    "verbose"    => \$verbose,
 	    "store:s"    => \$store,
-	    "load"       => \$load,
 	    "all"        => \$all, # do all EST sequences, not just the ones with no orientation
 	    "gff_directory:s" => \$gff_directory,	# stuff to specify a specific GFF file to search
 	    "gff_file:s"      => \$gff_file,
@@ -61,7 +60,6 @@ if ( $store ) {
 # in test mode?
 if ($test) {
   print "In test mode\n" if ($verbose);
-  $load = 0;
 }
 
 # establish log file.
@@ -321,8 +319,9 @@ foreach my $chromosome ($wormbase->get_chromosome_names(-mito => 1, -prefix => 0
   }
  
   # now write the ACE file for this chromosome
-  my $output = "/tmp/assign_orientation_chromosome_$chromosome.ace";
-  open (ACE, "> $output") || die "Can't open file $output\n";
+  my $version = $wormbase->get_wormbase_version_name();
+  my $output = $wormbase->wormpub . "/CURATION_DATA/assign_orientation." . $version . ".ace";
+  open (ACE, ">> $output") || die "Can't open file $output\n";
   # we are happy that the existing orientation of these is OK
   # if no existing orientation, we make the default: EST_5
   my $count_out = 0;
@@ -362,13 +361,6 @@ foreach my $chromosome ($wormbase->get_chromosome_names(-mito => 1, -prefix => 0
     $count_out++;
   }
   close(ACE);
-
-  # now load the output ACE file into camace
-  if ($load && !$test) {
-    $wormbase->load_to_database($wormbase->database("camace"), $output, "assign_orientation.pl", $log);
-  } else {
-    print "\n\n$output will not be loaded into DATABASES/camace\n";
-  }
 
 }
     
