@@ -29,7 +29,7 @@ desc 'update the configuration file'
 task :update_conf do
         yml_file='ensembl_lite.conf'
 	yml=YAML::load_file(yml_file)
-	yml['elegans']['version']="WS#{Dir.glob("/nfs/disk100/wormpub/DATABASES/WS*").sort[-2].scan(/\d+$/)[0].to_i+1}"
+	yml['elegans']['version']="WS#{Dir.glob("/nfs/disk100/wormpub/DATABASES/WS*").sort[-2].scan(/\d+/)[-1].to_i+1}"
 	File.open(yml_file,'w') do |out|
 		YAML.dump(yml,out)
 	end
@@ -188,6 +188,7 @@ desc 'cleanup the compara work directories'
 task :cleanup do
 	sh 'rm -rf /lustre/scratch1/ensembl/wormpipe/compara/logs/*'      # remove the logs
 	sh 'rm -f /lustre/scratch1/ensembl/wormpipe/compara/Caenorhabditis*' # remove the blast databases
+	sh 'rm -f /lustre/work1/ensembl/wormpipe/compara/Caenorhabditis*' # remove the blast databases
 	sh 'rm -f /tmp/compara.ace' # remove the compara ace file
 	sh 'rm -rf /tmp/compara'    # remove the compara dump directory
 end
