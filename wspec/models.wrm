@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: ar2 $
-// Last edited on: $Date: 2007-10-30 10:42:24 $
+// Last edited on: $Date: 2007-11-27 17:31:21 $
 
 
 
@@ -2217,7 +2217,6 @@
                 Reference  ?Paper       //Describes design of the chip
 		URL Text                //to link to manufacturers site.
                 Remark     ?Text        #Evidence
-                Microarray_results      ?Microarray_results XREF Microarray
                 Microarray_experiment   ?Microarray_experiment XREF Microarray
 
 
@@ -2230,7 +2229,7 @@
                         CDS	      ?CDS 	  XREF Microarray_results #Evidence   // should be mapped during the build
                         Transcript    ?Transcript XREF Microarray_results #Evidence   // should be mapped during the build
 			Pseudogene    ?Pseudogene XREF Microarray_results #Evidence   // should be mapped during the build
-                        Microarray    ?Microarray XREF Microarray_results
+			Microarray    ?Microarray
                         Results       ?Microarray_experiment UNIQUE #Microarray_data
                         Range         Min UNIQUE Float UNIQUE ?Microarray_experiment  // mix observed ratio or frequency in all experiments and corresponding experiment
                                       Max UNIQUE Float UNIQUE ?Microarray_experiment  // max observed ratio or frequency in all experiments and corresponding experiment 
@@ -2275,6 +2274,10 @@
 		Overlaps_transcript ?Transcript XREF Corresponding_oligo_set #Evidence
 		Overlaps_pseudogene ?Pseudogene XREF Corresponding_oligo_set #Evidence
                 Remark Text    #Evidence
+		Type    Affymetrix_microarray_probe
+			WashU_GSC_microarray_probe
+			Agilent_microarray_probe
+			Affymetrix_tiling_array_probe
 		Method UNIQUE ?Method
 
 
