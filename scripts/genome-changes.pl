@@ -7,7 +7,7 @@
 # This is a script to aid making changes to the sequence of a clone.
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2007-07-09 09:21:42 $      
+# Last updated on: $Date: 2007-11-28 14:35:57 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -25,7 +25,7 @@ use Sequence_extract;
 ######################################
 
 my ($help, $debug, $test, $verbose, $store, $wormbase);
-my ($database, $new_database, $infile, $nomove, $noload, $nohomol);
+my ($database, $new_database, $infile, $nomove, $noload, $nohomol, $ignore_assembly_tags);
 
 GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
@@ -38,6 +38,7 @@ GetOptions ("help"       => \$help,
 	    "nomove"     => \$nomove, # assume that the new database has been copied already
 	    "noload"     => \$noload,	# for testing only, don't load ace files
 	    "nohomol"    => \$nohomol,	# for testing only, don't change superlink homol data
+	    "ignore_assembly_tags" => \$ignore_assembly_tags, # ignore assembly tags, report them instead of dieing
 	    );
 
 if (! defined $database || $database eq "") {
@@ -1794,7 +1795,7 @@ sub change_assembly_tags {
       $log->write_to("$split[4]\n");
       $log->write_to( "in clone $clone, position $start_pos..$end_pos\n");
       $log->write_to( "You should investigate this change to see if it is real.\n");
-      return 1;
+      return 1 unless ($ignore_assembly_tags);
     }
     if ($split[2] > $end_pos && $split[3] > $end_pos) {
       $split[2] += $count_bases;
@@ -2523,6 +2524,11 @@ script_template.pl  OPTIONAL arguments:
 
 =back
 
+=over 4
+    
+=item -ignore_assembly_tags - don't abort changes made in the region of an assembly tag, just report these changes
+
+=back
 
 =head1 REQUIREMENTS
 
