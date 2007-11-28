@@ -5,7 +5,7 @@
 # A script to make multiple copies of camace for curation, and merge them back again
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2007-11-23 14:30:50 $
+# Last edited on: $Date: 2007-11-28 13:42:54 $
 #
 # Persisting errors.
 #running csh -c "reformat_acediff file 1 file2"
@@ -39,6 +39,7 @@ my $wormbase;
 my $extra;                 # remove the GeneIDupdater call as this is run outside this script.
 my $email;                 # Option for child scripts that can tace a user email option.
 my $nodump;                # don't dump from split camaces.
+my $blastx;                # update the blastx data this option is interactive as passwords are required.
 
   GetOptions (
 	      "all"        => \$all,
@@ -56,6 +57,7 @@ my $nodump;                # don't dump from split camaces.
 	      "extra"      => \$extra,
 	      "email:s"    => \$email,
 	      "nodump"     => \$nodump,
+	      "blastx"     => \$blastx,
 	     );
 
 
@@ -159,11 +161,20 @@ if ($split) {
 print "Phase 3 finished. All ~wormpub split camaces can now be used\n\nCheck all TransferDB log files for \"ended SUCCESSFULLY\"\n";
 }
 
+####################################################
+## Update and load blastx results to the database ##
+####################################################
+if ($blastx) {
+
+  print "Update blastx results in $canonical\n\n\n        THIS IS AN INTERACTIVE SESSION SO STICK AROUND!!!\n\n\n\n";
+  $wormbase->run_script("misc/split_blastx_by_centre.pl -version $WS_version", $log) && die "Failed to generate newblastx data for camace using split_blastx_by_centre.pl\n";
+  &loadace("$directory/CAM_blastx.ace", 'merge_split_blastx') or die "Failed to load new blastx_data\n";
+  print "Updated blastx data in $canonical\n\n";
+}
+
 print "Diaskeda same Poli\n"; #we had alot of fun#
 $log->mail();
 exit(0);
-
-
 
 ##################################################################################################################################################
                                                                 #################
@@ -178,7 +189,7 @@ exit(0);
 ##########################################################
 sub remove_data {
   my $sub_database = shift;
-  my $database_path = $wormpub."DATABASES/${sub_database}";
+  my $database_path = $wormpub."/DATABASES/${sub_database}";
   $ENV{'ACEDB'} = $database_path;
   my $command;
   #remove homol tiling data.
@@ -248,6 +259,8 @@ sub dumpace {
 sub loadace {
   my $filepath = shift;
   my $tsuser   = shift;
+
+  if ($tsuser =~ /\S+\s/) {print "ERROR: tsuser contains white space!!\n"; die "Failed to open database connection because of tsuser :(\n"}
   my $command = "pparse $filepath\nsave\nquit\n";
 
   # dump out from ACEDB
@@ -277,42 +290,42 @@ sub update_camace {
   ## upload BLAT results to database ##
   #####################################
   print "\n\nUpdate BLAT results in $canonical\n";
-  $wormbase->run_script("load_blat2db.pl -all -dbdir $canonical", $log) && die "Failed to run load_blat2db.pl\n";
+   $wormbase->run_script("load_blat2db.pl -all -dbdir $canonical", $log) && die "Failed to run load_blat2db.pl\n";
   
-  ####################################################
-  ## Update and load blastx results to the database ##
-  ####################################################
-  print "Update blastx results in $canonical\n";
-  $wormbase->run_script("misc/split_blastx_by_centre.pl -version $WS_version", $log) && die "Failed to generate newblastx data for camace using split_blastx_by_centre.pl\n";
-  &loadace("$directory/CAM_blastx.ace", 'merge_split_blastx') or die "Failed to load new blastx_data\n";
-  print "Updated blastx data in $canonical\n\n";
-
-  #############################################################
-  ## Remove old and update new anomaly and tiling array data ##
-  #############################################################
+  ############################################################
+  ## Remove old and update new anomaly and orientation data ##
+  ############################################################
   &remove_data("camace",);
-  &loadace($wormpub."/CURATION_DATA/anomalies.ace", 'curation anomaly data') or die "Failed to load new curation data\n";
+  $ENV{'ACEDB'} = $canonical;
+  &loadace("/nfs/disk100/wormpub/CURATION_DATA/anomalies.ace", 'curation_anomaly_data') or die "Failed to load new curation data\n";
   print "Updated anomaly data in $canonical\n\n";
+
   #&loadace($wormpub."/tiling.ace", 'tiling array data') or die "Failed to load tiling array data\n";
   #print "Updated tiling array data in $canonical\n\n";
 
-  ##################################################################################
-  ## Update Gene IDs, Protein ID's and check the sequence versions of our clones. ##
-  ##################################################################################
-  if ($extra) {
-    print "\n\nRunning Gene_ID_update.pl to refresh WBGeneID\'s, Protein_ID\'s and Clone sequence versions.\n\n";
-    $wormbase->run_script("GeneID_updater.pl -geneID -proteinID -version $WS_version -update", $log) && die "Failed to run Gene_ID_updater.pl\n";
-    print "Updated WBGene ID\'s Protein_ID\'s and Clone sequence versions.\n";
+  print "Looking for /nfs/disk100/wormpub/CURATION_DATA/assign_orientation.WS${version}.ace.......................\n";
+  if (-e "/nfs/disk100/wormpub/CURATION_DATA/assign_orientation.WS${version}a.ace") {
+    print "File present.....Updating Transcript orientation from WS${version} for the next build.\n";
+    &loadace("/nfs/disk100/wormpub/CURATION_DATA/assign_orientation.WS${version}a.ace", 'transcript_orientation_data') or die "Failed to load new orientation data\n";
+    print "Updated Transcript orientations\n\n";
   }
+  else {print "Orientation data was not present at this point in the build so will need to be loaded later on, but before the next build!!!!!\n\n";}
 
-  #######################################################
-  ## Get new ESTs/mRNAs from EMBL and load into camace ##
-  #######################################################
-#  print "\n\nRunning whats_new_in_EMBL.pl to get new ESTs/mRNAs from EMBL\n\n";
-#  $wormbase->run_script("whats_new_in_EMBL.pl -version $version", $log) && die "Failed to run whats_new_in_embl.pl\n";
-#  &loadace("$directory/new_mRNA.ace", 'merge_split_mRNAs') or die "Failed to load new mRNA Data\n";
-#  print "Imported new mRNA data into camace.\n";
-#  print "*****************You will need to manually alter the EST file as we re-name the ESTs after their yk id.******************\n\n";
+  ##################################################################################
+  ## Update Protein ID's                                                          ##
+  ##################################################################################
+  print "\n\nRunning Gene_ID_update.pl to refresh Protein_ID\'s\n\n";
+  $wormbase->run_script("GeneID_updater.pl -proteinID -version $WS_version -update", $log) && die "Failed to run Gene_ID_updater.pl\n";
+  print "Updated Protein_ID\'s\n";
+
+  ######################################################
+  ## Check if camace is in sync with the name server. ##
+  ######################################################
+
+  print "\n\nRunning camace_nameDB_comm.pl.\n\n";
+  $wormbase->run_script("NAMEDB/camace_nameDB_comm.pl", $log) && die "Failed to run camace_nameDB_comm.pl\n";
+  print "camace_nameDB_comm.pl Finished, check the build log email for errors.\n";
+
 
   ##########################################
   ## Check Canonical Database for errors. ##
