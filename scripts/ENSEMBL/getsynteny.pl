@@ -122,13 +122,13 @@ foreach my $df (@{$dfgs}) {
           ".\t" ;
       } elsif ($dfr->dnafrag->genome_db->name eq $species2) {
         $species2_dfr_string = 'Target "Sequence:'.$dfr->dnafrag->name . "\" ".
-          "$gff_start $gff_stop Species: \"$species2\"";
+        "$gff_start $gff_stop ; Species: \"$species2\"";
       } elsif ($dfr->dnafrag->genome_db->name eq $species3) {
         $species3_dfr_string = 'Target "Sequence:'.$dfr->dnafrag->name . "\" ".
-        "$gff_start $gff_stop Species: \"$species3\"";
+        "$gff_start $gff_stop ; Species: \"$species3\"";
       } elsif ($dfr->dnafrag->genome_db->name eq $species4) {
         $species4_dfr_string = 'Target "Sequence:'.$dfr->dnafrag->name . "\" ".
-        "$gff_start $gff_stop Species: \"$species4\"";
+        "$gff_start $gff_stop ; Species: \"$species4\"";
       }
 
 
