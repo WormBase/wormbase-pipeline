@@ -4,8 +4,8 @@
 # 
 # by Anthony Rogers                             
 #
-# Last updated by: $Author: mh6 $               
-# Last updated on: $Date: 2007-09-27 13:21:02 $
+# Last updated by: $Author: mt3 $               
+# Last updated on: $Date: 2007-11-29 08:53:31 $
 
 # Generates a release letter at the end of build.
 #
@@ -143,7 +143,7 @@ if( defined($opt_l)) {
   my $tace = $wormbase->tace;
   my $db = Ace->connect(-path  => $ace_dir,
                         -program =>$tace) || $log->log_and_die("Connection failure: ",Ace->error);
-  my $query = "Find Gene WHERE (Corresponding_CDS OR Corresponding_transcript OR Corresponding_pseudogene) AND CGC_name";
+  my $query = "Find Gene WHERE (Corresponding_CDS OR Corresponding_transcript OR Corresponding_pseudogene) AND CGC_name AND Species = Caenorhabditis elegans";
   my $gene_seq_count = $db->fetch(-query=> "$query");
   $db->close;
 
@@ -178,9 +178,9 @@ if( defined($opt_l)) {
   print  RL "---------------------------------------\n";
   printf RL "Protein_id           %6d (%2.1f%%)\n", $wp_status{Protein_ID}, (($wp_status{Protein_ID}/$wp_status{Total}) * 100);
   print  RL "\n\n\n";
-  print  RL "Gene <-> CDS,Transcript,Pseudogene connections (WormBase-approved)\n";
-  print  RL "---------------------------------------------\n";
-  printf RL "Entries with WormBase-approved Gene name %6d\n", $wp_status{Gene};
+  print  RL "Gene <-> CDS,Transcript,Pseudogene connections\n";
+  print  RL "----------------------------------------------\n";
+  printf RL "Caenorhabditis elegans entries with WormBase-approved Gene name %6d\n", $wp_status{Gene};
   print  RL "\n\n";
   
 #  # Get the GeneModel corrections
