@@ -7,7 +7,7 @@
 # This is a script to aid making changes to the sequence of a clone.
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2007-11-28 14:35:57 $      
+# Last updated on: $Date: 2007-11-29 09:23:35 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -786,9 +786,14 @@ sub shift_gene_models {
 
   # get the length of the affected superlink on the chromosome object and
   # update its lengths
-   print "change Chromosome superlink lengths\n";
+  print "change Chromosome superlink lengths\n";
   if (&change_superlink_length_on_chrom($change, $superlink, @chrom_slurp)) {return 1;}
   
+  print "change Chromosome length\n";
+  # this doesn't actually have any effect because we don't use
+  # $change->{chrom_length} after this, but we may do further things
+  # in the future
+  &change_chromosome_length_on_chrom($change);
 
 
 
@@ -1680,6 +1685,18 @@ sub change_superlink_length_on_chrom {
       $have_changed_the_length = 1;
     }
 
+    # now change the downstream superlinks
+    if ($sl_start > $start_pos) {
+      $sl_start += $count_bases;
+      $sl_end += $count_bases;
+      # print to ace file
+      push @{$change->{'ace-delete'}{"Sequence : \"$chrom\""}}, "-D $line"; 
+      #print "$line\n";
+      push @{$change->{'ace-add'}{"Sequence : \"$chrom\""}}, "Subsequence $id $sl_start $sl_end"; 
+      #print "Homol_data $id $homol_start $homol_end\n";
+      $have_changed_the_length = 1;
+    }
+
   }
 
   # sanity check for when doing chroms
@@ -1694,6 +1711,27 @@ Check this. No changes were made.\n");
   return 0;
 }
 
+##########################################
+#  &change_chromosome_length_on_chrom($change);
+# make an explicit change to the length of the chromosome stored on
+# the chromosome object here
+
+sub change_chromosome_length_on_chrom {
+  my ($change) = @_;
+
+
+  my $chrom = $change->{'clone'};
+  my $count_bases = $change->{'count_bases'};
+
+  $change->{chrom_length} += $count_bases;
+
+  my $chrom_length = $change->{chrom_length};
+
+# should we add a chromosomal sequence?
+# this would make a ghost chromosome DNA object.
+#  push @{$change->{'ace-add'}{"Sequence : \"$chrom\""}}, "DNA \"$chrom\" $chrom_length";
+
+}
 
 
 ##########################################
