@@ -5,7 +5,7 @@
 # A script to make multiple copies of camace for curation, and merge them back again
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2007-11-28 13:42:54 $
+# Last edited on: $Date: 2007-11-29 14:06:36 $
 #
 # Persisting errors.
 #running csh -c "reformat_acediff file 1 file2"
@@ -168,6 +168,7 @@ if ($blastx) {
 
   print "Update blastx results in $canonical\n\n\n        THIS IS AN INTERACTIVE SESSION SO STICK AROUND!!!\n\n\n\n";
   $wormbase->run_script("misc/split_blastx_by_centre.pl -version $WS_version", $log) && die "Failed to generate newblastx data for camace using split_blastx_by_centre.pl\n";
+  $ENV{'ACEDB'} = $canonical;
   &loadace("$directory/CAM_blastx.ace", 'merge_split_blastx') or die "Failed to load new blastx_data\n";
   print "Updated blastx data in $canonical\n\n";
 }
