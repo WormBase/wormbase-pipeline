@@ -5,7 +5,7 @@
 # A script to make multiple copies of camace for curation, and merge them back again
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2007-11-29 14:06:36 $
+# Last edited on: $Date: 2007-11-29 14:48:41 $
 #
 # Persisting errors.
 #running csh -c "reformat_acediff file 1 file2"
@@ -203,6 +203,10 @@ sub remove_data {
   $command .= "y\n";
   #remove anomoly motif data.
   $command .= "query find Motif *curation_anomaly\n";
+  $command .= "kill\n";
+  $command .= "y\n";
+  #remove anomoly Homol_data.
+  $command .= "query find Homol_data *curation_anomaly\n";
   $command .= "kill\n";
   $command .= "y\n";
   #Save the database.
