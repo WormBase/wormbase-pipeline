@@ -7,7 +7,7 @@
 # Usage : autoace_builder.pl [-options]
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2007-11-23 14:08:25 $
+# Last edited on: $Date: 2007-11-29 14:31:18 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -270,6 +270,7 @@ sub remap_misc_dynamic {
 		      'misc_mass_spec_StevenHusson_2.ace'     => 'mass_spec',
 		      'misc_mass_spec_StevenHusson_3.ace'     => 'mass_spec',
 		      'misc_mass_spec_GenniferMerrihew.ace'   => 'mass_spec',
+		      'misc_mass_spec_Other.ace'              => 'mass_spec',
 		      );
     foreach my $clone_data_file (keys %clone_data) {
       my $data_file = $wormbase->misc_dynamic."/$clone_data_file";
