@@ -6,8 +6,8 @@
 #
 # Selectively dump GFF for certain acedb methods
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2007-10-30 13:46:06 $
+# Last edited by: $Author: mh6 $
+# Last edited on: $Date: 2007-11-30 16:14:05 $
 
 
 use lib $ENV{CVS_DIR};
@@ -145,7 +145,7 @@ sub check_options {
      
     my @chrom =  $wormbase->get_chromosome_names(-mito => 1, -prefix => 1);
 
-    my %chroms = map {$_ => 1} $wormbase->get_chromosome_names(-mito => 1);
+    my %chroms = map {$_ => 1} $wormbase->get_chromosome_names(-mito => 1, -prefix => 1);
   
     unless (@chromosomes ) {
       @sequences= @chrom;
@@ -154,7 +154,7 @@ sub check_options {
     else {
       foreach (@chromosomes) {
 	if ( $chroms{$_} ) {
-	  push( @sequences,$wormbase->chromosome_prefix."$_");
+	  push( @sequences,$_);
 	}
 	else {
 	  die "$_ is not a valid chromosome\n";
