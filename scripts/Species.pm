@@ -142,13 +142,12 @@ sub chromosome_names {
 	my @supercontigs;
 	my $i = 0;
 	while($i < 9660){
-		next if $i==5540;
-		push @supercontigs, $i++;
+		push (@supercontigs, $i++) unless ($i==5540);
 	}
 	return @supercontigs;
 }
 
-sub pep_prefix {'CRP'}
+sub pep_prefix {'RP'}
 sub pepdir_prefix{'rema'};
 sub ncbi_tax_id {'31234'};
 sub cds_regex{qr/cr01\.sctg\d+\.wum\.\d+\.\d+/};
