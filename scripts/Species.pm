@@ -142,7 +142,7 @@ sub chromosome_names {
 	my @supercontigs;
 	my $i = 0;
 	while($i < 9660){
-		push (@supercontigs, $i++) unless ($i++ == 5540);
+		push (@supercontigs, $i) unless ($i++ == 5540);
 	}
 	return @supercontigs;
 }
