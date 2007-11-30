@@ -7,8 +7,8 @@
 # 
 # Originally written by Dan Lawson
 #
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2007-11-14 16:34:39 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2007-11-30 16:40:13 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -389,13 +389,19 @@ sub copy_wormpep_files{
   $wormbase->run_command("$command", $log);
   $wormbase->run_command("cp $tgz_file $targetdir/$WS_name", $log);
 
-  $log->write_to("zip and copy brigpep\n");
-  my $brigpep = $wormbase->brigpep;
-  $wormbase->run_command("/bin/gzip -f $brigpep/brigpep$WS",$log);
-  $wormbase->run_command("cp $brigpep/brigpep$WS.gz $targetdir/$WS_name", $log);
-
-  $runtime = $wormbase->runtime;
-  $log->write_to("$runtime: Finished copying\n\n");
+	# copy wormpep file if one exists for that species.
+  $log->write_to("zip and copy other species\n");
+  my %accessors = ($wormbase->accessors, $wormbase->tier3_species_accessors);
+  foreach my $worm (keys %accessors){
+  	my $dir = $accessors{$worm}->wormpep;
+  	my $file = $worm->wormpep."/".$worm->pepdir_prefix."pep$WS";
+  	if(-e $file) {
+	    $wormbase->run_command("/bin/gzip -f $file",$log);
+		$wormbase->run_command("cp $file.gz $targetdir/$WS_name", $log);
+	}
+  	$runtime = $wormbase->runtime;
+  	$log->write_to("$runtime: Finished copying\n\n");
+  }
 }
 
 
@@ -632,8 +638,10 @@ sub copy_homol_data{
   # compress best blast hits files and then copy to FTP site
   $wormbase->run_command("/bin/gzip -f $blast_dir/worm_pep_best_blastp_hits", $log);
   $wormbase->run_command("/bin/gzip -f $blast_dir/worm_brigpep_best_blastp_hits", $log);
+  $wormbase->run_command("/bin/gzip -f $blast_dir/worm_remapep_best_blastp_hits", $log);
   $wormbase->run_command("scp $blast_dir/worm_pep_best_blastp_hits.gz      $targetdir/$WS_name/best_blastp_hits.$WS_name.gz", $log);
   $wormbase->run_command("scp $blast_dir/worm_brigpep_best_blastp_hits.gz  $targetdir/$WS_name/best_blastp_hits_brigpep.$WS_name.gz", $log);
+  $wormbase->run_command("scp $blast_dir/worm_remapep_best_blastp_hits.gz  $targetdir/$WS_name/best_blastp_hits_remapep.$WS_name.gz", $log);
 
 
 }
@@ -683,6 +691,8 @@ affy_oligo_mapping.gz
 agil_oligo_mapping.gz
 best_blastp_hits.WSREL.gz
 best_blastp_hits_brigpep.WSREL.gz
+best_blastp_hits_remapep.WSREL.gz
+remapepREL.gz
 brigpepREL.gz
 cDNA2orf.WSREL.gz
 confirmed_genes.WSREL.gz
@@ -725,6 +735,7 @@ CHROMOSOME_X.gff.gz
 CHROMOSOME_X_masked.dna.gz
 SUPPLEMENTARY_GFF
 briggffREL
+remagffREL
 composition.all
 intergenic_sequences.dna.gz
 totals
@@ -756,6 +767,10 @@ chrUn.gff
 chrV.gff
 chrV_random.gff
 chrX.gff
+
+./CHROMOSOMES/remagffREL
+remanei.gff
+remanei.dna
 
 ./ONTOLOGY
 anatomy_association.WSREL.wb
