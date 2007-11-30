@@ -41,7 +41,7 @@ else {
 
 my $log = Log_files->make_build_log($wormbase);
 
-my @chroms = $wormbase->get_chromosome_names(-mito => 1);
+my @chroms = $wormbase->get_chromosome_names(-prefix => 1,-mito => 1);
 $wormbase->checkLSF;
 
 my @methods     = split(/,/,join(',',$methods)) if $methods;
@@ -89,6 +89,7 @@ foreach my $chrom ( @chromosomes ) {
     my $out = scalar(@chromosomes) < 50 ? "$scratch_dir/wormpubGFFdump.$chrom.out" :"$scratch_dir/wormpubGFFdump.$submitchunk.out";
     my $bsub = "bsub -e $err -o $out \"perl $dumpGFFscript -store $store -database $database -dump_dir $dump_dir -chromosome $chrom\"";
     $log->write_to("$bsub\n");
+    print "$bsub\n";
     $wormbase->run_command("$bsub", $log);
   }
   $submitchunk++;
