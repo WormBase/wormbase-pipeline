@@ -6,8 +6,8 @@
 #
 # Selectively dump GFF for certain acedb methods
 #
-# Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2007-11-30 16:14:05 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2007-12-03 10:32:51 $
 
 
 use lib $ENV{CVS_DIR};
@@ -100,7 +100,7 @@ foreach my $sequence ( @sequences ) {
    foreach my $method ( @methods ) {
      $wormbase->check_file("$dump_dir/${sequence}_${method}.gff", $log,
 			   lines => ['^##', 
-				     "^${sequence}\\s+(Link|GenePair_STS|assembly_tag|${method})\\s+\\S+\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+\\s+\\S+",
+				     "^${sequence}\\s+(Link|GenePair_STS|assembly_tag|Genomic_canonical|${method})\\s+\\S+\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+\\s+\\S+",
 				     "^${sequence}\\s+\\.\\s+\\S+\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+"],
 			   );
    }
