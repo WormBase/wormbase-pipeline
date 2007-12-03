@@ -5,7 +5,7 @@
 # by Anthony Rogers                             
 #
 # Last updated by: $Author: mt3 $               
-# Last updated on: $Date: 2007-11-29 08:53:31 $
+# Last updated on: $Date: 2007-12-03 18:25:28 $
 
 # Generates a release letter at the end of build.
 #
@@ -143,7 +143,7 @@ if( defined($opt_l)) {
   my $tace = $wormbase->tace;
   my $db = Ace->connect(-path  => $ace_dir,
                         -program =>$tace) || $log->log_and_die("Connection failure: ",Ace->error);
-  my $query = "Find Gene WHERE (Corresponding_CDS OR Corresponding_transcript OR Corresponding_pseudogene) AND CGC_name AND Species = Caenorhabditis elegans";
+  my $query = "Find Gene WHERE (Corresponding_CDS OR Corresponding_transcript OR Corresponding_pseudogene) AND CGC_name AND Species = \"*elegans\"";
   my $gene_seq_count = $db->fetch(-query=> "$query");
   $db->close;
 
