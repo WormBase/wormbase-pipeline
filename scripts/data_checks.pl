@@ -7,7 +7,7 @@
 # This is a example of a good script template
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2007-09-25 13:23:38 $
+# Last updated on: $Date: 2007-12-04 14:53:50 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -141,7 +141,7 @@ sub read_acedb_queries {
     $i++;
     $queries[$i]{'DESC'}   = "The number of wormpep without pep_homol";
     $queries[$i]{'QUERY'}  = 'find wormpep !pep_homol';
-    $queries[$i]{'RESULT'} = 26;
+    $queries[$i]{'RESULT'} = 20;
 
     $i++;
     $queries[$i]{'DESC'}   = "tRNAs not attached to parent properly";
@@ -181,7 +181,7 @@ sub read_acedb_queries {
     $i++;
     $queries[$i]{'DESC'}   = "variation gene connection";
     $queries[$i]{'QUERY'}  = 'find Variation Gene';
-    $queries[$i]{'RESULT'} = 25000;
+    $queries[$i]{'RESULT'} = 60000;
 
     $i++;
     $queries[$i]{'DESC'}   = "genes with structured description";
