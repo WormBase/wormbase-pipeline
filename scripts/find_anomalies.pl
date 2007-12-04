@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2007-11-20 15:56:24 $      
+# Last updated on: $Date: 2007-12-04 12:35:59 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -107,7 +107,8 @@ print "Connecting to Ace\n";
 my $ace = Ace->connect (-path => $database,
                        -program => $tace) || die "cannot connect to database at $database\n";
 
-my %clonesize = $wormbase->FetchData('clonesize');
+my %clonesize;
+$wormbase->FetchData('clonesize', \%clonesize, "$database/COMMON_DATA/");
 
 # now delete things that have not been updated in this run that you
 # would expect to have been updated like protein-homology-based
