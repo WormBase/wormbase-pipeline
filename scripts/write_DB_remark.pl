@@ -7,8 +7,8 @@
 # This script interogates an ACEDB database and returns all pfam/Interpro/blastx 
 # data as appropriate and generates a suitable DB_remark
 #
-# Last updated on: $Date: 2007-09-07 15:46:16 $
-# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2007-12-04 15:00:16 $
+# Last updated by: $Author: ar2 $
 
 
 ### DB_remark is generated as follows:  ###
@@ -84,18 +84,19 @@ use Ace;
 #
 #################################
 
-my ($help, $debug, $test, $verbose, $store, $wormbase);
+my ($help, $debug, $test, $verbose, $species, $store, $wormbase);
 
 my $database; # which database to query
 my $output;   # choose different location of output file
 my $gene;     # to test on a single gene
 
-GetOptions("help"       => \$help,
+GetOptions("help"   => \$help,
 	   "debug=s"    => \$debug,
 	   "test"       => \$test,
 	   "verbose"    => \$verbose,
+	   "species" 	=> \$species,
 	   "database=s" => \$database,
-	   "store:s"      => \$store,
+	   "store:s"    => \$store,
 	   "output=s"   => \$output,
 	   "gene=s"     => \$gene
 	  );
@@ -107,6 +108,7 @@ if ( $store ) {
 } else {
   $wormbase = Wormbase->new( -debug   => $debug,
                              -test    => $test,
+                             -oganism => $species
 			     );
 }
 
@@ -155,7 +157,7 @@ my $db = Ace->connect (-path => "$database",
 
 ##################################################
 #
-# Main loop through elegans_CDS class
+# Main loop through CDS class
 #
 ##################################################
 
@@ -165,9 +167,9 @@ $log->write_to("$runtime: Processing CDS class\n");
 # get CDSs for C. elegans
 my $CDSs;
 if ( $gene ) {
-  $CDSs = $db->fetch_many(-query => "Find elegans_CDS $gene");
+  $CDSs = $db->fetch_many(-query => "Find CDS $gene");
 } else {
-  $CDSs = $db->fetch_many(-class => 'elegans_CDS');
+  $CDSs = $db->fetch_many(-query => 'Find CDS where method = "curated" and species = "'.$wormbase->full_name.'"');
 }
 
 SUBSEQUENCE: while ( my $cds = $CDSs->next ) {
@@ -192,7 +194,7 @@ SUBSEQUENCE: while ( my $cds = $CDSs->next ) {
   if ($protein) {
     @motifs = $protein->Motif_homol;
     if ($motifs[0]) {
-      $full_string .= "C. elegans $cgc_protein_name protein; " if ($cgc_name);
+      $full_string .= "C. $species $cgc_protein_name protein; " if ($cgc_name);
       # process motif information if present
       my %pfamhits;
       my %interprohits;
@@ -264,7 +266,7 @@ SUBSEQUENCE: while ( my $cds = $CDSs->next ) {
     # get peptide homologies if no motif data
     else {
       @peptide_homols = $protein->Pep_homol;
-      $full_string .= "C. elegans $cgc_protein_name protein" if ($cgc_name); 
+      $full_string .= "C. $species $cgc_protein_name protein" if ($cgc_name); 
       #####################################################
       # no pfam or interpro hits; getting protein matches
       #####################################################
@@ -337,7 +339,7 @@ $runtime= $wormbase->runtime;
 $log->write_to("$runtime: Processing pseudogene class\n");
 
 
-my @pseudogenes = $db->fetch(-query => 'Find elegans_pseudogenes');
+my @pseudogenes = $db->fetch(-query => 'Find Pseudogene where species = "'.$wormbase->full_name.'"');
 
 PSEUDOGENE: foreach my $pseudogene (@pseudogenes) {
 
@@ -399,7 +401,7 @@ $runtime= $wormbase->runtime;
 $log->write_to("$runtime: Processing transcript class\n");
 
 
-my $transcripts = $db->fetch_many(-query => 'Find elegans_RNA_genes');
+my $transcripts = $db->fetch_many(-query => 'Find Transcript where (NOT Method = Coding_transcript) AND (NOT Method = history) AND (Species = "'.$wormbase->full_name.'")');
 
 TRANSCRIPT: while ( my $transcript = $transcripts->next ) {
 
@@ -443,18 +445,18 @@ TRANSCRIPT: while ( my $transcript = $transcripts->next ) {
 
   if ($type eq '') { # non-coding transcript isoforms have no tag after 'Transcript'
     if ($cgc_name) {
-      $full_string .= "C. elegans non-coding isoform $cgc_name";
+      $full_string .= "C. $species non-coding isoform $cgc_name";
     } 
     else {
-      $full_string .= "C. elegans predicted non-coding isoform";
+      $full_string .= "C. $species predicted non-coding isoform";
     } 
   }   
   elsif ($method eq 'tRNAscan-SE-1.23') { # tRNAs
     if ($cgc_name) {
-      $full_string .= "C. elegans tRNA $cgc_name";
+      $full_string .= "C. $species tRNA $cgc_name";
     } 
     else {
-      $full_string .= "C. elegans predicted tRNA";
+      $full_string .= "C. $species predicted tRNA";
     }
   } 
   elsif ($type eq 'ncRNA') { # RNA genes
