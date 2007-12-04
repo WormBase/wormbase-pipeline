@@ -66,8 +66,8 @@ $log->write_to("connecting to treefam database : \tmysql:$database:db.treefam.or
 my $dbh                       = DBI->connect_cached("dbi:mysql:$database:db.treefam.org:3308", 'anonymous', '') || return;
 my $table_w                   = 'genes';
 # THIS TABLE HAS THE ID AND DISPLAY ID. SOMETIMES THE DISPLAY ID IS
-# THE UNIPROT NAME, SOMETIMES THE ID IS:
-my $st                        = "SELECT ID, TAX_ID from $table_w WHERE TAX_ID IN (6239, 6238)"; 
+# THE UNIPROT NAME, SOMETIMES THE ID IS:31234
+my $st                        = "SELECT ID, TAX_ID from $table_w WHERE TAX_ID IN (6239, 6238, 31234)";
 my $sth                       = $dbh->prepare($st) or die "Cannot prepare $st: $dbh->errstr\n";
 my$rv                        = $sth->execute or die "Cannot execute the query: $sth->errstr";
 if ($rv >= 1)
@@ -77,7 +77,7 @@ if ($rv >= 1)
                                             #      WBGene00024691 for a C. briggsae gene
       my $TAX_ID              = $array[1];  # eg., 6239 for a C. elegans gene or
                                             #      6238 for a C. briggsae gene 
-      if ($TAX_ID == 6239 || $TAX_ID == 6238) # IT IS A C. ELEGANS OR C. BRIGGSAE GENE
+      if ($TAX_ID == 6239 || $TAX_ID == 6238 || $TAX_ID == 31234) # IT IS A C. ELEGANS OR C. BRIGGSAE GENE
       {
          # REMEMBER THAT THIS WORM GENE IS IN TREEFAM:
          $WORM{$ID}        = $TAX_ID;  
