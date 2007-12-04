@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl5.8.0 -w
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2007-10-31 10:06:56 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2007-12-04 14:50:21 $
 
 
 use lib $ENV{'CVS_DIR'};
@@ -62,6 +62,7 @@ my $seq_obj      = Sequence_extract->invoke($database, undef, $wormbase) if $int
 
 #The mol_types available for each species is different
 #defaults lists - can be overridden by -types
+
 my %mol_types = ( 'elegans'          => [qw( EST mRNA ncRNA OST tc1 RST )],
 		  'briggsae'         => [qw( mRNA EST )],
 		  'remanei'          => [qw( mRNA EST )],
@@ -72,6 +73,7 @@ my %mol_types = ( 'elegans'          => [qw( EST mRNA ncRNA OST tc1 RST )],
 		  'nematode'         => [qw( EST )],
 		  'nembase'          => [qw( EST )],
 		  'washu'            => [qw( EST )],
+
 				);
 
 my @nematodes = qw(nematode washu nembase);
@@ -84,8 +86,9 @@ if( $qspecies ){
 		}
 	}
 	else {
-		$log->log_and_die("we only deal in Caenorhabditidae species!\n");
+		$log->log_and_die("we only deal in certain species!\n");
 	}
+	@nematodes = ();
 }
 	
 #set specific mol_types if specified.
@@ -106,10 +109,10 @@ if($nematode) {
 
 # mask the sequences based on Feature_data within the species database (or autoace for elegans.)
 if( $mask ) {
-	foreach my $species ( keys %mol_types ) {
+	foreach my $qspecies ( keys %mol_types ) {
 		next if (grep /$species/, @nematodes);
 		foreach my $moltype (@{$mol_types{$species}}) {
-			$wormbase->bsub_script("transcriptmasker.pl -species $species -mol_type $moltype", $species, $log);
+			$wormbase->bsub_script("transcriptmasker.pl -species $qspecies -mol_type $moltype", $species, $log);
 		}
 	}
 	
@@ -139,7 +142,7 @@ if ( $run ) {
 			
 			&check_and_shatter($accessors{$species}->maskedcdna, "$moltype.masked");
 			foreach my $seq_file (glob ($accessors{$species}->maskedcdna."/$moltype.masked*")) {
-				my $cmd = "bsub -J ".$accessors{$species}->pepdir_prefix."_$moltype \"/software/worm/bin/blat/blat -noHead -t=dnax -q=dnax ";
+				my $cmd = "bsub -E \"ls /software/worms\" -J ".$accessors{$species}->pepdir_prefix."_$moltype \"/software/worm/bin/blat/blat -noHead -t=dnax -q=dnax ";
 				$cmd .= $wormbase->genome_seq ." $seq_file ";
 				$cmd .= $wormbase->blat."/${species}_${moltype}_${split_count}.psl\"";
 				$wormbase->run_command($cmd, $log);
@@ -154,20 +157,20 @@ if ( $run ) {
 		my $seq_dir = $wormbase->maskedcdna;
 		&check_and_shatter($wormbase->maskedcdna, "$moltype.masked");
 		foreach my $seq_file (glob ($seq_dir."/$moltype.masked*")) {
-			my $cmd = "bsub -J ".$wormbase->pepdir_prefix."_$moltype \"/software/worm/bin/blat/blat -noHead ";
+			my $cmd = "bsub -E \"ls /software/worms\" -J ".$wormbase->pepdir_prefix."_$moltype \"/software/worm/bin/blat/blat -noHead ";
 			$cmd .= $wormbase->genome_seq ." $seq_file ";
 			$cmd .= $wormbase->blat."/".$wormbase->species."_${moltype}_${split_count}.psl\"";
 			$wormbase->run_command($cmd, $log);	
 			$split_count++;	
 		}		
 	}
-	#run other nematodes 
+	#run other nematodes - these dont have Species.pm so cant use maskedcdna method.
 	foreach my $moltype (@nematodes ){
 		my $split_count = 1;
 		my $seq_dir = $wormbase->basedir."/cDNA/$moltype";
 		&check_and_shatter($seq_dir, "EST.masked");
 		foreach my $seq_file (glob ($seq_dir."/EST*")) {
-			my $cmd = "bsub -J ".$wormbase->pepdir_prefix."_$moltype \"/software/worm/bin/blat/blat -noHead -q=dnax -t=dnax ";
+			my $cmd = "bsub -E \"ls /software/worms\" -J ".$wormbase->pepdir_prefix."_$moltype \"/software/worm/bin/blat/blat -noHead -q=dnax -t=dnax ";
 			$cmd .= $wormbase->genome_seq ." $seq_file ";
 			$cmd .= $wormbase->blat."/${moltype}_EST_${split_count}.psl\"";
 			$wormbase->run_command($cmd, $log);	
