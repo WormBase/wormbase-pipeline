@@ -8,7 +8,7 @@
 # Originally written by Dan Lawson
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2007-11-30 17:06:03 $
+# Last updated on: $Date: 2007-12-04 14:57:41 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -394,7 +394,7 @@ sub copy_wormpep_files{
   my %accessors = ($wormbase->species_accessors, $wormbase->tier3_species_accessors);
   foreach my $worm (keys %accessors){
   	my $dir = $accessors{$worm}->wormpep;
-  	my $file = $worm->wormpep."/".$worm->pepdir_prefix."pep$WS";
+  	my $file = "$dir/".$accessors{$worm}->pepdir_prefix."pep$WS";
   	if(-e $file) {
 	    $wormbase->run_command("/bin/gzip -f $file",$log);
 		$wormbase->run_command("cp $file.gz $targetdir/$WS_name", $log);
