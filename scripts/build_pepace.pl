@@ -9,8 +9,8 @@
 # solely in the wormpep.history file.
 #
 #
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2007-06-08 19:06:41 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2007-12-04 14:53:16 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -24,7 +24,7 @@ use Storable;
 # variables and command-line options #
 ######################################
 
-my ( $help, $debug, $test, $verbose, $store, $wormbase );
+my ( $help, $debug, $test, $verbose, $store, $wormbase, $species );
 
 GetOptions(
     "help"    => \$help,
@@ -32,6 +32,7 @@ GetOptions(
     "test"    => \$test,
     "verbose" => \$verbose,
     "store:s" => \$store,
+    "species" => \$species
 );
 
 if ($store) {
@@ -42,14 +43,12 @@ else {
     $wormbase = Wormbase->new(
         -debug => $debug,
         -test  => $test,
+        -organism => $species
     );
 }
 
 # Display help if required
 &usage("Help") if ($help);
-
-# in test mode?
-print "In test mode\n" if ($verbose && $test);
 
 # establish log file.
 my $log = Log_files->make_build_log($wormbase);
@@ -61,7 +60,8 @@ my $log = Log_files->make_build_log($wormbase);
 my $ace_dir    = $wormbase->autoace;                  # AUTOACE DATABASE DIR
 my $wormpepdir = $wormbase->wormpep;                  # CURRENT WORMPEP
 my $ver        = $wormbase->get_wormbase_version();
-
+my $PEP_PREFIX = $wormbase->pep_prefix;
+my $PEPDIR 	   = $wormbase->pepdir_prefix;
 # read history file
 our ( $gene, $CE, $in, $out );
 my %CE_history;
@@ -121,7 +121,7 @@ my $Y = "";
 my $V = "";
 my $U = "";
 
-open( HISTORY, "$wormpepdir/wormpep.history$ver" ) || die "wormpep.history$ver";
+open( HISTORY, "$wormpepdir/${PEPDIR}pep.history$ver" ) or $log->log_and_die("cant open wormpep.history$ver $!\n");
 while (<HISTORY>) {
     my @data = split( /\s+/, $_ );
     ( $gene, $CE, $in, $out ) = @data;
@@ -239,21 +239,17 @@ while (<HISTORY>) {
 }
 close HISTORY;
 
-# EXAMPLE OF OUTPUT:
-#
-# Protein : "WP:CE05214"
-# Database "SwissProt" "SwissProt_ID" "RR44_CAEEL"
-# Database "SwissProt" "SwissProt_AC" "Q17632"
-# Motif_homol     "INTERPRO:IPR001900"
-
 # get the sequence from the .fasta file
-open( FASTA, "<$wormpepdir/wormpep.fasta$ver" ) || die "cant open $wormpepdir/wp.fasta$ver";
+open (FASTA, "<$wormpepdir/${PEPDIR}pep.fasta$ver") or $log->log_and_die("cant open $wormpepdir/${PEPDIR}pep.fasta $!\n");
+print "reading $wormpepdir/${PEPDIR}pep.fasta$ver\n\n";
+
 my $fasta_pep;
 while (<FASTA>) {
 
     #chomp;
-    if ( $_ =~ /CE\d{5}/ ) {
+    if ( $_ =~ /$PEP_PREFIX\d{5}/ ) {
         $fasta_pep = $&;
+        print "$fasta_pep\n";
     }
     else {
         if ( defined($fasta_pep) ) {
@@ -269,12 +265,18 @@ my $acefile = "$ace_dir/acefiles/pepace.ace";
 
 open( ACE, ">$acefile" ) || die "cant write $acefile\n";
 
-$CE_live{'CE25872'} =1;# hard coded as this history is confused. Remove if CE25873 no longer valid
-push( @{ $CE_corr_CDS{'CE25872'} }, "F36D3.1" );
+if($wormbase->species eq 'elegans') {
+	$CE_live{'CE25872'} =1;# hard coded as this history is confused. Remove if CE25873 no longer valid
+	push( @{ $CE_corr_CDS{'CE25872'} }, "F36D3.1" );
+}
 
 #ace file for new Protein model (with History)
 foreach my $key ( sort keys %CE_history ) {
-    print ACE "Protein : \"WP:$key\"\n";
+	unless ($CE_sequence{$key}) {
+		$log->error("$key has no sequence in fasta file \n");
+		next;
+	}
+    print ACE "Protein : \"$PEP_PREFIX:$key\"\n";
 
     ## Write histories
     foreach my $release ( sort byRelease keys %{ $CE_history{$key} } ) {
@@ -283,9 +285,8 @@ foreach my $key ( sort keys %CE_history ) {
         }
     }
 
-    print ACE "Database \"WORMPEP\" WORMPEP_ID \"WP:$key\"\n";
-    print ACE "Molecular_weight ", &get_mol_weight( $CE_sequence{$key} ),
-      " Inferred_automatically \"build_pepace.pl\"\n";
+    print ACE "Database \"WORMPEP\" WORMPEP_ID \"$PEP_PREFIX:$key\"\n";
+    print ACE "Molecular_weight ", &get_mol_weight( $CE_sequence{$key} )," Inferred_automatically \"build_pepace.pl\"\n";
     print ACE "Species \"Caenorhabditis elegans\"\n";
     print ACE "Wormpep\n";
 
@@ -296,38 +297,37 @@ foreach my $key ( sort keys %CE_history ) {
         }
     }
     print ACE "\n";
-    print ACE "Peptide : \"WP:$key\"\n";
+    print ACE "Peptide : \"$PEP_PREFIX:$key\"\n";
     print ACE "$CE_sequence{$key}\n";
 }
 close ACE;
 $log->write_to("written $acefile - to be loaded in to autoace\n");
 
-my $live_peps  = `grep -c Live $acefile`;
-my $table_peps = `cut -f 2 $wormpepdir/wormpep.table$ver | sort -u | wc -l`;
-chomp $live_peps;
-chomp $table_peps;
+#while we have crap predictions this can be skipped.
+if( $wormbase->species eq "elegans") {
+	my $live_peps  = `grep -c Live $acefile`;
+	my $table_peps = `grep -c '>' $wormpepdir/${PEPDIR}pep$ver.pep`;
+	chomp $live_peps;
+	chomp $table_peps;
 
-$log->write_to("This file has $live_peps live peptides\n");
-$log->write_to("wormpep.table$ver suggests there should be $table_peps\n");
+	$log->write_to("This file has $live_peps live peptides\n");
+	$log->write_to("${PEPDIR}pep$ver.pep suggests there should be $table_peps\n");
 
-if ( ($live_peps) == $table_peps ) {
-    $log->write_to("\nso thats OK!\ntaking in to account 1 known problem - CE25872 -hard coded as live in the script\n");
+	if ( ($live_peps) == $table_peps ) {
+   		$log->write_to("\nso thats OK!\ntaking in to account 1 known problem - CE25872 -hard coded as live in the script\n");
+	}
+	else {
+    	$log->write_to("\n\n! ! ! ! THIS NEEDS ATTENTION ! ! ! !\n\n\n");
+    	$log->write_to("\n1 known problem - CE25872 is hard coded as LIVE in $0\n Check this is still valid sequence F36D3.1");
+	}
 }
-else {
-    $log->write_to("\n\n! ! ! ! THIS NEEDS ATTENTION ! ! ! !\n\n\n");
-    $log->write_to("\n1 known problem - CE25872 is hard coded as LIVE in $0\n Check this is still valid sequence F36D3.1");
-}
-
-my $date = `date`;
-
-$log->write_to("\n$0 finished at $date\n");
-$log->write_to("\n   . . about to start GetSwissIDandInterpro.pl\n");
-
 #load files in to autoace.
 $wormbase->load_to_database( $wormbase->autoace, "$ace_dir/acefiles/pepace.ace",'pepace' );
 
+# update common data
+$wormbase->run_script("update_Common_data.pl --build --cds2wormpep", $log);
+
 $log->mail();
-print "Finished.\n" if ($verbose);
 exit(0);
 
 ##############################################################
