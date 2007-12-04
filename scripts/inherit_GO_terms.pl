@@ -5,7 +5,7 @@
 # map GO_terms to ?Sequence objects from ?Motif and ?Phenotype
 #
 # Last updated by: $Author: ar2 $     
-# Last updated on: $Date: 2007-11-20 17:06:08 $      
+# Last updated on: $Date: 2007-12-04 14:56:16 $      
 
 use strict;
 use warnings;
@@ -24,6 +24,7 @@ my $verbose;             # for toggling extra output
 my $maintainers = "All"; # who receives emails from script
 my $noload;              # generate results but do not load to autoace
 my $database;
+my $species;
 
 ##############################
 # command-line options       #
@@ -37,6 +38,7 @@ GetOptions ("help"      => \$help,
 	    		"noload"    => \$noload,
     	    	"store:s"   => \$store,
     	    	"database:s" => \$database,
+    	    	"species:s"  => \$species
     	);
 
 # Display help if required
@@ -45,7 +47,7 @@ GetOptions ("help"      => \$help,
 # recreate configuration 
 my $wormbase;
 if ($store) { $wormbase = Storable::retrieve($store) or croak("cant restore wormbase from $store\n") }
-else { $wormbase = Wormbase->new( -debug => $debug, -test => $debug, ) }
+else { $wormbase = Wormbase->new( -debug => $debug, -test => $debug, -organism => $species ) }
 
 # Variables Part II (depending on $wormbase) 
 $debug = $wormbase->debug if $wormbase->debug;    # Debug mode, output only goes to one user
@@ -59,7 +61,7 @@ my $log=Log_files->make_build_log($wormbase);
 my $tace      = $wormbase->tace;      # tace executable path
 # Database path
 
-my $dbpath    = $wormbase->autoace;   
+my $dbpath    = $wormbase->orgdb;   
 $dbpath = $database if (defined $database);
 
 my %cds2gene;
