@@ -7,8 +7,8 @@
 # Generates the .acefiles from the primary databases as a prelim for building
 # autoace.
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2007-07-13 15:30:53 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2007-12-04 14:57:05 $
 
 #################################################################################
 # Variables                                                                     #
@@ -37,13 +37,15 @@ my $db;
 my $database;
 my $basedir;
 my $store;
+my $species;
 
-GetOptions ("debug=s"    => \$debug,
+GetOptions (	"debug=s"    => \$debug,
 	    		"help"       => \$help,
-	   	 	"database=s" => \$database,
+	   	 		"database=s" => \$database,
 	    		"db:s"       => \$db,
 	    		"test"       => \$test,
-	    		"store:s"    => \$store
+	    		"store:s"    => \$store,
+	    		"species:s"	 => \$species
 	   	);
 
 my $wormbase;
@@ -53,9 +55,13 @@ if( $store ) {
 else {
   $wormbase = Wormbase->new( -debug   => $debug,
 			     -test    => $test,
+			     -organism => $species
 			   );
 }
 
+my $elegans = Wormbase->new( -debug   => $debug,
+			     -test    => $test
+			     );
 
 if( $database ) {
   my ($volume,$directories,$fname) = File::Spec->splitpath( $database );
@@ -71,10 +77,10 @@ my $runtime     = $wormbase->runtime;
 my $tace        = $wormbase->tace;
 my $log         = Log_files->make_build_log( $wormbase );
 
-$basedir     = $wormbase->basedir unless $basedir;
-my $wormbasedir = $wormbase->autoace."/acefiles/primary";
+$basedir     = $elegans->basedir unless $basedir;
+my $wormbasedir = $elegans->autoace."/acefiles/primary";
 mkpath( $wormbasedir ) unless -e ( $wormbasedir );
-my $miscdir     = $wormbase->misc_static;
+my $miscdir     = $elegans->misc_static;
 
 my $autoace_config = "$basedir/autoace_config/autoace.config";
 
@@ -127,6 +133,7 @@ sub mknewacefiles {
   my ($filename,$extrafile,$filepath,$command,$outfile,$tag,@deletes,$include,@filters);
   
   local (*CONFIG);
+  $db = $species if ($species); #only do one other species per run
   
   open (CONFIG, "<$autoace_config");
   while (<CONFIG>) {
@@ -143,14 +150,18 @@ sub mknewacefiles {
       next unless (/$db/);
     }
     # parse database information
-    if (/^P\s+(\S+)\s+(\S+)$/) {
+    if (/^P\s+(\S+)/) {
       ($dbname)  = $1;
-      $dbdir     = $wormbase->primary("$dbname");
+      if ($species and $species ne 'elegans') {
+      	$dbdir = $wormbase->orgdb;
+      }else {
+            $dbdir = $wormbase->primary("$dbname");
+      }
       my $msg = "\n\n". $wormbase->runtime . " : Processing $dbname information in autoace_config\n";
       $log->write_to("$msg");
 
       # need to change dbpath if in test mode
-      $targetdir = $wormbase->acefiles."/primaries/$dbname";
+      $targetdir = $elegans->acefiles."/primaries/$dbname";
       mkpath( $targetdir ) unless ( -e "$targetdir" );
       $exe       = "$tace $dbdir";
       next;
@@ -179,7 +190,7 @@ sub mknewacefiles {
       $log->write_to("$msg");
     }
 
-    print "Noting filename:$filename\n" if ($wormbase->debug);
+    print "Noting filename:$filename\n" if ($elegans->debug);
 
     # if misc_static file copy from source dir under ~wormpub
     if ($dbname =~ /misc_static/) {
@@ -297,7 +308,7 @@ sub mknewacefiles {
     my $filtered_count = 0;
     my $removed_count = 0;
 
-    open (OUT, "> $filepath") || die "Can't open $filepath";
+    open (OUT, ">$filepath") || die "Can't open $filepath";
     open (TACE,"echo '$command' | $exe |");
     while (my $line = <TACE>) {
       next if ($line =~ /acedb\>/);
