@@ -1039,6 +1039,7 @@ sub load_to_database {
   my $file     = shift;
   my $tsuser   = shift;
   my $log      = shift;
+  my $no_bk    = shift;
 
   unless ( -e "$file" and -e $database) {
     if ( $log) {
@@ -1050,7 +1051,7 @@ sub load_to_database {
   }
 
   my $st = stat($file);
-  if ( $st->size > 50000000 ) {
+  if ( $st->size > 50000000 and !defined ($no_bk) ) {
     $log->write_to("backing up block files before loading $file\n") if $log;
     my $db_dir = $database."/database";
     my $tar_file = "backup.".time.".tgz";
@@ -1246,7 +1247,7 @@ sub establish_paths {
     $self->{'gff'}         = $self->chromosomes; #to maintain backwards compatibility 
     $self->{'gff_splits'}  = $self->orgdb . "/GFF_SPLITS";
     $self->{'primaries'}   = $self->basedir . "/PRIMARIES";
-    $self->{'blat'}        = $self->autoace . "/BLAT";
+    $self->{'blat'}        = $self->orgdb . "/BLAT";
     $self->{'checks'}      = $self->autoace . "/CHECKS";
     $self->{'ontology'}    = $self->autoace . "/ONTOLOGY";
     $self->{'tace'}   = '/software/worm/bin/acedb/tace';
@@ -1454,13 +1455,34 @@ sub format_sequence
 	$length = $length ? $length : 60;
 	my $left;
 	$new_seq = $seq if (length($seq) < $length);
-	while ($seq =~ /(\w{$length})/g){
+	while ($seq =~ /(\S{$length})/g){
 		$new_seq .= $&."\n";
 		$left = $';#'
 	}
 	$new_seq .= $left if ($left);
 	return $new_seq;
 }
+
+sub get_binned_chroms {
+	my $self = shift;	
+	my $bin_size = shift;
+	$bin_size = 64 unless $bin_size;
+	
+	my @chroms = $self->get_chromosome_names;
+	if (scalar @chroms > 50){
+		my @bins;
+		my $i=0;
+		while ($i<scalar @chroms){
+			push (@{$bins[$i % $bin_size]},$chroms[$i]);
+			$i++;
+		}
+		map {$_=join(',',@$_)} @bins;
+		@chroms = @bins;
+		}
+	return \@chroms;
+}
+
+
 ################################################################################
 #Return a true value
 ################################################################################
