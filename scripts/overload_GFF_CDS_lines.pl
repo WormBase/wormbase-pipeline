@@ -5,7 +5,7 @@
 # by Dan Lawson
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2007-11-07 12:03:21 $
+# Last updated on: $Date: 2007-12-04 14:59:26 $
 #
 
 #
@@ -28,7 +28,7 @@ use Carp;
 use Log_files;
 use Storable;
 
-my ($help, $debug, $test, $verbose, $store, $wormbase);
+my ($help, $debug, $test, $verbose, $store, $wormbase, $species);
 my ($chrom, $splitdir, $gffdir, $release);
 
 GetOptions (
@@ -40,15 +40,17 @@ GetOptions (
 	    "chrom:s"    => \$chrom,
 	    "release:s"  => \$release,
 	    "splits:s"   => \$splitdir,
-	    "gff:s"      => \$gffdir
+	    "gff:s"      => \$gffdir,
+	    "species:s"  => \$species	    
 	    );
 
 
 if ( $store ) {
   $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
 } else {
-  $wormbase = Wormbase->new( -debug   => $debug,
-                             -test    => $test,
+  $wormbase = Wormbase->new( -debug    => $debug,
+                             -test     => $test,
+                             -organism => $species
 			     );
 }
 
@@ -93,7 +95,7 @@ my %briefID;
 my %RNAgenes;
 my %seqname2geneid;
 
-&get_RNA_info;
+#&get_RNA_info;
 &get_wormpep_info;
 
 $wormbase->FetchData("worm_gene2geneID_name",\%seqname2geneid);
@@ -136,7 +138,7 @@ foreach my $file (@gff_files) {
 	
 			print OUT "$chromosome\t$source\t$feature\t$start\t$stop\t$score\t$strand\t$other\tCDS \"$i\" ;";
 			print OUT " Note \"$briefID{$i}\" ;"        if ($briefID{$i} ne "");
-			print OUT " WormPep \"WP:$wormpep{$i}\" ; " if ($wormpep{$i} ne "");
+			print OUT " WormPep \"".$wormbase->pep_prefix.":$wormpep{$i}\" ; " if ($wormpep{$i} ne "");
 			print OUT " Note \"$locus{$i}\" ; "         if ($locus{$i} ne "");
 			print OUT " Status \"$status{$i}\" ; "      if ($status{$i} ne "");
 			print OUT " Gene \"$geneID{$i}\" ; "        if ($geneID{$i} ne "");
@@ -191,7 +193,7 @@ sub get_RNA_info {
 
 sub get_wormpep_info {
 	my $file = $wormbase->wormpep."/".$wormbase->pepdir_prefix."pep".$wormbase->get_wormbase_version;
-	open (WORMPEP, "<$wormpep_dir/wormpep${release}") or $log->log_and_die("cant open $file $!\n");
+	open (WORMPEP, "<$file") or $log->log_and_die("cant open $file $!\n");
 	while (<WORMPEP>) {
 	    if (/^>(\S+) (\S+) (WBGene\d+) (\S+.+)\s+status\:(\S+)/) {
 			$CDS           = $1;
