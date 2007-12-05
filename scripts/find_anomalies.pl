@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2007-12-04 12:35:59 $      
+# Last updated on: $Date: 2007-12-05 11:59:26 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -29,7 +29,7 @@ use Modules::PWM;
 ######################################
 
 my ($help, $debug, $test, $verbose, $store, $wormbase);
-my ($database, $species);
+my ($database, $species, $supplementary);
 
 GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
@@ -38,6 +38,7 @@ GetOptions ("help"       => \$help,
 	    "store:s"    => \$store,
 	    "database:s" => \$database,	    # use the specified database instead of currentdb
 	    "species:s"  => \$species,
+	    "supplementary" => \$supplementary, # add GFF files to the SUPPLEMENTARY_DATA directory of the specified database
 	    );
 
 if ( $store ) {
@@ -158,11 +159,12 @@ my @chromosomes = $wormbase->get_chromosome_names(-mito => 0, -prefix => 0);
 
 foreach my $chromosome (@chromosomes) {
 
-  # if we are running this on autoace, write out the anomalies GFF file
-#  my $gff_file = $wormbase->{'gff_splits'} . "/CHROMOSOME_${chromosome}_curation_anomalies.gff";
-  my $gff_file = $wormbase->{'chromosomes'} . "/SUPPLEMENTARY_GFF/CHROMOSOME_${chromosome}_curation_anomalies.gff";
-  if ($database eq $wormbase->{'autoace'}) {
-    open (OUTPUT_GFF, ">$gff_file") || die "Can't open $gff_file";
+  # if we want the anomalies GFF file
+  if ($supplementary) {
+    my $gff_file = "$database/CHROMOSOMES/SUPPLEMENTARY_GFF/CHROMOSOME_${chromosome}_curation_anomalies.gff";
+    if ($database eq $wormbase->{'autoace'}) {
+      open (OUTPUT_GFF, ">$gff_file") || die "Can't open $gff_file";
+    }
   }
 
   $log->write_to("Processing chromosome $chromosome\n");
@@ -326,7 +328,7 @@ foreach my $chromosome (@chromosomes) {
 
 
   # close the ouput GFF file
-  if ($database eq $wormbase->{'autoace'}) {
+  if ($supplementary) {
     close (OUTPUT_GFF);
   }
 }
@@ -2928,7 +2930,7 @@ sub put_anomaly_record_in_database {
   # output the data to the GFF file
   #################################
 
-  if ($database eq $wormbase->{'autoace'}) {
+  if ($supplementary) {
     print OUTPUT_GFF "CHROMOSOME_$chromosome\tcuration_anomaly\t$anomaly_type\t$chrom_start\t$chrom_end\t$anomaly_score\t$chrom_strand\t.\tEvidence \"$anomaly_id\"\n";
   }
 
