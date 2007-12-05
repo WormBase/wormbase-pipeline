@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2007-12-05 11:59:26 $      
+# Last updated on: $Date: 2007-12-05 12:34:40 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -162,9 +162,7 @@ foreach my $chromosome (@chromosomes) {
   # if we want the anomalies GFF file
   if ($supplementary) {
     my $gff_file = "$database/CHROMOSOMES/SUPPLEMENTARY_GFF/CHROMOSOME_${chromosome}_curation_anomalies.gff";
-    if ($database eq $wormbase->{'autoace'}) {
-      open (OUTPUT_GFF, ">$gff_file") || die "Can't open $gff_file";
-    }
+    open (OUTPUT_GFF, ">$gff_file") || die "Can't open $gff_file";
   }
 
   $log->write_to("Processing chromosome $chromosome\n");
