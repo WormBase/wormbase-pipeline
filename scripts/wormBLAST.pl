@@ -5,7 +5,7 @@
 # written by Anthony Rogers
 #
 # Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2007-05-31 13:22:05 $
+# Last edited on: $Date: 2007-12-05 17:55:19 $
 
 
 use DBI;
@@ -24,7 +24,7 @@ use Storable;
 #######################################
 
 my $chromosomes;
-my ($wormpep, $brigpep);
+my ($wormpep, $brigpep,$remapep);
 my $update_databases;
 my $update_mySQL;
 my $setup_mySQL;
@@ -48,6 +48,7 @@ my $store;
 GetOptions("chromosomes" => \$chromosomes,
 	   "wormpep"     => \$wormpep,
 	   "brigpep"     => \$brigpep,
+	   'remapep'     => \$remapep,
 	   "databases"   => \$update_databases,
 	   "updatemysql" => \$update_mySQL,
 	   "setup"       => \$setup_mySQL,
@@ -130,8 +131,9 @@ $wormbase->run_command("ssh cbi4 ~/scripts/BLAST_scripts/copy_files_to_acari.pl 
 
 
 #get new wormpep
-$wormbase->run_command("ssh cbi4 ~/scripts/BLAST_scripts/copy_files_to_acari.pl -wormpep ".$wormbase->get_wormbase_version, $log) if ($wormpep);
-$wormbase->run_command("ssh cbi4 ~/scripts/BLAST_scripts/copy_files_to_acari.pl -brigpep ".$wormbase->get_wormbase_version, $log) if ($brigpep);
+$wormbase->run_command("ssh cbi4 ~/scripts/BLAST_scripts/copy_files_to_acari.pl -wormpep", $log) if ($wormpep);
+$wormbase->run_command("ssh cbi4 ~/scripts/BLAST_scripts/copy_files_to_acari.pl -brigpep", $log) if ($brigpep);
+$wormbase->run_command("ssh cbi4 ~/scripts/BLAST_scripts/copy_files_to_acari.pl -remapep", $log) if ($remapep);
 
 
 my %currentDBs;   #ALSO used in setup_mySQL 
