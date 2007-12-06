@@ -5,7 +5,7 @@
 # written by Anthony Rogers
 #
 # Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2007-12-05 17:55:19 $
+# Last edited on: $Date: 2007-12-06 09:51:22 $
 
 
 use DBI;
@@ -111,7 +111,8 @@ my %worm_dna_processIDs = (
 			yeast         => 5,
 			gadfly        => 6,
 			slimswissprot => 7,
-			slimtrembl  => 8,
+			slimtrembl    => 8,
+			remapep       => 15,
 		       );
 
 
@@ -123,7 +124,8 @@ my %wormprotprocessIds = (
 			  yeast         => 5,
 			  gadfly        => 6,
 			  slimswissprot => 7,
-			  slimtrembl  => 8,
+			  slimtrembl    => 8,
+			  remapep       => 15,
 			 );
 
 #get new chromosomes
@@ -146,7 +148,7 @@ unless ($cleanup) {
 open (OLD_DB,"<$last_build_DBs") or die "cant find $last_build_DBs";
 while (<OLD_DB>) {
   chomp;
-  if( /(gadfly|yeast|slimswissprot|slimtrembl|wormpep|ipi_human|brigpep)/ ) {
+  if( /(gadfly|yeast|slimswissprot|slimtrembl|wormpep|ipi_human|brigpep|remapep)/ ) {
     $currentDBs{$1} = $_;
   }
 }
@@ -160,7 +162,7 @@ if ( $update_databases ){
   while (<DIR>) { 
     #  print;
     chomp;
-    if( /\/(gadfly|yeast|slimswissprot|slimtrembl|wormpep|ipi_human|brigpep)/ ) {
+    if( /\/(gadfly|yeast|slimswissprot|slimtrembl|wormpep|ipi_human|brigpep|remapep)/ ) {
       my $whole_file = "$1"."$'";  #match + stuff after match.
       if( $1 eq "wormpep" ) {
 	print "updating wormpep to version $WS_version anyway - make sure the data is there !\n";
