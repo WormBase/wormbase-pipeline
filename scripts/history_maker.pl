@@ -775,7 +775,7 @@ sub populate_zero_weight_list {
   # get the available anomaly types
   my $query = qq{ SELECT type, COUNT(*) FROM anomaly WHERE chromosome = "$chromosome" AND centre = "$lab" AND active = 1 GROUP BY type; };
   my $db_query = $mysql->prepare ( $query );
-  $db_query->execute();
+  $db_query->execute() or &error_warning("WARNING", "MySQL server appears to be down");
   $results = $db_query->fetchall_arrayref;
 
   # put the types in the zero-weight list with their count
@@ -792,7 +792,7 @@ sub populate_zero_weight_list {
   # first test to see if this view table exists already and so should be deleted
   $query = qq{ SHOW TABLES; };
   $db_query = $mysql->prepare ( $query );
-  $db_query->execute();
+  $db_query->execute() or &error_warning("WARNING", "MySQL server appears to be down");
   $results = $db_query->fetchall_arrayref;
   foreach my $result_row (@$results) {
     if ($result_row->[0] eq $view) {
@@ -837,7 +837,7 @@ sub populate_anomaly_window_list {
 
   my $db_query = $mysql->prepare ( $query );
 
-  $db_query->execute();
+  $db_query->execute() or &error_warning("WARNING", "MySQL server appears to be down");
 
   $results = $db_query->fetchall_arrayref;
 
@@ -968,7 +968,7 @@ sub ignore_anomaly_window {
       my ($type, $clone, $clone_start, $clone_end, $chromosome_start, $chromosome_end, $sense, $thing_id, $thing_score, $explanation, $anomaly_id) = (@{$anomaly});
 
       # mark them as inactive 
-      $sth->execute($anomaly_id);
+      $sth->execute($anomaly_id) or &error_warning("WARNING", "MySQL server appears to be down");
       #print "Ignoring $type $clone:$clone_start..$clone_end anomaly_id $anomaly_id\n";
     }
     $sth->finish();
@@ -1066,7 +1066,7 @@ sub goto_anomaly_window {
   # get the query and present the details on the lower listbox
   my $db_query = $mysql->prepare ( $query );
 
-  $db_query->execute();
+  $db_query->execute() or &error_warning("WARNING", "MySQL server appears to be down");
   $results = $db_query->fetchall_arrayref;
 
 #  my $len = $#{$results}+1;
@@ -1267,7 +1267,7 @@ sub ignore_anomaly {
       #print "Detail: $type $clone $clone_start, $clone_end\n";
       if ($type eq $box_type && $box_clone eq $clone && $clone_start >= $start && $clone_end <= $end) {
 	# mark this one as inactive 
-	$sth->execute($anomaly_id);
+	$sth->execute($anomaly_id) or &error_warning("WARNING", "MySQL server appears to be down");
 	#print "Ignoring $type $clone $location anomaly_id $anomaly_id\n";
       }
     }
@@ -1366,7 +1366,7 @@ sub progress {
   # first test to see if this progress table exists already
   my $query = qq{ SHOW TABLES; };
   my $db_query = $mysql->prepare ( $query );
-  $db_query->execute();
+  $db_query->execute() or &error_warning("WARNING", "MySQL server appears to be down");
   my $results = $db_query->fetchall_arrayref;
   foreach my $result_row (@$results) {
     if ($result_row->[0] eq 'progress') {
@@ -1389,7 +1389,7 @@ sub progress {
       # assume all weights are 1 and get the scores of the windows
       my $query = qq{ SELECT SUM(a.thing_score) FROM anomaly AS a WHERE a.chromosome = "$chr" AND a.centre = "$lab" AND a.active = 1 GROUP BY window, sense; };
       my $db_query = $mysql->prepare ( $query );
-      $db_query->execute();
+      $db_query->execute() or &error_warning("WARNING", "MySQL server appears to be down");
       $results = $db_query->fetchall_arrayref;
 
       my $over_10 = 0;
@@ -1476,7 +1476,7 @@ sub progress {
 	# get the data with the count of days since 2 Oct 2006
 	$query = qq{ SELECT DATEDIFF(p.date,'2006-10-02'), over_10, over_5, over_2, over_1, over_half, over_quarter, under_quarter FROM progress AS p WHERE p.chromosome = "$chr" AND p.centre = "$lab" ORDER BY 1 };
 	my $db_query = $mysql->prepare ( $query );
-	$db_query->execute();
+	$db_query->execute() or &error_warning("WARNING", "MySQL server appears to be down");
 	$results = $db_query->fetchall_arrayref;
 
 	my @over_10=();
