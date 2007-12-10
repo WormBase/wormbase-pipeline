@@ -194,9 +194,9 @@ task :cleanup do
 end
 
 desc 'build and setup all databases'
-task :build => [:check_clean,:env_setup,:build_elegans,:build_briggsae,:build_homology,:run_homology,:dump_homology,:build_pecan,:run_pecan,:cleanup]
+task :build => [:check_clean,:env_setup,:build_elegans,:build_briggsae,:build_homology,:run_homology,:build_pecan,:run_pecan,:cleanup]
 
 desc 'dump all databases into the various flatfiles'
-task :dump => [:dump_pecan,:dump_compara,:copy_release,:cleanup]
+task :dump => [:dump_homology,:dump_pecan,:dump_compara,:copy_release,:cleanup]
 
 task :default => [:update_conf,:build,:dump]
