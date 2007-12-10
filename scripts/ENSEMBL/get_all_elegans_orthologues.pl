@@ -26,8 +26,7 @@ my %species = (
 );
 
 my $config = ( YAML::LoadFile('ensembl_lite.conf') )->{'elegans'};
-#my %cds2wbgene=%{&get_commondata('/nfs/disk100/wormpub/BUILD/autoace/COMMON_DATA/cds2wbgene_id.dat')};
-my %cds2wbgene=%{&get_commondata('/nfs/disk100/wormpub/DATABASES/current_DB/COMMON_DATA/cds2wbgene_id.dat')};
+my %cds2wbgene=%{&get_commondata('cds2wbgene_id')};
 
 my $db = new Bio::EnsEMBL::DBSQL::DBAdaptor(
         -host   => $config->{database}->{host},
@@ -139,7 +138,7 @@ foreach my $slice(@slices){
 				print "Ortholog $gid \"${\$species{ $config->{taxon_id}}}\" From_analysis WormBase-Compara\n"; # elegans
 				while (my ($r_k,$r_v)=each(%briggsae_ids)){
 				        my $rid=$cds2wbgene{$r_k}?$cds2wbgene{$r_k}:$r_k;
-					print "Ortholog  $rid \"$species{$$r_v[0]}\" From_analysis WormBase-Compara\n"
+					print "Ortholog $rid \"$species{$$r_v[0]}\" From_analysis WormBase-Compara\n"
 				}
 #                                while (my ($r_k,$r_v)=each(%brenneri_ids)){
 #				        my $rid=$cds2wbgene{$r_k}?$cds2wbgene{$r_k}:$r_k;
@@ -154,20 +153,29 @@ foreach my $slice(@slices){
 }
 
 
+
+# needs a merging step
+# /nfs/disk100/wormpub/BUILD/autoace/COMMON_DATA/
+# /nfs/disk100/wormpub/BUILD/remanei/COMMON_DATA/
 sub get_commondata {
 	my ($name)=@_;
-	my $file= new IO::File "< $name";
-	$/=undef;
-	my $data=<$file>;
-	$/="\n";
-	$file->close;
-	my $VAR1;
 	my %genehash;
-	eval($data);
+	my @locations=qw(autoace remanei);
+	my $dir=glob('~wormpub/BUILD/');
+	foreach my $loc(@locations) {
+		my $file_name="$dir/$loc/COMMON_DATA/$name.dat";
+		my $file= new IO::File "< $file_name" || die("@! can't open $file_name");
+		$/=undef;
+		my $data=<$file>;
+		$/="\n";
+		$file->close;
+		my $VAR1;
+		eval($data);
 
-	while(my ($k,$v)=each(%{$VAR1})){
-		$k=~s/[a-z]$//;
-		$genehash{$k}=$v
+		while(my ($k,$v)=each(%{$VAR1})){
+			$k=~s/[a-z]$//;
+			$genehash{$k}=$v
+		}
 	}
 	return \%genehash;
 }
