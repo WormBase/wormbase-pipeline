@@ -5,7 +5,7 @@
 # map GO_terms to ?Sequence objects from ?Motif and ?Phenotype
 #
 # Last updated by: $Author: ar2 $     
-# Last updated on: $Date: 2007-12-04 14:56:16 $      
+# Last updated on: $Date: 2007-12-11 09:49:29 $      
 
 use strict;
 use warnings;
@@ -134,7 +134,7 @@ sub tmhmmGO {
 	my $query = "find protein where species = \"".$wormbase->full_name."\" where Feature AND NEXT = \"tmhmm\"; follow Corresponding_CDS; follow Gene";
 	my $genes = $db->fetch_many(-query => $query);
 	while(my $gene = $genes->next){
-		print OUT "\nGene : ".$gene->name."\nGO_term \"GO:0016021\"\n";
+		print OUT "\nGene : ".$gene->name."\nGO_term \"GO:0016021\"\tIEA\tInferred_automatically\t\"CBS:TMHMM\"\n";
 	}
 }
 
