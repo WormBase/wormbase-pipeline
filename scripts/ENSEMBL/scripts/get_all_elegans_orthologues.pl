@@ -13,6 +13,7 @@
 
 use strict;
 use YAML;
+use FindBin;
 use IO::File;
 use Bio::EnsEMBL::DBSQL::DBAdaptor;
 use Bio::EnsEMBL::Compara::DBSQL::DBAdaptor;
@@ -25,7 +26,7 @@ my %species = (
 	135651 => 'Caenorhabditis brenneri',
 );
 
-my $config = ( YAML::LoadFile('ensembl_lite.conf') )->{'elegans'};
+my $config = ( YAML::LoadFile("$FindBin::Bin/../etc/ensembl_lite.conf") )->{'elegans'};
 my %cds2wbgene=%{&get_commondata('cds2wbgene_id')};
 
 my $db = new Bio::EnsEMBL::DBSQL::DBAdaptor(

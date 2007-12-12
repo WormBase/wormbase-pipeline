@@ -25,6 +25,8 @@ use Bio::Seq;
 use Bio::SeqIO;
 use Bio::EnsEMBL::CoordSystem;
 use Bio::EnsEMBL::DBSQL::DBAdaptor;
+use FindBin;
+use lib "$FindBin::Bin/../lib";
 use WormBase;
 use DBI qw(:sql_types);
 
@@ -39,10 +41,11 @@ GetOptions(
     'test'       => \$test,
 ) || die("bad commandline parameter\n");
 
-my $config = ( YAML::LoadFile("ensembl_lite.conf") )->{$species};
+my $yfile="$FindBin::Bin/../etc/ensembl_lite.conf";
+my $config = ( YAML::LoadFile($yfile) )->{$species};
 my $cvsDIR = $test
-  ? ( YAML::LoadFile("ensembl_lite.conf") )->{test}->{cvsdir}
-  : ( YAML::LoadFile("ensembl_lite.conf") )->{generics}->{cvsdir};
+  ? ( YAML::LoadFile($yfile) )->{test}->{cvsdir}
+  : ( YAML::LoadFile($yfile) )->{generics}->{cvsdir};
 
 our $gff_types = ($config->{gff_types} || "curated coding_exon");
 

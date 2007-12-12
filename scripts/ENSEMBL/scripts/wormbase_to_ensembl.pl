@@ -75,8 +75,8 @@ my $WB_DBNAME     = 'worm_WB160';#$ENV{'USER'}."_caenorhabditis_elegans_core_".$
 my $WB_DBUSER     = "wormadmin";		
 my $WB_DBPASS     = "XXXX";		
 
-use lib '~/ensembl/ensembl-pipeline/scripts/DataConversion/wormbase';
-
+use FindBin;
+use lib "$FindBin::Bin/../lib";"
 ###########################################
 # You should not need to change any settings below this line
 #-----------------------------------------------------------
@@ -139,7 +139,7 @@ if($comm eq "setup"){
 
   #7a fix the feature table
   print "loading analysis descriptions";
-  print `/nfs/team71/worm//mh6/bin/perl load_analysis_descriptions.pl -user $WB_DBUSER -host $WB_DBHOST -dbname $WB_DBNAME -pass $WB_DBPASS < analysis.descriptions`;
+  print `/nfs/team71/worm//mh6/bin/perl load_analysis_descriptions.pl -user $WB_DBUSER -host $WB_DBHOST -dbname $WB_DBNAME -pass $WB_DBPASS < ../analysis.descriptions`;
   # 8-insert other features
   my @steps = ($WB_LOGIC_NAME, $WB_OPERON_LOGIC_NAME, $WB_PSEUDO_LOGIC_NAME, $WB_EXPR_LOGIC_NAME, $WB_TRNA_LOGIC_NAME, $WB_RNAI_LOGIC_NAME, $WB_rRNA_LOGIC_NAME, $WB_ce_mrna_LOGIC_NAME, $WB_ce_est_LOGIC_NAME, $WB_other_EST_LOGIC_NAME, $WB_fosmid_LOGIC_NAME);
 						     

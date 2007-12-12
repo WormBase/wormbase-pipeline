@@ -1,5 +1,7 @@
 #!/usr/local/ensembl/bin/perl  -w
 
+use FindBin;
+use lib "$FindBin::Bin/../lib";
 use WormBase;
 use WormBaseConf;
 use Bio::EnsEMBL::Pipeline::SeqFetcher::Pfetch;

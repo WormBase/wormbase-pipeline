@@ -2,6 +2,8 @@
 
 use strict;
 use Bio::EnsEMBL::DBSQL::DBAdaptor;
+use FindBin;
+use lib "$FindBin::Bin/../lib";
 use WormBaseConf;
 
 

@@ -23,11 +23,12 @@ use Bio::EnsEMBL::DBSQL::DBAdaptor;
 use Getopt::Long;
 use YAML;
 use Test::More qw(no_plan);
+use FindBin;
 
 my ($species);
 GetOptions( 'species=s'=>\$species,);
 
-my $config = ( YAML::LoadFile('ensembl_lite.conf') )->{$species};
+my $config = ( YAML::LoadFile("$FindBin::Bin/../etc/ensembl_lite.conf") )->{$species};
 
 my $db = new Bio::EnsEMBL::DBSQL::DBAdaptor(
         -host   => $config->{database}->{host},

@@ -27,7 +27,7 @@ end
 # updates the C.elegans assembly version to the current build
 desc 'update the configuration file'
 task :update_conf do
-        yml_file='ensembl_lite.conf'
+        yml_file='etc/ensembl_lite.conf'
 	yml=YAML::load_file(yml_file)
 	yml['elegans']['version']="WS#{Dir.glob("/nfs/disk100/wormpub/DATABASES/WS*").sort[-2].scan(/\d+/)[-1].to_i+1}"
 	File.open(yml_file,'w') do |out|
@@ -76,8 +76,8 @@ end
 
 desc 'build homology database'
 task :build_homology => [:env_setup] do
-	conf='my_compara.conf'
-	yml=YAML::load_file('ensembl_lite.conf')
+	conf='etc/my_compara.conf'
+	yml=YAML::load_file('etc/ensembl_lite.conf')
         db=yml['elegans']['database']
 
         sh "mysql -h #{db['host']} -P#{db['port']} -u #{db['user']} -p#{db['password']} -e 'DROP DATABASE IF EXISTS worm_compara;CREATE DATABASE worm_compara;'"
@@ -90,7 +90,7 @@ end
 desc 'build PECAN database'
 task :build_pecan => [:env_setup] do
         conf='pecan.conf'
-	yml=YAML::load_file('ensembl_lite.conf')
+	yml=YAML::load_file('etc/ensembl_lite.conf')
         db=yml['elegans']['database']
 
 	sh "mysql -h #{db['host']} -P#{db['port']} -u #{db['user']} -p#{db['password']} -e 'DROP DATABASE IF EXISTS worm_compara_lagan;CREATE DATABASE worm_compara_lagan;'"
@@ -126,19 +126,19 @@ end
 
 desc 'dump homology ace file'
 task :dump_homology => [:env_setup] do
-	sh 'perl get_all_elegans_orthologues.pl > /tmp/compara.ace'
+	sh 'perl scripts/get_all_elegans_orthologues.pl > /tmp/compara.ace'
 end
 
 desc 'dump pecan files'
 task :dump_pecan => [:env_setup] do
 	FileUtils.mkdir_p('/tmp/compara')
  
- 	ENV['ENSEMBL_REGISTRY'] = './E_registry.pl'
+ 	ENV['ENSEMBL_REGISTRY'] = './etc/E_registry.pl'
 
-	sh 'perl getsynteny.pl > /tmp/compara/pecan.gff'   # dump gff
+	sh 'perl scripts/getsynteny.pl > /tmp/compara/pecan.gff'   # dump gff
 
 	['I','II','III','IV','V','X'].each {|c|
-	   sh "perl dump_clustal.pl CHROMOSOME_#{c} > /tmp/compara/pecan_chromosome_#{c}.clw" # dump clustal
+	   sh "perl scripts/dump_clustal.pl CHROMOSOME_#{c} > /tmp/compara/pecan_chromosome_#{c}.clw" # dump clustal
 	}
 end
 

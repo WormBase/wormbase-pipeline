@@ -19,6 +19,8 @@
 #===============================================================================
 
 use strict;
+use FindBin;
+use lib "$FindBin::Bin/../lib";
 use YAML;
 use Class::Struct;
 

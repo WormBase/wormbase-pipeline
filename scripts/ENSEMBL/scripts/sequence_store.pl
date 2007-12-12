@@ -1,6 +1,8 @@
 #!/usr/local/ensembl/bin/perl  -w
 
 use strict;
+use FindBin;
+use lib "$FindBin::Bin/../lib";
 use WormBase;
 use WormBaseConf;
 use Clone2Acc;

@@ -1,6 +1,8 @@
 #!/usr/local/ensembl/bin/perl  -w
 
 use strict;
+use FindBin;
+use lib "$FindBin::Bin/../lib";
 use WormBase;
 use WormBaseConf;
 use Clone2Acc;
@@ -25,7 +27,7 @@ my $db = new Bio::EnsEMBL::DBSQL::DBAdaptor(-host => $WB_DBHOST,
 
 my $analysis_adaptor = $db->get_AnalysisAdaptor();
 my $analysis = $analysis_adaptor->fetch_by_logic_name($WB_LOGIC_NAME);
-my $operon_analysis = $analysis_adaptor->fetch_by_logic_name($WB_SL1_LOGIC_NAME);
+my $operon_analysis = $analysis_adaptor->fetch_by_logic_name($WB_SL2_LOGIC_NAME);
 
 foreach my $chromosome_info(@{$WB_CHR_INFO}) {
 
@@ -35,7 +37,7 @@ foreach my $chromosome_info(@{$WB_CHR_INFO}) {
  my $chr = $db->get_SliceAdaptor->fetch_by_chr_start_end($chromosome_info->{'chr_name'}, 1, ($chromosome_info->{'length'}+1));
  
   
-  my @operons = @{&parse_SL1($chromosome_info->{'gff_file'}, $chr, $operon_analysis)};
+  my @operons = @{&parse_SL2($chromosome_info->{'gff_file'}, $chr, $operon_analysis)};
   my $non_transforming = &write_simple_features(\@operons, $db);
 
 

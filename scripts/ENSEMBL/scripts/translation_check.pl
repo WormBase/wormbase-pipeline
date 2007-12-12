@@ -1,7 +1,8 @@
 #!/usr/local/ensembl/bin/perl
 
 use strict;
-
+use FindBin;
+use lib "$FindBin::Bin/../lib";
 use WormBaseConf;
 use Bio::EnsEMBL::DBSQL::DBAdaptor;
 
