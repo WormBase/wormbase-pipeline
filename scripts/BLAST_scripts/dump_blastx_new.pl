@@ -247,7 +247,7 @@ my $sth = $dbh->prepare ( q{ SELECT analysis_id, db
 $sth->execute;
 
 while (my @row = $sth->fetchrow_array) {
-  if ($row[1] =~ /(wormpep|gadfly|ensembl|yeast|slimswissprot|slimtrembl|human|brigpep|remanei)/) {
+  if ($row[1] =~ /(wormpep|gadfly|ensembl|yeast|slimswissprot|slimtrembl|human|brigpep|remapep)/) {
     my $org;
     if ($1 =~ /wormpep/) {
       $org = "worm";
