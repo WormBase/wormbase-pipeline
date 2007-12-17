@@ -27,7 +27,7 @@ my $wormbase = Wormbase->new( 'debug'   => 'ar2',
 my $log = Log_files->make_build_log($wormbase);
 
 # mysql database parameters
-my $dbhost = "ia64b";
+my $dbhost = "ia64c";
 my $dbuser = "wormadmin";
 my $dbname = "worm_brigpep";
 my $dbpass = "worms";

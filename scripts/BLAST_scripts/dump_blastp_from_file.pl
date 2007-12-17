@@ -616,9 +616,6 @@ sub species_lookup
       $species = 'unknown' unless$species;
       return $species;
     }
-
-
-
 __END__
 
 =pod
