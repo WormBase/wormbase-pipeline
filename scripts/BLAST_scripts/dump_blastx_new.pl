@@ -265,7 +265,7 @@ while (my @row = $sth->fetchrow_array) {
       $org = "human";
     } elsif ($1 =~ /brigpep/) {
       $org = "briggsae";
-    } elsif ($1 =~ /remanei/) {
+    } elsif ($1 =~ /remapep/) {
       $org = "remanei";
     }
     $analysis2org{$row[0]} = $org;
