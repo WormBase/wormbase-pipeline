@@ -5,7 +5,7 @@
 # written by Anthony Rogers
 #
 # Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2007-12-06 09:51:22 $
+# Last edited on: $Date: 2007-12-17 17:22:38 $
 
 
 use DBI;
@@ -227,7 +227,7 @@ if( $distribute) {
 
 
 # mysql database parameters
-my $dbhost = "ia64b";
+my $dbhost = "ia64c";
 my $dbuser = "wormadmin";
 my $dbname = "worm_dna";
 my $dbpass = "worms";
@@ -281,7 +281,7 @@ if( $update_mySQL )
     
     #load information about any new clones
     print "\tloading information about any new clones in to $dbname\n";
-    $wormbase->run_script("BLAST_scripts/agp2ensembl.pl -dbname worm_dna -dbhost ia64b -dbuser wormadmin -dbpass worms -agp $wormpipe_dir/Elegans/WS$WS_version.agp -write -v -strict -fasta ".$wormbase->autoace."/allcmid", $log);
+    $wormbase->run_script("BLAST_scripts/agp2ensembl.pl -dbname worm_dna -dbhost ia64c -dbuser wormadmin -dbpass worms -agp $wormpipe_dir/Elegans/WS$WS_version.agp -write -v -strict -fasta ".$wormbase->autoace."/allcmid", $log);
     
     #check that the number of clones in the clone table equals the number of contigs and dna objects
     my ($clone_count, $contig_count, $dna_count);

@@ -8,8 +8,8 @@
 # matching a CDS and stores the results in the mysql database
 # 'worm_anomaly'
 #
-# Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2007-12-05 12:34:40 $      
+# Last updated by: $Author: mh6 $     
+# Last updated on: $Date: 2007-12-17 17:22:38 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -79,7 +79,7 @@ my $tace            = $wormbase->tace;        # TACE PATH
 # mysql database parameters
 my $sqldb = "worm_anomaly";
 if ($species) {$sqldb = $sqldb . "_" . lc $species;}
-my $dbsn = "DBI:mysql:database=$sqldb;host=ia64b";
+my $dbsn = "DBI:mysql:database=$sqldb;host=ia64c";
 my $dbuser = "wormadmin";
 my $dbpass = "worms";
 
