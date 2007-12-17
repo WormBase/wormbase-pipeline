@@ -4,7 +4,7 @@
 #
 # by Keith Bradnam
 #
-# Last updated on: $Date: 2007-09-24 13:30:14 $
+# Last updated on: $Date: 2007-12-17 15:22:05 $
 # Last updated by: $Author: pad $
 #
 # see pod documentation at end of file for more information about this script
@@ -77,7 +77,8 @@ foreach $CDSfilter (@CDSfilter) {
 ################################
 my @Predictions;
 if ($test1) {
-  @Predictions = $db->fetch('All_genes','Y32B12C*');
+#  @Predictions = $db->fetch('All_genes','Y32B12C*');
+@Predictions = $db->fetch('All_genes','C15A11*');
   foreach my $Predictions(@Predictions) {
     print $Predictions->name."\n";
   }
@@ -162,6 +163,17 @@ foreach my $gene_model ( @Predictions ) {
     my $prob_prediction = $gene_model->at('Type');
     push(@error3, "ERROR: The Pseudogene $gene_model does not have a Type Tag!\n") if (!defined($prob_prediction));
   }
+
+  ############################
+  # Transcript_specific      #
+  ############################
+ 
+  if ($method_test =~ (/transcript/) or ($method_test =~ (/RNA/)) && $gene_model->name =~ (/\w+\d+\.\d+\Z/)) {
+    my $prob_prediction = $gene_model->at('Visible.Brief_identification');
+    push(@error3, "ERROR: The Transcript $gene_model does not have a Brief_identification and will throw an error in the build :(!\n") if (!defined($prob_prediction));
+  }
+
+  
 
   ###################################
   #All gene predictions should have #
