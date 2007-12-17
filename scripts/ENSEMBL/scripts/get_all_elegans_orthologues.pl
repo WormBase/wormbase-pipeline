@@ -38,7 +38,7 @@ my $db = new Bio::EnsEMBL::DBSQL::DBAdaptor(
     );
 
 my $compara_db = new Bio::EnsEMBL::Compara::DBSQL::DBAdaptor(
-    -host   => 'ia64b',        # change that
+    -host   => 'ia64c',        # change that
     -user   => 'wormro',       # and that
     -dbname => 'worm_compara'
 );
