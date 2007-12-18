@@ -5,7 +5,7 @@
 # Usage : EMBL_Sequencefetch.pl [-options]
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2007-09-28 15:57:19 $
+# Last edited on: $Date: 2007-12-18 15:06:29 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -149,15 +149,15 @@ foreach my $organism(keys %species2taxonid) {
     if (scalar@entries > 0) {
       $log->write_to("Fetching NEW EMBL data: $organism - $molecule\n");
       &get_new_data (\@entries, $molecule, $organism) if (!defined $dump_only);
+      # Load the data back to the primary database.
+      $log->write_to("Loading $organism data into primary database\n");
+      &load_data ($sourceDB, $molecule, $organism) if (!defined $dump_only);
+      $log->write_to("Processed: $molecule\n============================================\n");
     }
     # if there isn't any, just print this line in the log.
     if (scalar@entries < 1) {
       $log->write_to("No NEW EMBL data:$organism - $molecule\n");
     }
-    # Load the data back to the primary database.
-    $log->write_to("Loading $organism data into primary database\n");
-    &load_data ($sourceDB, $molecule, $organism) if (!defined $dump_only);
-    $log->write_to("Processed: $molecule\n============================================\n");
   }
   # Dump the data back to BUILD_DATA/cDNA/organism/
   $log->write_to("Dumping BLAT sequences($organism)\n");
