@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: ar2 $
-// Last edited on: $Date: 2007-11-27 17:31:21 $
+// Last edited on: $Date: 2007-12-19 14:54:48 $
 
 
 
@@ -720,6 +720,7 @@
 	  Feature_evidence ?Feature				      // Reference a Feature - eg for creation of isoform based on TEC-RED SL2
 	  Laboratory_evidence ?Laboratory                             // Reference a Lab
 	  From_analysis ?Analysis				      // Reference an analysis
+	  Variation_evidence ?Variation				      // Explicitly record variation from which IMP manual GO annotations are made
 
 ////////////////////////////////////////////////////////
 //
