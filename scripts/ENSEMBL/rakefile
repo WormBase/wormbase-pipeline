@@ -2,6 +2,11 @@
 # including dumping and packaging a tarball of the databases
 # it requires rake to run
 
+# major advantage is the shared configuration file across quite
+# a few PERL scripts and the management through rake
+# 
+
+
 require 'yaml'
 require 'fileutils'
 
@@ -18,7 +23,7 @@ end
 desc 'setup environment variables'
 task :env_setup do
 	old=ENV['PERL5LIB']
-	additional='.:/software/worm/lib:/software/worm/ensembl/ensembl-compara/modules:/software/worm/ensembl/ensembl-analysis/modules:/software/worm/ensembl/ensembl-pipeline/scripts/DataConversion/wormbase:/software/worm/ensembl/ensembl-hive/modules:/software/worm/lib/bioperl-run:/software/worm/ensembl/ensembl/modules:/software/worm/ensembl/ensembl-pipeline/modules:/software/worm/lib/bioperl-live:'
+	additional='.:/software/worm/lib/perl5:/software/worm/lib:/software/worm/ensembl/ensembl-compara/modules:/software/worm/ensembl/ensembl-analysis/modules:/software/worm/ensembl/ensembl-pipeline/scripts/DataConversion/wormbase:/software/worm/ensembl/ensembl-hive/modules:/software/worm/lib/bioperl-run:/software/worm/ensembl/ensembl/modules:/software/worm/ensembl/ensembl-pipeline/modules:/software/worm/lib/bioperl-live:'
 	ENV['PERL5LIB']=additional+old
 	ENV['LAGAN_DIR']='/usr/local/ensembl/lagan-1.21'
 	ENV['ZOE']='/usr/local/ensembl/Zoe'
@@ -81,10 +86,10 @@ task :build_homology => [:env_setup] do
         db=yml['elegans']['database']
 
         sh "mysql -h #{db['host']} -P#{db['port']} -u #{db['user']} -p#{db['password']} -e 'DROP DATABASE IF EXISTS worm_compara;CREATE DATABASE worm_compara;'"
-	`cat /software/worm/ensembl/ensembl-hive/sql/tables.sql /software/worm/ensembl/ensembl-compara/sql/table.sql /software/worm/ensembl/ensembl-compara/sql/pipeline-tables.sql |mysql -h #{db['host']} -u #{db['user']} -p#{db['password']} -pworms worm_compara`
+	`cat /software/worm/ensembl/ensembl-hive/sql/tables.sql /software/worm/ensembl/ensembl-compara/sql/table.sql /software/worm/ensembl/ensembl-compara/sql/pipeline-tables.sql |mysql -h #{db['host']} -u #{db['user']} -p#{db['password']} worm_compara`
 	sh "/software/worm/ensembl/ensembl-compara/scripts/pipeline/comparaLoadGenomes.pl -conf #{conf}"
 	sh "/software/worm/ensembl/ensembl-compara/scripts/pipeline/loadHomologySystem.pl -conf #{conf}"
-	sh "bzcat /nfs/acari/wormpipe/ensembl/ensembl-compara/scripts/pipeline/ncbi_taxon.sql.bz2 |mysql -h #{db['host']} -u #{db['user']} -p#{db['password']} -pworms worm_compara"
+	sh "bzcat /nfs/acari/wormpipe/ensembl/ensembl-compara/scripts/pipeline/ncbi_taxon.sql.bz2 |mysql -h #{db['host']} -u #{db['user']} -p#{db['password']} worm_compara"
 end
 
 desc 'build PECAN database'
@@ -105,7 +110,10 @@ end
 
 # hive shorthand
 def run_beehive(db_name)
-	sh %Q(beekeeper.pl -url mysql://wormadmin:worms@ia64c:3306/#{db_name} -loop -lsf_option '-R"rusage[myia64c=10:duration=10:decay=1] select[myia64c<400]" -W 120')
+	yml=YAML::load_file('etc/ensembl_lite.conf')
+        db=yml['elegans']['database'] # lets default to elegans for dbconnection details
+
+	sh %Q(beekeeper.pl -url mysql://#{db['user']}:#{db['password']}@#{db['host']}:#{db['port']}/#{db_name} -loop -lsf_option '-R"rusage[myia64c=10:duration=10:decay=1] select[myia64c<400]" -W 120')
 end
 
 
@@ -146,12 +154,12 @@ desc "make a compara tarball"
 task :dump_compara do
 	conf=YAML.load_file('ensembl_lite.conf')
 
-	mysqldir='' #'/var/tmp/mysql-5.1.16-beta-linux-i686-glibc23/bin/' # oops only works on the deskpro
-	# dump_options='--add-drop-table --add-drop-database -u wormadmin -a -h ia64c --password=worms'
-	dump_options='--add-drop-table -u wormadmin -a -h ia64c --password=worms'
+	mysqldir=''
+	dump_options='--add-drop-table -u wormro -a -h ia64c'
 
-	to_dump =[ 'briggsae','elegans','remanei','brenneri']
+	to_dump =[ 'briggsae','elegans','remanei','brenneri','brugia']
 
+	########### if needed, commment out the mysql dumping part #####
 	FileUtils.mkdir_p('/tmp/compara')
 	FileUtils.cd('/tmp/compara') do
 		conf.each_key{|org|
@@ -163,6 +171,8 @@ task :dump_compara do
 		sh "#{mysqldir}mysqldump #{dump_options} -B worm_compara > worm_compara.sql"
 		sh "#{mysqldir}mysqldump #{dump_options} -B worm_compara_lagan > worm_compara_lagan.sql"
 	end
+	# # # # # # # # # # # # # # # #
+	
 	FileUtils.cd('/tmp') do
 		File.unlink("compara.tar.bz2") if File.exists?("compara.tar.bz2")
 		sh "tar cvf compara.tar compara/*"
