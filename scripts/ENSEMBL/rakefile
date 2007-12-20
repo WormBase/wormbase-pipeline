@@ -105,7 +105,7 @@ end
 
 # hive shorthand
 def run_beehive(db_name)
-	sh %Q(beekeeper.pl -url mysql://wormadmin:worms@ia64b:3306/#{db_name} -loop -lsf_option '-R"rusage[myia64b=10:duration=10:decay=1] select[myia64b<400]" -W 120')
+	sh %Q(beekeeper.pl -url mysql://wormadmin:worms@ia64c:3306/#{db_name} -loop -lsf_option '-R"rusage[myia64c=10:duration=10:decay=1] select[myia64c<400]" -W 120')
 end
 
 
@@ -147,8 +147,8 @@ task :dump_compara do
 	conf=YAML.load_file('ensembl_lite.conf')
 
 	mysqldir='' #'/var/tmp/mysql-5.1.16-beta-linux-i686-glibc23/bin/' # oops only works on the deskpro
-	# dump_options='--add-drop-table --add-drop-database -u wormadmin -a -h ia64b --password=worms'
-	dump_options='--add-drop-table -u wormadmin -a -h ia64b --password=worms'
+	# dump_options='--add-drop-table --add-drop-database -u wormadmin -a -h ia64c --password=worms'
+	dump_options='--add-drop-table -u wormadmin -a -h ia64c --password=worms'
 
 	to_dump =[ 'briggsae','elegans','remanei','brenneri']
 
