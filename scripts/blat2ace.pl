@@ -7,7 +7,7 @@
 # Exporter to map blat data to genome and to find the best match for each EST, mRNA, OST, etc.
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2007-10-29 13:43:13 $
+# Last edited on: $Date: 2007-12-20 13:31:52 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -433,16 +433,22 @@ unless ($nematode || $washu || $nembase) {
   if ($intron) {
     
     open(CI_auto, ">$blat_dir/autoace.ci.${qspecies}_${type}.ace");
-  
+    
     foreach my $link (sort keys %ci) {
       my %double;
-	
+      
       print CI_auto "\nSequence : \"$link\"\n";
-	
+      
       for (my $i = 0; $i < @{$ci{$link}}; $i++) {
 	my $merge = $ci{$link}->[$i][0].":".$ci{$link}->[$i][1];
 	if (!exists $double{$merge}) {
-	  printf CI_auto "Confirmed_intron %d %d $type $ci{$link}->[$i][2]\n",  $ci{$link}->[$i][0], $ci{$link}->[$i][1];
+	  # If RST or OST modify output.
+	  if (($type eq "RST") or ($type eq "OST")) {
+	    printf CI_auto "Confirmed_intron %d %d EST $ci{$link}->[$i][2]\n",  $ci{$link}->[$i][0], $ci{$link}->[$i][1];
+	  }
+	  else {
+	    printf CI_auto "Confirmed_intron %d %d $type $ci{$link}->[$i][2]\n",  $ci{$link}->[$i][0], $ci{$link}->[$i][1];
+	  }
 	}
 	$double{$merge} = 1;
       }
