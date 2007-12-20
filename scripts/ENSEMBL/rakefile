@@ -105,7 +105,9 @@ end
 
 # hive shorthand
 def run_beehive(db_name)
-	sh %Q(beekeeper.pl -url mysql://wormadmin:worms@ia64c:3306/#{db_name} -loop -lsf_option '-R"rusage[myia64b=10:duration=10:decay=1] select[myia64b<400]" -W 120')
+#	sh %Q(beekeeper.pl -url mysql://wormadmin:worms@ia64c:3306/#{db_name} -loop -lsf_option '-R"rusage[myia64b=10:duration=10:decay=1] select[myia64b<400]" -W 120')
+	sh %Q(beekeeper.pl -url mysql://wormadmin:worms@ia64c:3306/#{db_name} -loop -lsf_option '--W 120')
+
 end
 
 
