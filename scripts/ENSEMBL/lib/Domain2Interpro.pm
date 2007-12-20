@@ -1,0 +1,176 @@
+#!/usr/local/bin/perl -w
+#
+# Originally written by Gary Williams (gw3@sanger), modifying a script by Marc Sohrmann (ms2@sanger.ac.uk)
+#
+# Dumps InterPro protein motifs from ensembl mysql (protein) database to an ace file
+#
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2007-12-20 12:58:21 $
+
+
+package Domain2Interpro;
+
+use strict;
+####################
+# Class Variables
+#
+
+# define the Database names that InterPro uses in interpro.xml
+# and the logic names (as specified in @methods) that search those databases
+my %method_database = (
+		       'scanprosite' => 'PROSITE',
+		       'Prints'      => 'PRINTS',
+		       'pfscan'      => 'PROFILE',
+		       'blastprodom' => 'PRODOM',
+		       'Smart'       => 'SMART',
+		       'hmmpanther'  => 'PANTHER',
+		       'Pfam'        => 'PFAM',
+		       'Tigrfam'     => 'TIGRFAMs',
+		       'PIRSF'       => 'PIRSF',
+		       'Superfamily' => 'SSF',
+		       'gene3d'      => 'GENE3D',
+	       );
+
+
+sub new {
+	my $class = shift;
+	my %self;
+        my ($ip_ids,$ip2name) = &get_ip_mappings();# hash of Databases hash of IDs
+	$self{ip_ids}=$ip_ids;
+	$self{ip2name}=$ip2name;
+	bless \%self , $class;
+}
+
+sub get_method2database {
+	my ($self,$key)=@_;
+	return $method_database{$key}}
+
+# lets assume an hashref->{method}->arrayreff(array($hid,$start,$end,$hstart,$hend,$score,$evalue))
+sub get_mapping{
+	my ($self,$data)=@_;
+	my @m=$self->get_motifs($data);
+	return $self->merge_hits(@m);
+}
+
+# lets assume an hashref->{method}->arrayref(array($hid,$start,$end,$hstart,$hend,$score,$evalue))
+sub get_motifs {
+	my ($self,$motifs) =@_;
+        # get the motifs
+        my @_motifs;
+        while( my ($method,$arefs)=each %$motifs) {
+         foreach my $aref (@$arefs) {
+           my ($hid, $start, $end, $hstart, $hend, $score, $evalue) = @$aref;
+           if (($method eq "hmmpfam" ) && ( $hid =~ /(\w+)\.\d+/ )) { $hid = $1}
+           # convert Database ID to InterPro ID (if it is in InterPro)
+           my $database = $method_database{$method};
+           if (exists $self->{ip_ids}{$database}{$hid}) {
+             my $ip_id = $self->{ip_ids}{$database}{$hid};
+             my @hit = ( $ip_id, $start, $end, $hstart, $hend, $score, $evalue );
+             push @_motifs, [ @hit ];
+           } 
+          }
+        }
+	return @_motifs;
+}
+
+sub merge_hits {
+	my ($self,@motifs)=@_;        
+	my @merged;
+        # sort the hits for this protein by ID and start position
+        @motifs = sort { $a->[0] cmp $b->[0] || $a->[1] <=> $b->[1] } @motifs;
+ 
+        # go through the hits for this protein looking for the same InterPro Id hits that overlap
+        # then merge them
+        my $prev_id = "";
+        my ($merged_start,$merged_end, $merged_hstart, $merged_hend, $merged_score, $merged_evalue);
+        my @merged_hit;
+        foreach my $hit (@motifs) {
+        my ( $ip_id, $start, $end, $hstart, $hend, $score, $evalue ) = @$hit;
+        # is this a new ID or the same ID at a different part of the protein?
+        if ($prev_id ne $ip_id || $start > $merged_end) {
+
+          # save the merged hit
+          if ($prev_id ne "") {
+ 	    @merged_hit = ( $prev_id, $merged_start, $merged_end, $merged_hstart, $merged_hend, $merged_score, $merged_evalue,$self->{ip2name}->{$prev_id});
+	    push @merged, [ @merged_hit ];
+          }
+
+          # reset the values for the merged hit to be the values of the new ID
+          $prev_id = $ip_id;
+          $merged_start = $start;
+          $merged_end = $end;
+          $merged_hstart = $hstart;
+          $merged_hend = $hend;
+          $merged_score = $score;
+          $merged_evalue = $evalue; 
+        } else {
+          # merge this hit into the merged hits
+          # some results (e.g. prints) have zero hstart and hend, so overwrite these
+          if ($merged_start > $start) {$merged_start = $start}
+          if ($merged_end < $end) {$merged_end = $end}
+          if ($hstart != 0 && ($merged_hstart == 0 || $merged_hstart > $hstart)) {$merged_hstart = $hstart}
+          if ($merged_hend == 0 || $merged_hend < $hend) {$merged_hend = $hend}
+          if ($merged_score < $score) {$merged_score = $score}
+          if ($merged_evalue > $evalue) {$merged_evalue = $evalue}
+        }
+       }
+       # save the last merged ID
+       @merged_hit = ( $prev_id, $merged_start, $merged_end, $merged_hstart, $merged_hend, $merged_score, $merged_evalue ,$self->{ip2name}->{$prev_id} );
+       push @merged, [ @merged_hit ];
+       return @merged;
+}
+
+#########################
+# get the interpro file #
+#########################
+
+sub get_interpro {
+   my $file = shift;
+  `wget -O $file ftp://ftp.ebi.ac.uk/pub/databases/interpro/interpro.xml.gz`;
+ }
+
+#########################################################
+# reads in data for database ID to InterPro ID mapping  #
+#########################################################
+sub get_ip_mappings {
+  # the interpro.xml file can be obtained from:
+  # ftp.ebi.ac.uk/pub/databases/interpro/interpro.xml.gz
+
+  my $file = "/tmp/interpro.xml.gz";
+
+  # get the interpro file from the EBI
+  unlink "$file" if -e "$file";
+  get_interpro($file);
+ 
+  open (XML, "zcat $file|") || die "Failed to open pipe to zcat $file\n";
+ 
+  my $in_member_list = 0;       # flag for in data ID section of XML file
+  my ($IPid, $IPname, $this_db, $this_dbkey);
+  my %ip_ids;       # hash of Databases hash of IDs
+  my %ip2bla;       # ip_id2name
+
+  while (my $line = <XML>) {
+    if ($line =~ /<interpro id=\"(\S+)\"/) {
+      $IPid = $1;
+    } elsif ($line =~ m|<name>(.+)</name>|) {
+      $ip2bla{$IPid}=$1;
+    } elsif ($line =~ /<member_list>/) { # start of database ID section
+      $in_member_list = 1;
+    } elsif ($line =~ m|</member_list>|) { # end of database ID section
+      $in_member_list = 0;
+    } elsif ($in_member_list && $line =~ /<db_xref/) {
+      ($this_db, $this_dbkey) = ($line =~ /db=\"(\S+)\" dbkey=\"(\S+)\" /);
+      $ip_ids{$this_db}{$this_dbkey} = $IPid;
+    }
+  }
+  close (XML);
+  unlink $file;
+  return (\%ip_ids,\%ip2bla);
+}
+
+sub DESTROY {
+  my $file ='/tmp/interpro.xml.gz';
+  unlink  $file if -e $file;
+}
+
+1;
