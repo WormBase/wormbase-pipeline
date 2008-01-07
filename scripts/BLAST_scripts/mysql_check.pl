@@ -11,7 +11,7 @@ GetOptions (
 	   );
 
 
-my $dbh = DBI->connect("dbi:mysql:database=$dbname;host=ia64c","wormro") or die "Cant connect to $dbname\n$DBI::errstr";
+my $dbh = DBI->connect("dbi:mysql:database=$dbname;host=ia64b","wormro") or die "Cant connect to $dbname\n$DBI::errstr";
 print "connected\n------------\n\n";
 
 # get table list

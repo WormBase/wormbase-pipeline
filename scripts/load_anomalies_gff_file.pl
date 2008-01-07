@@ -8,8 +8,8 @@
 # matching a CDS and stores the results in the mysql database
 # 'worm_anomaly'
 #
-# Last updated by: $Author: mh6 $     
-# Last updated on: $Date: 2007-12-17 17:22:38 $      
+# Last updated by: $Author: gw3 $     
+# Last updated on: $Date: 2008-01-07 13:18:04 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -124,7 +124,7 @@ my $giface          = $wormbase->giface;      # GIFACE PATH
 ##########################
 
 # mysql database parameters
-my $dbsn = "DBI:mysql:database=worm_anomaly;host=ia64c";
+my $dbsn = "DBI:mysql:database=worm_anomaly;host=ia64b";
 my $dbuser = "wormadmin";
 my $dbpass = "worms";
 

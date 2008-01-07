@@ -8,8 +8,8 @@ require 'rubygems'
 require_gem 'ensembl-api' # Jan Aert's EnsEMBL API
 include Ensembl::Core
 
-# connect to db -- hardcoded to brugia and ia64c, can always be changed if needed
-CoreDBConnection.establish_connection(:adapter=>'mysql',:host => 'ia64c',:database =>'worm_ensembl_brugia',:username=>'wormro',:password => '')
+# connect to db -- hardcoded to brugia and ia64b, can always be changed if needed
+CoreDBConnection.establish_connection(:adapter=>'mysql',:host => 'ia64b',:database =>'worm_ensembl_brugia',:username=>'wormro',:password => '')
 
 Gene.find_all().each{|g|
     $stderr.puts "processing gene #{g.stable_id}" if $DEBUG

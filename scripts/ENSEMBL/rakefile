@@ -113,7 +113,7 @@ def run_beehive(db_name)
 	yml=YAML::load_file('etc/ensembl_lite.conf')
         db=yml['elegans']['database'] # lets default to elegans for dbconnection details
 
-	sh %Q(beekeeper.pl -url mysql://#{db['user']}:#{db['password']}@#{db['host']}:#{db['port']}/#{db_name} -loop -lsf_option '-R"rusage[myia64c=10:duration=10:decay=1] select[myia64c<400]" -W 120')
+	sh %Q(beekeeper.pl -url mysql://#{db['user']}:#{db['password']}@#{db['host']}:#{db['port']}/#{db_name} -loop -lsf_option '-R"rusage[myia64b=10:duration=10:decay=1] select[myia64b<400]" -W 120')
 end
 
 
@@ -155,7 +155,7 @@ task :dump_compara do
 	conf=YAML.load_file('ensembl_lite.conf')
 
 	mysqldir=''
-	dump_options='--add-drop-table -u wormro -a -h ia64c'
+	dump_options='--add-drop-table -u wormro -a -h ia64b'
 
 	to_dump =[ 'briggsae','elegans','remanei','brenneri','brugia']
 

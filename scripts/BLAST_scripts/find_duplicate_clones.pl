@@ -46,7 +46,7 @@ if ( $store ) {
 # establish log file.
 my $log = Log_files->make_build_log($wormbase);
 
-$dbhost = "ia64c" unless $dbhost;
+$dbhost = "ia64b" unless $dbhost;
 $dbuser = "wormadmin" unless $dbuser;
 $dbname = "worm_dna" unless $dbname;
 $dbpass = "worms" unless $dbpass;

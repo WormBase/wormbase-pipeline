@@ -51,7 +51,7 @@ my %clonesize;
 $wormbase->FetchData("clonesize", \%clonesize);
 
 # mysql database parameters
-my $dbhost = "ia64c";
+my $dbhost = "ia64b";
 my $dbuser = "wormro";
 my $dbname = "worm_dna";
 my $dbpass = "";

@@ -56,7 +56,7 @@ $version = $wormbase->get_wormbase_version;
 # set some parameters
 ####################################################################
 # mysql database
-my $dbhost = "ia64c";
+my $dbhost = "ia64b";
 my $dbuser = "wormro";
 my $dbname = "worm_dna";
 my $dbpass = "";
