@@ -2,8 +2,8 @@
 #
 # initiate_build.pl
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2006-06-09 14:12:13 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2008-01-07 15:15:52 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -15,13 +15,14 @@ use File::Spec;
 use Storable;
 
 my ($test,$debug,$database, $version);
-my ($store, $wormbase);
+my ($store, $wormbase, $user);
 GetOptions (
 	    'test'       => \$test,
 	    'debug:s'    => \$debug,
 	    'database:s' => \$database,
 	    'version:s'  => \$version,
-	    'store:s'    => \$store
+	    'store:s'    => \$store,
+	    'user:s'     => \$user,
 	   );
 
 if( $store ) {
@@ -59,9 +60,9 @@ $log->log_and_die( "version to build not specified\n") unless $wormbase->version
 #################################################################################
 
 ## update CVS wspec, wquery and autoace_config from CVS
-$wormbase->run_command("cd ".$wormbase->autoace.";cvs -d :ext:cvs.sanger.ac.uk:/nfs/ensembl/cvsroot/ checkout -d wspec wormbase/wspec", $log);
-$wormbase->run_command("cd ".$wormbase->autoace.";cvs -d :ext:cvs.sanger.ac.uk:/nfs/ensembl/cvsroot/ checkout -d wquery wormbase/wquery", $log);
-$wormbase->run_command("cd ".$wormbase->basedir.";cvs -d :ext:cvs.sanger.ac.uk:/nfs/ensembl/cvsroot/ checkout -d autoace_config wormbase/autoace_config",$log);
+$wormbase->run_command("cd ".$wormbase->autoace.";wp_cvs $user checkout wspec wormbase/wspec", $log);
+$wormbase->run_command("cd ".$wormbase->autoace.";wp_cvs $user checkout wquery wormbase/wquery", $log);
+$wormbase->run_command("cd ".$wormbase->basedir.";wp_cvs $user checkout autoace_config wormbase/autoace_config",$log);
 
 ## make new build_in_process flag ( not done yet in rebuild )
 
