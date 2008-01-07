@@ -13,7 +13,7 @@
 # 4) Makes current_DB (copy of latest release) in ~wormpub/DATABASES
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2007-10-01 15:35:51 $
+# Last updated on: $Date: 2008-01-07 11:09:50 $
 
 
 use strict;
@@ -90,7 +90,7 @@ my $WS_oldest   = $WS_current - 3; # the version that *should* be the oldest
 my $WS_old_name = "WS".$WS_oldest;
 my $WS_old_path = $wormbase->database("$WS_old_name");
 my $old_wormpep = "$basedir/WORMPEP/wormpep".($WS_current-3);
-
+&archive_old_releases ($WS_old_name);
 #####################################################################################
 
 my $new_dir = $wormbase->wormpub."/DATABASES/".$wormbase->get_wormbase_version_name;
