@@ -7,7 +7,7 @@
 # Usage : autoace_builder.pl [-options]
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2007-11-29 14:31:18 $
+# Last edited on: $Date: 2008-01-07 15:27:36 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -29,7 +29,7 @@ my $gene_span;
 my ( $load, $tsuser, $map_features, $remap_misc_dynamic, $map, $transcripts, $intergenic, $data_sets, $nem_contigs);
 my ( $GO_term, $rna , $dbcomp, $confirm, $operon ,$repeats, $remarks, $names, $treefam, $cluster);
 my ( $utr, $agp, $gff_munge, $extras , $ontologies, $interpolate, $check);
-my ( $data_check, $buildrelease, $public,$finish_build, $release);
+my ( $data_check, $buildrelease, $public,$finish_build, $release, $user);
 
 
 GetOptions(
@@ -80,7 +80,8 @@ GetOptions(
 	   'finish_build'   => \$finish_build,
 	   'release'        => \$release,
 	   'check'    	    => \$check,
-	   'data_check'     => \$data_check
+	   'data_check'     => \$data_check,
+	   'user:s'         => \$user,
 	  );
 
 my $wormbase = Wormbase->new(
@@ -92,7 +93,7 @@ my $wormbase = Wormbase->new(
 # establish log file.
 my $log = Log_files->make_build_log($wormbase);
 
-$wormbase->run_script( "initiate_build.pl -version $initiate",$log ) if defined($initiate);
+$wormbase->run_script( "initiate_build.pl -user $user -version $initiate",$log ) if defined($initiate);
 $wormbase->run_script( 'prepare_primary_databases.pl',      $log ) if $prepare_databases;
 $wormbase->run_script( 'make_acefiles.pl',                  $log ) if $acefile;
 $wormbase->run_script( 'make_autoace.pl',                   $log ) if $build;
