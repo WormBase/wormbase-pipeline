@@ -4,7 +4,7 @@
 #
 # by Keith Bradnam
 #
-# Last updated on: $Date: 2007-12-17 15:22:05 $
+# Last updated on: $Date: 2008-01-07 13:28:47 $
 # Last updated by: $Author: pad $
 #
 # see pod documentation at end of file for more information about this script
@@ -290,7 +290,10 @@ sub test_gene_sequence_for_errors{
   $dna =~ s/\n//g;
   my $length_gene_name = length($gene_model)+1;
   $dna = substr($dna, $length_gene_name);
-	    
+  if (!$dna){
+    push(@error1, "$gene_model has a problem with it's DNA connection.\n");
+    next CHECK_GENE;
+  }	    
   # calculate other necessary values
   my $gene_model_length = length($dna);
   my $remainder = $gene_model_length%3;
