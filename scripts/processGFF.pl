@@ -6,8 +6,8 @@
 #
 # handles post processing of GFF files
 #
-# Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2006-11-30 14:59:11 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2008-01-08 13:24:51 $
 #
 
 use lib $ENV{CVS_DIR};
@@ -170,6 +170,9 @@ sub GFF_clones_with_accessions{
   }
   close(GFF);
   close(OUT);
+
+  $wormbase->check_files($log, "clone_acc");
+
 }
 
 ########################################
@@ -214,6 +217,7 @@ sub GFF_genes_with_accessions{
   }
   close (GFF);
   close (OUT);
+
 }
 
 __END__
