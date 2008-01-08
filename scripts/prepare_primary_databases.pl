@@ -2,8 +2,8 @@
 #
 # prepare_primary_databases.pl
 #
-# Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2007-12-05 09:59:35 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2008-01-08 12:16:36 $
 
 use strict;
 my $scriptdir = $ENV{'CVS_DIR'};
@@ -63,7 +63,7 @@ unless( $caen ) {
 	foreach my $species (keys %access) {
 		$log->write_to("\t$species\n");
 		my $start = $wormbase->database("$species");
-		my $end = $access{$species}->autoace;
+		my $end = $access{$species}->orgdb;
 		$wormbase->run_script("TransferDB.pl -start $start -end $end -database -wspec", $log);
 	}
 }
@@ -104,8 +104,6 @@ foreach ( qw(camace geneace ) ){
   $wormbase->run_script("TransferDB.pl -start ".$wormbase->database("$_"). " -end ".$wormbase->primary("$_") ." -database -wspec", $log);
   $wormbase->run_command("ln -sf ".$wormbase->autoace."/wspec/models.wrm ".$wormbase->primary("$_")."/wspec/models.wrm", $log);
 }
-#system("cp -R misc_static $autoace/acefiles/primary  #check whats happened here - looks like partial edit
-
 #################################################
 # Check that the databases have unpack correctly #
 #################################################
@@ -125,7 +123,7 @@ if ( !defined($database) or ($database and ($database eq 'brigace') ) ) {
 	my $ver = $wormbase->version;
 	$wormbase->run_command("cp -R ".$wormbase->primary('brigace')."/temp_unpack_dir/briggff$ver ". $wormbase->chromosomes."/",$log);
 	my $brigbase=Wormbase->new(-organism =>'Briggsae',-debug => $debug,-test =>$test,-version => $wormbase->version);
-	$wormbase->run_command("cp -f ".$wormbase->primary('brigace')."/temp_unpack_dir/brigpep$ver/* ". $brigbase->brigpep."/",$log);
+	$wormbase->run_command("cp -f ".$wormbase->primary('brigace')."/temp_unpack_dir/brigpep$ver/* ". $brigbase->wormpep."/",$log);
 }	
 
 
