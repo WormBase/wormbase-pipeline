@@ -725,6 +725,10 @@ sub check_files {
   my $found_script = 0;
   my $found_a_file = 0;
   my $file;
+
+  my $script_name = $0;
+  $script_name =~ s/.+\/(\S+)/$1/; # remove header of path
+
   while (my $line = <FCCONFIG>) {
     chomp $line;
     if ($line =~ /^#/ || $line =~ /^\s+$/) {  
@@ -764,8 +768,8 @@ sub check_files {
     } elsif ($found_species) {
       if ($line =~ /^SCRIPT/) {
 	$found_script = 0;
-	if ($line =~ /^SCRIPT\s+$0\s*$/ || 
-	    (defined $part && $line =~ /^SCRIPT\s+$0\s+$part$/)) {
+	if ($line =~ /^SCRIPT\s+$script_name\s*$/ || 
+	    (defined $part && $line =~ /^SCRIPT\s+$script_name\s+$part$/)) {
 	  $found_script = 1;
 	}
       }
