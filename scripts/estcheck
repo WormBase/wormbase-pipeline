@@ -7,8 +7,8 @@
 #
 # Usage: estcheck [-options]
 #
-# Last updated by: $Author: ar2 $     
-# Last updated on: $Date: 2006-03-23 16:59:46 $      
+# Last updated by: $Author: pad $     
+# Last updated on: $Date: 2008-01-08 13:48:34 $      
 
 #####################################################################################################
 
@@ -40,13 +40,14 @@ my $runtime = `date +%H:%M:%S`; chomp $runtime;
  # command-line options       #
  ##############################
 
-my ($help, $debug, $test, $verbose, $store, $wormbase);
+my ($help, $debug, $test, $verbose, $store, $wormbase, $database,);
 
-GetOptions ("help"       => \$help,
-            "debug=s"    => \$debug,
-	    "test"       => \$test,
-	    "verbose"    => \$verbose,
-	    "store:s"      => \$store,
+GetOptions ("help"        => \$help,
+            "debug=s"     => \$debug,
+	    "test"        => \$test,
+	    "verbose"     => \$verbose,
+	    "store:s"     => \$store,
+	    "database:s" => \$database,
 	    );
 
 if ( $store ) {
@@ -75,7 +76,13 @@ my $log = Log_files->make_build_log($wormbase);
  # Paths etc                  #
  ##############################
 my $tace            = $wormbase->tace;        # TACE PATH
-my $dbdir           = $wormbase->autoace;     # Database path
+my $dbdir;
+if ($database) {
+  $dbdir = $database; # Database path
+}
+else {
+  $dbdir           = $wormbase->autoace;     # Database path
+}
 my $outdir          = $dbdir . "/CHECKS";
 my $WS_version      = $wormbase->get_wormbase_version_name;
 
@@ -88,7 +95,7 @@ $log->write_to("# run details    : $rundate $runtime\n\n");
  # Loop through the EST sequences       #
  ########################################
 
-my (%EST_acc, %EST_len, %EST_match);
+my (%EST_acc, %EST_len, %EST_match, %EST_hit);
 
 $ENV{'ACEDB'} = $dbdir;
 my $command=<<EOF;
@@ -111,9 +118,15 @@ while (<TACE>) {
   
   $EST_acc{$f[0]}   = $f[1];
   $EST_len{$f[0]}   = $f[2];
+  $EST_hit{$f[0]} = "";   # initialise in case there is no match
+  $EST_hit{$f[0]} = $f[3]; # This is used when creating the total files, to preserve isoform designation.
   $EST_match{$f[0]} = ""; # initialise in case there is no match
-  $EST_match{$f[0]} = $f[3];
-
+  if ($f[3] =~ /(\w+\.\d+)([a-z])/) {
+    $EST_match{$f[0]} = $1;
+  }
+  else {
+    $EST_match{$f[0]} = $f[3];
+  }
 }
 close TACE;
 
@@ -178,7 +191,7 @@ foreach my $EST (sort keys %EST_clone) {
     ($EST_acc{$read} = "") if (!defined($EST_acc{$read}));
     ($EST_match{$read} = "") if (!defined($EST_match{$read}));
     ($EST_len{$read} = "") if (!defined($EST_len{$read}));
-    print EST_total "$read\t$EST_acc{$read}\t$EST_len{$read}\t$EST_match{$read}\n";
+    print EST_total "$read\t$EST_acc{$read}\t$EST_len{$read}\t$EST_hit{$read}\n";
     print EST_total "$read\t$EST_acc{$read}\t\n";
     
     # No accession
@@ -197,7 +210,7 @@ foreach my $EST (sort keys %EST_clone) {
     
     # Mismatch between .3 and .5 reads
     if(defined($first_match) && defined($first_read)){
-      if ( ($first_match ne "") && ($EST_match{$read} ne $first_match)) {
+      if ( ($first_match ne "") && ($EST_match{$read} ne "") && ($EST_match{$read} ne $first_match)) {
 	$log->write_to("=> $read is attached to a different CDS than $first_read : [${read}:$EST_match{$read} | $first_read:$first_match]\n");
 	print EST_mismatched_1 "$read is attached to a different CDS than $first_read : [${read}:$EST_match{$read} | $first_read:$first_match]\n";
 	print EST_mismatched_2 "Sequence : \"$read\"\n";
