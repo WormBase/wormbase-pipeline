@@ -7,7 +7,7 @@
 # handles post processing of GFF files
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2008-01-08 13:24:51 $
+# Last edited on: $Date: 2008-01-08 14:38:50 $
 #
 
 use lib $ENV{CVS_DIR};
@@ -79,6 +79,7 @@ else {
       &GFF_clones_with_accessions( $in, $out, $db );
     }
     $db->close;
+    $wormbase->check_files($log, "clone_acc"); # do the clone_acc part of the file checks
   }
   if( $gene_acc ) {
     my $db = Ace->connect(-path=>$database) || do { print "Connection failure to $database: ",Ace->error; die();};
@@ -170,8 +171,6 @@ sub GFF_clones_with_accessions{
   }
   close(GFF);
   close(OUT);
-
-  $wormbase->check_files($log, "clone_acc");
 
 }
 
