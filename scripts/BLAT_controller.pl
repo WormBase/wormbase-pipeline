@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl5.8.0 -w
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2007-12-04 14:50:21 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2008-01-09 17:08:10 $
 
 
 use lib $ENV{'CVS_DIR'};
@@ -110,8 +110,8 @@ if($nematode) {
 # mask the sequences based on Feature_data within the species database (or autoace for elegans.)
 if( $mask ) {
 	foreach my $qspecies ( keys %mol_types ) {
-		next if (grep /$species/, @nematodes);
-		foreach my $moltype (@{$mol_types{$species}}) {
+		next if (grep /$qspecies/, @nematodes);
+		foreach my $moltype (@{$mol_types{$qspecies}}) {
 			$wormbase->bsub_script("transcriptmasker.pl -species $qspecies -mol_type $moltype", $species, $log);
 		}
 	}
