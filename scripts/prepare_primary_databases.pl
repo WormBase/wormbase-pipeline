@@ -2,8 +2,8 @@
 #
 # prepare_primary_databases.pl
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2008-01-08 12:16:36 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2008-01-09 11:18:13 $
 
 use strict;
 my $scriptdir = $ENV{'CVS_DIR'};
@@ -124,6 +124,8 @@ if ( !defined($database) or ($database and ($database eq 'brigace') ) ) {
 	$wormbase->run_command("cp -R ".$wormbase->primary('brigace')."/temp_unpack_dir/briggff$ver ". $wormbase->chromosomes."/",$log);
 	my $brigbase=Wormbase->new(-organism =>'Briggsae',-debug => $debug,-test =>$test,-version => $wormbase->version);
 	$wormbase->run_command("cp -f ".$wormbase->primary('brigace')."/temp_unpack_dir/brigpep$ver/* ". $brigbase->wormpep."/",$log);
+        $wormbase->run_script("CBG_to_CBP.pl -input " . $brigbase->wormpep . "/brigpep$ver/brigpep$ver", $log);
+
 }	
 
 
