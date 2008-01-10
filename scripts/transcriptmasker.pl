@@ -8,7 +8,7 @@
 # 031023 dl1
 
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2008-01-10 10:34:47 $
+# Last edited on: $Date: 2008-01-10 12:13:22 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -155,11 +155,11 @@ sub remove_masked_files {
   my $species  = shift;
   my $mol_type = shift;
   if ((-e $wormbase->maskedcdna."/$mol_type.masked") or (-e $wormbase->maskedcdna."/$mol_type.masked_1")) {
-    $log->write_to("Removing old $mol_type masked files for $species\n");
+    $log->write_to("Removing old $mol_type masked files for $species in ".$wormbase->maskedcdna."\n");
     $wormbase->run_command ("rm ".$wormbase->maskedcdna."/$mol_type.masked*", $log);
   }
   else {
-    $log->write_to("No old $mol_type masked files for $species to be removed\n");
+    $log->write_to("No old $mol_type masked files for $species to be removed from ".$wormbase->maskedcdna."\n");
   }
 }
 
@@ -175,7 +175,7 @@ sub MaskSequence {
   my $ignored = 0;
   my $ignore ;
 
-  $log->write_to("masking $mol_type for $species\n");
+  #$log->write_to("masking $mol_type for $species\n");
 
   # set input record seperator
   $/ = ">";
@@ -187,6 +187,7 @@ sub MaskSequence {
   
   # input file loop structure
   my $file2mask = $file ? $file : $wormbase->cdna_dir."/$mol_type";
+  $log->write_to("masking $mol_type for $species input from $file2mask output to $output_file\n");
   my $seq_in = Bio::SeqIO->new(-file => "$file2mask" , '-format' => 'Fasta');
  SEQ: while (my $seqobj = $seq_in->next_seq) {
     my $seqmasked = $seqobj->seq;		# copy sequence to masked file and
