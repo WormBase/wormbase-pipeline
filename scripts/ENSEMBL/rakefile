@@ -46,7 +46,7 @@ end
 
 # small shorthand
 def build_db(db_name)
-	sh "perl worm_lite.pl -species #{db_name} -setup -load_dna -load_gene"
+	sh "perl scripts/worm_lite.pl -species #{db_name} -setup -load_dna -load_gene"
 end
 
 desc 'build elegans database'
