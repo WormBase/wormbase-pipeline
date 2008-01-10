@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl5.8.0 -w
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2008-01-09 17:08:10 $
+# Last edited on: $Date: 2008-01-10 12:15:19 $
 
 
 use lib $ENV{'CVS_DIR'};
@@ -112,7 +112,7 @@ if( $mask ) {
 	foreach my $qspecies ( keys %mol_types ) {
 		next if (grep /$qspecies/, @nematodes);
 		foreach my $moltype (@{$mol_types{$qspecies}}) {
-			$wormbase->bsub_script("transcriptmasker.pl -species $qspecies -mol_type $moltype", $species, $log);
+			$wormbase->bsub_script("transcriptmasker.pl -species $qspecies -mol_type $moltype", $qspecies, $log);
 		}
 	}
 	
