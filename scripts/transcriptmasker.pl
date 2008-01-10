@@ -7,8 +7,8 @@
 
 # 031023 dl1
 
-# Last edited by: $Author: pad $
-# Last edited on: $Date: 2007-11-08 11:32:20 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2008-01-10 10:34:47 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -111,7 +111,6 @@ if($wormbase->species eq 'elegans') {
 $database = $wormbase->autoace unless $database;
 my $blat_dir =  $wormbase->blat;
 my $tace  = $wormbase->tace;                          # tace executable path
-my $acc;                                              # accession for the entry
 my $id;                                               # id for the entry
 my $seq;                                              # raw sequence for the entry
 my %sequence;                                         # 
@@ -210,7 +209,7 @@ sub MaskSequence {
 	  	}			# fudge to ensure non-negative clipping coords
 	  
 	  	print "$id: '$feature' $start -> $stop [$cut_to : $cut_from ($cut_length)]\n" if ($wormbase->debug);
-	  	print "// # $acc [$id] $feature:" . (substr($seqmasked,$cut_to,$cut_length)) . " [$start - $stop]\n\n" if ($debug);
+	  	print "// # [$id] $feature:" . (substr($seqmasked,$cut_to,$cut_length)) . " [$start - $stop]\n\n" if ($debug);
 	 	my $newseq = (substr($seqmasked,0,$cut_to)) . ('n' x $cut_length)  . (substr($seqmasked,$cut_from));
 	 	$seqmasked = $newseq;
 		}
