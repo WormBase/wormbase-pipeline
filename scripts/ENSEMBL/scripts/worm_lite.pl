@@ -25,6 +25,8 @@ use Bio::Seq;
 use Bio::SeqIO;
 use Bio::EnsEMBL::CoordSystem;
 use Bio::EnsEMBL::DBSQL::DBAdaptor;
+use Bio::EnsEMBL::Utils::Exception qw(verbose warning);
+verbose('OFF');
 use FindBin;
 use lib "$FindBin::Bin/../lib";
 use WormBase;
