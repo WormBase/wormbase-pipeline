@@ -6,8 +6,8 @@
 #
 # Creates SMapped Gene spans for Gene objects
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2007-12-04 14:51:54 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2008-01-11 11:52:52 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -57,29 +57,10 @@ if ($prepare) {
 else {
     my %CDS_data;
     my $cds;
-    my %gene2seq;
-    my $def_file = "$database/wquery/WBGene2seq.def";
-    $log->log_and_die("Tablemaker definition file WBGene2seq.def is required. Not present in $database/wquery\n") unless ( -e "$def_file" );
 
-    my $tace   = $wormbase->tace;
     my $coords = Coords_converter->invoke( $database, undef, $wormbase );
 
-    my $command = "Table-maker -p $def_file\nquit\n";
-
-    open( FH, "echo '$command'| $tace $database | " );
-
-    while (<FH>) {
-        s/{\t}*/\t/g;
-        s/\"//g;#"
-	    my @data = split;
-        next unless $data[1];
-        my $gene = shift @data;
-        push( @{ $gene2seq{$gene} }, @data );
-    }
-
-    close FH;
-
-    my %cds2wbgene_id = $wormbase->FetchData('cds2wbgene_id');
+    my %worm_gene2geneID_name = $wormbase->FetchData('worm_gene2geneID_name');
     my @chromosomes = $wormbase->get_chromosome_names(-prefix => 1, -mito => 1);
     @chromosomes = ("$chromosome") if $chromosome;
     
@@ -126,22 +107,28 @@ else {
         }
 
         foreach my $CDS ( keys %gene_coords ) {
-	    my $WBgene = $cds2wbgene_id{$CDS};
-	    foreach my $transcript ( @{ $gene_coords{$CDS} } ) {
-		if ( !( defined $gene_span{$WBgene} ) ) {
-		    $gene_span{$WBgene}->{'min'}    = $transcript->[0];
-		    $gene_span{$WBgene}->{'max'}    = $transcript->[1];
-		    $gene_span{$WBgene}->{'strand'} = $transcript->[2];
-		}
-		else {
-		    if ( $transcript->[0] < $gene_span{$WBgene}->{'min'} ) {
-			$gene_span{$WBgene}->{'min'} = $transcript->[0];
-		    }
-		    if ( $gene_span{$WBgene}->{'max'} < $transcript->[1] ) {
-			$gene_span{$WBgene}->{'max'} = $transcript->[1];
-		    }
-                }
-            }
+	  my $WBgene = $worm_gene2geneID_name{$CDS};
+	  if (! defined $WBgene) {
+	    my $cds = $CDS;
+	    $cds =~ s/(\S+\.\d+[a-z]*)\.\d+/$1/; # convert transcript ID to sequence name to get WBGene ID
+	    $WBgene = $worm_gene2geneID_name{$cds};
+	    if (! defined $WBgene) {$log->write_to("*** $CDS is not a key of worm_gene2geneID_name\n"); next;}
+	  }
+	  foreach my $transcript ( @{ $gene_coords{$CDS} } ) {
+	    if ( !( defined $gene_span{$WBgene} ) ) {
+	      $gene_span{$WBgene}->{'min'}    = $transcript->[0];
+	      $gene_span{$WBgene}->{'max'}    = $transcript->[1];
+	      $gene_span{$WBgene}->{'strand'} = $transcript->[2];
+	    }
+	    else {
+	      if ( $transcript->[0] < $gene_span{$WBgene}->{'min'} ) {
+		$gene_span{$WBgene}->{'min'} = $transcript->[0];
+	      }
+	      if ( $gene_span{$WBgene}->{'max'} < $transcript->[1] ) {
+		$gene_span{$WBgene}->{'max'} = $transcript->[1];
+	      }
+	    }
+	  }
         }
         if ($gff) {
             open( OUTGFF, ">".$wormbase->gff_splits . "/${chrom}_WBgene.gff" ) or do { $log->write_to("cant open output\n"); die "cant open output\n"; }
