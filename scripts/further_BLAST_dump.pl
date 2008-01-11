@@ -7,7 +7,7 @@
 # Author: Chao-Kung CHen
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2007-04-04 14:54:29 $
+# Last updated on: $Date: 2008-01-11 17:05:15 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -38,6 +38,7 @@ my $log = Log_files->make_build_log($wormbase);
 
 my $source_dir    = "/lustre/work1/ensembl/wormpipe/dumps";
 my $target_dir = $wormbase->acefiles;
+my $backup_dir = "$source_dir/BACKUP";
 
 my $farm_ace = glob("~wormpipe/ace_files") ;  # this is the only place where a path is specified outside of Wormbase.pm as cant access wormpipe and wormpub acefiles at same time
 unlink("$source_dir/ensembl_protein_info.ace");
@@ -63,10 +64,12 @@ foreach my $file (@files){
   if (( $file eq "waba.ace") && (-e "/nfs/acari/wormpipe/ace_files/waba.ace")){
     $log->write_to("scping new version of $file\n");
     $wormbase->run_command("scp farm-login:/nfs/acari/wormpipe/ace_files/waba.ace ${target_dir}/waba.ace", $log);
+    $wormbase->run_command("cp /nfs/acari/wormpipe/ace_files/waba.ace $backup_dir", $log);
   }
   elsif ( -e "$source_dir/$file" ) {
     $log->write_to("scping new version of $file\n");
     $wormbase->run_command("scp farm-login:${source_dir}/${file} ${target_dir}/${file}", $log);
+    $wormbase->run_command("cp ${source_dir}/${file} $backup_dir", $log);
   }
   else {
     $log->write_to($file." does not exist\n");
