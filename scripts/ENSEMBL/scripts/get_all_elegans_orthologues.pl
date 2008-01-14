@@ -23,7 +23,8 @@ my %species = (
 	6239   => 'Caenorhabditis elegans',
 	6238   => 'Caenorhabditis briggsae', 
 	31234  => 'Caenorhabditis remanei',
-	135651 => 'Caenorhabditis brenneri',
+#	135651 => 'Caenorhabditis brenneri',
+	6279   => 'Brugia malayi'
 );
 
 my $config = ( YAML::LoadFile("$FindBin::Bin/../etc/ensembl_lite.conf") )->{'elegans'};
@@ -38,7 +39,7 @@ my $db = new Bio::EnsEMBL::DBSQL::DBAdaptor(
     );
 
 my $compara_db = new Bio::EnsEMBL::Compara::DBSQL::DBAdaptor(
-    -host   => 'ia64c',        # change that
+    -host   => 'ia64b',        # change that
     -user   => 'wormro',       # and that
     -dbname => 'worm_compara'
 );
@@ -57,7 +58,8 @@ foreach my $slice(@slices){
 		# needs some better way
 		my %briggsae_ids;
 		my %remanei_ids;
-		my %brenneri_ids;
+#		my %brenneri_ids;
+		my %brugia_ids;
 
 
 		foreach my $homology ( @{$homologies} ) {
@@ -73,7 +75,9 @@ foreach my $slice(@slices){
 					elsif ($pepm->taxon_id==135651){
 						$brenneri_ids{ $pepm->stable_id } = [$pepm->taxon_id,$homology->description,$homology->subtype]
 					}
-					elsif ($pepm->taxon_id==6239){}
+					elsif ($pepm->taxon_id==6279){
+                                                $brugia_ids{ $pepm->stable_id } = [$pepm->taxon_id,$homology->description,$homology->subtype]
+					}
 					else {print STDERR "cannot find:".$pepm->taxon_id."\n"}
 
 				}
@@ -103,16 +107,17 @@ foreach my $slice(@slices){
 			        my $sid=$cds2wbgene{$k}?$cds2wbgene{$k}:$k;
 				print "Ortholog $sid \"$species{$$v[0]}\" From_analysis WormBase-Compara\n";
 		}
-#                while (my ($k,$v)=each(%brenneri_ids)){
-#			        my $rid=$cds2wbgene{$k}?$cds2wbgene{$k}:$k;
-#				print "Ortholog_other Brenneri_prerelease gene $rid \"$species{$$v[0]}\" From_analysis WormBase-Compara\n"
-#		}
+		# brugia
+                while (my ($k,$v)=each(%brugia_ids)){
+		                my $rid=$cds2wbgene{$k}?$cds2wbgene{$k}:$k;
+				print "Ortholog_other Brugia_database gene $rid \"$species{$$v[0]}\" From_analysis WormBase-Compara\n"
+		}
 
 		print "\n";
 
 		# briggsae part
 
-		# briggsae, remanei, brenneri part		
+		# briggsae, remanei, brugia part		
 		while (my ($k,$v)=each(%briggsae_ids)){
 			   	my $sid=$cds2wbgene{$k}?$cds2wbgene{$k}:$k;
 				print "Gene : \"$sid\"\n";
@@ -121,10 +126,10 @@ foreach my $slice(@slices){
 				        my $rid=$cds2wbgene{$r_k}?$cds2wbgene{$r_k}:$r_k;
 					print "Ortholog $rid \"$species{$$r_v[0]}\" From_analysis WormBase-Compara\n"
 				}
-#                                while (my ($r_k,$r_v)=each(%brenneri_ids)){
-#				        my $rid=$cds2wbgene{$r_k}?$cds2wbgene{$r_k}:$r_k;
-#					print "Ortholog_other Brenneri_prerelease gene $rid \"$species{$$r_v[0]}\" From_analysis WormBase-Compara\n"
-#				}
+                                while (my ($r_k,$r_v)=each(%brugia_ids)){
+				        my $rid=$cds2wbgene{$r_k}?$cds2wbgene{$r_k}:$r_k;
+					print "Ortholog_other Brugia_database gene $rid \"$species{$$r_v[0]}\" From_analysis WormBase-Compara\n"
+				}
 
 				print "\n";
 		
@@ -141,10 +146,10 @@ foreach my $slice(@slices){
 				        my $rid=$cds2wbgene{$r_k}?$cds2wbgene{$r_k}:$r_k;
 					print "Ortholog $rid \"$species{$$r_v[0]}\" From_analysis WormBase-Compara\n"
 				}
-#                                while (my ($r_k,$r_v)=each(%brenneri_ids)){
-#				        my $rid=$cds2wbgene{$r_k}?$cds2wbgene{$r_k}:$r_k;
-#					print "Ortholog_other Brenneri_prerelease gene $rid \"$species{$$r_v[0]}\" From_analysis WormBase-Compara\n"
-#				}
+                                while (my ($r_k,$r_v)=each(%brugia_ids)){
+				        my $rid=$cds2wbgene{$r_k}?$cds2wbgene{$r_k}:$r_k;
+					print "Ortholog_other Brugia_databse gene $rid \"$species{$$r_v[0]}\" From_analysis WormBase-Compara\n"
+				}
 
 				print "\n";
 		
