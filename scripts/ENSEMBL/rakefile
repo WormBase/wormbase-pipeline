@@ -94,7 +94,7 @@ end
 
 desc 'build PECAN database'
 task :build_pecan => [:env_setup] do
-        conf='pecan.conf'
+        conf='etc/pecan.conf'
 	yml=YAML::load_file('etc/ensembl_lite.conf')
         db=yml['elegans']['database']
 
