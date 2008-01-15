@@ -7,8 +7,8 @@
 #
 # written by Dan Lawson
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2007-02-05 12:29:29 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2008-01-15 10:58:18 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -216,7 +216,7 @@ close FILE;
 close OUT;
 
 # now load to autoace if -load specified
-$wormbase->load_to_database($wormbase->autoace,"$ace_dir/acefiles/WormpepACandIDs.ace", 'wormpep_ID') if ($load);
+$wormbase->load_to_database($wormbase->autoace, "$ace_dir/acefiles/WormpepACandIDs.ace", 'wormpep_ID', $log) if ($load);
 
 $log->mail;
 exit(0);

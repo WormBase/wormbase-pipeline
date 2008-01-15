@@ -6,8 +6,8 @@
 #
 # Makes CDS status information by looking at transcript to exon mappings
 #
-# Last updated by: $Author: ar2 $     
-# Last updated on: $Date: 2007-09-07 15:49:45 $      
+# Last updated by: $Author: gw3 $     
+# Last updated on: $Date: 2008-01-15 10:57:16 $      
 
 
 use strict;
@@ -193,7 +193,7 @@ foreach my $chromosome (@chromosomes) {
 close(ACE);
 
 # load file to autoace?
-$wormbase->load_to_database($wormbase->autoace, $output,"confirm_genes") if($load);
+$wormbase->load_to_database($wormbase->autoace, $output, "confirm_genes", $log) if($load);
 
 $log->mail();
 exit(0);

@@ -7,7 +7,7 @@
 # Creates SMapped Gene spans for Gene objects
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2008-01-11 11:52:52 $
+# Last edited on: $Date: 2008-01-15 10:54:16 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -156,7 +156,7 @@ else {
     }
     close ACE unless $no_ace;
     close OUTGFF if $gff;
-    $wormbase->load_to_database( "$database", "$acefile", "WBGene_span" ) unless ($no_ace);    
+    $wormbase->load_to_database( "$database", "$acefile", "WBGene_span", $log ) unless ($no_ace);    
 }
 
 $wormbase->run_script( "dump_gff_batch.pl -database " . $wormbase->autoace . " -methods gene -dump_dir " . $wormbase->gff_splits, $log ) unless $no_gff;

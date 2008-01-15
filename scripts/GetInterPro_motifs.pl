@@ -7,7 +7,7 @@
 # Gets latest Interpro:GO mappings from XXXX and puts info in to ace file
 #
 # Last updated by: $Author: gw3 $                      
-# Last updated on: $Date: 2007-08-29 08:59:18 $         
+# Last updated on: $Date: 2008-01-15 10:51:33 $         
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -78,9 +78,9 @@ close IPDESC;
 close I2G;
 
 # load file if -load was specified
-$wormbase->load_to_database( $wormbase->autoace,
-			     "$ip_ace_file",
-			     'interpo_motifs') if($load);
+
+$wormbase->load_to_database( $wormbase->autoace, "$ip_ace_file",
+			     'interpo_motifs', $log) if($load);
 
 # mail Log file
 $log->mail;
