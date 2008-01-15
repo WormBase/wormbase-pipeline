@@ -1096,11 +1096,22 @@ sub load_to_database {
   $tsuser =~ s/\./_/g;
 
 
-  my $command = "pparse $file\nsave\nquit\n";
   my $tace = $self->tace;
-
-  open( WRITEDB, "| $tace -tsuser $tsuser $database " ) || die "Couldn't open pipe to database\n";
-  print WRITEDB $command;
+  my $command = <<EOF;
+pparse $file
+save
+quit
+EOF
+  open( WRITEDB, "echo '$command'| $tace -tsuser $tsuser $database |" ) || die "Couldn't open pipe to database\n";
+  while (my $line = <WRITEDB>) {
+    print "$line";
+    if ($line =~ 'ERROR') {
+      if ($log) {
+	$log->write_to("ERROR while parsing ACE file $file\n$line\n");
+	$log->error;
+      }
+    }
+  }
   close(WRITEDB);
 }
 
