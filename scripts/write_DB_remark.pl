@@ -7,8 +7,8 @@
 # This script interogates an ACEDB database and returns all pfam/Interpro/blastx 
 # data as appropriate and generates a suitable DB_remark
 #
-# Last updated on: $Date: 2007-12-04 15:00:16 $
-# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2008-01-15 11:59:11 $
+# Last updated by: $Author: gw3 $
 
 
 ### DB_remark is generated as follows:  ###
@@ -515,7 +515,7 @@ $db->close;
 # load the file to autoace
 $runtime= $wormbase->runtime;
 $log->write_to("$runtime: loading results to $database\n");
-$wormbase->load_to_database($database, $output_file,"DB_remark") unless $debug;
+$wormbase->load_to_database($database, $output_file, "DB_remark", $log) unless $debug;
 
 $runtime= $wormbase->runtime;
 $log->write_to("$runtime: Finished script\n\n");

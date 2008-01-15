@@ -5,8 +5,8 @@
 # by Kerstin Jekosch
 #
 # Version: $Version: $
-# Last updated by: $Author: pad $
-# Last updated on: $Date: 2006-12-05 10:41:52 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2008-01-15 11:56:24 $
 
 use strict;
 use warnings;
@@ -303,7 +303,7 @@ close(OUTACE);
 #########################################################
 # read acefiles into autoace (unless running test mode) #
 #########################################################
-$wb->load_to_database( $dbdir, $acefile, "RNAi_mappings" ) if ($load && ! $noparse);
+$wb->load_to_database( $dbdir, $acefile, "RNAi_mappings", $log ) if ($load && ! $noparse);
 
 ####################################
 # print some statistics to the log #

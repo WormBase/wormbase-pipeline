@@ -3,7 +3,7 @@
 # map_operons.pl
 
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2006-11-21 16:33:56 $
+# Last edited on: $Date: 2008-01-15 11:58:22 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -72,7 +72,7 @@ foreach my $operon(@operons) {
   print OUT "\n";
 }
 $db->close;
-$wb->load_to_database($wb->autoace,"$acefile",'operon_span') unless $noload;
+$wb->load_to_database($wb->autoace, "$acefile", 'operon_span', $log) unless $noload;
 
 $log->mail;
 exit(0);
