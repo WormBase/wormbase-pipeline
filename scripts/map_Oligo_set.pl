@@ -191,13 +191,7 @@ close(OUTACE);
 ##############################
 
 unless ($test||$no_parse) {
-
-    my $command = "pparse $acefile\nsave\nquit\n";
-
-    open( TACE, "| $tace -tsuser map_Oligo_products $dbdir" )
-      || die "Couldn't open tace connection to $dbdir\n";
-    print TACE $command;
-    close(TACE);
+    $wb->load_to_database( $dbdir, $acefile, 'map_Oligo_products', $log );
 }
 
 ###############
