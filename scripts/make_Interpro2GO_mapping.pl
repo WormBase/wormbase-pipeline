@@ -6,8 +6,8 @@
 #
 # Gets latest Interpro:GO mappings from XXXX and puts info in to ace file
 #
-# Last updated by: $Author: ar2 $                      
-# Last updated on: $Date: 2006-02-23 14:30:45 $           
+# Last updated by: $Author: gw3 $                      
+# Last updated on: $Date: 2008-01-15 11:46:11 $           
 
 
 use strict;
@@ -131,7 +131,7 @@ foreach my $key (keys %interpro_des){
 }
 close(I2GACE);
 
-$wormbase->load_to_database($wormbase->autoace, "$ace_dir/acefiles/interpro2go.ace", 'interpro2go_mapping');
+$wormbase->load_to_database($wormbase->autoace, "$ace_dir/acefiles/interpro2go.ace", 'interpro2go_mapping', $log);
 
 # write Data::Dumper of interpro => GO mapping
 open (IP2GO,">$common_data_dir/interpro2go.dat") or die "cant open i2g\n";

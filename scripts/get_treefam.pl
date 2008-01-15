@@ -194,7 +194,7 @@ foreach my $ID (keys %FAMILY)
 
 #------------------------------------------------------------------# 
 
-$wormbase->load_to_database($wormbase->autoace,$wormbase->acefiles."/treefam.ace",'treefam') unless $no_load;
+$wormbase->load_to_database($wormbase->autoace, $wormbase->acefiles."/treefam.ace", 'treefam', $log) unless $no_load;
 
 $log->mail;
 print STDERR "FINISHED.\n";
