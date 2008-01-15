@@ -7,8 +7,8 @@
 #
 # This makes the autoace database from its composite sources.
 #
-# Last edited by: $Author: pad $
-# Last edited on: $Date: 2007-08-22 11:24:56 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2008-01-15 13:30:38 $
 
 use strict;
 use lib  $ENV{'CVS_DIR'};
@@ -303,14 +303,12 @@ sub reinitdb {
 
 
   foreach my $filename (@filenames) {
-    my $command = "pparse $filename\nsave\nquit\n";
     if (-e $filename) {
       my $runtime = $wormbase->runtime;
       $log->write_to( "* Reinitdb: started parsing $filename at $runtime\n");
       my ($tsuser) = $filename =~ (/^\S+\/(\S+)\_/);
-      &DbWrite($command,"$tace -tsuser $tsuser",$dbpath,"ParseFile");
-    }
-    else {
+      $wormbase->load_to_database( $dbpath, $filename, $tsuser, $log );
+    } else {
       $log->write_to( "* Reinitdb: $filename is not existent - skipping ..\n");
       next;
     }
@@ -387,8 +385,7 @@ sub makechromlink {
     return;
   } 
   else {
-    my $command = "pparse $chromlink_file\nsave\nquit\n";
-    &DbWrite($command,"$tace -tsuser make_autoace",$dbpath,"MakeChromLinks");
+    $wormbase->load_to_database( $dbpath, $chromlink_file, "make_autoace", $log );
   }
   $log->write_to( $wormbase->runtime. ": Finished.\n\n");
 }
