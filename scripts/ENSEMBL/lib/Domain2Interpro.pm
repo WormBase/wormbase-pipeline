@@ -5,8 +5,24 @@
 # Dumps InterPro protein motifs from ensembl mysql (protein) database to an ace file
 #
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2007-12-20 12:58:21 $
+# Last updated on: $Date: 2008-01-15 12:00:27 $
+=pod
 
+=head1 NAME
+
+Domain2Interpro
+
+=head1 SYNOPSIS
+
+use Domain2Interpro;
+$m=new Domain2Interpro;
+$m->get_mapping($hashref->{method}->arrayreff(array($hid,$start,$end,$hstart,$hend,$score,$evalue)))
+
+=head1 DESCRIPTION
+
+generalisation of Gary's Interpro dumper
+
+=cut
 
 package Domain2Interpro;
 
@@ -14,6 +30,12 @@ use strict;
 ####################
 # Class Variables
 #
+
+=head2 class variable
+
+       %method_database: holds the mapping of logic_name to interpro database identifiers
+
+=cut
 
 # define the Database names that InterPro uses in interpro.xml
 # and the logic names (as specified in @methods) that search those databases
@@ -31,7 +53,17 @@ my %method_database = (
 		       'gene3d'      => 'GENE3D',
 	       );
 
+=head2 new
 
+     Title    : new
+     usage    : $m = new Domain2Interpro
+     Function : constructor to provide the mapping data
+     returns  : a Domain2Interpro object
+     Args     : none
+
+=cut
+
+# constructor
 sub new {
 	my $class = shift;
 	my %self;
@@ -41,9 +73,30 @@ sub new {
 	bless \%self , $class;
 }
 
+=head2 get_method2database
+
+     Title    : get_method2database
+     usage    : $m->get_method2database('Tigrfam')
+     Function : accessor to the class variable
+     returns  : a string containind the database id
+     Args     : method name
+
+=cut
+
+# mapping of method to database
 sub get_method2database {
 	my ($self,$key)=@_;
 	return $method_database{$key}}
+
+=head2 get_mapping
+
+     Title    : get_mapping
+     usage    : $m->get_mapping(\%features)
+     Function : default method to get mappings
+     returns  : list containing arrayrefs of @hit = ( $ip_id, $start, $end, $hstart, $hend, $score, $evalue )
+     Args     : lighweight feature: hashref->{method}->arrayreff(array($hid,$start,$end,$hstart,$hend,$score,$evalue))
+
+=cut
 
 # lets assume an hashref->{method}->arrayreff(array($hid,$start,$end,$hstart,$hend,$score,$evalue))
 sub get_mapping{
@@ -51,6 +104,16 @@ sub get_mapping{
 	my @m=$self->get_motifs($data);
 	return $self->merge_hits(@m);
 }
+
+=head2 get_motifs
+
+     Title    : get_motifs
+     usage    : $m->get_motifs
+     Function : method to get mappings of motifs (unmerged)
+     returns  : list containing arrayrefs of @hit = ( $ip_id, $start, $end, $hstart, $hend, $score, $evalue )
+     Args     : lighweight feature: hashref->{method}->arrayreff(array($hid,$start,$end,$hstart,$hend,$score,$evalue))
+
+=cut
 
 # lets assume an hashref->{method}->arrayref(array($hid,$start,$end,$hstart,$hend,$score,$evalue))
 sub get_motifs {
@@ -73,6 +136,17 @@ sub get_motifs {
 	return @_motifs;
 }
 
+=head2 merge_hits
+
+     Title    : merge_hits
+     usage    : $m->merge_hits(@ip-features)
+     Function : default method to get merge ip features
+     returns  : list containing arrayrefs of @hit = ( $ip_id, $start, $end, $hstart, $hend, $score, $evalue )
+     Args     : list containing arrayrefs of @hit = ( $ip_id, $start, $end, $hstart, $hend, $score, $evalue )
+
+=cut
+
+# merge overlapping hits with the same IP id
 sub merge_hits {
 	my ($self,@motifs)=@_;        
 	my @merged;
@@ -120,6 +194,16 @@ sub merge_hits {
        return @merged;
 }
 
+=head2 get_interpro
+
+     Title    : get_interpro
+     usage    : get_interpro('/tmp/')
+     Function : get the interpro XML file and save it
+     returns  : 
+     Args     : directory to save the file in
+
+=cut
+
 #########################
 # get the interpro file #
 #########################
@@ -128,6 +212,17 @@ sub get_interpro {
    my $file = shift;
   `wget -O $file ftp://ftp.ebi.ac.uk/pub/databases/interpro/interpro.xml.gz`;
  }
+
+=head2 get_ip_mappings
+
+     Title    : get_ip_mappings
+     usage    : get_ip_mappings
+     Function : build the motif->ip mappings
+     returns  : hash of database IDs , hash hashes of interpro to motif ids for each method
+     Args     :
+
+=cut
+
 
 #########################################################
 # reads in data for database ID to InterPro ID mapping  #
@@ -167,6 +262,17 @@ sub get_ip_mappings {
   unlink $file;
   return (\%ip_ids,\%ip2bla);
 }
+
+=head2 DESTROY
+
+     Title    : DESTROY
+     usage    : $m->DESTROY or automatically called
+     Function : cleanes up any tmp files
+     returns  :
+     Args     :
+
+=cut
+
 
 sub DESTROY {
   my $file ='/tmp/interpro.xml.gz';
