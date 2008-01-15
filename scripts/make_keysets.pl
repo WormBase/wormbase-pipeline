@@ -7,7 +7,7 @@
 # Usage : make_keysets.pl [-options]
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2007-04-11 11:26:58 $
+# Last edited on: $Date: 2008-01-15 11:53:15 $
 
 #################################################################################
 # variables                                                                     #
@@ -155,7 +155,7 @@ if (($history) || ($all)) {
 } 
 
 my $misc_static_dir = $wormbase->misc_static;
-$wormbase->load_to_database($dbpath, "$misc_static_dir/represent_clone.ace", "clone_check") if $all;
+$wormbase->load_to_database($dbpath, "$misc_static_dir/represent_clone.ace", "clone_check", $log) if $all;
 
 
 $log->mail();
@@ -191,13 +191,8 @@ sub tace_it {
 sub load_it {
     my ($name,$user) = @_;
 
-    my $command = "pparse $outpath/$name.ace\nsave\nquit\n";
+    $wormbase->load_to_database($dbpath, "$outpath/$name.ace", $user, $log);
 
-    open (TACE,"echo '$command' | $tace $dbpath |") or die "Can't make db connection\n";
-    while (<TACE>) {
-	print if ($debug);
-    }
-    close TACE;
 }
 #_ end of load_it _#
 
