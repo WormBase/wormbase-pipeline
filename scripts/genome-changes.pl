@@ -7,7 +7,7 @@
 # This is a script to aid making changes to the sequence of a clone.
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2007-11-29 09:23:35 $      
+# Last updated on: $Date: 2008-01-15 13:38:36 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -262,10 +262,7 @@ while (my $input_line = <IN>) {
   } else {
     # load ace file into new database
     print "load ace file of changes into new database\n";
-    my $command = "pparse $acefile\nsave\nquit\n";
-    open( WRITEDB, "| $tace -tsuser genome_changes_pl $new_database " ) || die "Couldn't open pipe to database $new_database\n";
-    print WRITEDB $command;
-    close(WRITEDB);
+    $wormbase->load_to_database($new_database, $acefile, "genome_changes_pl", $log);
   }
 
   # now run 'makesuperlinks.pl' on the last clone change    
@@ -302,11 +299,8 @@ while (my $input_line = <IN>) {
   } else {
     # load the resulting $super ace file into newdatabase
     print "load ace file of superlinks '$super' into new database\n";
-    my $command = "pparse $super\nsave\nquit\n";
-    open( WRITEDB, "| $tace -tsuser genome_changes_pl $new_database " ) || die "Couldn't open pipe to database $new_database\n";
-    print WRITEDB $command;
-    close(WRITEDB);
-    
+    $wormbase->load_to_database($new_database, $super, "genome_changes_pl", $log);
+
     # close then reopen an ACE connection to parse details for mapping to genome
     print "Connecting to Ace\n";
     $ace->close;
