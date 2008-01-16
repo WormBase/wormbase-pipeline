@@ -60,7 +60,7 @@ foreach my $slice (@$slices) {
 			end       => $gene->end(),
 			strand    => $gene->strand(),
 #			display   => $gene->external_name(),
-			note      => $gene->status() . " " . $gene->biotype(),
+			note      => ($gene->status()||'PREDICTED' ). " " . $gene->biotype(),
 			public_name => $gene->stable_id(),
 		);
 		foreach my $transcript (@{$gene->get_all_Transcripts()}) {
@@ -242,8 +242,8 @@ sub gff_line {
 	}
 	push @tags, "Name=$name" if defined $name;
 	push @tags, "Note=$note" if defined $note;
-	push @tags, "Info=$info" if defined $info;
-	push @tags, "Public_name=$public" if defined $public;
+	push @tags, "info=$info" if defined $info;
+	push @tags, "public_name=$public" if defined $public;
 	$output .= join(';', @tags);
 	$output .= "\n";
 	
