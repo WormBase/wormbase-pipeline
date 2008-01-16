@@ -1,13 +1,13 @@
-#!/usr/local/bin/perl5.8.0 -w
+#!/software/bin/perl -w
 #
 # script_template.pl                           
 # 
-# by Keith Bradnam                         
+# by xxx                         
 #
 # This is a example of a good script template
 #
-# Last updated by: $Author: ar2 $     
-# Last updated on: $Date: 2006-02-17 11:32:47 $      
+# Last updated by: $Author: gw3 $     
+# Last updated on: $Date: 2008-01-16 15:08:42 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -31,7 +31,7 @@ GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
 	    "test"       => \$test,
 	    "verbose"    => \$verbose,
-	    "store:s"      => \$store,
+	    "store:s"    => \$store,
 	    );
 
 if ( $store ) {
@@ -204,7 +204,7 @@ script_template.pl  OPTIONAL arguments:
 
 =over 4
 
-=item Keith Bradnam (krb@sanger.ac.uk)
+=item xxx (xxx@sanger.ac.uk)
 
 =back
 
