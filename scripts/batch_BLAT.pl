@@ -4,8 +4,8 @@
 #
 # Anthony Rogers
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2007-05-23 13:33:11 $
+# Last edited by: $Author: mh6 $
+# Last edited on: $Date: 2008-01-16 11:39:50 $
  
 
 use strict;
@@ -151,7 +151,7 @@ sub run_bsub
     my $error_dir = "$wormpub/BSUB_ERRORS";
     my $error     = "$error_dir/$output.err";
 
-    my $bsub_cmd = "$blat $autoace_fa $EST_dir/$source ";
+    my $bsub_cmd = "$blat $autoace_fa $EST_dir/$source -maxIntron=150000";
     $bsub_cmd .= $parameters if $parameters;
     $bsub_cmd .= " $output_dir/$output";
 
