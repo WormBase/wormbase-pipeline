@@ -120,7 +120,7 @@ foreach my $slice (@$slices) {
 			score       => $feature->score,
 			dbid        => $feature->dbID,
 			logic_name  => $feature->analysis->logic_name,
-			cigar       => $feature->cigar_string,
+			cigar       => cigar_to_almost_cigar($feature->cigar_string),
 		};
 		print dump_feature($stripped_feature);
 	}
@@ -129,13 +129,18 @@ foreach my $slice (@$slices) {
 
 }
 
+sub cigar_to_almost_cigar {
+	my $i=shift;
+	$i=~s/(\d*)(\w)/$2$1 /g;
+	return $i;
+}
 
 sub dump_feature {
 	my $i=shift;
 	my %feature=%{$i};
 	my $gff_line=
-	 "$feature{target_id}\tprotein_alignment\t$feature{logic_name}\t$feature{target_start}\t$feature{target_stop}\t$feature{score}\t$feature{strand}\t.\t"
-	."ID=$feature{logic_name}.$feature{dbid};Name=$feature{hit_id};Target=$feature{hit_id} $feature{hit_start} $feature{hit_stop} Gap=$feature{cigar}\n";
+	 "$feature{target_id}\t$feature{logic_name}\tprotein_match\t$feature{hit_start}\t$feature{hit_stop}\t$feature{score}\t$feature{strand}\t.\t"
+	."ID=$feature{logic_name}.$feature{dbid};Name=$feature{hit_id};Target=$feature{hit_id} $feature{target_start} $feature{target_stop};Gap=$feature{cigar}\n";
 	return $gff_line;
 }
 
