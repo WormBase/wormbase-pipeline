@@ -6,8 +6,8 @@
 #
 # by Anon
 #
-# Last updated by: $Author: mh6 $                      
-# Last updated on: $Date: 2006-12-07 09:52:08 $        
+# Last updated by: $Author: gw3 $                      
+# Last updated on: $Date: 2008-01-17 16:07:02 $        
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -194,8 +194,7 @@ $db->close;
 
 if($load){
   $log->write_to("Loading file to autoace\n");
-  my $command = "autoace_builder.pl -load $outfile -tsuser microarray_mappings";
-  $wb->load_to_database($wb->autoace, $outfile, 'microarray_mappings',$log);
+  $wb->load_to_database($wb->autoace, $outfile, 'microarray_mappings', $log);
 }
 
 
