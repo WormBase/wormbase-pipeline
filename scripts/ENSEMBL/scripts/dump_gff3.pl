@@ -120,7 +120,7 @@ foreach my $slice (@$slices) {
 			score       => $feature->score,
 			dbid        => $feature->dbID,
 			logic_name  => $feature->analysis->logic_name,
-			cigar       => cigar_to_almost_cigar($feature->cigar_string),
+			cigar       => $feature->cigar_string,
 		};
 		print dump_feature($stripped_feature);
 	}
