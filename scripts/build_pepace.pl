@@ -9,8 +9,8 @@
 # solely in the wormpep.history file.
 #
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2008-01-15 10:55:17 $
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2008-01-17 13:54:34 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -306,7 +306,7 @@ $log->write_to("written $acefile - to be loaded in to autoace\n");
 #while we have crap predictions this can be skipped.
 if( $wormbase->species eq "elegans") {
 	my $live_peps  = `grep -c Live $acefile`;
-	my $table_peps = `grep -c '>' $wormpepdir/${PEPDIR}pep$ver.pep`;
+	my $table_peps = `/software/worm/bin/wublast/nrdb $wormpepdir/${PEPDIR}pep$ver.pep |grep -c '>'`;
 	chomp $live_peps;
 	chomp $table_peps;
 
