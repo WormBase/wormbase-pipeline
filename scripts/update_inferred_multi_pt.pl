@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl5.8.0 -w
 # Author: Chao-Kung Chen
-# Last updated by $Author: mh6 $
-# Last updated on: $Date: 2006-01-10 14:57:13 $ 
+# Last updated by $Author: gw3 $
+# Last updated on: $Date: 2008-01-17 16:10:44 $ 
 
 use strict;
 use warnings;
@@ -116,10 +116,10 @@ my %order_locus; # reverse of above, key is a integer position, value is CGC gen
 #load to database if -load specified
 if($load){
   $log->write_to("Loading new pseudo multi point data to $database");
-  my $command = "autoace_builder.pl -load $new_output -tsuser new_pseudo_multi_pt_data";
+  $wb->load_to_database( $database, $new_output, "new_pseudo_multi_pt_data", $log );
 
   $log->write_to("Loading updated pseudo multi point data to $database");
-  $command = "autoace_builder.pl -load $updated_output -tsuser updated_pseudo_multi_pt_data";
+  $wb->load_to_database( $database, $updated_output, "updated_pseudo_multi_pt_data", $log );
 
 }
 
