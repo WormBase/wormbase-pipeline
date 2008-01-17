@@ -9,8 +9,8 @@
 # solely in the wormpep.history file.
 #
 #
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2008-01-17 13:54:34 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2008-01-17 14:07:04 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -306,12 +306,12 @@ $log->write_to("written $acefile - to be loaded in to autoace\n");
 #while we have crap predictions this can be skipped.
 if( $wormbase->species eq "elegans") {
 	my $live_peps  = `grep -c Live $acefile`;
-	my $table_peps = `/software/worm/bin/wublast/nrdb $wormpepdir/${PEPDIR}pep$ver.pep |grep -c '>'`;
+	my $table_peps = `/software/worm/bin/wublast/nrdb $wormpepdir/${PEPDIR}pep$ver |grep -c '>'`;
 	chomp $live_peps;
 	chomp $table_peps;
 
 	$log->write_to("This file has $live_peps live peptides\n");
-	$log->write_to("${PEPDIR}pep$ver.pep suggests there should be $table_peps\n");
+	$log->write_to("$wormpepdir/${PEPDIR}pep$ver suggests there should be $table_peps\n");
 
 	if ( ($live_peps) == $table_peps ) {
    		$log->write_to("\nso thats OK!\ntaking in to account 1 known problem - CE25872 -hard coded as live in the script\n");
