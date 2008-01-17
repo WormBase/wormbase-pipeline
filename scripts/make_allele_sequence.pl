@@ -5,9 +5,9 @@
 #
 # This maps alleles to the genome based on their flanking sequences
 #
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2006-07-17 12:31:52 $
-# SubVersion :     $Revision: 1.1 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2008-01-17 16:05:05 $
+# SubVersion :     $Revision: 1.2 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -258,9 +258,7 @@ sub process_list {
 sub load_alleles_to_database {
 
     $log->write_to("\nStart parsing $ace_file in to $database\n\n");
-    my $command = "autoace_builder.pl -load $ace_file -tsuser map_Alleles.pl";
-    my $status  = system($command);
-    if ( ( $status >> 8 ) != 0 ) { die "ERROR: Loading $ace_file file failed \$\? = $status\n" }
+    $wb->load_to_database( $database, $ace_file, "map_Alleles.pl", $log );
     $log->write_to("\nFinished parsing $ace_file in to $database\n\n");
 }
 

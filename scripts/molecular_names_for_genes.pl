@@ -6,8 +6,8 @@
 #
 # quick script to populate Molecular_name tag in ?Gene model during build
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2006-02-17 11:32:47 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2008-01-17 16:00:09 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -132,11 +132,8 @@ close OUT;
 
 $log->write_to("Found $counter molecular names for genes\n");
 
-# load file to autoace using autoace_builder.pl -load
-$log->write_to("Loading $ace_dir/molecular_names_for_genes.ace to autoace\n");
-$command = "autoace_builder.pl -load $ace_dir/acefiles/molecular_names_for_genes.ace -tsuser molecular_names -database $ace_dir";
-
-$wormbase->run_script("$command", $log);
+# load file to autoace
+$wormbase->load_to_database($ace_dir, "$ace_dir/acefiles/molecular_names_for_genes.ace", "molecular_names", $log);
 
 # tidy up and exit
 $log->mail();
