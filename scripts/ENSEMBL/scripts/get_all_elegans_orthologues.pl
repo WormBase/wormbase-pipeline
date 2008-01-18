@@ -58,8 +58,9 @@ foreach my $slice(@slices){
 		# needs some better way
 		my %briggsae_ids;
 		my %remanei_ids;
-#		my %brenneri_ids;
+		my %brenneri_ids;
 		my %brugia_ids;
+		my %elegans_ids;
 
 
 		foreach my $homology ( @{$homologies} ) {
@@ -78,6 +79,10 @@ foreach my $slice(@slices){
 					elsif ($pepm->taxon_id==6279){
                                                 $brugia_ids{ $pepm->stable_id } = [$pepm->taxon_id,$homology->description,$homology->subtype]
 					}
+                        		elsif ($pepm->taxon_id==6239){
+						$elegans_ids{ $pepm->stable_id } = [$pepm->taxon_id,$homology->description,$homology->subtype] 
+					}
+
 					else {print STDERR "cannot find:".$pepm->taxon_id."\n"}
 
 				}
@@ -136,8 +141,6 @@ foreach my $slice(@slices){
 		}
 
 		# remanei part
-
-		# remanei, brenneri and briggsae part		
 		while (my ($k,$v)=each(%remanei_ids)){
 			   	my $sid=$cds2wbgene{$k}?$cds2wbgene{$k}:$k;
 				print "Gene : \"$sid\"\n";
