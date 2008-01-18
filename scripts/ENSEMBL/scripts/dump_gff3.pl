@@ -44,15 +44,16 @@ print "##gff-version 3\n";
 # Get all Vega toplevel slices
 my $sa = $vega_db->get_SliceAdaptor();
 my $slices = $sa->fetch_all('toplevel');
-foreach my $slice (@$slices) {
+while( my $slice = shift @$slices) {
 	my $slice_name = $slice->seq_region_name();
 	print STDERR "Doing $slice_name:\n" if $debug;
 	
 	# Get all the genes on this slice
 	my $genes = $slice->get_all_Genes();
-	foreach my $gene (@$genes) {
+	while( my $gene=shift @$genes) {
 		my $gene_stable_id = 'gene.'.$gene->stable_id();
 		print STDERR " Dumping $gene_stable_id\n" if $debug;
+
 		my %gene_to_dump = (
 			stable_id => $gene_stable_id,
 			name      => $slice_name,
@@ -63,13 +64,23 @@ foreach my $slice (@$slices) {
 			note      => ($gene->status()||'PREDICTED' ). " " . $gene->biotype(),
 			public_name => $gene->stable_id(),
 		);
-		foreach my $transcript (@{$gene->get_all_Transcripts()}) {
+		my $all_transcripts = $gene->get_all_Transcripts();
+		while( my $transcript = shift @{$all_transcripts}) {
+			my $translation = $transcript->translation;
+
 			my $transcript_stable_id = 'transcript.'.$transcript->stable_id();
+			my $translation_id = 'cds.'.$transcript->translation->stable_id();
+
 			print STDERR "  Dumping $transcript_stable_id\n" if $debug;
+			print STDERR "  Dumping $translation_id\n" if $debug;
+
 			push @{$gene_to_dump{'transcript'}}, {
 				stable_id => $transcript_stable_id,
+				translation_stable_id => $translation_id,
 				name      => $slice_name,
 				start     => $transcript->start(),
+				cds_start => $translation->genomic_start(),
+				cds_end   => $translation->genomic_end(),
 				end       => $transcript->end(),
 				strand    => $transcript->strand(),
 #				display   => $transcript->external_name(),
@@ -77,7 +88,8 @@ foreach my $slice (@$slices) {
 				info      => get_info($transcript),
 				public_name => $transcript->stable_id(),
 			};
-			foreach my $exon (@{$transcript->get_all_Exons()}) {
+			my $all_exons=$transcript->get_all_Exons();
+			while( my $exon = shift @{$all_exons}) {
 				my $exon_stable_id = 'exon.'.$exon->stable_id();
 				print STDERR "   Dumping $exon_stable_id\n" if $debug;
 				push @{${${$gene_to_dump{'transcript'}}[-1]}{'exon'}}, {
@@ -88,9 +100,11 @@ foreach my $slice (@$slices) {
 					strand    => $exon->strand(),
 				}
 			}
-			foreach my $cds (@{$transcript->get_all_translateable_Exons()}) {
+			my $all_t_exons = $transcript->get_all_translateable_Exons();
+			while (my $cds = shift @{$all_t_exons}) {
 #				my $cds_stable_id = 'cds.'.$transcript->translation->stable_id();
 				my $cds_stable_id = 'coding_exon.'.$cds->stable_id();
+
 
 				print STDERR "   Dumping CDS $cds_stable_id\n" if $debug;
 				push @{${${$gene_to_dump{'transcript'}}[-1]}{'cds'}}, {
@@ -121,9 +135,25 @@ foreach my $slice (@$slices) {
 			dbid        => $feature->dbID,
 			logic_name  => $feature->analysis->logic_name,
 			cigar       => $feature->cigar_string,
+			feature_type=> 'protein_match',
 		};
 		print dump_feature($stripped_feature);
 	}
+        my $repeats = $slice->get_all_RepeatFeatures;
+        foreach my $feature (@$repeats){
+        	my $stripped_feature = {
+			target_id   => $feature->slice->seq_region_name,
+			strand      => ($feature->strand > 0?'+':'-'),
+			hit_start   => $feature->start,
+			hit_stop    => $feature->end,
+			score       => ($feature->score||'.'),
+			dbid        => $feature->dbID,
+			logic_name  => $feature->analysis->logic_name,
+			feature_type=> 'repeat_region',
+		};
+		print dump_feature($stripped_feature);
+	}
+
 	print '#'x80;
 	print "\n";
 
@@ -139,8 +169,10 @@ sub dump_feature {
 	my $i=shift;
 	my %feature=%{$i};
 	my $gff_line=
-	 "$feature{target_id}\t$feature{logic_name}\tprotein_match\t$feature{hit_start}\t$feature{hit_stop}\t$feature{score}\t$feature{strand}\t.\t"
-	."ID=$feature{logic_name}.$feature{dbid};Name=$feature{hit_id};Target=$feature{hit_id} $feature{target_start} $feature{target_stop};Gap=$feature{cigar}\n";
+	 "$feature{target_id}\t$feature{logic_name}\t$feature{feature_type}\t$feature{hit_start}\t$feature{hit_stop}\t".
+	 "$feature{score}\t$feature{strand}\t.".
+	 "\tID=$feature{logic_name}.$feature{dbid}".
+	 ($feature{cigar}?";Name=$feature{hit_id};Target=$feature{hit_id} $feature{target_start} $feature{target_stop};Gap=$feature{cigar}\n":"\n");
 	return $gff_line;
 }
 
@@ -188,9 +220,13 @@ sub dump_gene {
 	foreach my $transcript (@{$gene->{'transcript'}}) {
 		$output .= gff_line(
 			$transcript->{'name'}, 'mRNA', $transcript->{'start'}, $transcript->{'end'},
-			$transcript->{'strand'}, $transcript->{'stable_id'}, undef ,$transcript->{'display'} || undef, undef,$transcript->{info} 
+			$transcript->{'strand'}, $transcript->{'stable_id'}, undef ,$transcript->{'display'} || undef, undef, 
+			undef,$transcript->{'public_name'},$parent);
+		$output .= gff_line(
+			$transcript->{'name'}, 'CDS', $transcript->{'cds_start'}, $transcript->{'cds_end'},
+			$transcript->{'strand'}, $transcript->{'translation_stable_id'}, 0 ,$transcript->{'display'} || undef, undef,$transcript->{info} 
 			|| undef,$transcript->{'public_name'},$parent);
-		
+	
 		# Store the parent of this transcript's exons
 		$parent = $transcript->{'stable_id'};
 		foreach my $exon (@{$transcript->{'exon'}}) {
@@ -216,7 +252,8 @@ sub dump_gene {
 		foreach my $cds (@{$transcript->{'cds'}}) {
 			$output .= gff_line(
 				$cds->{'name'}, 'coding_exon', $cds->{'start'}, $cds->{'end'},
-				$cds->{'strand'}, $cds->{'stable_id'}, $cds->{'phase'},undef, undef,undef ,undef, $parent);
+				$cds->{'strand'}, $cds->{'stable_id'}, $cds->{'phase'},undef, 
+				undef,undef ,undef, $transcript->{'translation_stable_id'});
 		}
 	}
 	
