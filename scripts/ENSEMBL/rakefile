@@ -10,6 +10,8 @@
 require 'yaml'
 require 'fileutils'
 
+tmp_place = '/lustre/scratch1/ensembl/wormpipe/compara_build'
+
 # check to see if the old build was cleaned
 # will raise an error if not
 desc 'check if the directories are cleaned up'
@@ -134,19 +136,19 @@ end
 
 desc 'dump homology ace file'
 task :dump_homology => [:env_setup] do
-	sh 'perl scripts/get_all_elegans_orthologues.pl > /tmp/compara.ace'
+	sh "perl scripts/get_all_elegans_orthologues.pl > #{tmp_place}/compara.ace"
 end
 
 desc 'dump pecan files'
 task :dump_pecan => [:env_setup] do
-	FileUtils.mkdir_p('/tmp/compara')
+	FileUtils.mkdir_p("#{tmp_place}/compara")
  
  	ENV['ENSEMBL_REGISTRY'] = './etc/E_registry.pl'
 
-	sh 'perl scripts/getsynteny.pl > /tmp/compara/pecan.gff'   # dump gff
+	sh "perl scripts/getsynteny.pl > #{tmp_place}/compara/pecan.gff"   # dump gff
 
 	['I','II','III','IV','V','X'].each {|c|
-	   sh "perl scripts/dump_clustal.pl CHROMOSOME_#{c} > /tmp/compara/pecan_chromosome_#{c}.clw" # dump clustal
+	   sh "perl scripts/dump_clustal.pl CHROMOSOME_#{c} > #{tmp_place}/compara/pecan_chromosome_#{c}.clw" # dump clustal
 	}
 end
 
@@ -160,8 +162,8 @@ task :dump_compara do
 	to_dump =[ 'briggsae','elegans','remanei','brenneri','brugia']
 
 	########### if needed, commment out the mysql dumping part #####
-	FileUtils.mkdir_p('/tmp/compara')
-	FileUtils.cd('/tmp/compara') do
+	FileUtils.mkdir_p("#{tmp_place}/compara")
+	FileUtils.cd("#{tmp_place}/compara") do
 		conf.each_key{|org|
 			next unless to_dump.include?(org)
 			db=conf[org]['database']
@@ -173,7 +175,7 @@ task :dump_compara do
 	end
 	# # # # # # # # # # # # # # # #
 	
-	FileUtils.cd('/tmp') do
+	FileUtils.cd(tmp_place) do
 		File.unlink("compara.tar.bz2") if File.exists?("compara.tar.bz2")
 		sh "tar cvf compara.tar compara/*"
 		sh "bzip2 -9 compara.tar"
@@ -184,8 +186,8 @@ end
 desc 'copy release files'
 task :copy_release do
 	target_dir='/nfs/disk100/wormpub/BUILD/autoace/'
-	cp '/tmp/compara.ace',"#{target_dir}acefiles/"
-	cp '/tmp/compara.tar.bz2',target_dir
+	cp "#{tmp_place}/compara.ace","#{target_dir}acefiles/"
+	cp "#{tmp_place}/compara.tar.bz2",target_dir
 end
 
 
@@ -199,8 +201,8 @@ task :cleanup do
 	sh 'rm -rf /lustre/scratch1/ensembl/wormpipe/compara/logs/*'      # remove the logs
 	sh 'rm -f /lustre/scratch1/ensembl/wormpipe/compara/Caenorhabditis*' # remove the blast databases
 	sh 'rm -f /lustre/work1/ensembl/wormpipe/compara/Caenorhabditis*' # remove the blast databases
-	sh 'rm -f /tmp/compara.ace' # remove the compara ace file
-	sh 'rm -rf /tmp/compara'    # remove the compara dump directory
+	sh "rm -f #{tmp_place}/compara.ace" # remove the compara ace file
+	sh "rm -rf #{tmp}/compara"    # remove the compara dump directory
 end
 
 desc 'build and setup all databases'
