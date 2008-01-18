@@ -61,7 +61,7 @@ while( <$TABLE> ){
     }
 }
 #connect to name server and set domain to 'Gene'
-my $DB    	= 'wbgene_id;mcs2a';
+my $DB    	= 'wbgene_id;mcs2a;3305';
 my $PASS 	= "wormpub";
 my $USER 	= "wormpub";
 my $DOMAIN  = 'Gene';
