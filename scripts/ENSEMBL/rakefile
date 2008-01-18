@@ -202,7 +202,7 @@ task :cleanup do
 	sh 'rm -f /lustre/scratch1/ensembl/wormpipe/compara/Caenorhabditis*' # remove the blast databases
 	sh 'rm -f /lustre/work1/ensembl/wormpipe/compara/Caenorhabditis*' # remove the blast databases
 	sh "rm -f #{tmp_place}/compara.ace" # remove the compara ace file
-	sh "rm -rf #{tmp}/compara"    # remove the compara dump directory
+	sh "rm -rf #{tmp_place}/compara"    # remove the compara dump directory
 end
 
 desc 'build and setup all databases'
