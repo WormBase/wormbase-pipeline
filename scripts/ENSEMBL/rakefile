@@ -152,7 +152,7 @@ end
 
 desc "make a compara tarball"
 task :dump_compara do
-	conf=YAML.load_file('ensembl_lite.conf')
+	conf=YAML.load_file('etc/ensembl_lite.conf')
 
 	mysqldir=''
 	dump_options='--add-drop-table -u wormro -a -h ia64b'
