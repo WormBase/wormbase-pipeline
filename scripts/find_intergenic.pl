@@ -6,11 +6,12 @@
 #
 # by Gary Williams
 #
-# Last updated by: $Author: gw3 $                      
-# Last updated on: $Date: 2008-01-11 12:16:44 $        
+# Last updated by: $Author: pad $                      
+# Last updated on: $Date: 2008-01-22 16:49:06 $        
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
+#use lib "~/pad/wormbase/scripts";
 use Wormbase;
 use Getopt::Long;
 use Carp;
@@ -80,9 +81,9 @@ if ($side ne "both" && $side ne "5" && $side ne "3") {
 if ($operons ne "include" && $operons ne "only" && $operons ne "no") {
     die "Error: option -operons=$operons is invalid (requires 'include', 'only' or 'no')\n";
 }
-
+if (!defined($output)){
 $output = $wormbase->chromosomes."/intergenic_sequences.dna" unless $output;
-
+}
 ##########################
 # MAIN BODY OF SCRIPT
 ##########################
@@ -98,8 +99,6 @@ my $no_sequences = 0;		# count number of sequences written out
 
 
 my $seq_obj = Sequence_extract->invoke($dbdir, undef, $wormbase);
-
-$output = $wormbase->chromosomes."/intergenic_sequences.dna";
 open (OUT, ">$output") || die "Failed to open output file $output";
 
 foreach my $chromosome (@chromosomes) {
@@ -209,7 +208,9 @@ foreach my $chromosome (@chromosomes) {
 	# get width of intergenic distance
 	$width = $start-$last_end-1;
 	$seq_start = $last_end;
-	$print_start = $seq_start+1; # human-readable start coordinate
+	if ($seq_start eq "0") {$seq_start = "1";}
+	if ($seq_start eq "1") {$print_start = $seq_start;}
+	$print_start = $seq_start+1 unless ($seq_start eq "1"); # human-readable start coordinate
 	print OUT ">${last_name}_${gene_name} CHROMOSOME_$chromosome $print_start, len: $width\n";
 	$sequence = $seq_obj->Sub_sequence("CHROMOSOME_$chromosome", "$seq_start", "$width");
 #	print OUT "$sequence\n";
