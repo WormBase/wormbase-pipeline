@@ -7,11 +7,10 @@
 # by Gary Williams
 #
 # Last updated by: $Author: pad $                      
-# Last updated on: $Date: 2008-01-22 16:49:06 $        
+# Last updated on: $Date: 2008-01-22 16:53:21 $        
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
-#use lib "~/pad/wormbase/scripts";
 use Wormbase;
 use Getopt::Long;
 use Carp;
