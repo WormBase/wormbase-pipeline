@@ -7,7 +7,7 @@
 # Converts yeastX.pep file to ace file, copies to wormsrv2, adds SGD as Accession field
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2006-11-14 10:07:16 $
+# Last edited on: $Date: 2008-01-23 09:56:06 $
 
 
 use strict;
@@ -65,6 +65,7 @@ while (<YEAST>) {
   next unless $desc;
   if( (defined $info[5]) and (defined $desc) ){
     $YEAST_DESC{$info[5]} = "$desc";
+    $YEAST_DESC{$info[5]} =~ s/"/'/g;
   }
 }
 
