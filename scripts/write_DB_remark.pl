@@ -7,7 +7,7 @@
 # This script interogates an ACEDB database and returns all pfam/Interpro/blastx 
 # data as appropriate and generates a suitable DB_remark
 #
-# Last updated on: $Date: 2008-01-15 11:59:11 $
+# Last updated on: $Date: 2008-01-23 10:44:57 $
 # Last updated by: $Author: gw3 $
 
 
@@ -342,10 +342,12 @@ $log->write_to("$runtime: Processing pseudogene class\n");
 my @pseudogenes = $db->fetch(-query => 'Find Pseudogene where species = "'.$wormbase->full_name.'"');
 
 PSEUDOGENE: foreach my $pseudogene (@pseudogenes) {
-
+  
   my ($type, $gene_name, $gene, $cgc_name);
 
   my $full_string = "";
+
+  if ($pseudogene->Method eq "history") {next;}	# we don't need a DB remark in the history objects and they don't have Gene tags
 
   # grab Gene ID, and use this to look up Gene object to get CGC_name if present
   if(!defined($pseudogene->Gene)){
