@@ -7,7 +7,7 @@
 # This script interogates an ACEDB database and returns all pfam/Interpro/blastx 
 # data as appropriate and generates a suitable DB_remark
 #
-# Last updated on: $Date: 2008-01-23 10:44:57 $
+# Last updated on: $Date: 2008-01-23 13:34:57 $
 # Last updated by: $Author: gw3 $
 
 
@@ -138,6 +138,7 @@ $database = $wormbase->autoace unless $database;
 my $output_file;  # specify output file location
 my $runtime;
 
+$species = "elegans" unless $species;
 
 # set up file paths
 if ($output) {
@@ -163,13 +164,15 @@ my $db = Ace->connect (-path => "$database",
 
 $runtime= $wormbase->runtime;
 $log->write_to("$runtime: Processing CDS class\n");
+my $object_count = 0;
+my $remark_count = 0;
 
 # get CDSs for C. elegans
 my $CDSs;
 if ( $gene ) {
   $CDSs = $db->fetch_many(-query => "Find CDS $gene");
 } else {
-  $CDSs = $db->fetch_many(-query => 'Find CDS where method = "curated" and species = "'.$wormbase->full_name.'"');
+  $CDSs = $db->fetch_many(-query => 'Find CDS where Method = "curated" AND Species = "'.$wormbase->full_name.'"');
 }
 
 SUBSEQUENCE: while ( my $cds = $CDSs->next ) {
@@ -287,14 +290,14 @@ SUBSEQUENCE: while ( my $cds = $CDSs->next ) {
 	  my ($a,$b,$score,$d,$e,$f,$g) = $protein->row;
 
 	  my $title = $protein->Description;
-	  my $species = $protein->Species;
+	  my $protein_species = $protein->Species;
     
 	  # replace details if you find better score
-	  if (($score > $max_score) && $title && $species && $protein) {
+	  if (($score > $max_score) && $title && $protein_species && $protein) {
 	    $max_score = $score;
 	    $best_match = $protein;
 	    $best_description = $title;
-	    $best_species = $species;
+	    $best_species = $protein_species;
 	  }
 
 	  $protein->DESTROY();
@@ -315,15 +318,17 @@ SUBSEQUENCE: while ( my $cds = $CDSs->next ) {
     $log->write_to("ERROR: ".$cds->name." has no Corresponding_protein\n");
   }
 
-
+  $object_count++;
   next SUBSEQUENCE if ($full_string eq "");
+  $remark_count++;
 
   print ACE "CDS : $cds\n";
   print ACE "-D DB_remark\n";
   print ACE "DB_remark \"$full_string\"\n\n";
 
-  print "$cds\t$full_string\n" if $debug;
+  print "$cds\t$full_string\n" if $verbose;
 }
+$log->write_to("Found $object_count CDS, added remarks to $remark_count\n\n");
 
 
 
@@ -337,9 +342,11 @@ SUBSEQUENCE: while ( my $cds = $CDSs->next ) {
 
 $runtime= $wormbase->runtime;
 $log->write_to("$runtime: Processing pseudogene class\n");
+$object_count = 0;
+$remark_count = 0;
 
 
-my @pseudogenes = $db->fetch(-query => 'Find Pseudogene where species = "'.$wormbase->full_name.'"');
+my @pseudogenes = $db->fetch(-query => 'Find Pseudogene where species = "'.$wormbase->full_name.'" AND (NOT Method = history)');
 
 PSEUDOGENE: foreach my $pseudogene (@pseudogenes) {
   
@@ -347,7 +354,6 @@ PSEUDOGENE: foreach my $pseudogene (@pseudogenes) {
 
   my $full_string = "";
 
-  if ($pseudogene->Method eq "history") {next;}	# we don't need a DB remark in the history objects and they don't have Gene tags
 
   # grab Gene ID, and use this to look up Gene object to get CGC_name if present
   if(!defined($pseudogene->Gene)){
@@ -381,7 +387,9 @@ PSEUDOGENE: foreach my $pseudogene (@pseudogenes) {
     $full_string .= "C. elegans predicted pseudogene"; 
   }
 
+  $object_count++;
   next PSEUDOGENE if ($full_string eq "");
+  $remark_count++;
 
   print ACE "Pseudogene : $pseudogene\n";
   print ACE "-D DB_remark\n";
@@ -390,6 +398,7 @@ PSEUDOGENE: foreach my $pseudogene (@pseudogenes) {
   # kill object to free memory
   $pseudogene->DESTROY();
 }
+$log->write_to("Found $object_count Pseudogenes, added remarks to $remark_count\n\n");
 
 
 
@@ -401,7 +410,8 @@ PSEUDOGENE: foreach my $pseudogene (@pseudogenes) {
 
 $runtime= $wormbase->runtime;
 $log->write_to("$runtime: Processing transcript class\n");
-
+$object_count = 0;
+$remark_count = 0;
 
 my $transcripts = $db->fetch_many(-query => 'Find Transcript where (NOT Method = Coding_transcript) AND (NOT Method = history) AND (Species = "'.$wormbase->full_name.'")');
 
@@ -501,14 +511,16 @@ TRANSCRIPT: while ( my $transcript = $transcripts->next ) {
     }
   }
 
+  $object_count++;
   next TRANSCRIPT if ($full_string eq "");
+  $remark_count++;
 
   print ACE "Transcript : $transcript\n";
   print ACE "-D DB_remark\n";
   print ACE "DB_remark \"$full_string\"\n\n";
 
-
 }
+$log->write_to("Found $object_count Pseudogenes, added remarks to $remark_count\n\n");
 
 # tidy up
 close ACE;
