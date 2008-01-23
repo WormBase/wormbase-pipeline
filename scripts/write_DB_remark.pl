@@ -7,7 +7,7 @@
 # This script interogates an ACEDB database and returns all pfam/Interpro/blastx 
 # data as appropriate and generates a suitable DB_remark
 #
-# Last updated on: $Date: 2008-01-23 14:33:08 $
+# Last updated on: $Date: 2008-01-23 14:40:42 $
 # Last updated by: $Author: gw3 $
 
 
@@ -229,7 +229,7 @@ SUBSEQUENCE: while ( my $cds = $CDSs->next ) {
       if ($#pfamelements == 1) {
 			foreach (keys %pfamhits) {
 	  			$full_string .= "contains similarity to Pfam domain $_ ";
-	  			$full_string .= "$pfamhits{$_}" if $pfamhits{$_};
+	  			$full_string .= "$pfamhits{$_} " if $pfamhits{$_};
 			}
       }
       elsif ($#pfamelements > 1) {
@@ -237,7 +237,7 @@ SUBSEQUENCE: while ( my $cds = $CDSs->next ) {
 	$full_string .= "contains similarity to Pfam domains ";
 	foreach (keys %pfamhits) {
 	  if ($pfamhits{$_}) {
-	    $full_string .= "$_ ($pfamhits{$_})";
+	    $full_string .= "$_ ($pfamhits{$_}) ";
 	    $full_string .=  "($pfam_count{\"PFAM:$_\"})" if $pfam_count{"PFAM:$_"} > 1;
 	    if ($count < $#pfamelements) {
 	      $full_string .= ", ";
@@ -269,7 +269,7 @@ SUBSEQUENCE: while ( my $cds = $CDSs->next ) {
     # get peptide homologies if no motif data
     else {
       @peptide_homols = $protein->Pep_homol;
-      $full_string .= "C. $species $cgc_protein_name protein" if ($cgc_name); 
+      $full_string .= "C. $species $cgc_protein_name protein " if ($cgc_name); 
       #####################################################
       # no pfam or interpro hits; getting protein matches
       #####################################################
@@ -374,17 +374,17 @@ PSEUDOGENE: foreach my $pseudogene (@pseudogenes) {
 
   if (($type) || ($cgc_name)) {
     if (($type) && ($cgc_name)) { 
-      $full_string .= "C. elegans $type pseudogene $cgc_name"; 
+      $full_string .= "C. elegans $type pseudogene $cgc_name "; 
     } 
     elsif ($type) { 
-      $full_string .= "C. elegans $type pseudogene"; 
+      $full_string .= "C. elegans $type pseudogene "; 
     } 
     elsif ($cgc_name) {
-      $full_string .= "C. elegans pseudogene $cgc_name"; 
+      $full_string .= "C. elegans pseudogene $cgc_name "; 
     }
   } 
   else {
-    $full_string .= "C. elegans predicted pseudogene"; 
+    $full_string .= "C. elegans predicted pseudogene "; 
   }
 
   $object_count++;
@@ -457,57 +457,57 @@ TRANSCRIPT: while ( my $transcript = $transcripts->next ) {
 
   if ($type eq '') { # non-coding transcript isoforms have no tag after 'Transcript'
     if ($cgc_name) {
-      $full_string .= "C. $species non-coding isoform $cgc_name";
+      $full_string .= "C. $species non-coding isoform $cgc_name ";
     } 
     else {
-      $full_string .= "C. $species predicted non-coding isoform";
+      $full_string .= "C. $species predicted non-coding isoform ";
     } 
   }   
   elsif ($method eq 'tRNAscan-SE-1.23') { # tRNAs
     if ($cgc_name) {
-      $full_string .= "C. $species tRNA $cgc_name";
+      $full_string .= "C. $species tRNA $cgc_name ";
     } 
     else {
-      $full_string .= "C. $species predicted tRNA";
+      $full_string .= "C. $species predicted tRNA ";
     }
   } 
   elsif ($type eq 'ncRNA') { # RNA genes
     if ($cgc_name) {
-      $full_string .= "C. elegans non-protein coding RNA $cgc_name";
+      $full_string .= "C. elegans non-protein coding RNA $cgc_name ";
     } 
     else {
-      $full_string .= "C. elegans probable non-coding RNA";
+      $full_string .= "C. elegans probable non-coding RNA ";
     }
   } 
   elsif ($type eq 'snRNA') { # snRNA genes
     if ($cgc_name) {
-      $full_string .= "C. elegans small nuclear RNA $description $cgc_name";
+      $full_string .= "C. elegans small nuclear RNA $description $cgc_name ";
     } 
     else {
-      $full_string .= "C. elegans small nuclear RNA $description";
+      $full_string .= "C. elegans small nuclear RNA $description ";
     }
   } 
   elsif ($type eq 'snoRNA') { # snoRNA genes
     if ($cgc_name) {
-      $full_string .= "C. elegans small nucleolar RNA $description $cgc_name";
+      $full_string .= "C. elegans small nucleolar RNA $description $cgc_name ";
     } 
     else {
-      $full_string .= "C. elegans small nucleolar RNA $description";
+      $full_string .= "C. elegans small nucleolar RNA $description ";
     }
   } 
   elsif ($type eq 'miRNA') { # miRNA genes
     if ($cgc_name) {
-      $full_string .= "C. elegans microRNA $cgc_name";
+      $full_string .= "C. elegans microRNA $cgc_name ";
     } 
     else {
-      $full_string .= "C. elegans predicted micro RNA";
+      $full_string .= "C. elegans predicted micro RNA ";
     }
   } 
   elsif ($type eq 'scRNA') { # scRNA genes
     if ($cgc_name) {
-      $full_string .= "C. elegans small cytoplasmic RNA $cgc_name";
+      $full_string .= "C. elegans small cytoplasmic RNA $cgc_name ";
     } else {
-      $full_string .= "C. elegans predicted small cytoplasmic RNA";
+      $full_string .= "C. elegans predicted small cytoplasmic RNA ";
     }
   }
 
