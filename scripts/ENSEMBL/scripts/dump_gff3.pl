@@ -89,6 +89,8 @@ while( my $slice = shift @$slices) {
 				public_name => $transcript->stable_id(),
 			};
 			my $all_exons=$transcript->get_all_Exons();
+			my $all_t_exons = $transcript->get_all_translateable_Exons();
+
 			while( my $exon = shift @{$all_exons}) {
 				my $exon_stable_id = 'exon.'.$exon->stable_id();
 				print STDERR "   Dumping $exon_stable_id\n" if $debug;
@@ -100,21 +102,18 @@ while( my $slice = shift @$slices) {
 					strand    => $exon->strand(),
 				}
 			}
-			my $all_t_exons = $transcript->get_all_translateable_Exons();
+
 			while (my $cds = shift @{$all_t_exons}) {
-#				my $cds_stable_id = 'cds.'.$transcript->translation->stable_id();
 				my $cds_stable_id = 'coding_exon.'.$cds->stable_id();
 
-
-				print STDERR "   Dumping CDS $cds_stable_id\n" if $debug;
+				print STDERR "   Dumping coding_exons $cds_stable_id\n" if $debug;
 				push @{${${$gene_to_dump{'transcript'}}[-1]}{'cds'}}, {
 					stable_id => $cds_stable_id,
 					name      => $slice_name,
 					start     => $cds->start(),
 					end       => $cds->end(),
 					strand    => $cds->strand(),
-					phase     => $cds->phase(),
-# add blastp hits and domains as notes?
+					phase     => (3-$cds->phase())%3, # phase/frame conversion to a sane system
 				}
 			}
 		}
@@ -176,6 +175,8 @@ sub dump_feature {
 	return $gff_line;
 }
 
+
+# build the info tag including protein features and interpro
 sub get_info {
 	my $transcript= shift;
 	my $info='';
@@ -224,7 +225,7 @@ sub dump_gene {
 			undef,$transcript->{'public_name'},$parent);
 		$output .= gff_line(
 			$transcript->{'name'}, 'CDS', $transcript->{'cds_start'}, $transcript->{'cds_end'},
-			$transcript->{'strand'}, $transcript->{'translation_stable_id'}, 0 ,$transcript->{'display'} || undef, undef,$transcript->{info} 
+			$transcript->{'strand'}, $transcript->{'translation_stable_id'}, '.' ,$transcript->{'display'} || undef, undef,$transcript->{info} 
 			|| undef,$transcript->{'public_name'},$parent);
 	
 		# Store the parent of this transcript's exons
