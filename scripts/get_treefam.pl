@@ -38,7 +38,7 @@ GetOptions (
 	    "test"          => \$test,
 	    "store:s"       => \$store,
 	    "no_load"       => \$no_load
-	   );
+	   )|| die(@!);
 
 my $wormbase;
 if( $store ) {
@@ -166,30 +166,32 @@ foreach my $ID (keys %FAMILY)
 {
   my $family                 = $FAMILY{$ID};
   my @family                 = split(/\,/,$family); # THIS IS A LIST OF THE FAMILIES THAT A WORM GENE APPEARS IN.
-  my $no_families            = $#family + 1; # THIS IS THE NUMBER OF FAMILIES THAT A WORM GENE APPEARS IN.
+  my $no_families            = $#family + 1;        # THIS IS THE NUMBER OF FAMILIES THAT A WORM GENE APPEARS IN.
   print "$ID families: $no_families ($family)\n"; 
   my $gene = $ID;
-  my $gene_obj;
+
+  my ($gene_obj,$cds_obj);
+
   $gene = $gene =~ /(\w+\.\w+)\.\d+/ ? $1 : $gene;
-   if( $gene =~ /WBGene/ ) {
-     $gene_obj = $db->fetch("query find Gene $gene");
-   }
-   else {
-     $gene_obj = $db->fetch(Gene_name => "$gene");
-   }
-   if ($gene_obj) {
-     $gene_obj = $gene_obj->Molecular_name_for;
-   }
-   if ( $gene_obj ) {
-     if ( my $cds = $gene_obj->Corresponding_CDS ) {
-       if ( my $wormpep = $cds->Corresponding_protein ) {
-	 print OUT "\nProtein : \"",$wormpep->name,"\"\n";
-	 foreach (@family) {
-	   print OUT "Database TREEFAM TREEFAM_ID $_\n";
-	 }
-       }
+  if( $gene =~ /WBGene/ ) { # if a WBGeneID was used
+     $gene_obj = $db->fetch(Gene => "$gene")
+  }
+  else { # try to search for a CDS, else for a Gene_name
+     $cds_obj = $db->fetch(CDS=>"$gene");
+     unless ($cds_obj){
+      my $gene_name = $db->fetch(Gene_name => "$gene");
+      $gene_obj=$gene_name->Molecular_name_for if $gene_name;
      }
-   }
+  }
+  $cds_obj  ||= ($gene_obj->Corresponding_CDS) if $gene_obj;
+
+  next unless  $cds_obj;
+  if ( my $wormpep = $cds_obj->Corresponding_protein ) {
+	  print OUT "\nProtein : \"",$wormpep->name,"\"\n";
+	  foreach (@family) { 
+		  print OUT "Database TREEFAM TREEFAM_ID $_\n";
+	  }
+  }
 }
 
 #------------------------------------------------------------------# 
