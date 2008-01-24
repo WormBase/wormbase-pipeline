@@ -1045,6 +1045,12 @@ sub load_to_database {
   my $log      = shift;
   my $no_bk    = shift;
 
+  my $error=0;
+  my $species = $self->species;
+  my $version = $self->get_wormbase_version;
+  my $prev_version = $version-1;
+  my $pparse_file = $self->build_data . "/COMPARE/pparse_ace.dat"; # file holding pparse details from previous Builds
+
   unless ( -e "$file" and -e $database) {
     if ( $log) {
       $log->error;
@@ -1053,6 +1059,10 @@ sub load_to_database {
     print STDERR "Couldn't find file named: $file or database $database\n";
     return 1;
   }
+
+  # get the base filename without the path
+  my $basename = $file;
+  $basename =~ s/.*\///;
 
   my $st = stat($file);
   if ( $st->size > 50000000 and !defined ($no_bk) ) {
@@ -1089,8 +1099,7 @@ sub load_to_database {
   unless ($tsuser) {
 
     # remove trailing path of filename
-    $tsuser = $file;
-    $tsuser =~ s/.*\///;
+    $tsuser = $basename
   }
 
   $tsuser =~ s/\./_/g;
@@ -1103,16 +1112,69 @@ save
 quit
 EOF
   open( WRITEDB, "echo '$command'| $tace -tsuser $tsuser $database |" ) || die "Couldn't open pipe to database\n";
+
+# expect output like:
+#
+# acedb> // Parsing file /nfs/disk100/wormpub/BUILD/autoace/acefiles/feature_binding_site.ace
+# // objects processed: 154 found, 154 parsed ok, 0 parse failed
+# // 51 Active Objects
+# acedb> // 51 Active Objects
+# acedb>
+  my $parsed = 0;
+  my $active = 0;		# counts of objects
+
   while (my $line = <WRITEDB>) {
     print "$line";
     if ($line =~ 'ERROR') {
       if ($log) {
 	$log->write_to("ERROR while parsing ACE file $file\n$line\n");
 	$log->error;
+	$error=1;
       }
+    } elsif ($line =~ /objects processed:\s+\d+\s+found,\s+(\d+)\s+parsed ok,/) {
+      $parsed = $1;
+    } elsif ($line =~ /(\d+)\s+Active Objects/) {
+      $active = $1;
     }
   }
   close(WRITEDB);
+
+  if (! $error) {
+    # check against previous loads of this file
+    my $last_parsed;		# objects parsed on the previous build
+    my $last_active;
+    # get the number of objects in the pparse of this file in the previous Build
+    if (open (PPARSE_ACE, "< $pparse_file")) {
+      while (my $line = <PPARSE_ACE>) {
+	my ($pa_version, $pa_file, $pa_species, $pa_parsed, $pa_active) = split /\s+/, $line;
+	if ($pa_version == $prev_version && $pa_file eq $basename && $species eq $pa_species) {
+	  # store to get the last one in the previous build
+	  $last_parsed = $pa_parsed;
+	  $last_active = $pa_active;
+	} 
+      }
+      close (PPARSE_ACE);
+    }
+
+    # check the current Build parse object numbers against the previous one
+    if (defined $last_parsed) {
+      $log->write_to("Version WS$prev_version parsed $last_parsed objects OK with $last_active Active Objects\n");
+      $log->write_to("Version WS$version parsed $parsed objects OK with $active Active Objects\n\n");
+      if ($parsed < $last_parsed * 0.9 || $parsed > $last_parsed * 1.1
+      ||  $active < $last_active * 0.9 || $active > $last_active * 1.1) {
+	$log->write_to("*** POSSIBLE ERROR found while parsing ACE file $file\n\n");
+	$log->error;
+      }
+    }
+
+    # now store the details for this pparse
+    if (open (PPARSE_ACE, ">> $pparse_file")) {
+      print PPARSE_ACE "$version $basename $species $parsed $active\n";
+      close (PPARSE_ACE);
+    } else {
+      $log->write_to("WARNING: Couldn't write to $pparse_file\n\n");
+    }
+  }
 }
 
 ####################################
