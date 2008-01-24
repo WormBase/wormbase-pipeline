@@ -85,9 +85,12 @@ foreach my $chrom ( @chromosomes ) {
     }
   }
   else {
+    # for large chromosomes, ask for a file size limit of 400 Mb and a memory limit of 3.5 Gb
+    # See: http://scratchy.internal.sanger.ac.uk/wiki/index.php/Submitting_large_memory_jobs
+    my $bsub_options = scalar(@chromosomes) < 50 ? "-F 400000 -M 3500000 -R \"select[mem>3500] rusage[mem=3500]\"" : "";
     my $err = scalar(@chromosomes) < 50 ? "$scratch_dir/wormpubGFFdump.$chrom.err": "$scratch_dir/wormpubGFFdump.$submitchunk.err";
     my $out = scalar(@chromosomes) < 50 ? "$scratch_dir/wormpubGFFdump.$chrom.out" :"$scratch_dir/wormpubGFFdump.$submitchunk.out";
-    my $bsub = "bsub -e $err -o $out \"perl $dumpGFFscript -store $store -database $database -dump_dir $dump_dir -chromosome $chrom\"";
+    my $bsub = "bsub $bsub_options -e $err -o $out \"perl $dumpGFFscript -store $store -database $database -dump_dir $dump_dir -chromosome $chrom\"";
     $log->write_to("$bsub\n");
     print "$bsub\n";
     $wormbase->run_command("$bsub", $log);
