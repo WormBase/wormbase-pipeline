@@ -6,8 +6,8 @@
 #
 # This is a example of a good script template
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2007-12-04 14:53:50 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2008-01-24 16:15:04 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -360,7 +360,7 @@ sub read_GFF_queries {
     $i++;
     $queries[$i]{'DESC'}  = "Expr_pattern mapped Expression Patterns";
     $queries[$i]{'GFF'}   = "Expr_pattern";
-    $queries[$i]{'EXPECT'}= 2531;
+    $queries[$i]{'EXPECT'}= 4906;
 
     $i++;
     $queries[$i]{'DESC'}  = "Chronogram mappings";
