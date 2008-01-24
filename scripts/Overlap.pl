@@ -1,14 +1,26 @@
 #!/usr/local/bin/perl -w
 ######################### Overlap.pl ################################
 #
-# Copyright (c) 1999  Richard Bruskiewich (rbsk@sanger.ac.uk)
-# Sanger Centre, Wellcome Trust Genome Campus, Cambs, UK
-# All rights reserved.
-#
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation
-#
+# Copyright (c) 1999 Genome Research Ltd.
+# # Author: Richard Bruskiewich <rbsk@sanger.ac.uk>
+# #
+# # Any redistribution or derivation in whole or in part including any
+# # substantial portion of this code must include this copyright and
+# # permission notice.
+# #
+# # THIS SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+# # EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+# # MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+# # IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+# # CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+# # TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+# # SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# #
+# # This code is free software; you can redistribute it and/or modify it
+# # under the terms of the GNU General Public License as published by the
+# # Free Software Foundation; either version 2 of the License, or (at
+# # your option) any later version (http://www.gnu.org/copyleft/gpl.txt).
+# 
 # Name: Overlap.pl
 #
 # Function: 
