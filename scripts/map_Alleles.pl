@@ -49,23 +49,25 @@ map_Allele.pl options:
 	-database DATABASE_DIRECTORY      use a different AceDB
 	-weak_checks        relax sequence sanity checks
 	-help               print this message
+	-test               use the test database
 USAGE
 
 exit 1;	
 }
 
-my ( $debug, $store, $outdir,$allele ,$noload,$database,$weak_checks,$help);
+my ( $debug, $store, $outdir,$allele ,$noload,$database,$weak_checks,$help,$test);
 
 GetOptions(
     'debug=s'  => \$debug,
     'store=s'  => \$store,
-	'outdir=s' => \$outdir,
-	'allele=s' => \$allele,
-	'noload'   => \$noload,
-	'noupdate' => \$noload,
-	'database=s' => \$database,
-	'weak_checks' => \$weak_checks,
-	'help'		=> \$help,
+    'outdir=s' => \$outdir,
+    'allele=s' => \$allele,
+    'noload'   => \$noload,
+    'noupdate' => \$noload,
+    'database=s'  => \$database,
+    'weak_checks' => \$weak_checks,
+    'help'        => \$help,
+    'test'        => \$test,
 ) or &print_usage();
 
 &print_usage if $help;
@@ -77,7 +79,7 @@ if ($store) {
     $wb = Storable::retrieve($store)
       or croak("cannot restore wormbase from $store");
 }
-else { $wb = Wormbase->new( -debug => $debug, -test => $debug, -autoace => $database ) }
+else { $wb = Wormbase->new( -debug => $debug, -test => $test, -autoace => $database ) }
 
 my $log = Log_files->make_build_log($wb);
 MapAlleles::setup($log,$wb) unless $database;
