@@ -7,8 +7,8 @@
 #
 # This makes the autoace database from its composite sources.
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2008-01-15 13:30:38 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2008-01-25 09:23:43 $
 
 use strict;
 use lib  $ENV{'CVS_DIR'};
@@ -25,7 +25,7 @@ use Storable;
 # Command-line options          #
 #################################
 
-our ($help, $debug, $test);
+our ($help, $debug, $test, $species);
 my $store;
 my( $all, $parse, $init, $tmpgene, $pmap, $chromlink, $check, $allcmid, $reorder, $common );
 
@@ -41,7 +41,8 @@ GetOptions ("help"         => \$help,
 	    "check"        => \$check,
 	    "allcmid"      => \$allcmid,
 	    "reorder"      => \$reorder,
-	    "common"       => \$common
+	    "common"       => \$common,
+	    "species:s"	   => \$species
 	   );
 
 $all = 1 unless( $init or $parse or $tmpgene or $pmap or $chromlink or $check or $allcmid or $reorder or $common);
@@ -60,7 +61,8 @@ if( $store ) {
 }
 else {
   $wormbase = Wormbase->new( -debug   => $debug,
-			     -test    => $test,
+						     -test    => $test,
+						     -organism => $species
 			   );
 }
 
@@ -68,9 +70,9 @@ else {
 # database/file paths and locations
 my $basedir     = $wormbase->basedir;
 
-my $autoacedir  = $wormbase->autoace;
+my $autoacedir  = $wormbase->orgdb;
 my $wormbasedir = "$autoacedir/acefiles/primaries";
-my $configfile  = "$basedir/autoace_config/autoace.config";
+my $configfile  = "$basedir/autoace_config/".$wormbase->species.".config";
 my $dbpath = $autoacedir;
 
 # make log files
@@ -90,10 +92,10 @@ my $giface = $wormbase->giface;
 my $errors = 0; # for tracking system call related errors
 
 # start doing stuff
-&mail_reminder;
+#&mail_reminder;
 
 #Set up correct database structure if it doesn't exist
-&createdirs;	
+#&createdirs;	
 
 # Parse config file
 &parseconfig if ( $all or $parse );
@@ -103,30 +105,31 @@ my $errors = 0; # for tracking system call related errors
 # directories - use the config file to find them all
 &reinitdb() if ( $all or $init );
 
-# remove temp genes
-&remove_pariah_gene() if( $all or $tmpgene );
+if($wormbase->species eq 'elegans') {
+	# remove temp genes
+	&remove_pariah_gene() if( $all or $tmpgene );
 
-# remove tiling array data from autoace.
-&remove_tiling_data;
+	# remove tiling array data from autoace.
+	&remove_tiling_data;
 
-# Read in the physical map and make all maps
-&physical_map_stuff() if( $all or $pmap );
+	# Read in the physical map and make all maps
+	&physical_map_stuff() if( $all or $pmap );
 
-# Make the chromosomal links
-&makechromlink() if ( $all or $chromlink );
+	# Make the chromosomal links
+	&makechromlink() if ( $all or $chromlink );
 
-#check new build
-&check_make_autoace if ( $all or $check );
+	#check new build
+	&check_make_autoace if ( $all or $check );
 
-#write cosmid seq file
-&allcmid if ( $all or $allcmid );
+	#write cosmid seq file
+	&allcmid if ( $all or $allcmid );
 
-#reorder exons
-$wormbase->run_script("reorder_exons.pl", $log ) if( $all or $reorder );
+	#reorder exons
+	$wormbase->run_script("reorder_exons.pl", $log ) if( $all or $reorder );
+}
 
 #write COMMON_DATA files that can be done at start of build.
 $wormbase->run_script("update_Common_data.pl -clone2acc -clone2size -clone2seq -genes2lab -worm_gene2cgc -worm_gene2geneID -worm_gene2class -est -est2feature -gene_id -clone2type -cds2cgc", $log ) if( $all or $common );
-
 
 #finish
 $log->mail;
@@ -151,21 +154,6 @@ sub DbWrite {
     print WRITEDB $command;
     close WRITEDB;
 }
-
-
-###################################################
-# Get time coordinates
-
-sub GetTime {
-    my ($SECS,$MINS,$HOURS,$DAY,$MONTH,$YEAR)=(localtime)[0,1,2,3,4,5];
-    if ($MINS=~/^\d{1,1}$/) {
-	$MINS="0"."$MINS";
-    }
-    my $REALMONTH=$MONTH+1;
-    my $REALYEAR=$YEAR+1900;
-    my $NOW = "$DAY-$REALMONTH-$REALYEAR:$HOURS:$MINS";
-    return $NOW;
-} 
 
 
 ################################################
@@ -208,32 +196,21 @@ sub parseconfig {
   my ($filename,$dbname);
   open(CONFIG,"$configfile");
   while(<CONFIG>) {
-
-    # some formating, remove leading and trailing whitespace
-    s/^\s+//;
-    s/\s+$//;   
-    
-    # next if comment line
-    next if (/^\#/ || /^$/);
-    
-    # parse database information
-    if (/^P\s+(\S+)\s+(\S+)$/) {
-      $dbname = $1;
-      next;
+	next if /#/;
+	next unless /\w/;
+    my %makefile;
+    foreach my $pair (split(/\t+/,$_)) {
+		my($tag,$value)= ($pair =~ /(\w+)=(.*)/);
+		if( $tag and $value) {
+	    	$makefile{$tag} = $value;
+		}
+		else {
+	    	$log->log_and_die("Ill formed config line $_ :\n");
+	    }
     }
-    
-    # parse file name
-    if (/^\S+\s+(\S+)/) {
-      $filename = $1;
-    }
-    
-    # next if no filename parsed
-    if (!defined $filename) {
-      $log->write_to( "ERROR: Failed to parse filename ..\n");
-      $log->error;
-      next;
-    }
-    
+    next if $makefile{'path'}; #database path defn used in make_acefiles.pl
+    $dbname = $makefile{'db'};
+    $filename = $makefile{'file'};
     # check that file exists before adding to array and is not zero bytes
     if (-e "$wormbasedir"."/$dbname/"."$filename") {
       if (-z "$wormbasedir"."/$dbname/"."$filename") {
@@ -245,7 +222,11 @@ sub parseconfig {
 			push (@filenames,"$wormbasedir"."/$dbname/"."$filename");
 			$log->write_to( "* Parse config file : file $wormbasedir/$dbname/$filename noted ..\n");
       }
-    } 
+    }
+    elsif( $dbname eq 'misc') {
+    	push(@filenames,$wormbase->misc_static."/$filename");
+    	$log->write_to( "* Parse config file : file ".$wormbase->misc_static."/$filename noted ..\n");
+    }
     else {
       $log->write_to( "ERROR: file $wormbasedir/$dbname/$filename is not existent !\n");
       $log->error;
@@ -338,35 +319,6 @@ sub physical_map_stuff{
 
   $log->write_to( $wormbase->runtime. ": finished\n\n");
 }
-
-
-###################################################
-# Set the date correctly in displays.wrm
-
-sub setdate {
-  my @t   = localtime ; while ($t[5] >= 100) { $t[5] -= 100 ; }
-  my $dat = sprintf "%02d\/%02d\/%02d", $t[3], $t[4]+1, $t[5] ;
-  my $status = move("$dbpath/wspec/displays.wrm", "$dbpath/wspec/displays.old");
-  print "ERROR: Couldn't move file: $!\n" if ($status == 0);
-
-
-  open(FILE,"$dbpath/wspec/displays.old") or do { $log->write_to( "failed to open $dbpath/wspec/displays.old\n"); return 1;};
-  open(NEWFILE,">$dbpath/wspec/displays.wrm") or do { $log->write_to( "failed to open $dbpath/wspec/displays.wrm\n"); return 1;};
-  while (<FILE>) {
-    if (/^_DDtMain/) {
-      print NEWFILE "_DDtMain -g TEXT_FIT -t \"C.elegans database $dat\"  -w .43 -height .23 -help acedb\n";
-    } 
-    else {
-      print NEWFILE $_;
-    }
-  }
-  close(FILE);
-  close(NEWFILE);
-  unlink "$dbpath/wspec/displays.old" or $log->write_to( "ERROR: Couldn't unlink file: $!\n");
-}
-
-
-
 
 
 #############################
