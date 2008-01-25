@@ -7,7 +7,7 @@
 # Do fast overlap matching of positions of two sets of things.
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2007-10-29 13:01:19 $      
+# Last updated on: $Date: 2008-01-25 15:55:34 $      
 
 =pod
 
@@ -499,6 +499,96 @@ sub get_EST_BEST {
      file			=> "CHROMOSOME_${chromosome}_BLAT_EST_BEST.gff",
      gff_source			=> "BLAT_EST_BEST",
      gff_type			=> "EST_match",
+     ID_after			=> "Target\\s+\"Sequence:",
+     reverse_orientation        => 1,
+     homology                   => 1,
+     chromosome                 => $chromosome,
+   );
+
+  return $self->read_GFF_file(\%GFF_data);
+
+}
+
+=head2
+
+    Title   :   get_EST_NEMATODE
+    Usage   :   my @gff = $ovlp->get_EST_NEMATODE($chromosome)
+    Function:   reads the GFF data for EST NEMATODE
+    Returns :   list of lists for GFF data
+    Args    :   chromosome number
+
+=cut
+
+sub get_EST_NEMATODE {
+  my $self = shift;
+  my ($chromosome) = @_;
+
+  my %GFF_data = 
+   (
+     directory			=> $self->{database} . "/GFF_SPLITS",
+     file			=> "CHROMOSOME_${chromosome}_BLAT_NEMATODE.gff",
+     gff_source			=> "BLAT_NEMATODE",
+     gff_type			=> "translated_nucleotide_match",
+     ID_after			=> "Target\\s+\"Sequence:",
+     reverse_orientation        => 1,
+     homology                   => 1,
+     chromosome                 => $chromosome,
+   );
+
+  return $self->read_GFF_file(\%GFF_data);
+
+}
+
+=head2
+
+    Title   :   get_EST_NEMBASE
+    Usage   :   my @gff = $ovlp->get_EST_NEMBASE($chromosome)
+    Function:   reads the GFF data for EST NEMBASE
+    Returns :   list of lists for GFF data
+    Args    :   chromosome number
+
+=cut
+
+sub get_EST_NEMBASE {
+  my $self = shift;
+  my ($chromosome) = @_;
+
+  my %GFF_data = 
+   (
+     directory			=> $self->{database} . "/GFF_SPLITS",
+     file			=> "CHROMOSOME_${chromosome}_BLAT_NEMBASE.gff",
+     gff_source			=> "BLAT_NEMBASE",
+     gff_type			=> "translated_nucleotide_match",
+     ID_after			=> "Target\\s+\"Sequence:",
+     reverse_orientation        => 1,
+     homology                   => 1,
+     chromosome                 => $chromosome,
+   );
+
+  return $self->read_GFF_file(\%GFF_data);
+
+}
+
+=head2
+
+    Title   :   get_EST_WASHU
+    Usage   :   my @gff = $ovlp->get_EST_WASHU($chromosome)
+    Function:   reads the GFF data for EST WASHU
+    Returns :   list of lists for GFF data
+    Args    :   chromosome number
+
+=cut
+
+sub get_EST_WASHU {
+  my $self = shift;
+  my ($chromosome) = @_;
+
+  my %GFF_data = 
+   (
+     directory			=> $self->{database} . "/GFF_SPLITS",
+     file			=> "CHROMOSOME_${chromosome}_BLAT_WASHU.gff",
+     gff_source			=> "BLAT_WASHU",
+     gff_type			=> "translated_nucleotide_match",
      ID_after			=> "Target\\s+\"Sequence:",
      reverse_orientation        => 1,
      homology                   => 1,
