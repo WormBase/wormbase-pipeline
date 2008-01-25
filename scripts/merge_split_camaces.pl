@@ -5,7 +5,7 @@
 # A script to make multiple copies of camace for curation, and merge them back again
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2007-11-29 14:48:41 $
+# Last edited on: $Date: 2008-01-25 13:49:00 $
 #
 # Persisting errors.
 #running csh -c "reformat_acediff file 1 file2"
@@ -212,7 +212,6 @@ sub remove_data {
   #Save the database.
   $command .= "save\n";
   $command .= "quit\n";
-#  $command = "query find Homol_data *tiling*\nkill\ny\nquery find Sequence *tiling*\nkill\ny\nquery find Motif *curation_anomaly\nkill\ny\nsave\nquit\n";
   print "Removing tiling array data.\n";
   open (TACE,"| $tace") or die "Failed to open database connection\n";
   print TACE $command;
@@ -302,11 +301,11 @@ sub update_camace {
   ############################################################
   &remove_data("camace",);
   $ENV{'ACEDB'} = $canonical;
-  &loadace("/nfs/disk100/wormpub/CURATION_DATA/anomalies.ace", 'curation_anomaly_data') or die "Failed to load new curation data\n";
+  &loadace("$wormpub./CURATION_DATA/anomalies.ace", 'curation_anomaly_data') or die "Failed to load new curation data\n";
   print "Updated anomaly data in $canonical\n\n";
 
-  #&loadace($wormpub."/tiling.ace", 'tiling array data') or die "Failed to load tiling array data\n";
-  #print "Updated tiling array data in $canonical\n\n";
+  &loadace($wormpub."/CURATION_DATA/tiling_array.ace", 'tiling array data') or die "Failed to load tiling array data\n";
+  print "Updated tiling array data in $canonical\n\n";
 
   print "Looking for /nfs/disk100/wormpub/CURATION_DATA/assign_orientation.WS${version}.ace.......................\n";
   if (-e "/nfs/disk100/wormpub/CURATION_DATA/assign_orientation.WS${version}a.ace") {
@@ -363,6 +362,8 @@ sub split_databases {
     $wormbase->run_script("TransferDB.pl -start $canonical -end $wormpub/camace_${database} -split -database -wspec", $log) && die "Failed to run TransferDB.pl for camace_${database}\n";
     }
   print "CAMACE SPLITS UPDATED\n";
+  #remove gapped alignment for homol data from camace_gw3
+  &loadace("/nfs/disk100/wormpub/camace_orig/acefiles/method_fix.ace", 'camace_gw3_method_fix') or die "Failed to updates the methods in camace_gw3!!\n";
 }
 
 sub usage {
