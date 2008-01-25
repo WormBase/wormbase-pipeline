@@ -7,7 +7,7 @@
 # Do fast overlap matching of positions of two sets of things.
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-01-25 15:55:34 $      
+# Last updated on: $Date: 2008-01-25 16:00:19 $      
 
 =pod
 
@@ -1527,6 +1527,35 @@ sub get_3_UTRs {
      gff_source			=> "Coding_transcript",
      gff_type			=> "three_prime_UTR",
      ID_after			=> 'Transcript\s+',
+     chromosome                 => $chromosome,
+
+   );
+
+  return $self->read_GFF_file(\%GFF_data);
+
+}
+
+=head2
+
+    Title   :   get_Genes
+    Usage   :   my @gff = $ovlp->get_Genes($chromosome)
+    Function:   reads the GFF data for the Genes
+    Returns :   list of lists for GFF data
+    Args    :   chromosome number
+
+=cut
+
+sub get_Genes {
+  my $self = shift;
+  my ($chromosome) = @_;
+
+  my %GFF_data = 
+   (
+     directory			=> $self->{database} . "/GFF_SPLITS",
+     file			=> "CHROMOSOME_${chromosome}_gene.gff",
+     gff_source			=> "gene",
+     gff_type			=> "gene",
+     ID_after			=> 'Gene\s+',
      chromosome                 => $chromosome,
 
    );
