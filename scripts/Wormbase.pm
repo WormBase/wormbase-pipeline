@@ -1503,7 +1503,16 @@ sub species_accessors {
 	}
 	return %accessors;
 }
-
+####################################
+# accessor for elegans - required sometime for other species builds
+sub build_accessor {
+	my $self = shift;
+	my $wb = Wormbase->new( -debug   => $self->debug,
+			     			-test     => $self->test
+			     		);
+			     		
+	return $wb;
+}
 ####################################
 # accessor for the 'tier3' species
 sub tier3_species_accessors {
@@ -1545,7 +1554,7 @@ sub get_binned_chroms {
 	my $bin_size = shift;
 	$bin_size = 64 unless $bin_size;
 	
-	my @chroms = $self->get_chromosome_names;
+	my @chroms = $self->get_chromosome_names(-prefix => 1, -mito => 1);
 	if (scalar @chroms > 50){
 		my @bins;
 		my $i=0;
