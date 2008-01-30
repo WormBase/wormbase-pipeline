@@ -1,7 +1,7 @@
 #!/usr/local/ensembl/bin/perl -w                  
 #
 # Last updated by: $Author: mh6 $     
-# Last updated on: $Date: 2008-01-30 14:11:20 $      
+# Last updated on: $Date: 2008-01-30 14:17:52 $      
 
 use strict;
 use Getopt::Long;
@@ -31,7 +31,7 @@ $file =~ /ipi_human(_\d+_\d+)/;
 my $datestamp = $1;
 my $output_dir = "/lustre/work1/ensembl/wormpipe/dumps/";
 print "processing $file\n" if $debug;
-my $fasta = "/lustre/work1/ensembl/wormpipe/BlastDB/ipi_human$datestamp.pep");
+my $fasta = "/lustre/work1/ensembl/wormpipe/BlastDB/ipi_human$datestamp.pep";
 
 if( $debug ) {
   $output_dir .= "_test";
