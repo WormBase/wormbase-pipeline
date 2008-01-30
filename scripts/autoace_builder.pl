@@ -6,8 +6,8 @@
 #
 # Usage : autoace_builder.pl [-options]
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2008-01-30 14:35:55 $
+# Last edited by: $Author: mh6 $
+# Last edited on: $Date: 2008-01-30 15:46:29 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -82,7 +82,7 @@ GetOptions(
 	   'check'    	    => \$check,
 	   'data_check'     => \$data_check,
 	   'user:s'         => \$user,
-	  );
+	  )||die(@!);
 
 my $wormbase = Wormbase->new(
     -test    => $test,
