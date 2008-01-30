@@ -7,8 +7,8 @@
 #
 # This makes the autoace database from its composite sources.
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2008-01-25 09:23:43 $
+# Last edited by: $Author: mh6 $
+# Last edited on: $Date: 2008-01-30 09:32:41 $
 
 use strict;
 use lib  $ENV{'CVS_DIR'};
@@ -95,7 +95,7 @@ my $errors = 0; # for tracking system call related errors
 #&mail_reminder;
 
 #Set up correct database structure if it doesn't exist
-#&createdirs;	
+&createdirs;	
 
 # Parse config file
 &parseconfig if ( $all or $parse );
