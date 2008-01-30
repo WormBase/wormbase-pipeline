@@ -122,16 +122,16 @@ foreach my $slice(@slices){
 
 		# briggsae part
 
-		# briggsae, remanei, brugia part		
+		# briggsae	
 		while (my ($k,$v)=each(%briggsae_ids)){
 			   	my $sid=$cds2wbgene{$k}?$cds2wbgene{$k}:$k;
 				print "Gene : \"$sid\"\n";
 				print "Ortholog $gid \"${\$species{ $config->{taxon_id}}}\" From_analysis WormBase-Compara\n"; # elegans
-				while (my ($r_k,$r_v)=each(%remanei_ids)){
+				while (my ($r_k,$r_v)=each(%remanei_ids)){                                                     # remanei
 				        my $rid=$cds2wbgene{$r_k}?$cds2wbgene{$r_k}:$r_k;
 					print "Ortholog $rid \"$species{$$r_v[0]}\" From_analysis WormBase-Compara\n"
 				}
-                                while (my ($r_k,$r_v)=each(%brugia_ids)){
+                                while (my ($r_k,$r_v)=each(%brugia_ids)){                                                      # brenneri
 				        my $rid=$cds2wbgene{$r_k}?$cds2wbgene{$r_k}:$r_k;
 					print "Ortholog_other Brugia_database gene $rid \"$species{$$r_v[0]}\" From_analysis WormBase-Compara\n"
 				}
@@ -145,11 +145,11 @@ foreach my $slice(@slices){
 			   	my $sid=$cds2wbgene{$k}?$cds2wbgene{$k}:$k;
 				print "Gene : \"$sid\"\n";
 				print "Ortholog $gid \"${\$species{ $config->{taxon_id}}}\" From_analysis WormBase-Compara\n"; # elegans
-				while (my ($r_k,$r_v)=each(%briggsae_ids)){
+				while (my ($r_k,$r_v)=each(%briggsae_ids)){                                                    # briggsae
 				        my $rid=$cds2wbgene{$r_k}?$cds2wbgene{$r_k}:$r_k;
 					print "Ortholog $rid \"$species{$$r_v[0]}\" From_analysis WormBase-Compara\n"
 				}
-                                while (my ($r_k,$r_v)=each(%brugia_ids)){
+                                while (my ($r_k,$r_v)=each(%brugia_ids)){                                                      # brigia
 				        my $rid=$cds2wbgene{$r_k}?$cds2wbgene{$r_k}:$r_k;
 					print "Ortholog_other Brugia_databse gene $rid \"$species{$$r_v[0]}\" From_analysis WormBase-Compara\n"
 				}
@@ -182,8 +182,9 @@ sub get_commondata {
 		eval($data);
 
 		while(my ($k,$v)=each(%{$VAR1})){
+			$genehas{$k}=$v;
 			$k=~s/[a-z]$//;
-			$genehash{$k}=$v
+			$genehash{$k}=$v;
 		}
 	}
 	return \%genehash;
