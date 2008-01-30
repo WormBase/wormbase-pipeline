@@ -35,7 +35,7 @@ if ( $store ) {
 			     );
 }
 
-my $dir = glob("~wormpipe/BlastDB");
+my $dir = '/lustre/work1/ensembl/wormpipe/BlastDB';
 my $log = Log_files->make_build_log($wormbase);
 
 if ( $chroms ) {
