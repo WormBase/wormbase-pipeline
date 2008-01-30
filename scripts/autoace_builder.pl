@@ -7,7 +7,7 @@
 # Usage : autoace_builder.pl [-options]
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2008-01-07 15:27:36 $
+# Last edited on: $Date: 2008-01-30 14:35:55 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -241,6 +241,9 @@ sub map_features {
 
     # maps SAGE tags to the genes and to the genome
     $wormbase->run_script( 'map_tags.pl -load', $log );
+    
+    # attach 'other nematode' ESTs to the genes they BLAT to best
+    $wormbase->run_script( 'attach_other_nematode_ests.pl -load', $log );
     
 }
 
