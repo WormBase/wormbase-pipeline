@@ -7,7 +7,7 @@
 # 
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-01-30 14:27:42 $      
+# Last updated on: $Date: 2008-01-30 14:59:13 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -37,7 +37,6 @@ GetOptions ("help"       => \$help,
 	    "load"       => \$load,
 	    );
 
-$debug = "gw3";
 
 if ( $store ) {
   $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
