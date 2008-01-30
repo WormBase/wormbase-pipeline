@@ -6,8 +6,8 @@
 #
 # Usage : autoace_builder.pl [-options]
 #
-# Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2008-01-30 15:46:29 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2008-01-30 16:38:09 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -20,7 +20,7 @@ use Coords_converter;
 use Log_files;
 use Storable;
 
-my ( $debug, $test, $database );
+my ( $debug, $test, $database, $species);
 my ( $initiate, $prepare_databases, $acefile, $build, $first_dumps );
 my ( $make_wormpep, $finish_wormpep );
 my ( $prep_blat, $run_blat,     $finish_blat );
@@ -81,13 +81,16 @@ GetOptions(
 	   'release'        => \$release,
 	   'check'    	    => \$check,
 	   'data_check'     => \$data_check,
+	   'species:s'      => \$species,
 	   'user:s'         => \$user,
 	  )||die(@!);
+
 
 my $wormbase = Wormbase->new(
     -test    => $test,
     -debug   => $debug,
-    -version => $initiate
+    -version => $initiate,
+    -organism=> $species
 );
 
 # establish log file.
