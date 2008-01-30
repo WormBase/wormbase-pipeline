@@ -1,7 +1,7 @@
 #!/usr/local/ensembl/bin/perl -w                  
 #
-# Last updated by: $Author: ar2 $     
-# Last updated on: $Date: 2007-04-19 10:41:40 $      
+# Last updated by: $Author: mh6 $     
+# Last updated on: $Date: 2008-01-30 14:11:20 $      
 
 use strict;
 use Getopt::Long;
@@ -31,7 +31,7 @@ $file =~ /ipi_human(_\d+_\d+)/;
 my $datestamp = $1;
 my $output_dir = "/lustre/work1/ensembl/wormpipe/dumps/";
 print "processing $file\n" if $debug;
-my $fasta = glob("~wormpipe/BlastDB/ipi_human$datestamp.pep");
+my $fasta = "/lustre/work1/ensembl/wormpipe/BlastDB/ipi_human$datestamp.pep");
 
 if( $debug ) {
   $output_dir .= "_test";
@@ -58,11 +58,11 @@ tie my %PEPTIDE,'GDBM_File', "/tmp/peptide.dbm",&GDBM_WRCREAT, 0777 or die "cann
 tie my %DATABASES,'GDBM_File', "/tmp/databases.dbm",&GDBM_WRCREAT, 0777 or die "cannot open /tmp/databases.dbm\n";
 
 my %database_field = ( 	'VEGA' 		=> 'OtterID',
-						'ENSEMBL' 	=> 'ENSEMBL_PEP_ID',
-						'SWISS-PROT'=> 'SwissProt_AC',
-						'TREMBL' 	=> 'TrEMBL_ID',
-						'H-INV' 	=> 'H-INV_ID'
-					);
+			'ENSEMBL' 	=> 'ENSEMBL_PEP_ID',
+			'SWISS-PROT'=> 'SwissProt_AC',
+			'TREMBL' 	=> 'TrEMBL_ID',
+			'H-INV' 	=> 'H-INV_ID'
+		     );
 
 my $prim_DB_id;
 my $prim_DB;
@@ -143,8 +143,8 @@ while (<DATA>) {
     	print OUT "Gene_name \"$1\"\n";
     }
     splice @data,0,3;
-    print OUT "Title \"".join(" ",@data)."\"\n";#"
-	$DESC{$prim_DB_id} .= join(" ",@data);
+    print OUT "Title \"".join(" ",@data)."\"\n";
+    $DESC{$prim_DB_id} .= join(" ",@data);
     print OUT "\nPeptide : \"$prim_DB:$prim_DB_id\"\n";
     print FASTA ">$prim_DB_id\n";
       
