@@ -4,13 +4,13 @@
 # 
 # written by Anthony Rogers
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2008-01-07 13:18:57 $
+# Last edited by: $Author: mh6 $
+# Last edited on: $Date: 2008-01-31 11:23:54 $
 
 
 use DBI;
 use strict;
-my $wormpipe_dir = glob("~wormpipe");
+my $wormpipe_dir = '/lustre/work1/ensembl/wormpipe';
 use lib $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'}."/BLAST_scripts";
 use Wormbase;
@@ -129,13 +129,13 @@ my %wormprotprocessIds = (
 			 );
 
 #get new chromosomes
-$wormbase->run_command("ssh cbi4 ~/scripts/BLAST_scripts/copy_files_to_acari.pl -chrom", $log) if ($chromosomes);
+$wormbase->run_command("perl ~/wormbase/scripts/BLAST_scripts/copy_files_to_acari.pl -chrom", $log) if ($chromosomes);
 
 
 #get new wormpep
-$wormbase->run_command("ssh cbi4 ~/scripts/BLAST_scripts/copy_files_to_acari.pl -wormpep", $log) if ($wormpep);
-$wormbase->run_command("ssh cbi4 ~/scripts/BLAST_scripts/copy_files_to_acari.pl -brigpep", $log) if ($brigpep);
-$wormbase->run_command("ssh cbi4 ~/scripts/BLAST_scripts/copy_files_to_acari.pl -remapep", $log) if ($remapep);
+$wormbase->run_command("perl ~/wormbase/scripts/BLAST_scripts/copy_files_to_acari.pl -wormpep", $log) if ($wormpep);
+$wormbase->run_command("perl ~/wormbase/scripts/BLAST_scripts/copy_files_to_acari.pl -brigpep", $log) if ($brigpep);
+$wormbase->run_command("perl ~/wormbase/scripts/BLAST_scripts/copy_files_to_acari.pl -remapep", $log) if ($remapep);
 
 
 my %currentDBs;   #ALSO used in setup_mySQL 
@@ -548,8 +548,8 @@ if( $prep_dump ) {
   my $autoace = $wormbase->autoace;
   my $wormpep = $wormbase->wormpep;
   if( -e $wormbase->gff_splits."/CHROMOSOME_X_curated.gff") {
-    $wormbase->run_command("cat ".$wormbase->gff_splits."/CHROMOSOME_*_curated.gff | $scripts_dir/BLAST_scripts/gff2cds.pl > /nfs/acari/wormpipe/Elegans/cds$WS_version.gff", $log);
-    $wormbase->run_command("cat ".$wormbase->gff_splits."/CHROMOSOME_*_Genomic_canonical.gff   | $scripts_dir/BLAST_scripts/gff2cos.pl > /nfs/acari/wormpipe/Elegans/cos$WS_version.gff",$log);
+    $wormbase->run_command("cat ".$wormbase->gff_splits."/CHROMOSOME_*_curated.gff | $scripts_dir/BLAST_scripts/gff2cds.pl > $wormpipe_dir/Elegans/cds$WS_version.gff", $log);
+    $wormbase->run_command("cat ".$wormbase->gff_splits."/CHROMOSOME_*_Genomic_canonical.gff   | $scripts_dir/BLAST_scripts/gff2cos.pl > $wormpipe_dir/Elegans/cos$WS_version.gff",$log);
     
     system("touch $wormpipe_dir/DUMP_PREP_RUN");
   }
@@ -612,7 +612,7 @@ if( $cleanup ) {
 #   /lustre/work1/ensembl/wormpipe/dumps/
 #      *.ace
 #      *.log
-  my $clear_dump = "/lustre/work1/ensembl/wormpipe/dumps";
+  my $clear_dump = "$wormpipe_dir/dumps";
   print "Removing . . . \n";
   print "\t$clear_dump/*.ace\n";  system("rm -f $clear_dump/*.ace") && warn "cant remove ace files from $clear_dump";
   print "\t$clear_dump/*.log\n";  system("rm -f $clear_dump/*.log") && warn "cant remove log files from $clear_dump";
