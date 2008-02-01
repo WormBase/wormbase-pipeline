@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: ar2 $
-// Last edited on: $Date: 2007-12-19 14:54:48 $
+// Last edited on: $Date: 2008-02-01 10:31:47 $
 
 
 
@@ -2784,6 +2784,8 @@
 	   Sequence_details SMap S_parent UNIQUE Sequence UNIQUE ?Sequence XREF Allele
 			    Flanking_sequences UNIQUE Text UNIQUE Text
 			    CGH_deleted_probes UNIQUE Text UNIQUE Text
+			    FivePrimeGap       UNIQUE Int
+                            ThreePrimeGap      UNIQUE Int			      
 			    Type_of_mutation Substitution UNIQUE Text Text #Evidence // wild type and mutant sequence
 					     Insertion    UNIQUE Text      #Evidence
 					     Deletion     UNIQUE Text      #Evidence  
