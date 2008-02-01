@@ -104,11 +104,11 @@ my $searchspace = 10000000;
 
 
 # input files
-my $helper_files_dir = glob("~wormpipe/Elegans");
+my $helper_files_dir = '/lustre/work1/ensembl/wormpipe/Elegans';
 my $agp_file = "$helper_files_dir/WS$version.agp";
 my $cds_file = "$helper_files_dir/cds$version.gff";
 my $cos_file = "$helper_files_dir/cos$version.gff";
-my $wormpep_file = glob("~wormpipe/BlastDB/wormpep$version.pep");
+my $wormpep_file = "/lustre/work1/ensembl/wormpipe/BlastDB/wormpep$version.pep";
 
 unless ( -e $agp_file and -e $wormpep_file and -e $cds_file and -e $cos_file ) {
   $log->log_and_die("missing helper file please check these exist : \n$agp_file\n$cds_file\n$cos_file\n$wormpep_file\n");
