@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-01-07 13:14:35 $      
+# Last updated on: $Date: 2008-02-04 10:31:50 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -286,7 +286,7 @@ foreach my $chromosome (@chromosomes) {
   &get_matched_exons(\@cds_exons, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, $chromosome);
 
   print "finding short CDS exons\n";
-  &get_short_exons(\@cds_exons, $chromosome);
+  &get_short_exons(\@coding_transcripts, $chromosome);
 
   print "finding EST/genome mismatches\n";
   &get_est_mismatches(\@est, $chromosome);
@@ -929,7 +929,10 @@ sub get_protein_differences {
 
   my $SMALL_OVERLAP = -20;	# amount of small overlap to ignore
 
-  my %exons_match = &init_match(near => $SMALL_OVERLAP, same_sense => 1); # allow the protein to have up to 20 bases overlap without it being a match
+  # 4 Feb 2008 - changed this to look for overlaps in either sense so
+  # we don't flag up low complexity regions where proteins align to
+  # the opposite sense.
+  my %exons_match = &init_match(near => $SMALL_OVERLAP, same_sense => 0); # allow the protein to have up to 20 bases overlap without it being a match
   my %pseud_match = &init_match();
   my %trans_match = &init_match();
   my %trane_match = &init_match();
@@ -2339,7 +2342,8 @@ sub get_est_mismatches {
 }
 ##########################################
 # Finding weak exon splice sites
-# note any splice sites with a score < 1.0
+# output to database any splice sites with a score < 0.1
+# output to database any splice sites with a score < 0.5 if there are two or more such splice sites in a gene
 # get_weak_exon_splice_sites(\@exons, $chromosome);
 
  sub get_weak_exon_splice_sites {
@@ -2349,8 +2353,13 @@ sub get_est_mismatches {
    my $seq_file = "$database/CHROMOSOMES/CHROMOSOME_$chromosome.dna";
    my $seq = read_file($seq_file);
 
+   my $splice_cutoff = 0.5;	# if we have two or more splice sites below this value, then report them
+   my $splice_cutoff_single = 0.1; # if we have only one splice site, it has to be below ths value before we report it
+   my $count_low_sites = 0;
+
    my $prev_end = 0;
    my $prev_exon = "";
+   my @prev_details = ();	# details to store in database of previous splice site < 'splice_cutoff'
 
    foreach my $exon (@{$exons_aref}) { # $exon_id, $chrom_start, $chrom_end, $chrom_strand
 
@@ -2374,13 +2383,30 @@ sub get_est_mismatches {
 	 $score_3 = $pwm->splice3($seq, $chrom_start-2, '+'); # -1 to convert from acedb sequence pos to perl string coords
 
 	 #print "5' site: $score_5\n";
-	 if ($score_5 < 0.75) {
-	   &output_to_database("WEAK_INTRON_SPLICE_SITE", $chromosome, $exon_id, $prev_end, $prev_end+1, $chrom_strand, $anomaly_score, '');
+	 if ($score_5 < $splice_cutoff) {
+	   if ($score_5 < $splice_cutoff_single || $count_low_sites > 0) {
+	     &output_to_database("WEAK_INTRON_SPLICE_SITE", $chromosome, $exon_id, $prev_end, $prev_end+1, $chrom_strand, $anomaly_score, '');
+	     if ($count_low_sites == 1 && @prev_details) { # output the stored details of the first site
+	       &output_to_database("WEAK_INTRON_SPLICE_SITE", @prev_details);
+	     }
+	   } else {		# store the details in case we find a second low-scoring site in this CDS
+	     @prev_details = ($chromosome, $exon_id, $prev_end, $prev_end+1, $chrom_strand, $anomaly_score, '');
+	   }
+	   $count_low_sites++;
 	 }
 	 #print "3' site: $score_3\n";
-	 if ($score_3 < 0.75) {
-	   &output_to_database("WEAK_INTRON_SPLICE_SITE", $chromosome, $exon_id, $chrom_start-1, $chrom_start, $chrom_strand, $anomaly_score, '');
+	 if ($score_3 < $splice_cutoff) {
+	   if ($score_3 < $splice_cutoff_single || $count_low_sites > 0) {
+	     &output_to_database("WEAK_INTRON_SPLICE_SITE", $chromosome, $exon_id, $chrom_start-1, $chrom_start, $chrom_strand, $anomaly_score, '');
+	     if ($count_low_sites == 1 && @prev_details) { # output the stored details of the first site
+	       &output_to_database("WEAK_INTRON_SPLICE_SITE", @prev_details);
+	     }
+	   } else {		# store the details in case we find a second low-scoring site in this CDS
+	     @prev_details = ($chromosome, $exon_id,  $chrom_start-1, $chrom_start, $chrom_strand, $anomaly_score, '');
+	   }
+	   $count_low_sites++;
 	 }
+
        } else {			# reverse sense
 	 $score_5 = $pwm->splice5($seq, $chrom_start-1, '-'); # -1 to convert from acedb sequence pos to perl string coords
 	 $score_3 = $pwm->splice3($seq, $prev_end, '-'); # -1 to convert from acedb sequence pos to perl string coords
@@ -2392,15 +2418,34 @@ sub get_est_mismatches {
 	 #print "3' seq: $s3\n";
 
 	 #print "5' site: $score_5\n";
-	 if ($score_5 < 0.75) {
-	   &output_to_database("WEAK_INTRON_SPLICE_SITE", $chromosome, $exon_id, $chrom_start-1, $chrom_start, $chrom_strand, $anomaly_score, '');
+	 if ($score_5 < $splice_cutoff) {
+	   if ($score_5 < $splice_cutoff_single || $count_low_sites > 0) {
+	     &output_to_database("WEAK_INTRON_SPLICE_SITE", $chromosome, $exon_id, $chrom_start-1, $chrom_start, $chrom_strand, $anomaly_score, '');
+	     if ($count_low_sites == 1 && @prev_details) { # output the stored details of the first site
+	       &output_to_database("WEAK_INTRON_SPLICE_SITE", @prev_details);
+	     }
+	   } else {		# store the details in case we find a second low-scoring site in this CDS
+	     @prev_details = ($chromosome, $exon_id,  $chrom_start-1, $chrom_start, $chrom_strand, $anomaly_score, '');
+	   }
+	   $count_low_sites++;
 	 }
 	 #print "3' site: $score_3\n";
-	 if ($score_3 < 0.75) {
-	   &output_to_database("WEAK_INTRON_SPLICE_SITE", $chromosome, $exon_id, $prev_end, $prev_end+1, $chrom_strand, $anomaly_score, '');
+	 if ($score_3 < $splice_cutoff) {
+	   if ($score_3 < $splice_cutoff_single || $count_low_sites > 0) {
+	     &output_to_database("WEAK_INTRON_SPLICE_SITE", $chromosome, $exon_id, $prev_end, $prev_end+1, $chrom_strand, $anomaly_score, '');
+	     if ($count_low_sites == 1 && @prev_details) { # output the stored details of the first site
+	       &output_to_database("WEAK_INTRON_SPLICE_SITE", @prev_details);
+	     }
+	   } else {		# store the details in case we find a second low-scoring site in this CDS
+	     @prev_details = ($chromosome, $exon_id,  $prev_end, $prev_end+1, $chrom_strand, $anomaly_score, '');
+	   }
+	   $count_low_sites++;
 	 }
        }
 
+     } elsif ($prev_exon ne $exon_id) {	# we have a new CDS, so reset the count of low-scoring sites in this CDS
+       $count_low_sites = 0;
+       @prev_details = ();
      }
      $prev_end = $chrom_end;
      $prev_exon = $exon_id;
