@@ -169,7 +169,7 @@ foreach my $slice(@slices){
 sub get_commondata {
 	my ($name)=@_;
 	my %genehash;
-	my @locations=qw(autoace remanei);
+	my @locations=qw(autoace remanei briggsae);
 	my $dir=glob('~wormpub/BUILD/');
 	foreach my $loc(@locations) {
 		my $file_name="$dir/$loc/COMMON_DATA/$name.dat";
