@@ -11,7 +11,7 @@
 use strict;
 use IO::File;
 use Bio::EnsEMBL::Registry;
-Bio::EnsEMBL::Registry->load_registry_from_db(-host => 'ensembldb.ensembl.org', -user => 'anonymous',-port => 3306,-verbose => 1,-db_bversion => 47);
+Bio::EnsEMBL::Registry->load_registry_from_db(-host => 'ensembldb.ensembl.org', -user => 'anonymous',-port => 3306,-verbose => 0,-db_bversion => 47);
 
 use Bio::EnsEMBL::DBSQL::DBAdaptor;
 use Bio::EnsEMBL::Compara::DBSQL::DBAdaptor;
@@ -59,7 +59,7 @@ foreach my $slice(@slices){
 
 		print "Gene : \"$gid\"\n";
 		while (my ($k,$v)=each(%homol_ids)){
-				print "Ortholog_other EnsEMBL gene $k \"${\$$v[0]->name}\" Inferred_automatically compara\n";
+				print "Ortholog_other EnsEMBL gene $k \"${\$$v[0]->name}\"  From_analysis EnsEMBL-Compara\n";
 		}
 		foreach my $key(keys %omims){
 			print "Ortholog_other EnsEMBL gene $key \"Homo sapiens\" Inferred_automatically OMIM_compara\n";
