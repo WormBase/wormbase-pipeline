@@ -11,7 +11,7 @@
 use strict;
 use IO::File;
 use Bio::EnsEMBL::Registry;
-Bio::EnsEMBL::Registry->load_registry_from_db(-host => 'ensembldb.ensembl.org', -user => 'anonymous',-port => 3306,-verbose => 1);
+Bio::EnsEMBL::Registry->load_registry_from_db(-host => 'ensembldb.ensembl.org', -user => 'anonymous',-port => 3306,-verbose => 1,-db_bversion => 47);
 
 use Bio::EnsEMBL::DBSQL::DBAdaptor;
 use Bio::EnsEMBL::Compara::DBSQL::DBAdaptor;
