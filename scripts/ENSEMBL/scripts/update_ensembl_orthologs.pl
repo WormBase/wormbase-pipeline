@@ -24,32 +24,45 @@ my $member_adaptor = Bio::EnsEMBL::Registry->get_adaptor('Multi','compara','Memb
 my $homology_adaptor = Bio::EnsEMBL::Registry->get_adaptor('Multi','compara','Homology');;
 
 my @slices = @{$slice_adaptor->fetch_all('toplevel')};
+
 foreach my $slice(@slices){
 	foreach my $gene (@{$slice->get_all_Genes}){
+
+		my $gid=$cds2wbgene{$gene->stable_id}?$cds2wbgene{$gene->stable_id}:next; # don't import outdated genes
+
 		my $member = $member_adaptor->fetch_by_source_stable_id( 'ENSEMBLGENE',$gene->stable_id());
 		next unless $member;
 		my $homologies = $homology_adaptor->fetch_all_by_Member_method_link_type( $member, 'ENSEMBL_ORTHOLOGUES' );
 
 		my %homol_ids;
+		my %omims;
 
 		foreach my $homology ( @{$homologies} ) {
 			foreach my $ma ( @{ $homology->get_all_Member_Attribute } ) {
 				my ( $me, $at ) = @{$ma};
 				foreach my $pepm ( @{ $me->get_all_peptide_Members() } ) { 
-					if ($pepm->taxon_id != 6239){$homol_ids{ $pepm->gene->stable_id } = [$pepm->taxon,$homology->description,$homology->subtype] }
-				}
+					if ($pepm->taxon_id != 6239){
+						$homol_ids{ $pepm->gene->stable_id } = [$pepm->taxon,$homology->description,$homology->subtype];
+					}
 
+					# put the OMIM orthologs into another hash based on the MIM_GENES xref
+					if ($pepm->taxon_id == 9606){
+					        # uses an undocumented function of get_all_DBEntries, so lets hope it stays
+						$omims{$pepm->gene->stable_id}=1 if $pepm->gene->get_all_DBEntries('MIM_GENES');
+					}
+				}
 			}
 		}
 
-
 		next unless %homol_ids;
 
-		my $gid=$cds2wbgene{$gene->stable_id}?$cds2wbgene{$gene->stable_id}:next;
 
 		print "Gene : \"$gid\"\n";
 		while (my ($k,$v)=each(%homol_ids)){
 				print "Ortholog_other EnsEMBL gene $k \"${\$$v[0]->name}\" Inferred_automatically compara\n";
+		}
+		foreach my $key(keys %omims){
+			print "Ortholog_other EnsEMBL gene $key \"Homo sapiens\" Inferred_automatically OMIM_compara\n";
 		}
 
 		print "\n";
