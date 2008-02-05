@@ -35,7 +35,7 @@ use lib "$ENV{CVS_DIR}/Modules";
 use Feature_mapper;
 use Sequence_extract;
 use Coords_converter;
-memoize('Sequence_extract::Sub_sequence'); 
+memoize('Sequence_extract::Sub_sequence') unless $ENV{DEBUG}; 
 use gff_model;
 
 # needs to be attached in main code
@@ -803,7 +803,7 @@ sub print_pseudogenes{
 	while( my($allele_name, $pgenes) = each %$hits){
 		print $fh 'Variation : "',$allele_name,"\"\n";
 		foreach my $p_gene (keys %$pgenes){
-				print $fh "Pseudogene $p_gene Inferred_automatically map_Alleles.pl\n";
+				print $fh "Pseudogene $p_gene\n";
 		}
 		print $fh "\n";
 	}
