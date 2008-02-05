@@ -878,7 +878,7 @@ sub print_ncrnas{
 	while( my($allele_name, $ncrnas) = each %$hits){
 		print $fh 'Variation : "',$allele_name,"\"\n";
 		foreach my $ncrna (keys %$ncrnas){
-				print $fh "Transcript $ncrna Inferred_automatically map_Alleles.pl\n";
+				print $fh "Transcript $ncrna\n";
 		}
 		print $fh "\n";
 	}
