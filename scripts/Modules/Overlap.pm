@@ -7,7 +7,7 @@
 # Do fast overlap matching of positions of two sets of things.
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-01-25 16:00:19 $      
+# Last updated on: $Date: 2008-02-06 15:03:14 $      
 
 =pod
 
@@ -83,6 +83,20 @@ Routines to read GFF files from the database defined in $wormbase
 @list = $ovlp->get_genefinder_exons($chromosome)
 @list = $ovlp->get_twinscan_transcripts($chromosome)
 @list = $ovlp->get_twinscan_exons($chromosome)
+@list = $ovlp->get_transposons($chromosome)
+@list = $ovlp->get_transposon_exons($chromosome)
+@list = $ovlp->get_polyA_signal($chromosome)
+@list = $ovlp->get_polyA_site($chromosome)
+@list = $ovlp->get_TSL_SL1($chromosome)
+@list = $ovlp->get_TSL_SL2($chromosome)
+@list = $ovlp->get_SAGE_transcripts($chromosome)
+@list = $ovlp->get_blastx_homologies($chromosome)
+@list = $ovlp->get_waba_coding($chromosome)
+@list = $ovlp->get_repeatmasked($chromosome)
+@list = $ovlp->get_5_UTRs($chromosome)
+@list = $ovlp->get_3_UTRs($chromosome)
+@list = $ovlp->get_Genes($chromosome)
+@list = $ovlp->get_Operons($chromosome)
 
 
 
@@ -1557,6 +1571,35 @@ sub get_Genes {
      gff_type			=> "gene",
      ID_after			=> 'Gene\s+',
      chromosome                 => $chromosome,
+
+   );
+
+  return $self->read_GFF_file(\%GFF_data);
+
+}
+
+
+=head2
+
+    Title   :   get_Operons
+    Usage   :   my @gff = $ovlp->get_Operons($chromosome)
+    Function:   reads the GFF data for the Operons
+    Returns :   list of lists for GFF data
+    Args    :   chromosome number
+
+=cut
+
+sub get_Operons {
+  my $self = shift;
+  my ($chromosome) = @_;
+
+  my %GFF_data = 
+   (
+     directory			=> $self->{database} . "/CHROMOSOMES",
+     file			=> "CHROMOSOME_${chromosome}.gff",
+     gff_source			=> "operon",
+     gff_type			=> "operon",
+     ID_after			=> 'Operon\s+',
 
    );
 
