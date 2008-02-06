@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-02-04 10:31:50 $      
+# Last updated on: $Date: 2008-02-06 16:37:11 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -108,8 +108,20 @@ print "Connecting to Ace\n";
 my $ace = Ace->connect (-path => $database,
                        -program => $tace) || die "cannot connect to database at $database\n";
 
+# output file of data to write to database, primarily for St. Louis to read in
+my $datafile = $wormbase->wormpub . "/CURATION_DATA/anomalies.dat";
+open (DAT, "> $datafile") || die "Can't open $datafile\n";
+
+# and output the species line for the St. Louis datafile
+if (!defined $species || $species eq '') {$species = 'elegans';} 
+print DAT "SPECIES\t$species\n\n";
+
+
 my %clonesize;
 $wormbase->FetchData('clonesize', \%clonesize, "$database/COMMON_DATA/");
+
+my %clonelab;
+$wormbase->FetchData('clone2centre', \%clonelab, "$database/COMMON_DATA/");
 
 # now delete things that have not been updated in this run that you
 # would expect to have been updated like protein-homology-based
@@ -141,7 +153,7 @@ $wormbase->FetchData('clonesize', \%clonesize, "$database/COMMON_DATA/");
 &delete_anomalies("INTRONS_IN_UTR");
 
 my $ace_output = $wormbase->wormpub . "/CURATION_DATA/anomalies.ace";
-if ($species) { $ace_output = $wormbase->wormpub . "/CURATION_DATA/anomalies_" . lc $species . ".ace";}
+if ($species && $species ne 'elegans') { $ace_output = $wormbase->wormpub . "/CURATION_DATA/anomalies_" . lc $species . ".ace";}
 open (OUT, "> $ace_output") || die "Can't open $ace_output to write the Method\n";
 print OUT "\n\n";
 print OUT "Method : \"curation_anomaly\"\n";
@@ -331,6 +343,10 @@ foreach my $chromosome (@chromosomes) {
   }
 }
 
+# close the output datafile for St. Louis
+if ($datafile) {
+  close(DAT);			
+}
 
 # disconnect from the mysql database
 $mysql->disconnect || die "error disconnecting from database", $DBI::errstr;
@@ -354,6 +370,7 @@ if ($database eq $wormbase->{'autoace'}) {
 			  );
   }
 }
+
 
 $log->mail();
 print "Finished.\n" if ($verbose);
@@ -2512,6 +2529,10 @@ sub get_matched_repeatmasker {
 
   my ($exons_aref, $repeatmasked_aref, $chromosome) = @_;
 
+
+  # remove the low-complexity repeat regions from the repeats list
+  my @r2 = grep { $_->[0] !~ /\)n/ } @{$repeatmasked_aref}; # want the ones without ')n' in their ID
+
   my %exons_match = &init_match();
   my %repeat_match = &init_match();
 
@@ -2519,7 +2540,7 @@ sub get_matched_repeatmasker {
 
     my $got_a_match = 0;
   
-    if (&match($exon, $repeatmasked_aref, \%repeat_match)) {
+    if (&match($exon, \@r2, \%repeat_match)) {
       $got_a_match = 1;
     }
 
@@ -2938,7 +2959,14 @@ sub output_to_database {
 
   # get the clone and lab for this location
   my ($clone, $clone_start, $clone_end) = $coords->LocateSpan("CHROMOSOME_$chromosome", $chrom_start, $chrom_end);
-  my $lab =  &get_lab($clone);          # get the lab that sequenced this clone
+  my $lab =  $clonelab{$clone};          # get the lab that sequenced this clone  
+  if (! defined $lab) {
+    if ($clone =~ /SUPERLINK_CB_/) {
+      $lab = 'HX';
+    } else {
+      $lab = 'RW';
+    }
+  }
   #print "clone $clone is in lab $lab\n";
 
   # calculate the window value as blocks of 10 kb
@@ -3018,7 +3046,7 @@ sub put_anomaly_record_in_database {
   ########################################
   # write the anomaly data to the database
   ########################################
-
+  if (0) {			# do this stuff in load_anomalies.pl
   # need to do a check for a very similar previous record that may
   # need to be overwritten, preserving the status.
 
@@ -3064,10 +3092,15 @@ sub put_anomaly_record_in_database {
       # we want a new record inserted
       # write the data to the database
       $db_key_id++;
-      $mysql->do(qq{ insert into anomaly values ($db_key_id, "$anomaly_type", "$clone", $clone_start, $clone_end, "$lab", "$chromosome", $chrom_start, $chrom_end, "$chrom_strand", "$anomaly_id", $anomaly_score, "$explanation", $window, 1, NULL); });
+  $mysql->do(qq{ insert into anomaly values ($db_key_id, "$anomaly_type", "$clone", $clone_start, $clone_end, "$lab", "$chromosome", $chrom_start, $chrom_end, "$chrom_strand", "$anomaly_id", $anomaly_score, "$explanation", $window, 1, NULL); });
       #print "*** inserting new record\n";
     }
   }
+}
+
+  # and output the line for the St. Louis datafile
+  print DAT "INSERT\t$anomaly_type\t$chromosome\t$anomaly_id\t$chrom_start\t$chrom_end\t$chrom_strand\t$anomaly_score\t$explanation\t$clone\t$clone_start\t$clone_end\t$lab\n";
+
 
 }
 ##########################################
@@ -3082,55 +3115,39 @@ sub tidy_up_senseless_records {
 
   my $old_db_key_id;
   my $active;
+  if (0) {			# do this stuff in load_anomalies.pl
+  if ($test) {
+    print "In test mode - so not updating the mysql database\n";
+  } else {
+    my $db_query = $mysql->prepare ( qq{ SELECT anomaly_id, active FROM anomaly WHERE type = "$anomaly_type" AND chromosome = "$chromosome" AND sense = "." AND chromosome_start = $chrom_start AND chromosome_end = $chrom_end AND thing_id = "$anomaly_id" });
 
-  my $db_query = $mysql->prepare ( qq{ SELECT anomaly_id, active FROM anomaly WHERE type = "$anomaly_type" AND chromosome = "$chromosome" AND sense = "." AND chromosome_start = $chrom_start AND chromosome_end = $chrom_end AND thing_id = "$anomaly_id" });
+    $db_query->execute();
+    my $ref_results = $db_query->fetchall_arrayref;
 
-  $db_query->execute();
-  my $ref_results = $db_query->fetchall_arrayref;
-
-  # find the nearest one to the current data
-  #print "\tstart search for $anomaly_id\n";
-  foreach my $result_row (@$ref_results) {
-    $old_db_key_id = $result_row->[0];
-    $active = $result_row->[1];
+    # find the nearest one to the current data
+    #print "\tstart search for $anomaly_id\n";
+    foreach my $result_row (@$ref_results) {
+      $old_db_key_id = $result_row->[0];
+      $active = $result_row->[1];
     
-    # we want two new records inserted
-    $db_key_id++;
-    #print qq{ INSERT INTO anomaly VALUES ($db_key_id, "$anomaly_type", "$clone", $clone_start, $clone_end, "$lab", "$chromosome", $chrom_start, $chrom_end, "+", "$anomaly_id", $anomaly_score, "$explanation", $window, $active, NULL); \n  };
-
-    $mysql->do(qq{ INSERT INTO anomaly VALUES ($db_key_id, "$anomaly_type", "$clone", $clone_start, $clone_end, "$lab", "$chromosome", $chrom_start, $chrom_end, "+", "$anomaly_id", $anomaly_score, "$explanation", $window, $active, NULL); });
-    $db_key_id++;
-    $mysql->do(qq{ INSERT INTO anomaly VALUES ($db_key_id, "$anomaly_type", "$clone", $clone_start, $clone_end, "$lab", "$chromosome", $chrom_start, $chrom_end, "-", "$anomaly_id", $anomaly_score, "$explanation", $window, $active, NULL); });
+      # we want two new records inserted
+      $db_key_id++;
+      #print qq{ INSERT INTO anomaly VALUES ($db_key_id, "$anomaly_type", "$clone", $clone_start, $clone_end, "$lab", "$chromosome", $chrom_start, $chrom_end, "+", "$anomaly_id", $anomaly_score, "$explanation", $window, $active, NULL); \n  };
       
+      $mysql->do(qq{ INSERT INTO anomaly VALUES ($db_key_id, "$anomaly_type", "$clone", $clone_start, $clone_end, "$lab", "$chromosome", $chrom_start, $chrom_end, "+", "$anomaly_id", $anomaly_score, "$explanation", $window, $active, NULL); });
+      $db_key_id++;
+      $mysql->do(qq{ INSERT INTO anomaly VALUES ($db_key_id, "$anomaly_type", "$clone", $clone_start, $clone_end, "$lab", "$chromosome", $chrom_start, $chrom_end, "-", "$anomaly_id", $anomaly_score, "$explanation", $window, $active, NULL); });
+      				# 
     
-    # and we want to delete the old record with no sense
-    #print qq{ DELETE FROM anomaly WHERE anomaly_id = $old_db_key_id; \n  };
+      # and we want to delete the old record with no sense
+      #print qq{ DELETE FROM anomaly WHERE anomaly_id = $old_db_key_id; \n  };
 
-    $mysql->do(qq{ DELETE FROM anomaly WHERE anomaly_id = $old_db_key_id; });
+      $mysql->do(qq{ DELETE FROM anomaly WHERE anomaly_id = $old_db_key_id; });
+    }
   }
 }
-##########################################
-# get the lab for a clone or superlink
-
-sub get_lab {
-
-  my ($clone) = @_;
-
-  if ($clone =~ /CHROMOSOME/) {return "HX/RW";}
-  if ($clone =~ /cTel/i) {return "HX";}
-  if ($clone =~ /^SUPERLINK_RW/) {return "RW";}
-  if ($clone =~ /^SUPERLINK_CB/) {return "HX";}
-
-  my $sequence_obj = $ace->fetch(Sequence => $clone);
-  my $source = $sequence_obj->Source;
-
-  if ($source =~ /CHROMOSOME/) {return "HX/RW";}
-  if ($source =~ /cTel/i) {return "HX";}
-  if ($source =~ /^SUPERLINK_RW/) {return "RW";}
-  if ($source =~ /^SUPERLINK_CB/) {return "HX";}
-
-  return "HX/RW";
 }
+
 ##########################################
 ##########################################
 # now delete things that have not been updated in this run that you
@@ -3147,10 +3164,17 @@ sub delete_anomalies{
 
   my ($type) = @_;
 
+  if (0) {			# do this stuff in load_anomalies.pl
   # Delete anything that hasn't been marked as to be ignored (still
   # active = 1) that is of the required type
-
-  $mysql->do(qq{ DELETE FROM anomaly WHERE type = "$type" AND active = 1 });
+  if ($test) {
+    print "In test mode - so not updating the mysql database\n";
+  } else {
+    $mysql->do(qq{ DELETE FROM anomaly WHERE type = "$type" AND active = 1 });
+  }
+}
+  # and output the line for the St. Louis datafile
+  print DAT "DELETE\t$type\n";
 
 }
 
