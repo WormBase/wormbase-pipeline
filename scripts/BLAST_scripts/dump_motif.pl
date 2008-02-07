@@ -4,8 +4,8 @@
 #
 # Dumps protein motifs from ensembl mysql (protein) database to an ace file
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2008-01-07 13:23:26 $
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2008-02-07 17:17:48 $
 
 use lib $ENV{'CVS_DIR'};
 
@@ -96,9 +96,9 @@ foreach my $meth (@methods) {
 }
 
 # prepare the sql querie
-my $sth_f = $dbh->prepare ( q{ SELECT stable_id, seq_start, seq_end, hit_id, hit_start, hit_end, score
-                                 FROM protein_feature,translation_stable_id
-                                WHERE analysis_id = ? AND translation_stable_id.translation_id = protein_feature.translation_id
+my $sth_f = $dbh->prepare ( q{ SELECT protein_id, seq_start, seq_end, hit_id, hit_start, hit_end, score
+                                 FROM protein_feature
+                                WHERE analysis_id = ? 
                              } );
 
 # get the motifs
@@ -111,7 +111,7 @@ foreach my $meth (@methods) {
   foreach my $aref (@$ref) {
     my ($prot, $start, $end, $hid, $hstart, $hend, $score) = @$aref;
     my $line;
-    if ($meth eq "Pfam") {
+    if ($meth eq "hmmpfam") {
       if( $hid =~ /(\w+)\.\d+/ ) {
 	$hid = $1;
       }
