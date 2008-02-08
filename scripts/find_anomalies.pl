@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-02-06 16:37:11 $      
+# Last updated on: $Date: 2008-02-08 10:32:57 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -3046,7 +3046,7 @@ sub put_anomaly_record_in_database {
   ########################################
   # write the anomaly data to the database
   ########################################
-  if (0) {			# do this stuff in load_anomalies.pl
+
   # need to do a check for a very similar previous record that may
   # need to be overwritten, preserving the status.
 
@@ -3096,7 +3096,7 @@ sub put_anomaly_record_in_database {
       #print "*** inserting new record\n";
     }
   }
-}
+
 
   # and output the line for the St. Louis datafile
   print DAT "INSERT\t$anomaly_type\t$chromosome\t$anomaly_id\t$chrom_start\t$chrom_end\t$chrom_strand\t$anomaly_score\t$explanation\t$clone\t$clone_start\t$clone_end\t$lab\n";
@@ -3115,7 +3115,7 @@ sub tidy_up_senseless_records {
 
   my $old_db_key_id;
   my $active;
-  if (0) {			# do this stuff in load_anomalies.pl
+
   if ($test) {
     print "In test mode - so not updating the mysql database\n";
   } else {
@@ -3145,7 +3145,7 @@ sub tidy_up_senseless_records {
       $mysql->do(qq{ DELETE FROM anomaly WHERE anomaly_id = $old_db_key_id; });
     }
   }
-}
+
 }
 
 ##########################################
@@ -3164,7 +3164,6 @@ sub delete_anomalies{
 
   my ($type) = @_;
 
-  if (0) {			# do this stuff in load_anomalies.pl
   # Delete anything that hasn't been marked as to be ignored (still
   # active = 1) that is of the required type
   if ($test) {
@@ -3172,7 +3171,7 @@ sub delete_anomalies{
   } else {
     $mysql->do(qq{ DELETE FROM anomaly WHERE type = "$type" AND active = 1 });
   }
-}
+
   # and output the line for the St. Louis datafile
   print DAT "DELETE\t$type\n";
 
