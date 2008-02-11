@@ -67,6 +67,7 @@ sub chromosome_names {
 sub mt_name {return undef}
 sub chromosome_prefix {'PREFIX_'}
 sub pep_prefix {return undef}
+sub wormpep_prefix {return undef}
 
 ########################################
 #
@@ -86,6 +87,7 @@ sub pepdir_prefix{'worm'};
 sub cds_regex{qr/^[A-Z0-9_cel]+\.[1-9]\d?[A-Za-z]?$/};  #the cel is for telomeric clone CDSs cTel54X.1
 sub ncbi_tax_id {'6239'};
 sub full_name {'Caenorhabditis elegans'};
+sub wormpep_prefix{'WP'}
 
 ########################################
 package Briggsae;
@@ -113,6 +115,7 @@ sub pepdir_prefix{'brig'};
 sub cds_regex{qr/^CBG\d{5}$/};
 sub ncbi_tax_id {'6238'};
 sub full_name {'Caenorhabditis briggsae'};
+sub wormpep_prefix{'BP'}
 
 sub wormpep_files {
   my $self = shift;
@@ -148,6 +151,7 @@ sub chromosome_names {
 	return @supercontigs;
 }
 
+sub wormpep_prefix {'RP'}
 sub pep_prefix {'RP'}
 sub pepdir_prefix{'rema'};
 sub ncbi_tax_id {'31234'};
@@ -292,23 +296,28 @@ if ( __FILE__ eq $0 ) {
 
     package Species;
 
-    sub organism { my $self = shift; print 'I am a ' . ref($self) . "\n" }
+    sub organism { my $self = shift; 'I am a ' . ref($self)."\n" }
 
     package Wormbase;
 
-    sub worm { print "I am a worm\n" }
+    sub worm { "I am a worm\n" }
 
     package Main;
     sub test {
     	my $worm = shift;
 	print '-'x40,"\n";
-	$worm->organism;
-	$worm->worm;
+	print $worm->organism();
+	print $worm->full_name(),"\n";
+	print $worm->worm();
 	print 'my compost heap is at :' . $worm->autoace(), "\n";
+	print $worm->wormpep_prefix(),"\n";
+	print $worm->pep_prefix(),"\n";
+	print $worm->ncbi_tax_id(),"\n";
+	print $worm->chromosome_prefix(),"\n";
 #	print "my chromosomes (custom prefix) are : ",join(' / ',$worm->get_chromosome_names('-prefix' => 'BLEEP_',-mito => 1)),"\n";
 #	print "my chromosomes (w/o Mt + default prefix) are : ",join(' / ',$worm->get_chromosome_names('-prefix' => 1,)),"\n";
 #	print "my chromosomes are : ",join(' / ',$worm->get_chromosome_names(-mito => 1)),"\n";
-#   	print '-'x40,"\n";
+   	print '-'x40,"\n";
     }
 
 

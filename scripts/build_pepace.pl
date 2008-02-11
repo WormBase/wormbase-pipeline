@@ -9,8 +9,8 @@
 # solely in the wormpep.history file.
 #
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2008-01-17 14:07:04 $
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2008-02-11 11:33:11 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -61,6 +61,7 @@ my $ace_dir    = $wormbase->autoace;                  # AUTOACE DATABASE DIR
 my $wormpepdir = $wormbase->wormpep;                  # CURRENT WORMPEP
 my $ver        = $wormbase->get_wormbase_version();
 my $PEP_PREFIX = $wormbase->pep_prefix;
+my $WORMPEP_PREFIX = $wormbase->wormpep_prefic; # the namely WP: pr BP:
 my $PEPDIR 	   = $wormbase->pepdir_prefix;
 # read history file
 our ( $gene, $CE, $in, $out );
@@ -276,7 +277,7 @@ foreach my $key ( sort keys %CE_history ) {
 		$log->error("$key has no sequence in fasta file \n");
 		next;
 	}
-    print ACE "Protein : \"$PEP_PREFIX:$key\"\n";
+    print ACE "Protein : \"$WORMPEP_PREFIX:$key\"\n";
 
     ## Write histories
     foreach my $release ( sort byRelease keys %{ $CE_history{$key} } ) {
@@ -285,7 +286,7 @@ foreach my $key ( sort keys %CE_history ) {
         }
     }
 
-    print ACE "Database \"WORMPEP\" WORMPEP_ID \"$PEP_PREFIX:$key\"\n";
+    print ACE "Database \"WORMPEP\" WORMPEP_ID \"$WORMPEP_PREFIX:$key\"\n";
     print ACE "Molecular_weight ", &get_mol_weight( $CE_sequence{$key} )," Inferred_automatically \"build_pepace.pl\"\n";
     print ACE "Species \"Caenorhabditis elegans\"\n";
     print ACE "Wormpep\n";
@@ -297,7 +298,7 @@ foreach my $key ( sort keys %CE_history ) {
         }
     }
     print ACE "\n";
-    print ACE "Peptide : \"$PEP_PREFIX:$key\"\n";
+    print ACE "Peptide : \"$WORMPEP_PREFIX:$key\"\n";
     print ACE "$CE_sequence{$key}\n";
 }
 close ACE;
