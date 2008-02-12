@@ -141,13 +141,9 @@ close($out);
 ##################
 
 
-$wormbase->check_file($output, $log,
-minsize => 5000000,
-maxsize => 10000000,
-lines => ['^WB\tWBGene\d+\t\S+\t\S*\t\S+\t\S*\tExpr_pattern\t\S+']
-);
+$wormbase->check_files($log);
 
-$db->close; # *(£% Ace destructor
+$db->close; # Ace destructor
 
 $log->mail;
 exit;
