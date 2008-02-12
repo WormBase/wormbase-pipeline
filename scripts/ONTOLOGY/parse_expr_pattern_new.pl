@@ -58,7 +58,7 @@ my $db = Ace->connect(-path => $acedbpath,  -program => $tace) or $log->log_and_
 warn "done\n";
 
 my %names=();
-my @aql_results=$db->aql("select a, a->public_name from a in class gene");
+my @aql_results=$db->aql("select a, a->public_name from a in class gene where a->species=\"${\$wormbase->full_name}\"");
 foreach (@aql_results) {
     $names{$_->[0]}=$_->[1];
 }
@@ -122,6 +122,7 @@ while (my $obj=$it->next) {
 		if ($at{$a}[1]) {
 		    $q=$at{$a}[1];
 		}
+		next unless $names{$g};# that is to prevent elegans/non-target-species ghosts from appearing
 		print $out "WB\t$g\t$names{$g}\t$q\t$a\t$ref\tExpr_pattern\t$ep\t\t\t\t\t\t$date\tWB\n";
 	    }
 	}
