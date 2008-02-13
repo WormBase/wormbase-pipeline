@@ -80,8 +80,8 @@ sub invoke
     }
     else {
     #chromosome based assemblies
-   		my $seq_file = $database."/CHROMOSOMES/CHROMOSOME_I.dna";
-    	unless( -e "$seq_file" ) {
+   	my @seq_files = $database."/CHROMOSOMES/*.dna";
+    	unless( $seq_files[0] && -e $seq_files[0] ) {
       	open (ACE, "| $tace $database") or croak "cant connect to $database :$!\n";
 
 	    foreach my $chrom ( @chromosome ) {
