@@ -151,7 +151,7 @@ foreach my $slice(@slices){
 				}
                                 while (my ($r_k,$r_v)=each(%brugia_ids)){                                                      # brigia
 				        my $rid=$cds2wbgene{$r_k}?$cds2wbgene{$r_k}:$r_k;
-					print "Ortholog_other Brugia_databse gene $rid \"$species{$$r_v[0]}\" From_analysis WormBase-Compara\n"
+					print "Ortholog_other Brugia_database gene $rid \"$species{$$r_v[0]}\" From_analysis WormBase-Compara\n"
 				}
 
 				print "\n";
