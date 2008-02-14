@@ -9,7 +9,7 @@
 #
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2006-05-25 11:10:50 $      
+# Last updated on: $Date: 2008-02-14 11:17:21 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -75,7 +75,7 @@ if (! defined $twinscan || ! defined $output) {
 # read in the mapping data
 ##########################
 
-my @mapping_data = Remap_Sequence_Change::read_mapping_data($release1, $release2);
+my @mapping_data = Remap_Sequence_Change::read_mapping_data($release1, $release2, $wormbase->species);
 
 
 ##########################

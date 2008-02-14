@@ -4,8 +4,8 @@
 # 
 # by Anthony Rogers                             
 #
-# Last updated by: $Author: mt3 $               
-# Last updated on: $Date: 2007-12-03 18:25:28 $
+# Last updated by: $Author: gw3 $               
+# Last updated on: $Date: 2008-02-14 11:04:30 $
 
 # Generates a release letter at the end of build.
 #
@@ -119,8 +119,8 @@ if( defined($opt_l)) {
   
   # make the chromosomal sequence changes file
   open (CC, "> $reports_dir/chromosome_changes") || die "Can't open file $reports_dir/chromosome_changes\n";
-  my @mapping_data = Remap_Sequence_Change::read_mapping_data($ver-1, $ver);
-  my $text = Remap_Sequence_Change::write_changes($ver, @mapping_data);
+  my @mapping_data = Remap_Sequence_Change::read_mapping_data($ver-1, $ver, $wormbase->species);
+  my $text = Remap_Sequence_Change::write_changes($wormbase, $ver, @mapping_data);
   print CC $text;
   close(CC);
 

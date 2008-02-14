@@ -6,8 +6,8 @@
 #
 # This takes a BUILD_DATA/MISC_DYNAMIC/*mass_spec*.ace file and converts any coordinates that have changed between releases
 #
-# Last updated by: $Author: mh6 $     
-# Last updated on: $Date: 2007-06-11 08:56:23 $      
+# Last updated by: $Author: gw3 $     
+# Last updated on: $Date: 2008-02-14 11:15:07 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -74,7 +74,7 @@ my $currentdb = $wormbase->database('current');
 
 my $version = $wormbase->get_wormbase_version;
 print "Getting mapping data for WS$version\n";
-my @mapping_data = Remap_Sequence_Change::read_mapping_data($version - 1, $version);
+my @mapping_data = Remap_Sequence_Change::read_mapping_data($version - 1, $version, $wormbase->species);
  
 
 ##########################

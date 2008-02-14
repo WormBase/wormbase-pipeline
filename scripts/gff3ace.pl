@@ -5,7 +5,7 @@
 # To not remap, set the release to be 0.
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2007-09-05 15:45:25 $      
+# Last updated on: $Date: 2008-02-14 11:02:17 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -40,11 +40,18 @@ GetOptions ("help"       => \$help,
 	    );
 
 
+my $organism_species;
+if ($species) {
+  ($organism_species) = ($species =~ /\S+\s+(\S+)/); # get the second name of the binomial species name
+}
+
+
 if ( $store ) {
   $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
 } else {
   $wormbase = Wormbase->new( -debug   => $debug,
                              -test    => $test,
+			     -organism => $organism_species,
 			     );
 }
 
@@ -83,7 +90,7 @@ my %sources;			# keep a note of the sources used
 # read in the mapping data
 my @mapping_data;
 if ($release != 0) {
-  @mapping_data = Remap_Sequence_Change::read_mapping_data($release, $wormbase->get_wormbase_version);
+  @mapping_data = Remap_Sequence_Change::read_mapping_data($release, $wormbase->get_wormbase_version, $wormbase->species);
 }
 
 # suck the data in

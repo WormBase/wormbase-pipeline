@@ -7,7 +7,7 @@
 # This takes a BUILD_DATA/MISC_DYNAMIC/*expression*.ace file and converts any coordinates that have changed between releases
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2007-09-13 09:59:11 $      
+# Last updated on: $Date: 2008-02-14 11:09:17 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -74,7 +74,7 @@ my $currentdb = $wormbase->database('current');
 
 my $version = $wormbase->get_wormbase_version;
 print "Getting mapping data for WS$version\n";
-my @mapping_data = Remap_Sequence_Change::read_mapping_data($version - 1, $version);
+my @mapping_data = Remap_Sequence_Change::read_mapping_data($version - 1, $version, $wormbase->species);
  
 
 ##########################
