@@ -151,10 +151,10 @@ sub Sub_sequence
 
     $seq = $self->{'single_chrom'}->{"$seq"} if $self->{'single_chrom'}->{"$seq"};
 
-    if( $seq =~ /CHROMOSOME/ ) {
+    if( $seq =~ /CHROMOSOME|chr/ ) { # MH6 - not the best way to differentiate them
       $chrom = $seq;
-# GWW - removed this to stop chromosome positions being reset all the time
-#      $start = 0;
+      # GWW - removed this to stop chromosome positions being reset all the time
+      # $start = 0;
     }      
 
     #passed seq is a SUPERLINK
