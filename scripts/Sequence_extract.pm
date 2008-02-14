@@ -107,7 +107,7 @@ EOF
 	      $/ = "\n";
 	      $seq =~ s/>[\w\-_]+//;
 	      $seq =~ s/\n//g;
-	      $self->{'SEQUENCE'}->{"CHROMOSOME_$_"} = $seq;
+	      $self->{'SEQUENCE'}->{$seqname} = $seq;
 	    }
 	 }
 	 return $self;
