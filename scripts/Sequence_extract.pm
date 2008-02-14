@@ -70,6 +70,7 @@ sub invoke
     my $tace = $wormbase->tace; # <= hmpf
     
     my @chromosome = $wormbase->get_chromosome_names(-mito => 1);
+    my $chromprefix= $wormbase->chromosome_prefix;
     if (scalar @chromosome > 100){
     #contig assemblies	
     	my $supercontig_seq = $wormbase->chromosomes."/supercontigs.fa";
@@ -82,29 +83,31 @@ sub invoke
     #chromosome based assemblies
    	my @seq_files = $database."/CHROMOSOMES/*.dna";
     	unless( $seq_files[0] && -e $seq_files[0] ) {
-      	open (ACE, "| $tace $database") or croak "cant connect to $database :$!\n";
+      	  open (ACE, "| $tace $database") or croak "cant connect to $database :$!\n";
 
-	    foreach my $chrom ( @chromosome ) {
-			print "writing DNA seq for chromosome_$chrom\n";
-		      my $command = <<EOF;
-				clear
-				find sequence CHROMOSOME_$chrom
-			    dna -f $database/CHROMOSOMES/CHROMOSOME_$chrom.dna
+          foreach my $chrom ( @chromosome ) {
+             my $seqname="$chromprefix"."$chrom";
+             print "writing DNA seq for $seqname\n";
+             print ACE <<EOF;
+clear
+find sequence $seqname
+dna -f $database/CHROMOSOMES/$seqname.dna
 EOF
-	        print ACE $command;
-	      }
-	      close ACE;
-	    }
-	    foreach (@chromosome) {
-	      # read seq into $self
-	      $/ = "";
-	      open (SEQ, "$database/CHROMOSOMES/CHROMOSOME_$_.dna") or croak "cant open the dna file for $_:$!\n";
+	     }
+	     close ACE;
+	 }
+
+	 foreach my $chrom (@chromosome) {
+	   # read seq into $self
+           my $seqname="$chromprefix"."$chrom";
+	   $/ = "";
+	   open (SEQ, "$database/CHROMOSOMES/$seqname.dna") or croak "cant open the dna file for $seqname:$!\n";
 	      my $seq = <SEQ>;
 	      close SEQ;
 	      $/ = "\n";
-	      $seq =~ s/>CHROMOSOME_\w+//;
+	      $seq =~ s/>[\w-_]+//;
 	      $seq =~ s/\n//g;
-	      $self->{'SEQUENCE'}->{"CHROMOSOME_$_"} = $seq;
+	      $self->{'SEQUENCE'}->{$seqname} = $seq;
 	    }
 	 }
 	 return $self;
