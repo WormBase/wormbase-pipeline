@@ -13,7 +13,7 @@
 #      COMPANY:
 #     $Version:  $
 #      CREATED: 2006-02-27
-#        $Date: 2007-06-08 14:20:45 $
+#        $Date: 2008-02-14 10:55:51 $
 #===============================================================================
 package Remap_Sequence_Change;
 
@@ -31,6 +31,7 @@ use Wormbase;
 # Args:      $release1, $release2, the first and last wormbase release
 #                  numbers to use e.g. 140, 150 to convert data made using wormbase
 #                  release WS140 to the coordinates of release WS150
+#            $species - species if organism is not 'elegans'
 # Returns:   the mapping data, for use in remap_gff()
 #
 
@@ -46,16 +47,20 @@ use Wormbase;
                                                                                                                                                             
 sub read_mapping_data {
 
-  my ($release1, $release2) = @_;
-                                                                                                                                           
+  my ($release1, $release2, $species) = @_;
+
   # array (one for each release) of hashes (keyed by chromosome number) of list (one for each difference) of list (one for each field)
   # access like: $fields_hashref = @{ $mapping_data[$release]{$chrom}[$next_difference] }
   my @mapping_data;
                                                                                                                                                             
   foreach my $release (($release1+1) .. $release2) {
     my %chroms;
+    
     my $infile = "/lustre/cbi4/work1/wormpub/CHROMOSOME_DIFFERENCES/sequence_differences.WS$release";
-#    my $infile = "/nfs/disk100/wormpub/CHROMOSOME_DIFFERENCES/sequence_differences.WS$release";
+    if ($species and $species ne 'elegans') {
+      $infile = "/lustre/cbi4/work1/wormpub/CHROMOSOME_DIFFERENCES/sequence_differences_$species.WS$release";
+    }
+
     open (IN, "< $infile") || die "Can't open $infile\n";
     my $chrom;
     while (my $line = <IN>) {
@@ -475,13 +480,13 @@ sub chromosome_to_clone {
 #
 
 sub write_changes {
-  my ($release, @mapping_data) = @_;
+  my ($wormbase, $release, @mapping_data) = @_;
  
   my $text;
   my $title = "Chromosomal Changes:\n--------------------\n";
   my $no_changes = "There are no changes to the chromosome sequences in this release.\n";
   my $any_changes = 0;
-  my @chromosomes = qw(I II III IV V X);
+  my @chromosomes = $wormbase->get_chromosome_names(-mito => 0, -prefix => 0);
            
   foreach my $chromosome (@chromosomes) {
                                                                                                                                                             
@@ -548,7 +553,7 @@ Module for remapping chromosomal sequence locations across releases.
 
 =over 4
 
-=item @mapping_data = &read_mapping_data($release1, $release2);
+=item @mapping_data = &read_mapping_data($release1, $release2, $species);
 
 Reads in the mapping information from the files created during the
 build of each release.
