@@ -17,7 +17,7 @@
 # foreach? end
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2007-06-08 14:23:22 $      
+# Last updated on: $Date: 2008-02-14 10:37:35 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -34,14 +34,15 @@ use Storable;
 # variables and command-line options # 
 ######################################
 
-my ($help, $debug, $test, $verbose, $store, $wormbase);
+my ($help, $debug, $test, $verbose, $store, $wormbase, $species);
 my ($database1, $database2, $version);
 
-GetOptions ("help"       => \$help,
-            "debug=s"    => \$debug,
-	    "test"       => \$test,
-	    "verbose"    => \$verbose,
-	    "store=s"      => \$store,
+GetOptions ("help"        => \$help,
+            "debug=s"     => \$debug,
+	    "test"        => \$test,
+	    "verbose"     => \$verbose,
+	    "store=s"     => \$store,
+	    "species:s"   => \$species,
 	    "database1=s" => \$database1,
 	    "database2=s" => \$database2, 
 	    "version=i"  => \$version,
@@ -50,8 +51,9 @@ GetOptions ("help"       => \$help,
 if ( $store ) {
   $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
 } else {
-  $wormbase = Wormbase->new( -debug   => $debug,
-                             -test    => $test,
+  $wormbase = Wormbase->new( -debug    => $debug,
+                             -test     => $test,
+			     -organism => $species,
 			     );
 }
 
@@ -73,11 +75,14 @@ my $log = Log_files->make_build_log($wormbase);
 ##########################
 
 my $outfile = "/lustre/cbi4/work1/wormpub/CHROMOSOME_DIFFERENCES/sequence_differences.WS$version";
+if ($species and $species ne 'elegans') {
+  $outfile = "/lustre/cbi4/work1/wormpub/CHROMOSOME_DIFFERENCES/sequence_differences_$species.WS$version";
+}
 
 open (OUT, "> $outfile") || die "Can't open $outfile";
 
-my @chromosomes = qw(I II III IV V X);
-#my @chromosomes = qw(X);
+my @chromosomes = $wormbase->get_chromosome_names(-mito => 0, -prefix => 0);
+
 foreach my $chromosome (@chromosomes) {
   my @differences = ();
 
