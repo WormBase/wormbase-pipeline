@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl5.8.0 -w
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2008-01-10 15:43:12 $
+# Last edited by: $Author: pad $
+# Last edited on: $Date: 2008-02-14 13:57:45 $
 
 
 use lib $ENV{'CVS_DIR'};
@@ -341,17 +341,28 @@ sub confirm_introns {
 		    print GOOD "Confirmed_intron $one $two False $f[4]\n\n";
 		}
 		else {
-		    print GOOD "Confirmed_intron $one $two $type $f[4]\n\n";
+		  if ($type eq "mRNA"){
+		    print GOOD "Confirmed_intron $one $two cDNA $f[4]\n\n";
+		  }
+		  else {
+		    print GOOD "Confirmed_intron $one $two EST $f[4]\n\n";
+		  }
 		}
-	    }
+	      }
 	    else {
+	      if ($type eq "mRNA"){
 		print BAD "Feature_data : \"$virtual\"\n";
-		print BAD "Confirmed_intron $one $two $type $f[4]\n\n";		
+		print BAD "Confirmed_intron $one $two cDNA $f[4]\n\n";		
+	      }
+	      else {
+		print BAD "Feature_data : \"$virtual\"\n";
+		print BAD "Confirmed_intron $one $two EST $f[4]\n\n";
+	      }
 	    }
-	}
+	  }
+      }
     }
   }
-}
   close CI;
   
   close GOOD;
