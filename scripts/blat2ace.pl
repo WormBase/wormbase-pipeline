@@ -7,7 +7,7 @@
 # Exporter to map blat data to genome and to find the best match for each EST, mRNA, OST, etc.
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2008-02-12 14:08:19 $
+# Last edited on: $Date: 2008-02-14 13:36:33 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -446,7 +446,7 @@ unless ($nematode || $washu || $nembase) {
 	  if (($type eq "RST") or ($type eq "OST")) {
 	    printf CI_auto "Confirmed_intron %d %d EST $ci{$link}->[$i][2]\n",  $ci{$link}->[$i][0], $ci{$link}->[$i][1];
 	  }
-	  if ($type eq "mRNA") {
+	  elsif ($type eq "mRNA") {
 	    printf CI_auto "Confirmed_intron %d %d cDNA $ci{$link}->[$i][2]\n",  $ci{$link}->[$i][0], $ci{$link}->[$i][1];
 	  }
 	  else {
