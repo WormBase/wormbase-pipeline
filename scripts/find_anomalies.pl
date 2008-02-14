@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-02-08 10:32:57 $      
+# Last updated on: $Date: 2008-02-14 13:33:19 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -78,7 +78,8 @@ my $tace            = $wormbase->tace;        # TACE PATH
 
 # mysql database parameters
 my $sqldb = "worm_anomaly";
-if ($species) {$sqldb = $sqldb . "_" . lc $species;}
+$species = $wormbase->species;
+if ($species ne 'elegans') {$sqldb = $sqldb . "_" . lc $species;}
 my $dbsn = "DBI:mysql:database=$sqldb;host=ia64b";
 my $dbuser = "wormadmin";
 my $dbpass = "worms";
@@ -113,7 +114,6 @@ my $datafile = $wormbase->wormpub . "/CURATION_DATA/anomalies.dat";
 open (DAT, "> $datafile") || die "Can't open $datafile\n";
 
 # and output the species line for the St. Louis datafile
-if (!defined $species || $species eq '') {$species = 'elegans';} 
 print DAT "SPECIES\t$species\n\n";
 
 
@@ -153,7 +153,7 @@ $wormbase->FetchData('clone2centre', \%clonelab, "$database/COMMON_DATA/");
 &delete_anomalies("INTRONS_IN_UTR");
 
 my $ace_output = $wormbase->wormpub . "/CURATION_DATA/anomalies.ace";
-if ($species && $species ne 'elegans') { $ace_output = $wormbase->wormpub . "/CURATION_DATA/anomalies_" . lc $species . ".ace";}
+if ($species ne 'elegans') { $ace_output = $wormbase->wormpub . "/CURATION_DATA/anomalies_" . lc $species . ".ace";}
 open (OUT, "> $ace_output") || die "Can't open $ace_output to write the Method\n";
 print OUT "\n\n";
 print OUT "Method : \"curation_anomaly\"\n";
