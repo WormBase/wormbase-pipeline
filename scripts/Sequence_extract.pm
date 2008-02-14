@@ -105,9 +105,9 @@ EOF
 	      my $seq = <SEQ>;
 	      close SEQ;
 	      $/ = "\n";
-	      $seq =~ s/>[\w-_]+//;
+	      $seq =~ s/>[\w\-_]+//;
 	      $seq =~ s/\n//g;
-	      $self->{'SEQUENCE'}->{$seqname} = $seq;
+	      $self->{'SEQUENCE'}->{"CHROMOSOME_$_"} = $seq;
 	    }
 	 }
 	 return $self;
