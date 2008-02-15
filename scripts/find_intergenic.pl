@@ -7,7 +7,7 @@
 # by Gary Williams
 #
 # Last updated by: $Author: mh6 $                      
-# Last updated on: $Date: 2008-02-01 14:26:49 $        
+# Last updated on: $Date: 2008-02-15 16:22:46 $        
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -58,13 +58,13 @@ if ( $store ) {
 
 $dbdir          = $wormbase->test ? $wormbase->database("current") : $wormbase->autoace unless $dbdir; # Database path
 my $gffdir      = $wormbase->gff_splits;        # GFF directory
-my @chromosomes = qw( I II III IV V X );                            # chromosomes
+my @chromosomes = $wormbase->get_chromosome_names; # chromosomes
 
 
 # in test mode?
 if ($test) {
   print "In test mode\n" if ($verbose);
-  @chromosomes = qw( III );
+  @chromosomes = qw(I);
 
 }
 
@@ -113,8 +113,9 @@ foreach my $chromosome (@chromosomes) {
   # lines are like:
   # CHROMOSOME_X    gene    gene    1316    1935    .       +       .       Gene "WBGene00008351"
 
-  print "Loop through Gene GFF file CHROMOSOME_${chromosome}\n" if ($verbose);
-  open (GFF, "< $gffdir/CHROMOSOME_${chromosome}_gene.gff") || die "Failed to open GFF file: $gffdir/CHROMOSOME_${chromosome}_WBgene.gff\n\n";
+  print "Loop through Gene GFF file ${\$wormbase->chromosome_prefix}${chromosome}\n" if ($verbose);
+  open (GFF, "< $gffdir/${\$wormbase->chromosome_prefix}${chromosome}_gene.gff") 
+  || die "Failed to open GFF file: $gffdir/${\$wormbase->chromosome_prefix}${chromosome}_WBgene.gff\n\n";
   while (<GFF>) {
     chomp;
     s/^\#.*//;
@@ -210,8 +211,8 @@ foreach my $chromosome (@chromosomes) {
 	if ($seq_start eq "0") {$seq_start = "1";}
 	if ($seq_start eq "1") {$print_start = $seq_start;}
 	$print_start = $seq_start+1 unless ($seq_start eq "1"); # human-readable start coordinate
-	print OUT ">${last_name}_${gene_name} CHROMOSOME_$chromosome $print_start, len: $width\n";
-	$sequence = $seq_obj->Sub_sequence("CHROMOSOME_$chromosome", "$seq_start", "$width");
+	print OUT ">${last_name}_${gene_name} ${\$wormbase->chromosome_prefix}$chromosome $print_start, len: $width\n";
+	$sequence = $seq_obj->Sub_sequence("${\$wormbase->chromosome_prefix}$chromosome", "$seq_start", "$width");
 #	print OUT "$sequence\n";
 	fasta_write($sequence);
 	$no_sequences++;
@@ -231,9 +232,9 @@ foreach my $chromosome (@chromosomes) {
 	  $seq_start = $last_end;
 	  $print_start = $seq_start+1; # human-readable start coordinate
 	  my $prime =  ($last_strand eq "+") ? "3" : "5";
-	  print OUT ">$last_name.${prime}prime CHROMOSOME_$chromosome $print_start, len: $width\n";
+	  print OUT ">$last_name.${prime}prime ${\$wormbase->chromosome_prefix}$chromosome $print_start, len: $width\n";
 	  # output sequence from end of gene to $width past the end
-	  $sequence = $seq_obj->Sub_sequence("CHROMOSOME_$chromosome", "$seq_start", "$width");
+	  $sequence = $seq_obj->Sub_sequence("${\$wormbase->chromosome_prefix}$chromosome", "$seq_start", "$width");
 	  if ($last_strand eq "-") {
 	    # get reverse-comp of sequence
 	    $sequence = $seq_obj->DNA_revcomp($sequence);
@@ -253,9 +254,9 @@ foreach my $chromosome (@chromosomes) {
 	  $seq_start = $start-$width-1;
 	  $print_start = $seq_start+1; # human-readable start coordinate
 	  my $prime =  ($strand eq "+") ? "5" : "3";
-	  print OUT ">$gene_name.${prime}prime CHROMOSOME_$chromosome $print_start, len: $width\n";
+	  print OUT ">$gene_name.${prime}prime ${\$wormbase->chromosome_prefix}$chromosome $print_start, len: $width\n";
 	  # output sequence from $width before the gene to the start
-	  $sequence = $seq_obj->Sub_sequence("CHROMOSOME_$chromosome", "$seq_start", "$width");
+	  $sequence = $seq_obj->Sub_sequence("${\$wormbase->chromosome_prefix}$chromosome", "$seq_start", "$width");
 	  if ($strand eq "-") {
 	    # get reverse-comp of sequence
 	    $sequence = $seq_obj->DNA_revcomp($sequence);
@@ -298,8 +299,8 @@ foreach my $chromosome (@chromosomes) {
       $width = 50000;
       $seq_start = $last_end;
       $print_start = $seq_start+1; # human-readable start coordinate
-      print OUT ">${last_name}_end_of_chromosome CHROMOSOME_$chromosome $print_start, len: $width\n";
-      $sequence = $seq_obj->Sub_sequence("CHROMOSOME_$chromosome", "$seq_start", "$width");
+      print OUT ">${last_name}_end_of_chromosome ${\$wormbase->chromosome_prefix}$chromosome $print_start, len: $width\n";
+      $sequence = $seq_obj->Sub_sequence("${\$wormbase->chromosome_prefix}$chromosome", "$seq_start", "$width");
 #      print OUT "$sequence\n";
       fasta_write($sequence);
       $no_sequences++;
@@ -311,9 +312,9 @@ foreach my $chromosome (@chromosomes) {
 	$seq_start = $last_end;
 	$print_start = $seq_start+1; # human-readable start coordinate
 	my $prime =  ($last_strand eq "+") ? "3" : "5";
-	print OUT ">$last_name.${prime}prime CHROMOSOME_$chromosome $print_start\n";
+	print OUT ">$last_name.${prime}prime ${\$wormbase->chromosome_prefix}$chromosome $print_start\n";
 	# output sequence from end of gene to $width past the end
-	$sequence = $seq_obj->Sub_sequence("CHROMOSOME_$chromosome", "$seq_start", "$width");
+	$sequence = $seq_obj->Sub_sequence("${\$wormbase->chromosome_prefix}$chromosome", "$seq_start", "$width");
 	if ($last_strand eq "-") {
 	  # get reverse-comp of sequence
 	  $sequence = $seq_obj->DNA_revcomp($sequence);
