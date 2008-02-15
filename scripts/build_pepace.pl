@@ -9,8 +9,8 @@
 # solely in the wormpep.history file.
 #
 #
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2008-02-11 11:33:11 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2008-02-15 16:56:23 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -61,7 +61,7 @@ my $ace_dir    = $wormbase->autoace;                  # AUTOACE DATABASE DIR
 my $wormpepdir = $wormbase->wormpep;                  # CURRENT WORMPEP
 my $ver        = $wormbase->get_wormbase_version();
 my $PEP_PREFIX = $wormbase->pep_prefix;
-my $WORMPEP_PREFIX = $wormbase->wormpep_prefic; # the namely WP: pr BP:
+my $WORMPEP_PREFIX = $wormbase->wormpep_prefix; # the namely WP: pr BP:
 my $PEPDIR 	   = $wormbase->pepdir_prefix;
 # read history file
 our ( $gene, $CE, $in, $out );
@@ -240,26 +240,8 @@ while (<HISTORY>) {
 }
 close HISTORY;
 
-# get the sequence from the .fasta file
-open (FASTA, "<$wormpepdir/${PEPDIR}pep.fasta$ver") or $log->log_and_die("cant open $wormpepdir/${PEPDIR}pep.fasta $!\n");
-print "reading $wormpepdir/${PEPDIR}pep.fasta$ver\n\n";
-
-my $fasta_pep;
-while (<FASTA>) {
-
-    #chomp;
-    if ( $_ =~ /$PEP_PREFIX\d{5}/ ) {
-        $fasta_pep = $&;
-        print "$fasta_pep\n";
-    }
-    else {
-        if ( defined($fasta_pep) ) {
-            $CE_sequence{$fasta_pep} .= "$_";
-        }
-    }
-}
-close FASTA;
-
+# get the sequence from the common data written earlier
+%CE_sequence = $wormbase->FetchData('cds2aa');
 # write ace file
 my $ii;
 my $acefile = "$ace_dir/acefiles/pepace.ace";
@@ -273,11 +255,11 @@ if($wormbase->species eq 'elegans') {
 
 #ace file for new Protein model (with History)
 foreach my $key ( sort keys %CE_history ) {
-	unless ($CE_sequence{$key}) {
-		$log->error("$key has no sequence in fasta file \n");
-		next;
-	}
-    print ACE "Protein : \"$WORMPEP_PREFIX:$key\"\n";
+#	unless ($CE_sequence{$key}) {
+#		$log->error("$key has no sequence in fasta file \n");
+#		next;
+#	}
+    print ACE "\nProtein : \"$WORMPEP_PREFIX:$key\"\n";
 
     ## Write histories
     foreach my $release ( sort byRelease keys %{ $CE_history{$key} } ) {
@@ -287,8 +269,7 @@ foreach my $key ( sort keys %CE_history ) {
     }
 
     print ACE "Database \"WORMPEP\" WORMPEP_ID \"$WORMPEP_PREFIX:$key\"\n";
-    print ACE "Molecular_weight ", &get_mol_weight( $CE_sequence{$key} )," Inferred_automatically \"build_pepace.pl\"\n";
-    print ACE "Species \"Caenorhabditis elegans\"\n";
+ 	print ACE "Species \"Caenorhabditis elegans\"\n";
     print ACE "Wormpep\n";
 
     if ( $CE_live{$key} == 1 ) {
@@ -298,8 +279,11 @@ foreach my $key ( sort keys %CE_history ) {
         }
     }
     print ACE "\n";
-    print ACE "Peptide : \"$WORMPEP_PREFIX:$key\"\n";
-    print ACE "$CE_sequence{$key}\n";
+    if ($CE_sequence{$key}) {
+	    print ACE "Peptide : \"$WORMPEP_PREFIX:$key\"\n";
+    	print ACE "$CE_sequence{$key}\n";
+    	print ACE "Molecular_weight ", &get_mol_weight( $CE_sequence{$key} )," Inferred_automatically \"build_pepace.pl\"\n";
+    }
 }
 close ACE;
 $log->write_to("written $acefile - to be loaded in to autoace\n");
@@ -307,7 +291,7 @@ $log->write_to("written $acefile - to be loaded in to autoace\n");
 #while we have crap predictions this can be skipped.
 if( $wormbase->species eq "elegans") {
 	my $live_peps  = `grep -c Live $acefile`;
-	my $table_peps = `/software/worm/bin/wublast/nrdb $wormpepdir/${PEPDIR}pep$ver |grep -c '>'`;
+	my $table_peps = `/software/worm/bin/wublast/nrdb $wormpepdir/${PEPDIR}pep$ver.pep |grep -c '>'`;
 	chomp $live_peps;
 	chomp $table_peps;
 
