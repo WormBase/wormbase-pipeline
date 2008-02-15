@@ -190,7 +190,11 @@ sub report
       $real_end = $self->transformer->revert_to_neg( $self->end );
     }
 
-    my @clone_coords = $coords->LocateSpan($self->chromosome, $real_start,$real_end );
+    # evil way to treat non-elegans species chromosome names
+    my $chr=$self->chromosome;
+    $chr="${\$coords->{chromosome_prefix}}$chr" if $coords->{species} ne 'elegans';
+
+    my @clone_coords = $coords->LocateSpan($chr, $real_start,$real_end );
 
     # output S_Parent for transcript
     print $fh "\nSequence : $clone_coords[0]\n";

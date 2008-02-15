@@ -6,8 +6,8 @@
 #
 # Script to make ?Transcript objects
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2007-09-20 08:32:14 $
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2008-02-15 14:24:49 $
 use strict;
 use lib $ENV{'CVS_DIR'};
 use Getopt::Long;
@@ -118,7 +118,7 @@ foreach my $chrom ( @chromosomes ) {
 
 
   # parse GFF file to get CDS and exon info
-  $gff_file = $gff_dir."/CHROMOSOME_${chrom}_curated.gff";
+  $gff_file = $gff_dir."/${\$wormbase->chromosome_prefix}${chrom}_curated.gff";
   open (GFF,"<$gff_file") or $log->log_and_die("cant open $gff_file : $!\n");
   $log->write_to("reading gff file $gff_file\n");
   while (<GFF>) {
@@ -142,7 +142,7 @@ foreach my $chrom ( @chromosomes ) {
   # read BLAT data
   my @BLAT_methods = qw( BLAT_EST_BEST BLAT_mRNA_BEST BLAT_OST_BEST BLAT_RST_BEST);
   foreach my $method (@BLAT_methods) {
-    $gff_file = $gff_dir."/CHROMOSOME_${chrom}_${method}.gff";
+    $gff_file = $gff_dir."/${\$wormbase->chromosome_prefix}${chrom}_${method}.gff";
     open( GFF,"<$gff_file") or $log->log_and_die("cant open $gff_file : $!\n");
     while ( <GFF> ) {
       next if (/#/); 		 # miss header
@@ -164,12 +164,12 @@ foreach my $chrom ( @chromosomes ) {
   }
 
   #Chromomsome info
-  $gff_file = $gff_dir."/CHROMOSOME_${chrom}_Link.gff";
+  $gff_file = $gff_dir."/${\$wormbase->chromosome_prefix}${chrom}_Link.gff";
   open (GFF,"<$gff_file") or $log->log_and_die("cant open gff_file :$!\n");  
   #create Strand_transformer for '-' strand coord reversal
   CHROM:while( <GFF> ){
     my @data = split;
-    if ( $data[1] eq "Link" and $data[9] =~ "CHROMOSOME") {
+    if ( $data[1] eq "Link" and $data[9] =~ /"CHROMOSOME|"chr/) {
       $transformer = Strand_transformer->new($data[3],$data[4]);
       last CHROM;
     }
@@ -179,7 +179,7 @@ foreach my $chrom ( @chromosomes ) {
   #CHROMOSOME_I  SL1  SL1_acceptor_site   182772  182773 .  -  .  Feature "WBsf016344"
   my @feature_types = qw(SL1 SL2 polyA_site polyA_signal_sequence);
   foreach my $Type (@feature_types){
-    my $gff_file = "$gff_dir/CHROMOSOME_${chrom}_${Type}.gff";
+    my $gff_file = "$gff_dir/${\$wormbase->chromosome_prefix}${chrom}_${Type}.gff";
     open(GFF, "<$gff_file") or $log->log_and_die("cant open $gff_file : $!\n");
     while( <GFF> ){
       my @data = split;
@@ -527,6 +527,8 @@ sub load_EST_data
 	chomp;
 	s/\"//g;
 	my @data = split;
+	next unless ($data[0] && $data[1]);
+	next if $data[0]=~/acedb/;
 	$$cDNA_span{$data[0]}->[4] = $data[1];
 	print PAIRS "$data[0]\t$data[1]\n";
       }
