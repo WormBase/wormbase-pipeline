@@ -5,7 +5,7 @@
 # by Anthony Rogers et al
 #
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2008-02-14 14:29:21 $
+# Last updated on: $Date: 2008-02-15 17:11:44 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -56,7 +56,7 @@ my %Table_defs = (
 		  'cds2protein'      => 'CommonData:CDS_proteinID.def',
 		  'clone2sv'         => 'CommonData:Clone_SequenceVersion.def',
 		  'clone2accession'  => 'CommonData:Clone_Accession.def', 
-		  'clone2size'       => 'CommonData:Clone_Size.def',
+		  'clone2size'       => "CommonData:Clone_Size_${\$wormbase->species}.def",
                   'clone2type'       => 'CommonData:Clone_Type.def',
 		  'clone2centre'     => 'CommonData:Clone_Lab.def',
 		  'cds2status'       => 'CommonData:CDS_Status.def',
