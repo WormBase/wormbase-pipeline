@@ -6,8 +6,8 @@
 #
 # Makes CDS status information by looking at transcript to exon mappings
 #
-# Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-01-15 10:57:16 $      
+# Last updated by: $Author: mh6 $     
+# Last updated on: $Date: 2008-02-15 16:40:21 $      
 
 
 use strict;
@@ -50,7 +50,7 @@ if ($store) {
 my $log = Log_files->make_build_log($wormbase);
 my $maintainers = "All";
 
-my @chromosomes  = qw( I II III IV V X MtDNA);                    # all chromosomes
+my @chromosomes  = $wormbase->get_chromosome_names(-mito => 1);  # all chromosomes
 @chromosomes     = qw( III ) if $quicktest;
 
 &printhelp() if ($help);
@@ -98,7 +98,7 @@ foreach my $chromosome (@chromosomes) {
     
   print $wormbase->runtime, " : Getting BLAT_TRANSCRIPT_BEST feature coordinates for chromosome $chromosome\n"  if ($verbose);
   #create BLAT_TRANSCRIPT_BEST for ease of transition!
-  $wormbase->run_command("cd $gffdir; cat CHROMOSOME_${chromosome}_BLAT_EST_BEST.gff CHROMOSOME_${chromosome}_BLAT_OST_BEST.gff CHROMOSOME_${chromosome}_BLAT_mRNA_BEST.gff CHROMOSOME_${chromosome}_BLAT_RST_BEST.gff >  CHROMOSOME_${chromosome}_BLAT_TRANSCRIPT_BEST.gff", $log);
+  $wormbase->run_command("cd $gffdir; cat ${\$wormbase->chromosome_prefix}${chromosome}_BLAT_EST_BEST.gff ${\$wormbase->chromosome_prefix}${chromosome}_BLAT_OST_BEST.gff ${\$wormbase->chromosome_prefix}${chromosome}_BLAT_mRNA_BEST.gff ${\$wormbase->chromosome_prefix}${chromosome}_BLAT_RST_BEST.gff >  ${\$wormbase->chromosome_prefix}${chromosome}_BLAT_TRANSCRIPT_BEST.gff", $log);
   my @EST_GFF  = &read_gff('BLAT_TRANSCRIPT_BEST',$chromosome);
   my %EST     = %{$EST_GFF[0]};
   my @ESTlist = @{$EST_GFF[1]};
@@ -212,7 +212,8 @@ sub read_gff {
   my %hash     = ();
    
   # open the GFF file
-  open (GFF, "$gffdir/CHROMOSOME_${chromosome}_$filename.gff") or die "Cannot open $gffdir/CHROMOSOME_${chromosome}_$filename.gff $!\n";
+  open (GFF, "$gffdir/${\$wormbase->chromosome_prefix}${chromosome}_$filename.gff") 
+    || die "Cannot open $gffdir/${\$wormbase->chromosome_prefix}${chromosome}_$filename.gff $!\n";
   while (<GFF>) {
 	
     # discard header lines
