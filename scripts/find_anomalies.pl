@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-02-14 13:33:19 $      
+# Last updated on: $Date: 2008-02-15 12:18:30 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -363,7 +363,7 @@ if ($database eq $wormbase->{'autoace'}) {
   foreach my $chromosome (@chromosomes) {
     my $gff_file = $wormbase->{'chromosomes'} . "/SUPPLEMENTARY_GFF/CHROMOSOME_${chromosome}_curation_anomalies.gff";
     $wormbase->check_file($gff_file, $log,
-			  minsize => 1000000,
+			  minsize => 700000,
 			  maxsize => 4000000,
 			  lines => ['^##',
 				    "^CHROMOSOME_${chromosome}\\s+curation_anomaly\\s+\\S+\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+\\s+Evidence\\s+\\S+"],
