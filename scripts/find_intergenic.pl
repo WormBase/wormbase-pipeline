@@ -6,8 +6,8 @@
 #
 # by Gary Williams
 #
-# Last updated by: $Author: mh6 $                      
-# Last updated on: $Date: 2008-02-15 16:22:46 $        
+# Last updated by: $Author: gw3 $                      
+# Last updated on: $Date: 2008-02-18 15:20:20 $        
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -344,7 +344,7 @@ $log->write_to("Wrote $no_sequences sequences\n");
 print "Wrote $no_sequences sequences\n";
 
 $log->write_to("gzipping $output\n");
-$wormbase->run_command("gzip $output", $log);
+$wormbase->run_command("gzip -f $output", $log);
 
 $wormbase->check_file("$output.gz", $log,
 		      minsize => 12000000,
