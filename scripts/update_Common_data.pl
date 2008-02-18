@@ -5,7 +5,7 @@
 # by Anthony Rogers et al
 #
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2008-02-15 17:11:44 $
+# Last updated on: $Date: 2008-02-18 12:02:02 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -52,25 +52,6 @@ my $est2feature;       # Hash: %est2feature         Key: EST name (WormBase)    
 my $cds2gene_id;       # Hash: %cds2gene_id         Key: CDS name                          Value: WBGene_id
 
 
-my %Table_defs = (
-		  'cds2protein'      => 'CommonData:CDS_proteinID.def',
-		  'clone2sv'         => 'CommonData:Clone_SequenceVersion.def',
-		  'clone2accession'  => 'CommonData:Clone_Accession.def', 
-		  'clone2size'       => "CommonData:Clone_Size_${\$wormbase->species}.def",
-                  'clone2type'       => 'CommonData:Clone_Type.def',
-		  'clone2centre'     => 'CommonData:Clone_Lab.def',
-		  'cds2status'       => 'CommonData:CDS_Status.def',
-                  'cds2cgc'          => 'CommonData:CDS_CGCname.def',
-		  'est2feature'      => 'CommonData:EST_Feature.def',
-		  'estdata'          => 'CommonData:EST_data.def',
-		  'cds2lab'          => 'CommonData:CDS_Lab.def',
-		  'pseudogene2lab'   => 'CommonData:Pseudogene_Lab.def',
-		  'RNAgene2lab'      => 'CommonData:RNAgene_Lab.def',
-		  'wormgene2cgc'     => 'CommonData:WormGene_CGCname.def',
-		  'wormgene2geneid'  => 'CommonData:WormGene_GeneID.def',
-		  'cds2wormpep'      => 'CommonData:CDS2wormpep'
-		  );
-
 my $store;
 GetOptions (
 	    "build"              => \$build,
@@ -108,7 +89,30 @@ else {
 }
 
 my $log = Log_files->make_build_log( $wormbase );
+
+my %Table_defs = (
+		  'cds2protein'      => 'CommonData:CDS_proteinID.def',
+		  'clone2sv'         => 'CommonData:Clone_SequenceVersion.def',
+		  'clone2accession'  => 'CommonData:Clone_Accession.def', 
+		  'clone2size'       => "CommonData:Clone_Size_${\$wormbase->species}.def",
+                  'clone2type'       => 'CommonData:Clone_Type.def',
+		  'clone2centre'     => 'CommonData:Clone_Lab.def',
+		  'cds2status'       => 'CommonData:CDS_Status.def',
+                  'cds2cgc'          => 'CommonData:CDS_CGCname.def',
+		  'est2feature'      => 'CommonData:EST_Feature.def',
+		  'estdata'          => 'CommonData:EST_data.def',
+		  'cds2lab'          => 'CommonData:CDS_Lab.def',
+		  'pseudogene2lab'   => 'CommonData:Pseudogene_Lab.def',
+		  'RNAgene2lab'      => 'CommonData:RNAgene_Lab.def',
+		  'wormgene2cgc'     => 'CommonData:WormGene_CGCname.def',
+		  'wormgene2geneid'  => 'CommonData:WormGene_GeneID.def',
+		  'cds2wormpep'      => 'CommonData:CDS2wormpep'
+		  );
+
+
+
 ##########################################
+
 # Set up database paths                  #
 ##########################################
 
@@ -344,11 +348,16 @@ sub write_clone2type  {
 sub write_clonesize  {   
 
   my %clonesize;
-    
-  # connect to AceDB using TableMaker,
-  my $command="Table-maker -p $wquery_dir/$Table_defs{'clone2size'}\nquit\n";
   
-  open (TACE, "echo '$command' | $tace $ace_dir |");
+  if (ref $wormbase eq 'Briggsae') { # needs to be beautified
+	  my $command="perl $ENV{CVS_DIR}/get_clone_sizes.pl -species Briggsae";
+	  open(TACE, "$command|");
+  }
+  else {
+	  # connect to AceDB using TableMaker,
+	  my $command="Table-maker -p $wquery_dir/$Table_defs{'clone2size'}\nquit\n";
+	  open (TACE, "echo '$command' | $tace $ace_dir |");
+  }
   while (<TACE>) {
       chomp;
       s/\"//g;
@@ -359,7 +368,7 @@ sub write_clonesize  {
       }
   }
   close TACE;
-  
+
   # now dump data to file
 
   open (CLONESIZE, ">$data_dir/clonesize.dat") or die "cant write $data_dir/clonesize.dat :$!";
