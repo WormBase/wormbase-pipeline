@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-02-15 12:18:30 $      
+# Last updated on: $Date: 2008-02-18 15:14:24 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -173,7 +173,7 @@ foreach my $chromosome (@chromosomes) {
 
   # if we want the anomalies GFF file
   if ($supplementary) {
-    my $gff_file = "$database/CHROMOSOMES/SUPPLEMENTARY_GFF/CHROMOSOME_${chromosome}_curation_anomalies.gff";
+    my $gff_file = "$database/CHROMOSOMES/SUPPLEMENTARY_GFF/${\$wormbase->chromosome_prefix}${chromosome}_curation_anomalies.gff";
     open (OUTPUT_GFF, ">$gff_file") || die "Can't open $gff_file";
   }
 
@@ -361,12 +361,12 @@ $ace->close;
 
 if ($database eq $wormbase->{'autoace'}) {
   foreach my $chromosome (@chromosomes) {
-    my $gff_file = $wormbase->{'chromosomes'} . "/SUPPLEMENTARY_GFF/CHROMOSOME_${chromosome}_curation_anomalies.gff";
+    my $gff_file = $wormbase->{'chromosomes'} . "/SUPPLEMENTARY_GFF/${\$wormbase->chromosome_prefix}${chromosome}_curation_anomalies.gff";
     $wormbase->check_file($gff_file, $log,
 			  minsize => 700000,
 			  maxsize => 4000000,
 			  lines => ['^##',
-				    "^CHROMOSOME_${chromosome}\\s+curation_anomaly\\s+\\S+\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+\\s+Evidence\\s+\\S+"],
+				    "^${\$wormbase->chromosome_prefix}${chromosome}\\s+curation_anomaly\\s+\\S+\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+\\s+Evidence\\s+\\S+"],
 			  );
   }
 }
@@ -392,7 +392,7 @@ sub get_coding_exons {
   my %GFF_data = 
    (
      directory			=> "$database/GFF_SPLITS/",
-     file			=> "CHROMOSOME_${chromosome}_Coding_transcript.gff",
+     file			=> "${\$wormbase->chromosome_prefix}${chromosome}_Coding_transcript.gff",
      gff_source			=> "Coding_transcript",
      gff_type			=> "exon",
      anomaly_type		=> "",
@@ -414,7 +414,7 @@ sub get_cds_exons {
   my %GFF_data = 
    (
      directory			=> "$database/GFF_SPLITS/",
-     file			=> "CHROMOSOME_${chromosome}_curated.gff",
+     file			=> "${\$wormbase->chromosome_prefix}${chromosome}_curated.gff",
      gff_source			=> "curated",
      gff_type			=> "exon",
      anomaly_type		=> "",
@@ -436,7 +436,7 @@ sub get_pseudogenes {
   my %GFF_data = 
    (
      directory			=> "$database/GFF_SPLITS/",
-     file			=> "CHROMOSOME_${chromosome}_Pseudogene.gff",
+     file			=> "${\$wormbase->chromosome_prefix}${chromosome}_Pseudogene.gff",
      gff_source			=> "Pseudogene",
      gff_type			=> "Pseudogene",
      anomaly_type		=> "",
@@ -460,7 +460,7 @@ sub get_pseudogene_exons {
   my %GFF_data = 
    (
      directory			=> "$database/GFF_SPLITS/",
-     file			=> "CHROMOSOME_${chromosome}_Pseudogene.gff",
+     file			=> "${\$wormbase->chromosome_prefix}${chromosome}_Pseudogene.gff",
      gff_source			=> "Pseudogene",
      gff_type			=> "exon",
      anomaly_type		=> "",
@@ -485,7 +485,7 @@ sub get_transposons {
   my %GFF_data = 
    (
      directory			=> "$database/GFF_SPLITS/",
-     file			=> "CHROMOSOME_${chromosome}_Transposon.gff",
+     file			=> "${\$wormbase->chromosome_prefix}${chromosome}_Transposon.gff",
      gff_source			=> "Transposon",
      gff_type			=> "transposable_element",
      anomaly_type		=> "",
@@ -509,7 +509,7 @@ sub get_transposon_exons {
   my %GFF_data = 
    (
      directory			=> "$database/GFF_SPLITS/",
-     file			=> "CHROMOSOME_${chromosome}_Transposon_CDS.gff",
+     file			=> "${\$wormbase->chromosome_prefix}${chromosome}_Transposon_CDS.gff",
      gff_source			=> "Transposon_CDS",
      gff_type			=> "coding_exon",
      anomaly_type		=> "",
@@ -531,7 +531,7 @@ sub get_coding_transcripts {
   my %GFF_data = 
    (
      directory			=> "$database/GFF_SPLITS/",
-     file			=> "CHROMOSOME_${chromosome}_Coding_transcript.gff",
+     file			=> "${\$wormbase->chromosome_prefix}${chromosome}_Coding_transcript.gff",
      gff_source			=> "Coding_transcript",
      gff_type			=> "protein_coding_primary_transcript",
      anomaly_type		=> "",
@@ -554,7 +554,7 @@ sub get_noncoding_transcript_exons {
   my %GFF_data = 
    (
      directory			=> "$database/GFF_SPLITS/",
-     file			=> "CHROMOSOME_${chromosome}_Non_coding_transcript.gff",
+     file			=> "${\$wormbase->chromosome_prefix}${chromosome}_Non_coding_transcript.gff",
      gff_source			=> "Non_coding_transcript",
      gff_type			=> "exon",
      anomaly_type		=> "",
@@ -576,7 +576,7 @@ sub get_rRNA {
   my %GFF_data = 
    (
      directory			=> "$database/GFF_SPLITS/",
-     file			=> "CHROMOSOME_${chromosome}_rRNA.gff",
+     file			=> "${\$wormbase->chromosome_prefix}${chromosome}_rRNA.gff",
      gff_source			=> "rRNA",
      gff_type			=> "rRNA_primary_transcript",
      anomaly_type		=> "",
@@ -599,7 +599,7 @@ sub get_homologies {
   my %GFF_data = 
    (
      directory			=> "$database/CHROMOSOMES/", # NB we are reading the full gff file, not the split ones here
-     file			=> "CHROMOSOME_${chromosome}.gff",
+     file			=> "${\$wormbase->chromosome_prefix}${chromosome}.gff",
      gff_source			=> "wublastx",
      gff_type			=> "protein_match",
      homology			=> "1",	# this is a GFF with homology data that we need to store
@@ -623,7 +623,7 @@ sub get_TSL_SL1 {
   my %GFF_data = 
    (
      directory			=> "$database/GFF_SPLITS/", # NB we are reading the full gff file, not the split ones here
-     file			=> "CHROMOSOME_${chromosome}_SL1.gff",
+     file			=> "${\$wormbase->chromosome_prefix}${chromosome}_SL1.gff",
      gff_source			=> "SL1",
      gff_type			=> "SL1_acceptor_site",
      anomaly_type		=> "",
@@ -646,7 +646,7 @@ sub get_TSL_SL2 {
   my %GFF_data = 
    (
      directory			=> "$database/GFF_SPLITS/", # NB we are reading the full gff file, not the split ones here
-     file			=> "CHROMOSOME_${chromosome}_SL2.gff",
+     file			=> "${\$wormbase->chromosome_prefix}${chromosome}_SL2.gff",
      gff_source			=> "SL2",
      gff_type			=> "SL2_acceptor_site",
      anomaly_type		=> "",
@@ -668,7 +668,7 @@ sub get_SAGE_transcripts {
   my %GFF_data = 
    (
      directory			=> "$database/GFF_SPLITS/",
-     file			=> "CHROMOSOME_${chromosome}_SAGE_transcript.gff",
+     file			=> "${\$wormbase->chromosome_prefix}${chromosome}_SAGE_transcript.gff",
      gff_source			=> "SAGE_transcript",
      gff_type			=> "transcript",
      anomaly_type		=> "",
@@ -691,7 +691,7 @@ sub get_twinscan_exons {
   my %GFF_data = 
    (
      directory			=> "$database/CHROMOSOMES/", # NB we are reading the full gff file, not the split ones here
-     file			=> "CHROMOSOME_${chromosome}.gff",
+     file			=> "${\$wormbase->chromosome_prefix}${chromosome}.gff",
      gff_source			=> "twinscan",
      gff_type			=> "coding_exon",
      anomaly_type		=> "",
@@ -715,7 +715,7 @@ sub get_twinscan_transcripts {
   my %GFF_data = 
    (
      directory			=> "$database/CHROMOSOMES/", # NB we are reading the full gff file, not the split ones here
-     file			=> "CHROMOSOME_${chromosome}.gff",
+     file			=> "${\$wormbase->chromosome_prefix}${chromosome}.gff",
      gff_source			=> "twinscan",
      gff_type			=> "CDS",
      anomaly_type		=> "",
@@ -739,7 +739,7 @@ sub get_genefinder {
   my %GFF_data = 
    (
      directory			=> "$database/CHROMOSOMES/", # NB we are reading the full gff file, not the split ones here
-     file			=> "CHROMOSOME_${chromosome}.gff",
+     file			=> "${\$wormbase->chromosome_prefix}${chromosome}.gff",
      gff_source			=> "Genefinder",
      gff_type			=> "coding_exon",
      anomaly_type		=> "",
@@ -762,7 +762,7 @@ sub get_waba_coding {
   my %GFF_data = 
    (
      directory			=> "$database/CHROMOSOMES/", # NB we are reading the full gff file, not the split ones here
-     file			=> "CHROMOSOME_${chromosome}.gff",
+     file			=> "${\$wormbase->chromosome_prefix}${chromosome}.gff",
      gff_source			=> "waba_coding",
      gff_type			=> "nucleotide_match",
      homology			=> "1",	# this is a GFF with homology data that we need to store
@@ -786,7 +786,7 @@ sub get_repeatmasked {
   my %GFF_data = 
    (
      directory			=> "$database/CHROMOSOMES/", # NB we are reading the full gff file, not the split ones here
-     file			=> "CHROMOSOME_${chromosome}.gff",
+     file			=> "${\$wormbase->chromosome_prefix}${chromosome}.gff",
      gff_source			=> "RepeatMasker",
      gff_type			=> "repeat_region",
      anomaly_type		=> "",
@@ -810,7 +810,7 @@ sub get_5_UTRs {
   my %GFF_data = 
    (
      directory			=> "$database/GFF_SPLITS/",
-     file			=> "CHROMOSOME_${chromosome}_UTR.gff",
+     file			=> "${\$wormbase->chromosome_prefix}${chromosome}_UTR.gff",
      gff_source			=> "Coding_transcript",
      gff_type			=> "five_prime_UTR",
      anomaly_type		=> "",
@@ -834,7 +834,7 @@ sub get_3_UTRs {
   my %GFF_data = 
    (
      directory			=> "$database/GFF_SPLITS/",
-     file			=> "CHROMOSOME_${chromosome}_UTR.gff",
+     file			=> "${\$wormbase->chromosome_prefix}${chromosome}_UTR.gff",
      gff_source			=> "Coding_transcript",
      gff_type			=> "three_prime_UTR",
      anomaly_type		=> "",
@@ -885,7 +885,7 @@ sub get_est {
   my %GFF_data = 
    (
      directory			=> "$database/CHROMOSOMES/", # NB we are reading the full gff file, not the split ones here
-     file			=> "CHROMOSOME_${chromosome}.gff",
+     file			=> "${\$wormbase->chromosome_prefix}${chromosome}.gff",
      gff_source			=> "BLAT_EST_BEST",
      gff_type			=> "EST_match",
      homology			=> "1",	# this is a GFF with homology data that we need to store
@@ -2367,7 +2367,7 @@ sub get_est_mismatches {
    my ($exons_aref, $chromosome) = @_;
 
    my $pwm = PWM->new;
-   my $seq_file = "$database/CHROMOSOMES/CHROMOSOME_$chromosome.dna";
+   my $seq_file = "$database/CHROMOSOMES/${\$wormbase->chromosome_prefix}$chromosome.dna";
    my $seq = read_file($seq_file);
 
    my $splice_cutoff = 0.5;	# if we have two or more splice sites below this value, then report them
@@ -2844,7 +2844,7 @@ sub get_GFF_files {
   (
    {
      directory			=> $dir,
-     file			=> "CHROMOSOME_${chromosome}.check_intron_*.gff",
+     file			=> "${\$wormbase->chromosome_prefix}${chromosome}.check_intron_*.gff",
      gff_source			=> "",
      gff_type			=> "intron",
      anomaly_type		=> "CONFIRMED_EST_INTRON",
@@ -2854,7 +2854,7 @@ sub get_GFF_files {
 
    {
      directory			=> $dir,
-     file			=> "CHROMOSOME_${chromosome}.check_intron_*.gff",
+     file			=> "${\$wormbase->chromosome_prefix}${chromosome}.check_intron_*.gff",
      gff_source			=> "",
      gff_type			=> "intron",
      anomaly_type		=> "CONFIRMED_cDNA_INTRON",
@@ -2918,7 +2918,7 @@ sub read_GFF_file {
 	  }
 	  if (! defined $id) {next;}
 	  $id =~ s/\"//g;	# remove quotes
-	  if ($chromosome =~ /CHROMOSOME_(\S+)/) {$chromosome = $1;} # abbreviate chromosome
+	  if ($chromosome =~ /${\$wormbase->chromosome_prefix}(\S+)/) {$chromosome = $1;} # abbreviate chromosome
 
 	  #print "read GFF: $chromosome, $id, $start, $end, $sense\n";
 
@@ -2958,7 +2958,7 @@ sub output_to_database {
   my ($anomaly_type, $chromosome, $anomaly_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score, $explanation ) = @_;
 
   # get the clone and lab for this location
-  my ($clone, $clone_start, $clone_end) = $coords->LocateSpan("CHROMOSOME_$chromosome", $chrom_start, $chrom_end);
+  my ($clone, $clone_start, $clone_end) = $coords->LocateSpan("${\$wormbase->chromosome_prefix}$chromosome", $chrom_start, $chrom_end);
   my $lab =  $clonelab{$clone};          # get the lab that sequenced this clone  
   if (! defined $lab) {
     if ($clone =~ /SUPERLINK_CB_/) {
@@ -3002,7 +3002,7 @@ sub put_anomaly_record_in_database {
   #################################
 
   if ($supplementary) {
-    print OUTPUT_GFF "CHROMOSOME_$chromosome\tcuration_anomaly\t$anomaly_type\t$chrom_start\t$chrom_end\t$anomaly_score\t$chrom_strand\t.\tEvidence \"$anomaly_id\"\n";
+    print OUTPUT_GFF "${\$wormbase->chromosome_prefix}$chromosome\tcuration_anomaly\t$anomaly_type\t$chrom_start\t$chrom_end\t$anomaly_score\t$chrom_strand\t.\tEvidence \"$anomaly_id\"\n";
   }
 
   ####################################
