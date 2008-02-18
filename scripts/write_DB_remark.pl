@@ -7,8 +7,8 @@
 # This script interogates an ACEDB database and returns all pfam/Interpro/blastx 
 # data as appropriate and generates a suitable DB_remark
 #
-# Last updated on: $Date: 2008-01-23 14:40:42 $
-# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2008-02-18 16:19:24 $
+# Last updated by: $Author: mh6 $
 
 
 ### DB_remark is generated as follows:  ###
@@ -144,7 +144,7 @@ $species = "elegans" unless $species;
 if ($output) {
   $output_file = $output;
 } else {
-  $output_file   = $wormbase->misc_dynamic . "/misc_DB_remark.ace";
+  $output_file   = $wormbase->acefiles . "/misc_DB_remark.ace";
 }
 print "Output file is $output_file\n\n";
 open (ACE,">$output_file") or die "Can't open output file $output_file:\t$!\n";
