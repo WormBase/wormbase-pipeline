@@ -1,7 +1,7 @@
 #!/software/bin/perl -w
 
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2007-10-11 10:05:48 $
+# Last updated on: $Date: 2008-02-19 13:51:44 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -69,8 +69,8 @@ $log->write_to("\tExcuting query . .\n");
 $sth_f->execute($wormbase->ncbi_tax_id);
 my $ref_results = $sth_f->fetchall_arrayref;
 
-my %aa2pepid ;#= $wormbase->FetchData('pepseq2pepid');
-&makepepseq_hash unless (%aa2pepid);
+my %aa2pepid = $wormbase->FetchData('aa2pepid');
+#&makepepseq_hash unless (%aa2pepid);
 
 $log->write_to("\twriting output\n");
 open (ACE,">".$wormbase->acefiles."/PFAM_active_sites.ace") or $log->log_and_die("cant open ".$wormbase->acefiles."/PFAM_active_sites.ace :$!");
@@ -85,8 +85,9 @@ foreach (@$ref_results) {
 		}
 	}
 	if( $aa2pepid{$seq} ){
-		my $pepid = $aa2pepid{$seq};
-		print ACE "\nProtein : \"WP:$pepid\"\n";
+		my $pepid = $wormbase->wormpep_prefix.":".$wormbase->pep_prefix.&pad($aa2pepid{$seq});
+		
+		print ACE "\nProtein : \"$pepid\"\n";
 		print ACE "Motif_homol Active_site \"$method\" 0 $residue $residue 1 1\n"; 
 	}
 	else {
@@ -101,27 +102,24 @@ exit;
 
 
 sub update_database {
-	# THIS DOESNT WORK.
-	# you need to get the files from the ftp site and do it manually. see wiki for details.
-	
 	$log->write_to("\n\nUpdating database from PFAM ftp site\n");
 	
 	my $ftp = glob("~ftp/pub/databases/Pfam/database_files");
 	my @tables = qw(markup_key pfamseq pfamseq_markup);
 	foreach my $table (@tables){
 		$log->write_to("\tfetching $table.txt\n");
-		$wormbase->run_command("cp $ftp/$table.txt.gz /tmp/$table.txt.gz", $log);
+		$wormbase->run_command("cp -f $ftp/$table.txt.gz /tmp/$table.txt.gz", $log);
 		
 		$log->write_to("\tunzippping /tmp/$table.txt\n");
-		$wormbase->run_command("gunzip /tmp/$table.txt.gz", $log);
+		$wormbase->run_command("gunzip -f /tmp/$table.txt.gz", $log);
 
 		$log->write_to("\tclearing table $table\n");
-		$DB->do("delete from $table");
+		$DB->do("DELETE FROM $table") or $log->log_and_die($DB->errstr."\n");
 		
 		$log->write_to("\tloading data in to $table\n");		
-		$DB->do("LOAD DATA LOCAL INFILE \'/tmp/$table.txt\' INTO TABLE $table");
+		$DB->do("LOAD DATA LOCAL INFILE \"/tmp/$table.txt\" INTO TABLE $table") or $log->log_and_die($DB->errstr."\n");
 		
-		$wormbase->run_command("rm /tmp/$table.txt", $log);
+		$wormbase->run_command("rm -f /tmp/$table.txt", $log);
 	}
 	$log->write_to("Database update complete\n\n");
 }
@@ -142,8 +140,7 @@ sub makepepseq_hash {
 	close PEP;
 }
 
-
-
-
-
-
+sub pad {
+	my $num = shift;
+	return sprintf "%05d" , $num;
+}
