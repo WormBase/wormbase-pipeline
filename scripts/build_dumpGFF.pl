@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl -w
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2007-09-20 14:18:20 $
+# Last edited on: $Date: 2008-02-20 16:52:49 $
 
 use strict;
 use lib  $ENV{'CVS_DIR'};
@@ -71,7 +71,7 @@ init history
 init miRNA
 init tRNAscan-SE-1.23
 init Non_coding_transcript
-init SAGE_transcript
+init SAGE_tag
 init snRNA
 init miRNA
 init rRNA
