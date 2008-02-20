@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl5.8.0 -w
 #
-# Last edited by: $Author: pad $
-# Last edited on: $Date: 2008-02-14 13:57:45 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2008-02-20 14:40:25 $
 
 
 use lib $ENV{'CVS_DIR'};
@@ -112,6 +112,9 @@ if( $mask ) {
 	foreach my $qspecies ( keys %mol_types ) {
 		next if (grep /$qspecies/, @nematodes);
 		foreach my $moltype (@{$mol_types{$qspecies}}) {
+			#transcriptmasker is designed to be run on a sinlge species at a time.
+			#therefore this uses the query species ($qspecies) as the -species parameter so that 
+			#transcriptmasker creates a different Species opbject and gets the correct paths! 
 			$wormbase->bsub_script("transcriptmasker.pl -species $qspecies -mol_type $moltype", $qspecies, $log);
 		}
 	}
@@ -183,7 +186,6 @@ if( $postprocess ) {
   # merge psl files and convert to ace format
   $log->write_to("merging PSL files \n");
   my $blat_dir = $wormbase->blat;
-  my $species = $wormbase->species;
   foreach my $species (keys %mol_types) {
   	foreach my $moltype ( @{$mol_types{$species}}){
  	 $wormbase->run_command("cat $blat_dir/${species}_${moltype}_* |sort -u  > $blat_dir/${species}_${moltype}_out.psl", $log); # /d causes compiler warning (?)
@@ -236,8 +238,8 @@ sub confirm_introns {
   local (*GOOD,*BAD);
   
   # open the output files
-  open (GOOD, ">$blat_dir/autoace.good_introns.$type.ace") or die "$!";
-  open (BAD,  ">$blat_dir/autoace.bad_introns.$type.ace")  or die "$!";
+  open (GOOD, ">$blat_dir/".$wormbase->species.".good_introns.$type.ace") or die "$!";
+  open (BAD,  ">$blat_dir/".$wormbase->species.".bad_introns.$type.ace")  or die "$!";
   
   my ($link,@introns,$dna,$switch);
  
@@ -246,10 +248,10 @@ sub confirm_introns {
   	
   # set qspecies to be just 'elegans' for now
   # is this meant to iterate over all species?
-  # if so, then we need separate $blat_dir/autoace.{good,bad}_introns.$type.ace files for each species
+  # if so, then we need separate $blat_dir/".$wormbase->species.".{good,bad}_introns.$type.ace files for each species
   my $qspecies = 'elegans';
   	
-  open (CI, "<$blat_dir/autoace.ci.${qspecies}_${type}.ace")  or $log->log_and_die("Cannot open $blat_dir/autoace.ci.${qspecies}_${type}.ace $!\n");
+  open (CI, "<$blat_dir/".$wormbase->species.".ci.${qspecies}_${type}.ace")  or $log->log_and_die("Cannot open $blat_dir/".$wormbase->species.".ci.${qspecies}_${type}.ace $!\n");
   while (<CI>) {
     next unless /^\S/;
     if (/Sequence : \"(\S+)\"/) {
