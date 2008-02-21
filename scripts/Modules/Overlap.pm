@@ -6,8 +6,8 @@
 #
 # Do fast overlap matching of positions of two sets of things.
 #
-# Last updated by: $Author: mh6 $     
-# Last updated on: $Date: 2008-02-21 11:44:34 $      
+# Last updated by: $Author: gw3 $     
+# Last updated on: $Date: 2008-02-21 14:20:11 $      
 
 =pod
 
@@ -294,6 +294,7 @@ sub _init_match {
                   ID_after		=> regular expression after which the ID is expected to be
                   reverse_orientation   => 1, optional - specifies that the orientation should be reversed if this is a 3-prime read
                   homology              => 1, optional - specifies that the $hit_start, $hit_end, $score data from a homology alignment should also be read
+                  other_data            => 1, optional - specifies that the 'other' data field should be appended to the result
 
 
 =cut
@@ -339,6 +340,7 @@ sub read_GFF_file {
       if ($line =~ /^#/) {next;}  
       my @f = split /\t/, $line;
       my ($chromosome, $source, $type, $start, $end, $sense) = ($f[0], $f[1], $f[2], $f[3], $f[4], $f[6]);
+      my $other_data;
       if ($GFF_data->{gff_source} ne "" && $GFF_data->{gff_source} ne $source) {next;}
       if ($GFF_data->{gff_type} ne "" && $GFF_data->{gff_type} ne $type) {next;}
       if (exists $GFF_data->{homology}) {	# do we need to store the homology data?
@@ -349,12 +351,14 @@ sub read_GFF_file {
       }
       if (! defined $id) {next;}
       $id =~ s/\"//g;	# remove quotes
+      $id =~ s/\;\S+//;	# remove anything after a ';' as this is s field separator in the 'other' field
+      if (exists $GFF_data->{'other_data'}) {$other_data = $f[8]}
       if ($chromosome =~ /${\$self->wormbase->chromosome_prefix}(\S+)/) {$chromosome = $1;} # abbreviate chromosome
       
       if (exists $GFF_data->{homology}) {	# do we need to store the homology data?
-	push @result, [$id, $start, $end, $sense, $hit_start, $hit_end, $score];
+	push @result, [$id, $start, $end, $sense, $hit_start, $hit_end, $score, $other_data];
       } else {
-	push @result, [$id, $start, $end, $sense];		
+	push @result, [$id, $start, $end, $sense, $other_data];		
       }
     }
 #    close (GFF);
@@ -1415,18 +1419,11 @@ sub get_SAGE_tags {
      gff_source			=> "",
      gff_type			=> "SAGE_tag",
      homology			=> "1",	# this is a GFF with homology data that we need to store (well, maybe we might need to?)
-     ID_after			=> "count\\s+",
+     ID_after			=> "Sequence\\s+",
+     other_data			=> 1,           # we want to store the other_data field to get the 'count' 
    );
 
-  # the 'score' is really the 'count' tag in the 'other' field
-  # so shove the number in the ID field into the score field
-  my @tags = $self->read_GFF_file(\%GFF_data);
-  foreach my $t (@tags) {
-    my $count = $t->[0];
-    ($t->[6]) = ($count =~ /\d+/);
-    $t->[0] = "";
-  }
-
+  return $self->read_GFF_file(\%GFF_data);
 }
 
 =head2
