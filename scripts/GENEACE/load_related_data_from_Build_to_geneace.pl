@@ -8,8 +8,8 @@
 # RUN this script anytime during the build or after the build when get_interpolated_map 
 # and update_inferred multi-pt data are done
 #
-# Last updated on: $Date: 2007-09-26 10:47:32 $
-# Last updated by: $Author: mt3 $
+# Last updated on: $Date: 2008-02-21 15:00:29 $
+# Last updated by: $Author: mh6 $
 
 
 use strict;
@@ -59,13 +59,13 @@ print INT_A $command;
 close INT_A;
 
 #need to refresh all Interpolated map positions as they are all relative to each other.
-$wormbase->load_to_database($geneace,$int_map_pos,'interpolated_map_positions_from_autoace');
+$wormbase->load_to_database($geneace,$int_map_pos,'interpolated_map_positions_from_autoace',$log);
 
 # (1) Promoted map positions
 $log->write_to("Loading pseudo map positions\n");
 my $file = $wormbase->acefiles."/pseudo_map_positions.ace";
 
-$wormbase->load_to_database($geneace, $file, 'pseudo_map_positions_from_autoace');
+$wormbase->load_to_database($geneace, $file, 'pseudo_map_positions_from_autoace',$log);
 
 
 # (6) updated geneace with person/person_name data from Caltech
@@ -98,16 +98,16 @@ close Load_GA;
 # new Person data will have been dumped from citace
 $log->write_to("Adding new person data\n");
 my $person = $wormbase->acefiles."/primaries/caltech/caltech_Person.ace";
-$wormbase->load_to_database($geneace, $person,"caltech_Person");
+$wormbase->load_to_database($geneace, $person,"caltech_Person",$log);
 
 
 # new Paper data will have been dumped from citace
 $log->write_to("Adding new paper data\n");
 my $paper = $wormbase->acefiles."/primaries/caltech/caltech_Paper.ace";
-$wormbase->load_to_database($geneace, $paper,"caltech_Paper");
+$wormbase->load_to_database($geneace, $paper,"caltech_Paper",$log);
 
 #load the analysis papers back
-$wormbase->load_to_database($geneace, $analysis_papers,"analysis_Paper");
+$wormbase->load_to_database($geneace, $analysis_papers,"analysis_Paper",$log);
 
 $log->mail();
 exit(0);
