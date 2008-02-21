@@ -9,7 +9,7 @@
 # transcripts to find the most probably orientation.
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2007-11-26 15:43:03 $      
+# Last updated on: $Date: 2008-02-21 11:13:22 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -321,6 +321,9 @@ foreach my $chromosome ($wormbase->get_chromosome_names(-mito => 1, -prefix => 0
   # now write the ACE file for this chromosome
   my $version = $wormbase->get_wormbase_version_name();
   my $output = $wormbase->wormpub . "/CURATION_DATA/assign_orientation." . $version . ".ace";
+  if ($wormbase->species ne 'elegans') {
+    $output = $wormbase->wormpub . "/CURATION_DATA/assign_orientation_${\$wormbase->species}." . $version . ".ace";
+  }
   open (ACE, ">> $output") || die "Can't open file $output\n";
   # we are happy that the existing orientation of these is OK
   # if no existing orientation, we make the default: EST_5
