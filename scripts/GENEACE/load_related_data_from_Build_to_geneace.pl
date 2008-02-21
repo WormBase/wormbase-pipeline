@@ -8,7 +8,7 @@
 # RUN this script anytime during the build or after the build when get_interpolated_map 
 # and update_inferred multi-pt data are done
 #
-# Last updated on: $Date: 2008-02-21 15:00:29 $
+# Last updated on: $Date: 2008-02-21 15:12:33 $
 # Last updated by: $Author: mh6 $
 
 
@@ -97,13 +97,13 @@ close Load_GA;
 
 # new Person data will have been dumped from citace
 $log->write_to("Adding new person data\n");
-my $person = $wormbase->acefiles."/primaries/caltech/caltech_Person.ace";
+my $person = $wormbase->acefiles."/primaries/citace/caltech_Person.ace";
 $wormbase->load_to_database($geneace, $person,"caltech_Person",$log);
 
 
 # new Paper data will have been dumped from citace
 $log->write_to("Adding new paper data\n");
-my $paper = $wormbase->acefiles."/primaries/caltech/caltech_Paper.ace";
+my $paper = $wormbase->acefiles."/primaries/citace/caltech_Paper.ace";
 $wormbase->load_to_database($geneace, $paper,"caltech_Paper",$log);
 
 #load the analysis papers back
