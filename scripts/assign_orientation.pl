@@ -8,8 +8,8 @@
 # orientation yet.  It uses best splice site and overlap with
 # transcripts to find the most probably orientation.
 #
-# Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-02-21 11:13:22 $      
+# Last updated by: $Author: mh6 $     
+# Last updated on: $Date: 2008-02-21 11:19:00 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -392,7 +392,7 @@ sub read_chromosome {
 
   my $chromosome = shift;
 
-  my $seq_file = $wormbase->chromosomes . "/CHROMOSOME_$chromosome.dna";
+  my $seq_file = $wormbase->chromosomes . "${\$wormbase->chromosome_prefix}$chromosome.dna";
   my $seq = read_file($seq_file);
 
   return $seq;
