@@ -6,8 +6,8 @@
 #
 # Do fast overlap matching of positions of two sets of things.
 #
-# Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-02-21 11:26:11 $      
+# Last updated by: $Author: mh6 $     
+# Last updated on: $Date: 2008-02-21 11:44:34 $      
 
 =pod
 
@@ -175,6 +175,21 @@ sub new {
   $self->{wormbase} = shift or croak "no wormbase supplied\n";
 
   return $self;
+}
+
+=head2
+
+    Title   :   wormbase
+    Usage   :   my $wormbase = Overlap->wormbase;
+    Function:   accessor for the wormbase attribute
+    Returns :   Wormbase object
+    Args    :   none
+
+=cut
+
+sub wormbase {
+	my $self=shift;
+	return $self->{wormbase};
 }
 
 =head2
