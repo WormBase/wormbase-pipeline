@@ -7,7 +7,7 @@
 # Do fast overlap matching of positions of two sets of things.
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-02-15 16:47:26 $      
+# Last updated on: $Date: 2008-02-21 11:26:11 $      
 
 =pod
 
@@ -89,7 +89,7 @@ Routines to read GFF files from the database defined in $wormbase
 @list = $ovlp->get_polyA_site($chromosome)
 @list = $ovlp->get_TSL_SL1($chromosome)
 @list = $ovlp->get_TSL_SL2($chromosome)
-@list = $ovlp->get_SAGE_transcripts($chromosome)
+@list = $ovlp->get_SAGE_tags($chromosome)
 @list = $ovlp->get_blastx_homologies($chromosome)
 @list = $ovlp->get_waba_coding($chromosome)
 @list = $ovlp->get_repeatmasked($chromosome)
@@ -1381,30 +1381,36 @@ sub get_TSL_SL2 {
 
 =head2
 
-    Title   :   get_SAGE_transcripts
-    Usage   :   my @gff = $ovlp->get_SAGE_transcripts($chromosome)
-    Function:   reads the GFF data for SAGE transcripts
+    Title   :   get_SAGE_tags
+    Usage   :   my @gff = $ovlp->get_SAGE_tags($chromosome)
+    Function:   reads the GFF data for SAGE tags
     Returns :   list of lists for GFF data
     Args    :   chromosome number
 
 =cut
 
-sub get_SAGE_transcripts {
+sub get_SAGE_tags {
   my $self = shift;
   my ($chromosome) = @_;
 
   my %GFF_data = 
    (
-     directory			=> $self->{database} . "/GFF_SPLITS",
-     file			=> "${\$self->wormbase->chromosome_prefix}${chromosome}_SAGE_transcript.gff",
-     gff_source			=> "SAGE_transcript",
-     gff_type			=> "transcript",
-     ID_after			=> "SAGE_transcript\\s+",
-     chromosome                 => $chromosome,
-
+     directory			=> $self->{database} . "/CHROMOSOMES",
+     file			=> "${\$self->wormbase->chromosome_prefix}${chromosome}.gff",
+     gff_source			=> "",
+     gff_type			=> "SAGE_tag",
+     homology			=> "1",	# this is a GFF with homology data that we need to store (well, maybe we might need to?)
+     ID_after			=> "count\\s+",
    );
 
-  return $self->read_GFF_file(\%GFF_data);
+  # the 'score' is really the 'count' tag in the 'other' field
+  # so shove the number in the ID field into the score field
+  my @tags = $self->read_GFF_file(\%GFF_data);
+  foreach my $t (@tags) {
+    my $count = $t->[0];
+    ($t->[6]) = ($count =~ /\d+/);
+    $t->[0] = "";
+  }
 
 }
 
