@@ -119,7 +119,7 @@ sub get_all_alleles {
 sub get_allele {
 	my ($allele)=@_;
 	my $db = Ace->connect( -path => $wb->autoace ) || do { print "cannot connect to ${$wb->autoace}:", Ace->error; die };
-    my @alleles = $db->fetch( -query =>"Find Variation $allele");
+        my @alleles = $db->fetch(Variation => $allele);
 	return \@alleles;
 }
 
@@ -138,7 +138,7 @@ sub get_allele {
 sub _filter_alleles {
     my ($alleles) = @_;
 
-    my @good_alles;
+    my @good_alleles;
 
     foreach my $allele (@{$alleles}) {
         my $name = $allele->name;
@@ -150,8 +150,10 @@ sub _filter_alleles {
         if ( ! defined $allele->Sequence ) {
 			$log->write_to("ERROR: $name has missing Sequence tag (Remark: $remark)\n");$errors++
 			}
-	
-	# connected sequence has no source
+
+# The bit below is commented out, as there are sadly some alleles connected to sequences without source that can't be moved :-(
+
+#	# connected sequence has no source
 #        elsif ( !defined $allele->Sequence->Source && !defined $weak_checks) { 
 #            $log->write_to("ERROR: $name connects to ${\$allele->Sequence} which has no Source tag (Remark: $remark)\n");$errors++
 #        }
@@ -179,9 +181,9 @@ sub _filter_alleles {
 		($allele->Type_of_mutation->right=~/\d|\s/ || $allele->Type_of_mutation->right->right=~/\d|\s/)){
 		$log->write_to("ERROR: $name has numbers an/or spaces in the from/to tags (Remark: $remark)\n");$errors++
 	}
-	else { push @good_alles, $allele }
+	else { push @good_alleles, $allele }
     }
-    return \@good_alles;
+    return \@good_alleles;
 }
 
 =head2 map
@@ -237,6 +239,85 @@ sub map {
 	}
 	return \%alleles
 }
+
+=head2 map_cgh 
+
+	Title	: map_cgh
+	Usage	: MapAlleles::map_cgh(hash_ref of Ace::Alleles)
+	Function: maps determines cgh flank sizes
+	Returns	: 
+	Args	: (hash_ref) of Ace::Alleles from MapAlleles::map
+    
+=cut
+
+# get the chromosome coordinates for CGH arrays
+sub map_cgh {
+	my ($alleles)=@_;
+
+	my $mapper = Feature_mapper->new( $wb->autoace, undef, $wb );
+        my $coords = Coords_converter->invoke( $wb->autoace, 1, $wb );
+
+	while( my($k,$x)=each %$alleles ){
+		my $v=$x->{allele};
+		# $chromosome_name,$start,$stop
+		next unless $v->CGH_deleted_probes;
+		my @cgh_map=$mapper->map_feature($v->Sequence->name,$v->CGH_deleted_probes->name,$v->CGH_deleted_probes->right->name);
+		if ($cgh_map[0] eq '0'){
+			$log->write_to("ERROR: Couldn't map inner probes of $k to sequence ${\$v->Sequence->name} with ${\$v->CGH_deleted_probes->name} and ${\$v->CGH_deleted_probes->right->name} (Remark: ${\$v->Remark})\n");
+			$errors++;
+			next
+		}
+
+		# from flanks to variation
+		if ($cgh_map[2]>$cgh_map[1]){$cgh_map[1]++;$cgh_map[2]--}else {$cgh_map[1]--;$cgh_map[2]++}
+	
+		my ($chrom,$cgh_start)=$mapper->Coords_2chrom_coords($cgh_map[0],$cgh_map[1]);
+		my ($drop,$cgh_stop)=$mapper->Coords_2chrom_coords($cgh_map[0],$cgh_map[2]);
+	
+		# orientation
+		my $orientation='+';
+		if ($stop < $start){
+			my $tmp=$cgh_start;
+			$tmp=$cgh_start;
+			$cgh_start=$cgh_stop;
+			$cgh_stop=$tmp;
+		}
+
+		$$alleles{$k}->{cgh_start}=$cgh_start;
+		$$alleles{$k}->{cgh_stop}=$cgh_stop;
+
+		print "$k ($chrom ($orientation): $cgh_start - $cgh_stop) clone: $cgh_map[0] $cgh_map[1]-$cgh_map[2]\n" if $wb->debug;
+	}
+	# no need to return anything, as we fiddle around with the reference
+}
+
+=head2 print_cgh
+
+	Title	: print_cgh
+	Usage	: MapAlleles::print_genes(hash_ref alleles)
+	Function: print ACE format for CGH arrays ranges
+	Returns	: nothing
+	Args	: (hash_ref) of {allele_name}={allele_data} 
+
+=cut
+
+sub print_cgh{
+	my ($alleles,$fh)=@_;
+	while (my($k,$v)=each %$alleles){
+		next unless ($v->{cgh_start}&&$v->{cgh_stop}); # skip it if it is not a cgh allele
+
+		my $left_range=$v->{cgh_start} - $v->{start};
+		my $right_range=$v->{stop} - $v->{cgh_stop};
+
+		my @order=qw(Five Three);
+		@order=qw(Three Five) if ($v->{orientation} eq '+');
+
+		print $fh "Variation : \"$k\"\n";
+		print $fh "$order[0]_PrimeGap $left_range\n";			
+		print $fh "$order[1]_PrimeGap $right_range\n\n";
+	}
+}
+
 
 
 =head2 print_genes
@@ -447,15 +528,16 @@ sub get_cds {
 					my @types=(Acceptor,Donor);
 					@types=(Donor,Acceptor) if $hit->{orientation} eq '+';
 					my @intron_starts= grep{$v->{start} <= $_->{start}+1 && $v->{stop}>=$_->{start} } @introns; # intron start 
-					my @intron_end   = grep{$v->{start} <= $_->{stop}    && $v->{stop}>=$_->{stop}-1 } @introns; # intron stop
+					my @intron_stops = grep{$v->{start} <= $_->{stop}    && $v->{stop}>=$_->{stop}-1 } @introns; # intron stop
 					
 					# add the from to stuff:
-				    foreach my $intron (@intron_starts){
+				        foreach my $intron (@intron_starts){
 						my $site=&get_seq($intron->{chromosome},$intron->{start},$intron->{start}+1,$intron->{orientation});
 						if ($v->{start}-$v->{stop}==0 && $v->{allele}->Type_of_mutation eq 'Substitution'){
 							my $from_na="${\$v->{allele}->Type_of_mutation->right}";
 							my $to_na="${\$v->{allele}->Type_of_mutation->right->right}";
 							my $offset=$intron->{start}-$v->{start};
+							$offset=(1-$offset) if $intron->{orientation} eq '-';
 							my $to_site=$site;
 							my $from_site=$site;
 							substr($to_site,$offset,1,lc($to_na));
@@ -467,12 +549,13 @@ sub get_cds {
 							$cds{$hit->{name}}{"$types[0] \"${\$v->{allele}->Type_of_mutation} disrupts $site\""}{$k}=1; 
 						}
 					}
-					foreach my $intron(@intron_stop){
+					foreach my $intron(@intron_stops){
 						my $site=&get_seq($intron->{chromosome},$intron->{stop}-1,$intron->{stop},$intron->{orientation});
 						if ($v->{start}-$v->{stop}==0 && $v->{allele}->Type_of_mutation eq 'Substitution'){
 							my $from_na="${\$v->{allele}->Type_of_mutation->right}";
 							my $to_na="${\$v->{allele}->Type_of_mutation->right->right}";
-							my $offset=$intron->{stop}-$v->{stop};
+							my $offset=(1-($intron->{stop}-$v->{stop}));
+							$offset=(1-$offset) if $intron->{orientation} eq '-';
 							my $to_site=$site;
 							my $from_site=$site;
 							substr($to_site,$offset,1,lc($to_na));
@@ -484,7 +567,6 @@ sub get_cds {
 							$cds{$hit->{name}}{"$types[1] \"${\$v->{allele}->Type_of_mutation} disrupts $site\""}{$k}=1;
 						}
 					}
-
 				}
 			}
 		}

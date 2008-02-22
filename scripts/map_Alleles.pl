@@ -101,6 +101,7 @@ my $alleles = $allele? MapAlleles::get_allele($allele) : MapAlleles::get_all_all
 my $mapped_alleles = MapAlleles::map($alleles);
 undef $alleles;# could theoretically undef the alleles here 
 
+
 # for other databases don't run through the GFF_SPLITs
 &finish() if $database;
 
@@ -110,6 +111,10 @@ while( my($key,$allele)=each %$mapped_alleles){
 	print $fh "Sequence : \"$allele->{clone}\"\nAllele $key $allele->{clone_start} $allele->{clone_stop}\n\n";
 	print $fh "Variation : \"$key\"\nSequence  $allele->{clone}\n\n"
 }
+
+# CGH fun
+MapAlleles::map_cgh($mapped_alleles);
+MapAlleles::print_cgh($mapped_alleles,$fh);
 
 # get overlaps with genes
 # gene_name->[allele_names,...]
