@@ -8,8 +8,8 @@
 # Uses Ant's Feature_mapper.pm module
 #
 #
-# Last updated by: $Author: gw3 $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2008-01-15 11:57:25 $        # quickly see when script was last changed and by whom
+# Last updated by: $Author: pad $                      # These lines will get filled in by cvs and helps us
+# Last updated on: $Date: 2008-02-25 16:50:48 $        # quickly see when script was last changed and by whom
 
 
 $|=1;
@@ -58,7 +58,10 @@ exec ('perldoc',$0) if ($help);
 # recreate configuration  
 my $wb;
 if ($store) { $wb = Storable::retrieve($store) or croak("cant restore wormbase from $store\n") }
-else { $wb = Wormbase->new( -debug => $debug,) }
+else { $wb = Wormbase->new( 
+			   -debug => $debug,
+			   -test  => $test,
+			  ) }
 
 my $log = Log_files->make_build_log($wb);
 
