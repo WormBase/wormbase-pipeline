@@ -6,8 +6,8 @@
 #
 # Exporter to map blat data to genome and to find the best match for each EST, mRNA, OST, etc.
 #
-# Last edited by: $Author: pad $
-# Last edited on: $Date: 2008-02-14 13:36:33 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2008-02-26 14:39:07 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -341,7 +341,9 @@ if ($nematode || $washu || $nembase) {
 	      my $last   = $y - 1;
 	      my $first  =  (${$entry->{"exons"}}[$last][1] + 1) + (($n-1)*100000);
 	      my $second =  (${$entry->{'exons'}}[$y][0]    - 1) + (($n-1)*100000);
-	      $estorientation{$found} = 5 if ($type eq 'mRNA');
+	      if ($type eq 'mRNA' && !exists $estorientation{$found}) {	# default orientation of mRNA is forwards
+		$estorientation{$found} = 5;
+	      }
 	      if (${$entry->{'exons'}}[0][2] < ${$entry->{'exons'}}[0][3]) {
 		if ((${$entry->{'exons'}}[$y][2] == ${$entry->{'exons'}}[$last][3] + 1) && (($second - $first) > 2)) {
 		  if (exists $estorientation{$found} && $estorientation{$found} eq '3') {
@@ -349,7 +351,7 @@ if ($nematode || $washu || $nembase) {
 		  } elsif (exists $estorientation{$found} && $estorientation{$found} eq '5') {
 		    push @{$ci{$superlink}}, [$first,$second,$found];
 		  } else {
-		    #$log->write_to("WARNING: Direction not found for $found\n\n");
+		    $log->write_to("WARNING: Direction not found for $found\n\n");
 		  }
 		}
 	      } elsif (${$entry->{'exons'}}[0][2] > ${$entry->{'exons'}}[0][3]) {
