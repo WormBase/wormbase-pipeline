@@ -2,7 +2,7 @@
 #
 # EMBLdump.pl :  makes modified EMBL dumps from camace.
 # 
-#  Last updated on: $Date: 2007-11-08 17:10:17 $
+#  Last updated on: $Date: 2008-02-26 16:20:22 $
 #  Last updated by: $Author: pad $
 
 use strict;
@@ -279,18 +279,13 @@ while (<EMBL>) {
   ###########################################################
 
   #FT   ncRNA(5 char -> 8 characters misc_RNA)
-  if (/^FT\s+(\w{2}RNA)/) {
-    s/$1   /misc_RNA/g;
+  if ((/^FT\s+(\w{2}RNA)/) || (/^FT\s+(\w{3}RNA)/)) {
+    s/$1   /misc_RNA/g if (/^FT\s+(\w{2}RNA)/); #5-8 chr
+    s/$1  /misc_RNA/g if (/^FT\s+(\w{3}RNA)/);  #6-8 chr
     print OUT "$_";
     next;
   }
-  #FT   snoRNA(6 char -> 8 characters misc_RNA)
-  elsif (/^FT\s+(\w{3}RNA)/) {
-    s/snoRNA  /misc_RNA/g;
-    print OUT "$_";
-    next;
-  }
-
+  
   # standard_name......
   # don't print out first few lines until they have been converted 
   # can only do this when it gets to DE line
