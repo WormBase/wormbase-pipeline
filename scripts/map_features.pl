@@ -9,7 +9,7 @@
 #
 #
 # Last updated by: $Author: pad $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2008-02-25 16:50:48 $        # quickly see when script was last changed and by whom
+# Last updated on: $Date: 2008-02-27 12:27:05 $        # quickly see when script was last changed and by whom
 
 
 $|=1;
@@ -58,10 +58,9 @@ exec ('perldoc',$0) if ($help);
 # recreate configuration  
 my $wb;
 if ($store) { $wb = Storable::retrieve($store) or croak("cant restore wormbase from $store\n") }
-else { $wb = Wormbase->new( 
-			   -debug => $debug,
-			   -test  => $test,
-			  ) }
+else { $wb = Wormbase->new( -debug => $debug, 
+			    -test  => $test 
+			    ) }
 
 my $log = Log_files->make_build_log($wb);
 
@@ -166,8 +165,13 @@ foreach my $query (@features2map) {
 	$log->write_to("ERROR: $feature maps to $clone $start -> $stop, feature span is $span bp\n");
       }
     } #_ if match line
-  }
-  close TACE;
+
+    # lines that look like features but there is a problem eg. whitespace in flanks.
+    elsif (/^\"(\S+)\"/) {
+      $log->write_to("$1 has a problem, please check flanking sequences!! (whitespace is one cause)\n");
+    }
+  }				 
+  close TACE;			
 
   $wb->load_to_database($wb->autoace, "$outdir/feature_${query}.ace", "feature_mapping", $log);
 }
