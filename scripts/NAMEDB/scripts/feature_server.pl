@@ -1,11 +1,11 @@
 #!/usr/local/bin/perl -wT
 #author ar2
-use lib "../lib";
+#use lib "../lib";
 use strict;
 
 use vars qw($SSO_USER $PASS $DB $VALID_USERS $VALID_API_USERS $VALID_CGCNAME_USERS $USER $MAIL_NOTIFY_LIST $MAILS $LIVE);
 
-use SangerPaths qw(core);
+use SangerPaths qw(core celegans);
 use SangerWeb;
 use NameDB_handler;
 use Data::Dumper;
@@ -84,9 +84,9 @@ sub main {
 			    'onload' => 'init()',
 			   });
   if ($sw->is_dev()) {
-    $DB = 'test_wbgene_id;mcs2a';
+    $DB = 'test_wbgene_id;mcs2a;3305';
   } else {
-    $DB = 'test_wbgene_id;mcs2a';
+    $DB = 'wbgene_id;mcs2a;3305';
   }
 
   $SSO_USER = $sw->username();	## for SSO
@@ -346,7 +346,9 @@ sub main {
 		
   sub query {
       my $db = get_db_connection();
-      my $query = " select object_public_id from primary_identifier where domain_id=3 order by object_public_id desc limit 1";
+      my $domain_id = $db->getDomainId;
+
+      my $query = " select object_public_id from primary_identifier where domain_id=$domain_id order by object_public_id desc limit 1";
       my $last_object = $db->dbh->selectcol_arrayref($query,undef)->[0];
 
       print "the last Feature ID used was $last_object";
