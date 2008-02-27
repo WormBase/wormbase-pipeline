@@ -21,6 +21,8 @@
 use strict;
 use YAML;
 use Getopt::Long;
+use Storable;
+# use Wormbase;
 use Bio::Seq;
 use Bio::SeqIO;
 use Bio::EnsEMBL::CoordSystem;
@@ -32,7 +34,7 @@ use lib "$FindBin::Bin/../lib";
 use WormBase;
 use DBI qw(:sql_types);
 
-my ( $debug, $species, $setup, $dna, $genes, $test );
+my ( $debug, $species, $setup, $dna, $genes, $test,$store );
 
 GetOptions(
     'species=s'  => \$species,
@@ -41,7 +43,14 @@ GetOptions(
     'load_genes' => \$genes,
     'debug'      => \$debug,
     'test'       => \$test,
+    'sore=s'     => \$store,
 ) || die("bad commandline parameter\n");
+
+if ($store){
+	my $storable=Storable::retrieve($store);
+	$species= ref $storable;
+	$species=~tr/[A-Z]/[a-z]/;
+}
 
 my $yfile="$FindBin::Bin/../etc/ensembl_lite.conf";
 my $config = ( YAML::LoadFile($yfile) )->{$species};
