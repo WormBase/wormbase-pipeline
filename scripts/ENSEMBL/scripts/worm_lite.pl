@@ -43,7 +43,7 @@ GetOptions(
     'load_genes' => \$genes,
     'debug'      => \$debug,
     'test'       => \$test,
-    'sore=s'     => \$store,
+    'store=s'     => \$store,
 ) || die("bad commandline parameter\n");
 
 if ($store){
