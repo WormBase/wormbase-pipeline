@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-02-28 11:37:43 $      
+# Last updated on: $Date: 2008-02-28 13:22:35 $      
 
 # Changes required by Ant: 2008-02-19
 # 
@@ -191,7 +191,9 @@ my %clonesize;
 $wormbase->FetchData('clonesize', \%clonesize, "$database/COMMON_DATA/");
 
 my %clonelab;
-$wormbase->FetchData('clone2centre', \%clonelab, "$database/COMMON_DATA/");
+if ($wormbase->species eq 'elegans') {
+  $wormbase->FetchData('clone2centre', \%clonelab, "$database/COMMON_DATA/");
+}
 
 # list of frequencies of repeat motifs that overlap coding exons
 my %repeat_count;
@@ -229,7 +231,7 @@ my @est_mismatches;
 &delete_anomalies("CONFIRMED_cDNA_INTRON");
 &delete_anomalies("INTRONS_IN_UTR");
 &delete_anomalies("SPLIT_GENE_BY_TWINSCAN");
-&delete_anomalies("MERGE_GENE_BY_TWINSCAN");
+&delete_anomalies("MERGE_GENES_BY_TWINSCAN");
 
 
 my $ace_output = $wormbase->wormpub . "/CURATION_DATA/anomalies_$species.ace";
@@ -1072,20 +1074,20 @@ sub split_check {
       if (((grep /$protein_id/, @{$box->{'ID'}}) ||
 	  $box->{'chrom_start'} <= $chrom_end && $box->{'chrom_end'} >= $chrom_start) &&
           ! exists $box->{'deleted'}) {
-                                                                                                                                              
+
         #print "*** Box $box->{'chrom_start'}..$box->{'chrom_end'}, matches $protein_id, $chrom_start, $chrom_end, $protein_score\n";
-                                                                                                                                              
+
 	# add this homology to the box
         $box->{'count'}++;        # add to the count of matches in this box
         $box->{'total_score'} += $protein_score;        # add to the sum of the alignment scores
         push @{$box->{'ID'}}, ($protein_id);        # add to the protein IDs
-                                                                                                                                              
+
         # update start/end
         if ($box->{'chrom_start'} > $chrom_start) {$box->{'chrom_start'} = $chrom_start;}
         if ($box->{'chrom_end'} < $chrom_end) {$box->{'chrom_end'} = $chrom_end;}
-                                                                                                                                              
+
         $got_a_match = 1;
-                                                                                                                                              
+
         # check to see if we now need to merge two overlapping boxes
         my $past_first_box = 0;
         foreach my $other_box (@boxes) {
@@ -1099,7 +1101,7 @@ sub split_check {
             }
             next;
           };
-                                                                                                                                              
+
           # now start checks for overlaps of boxes
           if (((grep /$protein_id/, @{$other_box->{'ID'}}) ||
 	       $other_box->{'chrom_start'} <= $box->{'chrom_end'} && $other_box->{'chrom_end'} >= $box->{'chrom_start'}) &&
@@ -1117,8 +1119,7 @@ sub split_check {
         }
       }
     }
-                                                                                                                                              
-                                                                                                                                              
+
     # no existing boxes found, so start a new one
     if (! $got_a_match) {
       #print "New box for $protein_id, $chrom_start, $chrom_end, $protein_score\n";
@@ -1133,7 +1134,7 @@ sub split_check {
       push @boxes, $new_box;
     }
   }
-                                                                                                                                              
+
 # now look at each box to see if it has passed our tests
   my $count_of_boxes_passing_tests = 0;
   foreach my $box (@boxes) {
@@ -2417,13 +2418,20 @@ sub output_to_database {
 
   # get the clone and lab for this location
   my ($clone, $clone_start, $clone_end) = $coords->LocateSpan("${\$wormbase->chromosome_prefix}$chromosome", $chrom_start, $chrom_end);
-  my $lab =  $clonelab{$clone};          # get the lab that sequenced this clone  
-  if (! defined $lab) {
-    if ($clone =~ /SUPERLINK_CB_/) {
-      $lab = 'HX';
-    } else {
-      $lab = 'RW';
+  my $lab;
+  if ($wormbase->species eq 'elegans') {
+    $lab =  $clonelab{$clone};          # get the lab that sequenced this clone  
+    if (! defined $lab) {
+      if ($clone =~ /SUPERLINK_CB_/) {
+	$lab = 'HX';
+      } else {
+	$lab = 'RW';
+      }
     }
+  } elsif ($wormbase->species eq 'briggsae') {
+    $lab = 'RX';
+  } else {
+    print "*** ERROR - WE DON'T KNOW WHICH LAB IS CURATING SPECIES: $wormbase->species\n";
   }
   #print "clone $clone is in lab $lab\n";
 
