@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-02-28 13:22:35 $      
+# Last updated on: $Date: 2008-02-28 16:38:21 $      
 
 # Changes required by Ant: 2008-02-19
 # 
@@ -306,7 +306,7 @@ foreach my $chromosome (@chromosomes) {
   my $matched_protein_aref = &get_protein_differences(\@cds_exons, \@pseudogenes, \@homologies, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, $chromosome);
 
   print "finding frameshifts\n";
-  &get_frameshifts($matched_protein_aref, $chromosome);
+  &get_frameshifts(\@homologies, $chromosome);
 
   print "finding genes to be split/merged based on protein homology\n";
   &get_protein_split_merged($matched_protein_aref, $chromosome);
@@ -640,49 +640,51 @@ sub get_EST_differences {
 
 # get the frameshifts evident in adjacent homologies of a group of HSPs for proteins
 
-#  my @frameshifts = get_frameshifts(\@matched);
+#  my @frameshifts = get_frameshifts(\@homologies);
 
 sub get_frameshifts {
-  my ($matched_aref, $chromosome) = @_;
+  my ($homologies_aref, $chromosome) = @_;
 
-  my @matched = @{$matched_aref};
-
-  my $prev_protein_id = "";	# use to collect alignments for a protein's homology when looking for frameshifts
-  my $prev_chrom_strand = "";	# the previous HSP's sense
-  my $prev_chrom_end = -1;
-  my $prev_hit_start = -1;
-  my $prev_hit_end = -1;
-  my $prev_score = -1;
-
-  my @list_of_aligments = ();	# previous protein ID
+  my $SCORE_THRESHOLD = 40;
+  my $MAX_CHROM_DIFF = 15;	# maximum distance that the ends of the alignment are allowed to be on the chromosome
+  my $MIN_CHROM_DIFF = -25;	# minimum distance that the ends of the alignment are allowed to be on the chromosome
+  my $MAX_PROT_DIFF = 15;	# maximum distance that the ends of the HSPs are allowed to be from each other in the protein
 
   # sort the homologies grouped by protein ID and then chromosomal position
-  my @homologies = sort {$a->[0] cmp $b->[0] or $a->[1] <=> $b->[1]} @matched;
+  my @homologies = sort {$a->[0] cmp $b->[0] or $a->[1] <=> $b->[1]} @{$homologies_aref};
 
-  foreach my $homology (@homologies) { # $protein_database, $protein_id, $chrom_start, $chrom_end, $chrom_strand, $hit_start, $hit_end, $clone, $protein_score
+  # for each protein, compare all if HSPs with all its downstream HSPs
+  for (my $i = 0; $i < scalar @homologies; $i++) {
+    my $homology = $homologies[$i];
+    my $prev_protein_id = $homology->[0];
+my $prev_chrom_start = $homology->[1];
+    my $prev_chrom_end = $homology->[2];
+    my $prev_hit_end = $homology->[5];
+    my $prev_protein_score = $homology->[6];
+    if ($prev_protein_score < $SCORE_THRESHOLD) {next;} # only look at high-scoring proteins
 
-    my $protein_id = $homology->[0];
-    my $chrom_start = $homology->[1];
-    my $chrom_end = $homology->[2];
-    my $chrom_strand = $homology->[3];
-    my $hit_start = $homology->[4];
-    my $hit_end = $homology->[5];
-    my $protein_score = $homology->[6];
+    # get the next downstream HSP
+    for (my $j = $i+1; $j < scalar @homologies; $j++) {
+      if ($homologies[$j]->[0] ne $prev_protein_id) {last;} # no longer looking at HSPs of the same protein
+      if ($homologies[$j]->[6] < $SCORE_THRESHOLD) {next;} # only look at high-scoring proteins
+      my $protein_id = $homologies[$j]->[0];
+      my $chrom_start = $homologies[$j]->[1];
+      my $chrom_strand = $homologies[$j]->[3];
+      my $hit_start = $homologies[$j]->[4];
+      my $protein_score = $homologies[$j]->[6];
 
-    #print "Matched: $protein_id, $chrom_start, $chrom_end, $chrom_strand, $hit_start, $hit_end, $protein_score\n" if ($verbose);
-    # look for frameshifts against the other alignment blocks of this homology
-    if ($protein_id eq $prev_protein_id && $chrom_strand eq $prev_chrom_strand) {
-      #print "Looking at next group\n" if ($verbose);
-
-      #print $homology->[0] ."\t". $homology->[1] ."\t". $homology->[2] ."\t". $homology->[3] ."\t". $homology->[4] ."\t". $homology->[5]."\n";
-
-      # look for lack of intron
       my $chrom_diff = $chrom_start - $prev_chrom_end;
       my $prot_diff = $hit_start - $prev_hit_end;
-	  
+      my $frameshift = abs($chrom_diff-1) % 3; # get the difference in the frame aligned to
+
+      # if we are getting too far away from the end of $homologies[$i], then increment $i to stop searching it
+      if ($chrom_diff > $MAX_CHROM_DIFF) {last;}
+
+      #print "$prev_protein_id $prev_chrom_start..$prev_chrom_end ($i) $protein_id $chrom_start.. ($j) chrom_diff $chrom_diff prot_diff $prot_diff frameshift $frameshift protein_score $protein_score prev_protein_score $prev_protein_score\n";
+
       # output any frameshifts found to the database
       # want the frame to have changed, so look at the chrom_start to prev_chrom_end difference mod 3
-      if (( (abs($chrom_diff+1)) % 3 != 0) && $chrom_diff > -30 && $chrom_diff < 15 && $prot_diff > -15 && $prot_diff < 15) {
+      if ($frameshift != 0 && $chrom_diff > $MIN_CHROM_DIFF && $chrom_diff < $MAX_CHROM_DIFF && abs($prot_diff) < $MAX_PROT_DIFF) {
 
 	# get the region to display
 	my $anomaly_start = $prev_chrom_end;
@@ -697,34 +699,20 @@ sub get_frameshifts {
 	$anomaly_start -= 10;
 	$anomaly_end += 10;
 
-	# reject any hits where either of the proteins have a Blast score < 50
-	if ($protein_score < 50 || $prev_score < 50) {next;}
-
 	# make the anomaly score based on the protein alignment score normalised between 1 and 3
 	# using the log10 of the blast score
 	# the BLAST scores seem to be between 0 and 1000
 	# use the average of the two alignment's scores
-	my $average_blast_score = ($protein_score+$prev_score)/2;
+	my $average_blast_score = ($protein_score+$prev_protein_score)/2;
 	my $anomaly_score = POSIX::log10($average_blast_score);
 	if ($anomaly_score > 3) {$anomaly_score = 3;}
 	if ($anomaly_score < 0) {$anomaly_score = 0;}
 
-	#print "FRAMESHIFTED_PROTEIN ANOMALY: $protein_id, $anomaly_start, $anomaly_end, $chrom_strand, $anomaly_score\n";
-	&output_to_database("FRAMESHIFTED_PROTEIN", $chromosome, $protein_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score, '');
+	print "FRAMESHIFTED_PROTEIN ANOMALY: $protein_id, $anomaly_start, $anomaly_end, $chrom_strand, $anomaly_score\n";
+	&output_to_database("FRAMESHIFTED_PROTEIN", $chromosome, $protein_id, $anomaly_start, $anomaly_end, $chrom_strand, $anomaly_score, '');
       }
-
-    }      
-
-    # update the previous HSP details
-    $prev_chrom_end = $chrom_end;
-    $prev_hit_start = $hit_start;
-    $prev_hit_end = $hit_end;
-    $prev_score = $protein_score;
-    $prev_protein_id = $protein_id;
-    $prev_chrom_strand = $chrom_strand;
-
+    }
   }
-
 }
 
 
