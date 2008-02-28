@@ -7,7 +7,7 @@
 # Do fast overlap matching of positions of two sets of things.
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-02-21 14:20:11 $      
+# Last updated on: $Date: 2008-02-28 09:16:52 $      
 
 =pod
 
@@ -97,12 +97,23 @@ Routines to read GFF files from the database defined in $wormbase
 @list = $ovlp->get_3_UTRs($chromosome)
 @list = $ovlp->get_Genes($chromosome)
 @list = $ovlp->get_Operons($chromosome)
+@list = $ovlp->get_miRNA($chromosome);
+@list = $ovlp->get_ncRNA($chromosome);
+@list = $ovlp->get_scRNA($chromosome);
+@list = $ovlp->get_snRNA($chromosome);
+@list = $ovlp->get_snoRNA($chromosome);
+@list = $ovlp->get_stRNA($chromosome);
+@list = $ovlp->get_tRNA($chromosome);
+@list = $ovlp->get_tRNAscan_SE_1_23RNA($chromosome);
+@list = $ovlp->get_CDS_introns($chromosome);
+@list = $ovlp->get_check_introns_EST($chromosome);
+@list = $ovlp->get_check_introns_cDNA($chromosome);
 
 
-
-Routines to modify GFF lists
+Routines to modify/filter GFF lists
 
 @reduced_list = $ovlp->get_span(@list)
+@only_complex_repeats = $ovlp->get_repeatmasked_complex(@repeatmasked);
 
 
 
@@ -1418,7 +1429,6 @@ sub get_SAGE_tags {
      file			=> "${\$self->wormbase->chromosome_prefix}${chromosome}.gff",
      gff_source			=> "",
      gff_type			=> "SAGE_tag",
-     homology			=> "1",	# this is a GFF with homology data that we need to store (well, maybe we might need to?)
      ID_after			=> "Sequence\\s+",
      other_data			=> 1,           # we want to store the other_data field to get the 'count' 
    );
@@ -1624,6 +1634,373 @@ sub get_Operons {
   return $self->read_GFF_file(\%GFF_data);
 
 }
+
+=head2
+
+    Title   :   get_miRNA
+    Usage   :   my @gff = $ovlp->get_miRNA($chromosome)
+    Function:   reads the GFF data for the miRNA transcipts
+    Returns :   list of lists for GFF data
+    Args    :   chromosome number
+
+=cut
+
+sub get_miRNA {
+  my $self = shift;
+  my ($chromosome) = @_;
+
+  my %GFF_data = 
+   (
+     directory			=> $self->{database} . "/GFF_SPLITS",
+     file			=> "${\$self->wormbase->chromosome_prefix}${chromosome}_miRNA.gff",
+
+     gff_source			=> "miRNA",
+     gff_type			=> "miRNA_primary_transcript",
+     ID_after			=> 'Transcript\s+',
+
+   );
+
+  return $self->read_GFF_file(\%GFF_data);
+
+}
+
+
+=head2
+
+    Title   :   get_ncRNA
+    Usage   :   my @gff = $ovlp->get_ncRNA($chromosome)
+    Function:   reads the GFF data for the ncRNA transcripts
+    Returns :   list of lists for GFF data
+    Args    :   chromosome number
+
+=cut
+
+sub get_ncRNA {
+  my $self = shift;
+  my ($chromosome) = @_;
+
+  my %GFF_data = 
+   (
+     directory			=> $self->{database} . "/GFF_SPLITS",
+     file			=> "${\$self->wormbase->chromosome_prefix}${chromosome}_ncRNA.gff",
+
+     gff_source			=> "ncRNA",
+     gff_type			=> "ncRNA_primary_transcript",
+     ID_after			=> 'Transcript\s+',
+
+   );
+
+  return $self->read_GFF_file(\%GFF_data);
+
+}
+
+
+=head2
+
+    Title   :   get_scRNA
+    Usage   :   my @gff = $ovlp->get_scRNA($chromosome)
+    Function:   reads the GFF data for the scRNA transcripts
+    Returns :   list of lists for GFF data
+    Args    :   chromosome number
+
+=cut
+
+sub get_scRNA {
+  my $self = shift;
+  my ($chromosome) = @_;
+
+  my %GFF_data = 
+   (
+     directory			=> $self->{database} . "/GFF_SPLITS",
+     file			=> "${\$self->wormbase->chromosome_prefix}${chromosome}_scRNA.gff",
+
+     gff_source			=> "scRNA",
+     gff_type			=> "scRNA_primary_transcript",
+     ID_after			=> 'Transcript\s+',
+
+   );
+
+  return $self->read_GFF_file(\%GFF_data);
+
+}
+
+
+=head2
+
+    Title   :   get_snRNA
+    Usage   :   my @gff = $ovlp->get_snRNA($chromosome)
+    Function:   reads the GFF data for the snRNA transcripts
+    Returns :   list of lists for GFF data
+    Args    :   chromosome number
+
+=cut
+
+sub get_snRNA {
+  my $self = shift;
+  my ($chromosome) = @_;
+
+  my %GFF_data = 
+   (
+     directory			=> $self->{database} . "/GFF_SPLITS",
+     file			=> "${\$self->wormbase->chromosome_prefix}${chromosome}_snRNA.gff",
+
+     gff_source			=> "snRNA",
+     gff_type			=> "snRNA_primary_transcript",
+     ID_after			=> 'Transcript\s+',
+
+   );
+
+  return $self->read_GFF_file(\%GFF_data);
+
+}
+
+
+=head2
+
+    Title   :   get_snoRNA
+    Usage   :   my @gff = $ovlp->get_snoRNA($chromosome)
+    Function:   reads the GFF data for the snoRNA transcripts
+    Returns :   list of lists for GFF data
+    Args    :   chromosome number
+
+=cut
+
+sub get_snoRNA {
+  my $self = shift;
+  my ($chromosome) = @_;
+
+  my %GFF_data = 
+   (
+     directory			=> $self->{database} . "/GFF_SPLITS",
+     file			=> "${\$self->wormbase->chromosome_prefix}${chromosome}_snoRNA.gff",
+
+     gff_source			=> "snoRNA",
+     gff_type			=> "snoRNA_primary_transcript",
+     ID_after			=> 'Transcript\s+',
+
+   );
+
+  return $self->read_GFF_file(\%GFF_data);
+
+}
+
+
+=head2
+
+    Title   :   get_stRNA
+    Usage   :   my @gff = $ovlp->get_stRNA($chromosome)
+    Function:   reads the GFF data for the stRNA stranscripts
+    Returns :   list of lists for GFF data
+    Args    :   chromosome number
+
+=cut
+
+sub get_stRNA {
+  my $self = shift;
+  my ($chromosome) = @_;
+
+  my %GFF_data = 
+   (
+     directory			=> $self->{database} . "/GFF_SPLITS",
+     file			=> "${\$self->wormbase->chromosome_prefix}${chromosome}_stRNA.gff",
+
+     gff_source			=> "stRNA",
+     gff_type			=> "stRNA_primary_transcript",
+     ID_after			=> 'Transcript\s+',
+
+   );
+
+  return $self->read_GFF_file(\%GFF_data);
+
+}
+
+
+=head2
+
+    Title   :   get_tRNA
+    Usage   :   my @gff = $ovlp->get_tRNA($chromosome)
+    Function:   reads the GFF data for the tRNA transcripts
+    Returns :   list of lists for GFF data
+    Args    :   chromosome number
+
+=cut
+
+sub get_tRNA {
+  my $self = shift;
+  my ($chromosome) = @_;
+
+  my %GFF_data = 
+   (
+     directory			=> $self->{database} . "/GFF_SPLITS",
+     file			=> "${\$self->wormbase->chromosome_prefix}${chromosome}_tRNA.gff",
+
+     gff_source			=> "tRNA",
+     gff_type			=> "tRNA_primary_transcript",
+     ID_after			=> 'Transcript\s+',
+
+   );
+
+  return $self->read_GFF_file(\%GFF_data);
+
+}
+
+
+=head2
+
+    Title   :   get_tRNAscan_SE_1_23RNA
+    Usage   :   my @gff = $ovlp->get_tRNAscan_SE_1_23RNA($chromosome)
+    Function:   reads the GFF data for the tRNAscan_SE_1_23RNA transcripts
+    Returns :   list of lists for GFF data
+    Args    :   chromosome number
+
+=cut
+
+sub get_tRNAscan_SE_1_23RNA {
+  my $self = shift;
+  my ($chromosome) = @_;
+
+  my %GFF_data = 
+   (
+     directory			=> $self->{database} . "/GFF_SPLITS",
+     file			=> "${\$self->wormbase->chromosome_prefix}${chromosome}_tRNAscan-SE-1.23.gff",
+
+     gff_source			=> "tRNAscan-SE-1.23",
+     gff_type			=> "tRNA_primary_transcript",
+     ID_after			=> 'Transcript\s+',
+
+   );
+
+  return $self->read_GFF_file(\%GFF_data);
+
+}
+
+
+=head2
+
+    Title   :   get_repeatmasked_complex
+    Usage   :   my @gff = $ovlp->get_(@repeat)
+    Function:   filters a list of RepeatMasker GFF data to leave only the ones with no ()n of '-rich' in their names.
+    Returns :   list of lists for GFF data
+    Args    :   lists of lists of repeat GFF data from $self->get_repeatmasked()
+
+=cut
+
+ sub get_repeatmasked_complex {
+   my $self = shift;
+   my (@repeatmasked) = @_;
+   
+   # want the ones without ')n' in their ID
+   my @r2 = grep { $_->[0] !~ /\)n/ } @repeatmasked; 
+   # want the ones without '-rich' in their ID
+   my @repeatmasked_complex = grep { $_->[0] !~ /\-rich/ } @r2; 
+
+   return @repeatmasked_complex;
+
+}
+
+
+=head2
+
+    Title   :   get_CDS_introns
+    Usage   :   my @gff = $ovlp->get_CDS_introns($chromosome)
+    Function:   reads the GFF data for the curated CDS introns
+    Returns :   list of lists for GFF data
+    Args    :   chromosome number
+
+=cut
+
+sub get_CDS_introns {
+  my $self = shift;
+  my ($chromosome) = @_;
+
+  my %GFF_data = 
+   (
+     directory			=> $self->{database} . "/GFF_SPLITS",
+     file			=> "${\$self->wormbase->chromosome_prefix}${chromosome}_gene_introns.gff",
+
+     gff_source			=> "curated",
+     gff_type			=> "intron",
+     ID_after			=> 'CDS\s+',
+     other_data                 => 1,
+   );
+
+  return $self->read_GFF_file(\%GFF_data);
+
+}
+
+
+=head2
+
+    Title   :   get_check_introns_EST
+    Usage   :   my @gff = $ovlp->get_check_introns_EST($chromosome)
+    Function:   reads the GFF data for the CHECKS/ confirmed EST introns that dont match the curated introns
+    Returns :   list of lists for GFF data
+    Args    :   chromosome number
+
+=cut
+
+sub get_check_introns_EST {
+  my $self = shift;
+  my ($chromosome) = @_;
+
+  my $dir;
+  if (-d $self->wormbase->{'autoace'} ) {
+    $dir = $self->wormbase->autoace . "/CHECKS/";
+  } else {
+    $dir = '/nfs/WWWdev/SANGER_docs/htdocs/Projects/C_elegans/WORMBASE/development_release/GFF/'; # web directory
+  }
+
+
+  my %GFF_data = 
+   (
+     directory			=> $dir,
+     file			=> "${\$self->wormbase->chromosome_prefix}${chromosome}.check_intron_*.gff",
+     gff_source			=> "",
+     gff_type			=> "intron",
+     ID_after			=> 'Confirmed_EST\s+',
+
+   );
+
+  return $self->read_GFF_file(\%GFF_data);
+
+}
+
+
+=head2
+
+    Title   :   get_check_introns_cDNA
+    Usage   :   my @gff = $ovlp->get_check_introns_cDNA($chromosome)
+    Function:   reads the GFF data for the the confirmed cDNA introns that dont match the curated introns
+    Returns :   list of lists for GFF data
+    Args    :   chromosome number
+
+=cut
+
+sub get_check_introns_cDNA {
+  my $self = shift;
+  my ($chromosome) = @_;
+
+  my $dir;
+  if (-d $self->wormbase->{'autoace'}) {
+    $dir = $self->wormbase->autoace . "/CHECKS/";
+  } else {
+    $dir = '/nfs/WWWdev/SANGER_docs/htdocs/Projects/C_elegans/WORMBASE/development_release/GFF/'; # web directory
+  }
+
+  my %GFF_data = 
+   (
+     directory			=> $dir,
+     file			=> "${\$self->wormbase->chromosome_prefix}${chromosome}.check_intron_*.gff",
+     gff_source			=> "",
+     gff_type			=> "intron",
+     ID_after			=> 'Confirmed_cDNA\s+',
+
+   );
+
+  return $self->read_GFF_file(\%GFF_data);
+
+}
+
 
 ############################################################################
 
