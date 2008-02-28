@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-02-28 09:22:15 $      
+# Last updated on: $Date: 2008-02-28 11:37:43 $      
 
 # Changes required by Ant: 2008-02-19
 # 
@@ -29,12 +29,12 @@
 # positives are filtered out. (not done yet)
 # - Score as for merge_genes_by_proteins (Done 2008-02-20)
 # 
-# mismatched_est - output to a separate file for curators to look at (not done yet)
+# mismatched_est - output to a separate file for curators to look at (Done 2008-02-28)
 # 
 # overlapping_exons - score increased to 5 (Done 2008-02-20)
 # 
 # repeat_overlaps_exons - ignore overlaps of circa <20 bases.  (Done 2008-02-22)
-# - Report the types and frequency of overlaps. (not done yet)
+# - Report the types and frequency of overlaps. (Done 2008-02-28)
 # 
 # short_exons - remove (Done 2008-02-20)
 # 
@@ -167,7 +167,7 @@ if (! $nodb) {
 }
 
 # output file of data to write to database, primarily for St. Louis to read in
-my $datafile = $wormbase->wormpub . "/CURATION_DATA/anomalies.dat";
+my $datafile = $wormbase->wormpub . "/CURATION_DATA/anomalies_$species.dat";
 open (DAT, "> $datafile") || die "Can't open $datafile\n";
 
 # and output the species line for the St. Louis datafile
@@ -193,6 +193,11 @@ $wormbase->FetchData('clonesize', \%clonesize, "$database/COMMON_DATA/");
 my %clonelab;
 $wormbase->FetchData('clone2centre', \%clonelab, "$database/COMMON_DATA/");
 
+# list of frequencies of repeat motifs that overlap coding exons
+my %repeat_count;
+
+# list of ESTs which have smal mismatches to the genome sequence
+my @est_mismatches;
 
 # now delete things that have not been updated in this run that you
 # would expect to have been updated like protein-homology-based
@@ -227,8 +232,7 @@ $wormbase->FetchData('clone2centre', \%clonelab, "$database/COMMON_DATA/");
 &delete_anomalies("MERGE_GENE_BY_TWINSCAN");
 
 
-my $ace_output = $wormbase->wormpub . "/CURATION_DATA/anomalies.ace";
-if ($species ne 'elegans') { $ace_output = $wormbase->wormpub . "/CURATION_DATA/anomalies_" . lc $species . ".ace";}
+my $ace_output = $wormbase->wormpub . "/CURATION_DATA/anomalies_$species.ace";
 open (OUT, "> $ace_output") || die "Can't open $ace_output to write the Method\n";
 print OUT "\n\n";
 print OUT "Method : \"curation_anomaly\"\n";
@@ -392,6 +396,26 @@ if ($datafile) {
   close(DAT);			
 }
 
+
+# output file of repeat motifs that overlap coding exons
+my $repeatsfile = $wormbase->wormpub . "/CURATION_DATA/repeats_overlapping_exons_$species.dat";
+open (REPEATS, "> $repeatsfile") || die "Can't open $repeatsfile\n";
+print REPEATS "Frequencies of repeat motifs overlapping coding exons by more than 20 bases\n\n";
+foreach my $repeat (sort {$repeat_count{$a} <=> $repeat_count{$b} } keys %repeat_count) { # sort the keys by the value to get a nice table
+  print REPEATS "$repeat\t$repeat_count{$repeat}\n";
+}
+close(REPEATS);			
+
+# output file of ESTs with small mismatches to teh genomic sequence
+my $est_mismatch_file = $wormbase->wormpub . "/CURATION_DATA/est_mismatch_genome_$species.dat";
+open (EST_MISMATCH, "> $est_mismatch_file") || die "Can't open $est_mismatch_file\n";
+print EST_MISMATCH "ESTs which have small mismatches to the genomic sequence\n";
+print EST_MISMATCH "EST\tchromosome\tstart\tend\tproportion of ESTs mismatching\n\n";
+foreach my $mismatch (@est_mismatches) {
+  print EST_MISMATCH "@{$mismatch}\n";
+}
+close(EST_MISMATCH);
+
 # disconnect from the mysql database
 if (! $nodb) {
   $mysql->disconnect || die "error disconnecting from database", $DBI::errstr;
@@ -444,6 +468,7 @@ sub get_protein_differences {
 
   my @not_matched = ();		# the resulting list of hashes of homologies with no matching exons/transposons/pseudogenes
   my @matched = ();		# the resulting list of hashes of homologies which match a coding exon
+  my @matching_exons;
 
   my $SMALL_OVERLAP = -20;	# amount of small overlap to ignore
       
@@ -464,7 +489,7 @@ sub get_protein_differences {
     my $got_a_match_to_coding_exon = 0;	# not yet seen a match to a coding exon
     my $matching_exon = "";	        # the name of the exon that matches;
 
-    if (my @matching_exons = $exons_match->match($homology)) {               #&match($homology, $exons_aref, \%exons_match)) 
+    if (@matching_exons = $exons_match->match($homology)) {               #&match($homology, $exons_aref, \%exons_match)) 
       $got_a_match = 1;
       $got_a_match_to_coding_exon = 1;
       $matching_exon = $matching_exons[0][0];
@@ -474,7 +499,7 @@ sub get_protein_differences {
       $got_a_match = 1;
     }
 
-    if (my @matching_exons = $trans_match->match($homology)) {               #&match($homology, $transposons_aref, \%trans_match)) {
+    if (@matching_exons = $trans_match->match($homology)) {               #&match($homology, $transposons_aref, \%trans_match)) {
       $got_a_match = 1;
       $got_a_match_to_coding_exon = 1;
       $matching_exon = $matching_exons[0][0];
@@ -538,7 +563,7 @@ sub get_EST_differences {
 
   my @not_matched = ();		# the resulting list of hashes of est with no matching exons/transposons/pseudogenes
   my @matched = ();		# the resulting list of hashes of est which match a coding exon
-
+  my @matching_exons;
 
   my $exons_match = $ovlp->compare($exons_aref, same_sense => 1);
   my $pseud_match = $ovlp->compare($pseudogenes_aref);
@@ -554,17 +579,17 @@ sub get_EST_differences {
     my $got_a_match_to_coding_exon = 0;	# not yet seen a match to a coding exon
     my $matching_exon = "";	        # the name of the exon that matches;
 
-    if (my @matching_exons = $exons_match->match($homology)) {               #&match($homology, $exons_aref, \%exons_match)) 
+    if (@matching_exons = $exons_match->match($homology)) {               #&match($homology, $exons_aref, \%exons_match)) 
       $got_a_match = 1;
       $got_a_match_to_coding_exon = 1;
       $matching_exon = $matching_exons[0][0];
     }
 
-    if ( $pseud_match->match($homology)) {              #&match($homology, $pseudogenes_aref, \%pseud_match)) {
+    if ($pseud_match->match($homology)) {              #&match($homology, $pseudogenes_aref, \%pseud_match)) {
       $got_a_match = 1;
     }
 
-    if (my @matching_exons = $trans_match->match($homology)) {               #&match($homology, $transposons_aref, \%trans_match)) {
+    if (@matching_exons = $trans_match->match($homology)) {               #&match($homology, $transposons_aref, \%trans_match)) {
       $got_a_match = 1;
       $got_a_match_to_coding_exon = 1;
       $matching_exon = $matching_exons[0][0];
@@ -727,7 +752,8 @@ sub get_protein_split_merged {
   my $got_a_new_exon;
   my $got_a_big_decrease_in_HSP_start;
   my $got_a_continuation_of_the_HSPs;
-
+  my $average_blast_score;
+  my $anomaly_score;
 
   # sort the homologies grouped by protein ID and then chromosomal position
   my @homologies = sort {$a->[0] cmp $b->[0] or $a->[1] <=> $b->[1]} @matched;
@@ -810,8 +836,8 @@ sub get_protein_split_merged {
 	# using the log10 of the blast score
 	# the BLAST scores seem to be between 0 and 1000
 	# use the average of the two alignment's scores
-	my $average_blast_score = ($protein_score+$prev_score)/2;
-	my $anomaly_score = POSIX::log10($average_blast_score);
+	$average_blast_score = ($protein_score+$prev_score)/2;
+	$anomaly_score = POSIX::log10($average_blast_score);
 	if ($anomaly_score > 3) {$anomaly_score = 3;}
 	if ($anomaly_score < 0) {$anomaly_score = 0;}
 
@@ -829,8 +855,8 @@ sub get_protein_split_merged {
 	# using the log10 of the blast score
 	# the BLAST scores seem to be between 0 and 1000
 	# use the average of the two alignment's scores
-	my $average_blast_score = ($protein_score+$prev_score)/2;
-	my $anomaly_score = POSIX::log10($average_blast_score);
+	$average_blast_score = ($protein_score+$prev_score)/2;
+	$anomaly_score = POSIX::log10($average_blast_score);
 	if ($anomaly_score > 3) {$anomaly_score = 3;}
 	if ($anomaly_score < 0) {$anomaly_score = 0;}
 
@@ -1954,6 +1980,10 @@ sub get_est_mismatches {
       # get score as proportion of ESTs there that have the misalignment
       my $anomaly_score = $mismatch_counts{$key}{count}/($mismatch_counts{$key}{overlaps} + $mismatch_counts{$key}{count});
       if ($anomaly_score >= 0.5) { # we don't want the dubious cases
+
+	# save the details for outputting to the MISMATCHED_EST file at the end of the program
+	push @est_mismatches, [$mismatch_counts{$key}{EST_id}, $chromosome, $mismatch_counts{$key}{chrom_start}, $mismatch_counts{$key}{chrom_end}, $mismatch_counts{$key}{chrom_strand}, $anomaly_score];
+
 	#print "MISMATCHED_EST ", $chromosome, " ID ", $mismatch_counts{$key}{EST_id}, " start ", $mismatch_counts{$key}{chrom_start}, " end ", $mismatch_counts{$key}{chrom_end}, " strand ", $mismatch_counts{$key}{chrom_strand}, "score $anomaly_score\n";
 	&output_to_database("MISMATCHED_EST", $chromosome, $mismatch_counts{$key}{EST_id}, $mismatch_counts{$key}{chrom_start}, $mismatch_counts{$key}{chrom_end}, $mismatch_counts{$key}{chrom_strand}, $anomaly_score, 'possible genomic sequence error or evidence of RNA editing');
       }
@@ -2166,7 +2196,12 @@ sub get_matched_repeatmasker {
     if (@results = $repeat_match->match($exon)) { #&match($exon, $repeatmasked_aref, \%repeat_match)) {
       $got_a_match = 1;
       @names = $repeat_match->matching_IDs;
-      # +++ print "REPEATS: @names\n";
+
+      # store a count of the times the repeat motifs have been seen overlapping a coding exons
+      # this is output at the end of the program
+      foreach my $name (@names) {
+	$repeat_count{$name}++;
+      }
     }
 
     # output matched exons to the database
