@@ -7,7 +7,7 @@
 # Do fast overlap matching of positions of two sets of things.
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-02-28 09:16:52 $      
+# Last updated on: $Date: 2008-02-28 11:56:06 $      
 
 =pod
 
@@ -1628,6 +1628,7 @@ sub get_Operons {
      gff_source			=> "operon",
      gff_type			=> "operon",
      ID_after			=> 'Operon\s+',
+     chromosome                 => $chromosome,
 
    );
 
@@ -1657,6 +1658,7 @@ sub get_miRNA {
      gff_source			=> "miRNA",
      gff_type			=> "miRNA_primary_transcript",
      ID_after			=> 'Transcript\s+',
+     chromosome                 => $chromosome,
 
    );
 
@@ -1687,6 +1689,7 @@ sub get_ncRNA {
      gff_source			=> "ncRNA",
      gff_type			=> "ncRNA_primary_transcript",
      ID_after			=> 'Transcript\s+',
+     chromosome                 => $chromosome,
 
    );
 
@@ -1717,6 +1720,7 @@ sub get_scRNA {
      gff_source			=> "scRNA",
      gff_type			=> "scRNA_primary_transcript",
      ID_after			=> 'Transcript\s+',
+     chromosome                 => $chromosome,
 
    );
 
@@ -1747,6 +1751,7 @@ sub get_snRNA {
      gff_source			=> "snRNA",
      gff_type			=> "snRNA_primary_transcript",
      ID_after			=> 'Transcript\s+',
+     chromosome                 => $chromosome,
 
    );
 
@@ -1777,6 +1782,7 @@ sub get_snoRNA {
      gff_source			=> "snoRNA",
      gff_type			=> "snoRNA_primary_transcript",
      ID_after			=> 'Transcript\s+',
+     chromosome                 => $chromosome,
 
    );
 
@@ -1807,6 +1813,7 @@ sub get_stRNA {
      gff_source			=> "stRNA",
      gff_type			=> "stRNA_primary_transcript",
      ID_after			=> 'Transcript\s+',
+     chromosome                 => $chromosome,
 
    );
 
@@ -1837,6 +1844,7 @@ sub get_tRNA {
      gff_source			=> "tRNA",
      gff_type			=> "tRNA_primary_transcript",
      ID_after			=> 'Transcript\s+',
+     chromosome                 => $chromosome,
 
    );
 
@@ -1867,6 +1875,7 @@ sub get_tRNAscan_SE_1_23RNA {
      gff_source			=> "tRNAscan-SE-1.23",
      gff_type			=> "tRNA_primary_transcript",
      ID_after			=> 'Transcript\s+',
+     chromosome                 => $chromosome,
 
    );
 
@@ -1922,6 +1931,7 @@ sub get_CDS_introns {
      gff_type			=> "intron",
      ID_after			=> 'CDS\s+',
      other_data                 => 1,
+     chromosome                 => $chromosome,
    );
 
   return $self->read_GFF_file(\%GFF_data);
