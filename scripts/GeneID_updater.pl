@@ -7,7 +7,7 @@
 # Script to refresh various information including WBGene ID's, protein_ids, clone SV's in a chosen database from a chosen reference database.
 #
 # Last updated by: $Author: pad $
-# Last updated on: $Date: 2007-09-07 08:25:42 $
+# Last updated on: $Date: 2008-02-28 10:45:11 $
 
 use strict;
 my $scriptdir =  $ENV{'CVS_DIR'};
@@ -23,16 +23,16 @@ use Socket;
 # variables and command-line options #
 ######################################
 
-my ($help, $debug, $geneID, $database, $sourceDB, $update, $public, $sourceDB2, $proteinID, $version, $test, $store, $wormbase, $sv, $output_dir, $verbose, $all);
+my ($help, $debug, $geneID, $database, $sourceDB, $update, $public, $sourceDB2, $proteinID, $version, $test, $store, $wormbase, $sv, $output_dir, $verbose, $all, $operon, $info);
 
 GetOptions (
 	    'help'         => \$help, #help documentation.
 	    'test'         => \$test, #test build
             'debug=s'      => \$debug, #debug option for email
 	    'geneID'       => \$geneID,	#update gene id's
+	    'database=s'   => \$database, #Database to check/update
 	    'sourceDB=s'   => \$sourceDB, #source for gene id info
     	    'sourceDB2=s'  => \$sourceDB2, #source for protein id's
-	    'database=s'   => \$database, #Database to check.
 	    'output_dir=s' => \$output_dir, #Specify your own output directory
 	    'proteinID'    => \$proteinID, #update protein id's option
 	    'update'       => \$update,	#load ace files automatically into database being checked.
@@ -42,6 +42,8 @@ GetOptions (
 	    'sv'           => \$sv, #check sequence versions against embl
 	    'verbose'      => \$verbose, # Verbose output into log messages
 	    'all'          => \$all, #Do ALL (GeneID, ProteinID, Sequence version,) syncronisations.
+	    'operon'       => \$operon, #Refresh operon data in camace.
+	    'gene_info'    => \$info, #Refresh CGC_names and Gene_class in elegans sequence based genes.
 	   );
 
 
@@ -59,11 +61,9 @@ my $output_file2;
 my $output_file3;
 my %models2geneID;
 my $count = "0";
-if (!$version) {
-  $version = "666";
-}
-
+if (!$version) {$version = "666";}
 my $next_build = ($version + 1);
+my $wormpub = $wormbase->wormpub;
 
 # tace executable path
 my $tace = $wormbase->tace;
@@ -74,21 +74,12 @@ my $tace = $wormbase->tace;
 # establish log file.
 my $log = Log_files->make_build_log($wormbase);
 
-my $wormpub = $wormbase->wormpub;
+# Specify Paths and files
 
 if (!$output_dir) {
   $output_dir = $wormpub."/camace_orig/WS${version}-WS${next_build}";
   print "Using $output_dir\n\n" if ($verbose); 
 } 
- 
-##########################
-# MAIN BODY OF SCRIPT
-##########################
-
-#load know anomolies to be ignored
-&load_exceptions;
-
-# Specify Paths and files
 my $def_dir = $wormbase->database('current')."/wquery";
 my $tablemaker_query =  "${def_dir}/SCRIPT:GeneID_updater.pl.def";
 my $tablemaker_query2 = "${def_dir}/SCRIPT:HXcds2protID.def";
@@ -109,19 +100,43 @@ if ($proteinID || $all) {
   if (defined ($sourceDB2)) {
     $sourceDB2 = $sourceDB2;
   }
+  elsif (-e $wormpub."/BUILD/autoace/database/block1.wrm") {
+    print "Using autoace for the source of protein IDs\n";
+    $sourceDB2 = $wormbase->database('autoace');
+  }
   else {
     $sourceDB2 = $wormbase->database('current');
   }
 }
 
+##########################
+# MAIN BODY OF SCRIPT
+##########################
 
-########################################################################
-# make database connection for extracting WBGene<=>Sequence_name data  #
-# Method   : tace/tablemaker                                           #
-# SourceDB : $wormpub/DATABASES/geneace                    # 
-########################################################################
 
-if ($geneID || $all) {
+&gene_ID if ($geneID);
+&protein_ID if ($proteinID || $all);
+&sv if ($sv || $all);
+&operon if ($operon || $all);
+&info if ($info || $all);
+
+$log->write_to("Upload file(s) completed.......\n");
+
+&upload if ($update);
+&noupdate if (!defined $update);
+
+$log->mail();
+print "Diaskeda same Poli\n";	#we had alot of fun#
+exit(0);
+
+
+##############################################################
+#                        Subroutines                         #
+##############################################################
+
+
+sub gene_ID {
+  &load_exceptions;                  #load know anomolies to be ignored
   $output_file = "$output_dir/updated_geneIDs_WS${next_build}\.ace";
   $log->write_to("\n==============================================================================================
 geneID option selected, updating WBGeneID connections in $database
@@ -160,7 +175,7 @@ geneID option selected, updating WBGeneID connections in $database
   ####################################################################
   # make database connections for looping through elegans subclasses #
   # Method   : AcePerl                                               # 
-  # TargetDB : $wormpub/DATABASES/camace                 # 
+  # TargetDB : $wormpub/DATABASES/camace                             # 
   ####################################################################
 
   $log->write_to("/2/ Gathering data from $database; Object Class and Name\n\n");
@@ -229,7 +244,8 @@ geneID option selected, updating WBGeneID connections in $database
 ########################
 #  Refresh ProteinIDs  #
 ########################
-if ($proteinID || $all) {
+
+sub protein_ID {
   $output_file2 = "$output_dir/updated_proteinIDs_WS${next_build}.ace";
   $log->write_to("\n\n==============================================================================================\nproteinID option selected, updating WP:Protein_ID connections in $database\n----------------------------------------------------------------------------------------------\n\n");
   $log->write_to("SOURCE Database for Protein IDs: $sourceDB2.\n");
@@ -271,7 +287,7 @@ if ($proteinID || $all) {
 #  Check Sequence versions of cosmids  #
 ########################################
 
-if ($sv || $all) {
+sub sv {
   my $continue;
   my $EM_acc;
   my $EM_seqver;
@@ -285,7 +301,7 @@ SV option selected, updating Clone Sequence Versions connections in $database
   $log->write_to("\nComparing SV\'s in $database against MFETCH query\n\n");
   $output_file3 = "$output_dir/sequence_version_update_WS${next_build}.ace";
   $log->write_to("OUTPUT FILE: $output_file3\n\n");
-  my $command = "nosave\nTable-maker -f ".$wormbase->database('camace')."/wquery/sequence_versions.def\nquit\n";
+  my $command = "nosave\nTable-maker -f ".$database."/wquery/sequence_versions.def\nquit\n";
 
   #Genereate files and connections.
   open (OUT3,  ">$output_file3") or die "Cannot open output file $output_file3\n";
@@ -294,46 +310,48 @@ SV option selected, updating Clone Sequence Versions connections in $database
 
   #Process data retrieved from database.
   while (<LIST>) {
-    if (/acedb>/) {
-      $continue = 1;next;
-    }
-    next until ($continue);
+    next until (/\"\S+/);
     chomp;
     s/\"//g;
     $log->write_to("WormBase Line = $_\n")if ($debug && $verbose);
-    ($clone,$acc,$ver) = (/^(\S+)\s+\S+\s+(\S+)\.(\d+)/);
-    $log->write_to("WB  Sequence version $ver\n") if ($debug && $verbose);
-
-    #Retrieve data from mfetch embl database.
-    # Example data line: ID   AL031222; SV 1; linear; genomic DNA; STD; INV; 4191 BP.
-    open (GET, "/usr/local/pubseq/scripts/mfetch -d embl -f id -i \"sv:$acc.\*\" |");
-    while (<GET>) {
-      chomp;
-      $log->write_to("EMBL Line = $_\n") if ($debug && $verbose);
-    
-      if (/^ID\s+(\S+);\s+\S+\s+(\d+);/) {
-	($EM_acc,$EM_seqver) = ($1,$2);
-	$log->write_to("EM  Sequence version $EM_seqver\n") if ($debug && $verbose);
+    if ((/^(\S+)\s+\S+\s+(\S+)\.(\d+)/)) {
+      ($clone,$acc,$ver) = (/^(\S+)\s+\S+\s+(\S+)\.(\d+)/);
+      $log->write_to("WB  Sequence version $ver\n") if ($debug && $verbose);
+      #Retrieve data from mfetch embl database.
+      # Example data line: ID   AL031222; SV 1; linear; genomic DNA; STD; INV; 4191 BP.
+      open (GET, "/software/bin/mfetch -d embl -f id -i \"sv:$acc.\*\" |");
+      while (<GET>) {
+	chomp;
+	$log->write_to("EMBL Line = $_\n") if ($debug && $verbose);
+	
+	if (/^ID\s+(\S+);\s+\S+\s+(\d+);/) {
+	  print "TM line test: $_\n" if ($debug && $verbose);
+	  ($EM_acc,$EM_seqver) = ($1,$2);
+	  $log->write_to("EM  Sequence version $EM_seqver\n") if ($debug && $verbose);
+	}
+	print "Cosmids done = $count - $acc\n" if ($debug);
+	if ($EM_seqver == $ver) {
+	  print "-----------------------\nResult: Cool\n-----------------------\n" if ($verbose);
+	} else {
+	  $log->write_to("Processing $acc......\n") if !$verbose;
+	  $log->write_to("ERROR: WB=$ver EMBL=$EM_seqver\n");
+	  print OUT3 "\nSequence : \"$clone\"\n";
+	  print OUT3 "-D Database EMBL NDB_SV\n";
+	  print OUT3 "\nSequence : \"$clone\"\n";
+	  print OUT3 "Database EMBL NDB_SV $acc.$EM_seqver\n";
+	}
+	
+	if (/^DT\s+(\S+)\s+\(Rel. (\d+)\, Last updated\, Version (\d+)\)/) {
+	  ($EM_rel,$EM_ver,$EM_sub) = ($2,$3,$1);
+	  $log->write_to("Latest version : Rel. $EM_rel Ver. $EM_ver [$EM_sub] \n");
+	}
       }
-      print "Cosmids done = $count\n" if ($debug);
-      if ($EM_seqver == $ver) {
-	print "-----------------------\nResult: Cool\n-----------------------\n" if ($verbose);
-      } else {
-	$log->write_to("Processing $acc......\n") if !$verbose;
-	$log->write_to("ERROR: WB=$ver EMBL=$EM_seqver\n");
-	print OUT3 "\nSequence : \"$clone\"\n";
-	print OUT3 "-D Database EMBL NDB_SV\n";
-	print OUT3 "\nSequence : \"$clone\"\n";
-	print OUT3 "Database EMBL NDB_SV $acc.$EM_seqver\n";
-      }
-
-      if (/^DT\s+(\S+)\s+\(Rel. (\d+)\, Last updated\, Version (\d+)\)/) {
-	($EM_rel,$EM_ver,$EM_sub) = ($2,$3,$1);
-	$log->write_to("Latest version : Rel. $EM_rel Ver. $EM_ver [$EM_sub] \n");
-      }
+      #  $log->write_to("\n");
+      $count = ($count +1);
     }
-    #  $log->write_to("\n");
-    $count = ($count +1);
+    else {
+      $log->write_to("$_ is an bogus line in the data retrieved\n");
+    }
   }
 
   close OUT3;
@@ -341,12 +359,15 @@ SV option selected, updating Clone Sequence Versions connections in $database
   close GET;
 }
 
+sub info {}
+
+sub operon {}
+
 #######################################################
 ## Logging                                           ##
 #######################################################
-$log->write_to("Upload file(s) completed.......\n");
 
-if (!defined ($update)) {
+sub noupdate {
   $log->write_to("\n\n==============================================================================================\n");
   $log->write_to("ACTION\n");
   $log->write_to("==============================================================================================\n");
@@ -355,8 +376,8 @@ if (!defined ($update)) {
   $log->write_to("\t$wormpub/camace_orig/acefiles/geneID_patch.ace\n") if ($geneID || $all);
   $log->write_to("\t$output_file2\n") if ($proteinID || $all);
   $log->write_to("\t$output_file3") if ($sv || $all);
-  $log->write_to("\n\n\tinto $canonical\n\n");
-  $log->write_to("\tCOMMANDS:\n\ttace $canonical -tsuser merge_split\n");
+  $log->write_to("\n\n\tinto $database\n\n");
+  $log->write_to("\tCOMMANDS:\n\ttace $database -tsuser merge_split\n");
   $log->write_to("\tpparse $output_file\n") if ($geneID || $all);
   $log->write_to("\tpparse $wormpub/camace_orig/acefiles/geneID_patch.ace\n") if ($geneID || $all);
   $log->write_to("\tpparse $output_file2\n") if ($proteinID || $all);
@@ -367,23 +388,13 @@ if (!defined ($update)) {
 ###################
 # Upload new data #
 ###################
-
-if ($update) {
+sub update {
   $log->write_to("==============================================================================================");
   $log->write_to("ACTION");
   $log->write_to("==============================================================================================");
   $log->write_to("\nLoading files........\n");
   &load_data;
 }
-
-$log->mail();
-print "Diaskeda same Poli\n";	#we had alot of fun#
-exit(0);
-
-
-##############################################################
-# Subroutines                                                #
-##############################################################
 
 sub load_data {
   my $command = "query find curated_CDS\nedit -D Gene\nclear\n" if ($geneID || $all);
