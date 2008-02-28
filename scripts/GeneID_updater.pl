@@ -7,7 +7,7 @@
 # Script to refresh various information including WBGene ID's, protein_ids, clone SV's in a chosen database from a chosen reference database.
 #
 # Last updated by: $Author: pad $
-# Last updated on: $Date: 2008-02-28 10:45:11 $
+# Last updated on: $Date: 2008-02-28 14:53:58 $
 
 use strict;
 my $scriptdir =  $ENV{'CVS_DIR'};
@@ -122,7 +122,7 @@ if ($proteinID || $all) {
 
 $log->write_to("Upload file(s) completed.......\n");
 
-&upload if ($update);
+&update if ($update);
 &noupdate if (!defined $update);
 
 $log->mail();
