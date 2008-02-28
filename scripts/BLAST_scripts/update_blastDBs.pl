@@ -1,7 +1,7 @@
 #!/usr/local/ensembl/bin/perl -w
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2008-02-28 14:34:46 $
+# Last edited on: $Date: 2008-02-28 14:41:50 $
 
 use lib $ENV{'CVS_DIR'};
 
@@ -17,7 +17,7 @@ use Net::FTP;
 use Time::localtime;
 
 my ($test, $debug, $database);
-my ($fly, $yeast, $human, $uniprot, $all);
+my ($fly, $yeast, $human, $uniprot, $interpro, $all);
 my $store;
 my ($species, $qspecies, $nematode);
 
@@ -31,6 +31,7 @@ GetOptions (
 	    'yeast' 	  => \$yeast,
 	    'human'	  => \$human,
 	    'uniprot'	  => \$uniprot,
+	    'interpro'    => \$interpro,
 	    'all'         => \$all
 	    );
 
@@ -50,10 +51,10 @@ my $log = Log_files->make_build_log($wormbase);
 my $blastdir    = '/lustre/work1/ensembl/wormpipe/BlastDB';
 my $acedir      = '/lustre/work1/ensembl/wormpipe/ace_files';
 
-$human=$fly=$yeast=$uniprot=1 if $all;
+$human=$fly=$yeast=$uniprot=$interpro=1 if $all;
 
 if( $human ) { &process_human; } 
-
+if ($interpro) { $wormbase->run_script("BLAST_scripts/make_interpro.pl",$log); }
 
 if($uniprot) {
     #get current ver.
