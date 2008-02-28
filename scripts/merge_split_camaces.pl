@@ -5,7 +5,7 @@
 # A script to make multiple copies of camace for curation, and merge them back again
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2008-01-25 13:49:00 $
+# Last edited on: $Date: 2008-02-28 11:09:54 $
 #
 # Persisting errors.
 #running csh -c "reformat_acediff file 1 file2"
@@ -316,11 +316,11 @@ sub update_camace {
   else {print "Orientation data was not present at this point in the build so will need to be loaded later on, but before the next build!!!!!\n\n";}
 
   ##################################################################################
-  ## Update Protein ID's                                                          ##
+  ## Update Protein ID's and check embl sequence_versions                         ##
   ##################################################################################
   print "\n\nRunning Gene_ID_update.pl to refresh Protein_ID\'s\n\n";
-  $wormbase->run_script("GeneID_updater.pl -proteinID -version $WS_version -update", $log) && die "Failed to run Gene_ID_updater.pl\n";
-  print "Updated Protein_ID\'s\n";
+  $wormbase->run_script("GeneID_updater.pl -proteinID -sv -version $WS_version -update", $log) && die "Failed to run Gene_ID_updater.pl\n";
+  print "Updated Protein_ID\'s and clone Sequence_versions\n";
 
   ######################################################
   ## Check if camace is in sync with the name server. ##
