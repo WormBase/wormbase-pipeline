@@ -51,13 +51,14 @@ else {
     die "$usage";
 }
 
-read_fasta (\*STDIN);
+read_fasta ('/data/blastdb/Supported/uniprot');
 untie %HASH;
 
 sub read_fasta {
-    local (*FILE) = @_;
+    my $uniprot = shift;
     my ($id, $acc, $seq);
     open (OUT,">$output") or die "cant write to $output\n";
+    open (FILE,"<$uniprot") or die "cant read $uniprot\n";
     while (<FILE>) {
         chomp;
         if (/^>(\S+)\.\d+\s+(\S+)/) {
@@ -113,4 +114,6 @@ sub read_fasta {
             $seq .= $_ ;
         }
     }
+    close FILE;
+    close OUT;
 }

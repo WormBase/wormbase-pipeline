@@ -4,15 +4,43 @@
 
 # parses either the swissprot or trembl .dat flat files,
 # and writes three DBM files: org, description, key words
+use lib $ENV{'CVS_DIR'};
 
 use strict;
-use Getopt::Std;
+use Getopt::Long;
 use GDBM_File;
-use vars qw($opt_s $opt_t $opt_v);
+use Wormbase;
+use Storable;
+use Log_files;
+
+my ($opt_s, $opt_t, $opt_v);
+my ($test, $debug, $store, $species);
+my $file;
 #swissprot trembl verbose
 
-getopts ("stv");
+GetOptions ("s" => \$opt_s,
+	    "t" => \$opt_t,
+	    "v" => \$opt_v,
+	    "file:s" => \$file,
+	    "test"   => \$test,
+	    "store:s"=> \$store,
+	    "debug:s"=> \$debug,
+	    );
+
 my $verbose = $opt_v;
+
+my $wormbase;
+if( $store ) {
+    $wormbase = retrieve( $store ) or croak("cant restore wormbase from $store\n");
+}
+else {
+    $wormbase = Wormbase->new( -debug   => $debug,
+			       -test     => $test,
+			       -organism => $species
+			       );
+}
+
+my $log = Log_files->make_build_log($wormbase);
 
 # store the database files in swall_data, but make them in /tmp as this goes MUCH faster
 my $output_dir = "/lustre/work1/ensembl/wormpipe/swall_data";
@@ -28,12 +56,12 @@ my $des;
 my $key;
 my $switch = 0;
 
-my $usage = "cat swissprot/trembl .dat file | swiss_trembl2dmb.pl\n";
+my $usage = "swiss_trembl2dmb.pl -file uniprot_sprot.dat\n";
 $usage .= "-s for swissprot\n";
 $usage .= "-t for trembl\n";
 
 if ($opt_s && $opt_t) {
-    die "$usage";
+   $log->log_and_die ("$usage");
 }
 elsif ($opt_s) {
   
@@ -41,9 +69,9 @@ elsif ($opt_s) {
   `rm $tmp_dir/swissprot2des` if (-e "$tmp_dir/swissprot2des" );
   `rm $tmp_dir/swissprot2key` if (-e "$tmp_dir/swissprot2key" );
   
-  tie %ORG,'GDBM_File',"$tmp_dir/swissprot2org",&GDBM_WRCREAT, 0666 or die "cannot open DBM file";
-  tie %DES,'GDBM_File',"$tmp_dir/swissprot2des",&GDBM_WRCREAT, 0666 or die "cannot open DBM file";
-  tie %KEY,'GDBM_File',"$tmp_dir/swissprot2key",&GDBM_WRCREAT, 0666 or die "cannot open DBM file";
+  tie %ORG,'GDBM_File',"$tmp_dir/swissprot2org",&GDBM_WRCREAT, 0666 or $log->log_and_die("cannot open DBM file");
+  tie %DES,'GDBM_File',"$tmp_dir/swissprot2des",&GDBM_WRCREAT, 0666 or $log->log_and_die("cannot open DBM file");
+  tie %KEY,'GDBM_File',"$tmp_dir/swissprot2key",&GDBM_WRCREAT, 0666 or $log->log_and_die("cannot open DBM file");
 }
 elsif ($opt_t) {
   
@@ -51,15 +79,16 @@ elsif ($opt_t) {
   `rm $tmp_dir/trembl2des` if (-e "$tmp_dir/trembl2des" );
   `rm $tmp_dir/trembl2key` if (-e "$tmp_dir/trembl2key" );
   
-  tie %ORG,'GDBM_File', "$tmp_dir/trembl2org",&GDBM_WRCREAT, 0666 or die "cannot open DBM file";
-  tie %DES,'GDBM_File', "$tmp_dir/trembl2des",&GDBM_WRCREAT, 0666 or die "cannot open DBM file";
-  tie %KEY,'GDBM_File', "$tmp_dir/trembl2key",&GDBM_WRCREAT, 0666 or die "cannot open DBM file";
+  tie %ORG,'GDBM_File', "$tmp_dir/trembl2org",&GDBM_WRCREAT, 0666 or $log->log_and_die("cannot open DBM file"); 
+  tie %DES,'GDBM_File', "$tmp_dir/trembl2des",&GDBM_WRCREAT, 0666 or  $log->log_and_die("cannot open DBM file");
+  tie %KEY,'GDBM_File', "$tmp_dir/trembl2key",&GDBM_WRCREAT, 0666 or  $log->log_and_die("cannot open DBM file");
 }
 else {
     die "$usage";
 }
 
-while (my $line = <>) {
+open(SW,"<$file") or die("cant open $file:$!\n");
+while (my $line = <SW>) {
     if ($line =~ /^AC\s+(\S+)\;/) {
         $id = $1;
         $switch = 1;
@@ -147,6 +176,7 @@ while (my $line = <>) {
         $switch = 0;
     }
 }
+close SW;
 
 untie %ORG;
 untie %DES;
@@ -170,3 +200,5 @@ elsif ($opt_t) {
   `mv -f $tmp_dir/trembl2key $output_dir`;
   
 }
+
+$log->mail;
