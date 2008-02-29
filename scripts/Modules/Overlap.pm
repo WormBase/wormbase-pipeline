@@ -7,7 +7,7 @@
 # Do fast overlap matching of positions of two sets of things.
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-02-28 11:56:06 $      
+# Last updated on: $Date: 2008-02-29 10:15:30 $      
 
 =pod
 
@@ -108,7 +108,7 @@ Routines to read GFF files from the database defined in $wormbase
 @list = $ovlp->get_CDS_introns($chromosome);
 @list = $ovlp->get_check_introns_EST($chromosome);
 @list = $ovlp->get_check_introns_cDNA($chromosome);
-
+@list = $ovlp->get_mass_spec_peptides($chromosome);
 
 Routines to modify/filter GFF lists
 
@@ -2004,6 +2004,34 @@ sub get_check_introns_cDNA {
      gff_source			=> "",
      gff_type			=> "intron",
      ID_after			=> 'Confirmed_cDNA\s+',
+
+   );
+
+  return $self->read_GFF_file(\%GFF_data);
+
+}
+
+=head2
+
+    Title   :   get_mass_spec_peptides
+    Usage   :   my @gff = $ovlp->get_mass_spec_peptides($chromosome)
+    Function:   reads the GFF data for the the mass spectromtry peptides aligned to the genome
+    Returns :   list of lists for GFF data
+    Args    :   chromosome number
+
+=cut
+
+sub get_mass_spec_peptides {
+  my $self = shift;
+  my ($chromosome) = @_;
+
+  my %GFF_data = 
+   (
+     directory			=> $self->{database} . "/CHROMOSOMES",
+     file			=> "${\$self->wormbase->chromosome_prefix}${chromosome}.gff",
+     gff_source			=> "mass_spec_genome",
+     gff_type			=> "translated_nucleotide_match",
+     ID_after			=> 'Target\s+',
 
    );
 
