@@ -58,8 +58,8 @@ sub write_table {
   $log->write_to("writing $type\n");
     
   my %type_remark = ('affy' => "Affymetrix",
-		     'agil' => "Agilent",
-		     'gsc'  => "GSC at WashU"
+		     'agil' => "Agilent_microarray_probe",
+		     'gsc'  => "WashU_GSC_microarray_probe"
 		    );
 
   my $query;
