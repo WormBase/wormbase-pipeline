@@ -744,7 +744,7 @@ sub connect_to_database {
 
   if ($lab eq "HX") {
 
-    $dbsn = "DBI:mysql:database=worm_anomaly;host=ia64b";
+    $dbsn = "DBI:mysql:database=worm_anomaly;host=ia64d";
     $dbuser = "wormadmin";
     $dbpass = "worms";
 
