@@ -7,7 +7,7 @@
 # Do fast overlap matching of positions of two sets of things.
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-02-29 10:15:30 $      
+# Last updated on: $Date: 2008-02-29 15:36:14 $      
 
 =pod
 
@@ -2100,8 +2100,8 @@ sub match {
     # test if there is an overlap (allowing possible nearby matches)
     # and optionally test if the senses are the same
     #print "SECONDARY LINE: $secondary->[0] $secondary->[1] $secondary->[2] $secondary->[3]\n";
-    if ($secondary->[1] <= $main_end + $near_3 && 
-	$secondary->[2] >= $main_start - $near_5 && 
+    if ($secondary->[1] <= $main_end + $near_5 && 
+	$secondary->[2] >= $main_start - $near_3 && 
 	($self->{state}->{same_sense}?($main_strand eq $secondary->[3]):1) &&
 	($self->{state}->{other_sense}?($main_strand ne $secondary->[3]):1)
 	) {
@@ -2132,7 +2132,7 @@ sub match {
     } else {
       #print "no match\n";
       # don't search any further for this one if no overlap and the secondary_start > this_end
-      if ($secondary->[1] > $main_end + $near_3) {last;}	# we have gone past the end of all possible matches
+      if ($secondary->[1] > $main_end + $near_5) {last;}	# we have gone past the end of all possible matches
     }
 
   }
