@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-02-29 11:35:09 $      
+# Last updated on: $Date: 2008-02-29 12:01:05 $      
 
 # Changes required by Ant: 2008-02-19
 # 
@@ -767,7 +767,7 @@ sub get_protein_split_merged {
     # because their predictions are heavily based on twinscan
     # predictions and so we would be simply confirming possibly
     # erroneous twinscan data.
-    if ($protein_id =~ /^BP:/ || $protein_id =~ /^RP:/) {next;}
+    #if ($protein_id =~ /^BP:/ || $protein_id =~ /^RP:/) {next;}
 
     #  check if these are isoforms of the same gene and if so then treat them as the same gene
     if ($matching_exon =~ /(\S+\.\d+)[a-z]/) {
@@ -809,8 +809,8 @@ sub get_protein_split_merged {
       }
       
       # see if we have a big decrease in the start of the HSP - a possible case for splitting
-      if (($chrom_strand eq '+' && $prev_chrom_end < $chrom_start && $prev_hit_start > $hit_start + 100) ||
-	  ($chrom_strand eq '-' && $prev_chrom_end < $chrom_start && $prev_hit_start < $hit_start - 100 && $prev_hit_start != -1)) {
+      if (($chrom_strand eq '+' && $prev_chrom_end < $chrom_start && ($prev_hit_start > $hit_start + 100 || ($prev_hit_end > 100 && $hit_start < 30))) ||
+	  ($chrom_strand eq '-' && $prev_chrom_end < $chrom_start && ($prev_hit_start < $hit_start - 100 && $prev_hit_start != -1 || ($prev_hit_start < 30 && $hit_start > 100 && $prev_hit_start != -1))) {
 	$got_a_big_decrease_in_HSP_start = 1;
 	#print "Split? $protein_id chrom_start $chrom_end prev_chrom_start $prev_chrom_start $chrom_strand prev_hit_start $prev_hit_start hit_start $hit_start\n";
       } else {
