@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-02-28 16:38:21 $      
+# Last updated on: $Date: 2008-02-29 11:01:19 $      
 
 # Changes required by Ant: 2008-02-19
 # 
@@ -232,6 +232,7 @@ my @est_mismatches;
 &delete_anomalies("INTRONS_IN_UTR");
 &delete_anomalies("SPLIT_GENE_BY_TWINSCAN");
 &delete_anomalies("MERGE_GENES_BY_TWINSCAN");
+&delete_anomalies("UNMATCHED_MASS_SPEC_PEPTIDE");
 
 
 my $ace_output = $wormbase->wormpub . "/CURATION_DATA/anomalies_$species.ace";
@@ -296,7 +297,7 @@ foreach my $chromosome (@chromosomes) {
   my @CDS_introns = $ovlp->get_CDS_introns($chromosome);
   my @check_introns_EST  = $ovlp->get_check_introns_EST($chromosome);
   my @check_introns_cDNA = $ovlp->get_check_introns_cDNA($chromosome);
-
+  my @mass_spec_peptides = $ovlp->get_mass_spec_peptides($chromosome);
 
 ######################################################################
 
@@ -354,6 +355,8 @@ foreach my $chromosome (@chromosomes) {
   print "finding genes to be split/merged based on twinscan\n";
   &get_twinscan_split_merged(\@twinscan_transcripts, \@CDS, $chromosome);
 
+  print "finding unmatched mass spec peptides\n";
+  &get_unmatched_mass_spec_peptides(\@mass_spec_peptides, \@cds_exons, $chromosome);
 
 #################################################
 # these don't work very well - don't use
@@ -402,7 +405,7 @@ if ($datafile) {
 # output file of repeat motifs that overlap coding exons
 my $repeatsfile = $wormbase->wormpub . "/CURATION_DATA/repeats_overlapping_exons_$species.dat";
 open (REPEATS, "> $repeatsfile") || die "Can't open $repeatsfile\n";
-print REPEATS "Frequencies of repeat motifs overlapping coding exons by more than 20 bases\n\n";
+print REPEATS "# Frequencies of repeat motifs overlapping coding exons by more than 20 bases\n\n";
 foreach my $repeat (sort {$repeat_count{$a} <=> $repeat_count{$b} } keys %repeat_count) { # sort the keys by the value to get a nice table
   print REPEATS "$repeat\t$repeat_count{$repeat}\n";
 }
@@ -411,8 +414,8 @@ close(REPEATS);
 # output file of ESTs with small mismatches to teh genomic sequence
 my $est_mismatch_file = $wormbase->wormpub . "/CURATION_DATA/est_mismatch_genome_$species.dat";
 open (EST_MISMATCH, "> $est_mismatch_file") || die "Can't open $est_mismatch_file\n";
-print EST_MISMATCH "ESTs which have small mismatches to the genomic sequence\n";
-print EST_MISMATCH "EST\tchromosome\tstart\tend\tproportion of ESTs mismatching\n\n";
+print EST_MISMATCH "# ESTs which have small mismatches to the genomic sequence\n";
+print EST_MISMATCH "# EST\tchromosome\tstart\tend\tstrand\tproportion of ESTs mismatching\n\n";
 foreach my $mismatch (@est_mismatches) {
   print EST_MISMATCH "@{$mismatch}\n";
 }
@@ -2390,6 +2393,44 @@ sub get_unmatched_ests {
     }
   }
 }
+
+##########################################
+# get mass-spec peptides not matching coding exons
+#  &get_unmatched_mass_spec_peptides(\@mass_spec_peptides, \@cds_exons, $chromosome);
+
+sub get_unmatched_mass_spec_peptides {
+  my ($mass_spec_peptides_aref, $cds_exons_aref, $chromosome) = @_;
+
+  my $cds_match = $ovlp->compare($cds_exons_aref, same_sense => 0); # the sense of the mass-spec peptide is not well established
+
+  foreach my $msp (@{$mass_spec_peptides_aref}) { # $msp_id, $chrom_start, $chrom_end, $chrom_strand
+
+    my $got_a_match = 0;
+
+    if (my @results = $cds_match->match($msp)) { 
+      # want the mass_spec peptide to be entirely overlapped by the CDS exon
+      print "no. of result=", scalar @results, "\n";
+      foreach my $result (@results) {
+	my ($prop1, $prop2)   = $cds_match->matching_proportions($result);
+	if ($prop1 == 1) {$got_a_match = 1;}
+      }
+    }
+
+    # output unmatched mass-spec protein to the database
+    if (!$got_a_match) {
+      my $msp_id = $msp->[0];
+      my $chrom_start = $msp->[1];
+      my $chrom_end = $msp->[2];
+      my $chrom_strand = $msp->[3];
+
+      my $anomaly_score = 10;	# huge score!
+
+      #print "UNMATCHED_MASS_SPEC_PEPTIDE, $chromosome, $msp_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score, \n";
+      &output_to_database("UNMATCHED_MASS_SPEC_PEPTIDE", $chromosome, $msp_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score, "");
+    }
+  }
+}
+
 
 
 ####################################################################################
