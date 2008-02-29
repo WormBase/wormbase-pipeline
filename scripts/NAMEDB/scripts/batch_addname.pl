@@ -34,9 +34,9 @@ $species = 'elegans' unless $species;
 
 my $DB;
 if ($test) {
-    $DB = 'test_wbgene_id;mcs2a';
+    $DB = 'test_wbgene_id;mcs2a;3305';
   } else {
-    $DB = 'wbgene_id;mcs2a';
+    $DB = 'wbgene_id;mcs2a;3305';
 }
 
 my $db = NameDB_handler->new($DB,$USER,$PASS);
