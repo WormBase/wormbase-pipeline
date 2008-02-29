@@ -56,34 +56,17 @@ exit(0);
 sub write_table {
   my $type  = shift;
   $log->write_to("writing $type\n");
-#  if ($type]) {
-#    if ($type=~/affymetrix/i) {
-#	$type="Affymetrix";
-#    }
-#    elsif ($ARGV[1]=~/agilent/i) {
-#	$type="Agilent";
-#    }
-#    elsif ($ARGV[1]=~/gsc/i) {
-#	$type="GSC at WashU";
-#    }
-#    else {
-#	print "unrecognized type\n";
-#	exit;
-#    }
-#}
     
-my %type_remark = ('affy' => "Affymetrix",
-		   'agil' => "Agilent",
-		   'gsc'  => "GSC at WashU"
-		  );
-
-
+  my %type_remark = ('affy' => "Affymetrix",
+		     'agil' => "Agilent",
+		     'gsc'  => "GSC at WashU"
+		    );
 
   my $query;
   if ($type) {
-    $query="find oligo_set remark=\"*".$type_remark{$type}."*\"";
+    $query="find Oligo_set where type=\"*".$type_remark{$type}."*\"";
   } else {
-    $query="find oligo_set";
+    $query="find Oligo_set";
   }
   my $it=$db->fetch_many(-query=>$query);
   my $count=0;
