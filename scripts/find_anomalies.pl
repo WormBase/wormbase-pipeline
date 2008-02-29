@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-02-29 12:04:28 $      
+# Last updated on: $Date: 2008-02-29 15:42:31 $      
 
 # Changes required by Ant: 2008-02-19
 # 
@@ -1413,7 +1413,8 @@ sub get_isolated_TSL {
   my @SL = sort {$a->[1] <=> $b->[1]} (@SL1, @SL2); # merge and sort the two TSL lists
       
   # allow the TSL to be within 75 bases of the transcript to give a match
-  my $transcripts_match = $ovlp->compare($transcripts_aref, near => 75, same_sense => 1);
+  my $transcripts1_match = $ovlp->compare($transcripts_aref, near_5 => 75, same_sense => 1); # look for overlap or near to the 5' end
+  my $transcripts2_match = $ovlp->compare($transcripts_aref, near_5 => -3, same_sense => 1); # only look for overlap (don't count a bit of overlap at the start)
   my $pseud_match = $ovlp->compare($pseudogenes_aref, same_sense => 1);
   my $trans_match = $ovlp->compare($transposons_aref, same_sense => 1);
   my $trane_match = $ovlp->compare($transposon_exons_aref, same_sense => 1);
@@ -1423,8 +1424,19 @@ sub get_isolated_TSL {
   foreach my $tsl (@SL) { # $TSL_id, $chrom_start, $chrom_end, $chrom_strand
 
     my $got_a_match = 0;
-  
-    if ($transcripts_match->match($tsl)) { 
+    my @result1;
+    my @result2;
+    my @names1 = ();		# names of transcripts that match including near the 5' end
+    my @names2 = ();		# names of transcripts that only overlap
+
+    @result1 = $transcripts1_match->match($tsl);
+    @result2 = $transcripts2_match->match($tsl);
+
+    # see if we have the same number of matches from an overlap
+    # including 75 bases the the 5' end and a simple overlap - if not
+    # then we have an overlap at the 5' end in one of the transcripts
+    # of this gene and so we have a match
+    if (scalar @result1 != scalar @result2) {
       $got_a_match = 1;
     }
 
@@ -2409,7 +2421,7 @@ sub get_unmatched_mass_spec_peptides {
 
     if (my @results = $cds_match->match($msp)) { 
       # want the mass_spec peptide to be entirely overlapped by the CDS exon
-      print "no. of result=", scalar @results, "\n";
+      # print "no. of results=", scalar @results, "\n";
       foreach my $result (@results) {
 	my ($prop1, $prop2)   = $cds_match->matching_proportions($result);
 	if ($prop1 == 1) {$got_a_match = 1;}
