@@ -8,7 +8,7 @@
 # stores the results in the mysql database 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-02-06 16:35:33 $      
+# Last updated on: $Date: 2008-02-29 11:35:37 $      
 
 use strict;                                      
 use Getopt::Long;
@@ -53,7 +53,10 @@ my $sqldb = "worm_anomaly";
 
 if ($species && $species ne 'elegans') {$sqldb = $sqldb . "_" . lc $species;}
 
-my $dbsn = "DBI:mysql:database=$sqldb;host=ia64b";
+##########################
+# CHANGE YOUR DETAILS HERE
+##########################
+my $dbsn = "DBI:mysql:database=$sqldb;host=ia64d";
 my $dbuser = "wormadmin";
 my $dbpass = "worms";
 

@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-02-29 11:01:19 $      
+# Last updated on: $Date: 2008-02-29 11:35:09 $      
 
 # Changes required by Ant: 2008-02-19
 # 
@@ -145,7 +145,7 @@ if (! $nodb) {
   # mysql database parameters
   my $sqldb = "worm_anomaly";
   if ($species ne 'elegans') {$sqldb = $sqldb . "_" . lc $species;}
-  my $dbsn = "DBI:mysql:database=$sqldb;host=ia64b";
+  my $dbsn = "DBI:mysql:database=$sqldb;host=ia64d";
   my $dbuser = "wormadmin";
   my $dbpass = "worms";
 
