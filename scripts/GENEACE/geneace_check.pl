@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: mt3 $
-# Last updated on: $Date: 2008-01-21 18:17:40 $
+# Last updated on: $Date: 2008-03-03 12:20:56 $
 
 use strict;
 use lib $ENV{"CVS_DIR"};
@@ -283,11 +283,6 @@ sub process_gene_class{
   # checks that a gene with alleles are not dead (i.e. merged into something else)
   foreach my $gene ($db->fetch(-query=>"Find Gene WHERE NOT Live AND Allele")){
     print LOG "ERROR: Mama mia! $gene is dead but is still connected to an allele\n";
-  }
-
- # checks that a gene with DB_info tags are not dead (i.e. merged into something else)
-  foreach my $gene ($db->fetch(-query=>"Find Gene WHERE NOT Live AND DB_info")){
-    print LOG "ERROR: Oh dear! $gene is dead but still has a DB_info tag\n";
   }
 
   # checks that a gene with references are not dead (i.e. merged into something else)
