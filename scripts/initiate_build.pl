@@ -3,7 +3,7 @@
 # initiate_build.pl
 #
 # Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2008-03-03 13:59:00 $
+# Last edited on: $Date: 2008-03-04 16:49:24 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -68,7 +68,7 @@ $wormbase->run_command("cd ".$wormbase->basedir.'; cvs -d :pserver:cvsuser@cvsro
 
 ## update database.wrm using cvs
 my $cvs_file = $wormbase->autoace."/wspec/database.wrm";
-$wormbase->run_command("sed 's/WS94/WS${version}/' < $cvs_file > ${cvs_file}.new", $log);  #  the version in CVS is WS94
+$wormbase->run_command("sed 's/WS0/WS${version}/' < $cvs_file > ${cvs_file}.new", $log);  #  the version in CVS is WS94
 my $status = move(${cvs_file}.".new", "$cvs_file") or $log->write_to("ERROR: renaming file: $!\n");
 $log->write_to("ERROR: Couldn't move file: $!\n") if ($status == 0);
 
