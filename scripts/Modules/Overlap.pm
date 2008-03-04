@@ -7,7 +7,7 @@
 # Do fast overlap matching of positions of two sets of things.
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-02-29 15:36:14 $      
+# Last updated on: $Date: 2008-03-04 17:24:26 $      
 
 =pod
 
@@ -321,12 +321,15 @@ sub read_GFF_file {
 
   # didn't find any files of that name
   if (@files == 0 || ! -e $files[0]) {
+    print "WARNING: didn't find file @files\n";
     # if there is a 'chromosome' hash then we can look to see if there
     # is a CHROMOSOME file instead of a GFF_SPLIT file
     my $test_file = $self->{database} . "/CHROMOSOMES/${\$self->wormbase->chromosome_prefix}" . $GFF_data->{chromosome} . ".gff";
     if (-e $test_file) {
       @files = ($test_file);
       print "Reading from $test_file instead of $GFF_data->{file}\n";
+    } else {
+      print "ERROR: Couldn't find file $GFF_data->{directory}/$GFF_data->{file} for data: $GFF_data->{gff_source} $GFF_data->{gff_type}\n";
     }
   }
 
@@ -374,6 +377,10 @@ sub read_GFF_file {
     }
 #    close (GFF);
   }
+  if (scalar @result == 0) {
+    print "WARNING: no data found for @files\n";
+  }
+    
       
   # The 3' reads of the ESTs/OSTs/mRNAs BLAT results are really in the reverse sense to
   # the gene they match but ACeDB has a tag to display them in the
@@ -1954,7 +1961,7 @@ sub get_check_introns_EST {
   my ($chromosome) = @_;
 
   my $dir;
-  if (-d $self->wormbase->{'autoace'} ) {
+  if (-e $self->wormbase->{'autoace'} . "/${\$self->wormbase->chromosome_prefix}${chromosome}.check_intron_cam.gff") {
     $dir = $self->wormbase->autoace . "/CHECKS/";
   } else {
     $dir = '/nfs/WWWdev/SANGER_docs/htdocs/Projects/C_elegans/WORMBASE/development_release/GFF/'; # web directory
@@ -1991,7 +1998,7 @@ sub get_check_introns_cDNA {
   my ($chromosome) = @_;
 
   my $dir;
-  if (-d $self->wormbase->{'autoace'}) {
+  if (-e $self->wormbase->{'autoace'} . "/${\$self->wormbase->chromosome_prefix}${chromosome}.check_intron_cam.gff") {
     $dir = $self->wormbase->autoace . "/CHECKS/";
   } else {
     $dir = '/nfs/WWWdev/SANGER_docs/htdocs/Projects/C_elegans/WORMBASE/development_release/GFF/'; # web directory
