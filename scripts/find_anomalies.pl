@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-03-04 10:50:31 $      
+# Last updated on: $Date: 2008-03-04 16:27:26 $      
 
 # Changes required by Ant: 2008-02-19
 # 
@@ -2433,7 +2433,7 @@ sub get_unmatched_mass_spec_peptides {
       # want the mass_spec peptide to be entirely overlapped by the transposon_CDS exon
       # print "no. of results=", scalar @results, "\n";
       foreach my $result (@results) {
-	my ($prop1, $prop2)   = $cds_match->matching_proportions($result);
+	my ($prop1, $prop2)   = $trans_match->matching_proportions($result);
 	if ($prop1 == 1) {$got_a_match = 1;}
       }
     }
