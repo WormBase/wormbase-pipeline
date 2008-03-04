@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-02-29 15:42:31 $      
+# Last updated on: $Date: 2008-03-04 10:50:31 $      
 
 # Changes required by Ant: 2008-02-19
 # 
@@ -356,7 +356,7 @@ foreach my $chromosome (@chromosomes) {
   &get_twinscan_split_merged(\@twinscan_transcripts, \@CDS, $chromosome);
 
   print "finding unmatched mass spec peptides\n";
-  &get_unmatched_mass_spec_peptides(\@mass_spec_peptides, \@cds_exons, $chromosome);
+  &get_unmatched_mass_spec_peptides(\@mass_spec_peptides, \@cds_exons, \@transposon_exons, $chromosome);
 
 #################################################
 # these don't work very well - don't use
@@ -2408,12 +2408,13 @@ sub get_unmatched_ests {
 
 ##########################################
 # get mass-spec peptides not matching coding exons
-#  &get_unmatched_mass_spec_peptides(\@mass_spec_peptides, \@cds_exons, $chromosome);
+#  &get_unmatched_mass_spec_peptides(\@mass_spec_peptides, \@cds_exons, \@transposon_exons, $chromosome);
 
 sub get_unmatched_mass_spec_peptides {
-  my ($mass_spec_peptides_aref, $cds_exons_aref, $chromosome) = @_;
+  my ($mass_spec_peptides_aref, $cds_exons_aref, $transposon_exons_aref, $chromosome) = @_;
 
-  my $cds_match = $ovlp->compare($cds_exons_aref, same_sense => 0); # the sense of the mass-spec peptide is not well established
+  my $cds_match   = $ovlp->compare($cds_exons_aref, same_sense => 0); # the sense of the mass-spec peptide is not well established
+  my $trans_match = $ovlp->compare($transposon_exons_aref, same_sense => 0); # the sense of the mass-spec peptide is not well established
 
   foreach my $msp (@{$mass_spec_peptides_aref}) { # $msp_id, $chrom_start, $chrom_end, $chrom_strand
 
@@ -2421,6 +2422,15 @@ sub get_unmatched_mass_spec_peptides {
 
     if (my @results = $cds_match->match($msp)) { 
       # want the mass_spec peptide to be entirely overlapped by the CDS exon
+      # print "no. of results=", scalar @results, "\n";
+      foreach my $result (@results) {
+	my ($prop1, $prop2)   = $cds_match->matching_proportions($result);
+	if ($prop1 == 1) {$got_a_match = 1;}
+      }
+    }
+
+    if (my @results = $trans_match->match($msp)) { 
+      # want the mass_spec peptide to be entirely overlapped by the transposon_CDS exon
       # print "no. of results=", scalar @results, "\n";
       foreach my $result (@results) {
 	my ($prop1, $prop2)   = $cds_match->matching_proportions($result);
