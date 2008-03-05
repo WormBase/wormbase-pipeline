@@ -1,7 +1,7 @@
 #!/usr/local/ensembl/bin/perl -w
 #
 # Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2008-03-05 15:31:37 $
+# Last edited on: $Date: 2008-03-05 15:35:39 $
 
 use lib $ENV{'CVS_DIR'};
 
@@ -79,7 +79,7 @@ if($uniprot) {
 if($yeast) {
     $log->write_to("Updating yeast\n");
     my $sourcedir = "pub/yeast/data_download/sequence/genomic_sequence/orf_protein";
-    my $target = $blastdir."/download.yeast.gz";
+    my $target = '/tmp/download.yeast.gz';
     my $filename1 = "orf_trans.fasta.gz";
     my $login = "anonymous";
     my $passw = 'wormbase@sanger.ac.uk';
