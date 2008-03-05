@@ -1,7 +1,7 @@
 #!/usr/local/ensembl/bin/perl -w
 #
 # Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2008-03-05 15:24:21 $
+# Last edited on: $Date: 2008-03-05 15:26:47 $
 
 use lib $ENV{'CVS_DIR'};
 
@@ -306,7 +306,7 @@ sub process_uniprot {
 
 
 sub process_yeast {
-    my $ver = &determine_last_ver('yeast');
+    my $ver = &determine_last_vers('yeast');
     my $source_file = "$blastdir/yeast${ver}.pep";
     my $acefile     = "$acedir/yeast.ace";
     # output initally goes to tmp file
