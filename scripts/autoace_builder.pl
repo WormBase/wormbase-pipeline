@@ -6,8 +6,8 @@
 #
 # Usage : autoace_builder.pl [-options]
 #
-# Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2008-02-06 13:22:31 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2008-03-05 13:37:43 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -96,7 +96,7 @@ my $wormbase = Wormbase->new(
 # establish log file.
 my $log = Log_files->make_build_log($wormbase);
 
-$wormbase->run_script( "initiate_build.pl -user $user -version $initiate",$log ) if defined($initiate);
+$wormbase->run_script( "initiate_build.pl -version $initiate",$log ) if defined($initiate);
 $wormbase->run_script( 'prepare_primary_databases.pl',      $log ) if $prepare_databases;
 $wormbase->run_script( 'make_acefiles.pl',                  $log ) if $acefile;
 $wormbase->run_script( 'make_autoace.pl',                   $log ) if $build;
@@ -106,7 +106,7 @@ $wormbase->run_script( "build_dumpGFF.pl -stage $gff_dump", $log ) if $gff_dump;
 
 $wormbase->run_script( "processGFF.pl -$processGFF",        $log ) if $processGFF;    #clone_acc
 &first_dumps                                                       if $first_dumps;   # dependant on clone_acc for agp
-$wormbase->run_script( 'make_wormpep.pl -initial',          $log ) if $make_wormpep;
+$wormbase->run_script( 'make_wormpep.pl -initial -all',          $log ) if $make_wormpep;
 $wormbase->run_script( 'map_features.pl -all',              $log ) if $map_features;
 
 
@@ -144,7 +144,7 @@ $wormbase->run_script( 'load_data_sets.pl -homol -briggsae -misc', $log) if $dat
 $wormbase->run_script( 'make_wormrna.pl'                         , $log) if $rna;
 $wormbase->run_script( 'confirm_genes.pl -load'                  , $log) if $confirm;
 $wormbase->run_script( 'map_operons.pl'                          , $log) if $operon;
-$wormbase->run_script( 'make_wormpep.pl -final'                  , $log) if $finish_wormpep;
+$wormbase->run_script( 'make_wormpep.pl -all -final'                  , $log) if $finish_wormpep;
 $wormbase->run_script( 'write_DB_remark.pl'                      , $log) if $remarks;
 $wormbase->run_script( 'molecular_names_for_genes.pl'            , $log) if $names;
 $wormbase->run_script( 'get_treefam.pl'                          , $log) if $treefam;
