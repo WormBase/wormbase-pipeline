@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-03-05 16:50:40 $      
+# Last updated on: $Date: 2008-03-05 16:55:56 $      
 
 # Changes required by Ant: 2008-02-19
 # 
@@ -2508,124 +2508,120 @@ sub get_introns_refuted_by_est {
 	push @single_introns, $intron;
       }
     }
-
-    # it should be sorted by start position already, but just in case, do it again
-    @single_introns = sort {$a->[1] <=> $b->[1]} (@single_introns); 
+  }
+  # it should be sorted by start position already, but just in case, do it again
+  @single_introns = sort {$a->[1] <=> $b->[1]} (@single_introns); 
 
 # now check to see if any of these non-overlapped introns have an EST/OST/RST/mRNA
 # aligned across them, in which case they are an anomaly
 
-    my $intron_match   = $ovlp->compare(\@single_introns, same_sense => 1); 
+  my $intron_match   = $ovlp->compare(\@single_introns, same_sense => 1); 
     
 
-    foreach my $est (@{$est_hsp_aref}) { # $est_id, $chrom_start, $chrom_end, $chrom_strand
-      $got_a_match = 0;
-      if (my @results = $intron_match->match($est)) { 
-	# check to see if the intron is completely covered by the EST
-	foreach my $result (@results) {
-	  my ($prop1, $prop2)   = $intron_match->matching_proportions($result);
-	  if ($prop2 == 1) {
-	    $got_a_match = 1;
-	  }
+  foreach my $est (@{$est_hsp_aref}) { # $est_id, $chrom_start, $chrom_end, $chrom_strand
+    $got_a_match = 0;
+    if (my @results = $intron_match->match($est)) { 
+      # check to see if the intron is completely covered by the EST
+      foreach my $result (@results) {
+	my ($prop1, $prop2)   = $intron_match->matching_proportions($result);
+	if ($prop2 == 1) {
+	  $got_a_match = 1;
 	}
-      }
-
-      # output unmatched mass-spec protein to the database
-      if ($got_a_match) {
-	my $est_id = $est->[0];
-	my $chrom_start = $est->[1];
-	my $chrom_end = $est->[2];
-	my $chrom_strand = $est->[3];
-
-	my $anomaly_score = 5;	# huge score!
-
-	&output_to_database("EST_OVERLAPS_INTRON", $chromosome, $est_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score, "");
       }
     }
 
-    $intron_match   = $ovlp->compare(\@single_introns, same_sense => 1); 
+    # output unmatched mass-spec protein to the database
+    if ($got_a_match) {
+      my $est_id = $est->[0];
+      my $chrom_start = $est->[1];
+      my $chrom_end = $est->[2];
+      my $chrom_strand = $est->[3];
 
-    foreach my $ost (@{$ost_hsp_aref}) { # $ost_id, $chrom_start, $chrom_end, $chrom_strand
-      $got_a_match = 0;
-      if (my @results = $intron_match->match($ost)) { 
-	# check to see if the intron is completely covered by the OST
-	foreach my $result (@results) {
-	  my ($prop1, $prop2)   = $intron_match->matching_proportions($result);
-	  if ($prop2 == 1) {
-	    $got_a_match = 1;
-	  }
+      my $anomaly_score = 5;	# huge score!
+
+      &output_to_database("EST_OVERLAPS_INTRON", $chromosome, $est_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score, "");
+    }
+  }
+
+  $intron_match   = $ovlp->compare(\@single_introns, same_sense => 1); 
+
+  foreach my $ost (@{$ost_hsp_aref}) { # $ost_id, $chrom_start, $chrom_end, $chrom_strand
+    $got_a_match = 0;
+    if (my @results = $intron_match->match($ost)) { 
+      # check to see if the intron is completely covered by the OST
+      foreach my $result (@results) {
+	my ($prop1, $prop2)   = $intron_match->matching_proportions($result);
+	if ($prop2 == 1) {
+	  $got_a_match = 1;
 	}
-      }
-
-      # output unmatched mass-spec protein to the database
-      if ($got_a_match) {
-	my $ost_id = $ost->[0];
-	my $chrom_start = $ost->[1];
-	my $chrom_end = $ost->[2];
-	my $chrom_strand = $ost->[3];
-
-	my $anomaly_score = 1;	# OST are not so reliable, so give them a medium score
-
-	&output_to_database("OST_OVERLAPS_INTRON", $chromosome, $ost_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score, "");
       }
     }
 
-    $intron_match   = $ovlp->compare(\@single_introns, same_sense => 1); 
+    # output unmatched mass-spec protein to the database
+    if ($got_a_match) {
+      my $ost_id = $ost->[0];
+      my $chrom_start = $ost->[1];
+      my $chrom_end = $ost->[2];
+      my $chrom_strand = $ost->[3];
+      
+      my $anomaly_score = 1;	# OST are not so reliable, so give them a medium score
 
-    foreach my $rst (@{$rst_hsp_aref}) { # $rst_id, $chrom_start, $chrom_end, $chrom_strand
-      $got_a_match = 0;
-      if (my @results = $intron_match->match($rst)) { 
-	# check to see if the intron is completely covered by the RST
-	foreach my $result (@results) {
-	  my ($prop1, $prop2)   = $intron_match->matching_proportions($result);
-	  if ($prop2 == 1) {
-	    $got_a_match = 1;
-	  }
+      &output_to_database("OST_OVERLAPS_INTRON", $chromosome, $ost_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score, "");
+    }
+  }
+
+  $intron_match   = $ovlp->compare(\@single_introns, same_sense => 1); 
+
+  foreach my $rst (@{$rst_hsp_aref}) { # $rst_id, $chrom_start, $chrom_end, $chrom_strand
+    $got_a_match = 0;
+    if (my @results = $intron_match->match($rst)) { 
+      # check to see if the intron is completely covered by the RST
+      foreach my $result (@results) {
+	my ($prop1, $prop2)   = $intron_match->matching_proportions($result);
+	if ($prop2 == 1) {
+	  $got_a_match = 1;
 	}
-      }
-
-      # output unmatched mass-spec protein to the database
-      if ($got_a_match) {
-	my $rst_id = $rst->[0];
-	my $chrom_start = $rst->[1];
-	my $chrom_end = $rst->[2];
-	my $chrom_strand = $rst->[3];
-
-	my $anomaly_score = 5;	# huge score!
-
-	&output_to_database("RST_OVERLAPS_INTRON", $chromosome, $rst_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score, "");
       }
     }
 
-    $intron_match   = $ovlp->compare(\@single_introns, same_sense => 1); 
+    # output unmatched mass-spec protein to the database
+    if ($got_a_match) {
+      my $rst_id = $rst->[0];
+      my $chrom_start = $rst->[1];
+      my $chrom_end = $rst->[2];
+      my $chrom_strand = $rst->[3];
 
-    foreach my $mrna (@{$mrna_hsp_aref}) { # $mrna_id, $chrom_start, $chrom_end, $chrom_strand
-      $got_a_match = 0;
-      if (my @results = $intron_match->match($mrna)) { 
-	# check to see if the intron is completely covered by the MRNA
-	foreach my $result (@results) {
-	  my ($prop1, $prop2)   = $intron_match->matching_proportions($result);
-	  if ($prop2 == 1) {
-	    $got_a_match = 1;
-	  }
+      my $anomaly_score = 5;	# huge score!
+
+      &output_to_database("RST_OVERLAPS_INTRON", $chromosome, $rst_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score, "");
+    }
+  }
+
+  $intron_match   = $ovlp->compare(\@single_introns, same_sense => 1); 
+
+  foreach my $mrna (@{$mrna_hsp_aref}) { # $mrna_id, $chrom_start, $chrom_end, $chrom_strand
+    $got_a_match = 0;
+    if (my @results = $intron_match->match($mrna)) { 
+      # check to see if the intron is completely covered by the MRNA
+      foreach my $result (@results) {
+	my ($prop1, $prop2)   = $intron_match->matching_proportions($result);
+	if ($prop2 == 1) {
+	  $got_a_match = 1;
 	}
-      }
-
-      # output unmatched mass-spec protein to the database
-      if ($got_a_match) {
-	my $mrna_id = $mrna->[0];
-	my $chrom_start = $mrna->[1];
-	my $chrom_end = $mrna->[2];
-	my $chrom_strand = $mrna->[3];
-
-	my $anomaly_score = 5;	# huge score!
-
-	&output_to_database("MRNA_OVERLAPS_INTRON", $chromosome, $mrna_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score, "");
       }
     }
 
+    # output unmatched mass-spec protein to the database
+    if ($got_a_match) {
+      my $mrna_id = $mrna->[0];
+      my $chrom_start = $mrna->[1];
+      my $chrom_end = $mrna->[2];
+      my $chrom_strand = $mrna->[3];
 
+      my $anomaly_score = 5;	# huge score!
 
+      &output_to_database("MRNA_OVERLAPS_INTRON", $chromosome, $mrna_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score, "");
+    }
   }
 
 }
