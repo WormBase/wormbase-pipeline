@@ -1,7 +1,7 @@
 #!/usr/local/ensembl/bin/perl -w
 #
 # Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2008-03-05 15:28:31 $
+# Last edited on: $Date: 2008-03-05 15:31:37 $
 
 use lib $ENV{'CVS_DIR'};
 
@@ -327,7 +327,7 @@ sub process_yeast {
     my %YEAST_DESC;
     tie  (%YEAST_DESC ,'GDBM_File',"$ace_info_dbm", &GDBM_WRCREAT,0777) or die "cant open $ace_info_dbm :$!\n";
 
-    open (YEAST , "<$DB_dir/yeast.download");
+    open (YEAST , "<$DB_dir/download.yeast");
     my $linecount;
     while (<YEAST>) {
 	$linecount++;
