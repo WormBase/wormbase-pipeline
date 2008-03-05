@@ -1,7 +1,7 @@
 #!/usr/local/ensembl/bin/perl -w
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2008-02-28 14:41:50 $
+# Last edited by: $Author: mh6 $
+# Last edited on: $Date: 2008-03-05 15:24:21 $
 
 use lib $ENV{'CVS_DIR'};
 
@@ -356,8 +356,8 @@ sub process_yeast {
     open (ACE,">$acefile");
 
     while (<SOURCE>) {
-	if( />/ ) { 
-	    if (/>(\S+)\s+(\S+)\s+SGDID:(\w+)/) {
+	if( /\>/ ) { 
+	    if (/\>(\S+)\s+(\S+)\s+SGDID:(\w+)/) {
 		my $ID = $1;
 		print ACE "\nProtein : \"SGD:$ID\"\n";
 		print ACE "Peptide \"SGD:$ID\"\n";
@@ -369,7 +369,7 @@ sub process_yeast {
 
 		print ACE "\nPeptide : \"SGD:$ID\"\n"; 	
 		
-		print PEP "\>$ID\n";
+		print PEP ">$ID\n";
 	    }
 	    else {
 		print $_;
