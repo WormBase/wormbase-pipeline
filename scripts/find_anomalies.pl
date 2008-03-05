@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-03-04 16:27:26 $      
+# Last updated on: $Date: 2008-03-05 16:50:40 $      
 
 # Changes required by Ant: 2008-02-19
 # 
@@ -233,6 +233,10 @@ my @est_mismatches;
 &delete_anomalies("SPLIT_GENE_BY_TWINSCAN");
 &delete_anomalies("MERGE_GENES_BY_TWINSCAN");
 &delete_anomalies("UNMATCHED_MASS_SPEC_PEPTIDE");
+&delete_anomalies("EST_OVERLAPS_INTRON");
+&delete_anomalies("OST_OVERLAPS_INTRON");
+&delete_anomalies("RST_OVERLAPS_INTRON");
+&delete_anomalies("MRNA_OVERLAPS_INTRON");
 
 
 my $ace_output = $wormbase->wormpub . "/CURATION_DATA/anomalies_$species.ace";
@@ -265,26 +269,35 @@ foreach my $chromosome (@chromosomes) {
   print "reading GFF data\n";
   my @est_hsp = $ovlp->get_EST_BEST($chromosome);
   #my @est_paired_span = $ovlp->get_paired_span(@est_hsp); # change the ESTs from HSPs to start-to-end span of paired reads
-  my @cds_exons  = $ovlp->get_curated_CDS_exons($chromosome);
+  my @rst_hsp = $ovlp->get_RST_BEST($chromosome);
+  my @ost_hsp = $ovlp->get_OST_BEST($chromosome);
+  my @mrna_hsp = $ovlp->get_mRNA_BEST($chromosome);
+
+  my @CDS = $ovlp->get_curated_CDS($chromosome);
   my @pseudogenes = $ovlp->get_pseudogene($chromosome);
-  my @rRNA = $ovlp->get_rRNA_transcripts($chromosome);
-  #my @coding_transcript_exons = $ovlp->get_Coding_transcript_exons($chromosome);
   my @coding_transcripts = $ovlp->get_Coding_transcripts($chromosome);
   my @transposons = $ovlp->get_transposons($chromosome);
+
+  my @cds_exons  = $ovlp->get_curated_CDS_exons($chromosome);
   my @transposon_exons = $ovlp->get_transposon_exons($chromosome);
   my @noncoding_transcript_exons = $ovlp->get_Non_coding_transcript_exons($chromosome);
+  #my @coding_transcript_exons = $ovlp->get_Coding_transcript_exons($chromosome);
+
+  my @CDS_introns = $ovlp->get_CDS_introns($chromosome);
+
   my @TSL_SL1 = $ovlp->get_TSL_SL1($chromosome);
   my @TSL_SL2 = $ovlp->get_TSL_SL2($chromosome);
+
   my @homologies = $ovlp->get_blastx_homologies($chromosome);
+
   my @twinscan_exons = $ovlp->get_twinscan_exons($chromosome);
   my @twinscan_transcripts = $ovlp->get_twinscan_transcripts($chromosome);
   my @genefinder = $ovlp->get_genefinder_exons($chromosome);
-  my @waba_coding = $ovlp->get_waba_coding($chromosome);
-  my @repeatmasked = $ovlp->get_repeatmasked($chromosome);
+
   my @UTRs_5 = $ovlp->get_5_UTRs($chromosome);
   my @UTRs_3 = $ovlp->get_3_UTRs($chromosome);
-  my @CDS = $ovlp->get_curated_CDS($chromosome);
-  my @SAGE_tags = $ovlp->get_SAGE_tags($chromosome);
+
+  my @rRNA = $ovlp->get_rRNA_transcripts($chromosome);
   my @miRNA = $ovlp->get_miRNA($chromosome);
   my @ncRNA = $ovlp->get_ncRNA($chromosome);
   my @scRNA = $ovlp->get_scRNA($chromosome);
@@ -293,11 +306,15 @@ foreach my $chromosome (@chromosomes) {
   my @stRNA = $ovlp->get_stRNA($chromosome);
   my @tRNA = $ovlp->get_tRNA($chromosome);
   my @tRNAscan_SE_1_23 = $ovlp->get_tRNAscan_SE_1_23RNA($chromosome);
+
+  my @waba_coding = $ovlp->get_waba_coding($chromosome);
+  my @repeatmasked = $ovlp->get_repeatmasked($chromosome);
   my @repeatmasked_complex = $ovlp->get_repeatmasked_complex(@repeatmasked);
-  my @CDS_introns = $ovlp->get_CDS_introns($chromosome);
+  my @mass_spec_peptides = $ovlp->get_mass_spec_peptides($chromosome);
+  my @SAGE_tags = $ovlp->get_SAGE_tags($chromosome);
+
   my @check_introns_EST  = $ovlp->get_check_introns_EST($chromosome);
   my @check_introns_cDNA = $ovlp->get_check_introns_cDNA($chromosome);
-  my @mass_spec_peptides = $ovlp->get_mass_spec_peptides($chromosome);
 
 ######################################################################
 
@@ -357,6 +374,10 @@ foreach my $chromosome (@chromosomes) {
 
   print "finding unmatched mass spec peptides\n";
   &get_unmatched_mass_spec_peptides(\@mass_spec_peptides, \@cds_exons, \@transposon_exons, $chromosome);
+
+  print "finding introns refuted by EST\n";
+  &get_introns_refuted_by_est(\@CDS_introns, \@cds_exons, \@est_hsp, \@rst_hsp, \@ost_hsp, \@mrna_hsp, $chromosome);
+
 
 #################################################
 # these don't work very well - don't use
@@ -711,7 +732,7 @@ my $prev_chrom_start = $homology->[1];
 	if ($anomaly_score > 3) {$anomaly_score = 3;}
 	if ($anomaly_score < 0) {$anomaly_score = 0;}
 
-	print "FRAMESHIFTED_PROTEIN ANOMALY: $protein_id, $anomaly_start, $anomaly_end, $chrom_strand, $anomaly_score\n";
+	#print "FRAMESHIFTED_PROTEIN ANOMALY: $protein_id, $anomaly_start, $anomaly_end, $chrom_strand, $anomaly_score\n";
 	&output_to_database("FRAMESHIFTED_PROTEIN", $chromosome, $protein_id, $anomaly_start, $anomaly_end, $chrom_strand, $anomaly_score, '');
       }
     }
@@ -2456,6 +2477,159 @@ sub get_unmatched_mass_spec_peptides {
 
 
 ####################################################################################
+# find introns refuted by EST - i.e. intron with an est aligned across it
+#  &get_introns_refuted_by_est(\@CDS_introns, \@cds_exons, \@est_hsp, \@rst_hsp, \@ost_hsp, \@mrna_hsp, $chromosome);
+sub get_introns_refuted_by_est {
+
+  my ($CDS_introns_aref, $cds_exons_aref, $est_hsp_aref, $rst_hsp_aref, $ost_hsp_aref, $mrna_hsp_aref, $chromosome) = @_;
+
+
+# want to get all introns with no completely overlapping (isoform)
+# exons, because if there was an EST aligned across an intron
+# completely overlapped by an exon, the EST is simply confirming the
+# exon and says nothing about the correctness or otherwise of the
+# intron.
+
+  my $cds_match   = $ovlp->compare($cds_exons_aref, same_sense => 1); 
+  my @single_introns;		# the list of introns with no completely overlapping (isoform) exons
+  my $got_a_match = 0;
+
+  foreach my $intron (@{$CDS_introns_aref}) { # $intron_id, $chrom_start, $chrom_end, $chrom_strand
+    $got_a_match = 0;
+    if (my @results = $cds_match->match($intron)) { 
+      # don't want the intron to be entirely overlapped by the CDS exon
+      foreach my $result (@results) {
+	my ($prop1, $prop2)   = $cds_match->matching_proportions($result);
+	if ($prop1 == 1) {
+	  $got_a_match = 1;
+	}
+      }
+      if (! $got_a_match) {
+	push @single_introns, $intron;
+      }
+    }
+
+    # it should be sorted by start position already, but just in case, do it again
+    @single_introns = sort {$a->[1] <=> $b->[1]} (@single_introns); 
+
+# now check to see if any of these non-overlapped introns have an EST/OST/RST/mRNA
+# aligned across them, in which case they are an anomaly
+
+    my $intron_match   = $ovlp->compare(\@single_introns, same_sense => 1); 
+    
+
+    foreach my $est (@{$est_hsp_aref}) { # $est_id, $chrom_start, $chrom_end, $chrom_strand
+      $got_a_match = 0;
+      if (my @results = $intron_match->match($est)) { 
+	# check to see if the intron is completely covered by the EST
+	foreach my $result (@results) {
+	  my ($prop1, $prop2)   = $intron_match->matching_proportions($result);
+	  if ($prop2 == 1) {
+	    $got_a_match = 1;
+	  }
+	}
+      }
+
+      # output unmatched mass-spec protein to the database
+      if ($got_a_match) {
+	my $est_id = $est->[0];
+	my $chrom_start = $est->[1];
+	my $chrom_end = $est->[2];
+	my $chrom_strand = $est->[3];
+
+	my $anomaly_score = 5;	# huge score!
+
+	&output_to_database("EST_OVERLAPS_INTRON", $chromosome, $est_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score, "");
+      }
+    }
+
+    $intron_match   = $ovlp->compare(\@single_introns, same_sense => 1); 
+
+    foreach my $ost (@{$ost_hsp_aref}) { # $ost_id, $chrom_start, $chrom_end, $chrom_strand
+      $got_a_match = 0;
+      if (my @results = $intron_match->match($ost)) { 
+	# check to see if the intron is completely covered by the OST
+	foreach my $result (@results) {
+	  my ($prop1, $prop2)   = $intron_match->matching_proportions($result);
+	  if ($prop2 == 1) {
+	    $got_a_match = 1;
+	  }
+	}
+      }
+
+      # output unmatched mass-spec protein to the database
+      if ($got_a_match) {
+	my $ost_id = $ost->[0];
+	my $chrom_start = $ost->[1];
+	my $chrom_end = $ost->[2];
+	my $chrom_strand = $ost->[3];
+
+	my $anomaly_score = 1;	# OST are not so reliable, so give them a medium score
+
+	&output_to_database("OST_OVERLAPS_INTRON", $chromosome, $ost_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score, "");
+      }
+    }
+
+    $intron_match   = $ovlp->compare(\@single_introns, same_sense => 1); 
+
+    foreach my $rst (@{$rst_hsp_aref}) { # $rst_id, $chrom_start, $chrom_end, $chrom_strand
+      $got_a_match = 0;
+      if (my @results = $intron_match->match($rst)) { 
+	# check to see if the intron is completely covered by the RST
+	foreach my $result (@results) {
+	  my ($prop1, $prop2)   = $intron_match->matching_proportions($result);
+	  if ($prop2 == 1) {
+	    $got_a_match = 1;
+	  }
+	}
+      }
+
+      # output unmatched mass-spec protein to the database
+      if ($got_a_match) {
+	my $rst_id = $rst->[0];
+	my $chrom_start = $rst->[1];
+	my $chrom_end = $rst->[2];
+	my $chrom_strand = $rst->[3];
+
+	my $anomaly_score = 5;	# huge score!
+
+	&output_to_database("RST_OVERLAPS_INTRON", $chromosome, $rst_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score, "");
+      }
+    }
+
+    $intron_match   = $ovlp->compare(\@single_introns, same_sense => 1); 
+
+    foreach my $mrna (@{$mrna_hsp_aref}) { # $mrna_id, $chrom_start, $chrom_end, $chrom_strand
+      $got_a_match = 0;
+      if (my @results = $intron_match->match($mrna)) { 
+	# check to see if the intron is completely covered by the MRNA
+	foreach my $result (@results) {
+	  my ($prop1, $prop2)   = $intron_match->matching_proportions($result);
+	  if ($prop2 == 1) {
+	    $got_a_match = 1;
+	  }
+	}
+      }
+
+      # output unmatched mass-spec protein to the database
+      if ($got_a_match) {
+	my $mrna_id = $mrna->[0];
+	my $chrom_start = $mrna->[1];
+	my $chrom_end = $mrna->[2];
+	my $chrom_strand = $mrna->[3];
+
+	my $anomaly_score = 5;	# huge score!
+
+	&output_to_database("MRNA_OVERLAPS_INTRON", $chromosome, $mrna_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score, "");
+      }
+    }
+
+
+
+  }
+
+}
+
 ####################################################################################
 ####################################################################################
 ####################################################################################
