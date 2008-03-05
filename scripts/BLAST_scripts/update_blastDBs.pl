@@ -1,7 +1,7 @@
 #!/usr/local/ensembl/bin/perl -w
 #
 # Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2008-03-05 15:26:47 $
+# Last edited on: $Date: 2008-03-05 15:28:31 $
 
 use lib $ENV{'CVS_DIR'};
 
@@ -310,7 +310,7 @@ sub process_yeast {
     my $source_file = "$blastdir/yeast${ver}.pep";
     my $acefile     = "$acedir/yeast.ace";
     # output initally goes to tmp file
-    my $pepfile  = "$blastdir/yeast${$ver}.pep.tmp"; 
+    my $pepfile  = "$blastdir/yeast${ver}.pep.tmp"; 
 
 
     # this bit creates a DBM database of ORF => description
