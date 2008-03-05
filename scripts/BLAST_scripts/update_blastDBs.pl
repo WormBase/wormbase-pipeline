@@ -1,7 +1,7 @@
 #!/usr/local/ensembl/bin/perl -w
 #
 # Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2008-03-05 15:35:39 $
+# Last edited on: $Date: 2008-03-05 15:39:19 $
 
 use lib $ENV{'CVS_DIR'};
 
@@ -330,6 +330,7 @@ sub process_yeast {
     open (YEAST , "<$DB_dir/download.yeast");
     my $linecount;
     while (<YEAST>) {
+	next unless /\>/;
 	$linecount++;
 	chomp;
 	my @info = split(/\t/,$_);
@@ -349,6 +350,7 @@ sub process_yeast {
 	    $YEAST_DESC{$info[5]} =~ s/"/'/g;	#"
 	}
     }
+    close YEAST;
 
 # now extract info from main FASTA file and write ace file
     open (SOURCE,"<$source_file");
