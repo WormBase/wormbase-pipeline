@@ -67,8 +67,8 @@ while( my $slice = shift @$slices) {
 		my %gene_to_dump = (
 			stable_id => $gene_stable_id,
 			name      => $slice_name,
-			start     => $gene->start(),
-			end       => $gene->end(),
+			start     => $gene->seq_region_start(),
+			end       => $gene->seq_region_end(),
 			strand    => $gene->strand(),
 			note      => ($gene->status()||'PREDICTED' ). " " . $gene->biotype(),
 			public_name => $gene->stable_id(),
@@ -111,8 +111,8 @@ while( my $slice = shift @$slices) {
 				push @{${${$gene_to_dump{'transcript'}}[-1]}{'exon'}}, {
 					stable_id => $exon_stable_id,
 					name      => $slice_name,
-					start     => $exon->start(),
-					end       => $exon->end(),
+					start     => $exon->seq_region_start(),
+					end       => $exon->seq_region_end(),
 					strand    => $exon->strand(),
 				}
 			}
@@ -123,8 +123,8 @@ while( my $slice = shift @$slices) {
 				push @{${${$gene_to_dump{'transcript'}}[-1]}{'cds'}}, {
 					stable_id => $translation_id,
 					name      => $slice_name,
-					start     => $cds->start(),
-					end       => $cds->end(),
+					start     => $cds->seq_region_start(),
+					end       => $cds->seq_region_end(),
 					strand    => $cds->strand(),
 					phase     => (3-$cds->phase())%3, # phase/frame conversion to a sane system
 				}
@@ -145,8 +145,8 @@ while( my $slice = shift @$slices) {
 			target_start=> $feature->hstart,
 			target_stop => $feature->hend,
 			strand      => ($feature->strand > 0?'+':'-'),
-			hit_start   => $feature->start,
-			hit_stop    => $feature->end,
+			hit_start   => $feature->seq_region_start,
+			hit_stop    => $feature->seq_region_end,
 			score       => $feature->score,
 			p_value     => $feature->p_value,
 			dbid        => $feature->dbID,
@@ -170,8 +170,8 @@ while( my $slice = shift @$slices) {
         	my $stripped_feature = {
 			target_id   => $feature->slice->seq_region_name,
 			strand      => ($feature->strand > 0?'+':'-'),
-			hit_start   => $feature->start,
-			hit_stop    => $feature->end,
+			hit_start   => $feature->seq_region_start,
+			hit_stop    => $feature->seq_region_end,
 			score       => ($feature->score||'.'),
 			dbid        => $feature->dbID,
 			logic_name  => $feature->analysis->logic_name,
