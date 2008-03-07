@@ -10,7 +10,7 @@
 #
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2008-02-15 16:56:23 $
+# Last updated on: $Date: 2008-03-07 11:51:47 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -32,7 +32,7 @@ GetOptions(
     "test"    => \$test,
     "verbose" => \$verbose,
     "store:s" => \$store,
-    "species" => \$species
+    "species:s" => \$species
 );
 
 if ($store) {
@@ -269,8 +269,8 @@ foreach my $key ( sort keys %CE_history ) {
     }
 
     print ACE "Database \"WORMPEP\" WORMPEP_ID \"$WORMPEP_PREFIX:$key\"\n";
- 	print ACE "Species \"Caenorhabditis elegans\"\n";
-    print ACE "Wormpep\n";
+ 	print ACE "Species \"".$wormbase->full_name."\"\n";
+    print ACE "Wormpep\n" if ($wormbase->species eq 'elegans');
 
     if ( $CE_live{$key} == 1 ) {
         print ACE "Live\n";
@@ -278,11 +278,12 @@ foreach my $key ( sort keys %CE_history ) {
             print ACE "Corresponding_CDS \"$CE_corr_CDS{$key}[$ii]\"\n";
         }
     }
-    print ACE "\n";
-    if ($CE_sequence{$key}) {
-	    print ACE "Peptide : \"$WORMPEP_PREFIX:$key\"\n";
-    	print ACE "$CE_sequence{$key}\n";
-    	print ACE "Molecular_weight ", &get_mol_weight( $CE_sequence{$key} )," Inferred_automatically \"build_pepace.pl\"\n";
+    my $pepid = $CE_gene{$key}->[0];
+    if ($CE_sequence{$pepid}) {
+       	print ACE "Molecular_weight ", &get_mol_weight( $CE_sequence{$pepid} )," Inferred_automatically \"build_pepace.pl\"\n";
+	    print ACE "\nPeptide : \"$WORMPEP_PREFIX:$key\"\n";
+    	print ACE "$CE_sequence{$pepid}\n";
+
     }
 }
 close ACE;
