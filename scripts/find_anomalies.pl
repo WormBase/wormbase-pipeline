@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-03-05 16:55:56 $      
+# Last updated on: $Date: 2008-03-07 13:45:56 $      
 
 # Changes required by Ant: 2008-02-19
 # 
@@ -237,6 +237,7 @@ my @est_mismatches;
 &delete_anomalies("OST_OVERLAPS_INTRON");
 &delete_anomalies("RST_OVERLAPS_INTRON");
 &delete_anomalies("MRNA_OVERLAPS_INTRON");
+&delete_anomalies("INCOMPLETE_PFAM_MOTIF");
 
 
 my $ace_output = $wormbase->wormpub . "/CURATION_DATA/anomalies_$species.ace";
@@ -417,6 +418,10 @@ foreach my $chromosome (@chromosomes) {
   }
 }
 
+
+# get the incomlpete Pfam motif anomalies - this is currently chromosome independent
+&find_incomplete_pfam_motifs();
+
 # close the output datafile for St. Louis
 if ($datafile) {
   close(DAT);			
@@ -432,7 +437,7 @@ foreach my $repeat (sort {$repeat_count{$a} <=> $repeat_count{$b} } keys %repeat
 }
 close(REPEATS);			
 
-# output file of ESTs with small mismatches to teh genomic sequence
+# output file of ESTs with small mismatches to the genomic sequence
 my $est_mismatch_file = $wormbase->wormpub . "/CURATION_DATA/est_mismatch_genome_$species.dat";
 open (EST_MISMATCH, "> $est_mismatch_file") || die "Can't open $est_mismatch_file\n";
 print EST_MISMATCH "# ESTs which have small mismatches to the genomic sequence\n";
@@ -2628,6 +2633,313 @@ sub get_introns_refuted_by_est {
 
 ####################################################################################
 ####################################################################################
+####################################################################################
+####################################################################################
+####################################################################################
+
+####################################################################################
+# look at high-scoring pfam motifs and report ones that are missing substantial bits at their ends
+
+sub find_incomplete_pfam_motifs {
+
+
+  my $MOTIF_THRESHOLD = 100;	# amount of motif that can be missing before we report it
+
+  my $pfam_id;
+
+# get the lengths of the Pfam motifs
+  print "get lengths of Pfam motifs\n";
+  my %pfam_length;
+  my $pfam_file = "/tmp/Pfam";
+  $wormbase->run_command("scp -q farm-login:/data/blastdb/Worms/interpro_scan/iprscan/data/Pfam $pfam_file", $log);
+  open (PFAM, "< $pfam_file") || die "can't open $pfam_file\n";
+  while (my $line = <PFAM>) {
+    if ($line =~ /^ACC\s+(PF\d+)/) {
+      $pfam_id = $1;
+    }
+    if ($line =~ /^LENG\s+(\d+)/) {
+      $pfam_length{$pfam_id} = $1;
+    }
+  }
+  close(PFAM);
+  $wormbase->run_command("rm -f $pfam_file", $log);
+
+# find the incomplete Pfam motifs
+
+# open tace connection to Protein object and slurp up the contents
+  my $cmd = "query find Protein \"WP:*\" Motif_homol Pfam\nshow -a Motif_homol\nquit\n";
+  open (TACE, "echo '$cmd' | $tace $database |");
+  my @slurp = <TACE>;
+  close TACE;
+
+# Now have data like:
+#Protein : "WP:CE42042"
+#Motif_homol      "PFAM:PF00635" "pfam" 43.099998 16 120 1 114
+#Motif_homol      "INTERPRO:IPR000535" "interpro" 0.000000 16 133 1 118
+#Motif_homol      "INTERPRO:IPR008962" "interpro" 0.000000 7 134 1 126
+
+  my $protein_id;
+
+  print "find incomplete Pfam motifs\n";
+  foreach my $line (@slurp) {
+#  print "$line\n";
+    if ($line =~ /^Protein\s+\:\s+\"(\S+)\"/) {$protein_id = $1;}
+    if ($line =~ /PFAM/) {
+      my @split = split /\s+/, $line;
+      my ($pfam_id) = $split[1] =~ /PFAM\:(\S+)\"/;
+      my $score = $split[3];
+      my $prot_start = $split[4];
+      my $prot_end = $split[5];
+      my $motif_start = $split[6];
+      my $motif_end = $split[7];
+
+      if ($score < 100) {next;}
+      # see if we have a partial match at the start
+      if ($motif_start > $MOTIF_THRESHOLD) {
+	#print "$protein_id : score: $score not start of $pfam_id (1) $motif_start..$motif_end\n";
+	my ($chromosome, $chrom_start, $chrom_end) = &convert_protein_coords_to_chrom_coords($protein_id, $prot_start, $prot_end);
+      
+	# ouput details of the region to the anomalies database
+	if (defined $chromosome) {
+	  my $chrom_strand = '+';
+	  if ($chrom_start > $chrom_end) {
+	    $chrom_strand = '-';
+	    my $tmp = $chrom_end;
+	    $chrom_end = $chrom_start;
+	    $chrom_start = $tmp;
+	  }
+
+	  # if we want the anomalies GFF file, output these details
+	  if ($supplementary) {
+	    my $gff_file = "$database/CHROMOSOMES/SUPPLEMENTARY_GFF/${chromosome_prefix}${chromosome}_curation_anomalies.gff";
+	    open (OUTPUT_GFF, ">>$gff_file") || die "Can't open $gff_file";
+	  }
+	  
+	  print "$chromosome, $chrom_start, $chrom_end, $chrom_strand $pfam_id missing motif at start\n";
+	  my $anomaly_score = 2;
+	  &output_to_database("INCOMPLETE_PFAM_MOTIF", $chromosome, $pfam_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score, 'missing part of motif at start');
+	  
+	  if ($supplementary) {
+	    close(OUTPUT_GFF);
+	  }
+	}
+
+      } elsif (exists $pfam_length{$pfam_id} && $motif_end < $pfam_length{$pfam_id} - $MOTIF_THRESHOLD) {
+	# ... and at the end
+
+	#print "$protein_id : score: $score not end of $pfam_id $motif_start..$motif_end ($pfam_length{$pfam_id})\n";
+	my ($chromosome, $chrom_start, $chrom_end) = &convert_protein_coords_to_chrom_coords($protein_id, $prot_start, $prot_end);
+
+	# ouput details of the region to the anomalies database
+	if (defined $chromosome) {
+	  my $chrom_strand = '+';
+	  if ($chrom_start > $chrom_end) {
+	    $chrom_strand = '-';
+	    my $tmp = $chrom_end;
+	    $chrom_end = $chrom_start;
+	    $chrom_start = $tmp;
+	  }
+
+	  # if we want the anomalies GFF file, output these details
+	  if ($supplementary) {
+	    my $gff_file = "$database/CHROMOSOMES/SUPPLEMENTARY_GFF/${chromosome_prefix}${chromosome}_curation_anomalies.gff";
+	    open (OUTPUT_GFF, ">>$gff_file") || die "Can't open $gff_file";
+	  }
+	  
+	  print "$chromosome, $chrom_start, $chrom_end, $chrom_strand $pfam_id missing motif at end\n";
+	  my $anomaly_score = 2;
+	  &output_to_database("INCOMPLETE_PFAM_MOTIF", $chromosome, $pfam_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score, 'missing part of motif at end');
+	  
+	  if ($supplementary) {
+	    close(OUTPUT_GFF);
+	  }
+	}
+	
+	
+      }
+    }
+  }
+
+}
+
+
+
+##############################################################
+#
+# Subroutines for mapping proteins to the genome
+#
+##############################################################
+
+
+#      my ($chromosome, $chrom_start, $chrom_end) = &convert_protein_coords_to_chrom_coords($protein_id, $prot_start, $prot_end);
+
+sub convert_protein_coords_to_chrom_coords {
+
+  my ($protein_id, $prot_start, $prot_end) = @_;
+
+ # get CDS ID for this protein
+  my ($cds_name) = &get_cds_from_protein($protein_id);
+  if (! defined $cds_name) {return (undef, undef, undef);} # this is a history CDS
+
+ # get the CDS details
+  my ($clone, $cds_start, $cds_end, $exons_start_ref, $exons_end_ref) = &get_cds_details($cds_name);
+  if (! defined $clone) {return (undef, undef, undef);} # some problem here
+
+ # map the positions in the protein to the genome
+  my ($chromosome, $chrom_start, $chrom_end);
+  ($chromosome, $chrom_start) = &get_genome_mapping($cds_name, $clone, $cds_start, $cds_end, $exons_start_ref, $exons_end_ref, $prot_start); 
+  if (! defined $chromosome) {return (undef, undef, undef);} # some problem here
+  ($chromosome, $chrom_end)   = &get_genome_mapping($cds_name, $clone, $cds_start, $cds_end, $exons_start_ref, $exons_end_ref, $prot_end); 
+
+
+  # knock the prefix off the chromosome as it is added on again in other places
+  my $prefix = $wormbase->chromosome_prefix;
+  $chromosome =~ /$prefix(\S+)/;
+  $chromosome = $1;
+
+  return ($chromosome, $chrom_start, $chrom_end);
+
+}
+##########################################
+#  my (cds_name) = &get_cds_from_protein($protein_id);
+# get the CDS ID from the Protein ID
+
+sub get_cds_from_protein {
+  my ($protein_id) = @_;
+
+
+  my $protein_obj = $ace->fetch("Protein" => $protein_id);
+  #print "get CDS for $protein_id\n";
+  my $cds_id = $protein_obj->Corresponding_CDS;
+  $protein_obj->DESTROY();
+  if (! defined $cds_id) {
+    #print "history CDS\n";
+    return undef;
+  }
+  return $cds_id->name;
+
+}
+
+##########################################
+# my ($clone, $cds_start, $exons_start_ref, $exons_end_ref) = &get_cds_details($protein_name);
+# get the clone, clone start position and exons list from a CDS
+#
+
+sub get_cds_details {
+  my ($cds_name) = @_;
+
+  #print "Ace fetch->" if ($verbose);
+  #print "$cds_name\n" if ($verbose);
+  my $cds_obj = $ace->fetch("CDS" => $cds_name);
+  # debug
+  if (! defined $cds_obj) {
+    #print "cds problem\n";
+    return (undef, undef, undef, undef, undef);
+  }
+
+  my $clone = $cds_obj->Sequence;
+  if (! defined $clone) {
+    #print "clone problem\n";
+    return (undef, undef, undef, undef, undef);
+  }
+
+  # get the named object
+  # then get the data following a tag in that object
+  # and the NEXT data following the tag
+  my @exons_start = $cds_obj->Source_exons;
+  my @exons_end = $cds_obj->Source_exons(2);
+  $cds_obj->DESTROY();
+  if (! @exons_start || ! @exons_end) {
+    #print "exons problem\n";
+    return (undef, undef, undef, undef, undef);
+  }
+
+  # get the start position of the CDS in the clone's SMap
+  #print "Ace fetch->clone = $clone\n" if ($verbose);
+  my $clone_obj = $ace->fetch("Sequence" => $clone);
+  if (! defined $clone_obj) {
+    #print "cds start problem\n";
+    return (undef, undef, undef, undef, undef);
+  }
+
+  # You have to creep up on the data you want by using the $obj->at()
+  # structure, in which you can specify exactly the path of tags and
+  # data through the object that you wish to traverse and then you can
+  # get the list of resulting positions under the sub-path that you
+  # want. This means that you must break up the query into a loop
+  # looking at every score value of every wormbase homology and then
+  # you can get the positions under that score.
+
+  my $foundit = 0;
+  my ($cds, $cds_start, $cds_end);
+  foreach $clone_obj ($clone_obj->at('SMap.S_child.CDS_child')) {
+    ($cds, $cds_start, $cds_end) = $clone_obj->row;
+    if ($cds eq $cds_name) {
+      $foundit = 1;
+      last;
+    }
+  }
+
+  if (! $foundit || ! defined $cds_start || ! defined $cds_end) {
+    #print "Can't fetch start/end positions for $cds_name in $clone\n";
+    return (undef, undef, undef, undef, undef);
+  }
+
+  # if the CDS is on the reverse sense, then $cds_end > $cds_start
+  return ($clone, $cds_start, $cds_end, \@exons_start, \@exons_end);
+
+}
+
+##########################################
+# my @homol_lines = &get_genome_mapping($cds_name, $clone, $cds_start, $exons_start_ref, $exons_end_ref, $prot_pos);
+# Convert a protein position to a genomic position
+
+sub get_genome_mapping {
+  my ($cds_name, $clone_name, $cds_start, $cds_end, $exons_start_ref, $exons_end_ref, $prot_pos) = @_;
+
+  my ($chromosome, $chrom_pos);
+  my $clone_pos;
+
+  # the positions of the exons on the clone relative to the start of the CDS
+  my @exons_start = @{$exons_start_ref};
+  my @exons_end = @{$exons_end_ref};
+
+  # convert the protein position to CDS coding position
+  my $cds_pos = ($prot_pos * 3) - 2; # start at the beginning of the codon, not the end :-)
+
+  # go through the exons seeing which one the position we want is in
+  my $exon_count = 0;
+  my $prev_end = 0;
+  foreach my $exon_start (@exons_start) {
+    my $exon_length = $exons_end[$exon_count] - $exon_start + 1;
+    my $cds_exon_start = $prev_end + 1;	# position of the start of this exon in the CDS
+    my $cds_exon_end = $cds_exon_start + $exon_length - 1;
+    
+    if ($cds_pos >= $cds_exon_start && $cds_pos <= $cds_exon_end) {
+      #print "pos is in this exon\n";
+      my $pos_in_this_exon = $cds_pos - $cds_exon_start;
+      if ($cds_start < $cds_end) { # forward sense
+	$clone_pos = $cds_start + $exon_start + $pos_in_this_exon  - 1;
+      } else {			# reverse sense
+	$clone_pos = $cds_start - ($exon_start + $pos_in_this_exon  - 1);
+      }
+      ($chromosome, $chrom_pos) = $coords->Coords_2chrom_coords($clone_name, $clone_pos);
+      last;
+    }
+
+    $prev_end = $cds_exon_end;
+    $exon_count++;
+  }
+
+
+  return ($chromosome, $chrom_pos);
+}
+
+
+####################################################################################
+#
+# General Subroutines
+#
 ####################################################################################
 
 ##########################################
