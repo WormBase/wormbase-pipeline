@@ -7,8 +7,8 @@
 # Gets sequences ready for blatting, blats sequences, processes blat output, makes confirmed introns
 # and virtual objects to hang the data onto
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2007-06-18 15:21:32 $
+# Last edited by: $Author: pad $
+# Last edited on: $Date: 2008-03-10 13:28:00 $
 
 
 use strict;
@@ -408,8 +408,8 @@ sub virtual_objects_blat {
   my ($name,$length,$total,$first,$second,$m,$n);
   
   # autoace
-  open (OUT_autoace_homol, ">$blat_dir/virtual_objects.autoace.blat.$data.ace") or die "$!";
-  open (OUT_autoace_feat,  ">$blat_dir/virtual_objects.autoace.ci.$data.ace")   or die "$!";
+  open (OUT_autoace_homol, ">$blat_dir/virtual_objects.".$wormbase->species.".blat.$data.ace") or die "$!";
+  open (OUT_autoace_feat,  ">$blat_dir/virtual_objects.".$wormbase->species.".ci.$data.ace")   or die "$!";
   
   open (ACE, "<$blat_dir/chromosome.ace") || die &usage(11);
   while (<ACE>) {
@@ -454,7 +454,7 @@ sub virtual_objects_blat {
   #             don't rock the boat...
 
   if ( ($data eq "nematode") || ($data eq "tc1") || ($data eq "ncrna") || ($data eq "embl") || ($data eq "washu") || ($data eq "nembase")) {
-    unlink ("$blat_dir/virtual_objects.autoace.ci.$data.ace");
+    unlink ("$blat_dir/virtual_objects.".$wormbase->species.".ci.$data.ace");
   }
 
 }

@@ -6,8 +6,8 @@
 #
 # Exporter to map blat data to genome and to find the best match for each EST, mRNA, OST, etc.
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2008-02-26 14:39:07 $
+# Last edited by: $Author: pad $
+# Last edited on: $Date: 2008-03-10 13:29:32 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -98,7 +98,7 @@ $log->log_and_die("no type specified\n") unless $type;
 $log->write_to($wormbase->runtime.": Start mapping\n\n");
 
 # open input and output filehandles
-open(ACE,  ">$blat_dir/autoace.${qspecies}_$type.ace")  or die "Cannot open $blat_dir/autoace.${qspecies}_${type}.ace $!\n";
+open(ACE,  ">$blat_dir/".$wormbase->species.".${qspecies}_$type.ace")  or die "Cannot open $blat_dir/$wormbase->species.${qspecies}_${type}.ace $!\n";
 open(BLAT, "<$blat_dir/${qspecies}_${type}_out.psl")    or die "Cannot open $blat_dir/${qspecies}_${type}_out.psl $!\n";
 
 my $number_of_replacements = 0;
@@ -306,9 +306,9 @@ if ($est || $ost) {
 # produce outfile for best matches #
 ####################################
 if ($nematode || $washu || $nembase) {
-  $wormbase->run_command("mv $blat_dir/autoace.$type.ace $blat_dir/autoace.blat.$type.ace", $log);
+  $wormbase->run_command("mv $blat_dir/".$wormbase->species.".$type.ace $blat_dir/$wormbase->species.blat.$type.ace", $log);
 } else {
-  open (AUTBEST, ">$blat_dir/autoace.best.${qspecies}_$type.ace");
+  open (AUTBEST, ">$blat_dir/".$wormbase->species.".best.${qspecies}_$type.ace");
   my $method = $qspecies eq $wormbase->species ? "BLAT_${type}_BEST" : "BLAT_Caen_${type}_BEST";
   $method = "BLAT_".uc($qspecies) if grep(/$qspecies/, @nematodes);
   foreach my $found (sort keys %best) {
@@ -379,7 +379,7 @@ if ($nematode || $washu || $nembase) {
 
 unless ($nematode || $washu || $nembase) {
   # Open new (final) output files for autoace, camace, and stlace
-  open (OUT_autoace, ">$blat_dir/autoace.blat.${qspecies}_$type.ace") or $log->log_and_die("cant open $blat_dir/autoace.blat.${qspecies}_$type.ace :$!");
+  open (OUT_autoace, ">$blat_dir/".$wormbase->species.".blat.${qspecies}_$type.ace") or $log->log_and_die("cant open $blat_dir/$wormbase->species.blat.${qspecies}_$type.ace :$!");
 
   # Change input separator to paragraph mode, but store what it old mode in $oldlinesep
   my $oldlinesep = $/;
@@ -389,7 +389,7 @@ unless ($nematode || $washu || $nembase) {
   my $superlink = "";
 
   # assign 
-  open(ABEST,  "<$blat_dir/autoace.best.${qspecies}_$type.ace") or $log->log_and_die("cant open $blat_dir/autoace.best.${qspecies}_$type.ace !$\n");
+  open(ABEST,  "<$blat_dir/".$wormbase->species.".best.${qspecies}_$type.ace") or $log->log_and_die("cant open $blat_dir/$wormbase->species.best.${qspecies}_$type.ace !$\n");
   while (<ABEST>) {
     if ($_ =~ /^Homol_data/) {
       # flag each blat hit which is best (all of them) - set $line{$_} to 1
@@ -409,7 +409,7 @@ unless ($nematode || $washu || $nembase) {
   # output those blat OTHER hits which are not flagged as BLAT_BEST in the .best.ace file
   # Does this by comparing entries in %line hash
 
-  open(AOTHER, "<$blat_dir/autoace.${qspecies}_$type.ace");
+  open(AOTHER, "<$blat_dir/".$wormbase->species.".${qspecies}_$type.ace");
   while (<AOTHER>) {
     if ($_ =~ /^Homol_data/) {
       my $line = $_;
@@ -434,7 +434,7 @@ unless ($nematode || $washu || $nembase) {
 
   if ($intron) {
     
-    open(CI_auto, ">$blat_dir/autoace.ci.${qspecies}_${type}.ace");
+    open(CI_auto, ">$blat_dir/".$wormbase->species.".ci.${qspecies}_${type}.ace");
     
     foreach my $link (sort keys %ci) {
       my %double;
@@ -465,7 +465,7 @@ unless ($nematode || $washu || $nembase) {
 
 
 #compress acefiles so that all object data is loaded together, expanded to run on all homol
-my @filenames = ("autoace.${qspecies}_$type.ace", "autoace.best.${qspecies}_$type.ace", "autoace.blat.${qspecies}_$type.ace", );
+my @filenames = ($wormbase->species.".${qspecies}_$type.ace", $wormbase->species.".best.${qspecies}_$type.ace", $wormbase->species.".blat.${qspecies}_$type.ace", );
 my $filename;
 $log->write_to("\n#########################################\nCompressing DNA_homolo acefiles\n#########################################\n");
 foreach $filename (@filenames) {
@@ -535,8 +535,8 @@ sub make_virt_objs {
   my ($name,$length,$total,$first,$second,$m,$n);
   
   # autoace
-  open (OUT_autoace_homol, ">>$blat_dir/virtual_objects.autoace.blat.$data.ace") or die "$!";
-  open (OUT_autoace_feat,  ">>$blat_dir/virtual_objects.autoace.ci.$data.ace")   or die "$!";
+  open (OUT_autoace_homol, ">>$blat_dir/virtual_objects.".$wormbase->species.".blat.$data.ace") or die "$!";
+  open (OUT_autoace_feat,  ">>$blat_dir/virtual_objects.".$wormbase->species.".ci.$data.ace")   or die "$!";
   
   foreach my $name (keys %make_virt_obj) {
 	$length = $make_virt_obj{$name};
@@ -582,8 +582,8 @@ __END__
 =head2 USAGE
 
 blat2ace.pl maps blat output to acedb. Thereby, it produces output for autoace and camace
-(autoace.ace and camace,ace). In addition, it produces files assigning the ESTs to one place 
-in the genome (autoace.best.ace and camace.best.ace). ESTs that have more than one best 
+(species.ace and camace,ace). In addition, it produces files assigning the ESTs to one place 
+in the genome (species.best.ace and camace.best.ace). ESTs that have more than one best 
 match are reported in morethan1match.txt. 
 
 blat2ace.pl  arguments:
@@ -596,7 +596,7 @@ blat2ace.pl  arguments:
 
 =item 
 
--intron => produce output for confirmed introns (autoace.ci.ace, camace.ci.ace)
+-intron => produce output for confirmed introns (species.ci.ace, camace.ci.ace)
 
 =item 
 

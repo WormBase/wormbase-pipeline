@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl5.8.0 -w
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2008-02-20 14:40:25 $
+# Last edited by: $Author: pad $
+# Last edited on: $Date: 2008-03-10 13:29:32 $
 
 
 use lib $ENV{'CVS_DIR'};
@@ -211,20 +211,20 @@ if( $load ) {
       $log->write_to("loading BLAT data - $type\n");
 
       # virtual objs
-      my $file =  "$blat_dir/virtual_objects.autoace.blat.$type.ace";
+      my $file =  "$blat_dir/virtual_objects.".$wormbase->species.".blat.$type.ace";
       $wormbase->load_to_database( $database, $file,"virtual_objects_$type", $log);
 
       # Don't need to add confirmed introns from nematode data (because there are none!)
       unless ( ($type eq "nematode") || ($type eq "washu") || ($type eq "nembase") || ($type eq "tc1") || ($type eq "embl")|| ($type eq "ncrna") ) {
-	$file = "$blat_dir/virtual_objects.autoace.ci.$type.ace"; 
+	$file = "$blat_dir/virtual_objects.".$wormbase->species.".ci.$type.ace"; 
 	$wormbase->load_to_database($database, $file, "blat_confirmed_introns_$type", $log);
 	
-	$file = "$blat_dir/autoace.good_introns.$type.ace";
+	$file = "$blat_dir/".$wormbase->species.".good_introns.$type.ace";
 	$wormbase->load_to_database($database, $file, "blat_good_introns_$type", $log);
       }
 
       # BLAT results
-      $file = "$blat_dir/autoace.blat.${species}_$type.ace";
+      $file = "$blat_dir/".$wormbase->species.".blat.${species}_$type.ace";
       $wormbase->load_to_database($database, $file, "blat_${species}_${type}_data", $log);
     }
   }

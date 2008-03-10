@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl -w
 # Last updated by: $Author: pad $     
-# Last updated on: $Date: 2008-03-05 11:21:11 $      
+# Last updated on: $Date: 2008-03-10 13:28:00 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -139,27 +139,27 @@ sub parse_briggsae_data {
 sub parse_blat_data {
   $log->write_to("loading BLAT data\n");
   my @files = (
-	       'autoace.blat.embl.ace',	       'autoace.blat.est.ace',
-	       'autoace.blat.mrna.ace',	       'autoace.blat.ncrna.ace',
-	       'autoace.blat.nematode.ace',    'autoace.blat.nembase.ace',
-	       'autoace.blat.ost.ace',	       'autoace.blat.tc1.ace',
-	       'autoace.blat.washu.ace',       'autoace.ci.est.ace',
-	       'autoace.ci.mrna.ace',	       'autoace.ci.ost.ace',
-	       'autoace.good_introns.est.ace',
-	       'autoace.good_introns.mrna.ace',
-	       'autoace.good_introns.ost.ace',
-	       'virtual_objects.autoace.blat.embl.ace',
-	       'virtual_objects.autoace.blat.est.ace',
-	       'virtual_objects.autoace.blat.mrna.ace',
-	       'virtual_objects.autoace.blat.ncrna.ace',
-	       'virtual_objects.autoace.blat.nematode.ace',
-	       'virtual_objects.autoace.blat.nembase.ace',
-	       'virtual_objects.autoace.blat.ost.ace',
-	       'virtual_objects.autoace.blat.tc1.ace',
-	       'virtual_objects.autoace.blat.washu.ace',
-	       'virtual_objects.autoace.ci.est.ace',
-	       'virtual_objects.autoace.ci.mrna.ace',
-	       'virtual_objects.autoace.ci.ost.ace'
+	       $wormbase->species.'.blat.embl.ace',	   $wormbase->species.'.blat.est.ace',
+	       $wormbase->species.'.blat.mrna.ace',	   $wormbase->species.'.blat.ncrna.ace',
+	       $wormbase->species.'.blat.nematode.ace',    $wormbase->species.'.blat.nembase.ace',
+	       $wormbase->species.'.blat.ost.ace',	   $wormbase->species.'.blat.tc1.ace',
+	       $wormbase->species.'.blat.washu.ace',       $wormbase->species.'.ci.est.ace',
+	       $wormbase->species.'.ci.mrna.ace',	   $wormbase->species.'.ci.ost.ace',
+	       $wormbase->species.'.good_introns.est.ace',
+	       $wormbase->species.'.good_introns.mrna.ace',
+	       $wormbase->species.'.good_introns.ost.ace',
+	       'virtual_objects.$wormbase->species.blat.embl.ace',
+	       'virtual_objects.$wormbase->species.blat.est.ace',
+	       'virtual_objects.$wormbase->species.blat.mrna.ace',
+	       'virtual_objects.$wormbase->species.blat.ncrna.ace',
+	       'virtual_objects.$wormbase->species.blat.nematode.ace',
+	       'virtual_objects.$wormbase->species.blat.nembase.ace',
+	       'virtual_objects.$wormbase->species.blat.ost.ace',
+	       'virtual_objects.$wormbase->species.blat.tc1.ace',
+	       'virtual_objects.$wormbase->species.blat.washu.ace',
+	       'virtual_objects.$wormbase->species.ci.est.ace',
+	       'virtual_objects.$wormbase->species.ci.mrna.ace',
+	       'virtual_objects.$wormbase->species.ci.ost.ace'
 	      );
 
  foreach my $file (@files){
