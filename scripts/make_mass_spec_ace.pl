@@ -8,7 +8,7 @@
 # in ace
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2007-11-23 13:27:50 $      
+# Last updated on: $Date: 2008-03-10 10:49:00 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -324,16 +324,10 @@ foreach my $experiment_id (keys %experiment) {
 }
 
 # write out the Homol_data lines for the clones and superlinks used
-my %clone_sizes = $wormbase->FetchData("clonesize", undef, $database . "/COMMON_DATA");
 my $coords      = Coords_converter->invoke($database, 0, $wormbase);
 
 foreach my $clone (keys %unique_clones) {
-  my $size;
-  if ($clone =~ /^SUPERLINK/) {
-    $size = $coords->Superlink_length($clone);
-  } else {
-    $size = $clone_sizes{$clone};
-  }
+  my $size = $coords->Superlink_length($clone);
   print OUT "\n";	
   print OUT "Sequence : $clone\n";
   print OUT "Homol_data $clone:Mass-spec 1 $size\n";
