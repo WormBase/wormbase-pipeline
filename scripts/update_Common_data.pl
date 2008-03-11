@@ -5,7 +5,7 @@
 # by Anthony Rogers et al
 #
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2008-03-11 14:14:48 $
+# Last updated on: $Date: 2008-03-11 14:24:07 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -395,7 +395,7 @@ sub write_cds2wormpep  {
   my $tablemakerFile="$wquery_dir/$Table_defs{'cds2wormpep'}";
 
   $wormbase->run_command("perl -pne 's/Caenorhabditis elegans/$species/' $tablemakerFile > $fname",$log);
-  my $command="Table-maker -p $wquery_dir/$fname\nquit\n";
+  my $command="Table-maker -p $fname\nquit\n";
   
   open (TACE, "echo '$command' | $tace $ace_dir |");
   my %cds2wormpep;
