@@ -5,7 +5,7 @@
 # by Anthony Rogers et al
 #
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2008-03-11 14:12:38 $
+# Last updated on: $Date: 2008-03-11 14:14:48 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -392,7 +392,7 @@ sub write_cds2wormpep  {
 
   # connect to AceDB using TableMaker,
   my $species=$wormbase->full_name;
-  my $tablemakeFile="$wquery_dir/$Table_defs{'cds2wormpep'}";
+  my $tablemakerFile="$wquery_dir/$Table_defs{'cds2wormpep'}";
 
   $wormbase->run_command("perl -pne 's/Caenorhabditis elegans/$species/' $tablemakerFile > $fname",$log);
   my $command="Table-maker -p $wquery_dir/$fname\nquit\n";
