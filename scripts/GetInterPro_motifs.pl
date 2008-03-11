@@ -7,7 +7,7 @@
 # Gets latest Interpro:GO mappings from XXXX and puts info in to ace file
 #
 # Last updated by: $Author: gw3 $                      
-# Last updated on: $Date: 2008-01-15 10:51:33 $         
+# Last updated on: $Date: 2008-03-11 12:00:03 $         
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -58,7 +58,7 @@ my $text;
 my $ip;
 
 # IPR000177 Apple domain
-$log->write_to(": Writing acefile to $ip_ace_file");
+$log->write_to(": Writing acefile to $ip_ace_file\n");
 while (<I2G>){
   chomp;
   my @info = split;

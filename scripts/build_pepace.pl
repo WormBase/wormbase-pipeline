@@ -9,8 +9,8 @@
 # solely in the wormpep.history file.
 #
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2008-03-07 11:51:47 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2008-03-11 12:01:49 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -304,7 +304,7 @@ if( $wormbase->species eq "elegans") {
 	}
 	else {
     	$log->write_to("\n\n! ! ! ! THIS NEEDS ATTENTION ! ! ! !\n\n\n");
-    	$log->write_to("\n1 known problem - CE25872 is hard coded as LIVE in $0\n Check this is still valid sequence F36D3.1");
+    	$log->write_to("\n1 known problem - CE25872 is hard coded as LIVE in $0\n Check this is still valid sequence F36D3.1\n\n");
 	}
 }
 #load files in to autoace.
