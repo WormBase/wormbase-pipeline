@@ -119,7 +119,8 @@ sub get_all_alleles {
 sub get_allele {
 	my ($allele)=@_;
 	my $db = Ace->connect( -path => $wb->autoace ) || do { print "cannot connect to ${$wb->autoace}:", Ace->error; die };
-        my @alleles = $db->fetch(Variation => $allele);
+    my @alleles = $db->fetch(Variation => "$allele");
+
 	return \@alleles;
 }
 
@@ -236,6 +237,18 @@ sub map {
 			clone => $map[0],clone_start => $map[1], clone_stop => $map[2],orientation => $orientation};
 
 		print "${\$x->name} ($chromosome ($orientation): $start - $stop) clone: $map[0] $map[1]-$map[2]\n" if $wb->debug;
+		
+		#map the CGH inner seqs
+		if($x->CGH_deleted_probes){
+			my @map=$mapper->map_feature($x->Sequence->name,$x->CGH_deleted_probes->name,$x->CGH_deleted_probes->right->name);
+			if ($map[0] eq '0'){
+				$log->write_to("ERROR: Couldn't map CGH_deleted_probes for ${\$x->name} to sequence ${\$x->Sequence->name} with ${\$x->Flanking_sequences->name} and ${\$x->Flanking_sequences->right->name} (Remark: ${\$x->Remark})\n");
+				$errors++;
+				next
+			}
+			$alleles{$x->name}{'CGH5'} = $map[1] - $alleles{$x->name}->{'clone_start'} ;
+			$alleles{$x->name}{'CGH3'} = $alleles{$x->name}->{'clone_stop'} - $map[2];
+		}
 	}
 	return \%alleles
 }

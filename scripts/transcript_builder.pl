@@ -6,8 +6,8 @@
 #
 # Script to make ?Transcript objects
 #
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2008-02-15 14:24:49 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2008-03-11 10:01:01 $
 use strict;
 use lib $ENV{'CVS_DIR'};
 use Getopt::Long;
@@ -126,7 +126,7 @@ foreach my $chrom ( @chromosomes ) {
     next if( $data[1] eq "history" );
     #  GENE STRUCTURE
     if ( $data[1] eq "curated" ) {
-      $data[9] =~ s/\"//g;
+      $data[9] =~ s/\"//g;#"
       next if( defined $test_cds and ($data[9] ne $test_cds)) ;
       if ( $data[2] eq "CDS" ) {
 	# GENE SPAN
@@ -148,7 +148,7 @@ foreach my $chrom ( @chromosomes ) {
       next if (/#/); 		 # miss header
       next unless (/BEST/);
       my @data = split;
-      $data[9] =~ s/\"//g;
+      $data[9] =~ s/\"//g;#"
       $data[9] =~ s/Sequence:// ;
       $cDNA{$data[9]}{$data[3]} = $data[4];
       # keep min max span of cDNA
@@ -164,8 +164,10 @@ foreach my $chrom ( @chromosomes ) {
   }
 
   #Chromomsome info
+
   $gff_file = $gff_dir."/${\$wormbase->chromosome_prefix}${chrom}_Link.gff";
   open (GFF,"<$gff_file") or $log->log_and_die("cant open gff_file :$!\n");  
+
   #create Strand_transformer for '-' strand coord reversal
   CHROM:while( <GFF> ){
     my @data = split;

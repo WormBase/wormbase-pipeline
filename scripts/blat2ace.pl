@@ -6,8 +6,8 @@
 #
 # Exporter to map blat data to genome and to find the best match for each EST, mRNA, OST, etc.
 #
-# Last edited by: $Author: pad $
-# Last edited on: $Date: 2008-03-10 13:29:32 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2008-03-11 10:01:01 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -66,7 +66,7 @@ my $log = Log_files->make_build_log($wormbase);
 #############################
 
 # set database paths, default to autoace unless -camace
-my $ace_dir   = $wormbase->autoace;     # AUTOACE DATABASE DIR
+my $ace_dir   = $wormbase->orgdb;
 my $blat_dir  = $wormbase->blat;
 my @nematodes = qw(nematode washu nembase);
 
@@ -98,7 +98,7 @@ $log->log_and_die("no type specified\n") unless $type;
 $log->write_to($wormbase->runtime.": Start mapping\n\n");
 
 # open input and output filehandles
-open(ACE,  ">$blat_dir/".$wormbase->species.".${qspecies}_$type.ace")  or die "Cannot open $blat_dir/$wormbase->species.${qspecies}_${type}.ace $!\n";
+open(ACE,  ">$blat_dir/".$wormbase->species.".${qspecies}_$type.ace")  or die "Cannot open $blat_dir/".$wormbase->species.".${qspecies}_${type}.ace $!\n";
 open(BLAT, "<$blat_dir/${qspecies}_${type}_out.psl")    or die "Cannot open $blat_dir/${qspecies}_${type}_out.psl $!\n";
 
 my $number_of_replacements = 0;
@@ -205,8 +205,8 @@ while (<BLAT>) {
       }
 
       if (!defined $virtualstart) {
-	  $log->write_to("$query will be discarded as the match is too long\n");
-	  $log->write_to("$query [$strand] $virtualstart $virtualend  [virtual slice $calc -> $newcalc, offset ".($matchend%100000)."]\n\n");
+	  #$log->write_to("$query will be discarded as the match is too long\n");
+	  #$log->write_to("$query [$strand] $virtualstart $virtualend  [virtual slice $calc -> $newcalc, offset ".($matchend%100000)."]\n\n");
 	  next;
       }
 
@@ -306,7 +306,7 @@ if ($est || $ost) {
 # produce outfile for best matches #
 ####################################
 if ($nematode || $washu || $nembase) {
-  $wormbase->run_command("mv $blat_dir/".$wormbase->species.".$type.ace $blat_dir/$wormbase->species.blat.$type.ace", $log);
+  $wormbase->run_command("mv $blat_dir/".$wormbase->species.".$type.ace $blat_dir/".$wormbase->species.".blat.$type.ace", $log);
 } else {
   open (AUTBEST, ">$blat_dir/".$wormbase->species.".best.${qspecies}_$type.ace");
   my $method = $qspecies eq $wormbase->species ? "BLAT_${type}_BEST" : "BLAT_Caen_${type}_BEST";
@@ -379,7 +379,8 @@ if ($nematode || $washu || $nembase) {
 
 unless ($nematode || $washu || $nembase) {
   # Open new (final) output files for autoace, camace, and stlace
-  open (OUT_autoace, ">$blat_dir/".$wormbase->species.".blat.${qspecies}_$type.ace") or $log->log_and_die("cant open $blat_dir/$wormbase->species.blat.${qspecies}_$type.ace :$!");
+
+  open (OUT_autoace, ">$blat_dir/".$wormbase->species.".blat.${qspecies}_$type.ace") or $log->log_and_die("cant open $blat_dir/".$wormbase->species.".blat.${qspecies}_$type.ace :$!");
 
   # Change input separator to paragraph mode, but store what it old mode in $oldlinesep
   my $oldlinesep = $/;
@@ -389,7 +390,8 @@ unless ($nematode || $washu || $nembase) {
   my $superlink = "";
 
   # assign 
-  open(ABEST,  "<$blat_dir/".$wormbase->species.".best.${qspecies}_$type.ace") or $log->log_and_die("cant open $blat_dir/$wormbase->species.best.${qspecies}_$type.ace !$\n");
+  open(ABEST,  "<$blat_dir/".$wormbase->species.".best.${qspecies}_$type.ace") or $log->log_and_die("cant open $blat_dir/".$wormbase->species.".best.${qspecies}_$type.ace !$\n");
+
   while (<ABEST>) {
     if ($_ =~ /^Homol_data/) {
       # flag each blat hit which is best (all of them) - set $line{$_} to 1
@@ -433,9 +435,8 @@ unless ($nematode || $washu || $nembase) {
   ###################################
 
   if ($intron) {
-    
     open(CI_auto, ">$blat_dir/".$wormbase->species.".ci.${qspecies}_${type}.ace");
-    
+
     foreach my $link (sort keys %ci) {
       my %double;
       
@@ -465,6 +466,7 @@ unless ($nematode || $washu || $nembase) {
 
 
 #compress acefiles so that all object data is loaded together, expanded to run on all homol
+
 my @filenames = ($wormbase->species.".${qspecies}_$type.ace", $wormbase->species.".best.${qspecies}_$type.ace", $wormbase->species.".blat.${qspecies}_$type.ace", );
 my $filename;
 $log->write_to("\n#########################################\nCompressing DNA_homolo acefiles\n#########################################\n");
