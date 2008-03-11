@@ -4,8 +4,8 @@
 #
 # Dumps InterPro protein motifs from ensembl mysql (protein) database to an ace file
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2008-01-07 13:22:50 $
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2008-03-11 15:49:11 $
 
 
 use strict;
@@ -20,22 +20,21 @@ use DBI;
 
 my $WPver; 
 my $database; 
-my $mysql; 
 my $method; 
 my $verbose; 
-my $help;
+my ($ddir,$help);
 my ($store, $test, $debug);
 
 
 
 GetOptions("debug:s"    => \$debug,
 	   "database:s" => \$database,
-	   "mysql"      => \$mysql,
 	   "method=s"   => \$method,
 	   "verbose"    => \$verbose,
 	   "test"       => \$test,
 	   "help"       => \$help,
 	   "store:s"    => \$store,
+	   'dumpdir=s'     => \$ddir,
 	  );
 
 # Display help if required
@@ -53,7 +52,7 @@ if ( $store ) {
 my $log = Log_files->make_build_log($wormbase);
 
 if ($test) {
-  $database = "worm_peptest";
+  $database = "worm_peptest" unless $database;
 }
 
 
@@ -64,6 +63,9 @@ if ($test) {
 # set up InterPro ID mapping
 my %ip_ids = get_ip_mappings();                # hash of Databases hash of IDs
  
+# set up CDS -> wormpep mapping
+my $cds2wormpep;
+$wormbase->FetchData('cds2wormpep',$cds2wormpep);
 
 
 # define the names of the Interpro methods to be dumped
@@ -74,37 +76,33 @@ if ($method ) {
 
 # add new methods (logic_names, as defined in the mysql database 'analysis' table, column 'logic_name') 
 # as they are added to the pipeline
-#
-#  @methods= qw(hmmpfam prints profile pirsf hmmtigr hmmsmart );
-#  @methods= qw(hmmpfam pirsf hmmtigr hmmsmart prosite profile);
-  @methods= qw(prosite prints profile blastprodom hmmsmart hmmpanther hmmpfam hmmtigr pirsf superfamily gene3d);
+   @methods = qw(Pfam Prints PIRSF Tigrfam Smart scanprosite pfscan);
 }
 
 
 # define the Database names that InterPro uses in interpro.xml
 # and the logic names (as specified in @methods) that search those databases
 my %method_database = (
-		       'prosite'     => 'PROSITE',
-		       'prints'      => 'PRINTS',
-		       'profile'     => 'PROFILE',
-		       'blastprodom' => 'PRODOM',
-		       'hmmsmart'    => 'SMART',
-		       'hmmpanther'  => 'PANTHER',
-		       'hmmpfam'     => 'PFAM',
-		       'hmmtigr'     => 'TIGRFAMs',
-		       'coils'       => 'COIL',
-		       'seg'         => 'SEG',
-		       'tmhmm'       => 'TMHMM',
-		       'signalp'     => 'SIGNALP',
-		       'pirsf'       => 'PIRSF',
-		       'superfamily' => 'SUPERFAMILY',
-		       'gene3d'      => 'GENE3D',
+		       'scanprosite'     => 'PROSITE',
+		       'Prints'      => 'PRINTS',
+		       'pfscan'     => 'PROFILE',
+		       'prodom'      => 'PRODOM',
+		       'Smart'    => 'SMART',
+		       'Pfam'     => 'PFAM',
+		       'Tigrfam'     => 'TIGRFAMs',
+		       'scanregexp'  => 'PROSITE',
+		       'Ncoils'       => 'COIL',
+		       'Seg'         => 'SEG',
+		       'Tmhmm'       => 'TMHMM',
+		       'Signalp'     => 'SIGNALP',
+		       'PIRSF'       => 'PIRSF',
+		       'Superfamily' => 'SUPERFAMILY',
 	       );
 
 # mysql database parameters
-my $dbhost = "ia64b";
+my $dbhost = "ia64d";
 my $dbuser = "wormro";		# worm read-only access
-my $dbname = "worm_pep";
+my $dbname = "worm_ensembl_elegans";
 $dbname = $database if $database;
 print "Dumping motifs from $dbname\n";
 my $dbpass = "";
@@ -116,7 +114,7 @@ sub now {
 }
 
 # create output files
-my $dump_dir = $wormbase->farm_dump;
+my $dump_dir = ($ddir || $wormbase->farm_dump);
 if ($test) {
   $dump_dir = ".";
 }
@@ -157,10 +155,11 @@ foreach my $method (@methods) {
 }
 
 # prepare the sql query
-my $sth_f = $dbh->prepare ( q{ SELECT protein_id, seq_start, seq_end, hit_id, hit_start, hit_end, score, evalue
-				   FROM protein_feature
+my $sth_f = $dbh->prepare ( q{ SELECT stable_id, seq_start, seq_end, hit_id, hit_start, hit_end, score, evalue
+				   FROM protein_feature,translation_stable_id
 				   WHERE evalue <= "0.1"
 				   AND analysis_id = ?
+				   AND translation_stable_id.translation_id = protein_feature.translation_id
                              } );
 
 # counts extracted for each method
@@ -199,8 +198,10 @@ foreach my $method (@methods) {
 
 # print ace file
 my $prefix = "WP";
-if ($dbname eq "worm_brigpep") {
+if ($dbname=~/brig/) {
   $prefix = "BP";
+}elsif ($dbname =~/rem/){
+	$prefix = 'RP';
 }
 
 # here we need to do:
@@ -284,20 +285,24 @@ $log->write_to("\nMerged $merged_count overlapping hits of the same InterPro ID\
 print "\nHave $motif_count InterPro domains in $protein_count proteins\n" if ($verbose);
 $log->write_to("\nHave $motif_count InterPro domains in $protein_count proteins\n");
 
+my %cds2wormpep;
+$wormbase->FetchData('cds2wormpep',\%cds2wormpep),
+
 my %domain_counts = ();
 # now print out the ACE file
-foreach my $prot (sort {$a cmp $b} keys %merged) {
+foreach my $p (sort {$a cmp $b} keys %merged) {
+    my $prot=($cds2wormpep{$p}||$p);
     print ACE "\n";
     print ACE "Protein : \"$prefix:$prot\"\n";
 
     # count the number of domains in this protein for the statistics
-    my $domains = scalar(@{$merged{$prot}});
+    my $domains = scalar(@{$merged{$p}});
     $domain_counts{$domains}++;
     if ($verbose && $domains > 100) {
-      print  "$prot has $domains InterPro domains!\n";
+      print  "$p($prot) has $domains InterPro domains!\n";
     }
 
-    foreach my $hit (@{$merged{$prot}}) {
+    foreach my $hit (@{$merged{$p}}) {
       my ($ip_id, $start, $end, $hstart, $hend, $score, $evalue) = @$hit;
       my $line = "Motif_homol \"INTERPRO:$ip_id\" \"interpro\" $evalue $start $end $hstart $hend";
       print "$line\n" if ($verbose);
@@ -397,7 +402,7 @@ sub get_ip_mappings {
   # ftp.ebi.ac.uk/pub/databases/interpro/interpro.xml.gz
 
   # store it here
-  my $dir = "/lustre/scratch1/ensembl/wormpipe";
+  my $dir = "/tmp";
   my $file = "$dir/interpro.xml";
 
   # get the interpro file from the EBI
