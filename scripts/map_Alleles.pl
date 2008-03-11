@@ -110,7 +110,7 @@ while( my($key,$allele)=each %$mapped_alleles){
 	print $fh "Sequence : \"$allele->{clone}\"\nAllele $key $allele->{clone_start} $allele->{clone_stop}\n\n";
 	print $fh "Variation : \"$key\"\nSequence  $allele->{clone}\n\n";
 	if($allele->{'CGH5'}) {
-		print $fh "Variation : \"$key\"\nFive_PrimeGap ".$allele->{CGH5}."\nThreePrimeGap ".$allele->{CGH3}."\n\n";
+		print $fh "Variation : \"$key\"\nFivePrimeGap ".$allele->{CGH5}."\nThreePrimeGap ".$allele->{CGH3}."\n\n";
 	}
 }
 
