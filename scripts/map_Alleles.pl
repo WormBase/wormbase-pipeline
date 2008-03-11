@@ -44,9 +44,9 @@ map_Allele.pl options:
 	-store FILE_NAME    use a Storable wormbase configuration file
 	-outdir DIR_NAME    print allele_mapping_VERSION.ace to DIR_NAME
 	-allele ALLELE_NAME check only ALLELE_NAME instead of all
-	-noload             don't update AceDB
+	-noload             dont update AceDB
 	-noupdate           same as -noload
-	-database DATABASE_DIRECTORY      use a different AceDB
+	-database			DATABASE_DIRECTORY use a different AceDB
 	-weak_checks        relax sequence sanity checks
 	-help               print this message
 	-test               use the test database
@@ -90,7 +90,6 @@ my $acefile=( $outdir ? $outdir : $wb->acefiles ) . "/allele_mapping.WS$release.
 
 # DEBUG mode
 if ($debug) {
-    $maintainer = "$debug\@sanger.ac.uk";
     print "DEBUG \"$debug\"\n\n";
 }
 
@@ -109,7 +108,10 @@ my $fh = new IO::File ">$acefile" || die($!);
 # create mapping Ace file
 while( my($key,$allele)=each %$mapped_alleles){
 	print $fh "Sequence : \"$allele->{clone}\"\nAllele $key $allele->{clone_start} $allele->{clone_stop}\n\n";
-	print $fh "Variation : \"$key\"\nSequence  $allele->{clone}\n\n"
+	print $fh "Variation : \"$key\"\nSequence  $allele->{clone}\n\n";
+	if($allele->{'CGH5'}) {
+		print $fh "Variation : \"$key\"\nFive_PrimeGap ".$allele->{CGH5}."\nThreePrimeGap ".$allele->{CGH3}."\n\n";
+	}
 }
 
 # CGH fun
