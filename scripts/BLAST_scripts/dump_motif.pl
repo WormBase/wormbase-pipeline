@@ -5,7 +5,7 @@
 # Dumps protein motifs from ensembl mysql (protein) database to an ace file
 #
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2008-02-07 17:17:48 $
+# Last updated on: $Date: 2008-03-11 15:20:59 $
 
 use lib $ENV{'CVS_DIR'};
 
@@ -42,14 +42,14 @@ my $log = Log_files->make_build_log($wormbase);
 $dump_dir ||= '/lustre/work1/ensembl/wormpipe/dumps';
 
 # define the names of the methods to be dumped
-@methods = qw(ncoils seg signalp tmhmm hmmpfam) unless @methods;
+@methods = qw(Ncoils Seg Signalp Tmhmm Pfam) unless @methods;
 
 $log->write_to("Dumping methods".@methods."\n");
 
 # mysql database parameters
-my $dbhost = "ia64b";
+my $dbhost = "ia64d";
 my $dbuser = "wormro";
-$dbname ||= "worm_pep";
+$dbname ||= "worm_ensembl_elegans";
 print "Dumping motifs from $dbname\n";
 my $dbpass = "";
 
@@ -96,22 +96,26 @@ foreach my $meth (@methods) {
 }
 
 # prepare the sql querie
-my $sth_f = $dbh->prepare ( q{ SELECT protein_id, seq_start, seq_end, hit_id, hit_start, hit_end, score
-                                 FROM protein_feature
-                                WHERE analysis_id = ? 
+my $sth_f = $dbh->prepare ( q{ SELECT stable_id, seq_start, seq_end, hit_id, hit_start, hit_end, score
+                                 FROM protein_feature,translation_stable_id
+                                WHERE analysis_id = ? AND translation_stable_id.translation_id = protein_feature.translation_id
                              } );
 
 # get the motifs
 my %motifs;
 my %pfams;
+my %cds2wormpep;
+$wormbase->FetchData('cds2wormpep',\%cds2wormpep);
+
 foreach my $meth (@methods) {
   $log->write_to("processing $meth\n");
   $sth_f->execute ($method2analysis{$meth});
   my $ref = $sth_f->fetchall_arrayref;
   foreach my $aref (@$ref) {
-    my ($prot, $start, $end, $hid, $hstart, $hend, $score) = @$aref;
+    my ($_prot, $start, $end, $hid, $hstart, $hend, $score) = @$aref;
+    my $prot=($cds2wormpep{$_prot}||$_prot);
     my $line;
-    if ($meth eq "hmmpfam") {
+    if ($meth eq "Pfam") {
       if( $hid =~ /(\w+)\.\d+/ ) {
 	$hid = $1;
       }
@@ -129,7 +133,10 @@ foreach my $meth (@methods) {
 my $prefix = "WP";
 if( $dbname =~ /brig/) {
   $prefix = "BP";
+}elsif($dbname =~/rem/){
+	$prefix='RP';
 }
+
 foreach my $prot (sort {$a cmp $b} keys %motifs) {
     print ACE "\n";
     # cds2wormpep conversion
