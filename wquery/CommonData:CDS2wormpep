@@ -1,6 +1,6 @@
 // Spread sheet definition for the ACeDB software 
-// User: ar2
-// Date: 2005-05-10_09:40:55
+// User: mh6
+// Date: 2008-03-11_11:52:44
 
 // %n (%%n in the graphic) are parameter to be given on the command line in tace
 // or by default by the Parameters given in this file
@@ -14,7 +14,7 @@ Width 12
 Optional 
 Visible 
 Class 
-Class elegans_CDS 
+Class CDS 
 From 1 
  
 Colonne 2 
@@ -24,7 +24,17 @@ Visible
 Class 
 Class Protein 
 From 1 
-Tag Corresponding_protein 
+Tag Corresponding_protein  
+ 
+Colonne 3 
+Width 12 
+Mandatory 
+Hidden 
+Class 
+Class Species 
+From 1 
+Tag Species 
+Condition "Caenorhabditis elegans"
  
  
 

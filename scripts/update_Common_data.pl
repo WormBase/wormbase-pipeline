@@ -5,7 +5,7 @@
 # by Anthony Rogers et al
 #
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2008-02-18 12:02:02 $
+# Last updated on: $Date: 2008-03-11 14:12:38 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -384,11 +384,18 @@ sub write_clonesize  {
 
 sub write_cds2wormpep  {   
 
+  use File::Temp qw /:POSIX/;
+  my $fname = File::Temp::tmpnam('/tmp/');
+
   $log->write_to("Updating cds2wormpep\n");
   my $WPver = $wormbase->get_wormbase_version;
 
   # connect to AceDB using TableMaker,
-  my $command="Table-maker -p $wquery_dir/$Table_defs{'cds2wormpep'}\nquit\n";
+  my $species=$wormbase->full_name;
+  my $tablemakeFile="$wquery_dir/$Table_defs{'cds2wormpep'}";
+
+  $wormbase->run_command("perl -pne 's/Caenorhabditis elegans/$species/' $tablemakerFile > $fname",$log);
+  my $command="Table-maker -p $wquery_dir/$fname\nquit\n";
   
   open (TACE, "echo '$command' | $tace $ace_dir |");
   my %cds2wormpep;
@@ -405,6 +412,8 @@ sub write_cds2wormpep  {
     $cds2wormpep{$gene} = $pep;
     $wormpep2cds{$pep} .= "$gene ";
   }
+
+  unlink $fname;
 
   #now dump data to file
   open (C2G, ">$data_dir/wormpep2cds.dat") or die "$data_dir/wormpep2cds.dat";
