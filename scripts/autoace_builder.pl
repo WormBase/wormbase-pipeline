@@ -7,7 +7,7 @@
 # Usage : autoace_builder.pl [-options]
 #
 # Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2008-03-12 10:09:00 $
+# Last edited on: $Date: 2008-03-12 14:45:20 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -351,10 +351,8 @@ sub make_UTR {
 
 sub get_repeats {
   #repeatmasked chromosomes
-  my $wormpipe= '/lustre/work1/ensembl/wormpipe';
-  my $release = $wormbase->get_wormbase_version;
-  my $agp = $wormpipe."/Elegans/WS$release.agp";
-  $wormbase->run_command("ssh farm-login nice +20 perl $ENV{'CVS_DIR'}/get_repeatmasked_chroms.pl -agp $agp", $log);
+  my $species= lc (ref $wormbase);
+  $wormbase->run_script("get_repeatmasked_chroms.pl -database worm_ensembl_$species", $log);
 
   #inverted
   $wormbase->run_script("run_inverted.pl -all" , $log);
