@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-03-12 13:26:50 $      
+# Last updated on: $Date: 2008-03-12 16:05:33 $      
 
 # Changes required by Ant: 2008-02-19
 # 
@@ -956,9 +956,6 @@ sub get_protein_split {
     my $protein_score = $homology->[6];
     # $homology->[7] can hold the the other_data field from the GFF line, but is usually undef
     my $matching_transcript = $homology->[8];
-
-    # don't look at protein homologies with a score below 30
-    if ($protein_score <= 30) {next;}
 
     #  check if these are isoforms of the same gene and if so then treat them as the same gene
     if ($matching_transcript =~ /(\S+\.\d+)[a-z]/) {
