@@ -1,7 +1,7 @@
 #!/software/bin/perl -w
 
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2008-02-19 13:51:44 $
+# Last updated by: $Author: pad $
+# Last updated on: $Date: 2008-03-12 14:04:53 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -51,8 +51,8 @@ my $log = Log_files->make_build_log($wormbase);
 $log->write_to("Getting PFAM active sites for $species\n");
 
 
-$log->write_to("\tconnecting to worm_pfam:ia64b as $user\n");
-my $DB = DBI -> connect("DBI:mysql:worm_pfam:ia64b", $user, $pass, {RaiseError => 1})
+$log->write_to("\tconnecting to worm_pfam:ia64d as $user\n");
+my $DB = DBI -> connect("DBI:mysql:worm_pfam:ia64d", $user, $pass, {RaiseError => 1})
     or  $log->log_and_die("cannot connect to db, $DBI::errstr");
 
 &update_database if $update;
