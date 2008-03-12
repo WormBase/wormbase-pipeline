@@ -15,7 +15,7 @@
 #      COMPANY:
 #      VERSION:  1.0
 #      CREATED:  13/02/06 09:37:00 GMT
-#     REVISION:  $Revision: 1.21 $
+#     REVISION:  $Revision: 1.22 $
 # includes code by: $Author: mh6 $
 #===============================================================================
 
@@ -58,9 +58,7 @@ if ($store) {
 }
 else { $wormbase = Wormbase->new( -debug => $debug, -test => $test ) }
 
-my $log =
-  Log_files->make_build_log($wormbase)
-  ;    # prewarning will be misused in a global way
+my $log = Log_files->make_build_log($wormbase) ;# prewarning will be misused in a global way
 my ($scriptname) = fileparse($0);
 $log->{SCRIPT} = "$scriptname : [$args]";
 
@@ -72,17 +70,16 @@ my $outdir     = "$acedb/acefiles/";
 #generate a new mapper based on the files (also needs to point to better gene/gene files)
 
 unlink "$acedb/logs/rev_physicals.yml" if ($prep);
-my $mapper =
-  Physical_mapper->new( $acedb, glob("$chromdir/CHROMOSOME_*_gene.gff") );
+
+my $mapper = Physical_mapper->new( $acedb, glob("$chromdir".($wormbase->chromosome_prefix)."*_gene.gff") );
 
 # check the mappings
 if ($prep) {
     $mapper->check_mapping( $log, $acedb );
-	$mapper->save("$acedb/logs/rev_physicals.yml");
+    $mapper->save("$acedb/logs/rev_physicals.yml");
 
     if ($errors) {
-        $log->mail( $maintainer,
-            "ERROR REPORT: interpolate_gff.pl -prepare had $errors ERRORS" );
+        $log->mail( $maintainer,"ERROR REPORT: interpolate_gff.pl -prepare had $errors ERRORS");
     }
     else { $log->mail( $maintainer, 'BUILD REPORT: interpolate_gff.pl' ) }
 
@@ -96,11 +93,9 @@ my $rev_genes = Map_func::get_phys($acedb);    # hash of all rev_map genes
 $log->write_to("\n\ngenerating acefiles:\n");
 $log->make_line;
 
-my @chromosomes = (
-    'CHROMOSOME_I', 'CHROMOSOME_II', 'CHROMOSOME_III', 'CHROMOSOME_IV',
-    'CHROMOSOME_V', 'CHROMOSOME_X'
-);
-@chromosomes = ( "CHROMOSOME_$chromosome", ) if $chromosome;
+my $cprefix=$wormbase->chromosome_prefix();
+my @chromosomes = $wormbase->get_chromosome_names(-prefix => 1);
+@chromosomes = ( "${cprefix}${chromosome}", ) if $chromosome;
 
 foreach my $chrom (@chromosomes) {
 ###################################################################################
@@ -113,17 +108,15 @@ foreach my $chrom (@chromosomes) {
 
     # Input files
     my @data;
-    push( @data, "$chromdir/${chrom}_allele.gff" )
-      if ( $alleles || $all );    # GFF_method_dump.pl -method Allele
+    push( @data, "$chromdir/${chrom}_allele.gff" ) if ( $alleles || $all );    # GFF_method_dump.pl -method Allele
     push( @data, "$chromdir/${chrom}_gene.gff" )      if ( $genes  || $all );
     push( @data, "$chromdir/${chrom}_clone_acc.gff" ) if ( $clones || $all );
     foreach my $file (@data) {
-        $chrom =~ /_(.*)$/;
+        $chrom =~ /$cprefix(.*)$/;
 
         &dump_alleles( $wormbase, $1 ) if ( $alleles && ( !-e $file ) );
 
-        my $fh = IO::File->new( $file, "r" )
-          || ( $log->write_to("cannot find: $file\n") && next );
+        my $fh = IO::File->new( $file, "r" ) || ( $log->write_to("cannot find: $file\n") && next );
         $file =~ /${chrom}_(allele|gene|clone)/;    # hmpf
         my $of = IO::File->new("> $outdir/interpolated_$1_$chrom.ace");
 
@@ -135,8 +128,7 @@ foreach my $chrom (@chromosomes) {
             my @fields = split;
 
             # dumb assumption that f[9] is always the id
-            my ( $chr, $source, $feature, $id, $ctag ) =
-              ( $fields[0], $fields[1], $fields[2], $fields[9], $fields[8] );
+            my ( $chr, $source, $feature, $id, $ctag ) = ( $fields[0], $fields[1], $fields[2], $fields[9], $fields[8] );
 
             my $class;
             if ( $source eq 'Genomic_canonical' && $feature eq 'region' ) {
@@ -147,20 +139,15 @@ foreach my $chrom (@chromosomes) {
             }
             elsif ( $source eq 'gene' && $feature eq 'gene' ) {
                 $class = 'Gene';
-                next
-                  if $rev_genes
-                  ->{$id}    # need to check for existing reverse maps for genes
+                next if $rev_genes ->{$id}    # need to check for existing reverse maps for genes
             }
             else { next }
 
             my $pos = ( $fields[3] + $fields[4] ) / 2;    # average map position
             my $aceline = $mapper->x_to_ace( $id, $pos, $chr, $class );
 
-            print $of $aceline
-              if $aceline
-              ; # mapper returns undef if it cannot be mapped (like on the telomers)
-            $log->write_to(
-"cannot map $class : $id (might be on a telomer) - phys.pos $chr : $pos\n"
+            print $of $aceline if $aceline ; # mapper returns undef if it cannot be mapped (like on the telomers)
+            $log->write_to( "cannot map $class : $id (might be on a telomer) - phys.pos $chr : $pos\n"
             ) if ( !$aceline );    #--
         }
 
@@ -178,13 +165,9 @@ sub dump_alleles {
     my ( $wormbase, $chromosome ) = @_;
 
 #	my $cmd = "GFF_method_dump.pl -database ".$wormbase->autoace." -method Allele -dump_dir ".$wormbase->autoace."/GFF_SPLITS -chromosome $chromosome";
-    my $cmd =
-        "grep Allele "
-      . $wormbase->autoace
-      . "/CHROMOSOMES/CHROMOSOME_$chromosome.gff >"
-      . $wormbase->autoace
-      . "/GFF_SPLITS/CHROMOSOME_${chromosome}_allele.gff";
-
+    my $cmd = "grep Allele "
+      . $wormbase->chromosomes . "/${cprefix}${chromosome}.gff >"
+      . "$chromdir/${cprefix}${chromosome}_allele.gff";
     print `$cmd`;
 }
 
@@ -199,7 +182,7 @@ package Physical_mapper;
 
 sub x_to_ace {
     my ( $self, $id, $map, $chr, $x ) = @_;
-    $chr =~ s/CHROMOSOME_//;
+    $chr =~ s/$cprefix//;
     my $mpos = $self->map( $map, $chr );
     if ($mpos) {
         return "$x : \"$id\"\nInterpolated_map_position \"$chr\" $mpos\n\n";
