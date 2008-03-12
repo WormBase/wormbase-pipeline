@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-03-12 16:05:33 $      
+# Last updated on: $Date: 2008-03-12 17:14:00 $      
 
 # Changes required by Ant: 2008-02-19
 # 
@@ -338,7 +338,7 @@ foreach my $chromosome (@chromosomes) {
 
   # this finds TEC-RED TSL sites more than 100 bases upstream that are not mentioned in the remarks or evidence
   print "finding isolated TSL sites\n";
-  &get_isolated_TSL(\@TSL_SL1, \@TSL_SL2, \@coding_transcripts, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, $chromosome);
+  &get_isolated_TSL(\@TSL_SL1, \@TSL_SL2, \@CDS, \@coding_transcripts, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, $chromosome);
 
   # get SAGE tags that don't match a gene with score based on frequency
   print "finding non-overlapping SAGE_tags\n";
@@ -1460,11 +1460,11 @@ sub get_unattached_TSL {
 
 ##########################################
 # get TSL sites that do not match a coding transcript or pseudogene
-#  &get_isolated_TSL(\@TSL_SL1, \@TSL_SL2, \@coding_transcript, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, $chromosome);
+#  &get_isolated_TSL(\@TSL_SL1, \@TSL_SL2, \@CDS, \@coding_transcript, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, $chromosome);
 
 sub get_isolated_TSL {
 
-  my ($SL1_aref, $SL2_aref, $transcripts_aref, $pseudogenes_aref, $transposons_aref, $transposon_exons_aref, $noncoding_transcript_exons_aref, $rRNA_aref, $chromosome) = @_;
+  my ($SL1_aref, $SL2_aref, $CDS_aref, $transcripts_aref, $pseudogenes_aref, $transposons_aref, $transposon_exons_aref, $noncoding_transcript_exons_aref, $rRNA_aref, $chromosome) = @_;
 
   $anomaly_count{UNMATCHED_TSL} = 0 if (! exists $anomaly_count{UNMATCHED_TSL});
 
@@ -1472,6 +1472,9 @@ sub get_isolated_TSL {
   my @SL2 = @$SL2_aref;
   my @SL = sort {$a->[1] <=> $b->[1]} (@SL1, @SL2); # merge and sort the two TSL lists
       
+  # allow the TSL to be within 75 bases of the CDS to give a match
+  my $CDS1_match = $ovlp->compare($CDS_aref, near_5 => 75, same_sense => 1); # look for overlap or near to the 5' end
+  my $CDS2_match = $ovlp->compare($CDS_aref, near_5 => -3, same_sense => 1); # only look for overlap (don't count a bit of overlap at the start)
   # allow the TSL to be within 75 bases of the transcript to give a match
   my $transcripts1_match = $ovlp->compare($transcripts_aref, near_5 => 75, same_sense => 1); # look for overlap or near to the 5' end
   my $transcripts2_match = $ovlp->compare($transcripts_aref, near_5 => -3, same_sense => 1); # only look for overlap (don't count a bit of overlap at the start)
@@ -1486,8 +1489,17 @@ sub get_isolated_TSL {
     my $got_a_match = 0;
     my @result1;
     my @result2;
-    my @names1 = ();		# names of transcripts that match including near the 5' end
-    my @names2 = ();		# names of transcripts that only overlap
+
+    @result1 = $CDS1_match->match($tsl);
+    @result2 = $CDS2_match->match($tsl);
+
+    # see if we have the same number of matches from an overlap
+    # including 75 bases the the 5' end and a simple overlap - if not
+    # then we have an overlap at the 5' end in one of the transcripts
+    # of this gene and so we have a match
+    if (scalar @result1 != scalar @result2) {
+      $got_a_match = 1;
+    }
 
     @result1 = $transcripts1_match->match($tsl);
     @result2 = $transcripts2_match->match($tsl);
