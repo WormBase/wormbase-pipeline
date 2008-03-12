@@ -99,7 +99,7 @@ foreach my $seq ( @{$sa->fetch_all('toplevel')}) {
   my $outfile = "$out_dir"."/${name}_masked.dna";
   open (OUT,">$outfile") or die "cant write $outfile\t$!\n";
 
-  $log->write_to("\twriting chromosome $seq\n");
+  $log->write_to("\twriting chromosome $name\n");
   print OUT ">$name 1 ",$seq->seq_region_length,"\n";
   my $width = 50;
   my $start_point = 0;
