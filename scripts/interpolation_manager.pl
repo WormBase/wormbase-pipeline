@@ -6,6 +6,7 @@
 use strict;
 use warnings;
 use lib $ENV{'CVS_DIR'};
+use lib '/software/worm/lib/site_perl/';
 use Wormbase;
 use Getopt::Long;
 use LSF RaiseError => 0, PrintError => 1, PrintOutput => 0;
@@ -58,7 +59,7 @@ my $m      = LSF::JobManager->new();
 my $mother = $m->submit("perl $ENV{CVS_DIR}/interpolate_gff.pl -prep $flags");
 my $myid   = $mother->id;
 
-foreach my $i qw( I II III IV V X ) {
+foreach my $i ($wb->get_chromosome_names) {
     $m->submit( -w => "ended($myid)", "perl $ENV{CVS_DIR}/interpolate_gff.pl -chrom $i $flags -allele" );
     $m->submit( -w => "ended($myid)", "perl $ENV{CVS_DIR}/interpolate_gff.pl -chrom $i $flags -gene" );
     $m->submit( -w => "ended($myid)", "perl $ENV{CVS_DIR}/interpolate_gff.pl -chrom $i $flags -clone" );
