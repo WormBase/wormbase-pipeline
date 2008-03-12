@@ -6,8 +6,8 @@
 #
 # Usage : autoace_builder.pl [-options]
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2008-03-05 14:40:08 $
+# Last edited by: $Author: mh6 $
+# Last edited on: $Date: 2008-03-12 10:09:00 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -363,7 +363,7 @@ sub get_repeats {
 
 sub ontologies {
 	$wormbase->run_script( "ONTOLOGY/parse_expr_pattern_new.pl", $log);
-	$wormbase->run_script( "ONTOLOGY/parse_go_terms_new.pl -rnai -gene", $log);
+	$wormbase->run_script( "ONTOLOGY/parse_go_terms_new.pl -rnai -gene -variation", $log);
 	$wormbase->run_script( "ONTOLOGY/parse_phenotype_new.pl", $log);
 }
 

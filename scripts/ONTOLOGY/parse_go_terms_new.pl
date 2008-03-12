@@ -10,7 +10,7 @@ use Storable;
 
 my ($ep, $ref, %genes, %at, %auth, $date);
 my ($help, $debug, $test, $verbose, $store, $wormbase);
-my ($output, $acedbpath, $rnai, $gene);
+my ($output, $acedbpath, $rnai, $gene, $variation, $skiplist);
 
 $|=9;
 
@@ -23,8 +23,10 @@ GetOptions ("help"       => \$help,
 	    "store:s"    => \$store,
 	    "database:s" => \$acedbpath,
 	    "rnai"   	 => \$rnai,
-	    "gene"		 => \$gene,
+	    "gene"     	 => \$gene,
+	    "variation"  => \$variation,
 	    "output:s"   => \$output,
+	    "skiplist:s" => \$skiplist, 
 	    );
 
 my $program_name=$0=~/([^\/]+)$/ ? $1 : '';
@@ -37,6 +39,8 @@ if ($help) {
     print "       -database <database> path to database\n";
     print "       -rnai            generate RNAi2GO mapping; default no\n";
     print "       -gene            generate gene mapping; default no\n";
+    print "       -variation       generate variation2GO mapping; default no\n";
+    print "       -skiplist <papers_to_skip> list of papers to skip when generating RNAi2GO mappings\n";
     exit;
 }
 
@@ -65,6 +69,16 @@ warn "connecting to database... ";
 my $db = Ace->connect(-path => $acedbpath,  -program => $wormbase->tace) or $log->log_and_die("Connection failure: ". Ace->error);
 warn "done\n";
 
+my %species_taxon_hash=("Caenorhabditis elegans"  => 6239,
+			"Caenorhabditis briggsae" => 6238,
+			"Caenorhabditis remanei"  => 31234,
+			"Caenorhabditis brenneri" => 135651,
+			"Caenorhabditis vulgaris" => 31233,
+			"Caenorhabditis trinidad" => "N/A",
+			"Brugia pahangi"          => 6280,
+			"Onchocerca volvulus"     => 6282,
+			"Pristionchus pacificus"  => 54126
+			);
 
 my %name_hash=();
 my @aql_results=$db->aql('select a, a->public_name from a in class gene');
@@ -89,6 +103,18 @@ foreach (@aql_results) {
 }
 warn scalar keys %papers , " papers read\n";
 
+my %papers_to_skip=();
+if ($skiplist) {
+    open (SKIP, "<$skiplist") or $log->log_and_die("cannot open $skiplist : $!\n");
+    while (<SKIP>) {
+	chomp;
+	s/\s+//g;
+	next unless /WBPaper/;
+	$papers_to_skip{$_}=1;
+    }
+    close (SKIP);
+    warn scalar keys %papers_to_skip, " papers will be skipped\n";
+}
 
 my %names=();
 
@@ -154,17 +180,14 @@ if ($gene) {
 		if ($tmp[4] eq 'Inferred_automatically') {
 		    $with=$tmp[5];
 		}
-		if ($tmp[5]=~/WBRNAi/) {     # do not parse RNAi GO terms via genes - it's done separately via phenotypes
+		if ($tmp[5]=~/WBPhenotype/) {     # do not parse phenotype-based GO terms via genes - it's done separately via phenotypes
 		    next;
 		}
 		my $syn="";
 		if ($public_name ne $seq_name_hash{$obj}) {
 		    $syn=$seq_name_hash{$obj};
 		}
-		my $taxon="taxon:6239";
-		if ($species=~/briggsae/) {
-		    $taxon="taxon:6238";
-		}
+		my $taxon="taxon:$species_taxon_hash{$species}";
 		my $a=$aspect{lc $go_type};
 		my $type="gene";
 		print $out "WB\t$obj\t$public_name\t\t$term\t$ref\t$tmp[3]\t$with\t$a\t\t$syn\t$type\t$taxon\t$date\tWB\n";
@@ -208,8 +231,8 @@ if ($rnai) {
 		push @genes, $_;
 	    }
 	}
-	my $species=$obj->Species;
 	my $ref=$obj->Reference;
+	next if $papers_to_skip{$ref};
 	my @phen_array_tmp=$obj->Phenotype;
 	my @phen_array=();
 	foreach (@phen_array_tmp) {
@@ -218,14 +241,12 @@ if ($rnai) {
 	}
 	
 	foreach my $gene (@genes) {
+	    my $species=$gene->Species;
 	    foreach my $phen (@phen_array) {
 		if (! ($phen2go{$phen})) {
 		    next;
 		}
-		my $taxon="taxon:6239";
-		if (defined $species and $species=~/briggsae/) { #future problems!
-		    $taxon="taxon:6238";
-		}
+		my $taxon="taxon:$species_taxon_hash{$species}";
 		my $type="gene";
 		my $public_name='';
 		if ($name_hash{$gene}) {
@@ -235,7 +256,7 @@ if ($rnai) {
 		if ($papers{$ref}) {
 		    $ref_field="WB:$ref|PMID:$papers{$ref}";
 		}
-		else {
+		elsif ($ref) {
 		    $ref_field="WB:$ref";
 		}
 		my $with="WB:$obj|WB:$phen";
@@ -258,6 +279,105 @@ if ($rnai) {
     warn "$count RNAi objects processed\n";
     warn "$line_count lines generated\n";
 }
+
+if ($variation) {
+
+    $count=0;
+
+    my %phen2go=();
+    @aql_results = $db->aql("select p, p->GO_term from p in class Phenotype where exists p->GO_term");
+    foreach(@aql_results) { 
+	if (defined $_->[1]) { 
+	    $phen2go{$_->[0]}{$_->[1]}=1;
+	}
+    }
+    warn scalar keys %phen2go, " phenotypes read\n";
+    
+    my $it=$db->fetch_many(-query=>'find phenotype go_term; follow variation');
+    
+    while (my $obj=$it->next) {
+	next unless $obj->isObject();
+	$count++;
+	if ($count % 1000 == 0) {
+	    warn "$count variation objects processed\n";
+	}
+
+	if ($obj->Gain_of_function) { # skip gain-of-function alleles
+	    next;
+	}
+
+	my @genes=$obj->Gene;
+	my @phen_array_tmp=$obj->Phenotype;
+	my %phen_hash=();
+	foreach (@phen_array_tmp) {
+	    if (! ($phen2go{$_})) {
+		next;
+	    }
+	    my $not=grep {/Not/} $_->tags();
+	    if ($not) {
+		next;
+	    }
+
+	    $phen_hash{$_}{count}++;
+	    if ($_->at("Paper_evidence")) {
+		$phen_hash{$_}{Paper_evidence}=$_->at("Paper_evidence[1]");
+	    }
+	    if ($_->at("Person_evidence")) {
+		$phen_hash{$_}{Person_evidence}=$_->at("Person_evidence[1]")=~/(WBPerson\d+)/ ? $1 : '';
+	    }
+	    if ($_->at("Curator_confirmed")) {
+		$phen_hash{$_}{Curator_confirmed}=$_->at("Curator_confirmed[1]")=~/(WBPerson\d+)/ ? $1 : '';
+	    }
+
+	}
+
+	    
+	
+	foreach my $gene (@genes) {
+	    my $species=$gene->Species;
+	    foreach my $phen (sort {$a cmp $b} keys %phen_hash) {
+		my $taxon="taxon:$species_taxon_hash{$species}";
+		my $type="gene";
+		my $public_name='';
+		if ($name_hash{$gene}) {
+		    $public_name=$name_hash{$gene};
+		}
+		my $ref_field='';
+		if ($phen_hash{$phen}{Paper_evidence}) {
+		    if ($papers{$phen_hash{$phen}{Paper_evidence}}) {
+			$ref_field="WB:$phen_hash{$phen}{Paper_evidence}|PMID:$papers{$phen_hash{$phen}{Paper_evidence}}";
+		    }
+		    else {
+			$ref_field="WB:$phen_hash{$phen}{Paper_evidence}";
+		    }
+		}
+		elsif ($phen_hash{$phen}{Person_evidence}) {
+		    $ref_field="WB:$phen_hash{$phen}{Person_evidence}";
+		}
+		elsif ($phen_hash{$phen}{Curator_confirmed}) {
+		    $ref_field="WB:$phen_hash{$phen}{Curator_confirmed}";
+		}
+		my $with="WB:$obj|WB:$phen";
+		my $syn="";
+		if ($public_name ne $seq_name_hash{$gene}) {
+		    $syn=$seq_name_hash{$gene};
+		}
+		
+		foreach my $term (keys %{$phen2go{$phen}}) {
+		    my $go_type=$db->fetch('GO_term', $term)->Type;
+		    my $a=$aspect{lc $go_type};
+		    print $out "WB\t$gene\t$public_name\t\t$term\t$ref_field\tIMP\t$with\t$a\t\t$syn\t$type\t$taxon\t$date\tWB\n";
+		    $line_count++;
+		}
+	    }
+	}
+    }
+    
+    
+    warn "$count variation objects processed\n";
+    warn "$line_count lines generated\n";
+}
+
 
 close($out);
 
