@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-03-07 13:45:56 $      
+# Last updated on: $Date: 2008-03-12 13:26:50 $      
 
 # Changes required by Ant: 2008-02-19
 # 
@@ -198,8 +198,11 @@ if ($wormbase->species eq 'elegans') {
 # list of frequencies of repeat motifs that overlap coding exons
 my %repeat_count;
 
-# list of ESTs which have smal mismatches to the genome sequence
+# list of ESTs which have small mismatches to the genome sequence
 my @est_mismatches;
+
+# hash of anomaly counts
+my %anomaly_count;
 
 # now delete things that have not been updated in this run that you
 # would expect to have been updated like protein-homology-based
@@ -472,6 +475,20 @@ if ($database eq $wormbase->{'autoace'}) {
   }
 }
 
+# report the numbers of anomalies found
+$log->write_to("\n");
+foreach my $anomaly_type (keys %anomaly_count) {
+  my $count = $anomaly_count{$anomaly_type};
+  my $error_msg;
+  if ($count == 0) {
+    $error_msg = "*** POSSIBLE ERROR";
+    $log->error;
+  } else {
+    $error_msg = "";
+  }
+  $log->write_to("$anomaly_type\t$count\t$error_msg\n");
+}
+
 $log->mail();
 print "Finished.\n" if ($verbose);
 exit(0);
@@ -494,6 +511,8 @@ exit(0);
 
 sub get_protein_differences {
   my ($exons_aref, $pseudogenes_aref, $homologies_aref, $transposons_aref, $transposon_exons_aref, $noncoding_transcript_exons_aref, $rRNA_aref, $chromosome) = @_;
+
+  $anomaly_count{UNMATCHED_PROTEIN} = 0 if (! exists $anomaly_count{UNMATCHED_PROTEIN});
 
   my @homologies = @{$homologies_aref};
 
@@ -590,6 +609,8 @@ sub get_protein_differences {
 sub get_EST_differences {
   my ($exons_aref, $pseudogenes_aref, $est_aref, $transposons_aref, $transposon_exons_aref, $noncoding_transcript_exons_aref, $rRNA_aref, $chromosome) = @_;
 
+  $anomaly_count{UNMATCHED_EST} = 0 if (! exists $anomaly_count{UNMATCHED_EST});
+
   my @est = @{$est_aref};
 
   my @not_matched = ();		# the resulting list of hashes of est with no matching exons/transposons/pseudogenes
@@ -674,6 +695,8 @@ sub get_EST_differences {
 sub get_frameshifts {
   my ($homologies_aref, $chromosome) = @_;
 
+  $anomaly_count{FRAMESHIFTED_PROTEIN} = 0 if (! exists $anomaly_count{FRAMESHIFTED_PROTEIN});
+
   my $SCORE_THRESHOLD = 40;
   my $MAX_CHROM_DIFF = 15;	# maximum distance that the ends of the alignment are allowed to be on the chromosome
   my $MIN_CHROM_DIFF = -25;	# minimum distance that the ends of the alignment are allowed to be on the chromosome
@@ -756,6 +779,9 @@ my $prev_chrom_start = $homology->[1];
 
 sub get_protein_split_merged {
   my ($matched_aref, $chromosome) = @_;
+
+  $anomaly_count{MERGE_GENES_BY_PROTEIN} = 0 if (! exists $anomaly_count{MERGE_GENES_BY_PROTEIN});
+  $anomaly_count{SPLIT_GENES_BY_PROTEIN} = 0 if (! exists $anomaly_count{SPLIT_GENES_BY_PROTEIN});
 
   my @matched = @{$matched_aref};
 
@@ -905,6 +931,8 @@ sub get_protein_split_merged {
 
 sub get_protein_split {
   my ($matched_aref, $chromosome) = @_;
+
+  $anomaly_count{SPLIT_GENE_BY_PROTEIN_GROUPS} = 0 if (! exists $anomaly_count{SPLIT_GENE_BY_PROTEIN_GROUPS});
 
   my @matched = @{$matched_aref};
 
@@ -1196,6 +1224,9 @@ sub split_check {
 sub get_EST_split_merged {
   my ($matched_EST_aref, $chromosome, %Show_in_reverse_orientation) = @_;
 
+  $anomaly_count{MERGE_GENES_BY_EST} = 0 if (! exists $anomaly_count{MERGE_GENES_BY_EST});
+  $anomaly_count{SPLIT_GENES_BY_EST} = 0 if (! exists $anomaly_count{SPLIT_GENES_BY_EST});
+
   my @matched = @{$matched_EST_aref};
 
   my $prev_EST_id = "";	# use to collect alignments for a EST's homology when looking for frameshifts
@@ -1354,6 +1385,8 @@ sub get_EST_split_merged {
 sub get_unattached_EST {
   my ($est_aref, $chromosome) = @_;
 
+  $anomaly_count{UNATTACHED_EST} = 0 if (! exists $anomaly_count{UNATTACHED_EST});
+
   my $anomaly_score = 1.0;	# we must look at this with high priority
 
   foreach my $EST (@$est_aref) { # $id, $start, $end, $sense
@@ -1384,6 +1417,8 @@ sub get_unattached_EST {
 
 sub get_unattached_TSL {
   my ($SL1_aref, $SL2_aref, $chromosome) = @_;
+
+  $anomaly_count{UNATTACHED_TSL} = 0 if (! exists $anomaly_count{UNATTACHED_TSL});
 
   my @SL1 = @$SL1_aref;
   my @SL2 = @$SL2_aref;
@@ -1433,6 +1468,8 @@ sub get_unattached_TSL {
 sub get_isolated_TSL {
 
   my ($SL1_aref, $SL2_aref, $transcripts_aref, $pseudogenes_aref, $transposons_aref, $transposon_exons_aref, $noncoding_transcript_exons_aref, $rRNA_aref, $chromosome) = @_;
+
+  $anomaly_count{UNMATCHED_TSL} = 0 if (! exists $anomaly_count{UNMATCHED_TSL});
 
   my @SL1 = @$SL1_aref;
   my @SL2 = @$SL2_aref;
@@ -1511,6 +1548,8 @@ sub get_unmatched_twinscan_exons {
 
   my ($twinscan_aref, $exons_aref, $pseudogenes_aref, $transposons_aref, $transposon_exons_aref, $noncoding_transcript_exons_aref, $rRNA_aref, $repeatmasked_aref, $chromosome) = @_;
 
+  $anomaly_count{UNMATCHED_TWINSCAN} = 0 if (! exists $anomaly_count{UNMATCHED_TWINSCAN});
+
   my $exons_match = $ovlp->compare($exons_aref, same_sense => 1);
   my $pseud_match = $ovlp->compare($pseudogenes_aref, same_sense => 1);
   my $trans_match = $ovlp->compare($transposons_aref, same_sense => 1);
@@ -1578,6 +1617,8 @@ sub get_unmatched_genefinder_exons {
 
   my ($genefinder_aref, $exons_aref, $pseudogenes_aref, $transposons_aref, $transposon_exons_aref, $noncoding_transcript_exons_aref, $rRNA_aref, $repeatmasked_aref, $chromosome) = @_;
 
+  $anomaly_count{UNMATCHED_GENEFINDER} = 0 if (! exists $anomaly_count{UNMATCHED_GENEFINDER});
+
   my $exons_match = $ovlp->compare($exons_aref, same_sense => 1);
   my $pseud_match = $ovlp->compare($pseudogenes_aref, same_sense => 1);
   my $trans_match = $ovlp->compare($transposons_aref, same_sense => 1);
@@ -1643,6 +1684,8 @@ sub get_unmatched_SAGE {
 
   my ($coding_transcripts_aref, $pseudogenes_aref, $SAGE_tags_aref, $transposons_aref, $transposon_exons_aref, $noncoding_transcript_exons_aref, $rRNA_aref, $miRNA_aref, $ncRNA_aref, $scRNA_aref, $snRNA_aref, $snoRNA_aref, $stRNA_aref, $tRNA_aref, $tRNAscan_SE_1_23RNA_aref, $chromosome) = @_;
  
+  $anomaly_count{UNMATCHED_SAGE} = 0 if (! exists $anomaly_count{UNMATCHED_SAGE});
+
   my @SAGE_tags = @{$SAGE_tags_aref};
 
   # count a hit within 20 bases as a match, so tags have to be more
@@ -1755,6 +1798,8 @@ sub get_unmatched_waba_coding {
 
   my ($waba_aref, $exons_aref, $pseudogenes_aref, $transposons_aref, $transposon_exons_aref, $noncoding_transcript_exons_aref, $rRNA_aref, $repeatmasked_aref, $chromosome) = @_;
 
+  $anomaly_count{UNMATCHED_WABA} = 0 if (! exists $anomaly_count{UNMATCHED_WABA});
+
   my $exons_match = $ovlp->compare($exons_aref);
   my $pseud_match = $ovlp->compare($pseudogenes_aref);
   my $trans_match = $ovlp->compare($transposons_aref);
@@ -1828,6 +1873,8 @@ sub get_unmatched_waba_coding {
 sub get_matched_exons {
 
   my ($cds_exons_aref, $pseudogenes_aref, $transposons_aref, $transposon_exons_aref, $noncoding_transcript_exons_aref, $rRNA_aref, $chromosome) = @_;
+
+  $anomaly_count{OVERLAPPING_EXONS} = 0 if (! exists $anomaly_count{OVERLAPPING_EXONS});
 
   my $exons_match = $ovlp->compare($cds_exons_aref, other_sense => 1);
   my $pseud_match = $ovlp->compare($pseudogenes_aref, other_sense => 1);
@@ -1904,6 +1951,8 @@ sub get_matched_exons {
 sub get_short_exons {
   my ($exons_aref, $chromosome) = @_;
 
+  $anomaly_count{SHORT_EXON} = 0 if (! exists $anomaly_count{SHORT_EXON});
+
   foreach my $exon (@{$exons_aref}) { # $exon_id, $chrom_start, $chrom_end, $chrom_strand
 
     my $exon_id = $exon->[0];
@@ -1928,6 +1977,9 @@ sub get_short_exons {
 
 sub get_est_mismatches {
   my ($est_aref, $chromosome) = @_;
+
+  $anomaly_count{MISMATCHED_EST} = 0 if (! exists $anomaly_count{MISMATCHED_EST});
+
   my @ests = @{$est_aref};
 
   my $prev_EST_id = "";	
@@ -2028,6 +2080,8 @@ sub get_est_mismatches {
 
 sub get_weak_exon_splice_sites {
   my ($CDS_introns_aref, $chromosome) = @_;
+
+  $anomaly_count{WEAK_INTRON_SPLICE_SITE} = 0 if (! exists $anomaly_count{WEAK_INTRON_SPLICE_SITE});
 
 
 # intron splice sites with key = "ID,strand,pos" value as list 
@@ -2178,6 +2232,8 @@ sub read_file {
 sub get_short_introns {
   my ($exons_aref, $chromosome) = @_;
 
+  $anomaly_count{SHORT_INTRON} = 0 if (! exists $anomaly_count{SHORT_INTRON});
+
   my $prev_end = 0;
   my $prev_exon = "";
 
@@ -2211,6 +2267,8 @@ sub get_short_introns {
 sub get_matched_repeatmasker {
 
   my ($exons_aref, $repeatmasked_aref, $chromosome) = @_;
+
+  $anomaly_count{REPEAT_OVERLAPS_EXON} = 0 if (! exists $anomaly_count{REPEAT_OVERLAPS_EXON});
 
 
   # remove the low-complexity repeat regions from the repeats list
@@ -2256,6 +2314,8 @@ sub get_matched_repeatmasker {
 sub get_multiple_utr_introns {
 
   my ($UTR_aref, $chromosome) = @_;
+
+  $anomaly_count{INTRONS_IN_UTR} = 0 if (! exists $anomaly_count{INTRONS_IN_UTR});
 
 
   my %output;
@@ -2303,6 +2363,9 @@ sub get_multiple_utr_introns {
 sub get_twinscan_split_merged {
 
   my ($twinscan_aref, $CDS_aref, $chromosome) = @_;
+
+  $anomaly_count{SPLIT_GENE_BY_TWINSCAN} = 0 if (! exists $anomaly_count{SPLIT_GENE_BY_TWINSCAN});
+  $anomaly_count{MERGE_GENES_BY_TWINSCAN} = 0 if (! exists $anomaly_count{MERGE_GENES_BY_TWINSCAN});
 
 
   my $twin_match = $ovlp->compare($twinscan_aref, same_sense => 1);
@@ -2381,6 +2444,8 @@ sub get_twinscan_split_merged {
 sub get_checked_confirmed_introns {
   my ($check_introns_EST_aref, $check_introns_cDNA_aref, $chromosome) = @_;
 
+  $anomaly_count{CONFIRMED_INTRON} = 0 if (! exists $anomaly_count{CONFIRMED_INTRON});
+
   foreach my $check (@{$check_introns_EST_aref}, @{$check_introns_cDNA_aref}) {
     my $anomaly_score = 10;	# high priority
     my $check_id     = $check->[0];
@@ -2400,6 +2465,8 @@ sub get_checked_confirmed_introns {
 sub get_unmatched_ests {
 
   my ($est_aref, $trans_aref, $pseud_aref, $tposon_aref, $nctrans_aref, $rrna_aref, $chromosome) = @_;
+
+  $anomaly_count{UNMATCHED_EST} = 0 if (! exists $anomaly_count{UNMATCHED_EST});
 
   # set up the overlap compare objects for the secondary lists
   my $trans_match = $ovlp->compare($trans_aref);
@@ -2438,6 +2505,8 @@ sub get_unmatched_ests {
 
 sub get_unmatched_mass_spec_peptides {
   my ($mass_spec_peptides_aref, $cds_exons_aref, $transposon_exons_aref, $chromosome) = @_;
+
+  $anomaly_count{UNMATCHED_MASS_SPEC_PEPTIDE} = 0 if (! exists $anomaly_count{UNMATCHED_MASS_SPEC_PEPTIDE});
 
   my $cds_match   = $ovlp->compare($cds_exons_aref, same_sense => 0); # the sense of the mass-spec peptide is not well established
   my $trans_match = $ovlp->compare($transposon_exons_aref, same_sense => 0); # the sense of the mass-spec peptide is not well established
@@ -2487,6 +2556,11 @@ sub get_unmatched_mass_spec_peptides {
 sub get_introns_refuted_by_est {
 
   my ($CDS_introns_aref, $cds_exons_aref, $est_hsp_aref, $rst_hsp_aref, $ost_hsp_aref, $mrna_hsp_aref, $chromosome) = @_;
+
+  $anomaly_count{EST_OVERLAPS_INTRON} = 0 if (! exists $anomaly_count{EST_OVERLAPS_INTRON});
+  $anomaly_count{OST_OVERLAPS_INTRON} = 0 if (! exists $anomaly_count{OST_OVERLAPS_INTRON});
+  $anomaly_count{RST_OVERLAPS_INTRON} = 0 if (! exists $anomaly_count{RST_OVERLAPS_INTRON});
+  $anomaly_count{MRNA_OVERLAPS_INTRON} = 0 if (! exists $anomaly_count{MRNA_OVERLAPS_INTRON});
 
 
 # want to get all introns with no completely overlapping (isoform)
@@ -2643,12 +2717,14 @@ sub get_introns_refuted_by_est {
 sub find_incomplete_pfam_motifs {
 
 
+  $anomaly_count{INCOMPLETE_PFAM_MOTIF} = 0 if (! exists $anomaly_count{INCOMPLETE_PFAM_MOTIF});
+
   my $MOTIF_THRESHOLD = 100;	# amount of motif that can be missing before we report it
 
   my $pfam_id;
 
 # get the lengths of the Pfam motifs
-  print "get lengths of Pfam motifs\n";
+#  print "get lengths of Pfam motifs\n";
   my %pfam_length;
   my $pfam_file = "/tmp/Pfam";
   $wormbase->run_command("scp -q farm-login:/data/blastdb/Worms/interpro_scan/iprscan/data/Pfam $pfam_file", $log);
@@ -2680,7 +2756,7 @@ sub find_incomplete_pfam_motifs {
 
   my $protein_id;
 
-  print "find incomplete Pfam motifs\n";
+#  print "find incomplete Pfam motifs\n";
   foreach my $line (@slurp) {
 #  print "$line\n";
     if ($line =~ /^Protein\s+\:\s+\"(\S+)\"/) {$protein_id = $1;}
@@ -2715,7 +2791,7 @@ sub find_incomplete_pfam_motifs {
 	    open (OUTPUT_GFF, ">>$gff_file") || die "Can't open $gff_file";
 	  }
 	  
-	  print "$chromosome, $chrom_start, $chrom_end, $chrom_strand $pfam_id missing motif at start\n";
+#	  print "$chromosome, $chrom_start, $chrom_end, $chrom_strand $pfam_id missing motif at start\n";
 	  my $anomaly_score = 2;
 	  &output_to_database("INCOMPLETE_PFAM_MOTIF", $chromosome, $pfam_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score, 'missing part of motif at start');
 	  
@@ -2746,7 +2822,7 @@ sub find_incomplete_pfam_motifs {
 	    open (OUTPUT_GFF, ">>$gff_file") || die "Can't open $gff_file";
 	  }
 	  
-	  print "$chromosome, $chrom_start, $chrom_end, $chrom_strand $pfam_id missing motif at end\n";
+#	  print "$chromosome, $chrom_start, $chrom_end, $chrom_strand $pfam_id missing motif at end\n";
 	  my $anomaly_score = 2;
 	  &output_to_database("INCOMPLETE_PFAM_MOTIF", $chromosome, $pfam_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score, 'missing part of motif at end');
 	  
@@ -3098,6 +3174,8 @@ sub put_anomaly_record_in_database {
     }
   }
 
+  # count the anomalies found
+  $anomaly_count{$anomaly_type}++;
 
   # and output the line for the St. Louis datafile
   print DAT "INSERT\t$anomaly_type\t$chromosome\t$anomaly_id\t$chrom_start\t$chrom_end\t$chrom_strand\t$anomaly_score\t$explanation\t$clone\t$clone_start\t$clone_end\t$lab\n";
