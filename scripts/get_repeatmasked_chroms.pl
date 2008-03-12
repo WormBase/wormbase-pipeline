@@ -20,20 +20,15 @@ use Carp;
 use Log_files;
 use Storable;
 
-use lib '/nfs/acari/wormpipe/BUILD/ensembl-pipeline/modules';
-use lib '/nfs/acari/wormpipe/BUILD/ensembl/modules';
-use lib '/nfs/disk100/humpub/modules/PerlModules';
-
-use Bio::EnsEMBL::Pipeline::DBSQL::DBAdaptor;
-use Bio::EnsEMBL::Clone;
-use Bio::EnsEMBL::RawContig;
-
+use lib '/software/worm/lib/bioperl-live';
+use lib '/software/worm/ensembl/ensembl/modules';
+use Bio::EnsEMBL::DBSQL::DBAdaptor;
 
 ######################################
 # variables and command-line options # 
 ######################################
 
-my ($help, $debug, $test, $verbose, $store, $wormbase);
+my ($help, $debug, $test, $verbose, $store, $wormbase,$database);
 
 my $agp;
 my $out_dir;
@@ -44,8 +39,8 @@ GetOptions ("help"       => \$help,
 	    "test"       => \$test,
 	    "verbose"    => \$verbose,
 	    "store:s"      => \$store,
-	    "agp:s"      => \$agp,
 	    "output:s"   => \$out_dir,
+	    "database:s" => \$database,
 	    );
 
 if ( $store ) {
@@ -69,11 +64,6 @@ if ($test) {
 my $log = Log_files->make_build_log($wormbase);
 
 
-unless ($agp) {
-    print STDERR "Must specify agp file\n";
-    exit 1;
-}
-
 #################################
 # Set up some useful paths      #
 #################################
@@ -82,68 +72,45 @@ unless ($agp) {
 
 $out_dir = $wormbase->chromosomes unless $out_dir;
 die "cant write to $out_dir\t$!\n" unless (-w $out_dir );
-die "cant read agp file $agp\t$!\n" unless (-r $agp );
 
 # open connection to EnsEMBL DB
 my $dbobj;
 
 $log->write_to("Connecting to worm_dna\n");
 
-$dbobj = Bio::EnsEMBL::Pipeline::DBSQL::DBAdaptor->new(
+$dbobj = Bio::EnsEMBL::DBSQL::DBAdaptor->new(
 						       '-host'   => 'ia64d',
 						       '-user'   => 'wormro',
-						       '-dbname' => 'worm_dna'
+						       '-dbname' => $database
 						      )
-  or die "Can't connect to Database worm_dna";
+  or die "Can't connect to Database $database";
 
 
-my $clone_adaptor  = $dbobj->get_CloneAdaptor();
-my $contig_adaptor = $dbobj->get_RawContigAdaptor();
 
 $log->write_to("Building chromosomes\n");
 
-open (AGP,"<$agp") or die "cant open $agp\n";
-my %chrom_seq;
-
-while ( <AGP> ) {
-
-  #  X       1       2278    1       F       AL031272.3      1       2278    +
-  my @data = split;
-  my $agp_chrom = $data[0];
-  my ($acc) = $data[5] =~ /(\w+)\./;
-  my $length = $data[7];
-
-  my $clone = $clone_adaptor->fetch_by_accession($acc);
-  die "no clone in database for $acc\n" unless $clone;
-  my $maskedseq = lc $clone->get_all_Contigs->[0]->get_repeatmasked_seq->seq; # only ever one contig/clone.
-  $chrom_seq{$agp_chrom} .= substr($maskedseq,0,$length);
-}
-close AGP;
-
-
-foreach ( sort keys %chrom_seq ) {
-  my $text = "\t$_\t".length $chrom_seq{$_};
-  $log->write_to("$text");
-  $log->write_to("\n");
-}
-
 print STDERR "Outputting     ";
 
-foreach my $seq (sort keys %chrom_seq ) {
+my $sa=$dbobj->get_SliceAdaptor();
 
-  my $outfile = "$out_dir"."/CHROMOSOME_${seq}_masked.dna";
+foreach my $seq ( @{$sa->fetch_all('toplevel')}) {
+  my $name=$seq->seq_region_name();
+
+  my $outfile = "$out_dir"."/${name}_masked.dna";
   open (OUT,">$outfile") or die "cant write $outfile\t$!\n";
 
   $log->write_to("\twriting chromosome $seq\n");
-  print OUT ">CHROMOSOME_${seq} 1 ",length($chrom_seq{$seq}),"\n";
+  print OUT ">$name 1 ",$seq->seq_region_length,"\n";
   my $width = 50;
   my $start_point = 0;
-  while ( $start_point + $width < length( $chrom_seq{$seq} ) ) {
-    print OUT substr($chrom_seq{$seq}, $start_point, $width ),"\n";
+  my $sequence=$seq->get_repeatmasked_seq->seq;
+  
+  while ( $start_point + $width < length( $sequence ) ) {
+    print OUT substr($sequence, $start_point, $width ),"\n";
     $start_point += $width;
   }
 
-  print OUT substr($chrom_seq{$seq}, $start_point),"\n";
+  print OUT substr($sequence, $start_point),"\n";
   close OUT;
   system("gzip $outfile");
 }
