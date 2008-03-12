@@ -64,6 +64,7 @@ our $gff_types = ($config->{gff_types} || "curated coding_exon");
 &setupdb( $config->{database}, $config->{version} ) if $setup;
 &load_dna($config)   if $dna;
 &load_genes($config) if $genes;
+&load_agp($config) if $agp;
 
 ##################################
 # create database from schema
@@ -149,7 +150,30 @@ sub load_dna {
         }
     }
 
+    $db->get_MetaContainer()->store_key_value( 'assembly.mapping', $cs->name . ":" . $cs->version . "|" . $ss->name .':'.$cs->version );
+    $db->get_MetaContainer()->store_key_value( 'assembly.mapping', $cs->name . ":" . $cs->version . "|" . $cl->name .':'.$cs->version );
+    $db->get_MetaContainer()->store_key_value( 'assembly.mapping', $cl->name . ":" . $cs->version . "|" . $cs->name .':'.$cs->version."|".$ss->name .':'.$cs->version );
+
+    $db->dbc->do('INSERT INTO seq_region_attrib (seq_region_id,attrib_type_id,value) SELECT seq_region_id,11,5 FROM seq_region WHERE Name LIKE "%Mt%"');
+    $db->dbc->do('INSERT INTO seq_region_attrib (seq_region_id,attrib_type_id,value) SELECT seq_region_id,6,6 FROM seq_region WHERE coord_system_id=1');
+    
+    $db->close;
+    undef $db
+    
     # agp fun
+    load_agp($config) if ($config->{agp}); 
+
+}
+
+sub load_agp {
+    my ($config) = @_;
+    my $db = new Bio::EnsEMBL::DBSQL::DBAdaptor(
+        -host   => $config->{database}->{host},
+        -user   => $config->{database}->{user},
+        -dbname => $config->{database}->{dbname},
+        -pass   => $config->{database}->{password},
+        -port   => $config->{database}->{port},
+    );
     if ($config->{agp}) {
         foreach my $file ( glob $config->{agp} ) {
 	    my $bzhook= $file=~/.bz2$/ ? "bzcat $file|" : $file;
@@ -173,12 +197,6 @@ sub load_dna {
     	}
     }
 
-    $db->get_MetaContainer()->store_key_value( 'assembly.mapping', $cs->name . ":" . $cs->version . "|" . $ss->name .':'.$cs->version );
-    $db->get_MetaContainer()->store_key_value( 'assembly.mapping', $cs->name . ":" . $cs->version . "|" . $cl->name .':'.$cs->version );
-    $db->get_MetaContainer()->store_key_value( 'assembly.mapping', $cl->name . ":" . $cs->version . "|" . $cs->name .':'.$cs->version."|".$ss->name .':'.$cs->version );
-
-    $db->dbc->do('INSERT INTO seq_region_attrib (seq_region_id,attrib_type_id,value) SELECT seq_region_id,11,5 FROM seq_region WHERE Name LIKE "%Mt%"');
-    $db->dbc->do('INSERT INTO seq_region_attrib (seq_region_id,attrib_type_id,value) SELECT seq_region_id,6,6 FROM seq_region WHERE coord_system_id=1');
 }
 
 sub load_genes {
