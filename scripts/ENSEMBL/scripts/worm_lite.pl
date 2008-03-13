@@ -7,7 +7,7 @@
 #
 #  DESCRIPTION:
 #
-#       AUTHOR:   (), <>
+#       AUTHOR:   (Michael Han), <mh6@sanger.ac.uk>
 #      COMPANY:
 #      VERSION:  1.0
 #      CREATED:  07/07/06 15:37:31 BST
@@ -34,13 +34,14 @@ use lib "$FindBin::Bin/../lib";
 use WormBase;
 use DBI qw(:sql_types);
 
-my ( $debug, $species, $setup, $dna, $genes, $test,$store );
+my ( $debug, $species, $setup, $dna, $genes, $test,$store,$agp );
 
 GetOptions(
     'species=s'  => \$species,
     'setup'      => \$setup,
     'load_dna'   => \$dna,
     'load_genes' => \$genes,
+    'load_agp'   => \$agp,
     'debug'      => \$debug,
     'test'       => \$test,
     'store=s'     => \$store,
