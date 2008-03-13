@@ -23,6 +23,8 @@ use YAML;
 use Getopt::Long;
 use Storable;
 # use Wormbase;
+use lib '/software/worm/ensembl/ensembl/modules';
+use lib '/software/worm/lib/bioperl-live';
 use Bio::Seq;
 use Bio::SeqIO;
 use Bio::EnsEMBL::CoordSystem;
@@ -159,8 +161,12 @@ sub load_dna {
     $db->dbc->do('INSERT INTO seq_region_attrib (seq_region_id,attrib_type_id,value) SELECT seq_region_id,6,6 FROM seq_region WHERE coord_system_id=1');
     
     $db->close;
-    undef $db
-    
+    undef $db;
+    undef $cs;
+    undef $ss;
+    undef $cl;
+    undef $sa;
+
     # agp fun
     load_agp($config) if ($config->{agp}); 
 
@@ -175,6 +181,11 @@ sub load_agp {
         -pass   => $config->{database}->{password},
         -port   => $config->{database}->{port},
     );
+    my $cs = $db->get_CoordSystemAdaptor()->fetch_by_dbID(1);    # chromosome
+    my $ss = $db->get_CoordSystemAdaptor()->fetch_by_dbID(2);    # superlink
+    my $cl = $db->get_CoordSystemAdaptor()->fetch_by_dbID(3);    # clone
+    my $sa = $db->get_SliceAdaptor();
+
     if ($config->{agp}) {
         foreach my $file ( glob $config->{agp} ) {
 	    my $bzhook= $file=~/.bz2$/ ? "bzcat $file|" : $file;
