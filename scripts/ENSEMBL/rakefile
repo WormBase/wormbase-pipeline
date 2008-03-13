@@ -16,7 +16,7 @@ tmp_place = '/lustre/scratch1/ensembl/wormpipe/compara_build'
 # will raise an error if not
 desc 'check if the directories are cleaned up'
 task :check_clean do
-	files=Dir.glob('/lustre/scratch1/ensembl/wormpipe/compara/Caenorhabditis*')
+	files=Dir.glob('/lustre/scratch1/ensembl/wormpipe/compara/Caenorhabditis* /lustre/scratch1/ensembl/wormpipe/compara/Brugia*')
 	raise("the last run was not cleaned up! delete:\n#{files.join("\n")}") unless files.size == 0
 end
 
@@ -200,7 +200,9 @@ desc 'cleanup the compara work directories'
 task :cleanup do
 	sh 'rm -rf /lustre/scratch1/ensembl/wormpipe/compara/logs/*'      # remove the logs
 	sh 'rm -f /lustre/scratch1/ensembl/wormpipe/compara/Caenorhabditis*' # remove the blast databases
+	sh 'rm -f /lustre/scratch1/ensembl/wormpipe/compara/Brugia*' # remove the blast databases
 	sh 'rm -f /lustre/work1/ensembl/wormpipe/compara/Caenorhabditis*' # remove the blast databases
+	sh 'rm -f /lustre/work1/ensembl/wormpipe/compara/Brugia*' # remove the blast databases
 	sh "rm -f #{tmp_place}/compara.ace" # remove the compara ace file
 	sh "rm -rf #{tmp_place}/compara"    # remove the compara dump directory
 end
