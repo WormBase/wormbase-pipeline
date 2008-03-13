@@ -31,7 +31,7 @@ my $dump_one_script;
 	   );
 $dump_one_script = $dump_one_script?glob($dump_one_script):'/lustre/work1/ensembl/wormpipe/script/dump_one_new.pl';
 
-my $dbh=DBI->connect( "dbi:mysql:database=$b;host=$host;port=$port", "wormro");
+my $dbh=DBI->connect("dbi:mysql:database=$db;host=$host;port=$port", "wormro");
 
 my $sth = $dbh->prepare('select count(*) from protein_feature where analysis_id in (select analysis_id from analysis where module="BlastPep")');
 $sth->execute;
