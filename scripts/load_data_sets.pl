@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl -w
-# Last updated by: $Author: pad $     
-# Last updated on: $Date: 2008-03-10 13:28:00 $      
+# Last updated by: $Author: mh6 $     
+# Last updated on: $Date: 2008-03-13 16:24:54 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -99,7 +99,6 @@ sub parse_homol_data {
 		    #other data
 		    "repeat_homologies.ace",
 		    "waba.ace",
-		    "TRF.ace",
 		    "inverted_repeats.ace"
 		   );
 
