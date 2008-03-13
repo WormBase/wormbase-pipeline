@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: ar2 $
-// Last edited on: $Date: 2008-02-01 10:31:47 $
+// Last edited on: $Date: 2008-03-13 16:50:42 $
 
 
 
@@ -265,7 +265,7 @@
 		  Cloned_by #Evidence      //[29 Aug 2006 ar2 - added for mt3 for acreditation of person who cloned gene
                   Reference_allele ?Variation #Evidence
                   Allele ?Variation XREF Gene #Evidence
-                  Phenotype ?Text #Evidence
+                  Legacy_information Text #Evidence
                   Complementation_data Text
                   Strain ?Strain XREF Gene
                   In_cluster ?Gene_cluster XREF Contains_gene // new way of linking to Clusters in locus class
@@ -411,7 +411,7 @@
 			Duplication	Free_dup
 			Translocation
 			Compound	Text
-                        Phenotype ?Text
+                Phenotype ?Phenotype XREF Rearrangement #Phenotype_info
 		Balances ?Map #Balancer
 //	possibility to refer to other Intervals to describe a complex rearrangement
 //	for the worm this is not too necessary, but important for fly and mouse
@@ -826,15 +826,15 @@
  	X_position UNIQUE Text
  	Y_position UNIQUE Text	
 
-?Neurodata      Send            Text    UNIQUE Int UNIQUE Float   // Text=series,Int=count,Float=synapse size in micron
-                Send_joint      Text    UNIQUE Int UNIQUE Float   // for polyadic synapse
-                Send_partner    ?Anatomy_term                     // [2006-04-21 ar2] Raymond
-                Receive         Text    UNIQUE Int UNIQUE Float
-                Receive_joint   Text    UNIQUE Int UNIQUE Float
-                Receive_partner ?Anatomy_term			  // [2006-04-21 ar2] Raymond
-                Gap_junction    Text    UNIQUE Int UNIQUE Float
-                Evidence        #Evidence
 
+?Neurodata     Send            Text    UNIQUE Int #Neuro_location   // Text=series,Int=count
+               Send_joint      Text    UNIQUE Int #Neuro_location   // for polyadic synapse
+               Receive         Text    UNIQUE Int #Neuro_location
+               Receive_joint   Text    UNIQUE Int #Neuro_location
+               Gap_junction    Text    UNIQUE Int #Neuro_location
+               Evidence        #Evidence 
+
+?Neuro_location    Section Int UNIQUE Int    UNIQUE Float   //Int1=first EM section where the connection was found,Int2=last section,Float=thickness per section in micron
 
 ?Reconstruction Cell ?Cell
                 Anatomy_term ?Anatomy_term //[2006-04-21 ar2] Raymond
@@ -1371,7 +1371,7 @@
                // keep the same model as in Sequence, so same code works
               Method UNIQUE ?Method // added for Lincoln RNAi [001213 dl]
 
-
+//Feature class
 ?Feature SMap S_parent UNIQUE Sequence UNIQUE ?Sequence XREF Feature_object
          Flanking_sequences UNIQUE ?Sequence UNIQUE Text UNIQUE Text
 	 DNA_text UNIQUE ?Text       // for storing the sequence of the feature...can use IUPAC codes to be able
@@ -1392,7 +1392,10 @@
                       Associated_with_pseudogene ?Pseudogene XREF Associated_feature #Evidence // richard
                       Associated_with_transposon ?Transposon XREF Associated_feature #Evidence //richard
 		      Associated_with_variation  ?Variation  XREF Feature #Evidence  
-		      Associated_with_Position_Matrix ?Position_Matrix XREF Associated_feature #Evidence
+		      Associated_with_Position_Matrix	      ?Position_Matrix XREF Associated_feature #Evidence
+		      Associated_with_operon      ?Operon XREF Associated_feature #Evidence
+		      Associated_with_gene_regulation      ?Gene_regulation XREF Associated_feature #Evidence
+		      Associated_with_expression_pattern	 ?Expr_pattern XREF Associated_feature #Evidence 
 	 Bound_by_product_of ?Gene XREF Gene_product_binds #Evidence //pad added this to show what gene it binds
 	 Annotation UNIQUE ?LongText		// added for data attribution [030220 dl]
 	 Confidential_remark ?Text //pad
@@ -1670,6 +1673,7 @@
 				Strain UNIQUE ?Strain
 		Reference ?Paper XREF Expr_pattern
                 Transgene ?Transgene XREF Expr_pattern
+		Associated_feature ?Feature XREF Associated_with_expression_pattern #Evidence
 		Antibody_info ?Antibody XREF Expr_pattern // This applies to both Western & Antibody staining
                                                           // added [031120 krb]
 		Curated_by UNIQUE Text // Hinxton (HX) or Caltech (CIT)
@@ -1717,7 +1721,7 @@
 // added by krb 031120
 //
 /////////////////////////////////////////////////////////////////////////////////////////////
- 
+
 ?Antibody  Evidence     #Evidence
            Summary      ?Text   #Evidence
            Other_name   Text
@@ -1740,8 +1744,6 @@
            Location        ?Laboratory
            Reference       ?Paper          XREF    Antibody
            Remark          ?Text #Evidence
-
-
 
 
 ?Picture Description ?Text
@@ -2162,6 +2164,7 @@
                               Transgene	?Transgene XREF Phenotype	// Added by Carol
 			      Anatomy_function ?Anatomy_function XREF Phenotype
 			      Interaction ?Interaction
+			      Rearrangement ?Rearrangement XREF Phenotype
 	   Associated_with    GO_term   ?GO_term   XREF Phenotype   ?GO_code  #Evidence	// Tag Associated_with changed by Carol
 
 
@@ -2178,6 +2181,7 @@
 ?Operon SMap S_parent UNIQUE Canonical_parent UNIQUE ?Sequence XREF Operon
 	Species UNIQUE ?Species
 	Contains_gene ?Gene XREF Contained_in_operon #Trans_splice_leader
+	Associated_feature ?Feature XREF Associated_with_operon	#Evidence
 	Reference ?Paper XREF Operon
 	Method UNIQUE ?Method
 	History    Merged_into      UNIQUE ?Operon XREF Acquires_merge #Evidence
@@ -2751,6 +2755,7 @@
                            Trans_regulated_seq     ?CDS       XREF    Trans_target    #Boolean
                            Cis_regulated_seq       ?CDS       XREF    Cis_target      #Boolean
                            Other_regulated         ?Text                              #Boolean
+		 Associated_feature ?Feature XREF Associated_with_gene_regulation #Evidence //to curate sequence feature connection [ar2]
                  Result    Positive_regulate #GR_condition
                            Negative_regulate #GR_condition
 			   Does_not_regulate #GR_condition // addded to capture negative data [040220 krb]
