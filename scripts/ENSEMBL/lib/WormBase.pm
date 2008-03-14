@@ -173,6 +173,8 @@ sub agp_parse {
             #print "Warning assumed default orientation for $contig\n";
         }
 
+        $contig=~s/\.\d+$//; # strip the version
+	
         #print "have raw coords ".$raw_start." ".$raw_end." ".$raw_ori."\n";
         if ( $chr_hash->{$contig} ) {
             die "contig " . $contig . " has been found twice something odd is going on\n";
