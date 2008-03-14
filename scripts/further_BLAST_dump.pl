@@ -6,8 +6,8 @@
 #
 # Author: Chao-Kung CHen
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2008-01-11 17:05:15 $
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2008-03-14 13:33:48 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -46,16 +46,11 @@ $wormbase->run_command("cat $farm_ace/flybase.ace $farm_ace/yeast.ace $source_di
 
 my @files        = (
 		    "worm_pep_best_blastp_hits",
-		    "worm_brigpep_best_blastp_hits",
-		    "TRF.ace",
 		    "repeat_homologies.ace",
 		    "worm_pep_blastp.ace",
-		    "worm_brigpep_blastp.ace",
 		    "worm_dna_blastx.ace",
-		    "worm_pep_motif_info.ace",
-		    "worm_brigpep_motif_info.ace",
-		    "worm_pep_interpro_motif_info.ace",
-		    "worm_brigpep_interpro_motif_info.ace",
+		    "worm_ensembl_elegans_motif_info.ace",
+		    "worm_ensembl_elegans_interpro_motif_info.ace",
 		    "ensembl_protein_info.ace",
 		    "waba.ace",
 		   );
