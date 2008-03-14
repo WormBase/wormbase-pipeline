@@ -8,15 +8,13 @@ use GDBM_File;
 use Wormbase;
 use Log_files;
 
-my $old;
 my $verbose;
 my $list_all;
 my $output;
 my $species;
 my ($store, $test, $debug);
 
-GetOptions ( "old"       => \$old,
-	     "verbose"   => \$verbose,
+GetOptions ( "verbose"   => \$verbose,
 	     "list=s"    => \$list_all,
 	     "output=s"  => \$output,
 	     "species=s" => \$species,
@@ -42,18 +40,14 @@ my $desc     = "$wormpipe_dump/desc.dbm";
 my $peptide  = "$wormpipe_dump/peptide.dbm";
 my $database = "$wormpipe_dump/databases.dbm";
 
-my @blastp_databases = qw( worm_pep worm_brigpep );
-
-my $ipi_hits_files = "$wormpipe_dump/ipi_hits_list_x ";
-foreach ( @blastp_databases ){ 
-  $ipi_hits_files .= "$wormpipe_dump/${_}_ipi_hits_list ";
-  warn "no ipi_hits file for $_ : $wormpipe_dump/${_}_ipi_hits_list\n" unless (-e "$wormpipe_dump/${_}_ipi_hits_list" );
-}
+my @ipi_hits_files = glob("$wormpipe_dump/*ipi_hits_list_x $wormpipe_dump/*ipi_hits_list");
 
 $list_all = "$wormpipe_dump/ipi_hits_all" unless $list_all;
 $output   = "$wormpipe_dump/ipi_hits.ace" unless $output;
 
-system("cat $ipi_hits_files | sort -u > $list_all");
+my $flat_files = join (" ",@ipi_hits_files);
+
+system("cat $flat_files | sort -u > $list_all");
 
 
 unless (-s "$acc2db" and -s "$desc"  and -s "$peptide") {
@@ -81,7 +75,6 @@ open (ACE, ">$output") or die "cant open $output\n";
 
 # Description goes in "Title" field for old style model 
 my $title_desc = "Description";
-$title_desc = "Title" if $old;
 
 while (<LIST>) {
   chomp;
@@ -102,19 +95,18 @@ while (<LIST>) {
 
   # this is for new protein model
 
-  #SwissProt_ID
-  #SwissProt_AC
-  #TrEMBL_AC
-  #FlyBase_gn
-  #Gadfly_ID
-  #SGD_systematic
-  #SGDID
-  #ENSEMBL_geneID
-  #ENSEMBL_proteinID
-  #WORMPEP_ID 
+  # SwissProt_ID
+  # SwissProt_AC
+  # TrEMBL_AC
+  # FlyBase_gn
+  # Gadfly_ID
+  # SGD_systematic
+  # SGDID
+  # ENSEMBL_geneID
+  # ENSEMBL_proteinID
+  # WORMPEP_ID 
 
-  unless ($old) {
-    foreach (@databases) {
+  foreach (@databases) {
       my ($DB,$ID) = split(/:/, $_);
       if( "$DB" eq "ENSEMBL" ){
       print ACE "Database ENSEMBL ENSEMBL_proteinID $ID\n";
@@ -132,25 +124,8 @@ while (<LIST>) {
       elsif( "$DB" eq "TREMBL" ){
 	print ACE "Database TREMBL TrEMBL_AC $ID\n";
       }
-    }
   }
 
-  # This is old protein model 
-  else {
-    foreach (@databases) {
-      my ($DB,$ID) = split(/:/, $_);
-      my $othername = $ID;
-      if( "$DB" eq "ENSEMBL" ){
-	$othername = $ENSpep_gene{$ID} if $ENSpep_gene{$ID};
-      }
-      elsif( "$DB" eq "SWISS-PROT" ){ 
-	$othername = $acc2id{$ID} if $acc2id{$ID};
-	print ACE "Other_name \"$swiss_id2gene{$othername}\"\n" if( $othername and $swiss_id2gene{$othername} );
-      }
-      
-      print ACE "Database $DB $othername $ID\n";
-    }
-  }
   # This is the same for each
   print ACE "\nPeptide : \"$prefix:$id\"\n";
   print ACE "$PEPTIDE{$id}\n";
