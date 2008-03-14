@@ -7,7 +7,7 @@
 # Author: Chao-Kung CHen
 #
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2008-03-14 13:55:25 $
+# Last updated on: $Date: 2008-03-14 14:03:49 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -35,14 +35,14 @@ if ( $store ) {
 }
 
 my $log = Log_files->make_build_log($wormbase);
-
-my $farm_ace = '/lustre/work1/ensembl/wormpipe';  # this is the only place where a path is specified outside of Wormbase.pm as cant access wormpipe and wormpub acefiles at same time
-
-my $source_dir    = "$farm_ace/dumps";
+my $farm_base = '/lustre/work1/ensembl/wormpipe';
+my $farm_ace = "$farm_base/ace_files"; 
+my $source_dir    = "$farm_base/dumps";
 my $target_dir = $wormbase->acefiles;
 my $backup_dir = "$source_dir/BACKUP";
 
 unlink("$source_dir/ensembl_protein_info.ace");
+
 $wormbase->run_command("cat $farm_ace/flybase.ace $farm_ace/yeast.ace $source_dir/ipi_hits.ace $source_dir/swissproteins.ace $source_dir/tremblproteins.ace > $source_dir/ensembl_protein_info.ace", $log);
 
 my @files        = (
@@ -69,7 +69,7 @@ foreach my $file (@files){
   }
   else {
     $log->write_to($file." does not exist\n");
-    $log->error;
+    $log->error unless $file eq 'waba.ace';
   }
 }
 
