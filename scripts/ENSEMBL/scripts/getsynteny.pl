@@ -21,7 +21,7 @@ getsynteny.pl  --host ensembldb.ensembl.org
 ";
 
 my $help = 0;
-my $host = 'ia64b';
+my $host = 'ia64d';
 my $user = 'wormro';
 my $pass;
 my $dbname = 'worm_compara_lagan';

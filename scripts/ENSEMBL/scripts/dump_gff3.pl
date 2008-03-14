@@ -20,7 +20,7 @@ my $debug = 1;
 
 # Vega database
 my $vega_dbname = '';
-my $vega_dbhost = 'ia64b';
+my $vega_dbhost = 'ia64d';
 my $vega_dbport =  3306;
 my $vega_dbuser = 'wormro'; 
 my $vega_dbpass = '';
