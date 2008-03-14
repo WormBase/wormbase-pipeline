@@ -52,8 +52,7 @@ my $trembl_list_txt   = "$wormpipe_dump/trembllist.txt";
 
 my $db_files        = "/lustre/work1/ensembl/wormpipe/swall_data";
 
-my @blastp_databases = qw(worm_pep worm_brigpep);
-my $blast_files = "$wormpipe_dump/*blastp.ace $wormpipe_dump/*blastx.ace ";
+my $blast_files = "$wormpipe_dump/*blastp.ace $wormpipe_dump/*X.ace ";
 
 # extract and write lists of which proteins have matches
 unless ( $list ){
