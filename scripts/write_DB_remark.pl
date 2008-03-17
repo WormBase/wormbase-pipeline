@@ -7,7 +7,7 @@
 # This script interogates an ACEDB database and returns all pfam/Interpro/blastx 
 # data as appropriate and generates a suitable DB_remark
 #
-# Last updated on: $Date: 2008-03-17 10:16:14 $
+# Last updated on: $Date: 2008-03-17 10:53:17 $
 # Last updated by: $Author: mh6 $
 
 
@@ -278,17 +278,17 @@ SUBSEQUENCE: while ( my $cds = $CDSs->next ) {
 
 	# stored details of match with highest score
 	my $max_score = 0;
-	my $best_match = "";
-	my $best_description = "";
-	my $best_species = "";
+	my $best_match ;
+	my $best_description ;
+	my $best_species ;
 
       PROTEIN: foreach my $protein (@peptide_homols) {
 
 	  # ignore other worm matches
 	  next PROTEIN if (
-		  ($protein =~ m/^BP\:CBP/) 
+		     ($protein =~ m/^BP\:CBP/) 
 		  || ($protein =~ m/^WP\:CE/)
-		  || ($protein =~m/^RP\:RP/)
+		  || ($protein =~ m/^RP\:RP/)
 	  );
 
 	  my ($a,$b,$score,$d,$e,$f,$g) = $protein->row;
@@ -310,7 +310,7 @@ SUBSEQUENCE: while ( my $cds = $CDSs->next ) {
 	if ($cgc_name) {	# don't always take a peptide match, so can't add "; " above, must add here
 	  $full_string .= "; ";
 	}
-	if ((defined $best_species) && (defined $best_description) && (defined $best_match)) {
+	if ($best_species && $best_description && $best_match) {
 	  $full_string .= "contains similarity to $best_species $best_description; $best_match ";
 	}
       }
