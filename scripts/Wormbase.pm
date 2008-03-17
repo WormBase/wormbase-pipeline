@@ -749,6 +749,9 @@ sub check_files {
 	if ($file =~ /(\$\S+\-\>[\w_\(\)\']+)(\/\S+)/) {
 	  $file = eval($1) . $2;         # and expand to the full path
 	}
+	while ($file =~ /(\S*)\$\{\\(\$\w+\-\>[\w_\(\)\']+)\}(\S*)/) { # look for: anything ${\$object->method} anything
+	  $file = $1 . eval($2) . $3;
+	}
 	# don't want to do a default test it we already have the tests
 	# that are specific for this species
 	if ($found_species eq 'default' &&
