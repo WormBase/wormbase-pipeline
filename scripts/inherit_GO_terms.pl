@@ -4,8 +4,8 @@
 #
 # map GO_terms to ?Sequence objects from ?Motif and ?Phenotype
 #
-# Last updated by: $Author: ar2 $     
-# Last updated on: $Date: 2007-12-11 09:49:29 $      
+# Last updated by: $Author: mh6 $     
+# Last updated on: $Date: 2008-03-17 15:19:25 $      
 
 use strict;
 use warnings;
@@ -32,13 +32,13 @@ my $species;
 
 GetOptions ("help"      => \$help,
             "debug=s"   => \$debug,
-			    "phenotype" => \$phenotype,
-			    "tmhmm"		=> \$tmhmm,
-	   		 "motif"     => \$motif,
-	    		"noload"    => \$noload,
-    	    	"store:s"   => \$store,
-    	    	"database:s" => \$database,
-    	    	"species:s"  => \$species
+            "phenotype" => \$phenotype,
+	    "tmhmm"		=> \$tmhmm,
+	    "motif"     => \$motif,
+	    "noload"    => \$noload,
+    	    "store:s"   => \$store,
+    	    "database:s" => \$database,
+    	    "species:s"  => \$species
     	);
 
 # Display help if required
@@ -78,9 +78,9 @@ my $db = Ace->connect(-path=>$dbpath,
 
 
 
-&motif($dbpath)     if ($motif);
-&phenotype($db) 	if ($phenotype);
-&tmhmmGO 			if ($tmhmm);
+&motif($dbpath) if ($motif);
+&phenotype($db) if ($phenotype);
+&tmhmmGO 	if ($tmhmm);
 
 close OUT;
 
@@ -131,7 +131,7 @@ sub motif {
 ########################################################################################
 
 sub tmhmmGO {
-	my $query = "find protein where species = \"".$wormbase->full_name."\" where Feature AND NEXT = \"tmhmm\"; follow Corresponding_CDS; follow Gene";
+	my $query = "find protein where species = \"".$wormbase->full_name."\" where Feature AND NEXT = \"Tmhmm\"; follow Corresponding_CDS; follow Gene";
 	my $genes = $db->fetch_many(-query => $query);
 	while(my $gene = $genes->next){
 		print OUT "\nGene : ".$gene->name."\nGO_term \"GO:0016021\"\tIEA\tInferred_automatically\t\"CBS:TMHMM\"\n";
@@ -150,13 +150,13 @@ sub phenotype {
   		next if (/acedb/ or /\/\//);
 		my @data = split;
 	  	my ($cds, $rnai, $phenotype_id,$go, $gene) = ($data[0], $data[1], $data[2], $data[3], $data[4]);
-		next if (! defined $phenotype);
+		next if (! defined $phenotype_id);
 		my $phenotype; 
 	  	if($phenotype_id =~ /WBPheno/) {
 	  		$phenotype = &get_phenotype_name($phenotype_id);
 	  	}
 	  	else {next;}
-  		unless($cds and $phenotype_id and $go) {
+  		unless($cds and $phenotype and $go) {
   			$log->write_to("bad data $_");
   			next;
   		}
