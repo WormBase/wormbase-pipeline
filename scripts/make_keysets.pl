@@ -6,8 +6,8 @@
 #
 # Usage : make_keysets.pl [-options]
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2008-01-15 11:53:15 $
+# Last edited by: $Author: mh6 $
+# Last edited on: $Date: 2008-03-17 16:54:14 $
 
 #################################################################################
 # variables                                                                     #
@@ -95,15 +95,17 @@ if (($rnai) || ($all)) {
     print "...hasta luego\n\n" if ($debug);
 }
 
+
+## commented out, as Expr_patterns are connected to genes
 # CDS with Expr_pattern
-if (($expr) || ($all)) {
-    print "Tace query for CDS_with_Expr_pattern\t" if ($debug);
-    my $command ="nosave\nquery find elegans_CDS where Expr_pattern\nlist -a\nquit\n";
-    &tace_it($command,'CDS_with_Expr_pattern');
-    print "....load into db\t" if ($debug);
-    &load_it('CDS_with_Expr_pattern','keyset_lists') unless ($noload);
-    print "...hasta luego\n\n" if ($debug);
-}
+#if (($expr) || ($all)) {
+#    print "Tace query for CDS_with_Expr_pattern\t" if ($debug);
+#    my $command ="nosave\nquery find elegans_CDS where Expr_pattern\nlist -a\nquit\n";
+#    &tace_it($command,'CDS_with_Expr_pattern');
+#    print "....load into db\t" if ($debug);
+#    &load_it('CDS_with_Expr_pattern','keyset_lists') unless ($noload);
+#    print "...hasta luego\n\n" if ($debug);
+#}
 
 # CDS with PCR_product
 if (($pcr) || ($all)) {
