@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-03-12 17:14:00 $      
+# Last updated on: $Date: 2008-03-17 11:25:23 $      
 
 # Changes required by Ant: 2008-02-19
 # 
@@ -328,7 +328,7 @@ foreach my $chromosome (@chromosomes) {
   my $matched_protein_aref = &get_protein_differences(\@cds_exons, \@pseudogenes, \@homologies, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, $chromosome);
 
   print "finding frameshifts\n";
-  &get_frameshifts(\@homologies, $chromosome);
+  &get_frameshifts(\@homologies, \@CDS_introns, $chromosome);
 
   print "finding genes to be split/merged based on protein homology\n";
   &get_protein_split_merged($matched_protein_aref, $chromosome);
@@ -690,10 +690,10 @@ sub get_EST_differences {
 
 # get the frameshifts evident in adjacent homologies of a group of HSPs for proteins
 
-#  my @frameshifts = get_frameshifts(\@homologies);
+#  my @frameshifts = get_frameshifts(\@homologies, \@CDS_introns);
 
 sub get_frameshifts {
-  my ($homologies_aref, $chromosome) = @_;
+  my ($homologies_aref, $CDS_introns_aref, $chromosome) = @_;
 
   $anomaly_count{FRAMESHIFTED_PROTEIN} = 0 if (! exists $anomaly_count{FRAMESHIFTED_PROTEIN});
 
@@ -702,6 +702,26 @@ sub get_frameshifts {
   my $MIN_CHROM_DIFF = -25;	# minimum distance that the ends of the alignment are allowed to be on the chromosome
   my $MAX_PROT_DIFF = 15;	# maximum distance that the ends of the HSPs are allowed to be from each other in the protein
 
+
+
+  ###########################################
+  # find out which introns are confirmed
+  ###########################################
+  my @confirmed_introns;
+
+  foreach my $intron (@{$CDS_introns_aref}) { # $intron_id, $chrom_start, $chrom_end, $chrom_strand, other
+
+    my $other_data = $intron->[4];
+    if ($other_data =~ /Confirmed_/) { # test to see if this intron is confirmed
+      push @confirmed_introns, $intron;
+    }
+
+  }
+
+  ###########################################
+  # find the frameshifts
+  ###########################################
+
   # sort the homologies grouped by protein ID and then chromosomal position
   my @homologies = sort {$a->[0] cmp $b->[0] or $a->[1] <=> $b->[1]} @{$homologies_aref};
 
@@ -709,7 +729,7 @@ sub get_frameshifts {
   for (my $i = 0; $i < scalar @homologies; $i++) {
     my $homology = $homologies[$i];
     my $prev_protein_id = $homology->[0];
-my $prev_chrom_start = $homology->[1];
+    my $prev_chrom_start = $homology->[1];
     my $prev_chrom_end = $homology->[2];
     my $prev_hit_end = $homology->[5];
     my $prev_protein_score = $homology->[6];
@@ -727,7 +747,10 @@ my $prev_chrom_start = $homology->[1];
 
       my $chrom_diff = $chrom_start - $prev_chrom_end;
       my $prot_diff = $hit_start - $prev_hit_end;
-      my $frameshift = abs($chrom_diff-1) % 3; # get the difference in the frame aligned to
+
+      # get the difference in the frame aligned to
+      # if diff % 2 is not 1 then it is a frameshift
+      my $frameshift = (abs($chrom_diff) % 3) - 1; 
 
       # if we are getting too far away from the end of $homologies[$i], then increment $i to stop searching it
       if ($chrom_diff > $MAX_CHROM_DIFF) {last;}
@@ -736,7 +759,14 @@ my $prev_chrom_start = $homology->[1];
 
       # output any frameshifts found to the database
       # want the frame to have changed, so look at the chrom_start to prev_chrom_end difference mod 3
-      if ($frameshift != 0 && $chrom_diff > $MIN_CHROM_DIFF && $chrom_diff < $MAX_CHROM_DIFF && abs($prot_diff) < $MAX_PROT_DIFF) {
+      if ($frameshift && $chrom_diff > $MIN_CHROM_DIFF && $chrom_diff < $MAX_CHROM_DIFF && abs($prot_diff) < $MAX_PROT_DIFF) {
+
+	# make a dummy GFF line for this frameshift
+	my $homol = [$prev_protein_id, $prev_chrom_end, $chrom_start, $chrom_strand]; 
+	# see if the line overlaps a confirmed intron, if so then ignore it
+	# start a new search every time because the protein homologies are not sorted in chromosomal order
+	my $confirmed_match  = $ovlp->compare(\@confirmed_introns, same_sense => 1);
+	if ($confirmed_match->match($homol)) {next;}
 
 	# get the region to display
 	my $anomaly_start = $prev_chrom_end;
