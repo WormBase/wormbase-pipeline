@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl -w
 # Last updated by: $Author: mh6 $     
-# Last updated on: $Date: 2008-03-13 16:34:25 $      
+# Last updated on: $Date: 2008-03-17 09:31:23 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -90,11 +90,11 @@ sub parse_homol_data {
 #		    "worm_brigpep_blastp.ace", # don't load briggsae files unless building briggsae
 		    "worm_dna_blastx.ace",
 		    #motif info
-		    "worm_pep_motif_info.ace",
+		    "worm_ensembl_elegans_motif_info.ace",
 #		    "worm_brigpep_motif_info.ace",
 		    #protein info
 		    "ensembl_protein_info.ace",
-		    "worm_pep_interpro_motif_info.ace",
+		    "worm_ensembl_elegans_interpro_motif_info.ace",
 #		    "worm_brigpep_interpro_motif_info.ace",
 		    #other data
 		    "repeat_homologies.ace",
