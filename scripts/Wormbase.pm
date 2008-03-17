@@ -745,7 +745,7 @@ sub check_files {
     } elsif ($found_script && $line !~ /^SCRIPT/) {
       if ($line =~ /^\s*FILE/) {
 	($file) = $line =~ /^\s*FILE\s+(\S+)/;
-	$file =~ s/wormbase->/self->/; # convert filenames with '$wormbase->' in to '$self->'
+	$file =~ s/wormbase->/self->/g; # convert filenames with '$wormbase->' in to '$self->'
 	if ($file =~ /(\$\S+\-\>[\w_\(\)\']+)(\/\S+)/) {
 	  $file = eval($1) . $2;         # and expand to the full path
 	}
