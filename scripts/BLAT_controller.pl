@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl5.8.0 -w
 #
-# Last edited by: $Author: pad $
-# Last edited on: $Date: 2008-03-10 13:29:32 $
+# Last edited by: $Author: mh6 $
+# Last edited on: $Date: 2008-03-18 17:00:52 $
 
 
 use lib $ENV{'CVS_DIR'};
@@ -145,7 +145,7 @@ if ( $run ) {
 			
 			&check_and_shatter($accessors{$species}->maskedcdna, "$moltype.masked");
 			foreach my $seq_file (glob ($accessors{$species}->maskedcdna."/$moltype.masked*")) {
-				my $cmd = "bsub -E \"ls /software/worms\" -J ".$accessors{$species}->pepdir_prefix."_$moltype \"/software/worm/bin/blat/blat -noHead -t=dnax -q=dnax ";
+				my $cmd = "bsub -E \"ls /software/worm\" -J ".$accessors{$species}->pepdir_prefix."_$moltype \"/software/worm/bin/blat/blat -noHead -t=dnax -q=dnax ";
 				$cmd .= $wormbase->genome_seq ." $seq_file ";
 				$cmd .= $wormbase->blat."/${species}_${moltype}_${split_count}.psl\"";
 				$wormbase->run_command($cmd, $log);
@@ -160,7 +160,7 @@ if ( $run ) {
 		my $seq_dir = $wormbase->maskedcdna;
 		&check_and_shatter($wormbase->maskedcdna, "$moltype.masked");
 		foreach my $seq_file (glob ($seq_dir."/$moltype.masked*")) {
-			my $cmd = "bsub -E \"ls /software/worms\" -J ".$wormbase->pepdir_prefix."_$moltype \"/software/worm/bin/blat/blat -noHead ";
+			my $cmd = "bsub -E \"ls /software/worm\" -J ".$wormbase->pepdir_prefix."_$moltype \"/software/worm/bin/blat/blat -noHead ";
 			$cmd .= $wormbase->genome_seq ." $seq_file ";
 			$cmd .= $wormbase->blat."/".$wormbase->species."_${moltype}_${split_count}.psl\"";
 			$wormbase->run_command($cmd, $log);	
@@ -173,7 +173,7 @@ if ( $run ) {
 		my $seq_dir = $wormbase->basedir."/cDNA/$moltype";
 		&check_and_shatter($seq_dir, "EST.masked");
 		foreach my $seq_file (glob ($seq_dir."/EST*")) {
-			my $cmd = "bsub -E \"ls /software/worms\" -J ".$wormbase->pepdir_prefix."_$moltype \"/software/worm/bin/blat/blat -noHead -q=dnax -t=dnax ";
+			my $cmd = "bsub -E \"ls /software/worm\" -J ".$wormbase->pepdir_prefix."_$moltype \"/software/worm/bin/blat/blat -noHead -q=dnax -t=dnax ";
 			$cmd .= $wormbase->genome_seq ." $seq_file ";
 			$cmd .= $wormbase->blat."/${moltype}_EST_${split_count}.psl\"";
 			$wormbase->run_command($cmd, $log);	
