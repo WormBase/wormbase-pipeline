@@ -11,7 +11,7 @@
 #   array of EnsEMBL objects, it invites disaster as it makes a copy of the array.
 #
 # Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2008-03-17 15:27:48 $ 
+# Last edited on: $Date: 2008-03-18 14:26:28 $ 
 
 my $usage = <<USAGE;
 blastx_dump.pl options:
@@ -38,6 +38,7 @@ use IO::File;
 
 use lib $ENV{CVS_DIR};
 
+use Storable;
 use Wormbase;
 use strict;
 
@@ -59,7 +60,7 @@ GetOptions(
 
 my $wormbase;
 if ($store) {
-    $wormbase = retrieve($store)
+    $wormbase = Storable::retrieve($store)
       or croak("Can't restore wormbase from $store\n");
 } else {
     $wormbase = Wormbase->new(
@@ -142,6 +143,7 @@ while (my $link = shift @superlinks){
 	&clone_ace($link->seq_region_name,$type,$link->length);
 	
 	my @features=&remove_selfhits(\@dafs,$link);
+	undef @dafs;
 	@features=&filter_features(\@features,$link->length);
 	while (my $f= shift @features){
 #       print $outf $link->seq_region_name;
@@ -260,7 +262,7 @@ sub remove_selfhits {
 
 	my @index=&build_search_struct($link->get_all_Genes()); # using a GFF styled search structure
 
-	FEATURE: foreach my $feature(@$features){
+	FEATURE: while (my $feature = shift @$features){
 		my $name=($cds2wormpep{$feature->hseqname}||$feature->hseqname );
                 
 		if ($selfhits) { # should probably not do this

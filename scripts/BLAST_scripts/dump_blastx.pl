@@ -5,7 +5,7 @@
 #  and concatenate them at the end
 # 
 # Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2008-03-17 15:27:48 $
+# Last edited on: $Date: 2008-03-18 14:26:28 $
 # 
 
 
@@ -64,7 +64,7 @@ my %logic2type = (
 	slimswissprotX => '1',
 );
 
-my $m=LSF::JobManager->new(-q => 'normal',-o => '/dev/null',-e=>'/dev/null',-R => '"select[mem>3000] rusage[mem=3000]"',-M => 3000000, -F => 400000);
+my $m=LSF::JobManager->new(-q => 'normal',-o => '/dev/null',-e=>'/dev/null',-R => '"select[mem>4000] rusage[mem=4000]"',-M => 4000000, -F => 400000);
 
 my $storable =  $wormbase->autoace . '/'. ref($wormbase).'.store';
 my $dumpdir = '/lustre/work1/ensembl/wormpipe/dumps';
@@ -74,10 +74,10 @@ $database ||= "worm_ensembl_$organism";
 
 # here goes the main bit:
 foreach my $db(keys %logic2type){
-	my $options="-database $database -logicname $db -outfile $dumpdir/dumps/${organism}_$db.ace -store $storable";
+	my $options="-database $database -logicname $db -outfile $dumpdir/${organism}_$db.ace -store $storable";
 	$options.=' -self' if $db eq ref $wormbase; # set selfhit removal for the self-blasts
 	$options.=' -toplevel' unless ref $wormbase eq 'Elegans'; # elegans dumps on clone level
-	$m->submit("/software/bin/perl $ENV{CVS_DIR}/BLAST_scripts/blastx_dumper.pl $options");
+	$m->submit("/software/bin/perl $ENV{CVS_DIR}/BLAST_scripts/blastx_dump.pl $options");
 }
 
 $m->wait_all_children( history => 1 );
@@ -92,5 +92,5 @@ $m->clear; # clear out the job manager to reuse.
 $wormbase->run_command("cat $dumpdir/$organism*X.ace >! $dumpdir/${organism}_blastx.ace",$log);
 # $wormbase->run_command("rm -f $dumpdir/$organism*X.ace",$log);
 
-$log->mai();
+$log->mail();
 								    
