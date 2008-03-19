@@ -7,8 +7,8 @@
 
 # 031023 dl1
 
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2008-01-10 12:13:22 $
+# Last edited by: $Author: mh6 $
+# Last edited on: $Date: 2008-03-19 13:28:30 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -20,7 +20,6 @@ use lib '/software/worm/lib/site_perl/bioperl-live';
 use Bio::SeqIO;
 use Wormbase;
 use IO::Handle;
-use Ace;
 use Getopt::Long;
 use Carp;
 use File::Path;
@@ -127,11 +126,6 @@ my %seq2feature;                                      #stores feature data info
 #get all of the Feature_data via table maker
 &fetch_features;	
 
-# connect to database
-print  "\nOpening $database for masking ..\n" if ($wormbase->debug);
-my $db = Ace->connect(	-path=>$database,
-			-program =>$tace) || $log->log_and_die("Connection failure: ".Ace->error."\n");
-
 # which data file to parse
 $masked = &MaskSequence($species, $mol_type);
 $log->write_to("\n=============================================\n\n");
@@ -141,7 +135,6 @@ $log->write_to("\n=============================================\n\n");
 #########################################
 
 $log->mail;
-$db->close;
 exit(0);
 
 
