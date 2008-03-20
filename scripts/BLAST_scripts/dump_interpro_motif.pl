@@ -5,7 +5,7 @@
 # Dumps InterPro protein motifs from ensembl mysql (protein) database to an ace file
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2008-03-20 14:21:14 $
+# Last updated on: $Date: 2008-03-20 14:26:57 $
 
 
 use strict;
@@ -191,7 +191,7 @@ foreach my $method (@methods) {
       }
     } elsif ($method eq "Superfamily") {
       $hid = "SSF$hid";
-    } elsif ($method eq "GENE3D") {
+    } elsif ($method eq "gene3d") {
       $hid = "G3DSA:$hid";
     }
 
