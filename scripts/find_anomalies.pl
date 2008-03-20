@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-03-17 11:25:23 $      
+# Last updated on: $Date: 2008-03-20 13:08:04 $      
 
 # Changes required by Ant: 2008-02-19
 # 
@@ -3085,6 +3085,9 @@ sub output_to_database {
 
   # calculate the window value as blocks of 10 kb
   my $window =  int($chrom_start/10000);
+
+  # truncate the $anomaly_id string to 32 characters (the width of the 'thing_id' field in the 'anomaly' table)
+  $anomaly_id = substr($anomaly_id, 0, 32);
 
   # if there is no strand information, put one anomaly in for each strand
   if ($chrom_strand ne '+' && $chrom_strand ne '-') {
