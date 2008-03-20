@@ -4,8 +4,8 @@
 #
 # Dumps InterPro protein motifs from ensembl mysql (protein) database to an ace file
 #
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2008-03-20 12:38:41 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2008-03-20 13:50:48 $
 
 
 use strict;
@@ -86,7 +86,7 @@ my %method_database = (
 		       'Tmhmm'       => 'TMHMM',
 		       'Signalp'     => 'SIGNALP',
 		       'PIRSF'       => 'PIRSF',
-		       'Superfamily' => 'SUPERFAMILY',
+		       'Superfamily' => 'SSF',
 		       'gene3d'      => 'GENE3D',
 		       'hmmpanther'  => 'PANTHER'
 	       );
@@ -183,10 +183,14 @@ foreach my $method (@methods) {
 
   foreach my $aref (@$ref) {
     my ($prot, $start, $end, $hid, $hstart, $hend, $score, $evalue) = @$aref;
-    if ($method eq "hmmpfam") {
+    # change the database IDs to the format used in the Interpro XML file
+    if ($method eq "Pfam") {
       if( $hid =~ /(\w+)\.\d+/ ) {
 	$hid = $1;
       }
+    }
+    if ($method eq "Superfamily") {
+      $hid = "SSF$hid";
     }
     # convert Database ID to InterPro ID (if it is in InterPro)
     my $database = $method_database{$method};
