@@ -5,7 +5,7 @@
 # Dumps InterPro protein motifs from ensembl mysql (protein) database to an ace file
 #
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2008-01-15 12:00:27 $
+# Last updated on: $Date: 2008-03-20 12:38:41 $
 =pod
 
 =head1 NAME
@@ -45,12 +45,16 @@ my %method_database = (
 		       'pfscan'      => 'PROFILE',
 		       'blastprodom' => 'PRODOM',
 		       'Smart'       => 'SMART',
-		       'hmmpanther'  => 'PANTHER',
 		       'Pfam'        => 'PFAM',
 		       'Tigrfam'     => 'TIGRFAMs',
+		       'Ncoils'      => 'COIL',
+		       'Seg'         => 'SEG',
+		       'Tmhmm'       => 'TMHMM',
+		       'Signalp'     => 'SIGNALP', 
 		       'PIRSF'       => 'PIRSF',
 		       'Superfamily' => 'SSF',
 		       'gene3d'      => 'GENE3D',
+		       'hmmpanther'  => 'PANTHER',
 	       );
 
 =head2 new

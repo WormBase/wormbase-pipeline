@@ -5,7 +5,7 @@
 # Dumps InterPro protein motifs from ensembl mysql (protein) database to an ace file
 #
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2008-03-11 15:49:11 $
+# Last updated on: $Date: 2008-03-20 12:38:41 $
 
 
 use strict;
@@ -68,16 +68,7 @@ my $cds2wormpep;
 $wormbase->FetchData('cds2wormpep',$cds2wormpep);
 
 
-# define the names of the Interpro methods to be dumped
-my @methods;
-if ($method ) {
-  push(@methods,$method)
-}else{
 
-# add new methods (logic_names, as defined in the mysql database 'analysis' table, column 'logic_name') 
-# as they are added to the pipeline
-   @methods = qw(Pfam Prints PIRSF Tigrfam Smart scanprosite pfscan);
-}
 
 
 # define the Database names that InterPro uses in interpro.xml
@@ -86,18 +77,33 @@ my %method_database = (
 		       'scanprosite'     => 'PROSITE',
 		       'Prints'      => 'PRINTS',
 		       'pfscan'     => 'PROFILE',
-		       'prodom'      => 'PRODOM',
-		       'Smart'    => 'SMART',
-		       'Pfam'     => 'PFAM',
+		       'blastprodom'=> 'PRODOM',
+		       'Smart'      => 'SMART',
+		       'Pfam'       => 'PFAM',
 		       'Tigrfam'     => 'TIGRFAMs',
-		       'scanregexp'  => 'PROSITE',
 		       'Ncoils'       => 'COIL',
 		       'Seg'         => 'SEG',
 		       'Tmhmm'       => 'TMHMM',
 		       'Signalp'     => 'SIGNALP',
 		       'PIRSF'       => 'PIRSF',
 		       'Superfamily' => 'SUPERFAMILY',
+		       'gene3d'      => 'GENE3D',
+		       'hmmpanther'  => 'PANTHER'
 	       );
+
+	       #### panther??
+
+# define the names of the Interpro methods to be dumped
+my @methods;
+if ($method ) {
+  push(@methods,$method)
+}else{
+
+# add new methods (logic_names, as defined in the mysql database 'analysis' table, column 'logic_name') 
+# as they are added to the pipeline
+   @methods = qw(scanprosite Prints pfscan blastprodom hmmpanther Smart Tigrfam Pfam PIRSF Superfamily gene3d);
+}
+
 
 # mysql database parameters
 my $dbhost = "ia64d";
