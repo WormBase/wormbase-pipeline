@@ -55,7 +55,7 @@ undef $db;
 #read GFF files
 my @chroms = $chrom or $wormbase->get_binned_chroms;
 foreach (@chroms) {
-    my $gff_file = $wormbase->gff."/$chrom.gff";
+    my $gff_file = $wormbase->gff."/$_.gff";
     open (GFF,"<$gff_file") or $log->log_and_die("cant open GFF $gff_file: $!\n");
     open (NEW,">$gff_file.new") or $log->log_and_die("cant write new GFF file: $!\n");
     while(<GFF>){
@@ -68,7 +68,7 @@ foreach (@chroms) {
 		$f[3] -= $alleles{$allele}->{'five'};
 		$f[4] += $alleles{$allele}->{'three'};
 
-		print NEW join("\t",@f)."\n";
+		print NEW join("\t",@f);
 	    }
 	    else {
 		#retain existing but also report missing data.
