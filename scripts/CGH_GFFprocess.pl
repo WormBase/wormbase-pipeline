@@ -53,9 +53,12 @@ while (my $cgh = $vars->next){
 undef $db;
 
 #read GFF files
-my @chroms = $chrom or $wormbase->get_binned_chroms;
-foreach (@chroms) {
-    my $gff_file = $wormbase->gff."/$_.gff";
+my @chroms;
+my $chroms;
+if ($chrom) {@chroms = $chrom;}
+else {@chroms = @{$wormbase->get_binned_chroms};}
+foreach $chroms (@chroms) {
+    my $gff_file = $wormbase->gff."/".$chroms.".gff";
     open (GFF,"<$gff_file") or $log->log_and_die("cant open GFF $gff_file: $!\n");
     open (NEW,">$gff_file.new") or $log->log_and_die("cant write new GFF file: $!\n");
     while(<GFF>){
