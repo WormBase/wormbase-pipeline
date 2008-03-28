@@ -4,8 +4,8 @@
 # 
 # by Dan Lawson
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2007-12-04 14:59:26 $
+# Last updated by: $Author: pad $
+# Last updated on: $Date: 2008-03-28 10:56:32 $
 #
 
 #
@@ -195,7 +195,7 @@ sub get_wormpep_info {
 	my $file = $wormbase->wormpep."/".$wormbase->pepdir_prefix."pep".$wormbase->get_wormbase_version;
 	open (WORMPEP, "<$file") or $log->log_and_die("cant open $file $!\n");
 	while (<WORMPEP>) {
-	    if (/^>(\S+) (\S+) (WBGene\d+) (\S+.+)\s+status\:(\S+)/) {
+	    if (/^>(\S+)\s+(\S+)\s+(WBGene\d+)\s+status\:(\S+)/) {
 			$CDS           = $1;
 			$wormpep{$CDS} = $2;
 			$geneID{$CDS}  = $3;
@@ -214,7 +214,7 @@ sub get_wormpep_info {
 			    $briefID{$CDS} = $line;
 			}
 	    }
-	    elsif (/^>(\S+) (\S+) (WBGene\d+) status\:(\S+)/) {
+	    elsif (/^>(\S+)\s+(\S+)\s+(WBGene\d+)\s+status\:(\S+)/) {
 			$CDS           = $1;
 			$wormpep{$CDS} = $2;
 			$geneID{$CDS}  = $3;
