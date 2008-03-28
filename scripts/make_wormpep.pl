@@ -6,8 +6,8 @@
 #
 # Builds a wormpep data set from the current autoace database
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2008-03-11 10:01:42 $
+# Last updated by: $Author: pad $
+# Last updated on: $Date: 2008-03-28 14:22:29 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -69,6 +69,7 @@ if ($test) {
 
 # establish log file.
 my $log = Log_files->make_build_log($wormbase);
+$species = lc ref $wormbase;
 $log->write_to("Building protein set for C.$species\n");
 
 ##########################################
@@ -342,6 +343,7 @@ sub write_final_pep
 	
 	my %cds_info;
 	my $def = $wormbase->basedir."/wquery/SCRIPT:make_wormpep.def";
+	print STDERR "parsing $def\n";
 	my $tm_query = $wormbase->table_maker_query($wormbase->build_accessor->orgdb,$def);
 	while(<$tm_query>) {
 		next if (/>/ or /\/\//);
@@ -365,12 +367,12 @@ sub write_final_pep
 			next;
 		}
 		print PEP ">$cds\t$PEP_PREFIX".&pad($cds2id{$cds});
-		#print PEP "\t".$cds_info{$cds}->{'gene'} if $cds_info{$cds}->{'gene'};
-		print PEP "\t".$cds_info{$cds}->{'cgc'} if $cds_info{$cds}->{'cgc'};
+		print PEP "\t".$cds_info{$cds}->{'gene'} if $cds_info{$cds}->{'gene'};
+		print PEP "\tlocus:".$cds_info{$cds}->{'cgc'} if $cds_info{$cds}->{'cgc'};
 		print PEP "\t".$cds_info{$cds}->{'brief'} if $cds_info{$cds}->{'brief'};
-		print PEP "\t".$cds_info{$cds}->{'status'} if $cds_info{$cds}->{'status'};
+		print PEP "\tstatus:".$cds_info{$cds}->{'status'} if $cds_info{$cds}->{'status'};
 		print PEP "\tUniProt:".$cds_info{$cds}->{'unip'} if $cds_info{$cds}->{'unip'};
-		print PEP "\t".$cds_info{$cds}->{'pid'} if $cds_info{$cds}->{'pid'} ;
+		print PEP "\tprotein_id:".$cds_info{$cds}->{'pid'} if $cds_info{$cds}->{'pid'} ;
 		print "$cds\n";
 		print PEP "\n".$wormbase->format_sequence( $cds2aa{$cds} )."\n";
 	}
