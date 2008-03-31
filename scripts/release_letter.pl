@@ -4,8 +4,8 @@
 # 
 # by Anthony Rogers                             
 #
-# Last updated by: $Author: gw3 $               
-# Last updated on: $Date: 2008-02-14 11:04:30 $
+# Last updated by: $Author: mh6 $               
+# Last updated on: $Date: 2008-03-31 15:19:53 $
 
 # Generates a release letter at the end of build.
 #
@@ -154,10 +154,8 @@ if( defined($opt_l)) {
   $wp_status{Confirmed}  = `grep Confirmed    $wormpep_datafile | wc -l`;
   $wp_status{Supported}  = `grep confirmed    $wormpep_datafile | wc -l`;
   $wp_status{Predicted}  = `grep Predicted    $wormpep_datafile | wc -l`;
-  $wp_status{Gene}      = $gene_seq_count;
-  $wp_status{Swissprot}  = `grep 'SW:'        $wormpep_datafile | wc -l`;
-  $wp_status{Trembl}     = `grep 'TR:'        $wormpep_datafile | wc -l`;
-  $wp_status{Tremblnew}  = `grep 'TN:'        $wormpep_datafile | wc -l`;
+  $wp_status{Gene}       = $gene_seq_count;
+  $wp_status{Uniprot}    = `grep 'UniProt:'        $wormpep_datafile | wc -l`;
   $wp_status{Protein_ID} = `grep 'protein_id' $wormpep_datafile | wc -l`;
   $wp_status{Total}      = $wp_status{Confirmed} + $wp_status{Supported} + $wp_status{Predicted}; 
   
@@ -171,8 +169,7 @@ if( defined($opt_l)) {
   print  RL "\n\n\n";
   print  RL "Status of entries: Protein Accessions\n";
   print  RL "-------------------------------------\n";
-  printf RL "UniProtKB\/Swiss-Prot accessions %6d (%2.1f%%)\n", $wp_status{Swissprot}, (($wp_status{Swissprot}/$wp_status{Total}) * 100);
-  printf RL "UniProtKB\/TrEMBL accessions    %6d (%2.1f%%)\n", $wp_status{Trembl},    (($wp_status{Trembl}/$wp_status{Total}) * 100);
+  printf RL "UniProtKB accessions %6d (%2.1f%%)\n", $wp_status{Uniprot}, (($wp_status{Uniprot}/$wp_status{Total}) * 100);
   print  RL "\n\n\n";
   print  RL "Status of entries: Protein_ID's in EMBL\n";
   print  RL "---------------------------------------\n";
