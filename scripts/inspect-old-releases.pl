@@ -17,7 +17,7 @@
 # foreach? end
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-02-14 13:17:40 $      
+# Last updated on: $Date: 2008-04-01 11:20:35 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -417,7 +417,10 @@ sub read_chromosome() {
   if (! open (SEQ, "<$file")) {	# try to open the sequence file
     open (SEQ, "/bin/gunzip -c $file.gz |") || die "Can't open file $file\n"; # ... or try to open the gzipped sequence file
   }
-  <SEQ>;                        # skip the title line
+  my $title = <SEQ>;                        # skip the title line
+  if ($title !~ /^\>/) {
+    $log->log_and_die("The first line of the chromosome file $file does not start with a '>' character\n");
+  }
   undef $/;                     # don't use record separator when reading file
   $seq = <SEQ>;                 # slurp up the whole file
   $seq =~ s/\n//g;              # remove newline characters
