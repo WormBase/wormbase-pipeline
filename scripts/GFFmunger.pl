@@ -4,8 +4,8 @@
 # 
 # by Dan Lawson
 #
-# Last updated by: $Author: pad $
-# Last updated on: $Date: 2007-11-07 11:36:19 $
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2008-04-02 10:28:40 $
 #
 # Usage GFFmunger.pl [-options]
 
@@ -127,12 +127,12 @@ my $gffpath;
 if ($CDS || $all) {
   $log->write_to("# Overloading CDS lines\n");
   if (defined($chrom)){
-    $log->write_to("overload_GFF_CDS_lines.pl -release $WS_version -chrom $chrom -splits $datadir -gff $gffdir\n");
-    $wormbase->run_script("overload_GFF_CDS_lines.pl -release $WS_version -chrom $chrom -splits $datadir -gff $gffdir", $log);                     # generate *.CSHL.gff files
+    $log->write_to("overload_GFF_CDS_lines.pl -chrom $chrom -gff $gffdir\n");
+    $wormbase->run_script("overload_GFF_CDS_lines.pl -chrom $chrom -gff $gffdir", $log); # generate *.CSHL.gff files
     
   } else {
-    $log->write_to("overload_GFF_CDS_lines.pl -release $WS_version -splits $datadir -gff $gffdir\n");
-    $wormbase->run_script("overload_GFF_CDS_lines.pl -release $WS_version -splits $datadir -gff $gffdir", $log);
+    $log->write_to("overload_GFF_CDS_lines.pl -gff $gffdir\n");
+    $wormbase->run_script("overload_GFF_CDS_lines.pl -gff $gffdir", $log);
   }
   foreach my $file (@gff_files) {
     next if ($file eq ""); 

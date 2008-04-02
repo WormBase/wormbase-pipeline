@@ -5,7 +5,7 @@
 # by Dan Lawson
 #
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2008-04-02 09:46:16 $
+# Last updated on: $Date: 2008-04-02 10:28:40 $
 #
 
 #
@@ -29,7 +29,7 @@ use Log_files;
 use Storable;
 
 my ($help, $debug, $test, $verbose, $store, $wormbase, $species);
-my ($chrom, $splitdir, $gffdir, $release);
+my ($chrom, $gffdir);
 
 GetOptions (
             "help"       => \$help,
@@ -38,8 +38,6 @@ GetOptions (
 	    "verbose"    => \$verbose,
 	    "store:s"      => \$store,
 	    "chrom:s"    => \$chrom,
-	    "release:s"  => \$release,
-	    "splits:s"   => \$splitdir,
 	    "gff:s"      => \$gffdir,
 	    "species:s"  => \$species	    
 	    );
@@ -65,14 +63,13 @@ if ($test) {
 
 # establish log file.
 my $log = Log_files->make_build_log($wormbase);
-$release = $wormbase->get_wormbase_version;
+my $release = $wormbase->get_wormbase_version;
 
 #################################
 # Set up some useful paths      #
 #################################
 
 
-$splitdir           = $wormbase->gff_splits unless $splitdir;
 $gffdir             = $wormbase->gff unless $gffdir;
 my $wormpep_dir     = $wormbase->wormpep;     # CURRENT WORMPEP
 
@@ -197,7 +194,7 @@ sub get_wormpep_info {
 	while (<WORMPEP>) {
 	    #>4R79.2 CE19650 WBGene00007067  Ras family      status:Partially_confirmed      UniProt:Q9XXA4_CAEEL    protein_id:CAA20282.1
 	    #>4R79.1b        CE39659 WBGene00003525  locus:nas-6     status:Partially_confirmed      UniProt:Q2HQL9_CAEEL    protein_id:CAJ76926.1
-	    if (/^>(\S+)\s+(\S+)\s+(WBGene\d+)(\s+locus:(\S+))*\s+([^\t]*?)\tstatus\:(\S+)/) {
+	    if (/^>(\S+)\s+(\S+)\s+(WBGene\d+)(\s+locus:(\S+))*\s+([^\t]*?)\s*status:(\S+)/) {
 			$CDS           = $1;
 			$wormpep{$CDS} = $2;
 			$geneID{$CDS}  = $3;
