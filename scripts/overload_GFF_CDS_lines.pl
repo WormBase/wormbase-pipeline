@@ -5,7 +5,7 @@
 # by Dan Lawson
 #
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2008-04-02 09:12:23 $
+# Last updated on: $Date: 2008-04-02 09:22:19 $
 #
 
 #
@@ -197,12 +197,12 @@ sub get_wormpep_info {
 	while (<WORMPEP>) {
 	    #>4R79.2 CE19650 WBGene00007067  Ras family      status:Partially_confirmed      UniProt:Q9XXA4_CAEEL    protein_id:CAA20282.1
 	    #>4R79.1b        CE39659 WBGene00003525  locus:nas-6     status:Partially_confirmed      UniProt:Q2HQL9_CAEEL    protein_id:CAJ76926.1
-	    if (/^>(\S+)\s+(\S+)\s+(WBGene\d+)\s(.+)\sstatus\:(\S+)/) {
+	    if (/^>(\S+)\s+(\S+)\s+(WBGene\d+)(\slocus:\S+)*\s(.+)\sstatus\:(\S+)/) {
 			$CDS           = $1;
 			$wormpep{$CDS} = $2;
 			$geneID{$CDS}  = $3;
-			$briefID{$CDS} = $4;
-			$status{$CDS}  = $5;
+			$briefID{$CDS} = $5;
+			$status{$CDS}  = $6;
 
 			$locus{$CDS}   = $1 if /locus:(\S+)/;
 
