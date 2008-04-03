@@ -2,8 +2,8 @@
 #
 # prepare_primary_databases.pl
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2008-01-09 11:18:13 $
+# Last edited by: $Author: pad $
+# Last edited on: $Date: 2008-04-03 12:16:04 $
 
 use strict;
 my $scriptdir = $ENV{'CVS_DIR'};
@@ -120,10 +120,10 @@ close LAST_VER;
 #copy over the biggsae GFF and proteins
 if ( !defined($database) or ($database and ($database eq 'brigace') ) ) {
 	$log->write_to("copying over briggsae data from stl upload\n");
-	my $ver = $wormbase->version;
+	my $ver = $wormbase->get_wormbase_version;
 	$wormbase->run_command("cp -R ".$wormbase->primary('brigace')."/temp_unpack_dir/briggff$ver ". $wormbase->chromosomes."/",$log);
 	my $brigbase=Wormbase->new(-organism =>'Briggsae',-debug => $debug,-test =>$test,-version => $wormbase->version);
-	$wormbase->run_command("cp -f ".$wormbase->primary('brigace')."/temp_unpack_dir/brigpep$ver/* ". $brigbase->wormpep."/",$log);
+	#$wormbase->run_command("cp -f ".$wormbase->primary('brigace')."/temp_unpack_dir/brigpep$ver/* ". $brigbase->wormpep."/",$log); #brigpep not from RW
         $wormbase->run_script("CBG_to_CBP.pl -input " . $brigbase->wormpep . "/brigpep$ver/brigpep$ver", $log);
 
 }	
