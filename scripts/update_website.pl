@@ -7,8 +7,8 @@
 # A script to finish the last part of the weekly build by updating all of the
 # relevant WormBase and Wormpep web pages.
 #
-# Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-01-28 12:14:57 $      
+# Last updated by: $Author: mh6 $     
+# Last updated on: $Date: 2008-04-03 09:24:55 $      
 
 
 #################################################################################
@@ -210,7 +210,7 @@ if ($all || $copyGFF) {
 		    samesize => $gff_file);
   }
   foreach my $chrom (@chrom) {
-    $wb->check_file("$wwwdata/$WS_name/GFF/CHROMOSOME_${chrom}_clone_acc.gff", $log,
+    $wb->check_file("$wwwdata/WORMBASE/$WS_name/GFF/CHROMOSOME_${chrom}_clone_acc.gff", $log,
 		    minsize => 10000);
   }
 }
