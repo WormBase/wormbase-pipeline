@@ -1379,17 +1379,28 @@ sub establish_paths {
 sub run_script {
   my $self   = shift;
   my $script = shift;
-  my $log    = shift;
+  my $log    = shift;  
+  
+  my $command = $self->build_cmd($script);
+  print "$command\n" if $self->test;
+  return $self->run_command( "$command", $log );
+}
+
+# abstracted out of run_script so that scripts using LSF::Manager can 
+# still use the Storable etc properly
+sub build_cmd {
+  my $self   = shift;
+  my $script = shift;
 
   my $species = ref $self;
   my $store = $self->autoace . "/$species.store";
   store( $self, $store );
   
   #if user wormpipe this always gives an ERROR and confuses log msgs
-  $self->run_command( "chmod -f 775 $store", $log) unless ($self->test_user_wormpub == 1);
+  $self->run_command( "chmod -f 775 $store") unless ($self->test_user_wormpub == 1);
   my $command = "perl $ENV{'CVS_DIR'}/$script -store $store";
   print "$command\n" if $self->test;
-  return $self->run_command( "$command", $log );
+  return $command;
 }
 
 ####################################
