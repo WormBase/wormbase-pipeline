@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl5.8.0 -w
 #
-# Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2008-03-18 17:00:52 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2008-04-03 12:57:50 $
 
 
 use lib $ENV{'CVS_DIR'};
@@ -14,6 +14,8 @@ use File::Path;
 use Log_files;
 use Storable;
 use Sequence_extract;
+use LSF RaiseError => 0, PrintError => 1, PrintOutput => 0;
+use LSF::JobManager;
 
 my ($test, $database, $debug);
 my ($mask, $dump, $run, $postprocess, $load, $process, $virtual, $intron);
@@ -194,14 +196,32 @@ if( $postprocess ) {
 }
 
 if ( $process or $virtual ) {
+	my $lsf = LSF::JobManager->new();
 	foreach my $species (keys %mol_types) {
 	  foreach my $type (@{$mol_types{$species}} ) {
     	#create virtual objects
-    	$wormbase->run_script("blat2ace.pl -virtual -type $type -qspecies $species", $log) if $virtual;
-    	$wormbase->run_script("blat2ace.pl -type $type -qspecies $species -intron", $log) if $process;
-    	&confirm_introns($type) if (($wormbase->species eq $species) and $intron);
+    	$log->write_to("Submitting $species $type\n");
+    	my $cmd = $wormbase->build_cmd("blat2ace.pl -virtual -type $type -qspecies $species");
+    	$lsf->submit($cmd) if $virtual;
+    	
+    	$cmd = $wormbase->build_cmd("blat2ace.pl -type $type -qspecies $species -intron");
+    	$lsf->submit($cmd) if $process;
      }
    }
+   $lsf->wait_all_children( history => 1 );
+	$log->write_to("All blat2ace runs have completed!\n");
+	for my $job ( $lsf->jobs ) {    # much quicker if history is pre-cached
+    	$log->error("$job exited non zero\n") if $job->history->exit_status != 0;
+	}
+	$lsf->clear;   
+	if($intron) {
+		$log->write_to("confirming introns . . \n");
+		#only do for self species matches
+		foreach my $type (@{$mol_types{$wormbase->species}} ) {
+			$log->write_to("\t$type\n");
+			&confirm_introns($type);
+		}
+	}
 }
 
 
@@ -211,21 +231,21 @@ if( $load ) {
       $log->write_to("loading BLAT data - $type\n");
 
       # virtual objs
-      my $file =  "$blat_dir/virtual_objects.".$wormbase->species.".blat.$type.ace";
+      my $file =  "$blat_dir/virtual_objects.$species.blat.$type.ace";
       $wormbase->load_to_database( $database, $file,"virtual_objects_$type", $log);
 
       # Don't need to add confirmed introns from nematode data (because there are none!)
       unless ( ($type eq "nematode") || ($type eq "washu") || ($type eq "nembase") || ($type eq "tc1") || ($type eq "embl")|| ($type eq "ncrna") ) {
 	$file = "$blat_dir/virtual_objects.".$wormbase->species.".ci.$type.ace"; 
 	$wormbase->load_to_database($database, $file, "blat_confirmed_introns_$type", $log);
-	
+
 	$file = "$blat_dir/".$wormbase->species.".good_introns.$type.ace";
 	$wormbase->load_to_database($database, $file, "blat_good_introns_$type", $log);
       }
 
       # BLAT results
       $file = "$blat_dir/".$wormbase->species.".blat.${species}_$type.ace";
-      $wormbase->load_to_database($database, $file, "blat_${species}_${type}_data", $log);
+      $wormbase->load_to_database($database, $file, "blat_${species}_${type}_data", $log,1);
     }
   }
 }
@@ -249,7 +269,7 @@ sub confirm_introns {
   # set qspecies to be just 'elegans' for now
   # is this meant to iterate over all species?
   # if so, then we need separate $blat_dir/".$wormbase->species.".{good,bad}_introns.$type.ace files for each species
-  my $qspecies = 'elegans';
+  my $qspecies = $wormbase->species;
   	
   open (CI, "<$blat_dir/".$wormbase->species.".ci.${qspecies}_${type}.ace")  or $log->log_and_die("Cannot open $blat_dir/".$wormbase->species.".ci.${qspecies}_${type}.ace $!\n");
   while (<CI>) {
