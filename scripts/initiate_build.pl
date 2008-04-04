@@ -2,8 +2,8 @@
 #
 # initiate_build.pl
 #
-# Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2008-03-04 16:49:24 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2008-04-04 10:41:17 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -14,7 +14,7 @@ use File::Copy;
 use File::Spec;
 use Storable;
 
-my ($test,$debug,$database, $version);
+my ($test,$debug,$database, $version, $species);
 my ($store, $wormbase, $user);
 GetOptions (
 	    'test'       => \$test,
@@ -23,6 +23,7 @@ GetOptions (
 	    'version:s'  => \$version,
 	    'store:s'    => \$store,
 	    'user:s'     => \$user,
+	    'species:s'  => \$species
 	   );
 
 if( $store ) {
@@ -30,7 +31,8 @@ if( $store ) {
 }
 else {
   $wormbase = Wormbase->new( -debug   => $debug,
-			     -test    => $test,
+			     -test    	=> $test,
+			     -organism => $species,
 			   );
 }
 
