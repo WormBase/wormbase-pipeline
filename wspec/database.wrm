@@ -221,6 +221,6 @@ PART :       1   local    ACEDB          block200.wrm  1000000    0
 //
 
 NAME WS0
-TITLE C. elegans database
+TITLE species database
 //
 ///////////////// end of file
