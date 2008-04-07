@@ -18,7 +18,7 @@
 #      CREATED:  02/18/08 10:48:17 GMT
 #     REVISION:  $revision:$
 #===============================================================================
-
+use lib $ENV{'CVS_DIR'};
 use Ace;
 use Wormbase;
 use Getopt::Long;
