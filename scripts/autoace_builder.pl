@@ -6,8 +6,8 @@
 #
 # Usage : autoace_builder.pl [-options]
 #
-# Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2008-03-12 14:45:20 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2008-04-07 16:25:48 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -196,25 +196,27 @@ exit(0);
 sub first_dumps {
     $wormbase->run_script( "chromosome_dump.pl --dna --composition", $log );
 
-    my $version = $wormbase->get_wormbase_version;
-    $wormbase->run_script( "inspect-old-releases.pl -version $version -database1 ".$wormbase->database('current')." -database2 ".$wormbase->autoace, $log );
+	if ($wormbase->species eq 'elegans'){
+	    my $version = $wormbase->get_wormbase_version;
+    	$wormbase->run_script( "inspect-old-releases.pl -version $version -database1 ".$wormbase->database('current')." -database2 ".$wormbase->autoace, $log );
 
-    $wormbase->run_script( "make_agp_file.pl",                       $log );
-    $wormbase->run_script( "agp2dna.pl",                             $log ); #dependant on processGFF producing clone_acc files.
+    	$wormbase->run_script( "make_agp_file.pl",                       $log );
+    	$wormbase->run_script( "agp2dna.pl",                             $log ); #dependant on processGFF producing clone_acc files.
 
-    my $agp_errors = 0;
+    	my $agp_errors = 0;
 
-    my @chrom = qw( I II III IV V X);
-    foreach my $chrom (@chrom) {
-        open( AGP, "<" . $wormbase->autoace . "/yellow_brick_road/CHROMOSOME_${chrom}.agp_seq.log" )
-          or die "Couldn't open agp file : $!";
-        while (<AGP>) {
-            $agp_errors++ if (/ERROR/);
-        }
-        close(AGP);
-    }
+    	my @chrom = qw(I II III IV V X);
+    	foreach my $chrom (@chrom) {
+    	    open( AGP, "<" . $wormbase->autoace . "/yellow_brick_road/CHROMOSOME_${chrom}.agp_seq.log" )
+    	      or die "Couldn't open agp file : $!";
+    	    while (<AGP>) {
+    	        $agp_errors++ if (/ERROR/);
+    	    }
+    	    close(AGP);
+    	}
     
-	$log->write_to("ERRORS ( $agp_errors ) in agp file\n");
+		$log->write_to("ERRORS ( $agp_errors ) in agp file\n");
+	}
 }
 
 sub map_features {
