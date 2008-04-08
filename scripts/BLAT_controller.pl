@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl5.8.0 -w
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2008-04-08 13:40:20 $
+# Last edited on: $Date: 2008-04-08 15:07:20 $
 
 
 use lib $ENV{'CVS_DIR'};
@@ -403,11 +403,18 @@ sub check_and_shatter {
 	my $dir = shift;
 	my $file = shift;
 	
-	$wormbase->run_command("rm -f $dir/${file}_*", $log);
-	my $seq_count = qx(grep -c '>' $dir/$file);
-	if( $seq_count > 10000) {
-		$wormbase->run_script("shatter $dir/$file 10000 $dir/$file", $log);
-		$wormbase->run_command("rm -f $dir/$file", $log);
+	unless( -e "$dir/$file" ) {
+		$log->write_to("$file doesnt exist - hopefully already shattered for other species\n");
+		my @shatteredfiles = glob("$dir/$file*");
+		if(scalar @shatteredfiles == 0){
+			$log->log_and_die("shattered files also missing - not good");
+		}
+	}else {		
+		my $seq_count = qx(grep -c '>' $dir/$file);
+		if( $seq_count > 10000) {
+			$wormbase->run_script("shatter $dir/$file 10000 $dir/$file", $log);
+			$wormbase->run_command("rm -f $dir/$file", $log);
+		}
 	}
 }
 
