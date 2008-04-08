@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl5.8.0 -w
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2008-04-03 12:57:50 $
+# Last edited on: $Date: 2008-04-08 13:40:20 $
 
 
 use lib $ENV{'CVS_DIR'};
@@ -68,10 +68,10 @@ my $seq_obj      = Sequence_extract->invoke($database, undef, $wormbase) if $int
 my %mol_types = ( 'elegans'          => [qw( EST mRNA ncRNA OST tc1 RST )],
 		  'briggsae'         => [qw( mRNA EST )],
 		  'remanei'          => [qw( mRNA EST )],
-		  'brenneri'         => [qw( mRNA )],
+		  'brenneri'         => [qw( mRNA EST )],
 		  'japonica'         => [qw( mRNA EST )],
 		  'heterorhabditis'  => [qw( mRNA EST )],
-		  'pristionchus'     => [qw( EST mRNA )],
+		  'pristionchus'     => [qw( mRNA EST )],
 		  'nematode'         => [qw( EST )],
 		  'nembase'          => [qw( EST )],
 		  'washu'            => [qw( EST )],
@@ -406,7 +406,7 @@ sub check_and_shatter {
 	$wormbase->run_command("rm -f $dir/${file}_*", $log);
 	my $seq_count = qx(grep -c '>' $dir/$file);
 	if( $seq_count > 10000) {
-		$wormbase->run_script("shatter $dir/$file 5000 $dir/$file", $log);
+		$wormbase->run_script("shatter $dir/$file 10000 $dir/$file", $log);
 		$wormbase->run_command("rm -f $dir/$file", $log);
 	}
 }
