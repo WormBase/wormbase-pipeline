@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: ar2 $
-// Last edited on: $Date: 2008-03-13 16:50:42 $
+// Last edited on: $Date: 2008-04-08 16:21:59 $
 
 
 
@@ -827,14 +827,16 @@
  	Y_position UNIQUE Text	
 
 
-?Neurodata     Send            Text    UNIQUE Int #Neuro_location   // Text=series,Int=count
-               Send_joint      Text    UNIQUE Int #Neuro_location   // for polyadic synapse
-               Receive         Text    UNIQUE Int #Neuro_location
-               Receive_joint   Text    UNIQUE Int #Neuro_location
-               Gap_junction    Text    UNIQUE Int #Neuro_location
-               Evidence        #Evidence 
+?Neurodata      Send            Text    UNIQUE Int #Neuro_location   // Text=series,Int=count
+                Send_joint      Text    UNIQUE Int #Neuro_location   // "joint" indicates polyadic synapse
+                Receive         Text    UNIQUE Int #Neuro_location
+                Receive_joint   Text    UNIQUE Int #Neuro_location
+                Gap_junction    Text    UNIQUE Int #Neuro_location
+                Evidence        #Evidence
 
-?Neuro_location    Section Int UNIQUE Int    UNIQUE Float   //Int1=first EM section where the connection was found,Int2=last section,Float=thickness per section in micron
+?Neuro_location	Section Int Int Text  //Int1=first EM section where the connection was
+                                                      //found,Int2=last section,Text=remark
+
 
 ?Reconstruction Cell ?Cell
                 Anatomy_term ?Anatomy_term //[2006-04-21 ar2] Raymond
