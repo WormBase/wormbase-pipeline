@@ -1046,7 +1046,7 @@ sub load_to_database {
   my $file     = shift;
   my $tsuser   = shift;
   my $log      = shift;
-  my $no_bk    = shift;
+  my $bk       = shift;
 
   my $error=0;
   my $species = $self->species;
@@ -1068,7 +1068,7 @@ sub load_to_database {
   $basename =~ s/.*\///;
 
   my $st = stat($file);
-  if ( $st->size > 50000000 and !defined ($no_bk) ) {
+  if ( $st->size > 50000000 and defined ($bk) ) {
     $log->write_to("backing up block files before loading $file\n") if $log;
     my $db_dir = $database."/database";
     my $tar_file = "backup.".time.".tgz";
