@@ -60,7 +60,7 @@ use DBI;
 # GET THE LONG NAMES OF THE TREEFAM GENES FROM THE MYSQL DATABASE:
 
 my %WORM                      = (); # HASH TABLE TO KEEP A LIST OF WORM GENES IN TREEFAM.
-my $database                  = 'treefam_5';
+my $database                  = 'treefam_6';
 
 $log->write_to("connecting to treefam database : \tmysql:$database:db.treefam.org:3308\n");
 my $dbh                       = DBI->connect_cached("dbi:mysql:$database:db.treefam.org:3308", 'anonymous', '') || return;
@@ -109,10 +109,12 @@ for (my $i = 1; $i <= 3; $i++)
    {
       $table_w             = 'fam_genes where FAM_TYPE="B"';
    }
-   elsif ($i == 3) # LOOK AT TREEFAM-C:
-   {
-      $table_w             = 'fam_genes where FAM_TYPE="C"';
-   }
+
+# TREEFAM-C families don't exist anymore
+#   elsif ($i == 3) # LOOK AT TREEFAM-C:
+#   {
+#      $table_w             = 'fam_genes where FAM_TYPE="C"';
+#   }
 
    # THE FIRST THREE COLUMNS IN THE TABLE famB_gene/famA_gene ARE THE TRANSCRIPT NAME, FAMILY NAME AND WHETHER THE
    # TRANSCRIPT IS IN THE SEED/FULL TREE:
