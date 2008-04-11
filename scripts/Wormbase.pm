@@ -219,7 +219,7 @@ sub FetchData {
   $/ = "\n";
   close FH;
   my $keycount = scalar keys %$VAR1;
-  die "$file retrieval through FetchData failed - dat file is empty\n" if $keycount == 0;
+  warn "$file retrieval through FetchData failed - dat file is empty\n" if $keycount == 0;
   %$ref = (%$VAR1);
 }
 
