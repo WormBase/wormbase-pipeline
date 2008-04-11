@@ -7,7 +7,7 @@
 # Script to make ?Transcript objects
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2008-03-11 10:01:01 $
+# Last updated on: $Date: 2008-04-11 12:57:07 $
 use strict;
 use lib $ENV{'CVS_DIR'};
 use Getopt::Long;
@@ -143,7 +143,7 @@ foreach my $chrom ( @chromosomes ) {
   my @BLAT_methods = qw( BLAT_EST_BEST BLAT_mRNA_BEST BLAT_OST_BEST BLAT_RST_BEST);
   foreach my $method (@BLAT_methods) {
     $gff_file = $gff_dir."/${\$wormbase->chromosome_prefix}${chrom}_${method}.gff";
-    open( GFF,"<$gff_file") or $log->log_and_die("cant open $gff_file : $!\n");
+    open( GFF,"<$gff_file") or $log->write_to("cant open $gff_file : $!\n");
     while ( <GFF> ) {
       next if (/#/); 		 # miss header
       next unless (/BEST/);
@@ -182,7 +182,7 @@ foreach my $chrom ( @chromosomes ) {
   my @feature_types = qw(SL1 SL2 polyA_site polyA_signal_sequence);
   foreach my $Type (@feature_types){
     my $gff_file = "$gff_dir/${\$wormbase->chromosome_prefix}${chrom}_${Type}.gff";
-    open(GFF, "<$gff_file") or $log->log_and_die("cant open $gff_file : $!\n");
+    open(GFF, "<$gff_file") or $log->write_to("cant open $gff_file : $!\n");
     while( <GFF> ){
       my @data = split;
       if ( $data[9] and $data[9] =~ /(WBsf\d+)/) { #Feature "WBsf003597"
