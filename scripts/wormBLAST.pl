@@ -5,7 +5,7 @@
 # written by Anthony Rogers
 #
 # Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2008-04-03 12:54:55 $
+# Last edited on: $Date: 2008-04-11 09:13:49 $
 #
 # it depends on:
 #    wormpep + history
@@ -22,9 +22,10 @@ use lib '/software/worm/lib/bioperl-live';
 use Bio::EnsEMBL::DBSQL::DBConnection;
 use strict;
 
-use lib $ENV{'CVS_DIR'};
-use lib $ENV{'CVS_DIR'} . "/BLAST_scripts";
-use lib $ENV{'CVS_DIR'} . "/ENSEMBL/lib";
+use FindBin qw($Bin);
+use lib "$Bin";
+use lib "$Bin/BLAST_scripts";
+use lib "$Bin/ENSEMBL/lib";
 
 use WormBase;
 use Wormbase;
