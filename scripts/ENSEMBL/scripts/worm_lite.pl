@@ -160,7 +160,7 @@ sub load_dna {
     $db->dbc->do('INSERT INTO seq_region_attrib (seq_region_id,attrib_type_id,value) SELECT seq_region_id,11,5 FROM seq_region WHERE Name LIKE "%Mt%"');
     $db->dbc->do('INSERT INTO seq_region_attrib (seq_region_id,attrib_type_id,value) SELECT seq_region_id,6,6 FROM seq_region WHERE coord_system_id=1');
     
-    $db->close;
+#    $db->close;
     undef $db;
     undef $cs;
     undef $ss;
@@ -222,7 +222,7 @@ sub load_genes {
     my $analysis = $db->get_AnalysisAdaptor()->fetch_by_logic_name('wormbase');
 
     # elegans hack for build
-    if ( $species eq 'elegans' ) {
+    if ( $species eq 'elegans' || $species eq 'briggsae' ) {
         foreach my $chr ( glob $config->{fasta} ) {
             my ( $path, $name ) = ( $chr =~ /(^.*)\/CHROMOSOMES\/(.*?)\.\w+/ );
             `mkdir /tmp/compara` if !-e '/tmp/compara';
@@ -242,7 +242,7 @@ sub load_genes {
     $db->dbc->do('UPDATE gene SET biotype="protein_coding"');
 
     # elegans cleanup
-    ( system('rm -rf /tmp/compara') && die "could not clean up /tmp/compara" ) if $species eq 'elegans';
+    ( system('rm -rf /tmp/compara') && die "could not clean up /tmp/compara" ) if ($species eq 'elegans' ||$species eq 'briggsae');
 }
 
 package WormBase;
