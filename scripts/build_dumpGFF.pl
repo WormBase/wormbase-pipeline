@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl -w
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2008-02-20 16:52:49 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2008-04-11 10:29:00 $
 
 use strict;
 use lib  $ENV{'CVS_DIR'};
@@ -44,8 +44,8 @@ else {
   my @methods;
  READARRAY: while (<DATA>) {
     chomp;
-    my ($type,$method) = split;
-    push(@methods,"$method") if ( $type eq $stage) ;
+    my ($type,$method,@speciestodo) = split;
+    push(@methods,"$method") if ( $type eq $stage and (grep($wormbase->species eq $_,@speciestodo)) ) ;
   }
   $methods = join(',',@methods);
 
@@ -61,57 +61,57 @@ $log->mail();
 exit(0);
 
 __DATA__
-init Genomic_canonical
-init Link
-init Pseudogene
-init Transposon
-init Transposon_CDS
-init curated
-init history
-init miRNA
-init tRNAscan-SE-1.23
-init Non_coding_transcript
-init SAGE_tag
-init snRNA
-init miRNA
-init rRNA
-init scRNA
-init snoRNA
-init tRNA
-init stRNA
-init snRNA
-init ncRNA
-init GenePairs
-init Oligo_set
-init SAGE_transcript
-init RNAi_primary
-init RNAi_secondary
-init Expr_profile
-init Orfeome
-blat BLAT_EST_BEST
-blat BLAT_EST_OTHER
-blat BLAT_NEMATODE
-blat BLAT_OST_BEST
-blat BLAT_OST_OTHER
-blat BLAT_RST_BEST
-blat BLAT_RST_OTHER
-blat BLAT_TC1_BEST
-blat BLAT_TC1_OTHER
-blat BLAT_mRNA_BEST
-blat BLAT_mRNA_OTHER
-blat BLAT_ncRNA_BEST
-blat BLAT_ncRNA_OTHER
-blat BLAT_WASHU
-blat BLAT_NEMBASE
-blat SL1
-blat SL2
-blat polyA_signal_sequence
-blat polyA_site
-homol waba_coding
-homol waba_strong
-homol waba_weak
-homol tandem
-homol RepeatMasker
-homol wublastx
-homol inverted
+init Genomic_canonical elegans briggsae remanei
+init Link elegans briggsae remanei
+init Pseudogene elegans briggsae remanei
+init Transposon elegans
+init Transposon_CDS elegans
+init curated  elegans briggsae remanei
+init history elegans briggsae
+init miRNA elegans
+init tRNAscan-SE-1.23 elegans
+init Non_coding_transcript elegans
+init SAGE_tag elegans
+init snRNA elegans
+init miRNA elegans
+init rRNA elegans
+init scRNA elegans
+init snoRNA elegans
+init tRNA elegans
+init stRNA elegans
+init snRNA elegans
+init ncRNA elegans
+init GenePairs elegans
+init Oligo_set elegans
+init SAGE_transcript elegans
+init RNAi_primary elegans
+init RNAi_secondary elegans
+init Expr_profile elegans
+init Orfeome elegans
+blat BLAT_EST_BEST elegans briggsae remanei
+blat BLAT_EST_OTHER elegans
+blat BLAT_NEMATODE elegans
+blat BLAT_OST_BEST elegans
+blat BLAT_OST_OTHER elegans
+blat BLAT_RST_BEST elegans
+blat BLAT_RST_OTHER elegans
+blat BLAT_TC1_BEST elegans
+blat BLAT_TC1_OTHER elegans
+blat BLAT_mRNA_BEST elegans briggsae remanei
+blat BLAT_mRNA_OTHER elegans
+blat BLAT_ncRNA_BEST elegans
+blat BLAT_ncRNA_OTHER elegans
+blat BLAT_WASHU elegans
+blat BLAT_NEMBASE elegans
+blat SL1 elegans
+blat SL2 elegans
+blat polyA_signal_sequence elegans
+blat polyA_site elegans
+homol waba_coding elegans
+homol waba_strong elegans
+homol waba_weak elegans
+homol tandem elegans
+homol RepeatMasker elegans
+homol wublastx elegans
+homol inverted elegans
 __END__
