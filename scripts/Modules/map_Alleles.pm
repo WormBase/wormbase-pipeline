@@ -326,8 +326,8 @@ sub print_cgh{
 		@order=qw(Three Five) if ($v->{orientation} eq '+');
 
 		print $fh "Variation : \"$k\"\n";
-		print $fh "$order[0]_PrimeGap $left_range\n";			
-		print $fh "$order[1]_PrimeGap $right_range\n\n";
+		print $fh "$order[0]PrimeGap $left_range\n";			
+		print $fh "$order[1]PrimeGap $right_range\n\n";
 	}
 }
 
