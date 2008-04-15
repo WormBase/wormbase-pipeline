@@ -659,7 +659,9 @@ sub compare {
 			if ($y==1) {
 				my $remark=$old->{$allele}->{allele}->Remark;
 				$log->write_to("ERROR: $allele -> $gene connection is only in geneace (Remark: $remark)\n");$errors++}
-			elsif($y==2){$log->write_to("WARNING: $allele -> $gene connection created by script\n")}
+			elsif($y==2){
+				#$log->write_to("WARNING: $allele -> $gene connection created by script\n");
+			}
 			elsif($y==3){}
 			else{die "comparison failed\n"}
 		}
