@@ -59,7 +59,7 @@ my $recip_file = "$wormpipe_dir/dumps/${database}_wublastp_recip.ace";
 
 open (BEST, ">$best_hits") or die "cant open $best_hits for writing\n";
 
-$log->write_to("Dump_new_prot_only.pl log file $rundate\n");
+# $log->write_to("Dump_new_prot_only.pl log file $rundate\n"); ### don't see how that could have ever worked after ecs1f was axed
 $log->write_to("-----------------------------------------------------\n\n");
 
 # to be able to include only those proteins that have homologies we need to record those that do
