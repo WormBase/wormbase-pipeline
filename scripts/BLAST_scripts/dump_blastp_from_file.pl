@@ -40,9 +40,6 @@ else {
 			     -test    => $test,
 			   );
 }
-my $brigbase = Wormbase->new(-debug => $debug,-test => $test,-organism => 'briggsae');
-my $remabase = Wormbase->new(-debug => $debug,-test => $test,-organism => 'remanei');
-
 my $log = Log_files->make_build_log($wormbase);
 
 $log->log_and_die("please give me a mysql protein database eg -database worm_pep\n") unless $database;
@@ -147,21 +144,21 @@ unless (-s "$db_files/trembl2des") {
 
 # gene CE info from COMMON_DATA files
 # using flattened arrays to merge hashes ... don't try this at home ... or with big hashes
-my %tmp_hash;
 my %CE2gene;
-$wormbase->FetchData('wormpep2cds',\%CE2gene);
-$brigbase->FetchData('wormpep2cds',\%tmp_hash);
-%CE2gene=(%CE2gene,%tmp_hash);
-$remabase->FetchData('wormpep2cds',\%tmp_hash);
-%CE2gene=(%CE2gene,%tmp_hash);
-
 my %gene2CE;
+$wormbase->FetchData('wormpep2cds',\%CE2gene);
 $wormbase->FetchData('cds2wormpep',\%gene2CE);
-$brigbase->FetchData('cds2wormpep',\%tmp_hash);
-%gene2CE=(%gene2CE,%tmp_hash);
-$remabase->FetchData('cds2wormpep',\%tmp_hash);
-%gene2CE=(%gene2CE,%tmp_hash);
-undef %tmp_hash;
+
+my %species_accessor=$wormbase->species_accessors;
+foreach my $key(keys %species_accessor){
+ my %tmp_hash;
+ print STDERR "getting data for $key\n";
+ my $commondata = $species_accessor{$key}->common_data;
+ $species_accessor{$key}->FetchData('wormpep2cds',\%tmp_hash) if -e "$commondata/wormpep2cds.dat";
+ %CE2gene=(%CE2gene,%tmp_hash);
+ $species_accessor{$key}->FetchData('cds2wormpep',\%tmp_hash) if -e "$commondata/cds2wormpep.dat";
+ %gene2CE=(%gene2CE,%tmp_hash);
+}
 
 my @results;
 
@@ -277,7 +274,7 @@ close RECIP;
 close BEST;
 close IPI_HITS;
 
-print "sorting ipi_hits file . . ";
+print "\nsorting ipi_hits file . . ";
 $wormbase->run_command("mv $ipi_file $ipi_file._tmp",        $log);
 $wormbase->run_command("sort -u $ipi_file._tmp > $ipi_file", $log);
 $wormbase->run_command("rm -f $ipi_file._tmp",         		$log);
