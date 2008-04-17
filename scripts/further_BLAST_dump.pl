@@ -6,8 +6,8 @@
 #
 # Author: Chao-Kung CHen
 #
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2008-03-14 14:03:49 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2008-04-17 10:54:53 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -34,6 +34,7 @@ if ( $store ) {
 			     );
 }
 
+my $species = $wormbase->species;
 my $log = Log_files->make_build_log($wormbase);
 my $farm_base = '/lustre/work1/ensembl/wormpipe';
 my $farm_ace = "$farm_base/ace_files"; 
@@ -46,12 +47,11 @@ unlink("$source_dir/ensembl_protein_info.ace");
 $wormbase->run_command("cat $farm_ace/flybase.ace $farm_ace/yeast.ace $source_dir/ipi_hits.ace $source_dir/swissproteins.ace $source_dir/tremblproteins.ace > $source_dir/ensembl_protein_info.ace", $log);
 
 my @files        = (
-		    "worm_pep_best_blastp_hits",
-		    "repeat_homologies.ace",
-		    "worm_pep_blastp.ace",
-		    "worm_dna_blastx.ace",
-		    "worm_ensembl_elegans_motif_info.ace",
-		    "worm_ensembl_elegans_interpro_motif_info.ace",
+		    "${species}_best_blastp_hits",
+		    "${species}_blastp.ace",
+		    "${species}_blastx.ace",
+		    "worm_ensembl_${species}_motif_info.ace",
+		    "worm_ensembl_${species}_interpro_motif_info.ace",
 		    "ensembl_protein_info.ace",
 		    "waba.ace",
 		   );
