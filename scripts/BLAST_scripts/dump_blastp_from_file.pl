@@ -15,7 +15,7 @@ my $file = shift;
 #######################################
 # command-line options                #
 #######################################
-my ($test, $debug, , $store, $verbose, $help);
+my ($test, $debug, , $store, $verbose, $help, $species);
 my ($all, $WPver, $analysisTOdump, $just_matches, $matches, $list, $database);
 GetOptions ("debug=s"      => \$debug,
 	    "verbose"      => \$verbose,
@@ -28,7 +28,8 @@ GetOptions ("debug=s"      => \$debug,
 	    "matches"      => \$matches,
 	    "dumplist=s"   => \$list,
 	    "database=s"   => \$database,
-	    "store:s"      => \$store
+	    "store:s"      => \$store,
+	    "species:s"    => \$species
            );
 
 my $wormbase;
@@ -37,12 +38,14 @@ if( $store ) {
 }
 else {
   $wormbase = Wormbase->new( -debug   => $debug,
-			     -test    => $test,
-			   );
+						     -test    => $test,
+						     -organism => $species
+						   );
 }
+$species = $wormbase->species; #in case defaulting to elegans when species not set.
 my $log = Log_files->make_build_log($wormbase);
 
-$log->log_and_die("please give me a mysql protein database eg -database worm_pep\n") unless $database;
+$log->log_and_die("please give me a mysql protein database eg -database worm_ensembl_elegans\n") unless $database;
 
 my @sample_peps = @_;
 my $dbname = $database;
@@ -52,9 +55,9 @@ my $rundate    = `date +%y%m%d`; chomp $rundate;
 my $wormpipe = glob("~wormpipe");
 my $wormpipe_dir = "/lustre/work1/ensembl/wormpipe";
 
-my $best_hits = "$wormpipe_dir/dumps/${database}_best_blastp_hits";
-my $ipi_file = "$wormpipe_dir/dumps/${database}_ipi_hits_list";
-my $output = "$wormpipe_dir/dumps/${database}_blastp.ace";
+my $best_hits = "$wormpipe_dir/dumps/${species}_best_blastp_hits";
+my $ipi_file = "$wormpipe_dir/dumps/${species}_ipi_hits_list";
+my $output = "$wormpipe_dir/dumps/${species}_blastp.ace";
 my $recip_file = "$wormpipe_dir/dumps/${database}_wublastp_recip.ace";
 
 open (BEST, ">$best_hits") or die "cant open $best_hits for writing\n";
