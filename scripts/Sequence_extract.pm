@@ -86,15 +86,16 @@ sub invoke
       	  open (ACE, "| $tace $database") or croak "cant connect to $database :$!\n";
 
           foreach my $chrom ( @chromosome ) {
-             my $seqname="$chromprefix"."$chrom";
-             print "writing DNA seq for $seqname\n";
-             print ACE <<EOF;
+	    my $seqname="$chromprefix"."$chrom";
+	    print "writing DNA seq for $seqname\n";
+	    print ACE <<EOF;
 clear
 find sequence $seqname
 dna -f $database/CHROMOSOMES/$seqname.dna
 EOF
-	     }
-	     close ACE;
+            $wormbase->remove_blank_lines("$database/CHROMOSOMES/$seqname.dna", $log);
+          }
+	  close ACE;
 	 }
 
 	 foreach my $chrom (@chromosome) {
