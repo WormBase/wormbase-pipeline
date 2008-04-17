@@ -5,7 +5,7 @@
 #  and concatenate them at the end
 # 
 # Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2008-03-18 14:26:28 $
+# Last edited on: $Date: 2008-04-17 15:52:50 $
 # 
 
 
@@ -75,7 +75,7 @@ $database ||= "worm_ensembl_$organism";
 # here goes the main bit:
 foreach my $db(keys %logic2type){
 	my $options="-database $database -logicname $db -outfile $dumpdir/${organism}_$db.ace -store $storable";
-	$options.=' -self' if $db eq ref $wormbase; # set selfhit removal for the self-blasts
+	$options.=' -self' if $logic2type{$db} eq ref $wormbase; # set selfhit removal for the self-blasts
 	$options.=' -toplevel' unless ref $wormbase eq 'Elegans'; # elegans dumps on clone level
 	$m->submit("/software/bin/perl $ENV{CVS_DIR}/BLAST_scripts/blastx_dump.pl $options");
 }
