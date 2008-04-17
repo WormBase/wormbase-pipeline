@@ -4,8 +4,8 @@
 #
 # written by Anthony Rogers
 #
-# Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2008-04-11 09:13:49 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2008-04-17 09:37:38 $
 #
 # it depends on:
 #    wormpep + history
@@ -568,7 +568,7 @@ sub update_analysis {
     }
 
     # update the interpro analysis
-    my $interpro_dir    = "/data/blastdb/Ensembl/interpro_scan/";
+    my $interpro_dir    = "/data/blastdb/Worms/interpro_scan";
     my $interpro_date   = 1000;
     my $last_build_date = -M $last_build_DBs;
     if ( -e $interpro_dir ) {
