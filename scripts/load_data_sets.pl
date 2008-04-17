@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl -w
-# Last updated by: $Author: mh6 $     
-# Last updated on: $Date: 2008-03-17 09:31:23 $      
+# Last updated by: $Author: ar2 $     
+# Last updated on: $Date: 2008-04-17 14:30:13 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -37,7 +37,7 @@ if ( $store ) {
                              -test    => $test,
 			     );
 }
-
+my $species = $wormbase->species;
 # establish log file.
 my $log = Log_files->make_build_log($wormbase);
 
@@ -86,16 +86,13 @@ sub parse_homol_data {
 
   my @files2Load = (
 		    #BLAST data
-		    "worm_pep_blastp.ace",
-#		    "worm_brigpep_blastp.ace", # don't load briggsae files unless building briggsae
-		    "worm_dna_blastx.ace",
+		    "${species}_blastp.ace",
+		    "${species}_blastx.ace",
 		    #motif info
-		    "worm_ensembl_elegans_motif_info.ace",
-#		    "worm_brigpep_motif_info.ace",
+		    "worm_ensembl_${species}_motif_info.ace",
 		    #protein info
 		    "ensembl_protein_info.ace",
-		    "worm_ensembl_elegans_interpro_motif_info.ace",
-#		    "worm_brigpep_interpro_motif_info.ace",
+		    "worm_ensembl_${species}_interpro_motif_info.ace",
 		    #other data
 		    "repeat_homologies.ace",
 		    "waba.ace",
