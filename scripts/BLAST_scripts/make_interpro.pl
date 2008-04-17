@@ -9,7 +9,7 @@
 # indexing program on it.
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-04-17 08:28:06 $      
+# Last updated on: $Date: 2008-04-17 10:18:47 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -35,7 +35,7 @@ GetOptions ("help"       => \$help,
 	    "store:s"    => \$store,
 	    "species:s"  => \$species, # for testing puposes, comma-delimted list of species to delete old results from, all species are done if none are specified
 	    "nodownload" => \$nodownload,  # for testing purposes, inhibit the downloading and indexing of the databases even if they should be downloaded
-	    "dbpass:s"   => \$dbpass, # the worm_ensembl_* mysql databases password
+#	    "dbpass:s"   => \$dbpass, # the worm_ensembl_* mysql databases password
 	    );
 
 if ( $store ) {
@@ -128,16 +128,23 @@ if ($get_main || $get_panther) {
     $wormbase->run_command("perl /software/worm/iprscan/bin/index_data.pl -p /data/blastdb/Worms/interpro_scan/iprscan/data/ -inx -bin -v", $log);
   }
 
+####################################################################################
+#
+# NO. Do not run this routine to delete the old result for all species.
+# We will run the ensembl pipeline for some species very rarely
+# and will wish the results to be kept until the next analysis run.
+#
+####################################################################################
 # for each species, delete the results of previous runs of the
 # analysis pipeline for interpro
-  foreach my $species_to_delete (@species) {
-    if ($test) {
-      $log->write_to("In test mode - the Interpro results for $species_to_delete will not be changed\n");
-    } else {
-      $log->write_to("Deleting old Interpro analysis results\n");
-      &delete_results($get_main, $get_panther, $species_to_delete);
-    }
-  }
+#  foreach my $species_to_delete (@species) {
+#    if ($test) {
+#      $log->write_to("In test mode - the Interpro results for $species_to_delete will not be changed\n");
+#    } else {
+#      $log->write_to("Deleting old Interpro analysis results\n");
+#      &delete_results($get_main, $get_panther, $species_to_delete);
+#    }
+#  }
 
 # save the version number of the new database
   $log->write_to("Saving record of latest database versions\n");
