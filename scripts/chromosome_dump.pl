@@ -8,8 +8,8 @@
 # A script for dumping dna and/or gff files for chromosome objects in autoace
 # see pod for more details
 #
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2007-05-25 10:55:31 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2008-04-17 10:31:51 $
 
 
 use strict;
@@ -117,23 +117,16 @@ sub dump_dna {
   }
   else {
     foreach my $c ($wormbase->get_chromosome_names(-mito => 1,-prefix=> 1)) {
-	$command.="find sequence $c\ndna -f $dump_dir/$c.dna\n"; # a bit iffy, as it does a memcopy for every .=
-	}
+      $command.="find sequence $c\ndna -f $dump_dir/$c.dna\n";
+    }
   }
   $command.='quit';
 
   &execute_ace_command($command,$tace,$database);
 
   $log->write_to("Removing blank first lines");
-  undef $/;
   foreach ($wormbase->get_chromosome_names(-mito => 1,-prefix=> 1)) {
-    open( CHROM,"<$dump_dir/$_.dna") or $log->log_and_die("cant open $dump_dir/$_.dna to read: $!\n");
-    my $chrom = <CHROM>;
-    close CHROM;
-    $chrom =~ s/^\n//;
-    open( CHROM,">$dump_dir/$_.dna") or $log->log_and_die("cant open $dump_dir/$_.dna to write: $!\n");
-    print CHROM $chrom;
-    close CHROM;
+    $wormbase->remove_blank_lines("$dump_dir/$_.dna", $log);
   }
   $log->write_to("Finished dumping DNA\n\n");
 }
