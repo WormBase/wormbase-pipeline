@@ -11,7 +11,7 @@
 #   array of EnsEMBL objects, it invites disaster as it makes a copy of the array.
 #
 # Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2008-03-18 14:26:28 $ 
+# Last edited on: $Date: 2008-04-17 11:39:14 $ 
 
 my $usage = <<USAGE;
 blastx_dump.pl options:
@@ -256,8 +256,8 @@ sub remove_selfhits {
 	my ($features,$link,$wormbase)=@_;
 	my (%cds2wormpep,@results);
 
-	$wormbase->FetchData( 'cds2wormpep', \%cds2wormpep ) if $wormbase;
-	%cds2wormpep=%{&read_table()} unless $wormbase;
+	#$wormbase->FetchData( 'cds2wormpep', \%cds2wormpep ) if $wormbase;
+	%cds2wormpep=%{&read_table()}; #unless $wormbase;
 	die('cannot fetch cds2wormpep') unless %cds2wormpep;
 
 	my @index=&build_search_struct($link->get_all_Genes()); # using a GFF styled search structure
@@ -302,13 +302,13 @@ sub search {
 	return @hits;
 }
 
-# remove < 75% of evalue features from 50bp windows
+# remove < 80% of evalue features from 200bp windows
 sub filter_features {
 	my ($features,$length)=@_;
         my %f_features;
 	
 	# 50bp bin size
-	my $size=100;
+	my $size=200;
 
 	# should I bin them instead?
 	my @bins;
