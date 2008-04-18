@@ -7,8 +7,8 @@
 # This script interogates an ACEDB database and returns all pfam/Interpro/blastx 
 # data as appropriate and generates a suitable DB_remark
 #
-# Last updated on: $Date: 2008-03-17 10:53:17 $
-# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2008-04-18 10:27:06 $
+# Last updated by: $Author: ar2 $
 
 
 ### DB_remark is generated as follows:  ###
@@ -94,7 +94,7 @@ GetOptions("help"   => \$help,
 	   "debug=s"    => \$debug,
 	   "test"       => \$test,
 	   "verbose"    => \$verbose,
-	   "species" 	=> \$species,
+	   "species:s" 	=> \$species,
 	   "database=s" => \$database,
 	   "store:s"    => \$store,
 	   "output=s"   => \$output,
@@ -108,7 +108,7 @@ if ( $store ) {
 } else {
   $wormbase = Wormbase->new( -debug   => $debug,
                              -test    => $test,
-                             -oganism => $species
+                             -organism => $species
 			     );
 }
 
@@ -197,7 +197,7 @@ SUBSEQUENCE: while ( my $cds = $CDSs->next ) {
   if ($protein) {
     @motifs = $protein->Motif_homol;
     if ($motifs[0]) {
-      $full_string .= "C. $species $cgc_protein_name protein; " if ($cgc_name);
+      $full_string .= $wormbase->full_name('-short' => 1)." $cgc_protein_name protein; " if ($cgc_name);
       # process motif information if present
       my %pfamhits;
       my %interprohits;
@@ -269,7 +269,7 @@ SUBSEQUENCE: while ( my $cds = $CDSs->next ) {
     # get peptide homologies if no motif data
     else {
       @peptide_homols = $protein->Pep_homol;
-      $full_string .= "C. $species $cgc_protein_name protein " if ($cgc_name); 
+      $full_string .= $wormbase->full_name('-short' => 1)." $cgc_protein_name protein " if ($cgc_name); 
       #####################################################
       # no pfam or interpro hits; getting protein matches
       #####################################################
@@ -378,17 +378,17 @@ PSEUDOGENE: foreach my $pseudogene (@pseudogenes) {
 
   if (($type) || ($cgc_name)) {
     if (($type) && ($cgc_name)) { 
-      $full_string .= "C. elegans $type pseudogene $cgc_name "; 
+      $full_string .= $wormbase->full_name('-short' => 1)." $type pseudogene $cgc_name "; 
     } 
     elsif ($type) { 
-      $full_string .= "C. elegans $type pseudogene "; 
+      $full_string .= $wormbase->full_name('-short' => 1)." $type pseudogene "; 
     } 
     elsif ($cgc_name) {
-      $full_string .= "C. elegans pseudogene $cgc_name "; 
+      $full_string .= $wormbase->full_name('-short' => 1)." pseudogene $cgc_name "; 
     }
   } 
   else {
-    $full_string .= "C. elegans predicted pseudogene "; 
+    $full_string .= $wormbase->full_name('-short' => 1)." predicted pseudogene "; 
   }
 
   $object_count++;
@@ -461,57 +461,57 @@ TRANSCRIPT: while ( my $transcript = $transcripts->next ) {
 
   if ($type eq '') { # non-coding transcript isoforms have no tag after 'Transcript'
     if ($cgc_name) {
-      $full_string .= "C. $species non-coding isoform $cgc_name ";
+      $full_string .= $wormbase->full_name('-short' => 1)." non-coding isoform $cgc_name ";
     } 
     else {
-      $full_string .= "C. $species predicted non-coding isoform ";
+      $full_string .= $wormbase->full_name('-short' => 1)." predicted non-coding isoform ";
     } 
   }   
   elsif ($method eq 'tRNAscan-SE-1.23') { # tRNAs
     if ($cgc_name) {
-      $full_string .= "C. $species tRNA $cgc_name ";
+      $full_string .= $wormbase->full_name('-short' => 1)." tRNA $cgc_name ";
     } 
     else {
-      $full_string .= "C. $species predicted tRNA ";
+      $full_string .= $wormbase->full_name('-short' => 1)." predicted tRNA ";
     }
   } 
   elsif ($type eq 'ncRNA') { # RNA genes
     if ($cgc_name) {
-      $full_string .= "C. elegans non-protein coding RNA $cgc_name ";
+      $full_string .= $wormbase->full_name('-short' => 1)." non-protein coding RNA $cgc_name ";
     } 
     else {
-      $full_string .= "C. elegans probable non-coding RNA ";
+      $full_string .= $wormbase->full_name('-short' => 1)." probable non-coding RNA ";
     }
   } 
   elsif ($type eq 'snRNA') { # snRNA genes
     if ($cgc_name) {
-      $full_string .= "C. elegans small nuclear RNA $description $cgc_name ";
+      $full_string .= $wormbase->full_name('-short' => 1)." small nuclear RNA $description $cgc_name ";
     } 
     else {
-      $full_string .= "C. elegans small nuclear RNA $description ";
+      $full_string .= $wormbase->full_name('-short' => 1)." small nuclear RNA $description ";
     }
   } 
   elsif ($type eq 'snoRNA') { # snoRNA genes
     if ($cgc_name) {
-      $full_string .= "C. elegans small nucleolar RNA $description $cgc_name ";
+      $full_string .= $wormbase->full_name('-short' => 1)." small nucleolar RNA $description $cgc_name ";
     } 
     else {
-      $full_string .= "C. elegans small nucleolar RNA $description ";
+      $full_string .= $wormbase->full_name('-short' => 1)." small nucleolar RNA $description ";
     }
   } 
   elsif ($type eq 'miRNA') { # miRNA genes
     if ($cgc_name) {
-      $full_string .= "C. elegans microRNA $cgc_name ";
+      $full_string .= $wormbase->full_name('-short' => 1)." microRNA $cgc_name ";
     } 
     else {
-      $full_string .= "C. elegans predicted micro RNA ";
+      $full_string .= $wormbase->full_name('-short' => 1)." predicted micro RNA ";
     }
   } 
   elsif ($type eq 'scRNA') { # scRNA genes
     if ($cgc_name) {
-      $full_string .= "C. elegans small cytoplasmic RNA $cgc_name ";
+      $full_string .= $wormbase->full_name('-short' => 1)." small cytoplasmic RNA $cgc_name ";
     } else {
-      $full_string .= "C. elegans predicted small cytoplasmic RNA ";
+      $full_string .= $wormbase->full_name('-short' => 1)." predicted small cytoplasmic RNA ";
     }
   }
 
