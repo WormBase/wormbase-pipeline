@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-03-20 13:08:04 $      
+# Last updated on: $Date: 2008-04-18 11:01:06 $      
 
 # Changes required by Ant: 2008-02-19
 # 
@@ -576,7 +576,7 @@ sub get_protein_differences {
       my $protein_score = $homology->[6];
 
       # reject any hits where either of the proteins have a Blast score < 50
-      if ($protein_score < 50) {next;}
+      if ($protein_score < 75) {next;}
 
       # make the anomaly score based on the protein alignment score normalised between 1 and 3
       # using the log10 of the blast score
@@ -1887,8 +1887,8 @@ sub get_unmatched_waba_coding {
       my $chrom_strand = $waba->[3];
       my $waba_score = $waba->[6];
 
-      # reject any hits where either of the proteins have a Blast score < 50
-      if ($waba_score < 50) {next;}
+      # reject any hits there is a  WABA score < 75
+      if ($waba_score < 75) {next;}
 
       # make the anomaly score based on the protein alignment score normalised between 1 and about 2.5
       # using the log10 of the waba score
