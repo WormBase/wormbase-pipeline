@@ -4,8 +4,8 @@
 #
 # written by Anthony Rogers
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2008-04-17 09:37:38 $
+# Last edited by: $Author: mh6 $
+# Last edited on: $Date: 2008-04-18 09:08:37 $
 #
 # it depends on:
 #    wormpep + history
@@ -342,6 +342,7 @@ sub update_blast_dbs {
         if (/\/(gadfly|yeast|slimswissprot|slimtrembl|wormpep|ipi_human|brigpep)/) {
             my $whole_file = "$1" . "$'";    # match + stuff after match.
 
+	    print "checking $_\n";
             if ( "$whole_file" ne "$_currentDBs{$1}" ) {
 
                 # make blastable database
@@ -437,9 +438,9 @@ sub update_dna {
     # * make_input_ids -dbhost XYZ -dbname XYZ -dbuser XYZ -dbpass XYZ -dbport 3306 -translation_id -logic SubmitTranslation
     $wormbase->run_command( "perl $pipeline_scripts/make_input_ids $db_options -translation_id -logic SubmitTranslation", $log );
 
-# * make_input_ids -dbhost XYZ -dbname XYZ -dbuser XYZ -dbpass XYZ -dbport 3306 -slice -slice_size 150000 -coord_system toplevel -logic_name SubmitSlice150k -input_id_type Slice150k
+# * make_input_ids -dbhost XYZ -dbname XYZ -dbuser XYZ -dbpass XYZ -dbport 3306 -slice -slice_size 75000 -coord_system toplevel -logic_name SubmitSlice75k -input_id_type Slice75k
     $wormbase->run_command(
-"perl $pipeline_scripts/make_input_ids $db_options -slice -slice_size 150000 -coord_system toplevel -logic_name SubmitSlice150k -input_id_type Slice150k",
+"perl $pipeline_scripts/make_input_ids $db_options -slice -slice_size 75000 -coord_system toplevel -logic_name SubmitSlice75k -input_id_type Slice75k",
         $log
     );
     return 1;
