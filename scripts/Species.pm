@@ -86,7 +86,15 @@ sub pep_prefix {'CE'}
 sub pepdir_prefix{'worm'};
 sub cds_regex{qr/^[A-Z0-9_cel]+\.[1-9]\d?[A-Za-z]?$/};  #the cel is for telomeric clone CDSs cTel54X.1
 sub ncbi_tax_id {'6239'};
-sub full_name {'Caenorhabditis elegans'};
+sub full_name {
+	my $self = shift;
+	my %param = @_ ;
+	if($param{'-short'}){
+		return 'C. elegans';
+	}
+	else { return'Caenorhabditis elegans'
+	};
+}
 sub wormpep_prefix{'WP'}
 
 ########################################
@@ -114,7 +122,16 @@ sub pep_prefix {'CBP'}
 sub pepdir_prefix{'brig'};
 sub cds_regex{qr/^CBG\d{5}$/};
 sub ncbi_tax_id {'6238'};
-sub full_name {'Caenorhabditis briggsae'};
+
+sub full_name {
+	my $self = shift;
+	my %param = @_ ;
+	if($param{'-short'}){
+		return 'C. briggsae';
+	}
+	else { return'Caenorhabditis briggsae'
+	};
+}
 sub wormpep_prefix{'BP'}
 
 sub wormpep_files {
@@ -138,8 +155,16 @@ sub _new {
 
     bless $self, $class;
 }
+sub full_name {
+	my $self = shift;
+	my %param = @_ ;
+	if($param{'-short'}){
+		return 'C. remanei';
+	}
+	else { return'Caenorhabditis remanei'
+	};
+}
 
-sub full_name {'Caenorhabditis remanei'}
 sub chromosome_prefix {'Crem_Contig'}
 sub chromosome_names {
 	my @supercontigs;
@@ -180,7 +205,15 @@ sub chromosome_prefix {'Contig'}
 sub pep_prefix {'CN'}
 sub pepdir_prefix{'bre'};
 sub ncbi_tax_id {'135651'};
-sub full_name {'Caenorhabditis brenneri'}
+sub full_name {
+	my $self = shift;
+	my %param = @_ ;
+	if($param{'-short'}){
+		return 'C. brenneri';
+	}
+	else { return'Caenorhabditis brenneri'
+	};
+}
 
 #######################################################
 
@@ -203,7 +236,15 @@ sub chromosome_prefix {'Contig'}
 sub pep_prefix {'JA'}
 sub pepdir_prefix{'jap'};
 sub ncbi_tax_id {'281687'};
-sub full_name {'Caenorhabditis japonica'}
+sub full_name {
+	my $self = shift;
+	my %param = @_ ;
+	if($param{'-short'}){
+		return 'C. japonica';
+	}
+	else { return'Caenorhabditis japonica'
+	};
+}
 
 #######################################################
 
@@ -220,8 +261,16 @@ sub _new {
 
     bless $self, $class;
 }
+sub full_name {
+	my $self = shift;
+	my %param = @_ ;
+	if($param{'-short'}){
+		return 'P. pacificus';
+	}
+	else { return'Pristionchus pacificus'
+	};
+}
 
-sub full_name {'Pristionchus pacificus'}
 sub chromosome_prefix {'Supercontig'}
 sub chromosome_names {
 	my @contigs;
@@ -254,7 +303,15 @@ sub _new {
 
     bless $self, $class;
 }
-sub full_name {'Heterorhabditis bacteriophora'}
+sub full_name {
+	my $self = shift;
+	my %param = @_ ;
+	if($param{'-short'}){
+		return 'H. bacteriophora';
+	}
+	else { return'Heterorhabditis bacteriophora'
+	};
+}
 sub ncbi_tax_id {'37862'};
 sub chromosome_prefix {'Contig'}
 sub pep_prefix {'HB'}
@@ -280,7 +337,15 @@ sub _new {
 
     bless $self, $class;
 }
-
+sub full_name {
+	my $self = shift;
+	my %param = @_ ;
+	if($param{'-short'}){
+		return 'B. malayi';
+	}
+	else { return'Brugia malayi'
+	};
+}
 sub full_name {'Brugia malayi'}
 sub chromosome_prefix {'Bmal_supercontig'}
 sub pep_prefix {'BM'}
