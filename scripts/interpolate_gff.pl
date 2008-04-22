@@ -15,7 +15,7 @@
 #      COMPANY:
 #      VERSION:  1.0
 #      CREATED:  13/02/06 09:37:00 GMT
-#     REVISION:  $Revision: 1.22 $
+#     REVISION:  $Revision: 1.23 $
 # includes code by: $Author: mh6 $
 #===============================================================================
 
@@ -71,7 +71,7 @@ my $outdir     = "$acedb/acefiles/";
 
 unlink "$acedb/logs/rev_physicals.yml" if ($prep);
 
-my $mapper = Physical_mapper->new( $acedb, glob("$chromdir".($wormbase->chromosome_prefix)."*_gene.gff") );
+my $mapper = Physical_mapper->new( $acedb, glob("$chromdir/".($wormbase->chromosome_prefix)."*_gene.gff") );
 
 # check the mappings
 if ($prep) {
