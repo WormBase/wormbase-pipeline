@@ -1186,23 +1186,23 @@ EOF
 sub remove_blank_lines {
   my ($shift, $file, $log) = @_;
 
-  $log->write_to("Removing blank lines from $file\n");
+  #$log->write_to("Removing blank lines from $file\n");
 
   $/ = undef;
-  open( CHROM,"< $file") or $log->log_and_die("cant open $file to read: $!\n");
+  open( CHROM,"< $file") or die("cant open $file to read: $!\n");
   my $chrom = <CHROM>;
   close CHROM;
   $chrom =~ s/^\n//;
   $chrom =~ s/\n\n/\n/g;
 
-  open( CHROM,"> $file") or $log->log_and_die("cant open $file to write: $!\n");
+  open( CHROM,"> $file") or die("cant open $file to write: $!\n");
   print CHROM $chrom;
   close CHROM;
   $/ = "\n";
 
   # check it starts with a '>'
   if (substr($chrom, 0, 1) ne '>') {
-    $log->log_and_die("The first line of $file does not start with a '>' character\n");
+    die("The first line of $file does not start with a '>' character\n");
   }
 
 }
