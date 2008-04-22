@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-04-18 11:01:06 $      
+# Last updated on: $Date: 2008-04-22 14:03:34 $      
 
 # Changes required by Ant: 2008-02-19
 # 
@@ -538,11 +538,13 @@ sub get_protein_differences {
     my $got_a_match = 0;	        # not yet seen a match to anything
     my $got_a_match_to_coding_exon = 0;	# not yet seen a match to a coding exon
     my $matching_exon = "";	        # the name of the exon that matches;
+    my $match_in_same_sense = 0;        # default is assumed to be a match in the opposite sense
 
     if (@matching_exons = $exons_match->match($homology)) {               #&match($homology, $exons_aref, \%exons_match)) 
       $got_a_match = 1;
       $got_a_match_to_coding_exon = 1;
       $matching_exon = $matching_exons[0][0];
+      if (grep /1/, $exons_match->matching_sense) {$match_in_same_sense = 1;}
     }
 
     if ( $pseud_match->match($homology)) {              #&match($homology, $pseudogenes_aref, \%pseud_match)) {
@@ -553,6 +555,7 @@ sub get_protein_differences {
       $got_a_match = 1;
       $got_a_match_to_coding_exon = 1;
       $matching_exon = $matching_exons[0][0];
+      if (grep /1/, $exons_match->matching_sense) {$match_in_same_sense = 1;}
     }
 
     if ($trane_match->match($homology)) {               #&match($homology, $transposon_exons_aref, \%trane_match)) {
@@ -591,7 +594,7 @@ sub get_protein_differences {
     }
 
     # add to the list of homologies to a coding regions
-    if ($got_a_match_to_coding_exon) {
+    if ($got_a_match_to_coding_exon && $match_in_same_sense) { # only want the protein matches in the same sense as the genes
       push @{$homology}, $matching_exon; # make a note of the exon we matched
       push @matched, $homology;
 
@@ -833,7 +836,7 @@ sub get_protein_split_merged {
   # sort the homologies grouped by protein ID and then chromosomal position
   my @homologies = sort {$a->[0] cmp $b->[0] or $a->[1] <=> $b->[1]} @matched;
 
-  foreach my $homology (@homologies) { # $protein_id, $chrom_start, $chrom_end, $chrom_strand, $hit_start, $hit_end, $protein_score, $matching_exon
+  foreach my $homology (@homologies) { # $protein_id, $chrom_start, $chrom_end, $chrom_strand, $hit_start, $hit_end, $protein_score, $matching_exon, $matching_sense
 
     my $protein_id = $homology->[0];
     my $chrom_start = $homology->[1];
