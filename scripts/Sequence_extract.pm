@@ -80,37 +80,37 @@ sub invoke
     	}
     }
     else {
-    #chromosome based assemblies
-   	my @seq_files = $database."/CHROMOSOMES/*.dna";
-    	unless( $seq_files[0] && -e $seq_files[0] ) {
-      	  open (ACE, "| $tace $database") or croak "cant connect to $database :$!\n";
+	 # iterate chromosomes
+	 foreach my $chromosome (@chromosome){
+         #chromosome based assemblies
+	  	  my $seqname="$chromprefix"."$chromosome";
 
-          foreach my $chrom ( @chromosome ) {
-	    my $seqname="$chromprefix"."$chrom";
-	    print "writing DNA seq for $seqname\n";
-	    print ACE <<EOF;
+		  # dump the chromosome if it doesn't exist
+    	          unless( -e "$database/CHROMOSOMES/$seqname.dna" ) {
+      	            open (ACE, "| $tace $database") or croak "cant connect to $database :$!\n";
+
+	            print "writing DNA seq for $seqname\n";
+	            print ACE <<EOF;
 clear
 find sequence $seqname
 dna -f $database/CHROMOSOMES/$seqname.dna
 EOF
-            $wormbase->remove_blank_lines("$database/CHROMOSOMES/$seqname.dna", $log);
-          }
-	  close ACE;
-	 }
+	            close ACE;
+                    $wormbase->remove_blank_lines("$database/CHROMOSOMES/$seqname.dna", $log);
+	          }
 
-	 foreach my $chrom (@chromosome) {
-	   # read seq into $self
-           my $seqname="$chromprefix"."$chrom";
-	   $/ = "";
-	   open (SEQ, "$database/CHROMOSOMES/$seqname.dna") or croak "cant open the dna file for $seqname:$!\n";
-	      my $seq = <SEQ>;
-	      close SEQ;
-	      $/ = "\n";
-	      $seq =~ s/>[\w\-_]+//;
-	      $seq =~ s/\n//g;
-	      $self->{'SEQUENCE'}->{$seqname} = $seq;
+		  # read the file/sequence into $self
+	          $/ = "";
+	          open (SEQ, "$database/CHROMOSOMES/$seqname.dna") or croak "cant open the dna file for $seqname:$!\n";
+	          my $seq = <SEQ>;
+	          close SEQ;
+	          $/ = "\n";
+	          $seq =~ s/>[\w\-_]+//;
+	          $seq =~ s/\n//g;
+	          $self->{'SEQUENCE'}->{$seqname} = $seq;
 	    }
-	 }
+
+         }
 	 return $self;
   }
 
