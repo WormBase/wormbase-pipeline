@@ -2,7 +2,7 @@
 #
 # EMBLdump.pl :  makes modified EMBL dumps from camace.
 # 
-#  Last updated on: $Date: 2008-02-26 16:20:22 $
+#  Last updated on: $Date: 2008-04-23 12:02:05 $
 #  Last updated by: $Author: pad $
 
 use strict;
@@ -279,11 +279,41 @@ while (<EMBL>) {
   ###########################################################
 
   #FT   ncRNA(5 char -> 8 characters misc_RNA)
-  if ((/^FT\s+(\w{2}RNA)/) || (/^FT\s+(\w{3}RNA)/)) {
-    s/$1   /misc_RNA/g if (/^FT\s+(\w{2}RNA)/); #5-8 chr
-    s/$1  /misc_RNA/g if (/^FT\s+(\w{3}RNA)/);  #6-8 chr
-    print OUT "$_";
-    next;
+  if ((/^FT\s+(\w{2}RNA)/) || (/^FT\s+(\w{3}RNA)/) || (/^FT\s+(misc_RNA)/)) {
+    chomp;
+    my $mol = $1;
+    if ($1 eq "snlRNA") {
+      s/$1  /ncRNA /g;
+      print OUT "$_\n";
+      print OUT "FT                   /ncRNA_class=\"Other\"\n";
+      print OUT "FT                   /note=\"$mol\"\n";
+      next;
+    }
+    elsif ($1 eq "snoRNA") {
+      s/$1/ncRNA /g;
+      print OUT "$_\n";
+      print OUT "FT                   /ncRNA_class=\"$mol\"\n";
+      next;
+    }
+    elsif ($1 eq "ncRNA") {
+      print OUT "$_\n";
+      print OUT "FT                   /ncRNA_class=\"Other\"\n";
+      next;
+    }
+    elsif (/^FT\s+(\w{2}RNA)/) {
+      s/$1/ncRNA/g;
+      print OUT "$_\n";
+      print OUT "FT                   /ncRNA_class=\"$mol\"\n";
+      next;
+    }
+    elsif (/^FT\s+(misc_RNA)/) {
+      print OUT "$_\n";
+      next;
+    }
+    else {
+      print OUT "$_\n";
+      next;
+    }
   }
   
   # standard_name......
