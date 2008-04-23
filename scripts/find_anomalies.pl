@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-04-22 14:03:34 $      
+# Last updated on: $Date: 2008-04-23 16:03:03 $      
 
 # Changes required by Ant: 2008-02-19
 # 
@@ -241,6 +241,7 @@ my %anomaly_count;
 &delete_anomalies("RST_OVERLAPS_INTRON");
 &delete_anomalies("MRNA_OVERLAPS_INTRON");
 &delete_anomalies("INCOMPLETE_PFAM_MOTIF");
+&delete_anomalies("UNMATCHED_EXPRESSION");
 
 
 my $ace_output = $wormbase->wormpub . "/CURATION_DATA/anomalies_$species.ace";
@@ -285,7 +286,7 @@ foreach my $chromosome (@chromosomes) {
   my @cds_exons  = $ovlp->get_curated_CDS_exons($chromosome);
   my @transposon_exons = $ovlp->get_transposon_exons($chromosome);
   my @noncoding_transcript_exons = $ovlp->get_Non_coding_transcript_exons($chromosome);
-  #my @coding_transcript_exons = $ovlp->get_Coding_transcript_exons($chromosome);
+  my @coding_transcript_exons = $ovlp->get_Coding_transcript_exons($chromosome);
 
   my @CDS_introns = $ovlp->get_CDS_introns($chromosome);
 
@@ -319,6 +320,9 @@ foreach my $chromosome (@chromosomes) {
 
   my @check_introns_EST  = $ovlp->get_check_introns_EST($chromosome);
   my @check_introns_cDNA = $ovlp->get_check_introns_cDNA($chromosome);
+
+  my @expression = &get_expression($chromosome);
+
 
 ######################################################################
 
@@ -381,6 +385,25 @@ foreach my $chromosome (@chromosomes) {
 
   print "finding introns refuted by EST\n";
   &get_introns_refuted_by_est(\@CDS_introns, \@cds_exons, \@est_hsp, \@rst_hsp, \@ost_hsp, \@mrna_hsp, $chromosome);
+
+  print "finding unmatched high expression regions\n";
+  &get_expression_outside_transcripts(\@expression,
+				      \@twinscan_exons,
+				      \@coding_transcript_exons, 
+				      \@pseudogenes, 
+				      \@transposons, 
+				      \@transposon_exons, 
+				      \@noncoding_transcript_exons,  
+				      \@rRNA, 
+				      \@miRNA, 
+				      \@ncRNA, 
+				      \@scRNA, 
+				      \@snRNA, 
+				      \@snoRNA, 
+				      \@stRNA, 
+				      \@tRNA, 
+				      \@tRNAscan_SE_1_23, 
+				      $chromosome);
 
 
 #################################################
@@ -503,6 +526,27 @@ exit(0);
 # Subroutines
 #
 ##############################################################
+
+##############################################################
+# get the GFF data of the tiling array high expression regions
+# precomputed by ~gw3/Dev/TilingArrays/tiling_array_to_GFF.pl
+
+sub get_expression {
+  my ($chromosome) = @_;
+
+  my %GFF_data = 
+   (
+    directory => '~wormpub/CURATION_DATA/Tiling_array_data',
+    file      => "tiling_array_${chromosome}.gff",
+    gff_source => 'tiling_array',
+    gff_type   => 'tiling_array',
+    ID_after   => 'ID\s+',
+    );
+
+  return $ovlp->read_GFF_file(\%GFF_data);
+
+}
+
 ##########################################
 # get the homologies with no matching exons or pseudogenes or transposons
 # and those which do match exons or transposons (but not pseudogenes)
@@ -2746,6 +2790,145 @@ sub get_introns_refuted_by_est {
   }
 
 }
+
+####################################################################################
+# get regions of high tiling array expression outside of known exons
+# but matching unused twinscan exons
+
+sub get_expression_outside_transcripts {
+  my ($expression_aref, 
+      $twinscan_exons_aref,
+      $coding_transcript_exons_aref, 
+      $pseudogenes_aref, 
+      $transposons_aref, 
+      $transposon_exons_aref, 
+      $noncoding_transcript_exons_aref, 
+      $rRNA_aref, 
+      $miRNA_aref, 
+      $ncRNA_aref, 
+      $scRNA_aref, 
+      $snRNA_aref, 
+      $snoRNA_aref, 
+      $stRNA_aref, 
+      $tRNA_aref, 
+      $tRNAscan_SE_1_23_aref, 
+      $chromosome) = @_;
+
+  $anomaly_count{UNMATCHED_EXPRESSION} = 0 if (! exists $anomaly_count{UNMATCHED_EXPRESSION});
+
+  my @expression = @{$expression_aref};
+
+      
+  # we allow the expression to be in either sense compared to the coding exons
+  my $twinscan_match = $ovlp->compare($twinscan_exons_aref, same_sense => 0);
+
+  my $exons_match = $ovlp->compare($coding_transcript_exons_aref, same_sense => 0);
+  my $pseud_match = $ovlp->compare($pseudogenes_aref, same_sense => 0);
+  my $trans_match = $ovlp->compare($transposons_aref, same_sense => 0);
+  my $trane_match = $ovlp->compare($transposon_exons_aref, same_sense => 0);
+  my $nonco_match = $ovlp->compare($noncoding_transcript_exons_aref, same_sense => 0);
+  my $rrna_match  = $ovlp->compare($rRNA_aref, same_sense => 0);
+
+  my $mirna_match  = $ovlp->compare($miRNA_aref, same_sense => 0);
+  my $ncrna_match  = $ovlp->compare($ncRNA_aref, same_sense => 0);
+  my $scrna_match  = $ovlp->compare($scRNA_aref, same_sense => 0);
+  my $snrna_match  = $ovlp->compare($snRNA_aref, same_sense => 0);
+  my $snorna_match  = $ovlp->compare($snoRNA_aref, same_sense => 0);
+  my $strna_match  = $ovlp->compare($stRNA_aref, same_sense => 0);
+  my $trna_match  = $ovlp->compare($tRNA_aref, same_sense => 0);
+  my $trnascan_match  = $ovlp->compare($tRNAscan_SE_1_23_aref, same_sense => 0);
+
+  foreach my $expression (@expression) { # $expression_id, $chrom_start, $chrom_end, $chrom_strand
+
+    if ($expression->[2] - $expression->[1] < 60) {next;}		# don't want itty bitty small expression regions
+
+    my $got_a_match = 1;	        # default until we have a twinscan match is that we DO have a match - twinscan resets this
+
+    if ($twinscan_match->match($expression)) {               
+      $got_a_match = 0;		# only can NOT have a match to a gene if we also have a match to a twinscan, so we find unmatched twinscan with high expression
+    }
+
+    if ($exons_match->match($expression)) {               
+      $got_a_match = 1;
+    }
+
+    if ( $pseud_match->match($expression)) {              
+      $got_a_match = 1;
+    }
+
+    if ($trans_match->match($expression)) {               
+      $got_a_match = 1;
+    }
+
+    if ($trane_match->match($expression)) {               
+      $got_a_match = 1;
+    }
+
+    if ($nonco_match->match($expression)) {               
+      $got_a_match = 1;
+    }
+
+    if ($rrna_match->match($expression)) {                
+      $got_a_match = 1;
+    }
+
+
+
+
+
+    if ($mirna_match->match($expression)) {                #&match($expression, $rRNA_aref, \%rrna_match)) {
+      $got_a_match = 1;
+    }
+
+    if ($ncrna_match->match($expression)) {                #&match($expression, $rRNA_aref, \%rrna_match)) {
+      $got_a_match = 1;
+    }
+
+    if ($scrna_match->match($expression)) {                #&match($expression, $rRNA_aref, \%rrna_match)) {
+      $got_a_match = 1;
+    }
+
+    if ($snrna_match->match($expression)) {                #&match($expression, $rRNA_aref, \%rrna_match)) {
+      $got_a_match = 1;
+    }
+
+    if ($snorna_match->match($expression)) {                #&match($expression, $rRNA_aref, \%rrna_match)) {
+      $got_a_match = 1;
+    }
+
+    if ($strna_match->match($expression)) {                #&match($expression, $rRNA_aref, \%rrna_match)) {
+      $got_a_match = 1;
+    }
+
+    if ($trna_match->match($expression)) {                #&match($expression, $rRNA_aref, \%rrna_match)) {
+      $got_a_match = 1;
+    }
+
+    if ($trnascan_match->match($expression)) {                #&match($expression, $rRNA_aref, \%rrna_match)) {
+      $got_a_match = 1;
+    }
+
+    # output unmatched expression with twinscan to the database
+    if (! $got_a_match) {
+      my $expression_id = "tiling_array";
+      my $chrom_start = $expression->[1];
+      my $chrom_end = $expression->[2];
+      my $chrom_strand = $expression->[3];
+      my $protein_score = $expression->[6];
+
+      my $anomaly_score = 10;
+
+      #print "NOT got a match ANOMALY: $protein_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score\n";
+      &output_to_database("UNMATCHED_EXPRESSION", $chromosome, $expression_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score, '');
+    }
+
+  }
+
+}
+
+
+
+
 
 ####################################################################################
 ####################################################################################
