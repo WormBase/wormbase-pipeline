@@ -8,7 +8,7 @@
 # Originally written by Dan Lawson
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2007-12-04 14:57:41 $
+# Last updated on: $Date: 2008-04-24 13:39:29 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -254,41 +254,9 @@ sub copy_release_files{
 ##################################################
 
 sub copy_chromosome_files{
-
   $runtime = $wormbase->runtime;
   $log->write_to("$runtime: copying chromosome files\n");
- # my $filename;
- # $wormbase->run_command("mkdir $targetdir/$WS_name/CHROMOSOMES", $log) unless -e "$targetdir/$WS_name/CHROMOSOMES";
-
- # opendir (DNAGFF,"$ace_dir/CHROMOSOMES") or croak ("Could not open directory $ace_dir/CHROMOSOMES");
- # while (defined($filename = readdir(DNAGFF))) {
- #   if (($filename eq ".")||($filename eq "..")) { next}
- #   next if  -d "$ace_dir/CHROMOSOMES/$filename";
-  #  $wormbase->run_command("scp $ace_dir/CHROMOSOMES/$filename $targetdir/$WS_name/CHROMOSOMES/$filename", $log);
-  #  my $O_SIZE = (stat("$ace_dir/CHROMOSOMES/$filename"))[7];
- #   my $N_SIZE = (stat("$targetdir/$WS_name/CHROMOSOMES/$filename"))[7];
- #   if ($O_SIZE != $N_SIZE) {
- #     $log->write_to("\tError: $filename SRC: $O_SIZE TGT: $N_SIZE - different file sizes, please check\n");
- #     croak "Couldn't copy $filename\n";
- #   } 
- # }
-#  closedir DNAGFF;
-
   $wormbase->run_command("cp -R $ace_dir/CHROMOSOMES $targetdir/$WS_name/CHROMOSOMES", $log);
-
-#  $wormbase->run_command("mkdir $targetdir/$WS_name/CHROMOSOMES/SUPPLEMENTARY_GFF", $log) unless -e "$targetdir/$WS_name/CHROMOSOMES/SUPPLEMENTARY_GFF";
-#    opendir (DNAGFFSUP,"$ace_dir/CHROMOSOMES/SUPPLEMENTARY_GFF") or croak ("Could not open directory $ace_dir/CHROMOSOMES/SUPPLEMENTARY_GFF");
-#  while (defined($filename = readdir(DNAGFFSUP))) {
-#    if (($filename eq ".")||($filename eq "..")) { next;}
-#    $wormbase->run_command("scp $ace_dir/CHROMOSOMES/SUPPLEMENTARY_GFF/$filename $targetdir/$WS_name/CHROMOSOMES/SUPPLEMENTARY_GFF/$filename", $log);
-#    my $O_SIZE = (stat("$ace_dir/CHROMOSOMES/SUPPLEMENTARY_GFF/$filename"))[7];
-#    my $N_SIZE = (stat("$targetdir/$WS_name/CHROMOSOMES/SUPPLEMENTARY_GFF/$filename"))[7];
-#    if ($O_SIZE != $N_SIZE) {
-#      $log->write_to("\tError: $filename SRC: $O_SIZE TGT: $N_SIZE - different file sizes, please check\n");
-#      croak "Couldn't copy SUPPLEMENTARY_GFF/$filename\n";
-#    } 
- # }
- # closedir DNAGFFSUP;
 
   $runtime = $wormbase->runtime;
   $log->write_to("$runtime: Finished copying\n\n");
@@ -629,19 +597,19 @@ sub copy_homol_data{
   my $blast_dir = $wormbase->acefiles;
 
   # does this to tidy up???? Not sure why these lines are here, krb
-  $wormbase->run_command("/bin/gzip -f $blast_dir/worm_pep_blastp.ace", $log);
-  $wormbase->run_command("/bin/gzip -f $blast_dir/worm_brigpep_blastp.ace", $log);
-  $wormbase->run_command("/bin/gzip -f $blast_dir/worm_dna_blastx.ace", $log);
-  $wormbase->run_command("/bin/gzip -f $blast_dir/worm_pep_motif_info.ace", $log);
-  $wormbase->run_command("/bin/gzip -f $blast_dir/worm_brigpep_motif_info.ace", $log);
+  $wormbase->run_command("/bin/gzip -f $blast_dir/elegans_blastp.ace", $log);
+  $wormbase->run_command("/bin/gzip -f $blast_dir/brigssae_blastp.ace", $log);
+  $wormbase->run_command("/bin/gzip -f $blast_dir/elegans_blastx.ace", $log);
+  $wormbase->run_command("/bin/gzip -f $blast_dir/elegans_motif_info.ace", $log);
+  $wormbase->run_command("/bin/gzip -f $blast_dir/briggsae_motif_info.ace", $log);
 
   # compress best blast hits files and then copy to FTP site
-  $wormbase->run_command("/bin/gzip -f $blast_dir/worm_pep_best_blastp_hits", $log);
-  $wormbase->run_command("/bin/gzip -f $blast_dir/worm_brigpep_best_blastp_hits", $log);
-  $wormbase->run_command("/bin/gzip -f $blast_dir/worm_remapep_best_blastp_hits", $log);
-  $wormbase->run_command("scp $blast_dir/worm_pep_best_blastp_hits.gz      $targetdir/$WS_name/best_blastp_hits.$WS_name.gz", $log);
-  $wormbase->run_command("scp $blast_dir/worm_brigpep_best_blastp_hits.gz  $targetdir/$WS_name/best_blastp_hits_brigpep.$WS_name.gz", $log);
-  $wormbase->run_command("scp $blast_dir/worm_remapep_best_blastp_hits.gz  $targetdir/$WS_name/best_blastp_hits_remapep.$WS_name.gz", $log);
+  $wormbase->run_command("/bin/gzip -f $blast_dir/elegans_best_blastp_hits", $log);
+  $wormbase->run_command("/bin/gzip -f $blast_dir/briggsae_best_blastp_hits", $log);
+  $wormbase->run_command("/bin/gzip -f $blast_dir/remanei_best_blastp_hits", $log);
+  $wormbase->run_command("scp $blast_dir/elegans_best_blastp_hits.gz  $targetdir/$WS_name/best_blastp_hits.$WS_name.gz", $log);
+  $wormbase->run_command("scp $blast_dir/briggsae_best_blastp_hits.gz $targetdir/$WS_name/best_blastp_hits_brigpep.$WS_name.gz", $log);
+  $wormbase->run_command("scp $blast_dir/remanei_best_blastp_hits.gz  $targetdir/$WS_name/best_blastp_hits_remapep.$WS_name.gz", $log);
 
 
 }
