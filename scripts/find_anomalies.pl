@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-04-23 16:03:03 $      
+# Last updated on: $Date: 2008-04-24 12:25:44 $      
 
 # Changes required by Ant: 2008-02-19
 # 
@@ -491,7 +491,7 @@ if ($database eq $wormbase->{'autoace'}) {
     my $gff_file = $wormbase->{'chromosomes'} . "/SUPPLEMENTARY_GFF/${\$wormbase->chromosome_prefix}${chromosome}_curation_anomalies.gff";
     $wormbase->check_file($gff_file, $log,
 			  minsize => 700000,
-			  maxsize => 4000000,
+			  maxsize => 6000000,
 			  lines => ['^##',
 				    "^${\$wormbase->chromosome_prefix}${chromosome}\\s+curation_anomaly\\s+\\S+\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+\\s+Evidence\\s+\\S+"],
 			  );
