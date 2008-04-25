@@ -613,17 +613,9 @@ sub test_user_wormpub {
     return 1;
   }
   else {
-    print "You are doing this as $name NOT wormpub ! \n\n If you are going to alter autoace in any way it will break.\nDo you want to continue? (y/n). . ";
-    my $response = <STDIN>;
-    chomp $response;
-    if ( "$response" eq "n" ) {
-      die "probably for the best !\n";
-    }
-    else {
-      print
-	"OK - on your head be it !\nBack to the script . .\n#########################################################\n\n\n";
-      return 0;
-    }
+    print "You are doing this as $name NOT wormpub ! \n\n If you are going to alter autoace in any way it will break.\nYou have 30 seconds in which to abort before this script will continue!\n";
+    sleep 30;
+    return 0;
   }
  }
 #############################################
