@@ -6,7 +6,7 @@
 # 19.02.02 Kerstin Jekosch
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2008-03-10 13:28:00 $
+# Last edited on: $Date: 2008-04-25 09:41:38 $
 
 use strict;
 use Getopt::Long;
@@ -101,37 +101,37 @@ END
 }
 
 sub load {
-
+my $species = $wormbase->species;
 my $command;
 if ($dbname =~ /autoace/) {
 $command=<<END;
-pparse $blat_dir/virtual_objects.$wormbase->species.blat.EST.ace 
-pparse $blat_dir/virtual_objects.$wormbase->species.blat.OST.ace
- pparse $blat_dir/virtual_objects.$wormbase->species.blat.RST.ace
-pparse $blat_dir/virtual_objects.$wormbase->species.blat.mRNA.ace 
-pparse $blat_dir/virtual_objects.$wormbase->species.blat.nembase.ace 
-pparse $blat_dir/virtual_objects.$wormbase->species.blat.washu.ace 
-pparse $blat_dir/virtual_objects.$wormbase->species.blat.nematode.ace 
-pparse $blat_dir/virtual_objects.$wormbase->species.ci.EST.ace 
-pparse $blat_dir/virtual_objects.$wormbase->species.ci.OST.ace 
-pparse $blat_dir/virtual_objects.$wormbase->species.ci.RST.ace
-pparse $blat_dir/virtual_objects.$wormbase->species.ci.mRNA.ace 
-pparse $blat_dir/virtual_objects.$wormbase->species.ci.embl.ace 
+pparse $blat_dir/virtual_objects.$species.blat.EST.ace 
+pparse $blat_dir/virtual_objects.$species.blat.OST.ace
+pparse $blat_dir/virtual_objects.$species.blat.RST.ace
+pparse $blat_dir/virtual_objects.$species.blat.mRNA.ace 
+pparse $blat_dir/virtual_objects.$species.blat.nembase.ace 
+pparse $blat_dir/virtual_objects.$species.blat.washu.ace 
+pparse $blat_dir/virtual_objects.$species.blat.nematode.ace 
+pparse $blat_dir/virtual_objects.$species.ci.EST.ace 
+pparse $blat_dir/virtual_objects.$species.ci.OST.ace 
+pparse $blat_dir/virtual_objects.$species.ci.RST.ace
+pparse $blat_dir/virtual_objects.$species.ci.mRNA.ace 
+pparse $blat_dir/virtual_objects.$species.ci.embl.ace 
 save
-pparse $blat_dir/$wormbase->species.blat.elegans_OST.ace
-pparse $blat_dir/$wormbase->species.blat.elegans_RST.ace
-pparse $blat_dir/$wormbase->species.blat.elegans_mRNA.ace 
-pparse $blat_dir/$wormbase->species.blat.embl.ace 
-pparse $blat_dir/$wormbase->species.blat.nembase.ace
-pparse $blat_dir/$wormbase->species.blat.washu.ace
-pparse $blat_dir/$wormbase->species.blat.nematode.ace
-pparse $blat_dir/$wormbase->species.good_introns.OST.ace
-pparse $blat_dir/$wormbase->species.good_introns.RST.ace
-pparse $blat_dir/$wormbase->species.good_introns.EST.ace 
-pparse $blat_dir/$wormbase->species.good_introns.mRNA.ace 
-pparse $blat_dir/$wormbase->species.good_introns.embl.ace 
+pparse $blat_dir/$species.blat.elegans_OST.ace
+pparse $blat_dir/$species.blat.elegans_RST.ace
+pparse $blat_dir/$species.blat.elegans_mRNA.ace 
+pparse $blat_dir/$species.blat.embl.ace 
+pparse $blat_dir/$species.blat.nembase.ace
+pparse $blat_dir/$species.blat.washu.ace
+pparse $blat_dir/$species.blat.nematode.ace
+pparse $blat_dir/$species.good_introns.OST.ace
+pparse $blat_dir/$species.good_introns.RST.ace
+pparse $blat_dir/$species.good_introns.EST.ace 
+pparse $blat_dir/$species.good_introns.mRNA.ace 
+pparse $blat_dir/$species.good_introns.embl.ace 
 save 
-pparse $blat_dir/$wormbase->species.blat.est.ace            
+pparse $blat_dir/$species.blat.est.ace            
 save
 quit
 END
@@ -139,55 +139,28 @@ END
 elsif ($dbname =~ /camace/) {
 $command=<<END;
 pparse $acefiles/chromlinks.ace
-pparse $blat_dir/virtual_objects.$wormbase->species.blat.EST.ace 
-pparse $blat_dir/virtual_objects.$wormbase->species.blat.OST.ace
-pparse $blat_dir/virtual_objects.$wormbase->species.blat.RST.ace
-pparse $blat_dir/virtual_objects.$wormbase->species.blat.mRNA.ace 
-pparse $blat_dir/virtual_objects.$wormbase->species.blat.ncRNA.ace
-pparse $blat_dir/virtual_objects.$wormbase->species.ci.EST.ace 
-pparse $blat_dir/virtual_objects.$wormbase->species.ci.OST.ace 
-pparse $blat_dir/virtual_objects.$wormbase->species.ci.RST.ace 
-pparse $blat_dir/virtual_objects.$wormbase->species.ci.mRNA.ace 
-pparse $blat_dir/virtual_objects.$wormbase->species.ci.ncRNA.ace
+pparse $blat_dir/virtual_objects.$species.blat.EST.ace 
+pparse $blat_dir/virtual_objects.$species.blat.OST.ace
+pparse $blat_dir/virtual_objects.$species.blat.RST.ace
+pparse $blat_dir/virtual_objects.$species.blat.mRNA.ace 
+pparse $blat_dir/virtual_objects.$species.blat.ncRNA.ace
+pparse $blat_dir/virtual_objects.$species.ci.EST.ace 
+pparse $blat_dir/virtual_objects.$species.ci.OST.ace 
+pparse $blat_dir/virtual_objects.$species.ci.RST.ace 
+pparse $blat_dir/virtual_objects.$species.ci.mRNA.ace 
+pparse $blat_dir/virtual_objects.$species.ci.ncRNA.ace
 save
-pparse $blat_dir/$wormbase->species.blat.elegans_EST.ace
-pparse $blat_dir/$wormbase->species.blat.elegans_OST.ace
-pparse $blat_dir/$wormbase->species.blat.elegans_RST.ace
-pparse $blat_dir/$wormbase->species.blat.elegans_mRNA.ace
-pparse $blat_dir/$wormbase->species.blat.elegans_ncRNA.ace
-pparse $blat_dir/$wormbase->species.good_introns.EST.ace 
-pparse $blat_dir/$wormbase->species.good_introns.OST.ace
-pparse $blat_dir/$wormbase->species.good_introns.RST.ace
-pparse $blat_dir/$wormbase->species.good_introns.mRNA.ace
-pparse $blat_dir/$wormbase->species.good_introns.ncRNA.ace
+pparse $blat_dir/$species.blat.elegans_EST.ace
+pparse $blat_dir/$species.blat.elegans_OST.ace
+pparse $blat_dir/$species.blat.elegans_RST.ace
+pparse $blat_dir/$species.blat.elegans_mRNA.ace
+pparse $blat_dir/$species.blat.elegans_ncRNA.ace
+pparse $blat_dir/$species.good_introns.EST.ace 
+pparse $blat_dir/$species.good_introns.OST.ace
+pparse $blat_dir/$species.good_introns.RST.ace
+pparse $blat_dir/$species.good_introns.mRNA.ace
+pparse $blat_dir/$species.good_introns.ncRNA.ace
 save 
-quit
-END
-}
-elsif ($dbname =~ /stlace/) { #this is now defunct as the stlace files aren't created.
-$command=<<END;
-pparse $blat_dir/virtual_objects.stlace.blat.EST.ace 
-pparse $blat_dir/virtual_objects.stlace.blat.OST.ace 
-pparse $blat_dir/virtual_objects.stlace.blat.RST.ace 
-pparse $blat_dir/virtual_objects.stlace.blat.mRNA.ace 
-pparse $blat_dir/virtual_objects.stlace.blat.embl.ace 
-pparse $blat_dir/virtual_objects.stlace.blat.nembase.ace 
-pparse $blat_dir/virtual_objects.stlace.blat.washu.ace 
-pparse $blat_dir/virtual_objects.stlace.blat.nematode.ace 
-pparse $blat_dir/virtual_objects.stlace.ci.EST.ace 
-pparse $blat_dir/virtual_objects.stlace.ci.OST.ace 
-pparse $blat_dir/virtual_objects.stlace.ci.mRNA.ace 
-save
-pparse $blat_dir/stlace.blat.ost.ace 
-pparse $blat_dir/stlace.blat.mrna.ace 
-pparse $blat_dir/stlace.blat.embl.ace 
-pparse $blat_dir/stlace.good_introns.est.ace 
-pparse $blat_dir/stlace.good_introns.ost.ace 
-pparse $blat_dir/stlace.good_introns.mrna.ace 
-pparse $blat_dir/stlace.good_introns.embl.ace 
-save 
-pparse $blat_dir/stlace.blat.est.ace            
-save
 quit
 END
 }
