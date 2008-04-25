@@ -8,7 +8,7 @@
 # relevant WormBase and Wormpep web pages.
 #
 # Last updated by: $Author: mh6 $     
-# Last updated on: $Date: 2008-04-03 09:24:55 $      
+# Last updated on: $Date: 2008-04-25 10:08:59 $      
 
 
 #################################################################################
@@ -816,6 +816,7 @@ sub copy_GFF_files{
 		  $queue->enqueue("$type,$chrom");
 	  }
   }
+
   my @workers;
   push @workers,threads->create('gff_worker');
   push @workers,threads->create('gff_worker');
@@ -823,9 +824,10 @@ sub copy_GFF_files{
   push @workers,threads->create('gff_worker');
   map {$_->join} @workers;
 
-  sub gff_worker {	
+  sub gff_worker {
+     my $threadid=threads->tid();
      while (my $string = $queue->dequeue_nb){ # pop a file from the queue and return undef if empty
-	printf ("processing $string in thread: %i\n",threads->tid());
+	$log->write_to("processing $string in thread: $threadid\n");
         my ($type,$chrom)=split(',',$string);
 
              open INF ,"zcat $chromdir/CHROMOSOME_${chrom}.gff.gz|" || die "ERROR: @!\n";
@@ -848,6 +850,8 @@ sub copy_GFF_files{
 	     }
 	     close INF;
      }
+     $log->write_to("finished creating GFF files for the website, main script will pick up from here.\n");
+     $log->mail("$maintainers", "BUILD REPORT: $0 finished child thread $threadid");
   }
 
 
