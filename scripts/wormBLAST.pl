@@ -5,7 +5,7 @@
 # written by Anthony Rogers
 #
 # Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2008-04-18 09:08:37 $
+# Last edited on: $Date: 2008-04-28 10:56:42 $
 #
 # it depends on:
 #    wormpep + history
@@ -149,7 +149,7 @@ if ($update_mySQL) {
 # run_rule_manager if run_pipeline
 
 if ($run_pipeline) {
-
+    # as can be seen is not yet implemented
 }
 
 ################ cleanup dodgy blast hits -clean_blasts ##################
@@ -242,16 +242,18 @@ exit(0);
 #                          T  H  E     S  U  B  R  O  U  T  I  N  E  S
 #
 #
-#
 ################################################################################################
 
+##########################
 # copy files to the farm
 sub copy2acari {
     my ($option) = shift;
     $wormbase->run_script( "BLAST_scripts/copy_files_to_acari.pl -$option", $log );
 }
 
+#####################
 # get logic_name -> analysis_id from the mysql database
+
 sub get_logic2analysis {
     my ( $dbh_, $prog ) = @_;
     my $sth = $dbh_->prepare('SELECT logic_name,analysis_id FROM analysis WHERE program like ?')
@@ -263,7 +265,10 @@ sub get_logic2analysis {
     return \%logic2analysis;
 }
 
+#######################
 # clean blast hits
+# * in case you want to remove hsps above a certain threshold from the database
+
 sub clean_blasts {
     my ( $dbh_, $dnaids, $pepids, $cutoff ) = @_;
     $cutoff ||= 0.001;
@@ -280,21 +285,31 @@ sub clean_blasts {
 #############################
 # parse the database files
 #
+# global variables:
+#   %prevDB is like {ensembl|gadfly|...} = /flunky/filename
+#   %currentDB the same
+
 sub get_updated_database_list {
     @updated_DBs = ();
     my @updated_dbfiles;
 
-    # process new databases
+    # process old databases
     open( OLD_DB, "<$last_build_DBs" ) or die "cant find $last_build_DBs";
     my %prevDBs;
 
     # get database file info from databases_used_WS(xx-1) (should have been updated by script if databases changed
-    while (<OLD_DB>) {
-        chomp;
-        if (/(ensembl|gadfly|yeast|slimswissprot|slimtrembl|wormpep|ipi_human|brigpep)/) {
-            $prevDBs{$1} = $_;
-        }
+    #
+    # get logic_name,db_file from analysis_table where program_name like '%blastp'
+    my $analysis_table=$raw_dbh->prepare("SELECT logic_name,db_file FROM analysis WHERE program_file LIKE '%blastp'")
+       || die "cannot prepare statement, $DBI::errstr";
+    my $table=$analysis_table->execute();
+    while (my @row = $table->fetch_row_array()){
+        if ($row[1] =~ /((ensembl|gadfly|yeast|slimswissprot|slimtrembl|wormpep|ipi_human|brigpep).*)/) {
+              $prevDBs{$2} = $1;  
+	}
     }
+
+    # process current databases
     open( CURR_DB, "<$database_to_use" ) or die "cant find $database_to_use";
     while (<CURR_DB>) {
         chomp;
@@ -317,6 +332,7 @@ sub get_updated_database_list {
 ##################################
 # update and copy the blastdbs
 # -distribute and -update_databases
+
 sub update_blast_dbs {
     my %_currentDBs;    # ALSO used in setup_mySQL
     my @_updated_DBs;
@@ -407,7 +423,7 @@ sub update_blast_dbs {
 # make input_ids for the new one
 #
 # or crude one: if different snowball a new database build
-#
+
 sub update_dna {
     my ($dbh) = @_;
     print "Updating mysql databases with new clone and protein info\n";
@@ -429,16 +445,9 @@ sub update_dna {
     my $pipeline_scripts = '/software/worm/ensembl/ensembl-pipeline/scripts';
     my $conf_dir         = '/software/worm/ensembl/ensembl-config/generic';
 
-    # * analysis_setup.pl -dbhost XYZ -dbuser XYZ - dbpass XYZ -dbname XYZ -dbport 3306 -read -file XYZ.conf
     $wormbase->run_command( "perl $pipeline_scripts/analysis_setup.pl $db_options -read -file $conf_dir/analysis.conf", $log );
-
-    # * rule_setup.pl -dbhost XYZ -dbuser XYZ - dbpass XYZ -dbname XYZ -dbport 3306 -read -file XYZ.conf
     $wormbase->run_command( "perl $pipeline_scripts/rule_setup.pl $db_options -read -file $conf_dir/rule.conf", $log );
-
-    # * make_input_ids -dbhost XYZ -dbname XYZ -dbuser XYZ -dbpass XYZ -dbport 3306 -translation_id -logic SubmitTranslation
     $wormbase->run_command( "perl $pipeline_scripts/make_input_ids $db_options -translation_id -logic SubmitTranslation", $log );
-
-# * make_input_ids -dbhost XYZ -dbname XYZ -dbuser XYZ -dbpass XYZ -dbport 3306 -slice -slice_size 75000 -coord_system toplevel -logic_name SubmitSlice75k -input_id_type Slice75k
     $wormbase->run_command(
 "perl $pipeline_scripts/make_input_ids $db_options -slice -slice_size 75000 -coord_system toplevel -logic_name SubmitSlice75k -input_id_type Slice75k",
         $log
@@ -449,7 +458,7 @@ sub update_dna {
 ##############################
 # update genes/proteins
 #
-#  heavily dependent on a working XYZpep.history file
+# * heavily dependent on a working XYZpep.history file
 #
 sub update_proteins {
     my ($species_ref) = @_;
@@ -475,12 +484,16 @@ sub update_proteins {
     &clean_input_id();
 }
 
+#################
 # handy utility function
+#
 sub delete_gene_by_translation {
     $dba->get_GeneAdaptor()->fetch_by_translation_stable_id(shift)->remove;
 }
 
+#######################
 # clean input_id_analysis table by dropping the translations and recreating them with the ensembl script
+#
 sub clean_input_id {
     $raw_dbh->do('DELETE FROM input_id_anlysis WHERE analysis_id = SELECT analysis_id FROM analysis WHERE logic_name="SubmitTranslation"');
     my $host     = $config->{database}->{host};
@@ -522,7 +535,9 @@ sub parse_genes {
     return \@genes;
 }
 
+#############
 # return @new , @changed , @lost cdses based on wormpep.diff
+#
 sub parse_wormpep_history {
     my ($wb) = @_;
     my $wp_file = glob( $wb->wormpep . '*.diff' );
@@ -549,8 +564,11 @@ sub parse_wormpep_history {
 #####################################
 # update blasts based on the updated_dbs
 #
+# * updates the analysis table with new db_files, changes the timestamp for the updated analysis to now()
+# * deletes features and input_ids for updated analysis
+
 sub update_analysis {
-    my $update_dbfile_handle  = $raw_dbh->prepare('UPDATE analysis SET db_file = ? WHERE analysis_id = ?') || die "$DBI::errstr";
+    my $update_dbfile_handle  = $raw_dbh->prepare('UPDATE analysis SET db_file = ? , created = NOW() WHERE analysis_id = ?') || die "$DBI::errstr";
     my $clean_input_id_handle = $raw_dbh->prepare('DELETE FROM input_id_analysis WHERE analysis_id = ?')   || die "$DBI::errstr";
     my $analysis_for_file     = $raw_dbh->prepare('SELECT analysis_id FROM analysis WHERE db_file LIKE ?') || die "$DBI::errstr";
 
@@ -591,9 +609,20 @@ sub update_analysis {
     }
 }
 
+
+#####################################################
+# class from WormBase.pm
+#
+# * based on inherited code from the FlyBase EnsEMBL import
+
 package WormBase;
 
+##############################################
 # redefine subroutine to use different tags
+#
+# * based on Bronwen's adaption of the FlyBase parser
+# * basically overrides some parsing regexps and does some munging
+
 sub process_file {
     my ($fh) = @_;
     my ( %genes, $transcript, %five_prime, %three_prime );
@@ -610,7 +639,7 @@ sub process_file {
         if ( ( $line eq 'Coding_transcript five_prime_UTR' ) or ( $line eq 'Coding_transcript three_prime_UTR' ) ) {
             $transcript = $gene;
 
-            #remove transcript-specific part: Y105E8B.1a.2
+            # remove transcript-specific part: Y105E8B.1a.2
             $gene =~ s/(\.\w+)\.\d+$/$1/ unless $species eq 'brugia';    # for that if i will go to hell :-(
             my $position = $type;
             if ( $position =~ /^five/ ) {
@@ -633,4 +662,3 @@ sub process_file {
 \n";
     return \%genes, \%five_prime, \%three_prime;
 }
-## Please see file perltidy.ERR
