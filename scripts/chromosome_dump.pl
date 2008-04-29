@@ -9,7 +9,7 @@
 # see pod for more details
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2008-04-17 10:31:51 $
+# Last updated on: $Date: 2008-04-29 12:16:27 $
 
 
 use strict;
@@ -124,7 +124,7 @@ sub dump_dna {
 
   &execute_ace_command($command,$tace,$database);
 
-  $log->write_to("Removing blank first lines");
+  $log->write_to("Removing blank first lines\n");
   foreach ($wormbase->get_chromosome_names(-mito => 1,-prefix=> 1)) {
     $wormbase->remove_blank_lines("$dump_dir/$_.dna", $log);
   }
