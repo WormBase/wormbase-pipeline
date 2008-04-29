@@ -7,7 +7,7 @@
 # Usage: camcheck.pl
 #
 # Last updated by: $Author: pad $
-# Last updated on: $Date: 2007-06-13 11:11:31 $
+# Last updated on: $Date: 2008-04-29 15:58:51 $
 #
 # see pod documentation (i.e. 'perldoc camcheck.pl') for more information.
 #
@@ -217,7 +217,8 @@ sub CloneTests {
 	######################################################################
 	# Iterative checks for each clone                                    #
 	######################################################################
-
+	
+	&check_overlap_right($obj);
 	
 	######################################################################
 	# Check for N's in FINISHED sequences                                #
@@ -292,6 +293,15 @@ sub CheckPredictedGenes {
   }
 }
 
+################################################
+# Check that all overlap_right data is in place.
+################################################
+sub check_overlap_right {
+  my $obj = shift;
+  if (!($obj->name =~ /cTel/)) {
+    $log->write_to("No overlap_right info found for $obj!!! This will cause errors in the build.\n") unless defined($obj->at('Structure.Overlap_right'));
+  }
+}
 
 ############################################################
 # Check that each clone only belongs to one (Sequence) map #
@@ -313,7 +323,6 @@ sub SingleSequenceMap {
 
 
 
-
 ####################################
 # Coherency check between directory and database
 ####################################
@@ -328,7 +337,6 @@ sub dateseq {
   }
 } 
 
-   
 ################################################
 # Coherency check between directory and database
 ################################################
