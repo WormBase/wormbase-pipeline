@@ -28,6 +28,7 @@ use Memoize;
 use Ace;
 use lib '/software/worm/lib/bioperl-live';
 use Bio::Tools::CodonTable;
+use Bio::Seq;
 
 # Wormbase
 use lib $ENV{CVS_DIR};
@@ -465,6 +466,7 @@ sub get_cds {
 					my $frame = ($cds_position-1) % 3 ; # ( 0 1 2 ) is in reality frame-1
 
 					my $from_na="${\$v->{allele}->Type_of_mutation->right}";
+					$from_na=Bio::Seq->new(-seq => $from_na,-alphabet => 'dna')->revcom->seq if $v->{orientation} ne $hit->{orientation};
 					my $from_codon=substr($sequence,$offset-1,3);
 
                                         # enforce some assertion
@@ -483,6 +485,7 @@ sub get_cds {
 					
 					my $to_na="${\$v->{allele}->Type_of_mutation->right->right}";
 					my $to_codon=$from_codon;
+					$to_na=Bio::Seq->new(-seq => $to_na,-alphabet => 'dna')->revcom->seq if $v->{orientation} ne $hit->{orientation};
 
                                         next unless ($frame +length($to_na) < 4);
 
