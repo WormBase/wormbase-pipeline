@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-04-24 12:25:44 $      
+# Last updated on: $Date: 2008-04-29 13:55:18 $      
 
 # Changes required by Ant: 2008-02-19
 # 
@@ -344,10 +344,6 @@ foreach my $chromosome (@chromosomes) {
   print "finding isolated TSL sites\n";
   &get_isolated_TSL(\@TSL_SL1, \@TSL_SL2, \@CDS, \@coding_transcripts, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, $chromosome);
 
-  # get SAGE tags that don't match a gene with score based on frequency
-  print "finding non-overlapping SAGE_tags\n";
-  &get_unmatched_SAGE(\@coding_transcripts, \@pseudogenes, \@SAGE_tags, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, \@miRNA, \@ncRNA, \@scRNA, \@snRNA, \@snoRNA, \@stRNA, \@tRNA, \@tRNAscan_SE_1_23, $chromosome);
-
   print "finding twinscan exons not overlapping CDS exons\n";
   &get_unmatched_twinscan_exons(\@twinscan_exons, \@cds_exons, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, \@repeatmasked_complex, $chromosome);
 
@@ -430,6 +426,10 @@ foreach my $chromosome (@chromosomes) {
 #  # this looks at the EST TSL sites and finds those not attached to genes
 #  print "finding TSL sites not attached to genes\n";
 #  &get_unattached_TSL(\@TSL_SL1, \@TSL_SL2, $chromosome);
+
+#  # get SAGE tags that don't match a gene with score based on frequency
+#  print "finding non-overlapping SAGE_tags\n";
+#  &get_unmatched_SAGE(\@coding_transcripts, \@pseudogenes, \@SAGE_tags, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, \@miRNA, \@ncRNA, \@scRNA, \@snRNA, \@snoRNA, \@stRNA, \@tRNA, \@tRNAscan_SE_1_23, $chromosome);
 
 
 #################################################
@@ -563,6 +563,7 @@ sub get_protein_differences {
   my @not_matched = ();		# the resulting list of hashes of homologies with no matching exons/transposons/pseudogenes
   my @matched = ();		# the resulting list of hashes of homologies which match a coding exon
   my @matching_exons;
+  my %sorted_proteins;		# protein hash keyed by protein name holding the homology and match data to find unmatched proteins that have other local matches
 
   my $SMALL_OVERLAP = -20;	# amount of small overlap to ignore
       
@@ -576,8 +577,14 @@ sub get_protein_differences {
 
   foreach my $homology (@homologies) { # $protein_id, $chrom_start, $chrom_end, $chrom_strand
 
+    my $protein_name = $homology->[0];
+    my $protein_score = $homology->[6];
+
     # don't want the low-scoring trembl proteins - they are not informative
-    if ($homology->[0] =~ /TR:/ &&  $homology->[6] < 200) {next;}
+    if ($protein_name =~ /TR:/ &&  $protein_score < 200) {next;}
+
+    # don't want any protein less than 100 - too much noise
+    if ($protein_score < 100) {next;}
 
     my $got_a_match = 0;	        # not yet seen a match to anything
     my $got_a_match_to_coding_exon = 0;	# not yet seen a match to a coding exon
@@ -614,17 +621,37 @@ sub get_protein_differences {
       $got_a_match = 1;
     }
 
-    # output unmatched homologies to the database
-    if (! $got_a_match) {
+    # store the homology object in a hash keyed by its name together with its 'match' status
+    # 
+    # here we want a NEW COPY of the data in $homology, not just a copy of
+    # the reference pointing to the same data, so we force this by getting
+    # the array and making a new [] reference to it, then we won't have a
+    # problem when we push $matching_exon on the end of $homology in the
+    # next section
+    # 
+    my $tmp_homology = [@{$homology}]; 
+    push @{$tmp_homology}, $got_a_match;
+    push @{$sorted_proteins{$protein_name}}, $tmp_homology;
+
+    # add to the list of homologies to a coding regions
+    if ($got_a_match_to_coding_exon && $match_in_same_sense) { # only want the protein matches in the same sense as the genes
+      push @{$homology}, $matching_exon; # make a note of the exon we matched
+      push @matched, $homology;
+    }
+  }
+
+
+  # now find the proteins that have other local matches (within 5 Kb)
+  # but which do not have a match to a gene
+  foreach my $prot_name (keys %sorted_proteins) {
+    for (my $i = 0; $i < @{$sorted_proteins{$prot_name}}; $i++) {
+      my $homology = $sorted_proteins{$prot_name}->[$i];
+      my $got_a_match = $homology->[8];
       my $protein_id = $homology->[0];
       my $chrom_start = $homology->[1];
       my $chrom_end = $homology->[2];
       my $chrom_strand = $homology->[3];
       my $protein_score = $homology->[6];
-
-      # reject any hits where either of the proteins have a Blast score < 50
-      if ($protein_score < 75) {next;}
-
       # make the anomaly score based on the protein alignment score normalised between 1 and 3
       # using the log10 of the blast score
       # the BLAST scores seem to be between 0 and 1000
@@ -632,16 +659,19 @@ sub get_protein_differences {
       my $anomaly_score = POSIX::log10($protein_score);
       if ($anomaly_score > 3) {$anomaly_score = 3;}
       if ($anomaly_score < 0) {$anomaly_score = 0;}
+	
+      my $prev_homology = undef;
+      my $next_homology = undef;
+      $prev_homology = $sorted_proteins{$prot_name}->[$i-1] unless ($i == 0);
+      $next_homology = $sorted_proteins{$prot_name}->[$i+1] unless ($i == @{$sorted_proteins{$prot_name}} - 1);
 
-      #print "NOT got a match ANOMALY: $protein_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score\n";
-      &output_to_database("UNMATCHED_PROTEIN", $chromosome, $protein_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score, '');
-    }
-
-    # add to the list of homologies to a coding regions
-    if ($got_a_match_to_coding_exon && $match_in_same_sense) { # only want the protein matches in the same sense as the genes
-      push @{$homology}, $matching_exon; # make a note of the exon we matched
-      push @matched, $homology;
-
+      if (! $got_a_match && defined $prev_homology && $chrom_start - $prev_homology->[2] < 5000 && $prev_homology->[3] eq $chrom_strand) {
+	#print "UNMATCHED_PROTEIN, $chromosome, $protein_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score\n";
+	&output_to_database("UNMATCHED_PROTEIN", $chromosome, $protein_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score, '');
+      } elsif (! $got_a_match && defined $next_homology && $next_homology->[1] - $chrom_end < 5000 && $next_homology->[3] eq $chrom_strand) {
+	#print "UNMATCHED_PROTEIN, $chromosome, $protein_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score\n";
+	&output_to_database("UNMATCHED_PROTEIN", $chromosome, $protein_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score, '');
+      }
     }
   }
 
