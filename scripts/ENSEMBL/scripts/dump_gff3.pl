@@ -151,7 +151,7 @@ while( my $slice = shift @$slices) {
 			p_value     => $feature->p_value,
 			dbid        => $feature->dbID,
 			logic_name  => $feature->analysis->logic_name,
-			cigar       => $feature->cigar_string,
+			cigar       => ($feature->strand > 0 ? $feature->cigar_string : reverse_cigar($feature->cigar_string)),
 			feature_type=> 'protein_match',
 		};
 		push @{$blastx_features{$stripped_feature->{logic_name}}}, $stripped_feature;
@@ -189,6 +189,14 @@ while( my $slice = shift @$slices) {
 sub cigar_to_almost_cigar {
 	my $i=shift;
 	$i=~s/(\d*)(\w)/$2$1 /g;
+	return $i;
+}
+
+# reverse cigar string
+sub reverse_cigar {
+	my $i=shift;
+	my @pairs=$i=~/(\d*[MIDFR])/g;
+	my $reversed_cigar = join('',reverse @pairs);
 	return $i;
 }
 
