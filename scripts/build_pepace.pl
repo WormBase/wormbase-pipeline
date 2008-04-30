@@ -9,8 +9,8 @@
 # solely in the wormpep.history file.
 #
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2008-03-11 12:01:49 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2008-04-30 09:17:53 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -213,7 +213,7 @@ while (<HISTORY>) {
             &addNewPeptide;
         }
         else {
-            if ( $gene =~ m/((\w+\.\d+)\w*)/ ) {
+            if ( $gene =~ m/(($wormbase->cds_regex)\w*)/ ) {
                 $stem    = $2;    #eg FK177.8
                 $isoform = $1;    #eg FK177.8a
                 if ( defined( $gene_CE{$stem} ) ) {
@@ -230,7 +230,7 @@ while (<HISTORY>) {
             }
             else {
 # one of the pain in the arse old named genes eg Y53F4B.AA orY5823F4B.A - both exist!
-                if ( $gene =~ m/\w+\.\w+/ ) {
+                if ( $gene =~ $wormbase->cds_regex) {
                     &addNewPeptide;    #just add it
                 }
             }
@@ -278,7 +278,7 @@ foreach my $key ( sort keys %CE_history ) {
             print ACE "Corresponding_CDS \"$CE_corr_CDS{$key}[$ii]\"\n";
         }
     }
-    my $pepid = $CE_gene{$key}->[0];
+    my $pepid = $CE_gene{$key}->[-1];
     if ($CE_sequence{$pepid}) {
        	print ACE "Molecular_weight ", &get_mol_weight( $CE_sequence{$pepid} )," Inferred_automatically \"build_pepace.pl\"\n";
 	    print ACE "\nPeptide : \"$WORMPEP_PREFIX:$key\"\n";
