@@ -5,7 +5,7 @@
 # written by Anthony Rogers
 #
 # Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2008-04-30 12:53:32 $
+# Last edited on: $Date: 2008-04-30 13:11:19 $
 #
 # it depends on:
 #    wormpep + history
@@ -604,7 +604,7 @@ sub update_analysis {
         # delete entries so they get rerun
         $raw_dbh->do('DELETE FROM protein_feature WHERE analysis_id IN (select analysis_id FROM analysis WHERE module LIKE "ProteinAnnotation%")')
           || die "$DBI::errstr";
-        $raw_dbh->do('DELETE FROM input_analysis_id WHERE analysis_id IN (select analysis_id FROM analysis WHERE module LIKE "ProteinAnnotation%")')
+        $raw_dbh->do('DELETE FROM input_id_analysis WHERE analysis_id IN (select analysis_id FROM analysis WHERE module LIKE "ProteinAnnotation%")')
           || die "$DBI::errstr";
     }
 }
