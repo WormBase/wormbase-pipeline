@@ -1,9 +1,9 @@
-#!/usr/local/bin/perl5.8.0 -w 
+#!/software/binn/perl -w 
 #
 # initiate_build.pl
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2008-04-04 11:00:33 $
+# Last edited on: $Date: 2008-04-30 10:53:45 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -15,7 +15,7 @@ use File::Spec;
 use Storable;
 
 my ($test,$debug,$database, $version, $species);
-my ($store, $wormbase, $user);
+my ($store, $wormbase, $user, $update);
 GetOptions (
 	    'test'       => \$test,
 	    'debug:s'    => \$debug,
@@ -23,7 +23,8 @@ GetOptions (
 	    'version:s'  => \$version,
 	    'store:s'    => \$store,
 	    'user:s'     => \$user,
-	    'species:s'  => \$species
+	    'species:s'  => \$species,
+	    'update'     => \$update
 	   );
 
 if( $store ) {
@@ -36,19 +37,24 @@ else {
 			   );
 }
 
-# strip off the WS if given
-if ($version =~ /^WS(\d+)/) {
-  $version = $1;
+if($update) {
+	die "you cant just update elegans - nice try!\n" if ($wormbase->species eq 'elegans');
+	$version = $wormbase->build_accessor->version;
 }
-# check it looks OK
-if ($version !~ /^\d\d\d$/) {
-  die "The version should be given as three digits\n";
+else {
+	# strip off the WS if given
+	if ($version =~ /^WS(\d+)/) {
+	  $version = $1;
+	}
+	# check it looks OK
+	if ($version !~ /^\d\d\d$/) {
+	  die "The version should be given as three digits\n";
+	}
+
+	$wormbase->establish_paths;
+	#copy the genefinder files 
+	$wormbase->run_command("cp -r ".$wormbase->build_data."/wgf ".$wormbase->autoace."/wgf");
 }
-
-$wormbase->establish_paths;
-#copy the genefinder files 
-$wormbase->run_command("cp -r ".$wormbase->build_data."/wgf ".$wormbase->autoace."/wgf");
-
 # set the new version number
 $wormbase->version($version);
 
@@ -78,7 +84,7 @@ my $status = move(${cvs_file}.".new", "$cvs_file") or $log->write_to("ERROR: ren
 $log->write_to("ERROR: Couldn't move file: $!\n") if ($status == 0);
 
 # add lines to the logfile
-my $msg = "Updated WormBase version number to WS".$wormbase->version."\n";
+my $msg = "Updated ".$wormbase->species." version number to WS".$wormbase->version."\n";
 $msg .= "You are ready to build another WormBase release\n";
 $msg .= "Please tell camace and geneace curators to update their database to use the new models!!!\n\n";
 

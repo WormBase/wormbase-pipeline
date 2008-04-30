@@ -2,8 +2,8 @@
 #
 # prepare_primary_databases.pl
 #
-# Last edited by: $Author: pad $
-# Last edited on: $Date: 2008-04-03 12:16:04 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2008-04-30 10:53:45 $
 
 use strict;
 my $scriptdir = $ENV{'CVS_DIR'};
@@ -26,7 +26,7 @@ use File::Path;
 #
 # Does         : [01] - checks the Primary_database_used_in_build data
 
-my ($test,$debug,$database, $store, $wormbase, $caen);
+my ($test,$debug,$database, $store, $wormbase, $caen, $species);
 
 GetOptions ( 
 	    "test"       => \$test,
@@ -34,15 +34,17 @@ GetOptions (
 	    'database:s' => \$database,
 	    'store:s'    => \$store,
 	    'caen'      => \$caen,
+	    'species:s'  => \$species
 	   );
 
 if( $store ) {
   $wormbase = retrieve( $store ) or croak("cant restore wormbase from $store\n");
 }
 else {
-  $wormbase = Wormbase->new( -debug   => $debug,
-			     -test    => $test,
-			   );
+  $wormbase = Wormbase->new( 	-debug   => $debug,
+			     				-test    => $test,
+			     				-organism => $species
+			   				);
 }
 
 # establish log file.
@@ -55,17 +57,14 @@ $databases{'citace'}->{'search'} = 'caltech/citace*';
 $databases{'cshace'}->{'search'} = 'csh/csh*';
 
 
-# establish databases for other caen sp
-unless( $caen ) {
-	$log->write_to("Copying Caenorhabditea databases . . \n");
-	my (%access) = $wormbase->species_accessors;
-	delete $access{'briggsae'}; # special coz of StLouis
-	foreach my $species (keys %access) {
-		$log->write_to("\t$species\n");
-		my $start = $wormbase->database("$species");
-		my $end = $access{$species}->orgdb;
-		$wormbase->run_script("TransferDB.pl -start $start -end $end -database -wspec", $log);
-	}
+# establish databases for other TierII sp
+$log->write_to("Updating TierII databases . . \n");
+my (%access) = $wormbase->species_accessors;
+foreach my $species (keys %access) {
+	$log->write_to("\t$species\n");
+	my $start = $wormbase->database("$species");
+	my $end = $access{$species}->orgdb;
+	$wormbase->run_script("initiate_build.pl -species $species -update", $log);
 }
 
 &FTP_versions;
@@ -116,19 +115,6 @@ foreach my $primary ( keys %databases){
   print LAST_VER "$primary : ".$databases{$primary}->{'ftp_date'}."\n";
 }
 close LAST_VER;
-
-#copy over the biggsae GFF and proteins
-if ( !defined($database) or ($database and ($database eq 'brigace') ) ) {
-	$log->write_to("copying over briggsae data from stl upload\n");
-	my $ver = $wormbase->get_wormbase_version;
-	$wormbase->run_command("cp -R ".$wormbase->primary('brigace')."/temp_unpack_dir/briggff$ver ". $wormbase->chromosomes."/",$log);
-	my $brigbase=Wormbase->new(-organism =>'Briggsae',-debug => $debug,-test =>$test,-version => $wormbase->version);
-	#$wormbase->run_command("cp -f ".$wormbase->primary('brigace')."/temp_unpack_dir/brigpep$ver/* ". $brigbase->wormpep."/",$log); #brigpep not from RW
-        $wormbase->run_script("CBG_to_CBP.pl -input " . $brigbase->wormpep . "/brigpep$ver/brigpep$ver", $log);
-
-}	
-
-
 
 $log->mail;
 exit(0);
@@ -185,24 +171,3 @@ sub usage {
   print "usage\n";
 }
 __END__
-
-_BUILD_INFO_
-
-<p class=indent><a name="unpack">
-<a href="http://intweb.sanger.ac.uk/Projects/C_elegans/PERL/autoace_minder.txt.shtml">
-<font color=red>autoace_minder.pl</a></font><font color=red> -unpack</font> (-test)<br>
-+ Checks the date stamps of database dumps on the FTP site and compares with those used in the last release<BR> 
-+ Runs <a href="#unpack_db.pl"><font color=red>unpack_db.pl</font></a> on new databases
-to copy & unpack database files to relevant place (e.g. <font color = green>/wormsrv2/stlace</font>)<BR>
-+ Re-initialise the databases, and then loads new data<BR>
-+ Copies camace and geneace from  <font color=green>/nfs/disk100/wormpub/DATABASES/</font> to <font color=green>/wormsrv2/</font>.<br>
-+ Writes <font color=green>Primary_databases_used_in_build</font> lock file (contains dates of databases
-used in build).<BR> 
-+ Writes <font color=green>/wormsrv2/autoace/logs/A3:Unpack_FTP_databases</font> lock file<BR>
-+ Writes <font color=green>/wormsrv2/autoace/logs/A4:Primary_databases_on_wormsrv2</font> lock file<BR>
-<b>~1 hour</b>
-
-
-<BR><BR><font color=blue><B>CHECK:</B></font><BR>
-Copying camace and geneace is done by TransferDB, which will generate two log files <font color=green>~wormpub/logs/TransferDB.yymmdd.pid</font>. Make sure that the last line reads "SUCCESS ...".
-</p>
