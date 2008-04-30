@@ -5,7 +5,7 @@
 # written by Anthony Rogers
 #
 # Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2008-04-30 11:14:56 $
+# Last edited on: $Date: 2008-04-30 11:21:43 $
 #
 # it depends on:
 #    wormpep + history
@@ -302,8 +302,8 @@ sub get_updated_database_list {
     # get logic_name,db_file from analysis_table where program_name like '%blastp'
     my $analysis_table=$raw_dbh->prepare("SELECT logic_name,db_file FROM analysis WHERE program_file LIKE '%blastp'")
        || die "cannot prepare statement, $DBI::errstr";
-    my $table=$analysis_table->execute();
-    while (my @row = $table->fetchrow_array()){
+    $analysis_table->execute();
+    while (my @row = $analysis_table->fetchrow_array()){
         if ($row[1] =~ /((ensembl|gadfly|yeast|slimswissprot|slimtrembl|wormpep|ipi_human|brigpep).*)/) {
               $prevDBs{$2} = $1;  
 	}
