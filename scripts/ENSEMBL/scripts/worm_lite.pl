@@ -226,8 +226,8 @@ sub load_genes {
         foreach my $chr ( glob $config->{fasta} ) {
             my ( $path, $name ) = ( $chr =~ /(^.*)\/CHROMOSOMES\/(.*?)\.\w+/ );
             `mkdir /tmp/compara` if !-e '/tmp/compara';
-            system("cat $path/GFF_SPLITS/${\$name}_gene.gff $path/GFF_SPLITS/${\$name}_curated.gff > /tmp/compara/${\$name}.gff")
-              && die 'cannot concatenate GFFs';
+            system("cat $path/GFF_SPLITS/${\$name}_gene.gff $path/GFF_SPLITS/${\$name}_curated.gff > /tmp/compara/${\$name}.gff");
+	    #&& die 'cannot concatenate GFFs';
         }
     }
 

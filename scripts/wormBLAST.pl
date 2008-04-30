@@ -5,7 +5,7 @@
 # written by Anthony Rogers
 #
 # Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2008-04-30 11:21:43 $
+# Last edited on: $Date: 2008-04-30 12:53:32 $
 #
 # it depends on:
 #    wormpep + history
@@ -408,7 +408,7 @@ sub update_blast_dbs {
     # copy chromosomes
     foreach my $chr ( $wormbase->get_chromosome_names( '-prefix' => 1, ) ) {
         my $file_name = "$wormpipe_dir/BlastDB/$chr.dna";
-        $log->write_to("copying $file_name to $blastdbdir/");
+        $log->write_to("copying $file_name to $blastdbdir/\n");
         copy( $file_name, "$blastdbdir/" )
           or $log->write_to("cannot copy $file_name\n");
     }
@@ -602,7 +602,7 @@ sub update_analysis {
         print "doing InterPro updates . . . \n";
 
         # delete entries so they get rerun
-        $raw_dbh->do('DELETE FROM protein_feature WHERE analysis_id IN (select analysis_id FROM analysis WHERE module LIKE "ProteinAnnotation%"')
+        $raw_dbh->do('DELETE FROM protein_feature WHERE analysis_id IN (select analysis_id FROM analysis WHERE module LIKE "ProteinAnnotation%")')
           || die "$DBI::errstr";
         $raw_dbh->do('DELETE FROM input_analysis_id WHERE analysis_id IN (select analysis_id FROM analysis WHERE module LIKE "ProteinAnnotation%")')
           || die "$DBI::errstr";
