@@ -7,7 +7,7 @@
 # Builds a wormrna data set from the current autoace database
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2007-12-04 14:58:48 $
+# Last updated on: $Date: 2008-05-01 13:51:06 $
 
 
 #################################################################################
@@ -28,7 +28,7 @@ use Storable;
 # variables and command-line options # 
 ######################################
 
-my ($help, $debug, $release, $test, $store);
+my ($help, $debug, $release, $test, $store, $species);
 my $errors      = 0;    # for tracking how many errors there are
 
 GetOptions (
@@ -36,7 +36,8 @@ GetOptions (
 	    "release=s" => \$release,
             "debug=s"   => \$debug,
 	    "test"      => \$test,
-	    "store:s"   => \$store
+	    "store:s"   => \$store,
+	    "species:s" => \$species
 	   );
 
 my $wormbase;
@@ -46,6 +47,7 @@ if( $store ) {
 else {
   $wormbase = Wormbase->new( -debug   => $debug,
 			     -test    => $test,
+			    -organism => $species
 			   );
 }
 
@@ -53,8 +55,6 @@ my $log = Log_files->make_build_log($wormbase);
 
 # Display help if required
 &usage("Help") if ($help);
-#&usage("releasename") if (!$release);
-#&usage("releasename") if ($release =~ /\D+/);
 
 
 #######################################
@@ -81,7 +81,6 @@ my $query = "FIND Transcript WHERE Method != Coding_transcript AND Method != His
 $log->write_to("$query\n");
 my @transcripts = $db->fetch (-query => $query); #Filtered composite Transcripts(NOT Method = Coding_transcript/history/non_coding_transcript).
 
-@transcripts = sort @transcripts;
 my $count = scalar(@transcripts);
 $log->write_to("Finding ". $count . " RNA sequences, writing output file\n\n");
 
@@ -89,8 +88,8 @@ $log->write_to("Finding ". $count . " RNA sequences, writing output file\n\n");
 ###########################################################################
 # get the rna sequence, write a rna.fasta file,
 ###########################################################################
-
-open (DNA , ">$new_wrdir/wormrna$release.rna") || die "Couldn't write wormrna$release.rna file : $!\n"; 
+my $rnafile = "$new_wrdir/".$wormbase->pepdir_prefix."rna$release.rna";
+open (DNA , ">$rnafile") || die "Couldn't write $rnafile : $!\n"; 
 my (%dot2num , @dotnames , @c_dotnames);
 
 foreach my $transcript (@transcripts) {    
@@ -113,8 +112,7 @@ foreach my $transcript (@transcripts) {
   
   $dna = $obj->asDNA();
   if ((!defined ($dna)) || ($dna eq "")) {
-    $log->write_to("ERROR: cannot extract dna sequence for $transcript\n");
-    $log->error;
+    $log->error("ERROR: cannot extract dna sequence for $transcript\n");
     # can't include in WormRNA if there is no DNA!
     next; 
   }
@@ -154,13 +152,13 @@ chmod (0444 , "$new_wrdir/wormrna$release.rna") || $log->write_to("cannot chmod 
 ###########################################################################
 
 open (README , ">$new_wrdir/README") || $log->log_and_die("Couldn't creat README file\n"); 
-
+my $orgname = $wormbase->full_name('-short' => 1);
 my $readme = <<END;
 WormRNA
 -------
 WormRNA is an additional database that accompanies the main WormBase 
 database (see http://www.wormbase.org for more details) and simply comprises
-the sequences of all known non-coding RNA molecules in the C. elegans genome.  
+the sequences of all known non-coding RNA molecules in the $orgname genome.  
 
 This release (WormRNA$release) corresponds to release WS$release of WormBase.
 The accompanying file (wormrna$release.rna) contains $count RNA sequences in FASTA
