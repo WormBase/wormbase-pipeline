@@ -10,7 +10,7 @@
 #
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2008-04-30 09:17:53 $
+# Last updated on: $Date: 2008-05-01 12:27:33 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -278,12 +278,13 @@ foreach my $key ( sort keys %CE_history ) {
             print ACE "Corresponding_CDS \"$CE_corr_CDS{$key}[$ii]\"\n";
         }
     }
-    my $pepid = $CE_gene{$key}->[-1];
-    if ($CE_sequence{$pepid}) {
-       	print ACE "Molecular_weight ", &get_mol_weight( $CE_sequence{$pepid} )," Inferred_automatically \"build_pepace.pl\"\n";
-	    print ACE "\nPeptide : \"$WORMPEP_PREFIX:$key\"\n";
-    	print ACE "$CE_sequence{$pepid}\n";
-
+    foreach my $pepid( @{$CE_gene{$key}}) {
+    	if ($CE_sequence{$pepid}) {
+    	   	print ACE "Molecular_weight ", &get_mol_weight( $CE_sequence{$pepid} )," Inferred_automatically \"build_pepace.pl\"\n";
+		    print ACE "\nPeptide : \"$WORMPEP_PREFIX:$key\"\n";
+    		print ACE "$CE_sequence{$pepid}\n";
+    		last; # we only need this once - just cant be sure which element is still live.
+		}
     }
 }
 close ACE;
