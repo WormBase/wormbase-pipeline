@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-04-29 13:55:18 $      
+# Last updated on: $Date: 2008-05-01 11:17:54 $      
 
 # Changes required by Ant: 2008-02-19
 # 
@@ -3029,7 +3029,8 @@ sub find_incomplete_pfam_motifs {
       if ($motif_start > $MOTIF_THRESHOLD) {
 	#print "$protein_id : score: $score not start of $pfam_id (1) $motif_start..$motif_end\n";
 	my ($chromosome, $chrom_start, $chrom_end) = &convert_protein_coords_to_chrom_coords($protein_id, $prot_start, $prot_end);
-      
+	if (! defined $chromosome) {next;} # found an isoform or other problem
+
 	# ouput details of the region to the anomalies database
 	if (defined $chromosome) {
 	  my $chrom_strand = '+';
@@ -3060,6 +3061,7 @@ sub find_incomplete_pfam_motifs {
 
 	#print "$protein_id : score: $score not end of $pfam_id $motif_start..$motif_end ($pfam_length{$pfam_id})\n";
 	my ($chromosome, $chrom_start, $chrom_end) = &convert_protein_coords_to_chrom_coords($protein_id, $prot_start, $prot_end);
+	if (! defined $chromosome) {next;} # found an isoform or other problem
 
 	# ouput details of the region to the anomalies database
 	if (defined $chromosome) {
@@ -3111,6 +3113,11 @@ sub convert_protein_coords_to_chrom_coords {
  # get CDS ID for this protein
   my ($cds_name) = &get_cds_from_protein($protein_id);
   if (! defined $cds_name) {return (undef, undef, undef);} # this is a history CDS
+
+ # we don't want isoforms because these naturally have fragments of domains 
+  if ($cds_name =~ /(\S+\.\d+)[a-z]/) {
+    return (undef, undef, undef);
+  }
 
  # get the CDS details
   my ($clone, $cds_start, $cds_end, $exons_start_ref, $exons_end_ref) = &get_cds_details($cds_name);
