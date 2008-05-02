@@ -380,7 +380,13 @@ sub get_genes {
 	my ($alleles)=@_;
 	my %genes;
 	while(my($k,$v)=each(%{$alleles})){
-		my @hits=$index->search_genes($v->{'chromosome'},$v->{'start'},$v->{'stop'});
+		my @hits;
+		if ($v->{cgh_start}) {
+		   @hits=$index->search_genes($v->{'chromosome'},$v->{'cgh_start'},$v->{'cgh_stop'});
+		}
+		else {
+		   @hits=$index->search_genes($v->{'chromosome'},$v->{'start'},$v->{'stop'});
+	        }
 		foreach my $hit(@hits){
 			$genes{$hit->{name}}||=[];
 			push @{$genes{$hit->{name}}}, $k;
@@ -390,6 +396,43 @@ sub get_genes {
 		foreach my $y (keys %genes) {print "$y -> ",join " ",@{$genes{$y}},"\n"}
 	}
 	return \%genes;
+}
+
+# map cgh alleles to possible genes (test)
+sub get_possible_genes {
+	my ($alleles)=@_;
+	my %allele2gene;
+	while(my($k,$v)=each(%{$alleles})){
+		my @hits;
+		if ($v->{cgh_start}) {
+		   @hits=$index->search_genes($v->{'chromosome'},$v->{'start'},$v->{'stop'});
+		}
+		else { next }
+		foreach my $hit(@hits){
+			$allele2gene{$k}||=[];
+			push @{$allele2gene{$k}}, $hit->{name};
+		}
+	}
+	if ($wb->debug){
+		foreach my $y (keys %allele2gene) {print "$y -> ",join " ",@{$allele2gene{$y}},"\n"}
+	}
+	return \%allele2gene;
+}
+
+# print possible gene thigns for CGH
+sub print_possible_genes {
+	my ($name,$possible,$real,$fh)=@_;
+	my %bad_keys;
+	my %good_ones;
+	map {$bad_keys{$_}++} @$real;
+	map {$good_ones{$_}++ unless $bad_keys{$_}} @$possible;
+	if (scalar keys %good_ones >=1){
+		print $fh "Variation : \"$name\"\n";
+		foreach my $gene(keys %good_ones){
+			print $fh "Possibly_affects $gene Inferred_automatically map_Alleles.pl\n";
+		}
+		print $fh "\n";
+	}
 }
 
 =head2 get_cds

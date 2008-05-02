@@ -127,6 +127,11 @@ my $genes=MapAlleles::get_genes($mapped_alleles);
 
 my $inversegenes=MapAlleles::print_genes($genes,$fh);
 
+my $possiblegenes=MapAlleles::get_possible_genes($mapped_alleles);
+while (my ($k,$v)=each %$possiblegenes){
+	MapAlleles::print_possible_genes($k,$v,$$inversegenes{$k},$fh)
+}
+
 # compare old<->new genes
 MapAlleles::compare($mapped_alleles,$inversegenes);
 
