@@ -293,9 +293,7 @@ use Carp;
 our @ISA = qw(Wormbase Species);
 
 sub _new {
-    carp('WARNING: Heterorhabditis bacteriophora is not yet fully integrated in the build');
-	
-    my $class = shift;
+	my $class = shift;
     my %param = %{ shift(@_) };
     my $self = $class->initialize( $class->flatten_params( \%param ) );
 
