@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-05-01 11:17:54 $      
+# Last updated on: $Date: 2008-05-02 14:15:49 $      
 
 # Changes required by Ant: 2008-02-19
 # 
@@ -1288,7 +1288,7 @@ sub split_check {
   my $count_of_boxes_passing_tests = 0;
   foreach my $box (@boxes) {
     if (! exists $box->{'deleted'} &&
-	$box->{'total_score'} > 100 &&
+	$box->{'total_score'} > 200 &&
 	$box->{'count'} > 1
 	) {
       $count_of_boxes_passing_tests++;
