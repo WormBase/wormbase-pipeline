@@ -1,8 +1,6 @@
 #!/usr/local/ensembl/bin/perl  -w
 
 use strict;
-use FindBin;
-use lib "$FindBin::Bin/../lib";
 use Switch;
 use WormBase;
 use WormBaseConf;
@@ -38,7 +36,7 @@ foreach my $chromosome_info ( @{$WB_CHR_INFO} ) {
 
         #MtDNA does not have Expr_profile, RNAi or Operon so may cause hassles for these
         next if ( ( $chromosome_info->{'chr_name'} eq 'MtDNA' )
-            && ( $analysis_logic_name eq 'Expression_profile' or $analysis_logic_name eq 'RNAi' or $analysis_logic_name eq 'Operon' ));
+            && ( $analysis_logic_name eq 'Expression_profile' or $analysis_logic_name eq 'RNAi' or $analysis_logic_name eq 'Operon' or $analysis_logic_name eq 'fosmid'));
 
         #read the features from gff file
         switch ($analysis_logic_name) {
@@ -99,7 +97,7 @@ foreach my $chromosome_info ( @{$WB_CHR_INFO} ) {
                    $blat->save($db) if $hits >0;
             }
 	    case 'genbank' {
-                   my $blat = Blat->new( $chr, $WB_workDIR . "" . $chromosome_info->{'gff_file'}, $analysis ,{-feature => 'BLAT_EMBL_BEST', -source => 'nucleotide_match'});
+                   my $blat = Blat->new( $chr, $WB_workDIR . "" . $chromosome_info->{'gff_file'}, $analysis ,{-feature => 'BLAT_Caen_mRNA_BEST', -source => 'nucleotide_match'});
 		   my $hits=  scalar( @{ $blat->{hits} } );
                    print "has $hits  BLAT hits\n" if $WB_DEBUG;
                    $blat->save($db) if $hits >0;
@@ -112,14 +110,57 @@ foreach my $chromosome_info ( @{$WB_CHR_INFO} ) {
                    $blat->save($db) if $hits >0;
             }
 
-            case 'tRNA' {
+  	    case 'ost' {
+                   my $blat = Blat->new( $chr, $WB_workDIR . "" . $chromosome_info->{'gff_file'}, $analysis ,
+			   {-feature => 'BLAT_OST_BEST', -source => 'expressed_sequence_match',-translated=>0 });
+		   my $hits=  scalar( @{ $blat->{hits} } );
+                   print "has $hits  BLAT hits\n" if $WB_DEBUG;
+                   $blat->save($db) if $hits >0;
+            }
+
+	    case 'caenorhabditis_est' {
+                   my $blat = Blat->new( $chr, $WB_workDIR . "" . $chromosome_info->{'gff_file'}, $analysis ,
+			   {-feature => 'BLAT_Caen_EST_BEST', -source => 'expressed_sequence_match',-translated=>0 });
+		   my $hits=  scalar( @{ $blat->{hits} } );
+                   print "has $hits  BLAT hits\n" if $WB_DEBUG;
+                   $blat->save($db) if $hits >0;
+            }
+
+	    case 'caenorhabditis_mrna' {
+                   my $blat = Blat->new( $chr, $WB_workDIR . "" . $chromosome_info->{'gff_file'}, $analysis ,
+			   {-feature => 'BLAT_Caen_mRNA_BEST', -source => 'expressed_sequence_match',-translated=>0 });
+		   my $hits=  scalar( @{ $blat->{hits} } );
+                   print "has $hits  BLAT hits\n" if $WB_DEBUG;
+                   $blat->save($db) if $hits >0;
+            }
+	    case 'nembase_contig' {
+                   my $blat = Blat->new( $chr, $WB_workDIR . "" . $chromosome_info->{'gff_file'}, $analysis ,
+			   {-feature => 'BLAT_NEMBASE', -source => 'translated_nucleotide_match',-translated=>0 });
+		   my $hits=  scalar( @{ $blat->{hits} } );
+                   print "has $hits  BLAT hits\n" if $WB_DEBUG;
+                   $blat->save($db) if $hits >0;
+            }
+	    case 'washu_contig' {
+                   my $blat = Blat->new( $chr, $WB_workDIR . "" . $chromosome_info->{'gff_file'}, $analysis ,
+			   {-feature => 'BLAT_WASHU', -source => 'translated_nucleotide_match',-translated=>0 });
+		   my $hits=  scalar( @{ $blat->{hits} } );
+                   print "has $hits  BLAT hits\n" if $WB_DEBUG;
+                   $blat->save($db) if $hits >0;
+            }
+
+	    case 'tRNA' {
                 #parse out tRNA-genes
                 #there only seem to be tRNA in MtDNA (tRNAscan in CHROMOSOMES)
                 my $tRNAgenes = parse_tRNA_genes( $WB_workDIR . "" . $chromosome_info->{'gff_file'}, $chr, $analysis );
                 print "have " . scalar @$tRNAgenes . " tRNA genes.\n" if ($WB_DEBUG);
-
                 #store tRNA-genes
                 &write_genes( $tRNAgenes, $db );
+
+		my $tRNA_scan_genes = parse_pseudo_files( $WB_workDIR . "" . $chromosome_info->{'gff_file'}, $chr, $analysis,'tRNAscan-SE-1.23' );
+		print "have " . scalar @$tRNA_scan_genes . " genomic tRNA genes.\n" if ($WB_DEBUG);
+                #store tRNA-genes
+                &write_genes( $tRNA_scan_genes, $db );
+
             }
             case 'rRNA' {
                 #parse out rRNA-genes
@@ -129,6 +170,40 @@ foreach my $chromosome_info ( @{$WB_CHR_INFO} ) {
                 #store tRNA-genes
                 &write_genes( $rRNAgenes, $db );
             }
+	    case 'ncRNA' {
+                #parse out ncRNA-genes
+                my $rRNAgenes = parse_pseudo_files( $WB_workDIR . "" . $chromosome_info->{'gff_file'}, $chr, $analysis,'ncRNA' );
+                print "have " . scalar @$rRNAgenes . " ncRNA genes.\n" if ($WB_DEBUG);
+
+                #store ncRNA-genes
+                &write_genes( $rRNAgenes, $db );
+            }
+	    case 'snRNA' {
+                #parse out snRNA-genes
+                my $rRNAgenes = parse_pseudo_files( $WB_workDIR . "" . $chromosome_info->{'gff_file'}, $chr, $analysis,'snRNA' );
+                print "have " . scalar @$rRNAgenes . " snRNA genes.\n" if ($WB_DEBUG);
+
+                #store snRNA-genes
+                &write_genes( $rRNAgenes, $db );
+            }
+	    case 'snoRNA' {
+                #parse out snoRNA-genes
+                my $rRNAgenes = parse_pseudo_files( $WB_workDIR . "" . $chromosome_info->{'gff_file'}, $chr, $analysis,'snoRNA' );
+                print "have " . scalar @$rRNAgenes . " snoRNA genes.\n" if ($WB_DEBUG);
+
+                #store snoRNA-genes
+                &write_genes( $rRNAgenes, $db );
+            }
+	    case 'snlRNA' {
+                #parse out snlRNA-genes
+                my $rRNAgenes = parse_pseudo_files( $WB_workDIR . "" . $chromosome_info->{'gff_file'}, $chr, $analysis,'snlRNA' );
+                print "have " . scalar @$rRNAgenes . " ncRNA genes.\n" if ($WB_DEBUG);
+
+                #store snlRNA-genes
+                &write_genes( $rRNAgenes, $db );
+            }
+
+
             case 'wormbase' {
 
                 #parse out real worm genes
