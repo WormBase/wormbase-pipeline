@@ -21,12 +21,16 @@ ipi_humanP	Human IPR proteins aligned by WU-BlastX
 knownGeneDensity	Known gene density features in a database as calculated by gene_density_calc.pl 
 Ncoils	Ncoils analysis from interpro_scan
 ncRNA	curated non-coding RNA genes
-nembase_contigs	NemBase EST contigs
+nembase_contig	NemBase EST contigs
 Operon	Multi-gene feature imported from Wormbase annotation (http://www.wormbase.org).
 other_est	ESTs of various organism from EMBL aligned to the genome using BLAT
 PercentageRepeat	Percentage of repetitive elements for top level seq_regions.
 PercentGC	Percentage of G/C bases in the sequence.
 PercentRepeat	GC content for top level seq_regions.
+Pfam	PFAM HMM analysis as part of interpro_scan
+pfscan	PFSCAN analysis as part of interpro_scan
+PIRSF	PIR superfamily analysis as part of interpro_scan
+Prints	Prints analysis as part of interpro_scan
 Pseudogene	Pseudogene identified from the original gene set (predicted by GeneWise/Exonerate) on the basis of frameshifted introns (introns of less than 10bp) and intron repeat content (introns of more than 80% repeat)
 remaneiP	C. remanei proteins aligned by WU-BlastP
 remaneiX	C. remanei proteins aligned by WU-BlastX
@@ -38,6 +42,8 @@ Seg	Identification of peptide low complexity sequences by Seg (J. C. Wooten et a
 Signalp	Signal-P predictions
 slimswissprotX	Swissprot proteins aligned by WU-BlastX
 slimswissprotP	Swissprot proteins aligned by WU-BlastP
+slimtremblX	TrEMBL proteins aligned by WU-BlastX
+slimtremblP	TrEMBL proteins aligned by WU-BlastP
 Smart	SMART domain analysis as part of interpro_scan
 snlRNA	small nucleolar like RNA genes
 snoRNA	small nucleolar RNA genes
@@ -47,6 +53,7 @@ Tigrfam	TIGRfam HMM analysis as part of interpro_scan
 Tmhmm	Transmembrane domains as identified by TmHMM
 TRF	Tandem repeats identified by Tandem Repeats Finder (G. Benson, Nuc. Acids Res. 1999 27:573-580)
 tRNA	transfer RNA genes
+washu_contig	Washington University Nematode clusters aligned by BLAT
 wormbase	This gene was annotated by Wormbase (http://www.wormbase.org) through a process of automatic and manual curation.
 wormpepX		C. elegans proteins aligned by WU-BlastX
 wormpepP		C. elegans proteins aligned by WU-BlastP
