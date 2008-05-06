@@ -4,8 +4,8 @@
 #
 # written by Anthony Rogers
 #
-# Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2008-04-30 13:11:19 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2008-05-06 09:42:08 $
 #
 # it depends on:
 #    wormpep + history
@@ -364,6 +364,7 @@ sub update_blast_dbs {
                 # make blastable database
                 print "\tmaking blastable database for $1\n";
                 $wormbase->run_command( "/usr/local/ensembl/bin/xdformat -p $wormpipe_dir/BlastDB/$whole_file", $log );
+                $wormbase->run_command( "/usr/local/ensembl/bin/formatdb -p -t $1 -i $wormpipe_dir/BlastDB/$whole_file", $log ) if ($1 eq 'wormpep');
                 push( @_updated_DBs, $1 );
 
                 #change hash entry ready to rewrite external_dbs
