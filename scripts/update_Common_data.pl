@@ -4,8 +4,8 @@
 # 
 # by Anthony Rogers et al
 #
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2008-03-11 14:24:07 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2008-05-06 12:49:19 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -28,6 +28,7 @@ my $build;             # for when you want to query autoace, i.e. you are buildi
 my $test;              # test mode, uses ~wormpub/TEST_BUILD
 my $all;               # performs all of the below options:
 my $debug;
+my $species;
      
 my $clone2accession;   # Hash: %clone2accession     Key: Genomic_canonical                 Value: GenBank/EMBL accession
                        # Hash: %accession2clone     Key: GenBank/EMBL accession            Value: Genomic_canonical
@@ -75,7 +76,8 @@ GetOptions (
 	    "store:s"            => \$store,
 	    "debug:s"            => \$debug,
 	    "clone2type"         => \$clone2type,
-	    "cds2cgc"            => \$cds2cgc
+	    "cds2cgc"            => \$cds2cgc,
+	    "species:s"			 => \$species
 	   );
 
 my $wormbase;
@@ -85,6 +87,7 @@ if( $store ) {
 else {
   $wormbase = Wormbase->new( -debug   => $debug,
 			     -test    => $test,
+			     -organism => $species
 			   );
 }
 
@@ -578,7 +581,7 @@ sub write_clones2seq  {
   my $seq; my $newname; my $seqname;
  
   # connect to AceDB using tace
-  my $command = "query find Genome_sequence\nDNA\nquit\n";
+  my $command = "query find Sequence where Genomic_canonical\nDNA\nquit\n";
  
   open (TACE, "echo '$command' | $tace $ace_dir | ");
   while (<TACE>) {
