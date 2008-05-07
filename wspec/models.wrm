@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: ar2 $
-// Last edited on: $Date: 2008-04-09 15:41:33 $
+// Last edited on: $Date: 2008-05-07 09:08:02 $
 
 
 
@@ -1134,7 +1134,6 @@
 		GO_term ?GO_term XREF CDS ?GO_code #Evidence
 		Variation ?Variation XREF Predicted_CDS // replaces Has_allele tag in ?Sequence
 		Microarray_results ?Microarray_results XREF CDS      //added for Microarray_results
-		Antibody ?Antibody XREF CDS // added [031120 krb]
 	  	Reference ?Paper XREF CDS // added [011030 krb]
                 Provisional_description ?Text #Evidence
                 Detailed_description ?Text #Evidence
@@ -1725,31 +1724,37 @@
 //
 // added by krb 031120
 //
+// Well defined antibodies will be full populated with Isolation data.  Ambigous anibodies
+// will be connected to what it is believed to be by the Possible_pseudonym(_of) pair of tags
+// No connection to CDS is required - just Gene is fine
+//
 /////////////////////////////////////////////////////////////////////////////////////////////
 
-?Antibody  Evidence     #Evidence
-           Summary      ?Text   #Evidence
-           Other_name   Text
-           Gene ?Gene XREF Antibody
-           CDS  ?CDS  XREF Antibody // might not be needed in the long run
-           Clonality    UNIQUE          Polyclonal      Text 
-                                        Monoclonal      Text
-           Antigen      UNIQUE          Peptide         Text
-                                        Protein         Text
-                                        Other_antigen   Text
-           Animal       UNIQUE          Rabbit
-                                        Mouse
-                                        Rat
-                                        Guinea_pig
-                                        Chicken
-                                        Goat
-                                        Other_animal    Text
-           Expr_pattern    ?Expr_pattern   XREF    Antibody_info   
-	   Gene_regulation ?Gene_regulation XREF Antibody_info
-           Location        ?Laboratory
-           Reference       ?Paper          XREF    Antibody
-           Remark          ?Text #Evidence
-
+?Antibody Summary ?Text #Evidence
+	  Other_name Text
+	  Gene ?Gene XREF Antibody
+	  Isolation Original_puplication UNIQUE ?Paper
+		    No_original_reference    Text //proposed by Wen
+		    Person ?Person
+		    Location ?Laboratory
+		    Clonality UNIQUE Polyclonal Text
+				     Monoclonal Text
+		    Antigen UNIQUE Peptide Text
+				   Protein Text
+				   Other_antigen Text
+		    Animal UNIQUE Rabbit
+				  Mouse
+				  Rat
+				  Guinea_pig
+				  Chicken
+				  Goat
+				  Other_animal Text
+	  Possible_pseudonym ?Antibody XREF Possible_pseudonym_of
+	  Possible_pseudonym_of ?Antibody XREF Possible_pseudonym
+	  Expr_pattern ?Expr_pattern XREF Antibody_info
+	  Gene_regulation ?Gene_regulation XREF Antibody_info
+	  Reference ?Paper XREF Antibody
+	  Remark ?Text #Evidence 
 
 ?Picture Description ?Text
 	 Pick_me_to_call Text Text
