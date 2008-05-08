@@ -30,9 +30,7 @@
 # # OF THE POSSIBILITY OF SUCH DAMAGE.
 
 use strict;
-use lib $ENV{'CVS_DIR'};
-use lib "$ENV{CVS_DIR}/Modules";
-use map_Alleles;
+use Modules::map_Alleles;
 use Wormbase;
 use Getopt::Long;
 use IO::File;              
@@ -82,7 +80,7 @@ if ($store) {
 else { $wb = Wormbase->new( -debug => $debug, -test => $test, -autoace => $database ) }
 
 my $log = Log_files->make_build_log($wb);
-MapAlleles::setup($log,$wb) unless $database;
+MapAlleles::setup($log,$wb); #unless $database;
 MapAlleles::set_wb_log($log,$wb,$weak_checks) if $database;
 
 my $release=$wb->get_wormbase_version;
@@ -102,7 +100,7 @@ undef $alleles;# could theoretically undef the alleles here
 
 
 # for other databases don't run through the GFF_SPLITs
-&finish() if $database;
+#&finish() if $database;
 
 my $fh = new IO::File ">$acefile" || die($!);
 # create mapping Ace file

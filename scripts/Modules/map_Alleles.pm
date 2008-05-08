@@ -489,7 +489,7 @@ sub get_cds {
                                         my $cds_position=0;
 					my $exon=1;
 					foreach my $c_exon(@coding_exons){
-						if ($v->{'start'}<=$c_exon->{'stop'}&&$v->{'stop'}>=$c_exon->{'start'}){
+						if ($v->{'start'}<=$c_exon->{'stop'} && $v->{'stop'}>=$c_exon->{'start'}){
 							if ($c_exon->{'orientation'} eq '+'){$cds_position+=($v->{'start'}-$c_exon->{'start'}+1)}
 							else{$cds_position+=($c_exon->{'stop'}-$v->{'start'}+1)}
 							last;
@@ -509,7 +509,6 @@ sub get_cds {
 					my $frame = ($cds_position-1) % 3 ; # ( 0 1 2 ) is in reality frame-1
 
 					my $from_na="${\$v->{allele}->Type_of_mutation->right}";
-					$from_na=Bio::Seq->new(-seq => $from_na,-alphabet => 'dna')->revcom->seq if $v->{orientation} ne $hit->{orientation};
 					my $from_codon=substr($sequence,$offset-1,3);
 
                                         # enforce some assertion
@@ -523,12 +522,21 @@ sub get_cds {
 						next;
 					}
 
-					substr($from_codon,$frame,length($from_na),$from_na);
+                                        my $flipped;
+					my $original_from=substr($from_codon,$frame,length($from_na),$from_na);
+					if ($original_from ne $from_na){
+					     $from_na=Bio::Seq->new(-seq => $from_na,-alphabet => 'dna')->revcom->seq;
+					     $flipped=1;
+					}
+					if ($original_from ne $from_na){ # don't touch it if neither forward nor reverse are inline with the reference sequence
+					     $log->write_to("WARNING: $k FROM/TO tags seem to be messed up, as $original_from (reference) is not $from_na or ${\$v->{allele}->Type_of_mutation->right}");
+                                             next;
+					}
 					my $from_aa=$table->translate($from_codon);
 					
 					my $to_na="${\$v->{allele}->Type_of_mutation->right->right}";
 					my $to_codon=$from_codon;
-					$to_na=Bio::Seq->new(-seq => $to_na,-alphabet => 'dna')->revcom->seq if $v->{orientation} ne $hit->{orientation};
+					$to_na=Bio::Seq->new(-seq => $to_na,-alphabet => 'dna')->revcom->seq if $flipped==1;
 
                                         next unless ($frame +length($to_na) < 4);
 
