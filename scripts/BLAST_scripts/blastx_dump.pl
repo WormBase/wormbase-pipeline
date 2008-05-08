@@ -11,7 +11,7 @@
 #   array of EnsEMBL objects, it invites disaster as it makes a copy of the array.
 #
 # Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2008-04-17 11:39:14 $ 
+# Last edited on: $Date: 2008-05-08 15:21:34 $ 
 
 my $usage = <<USAGE;
 blastx_dump.pl options:
@@ -131,7 +131,15 @@ my %cds2wormpep=%{&read_table()};
 
 # iterate over all superlinks
 while (my $link = shift @superlinks){
-#	print $outf $link->seq_region_name,"\n";
+	print STDERR "iterating over: ",$link->seq_region_name,"\n" if $ENV{TEST};
+
+	# hack around the limitations of the clone slices
+	# by projecting them onto the toplevel overlapping genes should be fetched
+	if (! $toplevel) {
+	  my $seq_pairs = $link->project('toplevel');
+          my $parent=shift @$seq_pairs;
+	  $link = $parent->to_Slice();
+        }
 
 	# get all ProteinAlignFeatures on it
 	my @dafs =  @{ $feature_adaptor->fetch_all_by_Slice($link,$logicname) };
@@ -155,7 +163,7 @@ while (my $link = shift @superlinks){
 	}
 
 	print $outf "\n";
-	last if $ENV{TEST};
+#	last if $ENV{TEST};
 }
 
 
@@ -316,6 +324,8 @@ sub filter_features {
 	# put the feature in all bins between start and stop
 	foreach my $f(@$features){
 		my ($_start,$_end)=sort {$a <=> $b } ($f->start,$f->end);
+		next if $_start < 0;
+		next if $_end > $f->slice()->length;
 		for (my $n=int($_start/$size);$n <=int($_end/$size);$n++){
 			push @{$bins[$n]},$f;
 		}
