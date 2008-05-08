@@ -5,7 +5,7 @@
 #  and concatenate them at the end
 # 
 # Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2008-04-17 15:52:50 $
+# Last edited on: $Date: 2008-05-08 13:58:03 $
 # 
 
 
@@ -76,7 +76,7 @@ $database ||= "worm_ensembl_$organism";
 foreach my $db(keys %logic2type){
 	my $options="-database $database -logicname $db -outfile $dumpdir/${organism}_$db.ace -store $storable";
 	$options.=' -self' if $logic2type{$db} eq ref $wormbase; # set selfhit removal for the self-blasts
-	$options.=' -toplevel' unless ref $wormbase eq 'Elegans'; # elegans dumps on clone level
+	$options.=' -toplevel';# unless ref $wormbase eq 'Elegans'; # elegans dumps on clone level
 	$m->submit("/software/bin/perl $ENV{CVS_DIR}/BLAST_scripts/blastx_dump.pl $options");
 }
 
@@ -89,7 +89,8 @@ for my $job ($m->jobs){ # much quicker if history is pre-cached
 $m->clear; # clear out the job manager to reuse.
 
 # concatenate the ace files into a big blob for later parsing with ensembl/ipi scripts
-$wormbase->run_command("cat $dumpdir/$organism*X.ace >! $dumpdir/${organism}_blastx.ace",$log);
+system ("cat $dumpdir/$organism*X.ace >! $dumpdir/${organism}_blastx.ace",$log) && die("cannot concatenate dumpdir/$organism*X.ace to $dumpdir/${organism}_blastx.ace\n" );
+
 # $wormbase->run_command("rm -f $dumpdir/$organism*X.ace",$log);
 
 $log->mail();
