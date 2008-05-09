@@ -2,7 +2,7 @@
 #
 # EMBLdump.pl :  makes modified EMBL dumps from camace.
 # 
-#  Last updated on: $Date: 2008-05-09 12:24:00 $
+#  Last updated on: $Date: 2008-05-09 14:38:19 $
 #  Last updated by: $Author: pad $
 
 use strict;
@@ -353,7 +353,7 @@ while (<EMBL>) {
     elsif (defined$mirgenes{$cds}) {
       print OUT "FT                   /gene=\"" . $mirgenes{$cds}  ."\"\n";
       print OUT "FT                   /ncRNA_class=\"Other\"\n";
-      print OUT "FT                   /note=\"miRNA $mirgenes{$cds}\"\n";
+      print OUT "FT                   /note=\"miRNA\"\n";
       print OUT "FT                   /locus_tag=\"$cds\"\n";
       next;
     }
