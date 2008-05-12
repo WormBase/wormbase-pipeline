@@ -11,7 +11,7 @@
 #   array of EnsEMBL objects, it invites disaster as it makes a copy of the array.
 #
 # Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2008-05-08 15:21:34 $ 
+# Last edited on: $Date: 2008-05-12 08:54:44 $ 
 
 my $usage = <<USAGE;
 blastx_dump.pl options:
@@ -159,7 +159,7 @@ while (my $link = shift @superlinks){
 #            $_->hseqname, $_->hstart, $_->hend, $_->hstrand,  $_->start,  $_->end, $_->strand,$_->p_value,$_->cigar_string)
                 my $hname=$f->hseqname;
 		$f->hseqname($prefix.$hname);
-		&feature2ace($f,$type) if $f->p_value < 0.0001;
+		&feature2ace($f,$type); #if $f->p_value < 0.0001;
 	}
 
 	print $outf "\n";
@@ -206,7 +206,7 @@ sub feature2ace {
 # p_value shorthand
 sub p_value {
 	my ($p)=@_;
-	my $log = ($p > 0 ? -(log($p))/log(10) : 999.9); # if e-value is zero set it to 999.9
+	my $log = (eval($p) > 0 ? -(log(eval($p)))/log(10) : 999.9); # if e-value is zero set it to 999.9
 	return $log;
 }
 
@@ -310,42 +310,45 @@ sub search {
 	return @hits;
 }
 
-# remove < 80% of evalue features from 200bp windows
+# remove < 75% of evalue features from 100bp windows
+# basica idea:
+#   create bins for every 100bp and put all overlapping features into them
+#   iterate over the bins and add the best 5 within 25% of the highest bin p-value into the results
 sub filter_features {
-	my ($features,$length)=@_;
+	my ($_features,$length)=@_;
         my %f_features;
 	
-	# 50bp bin size
-	my $size=200;
+	# bin size
+	my $size=100;
 
 	# should I bin them instead?
 	my @bins;
 
 	# put the feature in all bins between start and stop
-	foreach my $f(@$features){
+	while( my $f= shift @$_features ){
 		my ($_start,$_end)=sort {$a <=> $b } ($f->start,$f->end);
-		next if $_start < 0;
-		next if $_end > $f->slice()->length;
+#		next if $_start < 0;
+#		next if $_end > $length;
 		for (my $n=int($_start/$size);$n <=int($_end/$size);$n++){
 			push @{$bins[$n]},$f;
 		}
 	}
 
-	# get the best 5 within 20% of the best hsp and add them to a hash
+	# get the best 5 within 25% of the best hsp and add them to a hash
 	foreach my $bin(@bins) {
 		next unless $bin; # skip empty bins
 		my $best=0;
 		my $max_hsp=0;
 		my @sorted_bin = sort {$a->p_value <=> $b->p_value} @$bin;
 		$best=&p_value($sorted_bin[0]->p_value);
-		map { $f_features{$_->dbID}=$_ if (&p_value($_->p_value) > $best*0.80 && $max_hsp++ <5)} @$bin; # <= cutoff place, lets try 20% instead of 25%
+#		map { $f_features{$_->dbID}=$_ if ($max_hsp++ <5)} @$bin; # <= cutoff place, lets try 25%
+		map { $f_features{$_->dbID}=$_ if (&p_value($_->p_value) > $best*0.5 && $max_hsp++ <5)} @$bin; # <= cutoff place, lets try 25%
 	}
 	
 	# flatten hash into an array
 	my @_filtered=values %f_features;
 	return @_filtered;
 }
-
 
 sub get_latest_pep {
    my @species =qw(wormpep remapep brigpep);

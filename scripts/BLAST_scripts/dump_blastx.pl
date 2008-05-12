@@ -5,7 +5,7 @@
 #  and concatenate them at the end
 # 
 # Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2008-05-08 16:01:56 $
+# Last edited on: $Date: 2008-05-12 08:54:44 $
 # 
 
 
@@ -16,6 +16,7 @@ dump_blastx.pl options:
 	-database DB_NAME   Ensembl datbase to dump from. If not used deafults to the database of the storable
 	-species SPECIES_NAME which species you want to dump (a.e. elegans, briggsae,....)
 	-test               if you want to use TEST_BUILD instead of BUILD
+        -dumpdir DIRECTORY_NAME id you want to dump it to a different directory
 USAGE
 									
 
@@ -28,13 +29,14 @@ use Wormbase;
 use strict;
 
 
-my ($database,$store,$debug,$species,$test);
+my ($database,$store,$debug,$species,$test,$dumpdir);
 GetOptions(
 	'database=s'  => \$database,
 	'store=s'     => \$store,
 	'debug=s'     => \$debug,
 	'species=s'   => \$species,
 	'test'        => \$test,
+	'dumpdir=s'   => \$dumpdir,
 ) || die($usage);
 
 
@@ -67,7 +69,7 @@ my %logic2type = (
 my $m=LSF::JobManager->new(-q => 'normal',-o => '/dev/null',-e=>'/dev/null',-R => '"select[mem>4000] rusage[mem=4000]"',-M => 4000000, -F => 400000);
 
 my $storable =  $wormbase->autoace . '/'. ref($wormbase).'.store';
-my $dumpdir = '/lustre/work1/ensembl/wormpipe/dumps';
+$dumpdir ||= '/lustre/work1/ensembl/wormpipe/dumps';
 my $organism = lc (ref($wormbase));
 
 $database ||= "worm_ensembl_$organism";
@@ -89,12 +91,18 @@ for my $job ($m->jobs){ # much quicker if history is pre-cached
 $m->clear; # clear out the job manager to reuse.
 
 # concatenate the ace files into a big blob for later parsing with ensembl/ipi scripts
+my $outfile="$dumpdir/${organism}_blastx.ace";
+
+# in case of Elegans do something else
 if (ref $wormbase eq 'Elegans'){
- system ("cat $dumpdir/$organism*X.ace |/software/bin/perl $ENV{CVS_DIR}/BLAST_scripts/convert_chrom_blast2clone.pl >! $dumpdir/${organism}_blastx.ace") 
-   && die("cannot concatenate dumpdir/$organism*X.ace to $dumpdir/${organism}_blastx.ace\n" );
-}
-else {
-   system ("cat $dumpdir/$organism*X.ace >! $dumpdir/${organism}_blastx.ace",$log) && die("cannot concatenate dumpdir/$organism*X.ace to $dumpdir/${organism}_blastx.ace\n" );
+  my @files = glob("$dumpdir/$organism*X.ace");
+  unlink $outfile if -e $outfile;
+  foreach my $file (@files ){
+          system ("cat $file |/software/bin/perl $ENV{CVS_DIR}/BLAST_scripts/convert_chromblast2clone.pl > $outfile") 
+                 && die("cannot concatenate $file to $outfile\n" );
+	 }
+} else {
+   system ("cat $dumpdir/$organism*X.ace > $outfile") && die("cannot concatenate dumpdir/$organism*X.ace to $outfile\n" );
 }
 
 # $wormbase->run_command("rm -f $dumpdir/$organism*X.ace",$log);
