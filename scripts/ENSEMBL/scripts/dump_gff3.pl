@@ -72,7 +72,7 @@ while( my $slice = shift @$slices) {
 			strand    => $gene->strand(),
 			note      => ($gene->status()||'PREDICTED' ). " " . $gene->biotype(),
 			public_name => $gene->stable_id(),
-			display     => $geen->stable_id(), # wrong but fixes db's without xref_mapping
+			display     => $gene->stable_id(), # wrong but fixes db's without xref_mapping
 		);
 
 		# get all transcripts of the gene
@@ -326,13 +326,13 @@ sub gff_line {
 	return $output;
 }
 
-# remove < 80% of evalue features from 100bp windows
+# remove < 75% of evalue features from 50bp windows
 sub filter_features {
 	my ($features,$length)=@_;
         my %f_features;
 	
 	# 50bp bin size
-	my $size=100;
+	my $size=50;
 
 	# should I bin them instead?
 	my @bins;
@@ -352,7 +352,7 @@ sub filter_features {
 		my $max_hsp=0;
 		my @sorted_bin = sort {$a->{p_value} <=> $b->{p_value}} @$bin;
 		$best=&p_value($sorted_bin[0]->{p_value});
-		map { $f_features{$_->{dbid}}=$_ if (&p_value($_->{p_value}) > $best*0.80 && $max_hsp++ <5)} @$bin; # <= cutoff place, lets try 20% instead of 25%
+		map { $f_features{$_->{dbid}}=$_ if (&p_value($_->{p_value}) > $best*0.75 && $max_hsp++ <5)} @$bin; # <= cutoff place
 	}
 	
 	# flatten hash into an array
@@ -363,7 +363,7 @@ sub filter_features {
 # p_value shorthand
 sub p_value {
         my ($p)=@_;
-        my $log = ($p > 0 ? -(log($p))/log(10) : 999.9); # if e-value is zero set it to 999.9
+        my $log = (eval($p) > 0 ? -(log(eval($p)))/log(10) : 999.9); # if e-value is zero set it to 999.9
         return $log;
 }
 
