@@ -7,7 +7,7 @@
 # This is a example of a good script template
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2008-01-24 16:15:04 $
+# Last updated on: $Date: 2008-05-13 16:25:25 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -67,7 +67,7 @@ my @queries;
 if ($ace) {
     &read_acedb_queries;
     foreach my $query (@queries) {
-        $log->write_to( "\nTEST: " . $$query{'QUERY'} );
+        $log->write_to( "\nTEST (tace query): " . $$query{'QUERY'} . ' (' . $$query{'DESC'} . ')');
         my $count = $autoace->count( -query => $$query{'QUERY'} );
         my $expect = $$query{'RESULT'};
         $log->write_to(" . . . ok") if ( &pass_check( $expect, $count ) == 0 );
@@ -79,7 +79,7 @@ if ($gff) {
     my $gff_dir = $database . "/CHROMOSOMES";
     &read_GFF_queries;
     foreach my $query (@queries) {
-        $log->write_to( "\nTEST: " . $$query{'DESC'} );
+        $log->write_to( "\nTEST   (grep GFF): " . $$query{'GFF'} . ' (' . $$query{'DESC'}  . ')');
         my $actual = `cat $gff_dir/CHROMOSOME*.gff | grep -c $$query{'GFF'}`;
         my $expect = $$query{'EXPECT'} ? $$query{'EXPECT'} : $autoace->count( -query => $$query{'QUERY'} );
         $log->write_to(" . . . ok") if ( &pass_check( $expect, $actual ) == 0 );
@@ -126,12 +126,12 @@ sub read_acedb_queries {
     $i++;
     $queries[$i]{'DESC'}   = "The number of RNAi results with connections to genes";
     $queries[$i]{'QUERY'}  = 'find RNAi Gene';
-    $queries[$i]{'RESULT'} = 61844;
+    $queries[$i]{'RESULT'} = 73394;
 
     $i++;
     $queries[$i]{'DESC'}   = "The number of microarray results with connections to genes";
     $queries[$i]{'QUERY'}  = 'find microarray_results gene';
-    $queries[$i]{'RESULT'} = 77748;
+    $queries[$i]{'RESULT'} = 95545;
 
     $i++;
     $queries[$i]{'DESC'}   = "PCR products overlapping CDS";
@@ -156,7 +156,7 @@ sub read_acedb_queries {
     $i++;
     $queries[$i]{'DESC'}   = "Homol_data without Pep_homol";
     $queries[$i]{'QUERY'}  = 'find Homol_data *wublastx* !Pep_homol';
-    $queries[$i]{'RESULT'} = 5207;
+    $queries[$i]{'RESULT'} = 0;
     $i++;
 
     $queries[$i]{'DESC'}   = "Inverted repeat Feature_data without features";
@@ -181,7 +181,7 @@ sub read_acedb_queries {
     $i++;
     $queries[$i]{'DESC'}   = "variation gene connection";
     $queries[$i]{'QUERY'}  = 'find Variation Gene';
-    $queries[$i]{'RESULT'} = 60000;
+    $queries[$i]{'RESULT'} = 124046;
 
     $i++;
     $queries[$i]{'DESC'}   = "genes with structured description";
@@ -191,7 +191,7 @@ sub read_acedb_queries {
     $i++;
     $queries[$i]{'DESC'}   = "genes with GO_term";
     $queries[$i]{'QUERY'}  = 'find Gene GO_term';
-    $queries[$i]{'RESULT'} = 20038;
+    $queries[$i]{'RESULT'} = 14318;
 
     $i++;
     $queries[$i]{'DESC'}   = "CDSs with no source_exons";
@@ -238,12 +238,12 @@ sub read_GFF_queries {
     $queries[$i]{'QUERY'} = 'find Variation flanking_sequences AND method = "Substitution_allele"';
 
     $i++;
-    $queries[$i]{'DESC'}   = "RNAi primary";
+    $queries[$i]{'DESC'}   = "RNAi primary locations";
     $queries[$i]{'GFF'}    = "RNAi_primary";
-    $queries[$i]{'EXPECT'} = '134246';
+    $queries[$i]{'EXPECT'} = '150537';
 
     $i++;
-    $queries[$i]{'DESC'}   = "RNAi secondary";
+    $queries[$i]{'DESC'}   = "RNAi secondary locations";
     $queries[$i]{'GFF'}    = "RNAi_secondary";
     $queries[$i]{'EXPECT'} = '14165';
 
@@ -288,12 +288,12 @@ sub read_GFF_queries {
     $queries[$i]{'QUERY'} = 'find Operon';
 
     $i++;
-    $queries[$i]{'DESC'}  = "SL1";
+    $queries[$i]{'DESC'}  = "SL1 features";
     $queries[$i]{'GFF'}   = "SL1_acceptor_site";
     $queries[$i]{'QUERY'} = 'find Feature method = "SL1"';
 
     $i++;
-    $queries[$i]{'DESC'}  = "SL2";
+    $queries[$i]{'DESC'}  = "SL2 features";
     $queries[$i]{'GFF'}   = "SL2_acceptor_site";
     $queries[$i]{'QUERY'} = 'find Feature method = "SL2"';
 
@@ -307,10 +307,10 @@ sub read_GFF_queries {
     $queries[$i]{'GFF'}   = "nc_primary_transcript";
     $queries[$i]{'QUERY'} = 'find Transcript; method = non_coding_transcript';
 
-    $i++;
-    $queries[$i]{'DESC'}  = "ncRNA";
-    $queries[$i]{'GFF'}   = "ncRNA_primary_transcript";
-    $queries[$i]{'QUERY'} = 'find Transcript; method = ncRNA';
+#    $i++;
+#    $queries[$i]{'DESC'}  = "ncRNA";
+#    $queries[$i]{'GFF'}   = "ncRNA_primary_transcript";
+#    $queries[$i]{'QUERY'} = 'find Transcript; method = ncRNA';
 
     $i++;
     $queries[$i]{'DESC'}  = "tRNAs";
