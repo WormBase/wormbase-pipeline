@@ -392,8 +392,8 @@ $wormbase->run_command("grep 'taxon:6238' $output > $output.cb", $log);
 
 
 $wormbase->check_file($output, $log,
-minsize => 14000000,
-maxsize => 40000000,
+minsize => 11000000,
+maxsize => 20000000,
 lines => ['^WB\tWBGene\d+\t\S+\t\tGO\:\d+'],
 );
 
