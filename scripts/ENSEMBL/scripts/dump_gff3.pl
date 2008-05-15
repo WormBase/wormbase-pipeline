@@ -12,6 +12,7 @@ use warnings;
 use lib '../lib';
 
 use Bio::EnsEMBL::DBSQL::DBAdaptor;
+use IO::File;
 use DBI;
 use Domain2Interpro;
 use Getopt::Long;
@@ -24,7 +25,9 @@ my $vega_dbhost = 'ia64d';
 my $vega_dbport =  3306;
 my $vega_dbuser = 'wormro'; 
 my $vega_dbpass = '';
-
+my $dump_slice ;
+my $lsf;
+my $dumpdir;
 
 GetOptions(
            'dbhost=s'     => \$vega_dbhost,
@@ -32,6 +35,9 @@ GetOptions(
            'dbuser=s'     => \$vega_dbuser,
            'dbpass=s'     => \$vega_dbpass,
            'dbport=s'     => \$vega_dbport,
+	   'slice=s'      => \$dump_slice,
+	   'submit'       => \$lsf,
+	   'dumpdir=s'    => \$dumpdir,
           )or die ("Couldn't get options");
 
 my $vega_db = new Bio::EnsEMBL::DBSQL::DBAdaptor(
@@ -45,18 +51,35 @@ my $vega_db = new Bio::EnsEMBL::DBSQL::DBAdaptor(
 
 my $mapper = Domain2Interpro->new();
 
-print "##gff-version 3\n";
 
 # Get all toplevel slices
 my $sa = $vega_db->get_SliceAdaptor();
-my $slices = $sa->fetch_all('toplevel');
+my $slices;
+if ($dump_slice){
+   push @$slices, $sa->fetch_by_region('toplevel',$dump_slice);
+}
+else {
+   $slices = $sa->fetch_all('toplevel');
+}
+
 while( my $slice = shift @$slices) {
 	my $slice_name = $slice->seq_region_name();
 	my $slice_size = $slice->length;
 
-	print STDERR "Doing $slice_name:\n" if $debug;
+        if ($lsf){
+		my $bsub="bsub -R \"select[mem>3500] rusage[mem=3500]\" -o /dev/null -e /dev/null -J dump_$slice_name perl $0 -dbhost $vega_dbhost -dbname $vega_dbname -dbuser $vega_dbuser  -dbport $vega_dbport -slice $slice_name -dumpdir $dumpdir";
+		$bsub.=" -dbpass $vega_dbpass" if $vega_dbpass;
+		print STDERR "$bsub\n" if $debug;
+		print `$bsub`;
+		
+	}else {
 
-	print "##sequence-region $slice_name 1 $slice_size\n";
+	print STDERR "Dumping $slice_name to $dumpdir/$slice_name.gff3 \n" if $debug;
+        
+	my $outf = new IO::File (">$dumpdir/$slice_name.gff3");
+
+	print $outf "##gff-version 3\n";
+	print $outf "##sequence-region $slice_name 1 $slice_size\n";
 	
 	# Get all the genes on this slice
 	my $genes = $slice->get_all_Genes();
@@ -130,7 +153,7 @@ while( my $slice = shift @$slices) {
 				}
 			}
 		}
-		print dump_gene(\%gene_to_dump);
+		print $outf dump_gene(\%gene_to_dump);
 	}
 
 	# get all protein align features on the slice
@@ -160,7 +183,7 @@ while( my $slice = shift @$slices) {
 
 	while (my($k,$v)=each %blastx_features){
 		  my @filtered_features=filter_features($v,$slice_size);
-		  map {print dump_feature($_)} @filtered_features;
+		  map {print $outf dump_feature($_)} @filtered_features;
 	  }
 
 
@@ -177,12 +200,13 @@ while( my $slice = shift @$slices) {
 			logic_name  => $feature->analysis->logic_name,
 			feature_type=> 'repeat_region',
 		};
-		print dump_feature($stripped_feature);
+		print $outf dump_feature($stripped_feature);
 	}
 
-	print '#'x80;
-	print "\n";
-
+	print $outf '#'x80;
+	print $outf "\n";
+	$outf->close;
+      }
 }
 
 # CIGAR to old GFF3 CIGAR format converter
@@ -326,13 +350,13 @@ sub gff_line {
 	return $output;
 }
 
-# remove < 75% of evalue features from 50bp windows
+# remove < 75% of evalue features from 100bp windows
 sub filter_features {
 	my ($features,$length)=@_;
         my %f_features;
 	
 	# 50bp bin size
-	my $size=50;
+	my $size=100;
 
 	# should I bin them instead?
 	my @bins;
