@@ -68,8 +68,8 @@ foreach $chroms (@chroms) {
 	    if($alleles{$allele}->{'five'} and $alleles{$allele}->{'three'}) {
 		$f[1] = 'CGH_allele';
 		$f[2] = 'deletion';
-		$f[3] -= $alleles{$allele}->{'five'};
-		$f[4] += $alleles{$allele}->{'three'};
+		$f[3] += $alleles{$allele}->{'five'};
+		$f[4] -= $alleles{$allele}->{'three'};
 
 		print NEW join("\t",@f);
 	    }
