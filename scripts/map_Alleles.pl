@@ -30,7 +30,9 @@
 # # OF THE POSSIBILITY OF SUCH DAMAGE.
 
 use strict;
-use Modules::map_Alleles;
+use lib $ENV{'CVS_DIR'};
+use lib "$ENV{CVS_DIR}/Modules";
+use map_Alleles;
 use Wormbase;
 use Getopt::Long;
 use IO::File;              
@@ -53,9 +55,10 @@ USAGE
 exit 1;	
 }
 
-my ( $debug, $store, $outdir,$allele ,$noload,$database,$weak_checks,$help,$test);
+my ( $debug, $species, $store, $outdir,$allele ,$noload,$database,$weak_checks,$help,$test);
 
 GetOptions(
+	'species'  => \$species,
     'debug=s'  => \$debug,
     'store=s'  => \$store,
     'outdir=s' => \$outdir,
@@ -77,10 +80,10 @@ if ($store) {
     $wb = Storable::retrieve($store)
       or croak("cannot restore wormbase from $store");
 }
-else { $wb = Wormbase->new( -debug => $debug, -test => $test, -autoace => $database ) }
+else { $wb = Wormbase->new( -debug => $debug, -test => $test, -organism => $species, -autoace => $database ) }
 
 my $log = Log_files->make_build_log($wb);
-MapAlleles::setup($log,$wb); #unless $database;
+MapAlleles::setup($log,$wb) unless $database;
 MapAlleles::set_wb_log($log,$wb,$weak_checks) if $database;
 
 my $release=$wb->get_wormbase_version;
@@ -100,7 +103,7 @@ undef $alleles;# could theoretically undef the alleles here
 
 
 # for other databases don't run through the GFF_SPLITs
-#&finish() if $database;
+&finish() if $database;
 
 my $fh = new IO::File ">$acefile" || die($!);
 # create mapping Ace file
@@ -124,11 +127,6 @@ my $genes=MapAlleles::get_genes($mapped_alleles);
 # create the gene Ace file
 
 my $inversegenes=MapAlleles::print_genes($genes,$fh);
-
-my $possiblegenes=MapAlleles::get_possible_genes($mapped_alleles);
-while (my ($k,$v)=each %$possiblegenes){
-	MapAlleles::print_possible_genes($k,$v,$$inversegenes{$k},$fh)
-}
 
 # compare old<->new genes
 MapAlleles::compare($mapped_alleles,$inversegenes);
