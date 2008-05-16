@@ -214,6 +214,11 @@ sub map {
 			$errors++;
 			next
 		}
+		if( abs($map[1] - $map[2]) > 100000) {
+			$log->write_to("ERROR: $x is massive\n");
+			$errors++;
+			next;
+		} 
 		# from flanks to variation
 		if ($map[2]>$map[1]){$map[1]++;$map[2]--}
 		else {$map[1]--;$map[2]++}
