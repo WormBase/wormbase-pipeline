@@ -6,8 +6,8 @@
 #
 # Makes CDS status information by looking at transcript to exon mappings
 #
-# Last updated by: $Author: mh6 $     
-# Last updated on: $Date: 2008-02-15 16:40:21 $      
+# Last updated by: $Author: ar2 $     
+# Last updated on: $Date: 2008-05-16 12:21:18 $      
 
 
 use strict;
@@ -49,9 +49,14 @@ if ($store) {
 
 my $log = Log_files->make_build_log($wormbase);
 my $maintainers = "All";
+my $single; #set if working with contig based assembly eg remanei
 
 my @chromosomes  = $wormbase->get_chromosome_names(-mito => 1);  # all chromosomes
 @chromosomes     = qw( III ) if $quicktest;
+if (scalar $wormbase->get_chromosome_names > 16) {
+	@chromosomes = $wormbase->species;
+	$single = 1;
+}
 
 &printhelp() if ($help);
 
@@ -85,7 +90,9 @@ foreach my $chromosome (@chromosomes) {
   ###################################################
   # get CDS names (@CDSlist) and coordinates (%CDS) #
   ###################################################
-
+  #create BLAT_TRANSCRIPT_BEST for ease of transition!
+  &create_transcript_file($chromosome);  
+  print $wormbase->runtime, " : Getting BLAT_TRANSCRIPT_BEST feature coordinates for chromosome $chromosome\n"  if ($verbose);
   print $wormbase->runtime, " : Getting coordinates of 'coding_exon' features for chromosome $chromosome\n" if ($verbose);
   my @CDS_GFF  = &read_gff('curated',$chromosome);
   my %CDS      = %{$CDS_GFF[0]}; 
@@ -96,9 +103,6 @@ foreach my $chromosome (@chromosomes) {
   # get EST and/or cDNAs #
   ########################
     
-  print $wormbase->runtime, " : Getting BLAT_TRANSCRIPT_BEST feature coordinates for chromosome $chromosome\n"  if ($verbose);
-  #create BLAT_TRANSCRIPT_BEST for ease of transition!
-  $wormbase->run_command("cd $gffdir; cat ${\$wormbase->chromosome_prefix}${chromosome}_BLAT_EST_BEST.gff ${\$wormbase->chromosome_prefix}${chromosome}_BLAT_OST_BEST.gff ${\$wormbase->chromosome_prefix}${chromosome}_BLAT_mRNA_BEST.gff ${\$wormbase->chromosome_prefix}${chromosome}_BLAT_RST_BEST.gff >  ${\$wormbase->chromosome_prefix}${chromosome}_BLAT_TRANSCRIPT_BEST.gff", $log);
   my @EST_GFF  = &read_gff('BLAT_TRANSCRIPT_BEST',$chromosome);
   my %EST     = %{$EST_GFF[0]};
   my @ESTlist = @{$EST_GFF[1]};
@@ -210,10 +214,11 @@ sub read_gff {
   my $chromosome = shift; 
   my $name     = "";
   my %hash     = ();
-   
+  
+  my $gff_file = $single ? "$gffdir/${chromosome}_$filename.gff" :
+						   "$gffdir/${\$wormbase->chromosome_prefix}${chromosome}_$filename.gff";
   # open the GFF file
-  open (GFF, "$gffdir/${\$wormbase->chromosome_prefix}${chromosome}_$filename.gff") 
-    || die "Cannot open $gffdir/${\$wormbase->chromosome_prefix}${chromosome}_$filename.gff $!\n";
+  open (GFF, "$gff_file") or $log->log_and_die("Cannot open $gff_file $!\n");
   while (<GFF>) {
 	
     # discard header lines
@@ -222,7 +227,7 @@ sub read_gff {
     my @f = split /\t/;
     undef $name;
     ($name) = ($f[8] =~ /\"(\S+)\"/)          if ($filename eq 'curated' and /coding_exon/); # CDS name
-    ($name) = ($f[8] =~ /\"Sequence:(\S+)\"/) if ($filename eq 'BLAT_TRANSCRIPT_BEST'); # transcript name
+    ($name) = ($f[8] =~ /\"Sequence:(\S+)\"/) if ($filename eq 'BLAT_TRANSCRIPT_BEST' and !(/Caen/) ); # transcript name
     next unless $name;
     push @{$hash{$name}} , [$f[3],$f[4]]; 
   }
@@ -601,7 +606,21 @@ sub find_match {
   return \%store_match;
     
 }
-
+sub create_transcript_file {
+	my $chrom = shift;
+	if ($single) {
+		#grep out relevant lines from full gff file
+		my $gff_file = $wormbase->chromosomes."/$chrom.gff";
+		my $transcript_file = $wormbase->gff_splits."/".$wormbase->species."_BLAT_TRANSCRIPT_BEST.gff";
+		$wormbase->run_command("grep BLAT $gff_file | grep BEST > $transcript_file");
+		#make 'curated' at same time
+		$transcript_file = $wormbase->gff_splits."/".$wormbase->species."_curated.gff";
+		$wormbase->run_command("grep curated $gff_file > $transcript_file");
+	}
+	else {
+		$wormbase->run_command("cd $gffdir; cat ${\$wormbase->chromosome_prefix}${chrom}_BLAT_EST_BEST.gff ${\$wormbase->chromosome_prefix}${chrom}_BLAT_OST_BEST.gff ${\$wormbase->chromosome_prefix}${chrom}_BLAT_mRNA_BEST.gff ${\$wormbase->chromosome_prefix}${chrom}_BLAT_RST_BEST.gff >  ${\$wormbase->chromosome_prefix}${chrom}_BLAT_TRANSCRIPT_BEST.gff", $log);
+ 	}
+ }
 
 ################
 
