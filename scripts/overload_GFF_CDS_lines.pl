@@ -4,8 +4,8 @@
 # 
 # by Dan Lawson
 #
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2008-04-02 10:28:40 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2008-05-16 12:32:57 $
 #
 
 #
@@ -109,6 +109,12 @@ if (defined($chrom)){
 }
 else {
     @gff_files = $wormbase->get_chromosome_names('-prefix' => 1, '-mito' => 1);
+    #for species in many contigs the gffs are all in a single file named after the species
+    # e.g. remanei.gff
+    if(scalar @gff_files > 16) {
+    	@gff_files = ();
+    	push(@gff_files,$wormbase->species);
+    }
 }
 
 foreach my $file (@gff_files) {
