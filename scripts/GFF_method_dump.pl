@@ -7,7 +7,7 @@
 # Selectively dump GFF for certain acedb methods
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2007-12-05 10:34:53 $
+# Last edited on: $Date: 2008-05-16 09:43:22 $
 
 
 use lib $ENV{CVS_DIR};
@@ -98,9 +98,13 @@ close WRITEDB;
 foreach my $sequence ( @sequences ) {
  if ( @methods ) {
    foreach my $method ( @methods ) {
+
+     my $method_name = $method;
+     if ($method eq 'SNP') {$method_name = 'Allele'} # The SNP method has its GFF Source named allele
+
      $wormbase->check_file("$dump_dir/${sequence}_${method}.gff", $log,
 			   lines => ['^##', 
-				     "^${sequence}\\s+(Link|GenePair_STS|Genomic_canonical|${method})\\s+\\S+\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+\\s+\\S+",
+				     "^${sequence}\\s+(Link|GenePair_STS|Genomic_canonical|${method_name})\\s+\\S+\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+\\s+\\S+",
 				     "^${sequence}\\s+assembly_tag\\s+\\S+\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]",
 				     "^${sequence}\\s+\\.\\s+\\S+\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+"],
 			   );
