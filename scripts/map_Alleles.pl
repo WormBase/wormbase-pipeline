@@ -58,7 +58,7 @@ exit 1;
 my ( $debug, $species, $store, $outdir,$allele ,$noload,$database,$weak_checks,$help,$test);
 
 GetOptions(
-	'species'  => \$species,
+	'species=s'=> \$species,
     'debug=s'  => \$debug,
     'store=s'  => \$store,
     'outdir=s' => \$outdir,
