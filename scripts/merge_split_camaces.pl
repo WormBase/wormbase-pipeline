@@ -5,7 +5,7 @@
 # A script to make multiple copies of camace for curation, and merge them back again
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2008-02-28 11:09:54 $
+# Last edited on: $Date: 2008-05-29 14:46:40 $
 #
 # Persisting errors.
 #running csh -c "reformat_acediff file 1 file2"
@@ -40,6 +40,7 @@ my $extra;                 # remove the GeneIDupdater call as this is run outsid
 my $email;                 # Option for child scripts that can tace a user email option.
 my $nodump;                # don't dump from split camaces.
 my $blastx;                # update the blastx data this option is interactive as passwords are required.
+my $nosplit;               # use this option with the split if you only remove the mass_spec and tiling array data.
 
   GetOptions (
 	      "all"        => \$all,
@@ -58,6 +59,7 @@ my $blastx;                # update the blastx data this option is interactive a
 	      "email:s"    => \$email,
 	      "nodump"     => \$nodump,
 	      "blastx"     => \$blastx,
+	      "nosplit"    => \$nosplit,
 	     );
 
 
@@ -118,7 +120,6 @@ print "Using existing directory : '$directory'\n\n" if ($debug);
 
   # dumps the Pseudogene, Transcript, Feature and Sequence classes from the database
   &dump_camace unless ($nodump);
-
   ##   All of the raw data is now dumped to files    ##
 
   #remove 1st element of array as there aren't going to be any camace_orig updates
@@ -153,7 +154,7 @@ if ($update) {
 if ($split) {
   print "Removing old split databases and Copying $canonical database to the split camaces\n";
 #  if ($debug){shift (@databases)};
-  &split_databases;
+  &split_databases unless ($nosplit);
   
 # Remove data we don't want in the build.
     &remove_data("camace",);
@@ -207,6 +208,16 @@ sub remove_data {
   $command .= "y\n";
   #remove anomoly Homol_data.
   $command .= "query find Homol_data *curation_anomaly\n";
+  $command .= "kill\n";
+  $command .= "y\n";
+  #remove mass_spec peptides
+  $command .= "query find Protein MSP*\n";
+  $command .= "kill\n";
+  $command .= "y\n";
+  $command .= "clear\n";
+  $command .= "query find Protein\n";
+  $command .= "Edit -D Pep_homol \"MSP*\"\n";
+  $command .= "query find Mass_spec_peptide MSP*\n";
   $command .= "kill\n";
   $command .= "y\n";
   #Save the database.
@@ -264,7 +275,7 @@ sub loadace {
   my $filepath = shift;
   my $tsuser   = shift;
 
-  if ($tsuser =~ /\S+\s/) {print "ERROR: tsuser contains white space!!\n"; die "Failed to open database connection because of tsuser :(\n"}
+  if ($tsuser =~ /\S+\s/) {print "ERROR: tsuser contains white space!!\n"; die "Failed to open database connection because of tsuser :(\nAttempting to load $filepath\nTSUSER:$tsuser\n"}
   my $command = "pparse $filepath\nsave\nquit\n";
 
   # dump out from ACEDB
@@ -287,7 +298,7 @@ sub update_camace {
   ##################################################################
   foreach my $database (@databases) {
     foreach my $class (@classes) {
-      &loadace("$directory/update_${class}_${database}.ace","${database}");
+      &loadace("$directory/update_${class}_${database}.ace", '${database}_${class}');
     }
   }
   #####################################
@@ -301,25 +312,37 @@ sub update_camace {
   ############################################################
   &remove_data("camace",);
   $ENV{'ACEDB'} = $canonical;
-  &loadace("$wormpub./CURATION_DATA/anomalies.ace", 'curation_anomaly_data') or die "Failed to load new curation data\n";
-  print "Updated anomaly data in $canonical\n\n";
 
-  &loadace($wormpub."/CURATION_DATA/tiling_array.ace", 'tiling array data') or die "Failed to load tiling array data\n";
-  print "Updated tiling array data in $canonical\n\n";
+  my @files;
+  push (@files,"$wormpub/CURATION_DATA/anomalies_elegans.ace");
+  push (@files,"$wormpub/CURATION_DATA/tiling_array.ace");
+  push (@files,"$wormpub/CURATION_DATA/assign_orientation.WS${version}.ace");
+  push (@files,"$wormpub/BUILD_DATA/MISC_DYNAMIC/misc_mass_spec_GenniferMerrihew.ace");
+  push (@files,"$wormpub/BUILD_DATA/MISC_DYNAMIC/misc_mass_spec_MichaelHengartner.ace");
+  push (@files,"$wormpub/BUILD_DATA/MISC_DYNAMIC/misc_mass_spec_NatalieWielsch.ace");
+  push (@files,"$wormpub/BUILD_DATA/MISC_DYNAMIC/misc_mass_spec_Other.ace");
+  push (@files,"$wormpub/BUILD_DATA/MISC_DYNAMIC/misc_mass_spec_StevenHusson.ace");
+  push (@files,"$wormpub/BUILD_DATA/MISC_DYNAMIC/misc_mass_spec_StevenHusson_2.ace");
+  push (@files,"$wormpub/BUILD_DATA/MISC_DYNAMIC/misc_mass_spec_StevenHusson_3.ace");
 
-  print "Looking for /nfs/disk100/wormpub/CURATION_DATA/assign_orientation.WS${version}.ace.......................\n";
-  if (-e "/nfs/disk100/wormpub/CURATION_DATA/assign_orientation.WS${version}a.ace") {
-    print "File present.....Updating Transcript orientation from WS${version} for the next build.\n";
-    &loadace("/nfs/disk100/wormpub/CURATION_DATA/assign_orientation.WS${version}a.ace", 'transcript_orientation_data') or die "Failed to load new orientation data\n";
-    print "Updated Transcript orientations\n\n";
+  my $file;
+  foreach $file (@files) {
+    print "Looking for $file......................\n";
+    if (-e $file) {
+      &loadace("$file", '${version}_curation_data_update') or die "Failed to load $file\n";
+      print "Loaded $file into $canonical\n\n";
+    }
+    else {
+      print "File: $file not loaded\n\n";
+    }
   }
-  else {print "Orientation data was not present at this point in the build so will need to be loaded later on, but before the next build!!!!!\n\n";}
 
   ##################################################################################
   ## Update Protein ID's and check embl sequence_versions                         ##
   ##################################################################################
-  print "\n\nRunning Gene_ID_update.pl to refresh Protein_ID\'s\n\n";
-  $wormbase->run_script("GeneID_updater.pl -proteinID -sv -version $WS_version -update", $log) && die "Failed to run Gene_ID_updater.pl\n";
+  print "\n\nRunning Gene_ID_update.pl to refresh Protein_ID\'s and clone sequence version\'s\n\n";
+  if ($debug) {$wormbase->run_script("GeneID_updater.pl -proteinID -sv -version $WS_version -debug $debug -update", $log) && die "Failed to run Gene_ID_updater.pl\n";}
+  else {$wormbase->run_script("GeneID_updater.pl -proteinID -sv -version $WS_version -update", $log) && die "Failed to run Gene_ID_updater.pl\n";}
   print "Updated Protein_ID\'s and clone Sequence_versions\n";
 
   ######################################################
@@ -362,8 +385,6 @@ sub split_databases {
     $wormbase->run_script("TransferDB.pl -start $canonical -end $wormpub/camace_${database} -split -database -wspec", $log) && die "Failed to run TransferDB.pl for camace_${database}\n";
     }
   print "CAMACE SPLITS UPDATED\n";
-  #remove gapped alignment for homol data from camace_gw3
-  &loadace("/nfs/disk100/wormpub/camace_orig/acefiles/method_fix.ace", 'camace_gw3_method_fix') or die "Failed to updates the methods in camace_gw3!!\n";
 }
 
 sub usage {
