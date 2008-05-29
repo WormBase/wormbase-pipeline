@@ -4,7 +4,7 @@
 #
 # by Keith Bradnam
 #
-# Last updated on: $Date: 2008-01-07 13:28:47 $
+# Last updated on: $Date: 2008-05-29 12:47:03 $
 # Last updated by: $Author: pad $
 #
 # see pod documentation at end of file for more information about this script
@@ -104,11 +104,17 @@ foreach my $gene_model ( @Predictions ) {
   my $i;
   my $j;
   
+  if (($exon_coord2[0] < "1") && ($method_test->name eq 'curated')){
+    push(@error1, "ERROR: $gene_model has a problem with it\'s exon co-ordinates\n");
+    print "ERROR: $gene_model has a problem with it\'s exon co-ordinates\n";
+    next;
+  }
+
   for ($i=1; $i<@exon_coord2;$i++) {
     my $intron_size = ($exon_coord1[$i] - $exon_coord2[$i-1] -1);
     if (($intron_size < 34) && ($method_test->name eq 'curated')) {
       print "ERROR: $gene_model has a small intron ($intron_size bp)\n";
-      push(@error4,"ERROR: $gene_model has a very small intron ($intron_size bp)\n")
+      push(@error4,"ERROR: $gene_model has a very small intron ($intron_size bp)\n");
     }
     push(@error5,"WARNING: $gene_model has a small intron ($intron_size bp)\n") if (($intron_size > 33) && ($intron_size < 39) && (!$basic) && ($method_test eq 'curated'));
   }
