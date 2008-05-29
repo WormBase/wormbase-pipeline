@@ -6,8 +6,8 @@
 #
 # Builds a wormpep data set from the current autoace database
 #
-# Last updated by: $Author: pad $
-# Last updated on: $Date: 2008-03-28 14:22:29 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2008-05-29 13:51:44 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -69,8 +69,8 @@ if ($test) {
 
 # establish log file.
 my $log = Log_files->make_build_log($wormbase);
-$species = lc ref $wormbase;
-$log->write_to("Building protein set for C.$species\n");
+$log->write_to("Building protein set for ".$wormbase->full_name('-short' => 1)."\n");
+
 
 ##########################################
 # Set up database paths                  #
@@ -377,8 +377,12 @@ sub write_final_pep
 		print PEP "\n".$wormbase->format_sequence( $cds2aa{$cds} )."\n";
 	}
 	close PEP;
+	my $dir = $wormbase->wormpep;
+	$wormbase->run_command("ln -s $dir/wormpep_current $dir/wormpepWS$release", $log);
+	$wormbase->run_command("setdb $dir/wormpep_current > $dir/wormpep_current.log", $log);
 	
 	&write_table;
+	&count_isoforms if ($wormbase->species eq 'elegans');
 }
 
 sub write_table
@@ -441,5 +445,50 @@ sub get_embl_data {
 }
 	
 	
-	
-	
+sub count_isoforms{
+  my @wormpep_CDSs;
+  open (FILE , "$new_wpdir/wormpep$release") or $log->log_and_die("cannot open the wormpep$release file\n");
+  while (<FILE>) {
+    if (/^\>(\S+)\s+\S+/) {
+      my $cds = $1;
+      push (@wormpep_CDSs , $cds);
+    }
+  }
+  close (FILE);
+  
+  my $total_cds_count  = 0;
+  my $no_isoform_count = 0;
+  my $isoform_count    = 0;
+  my %new_name2x;
+  
+  foreach (@wormpep_CDSs) {
+    $total_cds_count++;
+    /^([A-Z0-9_]+)\.(.*)$/i;
+    my $cds_prefix = $1;
+    my $cds_suffix = $2;
+    if ($cds_suffix =~ /^[1-9][0-9]?$/) {
+      $no_isoform_count++;
+    }
+    elsif ($cds_suffix =~ /(^[1-9][0-9]?)([a-z])/) {
+      my $number = $1;
+      my $letter = $2;
+      my $new_name = $cds_prefix."_".$number;
+      unless (exists ($new_name2x{$new_name})) {
+	$no_isoform_count++;
+      } 
+      else {
+	$isoform_count++;
+      }
+      $new_name2x{$new_name} = "x";
+    } 
+    else {
+      $log->write_to("$_ has a non\-acceptable name in wormpep$release \(has not been counted\)\n");
+      next;
+    }
+  }
+  $log->write_to("\n\nthere are $no_isoform_count CDS in autoace, $total_cds_count when counting \($isoform_count\) alternate splice_forms\n");
+
+  # write the release letter (also does some checks)
+    &release_wormpep($no_isoform_count,$total_cds_count,$isoform_count);
+    chmod (0444 , "$new_wpdir/*") or $log->write_to("cannot chmod $new_wpdir/ files\n");
+}
