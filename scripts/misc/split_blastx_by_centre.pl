@@ -11,7 +11,7 @@ use Carp;
 use Log_files;
 use Storable;
 
-my ($debug, $version,$wormbase,$test,$update,$noprpcess,$store,$files,$noprocess);
+my ($debug, $version,$wormbase,$test,$update,$noprpcess,$store,$files,$noprocess,$path);
 
 GetOptions(
 	   'test'          => \$test,       #test build
@@ -22,6 +22,7 @@ GetOptions(
 	   'update'        => \$update,     # Load the camace file into the canonical database.
 	   'noprocess'     => \$noprocess,  # Don't process the files.
 	   "store:s"       => \$store,
+	   'path:s'        => \$path,       # should be used in conjunction with -files
 	  );
 
 
@@ -44,9 +45,14 @@ my $log = Log_files->make_build_log($wormbase);
 #establish global Scalars/arrays and hashes
 my $next_build = ($version + 1);
 
-#my $blast_dir = $wormbase->acefiles;
-#my $blast_dir = "/acari/work2a/wormpipe/dumps/blastx";
-my $blast_dir = "/lustre/work1/ensembl/wormpipe/dumps/blastx/";
+#check command line option compatability
+if ((defined($path) && !defined($files)) or (!defined($path) && defined($files))) {$log->log_and_die ("ERROR: -path and -files command line options should always be used as a pair!!\n");}
+
+#my $blast_dir = "/lustre/work1/ensembl/wormpipe/dumps/blastx/";
+my $blast_dir;
+$blast_dir = "/nfs/disk100/wormpub/camace_orig/WS$version-WS$next_build/BLAST" unless ($path);
+$blast_dir = $path if defined($path);
+#my $blast_dir = "/lustre/work1/ensembl/wormpipe/dumps/";
 my $temp_dir = "/nfs/disk100/wormpub/camace_orig/WS$version-WS$next_build/tmp";
 $wormbase->run_command("mkdir $temp_dir", $log);
 my $outdir = "/nfs/disk100/wormpub/camace_orig/WS$version-WS$next_build";
@@ -68,17 +74,34 @@ if (!$noprocess){
   my @files2split;
   if ($files) {
     @files2split = split (/\,/,$files);
-  } else {
+  } 
+else {
+push (@files2split,"feature_SL2.ace");
+push (@files2split,"feature_SL1.ace");
+push (@files2split,"feature_polyA_site.ace");
+push (@files2split,"feature_polyA_signal.ace");
+push (@files2split,"feature_binding_site.ace");
+push (@files2split,"repeat_homologies.ace");
+push (@files2split,"elegans_blastx.ace");
+push (@files2split,"elegans_blastx_fix.ace");
 
+#    push (@files2split,"briggsae_blastx.ace");
+#    push (@files2split,"fly_blastx.ace");
+#    push (@files2split,"human_blastx.ace");
+#    push (@files2split,"remanei_blastx.ace");
+#    push (@files2split,"slimswissprot_blastx.ace");
+#    push (@files2split,"slimtrembl_blastx.ace");
+#    push (@files2split,"worm_blastx.ace");
+#    push (@files2split,"yeast_blastx.ace");
+#push (@files2split,"elegans_remaneiX.ace");
+#push (@files2split,"elegans_brigpepX.ace");
+#push (@files2split,"elegans_wormpepX.ace");
+#push (@files2split,"elegans_GadflyX.ace");
+#push (@files2split,"elegans_ipi_humanX.ace");
+#push (@files2split,"elegans_slimtremblX.ace");
+#push (@files2split,"elegans_yeastX.ace");
+#push (@files2split,"elegans_slimswissprotX.ace");
 #TEC_RED
-    push (@files2split,"briggsae_blastx.ace");
-    push (@files2split,"fly_blastx.ace");
-    push (@files2split,"human_blastx.ace");
-    push (@files2split,"remanei_blastx.ace");
-    push (@files2split,"slimswissprot_blastx.ace");
-    push (@files2split,"slimtrembl_blastx.ace");
-    push (@files2split,"worm_blastx.ace");
-    push (@files2split,"yeast_blastx.ace");
 #RepeatMasker
 #waba
 #TRF.ace missing from WS162
@@ -88,7 +111,8 @@ if (!$noprocess){
   $log->write_to("\t\tPROCESSING DATA\n\t\t================================================================\n");
   foreach my $file ( @files2split ){
 #    $wormbase->run_command("scp ecs4:$blast_dir/$file $temp_dir/", $log);
-    $wormbase->run_command("scp farm-login:$blast_dir/$file $temp_dir/", $log);
+    $wormbase->run_command("scp farm-login:$blast_dir/$file $temp_dir/", $log) unless ($files);
+    $wormbase->run_command("scp $blast_dir/$file $temp_dir/", $log) if ($files);
     my $clone = "";
     my $type = "";
     $log->write_to("\nProcessing $blast_dir/$file\n");
