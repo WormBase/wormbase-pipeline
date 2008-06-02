@@ -2,7 +2,7 @@
 #
 # EMBLdump.pl :  makes modified EMBL dumps from camace.
 # 
-#  Last updated on: $Date: 2008-05-09 14:38:19 $
+#  Last updated on: $Date: 2008-06-02 15:46:09 $
 #  Last updated by: $Author: pad $
 
 use strict;
@@ -377,16 +377,16 @@ while (<EMBL>) {
 
    #  Modify the /product lines for genes that have EST evidence
    # /product="Hypothetical protein XXX.X"
-   # /product = "C. elegans protein XXX.X, partially confirmed by transcript evidence"
-   # /product = "C. elegans protein XXX.X, confirmed by transcript evidence"
-    if (/\/product\=\"Hypothetical protein (\S+.\S+)\"/) {
+   # /product="C. elegans protein XXX.X, partially confirmed by transcript evidence"
+   # /product="C. elegans protein XXX.X, confirmed by transcript evidence"
+    if (/\/product=\"Hypothetical protein (\S+.\S+)\"/) {
       $cds = $1;
       if ($cds2status{$cds} eq ("Confirmed")) {
-	print OUT "FT                   \/product = \"C. elegans protein $cds,\nFT                   confirmed by transcript evidence\"\n";
+	print OUT "FT                   \/product=\"C. elegans protein $cds,\nFT                   confirmed by transcript evidence\"\n";
 	next;
       }
       elsif ($cds2status{$cds} eq ("Partially_confirmed")) {
-	print OUT "FT                   \/product = \"C. elegans protein $cds,\nFT                   partially confirmed by transcript evidence\"\n";
+	print OUT "FT                   \/product=\"C. elegans protein $cds,\nFT                   partially confirmed by transcript evidence\"\n";
 	next;
       }
       else {
