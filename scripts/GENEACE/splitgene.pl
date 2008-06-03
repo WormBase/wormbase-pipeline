@@ -7,8 +7,8 @@
 # simple script for creating new (sequence based) Gene objects when splitting 
 # existing gene 
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2006-07-25 14:14:15 $
+# Last edited by: $Author: mt3 $
+# Last edited on: $Date: 2008-06-03 09:38:11 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -30,7 +30,7 @@ my $email;       # email new Gene IDs back to users to person who requested it
 my $load;        # load results to geneace (default is to just write an ace file)
 my $verbose;     # toggle extra (helpful?) output to screen
 my $p_clone;     # positive clone name for new gene
-
+my $species;     
 
 GetOptions ("old=s"     => \$old,
             "new=s"     => \$new,
@@ -38,17 +38,8 @@ GetOptions ("old=s"     => \$old,
 	    "id=s"      => \$id,
 	    "email"     => \$email,
 	    "load"      => \$load,
-	    "verbose"   => \$verbose);
-
-#####################################################
-# warn about incorrect usage of command line options
-#####################################################
-
-die "must specify -old and -new options\n"               if (!$old || !$new);
-die "-who option must be an integer\n"                   if ($who && ($who !~ m/^\d+$/));
-die "-old option is not a valid type of sequence name\n" unless( ($old =~ m/^\w+\.\d{1,2}$/) or ($old =~ /WBGene\d{8}/) );
-die "-new option is not a valid type of sequence name\n" if ($new !~ m/^\w+\.\d{1,2}$/);
-
+	    "verbose"   => \$verbose,
+            "species=s" => \$species,);
 
 ######################################
 # set person ID for curator
@@ -67,10 +58,22 @@ else{
 ############################################################
 # set database path, open connection and open output file
 ############################################################
-my $wormbase = Wormbase->new();
+my $wormbase = Wormbase->new("-organism" =>$species);
 my $tace = $wormbase->tace;
 my $database = $wormbase->database('geneace');
 
+#####################################################
+# warn about incorrect usage of command line options
+#####################################################
+
+die "must specify -old and -new options\n"               if (!$old || !$new);
+die "-who option must be an integer\n"                   if ($who && ($who !~ m/^\d+$/));
+die "-old option is not a valid type of sequence name\n" unless( ($old =~ $wormbase->cds_regex) or ($old =~ /WBGene\d{8}/) );
+die "-new option is not a valid type of sequence name\n" if ($new !~ $wormbase->cds_regex);
+
+######################################
+# open connection and open output file
+######################################
 my $db = Ace->connect(-path  => $database,
 		      -program =>$tace) || do { print "Connection failure: ",Ace->error; die();};
 
@@ -181,7 +184,7 @@ sub process_gene{
 	print OUT "Version 1\n";
 	print OUT "Sequence_name $new\n";
 	print OUT "Public_name $new\n";
-	print OUT "Species \"Caenorhabditis elegans\"\n";
+	print OUT "Species \"".$wormbase->full_name."\"\n";
 	print OUT "Positive_clone $p_clone Inferred_automatically \"From sequence, transcript, pseudogene data\"\n";
 	print OUT "History Version_change 1 now $person Event Split_from $old_gene\n";
 	print OUT "Split_from $old_gene\n";
