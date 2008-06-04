@@ -2,7 +2,7 @@
 #
 # EMBLdump.pl :  makes modified EMBL dumps from camace.
 # 
-#  Last updated on: $Date: 2008-06-02 15:46:09 $
+#  Last updated on: $Date: 2008-06-04 14:38:50 $
 #  Last updated by: $Author: pad $
 
 use strict;
@@ -269,7 +269,7 @@ while (<EMBL>) {
   if( /^AC/ ) {
     my $acc = $clone2accession{$id};
     print OUT "ID   $clone2accession{$id}; $ID2\nXX\n";
-
+    next;
 #AC * _AC006622
 #AC   CU457737; AC006622;
 
@@ -424,7 +424,7 @@ while (<EMBL>) {
     elsif ($1 eq "ncRNA") {
       print OUT "$_\n";
       print OUT "FT                   /ncRNA_class=\"Other\"\n" unless (/,/);
-      if (/,/) {$flag = "1";}
+      $flag = "1" if (/,/);
       next;
     }
     elsif (/^FT\s+(\w{2}RNA)/) {
@@ -436,6 +436,8 @@ while (<EMBL>) {
     elsif (/^FT\s+(misc_RNA)/) {
       s/$1/ncRNA   /g;
       print OUT "$_\n";
+      $flag = "1" if (/,/);
+      print OUT "FT                   /ncRNA_class=\"Other\"\n" unless (/,/);
       next;
     }
     else {
