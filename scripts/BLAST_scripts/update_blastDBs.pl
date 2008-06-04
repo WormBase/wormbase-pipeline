@@ -1,7 +1,7 @@
 #!/usr/local/ensembl/bin/perl -w
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2008-06-04 11:21:34 $
+# Last edited on: $Date: 2008-06-04 13:45:23 $
 
 use lib $ENV{'CVS_DIR'};
 
@@ -76,7 +76,7 @@ if($uniprot) {
 }
 
 
-if($yeast) {
+if ($yeast) {
     $log->write_to("Updating yeast\n");
     my $sourcedir = "pub/yeast/data_download/sequence/genomic_sequence/orf_protein";
     my $target = '/tmp/download.yeast.gz';
@@ -115,18 +115,33 @@ if($yeast) {
     $wormbase->run_command("rm -f $target", $log);
 }	
 
-if($fly){
+if ($fly) {
     $log->write_to("Updating fly . . \n");
+    # find the release version
+    my $page_download = '/tmp/page_download';
+    my $fly_version;
+    $log->write_to("\tdownloading flybase listing\n");
+    $wormbase->run_command("wget -O $page_download ftp://flybase.net/genomes/Drosophila_melanogaster/current/fasta/", $log);
+    open (PAGE, "<$page_download") || $log->log_and_die("Can't open $page_download\n");
+    while (my $line = <PAGE>) {
+      if ($line =~ /dmel-all-translation-r(\d+)\.(\d+)\.fasta.gz/) {
+	$fly_version = "$1.$2";
+	last;
+      }
+    }
+    close(PAGE);
+    $wormbase->run_command("rm -f $page_download", $log);
+
     #get the file
     my $fly_download = '/tmp/flybase.gz';
-    $log->write_to("\tdownloading\n");
-    $wormbase->run_command("wget -O $fly_download ftp://flybase.net/genomes/Drosophila_melanogaster/current/fasta/dmel-all-translation-r5.5.fasta.gz",$log);
-    $wormbase->run_command("gunzip -f $fly_download",$log);
+    $log->write_to("\tdownloading flybase file\n");
+    $wormbase->run_command("wget -O $fly_download ftp://flybase.net/genomes/Drosophila_melanogaster/current/fasta/dmel-all-translation-r${fly_version}.fasta.gz", $log);
+    $wormbase->run_command("gunzip -f $fly_download", $log);
     $fly_download = '/tmp/flybase';
     
     #check if number of proteins has changed
     $log->write_to("\tcomparing\n");
-    my $ver = &determine_last_ver('gadfly'); $ver++;
+    my $ver = &determine_last_vers('gadfly'); 
     my $old_file = "$blastdir/gadfly$ver.pep";
     my $old_cnt = qx{grep -c '>' $old_file};
     my $new_cnt = qx{grep -c '>' $fly_download};
@@ -134,6 +149,7 @@ if($fly){
     if( $old_cnt != $new_cnt){
     	#update the file
 	$log->write_to("\tupdating flybase . . .\n");
+	$ver++;
 	my $source_file = "$blastdir/gadfly${ver}.pep";
 	move("$fly_download", "$source_file") or $log->log_and_die("can't move $fly_download: $!\n");
 
@@ -205,7 +221,7 @@ if($fly){
 	
 	#Now overwrite source file with newly formatted file
 	
-	system("mv $pepfile $source_file") && die "Couldn't overwrite original peptide file $source_file\n";
+	system("mv $pepfile $source_file") && die "Couldn't write peptide file $source_file\n";
 	my $redundant = scalar keys %genes;
 	$log->write_to("\t$record_count ($redundant) proteins\nflybase updated\n\n");
     }
@@ -308,6 +324,7 @@ sub process_uniprot {
 sub process_yeast {
   my ($target) = @_;
   my $ver = &determine_last_vers('yeast');
+  $ver++;
   my $source_file = "$blastdir/yeast${ver}.pep";
   my $acefile     = "$acedir/yeast.ace";
   # output initally goes to tmp file
@@ -328,7 +345,7 @@ sub process_yeast {
 		my $DESC = $4; 
 		$DESC =~ s/\"$//;
 		$DESC =~ s/"/'/g; # "
-		print "$ID $DESC\n";
+
 		print ACE "\nProtein : \"SGD:$ID\"\n";
 		print ACE "Peptide \"SGD:$ID\"\n";
 		print ACE "Species \"Saccharomyces cerevisiae\"\n";
@@ -356,10 +373,9 @@ sub process_yeast {
     close(ACE);
 
 # Now overwrite source file with newly formatted file
-    system("mv $pepfile $source_file") or $log->log_and_die("Couldn't overwrite original peptide file $source_file\n");
+    system("mv $pepfile $source_file") && $log->log_and_die("Couldn't write peptide file $source_file\n");
 
 
-#    untie %YEAST_DESC;
 }
 
 
