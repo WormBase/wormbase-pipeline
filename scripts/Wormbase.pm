@@ -1164,7 +1164,12 @@ EOF
 
     # now store the details for this pparse
     if (open (PPARSE_ACE, ">> $pparse_file")) {
-      print PPARSE_ACE "$version $basename $species $parsed $active\n";
+      if ($version  && $basename && $species && $parsed && $active ) {
+	print PPARSE_ACE "$version $basename $species $parsed $active\n";
+      } else {
+	$log->write_to("*** POSSIBLE ERROR: Couldn't write to $pparse_file because some of the following is blank\nversion=$version, file=$basename, species=$species, parsed=$parsed, active=$active\n\n");
+	$log->error;
+      }
       close (PPARSE_ACE);
     } else {
       $log->write_to("WARNING: Couldn't write to $pparse_file\n\n");
