@@ -1,7 +1,7 @@
 #!/usr/local/ensembl/bin/perl -w
 #
-# Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2008-03-05 15:39:19 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2008-06-04 11:21:34 $
 
 use lib $ENV{'CVS_DIR'};
 
@@ -106,7 +106,7 @@ if($yeast) {
     if( $old_cnt != $new_cnt){
     	#update the file
 	$log->write_to("\tupdating yeast . . .\n");
-	&process_yeast;
+	&process_yeast($target);
     }
     else {
     	$log->write_to("yeast is up to date\n");
@@ -205,7 +205,7 @@ if($fly){
 	
 	#Now overwrite source file with newly formatted file
 	
-	system("mv $pepfile $source_file") && die "Couldn't overwrite original peptide file\n";
+	system("mv $pepfile $source_file") && die "Couldn't overwrite original peptide file $source_file\n";
 	my $redundant = scalar keys %genes;
 	$log->write_to("\t$record_count ($redundant) proteins\nflybase updated\n\n");
     }
@@ -306,68 +306,36 @@ sub process_uniprot {
 
 
 sub process_yeast {
-    my $ver = &determine_last_vers('yeast');
-    my $source_file = "$blastdir/yeast${ver}.pep";
-    my $acefile     = "$acedir/yeast.ace";
-    # output initally goes to tmp file
-    my $pepfile  = "$blastdir/yeast${ver}.pep.tmp"; 
+  my ($target) = @_;
+  my $ver = &determine_last_vers('yeast');
+  my $source_file = "$blastdir/yeast${ver}.pep";
+  my $acefile     = "$acedir/yeast.ace";
+  # output initally goes to tmp file
+  my $pepfile  = "$blastdir/yeast${ver}.pep.tmp"; 
 
 
-    # this bit creates a DBM database of ORF => description
-    use GDBM_File;
-
-    my $DB_dir = "/tmp";
-    # DBM files 
-    my $ace_info_dbm = "$DB_dir/ace_info.dbm";
-    my %ACE_INFO;
-
-    if( -e $ace_info_dbm ) {  #make sure starting with new dbase
-	`rm -f $ace_info_dbm` && die "cant remove $ace_info_dbm: $!\n";
-    }
-    my %YEAST_DESC;
-    tie  (%YEAST_DESC ,'GDBM_File',"$ace_info_dbm", &GDBM_WRCREAT,0777) or die "cant open $ace_info_dbm :$!\n";
-
-    open (YEAST , "<$DB_dir/download.yeast");
-    my $linecount;
-    while (<YEAST>) {
-	next unless /\>/;
-	$linecount++;
-	chomp;
-	my @info = split(/\t/,$_);
-	my $desc;
-	if("$info[2]" eq "" ) {
-	    #check $info[3]
-	    if("$info[3]" ne "" ) {
-		$desc = $info[3];
-	    }
-	}
-	else {
-	    $desc = $info[2];
-	}
-	next unless $desc;
-	if( (defined $info[5]) and (defined $desc) ){
-	    $YEAST_DESC{$info[5]} = "$desc";
-	    $YEAST_DESC{$info[5]} =~ s/"/'/g;	#"
-	}
-    }
-    close YEAST;
-
-# now extract info from main FASTA file and write ace file
-    open (SOURCE,"<$source_file");
-    open (PEP,">$pepfile");
-    open (ACE,">$acefile");
+# extract info from main FASTA file and write ace file
+    open (SOURCE,"<$target") || $log->log_and_die("Couldn't open $target\n");
+    open (PEP,">$pepfile") || $log->log_and_die("Couldn't open $pepfile\n");
+    open (ACE,">$acefile") || $log->log_and_die("Couldn't open $acefile\n");
 
     while (<SOURCE>) {
 	if( /\>/ ) { 
-	    if (/\>(\S+)\s+(\S+)\s+SGDID:(\w+)/) {
+	    if (/\>(\S+)\s+(\S+)\s+SGDID:(\w+).+\"(.+)/) {
 		my $ID = $1;
+		my $GENE = $2;
+		my $SGDID = $3;
+		my $DESC = $4; 
+		$DESC =~ s/\"$//;
+		$DESC =~ s/"/'/g; # "
+		print "$ID $DESC\n";
 		print ACE "\nProtein : \"SGD:$ID\"\n";
 		print ACE "Peptide \"SGD:$ID\"\n";
 		print ACE "Species \"Saccharomyces cerevisiae\"\n";
-		print ACE "Gene_name  \"$2\"\n";
+		print ACE "Gene_name  \"$GENE\"\n";
 		print ACE "Database \"SGD\" \"SGD_systematic_name\" \"$ID\"\n";
-		print ACE "Database \"SGD\" \"SGDID\" \"$3\"\n";
-		print ACE "Description \"$YEAST_DESC{$ID}\"\n" if $YEAST_DESC{"$ID"};
+		print ACE "Database \"SGD\" \"SGDID\" \"$SGDID\"\n";
+		print ACE "Description \"$DESC\"\n" if ($DESC);
 
 		print ACE "\nPeptide : \"SGD:$ID\"\n"; 	
 		
@@ -388,10 +356,10 @@ sub process_yeast {
     close(ACE);
 
 # Now overwrite source file with newly formatted file
-    system("mv $pepfile $source_file") or $log->log_and_die("Couldn't overwrite original peptide file\n");
+    system("mv $pepfile $source_file") or $log->log_and_die("Couldn't overwrite original peptide file $source_file\n");
 
 
-    untie %YEAST_DESC;
+#    untie %YEAST_DESC;
 }
 
 
