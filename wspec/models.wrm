@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: ar2 $
-// Last edited on: $Date: 2008-05-07 09:08:02 $
+// Last edited on: $Date: 2008-06-04 08:57:07 $
 
 
 
@@ -1733,7 +1733,7 @@
 ?Antibody Summary ?Text #Evidence
 	  Other_name Text
 	  Gene ?Gene XREF Antibody
-	  Isolation Original_puplication UNIQUE ?Paper
+	  Isolation Original_publication UNIQUE ?Paper
 		    No_original_reference    Text //proposed by Wen
 		    Person ?Person
 		    Location ?Laboratory
