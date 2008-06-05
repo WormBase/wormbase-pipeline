@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl5.8.0 -w
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2008-04-08 15:07:20 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2008-06-05 15:53:29 $
 
 
 use lib $ENV{'CVS_DIR'};
@@ -196,43 +196,48 @@ if( $postprocess ) {
 }
 
 if ( $process or $virtual ) {
-	my $lsf = LSF::JobManager->new();
-	foreach my $species (keys %mol_types) {
-	  foreach my $type (@{$mol_types{$species}} ) {
-    	#create virtual objects
-    	$log->write_to("Submitting $species $type\n");
-    	my $cmd = $wormbase->build_cmd("blat2ace.pl -virtual -type $type -qspecies $species");
-    	$lsf->submit($cmd) if $virtual;
+  my $lsf = LSF::JobManager->new();
+  foreach my $species (keys %mol_types) {
+    foreach my $type (@{$mol_types{$species}} ) {
+      #create virtual objects
+      $log->write_to("Submitting $species $type\n");
+      my $cmd = $wormbase->build_cmd("blat2ace.pl -virtual -type $type -qspecies $species");
+      $lsf->submit($cmd) if $virtual;
     	
-    	$cmd = $wormbase->build_cmd("blat2ace.pl -type $type -qspecies $species -intron");
-    	$lsf->submit($cmd) if $process;
-     }
-   }
-   $lsf->wait_all_children( history => 1 );
-	$log->write_to("All blat2ace runs have completed!\n");
-	for my $job ( $lsf->jobs ) {    # much quicker if history is pre-cached
-    	$log->error("$job exited non zero\n") if $job->history->exit_status != 0;
-	}
-	$lsf->clear;   
-	if($intron) {
-		$log->write_to("confirming introns . . \n");
-		#only do for self species matches
-		foreach my $type (@{$mol_types{$wormbase->species}} ) {
-			$log->write_to("\t$type\n");
-			&confirm_introns($type);
-		}
-	}
+      $cmd = $wormbase->build_cmd("blat2ace.pl -type $type -qspecies $species -intron");
+      $lsf->submit($cmd) if $process;
+    }
+  }
+  $lsf->wait_all_children( history => 1 );
+  $log->write_to("All blat2ace runs have completed!\n");
+  for my $job ( $lsf->jobs ) {    # much quicker if history is pre-cached
+    $log->error("$job exited non zero\n") if $job->history->exit_status != 0;
+  }
+  $lsf->clear;   
+  if($intron) {
+    $log->write_to("confirming introns . . \n");
+    #only do for self species matches
+    foreach my $type (@{$mol_types{$wormbase->species}} ) {
+      $log->write_to("\t$type\n");
+      &confirm_introns($type);
+    }
+  }
 }
 
 
 if( $load ) {
   foreach my $species (keys %mol_types){
+    $log->write_to("Loading $species BLAT data\n");
     foreach my $type (@{$mol_types{$species}}){
-      $log->write_to("loading BLAT data - $type\n");
-
+      $log->write_to("\tloading BLAT data - $type\n"); 
       # virtual objs
       my $file =  "$blat_dir/virtual_objects.$species.blat.$type.ace";
-      $wormbase->load_to_database( $database, $file,"virtual_objects_$type", $log);
+      # skip the virtual_objects ace files that are not created
+      if ($wormbase->species eq $species || -e $file) {
+	$wormbase->load_to_database( $database, $file,"virtual_objects_$type", $log);
+      } else {
+	$log->write_to("\tskipping $file\n"); 
+      }
 
       # Don't need to add confirmed introns from nematode data (because there are none!)
       unless ( ($type eq "nematode") || ($type eq "washu") || ($type eq "nembase") || ($type eq "tc1") || ($type eq "embl")|| ($type eq "ncrna") ) {
