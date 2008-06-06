@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl5.8.0 -w
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2008-06-05 15:53:29 $
+# Last edited on: $Date: 2008-06-06 16:08:03 $
 
 
 use lib $ENV{'CVS_DIR'};
@@ -196,24 +196,45 @@ if( $postprocess ) {
 }
 
 if ( $process or $virtual ) {
-  my $lsf = LSF::JobManager->new();
+
+  # first run all the blat2ace.pl -virtual jobs
+  my $lsf1 = LSF::JobManager->new();
   foreach my $species (keys %mol_types) {
     foreach my $type (@{$mol_types{$species}} ) {
       #create virtual objects
-      $log->write_to("Submitting $species $type\n");
-      my $cmd = $wormbase->build_cmd("blat2ace.pl -virtual -type $type -qspecies $species");
-      $lsf->submit($cmd) if $virtual;
+      $log->write_to("Submitting $species $type for virtual procesing\n");
+
+      my $cmd1 = $wormbase->build_cmd("blat2ace.pl -virtual -type $type -qspecies $species");
+      $lsf1->submit($cmd1) if $virtual;
     	
-      $cmd = $wormbase->build_cmd("blat2ace.pl -type $type -qspecies $species -intron");
-      $lsf->submit($cmd) if $process;
     }
   }
-  $lsf->wait_all_children( history => 1 );
+  $lsf1->wait_all_children( history => 1 );
   $log->write_to("All blat2ace runs have completed!\n");
-  for my $job ( $lsf->jobs ) {    # much quicker if history is pre-cached
+  for my $job ( $lsf1->jobs ) {    # much quicker if history is pre-cached
     $log->error("$job exited non zero\n") if $job->history->exit_status != 0;
   }
-  $lsf->clear;   
+  $lsf1->clear;   
+
+  # now run all the blat2ace.pl -intron jobs
+  my $lsf2 = LSF::JobManager->new();
+  foreach my $species (keys %mol_types) {
+    foreach my $type (@{$mol_types{$species}} ) {
+      #create virtual objects
+      $log->write_to("Submitting $species $type for intron processing\n");
+    	
+      my $cmd2 = $wormbase->build_cmd("blat2ace.pl -type $type -qspecies $species -intron");
+      $lsf2->submit($cmd2) if $process;
+
+    }
+  }
+  $lsf2->wait_all_children( history => 1 );
+  $log->write_to("All blat2ace runs have completed!\n");
+  for my $job ( $lsf2->jobs ) {    # much quicker if history is pre-cached
+    $log->error("$job exited non zero\n") if $job->history->exit_status != 0;
+  }
+  $lsf2->clear;   
+
   if($intron) {
     $log->write_to("confirming introns . . \n");
     #only do for self species matches
