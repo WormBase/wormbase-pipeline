@@ -6,8 +6,8 @@
 #
 # Exporter to map blat data to genome and to find the best match for each EST, mRNA, OST, etc.
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2008-03-11 10:01:01 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2008-06-06 13:36:21 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -308,6 +308,8 @@ if ($est || $ost) {
 if ($nematode || $washu || $nembase) {
   $wormbase->run_command("mv $blat_dir/".$wormbase->species.".$type.ace $blat_dir/".$wormbase->species.".blat.$type.ace", $log);
 } else {
+  my $no_direction = 0;		# count of transcripts with no specified orientation
+
   open (AUTBEST, ">$blat_dir/".$wormbase->species.".best.${qspecies}_$type.ace");
   my $method = $qspecies eq $wormbase->species ? "BLAT_${type}_BEST" : "BLAT_Caen_${type}_BEST";
   $method = "BLAT_".uc($qspecies) if grep(/$qspecies/, @nematodes);
@@ -351,7 +353,7 @@ if ($nematode || $washu || $nembase) {
 		  } elsif (exists $estorientation{$found} && $estorientation{$found} eq '5') {
 		    push @{$ci{$superlink}}, [$first,$second,$found];
 		  } else {
-		    $log->write_to("WARNING: Direction not found for $found\n\n");
+		    $no_direction++
 		  }
 		}
 	      } elsif (${$entry->{'exons'}}[0][2] > ${$entry->{'exons'}}[0][3]) {
@@ -361,11 +363,12 @@ if ($nematode || $washu || $nembase) {
 		  } elsif (exists $estorientation{$found} && $estorientation{$found} eq '5') {
 		    push @{$ci{$superlink}}, [$second,$first,$found]; 
 		  } else {
-		    $log->write_to("WARNING: Direction not found for $found\n\n");
+		    $no_direction++
 		  }
 		}
 	      }
 	    }
+	    $log->write_to("WARNING: Direction not found for $no_direction transcripts\n\n");
 	  }
 	}
       }
