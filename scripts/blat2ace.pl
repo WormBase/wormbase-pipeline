@@ -7,7 +7,7 @@
 # Exporter to map blat data to genome and to find the best match for each EST, mRNA, OST, etc.
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2008-06-06 14:13:40 $
+# Last edited on: $Date: 2008-06-06 16:05:20 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -96,7 +96,7 @@ $log->log_and_die("no type specified\n") unless $type;
 ##########################################################################################
 # map the blat hits to ace - i.e. process blat output (*.psl) file into set of ace files #
 ##########################################################################################
-$log->write_to($wormbase->runtime.": Start mapping\n\n");
+$log->write_to($wormbase->runtime.": Start mapping $qspecies $type\n\n");
 
 # open input and output filehandles
 open(ACE,  ">$blat_dir/".$wormbase->species.".${qspecies}_$type.ace")  or die "Cannot open $blat_dir/".$wormbase->species.".${qspecies}_${type}.ace $!\n";
@@ -265,7 +265,7 @@ while (<BLAT>) {
 	  
       }
       else {
-	  	      printf ACE "DNA_homol\t\"%s\"\t$method\t%.1f\t%d\t%d\t%d\t%d\n\n",$query,$score,$virtualstart,$virtualend,$query_start,$query_end;
+	printf ACE "DNA_homol\t\"%s\"\t$method\t%.1f\t%d\t%d\t%d\t%d\n\n",$query,$score,$virtualstart,$virtualend,$query_start,$query_end;
       }
       push @exons, [$virtualstart,$virtualend,$query_start,$query_end];				
   }
@@ -310,7 +310,7 @@ if ($nematode || $washu || $nembase) {
   #$wormbase->run_command("mv $blat_dir/".$wormbase->species.".$type.ace $blat_dir/".$wormbase->species.".blat.$type.ace", $log);
   my $fromace = "$blat_dir/".$wormbase->species.".$type.ace";
   my $toace = "$blat_dir/".$wormbase->species.".blat.$type.ace";
-  move($fromace, $toace) || $log->write_to("WARNING: move of $fromace failed: $!\n");
+  move($fromace, $toace) || do {$log->write_to("ERROR: move of $fromace to $toace failed: $!\n"); $log->error};
 } else {
   my $no_direction = 0;		# count of transcripts with no specified orientation
 
@@ -413,26 +413,43 @@ unless ($nematode || $washu || $nembase) {
   }
   close ABEST;
 
+  # we expect to have BEST hits in elegans
+  if ($qspecies eq 'elegans' && scalar (keys %line) == 0) {
+    $log->error;
+    $log->write_to("ERROR: we don't have any BEST $type in:\n$blat_dir/".$wormbase->species.".best.${qspecies}_$type.ace\n\n");
+  }
+  $log->write_to("Have " . scalar (keys %line) . " BEST $type in:\n$blat_dir/".$wormbase->species.".best.${qspecies}_$type.ace\n");
 
   # Now look through original output file (where everything is set to BLAT_OTHER) to
   # output those blat OTHER hits which are not flagged as BLAT_BEST in the .best.ace file
   # Does this by comparing entries in %line hash
 
+  my $count_other_hits = 0;
+  my $count_total_hits = 0;
   open(AOTHER, "<$blat_dir/".$wormbase->species.".${qspecies}_$type.ace");
   while (<AOTHER>) {
     if ($_ =~ /^Homol_data/) {
       my $line = $_;
+      if ($line =~ /OTHER/) {$count_total_hits++};
       # for comparison to %line hash, need to change OTHER to BEST in $_
       s/OTHER/BEST/g;
       # Only output BLAT_OTHER hits in first output file which we now know NOT to
       # really be BEST hits
       unless (exists $line{$_}) {
-		print OUT_autoace $line;
-      
+	print OUT_autoace $line;
+	$count_other_hits++;
       }	
     }
   }
   close AOTHER;
+
+  # we expect to have OTHER hits in elegans
+  if ($qspecies eq 'elegans' && $count_other_hits == 0) {
+    $log->error;
+    $log->write_to("ERROR: we don't have any OTHER $type in:\n$blat_dir/".$wormbase->species.".${qspecies}_$type.ace\n");
+  }
+  $log->write_to("Have $count_other_hits OTHER $type in:\n$blat_dir/".$wormbase->species.".${qspecies}_$type.ace\n");
+  $log->write_to("Have a total of $count_total_hits (BEST & OTHER) $type in:\n$blat_dir/".$wormbase->species.".${qspecies}_$type.ace\n");
 
   # reset input line separator
   $/= $oldlinesep;
@@ -481,7 +498,7 @@ foreach $filename (@filenames) {
   # $wormbase->run_command("/bin/mv $blat_dir/$filename $blat_dir/${filename}"."_uncompressed",$log);
   my $fromace = "$blat_dir/$filename";
   my $toace = "$blat_dir/${filename}_uncompressed";
-  move($fromace, $toace) || $log->write_to("WARNING: move of $fromace failed: $!\n");
+  move($fromace, $toace) || $log->write_to("WARNING: move of $fromace to $toace failed: $!\n");
 
   if (-e $toace ) {
     $log->write_to("Compressing $toace\n");
