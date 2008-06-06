@@ -7,7 +7,7 @@
 # Exporter to map blat data to genome and to find the best match for each EST, mRNA, OST, etc.
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2008-06-06 14:08:16 $
+# Last edited on: $Date: 2008-06-06 14:13:40 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -377,7 +377,7 @@ if ($nematode || $washu || $nembase) {
       }
     }
   }
-  $log->write_to("WARNING: Direction not found for $no_direction transcripts\n\n") if (! $no_direction);
+  $log->write_to("WARNING: Direction not found for $no_direction transcripts\n\n") if ($no_direction);
   close(AUTBEST);
 }
 ########################################################
