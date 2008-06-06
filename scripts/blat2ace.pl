@@ -7,7 +7,7 @@
 # Exporter to map blat data to genome and to find the best match for each EST, mRNA, OST, etc.
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2008-06-06 13:38:09 $
+# Last edited on: $Date: 2008-06-06 14:08:16 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -16,6 +16,7 @@ use Getopt::Long;
 use Carp;
 use Log_files;
 use Storable;
+use File::Copy;
 
 #########################
 # Command line options  #
@@ -306,7 +307,10 @@ if ($est || $ost) {
 # produce outfile for best matches #
 ####################################
 if ($nematode || $washu || $nembase) {
-  $wormbase->run_command("mv $blat_dir/".$wormbase->species.".$type.ace $blat_dir/".$wormbase->species.".blat.$type.ace", $log);
+  #$wormbase->run_command("mv $blat_dir/".$wormbase->species.".$type.ace $blat_dir/".$wormbase->species.".blat.$type.ace", $log);
+  my $fromace = "$blat_dir/".$wormbase->species.".$type.ace";
+  my $toace = "$blat_dir/".$wormbase->species.".blat.$type.ace";
+  move($fromace, $toace) || $log->write_to("WARNING: move of $fromace failed: $!\n");
 } else {
   my $no_direction = 0;		# count of transcripts with no specified orientation
 
@@ -373,7 +377,7 @@ if ($nematode || $washu || $nembase) {
       }
     }
   }
-  $log->write_to("WARNING: Direction not found for $no_direction transcripts\n\n");
+  $log->write_to("WARNING: Direction not found for $no_direction transcripts\n\n") if (! $no_direction);
   close(AUTBEST);
 }
 ########################################################
@@ -474,10 +478,14 @@ my @filenames = ($wormbase->species.".${qspecies}_$type.ace", $wormbase->species
 my $filename;
 $log->write_to("\n#########################################\nCompressing DNA_homolo acefiles\n#########################################\n");
 foreach $filename (@filenames) {
-  $wormbase->run_command("/bin/mv $blat_dir/$filename $blat_dir/${filename}"."_uncompressed",$log);
-  if (-e ("$blat_dir/${filename}"."_uncompressed") ) {
-    $log->write_to("Compressing ${filename}"."_uncompressed\n");
-    $wormbase->run_script("acecompress.pl -file $blat_dir/${filename}_uncompressed -homol -build", $log);
+  # $wormbase->run_command("/bin/mv $blat_dir/$filename $blat_dir/${filename}"."_uncompressed",$log);
+  my $fromace = "$blat_dir/$filename";
+  my $toace = "$blat_dir/${filename}_uncompressed";
+  move($fromace, $toace) || $log->write_to("WARNING: move of $fromace failed: $!\n");
+
+  if (-e $toace ) {
+    $log->write_to("Compressing $toace\n");
+    $wormbase->run_script("acecompress.pl -file $toace -homol -build", $log);
     $log->write_to("Compressed........\n");
   }
 }
