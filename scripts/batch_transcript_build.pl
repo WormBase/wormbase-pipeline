@@ -6,8 +6,8 @@
 #
 # wrapper script for running transcript_builder.pl
 #
-# Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2007-09-17 15:01:29 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2008-06-09 12:30:07 $
 
 use lib $ENV{CVS_DIR};
 use Wormbase;
@@ -69,6 +69,8 @@ unless ( $no_run ){
   open ( PAIRS, ">$pairs") or die "cant open $pairs :\t$!\n";
   while ( <TACE> ) {
     chomp;
+    if (/^Format/) {next;}
+    s/Sequence://g;
     s/\"//g;
     my @data = split;
     print PAIRS "$data[0]\t$data[1]\n";
@@ -79,7 +81,8 @@ unless ( $no_run ){
   foreach my $chrom ( @chromosomes ) {
     my $err = "$scratch_dir/transcipt_builder.$chrom.err.$$";
     my $out = "$dump_dir/CHROMOSOME_${chrom}_transcript.ace";
-    my $bsub = "bsub -e $err \"perl $builder_script -database $database -chromosome $chrom -store $store\"";
+    my $options = "-F 400000 -M 3500000 -R \"select[mem>3500] rusage[mem=3500]\"";
+    my $bsub = "bsub $options -e $err \"perl $builder_script -database $database -chromosome $chrom -store $store\"";
     print "$bsub\n";
     $wormbase->run_command("$bsub", $log);
   }
