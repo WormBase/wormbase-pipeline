@@ -1484,7 +1484,9 @@ sub wait_for_LSF {
   sleep 10;
   my $jobs = &jobs_left;
   while ( $jobs != 0 ) {
-    sleep 100 * $jobs;
+    my $time = 100 * $jobs;
+    if ($time > 1800) {$time = 1800;}
+    sleep $time;
     $jobs = &jobs_left;
   }
 
