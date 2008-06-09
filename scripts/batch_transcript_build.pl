@@ -7,7 +7,7 @@
 # wrapper script for running transcript_builder.pl
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2008-06-09 12:30:07 $
+# Last edited on: $Date: 2008-06-09 12:39:11 $
 
 use lib $ENV{CVS_DIR};
 use Wormbase;
@@ -70,6 +70,8 @@ unless ( $no_run ){
   while ( <TACE> ) {
     chomp;
     if (/^Format/) {next;}
+    if (/^\/\//) {next;}
+    if (/^acedb/) {next;}
     s/Sequence://g;
     s/\"//g;
     my @data = split;
