@@ -1,7 +1,7 @@
 #!/software/bin/perl -w
 
-# Last updated by: $Author: pad $
-# Last updated on: $Date: 2008-03-12 14:04:53 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2008-06-09 16:11:50 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -95,7 +95,7 @@ foreach (@$ref_results) {
 	}
 }
 
-
+$wormbase->load_to_database($wormbase->orgdb, $wormbase->acefiles."/PFAM_active_sites.ace", 'PFAM_active_sites', $log);
 $log->mail();
 exit;
 
@@ -112,7 +112,11 @@ sub update_database {
 		
 		$log->write_to("\tunzippping /tmp/$table.txt\n");
 		$wormbase->run_command("gunzip -f /tmp/$table.txt.gz", $log);
-
+		
+		$log->write_to("\t clearing quotes from /tmp/$table.txt\n");
+		$wormbase->run_command("cat /tmp/$table.txt | sed s/\\\"//g > tmp", $log);
+		$wormbase->run_command("mv tmp /tmp/$table.txt", $log);
+		
 		$log->write_to("\tclearing table $table\n");
 		$DB->do("DELETE FROM $table") or $log->log_and_die($DB->errstr."\n");
 		
