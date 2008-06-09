@@ -6,8 +6,8 @@
 #
 # quick script to populate Molecular_name tag in ?Gene model during build
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2008-01-17 16:00:09 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2008-06-09 12:54:54 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -24,13 +24,14 @@ use Storable;
 ##############################
 # command-line options       #
 ##############################
-my ($help, $debug, $test, $verbose, $store, $wormbase);
+my ($help, $debug, $species, $test, $verbose, $store, $wormbase);
 
 GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
 	    "test"       => \$test,
 	    "verbose"    => \$verbose,
 	    "store:s"      => \$store,
+	    "species:s"	=> \$species
 	    );
 
 if ( $store ) {
@@ -38,6 +39,7 @@ if ( $store ) {
 } else {
   $wormbase = Wormbase->new( -debug   => $debug,
                              -test    => $test,
+                             -organism => $species
 			     );
 }
 
