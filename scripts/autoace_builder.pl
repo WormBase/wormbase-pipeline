@@ -6,8 +6,8 @@
 #
 # Usage : autoace_builder.pl [-options]
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2008-04-07 16:25:48 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2008-06-10 09:01:22 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -348,6 +348,8 @@ sub make_UTR {
 	  my $store = $wormbase->autoace . '/'. ref($wormbase) . '.store';
 	  $wormbase->run_command("bsub -J make_UTRs -o /dev/null  perl $ENV{'CVS_DIR'}/make_UTR_GFF.pl -chromosome $_ -store $store",$log)
   }
+  $log->write_to("waiting for LSF jobs to finish\n");
+  $wormbase->wait_for_LSF;
 }
 
 
