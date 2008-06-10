@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-05-02 14:15:49 $      
+# Last updated on: $Date: 2008-06-10 15:00:25 $      
 
 # Changes required by Ant: 2008-02-19
 # 
@@ -218,6 +218,7 @@ my %anomaly_count;
 &delete_anomalies("UNATTACHED_EST");
 &delete_anomalies("UNATTACHED_TSL");
 &delete_anomalies("UNMATCHED_TSL");
+&delete_anomalies("UNMATCHED_RST5");
 &delete_anomalies("FRAMESHIFTED_PROTEIN");
 &delete_anomalies("OVERLAPPING_EXONS");
 &delete_anomalies("LONG_EXON");
@@ -328,6 +329,8 @@ foreach my $chromosome (@chromosomes) {
 
   print "finding anomalies\n";
 
+  if (0) {
+
   print "finding protein homologies not overlapping CDS exons\n";
   my $matched_protein_aref = &get_protein_differences(\@cds_exons, \@pseudogenes, \@homologies, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, $chromosome);
 
@@ -343,7 +346,12 @@ foreach my $chromosome (@chromosomes) {
   # this finds TEC-RED TSL sites more than 100 bases upstream that are not mentioned in the remarks or evidence
   print "finding isolated TSL sites\n";
   &get_isolated_TSL(\@TSL_SL1, \@TSL_SL2, \@CDS, \@coding_transcripts, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, $chromosome);
+}
 
+  print "finding isolated RST5\n";
+  &get_isolated_RST5(\@rst_hsp, \@CDS, \@coding_transcripts, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, $chromosome);
+
+  if (0) {
   print "finding twinscan exons not overlapping CDS exons\n";
   &get_unmatched_twinscan_exons(\@twinscan_exons, \@cds_exons, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, \@repeatmasked_complex, $chromosome);
 
@@ -401,7 +409,7 @@ foreach my $chromosome (@chromosomes) {
 				      \@tRNAscan_SE_1_23, 
 				      $chromosome);
 
-
+}
 #################################################
 # these don't work very well - don't use
 
@@ -926,7 +934,7 @@ sub get_protein_split_merged {
     # because their predictions are heavily based on twinscan
     # predictions and so we would be simply confirming possibly
     # erroneous twinscan data.
-    #if ($protein_id =~ /^BP:/ || $protein_id =~ /^RP:/) {next;}
+    if ($protein_id =~ /^BP:/ || $protein_id =~ /^RP:/) {next;}
 
     #  check if these are isoforms of the same gene and if so then treat them as the same gene
     if ($matching_exon =~ /(\S+\.\d+)[a-z]/) {
@@ -1654,6 +1662,115 @@ sub get_isolated_TSL {
   }
 
 }
+
+##########################################
+# get TSL sites that do not match a coding transcript or pseudogene
+#  #  &get_isolated_RST5(\@rst_hsp, \@CDS, \@coding_transcripts, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, $chromosome);
+
+sub get_isolated_RST5 {
+
+  my ($rst_aref, $CDS_aref, $transcripts_aref, $pseudogenes_aref, $transposons_aref, $transposon_exons_aref, $noncoding_transcript_exons_aref, $rRNA_aref, $chromosome) = @_;
+
+  $anomaly_count{UNMATCHED_RST5} = 0 if (! exists $anomaly_count{UNMATCHED_RST5});
+
+  # get just the RST5 sequences
+  my @rst = @$rst_aref;
+  my %seen_this_rst;		# a hash of RST IDs that we have already seen so we only bother with the 5'-most HSP hit
+
+  foreach my $rst5 (@rst) { # $RST_id, $chrom_start, $chrom_end, $chrom_strand
+    my $id = $rst5->[0];
+    if ($id =~ /RST5/) {
+      if ($rst5->[3] eq '+') {
+	$rst5->[2] =  $rst5->[1] + 2; # make the thing to match a small area around the start
+      } else {
+	$rst5->[1] =  $rst5->[2] + 2; # make the thing to match a small area around the start	
+      }
+      if ($rst5->[3] eq '+' && !exists $seen_this_rst{$id}) {
+	$seen_this_rst{$id} = $rst5;
+      }
+      if ($rst5->[3] eq '-') {
+	$seen_this_rst{$id} = $rst5; # get the last one of these in the list
+      }
+    }
+  }
+
+  # change the hash to an array sorted by start position
+  my @rst5;
+  foreach my $rst5 (keys %seen_this_rst) {
+    push @rst5, $seen_this_rst{$rst5};
+  }
+  @rst5 = sort {$a->[1] <=> $b->[1]} @rst5;
+  print "Have ", scalar@rst5 ," RST5s\n";
+
+  # allow the RST to be within 75 bases of the CDS to give a match
+  my $CDS1_match = $ovlp->compare($CDS_aref, near_5 => 75, same_sense => 1); # look for overlap or near to the 5' end
+  my $CDS2_match = $ovlp->compare($CDS_aref, near_5 => -5, same_sense => 1); # only look for overlap (don't count a bit of overlap at the start)
+
+  my $pseud_match = $ovlp->compare($pseudogenes_aref, same_sense => 1);
+  my $trans_match = $ovlp->compare($transposons_aref, same_sense => 1);
+  my $trane_match = $ovlp->compare($transposon_exons_aref, same_sense => 1);
+  my $nonco_match = $ovlp->compare($noncoding_transcript_exons_aref, same_sense => 1);
+  my $rrna_match  = $ovlp->compare($rRNA_aref, same_sense => 1);
+
+  foreach my $rst5 (@rst5) { # $RST_id, $chrom_start, $chrom_end, $chrom_strand
+
+    # ignore this hit if we have already seen this RST, so we only look at the 5'-most hit
+    my $id = $rst5->[0];
+
+    my $got_a_match = 0;
+    my @result1;
+    my @result2;
+
+    @result1 = $CDS1_match->match($rst5);
+    @result2 = $CDS2_match->match($rst5);
+
+    # see if we have the same number of matches from an overlap
+    # including 75 bases the the 5' end and a simple overlap - if not
+    # then we have an overlap at the 5' end in one of the transcripts
+    # of this gene and so we have a match
+    if (scalar @result1 != scalar @result2) {
+      $got_a_match = 1;
+    }
+    else {
+      print "$id equal match on CDS ", scalar @result1, " vs ",  scalar @result2, "\n";
+    }
+
+    if ($pseud_match->match($rst5)) { 
+      $got_a_match = 1;
+    }
+
+    if ($trans_match->match($rst5)) { 
+      $got_a_match = 1;
+    }
+
+    if ($nonco_match->match($rst5)) { 
+      $got_a_match = 1;
+    }
+
+    if ($trane_match->match($rst5)) { 
+      $got_a_match = 1;
+    }
+
+    if ($rrna_match->match($rst5)) { 
+      $got_a_match = 1;
+    }
+
+    # output unmatched RST5 sites to the database
+    if (! $got_a_match) {
+      my $RST5_id = $rst5->[0];
+      my $chrom_start = $rst5->[1];
+      my $chrom_end = $rst5->[2];
+      my $chrom_strand = $rst5->[3];
+
+      # make the anomaly score 5 because this is very informative
+      my $anomaly_score = 5;
+      print "RST5 NOT got a match ANOMALY: $RST5_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score\n";
+      &output_to_database("UNMATCHED_RST5", $chromosome, $RST5_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score, '');
+    }
+  }
+
+}
+
 
 ##########################################
 # get twinscan exons that do not match a coding transcript or pseudogene
