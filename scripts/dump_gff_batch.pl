@@ -10,12 +10,13 @@ use Storable;
 my ($debug, $test, $database,$species);
 
 my $dump_dir;
-my $dumpGFFscript = $ENV{'CVS_DIR'}."/GFF_method_dump.pl";
+my $dumpGFFscript = "GFF_method_dump.pl";
 my $scratch_dir = "/tmp";
 my $methods;
 my $chrom_choice;
 my $store;
-
+use LSF RaiseError => 0, PrintError => 1, PrintOutput => 0;
+use LSF::JobManager;
 
 GetOptions (
 	    "debug:s"       => \$debug,
@@ -74,29 +75,48 @@ else {
 
 $log->write_to("bsub commands . . . . \n\n");
 my $submitchunk=0;
+my $lsf = LSF::JobManager->new();
+
 foreach my $chrom ( @chromosomes ) {
   if ( @methods ) {
     foreach my $method ( @methods ) {
       my $err = scalar(@chromosomes) < 50 ? "$scratch_dir/wormpubGFFdump.$chrom.$method.err" : "$scratch_dir/wormpubGFFdump.$submitchunk.$method.err";
-      my $out = scalar(@chromosomes) < 50 ? "$scratch_dir/wormpubGFFdump.$chrom.$method.out" :  "$scratch_dir/wormpubGFFdump.$submitchunk.$method.out";
-      my $bsub = "bsub -e $err -o $out \"perl $dumpGFFscript -store $store -database $database -dump_dir $dump_dir -chromosome $chrom -method $method\"";
-      $log->write_to("$bsub\n");
-      $wormbase->run_command("$bsub", $log);
+      my $out = scalar(@chromosomes) < 50 ? "$scratch_dir/wormpubGFFdump.$chrom.$method.out" : "$scratch_dir/wormpubGFFdump.$submitchunk.$method.out";
+      my $bsub_options = "-e $err -o $out";
+
+      my $cmd = "$dumpGFFscript -database $database -dump_dir $dump_dir -chromosome $chrom -method $method";
+      $log->write_to("$cmd\n");
+      $cmd = $wormbase->build_cmd($cmd);
+
+      $lsf->submit($bsub_options, $cmd);
+      
     }
   }
   else {
     # for large chromosomes, ask for a file size limit of 400 Mb and a memory limit of 3.5 Gb
     # See: http://scratchy.internal.sanger.ac.uk/wiki/index.php/Submitting_large_memory_jobs
-    my $bsub_options = scalar(@chromosomes) < 50 ? "-F 400000 -M 3500000 -R \"select[mem>3500] rusage[mem=3500]\"" : "";
-    my $err = scalar(@chromosomes) < 50 ? "$scratch_dir/wormpubGFFdump.$chrom.err": "$scratch_dir/wormpubGFFdump.$submitchunk.err";
-    my $out = scalar(@chromosomes) < 50 ? "$scratch_dir/wormpubGFFdump.$chrom.out" :"$scratch_dir/wormpubGFFdump.$submitchunk.out";
-    my $bsub = "bsub $bsub_options -e $err -o $out \"perl $dumpGFFscript -store $store -database $database -dump_dir $dump_dir -chromosome $chrom\"";
-    $log->write_to("$bsub\n");
-    print "$bsub\n";
-    $wormbase->run_command("$bsub", $log);
+    my $bsub_options = scalar(@chromosomes) < 50 ? "-F 400000 -M 3500000 -R \"select[mem>3500] rusage[mem=3500]\" " : "";
+    my $err = scalar(@chromosomes) < 50 ? "$scratch_dir/wormpubGFFdump.$chrom.err" : "$scratch_dir/wormpubGFFdump.$submitchunk.err";
+    my $out = scalar(@chromosomes) < 50 ? "$scratch_dir/wormpubGFFdump.$chrom.out" : "$scratch_dir/wormpubGFFdump.$submitchunk.out";
+    $bsub_options .= "-e $err -o $out";
+
+    my $cmd = "$dumpGFFscript -database $database -dump_dir $dump_dir -chromosome $chrom";
+    $log->write_to("$cmd\n");
+    print "$cmd\n";
+    $cmd = $wormbase->build_cmd($cmd);
+
+    $lsf->submit($bsub_options, $cmd);
+
   }
   $submitchunk++;
 }
+
+$lsf->wait_all_children( history => 1 );
+$log->write_to("All GFF dump jobs have completed!\n");
+for my $job ( $lsf->jobs ) {
+  $log->error("Job $job (" . $job->history->command . ") exited non zero\n") if $job->history->exit_status != 0;
+}
+$lsf->clear;   
 
 $log->mail;
 exit(0);
