@@ -24,6 +24,7 @@ my $db = NameDB_handler->new($DB,$USER,$USER);
 my $c = 0;
 while( $c < $request ){
     my $id = $db->idCreate;
+    print "$id\n";
     $c++;
 }
 
