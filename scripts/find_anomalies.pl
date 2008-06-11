@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-06-10 15:00:25 $      
+# Last updated on: $Date: 2008-06-11 13:36:46 $      
 
 # Changes required by Ant: 2008-02-19
 # 
@@ -329,7 +329,7 @@ foreach my $chromosome (@chromosomes) {
 
   print "finding anomalies\n";
 
-  if (0) {
+  #if (0) {
 
   print "finding protein homologies not overlapping CDS exons\n";
   my $matched_protein_aref = &get_protein_differences(\@cds_exons, \@pseudogenes, \@homologies, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, $chromosome);
@@ -346,12 +346,12 @@ foreach my $chromosome (@chromosomes) {
   # this finds TEC-RED TSL sites more than 100 bases upstream that are not mentioned in the remarks or evidence
   print "finding isolated TSL sites\n";
   &get_isolated_TSL(\@TSL_SL1, \@TSL_SL2, \@CDS, \@coding_transcripts, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, $chromosome);
-}
+#}
 
   print "finding isolated RST5\n";
-  &get_isolated_RST5(\@rst_hsp, \@CDS, \@coding_transcripts, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, $chromosome);
+  #+++&get_isolated_RST5(\@rst_hsp, \@CDS, \@coding_transcripts, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, $chromosome);
 
-  if (0) {
+  #if (0) {
   print "finding twinscan exons not overlapping CDS exons\n";
   &get_unmatched_twinscan_exons(\@twinscan_exons, \@cds_exons, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, \@repeatmasked_complex, $chromosome);
 
@@ -409,7 +409,7 @@ foreach my $chromosome (@chromosomes) {
 				      \@tRNAscan_SE_1_23, 
 				      $chromosome);
 
-}
+#}
 #################################################
 # these don't work very well - don't use
 
@@ -807,8 +807,9 @@ sub get_frameshifts {
   # find the frameshifts
   ###########################################
 
-  # sort the homologies grouped by protein ID and then chromosomal position
-  my @homologies = sort {$a->[0] cmp $b->[0] or $a->[1] <=> $b->[1]} @{$homologies_aref};
+  # sort the homologies grouped by protein ID and then score and then chromosomal position
+#  my @homologies = sort {$a->[0] cmp $b->[0] or $a->[1] <=> $b->[1]} @{$homologies_aref};
+  my @homologies = sort {$a->[0] cmp $b->[0] or $a->[6] <=> $b->[6] or $a->[1] <=> $b->[1]} @{$homologies_aref};
 
   # for each protein, compare all if HSPs with all its downstream HSPs
   for (my $i = 0; $i < scalar @homologies; $i++) {
@@ -823,6 +824,7 @@ sub get_frameshifts {
     # get the next downstream HSP
     for (my $j = $i+1; $j < scalar @homologies; $j++) {
       if ($homologies[$j]->[0] ne $prev_protein_id) {last;} # no longer looking at HSPs of the same protein
+      if ($homologies[$j]->[6] != $prev_protein_score) {last;} # no longer looking at HSPs of an alignment with all the same score
       if ($homologies[$j]->[6] < $SCORE_THRESHOLD) {next;} # only look at high-scoring proteins
       my $protein_id = $homologies[$j]->[0];
       my $chrom_start = $homologies[$j]->[1];
@@ -876,7 +878,7 @@ sub get_frameshifts {
 	if ($anomaly_score < 0) {$anomaly_score = 0;}
 
 	#print "FRAMESHIFTED_PROTEIN ANOMALY: $protein_id, $anomaly_start, $anomaly_end, $chrom_strand, $anomaly_score\n";
-	&output_to_database("FRAMESHIFTED_PROTEIN", $chromosome, $protein_id, $anomaly_start, $anomaly_end, $chrom_strand, $anomaly_score, '');
+	&output_to_database("FRAMESHIFTED_PROTEIN", $chromosome, $protein_id, $anomaly_start, $anomaly_end, $chrom_strand, $anomaly_score, "Between protein positions: $prev_hit_end, $hit_start");
       }
     }
   }
