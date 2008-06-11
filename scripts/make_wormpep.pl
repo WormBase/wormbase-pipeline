@@ -7,7 +7,7 @@
 # Builds a wormpep data set from the current autoace database
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2008-06-11 14:54:45 $
+# Last updated on: $Date: 2008-06-11 15:10:16 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -489,6 +489,6 @@ sub count_isoforms{
   $log->write_to("\n\nthere are $no_isoform_count CDS in autoace, $total_cds_count when counting \($isoform_count\) alternate splice_forms\n");
 
   # write the release letter (also does some checks)
-    &release_wormpep($no_isoform_count,$total_cds_count,$isoform_count);
+    $wormbase->release_wormpep($no_isoform_count,$total_cds_count,$isoform_count);
     chmod (0444 , "$new_wpdir/*") or $log->write_to("cannot chmod $new_wpdir/ files\n");
 }
