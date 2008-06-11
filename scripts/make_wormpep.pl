@@ -6,8 +6,8 @@
 #
 # Builds a wormpep data set from the current autoace database
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2008-05-29 13:51:44 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2008-06-11 14:54:45 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -378,7 +378,7 @@ sub write_final_pep
 	}
 	close PEP;
 	my $dir = $wormbase->wormpep;
-	$wormbase->run_command("ln -s $dir/wormpep_current $dir/wormpepWS$release", $log);
+	$wormbase->run_command("ln -s $dir/wormpep$release $dir/wormpep_current", $log);
 	$wormbase->run_command("setdb $dir/wormpep_current > $dir/wormpep_current.log", $log);
 	
 	&write_table;
@@ -466,10 +466,10 @@ sub count_isoforms{
     /^([A-Z0-9_]+)\.(.*)$/i;
     my $cds_prefix = $1;
     my $cds_suffix = $2;
-    if ($cds_suffix =~ /^[1-9][0-9]?$/) {
+    if ($cds_suffix =~ /^[1-9][0-9]{0,2}$/) {
       $no_isoform_count++;
     }
-    elsif ($cds_suffix =~ /(^[1-9][0-9]?)([a-z])/) {
+    elsif ($cds_suffix =~ /(^[1-9][0-9]{0,2})([a-z])/) {
       my $number = $1;
       my $letter = $2;
       my $new_name = $cds_prefix."_".$number;
