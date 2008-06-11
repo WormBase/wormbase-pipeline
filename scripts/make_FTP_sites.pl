@@ -8,7 +8,7 @@
 # Originally written by Dan Lawson
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2008-04-24 13:39:29 $
+# Last updated on: $Date: 2008-06-11 16:16:55 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -77,6 +77,7 @@ use Log_files;
 use Storable;
 use Ace;
 use IO::Handle;
+use File::Path;
 
 
 #################################################################################
@@ -98,6 +99,9 @@ my $homols;  # only copy best blast hits
 my $manifest;# check everything has been copied.
 my $all;     # copy everything across
 my $dump_ko; # create the knockout consortium file
+my $dna;
+my $rna;
+my $gff;
 
 GetOptions ("help"     => \$help,
 	    "debug=s"  => \$debug,
@@ -105,7 +109,9 @@ GetOptions ("help"     => \$help,
 	    "verbose"  => \$verbose,
 	    "store:s"    => \$store,
 	    "release"  => \$release,
-	    "chroms"   => \$chroms,
+	    "dna"      => \$dna,
+	    "rna"      => \$rna,
+	    "gff"	   => \$gff,
 	    "ont"      => \$ont,
 	    "misc"     => \$misc,
 	    "wormpep"  => \$wormpep,
@@ -141,15 +147,15 @@ my $log = Log_files->make_build_log($wormbase);
 
 
 # using -all option?
-($release=$dump_ko=$chroms=$misc=$wormpep=$genes=$cDNA=$geneIDs=$pcr=$homols=$manifest=$ont = 1 ) if ($all);
+($release=$dump_ko=$dna=$gff=$rna=$misc=$wormpep=$genes=$cDNA=$geneIDs=$pcr=$homols=$manifest=$ont = 1 ) if ($all);
 
 my $base_dir = $wormbase->basedir;    # The BUILD directory
 my $ace_dir = $wormbase->autoace;     # AUTOACE DATABASE DIR
 my $citace_dir = $wormbase->primaries."/citace";
-my $targetdir = "/nfs/disk69/ftp/pub/wormbase";  # default directory, can be overidden
-
+my $targetdir = $wormbase->ftp_site;  # default directory, can be overidden
 my $WS              = $wormbase->get_wormbase_version();      # e.g.   132
 my $WS_name         = $wormbase->get_wormbase_version_name(); # e.g. WS132
+my $annotation_dir = "$targetdir/$WS_name/genomes/".$wormbase->species."/annotation";
 my $maintainers     = "All";
 my $runtime;
 
@@ -172,7 +178,9 @@ close FTP_LOCK;
 
 &copy_release_files if ($release);    # make a new directory for the WS release and copy across release files
 
-&copy_chromosome_files if ($chroms);  # make a new /CHROMOSOMES directory for the DNA, GFF, and agp files and copy files across
+&copy_dna_files if ($dna);  		  
+&copy_rna_files if ($rna);
+&copy_gff_files if ($gff);  		  
 
 &copy_ontology_files if ($ont);       # make a new /ONTOLOGY directory and copy files across
 
@@ -226,7 +234,8 @@ sub copy_release_files{
   $runtime = $wormbase->runtime;
   $log->write_to("$runtime: copying release files\n");
 
-  $wormbase->run_command("mkdir $targetdir/$WS_name", $log) unless -e "$targetdir/$WS_name";
+  my $ftp_acedb_dir = "$targetdir/$WS_name/acedb";
+  mkpath("$ftp_acedb_dir",1,775) unless -e "acedb_dir";
 
   my $filename;
 
@@ -234,16 +243,25 @@ sub copy_release_files{
   while (defined($filename = readdir(RELEASE))) {
     if (($filename eq ".")||($filename eq "..")) { next;}
     if (($filename =~ /letter/)||($filename =~ /dbcomp/)) { next;}
-    $wormbase->run_command("scp $ace_dir/release/$filename $targetdir/$WS_name/$filename", $log);
+    $wormbase->run_command("scp $ace_dir/release/$filename $ftp_acedb_dir/$filename", $log);
 
     my $O_SIZE = (stat("$ace_dir/release/$filename"))[7];
-    my $N_SIZE = (stat("$targetdir/$WS_name/$filename"))[7];
+    my $N_SIZE = (stat("$ftp_acedb_dir/$filename"))[7];
     if ($O_SIZE != $N_SIZE) {
       $log->write_to("\tError: $filename SRC: $O_SIZE TGT: $N_SIZE - different file sizes, please check\n");
       croak "Couldn't copy $filename\n";
     } 
   }
   closedir RELEASE;
+  
+  # Copy across the models.wrm file
+  $wormbase->run_command("scp $ace_dir/wspec/models.wrm $ftp_acedb_dir/models.wrm.$WS_name", $log);
+
+  # copy some miscellaneous files across
+  my $old_release = $WS -1;
+  $wormbase->run_command("scp ".	$wormbase->compare."/WS$old_release-$WS_name.dbcomp $ftp_acedb_dir", $log);
+  $wormbase->run_command("scp $base_dir/autoace_config/INSTALL $ftp_acedb_dir  ", $log);  
+  
   $runtime = $wormbase->runtime;
   $log->write_to("$runtime: Finished\n\n");
   
@@ -253,15 +271,50 @@ sub copy_release_files{
 # copy the DNA, GFF, and agp files across
 ##################################################
 
-sub copy_chromosome_files{
+sub copy_dna_files{
   $runtime = $wormbase->runtime;
-  $log->write_to("$runtime: copying chromosome files\n");
-  $wormbase->run_command("cp -R $ace_dir/CHROMOSOMES $targetdir/$WS_name/CHROMOSOMES", $log);
+  $log->write_to("$runtime: copying dna and agp files\n");
+  my $dna_dir = "$targetdir/$WS_name/genomes/".$wormbase->species."/sequences/dna";
+  mkpath($dna_dir,1,775);
+  my $chromdir = $wormbase->chromosomes;
+  $wormbase->run_command("cp -R $chromdir/*.dna $dna_dir/", $log);
+  $wormbase->run_command("cp -R $chromdir/*.agp $dna_dir/", $log);
 
   $runtime = $wormbase->runtime;
   $log->write_to("$runtime: Finished copying\n\n");
 }
 
+sub copy_gff_files{
+  $runtime = $wormbase->runtime;
+  $log->write_to("$runtime: copying gff files\n");
+  my $gff_dir = "$targetdir/$WS_name/genomes/".$wormbase->species."/genome_feature_tables/GFF2";
+  mkpath($gff_dir,1,775);
+  $wormbase->run_command("cp -R $ace_dir/CHROMOSOMES/*.gff $gff_dir/", $log);
+
+  $runtime = $wormbase->runtime;
+  $log->write_to("$runtime: Finished copying\n\n");
+}
+
+
+sub copy_rna_files{
+  $runtime = $wormbase->runtime;
+  $log->write_to("$runtime: copying rna files\n");
+  my $rnadir = $wormbase->wormrna;
+  if( -e "$rnadir") {
+	 my $ftprna_dir = "$targetdir/$WS_name/genomes/".$wormbase->species."/sequences/rna";
+ 	 mkpath($ftprna_dir,1,775);
+	 $wormbase->run_command("cp -R $rnadir $ftprna_dir/", $log);
+ 	 chdir "$ftprna_dir" or $log->write_to("Couldn't cd $ftprna_dir\n");
+ 	 my $prefix = $wormbase->pepdir_prefix;
+ 	 $wormbase->run_command("/bin/tar -cf ${prefix}rna$WS.tar README ${prefix}rna$WS.rna", $log);
+	 $wormbase->run_command("/bin/gzip -f ${prefix}rna$WS.tar",$log);
+  	 $runtime = $wormbase->runtime;
+  	 $log->write_to("$runtime: Finished copying\n\n");
+  }
+  else {
+  	$log->write_to("WARNING: no RNA files for ".$wormbase->full_name('short' => 1)."\n");
+  }
+}
 ############################################
 # copy across ontology files
 ############################################
@@ -281,38 +334,17 @@ sub copy_ontology_files {
 }
 
 ############################################
-# copy across models.wrm and misc files
+# copy across annotation files
 #############################################
 
 sub copy_misc_files{
   $runtime = $wormbase->runtime;
   $log->write_to("$runtime: copying misc files\n");
-
-  # Copy across the models.wrm file
-  $wormbase->run_command("scp $ace_dir/wspec/models.wrm $targetdir/$WS_name/models.wrm.$WS_name", $log);
-
-  # copy some miscellaneous files across
-  my $old_release = $WS -1;
-  $wormbase->run_command("scp ".	$wormbase->compare."/WS$old_release-$WS_name.dbcomp $targetdir/$WS_name/", $log);
-  $wormbase->run_command("scp $base_dir/autoace_config/INSTALL $targetdir/$WS_name/", $log);
-
-  # tar, zip, and copy WormRNA files across from BUILD/WORMRNA
-  my $dest = "$base_dir/WORMRNA/wormrna$WS";
-  chdir "$dest" or croak "Couldn't cd $dest\n";
-  $wormbase->run_command("/bin/tar -cf $targetdir/$WS_name/wormrna$WS.tar README wormrna$WS.rna", $log);
-  $wormbase->run_command("/bin/gzip -f $targetdir/$WS_name/wormrna$WS.tar", $log);
-
-  # tar, zip, and copy BrigRNA files
-  $log->write_to("tar, zip and copy brigrna\n");
-  $dest = "$base_dir/PRIMARIES/brigace/temp_unpack_dir/brigrna$WS";
-  chdir "$dest" or croak "Couldn't cd $dest\n";
-  $wormbase->run_command("/bin/tar -cf $targetdir/$WS_name/brigrna$WS.tar README brigrna$WS.rna", $log);
-  $wormbase->run_command("/bin/gzip -f $targetdir/$WS_name/brigrna$WS.tar",$log);
-
   # zip and copy the microarray oligo mapping files.
   chdir "$ace_dir";
   $wormbase->run_command("/bin/gzip -f *oligo_mapping", $log);
-  $wormbase->run_command("cp *oligo_mapping.gz $targetdir/$WS_name/", $log);
+  my $annotation_dir = "$targetdir/$WS_name/genomes/".$wormbase->species."/annotation";
+  $wormbase->run_command("cp $ace_dir/*oligo_mapping.gz $annotation_dir/", $log);
 
   $runtime = $wormbase->runtime;
   $log->write_to("$runtime: Finished copying\n\n");
@@ -369,7 +401,10 @@ sub copy_wormpep_files{
 	}
   	$runtime = $wormbase->runtime;
   	$log->write_to("$runtime: Finished copying\n\n");
-  }
+  } 
+  #copy best blast hits.
+  # . needs fixing
+  #$wormbase->run_command("scp $blast_dir/$species_best_blastp_hits.gz  $targetdir/$WS_name/best_blastp_hits_remapep.$WS_name.gz", $log);
 }
 
 
@@ -385,8 +420,7 @@ sub extract_confirmed_genes{
   my $db = Ace->connect(-path  => "$ace_dir/");
   my $query = "Find elegans_CDS; Confirmed";
   my @confirmed_genes   = $db->fetch(-query=>$query);
-
-  open(OUT,">${targetdir}/$WS_name/confirmed_genes.$WS_name") || croak "Couldn't write to ${targetdir}/$WS_name/confirmed_genes.$WS_name\n";
+  open(OUT,">$annotation_dir/confirmed_genes.$WS_name") or $log->write_to("Couldn't write to $annotation_dir/confirmed_genes.$WS_name\n");
 
   foreach my $seq (@confirmed_genes){
     my $dna = $seq->asDNA();
@@ -394,7 +428,7 @@ sub extract_confirmed_genes{
   }
 
   close(OUT);
-  $wormbase->run_command("/bin/gzip -f ${targetdir}/$WS_name/confirmed_genes.$WS_name", $log);
+  $wormbase->run_command("/bin/gzip -f $annotation_dir/confirmed_genes.$WS_name", $log);
 
   $db->close;
 
@@ -413,7 +447,7 @@ sub extract_ko {
 	$runtime = $wormbase->runtime;
   	$log->write_to("$runtime: Extracting Knockout Consortium Data\n");
 
-	my $outfile= "${targetdir}/$WS_name/knockout_consortium_alleles.$WS_name.xml.bz2";
+	my $outfile= "$annotation_dir/knockout_consortium_alleles.$WS_name.xml.bz2";
 
 	$wormbase->run_script("dump_ko.pl -file $outfile",$log);
 
@@ -455,8 +489,8 @@ EOF
   # output to ftp site
 
   
-  my $out = "$targetdir/$WS_name/cDNA2orf.$WS_name";
-  open(OUT, ">$out") || croak "Couldn't open $out\n";
+  my $out = "$annotation_dir/cDNA2orf.$WS_name";
+  open(OUT, ">$out") or $log->write_to("Couldn't open $out\n");
 
   foreach my $key (keys %cDNA2orf){
     print OUT "$key,$cDNA2orf{$key}\n";
@@ -483,10 +517,10 @@ sub make_geneID_list {
   my $tace    = $wormbase->tace;
   my $command = "Table-maker -p $ace_dir/wquery/gene2cgc_name_and_sequence_name.def\nquit\n";
   my $dir     = "$ace_dir";
-  my $out     = "$targetdir/$WS_name/geneIDs.$WS_name";
+  my $out     = "$annotation_dir/geneIDs.$WS_name";
 
   open (OUT, ">$out") || croak "Couldn't open $out\n";
-  open (TACE, "echo '$command' | $tace $dir | ") || croak "Couldn't access $dir\n";  
+  open (TACE, "echo '$command' | $tace $dir | ") or $log->write_to("cant access $dir\n");  
   while (<TACE>){
       if (m/^\"/){
 	  s/\"//g;
@@ -516,7 +550,7 @@ sub make_pcr_list {
   my $tace    = $wormbase->tace;
   my $command = "Table-maker -p $ace_dir/wquery/pcr_product2gene.def\nquit\n";
   my $dir     = "$ace_dir";
-  my $out     = "$targetdir/$WS_name/pcr_product2gene.$WS_name";
+  my $out     = "$annotation_dir/pcr_product2gene.$WS_name";
 
   # hashes needed because one pcr product may hit two or more genes
   my %pcr2gene;
@@ -543,7 +577,7 @@ sub make_pcr_list {
 
 # Now write output, cycling through list of pcr products in %pcr2gene
 
-  open (OUT, ">$out") || croak "Couldn't open $out\n";
+  open (OUT, ">$out") or $log->log_and_die("Couldn't open $out\n");
 
   foreach my $pcr (keys %pcr2gene){
     my @genes = split(/,/,$pcr2gene{$pcr});
@@ -584,34 +618,6 @@ sub CheckSize {
   if ($F_SIZE != $S_SIZE) {
     $log->write_to("\tERROR: $first SRC: $F_SIZE TGT: $S_SIZE - not same size, please check\n");
   } 
-}
-
-############################################################
-# copy best blast hits file to ftp site
-############################################################
-
-sub copy_homol_data{
-
-
-  my $blat_dir  = "$ace_dir/BLAT";
-  my $blast_dir = $wormbase->acefiles;
-
-  # does this to tidy up???? Not sure why these lines are here, krb
-  $wormbase->run_command("/bin/gzip -f $blast_dir/elegans_blastp.ace", $log);
-  $wormbase->run_command("/bin/gzip -f $blast_dir/brigssae_blastp.ace", $log);
-  $wormbase->run_command("/bin/gzip -f $blast_dir/elegans_blastx.ace", $log);
-  $wormbase->run_command("/bin/gzip -f $blast_dir/elegans_motif_info.ace", $log);
-  $wormbase->run_command("/bin/gzip -f $blast_dir/briggsae_motif_info.ace", $log);
-
-  # compress best blast hits files and then copy to FTP site
-  $wormbase->run_command("/bin/gzip -f $blast_dir/elegans_best_blastp_hits", $log);
-  $wormbase->run_command("/bin/gzip -f $blast_dir/briggsae_best_blastp_hits", $log);
-  $wormbase->run_command("/bin/gzip -f $blast_dir/remanei_best_blastp_hits", $log);
-  $wormbase->run_command("scp $blast_dir/elegans_best_blastp_hits.gz  $targetdir/$WS_name/best_blastp_hits.$WS_name.gz", $log);
-  $wormbase->run_command("scp $blast_dir/briggsae_best_blastp_hits.gz $targetdir/$WS_name/best_blastp_hits_brigpep.$WS_name.gz", $log);
-  $wormbase->run_command("scp $blast_dir/remanei_best_blastp_hits.gz  $targetdir/$WS_name/best_blastp_hits_remapep.$WS_name.gz", $log);
-
-
 }
 
 ##################################################################################
@@ -655,52 +661,57 @@ sub check_manifest {
 
 
 __DATA__
-affy_oligo_mapping.gz
-agil_oligo_mapping.gz
-best_blastp_hits.WSREL.gz
-best_blastp_hits_brigpep.WSREL.gz
-best_blastp_hits_remapep.WSREL.gz
-remapepREL.gz
-brigpepREL.gz
-cDNA2orf.WSREL.gz
-confirmed_genes.WSREL.gz
+./acedb
 files_in_tar
-geneIDs.WSREL.gz
-gsc_oligo_mapping.gz
 md5sum.WSREL
 models.wrm.WSREL
-pcr_product2gene.WSREL.gz
-wormpepREL.tar.gz
-wormrnaREL.tar.gz
-brigrnaREL.tar.gz
 
-./CHROMOSOMES
+./genomes/elegans/annotation/
+affy_oligo_mapping.gz
+agil_oligo_mapping.gz
+pcr_product2gene.WSREL.gz
+geneIDs.WSREL.gz
+gsc_oligo_mapping.gz
+cDNA2orf.WSREL.gz
+confirmed_genes.WSREL.gz
+
+
+./genomes/elegans/sequences/dna
 CHROMOSOME_I.agp
 CHROMOSOME_I.dna.gz
-CHROMOSOME_I.gff.gz
 CHROMOSOME_II.agp
 CHROMOSOME_II.dna.gz
-CHROMOSOME_II.gff.gz
 CHROMOSOME_III.agp
 CHROMOSOME_III.dna.gz
-CHROMOSOME_III.gff.gz
 CHROMOSOME_III_masked.dna.gz
 CHROMOSOME_II_masked.dna.gz
 CHROMOSOME_IV.agp
 CHROMOSOME_IV.dna.gz
-CHROMOSOME_IV.gff.gz
 CHROMOSOME_IV_masked.dna.gz
 CHROMOSOME_I_masked.dna.gz
 CHROMOSOME_MtDNA.dna.gz
-CHROMOSOME_MtDNA.gff.gz
 CHROMOSOME_V.agp
 CHROMOSOME_V.dna.gz
-CHROMOSOME_V.gff.gz
 CHROMOSOME_V_masked.dna.gz
 CHROMOSOME_X.agp
 CHROMOSOME_X.dna.gz
-CHROMOSOME_X.gff.gz
 CHROMOSOME_X_masked.dna.gz
+
+./genomes/elegans/sequences/protein
+wormpepREL.tar.gz
+best_blastp_hits.WSREL.gz
+
+./genomes/elegans/sequences/rna
+wormrnaREL.tar.gz
+
+./genomes/elegans/genome_feature_tables
+CHROMOSOME_I.gff.gz
+CHROMOSOME_II.gff.gz
+CHROMOSOME_III.gff.gz
+CHROMOSOME_IV.gff.gz
+CHROMOSOME_MtDNA.gff.gz
+CHROMOSOME_V.gff.gz
+CHROMOSOME_X.gff.gz
 SUPPLEMENTARY_GFF
 briggffREL
 remagffREL
@@ -708,7 +719,7 @@ composition.all
 intergenic_sequences.dna.gz
 totals
 
-./CHROMOSOMES/SUPPLEMENTARY_GFF
+./genomes/elegans/genome_feature_tables/SUPPLEMENTARY_GFF
 RNAz.gff
 genemark.gff
 mSplicer_orf.gff
@@ -722,7 +733,7 @@ CHROMOSOME_IV_curation_anomalies.gff
 CHROMOSOME_V_curation_anomalies.gff
 CHROMOSOME_X_curation_anomalies.gff
 
-./CHROMOSOMES/briggffREL
+./genomes/briggsae/genome_feature_tables/GFF2
 chrI.gff
 chrII.gff
 chrIII.gff
@@ -736,9 +747,22 @@ chrV.gff
 chrV_random.gff
 chrX.gff
 
-./CHROMOSOMES/remagffREL
-remanei.gff
-remanei.dna
+./genomes/briggsae/sequences/protein
+best_blastp_hits_brigpep.WSREL.gz
+brigpepREL.gz
+
+./genomes/briggsae/sequences/rna
+brigrnaREL.tar.gz
+
+./genomes/remanei/genome_feature_tables/GFF2
+remanei.gff.gz
+
+./genomes/remanei/sequences/protein
+best_blastp_hits_remapep.WSREL.gz
+remapepREL.gz
+
+./genomes/remanei/sequences/dna
+remanei.dna.gz
 
 ./ONTOLOGY
 anatomy_association.WSREL.wb
