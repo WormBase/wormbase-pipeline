@@ -7,7 +7,7 @@
 # Usage : autoace_builder.pl [-options]
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2008-06-10 09:01:22 $
+# Last edited on: $Date: 2008-06-12 13:56:04 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -158,12 +158,11 @@ $wormbase->run_script( "interpolation_manager.pl"                , $log) if $int
 $wormbase->run_script( "make_agp_file.pl"                        , $log) if $agp;
 
 #several GFF manipulation steps
+$wormbase->run_script( "Map_pos_GFFprocess.pl"                   , $log) if $gff_munge;	# must be run before CGH_GFFprocess.pl as it looks for 'Allele' lines
 $wormbase->run_script( "CGH_GFFprocess.pl"                       , $log) if $gff_munge;
 $wormbase->run_script( "landmark_genes2gff.pl"                   , $log) if $gff_munge;
 $wormbase->run_script( "GFFmunger.pl -all"                       , $log) if $gff_munge;
 $wormbase->run_script( "over_load_SNP_gff.pl"                    , $log) if $gff_munge;
-#$wormbase->run_script( "process_sage_gff.pl"                     , $log) if $gff_munge;
-# run process_sage_gff.pl under LSF and wait for each chromosome run to finish
 $wormbase->run_script( "chromosome_script_lsf_manager.pl -command '/software/bin/perl $ENV{'CVS_DIR'}/process_sage_gff.pl' -mito -prefix", $log) if $gff_munge;
 &ontologies								if $ontologies;
 &make_extras                                                             if $extras;
