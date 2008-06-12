@@ -64,7 +64,7 @@ foreach $chroms (@chroms) {
     while(<GFF>){
 	my @f = split(/\t/,$_);
 	if(defined $f[8] and ($f[1] eq 'Allele') and ($f[2] eq 'deletion') ) {
-	    my ($allele) = $f[8] =~ /Variation\s+\"([\w\(\)]+)\"/;
+	    my ($allele) = $f[8] =~ /Variation\s+\"(\S+)\"/;
 	    if($alleles{$allele}->{'five'} and $alleles{$allele}->{'three'}) {
 		$f[1] = 'CGH_allele';
 		$f[2] = 'deletion';
