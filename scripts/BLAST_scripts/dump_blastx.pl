@@ -5,7 +5,7 @@
 #  and concatenate them at the end
 # 
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2008-06-13 09:54:54 $
+# Last edited on: $Date: 2008-06-13 10:12:03 $
 # 
 
 
@@ -98,7 +98,7 @@ if (ref $wormbase eq 'Elegans'){
   my @files = glob("$dumpdir/$organism*X.ace");
   unlink $outfile if -e $outfile;
   foreach my $file (@files ){
-          system ("cat $file |/software/bin/perl $ENV{CVS_DIR}/BLAST_scripts/convert_chromblast2clone.pl >>! $outfile") 
+          system ("cat $file |/software/bin/perl $ENV{CVS_DIR}/BLAST_scripts/convert_chromblast2clone.pl >> $outfile") 
                  && die("cannot concatenate $file to $outfile\n" );
 	 }
 } else {
