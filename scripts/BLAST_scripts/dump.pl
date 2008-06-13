@@ -1,10 +1,10 @@
-#!/usr/local/ensembl/bin/perl -w
+#!/software/bin/perl -w
 
 use strict;
 use Getopt::Long;
 use Carp;
 use DBI;
-use LSF;
+use LSF RaiseError => 0, PrintError => 1, PrintOutput => 0;
 use LSF::JobManager;
 
 $| = 1;
