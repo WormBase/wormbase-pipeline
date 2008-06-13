@@ -22,7 +22,7 @@ if ($store) {
 		     )
 }
 
-my $wb = retrieve('/nfs/disk100/wormpub/BUILD/autoace/Elegans.store');
+#my $wb = retrieve('/nfs/disk100/wormpub/BUILD/autoace/Elegans.store');
 my $cc = Coords_converter->invoke($wb->orgdb,undef,$wb);
 
 my $seq;
@@ -54,10 +54,10 @@ while (<>) {
 	}
 }
 
-my %clonessize = $wb->FetchData('clonesize');
 foreach my $clone (keys %clones) {
 	print "\nSequence : $clone\n";
-	print "Homol_data 1 ".$clonessize{"$clone"}."\n";
+	my $size = $cc->Superlink_length($clone);
+	print "Homol_data 1 $size\n";
 	print "\nHomol_data : \"$clone:$blastdb\"\n";
 	
 	foreach my $hit (@{$clones{$clone}}) {
