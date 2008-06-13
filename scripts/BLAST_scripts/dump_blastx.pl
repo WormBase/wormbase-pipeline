@@ -4,8 +4,8 @@
 #  script to submit blastx dumping scripts onto the farm
 #  and concatenate them at the end
 # 
-# Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2008-05-12 08:54:44 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2008-06-13 09:54:54 $
 # 
 
 
@@ -98,7 +98,7 @@ if (ref $wormbase eq 'Elegans'){
   my @files = glob("$dumpdir/$organism*X.ace");
   unlink $outfile if -e $outfile;
   foreach my $file (@files ){
-          system ("cat $file |/software/bin/perl $ENV{CVS_DIR}/BLAST_scripts/convert_chromblast2clone.pl > $outfile") 
+          system ("cat $file |/software/bin/perl $ENV{CVS_DIR}/BLAST_scripts/convert_chromblast2clone.pl >>! $outfile") 
                  && die("cannot concatenate $file to $outfile\n" );
 	 }
 } else {
