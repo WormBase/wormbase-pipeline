@@ -4,6 +4,8 @@ use strict;
 use Getopt::Long;
 use Carp;
 use DBI;
+use LSF;
+use LSF::JobManager;
 
 $| = 1;
 
@@ -42,17 +44,28 @@ my $nseg = int(($nrow/$segsize))+1;
 
 print "N seg = $nseg\n";
 
+my $lsf=LSF::JobManager->new();
+
 for (my $i=0; $i<$nseg; $i++) {
   my $start = $i*$segsize;
   print "start = $start\n";
 
- # my $comstr = "bsub -P wormbase -q normal -R $resource -o junk$i.log ";
-  my $comstr = "bsub -P wormbase -q normal -o junk$i.log "; 
-  $comstr .= "-m \"$machines\" " if ($machines); 
-  $comstr .= "$dump_one_script -host $host -user $user -port $port -db $db -start $start -count $segsize -out junk$i.srt";
+  my $bsub_options = "-P wormbase -q normal -o junk$i.log ";
+  $bsub_options .= "-m \"$machines\" " if ($machines);
 
-  print $comstr . "\n";
+  my $cmd = "$dump_one_script -host $host -user $user -port $port -db $db -start $start -count $segsize -out junk$i.srt";
+  print "$cmd\n";
+  $lsf->submit($bsub_options, $cmd);
 
-  system($comstr);
   last if $test;
 }
+
+$lsf->wait_all_children( history => 1 );
+print "All children have completed!\n";
+
+for my $job ($lsf->jobs){ # much quicker if history is pre-cached
+  print "Job $job (" . $job->history->command . ") exited non zero\n" if ($job->history->exit_status != 0);
+}
+$lsf->clear; # clear out the job manager to reuse.
+
+exit(0);
