@@ -1586,7 +1586,12 @@ sub format_sequence
 		$new_seq .= $&."\n";
 		$left = $';#'
 	}
-	$new_seq .= $left if ($left);
+	if ($left) {
+		$new_seq .= $left;
+	}
+	else {
+		chomp($new_seq);
+	}
 	return $new_seq;
 }
 
