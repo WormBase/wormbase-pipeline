@@ -35,8 +35,8 @@ $dbpath = $wormbase->orgdb;
 my $db = Ace->connect('-path' => $dbpath) or $log->log_and_die("cant open Ace connection to $dbpath\n".Ace->error."\n");
 
 
-# get the physical mapping position of the Variations
-print "Reading Variation mapping data\n";
+# get the interpolated physical mapping position of the Variations
+print "Reading interpolated Variation mapping data\n";
 my %variation;
 my $query = "find Variation where Interpolated_map_position";
 my $vars = $db->fetch_many('-query' => $query);
@@ -45,13 +45,31 @@ while (my $var = $vars->next){
 }
 
 
-# get the physical mapping position of the Genes
-print "Reading Gene mapping data\n";
+# get the interpolated physical mapping position of the Genes
+print "Reading interpolated Gene mapping data\n";
 my %gene;
 $query = "find Gene where Interpolated_map_position";
 my $genes = $db->fetch_many('-query' => $query);
 while (my $gene = $genes->next){
   $gene{$gene->name} = $gene->Interpolated_map_position(2);
+}
+
+# get the exact physical mapping position of the Genes
+print "Reading exact Gene mapping data\n";
+my %gene_exact;
+$query = "find Gene where Position";
+$genes = $db->fetch_many('-query' => $query);
+while (my $gene = $genes->next){
+  $gene_exact{$gene->name} = $gene->Position;
+}
+
+# get the CGC/WGN name of the Genes
+print "Reading WGN names of genes\n";
+my %locus;
+$query = "find Gene where CGC_name";
+$genes = $db->fetch_many('-query' => $query);
+while (my $gene = $genes->next){
+  $locus{$gene->name} = $gene->CGC_name;
 }
 
 undef $db;
@@ -82,6 +100,8 @@ foreach my $chroms (@chroms) {
       my ($gene) = $f[8] =~ /Gene\s+\"(\S+)\"/;
       #if (!defined $gene) {die "no gene ID found Line: $line";}
       $f[8] .= " ; Interpolated_map_position \"$gene{$gene}\""if (exists $gene{$gene});
+      $f[8] .= " ; Position \"$gene_exact{$gene}\""if (exists $gene_exact{$gene});
+      $f[8] .= " ; Locus \"$locus{$gene}\""if (exists $locus{$gene});
 	
       print NEW join("\t",@f) . "\n";
       #print join("\t",@f) . "\n";
