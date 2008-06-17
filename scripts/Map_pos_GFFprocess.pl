@@ -57,10 +57,10 @@ while (my $gene = $genes->next){
 # get the exact physical mapping position of the Genes
 print "Reading exact Gene mapping data\n";
 my %gene_exact;
-$query = "find Gene where Position";
+$query = "find Gene where Map AND NEXT AND NEXT = Position";
 $genes = $db->fetch_many('-query' => $query);
 while (my $gene = $genes->next){
-  $gene_exact{$gene->name} = $gene->Position;
+  $gene_exact{$gene->name} = $gene->Map(3);
 }
 
 # get the CGC/WGN name of the Genes
