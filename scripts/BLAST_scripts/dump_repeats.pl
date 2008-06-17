@@ -98,6 +98,19 @@ foreach my $seq ( @{$sa->fetch_all($seq_level)}){
 	    printf OUT ("Feature tandem %s %s %s \"%i copies of %imer\"\n",
 		    $feature->seq_region_start,$feature->seq_region_end,$feature->score,$copy_no,length($feature->repeat_consensus->seq )); 
 	}
+
+        $repeats = $seq->get_all_RepeatFeatures('Dust');
+	if (scalar @$repeats) {
+         print OUT "\nSequence : \"$clone\"\n";
+         print OUT "Feature_data $clone:Dust 1 $clonesize\n\n";
+         print OUT "Feature_data : $clone:Dust\n";
+        }
+
+	foreach my $feature (@$repeats){
+	    printf OUT ("Feature dust %i %i %i \"low_complexity region\"\n",
+		    $feature->seq_region_start,$feature->seq_region_end,length($feature->repeat_consensus->seq )); 
+	}
+
 }
 
 
