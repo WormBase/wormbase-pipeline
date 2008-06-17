@@ -57,9 +57,9 @@ while (<>) {
 foreach my $clone (keys %clones) {
 	print "\nSequence : $clone\n";
 	my $size = $cc->Superlink_length($clone);
-	print "Homol_data 1 $size\n";
-	print "\nHomol_data : \"$clone:$blastdb\"\n";
-	
+	print "Homol_data \"$clone:$blastdb\" 1 $size\n";
+
+	print "\nHomol_data : \"$clone:$blastdb\"\n";	
 	foreach my $hit (@{$clones{$clone}}) {
 		print join("\t",@$hit)."\n";
 	}
