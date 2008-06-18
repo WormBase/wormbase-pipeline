@@ -44,18 +44,18 @@ my $nseg = int(($nrow/$segsize))+1;
 
 print "N seg = $nseg\n";
 
-my $lsf=LSF::JobManager->new();
+my $lsf=LSF::JobManager->new(-q => 'normal', -P => 'wormbase', -R => '"select[mem>4000] rusage[mem=4000]"', -M => 4000000, -F => 400000);
 
 for (my $i=0; $i<$nseg; $i++) {
   my $start = $i*$segsize;
   print "start = $start\n";
 
-  my $bsub_options = "-P wormbase -q normal -o junk$i.log ";
-  $bsub_options .= "-m \"$machines\" " if ($machines);
+  my @bsub_options = (-o => "junk$i.log", -e => "junk$i.err");
+  push @bsub_options, (-m => "\"$machines\"") if ($machines);
 
   my $cmd = "$dump_one_script -host $host -user $user -port $port -db $db -start $start -count $segsize -out junk$i.srt";
   print "$cmd\n";
-  $lsf->submit($bsub_options, $cmd);
+  $lsf->submit(@bsub_options, $cmd);
 
   last if $test;
 }
@@ -64,7 +64,7 @@ $lsf->wait_all_children( history => 1 );
 print "All children have completed!\n";
 
 for my $job ($lsf->jobs){ # much quicker if history is pre-cached
-  print "Job $job (" . $job->history->command . ") exited non zero\n" if ($job->history->exit_status != 0);
+  print "Job $job (" . $job->history->command . ") exited ". $job->history->exit_status ."\n" if ($job->history->exit_status != 0);
 }
 $lsf->clear; # clear out the job manager to reuse.
 
