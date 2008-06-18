@@ -7,7 +7,7 @@
 # wrapper script for running transcript_builder.pl
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2008-06-09 12:39:11 $
+# Last edited on: $Date: 2008-06-18 11:15:01 $
 
 use lib $ENV{CVS_DIR};
 use Wormbase;
@@ -15,10 +15,12 @@ use Getopt::Long;
 use strict;
 use Coords_converter;
 use Storable;
+use LSF RaiseError => 0, PrintError => 1, PrintOutput => 0;
+use LSF::JobManager;
 
 my $dump_dir;
 my $database;
-my $builder_script = $ENV{CVS_DIR}."/transcript_builder.pl";
+my $builder_script = "transcript_builder.pl";
 my $scratch_dir = "/tmp";
 my $chrom_choice;
 my $gff_dir;
@@ -80,18 +82,36 @@ unless ( $no_run ){
   close PAIRS;
 
   # create and submit LSF jobs.
+  #foreach my $chrom ( @chromosomes ) {
+   # my $err = "$scratch_dir/transcipt_builder.$chrom.err.$$";
+   # my $out = "$dump_dir/CHROMOSOME_${chrom}_transcript.ace";
+   # my $options = "-F 400000 -M 3500000 -R \"select[mem>3500] rusage[mem=3500]\"";
+   # my $bsub = "bsub $options -e $err \"perl $builder_script -database $database -chromosome $chrom -store $store\"";
+   # print "$bsub\n";
+   # $wormbase->run_command("$bsub", $log);
+  #}
+
+  # create and submit LSF jobs.
+  $log->write_to("bsub commands . . . . \n\n");
+  my $lsf = LSF::JobManager->new();
   foreach my $chrom ( @chromosomes ) {
     my $err = "$scratch_dir/transcipt_builder.$chrom.err.$$";
-    my $out = "$dump_dir/CHROMOSOME_${chrom}_transcript.ace";
-    my $options = "-F 400000 -M 3500000 -R \"select[mem>3500] rusage[mem=3500]\"";
-    my $bsub = "bsub $options -e $err \"perl $builder_script -database $database -chromosome $chrom -store $store\"";
-    print "$bsub\n";
-    $wormbase->run_command("$bsub", $log);
+    my $out = "$dump_dir/CHROMOSOME_${chrom}_transcript.ace"; # this doesn't appear to ever have been used! Delete this line?
+    my @bsub_options = (-e => "$err", -F => "400000", -M => "3500000", -R => "\"select[mem>3500] rusage[mem=3500]\"");
+    my $cmd = "$builder_script -database $database -chromosome $chrom";
+    $log->write_to("$cmd\n");
+    print "$cmd\n";
+    $cmd = $wormbase->build_cmd($cmd);
+    $lsf->submit(@bsub_options, $cmd);
+  }  
+  $lsf->wait_all_children( history => 1 );
+  $log->write_to("All transcript builder jobs have completed!\n");
+  for my $job ( $lsf->jobs ) {
+    $log->error("Job $job (" . $job->history->command . ") exited non zero\n") if $job->history->exit_status != 0;
   }
+  $lsf->clear;   
 }
 
-$log->write_to("waiting for LSF jobs to finish\n");
-$wormbase->wait_for_LSF;
 
 $log->write_to("all batch jobs done - cating outputs to ".$wormbase->transcripts."/transcripts.ace\n");
 $wormbase->run_command("cp " .$wormbase->misc_dynamic."/MtDNA_Transcripts.ace ".$wormbase->transcripts."/chromosome_MtDNA.ace", $log); #hard coded cp of fixed MtDNA Transcripts.
