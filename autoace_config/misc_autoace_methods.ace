@@ -1225,6 +1225,16 @@ Show_text
 GFF_source "binding_site_region"
 Remark	 "manually curated binding site region"
 
+Method : "promoter"
+Colour	MAGENTA
+Strand_sensitive
+Width	 1.000000
+Right_priority	 2.300000
+Show_up_strand
+Show_text
+GFF_source "promoter"
+Remark	 "manually curated promoter region"
+
 Method : "Oligo_cap"
 Remark	 "Oligo-cap sequence used in EST library generation. This feature is marked up for removal from the transcript sequence prior to mapping to the genome."
 
