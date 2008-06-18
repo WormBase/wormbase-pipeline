@@ -5,8 +5,8 @@
 # by Anthony Rogers
 #
 # Updates the local webpages in synch with the main website
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2008-03-11 10:49:35 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2008-06-18 15:46:26 $
 
 
 use strict;
@@ -60,8 +60,8 @@ foreach my $file ( @wormpep_files ) {
   unlink("$wormpub_dir/${file}_current") || $log->write_to("ERROR: Cannot delete file $wormpub_dir/${file}_current :\t$!\n");
   $wormbase->run_command("scp $wp_ftp_dir/${file}${release} $wormpub_dir/${file}_current", $log);
 }
-$wormbase->run_command("xdformat -p $wormpub_dir/wormpep_current", $log);
-$wormbase->run_command("setdb $wormpub_dir/wormpep_current", $log);
+$wormbase->run_command("/software/farm/bin/xdformat -p $wormpub_dir/wormpep_current", $log);
+$wormbase->run_command("/software/farm/bin/setdb $wormpub_dir/wormpep_current", $log);
 # create a symbolic link from top level wormpep into the release on the wormpep ftp site
 foreach my $file ( @wormpep_files ) {
   $wormbase->run_command("cd $wormpep_ftp_root && ln -fs wormpep${release}/${file}${release} $file", $log);
