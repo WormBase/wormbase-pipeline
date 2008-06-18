@@ -7,7 +7,7 @@
 # wrapper script for running transcript_builder.pl
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2008-06-18 11:15:01 $
+# Last edited on: $Date: 2008-06-18 15:07:04 $
 
 use lib $ENV{CVS_DIR};
 use Wormbase;
@@ -97,7 +97,7 @@ unless ( $no_run ){
   foreach my $chrom ( @chromosomes ) {
     my $err = "$scratch_dir/transcipt_builder.$chrom.err.$$";
     my $out = "$dump_dir/CHROMOSOME_${chrom}_transcript.ace"; # this doesn't appear to ever have been used! Delete this line?
-    my @bsub_options = (-e => "$err", -F => "400000", -M => "3500000", -R => "\"select[mem>3500] rusage[mem=3500]\"");
+    my @bsub_options = (-e => "$err", -F => "2000000", -M => "3500000", -R => "\"select[mem>3500] rusage[mem=3500]\"");
     my $cmd = "$builder_script -database $database -chromosome $chrom";
     $log->write_to("$cmd\n");
     print "$cmd\n";
