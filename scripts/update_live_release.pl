@@ -6,7 +6,7 @@
 #
 # Updates the local webpages in synch with the main website
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2008-06-18 15:46:26 $
+# Last updated on: $Date: 2008-06-18 15:48:53 $
 
 
 use strict;
@@ -86,7 +86,7 @@ $wormbase->run_command("cd $wormbase_ftp_dir && rm -f live_release && ln -fs WS$
 # Separate webpublish commands (for safety!) on the two top level directories that need updating
 ##############################################
 
-my $webpublish = "/usr/local/bin/webpublish";
+my $webpublish = "/software/bin/webpublish";
 
 # Now update WORMBASE current link
 $wormbase->run_command("cd $www/WORMBASE && rm -f current && ln -fs WS${release} current", $log) && $log->error("Couldn't update 'current' symlink\n", $log);
