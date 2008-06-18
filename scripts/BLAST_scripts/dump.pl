@@ -44,7 +44,7 @@ my $nseg = int(($nrow/$segsize))+1;
 
 print "N seg = $nseg\n";
 
-my $lsf=LSF::JobManager->new(-q => 'normal', -P => 'wormbase', -R => '"select[mem>4000] rusage[mem=4000]"', -M => 4000000, -F => 400000);
+my $lsf=LSF::JobManager->new(-q => 'normal', -P => 'wormbase', -R => '"select[mem>4000] rusage[mem=4000]"', -M => 4000000, -F => 2000000);
 
 for (my $i=0; $i<$nseg; $i++) {
   my $start = $i*$segsize;
