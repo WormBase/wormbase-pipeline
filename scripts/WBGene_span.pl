@@ -7,7 +7,7 @@
 # Creates SMapped Gene spans for Gene objects
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2008-06-09 14:18:16 $
+# Last edited on: $Date: 2008-06-18 10:49:05 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -160,10 +160,6 @@ else {
 }
 
 $wormbase->run_script( "dump_gff_batch.pl -database " . $wormbase->autoace . " -methods gene -dump_dir " . $wormbase->gff_splits, $log ) unless $no_gff;
-
-$log->write_to("waiting for LSF jobs to finish\n");
-$wormbase->wait_for_LSF;
-
 
 $log->mail;
 
