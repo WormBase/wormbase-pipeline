@@ -11,7 +11,6 @@ my ($debug, $test, $database,$species);
 
 my $dump_dir;
 my $dumpGFFscript = "GFF_method_dump.pl";
-my $scratch_dir = "/tmp";
 my $methods;
 my $chrom_choice;
 my $store;
@@ -41,6 +40,7 @@ else {
 }
 
 my $log = Log_files->make_build_log($wormbase);
+my $scratch_dir = $wormbase->logs;
 
 my @chroms = $wormbase->get_chromosome_names(-prefix => 1,-mito => 1);
 $wormbase->checkLSF;
@@ -65,7 +65,7 @@ $dump_dir = $wormbase->gff_splits unless $dump_dir;
 
 $log->write_to("Dumping from DATABASE : $database\n\tto $dump_dir\n\n");
 	      
-$log->write_to("\t chromosomes".@chromosomes."\n");
+$log->write_to("\t chromosomes ".@chromosomes."\n");
 if( @methods ){
   $log->write_to("\tmethods ".@methods."\n\n");
 }
@@ -82,30 +82,30 @@ foreach my $chrom ( @chromosomes ) {
     foreach my $method ( @methods ) {
       my $err = scalar(@chromosomes) < 50 ? "$scratch_dir/wormpubGFFdump.$chrom.$method.err" : "$scratch_dir/wormpubGFFdump.$submitchunk.$method.err";
       my $out = scalar(@chromosomes) < 50 ? "$scratch_dir/wormpubGFFdump.$chrom.$method.out" : "$scratch_dir/wormpubGFFdump.$submitchunk.$method.out";
-      my $bsub_options = "-e $err -o $out";
+      my @bsub_options = (-e => "$err", -o => "$out");
 
       my $cmd = "$dumpGFFscript -database $database -dump_dir $dump_dir -chromosome $chrom -method $method";
       $log->write_to("$cmd\n");
       $cmd = $wormbase->build_cmd($cmd);
 
-      $lsf->submit($bsub_options, $cmd);
+      $lsf->submit(@bsub_options, $cmd);
       
     }
   }
   else {
     # for large chromosomes, ask for a file size limit of 400 Mb and a memory limit of 3.5 Gb
     # See: http://scratchy.internal.sanger.ac.uk/wiki/index.php/Submitting_large_memory_jobs
-    my $bsub_options = scalar(@chromosomes) < 50 ? "-F 400000 -M 3500000 -R \"select[mem>3500] rusage[mem=3500]\" " : "";
+    my @bsub_options = scalar(@chromosomes) < 50 ? (-F => "400000", -M => "3500000", -R => "\"select[mem>3500] rusage[mem=3500]\"") : ();
     my $err = scalar(@chromosomes) < 50 ? "$scratch_dir/wormpubGFFdump.$chrom.err" : "$scratch_dir/wormpubGFFdump.$submitchunk.err";
     my $out = scalar(@chromosomes) < 50 ? "$scratch_dir/wormpubGFFdump.$chrom.out" : "$scratch_dir/wormpubGFFdump.$submitchunk.out";
-    $bsub_options .= "-e $err -o $out";
+    push @bsub_options, (-e => "$err", -o => "$out");
 
     my $cmd = "$dumpGFFscript -database $database -dump_dir $dump_dir -chromosome $chrom";
     $log->write_to("$cmd\n");
     print "$cmd\n";
     $cmd = $wormbase->build_cmd($cmd);
 
-    $lsf->submit($bsub_options, $cmd);
+    $lsf->submit(@bsub_options, $cmd);
 
   }
   $submitchunk++;
