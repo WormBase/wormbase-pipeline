@@ -1,7 +1,7 @@
 #/software/bin/perl -w
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2008-05-16 12:34:38 $
+# Last updated on: $Date: 2008-06-19 16:03:25 $
 
 #################################################################################
 # Variables                                                                     #
@@ -77,7 +77,7 @@ foreach my $spDB (values %accessors) {
 	my @blastfiles = qw( SPECIES_blastp.ace SPECIES_blastx.ace worm_ensembl_SPECIES_interpro_motif_info.ace worm_ensembl_SPECIES_motif_info.ace);
 	foreach my $file (@blastfiles){
 		$file =~ s/SPECIES/$spDB->species/;
-		$wormbase->load_to_database("$file", $log);
+		$wormbase->load_to_database($spDB->acefiles."/$file", $log);
 	}
 }
 
