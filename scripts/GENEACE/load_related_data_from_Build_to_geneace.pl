@@ -8,8 +8,8 @@
 # RUN this script anytime during the build or after the build when get_interpolated_map 
 # and update_inferred multi-pt data are done
 #
-# Last updated on: $Date: 2008-02-21 15:12:33 $
-# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2008-06-19 11:33:12 $
+# Last updated by: $Author: mt3 $
 
 
 use strict;
@@ -48,7 +48,7 @@ open (GA,"| $tace $geneace") or $log->log_and_die("Failed to get analysis papers
 print GA $command;
 close GA;
 
-# (2) interpolated map data
+# Map data 1 = interpolated map data
 $log->write_to("Loading interpolated map data\n");
 #Generate the file from autoace first
 my $int_map_pos = $wormbase->acefiles."/interpolated_map_position.ace";
@@ -61,12 +61,17 @@ close INT_A;
 #need to refresh all Interpolated map positions as they are all relative to each other.
 $wormbase->load_to_database($geneace,$int_map_pos,'interpolated_map_positions_from_autoace',$log);
 
-# (1) Promoted map positions
+# Map data 2 = Promoted map positions produced by interpolation manager
 $log->write_to("Loading pseudo map positions\n");
 my $file = $wormbase->acefiles."/pseudo_map_positions.ace";
 
 $wormbase->load_to_database($geneace, $file, 'pseudo_map_positions_from_autoace',$log);
 
+# Map data 3 = Genetic map fixes produced by interpolation manager
+$log->write_to("Loading genetic map fixes\n");
+my $file = $wormbase->acefiles."/genetic_map_fixes.ace";
+
+$wormbase->load_to_database($geneace, $file, 'genetic_map_fixes_from_autoace',$log);
 
 # (6) updated geneace with person/person_name data from Caltech
 # can use dumped Person class in /wormsrv2/wormbase/caltech/caltech_Person.ace
