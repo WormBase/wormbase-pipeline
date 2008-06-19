@@ -5,7 +5,7 @@
 # by Dan Lawson
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2008-06-19 15:18:54 $
+# Last updated on: $Date: 2008-06-19 15:21:55 $
 #
 # Usage GFFmunger.pl [-options]
 
@@ -208,14 +208,15 @@ sub check_its_worked {
 		$msg .= "landmark genes are not present\n";
 	}
 	if ( $fiveprime  < 10 ) {
-		$msg .= "UTRs and are not present\n";
+		$msg .= "UTRs are not present\n";
 	}
 	if ( $partially  < 10 ) {
 		$msg .= "CDS overloading not present\n";
 	}	
 	
 	if( defined ($msg) ) {
-		$log->log_and_die("GFFmunging failed : $msg");
+		$log->log("GFFmunging failed : $msg");
+		$log->error;
 	}
 	else {
 		$log->write_to("GFFmunging appears to have worked\n");
