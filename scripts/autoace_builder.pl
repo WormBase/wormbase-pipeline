@@ -7,7 +7,7 @@
 # Usage : autoace_builder.pl [-options]
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2008-06-12 13:56:04 $
+# Last edited on: $Date: 2008-06-19 09:20:30 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -19,6 +19,8 @@ use File::Copy;
 use Coords_converter;
 use Log_files;
 use Storable;
+use LSF RaiseError => 0, PrintError => 1, PrintOutput => 0;
+use LSF::JobManager;
 
 my ( $debug, $test, $database, $species);
 my ( $initiate, $prepare_databases, $acefile, $build, $first_dumps );
@@ -342,13 +344,21 @@ sub remap_misc_dynamic {
 
 sub make_UTR {
   my ($log)=@_;
+  
+  $log->write_to("bsub commands . . . . \n\n");
+  my $lsf = LSF::JobManager->new(-J => "make_UTRs", -o => "/dev/null");
   foreach ($wormbase->get_chromosome_names(-mito => 1) ) {
-	  # crude ... should be beautified
-	  my $store = $wormbase->autoace . '/'. ref($wormbase) . '.store';
-	  $wormbase->run_command("bsub -J make_UTRs -o /dev/null  perl $ENV{'CVS_DIR'}/make_UTR_GFF.pl -chromosome $_ -store $store",$log)
+    my $cmd = "make_UTR_GFF.pl -chromosome $_";
+    $log->write_to("$cmd\n");
+    $cmd = $wormbase->build_cmd($cmd);
+    $lsf->submit($cmd);
   }
-  $log->write_to("waiting for LSF jobs to finish\n");
-  $wormbase->wait_for_LSF;
+  $lsf->wait_all_children( history => 1 );
+  $log->write_to("All UTR jobs have completed!\n");
+  for my $job ( $lsf->jobs ) {
+    $log->error("Job $job (" . $job->history->command . ") exited with LSF error code: ". $job->history->exit_status ."\n") if $job->history->exit_status != 0;
+  }
+  $lsf->clear;   
 }
 
 
