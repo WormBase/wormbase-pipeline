@@ -5,7 +5,7 @@
 # by Dan Lawson
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2008-06-19 13:00:11 $
+# Last updated on: $Date: 2008-06-19 15:18:54 $
 #
 # Usage GFFmunger.pl [-options]
 
@@ -154,7 +154,7 @@ foreach my $file (@gff_files) {
 
   $log->write_to("# File $file\n");
   
-  if ($landmark || $all && $file ne "CHROMOSOME_MtDNA") {
+  if (($landmark || $all) && $file ne "CHROMOSOME_MtDNA") {
     $log->write_to("# Adding ${file}_landmarks.gff file\n");
     $addfile = "$datadir/${file}_landmarks.gff";
     &addtoGFF($addfile,$gffpath);
