@@ -7,7 +7,7 @@
 # Script to identify genes which can have their Interpolated_map_position tag promoted to a Map position
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2008-01-15 11:55:06 $
+# Last updated on: $Date: 2008-06-19 09:44:14 $
 
 use strict;
 use warnings;
@@ -138,7 +138,12 @@ $log->write_to("Total: $count to become inferred genetic marker(s)\n\n");
 
 
 #load to database if -load specified
-$wb->load_to_database($wb->autoace, $out, 'pseudo_map_postn', $log) if $load;
+
+# we do not wish to throw an error if there are large differences in
+# the number of objects loaded from this file between on Build and the
+# next
+my $accept_large_differences = 1; 
+$wb->load_to_database($wb->autoace, $out, 'pseudo_map_postn', $log, 0, $accept_large_differences) if $load;
 
 #######################################
 # Tidy up and mail relevant log files #
