@@ -24,6 +24,7 @@ use Getopt::Long;
 use Storable;
 # use Wormbase;
 use lib '/software/worm/ensembl/ensembl/modules';
+use lib '/software/worm/ensembl/ensembl-pipeline/modules';
 use lib '/software/worm/lib/bioperl-live';
 use Bio::Seq;
 use Bio::SeqIO;
