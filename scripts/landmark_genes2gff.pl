@@ -7,7 +7,7 @@
 # script for creating extra GFF lines to indicate those genes that are landmark genes
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2007-09-05 10:55:25 $
+# Last edited on: $Date: 2008-06-19 14:29:36 $
 use strict;
 use lib $ENV{'CVS_DIR'};
 use Wormbase;
@@ -94,10 +94,7 @@ foreach my $chromosome (@chromosomes) {
         next unless ( $data[1] eq "gene" && $data[2] eq "gene" );
 
         # modify 9th GFF column to look up in hash to get CGC name (or Public name)
-        my $gene = $data[8];
-        $gene =~ s/Gene //;
-        $gene =~ s/\"//g;
-        chomp($gene);
+        my ($gene) = $data[8] =~ /Gene \"(WBGene\d+)\"/;
 
         # check gene from GFF file with genes in hash to see if it is a landmark gene, write to output if so
         if ( $landmarks{$gene} ) {
