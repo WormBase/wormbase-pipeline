@@ -1039,6 +1039,7 @@ sub load_to_database {
   my $tsuser   = shift;
   my $log      = shift;
   my $bk       = shift;
+  my $accept_large_differences = shift;
 
   my $error=0;
   my $species = $self->species;
@@ -1060,7 +1061,7 @@ sub load_to_database {
   $basename =~ s/.*\///;
 
   my $st = stat($file);
-  if ( $st->size > 50000000 and defined ($bk) ) {
+  if ( $st->size > 50000000 and defined ($bk) and $bk ) {
     $log->write_to("backing up block files before loading $file\n") if $log;
     my $db_dir = $database."/database";
     my $tar_file = "backup.".time.".tgz";
@@ -1155,10 +1156,12 @@ EOF
     if (defined $last_parsed) {
       $log->write_to("Version WS$prev_version parsed $last_parsed objects OK with $last_active Active Objects\n");
       $log->write_to("Version WS$version parsed $parsed objects OK with $active Active Objects\n\n");
-      if ($parsed < $last_parsed * 0.9 || $parsed > $last_parsed * 1.1
-      ||  $active < $last_active * 0.9 || $active > $last_active * 1.1) {
-	$log->write_to("*** POSSIBLE ERROR found while parsing ACE file $file\n\n");
-	$log->error;
+      if (!defined $accept_large_differences) {
+	if ($parsed < $last_parsed * 0.9 || $parsed > $last_parsed * 1.1
+	    ||  $active < $last_active * 0.9 || $active > $last_active * 1.1) {
+	  $log->write_to("*** POSSIBLE ERROR found while parsing ACE file $file\n\n");
+	  $log->error;
+	}
       }
     }
 
@@ -1885,7 +1888,7 @@ matches the input seqeunce name.
 =over 4
 
 
-=head2 load_to_datase
+=head2 load_to_database
 
 =head2 SYNOPSIS
 
