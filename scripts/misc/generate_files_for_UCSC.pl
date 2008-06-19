@@ -39,6 +39,9 @@
 #     the gene.
 #9) A tab-separated file with first column transcript ID and second column UniProt ID.
 
+#see wiki for details on editing the storable file if you need to do this outside of the build
+#http://scratchy.internal.sanger.ac.uk/wiki/index.php/UsefulTitBits
+
 use strict;
 use lib $ENV{'CVS_DIR'};
 use Wormbase;
@@ -61,7 +64,7 @@ GetOptions (	"help"       => \$help,
 	  			"verbose"    => \$verbose,
 	    		"store:s"    => \$store,
 	    		"version:i"  => \$version,
-	    		"$dna"		 => \$dna,
+	    		"dna"		 => \$dna,
 	    		"agp"        => \$agp,
 	    		"data"       => \$data,
 	    		"gff"        => \$gff,
@@ -162,7 +165,7 @@ sub transcript_data_files {
 		s/\"//g;#"
 		chomp;
 		my @info = split("\t",$_);
-		next unless ($info[6] eq 'SwissProt_AC' or $info[6] eq 'TrEMBL_AC');
+		next unless ($info[6] eq 'UniProtAcc');
 #		next unless (/SwissProt_AC/ or /TrEMBL_AC/)
 		print PUB_NAME "$info[0]\t$info[2]\n";
 		print SENTENCE "$info[0]\t$info[3]\n";
