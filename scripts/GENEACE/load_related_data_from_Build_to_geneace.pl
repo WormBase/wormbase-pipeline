@@ -8,8 +8,8 @@
 # RUN this script anytime during the build or after the build when get_interpolated_map 
 # and update_inferred multi-pt data are done
 #
-# Last updated on: $Date: 2008-06-19 11:33:12 $
-# Last updated by: $Author: mt3 $
+# Last updated on: $Date: 2008-06-19 12:19:17 $
+# Last updated by: $Author: gw3 $
 
 
 use strict;
@@ -22,7 +22,7 @@ use Ace;
 ######################
 
 my $user = `whoami`; chomp $user;
-if ($user ne "wormpub"){print "\nYour need to be wormpub to upload data to geneace\n"; exit 0 };
+if ($user ne "wormpub"){print "\nYou need to be wormpub to upload data to geneace\n"; exit 0 };
 
 my $wormbase = Wormbase->new();
 my $tace = $wormbase->tace;          # tace executable path
@@ -65,13 +65,16 @@ $wormbase->load_to_database($geneace,$int_map_pos,'interpolated_map_positions_fr
 $log->write_to("Loading pseudo map positions\n");
 my $file = $wormbase->acefiles."/pseudo_map_positions.ace";
 
-$wormbase->load_to_database($geneace, $file, 'pseudo_map_positions_from_autoace',$log);
+# don't throw an error if there are large differences between the
+# number of objects loaded in the Build and the previous one
+my $accept_large_differences = 1; 
+$wormbase->load_to_database($geneace, $file, 'pseudo_map_positions_from_autoace', $log, 0, $accept_large_differences);
 
 # Map data 3 = Genetic map fixes produced by interpolation manager
 $log->write_to("Loading genetic map fixes\n");
-my $file = $wormbase->acefiles."/genetic_map_fixes.ace";
+$file = $wormbase->acefiles."/genetic_map_fixes.ace";
 
-$wormbase->load_to_database($geneace, $file, 'genetic_map_fixes_from_autoace',$log);
+$wormbase->load_to_database($geneace, $file, 'genetic_map_fixes_from_autoace', $log, 0, $accept_large_differences);
 
 # (6) updated geneace with person/person_name data from Caltech
 # can use dumped Person class in /wormsrv2/wormbase/caltech/caltech_Person.ace
