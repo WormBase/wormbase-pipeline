@@ -1,7 +1,7 @@
 #/software/bin/perl -w
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2008-06-20 14:46:21 $
+# Last updated on: $Date: 2008-06-20 16:19:38 $
 
 #################################################################################
 # Variables                                                                     #
@@ -78,7 +78,12 @@ foreach my $spDB (values %accessors) {
   foreach my $file (@blastfiles){
     my $species = $spDB->species;
     $file =~ s/SPECIES/$species/;
-    $wormbase->load_to_database($wormbase->orgdb, $spDB->acefiles."/$file", "merge_all_species", $log);
+    if (-e $file) {
+      $log->write_to("Loading: $file\n");
+      $wormbase->load_to_database($wormbase->orgdb, $spDB->acefiles."/$file", "merge_all_species", $log);
+    } else {
+      $log->write_to("WARNING: Can't find $file\n");
+    }
   }
 }
 
