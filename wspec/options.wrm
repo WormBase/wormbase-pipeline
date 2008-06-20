@@ -156,6 +156,7 @@ _VMovie            -H
 _VGO_term	   -V -T Term
 _VSO_term	   -V
 _VGO_code	   -V
+_VPosition_Matrix  -V 
 
 // Mass Spec class
 _VMass_spec_experiment  -V
