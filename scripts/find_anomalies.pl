@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-06-11 13:36:46 $      
+# Last updated on: $Date: 2008-06-20 10:25:31 $      
 
 # Changes required by Ant: 2008-02-19
 # 
@@ -649,7 +649,8 @@ sub get_protein_differences {
   }
 
 
-  # now find the proteins that have other local matches (within 5 Kb)
+  # now find the proteins that have other local matches (within 2 Kb)
+  # and which have the same score (so are probably HSPs from the same alignment)
   # but which do not have a match to a gene
   foreach my $prot_name (keys %sorted_proteins) {
     for (my $i = 0; $i < @{$sorted_proteins{$prot_name}}; $i++) {
@@ -673,10 +674,10 @@ sub get_protein_differences {
       $prev_homology = $sorted_proteins{$prot_name}->[$i-1] unless ($i == 0);
       $next_homology = $sorted_proteins{$prot_name}->[$i+1] unless ($i == @{$sorted_proteins{$prot_name}} - 1);
 
-      if (! $got_a_match && defined $prev_homology && $chrom_start - $prev_homology->[2] < 5000 && $prev_homology->[3] eq $chrom_strand) {
+      if      (! $got_a_match && defined $prev_homology && $chrom_start - $prev_homology->[2] < 2000 && $prev_homology->[3] eq $chrom_strand && $protein_score == $prev_homology->[6]) {
 	#print "UNMATCHED_PROTEIN, $chromosome, $protein_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score\n";
 	&output_to_database("UNMATCHED_PROTEIN", $chromosome, $protein_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score, '');
-      } elsif (! $got_a_match && defined $next_homology && $next_homology->[1] - $chrom_end < 5000 && $next_homology->[3] eq $chrom_strand) {
+      } elsif (! $got_a_match && defined $next_homology && $next_homology->[1] - $chrom_end < 2000   && $next_homology->[3] eq $chrom_strand && $protein_score == $next_homology->[6]) {
 	#print "UNMATCHED_PROTEIN, $chromosome, $protein_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score\n";
 	&output_to_database("UNMATCHED_PROTEIN", $chromosome, $protein_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score, '');
       }
@@ -808,7 +809,6 @@ sub get_frameshifts {
   ###########################################
 
   # sort the homologies grouped by protein ID and then score and then chromosomal position
-#  my @homologies = sort {$a->[0] cmp $b->[0] or $a->[1] <=> $b->[1]} @{$homologies_aref};
   my @homologies = sort {$a->[0] cmp $b->[0] or $a->[6] <=> $b->[6] or $a->[1] <=> $b->[1]} @{$homologies_aref};
 
   # for each protein, compare all if HSPs with all its downstream HSPs
@@ -917,8 +917,9 @@ sub get_protein_split_merged {
   my $average_blast_score;
   my $anomaly_score;
 
-  # sort the homologies grouped by protein ID and then chromosomal position
-  my @homologies = sort {$a->[0] cmp $b->[0] or $a->[1] <=> $b->[1]} @matched;
+  # sort the homologies grouped by protein ID and then score and then chromosomal position
+  #my @homologies = sort {$a->[0] cmp $b->[0] or $a->[1] <=> $b->[1]} @matched;
+  my @homologies = sort {$a->[0] cmp $b->[0] or $a->[6] <=> $b->[6] or $a->[1] <=> $b->[1]} @matched;
 
   foreach my $homology (@homologies) { # $protein_id, $chrom_start, $chrom_end, $chrom_strand, $hit_start, $hit_end, $protein_score, $matching_exon, $matching_sense
 
@@ -950,7 +951,7 @@ sub get_protein_split_merged {
     #print "Matched: $protein_id, $chrom_start, $chrom_end, $chrom_strand, $hit_start, $hit_end, $protein_score, $matching_exon\n";
 
     # look for homologies which cover two genes or genes which cover a repeated homology
-    if ($protein_id eq $prev_protein_id && $chrom_strand eq $prev_chrom_strand) {
+    if ($protein_id eq $prev_protein_id && $protein_score == $prev_score && $chrom_strand eq $prev_chrom_strand) {
 
       # see if exon has changed
       if ($prev_exon ne "" && $prev_exon ne $matching_exon) {
