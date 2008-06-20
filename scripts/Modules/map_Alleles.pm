@@ -456,7 +456,13 @@ sub get_cds {
 	my ($alleles)=@_;
 	my %cds;
 	while(my($k,$v)=each(%{$alleles})){
-		my @hits=$index->search_cds($v->{'chromosome'},$v->{'start'},$v->{'stop'});
+		my @hits;
+		if ($v->{cgh_start}) {
+		   @hits=$index->search_genes($v->{'chromosome'},$v->{'cgh_start'},$v->{'cgh_stop'});
+		}
+		else {
+		   @hits=$index->search_cds($v->{'chromosome'},$v->{'start'},$v->{'stop'});
+		}
 		foreach my $hit(@hits){
 			print $hit->{name},"\n" if $wb->debug;
 			my @exons=grep {($v->{'stop'}>=$_->{start}) && ($v->{start}<=$_->{stop})} $hit->get_all_exons;
@@ -859,7 +865,13 @@ sub search_utr{
 	my ($alleles,$utrs)=@_;
 	my %allele_utr;
 	while(my($k,$v)=each(%{$alleles})){
-		my @hits = grep {$_->{start}<=$v->{stop} && $_->{stop}>=$v->{start}} @{$$utrs{$v->{chromosome}}};
+		my @hits;
+		if ($v->{cgh_start}) {
+		   @hits = grep {$_->{start}<=$v->{cgh_stop} && $_->{stop}>=$v->{cgh_start}} @{$$utrs{$v->{chromosome}}};
+		}
+		else {
+		   @hits = grep {$_->{start}<=$v->{stop} && $_->{stop}>=$v->{start}} @{$$utrs{$v->{chromosome}}};
+		}
 		foreach my $hit(@hits){
 			$allele_utr{$k}{$hit->{transcript}}{$hit->{type}}=1;
 			print "$k -> ${\$hit->{transcript}} (${\$hit->{type}})\n" if $wb->debug;
@@ -935,7 +947,13 @@ sub search_pseudogenes{
 	my ($alleles,$pgenes)=@_;
 	my %allele_pgenes;
 	while(my($k,$v)=each(%{$alleles})){
-		my @hits = grep {$_->{start}<=$v->{stop} && $_->{stop}>=$v->{start}} @{$$pgenes{$v->{chromosome}}};
+		my @hits;
+		if ($v->{cgh_start}) {
+		   @hits = grep {$_->{start}<=$v->{cgh_stop} && $_->{stop}>=$v->{cgh_start}} @{$$pgenes{$v->{chromosome}}};
+		}
+		else {
+		   @hits = grep {$_->{start}<=$v->{stop} && $_->{stop}>=$v->{start}} @{$$pgenes{$v->{chromosome}}};
+		}
 		foreach my $hit(@hits){
 			$allele_pgenes{$k}{$hit->{pgene}}=1;
 			print "$k -> ${\$hit->{pgene}}\n" if $wb->debug;
