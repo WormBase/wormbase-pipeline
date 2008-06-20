@@ -1,7 +1,7 @@
 #/software/bin/perl -w
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2008-06-19 16:03:25 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2008-06-20 13:27:17 $
 
 #################################################################################
 # Variables                                                                     #
@@ -67,7 +67,7 @@ foreach my $spDB (values %accessors) {
 	next unless -e $dir;
 	push(@loaded,$spDB->species);
 	foreach my $file ( &read_dir($dir) ) {
-		$wormbase->load_to_database($wormbase->orgdb, $file);
+		$wormbase->load_to_database($wormbase->orgdb, $file, "merge_all_species", $log);
 	}
 	$log->write_to("\tloaded ".join(', ',@loaded)." in to ".$wormbase->orgdb."\n");
 }
@@ -77,7 +77,7 @@ foreach my $spDB (values %accessors) {
 	my @blastfiles = qw( SPECIES_blastp.ace SPECIES_blastx.ace worm_ensembl_SPECIES_interpro_motif_info.ace worm_ensembl_SPECIES_motif_info.ace);
 	foreach my $file (@blastfiles){
 		$file =~ s/SPECIES/$spDB->species/;
-		$wormbase->load_to_database($spDB->acefiles."/$file", $log);
+		$wormbase->load_to_database($wormbase->orgdb, $spDB->acefiles."/$file", "merge_all_species", $log);
 	}
 }
 
