@@ -1028,7 +1028,13 @@ sub search_ncrnas{
 	my ($alleles,$ncrnas)=@_;
 	my %allele_ncrnas;
 	while(my($k,$v)=each(%{$alleles})){
-		my @hits = grep {$_->{start}<=$v->{stop} && $_->{stop}>=$v->{start}} @{$$ncrnas{$v->{chromosome}}};
+		my @hits;
+		if ($v->{cgh_start}) {
+		   @hits = grep {$_->{start}<=$v->{cgh_stop} && $_->{stop}>=$v->{cgh_start}} @{$$ncrnas{$v->{chromosome}}};
+		}
+		else {
+		   @hits = grep {$_->{start}<=$v->{stop} && $_->{stop}>=$v->{start}} @{$$ncrnas{$v->{chromosome}}};
+		}
 		foreach my $hit(@hits){
 			$allele_ncrnas{$k}{$hit->{transcript}}=1;
 			print "$k -> ${\$hit->{transcript}}\n" if $wb->debug;
