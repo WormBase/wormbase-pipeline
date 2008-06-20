@@ -1,7 +1,7 @@
 #/software/bin/perl -w
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2008-06-20 13:27:17 $
+# Last updated on: $Date: 2008-06-20 14:46:21 $
 
 #################################################################################
 # Variables                                                                     #
@@ -53,8 +53,8 @@ my %accessors = $wormbase->species_accessors;
 my $lsf =  LSF::JobManager->new();
 $log->write_to("Dumping acefile from . . .\n");
 foreach my $spDB (values %accessors) {
-	$log->write_to("\t".$spDB->full_name('-short' => 1));
-	$lsf->submit(-J => $spDB->species, $spDB->build_cmd("make_acefiles.pl -merge"));
+  $log->write_to("\t".$spDB->full_name('-short' => 1));
+  $lsf->submit(-J => $spDB->species, $spDB->build_cmd("make_acefiles.pl -merge"));
 }
 
 $lsf->wait_all_children( history => 1 );
@@ -62,23 +62,24 @@ $lsf->wait_all_children( history => 1 );
 $log->write_to("\nFinished writing acefiles\nAbout to load . .\n");
 #and then load then one after another.
 foreach my $spDB (values %accessors) {
-	my @loaded;
-	my $dir = $spDB->acefiles."/MERGE/".$spDB->species."/";
-	next unless -e $dir;
-	push(@loaded,$spDB->species);
-	foreach my $file ( &read_dir($dir) ) {
-		$wormbase->load_to_database($wormbase->orgdb, $file, "merge_all_species", $log);
-	}
-	$log->write_to("\tloaded ".join(', ',@loaded)." in to ".$wormbase->orgdb."\n");
+  my @loaded;
+  my $dir = $spDB->acefiles."/MERGE/".$spDB->species."/";
+  next unless -e $dir;
+  push(@loaded,$spDB->species);
+  foreach my $file ( &read_dir($dir) ) {
+    $wormbase->load_to_database($wormbase->orgdb, $file, "merge_all_species", $log);
+  }
+  $log->write_to("\tloaded ".join(', ',@loaded)." in to ".$wormbase->orgdb."\n");
 }
 
 $log->write_to("\nNow loading blast data\n");
 foreach my $spDB (values %accessors) {
-	my @blastfiles = qw( SPECIES_blastp.ace SPECIES_blastx.ace worm_ensembl_SPECIES_interpro_motif_info.ace worm_ensembl_SPECIES_motif_info.ace);
-	foreach my $file (@blastfiles){
-		$file =~ s/SPECIES/$spDB->species/;
-		$wormbase->load_to_database($wormbase->orgdb, $spDB->acefiles."/$file", "merge_all_species", $log);
-	}
+  my @blastfiles = qw( SPECIES_blastp.ace SPECIES_blastx.ace worm_ensembl_SPECIES_interpro_motif_info.ace worm_ensembl_SPECIES_motif_info.ace);
+  foreach my $file (@blastfiles){
+    my $species = $spDB->species;
+    $file =~ s/SPECIES/$species/;
+    $wormbase->load_to_database($wormbase->orgdb, $spDB->acefiles."/$file", "merge_all_species", $log);
+  }
 }
 
 $log->mail;
