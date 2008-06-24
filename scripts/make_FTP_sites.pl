@@ -8,7 +8,7 @@
 # Originally written by Dan Lawson
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2008-06-24 14:09:51 $
+# Last updated on: $Date: 2008-06-24 14:41:06 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -663,7 +663,7 @@ sub copy_homol_data{
   my %accessors = ($wormbase->species_accessors, $wormbase->tier3_species_accessors);
   foreach my $worm_species (keys %accessors, $wormbase->species){
     my $source_file = "$blast_dir/${worm_species}_best_blastp_hits";
-    my $target_file = "$blast_dir/best_blastp_hits_${worm_species}.$WS_name.gz";
+    my $target_file = "best_blastp_hits_${worm_species}.$WS_name.gz";
     if(-e $source_file) {
       $wormbase->run_command("/bin/gzip -f $source_file",$log);
       $wormbase->run_command("scp $source_file.gz $targetdir/$WS_name/$target_file", $log);
