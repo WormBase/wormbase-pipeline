@@ -4,7 +4,7 @@
 # completely rewritten by Keith Bradnam from list_loci_designations
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2007-09-06 14:27:06 $
+# Last updated on: $Date: 2008-06-24 12:48:35 $
 #
 # This script should be run under a cron job and simply update the webpages that show
 # current gene names and sequence connections.  Gets info from geneace.  
@@ -76,8 +76,8 @@ $log->write_to("Making daily update lists\n");
 chdir($www) || print LOG "Couldn't run chdir\n";
 
 
-$wormbase->run_command("/usr/local/bin/webpublish -q *.shtml", $log) or $log->write_to("Couldn't run webpublish on html files\n");
-$wormbase->run_command("/usr/local/bin/webpublish -q *.txt", $log)   or $log->write_to("Couldn't run webpublish on text file\n");
+$wormbase->run_command("/software/bin/webpublish -q *.shtml", $log) or $log->write_to("Couldn't run webpublish on html files\n");
+$wormbase->run_command("/software/bin/webpublish -q *.txt", $log)   or $log->write_to("Couldn't run webpublish on text file\n");
 
 $log->write_to("check http://www.sanger.ac.uk/Projects/C_elegans/LOCI/genes2molecular_names.txt is up to date\n");
 
@@ -86,7 +86,7 @@ $log->write_to("check http://www.sanger.ac.uk/Projects/C_elegans/LOCI/genes2mole
 # Check the files
 ##################
   $wormbase->check_file("$www/loci_all.txt", $log,
-                  minsize => 660000);
+                  minsize => 600000);
   foreach my $letter ("a".."z") {
     $wormbase->check_file("$www/loci_designations_${letter}.shtml", $log,
 			  minsize => 1000);
