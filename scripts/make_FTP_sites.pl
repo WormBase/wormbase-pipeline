@@ -7,8 +7,8 @@
 # 
 # Originally written by Dan Lawson
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2008-06-11 16:16:55 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2008-06-24 10:12:53 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -235,7 +235,7 @@ sub copy_release_files{
   $log->write_to("$runtime: copying release files\n");
 
   my $ftp_acedb_dir = "$targetdir/$WS_name/acedb";
-  mkpath("$ftp_acedb_dir",1,775) unless -e "acedb_dir";
+  mkpath("$ftp_acedb_dir",1,0775) unless -e "acedb_dir";
 
   my $filename;
 
@@ -275,7 +275,7 @@ sub copy_dna_files{
   $runtime = $wormbase->runtime;
   $log->write_to("$runtime: copying dna and agp files\n");
   my $dna_dir = "$targetdir/$WS_name/genomes/".$wormbase->species."/sequences/dna";
-  mkpath($dna_dir,1,775);
+  mkpath($dna_dir,1,0775);
   my $chromdir = $wormbase->chromosomes;
   $wormbase->run_command("cp -R $chromdir/*.dna $dna_dir/", $log);
   $wormbase->run_command("cp -R $chromdir/*.agp $dna_dir/", $log);
@@ -288,7 +288,7 @@ sub copy_gff_files{
   $runtime = $wormbase->runtime;
   $log->write_to("$runtime: copying gff files\n");
   my $gff_dir = "$targetdir/$WS_name/genomes/".$wormbase->species."/genome_feature_tables/GFF2";
-  mkpath($gff_dir,1,775);
+  mkpath($gff_dir,1,0775);
   $wormbase->run_command("cp -R $ace_dir/CHROMOSOMES/*.gff $gff_dir/", $log);
 
   $runtime = $wormbase->runtime;
@@ -302,7 +302,7 @@ sub copy_rna_files{
   my $rnadir = $wormbase->wormrna;
   if( -e "$rnadir") {
 	 my $ftprna_dir = "$targetdir/$WS_name/genomes/".$wormbase->species."/sequences/rna";
- 	 mkpath($ftprna_dir,1,775);
+ 	 mkpath($ftprna_dir,1,0775);
 	 $wormbase->run_command("cp -R $rnadir $ftprna_dir/", $log);
  	 chdir "$ftprna_dir" or $log->write_to("Couldn't cd $ftprna_dir\n");
  	 my $prefix = $wormbase->pepdir_prefix;
