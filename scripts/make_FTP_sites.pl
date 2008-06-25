@@ -8,7 +8,7 @@
 # Originally written by Dan Lawson
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2008-06-25 12:29:01 $
+# Last updated on: $Date: 2008-06-25 16:26:30 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -280,6 +280,7 @@ sub copy_release_files{
 sub copy_dna_files{
   $runtime = $wormbase->runtime;
   $log->write_to("$runtime: copying dna and agp files\n");
+
   my %accessors = ($wormbase->species_accessors);
   $accessors{elegans} = $wormbase;
   foreach my $wb (values %accessors) {
@@ -329,7 +330,12 @@ sub copy_gff_files{
 
       # we don't want to end up with thousands of files for species with DNA still in contigs, so make one file
       my @contigs = $wb->get_chromosome_names(-prefix => 1, -mito => 1);
-      if (scalar @contigs > 50) {
+
+      if (-e "$chromdir/$species.gff") { # remanei does it this way
+	$wormbase->run_command("cp -R $chromdir/$species.gff $gff_dir/", $log);
+	$wormbase->run_command("/bin/gzip -f $gff_dir/$species.gff",$log);
+	
+      } elsif (scalar @contigs > 50) {
 	if (-e "$chromdir/$contigs[0].gff") { # are there any .gff files to copy?
 	  unlink "$gff_dir/$species.gff.gz"; # in case this script is being run a second time after problems
 	  foreach my $contig (@contigs) {
@@ -337,6 +343,7 @@ sub copy_gff_files{
 	  }
 	  $wormbase->run_command("/bin/gzip -f $gff_dir/$species.gff",$log);
 	}
+
       } else {
 	$wormbase->run_command("cp -R $chromdir/*.gff* $gff_dir/", $log);
       }
@@ -729,21 +736,21 @@ sub make_pcr_list {
 
 sub copy_homol_data {
 
-  my $blast_dir = $wormbase->acefiles;
-
   $runtime = $wormbase->runtime;
   $log->write_to("$runtime: copying homol files\n");
+
+  my $blast_dir = $wormbase->acefiles;
  
-  # copy homol file if one exists for that species.
-  $log->write_to("zip and copy other species\n");
-  my %accessors = ($wormbase->species_accessors, $wormbase->tier3_species_accessors);
-  foreach my $species (keys %accessors, $wormbase->species){
+  my %accessors = ($wormbase->species_accessors);
+  $accessors{elegans} = $wormbase;
+  foreach my $wb (values %accessors) {
+    my $species = $wb->species;
     my $source_file = "$blast_dir/${species}_best_blastp_hits";
-    if(-e $source_file) {
+    if(-e $source_file || -e "$source_file.gz") { # this script might be run more than once if there are problems
       my $protein_dir = "$targetdir/$WS_name/genomes/$species/sequences/protein";
       mkpath($protein_dir,1,0775);
       my $target_file = "$protein_dir/best_blastp_hits_${species}.$WS_name.gz";
-      $wormbase->run_command("/bin/gzip -f $source_file",$log);
+      $wormbase->run_command("/bin/gzip -f $source_file",$log) if (! -e "$source_file.gz"); # this script might be run more than once if there are problems
       $wormbase->run_command("scp $source_file.gz $target_file", $log);
     }
     $runtime = $wormbase->runtime;
@@ -782,27 +789,27 @@ sub usage {
 
 
 sub check_manifest {
-	my $rel = $wormbase->get_wormbase_version;
-	my $ftp_dir = $wormbase->ftp_site."/WS$rel";
-	my $path = $ftp_dir;
-	my $count;
-	while(<DATA>) {
-		next unless /\w/;
-		chomp;
-		s/REL/$rel/g;
-		if(/\.\/(\S+)/) {
-			$path = "$ftp_dir/$1";
-			next;
-		}
-		my $file = $_;
-		if( -s "$path/$file") {
-			$count++
-		}
-		else {
-			$log->error("ERROR: $file has a problem\n");
-		}
-	}
-	$log->write_to("$count files in place on FTP site\n");
+  my $rel = $wormbase->get_wormbase_version;
+  my $ftp_dir = $wormbase->ftp_site."/WS$rel";
+  my $path = $ftp_dir;
+  my $count;
+  while(<DATA>) {
+    next unless /\w/;
+    chomp;
+    s/REL/$rel/g;
+    if(/\.\/(\S+)/) {
+      $path = "$ftp_dir/$1";
+      next;
+    }
+    my $file = $_;
+    if( -s "$path/$file") {
+      $count++;
+      #print "OK: $path/$file\n";
+    } else {
+      $log->error("ERROR: $path/$file has a problem\n");
+    }
+  }
+  $log->write_to("$count files in place on FTP site\n");
 }
 
 
@@ -846,7 +853,7 @@ intergenic_sequences.dna.gz
 
 ./genomes/elegans/sequences/protein
 wormpepREL.tar.gz
-best_blastp_hits.WSREL.gz
+best_blastp_hits_elegans.WSREL.gz
 
 ./genomes/elegans/sequences/rna
 wormrnaREL.tar.gz
@@ -891,7 +898,7 @@ chrV_random.gff
 chrX.gff
 
 ./genomes/briggsae/sequences/protein
-best_blastp_hits_brigpep.WSREL.gz
+best_blastp_hits_briggsae.WSREL.gz
 brigpepREL.gz
 
 ./genomes/briggsae/sequences/rna
@@ -901,7 +908,7 @@ brigrnaREL.tar.gz
 remanei.gff.gz
 
 ./genomes/remanei/sequences/protein
-best_blastp_hits_remapep.WSREL.gz
+best_blastp_hits_remanei.WSREL.gz
 remapepREL.gz
 
 ./genomes/remanei/sequences/dna
