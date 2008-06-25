@@ -8,7 +8,7 @@
 # Originally written by Dan Lawson
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2008-06-24 14:41:06 $
+# Last updated on: $Date: 2008-06-25 12:29:01 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -102,6 +102,7 @@ my $dump_ko; # create the knockout consortium file
 my $dna;
 my $rna;
 my $gff;
+my $supplementary;
 
 GetOptions ("help"     => \$help,
 	    "debug=s"  => \$debug,
@@ -111,7 +112,8 @@ GetOptions ("help"     => \$help,
 	    "release"  => \$release,
 	    "dna"      => \$dna,
 	    "rna"      => \$rna,
-	    "gff"	   => \$gff,
+	    "gff"      => \$gff,
+	    "supplementary"      => \$supplementary,
 	    "ont"      => \$ont,
 	    "misc"     => \$misc,
 	    "wormpep"  => \$wormpep,
@@ -147,7 +149,7 @@ my $log = Log_files->make_build_log($wormbase);
 
 
 # using -all option?
-($release=$dump_ko=$dna=$gff=$rna=$misc=$wormpep=$genes=$cDNA=$geneIDs=$pcr=$homols=$manifest=$ont = 1 ) if ($all);
+($release=$dump_ko=$dna=$gff=$supplementary=$rna=$misc=$wormpep=$genes=$cDNA=$geneIDs=$pcr=$homols=$manifest=$ont = 1 ) if ($all);
 
 my $base_dir = $wormbase->basedir;    # The BUILD directory
 my $ace_dir = $wormbase->autoace;     # AUTOACE DATABASE DIR
@@ -181,6 +183,7 @@ close FTP_LOCK;
 &copy_dna_files if ($dna);  		  
 &copy_rna_files if ($rna);
 &copy_gff_files if ($gff);  		  
+&copy_supplementary_gff_files if ($supplementary);  		  
 
 &copy_ontology_files if ($ont);       # make a new /ONTOLOGY directory and copy files across
 
@@ -263,7 +266,7 @@ sub copy_release_files{
   $wormbase->run_command("scp $base_dir/autoace_config/INSTALL $ftp_acedb_dir", $log);  
   
   # change group ownership
-  $wormbase->run_command("chgrp -R -c worm $ftp_acedb_dir", $log);  
+  $wormbase->run_command("chgrp -R  worm $ftp_acedb_dir", $log);  
 
   $runtime = $wormbase->runtime;
   $log->write_to("$runtime: Finished\n\n");
@@ -277,15 +280,36 @@ sub copy_release_files{
 sub copy_dna_files{
   $runtime = $wormbase->runtime;
   $log->write_to("$runtime: copying dna and agp files\n");
-  my $dna_dir = "$targetdir/$WS_name/genomes/".$wormbase->species."/sequences/dna";
-  mkpath($dna_dir,1,0775);
-  my $chromdir = $wormbase->chromosomes;
-  $wormbase->run_command("cp -R $chromdir/*.dna* $dna_dir/", $log);
-  $wormbase->run_command("cp -R $chromdir/*.agp $dna_dir/", $log);
+  my %accessors = ($wormbase->species_accessors);
+  $accessors{elegans} = $wormbase;
+  foreach my $wb (values %accessors) {
+    my $species = $wb->species;
+    my $chromdir = $wb->chromosomes;
 
-  # change group ownership
-  $wormbase->run_command("chgrp -R -c worm $dna_dir", $log);  
+    if (-e "$chromdir") {
+      my $dna_dir = "$targetdir/$WS_name/genomes/$species/sequences/dna";
+      mkpath($dna_dir,1,0775);
 
+      # we don't want to end up with thousands of files for species with DNA still in contigs, so make one file
+      my @contigs = $wb->get_chromosome_names(-prefix => 1, -mito => 1);
+      if (scalar @contigs > 50) {
+	if (-e "$chromdir/$contigs[0].dna") { # are there any .dna files to copy?
+	  unlink "$dna_dir/$species.dna.gz"; # in case this script is being run a second time after problems
+	  foreach my $contig (@contigs) {
+	    $wormbase->run_command("cat $chromdir/$contig.dna >> $dna_dir/$species.dna", $log);
+	  }
+	  $wormbase->run_command("/bin/gzip -f $dna_dir/$species.dna",$log);
+	}
+      } else {
+	$wormbase->run_command("cp -R $chromdir/*.dna* $dna_dir/", $log);
+      }
+
+      $wormbase->run_command("cp -R $chromdir/*.agp $dna_dir/", $log) if (scalar glob("$chromdir/*.agp"));
+
+      # change group ownership
+      $wormbase->run_command("chgrp -R  worm $dna_dir", $log);  
+    }
+  }
   $runtime = $wormbase->runtime;
   $log->write_to("$runtime: Finished copying\n\n");
 }
@@ -293,13 +317,59 @@ sub copy_dna_files{
 sub copy_gff_files{
   $runtime = $wormbase->runtime;
   $log->write_to("$runtime: copying gff files\n");
-  my $gff_dir = "$targetdir/$WS_name/genomes/".$wormbase->species."/genome_feature_tables/GFF2";
-  mkpath($gff_dir,1,0775);
-  $wormbase->run_command("cp -R $ace_dir/CHROMOSOMES/*.gff* $gff_dir/", $log);
+  my %accessors = ($wormbase->species_accessors);
+  $accessors{elegans} = $wormbase;
+  foreach my $wb (values %accessors) {
+    my $species = $wb->species;
+    my $chromdir = $wb->chromosomes;
 
-  # change group ownership
-  $wormbase->run_command("chgrp -R -c worm $gff_dir", $log);  
+    if (-e "$chromdir") {
+      my $gff_dir = "$targetdir/$WS_name/genomes/$species/genome_feature_tables/GFF2";
+      mkpath($gff_dir,1,0775);
 
+      # we don't want to end up with thousands of files for species with DNA still in contigs, so make one file
+      my @contigs = $wb->get_chromosome_names(-prefix => 1, -mito => 1);
+      if (scalar @contigs > 50) {
+	if (-e "$chromdir/$contigs[0].gff") { # are there any .gff files to copy?
+	  unlink "$gff_dir/$species.gff.gz"; # in case this script is being run a second time after problems
+	  foreach my $contig (@contigs) {
+	    $wormbase->run_command("cat $chromdir/$contig.gff >> $gff_dir/$species.gff", $log);
+	  }
+	  $wormbase->run_command("/bin/gzip -f $gff_dir/$species.gff",$log);
+	}
+      } else {
+	$wormbase->run_command("cp -R $chromdir/*.gff* $gff_dir/", $log);
+      }
+
+      $wormbase->run_command("cp -R $chromdir/composition.all $gff_dir/", $log) if (-e "$chromdir/composition.all");
+      $wormbase->run_command("cp -R $chromdir/totals $gff_dir/", $log) if (-e "$chromdir/totals");
+
+      # change group ownership
+      $wormbase->run_command("chgrp -R  worm $gff_dir", $log);  
+    }
+  }
+  $runtime = $wormbase->runtime;
+  $log->write_to("$runtime: Finished copying\n\n");
+}
+
+sub copy_supplementary_gff_files{
+  $runtime = $wormbase->runtime;
+  $log->write_to("$runtime: copying supplementary gff files\n");
+  my %accessors = ($wormbase->species_accessors);
+  $accessors{elegans} = $wormbase;
+  foreach my $wb (values %accessors) {
+    my $species = $wb->species;
+    my $chromdir = $wb->chromosomes;
+
+    if (-e "$chromdir/SUPPLEMENTARY_GFF") {
+      my $sgff_dir = "$targetdir/$WS_name/genomes/$species/genome_feature_tables/SUPPLEMENTARY_GFF";
+      mkpath($sgff_dir,1,0775);
+      $wormbase->run_command("cp -R $chromdir/SUPPLEMENTARY_GFF/*.gff $sgff_dir/", $log);
+
+      # change group ownership
+      $wormbase->run_command("chgrp -R  worm $sgff_dir", $log);  
+    }
+  }
   $runtime = $wormbase->runtime;
   $log->write_to("$runtime: Finished copying\n\n");
 }
@@ -308,25 +378,30 @@ sub copy_gff_files{
 sub copy_rna_files{
   $runtime = $wormbase->runtime;
   $log->write_to("$runtime: copying rna files\n");
-  my $rnadir = $wormbase->wormrna;
+
+  # run through all possible organisms
+  my %accessors = ($wormbase->species_accessors);
+  $accessors{elegans} = $wormbase;
+  foreach my $wb (values %accessors) {
+
+    my $rnadir = $wb->wormrna;
+
     if( -e "$rnadir") {
-	 my $ftprna_dir = "$targetdir/$WS_name/genomes/".$wormbase->species."/sequences/rna";
-	 mkpath($ftprna_dir,1,0775);
-	 $wormbase->run_command("cp -R $rnadir/* $ftprna_dir/", $log);
- 	 chdir "$ftprna_dir" or $log->write_to("Couldn't cd $ftprna_dir\n");
- 	 my $prefix = $wormbase->pepdir_prefix;
- 	 $wormbase->run_command("/bin/tar -cf ${prefix}rna$WS.tar README ${prefix}rna$WS.rna", $log);
-	 $wormbase->run_command("/bin/gzip -f ${prefix}rna$WS.tar",$log);
+      my $ftprna_dir = "$targetdir/$WS_name/genomes/".$wb->species."/sequences/rna";
+      mkpath($ftprna_dir,1,0775);
+      $wormbase->run_command("cp -R $rnadir/* $ftprna_dir/", $log);
+      chdir "$ftprna_dir" or $log->write_to("Couldn't cd $ftprna_dir\n");
+      my $prefix = $wb->pepdir_prefix;
+      $wormbase->run_command("/bin/tar -cf ${prefix}rna$WS.tar README ${prefix}rna$WS.rna", $log);
+      $wormbase->run_command("/bin/gzip -f ${prefix}rna$WS.tar",$log);
 
-	 # change group ownership
-	 $wormbase->run_command("chgrp -R -c worm $ftprna_dir", $log);  
+      # change group ownership
+      $wormbase->run_command("chgrp -R  worm $ftprna_dir", $log);  
 
-  	 $runtime = $wormbase->runtime;
-  	 $log->write_to("$runtime: Finished copying\n\n");
+    }
   }
-  else {
-  	$log->write_to("WARNING: no RNA files for ".$wormbase->full_name('short' => 1)."\n");
-  }
+  $runtime = $wormbase->runtime;
+  $log->write_to("$runtime: Finished copying\n\n");
 }
 ############################################
 # copy across ontology files
@@ -345,8 +420,8 @@ sub copy_ontology_files {
   $wormbase->run_command("cp -R $ace_dir/ONTOLOGY $targetdir/$WS_name/ONTOLOGY", $log);
 
   # change group ownership
-  $wormbase->run_command("chgrp -R -c worm $ace_dir/ONTOLOGY", $log);  
-  $wormbase->run_command("chgrp -R -c worm $targetdir/$WS_name/ONTOLOGY", $log);  
+  $wormbase->run_command("chgrp -R  worm $ace_dir/ONTOLOGY", $log);  
+  $wormbase->run_command("chgrp -R  worm $targetdir/$WS_name/ONTOLOGY", $log);  
 
   $runtime = $wormbase->runtime;
   $log->write_to("$runtime: Finished copying\n\n");
@@ -370,7 +445,7 @@ sub copy_misc_files{
   $wormbase->run_command("cp $base_dir/autoace/compara.tar.bz2 $targetdir/$WS_name/",$log);
 
   # change group ownership
-  $wormbase->run_command("chgrp -R -c worm $targetdir/$WS_name", $log);  
+  $wormbase->run_command("chgrp -R  worm $targetdir/$WS_name", $log);  
 
   $runtime = $wormbase->runtime;
   $log->write_to("$runtime: Finished copying\n\n");
@@ -382,7 +457,7 @@ sub copy_misc_files{
 # copy across wormpep files
 #############################################
 
-sub copy_wormpep_files{
+sub copy_wormpep_files {
 
   $runtime = $wormbase->runtime;
   $log->write_to("$runtime: copying wormpep files\n");
@@ -390,15 +465,16 @@ sub copy_wormpep_files{
   my $wp_source_dir = $wormbase->wormpep;
   my $wormpep_ftp_root = glob("~ftp/pub/databases/wormpep");
   my $wp_ftp_dir = "$wormpep_ftp_root/wormpep$WS";
+  my $protein_dir = "$targetdir/$WS_name/genomes/elegans/sequences/protein";
   mkpath($wp_ftp_dir,1,0775);
-  mkpath("$targetdir/$WS_name",1,0775);
+  mkpath($protein_dir,1,0775);
  
   my @wormpep_files = $wormbase->wormpep_files;
   
   foreach my $file ( @wormpep_files ){
   # copy the wormpep release files across
-    $wormbase->run_command("cp $wp_source_dir/$file$WS $wp_ftp_dir/$file$WS", $log);
-    &CheckSize("$wp_source_dir/$file$WS","$wp_ftp_dir/$file$WS");
+    $wormbase->run_command("cp $wp_source_dir/$file$WS $protein_dir/$file$WS", $log);
+    &CheckSize("$wp_source_dir/$file$WS","$protein_dir/$file$WS");
   }
 
   # tar up the latest wormpep release and copy across
@@ -410,25 +486,27 @@ sub copy_wormpep_files{
       $command .= " wormpep$WS/$file$WS";
   }
   $wormbase->run_command("$command", $log);
-  $wormbase->run_command("cp $tgz_file $targetdir/$WS_name", $log);
+  $wormbase->run_command("cp $tgz_file $protein_dir", $log);
 
   # copy wormpep file if one exists for that species.
   $log->write_to("zip and copy other species\n");
   my %accessors = ($wormbase->species_accessors, $wormbase->tier3_species_accessors);
-  foreach my $worm (keys %accessors){
-  	my $dir = $accessors{$worm}->wormpep;
-  	my $file = "$dir/".$accessors{$worm}->pepdir_prefix."pep$WS";
+  foreach my $species (keys %accessors){
+  	my $dir = $accessors{$species}->wormpep;
+  	my $file = "$dir/".$accessors{$species}->pepdir_prefix."pep$WS";
   	if(-e $file) {
 	    $wormbase->run_command("/bin/gzip -f $file",$log);
-		$wormbase->run_command("cp $file.gz $targetdir/$WS_name", $log);
+	    $protein_dir = "$targetdir/$WS_name/genomes/$species/sequences/protein";
+	    mkpath($protein_dir,1,0775);
+	    $wormbase->run_command("cp $file.gz $protein_dir", $log);
 	}
   	$runtime = $wormbase->runtime;
   	$log->write_to("$runtime: Finished copying\n\n");
   } 
 
   # change group ownership
-  $wormbase->run_command("chgrp -R -c worm $wp_ftp_dir", $log);  
-  $wormbase->run_command("chgrp -R -c worm $targetdir/$WS_name", $log);  
+  $wormbase->run_command("chgrp -R  worm $wp_ftp_dir", $log);  
+  $wormbase->run_command("chgrp -R  worm $targetdir/$WS_name", $log);  
 
 }
 
@@ -458,7 +536,7 @@ sub extract_confirmed_genes{
   $wormbase->run_command("/bin/gzip -f $annotation_dir/confirmed_genes.$WS_name", $log);
 
   $db->close;
-  $wormbase->run_command("chgrp -R -c worm $annotation_dir", $log);  
+  $wormbase->run_command("chgrp -R  worm $annotation_dir", $log);  
 
   $runtime = $wormbase->runtime;
   $log->write_to("$runtime: Finished extracting\n\n");
@@ -479,7 +557,7 @@ sub extract_ko {
 	my $outfile= "$annotation_dir/knockout_consortium_alleles.$WS_name.xml.bz2";
 
 	$wormbase->run_script("dump_ko.pl -file $outfile",$log);
-	$wormbase->run_command("chgrp -R -c worm $annotation_dir", $log);  
+	$wormbase->run_command("chgrp -R  worm $annotation_dir", $log);  
 
 	$runtime = $wormbase->runtime;
   	$log->write_to("$runtime: Finished dumping\n\n");
@@ -529,7 +607,7 @@ EOF
   close(OUT);
 
   $wormbase->run_command("/bin/gzip -f $out", $log);
-  $wormbase->run_command("chgrp -R -c worm $annotation_dir", $log);  
+  $wormbase->run_command("chgrp -R  worm $annotation_dir", $log);  
 
   $runtime = $wormbase->runtime;
   $log->write_to("$runtime: Finished making files\n\n");  
@@ -565,7 +643,7 @@ sub make_geneID_list {
   close(OUT);
 
   $wormbase->run_command("/bin/gzip -f $out", $log);
-  $wormbase->run_command("chgrp -R -c worm $annotation_dir", $log);  
+  $wormbase->run_command("chgrp -R  worm $annotation_dir", $log);  
 
   $runtime = $wormbase->runtime;
   $log->write_to("$runtime: Finished making list\n\n");
@@ -639,7 +717,7 @@ sub make_pcr_list {
   close(OUT);
 
   $wormbase->run_command("/bin/gzip -f $out", $log);
-  $wormbase->run_command("chgrp -R -c worm $annotation_dir", $log);  
+  $wormbase->run_command("chgrp -R  worm $annotation_dir", $log);  
 
   $runtime = $wormbase->runtime;
   $log->write_to("$runtime: Finished making list\n\n");
@@ -649,31 +727,31 @@ sub make_pcr_list {
 # copy best blast hits file to ftp site
 ############################################################
 
-sub copy_homol_data{
+sub copy_homol_data {
 
   my $blast_dir = $wormbase->acefiles;
 
   $runtime = $wormbase->runtime;
   $log->write_to("$runtime: copying homol files\n");
-
-  mkpath("$targetdir/$WS_name",1,0775);
  
   # copy homol file if one exists for that species.
   $log->write_to("zip and copy other species\n");
   my %accessors = ($wormbase->species_accessors, $wormbase->tier3_species_accessors);
-  foreach my $worm_species (keys %accessors, $wormbase->species){
-    my $source_file = "$blast_dir/${worm_species}_best_blastp_hits";
-    my $target_file = "best_blastp_hits_${worm_species}.$WS_name.gz";
+  foreach my $species (keys %accessors, $wormbase->species){
+    my $source_file = "$blast_dir/${species}_best_blastp_hits";
     if(-e $source_file) {
+      my $protein_dir = "$targetdir/$WS_name/genomes/$species/sequences/protein";
+      mkpath($protein_dir,1,0775);
+      my $target_file = "$protein_dir/best_blastp_hits_${species}.$WS_name.gz";
       $wormbase->run_command("/bin/gzip -f $source_file",$log);
-      $wormbase->run_command("scp $source_file.gz $targetdir/$WS_name/$target_file", $log);
+      $wormbase->run_command("scp $source_file.gz $target_file", $log);
     }
     $runtime = $wormbase->runtime;
     $log->write_to("$runtime: Finished copying\n\n");
   } 
 
   # change group ownership
-  $wormbase->run_command("chgrp -R -c worm $targetdir/$WS_name", $log); 
+  $wormbase->run_command("chgrp -R  worm $targetdir/$WS_name", $log); 
 
 }
 
@@ -734,7 +812,7 @@ files_in_tar
 md5sum.WSREL
 models.wrm.WSREL
 
-./genomes/elegans/annotation/
+./genomes/elegans/annotation
 affy_oligo_mapping.gz
 agil_oligo_mapping.gz
 pcr_product2gene.WSREL.gz
@@ -764,6 +842,7 @@ CHROMOSOME_V_masked.dna.gz
 CHROMOSOME_X.agp
 CHROMOSOME_X.dna.gz
 CHROMOSOME_X_masked.dna.gz
+intergenic_sequences.dna.gz
 
 ./genomes/elegans/sequences/protein
 wormpepREL.tar.gz
@@ -772,7 +851,7 @@ best_blastp_hits.WSREL.gz
 ./genomes/elegans/sequences/rna
 wormrnaREL.tar.gz
 
-./genomes/elegans/genome_feature_tables
+./genomes/elegans/genome_feature_tables/GFF2
 CHROMOSOME_I.gff.gz
 CHROMOSOME_II.gff.gz
 CHROMOSOME_III.gff.gz
@@ -780,11 +859,7 @@ CHROMOSOME_IV.gff.gz
 CHROMOSOME_MtDNA.gff.gz
 CHROMOSOME_V.gff.gz
 CHROMOSOME_X.gff.gz
-SUPPLEMENTARY_GFF
-briggffREL
-remagffREL
 composition.all
-intergenic_sequences.dna.gz
 totals
 
 ./genomes/elegans/genome_feature_tables/SUPPLEMENTARY_GFF
