@@ -6,8 +6,8 @@
 #
 # Author: Chao-Kung CHen
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2008-04-17 10:54:53 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2008-06-25 16:06:02 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -16,6 +16,7 @@ use Log_files;
 use Getopt::Long;
 use File::Path;
 use Storable;
+use Carp;
 
 my ($help, $debug, $test, $verbose, $store, $wormbase);
 
@@ -47,29 +48,42 @@ unlink("$source_dir/ensembl_protein_info.ace");
 $wormbase->run_command("cat $farm_ace/flybase.ace $farm_ace/yeast.ace $source_dir/ipi_hits.ace $source_dir/swissproteins.ace $source_dir/tremblproteins.ace > $source_dir/ensembl_protein_info.ace", $log);
 
 my @files        = (
-		    "${species}_best_blastp_hits",
-		    "${species}_blastp.ace",
-		    "${species}_blastx.ace",
-		    "worm_ensembl_${species}_motif_info.ace",
-		    "worm_ensembl_${species}_interpro_motif_info.ace",
-		    "ensembl_protein_info.ace",
-		    "waba.ace",
+		    "SPECIES_best_blastp_hits",
+		    "SPECIES_blastp.ace",
+		    "SPECIES_blastx.ace",
+		    "worm_ensembl_SPECIES_motif_info.ace",
+		    "worm_ensembl_SPECIES_interpro_motif_info.ace",
 		   );
 
-foreach my $file (@files){
-  if (( $file eq "waba.ace") && (-e "$farm_ace/waba.ace")){
-    $log->write_to("copying new version of $file\n");
-    $wormbase->run_command("cp $farm_ace/waba.ace $target_dir/waba.ace", $log);
-    $wormbase->run_command("cp $farm_ace/waba.ace $backup_dir", $log);
-  }
-  elsif ( -e "$source_dir/$file" ) {
-    $log->write_to("copying new version of $file\n");
-    $wormbase->run_command("cp $source_dir/$file $target_dir/$file", $log);
-    $wormbase->run_command("cp $source_dir/$file $backup_dir", $log);
-  }
-  else {
-    $log->write_to($file." does not exist\n");
-    $log->error unless $file eq 'waba.ace';
+
+# copy the non-species-specific files
+if (-e "$farm_ace/waba.ace") {
+  $log->write_to("copying new version of waba.ace\n");
+  $wormbase->run_command("cp $farm_ace/waba.ace $target_dir/waba.ace", $log);
+  $wormbase->run_command("cp $farm_ace/waba.ace $backup_dir", $log);
+}
+if ( -e "$source_dir/ensembl_protein_info.ace" ) {
+  $log->write_to("copying new version of ensembl_protein_info.ace\n");
+  $wormbase->run_command("cp $source_dir/ensembl_protein_info.ace $target_dir/ensembl_protein_info.ace", $log);
+  $wormbase->run_command("cp $source_dir/ensembl_protein_info.ace $backup_dir", $log);
+}
+
+
+# copy these file for each tier 2 species
+my %accessors = ($wormbase->species_accessors);
+$accessors{elegans} = $wormbase;
+foreach my $species (keys %accessors) {
+
+  foreach my $f (@files){
+    my $file = $f;		# don't want to change $f as it is a reference to the element in @files
+    $file =~ s/SPECIES/$species/;
+    if ( -e "$source_dir/$file" ) {
+      $log->write_to("copying new version of $file\n");
+      $wormbase->run_command("cp $source_dir/$file $target_dir/$file", $log);
+      $wormbase->run_command("cp $source_dir/$file $backup_dir", $log);
+    } else {
+      warn "$source_dir/$file does not exist\n";
+    }
   }
 }
 
