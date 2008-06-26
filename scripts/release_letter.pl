@@ -4,8 +4,8 @@
 # 
 # by Anthony Rogers                             
 #
-# Last updated by: $Author: mh6 $               
-# Last updated on: $Date: 2008-03-31 15:19:53 $
+# Last updated by: $Author: mt3 $               
+# Last updated on: $Date: 2008-06-26 10:04:45 $
 
 # Generates a release letter at the end of build.
 #
@@ -115,7 +115,7 @@ if( defined($opt_l)) {
 
   print RL "\n\n";
   print RL "Release notes on the web:\n-------------------------\n";
-  print RL "http://www.wormbase.org/wiki/index.php/Release_notes\n\n\n\n";
+  print RL "http://www.wormbase.org/wiki/index.php/Release_Schedule\n\n\n\n";
   
   # make the chromosomal sequence changes file
   open (CC, "> $reports_dir/chromosome_changes") || die "Can't open file $reports_dir/chromosome_changes\n";
