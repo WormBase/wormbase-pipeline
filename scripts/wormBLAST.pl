@@ -5,7 +5,7 @@
 # written by Anthony Rogers
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2008-06-26 12:55:16 $
+# Last edited on: $Date: 2008-06-26 12:58:58 $
 #
 # it depends on:
 #    wormpep + history
@@ -227,7 +227,7 @@ if ($cleanup) {
     foreach my $species_dir (@species_dir) {
       foreach my $directory (@directories) {
         rmtree( "$scratch_dir/$species_dir/$directory", 1, 1 );	# this will remove the directory as well
-        mkdir("$scratch_dir/$species_dir/$directory", 775); # so remake it
+        mkdir("$scratch_dir/$species_dir/$directory", 0775); # so remake it
         system("chgrp worm $scratch_dir/$species_dir/$directory"); # and make it writable by 'worm'
       }
     }
