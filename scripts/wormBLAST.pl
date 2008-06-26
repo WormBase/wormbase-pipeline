@@ -5,7 +5,7 @@
 # written by Anthony Rogers
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2008-06-26 12:13:33 $
+# Last edited on: $Date: 2008-06-26 12:26:30 $
 #
 # it depends on:
 #    wormpep + history
@@ -190,8 +190,7 @@ if ($cleanup) {
     #    ipi_hits_list
     #    trembllist.txt
     #    swisslist.txt
-    #    best_blastp_hits
-    #    best_blastp_hits_brigprot
+    #    *best_blastp_hits
 
     #  ~wormpipe/Elegans
     #    WS99.agp
@@ -212,8 +211,8 @@ if ($cleanup) {
     system("mv -f $clear_dump/*.txt $wormpipe_dir/last_build/") && warn "cant move $clear_dump/*.txt\n";
     print "\t$clear_dump/ipi*\n";
     system("mv -f $clear_dump/ipi* $wormpipe_dir/last_build/") && warn "cant move $clear_dump/ipi*\n";
-    print "\t$clear_dump/best_blastp\n";
-    system("mv -f $clear_dump/best_blastp* $wormpipe_dir/last_build/") && warn "cant move $clear_dump/best_blast*\n";
+    print "\t$clear_dump/*best_blastp\n";
+    system("mv -f $clear_dump/*best_blastp* $wormpipe_dir/last_build/") && warn "cant move $clear_dump/*best_blast*\n";
     print "\t$wormpipe_dir/Elegans/*\n";
     system("mv -f $wormpipe_dir/Elegans/* $wormpipe_dir/last_build/") && warn "cant move $wormpipe_dir/Elegans/*\n";
     print "\nRemoving the $wormpipe_dir/DUMP_PREP_RUN lock file\n";
