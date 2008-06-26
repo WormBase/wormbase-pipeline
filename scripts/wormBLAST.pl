@@ -4,8 +4,8 @@
 #
 # written by Anthony Rogers
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2008-05-06 09:42:08 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2008-06-26 12:13:33 $
 #
 # it depends on:
 #    wormpep + history
@@ -221,17 +221,20 @@ if ($cleanup) {
 
     print "\nRemoving farm output and error files from /lustre/scratch1/ensembl/wormpipe/*\n";
     my $scratch_dir = "/lustre/scratch1/ensembl/wormpipe";
+    # Michael wants ensembl-brugia left as it is for now as he uses it for testing
+    my @species_dir = qw( ensembl-brenneri ensembl-briggsae ensembl-elegans ensembl-remanei ); 
     my @directories = qw( 0 1 2 3 4 5 6 7 8 9 );
-
-    foreach my $directory (@directories) {
-        rmtree( "$scratch_dir/$directory", 1, 1 );    # this will remove the directory as well
-        mkdir("$scratch_dir/$directory");             # so remake it
-        system("chgrp worm $scratch_dir/$directory"); # and make it writable by 'worm'
+    
+    foreach my $species_dir (@species_dir) {
+      foreach my $directory (@directories) {
+        rmtree( "$scratch_dir/$species_dir/$directory", 1, 1 );	# this will remove the directory as well
+        mkdir("$scratch_dir/$species_dir/$directory"); # so remake it
+        system("chgrp worm $scratch_dir/$species_dir/$directory"); # and make it writable by 'worm'
+      }
     }
     print "\n\nCLEAN UP COMPLETED\n\n";
 }
 
-&wait_for_pipeline_to_finish if $test_pipeline;       # debug stuff
 $log->mail;
 
 exit(0);
