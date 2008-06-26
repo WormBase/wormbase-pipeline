@@ -5,7 +5,7 @@
 # written by Anthony Rogers
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2008-06-26 12:26:30 $
+# Last edited on: $Date: 2008-06-26 12:55:16 $
 #
 # it depends on:
 #    wormpep + history
@@ -212,7 +212,7 @@ if ($cleanup) {
     print "\t$clear_dump/ipi*\n";
     system("mv -f $clear_dump/ipi* $wormpipe_dir/last_build/") && warn "cant move $clear_dump/ipi*\n";
     print "\t$clear_dump/*best_blastp\n";
-    system("mv -f $clear_dump/*best_blastp* $wormpipe_dir/last_build/") && warn "cant move $clear_dump/*best_blast*\n";
+    system("mv -f $clear_dump/*best_blastp* $wormpipe_dir/last_build/") && warn "cant move $clear_dump/*                                         best_blast*\n";
     print "\t$wormpipe_dir/Elegans/*\n";
     system("mv -f $wormpipe_dir/Elegans/* $wormpipe_dir/last_build/") && warn "cant move $wormpipe_dir/Elegans/*\n";
     print "\nRemoving the $wormpipe_dir/DUMP_PREP_RUN lock file\n";
@@ -227,7 +227,7 @@ if ($cleanup) {
     foreach my $species_dir (@species_dir) {
       foreach my $directory (@directories) {
         rmtree( "$scratch_dir/$species_dir/$directory", 1, 1 );	# this will remove the directory as well
-        mkdir("$scratch_dir/$species_dir/$directory"); # so remake it
+        mkdir("$scratch_dir/$species_dir/$directory", 775); # so remake it
         system("chgrp worm $scratch_dir/$species_dir/$directory"); # and make it writable by 'worm'
       }
     }
