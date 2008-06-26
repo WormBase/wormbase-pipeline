@@ -2,7 +2,7 @@
 #
 # EMBLdump.pl :  makes modified EMBL dumps from camace.
 # 
-#  Last updated on: $Date: 2008-06-04 14:38:50 $
+#  Last updated on: $Date: 2008-06-26 15:38:41 $
 #  Last updated by: $Author: pad $
 
 use strict;
@@ -190,6 +190,7 @@ if ($single) {
   $command  = "nosave\n"; # Don't really want to do this
   $command .= "query find CDS where Method = \"Genefinder\"\nkill\ny\n";# remove Genefinder predictions
   $command .= "query find CDS where Method = \"twinscan\"\nkill\ny\n";# remove twinscan predictions
+  $command .= "query find CDS where Method = \"jigsaw\"\nkill\ny\n";# remove jigsaw predictions
   $command .= "query find Genome_sequence $single From_laboratory = HX AND Finished AND DNA\ngif EMBL $outfilename\n";# find sequence and dump
   $command .= "quit\nn\n";# say you don't want to save and exit
 }
@@ -198,6 +199,7 @@ else {
   $command  = "nosave\n"; # Don't really want to do this
   $command .= "query find CDS where Method = \"Genefinder\"\nkill\ny\n";# remove Genefinder predictions
   $command .= "query find CDS where Method = \"twinscan\"\nkill\ny\n";# remove twinscan predictions
+  $command .= "query find CDS where Method = \"jigsaw\"\nkill\ny\n";# remove jigsaw predictions
   $command .= "query find Genome_sequence From_laboratory = HX AND Finished AND DNA\ngif EMBL $outfilename\n";# find sequence and dump
   $command .= "quit\nn\n";# say you don't want to save and exit
 }

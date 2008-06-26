@@ -4,7 +4,7 @@
 #
 # by Keith Bradnam
 #
-# Last updated on: $Date: 2008-05-29 12:47:03 $
+# Last updated on: $Date: 2008-06-26 15:38:41 $
 # Last updated by: $Author: pad $
 #
 # see pod documentation at end of file for more information about this script
@@ -67,7 +67,7 @@ our @error5;
 
 # Check for non-standard methods in CDS class
 my $CDSfilter = "";
-my @CDSfilter = $db->fetch (-query => 'FIND CDS; method != Transposon_CDS; method != curated; method !=history; method !=Genefinder; method !=twinscan');
+my @CDSfilter = $db->fetch (-query => 'FIND CDS; method != Transposon_CDS; method != curated; method !=history; method !=Genefinder; method !=twinscan; method !=jigsaw');
 foreach $CDSfilter (@CDSfilter) {
   push(@error4, "ERROR! CDS:$CDSfilter contains an invalid method please check\n");
 }
@@ -104,10 +104,13 @@ foreach my $gene_model ( @Predictions ) {
   my $i;
   my $j;
   
-  if (($exon_coord2[0] < "1") && ($method_test->name eq 'curated')){
-    push(@error1, "ERROR: $gene_model has a problem with it\'s exon co-ordinates\n");
-    print "ERROR: $gene_model has a problem with it\'s exon co-ordinates\n";
-    next;
+#  if (!defined($exon_coord2[0])) {print "$gene_model\n";}
+  if ($method_test->name ne 'Transposon') {
+    if (($exon_coord2[0] < "1") && ($method_test->name eq 'curated')){
+      push(@error1, "ERROR: $gene_model has a problem with it\'s exon co-ordinates\n");
+      print "ERROR: $gene_model has a problem with it\'s exon co-ordinates\n";
+      next;
+    }
   }
 
   for ($i=1; $i<@exon_coord2;$i++) {
@@ -153,9 +156,14 @@ foreach my $gene_model ( @Predictions ) {
     push(@error3, "ERROR: $gene_model requires an Isoform\n") if !$Isoform;
   }
 
-  #Test for erroneous Isoform tags.
-  if (($gene_model->name =~ (/\b\w+\.[0-9]{1,2}\b/)) && ($method_test ne 'history')) {
+  #All with an Isoform tag should be named correctly
+  if (($gene_model->name =~ (/\w+\.\d+$/)) && ($method_test ne 'history')) {
+    my $Isoform = $gene_model->at('Properties.Isoform');
+    push(@error3, "ERROR: $gene_model requires an Isoform\n") if $Isoform;
+  }
 
+  #Test for erroneous Isoform tags.??
+  if (($gene_model->name =~ (/\b\w+\.[0-9]{1,2,3}\b/)) && ($method_test ne 'history')) {
     my $Isoform = $gene_model->at('Properties.Isoform');
     push(@error3, "ERROR: $gene_model contains an invalid Isoform tag\n") if $Isoform;
   }
@@ -204,7 +212,7 @@ foreach my $gene_model ( @Predictions ) {
   print "ERROR: $gene_model method is hand_built\n" if ($method_test eq 'hand_built' && $verbose);
 	
   # check From_laboratory tag is present.
-  if (($method_test ne 'Genefinder') && ($method_test ne 'twinscan')) {
+  if (($method_test ne 'Genefinder') && ($method_test ne 'twinscan') && ($method_test ne 'jigsaw')) {
     my $laboratory = ($gene_model->From_laboratory);
     push(@error3, "ERROR: $gene_model does not have From_laboratory tag\n") if (!defined($laboratory));
     print "ERROR: $gene_model does not have From_laboratory tag\n" if (!defined($laboratory) && $verbose);
