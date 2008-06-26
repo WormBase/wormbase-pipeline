@@ -1,7 +1,7 @@
 #/software/bin/perl -w
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2008-06-20 16:19:38 $
+# Last updated on: $Date: 2008-06-26 12:19:57 $
 
 #################################################################################
 # Variables                                                                     #
@@ -75,7 +75,8 @@ foreach my $spDB (values %accessors) {
 $log->write_to("\nNow loading blast data\n");
 foreach my $spDB (values %accessors) {
   my @blastfiles = qw( SPECIES_blastp.ace SPECIES_blastx.ace worm_ensembl_SPECIES_interpro_motif_info.ace worm_ensembl_SPECIES_motif_info.ace);
-  foreach my $file (@blastfiles){
+  foreach my $f (@blastfiles){
+    my $file = $f;		# don't use $f as it is a reference to the array element
     my $species = $spDB->species;
     $file =~ s/SPECIES/$species/;
     if (-e $file) {
