@@ -7,7 +7,7 @@
 # Do position scoring matrix evaluation (PWM, PSM, PSSM) of a sequence.
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2007-07-23 12:25:07 $      
+# Last updated on: $Date: 2008-06-27 15:39:08 $      
 
 =pod
 
@@ -298,7 +298,7 @@ sub _evaluate {
   for (my $i = 0; $i < @{$matrix{'a'}}; $i++) {
     my $next_position = $pos + $matrix{'startoffset'} + $i;
     my $chr = lc substr($seq, $next_position, 1);
-    if ($chr eq 'n' || $chr eq '-') {return -999;}
+    if ($chr ne 'a' && $chr ne 'c' && $chr ne 'g' && $chr ne 't') {return -999;}
     $result += $matrix{$chr}->[$i];
   }
 
