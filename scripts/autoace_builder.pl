@@ -7,7 +7,7 @@
 # Usage : autoace_builder.pl [-options]
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2008-06-19 09:20:30 $
+# Last edited on: $Date: 2008-06-30 16:26:08 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -283,6 +283,7 @@ sub remap_misc_dynamic {
 		      'misc_mass_spec_GenniferMerrihew.ace'   => 'mass_spec',
 		      'misc_mass_spec_Other.ace'              => 'mass_spec',
 		      );
+
     foreach my $clone_data_file (keys %clone_data) {
       my $data_file = $wormbase->misc_dynamic."/$clone_data_file";
       my $backup_file = $wormbase->misc_dynamic."/BACKUP/$clone_data_file.$previous_release";
@@ -305,6 +306,13 @@ sub remap_misc_dynamic {
     if (-e $backup_genefinder) {$wormbase->run_command("mv -f $backup_genefinder $genefinder", $log);}
     $wormbase->run_command("mv -f $genefinder $backup_genefinder", $log);
     $wormbase->run_script( "remap_genefinder_between_releases.pl -input $backup_genefinder -out $genefinder", $log);
+
+    # remap jigsaw - uses the remap genefinder script
+    my $jigsaw = $wormbase->misc_dynamic."/misc_jigsaw.ace";
+    my $backup_jigsaw = $wormbase->misc_dynamic."/BACKUP/misc_jigsaw.ace.$previous_release";
+    if (-e $backup_jigsaw) {$wormbase->run_command("mv -f $backup_jigsaw $jigsaw", $log);}
+    $wormbase->run_command("mv -f $jigsaw $backup_jigsaw", $log);
+    $wormbase->run_script( "remap_genefinder_between_releases.pl -input $backup_jigsaw -out $jigsaw", $log);
 
     # remap fosmids
     my $fosmids = $wormbase->misc_dynamic."/fosmids.ace";
