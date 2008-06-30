@@ -1,13 +1,13 @@
-#!/usr/local/bin/perl5.8.0 -w
+#!/software/bin/perl -w
 #
 # remap_genefinder_between_releases.pl                     
 # 
 # by Gary Williams                         
 #
-# This takes the BUILD_DATA/MISC_DYNAMIC/misc_genefinder.ace file and converts any coordinates that have changed between releases
+# This takes the BUILD_DATA/MISC_DYNAMIC/misc_genefinder.ace or jigsaw files and converts any coordinates that have changed between releases
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-02-14 11:12:06 $      
+# Last updated on: $Date: 2008-06-30 16:25:06 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -83,7 +83,7 @@ my @mapping_data = Remap_Sequence_Change::read_mapping_data($version - 1, $versi
 
 
 #
-# Read the GENEFINDER locations from the previous ace file
+# Read the GENEFINDER/Jigsaw locations from the previous ace file
 # in order to be able to remap them
 #
 
@@ -118,17 +118,19 @@ my @mapping_data = Remap_Sequence_Change::read_mapping_data($version - 1, $versi
 my $current_converter = Coords_converter->invoke($currentdb, 0, $wormbase);
 my $autoace_converter = Coords_converter->invoke($ace_dir, 0, $wormbase);
 
-# get the GENEFINDER details
+# get the GENEFINDER/Jigsaw details
 my $clone_id;
 my ($indel, $change);
+my $prev_line = "";
 
 open (IN, "< $input") || die "can't open input file $input\n";
 open (OUT, "> $output") || die "can't open output file $output\n";
 while (my $line = <IN>) {
   chomp $line;
 
-  if ($line =~ /Sequence\s+(\S+)/) { 
+  if ($line =~ /Sequence\s+\:*\s*(\S+)/) { # there is a ':' in Jigsaw, but not in Genefinder
     $clone_id = $1;
+    $clone_id =~ s/\"//g;		# strip off quotes
 
   } elsif ($line =~ /CDS_child\s+(\S+)\s+(\d+)\s+(\d+)/) {
     my ($genefinder_id, $start, $end) = ($1, $2, $3);
@@ -139,19 +141,20 @@ while (my $line = <IN>) {
 	Remap_Sequence_Change::remap_clone($wormbase, $clone_id, $start, $end, $version, $current_converter, $autoace_converter, @mapping_data);
 
     if ($indel) {
-      $log->write_to("There is an indel in the sequence in GENEFINDER $genefinder_id, clone $clone_id, $start, $end\n");
+      $log->write_to("There is an indel in the sequence in GENEFINDER/Jigsaw $genefinder_id, clone $clone_id, $start, $end\n");
     } elsif ($change) {
-      $log->write_to("There is a change in the sequence in GENEFINDER $genefinder_id, clone $clone_id, $start, $end\n");
+      $log->write_to("There is a change in the sequence in GENEFINDER/Jigsaw $genefinder_id, clone $clone_id, $start, $end\n");
     }
 
     print "CDS_child $genefinder_id $start $end\n" if ($verbose);
-    print OUT "Sequence $clone_id\n";
+    if ($prev_line ne "") {print OUT "\n";}
+    print OUT "Sequence : \"$clone_id\"\n";
     print OUT "CDS_child $genefinder_id $start $end\n";
 
   } else {
     print OUT "$line\n";
   }
-
+  $prev_line = $line;
 }
 close (IN);
 close (OUT);
