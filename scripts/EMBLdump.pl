@@ -2,7 +2,7 @@
 #
 # EMBLdump.pl :  makes modified EMBL dumps from camace.
 # 
-#  Last updated on: $Date: 2008-06-26 15:38:41 $
+#  Last updated on: $Date: 2008-06-30 15:45:24 $
 #  Last updated by: $Author: pad $
 
 use strict;
@@ -271,7 +271,7 @@ while (<EMBL>) {
   if( /^AC/ ) {
     my $acc = $clone2accession{$id};
     print OUT "ID   $clone2accession{$id}; $ID2\nXX\n";
-    next;
+#    next;
 #AC * _AC006622
 #AC   CU457737; AC006622;
 
