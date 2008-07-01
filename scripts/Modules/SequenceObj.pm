@@ -847,9 +847,9 @@ sub check_features
 	  return 0;
 	}
       } else {
-	if ( $cdna->polyA_signal->[0] + 30 > $self->end) {
+	if ( $cdna->polyA_signal->[0] +  2500 > $self->end) {
 	  print STDERR $cdna->name, " polyA_signal within ", $self->name, "\n";
-	  #return 0;
+	  return 0;
 	}
       }
     }	
