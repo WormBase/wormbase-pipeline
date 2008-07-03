@@ -7,7 +7,7 @@
 # Do fast overlap matching of positions of two sets of things.
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-07-03 10:45:14 $      
+# Last updated on: $Date: 2008-07-03 13:50:45 $      
 
 =pod
 
@@ -390,7 +390,7 @@ sub read_GFF_file {
 #      print "$line\n";  
       $id =~ s/\"//g;	# remove quotes
       $id =~ s/\;\S+//;	# remove anything after a ';' as this is s field separator in the 'other' field
-      if (! defined $id) {print "ID NOT DEFINED *************************\n";next;}
+      if (! defined $id) {print "ID NOT DEFINED *************************\nwhen reading $line\nin file $file\n";next;}
       my $other_data;
       if (exists $GFF_data->{'other_data'}) {$other_data = $f[8]}
       if (exists $GFF_data->{homology}) {	# do we need to store the homology data?
@@ -1309,6 +1309,61 @@ sub get_twinscan_exons {
      directory			=> $self->{database} . "/CHROMOSOMES",
      file			=> "${chromosome}.gff",
      gff_source			=> "twinscan",
+     gff_type			=> "coding_exon",
+     ID_after			=> "CDS\\s+",
+   );
+
+  return $self->read_GFF_file($chromosome, \%GFF_data);
+
+}
+
+=head2
+
+    Title   :   get_twinscan_CDS
+    Usage   :   my @gff = $ovlp->get_twinscan_CDS($chromosome)
+    Function:   reads the GFF data for twinscan coding transcripts (START to STOP)
+    Returns :   list of lists for GFF data
+    Args    :   chromosome number
+
+=cut
+
+sub get_jigsaw_CDS {
+  my $self = shift;
+  my ($chromosome) = @_;
+
+  my %GFF_data = 
+   (
+     directory			=> $self->{database} . "/CHROMOSOMES",
+     file			=> "${chromosome}.gff",
+     gff_source			=> "jigsaw",
+     gff_type			=> "CDS",
+     ID_after			=> "CDS\\s+",
+   );
+
+  return $self->read_GFF_file($chromosome, \%GFF_data);
+
+}
+
+
+=head2
+
+    Title   :   get_jigsaw_exons
+    Usage   :   my @gff = $ovlp->get_jigsaw_exons($chromosome)
+    Function:   reads the GFF data for jigsaw exons
+    Returns :   list of lists for GFF data
+    Args    :   chromosome number
+
+=cut
+
+sub get_jigsaw_exons {
+  my $self = shift;
+  my ($chromosome) = @_;
+
+  my %GFF_data = 
+   (
+     directory			=> $self->{database} . "/CHROMOSOMES",
+     file			=> "${chromosome}.gff",
+     gff_source			=> "jigsaw",
      gff_type			=> "coding_exon",
      ID_after			=> "CDS\\s+",
    );
