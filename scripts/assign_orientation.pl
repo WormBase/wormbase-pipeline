@@ -8,8 +8,8 @@
 # orientation yet.  It uses best splice site and overlap with
 # transcripts to find the most probably orientation.
 #
-# Last updated by: $Author: mh6 $     
-# Last updated on: $Date: 2008-02-21 11:37:29 $      
+# Last updated by: $Author: gw3 $     
+# Last updated on: $Date: 2008-07-03 10:48:04 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -114,7 +114,7 @@ foreach my $chromosome ($wormbase->get_chromosome_names(-mito => 1, -prefix => 0
 		    homology=>1
 		    );
     print "gff_file in hash=" . $GFF_data{file} . "\n";
-    @est_hsp = $ovlp->read_GFF_file(\%GFF_data);
+    @est_hsp = $ovlp->read_GFF_file($chromosome, \%GFF_data);
   } else {
     @est_hsp = $ovlp->get_EST_BEST($chromosome); # get main list of EST entries to search with
     push @est_hsp, $ovlp->get_OST_BEST($chromosome); # and add on the list of OSTs ..
