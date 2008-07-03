@@ -5,11 +5,11 @@
 # by Gary Williams                        
 #
 # This looks for anomalous things such as protein homologies not
-# matching a CDS and stores the results in the mysql database
+# matching a CDS and stores the results in in a data file ready to be read into the SQL database
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-06-20 10:25:31 $      
+# Last updated on: $Date: 2008-07-03 10:17:15 $      
 
 # Changes required by Ant: 2008-02-19
 # 
@@ -81,7 +81,6 @@ use Ace;
 use Coords_converter;
 use Modules::Overlap;
 use Modules::PWM;
-use DBI;
 use POSIX qw(log10);
 
 ######################################
@@ -89,7 +88,7 @@ use POSIX qw(log10);
 ######################################
 
 my ($help, $debug, $test, $verbose, $store, $wormbase);
-my ($database, $species, $supplementary, $nodb);
+my ($database, $species, $supplementary);
 
 GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
@@ -99,12 +98,15 @@ GetOptions ("help"       => \$help,
 	    "database:s" => \$database,	    # use the specified database instead of currentdb
 	    "species:s"  => \$species,
 	    "supplementary" => \$supplementary, # add GFF files to the SUPPLEMENTARY_DATA directory of the specified database
-	    "nodb"       => \$nodb,
 	    );
 
 if ( $store ) {
   $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
 } else {
+  # check that the given species is correct
+  if (!defined $species && defined $database && (glob($database) ne glob("~wormpub/BUILD/autoace)") || glob($database) ne glob("~wormpub/DATABASES/current_DB)"))) {
+    croak("Please give the -species parameter if using a non-standard database\n");
+  }
   $wormbase = Wormbase->new( -debug   => $debug,
                              -test    => $test,
 			     -organism => $species,
@@ -124,6 +126,7 @@ my $log = Log_files->make_build_log($wormbase);
 
 my $currentdb = $wormbase->database('current');		# set currentdb explicitly as the default
 $database = $currentdb unless $database;
+$species = $wormbase->species;	                        # set the species if it was given
 
 
 #################################
@@ -137,40 +140,11 @@ my $tace = $wormbase->tace;        # TACE PATH
 ##########################
 
 
-my $mysql;
-my $db_key_id;
-my $go_faster_by_ignoring_db_checks;
-$species = $wormbase->species;
-if (! $nodb) {
-  # mysql database parameters
-  my $sqldb = "worm_anomaly";
-  if ($species ne 'elegans') {$sqldb = $sqldb . "_" . lc $species;}
-  my $dbsn = "DBI:mysql:database=$sqldb;host=ia64d";
-  my $dbuser = "wormadmin";
-  my $dbpass = "worms";
-
-  $mysql = DBI -> connect($dbsn, $dbuser, $dbpass, {RaiseError => 1})
-      || die "cannot connect to database $sqldb, $DBI::errstr";
-
-  # get the last used anomaly_id key value
-  my $array_ref = $mysql->selectcol_arrayref("select max(anomaly_id) from anomaly;");
-  $db_key_id = $array_ref->[0]; # 
-  $go_faster_by_ignoring_db_checks = 0;
-  if (defined $db_key_id) {
-    print "db_key_id=$db_key_id\n";
-  } else {
-    # reset the database key value
-    $db_key_id = 0; 
-    print "db_key_id has been reset to 0\n";
-    $go_faster_by_ignoring_db_checks = 1;	# don't need to check records in the database because there are none
-  }
-}
-
 # output file of data to write to database, primarily for St. Louis to read in
 my $datafile = $wormbase->wormpub . "/CURATION_DATA/anomalies_$species.dat";
 open (DAT, "> $datafile") || die "Can't open $datafile\n";
 
-# and output the species line for the St. Louis datafile
+# and output the species line for the data file
 print DAT "SPECIES\t$species\n\n";
 
 my $coords = Coords_converter->invoke($database, 0, $wormbase);
@@ -181,17 +155,20 @@ my $ace = Ace->connect (-path => $database,
                        -program => $tace) || die "cannot connect to database at $database\n";
 
 # get the Overlap object
-my $ovlp = Overlap->new($database, $wormbase);
+my $jigsaw = 0;
+if ($jigsaw) {
+  $log->write_to("Using the JIGSAW predictions\n");
+} else {
+  $log->write_to("Using the TIGR predictions\n");
+}
+my $ovlp = Overlap->new($database, $wormbase, $jigsaw);
 
 my $pwm = PWM->new;
 
 my $chromosome_prefix=$wormbase->chromosome_prefix;
 
-my %clonesize;
-$wormbase->FetchData('clonesize', \%clonesize, "$database/COMMON_DATA/");
-
 my %clonelab;
-if ($wormbase->species eq 'elegans') {
+if ($species eq 'elegans') {
   $wormbase->FetchData('clone2centre', \%clonelab, "$database/COMMON_DATA/");
 }
 
@@ -204,6 +181,18 @@ my @est_mismatches;
 # hash of anomaly counts
 my %anomaly_count;
 
+# read the list of which analyses are being done by which species
+my %run;
+while (my $run = <DATA>) {
+  if ($run =~ /START_DATA/) {last;}
+}
+while (my $run = <DATA>) {
+  if ($run =~ /END_DATA/) {last;}
+  my ($analysis, $allowed_species) = $run =~ /(\S+)\s*(.*)/;
+  if ($allowed_species =~ /$species/) {$run{$analysis} = 1;}
+}
+
+
 # now delete things that have not been updated in this run that you
 # would expect to have been updated like protein-homology-based
 # anomalies that might have gone away.  This also deletes anomalies
@@ -212,6 +201,7 @@ my %anomaly_count;
 &delete_anomalies("UNMATCHED_PROTEIN");
 &delete_anomalies("SPLIT_GENES_BY_PROTEIN");
 &delete_anomalies("SPLIT_GENE_BY_PROTEIN_GROUPS");
+&delete_anomalies("SHORT_EXON");
 &delete_anomalies("SPLIT_GENES_BY_EST");
 &delete_anomalies("MERGE_GENES_BY_EST");
 &delete_anomalies("UNMATCHED_EST");
@@ -231,6 +221,7 @@ my %anomaly_count;
 &delete_anomalies("UNMATCHED_TWINSCAN");
 &delete_anomalies("UNMATCHED_GENEFINDER");
 &delete_anomalies("CONFIRMED_INTRON");
+&delete_anomalies("UNCONFIRMED_INTRON");
 &delete_anomalies("CONFIRMED_EST_INTRON");
 &delete_anomalies("CONFIRMED_cDNA_INTRON");
 &delete_anomalies("INTRONS_IN_UTR");
@@ -259,14 +250,69 @@ print OUT "Remark \"This method is used by acedb to display curation anomaly reg
 print OUT "\n\n";
 close(OUT);
 
+my $brugia_count_contigs = 0;	# in brugia count the contigs that we test
+
 # loop through the chromosomes
-my @chromosomes = $wormbase->get_chromosome_names(-mito => 0, -prefix => 0);
+my @chromosomes = $wormbase->get_chromosome_names(-mito => 0, -prefix => 1);
 
 foreach my $chromosome (@chromosomes) {
 
+# for brugia, test to see if the jigsaw and tigr genes are the same -
+# it so then we don't need to get their anomalies for this test as
+# there is no difference between them
+  if ($species =~ /brugia/) {
+
+    # don't bother to test the degenerate contigs
+    if ($chromosome =~ /supercontigDegenerate/) {next;}
+
+# taken from get_Coding_transcript_exons
+    my %GFF_data = 
+	(
+	 directory		=> glob("~wormpub/DATABASES/TEST_DATABASES/brugia/brugia/CHROMOSOMES"), # jigsaw
+	 file			=> "${chromosome}.gff", # jigsaw
+	 gff_source		=> "jigsaw", # jigsaw
+	 gff_type		=> "exon", # jigsaw
+	 ID_after		=> "CDS\\s+", # jigsaw
+	 );
+
+    my @jigsaw_exons = $ovlp->read_GFF_file($chromosome, \%GFF_data);
+
+    %GFF_data = 
+	(
+	 directory		=> glob("~wormpub/DATABASES/TEST_DATABASES/brugia/brugia/CHROMOSOMES2/brugia"),
+	 file			=> "${chromosome}.gff3", # TIGR
+	 gff_source		=> "WormBase",
+	 gff_type		=> "exon",
+	 ID_after		=> "Parent=transcript\:",
+	 );
+
+    my @tigr_exons = $ovlp->read_GFF_file($chromosome, \%GFF_data);
+
+    my $match = 1;
+    if (@jigsaw_exons == @tigr_exons) {
+      foreach my $jigsaw (@jigsaw_exons) {
+	my $tigr = shift @tigr_exons;
+	if ($jigsaw->[1] != $tigr->[1] || $jigsaw->[2] != $tigr->[2]) {
+	  $match = 0; # difference in lengths, so not a perfect match
+	  print "no match in $jigsaw->[1] .. $jigsaw->[2] vs $tigr->[1] .. $tigr->[2]\n";
+	}
+      }
+    } else {
+      print "different number of exons: ", scalar @jigsaw_exons, " ", scalar @tigr_exons, "\n";
+      $match = 0;		# different numbers of exons, so not a perfect match
+    }
+    if ($match) {
+      print "NOT testing $chromosome - both the same. Have done: $brugia_count_contigs contigs\n";
+      next;  # both sets of exons are the same, so don't test this supercontig
+    }		
+    $brugia_count_contigs++;
+    print "TESTING $chromosome. Have done: $brugia_count_contigs contigs\n";
+  }
+
+
   # if we want the anomalies GFF file
   if ($supplementary) {
-    my $gff_file = "$database/CHROMOSOMES/SUPPLEMENTARY_GFF/${chromosome_prefix}${chromosome}_curation_anomalies.gff";
+    my $gff_file = "$database/CHROMOSOMES/SUPPLEMENTARY_GFF/${chromosome}_curation_anomalies.gff";
     open (OUTPUT_GFF, ">$gff_file") || die "Can't open $gff_file";
   }
 
@@ -322,7 +368,7 @@ foreach my $chromosome (@chromosomes) {
   my @check_introns_EST  = $ovlp->get_check_introns_EST($chromosome);
   my @check_introns_cDNA = $ovlp->get_check_introns_cDNA($chromosome);
 
-  my @expression = &get_expression($chromosome);
+  my @expression = &get_expression($chromosome) if (exists $run{UNMATCHED_EXPRESSION});
 
 
 ######################################################################
@@ -332,63 +378,66 @@ foreach my $chromosome (@chromosomes) {
   #if (0) {
 
   print "finding protein homologies not overlapping CDS exons\n";
-  my $matched_protein_aref = &get_protein_differences(\@cds_exons, \@pseudogenes, \@homologies, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, $chromosome);
+  my $matched_protein_aref = &get_protein_differences(\@cds_exons, \@pseudogenes, \@homologies, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, $chromosome) if (exists $run{UNMATCHED_PROTEIN});
 
   print "finding frameshifts\n";
-  &get_frameshifts(\@homologies, \@CDS_introns, $chromosome);
+  &get_frameshifts(\@homologies, \@CDS_introns, $chromosome) if (exists $run{FRAMESHIFTED_PROTEIN});
 
   print "finding genes to be split/merged based on protein homology\n";
-  &get_protein_split_merged($matched_protein_aref, $chromosome);
+  &get_protein_split_merged($matched_protein_aref, $chromosome) if (exists $run{MERGE_GENES_BY_PROTEIN});
 
   print "finding genes to be split based on protein homology groups\n";
-  &get_protein_split($matched_protein_aref, $chromosome);
+  &get_protein_split($matched_protein_aref, $chromosome) if (exists $run{SPLIT_GENE_BY_PROTEIN_GROUPS});
+
+  print "finding short CDS exons\n";
+  &get_short_exons(\@coding_transcripts, $chromosome) if (exists $run{SHORT_EXON});
 
   # this finds TEC-RED TSL sites more than 100 bases upstream that are not mentioned in the remarks or evidence
   print "finding isolated TSL sites\n";
-  &get_isolated_TSL(\@TSL_SL1, \@TSL_SL2, \@CDS, \@coding_transcripts, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, $chromosome);
+  &get_isolated_TSL(\@TSL_SL1, \@TSL_SL2, \@CDS, \@coding_transcripts, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, $chromosome) if (exists $run{UNMATCHED_TSL});
 #}
 
   print "finding isolated RST5\n";
-  #+++&get_isolated_RST5(\@rst_hsp, \@CDS, \@coding_transcripts, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, $chromosome);
+  &get_isolated_RST5(\@rst_hsp, \@CDS, \@coding_transcripts, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, $chromosome) if (exists $run{UNMATCHED_RST5});
 
   #if (0) {
   print "finding twinscan exons not overlapping CDS exons\n";
-  &get_unmatched_twinscan_exons(\@twinscan_exons, \@cds_exons, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, \@repeatmasked_complex, $chromosome);
+  &get_unmatched_twinscan_exons(\@twinscan_exons, \@cds_exons, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, \@repeatmasked_complex, $chromosome) if (exists $run{UNMATCHED_TWINSCAN});
 
   print "finding genefinder exons not overlapping CDS exons\n";
-  &get_unmatched_genefinder_exons(\@genefinder, \@cds_exons, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, \@repeatmasked_complex, $chromosome);
+  &get_unmatched_genefinder_exons(\@genefinder, \@cds_exons, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, \@repeatmasked_complex, $chromosome) if (exists $run{UNMATCHED_GENEFINDER});
 
   print "finding WABA coding regions not overlapping CDS exons\n";
-  &get_unmatched_waba_coding(\@waba_coding, \@cds_exons, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, \@repeatmasked_complex, $chromosome);
+  &get_unmatched_waba_coding(\@waba_coding, \@cds_exons, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, \@repeatmasked_complex, $chromosome) if (exists $run{UNMATCHED_WABA});
 
   print "finding CDS exons overlapping repeatmasker regions\n";
-  &get_matched_repeatmasker(\@cds_exons, \@repeatmasked_complex, $chromosome);
+  &get_matched_repeatmasker(\@cds_exons, \@repeatmasked_complex, $chromosome) if (exists $run{REPEAT_OVERLAPS_EXON});
 
   print "finding CDS exons overlapping other genes\n";
-  &get_matched_exons(\@cds_exons, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, $chromosome);
+  &get_matched_exons(\@cds_exons, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, $chromosome) if (exists $run{OVERLAPPING_EXONS});
 
   print "finding EST/genome mismatches\n";
-  &get_est_mismatches(\@est_hsp, $chromosome);
+  &get_est_mismatches(\@est_hsp, $chromosome) if (exists $run{UNMATCHED_EST});
 
 
   print "finding weak CDS exon splice sites\n";
-  &get_weak_exon_splice_sites(\@CDS_introns, $chromosome);
+  &get_weak_exon_splice_sites(\@CDS_introns, $chromosome) if (exists $run{WEAK_INTRON_SPLICE_SITE});
 
   print "finding multiple UTR introns\n";
-  &get_multiple_utr_introns(\@UTRs_5, $chromosome);
-  &get_multiple_utr_introns(\@UTRs_3, $chromosome);
+  &get_multiple_utr_introns(\@UTRs_5, $chromosome) if (exists $run{INTRONS_IN_UTR});
+  &get_multiple_utr_introns(\@UTRs_3, $chromosome) if (exists $run{INTRONS_IN_UTR});
 
   print "read confirmed checked introns\n";
-  &get_checked_confirmed_introns(\@check_introns_EST, \@check_introns_cDNA, $chromosome);
+  &get_checked_confirmed_introns(\@check_introns_EST, \@check_introns_cDNA, $chromosome) if (exists $run{CONFIRMED_INTRON});
 
   print "finding genes to be split/merged based on twinscan\n";
-  &get_twinscan_split_merged(\@twinscan_transcripts, \@CDS, $chromosome);
+  &get_twinscan_split_merged(\@twinscan_transcripts, \@CDS, $chromosome) if (exists $run{MERGE_GENES_BY_TWINSCAN});
 
   print "finding unmatched mass spec peptides\n";
-  &get_unmatched_mass_spec_peptides(\@mass_spec_peptides, \@cds_exons, \@transposon_exons, $chromosome);
+  &get_unmatched_mass_spec_peptides(\@mass_spec_peptides, \@cds_exons, \@transposon_exons, $chromosome) if (exists $run{UNMATCHED_MASS_SPEC_PEPTIDE});
 
   print "finding introns refuted by EST\n";
-  &get_introns_refuted_by_est(\@CDS_introns, \@cds_exons, \@est_hsp, \@rst_hsp, \@ost_hsp, \@mrna_hsp, $chromosome);
+  &get_introns_refuted_by_est(\@CDS_introns, \@cds_exons, \@est_hsp, \@rst_hsp, \@ost_hsp, \@mrna_hsp, $chromosome) if (exists $run{EST_OVERLAPS_INTRON});
 
   print "finding unmatched high expression regions\n";
   &get_expression_outside_transcripts(\@expression,
@@ -407,7 +456,10 @@ foreach my $chromosome (@chromosomes) {
 				      \@stRNA, 
 				      \@tRNA, 
 				      \@tRNAscan_SE_1_23, 
-				      $chromosome);
+				      $chromosome) if (exists $run{UNMATCHED_EXPRESSION});
+
+  print "finding confirmed introns not matching CDS introns - for brugia\n"; 
+  &get_unconfirmed_introns(\@est_hsp, \@mrna_hsp, \@CDS_introns, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, $chromosome) if (exists $run{UNCONFIRMED_INTRON});
 
 #}
 #################################################
@@ -415,29 +467,26 @@ foreach my $chromosome (@chromosomes) {
 
 ##  this looks at the ESTs  finds those not attached to a transcript
 ##  print "finding ESTs sites not attached to a transcript\n";
-##  &get_unattached_EST(\@est_hsp, $chromosome);
+##  &get_unattached_EST(\@est_hsp, $chromosome) if (exists $run{UNATTACHED_EST});
 
 ##  # ESTs not matching exons
 ##  # and those with a match to a coding exon
 ##  print "finding EST homologies not overlapping exons\n";
-##  my $matched_EST_aref = &get_EST_differences(\@exons, \@pseudogenes, \@est_hsp, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, $chromosome);
+##  my $matched_EST_aref = &get_EST_differences(\@exons, \@pseudogenes, \@est_hsp, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, $chromosome) if (exists $run{UNMATCHED_EST});
 
 ##  print "finding split/merged genes based on EST homology\n";
-##  &get_EST_split_merged($matched_EST_aref, $chromosome, %Show_in_reverse_orientation);
+##  &get_EST_split_merged($matched_EST_aref, $chromosome, %Show_in_reverse_orientation) if (exists $run{MERGE_GENES_BY_EST});
 
 #################################################
 # we don't value these anomalies very much - don't run them for now
 
-##  print "finding short CDS exons\n";
-##  &get_short_exons(\@coding_transcripts, $chromosome);
-
 #  # this looks at the EST TSL sites and finds those not attached to genes
 #  print "finding TSL sites not attached to genes\n";
-#  &get_unattached_TSL(\@TSL_SL1, \@TSL_SL2, $chromosome);
+#  &get_unattached_TSL(\@TSL_SL1, \@TSL_SL2, $chromosome) if (exists $run{UNATTACHED_TSL});
 
 #  # get SAGE tags that don't match a gene with score based on frequency
 #  print "finding non-overlapping SAGE_tags\n";
-#  &get_unmatched_SAGE(\@coding_transcripts, \@pseudogenes, \@SAGE_tags, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, \@miRNA, \@ncRNA, \@scRNA, \@snRNA, \@snoRNA, \@stRNA, \@tRNA, \@tRNAscan_SE_1_23, $chromosome);
+#  &get_unmatched_SAGE(\@coding_transcripts, \@pseudogenes, \@SAGE_tags, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, \@miRNA, \@ncRNA, \@scRNA, \@snRNA, \@snoRNA, \@stRNA, \@tRNA, \@tRNAscan_SE_1_23, $chromosome) if (exists $run{UNMATCHED_SAGE});
 
 
 #################################################
@@ -453,8 +502,8 @@ foreach my $chromosome (@chromosomes) {
 }
 
 
-# get the incomlpete Pfam motif anomalies - this is currently chromosome independent
-&find_incomplete_pfam_motifs();
+# get the incomplete Pfam motif anomalies - this is currently chromosome independent
+&find_incomplete_pfam_motifs() if (exists $run{INCOMPLETE_PFAM_MOTIF});
 
 # close the output datafile for St. Louis
 if ($datafile) {
@@ -481,11 +530,6 @@ foreach my $mismatch (@est_mismatches) {
 }
 close(EST_MISMATCH);
 
-# disconnect from the mysql database
-if (! $nodb) {
-  $mysql->disconnect || die "error disconnecting from database", $DBI::errstr;
-}
-
 # close the ACE connection
 $ace->close;
 
@@ -496,12 +540,12 @@ $ace->close;
 
 if ($database eq $wormbase->{'autoace'}) {
   foreach my $chromosome (@chromosomes) {
-    my $gff_file = $wormbase->{'chromosomes'} . "/SUPPLEMENTARY_GFF/${\$wormbase->chromosome_prefix}${chromosome}_curation_anomalies.gff";
+    my $gff_file = $wormbase->{'chromosomes'} . "/SUPPLEMENTARY_GFF/${chromosome}_curation_anomalies.gff";
     $wormbase->check_file($gff_file, $log,
 			  minsize => 700000,
 			  maxsize => 6000000,
 			  lines => ['^##',
-				    "^${\$wormbase->chromosome_prefix}${chromosome}\\s+curation_anomaly\\s+\\S+\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+\\s+Evidence\\s+\\S+"],
+				    "^${chromosome}\\s+curation_anomaly\\s+\\S+\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+\\s+Evidence\\s+\\S+"],
 			  );
   }
 }
@@ -551,7 +595,7 @@ sub get_expression {
     ID_after   => 'ID\s+',
     );
 
-  return $ovlp->read_GFF_file(\%GFF_data);
+  return $ovlp->read_GFF_file($chromosome, \%GFF_data);
 
 }
 
@@ -798,8 +842,10 @@ sub get_frameshifts {
   foreach my $intron (@{$CDS_introns_aref}) { # $intron_id, $chrom_start, $chrom_end, $chrom_strand, other
 
     my $other_data = $intron->[4];
-    if ($other_data =~ /Confirmed_/) { # test to see if this intron is confirmed
-      push @confirmed_introns, $intron;
+    if (defined $other_data) {	# in some species we may not have this cnofirmed information
+      if ($other_data =~ /Confirmed_/) { # test to see if this intron is confirmed
+	push @confirmed_introns, $intron;
+      }
     }
 
   }
@@ -2340,7 +2386,12 @@ sub get_weak_exon_splice_sites {
     my $chrom_end = $intron->[2];
     my $chrom_strand = $intron->[3];
     my $other_data = $intron->[4];
-    my $confirmed = $other_data =~ /Confirmed_/; # test to see if this intron is confirmed
+    my $confirmed;
+    if (defined $other_data) {
+      $confirmed = $other_data =~ /Confirmed_/; # test to see if this intron is confirmed
+    } else {
+      $confirmed = 0;		# assume all introns are not confirmed if we have no info on this
+    }
 
     # 5' splice site
     if (exists $splice_sites{"$CDS_id$chrom_strand$chrom_start"}) {
@@ -2387,7 +2438,7 @@ sub get_weak_exon_splice_sites {
   #################################################################
 
   my $pwm = PWM->new;
-  my $seq_file = "$database/CHROMOSOMES/${\$wormbase->chromosome_prefix}$chromosome.dna";
+  my $seq_file = "$database/CHROMOSOMES/$chromosome.dna";
   my $seq = read_file($seq_file);
 
   my $splice_cutoff = 0.5;	# if we have two or more splice sites below this value, then report them
@@ -2411,9 +2462,9 @@ sub get_weak_exon_splice_sites {
       @prev_details = ();
     }
 
-
     my $score;			# score of this splice site
     if ($strand eq '+') {
+      #$desc= "seq=". substr($seq, $splice_pos-10, 9)."/".substr($seq, $splice_pos-1, 10).  "\n";
       if ($splice_end == 5) {	# is it a 5' end of the intron
 	$score = $pwm->splice5($seq, $splice_pos-1, '+'); # -1 to convert from acedb sequence pos to perl string coords
       } else {			# or the 3' end of the intron
@@ -2430,12 +2481,12 @@ sub get_weak_exon_splice_sites {
 
     if ($score < $splice_cutoff) {
       if ($score < $splice_cutoff_single || $count_low_sites > 0) {
-	&output_to_database("WEAK_INTRON_SPLICE_SITE", $chromosome, $CDS_id, $splice_pos-1, $splice_pos+1, $strand, $anomaly_score, '');
+	&output_to_database("WEAK_INTRON_SPLICE_SITE", $chromosome, $CDS_id, $splice_pos-1, $splice_pos+1, $strand, $anomaly_score, "splice site score = $score");
 	if ($count_low_sites == 1 && @prev_details) { # output the stored details of the first site
 	  &output_to_database("WEAK_INTRON_SPLICE_SITE", @prev_details);
 	}
       } else {		# store the details in case we find a second low-scoring site in this CDS
-	@prev_details = ($chromosome, $CDS_id, $splice_pos-1, $splice_pos+1, $strand, $anomaly_score, '');
+	@prev_details = ($chromosome, $CDS_id, $splice_pos-1, $splice_pos+1, $strand, $anomaly_score, "splice site score = $score");
       }
       $count_low_sites++;
     }
@@ -3081,7 +3132,113 @@ sub get_expression_outside_transcripts {
 
 
 ####################################################################################
+#
+# get confirmed introns not matching a gene model 
+# for use when there are no pre-computed confirmed intron data
+#
 ####################################################################################
+
+sub get_confirmed_introns {
+
+  my ($est_aref) = @_;
+
+  my @est = @{$est_aref};
+
+
+  # change the ESTs into introns
+  my @introns = $ovlp->get_intron_from_exons(@est);
+
+
+  # want to check the introns look reasonable
+  # length > 25 bases
+  # contiguous in the EST
+  # ends of the intron sequence: (not done here yet)
+  # ((start eq 'gt' || start eq 'gc') && end eq 'ag') || # forward sense
+  #  (start eq 'ct' && (end  eq 'ac' ||  end eq 'gc'))   # reverse sense
+  my @checked_introns;
+  foreach my $intron (@introns) {
+    if ($intron->[2] - $intron->[1] > 25 &&
+	abs($intron->[5] - $intron->[4]) == 1) {
+      push @checked_introns, $intron;
+    }
+  }
+
+  return @checked_introns;
+
+}
+
+####################################################################################
+# get confirmed introns that don't match the curated gene models or pseudogenes, etc.
+####################################################################################
+
+sub get_unconfirmed_introns {
+
+  my ($est_aref, $mrna_aref, $cds_introns_aref, $pseudogenes_aref, $transposons_aref, $transposon_exons_aref, $noncoding_transcript_exons_aref, $rRNA_aref, $chromosome) = @_;
+
+  $anomaly_count{UNCONFIRMED_INTRON} = 0 if (! exists $anomaly_count{UNCONFIRMED_INTRON});
+
+  my @est_introns = &get_confirmed_introns($est_aref); # change the ESTs into confirmed introns
+  my @mrna_introns = &get_confirmed_introns($mrna_aref);
+
+  my @not_matched = ();		# the resulting list of hashes of est with no matching exons/transposons/pseudogenes
+  my @matched = ();		# the resulting list of hashes of est which match a coding exon
+
+  # we want an exact match of the CDS inron to the EST confirmed intron
+  # we aer not too sure of the orientation (hence sense) of the EST hit
+  my $cds_introns_match = $ovlp->compare($cds_introns_aref, exact_match => 1);
+  my $pseud_match = $ovlp->compare($pseudogenes_aref);
+  my $trans_match = $ovlp->compare($transposons_aref);
+  my $trane_match = $ovlp->compare($transposon_exons_aref);
+  my $nonco_match = $ovlp->compare($noncoding_transcript_exons_aref);
+  my $rrna_match  = $ovlp->compare($rRNA_aref);
+
+  # do both the EST and mRNA intons together
+  foreach my $homology (@est_introns, @mrna_introns) { # $est_id, $chrom_start, $chrom_end, $chrom_strand
+
+    my $got_a_match = 0;	        # not yet seen a match to anything
+
+    if ($cds_introns_match->match($homology)) {
+      $got_a_match = 1;
+    }
+
+    if ($pseud_match->match($homology)) { 
+      $got_a_match = 1;
+    }
+
+    if ($trans_match->match($homology)) {   
+      $got_a_match = 1;
+    }
+
+    if ($trane_match->match($homology)) {      
+      $got_a_match = 1;
+    }
+
+    if ($nonco_match->match($homology)) {      
+      $got_a_match = 1;
+    }
+
+    if ($rrna_match->match($homology)) {       
+      $got_a_match = 1;
+    }
+
+    # output unmatched est to the database
+    if (! $got_a_match) {
+      my $est_id = $homology->[0];
+      my $chrom_start = $homology->[1];
+      my $chrom_end = $homology->[2];
+      my $chrom_strand = $homology->[3];
+      my $est_score = $homology->[6];
+      my $anomaly_score = 1;
+      #print "NOT got an EST match ANOMALY: $est_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score\n";
+      &output_to_database("UNCONFIRMED_INTRON", $chromosome, $est_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score, '');
+    }
+
+  }
+
+}
+
+
+
 ####################################################################################
 ####################################################################################
 ####################################################################################
@@ -3163,7 +3320,7 @@ sub find_incomplete_pfam_motifs {
 
 	  # if we want the anomalies GFF file, output these details
 	  if ($supplementary) {
-	    my $gff_file = "$database/CHROMOSOMES/SUPPLEMENTARY_GFF/${chromosome_prefix}${chromosome}_curation_anomalies.gff";
+	    my $gff_file = "$database/CHROMOSOMES/SUPPLEMENTARY_GFF/${chromosome}_curation_anomalies.gff";
 	    open (OUTPUT_GFF, ">>$gff_file") || die "Can't open $gff_file";
 	  }
 	  
@@ -3195,7 +3352,7 @@ sub find_incomplete_pfam_motifs {
 
 	  # if we want the anomalies GFF file, output these details
 	  if ($supplementary) {
-	    my $gff_file = "$database/CHROMOSOMES/SUPPLEMENTARY_GFF/${chromosome_prefix}${chromosome}_curation_anomalies.gff";
+	    my $gff_file = "$database/CHROMOSOMES/SUPPLEMENTARY_GFF/${chromosome}_curation_anomalies.gff";
 	    open (OUTPUT_GFF, ">>$gff_file") || die "Can't open $gff_file";
 	  }
 	  
@@ -3249,11 +3406,6 @@ sub convert_protein_coords_to_chrom_coords {
   if (! defined $chromosome) {return (undef, undef, undef);} # some problem here
   ($chromosome, $chrom_end)   = &get_genome_mapping($cds_name, $clone, $cds_start, $cds_end, $exons_start_ref, $exons_end_ref, $prot_end); 
 
-
-  # knock the prefix off the chromosome as it is added on again in other places
-  my $prefix = $wormbase->chromosome_prefix;
-  $chromosome =~ /$prefix(\S+)/;
-  $chromosome = $1;
 
   return ($chromosome, $chrom_start, $chrom_end);
 
@@ -3408,7 +3560,7 @@ sub output_to_database {
   my ($anomaly_type, $chromosome, $anomaly_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score, $explanation ) = @_;
 
   # get the clone and lab for this location
-  my ($clone, $clone_start, $clone_end) = $coords->LocateSpan("${\$wormbase->chromosome_prefix}$chromosome", $chrom_start, $chrom_end);
+  my ($clone, $clone_start, $clone_end) = $coords->LocateSpan("$chromosome", $chrom_start, $chrom_end);
   my $lab;
   if ($wormbase->species eq 'elegans') {
     $lab =  $clonelab{$clone};          # get the lab that sequenced this clone  
@@ -3420,6 +3572,8 @@ sub output_to_database {
       }
     }
   } elsif ($wormbase->species eq 'briggsae') {
+    $lab = 'RX';
+  } elsif ($wormbase->species eq 'brugia') {
     $lab = 'RX';
   } else {
     print "*** ERROR - WE DON'T KNOW WHICH LAB IS CURATING SPECIES: $wormbase->species\n";
@@ -3434,7 +3588,6 @@ sub output_to_database {
 
   # if there is no strand information, put one anomaly in for each strand
   if ($chrom_strand ne '+' && $chrom_strand ne '-') {
-    &tidy_up_senseless_records($anomaly_type, $chromosome, $anomaly_id, $chrom_start, $chrom_end, '.', $window, $anomaly_score, $explanation, $clone, $clone_start, $clone_end, $lab);
     &put_anomaly_record_in_database($anomaly_type, $chromosome, $anomaly_id, $chrom_start, $chrom_end, '+', $window, $anomaly_score, $explanation, $clone, $clone_start, $clone_end, $lab);
     &put_anomaly_record_in_database($anomaly_type, $chromosome, $anomaly_id, $chrom_start, $chrom_end, '-', $window, $anomaly_score, $explanation, $clone, $clone_start, $clone_end, $lab);
 
@@ -3462,7 +3615,7 @@ sub put_anomaly_record_in_database {
   #################################
 
   if ($supplementary) {
-    print OUTPUT_GFF "${\$wormbase->chromosome_prefix}$chromosome\tcuration_anomaly\t$anomaly_type\t$chrom_start\t$chrom_end\t$anomaly_score\t$chrom_strand\t.\tEvidence \"$anomaly_id\"\n";
+    print OUTPUT_GFF "$chromosome\tcuration_anomaly\t$anomaly_type\t$chrom_start\t$chrom_end\t$anomaly_score\t$chrom_strand\t.\tEvidence \"$anomaly_id\"\n";
   }
 
   ####################################
@@ -3503,61 +3656,9 @@ sub put_anomaly_record_in_database {
     
   close(OUT);
 
-  ########################################
-  # write the anomaly data to the database
-  ########################################
-
-  # need to do a check for a very similar previous record that may
-  # need to be overwritten, preserving the status.
-
-  my $nearest_db_key_id = -1;
-  my $nearest = 21;	# this default size of distance will cause a new record to be inserted if it is not changed in the test below to be <= 20
-
-  if (! $nodb) {
-    if (! $go_faster_by_ignoring_db_checks) {
-      # see if there is something there already
-      my $db_query = $mysql->prepare ( qq{ SELECT anomaly_id, chromosome_start, chromosome_end FROM anomaly WHERE type = "$anomaly_type" AND chromosome = "$chromosome" AND sense = "$chrom_strand" AND thing_id = "$anomaly_id" AND window = $window});
-
-      $db_query->execute();
-      my $ref_results = $db_query->fetchall_arrayref;
-
-      # find the nearest one to the current data
-      #print "\tstart search for $anomaly_id\n";
-      foreach my $result_row (@$ref_results) {
-	my $dist_start = abs($chrom_start - $result_row->[1]);
-	my $dist_end = abs($chrom_end - $result_row->[2]);
-	#print "db_id=$result_row->[0] chrom_start=$result_row->[1] chrom_end=$result_row->[2]\n";
-	#print "searching distance of start pos = $dist_start end pos = $dist_end, nearest = $nearest\n";
-	if ($dist_start + $dist_end < $nearest) {
-	  $nearest = $dist_start + $dist_end;
-	  $nearest_db_key_id = $result_row->[0];
-	  #print "got a new best distance $nearest\n";
-	}
-      }
-    }
-  }
-
-  # is the distance in $nearest less than 20 bases, rather than the default size of 21?
-  # if it is not zero this is probably a move of the anomaly 
-  # as a result of genome sequence changes or
-  # changes in the blast database size.
-  # so we should update the existing record
-  if ($test) {
-    print "In test mode - so not updating the mysql database\n";
-  } elsif (!$nodb) {
-    if ($nearest <= 20) {
-      $mysql->do(qq{ UPDATE anomaly SET clone="$clone", clone_start=$clone_start, clone_end=$clone_end, centre="$lab", chromosome_start=$chrom_start, chromosome_end=$chrom_end, thing_score=$anomaly_score, explanation="$explanation"   WHERE anomaly_id = $nearest_db_key_id; });
-      # NB we do not write the status record for this anomaly_id
-
-    } else {
-
-      # we want a new record inserted
-      # write the data to the database
-      $db_key_id++;
-      $mysql->do(qq{ insert into anomaly values ($db_key_id, "$anomaly_type", "$clone", $clone_start, $clone_end, "$lab", "$chromosome", $chrom_start, $chrom_end, "$chrom_strand", "$anomaly_id", $anomaly_score, "$explanation", $window, 1, NULL); });
-      #print "*** inserting new record\n";
-    }
-  }
+  #############################################
+  # write the anomaly data to the data file
+  #############################################
 
   # count the anomalies found
   $anomaly_count{$anomaly_type}++;
@@ -3565,50 +3666,6 @@ sub put_anomaly_record_in_database {
   # and output the line for the St. Louis datafile
   print DAT "INSERT\t$anomaly_type\t$chromosome\t$anomaly_id\t$chrom_start\t$chrom_end\t$chrom_strand\t$anomaly_score\t$explanation\t$clone\t$clone_start\t$clone_end\t$lab\n";
 
-
-}
-##########################################
-# there have been a lot of records put in the database that have a sense
-# as '.'  we want to change these to be two records with a sense '+
-# and a sense '-' (this routine will not be required after the first
-# time it has been run and cleaned up the database)
-
-sub tidy_up_senseless_records {
-
-  my ($anomaly_type, $chromosome, $anomaly_id, $chrom_start, $chrom_end, $chrom_strand, $window, $anomaly_score, $explanation, $clone, $clone_start, $clone_end, $lab) = @_;
-
-  my $old_db_key_id;
-  my $active;
-
-  if ($test) {
-    print "In test mode - so not updating the mysql database\n";
-  } elsif (!$nodb) {
-    my $db_query = $mysql->prepare ( qq{ SELECT anomaly_id, active FROM anomaly WHERE type = "$anomaly_type" AND chromosome = "$chromosome" AND sense = "." AND chromosome_start = $chrom_start AND chromosome_end = $chrom_end AND thing_id = "$anomaly_id" });
-
-    $db_query->execute();
-    my $ref_results = $db_query->fetchall_arrayref;
-
-    # find the nearest one to the current data
-    #print "\tstart search for $anomaly_id\n";
-    foreach my $result_row (@$ref_results) {
-      $old_db_key_id = $result_row->[0];
-      $active = $result_row->[1];
-    
-      # we want two new records inserted
-      $db_key_id++;
-      #print qq{ INSERT INTO anomaly VALUES ($db_key_id, "$anomaly_type", "$clone", $clone_start, $clone_end, "$lab", "$chromosome", $chrom_start, $chrom_end, "+", "$anomaly_id", $anomaly_score, "$explanation", $window, $active, NULL); \n  };
-      
-      $mysql->do(qq{ INSERT INTO anomaly VALUES ($db_key_id, "$anomaly_type", "$clone", $clone_start, $clone_end, "$lab", "$chromosome", $chrom_start, $chrom_end, "+", "$anomaly_id", $anomaly_score, "$explanation", $window, $active, NULL); });
-      $db_key_id++;
-      $mysql->do(qq{ INSERT INTO anomaly VALUES ($db_key_id, "$anomaly_type", "$clone", $clone_start, $clone_end, "$lab", "$chromosome", $chrom_start, $chrom_end, "-", "$anomaly_id", $anomaly_score, "$explanation", $window, $active, NULL); });
-      				# 
-    
-      # and we want to delete the old record with no sense
-      #print qq{ DELETE FROM anomaly WHERE anomaly_id = $old_db_key_id; \n  };
-
-      $mysql->do(qq{ DELETE FROM anomaly WHERE anomaly_id = $old_db_key_id; });
-    }
-  }
 
 }
 
@@ -3627,15 +3684,7 @@ sub delete_anomalies{
 
   my ($type) = @_;
 
-  # Delete anything that hasn't been marked as to be ignored (still
-  # active = 1) that is of the required type
-  if ($test) {
-    print "In test mode - so not updating the mysql database\n";
-  } elsif (!$nodb)  {
-    $mysql->do(qq{ DELETE FROM anomaly WHERE type = "$type" AND active = 1 });
-  }
-
-  # and output the line for the St. Louis datafile
+  # output the line for the St. Louis datafile
   print DAT "DELETE\t$type\n";
 
 }
@@ -3665,6 +3714,42 @@ sub usage {
 
 __END__
 
+# table of which analyses to use with which organisms
+
+
+START_DATA
+UNMATCHED_PROTEIN            elegans brugia
+UNMATCHED_EST                
+FRAMESHIFTED_PROTEIN         elegans brugia
+MERGE_GENES_BY_PROTEIN       elegans brugia
+SPLIT_GENE_BY_PROTEIN_GROUPS elegans brugia
+MERGE_GENES_BY_EST
+UNATTACHED_EST
+UNATTACHED_TSL
+UNMATCHED_TSL                elegans
+UNMATCHED_RST5               elegans
+UNMATCHED_TWINSCAN           elegans
+UNMATCHED_GENEFINDER         elegans
+UNMATCHED_SAGE               elegans
+UNMATCHED_WABA               elegans
+OVERLAPPING_EXONS            elegans brugia
+MISMATCHED_EST               elegans brugia
+WEAK_INTRON_SPLICE_SITE      elegans brugia
+SHORT_EXON                   elegans brugia
+SHORT_INTRON                 elegans brugia
+REPEAT_OVERLAPS_EXON         elegans brugia
+INTRONS_IN_UTR               elegans brugia
+SPLIT_GENE_BY_TWINSCAN       elegans
+MERGE_GENES_BY_TWINSCAN      elegans
+CONFIRMED_INTRON             elegans 
+UNCONFIRMED_INTRON                   brugia
+UNMATCHED_EST 
+UNMATCHED_MASS_SPEC_PEPTIDE  elegans
+EST_OVERLAPS_INTRON          elegans brugia
+UNMATCHED_EXPRESSION         elegans
+INCOMPLETE_PFAM_MOTIF        elegans
+END_DATA
+
 =pod
 
 =head2 NAME - find_anomalies.pl
@@ -3677,7 +3762,8 @@ __END__
 
 =back
 
-This script populates the worm_anomaly mysql database with data describing some types of anomalies.
+This writes a data file ready to populate the worm_anomaly mysql
+database with data describing some types of anomalies.
 
 It can be run periodicaly e.g. every build which is especially useful
 if there have been corrections made to the genomic sequence
@@ -3706,14 +3792,6 @@ The default is to use autoace.
 
 =over 4
 
-=item -nodb
-
-If this is set then everything is run except for writing to the mysql database.
-
-The default is to write to the mysql database.
-
-=over 4
-
 =item -h, Help
 
 =back
@@ -3726,7 +3804,7 @@ The default is to write to the mysql database.
 
 =over 4
 
-=item -test, Test mode, run the script, but don't change anything in the mysql database.
+=item -test, Test mode
 
 =back
 
@@ -3741,7 +3819,7 @@ The default is to write to the mysql database.
 
 =over 4
 
-=item There must be a mysql database server running.
+=item GFF files for the input data
 
 =back
 
@@ -3754,3 +3832,5 @@ The default is to write to the mysql database.
 =back
 
 =cut
+
+
