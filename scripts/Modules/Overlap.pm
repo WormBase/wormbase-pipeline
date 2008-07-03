@@ -7,7 +7,7 @@
 # Do fast overlap matching of positions of two sets of things.
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-03-04 17:24:26 $      
+# Last updated on: $Date: 2008-07-03 10:45:14 $      
 
 =pod
 
@@ -24,7 +24,7 @@
     my $ovlp = Overlap->new($database, $wormbase);
 
     # loop through the chromosomes
-    foreach my $chromosome ($wormbase->get_chromosome_names(-mito => 1, -prefix => 0)) {
+    foreach my $chromosome ($wormbase->get_chromosome_names(-mito => 1, -prefix => 1)) {
 
       # read in the lists of GFF data
       my @est_hsp = $ovlp->get_EST_BEST($chromosome);     # main list of entries to search with
@@ -215,7 +215,8 @@ sub wormbase {
                    near_5 => distance - ditto for 5' end of our objects
                    near_3 => distance - ditto for 3' end of our objects
                    same_sense => boolean - say it must have both in the same sense for a match
-                   other_sense => boolean - set to true if want the both in the opposite sense for a match
+                   other_sense => boolean - set to true if want them both in the opposite sense for a match
+    		   exact_match => boolean - set to true if want them to start and end at the same position
 =cut
 
 sub compare {
@@ -246,6 +247,7 @@ sub compare {
                 near_3 => distance - ditto for 3' end of our objects
                 same_sense => boolean - say it must have both in the same sense for a match
                 other_sense => boolean - set to true if want the both in the opposite sense for a match
+                exact_match => boolean - set to true if want them to start and end at the same position
 =cut
 
 sub _init_match {
@@ -259,6 +261,7 @@ sub _init_match {
 	       near_3     => 0,	# ditto for 3'
 	       same_sense => 0,	# assume we want to allow a match to an object in either sense, set to true if want the same sense only
 	       other_sense => 0, # assume we want to allow a match to an object in either sense, set to true if want the opposite sense only
+	       exact_match => 0, # assume we do not want an exact match, but some sort of sloppy overlap
 	       );
 
   while (@params) {
@@ -279,7 +282,9 @@ sub _init_match {
     } elsif ($param eq "other_sense") {
       my $other_sense = shift @params;
       $state{other_sense} = $other_sense;
-
+    } elsif ($param eq "exact_match") {
+      my $exact_match = shift @params;
+      $state{exact_match} = $exact_match;
     }
   }
 
@@ -313,18 +318,20 @@ sub _init_match {
 
 sub read_GFF_file {
   my $self = shift;
+  my $chromosome = shift;
   my ($GFF_data) = @_;
 
   my @result;			# returned result
 
   my @files = glob($GFF_data->{directory} ."/". $GFF_data->{file});
+  if (!@files) {print "can't find GFF files $GFF_data->{file}";die " in dir $GFF_data->{directory}\n"}
 
   # didn't find any files of that name
   if (@files == 0 || ! -e $files[0]) {
     print "WARNING: didn't find file @files\n";
     # if there is a 'chromosome' hash then we can look to see if there
     # is a CHROMOSOME file instead of a GFF_SPLIT file
-    my $test_file = $self->{database} . "/CHROMOSOMES/${\$self->wormbase->chromosome_prefix}" . $GFF_data->{chromosome} . ".gff";
+    my $test_file = $self->{database} . "/CHROMOSOMES/" . $GFF_data->{chromosome} . ".gff";
     if (-e $test_file) {
       @files = ($test_file);
       print "Reading from $test_file instead of $GFF_data->{file}\n";
@@ -353,22 +360,39 @@ sub read_GFF_file {
       if ($line =~ /^\s*$/) {next;}
       if ($line =~ /^#/) {next;}  
       my @f = split /\t/, $line;
-      my ($chromosome, $source, $type, $start, $end, $sense) = ($f[0], $f[1], $f[2], $f[3], $f[4], $f[6]);
-      my $other_data;
-      if ($GFF_data->{gff_source} ne "" && $GFF_data->{gff_source} ne $source) {next;}
-      if ($GFF_data->{gff_type} ne "" && $GFF_data->{gff_type} ne $type) {next;}
+      my ($chr, $source, $type, $start, $end, $sense) = ($f[0], $f[1], $f[2], $f[3], $f[4], $f[6]);
+
+      if ($chr ne $chromosome) {next;}	  
+
+      if ($GFF_data->{gff_source} ne "") {
+	if ($GFF_data->{gff_source} =~ /\|/) {
+	  if ($source !~ /$GFF_data->{gff_source}/) {next;}
+	} else {
+	  if ($source ne $GFF_data->{gff_source}) {next;} # want an exact match if there are no '|'
+	}
+      }
+      if ($GFF_data->{gff_type} ne "") {
+	if ($GFF_data->{gff_type} =~ /\|/) {
+	  if ($type !~ /$GFF_data->{gff_type}/) {next;}
+	} else {
+	  if ($type ne $GFF_data->{gff_type}) {next;} # want an exact match if there are no '|'
+	}
+      }
+
       if (exists $GFF_data->{homology}) {	# do we need to store the homology data?
 	($id, $hit_start, $hit_end) = ($f[8] =~ /$GFF_data->{ID_after}(\S+)\s+(\d+)\s+(\d+)/);
 	if ($f[5] =~ /\d+/) {$score = $f[5]}; # if the score is numeric, store it
       } else {
-	($id) = ($f[8] =~ /$GFF_data->{ID_after}(\S+)/);
+	($id) = (exists $GFF_data->{ID_after}) ? 
+	    ($f[8] =~ /$GFF_data->{ID_after}(\S+)/) : 
+	    ($f[8]);	# if no 'ID_after' then the ID is just the Other field
       }
-      if (! defined $id) {next;}
+#      print "$line\n";  
       $id =~ s/\"//g;	# remove quotes
       $id =~ s/\;\S+//;	# remove anything after a ';' as this is s field separator in the 'other' field
+      if (! defined $id) {print "ID NOT DEFINED *************************\n";next;}
+      my $other_data;
       if (exists $GFF_data->{'other_data'}) {$other_data = $f[8]}
-      if ($chromosome =~ /${\$self->wormbase->chromosome_prefix}(\S+)/) {$chromosome = $1;} # abbreviate chromosome
-      
       if (exists $GFF_data->{homology}) {	# do we need to store the homology data?
 	push @result, [$id, $start, $end, $sense, $hit_start, $hit_end, $score, $other_data];
       } else {
@@ -378,7 +402,7 @@ sub read_GFF_file {
 #    close (GFF);
   }
   if (scalar @result == 0) {
-    print "WARNING: no data found for @files\n";
+    print "WARNING: no data found for ";print "@files"; print " looking for $GFF_data->{gff_source}";print " $GFF_data->{gff_type}\n";
   }
     
       
@@ -392,7 +416,7 @@ sub read_GFF_file {
   # right way round.
   #
  
-  if ($GFF_data->{reverse_orientation}) {
+  if ($GFF_data->{reverse_orientation} && -e $self->{wormbase}->common_data."estorientation.dat") {
     my @ests = @result;
     @result = ();
 
@@ -532,6 +556,57 @@ sub get_paired_span {
 
 =head2
 
+    Title   :   get_intron_from_exons
+    Usage   :   my @introns = $ovlp->get_introns_from_exons(@exons);
+    Function:   get a list of introns (the gaps) from between a list of exons (things with gaps between them)
+    Returns :   list of lists for GFF data of the gaps (intron) between the things (exons)
+    Args    :   list of lists for GFF data of introns
+
+=cut
+
+sub get_intron_from_exons {
+  my $self = shift;
+  my (@input) = @_;
+  my @out;
+
+  # sort by $id then start position
+  my @input_sorted = sort {$a->[0] cmp $b->[0]
+		   or
+		 $a->[1] <=> $b->[1]} @input;
+
+  my $prev_id = "";
+  my $prev_end;
+  my $prev_hit_end;
+  my ($id, $start, $end, $sense, $hit_start, $hit_end, $score);
+
+  foreach my $in (@input_sorted) {
+    ($id, $start, $end, $sense, $hit_start, $hit_end, $score) = @{$in};
+    if ($in->[0] eq $prev_id) {	# just gone past an intron
+      if (@{$in} > 5) {
+	# store the hit positions if known
+	if (($hit_start < $hit_end && $prev_hit_end < $hit_start) || # 5' read
+	    ($hit_start > $hit_end && $prev_hit_end > $hit_start)) { # 3' read
+	  push @out, [$id, $prev_end+1, $start-1, $sense, $prev_hit_end, $hit_start, $score];
+	}
+      } else {
+	# otherwise just store the chromosome positions
+	push @out, [$id, $prev_end+1, $start-1, $sense];
+      }
+    }
+    $prev_id = $id;
+    $prev_end = $end;
+    $prev_hit_end = $hit_end if (defined $hit_end);
+  }
+
+  # return result sorted by chromosomal start position
+  return sort {$a->[1] <=> $b->[1]} @out;
+
+}
+
+
+
+=head2
+
     Title   :   get_EST_BEST
     Usage   :   my @gff = $ovlp->get_EST_BEST($chromosome)
     Function:   reads the GFF data for EST BEST
@@ -547,7 +622,7 @@ sub get_EST_BEST {
   my %GFF_data = 
    (
      directory			=> $self->{database} . "/GFF_SPLITS",
-     file			=> "${\$self->wormbase->chromosome_prefix}${chromosome}_BLAT_EST_BEST.gff",
+     file			=> "${chromosome}_BLAT_EST_BEST.gff",
      gff_source			=> "BLAT_EST_BEST",
      gff_type			=> "EST_match",
      ID_after			=> "Target\\s+\"Sequence:",
@@ -556,7 +631,7 @@ sub get_EST_BEST {
      chromosome                 => $chromosome,
    );
 
-  return $self->read_GFF_file(\%GFF_data);
+  return $self->read_GFF_file($chromosome, \%GFF_data);
 
 }
 
@@ -577,7 +652,7 @@ sub get_EST_NEMATODE {
   my %GFF_data = 
    (
      directory			=> $self->{database} . "/GFF_SPLITS",
-     file			=> "${\$self->wormbase->chromosome_prefix}${chromosome}_BLAT_NEMATODE.gff",
+     file			=> "${chromosome}_BLAT_NEMATODE.gff",
      gff_source			=> "BLAT_NEMATODE",
      gff_type			=> "translated_nucleotide_match",
      ID_after			=> "Target\\s+\"Sequence:",
@@ -586,7 +661,7 @@ sub get_EST_NEMATODE {
      chromosome                 => $chromosome,
    );
 
-  return $self->read_GFF_file(\%GFF_data);
+  return $self->read_GFF_file($chromosome, \%GFF_data);
 
 }
 
@@ -607,7 +682,7 @@ sub get_EST_NEMBASE {
   my %GFF_data = 
    (
      directory			=> $self->{database} . "/GFF_SPLITS",
-     file			=> "${\$self->wormbase->chromosome_prefix}${chromosome}_BLAT_NEMBASE.gff",
+     file			=> "${chromosome}_BLAT_NEMBASE.gff",
      gff_source			=> "BLAT_NEMBASE",
      gff_type			=> "translated_nucleotide_match",
      ID_after			=> "Target\\s+\"Sequence:",
@@ -616,7 +691,7 @@ sub get_EST_NEMBASE {
      chromosome                 => $chromosome,
    );
 
-  return $self->read_GFF_file(\%GFF_data);
+  return $self->read_GFF_file($chromosome, \%GFF_data);
 
 }
 
@@ -637,7 +712,7 @@ sub get_EST_WASHU {
   my %GFF_data = 
    (
      directory			=> $self->{database} . "/GFF_SPLITS",
-     file			=> "${\$self->wormbase->chromosome_prefix}${chromosome}_BLAT_WASHU.gff",
+     file			=> "${chromosome}_BLAT_WASHU.gff",
      gff_source			=> "BLAT_WASHU",
      gff_type			=> "translated_nucleotide_match",
      ID_after			=> "Target\\s+\"Sequence:",
@@ -646,7 +721,7 @@ sub get_EST_WASHU {
      chromosome                 => $chromosome,
    );
 
-  return $self->read_GFF_file(\%GFF_data);
+  return $self->read_GFF_file($chromosome, \%GFF_data);
 
 }
 
@@ -667,7 +742,7 @@ sub get_OST_BEST {
   my %GFF_data = 
    (
      directory			=> $self->{database} . "/GFF_SPLITS",
-     file			=> "${\$self->wormbase->chromosome_prefix}${chromosome}_BLAT_OST_BEST.gff",
+     file			=> "${chromosome}_BLAT_OST_BEST.gff",
      gff_source			=> "BLAT_OST_BEST",
      gff_type			=> "expressed_sequence_match",
      ID_after			=> "Target\\s+\"Sequence:",
@@ -677,7 +752,7 @@ sub get_OST_BEST {
 
    );
 
-  return $self->read_GFF_file(\%GFF_data);
+  return $self->read_GFF_file($chromosome, \%GFF_data);
 
 }
 
@@ -698,7 +773,7 @@ sub get_mRNA_BEST {
   my %GFF_data = 
    (
      directory			=> $self->{database} . "/GFF_SPLITS",
-     file			=> "${\$self->wormbase->chromosome_prefix}${chromosome}_BLAT_mRNA_BEST.gff",
+     file			=> "${chromosome}_BLAT_mRNA_BEST.gff",
      gff_source			=> "BLAT_mRNA_BEST",
      gff_type			=> "cDNA_match",
      ID_after			=> "Target\\s+\"Sequence:",
@@ -708,7 +783,7 @@ sub get_mRNA_BEST {
 
    );
 
-  return $self->read_GFF_file(\%GFF_data);
+  return $self->read_GFF_file($chromosome, \%GFF_data);
 
 }
 
@@ -729,7 +804,7 @@ sub get_RST_BEST {
   my %GFF_data = 
    (
      directory			=> $self->{database} . "/GFF_SPLITS",
-     file			=> "${\$self->wormbase->chromosome_prefix}${chromosome}_BLAT_RST_BEST.gff",
+     file			=> "${chromosome}_BLAT_RST_BEST.gff",
      gff_source			=> "BLAT_RST_BEST",
      gff_type			=> "expressed_sequence_match",
      ID_after			=> "Target\\s+\"Sequence:",
@@ -739,7 +814,7 @@ sub get_RST_BEST {
 
    );
 
-  return $self->read_GFF_file(\%GFF_data);
+  return $self->read_GFF_file($chromosome, \%GFF_data);
 
 }
 
@@ -760,7 +835,7 @@ sub get_ncRNA_BEST {
   my %GFF_data = 
    (
      directory			=> $self->{database} . "/GFF_SPLITS",
-     file			=> "${\$self->wormbase->chromosome_prefix}${chromosome}_BLAT_ncRNA_BEST.gff",
+     file			=> "${chromosome}_BLAT_ncRNA_BEST.gff",
      gff_source			=> "BLAT_ncRNA_BEST",
      gff_type			=> "nucleotide_match",
      ID_after			=> "Target\\s+\"Sequence:",
@@ -770,7 +845,7 @@ sub get_ncRNA_BEST {
 
    );
 
-  return $self->read_GFF_file(\%GFF_data);
+  return $self->read_GFF_file($chromosome, \%GFF_data);
 
 }
 
@@ -791,7 +866,7 @@ sub get_curated_CDS {
   my %GFF_data = 
    (
      directory			=> $self->{database} . "/GFF_SPLITS",
-     file			=> "${\$self->wormbase->chromosome_prefix}${chromosome}_curated.gff",
+     file			=> "${chromosome}_curated.gff",
      gff_source			=> "curated",
      gff_type			=> "CDS",
      ID_after			=> "CDS\\s+",
@@ -799,7 +874,7 @@ sub get_curated_CDS {
 
    );
 
-  return $self->read_GFF_file(\%GFF_data);
+  return $self->read_GFF_file($chromosome, \%GFF_data);
 
 }
 
@@ -821,7 +896,7 @@ sub get_curated_CDS_exons {
   my %GFF_data = 
    (
      directory			=> $self->{database} . "/GFF_SPLITS",
-     file			=> "${\$self->wormbase->chromosome_prefix}${chromosome}_curated.gff",
+     file			=> "${chromosome}_curated.gff",
      gff_source			=> "curated",
      gff_type			=> "exon",
      ID_after			=> "CDS\\s+",
@@ -829,7 +904,7 @@ sub get_curated_CDS_exons {
 
    );
 
-  return $self->read_GFF_file(\%GFF_data);
+  return $self->read_GFF_file($chromosome, \%GFF_data);
 
 }
 
@@ -851,7 +926,7 @@ sub get_curated_CDS_introns {
   my %GFF_data = 
    (
      directory			=> $self->{database} . "/GFF_SPLITS",
-     file			=> "${\$self->wormbase->chromosome_prefix}${chromosome}_curated.gff",
+     file			=> "${chromosome}_curated.gff",
      gff_source			=> "curated",
      gff_type			=> "intron",
      ID_after			=> "CDS\\s+",
@@ -859,7 +934,7 @@ sub get_curated_CDS_introns {
 
    );
 
-  return $self->read_GFF_file(\%GFF_data);
+  return $self->read_GFF_file($chromosome, \%GFF_data);
 
 }
 
@@ -881,7 +956,7 @@ sub get_Coding_transcripts {
   my %GFF_data = 
    (
      directory			=> $self->{database} . "/GFF_SPLITS",
-     file			=> "${\$self->wormbase->chromosome_prefix}${chromosome}_Coding_transcript.gff",
+     file			=> "${chromosome}_Coding_transcript.gff",
      gff_source			=> "Coding_transcript",
      gff_type			=> "protein_coding_primary_transcript",
      ID_after			=> "Transcript\\s+",
@@ -889,7 +964,7 @@ sub get_Coding_transcripts {
 
    );
 
-  return $self->read_GFF_file(\%GFF_data);
+  return $self->read_GFF_file($chromosome, \%GFF_data);
 
 }
 
@@ -911,7 +986,7 @@ sub get_Coding_transcript_exons {
   my %GFF_data = 
    (
      directory			=> $self->{database} . "/GFF_SPLITS",
-     file			=> "${\$self->wormbase->chromosome_prefix}${chromosome}_Coding_transcript.gff",
+     file			=> "${chromosome}_Coding_transcript.gff",
      gff_source			=> "Coding_transcript",
      gff_type			=> "exon",
      ID_after			=> "Transcript\\s+",
@@ -919,7 +994,7 @@ sub get_Coding_transcript_exons {
 
    );
 
-  return $self->read_GFF_file(\%GFF_data);
+  return $self->read_GFF_file($chromosome, \%GFF_data);
 
 }
 
@@ -941,7 +1016,7 @@ sub get_Coding_transcript_introns {
   my %GFF_data = 
    (
      directory			=> $self->{database} . "/GFF_SPLITS",
-     file			=> "${\$self->wormbase->chromosome_prefix}${chromosome}_Coding_transcript.gff",
+     file			=> "${chromosome}_Coding_transcript.gff",
      gff_source			=> "Coding_transcript",
      gff_type			=> "intron",
      ID_after			=> "Transcript\\s+",
@@ -949,7 +1024,7 @@ sub get_Coding_transcript_introns {
 
    );
 
-  return $self->read_GFF_file(\%GFF_data);
+  return $self->read_GFF_file($chromosome, \%GFF_data);
 
 }
 
@@ -971,7 +1046,7 @@ sub get_Non_coding_transcripts {
   my %GFF_data = 
    (
      directory			=> $self->{database} . "/GFF_SPLITS",
-     file			=> "${\$self->wormbase->chromosome_prefix}${chromosome}_Non_coding_transcript.gff",
+     file			=> "${chromosome}_Non_coding_transcript.gff",
      gff_source			=> "Non_coding_transcript",
      gff_type			=> "nc_primary_transcript",
      ID_after			=> "Transcript\\s+",
@@ -979,7 +1054,7 @@ sub get_Non_coding_transcripts {
 
    );
 
-  return $self->read_GFF_file(\%GFF_data);
+  return $self->read_GFF_file($chromosome, \%GFF_data);
 
 }
 
@@ -1001,7 +1076,7 @@ sub get_Non_coding_transcript_exons {
   my %GFF_data = 
    (
      directory			=> $self->{database} . "/GFF_SPLITS",
-     file			=> "${\$self->wormbase->chromosome_prefix}${chromosome}_Non_coding_transcript.gff",
+     file			=> "${chromosome}_Non_coding_transcript.gff",
      gff_source			=> "Non_coding_transcript",
      gff_type			=> "exon",
      ID_after			=> "Transcript\\s+",
@@ -1009,7 +1084,7 @@ sub get_Non_coding_transcript_exons {
 
    );
 
-  return $self->read_GFF_file(\%GFF_data);
+  return $self->read_GFF_file($chromosome, \%GFF_data);
 
 }
 
@@ -1031,7 +1106,7 @@ sub get_Non_coding_transcript_introns {
   my %GFF_data = 
    (
      directory			=> $self->{database} . "/GFF_SPLITS",
-     file			=> "${\$self->wormbase->chromosome_prefix}${chromosome}_Non_coding_transcript.gff",
+     file			=> "${chromosome}_Non_coding_transcript.gff",
      gff_source			=> "Non_coding_transcript",
      gff_type			=> "intron",
      ID_after			=> "Transcript\\s+",
@@ -1039,7 +1114,7 @@ sub get_Non_coding_transcript_introns {
 
    );
 
-  return $self->read_GFF_file(\%GFF_data);
+  return $self->read_GFF_file($chromosome, \%GFF_data);
 
 }
 
@@ -1061,7 +1136,7 @@ sub get_pseudogene {
   my %GFF_data = 
    (
      directory			=> $self->{database} . "/GFF_SPLITS",
-     file			=> "${\$self->wormbase->chromosome_prefix}${chromosome}_Pseudogene.gff",
+     file			=> "${chromosome}_Pseudogene.gff",
      gff_source			=> "Pseudogene",
      gff_type			=> "Pseudogene",
      ID_after			=> "Pseudogene\\s+",
@@ -1069,7 +1144,7 @@ sub get_pseudogene {
 
    );
 
-  return $self->read_GFF_file(\%GFF_data);
+  return $self->read_GFF_file($chromosome, \%GFF_data);
 
 }
 
@@ -1091,7 +1166,7 @@ sub get_rRNA_transcripts {
   my %GFF_data = 
    (
      directory			=> $self->{database} . "/GFF_SPLITS",
-     file			=> "${\$self->wormbase->chromosome_prefix}${chromosome}_rRNA.gff",
+     file			=> "${chromosome}_rRNA.gff",
      gff_source			=> "rRNA",
      gff_type			=> "rRNA_primary_transcript",
      ID_after			=> "Transcript\\s+",
@@ -1099,7 +1174,7 @@ sub get_rRNA_transcripts {
 
    );
 
-  return $self->read_GFF_file(\%GFF_data);
+  return $self->read_GFF_file($chromosome, \%GFF_data);
 
 }
 
@@ -1121,7 +1196,7 @@ sub get_rRNA_exons {
   my %GFF_data = 
    (
      directory			=> $self->{database} . "/GFF_SPLITS",
-     file			=> "${\$self->wormbase->chromosome_prefix}${chromosome}_rRNA.gff",
+     file			=> "${chromosome}_rRNA.gff",
      gff_source			=> "rRNA",
      gff_type			=> "exon",
      ID_after			=> "Transcript\\s+",
@@ -1129,7 +1204,7 @@ sub get_rRNA_exons {
 
    );
 
-  return $self->read_GFF_file(\%GFF_data);
+  return $self->read_GFF_file($chromosome, \%GFF_data);
 
 }
 
@@ -1151,13 +1226,13 @@ sub get_genefinder_transcripts {
   my %GFF_data = 
    (
      directory			=> $self->{database} . "/CHROMOSOMES",
-     file			=> "${\$self->wormbase->chromosome_prefix}${chromosome}.gff",
+     file			=> "${chromosome}.gff",
      gff_source			=> "Genefinder",
      gff_type			=> "CDS",
      ID_after			=> "CDS\\s+",
    );
 
-  return $self->read_GFF_file(\%GFF_data);
+  return $self->read_GFF_file($chromosome, \%GFF_data);
 
 }
 
@@ -1178,13 +1253,13 @@ sub get_genefinder_exons {
   my %GFF_data = 
    (
      directory			=> $self->{database} . "/CHROMOSOMES",
-     file			=> "${\$self->wormbase->chromosome_prefix}${chromosome}.gff",
+     file			=> "${chromosome}.gff",
      gff_source			=> "Genefinder",
      gff_type			=> "coding_exon",
      ID_after			=> "CDS\\s+",
    );
 
-  return $self->read_GFF_file(\%GFF_data);
+  return $self->read_GFF_file($chromosome, \%GFF_data);
 
 }
 
@@ -1205,13 +1280,13 @@ sub get_twinscan_transcripts {
   my %GFF_data = 
    (
      directory			=> $self->{database} . "/CHROMOSOMES",
-     file			=> "${\$self->wormbase->chromosome_prefix}${chromosome}.gff",
+     file			=> "${chromosome}.gff",
      gff_source			=> "twinscan",
      gff_type			=> "CDS",
      ID_after			=> "CDS\\s+",
    );
 
-  return $self->read_GFF_file(\%GFF_data);
+  return $self->read_GFF_file($chromosome, \%GFF_data);
 
 }
 
@@ -1232,13 +1307,13 @@ sub get_twinscan_exons {
   my %GFF_data = 
    (
      directory			=> $self->{database} . "/CHROMOSOMES",
-     file			=> "${\$self->wormbase->chromosome_prefix}${chromosome}.gff",
+     file			=> "${chromosome}.gff",
      gff_source			=> "twinscan",
      gff_type			=> "coding_exon",
      ID_after			=> "CDS\\s+",
    );
 
-  return $self->read_GFF_file(\%GFF_data);
+  return $self->read_GFF_file($chromosome, \%GFF_data);
 
 }
 
@@ -1259,7 +1334,7 @@ sub get_transposons {
   my %GFF_data = 
    (
      directory			=> $self->{database} . "/GFF_SPLITS",
-     file			=> "${\$self->wormbase->chromosome_prefix}${chromosome}_Transposon.gff",
+     file			=> "${chromosome}_Transposon.gff",
      gff_source			=> "Transposon",
      gff_type			=> "transposable_element",
      ID_after			=> "Transposon\\s+",
@@ -1267,7 +1342,7 @@ sub get_transposons {
 
    );
 
-  return $self->read_GFF_file(\%GFF_data);
+  return $self->read_GFF_file($chromosome, \%GFF_data);
 
 }
 
@@ -1288,7 +1363,7 @@ sub get_transposon_exons {
   my %GFF_data = 
    (
      directory			=> $self->{database} . "/GFF_SPLITS",
-     file			=> "${\$self->wormbase->chromosome_prefix}${chromosome}_Transposon_CDS.gff",
+     file			=> "${chromosome}_Transposon_CDS.gff",
      gff_source			=> "Transposon_CDS",
      gff_type			=> "coding_exon",
      ID_after			=> "CDS\\s+",
@@ -1296,7 +1371,7 @@ sub get_transposon_exons {
 
    );
 
-  return $self->read_GFF_file(\%GFF_data);
+  return $self->read_GFF_file($chromosome, \%GFF_data);
 
 }
 
@@ -1317,7 +1392,7 @@ sub get_polyA_signal {
   my %GFF_data = 
    (
      directory			=> $self->{database} . "/GFF_SPLITS",
-     file			=> "${\$self->wormbase->chromosome_prefix}${chromosome}_polyA_signal_sequence.gff",
+     file			=> "${chromosome}_polyA_signal_sequence.gff",
      gff_source			=> "polyA_signal_sequence",
      gff_type			=> "polyA_signal_sequence",
      ID_after			=> 'Feature\s+',
@@ -1325,7 +1400,7 @@ sub get_polyA_signal {
 
    );
 
-  return $self->read_GFF_file(\%GFF_data);
+  return $self->read_GFF_file($chromosome, \%GFF_data);
 
 }
 
@@ -1346,7 +1421,7 @@ sub get_polyA_site {
   my %GFF_data = 
    (
      directory			=> $self->{database} . "/GFF_SPLITS",
-     file			=> "${\$self->wormbase->chromosome_prefix}${chromosome}_polyA_site.gff",
+     file			=> "${chromosome}_polyA_site.gff",
      gff_source			=> "polyA_site",
      gff_type			=> "polyA_site",
      ID_after			=> 'Feature\s+',
@@ -1354,7 +1429,7 @@ sub get_polyA_site {
 
    );
 
-  return $self->read_GFF_file(\%GFF_data);
+  return $self->read_GFF_file($chromosome, \%GFF_data);
 
 }
 
@@ -1375,7 +1450,7 @@ sub get_TSL_SL1 {
   my %GFF_data = 
    (
      directory			=> $self->{database} . "/GFF_SPLITS",
-     file			=> "${\$self->wormbase->chromosome_prefix}${chromosome}_SL1.gff",
+     file			=> "${chromosome}_SL1.gff",
      gff_source			=> "SL1",
      gff_type			=> "SL1_acceptor_site",
      ID_after			=> 'Feature\s+',
@@ -1383,7 +1458,7 @@ sub get_TSL_SL1 {
 
    );
 
-  return $self->read_GFF_file(\%GFF_data);
+  return $self->read_GFF_file($chromosome, \%GFF_data);
 
 }
 
@@ -1404,7 +1479,7 @@ sub get_TSL_SL2 {
   my %GFF_data = 
    (
      directory			=> $self->{database} . "/GFF_SPLITS",
-     file			=> "${\$self->wormbase->chromosome_prefix}${chromosome}_SL2.gff",
+     file			=> "${chromosome}_SL2.gff",
      gff_source			=> "SL2",
      gff_type			=> "SL2_acceptor_site",
      ID_after			=> 'Feature\s+',
@@ -1412,7 +1487,7 @@ sub get_TSL_SL2 {
 
    );
 
-  return $self->read_GFF_file(\%GFF_data);
+  return $self->read_GFF_file($chromosome, \%GFF_data);
 
 }
 
@@ -1433,14 +1508,14 @@ sub get_SAGE_tags {
   my %GFF_data = 
    (
      directory			=> $self->{database} . "/CHROMOSOMES",
-     file			=> "${\$self->wormbase->chromosome_prefix}${chromosome}.gff",
+     file			=> "${chromosome}.gff",
      gff_source			=> "",
      gff_type			=> "SAGE_tag",
      ID_after			=> "Sequence\\s+",
      other_data			=> 1,           # we want to store the other_data field to get the 'count' 
    );
 
-  return $self->read_GFF_file(\%GFF_data);
+  return $self->read_GFF_file($chromosome, \%GFF_data);
 }
 
 =head2
@@ -1460,14 +1535,14 @@ sub get_blastx_homologies {
   my %GFF_data = 
    (
      directory			=> $self->{database} . "/CHROMOSOMES",
-     file			=> "${\$self->wormbase->chromosome_prefix}${chromosome}.gff",
+     file			=> "${chromosome}.gff",
      gff_source			=> "wublastx",
      gff_type			=> "protein_match",
      homology			=> "1",	# this is a GFF with homology data that we need to store
      ID_after			=> "Target\\s+\"Protein:",
    );
 
-  return $self->read_GFF_file(\%GFF_data);
+  return $self->read_GFF_file($chromosome, \%GFF_data);
 
 }
 
@@ -1488,14 +1563,14 @@ sub get_waba_coding {
   my %GFF_data = 
    (
      directory			=> $self->{database} . "/CHROMOSOMES",
-     file			=> "${\$self->wormbase->chromosome_prefix}${chromosome}.gff",
+     file			=> "${chromosome}.gff",
      gff_source			=> "waba_coding",
      gff_type			=> "nucleotide_match",
      homology			=> "1",	# this is a GFF with homology data that we need to store
      ID_after			=> "Target\\s+\"Sequence:",
    );
 
-  return $self->read_GFF_file(\%GFF_data);
+  return $self->read_GFF_file($chromosome, \%GFF_data);
 
 }
 
@@ -1516,13 +1591,13 @@ sub get_repeatmasked {
   my %GFF_data = 
    (
      directory			=> $self->{database} . "/CHROMOSOMES",
-     file			=> "${\$self->wormbase->chromosome_prefix}${chromosome}.gff",
+     file			=> "${chromosome}.gff",
      gff_source			=> "RepeatMasker",
      gff_type			=> "repeat_region",
      ID_after			=> "Target\\s+\"Motif:",
    );
 
-  return $self->read_GFF_file(\%GFF_data);
+  return $self->read_GFF_file($chromosome, \%GFF_data);
 
 }
 
@@ -1543,7 +1618,7 @@ sub get_5_UTRs {
   my %GFF_data = 
    (
      directory			=> $self->{database} . "/GFF_SPLITS",
-     file			=> "${\$self->wormbase->chromosome_prefix}${chromosome}_UTR.gff",
+     file			=> "${chromosome}_UTR.gff",
      gff_source			=> "Coding_transcript",
      gff_type			=> "five_prime_UTR",
      ID_after			=> 'Transcript\s+',
@@ -1551,7 +1626,7 @@ sub get_5_UTRs {
 
    );
 
-  return $self->read_GFF_file(\%GFF_data);
+  return $self->read_GFF_file($chromosome, \%GFF_data);
 
 }
 
@@ -1572,7 +1647,7 @@ sub get_3_UTRs {
   my %GFF_data = 
    (
      directory			=> $self->{database} . "/GFF_SPLITS",
-     file			=> "${\$self->wormbase->chromosome_prefix}${chromosome}_UTR.gff",
+     file			=> "${chromosome}_UTR.gff",
      gff_source			=> "Coding_transcript",
      gff_type			=> "three_prime_UTR",
      ID_after			=> 'Transcript\s+',
@@ -1580,7 +1655,7 @@ sub get_3_UTRs {
 
    );
 
-  return $self->read_GFF_file(\%GFF_data);
+  return $self->read_GFF_file($chromosome, \%GFF_data);
 
 }
 
@@ -1601,7 +1676,7 @@ sub get_Genes {
   my %GFF_data = 
    (
      directory			=> $self->{database} . "/GFF_SPLITS",
-     file			=> "${\$self->wormbase->chromosome_prefix}${chromosome}_gene.gff",
+     file			=> "${chromosome}_gene.gff",
      gff_source			=> "gene",
      gff_type			=> "gene",
      ID_after			=> 'Gene\s+',
@@ -1609,7 +1684,7 @@ sub get_Genes {
 
    );
 
-  return $self->read_GFF_file(\%GFF_data);
+  return $self->read_GFF_file($chromosome, \%GFF_data);
 
 }
 
@@ -1631,7 +1706,7 @@ sub get_Operons {
   my %GFF_data = 
    (
      directory			=> $self->{database} . "/CHROMOSOMES",
-     file			=> "${\$self->wormbase->chromosome_prefix}${chromosome}.gff",
+     file			=> "${chromosome}.gff",
      gff_source			=> "operon",
      gff_type			=> "operon",
      ID_after			=> 'Operon\s+',
@@ -1639,7 +1714,7 @@ sub get_Operons {
 
    );
 
-  return $self->read_GFF_file(\%GFF_data);
+  return $self->read_GFF_file($chromosome, \%GFF_data);
 
 }
 
@@ -1660,7 +1735,7 @@ sub get_miRNA {
   my %GFF_data = 
    (
      directory			=> $self->{database} . "/GFF_SPLITS",
-     file			=> "${\$self->wormbase->chromosome_prefix}${chromosome}_miRNA.gff",
+     file			=> "${chromosome}_miRNA.gff",
 
      gff_source			=> "miRNA",
      gff_type			=> "miRNA_primary_transcript",
@@ -1669,7 +1744,7 @@ sub get_miRNA {
 
    );
 
-  return $self->read_GFF_file(\%GFF_data);
+  return $self->read_GFF_file($chromosome, \%GFF_data);
 
 }
 
@@ -1691,7 +1766,7 @@ sub get_ncRNA {
   my %GFF_data = 
    (
      directory			=> $self->{database} . "/GFF_SPLITS",
-     file			=> "${\$self->wormbase->chromosome_prefix}${chromosome}_ncRNA.gff",
+     file			=> "${chromosome}_ncRNA.gff",
 
      gff_source			=> "ncRNA",
      gff_type			=> "ncRNA_primary_transcript",
@@ -1700,7 +1775,7 @@ sub get_ncRNA {
 
    );
 
-  return $self->read_GFF_file(\%GFF_data);
+  return $self->read_GFF_file($chromosome, \%GFF_data);
 
 }
 
@@ -1722,7 +1797,7 @@ sub get_scRNA {
   my %GFF_data = 
    (
      directory			=> $self->{database} . "/GFF_SPLITS",
-     file			=> "${\$self->wormbase->chromosome_prefix}${chromosome}_scRNA.gff",
+     file			=> "${chromosome}_scRNA.gff",
 
      gff_source			=> "scRNA",
      gff_type			=> "scRNA_primary_transcript",
@@ -1731,7 +1806,7 @@ sub get_scRNA {
 
    );
 
-  return $self->read_GFF_file(\%GFF_data);
+  return $self->read_GFF_file($chromosome, \%GFF_data);
 
 }
 
@@ -1753,7 +1828,7 @@ sub get_snRNA {
   my %GFF_data = 
    (
      directory			=> $self->{database} . "/GFF_SPLITS",
-     file			=> "${\$self->wormbase->chromosome_prefix}${chromosome}_snRNA.gff",
+     file			=> "${chromosome}_snRNA.gff",
 
      gff_source			=> "snRNA",
      gff_type			=> "snRNA_primary_transcript",
@@ -1762,7 +1837,7 @@ sub get_snRNA {
 
    );
 
-  return $self->read_GFF_file(\%GFF_data);
+  return $self->read_GFF_file($chromosome, \%GFF_data);
 
 }
 
@@ -1784,7 +1859,7 @@ sub get_snoRNA {
   my %GFF_data = 
    (
      directory			=> $self->{database} . "/GFF_SPLITS",
-     file			=> "${\$self->wormbase->chromosome_prefix}${chromosome}_snoRNA.gff",
+     file			=> "${chromosome}_snoRNA.gff",
 
      gff_source			=> "snoRNA",
      gff_type			=> "snoRNA_primary_transcript",
@@ -1793,7 +1868,7 @@ sub get_snoRNA {
 
    );
 
-  return $self->read_GFF_file(\%GFF_data);
+  return $self->read_GFF_file($chromosome, \%GFF_data);
 
 }
 
@@ -1815,7 +1890,7 @@ sub get_stRNA {
   my %GFF_data = 
    (
      directory			=> $self->{database} . "/GFF_SPLITS",
-     file			=> "${\$self->wormbase->chromosome_prefix}${chromosome}_stRNA.gff",
+     file			=> "${chromosome}_stRNA.gff",
 
      gff_source			=> "stRNA",
      gff_type			=> "stRNA_primary_transcript",
@@ -1824,7 +1899,7 @@ sub get_stRNA {
 
    );
 
-  return $self->read_GFF_file(\%GFF_data);
+  return $self->read_GFF_file($chromosome, \%GFF_data);
 
 }
 
@@ -1846,7 +1921,7 @@ sub get_tRNA {
   my %GFF_data = 
    (
      directory			=> $self->{database} . "/GFF_SPLITS",
-     file			=> "${\$self->wormbase->chromosome_prefix}${chromosome}_tRNA.gff",
+     file			=> "${chromosome}_tRNA.gff",
 
      gff_source			=> "tRNA",
      gff_type			=> "tRNA_primary_transcript",
@@ -1855,7 +1930,7 @@ sub get_tRNA {
 
    );
 
-  return $self->read_GFF_file(\%GFF_data);
+  return $self->read_GFF_file($chromosome, \%GFF_data);
 
 }
 
@@ -1877,7 +1952,7 @@ sub get_tRNAscan_SE_1_23RNA {
   my %GFF_data = 
    (
      directory			=> $self->{database} . "/GFF_SPLITS",
-     file			=> "${\$self->wormbase->chromosome_prefix}${chromosome}_tRNAscan-SE-1.23.gff",
+     file			=> "${chromosome}_tRNAscan-SE-1.23.gff",
 
      gff_source			=> "tRNAscan-SE-1.23",
      gff_type			=> "tRNA_primary_transcript",
@@ -1886,7 +1961,7 @@ sub get_tRNAscan_SE_1_23RNA {
 
    );
 
-  return $self->read_GFF_file(\%GFF_data);
+  return $self->read_GFF_file($chromosome, \%GFF_data);
 
 }
 
@@ -1932,7 +2007,7 @@ sub get_CDS_introns {
   my %GFF_data = 
    (
      directory			=> $self->{database} . "/GFF_SPLITS",
-     file			=> "${\$self->wormbase->chromosome_prefix}${chromosome}_gene_introns.gff",
+     file			=> "${chromosome}_gene_introns.gff",
 
      gff_source			=> "curated",
      gff_type			=> "intron",
@@ -1941,7 +2016,7 @@ sub get_CDS_introns {
      chromosome                 => $chromosome,
    );
 
-  return $self->read_GFF_file(\%GFF_data);
+  return $self->read_GFF_file($chromosome, \%GFF_data);
 
 }
 
@@ -1961,7 +2036,7 @@ sub get_check_introns_EST {
   my ($chromosome) = @_;
 
   my $dir;
-  if (-e $self->wormbase->{'autoace'} . "/${\$self->wormbase->chromosome_prefix}${chromosome}.check_intron_cam.gff") {
+  if (-e $self->wormbase->{'autoace'} . "/${chromosome}.check_intron_cam.gff") {
     $dir = $self->wormbase->autoace . "/CHECKS/";
   } else {
     $dir = '/nfs/WWWdev/SANGER_docs/htdocs/Projects/C_elegans/WORMBASE/development_release/GFF/'; # web directory
@@ -1971,14 +2046,14 @@ sub get_check_introns_EST {
   my %GFF_data = 
    (
      directory			=> $dir,
-     file			=> "${\$self->wormbase->chromosome_prefix}${chromosome}.check_intron_*.gff",
+     file			=> "${chromosome}.check_intron_*.gff",
      gff_source			=> "",
      gff_type			=> "intron",
      ID_after			=> 'Confirmed_EST\s+',
 
    );
 
-  return $self->read_GFF_file(\%GFF_data);
+  return $self->read_GFF_file($chromosome, \%GFF_data);
 
 }
 
@@ -1998,7 +2073,7 @@ sub get_check_introns_cDNA {
   my ($chromosome) = @_;
 
   my $dir;
-  if (-e $self->wormbase->{'autoace'} . "/${\$self->wormbase->chromosome_prefix}${chromosome}.check_intron_cam.gff") {
+  if (-e $self->wormbase->{'autoace'} . "/${chromosome}.check_intron_cam.gff") {
     $dir = $self->wormbase->autoace . "/CHECKS/";
   } else {
     $dir = '/nfs/WWWdev/SANGER_docs/htdocs/Projects/C_elegans/WORMBASE/development_release/GFF/'; # web directory
@@ -2007,14 +2082,14 @@ sub get_check_introns_cDNA {
   my %GFF_data = 
    (
      directory			=> $dir,
-     file			=> "${\$self->wormbase->chromosome_prefix}${chromosome}.check_intron_*.gff",
+     file			=> "${chromosome}.check_intron_*.gff",
      gff_source			=> "",
      gff_type			=> "intron",
      ID_after			=> 'Confirmed_cDNA\s+',
 
    );
 
-  return $self->read_GFF_file(\%GFF_data);
+  return $self->read_GFF_file($chromosome, \%GFF_data);
 
 }
 
@@ -2035,14 +2110,14 @@ sub get_mass_spec_peptides {
   my %GFF_data = 
    (
      directory			=> $self->{database} . "/CHROMOSOMES",
-     file			=> "${\$self->wormbase->chromosome_prefix}${chromosome}.gff",
+     file			=> "${chromosome}.gff",
      gff_source			=> "mass_spec_genome",
      gff_type			=> "translated_nucleotide_match",
      ID_after			=> 'Target\s+',
 
    );
 
-  return $self->read_GFF_file(\%GFF_data);
+  return $self->read_GFF_file($chromosome, \%GFF_data);
 
 }
 
@@ -2107,10 +2182,23 @@ sub match {
     # test if there is an overlap (allowing possible nearby matches)
     # and optionally test if the senses are the same
     #print "SECONDARY LINE: $secondary->[0] $secondary->[1] $secondary->[2] $secondary->[3]\n";
-    if ($secondary->[1] <= $main_end + $near_5 && 
-	$secondary->[2] >= $main_start - $near_3 && 
-	($self->{state}->{same_sense}?($main_strand eq $secondary->[3]):1) &&
-	($self->{state}->{other_sense}?($main_strand ne $secondary->[3]):1)
+    if (
+	(
+	 !$self->{state}->{exact_match} &&
+         $secondary->[1] <= $main_end + $near_5 && 
+	 $secondary->[2] >= $main_start - $near_3 && 
+	 ($self->{state}->{same_sense}?($main_strand eq $secondary->[3]):1) &&
+	 ($self->{state}->{other_sense}?($main_strand ne $secondary->[3]):1)
+	 ) ||
+
+	# for when we require an exact match
+	(
+	 $self->{state}->{exact_match} &&
+	 $secondary->[1] == $main_start &&
+	 $secondary->[2] == $main_end &&
+	 ($self->{state}->{same_sense}?($main_strand eq $secondary->[3]):1) &&
+	 ($self->{state}->{other_sense}?($main_strand ne $secondary->[3]):1)
+	 )
 	) {
 
       # note that we have a match
