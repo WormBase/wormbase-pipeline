@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-07-03 10:17:15 $      
+# Last updated on: $Date: 2008-07-03 12:45:36 $      
 
 # Changes required by Ant: 2008-02-19
 # 
@@ -155,13 +155,7 @@ my $ace = Ace->connect (-path => $database,
                        -program => $tace) || die "cannot connect to database at $database\n";
 
 # get the Overlap object
-my $jigsaw = 0;
-if ($jigsaw) {
-  $log->write_to("Using the JIGSAW predictions\n");
-} else {
-  $log->write_to("Using the TIGR predictions\n");
-}
-my $ovlp = Overlap->new($database, $wormbase, $jigsaw);
+my $ovlp = Overlap->new($database, $wormbase);
 
 my $pwm = PWM->new;
 
@@ -1749,7 +1743,7 @@ sub get_isolated_RST5 {
     push @rst5, $seen_this_rst{$rst5};
   }
   @rst5 = sort {$a->[1] <=> $b->[1]} @rst5;
-  print "Have ", scalar@rst5 ," RST5s\n";
+  #print "Have ", scalar@rst5 ," RST5s\n";
 
   # allow the RST to be within 75 bases of the CDS to give a match
   my $CDS1_match = $ovlp->compare($CDS_aref, near_5 => 75, same_sense => 1); # look for overlap or near to the 5' end
@@ -1781,7 +1775,7 @@ sub get_isolated_RST5 {
       $got_a_match = 1;
     }
     else {
-      print "$id equal match on CDS ", scalar @result1, " vs ",  scalar @result2, "\n";
+      #print "$id equal match on CDS ", scalar @result1, " vs ",  scalar @result2, "\n";
     }
 
     if ($pseud_match->match($rst5)) { 
@@ -1813,7 +1807,7 @@ sub get_isolated_RST5 {
 
       # make the anomaly score 5 because this is very informative
       my $anomaly_score = 5;
-      print "RST5 NOT got a match ANOMALY: $RST5_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score\n";
+      #print "RST5 NOT got a match ANOMALY: $RST5_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score\n";
       &output_to_database("UNMATCHED_RST5", $chromosome, $RST5_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score, '');
     }
   }
@@ -3664,6 +3658,8 @@ sub put_anomaly_record_in_database {
   $anomaly_count{$anomaly_type}++;
 
   # and output the line for the St. Louis datafile
+  my $prefix = $wormbase->chromosome_prefix;
+  $chromosome =~ s/$prefix//;
   print DAT "INSERT\t$anomaly_type\t$chromosome\t$anomaly_id\t$chrom_start\t$chrom_end\t$chrom_strand\t$anomaly_score\t$explanation\t$clone\t$clone_start\t$clone_end\t$lab\n";
 
 
