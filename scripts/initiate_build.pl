@@ -2,8 +2,8 @@
 #
 # initiate_build.pl
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2008-06-03 13:33:23 $
+# Last edited by: $Author: mh6 $
+# Last edited on: $Date: 2008-07-07 13:47:55 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -38,7 +38,8 @@ else {
 }
 
 # sanity check
-if (-e glob("~wormpub/BUILD/autoace/database")) {
+print STDERR "CHECKING: ${\$wormbase->autoace}/database\n";
+if (-e "${\$wormbase->autoace}/database") {
   die( "There appears to still be data left over from the previous Build in autoace\nPlease check that finish_build.pl has completed.\n" );
 }
 
