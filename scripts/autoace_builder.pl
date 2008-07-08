@@ -6,8 +6,8 @@
 #
 # Usage : autoace_builder.pl [-options]
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2008-06-30 16:26:08 $
+# Last edited by: $Author: mh6 $
+# Last edited on: $Date: 2008-07-08 15:55:55 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -206,8 +206,7 @@ sub first_dumps {
 
     	my $agp_errors = 0;
 
-    	my @chrom = qw(I II III IV V X);
-    	foreach my $chrom (@chrom) {
+    	foreach my $chrom ($wormbase->get_chromosome_names) {
     	    open( AGP, "<" . $wormbase->autoace . "/yellow_brick_road/CHROMOSOME_${chrom}.agp_seq.log" )
     	      or die "Couldn't open agp file : $!";
     	    while (<AGP>) {
