@@ -6,8 +6,8 @@
 #
 # Selectively dump GFF for certain acedb methods
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2008-05-16 09:43:22 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2008-07-08 08:36:58 $
 
 
 use lib $ENV{CVS_DIR};
@@ -15,6 +15,7 @@ use Wormbase;
 use Getopt::Long;
 use strict;
 use Storable;
+use File::stat;
 
 my ($help, $debug, $test, $quicktest, $database, $species, @methods, @chromosomes, $dump_dir, @clones, $list );
 my @sequences;
@@ -49,17 +50,17 @@ else {
 			     -organism=> $species
 			   );
 }
-
+$species = $wormbase->species; #incase defaulting to elegans
 my $log = Log_files->make_build_log($wormbase);
-
 
 @methods     = split(/,/,join(',',@methods));
 @chromosomes = split(/,/,join(',',@chromosomes));
 @sequences = split(/,/,join(',',@clones)) if @clones;
 
-
-
 my $giface = $wormbase->giface;
+my $via_server; #set if dumping to single file via server cmds
+my $port = 23100;
+my $host = qx('hostname');chomp $host;
 
 $database = $wormbase->autoace unless $database;
 $dump_dir = "/tmp/GFF_CLASS" unless $dump_dir;
@@ -71,30 +72,67 @@ system("touch $dump_dir/dump") and die "cant write to $dump_dir\n";
 
 
 # open database connection once
-open (WRITEDB,"| $giface $database") or die "failed to open giface connection to $database\n";
+$via_server = 1 if (scalar @sequences > 16);
+if($via_server){
+	#start server
+	$wormbase->run_command("(/software/worm/bin/acedb/sgifaceserver $database $port 600:6000000:1000:600000000>/dev/null)>&/dev/null &",$log);
+	sleep 5;
+}
+else {
+	open (WRITEDB,"| $giface $database") or die "failed to open giface connection to $database\n";
+}
 
 foreach my $sequence ( @sequences ) {
   if ( @methods ) {
     foreach my $method ( @methods ) {
-      my $command = "gif seqget $sequence +method $method; seqactions -hide_header; seqfeatures -version 2 -file $dump_dir/${sequence}_${method}.gff\n";
-
-      print "$command";
-      print WRITEDB $command;
+    	my $file;
+    	$file = $via_server? "/tmp/gff_dump$$" : "$dump_dir/${sequence}_${method}.gff";
+    	if($via_server) {
+    		open (WRITEDB,"| /software/worm/bin/acedb/saceclient $host -port $port -userid wormpub -pass yslef4") or $log->log_and_die("$!\n");
+			print WRITEDB "gif seqget $sequence +method $method; seqfeatures -file $file\n";
+			close WRITEDB;
+			#while(stat($file)->mtime + 1  > (time)){
+			#	sleep 1;
+			#}
+			$wormbase->run_command("cat $file >> $dump_dir/${method}.gff");
+		}
+		else{
+    		my $command = "gif seqget $sequence +method $method; seqactions -hide_header; seqfeatures -version 2 -file $file\n";
+			print WRITEDB $command;
+		}
     }
   }
-  else { 
-    my $command = "gif seqget $sequence; seqactions -hide_header; seqfeatures -version 2 -file $dump_dir/$sequence.gff\n";
-    print "$command";
-    print WRITEDB $command;
+  else {
+  	if($via_server) {
+  		my $file = "/tmp/gff_dump$$"; 
+  		open (WRITEDB,"| saceclient $host -port $port -userid wormpub -pass yslef4") or $log->log_and_die("$!\n");
+		print WRITEDB "gif seqget $sequence; seqfeatures -file $file\n";
+		close WRITEDB;
+		$wormbase->run_command("cat $file >> $dump_dir/$species.gff");
+	}
+	else {
+	    my $command = "gif seqget $sequence; seqactions -hide_header; seqfeatures -version 2 -file $dump_dir/$sequence.gff\n";
+    	print "$command";
+    	print WRITEDB $command;
+    }
   }
 }
 
 
-close WRITEDB;
+if( $via_server ) {
+	#stop server
+	open (WRITEDB,"| saceclient $host -port $port -userid wormpub -pass yslef4") or $log->log_and_die("$!\n");
+	print WRITEDB "shutdown now\n";
+	close WRITEDB;
+}
+else {
+	close WRITEDB;
+}
 
 ##################
 # Check the files
 ##################
+if($wormbase->species eq 'elegans'){
 foreach my $sequence ( @sequences ) {
  if ( @methods ) {
    foreach my $method ( @methods ) {
@@ -128,7 +166,7 @@ foreach my $sequence ( @sequences ) {
 			 );   
  }
 }
-
+}
 
 
 # remove write test
