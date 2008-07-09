@@ -7,7 +7,7 @@
 # Do fast overlap matching of positions of two sets of things.
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-07-03 13:50:45 $      
+# Last updated on: $Date: 2008-07-09 08:38:12 $      
 
 =pod
 
@@ -388,9 +388,9 @@ sub read_GFF_file {
 	    ($f[8]);	# if no 'ID_after' then the ID is just the Other field
       }
 #      print "$line\n";  
+      if (! defined $id) {print "ID NOT DEFINED\nwhen reading $line\nin file $file\n";next;}
       $id =~ s/\"//g;	# remove quotes
       $id =~ s/\;\S+//;	# remove anything after a ';' as this is s field separator in the 'other' field
-      if (! defined $id) {print "ID NOT DEFINED *************************\nwhen reading $line\nin file $file\n";next;}
       my $other_data;
       if (exists $GFF_data->{'other_data'}) {$other_data = $f[8]}
       if (exists $GFF_data->{homology}) {	# do we need to store the homology data?
