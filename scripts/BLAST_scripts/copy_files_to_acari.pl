@@ -7,7 +7,6 @@
 # copy the latest dna and wormpep files from the wormpub build structure to a machine available to the farm
 # This machine used to be called acari - hence the script name :)
 #
-# WARNING: the version of remapep is hardcoded to WS185 and needs to be changed when we dump it for every build
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -55,7 +54,8 @@ if ( $chroms ) {
 
 &copy_worm_proteins($wormbase) if $wormpep ;
 &copy_worm_proteins(Wormbase->new(-debug => $debug,-test => $test, -organism => 'Briggsae')) if $brigpep ;
-&copy_worm_proteins(Wormbase->new(-debug => $debug,-test => $test, -organism => 'Remanei',-version => 185)) if $remapep ;
+#&copy_worm_proteins(Wormbase->new(-debug => $debug,-test => $test, -organism => 'Remanei',-version => 185)) if $remapep ;
+&copy_worm_proteins(Wormbase->new(-debug => $debug,-test => $test, -organism => 'Remanei')) if $remapep ;
 
 $log->mail;
 exit(0);
