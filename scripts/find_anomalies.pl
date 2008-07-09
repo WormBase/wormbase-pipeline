@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-07-09 10:24:36 $      
+# Last updated on: $Date: 2008-07-09 12:51:08 $      
 
 # Changes required by Ant: 2008-02-19
 # 
@@ -465,7 +465,7 @@ foreach my $chromosome (@chromosomes) {
 #}
 
   print "get jigsaw different to curated CDS\n";
-  my @unmatched_jigsaw = &get_jigsaw_different_to_curated_CDS(\@jigsaw_exons, \@cds_exons, $chromosome) if (exists $run{JIGSAW_DIFFERS_FROM_CDS});
+  my @unmatched_jigsaw = &get_jigsaw_different_to_curated_CDS(\@jigsaw_exons, \@cds_exons, \@pseudogenes, $chromosome) if (exists $run{JIGSAW_DIFFERS_FROM_CDS});
 
   print "get jigsaw differing from curated CDS with SignalP where the CDS has no signalP\n";
   &get_jigsaw_with_signalp(\@unmatched_jigsaw, \@jigsaw_exons, \@CDS, $chromosome) if (exists $run{JIGSAW_WITH_SIGNALP});
@@ -1759,10 +1759,10 @@ sub get_isolated_RST5 {
     push @rst5, $seen_this_rst{$rst5};
   }
   @rst5 = sort {$a->[1] <=> $b->[1]} @rst5;
-  print "Have ", scalar @rst5 ," RST5s\n";
+  #print "Have ", scalar @rst5 ," RST5s\n";
 
-  # allow the RST to be within 75 bases of the CDS to give a match
-  my $CDS1_match = $ovlp->compare($CDS_aref, near_5 => 75, same_sense => 1); # look for overlap or near to the 5' end
+  # allow the RST to be within 150 bases of the CDS to give a match
+  my $CDS1_match = $ovlp->compare($CDS_aref, near_5 => 150, same_sense => 1); # look for overlap or near to the 5' end
   my $CDS2_match = $ovlp->compare($CDS_aref, near_5 => -5, same_sense => 1); # only look for overlap (don't count a bit of overlap at the start)
 
   my $pseud_match = $ovlp->compare($pseudogenes_aref, same_sense => 1);
@@ -3195,7 +3195,7 @@ sub get_unconfirmed_introns {
   my @matched = ();		# the resulting list of hashes of est which match a coding exon
 
   # we want an exact match of the CDS inron to the EST confirmed intron
-  # we aer not too sure of the orientation (hence sense) of the EST hit
+  # we are not too sure of the orientation (hence sense) of the EST hit
   my $cds_introns_match = $ovlp->compare($cds_introns_aref, exact_match => 1);
   my $pseud_match = $ovlp->compare($pseudogenes_aref);
   my $trans_match = $ovlp->compare($transposons_aref);
@@ -3253,16 +3253,26 @@ sub get_unconfirmed_introns {
 
 sub get_jigsaw_different_to_curated_CDS {
 
-  my ($jigsaw_exons_aref, $CDS_exons_aref, $chromosome) = @_;
+  my ($jigsaw_exons_aref, $CDS_exons_aref, $pseudogenes_aref, $chromosome) = @_;
 
   $anomaly_count{JIGSAW_DIFFERS_FROM_CDS} = 0 if (! exists $anomaly_count{JIGSAW_DIFFERS_FROM_CDS});
+
+  # find the jigsaw prediction exons that don't overlap with a pseudogene
+  my @jigsaw_not_pseudogene;
+  my $pseud_match = $ovlp->compare($pseudogenes_aref);
+  foreach my $jigsaw (@{$jigsaw_exons_aref}) { # $jigsaw_id, $chrom_start, $chrom_end, $chrom_strand
+    if (! $pseud_match->match($jigsaw)) {
+      push @jigsaw_not_pseudogene, $jigsaw;
+    }
+  }
+
 
   # here we don't use the overlap module, we do it more efficiently using a hash
   my %unmatched_jigsaw;		# list of jigsaw exons left when we remove matching CDS exons
   my %all_jigsaw_exons;		# list of all jigsaw exons
 
   # first load all the jigsaw exons into the hash
-  foreach my $jigsaw (@{$jigsaw_exons_aref}) { # $jigsaw_id, $chrom_start, $chrom_end, $chrom_strand
+  foreach my $jigsaw (@jigsaw_not_pseudogene) { # $jigsaw_id, $chrom_start, $chrom_end, $chrom_strand
     my $key = $jigsaw->[3]."_".$jigsaw->[1]."_".$jigsaw->[2];  # the key is the chromosomal sense and position
     $unmatched_jigsaw{$key} = $jigsaw;
     $all_jigsaw_exons{$key} = 1;
