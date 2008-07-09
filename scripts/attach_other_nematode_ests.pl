@@ -6,8 +6,8 @@
 #
 # 
 #
-# Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-01-30 14:59:13 $      
+# Last updated by: $Author: mh6 $     
+# Last updated on: $Date: 2008-07-09 12:29:15 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -85,7 +85,7 @@ my %best_hits;			# hash of best-scoring matches to genes
 
 
 # loop through the chromosomes
-my @chromosomes = $wormbase->get_chromosome_names(-mito => 0, -prefix => 0);
+my @chromosomes = $wormbase->get_chromosome_names(-mito => 0, -prefix => 1);
 foreach my $chromosome (@chromosomes) {
 
   print "reading GFF data for chromosome $chromosome\n";
