@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-07-03 12:45:36 $      
+# Last updated on: $Date: 2008-07-09 10:24:36 $      
 
 # Changes required by Ant: 2008-02-19
 # 
@@ -228,6 +228,10 @@ while (my $run = <DATA>) {
 &delete_anomalies("MRNA_OVERLAPS_INTRON");
 &delete_anomalies("INCOMPLETE_PFAM_MOTIF");
 &delete_anomalies("UNMATCHED_EXPRESSION");
+&delete_anomalies("TWINSCAN_WITH_SIGNALP");
+&delete_anomalies("JIGSAW_WITH_SIGNALP");
+&delete_anomalies("JIGSAW_DIFFERS_FROM_CDS");
+&delete_anomalies("CDS_DIFFERS_FROM_JIGSAW");
 
 
 my $ace_output = $wormbase->wormpub . "/CURATION_DATA/anomalies_$species.ace";
@@ -313,23 +317,23 @@ foreach my $chromosome (@chromosomes) {
   $log->write_to("Processing chromosome $chromosome\n");
 
   print "reading GFF data\n";
-  my @est_hsp = $ovlp->get_EST_BEST($chromosome);
+  my @est_hsp = $ovlp->get_EST_BEST($chromosome);                      # EST hits (exons)
   #my @est_paired_span = $ovlp->get_paired_span(@est_hsp); # change the ESTs from HSPs to start-to-end span of paired reads
   my @rst_hsp = $ovlp->get_RST_BEST($chromosome);
   my @ost_hsp = $ovlp->get_OST_BEST($chromosome);
   my @mrna_hsp = $ovlp->get_mRNA_BEST($chromosome);
 
-  my @CDS = $ovlp->get_curated_CDS($chromosome);
-  my @pseudogenes = $ovlp->get_pseudogene($chromosome);
-  my @coding_transcripts = $ovlp->get_Coding_transcripts($chromosome);
+  my @CDS = $ovlp->get_curated_CDS($chromosome);                       # coding transcript (START to STOP)
+  my @pseudogenes = $ovlp->get_pseudogene($chromosome);                
+  my @coding_transcripts = $ovlp->get_Coding_transcripts($chromosome); # coding transcripts with UTRs
   my @transposons = $ovlp->get_transposons($chromosome);
 
-  my @cds_exons  = $ovlp->get_curated_CDS_exons($chromosome);
+  my @cds_exons  = $ovlp->get_curated_CDS_exons($chromosome);          # coding exons (START to STOP) 
   my @transposon_exons = $ovlp->get_transposon_exons($chromosome);
   my @noncoding_transcript_exons = $ovlp->get_Non_coding_transcript_exons($chromosome);
-  my @coding_transcript_exons = $ovlp->get_Coding_transcript_exons($chromosome);
+  my @coding_transcript_exons = $ovlp->get_Coding_transcript_exons($chromosome); # exons of complete transcript with UTRs
 
-  my @CDS_introns = $ovlp->get_CDS_introns($chromosome);
+  my @CDS_introns = $ovlp->get_CDS_introns($chromosome);               # coding introns
 
   my @TSL_SL1 = $ovlp->get_TSL_SL1($chromosome);
   my @TSL_SL2 = $ovlp->get_TSL_SL2($chromosome);
@@ -338,7 +342,11 @@ foreach my $chromosome (@chromosomes) {
 
   my @twinscan_exons = $ovlp->get_twinscan_exons($chromosome);
   my @twinscan_transcripts = $ovlp->get_twinscan_transcripts($chromosome);
+
   my @genefinder = $ovlp->get_genefinder_exons($chromosome);
+
+  my @jigsaw = $ovlp->get_jigsaw_CDS($chromosome);                     # jigsaw coding transcript (START to STOP)
+  my @jigsaw_exons = $ovlp->get_jigsaw_exons($chromosome);             # jigsaw coding exons 
 
   my @UTRs_5 = $ovlp->get_5_UTRs($chromosome);
   my @UTRs_3 = $ovlp->get_3_UTRs($chromosome);
@@ -389,17 +397,13 @@ foreach my $chromosome (@chromosomes) {
   # this finds TEC-RED TSL sites more than 100 bases upstream that are not mentioned in the remarks or evidence
   print "finding isolated TSL sites\n";
   &get_isolated_TSL(\@TSL_SL1, \@TSL_SL2, \@CDS, \@coding_transcripts, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, $chromosome) if (exists $run{UNMATCHED_TSL});
-#}
 
-  print "finding isolated RST5\n";
-  &get_isolated_RST5(\@rst_hsp, \@CDS, \@coding_transcripts, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, $chromosome) if (exists $run{UNMATCHED_RST5});
-
-  #if (0) {
   print "finding twinscan exons not overlapping CDS exons\n";
   &get_unmatched_twinscan_exons(\@twinscan_exons, \@cds_exons, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, \@repeatmasked_complex, $chromosome) if (exists $run{UNMATCHED_TWINSCAN});
 
   print "finding genefinder exons not overlapping CDS exons\n";
   &get_unmatched_genefinder_exons(\@genefinder, \@cds_exons, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, \@repeatmasked_complex, $chromosome) if (exists $run{UNMATCHED_GENEFINDER});
+
 
   print "finding WABA coding regions not overlapping CDS exons\n";
   &get_unmatched_waba_coding(\@waba_coding, \@cds_exons, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, \@repeatmasked_complex, $chromosome) if (exists $run{UNMATCHED_WABA});
@@ -455,7 +459,19 @@ foreach my $chromosome (@chromosomes) {
   print "finding confirmed introns not matching CDS introns - for brugia\n"; 
   &get_unconfirmed_introns(\@est_hsp, \@mrna_hsp, \@CDS_introns, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, $chromosome) if (exists $run{UNCONFIRMED_INTRON});
 
+  print "finding isolated RST5\n";
+  &get_isolated_RST5(\@rst_hsp, \@CDS, \@coding_transcripts, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, $chromosome) if (exists $run{UNMATCHED_RST5});
+
 #}
+
+  print "get jigsaw different to curated CDS\n";
+  my @unmatched_jigsaw = &get_jigsaw_different_to_curated_CDS(\@jigsaw_exons, \@cds_exons, $chromosome) if (exists $run{JIGSAW_DIFFERS_FROM_CDS});
+
+  print "get jigsaw differing from curated CDS with SignalP where the CDS has no signalP\n";
+  &get_jigsaw_with_signalp(\@unmatched_jigsaw, \@jigsaw_exons, \@CDS, $chromosome) if (exists $run{JIGSAW_WITH_SIGNALP});
+
+
+
 #################################################
 # these don't work very well - don't use
 
@@ -1743,7 +1759,7 @@ sub get_isolated_RST5 {
     push @rst5, $seen_this_rst{$rst5};
   }
   @rst5 = sort {$a->[1] <=> $b->[1]} @rst5;
-  #print "Have ", scalar@rst5 ," RST5s\n";
+  print "Have ", scalar @rst5 ," RST5s\n";
 
   # allow the RST to be within 75 bases of the CDS to give a match
   my $CDS1_match = $ovlp->compare($CDS_aref, near_5 => 75, same_sense => 1); # look for overlap or near to the 5' end
@@ -1775,7 +1791,7 @@ sub get_isolated_RST5 {
       $got_a_match = 1;
     }
     else {
-      #print "$id equal match on CDS ", scalar @result1, " vs ",  scalar @result2, "\n";
+      print "$id equal match on CDS ", scalar @result1, " vs ",  scalar @result2, "\n";
     }
 
     if ($pseud_match->match($rst5)) { 
@@ -1807,7 +1823,7 @@ sub get_isolated_RST5 {
 
       # make the anomaly score 5 because this is very informative
       my $anomaly_score = 5;
-      #print "RST5 NOT got a match ANOMALY: $RST5_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score\n";
+      print "RST5 NOT got a match ANOMALY: $RST5_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score\n";
       &output_to_database("UNMATCHED_RST5", $chromosome, $RST5_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score, '');
     }
   }
@@ -3163,6 +3179,7 @@ sub get_confirmed_introns {
 
 ####################################################################################
 # get confirmed introns that don't match the curated gene models or pseudogenes, etc.
+# used by brugia and other genomes that don't have a Build-generated list of confirmed exons
 ####################################################################################
 
 sub get_unconfirmed_introns {
@@ -3231,8 +3248,187 @@ sub get_unconfirmed_introns {
 
 }
 
+####################################################################################
+# get jigsaw different to curated CDS
+
+sub get_jigsaw_different_to_curated_CDS {
+
+  my ($jigsaw_exons_aref, $CDS_exons_aref, $chromosome) = @_;
+
+  $anomaly_count{JIGSAW_DIFFERS_FROM_CDS} = 0 if (! exists $anomaly_count{JIGSAW_DIFFERS_FROM_CDS});
+
+  # here we don't use the overlap module, we do it more efficiently using a hash
+  my %unmatched_jigsaw;		# list of jigsaw exons left when we remove matching CDS exons
+  my %all_jigsaw_exons;		# list of all jigsaw exons
+
+  # first load all the jigsaw exons into the hash
+  foreach my $jigsaw (@{$jigsaw_exons_aref}) { # $jigsaw_id, $chrom_start, $chrom_end, $chrom_strand
+    my $key = $jigsaw->[3]."_".$jigsaw->[1]."_".$jigsaw->[2];  # the key is the chromosomal sense and position
+    $unmatched_jigsaw{$key} = $jigsaw;
+    $all_jigsaw_exons{$key} = 1;
+  }
+
+  # now remove any jigsaw hash entries that have a key that matches the position of any curated CDS exon 
+  my @unmatched_cds;		# list of CDS exons that don't match a jigsaw exon
+  my %matched_cds;		# hash of CDS IDs where there is at least one exon in the CDS that matches a jigsaw exon
+  foreach my $cds (@{$CDS_exons_aref}) { # $cds_id, $chrom_start, $chrom_end, $chrom_strand
+    my $key = $cds->[3]."_".$cds->[1]."_".$cds->[2];
+    my $cds_id = $cds->[0];
+
+    if (exists $all_jigsaw_exons{$key}) { # check we have got a match
+      $matched_cds{$cds_id} = 1; # note that this CDS matched a jigsaw exon
+
+      if (exists $unmatched_jigsaw{$key}) {
+	delete $unmatched_jigsaw{$key};	# delete the jigsaw exon that matches a CDS exon
+      }
+      
+    } else {			# no match
+      push @unmatched_cds, $cds; # store the CDS exon that doesn't match a jigsaw exon
+
+    }
+  }
+
+  # now to cut down the numbers of CDS isoforms that differ slightly
+  # from jigsaw, only report those isoforms which have no exons
+  # that are the same as jigsaw.
+  my @completely_unmatched_cds;
+  foreach my $cds (@unmatched_cds) {
+    my $cds_id = $cds->[0];
+    if (! exists $matched_cds{$cds_id}) {
+      push @completely_unmatched_cds, $cds;
+    }
+  }
+
+  # now we output a hash of jigsaw details that don't match a CDS exon
+  foreach my $jigsaw (values %unmatched_jigsaw) {
+
+    # output unmatched jigsaw to the database
+      my $jigsaw_id = $jigsaw->[0];
+      my $chrom_start = $jigsaw->[1];
+      my $chrom_end = $jigsaw->[2];
+      my $chrom_strand = $jigsaw->[3];
+      my $est_score = $jigsaw->[6];
+      my $anomaly_score = 1;
+      #print "JIGSAW_DIFFERS_FROM_CDS ANOMALY: $jigsaw_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score\n";
+      &output_to_database("JIGSAW_DIFFERS_FROM_CDS", $chromosome, $jigsaw_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score, '');
+  }
+
+  # now we output a list of CDS details where no exon of the CDS has a match to a jigsaw exon
+  foreach my $cds (@completely_unmatched_cds) {
+
+    # output unmatched cds to the database
+      my $cds_id = $cds->[0];
+      my $chrom_start = $cds->[1];
+      my $chrom_end = $cds->[2];
+      my $chrom_strand = $cds->[3];
+      my $est_score = $cds->[6];
+      my $anomaly_score = 1;
+      #print "CDS_DIFFERS_FROM_JIGSAW ANOMALY: $cds_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score\n";
+      &output_to_database("CDS_DIFFERS_FROM_JIGSAW", $chromosome, $cds_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score, '');
+  }
+
+  return (values %unmatched_jigsaw);
+}
+
+####################################################################################
+# get jigsaw differing from curated CDS with SignalP where the CDS has no signalP
+
+sub get_jigsaw_with_signalp {
+
+  my ($unmatched_jigsaw_aref, $jigsaw_exons_aref, $CDS_aref, $chromosome) = @_;
+
+  $anomaly_count{JIGSAW_WITH_SIGNALP} = 0 if (! exists $anomaly_count{JIGSAW_WITH_SIGNALP});
+
+  # read in the pre-computed hash of jigsaw predictions that have signalP sites
+  my %jigsaw_signalp;
+  if (! -e $wormbase->wormpub . "/CURATION_DATA/${species}_jigsaw_signalp.dat") {
+    print "WARNING: Can't find the file of jigsaw signalp predictions\n";
+    return;
+  }
+  $wormbase->FetchData("${species}_jigsaw_signalp", \%jigsaw_signalp, $wormbase->wormpub . "/CURATION_DATA/");
+  
 
 
+  # get a list of jigsaw IDs that differ from the curated CDS
+  my %jigsaw_differ_IDs;
+  foreach my $jigsaw (@{$unmatched_jigsaw_aref}) {
+    $jigsaw_differ_IDs{$jigsaw->[0]} = 1;
+  }
+
+  # for each differing jigsaw gene
+  my @jigsaw_diff;
+  # get the set of jigsaw exons that differ from the curated CDS
+  foreach my $jigsaw (@{$jigsaw_exons_aref}) {
+    if (exists $jigsaw_differ_IDs{$jigsaw->[0]}) { # this is a differing jigsaw gene
+      push @jigsaw_diff, $jigsaw; # so save this jigsaw exon
+    }
+  }
+
+  # get the curated CDS transcript (if any) that they overlap
+  my %matching_cds;
+  my $jigsaw_match   = $ovlp->compare(\@jigsaw_diff, same_sense => 1); 
+  foreach my $cds (@{$CDS_aref}) { # $cds_id, $chrom_start, $chrom_end, $chrom_strand
+    if (my @results = $jigsaw_match->match($cds)) { 
+      my $cds_id = $cds->[0];
+      foreach my $result (@results) {
+	$matching_cds{$result->[0]} = $cds->[0]; # store the pairs of overlapping gene IDs for jigsaw and CDS
+      }
+    }
+  }
+
+  # foreach jigsaw gene that differs
+  foreach my $jigsaw (@{$unmatched_jigsaw_aref}) {
+    my $jigsaw_id = $jigsaw->[0];
+
+    # get the protein sequence of the jigsaw gene
+    my $jigsaw_obj = $ace->fetch("CDS" => $jigsaw_id);
+    my $jigsaw_seq = $jigsaw_obj->asPeptide();
+    my $title;
+    ($title, $jigsaw_seq) = ($jigsaw_seq =~ /(.+)\n(.+)\n/); # get the first and second lines
+    if (length $jigsaw_seq < 50) {next;}
+
+    my $desc = "";
+
+    # retrieve the protein sequence of the CDS (if it exists) from acedb
+    if (exists $matching_cds{$jigsaw_id}) {
+
+      $desc = "$jigsaw_id has a SignalP but $matching_cds{$jigsaw_id} doesn't";
+
+      my $cds_obj = $ace->fetch("CDS" => $matching_cds{$jigsaw_id});
+      my $cds_seq = $cds_obj->asPeptide();
+      ($title, $cds_seq) = ($cds_seq =~ /(.+)\n(.+)\n/); # get the first and second lines
+
+      # get the first 50 residues of the jigsaw and curated CDS proteins
+      $jigsaw_seq = substr($jigsaw_seq, 0, 50);
+      $cds_seq =    substr($cds_seq, 0, 50);
+
+      # if the two sequences differ
+      if ($jigsaw_seq eq $cds_seq) {next;}
+
+      # if the curated CDS protein does not have a signalP site
+      my $cds_protein_obj = $cds_obj->Corresponding_protein;
+      if (defined $cds_protein_obj->at('Feature.Signalp')) {next;}
+    } else {
+      $desc = "$jigsaw_id has a SignalP - no corresponding curated CDS was found";
+    }
+
+    # if the jigsaw protein has a signalP site then output the anomaly
+    if (exists $jigsaw_signalp{$jigsaw_id}) {
+      my $jigsaw_id = $jigsaw->[0];
+      my $chrom_start = $jigsaw->[1];
+      my $chrom_end = $jigsaw->[2];
+      my $chrom_strand = $jigsaw->[3];
+      my $anomaly_score = 1;
+      #print "JIGSAW_WITH_SIGNALP ANOMALY: $jigsaw_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score\n";
+      &output_to_database("JIGSAW_WITH_SIGNALP", $chromosome, $jigsaw_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score, $desc);
+    }
+
+  }
+
+}
+
+####################################################################################
+####################################################################################
 ####################################################################################
 ####################################################################################
 ####################################################################################
@@ -3726,6 +3922,8 @@ UNMATCHED_TSL                elegans
 UNMATCHED_RST5               elegans
 UNMATCHED_TWINSCAN           elegans
 UNMATCHED_GENEFINDER         elegans
+JIGSAW_DIFFERS_FROM_CDS      elegans
+JIGSAW_WITH_SIGNALP          elegans
 UNMATCHED_SAGE               elegans
 UNMATCHED_WABA               elegans
 OVERLAPPING_EXONS            elegans brugia
