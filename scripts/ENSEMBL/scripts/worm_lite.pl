@@ -241,7 +241,7 @@ sub load_genes {
 	   while (<INF>){
 		  next if /\#/;
 		  my @a=split;
-		  open OUTF,">>$a[0].gff" ||die (@!);
+		  open OUTF,">>/tmp/compara/$species/$a[0].gff" ||die (@!);
 		  print OUTF $_;
 		  close OUTF;
 	   }
