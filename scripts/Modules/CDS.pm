@@ -246,6 +246,7 @@ sub report
     my $fh = shift;
     my $coords = shift;
     my $transformer = shift;
+    my $species = shift;
 
     #$fh = STDOUT unless defined $fh;
 
@@ -264,7 +265,7 @@ sub report
     }
 
     foreach ( $self->transcripts ) {
-      $_->report($fh, $coords);
+      $_->report($fh, $coords, $species);
     }
   }
 

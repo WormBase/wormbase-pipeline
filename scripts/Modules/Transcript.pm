@@ -1,6 +1,6 @@
 package Transcript;
 
-use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'} ;
+use lib $ENV{'CVS_DIR'} ;
 use Carp;
 use strict;
 use Modules::SequenceObj;
@@ -181,6 +181,7 @@ sub report
     my $self = shift;
     my $fh = shift;
     my $coords = shift;
+    my $species = shift;
     
     my $real_start = $self->start;
     my $real_end = $self->end;
@@ -220,7 +221,7 @@ sub report
 	print $fh "Associated_feature $f\n";
       }
     }
-    print $fh "Species \"Caenorhabditis elegans\"\n";
+    print $fh "Species \"$species\"\n";
     print $fh "Method Coding_transcript\n";  
 
     foreach (@{$self->{'matching_cdna'}}) {
