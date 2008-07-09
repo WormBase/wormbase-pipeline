@@ -228,12 +228,29 @@ sub load_genes {
             my ( $path, $name ) = ( $chr =~ /(^.*)\/CHROMOSOMES\/(.*?)\.\w+/ );
             `mkdir /tmp/compara` if !-e '/tmp/compara';
             system("cat $path/GFF_SPLITS/${\$name}_gene.gff $path/GFF_SPLITS/${\$name}_curated.gff > /tmp/compara/${\$name}.gff");
-	    #&& die 'cannot concatenate GFFs';
         }
+    # if it is remanei collect all needed GFFs and then split them based on their supercontig into a /tmp/ directory
+    } elsif ($species eq 'remanei'){
+	   my ($path)=glob($config->{fasta})=~/(^.*)\/CHROMOSOMES\//;
+	   `mkdir /tmp/compara/$species` if !-e "/tmp/compara/$species";
+	   unlink glob("/tmp/compara/$species/*.gff"); # clean old leftovers
+	   system("cat $path/GFF_SPLITS/gene.gff $path/GFF_SPLITS/curated.gff > /tmp/compara/$species/all.gff");
+	   open INF,"/tmp/compara/$species/all.gff" || die (@!);
+	
+	   # that is quite evil due to thousands of open/close filehandle operations
+	   while (<INF>){
+		  next if /\#/;
+		  my @a=split;
+		  open OUTF,">>$a[0].gff" ||die (@!);
+		  print OUTF $_;
+		  close OUTF;
+	   }
+	   close INF;
     }
 
     foreach my $file ( glob $config->{gff} ) {
-        next if $file =~ /masked|CSHL|BLAT_BAC_END|briggsae|MtDNA/;
+        next if $file =~ /masked|CSHL|BLAT_BAC_END|MtDNA/;
+	if ($species !~/briggsae/){next if $file=~/briggsae/}
         $file =~ /.*\/(.*)\.gff/;
         print "parsing $1 from $file\n";
         my $slice = $db->get_SliceAdaptor->fetch_by_region( 'chromosome', $1 );
