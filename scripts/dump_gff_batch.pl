@@ -39,6 +39,8 @@ else {
   $store = $wormbase->autoace . "/".ref($wormbase).".store";
 }
 
+$species||=lc(ref($wormbase));
+
 my $log = Log_files->make_build_log($wormbase);
 my $scratch_dir = $wormbase->logs;
 
@@ -77,6 +79,13 @@ $log->write_to("bsub commands . . . . \n\n");
 my $submitchunk=0;
 my $lsf = LSF::JobManager->new();
 
+my $host = qx('hostname');chomp $host;
+my $port = 23100;
+if (scalar(@chromosomes) > 50){
+	$wormbase->run_command("(/software/worm/bin/acedb/sgifaceserver $database $port 600:6000000:1000:600000000>/dev/null)>&/dev/null &",$log);
+	sleep 5;
+}
+
 foreach my $chrom ( @chromosomes ) {
   if ( @methods ) {
     foreach my $method ( @methods ) {
@@ -84,7 +93,8 @@ foreach my $chrom ( @chromosomes ) {
       my $out = scalar(@chromosomes) < 50 ? "$scratch_dir/wormpubGFFdump.$chrom.$method.out" : "$scratch_dir/wormpubGFFdump.$submitchunk.$method.out";
       my @bsub_options = (-e => "$err", -o => "$out");
 
-      my $cmd = "$dumpGFFscript -database $database -dump_dir $dump_dir -chromosome $chrom -method $method";
+      my $cmd = "$dumpGFFscript -database $database -dump_dir $dump_dir -chromosome $chrom -method $method -species $species";
+      $cmd.=" -host $host" if scalar(@chromosomes) > 50;
       $log->write_to("$cmd\n");
       $cmd = $wormbase->build_cmd($cmd);
 
@@ -100,7 +110,8 @@ foreach my $chrom ( @chromosomes ) {
     my $out = scalar(@chromosomes) < 50 ? "$scratch_dir/wormpubGFFdump.$chrom.out" : "$scratch_dir/wormpubGFFdump.$submitchunk.out";
     push @bsub_options, (-e => "$err", -o => "$out");
 
-    my $cmd = "$dumpGFFscript -database $database -dump_dir $dump_dir -chromosome $chrom";
+    my $cmd = "$dumpGFFscript -database $database -dump_dir $dump_dir -chromosome $chrom -species $species";
+    $cmd.=" -host $host" if scalar(@chromosomes) > 50;
     $log->write_to("$cmd\n");
     print "$cmd\n";
     $cmd = $wormbase->build_cmd($cmd);
@@ -116,7 +127,19 @@ $log->write_to("All GFF dump jobs have completed!\n");
 for my $job ( $lsf->jobs ) {
   $log->error("Job $job (" . $job->history->command . ") exited non zero\n") if $job->history->exit_status != 0;
 }
-$lsf->clear;   
+$lsf->clear;
+
+if (scalar(@chromosomes) > 50){
+	$wormbase->run_command("(/software/worm/bin/acedb/sgifaceserver $database $port 600:6000000:1000:600000000>/dev/null)>&/dev/null &",$log);
+	open (WRITEDB,"| saceclient $host -port $port -userid wormpub -pass yslef4");
+	print WRITEDB "shutdown now\n";
+	close WRITEDB;
+	sleep 20;
+	my $ps_string=`ps waux|grep sgiface|grep -v grep`;
+	$ps_string=~/\w+\s+(\d+)/;
+	my $server_pid=$1;
+	$wormbase->run_command("kill $server_pid",$log) if $server_pid;
+}
 
 $log->mail;
 exit(0);
@@ -167,4 +190,4 @@ exit(0);
 
 =back
 
-=cut  
+=cut
