@@ -134,7 +134,7 @@ if (scalar(@chromosomes) > 50){
 	open (WRITEDB,"| saceclient $host -port $port -userid wormpub -pass yslef4");
 	print WRITEDB "shutdown now\n";
 	close WRITEDB;
-	sleep 20;
+	sleep 120;
 	my $ps_string=`ps waux|grep sgiface|grep -v grep`;
 	$ps_string=~/\w+\s+(\d+)/;
 	my $server_pid=$1;

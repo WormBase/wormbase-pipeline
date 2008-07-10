@@ -366,48 +366,6 @@ sub ncbi_tax_id {'6279'};
 
 #######################################################
 
-if ( __FILE__ eq $0 ) {
-
-    package Species;
-
-    sub organism { my $self = shift; 'I am a ' . ref($self)."\n" }
-
-    package Wormbase;
-
-    sub worm { "I am a worm\n" }
-
-    package Main;
-    sub test {
-    	my $worm = shift;
-	print '-'x40,"\n";
-	print $worm->organism();
-	print $worm->full_name(),"\n";
-	print $worm->worm();
-	print 'my compost heap is at :' . $worm->autoace(), "\n";
-	print $worm->wormpep_prefix(),"\n";
-	print $worm->pep_prefix(),"\n";
-	print $worm->ncbi_tax_id(),"\n";
-	print $worm->chromosome_prefix(),"\n";
-#	print "my chromosomes (custom prefix) are : ",join(' / ',$worm->get_chromosome_names('-prefix' => 'BLEEP_',-mito => 1)),"\n";
-#	print "my chromosomes (w/o Mt + default prefix) are : ",join(' / ',$worm->get_chromosome_names('-prefix' => 1,)),"\n";
-#	print "my chromosomes are : ",join(' / ',$worm->get_chromosome_names(-mito => 1)),"\n";
-   	print '-'x40,"\n";
-    }
-
-
-    eval{my $a = Wormbase->new(-test => 1);&test($a)};
-    print "$@\n" if ($@);
-
-
-    foreach my $orgs (qw(Elegans Briggsae Remanei Brenneri Japonica Heterorhabditis Pristionchus Brugia)){
-	    eval{
-		    my $a = Wormbase->new( '-organism' => $orgs,-test => 1);
-		    &test($a);
-		};
-	    print "$@\n" if ($@);
-    }
-
-}
 
 $JAPCONTIGS = <<END;
 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,
@@ -1052,6 +1010,53 @@ $REMCONTIGS=<<END;
 2249,2289,2329,2369,2409,2449,2529,2569,2609,2649,2689,2769,2809,2889,2929,3049,3089,3129,3289,3409,3569,3609,3929,4209,4249,4369,4409,4649,4769,4889,
 4929,4969,5609,5649,5729,5769,6329,7249,8889,9209
 END
+
+
+if ( __FILE__ eq $0 ) {
+
+    package Species;
+
+    sub organism { my $self = shift; 'I am a ' . ref($self)."\n" }
+
+    package Wormbase;
+
+    sub worm { "I am a worm\n" }
+
+    package Main;
+    sub test {
+    	my $worm = shift;
+	print '-'x40,"\n";
+	print $worm->organism();
+	print $worm->full_name(),"\n";
+	print $worm->worm();
+	print 'my compost heap is at :' . $worm->autoace(), "\n";
+	print $worm->wormpep_prefix(),"\n";
+	print $worm->pep_prefix(),"\n";
+	print $worm->ncbi_tax_id(),"\n";
+	print $worm->chromosome_prefix(),"\n";
+	print "I got : ",scalar ($worm->get_chromosome_names())," sequences\n";
+#	print "my chromosomes (custom prefix) are : ",join(' / ',$worm->get_chromosome_names('-prefix' => 'BLEEP_',-mito => 1)),"\n";
+#	print "my chromosomes (w/o Mt + default prefix) are : ",join(' / ',$worm->get_chromosome_names('-prefix' => 1,)),"\n";
+#	print "my chromosomes are : ",join(' / ',$worm->get_chromosome_names(-mito => 1)),"\n";
+   	print '-'x40,"\n";
+    }
+
+
+    eval{my $a = Wormbase->new(-test => 1);&test($a)};
+    print "$@\n" if ($@);
+
+
+    foreach my $orgs (qw(Elegans Briggsae Remanei Brenneri Japonica Heterorhabditis Pristionchus Brugia)){
+	    eval{
+		    my $a = Wormbase->new( '-organism' => $orgs,-test => 1);
+		    &test($a);
+		};
+	    print "$@\n" if ($@);
+    }
+
+}
+
+
 1;
 
 
