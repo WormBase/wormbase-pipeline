@@ -49,16 +49,16 @@ $wormbase->checkLSF;
 
 my @methods     = split(/,/,join(',',$methods)) if $methods;
 
-if (scalar @chroms > 50){
-	my @bins;
-	my $i=0;
-	while ($i<scalar @chroms){
-		push (@{$bins[$i % 64]},$chroms[$i]);
-		$i++;
-	}
-	map {$_=join(',',@$_)} @bins;
-	@chroms = @bins;
-}
+#if (scalar @chroms > 50){
+#	my @bins;
+#	my $i=0;
+#	while ($i<scalar @chroms){
+#		push (@{$bins[$i % 64]},$chroms[$i]);
+#		$i++;
+#	}
+#	map {$_=join(',',@$_)} @bins;
+#	@chroms = @bins;
+#}
 
 my @chromosomes = $chrom_choice ? split(/,/,join(',',$chrom_choice)):@chroms;
 
@@ -83,24 +83,26 @@ my $host = qx('hostname');chomp $host;
 my $port = 23100;
 if (scalar(@chromosomes) > 50){
 	$wormbase->run_command("(/software/worm/bin/acedb/sgifaceserver $database $port 600:6000000:1000:600000000>/dev/null)>&/dev/null &",$log);
-	sleep 5;
+	sleep 20;
 }
 
-foreach my $chrom ( @chromosomes ) {
+CHROMLOOP: foreach my $chrom ( @chromosomes ) {
   if ( @methods ) {
     foreach my $method ( @methods ) {
       my $err = scalar(@chromosomes) < 50 ? "$scratch_dir/wormpubGFFdump.$chrom.$method.err" : "$scratch_dir/wormpubGFFdump.$submitchunk.$method.err";
       my $out = scalar(@chromosomes) < 50 ? "$scratch_dir/wormpubGFFdump.$chrom.$method.out" : "$scratch_dir/wormpubGFFdump.$submitchunk.$method.out";
       my @bsub_options = (-e => "$err", -o => "$out");
 
-      my $cmd = "$dumpGFFscript -database $database -dump_dir $dump_dir -chromosome $chrom -method $method -species $species";
+      my $cmd = "$dumpGFFscript -database $database -dump_dir $dump_dir -method $method -species $species";
       $cmd.=" -host $host" if scalar(@chromosomes) > 50;
+      $cmd.=" -debug $debug" if $debug;
+      $cmd.=" -chromosome $chrom" if scalar(@chromosomes) < 50;
       $log->write_to("$cmd\n");
       $cmd = $wormbase->build_cmd($cmd);
 
       $lsf->submit(@bsub_options, $cmd);
-      
     }
+    last CHROMLOOP if scalar(@chromosomes) > 50;
   }
   else {
     # for large chromosomes, ask for a file size limit of 2 Gb and a memory limit of 3.5 Gb
@@ -110,14 +112,16 @@ foreach my $chrom ( @chromosomes ) {
     my $out = scalar(@chromosomes) < 50 ? "$scratch_dir/wormpubGFFdump.$chrom.out" : "$scratch_dir/wormpubGFFdump.$submitchunk.out";
     push @bsub_options, (-e => "$err", -o => "$out");
 
-    my $cmd = "$dumpGFFscript -database $database -dump_dir $dump_dir -chromosome $chrom -species $species";
+    my $cmd = "$dumpGFFscript -database $database -dump_dir $dump_dir -species $species";
+    $cmd.=" -chromosome $chrom" if scalar(@chromosomes) < 50;
     $cmd.=" -host $host" if scalar(@chromosomes) > 50;
+    $cmd.=" -debug $debug" if $debug;
     $log->write_to("$cmd\n");
     print "$cmd\n";
     $cmd = $wormbase->build_cmd($cmd);
 
     $lsf->submit(@bsub_options, $cmd);
-
+    last CHROMLOOP if scalar(@chromosomes) > 50;
   }
   $submitchunk++;
 }
@@ -130,7 +134,6 @@ for my $job ( $lsf->jobs ) {
 $lsf->clear;
 
 if (scalar(@chromosomes) > 50){
-	$wormbase->run_command("(/software/worm/bin/acedb/sgifaceserver $database $port 600:6000000:1000:600000000>/dev/null)>&/dev/null &",$log);
 	open (WRITEDB,"| saceclient $host -port $port -userid wormpub -pass yslef4");
 	print WRITEDB "shutdown now\n";
 	close WRITEDB;

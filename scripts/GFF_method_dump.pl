@@ -9,7 +9,7 @@
 # dumps the method through sace / tace and concatenates them.
 #
 # Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2008-07-10 11:13:25 $
+# Last edited on: $Date: 2008-07-11 12:25:00 $
 
 
 use lib $ENV{CVS_DIR};
@@ -78,22 +78,29 @@ unless($host) {
 	open (WRITEDB,"| $giface $database") or die "failed to open giface connection to $database\n";
 }
 
+$log->write_to("dumping methods:".join(",",@methods)."\n");
+$log->write_to("dumping sequences:".join(",",@sequences)."\n");
+
+my $count=0; # debug hack
 foreach my $sequence ( @sequences ) {
   if ( @methods ) {
     foreach my $method ( @methods ) {
-    	my $file = $via_server? "$dump_dir/tmp/gff_dump$$" : "$dump_dir/${sequence}_${method}.gff";
+    	my $file = $via_server? "$dump_dir/tmp/${sequence}_${method}.$$" : "$dump_dir/${sequence}_${method}.gff";
     	if($via_server) {
     		open (WRITEDB,"| /software/worm/bin/acedb/saceclient $host -port $port -userid wormpub -pass yslef4") or $log->log_and_die("$!\n");
 			print WRITEDB "gif seqget $sequence +method $method; seqfeatures -file $file\n";
 			close WRITEDB;
-			#while(stat($file)->mtime + 1  > (time)){
+			
+			#while(stat($file)->mtime + 5  > (time)){
 			#	sleep 1;
 			#}
+		
 			
 			my $sleeptime=0;
 			while (-e "$dump_dir/${method}.gff.flock" && $sleeptime++<11){sleep 15}
 			
 			$wormbase->run_command("touch $dump_dir/${method}.gff.flock");
+			#sleep 1;
 			$wormbase->run_command("cat $file >> $dump_dir/${method}.gff");
 			$wormbase->run_command("rm $dump_dir/${method}.gff.flock");
 			unlink $file;
@@ -111,9 +118,14 @@ foreach my $sequence ( @sequences ) {
 		print WRITEDB "gif seqget $sequence; seqfeatures -file $file\n";
 		close WRITEDB;
 		
+		#while(stat($file)->mtime + 5  > (time)){
+		#	sleep 1;
+		#}
+		
 		my $sleeptime=0;
 		while (-e "$dump_dir/${species}.gff.flock" && $sleeptime++<11){sleep 15}
 		$wormbase->run_command("touch $dump_dir/$species.gff.flock");
+		#sleep 1;
 		$wormbase->run_command("cat $file >> $dump_dir/$species.gff");
 		$wormbase->run_command("rm $dump_dir/$species.gff.flock");
 		unlink $file;
@@ -124,7 +136,10 @@ foreach my $sequence ( @sequences ) {
     	print WRITEDB $command;
     }
   }
+  $count++;
 }
+
+$log->write_to("dumped $count sequences\n");
 
 ##################
 # Check the files
