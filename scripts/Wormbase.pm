@@ -1414,12 +1414,21 @@ sub run_script {
   return $self->run_command( "$command", $log );
 }
 
+sub run_script_on_farm {
+  my $self   = shift;
+  my $script = shift;
+  my $log = shift;
+  
+  my $cmd = 'ssh -t farm-login "'.$self->build_cmd($script).'"';
+  return $self->run_command( "$cmd", $log );
+}
+
 # abstracted out of run_script so that scripts using LSF::Manager can 
 # still use the Storable etc properly
 sub build_cmd {
   my $self   = shift;
   my $script = shift;
-
+  
   my $species = ref $self;
   my $store = $self->autoace . "/$species.store";
   store( $self, $store );
@@ -1618,6 +1627,37 @@ sub get_binned_chroms {
 }
 
 
+##################################################################################
+# Wrapper for handling the opening of GFF files for both chromosome or contig
+# based assemblies.
+# Parameters :
+# Sequence to dump ( CHROMOSOME_X, Crem_Contig1245 )
+# Method to dump ( curated, BLAT_EST_BEST or undef for full seq)  
+# Log_files object
+#
+# returns a file handle for reading from
+#
+# eg my $handle = $wormbase->open_GFF_file('Crem_Contig1245', 'curated', $log)
+###################################################################################
+
+sub open_GFF_file {
+	my $self = shift;
+	my $seq = shift;
+	my $method = shift;
+	my $log = shift;
+	my $handle;
+	my $file;
+	if(scalar $self->get_chromosome_names > 15 ) { # contig based assembly
+		$file = defined $method ? $self->gff_splits."/$method.gff" : $self->chromosomes."/".$self->species.".gff";
+		open($handle,"grep \"$seq\\W\" $file |") or $log->log_and_die("cant open $file :$!\n");
+	}
+	else {
+		$file = defined $method ? $self->gff_splits."/${seq}$method.gff" : $self->chromosomes."/$seq.gff";
+		open ($handle,"<$file") or $log->log_and_die("cant open $file :$!\n");
+	}
+	
+	return $handle;
+}
 ################################################################################
 #Return a true value
 ################################################################################
