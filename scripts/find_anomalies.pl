@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-07-09 12:51:08 $      
+# Last updated on: $Date: 2008-07-15 11:07:24 $      
 
 # Changes required by Ant: 2008-02-19
 # 
@@ -266,8 +266,7 @@ foreach my $chromosome (@chromosomes) {
 # taken from get_Coding_transcript_exons
     my %GFF_data = 
 	(
-	 directory		=> glob("~wormpub/DATABASES/TEST_DATABASES/brugia/brugia/CHROMOSOMES"), # jigsaw
-	 file			=> "${chromosome}.gff", # jigsaw
+	 file		=> "~wormpub/DATABASES/TEST_DATABASES/brugia/brugia/CHROMOSOMES/${chromosome}.gff", # jigsaw
 	 gff_source		=> "jigsaw", # jigsaw
 	 gff_type		=> "exon", # jigsaw
 	 ID_after		=> "CDS\\s+", # jigsaw
@@ -277,8 +276,7 @@ foreach my $chromosome (@chromosomes) {
 
     %GFF_data = 
 	(
-	 directory		=> glob("~wormpub/DATABASES/TEST_DATABASES/brugia/brugia/CHROMOSOMES2/brugia"),
-	 file			=> "${chromosome}.gff3", # TIGR
+	 file		=> "~wormpub/DATABASES/TEST_DATABASES/brugia/brugia/CHROMOSOMES2/brugia/${chromosome}.gff3",
 	 gff_source		=> "WormBase",
 	 gff_type		=> "exon",
 	 ID_after		=> "Parent=transcript\:",
@@ -377,7 +375,7 @@ foreach my $chromosome (@chromosomes) {
 
   print "finding anomalies\n";
 
-  #if (0) {
+  if (0) {
 
   print "finding protein homologies not overlapping CDS exons\n";
   my $matched_protein_aref = &get_protein_differences(\@cds_exons, \@pseudogenes, \@homologies, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, $chromosome) if (exists $run{UNMATCHED_PROTEIN});
@@ -462,7 +460,7 @@ foreach my $chromosome (@chromosomes) {
   print "finding isolated RST5\n";
   &get_isolated_RST5(\@rst_hsp, \@CDS, \@coding_transcripts, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, $chromosome) if (exists $run{UNMATCHED_RST5});
 
-#}
+}
 
   print "get jigsaw different to curated CDS\n";
   my @unmatched_jigsaw = &get_jigsaw_different_to_curated_CDS(\@jigsaw_exons, \@cds_exons, \@pseudogenes, $chromosome) if (exists $run{JIGSAW_DIFFERS_FROM_CDS});
@@ -596,16 +594,21 @@ exit(0);
 sub get_expression {
   my ($chromosome) = @_;
 
+  if ($wormbase->species eq 'elegans') {
+
   my %GFF_data = 
    (
-    directory => '~wormpub/CURATION_DATA/Tiling_array_data',
-    file      => "tiling_array_${chromosome}.gff",
+    file => "~wormpub/CURATION_DATA/Tiling_array_data/tiling_array_${chromosome}.gff",
     gff_source => 'tiling_array',
     gff_type   => 'tiling_array',
     ID_after   => 'ID\s+',
     );
 
   return $ovlp->read_GFF_file($chromosome, \%GFF_data);
+
+} else {
+  return ();
+}
 
 }
 
