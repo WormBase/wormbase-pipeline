@@ -6,10 +6,10 @@
 #
 # This assigns orientation to BLATted sequences which have no
 # orientation yet.  It uses best splice site and overlap with
-# transcripts to find the most probably orientation.
+# transcripts to find the most probable orientation.
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-07-03 10:48:04 $      
+# Last updated on: $Date: 2008-07-15 11:00:34 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -31,7 +31,7 @@ use Modules::PWM;
 ######################################
 
 my ($help, $debug, $test, $verbose, $store, $wormbase);
-my ($all, $gff_directory, $gff_file, $gff_source, $gff_type, $ID_after);
+my ($all, $species, $gff_directory, $gff_file, $gff_source, $gff_type, $ID_after);
 
 GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
@@ -39,6 +39,7 @@ GetOptions ("help"       => \$help,
 	    "verbose"    => \$verbose,
 	    "store:s"    => \$store,
 	    "all"        => \$all, # do all EST sequences, not just the ones with no orientation
+	    "species:s"  => \$species, # the default is elegans
 	    "gff_directory:s" => \$gff_directory,	# stuff to specify a specific GFF file to search
 	    "gff_file:s"      => \$gff_file,
 	    "gff_source:s"    => \$gff_source,
@@ -46,11 +47,14 @@ GetOptions ("help"       => \$help,
 	    "ID_after:s"      => \$ID_after);
 
 
+$species = 'elegans' unless $species;
+
 if ( $store ) {
   $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
 } else {
   $wormbase = Wormbase->new( -debug   => $debug,
                              -test    => $test,
+			     -organism => $species,
 			     );
 }
 
@@ -70,10 +74,9 @@ my $log = Log_files->make_build_log($wormbase);
 # MAIN BODY OF SCRIPT
 ##########################
 
+my %dna_entry;		# store for dna sequences for when reading remanei-style multi-entry sequence file
 
-# get the Overlap object
 my $database = $wormbase->autoace;
-my $ovlp = Overlap->new($database, $wormbase);
 
 print "find ignored sequences\n" if ($verbose);
 my %ignore = &get_Ignore();
@@ -81,21 +84,20 @@ print "find sequences without Database\n" if ($verbose);
 my %not_db = &get_NOT_Database();
 print "find EST orientation\n" if ($verbose);
 my %Show_in_reverse_orientation = $wormbase->FetchData('estorientation');
+
 my $pwm = PWM->new;
 
-my $prefix=$wormbase->chromosome_prefix;
-
 # loop through the chromosomes
-foreach my $chromosome ($wormbase->get_chromosome_names(-mito => 1, -prefix => 0)) {
+foreach my $chromosome ($wormbase->get_chromosome_names(-mito => 1, -prefix => 1)) {
+
+# get the Overlap object
+my $ovlp = Overlap->new($database, $wormbase);
+
 
   my %splice_ok = ();
   my %splice_reverse = ();
   my %gene_ok = ();
   my %gene_reverse = ();
-
-  # read the chromosmal sequence
-  $log->write_to("\n\nChromosome $chromosome\n");
-  my $seq = read_chromosome($chromosome);
 
   # read in the lists of GFF data or the specified GFF file
   print "Reading GFF files\n" if ($verbose);
@@ -105,8 +107,7 @@ foreach my $chromosome ($wormbase->get_chromosome_names(-mito => 1, -prefix => 0
   if ($gff_directory && $gff_file && $gff_source && $gff_type && $ID_after) {
     print "gff_file = $gff_file\n";
     my %GFF_data = (
-		    directory=>$gff_directory,
-		    file=>$prefix . $chromosome . "_" . $gff_file, 
+		    file=>$gff_directory . "/" . $chromosome . "_" . $gff_file, 
 		    gff_source=>$gff_source, 
 		    gff_type=>$gff_type,
 		    ID_after=>$ID_after, 
@@ -121,6 +122,13 @@ foreach my $chromosome ($wormbase->get_chromosome_names(-mito => 1, -prefix => 0
     push @est_hsp, $ovlp->get_mRNA_BEST($chromosome); # and the list of mRNAs ...
     push @est_hsp, $ovlp->get_RST_BEST($chromosome); # and the list of RSTs
   }
+
+  # check we have some ESTs/mRNAs etc. 
+  if (! scalar @est_hsp) {
+    print "No ESTs found in $chromosome\n" if ($verbose);
+    next;
+  }
+
   @est_hsp = sort {$a->[1] <=> $b->[1]} @est_hsp; # and ensure it is sorted by chromosomal start position
 
   my @est = $ovlp->get_span(@est_hsp); # change the ESTs from HSPs to start-to-end span
@@ -134,14 +142,17 @@ foreach my $chromosome ($wormbase->get_chromosome_names(-mito => 1, -prefix => 0
   # get ESTs with no orientation (or get all ESTs if $all or a GFF file is specified)
   my @no53_est;
   foreach my $est (@est) {
+    print "$est->[0] ignored\n" if ($verbose && exists $ignore{$est->[0]});
     if (exists $ignore{$est->[0]}) {next;} # withdrawn, rRNA or chimaeric
+    print "$est->[0] no Database tag\n" if ($verbose && exists $not_db{$est->[0]});
     if (exists $not_db{$est->[0]}) {next;} # estorientation hash file will not have this sequence's orientation even if it is set
+    print "$est->[0] already in reverse orientation\n" if ($verbose && exists $Show_in_reverse_orientation{$est->[0]});
     if ($all || !exists $Show_in_reverse_orientation{$est->[0]} || $gff_file) {
-      #print "$est->[0]\n" if ($verbose);
+      print "$est->[0] to be analysed\n" if ($verbose);
       push @no53_est, $est;
     }
   }
-  print "Have ", scalar @no53_est, " sequences with no orientation\n" if (!$all && $verbose);
+  print "Have ", scalar @no53_est, " sequences with no orientation\n" if ($verbose);
 
   # get the corresponding HSPs of these ESTs
   my %ids;
@@ -160,6 +171,11 @@ foreach my $chromosome ($wormbase->get_chromosome_names(-mito => 1, -prefix => 0
 		   or
 		 $a->[1] <=> $b->[1]} @no53_est_hsp;
 
+
+  # read the chromosmal sequence
+  $log->write_to("\n\nChromosome $chromosome\n");
+  my $seq = read_chromosome($chromosome);
+
   # get the 5' and 3' splice sites of the EST HSPs
   my $prev_id = "";
   my ($id, $start, $end, $sense, $hit_start, $hit_end, $score);
@@ -177,7 +193,7 @@ foreach my $chromosome ($wormbase->get_chromosome_names(-mito => 1, -prefix => 0
       ($id, $start, $end, $sense, $hit_start, $hit_end, $score) = @{$hsp};
       # see if we have a clean splice with no missed EST bases
       if (abs($hit_start - $prev_hit_end) == 1) {
-	#print "$id $sense\n" if ($verbose);
+	print "$id $sense\n" if ($verbose);
 
 	# check the splice sites
 	# forward sense
@@ -193,7 +209,7 @@ foreach my $chromosome ($wormbase->get_chromosome_names(-mito => 1, -prefix => 0
 	# good difference between the intron splice scores on the two strands
 	# and one or the other has good splice scores
 	if (abs($reverse - $forward) > 1 && ($reverse > 1 || $forward > 1)) {
-	  #print "$id $forward $reverse " if ($verbose);
+	  print "$id $forward $reverse " if ($verbose);
 	  if (($sense eq '+' && $reverse > 1) || ($sense eq '-' && $forward > 1)) {
 	    print "$id $forward $reverse  ************* REVERSE SENSE REQUIRED (splice)\n" if ($verbose);
 	    $splice_reverse{$id} = 1;
@@ -221,11 +237,11 @@ foreach my $chromosome ($wormbase->get_chromosome_names(-mito => 1, -prefix => 0
       # ($est_id, $chrom_start, $chrom_end, $chrom_strand, $hit_start, $hit_end, $score)
 
       my $id = $est->[0];
-      #print "next EST to check = $id\n" if ($verbose);
+      print "next EST to check = $id\n" if ($verbose);
 
       # look to see if the EST has any matches to CDS and/or pseudogenes
       my @cds_matches = $cds_obj->match($est);
-      #print "Have ", scalar @cds_matches, " overlaps to cds\n" if ($verbose);
+      print "Have ", scalar @cds_matches, " overlaps to cds\n" if ($verbose);
       my $prop_same = 0;		# proportion matching gene on same sense
       my $prop_other = 0;		# proportion matching gene on other sense
       my @senses = $cds_obj->matching_sense;
@@ -239,7 +255,7 @@ foreach my $chromosome ($wormbase->get_chromosome_names(-mito => 1, -prefix => 0
       }
 
       my @pseud_matches = $pseud_obj->match($est);
-      #print "Have ", scalar @pseud_matches, " overlaps to pseudogenes\n" if ($verbose);
+      print "Have ", scalar @pseud_matches, " overlaps to pseudogenes\n" if ($verbose);
       @senses = $pseud_obj->matching_sense;
       for (my $i=0; $i < @senses; $i++) {
 	my ($p1,$p2) = $pseud_obj->matching_proportions($pseud_matches[$i]);
@@ -251,7 +267,7 @@ foreach my $chromosome ($wormbase->get_chromosome_names(-mito => 1, -prefix => 0
       }
 
       my @rrna_matches = $rrna_obj->match($est);
-      #print "Have ", scalar @rrna_matches, " overlaps to rRNAs\n" if ($verbose);
+      print "Have ", scalar @rrna_matches, " overlaps to rRNAs\n" if ($verbose);
       @senses = $rrna_obj->matching_sense;
       for (my $i=0; $i < @senses; $i++) {
 	my ($p1,$p2) = $rrna_obj->matching_proportions($rrna_matches[$i]);
@@ -263,7 +279,7 @@ foreach my $chromosome ($wormbase->get_chromosome_names(-mito => 1, -prefix => 0
       }
 
       my @twin_matches = $twin_obj->match($est);
-      #print "Have ", scalar @twin_matches, " overlaps to twinscan\n" if ($verbose);
+      print "Have ", scalar @twin_matches, " overlaps to twinscan\n" if ($verbose);
       @senses = $twin_obj->matching_sense;
       for (my $i=0; $i < @senses; $i++) {
 	my ($p1,$p2) = $twin_obj->matching_proportions($twin_matches[$i]);
@@ -279,7 +295,7 @@ foreach my $chromosome ($wormbase->get_chromosome_names(-mito => 1, -prefix => 0
       my $trans_prop_same = 0;
       my $trans_prop_other = 0;
       my @trans_matches = $trans_obj->match($est);
-      #print "Have ", scalar @trans_matches, " overlaps to Coding transcript exons\n" if ($verbose);
+      print "Have ", scalar @trans_matches, " overlaps to Coding transcript exons\n" if ($verbose);
       if ($prop_same == 0 && $prop_other == 0) {
 	@senses = $trans_obj->matching_sense;
 	for (my $i=0; $i < @senses; $i++) {
@@ -309,7 +325,7 @@ foreach my $chromosome ($wormbase->get_chromosome_names(-mito => 1, -prefix => 0
 	    print "$id $trans_prop_same $trans_prop_other  ************* REVERSE SENSE REQUIRED (transcript)\n" if ($verbose);
 	    $gene_reverse{$id} = 1;
 	  } else {
-#         print "$id $trans_prop_same $trans_prop_other (transcript)\n" if ($verbose);
+	    print "$id $trans_prop_same $trans_prop_other (transcript)\n" if ($verbose);
 	    $gene_ok{$id} = 1;
 	  }
 	}
@@ -322,13 +338,14 @@ foreach my $chromosome ($wormbase->get_chromosome_names(-mito => 1, -prefix => 0
   my $version = $wormbase->get_wormbase_version_name();
   my $output = $wormbase->wormpub . "/CURATION_DATA/assign_orientation." . $version . ".ace";
   if ($wormbase->species ne 'elegans') {
-    $output = $wormbase->wormpub . "/CURATION_DATA/assign_orientation_${\$wormbase->species}." . $version . ".ace";
+#    $output = $wormbase->wormpub . "/CURATION_DATA/assign_orientation_${\$wormbase->species}." . $version . ".ace";
+    $output = $wormbase->acefiles . "/assign_orientation.ace";
   }
   open (ACE, ">> $output") || die "Can't open file $output\n";
   # we are happy that the existing orientation of these is OK
   # if no existing orientation, we make the default: EST_5
   my $count_out = 0;
-  $log->write_to("\n\nThe following are confirmed in their default orientation\n\n");
+  $log->write_to("\nThe following are confirmed in their default orientation\n") if (scalar(keys %splice_ok) + scalar(keys %gene_ok));
   foreach my $id (keys %splice_ok, keys %gene_ok) {
     if (!exists $Show_in_reverse_orientation{$id}) {
       print ACE "\nSequence : $id\n";
@@ -342,7 +359,7 @@ foreach my $chromosome ($wormbase->get_chromosome_names(-mito => 1, -prefix => 0
   # we need to swap the orientation of these
   # they may already have an orientation that needs to be deleted
   $count_out = 0;
-  $log->write_to("\n\nThe following have their orientation reversed\n\n");
+  $log->write_to("\nThe following have their orientation reversed\n") if (scalar(keys %splice_reverse) + scalar(keys %gene_reverse));
   foreach my $id (keys %splice_reverse, keys %gene_reverse) {
     if (!exists $Show_in_reverse_orientation{$id} || $Show_in_reverse_orientation{$id} == 5) {
       print ACE "\nSequence : $id\n";
@@ -392,8 +409,15 @@ sub read_chromosome {
 
   my $chromosome = shift;
 
-  my $seq_file = $wormbase->chromosomes . "/${\$wormbase->chromosome_prefix}$chromosome.dna";
-  my $seq = read_file($seq_file);
+  # if we have already read in the sequence entries, return the one for this chromosome
+  if (exists $dna_entry{$chromosome}) {return $dna_entry{$chromosome};}
+
+  my $seq_file = $wormbase->chromosomes . "/$chromosome.dna";
+  my $seq = &read_file($seq_file);
+
+  if (! defined $seq) {
+    $seq = &read_entry($wormbase->chromosomes, $chromosome)
+  }
 
   return $seq;
 
@@ -405,16 +429,72 @@ sub read_chromosome {
 sub read_file {
   my ($file) = @_;
 
-  $/ = "";
-  open (SEQ, $file) or die "Can't open the dna file for $file : $!\n";
-  my $seq = <SEQ>;
-  close SEQ;
-  $/ = "\n";
+  my $seq;
 
-  $seq =~ s/>.*\n//;           # remove one title line
-  $seq =~ s/\n//g;
+  # try to open a single-chromosome entry file e.g. for elegans, briggsae
+  if (open (SEQ, $file)) {
+    $/ = "";
+    $seq = <SEQ>;
+    close SEQ;
+    $/ = "\n";
+    
+    $seq =~ s/>.*\n//;           # remove one title line
+    $seq =~ s/\n//g;
+  } else {
+    print "Can't open the dna file for $file : $!\n" if ($verbose);
+  }
 
   return $seq
+}
+
+
+##########################################
+# read entry in a file if the file consists of lots of entries
+
+sub read_entry {
+  my ($dir, $chromosome) = @_;
+
+  # if we have already read in the sequence entries, return the one for this chromosome
+  if (exists $dna_entry{$chromosome}) {return $dna_entry{$chromosome};}
+
+  my $file = "$dir/supercontigs.fa"; # it might be called this
+  print "Trying: $file\n" if ($verbose);
+  if (! -e $file) {
+    print "Can't open the dna file for $file : $!\n" if ($verbose);
+    $file = "$dir/" . $wormbase->species . ".fa"; # or it might be called this - the nomenclature is not yet certain
+    print "Trying: $file\n" if ($verbose);
+
+  } elsif (! -e $file) {
+    die "Can't find chromosome sequence file for $dir, $chromosome\n";
+  }
+
+  print "Reading DNA sequence entries\n";
+  my $seq;
+
+  if (open (SEQ, $file)) {
+    my $entry;
+    while (my $line = <SEQ>) {
+      chomp $line;
+      if ($line =~ /^>(\S+)/) {
+	if (defined $entry) {	# store the previous sequence entry
+	  $dna_entry{$entry} = $seq;
+	}
+	$seq = "";
+	$entry = $1;
+      } else {
+	$seq .= $line;
+      }
+    }
+    if (defined $entry) {	# store the last entry
+      $dna_entry{$entry} = $seq;
+    }
+    close SEQ;
+  } else {
+    die "Can't open the dna file for $file : $!\n";
+  }
+
+  if (! exists $dna_entry{$chromosome}) {$log->log_and_die("No DNA sequence was found for $chromosome\n");}
+  return $dna_entry{$chromosome};
 }
 
 
@@ -539,9 +619,6 @@ If a specific GFF input file is specified, then all sequences in the
 file are examined and if there is no evidence of the orientation from
 the splice site scores, the overlap with exons will be used to assign
 the orientation.
-
-If the -load option is used then the resulting ACE files are loaded
-into camace.
 
 In the Build, the normal usage will be:
 assign_orientation.pl -load
