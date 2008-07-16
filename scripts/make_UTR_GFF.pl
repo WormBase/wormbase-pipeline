@@ -15,7 +15,7 @@
 #      COMPANY:
 #      VERSION:  2 
 #      CREATED:  21/02/06 14:11:30 GMT
-#     REVISION:  $Revision: 1.17 $ 
+#     REVISION:  $Revision: 1.18 $ 
 #===============================================================================
 
 use strict;
@@ -59,8 +59,8 @@ my $gffdir = $wormbase->gff_splits;
 my $db     = GFF_sql->new( { -build => 1 } );
 my $outdir = $gffdir;
 my %cds_cache;  # crude hack to speed up the cds lookup
-my $contig_assembly = (scalar $wormbase->get_chromosome_names > 15) ? 1 : undef;
-
+my $contig_assembly = ($wormbase->assembly_type eq 'contig') ? 1 : undef;
+my $suffix = $contig_assembly ? $$ : '';
 # main
 CHROM:foreach my $chr (@chromosome) {
     %cds_cache=(); # clean out old data
@@ -72,11 +72,11 @@ CHROM:foreach my $chr (@chromosome) {
    	&write_tmp_gff($file_prefix,$long_name) if $contig_assembly;
    	
     # load    
-    $db->load_gff( "$gffdir/${file_prefix}_curated.gff$$", $long_name, 1 ) if !$load;
-    $db->load_gff( "$gffdir/${file_prefix}_Coding_transcript.gff$$", $long_name ) if !$load;
+    $db->load_gff( "$gffdir/${file_prefix}_curated.gff$suffix", $long_name, 1 ) if !$load;
+    $db->load_gff( "$gffdir/${file_prefix}_Coding_transcript.gff$suffix", $long_name ) if !$load;
 
-    my $outfile = IO::File->new( "$outdir/${file_prefix}_UTR.gff$$",          ">>" ); # append or create
-    my $infile  = IO::File->new( "$gffdir/${file_prefix}_Coding_transcript.gff$$", "r" );
+    my $outfile = IO::File->new( "$outdir/${file_prefix}_UTR.gff$suffix",          ">>" ); # append or create
+    my $infile  = IO::File->new( "$gffdir/${file_prefix}_Coding_transcript.gff$suffix", "r" );
 
     my $n_exons=0;
     
@@ -109,14 +109,14 @@ $log->mail();
 sub write_tmp_gff {
 	my $prefix = shift;
 	my $contig = shift;
-	open(OUT,">$gffdir/${prefix}_curated.gff$$") or $log->log_and_die("cant make curated tmp GFF for $prefix $contig: $!\n");
+	open(OUT,">$gffdir/${prefix}_curated.gff$suffix") or $log->log_and_die("cant make curated tmp GFF for $prefix $contig: $!\n");
 	my $handle = $wormbase->open_GFF_file($contig,'curated', $log);
 	while (<$handle>) {
 		print OUT;
 	}
 	close $handle;
 	close OUT;
-	open(OUT,">$gffdir/${prefix}_Coding_transcript.gff$$") or $log->log_and_die("cant make Coding tmp GFF for $prefix $contig: $!\n");
+	open(OUT,">$gffdir/${prefix}_Coding_transcript.gff$suffix") or $log->log_and_die("cant make Coding tmp GFF for $prefix $contig: $!\n");
 	$handle = $wormbase->open_GFF_file($contig,'Coding_transcript', $log);
 	while (<$handle>) {
 		print OUT;
