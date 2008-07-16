@@ -227,8 +227,8 @@ sub map {
 		  if ($x->name !~ /^niDf/) {
 		    $log->write_to("ERROR: $x is massive\n");
 		    $errors++;
+		    next;
 		  }
-		  next;
 		} 
 
 		# from flanks to variation
