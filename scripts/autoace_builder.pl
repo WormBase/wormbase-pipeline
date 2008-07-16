@@ -6,8 +6,8 @@
 #
 # Usage : autoace_builder.pl [-options]
 #
-# Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2008-07-08 15:55:55 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2008-07-16 09:58:37 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -354,7 +354,7 @@ sub make_UTR {
   
   $log->write_to("bsub commands . . . . \n\n");
   my $lsf = LSF::JobManager->new(-J => "make_UTRs", -o => "/dev/null");
-  foreach ($wormbase->get_chromosome_names(-mito => 1) ) {
+  foreach (@{$wormbase->get_binned_chroms} ) {
     my $cmd = "make_UTR_GFF.pl -chromosome $_";
     $log->write_to("$cmd\n");
     $cmd = $wormbase->build_cmd($cmd);
@@ -366,6 +366,11 @@ sub make_UTR {
     $log->error("Job $job (" . $job->history->command . ") exited with LSF error code: ". $job->history->exit_status ."\n") if $job->history->exit_status != 0;
   }
   $lsf->clear;   
+  #merge into single file.
+  $wormbase->run_command("cat ".$wormbase->gff_splits."/UTR.gff* >> ".$wormbase->gff_splits."/allUTR.gff",$log);
+  $wormbase->run_command("rm -f ".$wormbase->gff_splits."/UTR.gff*",$log);
+  $wormbase->run_command("mv -f ".$wormbase->gff_splits."/allUTR.gff ".$wormbase->gff_splits."/UTR.gff",$log);
+  
 }
 
 

@@ -11,11 +11,11 @@
 # REQUIREMENTS:  Wormbase.pm, Modules::GFF_sql.pm
 #         BUGS:  ---
 #        NOTES:  ---
-#       AUTHOR:  $Author: mh6 $
+#       AUTHOR:  $Author: ar2 $
 #      COMPANY:
 #      VERSION:  2 
 #      CREATED:  21/02/06 14:11:30 GMT
-#     REVISION:  $Revision: 1.16 $ 
+#     REVISION:  $Revision: 1.17 $ 
 #===============================================================================
 
 use strict;
@@ -42,39 +42,41 @@ die `perldoc $0` if $help;
 if ($store) { $wormbase = Storable::retrieve($store) or croak("Can't restore wormbase from $store\n") }
 else { $wormbase = Wormbase->new( -debug => $debug, -test => $test ) }
 
-my $maintainers = $debug?"$debug\@sanger.ac.uk":'All';
-
 my $log = Log_files->make_build_log($wormbase);    # prewarning will be misused in a global way
 
 # do a single chromosome if prompted else do the lot......
 my @chromosome;
 if ($chrom) {
-    push( @chromosome, $chrom );
+	@chromosome = split(/,/,join(',',$chrom));
 }
 else {
     @chromosome = $wormbase->get_chromosome_names(-mito => 1);
 }
 
-# globale setup setup
-my $gffdir = $wormbase->{'gff_splits'};
+# global setup setup
+
+my $gffdir = $wormbase->gff_splits;
 my $db     = GFF_sql->new( { -build => 1 } );
-my $outdir = $gffdir;                           #"/tmp/";
+my $outdir = $gffdir;
 my %cds_cache;  # crude hack to speed up the cds lookup
+my $contig_assembly = (scalar $wormbase->get_chromosome_names > 15) ? 1 : undef;
 
 # main
-foreach my $chr (@chromosome) {
+CHROM:foreach my $chr (@chromosome) {
     %cds_cache=(); # clean out old data
-    my $prefix=$wormbase->chromosome_prefix;
-    my $long_name = $prefix.$chr;
-
-    $log->write_to("Processing $long_name\n");
-
+    my $pref = $wormbase->chromosome_prefix;
+    $chr =~ s/$pref//; #seems silly but is safest way to ensure that its not missing or duplicated!
+    my $file_prefix = $contig_assembly ? $wormbase->species : $wormbase->chromosome_prefix.$chr;
+   	my $long_name = $wormbase->chromosome_prefix.$chr;
+   		
+   	&write_tmp_gff($file_prefix,$long_name) if $contig_assembly;
+   	
     # load    
-    $db->load_gff( "$gffdir/${long_name}_curated.gff", $long_name, 1 ) if !$load;
-    $db->load_gff( "$gffdir/${long_name}_Coding_transcript.gff", $long_name ) if !$load;
+    $db->load_gff( "$gffdir/${file_prefix}_curated.gff$$", $long_name, 1 ) if !$load;
+    $db->load_gff( "$gffdir/${file_prefix}_Coding_transcript.gff$$", $long_name ) if !$load;
 
-    my $outfile = IO::File->new( "$outdir/${long_name}_UTR.gff",          "w" ); # needs to be changed to
-    my $infile  = IO::File->new( "$gffdir/${long_name}_Coding_transcript.gff", "r" );
+    my $outfile = IO::File->new( "$outdir/${file_prefix}_UTR.gff$$",          ">>" ); # append or create
+    my $infile  = IO::File->new( "$gffdir/${file_prefix}_Coding_transcript.gff$$", "r" );
 
     my $n_exons=0;
     
@@ -82,7 +84,7 @@ foreach my $chr (@chromosome) {
     while (<$infile>) {
 
         next if /\#/;
-        s/\"//g;
+        s/\"//g;#"
         my @f = split;
         my ( $chrom, $start, $stop, $ori, $name ) = ( $f[0], $f[3], $f[4], $f[6], $f[9] );
         next if ( $f[1] ne 'Coding_transcript' || $f[2] ne 'exon' );
@@ -93,20 +95,43 @@ foreach my $chr (@chromosome) {
     }
 
     $log->write_to("processed $n_exons exons\n");
+    $wormbase->run_command("cat $outdir/${file_prefix}_UTR.gff$$ >> $outdir/UTR.gff$$", 'no_log');
+    
+    #clean up
+    $wormbase->run_command("rm $gffdir/".$wormbase->species."*$$",'no_log');
 }
 
-$log->mail( "$maintainers", "BUILD REPORT: $0" );
+$log->mail();
 
 ##########################
+
+#
+sub write_tmp_gff {
+	my $prefix = shift;
+	my $contig = shift;
+	open(OUT,">$gffdir/${prefix}_curated.gff$$") or $log->log_and_die("cant make curated tmp GFF for $prefix $contig: $!\n");
+	my $handle = $wormbase->open_GFF_file($contig,'curated', $log);
+	while (<$handle>) {
+		print OUT;
+	}
+	close $handle;
+	close OUT;
+	open(OUT,">$gffdir/${prefix}_Coding_transcript.gff$$") or $log->log_and_die("cant make Coding tmp GFF for $prefix $contig: $!\n");
+	$handle = $wormbase->open_GFF_file($contig,'Coding_transcript', $log);
+	while (<$handle>) {
+		print OUT;
+	}
+	close $handle;
+	close OUT;
+}
+
 
 # get CDS name (lifted from original version)
 sub short_name {
     my ($name) = @_;
-    my $dotno = $name =~ tr/\./\./;
-    if ( $dotno > 1 ) {
-        $name=~s/\.\w+$//;
-    }
-    return $name;
+    my $cds_regex = $wormbase->cds_regex;
+    my ($cdsname) = $name =~ /($cds_regex)/;
+    return $cdsname;
 }
 
 # UTR GFF line generator
