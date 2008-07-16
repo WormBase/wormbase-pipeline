@@ -4,8 +4,8 @@
 #
 # written by Anthony Rogers
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2008-06-26 12:58:58 $
+# Last edited by: $Author: mh6 $
+# Last edited on: $Date: 2008-07-16 12:41:11 $
 #
 # it depends on:
 #    wormpep + history
@@ -346,7 +346,7 @@ sub update_blast_dbs {
     open( OLD_DB, "<$last_build_DBs" ) or die "cant find $last_build_DBs";
     while (<OLD_DB>) {
         chomp;
-        if (/(gadfly|yeast|slimswissprot|slimtrembl|wormpep|ipi_human|brigpep)/) {
+        if (/(remapep|gadfly|yeast|slimswissprot|slimtrembl|wormpep|ipi_human|brigpep)/) {
             $_currentDBs{$1} = $_;
         }
     }
@@ -357,7 +357,7 @@ sub update_blast_dbs {
     open( DIR, "ls -l $wormpipe_dir/BlastDB/*.pep |" ) or die "readir\n";
     while (<DIR>) {
         chomp;
-        if (/\/(gadfly|yeast|slimswissprot|slimtrembl|wormpep|ipi_human|brigpep)/) {
+        if (/\/(remapep|gadfly|yeast|slimswissprot|slimtrembl|wormpep|ipi_human|brigpep)/) {
             my $whole_file = "$1" . "$'";    # match + stuff after match.
 
 	    print "checking $_\n";
@@ -527,6 +527,27 @@ sub parse_genes {
               && die 'cannot concatenate GFFs';
         }
     }
+	# if it is remanei collect all needed GFFs and then split them based on their supercontig into a /tmp/ directory
+	elsif (ref($wormbase) eq 'Remanei'){
+	           my ($path)=glob($config->{fasta})=~/(^.*)\/CHROMOSOMES\//;
+	           my $tmpdir="/tmp/compara/$species";
+			   print STDERR "mkdir -p $tmpdir\n" if $debug;
+	           `mkdir -p $tmpdir` if !-e "/tmp/compara/$species";
+	           unlink glob("$tmpdir/*.gff"); # clean old leftovers
+	           system("cat $path/GFF_SPLITS/gene.gff $path/GFF_SPLITS/curated.gff > $tmpdir/all.gff");
+	           open INF,"$tmpdir/all.gff" || die (@!);
+
+	           # that is quite evil due to thousands of open/close filehandle operations
+	           while (<INF>){
+	                  next if /\#/;
+	                  my @a=split;
+	                  open OUTF,">>$tmpdir/$a[0].gff" ||die (@!);
+	                  print OUTF $_;
+	                  close OUTF;
+	           }
+	           close INF;
+	}
+
 
     foreach my $file ( glob $config->{gff} ) {
         next if $file =~ /masked|CSHL|BLAT_BAC_END|briggsae|MtDNA/;
