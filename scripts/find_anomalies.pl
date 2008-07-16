@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-07-15 11:07:24 $      
+# Last updated on: $Date: 2008-07-16 15:07:24 $      
 
 # Changes required by Ant: 2008-02-19
 # 
@@ -139,6 +139,9 @@ my $tace = $wormbase->tace;        # TACE PATH
 # MAIN BODY OF SCRIPT
 ##########################
 
+my %dna_entry;		# store for dna sequences for when reading remanei-style multi-entry sequence file
+
+my $ovlp;			# Overlap object
 
 # output file of data to write to database, primarily for St. Louis to read in
 my $datafile = $wormbase->wormpub . "/CURATION_DATA/anomalies_$species.dat";
@@ -153,9 +156,6 @@ my $coords = Coords_converter->invoke($database, 0, $wormbase);
 print "Connecting to Ace\n";
 my $ace = Ace->connect (-path => $database,
                        -program => $tace) || die "cannot connect to database at $database\n";
-
-# get the Overlap object
-my $ovlp = Overlap->new($database, $wormbase);
 
 my $pwm = PWM->new;
 
@@ -234,6 +234,13 @@ while (my $run = <DATA>) {
 &delete_anomalies("CDS_DIFFERS_FROM_JIGSAW");
 
 
+# if we want the anomalies GFF file
+if ($supplementary) {
+  my $gff_file = "$database/CHROMOSOMES/SUPPLEMENTARY_GFF/curation_anomalies.gff";
+  open (OUTPUT_GFF, ">$gff_file") || die "Can't open $gff_file";      
+}
+
+
 my $ace_output = $wormbase->wormpub . "/CURATION_DATA/anomalies_$species.ace";
 open (OUT, "> $ace_output") || die "Can't open $ace_output to write the Method\n";
 print OUT "\n\n";
@@ -254,6 +261,9 @@ my $brugia_count_contigs = 0;	# in brugia count the contigs that we test
 my @chromosomes = $wormbase->get_chromosome_names(-mito => 0, -prefix => 1);
 
 foreach my $chromosome (@chromosomes) {
+
+  # get the Overlap object
+  $ovlp = Overlap->new($database, $wormbase);
 
 # for brugia, test to see if the jigsaw and tigr genes are the same -
 # it so then we don't need to get their anomalies for this test as
@@ -305,12 +315,6 @@ foreach my $chromosome (@chromosomes) {
     print "TESTING $chromosome. Have done: $brugia_count_contigs contigs\n";
   }
 
-
-  # if we want the anomalies GFF file
-  if ($supplementary) {
-    my $gff_file = "$database/CHROMOSOMES/SUPPLEMENTARY_GFF/${chromosome}_curation_anomalies.gff";
-    open (OUTPUT_GFF, ">$gff_file") || die "Can't open $gff_file";
-  }
 
   $log->write_to("Processing chromosome $chromosome\n");
 
@@ -375,7 +379,7 @@ foreach my $chromosome (@chromosomes) {
 
   print "finding anomalies\n";
 
-  if (0) {
+  #if (0) {
 
   print "finding protein homologies not overlapping CDS exons\n";
   my $matched_protein_aref = &get_protein_differences(\@cds_exons, \@pseudogenes, \@homologies, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, $chromosome) if (exists $run{UNMATCHED_PROTEIN});
@@ -460,7 +464,7 @@ foreach my $chromosome (@chromosomes) {
   print "finding isolated RST5\n";
   &get_isolated_RST5(\@rst_hsp, \@CDS, \@coding_transcripts, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, $chromosome) if (exists $run{UNMATCHED_RST5});
 
-}
+#}
 
   print "get jigsaw different to curated CDS\n";
   my @unmatched_jigsaw = &get_jigsaw_different_to_curated_CDS(\@jigsaw_exons, \@cds_exons, \@pseudogenes, $chromosome) if (exists $run{JIGSAW_DIFFERS_FROM_CDS});
@@ -503,10 +507,6 @@ foreach my $chromosome (@chromosomes) {
 
 
 
-  # close the ouput GFF file
-  if ($supplementary) {
-    close (OUTPUT_GFF);
-  }
 }
 
 
@@ -518,6 +518,10 @@ if ($datafile) {
   close(DAT);			
 }
 
+# close the ouput GFF file
+if ($supplementary) {
+  close (OUTPUT_GFF);
+}
 
 # output file of repeat motifs that overlap coding exons
 my $repeatsfile = $wormbase->wormpub . "/CURATION_DATA/repeats_overlapping_exons_$species.dat";
@@ -547,15 +551,12 @@ $ace->close;
 ##################
 
 if ($database eq $wormbase->{'autoace'}) {
-  foreach my $chromosome (@chromosomes) {
-    my $gff_file = $wormbase->{'chromosomes'} . "/SUPPLEMENTARY_GFF/${chromosome}_curation_anomalies.gff";
-    $wormbase->check_file($gff_file, $log,
-			  minsize => 700000,
-			  maxsize => 6000000,
-			  lines => ['^##',
-				    "^${chromosome}\\s+curation_anomaly\\s+\\S+\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+\\s+Evidence\\s+\\S+"],
-			  );
-  }
+  my $gff_file = $wormbase->{'chromosomes'} . "/SUPPLEMENTARY_GFF/curation_anomalies.gff";
+  $wormbase->check_file($gff_file, $log,
+			minsize => 700000,
+			lines => ['^##',
+				  "^\\S+\\s+curation_anomaly\\s+\\S+\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+\\s+Evidence\\s+\\S+"],
+			);
 }
 
 # report the numbers of anomalies found
@@ -2452,7 +2453,7 @@ sub get_weak_exon_splice_sites {
 
   my $pwm = PWM->new;
   my $seq_file = "$database/CHROMOSOMES/$chromosome.dna";
-  my $seq = read_file($seq_file);
+  my $seq = read_chromosome($chromosome);
 
   my $splice_cutoff = 0.5;	# if we have two or more splice sites below this value, then report them
   my $splice_cutoff_single = 0.1; # if we have only one splice site, it has to be below this value before we report it
@@ -2507,23 +2508,105 @@ sub get_weak_exon_splice_sites {
   }				# foreach $splice
 }
 
+
+##########################################
+##########################################
+# read the chromosmal sequence
+#  my $seq = read_chromosome($chromosome);
+
+sub read_chromosome {
+
+  my $chromosome = shift;
+
+  # if we have already read in the sequence entries, return the one for this chromosome
+  if (exists $dna_entry{$chromosome}) {return $dna_entry{$chromosome};}
+
+  my $seq_file = $wormbase->chromosomes . "/$chromosome.dna";
+  my $seq = &read_file($seq_file);
+
+  if (! defined $seq) {
+    $seq = &read_entry($wormbase->chromosomes, $chromosome)
+  }
+
+  return $seq;
+
+}
+
 ##########################################
 # read file
 
 sub read_file {
   my ($file) = @_;
 
-  $/ = "";
-  open (SEQ, $file) or die "Can't open the dna file for $file : $!\n";
-  my $seq = <SEQ>;
-  close SEQ;
-  $/ = "\n";
+  my $seq;
 
-  $seq =~ s/^>.*\n//;		# remove one initial title line
-  $seq =~ s/\n//g;
+  # try to open a single-chromosome entry file e.g. for elegans, briggsae
+  if (open (SEQ, $file)) {
+    $/ = "";
+    $seq = <SEQ>;
+    close SEQ;
+    $/ = "\n";
+    
+    $seq =~ s/>.*\n//;           # remove one title line
+    $seq =~ s/\n//g;
+  } else {
+    print "Can't open the dna file for $file : $!\n" if ($verbose);
+  }
 
   return $seq
 }
+
+
+##########################################
+# read entry in a file if the file consists of lots of entries
+
+sub read_entry {
+  my ($dir, $chromosome) = @_;
+
+  # if we have already read in the sequence entries, return the one for this chromosome
+  if (exists $dna_entry{$chromosome}) {return $dna_entry{$chromosome};}
+
+  my $file = "$dir/supercontigs.fa"; # it might be called this
+  print "Trying: $file\n" if ($verbose);
+  if (! -e $file) {
+    print "Can't open the dna file for $file : $!\n" if ($verbose);
+    $file = "$dir/" . $wormbase->species . ".fa"; # or it might be called this - the nomenclature is not yet certain
+    print "Trying: $file\n" if ($verbose);
+
+  } elsif (! -e $file) {
+    die "Can't find chromosome sequence file for $dir, $chromosome\n";
+  }
+
+  print "Reading DNA sequence entries\n";
+  my $seq;
+
+  if (open (SEQ, $file)) {
+    my $entry;
+    while (my $line = <SEQ>) {
+      chomp $line;
+      if ($line =~ /^>(\S+)/) {
+	if (defined $entry) {	# store the previous sequence entry
+	  $dna_entry{$entry} = $seq;
+	}
+	$seq = "";
+	$entry = $1;
+      } else {
+	$seq .= $line;
+      }
+    }
+    if (defined $entry) {	# store the last entry
+      $dna_entry{$entry} = $seq;
+    }
+    close SEQ;
+  } else {
+    die "Can't open the dna file for $file : $!\n";
+  }
+
+  if (! exists $dna_entry{$chromosome}) {$log->log_and_die("No DNA sequence was found for $chromosome\n");}
+  return $dna_entry{$chromosome};
+}
+
+
 ##########################################
 # Finding short CDS introns
 # note any introns shorter than 30 bases
@@ -3923,11 +4006,11 @@ __END__
 
 
 START_DATA
-UNMATCHED_PROTEIN            elegans brugia
+UNMATCHED_PROTEIN            elegans remanei brugia
 UNMATCHED_EST                
-FRAMESHIFTED_PROTEIN         elegans brugia
-MERGE_GENES_BY_PROTEIN       elegans brugia
-SPLIT_GENE_BY_PROTEIN_GROUPS elegans brugia
+FRAMESHIFTED_PROTEIN         elegans remanei brugia
+MERGE_GENES_BY_PROTEIN       elegans remanei brugia
+SPLIT_GENE_BY_PROTEIN_GROUPS elegans remanei brugia
 MERGE_GENES_BY_EST
 UNATTACHED_EST
 UNATTACHED_TSL
@@ -3939,22 +4022,22 @@ JIGSAW_DIFFERS_FROM_CDS      elegans
 JIGSAW_WITH_SIGNALP          elegans
 UNMATCHED_SAGE               elegans
 UNMATCHED_WABA               elegans
-OVERLAPPING_EXONS            elegans brugia
-MISMATCHED_EST               elegans brugia
-WEAK_INTRON_SPLICE_SITE      elegans brugia
-SHORT_EXON                   elegans brugia
-SHORT_INTRON                 elegans brugia
-REPEAT_OVERLAPS_EXON         elegans brugia
-INTRONS_IN_UTR               elegans brugia
+OVERLAPPING_EXONS            elegans remanei brugia
+MISMATCHED_EST               elegans remanei brugia
+WEAK_INTRON_SPLICE_SITE      elegans remanei brugia
+SHORT_EXON                   elegans remanei brugia
+SHORT_INTRON                 elegans remanei brugia
+REPEAT_OVERLAPS_EXON         elegans remanei brugia
+INTRONS_IN_UTR               elegans remanei brugia
 SPLIT_GENE_BY_TWINSCAN       elegans
 MERGE_GENES_BY_TWINSCAN      elegans
-CONFIRMED_INTRON             elegans 
+CONFIRMED_INTRON             elegans remanei
 UNCONFIRMED_INTRON                   brugia
 UNMATCHED_EST 
 UNMATCHED_MASS_SPEC_PEPTIDE  elegans
-EST_OVERLAPS_INTRON          elegans brugia
+EST_OVERLAPS_INTRON          elegans remanei brugia
 UNMATCHED_EXPRESSION         elegans
-INCOMPLETE_PFAM_MOTIF        elegans
+INCOMPLETE_PFAM_MOTIF        elegans remanei
 END_DATA
 
 =pod
@@ -3996,6 +4079,12 @@ script_template.pl  OPTIONAL arguments:
 This specifies an ACeDB database to use to read GFF data etc.
 
 The default is to use autoace.
+
+=over 4
+
+=item -species
+
+The species - the default is 'elegans'
 
 =over 4
 
