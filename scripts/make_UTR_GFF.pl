@@ -15,7 +15,7 @@
 #      COMPANY:
 #      VERSION:  2 
 #      CREATED:  21/02/06 14:11:30 GMT
-#     REVISION:  $Revision: 1.18 $ 
+#     REVISION:  $Revision: 1.19 $ 
 #===============================================================================
 
 use strict;
@@ -75,8 +75,8 @@ CHROM:foreach my $chr (@chromosome) {
     $db->load_gff( "$gffdir/${file_prefix}_curated.gff$suffix", $long_name, 1 ) if !$load;
     $db->load_gff( "$gffdir/${file_prefix}_Coding_transcript.gff$suffix", $long_name ) if !$load;
 
-    my $outfile = IO::File->new( "$outdir/${file_prefix}_UTR.gff$suffix",          ">>" ); # append or create
-    my $infile  = IO::File->new( "$gffdir/${file_prefix}_Coding_transcript.gff$suffix", "r" );
+    my $outfile = IO::File->new( "$outdir/${file_prefix}_UTR.gff$suffix",          ">>" ) or $log->log_and_die("cant open ${file_prefix}_UTR.gff$suffix"); # append or create
+    my $infile  = IO::File->new( "$gffdir/${file_prefix}_Coding_transcript.gff$suffix", "r" ) or $log->log_and_die("cant open ${file_prefix}_Coding_transcrit.gff$suffix");
 
     my $n_exons=0;
     
@@ -95,10 +95,11 @@ CHROM:foreach my $chr (@chromosome) {
     }
 
     $log->write_to("processed $n_exons exons\n");
-    $wormbase->run_command("cat $outdir/${file_prefix}_UTR.gff$$ >> $outdir/UTR.gff$$", 'no_log');
-    
-    #clean up
-    $wormbase->run_command("rm $gffdir/".$wormbase->species."*$$",'no_log');
+	#clean up
+	if( $wormbase->assembly_type eq 'contig') {
+	    $wormbase->run_command("cat $outdir/${file_prefix}_UTR.gff$$ >> $outdir/UTR.gff$$", 'no_log');
+    	$wormbase->run_command("rm $gffdir/".$wormbase->species."*$$",'no_log');
+    }
 }
 
 $log->mail();
