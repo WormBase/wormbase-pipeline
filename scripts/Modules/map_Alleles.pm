@@ -214,11 +214,23 @@ sub map {
 			$errors++;
 			next
 		}
+
 		if( abs($map[1] - $map[2]) > 100000) {
-			$log->write_to("ERROR: $x is massive\n");
-			$errors++;
-			next;
+		  # Note from Mary Ann 20 june 2008:
+		  # I have heard back from Mark Edgley and he confirms
+		  # that the few Massive deletions which map_alleles
+		  # is spitting out as an error are in fact massive and
+		  # OK.
+		  # Since this dataset is pretty much complete I think
+                  # it would be OK to exclude niDf* alleles from the "is it massive"
+                  # check.
+		  if ($x->name !~ /^niDf/) {
+		    $log->write_to("ERROR: $x is massive\n");
+		    $errors++;
+		  }
+		  next;
 		} 
+
 		# from flanks to variation
 		if ($map[2]>$map[1]){$map[1]++;$map[2]--}
 		else {$map[1]--;$map[2]++}
