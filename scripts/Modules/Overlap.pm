@@ -7,7 +7,7 @@
 # Do fast overlap matching of positions of two sets of things.
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-07-15 10:59:54 $      
+# Last updated on: $Date: 2008-07-16 09:19:00 $      
 
 =pod
 
@@ -1952,7 +1952,7 @@ sub get_tRNAscan_SE_1_23RNA {
 
     Title   :   get_repeatmasked_complex
     Usage   :   my @gff = $ovlp->get_(@repeat)
-    Function:   filters a list of RepeatMasker GFF data to leave only the ones with no ()n of '-rich' in their names.
+    Function:   filters a list of RepeatMasker GFF data to leave only the ones with no ()n of '_rich' in their names.
     Returns :   list of lists for GFF data
     Args    :   lists of lists of repeat GFF data from $self->get_repeatmasked()
 
@@ -1964,8 +1964,8 @@ sub get_tRNAscan_SE_1_23RNA {
    
    # want the ones without ')n' in their ID
    my @r2 = grep { $_->[0] !~ /\)n/ } @repeatmasked; 
-   # want the ones without '-rich' in their ID
-   my @repeatmasked_complex = grep { $_->[0] !~ /\-rich/ } @r2; 
+   # want the ones without '_rich' in their ID
+   my @repeatmasked_complex = grep { $_->[0] !~ /\_rich/ } @r2; 
 
    return @repeatmasked_complex;
 
