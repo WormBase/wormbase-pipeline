@@ -7,7 +7,7 @@
 # Usage : autoace_builder.pl [-options]
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2008-07-16 09:58:37 $
+# Last edited on: $Date: 2008-07-16 14:42:53 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -366,11 +366,13 @@ sub make_UTR {
     $log->error("Job $job (" . $job->history->command . ") exited with LSF error code: ". $job->history->exit_status ."\n") if $job->history->exit_status != 0;
   }
   $lsf->clear;   
-  #merge into single file.
-  $wormbase->run_command("cat ".$wormbase->gff_splits."/UTR.gff* >> ".$wormbase->gff_splits."/allUTR.gff",$log);
-  $wormbase->run_command("rm -f ".$wormbase->gff_splits."/UTR.gff*",$log);
-  $wormbase->run_command("mv -f ".$wormbase->gff_splits."/allUTR.gff ".$wormbase->gff_splits."/UTR.gff",$log);
   
+  #merge into single file.
+  if($wormbase->assembly_type eq 'contig') {
+  	$wormbase->run_command("cat ".$wormbase->gff_splits."/UTR.gff* >> ".$wormbase->gff_splits."/allUTR.gff",$log);
+  	$wormbase->run_command("rm -f ".$wormbase->gff_splits."/UTR.gff*",$log);
+  	$wormbase->run_command("mv -f ".$wormbase->gff_splits."/allUTR.gff ".$wormbase->gff_splits."/UTR.gff",$log);
+  }
 }
 
 
