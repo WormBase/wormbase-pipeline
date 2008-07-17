@@ -7,7 +7,7 @@
 # by Gary Williams
 #
 # Last updated by: $Author: gw3 $                      
-# Last updated on: $Date: 2008-02-18 15:20:20 $        
+# Last updated on: $Date: 2008-07-17 12:31:27 $        
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -27,22 +27,23 @@ use Sequence_extract;
 ######################################
 
 my ($help, $debug, $test, $verbose, $store, $wormbase);
-my ($output, $proximity, $side, $operons, $dbdir);
+my ($output, $proximity, $side, $operons, $dbdir, $species);
 #$output = "";       		# file to write output to
 $proximity = 0;              # region around gene to restrict output to (<= 0 write complete intergenic region)
 $side = "both";	        # either "both", "5", "3" side of gene to output
 $operons = "include";	# either "include", "only", "no" intergenic regions inside operons
 
-GetOptions ("help"       => \$help,
-            "debug=s"    => \$debug,
-	    "test"       => \$test,
-	    "verbose"    => \$verbose,
-	    "store:s"      => \$store,
-	    "output=s"  => \$output,
+GetOptions ("help"        => \$help,
+            "debug=s"     => \$debug,
+	    "test"        => \$test,
+	    "verbose"     => \$verbose,
+	    "store:s"     => \$store,
+	    "output=s"    => \$output,
 	    "proximity=i" => \$proximity,
 	    "side=s"      => \$side,
-	    "operons=s" => \$operons,
-	    "database=s"=> \$dbdir
+	    "operons=s"   => \$operons,
+	    "database=s"  => \$dbdir,
+	    "species:s"   => \$species,
 	    );
 
 if ( $store ) {
@@ -50,6 +51,7 @@ if ( $store ) {
 } else {
   $wormbase = Wormbase->new( -debug   => $debug,
                              -test    => $test,
+			     -organism => $species,
 			     );
 }
 
@@ -60,12 +62,9 @@ $dbdir          = $wormbase->test ? $wormbase->database("current") : $wormbase->
 my $gffdir      = $wormbase->gff_splits;        # GFF directory
 my @chromosomes = $wormbase->get_chromosome_names; # chromosomes
 
-
 # in test mode?
 if ($test) {
   print "In test mode\n" if ($verbose);
-  @chromosomes = qw(I);
-
 }
 
 # establish log file.
@@ -81,8 +80,9 @@ if ($operons ne "include" && $operons ne "only" && $operons ne "no") {
     die "Error: option -operons=$operons is invalid (requires 'include', 'only' or 'no')\n";
 }
 if (!defined($output)){
-$output = $wormbase->chromosomes."/intergenic_sequences.dna" unless $output;
+  $output = $wormbase->chromosomes."/intergenic_sequences.dna" unless $output;
 }
+
 ##########################
 # MAIN BODY OF SCRIPT
 ##########################
@@ -106,17 +106,16 @@ foreach my $chromosome (@chromosomes) {
   my %gene = ();
   my %gene_count = ();
 
-  print "Processing chromosome $chromosome\n";
-  $log->write_to("Processing chromosome $chromosome\n");
+  $log->write_to("Processing chromosome $chromosome\n") if ($verbose);
 
   # loop through the CHROMOSOME GFF transcript file  
   # lines are like:
   # CHROMOSOME_X    gene    gene    1316    1935    .       +       .       Gene "WBGene00008351"
 
-  print "Loop through Gene GFF file ${\$wormbase->chromosome_prefix}${chromosome}\n" if ($verbose);
-  open (GFF, "< $gffdir/${\$wormbase->chromosome_prefix}${chromosome}_gene.gff") 
-  || die "Failed to open GFF file: $gffdir/${\$wormbase->chromosome_prefix}${chromosome}_WBgene.gff\n\n";
-  while (<GFF>) {
+  print "Loop through Gene GFF file\n" if ($verbose);
+  my $GFF = $wormbase->open_GFF_file("${\$wormbase->chromosome_prefix}${chromosome}", 'gene', $log);
+
+  while (<$GFF>) {
     chomp;
     s/^\#.*//;
     next unless /\S/;
@@ -141,7 +140,7 @@ foreach my $chromosome (@chromosomes) {
       print "Operon : '$gene_name'\n" if ($verbose);
     }
   }
-  close (GFF);
+  close ($GFF);
 
 ####################################################
 # Sort by start position then operons before genes #
@@ -302,8 +301,10 @@ foreach my $chromosome (@chromosomes) {
       print OUT ">${last_name}_end_of_chromosome ${\$wormbase->chromosome_prefix}$chromosome $print_start, len: $width\n";
       $sequence = $seq_obj->Sub_sequence("${\$wormbase->chromosome_prefix}$chromosome", "$seq_start", "$width");
 #      print OUT "$sequence\n";
-      fasta_write($sequence);
-      $no_sequences++;
+      if ($sequence) {		# if the gene ends at the end of the chromosome there will not be a sequence after the gene
+	fasta_write($sequence);
+	$no_sequences++;
+      }
     } else {
       # print the region near the end of the last gene
       if ($side eq "both" || ($last_strand eq "+" && $side eq "3") || ($last_strand eq "-" && $side eq "5")) {
@@ -315,14 +316,15 @@ foreach my $chromosome (@chromosomes) {
 	print OUT ">$last_name.${prime}prime ${\$wormbase->chromosome_prefix}$chromosome $print_start\n";
 	# output sequence from end of gene to $width past the end
 	$sequence = $seq_obj->Sub_sequence("${\$wormbase->chromosome_prefix}$chromosome", "$seq_start", "$width");
-	if ($last_strand eq "-") {
-	  # get reverse-comp of sequence
-	  $sequence = $seq_obj->DNA_revcomp($sequence);
+	if ($sequence) { # if the gene ends at the end of the chromosome there will not be a sequence after the gene
+	  if ($last_strand eq "-") {
+	    # get reverse-comp of sequence
+	    $sequence = $seq_obj->DNA_revcomp($sequence);
+	  }
+#	  print OUT "$sequence\n";
+	  fasta_write($sequence);
+	  $no_sequences++;
 	}
-#	print OUT "$sequence\n";
-	fasta_write($sequence);
-	$no_sequences++;
-
       }
 
     }
@@ -340,9 +342,6 @@ close (OUT);
 
 $log->write_to("\n\nFinished writing output file\n");
 $log->write_to("Wrote $no_sequences sequences\n");
-
-print "Wrote $no_sequences sequences\n";
-
 $log->write_to("gzipping $output\n");
 $wormbase->run_command("gzip -f $output", $log);
 
@@ -350,6 +349,7 @@ $wormbase->check_file("$output.gz", $log,
 		      minsize => 12000000,
 );
 
+$log->write_to("Finished.");
 $log->mail();
 
 exit(0);
