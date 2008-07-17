@@ -70,7 +70,7 @@ sub invoke
     my $tace = $wormbase->tace; # <= hmpf
     
     my @chromosome = $wormbase->get_chromosome_names(-mito => 1);
-    my $chromprefix= $wormbase->chromosome_prefix;
+    $self->{chromprefix} = $wormbase->chromosome_prefix;
     if (scalar @chromosome > 100){
     #contig assemblies	
     	my $supercontig_seq = $wormbase->chromosomes."/supercontigs.fa";
@@ -83,7 +83,7 @@ sub invoke
 	 # iterate chromosomes
 	 foreach my $chromosome (@chromosome){
          #chromosome based assemblies
-	  	  my $seqname="$chromprefix"."$chromosome";
+	  	  my $seqname = $self->{chromprefix} . "$chromosome";
 
 		  # dump the chromosome if it doesn't exist
     	          unless( -e "$database/CHROMOSOMES/$seqname.dna" ) {
@@ -152,14 +152,11 @@ sub Sub_sequence
 
     $seq = $self->{'single_chrom'}->{"$seq"} if $self->{'single_chrom'}->{"$seq"};
 
-    if( $seq =~ /CHROMOSOME|chr/ ) { # MH6 - not the best way to differentiate them
+    my $prefix = $self->{chromprefix};
+    if( $seq =~ /$prefix/ ) {
       $chrom = $seq;
-      # GWW - removed this to stop chromosome positions being reset all the time
-      # $start = 0;
-    }      
 
-    #passed seq is a SUPERLINK
-    elsif( $seq =~ /SUPERLINK/ ) {
+    } elsif( $seq =~ /SUPERLINK/ ) { #passed seq is a SUPERLINK, only elegans uses 'SUPERLINK'
       my $sl = $seq;
       $chrom = $self->_getChromFromSlink("$seq");
       $seq = $chrom; # gets processed as chromosome below
@@ -167,6 +164,7 @@ sub Sub_sequence
       # modify the starting coordinate
       $start += $self->{"$chrom"}->{SUPERLINK}->{"$sl"}->[0];
       $length = $self->{"$chrom"}->{SUPERLINK}->{"$sl"}->[1] - $self->{"$chrom"}->{SUPERLINK}->{"$sl"}->[0] unless $length;
+
     } else {
       # This is when the passed seq is a clone
       unless ($self->{'CLONE2CHROM'}->{"$seq"} ) {
@@ -194,19 +192,22 @@ sub Sub_sequence
     }
 
     if( $chrom ) {
-      $length = length($self->{SEQUENCE}->{"$chrom"}) unless $length; #full sequence of object.
+      my $seqlength = $self->{LENGTH}->{$chrom};
+      if ($start >= $seqlength) {
+	carp "subsequence invalid, past end of sequence : seq = $seq\tsequence length = $seqlength\tstart = $start\tlength = $length\textend = $extend\n";
+	return;
+      }
+      $length = $seqlength unless $length; #full sequence of object.
       return $self->{SEQUENCE}->{"$chrom"} unless ($start and $length);#return whole seq if no coords passed
       $subseq = substr( ($self->{SEQUENCE}->{"$chrom"} ),$start, $length+(2*$extend) ); #extend either end
-    }
-    else {
-      carp "couldn't work out chromosome \n that sequence $seq derives from\n";
+    } else {
+      carp "couldn't work out chromosome that sequence $seq derives from\n";
     }
 
     if ($subseq ) {
       return $subseq;
-    }
-    else {
-      carp "subsequence invalid : seq = $seq\tstart = $start\n\tlength = $length\n\textend = $extend\n";
+    } else {
+      carp "subsequence invalid : seq = $seq\tstart = $start\tlength = $length\textend = $extend\n";
     }
   }
 
