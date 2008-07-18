@@ -7,7 +7,7 @@
 # Builds a wormpep data set from the current autoace database
 #
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2008-07-18 09:43:40 $
+# Last updated on: $Date: 2008-07-18 10:43:21 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -344,7 +344,7 @@ sub write_final_pep
 	my %cds_info;
 	my $def = $wormbase->basedir."/wquery/SCRIPT:make_wormpep.def";
 	print STDERR "parsing $def\n";
-	my $tm_query = $wormbase->table_maker_query($wormbase->build_accessor->orgdb,$def);
+	my $tm_query = $wormbase->table_maker_query($dbdir,$def);
 	while(<$tm_query>) {
 		next if (/>/ or /\/\//);
 		s/\"//g;#"
