@@ -6,8 +6,8 @@
 #
 # Author: Chao-Kung CHen
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2008-06-25 16:06:02 $
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2008-07-18 14:17:22 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -41,7 +41,7 @@ my $farm_base = '/lustre/work1/ensembl/wormpipe';
 my $farm_ace = "$farm_base/ace_files"; 
 my $source_dir    = "$farm_base/dumps";
 my $target_dir = $wormbase->acefiles;
-my $backup_dir = "$source_dir/BACKUP";
+my $backup_dir = "$source_dir/BACKUP/";
 
 unlink("$source_dir/ensembl_protein_info.ace");
 
@@ -71,7 +71,7 @@ if ( -e "$source_dir/ensembl_protein_info.ace" ) {
 
 # copy these file for each tier 2 species
 my %accessors = ($wormbase->species_accessors);
-$accessors{elegans} = $wormbase;
+$accessors{lc(ref($wormbase))} = $wormbase;
 foreach my $species (keys %accessors) {
 
   foreach my $f (@files){
