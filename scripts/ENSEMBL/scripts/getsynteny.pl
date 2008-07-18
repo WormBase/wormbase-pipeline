@@ -24,7 +24,7 @@ my $help = 0;
 my $host = 'ia64d';
 my $user = 'wormro';
 my $pass;
-my $dbname = 'worm_compara_lagan';
+my $dbname = 'worm_compara_pecan';
 
 my $species1 = 'Caenorhabditis elegans';
 my $species1_assembly;
@@ -34,7 +34,10 @@ my $species3 = 'Caenorhabditis remanei';
 my $species3_assembly;
 my $species4 = 'Caenorhabditis brenneri';
 my $species4_assembly;
-
+my $species5 = 'Brugia malayi ';
+my $species5_assembly;
+my $species6 = 'Pristionchus pacificus';
+my $species6_assembly;
 
 my $method_link_type = "SYNTENY";
 
@@ -53,6 +56,10 @@ my $chr_names = "all";
             'assembly3:s' => \$species3_assembly,
             'species4:s' => \$species4,
             'assembly4:s' => \$species4_assembly,
+            'species5:s' => \$species5,
+            'assembly5:s' => \$species5_assembly,
+            'species6:s' => \$species6,
+            'assembly6:s' => \$species6_assembly,
             'chr_names=s' => \$chr_names,
             'method_link_type=s' => \$method_link_type);
 
@@ -75,8 +82,10 @@ my $gdb1 = $gdba->fetch_by_name_assembly($species1,$species1_assembly);
 my $gdb2 = $gdba->fetch_by_name_assembly($species2,$species2_assembly);
 my $gdb3 = $gdba->fetch_by_name_assembly($species3,$species3_assembly);
 my $gdb4 = $gdba->fetch_by_name_assembly($species4,$species4_assembly);
+my $gdb5 = $gdba->fetch_by_name_assembly($species5,$species5_assembly);
+my $gdb6 = $gdba->fetch_by_name_assembly($species6,$species6_assembly);
 
-my $mlss = $mlssa->fetch_by_method_link_type_GenomeDBs($method_link_type, [$gdb1, $gdb2,$gdb3,$gdb4]);
+my $mlss = $mlssa->fetch_by_method_link_type_GenomeDBs($method_link_type, [$gdb1, $gdb2,$gdb3,$gdb4,$gdb5,$gdb6]);
 
 my $dfgs;
 
@@ -101,7 +110,7 @@ foreach my $df (@{$dfgs}) {
   my $dfname = $df->name;
 
   foreach my $sr (@{$syntenies}) {
-    my ($species1_dfr_string, $species2_dfr_string , $species3_dfr_string,$species4_dfr_string);
+    my ($species1_dfr_string, $species2_dfr_string , $species3_dfr_string,$species4_dfr_string,$species5_dfr_string,$species6_dfr_string);
     foreach my $dfr (@{$sr->get_all_DnaFragRegions}) {
       my $strand = "+";
       my ($gff_start,$gff_stop)=($dfr->dnafrag_start,$dfr->dnafrag_end);
@@ -129,14 +138,22 @@ foreach my $df (@{$dfgs}) {
       } elsif ($dfr->dnafrag->genome_db->name eq $species4) {
         $species4_dfr_string = 'Target "Sequence:'.$dfr->dnafrag->name . "\" ".
         "$gff_start $gff_stop ; Species: \"$species4\"";
+      } elsif ($dfr->dnafrag->genome_db->name eq $species5) {
+        $species5_dfr_string = 'Target "Sequence:'.$dfr->dnafrag->name . "\" ".
+        "$gff_start $gff_stop ; Species: \"$species5\"";
+      } elsif ($dfr->dnafrag->genome_db->name eq $species6) {
+        $species5_dfr_string = 'Target "Sequence:'.$dfr->dnafrag->name . "\" ".
+        "$gff_start $gff_stop ; Species: \"$species6\"";
       }
-
 
     }
     print $species1_dfr_string . $species2_dfr_string."\n" if $species2_dfr_string;
     print $species1_dfr_string . $species3_dfr_string."\n" if $species3_dfr_string;
     print $species1_dfr_string . $species4_dfr_string."\n" if $species4_dfr_string;
-  }
+    print $species1_dfr_string . $species5_dfr_string."\n" if $species5_dfr_string;
+    print $species1_dfr_string . $species6_dfr_string."\n" if $species6_dfr_string;
+
+ }
 }
 
 print STDERR "Total number of_synteny regions $total_nb_syntenies\n";

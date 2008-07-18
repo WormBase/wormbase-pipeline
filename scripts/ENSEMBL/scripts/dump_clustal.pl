@@ -38,14 +38,16 @@ my $edb = $gdb_a->fetch_by_name_assembly('Caenorhabditis elegans');
 my $bdb = $gdb_a->fetch_by_name_assembly('Caenorhabditis briggsae');
 my $rdb = $gdb_a->fetch_by_name_assembly('Caenorhabditis remanei');
 my $ndb = $gdb_a->fetch_by_name_assembly('Caenorhabditis brenneri');
+my $pdb = $gdb_a->fetch_by_name_assembly('Pristionchus pacificus');
+my $brdb = $gdb_a->fetch_by_name_assembly('Brugia malayi');
 
-my $mlss = $mlss_a->fetch_by_method_link_type_GenomeDBs( 'PECAN', [ $edb, $bdb, $rdb,$ndb] );
+my $mlss = $mlss_a->fetch_by_method_link_type_GenomeDBs( 'PECAN', [ $edb, $bdb, $rdb,$ndb,$brdb,$pdb] );
 
 my $alignIO = Bio::AlignIO->newFh(
     -interleaved => 0,
     -fh          => \*STDOUT,
     -format      => 'clustalw',
-    -idlength    => 30
+    -idlength    => 40
 );
 
 # get a DNA fragment
@@ -66,7 +68,7 @@ foreach my $align (@$all_blocks) {
     foreach my $this ( @{ $align->get_all_GenomicAligns() } ) {
         #		$this->dnafrag->name, '[', $this->dnafrag_start,'-', $this->dnafrag_end, '](', $this->dnafrag_strand, ")\n",
         my $seq_name = $this->dnafrag->genome_db->name;
-        $seq_name =~ s/(.)\w* (.)\w*/$1$2/;
+        $seq_name =~ s/(.)\w* (...)\w*/$1$2/;
         $seq_name .= '-'.$this->dnafrag->name;
 	my $strand=$this->dnafrag_strand >0 ?'+':'-';
 	$seq_name .= "($strand)";
