@@ -23,6 +23,7 @@ $exclude{'Saccharomyces cerevisiae'}     = 1;
 $exclude{'Homo sapiens'}                 = 1;
 $exclude{'Human immunodeficiency virus'} = 1;
 $exclude{'Caenorhabditis briggsae'}      = 1;
+$exclude{'Caenorhabditis remanei'}       = 1;
 
 our $output; # file to write
 my $output_dir = "/lustre/work1/ensembl/wormpipe/swall_data";
