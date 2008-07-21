@@ -43,7 +43,7 @@
 // Groups that users belong to, each user should only be in one group,
 // The code will use the first group that it finds a user in.
 //
-admin:
+admin: wormpub
 write:
 read:
 
@@ -53,3 +53,4 @@ read:
 // new users are just added to the bottom of the file.
 // 
 //
+wormpub 882325df5879bb2684fe42e429984595

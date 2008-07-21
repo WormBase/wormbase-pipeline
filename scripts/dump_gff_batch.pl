@@ -134,7 +134,7 @@ for my $job ( $lsf->jobs ) {
 $lsf->clear;
 
 if (scalar(@chromosomes) > 50){
-	open (WRITEDB,"| saceclient $host -port $port -userid wormpub -pass yslef4");
+	open (WRITEDB,"| saceclient $host -port $port -userid wormpub -pass blablub");
 	print WRITEDB "shutdown now\n";
 	close WRITEDB;
 	sleep 120;

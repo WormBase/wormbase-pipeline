@@ -9,7 +9,7 @@
 # dumps the method through sace / tace and concatenates them.
 #
 # Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2008-07-11 12:25:00 $
+# Last edited on: $Date: 2008-07-21 14:53:37 $
 
 
 use lib $ENV{CVS_DIR};
@@ -87,7 +87,7 @@ foreach my $sequence ( @sequences ) {
     foreach my $method ( @methods ) {
     	my $file = $via_server? "$dump_dir/tmp/${sequence}_${method}.$$" : "$dump_dir/${sequence}_${method}.gff";
     	if($via_server) {
-    		open (WRITEDB,"| /software/worm/bin/acedb/saceclient $host -port $port -userid wormpub -pass yslef4") or $log->log_and_die("$!\n");
+    		open (WRITEDB,"| /software/worm/bin/acedb/saceclient $host -port $port -userid wormpub -pass blablub") or $log->log_and_die("$!\n");
 			print WRITEDB "gif seqget $sequence +method $method; seqfeatures -file $file\n";
 			close WRITEDB;
 			
@@ -114,7 +114,7 @@ foreach my $sequence ( @sequences ) {
   else {
   	if($via_server) {
   		my $file = "$dump_dir/tmp/gff_dump$$"; 
-  		open (WRITEDB,"| saceclient $host -port $port -userid wormpub -pass yslef4") or $log->log_and_die("$!\n");
+  		open (WRITEDB,"| saceclient $host -port $port -userid wormpub -pass blablub") or $log->log_and_die("$!\n");
 		print WRITEDB "gif seqget $sequence; seqfeatures -file $file\n";
 		close WRITEDB;
 		
