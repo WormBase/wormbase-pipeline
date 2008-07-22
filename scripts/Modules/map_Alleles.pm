@@ -463,14 +463,14 @@ sub print_possible_genes {
 
 =cut
 
-# map the alleles to cdses (test)
+# map the alleles to cdses 
 sub get_cds {
 	my ($alleles)=@_;
 	my %cds;
 	while(my($k,$v)=each(%{$alleles})){
 		my @hits;
 		if ($v->{cgh_start}) {
-		   @hits=$index->search_genes($v->{'chromosome'},$v->{'cgh_start'},$v->{'cgh_stop'});
+		   @hits=$index->search_cds($v->{'chromosome'},$v->{'cgh_start'},$v->{'cgh_stop'});
 		}
 		else {
 		   @hits=$index->search_cds($v->{'chromosome'},$v->{'start'},$v->{'stop'});
