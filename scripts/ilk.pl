@@ -8,7 +8,7 @@
 # and finds information about the homologous wormpep proteins
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-07-22 12:57:04 $      
+# Last updated on: $Date: 2008-07-22 15:46:28 $      
 
 # To do:
 # accept wormpep ID as input
@@ -287,6 +287,26 @@ sub get_data {
     }
 
   }
+
+  # get the description of the domains - most domains will be duplicated
+  # across the proteins, so we only have to get their descriptions
+  # once here and not for each homolog.
+  my %domains_desc;
+  foreach my $homolog (keys %{$data{homologs}}) {
+    foreach my $domain (keys %{$data{homologs}{$homolog}{domains_href}}) {
+      if (! exists $domains_desc{$domain}) {
+	my $motif_obj = $db->fetch("Motif" => $domain);
+	if (defined $motif_obj) {
+	  my $title = $motif_obj->Title; # get the description
+	  if (defined $title) {
+	    print "$domain:\t $title\n";
+	    $domains_desc{$domain} = $title;
+	  }
+	}
+      }
+    }
+  }
+  $data{domain_desc_href} = \%domains_desc;
 
   return %data;
 }
@@ -725,7 +745,7 @@ sub make_canvases {
   # set up the canvases for the homologs
   # sort them by descending Blast scores
   foreach my $homolog (sort { $data{homologs}{$b}{score} <=>  $data{homologs}{$a}{score} } keys %{ $data{homologs} }) {
-      &add_canvas($scale, $homolog, $data{homologs}{$homolog}, \%colours, $scrolled, $target_canv, $homologous_regions{$homolog});
+      &add_canvas($scale, $homolog, $data{homologs}{$homolog}, \%colours, $scrolled, $target_canv, $homologous_regions{$homolog}, $data{domain_desc_href});
   }
 
 }
@@ -738,21 +758,24 @@ sub add_canvas {
   # parameters:
   # $target_canv = canv object created by the target, here so that homologs can raise/lower the homologous regions
   # $target_homologous_regions_aref = aref of this homolog's homologous region rectangle ojects in target's canvas
-  my ($scale, $id, $info, $colours, $scrolled, $target_canv, $target_homologous_regions_aref) = @_;
+  my ($scale, $id, $info, $colours, $scrolled, $target_canv, $target_homologous_regions_aref, $target_domain_desc_href) = @_;
 
   my %info = %{$info};		# the bit of the %data global variable dealing specifically with this homolog
   my $have_target = 0;		# flag set true if we have the target CDS
 
 
   my $protein;
+  my %domain_desc;
 
   if ($id eq 'target') {
     $have_target = 1;
     $id = $info{cds_name};	# NB only the target has this key/value pair
     $protein = $info{protein};
+    %domain_desc = %{$info{domain_desc_href}};
   } else {
     $protein = $id;
     $id = $info{cds_name_of_homolog};
+    %domain_desc = %{$target_domain_desc_href};
   }
   my $gene = $info{gene};
   my $cgc_name = $info{cgc_name};
@@ -983,10 +1006,12 @@ sub add_canvas {
     my $domain_obj = $canv->createRectangle($x, $y, 
 					$x+$aa_len, $y+$height,
 					-fill => "$colour");
+    my $domain_desc = $domain_desc{$domain};
+    if (!defined $domain_desc) {$domain_desc = "";}
     $canv->bind($domain_obj,
 		'<Enter>',
 		sub {
-		  &status_line("Domain: $domain");
+		  &status_line("Domain: $domain\t$domain_desc");
 		});
 
     $count++;
