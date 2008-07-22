@@ -8,7 +8,7 @@
 # and finds information about the homologous wormpep proteins
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-07-17 14:57:37 $      
+# Last updated on: $Date: 2008-07-22 12:57:04 $      
 
 # To do:
 # accept wormpep ID as input
@@ -87,6 +87,8 @@ my $log = Log_files->make_build_log($wormbase);
 my $status;			# label to display status and other information
 my $VERSION = '1.1.0';
 my $MW;				# Main Window handle
+my $quick_cds;			# next CDS to display frm quick entry frame
+my $quick_entry;		# entry field for quick frame
 
 my %data;
 
@@ -563,6 +565,7 @@ sub usage {
      $file->command(-label => "New", -command => \&new_cds);
      $file->command(-label => "Save As", -command => \&export);
      $file->command(-label => "Quit", -command => \&quit); 
+
      # Finally, the Help menuitems. 
      $help->command(-label => 'Version'); 
      $help->separator; 
@@ -637,6 +640,9 @@ sub init {
 
   $MW->title("ilk $VERSION"); 
   my $menubar = build_menubar; 
+
+  # create the quick-entry bar
+  &add_quick_entry;
 
   # create the status line
   &add_status_line;
@@ -852,6 +858,16 @@ sub add_canvas {
 		  &status_line("$id Lab: $lab Gene: $gene Protein: $protein Exon: $exon_count Length: $len bp");
 		});
 
+    $canv->bind("$id.$i",		
+	      '<Button-1>',
+              sub {
+		&status_line("Going to: $id");
+		$quick_cds = $id;
+		&quick_next_cds;		
+	      }
+	      );
+
+
     # mark the exon boundaries
     if ($i != 0) {
       my $exon_mark = $canv->createLine($x, $y-2,
@@ -887,6 +903,15 @@ sub add_canvas {
       my $homologous_region = $canv->createRectangle($x, $y, 
 						     $x+$aa_len, $y+$height,
 						     -fill => 'red');
+      $canv->bind($homologous_region,		
+		  '<Button-1>',
+		  sub {
+		    &status_line("Going to: $id");
+		    $quick_cds = $id;
+		    &quick_next_cds;		
+		  }
+		  );
+
     }
   } else {
     # this is the target
@@ -970,7 +995,52 @@ sub add_canvas {
   return ($canv, %homologous_regions);
 }
 
+#####################################################
+# add the quick entry frame and label
+sub add_quick_entry {
+  my $quick = $MW->Frame(-borderwidth => 3,
+			-relief => 'groove',
+			-background => 'lightyellow')->pack(-side => 'top',
+						     -fill => 'x');
+  $quick->Label( 
+	    -text => 'Next CDS: ',
+	    -background => 'lightyellow')->pack(-side => 'left');		
 
+     # entry field
+  $quick_entry = $quick->Entry( 
+				   -width => 25,
+				   -textvariable=> \$quick_cds,
+				   -background => 'grey')->pack(-side => 'left');
+  
+  # make Return and Enter submit CDS 
+  $quick_entry->bind("<Return>",[ \&quick_next_cds]);
+  $quick_entry->bind("<KP_Enter>",[ \&quick_next_cds]);
+
+  # Make history button
+  my $make = $quick->Button( -text => "OK",
+			     -command => [\&quick_next_cds],
+			     -background => 'lightyellow',
+			     )->pack(-side => 'left',
+				     -pady => '1',
+				     -padx => '6',
+				     -anchor => "e"
+				     );
+
+}
+
+
+
+
+##############################################################
+sub quick_next_cds {
+  my $cds = $quick_cds;
+  if (defined $cds && length($cds)) {
+    #print "CDS = $cds\n";
+    %data = &get_data($cds);
+    &interface(%data);
+  }
+}
+##############################################################
 #####################################################
 # add the status frame and label
 sub add_status_line {
@@ -978,6 +1048,7 @@ sub add_status_line {
 			-relief => 'groove',
 			-background => 'cyan')->pack(-side => 'top',
 						     -fill => 'x');
+
   $status = $line->Entry(-background => 'cyan',
 			 -width => 120)->pack(-side => 'left',
 					       -fill => 'x'); # $status is a global variable
