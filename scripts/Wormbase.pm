@@ -1491,6 +1491,8 @@ sub run_command {
 }
 
 ####################################
+# THIS IS DEPRECATED.
+# Use LSF::JobManager instead
 sub wait_for_LSF {
   my $self = shift;
   sleep 10;
@@ -1641,23 +1643,53 @@ sub get_binned_chroms {
 ###################################################################################
 
 sub open_GFF_file {
-	my $self = shift;
-	my $seq = shift;
-	my $method = shift;
-	my $log = shift;
-	my $handle;
-	my $file;
-	if(scalar $self->get_chromosome_names > 15 ) { # contig based assembly
-		$file = defined $method ? $self->gff_splits."/$method.gff" : $self->chromosomes."/".$self->species.".gff";
-		open($handle,"grep \"$seq\\W\" $file |") or $log->log_and_die("cant open $file :$!\n");
-	}
-	else {
-		$file = defined $method ? $self->gff_splits."/${seq}$method.gff" : $self->chromosomes."/$seq.gff";
-		open ($handle,"<$file") or $log->log_and_die("cant open $file :$!\n");
-	}
-	
-	return $handle;
+  my $self = shift;
+  my $seq = shift;
+  my $method = shift;
+  my $log = shift;
+  my $handle;
+
+  my $file = $self->GFF_file_name($seq, $method);
+  if ($self->separate_chromosomes ) { 
+    open ($handle,"<$file") or $log->log_and_die("cant open $file :$!\n");
+  } else {		# contig based assembly
+    open($handle,"grep \"$seq\\W\" $file |") or $log->log_and_die("cant open $file :$!\n");
+  }
+  
+  return $handle;
 }
+
+###################################################################################
+# Tests whether we are using separate chromosomes (returns true)
+# or whether we have a contig based assembly (returns false)
+#
+# This is used to determine whether we concatenate all the GFF data
+# together in one file or not.
+
+sub separate_chromosomes {
+  my $self = shift;
+  return (scalar $self->get_chromosome_names <= 15);
+}
+
+###################################################################################
+# Returns the name of the GFF file to use
+# Args: full chromosome name, 
+#       [optional] GFF method - this forces the use of the GFF_SPLITS/ file, rather than the CHROMOSOMES/ file
+
+sub GFF_file_name {
+  my $self = shift;
+  my ($chromosome, $method) = @_;
+
+  my $file;
+  if ($self->separate_chromosomes ) { 
+    $file = defined $method ? $self->gff_splits."/${chromosome}$method.gff" : $self->chromosomes."/$chromosome.gff";
+  } else {			# contig based assembly
+    $file = defined $method ? $self->gff_splits."/$method.gff" : $self->chromosomes."/".$self->species.".gff";
+  }
+
+  return $file;
+}
+
 ################################################################################
 #Return a true value
 ################################################################################
