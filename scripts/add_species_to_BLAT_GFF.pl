@@ -7,7 +7,7 @@
 # This is a example of a good script template
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2008-07-23 11:21:10 $
+# Last updated on: $Date: 2008-07-23 12:16:43 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -160,60 +160,61 @@ foreach my $chromosome (@chromosomes) {
 	# input file multiple times (e.g. when sorting out problems)
 	# in which case we do not want to add 'Species' multiple
 	# times to the same line.
-	if ($f[8] =~ /;\sSpecies/) {next}
+	if (defined $f[8] && $f[8] !~ /;\sSpecies/) {
 
 
-        # is this a BLAT_WASHU or BLAT_NEMBASE or BLAT_NEMATODE or BLAT_Caen_EST_* line?
-        if ( $f[1] eq 'BLAT_WASHU' ) {
+	  # is this a BLAT_WASHU or BLAT_NEMBASE or BLAT_NEMATODE or BLAT_Caen_EST_* line?
+	  if ( $f[1] eq 'BLAT_WASHU' ) {
 
-            # get the ID name
+				# get the ID name
             ($id) = ( $f[8] =~ /Target \"Sequence:(\S+)\"/ );
 
             if ( exists $species{'BLAT_WASHU'}->{$id} ) {
-                $line = $line . " ; Species \"" . $species{'BLAT_WASHU'}->{$id} . "\"";
-                $count++;
-                print "$line\n" if ($verbose);
+	      $line = $line . " ; Species \"" . $species{'BLAT_WASHU'}->{$id} . "\"";
+	      $count++;
+	      print "$line\n" if ($verbose);
             }
-        }
-        elsif ( $f[1] eq 'BLAT_NEMBASE' ) {
+	  }
+	  elsif ( $f[1] eq 'BLAT_NEMBASE' ) {
 
-            # get the ID name
+				# get the ID name
             ($id) = ( $f[8] =~ /Target \"Sequence:(\S+)\"/ );
 
-            if ( exists $species{'BLAT_NEMBASE'}->{$id} ) {
-                $line = $line . " ; Species \"" . $species{'BLAT_NEMBASE'}->{$id} . "\"";
-                $count++;
-                print "$line\n" if ($verbose);
+            if ( exists $species{'BLAT_NEMBASE'}->{$id} ) { # 
+	      $line = $line . " ; Species \"" . $species{'BLAT_NEMBASE'}->{$id} . "\"";
+	      $count++;
+	      print "$line\n" if ($verbose);
             }
-        }
-        elsif ( $f[1] eq 'BLAT_NEMATODE' ) {
+	  }
+	  elsif ( $f[1] eq 'BLAT_NEMATODE' ) {
 
-            # get the ID name
+				# get the ID name
             ($id) = ( $f[8] =~ /Target \"Sequence:(\S+)\"/ );
 
             if ( exists $species{'BLAT_NEMATODE'}->{$id} ) {
-                $line = $line . " ; Species \"" . $species{'BLAT_NEMATODE'}->{$id} . "\"";
-                $count++;
-                print "$line\n" if ($verbose);
+	      $line = $line . " ; Species \"" . $species{'BLAT_NEMATODE'}->{$id} . "\"";
+	      $count++;
+	      print "$line\n" if ($verbose);
             }
             else {
-                #print "BLAT_NEMATODE species doesn't exist for $id\n";
+	      #print "BLAT_NEMATODE species doesn't exist for $id\n";
             }
-        }
-        elsif ( $f[1] =~ /BLAT_Caen_EST_/ ){    # BLAT_Caen_EST_BEST or BLAT_Caen_EST_OTHER
-            # get the ID name
+	  }
+	  elsif ( $f[1] =~ /BLAT_Caen_EST_/ ){    # BLAT_Caen_EST_BEST or BLAT_Caen_EST_OTHER
+				# get the ID name
             ($id) = ( $f[8] =~ /Target \"Sequence:(\S+)\"/ );
 
-            if ( exists $species{'BLAT_NEMATODE'}->{$id} )
+            if ( exists $species{'BLAT_NEMATODE'}->{$id} ) # 
             { # the {'BLAT_NEMATODE'} hash holds the EMBL data which BLAT_Caen_EST_* uses as well
-                $line = $line . " ; Species \"" . $species{'BLAT_NEMATODE'}->{$id} . "\"";
-                $count++;
-                print "$line\n" if ($verbose);
+	      $line = $line . " ; Species \"" . $species{'BLAT_NEMATODE'}->{$id} . "\"";
+	      $count++;
+	      print "$line\n" if ($verbose);
             }
             else {
-                print "BLAT_Caen_EST species doesn't exist for $id\n";
+	      print "BLAT_Caen_EST species doesn't exist for $id\n";
             }
-        }
+	  }
+	}
 
         # write out the line
         print OUT "$line\n";
