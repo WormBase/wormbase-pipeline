@@ -77,6 +77,7 @@ sub make_build_log {
     my $class    = shift;
     my $wormbase = shift;
     my $ver      = $wormbase->get_wormbase_version;
+    my $species  = $wormbase->species;
     my $filename;
     $0 =~ m/([^\/]*$)/ ? $filename = $0 : $filename =
       $1;    # get filename (sometimes $0 includes full path if not run from its dir )
@@ -85,7 +86,7 @@ sub make_build_log {
     my $log_file = "$path/$filename" . ".WS${ver}." . $$;
     my $log;
     open( $log, ">$log_file" ) or croak "cant open file $log_file : $!";
-    print $log "WS$ver Build script : $filename \n\n";
+    print $log "WS$ver ($species) Build script : $filename \n\n";
     print $log "Started at ", $wormbase->runtime, "\n";
     print $log "-----------------------------------\n\n";
 
