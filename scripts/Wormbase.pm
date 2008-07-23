@@ -984,9 +984,8 @@ sub check_file {
 	    !($line =~ /Locus\s+lin-42/) &&
 	    !($line =~ /Aff_Y116F11.ZZ33/) &&
 	    !($line =~ /F16H9.2/) &&
-	    !($line =~ /WBGene00008901/ &&
-	    !($line =~ /niDf/  ) 
-	    ) { 
+	    !($line =~ /WBGene00008901/) &&
+	    !($line =~ /niDf/)) { 
 	  push @problems, "line $line_count:\n$line\nGFF feature is longer than $MAX_FEATURE_LENGTH bases ($feature_length bases)";
 # report all length errors
 #	  last;
