@@ -1,55 +1,51 @@
 #!/usr/local/bin/perl5.8.0 -w
 #
-# script_template.pl                           
-# 
-# by Keith Bradnam                         
+# script_template.pl
+#
+# by Keith Bradnam
 #
 # This is a example of a good script template
 #
-# Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2007-09-03 11:40:57 $      
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2008-07-23 08:34:36 $
 
-use strict;                                      
+use strict;
 use lib $ENV{'CVS_DIR'};
 use Wormbase;
 use Getopt::Long;
 use Carp;
 use Log_files;
 use Storable;
-#use Ace;
-#use Sequence_extract;
-#use Coords_converter;
 
 ######################################
-# variables and command-line options # 
+# variables and command-line options #
 ######################################
 
-my ($help, $debug, $test, $verbose, $store, $wormbase);
+my ( $help, $debug, $test, $verbose, $store, $wormbase );
 
+GetOptions(
+    'help'    => \$help,
+    'debug=s' => \$debug,
+    'test'    => \$test,
+    'verbose' => \$verbose,
+    'store:s' => \$store,
+);
 
-GetOptions ("help"       => \$help,
-            "debug=s"    => \$debug,
-	    "test"       => \$test,
-	    "verbose"    => \$verbose,
-	    "store:s"      => \$store,
-	    );
-
-if ( $store ) {
-  $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
-} else {
-  $wormbase = Wormbase->new( -debug   => $debug,
-                             -test    => $test,
-			     );
+if ($store) {
+    $wormbase = retrieve($store) or croak("Can't restore wormbase from $store\n");
+} 
+else {
+    $wormbase = Wormbase->new(
+        -debug => $debug,
+        -test  => $test,
+    );
 }
 
 # Display help if required
-&usage("Help") if ($help);
+&usage('Help') if ($help);
 
 # in test mode?
-if ($test) {
-  print "In test mode\n" if ($verbose);
-
-}
+print "In test mode\n" if ( $verbose && $test );
 
 # establish log file.
 my $log = Log_files->make_build_log($wormbase);
@@ -59,16 +55,11 @@ my $log = Log_files->make_build_log($wormbase);
 #################################
 
 # Set up top level base directories (these are different if in test mode)
-my $gff_dir         = $wormbase->gff;         # AUTOACE GFF
-###my $gff_dir = glob("~wormpub/DATABASES/current_DB/CHROMOSOMES/");
-
-my $ace_dir = $wormbase->autoace;
-###my $ace_dir = glob("~wormpub/DATABASES/current_DB/");
+my $gff_dir = $wormbase->gff;    # GFF
+my $ace_dir = $wormbase->autoace;# Autoace
 
 # other paths
-my $tace            = $wormbase->tace;        # TACE PATH
-
-
+my $tace = $wormbase->tace;      # TACE PATH
 
 ###################################
 # get the species of the sequences
@@ -79,52 +70,52 @@ my $cmd2 = "Query Find Sequence Where Database = \"NEMBASE\"\nshow -a Species\nq
 my $cmd3 = "Query Find Sequence Where Database = \"EMBL\"\nshow -a Species\nquit";
 
 my %species;
-my $id;
-my $db;
+my ( $id, $db );
 
 print "Finding BLAT_WASHU data\n";
-open (TACE, "echo '$cmd1' | $tace $ace_dir |");
+open( TACE, "echo '$cmd1' | $tace $ace_dir |" );
 while (<TACE>) {
-  chomp;
-  next if (/acedb\>/);
-  next if (/\/\//);
-  if (/Sequence\s+:\s+\"(\S+)\"/) {
-    $id = $1;
-  } elsif (/Species\s+\"(.+)\"/) {
-    $species{'BLAT_WASHU'}->{$id} = $1;
-  }
+    chomp;
+    next if (/acedb\>/);
+    next if (/\/\//);
+    if (/Sequence\s+:\s+\"(\S+)\"/) {
+        $id = $1;
+    }
+    elsif (/Species\s+\"(.+)\"/) {
+        $species{'BLAT_WASHU'}->{$id} = $1;
+    }
 }
 close TACE;
 
 print "Finding BLAT_NEMBASE data\n";
-open (TACE, "echo '$cmd2' | $tace $ace_dir |");
+open( TACE, "echo '$cmd2' | $tace $ace_dir |" );
 while (<TACE>) {
-  chomp;
-  next if (/acedb\>/);
-  next if (/\/\//);
-  if (/Sequence\s+:\s+\"(\S+)\"/) {
-    $id = $1;
-  } elsif (/Species\s+\"(.+)\"/) {
-    $species{'BLAT_NEMBASE'}->{$id} = $1;
-  }
+    chomp;
+    next if (/acedb\>/);
+    next if (/\/\//);
+    if (/Sequence\s+:\s+\"(\S+)\"/) {
+        $id = $1;
+    }
+    elsif (/Species\s+\"(.+)\"/) {
+        $species{'BLAT_NEMBASE'}->{$id} = $1;
+    }
 }
 close TACE;
 
 print "Finding BLAT_NEMATODE data\n";
-open (TACE, "echo '$cmd3' | $tace $ace_dir |");
+open( TACE, "echo '$cmd3' | $tace $ace_dir |" );
 while (<TACE>) {
-  chomp;
-  next if (/acedb\>/);
-  next if (/\/\//);
-  if (/Sequence\s+:\s+\"(\S+)\"/) {
-    $id = $1;
-  } elsif (/Species\s+\"(.+)\"/) {
-    $species{'BLAT_NEMATODE'}->{$id} = $1;
-  }
+    chomp;
+    next if (/acedb\>/);
+    next if (/\/\//);
+    if (/Sequence\s+:\s+\"(\S+)\"/) {
+        $id = $1;
+    }
+    elsif (/Species\s+\"(.+)\"/) {
+        $species{'BLAT_NEMATODE'}->{$id} = $1;
+    }
 }
 close TACE;
-
-
 
 ##########################
 # MAIN BODY OF SCRIPT
@@ -132,84 +123,104 @@ close TACE;
 my $count;
 
 # loop through the chromosomes
-  my @chromosomes =  $wormbase->get_chromosome_names(-mito => 1, -prefix => 0);
-  foreach my $chromosome (@chromosomes) {
-    print "Reading chromosome $chromosome\n" if ($verbose);
+my @chromosomes = $wormbase->get_chromosome_names( -mito => 1, -prefix => 1 );
+foreach my $chromosome (@chromosomes) {
+    print "Reading $chromosome\n" if ($verbose);
 
-# loop through the GFF file
+    # loop through the GFF file
     my @f;
-    open (GFF, "<$gff_dir/CHROMOSOME_${chromosome}.gff") || die "Failed to open gff file $gff_dir/CHROMOSOME_${chromosome}.gff\n";
-    open (OUT, ">$gff_dir/CHROMOSOME_${chromosome}.gff.new") || die "Failed to open gff file $gff_dir/CHROMOSOME_${chromosome}.gff.new\n";
-###    open (OUT, ">./CHROMOSOME_${chromosome}.gff.new") || die "Failed to open gff file ./CHROMOSOME_${chromosome}.gff.new\n";
-    while (my $line = <GFF>) {
-      chomp $line;
-      if ($line =~ /^#/ || $line !~ /\S/) {
-	print OUT "$line\n";
-        next;
-      }
-      @f = split /\t/, $line;
-      my $id;
+    my $gffinf = $wormbase->open_GFF_file(
+        $chromosome, undef, $log );
 
-# is this a BLAT_WASHU or BLAT_NEMBASE or BLAT_NEMATODE or BLAT_Caen_EST_* line?
-      if ($f[1] eq 'BLAT_WASHU') {
-	# get the ID name
-	($id) = ($f[8] =~ /Target \"Sequence:(\S+)\"/);
-
-	if (exists $species{'BLAT_WASHU'}->{$id}) {
-	  $line = $line . " ; Species \"" . $species{'BLAT_WASHU'}->{$id} . "\"";
-	  $count++;
-	  #print "$line\n" if ($verbose);
-	}
-      } elsif ($f[1] eq 'BLAT_NEMBASE') {
-	# get the ID name
-	($id) = ($f[8] =~ /Target \"Sequence:(\S+)\"/);
-
-	if (exists $species{'BLAT_NEMBASE'}->{$id}) {
-	  $line = $line . " ; Species \"" . $species{'BLAT_NEMBASE'}->{$id} . "\"";
-	  $count++;
-	  #print "$line\n" if ($verbose);
-	}
-      } elsif ($f[1] eq 'BLAT_NEMATODE') {
-	# get the ID name
-	($id) = ($f[8] =~ /Target \"Sequence:(\S+)\"/);
-
-	if (exists $species{'BLAT_NEMATODE'}->{$id}) {
-	  $line = $line . " ; Species \"" . $species{'BLAT_NEMATODE'}->{$id} . "\"";
-	  $count++;
-	  #print "$line\n" if ($verbose);
-	} else {
-	  #print "BLAT_NEMATODE species doesn't exist for $id\n";
-	}
-      } elsif ($f[1] =~ /BLAT_Caen_EST_/) { # BLAT_Caen_EST_BEST or BLAT_Caen_EST_OTHER
-	# get the ID name
-	($id) = ($f[8] =~ /Target \"Sequence:(\S+)\"/);
-
-	if (exists $species{'BLAT_NEMATODE'}->{$id}) { # the {'BLAT_NEMATODE'} hash holds the EMBL data which BLAT_Caen_EST_* uses as well
-	  $line = $line . " ; Species \"" . $species{'BLAT_NEMATODE'}->{$id} . "\"";
-	  $count++;
-	  #print "$line\n" if ($verbose);
-	} else {
-	  print "BLAT_Caen_EST species doesn't exist for $id\n";
-	}      }
-
-
-# write out the line
-      print OUT "$line\n";
-
-# end of GFF loop
+    # filename munging
+    if ( scalar $wormbase->get_chromosome_names < 15 ) {
+        open( OUT, ">$gff_dir/$chromosome.gff.new" )
+          || die "Failed to open gff file $gff_dir/$chromosome.gff.new\n";
+    }
+    else {
+        open( OUT, ">>$gff_dir/${\$wormbase->species}.gff.new" ) 
+           || die "Failed to open gff file ${\$wormbase->species}.gff.new\n";
     }
 
-# close files
-    close (GFF);
-    close (OUT);
+    while ( my $line = <$gffinf> ) {
+        chomp $line;
+        if ( $line =~ /^#/ || $line !~ /\S/ ) {
+            print OUT "$line\n";
+            next;
+        }
+        @f = split /\t/, $line;
+        my $id;
 
-# end of chromosome loop
-  }
+        # is this a BLAT_WASHU or BLAT_NEMBASE or BLAT_NEMATODE or BLAT_Caen_EST_* line?
+        if ( $f[1] eq 'BLAT_WASHU' ) {
+
+            # get the ID name
+            ($id) = ( $f[8] =~ /Target \"Sequence:(\S+)\"/ );
+
+            if ( exists $species{'BLAT_WASHU'}->{$id} ) {
+                $line = $line . " ; Species \"" . $species{'BLAT_WASHU'}->{$id} . "\"";
+                $count++;
+                print "$line\n" if ($verbose);
+            }
+        }
+        elsif ( $f[1] eq 'BLAT_NEMBASE' ) {
+
+            # get the ID name
+            ($id) = ( $f[8] =~ /Target \"Sequence:(\S+)\"/ );
+
+            if ( exists $species{'BLAT_NEMBASE'}->{$id} ) {
+                $line = $line . " ; Species \"" . $species{'BLAT_NEMBASE'}->{$id} . "\"";
+                $count++;
+                print "$line\n" if ($verbose);
+            }
+        }
+        elsif ( $f[1] eq 'BLAT_NEMATODE' ) {
+
+            # get the ID name
+            ($id) = ( $f[8] =~ /Target \"Sequence:(\S+)\"/ );
+
+            if ( exists $species{'BLAT_NEMATODE'}->{$id} ) {
+                $line = $line . " ; Species \"" . $species{'BLAT_NEMATODE'}->{$id} . "\"";
+                $count++;
+                print "$line\n" if ($verbose);
+            }
+            else {
+                #print "BLAT_NEMATODE species doesn't exist for $id\n";
+            }
+        }
+        elsif ( $f[1] =~ /BLAT_Caen_EST_/ ){    # BLAT_Caen_EST_BEST or BLAT_Caen_EST_OTHER
+            # get the ID name
+            ($id) = ( $f[8] =~ /Target \"Sequence:(\S+)\"/ );
+
+            if ( exists $species{'BLAT_NEMATODE'}->{$id} )
+            { # the {'BLAT_NEMATODE'} hash holds the EMBL data which BLAT_Caen_EST_* uses as well
+                $line = $line . " ; Species \"" . $species{'BLAT_NEMATODE'}->{$id} . "\"";
+                $count++;
+                print "$line\n" if ($verbose);
+            }
+            else {
+                print "BLAT_Caen_EST species doesn't exist for $id\n";
+            }
+        }
+
+        # write out the line
+        print OUT "$line\n";
+
+        # end of GFF loop
+    }
+
+    # close files
+    close($gffinf);
+    close(OUT);
+
+    # end of chromosome loop
+}
 
 # copy new GFF files over
-  foreach my $chromosome (@chromosomes) {
-    system("mv -f $gff_dir/CHROMOSOME_${chromosome}.gff.new $gff_dir/CHROMOSOME_${chromosome}.gff");
-  }
+@chromosomes = ($wormbase->species) if (scalar @chromosomes>15);
+foreach my $chromosome (@chromosomes) {
+    system("mv -f $gff_dir/$chromosome.gff.new $gff_dir/$chromosome.gff");
+}
 
 # Close log files and exit
 $log->write_to("\n\nStatistics\n");
@@ -221,22 +232,15 @@ $log->write_to("Changed $count lines\n");
 ##################
 # CHROMOSOME_MtDNA is the smallest at ~1500000
 foreach my $chromosome (@chromosomes) {
-  $wormbase->check_file("$gff_dir/CHROMOSOME_${chromosome}.gff", $log,
-			minsize => 1500000,
-			lines => ['^##',
-				  "^CHROMOSOME_${chromosome}\\s+\\S+\\s+\\S+\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+"],
-			);
+    $wormbase->check_file( "$gff_dir/$chromosome.gff", $log,
+        minsize => 1500000,
+        lines   => ['^##',"^$chromosome\\s+\\S+\\s+\\S+\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+"],
+    );
 }
-
 
 $log->mail();
 print "Finished.\n" if ($verbose);
 exit(0);
-
-
-
-
-
 
 ##############################################################
 #
@@ -244,30 +248,25 @@ exit(0);
 #
 ##############################################################
 
-
-
 ##########################################
 
 sub usage {
-  my $error = shift;
+    my $error = shift;
 
-  if ($error eq "Help") {
-    # Normal help menu
-    system ('perldoc',$0);
-    exit (0);
-  }
+    if ( $error eq "Help" ) {
+
+        # Normal help menu
+        system( 'perldoc', $0 );
+        exit(0);
+    }
 }
 
 ##########################################
 
-
-
-
 # Add perl documentation in POD format
-# This should expand on your brief description above and 
-# add details of any options that can be used with the program.  
+# This should expand on your brief description above and
+# add details of any options that can be used with the program.
 # Such documentation can be viewed using the perldoc command.
-
 
 __END__
 
