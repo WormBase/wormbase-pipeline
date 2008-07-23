@@ -8,7 +8,7 @@
 # and finds information about the homologous wormpep proteins
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-07-22 15:46:28 $      
+# Last updated on: $Date: 2008-07-23 15:53:15 $      
 
 # To do:
 # accept wormpep ID as input
@@ -42,7 +42,7 @@ use Tk::FileDialog;
 ######################################
 
 my ($help, $debug, $test, $verbose, $store, $wormbase);
-my ($input, $textonly);
+my ($input, $textonly, $group);
 
 GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
@@ -50,6 +50,7 @@ GetOptions ("help"       => \$help,
 	    "verbose"    => \$verbose,
 	    "store:s"    => \$store,
 	    "input:s"    => \$input,
+	    "group:s"    => \$group,
 	    "textonly"   => \$textonly,	# don't show the interface
 	    );
 
@@ -95,6 +96,12 @@ my %data;
 # open an ACE connection to parse details
 my $tace            = $wormbase->tace;        # TACE PATH
 
+# get the type of grouping
+if (!defined $group || $group eq "") {$group = "same"}
+if ($group ne "all" && $group ne "same" && $group ne "other") {
+  die "-group should be set to one of:\n'same' (only same species), 'all' (all species), 'other' (only other species).\nThe default is 'same'\n";
+}
+
 #print "Connecting to Ace\n";
 my $db = Ace->connect (-path => $wormbase->database('current'),
                        -program => $tace) || die "cannot connect to database at $wormbase->database('current')\n";
@@ -108,7 +115,7 @@ if (! defined $input || $input eq "") {
 } else {
 
 # get the data on the cds
-  %data = &get_data($input);
+  %data = &get_data($input, $group);
 }
 
 # show the interface
@@ -152,7 +159,7 @@ sub interface {
                                  -text    => "Enter CDS name:", 
                                  -buttons => ['OK'], 
                                  );
-    # +++ %data = get_data($cds);
+    # +++ %data = get_data($cds, $group);
   }
 
   &init(%data); 
@@ -164,7 +171,7 @@ sub interface {
 # get the data on the CDS
 
 sub get_data {
-  my ($cds) = @_;
+  my ($cds, $group) = @_;
   my %data;
 
 
@@ -200,10 +207,11 @@ sub get_data {
   print "Phenotype: $data{phenotype}\n";
 
 # get domains and homologs in the protein product
-  my ($domains_href, $homologs_href, $mass_spec_href) = &get_domains($protein, "target");
+  my ($domains_href, $homologs_href, $mass_spec_href, $signalp) = &get_domains($protein, "target", $group);
   $data{domains_href} = $domains_href;
   $data{mass_spec_href} = $mass_spec_href;
   $data{homologs_href} = $homologs_href;
+  $data{signalp} = $signalp;
   
 # print the domains
   print "\nDomains of $protein\n";
@@ -225,6 +233,10 @@ sub get_data {
 
 # get the CDS names of the homologs
     my $cds_name_of_homolog = &get_cds_name($homolog);
+    if (! defined $cds_name_of_homolog) {
+      delete $homologs_href->{$homolog};
+      next;
+    }
     print "\tCDS name: $cds_name_of_homolog\n";
     $data{homologs}{$homolog}{cds_name_of_homolog} = $cds_name_of_homolog;
 
@@ -267,10 +279,11 @@ sub get_data {
     }
 
 # get domains in the homologs
-    my ($homolog_domains_href, $homologs_homologs_href, $homolog_mass_spec_href) = &get_domains($homolog, "homolog");
+    my ($homolog_domains_href, $homologs_homologs_href, $homolog_mass_spec_href, $signalp) = &get_domains($homolog, "homolog", $group);
     $data{homologs}{$homolog}{domains_href} = $homolog_domains_href;
     $data{homologs}{$homolog}{mass_spec_href} = $homolog_mass_spec_href;
     $data{homologs}{$homolog}{homologs_href} = $homologs_homologs_href;	# this is the set of homologous matches of this homolog to other proteins - probably not useful
+    $data{homologs}{$homolog}{signalp} = $signalp;
 
 # print the domains in the homologs
     foreach my $domain (keys %{$homolog_domains_href}) {
@@ -343,7 +356,7 @@ sub get_cds_details {
   my $lab = $cds_obj->From_laboratory;
   if (! defined $lab) {
     print "Can't fetch laboratory for $cds_name\n";
-    return (undef, undef, undef, undef, undef, undef, undef);
+    $lab = '';
   }
 
   # if there is no RNAi phenotype, then $rnai is undef
@@ -417,9 +430,13 @@ sub get_protein {
 # my ($domains_href, $homologs_aref, $mass_spec_aref) = &get_domains($protein, "target");
 
 sub get_domains {
-  my ($protein, $type) = @_;
+  my ($protein, $type, $group) = @_;
 
-  my (%domains, %homologs, %mass_spec);
+  my (%domains, %homologs, %mass_spec, $signalp);
+
+  # get the first two letters of the protein name - other members of
+  # this group will share this name.
+  my $group_start = substr($protein, 0, 2);
 
   my $protein_obj = $db->fetch("Protein" => $protein);
   if (! defined $protein_obj) {
@@ -427,6 +444,8 @@ sub get_domains {
     return (undef, undef);
   }
 
+  # get the signalp status
+  $signalp = defined $protein_obj->at('Feature.Signalp')?1:0;
 
 # this skips over the repeated domains
   my @domain_names = $protein_obj->Motif_homol;
@@ -473,27 +492,33 @@ sub get_domains {
   my @homol_names = $protein_obj->Pep_homol;
   foreach my $homol_name (@homol_names) {
     # we only want the homologs if this is the main target - ignore the homologs of the homologs
-    # and we only want the wormpep homologs
-    if ($homol_name =~ /^WP:/ && $type eq "target") { 
-      my $max_score = 0;
-      my @scores = $protein_obj->at("Homol.Pep_homol.$homol_name"."[2]");
-      foreach my $score (@scores) {
-	if ($score > $max_score) {
-	  $max_score = $score;
+    # and we only want the homologs from the same species if $group eq 'same'
+    if ($type eq "target") { 
+      if ($homol_name !~ /^MSP:/) {
+	if (($group eq "same" && $homol_name =~ /^$group_start/) ||
+	    ($group eq "other" && $homol_name !~ /^$group_start/) ||
+	    ($group eq "all")
+	    ) { 
+	  my $max_score = 0;
+	  my @scores = $protein_obj->at("Homol.Pep_homol.$homol_name"."[2]");
+	  foreach my $score (@scores) {
+	    if ($score > $max_score) {
+	      $max_score = $score;
+	    }
+	    $score =~ s/\./\\./;	# quote the decimal points
+	    #print "want = Homol.Pep_homol.$homol_name.wublastp_worm.$score"."[1]\n";
+	    my @starts = $protein_obj->at("Homol.Pep_homol.$homol_name.wublastp_worm.$score"."[1]");
+	    my @ends   = $protein_obj->at("Homol.Pep_homol.$homol_name.wublastp_worm.$score"."[2]");
+	    my @other_starts = $protein_obj->at("Homol.Pep_homol.$homol_name.wublastp_worm.$score"."[3]");
+	    my @other_ends   = $protein_obj->at("Homol.Pep_homol.$homol_name.wublastp_worm.$score"."[4]");
+	    push @{$homologs{$homol_name}->{'start'}}, @starts;
+	    push @{$homologs{$homol_name}->{'end'}},   @ends;
+	    push @{$homologs{$homol_name}->{'other_start'}}, @other_starts;
+	    push @{$homologs{$homol_name}->{'other_end'}},   @other_ends;
+	  }
+	  $homologs{$homol_name}->{'score'} = $max_score;
 	}
-	$score =~ s/\./\\./;	# quote the decimal points
-	#print "want = Homol.Pep_homol.$homol_name.wublastp_worm.$score"."[1]\n";
-	my @starts = $protein_obj->at("Homol.Pep_homol.$homol_name.wublastp_worm.$score"."[1]");
-	my @ends   = $protein_obj->at("Homol.Pep_homol.$homol_name.wublastp_worm.$score"."[2]");
-	my @other_starts = $protein_obj->at("Homol.Pep_homol.$homol_name.wublastp_worm.$score"."[3]");
-	my @other_ends   = $protein_obj->at("Homol.Pep_homol.$homol_name.wublastp_worm.$score"."[4]");
-	push @{$homologs{$homol_name}->{'start'}}, @starts;
-	push @{$homologs{$homol_name}->{'end'}},   @ends;
-	push @{$homologs{$homol_name}->{'other_start'}}, @other_starts;
-	push @{$homologs{$homol_name}->{'other_end'}},   @other_ends;
       }
-      $homologs{$homol_name}->{'score'} = $max_score;
-
     } elsif ($homol_name =~ /^MSP:/) { # mass-spec peptide mapping
       #print "want = Homol.Pep_homol.$homol_name.wublastp_worm.1"."[1]\n";
       my @starts = $protein_obj->at("Homol.Pep_homol.$homol_name.mass-spec.1"."[1]");
@@ -511,7 +536,7 @@ sub get_domains {
 
 
 
-  return (\%domains, \%homologs, \%mass_spec);
+  return (\%domains, \%homologs, \%mass_spec, $signalp);
 }
 
 ##########################################
@@ -638,7 +663,7 @@ more text',
    my $cds = entry_dialog("New", "Enter CDS name");
    if (defined $cds && length($cds)) {
      #print "CDS = $cds\n";
-     %data = &get_data($cds);
+     %data = &get_data($cds, $group);
      &interface(%data);
    }
 
@@ -789,6 +814,7 @@ sub add_canvas {
   my $domains_href = $info{domains_href};
   my $mass_spec_href = $info{mass_spec_href};
   my $homologs_href = $info{homologs_href};
+  my $signalp = $info{signalp};
   my $score = $info{score};
   if (! defined $score) {$score = 100.0;} # the target doesn't have a score to itself, so make a dummy one
 
@@ -856,7 +882,20 @@ sub add_canvas {
   }
   
   if (defined $info{cgc_name}) {
-    my $lab4 = $canv->createText(80, 10, -text => "$info{cgc_name}", -anchor => 'w', -fill => 'red');
+    my $lab4 = $canv->createText(90, 10, -text => "$info{cgc_name}", -anchor => 'w', -fill => 'red');
+  }
+
+  # display the signalp region
+  if ($signalp) {
+    my $sig = $canv->createRectangle(75, 10, 
+				     85, 25,
+				     -fill => 'white',
+				     );
+    $canv->bind($sig,
+		'<Enter>',
+		sub {
+		  &status_line("$id Lab: $lab Gene: $gene Protein: $protein has a SignalP region");
+		});
   }
 
   # display the exons
@@ -1061,7 +1100,7 @@ sub quick_next_cds {
   my $cds = $quick_cds;
   if (defined $cds && length($cds)) {
     #print "CDS = $cds\n";
-    %data = &get_data($cds);
+    %data = &get_data($cds, $group);
     &interface(%data);
   }
 }
