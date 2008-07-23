@@ -9,7 +9,7 @@
 # transcripts to find the most probable orientation.
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-07-15 11:00:34 $      
+# Last updated on: $Date: 2008-07-23 13:04:34 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -77,6 +77,13 @@ my $log = Log_files->make_build_log($wormbase);
 my %dna_entry;		# store for dna sequences for when reading remanei-style multi-entry sequence file
 
 my $database = $wormbase->autoace;
+
+# output file name
+my $version = $wormbase->get_wormbase_version_name();
+my $output = $wormbase->wormpub . "/CURATION_DATA/assign_orientation." . $version . ".ace";
+if ($wormbase->species ne 'elegans') {
+  $output = $wormbase->acefiles . "/assign_orientation.ace";
+}
 
 print "find ignored sequences\n" if ($verbose);
 my %ignore = &get_Ignore();
@@ -335,12 +342,6 @@ my $ovlp = Overlap->new($database, $wormbase);
   }
  
   # now write the ACE file for this chromosome
-  my $version = $wormbase->get_wormbase_version_name();
-  my $output = $wormbase->wormpub . "/CURATION_DATA/assign_orientation." . $version . ".ace";
-  if ($wormbase->species ne 'elegans') {
-#    $output = $wormbase->wormpub . "/CURATION_DATA/assign_orientation_${\$wormbase->species}." . $version . ".ace";
-    $output = $wormbase->acefiles . "/assign_orientation.ace";
-  }
   open (ACE, ">> $output") || die "Can't open file $output\n";
   # we are happy that the existing orientation of these is OK
   # if no existing orientation, we make the default: EST_5
@@ -383,7 +384,21 @@ my $ovlp = Overlap->new($database, $wormbase);
   close(ACE);
 
 }
-    
+
+
+# The elegans orientation data is read into camace during the camace
+# merge-split procedure.
+
+# If the species is not 'elegans' then we need to load the orientation
+# ace file into the database in ~wormpub/DATABASES/$species This will
+# ensure that the orientations will be in the database ready for the
+# next Build procedure. We do NOT want these orientations loaded into
+# the current BUILD database because we have already done teh GFF
+# dumps and the orientations would be inconsistent.
+if ($wormbase->species ne 'elegans') {
+  my $database = $wormbase->database($wormbase->species);
+  $wormbase->load_to_database($database, $output, 'assign_orientation.pl', $log, undef, 1);
+}
 
 
 $log->mail();
