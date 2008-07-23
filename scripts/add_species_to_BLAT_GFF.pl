@@ -6,8 +6,8 @@
 #
 # This is a example of a good script template
 #
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2008-07-23 08:34:36 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2008-07-23 11:21:10 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -21,14 +21,15 @@ use Storable;
 # variables and command-line options #
 ######################################
 
-my ( $help, $debug, $test, $verbose, $store, $wormbase );
+my ( $help, $debug, $test, $verbose, $store, $wormbase, $species );
 
 GetOptions(
-    'help'    => \$help,
-    'debug=s' => \$debug,
-    'test'    => \$test,
-    'verbose' => \$verbose,
-    'store:s' => \$store,
+    'help'      => \$help,
+    'debug=s'   => \$debug,
+    'test'      => \$test,
+    'verbose'   => \$verbose,
+    'store:s'   => \$store,
+    'species:s' => \$species,
 );
 
 if ($store) {
@@ -38,6 +39,7 @@ else {
     $wormbase = Wormbase->new(
         -debug => $debug,
         -test  => $test,
+	-organism => $species,
     );
 }
 
@@ -129,20 +131,23 @@ foreach my $chromosome (@chromosomes) {
 
     # loop through the GFF file
     my @f;
-    my $gffinf = $wormbase->open_GFF_file(
-        $chromosome, undef, $log );
 
     # filename munging
-    if ( scalar $wormbase->get_chromosome_names < 15 ) {
-        open( OUT, ">$gff_dir/$chromosome.gff.new" )
-          || die "Failed to open gff file $gff_dir/$chromosome.gff.new\n";
-    }
-    else {
-        open( OUT, ">>$gff_dir/${\$wormbase->species}.gff.new" ) 
-           || die "Failed to open gff file ${\$wormbase->species}.gff.new\n";
-    }
+    my $GFF_file_name = $wormbase->GFF_file_name($chromosome, undef);
+    my $new_file = "${GFF_file_name}.new";
 
-    while ( my $line = <$gffinf> ) {
+    # We don't use the $wormbase->open_GFF_file method when dealing
+    # with species with genomes in many contigs because it is
+    # inefficient to read in the same file thousands of times when we
+    # can process all of the lines in one read-through as we don't
+    # care which chromosome the BLAT match is to.
+    # 
+    # my $gffinf = $wormbase->open_GFF_file($chromosome, undef, $log); 
+
+    open (GFFINF, "<$GFF_file_name") || die "Can't open $GFF_file_name\n"; 
+    open(OUT, ">$new_file") || die "Failed to open gff file $new_file\n";
+
+    while ( my $line = <GFFINF> ) {
         chomp $line;
         if ( $line =~ /^#/ || $line !~ /\S/ ) {
             print OUT "$line\n";
@@ -150,6 +155,13 @@ foreach my $chromosome (@chromosomes) {
         }
         @f = split /\t/, $line;
         my $id;
+
+	# It is possible that this script is being run on the same
+	# input file multiple times (e.g. when sorting out problems)
+	# in which case we do not want to add 'Species' multiple
+	# times to the same line.
+	if ($f[8] =~ /;\sSpecies/) {next}
+
 
         # is this a BLAT_WASHU or BLAT_NEMBASE or BLAT_NEMATODE or BLAT_Caen_EST_* line?
         if ( $f[1] eq 'BLAT_WASHU' ) {
@@ -210,17 +222,20 @@ foreach my $chromosome (@chromosomes) {
     }
 
     # close files
-    close($gffinf);
+    close(GFFINF);
     close(OUT);
 
-    # end of chromosome loop
-}
+    # copy new GFF files over
+    system("mv -f $new_file $GFF_file_name");
 
-# copy new GFF files over
-@chromosomes = ($wormbase->species) if (scalar @chromosomes>15);
-foreach my $chromosome (@chromosomes) {
-    system("mv -f $gff_dir/$chromosome.gff.new $gff_dir/$chromosome.gff");
-}
+    # If we are dealing with a species with genomes in many contigs
+    # and all the GFF data in one file, it is inefficient to read in
+    # the same file thousands of times when we have processed all of
+    # the lines in the first read-through as we don't care or test
+    # which chromosome the BLAT match is to.
+    if (! $wormbase->separate_chromosomes) {last}
+
+}    # chromosome loop
 
 # Close log files and exit
 $log->write_to("\n\nStatistics\n");
@@ -230,13 +245,7 @@ $log->write_to("Changed $count lines\n");
 ##################
 # Check the files
 ##################
-# CHROMOSOME_MtDNA is the smallest at ~1500000
-foreach my $chromosome (@chromosomes) {
-    $wormbase->check_file( "$gff_dir/$chromosome.gff", $log,
-        minsize => 1500000,
-        lines   => ['^##',"^$chromosome\\s+\\S+\\s+\\S+\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+"],
-    );
-}
+$wormbase->check_files($log); 
 
 $log->mail();
 print "Finished.\n" if ($verbose);
