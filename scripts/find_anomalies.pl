@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-07-16 15:07:24 $      
+# Last updated on: $Date: 2008-07-24 13:43:39 $      
 
 # Changes required by Ant: 2008-02-19
 # 
@@ -1827,7 +1827,7 @@ sub get_isolated_RST5 {
 
       # make the anomaly score 5 because this is very informative
       my $anomaly_score = 5;
-      print "RST5 NOT got a match ANOMALY: $RST5_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score\n";
+      #print "RST5 NOT got a match ANOMALY: $RST5_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score\n";
       &output_to_database("UNMATCHED_RST5", $chromosome, $RST5_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score, '');
     }
   }
@@ -3503,7 +3503,11 @@ sub get_jigsaw_with_signalp {
 
       # if the curated CDS protein does not have a signalP site
       my $cds_protein_obj = $cds_obj->Corresponding_protein;
-      if (defined $cds_protein_obj->at('Feature.Signalp')) {next;}
+      if (! defined $cds_protein_obj) {
+	print "WARNING: $matching_cds{$jigsaw_id} doesn't have a corresponding protein\n";
+      } else {
+	if (defined $cds_protein_obj->at('Feature.Signalp')) {next;}
+      }
     } else {
       $desc = "$jigsaw_id has a SignalP - no corresponding curated CDS was found";
     }
