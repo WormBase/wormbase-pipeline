@@ -8,7 +8,7 @@
 # and finds information about the homologous wormpep proteins
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-07-23 15:53:15 $      
+# Last updated on: $Date: 2008-07-24 16:36:11 $      
 
 # To do:
 # accept wormpep ID as input
@@ -88,7 +88,6 @@ my $log = Log_files->make_build_log($wormbase);
 my $status;			# label to display status and other information
 my $VERSION = '1.1.0';
 my $MW;				# Main Window handle
-my $quick_cds;			# next CDS to display frm quick entry frame
 my $quick_entry;		# entry field for quick frame
 
 my %data;
@@ -98,11 +97,16 @@ my $tace            = $wormbase->tace;        # TACE PATH
 
 # get the type of grouping
 if (!defined $group || $group eq "") {$group = "same"}
-if ($group ne "all" && $group ne "same" && $group ne "other") {
-  die "-group should be set to one of:\n'same' (only same species), 'all' (all species), 'other' (only other species).\nThe default is 'same'\n";
+if ($group ne "all" && 
+    $group ne "same" && 
+    $group ne "other" &&
+    $group ne "elegans" &&
+    $group ne "briggsae" &&
+    $group ne "remanei") {
+  die "-group should be set to one of:\n'same' (only same species), 'all' (all species), 'other' (only other species), or a species name.\nThe default is 'same'\n";
 }
 
-#print "Connecting to Ace\n";
+print "Connecting to Ace\n";
 my $db = Ace->connect (-path => $wormbase->database('current'),
                        -program => $tace) || die "cannot connect to database at $wormbase->database('current')\n";
 
@@ -434,6 +438,12 @@ sub get_domains {
 
   my (%domains, %homologs, %mass_spec, $signalp);
 
+  # table of first two letters of protein names of various species
+  my %species_letters = ('elegans'  => 'WP',
+			 'remanei'  => 'RP',
+			 'briggsae' => 'BP',
+			 );
+
   # get the first two letters of the protein name - other members of
   # this group will share this name.
   my $group_start = substr($protein, 0, 2);
@@ -497,6 +507,7 @@ sub get_domains {
       if ($homol_name !~ /^MSP:/) {
 	if (($group eq "same" && $homol_name =~ /^$group_start/) ||
 	    ($group eq "other" && $homol_name !~ /^$group_start/) ||
+	    (exists $species_letters{$group} && $homol_name =~ /$species_letters{$group}/) ||
 	    ($group eq "all")
 	    ) { 
 	  my $max_score = 0;
@@ -882,7 +893,7 @@ sub add_canvas {
   }
   
   if (defined $info{cgc_name}) {
-    my $lab4 = $canv->createText(90, 10, -text => "$info{cgc_name}", -anchor => 'w', -fill => 'red');
+    my $lab4 = $canv->createText(10*(length $id), 10, -text => "$info{cgc_name}", -anchor => 'w', -fill => 'red');
   }
 
   # display the signalp region
@@ -924,7 +935,7 @@ sub add_canvas {
 	      '<Button-1>',
               sub {
 		&status_line("Going to: $id");
-		$quick_cds = $id;
+		$input = $id;
 		&quick_next_cds;		
 	      }
 	      );
@@ -969,7 +980,7 @@ sub add_canvas {
 		  '<Button-1>',
 		  sub {
 		    &status_line("Going to: $id");
-		    $quick_cds = $id;
+		    $input = $id;
 		    &quick_next_cds;		
 		  }
 		  );
@@ -1073,7 +1084,7 @@ sub add_quick_entry {
      # entry field
   $quick_entry = $quick->Entry( 
 				   -width => 25,
-				   -textvariable=> \$quick_cds,
+				   -textvariable=> \$input,
 				   -background => 'grey')->pack(-side => 'left');
   
   # make Return and Enter submit CDS 
@@ -1087,8 +1098,37 @@ sub add_quick_entry {
 			     )->pack(-side => 'left',
 				     -pady => '1',
 				     -padx => '6',
-				     -anchor => "e"
+				     -anchor => "w"
 				     );
+
+
+
+my $groups=$quick->Menubutton(-text=>'Groups',
+  -background=>'lightyellow',
+  -activebackground=>'grey')->pack(-side=>'right');
+ 
+
+  $groups->command(-label=>'Same species',
+		   -background=>'lightyellow',
+		   -command=>[\&change_group, 'same']);
+  $groups->command(-label=>'Other species',
+		   -background=>'lightyellow',
+		   -command=>[\&change_group, 'other']);
+  $groups->command(-label=>'All species',
+		   -background=>'lightyellow',
+		   -command=>[\&change_group, 'all']);
+  $groups->separator();
+  $groups->command(-label=>'elegans only',
+		   -background=>'lightyellow',
+		   -command=>[\&change_group, 'elegans']);
+  $groups->command(-label=>'briggsae only',
+		   -background=>'lightyellow',
+		   -command=>[\&change_group, 'briggsae']);
+  $groups->command(-label=>'remanei only',
+		   -background=>'lightyellow',
+		   -command=>[\&change_group, 'remanei']);
+ 
+
 
 }
 
@@ -1097,14 +1137,20 @@ sub add_quick_entry {
 
 ##############################################################
 sub quick_next_cds {
-  my $cds = $quick_cds;
+  my $cds = $input;
   if (defined $cds && length($cds)) {
-    #print "CDS = $cds\n";
+    print "displaying CDS = $cds\n";
     %data = &get_data($cds, $group);
     &interface(%data);
   }
 }
 ##############################################################
+sub change_group {
+  ($group) = @_; 
+  print "Group = $group\n";
+  &quick_next_cds;
+}
+
 #####################################################
 # add the status frame and label
 sub add_status_line {
