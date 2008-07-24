@@ -4,8 +4,8 @@
 # 
 # by Dan Lawson
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2008-06-19 15:21:55 $
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2008-07-24 10:05:57 $
 #
 # Usage GFFmunger.pl [-options]
 
@@ -215,7 +215,7 @@ sub check_its_worked {
 	}	
 	
 	if( defined ($msg) ) {
-		$log->log("GFFmunging failed : $msg");
+		$log->write_to("GFFmunging failed : $msg");
 		$log->error;
 	}
 	else {
