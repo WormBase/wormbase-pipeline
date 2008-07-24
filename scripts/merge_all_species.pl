@@ -1,7 +1,7 @@
 #/software/bin/perl -w
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2008-06-26 12:19:57 $
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2008-07-24 15:36:03 $
 
 #################################################################################
 # Variables                                                                     #
@@ -79,7 +79,7 @@ foreach my $spDB (values %accessors) {
     my $file = $f;		# don't use $f as it is a reference to the array element
     my $species = $spDB->species;
     $file =~ s/SPECIES/$species/;
-    if (-e $file) {
+    if (-e $sbDB->acefiles."/$file") {
       $log->write_to("Loading: $file\n");
       $wormbase->load_to_database($wormbase->orgdb, $spDB->acefiles."/$file", "merge_all_species", $log);
     } else {
