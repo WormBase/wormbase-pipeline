@@ -394,13 +394,13 @@ $wormbase->run_command("grep 'taxon:31234' $output > $output.rem", $log);
 
 $wormbase->check_file($output, $log,
 minsize => 11000000,
-maxsize => 20000000,
+maxsize => 70000000,
 lines => ['^WB\tWBGene\d+\t\S+\t\tGO\:\d+'],
 );
 
 $wormbase->check_file("$output.ce", $log,
 minsize => 9000000,
-maxsize => 20000000,
+maxsize => 30000000,
 lines => ['^WB\tWBGene\d+\t\S+\t\tGO\:\d+'],
 );
 
@@ -415,6 +415,14 @@ minsize =>  4500000,
 maxsize => 12000000,
 lines => ['^WB\tWBGene\d+\t\S+\t\tGO\:\d+'],
 );
+
+$wormbase->check_file("$output.crem", $log,
+minsize =>  4500000,
+maxsize => 12000000,
+lines => ['^WB\tWBGene\d+\t\S+\t\tGO\:\d+'],
+);
+
+
 $db->close;
 
 $log->mail;
