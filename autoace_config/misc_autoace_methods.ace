@@ -996,6 +996,10 @@ Right_priority	 5.530000
 GFF_source	 "tandem"
 GFF_feature	 "tandem_repeat"
 
+Method : "dust"
+Remark           "DUST low complexity regions"
+GFF_source       "dust"
+GFF_feature      "low_complexity_region"
 
 // Use for ar2-style transcript objects
 
