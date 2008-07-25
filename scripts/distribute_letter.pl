@@ -8,8 +8,8 @@
 #                          ~wormpub/BUILD/autoace/release/
 #                          /nfs/WWW/SANGER_docs/htdocs/Projects/C_elegans/WORMBASE/current/release_notes.txt/
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2007-09-04 13:33:55 $
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2008-07-25 23:00:30 $
 
 
 use strict;                                      
@@ -143,7 +143,7 @@ $wormbase->run_command("ln -fs $release development_release", $log);
 
 # Now update WORMBASE pages
 # these won't be seen until current symlink is also updated
-my $webpublish = "/usr/local/bin/webpublish";
+my $webpublish = "/software/bin/webpublish";
 $wormbase->run_command("$webpublish  -q -r $release", $log)            && $log->write_to("Couldn't run webpublish on release directory\n");
 $wormbase->run_command("$webpublish  -q -r development_release", $log) && $log->write_to("Couldn't run webpublish on dev sym link\n");
 
