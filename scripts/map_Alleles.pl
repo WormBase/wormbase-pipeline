@@ -131,6 +131,11 @@ my $inversegenes=MapAlleles::print_genes($genes,$fh);
 # compare old<->new genes
 MapAlleles::compare($mapped_alleles,$inversegenes);
 
+my $cgh_allele2gene = MapAlleles::get_possible_genes($mapped_alleles);
+while (my($k,$v)=each %$cgh_allele2gene){
+    MapAlleles::print_possible_genes ($k,$v,$$inversegenes{$k},$fh);
+}
+
 # get overlaps with CDSs (intron,exon,coding_exon,cds)
 # cds_name->allele_name->type
 my $cds=MapAlleles::get_cds($mapped_alleles);
