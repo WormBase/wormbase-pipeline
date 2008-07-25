@@ -384,6 +384,7 @@ close($out);
 #separate species for gene associations
 $wormbase->run_command("grep 'taxon:6239' $output > $output.ce", $log);
 $wormbase->run_command("grep 'taxon:6238' $output > $output.cb", $log);
+$wormbase->run_command("grep 'taxon:31234' $output > $output.rem", $log);
 
 
 ##################
@@ -409,6 +410,11 @@ maxsize => 12000000,
 lines => ['^WB\tWBGene\d+\t\S+\t\tGO\:\d+'],
 );
 
+$wormbase->check_file("$output.cb", $log,
+minsize =>  4500000,
+maxsize => 12000000,
+lines => ['^WB\tWBGene\d+\t\S+\t\tGO\:\d+'],
+);
 $db->close;
 
 $log->mail;
