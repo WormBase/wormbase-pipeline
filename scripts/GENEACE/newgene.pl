@@ -7,7 +7,7 @@
 # simple script for creating new (sequence based) Gene objects 
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2008-01-18 15:40:56 $
+# Last edited on: $Date: 2008-07-28 14:33:15 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -110,7 +110,7 @@ if( $update_nameDB ) {
 
 #verify if valid name
 
-  $namedb = NameDB_handler->new($DB,$USER,$PASS);
+  $namedb = NameDB_handler->new($DB,$USER,$PASS,'/nfs/WWWdev/SANGER_docs/htdocs');
   $namedb->setDomain('Gene');
 }
 ############################################################

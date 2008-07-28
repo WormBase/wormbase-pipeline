@@ -46,7 +46,7 @@ $DB or die "Must provide a --database option";
 $USER ||= $ENV{USER};
 
 die $USAGE unless ($id and $domain and $USER and $PASS and $DB);
-my $db = NameDB->connect($DB,$USER,$PASS);
+my $db = NameDB->connect($DB,$USER,$PASS, '/nfs/WWWdev/SANGER_docs/htdocs');
 
 my @doms = $db->getDomains;
 #die ("$domain is invalid\n Use one of".join(@doms,', ')."\n") unless (grep $domain @doms);
