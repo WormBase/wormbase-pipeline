@@ -1,10 +1,8 @@
 #!/usr/local/bin/perl -wT
 #author ar2
-use lib "../lib";
 use strict;
-
 use vars qw($USER $PASS $DB $VALID_USERS $VALID_API_USERS $VALID_CGCNAME_USERS $SSO_USER $MAIL_NOTIFY_LIST $MAILS $LIVE);
-use SangerPaths qw(core);
+use SangerPaths qw(core celegans);
 use SangerWeb;
 use NameDB_handler;
 use Data::Dumper;
@@ -90,10 +88,10 @@ sub main {
 
 	# determine if live or WWWdev and select database accordingly
 	if($sw->is_dev()) {
-		$DB = 'test_wbgene_id;mcs2a';
+		$DB = 'test_wbgene_id;mcs2a:3305';
 	}
 	else {
-		$DB = 'wbgene_id;mcs2a';
+		$DB = 'wbgene_id;mcs2a:3305';
 	}
 
 	$SSO_USER = $sw->username(); ## for SSO
@@ -327,7 +325,7 @@ sub split_gene {
 		Enter the WBGene_id of the gene to split 
 		<INPUT TYPE="text" NAME="id" SIZE="13" MAXLENGTH="14">
 		<BR>and the new Sequence gene to create
-		<INPUT TYPE="text" NAME="new_name" SIZE="13" MAXLENGTH="10" VALUE="new Sequence">
+		<INPUT TYPE="text" NAME="new_name" SIZE="13" MAXLENGTH="15" VALUE="new Sequence">
 		<INPUT TYPE="hidden" NAME="action" VALUE="split_gene">
 		<INPUT TYPE="hidden" NAME="type" VALUE="Sequence">
 		<br><br>
