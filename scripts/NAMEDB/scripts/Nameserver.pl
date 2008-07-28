@@ -5,7 +5,6 @@ use strict;
 
 use vars qw($USER $PASS $DB $VALID_USERS $VALID_API_USERS $VALID_CGCNAME_USERS $SSO_USER $MAIL_NOTIFY_LIST $MAILS $LIVE);
 
-use SangerPaths qw(core);
 use SangerWeb;
 use NameDB_handler;
 use Data::Dumper;
@@ -867,9 +866,10 @@ sub fix_case
 
 #################################################################
 sub get_db_connection {
-	
+	require SangerWeb ;
+	my $path = SangerWeb->document_root();	
 	my $DOMAIN = 'Gene';
-	my $db = NameDB_handler->new($DB,$USER,$PASS,1); #1 is for web output
+	my $db = NameDB_handler->new($DB,$USER,$PASS,$path); #1 is for web output
 	
 	$db || return(undef);
 	$db->setDomain($DOMAIN);

@@ -32,17 +32,11 @@ sub new
   {
     my $class = shift;
     my $dsn = shift;
-    my ($name,$password, $web) = @_;
+    my ($name,$password, $path) = @_;
     my $db = NameDB->connect($dsn,$name,$password);
 
     bless ($db, $class);
-    my $path;
-    if ( $web ) {
-      require SangerWeb ;	#qw(core);
-      $path = SangerWeb->document_root();
-    } else {
-	$path = '/nfs/WWWdev/SANGER_docs/htdocs';
-    }
+
     #read in clone list to validate CDS names with
     my $clone_file = "$path/Projects/C_elegans/clonelist";
 	
