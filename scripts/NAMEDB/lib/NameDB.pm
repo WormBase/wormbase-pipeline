@@ -124,7 +124,9 @@ use constant UNIMPL  => 10;
 use constant DBERR   => 11;
 use constant INTERR  => 12;
 
+use lib '/software/worm/lib/perl';
 use Crypt::CBC;
+
 use constant SECRET_PASSWORD => 'ViVaAce!';
 use constant DB_TYPE         => 'InnoDB';
 my $CIPHER = Crypt::CBC->new({key => SECRET_PASSWORD,
