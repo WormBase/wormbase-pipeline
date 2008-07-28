@@ -164,7 +164,13 @@ sub validate_name {
 				      "CGC" => '^Cbn-[a-z21]{3,4}-[1-9]\d*(\.\d+)?$',	
 				      "Sequence" => 'no_type',
 				      "Public_name" => '^Cbn-[a-z]{3,4}-[1-9]\d*(\.\d+)?$',
-				     }
+				     },
+                        'pristionchus' => {
+				     "CGC" => '^Ppa-[a-z21]{3,4}-[1-9]\d*(\.\d+)?$',	
+				     "Sequence" => '^PPA\d{5}$',
+				     "Public_name" => '^Ppa-[a-z]{3,4}-[1-9]\d*(\.\d+)?$|^PPA\d{5}$',
+				    },
+
 		      };
 
     unless ( $name =~ /$name_checks->{$species}->{$type}/ ) {
