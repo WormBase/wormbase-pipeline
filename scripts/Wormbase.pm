@@ -1223,6 +1223,7 @@ sub basedir     { my $self = shift; return $self->{'basedir'}; }
 sub autoace     { my $self = shift; return $self->{'autoace'}; }
 sub wormpep     { my $self = shift; return $self->{'wormpep'}; }
 sub peproot     { my $self = shift; return $self->{'peproot'}; }
+sub rnaroot     { my $self = shift; return $self->{'rnaroot'}; }
 sub brigpep     { my $self = shift; return $self->{'brigpep'}; }
 sub wormrna     { my $self = shift; return $self->{'wormrna'}; }
 sub gff         { my $self = shift; return $self->{'gff'}; }
@@ -1245,6 +1246,7 @@ sub build_data  { my $self = shift; return $self->{'build_data'}; }
 sub ontology    { my $self = shift; return $self->{'ontology'}; }
 sub orgdb       { my $self = shift; return $self->{'orgdb'}; }
 sub cdna_dir    { my $self = shift; return $self->{'cdna_dir'};}
+sub cdna_acedir { my $self = shift; return $self->{'cdna_acedir'};}
 sub maskedcdna  { my $self = shift; return $self->{'maskedcdna'} ;}
 sub genome_seq  { my $self = shift; return $self->autoace."/genome_seq";}
 
@@ -1343,7 +1345,8 @@ sub establish_paths {
     
     #species specific paths
     $self->{'peproot'}    = $basedir . "/WORMPEP";
-    $self->{'wormrna'}    = $basedir . "/WORMRNA/wormrna" . $self->get_wormbase_version;
+    $self->{'rnaroot'}    = $basedir . "/WORMRNA/";
+    $self->{'wormrna'}    = $basedir . "/WORMRNA/".$self->pepdir_prefix."rna" . $self->get_wormbase_version;
     $self->{'wormpep'}    = $basedir . "/WORMPEP/".$self->pepdir_prefix."pep" . $self->get_wormbase_version;
 
     $self->{'logs'}        = $self->orgdb . "/logs";
@@ -1381,6 +1384,7 @@ sub establish_paths {
     $self->{'misc_dynamic'} = $self->{'build_data'} . "/MISC_DYNAMIC";
     $self->{'compare'}      = $self->{'build_data'} . "/COMPARE";
     $self->{'cdna_dir'}    = $self->{'build_data'} . "/cDNA/".$self->{'species'};
+    $self->{'cdna_acedir'} = $self->{'build_data'} . "/cDNAace/".$self->{'species'};
     $self->{'maskedcdna'}  = $basedir . "/cDNA/".$self->{'species'};
 
     $self->{'farm_dump'}    = '/lustre/work1/ensembl/wormpipe/dumps';
@@ -1475,7 +1479,12 @@ sub run_command {
   my $self    = shift;
   my $command = shift;
   my $log     = shift;
-  print STDERR "No log obj passed to run_command by ".(caller)."\n" unless $log;
+  if ($log) {
+  	if($log eq 'no_log') {undef $log; }
+  }
+  else {	
+	print STDERR "No log obj passed to run_command by ".(caller)."\n";
+  }
   $log->write_to("running $command\n") if $log;
   my $return_status = system("$command");
   if ( ( $return_status >> 8 ) != 0 ) {
