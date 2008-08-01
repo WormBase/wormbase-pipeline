@@ -287,7 +287,7 @@ sub chromosome_prefix {'Supercontig'}
 sub chromosome_names {
 	my @contigs;
 	my $i = 0;
-	while($i < 5060){
+	while($i < 5106){
 		push(@contigs, "$i");
 		$i++;
 	}
