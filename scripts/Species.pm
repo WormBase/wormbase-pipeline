@@ -283,7 +283,7 @@ sub full_name {
 	};
 }
 
-sub chromosome_prefix {'Supercontig'}
+sub chromosome_prefix {'Ppa_Contig'}
 sub chromosome_names {
 	my @contigs;
 	my $i = 0;
