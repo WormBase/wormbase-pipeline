@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl -w
 # Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2008-07-11 12:24:59 $
+# Last edited on: $Date: 2008-08-04 14:19:55 $
 
 use strict;
 use lib  $ENV{'CVS_DIR'};
@@ -61,13 +61,13 @@ $log->mail();
 exit(0);
 
 __DATA__
-init Genomic_canonical elegans briggsae remanei
-init Link elegans briggsae remanei
-init Pseudogene elegans briggsae remanei
-init Transposon elegans
-init Transposon_CDS elegans
-init curated  elegans briggsae remanei
-init history elegans briggsae
+init Genomic_canonical elegans briggsae remanei pristionchus
+init Link elegans briggsae remanei pristionchus
+init Pseudogene elegans briggsae remanei pristionchus
+init Transposon elegans pristionchus
+init Transposon_CDS elegans pristionchus
+init curated  elegans briggsae remanei pristionchus
+init history elegans briggsae pristionchus
 init miRNA elegans
 init tRNAscan-SE-1.23 elegans
 init Non_coding_transcript elegans
@@ -86,7 +86,7 @@ init RNAi_primary elegans
 init RNAi_secondary elegans
 init Expr_profile elegans
 init Orfeome elegans
-blat BLAT_EST_BEST elegans briggsae remanei
+blat BLAT_EST_BEST elegans briggsae remanei pristionchus
 blat BLAT_EST_OTHER elegans
 blat BLAT_NEMATODE elegans
 blat BLAT_OST_BEST elegans
@@ -95,7 +95,7 @@ blat BLAT_RST_BEST elegans
 blat BLAT_RST_OTHER elegans
 blat BLAT_TC1_BEST elegans
 blat BLAT_TC1_OTHER elegans
-blat BLAT_mRNA_BEST elegans briggsae remanei
+blat BLAT_mRNA_BEST elegans briggsae remanei pristionchus
 blat BLAT_mRNA_OTHER elegans
 blat BLAT_ncRNA_BEST elegans
 blat BLAT_ncRNA_OTHER elegans
