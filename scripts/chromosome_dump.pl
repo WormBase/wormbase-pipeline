@@ -8,8 +8,8 @@
 # A script for dumping dna and/or gff files for chromosome objects in autoace
 # see pod for more details
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2008-04-29 12:16:27 $
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2008-08-05 15:34:23 $
 
 
 use strict;
@@ -127,6 +127,12 @@ sub dump_dna {
   $log->write_to("Removing blank first lines\n");
   foreach ($wormbase->get_chromosome_names(-mito => 1,-prefix=> 1)) {
     $wormbase->remove_blank_lines("$dump_dir/$_.dna", $log);
+  }
+  if (scalar($wormbase->get_chromosome_names(-mito => 1,-prefix=> 1))>50) {
+    unlink "$dump_dir/supercontigs.fa" if -e "$dump_dir/supercontigs.fa";
+    foreach ($wormbase->get_chromosome_names(-mito => 1,-prefix=> 1)) {
+	    print `cat $dump_dir/$_.dna >>! $dump_dir/supercontigs.fa`;
+    }
   }
   $log->write_to("Finished dumping DNA\n\n");
 }
