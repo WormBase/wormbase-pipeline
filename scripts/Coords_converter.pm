@@ -332,7 +332,7 @@ sub invoke
 	print "refreshing coordinates for $database\n";
 	my $tace = $wormbase->tace;
 
-	my $command = "find sequence Supercontig*\nshow -a Subsequence -f ${SL_coords_file}\n";
+	my $command = "find sequence Ppa_Contig*\nshow -a DNA -f ${SL_coords_file}\n";
 
 	open (ACE,"| $tace $database") or croak "cant open $database\n";
 	print ACE $command ;
@@ -345,11 +345,10 @@ sub invoke
 	while(my $line = <SL>) {
 	  if ($line =~ /Sequence\s+:\s+\"(\S+)\"/) {
 	    $supercontig = $1;
-	  } elsif ($line =~ /Subsequence\s+\"(\S+)\"\s+(\d+)\s+(\d+)/) {
+	  } elsif ($line =~ /DNA\s+\"(\S+)\"\s+(\d+)/) {
 	    my $contig = $1;
 	    my $pos1 = $2;
-	    my $pos2 = $3;
-	    push @{$data{$supercontig}}, [($contig, $pos1, $pos2)];
+	    push @{$data{$supercontig}}, [($contig, $pos1)];
 	  }
 	}
 	close (SL);
@@ -360,21 +359,7 @@ sub invoke
 	# now sort by start position and write out again including the gap information
 	foreach my $supercontig (keys %data) {
 	  print SLB "\nSequence : \"$supercontig\"\n";
-	  $prev_pos = -1;
-	  $prev_contig = "";
-	  my $gapcount = 1;
-	  foreach my $clonedata (sort {$a->[1] <=> $b->[1]} @{$data{$supercontig}}) {
-	    my $contig = $clonedata->[0];
-	    my $pos1 = $clonedata->[1];
-	    my $pos2 = $clonedata->[2];
-	    if ($prev_contig ne "") {
-	      print SLB "Subsequence \"$prev_contig.GAP_$gapcount\" ", $prev_pos + 1, " ", $pos1 - 1, "\n";
-	      $gapcount++;
-	    }
-	    print SLB "Subsequence \"$contig\" $pos1 $pos2\n";
-	    $prev_pos = $pos2;
-	    $prev_contig = $contig;
-	  }
+	  print SLB "Subsequence \"$supercontig\" 1 ".$data{$supercontig}->[0]->[1]. "\n";
 	}
 	close (SLB);
 	system("cp $SL_coords_file $clone_coords_file") and croak "cant cp $SL_coords_file\n" ;
