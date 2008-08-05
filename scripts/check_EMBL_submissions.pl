@@ -7,7 +7,7 @@
 # clones. Entries which have failed to load or return are highlighted
 # and changes in sequence version are notified.
 
-# Last updated on: $Date: 2007-05-15 13:53:35 $
+# Last updated on: $Date: 2008-08-05 16:10:27 $
 # Last updated by: $Author: pad $
 
 use strict;
@@ -18,7 +18,7 @@ use Wormbase;
 use Log_files;
 use Storable;
 
-my ($embl_file,$maintainer,$wormbase,$store,$test,);
+my ($embl_file,$maintainer,$wormbase,$store,$test);
 
 ##############################
 # command-line options       #
@@ -27,6 +27,7 @@ my ($embl_file,$maintainer,$wormbase,$store,$test,);
 my $debug;                 # Debug option
 my $help;                  # Help menu
 my $file;                  # EMBL file
+my $database;              # specify full path to alternate reference database.
 my $verbose;
 
 GetOptions (
@@ -36,6 +37,7 @@ GetOptions (
 	    "store:s"    => \$store,
 	    "verbose"    => \$verbose,
             "test"       => \$test,
+	    "database:s" => \$database,
 	   );
 
  ########################################
@@ -64,7 +66,16 @@ else {
  # Paths/variables etc                  #
  ########################################
 
-my $dbdir = glob "/nfs/disk100/wormpub/DATABASES/camace";
+my $dbdir;
+
+if (defined$database) {
+    $dbdir = $database;
+}
+else {
+    $dbdir = glob "/nfs/disk100/wormpub/DATABASES/camace";
+}
+&usage(5) if !(-e "$dbdir/database/ACEDB.wrm");
+
 my $tace = $wormbase->tace;
 my $submitted_file = "/nfs/disk100/wormpub/analysis/TO_SUBMIT/submitted_to_EMBL";
 my (%clone2id,%id2sv,%embl_acc,%embl_status,%embl_sv);
@@ -98,10 +109,11 @@ $log->write_to("\n");
  ########################################
  # query autoace for EMBL ID/AC lines   #
  ########################################
-
 $ENV{'ACEDB'} = $dbdir;
+my $def = "$dbdir/wquery/SCRIPT:check_EMBL_submissions.def";
+&usage(4) if !(-e "$def");
 
-my $command = "Table-maker -p $dbdir/wquery/SCRIPT:check_EMBL_submissions.def\nquit\n";
+my $command = "Table-maker -p $def\nquit\n";
 my ($sv,$id,$name);
 
 open (TACE, "echo '$command' | $tace | ");
@@ -249,9 +261,34 @@ sub usage {
         exit(0);
     }
     elsif ($error == 3) {
-	print "\nERROR: Output file $out_file already exists!\nPlease specify a file name - e.g. SV_update_". $wormbase->rundate. ".ace\n\n[INPUT]1:";
-	my $tmp = <STDIN>;
-	$out_file = "/nfs/disk100/wormpub/analysis/TO_SUBMIT/$tmp";
+      print "\nERROR: Output file $out_file already exists!\nPlease specify a file name - e.g. SV_update_". $wormbase->rundate. ".ace\n\n[INPUT]:";
+      my $tmp = <STDIN>;
+      $out_file = "/nfs/disk100/wormpub/analysis/TO_SUBMIT/$tmp";
+    }
+    elsif ($error == 4) {
+      print "ERROR: Table-maker $dbdir/wquery/SCRIPT:check_EMBL_submissions.def does not exist!\n\nDo you want to default to the canonical camace version of the definition?......yes/no\n\n[INPUT]:";
+      my $tmp2 = <STDIN>;
+      chomp $tmp2;
+      if ($tmp2 =~ "yes") {
+      $def = "/nfs/disk100/wormpub/DATABASES/camace/wquery/SCRIPT:check_EMBL_submissions.def";
+    }
+      elsif ($tmp2 =~ "no"){
+	die "ERROR: Alternate .def file not accepted!!!\n";
+      }
+      else {print "ERROR: $tmp2 is not a valid response......Aborting\n";
+	    die;
+	  }
+    }
+    elsif ($error == 5) {
+      print "ERROR: The database: $dbdir does not exist, please Quit or Specify a new database\n\nquit/database path\n\n[INPUT]:";
+      my $tmp3 = <STDIN>;
+      chomp $tmp3;
+      if ($tmp3 =~ "quit") {
+	die "Aborted.......\n\n";
+      }
+      else {
+	$dbdir = "$tmp3";
+      }
     }
   }
 
