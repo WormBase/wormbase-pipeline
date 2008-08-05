@@ -14,11 +14,12 @@ use Wormbase;
 use Getopt::Long;
 use Log_files;
 
-my ($wormpep, $brigpep, $remapep, $chroms, $test, $debug, $store);
+my ($wormpep, $brigpep, $remapep, $chroms, $test, $debug, $store,$ppapep);
 GetOptions (
 	    'wormpep' => \$wormpep,
 	    'brigpep'   => \$brigpep,
 	    'remapep'   => \$remapep,
+            'ppapep'    => \$ppapep,
 	    'chrom'     => \$chroms,
 	    "debug=s"   => \$debug,
 	    "test"      => \$test,
@@ -56,6 +57,7 @@ if ( $chroms ) {
 &copy_worm_proteins(Wormbase->new(-debug => $debug,-test => $test, -organism => 'Briggsae')) if $brigpep ;
 #&copy_worm_proteins(Wormbase->new(-debug => $debug,-test => $test, -organism => 'Remanei',-version => 185)) if $remapep ;
 &copy_worm_proteins(Wormbase->new(-debug => $debug,-test => $test, -organism => 'Remanei')) if $remapep ;
+&copy_worm_proteins(Wormbase->new(-debug => $debug,-test => $test, -organism => 'Pristionchus')) if $ppapep ;
 
 $log->mail;
 exit(0);

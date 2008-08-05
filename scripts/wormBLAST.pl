@@ -5,7 +5,7 @@
 # written by Anthony Rogers
 #
 # Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2008-08-04 16:20:54 $
+# Last edited on: $Date: 2008-08-05 09:30:58 $
 #
 # it depends on:
 #    wormpep + history
@@ -126,7 +126,7 @@ my %wormprotprocessIDs  = %{ get_logic2analysis( $raw_dbh, '%blastp' ) };
 #
 
 if ($copy) {
-    foreach my $option (qw(wormpep remapep brigpep chrom)) { copy2acari($option) }    # don't need the chromosomes
+    foreach my $option (qw(ppapep wormpep remapep brigpep chrom)) { copy2acari($option) }    # don't need the chromosomes
 }
 
 ########### updating databases ###############
@@ -221,7 +221,7 @@ if ($cleanup) {
     print "\nRemoving farm output and error files from /lustre/scratch1/ensembl/wormpipe/*\n";
     my $scratch_dir = "/lustre/scratch1/ensembl/wormpipe";
     # Michael wants ensembl-brugia left as it is for now as he uses it for testing
-    my @species_dir = qw( ensembl-brenneri ensembl-briggsae ensembl-elegans ensembl-remanei ); 
+    my @species_dir = qw( ensembl-pristionchus ensembl-brenneri ensembl-briggsae ensembl-elegans ensembl-remanei ); 
     my @directories = qw( 0 1 2 3 4 5 6 7 8 9 );
     
     foreach my $species_dir (@species_dir) {
@@ -306,7 +306,7 @@ sub get_updated_database_list {
        || die "cannot prepare statement, $DBI::errstr";
     $analysis_table->execute();
     while (my @row = $analysis_table->fetchrow_array()){
-        if ($row[1] =~ /((remapep|ensembl|gadfly|yeast|slimswissprot|slimtrembl|wormpep|ipi_human|brigpep).*)/) {
+        if ($row[1] =~ /((ppapep|remapep|ensembl|gadfly|yeast|slimswissprot|slimtrembl|wormpep|ipi_human|brigpep).*)/) {
               $prevDBs{$2} = $1;  
 	}
     }
@@ -315,7 +315,7 @@ sub get_updated_database_list {
     open( CURR_DB, "<$database_to_use" ) or die "cant find $database_to_use";
     while (<CURR_DB>) {
         chomp;
-        if (/(remapep|ensembl|gadfly|yeast|slimswissprot|slimtrembl|wormpep|ipi_human|brigpep)/) {
+        if (/(ppapep|remapep|ensembl|gadfly|yeast|slimswissprot|slimtrembl|wormpep|ipi_human|brigpep)/) {
             $currentDBs{$1} = $_;
         }
     }
@@ -346,7 +346,7 @@ sub update_blast_dbs {
     open( OLD_DB, "<$last_build_DBs" ) or die "cant find $last_build_DBs";
     while (<OLD_DB>) {
         chomp;
-        if (/(remapep|gadfly|yeast|slimswissprot|slimtrembl|wormpep|ipi_human|brigpep)/) {
+        if (/(ppapep|remapep|gadfly|yeast|slimswissprot|slimtrembl|wormpep|ipi_human|brigpep)/) {
             $_currentDBs{$1} = $_;
         }
     }
@@ -357,7 +357,7 @@ sub update_blast_dbs {
     open( DIR, "ls -l $wormpipe_dir/BlastDB/*.pep |" ) or die "readir\n";
     while (<DIR>) {
         chomp;
-        if (/\/(remapep|gadfly|yeast|slimswissprot|slimtrembl|wormpep|ipi_human|brigpep)/) {
+        if (/\/(ppapep|remapep|gadfly|yeast|slimswissprot|slimtrembl|wormpep|ipi_human|brigpep)/) {
             my $whole_file = "$1" . "$'";    # match + stuff after match.
 
 	    print "checking $_\n";
@@ -528,7 +528,7 @@ sub parse_genes {
         }
     }
 	# if it is remanei collect all needed GFFs and then split them based on their supercontig into a /tmp/ directory
-	elsif (ref($wormbase) eq 'Remanei'){
+	elsif (ref($wormbase) eq 'Remanei'||ref($wormbase) eq 'Pristionchus'){
 	           my ($path)=glob($config->{fasta})=~/(^.*)\/CHROMOSOMES\//;
 	           my $tmpdir="/tmp/compara/$species";
 			   print STDERR "mkdir -p $tmpdir\n" if $debug;
