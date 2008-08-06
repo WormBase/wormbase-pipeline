@@ -97,13 +97,25 @@ foreach my $seq ( @{$sa->fetch_all('toplevel')}) {
   my $name=$seq->seq_region_name();
 
   my $outfile = "$out_dir"."/${name}_masked.dna";
-  open (OUT,">$outfile") or die "cant write $outfile\t$!\n";
+  my $outfile2 = "$out_dir"."/${name}_softmasked.dna";
 
+  print_seq($outfile,$name,$seq);
+  print_seq($outfile2,$name,$seq,1);
+}
+
+sub print_seq {
+  my ($file,$name,$seq,$softmasked) = @_;
+ 
+  open(OUT,">$file") or die "cant write $file\t$!\n";
+  
   $log->write_to("\twriting chromosome $name\n");
   print OUT ">$name 1 ",$seq->seq_region_length,"\n";
+
   my $width = 50;
   my $start_point = 0;
-  my $sequence=$seq->get_repeatmasked_seq->seq;
+  my $sequence=$softmasked?
+         $seq->get_repeatmasked_seq->seq(undef,1)
+	 :$seq->get_repeatmasked_seq->seq();
   
   while ( $start_point + $width < length( $sequence ) ) {
     print OUT substr($sequence, $start_point, $width ),"\n";
@@ -112,7 +124,7 @@ foreach my $seq ( @{$sa->fetch_all('toplevel')}) {
 
   print OUT substr($sequence, $start_point),"\n";
   close OUT;
-  system("gzip $outfile");
+  system("gzip -9 $file");
 }
 
 $log->write_to("Done\n");
