@@ -7,7 +7,7 @@
 # Script to make ?Transcript objects
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2008-04-11 12:57:07 $
+# Last updated on: $Date: 2008-08-06 09:49:59 $
 use strict;
 use lib $ENV{'CVS_DIR'};
 use Getopt::Long;
@@ -23,7 +23,7 @@ use Storable;
 
 my ($debug, $store, $help, $verbose, $really_verbose, $est, $gff,
     $database, $build, $new_coords, $test, $UTR_range, @chromosomes, 
-    $gff_dir, $test_cds, $wormbase, $db);
+    $gff_dir, $test_cds, $wormbase, $db, $species);
 
 my $gap = 15;			# $gap is the gap allowed in an EST alignment before it is considered a "real" intron
 
@@ -45,7 +45,8 @@ GetOptions ( "debug:s"          => \$debug,
 	     "chromosome:s"     => \@chromosomes,
 	     "gff_dir:s"        => \$gff_dir,
 	     "cds:s"            => \$test_cds,
-	     "store:s"          => \$store
+	     "store:s"          => \$store,
+	     "species:s"		=> \$species
 	   ) ;
 
 if ( $store ) {
@@ -53,6 +54,7 @@ if ( $store ) {
 } else {
   $wormbase = Wormbase->new( -debug   => $debug,
 			     -test    => $test,
+			     -organism => $species
                            );
 }
 
@@ -80,7 +82,7 @@ if ($wormbase->debug) {
 my $log = Log_files->make_build_log($wormbase);
 
 &check_opts;
-die "no database\n" unless $database;
+$log->log_and_die("no database\n") unless $database;
 
 #setup directory for transcript
 my $transcript_dir = $wormbase->transcripts;
@@ -97,10 +99,12 @@ my %feature_data;
 
 
 # process chromosome at a time
-@chromosomes = qw(I II III IV V X MtDNA) unless @chromosomes;
+@chromosomes = $wormbase->get_chromosome_names unless @chromosomes;
+my $contigs = 1 if (scalar @chromosomes > 15);
 
 foreach my $chrom ( @chromosomes ) {
 
+  #$chrom = $wormbase->chromosome_prefix.$chrom;
   # links store start /end chrom coords
   my $link_start;
   my $link_end;
@@ -116,12 +120,15 @@ foreach my $chrom ( @chromosomes ) {
   my $index = 0;
   my $gff_file;
 
+	my $gff_stem = $contigs ? $gff_dir.'/' : $gff_dir."/${chrom}_";
+
 
   # parse GFF file to get CDS and exon info
-  $gff_file = $gff_dir."/${\$wormbase->chromosome_prefix}${chrom}_curated.gff";
-  open (GFF,"<$gff_file") or $log->log_and_die("cant open $gff_file : $!\n");
+  $gff_file = $gff_stem."curated.gff";
+  # open (GFF,"grep \"^$chrom\\W\" $gff_file | ") or $log->log_and_die("cant open $gff_file : $!\n");
+  my $GFF = $wormbase->open_GFF_file($chrom, 'curated',$log);
   $log->write_to("reading gff file $gff_file\n");
-  while (<GFF>) {
+  while (<$GFF>) {
     my @data = split;
     next if( $data[1] eq "history" );
     #  GENE STRUCTURE
@@ -137,14 +144,16 @@ foreach my $chrom ( @chromosomes ) {
       }
     }
   }
-  close GFF;
+  close $GFF;
 
   # read BLAT data
   my @BLAT_methods = qw( BLAT_EST_BEST BLAT_mRNA_BEST BLAT_OST_BEST BLAT_RST_BEST);
   foreach my $method (@BLAT_methods) {
-    $gff_file = $gff_dir."/${\$wormbase->chromosome_prefix}${chrom}_${method}.gff";
-    open( GFF,"<$gff_file") or $log->write_to("cant open $gff_file : $!\n");
-    while ( <GFF> ) {
+    $gff_file = $gff_stem."$method.gff";
+    next unless (-e $gff_file); #not all contigs will have these mol_types
+    #open( GFF,"grep \"$chrom\\W\" $gff_file |") or $log->write_to("cant open $gff_file : $!\n");
+    my $GFF = $wormbase->open_GFF_file($chrom, $method, $log);
+    while ( <$GFF> ) {
       next if (/#/); 		 # miss header
       next unless (/BEST/);
       my @data = split;
@@ -153,37 +162,41 @@ foreach my $chrom ( @chromosomes ) {
       $cDNA{$data[9]}{$data[3]} = $data[4];
       # keep min max span of cDNA
       if ( !(defined($cDNA_span{$data[9]}[0])) or ($cDNA_span{$data[9]}[0] > $data[3]) ) {
-	$cDNA_span{$data[9]}[0] = $data[3];
-	$cDNA_span{$data[9]}[2] = $data[6]; #store strand of cDNA
+		$cDNA_span{$data[9]}[0] = $data[3];
+		$cDNA_span{$data[9]}[2] = $data[6]; #store strand of cDNA
       } 
       if ( !(defined($cDNA_span{$data[9]}[1])) or ($cDNA_span{$data[9]}[1] < $data[4]) ) {
-	$cDNA_span{$data[9]}[1] = $data[4];
+		$cDNA_span{$data[9]}[1] = $data[4];
       }
     }
-    close GFF;
+    close $GFF;
   }
 
   #Chromomsome info
 
-  $gff_file = $gff_dir."/${\$wormbase->chromosome_prefix}${chrom}_Link.gff";
-  open (GFF,"<$gff_file") or $log->log_and_die("cant open gff_file :$!\n");  
-
+  $gff_file = $gff_stem."Link.gff";
+  #open (GFF,"grep \"$chrom\\W\" $gff_file |") or $log->log_and_die("cant open gff_file :$!\n");  
+  $GFF = $wormbase->open_GFF_file($chrom, 'Link', $log);
   #create Strand_transformer for '-' strand coord reversal
-  CHROM:while( <GFF> ){
+  CHROM:while( <$GFF> ){
     my @data = split;
-    if ( $data[1] eq "Link" and $data[9] =~ /"CHROMOSOME|"chr/) {
+    my $chr = $wormbase->chromosome_prefix;
+    if ( ($data[1] eq "Link" and $data[9] =~ /$chr/) or
+    	 ($data[1] eq "Genomic_canonical" and $data[9] =~ /$chr/) ){
       $transformer = Strand_transformer->new($data[3],$data[4]);
       last CHROM;
     }
   }
-    
+  close $GFF;
   # add feature_data to cDNA
   #CHROMOSOME_I  SL1  SL1_acceptor_site   182772  182773 .  -  .  Feature "WBsf016344"
   my @feature_types = qw(SL1 SL2 polyA_site polyA_signal_sequence);
   foreach my $Type (@feature_types){
-    my $gff_file = "$gff_dir/${\$wormbase->chromosome_prefix}${chrom}_${Type}.gff";
-    open(GFF, "<$gff_file") or $log->write_to("cant open $gff_file : $!\n");
-    while( <GFF> ){
+    my $gff_file = $gff_stem."$Type.gff";
+    next unless (-e $gff_file); #not all contigs will have these features
+    #open(GFF, "grep \"$chrom\\W\" $gff_file |") or $log->write_to ("cant open $gff_file : $!\n");
+    my $GFF = $wormbase->open_GFF_file($chrom, $Type, $log);
+    while( <$GFF> ){
       my @data = split;
       if ( $data[9] and $data[9] =~ /(WBsf\d+)/) { #Feature "WBsf003597"
 	my $feat_id = $1;
@@ -197,7 +210,7 @@ foreach my $chrom ( @chromosomes ) {
 	}
       }
     }
-    close GFF;
+    close $GFF;
   }
 
 
@@ -212,9 +225,9 @@ foreach my $chrom ( @chromosomes ) {
     }
   }
 
-  close GFF;
+  close $GFF;
   
-  &load_EST_data(\%cDNA_span, $chrom);
+  &load_EST_data(\%cDNA_span, $chrom);  
   # &checkData(\$gff,\$%cDNA_span, \%genes_span); # this just checks that there is some BLAT and gene data in the GFF file
   &eradicateSingleBaseDiff(\%cDNA);
 
@@ -302,7 +315,7 @@ foreach my $chrom ( @chromosomes ) {
     }
   }
       
-  print "Second round additions\n";
+  $log->write_to("Second round additions\n");
 
   foreach my $CDNA ( @cdna_objs) {
     next if ( defined $est and $CDNA->name ne "$est"); #debug line
@@ -337,7 +350,7 @@ foreach my $chrom ( @chromosomes ) {
 	
 	  unless ( $downstream_CDS ) {
 	    last;
-	    print "last gene in array\n";
+	    $log->write_to("last gene in array\n");
 	  }
 	  # dont count isoforms
 	  my $down_name = $downstream_CDS->name;
@@ -353,9 +366,9 @@ foreach my $chrom ( @chromosomes ) {
 
 	  # check unmapped cdna ( $CDNA ) lies within 1kb of CDS that paired read maps to ( $cds ) and before $downstream_CDS
 	
-	  print "trying ",$cds->name, " downstream is ", $downstream_CDS->name," with ",$CDNA->name,"\n";
+	  #print "trying ",$cds->name, " downstream is ", $downstream_CDS->name," with ",$CDNA->name,"\n";
 	  if ( ($CDNA->start > $cds->gene_end) and ($CDNA->start - $cds->gene_end < 1000) and ($CDNA->end < $downstream_CDS->gene_start) ) {
-	    print " adding 3' cDNA ",$CDNA->name," to ",$cds->name,"\n";
+	    #print " adding 3' cDNA ",$CDNA->name," to ",$cds->name,"\n";
 	    $cds->add_3_UTR($CDNA);
 	    $CDNA->mapped($cds);
 	    last;
@@ -367,7 +380,7 @@ foreach my $chrom ( @chromosomes ) {
     }
   }
 
-  print "Third round additions\n";
+  $log->write_to("Third round additions\n");
 
   foreach my $CDNA ( @cdna_objs) {
     next if ( defined $est and $CDNA->name ne "$est"); #debug line
@@ -381,12 +394,12 @@ foreach my $chrom ( @chromosomes ) {
   }
 
 
-  my $out_file = "$transcript_dir/chromosome_$chrom.ace";
-  print "writing output to $out_file\n";
-  open (FH,">$out_file") or $log->log_and_die("cant open $out_file\n");
+  my $out_file = "$transcript_dir/transcripts$$.ace";
+  $log->write_to("writing output to $out_file\n");
+  open (FH,">>$out_file") or $log->log_and_die("cant open $out_file\n");
   foreach my $cds (@cds_objs ) {
-    print "reporting : ",$cds->name,"\n" if $wormbase->debug;
-    $cds->report(*FH, $coords, $transformer);
+    $log->write_to("reporting : ".$cds->name."\n") if $wormbase->debug;
+    $cds->report(*FH, $coords, $transformer, $wormbase->full_name);
   }
 
   last if $gff;			# if only doing a specified gff file exit after this is complete
@@ -479,7 +492,7 @@ sub load_EST_data
     my $cDNA_span = shift;
     my $chrom = shift;
     my %est_orient;
-    $wormbase->FetchData("estorientation",\%est_orient);
+    $wormbase->FetchData("estorientation",\%est_orient) unless (5 < scalar keys %est_orient);
     foreach my $EST ( keys %est_orient ) {
       if ( exists $$cDNA_span{$EST} && defined $$cDNA_span{$EST}->[2]) {
 	my $GFF_strand = $$cDNA_span{$EST}->[2];
@@ -506,14 +519,14 @@ sub load_EST_data
     }
 
     # load paired read info
-    print STDERR "Loading EST paired read info\n";
+    $log->write_to("Loading EST paired read info\n");
     my $pairs = $wormbase->autoace."/EST_pairs.txt";
     
     if ( -e $pairs ) {
       open ( PAIRS, "<$pairs") or $log->log_and_die("cant open $pairs :\t$!\n");
       while ( <PAIRS> ) {
 	chomp;
-	s/\"//g;
+	s/\"//g;#"
 	s/Sequence://g;
 	next if( ( $_ =~ /acedb/) or ($_ =~ /\/\//) );
 	my @data = split;
@@ -525,7 +538,7 @@ sub load_EST_data
       
       open (TACE, "echo '$cmd' | $tace $db |") or die "cant open tace to $database using $tace\n";
       open ( PAIRS, ">$pairs") or die "cant open $pairs :\t$!\n";
-      while ( <TACE> ) {
+      while ( <TACE> ) { 
 	chomp;
 	s/\"//g;
 	my @data = split;
