@@ -1659,7 +1659,7 @@ sub open_GFF_file {
   my $handle;
 
   my $file = $self->GFF_file_name($seq, $method);
-  if ($self->separate_chromosomes ) { 
+  if ($self->assembly_type eq 'contig' ) { 
     open ($handle,"<$file") or $log->log_and_die("cant open $file :$!\n");
   } else {		# contig based assembly
     open($handle,"grep \"$seq\\W\" $file |") or $log->log_and_die("cant open $file :$!\n");
@@ -1668,17 +1668,6 @@ sub open_GFF_file {
   return $handle;
 }
 
-###################################################################################
-# Tests whether we are using separate chromosomes (returns true)
-# or whether we have a contig based assembly (returns false)
-#
-# This is used to determine whether we concatenate all the GFF data
-# together in one file or not.
-
-sub separate_chromosomes {
-  my $self = shift;
-  return (scalar $self->get_chromosome_names <= 15);
-}
 
 ###################################################################################
 # Returns the name of the GFF file to use
@@ -1690,7 +1679,7 @@ sub GFF_file_name {
   my ($chromosome, $method) = @_;
 
   my $file;
-  if ($self->separate_chromosomes ) { 
+  if ($self->assembly_type ne 'contig') { 
     $file = defined $method ? $self->gff_splits."/${chromosome}$method.gff" : $self->chromosomes."/$chromosome.gff";
   } else {			# contig based assembly
     $file = defined $method ? $self->gff_splits."/$method.gff" : $self->chromosomes."/".$self->species.".gff";
