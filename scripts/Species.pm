@@ -96,6 +96,7 @@ sub full_name {
 	};
 }
 sub wormpep_prefix{'WP'}
+sub assembly_type {'chromosome'};
 
 ########################################
 package Briggsae;
@@ -122,6 +123,7 @@ sub pep_prefix {'CBP'}
 sub pepdir_prefix{'brig'};
 sub cds_regex{qr/^CBG\d{5}$/};
 sub ncbi_tax_id {'6238'};
+sub assembly_type {'chromosome'};
 
 sub full_name {
 	my $self = shift;
@@ -179,6 +181,7 @@ sub pep_prefix {'RP'}
 sub pepdir_prefix{'rema'};
 sub ncbi_tax_id {'31234'};
 sub cds_regex{qr/CRE\d{5}/};
+sub assembly_type {'contig'};
 
 #######################################################
 package Brenneri;
@@ -219,6 +222,7 @@ sub full_name {
 	else { return'Caenorhabditis brenneri'
 	};
 }
+sub assembly_type {'contig'};
 
 #######################################################
 
@@ -257,6 +261,7 @@ sub full_name {
 	else { return'Caenorhabditis japonica'
 	};
 }
+sub assembly_type {'contig'};
 
 #######################################################
 
@@ -298,6 +303,7 @@ sub cds_regex{qr/PPA\d{5}/};
 sub pep_prefix {'PP'}
 sub pepdir_prefix{'ppa'};
 sub ncbi_tax_id {'54126'};
+sub assembly_type {'contig'};
 
 #######################################################
 
@@ -327,6 +333,7 @@ sub ncbi_tax_id {'37862'};
 sub chromosome_prefix {'Contig'}
 sub pep_prefix {'HB'}
 sub pepdir_prefix{'het'};
+sub assembly_type {'contig'};
 
 ######################################################
 #
@@ -361,6 +368,7 @@ sub chromosome_prefix {'Bmal_supercontig'}
 sub pep_prefix {'BM'}
 sub pepdir_prefix{'brug'};
 sub ncbi_tax_id {'6279'};
+sub assembly_type {'contig'};
 
 
 #######################################################
