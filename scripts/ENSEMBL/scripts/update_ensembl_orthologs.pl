@@ -10,8 +10,12 @@
 
 use strict;
 use IO::File;
+use lib '/software/worm/ensembl/ensembl/modules';
+use lib '/software/worm/ensembl/ensembl-compara/modules';
+use lib '/software/worm/ensembl/bioperl-live';
+
 use Bio::EnsEMBL::Registry;
-Bio::EnsEMBL::Registry->load_registry_from_db(-host => 'ensembldb.ensembl.org', -user => 'anonymous',-port => 3306,-verbose => 0,-db_bversion => 47);
+Bio::EnsEMBL::Registry->load_registry_from_db(-host => 'ens-livemirror', -user => 'wormro',-port => 3306,-verbose => 0,-db_version => 50);
 
 use Bio::EnsEMBL::DBSQL::DBAdaptor;
 use Bio::EnsEMBL::Compara::DBSQL::DBAdaptor;
@@ -25,8 +29,10 @@ my $homology_adaptor = Bio::EnsEMBL::Registry->get_adaptor('Multi','compara','Ho
 
 my @slices = @{$slice_adaptor->fetch_all('toplevel')};
 
+
 foreach my $slice(@slices){
-	foreach my $gene (@{$slice->get_all_Genes}){
+	my $genes = $slice->get_all_Genes;
+	while (my $gene = shift @{$genes}){
 
 		my $gid=$cds2wbgene{$gene->stable_id}?$cds2wbgene{$gene->stable_id}:next; # don't import outdated genes
 
@@ -36,20 +42,16 @@ foreach my $slice(@slices){
 
 		my %homol_ids;
 		my %omims;
+		my %omim_genes;
 
 		foreach my $homology ( @{$homologies} ) {
 			foreach my $ma ( @{ $homology->get_all_Member_Attribute } ) {
 				my ( $me, $at ) = @{$ma};
 				foreach my $pepm ( @{ $me->get_all_peptide_Members() } ) { 
 					if ($pepm->taxon_id != 6239){
-						$homol_ids{ $pepm->gene->stable_id } = [$pepm->taxon,$homology->description,$homology->subtype];
+						$homol_ids{ $pepm->stable_id } = $pepm; #$homology->description,$homology->subtype];
 					}
 
-					# put the OMIM orthologs into another hash based on the MIM_GENES xref
-					if ($pepm->taxon_id == 9606){
-					        # uses an undocumented function of get_all_DBEntries, so lets hope it stays
-						$omims{$pepm->gene->stable_id}=1 if $pepm->gene->get_all_DBEntries('MIM_GENES');
-					}
 				}
 			}
 		}
@@ -59,14 +61,23 @@ foreach my $slice(@slices){
 
 		print "Gene : \"$gid\"\n";
 		while (my ($k,$v)=each(%homol_ids)){
-				print "Ortholog_other EnsEMBL gene $k \"${\$$v[0]->name}\"  From_analysis EnsEMBL-Compara\n";
+#				print "Ortholog_other EnsEMBL gene $k \"${\$$v[0]->name}\"  From_analysis EnsEMBL-Compara\n";
+				print "Ortholog_other ENSEMBL:$k  From_analysis EnsEMBL-Compara\n";
 		}
-		foreach my $key(keys %omims){
-			print "Ortholog_other EnsEMBL gene $key \"Homo sapiens\" Inferred_automatically OMIM_compara\n";
-		}
-
 		print "\n";
 
+		while (my ($k,$v)=each(%homol_ids)){
+					# put the OMIM orthologs into another hash based on the MIM_GENE xref
+					print "Protein : ENSEMBL:$k\n";
+					print "Species \"${\$v->taxon->name}\"\n";
+					print "DB_info DatabaseEnsEMBL ENSEMBL_proteinID $k\n";
+					if ($v->taxon_id == 9606){ # meaning if human
+					        # uses an undocumented function of get_all_DBEntries, so lets hope it stays
+						map {printf "DB_info Database OMIM gene %s\n",$_->primary_id} @{$v->gene->get_all_DBLinks('MIM_MORBID')};
+						map {printf "DB_info Database OMIM disease %s\n",$_->primary_id} @{$v->gene->get_all_DBLinks('MIM_GENE')};
+					}
+					print "\n";
+		}
 	}	
 }
 
