@@ -6,8 +6,8 @@
 #
 # wrapper script for running transcript_builder.pl
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2008-06-18 15:07:04 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2008-08-07 10:24:42 $
 
 use lib $ENV{CVS_DIR};
 use Wormbase;
@@ -24,7 +24,7 @@ my $builder_script = "transcript_builder.pl";
 my $scratch_dir = "/tmp";
 my $chrom_choice;
 my $gff_dir;
-my ($store, $debug, $test, $no_run);
+my ($store, $debug, $test, $no_run, $species);
 
 GetOptions (
 	    "database:s"    => \$database,
@@ -35,7 +35,8 @@ GetOptions (
 	    "store:s"       => \$store,
 	    "debug:s"       => \$debug,
 	    "test"          => \$test,
-	    "no_run"        => \$no_run
+	    "no_run"        => \$no_run,
+	    "species:s"		=> \$species
 
 	   );
 
@@ -45,6 +46,7 @@ if ( $store ) {
 } else {
   $wormbase = Wormbase->new( -debug   => $debug,
                              -test    => $test,
+                             -organism => $species
 			     );
 }
 
@@ -53,14 +55,17 @@ $wormbase->checkLSF($log);
 
 $database = $wormbase->autoace unless $database;
 unless ( $no_run ){
-  my @chromosomes = $wormbase->get_chromosome_names(); # mo MtDNA
-  @chromosomes = split(/,/,join(',',$chrom_choice)) if $chrom_choice;
+  my @chromosomes = @{$wormbase->get_binned_chroms()}; # mo MtDNA
+  if ($chrom_choice) {
+  	my @chrs = split(/,/,join(',',$chrom_choice)) ;
+  	$chromosomes[0] = @chrs;
+  }  
 
   $gff_dir  = $wormbase->gff unless $gff_dir;
   $dump_dir = $wormbase->transcripts unless $dump_dir;
 
   # make a Coords_converter to write the coords files. Otherwise all 6 processes try and do it.
-  my $coords = Coords_converter->invoke($database,1, $wormbase);
+  my $coords = Coords_converter->invoke($database,undef, $wormbase);
 
   # this extract paired read info from the database and writes it to EST_pairs file
   my $cmd = "select cdna, pair from cdna in class cDNA_sequence where exists_tag cdna->paired_read, pair in cdna->paired_read";
@@ -75,35 +80,24 @@ unless ( $no_run ){
     if (/^\/\//) {next;}
     if (/^acedb/) {next;}
     s/Sequence://g;
-    s/\"//g;
     my @data = split;
     print PAIRS "$data[0]\t$data[1]\n";
   }
   close PAIRS;
 
   # create and submit LSF jobs.
-  #foreach my $chrom ( @chromosomes ) {
-   # my $err = "$scratch_dir/transcipt_builder.$chrom.err.$$";
-   # my $out = "$dump_dir/CHROMOSOME_${chrom}_transcript.ace";
-   # my $options = "-F 400000 -M 3500000 -R \"select[mem>3500] rusage[mem=3500]\"";
-   # my $bsub = "bsub $options -e $err \"perl $builder_script -database $database -chromosome $chrom -store $store\"";
-   # print "$bsub\n";
-   # $wormbase->run_command("$bsub", $log);
-  #}
-
-  # create and submit LSF jobs.
   $log->write_to("bsub commands . . . . \n\n");
   my $lsf = LSF::JobManager->new();
-  foreach my $chrom ( @chromosomes ) {
-    my $err = "$scratch_dir/transcipt_builder.$chrom.err.$$";
-    my $out = "$dump_dir/CHROMOSOME_${chrom}_transcript.ace"; # this doesn't appear to ever have been used! Delete this line?
-    my @bsub_options = (-e => "$err", -F => "2000000", -M => "3500000", -R => "\"select[mem>3500] rusage[mem=3500]\"");
-    my $cmd = "$builder_script -database $database -chromosome $chrom";
-    $log->write_to("$cmd\n");
-    print "$cmd\n";
-    $cmd = $wormbase->build_cmd($cmd);
-    $lsf->submit(@bsub_options, $cmd);
-  }  
+ 	 foreach my $chrom ( @chromosomes ) {
+ 	 	my $name = substr($chrom,0, 15);
+ 	    my$err = "$scratch_dir/transcipt_builder.$name.err.$$";
+ 	    my $cmd = "$builder_script -database $database -chromosome $chrom";
+	    $log->write_to("$cmd\n");
+	    print "$cmd\n";
+	    $cmd = $wormbase->build_cmd($cmd);
+	  	my @bsub_options = (-e => "$err", -F => "2000000", -M => "3500000", -R => "\"select[mem>3500] rusage[mem=3500]\"");
+	    $lsf->submit(@bsub_options, $cmd);
+	  }  
   $lsf->wait_all_children( history => 1 );
   $log->write_to("All transcript builder jobs have completed!\n");
   for my $job ( $lsf->jobs ) {
@@ -114,11 +108,13 @@ unless ( $no_run ){
 
 
 $log->write_to("all batch jobs done - cating outputs to ".$wormbase->transcripts."/transcripts.ace\n");
-$wormbase->run_command("cp " .$wormbase->misc_dynamic."/MtDNA_Transcripts.ace ".$wormbase->transcripts."/chromosome_MtDNA.ace", $log); #hard coded cp of fixed MtDNA Transcripts.
-$wormbase->run_command("cat ".$wormbase->transcripts."/chromosome_*.ace > ".$wormbase->transcripts."/transcripts.ace", $log);
+$wormbase->run_command("cp " .$wormbase->misc_dynamic."/MtDNA_Transcripts.ace ".$wormbase->transcripts."/chromosome_MtDNA.ace", $log) if ($wormbase->species eq 'elegans'); #hard coded cp of fixed MtDNA Transcripts.
+
+my $allfile = $wormbase->transcripts."/".$wormbase->species."_transcripts.ace";
+$wormbase->run_command("cat ".$wormbase->transcripts."/transcripts*.ace > $allfile", $log);
 
 $log->write_to("loading file to ".$wormbase->autoace."\n");
-$wormbase->load_to_database($wormbase->autoace,$wormbase->transcripts."/transcripts.ace",'transcript_builder', $log);
+$wormbase->load_to_database($wormbase->autoace,$allfile,'transcript_builder', $log);
 
 $log->write_to("batch_dumping GFF files\n");
 $wormbase->run_script("dump_gff_batch.pl -method Coding_transcript");
