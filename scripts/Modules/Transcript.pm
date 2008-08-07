@@ -193,7 +193,7 @@ sub report
 
     # evil way to treat non-elegans species chromosome names
     my $chr=$self->chromosome;
-    $chr="${\$coords->{chromosome_prefix}}$chr" if $coords->{species} ne 'elegans';
+    #$chr="${\$coords->{chromosome_prefix}}$chr" if $coords->{species} ne 'elegans';
 
     my @clone_coords = $coords->LocateSpan($chr, $real_start,$real_end );
 
