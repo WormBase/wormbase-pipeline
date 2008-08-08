@@ -7,7 +7,7 @@
 # Makes CDS status information by looking at transcript to exon mappings
 #
 # Last updated by: $Author: ar2 $     
-# Last updated on: $Date: 2008-05-16 12:21:18 $      
+# Last updated on: $Date: 2008-08-08 13:43:29 $      
 
 
 use strict;
@@ -22,17 +22,18 @@ use Storable;
 # command-line options       #
 ##############################
 
-my ($help, $verbose, $test, $quicktest, $store, $debug); # the main options
+my ($help, $verbose, $test, $quicktest, $store, $debug, $species); # the main options
 my $load; # whether to load to autoace or not
 
 GetOptions (
 	    "help"         => \$help,
-            "verbose"      => \$verbose,
+        "verbose"      => \$verbose,
 	    "test"         => \$test,
 	    "load"         => \$load,
 	    "quicktest"    => \$quicktest,
 	    "store:s"      => \$store,
-	    "debug:s"      => \$debug
+	    "debug:s"      => \$debug,
+	    "species:s"	   => \$species,
             );
 
 ##############################
@@ -44,17 +45,15 @@ my $wormbase;
 if ($store) {
   $wormbase = Storable::retrieve($store) or croak("cant restore wormbase from $store\n")
 } else {
-  $wormbase = Wormbase->new( -debug => $debug, -test => $test, );
+  $wormbase = Wormbase->new( -debug => $debug, -test => $test, -organism => $species );
 }
 
 my $log = Log_files->make_build_log($wormbase);
-my $maintainers = "All";
 my $single; #set if working with contig based assembly eg remanei
 
 my @chromosomes  = $wormbase->get_chromosome_names(-mito => 1);  # all chromosomes
 @chromosomes     = qw( III ) if $quicktest;
-if (scalar $wormbase->get_chromosome_names > 16) {
-	@chromosomes = $wormbase->species;
+if (scalar $wormbase->get_chromosome_names > 15) {
 	$single = 1;
 }
 
@@ -67,11 +66,9 @@ my %unconf = ();
 # directories #
 ###############
 
-
 my $gffdir = $wormbase->gff_splits;
 my $outdir = $wormbase->acefiles;
 my $output = "$outdir/gene_confirmation_status.ace"; # output acefile name & path
-
 
 ####################################################################################################################
 
@@ -81,7 +78,7 @@ my $output = "$outdir/gene_confirmation_status.ace"; # output acefile name & pat
 
 # open output acefile 
 
-open (ACE,">$output") || die "Cannot open $output\n";
+open (ACE,">$output") or $log->log_and_die("Cannot open $output\n");
 
 foreach my $chromosome (@chromosomes) {
 
@@ -191,7 +188,7 @@ foreach my $chromosome (@chromosomes) {
     print ACE "CDS : \"$look\"\n";
     print ACE "Prediction_status $CDSstatus{$look}\n\n";
   }
-  print $wormbase->runtime, " : Finished with Chromosome_$chromosome\n\n" if ($verbose);
+  print $wormbase->runtime, " : Finished with $chromosome\n\n" if ($verbose);
 }
 
 close(ACE);
@@ -215,11 +212,18 @@ sub read_gff {
   my $name     = "";
   my %hash     = ();
   
-  my $gff_file = $single ? "$gffdir/${chromosome}_$filename.gff" :
-						   "$gffdir/${\$wormbase->chromosome_prefix}${chromosome}_$filename.gff";
-  # open the GFF file
-  open (GFF, "$gff_file") or $log->log_and_die("Cannot open $gff_file $!\n");
-  while (<GFF>) {
+  my $gff_file;
+  my $GFF; #file handle
+  if( $single) {
+  	$gff_file = "$gffdir/$filename.gff";
+  	my $match = $wormbase->chromosome_prefix."$chromosome";
+  	open ($GFF, "grep \"^$match\\W\" $gff_file |") or $log->write_to("Cannot open grep of $gff_file $!\n");
+  }
+  else {
+  	$gff_file = "$gffdir/${\$wormbase->chromosome_prefix}${chromosome}_$filename.gff";
+  	open ($GFF, "$gff_file") or $log->write_to("Cannot open $gff_file $!\n");
+  }
+  while (<$GFF>) {
 	
     # discard header lines
     next if /\#/;
@@ -258,7 +262,7 @@ sub read_gff {
   }
   my @list = sort { $hash{$a}->[0][0] <=> $hash{$b}->[0][0] || $a cmp $b } keys %hash;  
     
-  close(GFF);
+  close($GFF);
   return (\%hash,\@list);
 }
 
@@ -608,20 +612,17 @@ sub find_match {
 }
 sub create_transcript_file {
 	my $chrom = shift;
-	if ($single) {
-		#grep out relevant lines from full gff file
-		my $gff_file = $wormbase->chromosomes."/$chrom.gff";
-		my $transcript_file = $wormbase->gff_splits."/".$wormbase->species."_BLAT_TRANSCRIPT_BEST.gff";
-		$wormbase->run_command("grep BLAT $gff_file | grep BEST > $transcript_file");
-		#make 'curated' at same time
-		$transcript_file = $wormbase->gff_splits."/".$wormbase->species."_curated.gff";
-		$wormbase->run_command("grep curated $gff_file > $transcript_file");
+	my $prefix;
+	if($single){
+		$prefix = '';
+	}else {
+		$prefix = $wormbase->chromosome_prefix."${chrom}_";
 	}
-	else {
-		$wormbase->run_command("cd $gffdir; cat ${\$wormbase->chromosome_prefix}${chrom}_BLAT_EST_BEST.gff ${\$wormbase->chromosome_prefix}${chrom}_BLAT_OST_BEST.gff ${\$wormbase->chromosome_prefix}${chrom}_BLAT_mRNA_BEST.gff ${\$wormbase->chromosome_prefix}${chrom}_BLAT_RST_BEST.gff >  ${\$wormbase->chromosome_prefix}${chrom}_BLAT_TRANSCRIPT_BEST.gff", $log);
- 	}
- }
+	$wormbase->run_command("cd $gffdir; cat ${prefix}BLAT_EST_BEST.gff ${prefix}BLAT_mRNA_BEST.gff >  ${prefix}BLAT_TRANSCRIPT_BEST.gff", $log) unless (-e "$gffdir/${prefix}BLAT_TRANSCRIPT_BEST.gff");
 
+	#only elegans has OSTs and RSTs
+	$wormbase->run_command("cd $gffdir; cat ${prefix}BLAT_OST_BEST.gff ${prefix}BLAT_RST_BEST.gff >>  ${prefix}BLAT_TRANSCRIPT_BEST.gff", $log) if ($wormbase->species eq 'elegans');
+}
 ################
 
 sub printhelp {
