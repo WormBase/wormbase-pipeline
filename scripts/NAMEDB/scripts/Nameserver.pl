@@ -334,6 +334,7 @@ Species :
 <option value="remanei">remanei</option>
 <option value="brenneri">brenneri</option>
 <option value="japonica">japonica</option>
+<option value="pristionchus">Pristionchus</option>
 </select><P>
 		<font color=gray>(Optional) Addition comment (eg instruction to cgc person)<br> <INPUT TYPE="text" NAME="remark" SIZE="100" MAXLENGTH="200"><BR></font>
 		<INPUT TYPE="hidden" NAME="action" VALUE="split_gene">
@@ -423,6 +424,7 @@ sub remove_name {
 <option value="remanei">remanei</option>
 <option value="brenneri">brenneri</option>
 <option value="japonica">japonica</option>
+<option value="pristionchus">Pristionchus</option>
 </select><P><br>
 		<INPUT TYPE="submit" VALUE="Remove Name">
 
@@ -482,6 +484,7 @@ Species :
 <option value="remanei">remanei</option>
 <option value="brenneri">brenneri</option>
 <option value="japonica">japonica</option>
+<option value="pristionchus">Pristionchus</option>
 </select>
 <INPUT TYPE="hidden" NAME="action" VALUE="add_name">
     		<INPUT TYPE="submit" VALUE="Add Name">
@@ -545,6 +548,7 @@ sub new_gene {
 <option value="remanei">remanei</option>
 <option value="brenneri">brenneri</option>
 <option value="japonica">japonica</option>
+<option value="pristionchus">Pristionchus</option>
 </select>
 		<P>
 		<font color=gray>(Optional) Addition comment (eg instruction to cgc person)<br> <INPUT TYPE="text" NAME="remark" SIZE="100" MAXLENGTH="200"><BR></font>
@@ -706,6 +710,7 @@ sub change_class {
 <option value="remanei">remanei</option>
 <option value="brenneri">brenneri</option>
 <option value="japonica">japonica</option>
+<option value="pristionchus">Pristionchus</option>
 </select>
 		
 		<INPUT TYPE="hidden" NAME="action" VALUE="change_class">
