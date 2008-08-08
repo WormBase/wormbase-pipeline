@@ -4,8 +4,8 @@
 #  script to submit blastx dumping scripts onto the farm
 #  and concatenate them at the end
 # 
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2008-06-13 10:12:03 $
+# Last edited by: $Author: mh6 $
+# Last edited on: $Date: 2008-08-08 13:41:36 $
 # 
 
 
@@ -59,6 +59,7 @@ my %logic2type = (
 	remaneiX => 'Remanei',
 	brigpepX => 'Briggsae',
 	wormpepX => 'Elegans',
+	ppapepX  => 'Pristionchus',
 	GadflyX  => '1',
 	ipi_humanX => '1',
 	slimtremblX => '1',
