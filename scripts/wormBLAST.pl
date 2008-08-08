@@ -5,7 +5,7 @@
 # written by Anthony Rogers
 #
 # Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2008-08-05 09:30:58 $
+# Last edited on: $Date: 2008-08-08 13:38:29 $
 #
 # it depends on:
 #    wormpep + history
@@ -161,7 +161,7 @@ if ($prep_dump) {
     # prepare helper files gff2cds and gff2cos
     my $autoace = $wormbase->autoace;
     my $wormpep = $wormbase->wormpep;
-    if ( -e $wormbase->gff_splits . "/CHROMOSOME_X_curated.gff" ) {
+    if ( lc(ref $wormbase) eq 'elegans' && -e $wormbase->gff_splits . "/CHROMOSOME_X_curated.gff" ) {
         $wormbase->run_command(
             "cat "
               . $wormbase->gff_splits
@@ -177,8 +177,9 @@ if ($prep_dump) {
             $log
         );
         system("touch $wormpipe_dir/DUMP_PREP_RUN");
-    }
-    else { die( " cant find GFF files at " . $wormbase->gff_splits . "\n " ) }
+    } elsif(lc(ref $wormbase) ne 'elegans'){
+	    system("touch $wormpipe_dir/DUMP_PREP_RUN");
+    } else { die( " cant find GFF files at " . $wormbase->gff_splits . "\n " ) }
 }
 
 ##################### -cleanup ##################################
