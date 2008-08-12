@@ -114,7 +114,7 @@ sub print_seq {
   my $width = 50;
   my $start_point = 0;
   my $sequence=$softmasked?
-         $seq->get_repeatmasked_seq->seq(undef,1)
+         $seq->get_repeatmasked_seq(undef,1)->seq()
 	 :$seq->get_repeatmasked_seq->seq();
   
   while ( $start_point + $width < length( $sequence ) ) {
