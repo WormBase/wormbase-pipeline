@@ -86,17 +86,23 @@ sub invoke
 
     $self->{species} = $wormbase->species;
     $self->{chromosome_prefix} = $wormbase->chromosome_prefix ;
-
+    my $species = $self->{species};
+    
     if( $database ) {
       croak "$database does not exist\n" unless( -d "$database" );
     }
     else {
-      $database = $wormbase->database("current");
+      # the sequence files and coords files in current_DB are elegans-specific 
+      # so use the appropriate species' database if this is not elegans
+      if ($species eq 'elegans') {
+	$database = $wormbase->database("current");
+
+      } else {
+	$database = $wormbase->database($species);
+      }
       undef $refresh;
     }
 
-    my $species = $self->{species};
-    
     #print "using database: $database\n";
     #print "species: $species\n";
 
