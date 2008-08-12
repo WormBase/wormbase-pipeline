@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: ar2 $
-// Last edited on: $Date: 2008-07-11 09:21:27 $
+// Last edited on: $Date: 2008-08-12 13:34:50 $
 
 
 
@@ -380,6 +380,9 @@
                                    Epistasis    #Interaction_info
                                    Mutual_enhancement    #Interaction_info
                                    Mutual_suppression    #Interaction_info
+	       Confidence	   Confidence_level        UNIQUE Float
+				   P_value		   UNIQUE Float
+				   Log_likelihood_score    UNIQUE Float
                Paper ?Paper XREF Interaction
                DB_info Database ?Database ?Database_field ?Accession_number
                Remark  ?Text   #Evidence
@@ -458,7 +461,7 @@
 		     Outcrossed Text
 		     Mutagen Text
 		     CGC_received DateType
-		     Phenotype ?Phenotype XREF Strain #Phenotype
+		     Phenotype ?Phenotype XREF Strain #Phenotype_info
          Location ?Laboratory #Lab_Location
 	 Made_by Text
 	 Remark	?Text #Evidence
