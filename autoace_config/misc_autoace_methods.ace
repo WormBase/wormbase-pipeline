@@ -1320,6 +1320,27 @@ Show_text
 GFF_feature "micro_ORF"
 Remark "Published micro-ORF"
 
+Method : "binding_site_region" 	 
+Colour  MAGENTA 	 
+Strand_sensitive 	 
+Width    1.000000 	 
+Right_priority   2.300000 	 
+Show_up_strand 	 
+Show_text 	 
+GFF_source "binding_site_region" 	 
+Remark   "manually curated binding site region" 	 
+  	 
+Method : "promoter" 	 
+Colour  MAGENTA 	 
+Strand_sensitive 	 
+Width    1.000000 	 
+Right_priority   2.300000 	 
+Show_up_strand 	 
+Show_text 	 
+GFF_source "promoter" 	 
+Remark   "manually curated promoter region"
+
+
 Method : "binding_site"
 Colour	MAGENTA
 Strand_sensitive
@@ -1371,6 +1392,10 @@ GFF_source      "Promoterome"
 GFF_feature     "PCR_product"
 Remark          "SO:0000006"
 
+Method : "dust" 	 
+Remark           "DUST low complexity regions" 	 
+GFF_source       "dust" 	 
+GFF_feature      "low_complexity_region"
 
 ///////////////////////////////////////////////////////////////////
 //
