@@ -117,7 +117,6 @@ GFF_feature "substitution"
 
 
 
-
 //////////////////////////////////////////////////////////////////////////////////////////
 //
 // Sequence and gene related methods
@@ -256,6 +255,7 @@ COLOUR "RED"
 Show_up_strand	
 Right_priority 3.9
 Score_by_width
+Score_bounds     50.000000 100.000000
 Overlap
 Blixem_N
 Join_blocks
@@ -267,6 +267,7 @@ Remark "This method describes C. elegans mRNA sequences..."
 Method : "BLAT_mRNA_OTHER"
 COLOUR "ORANGE"
 Score_by_width
+Score_bounds     50.000000 100.000000
 Right_priority 3.92
 Overlap
 Blixem_N
@@ -280,6 +281,7 @@ COLOUR "RED"
 Show_up_strand	
 Right_priority 4.02
 Score_by_width
+Score_bounds     50.000000 100.000000
 Overlap
 Blixem_N
 Join_blocks
@@ -291,6 +293,7 @@ Remark "This method describes C. elegans ncRNA sequences..."
 Method : "BLAT_ncRNA_OTHER"
 COLOUR "ORANGE"
 Score_by_width
+Score_bounds     50.000000 100.000000
 Right_priority 4.04
 Overlap
 Blixem_N
@@ -322,7 +325,86 @@ Right_priority   3.960000
 Join_blocks
 Blixem_N
 GFF_feature "expressed_sequence_match"
+Remark "This method describes C. elegans RST sequences...."
+// Need GFF_source and GFF_feature?
+
+
+
+Method : "BLAT_RST_BEST"
+Colour   "LIGHTGRAY"
+Show_up_strand
+Score_by_width
+Score_bounds     50.000000 100.000000
+Right_priority   3.840000
+Join_blocks
+Blixem_N
+GFF_feature "expressed_sequence_match"
+Remark "This method describes C. elegans RST sequences...."
+// Need GFF_source and GFF_feature?
+
+Method : "BLAT_RST_OTHER"
+Colour   "DARKGRAY"
+Show_up_strand
+Score_by_width
+Score_bounds     50.000000 100.000000
+Overlap
+Right_priority   3.860000
+Join_blocks
+Blixem_N
+GFF_feature "expressed_sequence_match"
 Remark "This method describes C. elegans OST sequences...."
+// Need GFF_source and GFF_feature?
+
+
+Method : "BLAT_Caen_EST_BEST"
+Colour   "GREEN"
+Show_up_strand
+Score_by_width
+Score_bounds     50.000000 100.000000
+Right_priority   3.980000
+Join_blocks
+Blixem_N
+GFF_feature "expressed_sequence_match"
+Remark "This method describes the best location of ESTs from other Caenorhabditae sp aligned to geneome"
+// Need GFF_source and GFF_feature?
+
+Method : "BLAT_Caen_EST_OTHER"
+Colour   "PALEGREEN"
+Show_up_strand
+Score_by_width
+Score_bounds     50.000000 100.000000
+Overlap
+Right_priority   3.990000
+Join_blocks
+Blixem_N
+GFF_feature "expressed_sequence_match"
+Remark "This method describes the secondary location of ESTs from other Caenorhabditae sp aligned to geneome"
+// Need GFF_source and GFF_feature?
+
+
+Method : "BLAT_Caen_mRNA_BEST"
+Colour   "PALEYELLOW"
+Show_up_strand
+Score_by_width
+Score_bounds     50.000000 100.000000
+Right_priority   4.1
+Join_blocks
+Blixem_N
+GFF_feature "expressed_sequence_match"
+Remark "This method describes the best location of mRNAs from other Caenorhabditae sp aligned to geneome"
+// Need GFF_source and GFF_feature?
+
+
+Method : "BLAT_Caen_mRNA_OTHER"
+Colour   "BROWN"
+Show_up_strand
+Score_by_width
+Score_bounds     50.000000 100.000000
+Right_priority   4.2
+Join_blocks
+Blixem_N
+GFF_feature "expressed_sequence_match"
+Remark "This method describes the secondary locations of mRNA from other Caenorhabditae sp aligned to geneome"
 // Need GFF_source and GFF_feature?
 
 
@@ -330,6 +412,7 @@ Method : "BLAT_NEMATODE"
 Colour "GREEN"
 Right_priority 4.7
 Score_by_width
+Score_bounds     50.000000 100.000000
 Show_up_strand
 Overlap
 Blixem_N
@@ -343,6 +426,7 @@ Method : "BLAT_WASHU"
 Colour "LIGHTGREEN"
 Right_priority 4.7
 Score_by_width
+Score_bounds     50.000000 100.000000
 Show_up_strand
 Overlap
 Blixem_N
@@ -356,6 +440,7 @@ Method : "BLAT_NEMBASE"
 Colour "LIGHTGREEN"
 Right_priority 4.7
 Score_by_width
+Score_bounds     50.000000 100.000000
 Show_up_strand
 Overlap
 Blixem_N
@@ -373,6 +458,7 @@ Score_bounds 40 120
 Right_priority 5.4
 GFF_feature "nucleotide_match"
 Remark "WABA 'Coding' matches resulting from a search of C. briggsae assembly against C. elegans genome"
+Strand_sensitive
 
 
 Method : "WABA_strong"
@@ -384,6 +470,7 @@ Score_bounds 40 120
 Right_priority 5.4
 GFF_feature "nucleotide_match"
 Remark "WABA 'Strong' matches resulting from a search of C. briggsae assembly against C. elegans genome"
+Strand_sensitive
 
 
 Method : "WABA_weak"
@@ -395,7 +482,11 @@ Score_bounds 40 120
 Right_priority 5.4
 GFF_feature "nucleotide_match"
 Remark "WABA 'weak' matches resulting from a search of C. briggsae assembly against C. elegans genome"
+Strand_sensitive
 
+Method : "wublastp_remanei"
+Remark   "wublastp search of remanei proteome"
+Colour   DARKGREEN
 
 Method : "wublastp_fly"
 Colour "BLUE"
@@ -444,6 +535,7 @@ GFF_source       "wublastx"
 GFF_feature      "protein_match"
 Join_blocks
 Remark   "wublastx search of C. elegans genomic clones vs Wormpep"
+Gapped
 
 
 Method : "wublastx_briggsae"
@@ -458,6 +550,7 @@ GFF_source       "wublastx"
 GFF_feature      "protein_match"
 Join_blocks
 Remark   "wublastx search of C. elegans genomic clones vs C. briggsae peptides"
+Gapped
 
 
 Method : "wublastx_fly"
@@ -472,6 +565,7 @@ GFF_source       "wublastx"
 GFF_feature      "protein_match"
 Join_blocks
 Remark   "wublastx search of C. elegans genomic clones vs Drosophila melanogaster proteins from GadFly"
+Gapped
 
 
 Method : "wublastx_yeast"
@@ -486,7 +580,7 @@ GFF_source       "wublastx"
 GFF_feature      "protein_match"
 Join_blocks
 Remark   "wublastx search of C. elegans genomic clones vs Saccharomyces cerevisiae proteins from SGD"
-
+Gapped
 
 
 Method : "wublastx_human"
@@ -501,6 +595,7 @@ GFF_source       "wublastx"
 GFF_feature      "protein_match"
 Join_blocks
 Remark   "wublastx search of C. elegans genomic clones vs Human proteins from IPI human protein set"
+Gapped
 
 
 Method : "wublastx_slimSwissProt"
@@ -515,7 +610,7 @@ GFF_source       "wublastx"
 GFF_feature      "protein_match"
 Join_blocks
 Remark   "wublastx search of C. elegans genomic clones vs proteins from reduced SwissProt dataset"
-
+Gapped
 
 
 Method : "wublastx_slimTrEmbl"
@@ -530,7 +625,7 @@ GFF_source       "wublastx"
 GFF_feature      "protein_match"
 Join_blocks
 Remark   "wublastx search of C. elegans genomic clones vs proteins from reduced TrEmbl dataset"
-
+Gapped
 
  
 Method : "wublastx_remanei"
@@ -545,7 +640,7 @@ GFF_source       "wublastx"
 GFF_feature      "protein_match"
 Join_blocks
 Remark   "wublastx search of C. elegans genomic clones vs C. remanei peptides"
- 
+Gapped
 
 
 Method "TEC_RED"
@@ -686,6 +781,17 @@ Colour "RED"
 Right_priority 4
 Width 1.000000
 Strand_sensitive Show_up_strand 
+
+
+//To map Chronograms to genome.
+
+Method : "Chronogram"
+GFF_source      "Chronogram"
+GFF_feature     "reagent"
+Colour ORANGE
+Right_priority 4
+Width 1
+Strand_sensitive Show_up_strand
 
 Method : "Orfeome"
 Colour	BLUE
@@ -900,6 +1006,16 @@ EMBL_feature     "snRNA"
 GFF_source "snRNA"
 GFF_feature "snRNA_primary_transcript"
 
+Method : "snlRNA"
+Colour   GREEN
+Show_up_strand  
+Width    2.000000
+Right_priority   2.350000
+Show_text       
+EMBL_feature     "snlRNA"
+GFF_source "snlRNA"
+GFF_feature "snlRNA_primary_transcript"
+
 Method : "snoRNA"
 Colour   GREEN
 Show_up_strand  
@@ -929,16 +1045,6 @@ Show_text
 EMBL_feature     "misc_RNA"
 GFF_source "stRNA"
 GFF_feature "stRNA_primary_transcript"
-
-Method : "snlRNA"
-Colour   GREEN
-Show_up_strand  
-Width    2.000000
-Right_priority   2.350000
-Show_text       
-EMBL_feature     "snlRNA"
-GFF_source "snlRNA"
-GFF_feature "snlRNA_primary_transcript"
 
 Method : "RNAi"
 Width    1.000000
@@ -996,10 +1102,6 @@ Right_priority	 5.530000
 GFF_source	 "tandem"
 GFF_feature	 "tandem_repeat"
 
-Method : "dust"
-Remark           "DUST low complexity regions"
-GFF_source       "dust"
-GFF_feature      "low_complexity_region"
 
 // Use for ar2-style transcript objects
 
@@ -1068,6 +1170,15 @@ CDS_colour       DARKRED
 Show_up_strand   DARKRED
 Bumpable
 Right_priority   2.350000
+Show_text
+EMBL_feature     "CDS"
+
+Method : "jigsaw"
+Colour   PURPLE
+CDS_colour       PURPLE
+Show_up_strand   PURPLE
+Bumpable
+Right_priority   2.370000
 Show_text
 EMBL_feature     "CDS"
 
@@ -1219,26 +1330,6 @@ Show_text
 GFF_source "binding_site"
 Remark	 "manually curated binding site feature"
 
-Method : "binding_site_region"
-Colour	MAGENTA
-Strand_sensitive
-Width	 1.000000
-Right_priority	 2.300000
-Show_up_strand
-Show_text
-GFF_source "binding_site_region"
-Remark	 "manually curated binding site region"
-
-Method : "promoter"
-Colour	MAGENTA
-Strand_sensitive
-Width	 1.000000
-Right_priority	 2.300000
-Show_up_strand
-Show_text
-GFF_source "promoter"
-Remark	 "manually curated promoter region"
-
 Method : "Oligo_cap"
 Remark	 "Oligo-cap sequence used in EST library generation. This feature is marked up for removal from the transcript sequence prior to mapping to the genome."
 
@@ -1274,6 +1365,11 @@ Right_priority 1.5
 Width 1
 GFF_feature "translated_nucleotide_match"
 Remark "Mass Spectrometry peptide matching a protein."
+
+Method          "Promoterome"
+GFF_source      "Promoterome"
+GFF_feature     "PCR_product"
+Remark          "SO:0000006"
 
 
 ///////////////////////////////////////////////////////////////////
