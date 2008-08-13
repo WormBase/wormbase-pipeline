@@ -7,7 +7,7 @@
 # Do fast overlap matching of positions of two sets of things.
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-07-16 09:19:00 $      
+# Last updated on: $Date: 2008-08-13 15:39:42 $      
 
 =pod
 
@@ -1964,8 +1964,8 @@ sub get_tRNAscan_SE_1_23RNA {
    
    # want the ones without ')n' in their ID
    my @r2 = grep { $_->[0] !~ /\)n/ } @repeatmasked; 
-   # want the ones without '_rich' in their ID
-   my @repeatmasked_complex = grep { $_->[0] !~ /\_rich/ } @r2; 
+   # want the ones without '-rich' or in '_rich' their ID
+   my @repeatmasked_complex = grep { $_->[0] !~ /\[-_]rich/ } @r2; 
 
    return @repeatmasked_complex;
 
