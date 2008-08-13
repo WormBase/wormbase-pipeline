@@ -10,7 +10,6 @@ use Log_files;
 use File::Copy;
 
 
-
 my $file = shift;
 #######################################
 # command-line options                #
@@ -96,18 +95,21 @@ $WPver-- if( $test );
 #+-------------+----------------+
 
 
-my %processIds2prot_analysis = ( 'wormpepP' => "wublastp_worm",
-				 'brigpepP' => "wublastp_briggsae",
-				 'ipi_humanP' => "wublastp_human",
-				 'yeastP' => "wublastp_yeast",
-				 'GadflyP' => "wublastp_fly",
+my %processIds2prot_analysis = ( 
+	             'wormpepP'       => "wublastp_worm",
+				 'brigpepP'       => "wublastp_briggsae",
+				 'ipi_humanP'     => "wublastp_human",
+				 'yeastP'         => "wublastp_yeast",
+				 'GadflyP'        => "wublastp_fly",
 				 'slimswissprotP' => "wublastp_slimswissprot",
-				 'slimtremblP' => "wublastp_slimtrembl",
-				 'remaneiP'=> "wublastp_remanei",
+				 'slimtremblP'    => "wublastp_slimtrembl",
+				 'remaneiP'       => 'wublastp_remanei',
+				 'ppapepP'        => 'wublastp_pristionchus'
 			       );
 ##########
 
-our %org_prefix = ( 'wublastp_worm'          => 'WP',
+our %org_prefix = ( 
+	        'wublastp_worm'          => 'WP',
 		    'wublastp_ensembl'       => 'ENSEMBL',
 		    'wublastp_fly'           => 'FLYBASE',
 		    'wublastp_yeast'         => 'SGD',
@@ -116,6 +118,7 @@ our %org_prefix = ( 'wublastp_worm'          => 'WP',
 		    'wublastp_briggsae'      => 'BP',
 		    'wublastp_ipi_human'     => 'IP', # should never actually get included
 		    'wublastp_remanei'       => 'RP',
+		    'wublastp_pristionchus'  => 'PP',
 		  );
 
 my $QUERY_SPECIES = $wormbase->full_name;
@@ -136,14 +139,10 @@ while (my($from,$to)=each %file_mapping ){
 
 my (%SWISSORG, %TREMBLORG);
 tie %SWISSORG, 'GDBM_File',"/tmp/swissprot2org",&GDBM_WRCREAT,0666 or die "cannot open swissprot2org DBM file /tmp/swissprot2org";
-unless (-s "$db_files/swissprot2des") {
-  die "swissprot2des not found or empty";
-}
+unless (-s "$db_files/swissprot2des") {die "swissprot2des not found or empty";}
 
 tie %TREMBLORG, 'GDBM_File',"/tmp/trembl2org",&GDBM_WRCREAT ,0666 or die "cannot open /tmp/trembl2org DBM file";
-unless (-s "$db_files/trembl2des") {
-  die "trembl2des not found or empty";
-}
+unless (-s "$db_files/trembl2des") { die "trembl2des not found or empty";}
 
 # gene CE info from COMMON_DATA files
 # using flattened arrays to merge hashes ... don't try this at home ... or with big hashes
@@ -190,12 +189,11 @@ my %swiss_matches;
 my %trembl_matches;
 my %brig_matches;
 my %rem_matches;
+my %ppa_matches;
 
 my %type_count;
 
 while (<BLAST>) {
-
-  #49483856        CE00003 1       407     1       407     B0303.14        2       2114    219.327902      100     1,1,0
 
 #  +--------------------+-----------------------+-----------+---------+-----------+---------+-----------+-------------+-------+---------+------------+
 #  | protein_feature_id | translation_stable_id | seq_start | seq_end | hit_start | hit_end | hit_id    | logic_name  | score | evalue  | perc_ident |
@@ -215,11 +213,12 @@ while (<BLAST>) {
   my $proteinId=($gene2CE{$cdsid}||$cdsid);
   my $homolID=($gene2CE{$hit_id}||$hit_id);
 
-  next if $proteinId eq $homolID;
+  next if $proteinId eq $homolID; # self-hit removal
 
   # check if next protein
   if ( $current_pep and $current_pep ne $proteinId ) {  
-    &dumpData ($current_pep,\%worm_matches,\%human_matches,\%fly_matches,\%yeast_matches,\%swiss_matches,\%trembl_matches,\%brig_matches, \%rem_matches) if (%worm_matches or %human_matches or %fly_matches or %yeast_matches or %swiss_matches or %trembl_matches or %brig_matches or %rem_matches);
+    &dumpData ($current_pep,\%worm_matches,\%human_matches,\%fly_matches,\%yeast_matches,\%swiss_matches,\%trembl_matches,\%brig_matches, \%rem_matches) 
+            if (%worm_matches or %human_matches or %fly_matches or %yeast_matches or %swiss_matches or %trembl_matches or %brig_matches or %rem_matches);
 
     #undef all hashes
     %worm_matches = ();
@@ -230,6 +229,7 @@ while (<BLAST>) {
     %trembl_matches = ();
     %brig_matches = ();
     %rem_matches = ();
+    %ppa_matches =();
 
     %type_count = ();
 
@@ -243,23 +243,26 @@ while (<BLAST>) {
   my @data = ($proteinId, $processIds2prot_analysis{$analysis},  $myHomolStart, $myHomolEnd, $homolID, $pepHomolStart, $pepHomolEnd, $e);
 
   my $added = 0;
-  if ( $analysis eq 'wormpepP' ) #wormpep
-    {
+  if ( $analysis eq 'wormpepP' ){ # wormpep
       $added = &addWormData ( \%worm_matches, \@data );
-    } elsif ( $analysis eq 'GadflyP'  ) { #gadfly peptide set also has isoforms
+    } elsif ( $analysis eq 'GadflyP'  ) { # gadfly peptide set also has isoforms
       $added = &addFlyData ( \%fly_matches, \@data );
-    } elsif ( $analysis eq 'yeastP'  ) { # others dont have isoforms so let adding routine deal with them
+
+    # others dont have isoforms so let adding routine deal with them
+    } elsif ( $analysis eq 'yeastP'  ) {
       $added = &addData ( \%yeast_matches, \@data );
-    } elsif ( $analysis eq 'slimswissprotP'  ) { # others dont have isoforms so let adding routine deal with them
+    } elsif ( $analysis eq 'slimswissprotP'  ) {
       $added = &addData ( \%swiss_matches, \@data );
-    } elsif ( $analysis eq 'slimtremblP') { # others dont have isoforms so let adding routine deal with them
+    } elsif ( $analysis eq 'slimtremblP') {
       $added = &addData ( \%trembl_matches, \@data );
-    } elsif ( $analysis eq 'ipi_humanP') { # others dont have isoforms so let adding routine deal with them
+    } elsif ( $analysis eq 'ipi_humanP') {
       $added = &addData ( \%human_matches, \@data );
     } elsif ( $analysis eq 'brigpepP') {
       $added = &addData ( \%brig_matches, \@data );
     } elsif ( $analysis eq 'remaneiP') {
       $added = &addData ( \%rem_matches, \@data );
+    } elsif ( $analysis eq 'ppapepP') {
+      $added = &addData ( \%ppa_matches, \@data );
     }
 
   #this keeps track of how many hits are stored for each analysis.  Once we have 10 we can ignore the rest as the list is sorted.
@@ -284,7 +287,12 @@ $wormbase->run_command("rm -f $ipi_file._tmp",         		$log);
 print "DONE\n";
 $log->write_to(" : Data extraction complete\n\n");
 
-#process the recip file so that proteins are grouped
+
+##########################
+# reciprocal hits part   #
+##########################
+
+# process the recip file so that proteins are grouped
 $log->write_to(": processing the reciprocal data file for efficient loading.\n");
 open (SORT,"sort -t \" \" -k2 $recip_file | ");
 open (RS,">>$output") or die "rs"; #append this sorted data to the main homols file and load together.
@@ -319,10 +327,10 @@ untie %ACC2DB;
 untie %SWISSORG;
 untie %TREMBLORG;
 
+# cleanup
 while (my($from,$to)=each %file_mapping ){
 	 unlink $to or die "delete of $to failed: $!";
 }
-
 
 print "\nEnd of dump/\n";
 $log->mail;
@@ -353,7 +361,7 @@ sub dumpData {
 	###############################################
 
       HOMOLOGUES:
-	#Use of uninitialized value in numeric comparison (<=>) at /nfs/team71/worm/ar2/wormbase/scripts/Dump_new_prot_only.pl line 291.
+	# Use of uninitialized value in numeric comparison (<=>) at /nfs/team71/worm/ar2/wormbase/scripts/Dump_new_prot_only.pl line 291.
 
 	foreach (sort {$$matches{$b}[0]->[7] <=> $$matches{$a}[0]->[7]} keys %$matches ) {
 	  foreach my $data_array_ref (@$matches{$_}) {
@@ -367,17 +375,18 @@ sub dumpData {
 	      if ( "$$data[1]" eq "wublastp_worm" ) {
 		      #my $gene = $$data[4]; 
 		      #$$data[4] = $gene2CE{"$gene"};
-		next unless $$data[4];
+		      next unless $$data[4];
 	      }
 	    
 	      # sort out prefix - mainly for ipi_human where it can be ENS, SW, TR, LL etc
 	      elsif ( "$$data[1]" eq "wublastp_human" ) {
-		$prefix = &getPrefix("$$data[4]");
+		       $prefix = &getPrefix("$$data[4]");
 	      }
+	
 	      if ($best == 0) {
-		$BEST{$$data[1]} = "$prefix:$$data[4]"."score$$data[7]";
-		$best = 1;
-		next HOMOLOGUES if $just_matches; # dont bother with all the rest
+               $BEST{$$data[1]} = "$prefix:$$data[4]"."score$$data[7]";
+               $best = 1;
+               next HOMOLOGUES if $just_matches; # dont bother with all the rest
 	      }	
 	      print OUT "Pep_homol ";
 	      print OUT "\"$prefix:$$data[4]\" "; #  homolID
@@ -385,32 +394,32 @@ sub dumpData {
 	      print OUT "$$data[7] ";	#  e value
 	      print OUT "$$data[2] ";	#  HomolStart
 	      print OUT "$$data[3] ";	#  HomolEnd
-	      print OUT "$$data[5] ";	#  pepHomolStar
+	      print OUT "$$data[5] ";	#  pepHomolStart
 	      print OUT "$$data[6] ";	#  pepHomolEnd
 	      print OUT "Target_species \"",&species_lookup($$data[1], $$data[4]),"\"\n";
 
 	      print RECIP "Protein : \"$prefix:$$data[4]\" line "; #  matching peptide
-	      print RECIP "\"$prot_pref:$pid\" ";	#worm protein
+	      print RECIP "\"$prot_pref:$pid\" ";	# worm protein
 	      print RECIP "$$data[1] "; #  analysis
 	      print RECIP "$$data[7] "; #  e value
 	      print RECIP "$$data[5] "; #  HomolStart
 	      print RECIP "$$data[6] "; #  HomolEnd
-	      print RECIP "$$data[2] "; #  pepHomolStar
+	      print RECIP "$$data[2] "; #  pepHomolStart
 	      print RECIP "$$data[3] "; #  pepHomolEnd
 	      print RECIP "Target_species \"$QUERY_SPECIES\"\n";
 	      
-              print OUT "Pep_homol ";
-              print OUT "\"$prefix:$$data[4]\" "; #  homolID
-              print OUT "$$data[1] ";	#  analysis
-              print OUT "$$data[7] ";	#  e value
-              print OUT "$$data[2] ";	#  HomolStart
-              print OUT "$$data[3] ";	#  HomolEnd
-              print OUT "$$data[5] ";	#  pepHomolStar
-              print OUT "$$data[6]\n";	#  pepHomolEnd
+          print OUT "Pep_homol ";
+          print OUT "\"$prefix:$$data[4]\" "; #  homolID
+          print OUT "$$data[1] ";	#  analysis
+          print OUT "$$data[7] ";	#  e value
+          print OUT "$$data[2] ";	#  HomolStart
+          print OUT "$$data[3] ";	#  HomolEnd
+          print OUT "$$data[5] ";	#  pepHomolStar
+          print OUT "$$data[6]\n";	#  pepHomolEnd
 	    }
 	  }
 	}
-      }
+    }
       # output best matches
       print BEST "$pid";
       foreach my $ana (values %processIds2prot_analysis) {
@@ -457,14 +466,14 @@ sub addFlyData {
 
 
 sub addWormData {
-      my $match = shift;	#hash to add data to 
-      my $data = shift;		#array data to analyse
+      my $match = shift;	# hash to add data to 
+      my $data = shift;		# array data to analyse
       my $homol = $$data[4];
       my $homol_gene = &justGeneName( $homol );
 
-      if ( $database eq "worm_remanei" ) {
+      if ( $database eq "worm_remanei"||$database eq 'worm_pristionchus' ) {
 	my @_genes=split(/\s/,$$data[0]);
-	foreach my $_g(@_genes){ #MH6
+	foreach my $_g(@_genes) {
 	 	my $my_gene = &justGeneName( $CE2gene{ $$data[0] } ) ;
 		return 0 if ("$homol_gene" eq "$my_gene"); # self match or isoform of same gene
 	}
@@ -579,6 +588,7 @@ sub species_lookup {
 		      'wublastp_human'         => 'Homo sapiens',
 		      'wublastp_yeast'         => 'Saccharomyces cerevisiae',
 		      'wublastp_fly'           => 'Drosophila melanogaster',
+		      'wublastp_pristionchus'  => 'Pristionchus pacificus',
 		      'wublastp_slimswissprot' => $SWISSORG{$protein},
 		      'wublastp_slimtrembl'    => $TREMBLORG{$protein}
 		      );
