@@ -304,6 +304,7 @@ sub pep_prefix {'PP'}
 sub pepdir_prefix{'ppa'};
 sub ncbi_tax_id {'54126'};
 sub assembly_type {'contig'};
+sub wormpep_prefix {'PP'}
 
 #######################################################
 
