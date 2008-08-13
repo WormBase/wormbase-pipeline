@@ -34,8 +34,8 @@ species_string=(spec_prefix[0..2].upcase) + (spec_suffix[0..1].upcase)
 CoreDBConnection.establish_connection(:adapter=>'mysql',:host => 'ia64d',:database =>database,:username=>'wormro',:password => '')
 
 # get all genes ...
-Gene.find_all().each{|g|
-    $stderr.puts "processing gene #{g.stable_id}" if $DEBUG
+Gene.find(:all).each{|g|
+   $stderr.puts "processing gene #{g.stable_id}" if $DEBUG
     t=g.transcripts # get all transcripts for the gene g
     
     # sort them by size and pick the longest one
