@@ -7,7 +7,7 @@
 # Script to make ?Transcript objects
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2008-08-06 09:49:59 $
+# Last updated on: $Date: 2008-08-14 09:36:13 $
 use strict;
 use lib $ENV{'CVS_DIR'};
 use Getopt::Long;
@@ -99,8 +99,8 @@ my %feature_data;
 
 
 # process chromosome at a time
-@chromosomes = $wormbase->get_chromosome_names unless @chromosomes;
-my $contigs = 1 if (scalar @chromosomes > 15);
+@chromosomes = $wormbase->get_chromosome_names('-prefix') unless @chromosomes;
+my $contigs = 1 if ($wormbase->assembly_type eq 'contig');
 
 foreach my $chrom ( @chromosomes ) {
 
@@ -125,7 +125,6 @@ foreach my $chrom ( @chromosomes ) {
 
   # parse GFF file to get CDS and exon info
   $gff_file = $gff_stem."curated.gff";
-  # open (GFF,"grep \"^$chrom\\W\" $gff_file | ") or $log->log_and_die("cant open $gff_file : $!\n");
   my $GFF = $wormbase->open_GFF_file($chrom, 'curated',$log);
   $log->write_to("reading gff file $gff_file\n");
   while (<$GFF>) {
@@ -540,7 +539,7 @@ sub load_EST_data
       open ( PAIRS, ">$pairs") or die "cant open $pairs :\t$!\n";
       while ( <TACE> ) { 
 	chomp;
-	s/\"//g;
+	s/\"//g;#"
 	my @data = split;
 	next unless ($data[0] && $data[1]);
 	next if $data[0]=~/acedb/;
