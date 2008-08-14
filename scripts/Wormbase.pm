@@ -1659,7 +1659,7 @@ sub open_GFF_file {
   my $handle;
 
   my $file = $self->GFF_file_name($seq, $method);
-  if ($self->assembly_type eq 'contig' ) { 
+  if ($self->assembly_type ne 'contig' ) { 
     open ($handle,"<$file") or $log->log_and_die("cant open $file :$!\n");
   } else {		# contig based assembly
     open($handle,"grep \"$seq\\W\" $file |") or $log->log_and_die("cant open $file :$!\n");
