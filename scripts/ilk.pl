@@ -8,7 +8,7 @@
 # and finds information about the homologous wormpep proteins
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-07-24 16:36:11 $      
+# Last updated on: $Date: 2008-08-15 15:01:15 $      
 
 # To do:
 # accept wormpep ID as input
@@ -89,6 +89,7 @@ my $status;			# label to display status and other information
 my $VERSION = '1.1.0';
 my $MW;				# Main Window handle
 my $quick_entry;		# entry field for quick frame
+my $compare_cds;		# entry field for comparing a CDS and the target to the homologs
 
 my %data;
 
@@ -698,7 +699,7 @@ sub init {
   my $menubar = build_menubar; 
 
   # create the quick-entry bar
-  &add_quick_entry;
+  &add_quick_entry(\%data);
 
   # create the status line
   &add_status_line;
@@ -848,7 +849,7 @@ sub add_canvas {
   # canv is the canvas that we will draw on
   my $canv = $top->Canvas(-background => 'gray',
 			  -width  => 850,
-			  -height => 40 + ($domain_count * 5),
+			  -height => 50 + ($domain_count * 5),
 			  )->pack(-side => 'left',
 				  -expand => 1,
 				  -fill => "x",
@@ -893,13 +894,13 @@ sub add_canvas {
   }
   
   if (defined $info{cgc_name}) {
-    my $lab4 = $canv->createText(10*(length $id), 10, -text => "$info{cgc_name}", -anchor => 'w', -fill => 'red');
+    my $lab4 = $canv->createText(80, 10, -text => "$info{cgc_name}", -anchor => 'w', -fill => 'red');
   }
 
   # display the signalp region
   if ($signalp) {
-    my $sig = $canv->createRectangle(75, 10, 
-				     85, 25,
+    my $sig = $canv->createRectangle(95, 20, 
+				     105, 35,
 				     -fill => 'white',
 				     );
     $canv->bind($sig,
@@ -910,8 +911,8 @@ sub add_canvas {
   }
 
   # display the exons
-  my $x = 80;
-  my $y = 15;
+  my $x = 100;
+  my $y = 25;
   my $height = 5;
   for (my $i = 0; $i < @{$exons_start_ref}; $i++) {
     my $len = $exons_end_ref->[$i] - $exons_start_ref->[$i] + 1;
@@ -969,8 +970,8 @@ sub add_canvas {
       #print "\tHomology: $start..$end homolog_positions: $other_start..$other_end\n";
 
       my $height = 3;
-      my $y = 16;
-      my $x = 80 + ($other_start * $scale);
+      my $y = 26;
+      my $x = 100 + ($other_start * $scale);
       my $len = $other_end - $other_start + 1;
       my $aa_len = $len * $scale; # get length in residues and scale to fit
       my $homologous_region = $canv->createRectangle($x, $y, 
@@ -997,8 +998,8 @@ sub add_canvas {
       foreach my $target_start (@target_starts) {
 	my $target_end = shift @target_ends;
 	my $height = 3;
-	my $y = 16;
-	my $x = 80 + ($target_start * $scale);
+	my $y = 26;
+	my $x = 100 + ($target_start * $scale);
 	my $len = $target_end - $target_start + 1;
 	my $aa_len = $len * $scale; # get length in residues and scale to fit
 	my $homologous_region = $canv->createRectangle($x, $y, 
@@ -1017,8 +1018,8 @@ sub add_canvas {
   foreach my $mass_spec (keys %{$mass_spec_href}) {
     #print "$mass_spec $mass_spec_href->{$mass_spec}{'start'} $mass_spec_href->{$mass_spec}{'end'}\n";
     my $height = 4;
-    my $y = 22 + ($count * 5);
-    my $x = 80 + (@{$mass_spec_href->{$mass_spec}{'start'}}[0] * $scale);
+    my $y = 32 + ($count * 5);
+    my $x = 100 + (@{$mass_spec_href->{$mass_spec}{'start'}}[0] * $scale);
     my $len = @{$mass_spec_href->{$mass_spec}{'end'}}[0] - @{$mass_spec_href->{$mass_spec}{'start'}}[0] + 1;
     my $aa_len = $len * $scale; # get length in residues and scale to fit
 
@@ -1040,8 +1041,8 @@ sub add_canvas {
   foreach my $domain (keys %{$domains_href}) {
     #print "$domain $domains_href->{$domain}{'start'} $domains_href->{$domain}{'end'}\n";
     my $height = 4;
-    my $y = 22 + ($count * 5);
-    my $x = 80 + ($domains_href->{$domain}{'start'} * $scale);
+    my $y = 32 + ($count * 5);
+    my $x = 100 + ($domains_href->{$domain}{'start'} * $scale);
     my $len = $domains_href->{$domain}{'end'} - $domains_href->{$domain}{'start'} + 1;
     my $aa_len = $len * $scale; # get length in residues and scale to fit
 
@@ -1049,7 +1050,18 @@ sub add_canvas {
     if (exists $colours->{$domain}) {
       $colour = $colours->{$domain};
     } else {
-      $colour = sprintf( "#%02x%02x%02x", int(rand 127)+127, int(rand 127)+127, int(rand 127)+127); # light random colour
+      # construct a colour from the domain ID name
+      my @colour;
+      foreach (my $i = 0; $i < length $domain; $i++) {
+	my $chr = substr($domain, $i, 1);
+	if ($chr =~ /\d/) {
+	  $colour[$i % 3] .= $chr;
+	}
+      }
+      foreach my $c (@colour) {
+	if ($c < 12) {$c *= 10;}
+      }
+      $colour = sprintf( "#%02x%02x%02x", $colour[0]+127, $colour[1]+127, $colour[2]+127); # light random colour
       $colours->{$domain} = $colour;
     }
 
@@ -1073,6 +1085,8 @@ sub add_canvas {
 #####################################################
 # add the quick entry frame and label
 sub add_quick_entry {
+  my $data = shift;
+
   my $quick = $MW->Frame(-borderwidth => 3,
 			-relief => 'groove',
 			-background => 'lightyellow')->pack(-side => 'top',
@@ -1081,7 +1095,7 @@ sub add_quick_entry {
 	    -text => 'Next CDS: ',
 	    -background => 'lightyellow')->pack(-side => 'left');		
 
-     # entry field
+  # entry field
   $quick_entry = $quick->Entry( 
 				   -width => 25,
 				   -textvariable=> \$input,
@@ -1091,7 +1105,7 @@ sub add_quick_entry {
   $quick_entry->bind("<Return>",[ \&quick_next_cds]);
   $quick_entry->bind("<KP_Enter>",[ \&quick_next_cds]);
 
-  # Make history button
+  # OK button
   my $make = $quick->Button( -text => "OK",
 			     -command => [\&quick_next_cds],
 			     -background => 'lightyellow',
@@ -1101,9 +1115,37 @@ sub add_quick_entry {
 				     -anchor => "w"
 				     );
 
+  # compare entry field - compare this CDS's protein to all the other
+  # homologs and compare the target protein to all the homologs to see
+  # which one is best
+  
+  $quick->Label( 
+	    -text => ' Compare to CDS: ',
+	    -background => 'lightyellow')->pack(-side => 'left');		
+
+  # entry field
+  my $compare_entry = $quick->Entry( 
+				   -width => 25,
+				   -textvariable=> \$compare_cds,
+				   -background => 'grey')->pack(-side => 'left');
+  
+  # make Return and Enter submit CDS 
+  $compare_entry->bind("<Return>",[ \&compare_cds, $data]);
+  $compare_entry->bind("<KP_Enter>",[ \&compare_cds, $data]);
+
+  # OK button
+  $quick->Button( -text => "OK",
+		     -command => [\&compare_cds, $data],
+		     -background => 'lightyellow',
+		     )->pack(-side => 'left',
+			     -pady => '1',
+			     -padx => '6',
+			     -anchor => "w"
+			     );
 
 
-my $groups=$quick->Menubutton(-text=>'Groups',
+  # groups pop-up menu
+  my $groups=$quick->Menubutton(-text=>'Groups',
   -background=>'lightyellow',
   -activebackground=>'grey')->pack(-side=>'right');
  
@@ -1151,6 +1193,76 @@ sub change_group {
   &quick_next_cds;
 }
 
+##############################################################
+#
+# Compare the target gene to another CDS by taking their protein
+# sequences and for both of them doing a global alignment against each
+# of the homolog proteins. The scores of the alignments are displayed.
+
+sub compare_cds {
+  my $data_href = shift;
+  my $data = %{$data_href};
+
+  if (defined $compare_cds && length($compare_cds)) {
+
+    # get the target protein data
+    my $target_cds = $data{cds_name};	# NB only the target has this key/value pair
+    my $target_protein = $data{protein};
+    my $target_obj = $db->fetch(Protein => $target_protein);
+    my $target_seq = $target_obj->asPeptide;
+    my $target_file = "/tmp/target_${target_cds}";
+    open (TARGET, ">$target_file") || die "Can't open $target_file\n";
+    print TARGET "$target_seq";
+    close(TARGET);
+
+    # get the data for the CDS to compare the target to
+    my $compare_obj = $db->fetch(CDS => $compare_cds);
+    my $compare_seq = $compare_obj->asPeptide;
+    my $compare_file = "/tmp/compare_${compare_cds}";
+    open (COMPARE, ">$compare_file") || die "Can't open $compare_file\n";
+    print COMPARE "$compare_seq";
+    #print "$compare_seq";
+    close(COMPARE);
+
+    print "comparing target $target_cds to the CDS $compare_cds\n\n";
+    
+    my $result_file = "/tmp/${target_cds}_comparison";
+    open (RES, ">$result_file") || die "Can't open $result_file\n";
+    foreach my $homolog (sort { $data{homologs}{$b}{score} <=>  $data{homologs}{$a}{score} } keys %{ $data{homologs} }) {
+      my $homolog_cds = $data{homologs}{$homolog}{cds_name_of_homolog};
+      my $obj = $db->fetch(Protein => $homolog);
+      my $hom_file = "/tmp/homolog_${homolog_cds}";
+      open (HOM, ">$hom_file") || die "Can't open $hom_file\n";
+      print HOM $obj->asPeptide . "\n";
+      close(HOM);
+      my $target_score;
+      my $compare_score;
+      open (NEEDLE, "needle $target_file $hom_file -auto -stdout|");
+      while (my $line = <NEEDLE>) {
+	if ($line =~ /Score:\s+([\d\.]+)/) {$target_score = $1;}
+	print RES $line;
+      }
+      open (NEEDLE, "needle $compare_file $hom_file -auto -stdout|");
+      while (my $line = <NEEDLE>) {
+	if ($line =~ /Score:\s+([\d\.]+)/) {$compare_score = $1;}
+	print RES $line;
+      }
+      unlink $hom_file;
+
+      # report the results
+      my $difference = $compare_score - $target_score;
+      print "Homolog: $homolog_cds $homolog\ttarget: $target_score\tcompare: $compare_score\tdiff: $difference\n";
+
+    }
+    close(RES);
+    print "\nAlignments are in $result_file\n";
+
+    # tidy up
+    unlink $target_file;
+    unlink $compare_file;
+
+  }
+}
 #####################################################
 # add the status frame and label
 sub add_status_line {
