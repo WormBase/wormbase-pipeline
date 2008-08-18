@@ -2,8 +2,8 @@
 #
 # initiate_build.pl
 #
-# Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2008-07-07 13:47:55 $
+# Last edited by: $Author: pad $
+# Last edited on: $Date: 2008-08-18 13:31:46 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -88,6 +88,10 @@ $wormbase->run_command("sed 's/species/${species}/' < tmp > ${cvs_file}.new", $l
 
 my $status = move(${cvs_file}.".new", "$cvs_file") or $log->write_to("ERROR: renaming file: $!\n");
 $log->write_to("ERROR: Couldn't move file: $!\n") if ($status == 0);
+
+# Dump the sequence data from the species primary database being build.
+$log->write_to("Dumping sequence data to file for ".$wormbase->species."\n");
+$wormbase->run_script("dump_primary_seq_data.pl -organism $species", $log);
 
 # add lines to the logfile
 my $msg = "Updated ".$wormbase->species." version number to WS".$wormbase->version."\n";
