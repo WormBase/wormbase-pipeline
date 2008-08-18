@@ -5,7 +5,7 @@
 # Usage : dump_primary_seq_data.pl [-options]
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2008-08-18 13:19:15 $
+# Last edited on: $Date: 2008-08-18 13:28:45 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -73,7 +73,7 @@ push (@species, $organism);
 foreach my $organism(@species) {
   $log->write_to("============================================\nDUMPING: $organism\n============================================\n");
 # output dirs
-  my   $output_dir = $wormbase->basedir."_DATA/cDNA_ace/$organism";
+  my   $output_dir = $wormbase->basedir."_DATA/cDNAace/$organism";
   $wormbase->run_command ("mkdir $output_dir", $log) if (!-e $output_dir);
   
 
@@ -173,7 +173,7 @@ __END__
 
 =back
 
-This script dumps ace files for Transcript data for each species and stores them under BUILD_DATA/cDNA_ace/
+This script dumps ace files for Transcript data for each species and stores them under BUILD_DATA/cDNAace/
 
 dump_primary_seq_data.pl
 
