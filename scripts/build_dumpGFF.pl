@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl -w
 # Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2008-08-04 14:19:55 $
+# Last edited on: $Date: 2008-08-19 11:09:46 $
 
 use strict;
 use lib  $ENV{'CVS_DIR'};
@@ -88,7 +88,7 @@ init Expr_profile elegans
 init Orfeome elegans
 blat BLAT_EST_BEST elegans briggsae remanei pristionchus
 blat BLAT_EST_OTHER elegans
-blat BLAT_NEMATODE elegans
+blat BLAT_NEMATODE elegans pristionchus remanei briggsae
 blat BLAT_OST_BEST elegans
 blat BLAT_OST_OTHER elegans
 blat BLAT_RST_BEST elegans
