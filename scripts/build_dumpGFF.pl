@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl -w
 # Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2008-08-19 11:09:46 $
+# Last edited on: $Date: 2008-08-19 13:44:34 $
 
 use strict;
 use lib  $ENV{'CVS_DIR'};
@@ -87,7 +87,7 @@ init RNAi_secondary elegans
 init Expr_profile elegans
 init Orfeome elegans
 blat BLAT_EST_BEST elegans briggsae remanei pristionchus
-blat BLAT_EST_OTHER elegans
+blat BLAT_EST_OTHER elegans briggsae remanei pristionchus
 blat BLAT_NEMATODE elegans pristionchus remanei briggsae
 blat BLAT_OST_BEST elegans
 blat BLAT_OST_OTHER elegans
@@ -96,11 +96,11 @@ blat BLAT_RST_OTHER elegans
 blat BLAT_TC1_BEST elegans
 blat BLAT_TC1_OTHER elegans
 blat BLAT_mRNA_BEST elegans briggsae remanei pristionchus
-blat BLAT_mRNA_OTHER elegans
+blat BLAT_mRNA_OTHER elegans briggsae remanei pristionchus
 blat BLAT_ncRNA_BEST elegans
 blat BLAT_ncRNA_OTHER elegans
-blat BLAT_WASHU elegans
-blat BLAT_NEMBASE elegans
+blat BLAT_WASHU elegans briggsae remanei pristionchus
+blat BLAT_NEMBASE elegans briggsae remanei pristionchus
 blat SL1 elegans
 blat SL2 elegans
 blat polyA_signal_sequence elegans
@@ -110,6 +110,6 @@ homol waba_strong elegans
 homol waba_weak elegans
 homol tandem elegans
 homol RepeatMasker elegans
-homol wublastx elegans
-homol inverted elegans
+homol wublastx elegans briggsae remanei pristionchus
+homol inverted elegans briggsae remanei pristionchus
 __END__
