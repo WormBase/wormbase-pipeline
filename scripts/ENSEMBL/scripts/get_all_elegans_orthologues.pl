@@ -23,8 +23,9 @@ my %species = (
 	6239   => 'Caenorhabditis elegans',
 	6238   => 'Caenorhabditis briggsae', 
 	31234  => 'Caenorhabditis remanei',
-#	135651 => 'Caenorhabditis brenneri',
-	6279   => 'Brugia malayi'
+	135651 => 'Caenorhabditis brenneri',
+	6279   => 'Brugia malayi',
+	54126  => 'Pristionchus pacificus',
 );
 
 my $config = ( YAML::LoadFile("$FindBin::Bin/../etc/ensembl_lite.conf") )->{'elegans'};
@@ -61,6 +62,7 @@ foreach my $slice(@slices){
 		my %brenneri_ids;
 		my %brugia_ids;
 		my %elegans_ids;
+		my %pristionchus_ids;
 
 
 		foreach my $homology ( @{$homologies} ) {
@@ -82,7 +84,9 @@ foreach my $slice(@slices){
                         		elsif ($pepm->taxon_id==6239){
 						$elegans_ids{ $pepm->stable_id } = [$pepm->taxon_id,$homology->description,$homology->subtype] 
 					}
-
+					elsif ($pepm->taxon_id==54126){
+						$pristionchus_ids{$pepm->stable_id} = [$pepm->taxon_id,$homology->description,$homology->subtype]
+					}
 					else {print STDERR "cannot find:".$pepm->taxon_id."\n"}
 
 				}
