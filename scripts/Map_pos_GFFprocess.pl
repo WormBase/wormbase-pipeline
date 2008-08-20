@@ -75,14 +75,18 @@ while (my $gene = $genes->next){
 undef $db;
 
 #read GFF files
-my @chroms = @{$wormbase->get_binned_chroms};
+my @chroms = $wormbase->get_chromosome_names(-prefix => 1);
 
 foreach my $chroms (@chroms) {
   print "Processing chromosome $chroms\n";
-  my $gff_file = $wormbase->gff."/".$chroms.".gff";
-  open (GFF,"<$gff_file") or $log->log_and_die("cant open GFF $gff_file: $!\n");
-  open (NEW,">$gff_file.new") or $log->log_and_die("cant write new GFF file: $!\n");
-  while (my $line = <GFF>) {
+
+  my $gff_file = $wormbase->GFF_file_name($chroms);
+  
+  my $INF = $wormbase->open_GFF_file($chroms,undef,$log);
+  
+  open (NEW,">>$gff_file.new") or $log->log_and_die("cant write new GFF file: $!\n");
+
+  while (my $line = <$INF>) {
     chomp $line;
     if ($line =~ /^#/) {next;}
 
@@ -110,10 +114,12 @@ foreach my $chroms (@chroms) {
       print NEW "$line\n";
     }
   }
-  close GFF;
+  close $INF;
   close NEW;
-  move("$gff_file.new","$gff_file") or $log->error("cant move $gff_file.new :$!\n") ;
+  move("$gff_file.new",$gff_file) unless $wormbase->assembly_type eq 'contig' ;
 }
+my $gff_file = $wormbase->GFF_file_name();
+#move("$gff_file.new",$gff_file) if $wormbase->assembly_type eq 'contig' ;
 
 
 $log->mail();
