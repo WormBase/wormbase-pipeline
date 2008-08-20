@@ -31,8 +31,8 @@ GetOptions(
     "store:s"   => \$store,
 );
 
-$test = 1;
-$debug = "gw3";
+#$test = 1;
+#$debug = "gw3";
 
 
 # Display help if required
@@ -136,7 +136,12 @@ sub map_tec_red {
   my $clone_obj = $db->fetch(Sequence => $clone);
   my $start = $clone_obj->at("SMap.S_child.Feature_object.$feature"."[1]");
   my $end = $clone_obj->at("SMap.S_child.Feature_object.$feature"."[2]");
-  
+  # error check 
+  if (!defined $start || !defined $end) {
+    $log->error;
+    $log->write_to("ERROR: Undefined start/end of $feature in $clone. Are Feature objects OK?\n");
+  }
+
   # get the clone location of the tec_red 
   my $tec_red_start;
   my $tec_red_end;
