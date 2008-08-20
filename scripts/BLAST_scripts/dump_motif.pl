@@ -5,7 +5,7 @@
 # Dumps protein motifs from ensembl mysql (protein) database to an ace file
 #
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2008-03-11 15:20:59 $
+# Last updated on: $Date: 2008-08-20 15:16:43 $
 
 use lib $ENV{'CVS_DIR'};
 
@@ -135,6 +135,8 @@ if( $dbname =~ /brig/) {
   $prefix = "BP";
 }elsif($dbname =~/rem/){
 	$prefix='RP';
+}elsif($dbname =~/pris/){
+	$prefix='PP';
 }
 
 foreach my $prot (sort {$a cmp $b} keys %motifs) {

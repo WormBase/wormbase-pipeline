@@ -4,8 +4,8 @@
 #
 # Dumps InterPro protein motifs from ensembl mysql (protein) database to an ace file
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2008-03-20 14:26:57 $
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2008-08-20 15:16:43 $
 
 
 use strict;
@@ -215,6 +215,8 @@ if ($dbname=~/brig/) {
   $prefix = "BP";
 }elsif ($dbname =~/rem/){
 	$prefix = 'RP';
+}elsif ($dbname =~/pris/){
+	$prefix = 'PP';
 }
 
 # here we need to do:
