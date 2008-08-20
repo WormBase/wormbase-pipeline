@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl -w
-# Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-07-01 08:19:05 $      
+# Last updated by: $Author: pad $     
+# Last updated on: $Date: 2008-08-20 09:51:33 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -123,7 +123,7 @@ sub parse_briggsae_data {
 	       "bac_ends_unique.ace"
 	      );
 
-  my $brig_dir = $wormbase->database('brigace')."/BAC_ENDS";
+  my $brig_dir = $wormbase->primary('brigace')."/BAC_ENDS";
   $log->write_to("\nLoading briggsae BAC ends from $brig_dir\n===========================\n");
   foreach my $file (@files){
     $log->write_to("\tload $file\n");
