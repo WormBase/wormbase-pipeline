@@ -6,8 +6,8 @@
 #
 # This is a example of a good script template
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2008-07-23 12:16:43 $
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2008-08-21 15:09:08 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -234,8 +234,8 @@ foreach my $chromosome (@chromosomes) {
     # the same file thousands of times when we have processed all of
     # the lines in the first read-through as we don't care or test
     # which chromosome the BLAT match is to.
-    if (! $wormbase->separate_chromosomes) {last}
-
+    #if (! $wormbase->separate_chromosomes) {last}
+    last if $wormbase->assembly_type eq 'contig';
 }    # chromosome loop
 
 # Close log files and exit
