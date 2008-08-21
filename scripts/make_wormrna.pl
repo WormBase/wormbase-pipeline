@@ -6,8 +6,8 @@
 #
 # Builds a wormrna data set from the current autoace database
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2008-05-01 13:51:06 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2008-08-21 12:32:25 $
 
 
 #################################################################################
@@ -144,7 +144,7 @@ foreach my $transcript (@transcripts) {
 }   
 
 close DNA;
-chmod (0444 , "$new_wrdir/wormrna$release.rna") || $log->write_to("cannot chmod $new_wrdir/wormrna$release.rna\n");
+chmod (0444 , $rnafile) || $log->write_to("cannot chmod $rnafile\n");
 
 
 ###########################################################################
@@ -187,7 +187,7 @@ $wormbase->check_file("$new_wrdir/README", $log,
 minsize => 400,
 maxsize => 500,
 );
-$wormbase->check_file("$new_wrdir/wormrna$release.rna", $log,
+$wormbase->check_file($rnafile, $log,
 readonly => 1,
 minsize => 400000,
 maxsize => 800000,
