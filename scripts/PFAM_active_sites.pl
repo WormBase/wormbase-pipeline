@@ -1,7 +1,7 @@
 #!/software/bin/perl -w
 
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2008-06-09 16:11:50 $
+# Last updated by: $Author: pad $
+# Last updated on: $Date: 2008-08-21 13:31:09 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -105,26 +105,52 @@ sub update_database {
 	$log->write_to("\n\nUpdating database from PFAM ftp site\n");
 	
 	my $ftp = glob("~ftp/pub/databases/Pfam/database_files");
-	my @tables = qw(markup_key pfamseq pfamseq_markup);
+	my @tables = qw(pfamseq markup_key pfamseq_markup);
 	foreach my $table (@tables){
 		$log->write_to("\tfetching $table.txt\n");
-		$wormbase->run_command("cp -f $ftp/$table.txt.gz /tmp/$table.txt.gz", $log);
 		
-		$log->write_to("\tunzippping /tmp/$table.txt\n");
-		$wormbase->run_command("gunzip -f /tmp/$table.txt.gz", $log);
+		if (-e $ftp."/".$table.".txt.gz"){
+		  $wormbase->run_command("cp -f $ftp/$table.txt.gz /tmp/$table.txt.gz", $log);
+		  $log->write_to("\tunzippping /tmp/$table.txt\n");
+		  $wormbase->run_command("gunzip -f /tmp/$table.txt.gz", $log);
+		}
+		
+		elsif (-e $ftp."/".$table.".txt"){
+		  $log->write_to("\tgzip archive abscent....using $table.txt.\n");
+		  $wormbase->run_command("cp -f $ftp/$table.txt /tmp/$table.txt", $log);
+		}
+
+		else {
+		  $log->log_and_die("Couldn't find $ftp/$table file to copy :(\n");
+		}
 		
 		$log->write_to("\t clearing quotes from /tmp/$table.txt\n");
 		$wormbase->run_command("cat /tmp/$table.txt | sed s/\\\"//g > tmp", $log);
 		$wormbase->run_command("mv tmp /tmp/$table.txt", $log);
-		
+		$log->write_to("\t checking quote clearing in /tmp/$table.txt\n");
+		$wormbase->run_command("cat /tmp/$table.txt | sed s/\\\'//g > tmp", $log);
+		$wormbase->run_command("mv tmp /tmp/$table.txt", $log);
+
+		# pfamseq table is subject to unannounced column re-ordering, so update the schema.
+		if ($table eq "pfamseq") {
+		  if (-e $ftp."/pfamseq.sql"){
+		    $log->write_to("\tupdating the pfamseq table schema\n");
+		    $wormbase->run_command("cp -f $ftp/pfamseq.sql /tmp/pfamseq.sql", $log);
+		    $wormbase->run_command("mysql -h ia64d -u wormadmin -p$pass worm_pfam < /tmp/pfamseq.sql", $log);
+		  }
+		  else {$log->write_to("\tcouldn't update the pfamseq table schema\n");}
+		}
+		# flush the table
 		$log->write_to("\tclearing table $table\n");
 		$DB->do("DELETE FROM $table") or $log->log_and_die($DB->errstr."\n");
-		
+		# load in the new data.
 		$log->write_to("\tloading data in to $table\n");		
 		$DB->do("LOAD DATA LOCAL INFILE \"/tmp/$table.txt\" INTO TABLE $table") or $log->log_and_die($DB->errstr."\n");
-		
+		# clean up files
+		$wormbase->run_command("rm -f /tmp/pfamseq.sql",$log) if (-e "/tmp/pfamseq.sql");
 		$wormbase->run_command("rm -f /tmp/$table.txt", $log);
-	}
+#select
+	      }
 	$log->write_to("Database update complete\n\n");
 }
 
