@@ -8,8 +8,8 @@
 #
 # dumps the method through sace / tace and concatenates them.
 #
-# Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2008-07-21 14:53:37 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2008-08-21 15:52:10 $
 
 
 use lib $ENV{CVS_DIR};
@@ -73,7 +73,7 @@ system("touch $dump_dir/tmp_file") and die "cant write to $dump_dir\n";
 
 
 # open database connection once
-$via_server = 1 if (scalar @sequences > 16 ||$host);
+$via_server = 1 if (scalar @sequences > 50 ||$host);
 unless($host) {
 	open (WRITEDB,"| $giface $database") or die "failed to open giface connection to $database\n";
 }
@@ -81,59 +81,76 @@ unless($host) {
 $log->write_to("dumping methods:".join(",",@methods)."\n");
 $log->write_to("dumping sequences:".join(",",@sequences)."\n");
 
+# ensure that we do not append to an already existing GFF file and that the flock is deleted
+if ($via_server) {
+  unlink "$dump_dir/$species.gff";
+  unlink "$dump_dir/$species.gff.flock";
+}
+
 my $count=0; # debug hack
 foreach my $sequence ( @sequences ) {
   if ( @methods ) {
     foreach my $method ( @methods ) {
-    	my $file = $via_server? "$dump_dir/tmp/${sequence}_${method}.$$" : "$dump_dir/${sequence}_${method}.gff";
-    	if($via_server) {
-    		open (WRITEDB,"| /software/worm/bin/acedb/saceclient $host -port $port -userid wormpub -pass blablub") or $log->log_and_die("$!\n");
-			print WRITEDB "gif seqget $sequence +method $method; seqfeatures -file $file\n";
-			close WRITEDB;
-			
-			#while(stat($file)->mtime + 5  > (time)){
-			#	sleep 1;
-			#}
-		
-			
-			my $sleeptime=0;
-			while (-e "$dump_dir/${method}.gff.flock" && $sleeptime++<11){sleep 15}
-			
-			$wormbase->run_command("touch $dump_dir/${method}.gff.flock");
-			#sleep 1;
-			$wormbase->run_command("cat $file >> $dump_dir/${method}.gff");
-			$wormbase->run_command("rm $dump_dir/${method}.gff.flock");
-			unlink $file;
-		}
-		else{
-    		my $command = "gif seqget $sequence +method $method; seqactions -hide_header; seqfeatures -version 2 -file $file\n";
-			print WRITEDB $command;
-		}
-    }
-  }
-  else {
-  	if($via_server) {
-  		my $file = "$dump_dir/tmp/gff_dump$$"; 
-  		open (WRITEDB,"| saceclient $host -port $port -userid wormpub -pass blablub") or $log->log_and_die("$!\n");
-		print WRITEDB "gif seqget $sequence; seqfeatures -file $file\n";
-		close WRITEDB;
-		
-		#while(stat($file)->mtime + 5  > (time)){
-		#	sleep 1;
-		#}
-		
-		my $sleeptime=0;
-		while (-e "$dump_dir/${species}.gff.flock" && $sleeptime++<11){sleep 15}
-		$wormbase->run_command("touch $dump_dir/$species.gff.flock");
-		#sleep 1;
-		$wormbase->run_command("cat $file >> $dump_dir/$species.gff");
-		$wormbase->run_command("rm $dump_dir/$species.gff.flock");
-		unlink $file;
+      if($via_server) {
+    	my $file = "$dump_dir/tmp/${sequence}_${method}.$$";
+	my $cmd = "gif seqget $sequence +method $method; seqfeatures -file $file";
+	open (WRITEDB,"echo '$cmd' | /software/worm/bin/acedb/saceclient $host -port $port -userid wormpub -pass blablub |") or $log->log_and_die("$!\n");
+	while (my $line = <WRITEDB>) {
+	  if ($line =~ 'ERROR') {
+	    $log->write_to("ERROR detected while GFF dumping $sequence:\n\t$line\n\n");
+	    print "ERROR detected while GFF dumping $sequence:\n\t$line\n\n";
+	  }
 	}
-	else {
-	    my $command = "gif seqget $sequence; seqactions -hide_header; seqfeatures -version 2 -file $dump_dir/$sequence.gff\n";
-    	print "$command";
-    	print WRITEDB $command;
+	close WRITEDB;
+			
+	#while(stat($file)->mtime + 5  > (time)){
+	#	sleep 1;
+	#}
+		
+	
+	my $sleeptime=0;
+	while (-e "$dump_dir/${method}.gff.flock" && $sleeptime++<11){sleep 15}
+	
+	$wormbase->run_command("touch $dump_dir/${method}.gff.flock");
+	#sleep 1;
+	$wormbase->run_command("cat $file >> $dump_dir/${method}.gff");
+	$wormbase->run_command("rm $dump_dir/${method}.gff.flock");
+	unlink $file;
+      } else {
+    	my $file = "$dump_dir/${sequence}_${method}.gff";
+	my $command = "gif seqget $sequence +method $method; seqactions -hide_header; seqfeatures -version 2 -file $file\n";
+	print WRITEDB $command;
+      }
+    }
+  } else {
+    if($via_server) {
+      print "In here\n";
+      my $file = "$dump_dir/tmp/gff_dump$$"; 
+      my $cmd = "gif seqget $sequence; seqfeatures -file $file";
+      open (WRITEDB,"echo '$cmd' | /software/worm/bin/acedb/saceclient $host -port $port -userid wormpub -pass blablub |") or $log->log_and_die("$!\n");
+      while (my $line = <WRITEDB>) {
+	if ($line =~ 'ERROR') {
+	  $log->write_to("ERROR detected while GFF dumping $sequence:\n\t$line\n\n");
+	  print "ERROR detected while GFF dumping $sequence:\n\t$line\n\n";
+	}
+      }
+      close WRITEDB;
+		
+      #while(stat($file)->mtime + 5  > (time)){
+      #	sleep 1;
+      #}
+      
+      my $sleeptime=0;
+      while (-e "$dump_dir/${species}.gff.flock" && $sleeptime++<11){sleep 15}
+      $wormbase->run_command("touch $dump_dir/$species.gff.flock");
+      #sleep 1;
+      $wormbase->run_command("cat $file >> $dump_dir/$species.gff");
+      $wormbase->run_command("rm $dump_dir/$species.gff.flock");
+      unlink $file;
+    } else {
+      my $command = "gif seqget $sequence; seqactions -hide_header; seqfeatures -version 2 -file $dump_dir/$sequence.gff\n";
+      print "$command";
+      print WRITEDB $command;
     }
   }
   $count++;
