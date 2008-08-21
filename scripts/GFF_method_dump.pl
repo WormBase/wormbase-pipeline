@@ -9,7 +9,7 @@
 # dumps the method through sace / tace and concatenates them.
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2008-08-21 15:52:10 $
+# Last edited on: $Date: 2008-08-21 16:06:30 $
 
 
 use lib $ENV{CVS_DIR};
@@ -97,6 +97,7 @@ foreach my $sequence ( @sequences ) {
 	open (WRITEDB,"echo '$cmd' | /software/worm/bin/acedb/saceclient $host -port $port -userid wormpub -pass blablub |") or $log->log_and_die("$!\n");
 	while (my $line = <WRITEDB>) {
 	  if ($line =~ 'ERROR') {
+	    $log->error;
 	    $log->write_to("ERROR detected while GFF dumping $sequence:\n\t$line\n\n");
 	    print "ERROR detected while GFF dumping $sequence:\n\t$line\n\n";
 	  }
@@ -130,6 +131,7 @@ foreach my $sequence ( @sequences ) {
       open (WRITEDB,"echo '$cmd' | /software/worm/bin/acedb/saceclient $host -port $port -userid wormpub -pass blablub |") or $log->log_and_die("$!\n");
       while (my $line = <WRITEDB>) {
 	if ($line =~ 'ERROR') {
+	  $log->error;
 	  $log->write_to("ERROR detected while GFF dumping $sequence:\n\t$line\n\n");
 	  print "ERROR detected while GFF dumping $sequence:\n\t$line\n\n";
 	}
