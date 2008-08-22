@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-08-21 08:50:26 $      
+# Last updated on: $Date: 2008-08-22 08:48:19 $      
 
 # Changes required by Ant: 2008-02-19
 # 
@@ -3564,7 +3564,8 @@ sub find_incomplete_pfam_motifs {
 # find the incomplete Pfam motifs
 
 # open tace connection to Protein object and slurp up the contents
-  my $cmd = "query find Protein \"WP:*\" Motif_homol Pfam\nshow -a Motif_homol\nquit\n";
+  my $prefix = $wormbase->wormpep_prefix;
+  my $cmd = "query find Protein \"${prefix}:*\" Motif_homol Pfam\nshow -a Motif_homol\nquit\n";
   open (TACE, "echo '$cmd' | $tace $database |");
   my @slurp = <TACE>;
   close TACE;
