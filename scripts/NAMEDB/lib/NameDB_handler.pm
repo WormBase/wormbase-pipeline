@@ -164,6 +164,11 @@ sub validate_name {
 				     "Sequence" => '^PPA\d{5}$',
 				     "Public_name" => '^Ppa-[a-z]{3,4}-[1-9]\d*(\.\d+)?$|^PPA\d{5}$',
 				    },
+                        'japonica'' => {
+				     "CGC" => '^Cjp-[a-z21]{3,4}-[1-9]\d*(\.\d+)?$',	
+				     "Sequence" => '^CJA\d{5}$',
+				     "Public_name" => '^Cjp-[a-z]{3,4}-[1-9]\d*(\.\d+)?$|^CJA\d{5}$',
+				    },
 
 		      };
 
