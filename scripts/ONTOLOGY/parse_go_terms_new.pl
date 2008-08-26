@@ -77,7 +77,8 @@ my %species_taxon_hash=("Caenorhabditis elegans"  => 6239,
 			"Caenorhabditis trinidad" => "N/A",
 			"Brugia pahangi"          => 6280,
 			"Onchocerca volvulus"     => 6282,
-			"Pristionchus pacificus"  => 54126
+			"Pristionchus pacificus"  => 54126,
+			'Caenorhabditis japonica' => 228167,
 			);
 
 my %name_hash=();
@@ -385,6 +386,8 @@ close($out);
 $wormbase->run_command("grep 'taxon:6239' $output > $output.ce", $log);
 $wormbase->run_command("grep 'taxon:6238' $output > $output.cb", $log);
 $wormbase->run_command("grep 'taxon:31234' $output > $output.rem", $log);
+$wormbase->run_command("grep 'taxon:54126' $output > $output.ppa", $log);
+$wormbase->run_command("grep 'taxon:281687' $output > $output.cjp", $log);
 
 
 ##################
