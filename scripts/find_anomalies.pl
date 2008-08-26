@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-08-26 12:25:05 $      
+# Last updated on: $Date: 2008-08-26 12:28:48 $      
 
 # Changes required by Ant: 2008-02-19
 # 
@@ -105,7 +105,7 @@ if ( $store ) {
 } else {
   # check that the given species is correct
   if (!defined $species) {
-    if (defined $database && (glob($database) ne glob("~wormpub/BUILD/autoace)") || glob($database) ne glob("~wormpub/DATABASES/current_DB)"))) {
+    if (defined $database && (glob($database) ne glob("~wormpub/BUILD/autoace") && glob($database) ne glob("~wormpub/DATABASES/current_DB)"))) {
       croak("Please give the -species parameter if using a non-standard database\n");
     } else {
       $species = 'elegans';
