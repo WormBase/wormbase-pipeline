@@ -5,8 +5,8 @@
 # Counts the number of objects in an ACEDB database for each Class stated in the config file
 # Compares this number to those from a second database.
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2007-07-03 12:44:31 $
+# Last updated by: $Author: pad $
+# Last updated on: $Date: 2008-08-26 13:20:41 $
 
 
 use strict;
@@ -347,7 +347,7 @@ sub mid_run {
 		   "Cell_group",
 		   "Class",
 		   "Clone",
-		   "Cluster",
+		   "Expression_cluster", #renamed from Cluster
 		   "Coding_transcripts",
 		   "Comment",
 		   "Condition",
