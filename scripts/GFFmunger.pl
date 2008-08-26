@@ -5,7 +5,7 @@
 # by Dan Lawson
 #
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2008-07-24 10:05:57 $
+# Last updated on: $Date: 2008-08-26 16:14:08 $
 #
 # Usage GFFmunger.pl [-options]
 
@@ -101,8 +101,12 @@ if (defined($chrom)){
     push(@gff_files,$chrom);
 }
 else {
-    @gff_files = $wormbase->get_chromosome_names('-prefix' => 1, '-mito' => 1);
-}
+	if ($wormbase->assembly_type eq 'contig'){
+	  @gff_files = ($wormbase->species);
+	} else {
+          @gff_files = $wormbase->get_chromosome_names('-prefix' => 1, '-mito' => 1);
+        }
+ }
 
 # check to see if full chromosome gff dump files exist
 foreach my $file (@gff_files) {
@@ -156,13 +160,13 @@ foreach my $file (@gff_files) {
   
   if (($landmark || $all) && $file ne "CHROMOSOME_MtDNA") {
     $log->write_to("# Adding ${file}_landmarks.gff file\n");
-    $addfile = "$datadir/${file}_landmarks.gff";
+    $addfile = $wormbase->assembly_type eq 'contig' ? "$datadir/landmarks.gff" : "$datadir/${file}_landmarks.gff";
     &addtoGFF($addfile,$gffpath);
   }
 
   if ($UTR || $all) {
     $log->write_to("# Adding ${file}_UTR.gff file\n");
-    $addfile = "$datadir/${file}_UTR.gff";
+    $addfile = $wormbase->assembly_type eq 'contig' ? "$datadir/UTR.gff" : "$datadir/${file}_UTR.gff";
     &addtoGFF($addfile,$gffpath);
   }
   
