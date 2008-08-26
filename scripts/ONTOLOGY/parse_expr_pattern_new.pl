@@ -53,7 +53,7 @@ $acedbpath=$wormbase->autoace unless $acedbpath;
 my $tace= $wormbase->tace;
 
 
-warn "connecting to database... ";
+warn "connecting to database... $acedbpath\n ";
 my $db = Ace->connect(-path => $acedbpath,  -program => $tace) or $log->log_and_die("Connection failure: ". Ace->error);
 warn "done\n";
 
