@@ -4,8 +4,8 @@
 # 
 # by Dan Lawson
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2008-05-16 12:32:57 $
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2008-08-26 09:56:41 $
 #
 
 #
@@ -113,7 +113,7 @@ else {
     # e.g. remanei.gff
     if(scalar @gff_files > 16) {
     	@gff_files = ();
-    	push(@gff_files,$wormbase->species);
+    	push(@gff_files,lc($wormbase->species));
     }
 }
 
