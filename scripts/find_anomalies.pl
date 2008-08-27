@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-08-26 12:28:48 $      
+# Last updated on: $Date: 2008-08-27 10:46:51 $      
 
 # Changes required by Ant: 2008-02-19
 # 
@@ -3292,8 +3292,11 @@ sub get_unconfirmed_introns {
   my $nonco_match = $ovlp->compare($noncoding_transcript_exons_aref);
   my $rrna_match  = $ovlp->compare($rRNA_aref);
 
+  # join the ESTs and mRNA hits and sort by start position 
+  my @introns = sort {$a->[1] <=> $b->[1]} (@est_introns, @mrna_introns);
+
   # do both the EST and mRNA intons together
-  foreach my $homology (@est_introns, @mrna_introns) { # $est_id, $chrom_start, $chrom_end, $chrom_strand
+  foreach my $homology (@introns) { # $est_id, $chrom_start, $chrom_end, $chrom_strand
 
     my $got_a_match = 0;	        # not yet seen a match to anything
 
