@@ -137,8 +137,8 @@ if (scalar(@chromosomes) > 50){
 	open (WRITEDB,"| saceclient $host -port $port -userid wormpub -pass blablub");
 	print WRITEDB "shutdown now\n";
 	close WRITEDB;
-	sleep 120;
-	my $ps_string=`ps waux|grep sgiface|grep -v grep`;
+	sleep 180;
+	my $ps_string=`ps waux|grep sgiface|grep \$USER|grep -v grep`;
 	$ps_string=~/\w+\s+(\d+)/;
 	my $server_pid=$1;
 	$wormbase->run_command("kill $server_pid",$log) if $server_pid;
