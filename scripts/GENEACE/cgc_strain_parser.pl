@@ -8,7 +8,7 @@
 # Page download and update upload to geneace has been automated [ck1]
 
 # Last updated by: $Author: mt3 $
-# Last updated on: $Date: 2008-04-16 09:35:02 $
+# Last updated on: $Date: 2008-08-27 13:57:32 $
 
 use strict;
 use Getopt::Long;
@@ -67,32 +67,6 @@ my $rundate     = $wormbase->rundate;
 
 my $input_file = "$path/cgc_strain_list_$rundate";
 system("wget -O $input_file http://www.cbs.umn.edu/CGC/strains/gophstrnt.txt") && die "Unable to download strain data file from CGC website\n\n";
-
-
-###############################################
-# Download Paper IDs from Caltech to build hash
-###############################################
-
-my $paper_IDs = "$path/caltech_paper_IDs.$rundate.txt";
-system("wget -O $paper_IDs http://minerva.caltech.edu/~acedb/paper2wbpaper.txt") && die "Unable to download paper ID file from Caltech website\n\n";
-
-# Build hash linking cgc IDs to WBPaper IDs
-my %cgc2paperID;
-
-open(PAPER, "<$paper_IDs") || die "Can't open paper ID input file\n";
-while(<PAPER>){
-  # grab old and new identifiers, only add CGC IDs to hash as key
-  my ($cgc,$paperID) = split;
-  if ($cgc =~ m/^cgc/){
-    #just use number as key
-    $cgc =~ s/cgc//;
-    $cgc2paperID{$cgc} = $paperID;
-  }
-}
-close(PAPER);
-
-
-
 
 ############################################
 # get hash to convert CGC name to Gene ID
@@ -283,16 +257,6 @@ while(<INPUT>){
   print STRAIN "Outcrossed\t\"$outcrossed\"\n" unless ($outcrossed eq "");
   print DELETE_STRAIN  "-D Outcrossed\n" unless ($outcrossed eq "");
 
-
-  if(m/Reference: CGC \#(\d{1,4})\s+/){
-    my $reference = $1;
-    # is there a WBpaper ID for this?
-    if (exists $cgc2paperID{$reference}){
-      print STRAIN "Reference \"$cgc2paperID{$reference}\"\n";
-      print DELETE_STRAIN  "-D Reference \"$cgc2paperID{$reference}\"\n";
-    }
-  }
-
   my $made_by;
   m/Made by: (.*?)Received:/;
   $made_by = $1;
@@ -480,13 +444,6 @@ should have received details of these alleles already, chase this up with Mark E
 
 Other items in this file to check by hand will concern alleles of C. briggsae genes
 which will already have a gene ID.  
-
-The script will also generate another output file, e.g. caltech_paper_IDs.041130.txt.
-This file is downloaded from a Caltech website and it does nothing more than connect
-CGC paper identifiers to their relevant WormBase paper ID.  CGC strain data uses
-the former and we need to use the latter.  It is safe to delete this file after the
-script runs.
-
 
 =over 4
 
