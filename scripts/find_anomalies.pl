@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-08-27 10:46:51 $      
+# Last updated on: $Date: 2008-08-28 11:12:52 $      
 
 # Changes required by Ant: 2008-02-19
 # 
@@ -1374,7 +1374,7 @@ sub split_check {
 
 # now look to see if we have more than one box and return the details of the IDs in those boxes
   #print "Found $count_of_boxes_passing_tests boxes passing test\n";
-  if ($count_of_boxes_passing_tests > 2) {
+  if ($count_of_boxes_passing_tests > 1) {
     foreach my $box (@boxes) {
       if (exists $box->{'passed_test'}) {
 	# foreach of the IDs in this box, put the details in @box_result
