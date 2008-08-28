@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: mt3 $
-# Last updated on: $Date: 2008-08-28 13:58:46 $
+# Last updated on: $Date: 2008-08-28 15:35:21 $
 
 use strict;
 use lib $ENV{"CVS_DIR"};
@@ -392,8 +392,8 @@ sub test_locus_for_errors{
   if( defined $gene_id->Gene_class && defined $gene_id->CGC_name ){
     my $cgc_name = $gene_id->CGC_name;
     my $gc_name = $cgc_name;
-    if ( $gc_name =~ /C\w\w/){
-	$gc_name =~ s/C\w\w-//;
+    if ( $gc_name =~ /^[CP]\w\w/){
+	$gc_name =~ s/^[CP]\w\w-//;
        }
     $gc_name =~ s/-.+//;
     my $gc = $gene_id->Gene_class;
