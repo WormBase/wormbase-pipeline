@@ -4,8 +4,8 @@
 #
 # Usage : EMBL_Sequencefetch.pl [-options]
 #
-# Last edited by: $Author: pad $
-# Last edited on: $Date: 2007-12-18 15:06:29 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2008-08-28 08:49:32 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -503,12 +503,12 @@ sub load_data {
   else {$submol_mod = $submol;}
 
   $acefile = "$output_dir/new_${suborganism}_$submol_mod.ace";
-  $wormbase->load_to_database($sub_sourceDB, $acefile, "EMBL_sequence_fetch.pl", $log) if (-e $acefile);
+  $wormbase->load_to_database($sub_sourceDB, $acefile, "EMBL_sequence_fetch.pl", $log, 0, 1) if (-e $acefile);
   $log->write_to("Loading $acefile into $sub_sourceDB\n\n") if (-e $acefile);
 
   unless (defined $nolongtext) {
     $Longtextfile = "$output_dir/new_${suborganism}_${submol_mod}_longtext.txt";
-    $wormbase->load_to_database($sub_sourceDB, $Longtextfile, "EMBL_sequence_fetch.pl", $log) if (-e $Longtextfile);
+    $wormbase->load_to_database($sub_sourceDB, $Longtextfile, "EMBL_sequence_fetch.pl", $log, 0, 1) if (-e $Longtextfile);
     $log->write_to("Loading $Longtextfile into $sub_sourceDB\n\n") if (-e $Longtextfile);
   }
 }
