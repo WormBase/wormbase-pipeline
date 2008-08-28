@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: mt3 $
-# Last updated on: $Date: 2008-03-03 12:20:56 $
+# Last updated on: $Date: 2008-08-28 13:58:46 $
 
 use strict;
 use lib $ENV{"CVS_DIR"};
@@ -291,7 +291,7 @@ sub process_gene_class{
   }
 
   # checks that a gene with orthologs has not been merged into something else ie Dead. nb. It is OK for Transposon_CDSs to have Orthologs
-  foreach my $gene ($db->fetch(-query=>"Find Gene WHERE NOT Live AND Ortholog AND NOT Made_into_transposon")){
+  foreach my $gene ($db->fetch(-query=>"Find Gene WHERE NOT Live AND Merged_into AND Ortholog")){
       print LOG "ERROR: Zut alors! $gene has been merged (and is Dead) but is still connected to an ortholog\n";
   }
 
