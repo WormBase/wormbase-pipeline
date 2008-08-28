@@ -5,7 +5,7 @@
 # written by Anthony Rogers
 #
 # Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2008-08-08 13:38:29 $
+# Last edited on: $Date: 2008-08-28 09:04:50 $
 #
 # it depends on:
 #    wormpep + history
@@ -222,7 +222,7 @@ if ($cleanup) {
     print "\nRemoving farm output and error files from /lustre/scratch1/ensembl/wormpipe/*\n";
     my $scratch_dir = "/lustre/scratch1/ensembl/wormpipe";
     # Michael wants ensembl-brugia left as it is for now as he uses it for testing
-    my @species_dir = qw( ensembl-pristionchus ensembl-brenneri ensembl-briggsae ensembl-elegans ensembl-remanei ); 
+    my @species_dir = qw( ensembl-pristionchus ensembl-japonica ensembl-brenneri ensembl-briggsae ensembl-elegans ensembl-remanei ); 
     my @directories = qw( 0 1 2 3 4 5 6 7 8 9 );
     
     foreach my $species_dir (@species_dir) {
