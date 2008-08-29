@@ -6,8 +6,8 @@
 #
 # Usage : autoace_builder.pl [-options]
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2008-07-16 14:42:53 $
+# Last edited by: $Author: pad $
+# Last edited on: $Date: 2008-08-29 10:38:31 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -182,7 +182,7 @@ $wormbase->run_command("update_gffdb.csh"                         , $log) if $fi
 if ($load) {
     $log->write_to("loading $load to ".$wormbase->autoace."\n");
     $log->write_to("\ttsuser = $tsuser\n\n");
-    $wormbase->load_to_database( $wormbase->autoace, $load, $tsuser ,$log) if ( -e $load );
+    $wormbase->load_to_database( $wormbase->autoace, $load, $tsuser ,$log); #appropriate checks are made in the Wormbase.pm
 }
 
 $log->mail;
