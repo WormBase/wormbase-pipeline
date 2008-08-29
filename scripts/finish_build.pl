@@ -12,8 +12,8 @@
 # 3) Archives old GFF_SPLITS directory
 # 4) Makes current_DB (copy of latest release) in ~wormpub/DATABASES
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2008-01-07 11:09:50 $
+# Last updated by: $Author: pad $
+# Last updated on: $Date: 2008-08-29 15:40:10 $
 
 
 use strict;
@@ -107,9 +107,13 @@ $wormbase->run_command("rm ".$wormbase->database('current'), $log);
 $wormbase->run_command("ln -sf ".$new_dir." ".$wormbase->database('current'),$log);
 
 
-# Transfer autoace to ~wormpub/DATABASES/current_DB - first remove existing files
-$log->write_to("Removing $new_dir/acefiles/\n");
-$wormbase->delete_files_from("$new_dir/acefiles","*","+") unless ($test);
+# Transfer autoace to ~wormpub/DATABASES/current_DB - first remove primaries acefiles and old data
+my $old_version = $WS_current -1;
+my $old_dir = $wormbase->wormpub."/DATABASES/WS".$old_version;
+$log->write_to("Removing $old_dir/acefiles/\n");
+$wormbase->delete_files_from("$old_dir/acefiles","*","+") unless ($test);
+$log->write_to("Removing primaries acefiles/\n");
+$wormbase->delete_files_from("$new_dir/acefiles/primaries","*","+") unless ($test);
 
 $log->write_to("Unzipping any gzipped chromosome files\n");
 if (!$test) {
