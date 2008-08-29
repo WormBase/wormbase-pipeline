@@ -642,6 +642,20 @@ Join_blocks
 Remark   "wublastx search of C. elegans genomic clones vs C. remanei peptides"
 Gapped
 
+Method : "wublastx_pristionchus"
+Colour   DARKGREEN
+Frame_sensitive
+Show_up_strand
+Score_by_width
+Score_bounds     10.000000 100.000000
+Right_priority   4.80000
+Blixem_X
+GFF_source       "wublastx"
+GFF_feature      "protein_match"
+Join_blocks
+Remark   "wublastx search vs P. pacificus peptides"
+Gapped
+
 
 Method "TEC_RED"
 Colour CYAN
