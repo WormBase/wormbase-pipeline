@@ -5,7 +5,7 @@
 # written by Anthony Rogers
 #
 # Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2008-08-28 09:04:50 $
+# Last edited on: $Date: 2008-09-01 15:28:56 $
 #
 # it depends on:
 #    wormpep + history
@@ -126,7 +126,7 @@ my %wormprotprocessIDs  = %{ get_logic2analysis( $raw_dbh, '%blastp' ) };
 #
 
 if ($copy) {
-    foreach my $option (qw(ppapep wormpep remapep brigpep chrom)) { copy2acari($option) }    # don't need the chromosomes
+    foreach my $option (qw(jappep ppapep wormpep remapep brigpep chrom)) { copy2acari($option) }    # don't need the chromosomes
 }
 
 ########### updating databases ###############
@@ -307,7 +307,7 @@ sub get_updated_database_list {
        || die "cannot prepare statement, $DBI::errstr";
     $analysis_table->execute();
     while (my @row = $analysis_table->fetchrow_array()){
-        if ($row[1] =~ /((ppapep|remapep|ensembl|gadfly|yeast|slimswissprot|slimtrembl|wormpep|ipi_human|brigpep).*)/) {
+        if ($row[1] =~ /((jappep|ppapep|remapep|ensembl|gadfly|yeast|slimswissprot|slimtrembl|wormpep|ipi_human|brigpep).*)/) {
               $prevDBs{$2} = $1;  
 	}
     }
@@ -316,7 +316,7 @@ sub get_updated_database_list {
     open( CURR_DB, "<$database_to_use" ) or die "cant find $database_to_use";
     while (<CURR_DB>) {
         chomp;
-        if (/(ppapep|remapep|ensembl|gadfly|yeast|slimswissprot|slimtrembl|wormpep|ipi_human|brigpep)/) {
+        if (/(jappep|ppapep|remapep|ensembl|gadfly|yeast|slimswissprot|slimtrembl|wormpep|ipi_human|brigpep)/) {
             $currentDBs{$1} = $_;
         }
     }
@@ -347,7 +347,7 @@ sub update_blast_dbs {
     open( OLD_DB, "<$last_build_DBs" ) or die "cant find $last_build_DBs";
     while (<OLD_DB>) {
         chomp;
-        if (/(ppapep|remapep|gadfly|yeast|slimswissprot|slimtrembl|wormpep|ipi_human|brigpep)/) {
+        if (/(jappep|ppapep|remapep|gadfly|yeast|slimswissprot|slimtrembl|wormpep|ipi_human|brigpep)/) {
             $_currentDBs{$1} = $_;
         }
     }
@@ -358,7 +358,7 @@ sub update_blast_dbs {
     open( DIR, "ls -l $wormpipe_dir/BlastDB/*.pep |" ) or die "readir\n";
     while (<DIR>) {
         chomp;
-        if (/\/(ppapep|remapep|gadfly|yeast|slimswissprot|slimtrembl|wormpep|ipi_human|brigpep)/) {
+        if (/\/(jappep|ppapep|remapep|gadfly|yeast|slimswissprot|slimtrembl|wormpep|ipi_human|brigpep)/) {
             my $whole_file = "$1" . "$'";    # match + stuff after match.
 
 	    print "checking $_\n";
