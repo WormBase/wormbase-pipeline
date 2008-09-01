@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl -w
 # Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2008-08-19 13:44:34 $
+# Last edited on: $Date: 2008-09-01 09:25:25 $
 
 use strict;
 use lib  $ENV{'CVS_DIR'};
@@ -61,13 +61,13 @@ $log->mail();
 exit(0);
 
 __DATA__
-init Genomic_canonical elegans briggsae remanei pristionchus
-init Link elegans briggsae remanei pristionchus
-init Pseudogene elegans briggsae remanei pristionchus
-init Transposon elegans pristionchus
-init Transposon_CDS elegans pristionchus
-init curated  elegans briggsae remanei pristionchus
-init history elegans briggsae pristionchus
+init Genomic_canonical elegans briggsae remanei pristionchus japonica
+init Link elegans briggsae remanei pristionchus japonica
+init Pseudogene elegans briggsae remanei pristionchus japonica
+init Transposon elegans pristionchus japonica
+init Transposon_CDS elegans pristionchus japonica
+init curated  elegans briggsae remanei pristionchus japonica
+init history elegans briggsae pristionchus japonica
 init miRNA elegans
 init tRNAscan-SE-1.23 elegans
 init Non_coding_transcript elegans
@@ -86,21 +86,21 @@ init RNAi_primary elegans
 init RNAi_secondary elegans
 init Expr_profile elegans
 init Orfeome elegans
-blat BLAT_EST_BEST elegans briggsae remanei pristionchus
-blat BLAT_EST_OTHER elegans briggsae remanei pristionchus
-blat BLAT_NEMATODE elegans pristionchus remanei briggsae
+blat BLAT_EST_BEST elegans briggsae remanei pristionchus japonica
+blat BLAT_EST_OTHER elegans briggsae remanei pristionchus japonica
+blat BLAT_NEMATODE elegans pristionchus remanei briggsae japonica
 blat BLAT_OST_BEST elegans
 blat BLAT_OST_OTHER elegans
 blat BLAT_RST_BEST elegans
 blat BLAT_RST_OTHER elegans
 blat BLAT_TC1_BEST elegans
 blat BLAT_TC1_OTHER elegans
-blat BLAT_mRNA_BEST elegans briggsae remanei pristionchus
-blat BLAT_mRNA_OTHER elegans briggsae remanei pristionchus
+blat BLAT_mRNA_BEST elegans briggsae remanei pristionchus japonica
+blat BLAT_mRNA_OTHER elegans briggsae remanei pristionchus japonica
 blat BLAT_ncRNA_BEST elegans
 blat BLAT_ncRNA_OTHER elegans
-blat BLAT_WASHU elegans briggsae remanei pristionchus
-blat BLAT_NEMBASE elegans briggsae remanei pristionchus
+blat BLAT_WASHU elegans briggsae remanei pristionchus japonica
+blat BLAT_NEMBASE elegans briggsae remanei pristionchus japonica
 blat SL1 elegans
 blat SL2 elegans
 blat polyA_signal_sequence elegans
@@ -110,6 +110,6 @@ homol waba_strong elegans
 homol waba_weak elegans
 homol tandem elegans
 homol RepeatMasker elegans
-homol wublastx elegans briggsae remanei pristionchus
-homol inverted elegans briggsae remanei pristionchus
+homol wublastx elegans briggsae remanei pristionchus japonica
+homol inverted elegans briggsae remanei pristionchus japonica
 __END__
