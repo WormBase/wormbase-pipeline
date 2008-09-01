@@ -11,7 +11,7 @@
 #   array of EnsEMBL objects, it invites disaster as it makes a copy of the array.
 #
 # Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2008-05-12 08:54:44 $ 
+# Last edited on: $Date: 2008-09-01 09:44:25 $ 
 
 my $usage = <<USAGE;
 blastx_dump.pl options:
@@ -111,6 +111,8 @@ my %logic2type = (
         slimtremblX    => 'wublastx_slimTrEmbl',
         yeastX         => 'wublastx_yeast',
 	slimswissprotX => 'wublastx_slimSwissProt',
+        ppapepX        => 'wublastx_pristionchus',
+	jpapepX        => 'wublastx_japonica',
 );
 
 my %logic2prefix = (
@@ -121,7 +123,9 @@ my %logic2prefix = (
         slimtremblX    => 'TR:',
         yeastX         => 'SGD:',
 	slimswissprotX => 'SW:',
-	wormpepX       => 'WP:'
+	wormpepX       => 'WP:',
+	ppapepX        => 'PP:',
+	jpapepX        => 'JA:',
 );
 
 $logicname='wormpepX' if $test;
@@ -351,7 +355,7 @@ sub filter_features {
 }
 
 sub get_latest_pep {
-   my @species =qw(wormpep remapep brigpep);
+   my @species =qw(wormpep remapep brigpep ppapep jappep);
    my @history_files;
    SPECIES: foreach my $s (@species){
 	   my @files = sort {$b cmp $a} glob("~wormpub/BUILD/WORMPEP/$s*/*history*");
