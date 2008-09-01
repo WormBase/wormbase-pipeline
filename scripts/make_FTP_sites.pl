@@ -7,8 +7,8 @@
 # 
 # Originally written by Dan Lawson
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2008-06-25 16:26:30 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2008-09-01 14:29:11 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -466,55 +466,61 @@ sub copy_misc_files{
 
 sub copy_wormpep_files {
 
-  $runtime = $wormbase->runtime;
-  $log->write_to("$runtime: copying wormpep files\n");
+	$runtime = $wormbase->runtime;
+	$log->write_to("$runtime: copying wormpep files\n");
 
-  my $wp_source_dir = $wormbase->wormpep;
-  my $wormpep_ftp_root = glob("~ftp/pub/databases/wormpep");
-  my $wp_ftp_dir = "$wormpep_ftp_root/wormpep$WS";
-  my $protein_dir = "$targetdir/$WS_name/genomes/elegans/sequences/protein";
-  mkpath($wp_ftp_dir,1,0775);
-  mkpath($protein_dir,1,0775);
- 
-  my @wormpep_files = $wormbase->wormpep_files;
-  
-  foreach my $file ( @wormpep_files ){
-  # copy the wormpep release files across
-    $wormbase->run_command("cp $wp_source_dir/$file$WS $protein_dir/$file$WS", $log);
-    &CheckSize("$wp_source_dir/$file$WS","$protein_dir/$file$WS");
-  }
+	my $wp_source_dir = $wormbase->wormpep;
+	my $wormpep_ftp_root = glob("~ftp/pub/databases/wormpep");
+	my $wp_ftp_dir = "$wormpep_ftp_root/wormpep$WS";
+	my $protein_dir = "$targetdir/$WS_name/genomes/elegans/sequences/protein";
+	mkpath($wp_ftp_dir,1,0775);
+	mkpath($protein_dir,1,0775);
 
-  # tar up the latest wormpep release and copy across
-  my $tgz_file = "$wp_source_dir/wormpep$WS.tar.gz";
-  my $command = "tar -c -z -h -P -C \"$base_dir/WORMPEP/\" -f $tgz_file";
+	&_copy_pep_file($wormbase);#elegans
 
-  # grab list of wormpep file names from subroutine
-  foreach my $file (@wormpep_files){
-      $command .= " wormpep$WS/$file$WS";
-  }
-  $wormbase->run_command("$command", $log);
-  $wormbase->run_command("cp $tgz_file $protein_dir", $log);
-
-  # copy wormpep file if one exists for that species.
-  $log->write_to("zip and copy other species\n");
-  my %accessors = ($wormbase->species_accessors, $wormbase->tier3_species_accessors);
-  foreach my $species (keys %accessors){
-  	my $dir = $accessors{$species}->wormpep;
-  	my $file = "$dir/".$accessors{$species}->pepdir_prefix."pep$WS";
-  	if(-e $file) {
-	    $wormbase->run_command("/bin/gzip -f $file",$log);
-	    $protein_dir = "$targetdir/$WS_name/genomes/$species/sequences/protein";
-	    mkpath($protein_dir,1,0775);
-	    $wormbase->run_command("cp $file.gz $protein_dir", $log);
+	# copy wormpep file if one exists for that species.
+	$log->write_to("zip and copy other species\n");
+	my %accessors = ($wormbase->species_accessors, $wormbase->tier3_species_accessors);
+	foreach my $species (keys %accessors){
+		$log->write_to("copying $species protein data to FTP site\n");
+		&_copy_pep_file($accessors{$species})
 	}
-  	$runtime = $wormbase->runtime;
-  	$log->write_to("$runtime: Finished copying\n\n");
-  } 
+	$runtime = $wormbase->runtime;
+	$log->write_to("$runtime: Finished copying\n\n");
 
-  # change group ownership
-  $wormbase->run_command("chgrp -R  worm $wp_ftp_dir", $log);  
-  $wormbase->run_command("chgrp -R  worm $targetdir/$WS_name", $log);  
+	# change group ownership
+	$wormbase->run_command("chgrp -R  worm $wp_ftp_dir", $log);
+}
 
+sub _copy_pep_files {
+	my $wb = shift;
+	my $source = $wb->wormpep;
+	my $target = "$targetdir/$WS_name/genomes/".$wb->species."/sequences/protein";
+	mkpath($target,1,0775);
+
+	# if wwormpep has not been rebuilt it may need to be carried from previous build.  Possibly done earlier but if not do it here.
+	unless (-e $source) {
+		require CarryOver;
+		my $carrier = CarryOver->($wb, $log);
+		$carrier->carry_wormpep($WS);
+	}
+	# tar up the latest wormpep release and copy across (files added in next loop)
+	my $tgz_file = "$source/".$wb->pep_prefix."pep$WS.tar.gz";
+	my $command = "tar -c -z -h -P -C \"$base_dir/WORMPEP/\" -f $tgz_file";
+	
+	# copy em over
+	my @wormpep_files = $wb->wormpep_files;
+	foreach my $file ( @wormpep_files ){
+		my $sourcefile = "$source/$file$WS";
+		$wb->run_command("cp $sourcefile $target/$file$WS", $log);
+		&CheckSize("$sourcefile","$target/$file$WS");
+		$command .= " $sourcefile";
+	}
+	$wb->run_command("$command", $log);
+	$wb->run_command("cp $tgz_file $target", $log);
+
+	# change group ownership
+	$wormbase->run_command("chgrp -R  worm $target", $log);
 }
 
 
