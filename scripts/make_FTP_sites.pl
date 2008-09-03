@@ -8,7 +8,7 @@
 # Originally written by Dan Lawson
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2008-09-01 14:29:11 $
+# Last updated on: $Date: 2008-09-03 15:43:13 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -70,6 +70,7 @@ and upgrade by Keith Bradnam (krb@sanger.ac.uk)
 =cut
 use strict;
 use lib $ENV{'CVS_DIR'};
+use lib $ENV{'CVS_DIR'}."/Modules";
 use Wormbase;
 use Getopt::Long;
 use Carp;
@@ -78,6 +79,7 @@ use Storable;
 use Ace;
 use IO::Handle;
 use File::Path;
+
 
 
 #################################################################################
@@ -293,16 +295,20 @@ sub copy_dna_files{
 
       # we don't want to end up with thousands of files for species with DNA still in contigs, so make one file
       my @contigs = $wb->get_chromosome_names(-prefix => 1, -mito => 1);
-      if (scalar @contigs > 50) {
-	if (-e "$chromdir/$contigs[0].dna") { # are there any .dna files to copy?
-	  unlink "$dna_dir/$species.dna.gz"; # in case this script is being run a second time after problems
-	  foreach my $contig (@contigs) {
-	    $wormbase->run_command("cat $chromdir/$contig.dna >> $dna_dir/$species.dna", $log);
-	  }
-	  $wormbase->run_command("/bin/gzip -f $dna_dir/$species.dna",$log);
-	}
+      if ($wb->assembly_type eq 'contig') {
+		if (-e "$chromdir/$contigs[0].dna") { # are there any .dna files to copy?
+			unlink "$dna_dir/$species.dna.gz"; # in case this script is being run a second time after problems
+			foreach my $contig (@contigs) {
+				$wormbase->run_command("cat $chromdir/$contig.dna >> $dna_dir/$species.dna", $log);
+				$wormbase->run_command("zcat $chromdir/${contig}_softmasked.dna.gz >> $dna_dir/{$species}_softmasked.dna", $log);
+				$wormbase->run_command("zcat $chromdir/${contig}_masked.dna.gz >> $dna_dir/{$species}_masked.dna", $log);
+			}
+			$wormbase->run_command("/bin/gzip -f $dna_dir/$species.dna",$log);
+			$wormbase->run_command("/bin/gzip -f $dna_dir/".$species."_softmasked.dna",$log);
+			$wormbase->run_command("/bin/gzip -f $dna_dir/".$species."_masked.dna",$log);
+		}
       } else {
-	$wormbase->run_command("cp -R $chromdir/*.dna* $dna_dir/", $log);
+		$wormbase->run_command("cp -R $chromdir/*.dna* $dna_dir/", $log);
       }
 
       $wormbase->run_command("cp -R $chromdir/*.agp $dna_dir/", $log) if (scalar glob("$chromdir/*.agp"));
@@ -315,7 +321,7 @@ sub copy_dna_files{
   $log->write_to("$runtime: Finished copying\n\n");
 }
 
-sub copy_gff_files{
+sub _copy_gff_files{
   $runtime = $wormbase->runtime;
   $log->write_to("$runtime: copying gff files\n");
   my %accessors = ($wormbase->species_accessors);
@@ -335,7 +341,7 @@ sub copy_gff_files{
 	$wormbase->run_command("cp -R $chromdir/$species.gff $gff_dir/", $log);
 	$wormbase->run_command("/bin/gzip -f $gff_dir/$species.gff",$log);
 	
-      } elsif (scalar @contigs > 50) {
+      } elsif ($wb->assembly_type eq 'contig') {
 	if (-e "$chromdir/$contigs[0].gff") { # are there any .gff files to copy?
 	  unlink "$gff_dir/$species.gff.gz"; # in case this script is being run a second time after problems
 	  foreach my $contig (@contigs) {
@@ -424,7 +430,7 @@ sub copy_ontology_files {
   mkpath("$targetdir/$WS_name/ONTOLOGY",1,0775);
 
   $wormbase->run_command("cp $obo_dir/*.obo $ace_dir/ONTOLOGY", $log);
-  $wormbase->run_command("cp -R $ace_dir/ONTOLOGY $targetdir/$WS_name/ONTOLOGY", $log);
+  $wormbase->run_command("cp -R $ace_dir/ONTOLOGY $targetdir/$WS_name", $log);
 
   # change group ownership
   $wormbase->run_command("chgrp -R  worm $ace_dir/ONTOLOGY", $log);  
@@ -476,14 +482,14 @@ sub copy_wormpep_files {
 	mkpath($wp_ftp_dir,1,0775);
 	mkpath($protein_dir,1,0775);
 
-	&_copy_pep_file($wormbase);#elegans
+	&_copy_pep_files($wormbase);#elegans
 
 	# copy wormpep file if one exists for that species.
 	$log->write_to("zip and copy other species\n");
 	my %accessors = ($wormbase->species_accessors, $wormbase->tier3_species_accessors);
 	foreach my $species (keys %accessors){
 		$log->write_to("copying $species protein data to FTP site\n");
-		&_copy_pep_file($accessors{$species})
+		&_copy_pep_files($accessors{$species})
 	}
 	$runtime = $wormbase->runtime;
 	$log->write_to("$runtime: Finished copying\n\n");
@@ -494,18 +500,18 @@ sub copy_wormpep_files {
 
 sub _copy_pep_files {
 	my $wb = shift;
-	my $source = $wb->wormpep;
+	my $source = $wb->basedir . "/WORMPEP/".$wb->pepdir_prefix."pep$WS";
 	my $target = "$targetdir/$WS_name/genomes/".$wb->species."/sequences/protein";
 	mkpath($target,1,0775);
 
 	# if wwormpep has not been rebuilt it may need to be carried from previous build.  Possibly done earlier but if not do it here.
 	unless (-e $source) {
 		require CarryOver;
-		my $carrier = CarryOver->($wb, $log);
-		$carrier->carry_wormpep($WS);
+		my $carrier = CarryOver->new($wb, $log);
+		$carrier->carry_wormpep($WS,$wb->version);
 	}
 	# tar up the latest wormpep release and copy across (files added in next loop)
-	my $tgz_file = "$source/".$wb->pep_prefix."pep$WS.tar.gz";
+	my $tgz_file = "$source/".$wb->pepdir_prefix."pep$WS.tar.gz";
 	my $command = "tar -c -z -h -P -C \"$base_dir/WORMPEP/\" -f $tgz_file";
 	
 	# copy em over
@@ -905,7 +911,7 @@ chrX.gff
 
 ./genomes/briggsae/sequences/protein
 best_blastp_hits_briggsae.WSREL.gz
-brigpepREL.gz
+brigpepREL.tar.gz
 
 ./genomes/briggsae/sequences/rna
 brigrnaREL.tar.gz
@@ -915,7 +921,7 @@ remanei.gff.gz
 
 ./genomes/remanei/sequences/protein
 best_blastp_hits_remanei.WSREL.gz
-remapepREL.gz
+remapepREL.tar.gz
 
 ./genomes/remanei/sequences/dna
 remanei.dna.gz
