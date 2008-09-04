@@ -1211,7 +1211,7 @@ sub remove_blank_lines {
 ####################################
 sub wormpep_files {
   my $self = shift;
-  my $prefix = $self->pep_prefix;
+  my $prefix = $self->pepdir_prefix;
   return ( $prefix."pep", $prefix."pep.accession", $prefix."pep.dna", $prefix."pep.history", $prefix."pep.fasta", $prefix."pep.table", $prefix."pep.diff" );
 }
 
