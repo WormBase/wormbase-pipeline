@@ -4,8 +4,8 @@
 # 
 # by Dan Lawson
 #
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2008-08-26 09:56:41 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2008-09-04 10:10:52 $
 #
 
 #
@@ -111,7 +111,7 @@ else {
     @gff_files = $wormbase->get_chromosome_names('-prefix' => 1, '-mito' => 1);
     #for species in many contigs the gffs are all in a single file named after the species
     # e.g. remanei.gff
-    if(scalar @gff_files > 16) {
+    if($wormbase->assembly_type eq 'contig') {
     	@gff_files = ();
     	push(@gff_files,lc($wormbase->species));
     }
