@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-08-28 11:12:52 $      
+# Last updated on: $Date: 2008-09-04 16:25:44 $      
 
 # Changes required by Ant: 2008-02-19
 # 
@@ -4019,11 +4019,11 @@ __END__
 
 
 START_DATA
-UNMATCHED_PROTEIN            elegans remanei brugia
+UNMATCHED_PROTEIN            elegans remanei briggsae japonica brugia
 UNMATCHED_EST                
-FRAMESHIFTED_PROTEIN         elegans remanei brugia
-MERGE_GENES_BY_PROTEIN       elegans remanei brugia
-SPLIT_GENE_BY_PROTEIN_GROUPS elegans remanei brugia
+FRAMESHIFTED_PROTEIN         elegans remanei briggsae japonica brugia
+MERGE_GENES_BY_PROTEIN       elegans remanei briggsae japonica brugia
+SPLIT_GENE_BY_PROTEIN_GROUPS elegans remanei briggsae japonica brugia
 MERGE_GENES_BY_EST
 UNATTACHED_EST
 UNATTACHED_TSL
@@ -4035,22 +4035,21 @@ JIGSAW_DIFFERS_FROM_CDS      elegans
 JIGSAW_WITH_SIGNALP          elegans
 UNMATCHED_SAGE               elegans
 UNMATCHED_WABA               elegans
-OVERLAPPING_EXONS            elegans remanei brugia
-MISMATCHED_EST               elegans remanei brugia
-WEAK_INTRON_SPLICE_SITE      elegans remanei brugia
-SHORT_EXON                   elegans remanei brugia
-SHORT_INTRON                 elegans remanei brugia
-REPEAT_OVERLAPS_EXON         elegans remanei brugia
-INTRONS_IN_UTR               elegans remanei brugia
+OVERLAPPING_EXONS            elegans remanei briggsae japonica brugia
+MISMATCHED_EST               elegans remanei briggsae japonica brugia
+WEAK_INTRON_SPLICE_SITE      elegans remanei briggsae japonica brugia
+SHORT_EXON                   elegans remanei briggsae japonica brugia
+SHORT_INTRON                 elegans remanei briggsae japonica brugia
+REPEAT_OVERLAPS_EXON         elegans remanei briggsae japonica brugia
+INTRONS_IN_UTR               elegans remanei briggsae japonica brugia
 SPLIT_GENE_BY_TWINSCAN       elegans
 MERGE_GENES_BY_TWINSCAN      elegans
-CONFIRMED_INTRON             elegans remanei
+CONFIRMED_INTRON             elegans remanei briggsae japonica 
 UNCONFIRMED_INTRON                   brugia
-UNMATCHED_EST 
 UNMATCHED_MASS_SPEC_PEPTIDE  elegans
-EST_OVERLAPS_INTRON          elegans remanei brugia
+EST_OVERLAPS_INTRON          elegans remanei briggsae japonica brugia
 UNMATCHED_EXPRESSION         elegans
-INCOMPLETE_PFAM_MOTIF        elegans remanei
+INCOMPLETE_PFAM_MOTIF        elegans remanei briggsae japonica 
 END_DATA
 
 =pod
