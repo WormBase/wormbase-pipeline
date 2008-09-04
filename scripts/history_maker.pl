@@ -28,6 +28,7 @@ my $intron;
 my $twinscan;
 my $anomaly;
 my $lab;
+my $species;
 
 GetOptions (
             "debug=s"    => \$debug,
@@ -45,6 +46,7 @@ GetOptions (
 	    "twinscan"     => \$twinscan,
 	    "anomaly"      => \$anomaly,
 	    "lab=s"        => \$lab, # RW or HX
+	    "species:s"    => \$species,
 	    "help|h"       => sub { system("perldoc $0"); exit(0);}
 	   );
 
@@ -742,22 +744,30 @@ sub connect_to_database {
   my $dbuser;
   my $dbpass;
 
+  my $sqldb = "worm_anomaly";
+
+  # if the species is anything other than 'elegans' (the default) then
+  # we use the database that has a name formed from the 'base' database
+  # name and that species' name
+
+  if ($species && $species ne 'elegans') {$sqldb = $sqldb . "_" . lc $species;}
+
   if ($lab eq "HX") {
 
-    $dbsn = "DBI:mysql:database=worm_anomaly;host=ia64d";
+    $dbsn = "DBI:mysql:database=$sqldb;host=ia64d";
     $dbuser = "wormadmin";
     $dbpass = "worms";
 
   } else {			# for St. Louis
 
-    $dbsn = "DBI:mysql:database=worm_anomaly;host=XXXXX";
+    $dbsn = "DBI:mysql:database=$sqldb;host=XXXXX";
     $dbuser = "XXXXXX";
     $dbpass = "XXXXXX";
 
   }
 
   my $mysql = DBI -> connect($dbsn, $dbuser, $dbpass, {AutoCommit => 1, RaiseError => 1})
-      || die "cannot connect to database, $DBI::errstr";
+      || die "cannot connect to database $sqldb, $DBI::errstr";
 
   return $mysql;
 
