@@ -7,7 +7,7 @@
 # Carry over data from one build to the next when species not being built
 #
 # Last updated by: $Author: ar2 $     
-# Last updated on: $Date: 2008-07-29 15:37:26 $      
+# Last updated on: $Date: 2008-09-04 10:13:20 $      
 
 =pod
 
@@ -58,7 +58,9 @@ sub _carry_over {
 	my $old_dir = shift;
 	my $new_dir = shift;
 	my $ver = shift;
-	my $oldver = $ver-1;
+	my $oldver = shift;
+
+	$oldver = $ver-1 unless $oldver;
 	
 	mkdir("$new_dir",0775) unless( -e $new_dir);
 	
@@ -77,15 +79,16 @@ sub _carry_over {
 sub carry_wormpep {
 	my $self = shift;
 	my $ver = shift; #version to create
+	my $oldver = shift; #version to copy
 	
 	$ver = $self->{'wormbase'}->get_wormbase_version unless $ver;
 	$ver =~ s/WS//;
-	my $oldver = $ver-1;
+	$oldver = $ver-1 unless $oldver;
 		
 	my $newwormpepdir = $self->{'wormbase'}->peproot."/".$self->{'wormbase'}->pepdir_prefix."pep$ver";
 	my $oldwormpepdir = $self->{'wormbase'}->peproot."/".$self->{'wormbase'}->pepdir_prefix."pep$oldver";
 
-	$self->_carry_over($oldwormpepdir, $newwormpepdir, $ver);
+	$self->_carry_over($oldwormpepdir, $newwormpepdir, $ver, $oldver);
 }
 
 sub carry_wormrna {
