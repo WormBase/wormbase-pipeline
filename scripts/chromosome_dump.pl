@@ -8,8 +8,8 @@
 # A script for dumping dna and/or gff files for chromosome objects in autoace
 # see pod for more details
 #
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2008-08-05 15:34:23 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2008-09-04 10:09:24 $
 
 
 use strict;
@@ -253,7 +253,7 @@ sub read_chromosome {
   #print "read chromosome $chromosome\n";
 
   $/ = "";
-  open (SEQ, $chromosome) or die "Can't open the dna file for $chromosome : $!\n";
+  open (SEQ, $chromosome) or $log->log_and_die("Can't open the dna file for $chromosome : $!\n");
   my $seq = <SEQ>;
   close SEQ;
   $/ = "\n";
