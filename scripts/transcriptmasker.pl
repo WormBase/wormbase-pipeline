@@ -7,8 +7,8 @@
 
 # 031023 dl1
 
-# Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2008-03-19 13:28:30 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2008-09-04 10:12:27 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -44,7 +44,7 @@ my $nematode; # non-washu or nembase ests.  Just to get them dumped from databas
 my $all;      # all of the above
 my $file;
 
-my ($species, $mol_type);
+my ($species, $mol_type, $qspecies);
 
 GetOptions (
 	    "all"            => \$all,#not a valid option
@@ -60,6 +60,7 @@ GetOptions (
 	    "store:s"        => \$store,
 	    "file:s"         => \$file,
 	    "species:s"      => \$species,
+	    "qspecies:s"	 => \$qspecies,
 	    "mol_type:s"     => \$mol_type
 	   );
 
@@ -67,6 +68,10 @@ GetOptions (
 &usage("Help") if ($help);
 
 my $wormbase;
+
+#if running from BLAT_controller and masking a different species some jiggery-pokery is needed to 
+# make sure the correct paths get used and debug/test info is not lost.
+
 if( $store ) {
   $wormbase = retrieve( $store ) or croak("cant restore wormbase from $store\n");
 }
@@ -77,6 +82,13 @@ else {
 						   );
 }
 
+if( $qspecies and ($qspecies ne $wormbase->species) ){
+	  $wormbase = Wormbase->new( -debug   => $wormbase->debug,
+			     			-test     => $wormbase->test,
+			     			-organism => $qspecies
+						   );
+}						
+						  
 my $log = Log_files->make_build_log($wormbase);
 $log->write_to("mol_type must be specifies\n") unless $mol_type;
 
@@ -107,7 +119,7 @@ if($wormbase->species eq 'elegans') {
 }
 
 # which database
-$database = $wormbase->autoace unless $database;
+$database = $wormbase->orgdb unless $database;
 my $blat_dir =  $wormbase->blat;
 my $tace  = $wormbase->tace;                          # tace executable path
 my $id;                                               # id for the entry
