@@ -8,7 +8,8 @@ use Storable;
 
 my $store = shift;#'/nfs/disk100/wormpub/BUILD/autoace/wormbase.store';
 my $wormbase = retrieve( $store );
-my $database = shift or $wormbase->autoace;#$ENV{'CURRENT'};
+my $database = shift;
+$database ||= $wormbase->autoace;#$ENV{'CURRENT'};
 my %clone2acc;
 $wormbase->FetchData('clone2accession',\%clone2acc,"$database/COMMON_DATA");
 
@@ -23,7 +24,7 @@ foreach my $gene ( @genes ) {
     my $EMBL_acc = $clone2acc{$parent->name};
     my $pid = "na";
     if ($gene->Protein_id and  $gene->Protein_id->right and $gene->Protein_id->right->right ) {
-      $pid =$gene->Protein_id->right->right;
+      $pid =$gene->at(DB_info)->Protein_id->right->right->name
     }
 
     my $WBG_id = $gene->Gene->name;
