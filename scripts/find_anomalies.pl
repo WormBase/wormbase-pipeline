@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-09-04 16:25:44 $      
+# Last updated on: $Date: 2008-09-05 09:13:14 $      
 
 # Changes required by Ant: 2008-02-19
 # 
@@ -240,7 +240,7 @@ while (my $run = <DATA>) {
 
 # if we want the anomalies GFF file
 if ($supplementary) {
-  my $gff_file = "$database/CHROMOSOMES/SUPPLEMENTARY_GFF/curation_anomalies.gff";
+  my $gff_file = "$database/CHROMOSOMES/SUPPLEMENTARY_GFF/${species}_curation_anomalies.gff";
   open (OUTPUT_GFF, ">$gff_file") || die "Can't open $gff_file";      
 }
 
@@ -2524,11 +2524,11 @@ sub read_chromosome {
   # if we have already read in the sequence entries, return the one for this chromosome
   if (exists $dna_entry{$chromosome}) {return $dna_entry{$chromosome};}
 
-  my $seq_file = "$database/CHROMOSOMES/$chromosome.dna";
+  my $seq_file = $wormbase->chromosomes . "/$chromosome.dna";
   my $seq = &read_file($seq_file);
 
   if (! defined $seq) {
-    $seq = &read_entry("$database/CHROMOSOMES", $chromosome)
+    $seq = &read_entry($wormbase->chromosomes, $chromosome)
   }
 
   return $seq;
