@@ -7,8 +7,8 @@
 #
 # This makes the autoace database from its composite sources.
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2008-07-25 14:40:48 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2008-09-05 15:42:41 $
 
 use strict;
 use lib  $ENV{'CVS_DIR'};
@@ -260,9 +260,13 @@ sub parseconfig {
     # check that file exists before adding to array and is not zero bytes
     if (-e "$wormbasedir"."/$dbname/"."$filename") {
       if (-z "$wormbasedir"."/$dbname/"."$filename") {
-			$log->write_to( "ERROR: file $wormbasedir/$dbname/$filename is zero bytes !\n");
+	$log->write_to( "ERROR: file $wormbasedir/$dbname/$filename is zero bytes !\n");
       	$log->error;
-			$errors++;
+	$errors++;
+      } elsif (-d "$wormbasedir"."/$dbname/"."$filename") {
+	$log->write_to( "ERROR: file $wormbasedir/$dbname/$filename is a directory !\n");
+      	$log->error;
+	$errors++;
       }
       else{
 			push (@filenames,"$wormbasedir"."/$dbname/"."$filename");
