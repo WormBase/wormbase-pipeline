@@ -9,7 +9,7 @@
 # dumps the method through sace / tace and concatenates them.
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2008-09-05 14:01:28 $
+# Last edited on: $Date: 2008-09-05 14:04:47 $
 
 
 use lib $ENV{CVS_DIR};
@@ -69,13 +69,13 @@ $dump_dir = "/tmp/GFF_CLASS" unless $dump_dir;
 `mkdir -p $dump_dir/tmp` unless -e "$dump_dir/tmp";
 
 #make sure dump_dir is writable
-system("touch $dump_dir/tmp_file") and die "cant write to $dump_dir\n";
+system("touch $dump_dir/tmp_file") and $log->log_and_die ("cant write to $dump_dir\n");
 
 
 # open database connection once
 $via_server = 1 if (scalar @sequences > 50 ||$host);
 unless($via_server) {
-	open (WRITEDB,"| $giface $database") or die "failed to open giface connection to $database\n";
+	open (WRITEDB,"| $giface $database") or $log->log_and_die ("failed to open giface connection to $database\n");
 }
 
 $log->write_to("dumping methods:".join(",",@methods)."\n");
@@ -159,7 +159,7 @@ foreach my $sequence ( @sequences ) {
 }
 
 unless($via_server) {
-  close (WRITEDB) or die "failed to close giface connection to $database\n";
+  close (WRITEDB) or $log->log_and_die ("failed to close giface connection to $database\n");
 }
 
 $log->write_to("dumped $count sequences\n");
@@ -235,7 +235,7 @@ sub check_options {
 	      push( @sequences,$_);
 	    }
 	    else {
-	      die "$_ is not a valid chromosome\n";
+	      $log->log_and_die ("$_ is not a valid chromosome\n");
 	    }
       }
     }
@@ -253,14 +253,14 @@ sub check_options {
     }
   }
   else {
-	    die "You must enter a valid database\n";
+	    $log->log_and_die ("You must enter a valid database\n");
 	  }
-  die "$database is not a valid acedb database\n";	
+  $log->log_and_die ("$database is not a valid acedb database\n");	
 }
 
 sub process_list
   {
-    open(LIST,"<$list") or die "bad list $list\n";
+    open(LIST,"<$list") or $log->log_and_die ("bad list $list\n");
     while(<LIST>) {
       chomp;
       push(@sequences,$_);
