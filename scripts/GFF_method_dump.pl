@@ -9,7 +9,7 @@
 # dumps the method through sace / tace and concatenates them.
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2008-08-21 16:06:30 $
+# Last edited on: $Date: 2008-09-05 14:01:28 $
 
 
 use lib $ENV{CVS_DIR};
@@ -74,7 +74,7 @@ system("touch $dump_dir/tmp_file") and die "cant write to $dump_dir\n";
 
 # open database connection once
 $via_server = 1 if (scalar @sequences > 50 ||$host);
-unless($host) {
+unless($via_server) {
 	open (WRITEDB,"| $giface $database") or die "failed to open giface connection to $database\n";
 }
 
@@ -156,6 +156,10 @@ foreach my $sequence ( @sequences ) {
     }
   }
   $count++;
+}
+
+unless($via_server) {
+  close (WRITEDB) or die "failed to close giface connection to $database\n";
 }
 
 $log->write_to("dumped $count sequences\n");
