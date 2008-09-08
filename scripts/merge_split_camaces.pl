@@ -5,7 +5,7 @@
 # A script to make multiple copies of camace for curation, and merge them back again
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2008-05-29 14:46:40 $
+# Last edited on: $Date: 2008-09-08 16:39:59 $
 #
 # Persisting errors.
 #running csh -c "reformat_acediff file 1 file2"
@@ -94,7 +94,6 @@ my $split_db;
 push(@databases,"orig");
 push(@databases,"pad") if ($pad || $all);
 push(@databases,"gw3") if ($gw3 || $all);
-push(@databases,"ar2") if ($ar2 || $all);
 
 # directory paths
 my $wormpub = $wormbase->wormpub;
