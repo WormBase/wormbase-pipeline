@@ -8,7 +8,7 @@
 # and finds information about the homologous wormpep proteins
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-08-15 15:01:15 $      
+# Last updated on: $Date: 2008-09-08 10:47:15 $      
 
 # To do:
 # accept wormpep ID as input
@@ -1052,6 +1052,9 @@ sub add_canvas {
     } else {
       # construct a colour from the domain ID name
       my @colour;
+      $colour[0] = 0;
+      $colour[1] = 0;
+      $colour[2] = 0;
       foreach (my $i = 0; $i < length $domain; $i++) {
 	my $chr = substr($domain, $i, 1);
 	if ($chr =~ /\d/) {
