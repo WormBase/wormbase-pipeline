@@ -9,7 +9,7 @@
 # see pod for more details
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2008-09-04 10:09:24 $
+# Last updated on: $Date: 2008-09-08 16:18:43 $
 
 
 use strict;
@@ -128,10 +128,10 @@ sub dump_dna {
   foreach ($wormbase->get_chromosome_names(-mito => 1,-prefix=> 1)) {
     $wormbase->remove_blank_lines("$dump_dir/$_.dna", $log);
   }
-  if (scalar($wormbase->get_chromosome_names(-mito => 1,-prefix=> 1))>50) {
+  if ($wormbase->assembly_type eq 'contig') {
     unlink "$dump_dir/supercontigs.fa" if -e "$dump_dir/supercontigs.fa";
     foreach ($wormbase->get_chromosome_names(-mito => 1,-prefix=> 1)) {
-	    print `cat $dump_dir/$_.dna >>! $dump_dir/supercontigs.fa`;
+	    $wormbase->run_command("cat $dump_dir/$_.dna >> $dump_dir/supercontigs.fa",'no_log');
     }
   }
   $log->write_to("Finished dumping DNA\n\n");
