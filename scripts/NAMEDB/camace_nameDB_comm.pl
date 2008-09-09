@@ -100,8 +100,8 @@ foreach my $gene (keys %ace_genes) {
     &check_gene($gene);
     delete($ace_genes{$gene}) if $ace_genes{$gene};
 }
-
-$log->mail;
+$log->write_to("Work Done!\n");
+$log->mail();
 exit(0);
 
 
