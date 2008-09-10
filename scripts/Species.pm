@@ -121,7 +121,7 @@ sub chromosome_names {qw(I I_random II II_random III III_random IV IV_random V V
 
 sub pep_prefix {'CBP'}
 sub pepdir_prefix{'brig'};
-sub cds_regex{qr/^CBG\d{5}$/};
+sub cds_regex{qr/^CBG\d{5}[a-z]*$/};
 sub ncbi_tax_id {'6238'};
 sub assembly_type {'chromosome'};
 
