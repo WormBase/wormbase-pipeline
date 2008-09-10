@@ -254,7 +254,7 @@ sub pepdir_prefix{'jap'};
 sub ncbi_tax_id {'281687'};
 sub cds_regex{qr/CJA\d{5}[a-z]*/};
 sub assembly_type {'contig'};
-sub wormpep_prefix {'JP'}
+sub wormpep_prefix {'JA'}
 
 sub full_name {
 	my $self = shift;
