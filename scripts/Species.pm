@@ -180,7 +180,7 @@ sub wormpep_prefix {'RP'}
 sub pep_prefix {'RP'}
 sub pepdir_prefix{'rema'};
 sub ncbi_tax_id {'31234'};
-sub cds_regex{qr/CRE\d{5}/};
+sub cds_regex{qr/CRE\d{5}[a-z]*/};
 sub assembly_type {'contig'};
 
 #######################################################
@@ -252,6 +252,10 @@ sub chromosome_names {
 sub pep_prefix {'JA'}
 sub pepdir_prefix{'jap'};
 sub ncbi_tax_id {'281687'};
+sub cds_regex{qr/CJA\d{5}[a-z]*/};
+sub assembly_type {'contig'};
+sub wormpep_prefix {'JP'}
+
 sub full_name {
 	my $self = shift;
 	my %param = @_ ;
@@ -299,7 +303,7 @@ sub chromosome_names {
 	return @contigs;
 }
 
-sub cds_regex{qr/PPA\d{5}/};
+sub cds_regex{qr/PPA\d{5}[a-z]*/};
 sub pep_prefix {'PP'}
 sub pepdir_prefix{'ppa'};
 sub ncbi_tax_id {'54126'};
