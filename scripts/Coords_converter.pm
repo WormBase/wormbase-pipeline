@@ -397,12 +397,51 @@ sub invoke
     # 
     ##########################
 
-    } elsif ($species eq 'japonica') {
+    } elsif ($species eq 'japonica') { # read data from the Supercontig* Sequence:Subsequence tags in
+      # the acedb database
 
-      carp "Do not know how to read in coordinate data for $species\n";
+      if ( $refresh ) {
+	print "refreshing coordinates for $database\n";
+	my $tace = $wormbase->tace;
 
+	my $command = "find sequence ".$wormbase->chromosome_prefix."*\nshow -a DNA -f ${SL_coords_file}\n";
+
+	open (ACE,"| $tace $database") or croak "cant open $database\n";
+	print ACE $command ;
+	close(ACE);
+
+	# convert the GAP name into a unique gap name
+	my %data;
+	my $supercontig;
+	open (SL, "< $SL_coords_file") or croak "cant open $SL_coords_file\t$!";
+	while(my $line = <SL>) {
+		$line =~ s/\"//g;#"
+	  if ($line =~ /Sequence\s+:\s+(\S+)/) {
+	    $supercontig = $1;
+	  } elsif ($line =~ /DNA\s+(\S+)\s+(\d+)/) {
+	    my $contig = $1;
+	    my $pos1 = $2;
+	    push @{$data{$supercontig}}, [($contig, $pos1)];
+	  }
+	}
+	close (SL);
+
+	my $prev_pos;
+	my $prev_contig = "";
+	open (SLB, "> $SL_coords_file") or croak "cant open $SL_coords_file\t$!";
+	# now sort by start position and write out again including the gap information
+	foreach my $supercontig (keys %data) {
+	  print SLB "\nSequence : \"$supercontig\"\n";
+	    print SLB "Subsequence \"$supercontig\" 1 ".$data{$supercontig}->[0]->[1]."\n";
+	  }
+	
+	close (SLB);
+	system("cp $SL_coords_file $clone_coords_file") and croak "cant cp $SL_coords_file\n" ;
+      }
+
+      
       # now read and load the data
-      # &_read_data_file($database, $species, $self);
+      &_read_data_file($database, $species, $self);
 
       return undef;
 
