@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: ar2 $
-// Last edited on: $Date: 2008-08-12 13:34:50 $
+// Last edited on: $Date: 2008-09-11 12:57:44 $
 
 
 
@@ -2681,6 +2681,7 @@
 
 
 #Affiliation Affiliation_address UNIQUE Text
+	     Person ?Person
 
 
 ///////////////////////
