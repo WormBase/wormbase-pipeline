@@ -470,7 +470,7 @@ sub add_name {
     ## only specified users can add a CGC name
     if (exists $VALID_CGCNAME_USERS->{$USER}) {
       print qq(
-			  <OPTION>CGC
+			  <OPTION SELECTED>CGC
 			);
     }
     print qq(
