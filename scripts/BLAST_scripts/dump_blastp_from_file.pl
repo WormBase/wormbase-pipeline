@@ -96,20 +96,21 @@ $WPver-- if( $test );
 
 
 my %processIds2prot_analysis = ( 
-	             'wormpepP'       => "wublastp_worm",
-				 'brigpepP'       => "wublastp_briggsae",
-				 'ipi_humanP'     => "wublastp_human",
-				 'yeastP'         => "wublastp_yeast",
-				 'GadflyP'        => "wublastp_fly",
-				 'slimswissprotP' => "wublastp_slimswissprot",
-				 'slimtremblP'    => "wublastp_slimtrembl",
+	                         'wormpepP'       => 'wublastp_worm',
+				 'brigpepP'       => 'wublastp_briggsae',
+				 'ipi_humanP'     => 'wublastp_human',
+				 'yeastP'         => 'wublastp_yeast',
+				 'GadflyP'        => 'wublastp_fly',
+				 'slimswissprotP' => 'wublastp_slimswissprot',
+				 'slimtremblP'    => 'wublastp_slimtrembl',
 				 'remaneiP'       => 'wublastp_remanei',
-				 'ppapepP'        => 'wublastp_pristionchus'
+				 'ppapepP'        => 'wublastp_pristionchus',
+				 'jpapepP'        => 'wublastp_japonica',
 			       );
 ##########
 
 our %org_prefix = ( 
-	        'wublastp_worm'          => 'WP',
+	            'wublastp_worm'          => 'WP',
 		    'wublastp_ensembl'       => 'ENSEMBL',
 		    'wublastp_fly'           => 'FLYBASE',
 		    'wublastp_yeast'         => 'SGD',
@@ -119,6 +120,7 @@ our %org_prefix = (
 		    'wublastp_ipi_human'     => 'IP', # should never actually get included
 		    'wublastp_remanei'       => 'RP',
 		    'wublastp_pristionchus'  => 'PP',
+		    'wublastp_japonica'      => 'JP',
 		  );
 
 my $QUERY_SPECIES = $wormbase->full_name;
