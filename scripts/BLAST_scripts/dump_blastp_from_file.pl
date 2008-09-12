@@ -105,7 +105,7 @@ my %processIds2prot_analysis = (
 				 'slimtremblP'    => 'wublastp_slimtrembl',
 				 'remaneiP'       => 'wublastp_remanei',
 				 'ppapepP'        => 'wublastp_pristionchus',
-				 'jpapepP'        => 'wublastp_japonica',
+				 'jappepP'        => 'wublastp_japonica',
 			       );
 ##########
 
