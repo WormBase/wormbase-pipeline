@@ -192,6 +192,7 @@ my %trembl_matches;
 my %brig_matches;
 my %rem_matches;
 my %ppa_matches;
+my %jap_matches;
 
 my %type_count;
 
@@ -219,8 +220,8 @@ while (<BLAST>) {
 
   # check if next protein
   if ( $current_pep and $current_pep ne $proteinId ) {  
-    &dumpData ($current_pep,\%worm_matches,\%human_matches,\%fly_matches,\%yeast_matches,\%swiss_matches,\%trembl_matches,\%brig_matches, \%rem_matches) 
-            if (%worm_matches or %human_matches or %fly_matches or %yeast_matches or %swiss_matches or %trembl_matches or %brig_matches or %rem_matches);
+    &dumpData ($current_pep,\%worm_matches,\%human_matches,\%fly_matches,\%yeast_matches,\%swiss_matches,\%trembl_matches,\%brig_matches, \%rem_matches,\%jap_matches) 
+            if (%worm_matches or %human_matches or %fly_matches or %yeast_matches or %swiss_matches or %trembl_matches or %brig_matches or %rem_matches or %jap_matches);
 
     #undef all hashes
     %worm_matches = ();
@@ -231,8 +232,9 @@ while (<BLAST>) {
     %trembl_matches = ();
     %brig_matches = ();
     %rem_matches = ();
-    %ppa_matches =();
-
+    %ppa_matches = ();
+    %jap_matches = ();
+    
     %type_count = ();
 
   }
@@ -260,11 +262,13 @@ while (<BLAST>) {
     } elsif ( $analysis eq 'ipi_humanP') {
       $added = &addData ( \%human_matches, \@data );
     } elsif ( $analysis eq 'brigpepP') {
-      $added = &addData ( \%brig_matches, \@data );
+      $added = &addWormData ( \%brig_matches, \@data );
     } elsif ( $analysis eq 'remaneiP') {
-      $added = &addData ( \%rem_matches, \@data );
+      $added = &addWormData ( \%rem_matches, \@data );
     } elsif ( $analysis eq 'ppapepP') {
-      $added = &addData ( \%ppa_matches, \@data );
+      $added = &addWormData ( \%ppa_matches, \@data );
+    } elsif ( $analysis eq 'jappepP') {
+      $added = &addWormData ( \%jap_matches, \@data);
     }
 
   #this keeps track of how many hits are stored for each analysis.  Once we have 10 we can ignore the rest as the list is sorted.
@@ -473,7 +477,7 @@ sub addWormData {
       my $homol = $$data[4];
       my $homol_gene = &justGeneName( $homol );
 
-      if ( $database eq "worm_remanei"||$database eq 'worm_pristionchus' ) {
+      if ( $database eq "worm_remanei" || $database eq 'worm_pristionchus' || $database eq 'worm_japonica') {
 	my @_genes=split(/\s/,$$data[0]);
 	foreach my $_g(@_genes) {
 	 	my $my_gene = &justGeneName( $CE2gene{ $$data[0] } ) ;
