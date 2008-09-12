@@ -5,7 +5,7 @@
 #  and concatenate them at the end
 # 
 # Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2008-09-12 15:02:44 $
+# Last edited on: $Date: 2008-09-12 15:04:38 $
 # 
 
 
@@ -68,7 +68,7 @@ my %logic2type = (
 	slimswissprotX => '1',
 );
 
-my $m=LSF::JobManager->new(-q => 'normal',-o => '/dev/null',-e=>'/dev/null',-R => '"select[mem>4000] rusage[mem=4000]"',-M => 4000000, -F => 400000);
+my $m=LSF::JobManager->new(-q => 'long',-o => '/dev/null',-e=>'/dev/null',-R => '"select[mem>4000] rusage[mem=4000]"',-M => 4000000, -F => 400000);
 
 my $storable =  $wormbase->autoace . '/'. ref($wormbase).'.store';
 $dumpdir ||= '/lustre/work1/ensembl/wormpipe/dumps';
