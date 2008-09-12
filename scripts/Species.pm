@@ -265,7 +265,6 @@ sub full_name {
 	else { return'Caenorhabditis japonica'
 	};
 }
-sub assembly_type {'contig'};
 
 #######################################################
 
