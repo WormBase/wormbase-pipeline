@@ -9,7 +9,7 @@
 # transcripts to find the most probable orientation.
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-07-23 13:04:34 $      
+# Last updated on: $Date: 2008-09-15 12:50:15 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -142,6 +142,7 @@ my $ovlp = Overlap->new($database, $wormbase);
   my @cds  = $ovlp->get_curated_CDS_exons($chromosome); # secondary list we search against
   my @pseud = $ovlp->get_pseudogene($chromosome); # secondary list we search against
   my @rrna = $ovlp->get_rRNA_exons($chromosome); # secondary list we search against
+  my @ncrna = $ovlp->get_ncRNA($chromosome); # secondary list we search against
   my @twin = $ovlp->get_twinscan_exons($chromosome); # secondary list we search against
   my @trans = $ovlp->get_Coding_transcript_exons($chromosome); # secondary list we search against
 
@@ -235,6 +236,7 @@ my $ovlp = Overlap->new($database, $wormbase);
     my $cds_obj = $ovlp->compare(\@cds);
     my $pseud_obj = $ovlp->compare(\@pseud);
     my $rrna_obj = $ovlp->compare(\@rrna);
+    my $ncrna_obj = $ovlp->compare(\@ncrna);
     my $twin_obj = $ovlp->compare(\@twin);
     my $trans_obj = $ovlp->compare(\@trans);
 
@@ -278,6 +280,18 @@ my $ovlp = Overlap->new($database, $wormbase);
       @senses = $rrna_obj->matching_sense;
       for (my $i=0; $i < @senses; $i++) {
 	my ($p1,$p2) = $rrna_obj->matching_proportions($rrna_matches[$i]);
+	if ($senses[$i] == 1) {
+	  if ($prop_same < $p1) {$prop_same = $p1;}
+	} else {
+	  if ($prop_other < $p1) {$prop_other = $p1;}
+	}
+      }
+
+      my @ncrna_matches = $ncrna_obj->match($est);
+      print "Have ", scalar @ncrna_matches, " overlaps to ncRNAs\n" if ($verbose);
+      @senses = $ncrna_obj->matching_sense;
+      for (my $i=0; $i < @senses; $i++) {
+	my ($p1,$p2) = $ncrna_obj->matching_proportions($rrna_matches[$i]);
 	if ($senses[$i] == 1) {
 	  if ($prop_same < $p1) {$prop_same = $p1;}
 	} else {
