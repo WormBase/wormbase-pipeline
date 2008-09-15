@@ -11,7 +11,7 @@ require 'yaml'
 require 'fileutils'
 
 tmp_place = '/lustre/scratch1/ensembl/wormpipe/compara_build'
-perl='/software/worm/perl5_10/bin/perl'
+perl='/software/worm/perl_510/bin/perl'
 basedir='/software/worm/ensembl'
 
 # check to see if the old build was cleaned
