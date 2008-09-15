@@ -24,6 +24,7 @@ my %species = (
 	6238   => 'Caenorhabditis briggsae', 
 	31234  => 'Caenorhabditis remanei',
 	135651 => 'Caenorhabditis brenneri',
+        281687 => 'Caenorhabditis japonica',
 	6279   => 'Brugia malayi',
 	54126  => 'Pristionchus pacificus',
 );
@@ -63,6 +64,7 @@ foreach my $slice(@slices){
 		my %brugia_ids;
 		my %elegans_ids;
 		my %pristionchus_ids;
+		my %japonica_ids;
 
 
 		foreach my $homology ( @{$homologies} ) {
@@ -86,7 +88,11 @@ foreach my $slice(@slices){
 					}
 					elsif ($pepm->taxon_id==54126){
 						$pristionchus_ids{$pepm->stable_id} = [$pepm->taxon_id,$homology->description,$homology->subtype]
+					} 
+					elsif ($pepm->taxon_id==281687){
+						$japonica_ids{$pepm->stable_id} = [$pepm->taxon_id,$homology->description,$homology->subtype]
 					}
+
 					else {print STDERR "cannot find:".$pepm->taxon_id."\n"}
 
 				}
@@ -123,8 +129,9 @@ foreach my $slice(@slices){
 
 		print "\n";
 
-		# briggsae part
 
+		# that whole bit below feels very redundant and could be probably refactored ....
+		
 		# briggsae	
 		while (my ($k,$v)=each(%briggsae_ids)){
 			   	my $sid=$cds2wbgene{$k}?$cds2wbgene{$k}:$k;
@@ -134,11 +141,15 @@ foreach my $slice(@slices){
 				        my $rid=$cds2wbgene{$r_k}?$cds2wbgene{$r_k}:$r_k;
 					print "Ortholog $rid \"$species{$$r_v[0]}\" From_analysis WormBase-Compara\n"
 				}
-                                while (my ($r_k,$r_v)=each(%pristionchus_ids)){                                                      # brenneri
+                                while (my ($r_k,$r_v)=each(%pristionchus_ids)){                                                # pristionchus
 				        my $rid=$cds2wbgene{$r_k}?$cds2wbgene{$r_k}:$r_k;
 					print "Ortholog $rid \"$species{$$r_v[0]}\" From_analysis WormBase-Compara\n"
 				}
-
+				
+                                while (my ($r_k,$r_v)=each(%japonica_ids)){                                                     # japonica
+				        my $rid=$cds2wbgene{$r_k}?$cds2wbgene{$r_k}:$r_k;
+					print "Ortholog $rid \"$species{$$r_v[0]}\" From_analysis WormBase-Compara\n"
+				}
 				print "\n";
 		
 		}
@@ -152,7 +163,12 @@ foreach my $slice(@slices){
 				        my $rid=$cds2wbgene{$r_k}?$cds2wbgene{$r_k}:$r_k;
 					print "Ortholog $rid \"$species{$$r_v[0]}\" From_analysis WormBase-Compara\n"
 				}
-                                while (my ($r_k,$r_v)=each(%pristionchus_ids)){                                                      # remanei
+                                while (my ($r_k,$r_v)=each(%pristionchus_ids)){                                                # pristionchus
+				        my $rid=$cds2wbgene{$r_k}?$cds2wbgene{$r_k}:$r_k;
+					print "Ortholog $rid \"$species{$$r_v[0]}\" From_analysis WormBase-Compara\n"
+				}
+				
+				while (my ($r_k,$r_v)=each(%japonica_ids)){                                                   # japonica 
 				        my $rid=$cds2wbgene{$r_k}?$cds2wbgene{$r_k}:$r_k;
 					print "Ortholog $rid \"$species{$$r_v[0]}\" From_analysis WormBase-Compara\n"
 				}
@@ -173,7 +189,31 @@ foreach my $slice(@slices){
 				        my $rid=$cds2wbgene{$r_k}?$cds2wbgene{$r_k}:$r_k;
 					print "Ortholog $rid \"$species{$$r_v[0]}\" From_analysis WormBase-Compara\n"
 				}
+                                while (my ($r_k,$r_v)=each(%japonica_ids)){                                                      # japonica 
+				        my $rid=$cds2wbgene{$r_k}?$cds2wbgene{$r_k}:$r_k;
+					print "Ortholog $rid \"$species{$$r_v[0]}\" From_analysis WormBase-Compara\n"
+				}
 
+				print "\n";
+		
+		}
+		# japonica part
+		while (my ($k,$v)=each(%japonica_ids)){
+			   	my $sid=$cds2wbgene{$k}?$cds2wbgene{$k}:$k;
+				print "Gene : \"$sid\"\n";
+				print "Ortholog $gid \"${\$species{ $config->{taxon_id}}}\" From_analysis WormBase-Compara\n"; # elegans
+				while (my ($r_k,$r_v)=each(%briggsae_ids)){                                                    # briggsae
+				        my $rid=$cds2wbgene{$r_k}?$cds2wbgene{$r_k}:$r_k;
+					print "Ortholog $rid \"$species{$$r_v[0]}\" From_analysis WormBase-Compara\n"
+				}
+                                while (my ($r_k,$r_v)=each(%remanei_ids)){                                                    # remanei 
+				        my $rid=$cds2wbgene{$r_k}?$cds2wbgene{$r_k}:$r_k;
+					print "Ortholog $rid \"$species{$$r_v[0]}\" From_analysis WormBase-Compara\n"
+				}
+                                while (my ($r_k,$r_v)=each(%pristionchus_ids)){                                               # pristionchus 
+				        my $rid=$cds2wbgene{$r_k}?$cds2wbgene{$r_k}:$r_k;
+					print "Ortholog $rid \"$species{$$r_v[0]}\" From_analysis WormBase-Compara\n"
+				}
 				print "\n";
 		
 		}
