@@ -120,7 +120,7 @@ our %org_prefix = (
 		    'wublastp_ipi_human'     => 'IP', # should never actually get included
 		    'wublastp_remanei'       => 'RP',
 		    'wublastp_pristionchus'  => 'PP',
-		    'wublastp_japonica'      => 'JP',
+		    'wublastp_japonica'      => 'JA',
 		  );
 
 my $QUERY_SPECIES = $wormbase->full_name;
@@ -591,6 +591,7 @@ sub species_lookup {
       my %species = ( 'wublastp_worm'          => 'Caenorhabditis elegans',
 		      'wublastp_briggsae'      => 'Caenorhabditis briggsae',
 		      'wublastp_remanei'       => 'Caenorhabditis remanei',
+		      'wublastp_japonica'      => 'Caenorhabditis japonica',
 		      'wublastp_human'         => 'Homo sapiens',
 		      'wublastp_yeast'         => 'Saccharomyces cerevisiae',
 		      'wublastp_fly'           => 'Drosophila melanogaster',

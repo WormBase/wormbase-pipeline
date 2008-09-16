@@ -5,7 +5,7 @@
 # Dumps InterPro protein motifs from ensembl mysql (protein) database to an ace file
 #
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2008-08-20 15:16:43 $
+# Last updated on: $Date: 2008-09-16 15:27:09 $
 
 
 use strict;
@@ -210,14 +210,7 @@ foreach my $method (@methods) {
 
 
 # print ace file
-my $prefix = "WP";
-if ($dbname=~/brig/) {
-  $prefix = "BP";
-}elsif ($dbname =~/rem/){
-	$prefix = 'RP';
-}elsif ($dbname =~/pris/){
-	$prefix = 'PP';
-}
+my $prefix = $wormbase->pep_prefix; 
 
 # here we need to do:
 # foreach protein:
