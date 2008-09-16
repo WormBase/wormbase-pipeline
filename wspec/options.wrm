@@ -84,6 +84,7 @@ _VPaper            -V -T Brief_citation
 _VGene_class       -V
 _VGene_name	   -V
 _VLocus            -V -D GMAP
+_VLocus            -V 
 _VGene             -V -T Public_name
 _VRearrangement    -V -D GMAP
 _VMap              -V -D GMAP  
