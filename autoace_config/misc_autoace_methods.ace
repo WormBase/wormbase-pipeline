@@ -523,6 +523,11 @@ Colour "LIGHTGREEN"
 Remark   "wublastp search of Wormpep vs C. briggsae peptides"
 
 
+Method : "wublastp_japonica"
+Colour "LIGHTGREEN"
+Remark   "wublastp search of Wormpep vs C. japonica peptides"
+
+
 Method : "wublastx_worm"
 Colour "DARKBLUE"
 Frame_sensitive
@@ -654,6 +659,21 @@ GFF_source       "wublastx"
 GFF_feature      "protein_match"
 Join_blocks
 Remark   "wublastx search vs P. pacificus peptides"
+Gapped
+
+
+Method : "wublastx_japonica"
+Colour   LIGHTGREEN
+Frame_sensitive
+Show_up_strand
+Score_by_width
+Score_bounds     10.000000 100.000000
+Right_priority   4.90000
+Blixem_X
+GFF_source       "wublastx"
+GFF_feature      "protein_match"
+Join_blocks
+Remark   "wublastx search vs C. japonica peptides"
 Gapped
 
 
