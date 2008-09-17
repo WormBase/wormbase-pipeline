@@ -1,7 +1,7 @@
 #!/software/bin/perl -w
 
-# Last updated by: $Author: pad $
-# Last updated on: $Date: 2008-08-21 13:31:09 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2008-09-17 09:07:37 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -104,7 +104,7 @@ exit;
 sub update_database {
 	$log->write_to("\n\nUpdating database from PFAM ftp site\n");
 	
-	my $ftp = glob("~ftp/pub/databases/Pfam/database_files");
+	my $ftp = glob("~ftp/pub/databases/Pfam/current_release/database_files");
 	my @tables = qw(pfamseq markup_key pfamseq_markup);
 	foreach my $table (@tables){
 		$log->write_to("\tfetching $table.txt\n");
