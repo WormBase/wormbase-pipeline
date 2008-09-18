@@ -155,6 +155,7 @@ sub Sub_sequence
     my $prefix = $self->{chromprefix};
     if( $seq =~ /$prefix/ ) {
       $chrom = $seq;
+      if (!defined $start){$start=0}		# in case the start is not specified
 
     } elsif( $seq =~ /SUPERLINK/ ) { #passed seq is a SUPERLINK, only elegans uses 'SUPERLINK'
       my $sl = $seq;
