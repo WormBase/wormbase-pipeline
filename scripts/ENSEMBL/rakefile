@@ -189,6 +189,8 @@ end
 
 desc 'dump homology ace file'
 task :dump_homology => [:env_setup] do
+	puts "making #{tmp_place}/compara"
+	FileUtils.mkdir_p("#{tmp_place}/compara")
 	sh "/software/bin/perl scripts/get_all_elegans_orthologues.pl > #{tmp_place}/compara.ace"
 end
 
@@ -254,8 +256,10 @@ task :cleanup do
 	sh 'rm -rf /lustre/scratch1/ensembl/wormpipe/compara/logs/*'      # remove the logs
 	sh 'rm -f /lustre/scratch1/ensembl/wormpipe/compara/Caenorhabditis*' # remove the blast databases
 	sh 'rm -f /lustre/scratch1/ensembl/wormpipe/compara/Brugia*' # remove the blast databases
-	sh 'rm -f /lustre/work1/ensembl/wormpipe/compara/Caenorhabditis*' # remove the blast databases
+	sh 'rm -f /lustre/scratch1/ensembl/wormpipe/compara/Pristionchus*' # remove the blast databases
+        sh 'rm -f /lustre/work1/ensembl/wormpipe/compara/Caenorhabditis*' # remove the blast databases
 	sh 'rm -f /lustre/work1/ensembl/wormpipe/compara/Brugia*' # remove the blast databases
+	sh 'rm -f /lustre/work1/ensembl/wormpipe/compara/Pristionchus*' # remove the blast databases
 	sh "rm -f #{tmp_place}/compara.ace" # remove the compara ace file
 	sh "rm -rf #{tmp_place}/compara"    # remove the compara dump directory
 end
