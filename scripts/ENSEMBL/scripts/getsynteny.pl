@@ -39,7 +39,7 @@ my $species5_assembly;
 my $species6 = 'Pristionchus pacificus';
 my $species6_assembly;
 my $species7 = 'Caenorhabditis japonica';
-my $species7_assembly;'
+my $species7_assembly;
 
 my $method_link_type = "SYNTENY";
 
