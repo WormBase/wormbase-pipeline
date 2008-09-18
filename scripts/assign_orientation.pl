@@ -9,7 +9,7 @@
 # transcripts to find the most probable orientation.
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-09-15 12:50:15 $      
+# Last updated on: $Date: 2008-09-18 13:28:35 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -143,7 +143,7 @@ my $ovlp = Overlap->new($database, $wormbase);
   my @pseud = $ovlp->get_pseudogene($chromosome); # secondary list we search against
   my @rrna = $ovlp->get_rRNA_exons($chromosome); # secondary list we search against
   my @ncrna = $ovlp->get_ncRNA($chromosome); # secondary list we search against
-  my @twin = $ovlp->get_twinscan_exons($chromosome); # secondary list we search against
+  my @jigsaw = $ovlp->get_jigsaw_exons($chromosome); # secondary list we search against
   my @trans = $ovlp->get_Coding_transcript_exons($chromosome); # secondary list we search against
 
 
@@ -237,7 +237,7 @@ my $ovlp = Overlap->new($database, $wormbase);
     my $pseud_obj = $ovlp->compare(\@pseud);
     my $rrna_obj = $ovlp->compare(\@rrna);
     my $ncrna_obj = $ovlp->compare(\@ncrna);
-    my $twin_obj = $ovlp->compare(\@twin);
+    my $jigsaw_obj = $ovlp->compare(\@jigsaw);
     my $trans_obj = $ovlp->compare(\@trans);
 
     print "Searching\n" if ($verbose);
@@ -299,11 +299,11 @@ my $ovlp = Overlap->new($database, $wormbase);
 	}
       }
 
-      my @twin_matches = $twin_obj->match($est);
-      print "Have ", scalar @twin_matches, " overlaps to twinscan\n" if ($verbose);
-      @senses = $twin_obj->matching_sense;
+      my @jigsaw_matches = $jigsaw_obj->match($est);
+      print "Have ", scalar @jigsaw_matches, " overlaps to jigsaw\n" if ($verbose);
+      @senses = $jigsaw_obj->matching_sense;
       for (my $i=0; $i < @senses; $i++) {
-	my ($p1,$p2) = $twin_obj->matching_proportions($twin_matches[$i]);
+	my ($p1,$p2) = $jigsaw_obj->matching_proportions($jigsaw_matches[$i]);
 	if ($senses[$i] == 1) {
 	  if ($prop_same < $p1) {$prop_same = $p1;}
 	} else {
@@ -632,7 +632,7 @@ If the -all flag is NOT set and a specific GFF file is NOT specified,
 then only the sequences with no EST_5 and no EST_3 tag set are
 examined. For these sequences, if the orientation cannot be confirmed
 from the splice site score then the greatest overlaps with CDS exons,
-rRNA exons, pseudogenes and twinscan exons are used to assign the
+rRNA exons, pseudogenes and jigsaw exons are used to assign the
 orientation. If the orientation still cannot be assigned, then the
 greatest overlap with transcript exons are used. If the evidence is
 still lacking and there is no other tag already set then the default
