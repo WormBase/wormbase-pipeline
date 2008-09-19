@@ -4,8 +4,8 @@
 # 
 # by Dan Lawson
 #
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2008-08-26 16:14:08 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2008-09-19 10:23:03 $
 #
 # Usage GFFmunger.pl [-options]
 
@@ -181,14 +181,25 @@ foreach my $file (@gff_files) {
 # Check the files
 ##################
 
-foreach  my $file (@gff_files) {
-  $wormbase->check_file("$gffdir/${file}.gff", $log,
-                        minsize => 1500000,
-                        lines => ['^##',
-                                  "^$file\\s+\\S+\\s+\\S+\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+"],
-                        );
-}
 
+if ($wormbase->assembly_type eq 'contig') {
+  my ($file) = @gff_files;
+  my $prefix = $wormbase->chromosome_prefix;
+  $wormbase->check_file("$gffdir/${file}.gff", $log,
+			minsize => 1500000,
+			lines => ['^##',
+				  "^$prefix\\S+\\s+\\S+\\s+\\S+\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+"],
+			);
+
+} else {
+  foreach  my $file (@gff_files) {
+    $wormbase->check_file("$gffdir/${file}.gff", $log,
+			  minsize => 1500000,
+			  lines => ['^##',
+				    "^$file\\s+\\S+\\s+\\S+\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+"],
+			  );
+  }
+}
 
 # Tidy up
 $log->mail();
