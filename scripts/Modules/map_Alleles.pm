@@ -557,7 +557,10 @@ sub get_cds {
                          $flipped=1;
                     }
                     if (lc($original_from) ne lc($from_na)){ # don't touch it if neither forward nor reverse are inline with the reference sequence
-                         $log->write_to("WARNING: $k FROM/TO tags seem to be messed up, as $original_from (reference) is not $from_na or ${\$v->{allele}->Type_of_mutation->right}\n");
+                         $log->write_to(
+		           "ERROR: $k FROM/TO tags seem to be messed up, as $original_from (reference) is not $from_na or ${\$v->{allele}->Type_of_mutation->right}\n"
+			 );
+			 $errors++;
                           next;
                     }
                     $original_from=substr($from_codon,$frame,length($from_na),$from_na);
