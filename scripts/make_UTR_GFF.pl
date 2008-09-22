@@ -11,11 +11,11 @@
 # REQUIREMENTS:  Wormbase.pm, Modules::GFF_sql.pm
 #         BUGS:  ---
 #        NOTES:  ---
-#       AUTHOR:  $Author: ar2 $
+#       AUTHOR:  $Author: mh6 $
 #      COMPANY:
 #      VERSION:  2 
 #      CREATED:  21/02/06 14:11:30 GMT
-#     REVISION:  $Revision: 1.19 $ 
+#     REVISION:  $Revision: 1.20 $ 
 #===============================================================================
 
 use strict;
@@ -56,7 +56,7 @@ else {
 # global setup setup
 
 my $gffdir = $wormbase->gff_splits;
-my $db     = GFF_sql->new( { -build => 1 } );
+my $db     =  $test ? GFF_sql->new() : GFF_sql->new( { -build => 1 } );
 my $outdir = $gffdir;
 my %cds_cache;  # crude hack to speed up the cds lookup
 my $contig_assembly = ($wormbase->assembly_type eq 'contig') ? 1 : undef;
