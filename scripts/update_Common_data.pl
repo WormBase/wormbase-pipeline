@@ -5,7 +5,7 @@
 # by Anthony Rogers et al
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2008-05-06 12:49:19 $
+# Last updated on: $Date: 2008-09-22 11:28:10 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -352,8 +352,8 @@ sub write_clonesize  {
 
   my %clonesize;
   
-  if (ref $wormbase eq 'Briggsae') { # needs to be beautified
-	  my $command="perl $ENV{CVS_DIR}/get_clone_sizes.pl -species Briggsae";
+  unless ($wormbase->species eq 'elegans') { # needs to be beautified
+	  my $command="perl $ENV{CVS_DIR}/get_clone_sizes.pl -species ".$wormbase->species;
 	  open(TACE, "$command|");
   }
   else {
