@@ -6,8 +6,8 @@
 # A simple script to send a check list to the person who will be performing the next
 # build to check the current build
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2007-11-06 09:46:58 $
+# Last updated by: $Author: mt3 $
+# Last updated on: $Date: 2008-09-22 10:14:17 $
 use strict;
 use warnings;
 use lib $ENV{'CVS_DIR'};
@@ -104,8 +104,9 @@ C. briggase protein objects too...these now have their own set of blastp hits
 
 6) Check PFAM Motif objects have a title tag. It is a problem if there are more than about 20.
 
-7) Run composition *.dna in the CHROMOSOMES directory.  Make sure this is the same as it was
-at the start of the build.  Bad Homol objects can lead to errors esp when chromosome length has been reduced
+7) Run ls ~/BUILD/autoace/CHROMOSOMES/*.dna | grep -v Mt | xargs composition in the CHROMOSOMES directory.  
+Make sure this is the same as it was at the start of the build.  Bad Homol objects can lead to errors esp when 
+chromosome length has been reduced
 
 Thats all...for now!  If you are satisfied the build is ok, please inform the person
 building the database. Please continue to add to this list as appropriate.
