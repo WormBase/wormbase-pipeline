@@ -146,6 +146,7 @@ _VTree             -V -D DtDendrogram
 _VTreeNode         -H -D DtDendrogram
 _VView		   -V
 _VAnatomy_term 	   -V -T Term
+_VAnatomy_function -V
 _VAnatomy_name 	   -V -T Term
 _VAntibody         -V
 _VExpression_cluster          -V
