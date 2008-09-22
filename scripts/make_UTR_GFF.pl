@@ -11,11 +11,11 @@
 # REQUIREMENTS:  Wormbase.pm, Modules::GFF_sql.pm
 #         BUGS:  ---
 #        NOTES:  ---
-#       AUTHOR:  $Author: mh6 $
+#       AUTHOR:  $Author: gw3 $
 #      COMPANY:
 #      VERSION:  2 
 #      CREATED:  21/02/06 14:11:30 GMT
-#     REVISION:  $Revision: 1.20 $ 
+#     REVISION:  $Revision: 1.21 $ 
 #===============================================================================
 
 use strict;
@@ -130,7 +130,7 @@ sub write_tmp_gff {
 # get CDS name (lifted from original version)
 sub short_name {
     my ($name) = @_;
-    my $cds_regex = $wormbase->cds_regex;
+    my $cds_regex = $wormbase->cds_regex_noend;
     my ($cdsname) = $name =~ /($cds_regex)/;
     return $cdsname;
 }
