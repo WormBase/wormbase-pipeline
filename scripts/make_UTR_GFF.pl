@@ -15,7 +15,7 @@
 #      COMPANY:
 #      VERSION:  2 
 #      CREATED:  21/02/06 14:11:30 GMT
-#     REVISION:  $Revision: 1.21 $ 
+#     REVISION:  $Revision: 1.22 $ 
 #===============================================================================
 
 use strict;
@@ -132,6 +132,7 @@ sub short_name {
     my ($name) = @_;
     my $cds_regex = $wormbase->cds_regex_noend;
     my ($cdsname) = $name =~ /($cds_regex)/;
+    if (! defined $cdsname) {$wormbase->log_and_die("There is a problem with extracting the CDS name from the Transcript name: $name\n")}
     return $cdsname;
 }
 
