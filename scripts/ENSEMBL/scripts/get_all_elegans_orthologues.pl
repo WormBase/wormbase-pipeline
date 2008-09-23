@@ -111,7 +111,7 @@ foreach my $slice(@slices){
 		# elegans part
 
                 # could probably merge all hashes into one big one
-                my %all_ortho = (%briggsae_ids,%remanei_ids,%pristionchus_ids);
+                my %all_ortho = (%briggsae_ids,%remanei_ids,%pristionchus_ids,%japonica_ids);
 		
 		print "Gene : \"$gid\"\n";
 		while (my ($k,$v)=each(%all_ortho)){
