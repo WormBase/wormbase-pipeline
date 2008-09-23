@@ -6,8 +6,8 @@
 #
 # Script to identify genes which can have their Interpolated_map_position tag promoted to a Map position
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2008-06-19 09:44:14 $
+# Last updated by: $Author: pad $
+# Last updated on: $Date: 2008-09-23 09:45:22 $
 
 use strict;
 use warnings;
@@ -153,7 +153,7 @@ $db->close;
 close(OUT);
 
 $log->mail();
-$log->mail("cgc\@wormbase.org", "list of promoted map positions") unless $wb->test;
+$log->mail("genenames\@wormbase.org", "list of promoted map positions") unless $wb->test;
 
 exit(0);
 
