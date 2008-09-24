@@ -7,7 +7,7 @@
 # This is a script to fidn the strand-insensitive intersection of two GFF files.
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-09-24 10:11:19 $      
+# Last updated on: $Date: 2008-09-24 10:23:54 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -97,10 +97,11 @@ foreach my $chromosome ($wormbase->get_chromosome_names(-mito => 1, -prefix => 1
 	       );
 
   foreach my $gff1_line (@gff1_list) {
-    if (match($gff1_line, \@gff2_list, \%state) && !$not_matching) {
+    my $match_result = match($gff1_line, \@gff2_list, \%state);
+    if ($match_result && !$not_matching) { # we want GFF1 lines that do have a match to GFF2
       my $line = join "\t", @{$gff1_line};
       print OUT "$line\n";
-    } elsif ($not_matching) {	# we want GFF1 lines that don't have a match to GFF2
+    } elsif (!$match_result && $not_matching) {	# we want GFF1 lines that don't have a match to GFF2
       my $line = join "\t", @{$gff1_line};
       print OUT "$line\n";
     }
