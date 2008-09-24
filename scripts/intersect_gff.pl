@@ -7,7 +7,7 @@
 # This is a script to fidn the strand-insensitive intersection of two GFF files.
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-09-24 10:23:54 $      
+# Last updated on: $Date: 2008-09-24 12:50:23 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -138,6 +138,7 @@ sub read_gff_file {
     push @result, [@f];
   }
   close (GFF);
+  @result = sort {$a->[3] <=> $b->[3] or $a->[4] <=> $b->[4]} @result; # sort by start position
   return @result;
 }
 
