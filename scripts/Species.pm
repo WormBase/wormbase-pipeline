@@ -94,6 +94,9 @@ sub full_name {
 	if($param{'-short'}){
 		return 'C. elegans';
 	}
+	elsif($param{'-g_species'}){
+		return 'c_elegans';
+	}
 	else { return'Caenorhabditis elegans'
 	};
 }
@@ -133,6 +136,8 @@ sub full_name {
 	my %param = @_ ;
 	if($param{'-short'}){
 		return 'C. briggsae';
+	}	elsif($param{'-g_species'}){
+		return 'c_briggsae';
 	}
 	else { return'Caenorhabditis briggsae'
 	};
@@ -165,6 +170,8 @@ sub full_name {
 	my %param = @_ ;
 	if($param{'-short'}){
 		return 'C. remanei';
+	}	elsif($param{'-g_species'}){
+		return 'c_remanei';
 	}
 	else { return'Caenorhabditis remanei'
 	};
@@ -222,6 +229,8 @@ sub full_name {
 	my %param = @_ ;
 	if($param{'-short'}){
 		return 'C. brenneri';
+	}elsif($param{'-g_species'}){
+		return 'c_brenneri';
 	}
 	else { return'Caenorhabditis brenneri'
 	};
@@ -266,6 +275,8 @@ sub full_name {
 	my %param = @_ ;
 	if($param{'-short'}){
 		return 'C. japonica';
+	}elsif($param{'-g_species'}){
+		return 'c_japonica';
 	}
 	else { return'Caenorhabditis japonica'
 	};
@@ -291,6 +302,8 @@ sub full_name {
 	my %param = @_ ;
 	if($param{'-short'}){
 		return 'P. pacificus';
+	}elsif($param{'-g_species'}){
+		return 'p_pacificus';
 	}
 	else { return'Pristionchus pacificus'
 	};
@@ -335,6 +348,8 @@ sub full_name {
 	my %param = @_ ;
 	if($param{'-short'}){
 		return 'H. bacteriophora';
+	}	elsif($param{'-g_species'}){
+		return 'h_bacteriophora';
 	}
 	else { return'Heterorhabditis bacteriophora'
 	};
@@ -370,6 +385,8 @@ sub full_name {
 	my %param = @_ ;
 	if($param{'-short'}){
 		return 'B. malayi';
+	}	elsif($param{'-g_species'}){
+		return 'b_malayi';
 	}
 	else { return'Brugia malayi'
 	};
