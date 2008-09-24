@@ -7,7 +7,7 @@
 # This is a script to fidn the strand-insensitive intersection of two GFF files.
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-09-24 09:46:25 $      
+# Last updated on: $Date: 2008-09-24 10:11:19 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -67,7 +67,7 @@ my $log = Log_files->make_build_log($wormbase);
 if (!defined $near_5) {$near_5 = 0}
 if (!defined $near_3) {$near_3 = 0}
 # sanity check
-if ($same_sense == 1 && $other_sense == 1) {
+if (defined $same_sense && defined $other_sense && $same_sense == 1 && $other_sense == 1) {
   croak ("You can't choose for a match to only things on the same sense and only things on the opposite sense!\n");
 }
 
