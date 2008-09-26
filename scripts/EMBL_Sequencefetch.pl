@@ -4,8 +4,8 @@
 #
 # Usage : EMBL_Sequencefetch.pl [-options]
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2008-08-28 08:49:32 $
+# Last edited by: $Author: pad $
+# Last edited on: $Date: 2008-09-26 13:23:14 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -119,10 +119,10 @@ WARNING: You are retrieving EMBL sequences as a full update (This will take a lo
 # MAIN BODY OF SCRIPT
 ##########################
 
-my %species = ($wormbase->species_accessors);
-$species{$wormbase->species} = $wormbase;
-
+#my %species = ($wormbase->species_accessors);
+#$species{$wormbase->species} = $wormbase;
 #foreach my $organism(keys %species) {
+
 foreach my $organism(keys %species2taxonid) {
   $log->write_to("============================================\nProcessing: $organism\n============================================\n");
   my $sourceDB;
@@ -159,22 +159,15 @@ foreach my $organism(keys %species2taxonid) {
       $log->write_to("No NEW EMBL data:$organism - $molecule\n");
     }
   }
-  # Dump the data back to BUILD_DATA/cDNA/organism/
-  $log->write_to("Dumping BLAT sequences($organism)\n");
-  &dump_BLAT_data ($sourceDB, $organism, \%species);
+  # not needed any more - Dump the data back to BUILD_DATA/cDNA/organism/
+  #$log->write_to("Dumping BLAT sequences($organism)\n");
+  #&dump_BLAT_data ($sourceDB, $organism, $organism);
+  
   $log->write_to("============================================\nProcessed: $organism\n============================================\n\n");
 }
 
-  # Cat all of the EST/mRNA sequence files into a single file for loading into the build and remove the files..
-$log->write_to("Refreshing Organism sequence data for next build..........\n\n");
-$wormbase->run_command ("rm $miscdir/Caenorhabditae_sequence_data_to_load.ace", $log) if (-e "$miscdir/Caenorhabditae_sequence_data_to_load.ace");
-$wormbase->run_command ("rm $miscdir/elegans_*_data_tmp.ace", $log); #elegans data comes from camace.
-$wormbase->run_command ("cat $miscdir/*_mRNA_data_tmp.ace > $miscdir/Caenorhabditae_sequence_data_to_load.ace", $log);
-$wormbase->run_command ("cat $miscdir/*_EST_data_tmp.ace >> $miscdir/Caenorhabditae_sequence_data_to_load.ace", $log);
-$wormbase->run_command ("rm $miscdir/*_data_tmp.ace", $log);
 $log->write_to("\nRefreshed........ ;) \n\n");
 $log->write_to ("WORK DONE------------FINISHED\n\n");
-#Close log/files and exit
 $log->mail();
 exit(0);
 
@@ -226,14 +219,6 @@ sub fetch_database_info {
 	$status = "No";
       }
 
-      # add data to hash(s) sequence_accession_no is key, status/method/acc_sv is value
-#      %sequencedata = (
-#		       SEQUENCE => {
-#				    sequence2acc_sv => '$acc_sv',
-#				    sequence2method => '$method',
-#				    sequence2feature => '$status',
-#				   }
-#		      );
       $acc_sv2sequence{$sequenceacc} = $acc_sv;
       $method2sequence{$sequenceacc} = $method;
       $feature2seq{$sequenceacc} = $status;
@@ -503,29 +488,25 @@ sub load_data {
   else {$submol_mod = $submol;}
 
   $acefile = "$output_dir/new_${suborganism}_$submol_mod.ace";
-  $wormbase->load_to_database($sub_sourceDB, $acefile, "EMBL_sequence_fetch.pl", $log, 0, 1) if (-e $acefile);
+  $wormbase->load_to_database($sub_sourceDB, $acefile, "EMBL_sequence_fetch.pl", $log) if (-e $acefile);
   $log->write_to("Loading $acefile into $sub_sourceDB\n\n") if (-e $acefile);
 
   unless (defined $nolongtext) {
     $Longtextfile = "$output_dir/new_${suborganism}_${submol_mod}_longtext.txt";
-    $wormbase->load_to_database($sub_sourceDB, $Longtextfile, "EMBL_sequence_fetch.pl", $log, 0, 1) if (-e $Longtextfile);
+    $wormbase->load_to_database($sub_sourceDB, $Longtextfile, "EMBL_sequence_fetch.pl", $log) if (-e $Longtextfile);
     $log->write_to("Loading $Longtextfile into $sub_sourceDB\n\n") if (-e $Longtextfile);
   }
 }
 
 ##########################
 # dump data for BLATing  #
-##########################
-
+################################################################################
+# OBSOLETE SUBROUTINE - BLAT DATA IS NOW ONLY DUMPED WHEN A BUILD IS INITIATED #
+################################################################################
 sub dump_BLAT_data {
   my $dbdir = shift;
   my $subspecies = shift;
-  my $EST_dir;
-  if ($subspecies eq "heterorhabditis" or $subspecies eq "pristionchus") {
-    $EST_dir = $wormbase->basedir."_DATA/cDNA/$subspecies";
-  }
-  else {$EST_dir = $species{$subspecies}{cdna_dir};}
-
+  my $EST_dir = $wormbase->basedir."_DATA/cDNA/$subspecies";
   $log->write_to("Dumping $subspecies from $dbdir\n\n");
 
   # Remove stale data if it exists on disk.
@@ -584,7 +565,7 @@ __END__
 
 =back
 
-This script does...blah blah blah
+This script gets sequence data for all species (currently hacked to store the taxid within the script)
 
 EMBL_Sequencefetch_species.pl
 
