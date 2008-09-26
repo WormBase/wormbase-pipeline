@@ -5,7 +5,7 @@
 # Usage : dump_primary_seq_data.pl [-options]
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2008-08-18 13:28:45 $
+# Last edited on: $Date: 2008-09-26 15:06:43 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -22,7 +22,7 @@ use Species;
 # variables and command-line options #
 ######################################
 
-my ($help, $debug, $test, $verbose, $store, $wormbase, $version, $organism, $output, $species);
+my ($help, $debug, $test, $verbose, $store, $wormbase, $version, $organism, $species, $noseqdump, $noacedump);
 
 GetOptions ("help"       => \$help, #
             "debug=s"    => \$debug, # debug option, turns on more printing and only email specified user.
@@ -30,6 +30,8 @@ GetOptions ("help"       => \$help, #
             "verbose"    => \$verbose, # additional printing
             "store:s"    => \$store, # wormbase storable object
 	    "organism=s" => \$organism, # Specify an organism
+	    "noace"      => \$noacedump, # don't update the ace data on disk.
+            "noseq"      => \$noseqdump, # don't update the BLAT seq data on disk.
 	    );
 
 if ( $store ) {
@@ -73,9 +75,16 @@ push (@species, $organism);
 foreach my $organism(@species) {
   $log->write_to("============================================\nDUMPING: $organism\n============================================\n");
 # output dirs
-  my   $output_dir = $wormbase->basedir."_DATA/cDNAace/$organism";
-  $wormbase->run_command ("mkdir $output_dir", $log) if (!-e $output_dir);
-  
+  my   $ACEoutput_dir = $wormbase->basedir."_DATA/cDNAace/$organism";
+  $wormbase->run_command ("rm -r $ACEoutput_dir", $log) if (-e $ACEoutput_dir);
+  $log->write_to("Removing $ACEoutput_dir\n") if (-e $ACEoutput_dir);
+  $wormbase->run_command ("mkdir $ACEoutput_dir", $log) if (!-e $ACEoutput_dir);
+  $log->write_to("Creating $ACEoutput_dir\n") if (!-e $ACEoutput_dir);
+  my $BLAToutput_dir = $wormbase->basedir."_DATA/cDNA/$organism";
+  $wormbase->run_command ("rm -r $BLAToutput_dir", $log) if (-e $BLAToutput_dir);
+  $log->write_to("Removing $BLAToutput_dir\n") if (-e $BLAToutput_dir);
+  $wormbase->run_command ("mkdir $BLAToutput_dir", $log) if (!-e $BLAToutput_dir);
+  $log->write_to("Creating $BLAToutput_dir\n") if (!-e $BLAToutput_dir);
 
   my $sourceDB;
   if ($organism eq "elegans") {
@@ -89,18 +98,18 @@ foreach my $organism(@species) {
   }
   else {$sourceDB = $wormbase->database($organism);}
   # Fetch sequence data from primary database.
-  $log->write_to("Fetching sequence data from $sourceDB:\n");
+  $log->write_to("\n\nUsing: $sourceDB: for data retrieval\n");
   
 
 # not needed any more - Dump the data back to BUILD_DATA/cDNA/organism/
-$log->write_to("Dumping BLAT sequences($organism)\n");
-&dump_BLAT_data ($sourceDB, $organism, \%species, $output_dir);
-  
-  $log->write_to("============================================\nProcessed: $organism\n============================================\n\n");
+$log->write_to("Dumping $organism Transcript .ace data.........\n") unless $noacedump;
+&dump_BLAT_ace_data ($sourceDB, $organism, \%species, $ACEoutput_dir) unless $noacedump;
+$log->write_to("Dumping $organism BLAT dna sequences...........\n") unless $noseqdump;
+&dump_BLAT_data ($sourceDB, $organism, \%species, $BLAToutput_dir) unless $noseqdump; 
+  $log->write_to("============================================\nPROCESSED: $organism\n============================================\n-\n-\n-\n-\n");
 }
 
 $log->write_to("\nRefreshed........ ;) \n\n");
-$log->write_to ("WORK DONE------------FINISHED\n\n");
 #Close log/files and exit
 $log->mail();
 exit(0);
@@ -113,14 +122,13 @@ exit(0);
 ###################################################
 
 
-sub dump_BLAT_data {
+sub dump_BLAT_ace_data {
   my $dbdir = shift;
   my $subspecies = shift;
   my $speciesobj = shift;
   my $EST_dir =shift;
 #  $EST_dir = $EST_dir.$subspecies;
-    $log->write_to("Dumping $subspecies from $dbdir\n\n");
-
+ 
   # Remove stale data if it exists on disk.
   my @types = ('mRNA','ncRNA','EST','OST','tc1','RST');
   foreach my $type (@types) {
@@ -155,7 +163,52 @@ END
   open (DB, "| $tace $dbdir") || die "Couldn't open $dbdir\n";
   print DB $command;
   close DB;
-  $log->write_to("Finished $subspecies\n\n");
+  $log->write_to("$subspecies Transcripts dumped\n\n");
+}
+
+##########################
+# dump data for BLATing  #
+##########################
+sub dump_BLAT_data {
+  my $dbdir = shift;
+  my $subspecies = shift;
+  my $speciesobj = shift;
+  my $EST_dir =shift;
+#  $EST_dir = $EST_dir.$subspecies;
+
+  # Remove stale data if it exists on disk.
+  my @types = ('mRNA','ncRNA','EST','OST','tc1','RST');
+  foreach my $type (@types) {
+    $wormbase->run_command ("rm $EST_dir${type}", $log) if (-e $EST_dir."${type}");
+    $log->write_to("Removed $EST_dir${type}\n\n")  if (-e $EST_dir."${type}" && $debug);
+  }
+
+  my $command=<<END;
+query find Sequence where method = NDB & RNA AND NEXT = mRNA & !Ignore\n
+Dna -mismatch $EST_dir/mRNA\n
+clear\n
+query find Sequence where method = NDB & RNA AND NEXT != mRNA & !Ignore\n
+Dna -mismatch $EST_dir/ncRNA\n
+clear\n
+query find Sequence where method = EST_$subspecies & !OST* & !Ignore & !RST*\n
+Dna -mismatch $EST_dir/EST\n
+clear\n
+query find Sequence where method = EST_$subspecies & OST* & !Ignore\n
+Dna -mismatch $EST_dir/OST\n
+clear\n
+query find Sequence where method = EST_$subspecies & RST* & !Ignore\n
+Dna -mismatch $EST_dir/RST\n
+clear\n
+query find Sequence TC*\n
+Dna -mismatch $EST_dir/tc1\n
+clear\n
+quit\n
+END
+  print $command if ($debug);
+  open (DB, "| $tace $dbdir") || die "Couldn't open $dbdir\n";
+  print DB $command;
+  close DB;
+  $log->write_to("$subspecies .ace data dumped.\n\n");
 }
 
 
@@ -173,7 +226,7 @@ __END__
 
 =back
 
-This script dumps ace files for Transcript data for each species and stores them under BUILD_DATA/cDNAace/
+This script dumps ace and sequence files for Transcript data for each species and stores them under BUILD_DATA/cDNAace/ and BUILD_DATA/cDNA
 
 dump_primary_seq_data.pl
 
