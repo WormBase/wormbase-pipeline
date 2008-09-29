@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: mt3 $
-# Last updated on: $Date: 2008-08-28 15:35:21 $
+# Last updated on: $Date: 2008-09-29 11:09:42 $
 
 use strict;
 use lib $ENV{"CVS_DIR"};
@@ -930,14 +930,6 @@ sub process_allele_class{
 	if (scalar @geneids > 1) {
 	  print LOG "CHECK: $allele is connected to more than one gene ids: @geneids\n";
 	}
-      }
-    }
-
-
-    # All substitution alleles with flanking sequences should be connected to a gene
-    if ($allele->Flanking_sequences && !defined $allele->Gene) {
-      if ($allele->at('Sequence_details.Type_of_mutation.Substitution')) {
-	print LOG "ERROR: substitution allele $allele has flanking sequences but is not connected to a Gene object\n";
       }
     }
 
