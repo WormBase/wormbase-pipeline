@@ -6,8 +6,8 @@
 #
 # Usage : acecompress.pl [-options]
 #
-# Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2007-03-09 15:15:58 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2008-09-30 15:36:18 $
 use lib $ENV{'CVS_DIR'};
 
 use strict;
@@ -106,6 +106,7 @@ close ACE;
 
 #replace original, retaining if bk option set
 $wormbase->run_command("mv $file $file.bk", $log) if ($bk);
+$wormbase->run_command("rm -f $file", $log);
 $file=~s/_uncompressed// if $build;
 $wormbase->run_command("mv -f $outfile $file",$log);
 
