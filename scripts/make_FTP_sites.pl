@@ -8,7 +8,7 @@
 # Originally written by Dan Lawson
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2008-09-03 15:43:13 $
+# Last updated on: $Date: 2008-09-30 14:48:50 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -159,7 +159,7 @@ my $citace_dir = $wormbase->primaries."/citace";
 my $targetdir = $wormbase->ftp_site;  # default directory, can be overidden
 my $WS              = $wormbase->get_wormbase_version();      # e.g.   132
 my $WS_name         = $wormbase->get_wormbase_version_name(); # e.g. WS132
-my $annotation_dir = "$targetdir/$WS_name/genomes/".$wormbase->species."/annotation";
+my $annotation_dir = "$targetdir/$WS_name/genomes/".$wormbase->full_name('-g_species' => 1)."/annotation";
 my $maintainers     = "All";
 my $runtime;
 
@@ -286,75 +286,104 @@ sub copy_dna_files{
   my %accessors = ($wormbase->species_accessors);
   $accessors{elegans} = $wormbase;
   foreach my $wb (values %accessors) {
-    my $species = $wb->species;
+    my $gspecies = $wb->full_name('-g_species'=>1);
     my $chromdir = $wb->chromosomes;
 
     if (-e "$chromdir") {
-      my $dna_dir = "$targetdir/$WS_name/genomes/$species/sequences/dna";
+      my $dna_dir = "$targetdir/$WS_name/genomes/$gspecies/sequences/dna";
       mkpath($dna_dir,1,0775);
 
       # we don't want to end up with thousands of files for species with DNA still in contigs, so make one file
       my @contigs = $wb->get_chromosome_names(-prefix => 1, -mito => 1);
-      if ($wb->assembly_type eq 'contig') {
-		if (-e "$chromdir/$contigs[0].dna") { # are there any .dna files to copy?
-			unlink "$dna_dir/$species.dna.gz"; # in case this script is being run a second time after problems
-			foreach my $contig (@contigs) {
-				$wormbase->run_command("cat $chromdir/$contig.dna >> $dna_dir/$species.dna", $log);
-				$wormbase->run_command("zcat $chromdir/${contig}_softmasked.dna.gz >> $dna_dir/{$species}_softmasked.dna", $log);
-				$wormbase->run_command("zcat $chromdir/${contig}_masked.dna.gz >> $dna_dir/{$species}_masked.dna", $log);
-			}
-			$wormbase->run_command("/bin/gzip -f $dna_dir/$species.dna",$log);
-			$wormbase->run_command("/bin/gzip -f $dna_dir/".$species."_softmasked.dna",$log);
-			$wormbase->run_command("/bin/gzip -f $dna_dir/".$species."_masked.dna",$log);
+	#todd wants all species to have whole genome in one file
+	if (-e "$chromdir/$contigs[0].dna") { # are there any .dna files to copy?
+		unlink "$dna_dir/$gspecies.dna.gz"; # in case this script is being run a second time after problems
+		$log->write_to("cating sequences together in to $dna_dir/$gspecies.$WS_name.dna.fa");
+		foreach my $contig (@contigs) {
+			$wormbase->run_command("cat $chromdir/$contig.dna >> $dna_dir/$gspecies.$WS_name.dna.fa", 'no_log');
+			$wormbase->run_command("cat $chromdir/${contig}_softmasked.dna.gz >> $dna_dir/${gspecies}_softmasked.$WS_name.dna.fa", 'no_log');
+			$wormbase->run_command("cat $chromdir/${contig}_masked.dna.gz >> $dna_dir/${gspecies}_masked.$WS_name.dna.fa", 'no_log');
 		}
-      } else {
+		$wormbase->run_command("/bin/gzip -f $dna_dir/$gspecies.$WS_name.dna.fa",$log);
+		$wormbase->run_command("/bin/gzip -f $dna_dir/".$gspecies."_softmasked.$WS_name.dna.fa",$log);
+		$wormbase->run_command("/bin/gzip -f $dna_dir/".$gspecies."_masked.$WS_name.dna.fa",$log);
+		
+      }
+      if($wb->assembly_type eq 'chromosome') {
 		$wormbase->run_command("cp -R $chromdir/*.dna* $dna_dir/", $log);
       }
 
-      $wormbase->run_command("cp -R $chromdir/*.agp $dna_dir/", $log) if (scalar glob("$chromdir/*.agp"));
+      $wb->run_command("cp -R $chromdir/*.agp $dna_dir/", $log) if (scalar glob("$chromdir/*.agp"));
 
       # change group ownership
-      $wormbase->run_command("chgrp -R  worm $dna_dir", $log);  
+      $wb->run_command("chgrp -R  worm $dna_dir", $log);
     }
   }
   $runtime = $wormbase->runtime;
   $log->write_to("$runtime: Finished copying\n\n");
 }
 
-sub _copy_gff_files{
+sub copy_gff_files{
   $runtime = $wormbase->runtime;
   $log->write_to("$runtime: copying gff files\n");
   my %accessors = ($wormbase->species_accessors);
   $accessors{elegans} = $wormbase;
   foreach my $wb (values %accessors) {
     my $species = $wb->species;
+    my $gspecies = $wb->full_name('-g_species' => 1);
     my $chromdir = $wb->chromosomes;
 
     if (-e "$chromdir") {
-      my $gff_dir = "$targetdir/$WS_name/genomes/$species/genome_feature_tables/GFF2";
+      my $gff_dir = "$targetdir/$WS_name/genomes/$gspecies/genome_feature_tables/GFF2";
       mkpath($gff_dir,1,0775);
 
       # we don't want to end up with thousands of files for species with DNA still in contigs, so make one file
       my @contigs = $wb->get_chromosome_names(-prefix => 1, -mito => 1);
-
-      if (-e "$chromdir/$species.gff") { # remanei does it this way
-	$wormbase->run_command("cp -R $chromdir/$species.gff $gff_dir/", $log);
-	$wormbase->run_command("/bin/gzip -f $gff_dir/$species.gff",$log);
-	
-      } elsif ($wb->assembly_type eq 'contig') {
-	if (-e "$chromdir/$contigs[0].gff") { # are there any .gff files to copy?
-	  unlink "$gff_dir/$species.gff.gz"; # in case this script is being run a second time after problems
-	  foreach my $contig (@contigs) {
-	    $wormbase->run_command("cat $chromdir/$contig.gff >> $gff_dir/$species.gff", $log);
-	  }
-	  $wormbase->run_command("/bin/gzip -f $gff_dir/$species.gff",$log);
-	}
-
-      } else {
-	$wormbase->run_command("cp -R $chromdir/*.gff* $gff_dir/", $log);
+	my $whole_filename = "$gspecies.$WS_name.gff"; #concatenated whole genome file require for all species
+	$wormbase->run_command("rm -f $gff_dir/$whole_filename", $log);
+	if($wb->assembly_type eq 'contig') {
+	      if (-e "$chromdir/$species.gff") { # tierII does it this way
+			$wormbase->run_command("cp -R $chromdir/$species.gff $gff_dir/$whole_filename", $log);
+      	}
+      	else {
+      		$log->error("$chromdir/$species.gff missing\n");
+      	}
+      }
+      else {
+           $wormbase->run_command("cat $chromdir/*.gff* > $gff_dir/$whole_filename", $log);
+           $wormbase->run_command("cp $chromdir/*.gff* $gff_dir/", $log); #individual files too
       }
 
-      $wormbase->run_command("cp -R $chromdir/composition.all $gff_dir/", $log) if (-e "$chromdir/composition.all");
+	#add supplementary and nGASP GFF
+	my $ngaspdir;
+	if($species eq 'elegans') {
+		my $supdir = $wb->build_data."/SUPPLEMENTARY_GFF";
+		my @gfffiles = glob("$supdir/*.gff");
+		foreach my $sup (@gfffiles){
+			$wb->run_command("cat $sup >> $gff_dir/$whole_filename", $log);
+		}
+		$ngaspdir = $supdir;
+	}
+	$ngaspdir = $wb->database("$species")."/nGASP" unless $ngaspdir;
+	
+	#nGASP - zcat files stored under primaries (or BUILD_DATA for C_ele) on to FTP full GFF file.
+	if(-e $ngaspdir){
+		my @ngasp_methods = qw(augustus fgenesh jigsaw mgene);
+		foreach my $method(@ngasp_methods){
+			my $file = "$ngaspdir/$species.$method.gff2.gz";
+			if(-e $file){
+				$wb->run_command("zcat $file >> $gff_dir/$whole_filename", $log);
+			}else {
+				$log->error("$file missing\n");
+			}
+		}
+	}
+	else{
+		$log->write_to("no ngasp for $gspecies\n");
+	}
+      
+	$wormbase->run_command("/bin/gzip -f $gff_dir/$whole_filename",$log);
+	$wormbase->run_command("cp -R $chromdir/composition.all $gff_dir/", $log) if (-e "$chromdir/composition.all");
       $wormbase->run_command("cp -R $chromdir/totals $gff_dir/", $log) if (-e "$chromdir/totals");
 
       # change group ownership
@@ -368,20 +397,16 @@ sub _copy_gff_files{
 sub copy_supplementary_gff_files{
   $runtime = $wormbase->runtime;
   $log->write_to("$runtime: copying supplementary gff files\n");
-  my %accessors = ($wormbase->species_accessors);
-  $accessors{elegans} = $wormbase;
-  foreach my $wb (values %accessors) {
-    my $species = $wb->species;
-    my $chromdir = $wb->chromosomes;
+  if($wormbase->species eq'elegans') {
+	my $chromdir = $wormbase->build_data;
+	if (-e "$chromdir/SUPPLEMENTARY_GFF") {
+		my $sgff_dir = "$targetdir/$WS_name/genomes/c_elegans/genome_feature_tables/SUPPLEMENTARY_GFF";
+		mkpath($sgff_dir,1,0775);
+		$wormbase->run_command("cp -R $chromdir/SUPPLEMENTARY_GFF/*.gff $sgff_dir/", $log);
 
-    if (-e "$chromdir/SUPPLEMENTARY_GFF") {
-      my $sgff_dir = "$targetdir/$WS_name/genomes/$species/genome_feature_tables/SUPPLEMENTARY_GFF";
-      mkpath($sgff_dir,1,0775);
-      $wormbase->run_command("cp -R $chromdir/SUPPLEMENTARY_GFF/*.gff $sgff_dir/", $log);
-
-      # change group ownership
-      $wormbase->run_command("chgrp -R  worm $sgff_dir", $log);  
-    }
+		# change group ownership
+		$wormbase->run_command("chgrp -R  worm $sgff_dir", $log);
+	}
   }
   $runtime = $wormbase->runtime;
   $log->write_to("$runtime: Finished copying\n\n");
@@ -400,7 +425,7 @@ sub copy_rna_files{
     my $rnadir = $wb->wormrna;
 
     if( -e "$rnadir") {
-      my $ftprna_dir = "$targetdir/$WS_name/genomes/".$wb->species."/sequences/rna";
+      my $ftprna_dir = "$targetdir/$WS_name/genomes/".$wb->full_name('-g_spsecies' => 1)."/sequences/rna";
       mkpath($ftprna_dir,1,0775);
       $wormbase->run_command("cp -R $rnadir/* $ftprna_dir/", $log);
       chdir "$ftprna_dir" or $log->write_to("Couldn't cd $ftprna_dir\n");
@@ -450,7 +475,7 @@ sub copy_misc_files{
   # zip and copy the microarray oligo mapping files.
   chdir "$ace_dir";
   $wormbase->run_command("/bin/gzip -f *oligo_mapping", $log);
-  my $annotation_dir = "$targetdir/$WS_name/genomes/".$wormbase->species."/annotation";
+  my $annotation_dir = "$targetdir/$WS_name/genomes/".$wormbase->full_name('-g_species' => 1)."/annotation";
   mkpath($annotation_dir,1,0775);
   $wormbase->run_command("cp $ace_dir/*oligo_mapping.gz $annotation_dir/", $log);
 
@@ -478,15 +503,13 @@ sub copy_wormpep_files {
 	my $wp_source_dir = $wormbase->wormpep;
 	my $wormpep_ftp_root = glob("~ftp/pub/databases/wormpep");
 	my $wp_ftp_dir = "$wormpep_ftp_root/wormpep$WS";
-	my $protein_dir = "$targetdir/$WS_name/genomes/elegans/sequences/protein";
 	mkpath($wp_ftp_dir,1,0775);
-	mkpath($protein_dir,1,0775);
 
 	&_copy_pep_files($wormbase);#elegans
 
 	# copy wormpep file if one exists for that species.
 	$log->write_to("zip and copy other species\n");
-	my %accessors = ($wormbase->species_accessors, $wormbase->tier3_species_accessors);
+	my %accessors = ($wormbase->species_accessors);
 	foreach my $species (keys %accessors){
 		$log->write_to("copying $species protein data to FTP site\n");
 		&_copy_pep_files($accessors{$species})
@@ -501,7 +524,7 @@ sub copy_wormpep_files {
 sub _copy_pep_files {
 	my $wb = shift;
 	my $source = $wb->basedir . "/WORMPEP/".$wb->pepdir_prefix."pep$WS";
-	my $target = "$targetdir/$WS_name/genomes/".$wb->species."/sequences/protein";
+	my $target = "$targetdir/$WS_name/genomes/".$wb->full_name('-g_species' => 1)."/sequences/protein";
 	mkpath($target,1,0775);
 
 	# if wwormpep has not been rebuilt it may need to be carried from previous build.  Possibly done earlier but if not do it here.
@@ -524,6 +547,12 @@ sub _copy_pep_files {
 	}
 	$wb->run_command("$command", $log);
 	$wb->run_command("cp $tgz_file $target", $log);
+
+	#single gzipped fasta file for Todd
+	my $WS_name = $wormbase->get_wormbase_version_name;
+	my $pepfile = "$target/".$wb->pepdir_prefix."pep$WS";
+	my $toddfile ="$target/".$wb->pepdir_prefix."pep.$WS_name.fa.gz";
+	$wb->run_command("gzip -c $pepfile > $toddfile", $log);
 
 	# change group ownership
 	$wormbase->run_command("chgrp -R  worm $target", $log);
@@ -759,7 +788,7 @@ sub copy_homol_data {
     my $species = $wb->species;
     my $source_file = "$blast_dir/${species}_best_blastp_hits";
     if(-e $source_file || -e "$source_file.gz") { # this script might be run more than once if there are problems
-      my $protein_dir = "$targetdir/$WS_name/genomes/$species/sequences/protein";
+      my $protein_dir = "$targetdir/$WS_name/genomes/".$wb->full_name('-g_species'=>1)."/sequences/protein";
       mkpath($protein_dir,1,0775);
       my $target_file = "$protein_dir/best_blastp_hits_${species}.$WS_name.gz";
       $wormbase->run_command("/bin/gzip -f $source_file",$log) if (! -e "$source_file.gz"); # this script might be run more than once if there are problems
@@ -801,29 +830,66 @@ sub usage {
 
 
 sub check_manifest {
-  my $rel = $wormbase->get_wormbase_version;
-  my $ftp_dir = $wormbase->ftp_site."/WS$rel";
-  my $path = $ftp_dir;
-  my $count;
-  while(<DATA>) {
-    next unless /\w/;
-    chomp;
-    s/REL/$rel/g;
-    if(/\.\/(\S+)/) {
-      $path = "$ftp_dir/$1";
-      next;
-    }
-    my $file = $_;
-    if( -s "$path/$file") {
-      $count++;
-      #print "OK: $path/$file\n";
-    } else {
-      $log->error("ERROR: $path/$file has a problem\n");
-    }
-  }
-  $log->write_to("$count files in place on FTP site\n");
+	my $rel = $wormbase->get_wormbase_version;
+	my $ftp_dir = $wormbase->ftp_site."/WS$rel";
+	my $path = $ftp_dir;
+	my $count;
+	my %otherspecies = $wormbase->species_accessors;
+	$otherspecies{$wormbase->species} = $wormbase;
+	my $gspecies =0;
+	while(<DATA>) {
+		next unless /\w/;
+		next if/^#/;
+		chomp;
+		s/REL/$rel/g;
+
+		if(/\.\/(\S+)/) {
+			$path = "$ftp_dir/$1";
+			if($path =~ /gspecies/){
+				$gspecies = 1;
+			}
+			else {
+				$gspecies = 0;
+			}
+			next;
+		}
+
+		my $file = $_;
+		if($gspecies ==1) {
+			foreach my $worm (keys %otherspecies){
+				my $gspecies = $otherspecies{$worm}->full_name('-g_species'=>1);
+				my $gWORM = $otherspecies{$worm}->pepdir_prefix;
+				my $species = $otherspecies{$worm}->species;
+				my $wormpath = $path;
+				my $wormfile = $file;
+				$wormpath =~ s/gspecies/$gspecies/;
+				$wormfile =~ s/gspecies/$gspecies/;
+				$wormfile =~ s/WORM/$gWORM/;
+				$wormfile =~ s/SPECIES/$species/;
+				$count += &checkfile("$wormpath/$wormfile");
+			}
+		}
+		else {
+			$count += &checkfile("$path/$file");
+		}
+	}
+	$log->write_to("$count files in place on FTP site\n");
 }
 
+sub checkfile {
+	my $file = shift;
+	if( -s "$file") {
+      	$log->write_to("OK: $file\n");
+      	return 1;
+	} else {
+      	$log->error("ERROR: $file has a problem\n");
+      	return 0;
+      }
+}
+
+#for manifest checks
+# gspecies = $wb->full_name('-gspecies' => 1)
+# WORM = $wb->pepdir_prefix
 
 __DATA__
 ./acedb
@@ -831,7 +897,8 @@ files_in_tar
 md5sum.WSREL
 models.wrm.WSREL
 
-./genomes/elegans/annotation
+#elegans specific stuff
+./genomes/c_elegans/annotation
 affy_oligo_mapping.gz
 agil_oligo_mapping.gz
 pcr_product2gene.WSREL.gz
@@ -840,8 +907,7 @@ gsc_oligo_mapping.gz
 cDNA2orf.WSREL.gz
 confirmed_genes.WSREL.gz
 
-
-./genomes/elegans/sequences/dna
+./genomes/c_elegans/sequences/dna
 CHROMOSOME_I.agp
 CHROMOSOME_I.dna.gz
 CHROMOSOME_II.agp
@@ -863,14 +929,19 @@ CHROMOSOME_X.dna.gz
 CHROMOSOME_X_masked.dna.gz
 intergenic_sequences.dna.gz
 
-./genomes/elegans/sequences/protein
-wormpepREL.tar.gz
-best_blastp_hits_elegans.WSREL.gz
+./genomes/gspecies/sequences/dna
+gspecies.WSREL.dna.fa.gz
 
-./genomes/elegans/sequences/rna
-wormrnaREL.tar.gz
+./genomes/gspecies/sequences/protein
+WORMpepREL.tar.gz
+WORMpep.WSREL.fa.gz
+best_blastp_hits_SPECIES.WSREL.gz
 
-./genomes/elegans/genome_feature_tables/GFF2
+./genomes/gspecies/sequences/rna
+WORMrnaREL.tar.gz
+WORMrna.WSREL.rna.fa.gz
+
+./genomes/c_elegans/genome_feature_tables/GFF2
 CHROMOSOME_I.gff.gz
 CHROMOSOME_II.gff.gz
 CHROMOSOME_III.gff.gz
@@ -881,7 +952,10 @@ CHROMOSOME_X.gff.gz
 composition.all
 totals
 
-./genomes/elegans/genome_feature_tables/SUPPLEMENTARY_GFF
+./genomes/gspecies/genome_feature_tables/GFF2
+gspecies.WSREL.gff.gz
+
+./genomes/c_elegans/genome_feature_tables/SUPPLEMENTARY_GFF
 RNAz.gff
 genemark.gff
 mSplicer_orf.gff
@@ -895,7 +969,7 @@ CHROMOSOME_IV_curation_anomalies.gff
 CHROMOSOME_V_curation_anomalies.gff
 CHROMOSOME_X_curation_anomalies.gff
 
-./genomes/briggsae/genome_feature_tables/GFF2
+./genomes/c_briggsae/genome_feature_tables/GFF2
 chrI.gff
 chrII.gff
 chrIII.gff
@@ -908,23 +982,6 @@ chrUn.gff
 chrV.gff
 chrV_random.gff
 chrX.gff
-
-./genomes/briggsae/sequences/protein
-best_blastp_hits_briggsae.WSREL.gz
-brigpepREL.tar.gz
-
-./genomes/briggsae/sequences/rna
-brigrnaREL.tar.gz
-
-./genomes/remanei/genome_feature_tables/GFF2
-remanei.gff.gz
-
-./genomes/remanei/sequences/protein
-best_blastp_hits_remanei.WSREL.gz
-remapepREL.tar.gz
-
-./genomes/remanei/sequences/dna
-remanei.dna.gz
 
 ./ONTOLOGY
 anatomy_association.WSREL.wb
