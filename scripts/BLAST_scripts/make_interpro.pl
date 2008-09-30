@@ -9,7 +9,7 @@
 # indexing program on it.
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-04-17 10:18:47 $      
+# Last updated on: $Date: 2008-09-30 09:54:21 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -110,6 +110,7 @@ if (!$nodownload) {
   if ($get_main) {
     $log->write_to("Downloading the main Interpro databases\n");
     &get_file('main', $latest_main);
+    &get_file('match_data', $latest_main);
   }
 
 # if the panther database changed, get it
@@ -232,7 +233,7 @@ sub get_file {
     $log->write_to("Delete the old Panther files (this takes a while)\n");
     $wormbase->run_command("rm -rf $dir/iprscan/data/Panther", $log);
 
-  } else {
+  } elsif ($type eq 'main') {
     $filename = "iprscan_DATA_${version}.tar.gz";
 
     $log->write_to("Delete the old index files\n");
@@ -241,6 +242,9 @@ sub get_file {
     $wormbase->run_command("rm -rf $dir/iprscan/data/*.psq", $log);
     $wormbase->run_command("rm -rf $dir/iprscan/data/*.phr", $log);
     $wormbase->run_command("rm -rf $dir/iprscan/data/*.pin", $log);
+
+  } elsif ($type eq 'match_data') {
+    $filename = "iprscan_MATCH_DATA_${version}.tar.gz";
 
   }
 
