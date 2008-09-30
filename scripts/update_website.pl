@@ -7,8 +7,8 @@
 # A script to finish the last part of the weekly build by updating all of the
 # relevant WormBase and Wormpep web pages.
 #
-# Last updated by: $Author: mh6 $     
-# Last updated on: $Date: 2008-04-25 10:08:59 $      
+# Last updated by: $Author: ar2 $     
+# Last updated on: $Date: 2008-09-30 15:38:07 $      
 
 
 #################################################################################
@@ -830,7 +830,7 @@ sub copy_GFF_files{
 	$log->write_to("processing $string in thread: $threadid\n");
         my ($type,$chrom)=split(',',$string);
 
-             open INF ,"zcat $chromdir/CHROMOSOME_${chrom}.gff.gz|" || die "ERROR: @!\n";
+             open INF ,"cat $chromdir/CHROMOSOME_${chrom}.gff|" || die "ERROR: @!\n";
              my $outf= new IO::File "$wwwdata/WORMBASE/$WS_name/GFF/CHROMOSOME_${chrom}.$type.gff",'w';
              while (<INF>){
 		     my @F=split;
@@ -959,7 +959,7 @@ sub update_wormpep_pages{
 
   # create release_paragraph.shtml
   open (PARAGRAPH, ">$www/$WS_name/release_paragraph.shtml") || croak "Can't create the file: $www/$WS_name/release_paragraph.shtml\n\n";
-  print PARAGRAPH "The current Wormpep database, wormpep${WS_current} (released $release_date), contains $letters residues in $count protein sequences (of which $alt_spliced have splice variants) - wormpep${WS_current} is based on the <A href=\"ftp://ftp.sanger.ac.uk/pub/wormbase/WS$WS_current\">current WS$WS_current release</A> of the <I>C. elegans</I> AceDB database.\n";
+  print PARAGRAPH "The current Wormpep database, wormpep${WS_current} (released $release_date), contains $letters residues in $count protein sequences (of which $alt_spliced have splice variants) - wormpep${WS_current} is based on the <A href=\"ftp://ftp.sanger.ac.uk/pub2/wormbase/WS$WS_current\">current WS$WS_current release</A> of the <I>C. elegans</I> AceDB database.\n";
   close (PARAGRAPH);
 
   # update the 'current_release.shtml' file
