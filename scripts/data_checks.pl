@@ -6,8 +6,8 @@
 #
 # This is a example of a good script template
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2008-05-14 09:15:16 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2008-09-30 15:35:09 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -65,11 +65,12 @@ my @queries;
 
 # acedb queries, where the results of specified queries are compared against expected values
 if ($ace) {
-    &read_acedb_queries;
+    my @queries = &read_acedb_queries;
     foreach my $query (@queries) {
-        $log->write_to( "\nTEST (tace query): " . $$query{'QUERY'} . ' (' . $$query{'DESC'} . ')');
-        my $count = $autoace->count( -query => $$query{'QUERY'} );
-        my $expect = $$query{'RESULT'};
+	my($desc,$test,$expect) = @{$query};
+
+        $log->write_to( "\nTEST (tace query): $test  ($desc )");
+        my $count = $autoace->count( -query => $test );;
         $log->write_to(" . . . ok") if ( &pass_check( $expect, $count ) == 0 );
     }
 }
@@ -116,107 +117,61 @@ sub pass_check {
     return 0;
 }
 
-sub read_acedb_queries {
-
-    my $i = 0;
-    $queries[$i]{'DESC'}   = "The number of RNAi experiments with more than one associated Gene";
-    $queries[$i]{'QUERY'}  = 'find rnai COUNT gene > 1 AND uniquely_mapped';
-    $queries[$i]{'RESULT'} = 2034;
-
-    $i++;
-    $queries[$i]{'DESC'}   = "The number of RNAi results with connections to genes";
-    $queries[$i]{'QUERY'}  = 'find RNAi Gene';
-    $queries[$i]{'RESULT'} = 73394;
-
-    $i++;
-    $queries[$i]{'DESC'}   = "The number of microarray results with connections to genes";
-    $queries[$i]{'QUERY'}  = 'find microarray_results gene';
-    $queries[$i]{'RESULT'} = 95545;
-
-    $i++;
-    $queries[$i]{'DESC'}   = "PCR products overlapping CDS";
-    $queries[$i]{'QUERY'}  = "find PCR_product Overlaps_CDS";
-    $queries[$i]{'RESULT'} = 62852;
-
-    $i++;
-    $queries[$i]{'DESC'}   = "The number of wormpep without pep_homol";
-    $queries[$i]{'QUERY'}  = 'find wormpep !pep_homol';
-    $queries[$i]{'RESULT'} = 727;
-
-    $i++;
-    $queries[$i]{'DESC'}   = "tRNAs not attached to parent properly";
-    $queries[$i]{'QUERY'}  = 'Transcript AND NEXT AND NOT NEXT';
-    $queries[$i]{'RESULT'} = 0;
-
-    $i++;
-    $queries[$i]{'DESC'}   = "Homol_data without waba";
-    $queries[$i]{'QUERY'}  = 'find Homol_data *waba !DNA_homol';
-    $queries[$i]{'RESULT'} = 0;
-
-    $i++;
-    $queries[$i]{'DESC'}   = "Homol_data without Pep_homol";
-    $queries[$i]{'QUERY'}  = 'find Homol_data *wublastx* !Pep_homol';
-    $queries[$i]{'RESULT'} = 0;
-    $i++;
-
-    $queries[$i]{'DESC'}   = "Inverted repeat Feature_data without features";
-    $queries[$i]{'QUERY'}  = 'find Feature_data *inverted !feature';
-    $queries[$i]{'RESULT'} = 188;
-
-    $i++;
-    $queries[$i]{'DESC'}   = "TRF repeat Feature_data without features";
-    $queries[$i]{'QUERY'}  = 'find Feature_data *TRF !Feature';
-    $queries[$i]{'RESULT'} = 0;
-
-    $i++;
-    $queries[$i]{'DESC'}   = "Oligo_sets with overlapping_CDS";
-    $queries[$i]{'QUERY'}  = 'find Oligo_Set Overlaps_CDS';
-    $queries[$i]{'RESULT'} = 74615;
-
-    $i++;
-    $queries[$i]{'DESC'}   = "operons without genes";
-    $queries[$i]{'QUERY'}  = 'find operon !contains Gene';
-    $queries[$i]{'RESULT'} = 0;
-
-    $i++;
-    $queries[$i]{'DESC'}   = "variation gene connection";
-    $queries[$i]{'QUERY'}  = 'find Variation Gene';
-    $queries[$i]{'RESULT'} = 124046;
-
-    $i++;
-    $queries[$i]{'DESC'}   = "genes with structured description";
-    $queries[$i]{'QUERY'}  = 'find Gene Structured_description';
-    $queries[$i]{'RESULT'} = 5000;
-
-    $i++;
-    $queries[$i]{'DESC'}   = "genes with GO_term";
-    $queries[$i]{'QUERY'}  = 'find Gene GO_term';
-    $queries[$i]{'RESULT'} = 14318;
-
-    $i++;
-    $queries[$i]{'DESC'}   = "CDSs with no source_exons";
-    $queries[$i]{'QUERY'}  = 'find CDS !Source_exons; method';
-    $queries[$i]{'RESULT'} = 0;
-    
-    $i++;
-    $queries[$i]{'DESC'}   = "Operons without parent ";
-    $queries[$i]{'QUERY'}  = 'find Operon !History AND !Canonical_parent';
-    $queries[$i]{'RESULT'} =  0;
-     
-    $i++;
-    $queries[$i]{'DESC'}   = "GO_term without Term or Definition";
-    $queries[$i]{'QUERY'}  = 'find GO_term !(Term or Definition)';
-    $queries[$i]{'RESULT'} =  0;     
-       
-    $i++;
-    $queries[$i]{'DESC'}   = "Homol mapped Expression Patterns";
-    $queries[$i]{'QUERY'}  = 'find Expr_pattern where Homol_homol';
-    $queries[$i]{'RESULT'} = 4506 ;    
-     
-    #	$i++;
-    #	$queries[$i]{'DESC'}   = "";
-    #	$queries[$i]{'QUERY'}  = '';
-    #	$queries[$i]{'RESULT'} =  ;
+sub read_acedb_queries { 
+    my @queries;
+    my $org = $wormbase->species;
+    if($org eq 'elegans'){    
+	@queries = (
+		   ["The number of RNAi experiments with more than one associated Gene", 'find rnai COUNT gene > 1 AND uniquely_mapped', 2034],
+		   ["The number of RNAi results with connections to genes", 'find RNAi Gene', 73394],
+		   ["The number of microarray results with connections to genes", 'find microarray_results gene', 95545],
+		   ["PCR products overlapping CDS", "find PCR_product Overlaps_CDS", 62852],
+		   ["The number of wormpep without pep_homol", 'find wormpep !pep_homol', 727],
+		   ["tRNAs not attached to parent properly", 'Transcript AND NEXT AND NOT NEXT', 0],
+		   ["Homol_data without waba", 'find Homol_data *waba !DNA_homol', 0],
+		   ["Homol_data without Pep_homol", 'find Homol_data *wublastx* !Pep_homol', 0],
+		   ["Inverted repeat Feature_data without features", 'find Feature_data *inverted !feature', 188],
+		   ["TRF repeat Feature_data without features", 'find Feature_data *TRF !Feature', 0],
+		   ["Oligo_sets with overlapping_CDS", 'find Oligo_Set Overlaps_CDS', 74615],
+		   ["operons without genes", 'find operon !contains Gene', 0],
+		   ["variation gene connection", 'find Variation Gene', 124046],
+		   ["genes with structured description", 'find Gene Structured_description', 5000],
+		   ["genes with GO_term", 'find Gene GO_term', 14318],
+		   ["CDSs with no source_exons", 'find CDS !Source_exons, method', 0],
+		   ["Operons without parent ", 'find Operon !History AND !Canonical_parent',  0],
+		   ["GO_term without Term or Definition", 'find GO_term !(Term or Definition)',  0],
+		   ["Homol mapped Expression Patterns", 'find Expr_pattern where Homol_homol', 4506],
+		   );
+    }
+    elsif( $species eq 'japonica'){  
+	@queries = (
+		   ["The number of wormpep without pep_homol", 'find protein JA* !pep_homol', 747],
+		   ["tRNAs not attached to parent properly", 'Transcript AND NEXT AND NOT NEXT', 0],
+		   ["Homol_data without Pep_homol", 'find Homol_data *wublastx* !Pep_homol', 0],
+		   ["Inverted repeat Feature_data without features", 'find Feature_data *inverted !feature', 437],
+		   ["TRF repeat Feature_data without features", 'find Feature_data *TRF !Feature', 0],
+		   ["genes with GO_term", 'find Gene GO_term', 7708],
+		   ["CDSs with no source_exons", 'find CDS CJA !Source_exons, method', 0],
+		   ["Operons without parent ", 'find Operon !History AND !Canonical_parent',  0],
+		   ["Proteins without peptides ", 'find Protein JA* !Peptide',  0],
+		   ["CDSs without transcripts ", 'find CDS CJA* !Corresponding_transcript',  0],
+		   );
+    }    
+    elsif( $species eq 'remanei'){  
+	@queries = (
+		   ["The number of wormpep without pep_homol", 'find protein RP* !pep_homol', 1362],
+		   ["tRNAs not attached to parent properly", 'Transcript AND NEXT AND NOT NEXT', 0],
+		   ["Homol_data without Pep_homol", 'find Homol_data *wublastx* !Pep_homol', 0],
+		   ["Inverted repeat Feature_data without features", 'find Feature_data *inverted !feature', 437],
+		   ["TRF repeat Feature_data without features", 'find Feature_data *TRF !Feature', 0],
+		   ["genes with GO_term", 'find Gene GO_term', 7708],
+		   ["CDSs with no source_exons", 'find CDS CRE !Source_exons, method', 0],
+		   ["Operons without parent ", 'find Operon !History AND !Canonical_parent',  0],
+		   ["Proteins without peptides ", 'find Protein RP*RP !Peptide',  0],
+		   ["CDSs without transcripts ", 'find CDS CRE* !Corresponding_transcript',  0],
+		   );
+    }
+    return @queries;
 }
 
 sub read_GFF_queries {
