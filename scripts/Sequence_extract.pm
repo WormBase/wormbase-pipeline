@@ -257,7 +257,7 @@ sub DNA_rev
 =head2
 
   Title   :   DNA_comp
-  Usage   :   my $comp = $seq_obj->($seq)
+  Usage   :   my $comp = $seq_obj->DNA_comp($seq)
   Function:   complement DNA seq
   Returns :   DNA sequence as string
   Args    :   DNA sequence as string
@@ -277,7 +277,32 @@ sub DNA_comp
     $seq =~ tr/x/c/;
     return ($seq);
   }
+  
+=head2
 
+  Title   :   flanking_sequences
+  Usage   :   my $flanks = $seq_obj->flanking_sequences($seq, 1000, 20000, 30)
+  Function:   give flanking sequence of specified location
+  Returns :   ref to array contianing two DNA sequences as string
+  Args    :   reference seq, start coord, end coord, flank length required.
 
+=cut
+
+sub flanking_sequences {
+	my $self = shift;
+	my($seq, $start, $end, $length) = @_;
+	my @flanks;
+
+	$flanks[0] = $self->Sub_sequence($seq,($start-$length-1),$length);
+	$flanks[1] = $self->Sub_sequence($seq,$end,$length);
+	
+	if( $end < $start ){
+		$tmp = $self->DNA_revcomp($flanks[0]);
+		$flanks[0] = $self->DNA_revcomp($flanks[1]);
+		$flanks[1] = $tmp;
+	}
+	
+	return \@flanks;
+}
 
 1;
