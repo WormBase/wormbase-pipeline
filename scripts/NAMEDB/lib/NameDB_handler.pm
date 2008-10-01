@@ -156,8 +156,8 @@ sub validate_name {
 				    },
 		       'brenneri' => {
 				      "CGC" => '^Cbn-[a-z21]{3,4}-[1-9]\d*(\.\d+)?$',	
-				      "Sequence" => 'no_type',
-				      "Public_name" => '^Cbn-[a-z]{3,4}-[1-9]\d*(\.\d+)?$',
+				      "Sequence" => '^CBN\d{5}$',
+				      "Public_name" => '^Cbn-[a-z]{3,4}-[1-9]\d*(\.\d+)?$|^CBN\d{5}$',
 				     },
                         'pristionchus' => {
 				     "CGC" => '^Ppa-[a-z21]{3,4}-[1-9]\d*(\.\d+)?$',	
