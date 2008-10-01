@@ -236,6 +236,10 @@ sub full_name {
 	};
 }
 sub assembly_type {'contig'};
+sub wormpep_prefix {'CN'}
+sub cds_regex{qr/CBN\d{5}[a-z]*/};
+sub cds_regex_noend{qr/CBN\d{5}[a-z]*/}; # for getting the CDS part of a Transcript name
+
 
 #######################################################
 
