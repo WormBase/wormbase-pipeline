@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: mt3 $
-# Last updated on: $Date: 2008-09-29 11:09:42 $
+# Last updated on: $Date: 2008-10-02 14:20:36 $
 
 use strict;
 use lib $ENV{"CVS_DIR"};
@@ -118,6 +118,7 @@ foreach $class (@classes){
   if ($class =~ m/allele/i)        {&process_allele_class}
   if ($class =~ m/strain/i)        {&process_strain_class}
   if ($class =~ m/rearrangement/i) {&process_rearrangement}
+  if ($class =~ m/paper/i)         {&process_paper_class}
 #  if ($class =~ m/mapping/i)       {&check_genetics_coords_mapping}
 #  if ($class =~ m/multipoint/i)    {&check_dubious_multipt_gene_connections}
 }
@@ -1158,6 +1159,28 @@ sub process_rearrangement {
   print LOG "No errors found\n" if $count == 0;
 }
 
+
+                          ############################################################
+                          #         SUBROUTINES FOR -class paper option              #
+                          ############################################################
+
+sub process_paper_class {
+
+
+    print "\nChecking Paper class for errors:\n";
+    print LOG "\nChecking Paper class for errors:\n--------------------------------\n";
+
+    #fetches the data from Geneace
+    my @Papers =$db->fetch (-query => 'FIND Paper');
+    #iterates through @Papers
+    foreach my $paper_id ( @Papers ) {
+	unless ($paper_id->name =~ (/WBPaper[0-9]{8}$/)) {
+	    print LOG "Error: $paper_id is not formatted correctly\n"; # prints an error if the Paper ID does not match WBPaper12345678
+	    print "Error: $paper_id is not formatted correctly\n" if ($debug); 
+	} 
+    }
+}
+  
                           ############################################################
                           #         SUBROUTINES FOR -class mapping option            #
                           ############################################################
