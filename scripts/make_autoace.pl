@@ -7,8 +7,8 @@
 #
 # This makes the autoace database from its composite sources.
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2008-09-05 15:42:41 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2008-10-02 10:19:23 $
 
 use strict;
 use lib  $ENV{'CVS_DIR'};
@@ -277,6 +277,13 @@ sub parseconfig {
     	push(@filenames,$wormbase->misc_static."/$filename");
     	$log->write_to( "* Parse config file : file ".$wormbase->misc_static."/$filename noted ..\n");
     }
+    elsif( $dbname eq 'config') {
+    	if(-e "$basedir/autoace_config/$filename"){
+    		push(@filenames,"$basedir/autoace_config/$filename");
+    	}else{
+    		$log->error("ERROR: file $basedir/autoace_config/$filename is not existent !\n");
+    	}
+	}
     else {
       $log->write_to( "ERROR: file $wormbasedir/$dbname/$filename is not existent !\n");
       $log->error;
