@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-10-02 11:13:43 $      
+# Last updated on: $Date: 2008-10-02 12:13:38 $      
 
 # Changes required by Ant: 2008-02-19
 # 
@@ -3394,10 +3394,12 @@ sub get_jigsaw_different_to_curated_CDS {
   # from jigsaw, only report those isoforms which have no exons
   # that are the same as jigsaw.
   my @completely_unmatched_cds;
+  my @completely_unmatched_cds_ids;
   foreach my $cds (@unmatched_cds) {
     my $cds_id = $cds->[0];
     if (! exists $matched_cds{$cds_id}) {
       push @completely_unmatched_cds, $cds;
+      push @completely_unmatched_cds_ids, $cds->[0];
     }
   }
 
@@ -3412,7 +3414,7 @@ sub get_jigsaw_different_to_curated_CDS {
       my $est_score = $jigsaw->[6];
       my $anomaly_score = 1;
       #print "JIGSAW_DIFFERS_FROM_CDS ANOMALY: $jigsaw_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score\n";
-      &output_to_database("JIGSAW_DIFFERS_FROM_CDS", $chromosome, $jigsaw_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score, "See: @completely_unmatched_cds");
+      &output_to_database("JIGSAW_DIFFERS_FROM_CDS", $chromosome, $jigsaw_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score, "See: @completely_unmatched_cds_ids");
   }
 
   # now we output a list of CDS details where no exon of the CDS has a match to a jigsaw exon
