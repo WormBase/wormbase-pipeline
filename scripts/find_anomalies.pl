@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-09-05 09:13:14 $      
+# Last updated on: $Date: 2008-10-02 11:13:43 $      
 
 # Changes required by Ant: 2008-02-19
 # 
@@ -3412,7 +3412,7 @@ sub get_jigsaw_different_to_curated_CDS {
       my $est_score = $jigsaw->[6];
       my $anomaly_score = 1;
       #print "JIGSAW_DIFFERS_FROM_CDS ANOMALY: $jigsaw_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score\n";
-      &output_to_database("JIGSAW_DIFFERS_FROM_CDS", $chromosome, $jigsaw_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score, '');
+      &output_to_database("JIGSAW_DIFFERS_FROM_CDS", $chromosome, $jigsaw_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score, "See: @completely_unmatched_cds");
   }
 
   # now we output a list of CDS details where no exon of the CDS has a match to a jigsaw exon
