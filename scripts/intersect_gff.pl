@@ -7,7 +7,7 @@
 # This is a script to fidn the strand-insensitive intersection of two GFF files.
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-09-24 12:50:23 $      
+# Last updated on: $Date: 2008-10-03 14:02:19 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -24,7 +24,7 @@ use Modules::Overlap;
 
 my ($help, $debug, $test, $verbose, $store, $wormbase);
 my ($species, $gff1, $gff2, $output);
-my ($not_matching, $near_5, $near_3, $same_sense, $other_sense, $exact_match);
+my ($matches, $not_matching, $near_5, $near_3, $same_sense, $other_sense, $exact_match);
 
 GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
@@ -35,6 +35,7 @@ GetOptions ("help"       => \$help,
 	    "gff1:s"     => \$gff1,
 	    "gff2:s"     => \$gff2,
 	    "output:s"   => \$output,
+	    "matches:s"  => \$matches,
 	    "not_matching" => \$not_matching,
 	    "near_5:i"   => \$near_5,
 	    "near_3:i"   => \$near_3,
@@ -71,6 +72,9 @@ if (defined $same_sense && defined $other_sense && $same_sense == 1 && $other_se
   croak ("You can't choose for a match to only things on the same sense and only things on the opposite sense!\n");
 }
 
+# if we have a -matches with nothng after
+if (defined $matches && $matches eq "") {$matches = 'ID\s*=\s*'}	# look for the ID in -gff2 features after 'ID='
+
 ##########################
 # MAIN BODY OF SCRIPT
 ##########################
@@ -97,11 +101,28 @@ foreach my $chromosome ($wormbase->get_chromosome_names(-mito => 1, -prefix => 1
 	       );
 
   foreach my $gff1_line (@gff1_list) {
-    my $match_result = match($gff1_line, \@gff2_list, \%state);
-    if ($match_result && !$not_matching) { # we want GFF1 lines that do have a match to GFF2
+    my @match_result = match($gff1_line, \@gff2_list, \%state);
+    if (@match_result && !$not_matching) { # we want GFF1 lines that do have a match to GFF2
+
+      # add the matching IDs
+      if ($matches) {
+	if (defined $gff1_line->[8] && $gff1_line->[8] ne "") {$gff1_line->[8] .= " ; " }
+	$gff1_line->[8] .= 'Matches="';
+	my $id_count=0;
+	foreach my $matching_feature (@match_result) {
+	  my ($match_id) = $matching_feature->[8] =~ /$matches(\S+)/;
+	  if (!defined $match_id) {die "No ID found in line:\n@{$matching_feature}\nExpected to find ID after '$matches' in '$matching_feature->[8]'\n";}
+	  $match_id =~ s/\"//g;   # remove quotes
+	  $match_id =~ s/\;\S+//; # remove anything after a ';' as this is s field separator in the 'other' field
+	  if ($id_count++ > 0) {$gff1_line->[8] .= ","}	      
+	  $gff1_line->[8] .= $match_id;
+	}
+	$gff1_line->[8] .= '"';
+      }
+
       my $line = join "\t", @{$gff1_line};
       print OUT "$line\n";
-    } elsif (!$match_result && $not_matching) {	# we want GFF1 lines that don't have a match to GFF2
+    } elsif (!@match_result && $not_matching) {	# we want GFF1 lines that don't have a match to GFF2
       my $line = join "\t", @{$gff1_line};
       print OUT "$line\n";
     }
@@ -315,7 +336,13 @@ script_template.pl  OPTIONAL arguments:
 
 =over 4
 
-=item -not_matching, if this is set that the lines in the -gff1 file that do not match any in the -gff2 file will be output instead of the ones that do match.
+=item -not_matching, if this is set then the lines in the -gff1 file that do not match any in the -gff2 file will be output instead of the ones that do match.
+
+=back
+
+=over 4
+
+=item -matches, if this is set then the IDs of the matching lines in the -gff2 file are appended to the end of the output lines. The ID is taken from the 8th column of the -gff2 file and looks like 'ID="ID_name"'. The output ID will be output as: Matches="ID_name". If more than one ID matches, then the output will have all of the names separated by commas: Matches="ID_name1,ID_name2,ID_name3". This looks for the ID after the pattern 'ID=' by default, but you can specify a regex that comes in front of the ID by, for example "-matches 'CDS\s+'" to match IDs like 'CDS "CBG10234"'
 
 =back
 
