@@ -1,6 +1,6 @@
 // Spread sheet definition for the ACeDB software 
-// User: ar2
-// Date: 2006-05-25_12:12:07
+// User: wormpub
+// Date: 2007-10-22_18:14:53
 
 // %n (%%n in the graphic) are parameter to be given on the command line in tace
 // or by default by the Parameters given in this file
@@ -14,8 +14,9 @@ Width 12
 Optional 
 Visible 
 Class 
-Class cDNA_Sequence 
+Class Sequence 
 From 1 
+Condition method = "*EST*" OR method = "*NDB*"
  
 Colonne 2 
 Width 25 
@@ -24,7 +25,7 @@ Hidden
 Class 
 Class Feature_data 
 From 1 
-Tag Feature_data 
+Tag Feature_data  
  
 Colonne 3 
 Width 12 
@@ -33,7 +34,7 @@ Visible
 Class 
 Class Method 
 From 2 
-Tag Feature 
+Tag Feature  
  
 Colonne 4 
 Width 12 
@@ -41,7 +42,7 @@ Optional
 Visible 
 Integer 
 Right_of 3 
-Tag  HERE  
+Tag HERE   
  
 Colonne 5 
 Width 12 
@@ -49,7 +50,7 @@ Optional
 Visible 
 Integer 
 Right_of 4 
-Tag  HERE  
+Tag HERE   
  
  
 
