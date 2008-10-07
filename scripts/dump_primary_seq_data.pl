@@ -4,10 +4,9 @@
 #
 # Usage : dump_primary_seq_data.pl [-options]
 #
-# Last edited by: $Author: pad $
-# Last edited on: $Date: 2008-09-26 15:06:43 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2008-10-07 13:33:16 $
 
-my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
 use strict;
 use Wormbase;
@@ -86,17 +85,8 @@ foreach my $organism(@species) {
   $wormbase->run_command ("mkdir $BLAToutput_dir", $log) if (!-e $BLAToutput_dir);
   $log->write_to("Creating $BLAToutput_dir\n") if (!-e $BLAToutput_dir);
 
-  my $sourceDB;
-  if ($organism eq "elegans") {
-    $sourceDB = $wormbase->database('camace');
-  }
-  elsif ($organism eq "heterorhabditis") {
-    $sourceDB = glob "~wormpub/DATABASES/heterorhabditis";
-  }
-  elsif ($organism eq "pristionchus"){
-    $sourceDB = glob "~wormpub/DATABASES/pristionchus";
-  }
-  else {$sourceDB = $wormbase->database($organism);}
+  my $sourceDB = $wormbase->seq_db;
+  
   # Fetch sequence data from primary database.
   $log->write_to("\n\nUsing: $sourceDB: for data retrieval\n");
   
