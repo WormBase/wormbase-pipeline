@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-10-02 12:13:38 $      
+# Last updated on: $Date: 2008-10-07 13:39:59 $      
 
 # Changes required by Ant: 2008-02-19
 # 
@@ -383,7 +383,7 @@ foreach my $chromosome (@chromosomes) {
 
   print "finding anomalies\n";
 
-  #if (0) {
+#  if (0) {
 
   print "finding protein homologies not overlapping CDS exons\n";
   my $matched_protein_aref = &get_protein_differences(\@cds_exons, \@pseudogenes, \@homologies, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, $chromosome) if (exists $run{UNMATCHED_PROTEIN});
@@ -422,7 +422,6 @@ foreach my $chromosome (@chromosomes) {
 
   print "finding EST/genome mismatches\n";
   &get_est_mismatches(\@est_hsp, $chromosome) if (exists $run{UNMATCHED_EST});
-
 
   print "finding weak CDS exon splice sites\n";
   &get_weak_exon_splice_sites(\@CDS_introns, $chromosome) if (exists $run{WEAK_INTRON_SPLICE_SITE});
@@ -2524,11 +2523,11 @@ sub read_chromosome {
   # if we have already read in the sequence entries, return the one for this chromosome
   if (exists $dna_entry{$chromosome}) {return $dna_entry{$chromosome};}
 
-  my $seq_file = $wormbase->chromosomes . "/$chromosome.dna";
+  my $seq_file = "$database/CHROMOSOMES/$chromosome.dna";
   my $seq = &read_file($seq_file);
 
   if (! defined $seq) {
-    $seq = &read_entry($wormbase->chromosomes, $chromosome)
+    $seq = &read_entry("$database/CHROMOSOMES", $chromosome)
   }
 
   return $seq;
@@ -3358,6 +3357,16 @@ sub get_jigsaw_different_to_curated_CDS {
     }
   }
 
+  # find CDS IDs that overlap jigsaw
+  my %cds_overlaps_jigsaw;
+  my $cds_match = $ovlp->compare($CDS_exons_aref);
+  foreach my $jigsaw (@{$jigsaw_exons_aref}) { # $jigsaw_id, $chrom_start, $chrom_end, $chrom_strand
+    if (my @results = $cds_match->match($jigsaw)) {
+      foreach my $cds_hit (@results) {
+	push @{$cds_overlaps_jigsaw{$jigsaw}}, $cds_hit->[0]; # store the CDS ID
+      }
+    }
+  }
 
   # here we don't use the overlap module, we do it more efficiently using a hash
   my %unmatched_jigsaw;		# list of jigsaw exons left when we remove matching CDS exons
@@ -3376,7 +3385,7 @@ sub get_jigsaw_different_to_curated_CDS {
   foreach my $cds (@{$CDS_exons_aref}) { # $cds_id, $chrom_start, $chrom_end, $chrom_strand
     my $key = $cds->[3]."_".$cds->[1]."_".$cds->[2];
     my $cds_id = $cds->[0];
-
+    
     if (exists $all_jigsaw_exons{$key}) { # check we have got a match
       $matched_cds{$cds_id} = 1; # note that this CDS matched a jigsaw exon
 
@@ -3394,12 +3403,10 @@ sub get_jigsaw_different_to_curated_CDS {
   # from jigsaw, only report those isoforms which have no exons
   # that are the same as jigsaw.
   my @completely_unmatched_cds;
-  my @completely_unmatched_cds_ids;
   foreach my $cds (@unmatched_cds) {
     my $cds_id = $cds->[0];
     if (! exists $matched_cds{$cds_id}) {
       push @completely_unmatched_cds, $cds;
-      push @completely_unmatched_cds_ids, $cds->[0];
     }
   }
 
@@ -3414,7 +3421,14 @@ sub get_jigsaw_different_to_curated_CDS {
       my $est_score = $jigsaw->[6];
       my $anomaly_score = 1;
       #print "JIGSAW_DIFFERS_FROM_CDS ANOMALY: $jigsaw_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score\n";
-      &output_to_database("JIGSAW_DIFFERS_FROM_CDS", $chromosome, $jigsaw_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score, "See: @completely_unmatched_cds_ids");
+      # get the unique list of CDS IDs that overlap with this JIGSAW (see p124 in the Perl Cookbook)
+      my %seen;
+      my @cds_ids = grep {! $seen{$_} ++ } @{$cds_overlaps_jigsaw{$jigsaw_id}};
+      my $cds_ids="";
+      foreach my $cds (@cds_ids) {
+	$cds_ids .= "$cds ";
+      }
+      &output_to_database("JIGSAW_DIFFERS_FROM_CDS", $chromosome, $jigsaw_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score, "See: $cds_ids");
   }
 
   # now we output a list of CDS details where no exon of the CDS has a match to a jigsaw exon
