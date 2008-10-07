@@ -5,7 +5,7 @@
 # Usage : dump_primary_seq_data.pl [-options]
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2008-10-07 13:33:16 $
+# Last edited on: $Date: 2008-10-07 13:38:18 $
 
 use lib $ENV{'CVS_DIR'};
 use strict;
