@@ -5,7 +5,7 @@
 # Usage : EMBL_Sequencefetch.pl [-options]
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2008-09-26 13:23:14 $
+# Last edited on: $Date: 2008-10-07 13:02:50 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -119,11 +119,18 @@ WARNING: You are retrieving EMBL sequences as a full update (This will take a lo
 # MAIN BODY OF SCRIPT
 ##########################
 
-#my %species = ($wormbase->species_accessors);
-#$species{$wormbase->species} = $wormbase;
-#foreach my $organism(keys %species) {
+my @organism;
 
-foreach my $organism(keys %species2taxonid) {
+if (!defined($organism)) {
+@organism = (keys %species2taxonid);
+}
+
+elsif ($organism) {
+push (@organism, $organism);
+}
+
+
+foreach my $organism(@organism) {
   $log->write_to("============================================\nProcessing: $organism\n============================================\n");
   my $sourceDB;
   if ($organism eq "elegans") {
