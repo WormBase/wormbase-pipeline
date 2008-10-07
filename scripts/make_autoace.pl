@@ -7,8 +7,8 @@
 #
 # This makes the autoace database from its composite sources.
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2008-10-02 10:19:23 $
+# Last edited by: $Author: pad $
+# Last edited on: $Date: 2008-10-07 14:17:00 $
 
 use strict;
 use lib  $ENV{'CVS_DIR'};
@@ -27,7 +27,7 @@ use Storable;
 
 our ($help, $debug, $test, $species);
 my $store;
-my( $all, $parse, $init, $tmpgene, $pmap, $chromlink, $check, $allcmid, $reorder, $common, $cdna );
+my( $all, $parse, $init, $tmpgene, $pmap, $chromlink, $check, $allcmid, $reorder, $common );
 
 GetOptions ("help"         => \$help,
             "debug=s"      => \$debug,
@@ -42,11 +42,10 @@ GetOptions ("help"         => \$help,
 	    "allcmid"      => \$allcmid,
 	    "reorder"      => \$reorder,
 	    "common"       => \$common,
-	    "cdna"         => \$cdna,
 	    "species:s"	   => \$species
 	   );
 
-$all = 1 unless( $init or $parse or $tmpgene or $pmap or $chromlink or $check or $allcmid or $reorder or $common or $cdna) ;
+$all = 1 unless( $init or $parse or $tmpgene or $pmap or $chromlink or $check or $allcmid or $reorder or $common ) ;
 
 # Display help if required
 &usage("Help") if ($help);
@@ -133,49 +132,6 @@ if($wormbase->species eq 'elegans') {
 
 #write COMMON_DATA files that can be done at start of build.
 $wormbase->run_script("update_Common_data.pl -clone2centre -clone2acc -clone2size -clone2seq -genes2lab -worm_gene2cgc -worm_gene2geneID -worm_gene2class -est -est2feature -gene_id -clone2type -cds2cgc", $log ) if( $all or $common );
-
-
-if($all or $cdna){
-#write out sequence objects
-    my @queries;
-    my $EST_dir = $wormbase->cdna_dir;
-    my $EST_acedir =$wormbase->cdna_acedir;
-    mkpath $EST_acedir unless (-e $EST_acedir);
-    my $miscdir = $wormbase->misc_dynamic;
-    my $dbdir = $wormbase->orgdb;
-    $log->write_to("writing cDNA sequences etc from $dbdir to\n\t$EST_dir\n\t$EST_acedir\n\n");
-
- my $command=<<END;
-query find Sequence where method = NDB & RNA AND NEXT = mRNA & !Ignore\n
-Show -T -a -f $EST_acedir/mRNA.ace
-Dna -mismatch $EST_dir/mRNA\n
-clear\n
-query find Sequence where method = NDB & RNA AND NEXT != mRNA & !Ignore\n
-Show -T -a -f $EST_acedir/ncRNA.ace
-Dna -mismatch $EST_dir/ncRNA\n
-clear\n
-query find Sequence where method = EST_$species & !OST* & !Ignore & !RST*\n
-Show -T -a -f $EST_acedir/EST.ace
-Dna -mismatch $EST_dir/EST\n
-clear\n
-query find Sequence where method = EST_$species & OST* & !Ignore\n
-Show -T -a -f $EST_acedir/OST.ace
-Dna -mismatch $EST_dir/OST\n
-clear\n
-query find Sequence where method = EST_$species & RST* & !Ignore\n
-Show -T -a -f $EST_acedir/RST.ace
-Dna -mismatch $EST_dir/RST\n
-clear\n
-query find Sequence TC*\n
-Show -T -a -f $EST_acedir/tc1.ace
-Dna -mismatch $EST_dir/tc1\n
-clear\n
-END
-  print $command if ($wormbase->debug);
-  open (DB, "| $tace $dbdir") or $log->log_and_die("Couldn't open $dbdir\n");
-  print DB $command;
-  close DB;
-}
 
 #finish
 $log->mail;
