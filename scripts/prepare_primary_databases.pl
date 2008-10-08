@@ -2,8 +2,8 @@
 #
 # prepare_primary_databases.pl
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2008-04-30 10:53:45 $
+# Last edited by: $Author: pad $
+# Last edited on: $Date: 2008-10-08 14:00:33 $
 
 use strict;
 my $scriptdir = $ENV{'CVS_DIR'};
@@ -62,9 +62,7 @@ $log->write_to("Updating TierII databases . . \n");
 my (%access) = $wormbase->species_accessors;
 foreach my $species (keys %access) {
 	$log->write_to("\t$species\n");
-	my $start = $wormbase->database("$species");
-	my $end = $access{$species}->orgdb;
-	$wormbase->run_script("initiate_build.pl -species $species -update", $log);
+	$access{$species}->run_script("initiate_build.pl -update", $log);
 }
 
 &FTP_versions;
