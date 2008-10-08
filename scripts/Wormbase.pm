@@ -1249,7 +1249,7 @@ sub cdna_dir    { my $self = shift; return $self->{'cdna_dir'};}
 sub cdna_acedir { my $self = shift; return $self->{'cdna_acedir'};}
 sub maskedcdna  { my $self = shift; return $self->{'maskedcdna'} ;}
 sub genome_seq  { my $self = shift; return $self->autoace."/genome_seq";}
-sub seq_db	    { my $self = shift; return $self->database($self->{'SPECIES'});}
+sub seq_db	    { my $self = shift; return $self->database($self->{'species'});}
 
 
 		  # this can be modified by calling script
