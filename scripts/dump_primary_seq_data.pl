@@ -4,8 +4,8 @@
 #
 # Usage : dump_primary_seq_data.pl [-options]
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2008-10-07 13:38:18 $
+# Last edited by: $Author: pad $
+# Last edited on: $Date: 2008-10-08 10:52:20 $
 
 use lib $ENV{'CVS_DIR'};
 use strict;
@@ -38,7 +38,7 @@ if ( $store ) {
 } else {
   $wormbase = Wormbase->new( -debug    => $debug,
                              -test     => $test,
-			     -organism => $species,
+			     -organism => $organism,
 			   );
 }
 
