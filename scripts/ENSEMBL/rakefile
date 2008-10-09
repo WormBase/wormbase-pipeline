@@ -26,10 +26,10 @@ end
 # on which most other tasks depend on
 desc 'setup environment variables'
 task :env_setup do
-	old_perl5=ENV['PERL5LIB']
-  additional='/software/worm/lib/perl5:/software/worm/lib/bioperl-run_last_cvs/:/software/worm/ensembl/ensembl-config/brugia:/software/worm/ensembl/ensembl-pipeline/modules:/software/worm/ensembl/ensembl-analysis/modules:/software/worm/ensembl/bioperl-live:/software/worm/ensembl/bioperl-run:/software/worm/ensembl/ensembl/modules:/software/worm/ensembl/ensembl-hive/modules:/software/worm/ensembl/ensembl-compara/modules:/software/worm/ensembl/ensembl-analysis:/software/worm/lib:.:/nfs/team71/worm/mh6/perl_modules/lib/perl5:/nfs/farm/Worms/Ensembl/bioperl-live:/nfs/farm/Worms/Ensembl/ensembl/modules:/nfs/farm/Worms/Ensembl/ensembl-pipeline/modules:/lustre/work1/ensembl/wormpipe/Ensembl/bioperl-live:/lustre/work1/ensembl/wormpipe/Ensembl/ensembl/modules:/lustre/work1/ensembl/wormpipe/Ensembl/ensembl-pipeline/module'
-	ENV['PERL5LIB']=additional+old_perl5
-	puts "did you set:\nset path = (/software/ensembl/compara/semphy /software/ensembl/compara/gerp/GERP_03292006/ /software/worm/bin/wublast /software/worm/bin/ruby /software/worm/bin/acedb #{basedir}/ensembl-hive/scripts /software/worm/bin/wublast/ /software/worm/bin /software/worm/bin/ruby /software/worm/bin/acedb ~/wormbase/scripts /usr/local/ensembl/bin $path)"
+        old_perl5=ENV['PERL5LIB']
+        additional='/software/worm/lib/perl5:/software/worm/lib/bioperl-run_last_cvs/:/software/worm/ensembl/ensembl-config/brugia:/software/worm/ensembl/ensembl-pipeline/modules:/software/worm/ensembl/ensembl-analysis/modules:/software/worm/ensembl/bioperl-live:/software/worm/ensembl/bioperl-run:/software/worm/ensembl/ensembl/modules:/software/worm/ensembl/ensembl-hive/modules:/software/worm/ensembl/ensembl-compara/modules:/software/worm/ensembl/ensembl-analysis:/software/worm/lib:.:/nfs/team71/worm/mh6/perl_modules/lib/perl5:/nfs/farm/Worms/Ensembl/bioperl-live:/nfs/farm/Worms/Ensembl/ensembl/modules:/nfs/farm/Worms/Ensembl/ensembl-pipeline/modules:/lustre/work1/ensembl/wormpipe/Ensembl/bioperl-live:/lustre/work1/ensembl/wormpipe/Ensembl/ensembl/modules:/lustre/work1/ensembl/wormpipe/Ensembl/ensembl-pipeline/module'
+        ENV['PERL5LIB']=additional+old_perl5
+        puts "did you set:\nset path = (/software/ensembl/compara/semphy /software/ensembl/compara/gerp/GERP_03292006/ /software/worm/bin/wublast /software/worm/bin/ruby /software/worm/bin/acedb #{basedir}/ensembl-hive/scripts /software/worm/bin/wublast/ /software/worm/bin /software/worm/bin/ruby /software/worm/bin/acedb ~/wormbase/scripts /usr/local/ensembl/bin $path)"
 end
 
 # updates the C.elegans assembly version to the current build
@@ -270,4 +270,11 @@ task :build => [:check_clean,:env_setup,:build_homology,:run_homology,:build_pec
 desc 'dump all databases into the various flatfiles'
 task :dump => [:dump_homology,:dump_pecan,:dump_compara,:copy_release,:cleanup]
 
-task :default => [:update_conf,:build,:dump]
+desc 'hack around some of the more recent bugs in compara (build and run bit)'
+task :mt3_run => [:check_clean,:env_setup,:build_homology,:run_homology]
+
+desc 'hack around some of the more recent bugs in compara (dump)'
+task :mt3_dump => [:dump_homology,:dump_compara,:copy_release,:cleanup] 
+
+# task :default => [:update_conf,:build,:dump]
+task :default => [:update_conf,:mt3_run]
