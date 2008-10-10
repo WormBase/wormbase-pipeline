@@ -6,8 +6,8 @@
 #
 # Builds a wormpep data set from the current autoace database
 #
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2008-07-18 10:43:21 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2008-10-10 09:46:35 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -121,7 +121,7 @@ if ($initial) {
 }
 elsif( $final ) {
 	$pid=$pepfile=$table=1 if $all;
-	&get_embl_data		if $pid;
+	&get_embl_data		if ($pid and ($wormbase->species eq 'elegans'));
 	&write_final_pep 	if $pepfile;
 	&write_table 		if $table; #normally run within final pepfile
 }
@@ -475,10 +475,10 @@ sub count_isoforms{
       my $letter = $2;
       my $new_name = $cds_prefix."_".$number;
       unless (exists ($new_name2x{$new_name})) {
-	$no_isoform_count++;
+		$no_isoform_count++;
       } 
       else {
-	$isoform_count++;
+		$isoform_count++;
       }
       $new_name2x{$new_name} = "x";
     } 
