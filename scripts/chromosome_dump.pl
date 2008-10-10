@@ -9,7 +9,7 @@
 # see pod for more details
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2008-09-08 16:18:43 $
+# Last updated on: $Date: 2008-10-10 09:38:54 $
 
 
 use strict;
@@ -126,7 +126,7 @@ sub dump_dna {
 
   $log->write_to("Removing blank first lines\n");
   foreach ($wormbase->get_chromosome_names(-mito => 1,-prefix=> 1)) {
-    $wormbase->remove_blank_lines("$dump_dir/$_.dna", $log);
+    $wormbase->remove_blank_lines("$dump_dir/$_.dna", 'no_log');
   }
   if ($wormbase->assembly_type eq 'contig') {
     unlink "$dump_dir/supercontigs.fa" if -e "$dump_dir/supercontigs.fa";
