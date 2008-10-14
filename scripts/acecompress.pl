@@ -7,7 +7,7 @@
 # Usage : acecompress.pl [-options]
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2008-09-30 15:36:18 $
+# Last edited on: $Date: 2008-10-14 16:22:35 $
 use lib $ENV{'CVS_DIR'};
 
 use strict;
@@ -48,6 +48,7 @@ else {
 }
 
 my $log = Log_files->make_build_log($wormbase);
+$log->log_and_die("you need to choose -homol or -feature\n") unless ($homol or $feature);
 
 open (FILE, "<$file") or $log->log_and_die("cant open $file : $!\n");
 while (<FILE>) {
