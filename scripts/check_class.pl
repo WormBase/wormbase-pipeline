@@ -6,7 +6,7 @@
 # Compares this number to those from a second database.
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2007-05-09 09:16:22 $
+# Last updated on: $Date: 2008-10-14 14:25:33 $
 
 
 use strict;
@@ -27,7 +27,7 @@ $|=1;
 ######################################
 
 my ($help, $debug, $test, $verbose, $store, $wormbase);
-my ($database, $database1, $database2, $classes);
+my ($database, $database1, $database2, $classes, $species, $stage);
 my ($db_1, $db_2, $dbname_1, $dbname_2);
 my ($stlace, $camace, $genace, $csh, $caltech, $misc_static, $brigace, $incomplete, $data_sets);
 
@@ -38,8 +38,6 @@ GetOptions (
 	    "verbose"       => \$verbose,
 	    "store:s"       => \$store,
 	    "database=s"    => \$database,
-	    "database1=s"   => \$database1,
-	    "database2=s"   => \$database2,
 	    "classes=s"     => \$classes,
 	    "stlace"        => \$stlace,
 	    "camace"        => \$camace,
@@ -50,6 +48,8 @@ GetOptions (
 	    "brigace"       => \$brigace,
 	    "incomplete"    => \$incomplete,
 	    "data_sets"     => \$data_sets,
+	    "species:s"     => \$species,
+	    "stage:s"       => \$stage,
 	    );
 
 if ( $store ) {
@@ -57,6 +57,7 @@ if ( $store ) {
 } else {
   $wormbase = Wormbase->new( -debug   => $debug,
                              -test    => $test,
+			     -organism => $species,
 			     );
 }
 
@@ -77,33 +78,19 @@ my $log = Log_files->make_build_log($wormbase);
 # Get paths and versions
 ############################################
 
-my $WS_current  = $wormbase->get_wormbase_version;
-my $WS_previous = $WS_current - 1;
-my $exec        = $wormbase->tace;
+$species = $wormbase->species;
+my $version = $wormbase->get_wormbase_version;
+my $prev_version = $version-1;
 
-#################################################################
-# Compare autoace to previous build unless -database specified
-#################################################################
+my $exec = $wormbase->tace;
 
-$dbname_1    = "WS${WS_previous}";
-$db_1        = $wormbase->database("WS${WS_previous}");
+$database = $wormbase->autoace;
+$dbname_1    = "WS${prev_version}";
+$dbname_2    = "WS${version}";
 
-$dbname_2    = "WS${WS_current}";
-$db_2        = $wormbase->autoace;
+my $file = $wormbase->build_data . "/COMPARE/class_count.dat"; # file holding pparse details from previous Builds
 
-$database = $database1 unless $database;
 
-# First alternative database specified?
-if ($database) {
-    $dbname_1  = "$database";
-    $db_1      = "$database"; 
-}
-
-# Second alternative database specified?
-if ($database2) {
-    $dbname_2  = "$database2";
-    $db_2      = "$database2"; 
-}
 
 #########################################################################
 # Main part of script
@@ -111,6 +98,8 @@ if ($database2) {
 
 my @classes = ();
 @classes = split /,/, $classes if (defined $classes);
+
+$stage="unknown" if (!defined $stage);
 
 # get the collected sets of classes
  @classes = (@classes, &set_classes('stlace')) if ($stlace);
@@ -125,7 +114,7 @@ my @classes = ();
 
 $log->write_to("Checking $dbname_1 vs $dbname_2 for classes:\n@classes\n\n");
 
-my ($class_count_1, $class_count_2) = &count_classes($db_1, $db_2, @classes);
+my ($class_count) = &count_classes($database, @classes);
 
 $log->write_to(sprintf("%-22s %7s %7s %7s\n", "CLASS",$dbname_1,$dbname_2,"Difference"));
 
@@ -139,14 +128,15 @@ foreach my $class (@classes) {
   # Calculate difference between databases         #
   ##################################################
   
-  my $count1 = $$class_count_1[$count];
-  my $count2 = $$class_count_2[$count];
+  my $count1 = &get_prev_count($species, $prev_version, $class, $stage);
+  my $count2 = $$class_count[$count];
+  &store_count($species, $version, $class, $stage, $count2);
   my $diff = $count2 - $count1;
   my $err = "";
   if ($count2 == 0) {
     $err = "***** POSSIBLE ERROR *****";
     $log->error;
-  } elsif (!$incomplete &&	# we expect the 'incomplete' classes to be less than in currentdb
+  } elsif (	# we expect the 'incomplete' classes to be less than in currentdb
       ($count2 < $count1 * 0.9 || 
       $count2 > $count1 * 1.1)) {
     $err = "***** POSSIBLE ERROR *****";
@@ -195,13 +185,11 @@ sub usage {
 
 sub count_classes {
 
-  my ($db_1, $db_2, @classes)  = @_;
+  my ($database, @classes)  = @_;
 
-  my @class_count1;
-  my @class_count2;
+  my @class_count;
 
-  my $count1=0;
-  my $count2=0;
+  my $count=0;
 
   # Formulate query
   my $command;
@@ -212,34 +200,63 @@ sub count_classes {
 
 
   ####################################
-  # Count objects in first database
+  # Count objects in database
   ####################################
   #print "Command = $command\n";
   # open tace connection and count how many objects in each class
-  open (TACE, "echo '$command' | $exec $db_1 | ");
+  open (TACE, "echo '$command' | $exec $database | ");
   while (<TACE>) {
-    (push @class_count1, $1) if (/^\/\/ (\d+) Active Objects/);
-    $count1++ if (/^\/\/ (\d+) Active Objects/);
+    (push @class_count, $1) if (/^\/\/ (\d+) Active Objects/);
+    $count++ if (/^\/\/ (\d+) Active Objects/);
   }
   close (TACE);
     
     
-  ####################################
-  # Count objects in second database
-  ####################################
+  if ($count != @classes) {die "There are different numbers of classes and results (".scalar @classes." $count)\npossibly some results are not being returned?\n";}
+
+  return (\@class_count);
     
-  # open tace connection and count how many objects in each class
-  open (TACE, "echo '$command' | $exec $db_2 | ");
-  while (<TACE>) {
-    (push @class_count2, $1) if (/^\/\/ (\d+) Active Objects/);
-    $count2++ if (/^\/\/ (\d+) Active Objects/);
+}
+
+
+###############################################
+# get the count of this class found in the previous Build
+sub get_prev_count {
+  my ($species, $version, $class, $stage) = @_;
+
+  my $last_count = 0;
+  if (open (CLASS_COUNT, "< $file")) {
+    while (my $line = <CLASS_COUNT>) {
+      chomp $line;
+      my ($cc_version, $cc_class, $cc_species, $cc_count, $cc_stage) = split /\t+/, $line;
+      if ($cc_version == $prev_version && $cc_class eq $class && $cc_species eq $species && $cc_stage eq $stage) {
+	# store to get the last one in the previous build
+	$last_count = $cc_count;
+      } 
+    }
+    close (CLASS_COUNT);
   }
-  close (TACE);
+  return $last_count;
+}
 
-  if ($count1 != $count2) {die "There are different numbers of classes in the two databases ($count1, $count2)\npossibly some results are not being returned?\n";}
+###############################################
+# now store the details for this Build
+sub store_count {
 
-  return (\@class_count1, \@class_count2);
-    
+  my ($species, $version, $class, $stage, $count) = @_;
+
+
+  if (open (CLASS_COUNT, ">> $file")) {
+    if ($version && $class && $species && $count && $stage) {
+      print CLASS_COUNT "$version\t$class\t$species\t$count\t$stage\n";
+    } else {
+      $log->write_to("*** POSSIBLE ERROR: Couldn't write to $file because some of the following is blank\nversion=$version, class=$class, species=$species, count=$count\n\n");
+      $log->error;
+    }
+    close (CLASS_COUNT);
+  } else {
+    $log->write_to("WARNING: Couldn't write to $file\n\n");
+  }
 }
 
 
@@ -435,7 +452,8 @@ sub set_classes {
 		"Feature",
 		"Motif",
 		"Method",
-		);  }
+		);  
+  }
 
 
   return @classes;
@@ -492,13 +510,10 @@ objects would give a apparent error.)
 
 -classes are a comma-delimited list of explicit classes to check
 
--database allows you to specify the path of a database which will
-then be compared to the BUILD/autoace directory.
+-stage is a name given to this stage of the Build so you can compare
+ to the count of classes in the previous Build at this same stage.
 
--database2 allows you to specify a second database to compare to that specified
-by -database (rather than compare with previous build)
-
-
+-species specifies the species BUILD database to use.
 =back
 
 =head1 AUTHOR - Gary Williams
