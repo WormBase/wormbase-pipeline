@@ -202,9 +202,9 @@ task :dump_pecan => [:env_setup] do
 
 	sh "#{perl} scripts/getsynteny.pl > #{tmp_place}/compara/pecan.gff"   # dump gff
 
-	['I','II','III','IV','V','X'].each {|c|
-	   sh "#{perl} scripts/dump_clustal.pl CHROMOSOME_#{c} > #{tmp_place}/compara/pecan_chromosome_#{c}.clw" # dump clustal
-	}
+#	['I','II','III','IV','V','X'].each {|c|
+	   sh "#{perl} scripts/dump_all_clustal.pl > #{tmp_place}/compara/pecan.clw" # dump clustal
+#	}
 end
 
 desc "make a compara tarball"
