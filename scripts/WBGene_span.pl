@@ -1,4 +1,4 @@
-#!/usr/bin/env perl
+#!/software/bin/perl -w
 #
 # WBGene_span.pl
 #
@@ -6,8 +6,8 @@
 #
 # Creates SMapped Gene spans for Gene objects
 #
-# Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2008-08-20 11:12:42 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2008-10-15 16:10:01 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -120,7 +120,8 @@ else {
             my $WBgene = $worm_gene2geneID_name{$CDS};
             if ( !defined $WBgene ) {
                 my $cds = $CDS;
-                $cds =~ s/(\S+\.\d+[a-z]*)\.\d+/$1/;# convert transcript ID to sequence name to get WBGene ID
+                my $cdsregex = $wormbase->cds_regex_noend;
+                $cds =~ s/($cdsregex)\.\d+/$1/;# convert transcript ID to sequence name to get WBGene ID
                 $WBgene = $worm_gene2geneID_name{$cds};
                 if ( !defined $WBgene ) {
                     $log->write_to("*** $CDS is not a key of worm_gene2geneID_name\n");
