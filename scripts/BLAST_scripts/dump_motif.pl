@@ -4,8 +4,8 @@
 #
 # Dumps protein motifs from ensembl mysql (protein) database to an ace file
 #
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2008-09-16 15:27:09 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2008-10-17 09:42:53 $
 
 use lib $ENV{'CVS_DIR'};
 
@@ -130,7 +130,7 @@ foreach my $meth (@methods) {
 }
 
 # print ace file
-my $prefix = $wormbase->pep_prefix;
+my $prefix = $wormbase->wormpep_prefix;
 
 
 foreach my $prot (sort {$a cmp $b} keys %motifs) {
