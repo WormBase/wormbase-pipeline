@@ -8,7 +8,7 @@
 # in ace
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-03-10 10:49:00 $      
+# Last updated on: $Date: 2008-10-17 14:24:03 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -28,7 +28,7 @@ use Coords_converter;
 ######################################
 
 my ($help, $debug, $test, $verbose, $store, $wormbase);
-my ($input, $output, $database, $experiment_id, $natural);
+my ($input, $output, $database);
 
 GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
@@ -38,8 +38,6 @@ GetOptions ("help"       => \$help,
 	    "input:s"    => \$input,
 	    "output:s"   => \$output,
 	    "database:s" => \$database,
-	    "experiment_id:s" => \$experiment_id,
-	    "natural"    => \$natural,
 	    );
 
 # always in test mode
@@ -69,7 +67,6 @@ my $log = Log_files->make_build_log($wormbase);
 if (! defined $database) {$database = $wormbase->database('current')}
 if (! defined $input) {die "-input file not specified\n";}
 if (! defined $output) {die "-output file not specified\n";}
-if (! defined $experiment_id) {die "-experiment_id not specified\n";}
 
 ##########################
 # MAIN BODY OF SCRIPT
@@ -113,6 +110,11 @@ if (! defined $experiment_id) {die "-experiment_id not specified\n";}
 # 
 # 
 
+my $database_version = $wormbase->get_wormbase_version;
+if ($database_version == 666) {
+  print "In test - setting database version to 195 not 666\n";
+  $database_version = 195;
+}
 
 # open an ACE connection to parse details for mapping to genome
 my $tace            = $wormbase->tace;        # TACE PATH
@@ -123,7 +125,7 @@ my $db = Ace->connect (-path => $database,
 
 
 # this gives a hash with key=experiment ID value=list of details
-my ($experiment_hashref, $peptide_hashref) = parse_data();
+my ($experiment_hashref, $peptide_hashref) = &parse_data();
 
 my %experiment = %{$experiment_hashref};
 my %peptide = %{$peptide_hashref};
@@ -142,184 +144,105 @@ my $protein_history_aref = &get_protein_history;
 
 # get the peptides used in each protein
 my %proteins;
-foreach my $experiment_id (keys %experiment) {
+my $experiment_id = $experiment{experiment_id};
 
-  my %peptide_count = ();		# hash to hold count of times a peptide maps to proteins in this experiment
-  print "experiment_id = $experiment_id\n";
+my %peptide_count = ();		# hash to hold count of times a peptide maps to proteins
+print "experiment_id = $experiment_id\n";
 
-  my @peptides = @{ $experiment{$experiment_id}->{'PEPTIDES'} };
-  # get the unique non-redundant set of peptides in all experiments
-  foreach my $pep (@peptides) {
-    $unique_peptides{$pep} = 1;
+my @peptides = @{ $experiment{'PEPTIDES'} };
+# get the unique non-redundant set of peptides in all experiments
+foreach my $pep (@peptides) {
+  $unique_peptides{$pep} = 1;
+}
+
+# get the proteins and their peptides
+foreach my $peptide_sequence (@peptides) {
+  my @CDS_names = @{ $peptide{$peptide_sequence}->{'PROTEINS'} };
+  foreach my $protein (@CDS_names) {
+    push @{ $proteins{$protein} }, $peptide_sequence;
+  }
+}
+
+# get the wormpep sequences
+print "Reading wormpep sequences\n";
+my $wormpep = &get_wormpep_by_wp_id;
+
+print "Reading wormpep history file\n";
+# get the wormpep protein IDs used by previous version of the gene
+my $wormpep_history = &get_wormpep_history;
+
+my $final_count_ok = 0;
+my $final_count_not_ok = 0;
+
+print "Mapping peptides to genes\n";
+# go through the proteins mapping peptides to them
+foreach my $CDS_name (keys %proteins) {
+  #print "Processing CDS $CDS_name\n";
+
+  # see if there is an isoform that we should investigate first
+  my $cds_processed_ok;
+  my $CDS_name_isoform = "${CDS_name}a";
+  if (&has_current_history($wormpep_history, $CDS_name_isoform)) {
+    $cds_processed_ok = &process_cds($CDS_name, $CDS_name_isoform, $wormpep_history, \%unique_clones, %proteins);
   }
 
-  # get the proteins and their peptides
-  foreach my $peptide_sequence (@peptides) {
-    my @protein_names = @{ $peptide{$peptide_sequence}->{'PROTEINS'} };
-    foreach my $protein (@protein_names) {
-      push @{ $proteins{$protein} }, $peptide_sequence;
-    }
+  # if the isoform didn't give the required peptide matchesm look at the normal CDS_name
+  if (!$cds_processed_ok) {
+    $CDS_name_isoform = $CDS_name; # set the CDS_name back to the original name
+    $cds_processed_ok = &process_cds($CDS_name, $CDS_name, $wormpep_history, \%unique_clones, %proteins);
   }
 
-  # go through the proteins mapping peptides to them
-  foreach my $protein_name (keys %proteins) {
-
-    print "$protein_name " . @{ $proteins{$protein_name} } . "\n" if ($verbose);
-    my @peptides_in_protein = @{ $proteins{$protein_name} };
-
-    # go through each of the historical wormpep proteins for this gene
-    # looking for the most recent one that all the peptides map to
-    # and get the version of that protein so we can then get the history CDS if it is not the latest version
-
-    my $mapped_ok = 0;		# flag for mapping peptides to this protein sequence OK
-    my ($wormpep_ids_aref, $versions_aref) = &get_previous_wormpep_ids($protein_name, $protein_history_aref);
-    my @wormpep_ids = reverse @{$wormpep_ids_aref};
-    my @versions = reverse @{$versions_aref};
-
-    my $latest_cds = 0;		# count of the previous revisions of genes that we have to go back through before finding a match
-    foreach my $wormpep_id (@wormpep_ids) {
-
-      my $wormpep_seq = &get_wormpep_by_wp_id($wormpep_id);
-
-      # see if the peptides all map to this version of the wormpep protein sequence
-      my ($ok, %protein_positions) = &map_peptides_to_protein($wormpep_seq, @peptides_in_protein);
-
-      if ($ok) {
-	print "We have found all the peptides in CDS: $protein_name wormpep_id: $wormpep_id version=$latest_cds\n" if ($verbose);
-
-	# flag is true if we can map this to the genome
-	my $maps_to_genome_ok = 1;
-
-	# see if we are using the latest version of this protein or not
-	# if not, then construct the history ID name of the CDS to get
-	if (defined $versions[$latest_cds] && $latest_cds == 0) {
-	  $log->write_to("*** $protein_name has been changed to isoforms - it won't have the history CDS for exons, so can't map its peptides to the genome\n");
-	  $maps_to_genome_ok = 0;
-
-	} elsif (defined $versions[$latest_cds] || $latest_cds != 0) {
-	  $protein_name = $protein_name . ":wp" . ($versions[$latest_cds] - 1);
-	  print "$protein_name is using history version $versions[$latest_cds]\n" if ($verbose);
-	}
-
-	my ($clone, $cds_start, $cds_end, $exons_start_ref, $exons_end_ref);
-	if ($maps_to_genome_ok) {
-	  # get the details for mapping to the genome
-	  # we can't do this outside of this $wormpep_id loop because we don't know until now whether we must use a history CDS
-	  ($clone, $cds_start, $cds_end, $exons_start_ref, $exons_end_ref) = &get_cds_details($protein_name);
-	  # if we couldn't get the details of the CDS, then we just have to skip writing the genome mapping data for this protein
-	  if (! defined $clone) {
-	    $log->write_to("*** Couldn't get the mapping details of the CDS $protein_name\n");
-	    $maps_to_genome_ok = 0;
-	  } 
-	}
-
-        # only write this genome mapping stuff if we could find a CDS for the protein the peptides matched
-	if ($maps_to_genome_ok) {
-	  # note which clones were used for genome mapping
-	  $unique_clones{$clone} = 1;
-	}
-
-	# output the details for each of the peptides for this protein
-	foreach my $ms_peptide (@peptides_in_protein) {
-	  
-	  # only write this genome mapping stuff if we could find a CDS for the protein this peptide matched
-	  if ($maps_to_genome_ok) {
-	    # get the details for mapping to the genome
-	    my (@homol_lines) = &get_genome_mapping($ms_peptide, $protein_name, $clone, $cds_start, $cds_end, $exons_start_ref, $exons_end_ref, \%protein_positions); # get part of the MSPeptide_homol line like "clone_start clone_end 1 peptide_length AlignPepDNA"
-	    # write the Homol_data for the genome mapping
-	    print OUT "\n";
-	    print OUT "Homol_data : \"$clone:Mass-spec\"\n";
-	    foreach my $homol_line (@homol_lines) {
-	      print OUT "MSPeptide_homol \"MSP:$ms_peptide\" mass_spec_genome 100.0 $homol_line\n";
-	    }
-	  }
-
-	  # count the number of times this peptide maps to a protein in this experiment
-	  $peptide_count{$ms_peptide}++;
-
-	  # output the MS_peptide_results hash in the Mass_spec_peptide object
-	  print OUT "\n";
-	  print OUT "Mass_spec_peptide : \"MSP:$ms_peptide\"\n";
-	  print OUT "Mass_spec_experiments \"$experiment_id\" Protein_probability ", $experiment{$experiment_id}{'PROTEIN_PROBABILITY'}{$ms_peptide} ,"\n" if (defined $experiment{$experiment_id}{'PROTEIN_PROBABILITY'}{$ms_peptide});
-          print OUT "Mass_spec_experiments \"$experiment_id\" Peptide_probability ", $experiment{$experiment_id}{'PEPTIDE_PROBABILITY'}{$ms_peptide} ,"\n" if (defined $experiment{$experiment_id}{'PEPTIDE_PROBABILITY'}{$ms_peptide});
-	  print OUT "Mass_spec_experiments \"$experiment_id\" Protein \"WP:$wormpep_id\"\n"; # the protein that this peptide in this experiment matches
-
-	  # output the protein object for this peptide
-	  print OUT "\n";
-	  print OUT "Protein : \"MSP:$ms_peptide\"\n";
-	  print OUT "Peptide \"MSP:$ms_peptide\"\n";
-
-	  # output the homology of the wormpep protein to the peptide
-	  print OUT "\n";
-	  print OUT "Protein : \"WP:$wormpep_id\"\n";                                          
-	  my $pos = $protein_positions{$ms_peptide}; # position in protein
-	  my $len = length($ms_peptide); # length of peptide sequence
-	  my $end = $pos+$len-1;
-          print OUT "Pep_homol \"MSP:$ms_peptide\" mass-spec 1 $pos $end 1 $len\n"; # note where the peptide maps to a wormpep protein
-
-	  # note that this peptide has been used so that we need to output it when only doing a small debugging output
-	  $peptides_used{$ms_peptide} = 1;
-	}
-
-	$mapped_ok = 1;
-	last;
-      }
-
-      # count the version back we have to go
-      $latest_cds++;
-
-    }
-    if ($latest_cds != 1) {
-      print "Protein : $protein_name required revision $latest_cds\n";
-    }
-    if (!$mapped_ok) {
-      $log->write_to("*** Not mapped all the peptides for CDS $protein_name\n");
-    }
+  if ($cds_processed_ok) {
+    $final_count_ok++;
+#    $log->write_to("We have found all the peptides in CDS: $CDS_name_isoform\n");
+  } else {
+    $final_count_not_ok++;
+    $log->write_to("We have NOT FOUND all the peptides in CDS: $CDS_name_isoform\n");
   }
+}
 
-  # output the experiment data object
-  print OUT "\n";
-  print OUT "Mass_spec_experiment : \"$experiment_id\"\n";
-  print OUT "Species \"Caenorhabditis elegans\"\n";
-  print OUT "Strain \"N2\" \n";
-  print OUT "Life_stage \"all stages\"\n";
-  print OUT "Sub_cellular_localization \"whole organism\"\n";
-  print OUT "Digestion \"Trypsin\"\n";
-  print OUT "Instrumentation \"QTOF\"\n";
-  print OUT "Multiple_ambiguous_IDs_allowed\n";
-  print OUT "//Remark \"(some description of the experimental technique etc.)\"\n";
-  print OUT "//Person \"(WBPerson ID)\" \n";
-  print OUT "//Author \"(Author if there is no WBPerson ID you can use)\" \n";
-  print OUT "//Reference \"(WBPaper ID)\" \n";
-  print OUT "//Database \"(A brief description of the sequence database used to search against)\"\n";
-  print OUT "//Program \"(Mascot or SEQUEST etc.)\"\n";
-  print OUT "//Laboratory \"\" \n";
-  print OUT "//Genotype \"\" \n";
-  print OUT "//Anatomy_term \"\"\n";
-  print OUT "//Cell_type \"\" \n";
-  print OUT "//Ionisation_source \"\" \n";
-  print OUT "//Minimum_ion_proportion \n";
-  print OUT "//False_discovery_rate \n";
+# output the experiment data object
+print OUT "\n";
+print OUT "Mass_spec_experiment : \"$experiment_id\"\n";
+print OUT "Species \"$experiment{species}\"\n" if (exists $experiment{species});
+print OUT "Strain \"$experiment{strain}\" \n" if (exists $experiment{strain});
+print OUT "Life_stage \"$experiment{life_stage}\"\n" if (exists $experiment{life_stage});
+print OUT "Sub_cellular_localization \"$experiment{sub_cellular_localization}\"\n" if (exists $experiment{sub_cellular_localization});
+print OUT "Digestion \"$experiment{digestion}\"\n" if (exists $experiment{digestion});
+print OUT "Instrumentation \"$experiment{instrumentation}\"\n" if (exists $experiment{instrumentation});
+print OUT "Multiple_ambiguous_IDs_allowed\n" if (exists $experiment{multiple_ambiguous_IDs_allowed});
+print OUT "Remark \"$experiment{remark}\"\n" if (exists $experiment{remark});
+print OUT "Person \"$experiment{person}\" \n" if (exists $experiment{person});
+print OUT "Author \"$experiment{author}\" \n" if (exists $experiment{author});
+print OUT "Reference \"$experiment{reference}\" \n" if (exists $experiment{reference});
+print OUT "Database \"$experiment{database}\"\n" if (exists $experiment{database});
+print OUT "Program \"$experiment{program}\"\n" if (exists $experiment{program});
+print OUT "Laboratory \"$experiment{laboratory}\" \n" if (exists $experiment{laboratory});
+print OUT "Genotype \"$experiment{genotype}\" \n" if (exists $experiment{genotype});
+print OUT "Anatomy_term \"$experiment{anatomy_term}\"\n" if (exists $experiment{anatomy_term});
+print OUT "Cell_type \"$experiment{cell_type}\" \n" if (exists $experiment{cell_type});
+print OUT "Ionisation_source \"$experiment{ionisation_source}\" \n" if (exists $experiment{ionisation_source});
+print OUT "Minimum_ion_proportion $experiment{minimum_ion_proportion}\n" if (exists $experiment{minimum_ion_proportion});
+print OUT "False_discovery_rate $experiment{false_discovery_rate}\n" if (exists $experiment{false_discovery_rate});
 
 
-  # go through the peptides writing out their sequences
-  # whether the peptide is mapped uniquely for the Mass_spec_peptide in this experiment
-  # and whether or not they are flagged as natural
-  foreach my $ms_peptide (keys %unique_peptides) {
-    if (exists $peptides_used{$ms_peptide}) { # see if used this peptide - for making smaller output when debugging
-      # output the MS_peptide object
-      print OUT "\n";	
-      print OUT "Mass_spec_peptide : \"MSP:$ms_peptide\"\n";
-      print OUT "Peptide \"MSP:$ms_peptide\"\n";
-      print OUT "Protein_seq \"MSP:$ms_peptide\"\n";	  
-      print OUT "Petide_is_natural\n" if ($natural); # note spelling mistake
-      print OUT "Mass_spec_experiments \"$experiment_id\" Matches_database_uniquely\n" if (exists $peptide_count{$ms_peptide} && $peptide_count{$ms_peptide} == 1);
+# go through the peptides writing out their sequences
+# whether the peptide is mapped uniquely for the Mass_spec_peptide in this experiment
+# and whether or not they are flagged as natural
+foreach my $ms_peptide (keys %unique_peptides) {
+  if (exists $peptides_used{$ms_peptide}) { # see if used this peptide - for making smaller output when debugging
+    # output the MS_peptide object
+    print OUT "\n";	
+    print OUT "Mass_spec_peptide : \"MSP:$ms_peptide\"\n";
+    print OUT "Peptide \"MSP:$ms_peptide\"\n";
+    print OUT "Protein_seq \"MSP:$ms_peptide\"\n";	  
+    print OUT "Petide_is_natural\n" if (exists $experiment{natural}); # note spelling mistake
+    print OUT "Mass_spec_experiments \"$experiment_id\" Matches_database_uniquely\n" if (exists $peptide_count{$ms_peptide} && $peptide_count{$ms_peptide} == 1);
       
-      # and output the Peptide sequence object 
-      print OUT "\n";	
-      print OUT "Peptide : \"MSP:$ms_peptide\"\n";
-      print OUT "$ms_peptide\n";
-    }
+    # and output the Peptide sequence object 
+    print OUT "\n";	
+    print OUT "Peptide : \"MSP:$ms_peptide\"\n";
+    print OUT &no_underscore($ms_peptide) . "\n"; 
   }
 }
 
@@ -343,7 +266,8 @@ $db->close;
 # Close log files and exit
 $log->write_to("\n\nStatistics\n");
 $log->write_to("----------\n\n");
-$log->write_to("Put some statistics here.\n");
+$log->write_to("Count of genes with peptides mapped OK:     $final_count_ok\n");
+$log->write_to("Count of genes with peptides NOT mapped OK: $final_count_not_ok\n");
 
 $log->mail();
 print "Finished.\n" if ($verbose);
@@ -361,28 +285,39 @@ exit(0);
 ##############################################################
 
 # example peptide records
-#FMRFamide-related peptides or FaRPs
-#-LRFamide family
-# flp-1  SADPNFLRF . .
-# flp-1  AAADPNFLRF . .
-# flp-18 EIPGVLRF . .
-# flp-18 SEVPGVLRF . .
-# flp-18 SYFDEKKSVPGVLRF . .
-# flp-18 SVPGVLRF . .
-# flp-18 DFDGAMPGVLRF . .
-# flp-18 GAMPGVLRF . .
+# Mass_spec_experiment = BB_1
+# Species = Caenorhabditis elegans
+# Strain = N2
+# Life_stage = all stages
+# Sub_cellular_localization = whole organism
+# Digestion = Trypsin
+# Instrumentation = QTOF
+# Multiple_ambiguous_IDs_allowed
+# Person = WBPerson8676
+# #Reference = WBPaper0001234
+# Database = wormpep
+# Program = Sequest
+# #Natural
+# Posttranslation_modification_type = Phosphorylation site
+# Posttranslation_modification_database = PhosphoPep
+# Posttranslation_modification_URL = http://www.sbeams.org/dev1/sbeams/cgi/Glycopeptide/peptideSearch.cgi?action=Show_hits_form&search_type=gene_symbol&search_term=<PROTEINID>
 # 
-#                 
-##-IRFamide family
-# flp-5  GAKFIRF . .
-# flp-13 APEASPFIRF . .
-# flp-13 AMDSPLIRF  . .
-
-# flp-13 ASPSAPLIRF . .
-# flp-13 SPSAVPLIRF . .
-# flp-13 SAAAPLIRF . .
-# flp-13 AADGAPLIRF . .
-
+# # Phosphorylation is indicated by a '_' after the modified residue
+# 
+# PEPTIDES
+# 
+# 2RSSE.2	AAAFAS_NPSHSLDYQEVGASNPR	.	.
+# 2RSSE.2	AAAFASNPS_HSLDYQEVGASNPR	.	.
+# AC3.5	GPAKDDEMESS_EEQE	.	.
+# AC3.5	IWTRPEVK	.	.
+# AC3.5	MKGPAKDDEMES_SEEQE	.	.
+# AC3.5	MKGPAKDDEMES_S_EEQE	.	.
+# AC3.5	MKGPAKDDEMESS_EEQE	.	.
+# AC3.5	TQLIDFVYANGNGS_ASNLNNR	.	.
+# AC3.5	TQLIDFVYANGNGSASNLNNR	.	.
+# AC7.2a	SKS_PGGIVGR	.	.
+# AH10.3	RAS_AAPNVENR	.	.
+# AH9.3	EVQEAVKTEEAGSS_PK	.	.
 
 
 ##########################################
@@ -401,11 +336,13 @@ sub parse_data {
   my $sub_cellular_fraction;
   my $purification_type;
   my $quantification_type;
-  my $protein_name;
-  my @protein_names;
-  my @experiments; # the list of experiments that found the current peptide
+  my $CDS_name;
+  my @CDS_names;
+  my $experiment_id;
 
 
+
+  my %wormpep2cds = $wormbase->FetchData("wormpep2cds", undef, $database . "/COMMON_DATA");
   my %cgc_names = $wormbase->FetchData("cds2cgc", undef, $database . "/COMMON_DATA");
   my %cds_cgc_names;
   foreach my $cgc (keys %cgc_names) { # invert the cgc_names hash
@@ -414,8 +351,7 @@ sub parse_data {
   }
 
 
-  push @experiments, $experiment_id;
-
+  my $got_peptides = 0;		# flag for got to the PEPTIDES section of the input data
 
   open (DATA, "< $input") || die "Can't open $input\n";
   while (my $line = <DATA>) {
@@ -424,41 +360,108 @@ sub parse_data {
     if ($line =~ /^\s*$/) {next;}
 
     my $cgc_name;
-    if ($line =~ /\s*(\S+)\s+(\S+)\s+(\S+)\s+(\S+)/) {
-      $cgc_name = $1;
-      $peptide_sequence = $2;
-      $protein_probability = $3;
-      if ($protein_probability eq '.') {$protein_probability = undef}
-      $peptide_probability = $4;
-      if ($peptide_probability eq '.') {$peptide_probability = undef}
-      @protein_names = ();
-    }
 
-    if ($cgc_name =~ /\S+\-\d+/) { # standard CGC-style name e.g. daf-1
-      if (!exists $cds_cgc_names{$cgc_name}) {
-	print "line $line has a non-existent cds_cgc name\n";
-	next;
+    if (!$got_peptides) {
+      if ($line =~ /^PEPTIDES\s*$/) { # got to the PEPTIDES section of the input data
+	$got_peptides = 1;
+
+      } elsif ($line =~ /Mass_spec_experiment\s*=\s*(.+)/) {
+	# usually formed from the initials of the author, plus a number, e.g. 'SH_1'
+	$experiment{experiment_id} = $1;
+	$experiment_id = $1;
+
+      } elsif ($line =~ /Species\s*=\s*(.+)/) {
+	$experiment{species} = $1;
+
+      } elsif ($line =~ /Strain\s*=\s*(.+)/) {
+	$experiment{strain} = $1;
+
+      } elsif ($line =~ /Life_stage\s*=\s*(.+)/) {
+	$experiment{life_stage} = $1;
+
+      } elsif ($line =~ /Sub_cellular_localization\s*=\s*(.+)/) {
+ 	$experiment{sub_cellular_localization} = $1;
+
+      } elsif ($line =~ /Digestion\s*=\s*(.+)/) {
+ 	$experiment{digestion} = $1;
+
+      } elsif ($line =~ /Instrumentation\s*=\s*(.+)/) {
+ 	$experiment{instrumentation} = $1;
+
+      } elsif ($line =~ /Multiple_ambiguous_IDs_allowed/) {
+ 	$experiment{multiple_ambiguous_IDs_allowed} = 1;
+
+      } elsif ($line =~ /Person\s*=\s*(.+)/) {
+ 	$experiment{person} = $1;
+
+      } elsif ($line =~ /Reference\s*=\s*(.+)/) {
+ 	$experiment{reference} = $1;
+
+      } elsif ($line =~ /Database\s*=\s*(.+)/) {
+ 	$experiment{database} = $1;
+
+      } elsif ($line =~ /Program\s*=\s*(.+)/) {
+ 	$experiment{program} = $1;
+
+      } elsif ($line =~ /Natural/) {
+	# specifies that the peptides in this data set are naturally occuring.
+ 	$experiment{natural} = 1;
+
+      } elsif ($line =~ /Posttranslation_modification_type\s*=\s*(.+)/) {
+ 	$experiment{posttranslation_modification_type} = $1;
+
+      } elsif ($line =~ /Posttranslation_modification_database\s*=\s*(.+)/) {
+ 	$experiment{posttranslation_modification_database} = $1;
+
+      } elsif ($line =~ /Posttranslation_modification_URL\s*=\s*(.+)/) {
+ 	$experiment{posttranslation_modification_URL} = $1;
+
+      } else {
+	die "Input line not recognised:\n$line\n";
       }
-      # start getting the protein data
-      push @protein_names, @{$cds_cgc_names{$cgc_name}}; # get the list of CDS names for this CGC name
-  
-    } elsif ($cgc_name =~ /\S+\.\d+/) {	# standard Sequence style CDS name e.g. C25A7.2
-      push @protein_names, $cgc_name; # use CDS name as-is
 
     } else {
-      die "gene name '$cgc_name' not recognised\n";
-    }
 
-    # construct the peptide data
-    $peptide{$peptide_sequence}->{'PROTEINS'} = [@protein_names];
-    #print "$peptide_sequence protein = @protein_names\n";
+      if ($line =~ /\s*(\S+)\s+(\S+)\s+(\S+)\s+(\S+)/) {
+	$cgc_name = $1;
+	$peptide_sequence = $2;
+	$protein_probability = $3;
+	if ($protein_probability eq '.') {$protein_probability = undef}
+	$peptide_probability = $4;
+	if ($peptide_probability eq '.') {$peptide_probability = undef}
+	@CDS_names = ();
+      }
 
-    # save the peptide data in all its experiments
-    foreach my $experiment_id (@experiments) {
-      #print "experiment $experiment_id = $peptide_sequence\n";
-      push @{ $experiment{$experiment_id}->{'PEPTIDES'} }, $peptide_sequence;
-      $experiment{$experiment_id}{'PROTEIN_PROBABILITY'}{$peptide_sequence} = $protein_probability;
-      $experiment{$experiment_id}{'PEPTIDE_PROBABILITY'}{$peptide_sequence} = $peptide_probability;
+      if ($cgc_name =~ /\S+\-\d+/) { # standard CGC-style name e.g. daf-1
+	if (!exists $cds_cgc_names{$cgc_name}) {
+	  print "line $line has a non-existent cds_cgc name\n";
+	  next;
+	}
+	# start getting the protein data
+	push @CDS_names, @{$cds_cgc_names{$cgc_name}}; # get the list of CDS names for this CGC name
+  
+      } elsif ($cgc_name =~ /^CE\d{5}$/) { # wormpep ID
+	if (!exists $wormpep2cds{$cgc_name}) {
+	  print "line $line has a non-existent wormpep ID\n";
+	  next;
+	}
+	push @CDS_names, (split /\s+/, $wormpep2cds{$cgc_name}); # the CDS names for this wormpep ID
+
+      } elsif ($cgc_name =~ /\S+\.\d+/) {	# standard Sequence style CDS name e.g. C25A7.2
+	push @CDS_names, $cgc_name; # use CDS name as-is
+
+      } else {
+	die "gene name '$cgc_name' not recognised\n";
+      }
+
+      # construct the peptide data
+      $peptide{$peptide_sequence}->{'PROTEINS'} = [@CDS_names];
+      #print "$peptide_sequence protein = @CDS_names\n";
+
+      # save the peptide data in all its experiments
+      push @{ $experiment{'PEPTIDES'} }, $peptide_sequence;
+      $experiment{'PROTEIN_PROBABILITY'}{$peptide_sequence} = $protein_probability;
+      $experiment{'PEPTIDE_PROBABILITY'}{$peptide_sequence} = $peptide_probability;
     }
   }
   close (DATA);
@@ -466,6 +469,161 @@ sub parse_data {
   return (\%experiment, \%peptide);
 }
 
+
+##########################################
+# mapps all the peptides that should map to this CDS
+sub process_cds {
+  # CDS_name is the original CDS name (without the isoform 'a' added)
+  # used as the key to look for the peptides that should map to this
+  # CDS
+  # 
+  # CDS_name_isoform is the same as the CDS_name unless it has been
+  # changed to a an isoform and we want to try mapping to it in which
+  # case it has a 'a' added to the name to make the first isoform CDS
+  # name.
+  my ($CDS_name, $CDS_name_isoform, $wormpep_history, $unique_clones, %proteins) = @_;
+
+
+  print "$CDS_name_isoform " . @{ $proteins{$CDS_name} } . "\n" if ($verbose);
+  my @peptides_in_protein = @{ $proteins{$CDS_name} };
+
+  # go through each of the historical wormpep proteins for this gene
+  # looking for the most recent one that all the peptides map to
+  # and get the version of that protein so we can then get the history CDS if it is not the latest version
+
+  my $all_maps_to_genome_ok = 0;		# flag for mapping all peptides to the CDS genome position OK
+  my ($wormpep_ids_aref, $versions_aref) = &get_previous_wormpep_ids($CDS_name_isoform, $wormpep_history);
+  my @wormpep_ids = @{$wormpep_ids_aref};
+  my @versions = @{$versions_aref};
+
+  # try mapping the peptides to each version of the wormpep protein of
+  # this CDS, starting with the most recent version
+  my $latest_cds = 0;		# count of the previous revisions of genes that we have to go back through before finding a match
+  foreach my $wormpep_id (@wormpep_ids) {
+
+    my $wormpep_seq = $wormpep->{$wormpep_id};
+
+    # see if the peptides all map to this version of the wormpep protein sequence
+    my ($all_peptides_mapped_ok, %protein_positions) = &map_peptides_to_protein($wormpep_seq, @peptides_in_protein);
+
+    if ($all_peptides_mapped_ok) {
+      print "We have found all the peptides in CDS: $CDS_name_isoform wormpep_id: $wormpep_id version=$latest_cds\n" if ($verbose);
+
+      # result flag is true so far if we can map this to the genome
+      $all_maps_to_genome_ok = 1;
+
+      # see if we are using the latest version of this protein or not
+      # if not, then construct the history ID name of the CDS to get
+
+#      if (defined $versions[$latest_cds] && $latest_cds == 0) {
+#	$log->write_to("*** $CDS_name_isoform no longer exists - it doesn't have a wormpep history, so can't map the peptides to the genome\n");
+#	$all_maps_to_genome_ok = 0;
+#      } elsif (defined $versions[$latest_cds] && $latest_cds != 0) {
+
+      if (defined $versions[$latest_cds]) {
+	$CDS_name_isoform = $CDS_name_isoform . ":wp" . ($versions[$latest_cds] - 1);
+	print "$CDS_name_isoform is using history version $versions[$latest_cds]\n" if ($verbose);
+      }
+
+      my ($clone, $cds_start, $cds_end, $exons_start_ref, $exons_end_ref);
+      if ($all_maps_to_genome_ok) {
+	# get the details for mapping to the genome
+	# we can't do this outside of this $wormpep_id loop because we don't know until now whether we must use a history CDS
+	($clone, $cds_start, $cds_end, $exons_start_ref, $exons_end_ref) = &get_cds_details($CDS_name_isoform);
+	# if we couldn't get the details of the CDS, then we just have to skip writing the genome mapping data for this protein
+	if (! defined $clone) {
+	  $log->write_to("*** Couldn't get the mapping details of the CDS $CDS_name_isoform\n");
+	  $all_maps_to_genome_ok = 0;
+	}
+      }
+
+
+      # only write this genome mapping stuff if we could find a CDS for the protein the peptides matched
+      if ($all_maps_to_genome_ok) {
+	# note which clones were used for genome mapping
+	$unique_clones->{$clone} = 1;
+      }
+
+      # output the details for each of the peptides for this protein
+      foreach my $ms_peptide (@peptides_in_protein) {
+	  
+	# only write this genome mapping stuff if we could find a CDS for the protein this peptide matched
+	if ($all_maps_to_genome_ok) {
+	  # get the details for mapping to the genome
+	  my (@homol_lines) = &get_genome_mapping($ms_peptide, $CDS_name_isoform, $clone, $cds_start, $cds_end, $exons_start_ref, $exons_end_ref, \%protein_positions); # get part of the MSPeptide_homol line like "clone_start clone_end 1 peptide_length AlignPepDNA"
+	  # write the Homol_data for the genome mapping
+	  print OUT "\n";
+	  print OUT "Homol_data : \"$clone:Mass-spec\"\n";
+	  foreach my $homol_line (@homol_lines) {
+	    print OUT "MSPeptide_homol \"MSP:$ms_peptide\" mass_spec_genome 100.0 $homol_line\n";
+	  }
+	}
+
+	# count the number of times this peptide maps to a protein in this experiment
+	$peptide_count{$ms_peptide}++;
+
+	# output the MS_peptide_results hash in the Mass_spec_peptide object
+	print OUT "\n";
+	print OUT "Mass_spec_peptide : \"MSP:$ms_peptide\"\n";
+	print OUT "Mass_spec_experiments \"$experiment_id\" Protein_probability ", $experiment{'PROTEIN_PROBABILITY'}{$ms_peptide} ,"\n" if (defined $experiment{'PROTEIN_PROBABILITY'}{$ms_peptide});
+	print OUT "Mass_spec_experiments \"$experiment_id\" Peptide_probability ", $experiment{'PEPTIDE_PROBABILITY'}{$ms_peptide} ,"\n" if (defined $experiment{'PEPTIDE_PROBABILITY'}{$ms_peptide});
+	print OUT "Mass_spec_experiments \"$experiment_id\" Protein \"WP:$wormpep_id\"\n"; # the protein that this peptide in this experiment matches
+
+	# output the protein object for this peptide
+	print OUT "\n";
+	print OUT "Protein : \"MSP:$ms_peptide\"\n";
+	print OUT "Peptide \"MSP:$ms_peptide\"\n";
+
+	# output the homology of the wormpep protein to the peptide
+	print OUT "\n";
+	print OUT "Protein : \"WP:$wormpep_id\"\n";                                          
+	my $pos = $protein_positions{$ms_peptide}; # position in protein
+	my $len = length(&no_underscore($ms_peptide)); # length of peptide sequence
+	my $end = $pos+$len-1;
+	print OUT "Pep_homol \"MSP:$ms_peptide\" mass-spec 1 $pos $end 1 $len\n"; # note where the peptide maps to a wormpep protein
+	# output the posttranslation modifications (if any) for this protein
+	if (exists $experiment{'posttranslation_modification_database'}) {
+	  my $pt_db = $experiment{'posttranslation_modification_database'};
+	  my @pt_positions = &pos_underscore($ms_peptide);
+	  foreach my $pt_pos (@pt_positions) {
+	    my $pt_pos_in_protein = $pt_pos + $pos - 1;
+	    print OUT "Motif_homol \"$pt_db:$CDS_name_isoform\" $pt_db 0 $pt_pos_in_protein $pt_pos_in_protein 1 1\n";
+	  }
+
+	  # and write some details for the Motif Object
+	  print OUT "\n";
+	  print OUT "Motif : \"$pt_db:$CDS_name_isoform\"\n";
+	  print OUT "Title \"$experiment{'posttranslation_modification_type'}\"\n";
+	  print OUT "Database \"$pt_db\" \"${pt_db}_ID\" \"$CDS_name_isoform\"\n";
+	  print OUT "Pep_homol \"WP:$wormpep_id\"\n";
+	  print OUT "\n";
+	  print OUT "\n";
+
+
+	} elsif (exists $experiment{'posttranslation_modification_type'}) {
+	  print "*** Posttranslation_modification_type specified, but no Posttranslation_modification_database found\nShould add in output for the postranslational data to be a Feature in the Protein? A bit like this maybe?:\n";
+	  my $pt_type = $experiment{'posttranslation_modification_type'};
+	  my @pt_positions = &pos_underscore($ms_peptide);
+	  foreach my $pt_pos (@pt_positions) {
+	    my $pt_pos_in_protein = $pt_pos + $pos - 1;
+	    print OUT "Feature \"$pt_type\" $pt_pos_in_protein $pt_pos_in_protein 0\n";
+	  }
+	}
+
+	# note that this peptide has been used so that we need to output it when only doing a small debugging output
+	$peptides_used{$ms_peptide} = 1;
+      }
+      # don't bother to look at any more wormpep versions, we have mapped it OK
+      last;
+    }				# if ($all_peptides_mapped_ok) 
+
+    # count the version back we have to go
+    $latest_cds++;
+
+  }
+
+  return $all_maps_to_genome_ok;
+}
 
 ##########################################
 # take a protein and a set of peptides and map the peptides onto the protein
@@ -477,7 +635,11 @@ sub map_peptides_to_protein {
   my $ok = 1;			# true if all the peptides map to this protein
 
   foreach my $peptide (@peptides) {
-    my $pos = index($protein, $peptide);
+    my $no_underscore_peptide = &no_underscore($peptide); # remove the post-translation modification marker
+    #print "mapping $no_underscore_peptide\nto $protein\n";
+    print "mapping $no_underscore_peptide\n" if ($verbose);
+    my $pos = index($protein, $no_underscore_peptide);
+    print "mapping result: $pos\n" if ($verbose);
     $position{$peptide} = $pos+1; # convert from offset=0 to offset=1;
     if ($pos == -1) {$ok = 0;}	# set the flag if a peptide is not found in the protein
   }
@@ -485,31 +647,52 @@ sub map_peptides_to_protein {
   return ($ok, %position);
 }
 
+
 ##########################################
-# get the set of CDS, history versions and resulting protein IDs
-# my %protein_history = &get_protein_history;
+# get the wormpep protein IDs used by previous version of the gene
+#my %wormpep_history = &get_wormpep_history;
 
-sub get_protein_history {
-  my @protein_history;
+sub get_wormpep_history {
+  # get database version file
+  my $data_file = "/nfs/disk100/wormpub/BUILD/WORMPEP/wormpep${database_version}/wormpep.history$database_version";
 
-  # get database version
-  my $version = `grep "NAME WS" $database/wspec/database.wrm`;
-  chomp($version);
-  $version =~ s/.*WS//;
-  my $data_file = "/nfs/disk100/wormpub/BUILD/WORMPEP/wormpep${version}/wormpep.history$version";
+  my %wormpep_history;
 
   open (HIST, "< $data_file") || die "Can't open $data_file\n";
   while (my $line = <HIST>) {
     chomp $line;
     my @f = split /\s+/, $line;
     # $cds_id, $wormpep_id, $version1, $version2 <- ($version2 is undef if current version)
-    push @protein_history, [@f];
+    my $cds_id = shift @f;
+    push @{$wormpep_history{$cds_id}}, [@f];
   }
   close(HIST);
 
-  return \@protein_history;
-}
 
+  return \%wormpep_history;
+
+}
+##########################################
+# returns true if the CDS has a current history
+# returns false if the CDS has been made into an isoform (or pseudogene, etc.)
+sub has_current_history {
+  my ($history, $CDS_name) = @_;
+
+  # if the CDS_name is not a valid key then this CDS_name has been
+  # made into a isoform (or pseudogene, etc.) and no details are known
+  # of previous wormpep IDs
+  if (!exists $history->{$CDS_name}) {return 0;}
+
+  # if the last line in the history file for this CDS_name has only
+  # one value, then there is still a current CDS of this name
+  my @cds_history = @{$history->{$CDS_name}};
+  my $last_result = pop @cds_history;
+  print "@{$last_result}\n" if ($verbose);
+  if (scalar @{$last_result} == 2) {return 1;} 
+
+  # so there isn't a current CDS of this name
+  return 0;
+}
 
 ##########################################
 # get all previous wormpep protein IDs for a given CDS
@@ -519,88 +702,77 @@ sub get_protein_history {
 
 sub get_previous_wormpep_ids {
 
-  my ($gene_name, $protein_history_aref) = @_;
-
-  my @protein_history = @{$protein_history_aref};
+  my ($CDS_name, $history) = @_;
 
   my @wormpep_ids;
   my @versions;
 
-  foreach my $line (@protein_history) {
-    my ($cds_id, $wormpep_id, $version1, $version2) = @{$line};
-    if ($cds_id eq $gene_name) {
-      print "WP ID $wormpep_id\n";
-      push @wormpep_ids, $wormpep_id;
-      if (defined $version2) {	# if this is an old version, save the Build release number of the change
-
-# I think this should be: 
-#	push @versions, $version2;
-# not
-#        push @versions, $version1;
-# because version2 is the CDS version number at which the CDS was
-# changed and the protein is defined by CDS:wp(version2-1)
-
-	push @versions, $version2;
-      } else {			# otherwise indicate that it is the current version by an 'undef'
-	push @versions, undef;
-      }
+  my @cds_history = @{$history->{$CDS_name}};
+  foreach my $version (@cds_history) {
+    my ($wormpep_id, $version1, $version2) = @{$version};
+    push @wormpep_ids, $wormpep_id; # the wormpep ID
+    if (defined $version2) {
+      push @versions, $version2; # the second (ending) Build release version, 
+    } else {
+      push @versions, undef;	# undef if this is still the current version
     }
   }
+
+  # get the most recent versions first
+  @wormpep_ids = reverse @wormpep_ids;
+  @versions = reverse @versions;
 
   return \@wormpep_ids, \@versions;
 }
 
 ##########################################
-# get the wormpep protein from the wormpep fasta file by wormpep ID
-# $seq = get_wormpep_by_wp_id($wormpep_id);
+# get all the wormpep proteins from the wormpep fasta file by wormpep ID
+# 
 
 sub get_wormpep_by_wp_id {
 
-  my ($id) = @_;
-  my $data_file = "/nfs/disk100/wormpub/WORMPEP/wp.fasta_current";
-  my $title="";
+  my $data_file = "/nfs/disk100/wormpub/BUILD/WORMPEP/wormpep${database_version}/wormpep.fasta${database_version}";
   my $seq="";
+  my $id="";
+  my %wormpep;
 
   open (SEQ, "<$data_file") || die "Can't open $data_file\n";
   while (my $line = <SEQ>) {
     chomp $line;
     if ($line =~ />(\S+)/) {
-      if ($title eq $id) { # NB this is the previous title, not the one on this line
-	return $seq;
-      }
+      if ($seq ne "") {$wormpep{$id} = $seq;} # store sequence
+      $id = $1;
       $seq = "";
-      $title = $1;
     } else {
       $seq .= $line;
     }
   }
   close (SEQ);
+  $wormpep{$id} = $seq;		# store last sequence
 
-  if ($title eq $id) { # NB this is the last title in the file
-    return $seq;
-  }
+  return \%wormpep;
 }
 
 ##########################################
-# my ($clone, $cds_start, $exons_start_ref, $exons_end_ref) = &get_cds_details($protein_name);
+# my ($clone, $cds_start, $exons_start_ref, $exons_end_ref) = &get_cds_details($CDS_name);
 # get the clone, clone start position and exons list from a CDS
 #
 
 sub get_cds_details {
-  my ($protein_name) = @_;
+  my ($CDS_name) = @_;
 
   print "Ace fetch->" if ($verbose);
-  print "$protein_name\n" if ($verbose);
-  my $cds_obj = $db->fetch("CDS" => $protein_name);
+  print "$CDS_name\n" if ($verbose);
+  my $cds_obj = $db->fetch("CDS" => $CDS_name);
   # debug
   if (! defined $cds_obj) {
-    print "Can't fetch CDS object for $protein_name\n";
+    print "Can't fetch CDS object for $CDS_name\n";
     return (undef, undef, undef, undef, undef);
   }
 
   my $clone = $cds_obj->Sequence;
   if (! defined $clone) {
-    print "Can't fetch clone for $protein_name\n";
+    print "Can't fetch clone for $CDS_name\n";
     return (undef, undef, undef, undef, undef);
   }
 
@@ -611,7 +783,7 @@ sub get_cds_details {
   my @exons_end = $cds_obj->Source_exons(2);
   $cds_obj->DESTROY();
   if (! @exons_start || ! @exons_end) {
-    print "Can't fetch exons for $protein_name\n";
+    print "Can't fetch exons for $CDS_name\n";
     return (undef, undef, undef, undef, undef);
   }
 
@@ -623,35 +795,17 @@ sub get_cds_details {
     return (undef, undef, undef, undef, undef);
   }
 
-  # the original routine is no longer used because it didn't
-  # deal with CDS names that had missing start/end positions which
-  # messed up the synchrony between the names and positions from that
-  # point onwards.
-  #
-  # You have to creep up on the data you want by using the $obj->at()
-  # structure, in which you can specify exactly the path of tags and
-  # data through the object that you wish to traverse and then you can
-  # get the list of resulting positions under the sub-path that you
-  # want. This means that you must break up the query into a loop
-  # looking at every score value of every wormbase homology and then
-  # you can get the positions under that score.
+  my $quoted_obj = $CDS_name;
+  $quoted_obj =~ s/\./\\./g;            # replace . with \.
+  my ($cds, $cds_start, $cds_end) = $clone_obj->at("SMap.S_child.CDS_child.$quoted_obj")->row;
+  my $foundit = 1;
 
-  my $foundit = 0;
-  my ($cds, $cds_start, $cds_end);
-  foreach $clone_obj ($clone_obj->at('SMap.S_child.CDS_child')) {
-    ($cds, $cds_start, $cds_end) = $clone_obj->row;
-    if ($cds eq $protein_name) {
-      $foundit = 1;
-      last;
-    }
-  }
-
-  if (! $foundit || ! defined $cds_start || ! defined $cds_end) {
-    print "Can't fetch start/end positions for $protein_name in $clone\n";
+  if (! defined $cds_start || ! defined $cds_end) {
+    print "Can't fetch start/end positions for $CDS_name in $clone\n";
     return (undef, undef, undef, undef, undef);
   }
 
-  print "**** Found $protein_name in $clone:$cds_start..$cds_end\n";
+  print "Found $CDS_name in $clone:$cds_start..$cds_end\n" if ($verbose);
 
   # if the CDS is on the reverse sense, then $cds_end > $cds_start
   return ($clone, $cds_start, $cds_end, \@exons_start, \@exons_end);
@@ -660,7 +814,7 @@ sub get_cds_details {
 
 
 ##########################################
-# my @homol_lines = &get_genome_mapping($ms_peptide, $protein_name, $clone, $cds_start, $exons_start_ref, $exons_end_ref, \%protein_positions); 
+# my @homol_lines = &get_genome_mapping($ms_peptide, $CDS_name, $clone, $cds_start, $exons_start_ref, $exons_end_ref, \%protein_positions); 
 # get part of the MSPeptide_homol line like "clone_start clone_end 1 peptide_length AlignPepDNA"
 #
 # take the information describing the position of the CDS's exons in
@@ -670,7 +824,7 @@ sub get_cds_details {
 # Check that the peptide maps to the genome correctly by translating the mapped part
 
 sub get_genome_mapping {
-  my ($ms_peptide, $protein_name, $clone, $cds_start, $cds_end, $exons_start_ref, $exons_end_ref, $protein_positions_href) = @_;
+  my ($ms_peptide, $CDS_name, $clone, $cds_start, $cds_end, $exons_start_ref, $exons_end_ref, $protein_positions_href) = @_;
   my %protein_positions = %{$protein_positions_href};
 
   # the positions of the exons on the clone relative to the start of the CDS
@@ -686,28 +840,28 @@ sub get_genome_mapping {
   # get the peptide length
   my $peptide_length = length($ms_peptide);
 
-  print "ms_peptide = $ms_peptide protein_name = $protein_name\n" if ($verbose);
+  print "ms_peptide = $ms_peptide CDS_name = $CDS_name\n" if ($verbose);
 
   # get the start and end position of the peptide in the protein
   my $peptide_cds_start = $protein_positions{$ms_peptide}; 
-  print "position of peptide in protein = $peptide_cds_start\n" if ($verbose);
+  #print "position of peptide in protein = $peptide_cds_start\n" if ($verbose);
   my $peptide_cds_end = $peptide_cds_start + $peptide_length - 1;
   # convert protein positions to CDS coding positions
   $peptide_cds_start = ($peptide_cds_start * 3) - 2; # start at the beginning of the codon, not the end :-)
   $peptide_cds_end *= 3;
-  print "peptide_cds_start = $peptide_cds_start\n" if ($verbose);
+  #print "peptide_cds_start = $peptide_cds_start\n" if ($verbose);
 
   # find the positions in the cDNA of the start and end of the exons (i.e. the splice sites on the cDNA)
   my $exon_count = 0;
   my $prev_end = 0;
-  print "number of exons = $#exons_start and $#exons_end\n" if ($verbose);
+  #print "number of exons = $#exons_start and $#exons_end\n" if ($verbose);
   foreach my $exon_start (@exons_start) {
-    print "exon_start $exon_start exon_end $exons_end[$exon_count]\n" if ($verbose);
+    #print "exon_start $exon_start exon_end $exons_end[$exon_count]\n" if ($verbose);
     my $exon_length = $exons_end[$exon_count] - $exon_start + 1;
-    print "exon_length $exon_length\n" if ($verbose);
+    #print "exon_length $exon_length\n" if ($verbose);
     my $start = $prev_end + 1;
     my $end = $start + $exon_length - 1;
-    print "start $start end $end\n" if ($verbose);
+    #print "start $start end $end\n" if ($verbose);
     push @exons_internal_start, $start;
     push @exons_internal_end, $end;
     $prev_end = $end;
@@ -729,18 +883,18 @@ sub get_genome_mapping {
   my $peptide_start;		# start of peptide in aa's in this exon
   my $peptide_end;
 
-  foreach $exon_count (0..scalar @exons_start) {
+  foreach $exon_count (0..(scalar @exons_start) - 1) {
 
-    print "exon_count = $exon_count\n" if ($verbose);
-    print "peptide_cds_start = $peptide_cds_start\n" if ($verbose);
-    print "peptide_cds_end = $peptide_cds_end\n" if ($verbose);
-    print "exon CDS boundaries = $exons_internal_start[$exon_count] $exons_internal_end[$exon_count]\n" if ($verbose);
+    #print "exon_count = $exon_count\n" if ($verbose);
+    #print "peptide_cds_start = $peptide_cds_start\n" if ($verbose);
+    #print "peptide_cds_end = $peptide_cds_end\n" if ($verbose);
+    #print "exon CDS boundaries = $exons_internal_start[$exon_count] $exons_internal_end[$exon_count]\n" if ($verbose);
 
     #
     # see if start of peptide in this exon
     #
     if ($peptide_cds_start >= $exons_internal_start[$exon_count] && $peptide_cds_start <= $exons_internal_end[$exon_count]) {
-      print "start of peptide\n" if ($verbose);
+      #print "start of peptide\n" if ($verbose);
 
       if ($cds_start < $cds_end) {
 	$exon_clone_start = $cds_start + $exons_start[$exon_count] - 1; # get the clone position of the start of the exon
@@ -780,7 +934,7 @@ sub get_genome_mapping {
     # see if end of peptide in this exon
     #
     } elsif ($peptide_cds_end >= $exons_internal_start[$exon_count] && $peptide_cds_end <= $exons_internal_end[$exon_count]) {
-      print "end of peptide\n" if ($verbose);
+      #print "end of peptide\n" if ($verbose);
 
       if ($cds_start < $cds_end) {
 	$exon_clone_start = $cds_start + $exons_start[$exon_count] - 1; # get the clone position of the start of the exon
@@ -814,7 +968,7 @@ sub get_genome_mapping {
     # see if internal part of peptide in this exon
     #
     } elsif ($peptide_cds_start <= $exons_internal_start[$exon_count]) {
-      print "internal to peptide\n" if ($verbose);
+      #print "internal to peptide\n" if ($verbose);
       
       if ($cds_start < $cds_end) {
 	$exon_clone_start = $cds_start + $exons_start[$exon_count] - 1; # get the clone position of the start of the exon
@@ -842,6 +996,34 @@ sub get_genome_mapping {
 
   return @output;
 }
+##########################################
+# returns the peptide sequence with any underscore characters
+# (post-translational modification) stripped out
+
+sub no_underscore {
+  my $seq = shift;
+  $seq =~ s/_//g;
+  return $seq;
+}
+
+##########################################
+# returns the positions of any underscore characters
+# (post-translational modification)
+# so 'S_AS_' will give the result (1, 3)
+
+sub pos_underscore {
+  my $seq = shift;
+  my $pos = -1;
+  my @result;
+  while (($pos = index($seq, '_', $pos)) > -1) {
+    # adjust the position to allow for the number of other underscores
+    # before this one
+    push @result, $pos - @result; 
+    $pos++;
+  }
+  return @result;
+}
+
 ##########################################
 
 sub usage {
@@ -905,13 +1087,9 @@ script_template.pl MANDATORY arguments:
 
 =back
 
-=over 4
 
-=item -experiment_id name of the experiment, usually formed from the initials of the author, plus a number, e.g. 'SH_1'
 
-=back
-
-script_template.pl  OPTIONAL arguments:
+=head1 script_template.pl  OPTIONAL arguments:
 
 =over 4
 
@@ -921,7 +1099,7 @@ script_template.pl  OPTIONAL arguments:
 
 =over 4
 
-=item -natural specifies that the peptides in this data set are naturally occuring.
+=item -natural 
 
 =back
 
