@@ -1568,6 +1568,12 @@ sub species_accessors {
 	}
 	return %accessors;
 }
+
+#  if you want to find out if you're a core organism check in this list.
+sub core_species {
+	return @core_organisms;
+}
+
 ####################################
 # accessor for elegans - required sometime for other species builds
 sub build_accessor {
