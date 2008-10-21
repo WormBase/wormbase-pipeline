@@ -6,7 +6,7 @@
 # Compares this number to those from a second database.
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2008-10-14 14:25:33 $
+# Last updated on: $Date: 2008-10-21 08:31:10 $
 
 
 use strict;
@@ -128,7 +128,7 @@ foreach my $class (@classes) {
   # Calculate difference between databases         #
   ##################################################
   
-  my $count1 = &get_prev_count($species, $prev_version, $class, $stage);
+  my $count1 = &get_prev_count($species, $version, $class, $stage);
   my $count2 = $$class_count[$count];
   &store_count($species, $version, $class, $stage, $count2);
   my $diff = $count2 - $count1;
@@ -229,7 +229,11 @@ sub get_prev_count {
     while (my $line = <CLASS_COUNT>) {
       chomp $line;
       my ($cc_version, $cc_class, $cc_species, $cc_count, $cc_stage) = split /\t+/, $line;
-      if ($cc_version == $prev_version && $cc_class eq $class && $cc_species eq $species && $cc_stage eq $stage) {
+      # we don't want to get the count from any details that may have
+      # been stored by an earlier run of this script in this Build,
+      # but we want the most recent version's count apart from that,
+      # so get the most recent result that isn't from this Build.
+      if ($cc_version != $version && $cc_class eq $class && $cc_species eq $species && $cc_stage eq $stage) {
 	# store to get the last one in the previous build
 	$last_count = $cc_count;
       } 
