@@ -5,8 +5,8 @@
 # constructs superlink objects for camace based on Overlap_right tags
 # dl
 #
-# Last updated by: $Author: pad $
-# Last updated on: $Date: 2007-05-24 13:50:34 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2008-10-22 12:24:11 $
  
 $!=1;
 use strict;
@@ -284,7 +284,7 @@ foreach $seq (keys %CDSStart) {
     
     # next if no coordinate for parent clone
     if (!$currStart{$parent}) { 
-      if ($seq !~ /.tw$/) {	# don't complain about the twinscan CDSs - just ignore them
+      if ($seq !~ /.tw$/ && $seq !~ /jigsaw/) {	# don't complain about the twinscan or jigsaw CDSs - just ignore them
 	$log->write_to("no coord in link for parent $parent of $seq\n");
 	$error = 1;
       }
