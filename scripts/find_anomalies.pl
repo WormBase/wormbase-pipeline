@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-10-07 13:39:59 $      
+# Last updated on: $Date: 2008-10-22 12:11:23 $      
 
 # Changes required by Ant: 2008-02-19
 # 
@@ -554,7 +554,7 @@ $ace->close;
 ##################
 
 if ($database eq $wormbase->{'autoace'}) {
-  my $gff_file = $wormbase->{'chromosomes'} . "/SUPPLEMENTARY_GFF/curation_anomalies.gff";
+  my $gff_file = $wormbase->{'chromosomes'} . "/SUPPLEMENTARY_GFF/${species}_curation_anomalies.gff";
   $wormbase->check_file($gff_file, $log,
 			minsize => 700000,
 			lines => ['^##',
@@ -3631,19 +3631,10 @@ sub find_incomplete_pfam_motifs {
 	    $chrom_start = $tmp;
 	  }
 
-	  # if we want the anomalies GFF file, output these details
-	  if ($supplementary) {
-	    my $gff_file = "$database/CHROMOSOMES/SUPPLEMENTARY_GFF/${chromosome}_curation_anomalies.gff";
-	    open (OUTPUT_GFF, ">>$gff_file") || die "Can't open $gff_file";
-	  }
-	  
 #	  print "$chromosome, $chrom_start, $chrom_end, $chrom_strand $pfam_id missing motif at start\n";
 	  my $anomaly_score = 2;
 	  &output_to_database("INCOMPLETE_PFAM_MOTIF", $chromosome, $pfam_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score, 'missing part of motif at start');
 	  
-	  if ($supplementary) {
-	    close(OUTPUT_GFF);
-	  }
 	}
 
       } elsif (exists $pfam_length{$pfam_id} && $motif_end < $pfam_length{$pfam_id} - $MOTIF_THRESHOLD) {
@@ -3663,19 +3654,11 @@ sub find_incomplete_pfam_motifs {
 	    $chrom_start = $tmp;
 	  }
 
-	  # if we want the anomalies GFF file, output these details
-	  if ($supplementary) {
-	    my $gff_file = "$database/CHROMOSOMES/SUPPLEMENTARY_GFF/${chromosome}_curation_anomalies.gff";
-	    open (OUTPUT_GFF, ">>$gff_file") || die "Can't open $gff_file";
-	  }
-	  
 #	  print "$chromosome, $chrom_start, $chrom_end, $chrom_strand $pfam_id missing motif at end\n";
 	  my $anomaly_score = 2;
 	  &output_to_database("INCOMPLETE_PFAM_MOTIF", $chromosome, $pfam_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score, 'missing part of motif at end');
 	  
-	  if ($supplementary) {
-	    close(OUTPUT_GFF);
-	  }
+
 	}
 	
 	
