@@ -7,7 +7,7 @@
 # Builds a wormpep data set from the current autoace database
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2008-10-10 09:46:35 $
+# Last updated on: $Date: 2008-10-23 12:50:52 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -294,7 +294,7 @@ sub write_fasta
 #ENGYFGPICDRRSRTFAPKSDIQTSTPGYQTQVLKFDFKISDDIIIYSSLAFFVLLLIIF
 
 	unless (%aa_seq2id) {
-		%aa_seq2id = $wormbase->FetchData('aa_seq2pepid');
+		%aa_seq2id = $wormbase->FetchData('aa2pepid');
 	}
 	open (FASTA,">$new_wpdir/${PEP_FILE_STEM}.fasta$release")    or $log->log_and_die("cannot create $wpdir/${PEP_FILE_STEM}.fa$release\n");
 	foreach my $pep (sort { $aa_seq2id{$a} cmp $aa_seq2id{$b} } keys %aa_seq2id) {
