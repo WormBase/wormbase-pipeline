@@ -17,7 +17,7 @@
 # foreach? end
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-04-01 11:20:35 $      
+# Last updated on: $Date: 2008-10-23 10:12:55 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -36,7 +36,7 @@ use Storable;
 
 my ($help, $debug, $test, $verbose, $store, $wormbase, $species);
 my ($database1, $database2, $version);
-
+ 
 GetOptions ("help"        => \$help,
             "debug=s"     => \$debug,
 	    "test"        => \$test,
@@ -74,10 +74,11 @@ my $log = Log_files->make_build_log($wormbase);
 # MAIN BODY OF SCRIPT
 ##########################
 
-my $outfile = "/lustre/cbi4/work1/wormpub/CHROMOSOME_DIFFERENCES/sequence_differences.WS$version";
+my $outdir = "/lustre/cbi4/work1/wormpub/CHROMOSOME_DIFFERENCES";
+my $outfile = "$outdir/sequence_differences.WS$version";
 $species = $wormbase->species;
 if ($species ne 'elegans') {
-  $outfile = "/lustre/cbi4/work1/wormpub/CHROMOSOME_DIFFERENCES/sequence_differences_$species.WS$version";
+  $outfile = "$outdir/sequence_differences_$species.WS$version";
 }
 
 open (OUT, "> $outfile") || die "Can't open $outfile";
@@ -106,6 +107,21 @@ foreach my $chromosome (@chromosomes) {
 }
 
 close (OUT);
+
+# copy the data files to the FTP site
+my $FTP = "/nfs/disk69/ftp/pub2/wormbase/Remap-between-versions";
+chdir $outdir;
+$wormbase->run_command("rm $outdir/remap.tar.bz2", $log);
+$wormbase->run_command("chmod -R u+w $outdir/Remap-for-other-groups/CHROMOSOME_DIFFERENCES/", $log);
+$wormbase->run_command("cp $outdir/sequence_differences.WS* $outdir/Remap-for-other-groups/CHROMOSOME_DIFFERENCES/", $log);
+$wormbase->run_command("cp $outdir/sequence_differences.WS* $FTP/Mapping-data", $log);
+$wormbase->run_command("tar cvf remap.tar Remap-for-other-groups", $log);
+$wormbase->run_command("/usr/bin/bzip2 remap.tar", $log);
+$wormbase->run_command("cp $outdir/remap.tar.bz2 $FTP", $log);
+$wormbase->run_command("chmod oa+r $FTP/remap.tar.bz2", $log);
+$wormbase->run_command("chmod -R oa+r $FTP/Mapping-data", $log);
+$wormbase->run_command("chmod -R u+w $FTP/Mapping-data", $log);
+
 
 # Close log files and exit
 
