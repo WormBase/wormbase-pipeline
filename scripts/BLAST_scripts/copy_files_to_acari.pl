@@ -14,12 +14,13 @@ use Wormbase;
 use Getopt::Long;
 use Log_files;
 
-my ($wormpep, $brigpep, $remapep, $chroms, $test, $debug, $store,$ppapep,$jap);
+my ($wormpep, $brigpep, $remapep, $brepep, $chroms, $test, $debug, $store,$ppapep,$jap);
 GetOptions (
             'wormpep' => \$wormpep,
             'brigpep'   => \$brigpep,
             'remapep'   => \$remapep,
             'ppapep'    => \$ppapep,
+            'brepep'    => \$brepep,
             'chrom'     => \$chroms,
             "debug=s"   => \$debug,
             "test"      => \$test,
@@ -56,10 +57,10 @@ if ( $chroms ) {
 
 &copy_worm_proteins($wormbase) if $wormpep ;
 &copy_worm_proteins(Wormbase->new(-debug => $debug,-test => $test, -organism => 'Briggsae')) if $brigpep ;
-#&copy_worm_proteins(Wormbase->new(-debug => $debug,-test => $test, -organism => 'Remanei',-version => 185)) if $remapep ;
 &copy_worm_proteins(Wormbase->new(-debug => $debug,-test => $test, -organism => 'Remanei')) if $remapep ;
 &copy_worm_proteins(Wormbase->new(-debug => $debug,-test => $test, -organism => 'Pristionchus')) if $ppapep ;
 &copy_worm_proteins(Wormbase->new(-debug => $debug,-test => $test, -organism => 'Japonica')) if $jap ;
+&copy_worm_proteins(Wormbase->new(-debug => $debug,-test => $test, -organism => 'Brenneri')) if $brepep ;
 
 $log->mail;
 exit(0);
