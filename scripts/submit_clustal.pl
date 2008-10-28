@@ -24,7 +24,7 @@ use Getopt::Long;
 use DBI;
 use strict;
 
-my ($debug,$store,$species,$wb,$user,$pass,$test);
+my ($debug,$store,$species,$wb,$user,$pass,$test,$ace_database);
 GetOptions(
  'debug=s'   => \$debug,
  'store=s'   => \$store,
@@ -32,6 +32,7 @@ GetOptions(
  'user=s'    => \$user,
  'password=s'=> \$pass,
  'test=s'    => \$test,
+ 'acedb=s'   => \$ace_database,
 ) ||die(@!);
 
 if ($store) {
@@ -50,7 +51,8 @@ $pgdb->do("DELETE FROM clustal WHERE peptide_id LIKE \'$prefix\%\'");
 
 my $infile = $wb->wormpep;
 $infile.='/'.$wb->pepdir_prefix . 'pep'.$wb->version;
-my $acedb = $wb->autoace;
+# my $acedb = $wb->autoace;
+my $acedb = ($ace_database || glob('~wormpub/BUILD/autoace'));
 
 # get wormpep number of proteins
 my $count = `fgrep -c ">" $infile`;
