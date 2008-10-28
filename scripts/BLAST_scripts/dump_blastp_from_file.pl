@@ -106,6 +106,7 @@ my %processIds2prot_analysis = (
 				 'remaneiP'       => 'wublastp_remanei',
 				 'ppapepP'        => 'wublastp_pristionchus',
 				 'jappepP'        => 'wublastp_japonica',
+				 'brepepP'        => 'wublastp_brenneri',
 			       );
 ##########
 
@@ -121,6 +122,7 @@ our %org_prefix = (
 		    'wublastp_remanei'       => 'RP',
 		    'wublastp_pristionchus'  => 'PP',
 		    'wublastp_japonica'      => 'JA',
+		    'wublastp_brenneri'      => 'CN',
 		  );
 
 my $QUERY_SPECIES = $wormbase->full_name;
@@ -193,6 +195,7 @@ my %brig_matches;
 my %rem_matches;
 my %ppa_matches;
 my %jap_matches;
+my %bre_matches;
 
 my %type_count;
 
@@ -220,8 +223,8 @@ while (<BLAST>) {
 
   # check if next protein
   if ( $current_pep and $current_pep ne $proteinId ) {  
-    &dumpData ($current_pep,\%worm_matches,\%human_matches,\%fly_matches,\%yeast_matches,\%swiss_matches,\%trembl_matches,\%brig_matches, \%rem_matches,\%jap_matches) 
-            if (%worm_matches or %human_matches or %fly_matches or %yeast_matches or %swiss_matches or %trembl_matches or %brig_matches or %rem_matches or %jap_matches);
+    &dumpData ($current_pep,\%worm_matches,\%human_matches,\%fly_matches,\%yeast_matches,\%swiss_matches,\%trembl_matches,\%brig_matches, \%rem_matches,\%jap_matches,\%bre_matches) 
+            if (%worm_matches or %human_matches or %fly_matches or %yeast_matches or %swiss_matches or %trembl_matches or %brig_matches or %rem_matches or %jap_matches or %bre_matches);
 
     #undef all hashes
     %worm_matches = ();
@@ -234,6 +237,7 @@ while (<BLAST>) {
     %rem_matches = ();
     %ppa_matches = ();
     %jap_matches = ();
+    %bre_matches = ();
     
     %type_count = ();
 
@@ -269,6 +273,8 @@ while (<BLAST>) {
       $added = &addWormData ( \%ppa_matches, \@data );
     } elsif ( $analysis eq 'jappepP') {
       $added = &addWormData ( \%jap_matches, \@data);
+    } elsif ( $analysis eq 'brepepP') {
+      $added = &addWormData ( \%bre_matches,\@data);
     }
 
   #this keeps track of how many hits are stored for each analysis.  Once we have 10 we can ignore the rest as the list is sorted.
@@ -477,7 +483,7 @@ sub addWormData {
       my $homol = $$data[4];
       my $homol_gene = &justGeneName( $homol );
 
-      if ( $database eq "worm_remanei" || $database eq 'worm_pristionchus' || $database eq 'worm_japonica') {
+      if ( $database eq "worm_remanei" || $database eq 'worm_pristionchus' || $database eq 'worm_japonica' || $database eq 'worm_brenneri') {
 	my @_genes=split(/\s/,$$data[0]);
 	foreach my $_g(@_genes) {
 	 	my $my_gene = &justGeneName( $CE2gene{ $$data[0] } ) ;
@@ -592,6 +598,7 @@ sub species_lookup {
 		      'wublastp_briggsae'      => 'Caenorhabditis briggsae',
 		      'wublastp_remanei'       => 'Caenorhabditis remanei',
 		      'wublastp_japonica'      => 'Caenorhabditis japonica',
+		      'wublastp_brenneri'      => 'Caenorhabditis brenneri',
 		      'wublastp_human'         => 'Homo sapiens',
 		      'wublastp_yeast'         => 'Saccharomyces cerevisiae',
 		      'wublastp_fly'           => 'Drosophila melanogaster',
