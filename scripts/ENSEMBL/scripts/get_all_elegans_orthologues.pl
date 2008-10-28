@@ -111,7 +111,7 @@ foreach my $slice(@slices){
 		# elegans part
 
                 # could probably merge all hashes into one big one
-                my %all_ortho = (%briggsae_ids,%remanei_ids,%pristionchus_ids,%japonica_ids);
+                my %all_ortho = (%briggsae_ids,%remanei_ids,%pristionchus_ids,%japonica_ids,%brenneri_ids);
 		
 		print "Gene : \"$gid\"\n";
 		while (my ($k,$v)=each(%all_ortho)){
@@ -150,6 +150,11 @@ foreach my $slice(@slices){
 				        my $rid=$cds2wbgene{$r_k}?$cds2wbgene{$r_k}:$r_k;
 					print "Ortholog $rid \"$species{$$r_v[0]}\" From_analysis WormBase-Compara\n"
 				}
+				while (my ($r_k,$r_v)=each(%brenneri_ids)){                                                     # brenneri
+				        my $rid=$cds2wbgene{$r_k}?$cds2wbgene{$r_k}:$r_k;
+					print "Ortholog $rid \"$species{$$r_v[0]}\" From_analysis WormBase-Compara\n"
+				}
+
 				print "\n";
 		
 		}
@@ -169,6 +174,11 @@ foreach my $slice(@slices){
 				}
 				
 				while (my ($r_k,$r_v)=each(%japonica_ids)){                                                   # japonica 
+				        my $rid=$cds2wbgene{$r_k}?$cds2wbgene{$r_k}:$r_k;
+					print "Ortholog $rid \"$species{$$r_v[0]}\" From_analysis WormBase-Compara\n"
+				}
+
+				while (my ($r_k,$r_v)=each(%brenneri_ids)){                                                   # brenneri 
 				        my $rid=$cds2wbgene{$r_k}?$cds2wbgene{$r_k}:$r_k;
 					print "Ortholog $rid \"$species{$$r_v[0]}\" From_analysis WormBase-Compara\n"
 				}
@@ -193,7 +203,10 @@ foreach my $slice(@slices){
 				        my $rid=$cds2wbgene{$r_k}?$cds2wbgene{$r_k}:$r_k;
 					print "Ortholog $rid \"$species{$$r_v[0]}\" From_analysis WormBase-Compara\n"
 				}
-
+                                while (my ($r_k,$r_v)=each(%brenneri_ids)){                                                      # brenneri
+				        my $rid=$cds2wbgene{$r_k}?$cds2wbgene{$r_k}:$r_k;
+					print "Ortholog $rid \"$species{$$r_v[0]}\" From_analysis WormBase-Compara\n"
+				}
 				print "\n";
 		
 		}
@@ -214,9 +227,40 @@ foreach my $slice(@slices){
 				        my $rid=$cds2wbgene{$r_k}?$cds2wbgene{$r_k}:$r_k;
 					print "Ortholog $rid \"$species{$$r_v[0]}\" From_analysis WormBase-Compara\n"
 				}
+				while (my ($r_k,$r_v)=each(%brenneri_ids)){                                               # brenneri
+				        my $rid=$cds2wbgene{$r_k}?$cds2wbgene{$r_k}:$r_k;
+					print "Ortholog $rid \"$species{$$r_v[0]}\" From_analysis WormBase-Compara\n"
+				}
+
 				print "\n";
 		
 		}
+		# brenneri part
+		while (my ($k,$v)=each(%brenneri_ids)){
+			   	my $sid=$cds2wbgene{$k}?$cds2wbgene{$k}:$k;
+				print "Gene : \"$sid\"\n";
+				print "Ortholog $gid \"${\$species{ $config->{taxon_id}}}\" From_analysis WormBase-Compara\n"; # elegans
+				while (my ($r_k,$r_v)=each(%briggsae_ids)){                                                    # briggsae
+				        my $rid=$cds2wbgene{$r_k}?$cds2wbgene{$r_k}:$r_k;
+					print "Ortholog $rid \"$species{$$r_v[0]}\" From_analysis WormBase-Compara\n"
+				}
+                                while (my ($r_k,$r_v)=each(%remanei_ids)){                                                    # remanei 
+				        my $rid=$cds2wbgene{$r_k}?$cds2wbgene{$r_k}:$r_k;
+					print "Ortholog $rid \"$species{$$r_v[0]}\" From_analysis WormBase-Compara\n"
+				}
+                                while (my ($r_k,$r_v)=each(%pristionchus_ids)){                                               # pristionchus 
+				        my $rid=$cds2wbgene{$r_k}?$cds2wbgene{$r_k}:$r_k;
+					print "Ortholog $rid \"$species{$$r_v[0]}\" From_analysis WormBase-Compara\n"
+				}
+				while (my ($r_k,$r_v)=each(%japonica_ids)){                                               # japonica
+				        my $rid=$cds2wbgene{$r_k}?$cds2wbgene{$r_k}:$r_k;
+					print "Ortholog $rid \"$species{$$r_v[0]}\" From_analysis WormBase-Compara\n"
+				}
+
+				print "\n";
+		
+		}
+
 	}	
 }
 
@@ -228,7 +272,7 @@ foreach my $slice(@slices){
 sub get_commondata {
 	my ($name)=@_;
 	my %genehash;
-	my @locations=qw(autoace remanei briggsae pristionchus japonica);
+	my @locations=qw(autoace remanei briggsae pristionchus japonica brenneri);
 	my $dir=glob('~wormpub/BUILD/');
 	foreach my $loc(@locations) {
 		my $file_name="$dir/$loc/COMMON_DATA/$name.dat";
