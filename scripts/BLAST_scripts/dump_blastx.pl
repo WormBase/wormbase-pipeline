@@ -5,7 +5,7 @@
 #  and concatenate them at the end
 # 
 # Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2008-09-12 15:04:38 $
+# Last edited on: $Date: 2008-10-29 16:44:34 $
 # 
 
 
@@ -61,6 +61,7 @@ my %logic2type = (
 	wormpepX => 'Elegans',
 	ppapepX  => 'Pristionchus',
 	jappepX  => 'Japonica',
+	brepepX  => 'Brenneri',
 	GadflyX  => '1',
 	ipi_humanX => '1',
 	slimtremblX => '1',
