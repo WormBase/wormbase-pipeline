@@ -58,7 +58,8 @@ my $all_blocks = $ga_a->fetch_all_by_MethodLinkSpeciesSet( $mlss);
 my @all_aligns;
 
 # for all aligned blocks
-foreach my $align (@$all_blocks) {
+my $align;
+while( $align = shift @$all_blocks) {
 
     my $simple_align = Bio::SimpleAlign->new();
     $simple_align->id( "ID#" . $align->dbID );
