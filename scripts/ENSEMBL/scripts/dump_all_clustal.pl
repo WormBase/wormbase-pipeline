@@ -82,9 +82,5 @@ while( $align = shift @$all_blocks) {
         );
         $simple_align->add_seq($seq);
     }
-    push( @all_aligns, $simple_align );
-}
-
-foreach my $aln (@all_aligns) {
-    print $alignIO $aln;
+    print $alignIO $simple_align;
 }
