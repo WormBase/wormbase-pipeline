@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: ar2 $
-// Last edited on: $Date: 2008-09-11 12:57:44 $
+// Last edited on: $Date: 2008-10-30 09:29:57 $
 
 
 
@@ -1425,6 +1425,7 @@
                   Site_values      Text UNIQUE Float REPEAT
                   Threshold        Float
                   Associated_feature ?Feature XREF Associated_with_Position_Matrix #Evidence
+		  Derived_from_matrix ?Position_Matrix
                   Remark ?Text  #Evidence
 
 
