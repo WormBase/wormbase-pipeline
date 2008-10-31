@@ -8,7 +8,7 @@
 # Originally written by Dan Lawson
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2008-10-31 10:17:29 $
+# Last updated on: $Date: 2008-10-31 10:37:03 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -292,27 +292,19 @@ sub copy_dna_files{
     if (-e "$chromdir") {
       my $dna_dir = "$targetdir/$WS_name/genomes/$gspecies/sequences/dna";
       mkpath($dna_dir,1,0775);
-
-      # we don't want to end up with thousands of files for species with DNA still in contigs, so make one file
-      my @contigs = $wb->get_chromosome_names(-prefix => 1, -mito => 1);
 	#todd wants all species to have whole genome in one file
-	if (-e "$chromdir/$contigs[0].dna") { # are there any .dna files to copy?
-		unlink "$dna_dir/$gspecies.dna.gz"; # in case this script is being run a second time after problems
-		$log->write_to("cating sequences together in to $dna_dir/$gspecies.$WS_name.dna.fa");
-		foreach my $contig (@contigs) {
-			$wormbase->run_command("cat $chromdir/$contig.dna >> $dna_dir/$gspecies.$WS_name.dna.fa", 'no_log');
-			$wormbase->run_command("cat $chromdir/${contig}_softmasked.dna.gz >> $dna_dir/${gspecies}_softmasked.$WS_name.dna.fa", 'no_log');
-			$wormbase->run_command("cat $chromdir/${contig}_masked.dna.gz >> $dna_dir/${gspecies}_masked.$WS_name.dna.fa", 'no_log');
-		}
-		$wormbase->run_command("/bin/gzip -f $dna_dir/$gspecies.$WS_name.dna.fa",$log);
-		$wormbase->run_command("/bin/gzip -f $dna_dir/".$gspecies."_softmasked.$WS_name.dna.fa",$log);
-		$wormbase->run_command("/bin/gzip -f $dna_dir/".$gspecies."_masked.$WS_name.dna.fa",$log);
+	if ($wormbase->assembly_type eq 'contig') {
+		my $dna_file = "$chromdir/supercontigs.fa";
+		my $masked_file = "$chromdir/".$gspecies."_masked.dna";
+		my $soft_file = "$chromdir/".$gspecies."_masked.dna";
 		
-      }
-      if($wb->assembly_type eq 'chromosome') {
+		$wormbase->run_command("/bin/gzip -f $dna_file > $dna_dir/".$gspecies."$WS_name.dna.fa",$log);
+		$wormbase->run_command("cp -f $soft_file $dna_dir/".$gspecies."_softmasked.$WS_name.dna.fa.gz", $log);
+		$wormbase->run_command("cp -f $masked_file $dna_dir/".$gspecies."_masked.$WS_name.dna.fa.gz", $log);
+		
+      }elsif($wb->assembly_type eq 'chromosome') {
 		$wormbase->run_command("cp -R $chromdir/*.dna* $dna_dir/", $log);
       }
-
       $wb->run_command("cp -R $chromdir/*.agp $dna_dir/", $log) if (scalar glob("$chromdir/*.agp"));
 
       # change group ownership
