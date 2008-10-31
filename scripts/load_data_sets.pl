@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl -w
-# Last updated by: $Author: pad $     
-# Last updated on: $Date: 2008-08-20 09:51:33 $      
+# Last updated by: $Author: gw3 $     
+# Last updated on: $Date: 2008-10-31 16:33:14 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -61,13 +61,7 @@ sub parse_misc_files {
 		       $wormbase->misc_static."/nembase_nematode_contigs.ace"   => "nembase_ace"           ,
 		       $wormbase->misc_static."/other_nematode_ESTs.ace"        => "other_nematode_ace"    ,
 		       $wormbase->misc_static."/washu_nematode_contigs.ace"     => "washu_nem_ace"         ,
-		       $wormbase->misc_dynamic."/misc_mass_spec_MichaelHengartner.ace" => "mass_spec"      ,
 		       $wormbase->misc_dynamic."/misc_mass_spec_GenniferMerrihew.ace"  => "mass_spec"      ,
-		       $wormbase->misc_dynamic."/misc_mass_spec_StevenHusson.ace"      => "mass_spec"      ,
-		       $wormbase->misc_dynamic."/misc_mass_spec_StevenHusson_2.ace"    => "mass_spec"      ,
-		       $wormbase->misc_dynamic."/misc_mass_spec_StevenHusson_3.ace"    => "mass_spec"      ,
-		       $wormbase->misc_dynamic."/misc_mass_spec_NatalieWielsch.ace"    => "mass_spec"      ,
-		       $wormbase->misc_dynamic."/misc_mass_spec_Other.ace"             => "mass_spec"      ,
 		       $wormbase->wormpub."/analysis/GI_numbers/GI_numbers.ace" => "gi_number"             ,
 		       $wormbase->misc_static.'/misc_mtce_protein_IDs.ace'     => 'mtce_protein_IDs'      ,
 		       $wormbase->misc_dynamic.'/Caenorhabditae_sequence_data_to_load.ace'     => 'Caenorhabditae_seq_data',
