@@ -8,7 +8,7 @@
 # in ace
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-10-17 14:24:03 $      
+# Last updated on: $Date: 2008-10-31 13:23:36 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -123,6 +123,10 @@ my $db = Ace->connect (-path => $database,
                        -program => $tace) || die "cannot connect to database at $database\n";
 
 
+# open the output ACE file
+open (OUT, "> $output") || die "Can't open output file $output\n";
+print OUT "\n";			# blank line at start just in case we concatenate this to another ace file
+
 
 # this gives a hash with key=experiment ID value=list of details
 my ($experiment_hashref, $peptide_hashref) = &parse_data();
@@ -135,31 +139,28 @@ my %unique_peptides;		# non-redundant set of peptides used in all the experiment
 my %unique_clones;  		# non-redundant set of clones mapped to in all the experiments
 			
 
-# open the output ACE file
-open (OUT, "> $output") || die "Can't open output file $output\n";
-print OUT "\n";			# blank line at start just in case we concatenate this to another ace file
-
-# get the set of CDS, history versions and resulting protein IDs
-my $protein_history_aref = &get_protein_history;
-
 # get the peptides used in each protein
 my %proteins;
-my $experiment_id = $experiment{experiment_id};
+my $experiment_id;
 
 my %peptide_count = ();		# hash to hold count of times a peptide maps to proteins
-print "experiment_id = $experiment_id\n";
 
-my @peptides = @{ $experiment{'PEPTIDES'} };
-# get the unique non-redundant set of peptides in all experiments
-foreach my $pep (@peptides) {
-  $unique_peptides{$pep} = 1;
+# get the set of unique peptides from all experiments
+# %unique_peptides is lists of CDS matching the key peptide
+foreach my $experiment_id (keys %experiment) {
+  my @peptides = @{ $experiment{$experiment_id}{'PEPTIDES'} };
+  # get the unique non-redundant set of peptides in all experiments
+  foreach my $pep (@peptides) {
+    $unique_peptides{$pep} = 1;
+  }
 }
 
 # get the proteins and their peptides
-foreach my $peptide_sequence (@peptides) {
-  my @CDS_names = @{ $peptide{$peptide_sequence}->{'PROTEINS'} };
-  foreach my $protein (@CDS_names) {
-    push @{ $proteins{$protein} }, $peptide_sequence;
+# %proteins is lists of peptides matching the key CDS
+foreach my $peptide_sequence (keys %unique_peptides) {
+  my @CDS_names = @{ $peptide{$peptide_sequence} };
+  foreach my $CDS (@CDS_names) {
+    push @{ $proteins{$CDS} }, $peptide_sequence;
   }
 }
 
@@ -186,7 +187,7 @@ foreach my $CDS_name (keys %proteins) {
     $cds_processed_ok = &process_cds($CDS_name, $CDS_name_isoform, $wormpep_history, \%unique_clones, %proteins);
   }
 
-  # if the isoform didn't give the required peptide matchesm look at the normal CDS_name
+  # if the isoform didn't give the required peptide matches, look at the normal CDS_name
   if (!$cds_processed_ok) {
     $CDS_name_isoform = $CDS_name; # set the CDS_name back to the original name
     $cds_processed_ok = &process_cds($CDS_name, $CDS_name, $wormpep_history, \%unique_clones, %proteins);
@@ -201,31 +202,6 @@ foreach my $CDS_name (keys %proteins) {
   }
 }
 
-# output the experiment data object
-print OUT "\n";
-print OUT "Mass_spec_experiment : \"$experiment_id\"\n";
-print OUT "Species \"$experiment{species}\"\n" if (exists $experiment{species});
-print OUT "Strain \"$experiment{strain}\" \n" if (exists $experiment{strain});
-print OUT "Life_stage \"$experiment{life_stage}\"\n" if (exists $experiment{life_stage});
-print OUT "Sub_cellular_localization \"$experiment{sub_cellular_localization}\"\n" if (exists $experiment{sub_cellular_localization});
-print OUT "Digestion \"$experiment{digestion}\"\n" if (exists $experiment{digestion});
-print OUT "Instrumentation \"$experiment{instrumentation}\"\n" if (exists $experiment{instrumentation});
-print OUT "Multiple_ambiguous_IDs_allowed\n" if (exists $experiment{multiple_ambiguous_IDs_allowed});
-print OUT "Remark \"$experiment{remark}\"\n" if (exists $experiment{remark});
-print OUT "Person \"$experiment{person}\" \n" if (exists $experiment{person});
-print OUT "Author \"$experiment{author}\" \n" if (exists $experiment{author});
-print OUT "Reference \"$experiment{reference}\" \n" if (exists $experiment{reference});
-print OUT "Database \"$experiment{database}\"\n" if (exists $experiment{database});
-print OUT "Program \"$experiment{program}\"\n" if (exists $experiment{program});
-print OUT "Laboratory \"$experiment{laboratory}\" \n" if (exists $experiment{laboratory});
-print OUT "Genotype \"$experiment{genotype}\" \n" if (exists $experiment{genotype});
-print OUT "Anatomy_term \"$experiment{anatomy_term}\"\n" if (exists $experiment{anatomy_term});
-print OUT "Cell_type \"$experiment{cell_type}\" \n" if (exists $experiment{cell_type});
-print OUT "Ionisation_source \"$experiment{ionisation_source}\" \n" if (exists $experiment{ionisation_source});
-print OUT "Minimum_ion_proportion $experiment{minimum_ion_proportion}\n" if (exists $experiment{minimum_ion_proportion});
-print OUT "False_discovery_rate $experiment{false_discovery_rate}\n" if (exists $experiment{false_discovery_rate});
-
-
 # go through the peptides writing out their sequences
 # whether the peptide is mapped uniquely for the Mass_spec_peptide in this experiment
 # and whether or not they are flagged as natural
@@ -235,10 +211,13 @@ foreach my $ms_peptide (keys %unique_peptides) {
     print OUT "\n";	
     print OUT "Mass_spec_peptide : \"MSP:$ms_peptide\"\n";
     print OUT "Peptide \"MSP:$ms_peptide\"\n";
-    print OUT "Protein_seq \"MSP:$ms_peptide\"\n";	  
-    print OUT "Petide_is_natural\n" if (exists $experiment{natural}); # note spelling mistake
-    print OUT "Mass_spec_experiments \"$experiment_id\" Matches_database_uniquely\n" if (exists $peptide_count{$ms_peptide} && $peptide_count{$ms_peptide} == 1);
-      
+    print OUT "Protein_seq \"MSP:$ms_peptide\"\n";
+    foreach my $experiment_id (keys %experiment) {	  
+      print OUT "Petide_is_natural\n" if (exists $experiment{$experiment_id}{natural}); # note spelling mistake
+      if (exists $peptide_count{$ms_peptide}{$experiment_id} && $peptide_count{$ms_peptide}{$experiment_id} == 1) {
+	print OUT "Mass_spec_experiments \"$experiment_id\" Matches_database_uniquely\n";
+      }
+    }
     # and output the Peptide sequence object 
     print OUT "\n";	
     print OUT "Peptide : \"MSP:$ms_peptide\"\n";
@@ -254,6 +233,33 @@ foreach my $clone (keys %unique_clones) {
   print OUT "\n";	
   print OUT "Sequence : $clone\n";
   print OUT "Homol_data $clone:Mass-spec 1 $size\n";
+}
+
+# output the experiment data objects
+foreach my $experiment_id (keys %experiment) {
+  print OUT "\n";
+  print OUT "Mass_spec_experiment : \"$experiment_id\"\n";
+  print OUT "Species \"$experiment{$experiment_id}{species}\"\n" if (exists $experiment{$experiment_id}{species});
+  print OUT "Strain \"$experiment{$experiment_id}{strain}\" \n" if (exists $experiment{$experiment_id}{strain});
+  print OUT "Life_stage \"$experiment{$experiment_id}{life_stage}\"\n" if (exists $experiment{$experiment_id}{life_stage});
+  print OUT "Sub_cellular_localization \"$experiment{$experiment_id}{sub_cellular_localization}\"\n" if (exists $experiment{$experiment_id}{sub_cellular_localization});
+  print OUT "Digestion \"$experiment{$experiment_id}{digestion}\"\n" if (exists $experiment{$experiment_id}{digestion});
+  print OUT "Instrumentation \"$experiment{$experiment_id}{instrumentation}\"\n" if (exists $experiment{$experiment_id}{instrumentation});
+  print OUT "Ionisation_source \"$experiment{$experiment_id}{ionisation_source}\"\n" if (exists $experiment{$experiment_id}{ionisation_source});
+  print OUT "Multiple_ambiguous_IDs_allowed\n" if (exists $experiment{$experiment_id}{multiple_ambiguous_IDs_allowed});
+  print OUT "Remark \"$experiment{$experiment_id}{remark}\"\n" if (exists $experiment{$experiment_id}{remark});
+  print OUT "Person \"$experiment{$experiment_id}{person}\" \n" if (exists $experiment{$experiment_id}{person});
+  print OUT "Author \"$experiment{$experiment_id}{author}\" \n" if (exists $experiment{$experiment_id}{author});
+  print OUT "Reference \"$experiment{$experiment_id}{reference}\" \n" if (exists $experiment{$experiment_id}{reference});
+  print OUT "Database \"$experiment{$experiment_id}{database}\"\n" if (exists $experiment{$experiment_id}{database});
+  print OUT "Program \"$experiment{$experiment_id}{program}\"\n" if (exists $experiment{$experiment_id}{program});
+  print OUT "Laboratory \"$experiment{$experiment_id}{laboratory}\" \n" if (exists $experiment{$experiment_id}{laboratory});
+  print OUT "Genotype \"$experiment{$experiment_id}{genotype}\" \n" if (exists $experiment{$experiment_id}{genotype});
+  print OUT "Anatomy_term \"$experiment{$experiment_id}{anatomy_term}\"\n" if (exists $experiment{$experiment_id}{anatomy_term});
+  print OUT "Cell_type \"$experiment{$experiment_id}{cell_type}\" \n" if (exists $experiment{$experiment_id}{cell_type});
+  print OUT "Ionisation_source \"$experiment{$experiment_id}{ionisation_source}\" \n" if (exists $experiment{$experiment_id}{ionisation_source});
+  print OUT "Minimum_ion_proportion $experiment{$experiment_id}{minimum_ion_proportion}\n" if (exists $experiment{$experiment_id}{minimum_ion_proportion});
+  print OUT "False_discovery_rate $experiment{$experiment_id}{false_discovery_rate}\n" if (exists $experiment{$experiment_id}{false_discovery_rate});
 }
 
 
@@ -338,7 +344,7 @@ sub parse_data {
   my $quantification_type;
   my $CDS_name;
   my @CDS_names;
-  my $experiment_id;
+  my $experiment_id = undef;
 
 
 
@@ -367,54 +373,63 @@ sub parse_data {
 
       } elsif ($line =~ /Mass_spec_experiment\s*=\s*(.+)/) {
 	# usually formed from the initials of the author, plus a number, e.g. 'SH_1'
-	$experiment{experiment_id} = $1;
 	$experiment_id = $1;
+	$experiment{$experiment_id}{experiment_id} = $1;
 
       } elsif ($line =~ /Species\s*=\s*(.+)/) {
-	$experiment{species} = $1;
+	$experiment{$experiment_id}{species} = $1;
 
       } elsif ($line =~ /Strain\s*=\s*(.+)/) {
-	$experiment{strain} = $1;
+	$experiment{$experiment_id}{strain} = $1;
 
       } elsif ($line =~ /Life_stage\s*=\s*(.+)/) {
-	$experiment{life_stage} = $1;
+	$experiment{$experiment_id}{life_stage} = $1;
 
       } elsif ($line =~ /Sub_cellular_localization\s*=\s*(.+)/) {
- 	$experiment{sub_cellular_localization} = $1;
+ 	$experiment{$experiment_id}{sub_cellular_localization} = $1;
 
       } elsif ($line =~ /Digestion\s*=\s*(.+)/) {
- 	$experiment{digestion} = $1;
+ 	$experiment{$experiment_id}{digestion} = $1;
 
       } elsif ($line =~ /Instrumentation\s*=\s*(.+)/) {
- 	$experiment{instrumentation} = $1;
+ 	$experiment{$experiment_id}{instrumentation} = $1;
+
+      } elsif ($line =~ /Ionisation_source\s*=\s*(.+)/) {
+ 	$experiment{$experiment_id}{ionisation_source} = $1;
+
+      } elsif ($line =~ /False_discovery_rate\s*=\s*(.+)/) {
+ 	$experiment{$experiment_id}{false_discovery_rate} = $1;
 
       } elsif ($line =~ /Multiple_ambiguous_IDs_allowed/) {
- 	$experiment{multiple_ambiguous_IDs_allowed} = 1;
+ 	$experiment{$experiment_id}{multiple_ambiguous_IDs_allowed} = 1;
 
       } elsif ($line =~ /Person\s*=\s*(.+)/) {
- 	$experiment{person} = $1;
+ 	$experiment{$experiment_id}{person} = $1;
 
       } elsif ($line =~ /Reference\s*=\s*(.+)/) {
- 	$experiment{reference} = $1;
+ 	$experiment{$experiment_id}{reference} = $1;
 
       } elsif ($line =~ /Database\s*=\s*(.+)/) {
- 	$experiment{database} = $1;
+ 	$experiment{$experiment_id}{database} = $1;
+
+      } elsif ($line =~ /Remark\s*=\s*(.+)/) {
+ 	$experiment{$experiment_id}{remark} = $1;
 
       } elsif ($line =~ /Program\s*=\s*(.+)/) {
- 	$experiment{program} = $1;
+ 	$experiment{$experiment_id}{program} = $1;
 
       } elsif ($line =~ /Natural/) {
 	# specifies that the peptides in this data set are naturally occuring.
- 	$experiment{natural} = 1;
+ 	$experiment{$experiment_id}{natural} = 1;
 
       } elsif ($line =~ /Posttranslation_modification_type\s*=\s*(.+)/) {
- 	$experiment{posttranslation_modification_type} = $1;
+ 	$experiment{$experiment_id}{posttranslation_modification_type} = $1;
 
       } elsif ($line =~ /Posttranslation_modification_database\s*=\s*(.+)/) {
- 	$experiment{posttranslation_modification_database} = $1;
+ 	$experiment{$experiment_id}{posttranslation_modification_database} = $1;
 
       } elsif ($line =~ /Posttranslation_modification_URL\s*=\s*(.+)/) {
- 	$experiment{posttranslation_modification_URL} = $1;
+ 	$experiment{$experiment_id}{posttranslation_modification_URL} = $1;
 
       } else {
 	die "Input line not recognised:\n$line\n";
@@ -423,12 +438,21 @@ sub parse_data {
     } else {
 
       if ($line =~ /\s*(\S+)\s+(\S+)\s+(\S+)\s+(\S+)/) {
-	$cgc_name = $1;
-	$peptide_sequence = $2;
-	$protein_probability = $3;
-	if ($protein_probability eq '.') {$protein_probability = undef}
-	$peptide_probability = $4;
-	if ($peptide_probability eq '.') {$peptide_probability = undef}
+	my @f = split /\s+/, $line;
+	$cgc_name = shift @f;
+	$peptide_sequence = shift @f;
+	while ($protein_probability = shift @f) {
+	  if ($protein_probability eq '.') {$protein_probability = undef}
+	  $peptide_probability = shift @f;
+	  if ($peptide_probability eq '.') {$peptide_probability = undef}
+	  $experiment_id = shift @f;
+
+	  # save the peptide data in all its experiments
+	  push @{ $experiment{$experiment_id}{'PEPTIDES'} }, $peptide_sequence;	# list of peptides in this experiment
+	  $experiment{$experiment_id}{HAS_PEPTIDE}{$peptide_sequence} = 1; # unique hash of peptides in this experiment
+	  $experiment{$experiment_id}{'PROTEIN_PROBABILITY'}{$peptide_sequence} = $protein_probability;
+	  $experiment{$experiment_id}{'PEPTIDE_PROBABILITY'}{$peptide_sequence} = $peptide_probability;
+	}
 	@CDS_names = ();
       }
 
@@ -454,14 +478,10 @@ sub parse_data {
 	die "gene name '$cgc_name' not recognised\n";
       }
 
-      # construct the peptide data
-      $peptide{$peptide_sequence}->{'PROTEINS'} = [@CDS_names];
+      # construct the peptide data - these petides map to these CDSs
+      $peptide{$peptide_sequence} = [@CDS_names];
       #print "$peptide_sequence protein = @CDS_names\n";
 
-      # save the peptide data in all its experiments
-      push @{ $experiment{'PEPTIDES'} }, $peptide_sequence;
-      $experiment{'PROTEIN_PROBABILITY'}{$peptide_sequence} = $protein_probability;
-      $experiment{'PEPTIDE_PROBABILITY'}{$peptide_sequence} = $peptide_probability;
     }
   }
   close (DATA);
@@ -471,7 +491,7 @@ sub parse_data {
 
 
 ##########################################
-# mapps all the peptides that should map to this CDS
+# maps all the peptides that should map to this CDS
 sub process_cds {
   # CDS_name is the original CDS name (without the isoform 'a' added)
   # used as the key to look for the peptides that should map to this
@@ -503,8 +523,15 @@ sub process_cds {
 
     my $wormpep_seq = $wormpep->{$wormpep_id};
 
-    # see if the peptides all map to this version of the wormpep protein sequence
-    my ($all_peptides_mapped_ok, %protein_positions) = &map_peptides_to_protein($wormpep_seq, @peptides_in_protein);
+    my ($all_peptides_mapped_ok, %protein_positions);
+    # check to see if the protein exists!!!
+    if (defined $wormpep_seq) {
+      # see if the peptides all map to this version of the wormpep protein sequence
+      ($all_peptides_mapped_ok, %protein_positions) = &map_peptides_to_protein($wormpep_seq, @peptides_in_protein);
+    } else {
+      $all_peptides_mapped_ok = 0;
+    }
+
 
     if ($all_peptides_mapped_ok) {
       print "We have found all the peptides in CDS: $CDS_name_isoform wormpep_id: $wormpep_id version=$latest_cds\n" if ($verbose);
@@ -559,15 +586,20 @@ sub process_cds {
 	  }
 	}
 
-	# count the number of times this peptide maps to a protein in this experiment
-	$peptide_count{$ms_peptide}++;
-
 	# output the MS_peptide_results hash in the Mass_spec_peptide object
 	print OUT "\n";
 	print OUT "Mass_spec_peptide : \"MSP:$ms_peptide\"\n";
-	print OUT "Mass_spec_experiments \"$experiment_id\" Protein_probability ", $experiment{'PROTEIN_PROBABILITY'}{$ms_peptide} ,"\n" if (defined $experiment{'PROTEIN_PROBABILITY'}{$ms_peptide});
-	print OUT "Mass_spec_experiments \"$experiment_id\" Peptide_probability ", $experiment{'PEPTIDE_PROBABILITY'}{$ms_peptide} ,"\n" if (defined $experiment{'PEPTIDE_PROBABILITY'}{$ms_peptide});
-	print OUT "Mass_spec_experiments \"$experiment_id\" Protein \"WP:$wormpep_id\"\n"; # the protein that this peptide in this experiment matches
+	foreach my $experiment_id (keys %experiment) {
+	  print OUT "Mass_spec_experiments \"$experiment_id\" Protein_probability ", $experiment{$experiment_id}{'PROTEIN_PROBABILITY'}{$ms_peptide} ,"\n" if (defined $experiment{$experiment_id}{'PROTEIN_PROBABILITY'}{$ms_peptide});
+	  print OUT "Mass_spec_experiments \"$experiment_id\" Peptide_probability ", $experiment{$experiment_id}{'PEPTIDE_PROBABILITY'}{$ms_peptide} ,"\n" if (defined $experiment{$experiment_id}{'PEPTIDE_PROBABILITY'}{$ms_peptide});
+	  # check to see if this peptide has a match in this experiment
+	  if (exists $experiment{$experiment_id}{HAS_PEPTIDE}{$ms_peptide}) {
+	    # the protein that this peptide in this experiment matches
+	    print OUT "Mass_spec_experiments \"$experiment_id\" Protein \"WP:$wormpep_id\"\n"; 
+	    # count the number of times this peptide maps to a protein in this experiment
+	    $peptide_count{$ms_peptide}{$experiment_id}++;
+	  }
+	}
 
 	# output the protein object for this peptide
 	print OUT "\n";
@@ -575,6 +607,8 @@ sub process_cds {
 	print OUT "Peptide \"MSP:$ms_peptide\"\n";
 
 	# output the homology of the wormpep protein to the peptide
+	my $motif_out = "";	# holds the motif output, if any
+
 	print OUT "\n";
 	print OUT "Protein : \"WP:$wormpep_id\"\n";                                          
 	my $pos = $protein_positions{$ms_peptide}; # position in protein
@@ -582,33 +616,37 @@ sub process_cds {
 	my $end = $pos+$len-1;
 	print OUT "Pep_homol \"MSP:$ms_peptide\" mass-spec 1 $pos $end 1 $len\n"; # note where the peptide maps to a wormpep protein
 	# output the posttranslation modifications (if any) for this protein
-	if (exists $experiment{'posttranslation_modification_database'}) {
-	  my $pt_db = $experiment{'posttranslation_modification_database'};
-	  my @pt_positions = &pos_underscore($ms_peptide);
-	  foreach my $pt_pos (@pt_positions) {
-	    my $pt_pos_in_protein = $pt_pos + $pos - 1;
-	    print OUT "Motif_homol \"$pt_db:$CDS_name_isoform\" $pt_db 0 $pt_pos_in_protein $pt_pos_in_protein 1 1\n";
-	  }
-
-	  # and write some details for the Motif Object
-	  print OUT "\n";
-	  print OUT "Motif : \"$pt_db:$CDS_name_isoform\"\n";
-	  print OUT "Title \"$experiment{'posttranslation_modification_type'}\"\n";
-	  print OUT "Database \"$pt_db\" \"${pt_db}_ID\" \"$CDS_name_isoform\"\n";
-	  print OUT "Pep_homol \"WP:$wormpep_id\"\n";
-	  print OUT "\n";
-	  print OUT "\n";
-
-
-	} elsif (exists $experiment{'posttranslation_modification_type'}) {
-	  print "*** Posttranslation_modification_type specified, but no Posttranslation_modification_database found\nShould add in output for the postranslational data to be a Feature in the Protein? A bit like this maybe?:\n";
-	  my $pt_type = $experiment{'posttranslation_modification_type'};
-	  my @pt_positions = &pos_underscore($ms_peptide);
-	  foreach my $pt_pos (@pt_positions) {
-	    my $pt_pos_in_protein = $pt_pos + $pos - 1;
-	    print OUT "Feature \"$pt_type\" $pt_pos_in_protein $pt_pos_in_protein 0\n";
+	foreach my $experiment_id (keys %experiment) {
+	  if (exists $experiment{$experiment_id}{'posttranslation_modification_database'}) {
+	    my $pt_db = $experiment{$experiment_id}{'posttranslation_modification_database'};
+	    my @pt_positions = &pos_underscore($ms_peptide);
+	    foreach my $pt_pos (@pt_positions) {
+	      my $pt_pos_in_protein = $pt_pos + $pos - 1;
+	      print OUT "Motif_homol \"$pt_db:$CDS_name_isoform\" $pt_db 0 $pt_pos_in_protein $pt_pos_in_protein 1 1\n";
+	    }
+	    
+	    # and write some details for the Motif Object
+	    $motif_out .= "\n";
+	    $motif_out .= "\n";
+	    $motif_out .= "Motif : \"$pt_db:$CDS_name_isoform\"\n";
+	    $motif_out .= "Title \"$experiment{$experiment_id}{'posttranslation_modification_type'}\"\n";
+	    $motif_out .= "Database \"$pt_db\" \"${pt_db}_ID\" \"$CDS_name_isoform\"\n";
+	    $motif_out .= "Pep_homol \"WP:$wormpep_id\"\n";
+	    $motif_out .= "\n";
+	    $motif_out .= "\n";
+	    
+	  } elsif (exists $experiment{$experiment_id}{'posttranslation_modification_type'}) {
+	    print "*** Posttranslation_modification_type specified, but no Posttranslation_modification_database found\nShould add in output for the postranslational data to be a Feature in the Protein? A bit like this maybe?:\n";
+	    my $pt_type = $experiment{$experiment_id}{'posttranslation_modification_type'};
+	    my @pt_positions = &pos_underscore($ms_peptide);
+	    foreach my $pt_pos (@pt_positions) {
+	      my $pt_pos_in_protein = $pt_pos + $pos - 1;
+	      print OUT "Feature \"$pt_type\" $pt_pos_in_protein $pt_pos_in_protein 0\n";
+	    }
 	  }
 	}
+	# now output the motif objects, if any
+	print OUT $motif_out;
 
 	# note that this peptide has been used so that we need to output it when only doing a small debugging output
 	$peptides_used{$ms_peptide} = 1;
@@ -638,6 +676,8 @@ sub map_peptides_to_protein {
     my $no_underscore_peptide = &no_underscore($peptide); # remove the post-translation modification marker
     #print "mapping $no_underscore_peptide\nto $protein\n";
     print "mapping $no_underscore_peptide\n" if ($verbose);
+    if (!defined $no_underscore_peptide) {print "no_underscore_peptide not defined for $peptide";}
+    if (!defined $protein) {print "protein not defined for $peptide";}
     my $pos = index($protein, $no_underscore_peptide);
     print "mapping result: $pos\n" if ($verbose);
     $position{$peptide} = $pos+1; # convert from offset=0 to offset=1;
