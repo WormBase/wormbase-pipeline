@@ -6,8 +6,8 @@
 #
 # Usage : autoace_builder.pl [-options]
 #
-# Last edited by: $Author: pad $
-# Last edited on: $Date: 2008-08-29 10:38:31 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2008-10-31 16:32:14 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -274,13 +274,7 @@ sub remap_misc_dynamic {
     my %clone_data = (
 		      'misc_21urna_homol.ace'                 => '21_urna',
 		      'misc_Expression_pattern_homol.ace'     => 'expression_pattern',
-		      'misc_mass_spec_MichaelHengartner.ace'  => 'mass_spec',
-		      'misc_mass_spec_NatalieWielsch.ace'     => 'mass_spec',
-		      'misc_mass_spec_StevenHusson.ace'       => 'mass_spec',
-		      'misc_mass_spec_StevenHusson_2.ace'     => 'mass_spec',
-		      'misc_mass_spec_StevenHusson_3.ace'     => 'mass_spec',
 		      'misc_mass_spec_GenniferMerrihew.ace'   => 'mass_spec',
-		      'misc_mass_spec_Other.ace'              => 'mass_spec',
 		      );
 
     foreach my $clone_data_file (keys %clone_data) {
