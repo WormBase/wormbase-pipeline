@@ -8,7 +8,7 @@
 # Originally written by Dan Lawson
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2008-09-30 15:37:13 $
+# Last updated on: $Date: 2008-10-31 10:17:29 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -520,7 +520,7 @@ sub copy_wormpep_files {
 		$log->write_to("updating ftp/database/wormpep//\n");
 		my @wormpep_files = $wormbase->wormpep_files;
 		my $WS = $wormbase->get_wormbase_version;
-		my $source = $wormbase->basedir . "/WORMPEP/".$wormbase->pepdir_prefix."pep$WS"
+		my $source = $wormbase->basedir . "/WORMPEP/".$wormbase->pepdir_prefix."pep$WS";
 		foreach my $file ( @wormpep_files ){
 			my $sourcefile = "$source/$file$WS";
 			$wormbase->run_command("cp $sourcefile $wp_ftp_dir/$file$WS", $log);
