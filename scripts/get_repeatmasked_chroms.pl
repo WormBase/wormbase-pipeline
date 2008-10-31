@@ -112,18 +112,18 @@ foreach my $seq ( @{$sa->fetch_all('toplevel')}) {
 	if( $chr_assembly ) {
 		my $outfile = "$out_dir"."/${name}_masked.dna";
 		my $outfile2 = "$out_dir"."/${name}_softmasked.dna";
-		open($masked,">$outfile") or $log->log_and_die("cant write $outfile :$1\n");
+		open($masked,">$outfile") or $log->log_and_die("cant write $outfile :$!\n");
 		open($soft,">$outfile2") or $log->log_and_die("cant write $outfile2 :$!\n");
 	}
 	else {
 		my $outfile = "$out_dir"."/${species}_masked.dna";
 		my $outfile2 = "$out_dir"."/${species}_softmasked.dna";
-		open($masked,">>$outfile") or $log->log_and_die("cant write $outfile :$1\n");
+		open($masked,">>$outfile") or $log->log_and_die("cant write $outfile :$!\n");
 		open($soft,">>$outfile2") or $log->log_and_die("cant write $outfile2 :$!\n");
 
-		print_seq($masked,$name,$seq);
-		print_seq($soft,$name,$seq,1);
 	}
+	print_seq($masked,$name,$seq);
+	print_seq($soft,$name,$seq,1);
 }
 
 unless ($chr_assembly){
