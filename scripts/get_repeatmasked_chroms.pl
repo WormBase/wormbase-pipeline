@@ -28,7 +28,7 @@ use Bio::EnsEMBL::DBSQL::DBAdaptor;
 # variables and command-line options # 
 ######################################
 
-my ($help, $debug, $test, $verbose, $store, $wormbase,$database);
+my ($help, $debug, $test, $verbose, $store, $species, $wormbase,$database);
 
 my $agp;
 my $out_dir;
@@ -41,6 +41,7 @@ GetOptions ("help"       => \$help,
 	    "store:s"      => \$store,
 	    "output:s"   => \$out_dir,
 	    "database:s" => \$database,
+	    "species:s"  => \$species,
 	    );
 
 if ( $store ) {
@@ -48,9 +49,9 @@ if ( $store ) {
 } else {
   $wormbase = Wormbase->new( -debug   => $debug,
                              -test    => $test,
+                             -organism => $species,
 			     );
 }
-
 # Display help if required
 &usage("Help") if ($help);
 
@@ -59,10 +60,13 @@ if ($test) {
   print "In test mode\n" if ($verbose);
 
 }
-
 # establish log file.
 my $log = Log_files->make_build_log($wormbase);
 
+$species = $wormbase->species;
+unless ($database =~ /$species/) {
+	$log->log_and_die("are you sure you have the right species / database combo\n Species :$species\nDatabase : $database\n");
+}
 
 #################################
 # Set up some useful paths      #
@@ -93,23 +97,45 @@ print STDERR "Outputting     ";
 
 my $sa=$dbobj->get_SliceAdaptor();
 
+my $chr_assembly;
+if ($wormbase->assembly_type eq 'contig') {
+	$wormbase->run_command(" rm -f $out_dir/${species}_masked.dna", $log);
+	$wormbase->run_command(" rm -f $out_dir/${species}_softmasked.dna", $log);
+}else {
+	$chr_assembly = 1;
+}
+
 foreach my $seq ( @{$sa->fetch_all('toplevel')}) {
-  my $name=$seq->seq_region_name();
+	my $name=$seq->seq_region_name();
 
-  my $outfile = "$out_dir"."/${name}_masked.dna";
-  my $outfile2 = "$out_dir"."/${name}_softmasked.dna";
+	my($masked, $soft);
+	if( $chr_assembly ) {
+		my $outfile = "$out_dir"."/${name}_masked.dna";
+		my $outfile2 = "$out_dir"."/${name}_softmasked.dna";
+		open($masked,">$outfile") or $log->log_and_die("cant write $outfile :$1\n");
+		open($soft,">$outfile2") or $log->log_and_die("cant write $outfile2 :$!\n");
+	}
+	else {
+		my $outfile = "$out_dir"."/${species}_masked.dna";
+		my $outfile2 = "$out_dir"."/${species}_softmasked.dna";
+		open($masked,">>$outfile") or $log->log_and_die("cant write $outfile :$1\n");
+		open($soft,">>$outfile2") or $log->log_and_die("cant write $outfile2 :$!\n");
 
-  print_seq($outfile,$name,$seq);
-  print_seq($outfile2,$name,$seq,1);
+		print_seq($masked,$name,$seq);
+		print_seq($soft,$name,$seq,1);
+	}
+}
+
+unless ($chr_assembly){
+	$wormbase->run_command("gzip -9 $out_dir/${species}_masked.dna", $log);
+	$wormbase->run_command("gzip -9 $out_dir/${species}_softmasked.dna", $log);
 }
 
 sub print_seq {
   my ($file,$name,$seq,$softmasked) = @_;
  
-  open(OUT,">$file") or die "cant write $file\t$!\n";
-  
   $log->write_to("\twriting chromosome $name\n");
-  print OUT ">$name 1 ",$seq->seq_region_length,"\n";
+  print $file ">$name 1 ",$seq->seq_region_length,"\n";
 
   my $width = 50;
   my $start_point = 0;
@@ -118,13 +144,13 @@ sub print_seq {
 	 :$seq->get_repeatmasked_seq->seq();
   
   while ( $start_point + $width < length( $sequence ) ) {
-    print OUT substr($sequence, $start_point, $width ),"\n";
+    print $file substr($sequence, $start_point, $width ),"\n";
     $start_point += $width;
   }
 
-  print OUT substr($sequence, $start_point),"\n";
-  close OUT;
-  system("gzip -9 $file");
+  print $file substr($sequence, $start_point),"\n";
+  close $file;
+  system("gzip -9 $file") if ($chr_assembly);
 }
 
 $log->write_to("Done\n");
