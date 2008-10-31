@@ -8,7 +8,7 @@
 # Originally written by Dan Lawson
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2008-10-31 10:37:03 $
+# Last updated on: $Date: 2008-10-31 10:52:00 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -296,7 +296,7 @@ sub copy_dna_files{
 	if ($wormbase->assembly_type eq 'contig') {
 		my $dna_file = "$chromdir/supercontigs.fa";
 		my $masked_file = "$chromdir/".$gspecies."_masked.dna";
-		my $soft_file = "$chromdir/".$gspecies."_masked.dna";
+		my $soft_file = "$chrom	dir/".$gspecies."_masked.dna";
 		
 		$wormbase->run_command("/bin/gzip -f $dna_file > $dna_dir/".$gspecies."$WS_name.dna.fa",$log);
 		$wormbase->run_command("cp -f $soft_file $dna_dir/".$gspecies."_softmasked.$WS_name.dna.fa.gz", $log);
@@ -543,7 +543,7 @@ sub _copy_pep_files {
 	}
 	# tar up the latest wormpep release and copy across (files added in next loop)
 	my $tgz_file = "$source/".$wb->pepdir_prefix."pep$WS.tar.gz";
-	my $command = "tar -c -z -h -P -C \"$base_dir/WORMPEP/\" -f $tgz_file";
+	my $command = "tar -c -z -h -C \"$base_dir/WORMPEP/\" -f $tgz_file";
 	
 	# copy em over
 	my @wormpep_files = $wb->wormpep_files;
