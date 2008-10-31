@@ -21,7 +21,7 @@ while (<>){
 	next if $header;
 
 	# schema
-	s/peptide_id character varying(25)/peptide_id VARCHAR(25)/; # varchar bit
+	s/peptide_id\s+character\s+varying\(25\)/peptide_id VARCHAR\(25\)/; # varchar bit
 
 	# index
         next if /ALTER TABLE ONLY clustal/;
