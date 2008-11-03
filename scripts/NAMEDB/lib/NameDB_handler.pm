@@ -37,11 +37,6 @@ sub new
 
     bless ($db, $class);
 
-    if (!defined $path) {
-      $path = '/nfs/WWWdev/SANGER_docs/htdocs';
-      print "WARNING: No path was pass to this subroutine so $path was assigned\n";
-    }
-
     #read in clone list to validate CDS names with
     my $clone_file = "$path/Projects/C_elegans/clonelist";
 	
