@@ -8,7 +8,7 @@
 # in ace
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-10-31 13:23:36 $      
+# Last updated on: $Date: 2008-11-03 17:32:32 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -28,7 +28,7 @@ use Coords_converter;
 ######################################
 
 my ($help, $debug, $test, $verbose, $store, $wormbase);
-my ($input, $output, $database);
+my ($input, $output, $database, $directory, $load);
 
 GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
@@ -38,10 +38,10 @@ GetOptions ("help"       => \$help,
 	    "input:s"    => \$input,
 	    "output:s"   => \$output,
 	    "database:s" => \$database,
+	    "directory"  => \$directory,
+	    "load"       => \$load,
 	    );
 
-# always in test mode
-$test = 1;
 
 if ( $store ) {
   $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
@@ -64,9 +64,9 @@ if ($test) {
 my $log = Log_files->make_build_log($wormbase);
 
 # check parameters
-if (! defined $database) {$database = $wormbase->database('current')}
-if (! defined $input) {die "-input file not specified\n";}
-if (! defined $output) {die "-output file not specified\n";}
+if (! defined $database) {$database = $wormbase->autoace}
+if (! defined $input && ! defined $directory) {$directory = $wormbase->misc_dynamic;}
+if (! defined $output) {$output = $wormbase->acefiles."/mass-spec-data.ace";}
 
 ##########################
 # MAIN BODY OF SCRIPT
@@ -198,7 +198,7 @@ foreach my $CDS_name (keys %proteins) {
 #    $log->write_to("We have found all the peptides in CDS: $CDS_name_isoform\n");
   } else {
     $final_count_not_ok++;
-    $log->write_to("We have NOT FOUND all the peptides in CDS: $CDS_name_isoform\n");
+    $log->write_to("We have not found all the peptides in CDS: $CDS_name_isoform\n");
   }
 }
 
@@ -262,12 +262,16 @@ foreach my $experiment_id (keys %experiment) {
   print OUT "False_discovery_rate $experiment{$experiment_id}{false_discovery_rate}\n" if (exists $experiment{$experiment_id}{false_discovery_rate});
 }
 
-
-
 close (OUT);
 
 # close the ACE connection
 $db->close;
+
+# load the ace file
+if ($load) {
+  $wormbase->load_to_database($database, $output, 'make_mass_spec_ace.pl', $log);
+}
+
 
 # Close log files and exit
 $log->write_to("\n\nStatistics\n");
@@ -312,18 +316,18 @@ exit(0);
 # 
 # PEPTIDES
 # 
-# 2RSSE.2	AAAFAS_NPSHSLDYQEVGASNPR	.	.
-# 2RSSE.2	AAAFASNPS_HSLDYQEVGASNPR	.	.
-# AC3.5	GPAKDDEMESS_EEQE	.	.
-# AC3.5	IWTRPEVK	.	.
-# AC3.5	MKGPAKDDEMES_SEEQE	.	.
-# AC3.5	MKGPAKDDEMES_S_EEQE	.	.
-# AC3.5	MKGPAKDDEMESS_EEQE	.	.
-# AC3.5	TQLIDFVYANGNGS_ASNLNNR	.	.
-# AC3.5	TQLIDFVYANGNGSASNLNNR	.	.
-# AC7.2a	SKS_PGGIVGR	.	.
-# AH10.3	RAS_AAPNVENR	.	.
-# AH9.3	EVQEAVKTEEAGSS_PK	.	.
+# 2RSSE.2	AAAFAS_NPSHSLDYQEVGASNPR	.	. BB_1
+# 2RSSE.2	AAAFASNPS_HSLDYQEVGASNPR	.	. BB_1
+# AC3.5	GPAKDDEMESS_EEQE	.	. BB_1
+# AC3.5	IWTRPEVK	.	. BB_1
+# AC3.5	MKGPAKDDEMES_SEEQE	.	. BB_1
+# AC3.5	MKGPAKDDEMES_S_EEQE	.	. BB_1
+# AC3.5	MKGPAKDDEMESS_EEQE	.	. BB_1
+# AC3.5	TQLIDFVYANGNGS_ASNLNNR	.	. BB_1
+# AC3.5	TQLIDFVYANGNGSASNLNNR	.	. BB_1
+# AC7.2a	SKS_PGGIVGR	.	. BB_1
+# AH10.3	RAS_AAPNVENR	.	. BB_1
+# AH9.3	EVQEAVKTEEAGSS_PK	.	. BB_1
 
 
 ##########################################
@@ -334,6 +338,44 @@ sub parse_data {
 
   my %experiment;
   my %peptide;
+
+  my %wormpep2cds = $wormbase->FetchData("wormpep2cds", undef, $database . "/COMMON_DATA");
+  my %cgc_names = $wormbase->FetchData("cds2cgc", undef, $database . "/COMMON_DATA");
+  my %cds_cgc_names;
+  foreach my $cgc (keys %cgc_names) { # invert the cgc_names hash
+    my $cds = $cgc_names{$cgc};
+    push @{$cds_cgc_names{$cds}}, $cgc;
+  }
+
+  # if we have a directory specified, look there for files ending *.ms-dat
+  if (defined $directory) {
+    opendir (DIR, $directory) or $log->log_and_die("cant open directory $directory\n");
+    $log->write_to("Reading input files from $directory\n");
+    my @files = readdir DIR;
+    foreach my $file ( @files ) {
+      next if( $file eq '.' or $file eq '..');
+      if( (-T $directory."/".$file) and substr($file,-7,7 ) eq ".ms-dat" ) {
+	&parse_file($directory."/".$file, \%wormpep2cds, \%cgc_names, \%cds_cgc_names, \%experiment, \%peptide);
+      }
+    }
+
+  close DIR;
+
+  } else {			# else read one input file
+    $log->write_to("Reading input file\n");
+    &parse_file($input, \%wormpep2cds, \%cgc_names, \%cds_cgc_names, \%experiment, \%peptide);
+
+  }
+
+  return (\%experiment, \%peptide);
+
+}
+
+##########################################
+# get the data out of a file
+sub parse_file {
+  my ($input_file, $wormpep2cds, $cgc_names, $cds_cgc_names, $experiment, $peptide) = @_;
+
   my $peptide_sequence;
   my $peptide_probability;
   my $protein_probability;
@@ -344,22 +386,14 @@ sub parse_data {
   my $quantification_type;
   my $CDS_name;
   my @CDS_names;
+
   my $experiment_id = undef;
 
-
-
-  my %wormpep2cds = $wormbase->FetchData("wormpep2cds", undef, $database . "/COMMON_DATA");
-  my %cgc_names = $wormbase->FetchData("cds2cgc", undef, $database . "/COMMON_DATA");
-  my %cds_cgc_names;
-  foreach my $cgc (keys %cgc_names) { # invert the cgc_names hash
-    my $cds = $cgc_names{$cgc};
-    push @{$cds_cgc_names{$cds}}, $cgc;
-  }
-
-
   my $got_peptides = 0;		# flag for got to the PEPTIDES section of the input data
+  
+  $log->write_to("Reading input file $input_file\n");
 
-  open (DATA, "< $input") || die "Can't open $input\n";
+  open (DATA, "< $input_file") || die "Can't open $input_file\n";
   while (my $line = <DATA>) {
     chomp $line;
     if ($line =~ /^\#/) {next;} 
@@ -374,62 +408,62 @@ sub parse_data {
       } elsif ($line =~ /Mass_spec_experiment\s*=\s*(.+)/) {
 	# usually formed from the initials of the author, plus a number, e.g. 'SH_1'
 	$experiment_id = $1;
-	$experiment{$experiment_id}{experiment_id} = $1;
+	$experiment->{$experiment_id}{experiment_id} = $1;
 
       } elsif ($line =~ /Species\s*=\s*(.+)/) {
-	$experiment{$experiment_id}{species} = $1;
+	$experiment->{$experiment_id}{species} = $1;
 
       } elsif ($line =~ /Strain\s*=\s*(.+)/) {
-	$experiment{$experiment_id}{strain} = $1;
+	$experiment->{$experiment_id}{strain} = $1;
 
       } elsif ($line =~ /Life_stage\s*=\s*(.+)/) {
-	$experiment{$experiment_id}{life_stage} = $1;
+	$experiment->{$experiment_id}{life_stage} = $1;
 
       } elsif ($line =~ /Sub_cellular_localization\s*=\s*(.+)/) {
- 	$experiment{$experiment_id}{sub_cellular_localization} = $1;
+ 	$experiment->{$experiment_id}{sub_cellular_localization} = $1;
 
       } elsif ($line =~ /Digestion\s*=\s*(.+)/) {
- 	$experiment{$experiment_id}{digestion} = $1;
+ 	$experiment->{$experiment_id}{digestion} = $1;
 
       } elsif ($line =~ /Instrumentation\s*=\s*(.+)/) {
- 	$experiment{$experiment_id}{instrumentation} = $1;
+ 	$experiment->{$experiment_id}{instrumentation} = $1;
 
       } elsif ($line =~ /Ionisation_source\s*=\s*(.+)/) {
- 	$experiment{$experiment_id}{ionisation_source} = $1;
+ 	$experiment->{$experiment_id}{ionisation_source} = $1;
 
       } elsif ($line =~ /False_discovery_rate\s*=\s*(.+)/) {
- 	$experiment{$experiment_id}{false_discovery_rate} = $1;
+ 	$experiment->{$experiment_id}{false_discovery_rate} = $1;
 
       } elsif ($line =~ /Multiple_ambiguous_IDs_allowed/) {
- 	$experiment{$experiment_id}{multiple_ambiguous_IDs_allowed} = 1;
+ 	$experiment->{$experiment_id}{multiple_ambiguous_IDs_allowed} = 1;
 
       } elsif ($line =~ /Person\s*=\s*(.+)/) {
- 	$experiment{$experiment_id}{person} = $1;
+ 	$experiment->{$experiment_id}{person} = $1;
 
       } elsif ($line =~ /Reference\s*=\s*(.+)/) {
- 	$experiment{$experiment_id}{reference} = $1;
+ 	$experiment->{$experiment_id}{reference} = $1;
 
       } elsif ($line =~ /Database\s*=\s*(.+)/) {
- 	$experiment{$experiment_id}{database} = $1;
+ 	$experiment->{$experiment_id}{database} = $1;
 
       } elsif ($line =~ /Remark\s*=\s*(.+)/) {
- 	$experiment{$experiment_id}{remark} = $1;
+ 	$experiment->{$experiment_id}{remark} = $1;
 
       } elsif ($line =~ /Program\s*=\s*(.+)/) {
- 	$experiment{$experiment_id}{program} = $1;
+ 	$experiment->{$experiment_id}{program} = $1;
 
       } elsif ($line =~ /Natural/) {
 	# specifies that the peptides in this data set are naturally occuring.
- 	$experiment{$experiment_id}{natural} = 1;
+ 	$experiment->{$experiment_id}{natural} = 1;
 
       } elsif ($line =~ /Posttranslation_modification_type\s*=\s*(.+)/) {
- 	$experiment{$experiment_id}{posttranslation_modification_type} = $1;
+ 	$experiment->{$experiment_id}{posttranslation_modification_type} = $1;
 
       } elsif ($line =~ /Posttranslation_modification_database\s*=\s*(.+)/) {
- 	$experiment{$experiment_id}{posttranslation_modification_database} = $1;
+ 	$experiment->{$experiment_id}{posttranslation_modification_database} = $1;
 
       } elsif ($line =~ /Posttranslation_modification_URL\s*=\s*(.+)/) {
- 	$experiment{$experiment_id}{posttranslation_modification_URL} = $1;
+ 	$experiment->{$experiment_id}{posttranslation_modification_URL} = $1;
 
       } else {
 	die "Input line not recognised:\n$line\n";
@@ -448,28 +482,28 @@ sub parse_data {
 	  $experiment_id = shift @f;
 
 	  # save the peptide data in all its experiments
-	  push @{ $experiment{$experiment_id}{'PEPTIDES'} }, $peptide_sequence;	# list of peptides in this experiment
-	  $experiment{$experiment_id}{HAS_PEPTIDE}{$peptide_sequence} = 1; # unique hash of peptides in this experiment
-	  $experiment{$experiment_id}{'PROTEIN_PROBABILITY'}{$peptide_sequence} = $protein_probability;
-	  $experiment{$experiment_id}{'PEPTIDE_PROBABILITY'}{$peptide_sequence} = $peptide_probability;
+	  push @{ $experiment->{$experiment_id}{'PEPTIDES'} }, $peptide_sequence;	# list of peptides in this experiment
+	  $experiment->{$experiment_id}{HAS_PEPTIDE}{$peptide_sequence} = 1; # unique hash of peptides in this experiment
+	  $experiment->{$experiment_id}{'PROTEIN_PROBABILITY'}{$peptide_sequence} = $protein_probability;
+	  $experiment->{$experiment_id}{'PEPTIDE_PROBABILITY'}{$peptide_sequence} = $peptide_probability;
 	}
 	@CDS_names = ();
       }
 
       if ($cgc_name =~ /\S+\-\d+/) { # standard CGC-style name e.g. daf-1
-	if (!exists $cds_cgc_names{$cgc_name}) {
+	if (!exists $cds_cgc_names->{$cgc_name}) {
 	  print "line $line has a non-existent cds_cgc name\n";
 	  next;
 	}
 	# start getting the protein data
-	push @CDS_names, @{$cds_cgc_names{$cgc_name}}; # get the list of CDS names for this CGC name
+	push @CDS_names, @{$cds_cgc_names->{$cgc_name}}; # get the list of CDS names for this CGC name
   
       } elsif ($cgc_name =~ /^CE\d{5}$/) { # wormpep ID
-	if (!exists $wormpep2cds{$cgc_name}) {
+	if (!exists $wormpep2cds->{$cgc_name}) {
 	  print "line $line has a non-existent wormpep ID\n";
 	  next;
 	}
-	push @CDS_names, (split /\s+/, $wormpep2cds{$cgc_name}); # the CDS names for this wormpep ID
+	push @CDS_names, (split /\s+/, $wormpep2cds->{$cgc_name}); # the CDS names for this wormpep ID
 
       } elsif ($cgc_name =~ /\S+\.\d+/) {	# standard Sequence style CDS name e.g. C25A7.2
 	push @CDS_names, $cgc_name; # use CDS name as-is
@@ -479,14 +513,12 @@ sub parse_data {
       }
 
       # construct the peptide data - these petides map to these CDSs
-      $peptide{$peptide_sequence} = [@CDS_names];
-      #print "$peptide_sequence protein = @CDS_names\n";
+      push @{$peptide->{$peptide_sequence}}, @CDS_names;
 
     }
   }
   close (DATA);
 
-  return (\%experiment, \%peptide);
 }
 
 
@@ -559,7 +591,7 @@ sub process_cds {
 	($clone, $cds_start, $cds_end, $exons_start_ref, $exons_end_ref) = &get_cds_details($CDS_name_isoform);
 	# if we couldn't get the details of the CDS, then we just have to skip writing the genome mapping data for this protein
 	if (! defined $clone) {
-	  $log->write_to("*** Couldn't get the mapping details of the CDS $CDS_name_isoform\n");
+	  $log->write_to("Couldn't get the mapping details of the CDS $CDS_name_isoform\n");
 	  $all_maps_to_genome_ok = 0;
 	}
       }
@@ -619,21 +651,25 @@ sub process_cds {
 	foreach my $experiment_id (keys %experiment) {
 	  if (exists $experiment{$experiment_id}{'posttranslation_modification_database'}) {
 	    my $pt_db = $experiment{$experiment_id}{'posttranslation_modification_database'};
+	    my $got_a_post_trans_modification_in_this_protein = 0;
 	    my @pt_positions = &pos_underscore($ms_peptide);
 	    foreach my $pt_pos (@pt_positions) {
 	      my $pt_pos_in_protein = $pt_pos + $pos - 1;
 	      print OUT "Motif_homol \"$pt_db:$CDS_name_isoform\" $pt_db 0 $pt_pos_in_protein $pt_pos_in_protein 1 1\n";
+	      $got_a_post_trans_modification_in_this_protein = 1;
 	    }
 	    
-	    # and write some details for the Motif Object
-	    $motif_out .= "\n";
-	    $motif_out .= "\n";
-	    $motif_out .= "Motif : \"$pt_db:$CDS_name_isoform\"\n";
-	    $motif_out .= "Title \"$experiment{$experiment_id}{'posttranslation_modification_type'}\"\n";
-	    $motif_out .= "Database \"$pt_db\" \"${pt_db}_ID\" \"$CDS_name_isoform\"\n";
-	    $motif_out .= "Pep_homol \"WP:$wormpep_id\"\n";
-	    $motif_out .= "\n";
-	    $motif_out .= "\n";
+	    if ($got_a_post_trans_modification_in_this_protein) {
+	      # and write some details for the Motif Object
+	      $motif_out .= "\n";
+	      $motif_out .= "\n";
+	      $motif_out .= "Motif : \"$pt_db:$CDS_name_isoform\"\n";
+	      $motif_out .= "Title \"$experiment{$experiment_id}{'posttranslation_modification_type'}\"\n";
+	      $motif_out .= "Database \"$pt_db\" \"${pt_db}_ID\" \"$CDS_name_isoform\"\n";
+	      $motif_out .= "Pep_homol \"WP:$wormpep_id\"\n";
+	      $motif_out .= "\n";
+	      $motif_out .= "\n";
+	    }
 	    
 	  } elsif (exists $experiment{$experiment_id}{'posttranslation_modification_type'}) {
 	    print "*** Posttranslation_modification_type specified, but no Posttranslation_modification_database found\nShould add in output for the postranslational data to be a Feature in the Protein? A bit like this maybe?:\n";
@@ -647,6 +683,7 @@ sub process_cds {
 	}
 	# now output the motif objects, if any
 	print OUT $motif_out;
+	$motif_out = "";
 
 	# note that this peptide has been used so that we need to output it when only doing a small debugging output
 	$peptides_used{$ms_peptide} = 1;
