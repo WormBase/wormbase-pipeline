@@ -25,7 +25,7 @@ use HTTP::Date;
 $database = glob("~wormpub/DATABASES/current_DB") unless $database;
 
 #default to test database: specific -live at your peril!
-my $ns = $live ? 'wbgene_id:mcs2a' : 'test_wbgene_id:mcs2a';
+my $ns = $live ? 'wbgene_id:mcs2a:3305' : 'test_wbgene_id:mcs2a:3305';
 my $db = NameDB->connect($ns,$user,$pass);
 if( $init ) {
   $db->initialize(1) if $init;  # start with a completely clean slate
