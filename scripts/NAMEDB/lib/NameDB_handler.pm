@@ -226,7 +226,6 @@ sub make_new_obj
 sub dienice {
   my $db = shift;
   my($errmsg) = @_;
-  $db->web(1);
   if ( $db->web ) {
     print "<h2>Error</h2>\n";
     print "<p>$errmsg</p>\n";

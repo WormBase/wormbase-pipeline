@@ -947,16 +947,10 @@ sub get_db_connection {
   $db || return(undef);
   $db->setDomain($DOMAIN);
 	
-  set_web_output($db);		# turn on web reporting
+  $db->web(1);		# turn on web reporting
   return($db);
 }
 
-#################################################################
-sub set_web_output {
-  my ($conn) = @_;
-  $conn->web(1);		# turn on web reporting
-	
-}
 #################################################################
 
 #This is to allow the web page to accept any name for a gene but pass the geneID to NameDB_handler.
