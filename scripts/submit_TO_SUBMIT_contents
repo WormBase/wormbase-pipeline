@@ -7,7 +7,7 @@
 # to celegans@ebi.ac.uk.
 #
 # Last updated by: $Author: pad $                      
-# Last updated on: $Date: 2007-10-02 12:35:47 $        
+# Last updated on: $Date: 2008-11-04 15:27:05 $        
 
 $|=1;
 use strict;
@@ -25,7 +25,7 @@ my (@filenames);
  # Variables                  #
  ##############################
 
-my $maintainers = "dl1\@sanger.ac.uk";
+my $maintainers = "pad\@sanger.ac.uk";
 my $rundate     = `date +%y%m%d`; chomp $rundate;
 my $name;
 
@@ -131,6 +131,7 @@ print "\nAll of these will be submitted to EMBL (celegans\@ebi.ac.uk or ftp.ebi.
 $log->write_to("\nAll of these will be submitted to EMBL (celegans\@ebi.ac.uk or ftp.ebi.ac.uk)\n\n");
 print "-debug has also been selected so you \"$debug\", will get a copy :)\n\n" if $debug;
 $log->write_to("-debug has also been selected so you \"$debug\", will get a copy :)\n\n") if $debug;
+$log->write_to("Duncan Legge (duncan.legge\@ebi.ac.uk) will also get a copy as he has expressed an interest :)\n\n");
 print "Do you wish to proceed???(y or n)\n\n";
 
 my $answer=<STDIN>;
@@ -176,6 +177,7 @@ sub submit_sub {
       system ("/usr/bin/mail celegans\@ebi.ac.uk < $submitdir/$_") if (defined $email);
       #send them to the debug specified email.
       system ("/usr/bin/mail $debug\@sanger.ac.uk --subject=CLONE_SUBMISSION_${_} < $submitdir/$_") if ($debug);
+      system ("/usr/bin/mail duncan.legge\@ebi.ac.uk --subject=WORMBASE_CLONE_SUBMISSION_${_} < $submitdir/$_");
       #zip them
       system ("/bin/gzip $submitdir/$_");
     }
