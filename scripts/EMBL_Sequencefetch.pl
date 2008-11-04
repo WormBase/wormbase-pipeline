@@ -5,7 +5,7 @@
 # Usage : EMBL_Sequencefetch.pl [-options]
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2008-10-07 13:02:50 $
+# Last edited on: $Date: 2008-11-04 13:30:37 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -89,6 +89,7 @@ my %species2taxonid = (
 		       'brenneri'          => "135651",
 		       'pristionchus'      => "54126",
 		       'heterorhabditis'   => "37862",
+		       'brugia'            => "6279",
 		      );
 
 if ($test) {
