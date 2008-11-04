@@ -2,8 +2,8 @@
 #
 # initiate_build.pl
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2008-11-04 10:59:57 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2008-11-04 11:56:10 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -59,7 +59,7 @@ else {
 
 	$wormbase->establish_paths;
 	#copy the genefinder files 
-	$wormbase->run_command("cp -r ".$wormbase->build_data."/wgf ".$wormbase->autoace."/wgf");
+	$wormbase->run_command("cp -r ".$wormbase->build_data."/wgf ".$wormbase->autoace."/wgf", 'no_log');
 }
 # set the new version number
 $wormbase->version($version);
@@ -83,13 +83,14 @@ $wormbase->run_command("cd ".$wormbase->basedir.'; cvs -d :pserver:cvsuser@cvsro
 ## update database.wrm using cvs
 my $cvs_file = $wormbase->autoace."/wspec/database.wrm";
 $species = $wormbase->species;
-unlink "/tmp/database.wrm";
-$wormbase->run_command("sed 's/WS0/WS${version}/' < $cvs_file > /tmp/database.wrm", $log);  #  the version in CVS is WS0
-$wormbase->run_command("sed 's/species/${species}/' < /tmp/database.wrm > ${cvs_file}.new", $log);  #  the version in CVS is WS94
-unlink "/tmp/database.wrm";
+$wormbase->run_command("sed 's/WS0/WS${version}/' < $cvs_file > /tmp/cvsfile", $log);  #  the version in CVS is WS0
+my $short_name = $wormbase->full_name('-short'=>1);
+$wormbase->run_command("sed 's/species/${short_name}/' < /tmp/cvsfile > ${cvs_file}.new", $log);  #  the version in CVS is WS94
+
 
 my $status = move(${cvs_file}.".new", "$cvs_file") or $log->write_to("ERROR: renaming file: $!\n");
 $log->write_to("ERROR: Couldn't move file: $!\n") if ($status == 0);
+$wormbase->run_command("rm /tmp/cvsfile",$log);
 
 # Dump the sequence data from the species primary database being build.
 $log->write_to("Dumping sequence data to file for ".$wormbase->species."\n");
