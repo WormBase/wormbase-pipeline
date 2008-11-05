@@ -31,6 +31,7 @@ my %species = (
 
 my $config = ( YAML::LoadFile("$FindBin::Bin/../etc/ensembl_lite.conf") )->{'elegans'};
 my %cds2wbgene=%{&get_commondata('cds2wbgene_id')};
+my %cds2swiss=%{&get_cds2swiss('brugia')};
 
 my $db = new Bio::EnsEMBL::DBSQL::DBAdaptor(
         -host   => $config->{database}->{host},
@@ -120,150 +121,63 @@ foreach my $slice(@slices){
 		}
 
                 undef %all_ortho;
-                
-		# brugia
-#                while (my ($k,$v)=each(%brugia_ids)){
-#		                my $rid=$cds2wbgene{$k}?$cds2wbgene{$k}:$k;
-#				print "Ortholog_other Brugia_database gene $rid \"$species{$$v[0]}\" From_analysis WormBase-Compara\n"
-#		}
-
 		print "\n";
 
-
-		# that whole bit below feels very redundant and could be probably refactored ....
-		
+                
 		# briggsae	
-		while (my ($k,$v)=each(%briggsae_ids)){
-			   	my $sid=$cds2wbgene{$k}?$cds2wbgene{$k}:$k;
-				print "Gene : \"$sid\"\n";
-				print "Ortholog $gid \"${\$species{ $config->{taxon_id}}}\" From_analysis WormBase-Compara\n"; # elegans
-				while (my ($r_k,$r_v)=each(%remanei_ids)){                                                     # remanei
-				        my $rid=$cds2wbgene{$r_k}?$cds2wbgene{$r_k}:$r_k;
-					print "Ortholog $rid \"$species{$$r_v[0]}\" From_analysis WormBase-Compara\n"
-				}
-                                while (my ($r_k,$r_v)=each(%pristionchus_ids)){                                                # pristionchus
-				        my $rid=$cds2wbgene{$r_k}?$cds2wbgene{$r_k}:$r_k;
-					print "Ortholog $rid \"$species{$$r_v[0]}\" From_analysis WormBase-Compara\n"
-				}
-				
-                                while (my ($r_k,$r_v)=each(%japonica_ids)){                                                     # japonica
-				        my $rid=$cds2wbgene{$r_k}?$cds2wbgene{$r_k}:$r_k;
-					print "Ortholog $rid \"$species{$$r_v[0]}\" From_analysis WormBase-Compara\n"
-				}
-				while (my ($r_k,$r_v)=each(%brenneri_ids)){                                                     # brenneri
-				        my $rid=$cds2wbgene{$r_k}?$cds2wbgene{$r_k}:$r_k;
-					print "Ortholog $rid \"$species{$$r_v[0]}\" From_analysis WormBase-Compara\n"
-				}
 
-				print "\n";
-		
-		}
+		&print_thing(\%briggsae_ids,\%pristionchus_ids,\%remanei_ids,\%japonica_ids,\%brenneri_ids,\%brugia_ids,$gid,\%species);
 
 		# remanei part
-		while (my ($k,$v)=each(%remanei_ids)){
-			   	my $sid=$cds2wbgene{$k}?$cds2wbgene{$k}:$k;
-				print "Gene : \"$sid\"\n";
-				print "Ortholog $gid \"${\$species{ $config->{taxon_id}}}\" From_analysis WormBase-Compara\n"; # elegans
-				while (my ($r_k,$r_v)=each(%briggsae_ids)){                                                    # briggsae
-				        my $rid=$cds2wbgene{$r_k}?$cds2wbgene{$r_k}:$r_k;
-					print "Ortholog $rid \"$species{$$r_v[0]}\" From_analysis WormBase-Compara\n"
-				}
-                                while (my ($r_k,$r_v)=each(%pristionchus_ids)){                                                # pristionchus
-				        my $rid=$cds2wbgene{$r_k}?$cds2wbgene{$r_k}:$r_k;
-					print "Ortholog $rid \"$species{$$r_v[0]}\" From_analysis WormBase-Compara\n"
-				}
-				
-				while (my ($r_k,$r_v)=each(%japonica_ids)){                                                   # japonica 
-				        my $rid=$cds2wbgene{$r_k}?$cds2wbgene{$r_k}:$r_k;
-					print "Ortholog $rid \"$species{$$r_v[0]}\" From_analysis WormBase-Compara\n"
-				}
+	        &print_thing(\%remanei_ids,\%briggsae_ids,\%pristionchus_ids,\%japonica_ids,\%brenneri_ids,\%brugia_ids,$gid,\%species);
 
-				while (my ($r_k,$r_v)=each(%brenneri_ids)){                                                   # brenneri 
-				        my $rid=$cds2wbgene{$r_k}?$cds2wbgene{$r_k}:$r_k;
-					print "Ortholog $rid \"$species{$$r_v[0]}\" From_analysis WormBase-Compara\n"
-				}
-
-				print "\n";
-		
-		}
 		# pristionchus part
-		while (my ($k,$v)=each(%pristionchus_ids)){
-			   	my $sid=$cds2wbgene{$k}?$cds2wbgene{$k}:$k;
-				print "Gene : \"$sid\"\n";
-				print "Ortholog $gid \"${\$species{ $config->{taxon_id}}}\" From_analysis WormBase-Compara\n"; # elegans
-				while (my ($r_k,$r_v)=each(%briggsae_ids)){                                                    # briggsae
-				        my $rid=$cds2wbgene{$r_k}?$cds2wbgene{$r_k}:$r_k;
-					print "Ortholog $rid \"$species{$$r_v[0]}\" From_analysis WormBase-Compara\n"
-				}
-                                while (my ($r_k,$r_v)=each(%remanei_ids)){                                                      # remanei 
-				        my $rid=$cds2wbgene{$r_k}?$cds2wbgene{$r_k}:$r_k;
-					print "Ortholog $rid \"$species{$$r_v[0]}\" From_analysis WormBase-Compara\n"
-				}
-                                while (my ($r_k,$r_v)=each(%japonica_ids)){                                                      # japonica 
-				        my $rid=$cds2wbgene{$r_k}?$cds2wbgene{$r_k}:$r_k;
-					print "Ortholog $rid \"$species{$$r_v[0]}\" From_analysis WormBase-Compara\n"
-				}
-                                while (my ($r_k,$r_v)=each(%brenneri_ids)){                                                      # brenneri
-				        my $rid=$cds2wbgene{$r_k}?$cds2wbgene{$r_k}:$r_k;
-					print "Ortholog $rid \"$species{$$r_v[0]}\" From_analysis WormBase-Compara\n"
-				}
-				print "\n";
-		
-		}
+		&print_thing(\%pristionchus_ids,\%remanei_ids,\%briggsae_ids,\%japonica_ids,\%brenneri_ids,\%brugia_ids,$gid,\%species);
+
 		# japonica part
-		while (my ($k,$v)=each(%japonica_ids)){
-			   	my $sid=$cds2wbgene{$k}?$cds2wbgene{$k}:$k;
-				print "Gene : \"$sid\"\n";
-				print "Ortholog $gid \"${\$species{ $config->{taxon_id}}}\" From_analysis WormBase-Compara\n"; # elegans
-				while (my ($r_k,$r_v)=each(%briggsae_ids)){                                                    # briggsae
-				        my $rid=$cds2wbgene{$r_k}?$cds2wbgene{$r_k}:$r_k;
-					print "Ortholog $rid \"$species{$$r_v[0]}\" From_analysis WormBase-Compara\n"
-				}
-                                while (my ($r_k,$r_v)=each(%remanei_ids)){                                                    # remanei 
-				        my $rid=$cds2wbgene{$r_k}?$cds2wbgene{$r_k}:$r_k;
-					print "Ortholog $rid \"$species{$$r_v[0]}\" From_analysis WormBase-Compara\n"
-				}
-                                while (my ($r_k,$r_v)=each(%pristionchus_ids)){                                               # pristionchus 
-				        my $rid=$cds2wbgene{$r_k}?$cds2wbgene{$r_k}:$r_k;
-					print "Ortholog $rid \"$species{$$r_v[0]}\" From_analysis WormBase-Compara\n"
-				}
-				while (my ($r_k,$r_v)=each(%brenneri_ids)){                                               # brenneri
-				        my $rid=$cds2wbgene{$r_k}?$cds2wbgene{$r_k}:$r_k;
-					print "Ortholog $rid \"$species{$$r_v[0]}\" From_analysis WormBase-Compara\n"
-				}
+                &print_thing(\%japonica_ids,\%pristionchus_ids,\%remanei_ids,\%briggsae_ids,\%brenneri_ids,\%brugia_ids,$gid,\%species);
 
-				print "\n";
-		
-		}
 		# brenneri part
-		while (my ($k,$v)=each(%brenneri_ids)){
-			   	my $sid=$cds2wbgene{$k}?$cds2wbgene{$k}:$k;
-				print "Gene : \"$sid\"\n";
-				print "Ortholog $gid \"${\$species{ $config->{taxon_id}}}\" From_analysis WormBase-Compara\n"; # elegans
-				while (my ($r_k,$r_v)=each(%briggsae_ids)){                                                    # briggsae
-				        my $rid=$cds2wbgene{$r_k}?$cds2wbgene{$r_k}:$r_k;
-					print "Ortholog $rid \"$species{$$r_v[0]}\" From_analysis WormBase-Compara\n"
-				}
-                                while (my ($r_k,$r_v)=each(%remanei_ids)){                                                    # remanei 
-				        my $rid=$cds2wbgene{$r_k}?$cds2wbgene{$r_k}:$r_k;
-					print "Ortholog $rid \"$species{$$r_v[0]}\" From_analysis WormBase-Compara\n"
-				}
-                                while (my ($r_k,$r_v)=each(%pristionchus_ids)){                                               # pristionchus 
-				        my $rid=$cds2wbgene{$r_k}?$cds2wbgene{$r_k}:$r_k;
-					print "Ortholog $rid \"$species{$$r_v[0]}\" From_analysis WormBase-Compara\n"
-				}
-				while (my ($r_k,$r_v)=each(%japonica_ids)){                                               # japonica
-				        my $rid=$cds2wbgene{$r_k}?$cds2wbgene{$r_k}:$r_k;
-					print "Ortholog $rid \"$species{$$r_v[0]}\" From_analysis WormBase-Compara\n"
-				}
-
-				print "\n";
-		
-		}
-
+                &print_thing(\%brenneri_ids,\%japonica_ids,\%pristionchus_ids,\%remanei_ids,\%briggsae_ids,\%brugia_ids,$gid,\%species);
 	}	
 }
 
+################################### REFACTOR ME #######################
+sub print_thing {
+	my @genes = @_;
+	my $gid=$genes[6];
+	my %species=%{$genes[7]};
+	while (my ($k,$v)=each(%{$genes[0]})){
+			   	my $sid=$cds2wbgene{$k}?$cds2wbgene{$k}:$k;
+				print "Gene : \"$sid\"\n";
+				print "Ortholog $gid \"${\$species{ $config->{taxon_id}}}\" From_analysis WormBase-Compara\n"; # elegans
+
+				while (my ($r_k,$r_v)=each(%{$genes[1]})){                                                   
+				        my $rid=$cds2wbgene{$r_k}?$cds2wbgene{$r_k}:$r_k;
+					print "Ortholog $rid \"$species{$$r_v[0]}\" From_analysis WormBase-Compara\n"
+				}
+                                while (my ($r_k,$r_v)=each(%{$genes[2]})){                                                    
+				        my $rid=$cds2wbgene{$r_k}?$cds2wbgene{$r_k}:$r_k;
+					print "Ortholog $rid \"$species{$$r_v[0]}\" From_analysis WormBase-Compara\n"
+				}
+                                while (my ($r_k,$r_v)=each(%{$genes[3]})){                                               
+				        my $rid=$cds2wbgene{$r_k}?$cds2wbgene{$r_k}:$r_k;
+					print "Ortholog $rid \"$species{$$r_v[0]}\" From_analysis WormBase-Compara\n"
+				}
+				while (my ($r_k,$r_v)=each(%{$genes[4]})){                                          
+				        my $rid=$cds2wbgene{$r_k}?$cds2wbgene{$r_k}:$r_k;
+					print "Ortholog $rid \"$species{$$r_v[0]}\" From_analysis WormBase-Compara\n"
+				}
+
+				while (my ($r_k,$r_v)=each(%{$genes[5]})){                                               # brugia exception
+				        my $rid=$cds2swiss{$r_k}?$cds2swiss{$r_k}:$r_k;
+					print "Ortholog_other $rid From_analysis WormBase-Compara\n"
+				}
+
+				print "\n";
+		}
+}
+#################
 
 
 # needs a merging step
@@ -291,4 +205,17 @@ sub get_commondata {
 		}
 	}
 	return \%genehash;
+}
+
+sub get_cds2swiss {
+	my ($name)=@_;
+	my %cds2swiss;
+	my $dir = glob("~wormpub/DATABASES/$name/swiss2cds.dat");
+	my $file = new IO::File "<$dir" ||die ("@! cannot open $dir");
+	while (<$file>){
+	    chomp;
+            my ($swiss,$cds)=split;
+	    $cds2swiss{"${cds}A"}=$swiss;
+	}
+	return \%cds2swiss;
 }
