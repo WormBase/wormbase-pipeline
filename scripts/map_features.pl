@@ -9,7 +9,7 @@
 #
 #
 # Last updated by: $Author: gw3 $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2008-11-05 16:15:41 $        # quickly see when script was last changed and by whom
+# Last updated on: $Date: 2008-11-05 16:55:56 $        # quickly see when script was last changed and by whom
 
 
 $|=1;
@@ -168,6 +168,12 @@ EOF
       ($feature,$clone,$flanking_left,$flanking_right) = ($1,$2,$3,$4);
       
       my @coords = $mapper->map_feature($clone,$flanking_left,$flanking_right);
+      if (!defined $coords[2]) {
+	$log->write_to("ERROR: Can't map feature $feature on clone $clone flanking sequences: $flanking_left $flanking_right\n");
+	$log->error;
+	next;
+      }
+      
       $start = $coords[1];
       $stop  = $coords[2];
       
@@ -208,12 +214,14 @@ EOF
       }
       else {
 	$log->write_to("ERROR: $feature maps to $clone $start -> $stop, feature span is $span bp\n");
+	$log->error;
       }
     } #_ if match line
 
     # lines that look like features but there is a problem eg. whitespace in flanks.
     elsif (/^\"(\S+)\"/) {
-      $log->write_to("$1 has a problem, please check flanking sequences!! (whitespace is one cause)\n");
+      $log->write_to("ERROR: $1 has a problem, please check flanking sequences!! (whitespace is one cause)\n");
+      $log->error;
     }
   }				 
   close TACE;	
