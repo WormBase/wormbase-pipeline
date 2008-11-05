@@ -25,7 +25,6 @@ my %exclude = (
         'Caenorhabditis briggsae'      => 1,
         'Caenorhabditis remanei'       => 1,
         'Pristionchus pacificus'       => 1,
-        'Brugia malayi'                => 1,
 	'Caenorhabditis japonica'      => 1,
 	'Caenorhabditis brenneri'      => 1,
 	) ;
