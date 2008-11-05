@@ -8,8 +8,8 @@
 # Uses Ant's Feature_mapper.pm module
 #
 #
-# Last updated by: $Author: pad $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2008-02-27 12:27:05 $        # quickly see when script was last changed and by whom
+# Last updated by: $Author: gw3 $                      # These lines will get filled in by cvs and helps us
+# Last updated on: $Date: 2008-11-05 16:15:41 $        # quickly see when script was last changed and by whom
 
 
 $|=1;
@@ -85,7 +85,7 @@ my %sanity = (
 	      'SL1'          => 0,
 	      'SL2'          => 0,
 	      'polyA_site'   => 0,
-	      'polyA_signal' => 6,
+	      'polyA_signal_sequence' => 6,
 	      'binding_site' => -1
 	      );
 
@@ -93,7 +93,7 @@ my %sanity = (
 my @features2map;
 push (@features2map, "SL1")           if (($SL1) || ($all));
 push (@features2map, "SL2")           if (($SL2) || ($all));
-push (@features2map, "polyA_signal")  if (($polyA_signal) || ($all));
+push (@features2map, "polyA_signal_sequence")  if (($polyA_signal) || ($all));
 push (@features2map, "polyA_site")    if (($polyA_site) || ($all));
 push (@features2map, "binding_site")  if (($binding_site) || ($all));
 
@@ -103,6 +103,7 @@ push (@features2map, "binding_site")  if (($binding_site) || ($all));
 
 foreach my $query (@features2map) {
 
+  my $table_file = "/tmp/map_features_table_$query.def";
   $log->write_to("Mapping $query features\n");
 
   # open output files
@@ -114,7 +115,51 @@ foreach my $query (@features2map) {
     print "// Opening a file for input: $adhoc\n" if ($verbose);
   }
   else {
-    open (TACE, "echo 'Table-maker -p $dbdir/wquery/feature_${query}.def\nquit\n' | $tace $dbdir | ");
+    my $species_name = $wb->full_name;
+    my $table = <<EOF;
+Sortcolumn 1
+
+Colonne 1
+Width 12
+Optional
+Visible
+Class
+Class Feature
+From 1
+Condition Method = "$query" AND Species = "$species_name"
+
+Colonne 2
+Width 12
+Optional
+Visible
+Class
+Class Sequence
+From 1
+Tag Flanking_sequences
+
+Colonne 3
+Width 32
+Optional
+Visible
+Text
+Right_of 2
+Tag  HERE
+
+Colonne 4
+Width 32
+Optional
+Visible
+Text
+Right_of 3
+Tag  HERE
+
+// End of these definitions
+EOF
+    open (TABLE, ">$table_file") || die "Can't open $table_file: $!";
+    print TABLE $table;
+    close(TABLE);
+
+    open (TACE, "echo 'Table-maker -p $table_file\nquit\n' | $tace $dbdir | ");
   }
   while (<TACE>) {
     
@@ -171,7 +216,8 @@ foreach my $query (@features2map) {
       $log->write_to("$1 has a problem, please check flanking sequences!! (whitespace is one cause)\n");
     }
   }				 
-  close TACE;			
+  close TACE;	
+  unlink $table_file if (-e $table_file);
 
   $wb->load_to_database($wb->autoace, "$outdir/feature_${query}.ace", "feature_mapping", $log);
 }
