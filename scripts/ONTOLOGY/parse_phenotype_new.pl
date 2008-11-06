@@ -86,7 +86,7 @@ my $count=0;
 while (my $obj=$it->next) {
     $count++;
     if ($count % 1000 == 0) {
-	warn "$count objects processed\n";
+	warn "$count variation objects processed\n";
     }
     my @lines=split("\n", $obj->asAce);
     foreach (@lines) {
@@ -94,7 +94,7 @@ while (my $obj=$it->next) {
 	    $var=$_=~/\"(.+)\"/ ? $1 : '';
 	}
 	elsif (/Phenotype/) {
-	    my $tmp=$_=~/\"(WBPhenotype\d+)\"/ ? $1 : '';
+	    my $tmp=$_=~/\"(WBPhenotype:\d+)\"/ ? $1 : '';
 	    next unless $tmp;
 	    $pheno{$tmp}[0]++;
 	    my @tmp1=split('\s+');
