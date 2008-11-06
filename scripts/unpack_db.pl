@@ -12,8 +12,8 @@
 # the Cold Spring Harbor Laboratory database (cshace)
 # the Caltech database (citace)
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2007-05-23 13:33:11 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2008-11-06 13:45:24 $
 
 
 #################################################################################
@@ -264,6 +264,14 @@ sub unpack_stuff{
  ##############################
 
   foreach $filename (@filenames) { 
+
+    # citace has URLs in the LongText class that breaks acedb when this data is written out again, so quote '//'
+    if ($database eq "citace") {
+      my $tmp = "$filename.tmp";
+      system("/bin/sed 's#http:\\/\\/#http:\\\\/\\\\/#g' < $filename > $tmp");
+      $wormbase->run_command("mv -f $tmp $filename", $log)
+    }
+
     my $command=<<END;
 pparse $filename
 save 
