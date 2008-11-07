@@ -4,8 +4,8 @@
 # 
 # by Dan Lawson
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2008-09-04 10:10:52 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2008-11-07 16:56:05 $
 #
 
 #
@@ -142,7 +142,7 @@ foreach my $file (@gff_files) {
 			print OUT "$chromosome\t$source\t$feature\t$start\t$stop\t$score\t$strand\t$other\tCDS \"$i\" ;";
 			print OUT " Note \"$briefID{$i}\" ;"        if ($briefID{$i} ne "");
 			print OUT " WormPep \"".$wormbase->pep_prefix.":$wormpep{$i}\" ; " if ($wormpep{$i} ne "");
-			print OUT " Note \"$locus{$i}\" ; "         if ($locus{$i} ne "");
+			print OUT " Locus \"$locus{$i}\" ; "         if ($locus{$i} ne "");
 			print OUT " Status \"$status{$i}\" ; "      if ($status{$i} ne "");
 			print OUT " Gene \"$geneID{$i}\" ; "        if ($geneID{$i} ne "");
 	    }
@@ -151,7 +151,7 @@ foreach my $file (@gff_files) {
 	    	my ($transcript) = $name =~ (/Transcript \"(\S+)\"/);
 	    	print OUT "$chromosome\t$source\t$feature\t$start\t$stop\t$score\t$strand\t$other\tTranscript \"$transcript\" ;";
 	    	print OUT " Note \"".$RNAgenes{$transcript}->{'remark'}."\" ; " if $RNAgenes{$transcript}->{'remark'} ;
-	    	print OUT " Note \"".$RNAgenes{$transcript}->{'locus'}."\" ; "  if $RNAgenes{$transcript}->{'locus'} ;;
+	    	print OUT " Locus \"".$RNAgenes{$transcript}->{'locus'}."\" ; "  if $RNAgenes{$transcript}->{'locus'} ;;
 	    	print OUT " Gene \"".$seqname2geneid{$transcript}."\" ; "  if $seqname2geneid{$transcript} ;
 	    }
 		print OUT "\n";
