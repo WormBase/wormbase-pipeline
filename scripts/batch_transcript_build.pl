@@ -6,8 +6,8 @@
 #
 # wrapper script for running transcript_builder.pl
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2008-08-07 10:24:42 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2008-11-07 16:37:06 $
 
 use lib $ENV{CVS_DIR};
 use Wormbase;
@@ -76,6 +76,7 @@ unless ( $no_run ){
   open ( PAIRS, ">$pairs") or die "cant open $pairs :\t$!\n";
   while ( <TACE> ) {
     chomp;
+    if (/^\s*$/) {next;}
     if (/^Format/) {next;}
     if (/^\/\//) {next;}
     if (/^acedb/) {next;}
