@@ -7,7 +7,7 @@
 # This takes the BUILD_DATA/MISC_DYNAMIC/waba.ace file and converts any coordinates that have changed between releases
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-11-10 09:55:32 $      
+# Last updated on: $Date: 2008-11-10 11:16:03 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -66,7 +66,7 @@ my $log = Log_files->make_build_log($wormbase);
 my $ace_dir         = $wormbase->autoace;     # AUTOACE DATABASE DIR
 
 # some database paths
-my $currentdb = $wormbase->database('current');
+#my $currentdb = $wormbase->database('current');
 
 ##########################
 # read in the mapping data
@@ -87,90 +87,95 @@ my @mapping_data = Remap_Sequence_Change::read_mapping_data($version - 1, $versi
 # in order to be able to remap them
 #
 
+#Sequence : "CHROMOSOME_III"
+#Homol_data "CHROMOSOME_III:waba" 1 13783681
+#
+#Homol_data : "CHROMOSOME_III:waba"
+#DNA_homol       "chrUn" WABA_strong     32.0000 8301    8322    4630632 4630653
+#DNA_homol       "chrUn" WABA_weak       18.0000 8323    8419    4630654 4630750
+#DNA_homol       "chrUn" WABA_coding     28.0000 8328    8353    1830139 1830164
+#DNA_homol       "chrUn" WABA_weak       -6.0000 8354    8384    1830200 1830230
+#DNA_homol       "chrUn" WABA_coding     36.0000 8385    8419    1830231 1830264
+#DNA_homol       "chrUn" WABA_weak       28.0000 8420    8481    1830438 1830497
+#DNA_homol       "chrUn" WABA_weak       -40.0000        8420    8503    4630758 4630842
 
-#Sequence : "2L52"
-#Homol_data "2L52:waba" 1 4592
-#                                                                                                               
-#Homol_data : "2L52:waba"
-#DNA_homol       "cb25.fpc0305"  WABA_coding     32.0000 1342    1361    264066  264085
-#DNA_homol       "cb25.fpc0305"  WABA_weak       2.0000  1362    1382    264086  264106
-#DNA_homol       "cb25.fpc0305"  WABA_strong     34.0000 1383    1399    264122  264138
-#DNA_homol       "cb25.fpc0305"  WABA_weak       -8.0000 1400    1466    264139  264205
-#DNA_homol       "cb25.fpc0305"  WABA_weak       -58.0000        1467    1661    264236  264428
-#DNA_homol       "cb25.fpc0305"  WABA_weak       -72.0000        1728    1918    264429  264616
-#DNA_homol       "cb25.fpc0305"  WABA_weak       -64.3200        2016    2357    264617  264951
-#DNA_homol       "cb25.fpc0305"  WABA_weak       10.0000 2358    2400    265095  265137
-#DNA_homol       "cb25.fpc0305"  WABA_coding     88.0000 2401    2508    265138  265245
-#DNA_homol       "cb25.fpc0305"  WABA_weak       10.0000 2509    2539    265246  265276
-#DNA_homol       "cb25.fpc0305"  WABA_weak       32.4500 2540    2902    265283  265652
-#DNA_homol       "cb25.fpc0305"  WABA_coding     80.0000 3240    3311    265653  265724
-#DNA_homol       "cb25.fpc0305"  WABA_weak       30.0000 3327    3393    265725  265791
-#DNA_homol       "cb25.fpc0305"  WABA_weak       -98.0000        3597    3924    265792  266120
-#DNA_homol       "cb25.fpc0305"  WABA_weak       8.0000  3925    4068    266148  266290
-#DNA_homol       "cb25.fpc0305"  WABA_weak       -121.5500       4069    4436    266579  266937
-#DNA_homol       "cb25.fpc0305"  WABA_coding     82.0000 4437    4499    266981  267043
+# and
+
+#Sequence : "chrUn"
+#Homol_data "chrUn:waba" 1 7311690
+#
+#Homol_data : "chrUn:waba"
+#DNA_homol       "CHROMOSOME_II" WABA_weak       -80.0000        6586954 6586674 15408   15682
+#DNA_homol       "CHROMOSOME_II" WABA_weak       -10.0000        6586673 6586516 15846   16007
+#DNA_homol       "CHROMOSOME_II" WABA_weak       -64.7700        6586515 6586300 16021   16236
+#DNA_homol       "CHROMOSOME_II" WABA_weak       -132.3200       6586257 6585788 16237   16699
+#DNA_homol       "CHROMOSOME_II" WABA_weak       32.0000 6585766 6585589 16700   16877
+#DNA_homol       "CHROMOSOME_II" WABA_strong     50.0000 6585588 6585556 16878   16910
+
                                                                                                                
 
 
 # start the coords converters
-my $current_converter = Coords_converter->invoke($currentdb, 0, $wormbase);
 my $autoace_converter = Coords_converter->invoke($ace_dir, 0, $wormbase);
 
 # get the WABA details
 my $prev_clone_id = "";
-my $clone_id;
-my $new_clone_id;
+my $chromosome;
+my $chrom_length;
 my ($indel, $change);
-my %clonesize       = $wormbase->FetchData('clonesize', undef, "$ace_dir/COMMON_DATA"); 
-my $clone_length;
 
 open (IN, "< $input") || die "can't open input file $input\n";
 open (OUT, "> $output") || die "can't open output file $output\n";
 while (my $line = <IN>) {
+  print "$line\n" if ($verbose);
   chomp $line;
 
   if ($line =~ /Sequence\s+:\s+\"(\S+)\"/) { 
-    $clone_id = $1;
+    $chromosome = $1;
+
+    if ($chromosome =~ /CHROMOSOME/) { # this is an elegans chromosome
+      $chrom_length = &get_chrom_length($chromosome);
+    }
+    print OUT "$line\n";
+
+  } elsif ($line =~ /Homol_data\s+\"/) {
+    if ($chromosome =~ /CHROMOSOME/) { # this is an elegans chromosome
+      print OUT "Homol_data \"$chromosome:waba\" 1 $chrom_length\n";
+    } else {
+      print OUT "$line\n";
+    }
 
   } elsif ($line =~ /DNA_homol\s+(\S+)\s+(\S+)\s+(\S+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)/) {
     my ($waba_id, $waba_type, $waba_score, $start, $end, $cb_start, $cb_end) = ($1, $2, $3, $4, $5, $6, $7);
-    print "$line\n" if ($verbose);
 
-    # if $start > $end, then sense is -ve (i.e. normal ace convention)
-    ($new_clone_id, $start, $end, $indel, $change) = 
-	Remap_Sequence_Change::remap_clone($wormbase, $clone_id, $start, $end, $version, $current_converter, $autoace_converter, @mapping_data);
+    if ($chromosome =~ /CHROMOSOME/) { # this is an elegans chromosome
 
-    if ($indel) {
-      $log->write_to("There is an indel in the sequence in WABA $waba_id, clone $new_clone_id, $start, $end\n");
-    } elsif ($change) {
-      $log->write_to("There is a change in the sequence in WABA $waba_id, clone $new_clone_id, $start, $end\n");
-    }
+      # if $start > $end, then sense is -ve (i.e. normal ace convention)
+      ($start, $end, $indel, $change) = 
+	  Remap_Sequence_Change::remap_ace($chromosome, $start, $end, $version-1, $version, @mapping_data);
 
-    # if the new clone is the same as the previous clone, continue to write out the next DNA_homol line
-    # else we need to write new Sequence and Homol_data lines.
-    if ($new_clone_id ne $prev_clone_id) {
-
-      print OUT "\nSequence : \"$new_clone_id\"\n";
-
-      # get the superlink or clone length
-      if ($new_clone_id =~ /CHROMOSOME/) {
-	$clone_length = &get_chrom_length($new_clone_id);
-      } elsif ($new_clone_id =~ /SUPERLINK/) {
-	$clone_length = $autoace_converter->Superlink_length($new_clone_id);
-      } else {
-	$clone_length = $clonesize{$new_clone_id};
+      if ($indel) {
+	$log->write_to("There is an indel in the sequence in WABA $waba_id, chromosome $chromosome, $start, $end\n");
+      } elsif ($change) {
+	$log->write_to("There is a change in the sequence in WABA $waba_id, chromosome $chromosome, $start, $end\n");
       }
 
-      print OUT "Homol_data \"$new_clone_id:waba\" 1 $clone_length\n\n";
+      print OUT "DNA_homol $waba_id $waba_type $waba_score $start $end $cb_start $cb_end\n";
+    } else {			# briggsae chromosome
+      my $elegans_chrom = $waba_id;
+      $elegans_chrom =~ s/\"//g;
+      ($cb_start, $cb_end, $indel, $change) = 
+	  Remap_Sequence_Change::remap_ace($elegans_chrom, $cb_start, $cb_end, $version-1, $version, @mapping_data);
 
-      print OUT "Homol_data : \"$new_clone_id:waba\"\n";
+      if ($indel) {
+	$log->write_to("There is an indel in the sequence in WABA $waba_id, chromosome $chromosome, $start, $end\n");
+      } elsif ($change) {
+	$log->write_to("There is a change in the sequence in WABA $waba_id, chromosome $chromosome, $start, $end\n");
+      }
 
-      $prev_clone_id = $new_clone_id;
+      print OUT "DNA_homol $waba_id $waba_type $waba_score $start $end $cb_start $cb_end\n";
+      
     }
-    print OUT "DNA_homol $waba_id $waba_type $waba_score $start $end $cb_start $cb_end\n";
-
-  } elsif ($line =~ /Homol_data/) {	# ignore the Homol_data lines
-
   } else {
     print OUT "$line\n";
   }
@@ -208,8 +213,8 @@ sub get_chrom_length {
 
   my $in = $wormbase->autoace . "/GFF_SPLITS/${chrom}_curated.gff";
 
-  open (IN, "< $in") || die "Can't open file $in\n";
-  while (my $line = <IN>) {
+  open (CHROM, "< $in") || die "Can't open file $in\n";
+  while (my $line = <CHROM>) {
     if ($line =~ /##sequence-region\s+\S+\s+\S+\s+(\d+)/) {
 	$len = $1;
     }
