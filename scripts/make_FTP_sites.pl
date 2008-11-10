@@ -7,8 +7,8 @@
 # 
 # Originally written by Dan Lawson
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2008-10-31 10:52:00 $
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2008-11-10 15:12:20 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -105,6 +105,7 @@ my $dna;
 my $rna;
 my $gff;
 my $supplementary;
+my $clustal;
 
 GetOptions ("help"     => \$help,
 	    "debug=s"  => \$debug,
@@ -122,6 +123,7 @@ GetOptions ("help"     => \$help,
 	    "genes"    => \$genes,
 	    "cDNAlist" => \$cDNA,
 	    "geneIDs"  => \$geneIDs,
+	    "clustal"  => \$clustal,
 	    "pcr"      => \$pcr,
 	    "homols"   => \$homols,
 	    "manifest"=> \$manifest,
@@ -151,7 +153,7 @@ my $log = Log_files->make_build_log($wormbase);
 
 
 # using -all option?
-($release=$dump_ko=$dna=$gff=$supplementary=$rna=$misc=$wormpep=$genes=$cDNA=$geneIDs=$pcr=$homols=$manifest=$ont = 1 ) if ($all);
+($clustal=$release=$dump_ko=$dna=$gff=$supplementary=$rna=$misc=$wormpep=$genes=$cDNA=$geneIDs=$pcr=$homols=$manifest=$ont = 1 ) if ($all);
 
 my $base_dir = $wormbase->basedir;    # The BUILD directory
 my $ace_dir = $wormbase->autoace;     # AUTOACE DATABASE DIR
@@ -207,7 +209,7 @@ close FTP_LOCK;
 
 &extract_ko if ($dump_ko);            # dumps KO-consortium data to FTP site
 
-
+&copy_clustal if ($clustal);          # copies the clustal sql-dump to the FTP site
 
 ################################
 #
@@ -296,7 +298,7 @@ sub copy_dna_files{
 	if ($wormbase->assembly_type eq 'contig') {
 		my $dna_file = "$chromdir/supercontigs.fa";
 		my $masked_file = "$chromdir/".$gspecies."_masked.dna";
-		my $soft_file = "$chrom	dir/".$gspecies."_masked.dna";
+		my $soft_file = "$chromdir/".$gspecies."_masked.dna";
 		
 		$wormbase->run_command("/bin/gzip -f $dna_file > $dna_dir/".$gspecies."$WS_name.dna.fa",$log);
 		$wormbase->run_command("cp -f $soft_file $dna_dir/".$gspecies."_softmasked.$WS_name.dna.fa.gz", $log);
@@ -404,7 +406,23 @@ sub copy_supplementary_gff_files{
   $log->write_to("$runtime: Finished copying\n\n");
 }
 
+sub copy_clustal{
+  $runtime = $wormbase->runtime;
+  $log->write_to("$runtime: copying clustal sql dump\n");
+  if($wormbase->species eq 'elegans') {
+	my $chromdir = $wormbase->autoace;
+	if (-e "$chromdir/wormpep_clw.sql.bz2") {
+		my $sgff_dir = "$targetdir/$WS_name/";
+		mkpath($sgff_dir,1,0775);
+		$wormbase->run_command("cp -R $chromdir/wormpep_clw.sql.bz2 $sgff_dir/", $log);
 
+		# change group ownership
+		$wormbase->run_command("chgrp  worm $sgff_dir/wormpep_clw.sql.bz", $log);
+	}
+  }
+  $runtime = $wormbase->runtime;
+  $log->write_to("$runtime: Finished copying\n\n");
+}
 sub copy_rna_files{
   $runtime = $wormbase->runtime;
   $log->write_to("$runtime: copying rna files\n");
