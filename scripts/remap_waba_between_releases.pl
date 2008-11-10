@@ -7,7 +7,7 @@
 # This takes the BUILD_DATA/MISC_DYNAMIC/waba.ace file and converts any coordinates that have changed between releases
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-02-14 11:18:17 $      
+# Last updated on: $Date: 2008-11-10 09:55:32 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -121,7 +121,7 @@ my $prev_clone_id = "";
 my $clone_id;
 my $new_clone_id;
 my ($indel, $change);
-my %clonesize       = $wormbase->FetchData('clonesize', "$ace_dir/COMMON_DATA"); 
+my %clonesize       = $wormbase->FetchData('clonesize', undef, "$ace_dir/COMMON_DATA"); 
 my $clone_length;
 
 open (IN, "< $input") || die "can't open input file $input\n";
