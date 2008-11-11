@@ -2,8 +2,8 @@
 #
 # prepare_primary_databases.pl
 #
-# Last edited by: $Author: pad $
-# Last edited on: $Date: 2008-10-08 14:00:33 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2008-11-11 16:24:45 $
 
 use strict;
 my $scriptdir = $ENV{'CVS_DIR'};
@@ -49,12 +49,17 @@ else {
 
 # establish log file.
 my $log = Log_files->make_build_log($wormbase);
+$species = $wormbase->species;
 
 my %databases;
-$databases{'stlace'}->{'search'} = 'stl/stlace*';
-$databases{'brigace'}->{'search'}= 'stl/brigace*';
-$databases{'citace'}->{'search'} = 'caltech/citace*';
-$databases{'cshace'}->{'search'} = 'csh/csh*';
+if( $species ne 'elegans') {
+	$databases{$species}->{'search'} = "stl/$species*";
+}
+else {
+	$databases{'stlace'}->{'search'} = 'stl/stlace*';
+	$databases{'citace'}->{'search'} = 'caltech/citace*';
+	$databases{'cshace'}->{'search'} = 'csh/csh*';
+}
 
 
 # establish databases for other TierII sp
@@ -92,14 +97,17 @@ unless ($options eq "") {
   $wormbase->run_script("unpack_db.pl $options", $log);
 }
 
-# transfer camace and geneace  and brigace to correct PRIMARIES dir
-$log->write_to("Transfering geneace and camace\n");
+#only do genace and camace if doing elegans.  Assume genace ready if other species.
+if( $species eq 'elegans') {
+	# transfer camace and geneace  and brigace to correct PRIMARIES dir
+	$log->write_to("Transfering geneace and camace\n");
 
-foreach ( qw(camace geneace ) ){
-  next if (defined $database and ($database ne $_));
-  $wormbase->delete_files_from($wormbase->primary("$_"),'*','+');
-  $wormbase->run_script("TransferDB.pl -start ".$wormbase->database("$_"). " -end ".$wormbase->primary("$_") ." -database -wspec", $log);
-  $wormbase->run_command("ln -sf ".$wormbase->autoace."/wspec/models.wrm ".$wormbase->primary("$_")."/wspec/models.wrm", $log);
+	foreach ( qw(camace geneace ) ){
+	next if (defined $database and ($database ne $_));
+	$wormbase->delete_files_from($wormbase->primary("$_"),'*','+');
+	$wormbase->run_script("TransferDB.pl -start ".$wormbase->database("$_"). " -end ".$wormbase->primary("$_") ." -database -wspec", $log);
+	$wormbase->run_command("ln -sf ".$wormbase->autoace."/wspec/models.wrm ".$wormbase->primary("$_")."/wspec/models.wrm", $log);
+	}
 }
 #################################################
 # Check that the databases have unpack correctly #
