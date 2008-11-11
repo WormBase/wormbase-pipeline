@@ -49,17 +49,6 @@ $wormbase->checkLSF;
 
 my @methods     = split(/,/,join(',',$methods)) if $methods;
 
-#if (scalar @chroms > 50){
-#	my @bins;
-#	my $i=0;
-#	while ($i<scalar @chroms){
-#		push (@{$bins[$i % 64]},$chroms[$i]);
-#		$i++;
-#	}
-#	map {$_=join(',',@$_)} @bins;
-#	@chroms = @bins;
-#}
-
 my @chromosomes = $chrom_choice ? split(/,/,join(',',$chrom_choice)):@chroms;
 
 $database = $wormbase->autoace    unless $database;
@@ -97,8 +86,9 @@ CHROMLOOP: foreach my $chrom ( @chromosomes ) {
       $cmd.=" -host $host" if scalar(@chromosomes) > 50;
       $cmd.=" -debug $debug" if $debug;
       $cmd.=" -chromosome $chrom" if scalar(@chromosomes) < 50;
-      $log->write_to("$cmd\n");
       $cmd = $wormbase->build_cmd($cmd);
+      $log->write_to("Command: $cmd\n");
+      print "Command: $cmd\n";
 
       $lsf->submit(@bsub_options, $cmd);
     }
@@ -116,9 +106,9 @@ CHROMLOOP: foreach my $chrom ( @chromosomes ) {
     $cmd.=" -chromosome $chrom" if scalar(@chromosomes) < 50;
     $cmd.=" -host $host" if scalar(@chromosomes) > 50;
     $cmd.=" -debug $debug" if $debug;
-    $log->write_to("$cmd\n");
-    print "$cmd\n";
     $cmd = $wormbase->build_cmd($cmd);
+    $log->write_to("Command: $cmd\n");
+    print "Command: $cmd\n";
 
     $lsf->submit(@bsub_options, $cmd);
     last CHROMLOOP if scalar(@chromosomes) > 50;
@@ -128,10 +118,36 @@ CHROMLOOP: foreach my $chrom ( @chromosomes ) {
 
 $lsf->wait_all_children( history => 1 );
 $log->write_to("All GFF dump jobs have completed!\n");
+my @problem_cmds;
 for my $job ( $lsf->jobs ) {
-  $log->error("Job $job (" . $job->history->command . ") exited non zero\n") if $job->history->exit_status != 0;
+  $log->write_to("Job $job (" . $job->history->command . ") exited non zero\n") if $job->history->exit_status != 0;
+  push @problem_cmds, $job->history->command;
 }
 $lsf->clear;
+
+##################################################################
+# now try runnning any commands that failed again with more memory
+$lsf = LSF::JobManager->new();
+my @bsub_options = scalar(@chromosomes) < 50 ? (-F => "4000000", -M => "5000000", -R => "\"select[mem>5000] rusage[mem=5000]\"") : ();
+my $err = "$scratch_dir/wormpubGFFdump.rerun.err";
+my $out = "$scratch_dir/wormpubGFFdump.rerun.out";
+push @bsub_options, (-e => "$err", -o => "$out");
+if (scalar @problem_cmds < 100) { # we don't want to re-run too many jobs!
+  foreach my $cmd (@problem_cmds) {
+    $log->write_to("*** Attempting to re-run with 5Gb memory: $cmd\n");
+    $lsf->submit(@bsub_options, $cmd);
+  }
+  $lsf->wait_all_children( history => 1 );
+  for my $job ( $lsf->jobs ) {
+    $log->error("\n\nERROR: Job $job (" . $job->history->command . ") exited non zero at the second attempt!\n") if $job->history->exit_status != 0;
+    push @problem_cmds, $job->history->command;
+  }
+  $lsf->clear;
+} else {
+  $log->error("ERROR: There are ". scalar @problem_cmds ." GFF_method_dump.pl LSF jobs that have failed\n");
+}
+##################################################################
+
 
 if (scalar(@chromosomes) > 50){
 	open (WRITEDB,"| saceclient $host -port $port -userid wormpub -pass blablub");
