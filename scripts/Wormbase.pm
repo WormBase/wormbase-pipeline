@@ -533,10 +533,10 @@ sub release_wormpep		#($number_cds $number_total $number_alternate )
 
     #extract data from new wormpep files
     my $wormpep = $self->wormpep;
-    my $lost     = `more $wormpep/wormpep.diff$ver | grep 'lost' | wc -l`;
-    my $new      = `more $wormpep/wormpep.diff$ver | grep 'new' | wc -l`;
-    my $changed  = `more $wormpep/wormpep.diff$ver | grep 'changed' | wc -l`;
-    my $appeared = `more $wormpep/wormpep.diff$ver | grep 'appear' | wc -l`;
+    my $lost     = `grep -c 'lost' $wormpep/wormpep.diff$ver`;
+    my $new      = `grep -c 'new' $wormpep/wormpep.diff$ver`;
+    my $changed  = `grep -c 'changed' $wormpep/wormpep.diff$ver`;
+    my $appeared = `grep -c 'appear' $wormpep/wormpep.diff$ver`;
     my $entries  = `cat $wormpep/wormpep.diff$ver | wc -l`;
     my $net      = $new + $appeared - $lost;
     my $codingDNA;
