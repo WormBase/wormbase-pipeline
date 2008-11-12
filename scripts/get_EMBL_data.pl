@@ -6,8 +6,8 @@
 #
 # Reads protein ids and gets SwissProt IDs
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2008-02-15 16:55:15 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2008-11-12 12:35:36 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -72,6 +72,7 @@ while(<MAIL>){
 		$skip = 1 if (/^Subject: C/);
 	}
 	else {
+	  next if (/^X-Scanned:/);
 		#U10401  105     AAA19054        4       1408728171      T20B12.1        P41842  T20B12.1
 		my @data = split;
 		my($cloneacc, $pid, $version, $cds, $uniprot) = ($data[0],$data[2],$data[3],$data[-1],$data[6]);
