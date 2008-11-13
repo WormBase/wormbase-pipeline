@@ -7,7 +7,7 @@ use strict;
 use Log_files;
 use Storable;
 
-my ($debug, $test, $database,$species);
+my ($debug, $test, $database,$species, $verbose);
 
 my $dump_dir;
 my $dumpGFFscript = "GFF_method_dump.pl";
@@ -20,6 +20,7 @@ use LSF::JobManager;
 GetOptions (
 	    "debug:s"       => \$debug,
 	    "test"          => \$test,
+	    "verbose"       => \$verbose,
 	    "database:s"    => \$database,
 	    "dump_dir:s"    => \$dump_dir,
 	    "methods:s"     => \$methods,
@@ -75,6 +76,11 @@ if (scalar(@chromosomes) > 50){
 	sleep 20;
 }
 
+my $cmd_dir = $wormbase->autoace . "/TMP";
+mkdir $cmd_dir, 0777;
+my $cmd_file_root = "${cmd_dir}/dump_gff_batch_$$"; # root of name of files to hold commands
+my $cmd_number = 0;		# count for making name of next command file
+
 CHROMLOOP: foreach my $chrom ( @chromosomes ) {
   if ( @methods ) {
     foreach my $method ( @methods ) {
@@ -87,10 +93,18 @@ CHROMLOOP: foreach my $chrom ( @chromosomes ) {
       $cmd.=" -debug $debug" if $debug;
       $cmd.=" -chromosome $chrom" if scalar(@chromosomes) < 50;
       $cmd = $wormbase->build_cmd($cmd);
-      $log->write_to("Command: $cmd\n");
-      print "Command: $cmd\n";
+      $log->write_to("Command: $cmd\n") if ($verbose);
+      print "Command: $cmd\n" if ($verbose);
 
-      $lsf->submit(@bsub_options, $cmd);
+      # write out the command file to be executed
+      my $cmd_file = "$cmd_file_root." . $cmd_number++;
+      open (CMD, ">$cmd_file") || die "Can't open file $cmd_file: $!";
+      print CMD "#!/bin/csh\n";
+      print CMD "$cmd\n";
+      close (CMD);
+      chmod 0777, $cmd_file;
+
+      $lsf->submit(@bsub_options, $cmd_file);
     }
     last CHROMLOOP if scalar(@chromosomes) > 50;
   }
@@ -107,10 +121,18 @@ CHROMLOOP: foreach my $chrom ( @chromosomes ) {
     $cmd.=" -host $host" if scalar(@chromosomes) > 50;
     $cmd.=" -debug $debug" if $debug;
     $cmd = $wormbase->build_cmd($cmd);
-    $log->write_to("Command: $cmd\n");
-    print "Command: $cmd\n";
+    $log->write_to("Command: $cmd\n") if ($verbose);
+    print "Command: $cmd\n" if ($verbose);
 
-    $lsf->submit(@bsub_options, $cmd);
+    # write out the command file to be executed
+    my $cmd_file = "$cmd_file_root." . $cmd_number++;
+    open (CMD, ">$cmd_file") || die "Can't open file $cmd_file: $!";
+    print CMD "#!/bin/csh\n";
+    print CMD "$cmd\n";
+    close (CMD);
+    chmod 0777, $cmd_file;
+
+    $lsf->submit(@bsub_options, $cmd_file);
     last CHROMLOOP if scalar(@chromosomes) > 50;
   }
   $submitchunk++;
@@ -120,32 +142,47 @@ $lsf->wait_all_children( history => 1 );
 $log->write_to("All GFF dump jobs have completed!\n");
 my @problem_cmds;
 for my $job ( $lsf->jobs ) {
-  $log->write_to("Job $job (" . $job->history->command . ") exited non zero\n") if $job->history->exit_status != 0;
-  push @problem_cmds, $job->history->command;
+  if ($job->history->exit_status == 0) {
+    unlink $job->history->command;
+  } else {
+    $log->write_to("Job $job (" . $job->history->command . ") exited non zero\n");
+    push @problem_cmds, $job->history->command;
+  }
 }
 $lsf->clear;
 
 ##################################################################
-# now try runnning any commands that failed again with more memory
+# now try re-runnning any commands that failed
 $lsf = LSF::JobManager->new();
-my @bsub_options = scalar(@chromosomes) < 50 ? (-F => "4000000", -M => "5000000", -R => "\"select[mem>5000] rusage[mem=5000]\"") : ();
+    my @bsub_options = scalar(@chromosomes) < 50 ? (-F => "2000000", -M => "3500000", -R => "\"select[mem>3500] rusage[mem=3500]\"") : ();
 my $err = "$scratch_dir/wormpubGFFdump.rerun.err";
 my $out = "$scratch_dir/wormpubGFFdump.rerun.out";
 push @bsub_options, (-e => "$err", -o => "$out");
-if (scalar @problem_cmds < 100) { # we don't want to re-run too many jobs!
-  foreach my $cmd (@problem_cmds) {
-    $log->write_to("*** Attempting to re-run with 5Gb memory: $cmd\n");
-    $lsf->submit(@bsub_options, $cmd);
+if (scalar @problem_cmds < 120) { # we don't want to re-run too many jobs!
+  foreach my $cmd_file (@problem_cmds) {
+    $log->write_to("*** Attempting to re-run job: $cmd_file\n");
+    $lsf->submit(@bsub_options, $cmd_file);
   }
   $lsf->wait_all_children( history => 1 );
+  my $failed = 0;
   for my $job ( $lsf->jobs ) {
-    $log->error("\n\nERROR: Job $job (" . $job->history->command . ") exited non zero at the second attempt!\n") if $job->history->exit_status != 0;
-    push @problem_cmds, $job->history->command;
+    if ($job->history->exit_status == 0) {
+      unlink $job->history->command;
+    } else {
+      $failed++;
+      $log->error("\n\nERROR: Job $job (" . $job->history->command . ") exited non zero at the second attempt. See $err\n");
+      push @problem_cmds, $job->history->command;
+    }
+    $log->write_to("\n\nNumber of jobs that failed after the second attempt: $failed\n");
   }
-  $lsf->clear;
 } else {
-  $log->error("ERROR: There are ". scalar @problem_cmds ." GFF_method_dump.pl LSF jobs that have failed\n");
+  $log->error("ERROR: There are ". scalar @problem_cmds ." GFF_method_dump.pl LSF jobs that have failed. See $err\n");
+  $log->write_to("Not attempting to re-run all of these jobs.\nPlease investigate what went wrong!\n");
+  for my $job ( $lsf->jobs ) {
+    unlink $job->history->command;
+  }
 }
+$lsf->clear;
 ##################################################################
 
 
