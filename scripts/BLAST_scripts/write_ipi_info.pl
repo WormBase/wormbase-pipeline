@@ -85,33 +85,29 @@ while (<LIST>) {
     print ACE "Peptide \"$prefix:$id\"\n";
     print ACE "$title_desc \"$DESC{$id}\"\n" if $DESC{$id};
     print ACE "Species \"Homo sapiens\"\n";
-  }
-  else {
-    print "no prefix for $id\n" if ($verbose);
-  }
   
-  # write database lines
-  my @databases = split (/\s+/,$DATABASE{$id}) if ( $DATABASE{$id} );
+    # write database lines
+    my @databases = split (/\s+/,$DATABASE{$id}) if ( $DATABASE{$id} );
 
-  # this is for new protein model
+    # this is for new protein model
 
-  # SwissProt_ID
-  # SwissProt_AC
-  # TrEMBL_AC
-  # FlyBase_gn
-  # Gadfly_ID
-  # SGD_systematic
-  # SGDID
-  # ENSEMBL_geneID
-  # ENSEMBL_proteinID
-  # WORMPEP_ID 
+    # SwissProt_ID
+    # SwissProt_AC
+    # TrEMBL_AC
+    # FlyBase_gn
+    # Gadfly_ID
+    # SGD_systematic
+    # SGDID
+    # ENSEMBL_geneID
+    # ENSEMBL_proteinID
+    # WORMPEP_ID 
 
-  foreach (@databases) {
+    foreach (@databases) {
       my ($DB,$ID) = split(/:/, $_);
       if( "$DB" eq "ENSEMBL" ){
-      print ACE "Database ENSEMBL ENSEMBL_proteinID $ID\n";
-      #no longer get gene IDs from ensembl due to change in their fasta header
-      print ACE "Database ENSEMBL ENSEMBL_geneID $ENSpep_gene{$ID}\n" if ($ENSpep_gene{$ID});
+	print ACE "Database ENSEMBL ENSEMBL_proteinID $ID\n";
+	#no longer get gene IDs from ensembl due to change in their fasta header
+	print ACE "Database ENSEMBL ENSEMBL_geneID $ENSpep_gene{$ID}\n" if ($ENSpep_gene{$ID});
       }
       elsif( "$DB" eq "SWISS-PROT" ){ 
 	my $othername = $acc2id{$ID} if $acc2id{$ID};
@@ -119,17 +115,18 @@ while (<LIST>) {
 	print ACE "Database SwissProt SwissProt_ID $acc2id{$ID}\n" if $acc2id{$ID};
 
 	print ACE "Gene_name \"$swiss_id2gene{$othername}\"\n" if $swiss_id2gene{$othername};
-	
-      }
-      elsif( "$DB" eq "TREMBL" ){
+
+      } elsif( "$DB" eq "TREMBL" ){
 	print ACE "Database TREMBL TrEMBL_AC $ID\n";
       }
-  }
+    }
 
-  # This is the same for each
-  print ACE "\nPeptide : \"$prefix:$id\"\n";
-  print ACE "$PEPTIDE{$id}\n";
-  
+    # This is the same for each
+    print ACE "\nPeptide : \"$prefix:$id\"\n";
+    print ACE "$PEPTIDE{$id}\n";
+  } else {
+    print "no prefix for $id\n" if ($verbose);
+  }
 }
 
 untie %ACC2DB;
