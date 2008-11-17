@@ -1428,11 +1428,23 @@ sub run_script_on_farm {
   return $self->run_command( "$cmd", $log );
 }
 
+####################################
 # abstracted out of run_script so that scripts using LSF::Manager can 
 # still use the Storable etc properly
 sub build_cmd {
   my $self   = shift;
   my $script = shift;
+  
+  my $store_file = $self->build_store;
+  my $cmd = $self->build_cmd_line($script, $store_file);
+  return $cmd;
+}
+
+####################################
+# abstracted out of run_script so that scripts using LSF::Manager can 
+# still use the Storable etc properly
+sub build_store {
+  my $self   = shift;
   
   my $species = ref $self;
   my $store = $self->autoace . "/$species.store";
@@ -1440,6 +1452,17 @@ sub build_cmd {
   
   #if user wormpipe this always gives an ERROR and confuses log msgs
   $self->run_command( "chmod -f 775 $store") unless ($self->test_user_wormpub == 1);
+  return $store;
+}
+
+####################################
+# abstracted out of run_script so that scripts using LSF::Manager can 
+# still use the Storable etc properly
+sub build_cmd_line {
+  my $self   = shift;
+  my $script = shift;
+  my $store  = shift;
+  
   my $command = "perl $ENV{'CVS_DIR'}/$script -store $store";
   print "$command\n" if $self->test;
   return $command;
