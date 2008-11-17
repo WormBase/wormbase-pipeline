@@ -1,7 +1,7 @@
 #!/software/bin/perl -w
 
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2008-09-17 09:07:37 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2008-11-17 13:37:11 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -125,11 +125,11 @@ sub update_database {
 		}
 		
 		$log->write_to("\t clearing quotes from /tmp/$table.txt\n");
-		$wormbase->run_command("cat /tmp/$table.txt | sed s/\\\"//g > tmp", $log);
-		$wormbase->run_command("mv tmp /tmp/$table.txt", $log);
+		$wormbase->run_command("cat /tmp/$table.txt | sed s/\\\"//g > /tmp/$table.txt2", $log);
+		$wormbase->run_command("mv /tmp/$table.txt2 /tmp/$table.txt", $log);
 		$log->write_to("\t checking quote clearing in /tmp/$table.txt\n");
-		$wormbase->run_command("cat /tmp/$table.txt | sed s/\\\'//g > tmp", $log);
-		$wormbase->run_command("mv tmp /tmp/$table.txt", $log);
+		$wormbase->run_command("cat /tmp/$table.txt | sed s/\\\'//g > /tmp/$table.txt3", $log);
+		$wormbase->run_command("mv /tmp/$table.txt3 /tmp/$table.txt", $log);
 
 		# pfamseq table is subject to unannounced column re-ordering, so update the schema.
 		if ($table eq "pfamseq") {
