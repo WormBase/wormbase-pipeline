@@ -80,6 +80,7 @@ my $cmd_dir = $wormbase->autoace . "/TMP";
 mkdir $cmd_dir, 0777;
 my $cmd_file_root = "${cmd_dir}/dump_gff_batch_$$"; # root of name of files to hold commands
 my $cmd_number = 0;		# count for making name of next command file
+my $store_file = $wormbase->build_store; # get the store file to use in all commands
 
 CHROMLOOP: foreach my $chrom ( @chromosomes ) {
   if ( @methods ) {
@@ -92,7 +93,7 @@ CHROMLOOP: foreach my $chrom ( @chromosomes ) {
       $cmd.=" -host $host" if scalar(@chromosomes) > 50;
       $cmd.=" -debug $debug" if $debug;
       $cmd.=" -chromosome $chrom" if scalar(@chromosomes) < 50;
-      $cmd = $wormbase->build_cmd($cmd);
+      $cmd = $wormbase->build_cmd_line($cmd, $store_file);
       $log->write_to("Command: $cmd\n") if ($verbose);
       print "Command: $cmd\n" if ($verbose);
 
@@ -120,7 +121,7 @@ CHROMLOOP: foreach my $chrom ( @chromosomes ) {
     $cmd.=" -chromosome $chrom" if scalar(@chromosomes) < 50;
     $cmd.=" -host $host" if scalar(@chromosomes) > 50;
     $cmd.=" -debug $debug" if $debug;
-    $cmd = $wormbase->build_cmd($cmd);
+    $cmd = $wormbase->build_cmd_line($cmd, $store_file);
     $log->write_to("Command: $cmd\n") if ($verbose);
     print "Command: $cmd\n" if ($verbose);
 
