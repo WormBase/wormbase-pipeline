@@ -7,7 +7,7 @@
 # Builds a wormrna data set from the current autoace database
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2008-08-21 12:32:25 $
+# Last updated on: $Date: 2008-11-18 15:12:16 $
 
 
 #################################################################################
@@ -61,7 +61,6 @@ my $log = Log_files->make_build_log($wormbase);
 # release data                        #
 #######################################
 
-my $release_date = $wormbase->get_wormbase_release_date("long");
 $release         = $wormbase->get_wormbase_version unless $release;
 my $old_release  = $release-1;
 
@@ -165,7 +164,6 @@ The accompanying file (wormrna$release.rna) contains $count RNA sequences in FAS
 format.
 
 WormBase group, Sanger Institute
-$release_date
 
 END
 
