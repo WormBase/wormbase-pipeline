@@ -6,8 +6,8 @@
 #
 # Builds a wormpep data set from the current autoace database
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2008-11-18 11:56:08 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2008-11-18 14:55:26 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -230,19 +230,23 @@ sub write_wormpep_history_and_diff{
 	%cds2aa = $wormbase->FetchData('cds2aa');
     }
     my %line;
+	my %live_last_build;
     while (my $line = <OLDHISTORY>) {
 	chomp $line;
-	my ($cds , $wpid , $start , $end) = split (/\t/ , $line);
+	my ($cds , $wpid , $start , $end) = split (/\t+/ , $line);
 	$wpid =~ /${PEP_PREFIX}(\d+)/ ; my $num = $1;
 	$line{$cds} = $line; # track which CDSs have an entry
 	
 	if ($end){ #stuff dead in last release
 	    if($cds2id{$cds}){ #now coding
-		if($cds2id{$cds} eq $num and ($end eq $release))  { #reappeared
+		if($cds2id{$cds} eq $num)  { #reappeared
 		    print DIFF "reappeared:\t$cds\t${PEP_PREFIX}".&pad($cds2id{$cds})."\n";
 		}
 		else { #no change - coding for other peptide (or the same one reinstated)
-		    print HISTORY "$cds\t$wpid\t$start\t$end\n";
+			#B0303.7 CE00538 8       17
+			#B0303.7 CE00538 18      77
+			#B0303.7 CE30412 77      123
+			print HISTORY "$cds\t$wpid\t$start\t$end\n";
 		}
 	    }
 	    else { #no change
@@ -250,7 +254,8 @@ sub write_wormpep_history_and_diff{
 	    }
 	}
 	else { #live in last release
-	    if($cds2id{$cds}){ #still coding
+		$live_last_build{$cds} =1;
+		if($cds2id{$cds}){ #still coding
 		if("${PEP_PREFIX}$cds2id{$cds}" eq $wpid) {#same peptide
 						print HISTORY "$cds\t$wpid\t$start\n"; #no change
 					    }
@@ -267,8 +272,9 @@ sub write_wormpep_history_and_diff{
 	}
     }
     close OLDHISTORY;
+    #catch resurrections
     foreach my $cds (keys %cds2id){
-	unless ($line{$cds}) { #contains everything in last release
+	unless ($live_last_build{$cds}) {
 	    my $pad = &pad($cds2id{$cds});
 	    print HISTORY "$cds\t${PEP_PREFIX}$pad\t$release\n";
 	    print DIFF "new:\t$cds\t${PEP_PREFIX}$pad\n";
