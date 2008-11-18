@@ -37,7 +37,7 @@ my $log = Log_files->make_build_log($wormbase);
 
 #connect to database and read in data
 my $acedb = ($database or $wormbase->database('camace'));
-$def = "$acedb/wquery/SCRIPT:camace_nameDB_comm.def" unless $def;
+$def = $wormbase->database('camace')."/wquery/SCRIPT:camace_nameDB_comm.def" unless $def;
 my $TABLE = $wormbase->table_maker_query($acedb, $def);
 
 my %ace_genes;
