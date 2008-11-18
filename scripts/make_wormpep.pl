@@ -6,8 +6,8 @@
 #
 # Builds a wormpep data set from the current autoace database
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2008-10-23 12:50:52 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2008-11-18 11:56:08 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -424,8 +424,8 @@ sub get_additional_data {
   $wormbase->run_script("GetInterPro_motifs.pl -load", $log);
 
   # make interpro2go connections (to be used by getProteinID)
-  $log->write_to("getting InterPro2Go mapping\n");
-  $wormbase->run_script("make_Interpro2GO_mapping.pl", $log);
+  #$log->write_to("getting InterPro2Go mapping\n");
+  #$wormbase->run_script("make_Interpro2GO_mapping.pl", $log);
 }
 
 sub run_pepace {
