@@ -7,7 +7,7 @@
 # Gets latest Interpro:GO mappings from XXXX and puts info in to ace file
 #
 # Last updated by: $Author: gw3 $                      
-# Last updated on: $Date: 2008-03-11 12:00:03 $         
+# Last updated on: $Date: 2008-11-18 11:53:31 $         
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -45,37 +45,62 @@ my $runtime     = $wormbase->runtime;
 
 my $log = Log_files->make_build_log($wormbase);
 
-#Get the latest version
-my $motifs = "/tmp/interpro_motifs.html";
-$log->write_to(": Running 'wget' to get interpro file from EBI\n");
-`/usr/bin/wget -O $motifs ftp://ftp.ebi.ac.uk/pub/databases/interpro/entry.list` and $log->log_and_die("$0 Couldnt get listing.html\n");
+  # the interpro.xml file can be obtained from:
+  # ftp.ebi.ac.uk/pub/databases/interpro/interpro.xml.gz
 
+  # store it here
+  my $dir = "/tmp";
+  my $file = "$dir/interpro.xml";
+
+  # get the interpro file from the EBI
+  unlink $file;
+  get_interpro($file);
+
+ 
 my $ip_ace_file = $wormbase->acefiles."/interpro_motifs.ace";
-open (I2G,"<$motifs") or $log->log_and_die("cant open $motifs\n");
 open (IPDESC,">$ip_ace_file") or $log->log_and_die("cant write $ip_ace_file\n");
-my %interpro_des;   #IPR000018 => "P2Y4 purinoceptor"
-my $text;
-my $ip;
 
 # IPR000177 Apple domain
 $log->write_to(": Writing acefile to $ip_ace_file\n");
-while (<I2G>){
-  chomp;
-  my @info = split;
-  $ip = shift @info;
-  next if( (!defined $ip) or ($ip !~ /^IPR/) ); # header lines
-  #Motif : "INTERPRO:IPR000006"
-  #Title    "Class I metallothionein"
-  #Database         "INTERPRO" "INTERPRO_ID" "IPR000006"
-  print IPDESC "Motif : \"INTERPRO:$ip\"\n";
-  print IPDESC "Title  \"@info\"\n";
-  print IPDESC "Database  \"INTERPRO\" \"INTERPRO_ID\" \"$ip\"\n";
-  print IPDESC "\n";
-}
+open (XML, "< $file") || die "Failed to open file $file\n";
+ 
+my $IPid;
+my $IPdesc;
+my $GOterm;
 
+#Motif : "INTERPRO:IPR001624"
+#Title  "Peptidase aspartic, active site"
+#Database "INTERPRO" "INTERPRO_ID" "IPR001624"
+#GO_term "GO:0003774"
+#GO_term "GO:0005198"
+#GO_term "GO:0001539"
+#GO_term "GO:0009288"
+
+  while (my $line = <XML>) {
+    if ($line =~ /<interpro id=\"(\S+)\"/) {
+      $IPid = $1;
+
+      print IPDESC "\nMotif : \"INTERPRO:$IPid\"\n";
+      print IPDESC "Database  \"INTERPRO\" \"INTERPRO_ID\" \"$IPid\"\n";
+
+
+
+    } elsif ($line =~ /\<name\>(.+)\<\/name\>/) {
+      $IPdesc = $1;
+
+      print IPDESC "Title  \"$IPdesc\"\n";
+
+    } elsif ($line =~ /\<classification id=\"(\S+)\" class_type=\"GO\"\>/) {
+      $GOterm = $1;
+
+      print IPDESC "GO_term \"$GOterm\"\n";
+
+    }
+  }
+  close (XML);
+  unlink $file;
 
 close IPDESC;
-close I2G;
 
 # load file if -load was specified
 
@@ -99,8 +124,25 @@ sub usage {
 }
 
 
+#########################################################
+# reads in data for database ID to InterPro ID mapping  #
+#########################################################
 
 
+
+#########################
+# get the interpro file #
+#########################
+
+sub get_interpro {
+
+  my $latest_version = $_[0];
+ 
+				#Get the latest version
+  print "Attempting to FTP the latest version of interpro.xml from ebi \n";
+  `wget -O $latest_version.gz ftp://ftp.ebi.ac.uk/pub/databases/interpro/interpro.xml.gz`;
+  `gunzip "${latest_version}.gz"`;
+}
 
 __END__
 
