@@ -151,9 +151,9 @@ sub _filter_alleles {
     # print STDERR "checking $name\n";
         
     # has no sequence connection
-        if ( ! defined $allele->Sequence ) {
+    if ( ! defined $allele->Sequence ) {
             $log->write_to("ERROR: $name has missing Sequence tag (Remark: $remark)\n");$errors++
-            }
+    }
 
 # The bit below is commented out, as there are sadly some alleles connected to sequences without source that can't be moved :-(
 
@@ -163,25 +163,25 @@ sub _filter_alleles {
 #        }
 
     # no left flanking sequence
-        elsif (!defined $allele->Flanking_sequences){
+    elsif (!defined $allele->Flanking_sequences){
             $log->write_to("ERROR: $name has no left Flanking_sequence (Remark: $remark)\n");$errors++
-        }                                                                        
+    }                                                                        
 
     # no right flanking sequence
-        elsif (!defined $allele->Flanking_sequences->right || ! defined $allele->Flanking_sequences->right->name ) {
+    elsif (!defined $allele->Flanking_sequences->right || ! defined $allele->Flanking_sequences->right->name ) {
                     $log->write_to("ERROR: $name has no right Flanking_sequence (Remark: $remark)\n");$errors++
-        }       
+    }       
 
     # empty flanking sequence
-        elsif (!defined $allele->Flanking_sequences->name ) {
+    elsif (!defined $allele->Flanking_sequences->name ) {
                     $log->write_to("ERROR: $name has no left Flanking_sequence (Remark: $remark)\n");$errors++
-        }
-        elsif ($allele->Type_of_mutation eq 'Substitution' && !defined $allele->Type_of_mutation->right){
+    }
+    elsif ($allele->Type_of_mutation eq 'Substitution' && !defined $allele->Type_of_mutation->right){
                     $log->write_to("WARNING: $name has no from in the substitution tag (Remark: $remark)\n");
     }
     
     # has spaces or numbers in the DNA sequence strings
-        elsif (($allele->Type_of_mutation eq 'Substitution') && 
+    elsif (($allele->Type_of_mutation eq 'Substitution') && 
         ($allele->Type_of_mutation->right=~/\d|\s/ || $allele->Type_of_mutation->right->right=~/\d|\s/)){
         $log->write_to("ERROR: $name has numbers an/or spaces in the from/to tags (Remark: $remark)\n");$errors++
     }
@@ -223,8 +223,8 @@ sub map {
           # is spitting out as an error are in fact massive and
           # OK.
           # Since this dataset is pretty much complete I think
-                  # it would be OK to exclude niDf* alleles from the "is it massive"
-                  # check.
+          # it would be OK to exclude niDf* alleles from the "is it massive"
+          # check.
           if ($x->name !~ /^niDf/) {
             $log->write_to("ERROR: $x is massive\n");
             $errors++;
@@ -235,6 +235,7 @@ sub map {
         # from flanks to variation
         if ($map[2]>$map[1]){$map[1]++;$map[2]--}
         else {$map[1]--;$map[2]++}
+
         #------------------------------------------------------------------------
         my ($chromosome,$start)=$mapper->Coords_2chrom_coords($map[0],$map[1]);
         my ($drop,$stop)=$mapper->Coords_2chrom_coords($map[0],$map[2]);
@@ -438,7 +439,7 @@ sub get_possible_genes {
     return \%allele2gene;
 }
 
-# print possible gene thigns for CGH
+# print possible gene things for CGH (test)
 sub print_possible_genes {
     my ($name,$possible,$real,$fh)=@_;
     my %bad_keys;
@@ -511,12 +512,12 @@ sub get_cds {
                     map{$sequence=join("",$sequence,&get_seq($_->{chromosome},$_->{start},$_->{stop},$_->{orientation}))} @coding_exons;
                     
                     # get position in cds
-                                        my $cds_position=0;
+                    my $cds_position=0;
                     my $exon=1;
                     foreach my $c_exon(@coding_exons){
                         if ($v->{'start'}<=$c_exon->{'stop'} && $v->{'stop'}>=$c_exon->{'start'}){
                             if ($c_exon->{'orientation'} eq '+'){$cds_position+=($v->{'start'}-$c_exon->{'start'}+1)}
-                            else{$cds_position+=($c_exon->{'stop'}-$v->{'start'}+1)}
+                            else{$cds_position+=($c_exon->{'stop'}-$v->{'stop'}+1)} # <= start->stop
                             last;
                         }      
                         else{
@@ -561,7 +562,7 @@ sub get_cds {
 		           "ERROR: $k FROM/TO tags seem to be messed up, as $original_from (reference) is not $from_na or ${\$v->{allele}->Type_of_mutation->right}\n"
 			 );
 			 $errors++;
-                          next;
+                         next;
                     }
                     $original_from=substr($from_codon,$frame,length($from_na),$from_na);
                     
@@ -571,11 +572,10 @@ sub get_cds {
                     my $to_codon=$from_codon;
                     $to_na=Bio::Seq->new(-seq => $to_na,-alphabet => 'dna')->revcom->seq if $flipped==1;
 
-                                        next unless ($frame +length($to_na) < 4);
+                    next unless ($frame +length($to_na) < 4);
 
                     substr($to_codon,$frame,length($to_na),$to_na);
                     my $to_aa=$table->translate($to_codon);
-
                     
                     
                     # silent mutation
@@ -671,6 +671,7 @@ sub get_cds {
             }
         }
     }
+
     if ($wb->debug){
         foreach my $cds_name (keys %cds) {
             foreach my $type(keys %{$cds{$cds_name}}){
