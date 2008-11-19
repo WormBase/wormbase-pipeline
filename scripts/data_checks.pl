@@ -6,8 +6,8 @@
 #
 # This is a example of a good script template
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2008-09-30 15:35:09 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2008-11-19 10:45:52 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -119,8 +119,8 @@ sub pass_check {
 
 sub read_acedb_queries { 
     my @queries;
-    my $org = $wormbase->species;
-    if($org eq 'elegans'){    
+    my $species = $wormbase->species;
+    if($species eq 'elegans'){    
 	@queries = (
 		   ["The number of RNAi experiments with more than one associated Gene", 'find rnai COUNT gene > 1 AND uniquely_mapped', 2034],
 		   ["The number of RNAi results with connections to genes", 'find RNAi Gene', 73394],
