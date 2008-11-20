@@ -118,8 +118,6 @@ foreach my $chroms (@chroms) {
   close NEW;
   move("$gff_file.new",$gff_file) unless $wormbase->assembly_type eq 'contig' ;
 }
-my $gff_file = $wormbase->GFF_file_name();
-#move("$gff_file.new",$gff_file) if $wormbase->assembly_type eq 'contig' ;
 
 
 $log->mail();
