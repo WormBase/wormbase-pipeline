@@ -223,8 +223,8 @@ while (<BLAST>) {
 
   # check if next protein
   if ( $current_pep and $current_pep ne $proteinId ) {  
-    &dumpData ($current_pep,\%worm_matches,\%human_matches,\%fly_matches,\%yeast_matches,\%swiss_matches,\%trembl_matches,\%brig_matches, \%rem_matches,\%jap_matches,\%bre_matches) 
-            if (%worm_matches or %human_matches or %fly_matches or %yeast_matches or %swiss_matches or %trembl_matches or %brig_matches or %rem_matches or %jap_matches or %bre_matches);
+    &dumpData ($current_pep,\%worm_matches,\%human_matches,\%fly_matches,\%yeast_matches,\%swiss_matches,\%trembl_matches,\%brig_matches, \%rem_matches,\%jap_matches,\%bre_matches,\%ppa_matches) 
+            if (%worm_matches or %human_matches or %fly_matches or %yeast_matches or %swiss_matches or %trembl_matches or %brig_matches or %rem_matches or %jap_matches or %bre_matches or %ppa_matches);
 
     #undef all hashes
     %worm_matches = ();
