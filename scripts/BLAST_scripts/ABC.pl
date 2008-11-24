@@ -7,7 +7,7 @@
 # This is a script to automate the sections A, B and C of the BLAST Build
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-11-24 13:34:09 $      
+# Last updated on: $Date: 2008-11-24 13:57:15 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -43,8 +43,6 @@ if (!defined $password) {
   print "wormpub password> ";
   $password = <STDIN>;
 }
-
-$debug = "gw3";
 
 if ( $store ) {
   $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
@@ -150,7 +148,7 @@ foreach my $species (@species) {
   print "  Running dump_blastp_from_file.pl . . .\n" if ($verbose);
   my $cmd = "/software/bin/perl \$CVS_DIR/BLAST_scripts/dump_blastp_from_file.pl $species.srt -version $version -matches -database worm_$species";
   $cmd .= " -store $store_file";
-  print "cmd = $cmd";
+  #print "cmd = $cmd\n";
   $exp->send("$cmd\n");
   &wait_for_prompt($exp);
   $exp->send("rm -f /lustre/work1/ensembl/wormpipe/sort_dump/junk*.*\n");
@@ -160,12 +158,13 @@ foreach my $species (@species) {
   print "  Running Motif data . . .\n";
   $cmd = "/software/bin/perl \$CVS_DIR/BLAST_scripts/dump_motif.pl -database worm_ensembl_$species";
   $cmd .= " -store $store_file";
+  #print "cmd = $cmd\n";
   $exp->send("$cmd\n");
   &wait_for_prompt($exp);
 
   $cmd = "/software/bin/perl \$CVS_DIR/BLAST_scripts/dump_interpro_motif.pl -database worm_ensembl_$species";
   $cmd .= " -store $store_file";
-  print "cmd = $cmd";
+  #print "cmd = $cmd\n";
   $exp->send("$cmd\n");
   &wait_for_prompt($exp);
 
@@ -173,7 +172,7 @@ foreach my $species (@species) {
   print "  Running Repeat data . . .\n" if ($verbose);
   $cmd = "/software/bin/perl \$CVS_DIR/BLAST_scripts/dump_repeats.pl -database worm_ensembl_$species";
   $cmd .= " -store $store_file";
-  print "cmd = $cmd";
+  #print "cmd = $cmd\n";
   $exp->send("$cmd\n");
   &wait_for_prompt($exp);
 
