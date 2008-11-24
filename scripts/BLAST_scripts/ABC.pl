@@ -7,7 +7,7 @@
 # This is a script to automate the sections A, B and C of the BLAST Build
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-11-24 11:21:34 $      
+# Last updated on: $Date: 2008-11-24 11:48:04 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -180,7 +180,7 @@ foreach my $species (@species) {
 }
 
 $log->mail();
-print "Finished.\n" if ($verbose);
+print "\nFinished.\n";
 exit(0);
 
 
