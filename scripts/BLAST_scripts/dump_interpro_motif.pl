@@ -5,7 +5,7 @@
 # Dumps InterPro protein motifs from ensembl mysql (protein) database to an ace file
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2008-10-14 16:13:21 $
+# Last updated on: $Date: 2008-11-24 14:50:12 $
 
 
 use strict;
@@ -389,7 +389,7 @@ sub get_interpro {
   {				# 
 				#Get the latest version
     print "Attempting to FTP the latest version of interpro.xml from ebi \n" if ($verbose);
-    `wget -O $latest_version.gz ftp://ftp.ebi.ac.uk/pub/databases/interpro/interpro.xml.gz`;
+    `wget --cache=off -O $latest_version.gz ftp://ftp.ebi.ac.uk/pub/databases/interpro/interpro.xml.gz`;
     `gunzip "${latest_version}.gz"`;
   }
   else {
