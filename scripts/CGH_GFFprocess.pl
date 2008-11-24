@@ -37,7 +37,7 @@ my %alleles;
 $dbpath = ($dbpath or $wormbase->orgdb);
 my $db = Ace->connect('-path' => $dbpath) or $log->log_and_die("cant open Ace connection to $dbpath\n".Ace->error."\n");
 my $query = "find Variation ";
-$query .= defined $allele ? "\"$allele\"" : "where Natural_variant";
+$query .= defined $allele ? "\"$allele\"" : "where CGH_deleted_probes";
 
 my $vars = $db->fetch_many('-query' => $query);
 while (my $cgh = $vars->next){
