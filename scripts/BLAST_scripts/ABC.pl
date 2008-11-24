@@ -7,7 +7,7 @@
 # This is a script to automate the sections A, B and C of the BLAST Build
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-11-24 11:48:04 $      
+# Last updated on: $Date: 2008-11-24 13:34:09 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -140,36 +140,47 @@ foreach my $species (@species) {
   $log->write_to("  Sorting $species.srt . . .\n");
   print "  Sorting $species.srt . . .\n" if ($verbose);
   $exp->send("setenv SORT_OPTS \"-k2,2 -k8,8n -k10,10nr\"\n");
+  &wait_for_prompt($exp);
   $exp->send("cd /lustre/work1/ensembl/wormpipe/sort_dump\n");
+  &wait_for_prompt($exp);
   $exp->send("time sort -m -S 2G -T tmp \$SORT_OPTS junk*.srt -o $species.srt\n"); 
+  &wait_for_prompt($exp);
 
   $log->write_to("  Running dump_blastp_from_file.pl . . .\n");
   print "  Running dump_blastp_from_file.pl . . .\n" if ($verbose);
   my $cmd = "/software/bin/perl \$CVS_DIR/BLAST_scripts/dump_blastp_from_file.pl $species.srt -version $version -matches -database worm_$species";
   $cmd .= " -store $store_file";
+  print "cmd = $cmd";
   $exp->send("$cmd\n");
+  &wait_for_prompt($exp);
   $exp->send("rm -f /lustre/work1/ensembl/wormpipe/sort_dump/junk*.*\n");
+  &wait_for_prompt($exp);
 
   $log->write_to("  Running Motif data . . .\n") if ($verbose);
   print "  Running Motif data . . .\n";
   $cmd = "/software/bin/perl \$CVS_DIR/BLAST_scripts/dump_motif.pl -database worm_ensembl_$species";
   $cmd .= " -store $store_file";
   $exp->send("$cmd\n");
+  &wait_for_prompt($exp);
 
   $cmd = "/software/bin/perl \$CVS_DIR/BLAST_scripts/dump_interpro_motif.pl -database worm_ensembl_$species";
   $cmd .= " -store $store_file";
+  print "cmd = $cmd";
   $exp->send("$cmd\n");
+  &wait_for_prompt($exp);
 
   $log->write_to("  Running Repeat data . . .\n");
   print "  Running Repeat data . . .\n" if ($verbose);
   $cmd = "/software/bin/perl \$CVS_DIR/BLAST_scripts/dump_repeats.pl -database worm_ensembl_$species";
   $cmd .= " -store $store_file";
+  print "cmd = $cmd";
   $exp->send("$cmd\n");
+  &wait_for_prompt($exp);
 
   $log->write_to("  Logging out of wormpub . . .\n");
   print "  Logging out of wormpub . . .\n" if ($verbose);
 
-  $exp->send("sleep 10\n"); # rest a while and survey the fruit of our labours
+  #$exp->send("sleep 10\n"); # rest a while and survey the fruit of our labours
 
   #$exp->send("exit\n");		# from the 'script' command
   $exp->send("exit\n");		# from the ssh session
@@ -194,7 +205,12 @@ exit(0);
 #
 ##############################################################
 
+sub wait_for_prompt {
+  my $exp = shift @_;
+  my $timeout = 36000;
+  $exp->expect($timeout, [ qr'\[wormpub]\d+: $' ] ); # wait for the prompt
 
+}
 
 ##########################################
 
