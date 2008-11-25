@@ -1,7 +1,7 @@
 #/software/bin/perl -w
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2008-11-25 14:21:24 $
+# Last updated on: $Date: 2008-11-25 16:00:14 $
 
 #################################################################################
 # Variables                                                                     #
@@ -143,6 +143,18 @@ foreach my $spDB (values %accessors) {
     }
   }
 }
+
+
+$log->write_to("\nNow loading briggsae TEC-RED homol data . . .\n");
+# NB use run_command, not run_script because we wish to force use of briggsae db, and not add on '-store Elegans'
+$wormbase->run_command("/software/bin/perl \$CVS_DIR/map_tec-reds.pl -species briggsae");
+my $briggsaeDB = Wormbase->new( 
+			       -debug   => $wormbase->debug,
+			       -test     => $wormbase->test,
+			       -organism => 'briggsae'
+			       );	
+$wormbase->load_to_database($wormbase->orgdb, $briggsaeDB->acefiles."/misc_TEC_RED_homol.ace", "merge_all_species", $log);
+$wormbase->load_to_database($wormbase->orgdb, $briggsaeDB->acefiles."/misc_TEC_RED_homol_data.ace", "merge_all_species", $log);
 
 $log->mail;
 
