@@ -78,7 +78,7 @@ my %species_taxon_hash=("Caenorhabditis elegans"  => 6239,
 			"Brugia pahangi"          => 6280,
 			"Onchocerca volvulus"     => 6282,
 			"Pristionchus pacificus"  => 54126,
-			'Caenorhabditis japonica' => 228167,
+			'Caenorhabditis japonica' => 281687,
 			);
 
 my %name_hash=();
@@ -189,6 +189,7 @@ if ($gene) {
 		    $syn=$seq_name_hash{$obj};
 		}
 		my $taxon="taxon:$species_taxon_hash{$species}";
+		if (!exists $species_taxon_hash{$species}) {print "ERROR: missing species = $species\n";}
 		my $a=$aspect{lc $go_type};
 		my $type="gene";
 		print $out "WB\t$obj\t$public_name\t\t$term\t$ref\t$tmp[3]\t$with\t$a\t\t$syn\t$type\t$taxon\t$date\tWB\n";
@@ -413,13 +414,19 @@ maxsize => 12000000,
 lines => ['^WB\tWBGene\d+\t\S+\t\tGO\:\d+'],
 );
 
-$wormbase->check_file("$output.cb", $log,
+$wormbase->check_file("$output.cjp", $log,
 minsize =>  4500000,
 maxsize => 12000000,
 lines => ['^WB\tWBGene\d+\t\S+\t\tGO\:\d+'],
 );
 
-$wormbase->check_file("$output.crem", $log,
+$wormbase->check_file("$output.ppa", $log,
+minsize =>  4500000,
+maxsize => 12000000,
+lines => ['^WB\tWBGene\d+\t\S+\t\tGO\:\d+'],
+);
+
+$wormbase->check_file("$output.rem", $log,
 minsize =>  4500000,
 maxsize => 12000000,
 lines => ['^WB\tWBGene\d+\t\S+\t\tGO\:\d+'],
