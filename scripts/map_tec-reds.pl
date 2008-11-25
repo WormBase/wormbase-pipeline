@@ -16,7 +16,7 @@ use Ace;
 use Coords_converter;
 use Getopt::Long;
 
-my ( $help, $debug, $test, $store );
+my ( $help, $debug, $test, $store, $species );
 my $verbose;    # for toggling extra output
 
 
@@ -29,11 +29,8 @@ GetOptions(
     "debug=s"   => \$debug,
     "test"      => \$test,
     "store:s"   => \$store,
-);
-
-#$test = 1;
-#$debug = "gw3";
-
+    "species:s" => \$species,
+	   );
 
 # Display help if required
 &usage("Help") if ($help);
@@ -43,17 +40,16 @@ my $wormbase;
 if ( $store ) {
   $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
 } else {
-  $wormbase = Wormbase->new( -debug   => $debug,
-                             -test    => $test,
+  $wormbase = Wormbase->new( -debug    => $debug,
+                             -test     => $test,
+			     -organism => $species,
                              );
 }
 
 
 my $log = Log_files->make_build_log($wormbase);
 
-my $currentdb = $wormbase->database('current');	# use autoace when debugged 
-my $ace_dir = $wormbase->autoace;     # AUTOACE DATABASE DIR
-#my $database_path = $currentdb;     # full path to local AceDB database; change as appropriate
+my $ace_dir = $wormbase->autoace;     
 my $database_path = $ace_dir;     # full path to local AceDB database; change as appropriate
 my $program = $wormbase->tace;  # full path to tace; change as appropriate
 
@@ -61,8 +57,6 @@ print "connecting to server...";
 my $db = Ace->connect(-path => $database_path,  -program => $program) || die print "Connection failure: ", Ace->error;  # local database
 print "done\n";
 my $coords = Coords_converter->invoke($database_path, 0, $wormbase);
-my %clonesize = $wormbase->FetchData('clonesize');
-
 
 my $query="find Feature\nwhere Method = \"SL*\"\nshow -a\nquit\n";
 
@@ -74,7 +68,16 @@ my $prev_tec_red = "";		# to stop processing useless duplicates
 my $feature;
 my %homol_data;
 
-my $output = $wormbase->misc_dynamic."/misc_TEC_RED_homol.ace";
+my $output;
+my $output2;
+if ($wormbase->species eq 'elegans') {
+  $output = $wormbase->misc_dynamic."/misc_TEC_RED_homol.ace";
+  $output2 = $wormbase->misc_dynamic."/misc_TEC_RED_homol_data.ace";
+} else {
+  $output = $wormbase->acefiles."/misc_TEC_RED_homol.ace";
+  $output2 = $wormbase->acefiles."/misc_TEC_RED_homol_data.ace";
+}
+
 open (OUT, "> $output") || die "Can't open $output\n";
 open (TACE, "echo '$query' | $tace $database_path |");
 while (my $line = <TACE>) {
@@ -101,7 +104,6 @@ close TACE;
 close(OUT);
 
 # write out the Sequence object's Homol_data
-my $output2 = $wormbase->misc_dynamic."/misc_TEC_RED_homol_data.ace";
 open (OUT2, "> $output2") || die "Can't open $output\n";
 foreach my $clone (keys %homol_data) {
   my $clonelen = &get_clone_len($clone);
@@ -187,16 +189,8 @@ sub map_tec_red {
 sub get_clone_len {
   my ($clone) = @_;
 
-  my $clonelen = $clonesize{$clone};
-
-  if (! defined $clonelen) {
-    if ($clone =~ /SUPERLINK/ || $clone =~ /CHROMOSOME/) {
-      # get the Superlink lengths from the Coords_converter data
-      $clonelen = $coords->Superlink_length($clone);
-    } else {
-      die "undef returned for length of $clone\n";
-    }
-  }
+  # get the clone/superlink/chromosome lengths from the Coords_converter data
+  my $clonelen = $coords->Superlink_length($clone);
 
   return $clonelen;
 
