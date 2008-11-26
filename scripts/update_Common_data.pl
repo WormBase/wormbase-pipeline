@@ -5,7 +5,7 @@
 # by Anthony Rogers et al
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2008-11-26 13:14:21 $
+# Last updated on: $Date: 2008-11-26 13:49:50 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -155,7 +155,7 @@ if ($all) {
     my $err = "$scratch_dir/update_Common_data.pl.lsf.${arg}.err";
     my $out = "$scratch_dir/update_Common_data.pl.lsf.${arg}.out";
     my @bsub_options = (-e => "$err", -o => "$out");
-
+    if ($arg eq 'clone2seq') {push @bsub_options, (-F => "3000000", -M => "3500000", -R => "\"select[mem>3500] rusage[mem=3500]\"");}
     my $cmd = "update_Common_data.pl -${arg}";
     $cmd = $wormbase->build_cmd_line($cmd, $store_file);
     $lsf->submit(@bsub_options, $cmd);
