@@ -8,7 +8,7 @@
 # Originally written by Dan Lawson
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2008-11-26 14:19:29 $
+# Last updated on: $Date: 2008-11-26 15:39:32 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -535,7 +535,7 @@ sub copy_wormpep_files {
 			my $sourcefile = "$source/$file$WS";
 			$wormbase->run_command("cp $sourcefile $wp_ftp_dir/$file$WS", $log);
 			&CheckSize("$sourcefile","$wp_ftp_dir/$file$WS");
-			$wormbase->run_command("ln -sf $wp_ftp_dir/$file$WS $wormpep_ftp_root/$file");
+			$wormbase->run_command("ln -sf $wp_ftp_dir/$file$WS $wormpep_ftp_root/$file", $log);
 		}
 	}
 
