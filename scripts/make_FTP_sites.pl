@@ -7,8 +7,8 @@
 # 
 # Originally written by Dan Lawson
 #
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2008-11-10 15:12:20 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2008-11-26 14:19:29 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -435,7 +435,7 @@ sub copy_rna_files{
     my $rnadir = $wb->wormrna;
 
     if( -e "$rnadir") {
-      my $ftprna_dir = "$targetdir/$WS_name/genomes/".$wb->full_name('-g_spsecies' => 1)."/sequences/rna";
+      my $ftprna_dir = "$targetdir/$WS_name/genomes/".$wb->full_name('-g_species' => 1)."/sequences/rna";
       mkpath($ftprna_dir,1,0775);
       $wormbase->run_command("cp -R $rnadir/* $ftprna_dir/", $log);
       chdir "$ftprna_dir" or $log->write_to("Couldn't cd $ftprna_dir\n");
