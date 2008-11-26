@@ -5,7 +5,7 @@
 # by Anthony Rogers et al
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2008-11-26 12:17:25 $
+# Last updated on: $Date: 2008-11-26 13:14:21 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -323,7 +323,7 @@ sub write_clone2centre{
 
 
 sub write_clones2sv  {   
-
+  $log->write_to("Updating clones2sv\n");
     my %clone2sv;
     
     # connect to AceDB using TableMaker,
@@ -354,7 +354,7 @@ sub write_clones2sv  {
 ########################################################################################################
 
 sub write_clone2type  {   
-
+  $log->write_to("Updating clone2type\n");
     my %clone2type;
     
     # connect to AceDB using TableMaker,
@@ -386,6 +386,7 @@ sub write_clone2type  {
 ########################################################################################################
 
 sub write_clonesize  {   
+  $log->write_to("Updating clone2size\n");
 
   my %clonesize;
   
@@ -423,6 +424,7 @@ sub write_clonesize  {
 ########################################################################################################
 
 sub write_cds2wormpep  {   
+  $log->write_to("Updating cds2wormpep\n");
 
   use File::Temp qw /:POSIX/;
   my $fname = File::Temp::tmpnam('/tmp/');
@@ -473,7 +475,8 @@ sub write_cds2wormpep  {
 
 
 sub write_cds2status  {   
-    
+  $log->write_to("Updating cds2status\n");
+
     my %cds2status;
     my @f;
 
@@ -508,6 +511,7 @@ sub write_cds2status  {
 ########################################################################################################
 
 sub write_cds2cgc {
+  $log->write_to("Updating cds2cgc\n");
 
   # connect to AceDB using TableMaker,
   my $command="Table-maker -p $wquery_dir/$Table_defs{'cds2cgc'}\nquit\n";
@@ -539,7 +543,7 @@ sub write_cds2cgc {
 
 sub write_Feature  {   
 
-  $log->write_to("Updating write_Feature\n");
+  $log->write_to("Updating est2feature\n");
   my %est2feature;
   my $EST;
   my $feature;
@@ -572,7 +576,7 @@ sub write_Feature  {
 
 sub write_EST  {   
 
-  $log->write_to("Updating write_EST\n");
+  $log->write_to("Updating estdata\n");
   my %NDBaccession2est;
   my %estorientation;
   my @f;
