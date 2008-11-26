@@ -18,7 +18,7 @@ die "give me a number of features that you want\n"  unless ($request =~ /^\d+$/)
 my $DB    	= 'wbgene_id;mcs2a;3305';
 $DB = 'test_'.$DB if $test;
 my $DOMAIN  = 'Feature';
-my $db = NameDB_handler->new($DB,$USER,$USER);
+my $db = NameDB_handler->new($DB,$USER,$USER,"/nfs/WWWdev/SANGER_docs/data");
     $db->setDomain('Feature');
 
 my $c = 0;
