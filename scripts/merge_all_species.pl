@@ -1,7 +1,7 @@
 #/software/bin/perl -w
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2008-11-25 16:00:14 $
+# Last updated on: $Date: 2008-11-26 09:23:11 $
 
 #################################################################################
 # Variables                                                                     #
@@ -46,6 +46,7 @@ my $log = Log_files->make_build_log($wormbase);
 $log->write_to("hacked version of merge_all_species\n\n");
 
 my %accessors = $wormbase->species_accessors;
+
 
 # move all the old MERGE files out of the way
 $log->write_to("\nRemove the old MERGE ace files . . .\n");
@@ -127,11 +128,11 @@ foreach my $spDB (values %accessors) {
 
 
 
-$log->write_to("\nNow loading BLAST and repeat data . . .\n");
+$log->write_to("\nNow loading BLAST, protein and repeat data . . .\n");
 foreach my $spDB (values %accessors) {
   my $species = $spDB->species;
   $log->write_to("  Load BLAST from $species . . .\n");
-  my @blastfiles = qw( SPECIES_blastp.ace SPECIES_blastx.ace worm_ensembl_SPECIES_interpro_motif_info.ace worm_ensembl_SPECIES_motif_info.ace repeat_homologies.ace inverted_repeats.ace );
+  my @blastfiles = qw( SPECIES_blastp.ace SPECIES_blastx.ace worm_ensembl_SPECIES_interpro_motif_info.ace worm_ensembl_SPECIES_motif_info.ace repeat_homologies.ace inverted_repeats.ace pepace.ace);
   foreach my $f (@blastfiles){
     my $file = $f;		# don't use $f as it is a reference to the array element
     $file =~ s/SPECIES/$species/;
@@ -155,6 +156,7 @@ my $briggsaeDB = Wormbase->new(
 			       );	
 $wormbase->load_to_database($wormbase->orgdb, $briggsaeDB->acefiles."/misc_TEC_RED_homol.ace", "merge_all_species", $log);
 $wormbase->load_to_database($wormbase->orgdb, $briggsaeDB->acefiles."/misc_TEC_RED_homol_data.ace", "merge_all_species", $log);
+
 
 $log->mail;
 
