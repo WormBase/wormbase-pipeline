@@ -4,8 +4,8 @@
 # 
 # by Anthony Rogers et al
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2008-09-22 11:28:10 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2008-11-26 12:17:25 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -18,6 +18,8 @@ use Data::Dumper;
 use Getopt::Long;
 use Storable;
 use Log_files;
+use LSF RaiseError => 0, PrintError => 1, PrintOutput => 0;
+use LSF::JobManager;
 
 ##############################
 # command-line options       #
@@ -29,6 +31,7 @@ my $test;              # test mode, uses ~wormpub/TEST_BUILD
 my $all;               # performs all of the below options:
 my $debug;
 my $species;
+my $verbose;
      
 my $clone2accession;   # Hash: %clone2accession     Key: Genomic_canonical                 Value: GenBank/EMBL accession
                        # Hash: %accession2clone     Key: GenBank/EMBL accession            Value: Genomic_canonical
@@ -77,7 +80,8 @@ GetOptions (
 	    "debug:s"            => \$debug,
 	    "clone2type"         => \$clone2type,
 	    "cds2cgc"            => \$cds2cgc,
-	    "species:s"			 => \$species
+	    "species:s"		 => \$species,
+	    "verbose"            => \$verbose,
 	   );
 
 my $wormbase;
@@ -134,27 +138,60 @@ $log->write_to("Updating COMMON_DATA in $data_dir\n");
 
 our $tace = $wormbase->tace;
 
+# run '-all' Common_data dumps under LSF
+if ($all) { 
 
-# run the various options depending on command line arguments
-&write_cds2protein_id   if ($cds2protein_id   || $all);
-&write_clone2accession  if ($clone2accession  || $all);
-&write_clonesize        if ($clone2size       || $all);
-&write_cds2wormpep      if ($cds2wormpep      || $all);
-&write_cds2status       if ($cds2status       || $all);
-&write_cds2cgc          if ($cds2cgc          || $all);
-&write_clones2seq       if ($clone2seq        || $all);
-&write_clones2sv        if ($clone2sv         || $all);
-&write_clone2type       if ($clone2type       || $all);
-&write_clone2centre     if ($clone2centre     || $all);
-&write_genes2lab        if ($genes2lab        || $all);
-&write_worm_gene2class  if ($worm_gene2class  || $all);
-&write_EST              if ($estdata          || $all);
-&write_Feature          if ($est2feature      || $all);
-&write_Gene_id          if ($cds2gene_id      || $all);
-&write_worm_gene2geneID if ($worm_gene2geneID || $all);
-&write_worm_gene2cgc    if ($worm_gene2cgc    || $all);
+  my @all_args = qw( clone2acc clone2size cds2wormpep cds2pid
+	    cds2status clone2seq clone2sv clone2centre genes2lab
+	    worm_gene2cgc worm_gene2geneID worm_gene2class est
+	    est2feature gene_id clone2type cds2cgc );
 
-# hasta luego
+  $wormbase->checkLSF;
+  my $lsf = LSF::JobManager->new();
+  my $store_file = $wormbase->build_store; # make the store file to use in all commands
+  my $scratch_dir = $wormbase->logs;
+  
+  foreach my $arg (@all_args) {
+    my $err = "$scratch_dir/update_Common_data.pl.lsf.${arg}.err";
+    my $out = "$scratch_dir/update_Common_data.pl.lsf.${arg}.out";
+    my @bsub_options = (-e => "$err", -o => "$out");
+
+    my $cmd = "update_Common_data.pl -${arg}";
+    $cmd = $wormbase->build_cmd_line($cmd, $store_file);
+    $lsf->submit(@bsub_options, $cmd);
+  }
+
+  $lsf->wait_all_children( history => 1 );
+  $log->write_to("All Common_data jobs have completed!\n");
+  my @problem_cmds;
+  for my $job ( $lsf->jobs ) {
+    if ($job->history->exit_status != 0) {
+      $log->write_to("Job $job (" . $job->history->command . ") exited non zero\n");
+      push @problem_cmds, $job->history->command;
+    }
+  }
+  $lsf->clear;
+
+} else {
+  # run the various options depending on command line arguments
+  &write_cds2protein_id   if ($cds2protein_id);
+  &write_clone2accession  if ($clone2accession);
+  &write_clonesize        if ($clone2size);
+  &write_cds2wormpep      if ($cds2wormpep);
+  &write_cds2status       if ($cds2status);
+  &write_cds2cgc          if ($cds2cgc);
+  &write_clones2seq       if ($clone2seq);
+  &write_clones2sv        if ($clone2sv);
+  &write_clone2type       if ($clone2type);
+  &write_clone2centre     if ($clone2centre);
+  &write_genes2lab        if ($genes2lab);
+  &write_worm_gene2class  if ($worm_gene2class);
+  &write_EST              if ($estdata);
+  &write_Feature          if ($est2feature);
+  &write_Gene_id          if ($cds2gene_id);
+  &write_worm_gene2geneID if ($worm_gene2geneID);
+  &write_worm_gene2cgc    if ($worm_gene2cgc);
+}
 
 $log->mail;
 exit(0);
