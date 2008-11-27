@@ -2,8 +2,8 @@
 #
 # prepare_primary_databases.pl
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2008-11-11 16:24:45 $
+# Last edited by: $Author: mh6 $
+# Last edited on: $Date: 2008-11-27 14:49:42 $
 
 use strict;
 my $scriptdir = $ENV{'CVS_DIR'};
@@ -53,7 +53,8 @@ $species = $wormbase->species;
 
 my %databases;
 if( $species ne 'elegans') {
-	$databases{$species}->{'search'} = "stl/$species*";
+	my $shorthand = substr($species,0,4);
+	$databases{$species}->{'search'} = "stl/$shorthand*";
 }
 else {
 	$databases{'stlace'}->{'search'} = 'stl/stlace*';
