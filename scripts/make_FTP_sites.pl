@@ -7,8 +7,8 @@
 # 
 # Originally written by Dan Lawson
 #
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2008-11-27 09:22:56 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2008-11-27 11:48:44 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -294,19 +294,19 @@ sub copy_dna_files{
     if (-e "$chromdir") {
       my $dna_dir = "$targetdir/$WS_name/genomes/$gspecies/sequences/dna";
       mkpath($dna_dir,1,0775);
-	#todd wants all species to have whole genome in one file
-	if ($wormbase->assembly_type eq 'contig') {
-		my $dna_file = "$chromdir/supercontigs.fa";
-		my $masked_file = "$chromdir/".$gspecies."_masked.dna";
-		my $soft_file = "$chromdir/".$gspecies."_masked.dna";
+      #todd wants all species to have whole genome in one file
+      if ($wb->assembly_type eq 'contig') {
+	my $dna_file = "$chromdir/supercontigs.fa";
+	my $masked_file = "$chromdir/".$gspecies."_masked.dna";
+	my $soft_file = "$chromdir/".$gspecies."_masked.dna";
 		
-		$wormbase->run_command("/bin/gzip -f $dna_file > $dna_dir/".$gspecies."$WS_name.dna.fa",$log);
-		$wormbase->run_command("cp -f $soft_file $dna_dir/".$gspecies."_softmasked.$WS_name.dna.fa.gz", $log);
-		$wormbase->run_command("cp -f $masked_file $dna_dir/".$gspecies."_masked.$WS_name.dna.fa.gz", $log);
+	$wormbase->run_command("/bin/gzip -f $dna_file > $dna_dir/".$gspecies."$WS_name.dna.fa",$log);
+	$wormbase->run_command("cp -f $soft_file $dna_dir/".$gspecies."_softmasked.$WS_name.dna.fa.gz", $log);
+	$wormbase->run_command("cp -f $masked_file $dna_dir/".$gspecies."_masked.$WS_name.dna.fa.gz", $log);
 		
-      }elsif($wb->assembly_type eq 'chromosome') {
-		$wormbase->run_command("cp -R $chromdir/*.dna* $dna_dir/", $log);
-      }
+      } elsif ($wb->assembly_type eq 'chromosome') {
+	$wormbase->run_command("cp -R $chromdir/*.dna* $dna_dir/", $log);
+      } else {$log->error("$gspecies : unknown assembly_type\n")}
       $wb->run_command("cp -R $chromdir/*.agp $dna_dir/", $log) if (scalar glob("$chromdir/*.agp"));
 
       # change group ownership
@@ -968,13 +968,13 @@ WORMrnaREL.tar.gz
 WORMrna.WSREL.rna.fa.gz
 
 ./genomes/c_elegans/genome_feature_tables/GFF2
-CHROMOSOME_I.gff.gz
-CHROMOSOME_II.gff.gz
-CHROMOSOME_III.gff.gz
-CHROMOSOME_IV.gff.gz
-CHROMOSOME_MtDNA.gff.gz
-CHROMOSOME_V.gff.gz
-CHROMOSOME_X.gff.gz
+CHROMOSOME_I.gff
+CHROMOSOME_II.gff
+CHROMOSOME_III.gff
+CHROMOSOME_IV.gff
+CHROMOSOME_MtDNA.gff
+CHROMOSOME_V.gff
+CHROMOSOME_X.gff
 composition.all
 totals
 
@@ -988,12 +988,7 @@ mSplicer_orf.gff
 mSplicer_transcript.gff
 miranda.gff
 pictar.gff
-CHROMOSOME_I_curation_anomalies.gff
-CHROMOSOME_II_curation_anomalies.gff
-CHROMOSOME_III_curation_anomalies.gff
-CHROMOSOME_IV_curation_anomalies.gff
-CHROMOSOME_V_curation_anomalies.gff
-CHROMOSOME_X_curation_anomalies.gff
+elegans_curation_anomalies.gff
 
 ./genomes/c_briggsae/genome_feature_tables/GFF2
 chrI.gff
