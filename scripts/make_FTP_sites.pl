@@ -8,7 +8,7 @@
 # Originally written by Dan Lawson
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2008-11-27 14:14:49 $
+# Last updated on: $Date: 2008-11-27 15:58:28 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -808,11 +808,10 @@ sub copy_homol_data {
   $runtime = $wormbase->runtime;
   $log->write_to("$runtime: copying homol files\n");
 
-  my $blast_dir = $wormbase->acefiles;
- 
   my %accessors = ($wormbase->species_accessors);
   $accessors{elegans} = $wormbase;
   foreach my $wb (values %accessors) {
+    my $blast_dir = $wb->acefiles;
     my $species = $wb->species;
     my $source_file = "$blast_dir/${species}_best_blastp_hits";
     if(-e $source_file || -e "$source_file.gz") { # this script might be run more than once if there are problems
