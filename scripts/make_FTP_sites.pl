@@ -8,7 +8,7 @@
 # Originally written by Dan Lawson
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2008-11-27 13:45:17 $
+# Last updated on: $Date: 2008-11-27 14:14:49 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -301,7 +301,8 @@ sub copy_dna_files{
 	my $masked_file = "$chromdir/".$species."_masked.dna.gz";
 	my $soft_file = "$chromdir/".$species."_softmasked.dna.gz";
 		
-	$wormbase->run_command("/bin/gzip -c $dna_file >! $dna_dir/".$gspecies."$WS_name.dna.fa.gz",$log);
+	$wormbase->run_command("cp -f $dna_file $dna_dir/".$gspecies.".$WS_name.dna.fa",$log);
+	$wormbase->run_command("/bin/gzip -f $dna_dir/".$gspecies.".$WS_name.dna.fa",$log);
 	$wormbase->run_command("cp -f $soft_file $dna_dir/".$gspecies."_softmasked.$WS_name.dna.fa.gz", $log);
 	$wormbase->run_command("cp -f $masked_file $dna_dir/".$gspecies."_masked.$WS_name.dna.fa.gz", $log);
 		
@@ -393,7 +394,7 @@ sub copy_supplementary_gff_files{
   $runtime = $wormbase->runtime;
   $log->write_to("$runtime: copying supplementary gff files\n");
   if($wormbase->species eq'elegans') {
-	my $chromdir = $wormbase->build_data;
+	my $chromdir = $wormbase->chromosomes;
 	if (-e "$chromdir/SUPPLEMENTARY_GFF") {
 		my $sgff_dir = "$targetdir/$WS_name/genomes/c_elegans/genome_feature_tables/SUPPLEMENTARY_GFF";
 		mkpath($sgff_dir,1,0775);
