@@ -8,7 +8,7 @@
 # Originally written by Dan Lawson
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2008-11-27 12:26:30 $
+# Last updated on: $Date: 2008-11-27 13:45:17 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -966,7 +966,6 @@ best_blastp_hits_SPECIES.WSREL.gz
 
 ./genomes/gspecies/sequences/rna
 WORMrnaREL.tar.gz
-WORMrna.WSREL.rna.fa.gz
 
 ./genomes/c_elegans/genome_feature_tables/GFF2
 CHROMOSOME_I.gff
