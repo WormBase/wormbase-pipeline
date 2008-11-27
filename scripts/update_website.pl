@@ -7,8 +7,8 @@
 # A script to finish the last part of the weekly build by updating all of the
 # relevant WormBase and Wormpep web pages.
 #
-# Last updated by: $Author: ar2 $     
-# Last updated on: $Date: 2008-09-30 15:38:07 $      
+# Last updated by: $Author: gw3 $     
+# Last updated on: $Date: 2008-11-27 10:31:45 $      
 
 
 #################################################################################
@@ -173,7 +173,7 @@ if ($all || $dna) {
 if ($all || $dbcomp) {
   $wb->check_file("$www/$WS_name/dbcomp.shtml", $log, 
 		  minsize => 48050,
-		  maxsize => 48050);
+		  maxsize => 48080);
 }
 if ($all || $wormpep_diff) {
   $wb->check_file("$www/$WS_name/wormpep_diff.shtml", $log, 
