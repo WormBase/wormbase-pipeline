@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: ar2 $
-// Last edited on: $Date: 2008-10-30 09:29:57 $
+// Last edited on: $Date: 2008-11-28 10:22:11 $
 
 
 
@@ -1613,6 +1613,7 @@
 		Min_mag UNIQUE Float	// don't show if fewer bases per line
 		Show_text      // only put text in right-hand column if set
 		Gapped // draw sequences or homols with gaps
+		Allow_misalign // Homol reference/match coords do not have to align exactly, ref coords override. 
 		Join_blocks // link up all blocks of a single feature with lines
 	Blastn		// can calculate percent from score if blastn
 	Blixem  Blixem_X
