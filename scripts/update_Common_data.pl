@@ -5,7 +5,7 @@
 # by Anthony Rogers et al
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2008-11-26 13:49:50 $
+# Last updated on: $Date: 2008-11-28 12:59:29 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -26,7 +26,6 @@ use LSF::JobManager;
 ##############################
 
 
-my $build;             # for when you want to query autoace, i.e. you are building.  Otherwise defaults to current_DB
 my $test;              # test mode, uses ~wormpub/TEST_BUILD
 my $all;               # performs all of the below options:
 my $debug;
@@ -58,13 +57,12 @@ my $cds2gene_id;       # Hash: %cds2gene_id         Key: CDS name               
 
 my $store;
 GetOptions (
-	    "build"              => \$build,
 	    "clone2acc"          => \$clone2accession,
 	    "clone2size"         => \$clone2size,
 	    "cds2wormpep"        => \$cds2wormpep,
 	    "cds2pid"            => \$cds2protein_id,
 	    "cds2status"         => \$cds2status,
-	    "clone2seq"          => \$clone2seq,
+	    "clone2seq:s"        => \$clone2seq, # 'all' or species the sequence comes from (i.e. restrict to this Species tag)
 	    "clone2sv"           => \$clone2sv,
 	    "clone2centre"       => \$clone2centre,
 	    "genes2lab"          => \$genes2lab,
@@ -123,13 +121,10 @@ my %Table_defs = (
 # Set up database paths                  #
 ##########################################
 
-# Set up top level base directory which is different if in test mode
-# Make all other directories relative to this
-
-my $basedir    = $wormbase->basedir;
 my $data_dir   = $wormbase->common_data;
 my $wquery_dir = $wormbase->autoace."/wquery";
 my $ace_dir    = $wormbase->autoace;
+
 
 $log->write_to("Updating COMMON_DATA in $data_dir\n");
 ##############################
@@ -157,6 +152,7 @@ if ($all) {
     my @bsub_options = (-e => "$err", -o => "$out");
     if ($arg eq 'clone2seq') {push @bsub_options, (-F => "3000000", -M => "3500000", -R => "\"select[mem>3500] rusage[mem=3500]\"");}
     my $cmd = "update_Common_data.pl -${arg}";
+    if ($arg eq 'clone2seq') {$cmd .= ' all'} # write out sequence hash for all species
     $cmd = $wormbase->build_cmd_line($cmd, $store_file);
     $lsf->submit(@bsub_options, $cmd);
   }
@@ -614,49 +610,137 @@ sub write_EST  {
 }
 
 ####################################################################################
+# The -clone2seq parameter holds the name of the species to dump
+# sequences for or it takes the value 'all' to dump out genomic
+# sequences from all species. If the value is 'all' then LSF jobs are
+# fired off, each doing a different species. If the value is the short
+# name of a species, then that species is dumped to a file.
 
 sub write_clones2seq  {
  
   $log->write_to("Updating clone2seq\n");
-  my %clone2seq;
-  my $seq; my $newname; my $seqname;
- 
-  # connect to AceDB using tace
-  my $command = "query find Sequence where Genomic_canonical\nDNA\nquit\n";
- 
-  open (TACE, "echo '$command' | $tace $ace_dir | ");
-  while (<TACE>) {
-    chomp;
-    next if ($_ eq "");
-    next if (/acedb\>/);
-    next if (/\/\//);
-    
-    if (/^>(\S+)/) {
-      
-      $newname = $1;
-      unless (defined $seqname) {
-	$seqname = $newname;
-	next;
-      }
-      
-      # assign sequence
-      $clone2seq{$seqname} = $seq;
-      
-      # reset vars
-      $seqname = $newname;
-      $seq = "";
-      next;
-      
+
+  # populate the fullnames and sort out whether the species have a supercontig file that we can read in or not 
+  my %full_names;		# key=species value=full species name
+  my %supercontigs;		# key=species value=supercontigs file (if it exists)
+  my %accessors = ($wormbase->species_accessors);
+  $accessors{elegans} = $wormbase;
+  foreach my $spDB (values %accessors) {
+    my $species = $spDB->species;
+    $full_names{$species} = $spDB->full_name();
+    if ($spDB->assembly_type eq 'contig') {
+      my $chromdir = $spDB->chromosomes;
+      $supercontigs{$species} = "$chromdir/supercontigs.fa";
     }
-    $seq .= $_;
   }
-  close TACE;
-  $clone2seq{$seqname} = $seq;
+
+
+  # $clone2seq holds the species
+  if ($clone2seq eq "") {$clone2seq = $wormbase->species;} # the default is to do this species only
+
+  if ($clone2seq eq 'all') { 
+  # set up LSF jobs each doing a different species, otherwise TACE
+  # can crash or it takes a VERY long time
+    $wormbase->checkLSF;
+    my $lsf = LSF::JobManager->new();
+    my $store_file = $wormbase->build_store; # make the store file to use in all commands
+    my $scratch_dir = $wormbase->logs;
   
-  #now dump data to file
-  open (CDS, ">$data_dir/clone2sequence.dat") or die "Can't open file: $data_dir/clone2sequence.dat";
-  print CDS Data::Dumper->Dump([\%clone2seq]);
-  close CDS;
+    foreach my $this_species (keys %full_names) {
+      my $err = "$scratch_dir/update_Common_data.pl.lsf.clone2seq.$clone2seq.err";
+      my $out = "$scratch_dir/update_Common_data.pl.lsf.clone2seq.$clone2seq.out";
+      my @bsub_options = (-e => "$err", -o => "$out", -F => "3000000", -M => "3500000", -R => "\"select[mem>3500] rusage[mem=3500]\"");
+      my $cmd = "update_Common_data.pl -clone2seq $this_species";
+      $cmd = $wormbase->build_cmd_line($cmd, $store_file);
+      $log->write_to("Submitting LSF job: $cmd\n");
+      $lsf->submit(@bsub_options, $cmd);
+    }
+
+    $lsf->wait_all_children( history => 1 );
+    $log->write_to("All Common_data jobs have completed!\n");
+    for my $job ( $lsf->jobs ) {
+      if ($job->history->exit_status != 0) {
+	$log->write_to("Job $job (" . $job->history->command . ") exited non zero\n");
+      }
+    }
+    $lsf->clear;
+    
+
+  } else {			# dump files for a single species
+    $log->write_to("Dumping clone2seq for $clone2seq\n");
+    my %clone2seq;
+    my $seq; 
+    my $newname; 
+    my $seqname;
+ 
+    # do we have a file of sequences ready to read?
+    if (exists $supercontigs{$clone2seq}) {
+      my $supercontig_file = $supercontigs{$clone2seq};
+      $log->write_to("Reading data from $supercontig_file\n");
+      open (CONTIGS, "< $supercontig_file") || $log->log_and_die("Can't open file $supercontig_file : $!\n");
+      while (<CONTIGS>) {
+	next if ($_ eq "");
+	if (/^>(\S+)/) {
+	  $newname = $1;
+	  unless (defined $seqname) {
+	    $seqname = $newname;
+	    next;
+	  }
+      
+	  # assign sequence
+	  $clone2seq{$seqname} = $seq;
+	  
+	  # reset vars
+	  $seqname = $newname;
+	  $seq = "";
+	  next;
+	}
+	$seq .= $_;
+      }
+      close (CONTIGS);
+      $clone2seq{$seqname} = $seq;
+
+    } else {
+      # connect to AceDB using tace
+      $log->write_to("Reading data from tace\n");
+      my $full_name = $full_names{$clone2seq};
+      my $command = "query find Sequence where Genomic_canonical AND Species = \"$full_name\"\nDNA\nquit\n";
+ 
+      open (TACE, "echo '$command' | $tace $ace_dir | ");
+      while (<TACE>) {
+	chomp;
+	next if ($_ eq "");
+	next if (/acedb\>/);
+	next if (/\/\//);
+	
+	if (/^>(\S+)/) {
+      
+	  $newname = $1;
+	  unless (defined $seqname) {
+	    $seqname = $newname;
+	    next;
+	  }
+      
+	  # assign sequence
+	  $clone2seq{$seqname} = $seq;
+	  
+	  # reset vars
+	  $seqname = $newname;
+	  $seq = "";
+	  next;
+	  
+	}
+	$seq .= $_;
+      }
+      close TACE;
+      $clone2seq{$seqname} = $seq;
+    }
+
+    #now dump data to file for this species
+    open (CDS, ">$data_dir/clone2sequence_$clone2seq.dat") or die "Can't open file: $data_dir/clone2sequence_$clone2seq.dat";
+    print CDS Data::Dumper->Dump([\%clone2seq]);
+    close CDS;
+  }
 }
 
 ####################################################################################
@@ -926,7 +1010,7 @@ This module updates the following data sets:
 
 =item *
 
-%clone2seq - genomic clone name is key, DNA sequence is value
+%clone2seq all | species_name - This writes the file clone2sequence_<species>.dat for the specified species or for elegans and all Tier II species. Genomic clone name is key, DNA sequence is value
 
 =back
 
@@ -968,38 +1052,3 @@ and Gene ID as value
 
 
 
-=over 4
-
-=head2 EXAMPLE USAGE
-
-=over 4
-
-=item UPDATING THE DATA
-
-=over 4
-
-We need to be very careful about updating this data.  Depending on whether it is being updated during the build or 
-otherwise we need to use autoace or current_DB. 
-
-=item 
-
-update_Common_data.pl -build -all
-
-However if the build is underway and you want to write out the CDS 2 wormpep info but that is not yet in the 
-building database you need to use current_DB. so don't include -build ie 
-
-=item
-
-update_Common_data.pl -cds2wormpep
-
-
-At the end of the build ( in finish_build.pl) all data will be refreshed to be in synch with the current
-release ie
-
-=item
-
-update_Common_data.pl -build -all.
-
-There shouldn't really be any need to alter this apart from actually during the next build itself.  
-Scripts that generate the data that is included in Common_data should call the updating routines 
-themselves - so you wont have to ! 
