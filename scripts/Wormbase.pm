@@ -1204,6 +1204,7 @@ sub remove_blank_lines {
   if (substr($chrom, 0, 1) ne '>') {
     die("The first line of $file does not start with a '>' character\n");
   }
+  print STDERR substr($chrom, 0, 100) if $ENV{TEST};
 
 }
 
@@ -1331,7 +1332,7 @@ sub establish_paths {
     # if a specified non-build database is being used
 
     if ( $self->autoace ) {
-      ($basedir) = $self->autoace =~ /(.*)\/\w+$/;
+      ($basedir) = $self->autoace =~ /(.*)\/\w+\/*$/;
       $self->{'orgdb'} = $self->{'autoace'};
     } else {
       $basedir = $self->wormpub . "/BUILD";
@@ -1370,15 +1371,19 @@ sub establish_paths {
     $self->{'databases'}->{'current'} = $self->wormpub . "/DATABASES/current_DB";
     $self->{'databases'}->{'autoace'} = $self->autoace;
 
-    $self->{'primary'}->{'camace'}  = $self->primaries ."/camace";
-    $self->{'primary'}->{'geneace'} = $self->primaries ."/geneace";
-    $self->{'primary'}->{'stlace'}  = $self->primaries ."/stlace";
-    $self->{'primary'}->{'citace'}  = $self->primaries ."/citace";
-    $self->{'primary'}->{'caltech'} = $self->primaries ."/citace"; # to handle the various names used
-    $self->{'primary'}->{'csh'}     = $self->primaries ."/cshace";
-    $self->{'primary'}->{'cshace'}  = $self->primaries ."/cshace";
-    $self->{'primary'}->{'brigace'} = $self->primaries ."/brigace";
-    $self->{'primary'}->{'briggsae'}= $self->primaries ."/brigace"; # to handle the various names used
+    $self->{'primary'}->{'camace'}  = $self->primaries .'/camace';
+    $self->{'primary'}->{'geneace'} = $self->primaries .'/geneace';
+    $self->{'primary'}->{'stlace'}  = $self->primaries .'/stlace';
+    $self->{'primary'}->{'citace'}  = $self->primaries .'/citace';
+    $self->{'primary'}->{'caltech'} = $self->primaries .'/citace'; # to handle the various names used
+    $self->{'primary'}->{'csh'}     = $self->primaries .'/cshace';
+    $self->{'primary'}->{'cshace'}  = $self->primaries .'/cshace';
+    $self->{'primary'}->{'brigace'} = $self->primaries .'/brigace';
+    $self->{'primary'}->{'briggsae'}= $self->primaries .'/brigace'; # to handle the various names used
+    $self->{'primary'}->{'remace'}  = $self->primaries .'/remace';
+    $self->{'primary'}->{'japace'}  = $self->primaries .'/japace';
+    $self->{'primary'}->{'brenace'} = $self->primaries .'/brenace';
+
 
     $self->{'build_data'} = $self->{'basedir'} . "_DATA"; # BUILD_DATA or TEST_BUILD_DATA
     $self->{'misc_static'} = $self->{'build_data'} . "/MISC_STATIC";

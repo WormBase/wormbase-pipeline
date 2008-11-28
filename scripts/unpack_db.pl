@@ -12,8 +12,8 @@
 # the Cold Spring Harbor Laboratory database (cshace)
 # the Caltech database (citace)
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2008-11-06 13:45:24 $
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2008-11-28 12:06:19 $
 
 
 #################################################################################
@@ -35,10 +35,7 @@ use Storable;
 ##############################
 
 my $help;
-my $brigace;
-my $citace;
-my $cshace;
-my $stlace;
+my ($brigace, $citace, $cshace, $stlace,$brenneri,$japonica,$remanei);
 my ($debug,$test,$database,$basedir);
 my $store;
 
@@ -48,6 +45,9 @@ GetOptions (
             "cshace=s"  => \$cshace,
             "stlace=s"  => \$stlace,
             "brigace=s" => \$brigace,
+	    'remaace=s' => \$remanei,
+	    'brenace=s' => \$brenneri,
+	    'japace=s'  => \$japonica,
             "test"      => \$test,
 	    "debug:s"   => \$debug,
 	    "database|basedir:s"  => \$basedir,
@@ -67,7 +67,7 @@ else {
 my $rundate = $wormbase->rundate;
 
 &usage if ($help);
-&usage if (!defined($brigace) && !defined($citace) && !defined($stlace) && !defined($cshace));
+#&usage if (!defined($brigace) && !defined($citace) && !defined($stlace) && !defined($cshace));
 
 # establish log file.
 my $log = Log_files->make_build_log($wormbase);
@@ -76,13 +76,16 @@ my $log = Log_files->make_build_log($wormbase);
 # loop through main routine for each database to be unpacked #
 ##############################################################
 
-&unpack_stuff("citace",$citace)   if ($citace);
-&unpack_stuff("cshace",$cshace)   if ($cshace);
-&unpack_stuff("stlace",$stlace)   if ($stlace);
-&unpack_stuff("brigace",$brigace) if ($brigace);
+&unpack_stuff("citace",$citace)    if ($citace);
+&unpack_stuff("cshace",$cshace)    if ($cshace);
+&unpack_stuff("stlace",$stlace)    if ($stlace);
+&unpack_stuff("brigace",$brigace)  if ($brigace);
+&unpack_stuff('remace',$remanei)   if ($remanei);
+&unpack_stuff('brenace',$brenneri) if ($brenneri);
+&unpack_stuff("japace",$japonica)  if ($japonica);
 
 
-sub unpack_stuff{
+sub unpack_stuff {
   my $database = shift;
   my $opt = shift;
   my (@filenames,$filename,$ftp,$dbdir,$logfile,$dbname);
@@ -122,6 +125,25 @@ sub unpack_stuff{
     $logfile = "$logs/unpack_brigace.$rundate.$$";
     $dbname  = "brigace";
   }
+  if ($database eq 'remace'){
+    $ftp     = "$ftp_dir/stl";
+    $dbdir   = "$primaries/remace";
+    $logfile = "$logs/unpack_remace.$rundate.$$";
+    $dbname  = "remace";
+  }
+  if ($database eq 'brenace'){
+    $ftp     = "$ftp_dir/stl";
+    $dbdir   = "$primaries/brenace";
+    $logfile = "$logs/unpack_brenace.$rundate.$$";
+    $dbname  = "brenace";
+  }
+  if ($database eq "japace"){
+    $ftp     = "$ftp_dir/stl";
+    $dbdir   = "$primaries/japace";
+    $logfile = "$logs/unpack_japgace.$rundate.$$";
+    $dbname  = "japace";
+  }
+
   ##############################
   # open logfile               #
   ##############################
@@ -131,10 +153,10 @@ sub unpack_stuff{
 
   my $msg = "# unpack_db.pl - $database\n#\n".
     "# run details         : $rundate ".$wormbase->runtime."\n".
-      "# Source directory    : $ftp\n".
-	"# Target directory    : $dbdir\n#\n".
-	  "# Source file         : ".$dbname."_$today.tar.gz\n".
-	    "\n";
+    "# Source directory    : $ftp\n".
+    "# Target directory    : $dbdir\n#\n".
+    "# Source file         : ".$dbname."_$today.tar.gz\n".
+    "\n";
 
   $log->write_to("$msg");
 
