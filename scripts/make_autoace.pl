@@ -7,8 +7,8 @@
 #
 # This makes the autoace database from its composite sources.
 #
-# Last edited by: $Author: pad $
-# Last edited on: $Date: 2008-10-07 14:17:00 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2008-11-28 13:04:12 $
 
 use strict;
 use lib  $ENV{'CVS_DIR'};
@@ -131,7 +131,7 @@ if($wormbase->species eq 'elegans') {
 }
 
 #write COMMON_DATA files that can be done at start of build.
-$wormbase->run_script("update_Common_data.pl -clone2centre -clone2acc -clone2size -clone2seq -genes2lab -worm_gene2cgc -worm_gene2geneID -worm_gene2class -est -est2feature -gene_id -clone2type -cds2cgc", $log ) if( $all or $common );
+$wormbase->run_script("update_Common_data.pl -clone2centre -clone2acc -clone2size -clone2seq $species -genes2lab -worm_gene2cgc -worm_gene2geneID -worm_gene2class -est -est2feature -gene_id -clone2type -cds2cgc", $log ) if( $all or $common );
 
 #finish
 $log->mail;
