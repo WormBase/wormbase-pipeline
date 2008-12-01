@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl5.8.0 -w
 # Last updated by $Author: ar2 $
-# Last updated on: $Date: 2007-03-09 11:31:12 $
+# Last updated on: $Date: 2008-12-01 11:26:25 $
 
 package Geneace;
 
@@ -68,7 +68,6 @@ sub gene_info {
       $gene_info{$gene}{'Sequence_name'} 	= $seq_name 		if $seq_name;
       $gene_info{$seq_name}{'Gene'}      	= $gene     		if $seq_name;
       push(@{$gene_info{$gene}{'Other_name'}}, $other_name) if $other_name;
-      $gene_info{$other_name}{'Gene'} 		= $gene     		if $other_name;
       $gene_info{$gene}{'Public_name'} 	= $public_name 	if $public_name;
       $gene_info{$public_name}{'Gene'} 	= $gene     		if $public_name;
     }
