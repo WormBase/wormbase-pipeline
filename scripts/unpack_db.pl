@@ -13,7 +13,7 @@
 # the Caltech database (citace)
 #
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2008-12-01 11:18:04 $
+# Last updated on: $Date: 2008-12-01 11:37:24 $
 
 
 #################################################################################
@@ -46,8 +46,8 @@ GetOptions (
             "stlace=s"  => \$stlace,
             "brigace=s" => \$brigace,
 	    'remanei=s' => \$remanei,
-	    'brenace=s' => \$brenneri,
-	    'japace=s'  => \$japonica,
+	    'brenneri=s' => \$brenneri,
+	    'japonica=s'  => \$japonica,
             "test"      => \$test,
 	    "debug:s"   => \$debug,
 	    "database|basedir:s"  => \$basedir,
