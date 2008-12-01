@@ -7,7 +7,7 @@
 # Builds a wormpep data set from the current autoace database
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2008-11-18 14:55:26 $
+# Last updated on: $Date: 2008-12-01 14:01:35 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -257,12 +257,14 @@ sub write_wormpep_history_and_diff{
 		$live_last_build{$cds} =1;
 		if($cds2id{$cds}){ #still coding
 		if("${PEP_PREFIX}$cds2id{$cds}" eq $wpid) {#same peptide
-						print HISTORY "$cds\t$wpid\t$start\n"; #no change
-					    }
+			print HISTORY "$cds\t$wpid\t$start\n"; #no change
+		}
 		else{ #cds coding for something else
-		    print HISTORY "$cds\t$wpid\t$start\t$release\n";
-		    print HISTORY "$cds\t${PEP_PREFIX}".&pad($cds2id{$cds})."\t$release\n";	
-		    print DIFF "changed:\t$cds\t$wpid --> ${PEP_PREFIX}".&pad($cds2id{$cds})."\n";
+			print HISTORY "$cds\t$wpid\t$start\t$release\n";
+			print HISTORY "$cds\t${PEP_PREFIX}".&pad($cds2id{$cds})."\t$release\n";
+			print DIFF "changed:\t$cds\t$wpid --> ${PEP_PREFIX}".&pad($cds2id{$cds})."\n";
+			my $pad = &pad($cds2id{$cds});
+			print NEW ">$PEP_PREFIX".$pad."\n".$wormbase->format_sequence($cds2aa{$cds})."\n";
 		}
 	    }
 	    else { #now dead
