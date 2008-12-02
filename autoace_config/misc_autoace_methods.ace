@@ -1405,6 +1405,16 @@ Show_text
 GFF_source "binding_site_region" 	 
 Remark   "manually curated binding site region" 	 
   	 
+Method : "regulatory_region" 	 
+Colour  MAGENTA 	 
+Strand_sensitive 	 
+Width    1.000000 	 
+Right_priority   2.300000 	 
+Show_up_strand 	 
+Show_text 	 
+GFF_source "regulatory_region" 	 
+Remark   "manually curated regulatory region" 
+
 Method : "promoter" 	 
 Colour  MAGENTA 	 
 Strand_sensitive 	 
