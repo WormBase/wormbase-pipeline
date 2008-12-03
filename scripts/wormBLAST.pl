@@ -5,7 +5,7 @@
 # written by Anthony Rogers
 #
 # Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2008-12-03 14:35:40 $
+# Last edited on: $Date: 2008-12-03 14:46:33 $
 #
 # it depends on:
 #    wormpep + history
@@ -307,7 +307,7 @@ sub get_updated_database_list {
        || die "cannot prepare statement, $DBI::errstr";
     $analysis_table->execute();
     while (my @row = $analysis_table->fetchrow_array()){
-        if ($row[1] =~ /((jappep|ppapep|remapep|ensembl|gadfly|yeast|slimswissprot|slimtrembl|wormpep|ipi_human|brigpep).*)/) {
+        if ($row[1] =~ /((jappep|ppapep|remapep|ensembl|gadfly|yeast|slimswissprot|slimtrembl|wormpep|ipi_human|brigpep|brepep).*)/) {
               $prevDBs{$2} = $1;  
 	}
     }
@@ -316,7 +316,7 @@ sub get_updated_database_list {
     open( CURR_DB, "<$database_to_use" ) or die "cant find $database_to_use";
     while (<CURR_DB>) {
         chomp;
-        if (/(jappep|ppapep|remapep|ensembl|gadfly|yeast|slimswissprot|slimtrembl|wormpep|ipi_human|brigpep)/) {
+        if (/(jappep|ppapep|remapep|ensembl|gadfly|yeast|slimswissprot|slimtrembl|wormpep|ipi_human|brigpep|brepep)/) {
             $currentDBs{$1} = $_;
         }
     }
