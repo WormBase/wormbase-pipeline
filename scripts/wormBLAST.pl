@@ -5,7 +5,7 @@
 # written by Anthony Rogers
 #
 # Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2008-09-29 09:33:48 $
+# Last edited on: $Date: 2008-12-03 14:26:50 $
 #
 # it depends on:
 #    wormpep + history
@@ -126,7 +126,7 @@ my %wormprotprocessIDs  = %{ get_logic2analysis( $raw_dbh, '%blastp' ) };
 #
 
 if ($copy) {
-    foreach my $option (qw(jappep ppapep wormpep remapep brigpep chrom)) { copy2acari($option) }    # don't need the chromosomes
+    foreach my $option (qw(brepep jappep ppapep wormpep remapep brigpep chrom)) { copy2acari($option) }    # don't need the chromosomes
 }
 
 ########### updating databases ###############
