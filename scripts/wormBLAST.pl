@@ -5,7 +5,7 @@
 # written by Anthony Rogers
 #
 # Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2008-12-03 14:26:50 $
+# Last edited on: $Date: 2008-12-03 14:35:40 $
 #
 # it depends on:
 #    wormpep + history
@@ -347,7 +347,7 @@ sub update_blast_dbs {
     open( OLD_DB, "<$last_build_DBs" ) or die "cant find $last_build_DBs";
     while (<OLD_DB>) {
         chomp;
-        if (/(jappep|ppapep|remapep|gadfly|yeast|slimswissprot|slimtrembl|wormpep|ipi_human|brigpep)/) {
+        if (/(jappep|ppapep|remapep|gadfly|yeast|slimswissprot|slimtrembl|wormpep|ipi_human|brigpep|brepep)/) {
             $_currentDBs{$1} = $_;
         }
     }
@@ -358,7 +358,7 @@ sub update_blast_dbs {
     open( DIR, "ls -l $wormpipe_dir/BlastDB/*.pep |" ) or die "readir\n";
     while (<DIR>) {
         chomp;
-        if (/\/(jappep|ppapep|remapep|gadfly|yeast|slimswissprot|slimtrembl|wormpep|ipi_human|brigpep)/) {
+        if (/\/(jappep|ppapep|remapep|gadfly|yeast|slimswissprot|slimtrembl|wormpep|ipi_human|brigpep|brepep)/) {
             my $whole_file = "$1" . "$'";    # match + stuff after match.
 
 	    print "checking $_\n";
