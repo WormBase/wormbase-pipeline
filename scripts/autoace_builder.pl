@@ -6,8 +6,8 @@
 #
 # Usage : autoace_builder.pl [-options]
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2008-10-31 16:32:14 $
+# Last edited by: $Author: pad $
+# Last edited on: $Date: 2008-12-03 16:49:12 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -113,7 +113,7 @@ $wormbase->run_script( 'map_features.pl -all',              $log ) if $map_featu
 
 
 #########   BLAT  ############
-$wormbase->run_script( 'BLAT_controller.pl -mask -dump', $log ) if $prep_blat;
+$wormbase->run_script( 'BLAT_controller.pl -dump', $log ) if $prep_blat;
 #//--------------------------- batch job submission -------------------------//
 $wormbase->run_script( 'BLAT_controller.pl -run', $log )        if $run_blat;
 #//--------------------------- batch job submission -------------------------//

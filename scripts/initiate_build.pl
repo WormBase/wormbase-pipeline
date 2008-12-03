@@ -2,8 +2,8 @@
 #
 # initiate_build.pl
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2008-11-04 11:56:10 $
+# Last edited by: $Author: pad $
+# Last edited on: $Date: 2008-12-03 16:49:12 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -95,6 +95,9 @@ $wormbase->run_command("rm /tmp/cvsfile",$log);
 # Dump the sequence data from the species primary database being build.
 $log->write_to("Dumping sequence data to file for ".$wormbase->species."\n");
 $wormbase->run_script("dump_primary_seq_data.pl -organism $species", $log) unless $update;
+# Mask the sequences ready for BLATting
+$log->write_to("Masking sequence data for ".$wormbase->species."\n");
+$wormbase->run_script("BLAT_controller.pl -mask -qspecies $species", $log) unless $update;
 
 # add lines to the logfile
 my $msg = "Updated ".$wormbase->species." version number to WS".$wormbase->version."\n";
