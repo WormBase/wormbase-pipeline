@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl5.8.0 -w
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2008-06-06 16:08:03 $
+# Last edited by: $Author: mh6 $
+# Last edited on: $Date: 2008-12-04 12:15:15 $
 
 
 use lib $ENV{'CVS_DIR'};
@@ -462,6 +462,7 @@ sub dump_dna {
 
     open(GENOME,">".$accessors{$species}->autoace."/genome_seq") or $log->log_and_die("cant open genome sequence file".$accessors{$species}->autoace."/genome_seq: $!\n");
     foreach (@files){
+      next if (/supercontig/ && scalar @files>1); # don't touch this
       print GENOME "$_\n";
     }
     close GENOME;
