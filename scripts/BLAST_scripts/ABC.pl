@@ -7,7 +7,7 @@
 # This is a script to automate the sections A, B and C of the BLAST Build
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-11-26 10:47:45 $      
+# Last updated on: $Date: 2008-12-09 13:24:53 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -192,12 +192,12 @@ foreach my $species (@species) {
   # Check the files
   ##################
 
-  $wormbase->check_file($spDB->acefiles."acefiles/${species}_blastx.ace", 
+  $wormbase->check_file($spDB->acefiles."/${species}_blastx.ace", 
 			$log,
 			minsize => 1000000,
 			);
 
-  $wormbase->check_file($spDB->acefiles."acefiles/${species}_blastp.ace", 
+  $wormbase->check_file($spDB->acefiles."/${species}_blastp.ace", 
 			$log,
 			minsize => 1000000,
 			);
@@ -207,12 +207,12 @@ foreach my $species (@species) {
 			minsize => 1000000,
 			);
 
-  $wormbase->check_file($spDB->acefiles."acefiles/worm_ensembl_${species}_interpro_motif_info.ace", 
+  $wormbase->check_file($spDB->acefiles."/worm_ensembl_${species}_interpro_motif_info.ace", 
 			$log,
 			minsize => 1000000,
 			);
 
-  $wormbase->check_file($spDB->acefiles."acefiles/repeat_homologies.ace", 
+  $wormbase->check_file($spDB->acefiles."/repeat_homologies.ace", 
 			$log,
 			minsize => 1000000,
 			);
