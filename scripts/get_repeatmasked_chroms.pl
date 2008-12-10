@@ -149,8 +149,17 @@ sub print_seq {
   }
 
   print $file substr($sequence, $start_point),"\n";
+
+  # crude linux hack (will not work on Alphas)
+  my $dno=fileno($file);
+  my $fname = (`lsof -Fn -a -d $dno -p $$`)[1];
+  $fname = substr($fname,1);
+  $fname =~ s/\s\(.*\)//;
+  ###  lifted from perlmonks ###
+
   close $file;
-  system("gzip -9 $file") if ($chr_assembly);
+  print "fiddling with $fname \n";
+  system("gzip -9 $fname") if ($chr_assembly);
 }
 
 $log->write_to("Done\n");
