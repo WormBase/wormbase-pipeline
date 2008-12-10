@@ -67,7 +67,7 @@ unless ($all||$sequence) {
   $log->log_and_die("You must choose an option, [-all or -sequence <seqname>]. Ciao\n\n");
 }
 
-my %clone2sequence  = $wormbase->FetchData('clone2sequence');      # Genomic_canonical => DNA sequence
+my %clone2sequence  = $wormbase->FetchData("clone2sequence_${\$wormbase->species}");      # Genomic_canonical => DNA sequence
 my %clonesize       = $wormbase->FetchData('clonesize');           # Genomic_canonical => length in bp
 
 
