@@ -158,7 +158,6 @@ sub print_seq {
   ###  lifted from perlmonks ###
 
   close $file;
-  print "fiddling with $fname \n";
   system("gzip -9 $fname") if ($chr_assembly);
 }
 
