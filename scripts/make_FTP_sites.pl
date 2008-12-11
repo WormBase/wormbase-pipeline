@@ -8,7 +8,7 @@
 # Originally written by Dan Lawson
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2008-11-27 15:58:28 $
+# Last updated on: $Date: 2008-12-11 10:49:58 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -301,13 +301,34 @@ sub copy_dna_files{
 	my $masked_file = "$chromdir/".$species."_masked.dna.gz";
 	my $soft_file = "$chromdir/".$species."_softmasked.dna.gz";
 		
-	$wormbase->run_command("cp -f $dna_file $dna_dir/".$gspecies.".$WS_name.dna.fa",$log);
-	$wormbase->run_command("/bin/gzip -f $dna_dir/".$gspecies.".$WS_name.dna.fa",$log);
+	$wormbase->run_command("cp -f $dna_file $dna_dir/".$gspecies.".$WS_name.dna.fa", $log);
+	$wormbase->run_command("/bin/gzip -f $dna_dir/".$gspecies.".$WS_name.dna.fa", $log);
 	$wormbase->run_command("cp -f $soft_file $dna_dir/".$gspecies."_softmasked.$WS_name.dna.fa.gz", $log);
 	$wormbase->run_command("cp -f $masked_file $dna_dir/".$gspecies."_masked.$WS_name.dna.fa.gz", $log);
 		
       } elsif ($wb->assembly_type eq 'chromosome') {
+	# copy the chromosome files across
 	$wormbase->run_command("cp -R $chromdir/*.dna* $dna_dir/", $log);
+
+	# do for each type of unmasked and masked sequence
+	foreach my $type ("",  "_masked",  "_softmasked") {
+	  # delete any existing whole-genome files produced by running this script more than once
+	  unlink "$dna_dir/${gspecies}${type}.${WS_name}.dna.fa";
+
+	  # and construct the whole-genome dna files
+	  foreach my $chrom ($wb->get_chromosome_names(-mito => 1, -prefix => 1)) {
+	    my $chrom_file = "$chromdir/$chrom"; # basic form of the dna file
+	    # is the data gzipped?
+	    if (-e "$chrom_file${type}.dna") {
+	      $wormbase->run_command("cat ${chrom_file}${type}.dna >>! $dna_dir/${gspecies}${type}.${WS_name}.dna.fa", $log);
+	    } elsif (-e "${chrom_file}${type}.dna.gz") {
+	      $wormbase->run_command("/bin/gunzip -c  ${chrom_file}${type}.dna.gz >>! $dna_dir/${gspecies}${type}.${WS_name}.dna.fa", $log);
+	    } else {$log->error("$gspecies : missing file: $chrom_file${type}.dna\n")}
+	  }
+	  # gzip the resulting file
+	  $wormbase->run_command("/bin/gzip -f $dna_dir/${gspecies}${type}.${WS_name}.dna.fa", $log);	
+	}
+
       } else {$log->error("$gspecies : unknown assembly_type\n")}
       $wb->run_command("cp -R $chromdir/*.agp $dna_dir/", $log) if (scalar glob("$chromdir/*.agp"));
 
