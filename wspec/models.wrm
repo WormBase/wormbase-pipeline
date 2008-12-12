@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: ar2 $
-// Last edited on: $Date: 2008-11-28 10:22:11 $
+// Last edited on: $Date: 2008-12-12 14:27:30 $
 
 
 
@@ -212,8 +212,7 @@
 ?Locus  Evidence #Evidence
         Name    Other_name ?Gene_name #Evidence // unidirectional link
         Species UNIQUE ?Species // added by krb 15/02/02
-        Type    Gene_cluster    Contains ?Gene XREF In_cluster
-                Polymorphism    SNP  Text               // SNP stuff added for Todd [171001 krb]
+        Type	Polymorphism    SNP  Text               // SNP stuff added for Todd [171001 krb]
                                 Status Text
                                 SNP_assay ?PCR_product XREF SNP_locus ?Text
                                 RFLP    Text
@@ -931,6 +930,10 @@
 		  Life_stage UNIQUE ?Life_stage // to capture details of ESTs that are from different libraries
 		  Species UNIQUE ?Species
 		  Library UNIQUE ?Library
+		  Strain UNIQUE ?Strain
+		  Anatomy_term ?Anatomy_term   // life-stage and tissues that the sequence comes from
+		  Analysis UNIQUE ?Analysis    // analysis or project that produced this set of data 
+		  Read_coverage UNIQUE Float   // average read-coverage in a short-read cluster sequence
 	  Visible Title UNIQUE ?Text
 		  Matching_CDS ?CDS XREF Matching_cDNA #Evidence               // to link ESTs/mRNAs to CDS 
 		  Matching_transcript ?Transcript XREF Matching_cDNA #Evidence // to link ESTs/mRNAs to RNA genes
@@ -3043,7 +3046,7 @@
                  Matches Protein ?Protein  XREF  Contains_peptide    // matched protein
 
 // the main Analysis class
-?Analysis    Source_database ?Database
+?Analysis    DB_info Database ?Database ?Database_field ?Accession_number
              Based_on_WB_Release Int
              Based_on_DB_Release Text
              Description ?Text
