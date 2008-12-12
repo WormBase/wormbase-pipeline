@@ -4,8 +4,8 @@
 #
 # map GO_terms to ?Sequence objects from ?Motif and ?Phenotype
 #
-# Last updated by: $Author: mh6 $     
-# Last updated on: $Date: 2008-03-17 15:19:25 $      
+# Last updated by: $Author: ar2 $     
+# Last updated on: $Date: 2008-12-12 11:05:17 $      
 
 use strict;
 use warnings;
@@ -68,7 +68,7 @@ my %cds2gene;
 $wormbase->FetchData('cds2wbgene_id',\%cds2gene);                                
 
 my $out=$wormbase->acefiles."/inherited_GO_terms.ace";
-open (OUT,">$out");
+open (OUT,">$out") or $log->log_and_die("cant open $out :$!\n");
 
 ########################################
 # Connect with acedb server            #
@@ -148,9 +148,9 @@ sub phenotype {
   while(<$tm_query>) {
   		s/\"//g;  #remove "
   		next if (/acedb/ or /\/\//);
-		my @data = split;
-	  	my ($cds, $rnai, $phenotype_id,$go, $gene) = ($data[0], $data[1], $data[2], $data[3], $data[4]);
-		next if (! defined $phenotype_id);
+		my @data = split("\t",$_);
+	  	my ( $rnai, $cds, $gene, $phenotype_id,$go,$not) = @data;
+		next if ((! defined $phenotype_id) or ((defined $not)and ($not eq 'Not')));
 		my $phenotype; 
 	  	if($phenotype_id =~ /WBPheno/) {
 	  		$phenotype = &get_phenotype_name($phenotype_id);
@@ -195,39 +195,40 @@ sub write_phenotype_def {
 	my $txt = <<END;
 Sortcolumn 1
 
-Colonne 1
-Width 12
-Optional
-Visible
-Class
-Class elegans_CDS
-From 1
-
-Colonne 2
-Width 12
-Mandatory
-Visible
-Class
-Class RNAi
-From 1
-Tag RNAi_result
-
-Colonne 3
-Width 20
-Optional
-Visible
-Class
-Class Phenotype
-From 2
-Tag Phenotype
-
-Colonne 4
-Width 12
-Null
-Visible
-Show_Tag
-Right_of 3
-Tag  HERE  # Not
+Colonne 1 
+Width 12 
+Optional 
+Visible 
+Class 
+Class RNAi 
+From 1 
+ 
+Colonne 2 
+Width 12 
+Optional 
+Visible 
+Class 
+Class CDS 
+From 1 
+Tag Predicted_gene 
+ 
+Colonne 3 
+Width 12 
+Optional 
+Visible 
+Class 
+Class Gene 
+From 2 
+Tag Gene 
+ 
+Colonne 4 
+Width 12 
+Optional 
+Visible 
+Class 
+Class Phenotype 
+From 1 
+Tag Phenotype 
 
 Colonne 5
 Width 12
@@ -235,17 +236,17 @@ Mandatory
 Visible
 Class
 Class GO_term
-From 3
+From 4
 Tag GO_term
 
 Colonne 6
-Width 12
-Optional
-Visible
-Class
-Class Gene
-From 1
-Tag Gene
+Width 12 
+Optional 
+Visible 
+Next_Tag 
+Right_of 4 
+
+
 END
 
 	print TMP $txt;
