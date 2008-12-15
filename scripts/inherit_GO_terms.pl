@@ -5,7 +5,7 @@
 # map GO_terms to ?Sequence objects from ?Motif and ?Phenotype
 #
 # Last updated by: $Author: ar2 $     
-# Last updated on: $Date: 2008-12-12 11:05:17 $      
+# Last updated on: $Date: 2008-12-15 14:38:06 $      
 
 use strict;
 use warnings;
@@ -150,6 +150,7 @@ sub phenotype {
   		next if (/acedb/ or /\/\//);
 		my @data = split("\t",$_);
 	  	my ( $rnai, $cds, $gene, $phenotype_id,$go,$not) = @data;
+		chomp $not;
 		next if ((! defined $phenotype_id) or ((defined $not)and ($not eq 'Not')));
 		my $phenotype; 
 	  	if($phenotype_id =~ /WBPheno/) {
