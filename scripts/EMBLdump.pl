@@ -2,7 +2,7 @@
 #
 # EMBLdump.pl :  makes modified EMBL dumps from camace.
 # 
-#  Last updated on: $Date: 2008-06-30 15:45:24 $
+#  Last updated on: $Date: 2008-12-18 17:39:12 $
 #  Last updated by: $Author: pad $
 
 use strict;
@@ -381,22 +381,25 @@ while (<EMBL>) {
    # /product="Hypothetical protein XXX.X"
    # /product="C. elegans protein XXX.X, partially confirmed by transcript evidence"
    # /product="C. elegans protein XXX.X, confirmed by transcript evidence"
-    if (/\/product=\"Hypothetical protein (\S+.\S+)\"/) {
-      $cds = $1;
-      if ($cds2status{$cds} eq ("Confirmed")) {
-	print OUT "FT                   \/product=\"C. elegans protein $cds,\nFT                   confirmed by transcript evidence\"\n";
-	next;
-      }
-      elsif ($cds2status{$cds} eq ("Partially_confirmed")) {
-	print OUT "FT                   \/product=\"C. elegans protein $cds,\nFT                   partially confirmed by transcript evidence\"\n";
-	next;
-      }
-      else {
-	print OUT "$_";
-	next;
-      }
+  if (/\/product=\"Hypothetical protein (\S+.\S+)\"/) {
+    $cds = $1;
+    if (!defined$cds2status{$cds}) {
+      print "Warning data missing for $cds\n$_\n";
     }
-
+    if ($cds2status{$cds} eq ("Confirmed")) {
+      print OUT "FT                   \/product=\"C. elegans protein $cds,\nFT                   confirmed by transcript evidence\"\n";
+      next;
+    }
+    elsif ($cds2status{$cds} eq ("Partially_confirmed")) {
+      print OUT "FT                   \/product=\"C. elegans protein $cds,\nFT                   partially confirmed by transcript evidence\"\n";
+      next;
+    }
+    else {
+      print OUT "$_";
+      next;
+    }
+  }
+  
   ###########################################################
   ## Feature Table edits that are necessary for submission.##
   ###########################################################
