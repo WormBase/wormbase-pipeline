@@ -115,7 +115,7 @@ foreach my $df (@{$dfgs}) {
   my $dfname = $df->name;
 
   foreach my $sr (@{$syntenies}) {
-    my ($species6_dfr_string,$species7_dfr_string,$species1_dfr_string, $species2_dfr_string , $species3_dfr_string,$species4_dfr_string,$species5_dfr_string,$species6_dfr_string);
+    my ($species1_dfr_string, $species2_dfr_string , $species3_dfr_string,$species4_dfr_string,$species5_dfr_string,$species6_dfr_string,$species7_dfr_string);
     foreach my $dfr (@{$sr->get_all_DnaFragRegions}) {
       my $strand = "+";
       my ($gff_start,$gff_stop)=($dfr->dnafrag_start,$dfr->dnafrag_end);
@@ -160,7 +160,7 @@ foreach my $df (@{$dfgs}) {
     print $species1_dfr_string . $species4_dfr_string."\n" if $species4_dfr_string;
     print $species1_dfr_string . $species5_dfr_string."\n" if $species5_dfr_string;
     print $species1_dfr_string . $species6_dfr_string."\n" if $species6_dfr_string;
-    print $species1_dfr_string . $species6_dfr_string."\n" if $species7_dfr_string;
+    print $species1_dfr_string . $species7_dfr_string."\n" if $species7_dfr_string;
  }
 }
 
