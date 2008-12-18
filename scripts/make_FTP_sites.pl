@@ -7,8 +7,8 @@
 # 
 # Originally written by Dan Lawson
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2008-12-11 10:49:58 $
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2008-12-18 14:59:15 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -315,14 +315,15 @@ sub copy_dna_files{
 	  # delete any existing whole-genome files produced by running this script more than once
 	  unlink "$dna_dir/${gspecies}${type}.${WS_name}.dna.fa";
 
-	  # and construct the whole-genome dna files
+        # and construct the whole-genome dna files
 	  foreach my $chrom ($wb->get_chromosome_names(-mito => 1, -prefix => 1)) {
 	    my $chrom_file = "$chromdir/$chrom"; # basic form of the dna file
+	    $wormbase->run_command("touch $dna_dir/${gspecies}${type}.${WS_name}.dna.fa",$log);
 	    # is the data gzipped?
 	    if (-e "$chrom_file${type}.dna") {
-	      $wormbase->run_command("cat ${chrom_file}${type}.dna >>! $dna_dir/${gspecies}${type}.${WS_name}.dna.fa", $log);
+	      $wormbase->run_command("cat ${chrom_file}${type}.dna >> $dna_dir/${gspecies}${type}.${WS_name}.dna.fa", $log);
 	    } elsif (-e "${chrom_file}${type}.dna.gz") {
-	      $wormbase->run_command("/bin/gunzip -c  ${chrom_file}${type}.dna.gz >>! $dna_dir/${gspecies}${type}.${WS_name}.dna.fa", $log);
+	      $wormbase->run_command("/bin/gunzip -c  ${chrom_file}${type}.dna.gz >> $dna_dir/${gspecies}${type}.${WS_name}.dna.fa", $log);
 	    } else {$log->error("$gspecies : missing file: $chrom_file${type}.dna\n")}
 	  }
 	  # gzip the resulting file
