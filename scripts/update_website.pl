@@ -7,8 +7,8 @@
 # A script to finish the last part of the weekly build by updating all of the
 # relevant WormBase and Wormpep web pages.
 #
-# Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-11-27 10:31:45 $      
+# Last updated by: $Author: mh6 $     
+# Last updated on: $Date: 2008-12-19 10:32:44 $      
 
 
 #################################################################################
@@ -831,7 +831,7 @@ sub copy_GFF_files{
         my ($type,$chrom)=split(',',$string);
 
              open INF ,"cat $chromdir/CHROMOSOME_${chrom}.gff|" || die "ERROR: @!\n";
-             my $outf= new IO::File "$wwwdata/WORMBASE/$WS_name/GFF/CHROMOSOME_${chrom}.$type.gff",'w';
+             my $outf= new IO::File "$wwwdata/WORMBASE/$WS_name/GFF/CHROMOSOME_${chrom}.$type.gff",'w' || die "ERROR: @!\n";
              while (<INF>){
 		     my @F=split;
 		     switch($type){
