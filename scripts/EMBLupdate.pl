@@ -10,7 +10,7 @@
 #     * Update all necessary files on disk.
 #
 # Last updated by: $Author: pad $     
-# Last updated on: $Date: 2006-07-17 14:39:19 $      
+# Last updated on: $Date: 2008-12-19 14:33:48 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -113,6 +113,7 @@ while (<IN>) {
   }
 }
 close(IN);
+if (!defined($cossub)) {$cossub = "0";}
 $log->write_to("\nThere were $cosnum record(s) checked in this round of EMBL updating\n\n$cossub need re-submitting\n\n\n\n");
 $log->mail();
 exit(0);
