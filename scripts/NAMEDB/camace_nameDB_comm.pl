@@ -37,6 +37,7 @@ my $log = Log_files->make_build_log($wormbase);
 
 #connect to database and read in data
 my $acedb = ($database or $wormbase->database('camace'));
+$log->write_to("Checking $acedb for errors\n");
 $def = $wormbase->database('camace')."/wquery/SCRIPT:camace_nameDB_comm.def" unless $def;
 my $TABLE = $wormbase->table_maker_query($acedb, $def);
 
@@ -55,7 +56,6 @@ while( <$TABLE> ){
 	next;
     }
     else {
-	
 	$ace_genes{"$gene"}->{'name'} = $seq_name;
 	$ace_genes{"$gene"}->{'sts'} = ($cds or $transcript or $pseudo) ?  1 : 0; #live if it has one these nametypes
     }
