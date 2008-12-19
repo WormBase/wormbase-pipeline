@@ -2,7 +2,7 @@
 #
 # EMBLdump.pl :  makes modified EMBL dumps from camace.
 # 
-#  Last updated on: $Date: 2008-12-18 17:39:12 $
+#  Last updated on: $Date: 2008-12-19 10:37:55 $
 #  Last updated by: $Author: pad $
 
 use strict;
@@ -385,6 +385,8 @@ while (<EMBL>) {
     $cds = $1;
     if (!defined$cds2status{$cds}) {
       print "Warning data missing for $cds\n$_\n";
+      print OUT "$_";
+      next;
     }
     if ($cds2status{$cds} eq ("Confirmed")) {
       print OUT "FT                   \/product=\"C. elegans protein $cds,\nFT                   confirmed by transcript evidence\"\n";
