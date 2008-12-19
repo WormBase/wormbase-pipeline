@@ -7,8 +7,8 @@
 # 
 # Originally written by Dan Lawson
 #
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2008-12-18 14:59:15 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2008-12-19 12:31:58 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -79,7 +79,7 @@ use Storable;
 use Ace;
 use IO::Handle;
 use File::Path;
-
+use Bio::SeqIO;
 
 
 #################################################################################
@@ -301,14 +301,14 @@ sub copy_dna_files{
 	my $masked_file = "$chromdir/".$species."_masked.dna.gz";
 	my $soft_file = "$chromdir/".$species."_softmasked.dna.gz";
 		
-	$wormbase->run_command("cp -f $dna_file $dna_dir/".$gspecies.".$WS_name.dna.fa", $log);
-	$wormbase->run_command("/bin/gzip -f $dna_dir/".$gspecies.".$WS_name.dna.fa", $log);
+	$wormbase->run_command("/bin/gzip -f $dna_file > $dna_dir/".$gspecies."$WS_name.dna.fa.gz",$log);
 	$wormbase->run_command("cp -f $soft_file $dna_dir/".$gspecies."_softmasked.$WS_name.dna.fa.gz", $log);
 	$wormbase->run_command("cp -f $masked_file $dna_dir/".$gspecies."_masked.$WS_name.dna.fa.gz", $log);
-		
+	
       } elsif ($wb->assembly_type eq 'chromosome') {
 	# copy the chromosome files across
 	$wormbase->run_command("cp -R $chromdir/*.dna* $dna_dir/", $log);
+	$wormbase->run_command("/bin/gzip $dna_dir/*.dna", $log);
 
 	# do for each type of unmasked and masked sequence
 	foreach my $type ("",  "_masked",  "_softmasked") {
@@ -448,32 +448,37 @@ sub copy_clustal{
   $log->write_to("$runtime: Finished copying\n\n");
 }
 sub copy_rna_files{
-  $runtime = $wormbase->runtime;
-  $log->write_to("$runtime: copying rna files\n");
+    # $wormbase is the main build object (likely elegans) ; $wb is the species specific one
+    $runtime = $wormbase->runtime;
+    $log->write_to("$runtime: copying rna files\n");
 
-  # run through all possible organisms
-  my %accessors = ($wormbase->species_accessors);
-  $accessors{elegans} = $wormbase;
-  foreach my $wb (values %accessors) {
+    # run through all possible organisms
+    my %accessors = ($wormbase->species_accessors);
+    $accessors{elegans} = $wormbase;
+    foreach my $wb (values %accessors) {
+	my $rnadir = $wormbase->basedir . "/WORMRNA/".$wb->pepdir_prefix."rna$WS";
+	my $ftprna_dir = "$targetdir/$WS_name/genomes/".$wb->full_name('-g_species' => 1)."/sequences/rna";
+	mkpath($ftprna_dir,1,0775);
+	my $prefix = $wb->pepdir_prefix;
+	
+	my $file = "$rnadir/${prefix}rna".$wormbase->get_wormbase_version.".rna"; #source build file
+	my $ftpfile = "$ftprna_dir/".$wb->full_name('-g_species'=>1).".".$wormbase->get_wormbase_version_name.".rna.fa"; #target FTP file
 
-    my $rnadir = $wb->wormrna;
+	# if rna has not been rebuilt it may need to be carried from previous build.  Possibly done earlier but if not do it here.
+	unless (-e $file) {
+	    use CarryOver;
+	    my $carrier = CarryOver->new($wb, $log);
+	    $carrier->carry_wormrna($wormbase->version,$wb->version);
+	}
 
-    if( -e "$rnadir") {
-      my $ftprna_dir = "$targetdir/$WS_name/genomes/".$wb->full_name('-g_species' => 1)."/sequences/rna";
-      mkpath($ftprna_dir,1,0775);
-      $wormbase->run_command("cp -R $rnadir/* $ftprna_dir/", $log);
-      chdir "$ftprna_dir" or $log->write_to("Couldn't cd $ftprna_dir\n");
-      my $prefix = $wb->pepdir_prefix;
-      $wormbase->run_command("/bin/tar -cf ${prefix}rna$WS.tar README ${prefix}rna$WS.rna", $log);
-      $wormbase->run_command("/bin/gzip -f ${prefix}rna$WS.tar",$log);
+	$wormbase->run_command("cp -R $file $ftpfile", $log);
+	$wormbase->run_command("/bin/gzip -f $ftpfile",$log);
 
-      # change group ownership
-      $wormbase->run_command("chgrp -R  worm $ftprna_dir", $log);  
-
+	# change group ownership
+	$wormbase->run_command("chgrp -R  worm $ftprna_dir", $log);  
     }
-  }
-  $runtime = $wormbase->runtime;
-  $log->write_to("$runtime: Finished copying\n\n");
+    $runtime = $wormbase->runtime;
+    $log->write_to("$runtime: Finished copying\n\n");
 }
 ############################################
 # copy across ontology files
@@ -577,7 +582,7 @@ sub _copy_pep_files {
 	my $target = "$targetdir/$WS_name/genomes/".$wb->full_name('-g_species' => 1)."/sequences/protein";
 	mkpath($target,1,0775);
 
-	# if wwormpep has not been rebuilt it may need to be carried from previous build.  Possibly done earlier but if not do it here.
+	# if wormpep has not been rebuilt it may need to be carried from previous build.  Possibly done earlier but if not do it here.
 	unless (-e $source) {
 		require CarryOver;
 		my $carrier = CarryOver->new($wb, $log);
@@ -617,18 +622,24 @@ sub extract_confirmed_genes{
 
   $runtime = $wormbase->runtime;
   $log->write_to("$runtime: Extracting confirmed genes\n");
+	my $wormdna = $wormbase->wormpep."/".$wormbase->pepdir_prefix."pep.dna".$wormbase->get_wormbase_version;
+	my $seqio  = Bio::SeqIO->new('-file' => "$wormdna", '-format' => 'fasta');
 
   my $db = Ace->connect(-path => "$ace_dir/") || die print "ACE connection failure: ", Ace->error;
   my $query = "Find elegans_CDS; Confirmed";
   my @confirmed_genes   = $db->fetch(-query=>$query);
+  my %conf_genes;
+  map($conf_genes{$_->name} =1,@confirmed_genes);
   mkpath("$annotation_dir",1,0775);
 
   open(OUT,">$annotation_dir/confirmed_genes.$WS_name") or $log->write_to("Couldn't write to $annotation_dir/confirmed_genes.$WS_name\n");
+	while(my $seq = $seqio->next_seq){
+		if($conf_genes{$seq->id}) {
+			print OUT "\n>".$seq->id."\n";
+		    print OUT $wormbase->format_sequence($seq->seq);
+		}
+	}
 
-  foreach my $seq (@confirmed_genes){
-    my $dna = $seq->asDNA();
-    print OUT "$dna";
-  }
 
   close(OUT);
   $wormbase->run_command("/bin/gzip -f $annotation_dir/confirmed_genes.$WS_name", $log);
@@ -987,7 +998,7 @@ WORMpep.WSREL.fa.gz
 best_blastp_hits_SPECIES.WSREL.gz
 
 ./genomes/gspecies/sequences/rna
-WORMrnaREL.tar.gz
+gspecies.WSREL.rna.fa.gz
 
 ./genomes/c_elegans/genome_feature_tables/GFF2
 CHROMOSOME_I.gff
