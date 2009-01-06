@@ -8,7 +8,7 @@
 # autoace.
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2008-05-16 12:52:47 $
+# Last updated on: $Date: 2009-01-06 17:34:51 $
 
 #################################################################################
 # Variables                                                                     #
@@ -135,16 +135,16 @@ else {
 			$log->write_to("dumping $makefile{'class'} from $acedb\n");
 			open(TACE,"echo '$query' | $tace $acedb | ") or $log->log_and_die("cant do query : $!\n");
 			LINE: while(<TACE>) {
-				next if (/acedb>/ or /\/\//);
+				next if (/acedb>/ or /^\/\//);
 				if( $makefile{'regex'} ) {	
 					unless (/[^\w]/ or /$makefile{'class'}\s+\:\s+/ or /$makefile{'follow'}\s+\:\s+/) {
 						next LINE unless /$makefile{'regex'}/;
 					}			
+    				}
+    				print ACE;
     			}
-    			print ACE;
-    		}
-    		close TACE;
-    		close ACE;
+    			close TACE;
+    			close ACE;
 		}
 		elsif ($makefile{'path'}) {
 			my $sub = $makefile{'path'};
