@@ -6,7 +6,7 @@
 # Compares this number to those from a second database.
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2009-01-07 10:34:33 $
+# Last updated on: $Date: 2009-01-07 13:41:09 $
 
 
 use strict;
@@ -118,11 +118,55 @@ $log->write_to("Checking $dbname_1 vs $dbname_2 for classes:\n@classes\n\n");
 
 my ($class_count) = &count_classes($database, @classes);
 
+# get the results from previous releases
+my %results_0; 			# results from the last but one release
+my %results_1;			# results from the last release
+my $got_prev_results=0;
+my $got_prev_prev_results=0;
+for (my $version_count = 10; $version_count; $version_count--) { # go back up to 5 releases
+  %results_0 = ();
+  %results_1 = ();
+  foreach my $class (@classes) {
+    $results_0{$class} = &get_prev_count($species, $prev_prev_version, $class, $stage);
+    if (!$got_prev_results) {$results_1{$class} = &get_prev_count($species, $prev_version, $class, $stage)}
+  }
+
+  # check to see if we have results from the previous release number we are currently checking
+  # (elegans is the only species done every release)
+  foreach my $class (keys %results_1) {
+    if ($results_1{$class} != -1) {
+      $got_prev_results = 1;
+    } else {
+      $results_1{$class} = 0;	# change the value from -1 to 0 to get a sensible-looking display
+    }
+    if ($results_0{$class} != -1) {
+      $got_prev_prev_results = 1;
+    } else {
+      $results_0{$class} = 0;	# change the value from -1 to 0 to get a sensible-looking display
+    }
+  }
+
+  if ($got_prev_prev_results) {last}
+
+  # go back another version
+  $prev_prev_version--;
+  $dbname_0    = "WS${prev_prev_version}";
+  if (!$got_prev_results) {
+    $prev_version--;
+    $dbname_1    = "WS${prev_version}";
+  }
+}
+
+# display message if there are no previous results
+if (!$got_prev_results) {
+  $log->write_to("\n\nNo results have been found for this species for the last 10 releases\n\n");
+  $dbname_0 = '';
+  $dbname_1 = '';
+}
+
 $log->write_to(sprintf("%-22s %7s %7s %7s %7s\n", "CLASS","($dbname_0)",$dbname_1,$dbname_2,"Difference"));
 
-# don't want to report duplicate classes
 my %seen;
-
 my $count = 0;
 foreach my $class (@classes) {
 
@@ -130,8 +174,8 @@ foreach my $class (@classes) {
   # Calculate difference between databases         #
   ##################################################
   
-  my $count0 = &get_prev_count($species, $prev_prev_version, $class, $stage);
-  my $count1 = &get_prev_count($species, $prev_version, $class, $stage);
+  my $count0 = $results_0{$class};
+  my $count1 = $results_1{$class};
   my $count2 = $$class_count[$count];
   &store_count($species, $version, $class, $stage, $count2);
   my $diff = $count2 - $count1;
@@ -227,7 +271,7 @@ sub count_classes {
 sub get_prev_count {
   my ($species, $version, $class, $stage) = @_;
 
-  my $last_count = 0;
+  my $last_count = -1;		# -1 is a flag value indicating no results were found
   if (open (CLASS_COUNT, "< $file")) {
     while (my $line = <CLASS_COUNT>) {
       chomp $line;
