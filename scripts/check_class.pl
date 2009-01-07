@@ -6,7 +6,7 @@
 # Compares this number to those from a second database.
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2008-10-21 08:31:10 $
+# Last updated on: $Date: 2009-01-07 10:34:33 $
 
 
 use strict;
@@ -28,7 +28,7 @@ $|=1;
 
 my ($help, $debug, $test, $verbose, $store, $wormbase);
 my ($database, $database1, $database2, $classes, $species, $stage);
-my ($db_1, $db_2, $dbname_1, $dbname_2);
+my ($dbname_0, $dbname_1, $dbname_2);
 my ($stlace, $camace, $genace, $csh, $caltech, $misc_static, $brigace, $incomplete, $data_sets);
 
 GetOptions (
@@ -81,10 +81,12 @@ my $log = Log_files->make_build_log($wormbase);
 $species = $wormbase->species;
 my $version = $wormbase->get_wormbase_version;
 my $prev_version = $version-1;
+my $prev_prev_version = $version-2;
 
 my $exec = $wormbase->tace;
 
 $database = $wormbase->autoace;
+$dbname_0    = "WS${prev_prev_version}";
 $dbname_1    = "WS${prev_version}";
 $dbname_2    = "WS${version}";
 
@@ -116,7 +118,7 @@ $log->write_to("Checking $dbname_1 vs $dbname_2 for classes:\n@classes\n\n");
 
 my ($class_count) = &count_classes($database, @classes);
 
-$log->write_to(sprintf("%-22s %7s %7s %7s\n", "CLASS",$dbname_1,$dbname_2,"Difference"));
+$log->write_to(sprintf("%-22s %7s %7s %7s %7s\n", "CLASS","($dbname_0)",$dbname_1,$dbname_2,"Difference"));
 
 # don't want to report duplicate classes
 my %seen;
@@ -128,7 +130,8 @@ foreach my $class (@classes) {
   # Calculate difference between databases         #
   ##################################################
   
-  my $count1 = &get_prev_count($species, $version, $class, $stage);
+  my $count0 = &get_prev_count($species, $prev_prev_version, $class, $stage);
+  my $count1 = &get_prev_count($species, $prev_version, $class, $stage);
   my $count2 = $$class_count[$count];
   &store_count($species, $version, $class, $stage, $count2);
   my $diff = $count2 - $count1;
@@ -148,7 +151,7 @@ foreach my $class (@classes) {
   if ($seen{$class}) {next;}
   $seen{$class} = 1;
 
-  $log->write_to(sprintf("%-22s %7d %7d %7d %s\n", $class,$count1,$count2,$diff,$err));
+  $log->write_to(sprintf("%-22s %7d %7d %7d %7d %s\n", $class,$count0,$count1,$count2,$diff,$err));
 }
 
 
@@ -233,7 +236,7 @@ sub get_prev_count {
       # been stored by an earlier run of this script in this Build,
       # but we want the most recent version's count apart from that,
       # so get the most recent result that isn't from this Build.
-      if ($cc_version != $version && $cc_class eq $class && $cc_species eq $species && $cc_stage eq $stage) {
+      if ($cc_version == $version && $cc_class eq $class && $cc_species eq $species && $cc_stage eq $stage) {
 	# store to get the last one in the previous build
 	$last_count = $cc_count;
       } 
