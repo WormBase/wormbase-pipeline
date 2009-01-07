@@ -1045,6 +1045,7 @@ sub load_to_database {
   my $species = $self->species;
   my $version = $self->get_wormbase_version;
   my $prev_version = $version-1;
+  my $prev_prev_version = $version-2;
   my $pparse_file = $self->build_data . "/COMPARE/pparse_ace.dat"; # file holding pparse details from previous Builds
 
   unless ( -e "$file" and -e $database) {
@@ -1139,6 +1140,8 @@ EOF
     # check against previous loads of this file
     my $last_parsed;		# objects parsed on the previous build
     my $last_active;
+    my $last_but_one_parsed=0;		# objects parsed on the previous build but one
+    my $last_but_one_active=0;
     # get the number of objects in the pparse of this file in the previous Build
     if (open (PPARSE_ACE, "< $pparse_file")) {
       while (my $line = <PPARSE_ACE>) {
@@ -1148,12 +1151,18 @@ EOF
 	  $last_parsed = $pa_parsed;
 	  $last_active = $pa_active;
 	} 
+	if ($pa_version == $prev_prev_version && $pa_file eq $basename && $species eq $pa_species) {
+	  # store to get the last one in the previous build
+	  $last_but_one_parsed = $pa_parsed;
+	  $last_but_one_active = $pa_active;
+	} 
       }
       close (PPARSE_ACE);
     }
 
     # check the current Build parse object numbers against the previous one
     if (defined $last_parsed) {
+      $log->write_to("Version WS$prev_prev_version parsed $last_but_one_parsed objects OK with $last_but_one_active Active Objects\n");
       $log->write_to("Version WS$prev_version parsed $last_parsed objects OK with $last_active Active Objects\n");
       $log->write_to("Version WS$version parsed $parsed objects OK with $active Active Objects\n\n");
       if (!defined $accept_large_differences) {
