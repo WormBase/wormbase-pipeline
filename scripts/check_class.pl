@@ -6,7 +6,7 @@
 # Compares this number to those from a second database.
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2009-01-07 13:41:09 $
+# Last updated on: $Date: 2009-01-07 13:55:44 $
 
 
 use strict;
@@ -301,7 +301,11 @@ sub store_count {
     if ($version && $class && $species && $count && $stage) {
       print CLASS_COUNT "$version\t$class\t$species\t$count\t$stage\n";
     } else {
+      if (!$count) {
+$log->write_to("*** ERROR: There are zero $class in the database!\n\n");
+      } else {
       $log->write_to("*** POSSIBLE ERROR: Couldn't write to $file because some of the following is blank\nversion=$version, class=$class, species=$species, count=$count\n\n");
+    }
       $log->error;
     }
     close (CLASS_COUNT);
