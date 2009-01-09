@@ -4,8 +4,6 @@
 //
 // all methods should be stored here
 //
-// last updated by Keith Bradnam, 5th March 2004
-// 
 // GFF_source  = program/method/experiment used to determine what the thing is
 // GFF_feature = what the thing actually is (should try to use SO_terms where possible)
 //
@@ -13,18 +11,217 @@
 // and GFF_feature = 'tRNA'
 
 
+//////////////////////////////////////////////////////////////////////////
+//									//
+//            TO ADD A NEW METHOD YOU HAVE TO DO 2 THINGS       	//
+//	      -------------------------------------------		//
+//									//
+// i)  FIND A RELEVANT PLACE IN THE OBJECTS SECTION AND			//
+//     POPULATE THE NEW METHOD						//
+//									//
+// ii) GO TO THE Fmap SECTION (if it is to be mapped) AT THE BOTTOM AND //
+//     DECIDED WHERE IT SHOULD GO ON THE Fmap VIA Right_priority	//
+//									//
+//////////////////////////////////////////////////////////////////////////
 
-///////////////////////////////////////////////////
-//
-// Allele related methods
-//
-///////////////////////////////////////////////////
+				//////////////////////////////
+				//			    //
+				//      OBJECTS SECTION     //
+				//			    //
+				//////////////////////////////
 
+///////////////////////////////////////
+// Sequence and gene related methods //
+///////////////////////////////////////
+
+Method : "operon"
+Colour	 DARKGRAY 
+Show_up_strand	
+Width    1.000000
+Show_text	
+GFF_source	 "operon"
+GFF_feature	 "operon"
+
+Method : "Gene" 
+Colour	 LIGHTRED
+Show_up_strand	
+Width    1.000000
+Show_text	
+GFF_source	 "gene"
+GFF_feature	 "gene"
+
+Method : "UTR"
+Colour   CERISE
+Show_up_strand CERISE
+Show_text
+Width 1
+GFF_source "UTR"
+GFF_feature "UTR"
+Remark "UTRs in WormBase are currently predicted on the basis of available transcript evidence."
+// Need new GFF_source?
+
+Method : "curated" 
+Colour	 DARKBLUE
+CDS_colour	 DARKBLUE
+Show_up_strand	
+Bumpable	
+Show_text	
+EMBL_feature	 "CDS"
+GFF_source	 "curated"
+Remark "Predicted protein-coding genes are flagged with this method.  All of these genes have been looked at by a human curator at some point and have usually been modified with respect to the initial computer prediction."
+
+Method : "history" 
+Colour	 GRAY
+CDS_colour	 MAGENTA
+Show_up_strand	 GRAY
+Bumpable	
+Show_text	
+Remark "History objects represent old gene predictions which have since been removed, merged with other gene predictions or refined to make a better gene prediction according to the latest evidence"
+
+Method : "Pseudogene" 
+Colour	 DARKGRAY
+Show_up_strand	
+Width	 1.500000
+Show_text	
+EMBL_threshold	 0.000000
+EMBL_qualifier	 "\/note=\"\%s\"" "note"
+
+Method : "Coding_transcript" 
+Colour DARKGREEN
+Show_up_strand
+Width 1.5
+GFF_source "Coding_transcript"
+GFF_feature "protein_coding_primary_transcript"
+
+
+// Use for isoforms of coding genes which don't translate
+Method : "Non_coding_transcript" 
+Colour	 DARKGRAY
+Show_up_strand	
+Show_text	
+EMBL_feature	 "misc_RNA"
+GFF_source "Non_coding_transcript"
+GFF_feature "nc_primary_transcript"
+
+Method : "Transposon" 
+Colour	 DARKGRAY
+Width	 2.000000
+Show_text	
+Show_up_strand	
+GFF_source	 "Transposon"
+GFF_feature	 "transposable_element"
+
+Method : "Transposon_CDS"
+Colour	 DARKGRAY
+CDS_colour DARKGRAY
+Show_up_strand	
+Width	 2.000000
+Show_text	
+GFF_source	 "Transposon_CDS"
+GFF_feature	 "transposable_element"
+
+Method : "RNA" 
+Colour	 GREEN
+Show_up_strand	
+Width	 2.000000
+Show_text	
+EMBL_feature	 "misc_RNA"
+GFF_source "RNA"
+GFF_feature "transcript"
+
+Method : "ncRNA" 
+Colour	 GREEN
+Show_up_strand	
+Width	 2.000000
+Show_text	
+EMBL_feature	 "ncRNA"
+GFF_source "ncRNA"
+GFF_feature "ncRNA_primary_transcript"
+Remark  "An mRNA sequence that does not encode for a protein rather the RNA molecule is the gene product."
+
+Method : "rRNA" 
+Colour   GREEN
+Show_up_strand  
+Width    2.000000
+Show_text       
+GFF_source "rRNA"
+GFF_feature "rRNA_primary_transcript"
+EMBL_feature "rRNA"
+
+Method : "tRNA" 
+Colour	 PURPLE
+GFF_source	 "tRNA"
+GFF_feature	 "tRNA_primary_transcript"
+
+Method : "tRNAscan-SE-1.23" 
+Colour	 GREEN
+Show_up_strand	
+Bumpable	
+Show_text	
+EMBL_feature	 "tRNA"
+GFF_source "tRNAscan-SE-1.23"
+GFF_feature "tRNA_primary_transcript"
+
+Method : "scRNA" 
+Colour   GREEN
+Show_up_strand  
+Width    2.000000
+Show_text       
+EMBL_feature     "scRNA"
+GFF_source "scRNA"
+GFF_feature "scRNA_primary_transcript"
+
+Method : "snRNA" 
+Colour   GREEN
+Show_up_strand  
+Width    2.000000
+Show_text       
+EMBL_feature     "snRNA"
+GFF_source "snRNA"
+GFF_feature "snRNA_primary_transcript"
+
+Method : "snlRNA" 
+Colour   GREEN
+Show_up_strand  
+Width    2.000000
+Show_text       
+EMBL_feature     "snlRNA"
+GFF_source "snlRNA"
+GFF_feature "snlRNA_primary_transcript"
+
+Method : "snoRNA" 
+Colour   GREEN
+Show_up_strand  
+Width    2.000000
+Show_text       
+EMBL_feature     "snoRNA"
+GFF_source "snoRNA"
+GFF_feature "snoRNA_primary_transcript"
+
+Method : "miRNA" 
+Colour   GREEN
+Show_up_strand  
+Width    2.000000
+Show_text       
+EMBL_feature     "misc_RNA"
+GFF_source "miRNA"
+GFF_feature "miRNA_primary_transcript"
+
+Method : "stRNA" 
+Colour   GREEN
+Show_up_strand  
+Width    2.000000
+Show_text       
+EMBL_feature     "misc_RNA"
+GFF_source "stRNA"
+GFF_feature "stRNA_primary_transcript"
+
+////////////////////////////
+// Allele related methods //
+////////////////////////////
 
 // 'Allele' method is the default method if no other is more suitable
-
 Method : "Allele"
-Right_priority 2.5
 Width 1.1
 Colour ORANGE
 Show_text
@@ -34,8 +231,7 @@ GFF_feature "sequence_variant"
 Remark "Alleles in WormBase represent small sequence mutations (substitutions or indels) with the differences usually being between the sequenced (N2) strain of C. elegans and some other strain.  The Allele track on the WormBase web site also includes SNPs and transposon mediated insertions"
 
 
-Method : "Deletion_allele"
-Right_priority 2.5
+Method : "Deletion_allele" 
 Width 1.1
 Colour ORANGE
 Show_text
@@ -46,8 +242,7 @@ Remark "Deletion alleles in WormBase represent where other strains of C. elegans
 // Need new GFF_source?
 
 
-Method : "SNP"
-Right_priority 2.5
+Method : "SNP" 
 Width 1.1
 Colour ORANGE
 Show_text
@@ -59,7 +254,6 @@ Remark "Single Nucleotide Polymorphisms.  Most SNPs in WormBase determined from 
 
 
 Method : "Insertion_allele"
-Right_priority 2.5
 Width 1.1
 Colour ORANGE
 Show_text
@@ -70,8 +264,7 @@ Remark "Simple insertion alleles, which are not due to transposon insertions.  A
 // Need new GFF_source?
 
 
-Method : "Deletion_and_insertion_allele"
-Right_priority 2.5
+Method : "Deletion_and_insertion_allele" 
 Width 1.1
 Colour ORANGE
 Show_text
@@ -82,8 +275,7 @@ Remark "Basically, these are deletion alleles where the deletion is replaced by 
 // Need new GFF_source?
 
 
-Method : "Transposon_insertion"
-Right_priority 2.5
+Method : "Transposon_insertion" 
 Width 1.1
 Colour ORANGE
 Show_text
@@ -94,83 +286,103 @@ Remark "Most of the annotated transposon-mediated insertion sites in WormBase we
 // Need new GFF_source?
 
 
-Method : "Mos_insertion"
+Method : "Mos_insertion" 
 Remark "Derived from the Drosophila mariner element Mos1, Mos insertions can be mobilized to generate deletion and frameshift mutations. See Bessereau et al., Mobilization of a Drosophila transposon in the Caenorhabditis elegans germ line, Nature, 2001. 413:70-4."
 Colour "ORANGE"
 Strand_sensitive
 Width "1.1"
-Right_priority "2.5"
 Show_text
 GFF_source "Mos_insertion_allele"
 GFF_feature "transposable_element_insertion_site"
 
 
-Method : "Substitution_allele"
+Method : "Substitution_allele" 
 Remark "Simple allelic changes, i.e. mono or di-nucleotide substitutions"
 Colour "ORANGE"
 Strand_sensitive
 Width "1.1"
-Right_priority "2.5"
 Show_text
 GFF_source "Allele"
 GFF_feature "substitution"
 
 
-
-//////////////////////////////////////////////////////////////////////////////////////////
-//
-// Sequence and gene related methods
-// 
-//////////////////////////////////////////////////////////////////////////////////////////
-
-Method : "UTR"
-Colour   CERISE
-Show_up_strand CERISE
-Right_priority   2.000000
-Show_text
-Width 1
-GFF_source "UTR"
-GFF_feature "UTR"
-Remark "UTRs in WormBase are currently predicted on the basis of available transcript evidence."
-// Need new GFF_source?
-
-
-Method : "curated"
-Colour	 DARKBLUE
-CDS_colour	 DARKBLUE
-Show_up_strand	
-Bumpable	
-Right_priority	 2.000000
+Method : "Variation_PCR" 
+Remark	 "PCR product"
+Colour	 BLUE
+Width	 1.000000
 Show_text	
-EMBL_feature	 "CDS"
-GFF_source	 "curated"
-Remark "Predicted protein-coding genes are flagged with this method.  All of these genes have been looked at by a human curator at some point and have usually been modified with respect to the initial computer prediction."
+GFF_source	 "Variation_PCR"
+GFF_feature	 "PCR_product"
+Remark "PCR products used in Variation objects"
 
 
+////////////////////////////
+// Gene predicter methods //
+////////////////////////////
 
-/////////////////////////////////////////////////////////////
-//
-// Homology related methods (BLAST, BLAT and Waba
-//
-/////////////////////////////////////////////////////////////
+Method : "fgenesh"
+Colour   DARKRED
+CDS_colour       DARKRED
+Show_up_strand   DARKRED
+Bumpable
+Show_text
+EMBL_feature     "CDS"
+
+Method : "jigsaw" 
+Colour   PURPLE
+CDS_colour       PURPLE
+Show_up_strand   PURPLE
+Bumpable
+Show_text
+EMBL_feature     "CDS"
+
+Method : "Genefinder" 
+Colour   DARKGRAY
+CDS_colour       DARKGRAY
+Show_up_strand   DARKGRAY
+Bumpable
+Show_text
+EMBL_feature     "CDS"
+
+Method : "ensembl"
+Colour   ORANGE
+CDS_colour       ORANGE
+Show_up_strand   ORANGE
+Bumpable
+Show_text
+EMBL_feature     "CDS"
+
+Method : "twinscan" 
+Colour   DARKGREEN
+CDS_colour       DARKGREEN
+Show_up_strand   DARKGREEN
+Bumpable
+Show_text
+EMBL_feature     "CDS"
 
 
-Method : "BLAT_TC1_BEST"
+////////////////////////////////////////////////////
+// Homology related methods (BLAST, BLAT and Waba //
+////////////////////////////////////////////////////
+
+			//////////
+			// BLAT //
+			//////////
+
+Method : "BLAT_TC1_BEST" 
 Colour	 BROWN
 Score_by_width	
 Score_bounds	 50.000000 100.000000
-Right_priority	 5.30000
 Blixem_N	
 GFF_source	 "BLAT_TC1_BEST"
 GFF_feature	 "nucleotide_match"
 Remark "This method is used to map flanking sequences of Tc1 insertions in another strain of C. elegans against the N2 genome sequence."
 // Need new GFF_feature?
 
-Method : "BLAT_TC1_OTHER"
+Method : "BLAT_TC1_OTHER"  
 Colour	 BROWN
 Score_by_width	
 Score_bounds	 50.000000 100.000000
-Right_priority	 5.30000
 Blixem_N	
 GFF_source	 "BLAT_TC1_OTHER"
 GFF_feature	 "nucleotide_match"
@@ -178,31 +390,22 @@ Remark "This method is used to map flanking sequences of Tc1 insertions in anoth
 // Need new GFF_feature?
 
 
-Method : "BLAT_BAC_END"
+Method : "BLAT_BAC_END" 
 Colour   PALEYELLOW
 Score_by_width
 Score_bounds     50.000000 100.000000
 Overlap
-Right_priority   3.980000
 Blixem_N
 GFF_source "BLAT_BAC_END"
 GFF_feature "nucleotide_match"
 Remark "This method is used to map C.briggsae BAC end sequences."
 
-
-
-Method : "BLASTP"
-Colour	 BLUE
-Remark "This is the acedb method used for displaying BLASTP homologies"
-
-
-Method : "BLAT_EMBL_BEST"
+Method : "BLAT_EMBL_BEST" 
 Colour   VIOLET
 Show_up_strand	
 Score_by_width
 Score_bounds     50.000000 100.000000
 Overlap
-Right_priority   4.04
 Blixem_N
 Join_blocks
 GFF_feature "nucleotide_match"
@@ -210,12 +413,11 @@ Remark "This method is used to match C. elegans coding sequences (using the BLAT
 // Need GFF_source and GFF_feature?
 
 
-Method : "BLAT_EMBL_OTHER"
+Method : "BLAT_EMBL_OTHER" 
 Colour   PALEVIOLET
 Score_by_width
 Score_bounds     50.000000 100.000000
 Overlap
-Right_priority   4.06
 Blixem_N
 Join_blocks
 GFF_feature "nucleotide_match"
@@ -223,13 +425,12 @@ Remark "This method is used to match C. elegans coding sequences (using the BLAT
 // Need GFF_source and GFF_feature?
 
 
-Method : "BLAT_EST_BEST"
+Method : "BLAT_EST_BEST" 
 Colour   PALEORANGE
 Show_up_strand	
 Score_by_width
 Score_bounds     50.000000 100.000000
 Overlap
-Right_priority   3.98
 Blixem_N
 Join_blocks
 GFF_feature "EST_match"
@@ -237,12 +438,11 @@ Remark "This method describes C. elegans EST sequences..."
 // Need GFF_source and GFF_feature?
 
 
-Method : "BLAT_EST_OTHER"
+Method : "BLAT_EST_OTHER" 
 Colour   YELLOW
 Score_by_width
 Score_bounds     50.000000 100.000000
 Overlap
-Right_priority   4.00
 Blixem_N
 Join_blocks
 GFF_feature "EST_match"
@@ -250,10 +450,9 @@ Remark "This method describes C. elegans EST sequences..."
 // Need GFF_source and GFF_feature?
 
 
-Method : "BLAT_mRNA_BEST"
+Method : "BLAT_mRNA_BEST" 
 COLOUR "RED"
 Show_up_strand	
-Right_priority 3.9
 Score_by_width
 Score_bounds     50.000000 100.000000
 Overlap
@@ -264,11 +463,10 @@ Remark "This method describes C. elegans mRNA sequences..."
 // Need GFF_source and GFF_feature?
 
 
-Method : "BLAT_mRNA_OTHER"
+Method : "BLAT_mRNA_OTHER" 
 COLOUR "ORANGE"
 Score_by_width
 Score_bounds     50.000000 100.000000
-Right_priority 3.92
 Overlap
 Blixem_N
 Join_blocks
@@ -276,10 +474,9 @@ GFF_feature "cDNA_match"
 Remark "This method describes C. elegans mRNA sequences...."
 // Need GFF_source and GFF_feature?
 
-Method : "BLAT_ncRNA_BEST"
+Method : "BLAT_ncRNA_BEST" 
 COLOUR "RED"
 Show_up_strand	
-Right_priority 4.02
 Score_by_width
 Score_bounds     50.000000 100.000000
 Overlap
@@ -290,11 +487,10 @@ Remark "This method describes C. elegans ncRNA sequences..."
 // Need GFF_source and GFF_feature?
 
 
-Method : "BLAT_ncRNA_OTHER"
+Method : "BLAT_ncRNA_OTHER" 
 COLOUR "ORANGE"
 Score_by_width
 Score_bounds     50.000000 100.000000
-Right_priority 4.04
 Overlap
 Blixem_N
 Join_blocks
@@ -303,78 +499,69 @@ Remark "This method describes C. elegans ncRNA sequences...."
 // Need GFF_source and GFF_feature?
 
 
-Method : "BLAT_OST_BEST"
+Method : "BLAT_OST_BEST" 
 Colour   "PALEGRAY"
 Show_up_strand
 Score_by_width
 Score_bounds     50.000000 100.000000
-Right_priority   3.940000
 Join_blocks
 Blixem_N
 GFF_feature "expressed_sequence_match"
 Remark "This method describes C. elegans OST sequences...."
 // Need GFF_source and GFF_feature?
 
-Method : "BLAT_OST_OTHER"
+Method : "BLAT_OST_OTHER" 
 Colour   "GRAY"
 Show_up_strand
 Score_by_width
 Score_bounds     50.000000 100.000000
 Overlap
-Right_priority   3.960000
 Join_blocks
 Blixem_N
 GFF_feature "expressed_sequence_match"
 Remark "This method describes C. elegans RST sequences...."
 // Need GFF_source and GFF_feature?
 
-
-
-Method : "BLAT_RST_BEST"
+Method : "BLAT_RST_BEST" 
 Colour   "LIGHTGRAY"
 Show_up_strand
 Score_by_width
 Score_bounds     50.000000 100.000000
-Right_priority   3.840000
 Join_blocks
 Blixem_N
 GFF_feature "expressed_sequence_match"
 Remark "This method describes C. elegans RST sequences...."
 // Need GFF_source and GFF_feature?
 
-Method : "BLAT_RST_OTHER"
+Method : "BLAT_RST_OTHER" 
 Colour   "DARKGRAY"
 Show_up_strand
 Score_by_width
 Score_bounds     50.000000 100.000000
 Overlap
-Right_priority   3.860000
 Join_blocks
 Blixem_N
 GFF_feature "expressed_sequence_match"
 Remark "This method describes C. elegans OST sequences...."
 // Need GFF_source and GFF_feature?
 
-
-Method : "BLAT_Caen_EST_BEST"
+Method : "BLAT_Caen_EST_BEST" 
 Colour   "GREEN"
 Show_up_strand
 Score_by_width
 Score_bounds     50.000000 100.000000
-Right_priority   3.980000
 Join_blocks
 Blixem_N
 GFF_feature "expressed_sequence_match"
 Remark "This method describes the best location of ESTs from other Caenorhabditae sp aligned to geneome"
 // Need GFF_source and GFF_feature?
 
-Method : "BLAT_Caen_EST_OTHER"
+Method : "BLAT_Caen_EST_OTHER" 
 Colour   "PALEGREEN"
 Show_up_strand
 Score_by_width
 Score_bounds     50.000000 100.000000
 Overlap
-Right_priority   3.990000
 Join_blocks
 Blixem_N
 GFF_feature "expressed_sequence_match"
@@ -382,35 +569,30 @@ Remark "This method describes the secondary location of ESTs from other Caenorha
 // Need GFF_source and GFF_feature?
 
 
-Method : "BLAT_Caen_mRNA_BEST"
+Method : "BLAT_Caen_mRNA_BEST" 
 Colour   "PALEYELLOW"
 Show_up_strand
 Score_by_width
 Score_bounds     50.000000 100.000000
-Right_priority   4.1
 Join_blocks
 Blixem_N
 GFF_feature "expressed_sequence_match"
 Remark "This method describes the best location of mRNAs from other Caenorhabditae sp aligned to geneome"
 // Need GFF_source and GFF_feature?
 
-
-Method : "BLAT_Caen_mRNA_OTHER"
+Method : "BLAT_Caen_mRNA_OTHER" 
 Colour   "BROWN"
 Show_up_strand
 Score_by_width
 Score_bounds     50.000000 100.000000
-Right_priority   4.2
 Join_blocks
 Blixem_N
 GFF_feature "expressed_sequence_match"
 Remark "This method describes the secondary locations of mRNA from other Caenorhabditae sp aligned to geneome"
 // Need GFF_source and GFF_feature?
 
-
-Method : "BLAT_NEMATODE"
+Method : "BLAT_NEMATODE" 
 Colour "GREEN"
-Right_priority 4.7
 Score_by_width
 Score_bounds     50.000000 100.000000
 Show_up_strand
@@ -421,10 +603,8 @@ GFF_feature "translated_nucleotide_match"
 Remark "This method describes cDNA sequences from other nematode species (i.e. non-C. elegans)..."
 // Need GFF_source and GFF_feature?
 
-
-Method : "BLAT_WASHU"
+Method : "BLAT_WASHU" 
 Colour "LIGHTGREEN"
-Right_priority 4.7
 Score_by_width
 Score_bounds     50.000000 100.000000
 Show_up_strand
@@ -435,10 +615,8 @@ GFF_feature "translated_nucleotide_match"
 Remark "This method describes EST contigs of non-elegans nematode species from the WashU NemaGene project"
 // Need GFF_source and GFF_feature?
 
-
-Method : "BLAT_NEMBASE"
+Method : "BLAT_NEMBASE" 
 Colour "LIGHTGREEN"
-Right_priority 4.7
 Score_by_width
 Score_bounds     50.000000 100.000000
 Show_up_strand
@@ -449,43 +627,50 @@ GFF_feature "translated_nucleotide_match"
 Remark "This method describes EST contigs of non-elegans nematode species from the Edinburgh NemBase project"
 // Need GFF_source and GFF_feature?
 
-Method : "WABA_coding"
+
+			//////////
+			// WABA //
+			//////////
+
+Method : "WABA_coding" 
 Colour "DARKGREEN"
 GFF_source "waba_coding"
 GFF_feature "similarity"
 Score_by_width
 Score_bounds 40 120
-Right_priority 5.4
 Allow_misalign
 GFF_feature "nucleotide_match"
 Remark "WABA 'Coding' matches resulting from a search of C. briggsae assembly against C. elegans genome"
 Strand_sensitive
 
 
-Method : "WABA_strong"
+Method : "WABA_strong" 
 Colour "DARKGREEN"
 GFF_source "waba_strong"
 GFF_feature "similarity"
 Score_by_width
 Score_bounds 40 120
-Right_priority 5.4
 Allow_misalign
 GFF_feature "nucleotide_match"
 Remark "WABA 'Strong' matches resulting from a search of C. briggsae assembly against C. elegans genome"
 Strand_sensitive
 
 
-Method : "WABA_weak"
+Method : "WABA_weak" 
 Colour "DARKGREEN"
 GFF_source "waba_weak"
 GFF_feature "similarity"
 Score_by_width
 Score_bounds 40 120
-Right_priority 5.4
 Allow_misalign
 GFF_feature "nucleotide_match"
 Remark "WABA 'weak' matches resulting from a search of C. briggsae assembly against C. elegans genome"
 Strand_sensitive
+
+			///////////
+			// BLAST //
+			///////////
+
 
 Method : "wublastp_remanei"
 Remark   "wublastp search of remanei proteome"
@@ -536,13 +721,12 @@ Colour "LIGHTGREEN"
 Remark   "wublastp search of Wormpep vs C. brenneri peptides"
 
 
-Method : "wublastx_worm"
+Method : "wublastx_worm" 
 Colour "DARKBLUE"
 Frame_sensitive
 Show_up_strand
 Score_by_width
 Score_bounds     10.000000 100.000000
-Right_priority   4.700000
 Allow_misalign
 Blixem_X
 GFF_source       "wublastx"  
@@ -551,14 +735,40 @@ Join_blocks
 Remark   "wublastx search of C. elegans genomic clones vs Wormpep"
 Gapped
 
+Method : "wublastx_briggsae" 
+Colour "LIGHTGREEN"
+Frame_sensitive
+Show_up_strand
+Score_by_width
+Score_bounds     10.000000 100.000000
+Allow_misalign
+Blixem_X
+GFF_source       "wublastx"  
+GFF_feature      "protein_match"
+Join_blocks
+Remark   "wublastx search of C. elegans genomic clones vs C. briggsae peptides"
+Gapped
 
-Method : "wublastx_brenneri"
+Method : "wublastx_remanei" 
+Colour   DARKGREEN
+Frame_sensitive
+Show_up_strand
+Score_by_width
+Score_bounds     10.000000 100.000000
+Allow_misalign
+Blixem_X
+GFF_source       "wublastx"
+GFF_feature      "protein_match"
+Join_blocks
+Remark   "wublastx search of C. elegans genomic clones vs C. remanei peptides"
+Gapped
+
+Method : "wublastx_brenneri" 
 Colour "BLUE"
 Frame_sensitive
 Show_up_strand
 Score_by_width
 Score_bounds     10.000000 100.000000
-Right_priority   4.700000
 Allow_misalign
 Blixem_X
 GFF_source       "wublastx"  
@@ -568,124 +778,12 @@ Remark   "wublastx search of genomic clones vs Brepep"
 Gapped
 
 
-Method : "wublastx_briggsae"
-Colour "LIGHTGREEN"
-Frame_sensitive
-Show_up_strand
-Score_by_width
-Score_bounds     10.000000 100.000000
-Right_priority   4.7500000
-Allow_misalign
-Blixem_X
-GFF_source       "wublastx"  
-GFF_feature      "protein_match"
-Join_blocks
-Remark   "wublastx search of C. elegans genomic clones vs C. briggsae peptides"
-Gapped
-
-
-Method : "wublastx_fly"
-Colour "BLUE"
-Frame_sensitive
-Show_up_strand 
-Score_by_width  
-Score_bounds     10.000000 100.000000
-Right_priority   4.80
-Allow_misalign
-Blixem_X
-GFF_source       "wublastx"
-GFF_feature      "protein_match"
-Join_blocks
-Remark   "wublastx search of C. elegans genomic clones vs Drosophila melanogaster proteins from GadFly"
-Gapped
-
-
-Method : "wublastx_yeast"
-Colour "LIGHTBLUE"
-Frame_sensitive
-Show_up_strand
-Score_by_width
-Score_bounds     10.000000 100.000000
-Right_priority   4.85
-Allow_misalign
-Blixem_X
-GFF_source       "wublastx"  
-GFF_feature      "protein_match"
-Join_blocks
-Remark   "wublastx search of C. elegans genomic clones vs Saccharomyces cerevisiae proteins from SGD"
-Gapped
-
-
-Method : "wublastx_human"
-Colour "PALEBLUE"
-Frame_sensitive
-Show_up_strand
-Score_by_width
-Score_bounds     10.000000 100.000000
-Right_priority   4.90
-Allow_misalign
-Blixem_X
-GFF_source       "wublastx"  
-GFF_feature      "protein_match"
-Join_blocks
-Remark   "wublastx search of C. elegans genomic clones vs Human proteins from IPI human protein set"
-Gapped
-
-
-Method : "wublastx_slimSwissProt"
-Colour "VIOLET"
-Frame_sensitive
-Show_up_strand
-Score_by_width
-Score_bounds     10.000000 100.000000
-Right_priority   4.95
-Allow_misalign
-Blixem_X
-GFF_source       "wublastx"  
-GFF_feature      "protein_match"
-Join_blocks
-Remark   "wublastx search of C. elegans genomic clones vs proteins from reduced SwissProt dataset"
-Gapped
-
-
-Method : "wublastx_slimTrEmbl"
-Colour "VIOLET"
-Frame_sensitive
-Show_up_strand
-Score_by_width
-Score_bounds     10.000000 100.000000
-Right_priority   5.00
-Allow_misalign
-Blixem_X
-GFF_source       "wublastx"  
-GFF_feature      "protein_match"
-Join_blocks
-Remark   "wublastx search of C. elegans genomic clones vs proteins from reduced TrEmbl dataset"
-Gapped
-
- 
-Method : "wublastx_remanei"
+Method : "wublastx_pristionchus" 
 Colour   DARKGREEN
 Frame_sensitive
 Show_up_strand
 Score_by_width
 Score_bounds     10.000000 100.000000
-Right_priority   4.80000
-Allow_misalign
-Blixem_X
-GFF_source       "wublastx"
-GFF_feature      "protein_match"
-Join_blocks
-Remark   "wublastx search of C. elegans genomic clones vs C. remanei peptides"
-Gapped
-
-Method : "wublastx_pristionchus"
-Colour   DARKGREEN
-Frame_sensitive
-Show_up_strand
-Score_by_width
-Score_bounds     10.000000 100.000000
-Right_priority   4.80000
 Allow_misalign
 Blixem_X
 GFF_source       "wublastx"
@@ -695,13 +793,12 @@ Remark   "wublastx search vs P. pacificus peptides"
 Gapped
 
 
-Method : "wublastx_japonica"
+Method : "wublastx_japonica" 
 Colour   LIGHTGREEN
 Frame_sensitive
 Show_up_strand
 Score_by_width
 Score_bounds     10.000000 100.000000
-Right_priority   4.90000
 Allow_misalign
 Blixem_X
 GFF_source       "wublastx"
@@ -711,23 +808,108 @@ Remark   "wublastx search vs C. japonica peptides"
 Gapped
 
 
-Method : "TEC_RED"
+Method : "wublastx_fly" 
+Colour "BLUE"
+Frame_sensitive
+Show_up_strand 
+Score_by_width  
+Score_bounds     10.000000 100.000000
+Allow_misalign
+Blixem_X
+GFF_source       "wublastx"
+GFF_feature      "protein_match"
+Join_blocks
+Remark   "wublastx search of C. elegans genomic clones vs Drosophila melanogaster proteins from GadFly"
+Gapped
+
+
+Method : "wublastx_yeast" 
+Colour "LIGHTBLUE"
+Frame_sensitive
+Show_up_strand
+Score_by_width
+Score_bounds     10.000000 100.000000
+Allow_misalign
+Blixem_X
+GFF_source       "wublastx"  
+GFF_feature      "protein_match"
+Join_blocks
+Remark   "wublastx search of C. elegans genomic clones vs Saccharomyces cerevisiae proteins from SGD"
+Gapped
+
+
+Method : "wublastx_human" 
+Colour "PALEBLUE"
+Frame_sensitive
+Show_up_strand
+Score_by_width
+Score_bounds     10.000000 100.000000
+Allow_misalign
+Blixem_X
+GFF_source       "wublastx"  
+GFF_feature      "protein_match"
+Join_blocks
+Remark   "wublastx search of C. elegans genomic clones vs Human proteins from IPI human protein set"
+Gapped
+
+
+Method : "wublastx_slimSwissProt" 
+Colour "VIOLET"
+Frame_sensitive
+Show_up_strand
+Score_by_width
+Score_bounds     10.000000 100.000000
+Allow_misalign
+Blixem_X
+GFF_source       "wublastx"  
+GFF_feature      "protein_match"
+Join_blocks
+Remark   "wublastx search of C. elegans genomic clones vs proteins from reduced SwissProt dataset"
+Gapped
+
+
+Method : "wublastx_slimTrEmbl" 
+Colour "VIOLET"
+Frame_sensitive
+Show_up_strand
+Score_by_width
+Score_bounds     10.000000 100.000000
+Allow_misalign
+Blixem_X
+GFF_source       "wublastx"  
+GFF_feature      "protein_match"
+Join_blocks
+Remark   "wublastx search of C. elegans genomic clones vs proteins from reduced TrEmbl dataset"
+Gapped
+
+ 
+			///////////
+			// OTHER //
+			///////////
+
+Method : "TEC_RED" 
 Colour CYAN
 Show_up_strand
 Score_by_width
-Right_priority 2.45
 Blixem_N
 GFF_feature "nucleotide_match"
 Remark   "TEC-RED tag similarities"
 
+Method : "mass_spec_genome" 
+Colour BROWN
+Allow_misalign
+Width 1
+GFF_feature "translated_nucleotide_match"
+Remark "Mass Spectrometry peptide matching a protein."
 
-////////////////////////////////////////////////////////////////
-//
-// GeneFinder/acedb FMAP methods
-//
-/////////////////////////////////////////////////////////////////
 
-Method : "ATG"
+/////////////////////////////////////////////////////////////////////
+// GeneFinder/acedb FMAP methods				   //
+// These still have Right_priority tags as they might be "special" //
+/////////////////////////////////////////////////////////////////////
+
+
+Method : "ATG" 
 Colour	 YELLOW
 Frame_sensitive	
 Strand_sensitive	
@@ -747,14 +929,21 @@ Blixem_X
 Blixem_N	
 Remark "This method is used by acedb to show protein-coding genes on the FMAP display"
 
+Method : "Link"
+GFF_source "Link"
+GFF_feature "region"
+No_display	
 
 Method : "Genomic_canonical"
 GFF_feature "region"
 Remark	 "Method for sequences of genomic clones selected for use in the genome sequencing project of C. elegans"
 No_display	
 
+Method : "BLASTP"
+Colour	 BLUE
+Remark "This is the acedb method used for displaying BLASTP homologies"
 
-Method : "GF_ATG"
+Method : "GF_ATG" 
 Colour	 ORANGE
 Frame_sensitive	
 Strand_sensitive	
@@ -763,7 +952,7 @@ Score_bounds	 0.000000 3.000000
 Right_priority	 4.200000
 Remark "GeneFinder method"
 
-Method : "GF_coding5_seg"
+Method : "GF_coding5_seg" 
 Colour	 LIGHTGRAY
 Frame_sensitive	
 Strand_sensitive	
@@ -772,7 +961,7 @@ Score_bounds	 3.000000 12.000000
 Right_priority	 4.400000
 Remark "GeneFinder method"
 
-Method : "GF_splice"
+Method : "GF_splice" 
 Strand_sensitive	
 Score_by_width	
 Score_bounds	 -2.000000 4.000000
@@ -781,7 +970,7 @@ Right_priority	 5.600000
 Remark "GeneFinder method"
 
 
-Method : "hexExon"
+Method : "hexExon" 
 Colour	 ORANGE
 Frame_sensitive	
 Strand_sensitive	
@@ -789,500 +978,6 @@ Score_by_width
 Score_bounds	 10.000000 100.000000
 Right_priority	 4.450000
 Remark "GeneFinder method"
-
-
-
-////////////////////////////////////////////////////////////////
-//
-// Miscellaneous methods
-//
-////////////////////////////////////////////////////////////////
-
-Method : "Oligo_set"
-Remark          "A collection of oligonucleotide probes found in a microarray spot that defines the spot hybridization target."
-GFF_source      "Oligo_set"
-GFF_feature     "reagent"
-Width    1.000000
-Right_priority	 3.150000
-
-Method : "SAGE_tag"
-Remark  "A short diagnostic sequence tag, serial analysis of gene expression (SAGE), that allows the quantitative and simultaneous analysis of a large number of transcripts. A SAGE tag can be mapped to multiple transcripts and genomic locations."
-GFF_source      "SAGE_tag"
-GFF_feature     "SAGE_tag"
-
-Method : "SAGE_tag_unambiguously_mapped"
-Remark  "A SAGE tag that is mapped to a single transcript or to multiple transcripts corresponding to a single gene. An unambiguously mapped SAGE tag has a unique genomic location."
-GFF_source      "SAGE_tag_unambiguously_mapped"
-GFF_feature     "SAGE_tag"
-
-Method : "SAGE_tag_most_three_prime"
-Remark  "A SAGE tag that is mapped to multiple transcripts but is most likely derived from the one, to which it is mapped closest to the 3' end due to the SAGE experimental procedure. Proximity to the 3' end is determined based on the number of anchoring enzyme restriction sites (the 3' most site corresponds to position 1)."
-GFF_source      "SAGE_tag_most_three_prime"
-GFF_feature     "SAGE_tag"
-
-Method : "SAGE_tag_genomic_unique"
-Remark  "A SAGE tag that is not mapped to any transcript but is mapped to a unique genomic location."
-GFF_source      "SAGE_tag_genomic_unique"
-GFF_feature     "SAGE_tag"
-
-
-Method : "cDNA_for_RNAi"
-Width    1.000000
-Right_priority	 3.050000
-GFF_source	 "cDNA_for_RNAi"
-GFF_feature	 "experimental_result_region"
-// Need new GFF_source and GFF_feature?
-
-
-Method : "Expr_profile"
-Colour "GREEN"
-Width    1.000000
-Right_priority 3.2
-Allow_misalign
-Show_text
-GFF_source "Expr_profile"
-GFF_feature	 "experimental_result_region"
-
-Method : "Expr_pattern"
-GFF_source	"Expr_pattern"
-GFF_feature	"reagent"
-Colour "RED"
-Right_priority 4
-Allow_misalign
-Width 1.000000
-Strand_sensitive Show_up_strand 
-
-
-//To map Chronograms to genome.
-
-Method : "Chronogram"
-GFF_source      "Chronogram"
-GFF_feature     "reagent"
-Colour ORANGE
-Right_priority 4
-Allow_misalign
-Width 1
-Strand_sensitive Show_up_strand
-
-Method : "Orfeome"
-Colour	BLUE
-Width    1.000000
-Right_priority	 3.000000
-Show_text	
-GFF_source	 "Orfeome"
-GFF_feature	 "PCR_product"
-
-Method : "GenePairs"
-Colour	BLUE
-Width    1.000000
-Right_priority	 3.000000
-Show_text	
-GFF_source	 "GenePair_STS"
-GFF_feature	 "PCR_product"
-Remark "PCR product"
-
-//PCR products used in Variation objects
-
-Method : "Variation_PCR"
-Remark	 "PCR product"
-Colour	 BLUE
-Width	 1.000000
-Right_priority	 3.000000
-Show_text	
-GFF_source	 "Variation_PCR"
-GFF_feature	 "PCR_product"
-Remark "PCR products used in Variation objects"
-
-Method : "history"
-Colour	 GRAY
-CDS_colour	 MAGENTA
-Show_up_strand	 GRAY
-Bumpable	
-Right_priority	 2.300000
-Show_text	
-Remark "History objects represent old gene predictions which have since been removed, merged with other gene predictions or refined to make a better gene prediction according to the latest evidence"
-
-
-Method : "inverted"
-Remark	 "Poly-G number may not be accurate"
-Colour	 "DARKGRAY"
-Score_by_width	
-Score_bounds	 50.000000 100.000000
-Percent	
-Right_priority	 5.550000
-GFF_source	 "inverted"
-GFF_feature	 "inverted_repeat"
-
-Method : "Link"
-GFF_source "Link"
-GFF_feature "region"
-No_display	
-
-
-Method : "mRNA"
-Colour	 DARKRED
-Show_up_strand	
-Bumpable	
-Right_priority	 1.995000
-Show_text	
-GFF_source	 "mRNA"
-GFF_feature	 "mRNA"
-
-
-Method : "NDB_CDS"
-Colour	 GRAY
-CDS_colour	 RED
-Show_up_strand	
-Bumpable	
-Right_priority	 2.200000
-Show_text	
-
-
-Method : "operon"
-Colour	 DARKGRAY
-Show_up_strand	
-Width    1.000000
-Right_priority	 1.0
-Show_text	
-GFF_source	 "operon"
-GFF_feature	 "operon"
-
-Method : "Gene"
-Colour	 LIGHTRED
-Show_up_strand	
-Width    1.000000
-Right_priority	 1.1
-Show_text	
-GFF_source	 "gene"
-GFF_feature	 "gene"
-
-
-Method : "Pfam-hmmfs"
-Colour	 DARKGREEN
-Score_by_width	
-Score_bounds	 20.000000 50.000000
-Bumpable	
-Blixem_P	
-Belvu	
-
-Method : "Pfam-hmmls"
-Colour	 LIGHTGREEN
-Bumpable	
-Blixem_P	
-Belvu	
-
-
-Method : "predicted_polyA_site"
-Colour	 CERISE
-Strand_sensitive	
-Width	 1.000000
-Right_priority	 2.200000
-Show_up_strand
-Show_text
-GFF_source "computational_prediction"
-GFF_feature "polyA_site"
-Remark	 "Predicted polyadenylation site.  Derived from an analysis by Ashwin Hajarnavis and Ian Korf at the Wellcome Trust Sanger Insitute.  This analysis used hidden Markov models and polyadenylation signal and site predictions were made for all annotated genes in the WS110 release of WormBase.  These predictions will help extend many 3' UTR predictions in WormBase as many previous UTRs were only extended as far as the 3' most matching EST sequence, but many of these are known to be clipped at the 3' end."
-
-Method : "predicted_polyA_signal_sequence"
-Colour	 CERISE
-Strand_sensitive	
-Width	 1.000000
-Right_priority	 2.200000
-Show_up_strand
-Show_text
-GFF_source "computational_prediction"
-GFF_feature "polyA_signal_sequence"
-Remark	 "Predicted polyadenylation signal sequences.  Derived from an analysis by Ashwin Hajarnavis and Ian Korf at the Wellcome Trust Sanger Insitute.  This analysis used hidden Markov models and polyadenylation signal and site predictions were made for all annotated genes in the WS110 release of WormBase.  These predictions will help extend many 3' UTR predictions in WormBase as many previous UTRs were only extended as far as the 3' most matching EST sequence, but many of these are known to be clipped at the 3' end."
-
-                                                                                                         
-
-
-Method : "provisional"
-Colour	 BLUE
-Show_up_strand	
-Bumpable	
-Right_priority	 2.200000
-Show_text	
-EMBL_feature	 "CDS"
-GFF_source	 "provisional"
-
-
-Method : "Pseudogene"
-Colour	 DARKGRAY
-Show_up_strand	
-Width	 1.500000
-Right_priority	 2.000000
-Show_text	
-EMBL_threshold	 0.000000
-EMBL_qualifier	 "\/note=\"\%s\"" "note"
-
-
-Method : "RepeatMasker"
-Colour	 RED
-Score_by_width	
-Score_bounds	 50.000000 500.000000
-Right_priority	 5.570000
-Allow_misalign
-GFF_source	 "RepeatMasker"
-GFF_feature	 "repeat_region"
-
-Method : "RNA"
-Colour	 GREEN
-Show_up_strand	
-Width	 2.000000
-Right_priority	 2.000000
-Show_text	
-EMBL_feature	 "misc_RNA"
-GFF_source "RNA"
-GFF_feature "transcript"
-
-Method : "ncRNA"
-Colour	 GREEN
-Show_up_strand	
-Width	 2.000000
-Right_priority	 2.100000
-Show_text	
-EMBL_feature	 "ncRNA"
-GFF_source "ncRNA"
-GFF_feature "ncRNA_primary_transcript"
-Remark  "An mRNA sequence that does not encode for a protein rather the RNA molecule is the gene product."
-
-Method : "rRNA"
-Colour   GREEN
-Show_up_strand  
-Width    2.000000
-Right_priority   2.350000
-Show_text       
-GFF_source "rRNA"
-GFF_feature "rRNA_primary_transcript"
-EMBL_feature "rRNA"
-
-
-Method : "scRNA"
-Colour   GREEN
-Show_up_strand  
-Width    2.000000
-Right_priority   2.350000
-Show_text       
-EMBL_feature     "scRNA"
-GFF_source "scRNA"
-GFF_feature "scRNA_primary_transcript"
-
-Method : "snRNA"
-Colour   GREEN
-Show_up_strand  
-Width    2.000000
-Right_priority   2.350000
-Show_text       
-EMBL_feature     "snRNA"
-GFF_source "snRNA"
-GFF_feature "snRNA_primary_transcript"
-
-Method : "snlRNA"
-Colour   GREEN
-Show_up_strand  
-Width    2.000000
-Right_priority   2.350000
-Show_text       
-EMBL_feature     "snlRNA"
-GFF_source "snlRNA"
-GFF_feature "snlRNA_primary_transcript"
-
-Method : "snoRNA"
-Colour   GREEN
-Show_up_strand  
-Width    2.000000
-Right_priority   2.350000
-Show_text       
-EMBL_feature     "snoRNA"
-GFF_source "snoRNA"
-GFF_feature "snoRNA_primary_transcript"
-
-Method : "miRNA"
-Colour   GREEN
-Show_up_strand  
-Width    2.000000
-Right_priority   2.350000
-Show_text       
-EMBL_feature     "misc_RNA"
-GFF_source "miRNA"
-GFF_feature "miRNA_primary_transcript"
-
-Method : "stRNA"
-Colour   GREEN
-Show_up_strand  
-Width    2.000000
-Right_priority   2.3500000
-Show_text       
-EMBL_feature     "misc_RNA"
-GFF_source "stRNA"
-GFF_feature "stRNA_primary_transcript"
-
-Method : "RNAi"
-Width    1.000000
-Right_priority	 3.100000
-Allow_misalign
-Colour "DARKGREEN"
-GFF_source	 "RNAi"
-GFF_feature	 "RNAi_reagent"
-
-//RNAi Homols primary and secondary to distinguish identity to genomic target
-Method : "RNAi_primary"
-Width    1.000000
-Right_priority	 3.100000
-Allow_misalign
-Colour "DARKGREEN"
-GFF_source	"RNAi_primary"
-GFF_feature	"RNAi_reagent"
-Remark	"SO:0000337"
-Remark  "Primary matches for RNAi probes. Criteria Blast/BLAT >95% sequence identity over a stretch of at least 100 nt."
-
-Method : "RNAi_secondary"
-Width    0.5000000
-Right_priority	 3.100000
-Allow_misalign
-Colour "LIGHTGREEN"
-GFF_source	"RNAi_secondary"
-GFF_feature	"RNAi_reagent"
-Remark	"SO:0000337"
-Remark  "Secondary matches for RNAi probes. Criteria Blast 80-94.99% sequence identity over a stretch of at least 200 nt."
-
-
-Method : "RNAi_EST"
-GFF_source	 "cDNA_for_RNAi"
-GFF_feature	 "similarity"
-
-
-Method : "RNAi_injection"
-GFF_source	 "RNAi_injection"
-GFF_feature	 "experimental"
-
-Method : "signal_peptide"
-
-Method : "SPLICED_cDNA"
-Colour	 DARKGRAY
-Width	 2.000000
-Right_priority	 2.200000
-
-Method : "split"
-
-
-Method : "tandem"
-Remark	 "Tandem region"
-Colour	 DARKGRAY
-Score_by_width	
-Score_bounds	 50.000000 100.000000
-Percent	
-Right_priority	 5.530000
-GFF_source	 "tandem"
-GFF_feature	 "tandem_repeat"
-
-
-// Use for ar2-style transcript objects
-
-Method : "Coding_transcript"
-Colour DARKGREEN
-Show_up_strand
-Right_priority 2.1
-Width 1.5
-GFF_source "Coding_transcript"
-GFF_feature "protein_coding_primary_transcript"
-
-
-// Use for isoforms of coding genes which don't translate
-
-Method : "Non_coding_transcript"
-Colour	 DARKGRAY
-Show_up_strand	
-Right_priority	 2.050000
-Show_text	
-EMBL_feature	 "misc_RNA"
-GFF_source "Non_coding_transcript"
-GFF_feature "nc_primary_transcript"
-
-Method : "Transposon"
-Colour	 DARKGRAY
-Width	 2.000000
-Right_priority	 2.050000
-Show_text	
-Show_up_strand	
-GFF_source	 "Transposon"
-GFF_feature	 "transposable_element"
-
-Method : "Transposon_CDS"
-Colour	 DARKGRAY
-CDS_colour DARKGRAY
-Show_up_strand	
-Width	 2.000000
-Right_priority	 2.1
-Show_text	
-GFF_source	 "Transposon_CDS"
-GFF_feature	 "transposable_element"
-
-Method : "tRNA"
-Colour	 PURPLE
-Right_priority	 2.450000
-GFF_source	 "tRNA"
-GFF_feature	 "tRNA_primary_transcript"
-
-
-Method : "tRNAscan-SE-1.23"
-Colour	 GREEN
-Show_up_strand	
-Bumpable	
-Right_priority	 2.350000
-Show_text	
-EMBL_feature	 "tRNA"
-GFF_source "tRNAscan-SE-1.23"
-GFF_feature "tRNA_primary_transcript"
-
-
-
-
-Method : "fgenesh"
-Colour   DARKRED
-CDS_colour       DARKRED
-Show_up_strand   DARKRED
-Bumpable
-Right_priority   2.350000
-Show_text
-EMBL_feature     "CDS"
-
-Method : "jigsaw"
-Colour   PURPLE
-CDS_colour       PURPLE
-Show_up_strand   PURPLE
-Bumpable
-Right_priority   2.370000
-Show_text
-EMBL_feature     "CDS"
-
-Method : "Genefinder"
-Colour   DARKGRAY
-CDS_colour       DARKGRAY
-Show_up_strand   DARKGRAY
-Bumpable
-Right_priority   2.400000
-Show_text
-EMBL_feature     "CDS"
-
-Method : "ensembl"
-Colour   ORANGE
-CDS_colour       ORANGE
-Show_up_strand   ORANGE
-Bumpable
-Right_priority   2.450000
-Show_text
-EMBL_feature     "CDS"
-
-Method : "twinscan"
-Colour   DARKGREEN
-CDS_colour       DARKGREEN
-Show_up_strand   DARKGREEN
-Bumpable
-Right_priority   2.400000
-Show_text
-EMBL_feature     "CDS"
 
 Method : "worm_EMBL-dump"
 Display	
@@ -1305,28 +1000,228 @@ EMBL_dump_info   source_organism "Caenorhabditis elegans"
 EMBL_dump_info	 gene_from_name
 EMBL_feature	
 
+
+////////////////////////////////////////////
+// Miscellaneous methods that are Fmapped //
+////////////////////////////////////////////
+
+Method : "Oligo_set" 
+Remark          "A collection of oligonucleotide probes found in a microarray spot that defines the spot hybridization target."
+GFF_source      "Oligo_set"
+GFF_feature     "reagent"
+Width    1.000000
+
+Method : "SAGE_tag" 
+Remark  "A short diagnostic sequence tag, serial analysis of gene expression (SAGE), that allows the quantitative and simultaneous analysis of a large number of transcripts. A SAGE tag can be mapped to multiple transcripts and genomic locations."
+GFF_source      "SAGE_tag"
+GFF_feature     "SAGE_tag"
+
+Method : "SAGE_tag_unambiguously_mapped" 
+Remark  "A SAGE tag that is mapped to a single transcript or to multiple transcripts corresponding to a single gene. An unambiguously mapped SAGE tag has a unique genomic location."
+GFF_source      "SAGE_tag_unambiguously_mapped"
+GFF_feature     "SAGE_tag"
+
+Method : "SAGE_tag_most_three_prime" 
+Remark  "A SAGE tag that is mapped to multiple transcripts but is most likely derived from the one, to which it is mapped closest to the 3' end due to the SAGE experimental procedure. Proximity to the 3' end is determined based on the number of anchoring enzyme restriction sites (the 3' most site corresponds to position 1)."
+GFF_source      "SAGE_tag_most_three_prime"
+GFF_feature     "SAGE_tag"
+
+Method : "SAGE_tag_genomic_unique" 
+Remark  "A SAGE tag that is not mapped to any transcript but is mapped to a unique genomic location."
+GFF_source      "SAGE_tag_genomic_unique"
+GFF_feature     "SAGE_tag"
+
+
+Method : "cDNA_for_RNAi" 
+Width    1.000000
+GFF_source	 "cDNA_for_RNAi"
+GFF_feature	 "experimental_result_region"
+// Need new GFF_source and GFF_feature?
+
+
+Method : "Expr_profile" 
+Colour "GREEN"
+Width    1.000000
+Allow_misalign
+Show_text
+GFF_source "Expr_profile"
+GFF_feature	 "experimental_result_region"
+
+Method : "Expr_pattern" 
+GFF_source	"Expr_pattern"
+GFF_feature	"reagent"
+Colour "RED"
+Allow_misalign
+Width 1.000000
+Strand_sensitive Show_up_strand 
+
+Method : "Chronogram" 
+GFF_source      "Chronogram"
+GFF_feature     "reagent"
+Colour ORANGE
+Allow_misalign
+Width 1
+Strand_sensitive Show_up_strand
+
+Method : "Orfeome" 
+Colour	BLUE
+Width    1.000000
+Show_text	
+GFF_source	 "Orfeome"
+GFF_feature	 "PCR_product"
+
+Method : "GenePairs" 
+Colour	BLUE
+Width    1.000000
+Show_text	
+GFF_source	 "GenePair_STS"
+GFF_feature	 "PCR_product"
+Remark "PCR product"
+
+Method : "RNAi"
+Width    1.000000
+Allow_misalign
+Colour "DARKGREEN"
+GFF_source	 "RNAi"
+GFF_feature	 "RNAi_reagent"
+
+//RNAi Homols primary and secondary to distinguish identity to genomic target
+Method : "RNAi_primary" 
+Width    1.000000
+Allow_misalign
+Colour "DARKGREEN"
+GFF_source	"RNAi_primary"
+GFF_feature	"RNAi_reagent"
+Remark	"SO:0000337"
+Remark  "Primary matches for RNAi probes. Criteria Blast/BLAT >95% sequence identity over a stretch of at least 100 nt."
+
+Method : "RNAi_secondary" 
+Width    0.5000000
+Allow_misalign
+Colour "LIGHTGREEN"
+GFF_source	"RNAi_secondary"
+GFF_feature	"RNAi_reagent"
+Remark	"SO:0000337"
+Remark  "Secondary matches for RNAi probes. Criteria Blast 80-94.99% sequence identity over a stretch of at least 200 nt."
+
+Method : "RNAi_EST"
+GFF_source	 "cDNA_for_RNAi"
+GFF_feature	 "similarity"
+
+Method : "Vancouver_fosmid"
+GFF_source Vancouver_fosmid
+GFF_feature region
+No_display
+Remark "Method for the Vancouver fosmid clones"
+
+
+Method : "Promoterome"  
+GFF_source      "Promoterome"
+GFF_feature     "PCR_product"
+Remark          "SO:0000006"
+
+
+///////////////////////////
+// Miscellaneous methods //
+///////////////////////////
+
+Method : "mRNA" //??
+Colour	 DARKRED
+Show_up_strand	
+Bumpable	
+Right_priority	 1.995000
+Show_text	
+GFF_source	 "mRNA"
+GFF_feature	 "mRNA"
+
+
+Method : "NDB_CDS"
+Colour	 GRAY
+CDS_colour	 RED
+Show_up_strand	
+Bumpable	
+Right_priority	 2.200000
+Show_text	
+
+
+Method : "Pfam-hmmfs"
+Colour	 DARKGREEN
+Score_by_width	
+Score_bounds	 20.000000 50.000000
+Bumpable	
+Blixem_P	
+Belvu	
+
+Method : "Pfam-hmmls"
+Colour	 LIGHTGREEN
+Bumpable	
+Blixem_P	
+Belvu	
+
+Method : "provisional"
+Colour	 BLUE
+Show_up_strand	
+Bumpable	
+Right_priority	 2.200000
+Show_text	
+EMBL_feature	 "CDS"
+GFF_source	 "provisional"
+
+Method : "RNAi_injection"
+GFF_source	 "RNAi_injection"
+GFF_feature	 "experimental"
+
+Method : "signal_peptide"
+// never populated with data?
+
+Method : "SPLICED_cDNA"
+Colour	 DARKGRAY
+Width	 2.000000
+Right_priority	 2.200000
+
+Method : "split"
+// never populated with data?
+
+
+
 ///////////////////////////////////////////////////////
-//                                                   //
-// Methods for Feature markup and transcriptmasking  //
-//                                                   //
+// Methods for Feature markup and transcript masking //
 ///////////////////////////////////////////////////////
 
-Method : "SL1"
+Method : "predicted_polyA_site"
+Colour	 CERISE
+Strand_sensitive	
+Width	 1.000000
+Show_up_strand
+Show_text
+GFF_source "computational_prediction"
+GFF_feature "polyA_site"
+Remark	 "Predicted polyadenylation site.  Derived from an analysis by Ashwin Hajarnavis and Ian Korf at the Wellcome Trust Sanger Insitute.  This analysis used hidden Markov models and polyadenylation signal and site predictions were made for all annotated genes in the WS110 release of WormBase.  These predictions will help extend many 3' UTR predictions in WormBase as many previous UTRs were only extended as far as the 3' most matching EST sequence, but many of these are known to be clipped at the 3' end."
+
+Method : "predicted_polyA_signal_sequence"
+Colour	 CERISE
+Strand_sensitive	
+Width	 1.000000
+Show_up_strand
+Show_text
+GFF_source "computational_prediction"
+GFF_feature "polyA_signal_sequence"
+Remark	 "Predicted polyadenylation signal sequences.  Derived from an analysis by Ashwin Hajarnavis and Ian Korf at the Wellcome Trust Sanger Insitute.  This analysis used hidden Markov models and polyadenylation signal and site predictions were made for all annotated genes in the WS110 release of WormBase.  These predictions will help extend many 3' UTR predictions in WormBase as many previous UTRs were only extended as far as the 3' most matching EST sequence, but many of these are known to be clipped at the 3' end."
+
+Method : "SL1" 
 Remark	 "SL1 trans-splice acceptor site"
 Colour	 RED
 Strand_sensitive	
-Width	 2.000000
-Right_priority	 2.200000
+Width	 2.200000
 Show_text	
 GFF_source	 "SL1"
 GFF_feature	 "SL1_acceptor_site"
 
-Method : "SL2"
+Method : "SL2" 
 Remark	 "SL2 trans-splice acceptor site"
 Colour	 YELLOW
 Strand_sensitive	
-Width	 2.000000
-Right_priority	 2.250000
+Width	 2.500000
 Show_text	
 GFF_source	 "SL2"
 GFF_feature	 "SL2_acceptor_site"
@@ -1335,21 +1230,18 @@ Method : "TSL"
 Remark	 "Indeterminate trans-splice acceptor site."
 Colour	 ORANGE
 Width	 2.0
-Right_priority 2.3
 Show_text
 
 Method : "vector"
 Remark	 "Vector contamination"
 Colour	 YELLOW
 Width	 2.0
-Right_priority 2.2
 Show_text
 
 Method : "low_complexity"
 Remark	 "low_complexity repeat"
 Colour	 RED
 Width	 2.0
-Right_priority 2.2
 Show_text
 
 Method : "NDB"
@@ -1360,27 +1252,24 @@ Method : "polyA"
 Colour	 CERISE
 Strand_sensitive
 Width	 1.000000
-Right_priority	 2.200000
 Show_up_strand
 Show_text
 GFF_feature "polyA"
 Remark	 "polyA run on Transcript sequence."
 
-Method : "polyA_site"
+Method : "polyA_site" 
 Colour	 CERISE
 Strand_sensitive	
 Width	 1.000000
-Right_priority	 2.200000
 Show_up_strand
 Show_text
 GFF_feature "polyA_site"
 Remark	 "polyadenylation site"
 
-Method : "polyA_signal_sequence"
+Method : "polyA_signal_sequence" 
 Colour	 CERISE
 Strand_sensitive	
 Width	 1.000000
-Right_priority	 2.200000
 Show_up_strand
 Show_text
 GFF_feature "polyA_signal_sequence"
@@ -1390,117 +1279,476 @@ Method : "micro_ORF"
 Colour	"PALEMAGENTA"
 Strand_sensitive
 Width "1.000000"
-Right_priority "2.200000"
 Show_text
 GFF_feature "micro_ORF"
 Remark "Published micro-ORF"
 
-Method : "binding_site_region" 	 
+Method : "binding_site_region" 	  
 Colour  MAGENTA 	 
 Strand_sensitive 	 
 Width    1.000000 	 
-Right_priority   2.300000 	 
 Show_up_strand 	 
 Show_text 	 
 GFF_source "binding_site_region" 	 
 Remark   "manually curated binding site region" 	 
-  	 
-Method : "regulatory_region" 	 
-Colour  MAGENTA 	 
-Strand_sensitive 	 
-Width    1.000000 	 
-Right_priority   2.300000 	 
-Show_up_strand 	 
-Show_text 	 
-GFF_source "regulatory_region" 	 
-Remark   "manually curated regulatory region" 
+
+Method : "regulatory_region"
+Colour  MAGENTA
+Strand_sensitive
+Width    1.000000
+Show_up_strand
+Show_text
+GFF_source "regulatory_region"
+Remark   "manually curated regulatory region"	 
 
 Method : "promoter" 	 
 Colour  MAGENTA 	 
 Strand_sensitive 	 
 Width    1.000000 	 
-Right_priority   2.300000 	 
 Show_up_strand 	 
 Show_text 	 
 GFF_source "promoter" 	 
 Remark   "manually curated promoter region"
 
-
-Method : "binding_site"
+Method : "binding_site"  
 Colour	MAGENTA
 Strand_sensitive
 Width	 1.000000
-Right_priority	 2.300000
 Show_up_strand
 Show_text
 GFF_source "binding_site"
 Remark	 "manually curated binding site feature"
 
-Method : "Oligo_cap"
+Method : "Oligo_cap" /not mapped
 Remark	 "Oligo-cap sequence used in EST library generation. This feature is marked up for removal from the transcript sequence prior to mapping to the genome."
 
-Method : "poly_nucleotide"
+Method : "poly_nucleotide" /not mapped
 Remark	 "Poly-nucleotide runs found in EST sequence reads. This feature is marked up for removal from the transcript sequence prior to mapping to the genome."
 
-Method : "rRNA_contamination"
+Method : "rRNA_contamination" /not mapped
 Remark	 "rRNA contamination of the EST sequence reads. This feature is marked up for removal from the transcript sequence prior to mapping to the genome."
 
-Method : "BLAT_discrepancy"
+Method : "BLAT_discrepancy" /not mapped
 Remark "Sequence of unknown origin or poorquality, that causes missalignment to the genome when sequence is placed using BLAT software."
 Colour "BLACK"
 Width 2.0
-Right_priority 2.2
 Show_text
 
-Method : "chimeric"
+Method : "chimeric" /not mapped
 Remark "Chimeric EST sequence, this method is used to exclude the smallest fragment from BLAT analysis."
 Colour "BLACK"
 Width 2.0
-Right_priority 2.2
 Show_text
 
-Method : "Vancouver_fosmid"
-GFF_source Vancouver_fosmid
-GFF_feature region
-No_display
-Remark "Method for the Vancouver fosmid clones"
+////////////////////
+// Repeat methods //
+////////////////////
 
-Method : "mass_spec_genome"
-Colour BROWN
-Right_priority 1.5
+Method : "RepeatMasker" 
+Colour	 RED
+Score_by_width	
+Score_bounds	 50.000000 500.000000
 Allow_misalign
-Width 1
-GFF_feature "translated_nucleotide_match"
-Remark "Mass Spectrometry peptide matching a protein."
+GFF_source	 "RepeatMasker"
+GFF_feature	 "repeat_region"
 
-Method : "Promoterome"
-GFF_source      "Promoterome"
-GFF_feature     "PCR_product"
-Remark          "SO:0000006"
+Method : "tandem"
+Remark	 "Tandem region"
+Colour	 DARKGRAY
+Score_by_width	
+Score_bounds	 50.000000 100.000000
+Percent	
+GFF_source	 "tandem"
+GFF_feature	 "tandem_repeat"
 
-Method : "dust" 	 
+Method : "inverted"
+Remark	 "Poly-G number may not be accurate"
+Colour	 "DARKGRAY"
+Score_by_width	
+Score_bounds	 50.000000 100.000000
+Percent	
+GFF_source	 "inverted"
+GFF_feature	 "inverted_repeat"
+
+Method : "dust" //ordred	 
 Remark           "DUST low complexity regions" 	 
 GFF_source       "dust" 	 
 GFF_feature      "low_complexity_region"
 
-///////////////////////////////////////////////////////////////////
-//
-// Not sure that the following Methods are actually used or needed
-//
-///////////////////////////////////////////////////////////////////
 
-Method : "code default"
+/////////////////////////////////////////////////////////////////////
+// Not sure that the following Methods are actually used or needed //
+/////////////////////////////////////////////////////////////////////
+
+Method : "code default" /notFmapped
 Intron_min	 450
 Exon_min	 33
 Intron_cost	 -1.500000 55.000000
 Inter_gene_cost	 -5.000000
 
 
-Method : "hand_built"
+Method : "hand_built" 
 Colour	 DARKBLUE
 Show_up_strand	
 Bumpable	
-Right_priority	 2.100000
 Show_text	
 EMBL_feature	 "CDS"
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//					      Fmap SECTION						  //
+// Use this section for adding the Right_priority to a Fmapped method........ this allows for easy update //
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+Method : "Promoterome"
+Right_priority  1
+
+Method : "GenePairs"
+Right_priority  1.1
+
+Method : "Orfeome"
+Right_priority  1.2
+
+Method : "Expr_pattern"
+Right_priority  1.3
+
+Method : "Chronogram"
+Right_priority  1.3
+
+Method : "Variation_PCR"
+Right_priority  1.3
+
+Method : "PCR_product"
+Right_priority  1.4
+
+Method : "Expr_profile"
+Right_priority  1.4
+
+Method : "RNAi"
+Right_priority  1.5
+
+Method : "cDNA_for_RNAi"
+Right_priority  1.5
+
+Method : "RNAi_primary"
+Right_priority  1.5
+
+Method : "RNAi_secondary"
+Right_priority  1.5
+
+Method : "Oligo_set"
+Right_priority  1.6
+
+Method : "operon"
+Right_priority  1.7
+
+Method : "Gene"
+Right_priority  1.8
+
+Method : "UTR"
+Right_priority  1.8
+
+Method : "promoter"
+Right_priority  1.85
+
+Method : "regulatory_region"
+Right_priority  1.85
+
+Method : "Allele"
+Right_priority 1.9
+
+Method : "Deletion_allele"
+Right_priority  1.9
+
+Method : "Insertion_allele"
+Right_priority 2.5
+
+Method : "Deletion_and_insertion_allele"
+Right_priority  1.9
+
+Method : "Substitution_allele"
+Right_priority  1.9
+
+Method : "Transposon_insertion"
+Right_priority  1.9
+
+Method : "SNP"
+Right_priority  1.9
+
+Method : "Mos_insertion"
+Right_priority  1.9
+
+Method : "Coding_transcript"
+Right_priority  2
+
+Method : "polyA"
+Right_priority  2.1
+
+Method : "polyA_site"
+Right_priority  2.1
+
+Method : "predicted_polyA_site"
+Right_priority  2.1
+
+Method : "polyA_signal_sequence"
+Right_priority  2.1
+
+Method : "predicted_polyA_signal_sequence"
+Right_priority  2.1
+
+Method : "micro_ORF"
+Right_priority  2.1
+
+Method : "binding_site_region"
+Right_priority  2.1
+
+Method : "binding_site"
+Right_priority  2.1
+
+Method : "TSL"
+Right_priority 2.15
+
+Method : "mass_spec_genome"
+Right_priority  2.15
+
+Method : "SL1"
+Right_priority  2.2
+
+Method : "SL2"
+Right_priority  2.25
+
+Method : "TEC_RED"
+Right_priority  2.3
+
+Method : "Transposon"
+Right_priority  2.4
+
+Method : "Transposon_CDS"
+Right_priority  2.5
+
+Method : "curated"
+Right_priority  2.5
+
+Method : "Pseudogene"
+Right_priority  2.55
+
+Method : "Non_coding_transcript"
+Right_priority  2.55
+
+Method : "Transcript"
+Right_priority  2.6
+
+Method : "RNA"
+Right_priority	 2.6
+
+Method : "ncRNA"
+Right_priority  2.6
+
+Method : "rRNA"
+Right_priority  2.6
+
+Method : "tRNA"
+Right_priority  2.6
+
+Method : "scRNA"
+Right_priority  2.6
+
+Method : "snlRNA"
+Right_priority  2.6
+
+Method : "stRNA"
+Right_priority  2.6
+
+Method : "miRNA"
+Right_priority  2.6
+
+Method : "snRNA"
+Right_priority  2.6
+
+Method : "snoRNA"
+Right_priority  2.6
+
+Method : "tRNAscan-SE-1.23"
+Right_priority  2.6
+
+Method : "hand_built"
+Right_priority  2.65
+
+Method : "history"
+Right_priority  2.7
+
+Method : "jigsaw"
+Right_priority  2.8
+
+Method : "twinscan"
+Right_priority  2.9
+
+Method : "Genefinder"
+Right_priority  3.0
+
+Method : "fgenesh"
+Right_priority  3.1
+
+Method : "ensembl"
+Right_priority  3.1
+
+Method : "BLAT_BAC_END"
+Right_priority      3.25
+
+Method : "BLAT_mRNA_BEST"
+Right_priority    3.3
+
+Method : "BLAT_EST_BEST"
+Right_priority     3.35
+
+Method : "BLAT_OST_BEST"
+Right_priority     3.4
+
+Method : "BLAT_RST_BEST"
+Right_priority     3.45
+
+Method : "BLAT_ncRNA_BEST"
+Right_priority   3.5
+
+Method : "BLAT_TC1_BEST "
+Right_priority    3.55
+
+Method : "BLAT_EMBL_BEST"
+Right_priority    3.6
+
+Method : "BLAT_mRNA_OTHER"
+Right_priority   3.65
+
+Method : "BLAT_EST_OTHER"
+Right_priority    3.7
+
+Method : "BLAT_OST_OTHER"
+Right_priority    3.75
+
+Method : "BLAT_RST_OTHER"
+Right_priority    3.8
+
+Method : "BLAT_ncRNA_OTHER"
+Right_priority  3.85
+
+Method : "BLAT_TC1_OTHER"
+Right_priority    3.85
+
+Method : "BLAT_EMBL_OTHER"
+Right_priority   3.85
+
+Method : "SAGE_tag"
+Right_priority     3.9
+
+Method : "SAGE_tag_genomic_unique"
+Right_priority     3.9
+
+Method : "SAGE_tag_most_three_prime"
+Right_priority     3.9
+
+Method : "SAGE_tag_unambiguously_mapped"
+Right_priority     3.9
+
+Method : "BLAT_NEMATODE"
+Right_priority     3.92
+
+Method : "BLAT_NEMBASE "
+Right_priority     3.92
+
+Method : "BLAT_WASHU"
+Right_priority        3.92
+
+Method : "BLAT_Caen_mRNA_BEST"
+Right_priority  3.95
+
+Method : "BLAT_Caen_EST_BEST"
+Right_priority  4.0
+
+Method : "BLAT_Caen_OST_BEST"
+Right_priority  4.05
+
+Method : "BLAT_Caen_RST_BEST"
+Right_priority  4.1
+
+Method : "BLAT_Caen_ncRNA_BEST"
+Right_priority  4.15
+
+Method : "BLAT_Caen_tc1_BEST"
+Right_priority  4.2
+
+Method : "BLAT_Caen_mRNA_OTHER"
+Right_priority  4.25
+
+Method : "BLAT_Caen_EST_OTHER"
+Right_priority  4.3
+
+Method : "BLAT_Caen_OST_OTHER"
+Right_priority  4.35
+
+Method : "BLAT_Caen_RST_OTHER"
+Right_priority  4.4
+
+Method : "BLAT_Caen_ncRNA_OTHER"
+Right_priority  4.45
+
+Method : "BLAT_Caen_tc1_OTHER"
+Right_priority  4.45
+
+Method : "ATG"
+Right_priority  4.45
+
+Method : "wublastx_worm"
+Right_priority 4.5
+
+Method : "wublastx_briggsae"
+Right_priority 4.55
+
+Method : "wublastx_remanei"
+Right_priority 4.6
+
+Method : "wublastx_brenneri"
+Right_priority 4.65
+
+Method : "wublastx_japonica"
+Right_priority 4.7
+
+Method : "wublastx_pristionchus"
+Right_priority 4.75
+
+Method : "wublastx_fly"
+Right_priority 4.8
+
+Method : "wublastx_yeast"
+Right_priority 4.85
+
+Method : "wublastx_human"
+Right_priority 4.9
+
+Method : "wublastx_slimSwissProt"
+Right_priority 4.95
+
+Method : "wublastx_slimTrEmbl"
+Right_priority 5.0
+
+Method : "WABA_coding"
+Right_priority 5.4
+
+Method : "WABA_strong"
+Right_priority 5.4
+
+Method : "WABA_weak"
+Right_priority 5.4
+
+Method : "dust"
+Right_priority 5.5 
+
+Method : "tandem"
+Right_priority 5.6
+
+Method : "inverted"
+Right_priority 5.7
+
+Method : "RepeatMasker"
+Right_priority	 5.8
