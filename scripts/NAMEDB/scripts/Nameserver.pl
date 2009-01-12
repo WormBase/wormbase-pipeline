@@ -43,7 +43,7 @@ $VALID_API_USERS = {
 		    'add_name'		=> [qw(avc ar2 pad gw3 mt3 tbieri jspieth dblasiar pozersky)],
 		    'remove_name'	=> [qw(avc ar2 pad gw3 mt3 tbieri jspieth dblasiar pozersky)],
 		    'change_class'	=> [qw(avc ar2 pad gw3 mt3 tbieri jspieth dblasiar pozersky)],
-		    'dump_all'     => [qw(ar2 pad gw3 mt3 tbieri dblasiar pozersky caltech)],
+		    'dump_all'     => [qw(ar2 pad gw3 mt3 tbieri jspieth dblasiar pozersky caltech)],
 
 		   };
 
@@ -51,6 +51,7 @@ $VALID_API_USERS = {
 $VALID_CGCNAME_USERS = {
 			'mt3'			=> 1,
 			'ar2'			=> 1,
+			'pad'                   => 1,
 		       };
 
 $MAILS = {
@@ -350,7 +351,7 @@ Species :
 		my $db = get_db_connection();
 		my $new_id =$db->split_gene($name, $type, $gene_id, $species);
 		if ( $new_id ) {
-		  my $msg = "USER : $USER\nACTION : Split $gene_id\nNEW geneId : $new_id\nNEW CDS : $type $name\n\nsplitgene.pl -old $gene_id -new $name -who ". $$VALID_USERS{$USER} ." -id $new_id\n";
+		  my $msg = "USER : $USER\nACTION : Split $gene_id\nNEW geneId : $new_id\nNEW CDS : $type $name\n\nperl splitgene.pl -old $gene_id -new $name -who ". $$VALID_USERS{$USER} ." -id $new_id -load -species $species\n";
 		  $msg .= "\n\n$remark" if $remark;
 		  send_mail("webserver",[$MAILS->{$USER},$MAILS->{'cgc'},$MAILS->{'caltech'}],"Split gene $gene_id",$msg);
 
@@ -578,7 +579,7 @@ sub new_gene {
 	$msg .= "\n\nGene : $id\nVersion 1\nCGC_name $name Person_evidence\nPublic_name $name\nSpecies \"Caenorhabditis $species\"\nHistory Version_change 1 now WBPerson".$VALID_USERS->{$USER}." Created\nLive\nMethod Gene\nGene_class $gene_class\n";
 	$msg .= "\n\n$remark\n" if $remark;
       } else {
-	$msg .= "\nnewgene.pl -seq $name -who $who -load -id $id"; # line to run script to update geneace
+	$msg .= "\nnewgene.pl -seq $name -who $who -load -id $id -species $species"; # line to run script to update geneace
 	$msg .= " -species $species" if $species;
 	$msg .= "\n\n$remark" if $remark;
 	$msg .= "\n\n";
