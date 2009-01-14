@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: ar2 $
-// Last edited on: $Date: 2008-12-12 14:27:30 $
+// Last edited on: $Date: 2009-01-14 16:59:45 $
 
 
 
@@ -1684,6 +1684,7 @@
 		Pattern ?Text
 		Picture ?Picture XREF Expr_pattern
 		MovieURL Text //Added by wen for link to movie URLs. 
+		Movie    ?Movie    XREF Expr_pattern  //Added by Wen to curate Expr_pattern video
                 Remark ?Text #Evidence
                 Experiment	Laboratory ?Laboratory
 				Author ?Author 
@@ -2233,6 +2234,7 @@
        RNAi ?RNAi XREF Movie
        Variation ?Variation XREF Movie  //[2006-04-21 ar2] Carol
        Transgene ?Transgene XREF Movie
+       Expr_pattern ?Expr_pattern XREF Movie //Added by Wen to curate Expr_pattern video 
        Remark ?Text #Evidence
 
 
