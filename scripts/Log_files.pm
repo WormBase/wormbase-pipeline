@@ -76,11 +76,11 @@ Generate log file in the logs directory with WS version and processID appended t
 sub make_build_log {
     my $class    = shift;
     my $wormbase = shift;
+    my $opts = shift;
     my $ver      = $wormbase->get_wormbase_version;
     my $species  = $wormbase->species;
     my $filename;
-    $0 =~ m/([^\/]*$)/ ? $filename = $0 : $filename =
-      $1;    # get filename (sometimes $0 includes full path if not run from its dir )
+    $0 =~ m/([^\/]*$)/ ? $filename = $0 : $filename = $1;    # get filename (sometimes $0 includes full path if not run from its dir )
 
     my $path     = $wormbase->logs;
     my $log_file = "$path/$filename" . ".WS${ver}." . $$;
@@ -89,6 +89,16 @@ sub make_build_log {
     print $log "WS$ver ($species) Build script : $filename \n\n";
     print $log "Started at ", $wormbase->runtime, "\n";
     print $log "-----------------------------------\n\n";
+
+	#resolve options passed to script
+	
+	foreach my $opt(@{$opts}) {
+		next if ($opt eq 'test' or $opt eq 'debug' or $opt eq 'store' or $opt eq 'species');
+		next unless $opt =~ /\w/;
+		$opt =~ s/^\s+//;
+		$opt =~ s/\s+$//;
+		$filename .= " -$opt";
+	}
 
     my $self = {};
     $self->{"FILENAME"} = $log_file;
@@ -123,16 +133,32 @@ sub mail {
     my $file = $self->{"FILENAME"};
 
     # use subject line from calling script if specified or default to script name
-    my $script;
-    if ($subject) {
-        $script = $subject;
+    my $script = $self->{"SCRIPT"};
+    unless ($subject) {
+    	$subject = "REPORT: $script ";
     }
-    else {
-        $script = $self->{"SCRIPT"};
+    
+    #write out status of script to runlog for dependancy checks
+    if($self->{'wormbase'}) {
+	$subject .= $self->{'wormbase'}->species;
+	if($self->{'wormbase'}->autoace) {
+	    my $runlog = $self->{'wormbase'}->autoace."/runlog";
+	    open(RL,">>$runlog") or $self->error("cant write runlog\t$!\n");#warning of failure?
+    	if ( $self->report_errors != 0 ) {
+	    $script = "ERROR : $script";
+	    print RL "$script\tFAIL";
+    	}
+	    else {
+    		print RL "$script:run\n";
+	    }
+	    close RL;
+	}
     }
-    $script = "REPORT: $script";
-    $script = "ERROR : $script" if ( $self->report_errors != 0 );
-    Wormbase::mail_maintainer(undef, $script, $recipient, $file ); #pass undef as not using in object based way.  method expects self.
+    
+    
+    
+    #send the mail;
+    Wormbase::mail_maintainer(undef, $subject, $recipient, $file ); #pass undef as not using in object based way.  method expects self.
     $self->{'MAILED'} = 1;
 }
 
@@ -193,5 +219,6 @@ sub get_file {
     my $self = shift;
     return $self->{'FILENAME'};
 }
+
 
 1;
