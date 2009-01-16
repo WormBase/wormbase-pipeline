@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-10-22 12:11:23 $      
+# Last updated on: $Date: 2009-01-16 11:15:51 $      
 
 # Changes required by Ant: 2008-02-19
 # 
@@ -252,7 +252,7 @@ print OUT "Method : \"curation_anomaly\"\n";
 print OUT "Colour   RED\n";
 print OUT "Strand_sensitive Show_up_strand\n";
 print OUT "Right_priority   1.45\n";
-print OUT "Width   2\n";
+print OUT "Width   1\n";
 print OUT "Score_by_width\n";
 print OUT "Score_bounds 0.01 1.0\n";
 print OUT "Remark \"This method is used by acedb to display curation anomaly regions\"\n";
