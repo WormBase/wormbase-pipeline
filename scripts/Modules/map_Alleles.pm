@@ -734,7 +734,10 @@ sub compare {
     my %check;
     foreach my $allele(keys %$old){
         foreach my $gene($old->{$allele}->{allele}->Gene){
-            $check{$allele}{$gene}=1 unless (qq/${\$old->{$allele}->{allele}->at("Affects.Gene.$gene")->col(1)}/ eq 'Genomic_neighbourhood');
+            next if (qq/${\$old->{$allele}->{allele}->at("Affects.Gene.$gene")->col(1)}/ eq 'Genomic_neighbourhood');
+	    next if (qq/${\$old->{$allele}->{allele}->at("Affects.Gene.$gene")->col(1)}/ eq 'Regulatory_feature');
+
+	    $check{$allele}{$gene}=1; 
         }
     }
     foreach my $allele(keys %$new){

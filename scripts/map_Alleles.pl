@@ -58,7 +58,7 @@ exit 1;
 my ( $debug, $species, $store, $outdir,$allele ,$noload,$database,$weak_checks,$help,$test);
 
 GetOptions(
-	'species=s'=> \$species,
+    'species=s'=> \$species,
     'debug=s'  => \$debug,
     'store=s'  => \$store,
     'outdir=s' => \$outdir,
@@ -72,7 +72,7 @@ GetOptions(
 ) or &print_usage();
 
 &print_usage if $help;
-# WormBase template
+
 my $maintainer = 'All';
 my $wb;
 
@@ -89,7 +89,6 @@ MapAlleles::set_wb_log($log,$wb,$weak_checks) if $database;
 my $release=$wb->get_wormbase_version;
 my $acefile=( $outdir ? $outdir : $wb->acefiles ) . "/allele_mapping.WS$release.ace";
 
-# DEBUG mode
 if ($debug) {
     print "DEBUG \"$debug\"\n\n";
 }
