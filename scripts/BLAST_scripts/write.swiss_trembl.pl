@@ -190,14 +190,8 @@ sub output_list
 	  print ACE "Peptide \"$prefix:$accession\"\n";
 	  print ACE "Species \"$ORG{$accession}\"\n";
 	  print ACE "Description \"$DES{$accession}\"\n";
-	  if ("$prefix" eq "SW" ) {
-	    #print ACE "Database SwissProt SwissProt_ID $id\n";
-	    print ACE "Database SwissProt SwissProt_AC $accession\n";
-	  }
-	  else {
-	    print ACE "Database TREMBL TrEMBL_AC $id\n";
-	  }
-	
+	  print ACE "Database UniProt UniProtAcc $accession\n";
+	  print ACE "Database UniProt UniProtID $id\n" if $id;
 	  print ACE  "\n";
 	  print ACE  "Peptide : \"$prefix:$accession\"\n";
 	  print ACE "$seq\n";
