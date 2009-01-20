@@ -7,7 +7,7 @@
 # simple script for changing class of gene objects (e.g. CDS->Pseudogene)
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2006-02-27 17:06:11 $
+# Last edited on: $Date: 2009-01-20 13:48:27 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -30,6 +30,7 @@ my $person = "WBPerson2970"; # default
 my $load;                    # load results to geneace (default is to just write an ace file)
 my $verbose;                 # toggle extra (helpful?) output to screen
 my $store;
+my $species;
 
 # hash for class lookups
 my %change = ("CP" => ["CDS", "Pseudogene"],
@@ -51,13 +52,15 @@ GetOptions ("input=s"   => \$input,
 	    "load"      => \$load,
 	    "verbose"   => \$verbose,
 	    "store:s"   => \$store
+	    "species:s" => \$species
 );
 
+$species = 'elegans' unless $species;
 my $wormbase;
 if ( $store ) {
   $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
 } else {
-  $wormbase = Wormbase->new();
+  $wormbase = Wormbase->new('-organism' => $species);
 }
 
 # establish log file.
@@ -211,7 +214,8 @@ sub check_command_line_options{
   die "can't use -id option if processing input file\n"    if ($id && $input);
   die "Use -id or -seq option, not both\n"                 if ($id && $seq);
   die "can't use -class option if processing input file\n" if ($class && $input);
-  die "-seq option is not a valid type of sequence name\n" if ($seq && ($seq !~ m/^\w+\.\d{1,2}$/));
+  my $cds_regex = $wormbase->cds_regex;
+  die "-seq option is not a valid type of sequence name\n" if ($seq && ($seq !~ m/$cds_regex/));
 
   # look up -class option to see if it exists in hash
   if ($class && (!exists ($change{$class}))){
@@ -341,6 +345,10 @@ per line) then script will process file in a batch style
 =item -load
 
 will attempt to load the acefile into geneace (need to have write access!)
+
+=item -species <species>
+
+species working with eg japonica
                                                                                            
                                                                                            
 =head1 AUTHOR Keith Bradnam (mt3@sanger.ac.uk)
