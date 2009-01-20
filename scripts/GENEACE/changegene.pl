@@ -7,7 +7,7 @@
 # simple script for changing class of gene objects (e.g. CDS->Pseudogene)
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2009-01-20 13:48:27 $
+# Last edited on: $Date: 2009-01-20 14:52:23 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -51,7 +51,7 @@ GetOptions ("input=s"   => \$input,
 	    "who=i"     => \$who,
 	    "load"      => \$load,
 	    "verbose"   => \$verbose,
-	    "store:s"   => \$store
+	    "store:s"   => \$store,
 	    "species:s" => \$species
 );
 
