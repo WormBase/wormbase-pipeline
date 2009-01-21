@@ -10,7 +10,7 @@
 #
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2008-05-01 12:27:33 $
+# Last updated on: $Date: 2009-01-21 10:21:15 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -132,13 +132,14 @@ while (<HISTORY>) {
         my $i;
         for $i ( 0 .. $#{ $CE_gene{$CE} } ) {
             $existingGene = $CE_gene{$CE}[$i];
+            my $regex = $wormbase->seq_name_regex;
             if ( "$gene" eq "$existingGene" ) {
                 $handled = &reappearedPeptide;
                 last;
             }
 
             #is this an isoform of a pre-exisiting gene?
-            elsif ( $gene =~ m/(\w+\.\d+)(\w*)/ ) {
+            elsif ( $gene =~ m/($regex)(\w*)/ ) {
                 $stem    = $1;    #eg FK177.8
                 $isoform = $2;    #eg a
 
@@ -213,7 +214,8 @@ while (<HISTORY>) {
             &addNewPeptide;
         }
         else {
-            if ( $gene =~ m/(($wormbase->cds_regex)\w*)/ ) {
+	    my $re = $wormbase->seq_name_regex;
+            if ( $gene =~ m/(($re)\w*)/ ) {
                 $stem    = $2;    #eg FK177.8
                 $isoform = $1;    #eg FK177.8a
                 if ( defined( $gene_CE{$stem} ) ) {
@@ -278,13 +280,13 @@ foreach my $key ( sort keys %CE_history ) {
             print ACE "Corresponding_CDS \"$CE_corr_CDS{$key}[$ii]\"\n";
         }
     }
-    foreach my $pepid( @{$CE_gene{$key}}) {
+    foreach my $pepid( @{$CE_corr_CDS{$key}}) {
     	if ($CE_sequence{$pepid}) {
-    	   	print ACE "Molecular_weight ", &get_mol_weight( $CE_sequence{$pepid} )," Inferred_automatically \"build_pepace.pl\"\n";
-		    print ACE "\nPeptide : \"$WORMPEP_PREFIX:$key\"\n";
-    		print ACE "$CE_sequence{$pepid}\n";
-    		last; # we only need this once - just cant be sure which element is still live.
-		}
+	    print ACE "Molecular_weight ", &get_mol_weight( $CE_sequence{$pepid} )," Inferred_automatically \"build_pepace.pl\"\n";
+	    print ACE "\nPeptide : \"$WORMPEP_PREFIX:$key\"\n";
+	    print ACE "$CE_sequence{$pepid}\n";
+	    last; # we only need this once 
+	}
     }
 }
 close ACE;
