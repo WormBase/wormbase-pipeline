@@ -1,17 +1,15 @@
-#!/usr/local/bin/perl5.8.0 -w
-#
-# prepare_UTR_GFF.pl
-#
-# moves GFF files to /nfs/disk100/wormpub so you can run make_UTR_GFF.pl on cbi1
+#!/software/bin/perl -w
+
 use lib $ENV{'CVS_DIR'};
 use strict;
 use Getopt::Long;
 use Wormbase;
 use Log_files;
+use LSF RaiseError => 0, PrintError => 1, PrintOutput => 0;
+use LSF::JobManager;
 
 my $debug;
 my ($prepare, $run, $final);
-my $scripts = $ENV{'CVS_DIR'};
 my $chromosome;
 
 GetOptions (
@@ -54,11 +52,17 @@ $log->log_and_die("There were errors in the GFF copying so I stopping\n") unless
 
 if( $run ) {
   $log->write_to("Submitting bsub jobs\n");
+  my $lsf = LSF::JobManager->new();
   foreach my $chrom ( @chromosomes ) {
     my $err  = "$datdir/$chrom.err.$$";
-    my $bsub = "bsub -e $err \"$scripts/make_UTR_GFF.pl $chrom\"";
+    my $bsub =  $wormbase->build_cmd("make_UTR_GFF.pl $chrom");
     print "$bsub\n";
-    system("$bsub");
+    $lsf->submit('-e' => $err, '-J'=> "UTR_$chrom", $bsub);
+  }
+
+  $lsf->wait_all_children('history' => 1);
+  for my $job ($lsf->jobs){ # much quicker if history is pre-cached
+      $log->error("job ".$job->id." failed\n") if ($job->history->exit_status != 0);
   }
 }
 
