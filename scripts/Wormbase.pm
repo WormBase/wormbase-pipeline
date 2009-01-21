@@ -1,4 +1,4 @@
-# Wormbase.pm - module for general use by many Wormbase scripts
+#Wormbase.pm - module for general use by many Wormbase scripts
 # adapted from babel.pl
 # put together by krb, but mostly using stuff in babel.pl which
 # was done by dl1 et al.
@@ -1731,6 +1731,32 @@ sub GFF_file_name {
 
   return $file;
 }
+
+sub worm_webpublish {
+    my $self = shift;
+    my %opts = @_;
+    unless( $opts{'-file'}) {
+	print "file name missing\n";
+	return 1;
+    }
+    $opts{'-file'} =~ /(.*)\/(.*)$/;
+    my ($path, $file) = ($1,$2);
+    unless ($path and $file) {
+	print "cant determine path and file name\n";
+	return ;
+    }
+    chdir($path);
+    open(WP,"webpublish -r $file |") or die ("cant webpublish $file\n");
+    while(<WP>){
+	if(/fail/){
+	     warn ("webpublish $file has failures :$_\n");
+	     return ;
+	 }
+    }
+    return 1;
+}
+
+
 
 ################################################################################
 #Return a true value
