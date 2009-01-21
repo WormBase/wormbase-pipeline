@@ -85,6 +85,7 @@ sub mt_name {'MtDNA'}
 sub pep_prefix {'CE'}
 sub pepdir_prefix{'worm'};
 sub cds_regex{qr/^[A-Z0-9_cel]+\.[1-9]\d?\d?[A-Za-z]?$/};  #the cel is for telomeric clone CDSs cTel54X.1
+sub seq_name_regex{qr/^[A-Z0-9_cel]+\.[1-9]\d?\d?/};  #to get just the Sequence_name part
 sub cds_regex_noend{qr/^[A-Z0-9_cel]+\.[1-9]\d?\d?[A-Za-z]?/};  # for getting the CDS part of a Transcript name
 
 sub ncbi_tax_id {'6239'};
@@ -128,6 +129,7 @@ sub chromosome_names {qw(I I_random II II_random III III_random IV IV_random V V
 sub pep_prefix {'CBP'}
 sub pepdir_prefix{'brig'};
 sub cds_regex{qr/^CBG\d{5}[a-z]*$/};
+sub seq_name_regex{qr/^CBG\d{5}/};
 sub cds_regex_noend{qr/^CBG\d{5}[a-z]*/}; # for getting the CDS part of a Transcript name
 sub ncbi_tax_id {'6238'};
 sub assembly_type {'chromosome'};
@@ -192,6 +194,7 @@ sub pep_prefix {'RP'}
 sub pepdir_prefix{'rema'};
 sub ncbi_tax_id {'31234'};
 sub cds_regex{qr/CRE\d{5}[a-z]*/};
+sub seq_name_regex{qr/^CRE\d{5}/};
 sub cds_regex_noend{qr/CRE\d{5}[a-z]*/}; # for getting the CDS part of a Transcript name
 sub assembly_type {'contig'};
 
@@ -239,6 +242,7 @@ sub full_name {
 sub assembly_type {'contig'};
 sub wormpep_prefix {'CN'}
 sub cds_regex{qr/CBN\d{5}[a-z]*/};
+sub seq_name_regex{qr/^CBN\d{5}/};
 sub cds_regex_noend{qr/CBN\d{5}[a-z]*/}; # for getting the CDS part of a Transcript name
 
 #######################################################
@@ -270,6 +274,7 @@ sub pep_prefix {'JA'}
 sub pepdir_prefix{'jap'};
 sub ncbi_tax_id {'281687'};
 sub cds_regex{qr/CJA\d{5}[a-z]*/};
+sub seq_name_regex{qr/^CJA\d{5}/};
 sub cds_regex_noend{qr/CJA\d{5}[a-z]*/}; # for getting the CDS part of a Transcript name
 sub assembly_type {'contig'};
 sub wormpep_prefix {'JA'}
@@ -325,6 +330,7 @@ sub chromosome_names {
 }
 
 sub cds_regex{qr/PPA\d{5}[a-z]*/};
+sub seq_name_regex{qr/^PPA\d{5}/};
 sub cds_regex_noend{qr/PPA\d{5}[a-z]*/}; # for getting the CDS part of a Transcript name
 sub pep_prefix {'PP'}
 sub pepdir_prefix{'ppa'};
