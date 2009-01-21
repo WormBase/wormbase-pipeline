@@ -12,8 +12,8 @@
 # 3) Archives old GFF_SPLITS directory
 # 4) Makes current_DB (copy of latest release) in ~wormpub/DATABASES
 #
-# Last updated by: $Author: pad $
-# Last updated on: $Date: 2008-08-29 15:40:10 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2009-01-21 10:22:29 $
 
 
 use strict;
@@ -33,13 +33,14 @@ use Storable;
 ##############################
 
 my ($help, $debug, $test, $verbose, $store, $wormbase);
-
+my $noarchive;
 
 GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
 	    "test"       => \$test,
 	    "verbose"    => \$verbose,
 	    "store:s"    => \$store,
+	    "noarchive:s"=> \$noarchive
 	    );
 
 
@@ -50,6 +51,8 @@ if ( $store ) {
                              -test    => $test,
 			     );
 }
+
+
 
 # Display help if required
 &usage("Help") if ($help);
@@ -90,7 +93,7 @@ my $WS_oldest   = $WS_current - 3; # the version that *should* be the oldest
 my $WS_old_name = "WS".$WS_oldest;
 my $WS_old_path = $wormbase->database("$WS_old_name");
 my $old_wormpep = "$basedir/WORMPEP/wormpep".($WS_current-3);
-&archive_old_releases ($WS_old_name);
+&archive_old_releases ($WS_old_name) unless (defined $noarchive);
 #####################################################################################
 
 my $new_dir = $wormbase->wormpub."/DATABASES/".$wormbase->get_wormbase_version_name;
