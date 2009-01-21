@@ -8,8 +8,8 @@
 #
 # dumps the method through sace / tace and concatenates them.
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2008-09-05 14:04:47 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2009-01-21 10:13:13 $
 
 
 use lib $ENV{CVS_DIR};
@@ -42,6 +42,10 @@ GetOptions (
 	    "list:s"        => \$list
 	   );
 
+unless ($host) {
+	print STDERR "you need to start a server first and tell me the host\neg /software/worm/bin/acedb/sgifaceserver /nfs/disk100/wormpub/BUILD/remanei 23100 600:6000000:1000:600000000>/dev/null)>&/dev/null\n";
+	die;
+}
 my $wormbase;
 if( $store ) {
   $wormbase = retrieve( $store ) or croak("cant restore wormbase from $store\n");
@@ -112,10 +116,10 @@ foreach my $sequence ( @sequences ) {
 	my $sleeptime=0;
 	while (-e "$dump_dir/${method}.gff.flock" && $sleeptime++<11){sleep 15}
 	
-	$wormbase->run_command("touch $dump_dir/${method}.gff.flock");
+	$wormbase->run_command("touch $dump_dir/${method}.gff.flock", 'no_log');
 	#sleep 1;
-	$wormbase->run_command("cat $file >> $dump_dir/${method}.gff");
-	$wormbase->run_command("rm $dump_dir/${method}.gff.flock");
+	$wormbase->run_command("cat $file >> $dump_dir/${method}.gff",'no_log');
+	$wormbase->run_command("rm $dump_dir/${method}.gff.flock", 'no_log');
 	unlink $file;
       } else {
     	my $file = "$dump_dir/${sequence}_${method}.gff";
@@ -148,7 +152,7 @@ foreach my $sequence ( @sequences ) {
       #sleep 1;
       $wormbase->run_command("cat $file >> $dump_dir/$species.gff");
       $wormbase->run_command("rm $dump_dir/$species.gff.flock");
-      unlink $file;
+      #unlink $file;
     } else {
       my $command = "gif seqget $sequence; seqactions -hide_header; seqfeatures -version 2 -file $dump_dir/$sequence.gff\n";
       print "$command";
