@@ -71,7 +71,7 @@ sub invoke
     
     my @chromosome = $wormbase->get_chromosome_names(-mito => 1);
     $self->{chromprefix} = $wormbase->chromosome_prefix;
-    if (scalar @chromosome > 100){
+    if ($wormbase->assembly_type eq 'contig'){
     #contig assemblies	
     	my $supercontig_seq = $wormbase->chromosomes."/supercontigs.fa";
     	my $seqs = Bio::SeqIO->new(-file => $supercontig_seq, -format => "fasta");
