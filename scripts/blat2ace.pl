@@ -6,8 +6,8 @@
 #
 # Exporter to map blat data to genome and to find the best match for each EST, mRNA, OST, etc.
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2008-06-06 16:05:20 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2009-01-21 10:18:28 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -68,7 +68,7 @@ my $log = Log_files->make_build_log($wormbase);
 
 # set database paths, default to autoace unless -camace
 my $ace_dir   = $wormbase->orgdb;
-my $blat_dir  = $wormbase->blat;
+my $blat_dir = (defined $database ? $database."/BLAT" : $wormbase->blat);
 my @nematodes = qw(nematode washu nembase);
 
 #############################
