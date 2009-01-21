@@ -7,7 +7,7 @@
 # Usage : autoace_builder.pl [-options]
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2008-12-03 16:49:12 $
+# Last edited on: $Date: 2009-01-21 14:22:08 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -141,7 +141,7 @@ $wormbase->run_script( 'find_intergenic.pl'               , $log ) if $intergeni
 
 &get_repeats                                                             if $repeats; # loaded with homols
 #must have farm complete by this point.
-$wormbase->run_script( 'load_data_sets.pl -homol -briggsae -misc', $log) if $data_sets;
+$wormbase->run_script( 'load_data_sets.pl -homol -misc', $log) if $data_sets;
 # $build_dumpGFF.pl; (homol) is run chronologically here but previous call will operate
 $wormbase->run_script( 'make_wormrna.pl'                         , $log) if $rna;
 $wormbase->run_script( 'confirm_genes.pl -load'                  , $log) if $confirm;
