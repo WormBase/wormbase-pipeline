@@ -6,8 +6,8 @@
 #
 # This is a script to automate the sections A, B and C of the BLAST Build
 #
-# Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-12-09 13:24:53 $      
+# Last updated by: $Author: pad $     
+# Last updated on: $Date: 2009-01-21 12:33:05 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -23,7 +23,7 @@ use Expect;
 ######################################
 
 my ($help, $debug, $test, $verbose, $store, $wormbase);
-my ($password, $species_list);
+my ($password, $species_list, $checkonly,);
 
 GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
@@ -32,6 +32,7 @@ GetOptions ("help"       => \$help,
 	    "store:s"    => \$store,
 	    "password:s" => \$password,	# the wormpub password
 	    "species:s"  => \$species_list, # the comma-delimted list of species to process
+	    "check_only" => \$checkonly, #allows you to run just the checking part of the script
 	    );
 
 
@@ -90,7 +91,7 @@ foreach my $species (@species) {
   }
   my $store_file = $spDB->build_store; # create and get the store file to use in all commands for this species
 
-
+  if (!$checkonly) {
   # I don't think setting this SORT option is necessary until the sort
   # command is run under user wormpub, but the Build Guide says do it now,
   # so ...
@@ -185,29 +186,30 @@ foreach my $species (@species) {
   $exp->send("exit\n");		# from the ssh session
   # do a soft_close to nicely shut down the command
   $exp->soft_close();
-
+}
 
 
   ##################
   # Check the files
   ##################
+  my $dump_dir = "/lustre/work1/ensembl/wormpipe/dumps/";
 
-  $wormbase->check_file($spDB->acefiles."/${species}_blastx.ace", 
+  $wormbase->check_file($dump_dir."/${species}_blastx.ace", 
 			$log,
 			minsize => 1000000,
 			);
 
-  $wormbase->check_file($spDB->acefiles."/${species}_blastp.ace", 
+  $wormbase->check_file($dump_dir."/${species}_blastp.ace", 
 			$log,
 			minsize => 1000000,
 			);
 
-  $wormbase->check_file($spDB->acefiles."/worm_ensembl_${species}_motif_info.ace", 
+  $wormbase->check_file($dump_dir."/worm_ensembl_${species}_motif_info.ace", 
 			$log,
 			minsize => 1000000,
 			);
 
-  $wormbase->check_file($spDB->acefiles."/worm_ensembl_${species}_interpro_motif_info.ace", 
+  $wormbase->check_file($dump_dir."/worm_ensembl_${species}_interpro_motif_info.ace", 
 			$log,
 			minsize => 1000000,
 			);
