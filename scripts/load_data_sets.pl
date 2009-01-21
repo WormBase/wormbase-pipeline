@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl -w
-# Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-10-31 16:33:14 $      
+# Last updated by: $Author: ar2 $     
+# Last updated on: $Date: 2009-01-21 10:32:11 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -17,7 +17,7 @@ use File::Copy "cp";
 ######################################
 
 my ($help, $debug, $test, $verbose, $store, $wormbase);
-my ($homol, $misc, $brig, $blat);
+my ($homol, $misc, $species, $blat);
 
 GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
@@ -26,7 +26,7 @@ GetOptions ("help"       => \$help,
 	    "store:s"    => \$store,
 	    "homol"      => \$homol,
 	    "misc"       => \$misc,
-	    "briggsae"   => \$brig,
+	    "species:s"   => \$species,
 	    "blat"       => \$blat
 	    );
 
@@ -35,21 +35,29 @@ if ( $store ) {
 } else {
   $wormbase = Wormbase->new( -debug   => $debug,
                              -test    => $test,
+                             -organsim => $species
 			     );
 }
-my $species = $wormbase->species;
+$species = $wormbase->species;
 # establish log file.
 my $log = Log_files->make_build_log($wormbase);
 
-&parse_misc_files    if $misc;
-&parse_homol_data    if $homol;
-&parse_briggsae_data if $brig;
-&parse_blat_data     if $blat;
-
+my @core_organisms = $wormbase->core_species;
+if( $species eq 'elegans') {
+	&parse_misc_elegans_files	if $misc;
+	&parse_homol_data    		if $homol;
+}
+else {
+	if(grep(/$species/, map(lc $_,  @core_organisms))){  #other core (tierII) species)
+		&parse_homol_data;
+		&parse_briggsae_data if ($species eq 'briggsae');
+		&parse_nematode_seqs;
+	}
+}
 $log->mail();
 exit(0);
 
-sub parse_misc_files {
+sub parse_misc_elegans_files {
   my %files_to_load = (
 		       $wormbase->misc_dynamic."/misc_genefinder.ace"           => "genefinder_predictions",
 		       $wormbase->misc_dynamic."/misc_twinscan.ace"             => "twinscan_predictions"  ,
@@ -65,9 +73,11 @@ sub parse_misc_files {
 		       $wormbase->wormpub."/analysis/GI_numbers/GI_numbers.ace" => "gi_number"             ,
 		       $wormbase->misc_static.'/misc_mtce_protein_IDs.ace'     => 'mtce_protein_IDs'      ,
 		       $wormbase->misc_dynamic.'/Caenorhabditae_sequence_data_to_load.ace'     => 'Caenorhabditae_seq_data',
+		       $wormbase->misc_dynamic.'/waba.ace' => 'el_brig_waba',
 		       $wormbase->misc_dynamic.'/fosmids.ace'                   => 'vancouver_fosmids'     ,
 		       $wormbase->misc_dynamic.'/misc_21urna_homol.ace'         => '21uRNAs'               ,
 		       $wormbase->misc_dynamic.'/misc_Expression_pattern_homol.ace'  => 'Expression_patterns'     ,
+		       $wormbase->acefiles.'/ensembl_protein_info.ace' => 'ensembl_proteins_info',
 		      );
 
   $log->write_to("Loading files to ".$wormbase->autoace."\n==================================\n");
@@ -75,6 +85,20 @@ sub parse_misc_files {
     $log->write_to("\tloading $file -tsuser $files_to_load{$file}\n");
     $wormbase->load_to_database($wormbase->autoace,$file, $files_to_load{$file},$log);
   }
+}
+
+sub parse_nematode_seqs {
+	my %files2load = (
+		"nembase_nematode_contigs.ace"   => "nembase_ace"           ,
+		"other_nematode_ESTs.ace"        => "other_nematode_ace"    ,
+		"washu_nematode_contigs.ace"     => "washu_nem_ace"         ,
+		);
+	$log->write_to("loading nematode sequences to $species database\n");
+	foreach my $file ( keys %files2load ) {
+		my $tsuser = $files2load{"$file"};
+		$log->write_to("\tloading $file -tsuser -$tsuser\n");
+		$wormbase->load_to_database($wormbase->autoace,$wormbase->misc_static."/$file",$tsuser, $log);
+	}
 }
 
 sub parse_homol_data {
@@ -86,17 +110,11 @@ sub parse_homol_data {
 		    #motif info
 		    "worm_ensembl_${species}_motif_info.ace",
 		    #protein info
-		    "ensembl_protein_info.ace",
 		    "worm_ensembl_${species}_interpro_motif_info.ace",
 		    #other data
 		    "repeat_homologies.ace",
-		    "waba.ace",
 		    "inverted_repeats.ace"
 		   );
-
-  $log->write_to("\nCopying WABA to acedir \n==============================\n");
-
-  cp($wormbase->misc_dynamic.'/waba.ace',$wormbase->acefiles) ;
 
   $log->write_to("\nLoading homol data\n==============================\n");
   
@@ -123,42 +141,8 @@ sub parse_briggsae_data {
     $log->write_to("\tload $file\n");
     $wormbase->load_to_database($wormbase->autoace,"$brig_dir/$file","BAC_ends", $log);
   }
-  # and the brigpep file
-  $wormbase->load_to_database($wormbase->autoace, $wormbase->database('brigace')."/brigpep.ace","brigpep", $log);
 }
 
-sub parse_blat_data {
-  $log->write_to("loading BLAT data\n");
-  my @files = (
-	       $wormbase->species.'.blat.embl.ace',	   $wormbase->species.'.blat.est.ace',
-	       $wormbase->species.'.blat.mrna.ace',	   $wormbase->species.'.blat.ncrna.ace',
-	       $wormbase->species.'.blat.nematode.ace',    $wormbase->species.'.blat.nembase.ace',
-	       $wormbase->species.'.blat.ost.ace',	   $wormbase->species.'.blat.tc1.ace',
-	       $wormbase->species.'.blat.washu.ace',       $wormbase->species.'.ci.est.ace',
-	       $wormbase->species.'.ci.mrna.ace',	   $wormbase->species.'.ci.ost.ace',
-	       $wormbase->species.'.good_introns.est.ace',
-	       $wormbase->species.'.good_introns.mrna.ace',
-	       $wormbase->species.'.good_introns.ost.ace',
-	       'virtual_objects.$wormbase->species.blat.embl.ace',
-	       'virtual_objects.$wormbase->species.blat.est.ace',
-	       'virtual_objects.$wormbase->species.blat.mrna.ace',
-	       'virtual_objects.$wormbase->species.blat.ncrna.ace',
-	       'virtual_objects.$wormbase->species.blat.nematode.ace',
-	       'virtual_objects.$wormbase->species.blat.nembase.ace',
-	       'virtual_objects.$wormbase->species.blat.ost.ace',
-	       'virtual_objects.$wormbase->species.blat.tc1.ace',
-	       'virtual_objects.$wormbase->species.blat.washu.ace',
-	       'virtual_objects.$wormbase->species.ci.est.ace',
-	       'virtual_objects.$wormbase->species.ci.mrna.ace',
-	       'virtual_objects.$wormbase->species.ci.ost.ace'
-	      );
-
- foreach my $file (@files){
-    $log->write_to("\tload $file\n");
-    my $db = $wormbase->autoace;
-    $wormbase->load_to_database($db,$wormbase->blat."/$file",undef, $log);
-  }
-}
 
 
 
