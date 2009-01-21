@@ -5,7 +5,7 @@
 # map GO_terms to ?Sequence objects from ?Motif and ?Phenotype
 #
 # Last updated by: $Author: ar2 $     
-# Last updated on: $Date: 2008-12-15 14:38:06 $      
+# Last updated on: $Date: 2009-01-21 13:51:11 $      
 
 use strict;
 use warnings;
@@ -33,7 +33,7 @@ my $species;
 GetOptions ("help"      => \$help,
             "debug=s"   => \$debug,
             "phenotype" => \$phenotype,
-	    "tmhmm"		=> \$tmhmm,
+	    "tmhmm"	=> \$tmhmm,
 	    "motif"     => \$motif,
 	    "noload"    => \$noload,
     	    "store:s"   => \$store,
@@ -134,38 +134,44 @@ sub tmhmmGO {
 	my $query = "find protein where species = \"".$wormbase->full_name."\" where Feature AND NEXT = \"Tmhmm\"; follow Corresponding_CDS; follow Gene";
 	my $genes = $db->fetch_many(-query => $query);
 	while(my $gene = $genes->next){
-		print OUT "\nGene : ".$gene->name."\nGO_term \"GO:0016021\"\tIEA\tInferred_automatically\t\"CBS:TMHMM\"\n";
+	    print OUT "\nGene : ".$gene->name."\nGO_term \"GO:0016021\"\tIEA\tInferred_automatically\t\"CBS:TMHMM\"\n";
 	}
 }
 
 sub phenotype {
-  my $db = shift;
-  
-  my $def = &write_phenotype_def;
-  my $tm_query = $wormbase->table_maker_query($dbpath,$def);
-  #my $acefile = $wormbase->acefiles."/inherit_GO_terms.ace";
-  #open ACE,">$acefile" or $log->log_and_die("cant write $acefile: $!\n");
-  while(<$tm_query>) {
-  		s/\"//g;  #remove "
-  		next if (/acedb/ or /\/\//);
-		my @data = split("\t",$_);
-	  	my ( $rnai, $cds, $gene, $phenotype_id,$go,$not) = @data;
-		chomp $not;
-		next if ((! defined $phenotype_id) or ((defined $not)and ($not eq 'Not')));
-		my $phenotype; 
-	  	if($phenotype_id =~ /WBPheno/) {
-	  		$phenotype = &get_phenotype_name($phenotype_id);
-	  	}
-	  	else {next;}
-  		unless($cds and $phenotype and $go) {
-  			$log->write_to("bad data $_");
-  			next;
-  		}
-		print OUT "\nCDS : \"$cds\"\nGO_term \"$go\" IMP Inferred_automatically \"$phenotype ($phenotype_id|$rnai)\"\n" ;	print OUT "\nGene : \"$gene\"\nGO_term \"$go\" IMP Inferred_automatically \"$phenotype ($phenotype_id|$rnai)\"\n" ;
+    my $db = shift;
+    
+    my $def = &write_phenotype_def;
+    my %skiplist = ( 'WBPaper00005976' => 1,
+		     'WBPaper00026667' => 1,
+		     'WBPaper00005655' => 1,
+		     'WBPaper00026715' => 1,
+		     'WBPaper00027756' => 1
+		     );
+
+    my $tm_query = $wormbase->table_maker_query($dbpath,$def);
+    while(<$tm_query>) {
+	s/\"//g;  #remove "
+	next if (/acedb/ or /\/\//);
+	my @data = split("\t",$_);
+	my ( $rnai, $paper, $cds, $gene, $phenotype_id,$go,$not) = @data;
+	chomp $not;
+	next if (($paper !~ /WBPaper/) or (! defined $phenotype_id) or ((defined $not)and ($not eq 'Not')));
+	next if ($skiplist{$paper});
+	my $phenotype; 
+	if($phenotype_id =~ /WBPheno/) {
+	    $phenotype = &get_phenotype_name($phenotype_id);
 	}
-	#close ACE;
-	#tidy up
-	$wormbase->run_command("rm -f $def", $log);
+	else {next;}
+	unless($cds and $phenotype and $go) {
+	    $log->write_to("bad data $_");
+	    next;
+	}
+	print OUT "\nCDS : \"$cds\"\nGO_term \"$go\" IMP Inferred_automatically \"$phenotype ($phenotype_id|$rnai)\"\n" ;
+	print OUT "\nGene : \"$gene\"\nGO_term \"$go\" IMP Inferred_automatically \"$phenotype ($phenotype_id|$rnai)\"\n" ;
+    }
+    #tidy up
+    $wormbase->run_command("rm -f $def", $log);
 }
 
 
@@ -203,50 +209,58 @@ Visible
 Class 
 Class RNAi 
 From 1 
- 
+  
 Colonne 2 
+Width 12 
+Mandatory
+Visible 
+Class 
+Class Paper 
+From 1 
+Tag Reference 
+
+Colonne 3 
 Width 12 
 Optional 
 Visible 
 Class 
 Class CDS 
 From 1 
-Tag Predicted_gene 
- 
-Colonne 3 
-Width 12 
-Optional 
-Visible 
-Class 
-Class Gene 
-From 2 
-Tag Gene 
+Tag Predicted_gene  
  
 Colonne 4 
 Width 12 
 Optional 
 Visible 
 Class 
+Class Gene 
+From 3
+Tag Gene  
+ 
+Colonne 5
+Width 12 
+Optional 
+Visible 
+Class 
 Class Phenotype 
 From 1 
-Tag Phenotype 
-
-Colonne 5
-Width 12
-Mandatory
-Visible
-Class
-Class GO_term
-From 4
-Tag GO_term
-
-Colonne 6
+Tag Phenotype  
+ 
+Colonne 6 
+Width 12 
+Mandatory 
+Visible 
+Class 
+Class GO_term 
+From 5
+Tag GO_term 
+ 
+Colonne 7
 Width 12 
 Optional 
 Visible 
 Next_Tag 
-Right_of 4 
-
+Right_of 5 
 
 END
 
