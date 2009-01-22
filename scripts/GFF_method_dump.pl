@@ -9,7 +9,7 @@
 # dumps the method through sace / tace and concatenates them.
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2009-01-21 10:13:13 $
+# Last edited on: $Date: 2009-01-22 14:31:48 $
 
 
 use lib $ENV{CVS_DIR};
@@ -42,10 +42,7 @@ GetOptions (
 	    "list:s"        => \$list
 	   );
 
-unless ($host) {
-	print STDERR "you need to start a server first and tell me the host\neg /software/worm/bin/acedb/sgifaceserver /nfs/disk100/wormpub/BUILD/remanei 23100 600:6000000:1000:600000000>/dev/null)>&/dev/null\n";
-	die;
-}
+
 my $wormbase;
 if( $store ) {
   $wormbase = retrieve( $store ) or croak("cant restore wormbase from $store\n");
@@ -77,7 +74,14 @@ system("touch $dump_dir/tmp_file") and $log->log_and_die ("cant write to $dump_d
 
 
 # open database connection once
-$via_server = 1 if (scalar @sequences > 50 ||$host);
+if ($wormbase->assembly_type eq 'contig'){
+    $via_server = 1;
+    unless ($host) {
+	print STDERR "you need to start a server first and tell me the host\neg /software/worm/bin/acedb/sgifaceserver /nfs/disk100/wormpub/BUILD/remanei 23100 600:6000000:1000:600000000>/dev/null)>&/dev/null\n";
+	$log->log_and_die("no host passed for contig assembly");
+    }
+}
+
 unless($via_server) {
 	open (WRITEDB,"| $giface $database") or $log->log_and_die ("failed to open giface connection to $database\n");
 }
