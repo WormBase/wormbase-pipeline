@@ -120,6 +120,11 @@ foreach my $slice(@slices){
 				print "Ortholog $sid \"$species{$$v[0]}\" From_analysis WormBase-Compara\n";
 		}
 
+		while (my ($k,$v)=each(%brugia_ids)){                                               # brugia exception
+				my $bid=$cds2swiss{$k}?$cds2swiss{$k}:$k;
+				print "Ortholog_other $bid From_analysis WormBase-Compara\n";
+		}
+
                 undef %all_ortho;
 		print "\n";
 
