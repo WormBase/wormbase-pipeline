@@ -7,8 +7,8 @@
 
 # 031023 dl1
 
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2008-09-04 10:12:27 $
+# Last edited by: $Author: pad $
+# Last edited on: $Date: 2009-01-26 11:44:26 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -118,8 +118,14 @@ if($wormbase->species eq 'elegans') {
   $log->write_to("// Finished reading EST_names.dat hash\n\n");
 }
 
-# which database
+# which database?
+if (-e $wormbase->orgdb."/database/block1.wrm") {
 $database = $wormbase->orgdb unless $database;
+}
+else {
+$database = $wormbase->database($species);
+}
+
 my $blat_dir =  $wormbase->blat;
 my $tace  = $wormbase->tace;                          # tace executable path
 my $id;                                               # id for the entry
