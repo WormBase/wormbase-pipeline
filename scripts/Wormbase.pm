@@ -800,7 +800,7 @@ sub check_file {
   # file must not exist
   if (exists $criteria{must_not_exist}) {
     if (-e $file) {
-      push @problems,  "the file exists - it should not exist (often tested at the start of a script)";
+      push @problems,  "the file exists - it should not exist";
     } else {
       delete $criteria{must_not_exist};
     }
@@ -821,14 +821,15 @@ sub check_file {
     if (!-r $file) {
       push @problems,  "file is not readable";
     }
-  }
 
-  if (!exists $criteria{readonly}) {
-    if (!-w $file) {
-      push @problems,  "file is not writeable";
+    if (!exists $criteria{readonly}) {
+      if (!-w $file) {
+	push @problems,  "file is not writeable";
+      }
+    } else {
+      delete $criteria{readonly};
     }
-  } else {
-    delete $criteria{readonly};
+
   }
 
   my $size;
