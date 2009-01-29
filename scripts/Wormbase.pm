@@ -794,21 +794,33 @@ sub check_files {
 sub check_file {
 
   my ($self, $file, $log, %criteria) = @_;
-
-  unless ( -e $file) {
-    if ( $log) {
-      $log->error;
-      $log->write_to("ERROR: Couldn't find file named: $file\n");
-    }
-    carp "ERROR: Couldn't find file named: $file\n";
-    return 1;
-  }
-  delete $criteria{exists};
-
   my @problems;
 
-  if (!-r $file) {
-    push @problems,  "file is not readable";
+
+  # file must not exist
+  if (exists $criteria{must_not_exist}) {
+    if (-e $file) {
+      push @problems,  "the file exists - it should not exist (often tested at the start of a script)";
+    } else {
+      delete $criteria{must_not_exist};
+    }
+
+  } else {
+
+    # file must exist (the default)
+    if (! -e $file) {
+      if ( $log) {
+	$log->error;
+	$log->write_to("ERROR: Couldn't find file named: $file\n");
+      }
+      carp "ERROR: Couldn't find file named: $file\n";
+      return 1;
+    }
+    delete $criteria{exists}; # this 'exists' criterion is redundant
+
+    if (!-r $file) {
+      push @problems,  "file is not readable";
+    }
   }
 
   if (!exists $criteria{readonly}) {
@@ -1966,6 +1978,8 @@ Arguments:
     - filename to check
     - $log
     - optional hash containing one or more of the following:
+      must_not_exist => 1 (the file must not exist)
+      exists => 1 (the default, the file must exist)
       readonly => 1 (allow the file to be readonly)
       samesize => file_name to compare to
       similarsize => file_name to compare to (within 10% of the size)
