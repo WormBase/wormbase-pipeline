@@ -8,8 +8,8 @@
 # Uses Ant's Feature_mapper.pm module
 #
 #
-# Last updated by: $Author: gw3 $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2008-11-05 16:55:56 $        # quickly see when script was last changed and by whom
+# Last updated by: $Author: ar2 $                      # These lines will get filled in by cvs and helps us
+# Last updated on: $Date: 2009-01-29 16:32:44 $        # quickly see when script was last changed and by whom
 
 
 $|=1;
@@ -32,6 +32,7 @@ my $SL2;                     #  SL2 trans-splice leader acceptors
 my $polyA_site;              #  polyA_site
 my $polyA_signal;            #  polyA_signal
 my $binding_site;            #  binding_site feature data.
+my $binding_site_reg;        #  binding_site_region feature data
 my $adhoc;                   # Run against a file, output to screen
 my $start;
 my $stop;
@@ -44,6 +45,7 @@ GetOptions (
 	    "polyA_site"   => \$polyA_site,
 	    "polyA_signal" => \$polyA_signal,
 	    "binding_site" => \$binding_site,
+	    "binding_site_reg" => \$binding_site_reg,
 	    "adhoc=s"      => \$adhoc,
             "debug=s"      => \$debug,
             "verbose"      => \$verbose,
@@ -86,7 +88,9 @@ my %sanity = (
 	      'SL2'          => 0,
 	      'polyA_site'   => 0,
 	      'polyA_signal_sequence' => 6,
-	      'binding_site' => -1
+	      'binding_site' => -1,
+	      'binding_site_region' => -1
+
 	      );
 
 # queue which Feature types you want to map
@@ -96,6 +100,7 @@ push (@features2map, "SL2")           if (($SL2) || ($all));
 push (@features2map, "polyA_signal_sequence")  if (($polyA_signal) || ($all));
 push (@features2map, "polyA_site")    if (($polyA_site) || ($all));
 push (@features2map, "binding_site")  if (($binding_site) || ($all));
+push (@features2map, "binding_site_region")  if (($binding_site_reg) || ($all));
 
 #############
 # main loop #
