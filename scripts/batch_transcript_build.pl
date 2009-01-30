@@ -7,7 +7,7 @@
 # wrapper script for running transcript_builder.pl
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2009-01-30 15:00:06 $
+# Last edited on: $Date: 2009-01-30 15:07:02 $
 
 use lib $ENV{CVS_DIR};
 use Wormbase;
@@ -61,7 +61,7 @@ unless ( $no_run ){
   	$chromosomes[0] = @chrs;
   }  
 
-  $gff_dir  = $wormbase->gff unless $gff_dir;
+  $gff_dir  = $wormbase->gff_splits unless $gff_dir;
   $dump_dir = $wormbase->transcripts unless $dump_dir;
 
   # make a Coords_converter to write the coords files. Otherwise all 6 processes try and do it.
