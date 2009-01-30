@@ -6,8 +6,8 @@
 #
 # Usage : autoace_builder.pl [-options]
 #
-# Last edited by: $Author: pad $
-# Last edited on: $Date: 2009-01-30 09:37:25 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2009-01-30 15:43:23 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -366,9 +366,66 @@ sub make_UTR {
   
   #merge into single file.
   if($wormbase->assembly_type eq 'contig') {
-  	$wormbase->run_command("cat ".$wormbase->gff_splits."/UTR.gff* >> ".$wormbase->gff_splits."/allUTR.gff",$log);
-  	$wormbase->run_command("rm -f ".$wormbase->gff_splits."/UTR.gff*",$log);
-  	$wormbase->run_command("mv -f ".$wormbase->gff_splits."/allUTR.gff ".$wormbase->gff_splits."/UTR.gff",$log);
+    $wormbase->run_command("cat ".$wormbase->gff_splits."/UTR.gff* >> ".$wormbase->gff_splits."/allUTR.gff",$log);
+    $wormbase->run_command("rm -f ".$wormbase->gff_splits."/UTR.gff*",$log);
+    $wormbase->run_command("mv -f ".$wormbase->gff_splits."/allUTR.gff ".$wormbase->gff_splits."/UTR.gff",$log);
+	
+# check the files      
+#Crem_Contig35   Coding_transcript       three_prime_UTR 74394   74463   .       -       .       Transcript "CRE24456"
+#Crem_Contig35   Coding_transcript       coding_exon     74464   75307   .       -       1       Transcript "CRE24456" ; CDS "CRE24456"
+#Crem_Contig35   Coding_transcript       five_prime_UTR  75458   75463   .       -       .       Transcript "CRE24456"
+
+    $wormbase->check_file($wormbase->gff_splits."/UTR.gff", $log,
+			  lines => ['^##', 
+				    "^\\S+\\s+Coding_transcript\\s+(three_prime_UTR|coding_exon|five_prime_UTR)\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+Transcript\\s+\\S+"],
+			  gff => 1,
+			 );   
+  } else {
+  
+    # check the files      
+    foreach my $sequence ( $wormbase->get_chromosome_names(-prefix => 1, -mito => 1) ) {
+      if($wormbase->species eq 'elegans') {
+
+	my %sizes = (
+		     'CHROMOSOME_I'       => 3400000,
+		     'CHROMOSOME_II'      => 3500000,
+		     'CHROMOSOME_III'     => 3200000,
+		     'CHROMOSOME_IV'      => 3500000,
+		     'CHROMOSOME_V'       => 4200000,
+		     'CHROMOSOME_X'       => 3600000,
+		     'CHROMOSOME_MtDNA'   =>    2000,
+		    );
+	$wormbase->check_file($wormbase->gff_splits."/${sequence}_UTR.gff", $log,
+			      minsize => $sizes{$sequence},
+			      lines => ['^##', 
+					"^\\S+\\s+Coding_transcript\\s+(three_prime_UTR|coding_exon|five_prime_UTR)\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+Transcript\\s+\\S+"],
+			      gff => 1,
+			     );   
+      } elsif ($wormbase->species eq 'briggsae') {
+       
+	my %sizes = (
+		     'chr_I'          => 1300000,
+		     'chr_I_random'   =>  300000,
+		     'chr_II'         => 1500000,
+		     'chr_II_random'  =>  200000,
+		     'chr_III'        => 1500000,
+		     'chr_III_random' =>   70000,
+		     'chr_IV'         => 1600000,
+		     'chr_IV_random'  =>   50000,
+		     'chr_V'          => 1900000,
+		     'chr_V_random'   =>  300000,
+		     'chr_X'          => 2100000,
+		     'chr_Un'         =>  600000,
+		    );
+	$wormbase->check_file($wormbase->gff_splits."/${sequence}_UTR.gff", $log,
+			      minsize => $sizes{$sequence},
+			      lines => ['^##', 
+					"^\\S+\\s+Coding_transcript\\s+(three_prime_UTR|coding_exon|five_prime_UTR)\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+Transcript\\s+\\S+"],
+			      gff => 1,
+			     );   
+      }
+    }
+
   }
 }
 
