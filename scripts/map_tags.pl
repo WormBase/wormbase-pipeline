@@ -181,7 +181,7 @@ my $seq;
 my @tmp=();
 foreach my $chrom (@chroms) {
   my $input  = "get_sequences_gff_${chrom}.out";
-  open (IN, "<$input") or $log->log_and_die("Cant open $input: !$\n");
+  open (IN, "<$input") or $log->log_and_die("Cant open $input: $!\n");
   while (<IN>) {          # create a transcriptome hash
     chomp;
     next unless $_;
@@ -225,7 +225,7 @@ foreach my $chrom (@chroms) {
       $seq.=$_;          # get the sequence of the transcript including the bounding UTR sequences
     }
   }
-  close(IN) or $log->error("Problem closing $input: !$\n");
+  close(IN) or $log->error("Problem closing $input: $!\n");
   unlink($input);
 
   if (@tmp) {			# duhrr. process the last input line with a duplicate block of code

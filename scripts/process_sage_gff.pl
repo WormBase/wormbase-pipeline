@@ -1,6 +1,6 @@
 #!/software/bin/perl -w
 #
-# $Id: process_sage_gff.pl,v 1.8 2009-01-30 09:28:50 gw3 Exp $;
+# $Id: process_sage_gff.pl,v 1.9 2009-01-30 09:33:22 gw3 Exp $;
 #
 # process the raw Sanger GFF dump to add data to SAGE tags
 # Sheldon McKay <mckays@cshl.edu>
@@ -91,7 +91,7 @@ foreach my $chrom (@chroms){
 	my $atts = join ';', "Sequence $tag", @atts;
 	print TMP join ("\t",$ref,$src,$met,$start,$stop,$scr,$strand,$phase,$atts), "\n";
     }
-    close TMP or  $log->error("Problem closing $tmp_file: !$\n");
+    close TMP or  $log->error("Problem closing $tmp_file: $!\n");
     $wormbase->run_command("mv -f $tmp_file $file", $log);
 }
 

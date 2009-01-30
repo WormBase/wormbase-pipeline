@@ -15,7 +15,7 @@
 
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2007-06-08 10:36:50 $      
+# Last updated on: $Date: 2009-01-30 09:35:24 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -104,10 +104,10 @@ if ($chromosome) {
 
 foreach my $chrom ( @chroms ) {
   my $output = "get_sequences_gff_${chrom}.out";
-  open (OUT, ">$output") or $log->log_and_die("Cant open $output: !$\n");
+  open (OUT, ">$output") or $log->log_and_die("Cant open $output: $!\n");
   my @genes = &read_chromosome($chrom);
   &process_chromosome($chrom, @genes);
-  close(OUT) or $log->error("Problem closing $output: !$\n");
+  close(OUT) or $log->error("Problem closing $output: $!\n");
 }
 
 

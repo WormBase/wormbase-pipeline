@@ -6,8 +6,8 @@
 #
 # Exporter to map blat data to genome and to find the best match for each EST, mRNA, OST, etc.
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2009-01-21 10:18:28 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2009-01-30 09:34:42 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -397,7 +397,7 @@ unless ($nematode || $washu || $nembase) {
   my $superlink = "";
 
   # assign 
-  open(ABEST,  "<$blat_dir/".$wormbase->species.".best.${qspecies}_$type.ace") or $log->log_and_die("cant open $blat_dir/".$wormbase->species.".best.${qspecies}_$type.ace !$\n");
+  open(ABEST,  "<$blat_dir/".$wormbase->species.".best.${qspecies}_$type.ace") or $log->log_and_die("cant open $blat_dir/".$wormbase->species.".best.${qspecies}_$type.ace $!\n");
 
   while (<ABEST>) {
     if ($_ =~ /^Homol_data/) {
