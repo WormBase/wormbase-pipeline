@@ -1,6 +1,6 @@
 #!/software/bin/perl -w
 #
-# $Id: process_sage_gff.pl,v 1.7 2007-09-03 13:53:51 gw3 Exp $;
+# $Id: process_sage_gff.pl,v 1.8 2009-01-30 09:28:50 gw3 Exp $;
 #
 # process the raw Sanger GFF dump to add data to SAGE tags
 # Sheldon McKay <mckays@cshl.edu>
@@ -60,8 +60,8 @@ my $gff_path = $wormbase->chromosomes;
 foreach my $chrom (@chroms){
     my $file = $gff_path."/${chrom}.gff";
     my $tmp_file = "$file.tmp";
-    open (GFF,"<$file") or $log->log_and_die("Cant open $file: !$\n");
-    open (TMP,">$tmp_file") or  $log->log_and_die("Cant open $tmp_file: !$\n");
+    open (GFF,"<$file") or $log->log_and_die("Cant open $file: $!\n");
+    open (TMP,">$tmp_file") or  $log->log_and_die("Cant open $tmp_file: $!\n");
     while (<GFF>) {
 	if( !$_ || /^\#/ || !/SAGE_tag/) {
 	    print TMP;
