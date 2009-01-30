@@ -7,7 +7,7 @@
 # wrapper script for running transcript_builder.pl
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2008-11-07 16:37:06 $
+# Last edited on: $Date: 2009-01-30 15:00:06 $
 
 use lib $ENV{CVS_DIR};
 use Wormbase;
@@ -91,7 +91,7 @@ unless ( $no_run ){
   my $lsf = LSF::JobManager->new();
  	 foreach my $chrom ( @chromosomes ) {
  	 	my $name = substr($chrom,0, 15);
- 	    my$err = "$scratch_dir/transcipt_builder.$name.err.$$";
+ 	    my $err = "$scratch_dir/transcipt_builder.$name.err.$$";
  	    my $cmd = "$builder_script -database $database -chromosome $chrom";
 	    $log->write_to("$cmd\n");
 	    print "$cmd\n";
@@ -119,6 +119,68 @@ $wormbase->load_to_database($wormbase->autoace,$allfile,'transcript_builder', $l
 
 $log->write_to("batch_dumping GFF files\n");
 $wormbase->run_script("dump_gff_batch.pl -method Coding_transcript");
+
+
+##################
+# Check the files
+##################
+#CHROMOSOME_III  Coding_transcript       protein_coding_primary_transcript       3933602 3935885 .       -       .       Transcript "F37A8.4"
+
+if ($wormbase->assembly_type ne 'contig') { # elegans, briggsae
+  foreach my $sequence ( $wormbase->get_chromosome_names(-prefix => 1, -mito => 1) ) {
+    if($wormbase->species eq 'elegans') {
+
+      my %sizes = (
+		   'CHROMOSOME_I'       => 4800000,
+		   'CHROMOSOME_II'      => 5000000,
+		   'CHROMOSOME_III'     => 4500000,
+		   'CHROMOSOME_IV'      => 5000000,
+		   'CHROMOSOME_V'       => 6000000,
+		   'CHROMOSOME_X'       => 5000000,
+		   'CHROMOSOME_MtDNA'   =>    2000,
+		  );
+      $wormbase->check_file("$gff_dir/${sequence}_Coding_transcript.gff", $log,
+			    minsize => $sizes{$sequence},
+			    lines => ['^##', 
+				      "^${sequence}\\s+Coding_transcript\\s+(protein_coding_primary_transcript|intron|exon)\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+Transcript\\s+\\S+"],
+			    gff => 1,
+			   );   
+    } elsif ($wormbase->species eq 'briggsae') {
+
+      my %sizes = (
+		   'chr_I'          => 2000000,
+		   'chr_I_random'   =>  500000,
+		   'chr_II'         => 2500000,
+		   'chr_II_random'  =>  350000,
+		   'chr_III'        => 2300000,
+		   'chr_III_random' =>  100000,
+		   'chr_IV'         => 2500000,
+		   'chr_IV_random'  =>   80000,
+		   'chr_V'          => 3100000,
+		   'chr_V_random'   =>  500000,
+		   'chr_X'          => 3400000,
+		   'chr_Un'         =>  950000,
+		  );
+      $wormbase->check_file("$gff_dir/${sequence}_Coding_transcript.gff", $log,
+			    minsize => $sizes{$sequence},
+			    lines => ['^##', 
+				      "^${sequence}\\s+Coding_transcript\\s+(protein_coding_primary_transcript|intron|exon)\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+Transcript\\s+\\S+"],
+			    gff => 1,
+			   );   
+    }
+  }
+} else { # remanei, brenneri, japonica, prist, het
+      
+  $wormbase->check_file("$gff_dir/Coding_transcript.gff", $log,
+			lines => ['^##', 
+				  "^\\S+\\s+Coding_transcript\\s+(protein_coding_primary_transcript|intron|exon)\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+Transcript\\s+\\S+"],
+			gff => 1,
+		       );   
+}
+
+
+
+
 
 $log->mail;
 
