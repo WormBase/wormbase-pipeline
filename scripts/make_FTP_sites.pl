@@ -8,7 +8,7 @@
 # Originally written by Dan Lawson
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2009-02-02 10:51:55 $
+# Last updated on: $Date: 2009-02-02 11:08:19 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -871,7 +871,7 @@ sub CheckSize {
   my $F_SIZE = (stat("$first"))[7];
   my $S_SIZE = (stat("$second"))[7];
   if ($F_SIZE != $S_SIZE) {
-    $log->("\tERROR: $first SRC: $F_SIZE TGT: $S_SIZE - not same size, please check\n");
+    $log->error("\tERROR: $first SRC: $F_SIZE TGT: $S_SIZE - not same size, please check\n");
   } 
 }
 
