@@ -145,6 +145,7 @@ sub mail {
 	    my $runlog = $self->{'wormbase'}->autoace."/runlog";
 	    open(RL,">>$runlog") or $self->error("cant write runlog\t$!\n");#warning of failure?
     	if ( $self->report_errors != 0 ) {
+	    $subject = "ERROR: $subject";
 	    $script = "ERROR : $script";
 	    print RL "$script\tFAIL";
     	}
