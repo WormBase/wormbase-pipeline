@@ -8,7 +8,7 @@
 # Originally written by Dan Lawson
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2009-01-09 15:24:59 $
+# Last updated on: $Date: 2009-02-02 10:51:55 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -301,7 +301,7 @@ sub copy_dna_files{
 	my $masked_file = "$chromdir/".$species."_masked.dna.gz";
 	my $soft_file = "$chromdir/".$species."_softmasked.dna.gz";
 		
-	$wormbase->run_command("/bin/gzip -f $dna_file > $dna_dir/".$gspecies."$WS_name.dna.fa.gz",$log);
+	$wormbase->run_command("/bin/gzip -f $dna_file > $dna_dir/".$gspecies.".$WS_name.dna.fa.gz",$log);
 	$wormbase->run_command("cp -f $soft_file $dna_dir/".$gspecies."_softmasked.$WS_name.dna.fa.gz", $log);
 	$wormbase->run_command("cp -f $masked_file $dna_dir/".$gspecies."_masked.$WS_name.dna.fa.gz", $log);
 	
@@ -871,7 +871,7 @@ sub CheckSize {
   my $F_SIZE = (stat("$first"))[7];
   my $S_SIZE = (stat("$second"))[7];
   if ($F_SIZE != $S_SIZE) {
-    $log->write_to("\tERROR: $first SRC: $F_SIZE TGT: $S_SIZE - not same size, please check\n");
+    $log->("\tERROR: $first SRC: $F_SIZE TGT: $S_SIZE - not same size, please check\n");
   } 
 }
 
