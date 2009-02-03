@@ -2,8 +2,8 @@
 #
 # initiate_build.pl
 #
-# Last edited by: $Author: pad $
-# Last edited on: $Date: 2008-12-03 16:49:12 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2009-02-03 10:20:01 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -41,6 +41,11 @@ else {
 print STDERR "CHECKING: ${\$wormbase->autoace}/database\n";
 if (-e "${\$wormbase->autoace}/database") {
   die( "There appears to still be data left over from the previous Build in autoace\nPlease check that finish_build.pl has completed.\n" );
+
+}
+my $old_primary = $wormbase->primaries."/".$wormbase->upload_db_name."/temp_unpack_dir";
+if($species and -e($old_primary) ) {
+    die( "You should really clear out the old files from $old_primary before starting\n");
 }
 
 if($update) {

@@ -104,6 +104,7 @@ sub full_name {
 sub wormpep_prefix{'WP'}
 sub assembly_type {'chromosome'};
 sub seq_db {my $self = shift;return $self->database('camace');}
+sub upload_db_name {return ('stlace','citace')};
 
 ########################################
 package Briggsae;
@@ -152,6 +153,7 @@ sub wormpep_files {
   return ( "brigpep", "brigpep.accession", "brigpep.dna", "brigpep.history", "brigpep.fasta", "brigpep.table",
 	   "brigpep.diff" );
 }
+sub upload_db_name {'brigace'};
 
 
 #########################################
@@ -197,6 +199,7 @@ sub cds_regex{qr/CRE\d{5}[a-z]*/};
 sub seq_name_regex{qr/^CRE\d{5}/};
 sub cds_regex_noend{qr/CRE\d{5}[a-z]*/}; # for getting the CDS part of a Transcript name
 sub assembly_type {'contig'};
+sub upload_db_name {'remace'};
 
 #######################################################
 package Brenneri;
@@ -244,6 +247,7 @@ sub wormpep_prefix {'CN'}
 sub cds_regex{qr/CBN\d{5}[a-z]*/};
 sub seq_name_regex{qr/^CBN\d{5}/};
 sub cds_regex_noend{qr/CBN\d{5}[a-z]*/}; # for getting the CDS part of a Transcript name
+sub upload_db_name {'brenace'};
 
 #######################################################
 
@@ -291,6 +295,7 @@ sub full_name {
 	};
 }
 
+sub upload_db_name {'japace'};
 #######################################################
 
 package Pristionchus;
