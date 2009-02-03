@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: mt3 $
-# Last updated on: $Date: 2008-10-02 14:20:36 $
+# Last updated on: $Date: 2009-02-03 15:18:43 $
 
 use strict;
 use lib $ENV{"CVS_DIR"};
@@ -196,9 +196,7 @@ sub process_gene_class{
   # checks existence of a CGC name but no gene_class
   foreach my $gene ($db->fetch(-query=>'Find Gene WHERE CGC_name AND NOT Gene_class')){
     my $cgc_name = $gene->CGC_name;
-    print  "ERROR: $gene has CGC name ($cgc_name) but is not linked to its Gene_class\n";
-    print JAHLOG "ERROR: $gene has CGC name ($cgc_name) but is not linked to its Gene_class\n";
-    $jah_errors++;
+    print  LOG "ERROR: $gene has CGC name ($cgc_name) but is not linked to its Gene_class\n";
   }
 
   # checks Genes that do not have a map position nor an interpolated_map_position but has sequence info
