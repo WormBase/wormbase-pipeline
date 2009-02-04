@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl5.8.0 -w
 #
-# Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2008-12-04 12:15:15 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2009-02-04 15:31:07 $
 
 
 use lib $ENV{'CVS_DIR'};
@@ -451,22 +451,15 @@ sub check_and_shatter {
 #############################################################################
 
 sub dump_dna {
-  # this really just makes sure the list of sequence files to BLAT against is written. Used the seq files under the organism database.
-
-  my %accessors = $wormbase->species_accessors;
-  $accessors{$wormbase->species} = $wormbase;
-  foreach my $species ( keys %accessors ) {
-    # genome sequence dna files are either .dna or .fa
-    my @files = glob($accessors{$species}->chromosomes."/*.dna");
-    push(@files,glob($accessors{$species}->chromosomes."/*.fa"));
-
-    open(GENOME,">".$accessors{$species}->autoace."/genome_seq") or $log->log_and_die("cant open genome sequence file".$accessors{$species}->autoace."/genome_seq: $!\n");
+    my @files = glob($wormbase->chromosomes."/*.dna");
+    push(@files,glob($wormbase->chromosomes."/*.fa"));
+    
+    open(GENOME,">".$wormbase->autoace."/genome_seq") or $log->log_and_die("cant open genome sequence file".$wormbase->autoace."/genome_seq: $!\n");
     foreach (@files){
-      next if (/supercontig/ && scalar @files>1); # don't touch this
-      print GENOME "$_\n";
+	next if (/supercontig/ && scalar @files>1); # don't touch this
+	print GENOME "$_\n";
     }
     close GENOME;
-  }
 }
 __END__
 
