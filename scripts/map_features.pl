@@ -8,8 +8,8 @@
 # Uses Ant's Feature_mapper.pm module
 #
 #
-# Last updated by: $Author: ar2 $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2009-01-29 16:32:44 $        # quickly see when script was last changed and by whom
+# Last updated by: $Author: gw3 $                      # These lines will get filled in by cvs and helps us
+# Last updated on: $Date: 2009-02-06 11:12:18 $        # quickly see when script was last changed and by whom
 
 
 $|=1;
@@ -182,10 +182,15 @@ EOF
       $start = $coords[1];
       $stop  = $coords[2];
       
+      # Deal with polyA_signal_sequence features which have the
+      # flanking sequences outside of the feature, but
+      # Feature_mapper::map_feature expects the flanking sequences to
+      # overlap the feature by one base to enable correct mapping of
+      # features less than 2bp
+
       # munge returned coordinates to get the span of the mapped feature
       
-      # Deal with polyA_signal features
-      if ($query eq "polyA_signal") {
+      if ($query eq "polyA_signal_sequence") {
 	if ($start < $stop) {
 	  $start++;
 	  $stop--;
@@ -206,7 +211,7 @@ EOF
       }
       
       # check feature span is sane
-      if ( ($span == $sanity{$query}) || ($sanity{$query} < 0) ) {
+      if ( exists $sanity{$query} && (($span == $sanity{$query}) || ($sanity{$query} < 0)) ) {
 	
 	if ($adhoc) {
 	  print "$feature maps to $clone $start -> $stop, feature span is $span bp\n";
