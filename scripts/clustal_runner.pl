@@ -58,7 +58,7 @@ my $log = Log_files->make_build_log($wb);
 my $db = Ace->connect( -path => ($database||$wb->autoace) ) 
     || do { print "cannot connect to ${$wb->autoace}:", Ace->error; die };
 
-my $pgdb = DBI->connect('dbi:Pg:dbname=clx;host=deskpro16391.dynamic.sanger.ac.uk',$user,$pass);
+my $pgdb = DBI->connect('dbi:Pg:dbname=worm_clw;host=pgsrv1;port=5436',$user,$pass);
 
 my $sth = $pgdb->prepare('INSERT INTO clustal(peptide_id,alignment) VALUES (?,?)');
 my $qst = $pgdb->prepare('SELECT COUNT(peptide_id) FROM clustal WHERE peptide_id = ?');

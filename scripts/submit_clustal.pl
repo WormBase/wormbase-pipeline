@@ -45,7 +45,7 @@ my $log = Log_files->make_build_log($wb);
 
 # clean out the database
 my $prefix = $wb->wormpep_prefix;
-my $pgdb = DBI->connect('dbi:Pg:dbname=clx;host=deskpro16391.dynamic.sanger.ac.uk',$user,$pass);
+my $pgdb = DBI->connect('dbi:Pg:dbname=worm_clw;host=pgsrv1;port=5436',$user,$pass);
 $pgdb->do("DELETE FROM clustal WHERE peptide_id LIKE \'$prefix\%\'") unless $dontclean;
 
 # get wormpep dir and file name
