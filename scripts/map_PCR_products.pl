@@ -77,7 +77,7 @@ if ($debug) {
 my $tace  = $wb->tace;                # tace executable path
 my $dbdir = $wb->autoace;             # Database path
 $gffdir = $gffdir ? $gffdir : $wb->gff_splits;    # GFF splits directory
-my @chromosomes = $test    ? qw ( I ) : qw( I II III IV V X );                 # chromosomes to parse
+my @chromosomes = $test    ? qw ( CHROMOSOME_I ) : $wb->get_chromosome_names(-prefix => 1);                 # chromosomes to parse
 my $outace      = $acefile ? $acefile : $wb->acefiles . "/PCR_mappings.ace";
 
 # Struct for historical reasons
@@ -92,22 +92,22 @@ my $log = Log_files->make_build_log($wb);
 my $map = GFF_sql->new( { -build => 1 } );                                     # connect to build database
 
 foreach my $chromosome (@chromosomes) {
-    $log->write_to("Processing chromosome $chromosome\n");
-    print "\nProcessing chromosome $chromosome\n" if ($verbose);
+    $log->write_to("Processing $chromosome\n");
+    print "\nProcessing $chromosome\n" if ($verbose);
 
     ################
     # GFF database part
-   $map->clean("CHROMOSOME_$chromosome");                                     # reset the chromosome table
+   $map->clean($chromosome);                                     # reset the chromosome table
 
    foreach my $end ('curated', 'Non_coding_transcript', 'Pseudogene', 'ncRNA' ) {
-       my $file = "$gffdir/CHROMOSOME_${chromosome}_${end}.gff";
+       my $file = "$gffdir/${chromosome}_${end}.gff";
        $map->generate_tags($file);
-       $map->load_gff( $file, "CHROMOSOME_$chromosome" );
+       $map->load_gff( $file, $chromosome );
    }
 
     # Get PCR_product info from split GFF file
     &get_PCRs_from_GFF( $chromosome, 'Orfeome',   \%output, $map );
-    &get_PCRs_from_GFF( $chromosome, 'GenePairs', \%output, $map );
+#    &get_PCRs_from_GFF( $chromosome, 'GenePairs', \%output, $map );
 
 }
 
@@ -202,7 +202,7 @@ sub to_exon {
 sub get_PCRs_from_GFF {
     my ( $chromosome, $method, $pcr2gene, $map ) = @_;
 
-    open GFF_in, "<$gffdir/CHROMOSOME_${chromosome}_$method.gff" or $log->log_and_die("Failed to open PCR_product gff file\n\n");
+    open GFF_in, "<$gffdir/${chromosome}_$method.gff" or $log->log_and_die("Failed to open PCR_product gff file\n\n");
 
     while (<GFF_in>) {
         chomp;
@@ -212,11 +212,11 @@ sub get_PCRs_from_GFF {
 
         my ($name) = ( $f[8] =~ /PCR_product \"(.*)\"$/ );
         unless ($name) {
-            $log->write_to("WARNING: Cant get name from $f[8] , line $. in CHROMOSOME_${chromosome}_$method.gff\n");
+            $log->write_to("WARNING: Cant get name from $f[8] , line $. in ${chromosome}_$method.gff\n");
             next;
         }
 
-        my @hits = $map->get_chr( "CHROMOSOME_$chromosome", { start => $f[3], stop => $f[4] } );
+        my @hits = $map->get_chr( $chromosome, { start => $f[3], stop => $f[4] } );
         foreach my $hit (@hits) {
             my $exon = ${ &to_exon($hit) };
             push @{ $$pcr2gene{$name} }, $exon;
