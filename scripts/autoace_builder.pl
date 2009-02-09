@@ -6,8 +6,8 @@
 #
 # Usage : autoace_builder.pl [-options]
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2009-02-09 11:06:03 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2009-02-09 12:17:19 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -384,7 +384,7 @@ sub make_UTR {
 
     $wormbase->check_file($wormbase->gff_splits."/UTR.gff", $log,
 			  lines => ['^##', 
-				    "^\\S+\\s+Coding_transcript\\s+(three_prime_UTR|coding_exon|five_prime_UTR)\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+Transcript\\s+\\S+"],
+				    "^\\S+\\s+Coding_transcript\\s+(three_prime_UTR|coding_exon|five_prime_UTR)\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+\\s+Transcript\\s+\\S+"],
 			  gff => 1,
 			 );   
   } else {
@@ -405,7 +405,7 @@ sub make_UTR {
 	$wormbase->check_file($wormbase->gff_splits."/${sequence}_UTR.gff", $log,
 			      minsize => $sizes{$sequence},
 			      lines => ['^##', 
-					"^\\S+\\s+Coding_transcript\\s+(three_prime_UTR|coding_exon|five_prime_UTR)\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+Transcript\\s+\\S+"],
+					"^\\S+\\s+Coding_transcript\\s+(three_prime_UTR|coding_exon|five_prime_UTR)\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+\\s+Transcript\\s+\\S+"],
 			      gff => 1,
 			     );   
       } elsif ($wormbase->species eq 'briggsae') {
@@ -427,7 +427,7 @@ sub make_UTR {
 	$wormbase->check_file($wormbase->gff_splits."/${sequence}_UTR.gff", $log,
 			      minsize => $sizes{$sequence},
 			      lines => ['^##', 
-					"^\\S+\\s+Coding_transcript\\s+(three_prime_UTR|coding_exon|five_prime_UTR)\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+Transcript\\s+\\S+"],
+					"^\\S+\\s+Coding_transcript\\s+(three_prime_UTR|coding_exon|five_prime_UTR)\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+\\s+Transcript\\s+\\S+"],
 			      gff => 1,
 			     );   
       }
