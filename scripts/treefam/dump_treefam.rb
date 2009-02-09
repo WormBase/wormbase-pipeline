@@ -15,7 +15,7 @@ require 'optparse'
 require 'rubygems'
 require 'rdoc/ri/ri_paths'
 require 'rdoc/usage'
-require_gem 'ensembl-api' # Jan Aert's EnsEMBL API
+require 'ensembl'
 include Ensembl::Core
 
 database='worm_ensembl_elegans'
@@ -31,7 +31,7 @@ opt.parse(ARGV) rescue RDoc::usage('Usage')
 species_string=(spec_prefix[0..2].upcase) + (spec_suffix[0..1].upcase)
 
 # connect to db -- hardcoded to ia64d, can always be changed if needed
-CoreDBConnection.establish_connection(:adapter=>'mysql',:host => 'ia64d',:database =>database,:username=>'wormro',:password => '')
+Ensembl::Core::DBConnection.connect(species,49,:port => 3306,:adapter=>'mysql',:host => 'ia64d',:database =>database,:username=>'wormro',:password => '')
 
 # get all genes ...
 Gene.find(:all).each{|g|
