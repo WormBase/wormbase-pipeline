@@ -6,8 +6,8 @@
 #
 # Usage : autoace_builder.pl [-options]
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2009-01-30 15:43:23 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2009-02-09 11:06:03 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -224,32 +224,39 @@ sub first_dumps {
 
 sub map_features {
 
-    # PCR products  - requires UTR GFF files
-    $wormbase->run_script( 'map_PCR_products.pl', $log );
+    ## elegans only stuff
+    if ($wormbase->species eq 'elegans') {
+	# PCR products  - requires UTR GFF files
+	$wormbase->run_script( 'map_PCR_products.pl', $log );
 
-    #Oligo_sets
-    $wormbase->run_script( 'map_Oligo_set.pl', $log );
+	#Oligo_sets
+	$wormbase->run_script( 'map_Oligo_set.pl', $log );
 
-    # RNAi experiments
-    $wormbase->run_script( 'map_RNAi.pl -load', $log );
+	# RNAi experiments
+	$wormbase->run_script( 'map_RNAi.pl -load', $log );
 
-    # alleles
-    $wormbase->run_script( 'map_Alleles.pl', $log );
+	# writes tables listing microarrays to genes
+	$wormbase->run_script( 'make_oligo_set_mapping_table.pl -all', $log );
 
-    # Y2H objects
-    $wormbase->run_script( 'map_Y2H.pl -load', $log );
+	# maps SAGE tags to the genes and to the genome
+	$wormbase->run_script( 'map_tags.pl -load', $log );
 
-    # microarray connections
-    $wormbase->run_script( 'map_microarray.pl -load', $log );
+	# microarray connections
+	$wormbase->run_script( 'map_microarray.pl -load', $log );
+	
+	# Y2H objects
+	$wormbase->run_script( 'map_Y2H.pl -load', $log );
+    }
 
+    ## elegans or briggsae
+    if (($wormbase->species eq 'elegans') or ($wormbase->species eq 'briggsae')){
+	# alleles
+	$wormbase->run_script( 'map_Alleles.pl', $log );
+    }
+
+    ## all species
     # TSL features
     $wormbase->run_script( 'map_feature2gene.pl -load', $log );
-
-    # writes tables listing microarrays to genes
-    $wormbase->run_script( 'make_oligo_set_mapping_table.pl -all', $log );
-
-    # maps SAGE tags to the genes and to the genome
-    $wormbase->run_script( 'map_tags.pl -load', $log );
     
     # attach 'other nematode' ESTs to the genes they BLAT to best
     $wormbase->run_script( 'attach_other_nematode_ests.pl -load', $log );
