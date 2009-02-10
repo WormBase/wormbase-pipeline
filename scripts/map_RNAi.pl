@@ -5,8 +5,8 @@
 # by Kerstin Jekosch
 #
 # Version: $Version: $
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2008-01-15 11:56:24 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2009-02-10 14:18:47 $
 
 use strict;
 use warnings;
@@ -42,18 +42,18 @@ my $dbdir;         # connect to a different acedb
 my $noparse;	   # don't parse the ace file
 
 GetOptions(
-    "debug=s"      => \$debug,
-    "verbose"      => \$verbose,
-    "test"         => \$test,
-    "help"         => \$help,
-    "load"         => \$load,
-    "acefile=s"    => \$ace,
-    'store=s'      => \$store,
-    'chromosome=s' => \$chrom,
-    'gffdir=s'     => \$gffdir,
-    'dbdir=s'      => \$dbdir,
-    'noparse'	   => \$noparse,
-);
+	   "debug=s"      => \$debug,
+	   "verbose"      => \$verbose,
+	   "test"         => \$test,
+	   "help"         => \$help,
+	   "load"         => \$load,
+	   "acefile=s"    => \$ace,
+	   'store=s'      => \$store,
+	   'chromosome=s' => \$chrom,
+	   'gffdir=s'     => \$gffdir,
+	   'dbdir=s'      => \$dbdir,
+	   'noparse'	   => \$noparse,
+	   );
 
 # Display help if required
 &usage("Help") if ($help);
@@ -158,16 +158,16 @@ foreach my $RNAiID ( keys %rnai2genes ) {
 
         # remove duplicate primary connections
         @{ $rnai2genes{$RNAiID} } =
-          grep { ( ( !$genes2rnaip{ $_->id . $_->type } ) && ( $genes2rnaip{ $_->id . $_->type } = $RNAiID ) ) } @{ $rnai2genes{$RNAiID} };
+	    grep { ( ( !$genes2rnaip{ $_->id . $_->type } ) && ( $genes2rnaip{ $_->id . $_->type } = $RNAiID ) ) } @{ $rnai2genes{$RNAiID} };
         next if ( !defined ${ $rnai2genes{"$1_s"} }[0] );
 
         # for secondary connections remove duplicate secondaries as well as a secondary to an existing primary
         @{ $rnai2genes{"$1_s"} } =
-          grep { ( ( !$genes2rnais{ $_->id . $_->type } ) && ( $genes2rnais{ $_->id . $_->type } = $RNAiID ) ) } @{ $rnai2genes{"$1_s"} };
+	    grep { ( ( !$genes2rnais{ $_->id . $_->type } ) && ( $genes2rnais{ $_->id . $_->type } = $RNAiID ) ) } @{ $rnai2genes{"$1_s"} };
 
         foreach my $index ( 0 .. scalar( @{ $rnai2genes{"$1_s"} } ) - 1 ) {
             delete ${ $rnai2genes{"$1_s"} }[$index]
-              if $genes2rnaip{ ${ $rnai2genes{"$1_s"} }[$index]->id . ${ $rnai2genes{"$1_s"} }[$index]->type };    # eek ... slightly iffy
+		if $genes2rnaip{ ${ $rnai2genes{"$1_s"} }[$index]->id . ${ $rnai2genes{"$1_s"} }[$index]->type };    # eek ... slightly iffy
         }
     }
 }
@@ -286,6 +286,8 @@ foreach my $mapped ( keys %rnai2exp ) {
     }
 }
 
+my %rnai_go;
+&getGO_term_info;
 # Write primary/secondary type evidence for RNAi tag in ?Gene model
 # (This is done explicitly because you can't (easily) make a XREF between #Evidence tags in the models)
 foreach my $gene ( keys %inverse ) {
@@ -295,6 +297,17 @@ foreach my $gene ( keys %inverse ) {
         print "Gene: $gene RNAi: $RNAi type: $type\n" if ($verbose);
         print OUTACE "\nGene : \"$gene\"\n";
         print OUTACE "Experimental_info RNAi_result  \"$RNAi\" Inferred_automatically \"RNAi_$type\"\n";
+
+	# add GO_terms for RNAi_primaries that have phenotypes (replaces inherit_GO_terms.pl -phenotype)
+	if($type eq 'primary'){
+	    if($rnai_go{$RNAi}) {
+		foreach my $phen (keys %{$rnai_go{$RNAi}}) {
+		    foreach (@{$rnai_go{$RNAi}->{$phen}}) {
+			print OUTACE "GO_term $_ IMP Inferred_automatically \"($phen|$RNAi)\"\n";
+		    }
+		}
+	    }
+	}
     }
 }
 
@@ -387,56 +400,116 @@ sub get_RNAi_from_gff {
     close(GFF);
 }
 
+sub getGO_term_info {
+    &write_TM_def;
+    my $tm_query = $wb->table_maker_query($dbdir,'/tmp/inheritGO.def');
+    while(<$tm_query>) {
+	s/\"//g;  #remove "
+	next if (/acedb/ or /\/\//);
+	my ($rnai, $phen, $go) = split("\t",$_);
+	push(@{$rnai_go{$rnai}->{$phen}},$go);
+    }	
+}
+
+
+# this will write out an acedb tablemaker defn to a temp file
+sub write_TM_def {
+    my $def = '/tmp/inheritGO.def';
+    open TMP,">$def" or $log->log_and_die("cant write $def: $!\n");
+    my $txt = <<END;
+
+Sortcolumn 1
+
+Colonne 1
+Width 12
+Optional
+Visible
+Class
+Class RNAi
+From 1
+
+Colonne 2
+Width 12
+Mandatory
+Visible
+Class
+Class Phenotype
+From 1
+Tag Phenotype
+
+Colonne 3
+Width 12
+Mandatory
+Visible
+Class
+Class GO_term
+From 2
+Tag GO_term
+
+Colonne 4
+Width 12
+Null
+Visible
+Show_Tag
+Right_of 2
+Tag  HERE  # Not
+
+END
+
+	print TMP $txt;
+    close TMP;
+    return $def;
+}
 ############################################
 
 __END__
 
-=pod
+    =pod
 
-=head2 NAME - map_RNAi.pl
+    =head2 NAME - map_RNAi.pl
 
-=head1 USAGE
+    =head1 USAGE
 
-=over 4
+    =over 4
 
-=item map_RNAi.pl [-options]
+    =item map_RNAi.pl [-options]
 
-=back
+    =back
 
-map_RNAi.pl calculates the overlap between the genomic regions used in RNAi
-experiments and the CDS, transcript and pseudogene coordinates in the WS
-database release. It will generate an acefile which will remove any existing
-connections and make new ones. It will check the current database and make Gene
-connections where valid and attach expression_profiles as needed. This acefile
-is then loaded into autoace if -load is specified.
+    map_RNAi.pl calculates the overlap between the genomic regions used in RNAi
+    experiments and the CDS, transcript and pseudogene coordinates in the WS
+    database release. It will generate an acefile which will remove any existing
+    connections and make new ones. It will check the current database and make Gene
+    connections where valid and attach expression_profiles as needed. This acefile
+    is then loaded into autoace if -load is specified.
 
-map_RNAi mandatory arguments:
+    map_RNAi mandatory arguments:
 
 
-=over 4
+    =over 4
 
-=item none
+    =item none
 
-=back
+    =back
 
-map_RNAi optional arguments:
+    map_RNAi optional arguments:
 
-=over 4
+    =over 4
 
-=item -debug, debug mode
+    =item -debug, debug mode
 
-=item -verbose, additional debugging stuff
+    =item -verbose, additional debugging stuff
 
-=item -test, Test mode, generate the acefile but do not upload them, use only one chromosome 
+    =item -test, Test mode, generate the acefile but do not upload them, use only one chromosome 
 
-=item -help, Help pages
+    =item -help, Help pages
 
-=item -acefile, write to a specific acefile
+    =item -acefile, write to a specific acefile
 
-=item -load, loads file to autoace
+    =item -load, loads file to autoace
 
-=item -store specifiy configuration file
+    =item -store specifiy configuration file
 
-=back
+    =back
 
-=cut
+    =cut
