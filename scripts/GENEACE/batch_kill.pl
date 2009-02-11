@@ -34,12 +34,13 @@ e.g. perl batch_kill.pl -u fred -p secret -file deathrow.txt -test
 
 =cut
 
-my ($USER,$PASS, $test, $file, $species);
+my ($USER,$PASS, $test, $file, $species, $ns);
 GetOptions(
 	   'user:s'     => \$USER,
 	   'password:s' => \$PASS,
 	   'test'       => \$test,
 	   'file:s'     => \$file,
+	   'ns'         => \$ns
 	  ) or die;
 
 $species = 'elegans' unless $species;
@@ -95,7 +96,7 @@ sub kill_gene {
 	    print ACE "\nGene : $gene\nVersion $ver\nHistory Version_change $ver now $person Event Killed\nDead\nRemark \"$remark\"\n";
 	    print ACE "\nGene : $gene\n-D Sequence_name\n-D Method\n";
 	    #nameserver kill
-	    $db->kill_gene($gene);
+	    $db->kill_gene($gene) if $ns;
 	}
 	else {
 	    $log->error("no such gene $gene\n");
