@@ -7,7 +7,7 @@
 # Usage : acezip.pl [-options]
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2009-02-11 10:31:20 $
+# Last edited on: $Date: 2009-02-11 10:36:55 $
 use lib $ENV{'CVS_DIR'};
 
 use strict;
@@ -80,8 +80,8 @@ close ACE;
 #replace original, retaining if bk option set
 $wormbase->run_command("mv $file $file.bk", $log) if ($bk);
 $file=~s/_uncompressed// if $build;
-$wormbase->run_command("mv -f $outfile $file", $log);
 $wormbase->run_command("rm -f $file $file$$.sort $file$$.presort", $log);
+$wormbase->run_command("mv -f $outfile $file", $log);
 
 $log->mail;
 exit(0);
