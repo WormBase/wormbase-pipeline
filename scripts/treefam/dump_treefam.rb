@@ -2,7 +2,10 @@
 #== Synopsis
 # dumps the longest translation and their Pfam motifs of a gene
 #== Usage
-# dump_treefam.rb -db DB_NAME -species "Full SPECIESNAME"
+# dump_treefam.rb -d DB_NAME -s "Full SPECIESNAME" -p
+#   -p --protein  dump proteins instead of CDSes
+#   -d --database sets the database name
+#   -s --species  defines the species name in the id-line
 #
 #== Author:
 # Michael Han (mh6@sanger.ac.uk)
@@ -20,10 +23,12 @@ include Ensembl::Core
 
 database='worm_ensembl_elegans'
 species='Caenorhabdits elegans'
+protein=false
 
 opt=OptionParser.new
-opt.on("-d", "--database DATABASE",''){|d|database=d}
-opt.on("-s","--species SPECIES",''){|s|species=s}
+opt.on("-d", "--database DATABASE",''){|database|}
+opt.on("-s","--species SPECIES",''){|species|}
+opt.on("-p","--protein"){|protein|}
 opt.parse(ARGV) rescue RDoc::usage('Usage')
 
 # generate a species suffix from the two names
@@ -53,8 +58,8 @@ Gene.find(:all).each{|g|
     
     # and print it as Fasta file
     $stderr.puts "printing fasta" if $DEBUG
-#   seq=Bio::Sequence::AA.new(longest_transcript.protein_seq.sub('*',''))
-    seq=Bio::Sequence::NA.new(longest_transcript.cds_seq)
+    seq=Bio::Sequence::AA.new(longest_transcript.protein_seq.sub('*','')) if protein
+    seq=Bio::Sequence::NA.new(longest_transcript.cds_seq) unless protein
 
     puts seq.to_fasta("#{g.stable_id}\t#{g.stable_id}_#{species_string}\t#{longest_transcript.translation.stable_id}\t#{m_line}\t#{d_line}",60)
 }
