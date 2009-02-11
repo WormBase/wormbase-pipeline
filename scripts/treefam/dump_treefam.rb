@@ -6,6 +6,7 @@
 #   -p --protein  dump proteins instead of CDSes
 #   -d --database sets the database name
 #   -s --species  defines the species name in the id-line
+#   -o --outfile  write to outfile instead of stdout
 #
 #== Author:
 # Michael Han (mh6@sanger.ac.uk)
@@ -24,11 +25,13 @@ include Ensembl::Core
 database='worm_ensembl_elegans'
 species='Caenorhabdits elegans'
 protein=false
+out=$stdout
 
 opt=OptionParser.new
 opt.on("-d", "--database DATABASE",''){|database|}
 opt.on("-s","--species SPECIES",''){|species|}
 opt.on("-p","--protein"){|protein|}
+opt.on("-o","--outfile FILENAME"){|o|out=File.new(o,'w+')}
 opt.parse(ARGV) rescue RDoc::usage('Usage')
 
 # generate a species suffix from the two names
@@ -61,5 +64,5 @@ Gene.find(:all).each{|g|
     seq=Bio::Sequence::AA.new(longest_transcript.protein_seq.sub('*','')) if protein
     seq=Bio::Sequence::NA.new(longest_transcript.cds_seq) unless protein
 
-    puts seq.to_fasta("#{g.stable_id}\t#{g.stable_id}_#{species_string}\t#{longest_transcript.translation.stable_id}\t#{m_line}\t#{d_line}",60)
+    out.puts seq.to_fasta("#{g.stable_id}\t#{g.stable_id}_#{species_string}\t#{longest_transcript.translation.stable_id}\t#{m_line}\t#{d_line}",60)
 }
