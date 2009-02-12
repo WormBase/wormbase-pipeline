@@ -8,7 +8,7 @@
 # in ace
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-11-03 17:32:32 $      
+# Last updated on: $Date: 2009-02-12 11:56:37 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -198,7 +198,7 @@ foreach my $CDS_name (keys %proteins) {
 #    $log->write_to("We have found all the peptides in CDS: $CDS_name_isoform\n");
   } else {
     $final_count_not_ok++;
-    $log->write_to("We have not found all the peptides in CDS: $CDS_name_isoform\n");
+#    $log->write_to("We have not found all the peptides in CDS: $CDS_name_isoform\n");
   }
 }
 
@@ -277,7 +277,7 @@ if ($load) {
 $log->write_to("\n\nStatistics\n");
 $log->write_to("----------\n\n");
 $log->write_to("Count of genes with peptides mapped OK:     $final_count_ok\n");
-$log->write_to("Count of genes with peptides NOT mapped OK: $final_count_not_ok\n");
+$log->write_to("Count of genes with peptides NOT mapped OK: $final_count_not_ok (due to genes becoming pseudogenes etc. - can ignore this)\n");
 
 $log->mail();
 print "Finished.\n" if ($verbose);
@@ -591,7 +591,7 @@ sub process_cds {
 	($clone, $cds_start, $cds_end, $exons_start_ref, $exons_end_ref) = &get_cds_details($CDS_name_isoform);
 	# if we couldn't get the details of the CDS, then we just have to skip writing the genome mapping data for this protein
 	if (! defined $clone) {
-	  $log->write_to("Couldn't get the mapping details of the CDS $CDS_name_isoform\n");
+	  #$log->write_to("Couldn't get the mapping details of the CDS $CDS_name_isoform\n");
 	  $all_maps_to_genome_ok = 0;
 	}
       }
