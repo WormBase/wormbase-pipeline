@@ -8,7 +8,7 @@
 # so that gene discrepancies can be identified early in the build.
 #
 # Last updated by: $Author: pad $     
-# Last updated on: $Date: 2009-02-13 13:51:34 $      
+# Last updated on: $Date: 2009-02-13 16:18:55 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -66,14 +66,23 @@ my $xaceinstances;
 my @xaceinstances;
 # some database paths
 my $geneace   = $wormbase->primary('geneace');
+print "$geneace\n" if ($debug);
 my $camace    = $wormbase->primary('camace');
+print "$camace\n" if ($debug);
 my $stlace    = $wormbase->primary('stlace');
+print "$stlace\n" if ($debug);
 my $citace    = $wormbase->primary('citace');
+print "$citace\n" if ($debug);
 my $cshace    = $wormbase->primary('cshace');
+print "$cshace\n" if ($debug);
 my $brigace   = $wormbase->primary('brigace');
+print "$brigace\n" if ($debug);
 my $remace    = $wormbase->primary('remace');
-my $brenace = $wormbase->primary('brenace');
-my $japace = $wormbase->primary('japace');
+print "$remace\n" if ($debug);
+my $brenace   = $wormbase->primary('brenace');
+print "$brenace\n" if ($debug);
+my $japace    = $wormbase->primary('japace');
+print "$japace\n" if ($debug);
 
 ##########################
 # MAIN BODY OF SCRIPT
@@ -91,21 +100,19 @@ if ((-e $japace) && ($species eq 'japonica')) {push(@xaceinstances,"$japace");}
 # example of running anther script
 
 foreach $xaceinstances (@xaceinstances) {
-  unless ($geneace) {
     print "running camace_nameDB_comm.pl -database $xaceinstances\n";
-    $wormbase->run_script("NAMEDB/camace_nameDB_comm.pl -database $xaceinstances -debug pad", $log);
-  }
+    $wormbase->run_script("NAMEDB/camace_nameDB_comm.pl -database $xaceinstances", $log);
 }
 
 if ((-e $geneace) && ($species eq 'elegans'))  {
   print "running geneace_nameDB_comm.pl -debug pad\n";
-  $wormbase->run_script("NAMEDB/geneace_nameDB_comm.pl -debug pad", $log);
+  $wormbase->run_script("NAMEDB/geneace_nameDB_comm.pl", $log);
 }
 
 # Close log files and exit
-$log->write_to("\n\nStatistics\n");
+$log->write_to("\n\nFinished\n");
 $log->write_to("----------\n\n");
-$log->write_to("Put some statistics here.\n");
+#$log->write_to("Put some statistics here.\n");
 
 $log->mail();
 print "Finished.\n" if ($verbose);
