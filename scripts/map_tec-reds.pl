@@ -70,12 +70,13 @@ my %homol_data;
 
 my $output;
 my $output2;
-if ($wormbase->species eq 'elegans') {
+$species = $wormbase->species;
+if ($species eq 'elegans') {
   $output = $wormbase->misc_dynamic."/misc_TEC_RED_homol.ace";
   $output2 = $wormbase->misc_dynamic."/misc_TEC_RED_homol_data.ace";
 } else {
-  $output = $wormbase->acefiles."/misc_TEC_RED_homol.ace";
-  $output2 = $wormbase->acefiles."/misc_TEC_RED_homol_data.ace";
+  $output = $wormbase->acefiles."/misc_${species}_TEC_RED_homol.ace";
+  $output2 = $wormbase->acefiles."/misc_${species}_TEC_RED_homol_data.ace";
 }
 
 open (OUT, "> $output") || die "Can't open $output\n";
