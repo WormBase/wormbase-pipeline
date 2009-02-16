@@ -7,7 +7,7 @@
 # Exporter to map blat data to genome and to find the best match for each EST, mRNA, OST, etc.
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2009-02-16 15:17:16 $
+# Last edited on: $Date: 2009-02-16 15:58:54 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -133,6 +133,7 @@ while (<BLAT>) {
   my @query_starts = split (/,/, $f[19]);      # start coordinates of each query block
   my @slink_starts = split (/,/, $f[20]);      # start coordinates of each target (superlink) block
 
+  next if ($strand eq '--');
   $make_virt_obj{$superlink} = $slsize  if($virtualobjs);# store which sequence to make virtual objects for 
   # replace EST name (usually accession number) by yk... name 
   if ( ($est || $ost) && (exists $NDBaccession2est{$query}) ) {
