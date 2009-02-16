@@ -36,7 +36,7 @@ opt.parse(ARGV) rescue RDoc::usage('Usage')
 
 # generate a species suffix from the two names
 (spec_prefix,spec_suffix)=species.split
-species_string=(spec_prefix[0..2].upcase) + (spec_suffix[0..1].upcase)
+species_string=(spec_prefix[0..2].upcase) + (spec_suffix[0..2].upcase)
 
 # connect to db -- hardcoded to ia64d, can always be changed if needed
 Ensembl::Core::DBConnection.connect(species,49,:port => 3306,:adapter=>'mysql',:host => 'ia64d',:database =>database,:username=>'wormro',:password => '')
