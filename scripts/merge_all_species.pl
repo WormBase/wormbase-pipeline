@@ -1,7 +1,7 @@
 #/software/bin/perl -w
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2008-11-26 09:23:11 $
+# Last updated on: $Date: 2009-02-16 12:16:18 $
 
 #################################################################################
 # Variables                                                                     #
@@ -154,8 +154,8 @@ my $briggsaeDB = Wormbase->new(
 			       -test     => $wormbase->test,
 			       -organism => 'briggsae'
 			       );	
-$wormbase->load_to_database($wormbase->orgdb, $briggsaeDB->acefiles."/misc_TEC_RED_homol.ace", "merge_all_species", $log);
-$wormbase->load_to_database($wormbase->orgdb, $briggsaeDB->acefiles."/misc_TEC_RED_homol_data.ace", "merge_all_species", $log);
+$wormbase->load_to_database($wormbase->orgdb, $briggsaeDB->acefiles."/misc_briggsae_TEC_RED_homol.ace", "merge_all_species", $log);
+$wormbase->load_to_database($wormbase->orgdb, $briggsaeDB->acefiles."/misc_briggsae_TEC_RED_homol_data.ace", "merge_all_species", $log);
 
 
 $log->mail;
