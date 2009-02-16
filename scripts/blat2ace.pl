@@ -6,8 +6,8 @@
 #
 # Exporter to map blat data to genome and to find the best match for each EST, mRNA, OST, etc.
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2009-01-30 09:34:42 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2009-02-16 15:17:16 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -25,6 +25,7 @@ use File::Copy;
 my ($est, $mrna, $ncrna, $ost, $tc1, $nematode, $embl, $camace, $intron, $washu, $nembase);
 my ($help, $debug, $test, $verbose, $store, $wormbase, $species);
 my ($database, $virtualobjs, $type, $qspecies);
+my ($acefile,$pslfile);
 
 GetOptions (
 	    "help"       => \$help,
@@ -46,7 +47,9 @@ GetOptions (
 	    "intron"     => \$intron,
 	    "virtual"    => \$virtualobjs,
 	    "type:s"     => \$type,
-	    "qspecies:s" => \$qspecies #query species
+	    "qspecies:s" => \$qspecies, #query species
+	    "ace:s"      => \$acefile,
+	    "psl:s"      => \$pslfile
 	   );
 
 
@@ -99,8 +102,10 @@ $log->log_and_die("no type specified\n") unless $type;
 $log->write_to($wormbase->runtime.": Start mapping $qspecies $type\n\n");
 
 # open input and output filehandles
-open(ACE,  ">$blat_dir/".$wormbase->species.".${qspecies}_$type.ace")  or die "Cannot open $blat_dir/".$wormbase->species.".${qspecies}_${type}.ace $!\n";
-open(BLAT, "<$blat_dir/${qspecies}_${type}_out.psl")    or die "Cannot open $blat_dir/${qspecies}_${type}_out.psl $!\n";
+$acefile = "$blat_dir/".$wormbase->species.".${qspecies}_$type.ace" unless $acefile;
+$pslfile = "$blat_dir/${qspecies}_${type}_out.psl" unless $pslfile;
+open(ACE,  ">$acefile")  or die "Cannot open $acefile $!\n";
+open(BLAT, "<$pslfile")    or die "Cannot open $pslfile $!\n";
 
 my $number_of_replacements = 0;
 my %reported_this_query_before;
@@ -226,7 +231,7 @@ while (<BLAT>) {
 		  $query_start = $temp; 
 	      }
 	  }
-	  elsif (($strand eq '--') || ($strand eq '+-')) {
+	  elsif ($strand eq '+-') {
 	      $temp         = $virtualstart;
 	      $virtualstart = $virtualend;
 	      $virtualend   = $temp;
@@ -239,7 +244,7 @@ while (<BLAT>) {
 		  $query_end   = $query_start;
 		  $query_start = $temp; 
 	      }
-	  }			
+	  }
       }
       else {
 	  if ($strand eq '+'){
@@ -260,9 +265,6 @@ while (<BLAT>) {
       print ACE "Homol_data : \"$virtual\"\n";
       if ($type eq "nematode" || $type eq "washu" || $type eq "nembase") {
 	  printf ACE "DNA_homol\t\"%s\"\t\"BLAT_${type}\"\t%.1f\t%d\t%d\t%d\t%d\n\n",$query,$score,$virtualstart,$virtualend,$query_start,$query_end;
-	  
-#      print "// ERROR: $query [$strand] $virtualstart $virtualend $query_start $query_end ::: [$debug_start,$debug_end]  $newcalc - $calc {$slink_starts[$x]}\n" unless ((defined $virtualstart) && (defined $virtualend));
-	  
       }
       else {
 	printf ACE "DNA_homol\t\"%s\"\t$method\t%.1f\t%d\t%d\t%d\t%d\n\n",$query,$score,$virtualstart,$virtualend,$query_start,$query_end;
@@ -541,7 +543,7 @@ sub usage {
 	print "Check File: ''\n\n";
 	exit(0);
     }
-    if ($error == 20) {
+   if ($error == 20) {
 	# 
 	print "\nDon't want to do this for the -nematode or -washu or -nembase options.\n";
 	print "hasta luego\n\n";
