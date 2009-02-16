@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl -w
-# Last updated by: $Author: ar2 $     
-# Last updated on: $Date: 2009-01-21 10:32:11 $      
+# Last updated by: $Author: gw3 $     
+# Last updated on: $Date: 2009-02-16 12:29:05 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -140,6 +140,18 @@ sub parse_briggsae_data {
   foreach my $file (@files){
     $log->write_to("\tload $file\n");
     $wormbase->load_to_database($wormbase->autoace,"$brig_dir/$file","BAC_ends", $log);
+  }
+
+  # this could be in the parse_homol_data() routine but it is restricted to briggsae
+  # load the briggsae TEC-RED acefiles/ homol data
+  @files = (
+	    "misc_briggsae_TEC_RED_homol_data.ace",
+	    "misc_briggsae_TEC_RED_homol.ace"
+	   );
+  foreach my $file (@files){
+    $log->write_to("\tload $file\n");
+    my $tsuser = substr($file,0,-4); #file name without ace
+    $wormbase->load_to_database($wormbase->autoace,$wormbase->acefiles."/$file", $tsuser, $log);
   }
 }
 
