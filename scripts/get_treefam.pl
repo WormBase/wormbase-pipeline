@@ -60,7 +60,7 @@ use DBI;
 # GET THE LONG NAMES OF THE TREEFAM GENES FROM THE MYSQL DATABASE:
 
 my %WORM                      = (); # HASH TABLE TO KEEP A LIST OF WORM GENES IN TREEFAM.
-my $database                  = 'treefam_6';
+my $database                  = 'treefam_7';
 
 $log->write_to("connecting to treefam database : \tmysql:$database:db.treefam.org:3308\n");
 my $dbh                       = DBI->connect_cached("dbi:mysql:$database:db.treefam.org:3308", 'anonymous', '') || return;
