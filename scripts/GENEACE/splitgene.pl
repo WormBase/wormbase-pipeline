@@ -7,8 +7,8 @@
 # simple script for creating new (sequence based) Gene objects when splitting 
 # existing gene 
 #
-# Last edited by: $Author: mt3 $
-# Last edited on: $Date: 2008-06-03 09:38:11 $
+# Last edited by: $Author: pad $
+# Last edited on: $Date: 2009-02-18 16:25:15 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -71,13 +71,23 @@ die "-who option must be an integer\n"                   if ($who && ($who !~ m/
 die "-old option is not a valid type of sequence name\n" unless( ($old =~ $wormbase->cds_regex) or ($old =~ /WBGene\d{8}/) );
 die "-new option is not a valid type of sequence name\n" if ($new !~ $wormbase->cds_regex);
 
+##############################
+# warn/notify on use of -load.
+##############################
+
+if (!defined$load) {print "\n\nWarning: Update will not be loaded into $database as -load option has not been specified.\n";}
+elsif (defined$load) { print "Update will be loaded into $database\n";}
+
 ######################################
 # open connection and open output file
 ######################################
 my $db = Ace->connect(-path  => $database,
 		      -program =>$tace) || do { print "Connection failure: ",Ace->error; die();};
 
-open(OUT, ">$database/splitgene.ace") || die "Can't write to output file\n";
+my $outfile = "$database/splitgene_".$id.".ace";
+
+open(OUT, ">$outfile") || die "Can't write to output file\n";
+print "Output file: $outfile\n";
 
 # find out highest gene number in case new genes need to be created
 my $gene_max = $db->fetch(-query=>"Find Gene");
@@ -95,8 +105,8 @@ $db->close;
 close(OUT);
 
 # load information to geneace if -load is specified
-$wormbase->load_to_database($database, "$database/splitgene.ace", 'split_gene') if $load;
-
+$wormbase->load_to_database($database, "$outfile", 'split_gene') if $load;
+print "Finished!!!!\n";
 exit(0);
 
 
@@ -255,7 +265,8 @@ sub process_gene{
     A script designed to create new gene objects to load into geneace by splitting an
     existing gene.  Just supply an old (existing) sequence name, a new sequence name 
     for the result of the split, a person ID of curator providing the information and 
-    optionally a new Gene object ID.  Resulting acefile will be made in /nfs/disk100/wormpub/DATABASES/geneace/splitgene.ace
+    optionally a new Gene object ID.  Resulting acefile will be made in /nfs/disk100/wormpub/DATABASES/geneace/
+    the file will be called splitgene_<newgeneid>.ace
 
     Example 1 
     splitgene.pl -old AH6.3 -new AH6.11 -who 2970 -id 2342 -load
