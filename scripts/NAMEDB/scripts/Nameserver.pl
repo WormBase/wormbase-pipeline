@@ -52,6 +52,7 @@ $VALID_CGCNAME_USERS = {
 			'mt3'			=> 1,
 			'ar2'			=> 1,
 			'pad'                   => 1,
+			'gw3'                   => 1,
 		       };
 
 $MAILS = {
@@ -72,7 +73,7 @@ $MAILS = {
 	 };
 
 ## a list of people to mail when a DB operation occurs
-$MAIL_NOTIFY_LIST = [qw(ar2 mt3)];
+$MAIL_NOTIFY_LIST = [qw(ar2 mt3 pad gw3)];
 
 &main();
 1;
