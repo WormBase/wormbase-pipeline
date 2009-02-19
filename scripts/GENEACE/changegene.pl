@@ -7,7 +7,7 @@
 # simple script for changing class of gene objects (e.g. CDS->Pseudogene)
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2009-02-19 10:34:01 $
+# Last edited on: $Date: 2009-02-19 11:30:59 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -224,6 +224,7 @@ sub check_command_line_options{
   die "-seq option is not a valid type of sequence name\n" if ($seq && ($seq !~ m/$cds_regex/));
 
   # look up -class option to see if it exists in hash
+  if ($class eq undef) {die "No arguments supplied for -class option....ending\n"}
   if ($class && (!exists ($change{$class}))){
     die "Not valid arguments for -class option\n";
   }
