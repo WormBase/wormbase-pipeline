@@ -8,7 +8,7 @@
 # existing gene 
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2009-02-18 16:25:15 $
+# Last edited on: $Date: 2009-02-19 10:28:13 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -85,6 +85,7 @@ my $db = Ace->connect(-path  => $database,
 		      -program =>$tace) || do { print "Connection failure: ",Ace->error; die();};
 
 my $outfile = "$database/splitgene_".$id.".ace";
+if (-e $outfile) {print "Warning this split has probably already been processed.\n";}
 
 open(OUT, ">$outfile") || die "Can't write to output file\n";
 print "Output file: $outfile\n";
