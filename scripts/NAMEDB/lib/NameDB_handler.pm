@@ -291,7 +291,7 @@ sub merge_genes {
   my $names1 = $db->idAllNames($gene_id);
   my $names2 = $db->idAllNames($merge_id);
   
-  unless( ($db->user eq 'mt3') or ($db->user eq 'ar2') ){
+  unless( ($db->user eq 'mt3') or ($db->user eq 'ar2') or ($db->user eq 'pad') or ($db->user eq 'gw3' ){
     if ( $$names2{'CGC'} ) {
       if ($$names1{'CGC'} ) {
 	#both genes have CGC name - confirm with geneace 
