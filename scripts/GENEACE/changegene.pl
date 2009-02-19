@@ -7,7 +7,7 @@
 # simple script for changing class of gene objects (e.g. CDS->Pseudogene)
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2009-02-19 10:25:15 $
+# Last edited on: $Date: 2009-02-19 10:34:01 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -295,11 +295,12 @@ R = RNA gene (Transcript)
 T = Transposon
  
 Example
-changegene.pl -seq AH6.24 -who 2970 -class CP -load
+changegene.pl -seq AH6.4 -who 2970 -class CP -load
  
  
-This would produce the following acefile at /nfs/disk100/wormpub/DATABASES/geneace/changegene.ace and attempt to
-load it into geneace:
+This would produce the following acefile
+/nfs/disk100/wormpub/DATABASES/geneace/changegene_WBGene00005027.ace
+and attempt to load it into geneace:
  
 Gene WBGene00023428
 Live
