@@ -6,8 +6,8 @@
 #
 # simple script for changing class of gene objects (e.g. CDS->Pseudogene)
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2009-01-20 14:52:23 $
+# Last edited by: $Author: pad $
+# Last edited on: $Date: 2009-02-19 10:25:15 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -78,7 +78,13 @@ my $database = $wormbase->database('geneace');
 my $db = Ace->connect(-path  => $database,
 		      -program =>$tace) || do { print "Connection failure: ",Ace->error; die();};
 
-open(OUT, ">$database/changegene.ace") || die "Can't write to output file $database/changegene.ace \n";
+my $outfile;
+if (!$id) {$outfile = "$database/changegene_".&seq2gene($seq).".ace";}
+elsif ($id) {$outfile = "$database/changegene_".$id.".ace";}
+else {$outfile = "$database/changegene_".$seq.".ace";}
+if (-e $outfile) {print "Warning this gene has probably already been processed.\n";}
+
+open(OUT, ">$outfile") || die "Can't write to output file $outfile \n";
 
 $log->write_to("changing gene ");
 # get gene ID if -seq was specified
@@ -140,7 +146,7 @@ $db->close;
 close(OUT);
 
 # load information to geneace if -load is specified
-$wormbase->load_to_database($database, "$database/changegene.ace", 'mt3') if $load;
+$wormbase->load_to_database($database, "$outfile", 'changegene') if $load;
 
 $log->mail;
 
