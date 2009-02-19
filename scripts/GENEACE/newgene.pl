@@ -6,8 +6,8 @@
 #
 # simple script for creating new (sequence based) Gene objects 
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2008-07-28 14:33:15 $
+# Last edited by: $Author: pad $
+# Last edited on: $Date: 2009-02-19 10:46:46 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -124,7 +124,10 @@ $database = glob("~wormpub/DATABASES/geneace") if $test;
 my $db = Ace->connect(-path  => $database,
 		      -program =>$tace) || do { print "Connection failure: ",Ace->error; die();};
 
-open(OUT, ">$database/newgene.ace") || die "Can't write to output file\n";
+my $outfile = "$database/newgene_".$id.".ace";
+if (-e $outfile) {print "Warning this split has probably already been processed.\n";}
+
+open(OUT, ">$outfile") || die "Can't write to output file\n";
 
 # find out highest gene number in case new genes need to be created
 my $gene_max = $db->fetch(-query=>"Find Gene");
@@ -172,8 +175,8 @@ close(OUT);
 
 # load information to geneace if -load is specified
 if ($load){
-  my $command = "pparse $database/newgene.ace\nsave\nquit\n";
-  open (GENEACE,"| $tace -tsuser mt3 $database") || die "Failed to open pipe to $database\n";
+  my $command = "pparse $outfile\nsave\nquit\n";
+  open (GENEACE,"| $tace -tsuser newgene $database") || die "Failed to open pipe to $database\n";
   print GENEACE $command;
   close GENEACE;
 }
@@ -391,33 +394,33 @@ sub process_gene{
 A script designed to create new gene objects to load into geneace.  Mainly written to
 save time from adding all the mandatory tags that each new object needs.  Just supply
 a sequence name, person ID of curator providing the information and a new Gene object
-ID.  Resulting acefile will be made in /nfs/disk100/wormpub/DATABASES/geneace/newgene.ace
+ID.  Resulting acefile will be made in /nfs/disk100/wormpub/DATABASES/geneace/newgene_WBGeneid.ace
 
 More powerfully the script can additionally assign CGC names to genes as it creates
 them, or just assign CGC names to pre-existing genes.  Finally, the script can process
 lists of genes if stored in an input file.
  
 Example 1 
-newgene.pl -seq AH6.24 -who 2970 -id 23428 -load
+newgene.pl -seq AH6.4 -who 2970 -id 5027 -load
  
  
-This would produce the following acefile at /nfs/disk100/wormpub/DATABASES/geneace/newgene.ace and attempt to
-load it into geneace:
+This would produce the following acefile at /nfs/disk100/wormpub/DATABASES/geneace/newgene_WBGene00005027.ace 
+and attempt to load it into geneace:
  
-Gene WBGene00023428
+Gene WBGene00005027
 Live
 Version 1
-Sequence_name AH6.24
-Public_name AH6.24
+Sequence_name AH6.4
+Public_name AH6.4
 Species "Caenorhabditis elegans"
 History Version_change 1 now WBPerson2970 Event Created
 Method Gene
 
 
 Example 2
-newgene.pl -seq AH6.24 -load
+newgene.pl -seq AH6.4 -load
 
-This would achieve the same effect (assuming that 23428 in the previous example is the
+This would achieve the same effect (assuming that 5027 in the previous example is the
 next available gene ID).  Here the script automatically looks up the highest gene ID
 and adds 1 to get the new gene ID and assumed mt3 to the be the default option for -who
 
