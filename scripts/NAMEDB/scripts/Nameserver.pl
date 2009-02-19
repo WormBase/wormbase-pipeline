@@ -731,9 +731,9 @@ sub change_class {
       if ( $class eq 'transposon') {
 	&kill_gene($gene->[0], "made in to transposon");
       } else {
-      my $msg = "$cds converted to $class - $USER\nThis does not affect Nameserver DB\n\nchangegene.pl -seq $cds -who ".$VALID_USERS->{$USER}." -load -class <2 letter change code eg. CP>";
+      my $msg = "$cds converted to $class - $USER\nThis does not affect Nameserver DB\n\nchangegene.pl -seq $cds -who ".$VALID_USERS->{$USER}." -load -class\n\nRemember you need to add a 2 letter change code eg. CP after -class";
 	send_mail("webserver",[$MAILS->{$USER},$MAILS->{'cgc'},$MAILS->{'caltech'}],"$cds to $class", $msg);
-	print "changing $cds to $class<br>You should get an acknowledgement from the curator who handles this soon.";
+	print "changing $cds to $class.";
       }
     } else {
       print "$cds is not a valid $class name - no changes have been made<br>";
