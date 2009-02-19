@@ -6,8 +6,8 @@
 #
 # This is a example of a good script template
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2008-11-19 10:45:52 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2009-02-19 14:08:43 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -126,7 +126,7 @@ sub read_acedb_queries {
 		   ["The number of RNAi results with connections to genes", 'find RNAi Gene', 73394],
 		   ["The number of microarray results with connections to genes", 'find microarray_results gene', 95545],
 		   ["PCR products overlapping CDS", "find PCR_product Overlaps_CDS", 62852],
-		   ["The number of wormpep without pep_homol", 'find wormpep !pep_homol', 727],
+		   ["The number of wormpep without pep_homol", 'find wormpep !pep_homol', 528],
 		   ["tRNAs not attached to parent properly", 'Transcript AND NEXT AND NOT NEXT', 0],
 		   ["Homol_data without waba", 'find Homol_data *waba !DNA_homol', 0],
 		   ["Homol_data without Pep_homol", 'find Homol_data *wublastx* !Pep_homol', 0],
@@ -135,7 +135,7 @@ sub read_acedb_queries {
 		   ["Oligo_sets with overlapping_CDS", 'find Oligo_Set Overlaps_CDS', 74615],
 		   ["operons without genes", 'find operon !contains Gene', 0],
 		   ["variation gene connection", 'find Variation Gene', 124046],
-		   ["genes with structured description", 'find Gene Structured_description', 5000],
+		   ["genes with structured description", 'find Gene Structured_description', 5546],
 		   ["genes with GO_term", 'find Gene GO_term', 14318],
 		   ["CDSs with no source_exons", 'find CDS !Source_exons, method', 0],
 		   ["Operons without parent ", 'find Operon !History AND !Canonical_parent',  0],
