@@ -389,6 +389,7 @@ $wormbase->run_command("grep 'taxon:6238' $output > $output.cb", $log);
 $wormbase->run_command("grep 'taxon:31234' $output > $output.rem", $log);
 $wormbase->run_command("grep 'taxon:54126' $output > $output.ppa", $log);
 $wormbase->run_command("grep 'taxon:281687' $output > $output.cjp", $log);
+$wormbase->run_command("grep 'taxon:135651' $output > $output.cbn", $log);
 
 
 ##################
@@ -419,6 +420,13 @@ minsize =>  2000000,
 maxsize => 12000000,
 lines => ['^WB\tWBGene\d+\t\S+\t\tGO\:\d+'],
 );
+
+$wormbase->check_file("$output.cbn", $log,
+minsize =>  2000000,
+maxsize => 12000000,
+lines => ['^WB\tWBGene\d+\t\S+\t\tGO\:\d+'],
+);
+
 
 $wormbase->check_file("$output.ppa", $log,
 minsize =>  4500000,
