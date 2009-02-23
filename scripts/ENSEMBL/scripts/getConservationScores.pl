@@ -42,14 +42,14 @@ else {
     $wb = Wormbase->new(
         -debug => $debug,
         -test  => $test,
-        -organism => $species
+        -organism => $wbspecies
     );
 }
 
 my $species = $wb->full_name;
 $wbspecies  = $wb->organism unless $wbspecies;
 
-$ofile = $wormbase->chromosomes."/$wbspecies.wig.bz2" unless $ofile;
+$ofile = $wb->chromosomes."/$wbspecies.wig.bz2" unless $ofile;
 open OFH ,"|bzip2 -9> $ofile" || die($@);
 
 # get method_link_species_set adaptor
@@ -59,7 +59,8 @@ my $mlss_adaptor = Bio::EnsEMBL::Registry->get_adaptor('Compara', 'compara', 'Me
 my $mlss = $mlss_adaptor->fetch_by_method_link_type_registry_aliases("GERP_CONSERVATION_SCORE", 
     ['Caenorhabditis elegans', 'Caenorhabditis briggsae',
      'Caenorhabditis remanei', 'Brugia malayi', 
-     'Pristionchus pacificus', 'Caenorhabditis brenneri']);
+     'Pristionchus pacificus', 'Caenorhabditis brenneri',
+     'Caenorhabditis japonica']);
 
 
 foreach my $seq_region ($wb->get_chromosome_names(-prefix => 1)){
