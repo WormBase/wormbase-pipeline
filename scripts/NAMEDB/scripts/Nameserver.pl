@@ -43,8 +43,7 @@ $VALID_API_USERS = {
 		    'add_name'		=> [qw(avc ar2 pad gw3 mt3 tbieri jspieth dblasiar pozersky)],
 		    'remove_name'	=> [qw(avc ar2 pad gw3 mt3 tbieri jspieth dblasiar pozersky)],
 		    'change_class'	=> [qw(avc ar2 pad gw3 mt3 tbieri jspieth dblasiar pozersky)],
-		    'dump_all'     => [qw(ar2 pad gw3 mt3 tbieri jspieth dblasiar pozersky caltech)],
-
+		    'dump_all'          => [qw(ar2 pad gw3 mt3 tbieri jspieth dblasiar pozersky caltech)],
 		   };
 
 ## a list of valid SSO login names able to add GCG name
@@ -307,7 +306,7 @@ sub merge_genes
       if ( my $ids = $db->merge_genes($gene_gene, $merge_gene) ) {
 	print "Merge complete, $merge_gene is DEAD and has been merged into gene $gene_gene <br>";
 	#notify
-	send_mail("webserver",[$MAILS->{$USER},$MAILS->{'cgc'},$MAILS->{'caltech'}],"Merged gene $gene_gene : $merge_gene", "GENE MERGE\nUSER : $USER\nLIVE:retained geneID for $gene_gene (".$ids->[0].")\nDEAD: killed geneID $merge_gene (".$ids->[1].")\n");
+	send_mail("webserver",[$MAILS->{$USER},$MAILS->{'cgc'},$MAILS->{'pad'},$MAILS->{'gw3'},$MAILS->{'caltech'}],"Merged gene $gene_gene : $merge_gene", "GENE MERGE\nUSER : $USER\nLIVE:retained geneID for $gene_gene (".$ids->[0].")\nDEAD: killed geneID $merge_gene (".$ids->[1].")\n");
       } else {
 	print "Sorry, the gene merge failed<br>";
       }
@@ -354,7 +353,7 @@ Species :
 		if ( $new_id ) {
 		  my $msg = "USER : $USER\nACTION : Split $gene_id\nNEW geneId : $new_id\nNEW CDS : $type $name\n\nperl splitgene.pl -old $gene_id -new $name -who ". $$VALID_USERS{$USER} ." -id $new_id -load -species $species\n";
 		  $msg .= "\n\n$remark" if $remark;
-		  send_mail("webserver",[$MAILS->{$USER},$MAILS->{'cgc'},$MAILS->{'caltech'}],"Split gene $gene_id",$msg);
+		  send_mail("webserver",[$MAILS->{$USER},$MAILS->{'cgc'},$MAILS->{'pad'},$MAILS->{'gw3'},$MAILS->{'caltech'}],"Split gene $gene_id",$msg);
 
 		  #report to screen
 		  #$new_id = 'secret' unless ( $LIVE or defined $$VALID_CGCNAME_USERS{$USER});
@@ -393,7 +392,7 @@ sub kill_gene {
     if ($db->kill_gene($gene_id)) {
       print qq(Gene "$gene_id" has been killed because \"$remark\"<br>);
 			
-      send_mail("webserver",[$MAILS->{$USER},$MAILS->{'cgc'},$MAILS->{'caltech'}],"Kill request $gene_id", "USER :$USER\nWBGeneID : $gene_id\nAction : KILL\nRemark : $remark\n\n$gene_id\n$remark\nWBPerson".$VALID_USERS->{$USER}."//\t$USER\n\n");
+      send_mail("webserver",[$MAILS->{$USER},$MAILS->{'cgc'},$MAILS->{'pad'},$MAILS->{'gw3'},$MAILS->{'caltech'}],"Kill request $gene_id", "USER :$USER\nWBGeneID : $gene_id\nAction : KILL\nRemark : $remark\n\n$gene_id\n$remark\nWBPerson".$VALID_USERS->{$USER}."//\t$USER\n\n");
     } else {
       print qq(FAILED to kill "$gene_id" <br>);
     }
@@ -512,7 +511,7 @@ Species :
 
 	my $msg = "$type $name added to $gene_id", "USER : $USER\nWBGeneID : $gene_id\nName added : $name $type\n";
 	$msg .= "\nWARNING: CGC name ".$existing_names->{'CGC'}." overwritten\n" if defined $existing_CGC;
-	send_mail("webserver",[$MAILS->{$USER},$MAILS->{'cgc'},$MAILS->{'caltech'}],"$type added to $gene_id","$msg");
+	send_mail("webserver",[$MAILS->{$USER},$MAILS->{'cgc'},$MAILS->{'pad'},$MAILS->{'gw3'},$MAILS->{'caltech'}],"$type added to $gene_id","$msg");
       } else {
 	print "<p>FAILED: cant add name $name to $gene_id</p>";
       }
@@ -586,7 +585,7 @@ sub new_gene {
 	$msg .= "\n\n";
       }
 		
-      send_mail("webserver",[$MAILS->{$USER},$MAILS->{'cgc'}], "WBGeneID request $name $USER",$msg );
+      send_mail("webserver",[$MAILS->{$USER},$MAILS->{'cgc'},$MAILS->{'pad'},$MAILS->{'gw3'}], "WBGeneID request $name $USER",$msg );
       #report to screen
       #$id = 'secret' unless ( $LIVE or defined $$VALID_CGCNAME_USERS{$USER});
       print "The new id for $type: $name is $id\n";
@@ -732,7 +731,7 @@ sub change_class {
 	&kill_gene($gene->[0], "made in to transposon");
       } else {
       my $msg = "$cds converted to $class - $USER\nThis does not affect Nameserver DB\n\nchangegene.pl -seq $cds -who ".$VALID_USERS->{$USER}." -load -class\n\nRemember you need to add a 2 letter change code eg. CP after -class";
-	send_mail("webserver",[$MAILS->{$USER},$MAILS->{'cgc'},$MAILS->{'caltech'}],"$cds to $class", $msg);
+	send_mail("webserver",[$MAILS->{$USER},$MAILS->{'cgc'},$MAILS->{'pad'},$MAILS->{'gw3'},$MAILS->{'caltech'}],"$cds to $class", $msg);
 	print "changing $cds to $class.";
       }
     } else {
