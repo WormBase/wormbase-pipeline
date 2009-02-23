@@ -194,6 +194,14 @@ task :dump_homology => [:env_setup] do
 	sh "/software/bin/perl scripts/get_all_elegans_orthologues.pl > #{tmp_place}/compara.ace"
 end
 
+desc 'dump conservation wiggle files'
+task :dump_gerp =>[:env_setup] do
+	FileUtils.mkdir_p("#{tmp_place}/compara")
+	['elegans','briggsae','brenneri','remaeni','japonica','pristionchus','brugia'].each{|species|
+          sh "#{perl} scripts getConservationScores.pl -species #{species} -o #{tmp_place}/compara/#{species}.wig"
+	}
+end
+
 desc 'dump pecan files'
 task :dump_pecan => [:env_setup] do
 	FileUtils.mkdir_p("#{tmp_place}/compara")
