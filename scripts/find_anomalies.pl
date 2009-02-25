@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2009-02-25 11:05:13 $      
+# Last updated on: $Date: 2009-02-25 11:09:11 $      
 
 # Changes required by Ant: 2008-02-19
 # 
@@ -3872,6 +3872,8 @@ sub output_to_database {
   } elsif ($wormbase->species eq 'brugia') {
     $lab = 'RW';
   } elsif ($wormbase->species eq 'remanei') {
+    $lab = 'RW';
+  } elsif ($wormbase->species eq 'brenneri') {
     $lab = 'RW';
   } else {
     print "*** ERROR - WE DON'T KNOW WHICH LAB IS CURATING SPECIES: $wormbase->species\n";
