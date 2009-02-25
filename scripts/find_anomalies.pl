@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2009-02-25 11:09:11 $      
+# Last updated on: $Date: 2009-02-25 11:19:45 $      
 
 # Changes required by Ant: 2008-02-19
 # 
@@ -461,7 +461,7 @@ foreach my $chromosome (@chromosomes) {
 				      \@tRNAscan_SE_1_23, 
 				      $chromosome) if (exists $run{UNMATCHED_EXPRESSION});
 
-  print "finding confirmed introns not matching CDS introns - for brugia\n"; 
+  print "finding confirmed introns not matching CDS introns\n"; 
   &get_unconfirmed_introns(\@est_hsp, \@mrna_hsp, \@CDS_introns, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, $chromosome) if (exists $run{UNCONFIRMED_INTRON});
 
   print "finding isolated RST5\n";
@@ -3267,7 +3267,7 @@ sub get_confirmed_introns {
 
 ####################################################################################
 # get confirmed introns that don't match the curated gene models or pseudogenes, etc.
-# used by brugia and other genomes that don't have a Build-generated list of confirmed exons
+# used by genomes that don't have a Build-generated list of confirmed exons
 ####################################################################################
 
 sub get_unconfirmed_introns {
