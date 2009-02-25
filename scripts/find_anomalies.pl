@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2009-02-25 11:19:45 $      
+# Last updated on: $Date: 2009-02-25 11:43:14 $      
 
 # Changes required by Ant: 2008-02-19
 # 
@@ -341,37 +341,37 @@ foreach my $chromosome (@chromosomes) {
 
   my @CDS_introns = $ovlp->get_CDS_introns($chromosome);               # coding introns
 
-  my @TSL_SL1 = $ovlp->get_TSL_SL1($chromosome);
-  my @TSL_SL2 = $ovlp->get_TSL_SL2($chromosome);
+  my @TSL_SL1 = $ovlp->get_TSL_SL1($chromosome) if (exists $run{UNMATCHED_TSL});
+  my @TSL_SL2 = $ovlp->get_TSL_SL2($chromosome) if (exists $run{UNMATCHED_TSL});
 
   my @homologies = $ovlp->get_blastx_homologies($chromosome);
 
   my @twinscan_exons = $ovlp->get_twinscan_exons($chromosome);
-  my @twinscan_transcripts = $ovlp->get_twinscan_transcripts($chromosome);
+  my @twinscan_transcripts = $ovlp->get_twinscan_transcripts($chromosome) if (exists $run{MERGE_GENES_BY_TWINSCAN});
 
-  my @genefinder = $ovlp->get_genefinder_exons($chromosome);
+  my @genefinder = $ovlp->get_genefinder_exons($chromosome) if (exists $run{UNMATCHED_GENEFINDER});
 
-  my @jigsaw = $ovlp->get_jigsaw_CDS($chromosome);                     # jigsaw coding transcript (START to STOP)
+  #my @jigsaw = $ovlp->get_jigsaw_CDS($chromosome);                     # jigsaw coding transcript (START to STOP)
   my @jigsaw_exons = $ovlp->get_jigsaw_exons($chromosome);             # jigsaw coding exons 
 
-  my @UTRs_5 = $ovlp->get_5_UTRs($chromosome);
-  my @UTRs_3 = $ovlp->get_3_UTRs($chromosome);
+  my @UTRs_5 = $ovlp->get_5_UTRs($chromosome) if (exists $run{INTRONS_IN_UTR});
+  my @UTRs_3 = $ovlp->get_3_UTRs($chromosome) if (exists $run{INTRONS_IN_UTR});
 
   my @rRNA = $ovlp->get_rRNA_transcripts($chromosome);
-  my @miRNA = $ovlp->get_miRNA($chromosome);
-  my @ncRNA = $ovlp->get_ncRNA($chromosome);
-  my @scRNA = $ovlp->get_scRNA($chromosome);
-  my @snRNA = $ovlp->get_snRNA($chromosome);
-  my @snoRNA = $ovlp->get_snoRNA($chromosome);
-  my @stRNA = $ovlp->get_stRNA($chromosome);
-  my @tRNA = $ovlp->get_tRNA($chromosome);
-  my @tRNAscan_SE_1_23 = $ovlp->get_tRNAscan_SE_1_23RNA($chromosome);
+  my @miRNA = $ovlp->get_miRNA($chromosome) if (exists $run{UNMATCHED_EXPRESSION});
+  my @ncRNA = $ovlp->get_ncRNA($chromosome) if (exists $run{UNMATCHED_EXPRESSION});
+  my @scRNA = $ovlp->get_scRNA($chromosome) if (exists $run{UNMATCHED_EXPRESSION});
+  my @snRNA = $ovlp->get_snRNA($chromosome) if (exists $run{UNMATCHED_EXPRESSION});
+  my @snoRNA = $ovlp->get_snoRNA($chromosome) if (exists $run{UNMATCHED_EXPRESSION});
+  my @stRNA = $ovlp->get_stRNA($chromosome) if (exists $run{UNMATCHED_EXPRESSION});
+  my @tRNA = $ovlp->get_tRNA($chromosome) if (exists $run{UNMATCHED_EXPRESSION});
+  my @tRNAscan_SE_1_23 = $ovlp->get_tRNAscan_SE_1_23RNA($chromosome) if (exists $run{UNMATCHED_EXPRESSION});
 
-  my @waba_coding = $ovlp->get_waba_coding($chromosome);
+  my @waba_coding = $ovlp->get_waba_coding($chromosome)  if (exists $run{UNMATCHED_WABA});
   my @repeatmasked = $ovlp->get_repeatmasked($chromosome);
   my @repeatmasked_complex = $ovlp->get_repeatmasked_complex(@repeatmasked);
-  my @mass_spec_peptides = $ovlp->get_mass_spec_peptides($chromosome);
-  my @SAGE_tags = $ovlp->get_SAGE_tags($chromosome);
+  my @mass_spec_peptides = $ovlp->get_mass_spec_peptides($chromosome) if (exists $run{UNMATCHED_MASS_SPEC_PEPTIDE});
+  my @SAGE_tags = $ovlp->get_SAGE_tags($chromosome) if (exists $run{UNMATCHED_SAGE});
 
   my @check_introns_EST  = (); #$ovlp->get_check_introns_EST($chromosome);
   my @check_introns_cDNA = (); #$ovlp->get_check_introns_cDNA($chromosome);
