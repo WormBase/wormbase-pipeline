@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2009-01-16 11:15:51 $      
+# Last updated on: $Date: 2009-02-25 11:05:13 $      
 
 # Changes required by Ant: 2008-02-19
 # 
@@ -373,8 +373,8 @@ foreach my $chromosome (@chromosomes) {
   my @mass_spec_peptides = $ovlp->get_mass_spec_peptides($chromosome);
   my @SAGE_tags = $ovlp->get_SAGE_tags($chromosome);
 
-  my @check_introns_EST  = $ovlp->get_check_introns_EST($chromosome);
-  my @check_introns_cDNA = $ovlp->get_check_introns_cDNA($chromosome);
+  my @check_introns_EST  = (); #$ovlp->get_check_introns_EST($chromosome);
+  my @check_introns_cDNA = (); #$ovlp->get_check_introns_cDNA($chromosome);
 
   my @expression = &get_expression($chromosome) if (exists $run{UNMATCHED_EXPRESSION});
 
@@ -430,8 +430,8 @@ foreach my $chromosome (@chromosomes) {
   &get_multiple_utr_introns(\@UTRs_5, $chromosome) if (exists $run{INTRONS_IN_UTR});
   &get_multiple_utr_introns(\@UTRs_3, $chromosome) if (exists $run{INTRONS_IN_UTR});
 
-  print "read confirmed checked introns\n";
-  &get_checked_confirmed_introns(\@check_introns_EST, \@check_introns_cDNA, $chromosome) if (exists $run{CONFIRMED_INTRON});
+#  print "read confirmed checked introns\n";
+#  &get_checked_confirmed_introns(\@check_introns_EST, \@check_introns_cDNA, $chromosome) if (exists $run{CONFIRMED_INTRON});
 
   print "finding genes to be split/merged based on twinscan\n";
   &get_twinscan_split_merged(\@twinscan_transcripts, \@CDS, $chromosome) if (exists $run{MERGE_GENES_BY_TWINSCAN});
@@ -4018,11 +4018,11 @@ __END__
 
 
 START_DATA
-UNMATCHED_PROTEIN            elegans remanei briggsae japonica brugia
+UNMATCHED_PROTEIN            elegans remanei briggsae japonica brenneri brugia
 UNMATCHED_EST                
-FRAMESHIFTED_PROTEIN         elegans remanei briggsae japonica brugia
-MERGE_GENES_BY_PROTEIN       elegans remanei briggsae japonica brugia
-SPLIT_GENE_BY_PROTEIN_GROUPS elegans remanei briggsae japonica brugia
+FRAMESHIFTED_PROTEIN         elegans remanei briggsae japonica brenneri brugia
+MERGE_GENES_BY_PROTEIN       elegans remanei briggsae japonica brenneri brugia
+SPLIT_GENE_BY_PROTEIN_GROUPS elegans remanei briggsae japonica brenneri brugia
 MERGE_GENES_BY_EST
 UNATTACHED_EST
 UNATTACHED_TSL
@@ -4034,21 +4034,21 @@ JIGSAW_DIFFERS_FROM_CDS      elegans
 JIGSAW_WITH_SIGNALP          elegans
 UNMATCHED_SAGE               elegans
 UNMATCHED_WABA               elegans
-OVERLAPPING_EXONS            elegans remanei briggsae japonica brugia
-MISMATCHED_EST               elegans remanei briggsae japonica brugia
-WEAK_INTRON_SPLICE_SITE      elegans remanei briggsae japonica brugia
-SHORT_EXON                   elegans remanei briggsae japonica brugia
-SHORT_INTRON                 elegans remanei briggsae japonica brugia
-REPEAT_OVERLAPS_EXON         elegans remanei briggsae japonica brugia
-INTRONS_IN_UTR               elegans remanei briggsae japonica brugia
+OVERLAPPING_EXONS            elegans remanei briggsae japonica brenneri brugia
+MISMATCHED_EST               elegans remanei briggsae japonica brenneri brugia
+WEAK_INTRON_SPLICE_SITE      elegans remanei briggsae japonica brenneri brugia
+SHORT_EXON                   elegans remanei briggsae japonica brenneri brugia
+SHORT_INTRON                 elegans remanei briggsae japonica brenneri brugia
+REPEAT_OVERLAPS_EXON         elegans remanei briggsae japonica brenneri brugia
+INTRONS_IN_UTR               elegans remanei briggsae japonica brenneri brugia
 SPLIT_GENE_BY_TWINSCAN       elegans
 MERGE_GENES_BY_TWINSCAN      elegans
-CONFIRMED_INTRON             elegans remanei briggsae japonica 
-UNCONFIRMED_INTRON                   brugia
+CONFIRMED_INTRON             
+UNCONFIRMED_INTRON           elegans remanei briggsae japonica brenneri brugia
 UNMATCHED_MASS_SPEC_PEPTIDE  elegans
-EST_OVERLAPS_INTRON          elegans remanei briggsae japonica brugia
+EST_OVERLAPS_INTRON          elegans remanei briggsae japonica brenneri brugia
 UNMATCHED_EXPRESSION         elegans
-INCOMPLETE_PFAM_MOTIF        elegans remanei briggsae japonica 
+INCOMPLETE_PFAM_MOTIF        elegans remanei briggsae japonica brenneri
 END_DATA
 
 =pod
