@@ -9,7 +9,7 @@
 # transcripts to find the most probable orientation.
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-09-18 13:28:35 $      
+# Last updated on: $Date: 2009-02-26 15:44:52 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -136,7 +136,7 @@ my $ovlp = Overlap->new($database, $wormbase);
     next;
   }
 
-  @est_hsp = sort {$a->[1] <=> $b->[1]} @est_hsp; # and ensure it is sorted by chromosomal start position
+  @est_hsp = sort {$a->[1] <=> $b->[1] or $a->[2] <=> $b->[2]} @est_hsp; # and ensure it is sorted by chromosomal start,end position
 
   my @est = $ovlp->get_span(@est_hsp); # change the ESTs from HSPs to start-to-end span
   my @cds  = $ovlp->get_curated_CDS_exons($chromosome); # secondary list we search against
@@ -177,7 +177,7 @@ my $ovlp = Overlap->new($database, $wormbase);
   # sort the HSPs by name and then by chromosomal position
   my @sorted_hsp = sort {$a->[0] cmp $b->[0]
 		   or
-		 $a->[1] <=> $b->[1]} @no53_est_hsp;
+		 $a->[1] <=> $b->[1] or $a->[2] <=> $b->[2]} @no53_est_hsp;
 
 
   # read the chromosmal sequence
