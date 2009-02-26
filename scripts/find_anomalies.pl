@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2009-02-26 10:59:30 $      
+# Last updated on: $Date: 2009-02-26 15:07:29 $      
 
 # Changes required by Ant: 2008-02-19
 # 
@@ -1423,7 +1423,7 @@ sub get_EST_split_merged {
  
 
   # sort the homologies grouped by EST ID and then chromosomal position
-  my @homologies = sort {$a->[0] cmp $b->[0] or $a->[1] <=> $b->[1]} @matched;
+  my @homologies = sort {$a->[0] cmp $b->[0] or $a->[1] <=> $b->[1] or $a->[2] <=> $b->[2]} @matched;
 
   foreach my $homology (@homologies) { # $EST_id, $chrom_start, $chrom_end, $chrom_strand, $hit_start, $hit_end, $EST_score, other_data, $matching_transcript
 
@@ -1601,7 +1601,7 @@ sub get_unattached_TSL {
 
   my @SL1 = @$SL1_aref;
   my @SL2 = @$SL2_aref;
-  my @SL = sort {$a->[1] <=> $b->[1]} (@SL1, @SL2); # merge and sort the two TSL lists
+  my @SL = sort {$a->[1] <=> $b->[1] or $a->[2] <=> $b->[2]} (@SL1, @SL2); # merge and sort the two TSL lists
 
   my $anomaly_score = 1.0;	# we must look at this with high priority
 
@@ -1652,7 +1652,7 @@ sub get_isolated_TSL {
 
   my @SL1 = @$SL1_aref;
   my @SL2 = @$SL2_aref;
-  my @SL = sort {$a->[1] <=> $b->[1]} (@SL1, @SL2); # merge and sort the two TSL lists
+  my @SL = sort {$a->[1] <=> $b->[1] or $a->[2] <=> $b->[2]} (@SL1, @SL2); # merge and sort the two TSL lists
       
   # allow the TSL to be within 75 bases of the CDS to give a match
   my $CDS1_match = $ovlp->compare($CDS_aref, near_5 => 75, same_sense => 1); # look for overlap or near to the 5' end
@@ -1766,7 +1766,7 @@ sub get_isolated_RST5 {
   foreach my $rst5 (keys %seen_this_rst) {
     push @rst5, $seen_this_rst{$rst5};
   }
-  @rst5 = sort {$a->[1] <=> $b->[1]} @rst5;
+  @rst5 = sort {$a->[1] <=> $b->[1] or $a->[2] <=> $b->[2]} @rst5;
   #print "Have ", scalar @rst5 ," RST5s\n";
 
   # allow the RST to be within 150 bases of the CDS to give a match
@@ -2293,7 +2293,7 @@ sub get_est_mismatches {
 
   
   # sort the homologies grouped by EST ID and then chromosomal position
-  my @sorted_ests = sort {$a->[0] cmp $b->[0] or $a->[1] <=> $b->[1]} @ests;
+  my @sorted_ests = sort {$a->[0] cmp $b->[0] or $a->[1] <=> $b->[1] or $a->[2] <=> $b->[2]} @ests;
 
   my %mismatch_counts;
   foreach my $alignment (@sorted_ests) { # $EST_id, $chrom_start, $chrom_end, $chrom_strand, $hit_start, $hit_end, $EST_score, $matching_transcript
@@ -2445,7 +2445,7 @@ sub get_weak_exon_splice_sites {
   }
   print "Have ", scalar (keys %splice_sites), " splice sites, of which ", scalar @splices," are not confirmed\n";
   # sort splices by CDS_id so we can find out how many weak splices there are in a CDS
-  my @splices_sorted = sort {$a->[0] cmp $b->[0] } @splices;
+  my @splices_sorted = sort {$a->[0] cmp $b->[0] or $a->[2] <=> $b->[2]} @splices;
 
 
   #################################################################
@@ -2975,7 +2975,7 @@ sub get_introns_refuted_by_est {
     }
   }
   # it should be sorted by start position already, but just in case, do it again
-  @single_introns = sort {$a->[1] <=> $b->[1]} (@single_introns); 
+  @single_introns = sort {$a->[1] <=> $b->[1] or $a->[2] <=> $b->[2]} (@single_introns); 
 
 # now check to see if any of these non-overlapped introns have an EST/OST/RST/mRNA
 # aligned across them, in which case they are an anomaly
@@ -3291,7 +3291,7 @@ sub get_unconfirmed_introns {
   my @mrna_introns = &get_confirmed_introns(\@mrna2);
 
   # join the ESTs and mRNA hits and sort by start position 
-  my @introns = sort {$a->[1] <=> $b->[1]} (@est_introns, @mrna_introns);
+  my @introns = sort {$a->[1] <=> $b->[1] or $a->[2] <=> $b->[2]} (@est_introns, @mrna_introns);
 
 
 

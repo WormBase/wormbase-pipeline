@@ -7,7 +7,7 @@
 # Do fast overlap matching of positions of two sets of things.
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-09-05 09:25:57 $      
+# Last updated on: $Date: 2009-02-26 15:11:28 $      
 
 =pod
 
@@ -456,8 +456,8 @@ sub read_GFF_file {
     }
   }
 
-  # return saved result sorted by chromosomal start position
-  return sort {$a->[1] <=> $b->[1]} @result;
+  # return saved result sorted by chromosomal start and end position
+  return sort {$a->[1] <=> $b->[1] or $a->[2] <=> $b->[2]} @result;
 
 }
 
@@ -477,10 +477,13 @@ sub get_span {
 
   my @out;
 
-  # sort by $id then start position
+  # sort by $id then start,end position
   my @input_sorted = sort {$a->[0] cmp $b->[0]
-		   or
-		 $a->[1] <=> $b->[1]} @input;
+			     or
+			       $a->[1] <=> $b->[1]
+				 or 
+				   $a->[2] <=> $b->[2]
+				 } @input;
 
   my $prev_id = "";
   my ($id, $start, $end, $sense, $hit_start, $hit_end, $score);
@@ -508,8 +511,8 @@ sub get_span {
     push @out, [$id, $start, $end, $sense, $hit_start, $hit_end, $score];
   }
 
-  # return result sorted by chromosomal start position
-  return sort {$a->[1] <=> $b->[1]} @out;
+  # return result sorted by chromosomal start,end position
+  return sort {$a->[1] <=> $b->[1] or $a->[2] <=> $b->[2]} @out;
 }
 
 =head2
@@ -569,8 +572,8 @@ sub get_paired_span {
 
   my @out = values %store;
 
-  # return result sorted by chromosomal start position
-  return sort {$a->[1] <=> $b->[1]} @out;
+  # return result sorted by chromosomal start,end position
+  return sort {$a->[1] <=> $b->[1] or $a->[2] <=> $b->[2]} @out;
 
 }
 
@@ -590,10 +593,13 @@ sub get_intron_from_exons {
   my (@input) = @_;
   my @out;
 
-  # sort by $id then start position
+  # sort by $id then start,end position
   my @input_sorted = sort {$a->[0] cmp $b->[0]
-		   or
-		 $a->[1] <=> $b->[1]} @input;
+			     or
+			       $a->[1] <=> $b->[1]
+				 or 
+				   $a->[2] <=> $b->[2]
+				 } @input;
 
   my $prev_id = "";
   my $prev_end;
@@ -619,8 +625,8 @@ sub get_intron_from_exons {
     $prev_hit_end = $hit_end if (defined $hit_end);
   }
 
-  # return result sorted by chromosomal start position
-  return sort {$a->[1] <=> $b->[1]} @out;
+  # return result sorted by chromosomal start,end position
+  return sort {$a->[1] <=> $b->[1] or $a->[2] <=> $b->[2]} @out;
 
 }
 
