@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2009-02-25 11:43:14 $      
+# Last updated on: $Date: 2009-02-26 09:26:29 $      
 
 # Changes required by Ant: 2008-02-19
 # 
@@ -3276,8 +3276,23 @@ sub get_unconfirmed_introns {
 
   $anomaly_count{UNCONFIRMED_INTRON} = 0 if (! exists $anomaly_count{UNCONFIRMED_INTRON});
 
-  my @est_introns = &get_confirmed_introns($est_aref); # change the ESTs into confirmed introns
-  my @mrna_introns = &get_confirmed_introns($mrna_aref);
+  # remove the small HSPs caused by BLAT misalignments 
+  my (@est2, @mrna2);
+  foreach my $est (@{$est_aref}) { # $est_id, $chrom_start, $chrom_end, $chrom_strand
+    if ($est->[2] - $est->[1] > 30) {push @est2, $est} 
+  }
+  foreach my $mrna (@{$mrna_aref}) { # $mrna_id, $chrom_start, $chrom_end, $chrom_strand
+    if ($mrna->[2] - $mrna->[1] > 30) {push @mrna2, $mrna} 
+  }
+
+  # get the introns of these HSPs
+  my @est_introns = &get_confirmed_introns(\@est2); # change the ESTs into confirmed introns
+  my @mrna_introns = &get_confirmed_introns(\@mrna2);
+
+  # join the ESTs and mRNA hits and sort by start position 
+  my @introns = sort {$a->[1] <=> $b->[1]} (@est_introns, @mrna_introns);
+
+
 
   my @not_matched = ();		# the resulting list of hashes of est with no matching exons/transposons/pseudogenes
   my @matched = ();		# the resulting list of hashes of est which match a coding exon
@@ -3290,9 +3305,6 @@ sub get_unconfirmed_introns {
   my $trane_match = $ovlp->compare($transposon_exons_aref);
   my $nonco_match = $ovlp->compare($noncoding_transcript_exons_aref);
   my $rrna_match  = $ovlp->compare($rRNA_aref);
-
-  # join the ESTs and mRNA hits and sort by start position 
-  my @introns = sort {$a->[1] <=> $b->[1]} (@est_introns, @mrna_introns);
 
   # do both the EST and mRNA intons together
   foreach my $homology (@introns) { # $est_id, $chrom_start, $chrom_end, $chrom_strand
