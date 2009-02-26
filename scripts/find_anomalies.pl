@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2009-02-26 10:22:46 $      
+# Last updated on: $Date: 2009-02-26 10:59:30 $      
 
 # Changes required by Ant: 2008-02-19
 # 
@@ -240,6 +240,7 @@ while (my $run = <DATA>) {
 
 # if we want the anomalies GFF file
 if ($supplementary) {
+  mkdir "$database/CHROMOSOMES/SUPPLEMENTARY_GFF", 0777;
   my $gff_file = "$database/CHROMOSOMES/SUPPLEMENTARY_GFF/${species}_curation_anomalies.gff";
   open (OUTPUT_GFF, ">$gff_file") || die "Can't open $gff_file";      
 }
