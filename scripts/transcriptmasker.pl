@@ -7,8 +7,8 @@
 
 # 031023 dl1
 
-# Last edited by: $Author: pad $
-# Last edited on: $Date: 2009-01-26 11:44:26 $
+# Last edited by: $Author: mh6 $
+# Last edited on: $Date: 2009-02-27 11:48:32 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -107,7 +107,8 @@ my %valid_methods = (
 		     "chimeric"          => 1, # Chimeric EST reads (1 part of the EST is masked out).
 		     "rRNA_contamination"=> 1, # rRNA_contamination of library.
 		     "Oligo_cap"         => 1, # Oligo cap sequence masking.
-		     "low_complexity" => 1 #low-complexity or poor quality/unclipped sequence.
+		     "low_complexity"    => 1, #low-complexity or poor quality/unclipped sequence.
+		     'low'               => 1, #low-complexity or poor quality/unclipped sequence.
 		    );
 		    
 # transcript accessions to names from a hash in common data
