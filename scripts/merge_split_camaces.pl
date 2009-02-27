@@ -5,7 +5,7 @@
 # A script to make multiple copies of camace for curation, and merge them back again
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2009-02-12 11:45:02 $
+# Last edited on: $Date: 2009-02-27 09:47:10 $
 #
 # Persisting errors.
 #running csh -c "reformat_acediff file 1 file2"
@@ -436,7 +436,9 @@ sub load_curation_data {
   	"$wormpub/BUILD_DATA/MISC_DYNAMIC/misc_mass_spec_GenniferMerrihew.ace",
 	"$acefiles/mass-spec-data.ace",
        ) unless ($sub_database eq "camace");
-  push (@files,"$acefiles/misc_DB_remark.ace") if ($sub_database eq "camace");
+  push (@files,"$acefiles/misc_DB_remark.ace",
+        "$wormpub/CURATION_DATA/assign_orientation.WS${WS_version}.ace",
+       ) if ($sub_database eq "camace");
   
   foreach $file (@files) {
     $log->write_to ("Looking for $file......................\n");
