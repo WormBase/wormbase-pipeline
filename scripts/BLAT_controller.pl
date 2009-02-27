@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl5.8.0 -w
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2009-02-04 15:31:07 $
+# Last edited by: $Author: mh6 $
+# Last edited on: $Date: 2009-02-27 11:10:38 $
 
 
 use lib $ENV{'CVS_DIR'};
@@ -71,6 +71,7 @@ my %mol_types = ( 'elegans'          => [qw( EST mRNA ncRNA OST tc1 RST )],
 		  'brenneri'         => [qw( mRNA EST )],
 		  'japonica'         => [qw( mRNA EST )],
 		  'heterorhabditis'  => [qw( mRNA EST )],
+		  'brugia'           => [qw( mRNA EST )],
 		  'pristionchus'     => [qw( mRNA EST )],
 		  'nematode'         => [qw( EST )],
 		  'nembase'          => [qw( EST )],
