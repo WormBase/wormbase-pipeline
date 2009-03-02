@@ -93,7 +93,7 @@ sub kill_gene {
 	if($gene) {
 	    my $ver = $geneObj->Version->name;
 	    $ver++;
-	    print ACE "\nGene : $gene\nVersion $ver\nHistory Version_change $ver now $person Event Killed\nDead\nRemark \"$remark \" Curator_confirmed $person\n-D Sequence_name\n-D Method\n";
+	    print ACE "\nGene : $gene\nVersion $ver\nHistory Version_change $ver now $person Event Killed\nDead\nRemark \"$remark\" Curator_confirmed $person\n-D Sequence_name\n-D Method\n";
 	    #nameserver kill
 	    $db->kill_gene($gene) if $ns;
 	}
