@@ -394,7 +394,7 @@ sub kill_gene {
     if ($db->kill_gene($gene_id)) {
       print qq(Gene "$gene_id" has been killed because \"$remark\"<br>);
 			
-      send_mail("webserver",[$MAILS->{$USER},$MAILS->{'mt3'},$MAILS->{'md9'},$MAILS->{'pad'},$MAILS->{'gw3'},$MAILS->{'caltech'}],"Kill request $gene_id", "USER :$USER\nWBGeneID : $gene_id\nAction : KILL\nRemark : $remark\n\n$gene_id\n$remark\nWBPerson".$VALID_USERS->{$USER}."//\t$USER\n\n");
+      send_mail("webserver",[$MAILS->{$USER},$MAILS->{'mt3'},$MAILS->{'md9'},$MAILS->{'pad'},$MAILS->{'gw3'},$MAILS->{'caltech'}],"Kill request $gene_id", "$gene_id\nRemark \"$remark\"\nWBPerson".$VALID_USERS->{$USER}."//\t$USER\n\n");
     } else {
       print qq(FAILED to kill "$gene_id" <br>);
     }
