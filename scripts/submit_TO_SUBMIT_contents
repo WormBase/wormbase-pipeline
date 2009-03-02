@@ -7,7 +7,7 @@
 # to celegans@ebi.ac.uk.
 #
 # Last updated by: $Author: pad $                      
-# Last updated on: $Date: 2008-12-01 10:59:17 $        
+# Last updated on: $Date: 2009-03-02 11:32:53 $        
 
 $|=1;
 use strict;
@@ -25,7 +25,6 @@ my (@filenames);
  # Variables                  #
  ##############################
 
-my $maintainers = "pad\@sanger.ac.uk";
 my $rundate     = `date +%y%m%d`; chomp $rundate;
 my $name;
 
@@ -41,13 +40,15 @@ my $debug;      # Debug mode, verbose output to dl1 only
 my $email;
 my $login;
 my $test;
+my $verbose; # this option actually sends a copy of every record to the person specified by $debug.
 
 GetOptions (
             "debug=s"   => \$debug,
             "help"      => \$help,
 	    "email"     => \$email,
 	    "login:s"   => \$login, #supply the ebi ftp user id you whish to use.
-	    "test" => \$test,
+	    "test"      => \$test,
+	    "verbose"   => \$verbose,
 	   );
 
 my $wormbase = Wormbase->new(
@@ -62,8 +63,12 @@ my $log = Log_files->make_build_log($wormbase);
 &usage("Help") if ($help);
 
 # assign $maintainers if $debug set
+my $maintainers;
 if ($debug) {
   $maintainers = $debug . "\@sanger.ac.uk";
+}
+else {
+$maintainers = "pad\@sanger.ac.uk";
 }
 
 # Inform user of the pipeline that is selected.
@@ -104,7 +109,6 @@ else {
 my $ftp;
 if (!defined $email) {
   $ftp = Net::FTP->new("ftp.ebi.ac.uk", Debug => 0) or die "Cannot connect to ftp.ebi.ac.uk: $@";
-  #$ftp->login("$password","celegans\@") or die "Cannot login to ftp.ebi.ac.uk using celegans credentials\n", $ftp->message;
   $ftp->login("$login","$password\@") or $log->log_and_die ("Cannot login to ftp.ebi.ac.uk using celegans credentials\n". $ftp->message);
 }
 
@@ -127,10 +131,9 @@ exit(0);
 }
 
 # confirm you want to do this
-print "\nAll of these will be submitted to EMBL (celegans\@ebi.ac.uk or ftp.ebi.ac.uk)\n\n";
 $log->write_to("\nAll of these will be submitted to EMBL (celegans\@ebi.ac.uk or ftp.ebi.ac.uk)\n\n");
-print "-debug has also been selected so you \"$debug\", will get a copy :)\n\n" if $debug;
-$log->write_to("-debug has also been selected so you \"$debug\", will get a copy :)\n\n") if $debug;
+$log->write_to("-debug has also been selected so you \"$debug\", will get a summary :)\n\n") if $debug;
+$log->write_to("-verbose specified so you  \"$debug\", will get a complete submission :)\n\n") if $verbose;
 print "Do you wish to proceed???(y or n)\n\n";
 
 my $answer=<STDIN>;
@@ -150,7 +153,7 @@ unless (-e "$submitdir/submitted_to_EMBL") {
 
 $log->write_to("Duncan has been sent a summary of clones submitted.\n");
 system ("/usr/bin/mail duncan.legge\@ebi.ac.uk --subject=WormBase_EMBL_submission_summary < $submitdir/submitted_to_EMBL");
-
+system ("/usr/bin/mail $maintainers --subject=WormBase_EMBL_submission_summary < $submitdir/submitted_to_EMBL") if ($debug);
 $ftp->quit if (!defined $email);
 $log->mail;
 exit(0);
@@ -178,7 +181,7 @@ sub submit_sub {
       # Email them if $email is defined
       system ("/usr/bin/mail celegans\@ebi.ac.uk < $submitdir/$_") if (defined $email);
       #send them to the debug specified email.
-      system ("/usr/bin/mail $debug\@sanger.ac.uk --subject=CLONE_SUBMISSION_${_} < $submitdir/$_") if ($debug);
+      system ("/usr/bin/mail $maintainers --subject=CLONE_SUBMISSION_${_} < $submitdir/$_") if (($debug) && ($verbose));
       #zip them
       system ("/bin/gzip $submitdir/$_");
     }
@@ -209,11 +212,15 @@ __END__
 
 =item submit_TO_SUBMIT_contents [-options]
 
-=item submit_TO_SUBMIT_contents will submit EMBL files to the EBI via e-mail.
+=item 
+
+=item submit_TO_SUBMIT_contents will submit EMBL files to the EBI via ftp (default) or email.
 
 =item The submitted .embl files are then gzipped to prevent subsequent
 
 =item resubmission. All submission clone names are written to a log file.
+
+=item The summary log file is also sent to duncan.legge@ebi.ac.uk
 
 =back
 
@@ -227,13 +234,14 @@ __END__
 
 =over 4
 
-=item -login gives you the option to login as a different user eg. cbriggsae
-
- This option also triggers a command line password request.
+=item -login gives you the option to login as a different user eg.
+      cbriggsae. This option also triggers a command line password request.
 
 =item -h, Help page
 
-=item -debug,
+=item -debug, gives additional output messages as well as an email summary to the specified user.
+
+=item -verbose, will (in conjunction with -debug) submit a copy of all entries to the -debug maintainer.
 
 =back
 
@@ -261,7 +269,8 @@ no .embl files then no action is taken.
 
  Submits all files with the .embl suffix in the ~wormpub/analysis/TO_SUBMIT
  directory. The clone name for each file submitted is appended to the file
- submitted_to_EMBL, the above option will also email the submissions to the debug user i.e. pad.
+ submitted_to_EMBL, the above option will also email the submission summary 
+ to the debug user i.e. pad.
 
 =head1 AUTHOR - Daniel Lawson (modifications from the original of Steve Jones)
 
