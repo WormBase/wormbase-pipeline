@@ -7,7 +7,7 @@
 # simple script for creating new (sequence based) Gene objects 
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2009-02-19 10:46:46 $
+# Last edited on: $Date: 2009-03-02 12:04:30 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -179,6 +179,8 @@ if ($load){
   open (GENEACE,"| $tace -tsuser newgene $database") || die "Failed to open pipe to $database\n";
   print GENEACE $command;
   close GENEACE;
+  $wormbase->run_command("rm $outfile\n");
+  print "Output file has been cleaned away like a good little fellow\n";
 }
 
 
