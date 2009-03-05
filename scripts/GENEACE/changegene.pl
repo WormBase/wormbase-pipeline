@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.8.0 -w
+#!/software/bin/perl -w
 #
 # changegene.pl
 #
@@ -7,7 +7,7 @@
 # simple script for changing class of gene objects (e.g. CDS->Pseudogene)
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2009-03-02 12:04:30 $
+# Last edited on: $Date: 2009-03-05 17:43:18 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
