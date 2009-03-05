@@ -7,7 +7,7 @@
 # wrapper script for running transcript_builder.pl
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2009-02-06 13:23:57 $
+# Last edited on: $Date: 2009-03-05 10:01:50 $
 
 use lib $ENV{CVS_DIR};
 use Wormbase;
@@ -143,7 +143,7 @@ if ($wormbase->assembly_type ne 'contig') { # elegans, briggsae
 			    minsize => $sizes{$sequence},
 			    lines => ['^##', 
 				      "^${sequence}\\s+Coding_transcript\\s+(protein_coding_primary_transcript|intron|exon)\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+Transcript\\s+\\S+",
-				     '^${sequence}\\s+Link\\s+region\\s+1\\s+\\d+\\s+\\.\\s+\\+\\s+\\.\\s+Sequence\\s+\\"${sequence}\\"',
+				      "^${sequence}\\s+Link\\s+region\\s+1\\s+\\d+\\s+\\.\\s+\\+\\s+\\.\\s+Sequence\\s+\\\"${sequence}\\\"",
 				     ],
 			    gff => 1,
 			   );   
@@ -167,7 +167,7 @@ if ($wormbase->assembly_type ne 'contig') { # elegans, briggsae
 			    minsize => $sizes{$sequence},
 			    lines => ['^##', 
 				      "^${sequence}\\s+Coding_transcript\\s+(protein_coding_primary_transcript|intron|exon)\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+Transcript\\s+\\S+",
-				     '^${sequence}\\s+Link\\s+region\\s+1\\s+\\d+\\s+\\.\\s+\\+\\s+\\.\\s+Sequence\\s+\\"${sequence}\\"',
+				      "^${sequence}\\s+Link\\s+region\\s+1\\s+\\d+\\s+\\.\\s+\\+\\s+\\.\\s+Sequence\\s+\\\"${sequence}\\\"",
 				     ],
 			    gff => 1,
 			   );   
@@ -178,7 +178,7 @@ if ($wormbase->assembly_type ne 'contig') { # elegans, briggsae
   $wormbase->check_file("$gff_dir/Coding_transcript.gff", $log,
 			lines => ['^##', 
 				  "^\\S+\\s+Coding_transcript\\s+(protein_coding_primary_transcript|intron|exon)\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+Transcript\\s+\\S+",
-				     '^${sequence}\\s+Link\\s+region\\s+1\\s+\\d+\\s+\\.\\s+\\+\\s+\\.\\s+Sequence\\s+\\"${sequence}\\"',
+				  "^\\S+\\s+Link\\s+region\\s+1\\s+\\d+\\s+\\.\\s+\\+\\s+\\.\\s+Sequence\\s+\\\"\\S+\\\"",
 				 ],
 			gff => 1,
 		       );   
