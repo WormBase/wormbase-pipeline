@@ -6,8 +6,8 @@
 #
 # wrapper script for running transcript_builder.pl
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2009-03-05 10:01:50 $
+# Last edited by: $Author: mh6 $
+# Last edited on: $Date: 2009-03-05 11:13:40 $
 
 use lib $ENV{CVS_DIR};
 use Wormbase;
@@ -179,6 +179,7 @@ if ($wormbase->assembly_type ne 'contig') { # elegans, briggsae
 			lines => ['^##', 
 				  "^\\S+\\s+Coding_transcript\\s+(protein_coding_primary_transcript|intron|exon)\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+Transcript\\s+\\S+",
 				  "^\\S+\\s+Link\\s+region\\s+1\\s+\\d+\\s+\\.\\s+\\+\\s+\\.\\s+Sequence\\s+\\\"\\S+\\\"",
+				  "^\\S+\\s+Genomic_canonical\\s+region\\s+1\\s+\\d+\\s+\\.\\s+\\+\\s+\\.\\s+Sequence\\s+\\\"\\S+\\\"",
 				 ],
 			gff => 1,
 		       );   
