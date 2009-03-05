@@ -1289,7 +1289,8 @@ Strand_sensitive
 Width    1.000000 	 
 Show_up_strand 	 
 Show_text 	 
-GFF_source "binding_site_region" 	 
+GFF_source "binding_site_region"
+GFF_feature "binding_site"	 
 Remark   "manually curated binding site region" 	 
 
 Method : "regulatory_region"
@@ -1317,6 +1318,7 @@ Width	 1.000000
 Show_up_strand
 Show_text
 GFF_source "binding_site"
+GFF_feature "binding_site"	 
 Remark	 "manually curated binding site feature"
 
 Method : "Oligo_cap" /not mapped
