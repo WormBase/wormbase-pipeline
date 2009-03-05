@@ -7,8 +7,8 @@
 # A script to finish the last part of the weekly build by updating all of the
 # relevant WormBase and Wormpep web pages.
 #
-# Last updated by: $Author: mh6 $     
-# Last updated on: $Date: 2008-12-19 10:32:44 $      
+# Last updated by: $Author: ar2 $     
+# Last updated on: $Date: 2009-03-05 16:27:51 $      
 
 
 #################################################################################
@@ -144,9 +144,7 @@ unless ($test or $debug) {
 	# update 'current' symlink on dev site
 	$log->write_to("\nChanging 'current symbolic link to point to new release\n"); 	
 	chdir("$www") || $log->write_to("Couldn't chdir to $www\n");	
-	system("rm -f $www/current") && croak "Couldn't remove 'current' symlink\n";
 	system("rm -f $wwwdata/WORMBASE/current") && croak "Couldn't remove 'current' symlink in the data directory\n";
-	system("ln -s $WS_name current") && croak "Couldn't create new symlink\n";
 	system("cd  $wwwdata/WORMBASE/ && ln -s $WS_name current") && croak "Couldn't create new symlink in the data directory\n";
         chdir("$www") || $log->write_to("Couldn't chdir to $www\n");
 }
