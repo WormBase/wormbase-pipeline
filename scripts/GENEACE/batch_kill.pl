@@ -47,6 +47,7 @@ $species = 'elegans' unless $species;
 
 my $log = Log_files->make_log("NAMEDB:$file", $USER);
 my $DB;
+my $ecount;
 if ($test) {
     $DB = 'test_wbgene_id;mcs2a;3305';
   } else {
@@ -101,6 +102,11 @@ sub kill_gene {
 	    $log->error("no such gene $gene\n");
 	}
     }
+#    elsif (!defined($gene) && !defined($person)&& !defined($remark)) {
+elsif (!defined($gene && $person && $remark)) {
+  $ecount++;
+      $log->error("Warning: additional blank ($ecount) line in input file has been ignored\n");
+}
     else {
 	$log->error("missing info on $gene : $person : $remark\n");
     }
