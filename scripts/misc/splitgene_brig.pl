@@ -7,8 +7,8 @@
 # simple script for creating new (sequence based) Gene objects when splitting 
 # existing Caenorhabditis briggsae gene 
 #
-# Last edited by: $Author: mt3 $
-# Last edited on: $Date: 2007-09-19 15:57:46 $
+# Last edited by: $Author: pad $
+# Last edited on: $Date: 2009-03-09 14:43:41 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
