@@ -107,7 +107,7 @@ foreach my $chromosome (@chromosomes) {
 
     # Get PCR_product info from split GFF file
     &get_PCRs_from_GFF( $chromosome, 'Orfeome',   \%output, $map );
-#    &get_PCRs_from_GFF( $chromosome, 'GenePairs', \%output, $map );
+    &get_PCRs_from_GFF( $chromosome, 'GenePairs', \%output, $map );
 
 }
 
