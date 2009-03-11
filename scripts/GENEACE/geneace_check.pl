@@ -1,4 +1,4 @@
-#!/nfs/disk100/wormpub/bin/perl -w
+#!/software/bin/perl -w
 # 
 # geneace_check.pl
 #
@@ -6,8 +6,8 @@
 #
 # Script to run consistency checks on the geneace database
 #
-# Last updated by: $Author: mt3 $
-# Last updated on: $Date: 2009-03-04 16:55:59 $
+# Last updated by: $Author: pad $
+# Last updated on: $Date: 2009-03-11 14:09:55 $
 
 use strict;
 use lib $ENV{"CVS_DIR"};
