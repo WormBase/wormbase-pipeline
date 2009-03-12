@@ -7,7 +7,7 @@
 # Do fast overlap matching of positions of two sets of things.
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2009-02-26 15:11:28 $      
+# Last updated on: $Date: 2009-03-12 10:25:12 $      
 
 =pod
 
@@ -415,7 +415,7 @@ sub read_GFF_file {
       if (exists $GFF_data->{homology}) {	# do we need to store the homology data?
 	push @result, [$id, $start, $end, $sense, $hit_start, $hit_end, $score, $other_data];
       } else {
-	push @result, [$id, $start, $end, $sense, $other_data];		
+	push @result, [$id, $start, $end, $sense, $other_data];	
       }
     }
 #    close (GFF);
@@ -2003,6 +2003,46 @@ sub get_CDS_introns {
 
   return $self->read_GFF_file($chromosome, \%GFF_data);
 
+}
+
+=head2
+
+    Title   :   get_ignored_introns
+    Usage   :   my @gff = $ovlp->get_ignored_introns($chromosome)
+    Function:   reads the GFF data for the confirmed EST/mRNA introns that have been marked UTR/false/inconsistent
+    Returns :   list of lists for GFF data
+    Args    :   chromosome number
+
+=cut
+
+sub get_ignored_introns {
+  my $self = shift;
+  my ($chromosome) = @_;
+
+  my %GFF_data = 
+   (
+    method			=> "none",
+    gff_source			=> "Coding_transcript",
+    gff_type			=> "intron",
+    ID_after			=> 'Transcript\s+',
+    other_data                  => 1,
+   );
+
+  my @introns = $self->read_GFF_file($chromosome, \%GFF_data);
+
+  # now sift for only the ignored Confirmed_UTR/false/inconsistent introns
+  my @out;
+
+  # sort by $id then start,end position
+  my ($id, $start, $end, $sense, $hit_start, $hit_end, $score);
+  foreach my $in (@introns) {
+    if ($in->[4] =~ /Confirmed_UTR/ || $in->[4] =~ /Confirmed_false/ || $in->[4] =~ /Confirmed_inconsistent/) {
+      push @out, $in;
+    }
+  }
+
+  # return result sorted by chromosomal start,end position
+  return sort {$a->[1] <=> $b->[1] or $a->[2] <=> $b->[2]} @out;
 }
 
 
