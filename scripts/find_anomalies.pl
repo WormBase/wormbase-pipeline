@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2009-02-26 15:07:29 $      
+# Last updated on: $Date: 2009-03-12 10:24:04 $      
 
 # Changes required by Ant: 2008-02-19
 # 
@@ -376,6 +376,7 @@ foreach my $chromosome (@chromosomes) {
 
   my @check_introns_EST  = (); #$ovlp->get_check_introns_EST($chromosome);
   my @check_introns_cDNA = (); #$ovlp->get_check_introns_cDNA($chromosome);
+  my @ignored_introns = $ovlp->get_ignored_introns($chromosome) if (exists $run{UNCONFIRMED_INTRON}); 
 
   my @expression = &get_expression($chromosome) if (exists $run{UNMATCHED_EXPRESSION});
 
@@ -463,7 +464,7 @@ foreach my $chromosome (@chromosomes) {
 				      $chromosome) if (exists $run{UNMATCHED_EXPRESSION});
 
   print "finding confirmed introns not matching CDS introns\n"; 
-  &get_unconfirmed_introns(\@est_hsp, \@mrna_hsp, \@CDS_introns, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, $chromosome) if (exists $run{UNCONFIRMED_INTRON});
+  &get_unconfirmed_introns(\@ignored_introns, \@est_hsp, \@mrna_hsp, \@CDS_introns, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, $chromosome) if (exists $run{UNCONFIRMED_INTRON});
 
   print "finding isolated RST5\n";
   &get_isolated_RST5(\@rst_hsp, \@CDS, \@coding_transcripts, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, $chromosome) if (exists $run{UNMATCHED_RST5});
@@ -3251,9 +3252,7 @@ sub get_confirmed_introns {
   # want to check the introns look reasonable
   # length > 25 bases
   # contiguous in the EST
-  # ends of the intron sequence: (not done here yet)
-  # ((start eq 'gt' || start eq 'gc') && end eq 'ag') || # forward sense
-  #  (start eq 'ct' && (end  eq 'ac' ||  end eq 'gc'))   # reverse sense
+
   my @checked_introns;
   foreach my $intron (@introns) {
     if ($intron->[2] - $intron->[1] > 25 &&
@@ -3273,7 +3272,7 @@ sub get_confirmed_introns {
 
 sub get_unconfirmed_introns {
 
-  my ($est_aref, $mrna_aref, $cds_introns_aref, $pseudogenes_aref, $transposons_aref, $transposon_exons_aref, $noncoding_transcript_exons_aref, $rRNA_aref, $chromosome) = @_;
+  my ($ignored_introns_aref, $est_aref, $mrna_aref, $cds_introns_aref, $pseudogenes_aref, $transposons_aref, $transposon_exons_aref, $noncoding_transcript_exons_aref, $rRNA_aref, $chromosome) = @_;
 
   $anomaly_count{UNCONFIRMED_INTRON} = 0 if (! exists $anomaly_count{UNCONFIRMED_INTRON});
 
@@ -3286,33 +3285,72 @@ sub get_unconfirmed_introns {
     if ($mrna->[2] - $mrna->[1] > 30) {push @mrna2, $mrna} 
   }
 
-  # get the introns of these HSPs
+  # get the introns of the EST/mRNA HSPs
   my @est_introns = &get_confirmed_introns(\@est2); # change the ESTs into confirmed introns
   my @mrna_introns = &get_confirmed_introns(\@mrna2);
 
-  # join the ESTs and mRNA hits and sort by start position 
+  # join the ESTs and mRNA hits and sort by start,end position 
   my @introns = sort {$a->[1] <=> $b->[1] or $a->[2] <=> $b->[2]} (@est_introns, @mrna_introns);
 
+  # get the introns of the non_coding_transcripts
+  my @non_coding_introns = $ovlp->get_intron_from_exons(@{$noncoding_transcript_exons_aref});
 
+  # get the chromosomal sequence for checking canonical splice sites
+  my $seq = read_chromosome($chromosome);
 
-  my @not_matched = ();		# the resulting list of hashes of est with no matching exons/transposons/pseudogenes
-  my @matched = ();		# the resulting list of hashes of est which match a coding exon
-
-  # we want an exact match of the CDS inron to the EST confirmed intron
+  # we want an exact match of the CDS intron to the EST confirmed intron
   # we are not too sure of the orientation (hence sense) of the EST hit
   my $cds_introns_match = $ovlp->compare($cds_introns_aref, exact_match => 1);
   my $pseud_match = $ovlp->compare($pseudogenes_aref);
   my $trans_match = $ovlp->compare($transposons_aref);
   my $trane_match = $ovlp->compare($transposon_exons_aref);
-  my $nonco_match = $ovlp->compare($noncoding_transcript_exons_aref);
   my $rrna_match  = $ovlp->compare($rRNA_aref);
+  my $ignored_match  = $ovlp->compare($ignored_introns_aref, exact_match => 1); # introns marked as Confirmed_UTR/false/inconsistent
+  my $noncoding_match  = $ovlp->compare(\@non_coding_introns, exact_match => 1); # want to ignore non-coding_transcript introns
 
   # do both the EST and mRNA intons together
   foreach my $homology (@introns) { # $est_id, $chrom_start, $chrom_end, $chrom_strand
 
     my $got_a_match = 0;	        # not yet seen a match to anything
+    
+    # flag for got a match to an intron marked as Confirmed_UTR/false/inconsistent
+    my $confirmed_ignored = 0;
 
+
+    # check to see if the splice sites are canonical
+    my $splice5 = uc(substr($seq, $homology->[1]-1, 2));
+    my $splice3 = uc(substr($seq, $homology->[2]-2, 2));
+    #print "Feature data: $homology->[0] $homology->[1] $homology->[3] $splice5 .. $splice3\n";
+    #print "region: " . uc(substr($seq, $homology->[1]-3, 8)) ." .. " . uc(substr($seq, $homology->[2]-4, 8)) ."\n";
+
+    #if ($homology->[3] eq '+') {
+    #  if (($splice5 ne 'GT' && $splice5 ne 'GC') || $splice3 ne 'AG') {$got_a_match = 1}
+    #} else {
+    #  # reverse sense so $splice5 is really the 3' splice site and vice versa
+    #  if (($splice3 ne 'AC' && $splice3 ne 'GC') || $splice5 ne 'CT') {$got_a_match = 1}
+    #}
+
+    # we are not sure of the orientation of the ESTs, so here we accept splice sites in either orientation
+    if ((($splice5 ne 'GT' && $splice5 ne 'GC') || $splice3 ne 'AG') &&
+	(($splice3 ne 'AC' && $splice3 ne 'GC') || $splice5 ne 'CT')) {
+      $got_a_match = 1; # pretend that all introns with non-canonical splice match a CDS intron so that we ignore them
+      #print "*************** non-canonical\n";
+    } else {
+      #print "OK canonical\n";
+    }
+
+    if ($ignored_match->match($homology)) {
+      $got_a_match = 1;
+      $confirmed_ignored = 1;
+      #print "*************** ignored\n";
+    }
+
+    # now check to see if the EST intron matches a gene's intron
     if ($cds_introns_match->match($homology)) {
+      $got_a_match = 1;
+    }
+
+    if ($noncoding_match->match($homology)) { 
       $got_a_match = 1;
     }
 
@@ -3328,10 +3366,6 @@ sub get_unconfirmed_introns {
       $got_a_match = 1;
     }
 
-    if ($nonco_match->match($homology)) {      
-      $got_a_match = 1;
-    }
-
     if ($rrna_match->match($homology)) {       
       $got_a_match = 1;
     }
@@ -3343,7 +3377,9 @@ sub get_unconfirmed_introns {
       my $chrom_end = $homology->[2];
       my $chrom_strand = $homology->[3];
       my $est_score = $homology->[6];
-      my $anomaly_score = 1;
+      my $anomaly_score = 10;
+      # use a lower score if the intron is marked as Confirmed_UTR/false/inconsistent
+      if ($confirmed_ignored) {$anomaly_score = 1}
       #print "NOT got an EST match ANOMALY: $est_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score\n";
       &output_to_database("UNCONFIRMED_INTRON", $chromosome, $est_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score, '');
     }
