@@ -7,7 +7,7 @@
 # simple script for changing class of gene objects (e.g. CDS->Pseudogene)
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2009-03-13 11:52:33 $
+# Last edited on: $Date: 2009-03-13 11:58:43 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -79,8 +79,8 @@ my $db = Ace->connect(-path  => $database,
 		      -program =>$tace) || do { print "Connection failure: ",Ace->error; die();};
 
 my $outfile;
-if (!$id) {$outfile = "$database/changegene_".&seq2gene($seq).".ace";}
-elsif ($id) {$outfile = "$database/changegene_".$id.".ace";}
+if (!$id) {$outfile = "$database/NAMEDB_Files/changegene_".&seq2gene($seq).".ace";}
+elsif ($id) {$outfile = "$database/NAMEDB_Files/changegene_".$id.".ace";}
 else {$outfile = "$database/NAMEDB_Files/changegene_".$seq.".ace";}
 if (-e $outfile) {print "Warning this gene has probably already been processed.\n";}
 
