@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl -w
+#!/software/bin/perl -w
 use strict;
 use lib '../blib/lib';
 use lib '/nfs/WWWdev/SANGER_docs/lib/Projects/C_elegans';
@@ -61,11 +61,11 @@ my $db = NameDB_handler->new($DB,$USER,$PASS,'/nfs/WWWdev/SANGER_docs/htdocs');
 my $ace = Ace->connect('-path', '/nfs/disk100/wormpub/DATABASES/geneace') or $log->log_and_die("cant open geneace: $!\n");
 
 $db->setDomain('Gene');
+my $output = "/nfs/disk100/wormpub/DATABASES/geneace/NAMEDB_Files/batch_kill.ace";
 
 #open file and read
-
 open (FILE,"<$file") or $log->log_and_die("can't open $file : $!\n");
-open (ACE,">batch_kill.ace") or $log->log_and_die("cant write output: $!\n");
+open (ACE,">$output") or $log->log_and_die("cant write output: $!\n");
 my($gene,$person,$remark);
 my $count;
 while(<FILE>){
