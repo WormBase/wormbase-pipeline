@@ -84,7 +84,7 @@ sub chromosome_names {qw(I II III IV V X)}
 sub mt_name {'MtDNA'}
 sub pep_prefix {'CE'}
 sub pepdir_prefix{'worm'};
-sub cds_regex{qr/^[A-Z0-9_cel]+\.[1-9]\d?\d?[A-Za-z]?$/};  #the cel is for telomeric clone CDSs cTel54X.1
+sub cds_regex{qr/^[A-Z0-9_cel]+\.[1-9]\d{0,3}[A-Za-z]?$/};  #the cel is for telomeric clone CDSs cTel54X.1
 sub seq_name_regex{qr/^[A-Z0-9_cel]+\.[1-9]\d?\d?/};  #to get just the Sequence_name part
 sub cds_regex_noend{qr/^[A-Z0-9_cel]+\.[1-9]\d?\d?[A-Za-z]?/};  # for getting the CDS part of a Transcript name
 
