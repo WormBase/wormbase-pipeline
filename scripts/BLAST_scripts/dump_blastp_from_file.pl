@@ -287,6 +287,10 @@ while (<BLAST>) {
   }
 }
 
+&dumpData ($current_pep,\%worm_matches,\%human_matches,\%fly_matches,\%yeast_matches,\%swiss_matches,\%trembl_matches,\%brig_matches, \%rem_matches,\%jap_matches,\%bre_matches,\%ppa_matches) 
+            if (%worm_matches or %human_matches or %fly_matches or %yeast_matches or %swiss_matches or %trembl_matches or %brig_matches or %rem_matches or %jap_matches or %bre_matches or %ppa_matches);
+
+
 close OUT;
 close RECIP;
 close BEST;
@@ -483,13 +487,14 @@ sub addWormData {
       my $homol = $$data[4];
       my $homol_gene = &justGeneName( $homol );
 
-      if ( $database eq "worm_remanei" || $database eq 'worm_pristionchus' || $database eq 'worm_japonica' || $database eq 'worm_brenneri') {
+      #if ( $database eq "worm_remanei" || $database eq 'worm_pristionchus' || $database eq 'worm_japonica' || $database eq 'worm_brenneri') {
 	my @_genes=split(/\s/,$$data[0]);
 	foreach my $_g(@_genes) {
 	 	my $my_gene = &justGeneName( $CE2gene{ $$data[0] } ) ;
-		return 0 if ("$homol_gene" eq "$my_gene"); # self match or isoform of same gene
+		return 0 if ("$homol_gene" eq "$my_gene");       # self match or isoform of same gene
+		return 0 if (&justGeneName($CE2gene{$homol_gene}) eq $my_gene); # elegans case
 	}
-      }
+      #}
 
       #have we already matched an isoform of this protein
       # CE26000 | wublast_worm | start | end | Y73B6BL.34    fields or result array
