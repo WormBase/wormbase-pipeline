@@ -7,7 +7,7 @@
 # Do fast overlap matching of positions of two sets of things.
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2009-03-12 10:25:12 $      
+# Last updated on: $Date: 2009-03-16 13:35:42 $      
 
 =pod
 
@@ -2022,9 +2022,9 @@ sub get_ignored_introns {
   my %GFF_data = 
    (
     method			=> "none",
-    gff_source			=> "Coding_transcript",
+    gff_source			=> "",   # any source, as long as it has a Confirmed_* intron
     gff_type			=> "intron",
-    ID_after			=> 'Transcript\s+',
+    ID_after			=> '.', # any ID 
     other_data                  => 1,
    );
 
@@ -2033,7 +2033,7 @@ sub get_ignored_introns {
   # now sift for only the ignored Confirmed_UTR/false/inconsistent introns
   my @out;
 
-  # sort by $id then start,end position
+  # get the ones with confirmed introns
   my ($id, $start, $end, $sense, $hit_start, $hit_end, $score);
   foreach my $in (@introns) {
     if ($in->[4] =~ /Confirmed_UTR/ || $in->[4] =~ /Confirmed_false/ || $in->[4] =~ /Confirmed_inconsistent/) {
@@ -2186,7 +2186,7 @@ sub match {
   # if searching for same/opposite sense matches, then set last_used to be the
   # minimum of last_used_forward and last_used_reverse
   if ($self->{state}->{same_sense} || $self->{state}->{other_sense}) {
-    $self->{state}->{last_used} = $self->{state}->{last_used_forward};
+    $self->{state}->{last_used} = $self->{state}->{last_used_forward}; 
     if ($self->{state}->{last_used_reverse} < 
 	$self->{state}->{last_used_forward}) {
       $self->{state}->{last_used} = $self->{state}->{last_used_reverse};
