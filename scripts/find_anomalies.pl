@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2009-03-12 10:24:04 $      
+# Last updated on: $Date: 2009-03-16 13:36:32 $      
 
 # Changes required by Ant: 2008-02-19
 # 
@@ -3340,7 +3340,6 @@ sub get_unconfirmed_introns {
     }
 
     if ($ignored_match->match($homology)) {
-      $got_a_match = 1;
       $confirmed_ignored = 1;
       #print "*************** ignored\n";
     }
