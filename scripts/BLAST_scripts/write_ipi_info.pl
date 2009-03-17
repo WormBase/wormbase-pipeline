@@ -117,6 +117,9 @@ while (<LIST>) {
 	print ACE "Gene_name \"$swiss_id2gene{$othername}\"\n" if $swiss_id2gene{$othername};
 
       }
+      elsif("$DB" eq 'H-INV'){
+	print ACE "Database H-INV HIT $ID\n";
+      }
     }
 
     # This is the same for each
