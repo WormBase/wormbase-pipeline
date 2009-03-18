@@ -9,7 +9,7 @@ use Log_files;
 use Storable;	
 
 my ($ep, $ref, %genes, %at, %auth, $date);
-my ($help, $debug, $test, $verbose, $store, $wormbase);
+my ($help, $debug, $test, $store, $wormbase);
 my ($output, $acedbpath, $rnai, $gene, $variation, $skiplist);
 
 $|=9;
@@ -19,7 +19,6 @@ my %opts=();
 GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
 	    "test"       => \$test,
-	    "verbose"    => \$verbose,
 	    "store:s"    => \$store,
 	    "database:s" => \$acedbpath,
 	    "rnai"   	 => \$rnai,
@@ -65,9 +64,9 @@ my $day   = (localtime)[3];
 $date=sprintf("%04d%02d%02d", $year, $month, $day);
 
 $acedbpath = $wormbase->autoace unless $acedbpath;
-warn "connecting to database... ";
+warn "connecting to database... $acedbpath";
 my $db = Ace->connect(-path => $acedbpath,  -program => $wormbase->tace) or $log->log_and_die("Connection failure: ". Ace->error);
-warn "done\n";
+warn "... done\n";
 
 my %species_taxon_hash=("Caenorhabditis elegans"  => 6239,
 			"Caenorhabditis briggsae" => 6238,
