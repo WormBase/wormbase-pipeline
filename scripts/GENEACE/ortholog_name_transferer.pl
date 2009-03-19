@@ -109,7 +109,7 @@ sub write_new_orthology {
     $version++;
 
     print $ace "\nGene : $ortholog\nVersion $version\nCGC_name $new_name From_analysis Inferred_from_orthology\n";
-    print $ace "Public_name $new_name\nVersion_change $version now WBPerson2970 Name_change CGC_name $new_name\n";
+    print $ace "Public_name $new_name\nVersion_change $version now WBPerson9133 Name_change CGC_name $new_name\n";
     my ($class) = $new_name =~ /-(\w+)-/;
     print $ace "Gene_class $class\n";
     $log->write_to("Transfering CGC_name: $new_name from $gene to $ortholog");
