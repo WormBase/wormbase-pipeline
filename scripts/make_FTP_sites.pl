@@ -7,8 +7,8 @@
 # 
 # Originally written by Dan Lawson
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2009-02-02 11:08:19 $
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2009-03-26 16:59:11 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -437,11 +437,12 @@ sub copy_clustal{
 	my $chromdir = $wormbase->autoace;
 	if (-e "$chromdir/wormpep_clw.sql.bz2") {
 		my $sgff_dir = "$targetdir/$WS_name/";
+		my $target = "$sgff_dir/wormpep/wormpep${\$wormbase->version}_clw.sql.bz2";
 		mkpath($sgff_dir,1,0775);
-		$wormbase->run_command("cp -R $chromdir/wormpep_clw.sql.bz2 $sgff_dir/", $log);
+		$wormbase->run_command("cp -R $chromdir/wormpep_clw.sql.bz2 $target", $log);
 
 		# change group ownership
-		$wormbase->run_command("chgrp  worm $sgff_dir/wormpep_clw.sql.bz2", $log);
+		$wormbase->run_command("chgrp  worm $target", $log);
 	}
   }
   $runtime = $wormbase->runtime;
