@@ -7,8 +7,8 @@
 # A script to finish the last part of the weekly build by updating all of the
 # relevant WormBase and Wormpep web pages.
 #
-# Last updated by: $Author: ar2 $     
-# Last updated on: $Date: 2009-03-05 16:27:51 $      
+# Last updated by: $Author: mh6 $     
+# Last updated on: $Date: 2009-03-30 09:23:16 $      
 
 
 #################################################################################
@@ -343,7 +343,7 @@ sub copy_overlapcheck_files{
 
 
 ###########################################################################################################
-# Creates: release_header.shtml, finished_seqs.shtml, DNA_table.shtml,
+# Creates: release_header.shtml, DNA_table.shtml,
 # dbcomp.shtml, and wormpep.shtml
 ###########################################################################################################
 
@@ -743,8 +743,9 @@ print EST_HTML qq(<!--#include virtual="/perl/header" -->\n);
     print EST_HTML "</FONT></H2></TD></TR></TABLE>\n";
 
     print EST_HTML "<P><PRE>";
-    open (EST_TXT, "<$dbpath/CHECKS/$file.txt") || croak "Couldn't open EST_total.txt\n";
+    open (EST_TXT, "<$dbpath/CHECKS/$file.txt") || croak "Couldn't open $dbpath/CHECKS/$file.txt\n";
 
+    print "reading from $dbpath/CHECKS/$file.txt\n" if $debug;
     my $line = `wc -l $dbpath/CHECKS/$file.txt`;
     # take line count and add to array
     my ($new) = ($line =~ /(\d+)/);
