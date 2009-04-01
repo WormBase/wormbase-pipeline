@@ -6,8 +6,8 @@
 #
 # Script to make ?Transcript objects
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2008-08-14 09:36:13 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2009-04-01 10:12:24 $
 use strict;
 use lib $ENV{'CVS_DIR'};
 use Getopt::Long;
@@ -556,9 +556,9 @@ sub load_features
     my %tmp;
     $wormbase->FetchData("est2feature",\%tmp);
     foreach my $seq ( keys %tmp ) {
-      my @feature = split(/,/,$tmp{$seq});
-      foreach ( @feature ) {
-	push(@{$$features{$_}},$seq);
+      my @feature = @{$tmp{$seq}};
+      foreach my $feat ( @feature ) {
+	push(@{$$features{$feat}},$seq);
       }
     }
   }
