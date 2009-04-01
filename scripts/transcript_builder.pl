@@ -7,7 +7,7 @@
 # Script to make ?Transcript objects
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2009-04-01 10:12:24 $
+# Last updated on: $Date: 2009-04-01 15:00:09 $
 use strict;
 use lib $ENV{'CVS_DIR'};
 use Getopt::Long;
@@ -146,7 +146,7 @@ foreach my $chrom ( @chromosomes ) {
   close $GFF;
 
   # read BLAT data
-  my @BLAT_methods = qw( BLAT_EST_BEST BLAT_mRNA_BEST BLAT_OST_BEST BLAT_RST_BEST);
+  my @BLAT_methods = qw( BLAT_EST_BEST BLAT_mRNA_BEST BLAT_OST_BEST BLAT_RST_BEST RNASeq_Hillier_elegans);
   foreach my $method (@BLAT_methods) {
     $gff_file = $gff_stem."$method.gff";
     next unless (-e $gff_file); #not all contigs will have these mol_types
@@ -189,6 +189,11 @@ foreach my $chrom ( @chromosomes ) {
   close $GFF;
   # add feature_data to cDNA
   #CHROMOSOME_I  SL1  SL1_acceptor_site   182772  182773 .  -  .  Feature "WBsf016344"
+  #
+  # want to add in transcription_start_site and
+  # transcription_end_site, but these are not currently defined by a
+  # cDNA or even a 'bundle of short reads' in the Hillier data
+  #
   my @feature_types = qw(SL1 SL2 polyA_site polyA_signal_sequence);
   foreach my $Type (@feature_types){
     my $gff_file = $gff_stem."$Type.gff";
@@ -467,24 +472,6 @@ sub checkData
 
 
 ###################################################################################
-
-sub run_command
-  {
-    my $command = shift;
-    $log->write_to( $wormbase->runtime, ": started running $command\n");
-    my $status = system($command);
-    if ($status != 0) {
-      $errors++;
-      $log->write_to("ERROR: $command failed\n");
-    }
-    $log->write_to( $wormbase->runtime, ": finished running $command\n");
-
-    # for optional further testing by calling subroutine
-    return($status);
-  }
-
-#####################################################################################
-
 
 sub load_EST_data
   {
