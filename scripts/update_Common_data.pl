@@ -5,7 +5,7 @@
 # by Anthony Rogers et al
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2008-11-28 12:59:29 $
+# Last updated on: $Date: 2009-04-01 08:52:48 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -555,7 +555,7 @@ sub write_Feature  {
       next if (/acedb\>/);
       last if (/\/\//);
       if (/^(\S+)\s+(\S+)/) {
-	  $est2feature{$1} = $2;
+	push @{$est2feature{$1}}, $2; # make a list of features defined by this EST
       }
   }
   close TACE;
