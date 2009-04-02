@@ -7,7 +7,7 @@
 # Script to make ?Transcript objects
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2009-04-01 15:00:09 $
+# Last updated on: $Date: 2009-04-02 09:36:55 $
 use strict;
 use lib $ENV{'CVS_DIR'};
 use Getopt::Long;
@@ -312,12 +312,13 @@ foreach my $chrom ( @chromosomes ) {
     last if $est;
   }
 
-  # tie up read pairs
-  foreach my $cdna ( @cds_objs ) {
-    my $name = $cdna->name;
-    if ($cDNA_index{$name}) {
-    }
-  }
+  # tie up read pairs - only use cDNAs from read-pairs if both of the cDNAs in a pair match the CDS
+  # needs further work
+#  foreach my $cds ( @cds_objs ) {
+#    my $name = $cds->name;
+#    if ($cDNA_index{$name}) {
+#    }
+#  }
       
   $log->write_to("Second round additions\n");
 
