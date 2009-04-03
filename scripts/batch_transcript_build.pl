@@ -6,8 +6,8 @@
 #
 # wrapper script for running transcript_builder.pl
 #
-# Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2009-03-05 11:31:49 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2009-04-03 14:42:44 $
 
 use lib $ENV{CVS_DIR};
 use Wormbase;
@@ -142,7 +142,7 @@ if ($wormbase->assembly_type ne 'contig') { # elegans, briggsae
       $wormbase->check_file("$gff_dir/${sequence}_Coding_transcript.gff", $log,
 			    minsize => $sizes{$sequence},
 			    lines => ['^##', 
-				      "^${sequence}\\s+Coding_transcript\\s+(protein_coding_primary_transcript|intron|exon)\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+Transcript\\s+\\S+",
+				      "^${sequence}\\s+Coding_transcript\\s+(protein_coding_primary_transcript|intron|exon)\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+\\s+Transcript\\s+\\S+",
 				      "^${sequence}\\s+Link\\s+region\\s+1\\s+\\d+\\s+\\.\\s+\\+\\s+\\.\\s+Sequence\\s+\\\"${sequence}\\\"",
 				     ],
 			    gff => 1,
@@ -166,7 +166,7 @@ if ($wormbase->assembly_type ne 'contig') { # elegans, briggsae
       $wormbase->check_file("$gff_dir/${sequence}_Coding_transcript.gff", $log,
 			    minsize => $sizes{$sequence},
 			    lines => ['^##', 
-				      "^${sequence}\\s+Coding_transcript\\s+(protein_coding_primary_transcript|intron|exon)\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+Transcript\\s+\\S+",
+				      "^${sequence}\\s+Coding_transcript\\s+(protein_coding_primary_transcript|intron|exon)\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+\\s+Transcript\\s+\\S+",
 				      "^${sequence}\\s+Link\\s+region\\s+1\\s+\\d+\\s+\\.\\s+\\+\\s+\\.\\s+Sequence\\s+\\\"${sequence}\\\"",
 				     ],
 			    gff => 1,
@@ -177,7 +177,7 @@ if ($wormbase->assembly_type ne 'contig') { # elegans, briggsae
       
   $wormbase->check_file("$gff_dir/Coding_transcript.gff", $log,
 			lines => ['^##', 
-				  "^\\S+\\s+Coding_transcript\\s+(protein_coding_primary_transcript|intron|exon)\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\.\\s+Transcript\\s+\\S+",
+				  "^\\S+\\s+Coding_transcript\\s+(protein_coding_primary_transcript|intron|exon)\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+\\s+Transcript\\s+\\S+",
 				  "^\\S+\\s+Link\\s+region\\s+1\\s+\\d+\\s+\\.\\s+\\+\\s+\\.\\s+Sequence\\s+\\\"\\S+\\\"",
 				  "^\\S+\\s+Genomic_canonical\\s+region\\s+1\\s+\\d+\\s+\\.\\s+\\+\\s+\\.\\s+Sequence\\s+\\\"\\S+\\\"",
 				 ],
