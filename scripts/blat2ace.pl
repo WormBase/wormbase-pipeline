@@ -6,8 +6,8 @@
 #
 # Exporter to map blat data to genome and to find the best match for each EST, mRNA, OST, etc.
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2009-02-16 15:58:54 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2009-04-03 10:15:16 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -505,7 +505,7 @@ foreach $filename (@filenames) {
 
   if (-e $toace ) {
     $log->write_to("Compressing $toace\n");
-    $wormbase->run_script("acecompress.pl -file $toace -homol -build", $log);
+    $wormbase->run_script("acezip.pl -file $toace -build", $log);
     $log->write_to("Compressed........\n");
   }
 }
