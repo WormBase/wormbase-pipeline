@@ -975,7 +975,7 @@ sub check_file {
 
       if (my ($gff_source, $gff_start, $gff_end) = ($line =~ /^\S+\s+(\S+)\s+\S+\s+(\d+)\s+(\d+)\s+\S+\s+[-+\.]\s+[012\.]/)) {
 	if ($gff_end < $gff_start) {
-	  push @problems, "line $line_count:\n$line\nGFF feature start is before the feature end";
+	  push @problems, "line $line_count:\n$line\nGFF feature end is before the feature start";
 	  last;
 	}
 	# there are 'Genomic_canonical' features longer than 100 Kb
