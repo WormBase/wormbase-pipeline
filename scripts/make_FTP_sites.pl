@@ -8,7 +8,7 @@
 # Originally written by Dan Lawson
 #
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2009-03-26 16:59:11 $
+# Last updated on: $Date: 2009-04-06 08:49:14 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -301,7 +301,7 @@ sub copy_dna_files{
 	my $masked_file = "$chromdir/".$species."_masked.dna.gz";
 	my $soft_file = "$chromdir/".$species."_softmasked.dna.gz";
 		
-	$wormbase->run_command("/bin/gzip -f $dna_file > $dna_dir/".$gspecies.".$WS_name.dna.fa.gz",$log);
+	$wormbase->run_command("/bin/gzip -c $dna_file > $dna_dir/".$gspecies.".$WS_name.dna.fa.gz",$log);
 	$wormbase->run_command("cp -f $soft_file $dna_dir/".$gspecies."_softmasked.$WS_name.dna.fa.gz", $log);
 	$wormbase->run_command("cp -f $masked_file $dna_dir/".$gspecies."_masked.$WS_name.dna.fa.gz", $log);
 	
