@@ -5,8 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: ar2 $
-// Last edited on: $Date: 2009-01-14 16:59:45 $
-
+// Last edited on: $Date: 2009-04-07 14:50:29 $
 
 
 ////////////////////////
@@ -272,6 +271,7 @@
                   GO_term ?GO_term XREF Gene ?GO_code #Evidence
                   Contained_in_operon ?Operon XREF Contains_gene
                   Ortholog ?Gene XREF Ortholog ?Species #Evidence
+		  Paralog ?Gene XREF Paralog ?Species #Evidence
 		  Ortholog_other  ?Protein XREF Ortholog_gene #Evidence // to allow Orthologues links to none ?Gene genes eg remanei (ar2 Nov06)
                   Structured_description Provisional_description ?Text #Evidence         // added for Erich [020322 krb]
                                          Detailed_description ?Text #Evidence            // added for Erich [020322 krb]
@@ -1228,7 +1228,8 @@
 
 
 ?Pseudogene     Evidence #Evidence
-                SMap S_parent UNIQUE Sequence UNIQUE ?Sequence XREF Pseudogene      
+                SMap S_parent UNIQUE Sequence UNIQUE ?Sequence XREF Pseudogene
+				     Transposon UNIQUE ?Transposon XREF Pseudogene_child    
                 Structure Source_exons Int UNIQUE Int
                 DB_info DB_remark ?Text #Evidence
 			Database ?Database ?Database_field UNIQUE ?Accession_number XREF Pseudogene
@@ -1236,7 +1237,7 @@
                         Species UNIQUE ?Species
                 Type    UNIQUE Coding_pseudogene Text // [110803 dl] 
                                RNA_pseudogene Text    // Text can store type of RNA (probably tRNA)
-                               Transposon
+                               Transposon_pseudogene
 		Properties Isoform #Evidence
                 Visible Gene         UNIQUE ?Gene XREF Corresponding_pseudogene         // when Pseudogene is live
                         Gene_history UNIQUE ?Gene XREF Corresponding_pseudogene_history // when Pseudogene is dead
@@ -1270,13 +1271,15 @@
 
 ?Transposon Evidence #Evidence
 	    SMap S_parent UNIQUE Sequence UNIQUE ?Sequence XREF Transposon
-	    Structure Source_exons Int UNIQUE Int // added for consistency with other 'gene' classes
-                      LTR_region UNIQUE Int UNIQUE Int
-		      S_child CDS_child ?CDS XREF Transposon UNIQUE Int UNIQUE Int #SMap_info	  // Transposon_CDSs will now link to parent Transposons ar2 02-DEC-05   
-		              Pseudogene_child ?Pseudogene XREF Sequence UNIQUE Int UNIQUE Int #SMap_info
+	    Structure	  S_child CDS_child ?CDS XREF Transposon UNIQUE Int UNIQUE Int #SMap_info // Transposon_CDSs will now link to parent Transposons ar2 02-DEC-05   
+		          Pseudogene_child ?Pseudogene XREF Transposon UNIQUE Int UNIQUE Int #SMap_info
+			  LTR_region Int UNIQUE Int
 	    Origin Species UNIQUE ?Species
 	           From_laboratory UNIQUE ?Laboratory
                    Member_of ?Transposon_family XREF Family_members
+		   Old_Name ?Text #Evidence        //to store old Transposon name
+		   Copy_status UNIQUE Full #Evidence    //track if the transposon is essentially complete or a fragment.
+				      Partial #Evidence 
 	    Visible Remark ?Text #Evidence
             Associated_feature ?Feature XREF Associated_with_transposon #Evidence
             Method UNIQUE ?Method
@@ -1401,6 +1404,7 @@
 		    Defined_by_paper    ?Paper XREF Feature #Evidence
 		    Defined_by_person   ?Person
 		    Defined_by_author   ?Author
+		    Defined_by_analysis ?Analysis 
 	 Associations Associated_with_gene	 ?Gene	     XREF Associated_feature #Evidence // richard
                       Associated_with_CDS	 ?CDS	     XREF Associated_feature #Evidence  // richard
                       Associated_with_transcript ?Transcript XREF Associated_feature #Evidence  // richard
@@ -2345,9 +2349,10 @@
                            Precedes        ?Condition XREF Follows
                            Follows         ?Condition XREF Precedes
            Reference       ?Paper  //Defines the condition.
-	   Cell_type       ?Cell // added for Experiment (Microarray_results)
+	   Tissue	   ?Anatomy_term   // added for Experiment (Microarray_results)
            Treatment       ?Text // added for Experiment (Microarray_results)
 	   SAGE_experiment ?SAGE_experiment XREF Sample
+	   Analysis	   ?Analysis XREF Sample 
            Remark          ?Text #Evidence
 
 
@@ -3052,6 +3057,7 @@
              Based_on_WB_Release Int
              Based_on_DB_Release Text
              Description ?Text
+	     Sample ?Condition XREF Analysis
              Reference ?Paper XREF Describes_analysis
              Conducted_by ?Person XREF Conducted		// not always the same as the author of the paper - eg Erich running OrthoMCL
              URL Text					// eg www.treefam.org  (or would this be covered by Source_database?)
