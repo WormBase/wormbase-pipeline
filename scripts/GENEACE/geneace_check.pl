@@ -6,8 +6,8 @@
 #
 # Script to run consistency checks on the geneace database
 #
-# Last updated by: $Author: pad $
-# Last updated on: $Date: 2009-03-11 14:09:55 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2009-04-08 13:18:44 $
 
 use strict;
 use lib $ENV{"CVS_DIR"};
@@ -834,24 +834,30 @@ sub process_laboratory_class{
 
   my @labs = $db->fetch(-class => 'Laboratory',
 		        -name  => '*');
-
+  my $e = 0;
   # test for Allele_designation and Representative tags
   foreach my $lab (@labs){
     if ( $verbose && (!defined $lab -> Allele_designation) && $lab =~ /[A-Z]{3,3}/ ){
       print LOG "INFO: $lab has no Allele_designation (exception)\n";
+      $e++;
     }
     if ( (!defined $lab -> Allele_designation) && $lab !~ /[A-Z]{3,3}/ ){
       print LOG "ERROR: $lab has no Allele_designation\n";
+      $e++;
     }
     if( (!defined $lab->Representative) && $lab !~ /XA|CGC/ ){
       print LOG "ERROR: $lab has no Representative\n";
+      $e++;
     }
     if( defined $lab->at('Laboratory.CGC.Representative') && !defined $lab->Representative ){
       print LOG "ERROR: $lab has Representative tag without value\n";
+      $e++;
     }
     if ( defined $lab->Representative && $lab -> Representative !~ /^WBPerson\d+/ ){
       print LOG "$lab representative (", $lab->Representative, ") is not using WBPerson# format\n";
+      $e++;
     }
+    print LOG $lab->Remark."\n" if $e != 0;
   }
 }
 
@@ -921,16 +927,6 @@ sub process_allele_class{
       }
     }
 
-
-    # warn about alleles linked to more than one Gene (might be valid for deletion alleles so ignore them)
-    unless($allele->at('Sequence_details.Type_of_mutation.Deletion')){
-      if ($allele->Gene) {
-	my @geneids=$allele->Gene;
-	if (scalar @geneids > 1) {
-	  print LOG "CHECK: $allele is connected to more than one gene ids: @geneids\n";
-	}
-      }
-    }
 
     # check for Missense tag but no value
     if (!defined $allele->Missense) {
