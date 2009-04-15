@@ -4,7 +4,7 @@
 # by Michael Han
 # 
 # Last updated by: $Author: pad $
-# Last updated on: $Date: 2008-01-14 16:40:43 $
+# Last updated on: $Date: 2009-04-15 15:04:38 $
 
 package Features;
 
@@ -50,7 +50,6 @@ sub trim_polyA{
     
     my $poorqualscore = &check_poor_qual($badseq);#uses a small subroutine to assign a score to the post polyA sequence.
     if (($poorqualscore < 33) && ($poorqual > 50)) {
-      print "//$id contains internal polyA run longer than 10bp but does not look like a real polyA!!\n\n";
     }
     elsif (($poorqualscore > 32) or ($poorqual < 25)) { #mask poor quality under 25bp scoring fails short seqs.
       $polyAlength = ($probseq - $poorqual);
@@ -355,6 +354,6 @@ $Author: pad $
 
 =head1 VERSION
 
-$Date: 2008-01-14 16:40:43 $
+$Date: 2009-04-15 15:04:38 $
 
 =cut
