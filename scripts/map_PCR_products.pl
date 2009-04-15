@@ -81,7 +81,7 @@ my $dbdir = $wb->autoace;             # Database path
 $gffdir = $gffdir ? $gffdir : $wb->gff_splits;    # GFF splits directory
 my @chromosomes = $test    ? qw ( CHROMOSOME_I ) : $wb->get_chromosome_names(-prefix => 1);                 # chromosomes to parse
 my $outace      = $acefile ? $acefile : $wb->acefiles . "/PCR_mappings.ace";
-@chromosomes = qw ( $chrom ) if $chrom;
+@chromosomes = ( $chrom ) if $chrom;
 
 # Struct for historical reasons
 struct( Exon => [ start => '$', stop => '$', type => '$', id => '$' ] );
