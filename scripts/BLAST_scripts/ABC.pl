@@ -6,8 +6,8 @@
 #
 # This is a script to automate the sections A, B and C of the BLAST Build
 #
-# Last updated by: $Author: pad $     
-# Last updated on: $Date: 2009-01-21 12:33:05 $      
+# Last updated by: $Author: ar2 $     
+# Last updated on: $Date: 2009-04-16 11:04:19 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -95,6 +95,7 @@ foreach my $species (@species) {
   # I don't think setting this SORT option is necessary until the sort
   # command is run under user wormpub, but the Build Guide says do it now,
   # so ...
+  # this is required here as the initial dumps are sorted.  This makes the mergesort much faster.
   $ENV{SORT_OPTS} = "-k2,2 -k8,8n -k10,10nr";
 
   $log->write_to("  Running dump.pl . . .\n");
@@ -194,11 +195,7 @@ foreach my $species (@species) {
   ##################
   my $dump_dir = "/lustre/work1/ensembl/wormpipe/dumps/";
 
-  $wormbase->check_file($dump_dir."/${species}_blastx.ace", 
-			$log,
-			minsize => 1000000,
-			);
-
+ 
   $wormbase->check_file($dump_dir."/${species}_blastp.ace", 
 			$log,
 			minsize => 1000000,
