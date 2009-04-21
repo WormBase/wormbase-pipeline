@@ -1,4 +1,4 @@
-#!/usr/local/ensembl/bin/perl
+#!/software/bin/perl
 
 # Marc Sohrmann (ms2@sanger.ac.uk)
 
@@ -147,6 +147,9 @@ while (my $line = <SW>) {
             chomp $des;
             $des =~ s/\n/\s/g;
 	    $des =~ s/\"//g;
+	    if ($des=~/Full=([^\;]+)\;/){
+		    $des="$1";
+	    }
             if (exists $DES{$id}) {
                 print "DES PRESENT\t$id\t($des)\n" if $verbose;
             }
