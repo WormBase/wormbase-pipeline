@@ -6,8 +6,8 @@ $ENV{CLUSTALDIR} = '/software/worm/bin';
 
 use lib $ENV{CVS_DIR};
 use lib '/software/worm/lib/site_perl';
-use lib '/software/worm/ensembl-51/bioperl-live';
-use lib '/software/worm/ensembl-51/bioperl-run';
+use lib '/software/worm/ensembl-53/bioperl-live';
+use lib '/software/worm/ensembl-53/bioperl-run';
 use Wormbase;
 use Ace;
 use IO::String;
@@ -66,6 +66,35 @@ my $qst = $pgdb->prepare('SELECT COUNT(peptide_id) FROM clustal WHERE peptide_id
 # file setup
 my $infile= new IO::File $pepfile || $log->write_to("cannot open $pepfile\n");
 
+# color table based on malign, but changed for the colour blind
+my %colours = ( 
+'*'       =>  '666666',         #mismatch          (dark grey)
+'.'       =>  '999999',         #unknown           (light grey)
+ A        =>  '33cc00',         #hydrophobic       (bright green)
+ B        =>  '666666',         #D or N            (dark grey)
+ C        =>  '2c5197',         #cysteine          (st.louis blue)
+ D        =>  '0033ff',         #negative charge   (bright blue)
+ E        =>  '0033ff',         #negative charge   (bright blue)
+ F        =>  '009900',         #large hydrophobic (dark green)
+ G        =>  '33cc00',         #hydrophobic       (bright green)
+ H        =>  '009900',         #large hydrophobic (dark green)
+ I        =>  '33cc00',         #hydrophobic       (bright green)
+ K        =>  'cc0000',         #positive charge   (bright red)
+ L        =>  '33cc00',         #hydrophobic       (bright green)
+ M        =>  '380474',         #hydrophobic       (blue deep)
+ N        =>  '6600cc',         #polar             (purple)
+ P        =>  '33cc00',         #hydrophobic       (bright green)
+ Q        =>  '6600cc',         #polar             (purple)
+ R        =>  'cc0000',         #positive charge   (bright red)
+ S        =>  '0099ff',         #small alcohol     (dull blue)
+ T        =>  '0099ff',         #small alcohol     (dull blue)
+ V        =>  '33cc00',         #hydrophobic       (bright green)
+ W        =>  '009900',         #large hydrophobic (dark green)
+ X        =>  '666666',         #any               (dark grey)
+ Y        =>  '009900',         #large hydrophobic (dark green)
+ Z        =>  '666666',         #E or Q            (dark grey)
+);
+
 ### here goes the output bit ####
 
 my $line_no=0;
@@ -103,18 +132,34 @@ sub print_alignment{
   $peptide =~ s/^.+?[\s\n]//;
   $peptide =~ s/\s//g;
   
-  #print "processing $protRecord\n";
+  print "processing $protRecord\n" if $debug;
  
   push( @sequences, Bio::Seq->new(-id => $protRecord, -seq => $peptide));
 
   my ($candObjs,) = Best_BLAST_Objects($protRecord);
   
+  my $header; # will get the linkout table
+  
   foreach (@$candObjs) {
+    next if "$_"=~/^MSP/;
     my $pept = $_->asPeptide();
     $pept =~ s/^.+?[\s\n]//;
     $pept =~ s/\s+//g;    # remove any space
-    #print "  adding $_\n";
+    print "  adding $_\n" if $debug;
     next unless length($pept) > 3;
+    
+    if ($_->Corresponding_CDS){
+        my @cds = $_->Corresponding_CDS;
+	foreach my $cd (@cds){
+	 next unless $cd->Gene;
+         $header.=sprintf("<tr><td>%s</td><td>(%s)<td>%s <a href=\"/db/gene/gene?name=%s\">%s</a> %s</td></tr>",
+          &protein_url($_),$_->Species,$cd,$cd->Gene,$cd->Gene,($cd->Gene->CGC_name||''));
+        }
+    }else{
+        $header.=sprintf("<tr><td>%s</td><td>(%s)</td><td>%s</td></tr>",&protein_url($_),$_->Species,$_->Description);
+    }
+    
+    
     push(@sequences, Bio::Seq->new(-id => $_ , -seq => $pept));
    }
 
@@ -124,6 +169,8 @@ sub print_alignment{
   }
   # at this point, sequences and alignment should be ready
   $log->write_to("No sequences for $protRecord\n") if (!@sequences);
+
+  
 
   ######## HaCK from ClustalW bioperltut ################
   use Bio::Tools::Run::Alignment::Clustalw;
@@ -143,8 +190,10 @@ sub print_alignment{
       -idlength => 15,
   );
   print $aligner $aln;
+  
+  my $calign = _postprocess($alignString);
 
-  return $alignString;
+  return "<table border='0'>$header</table><pre>$calign</pre>";
 }
 
 # from the website
@@ -179,3 +228,36 @@ sub Best_BLAST_Objects {
     }
     return (\@bestIDs);
 } # end Best_BLAST_Match  
+
+# create protein linkouts
+sub protein_url {
+     my $p=shift;
+     return "$p" unless ref ($p->Database);
+     my @row = $p->DB_info->row(1);
+     my $db=$row[0];
+     my $id=$row[2];
+     return "$p" unless ref($db);
+     my $url=sprintf($db->URL_constructor,$id);
+     return "<a href=\"$url\">$p</a>";
+}
+
+# colour the raw alignment
+sub _postprocess{
+     my $raw_al=shift;
+     my @line=split("\n",$raw_al);
+     my $coloured;
+     foreach my $l(@line) {
+         my @cols=split(//,$l);
+         my $flip=0;
+         for(my $position=0;$position < scalar(@cols);$position++){
+           next if $l=~/CLUSTAL/;
+           $flip=1 if $cols[$position]=~/\s/;
+           next unless $flip;
+           $cols[$position]="<font color=\"#$colours{$cols[$position]}\">$cols[$position]</font>"
+            if $colours{$cols[$position]};
+         }
+         $coloured.=join('',@cols);
+         $coloured.="\n";
+     }
+     return $coloured; 
+}
