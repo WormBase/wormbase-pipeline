@@ -2,9 +2,10 @@
 
 # Version: $Version: $
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2009-03-19 16:56:56 $
+# Last updated on: $Date: 2009-04-22 15:49:54 $
 
 use lib '/software/worm/ensembl/bioperl-live';
+use lib '/software/worm/lib';
 use strict;
 use warnings;
 use lib $ENV{'CVS_DIR'};
@@ -15,6 +16,7 @@ use Bio::SearchIO;
 use LSF::JobManager;
 use Ace;
 use Coords_converter;
+use Bio::Tools::Blat;
 
 ################################
 # command-line options         #
@@ -71,7 +73,7 @@ if($dist) {
     my $count = 0;
     my $file = "/lustre/cbi4/work1/wormpub/RNAi/seqs_$count";
     my $seq;
-    my $chunk = 8000;
+    my $chunk = 5000;
     open($seq,">$file");
     while(my $rnai = $RNAis->next){
 	if($rnai->DNA_text) {
@@ -86,30 +88,41 @@ if($dist) {
 }
 else {
     $log->log_and_die("must have -seq and -genome") unless ($seqs and $genome and (-e $seqs) and (-e $genome) );
-    my $blat = '/software/worm/bin/blat/blat -out=blast  ';
+    my $blat = '/software/worm/bin/blat/blat ';
     my $out = "$seqs.blat";
-    #$wormbase->run_command("$blat $genome $seqs  $out",$log);
+    $wormbase->run_command("$blat $genome $seqs  $out",$log);
 
     my $coords = Coords_converter->invoke($db, 0, $wormbase);
 
     my $file;
     open($file, "<$out") or $log->log_and_die("cant open blat output $out : $!\n");
-    my $parser = new Bio::SearchIO('-format' => 'blast', '-fh' => $file);
+    my $parser = Bio::Tools::Blat->new('-fh' => $file);
     while(my $result = $parser->next_result) {
-	while(my $hit = $result->next_hit()) { # enter code here for hit processing
-	    # this creates concatenated string of homology (|||   |||||||||) 
-	    # use this to determine if there is a 200 bp run of identical bases.
-	    my $homology_string = "";
-	    map($homology_string .= $_->homology_string,$hit->hsps);
-	    my $match = match($homology_string);
-	    if(defined $match){
-		my $score = 100 *( $homology_string =~ tr/\|/\|/ / length($homology_string));
-		foreach my $hsp (sort {$a->start <=> $b->start} $hit->hsps) {
-		    my($clone, $start, $stop) = $coords->LocateSpan($hit->name, $hsp->hit->start, $hsp->hit->end);
-		    print "\nHomol_data : \"$clone:RNAi\"\nRNAi_homol ".$hsp->seq_id." $match $score $start $stop ".$hsp->start."\t".$hsp->end."\n";
-#		    print join("\t",($match,$hit->name, $hsp->seq_id, $hsp->hit->start,$hsp->hit->end, $hsp->frac_identical, $hsp->evalue, $hsp->score))."\n";
-		}     
-	    }
+	my @blocks = $result->get_SeqFeatures;
+	my $clone;
+	my @data;
+	# if all blocks lie in same clone great- otherwise need to convert to SL/supercontig
+	my ($target,$res_srt, $res_end) = $coords->LocateSpan($blocks[0]->seq_id, $result->start, $result->end);
+	my $convert = $coords->isa_clone($target);
+	
+	foreach my $block (@blocks){
+	    my $tseq   = $block->seq_id;
+	    my $tstart = $block->feature1->start;
+	    my $tend   = $block->feature1->end;
+	    my $qseq   = $block->hseq_id;
+	    my $qstart = $block->feature2->start;
+	    my $qend   = $block->feature2->end;
+	    my $score  = $block->score;
+
+	    ($tseq, $tstart, $tend) = $coords->LocateSpan($tseq,$tstart,$tend) if $convert; #convert from chrom -> clone / SL
+	    push(@data,[$tseq,$qseq,$score, $tstart, $tend, $qstart, $qend]);
+	}
+	my $match = &match(\@data);
+	if($match) {
+	    print "\nHomol_data : \"".$target.":RNAi_homol\"\n";
+	    foreach my $hsp (@data) {
+		print "RNAi_homol ".$$hsp[1]," $match ",join("\t",@$hsp[2..6])."\n";
+	    }  
 	}
     }
 }
@@ -120,11 +133,21 @@ exit;
 
 
 sub match {
-    my $string = shift;    
-    if($string =~ /\|{95}/ and length($string) > 100)  { # RNAi_primary match
+    #return "RNAi_primary";
+    my $data = shift;
+    my $longest = 0;
+    my $total =0;
+    foreach my $hsp (@{$data}){
+	my $length = abs($hsp->[4] - $hsp->[3]);
+	$longest = $length if $length >  $longest;
+	$total += $length;
+    }
+    
+    #work out if Primary or Secondary
+    if($longest >= 95  and $total > 100)  { # RNAi_primary match
 	return "RNAi_primary";
     }
-    elsif($string =~ /\|{80}/ and length($string) > 200){
+    elsif($longest >= 80 and $total > 200){
 	return "RNAi_secondary";
     }
     else {
