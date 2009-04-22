@@ -4,8 +4,8 @@
 # 
 # by Dan Lawson
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2008-09-19 10:23:03 $
+# Last updated by: $Author: pad $
+# Last updated on: $Date: 2009-04-22 14:08:40 $
 #
 # Usage GFFmunger.pl [-options]
 
@@ -158,7 +158,7 @@ foreach my $file (@gff_files) {
 
   $log->write_to("# File $file\n");
   
-  if (($landmark || $all) && $file ne "CHROMOSOME_MtDNA") {
+  if (($landmark || $all) && ($file ne "CHROMOSOME_MtDNA") && ($wormbase->species ne 'elegans')) {
     $log->write_to("# Adding ${file}_landmarks.gff file\n");
     $addfile = $wormbase->assembly_type eq 'contig' ? "$datadir/landmarks.gff" : "$datadir/${file}_landmarks.gff";
     &addtoGFF($addfile,$gffpath);
