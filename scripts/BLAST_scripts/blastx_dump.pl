@@ -11,7 +11,7 @@
 #   array of EnsEMBL objects, it invites disaster as it makes a copy of the array.
 #
 # Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2009-04-23 10:10:08 $ 
+# Last edited on: $Date: 2009-04-23 10:28:38 $ 
 
 my $usage = <<USAGE;
 blastx_dump.pl options:
@@ -101,7 +101,7 @@ my $feature_adaptor = $db->get_ProteinAlignFeatureAdaptor();
 # get all superlinks
 my @superlinks;
 if ($sequence){
-    @superlinks = $slice_adaptor->fetch_by_name($sequence);
+    @superlinks = $slice_adaptor->fetch_by_region('toplevel',$sequence);
 }elsif ($toplevel){
     @superlinks = @{$slice_adaptor->fetch_all('toplevel')} if $toplevel;
 }else {
