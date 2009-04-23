@@ -11,7 +11,7 @@
 #   array of EnsEMBL objects, it invites disaster as it makes a copy of the array.
 #
 # Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2009-04-23 10:28:38 $ 
+# Last edited on: $Date: 2009-04-23 11:25:24 $ 
 
 my $usage = <<USAGE;
 blastx_dump.pl options:
