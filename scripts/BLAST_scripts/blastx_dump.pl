@@ -11,7 +11,7 @@
 #   array of EnsEMBL objects, it invites disaster as it makes a copy of the array.
 #
 # Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2008-10-29 16:44:34 $ 
+# Last edited on: $Date: 2009-04-23 10:10:08 $ 
 
 my $usage = <<USAGE;
 blastx_dump.pl options:
@@ -23,6 +23,7 @@ blastx_dump.pl options:
       -selfhits          remove selfhits from the blastx hits
       -outfile FILENAME  print the dumps to a specific file
       -debug USERNAME    send log messages to one user only
+      -sequence SEQUENCE only process the sequence specified
 USAGE
 
 
@@ -45,7 +46,7 @@ use strict;
 # for testing run it only on one clone
 # setting the environment variable TEST_FEATURE limits the whole thing to the specified feature
 
-my ($logicname,$test,$dbname,$toplevel,$store,$selfhits,$outfile,$debug);
+my ($logicname,$test,$dbname,$toplevel,$store,$selfhits,$outfile,$debug,$sequence);
 GetOptions(
     "logicname=s" => \$logicname,
     'database=s'  => \$dbname,
@@ -55,6 +56,7 @@ GetOptions(
     'selfhits'    => \$selfhits,
     'outfile=s'   => \$outfile,
     'debug=s'     => \$debug,
+    'sequence=s'  => \$sequence,
 ) || die ($usage);
 
 
@@ -97,9 +99,15 @@ my $slice_adaptor = $db->get_SliceAdaptor();
 my $feature_adaptor = $db->get_ProteinAlignFeatureAdaptor();
 
 # get all superlinks
-my @superlinks = @{$slice_adaptor->fetch_all('clone')};
-@superlinks = @{$slice_adaptor->fetch_all('toplevel')} if $toplevel;
-@superlinks = @{$slice_adaptor->fetch_all('superlink')} if scalar(@superlinks)==0;
+my @superlinks;
+if ($sequence){
+    @superlinks = $slice_adaptor->fetch_by_name($sequence);
+}elsif ($toplevel){
+    @superlinks = @{$slice_adaptor->fetch_all('toplevel')} if $toplevel;
+}else {
+    @superlinks = @{$slice_adaptor->fetch_all('clone')};
+    @superlinks = @{$slice_adaptor->fetch_all('superlink')} if scalar(@superlinks)==0;
+}
 
 # hardcoded bits
 my %logic2type = (
