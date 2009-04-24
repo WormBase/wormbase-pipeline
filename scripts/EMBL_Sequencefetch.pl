@@ -5,7 +5,7 @@
 # Usage : EMBL_Sequencefetch.pl [-options]
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2009-02-13 13:39:10 $
+# Last edited on: $Date: 2009-04-24 14:04:46 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -194,8 +194,8 @@ elsif ($input) {
     if ($answer eq "n\n") {
       die "Failed to process $input as a data type was not specified\n To avoid this issue please use -Type in conjunction with -input on command line\n"
     }
-    &generate_data_from_flat ($input) ;
   }
+    &generate_data_from_flat ($input) ;
 }
 
 
