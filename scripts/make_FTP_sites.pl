@@ -8,7 +8,7 @@
 # Originally written by Dan Lawson
 #
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2009-04-06 08:49:14 $
+# Last updated on: $Date: 2009-04-28 16:23:44 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -438,7 +438,7 @@ sub copy_clustal{
 	if (-e "$chromdir/wormpep_clw.sql.bz2") {
 		my $sgff_dir = "$targetdir/$WS_name/";
 		my $target = "$sgff_dir/wormpep/wormpep${\$wormbase->version}_clw.sql.bz2";
-		mkpath($sgff_dir,1,0775);
+		mkpath("$sgff_dir/wormpep",1,0775);
 		$wormbase->run_command("cp -R $chromdir/wormpep_clw.sql.bz2 $target", $log);
 
 		# change group ownership
