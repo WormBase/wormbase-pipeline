@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl -w
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2009-04-28 10:51:26 $
+# Last edited on: $Date: 2009-04-28 14:03:15 $
 
 use strict;
 use lib  $ENV{'CVS_DIR'};
@@ -64,14 +64,14 @@ __DATA__
 init Genomic_canonical elegans briggsae remanei pristionchus japonica brenneri
 init Link elegans briggsae remanei pristionchus japonica brenneri
 init Pseudogene elegans briggsae remanei pristionchus japonica brenneri
-init Transposon elegans pristionchus japonica brenneri
-init Transposon_CDS elegans pristionchus japonica brenneri
+init Transposon elegans pristionchus japonica brenneri briggsae remanei
+init Transposon_CDS elegans pristionchus japonica brenneri briggsae remanei
 init curated  elegans briggsae remanei pristionchus japonica brenneri
 init history elegans briggsae pristionchus japonica brenneri
 init miRNA elegans
 init tRNAscan-SE-1.23 elegans
-init tRNAscan-SE-1.3 briggsae pristionchus japonica brenneri
-init Non_coding_transcript elegans
+init tRNAscan-SE-1.3 briggsae pristionchus japonica brenneri remanei
+init Non_coding_transcript elegans briggsae pristionchus japonica brenneri remanei
 init SAGE_tag elegans
 init snRNA elegans
 init rRNA elegans
@@ -102,15 +102,15 @@ blat BLAT_ncRNA_BEST elegans
 blat BLAT_ncRNA_OTHER elegans
 blat BLAT_WASHU elegans briggsae remanei pristionchus japonica brenneri
 blat BLAT_NEMBASE elegans briggsae remanei pristionchus japonica brenneri
-blat SL1 elegans
-blat SL2 elegans
-blat polyA_signal_sequence elegans
-blat polyA_site elegans
+blat SL1 elegans briggsae remanei pristionchus japonica brenneri
+blat SL2 elegans briggsae remanei pristionchus japonica brenneri
+blat polyA_signal_sequence elegans briggsae remanei pristionchus japonica brenneri
+blat polyA_site elegans briggsae remanei pristionchus japonica brenneri
 homol waba_coding elegans
 homol waba_strong elegans
 homol waba_weak elegans
-homol tandem elegans
-homol RepeatMasker elegans
+homol tandem elegans briggsae remanei pristionchus japonica brenneri
+homol RepeatMasker elegans briggsae remanei pristionchus japonica brenneri
 homol wublastx elegans briggsae remanei pristionchus japonica brenneri
 homol inverted elegans briggsae remanei pristionchus japonica brenneri
 __END__
