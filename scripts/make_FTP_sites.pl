@@ -8,7 +8,7 @@
 # Originally written by Dan Lawson
 #
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2009-04-28 16:23:44 $
+# Last updated on: $Date: 2009-04-29 09:08:58 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -437,8 +437,8 @@ sub copy_clustal{
 	my $chromdir = $wormbase->autoace;
 	if (-e "$chromdir/wormpep_clw.sql.bz2") {
 		my $sgff_dir = "$targetdir/$WS_name/";
-		my $target = "$sgff_dir/wormpep/wormpep${\$wormbase->version}_clw.sql.bz2";
-		mkpath("$sgff_dir/wormpep",1,0775);
+		my $target = "$sgff_dir/COMPARATIVE_ANALYSIS/wormpep${\$wormbase->version}_clw.sql.bz2";
+		mkpath("$sgff_dir/COMPARATIVE_ANALYSIS",1,0775);
 		$wormbase->run_command("cp -R $chromdir/wormpep_clw.sql.bz2 $target", $log);
 
 		# change group ownership
@@ -520,10 +520,11 @@ sub copy_misc_files{
   $wormbase->run_command("cp $ace_dir/*oligo_mapping.gz $annotation_dir/", $log);
 
   # copy the compara tarball
-  $wormbase->run_command("cp $base_dir/autoace/compara.tar.bz2 $targetdir/$WS_name/",$log);
+  $wormbase->run_command("cp $base_dir/autoace/compara.tar.bz2 $targetdir/$WS_name/COMPARATIVE_ANALYSIS/",$log);
 
   # change group ownership
   $wormbase->run_command("chgrp -R  worm $targetdir/$WS_name", $log);  
+  $wormbase->run_command("chgrp -R  worm $targetdir/$WS_name/COMPARATIVE_ANALYSIS", $log);  
 
   $runtime = $wormbase->runtime;
   $log->write_to("$runtime: Finished copying\n\n");
