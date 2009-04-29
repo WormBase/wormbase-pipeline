@@ -5,7 +5,7 @@
 # A script to make multiple copies of camace for curation, and merge them back again
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2009-02-27 09:47:10 $
+# Last edited on: $Date: 2009-04-29 10:58:04 $
 #
 # Persisting errors.
 #running csh -c "reformat_acediff file 1 file2"
@@ -410,7 +410,7 @@ sub load_curation_data {
     $log->write_to ("The BUIlD has finished...using currentDB/acefiles\n");
   }
   
-  push (@files,"$wormpub/CURATION_DATA/anomalies_elegans.ace",
+  push (@files,"$wormpub/CURATION_DATA/anomalies_elegans.ace.WS${WS_version}",
 	"$wormpub/CURATION_DATA/Tiling_array_data/tiling_array.ace",
 	"$wormpub/CURATION_DATA/assign_orientation.WS${WS_version}.ace",
 	"$wormpub/BUILD_DATA/MISC_DYNAMIC/misc_TEC_RED_homol.ace",
