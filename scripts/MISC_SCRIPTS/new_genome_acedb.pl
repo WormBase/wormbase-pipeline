@@ -37,8 +37,8 @@ sub initialise {
 	$wormbase->run_command("mkdir $dbpath", $log) unless -e $dbpath;
 	$wormbase->run_command("mkdir $dbpath/database", $log) unless -e "$dbpath/database";
 	$wormbase->run_command("mkdir $dbpath/acefiles", $log) unless -e "$dbpath/acefiles";	
-	$wormbase->run_command("cd $dbpath".';cvs -d :pserver:cvsuser@cvsro.sanger.ac.uk:/cvsroot/ensembl checkout -d wspec wormbase/wspec', $log);
-	$wormbase->run_command("cd $dbpath".';cvs -d :pserver:cvsuser@cvsro.sanger.ac.uk:/cvsroot/ensembl checkout -d autoace_config wormbase/autoace_config', $log);
+	$wormbase->run_command("cd $dbpath".';cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl checkout -d wspec wormbase/wspec', $log);
+	$wormbase->run_command("cd $dbpath".';cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl checkout -d autoace_config wormbase/autoace_config', $log);
 	&DbWrite('y',$wormbase->tace,$dbpath,"ReInitDB $species");
 	
 	#copy the genefinder table file

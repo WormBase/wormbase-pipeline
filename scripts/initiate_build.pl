@@ -2,8 +2,8 @@
 #
 # initiate_build.pl
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2009-02-03 10:20:01 $
+# Last edited by: $Author: tjrc $
+# Last edited on: $Date: 2009-04-30 10:55:12 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -79,9 +79,9 @@ $log->log_and_die( "version to build not specified\n") unless $wormbase->version
 #################################################################################
 
 ## update CVS wspec, wquery and autoace_config from CVS
-$wormbase->run_command("cd ".$wormbase->autoace.'; cvs -d :pserver:cvsuser@cvsro.sanger.ac.uk:/cvsroot/ensembl checkout -d wspec wormbase/wspec', $log);
-$wormbase->run_command("cd ".$wormbase->autoace.'; cvs -d :pserver:cvsuser@cvsro.sanger.ac.uk:/cvsroot/ensembl checkout -d wquery wormbase/wquery', $log);
-$wormbase->run_command("cd ".$wormbase->basedir.'; cvs -d :pserver:cvsuser@cvsro.sanger.ac.uk:/cvsroot/ensembl checkout -d autoace_config wormbase/autoace_config', $log);
+$wormbase->run_command("cd ".$wormbase->autoace.'; cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl checkout -d wspec wormbase/wspec', $log);
+$wormbase->run_command("cd ".$wormbase->autoace.'; cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl checkout -d wquery wormbase/wquery', $log);
+$wormbase->run_command("cd ".$wormbase->basedir.'; cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl checkout -d autoace_config wormbase/autoace_config', $log);
 
 ## make new build_in_process flag ( not done yet in rebuild )
 
