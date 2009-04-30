@@ -1,7 +1,7 @@
 #!/usr/local/ensembl/bin/perl -w
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2008-06-04 13:45:23 $
+# Last edited on: $Date: 2009-04-30 15:17:41 $
 
 use lib $ENV{'CVS_DIR'};
 
@@ -17,7 +17,7 @@ use Net::FTP;
 use Time::localtime;
 
 my ($test, $debug, $database);
-my ($fly, $yeast, $human, $uniprot, $interpro, $all);
+my ($fly, $yeast, $human, $uniprot, $interpro, $cleanup, $all);
 my $store;
 my ($species, $qspecies, $nematode);
 
@@ -32,6 +32,7 @@ GetOptions (
 	    'human'	  => \$human,
 	    'uniprot'	  => \$uniprot,
 	    'interpro'    => \$interpro,
+	    'cleanup'     => \$cleanup,
 	    'all'         => \$all
 	    );
 
@@ -51,7 +52,7 @@ my $log = Log_files->make_build_log($wormbase);
 my $blastdir    = '/lustre/work1/ensembl/wormpipe/BlastDB';
 my $acedir      = '/lustre/work1/ensembl/wormpipe/ace_files';
 
-$human=$fly=$yeast=$uniprot=$interpro=1 if $all;
+$human=$fly=$yeast=$uniprot=$interpro=$cleanup=1 if $all;
 
 if( $human ) { &process_human; } 
 if ($interpro) { $wormbase->run_script("BLAST_scripts/make_interpro.pl",$log); }
@@ -230,10 +231,80 @@ if ($fly) {
     }
     
     $wormbase->run_command("rm -f $fly_download", $log);
+  }
+
+
+#
+# And finally, clean up all the old database files
+#
+# If you have updated any of the blast databases ie not Interpro, which
+# are elsewhere, in the steps above you must ensure that you remove the
+# old versions from /lustre/work1/ensembl/wormpipe/BlastDB/. E.g. if
+# gadfly3.2 is a new database, then you should end up with gadfly3.2.pep
+# and remove gadfly3.1.pep.
+#
+# This will ensure that only the latest databases get copied across
+# the ensembl compute farm. Also remove the old blast database index
+# files for any old database (*.ahd, *.atb, *bsq, *.xpt, *.xps, *.xpd,
+# *.psq, *.pin, *.phr).
+#
+if ($cleanup) {
+
+  $log->write_to("  Removing old blast databases . . .\n");
+  
+  my $blast_dir = "/lustre/work1/ensembl/wormpipe/BlastDB/";
+
+  # root name regular expressions of the databases to check
+  my @roots = (
+	       'brepep\d+.pep',
+	       'brigpep\d+.pep',
+               'gadfly\d+.pep',
+               'ipi_human_\d+_\d+.pep',
+               'jappep\d+.pep',
+               'ppapep\d+.pep',
+	       'remapep\d+.pep',
+	       'slimswissprot\d+.pep',
+	       'slimtrembl\d+.pep',
+	       'wormpep\d+_slim.pep',
+	       'wormpep\d+.pep',
+	       'yeast\d+.pep',
+	      );
+
+  # get the list of files in the BLAST directory
+  opendir FH, $blast_dir;
+  my @list = readdir(FH);
+  closedir FH;
+
+  foreach my $regex (@roots) {
+    my @files = grep /$regex/, @list;
+    if (scalar @files > 1) {
+      # sort by creation time
+      my @sort = sort {-M "$blast_dir/$a" <=> -M "$blast_dir/$b"} @files;
+      my $youngest = shift @sort; # get the youngest file's release number
+      my ($youngest_release) = ($youngest =~ /^[a-zA-Z_]+(\d+)/);
+      #print "DONT DELETE release $youngest_release\n";
+      #print "dont delete $youngest\n";
+      foreach my $file (@sort) {
+	if ($file =~ /^[a-zA-Z_]+${youngest_release}/) {
+	  #print "dont delete $file\n";
+	  next;
+	}
+	$log->write_to("    Deleting $file*\n");
+	$wormbase->run_command("rm -f $blast_dir/${file}*", $log);
+	#print "rm -f $blast_dir/${file}*\n";
+      }
+    }
+  }
 }
+
+
 
 $log->mail;
 exit(0);
+
+
+##########################################################################################
+
 
 sub process_human {
     use File::Listing qw(parse_dir);
