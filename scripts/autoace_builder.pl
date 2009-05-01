@@ -6,8 +6,8 @@
 #
 # Usage : autoace_builder.pl [-options]
 #
-# Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2009-03-13 12:01:05 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2009-05-01 10:31:52 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -203,7 +203,6 @@ exit(0);
 ############################
 
 sub first_dumps {
-    $wormbase->run_script( "chromosome_dump.pl --dna --composition", $log );
 
 	if ($wormbase->species eq 'elegans'){
 	    my $version = $wormbase->get_wormbase_version;
