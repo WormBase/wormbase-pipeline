@@ -4,8 +4,8 @@
 // "Read Models" or "Add Update File" from the main menu.
 
 // ALL WormBase groups should be in sync with this set of models
-// Last edited by: $Author: ar2 $
-// Last edited on: $Date: 2009-04-07 14:50:29 $
+// Last edited by: $Author: pad $
+// Last edited on: $Date: 2009-05-01 13:34:16 $
 
 
 ////////////////////////
@@ -1272,14 +1272,14 @@
 ?Transposon Evidence #Evidence
 	    SMap S_parent UNIQUE Sequence UNIQUE ?Sequence XREF Transposon
 	    Structure	  S_child CDS_child ?CDS XREF Transposon UNIQUE Int UNIQUE Int #SMap_info // Transposon_CDSs will now link to parent Transposons ar2 02-DEC-05   
-		          Pseudogene_child ?Pseudogene XREF Transposon UNIQUE Int UNIQUE Int #SMap_info
-			  LTR_region Int UNIQUE Int
+				  Pseudogene_child ?Pseudogene XREF Transposon UNIQUE Int UNIQUE Int #SMap_info
+				  LTR_region Int UNIQUE Int
 	    Origin Species UNIQUE ?Species
 	           From_laboratory UNIQUE ?Laboratory
                    Member_of ?Transposon_family XREF Family_members
 		   Old_Name ?Text #Evidence        //to store old Transposon name
 		   Copy_status UNIQUE Full #Evidence    //track if the transposon is essentially complete or a fragment.
-				      Partial #Evidence 
+				      Partial #Evidence
 	    Visible Remark ?Text #Evidence
             Associated_feature ?Feature XREF Associated_with_transposon #Evidence
             Method UNIQUE ?Method
