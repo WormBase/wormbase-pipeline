@@ -7,8 +7,8 @@
 
 # 031023 dl1
 
-# Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2009-02-27 11:48:32 $
+# Last edited by: $Author: pad $
+# Last edited on: $Date: 2009-05-01 13:16:49 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -122,6 +122,9 @@ if($wormbase->species eq 'elegans') {
 # which database?
 if (-e $wormbase->orgdb."/database/block1.wrm") {
 $database = $wormbase->orgdb unless $database;
+}
+elsif ($species eq "elegans"){
+$database = $wormbase->database('camace');
 }
 else {
 $database = $wormbase->database($species);
