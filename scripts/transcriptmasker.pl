@@ -7,8 +7,8 @@
 
 # 031023 dl1
 
-# Last edited by: $Author: pad $
-# Last edited on: $Date: 2009-05-01 13:16:49 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2009-05-01 15:03:14 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -217,6 +217,10 @@ sub MaskSequence {
 	  	my ($cut_to,$cut_from,$cut_length);
 	  	$start = $coords->[0]; # start coord
 	  	$stop  = $coords->[1]; # stop coord
+		if ($stop > $seqlength) {
+		  $log->write_to("$id: $feature feature is past end of sequence\n"); 
+		  $stop = $seqlength; # correct the end position of the feature
+		}
 	  	$cut_to     = $start - 1; # manipulations for clipping 
 	  	$cut_from   = $stop;
 	  	$cut_length = $stop - $start + 1;
