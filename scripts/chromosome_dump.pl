@@ -9,7 +9,7 @@
 # see pod for more details
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2008-10-10 09:38:54 $
+# Last updated on: $Date: 2009-05-01 11:01:53 $
 
 
 use strict;
@@ -87,7 +87,7 @@ $dump_dir = $wormbase->chromosomes unless ($dump_dir);
 my $log = Log_files->make_build_log($wormbase);
 
 &dump_dna    if ($dna);
-&composition if ($composition);
+&composition if ($composition );
 &zip_files   if ($zipdna || $zipgff);
 
 # say goodnight Barry
@@ -214,7 +214,7 @@ sub composition {
   my $final_total = $total - $gaps;
 
   $wormbase->run_command("echo $total $final_total > totals",$log);
-  $wormbase->release_composition($log);
+  $wormbase->release_composition($log) if ($wormbase->species eq 'elegans');
 }
 
 ##########################################
