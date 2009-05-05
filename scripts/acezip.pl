@@ -7,7 +7,7 @@
 # Usage : acezip.pl [-options]
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2009-05-05 15:14:40 $
+# Last edited on: $Date: 2009-05-05 15:20:31 $
 use lib $ENV{'CVS_DIR'};
 
 use strict;
@@ -30,7 +30,10 @@ GetOptions (
 	    ;
 
 my $wormbase;
-my $outfile = "/tmp/acezip$$.new";
+# use the time and the process ID to make a unique file extension
+my $time = time();
+
+my $outfile = "/tmp/acezip$$.$time.new";
 
 if( $store ) {
   $wormbase = retrieve( $store ) or croak("cant restore wormbase from $store\n");
@@ -42,9 +45,6 @@ else {
 }
 
 my $log = Log_files->make_build_log($wormbase);
-
-# use the time and the process ID to make a unique file extension
-my $time = time();
 
 # Change input separator to paragraph mode, but store old mode in $oldlinesep
 my $oldlinesep = $/;
