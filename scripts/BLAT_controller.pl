@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl5.8.0 -w
 #
-# Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2009-02-27 11:10:38 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2009-05-05 16:23:54 $
 
 
 use lib $ENV{'CVS_DIR'};
@@ -206,7 +206,9 @@ if ( $process or $virtual ) {
       $log->write_to("Submitting $species $type for virtual procesing\n");
 
       my $cmd1 = $wormbase->build_cmd("blat2ace.pl -virtual -type $type -qspecies $species");
-      $lsf1->submit($cmd1) if $virtual;
+      # ask for a file size limit of 2 Gb and a memory limit of 4 Gb
+      my @bsub_options = (-F => "2000000", -M => "4000000", -R => "\"select[mem>4000] rusage[mem=4000]\"");
+      $lsf1->submit(@bsub_options, $cmd1) if $virtual;
     	
     }
   }
@@ -225,7 +227,8 @@ if ( $process or $virtual ) {
       $log->write_to("Submitting $species $type for intron processing\n");
     	
       my $cmd2 = $wormbase->build_cmd("blat2ace.pl -type $type -qspecies $species -intron");
-      $lsf2->submit($cmd2) if $process;
+      my @bsub_options = (-F => "2000000", -M => "4000000", -R => "\"select[mem>4000] rusage[mem=4000]\"");
+      $lsf2->submit(@bsub_options, $cmd2) if $process;
 
     }
   }
