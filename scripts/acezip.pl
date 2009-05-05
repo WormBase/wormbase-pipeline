@@ -7,7 +7,7 @@
 # Usage : acezip.pl [-options]
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2009-02-11 10:36:55 $
+# Last edited on: $Date: 2009-05-05 15:14:40 $
 use lib $ENV{'CVS_DIR'};
 
 use strict;
@@ -43,12 +43,15 @@ else {
 
 my $log = Log_files->make_build_log($wormbase);
 
+# use the time and the process ID to make a unique file extension
+my $time = time();
+
 # Change input separator to paragraph mode, but store old mode in $oldlinesep
 my $oldlinesep = $/;
 $/ = "";
 
 open (FILE, "<$file") or $log->log_and_die("cant open $file : $!\n");
-open (FILE2, ">$file$$.presort") or $log->log_and_die("cant open $file$$.presort : $!\n");
+open (FILE2, ">$file$$.$time.presort") or $log->log_and_die("cant open $file$$.$time.presort : $!\n");
 while (my $record = <FILE>) {
   $record =~ s/\t/ /g;
   $record =~ s/\n/\t/g;
@@ -59,12 +62,16 @@ close FILE;
 # reset input line separator
 $/= $oldlinesep;
 
-# sort the file
-$wormbase->run_command("sort -S 4G $file$$.presort -o $file$$.sort", $log);
+# sort the file - sometimes the sorted file doesn't appear - this is very odd - try a few times to make it
+my $tries = 5;
+while ($tries-- && ! -e "$file$$.$time.sort") {
+  $wormbase->run_command("sort -S 4G $file$$.$time.presort -o $file$$.$time.sort", $log);
+  system('sleep 5'); # wait a few seconds for NFS to realise that there really is a file there
+}
 
 # print output
 
-open( ACE, "<$file$$.sort") or $log->log_and_die("cant read from $file$$.sort : $!\n");
+open( ACE, "<$file$$.$time.sort") or $log->log_and_die("cant read from $file$$.$time.sort : $!\n");
 open( ACE2, ">$outfile") or $log->log_and_die("cant write to $outfile : $!\n");
 my $prev="";
 while (my $line = <ACE>) {
@@ -80,7 +87,7 @@ close ACE;
 #replace original, retaining if bk option set
 $wormbase->run_command("mv $file $file.bk", $log) if ($bk);
 $file=~s/_uncompressed// if $build;
-$wormbase->run_command("rm -f $file $file$$.sort $file$$.presort", $log);
+$wormbase->run_command("rm -f $file $file$$.$time.sort $file$$.$time.presort", $log);
 $wormbase->run_command("mv -f $outfile $file", $log);
 
 $log->mail;
