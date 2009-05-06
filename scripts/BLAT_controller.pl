@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl5.8.0 -w
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2009-05-06 11:14:15 $
+# Last edited on: $Date: 2009-05-06 11:16:39 $
 
 
 use lib $ENV{'CVS_DIR'};
@@ -256,7 +256,7 @@ if( $load ) {
     foreach my $type (@{$mol_types{$species}}){
       $log->write_to("\tloading BLAT data - $type\n"); 
       # virtual objs
-      my $file =  "$blat_dir/virtual_objects.",$wormbase->species,".blat.$type.$species.ace";
+      my $file =  "$blat_dir/virtual_objects." . $wormbase->species . ".blat.$type.$species.ace";
       # skip the virtual_objects ace files that are not created
       if ($wormbase->species eq $species || -e $file) {
 	$wormbase->load_to_database( $database, $file,"virtual_objects_$type", $log);
