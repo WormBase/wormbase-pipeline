@@ -7,7 +7,7 @@
 # Exporter to map blat data to genome and to find the best match for each EST, mRNA, OST, etc.
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2009-04-03 10:15:16 $
+# Last edited on: $Date: 2009-05-06 11:13:22 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -568,8 +568,8 @@ sub make_virt_objs {
   my ($name,$length,$total,$first,$second,$m,$n);
   
   # autoace
-  open (OUT_autoace_homol, ">>$blat_dir/virtual_objects.".$wormbase->species.".blat.$data.ace") or die "$!";
-  open (OUT_autoace_feat,  ">>$blat_dir/virtual_objects.".$wormbase->species.".ci.$data.ace")   or die "$!";
+  open (OUT_autoace_homol, ">$blat_dir/virtual_objects.".$wormbase->species.".blat.$data.$qspecies.ace") or die "$!";
+  open (OUT_autoace_feat,  ">$blat_dir/virtual_objects.".$wormbase->species.".ci.$data.$qspecies.ace")   or die "$!";
   
   foreach my $name (keys %make_virt_obj) {
 	$length = $make_virt_obj{$name};
