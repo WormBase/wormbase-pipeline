@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl5.8.0 -w
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2009-05-05 16:23:54 $
+# Last edited on: $Date: 2009-05-06 11:14:15 $
 
 
 use lib $ENV{'CVS_DIR'};
@@ -256,7 +256,7 @@ if( $load ) {
     foreach my $type (@{$mol_types{$species}}){
       $log->write_to("\tloading BLAT data - $type\n"); 
       # virtual objs
-      my $file =  "$blat_dir/virtual_objects.$species.blat.$type.ace";
+      my $file =  "$blat_dir/virtual_objects.",$wormbase->species,".blat.$type.$species.ace";
       # skip the virtual_objects ace files that are not created
       if ($wormbase->species eq $species || -e $file) {
 	$wormbase->load_to_database( $database, $file,"virtual_objects_$type", $log);
@@ -266,7 +266,7 @@ if( $load ) {
 
       # Don't need to add confirmed introns from nematode data (because there are none!)
       unless ( ($type eq "nematode") || ($type eq "washu") || ($type eq "nembase") || ($type eq "tc1") || ($type eq "embl")|| ($type eq "ncrna") ) {
-	$file = "$blat_dir/virtual_objects.".$wormbase->species.".ci.$type.ace"; 
+	$file = "$blat_dir/virtual_objects.".$wormbase->species.".ci.$type.$species.ace"; 
 	$wormbase->load_to_database($database, $file, "blat_confirmed_introns_$type", $log);
 
 	$file = "$blat_dir/".$wormbase->species.".good_introns.$type.ace";
