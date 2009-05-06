@@ -6,8 +6,8 @@
 #
 # Reads protein ids and gets SwissProt IDs
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2008-11-12 12:35:36 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2009-05-06 13:16:20 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -68,33 +68,32 @@ $mail = $mail ? $mail : $wormbase->wormpub."/protein_ID.mail";
 open (MAIL,"<$mail") or $log->log_and_die("cant read $mail\n");
 my $skip = 0; # skip through until past subject;
 while(<MAIL>){
-	if( $skip ==0) {
-		$skip = 1 if (/^Subject: C/);
+    if( $skip ==0) {
+	$skip = 1 if (/^X-Scanned:/);
+    }
+    else {
+	#U10401  105     AAA19054        4       1408728171      T20B12.1        P41842  T20B12.1
+	my @data = split;
+	my($cloneacc, $pid, $version, $cds, $uniprot) = ($data[0],$data[2],$data[3],$data[-1],$data[6]);
+	next unless (defined $pid);
+	print unless ($cloneacc and $pid and $version and $cds and $uniprot);
+	next unless $accession2clone{$cloneacc};#mail includes some mRNAs
+	    
+	    print ACE "\nCDS : \"$cds\"\n";
+	print ACE "Protein_id ".$accession2clone{$cloneacc}." $pid $version\n";
+	if($cds2wormpep{$cds}) {
+	    print ACE "\nProtein : \"WP:".$cds2wormpep{$cds}."\"\n";
+	    print ACE "Database UniProt UniProtAcc $uniprot\n" if $uniprot;
+	    print ACE "Database UniProt UniProtID ".$uac2uid{$uniprot}."\n" if ($uac2uid{$uniprot});
+	    
+	    print ACE "\nCDS : \"$cds\"\n";
+	    print ACE "Database UniProt UniProtAcc $uniprot\n" if $uniprot;
+	    print ACE "Database UniProt UniProtID ".$uac2uid{$uniprot}."\n" if ($uac2uid{$uniprot});
 	}
 	else {
-	  next if (/^X-Scanned:/);
-		#U10401  105     AAA19054        4       1408728171      T20B12.1        P41842  T20B12.1
-		my @data = split;
-		my($cloneacc, $pid, $version, $cds, $uniprot) = ($data[0],$data[2],$data[3],$data[-1],$data[6]);
-		next unless (defined $pid);
-		print unless ($cloneacc and $pid and $version and $cds and $uniprot);
-		next unless $accession2clone{$cloneacc};#mail includes some mRNAs
-		
-		print ACE "\nCDS : \"$cds\"\n";
-		print ACE "Protein_id ".$accession2clone{$cloneacc}." $pid $version\n";
-		if($cds2wormpep{$cds}) {
-			print ACE "\nProtein : \"WP:".$cds2wormpep{$cds}."\"\n";
-			print ACE "Database UniProt UniProtAcc $uniprot\n" if $uniprot;
-			print ACE "Database UniProt UniProtID ".$uac2uid{$uniprot}."\n" if ($uac2uid{$uniprot});
-			
-			print ACE "\nCDS : \"$cds\"\n";
-			print ACE "Database UniProt UniProtAcc $uniprot\n" if $uniprot;
-			print ACE "Database UniProt UniProtID ".$uac2uid{$uniprot}."\n" if ($uac2uid{$uniprot});
-		}
-		else {
-			$log->write_to("no ".$wormbase->pepdir_prefix."pep for $cds\n");
-		}
-	}	
+	    $log->write_to("no ".$wormbase->pepdir_prefix."pep for $cds\n");
+	}
+    }	
 }
 
 close MAIL or $log->error("didn't close mail properly\n");
