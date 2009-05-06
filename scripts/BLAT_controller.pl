@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl5.8.0 -w
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2009-05-06 11:16:39 $
+# Last edited on: $Date: 2009-05-06 16:05:55 $
 
 
 use lib $ENV{'CVS_DIR'};
@@ -269,8 +269,11 @@ if( $load ) {
 	$file = "$blat_dir/virtual_objects.".$wormbase->species.".ci.$type.$species.ace"; 
 	$wormbase->load_to_database($database, $file, "blat_confirmed_introns_$type", $log);
 
-	$file = "$blat_dir/".$wormbase->species.".good_introns.$type.ace";
-	$wormbase->load_to_database($database, $file, "blat_good_introns_$type", $log);
+	# only load in the good_intron files that have been created in confirm_introns()
+        if ($species eq $wormbase->species) {
+	  $file = "$blat_dir/".$wormbase->species.".good_introns.$type.ace";
+	  $wormbase->load_to_database($database, $file, "blat_good_introns_$type", $log);
+	}
       }
 
       # BLAT results
