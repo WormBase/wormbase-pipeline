@@ -5,8 +5,8 @@
 # by Kerstin Jekosch
 #
 # Version: $Version: $
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2009-02-10 14:18:47 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2009-05-07 15:20:35 $
 
 use strict;
 use warnings;
@@ -405,7 +405,7 @@ sub getGO_term_info {
     my $tm_query = $wb->table_maker_query($dbdir,'/tmp/inheritGO.def');
     while(<$tm_query>) {
 	s/\"//g;  #remove "
-	next if (/acedb/ or /\/\//);
+	next if (/acedb/ or /\/\// or /^\s*$/);
 	my ($rnai, $phen, $go) = split("\t",$_);
 	push(@{$rnai_go{$rnai}->{$phen}},$go);
     }	
