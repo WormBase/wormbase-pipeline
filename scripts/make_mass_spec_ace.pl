@@ -8,7 +8,7 @@
 # in ace
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2009-02-12 11:56:37 $      
+# Last updated on: $Date: 2009-05-08 08:57:03 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -672,7 +672,7 @@ sub process_cds {
 	    }
 	    
 	  } elsif (exists $experiment{$experiment_id}{'posttranslation_modification_type'}) {
-	    print "*** Posttranslation_modification_type specified, but no Posttranslation_modification_database found\nShould add in output for the postranslational data to be a Feature in the Protein? A bit like this maybe?:\n";
+	    #print "*** Posttranslation_modification_type specified, but no Posttranslation_modification_database found\nShould add in output for the postranslational data to be a Feature in the Protein? A bit like this maybe?:\n";
 	    my $pt_type = $experiment{$experiment_id}{'posttranslation_modification_type'};
 	    my @pt_positions = &pos_underscore($ms_peptide);
 	    foreach my $pt_pos (@pt_positions) {
