@@ -6,8 +6,8 @@
 #
 # Builds a wormpep data set from the current autoace database
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2008-12-01 14:01:35 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2009-05-08 11:24:08 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -475,10 +475,10 @@ sub count_isoforms{
     /^([A-Z0-9_]+)\.(.*)$/i;
     my $cds_prefix = $1;
     my $cds_suffix = $2;
-    if ($cds_suffix =~ /^[1-9][0-9]{0,2}$/) {
+    if ($cds_suffix =~ /^[1-9][0-9]{0,4}$/) {
       $no_isoform_count++;
     }
-    elsif ($cds_suffix =~ /(^[1-9][0-9]{0,2})([a-z])/) {
+    elsif ($cds_suffix =~ /(^[1-9][0-9]{0,4})([a-z])/) {
       my $number = $1;
       my $letter = $2;
       my $new_name = $cds_prefix."_".$number;
