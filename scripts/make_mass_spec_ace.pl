@@ -8,7 +8,7 @@
 # in ace
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2009-05-08 08:57:03 $      
+# Last updated on: $Date: 2009-05-08 09:39:20 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -783,6 +783,12 @@ sub get_previous_wormpep_ids {
 
   my @wormpep_ids;
   my @versions;
+
+  if (!defined $CDS_name) {$log->log_and_die("\nNot defined CDS_name\n")}
+  if (!exists $history->{$CDS_name}) {
+    $log->write_to("\nIn get_previous_wormpep_ids(): history->{$CDS_name} does not exist\n");
+    return \@wormpep_ids, \@versions;
+  }
 
   my @cds_history = @{$history->{$CDS_name}};
   foreach my $version (@cds_history) {
