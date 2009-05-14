@@ -29,6 +29,7 @@ my $twinscan;
 my $anomaly;
 my $lab;
 my $species;
+my $display_by_clones;
 
 GetOptions (
             "debug=s"    => \$debug,
@@ -46,6 +47,7 @@ GetOptions (
 	    "twinscan"     => \$twinscan,
 	    "anomaly"      => \$anomaly,
 	    "lab=s"        => \$lab, # RW or HX
+	    "display_by_clones"       => \$display_by_clones,
 	    "species:s"    => \$species,
 	    "help|h"       => sub { system("perldoc $0"); exit(0);}
 	   );
@@ -833,11 +835,20 @@ sub populate_anomaly_window_list {
   # SUM(thing_score) sum up rows within distinct window and distinct
   # sense and sort the output by descending SUM(thing_score)
 
+  my $query;
+  if ($display_by_clones) { # St. Louis people like to have the anomalies from a clone lumped together
+
+    $query = qq{ SELECT a.window, SUM(a.thing_score * w.weight), a.sense, a.clone FROM anomaly AS a INNER JOIN $view AS w ON a.type = w.type     WHERE a.chromosome = "$chromosome" AND a.centre = "$lab" AND a.active = 1 GROUP BY clone, sense ORDER BY 2 DESC; };
+
+
+  } else { # normal display by 10Kb window
+
 # there is no difference in speed between these two variants of this command:
 #
-#  my $query = qq{ SELECT a.window, SUM(a.thing_score), a.sense, a.clone FROM anomaly AS a INNER JOIN $view AS w ON a.type = w.type    WHERE a.chromosome = "$chromosome" AND a.centre = "$lab" AND a.active = 1 AND w.weight = 1 GROUP BY window, sense ORDER BY 2 DESC; };
+#  $query = qq{ SELECT a.window, SUM(a.thing_score), a.sense, a.clone FROM anomaly AS a INNER JOIN $view AS w ON a.type = w.type    WHERE a.chromosome = "$chromosome" AND a.centre = "$lab" AND a.active = 1 AND w.weight = 1 GROUP BY window, sense ORDER BY 2 DESC; };
 #
-  my $query = qq{ SELECT a.window, SUM(a.thing_score * w.weight), a.sense, a.clone FROM anomaly AS a INNER JOIN $view AS w ON a.type = w.type     WHERE a.chromosome = "$chromosome" AND a.centre = "$lab" AND a.active = 1 GROUP BY window, sense ORDER BY 2 DESC; };
+    $query = qq{ SELECT a.window, SUM(a.thing_score * w.weight), a.sense, a.clone FROM anomaly AS a INNER JOIN $view AS w ON a.type = w.type     WHERE a.chromosome = "$chromosome" AND a.centre = "$lab" AND a.active = 1 GROUP BY window, sense ORDER BY 2 DESC; };
+  }
 
   print "\n";
   print "chromosome=$chromosome\n";
@@ -859,8 +870,12 @@ sub populate_anomaly_window_list {
   my $over_quarter = 0;
   my $under_quarter = 0;
   foreach my $result_row (@$results) {
-    # clone, sense, score, window
-    $$anomaly_list_ref->insert('end', $chromosome . " " . $result_row->[3] . " Sense: " . $result_row->[2] . " Score: " . $result_row->[1] . " ID: " . $result_row->[0] );
+    if ($display_by_clones) { # St. Louis people like to have the anomalies from a clone lumped together
+      $$anomaly_list_ref->insert('end', $chromosome . " " . $result_row->[3] . " Sense: " . $result_row->[2] . " Score: " . $result_row->[1] );      
+    } else { # normal display by 10Kb window
+      # clone, sense, score, window
+      $$anomaly_list_ref->insert('end', $chromosome . " " . $result_row->[3] . " Sense: " . $result_row->[2] . " Score: " . $result_row->[1] . " ID: " . $result_row->[0] );
+    }
 
     # count the numbers in various score bins
     if ($result_row->[1] > 10) {
@@ -1026,7 +1041,25 @@ sub goto_anomaly_window {
     &confirm_message("AMBIGUOUS SELECTION", "You have selected both the clone $clone and a line from the list");
     return;
 
-  } elsif (defined $clone && $clone ne "") {
+  } elsif (defined $clone && $clone ne "" ) {
+
+    # display the whole clone
+    &goto_location($clone, 1, 200000, '+', 0);
+
+    # get and display the individual anomalies found in this clone
+    # pull out all anomalies in this clone except those marked as active = 0 and those with zero-weighted anomaly types
+    $query = qq{ SELECT a.type, a.clone, a.clone_start, a.clone_end, a.chromosome_start, a.chromosome_end, a.sense, a.thing_id, a.thing_score, a.explanation, a.anomaly_id FROM anomaly AS a INNER JOIN $view AS w ON a.type = w.type   WHERE a.clone = "$clone" AND a.active = 1 AND w.weight = 1 ORDER BY chromosome_start; };
+
+
+  } elsif ($display_by_clones && defined $selection) {  # St. Louis people like to have the anomalies from a clone lumped together
+
+
+    #print "get current selection\n";
+    my $selected_value = $$anomaly_window_list->get( $selection );
+    my @selected = split(/\s+/, $selected_value);
+
+    # use the selected clone
+    my $clone = $selected[1];
 
     # display the whole clone
     &goto_location($clone, 1, 200000, '+', 0);
