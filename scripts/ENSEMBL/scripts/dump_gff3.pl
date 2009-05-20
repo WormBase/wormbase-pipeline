@@ -160,7 +160,7 @@ while( my $slice = shift @$slices) {
 	my $features = $slice->get_all_ProteinAlignFeatures();
         my %blastx_features;
 
-	print STDERR "dumping ${\scalar @$features} Features\n";
+	print STDERR "dumping ${\scalar @$features} Protein Align Features\n";
 	foreach my $feature(@$features){
 		my $stripped_feature = {
 			hit_id      => $feature->hseqname,
@@ -186,6 +186,29 @@ while( my $slice = shift @$slices) {
 		  map {print $outf dump_feature($_)} @filtered_features;
 	  }
 
+        # get all dna align features on the slice
+	
+	$features=$slice->get_all_DnaAlignFeatures();
+	print STDERR "dumping ${\scalar @$features} DNA Align Features\n";
+        foreach my $feature(@$features){
+                 my $stripped_feature = {
+			hit_id      => $feature->hseqname,
+			target_id   => $feature->slice->seq_region_name,
+			target_start=> $feature->hstart,
+			target_stop => $feature->hend,
+			strand      => ($feature->strand > 0?'+':'-'),
+			hit_start   => $feature->seq_region_start,
+			hit_stop    => $feature->seq_region_end,
+			score       => $feature->score,
+			p_value     => $feature->p_value,
+			dbid        => $feature->dbID,
+			logic_name  => $feature->analysis->logic_name,
+			cigar       => ($feature->strand > 0 ? $feature->cigar_string : reverse_cigar($feature->cigar_string)),
+			feature_type=> 'nucleotide_match',
+		};
+                print $outf dump_feature($stripped_feature);
+	}
+	
 
 	# get all repeat features on the slice
         my $repeats = $slice->get_all_RepeatFeatures;
