@@ -9,7 +9,7 @@
 # transcripts to find the most probable orientation.
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2009-02-26 15:44:52 $      
+# Last updated on: $Date: 2009-05-21 12:44:45 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -97,6 +97,7 @@ my $pwm = PWM->new;
 # loop through the chromosomes
 foreach my $chromosome ($wormbase->get_chromosome_names(-mito => 1, -prefix => 1)) {
 
+
 # get the Overlap object
 my $ovlp = Overlap->new($database, $wormbase);
 
@@ -150,8 +151,10 @@ my $ovlp = Overlap->new($database, $wormbase);
   # get ESTs with no orientation (or get all ESTs if $all or a GFF file is specified)
   my @no53_est;
   foreach my $est (@est) {
+
     print "$est->[0] ignored\n" if ($verbose && exists $ignore{$est->[0]});
     if (exists $ignore{$est->[0]}) {next;} # withdrawn, rRNA or chimaeric
+
     print "$est->[0] no Database tag\n" if ($verbose && exists $not_db{$est->[0]});
     if (exists $not_db{$est->[0]}) {next;} # estorientation hash file will not have this sequence's orientation even if it is set
     print "$est->[0] already in reverse orientation\n" if ($verbose && exists $Show_in_reverse_orientation{$est->[0]});
@@ -253,61 +256,71 @@ my $ovlp = Overlap->new($database, $wormbase);
       print "Have ", scalar @cds_matches, " overlaps to cds\n" if ($verbose);
       my $prop_same = 0;		# proportion matching gene on same sense
       my $prop_other = 0;		# proportion matching gene on other sense
-      my @senses = $cds_obj->matching_sense;
-      for (my $i=0; $i < @senses; $i++) {
-	my ($p1,$p2) = $cds_obj->matching_proportions($cds_matches[$i]);
-	if ($senses[$i] == 1) {
-	  if ($prop_same < $p1) {$prop_same = $p1;}
-	} else {
-	  if ($prop_other < $p1) {$prop_other = $p1;}
+      if (@cds_matches) {
+	my @senses = $cds_obj->matching_sense;
+	for (my $i=0; $i < @senses; $i++) {
+	  my ($p1,$p2) = $cds_obj->matching_proportions($cds_matches[$i]);
+	  if ($senses[$i] == 1) {
+	    if ($prop_same < $p1) {$prop_same = $p1;}
+	  } else {
+	    if ($prop_other < $p1) {$prop_other = $p1;}
+	  }
 	}
       }
 
       my @pseud_matches = $pseud_obj->match($est);
       print "Have ", scalar @pseud_matches, " overlaps to pseudogenes\n" if ($verbose);
-      @senses = $pseud_obj->matching_sense;
-      for (my $i=0; $i < @senses; $i++) {
-	my ($p1,$p2) = $pseud_obj->matching_proportions($pseud_matches[$i]);
-	if ($senses[$i] == 1) {
-	  if ($prop_same < $p1) {$prop_same = $p1;}
-	} else {
-	  if ($prop_other < $p1) {$prop_other = $p1;}
+      if (@pseud_matches) {
+	my @senses = $pseud_obj->matching_sense;
+	for (my $i=0; $i < @senses; $i++) {
+	  my ($p1,$p2) = $pseud_obj->matching_proportions($pseud_matches[$i]);
+	  if ($senses[$i] == 1) {
+	    if ($prop_same < $p1) {$prop_same = $p1;}
+	  } else {
+	    if ($prop_other < $p1) {$prop_other = $p1;}
+	  }
 	}
       }
 
       my @rrna_matches = $rrna_obj->match($est);
       print "Have ", scalar @rrna_matches, " overlaps to rRNAs\n" if ($verbose);
-      @senses = $rrna_obj->matching_sense;
-      for (my $i=0; $i < @senses; $i++) {
-	my ($p1,$p2) = $rrna_obj->matching_proportions($rrna_matches[$i]);
-	if ($senses[$i] == 1) {
-	  if ($prop_same < $p1) {$prop_same = $p1;}
-	} else {
-	  if ($prop_other < $p1) {$prop_other = $p1;}
+      if (@rrna_matches) {
+	my @senses = $rrna_obj->matching_sense;
+	for (my $i=0; $i < @senses; $i++) {
+	  my ($p1,$p2) = $rrna_obj->matching_proportions($rrna_matches[$i]);
+	  if ($senses[$i] == 1) {
+	    if ($prop_same < $p1) {$prop_same = $p1;}
+	  } else {
+	    if ($prop_other < $p1) {$prop_other = $p1;}
+	  }
 	}
       }
 
       my @ncrna_matches = $ncrna_obj->match($est);
       print "Have ", scalar @ncrna_matches, " overlaps to ncRNAs\n" if ($verbose);
-      @senses = $ncrna_obj->matching_sense;
-      for (my $i=0; $i < @senses; $i++) {
-	my ($p1,$p2) = $ncrna_obj->matching_proportions($rrna_matches[$i]);
-	if ($senses[$i] == 1) {
-	  if ($prop_same < $p1) {$prop_same = $p1;}
-	} else {
-	  if ($prop_other < $p1) {$prop_other = $p1;}
+      if (@ncrna_matches) {
+	my @senses = $ncrna_obj->matching_sense;
+	for (my $i=0; $i < @senses; $i++) {
+	  my ($p1,$p2) = $ncrna_obj->matching_proportions($ncrna_matches[$i]);
+	  if ($senses[$i] == 1) {
+	    if ($prop_same < $p1) {$prop_same = $p1;}
+	  } else {
+	    if ($prop_other < $p1) {$prop_other = $p1;}
+	  }
 	}
       }
 
       my @jigsaw_matches = $jigsaw_obj->match($est);
       print "Have ", scalar @jigsaw_matches, " overlaps to jigsaw\n" if ($verbose);
-      @senses = $jigsaw_obj->matching_sense;
-      for (my $i=0; $i < @senses; $i++) {
-	my ($p1,$p2) = $jigsaw_obj->matching_proportions($jigsaw_matches[$i]);
-	if ($senses[$i] == 1) {
-	  if ($prop_same < $p1) {$prop_same = $p1;}
-	} else {
-	  if ($prop_other < $p1) {$prop_other = $p1;}
+      if (@jigsaw_matches) {
+	my @senses = $jigsaw_obj->matching_sense;
+	for (my $i=0; $i < @senses; $i++) {
+	  my ($p1,$p2) = $jigsaw_obj->matching_proportions($jigsaw_matches[$i]);
+	  if ($senses[$i] == 1) {
+	    if ($prop_same < $p1) {$prop_same = $p1;}
+	  } else {
+	    if ($prop_other < $p1) {$prop_other = $p1;}
+	  }
 	}
       }
 
@@ -318,13 +331,15 @@ my $ovlp = Overlap->new($database, $wormbase);
       my @trans_matches = $trans_obj->match($est);
       print "Have ", scalar @trans_matches, " overlaps to Coding transcript exons\n" if ($verbose);
       if ($prop_same == 0 && $prop_other == 0) {
-	@senses = $trans_obj->matching_sense;
-	for (my $i=0; $i < @senses; $i++) {
-	  my ($p1,$p2) = $trans_obj->matching_proportions($trans_matches[$i]);
-	  if ($senses[$i] == 1) {
-	    if ($trans_prop_same < $p1) {$trans_prop_same = $p1;}
-	  } else {
-	    if ($trans_prop_other < $p1) {$trans_prop_other = $p1;}
+	if (@trans_matches) {
+	  my @senses = $trans_obj->matching_sense;
+	  for (my $i=0; $i < @senses; $i++) {
+	    my ($p1,$p2) = $trans_obj->matching_proportions($trans_matches[$i]);
+	    if ($senses[$i] == 1) {
+	      if ($trans_prop_same < $p1) {$trans_prop_same = $p1;}
+	    } else {
+	      if ($trans_prop_other < $p1) {$trans_prop_other = $p1;}
+	    }
 	  }
 	}
       }
