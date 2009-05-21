@@ -9,7 +9,7 @@
 # dumps the method through sace / tace and concatenates them.
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2009-05-21 13:57:08 $
+# Last edited on: $Date: 2009-05-21 14:39:12 $
 
 
 use lib $ENV{CVS_DIR};
@@ -221,13 +221,13 @@ if ($via_server) { # contig sequences are contenated
       if($wormbase->species eq 'elegans') {
       
 	my %sizes = (
-		     'CHROMOSOME_I'       => 150000000,
-		     'CHROMOSOME_II'      => 150000000,
-		     'CHROMOSOME_III'     => 150000000,
-		     'CHROMOSOME_IV'      => 180000000,
-		     'CHROMOSOME_V'       => 190000000,
-		     'CHROMOSOME_X'       => 120000000,
-		     'CHROMOSOME_MtDNA'   =>   1500000,
+		     'CHROMOSOME_I'       => 230000000,
+		     'CHROMOSOME_II'      => 250000000,
+		     'CHROMOSOME_III'     => 230000000,
+		     'CHROMOSOME_IV'      => 290000000,
+		     'CHROMOSOME_V'       => 330000000,
+		     'CHROMOSOME_X'       => 220000000,
+		     'CHROMOSOME_MtDNA'   =>   2000000,
 		    );
 	$wormbase->check_file($file, $log,
 			      minsize => $sizes{$sequence},
