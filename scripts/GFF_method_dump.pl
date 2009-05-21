@@ -9,7 +9,7 @@
 # dumps the method through sace / tace and concatenates them.
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2009-01-29 12:27:39 $
+# Last edited on: $Date: 2009-05-21 13:57:08 $
 
 
 use lib $ENV{CVS_DIR};
@@ -175,94 +175,101 @@ $log->write_to("dumped $count sequences\n");
 ##################
 # Check the files
 ##################
-foreach my $sequence ( @sequences ) {
+if ($via_server) { # contig sequences are contenated
   if ( @methods ) {
     foreach my $method ( @methods ) {
-      
-      my $method_name = $method;
-      if ($method eq 'SNP') {$method_name = 'Allele'} # The SNP method has its GFF Source named allele
-      
-      $wormbase->check_file("$dump_dir/${sequence}_${method}.gff", $log,
+
+      my $file = "$dump_dir/${method}.gff";
+      $wormbase->check_file($file, $log,
 			    lines => ['^##', 
-				      "^${sequence}\\s+(Link|GenePair_STS|Genomic_canonical|${method_name})\\s+\\S+\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+\\s+\\S+",
-				      "^${sequence}\\s+assembly_tag\\s+\\S+\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]",
-				      "^${sequence}\\s+\\.\\s+\\S+\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+"],
-			   );
+				      "^\\S+\\s+\\S+\\s+\\S+\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+"],
+			    gff => 1,
+			   );   
     }
+
+
   } else { 
-    # we assume that these are the full chromosome dumps (before processing and munging)
-    if($wormbase->species eq 'elegans') {
+    my $file = "$dump_dir/$species.gff";
+    $wormbase->check_file($file, $log,
+			  lines => ['^##', 
+				    "^\\S+\\s+\\S+\\s+\\S+\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+"],
+			  gff => 1,
+			 );   
+
+  }
+
+} else { # chromosome sequences are kept separate
+  if ( @methods ) {
+    foreach my $method ( @methods ) {
+
+      foreach my $sequence ( @sequences ) {
+	my $file = "$dump_dir/${sequence}_${method}.gff";
+	$wormbase->check_file($file, $log,
+			      lines => ['^##', 
+					"^${sequence}\\s+\\S+\\s+\\S+\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+"],
+			      gff => 1,
+			     );   
+	
+	
+      }
+    }
+
+  } else { 
+    foreach my $sequence ( @sequences ) {
+      my $file = "$dump_dir/$sequence.gff";
+
+      if($wormbase->species eq 'elegans') {
       
-      my %sizes = (
-		   'CHROMOSOME_I'       => 150000000,
-		   'CHROMOSOME_II'      => 150000000,
-		   'CHROMOSOME_III'     => 150000000,
-		   'CHROMOSOME_IV'      => 180000000,
-		   'CHROMOSOME_V'       => 190000000,
-		   'CHROMOSOME_X'       => 120000000,
-		   'CHROMOSOME_MtDNA'   =>   1500000,
-		  );
-      $wormbase->check_file("$dump_dir/$sequence.gff", $log,
-			    minsize => $sizes{$sequence},
-			    lines => ['^##', 
-				      "^${sequence}\\s+\\S+\\s+\\S+\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+"],
-			    gff => 1,
+	my %sizes = (
+		     'CHROMOSOME_I'       => 150000000,
+		     'CHROMOSOME_II'      => 150000000,
+		     'CHROMOSOME_III'     => 150000000,
+		     'CHROMOSOME_IV'      => 180000000,
+		     'CHROMOSOME_V'       => 190000000,
+		     'CHROMOSOME_X'       => 120000000,
+		     'CHROMOSOME_MtDNA'   =>   1500000,
+		    );
+	$wormbase->check_file($file, $log,
+			      minsize => $sizes{$sequence},
+			      lines => ['^##', 
+					"^${sequence}\\s+\\S+\\s+\\S+\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+"],
+			      gff => 1,
 			   );   
-    } elsif ($wormbase->species eq 'briggsae') {
+      } elsif ($wormbase->species eq 'briggsae') {
 
-      my %sizes = (
-		   'chr_I'          => 150000000,
-		   'chr_I_random'   =>  70000000,
-		   'chr_II'         => 200000000,
-		   'chr_II_random'  =>  25000000,
-		   'chr_III'        => 400000000,
-		   'chr_III_random' =>   7000000,
-		   'chr_IV'         => 200000000,
-		   'chr_IV_random'  =>   4000000,
-		   'chr_V'          => 250000000,
-		   'chr_V_random'   =>  35000000,
-		   'chr_X'          => 250000000,
-		   'chr_Un'         => 100000000,
-		  );
-      $wormbase->check_file("$dump_dir/$sequence.gff", $log,
-			    minsize => $sizes{$sequence},
-			    lines => ['^##', 
-				      "^${sequence}\\s+\\S+\\s+\\S+\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+"],
-			    gff => 1,
-			   );   
-    } elsif ($wormbase->species eq 'remanei') {
+	my %sizes = (
+		     'chr_I'          => 150000000,
+		     'chr_I_random'   =>  70000000,
+		     'chr_II'         => 200000000,
+		     'chr_II_random'  =>  25000000,
+		     'chr_III'        => 400000000,
+		     'chr_III_random' =>   7000000,
+		     'chr_IV'         => 200000000,
+		     'chr_IV_random'  =>   4000000,
+		     'chr_V'          => 250000000,
+		     'chr_V_random'   =>  35000000,
+		     'chr_X'          => 250000000,
+		     'chr_Un'         => 100000000,
+		    );
+	$wormbase->check_file($file, $log,
+			      minsize => $sizes{$sequence},
+			      lines => ['^##', 
+					"^${sequence}\\s+\\S+\\s+\\S+\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+"],
+			      gff => 1,
+			     );   
+      } else {
+	$wormbase->check_file($file, $log,
+			      lines => ['^##', 
+					"^${sequence}\\s+\\S+\\s+\\S+\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+"],
+			      gff => 1,
+			     );   
+	
+      }
 
-      $wormbase->check_file("$dump_dir/$sequence.gff", $log,
-			    lines => ['^##', 
-				      "^${sequence}\\s+\\S+\\s+\\S+\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+"],
-			    gff => 1,
-			   );   
-    } elsif ($wormbase->species eq 'brenneri') {
-
-      $wormbase->check_file("$dump_dir/$sequence.gff", $log,
-			    lines => ['^##', 
-				      "^${sequence}\\s+\\S+\\s+\\S+\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+"],
-			    gff => 1,
-			   );   
-    } elsif ($wormbase->species eq 'japonica') {
-
-      $wormbase->check_file("$dump_dir/$sequence.gff", $log,
-			    lines => ['^##', 
-				      "^${sequence}\\s+\\S+\\s+\\S+\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+"],
-			    gff => 1,
-			   );   
-    } elsif ($wormbase->species eq 'pristionchus') {
-
-      $wormbase->check_file("$dump_dir/$sequence.gff", $log,
-			    lines => ['^##', 
-				      "^${sequence}\\s+\\S+\\s+\\S+\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+"],
-			    gff => 1,
-			   );   
-    } else {
-      $log->write_to("WARNING: check_file() is not being run for $wormbase->species\n");
     }
   }
 }
+
 
 
 # remove write test
