@@ -1157,19 +1157,62 @@ EOF
     my $last_but_one_active=0;
     # get the number of objects in the pparse of this file in the previous Build
     if (open (PPARSE_ACE, "< $pparse_file")) {
+      my $got_last = 0;
+      my $got_last_but_one = 0;
       while (my $line = <PPARSE_ACE>) {
 	my ($pa_version, $pa_file, $pa_species, $pa_parsed, $pa_active) = split /\s+/, $line;
-	if ($pa_version == $prev_version && $pa_file eq $basename && $species eq $pa_species) {
+	if ($pa_version == $prev_version && $pa_file eq $file && $species eq $pa_species) {
 	  # store to get the last one in the previous build
 	  $last_parsed = $pa_parsed;
 	  $last_active = $pa_active;
+	  $got_last = 1;
 	} 
-	if ($pa_version == $prev_prev_version && $pa_file eq $basename && $species eq $pa_species) {
-	  # store to get the last one in the previous build
+	if ($pa_version == $prev_prev_version && $pa_file eq $file && $species eq $pa_species) {
+	  # store to get the last one in the last but one previous build
 	  $last_but_one_parsed = $pa_parsed;
 	  $last_but_one_active = $pa_active;
+	  $got_last_but_one = 1;
 	} 
       }
+
+      # Originally we only stored the basename, then we changed to
+      # storing the full pathname because there was confusion with
+      # files like the acefiles and the merge_all_databases files
+      # having the same basename but different contents.
+      #
+      # Here we look for the basename during the period of transition
+      # which will be at least three Builds, so the $pparse_file will
+      # contain both the old entries with $basename in and newer entries
+      # with $file in.
+      #
+      # Eventualy the following bit looking for matches to $basenaem
+      # will not be required.
+
+      if (!$got_last || !$got_last_but_one) {
+	seek PPARSE_ACE, 0, 0;
+	while (my $line = <PPARSE_ACE>) {
+	  if (!$got_last) {
+	    my ($pa_version, $pa_file, $pa_species, $pa_parsed, $pa_active) = split /\s+/, $line;
+	    if ($pa_version == $prev_version && $pa_file eq $basename && $species eq $pa_species) {
+	      # store to get the last one in the previous build
+	      $last_parsed = $pa_parsed;
+	      $last_active = $pa_active;
+	    } 
+	  }
+	
+	  if (!$got_last_but_one) {
+	    my ($pa_version, $pa_file, $pa_species, $pa_parsed, $pa_active) = split /\s+/, $line;
+	  
+	    if ($pa_version == $prev_prev_version && $pa_file eq $basename && $species eq $pa_species) {
+	      # store to get the last one in the last but one previous build
+	      $last_but_one_parsed = $pa_parsed;
+	      $last_but_one_active = $pa_active;
+	    }
+	  } 
+	}
+      }
+    
+
       close (PPARSE_ACE);
     }
 
@@ -1190,9 +1233,9 @@ EOF
     # now store the details for this pparse
     if (open (PPARSE_ACE, ">> $pparse_file")) {
       if ($version && $basename && $species) {
-	print PPARSE_ACE "$version $basename $species $parsed $active\n";
+	print PPARSE_ACE "$version $file $species $parsed $active\n";
       } else {
-	$log->write_to("*** POSSIBLE ERROR: Couldn't write to $pparse_file because some of the following is blank\nversion=$version, file=$basename, species=$species, parsed=$parsed, active=$active\n\n");
+	$log->write_to("*** POSSIBLE ERROR: Couldn't write to $pparse_file because some of the following is blank\nversion=$version, file=$file, species=$species, parsed=$parsed, active=$active\n\n");
 	$log->error;
       }
       close (PPARSE_ACE);
