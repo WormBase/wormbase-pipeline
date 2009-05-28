@@ -7,8 +7,8 @@
 # A script to finish the last part of the weekly build by updating all of the
 # relevant WormBase and Wormpep web pages.
 #
-# Last updated by: $Author: mh6 $     
-# Last updated on: $Date: 2009-03-30 09:23:16 $      
+# Last updated by: $Author: gw3 $     
+# Last updated on: $Date: 2009-05-28 13:12:41 $      
 
 
 #################################################################################
@@ -197,9 +197,9 @@ if ($all || $overlap) {
 if ($all || $EST_files) {
   $wb->check_file("$www/$WS_name/Checks/EST_analysis.html", $log,
 		  minsize => 800,);
-  $wb->check_file("$www/$WS_name/Checks/EST_no_accession.shtml", $log);
-  $wb->check_file("$www/$WS_name/Checks/EST_unassigned.shtml", $log);
-  $wb->check_file("$www/$WS_name/Checks/EST_mismatched.shtml", $log);
+#  $wb->check_file("$www/$WS_name/Checks/EST_no_accession.shtml", $log);
+#  $wb->check_file("$www/$WS_name/Checks/EST_unassigned.shtml", $log);
+#  $wb->check_file("$www/$WS_name/Checks/EST_mismatched.shtml", $log);
 }
 if ($all || $copyGFF) {
   foreach my $gff_file (glob("$dbpath/CHECKS/*.gff")) {
@@ -725,9 +725,10 @@ sub copy_EST_files {
   $log->write_to("--------------\n");
 
 
-  my %files = ("EST_no_accession" => "No Accession number", 
-               "EST_unassigned" => "Unassigned reads",
-               "EST_mismatched" => "mismatched CDS assignments");
+  my %files = (#"EST_no_accession" => "No Accession number", 
+               #"EST_unassigned" => "Unassigned reads",
+               #"EST_mismatched" => "mismatched CDS assignments"
+	      );
 
   my @line_counts;
   
