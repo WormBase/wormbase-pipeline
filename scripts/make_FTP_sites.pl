@@ -7,8 +7,8 @@
 # 
 # Originally written by Dan Lawson
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2009-04-29 09:14:56 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2009-05-28 11:47:06 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -520,6 +520,7 @@ sub copy_misc_files{
   $wormbase->run_command("cp $ace_dir/*oligo_mapping.gz $annotation_dir/", $log);
 
   # copy the compara tarball
+  mkpath("$targetdir/$WS_name/COMPARATIVE_ANALYSIS",1,0775);
   $wormbase->run_command("cp $base_dir/autoace/compara.tar.bz2 $targetdir/$WS_name/COMPARATIVE_ANALYSIS/",$log);
 
   # change group ownership
