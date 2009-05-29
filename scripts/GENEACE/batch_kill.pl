@@ -7,17 +7,16 @@ use NameDB_handler;
 use Getopt::Long;
 use Log_files;
 use Ace;
-
+use Wormbase;
 =pod
 
-=head batch_addname.pl
+=head batch_kill.pl
 
 =item Options:
 
-  -user      username
-  -password  password
-  -file	     file containing genes to kill
-    FORMAT: 
+  -file	     file containing genes to kill <Mandatory>
+
+    FORMAT:
     WBGene00001234
     Remark "Removed"
     WBPerson1983
@@ -26,42 +25,62 @@ use Ace;
     Remark "Killed"
     WBPerson1849 
 
- The blank line between entries is ESSENTIAL
+    The blank line between entries is ESSENTIAL
 
+  -debug     limits to specified user <Optional>
+  -species   can be used to specify non elegans genes
+  -load      loads the resulting .ace file into geneace.
   -test      use the test nameserver
+  -ns        Kill's the gene in the nameserver as well as producing the .ace 
+             file for geneace
+  -user      username                 <Manditory if using -ns>
+  -password  password                 <Manditory if using -ns>
 
-e.g. perl batch_kill.pl -u fred -p secret -file deathrow.txt -test
+e.g. perl batch_kill.pl -file deathrow.txt [simple example]
+
+     perl batch_kill.pl -u fred -p secret -file deathrow.txt -ns -test -debug mt3
 
 =cut
 
-my ($USER,$PASS, $test, $file, $species, $ns);
+my ($USER,$PASS, $test, $file, $ns, $debug, $load);
 GetOptions(
 	   'user:s'     => \$USER,
 	   'password:s' => \$PASS,
 	   'test'       => \$test,
 	   'file:s'     => \$file,
-	   'ns'         => \$ns
+	   'ns'         => \$ns,
+	   'debug:s'    => \$debug,
+	   'load'       => \$load,
 	  ) or die;
 
-$species = 'elegans' unless $species;
-
+my $species = 'elegans';
 my $log = Log_files->make_log("NAMEDB:$file", $USER);
 my $DB;
+my $db;
 my $ecount;
 if ($test) {
     $DB = 'test_wbgene_id;mcs2a;3305';
   } else {
     $DB = 'wbgene_id;mcs2a;3305';
 }
-
-$log->write_to("killing genes in $file\n\n");
+my $wormbase = Wormbase->new("-organism" =>$species);
+my $database = "/nfs/disk100/wormpub/DATABASES/geneace";
+$log->write_to("Working.........\n-----------------------------------\n\n\n1) killing genes in file [${file}]\n\n");
 $log->write_to("TEST mode is ON!\n\n") if $test;
 
-my $db = NameDB_handler->new($DB,$USER,$PASS,'/nfs/WWWdev/SANGER_docs/htdocs');
-my $ace = Ace->connect('-path', '/nfs/disk100/wormpub/DATABASES/geneace') or $log->log_and_die("cant open geneace: $!\n");
-
+if ($ns) {
+$db = NameDB_handler->new($DB,$USER,$PASS,'/nfs/WWWdev/SANGER_docs/htdocs');
 $db->setDomain('Gene');
-my $output = "/nfs/disk100/wormpub/DATABASES/geneace/NAMEDB_Files/batch_kill.ace";
+}
+my $ace = Ace->connect('-path', $database) or $log->log_and_die("cant open $database: $!\n");
+
+my $output = $database."/NAMEDB_Files/batch_kill.ace";
+
+##############################
+# warn/notify on use of -load.
+##############################
+if (!defined$load) {$log->write_to("2) You have decided not to automatically load the output of this script\n\n");}
+elsif (defined$load) { $log->write_to("2) Output has beed scheduled for auto-loading.\n\n");}
 
 #open file and read
 open (FILE,"<$file") or $log->log_and_die("can't open $file : $!\n");
@@ -75,21 +94,20 @@ while(<FILE>){
     }
     else { #gather info
 	if   (/^(WBGene\d{8})/) { $gene = $1; } 
-	elsif(/^(WBPerson\d+)/) { $person = $1; } 
+	elsif(/^(WBPerson\d+)/) { $person = $1; }
 	elsif(/^Remark\s+\"(.*)\"/){$remark = $1}
 	else { $log->error("malformed line : $_\n") }
     }
 }
 &kill_gene; # remember the last one!
-
-$log->write_to("=======================\nkilled $count genes\n");
+&load_data if ($load);
+$log->write_to("5) Check $output file and load into geneace.\n") unless ($load);
 $log->mail;
 
 
 sub kill_gene {
     if($gene and $person and $remark) {
 	$count++;
-	#geneace kill
 	my $geneObj = $ace->fetch('Gene', $gene);
 	if($gene) {
 	    my $ver = $geneObj->Version->name;
@@ -111,4 +129,15 @@ elsif (!defined($gene && $person && $remark)) {
 	$log->error("missing info on $gene : $person : $remark\n");
     }
     undef $gene; undef $person ;undef $remark;
+$log->write_to("3) $count genes in file to be killed\n\n");
+$log->write_to("4) $count genes killed\n\n");
+}
+
+sub load_data {
+# load information to $database if -load is specified
+$wormbase->load_to_database("$database", "$output", 'batch_kill.pl');
+$log->write_to("5) Loaded $output into $database\n\n");
+$wormbase->run_command("rm $output\n");
+$log->write_to("6) Output file has been cleaned away like a good little fellow\n\n");
+print "Finished!!!!\n";
 }
