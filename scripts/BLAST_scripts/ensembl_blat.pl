@@ -4,7 +4,7 @@
 #   setting up the BLAT pipeline
 #
 # Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2009-05-29 10:25:42 $
+# Last edited on: $Date: 2009-05-29 10:32:36 $
 
 use constant USAGE => <<HERE;
 ensembl_blat.pl options:
@@ -34,11 +34,11 @@ use strict;
 
 my($debug,$store,$database,$user,$password,$species);
 GetOptions(
- 'debug'  => \$debug,
- 'store=s' => \$store,
- 'user=s' => \$user,
+ 'debug=s'    => \$debug,
+ 'store=s'    => \$store,
+ 'user=s'     => \$user,
  'password=s' => \$password,
- 'species=s' => \$species,
+ 'species=s'  => \$species,
 )||die(USAGE);
 
 # WormBase setup
