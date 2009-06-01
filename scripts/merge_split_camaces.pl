@@ -5,7 +5,7 @@
 # A script to make multiple copies of camace for curation, and merge them back again
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2009-04-29 10:58:04 $
+# Last edited on: $Date: 2009-06-01 11:53:01 $
 #
 # Persisting errors.
 #running csh -c "reformat_acediff file 1 file2"
@@ -156,26 +156,28 @@ if ($update) {
 
 if ($split) {
   $log->write_to ("Removing old split databases and Copying $canonical database to the split camaces\n");
-  &split_databases unless ($nosplit);
+#1  &split_databases unless ($nosplit);
   
   # Remove data we don't want in the build that may have got into the canonical erroneously.
   $log->write_to ("Removing any curation data that may have erroneously been loaded into the canonical db.\n");
   print "Removing any curation data that may have erroneously been loaded into the canonical db.\n" if ($debug);
-  &remove_data("camace",);
+#1  &remove_data("camace",);
   
   # Load DB_remarks into camace as these are required for EMBL dumping
   $log->write_to ("loading DB_remarks into camace\n");
   print "loading DB_remarks into camace\n" if ($debug);
-  &load_curation_data("camace"); #this loads just the DB_remarks into camace for EMBL dumping.
-  
+#1  &load_curation_data("camace"); #this loads just the DB_remarks into camace for EMBL dumping.
+
+#this introduced bogus CDSs into camace.
+  &remove_data("camace","1");
 
   ## Check Canonical Database for errors one last time. ##
   $log->write_to ("\nChecking camace for the final time.\n-----------------------------------\n");
   print "\nChecking camace for the final time.\n" if ($debug);
-  $wormbase->run_script("NAMEDB/camace_nameDB_comm.pl", $log) && die "Failed to run camace_nameDB_comm.pl\n";
+#1  $wormbase->run_script("NAMEDB/camace_nameDB_comm.pl", $log) && die "Failed to run camace_nameDB_comm.pl\n";
   $log->write_to ("camace_nameDB_comm.pl Finished, check the build log email for errors.\n\n");
   print "camace_nameDB_comm.pl Finished, check the build log email for errors.\n\n" if ($debug);
-  $wormbase->run_script("camcheck.pl -database ". $wormbase->database('camace'), $log) && die "Failed to run camcheck.pl\n";
+#1  $wormbase->run_script("camcheck.pl -database ". $wormbase->database('camace'), $log) && die "Failed to run camcheck.pl\n";
   $log->write_to ("camcheck.pl Finished, check the build log email for errors.\n");
   print "camcheck.pl Finished, check the build log email for errors.\n" if ($debug);
 
@@ -439,7 +441,7 @@ sub load_curation_data {
   push (@files,"$acefiles/misc_DB_remark.ace",
         "$wormpub/CURATION_DATA/assign_orientation.WS${WS_version}.ace",
        ) if ($sub_database eq "camace");
-  
+
   foreach $file (@files) {
     $log->write_to ("Looking for $file......................\n");
     if (-e $file) {
@@ -450,6 +452,7 @@ sub load_curation_data {
       $log->write_to ("!!WARNING!! File: $file does not exist\n\n");
     }
   }
+  
 
   # REMOVE BOGUS GENE PREDICTIONS that don't have a method from any database called.
   $log->write_to ("Removing remove bogus gene models from $database_path\n");
@@ -472,11 +475,13 @@ sub load_curation_data {
   }
 }
 
+
 #############################
 #(3c) remove curation data. #
 #############################
 sub remove_data {
   my $sub_database = shift;
+  my $option = shift;
   my $database_path;
   if ($sub_database eq "camace") {
     $database_path = $wormbase->database('camace');
@@ -487,117 +492,127 @@ sub remove_data {
   $log->write_to ("Removing curation data from $database_path\n");
   $ENV{'ACEDB'} = $database_path;
   my $command;
-  #remove DB_remarks
-  $command  = "query find CDS\n";
-  $command  .= "Edit -D DB_remark\n";
-  #remove jigsaw/genefinder/twinscan predictions.....basically all CDSs that aren't curated, history or Transposon_CDSs
-  $log->write_to ("Warning: If CDSs are expected to have additional methods to curated, history and Transposon_CDS, this script needs to be modified OK!\n\n");
-  $command .= "query method != curated AND method != Transposon_CDS AND method != history\n";
-  $command .= "kill\n";
-  $command .= "y\n";
-  $command .= "clear\n";
-  #remove most of the homol data.
-  $command .= "query find Homol_data where *BLAT_*\n";
-  $command .= "kill\n";
-  $command .= "y\n";
-  $command .= "clear\n";
-  $command .= "query find Homol_data where *signal_peptide\n";
-  $command .= "kill\n";
-  $command .= "y\n";
-  $command .= "clear\n";
-  $command .= "query find Homol_data where *inverted\n";
-  $command .= "kill\n";
-  $command .= "y\n";
-  $command .= "clear\n";
-  $command .= "query find Homol_data where *TEC_RED\n";
-  $command .= "kill\n";
-  $command .= "y\n";
-  $command .= "clear\n";
-  $command .= "query find Homol_data where *waba\n";
-  $command .= "kill\n";
-  $command .= "y\n";
-  $command .= "clear\n";
-  $command .= "query find Homol_data where *curation_anomaly\n";
-  $command .= "kill\n";
-  $command .= "y\n";
-  $command .= "clear\n";
-  $command .= "query find Homol_data where *wublastx*\n";
-  $command .= "kill\n";
-  $command .= "y\n";
-  $command .= "clear\n";
-  $command .= "query find Homol_data where *tiling*\n";
-  $command .= "kill\n";
-  $command .= "y\n";
-  $command .= "clear\n";
-  $command .= "query find Homol_data where *RepeatMasker*\n";
-  $command .= "kill\n";
-  $command .= "y\n";
-  $command .= "clear\n";
-  $command .= "query find Homol_data where *Expr*\n";
-  $command .= "kill\n";
-  $command .= "y\n";
-  $command .= "clear\n";
-  $command .= "query find Homol_data where *expr_anomaly*\n";
-  $command .= "kill\n";
-  $command .= "y\n";
-  $command .= "clear\n";
-  #remove blastp data
-  $command .= "query find Protein *WP*\n";
-  $command .= "Edit -D Pep_homol\n";
-  $command .= "clear\n";
-  #remove sequence tiling data.
-  $command .= "query find Sequence *tiling*\n";
-  $command .= "kill\n";
-  $command .= "y\n";
-  $command .= "clear\n";
-  #remove anomoly motif data.
-  $command .= "query find Motif *curation_anomaly\n";
-  $command .= "kill\n";
-  $command .= "y\n";
-  $command .= "clear\n";
-  #remove Feature mappings
-  $command .= "query find Genome_sequence\n";
-  $command .= "Edit -D Feature_object\n";
-  $command .= "clear\n";
-  #remove operon mappings
-  $command .= "query find Sequence CHROM*\n";
-  $command .= "Edit -D Operon\n";
-  $command .= "clear\n";
-  #remove public names
-  $command .= "query find Gene\n";
-  $command .= "Edit -D Public_name\n";
-  $command .= "clear\n";
-  #remove repeat data.
-  $command .= "query find Feature_data *TRF\n";
-  $command .= "kill\n";
-  $command .= "y\n";
-  $command .= "clear\n";
-  $command .= "query find Feature_data *inverted\n";
-  $command .= "kill\n";
-  $command .= "y\n";
-  $command .= "clear\n";
-  #remove mass_spec peptide data if canonical or 
-  if (($sub_database eq "camace") or ($remove_only)) {
-    $command .= "query find Homol_data where *Mass-spec\n";
-    $command .= "kill\n";
-    $command .= "y\n";
-    $command .= "clear\n";
-    $command .= "query find Protein \"MSP:*\"\n";
-    $command .= "kill\n";
-    $command .= "y\n";
-    $command .= "clear\n";
-    $command .= "query find Protein\n";
-    $command .= "Edit -D Pep_homol \"MSP*\"\n";
-    $command .= "clear\n";
-    $command .= "query find Mass_spec_peptide MSP*\n";
-    $command .= "kill\n";
-    $command .= "y\n";
-    $command .= "clear\n";
+
+  if (defined $option) {
+    $command  = "query find CDS where !method\n";
+    $command  .= "kill\n";
+    $command  .= "y\n";
   }
+  else {
+    #remove DB_remarks
+    $command  = "query find CDS\n";
+    $command  .= "Edit -D DB_remark\n";
+    #remove jigsaw/genefinder/twinscan predictions.....basically all CDSs that aren't curated, history or Transposon_CDSs
+    $log->write_to ("Warning: If CDSs are expected to have additional methods to curated, history and Transposon_CDS, this script needs to be modified OK!\n\n");
+    $command .= "query method != curated AND method != Transposon_CDS AND method != history\n";
+    $command .= "kill\n";
+    $command .= "y\n";
+    $command .= "clear\n";
+    #remove most of the homol data.
+    $command .= "query find Homol_data where *BLAT_*\n";
+    $command .= "kill\n";
+    $command .= "y\n";
+    $command .= "clear\n";
+    $command .= "query find Homol_data where *signal_peptide\n";
+    $command .= "kill\n";
+    $command .= "y\n";
+    $command .= "clear\n";
+    $command .= "query find Homol_data where *inverted\n";
+    $command .= "kill\n";
+    $command .= "y\n";
+    $command .= "clear\n";
+    $command .= "query find Homol_data where *TEC_RED\n";
+    $command .= "kill\n";
+    $command .= "y\n";
+    $command .= "clear\n";
+    $command .= "query find Homol_data where *waba\n";
+    $command .= "kill\n";
+    $command .= "y\n";
+    $command .= "clear\n";
+    $command .= "query find Homol_data where *curation_anomaly\n";
+    $command .= "kill\n";
+    $command .= "y\n";
+    $command .= "clear\n";
+    $command .= "query find Homol_data where *wublastx*\n";
+    $command .= "kill\n";
+    $command .= "y\n";
+    $command .= "clear\n";
+    $command .= "query find Homol_data where *tiling*\n";
+    $command .= "kill\n";
+    $command .= "y\n";
+    $command .= "clear\n";
+    $command .= "query find Homol_data where *RepeatMasker*\n";
+    $command .= "kill\n";
+    $command .= "y\n";
+    $command .= "clear\n";
+    $command .= "query find Homol_data where *Expr*\n";
+    $command .= "kill\n";
+    $command .= "y\n";
+    $command .= "clear\n";
+    $command .= "query find Homol_data where *expr_anomaly*\n";
+    $command .= "kill\n";
+    $command .= "y\n";
+    $command .= "clear\n";
+    #remove blastp data
+    $command .= "query find Protein *WP*\n";
+    $command .= "Edit -D Pep_homol\n";
+    $command .= "clear\n";
+    #remove sequence tiling data.
+    $command .= "query find Sequence *tiling*\n";
+    $command .= "kill\n";
+    $command .= "y\n";
+    $command .= "clear\n";
+    #remove anomoly motif data.
+    $command .= "query find Motif *curation_anomaly\n";
+    $command .= "kill\n";
+    $command .= "y\n";
+    $command .= "clear\n";
+    #remove Feature mappings
+    $command .= "query find Genome_sequence\n";
+    $command .= "Edit -D Feature_object\n";
+    $command .= "clear\n";
+    #remove operon mappings
+    $command .= "query find Sequence CHROM*\n";
+    $command .= "Edit -D Operon\n";
+    $command .= "clear\n";
+    #remove public names
+    $command .= "query find Gene\n";
+    $command .= "Edit -D Public_name\n";
+    $command .= "clear\n";
+    #remove repeat data.
+    $command .= "query find Feature_data *TRF\n";
+    $command .= "kill\n";
+    $command .= "y\n";
+    $command .= "clear\n";
+    $command .= "query find Feature_data *inverted\n";
+    $command .= "kill\n";
+    $command .= "y\n";
+    $command .= "clear\n";
+    #remove mass_spec peptide data if canonical or 
+    if (($sub_database eq "camace") or ($remove_only)) {
+      $command .= "query find Homol_data where *Mass-spec\n";
+      $command .= "kill\n";
+      $command .= "y\n";
+      $command .= "clear\n";
+      $command .= "query find Protein \"MSP:*\"\n";
+      $command .= "kill\n";
+      $command .= "y\n";
+      $command .= "clear\n";
+      $command .= "query find Protein\n";
+      $command .= "Edit -D Pep_homol \"MSP*\"\n";
+      $command .= "clear\n";
+      $command .= "query find Mass_spec_peptide MSP*\n";
+      $command .= "kill\n";
+      $command .= "y\n";
+      $command .= "clear\n";
+    }
+  }
+
   #Save the database.
   $command .= "save\n";
   $command .= "quit\n";
   $log->write_to ("Removing curation data data.\n");
+  $log->write_to (".....bogus CDSs only\n") if (defined $option);
   open (TACE,"| $tace") or die "Failed to open database connection\n";
   print TACE $command;
   close TACE;
