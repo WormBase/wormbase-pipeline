@@ -4,7 +4,7 @@
 #   setting up the BLAT pipeline
 #
 # Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2009-05-29 10:32:36 $
+# Last edited on: $Date: 2009-06-01 10:24:58 $
 
 use constant USAGE => <<HERE;
 ensembl_blat.pl options:
@@ -13,6 +13,8 @@ ensembl_blat.pl options:
             -species SPECIES_NAME species name a.e. elegans
             -user NAME          database user name
             -password PASSWORD  database password
+	    -host DBHOSTNAME    database host
+	    -port DBPORT        database port
 HERE
 
 ###################
@@ -32,13 +34,15 @@ verbose('OFF');
 use Wormbase;
 use strict;
 
-my($debug,$store,$database,$user,$password,$species);
+my($debug,$store,$database,$port,$user,$password,$species,$host);
 GetOptions(
  'debug=s'    => \$debug,
  'store=s'    => \$store,
  'user=s'     => \$user,
  'password=s' => \$password,
  'species=s'  => \$species,
+ 'host=s'     => \$host,
+ 'port=s'     => \$port,
 )||die(USAGE);
 
 # WormBase setup
@@ -59,13 +63,15 @@ my $database = sprintf('worm_ensembl_%s',lc(ref $wormbase));
 my $log = Log_files->make_build_log($wormbase);
 $log->write_to("Updating BLAT input files for $database\n");
 
+$host||='ia64d';
+$port||=3306;
 
 # MYSQL setup
 my $db = Bio::EnsEMBL::DBSQL::DBAdaptor->new(
-        -host     => 'ia64d',
+        -host     => $host,
         -user     => $user,
         -dbname   => $database,
-        -port     => 3306,
+        -port     => $port,
         -driver   => 'mysql', 
     );
 $db->password($password);
