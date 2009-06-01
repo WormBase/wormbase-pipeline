@@ -5,7 +5,7 @@
 # A script to make multiple copies of camace for curation, and merge them back again
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2009-06-01 11:53:01 $
+# Last edited on: $Date: 2009-06-01 12:16:44 $
 #
 # Persisting errors.
 #running csh -c "reformat_acediff file 1 file2"
@@ -156,28 +156,28 @@ if ($update) {
 
 if ($split) {
   $log->write_to ("Removing old split databases and Copying $canonical database to the split camaces\n");
-#1  &split_databases unless ($nosplit);
+  &split_databases unless ($nosplit);
   
   # Remove data we don't want in the build that may have got into the canonical erroneously.
   $log->write_to ("Removing any curation data that may have erroneously been loaded into the canonical db.\n");
   print "Removing any curation data that may have erroneously been loaded into the canonical db.\n" if ($debug);
-#1  &remove_data("camace",);
+  &remove_data("camace",);
   
   # Load DB_remarks into camace as these are required for EMBL dumping
   $log->write_to ("loading DB_remarks into camace\n");
   print "loading DB_remarks into camace\n" if ($debug);
-#1  &load_curation_data("camace"); #this loads just the DB_remarks into camace for EMBL dumping.
-
-#this introduced bogus CDSs into camace.
+  &load_curation_data("camace"); #this loads just the DB_remarks into camace for EMBL dumping.
+  
+  #this introduced bogus CDSs into camace.
   &remove_data("camace","1");
-
+  
   ## Check Canonical Database for errors one last time. ##
   $log->write_to ("\nChecking camace for the final time.\n-----------------------------------\n");
   print "\nChecking camace for the final time.\n" if ($debug);
-#1  $wormbase->run_script("NAMEDB/camace_nameDB_comm.pl", $log) && die "Failed to run camace_nameDB_comm.pl\n";
+  $wormbase->run_script("NAMEDB/camace_nameDB_comm.pl", $log) && die "Failed to run camace_nameDB_comm.pl\n";
   $log->write_to ("camace_nameDB_comm.pl Finished, check the build log email for errors.\n\n");
   print "camace_nameDB_comm.pl Finished, check the build log email for errors.\n\n" if ($debug);
-#1  $wormbase->run_script("camcheck.pl -database ". $wormbase->database('camace'), $log) && die "Failed to run camcheck.pl\n";
+  $wormbase->run_script("camcheck.pl -database ". $wormbase->database('camace'), $log) && die "Failed to run camcheck.pl\n";
   $log->write_to ("camcheck.pl Finished, check the build log email for errors.\n");
   print "camcheck.pl Finished, check the build log email for errors.\n" if ($debug);
 
