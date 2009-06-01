@@ -12,8 +12,8 @@
 # 3) Archives old GFF_SPLITS directory
 # 4) Makes current_DB (copy of latest release) in ~wormpub/DATABASES
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2009-01-21 10:22:29 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2009-06-01 14:19:27 $
 
 
 use strict;
@@ -171,15 +171,12 @@ sub archive_old_releases{
   # turn the old release into a tarball, move into $archive_dir and remove old directory
   $log->write_to("\nCreating $WS_old_name.tar.gz\n");
 
-  my $tar = $wormbase->database("$WS_old_name").".tar";
-  $wormbase->run_command("tar -cvf $tar ".$wormbase->database("$WS_old_name"), $log) && 
-      $log->log_and_die("ERROR in tar -cvf $tar\n");
-  $wormbase->run_command("gzip $tar", $log) && 
-      $log->log_and_die("ERROR in gzip $tar\n");
-  $wormbase->run_command("mv $tar.gz $archive_dir", $log) && 
-      $log->log_and_die("ERROR in mv $tar.gz $archive_dir\n");
+  my $tar = "${archive_dir}/TEST.${WS_old_name}.tar.gz";
+  $wormbase->run_command("tar -cvzf $tar ".$wormbase->database("$WS_old_name"), $log) && 
+      $log->log_and_die("ERROR in tar -cvzf $tar\n");
   $wormbase->run_command("rm -rf ".$wormbase->database("$WS_old_name"), $log) && 
       $log->log_and_die("ERROR in rm -rf " . $wormbase->database("$WS_old_name") . "\n");
+
 }
 
 #################################################################################
