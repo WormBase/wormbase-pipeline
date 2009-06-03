@@ -4,8 +4,8 @@
 #
 # written by Anthony Rogers
 #
-# Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2009-06-01 15:49:55 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2009-06-03 12:45:53 $
 #
 # it depends on:
 #    wormpep + history
@@ -487,7 +487,7 @@ sub update_blast_dbs {
                 $_currentDBs{$1} = "$whole_file";
             }
             else {
-                log->write_to ("\t$1 database unchanged $whole_file\n");
+                $log->write_to ("\t$1 database unchanged $whole_file\n");
             }
         }
     }
