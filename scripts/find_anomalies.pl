@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2009-03-16 13:36:32 $      
+# Last updated on: $Date: 2009-06-04 08:42:47 $      
 
 # Changes required by Ant: 2008-02-19
 # 
@@ -3375,10 +3375,16 @@ sub get_unconfirmed_introns {
       my $chrom_start = $homology->[1];
       my $chrom_end = $homology->[2];
       my $chrom_strand = $homology->[3];
+# seem to have the strand the wrong way round somehow - fix it
+      if ($chrom_strand eq '+') {
+	$chrom_strand = '-';
+      } else {
+	$chrom_strand = '+';
+      }
       my $est_score = $homology->[6];
       my $anomaly_score = 10;
       # use a lower score if the intron is marked as Confirmed_UTR/false/inconsistent
-      if ($confirmed_ignored) {$anomaly_score = 1}
+      if ($confirmed_ignored) {$anomaly_score = 0.1} # St. Louis want this to be given a very low score if already marked as 'inconsistent/false/UTR'
       #print "NOT got an EST match ANOMALY: $est_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score\n";
       &output_to_database("UNCONFIRMED_INTRON", $chromosome, $est_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score, '');
     }
