@@ -702,7 +702,7 @@ sub change_class {
     	<form action="$ENV{'SCRIPT_NAME'}" method="GET">
 		<BR><BR>
 		Enter the details of the gene to change<br>Convert Sequence gene
-		<INPUT TYPE="text" NAME="new_name" SIZE="15" MAXLENGTH="10" VALUE="">
+		<INPUT TYPE="text" NAME="new_name" SIZE="15" MAXLENGTH="12" VALUE="">
 		<p>Change to . . <p>
 		<input type="radio" name="class" value="CDS"> CDS<br>
 		<input type="radio" name="class" value="pseudogene" checked> Pseudogene<br>
