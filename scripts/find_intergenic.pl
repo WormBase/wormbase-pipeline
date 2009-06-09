@@ -7,7 +7,7 @@
 # by Gary Williams
 #
 # Last updated by: $Author: gw3 $                      
-# Last updated on: $Date: 2008-07-17 12:31:27 $        
+# Last updated on: $Date: 2009-06-09 08:08:30 $        
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -346,7 +346,7 @@ $log->write_to("gzipping $output\n");
 $wormbase->run_command("gzip -f $output", $log);
 
 $wormbase->check_file("$output.gz", $log,
-		      minsize => 12000000,
+		      minsize => 11000000,
 );
 
 $log->write_to("Finished.");
