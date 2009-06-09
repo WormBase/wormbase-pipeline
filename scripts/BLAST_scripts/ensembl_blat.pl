@@ -4,7 +4,7 @@
 #   setting up the BLAT pipeline
 #
 # Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2009-06-01 10:24:58 $
+# Last edited on: $Date: 2009-06-09 13:26:29 $
 
 use constant USAGE => <<HERE;
 ensembl_blat.pl options:
@@ -53,7 +53,7 @@ my $wormbase;
 } else {
     $wormbase = Wormbase->new(
         -debug    => $debug,
-        -species  => $species,
+        -organism  => $species,
     );
 }
 
