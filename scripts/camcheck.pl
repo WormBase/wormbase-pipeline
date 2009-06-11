@@ -6,8 +6,8 @@
 #
 # Usage: camcheck.pl
 #
-# Last updated by: $Author: pad $
-# Last updated on: $Date: 2008-04-29 15:58:51 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2009-06-11 15:03:14 $
 #
 # see pod documentation (i.e. 'perldoc camcheck.pl') for more information.
 #
@@ -91,7 +91,7 @@ if($email){
 
 # Use debug mode?
 if($debug){
-  print "// Debug mode seleted, recipient is \"$debug\"\n\n";
+  print "// Debug mode selected, recipient is \"$debug\"\n\n";
   ($maintainers = $debug . '\@sanger.ac.uk');
 }
 
