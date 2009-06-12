@@ -54,7 +54,10 @@ GetOptions(
 	  ) or die;
 
 my $species = 'elegans';
-my $log = Log_files->make_log("NAMEDB:$file", $USER);
+my $log;
+if (defined $USER) {$log = Log_files->make_log("NAMEDB:$file", $USER);}
+elsif (defined $debug) {$log = Log_files->make_log("NAMEDB:$file", $debug);}
+else {$log = Log_files->make_log("NAMEDB:$file");}
 my $DB;
 my $db;
 my $ecount;
@@ -99,10 +102,12 @@ while(<FILE>){
 	else { $log->error("malformed line : $_\n") }
     }
 }
+$log->write_to("3) $count genes in file to be killed\n\n");
+$log->write_to("4) $count genes killed\n\n");
 &kill_gene; # remember the last one!
 &load_data if ($load);
 $log->write_to("5) Check $output file and load into geneace.\n") unless ($load);
-$log->mail;
+$log->mail();
 
 
 sub kill_gene {
@@ -129,8 +134,6 @@ elsif (!defined($gene && $person && $remark)) {
 	$log->error("missing info on $gene : $person : $remark\n");
     }
     undef $gene; undef $person ;undef $remark;
-$log->write_to("3) $count genes in file to be killed\n\n");
-$log->write_to("4) $count genes killed\n\n");
 }
 
 sub load_data {
