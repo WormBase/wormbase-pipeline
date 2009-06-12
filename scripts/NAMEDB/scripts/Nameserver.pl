@@ -354,7 +354,7 @@ Species :
 		my $db = get_db_connection();
 		my $new_id =$db->split_gene($name, $type, $gene_id, $species);
 		if ( $new_id ) {
-		  my $msg = "USER : $USER\nACTION : Split $gene_id\nNEW geneId : $new_id\nNEW CDS : $type $name\n\nperl splitgene.pl -old $gene_id -new $name -who ". $$VALID_USERS{$USER} ." -id $new_id -load -species $species\n";
+		  my $msg = "USER : $USER\nACTION : Split $gene_id\nNEW geneId : $new_id\nNEW CDS : $type $name\n\n splitgene.pl -old $gene_id -new $name -who ". $$VALID_USERS{$USER} ." -id $new_id -load -species $species\n";
 		  $msg .= "\n\n$remark" if $remark;
 		  send_mail("webserver",[$MAILS->{$USER},$MAILS->{'gnw'},$MAILS->{'ar2'},$MAILS->{'pad'},$MAILS->{'gw3'},$MAILS->{'caltech'}],"Split gene $gene_id",$msg);
 
