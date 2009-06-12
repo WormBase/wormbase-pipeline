@@ -309,7 +309,7 @@ sub merge_genes
       if ( my $ids = $db->merge_genes($gene_gene, $merge_gene) ) {
 	print "Merge complete, $merge_gene is DEAD and has been merged into gene $gene_gene <br>";
 	#notify
-	send_mail("webserver",[$MAILS->{$USER},$MAILS->{'gnw'},$MAILS->{'ar2'},$MAILS->{'pad'},$MAILS->{'gw3'},$MAILS->{'caltech'}],"Merged gene $gene_gene : $merge_gene", "GENE MERGE\nUSER : $USER - ". $$VALID_USERS{$USER} ."\nLIVE:retained geneID for $gene_gene - ".$ids->[0]."\nDEAD: killed geneID $merge_gene - ".$ids->[1]."\n");
+	send_mail("webserver",[$MAILS->{$USER},$MAILS->{'gnw'},$MAILS->{'ar2'},$MAILS->{'pad'},$MAILS->{'gw3'},$MAILS->{'caltech'}],"Merged gene $gene_gene : $merge_gene", "GENE MERGE\nUSER : $USER - WBPerson". $$VALID_USERS{$USER} ."\nLIVE:retained geneID for $gene_gene - ".$ids->[0]."\nDEAD: killed geneID $merge_gene - ".$ids->[1]."\n");
       } else {
 	print "Sorry, the gene merge failed<br>";
       }
