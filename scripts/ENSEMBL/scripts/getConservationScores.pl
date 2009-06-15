@@ -74,7 +74,7 @@ foreach my $seq_region ($wb->get_chromosome_names(-prefix => 1)){
     throw("No Slice can be created with coordinates $seq_region") if (!@_slice);
 
     print OFH 'track type=wiggle_0 name="GERP scores" description="single nucleotide ',
-              'conservation scores from GERP/PECAN of 6 Nematodes" ',
+              'conservation scores from GERP/PECAN of 7 Nematodes" ',
               'visibility=full color=255,0,0 windowingFunction=mean smoothingWindow=5',"\n",
               "variableStep chrom=$seq_region span=1\n";
 
