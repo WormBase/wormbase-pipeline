@@ -16,7 +16,7 @@ use Storable;
 use Species;
 
 our @core_organisms=qw(Elegans Briggsae Remanei Brenneri Japonica Heterorhabditis Pristionchus);
-our @tier3_organisms=qw(Brugia);
+our @tier3_organisms=qw(Brugia Mhapla);
 our @allowed_organisms=(@core_organisms, @tier3_organisms); #class data
 
 sub initialize {
@@ -1692,6 +1692,19 @@ sub tier3_species_accessors {
 	}
 	return %accessors;
 }
+
+# return Species obj for all tierII and III
+sub all_species_accessors {
+    my $self = shift;
+    my %tier2 = $self->species_accessors;
+    my %tier3 = $self->tier3_species_accessors;
+    foreach my $t3 (keys %tier3){
+	$tier2{$t3} = $tier3{$t3};
+    }
+
+    return %tier2;
+}
+
 
 sub species {my $self = shift; return $self->{'species'};}
 
