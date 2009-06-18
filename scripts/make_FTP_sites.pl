@@ -7,8 +7,8 @@
 # 
 # Originally written by Dan Lawson
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2009-05-28 11:47:06 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2009-06-18 15:06:23 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -285,8 +285,9 @@ sub copy_dna_files{
   $runtime = $wormbase->runtime;
   $log->write_to("$runtime: copying dna and agp files\n");
 
-  my %accessors = ($wormbase->species_accessors);
+  my %accessors = ($wormbase->all_species_accessors);
   $accessors{elegans} = $wormbase;
+
   foreach my $wb (values %accessors) {
     my $gspecies = $wb->full_name('-g_species'=>1);
     my $chromdir = $wb->chromosomes;
@@ -557,20 +558,35 @@ sub copy_wormpep_files {
 		&_copy_pep_files($accessors{$species})
 	}
 
+	#tierIII's just have a single file to take care of.
+	my %tierIII = $wormbase->tier3_species_accessors;
+	foreach my $t3 (keys %tierIII){ 
+	    my $wb = $tierIII{$t3};
+	    my $source =$wb->basedir . "/WORMPEP/".$wb->pepdir_prefix."pep$WS/".$wb->pepdir_prefix."pep.$WS_name";
+	    my $target = "$targetdir/$WS_name/genomes/".$wb->full_name('-g_species' => 1)."/sequences/protein";
+	    mkpath($target,1,0775);
+	    my $ftp_targ = "$target/".$wb->pepdir_prefix."pep.$WS_name.fa.gz";
+	    unless(-e $source) {
+		my $oldWS = -1 + $wormbase->get_wormbase_version;
+	       $source = "$targetdir/WS$oldWS/genomes/".$wb->full_name('-g_species' => 1)."/sequences/protein/".$wb->pepdir_prefix."pep$WS/".$wb->pepdir_prefix."pep.WS$oldWS";
+		$log->log_and_die("no peptide file for ".$wb->species."\n$source\n") unless (-e $source);
+	    }
+	    $wb->run_command("cp $source $ftp_targ", $log);
+	}
 	#need to update ftp/databases/wormpep for website links
 	if($wormbase->species eq 'elegans') {
-		$log->write_to("updating ftp/database/wormpep//\n");
-		my @wormpep_files = $wormbase->wormpep_files;
-		my $WS = $wormbase->get_wormbase_version;
-		my $source = $wormbase->basedir . "/WORMPEP/".$wormbase->pepdir_prefix."pep$WS";
-		chdir $wormpep_ftp_root;
-		foreach my $file ( @wormpep_files ){
-			my $sourcefile = "$source/$file$WS";
-			$wormbase->run_command("cp $sourcefile $wp_ftp_dir/$file$WS", $log);
-			&CheckSize("$sourcefile","$wp_ftp_dir/$file$WS");
-		}
+	    $log->write_to("updating ftp/database/wormpep//\n");
+	    my @wormpep_files = $wormbase->wormpep_files;
+	    my $WS = $wormbase->get_wormbase_version;
+	    my $source = $wormbase->basedir . "/WORMPEP/".$wormbase->pepdir_prefix."pep$WS";
+	    chdir $wormpep_ftp_root;
+	    foreach my $file ( @wormpep_files ){
+		my $sourcefile = "$source/$file$WS";
+		$wormbase->run_command("cp $sourcefile $wp_ftp_dir/$file$WS", $log);
+		&CheckSize("$sourcefile","$wp_ftp_dir/$file$WS");
+	    }
 	}
-
+	
 	
 	$runtime = $wormbase->runtime;
 	$log->write_to("$runtime: Finished copying\n\n");
