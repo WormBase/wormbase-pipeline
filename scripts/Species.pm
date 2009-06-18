@@ -413,8 +413,50 @@ sub ncbi_tax_id {'6279'};
 sub assembly_type {'contig'};
 
 
-#######################################################
 
+######################################################
+
+package Mhapla;
+use Carp;
+our @ISA = qw(Wormbase Species);
+
+sub _new {	
+    my $class = shift;
+    my %param = %{ shift(@_) };
+
+    my $self = $class->initialize( $class->flatten_params( \%param ) );
+
+    # add stuff post object creation goes here
+
+    bless $self, $class;
+}
+sub full_name {
+	my $self = shift;
+	my %param = @_ ;
+	if($param{'-short'}){
+		return 'M. hapla';
+	}	elsif($param{'-g_species'}){
+		return 'm_hapla';
+	}
+	else { return'Meloidogyne hapla'
+	};
+}
+sub chromosome_prefix {'MhA1_Contig'}
+sub pep_prefix {'MH'}
+sub pepdir_prefix{'hap'};
+sub ncbi_tax_id {'6305'};
+sub assembly_type {'contig'};
+sub chromosome_names {
+	my @contigs;
+	my $i = 0;
+	while($i < 3452){
+		push(@contigs, "$i");
+		$i++;
+	}
+	return @contigs;
+}
+
+#######################################################
 #######################################################
 
 
