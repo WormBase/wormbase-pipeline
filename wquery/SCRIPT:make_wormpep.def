@@ -65,7 +65,7 @@ Class
 Class Database_field 
 Right_of 5 
 Tag HERE            
-Condition UniProtAcc OR UniProtID
+Condition UniProtAcc
  
 Colonne 7 
 Subtitle Accession             
