@@ -455,6 +455,47 @@ sub chromosome_names {
 	}
 	return @contigs;
 }
+######################################################
+
+package Mincognita;
+use Carp;
+our @ISA = qw(Wormbase Species);
+
+sub _new {	
+    my $class = shift;
+    my %param = %{ shift(@_) };
+
+    my $self = $class->initialize( $class->flatten_params( \%param ) );
+
+    # add stuff post object creation goes here
+
+    bless $self, $class;
+}
+sub full_name {
+	my $self = shift;
+	my %param = @_ ;
+	if($param{'-short'}){
+		return 'M. incognita';
+	}	elsif($param{'-g_species'}){
+		return 'mincognita';
+	}
+	else { return'Meloidogyne incognita'
+	};
+}
+sub chromosome_prefix {'Minc_Contig'}
+sub pep_prefix {'MI'}
+sub pepdir_prefix{'inc'};
+sub ncbi_tax_id {'6306'};
+sub assembly_type {'contig'};
+sub chromosome_names {
+	my @contigs;
+	my $i = 0;
+	while($i < 9538){
+		push(@contigs, "$i");
+		$i++;
+	}
+	return @contigs;
+}
 
 #######################################################
 #######################################################
