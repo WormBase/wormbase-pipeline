@@ -5,7 +5,7 @@
 # written by Anthony Rogers
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2009-06-03 12:45:53 $
+# Last edited on: $Date: 2009-07-01 13:57:22 $
 #
 # it depends on:
 #    wormpep + history
@@ -151,8 +151,8 @@ else {
     );
 }
 
-# establish log file. Can't do this if the BUILD/autoace directory has been moved to DATABASES
-$log = Log_files->make_build_log($wormbase) unless $cleanup;
+# establish log file. Can't use make_build_log if the BUILD/autoace directory has been moved to DATABASES
+$log = Log_files->make_log("/tmp/wormBLAST.$$",$wormbase->debug);
 
 $WS_version ||= $wormbase->get_wormbase_version;
 my $WS_old = $WS_version - 1;
