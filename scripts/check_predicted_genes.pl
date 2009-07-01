@@ -4,7 +4,7 @@
 #
 # by Keith Bradnam
 #
-# Last updated on: $Date: 2008-06-26 15:38:41 $
+# Last updated on: $Date: 2009-07-01 11:46:42 $
 # Last updated by: $Author: pad $
 #
 # see pod documentation at end of file for more information about this script
@@ -65,6 +65,11 @@ our @error3;
 our @error4;
 our @error5;
 
+#Permitted exceptions
+#small genes
+#my $smallgenes = ('C40H5.1', 'H12D21.1', 'H12D21.12','H12D21.13', 'H12D21.14',  'H12D21.15','W06A7.5','Y50E8A.17', 'ZC412.6', 'ZC412.7');
+
+
 # Check for non-standard methods in CDS class
 my $CDSfilter = "";
 my @CDSfilter = $db->fetch (-query => 'FIND CDS; method != Transposon_CDS; method != curated; method !=history; method !=Genefinder; method !=twinscan; method !=jigsaw');
@@ -104,18 +109,25 @@ foreach my $gene_model ( @Predictions ) {
   my $i;
   my $j;
   
-#  if (!defined($exon_coord2[0])) {print "$gene_model\n";}
-  if ($method_test->name ne 'Transposon') {
-    if (($exon_coord2[0] < "1") && ($method_test->name eq 'curated')){
-      push(@error1, "ERROR: $gene_model has a problem with it\'s exon co-ordinates\n");
-      print "ERROR: $gene_model has a problem with it\'s exon co-ordinates\n";
-      next;
-    }
-  }
 
+#  if (!defined($method_test)) {print "$gene_model\n";}
+  
+  if ($method_test ne 'Transposon') {
+      if (!defined($exon_coord2[0])) {
+	  print "ERROR: $gene_model has a problem with it\'s exon co-ordinates\n";
+	  push(@error1, "ERROR: $gene_model has a problem with it\'s exon co-ordinates\n");
+	  next;
+      }
+      if (($exon_coord2[0] < "1") && ($method_test eq 'curated')){
+	  push(@error1, "ERROR: $gene_model has a problem with it\'s exon co-ordinates\n");
+	  print "ERROR: $gene_model has a problem with it\'s exon co-ordinates\n";
+	  next;
+      }
+  }
+  
   for ($i=1; $i<@exon_coord2;$i++) {
     my $intron_size = ($exon_coord1[$i] - $exon_coord2[$i-1] -1);
-    if (($intron_size < 34) && ($method_test->name eq 'curated')) {
+    if (($intron_size < 34) && ($method_test eq 'curated')) {
       print "ERROR: $gene_model has a small intron ($intron_size bp)\n";
       push(@error4,"ERROR: $gene_model has a very small intron ($intron_size bp)\n");
     }
@@ -194,15 +206,21 @@ foreach my $gene_model ( @Predictions ) {
   ###################################
 
   # check that 'Sequence' tag is present and if so then grab parent sequence details
-  my $source = $gene_model->Sequence;
-  if (!defined ($source)) {
-    push(@error1,"ERROR: $gene_model has no Sequence tag, cannot check DNA\n");
+  my $source;
+  if (defined($gene_model->Sequence)){
+    $source = $gene_model->Sequence->name;
+  }
+  elsif (defined($gene_model->Transposon)){
+    $source = $gene_model->Transposon->name;
+  }
+  else {
+    push(@error1,"ERROR: $gene_model has no Parent, cannot check DNA\n");
     print "ERROR: $gene_model has no Sequence tag, cannot check DNA\n" if $verbose;
     next CHECK_GENE;
   }
 	
   # check species is correct
-  my $species = "";
+  my $species;
   ($species) = ($gene_model->get('Species'));
   push(@error3,"ERROR: $gene_model species is $species\n") if ($species ne "Caenorhabditis elegans");
   print "ERROR: $gene_model species is $species\n" if ($species ne "Caenorhabditis elegans" && $verbose);
