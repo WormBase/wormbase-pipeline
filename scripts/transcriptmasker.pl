@@ -7,8 +7,8 @@
 
 # 031023 dl1
 
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2009-05-01 15:03:14 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2009-07-03 10:15:19 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -110,14 +110,6 @@ my %valid_methods = (
 		     "low_complexity"    => 1, #low-complexity or poor quality/unclipped sequence.
 		     'low'               => 1, #low-complexity or poor quality/unclipped sequence.
 		    );
-		    
-# transcript accessions to names from a hash in common data
-our %EST_name;
-if($wormbase->species eq 'elegans') {
-  $log->write_to("// Reading EST_names.dat hash\n\n");
-  %EST_name = $wormbase->FetchData('NDBaccession2est');
-  $log->write_to("// Finished reading EST_names.dat hash\n\n");
-}
 
 # which database?
 if (-e $wormbase->orgdb."/database/block1.wrm") {
