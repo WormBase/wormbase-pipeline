@@ -15,7 +15,7 @@ use lib '/software/worm/ensembl/ensembl-compara/modules';
 use lib '/software/worm/ensembl/bioperl-live';
 
 use Bio::EnsEMBL::Registry;
-Bio::EnsEMBL::Registry->load_registry_from_db(-host => 'ens-livemirror', -user => 'wormro',-port => 3306,-verbose => 0,-db_version => 50);
+Bio::EnsEMBL::Registry->load_registry_from_db(-host => 'ens-livemirror', -user => 'wormro',-port => 3306,-verbose => 0,-db_version => 55);
 
 use Bio::EnsEMBL::DBSQL::DBAdaptor;
 use Bio::EnsEMBL::Compara::DBSQL::DBAdaptor;
@@ -70,7 +70,7 @@ foreach my $slice(@slices){
 					# put the OMIM orthologs into another hash based on the MIM_GENE xref
 					print "Protein : ENSEMBL:$k\n";
 					print "Species \"${\$v->taxon->name}\"\n";
-					print "DB_info DatabaseEnsEMBL ENSEMBL_proteinID $k\n";
+					print "DB_info Database EnsEMBL ENSEMBL_proteinID $k\n";
 					if ($v->taxon_id == 9606){ # meaning if human
 					        # uses an undocumented function of get_all_DBEntries, so lets hope it stays
 						map {printf "DB_info Database OMIM gene %s\n",$_->primary_id} @{$v->gene->get_all_DBLinks('MIM_MORBID')};
