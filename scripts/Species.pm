@@ -477,7 +477,7 @@ sub full_name {
 	if($param{'-short'}){
 		return 'M. incognita';
 	}	elsif($param{'-g_species'}){
-		return 'mincognita';
+		return 'm_incognita';
 	}
 	else { return'Meloidogyne incognita'
 	};
