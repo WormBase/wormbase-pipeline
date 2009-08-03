@@ -6,7 +6,7 @@
 # 19.02.02 Kerstin Jekosch
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2008-04-25 09:41:38 $
+# Last edited on: $Date: 2009-08-03 15:15:36 $
 
 use strict;
 use Getopt::Long;
@@ -43,15 +43,16 @@ my $log = Log_files->make_build_log($wormbase);
 my $tace =  $wormbase->tace;
 my $blat_dir;
 my $acefiles;
-
+my $test_file = $wormbase->blat."/virtual_objects.".$wormbase->species.".blat.EST.".$wormbase->species.".ace";
+$log->write_to("Loading BLAT data into $dbdir\n");
 # has the build finished?? script needs to look at ~wormpub/BUILD/autoace/BLAT, if it doesnt exist use current_db/BLAT!!
-if (!-e $wormbase->blat."/virtual_objects.".$wormbase->species.".blat.EST.ace"){
-  print "The build must have finished you are now going to use " .$wormbase->database('current')."/BLAT\n\n";
-  #$log->write_to( "The build must have finished you are now going to load data from current_db\n");
+if (!-e $test_file){
+  $log->write_to("The build must have finished you are now going to use " .$wormbase->database('current')."/BLAT\n\n");
   $blat_dir = ($wormbase->database('current')."/BLAT");
+  $acefiles = ($wormbase->database('current')."/acefiles");
 }  
-elsif (-e $wormbase->blat."/virtual_objects.".$wormbase->species.".blat.EST.ace"){
-  print "The build is still there..... \n\n";
+elsif (-e $test_file){
+  $log->write_to("The build is still there..... \n\n");
   $blat_dir = $wormbase->blat;
   $acefiles = $wormbase->acefiles;
 }
@@ -105,18 +106,18 @@ my $species = $wormbase->species;
 my $command;
 if ($dbname =~ /autoace/) {
 $command=<<END;
-pparse $blat_dir/virtual_objects.$species.blat.EST.ace 
-pparse $blat_dir/virtual_objects.$species.blat.OST.ace
-pparse $blat_dir/virtual_objects.$species.blat.RST.ace
-pparse $blat_dir/virtual_objects.$species.blat.mRNA.ace 
-pparse $blat_dir/virtual_objects.$species.blat.nembase.ace 
-pparse $blat_dir/virtual_objects.$species.blat.washu.ace 
-pparse $blat_dir/virtual_objects.$species.blat.nematode.ace 
-pparse $blat_dir/virtual_objects.$species.ci.EST.ace 
-pparse $blat_dir/virtual_objects.$species.ci.OST.ace 
-pparse $blat_dir/virtual_objects.$species.ci.RST.ace
-pparse $blat_dir/virtual_objects.$species.ci.mRNA.ace 
-pparse $blat_dir/virtual_objects.$species.ci.embl.ace 
+pparse $blat_dir/virtual_objects.$species.blat.EST.$species.ace
+pparse $blat_dir/virtual_objects.$species.blat.OST.$species.ace
+pparse $blat_dir/virtual_objects.$species.blat.RST.$species.ace
+pparse $blat_dir/virtual_objects.$species.blat.mRNA.$species.ace
+pparse $blat_dir/virtual_objects.$species.blat.nembase.$species.ace
+pparse $blat_dir/virtual_objects.$species.blat.washu.$species.ace
+pparse $blat_dir/virtual_objects.$species.blat.nematode.$species.ace
+pparse $blat_dir/virtual_objects.$species.ci.EST.$species.ace
+pparse $blat_dir/virtual_objects.$species.ci.OST.$species.ace
+pparse $blat_dir/virtual_objects.$species.ci.RST.$species.ace
+pparse $blat_dir/virtual_objects.$species.ci.mRNA.$species.ace
+pparse $blat_dir/virtual_objects.$species.ci.embl.$species.ace
 save
 pparse $blat_dir/$species.blat.elegans_OST.ace
 pparse $blat_dir/$species.blat.elegans_RST.ace
@@ -136,19 +137,20 @@ save
 quit
 END
 }
+
 elsif ($dbname =~ /camace/) {
 $command=<<END;
 pparse $acefiles/chromlinks.ace
-pparse $blat_dir/virtual_objects.$species.blat.EST.ace 
-pparse $blat_dir/virtual_objects.$species.blat.OST.ace
-pparse $blat_dir/virtual_objects.$species.blat.RST.ace
-pparse $blat_dir/virtual_objects.$species.blat.mRNA.ace 
-pparse $blat_dir/virtual_objects.$species.blat.ncRNA.ace
-pparse $blat_dir/virtual_objects.$species.ci.EST.ace 
-pparse $blat_dir/virtual_objects.$species.ci.OST.ace 
-pparse $blat_dir/virtual_objects.$species.ci.RST.ace 
-pparse $blat_dir/virtual_objects.$species.ci.mRNA.ace 
-pparse $blat_dir/virtual_objects.$species.ci.ncRNA.ace
+pparse $blat_dir/virtual_objects.$species.blat.EST.$species.ace
+pparse $blat_dir/virtual_objects.$species.blat.OST.$species.ace
+pparse $blat_dir/virtual_objects.$species.blat.RST.$species.ace
+pparse $blat_dir/virtual_objects.$species.blat.mRNA.$species.ace
+pparse $blat_dir/virtual_objects.$species.blat.ncRNA.$species.ace
+pparse $blat_dir/virtual_objects.$species.ci.EST.$species.ace
+pparse $blat_dir/virtual_objects.$species.ci.OST.$species.ace
+pparse $blat_dir/virtual_objects.$species.ci.RST.$species.ace
+pparse $blat_dir/virtual_objects.$species.ci.mRNA.$species.ace
+pparse $blat_dir/virtual_objects.$species.ci.ncRNA.$species.ace
 save
 pparse $blat_dir/$species.blat.elegans_EST.ace
 pparse $blat_dir/$species.blat.elegans_OST.ace
