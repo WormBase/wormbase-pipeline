@@ -12,8 +12,8 @@
 # 3) Archives old GFF_SPLITS directory
 # 4) Makes current_DB (copy of latest release) in ~wormpub/DATABASES
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2009-06-01 14:22:23 $
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2009-08-03 15:22:02 $
 
 
 use strict;
@@ -159,7 +159,7 @@ sub archive_old_releases{
   my $WS_old_name = shift;
   my $WS_old_path = $wormbase->database("$WS_old_name");
 
-  my $archive_dir = "/lustre/cbi4/work1/wormpub/wormarchive";
+  my $archive_dir = '/warehouse/wormbase01/wormarchive';
 
   unless ($WS_old_path) {
     $log->write_to("cant find database for $WS_old_path - not archiving\n");
