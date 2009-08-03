@@ -9,7 +9,7 @@
 # indexing program on it.
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-09-30 09:54:21 $      
+# Last updated on: $Date: 2009-08-03 12:45:37 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -280,7 +280,7 @@ sub delete_results {
 
   
   # logical names in the Ensemble pipeline for the analyses used in interpro
-  my @methods = qw(scanprosite Prints pfscan blastprodom hmmpanther Smart Tigrfam Pfam PIRSF Superfamily gene3d);
+  my @methods = qw(scanprosite Prints pfscan blastprodom hmmpanther Smart Tigrfam Pfam PIRSF Superfamily gene3d hamap);
 
   # get the mapping of method 2 analysis id
   my %method2analysis;
