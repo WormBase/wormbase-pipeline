@@ -12,8 +12,8 @@
 # 3) Archives old GFF_SPLITS directory
 # 4) Makes current_DB (copy of latest release) in ~wormpub/DATABASES
 #
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2009-08-03 15:22:02 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2009-08-05 10:26:19 $
 
 
 use strict;
@@ -113,8 +113,29 @@ $wormbase->run_command("ln -sf ".$new_dir." ".$wormbase->database('current'),$lo
 # Transfer autoace to ~wormpub/DATABASES/current_DB - first remove primaries acefiles and old data
 my $old_version = $WS_current -1;
 my $old_dir = $wormbase->wormpub."/DATABASES/WS".$old_version;
+
+#remove a load of stuff that we don't want to long term archive.
 $log->write_to("Removing $old_dir/acefiles/\n");
 $wormbase->delete_files_from("$old_dir/acefiles","*","+") unless ($test);
+
+$log->write_to("Removing $old_dir/log/\n");
+$wormbase->delete_files_from("$old_dir/log","*","+") unless ($test);
+
+$log->write_to("Removing $old_dir/CHECKS/\n");
+$wormbase->delete_files_from("$old_dir/CHECKS/","*","+") unless ($test);
+
+$log->write_to("Removing $old_dir/SUPPLEMENTARY_GFF/BACKUP/\n");
+$wormbase->delete_files_from("$old_dir/SUPPLEMENTARY_GFF/BACKUP/","*","+") unless ($test);
+
+$log->write_to("Removing $old_dir/TRANSCRIPTS/\n");
+$wormbase->delete_files_from("$old_dir/TRANSCRIPTS/","*","+") unless ($test);
+
+$log->write_to("Removing $old_dir/GFF_SPLITS/\n");
+$wormbase->delete_files_from("$old_dir/GFF_SPLITS/","*","+") unless ($test);
+
+$log->write_to("Removing $old_dir/BLAT/\n");
+$wormbase->delete_files_from("$old_dir/BLAT/","*","+") unless ($test);
+
 $log->write_to("Removing primaries acefiles/\n");
 $wormbase->delete_files_from("$new_dir/acefiles/primaries","*","+") unless ($test);
 
