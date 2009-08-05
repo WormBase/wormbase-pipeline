@@ -15,8 +15,8 @@ use Storable;
 my ($help, $debug, $test, $verbose, $store, $wormbase, $user,);
 my $database;
 
-my $acefile = "orthos.ace";
-my $batchfile  = "batch_load";
+my $acefile = "/nfs/disk100/wormpub/DATABASES/geneace/ORTHOLOGS/orthos.ace";
+my $batchfile  = "/nfs/disk100/wormpub/DATABASES/geneace/ORTHOLOGS/batch_load";
 my $genelist;
 
 GetOptions ("help"       => \$help,
@@ -124,7 +124,8 @@ while(<GENES>){
 close $ace;
 close $namedb;
 close GENES;
-
+$log->write_to("\nCreated orthos.ace and bathch_load under /nfs/disk100/wormpub/DATABASES/geneace/ORTHOLOGS/\n\n
+Dont forget to load the ace file in to Geneace.(default is orthos.ace)\n\nFinished\n");
 $log->mail;
 exit;
 
