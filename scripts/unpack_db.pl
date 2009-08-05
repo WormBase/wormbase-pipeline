@@ -12,8 +12,8 @@
 # the Cold Spring Harbor Laboratory database (cshace)
 # the Caltech database (citace)
 #
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2008-12-01 11:37:24 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2009-08-05 10:25:14 $
 
 
 #################################################################################
@@ -45,6 +45,7 @@ GetOptions (
             "cshace=s"  => \$cshace,
             "stlace=s"  => \$stlace,
             "brigace=s" => \$brigace,
+            "briggsae=s" => \$brigace,
 	    'remanei=s' => \$remanei,
 	    'brenneri=s' => \$brenneri,
 	    'japonica=s'  => \$japonica,
