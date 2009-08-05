@@ -1,4 +1,4 @@
- #!/software/bin/perl -w
+#!/software/bin/perl -w
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -12,7 +12,7 @@ use Storable;
 # variables and command-line options #
 ######################################
 
-my ($help, $debug, $test, $verbose, $store, $wormbase);
+my ($help, $debug, $test, $verbose, $store, $wormbase, $user,);
 my $database;
 
 my $acefile = "orthos.ace";
@@ -28,14 +28,16 @@ GetOptions ("help"       => \$help,
 	    "batch:s"    => \$batchfile,
 	    "ace:s"      => \$acefile,
 	    "list:s"     => \$genelist,
+	    "user:s"     => \$user, #manditory option as required for .ace output.
             );
 
 if ( $store ) {
   $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
-} else {
+} 
+else {
   $wormbase = Wormbase->new( -debug   => $debug,
                              -test    => $test,
-                             );
+			   );
 }
 
 my $log = Log_files->make_build_log($wormbase);
@@ -46,18 +48,44 @@ my %CGC_species = ('briggsae' => 'Cbr',
 		   'japonica' => 'Cja',
 		   'brenneri' => 'Cbn',
 		   'pacificus'=> 'Ppa',
-		   );
+		  );
 
 $database = $database or $wormbase->database('geneace');
 $log->write_to("Database : $database\n\n");
-
-my $acedb = Ace->connect('-path' => $database) or Ace->error;
 
 my $ace;
 my $namedb;
 open($ace, ">$acefile")      or $log->log_and_die("cant write acefile - $acefile : $!\n");
 open($namedb, ">$batchfile") or $log->log_and_die("cant write batch load file - $batchfile: $!\n");
 open(GENES,"<$genelist")     or $log->log_and_die("cant read gene list - $genelist : $!\n");
+
+my %person = ('mt3' => 'WBPerson9133',
+	      'md9' => 'WBPerson2970',
+	      'pad' => 'WBPerson1983',
+	      'ar2' => 'WBPerson1847',
+	      'gw3' => 'WBPerson4025',
+	      'mh6' => 'WBPerson4055',
+	     );
+
+unless (defined $user) {
+  print "\nERROR: please specify a user ID - e.g. mt3\n\n[INPUT]:";
+  my $tmp = <STDIN>;
+  chomp $tmp;
+  if (($tmp ne 'mt3') && ($tmp ne 'md9') && ($tmp ne 'pad') && ($tmp ne 'ar2') && ($tmp ne 'gw3') && ($tmp ne 'mh6')){
+    $log->log_and_die("UNKNOWN USER.....TERMINATE\n\n");
+  }
+  else {
+    $user = "$tmp";
+  }
+}
+
+
+##################################################################
+# Main Body
+##################################################################
+
+my $acedb = Ace->connect('-path' => $database) or Ace->error;
+
 
 while(<GENES>){
     chomp;
@@ -109,7 +137,7 @@ sub write_new_orthology {
     $version++;
 
     print $ace "\nGene : $ortholog\nVersion $version\nCGC_name $new_name From_analysis Inferred_from_orthology\n";
-    print $ace "Public_name $new_name\nVersion_change $version now WBPerson9133 Name_change CGC_name $new_name\n";
+    print $ace "Public_name $new_name\nVersion_change $version now $person{$user} Name_change CGC_name $new_name\n";
     my ($class) = $new_name =~ /-(\w+)-/;
     print $ace "Gene_class $class\n";
     $log->write_to("Transfering CGC_name: $new_name from $gene to $ortholog");
@@ -119,7 +147,7 @@ sub write_new_orthology {
 	my $evidence = $geneObj->CGC_name->right(2);
 	my $old_name = $geneObj->CGC_name->name;
 	my $old_class = $geneObj->Gene_class->name;
-	print $ace "Version_change ",$version," now WBPerson2970 Name_change Other_name $old_name\n";
+	print $ace "Version_change ",$version," now $person{$user} Name_change Other_name $old_name\n";
 	print $ace "Other_name $old_name\n";
 	#print old name as Other_name with evidence transferred.
 	foreach ($geneObj->CGC_name(2)){
