@@ -17,7 +17,7 @@
 # foreach? end
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-10-23 10:12:55 $      
+# Last updated on: $Date: 2009-08-05 10:13:15 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -116,7 +116,7 @@ $wormbase->run_command("chmod -R u+w $outdir/Remap-for-other-groups/CHROMOSOME_D
 $wormbase->run_command("cp $outdir/sequence_differences.WS* $outdir/Remap-for-other-groups/CHROMOSOME_DIFFERENCES/", $log);
 $wormbase->run_command("cp $outdir/sequence_differences.WS* $FTP/Mapping-data", $log);
 $wormbase->run_command("tar cvf remap.tar Remap-for-other-groups", $log);
-$wormbase->run_command("/usr/bin/bzip2 remap.tar", $log);
+$wormbase->run_command("/bin/bzip2 remap.tar", $log);
 $wormbase->run_command("cp $outdir/remap.tar.bz2 $FTP", $log);
 $wormbase->run_command("chmod oa+r $FTP/remap.tar.bz2", $log);
 $wormbase->run_command("chmod -R oa+r $FTP/Mapping-data", $log);
