@@ -1378,11 +1378,11 @@ GFF_source       "dust"
 GFF_feature      "low_complexity_region"
 
 Method : G4_DNA
-GFF_source "pmid
-GFF_feature "G4"
+GFF_source "pmid18538569"
+GFF_feature "G-quartet"
 Colour LIGHTGRAY
 Bumpable
-
+Remark "Intrinsically mutagenic motif, probably because it can form secondary structures during DNA replication" Paper_evidence WBPaper00031945
 
 /////////////////////////////////////////////////////////////////////
 // Not sure that the following Methods are actually used or needed //
