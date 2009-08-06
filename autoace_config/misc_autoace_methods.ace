@@ -1377,6 +1377,12 @@ Remark           "DUST low complexity regions"
 GFF_source       "dust" 	 
 GFF_feature      "low_complexity_region"
 
+Method : G4_DNA
+GFF_source "pmid
+GFF_feature "G4"
+Colour LIGHTGRAY
+Bumpable
+
 
 /////////////////////////////////////////////////////////////////////
 // Not sure that the following Methods are actually used or needed //
