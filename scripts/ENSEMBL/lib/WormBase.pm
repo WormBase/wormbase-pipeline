@@ -216,7 +216,7 @@ sub parse_gff {
 
     use Storable qw(store retrieve freeze thaw dclone);
 
-    #print STDERR "opening ".$file."\n";
+    print STDERR "opening ".$file."\n";
     open( FH, $file ) or die "couldn't open " . $file . " $!";
 
     die " seq " . $seq . " is not a Bio::Seq " unless ( $seq->isa("Bio::SeqI")
@@ -799,7 +799,8 @@ sub create_transcripts {
 
         #print STDERR "\nWorking on $transcript.(".$exons[0]->strand.") ";
         #get the gene-name
-        $gene_name= ( $transcript =~ /(.*?\w+\.\d+)[a-z A-Z]*\.*\d*/ )?$1:$transcript;
+	#$gene_name= ( $transcript =~ /(.*?\w+\.\d+)[a-z A-Z]*\.*\d*/ )?$1:$transcript;
+        $gene_name= ( $transcript =~ /([\w\.]+?)[a-z]*\.*\d*$/ )?$1:$transcript;
 
         $transcript_id = $transcript;
         print STDERR "\nNote: Gene name= " . $gene_name . " Transcript_id= " . $transcript_id . " (for transcript " . $transcript . ")";
