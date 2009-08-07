@@ -2,8 +2,8 @@
 #
 # prepare_primary_databases.pl
 #
-# Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2008-11-27 14:50:23 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2009-08-07 08:59:49 $
 
 use strict;
 my $scriptdir = $ENV{'CVS_DIR'};
@@ -79,7 +79,7 @@ foreach my $primary (keys %databases){
   next if (defined $database and ($database ne $primary));
   if( $databases{$primary}->{'ftp_date'} ) {
     unless ( $databases{$primary}->{'last_date'} == $databases{$primary}->{'ftp_date'} ) {
-      $options .= " -".($databases{"$primary"}->{'option'} or $primary )." ".$databases{$primary}->{'ftp_date'};
+      $options .= " -".$primary." ".$databases{$primary}->{'ftp_date'};
       print " => Update $primary";
       # clean out anything left from previous build
       $wormbase->delete_files_from($wormbase->primary("$primary"),'*','+');
