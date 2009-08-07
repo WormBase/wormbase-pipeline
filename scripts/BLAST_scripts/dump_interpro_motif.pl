@@ -5,7 +5,7 @@
 # Dumps InterPro protein motifs from ensembl mysql (protein) database to an ace file
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2008-11-24 14:50:12 $
+# Last updated on: $Date: 2009-08-07 14:34:48 $
 
 
 use strict;
@@ -74,34 +74,34 @@ $wormbase->FetchData('cds2wormpep',$cds2wormpep);
 # define the Database names that InterPro uses in interpro.xml
 # and the logic names (as specified in @methods) that search those databases
 my %method_database = (
-		       'scanprosite'     => 'PROSITE',
+		       'scanprosite' => 'PROSITE',
 		       'Prints'      => 'PRINTS',
-		       'pfscan'     => 'PROFILE',
-		       'blastprodom'=> 'PRODOM',
-		       'Smart'      => 'SMART',
-		       'Pfam'       => 'PFAM',
+		       'pfscan'      => 'PROFILE',
+		       'blastprodom' => 'PRODOM',
+		       'Smart'       => 'SMART',
+		       'Pfam'        => 'PFAM',
 		       'Tigrfam'     => 'TIGRFAMs',
-		       'Ncoils'       => 'COIL',
+		       'Ncoils'      => 'COIL',
 		       'Seg'         => 'SEG',
 		       'Tmhmm'       => 'TMHMM',
 		       'Signalp'     => 'SIGNALP',
 		       'PIRSF'       => 'PIRSF',
 		       'Superfamily' => 'SSF',
 		       'gene3d'      => 'GENE3D',
-		       'hmmpanther'  => 'PANTHER'
+		       'hmmpanther'  => 'PANTHER',
+		       'Hamap'       => 'HAMAP',
 	       );
 
-	       #### panther??
 
 # define the names of the Interpro methods to be dumped
 my @methods;
 if ($method ) {
   push(@methods,$method)
-}else{
+} else {
 
 # add new methods (logic_names, as defined in the mysql database 'analysis' table, column 'logic_name') 
 # as they are added to the pipeline
-   @methods = qw(scanprosite Prints pfscan blastprodom hmmpanther Smart Tigrfam Pfam PIRSF Superfamily gene3d);
+   @methods = qw(scanprosite Prints pfscan blastprodom hmmpanther Smart Tigrfam Pfam PIRSF Superfamily gene3d Hamap);
 }
 
 
