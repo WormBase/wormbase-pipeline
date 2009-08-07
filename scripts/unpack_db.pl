@@ -13,7 +13,7 @@
 # the Caltech database (citace)
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2009-08-05 10:25:14 $
+# Last updated on: $Date: 2009-08-07 13:23:57 $
 
 
 #################################################################################
@@ -198,9 +198,38 @@ sub unpack_stuff {
   $log->write_to("unzip and untar file\n\n");
 
 
+  # brigace doesn't have chromosomal DNA ace files, but it does have
+  # the chromosomal sequences held in fasta files, so make the ace
+  # files from the fasta files
+  if ($database eq "brigace") {
+    $log->write_to("Converting brigace fasta chromosome files to ace file\n");
+    my $version = $wormbase->get_wormbase_version;
+    my $chromace = "chrom.ace";
+    open (CHROMACE, "> $chromace") || die "Can't open $chromace\n";
+    open (LIST, "/bin/ls briggff${version}/*.dna |") || die "Couldn't pipe\n";
+    while (my $fasta=<LIST>) {
+      chomp $fasta;
+      open (FASTA, "< $fasta") || die "Can't open brigace chromosomal fasta file\n";
+      my $title = <FASTA>;
+      chomp $title;
+      $title =~ s/\>//;
+      print CHROMACE "\nDNA : \"$title\"\n";
+      while (my $line = <CHROMACE>) {
+	print CHROMACE "$line";
+      }
+      close FASTA;
+      $log->write_to("\tconverted $fasta\n");
+    }
+    close LIST;
+    close CHROMACE;
+    push @filenames, $chromace;
+  }
+
+
+
   # add list of ace files to be loaded into array
   $log->write_to("Database files to be loaded:\n");
-  open (LIST, "/bin/ls *.ace |") || die "Couldn't pipe";
+  open (LIST, "/bin/ls *.ace |") || die "Couldn't pipe\n";
   while (<LIST>) {
     chomp;
     push (@filenames,"$_");
