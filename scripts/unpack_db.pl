@@ -13,7 +13,7 @@
 # the Caltech database (citace)
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2009-08-07 13:23:57 $
+# Last updated on: $Date: 2009-08-07 15:04:30 $
 
 
 #################################################################################
@@ -214,7 +214,7 @@ sub unpack_stuff {
       chomp $title;
       $title =~ s/\>//;
       print CHROMACE "\nDNA : \"$title\"\n";
-      while (my $line = <CHROMACE>) {
+      while (my $line = <FASTA>) {
 	print CHROMACE "$line";
       }
       close FASTA;
