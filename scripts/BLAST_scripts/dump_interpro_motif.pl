@@ -4,8 +4,8 @@
 #
 # Dumps InterPro protein motifs from ensembl mysql (protein) database to an ace file
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2009-08-07 14:34:48 $
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2009-08-07 15:14:46 $
 
 
 use strict;
@@ -101,7 +101,7 @@ if ($method ) {
 
 # add new methods (logic_names, as defined in the mysql database 'analysis' table, column 'logic_name') 
 # as they are added to the pipeline
-   @methods = qw(scanprosite Prints pfscan blastprodom hmmpanther Smart Tigrfam Pfam PIRSF Superfamily gene3d Hamap);
+   @methods = keys %method_database;
 }
 
 
