@@ -4,8 +4,8 @@
 // "Read Models" or "Add Update File" from the main menu.
 
 // ALL WormBase groups should be in sync with this set of models
-// Last edited by: $Author: pad $
-// Last edited on: $Date: 2009-05-01 13:34:16 $
+// Last edited by: $Author: ar2 $
+// Last edited on: $Date: 2009-08-10 10:45:27 $
 
 
 ////////////////////////
@@ -1899,6 +1899,7 @@
                 Reconstruction ?Reconstruction XREF Anatomy_term #ReconCellInfo
                 Neurodata ?Anatomy_term #Neurodata
                 Link_diagram Text
+		Database     ?Database	?Database_field	?Accession_number 
                 URL     Text // for storing static URLs, such as WormAtlas, WormBook
                 Child   PART_OF_c       ?Anatomy_term   XREF    PART_OF_p
                         IS_A_c  ?Anatomy_term   XREF    IS_A_p
