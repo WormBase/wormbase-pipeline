@@ -7,7 +7,7 @@
 # Gets latest Interpro:GO mappings from XXXX and puts info in to ace file
 #
 # Last updated by: $Author: gw3 $                      
-# Last updated on: $Date: 2008-11-18 11:53:31 $         
+# Last updated on: $Date: 2009-08-10 09:46:19 $         
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -140,7 +140,7 @@ sub get_interpro {
  
 				#Get the latest version
   print "Attempting to FTP the latest version of interpro.xml from ebi \n";
-  `wget -O $latest_version.gz ftp://ftp.ebi.ac.uk/pub/databases/interpro/interpro.xml.gz`;
+  `wget -q -O $latest_version.gz ftp://ftp.ebi.ac.uk/pub/databases/interpro/interpro.xml.gz`;
   `gunzip "${latest_version}.gz"`;
 }
 
