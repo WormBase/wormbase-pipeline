@@ -799,8 +799,8 @@ sub create_transcripts {
 
         #print STDERR "\nWorking on $transcript.(".$exons[0]->strand.") ";
         #get the gene-name
-	#$gene_name= ( $transcript =~ /(.*?\w+\.\d+)[a-z A-Z]*\.*\d*/ )?$1:$transcript;
-        $gene_name= ( $transcript =~ /([\w\.]+?)[a-z]*\.*\d*$/ )?$1:$transcript;
+	$gene_name= ( $transcript =~ /(.*?\w+\.\d+)[a-z A-Z]*\.*\d*/ )?$1:$transcript; # elegans
+        $gene_name= ( $transcript =~ /([A-Z]{3,}\d+)[a-z]*(\.\d+)*$/ )?$1:$transcript if ($gene_name eq $transcript);
 
         $transcript_id = $transcript;
         print STDERR "\nNote: Gene name= " . $gene_name . " Transcript_id= " . $transcript_id . " (for transcript " . $transcript . ")";
