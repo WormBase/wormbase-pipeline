@@ -9,8 +9,8 @@
 # solely in the wormpep.history file.
 #
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2009-01-21 10:21:15 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2009-08-10 09:07:41 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -314,7 +314,7 @@ if( $wormbase->species eq "elegans") {
 $wormbase->load_to_database( $wormbase->autoace, "$ace_dir/acefiles/pepace.ace", 'pepace', $log );
 
 # update common data
-$wormbase->run_script("update_Common_data.pl --build --cds2wormpep", $log);
+$wormbase->run_script("update_Common_data.pl --cds2wormpep", $log);
 
 $log->mail();
 exit(0);
