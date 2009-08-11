@@ -7,7 +7,7 @@
 # wrapper script for running transcript_builder.pl
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2009-05-07 10:22:28 $
+# Last edited on: $Date: 2009-08-11 10:31:35 $
 
 use lib $ENV{CVS_DIR};
 use Wormbase;
@@ -153,18 +153,18 @@ if ($wormbase->assembly_type ne 'contig') { # elegans, briggsae
     } elsif ($wormbase->species eq 'briggsae') {
 
       my %sizes = (
-		   'chr_I'          => 2000000,
-		   'chr_I_random'   =>  500000,
-		   'chr_II'         => 2500000,
-		   'chr_II_random'  =>  350000,
-		   'chr_III'        => 2300000,
-		   'chr_III_random' =>  100000,
-		   'chr_IV'         => 2500000,
-		   'chr_IV_random'  =>   80000,
-		   'chr_V'          => 3100000,
-		   'chr_V_random'   =>  500000,
-		   'chr_X'          => 3400000,
-		   'chr_Un'         =>  950000,
+		   'chrI'          => 2000000,
+		   'chrI_random'   =>  500000,
+		   'chrII'         => 2500000,
+		   'chrII_random'  =>  350000,
+		   'chrIII'        => 2300000,
+		   'chrIII_random' =>  100000,
+		   'chrIV'         => 2500000,
+		   'chrIV_random'  =>   80000,
+		   'chrV'          => 3100000,
+		   'chrV_random'   =>  500000,
+		   'chrX'          => 3400000,
+		   'chrUn'         =>  950000,
 		  );
       $wormbase->check_file("$gff_dir/${sequence}_Coding_transcript.gff", $log,
 			    minsize => $sizes{$sequence},
