@@ -1,9 +1,9 @@
-#!/nfs/disk100/wormpub/bin/perl -w                 
+#!/software/bin/perl -w                 
 #
 # This is to add Confirmed / Predicted Status and RFLP to SNP gff lines as requested by Todd
 #
-# Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2007-09-03 13:47:10 $      
+# Last updated by: $Author: ar2 $     
+# Last updated on: $Date: 2009-08-12 12:54:12 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -12,28 +12,30 @@ use Getopt::Long;
 use Log_files;
 use Storable;
 use Ace;
+use strict;
 
 ######################################
 # variables and command-line options # 
 ######################################
 
 my ($help, $debug, $test, $verbose, $store, $wormbase);
-my $species;
+my ($species, $gff_file);
 
 GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
-	   		 "test"       => \$test,
-			    "verbose"    => \$verbose,
-			    "store:s"      => \$store,
-			    "species:s"  => \$species
+	    "test"       => \$test,
+	    "verbose"    => \$verbose,
+	    "store:s"    => \$store,
+	    "species:s"  => \$species,
+	    "file:s"     => \$gff_file
 	    );
 
 $species = 'elegans' unless $species;
 if ( $store ) {
   $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
 } else {
-  $wormbase = Wormbase->new( -debug   => $debug,
-                             -test    => $test,
+  $wormbase = Wormbase->new( '-debug'   => $debug,
+                             '-test'    => $test,
 			     );
 }
 
@@ -55,6 +57,9 @@ my $log = Log_files->make_build_log($wormbase);
 
 my %SNP;
 
+# need to add mol_change details to GFF lines
+&get_mol_changes;
+
 #load SNP details from table maker query
 my $table = $wormbase->table_maker_query($wormbase->autoace, &write_def_file);
 while(<$table>) {
@@ -71,34 +76,42 @@ my @chroms = qw(I II III IV V X MtDNA);
 my $dir = $wormbase->chromosomes;
 my $stat = 0;
 foreach my $chrom (@chroms) {
-	open(GFF,"<$dir/CHROMOSOME_${chrom}.gff") or $log->log_and_die("cant open $dir/CHROMOSOME_${chrom}.gff");
-	open(NEW,">$dir/CHROMOSOME_${chrom}.gff.tmp") or $log->log_and_die("cant open $chrom tmp file\n");
-	while( <GFF> ) {
-		chomp;	
-		print NEW "$_";
-		#CHROMOSOME_V    Allele  SNP     155950  155951  .       +       .       Variation "uCE5-508"
-		#I       Allele  SNP     126950  126950  .       +       .       Variation "pkP1003"  ;  Status "Confirmed_SNP" ; RFLP "Yes"
-		if( /SNP/ and /Allele/) {
-			my ($allele) = /Variation \"(.+)\"$/;
-			print NEW " ; Status \"",$SNP{$allele}->{'confirm'},"\"" if $SNP{$allele}->{'confirm'};
-			print NEW " ; RFLP ", (defined $SNP{$allele}->{'RFLP'}? '"Yes"' : '"No"');
-			$stat++;
-		}
-		print NEW "\n";
+    my $file = ($gff_file or "$dir/CHROMOSOME_${chrom}.gff");
+    open(GFF,"<$file") or $log->log_and_die("cant open $file");
+    open(NEW,">$file.tmp") or $log->log_and_die("cant open $file tmp file\n");
+    while( <GFF> ) {
+	chomp;	
+	print NEW "$_";
+	#CHROMOSOME_V    Allele  SNP     155950  155951  .       +       .       Variation "uCE5-508"
+	#I       Allele  SNP     126950  126950  .       +       .       Variation "pkP1003"  ;  Status "Confirmed_SNP" ; RFLP "Yes"
+	if( /SNP/ and /Allele/) {
+	    my ($allele) = /Variation \"(.+)\"$/;
+	    print NEW " ; Status \"",$SNP{$allele}->{'confirm'},"\"" if $SNP{$allele}->{'confirm'};
+	    print NEW " ; RFLP ", (defined $SNP{$allele}->{'RFLP'}? '"Yes"' : '"No"');
+	    print NEW " ; Mutation_type \"".$SNP{$allele}->{'mol_change'}."\"" if $SNP{$allele}->{'mol_change'};
+	    $stat++;
 	}
-	$wormbase->run_command("mv -f $dir/CHROMOSOME_${chrom}.gff.tmp $dir/CHROMOSOME_${chrom}.gff", $log);
+	print NEW "\n";
+    }
+    $wormbase->run_command("mv -f $file.tmp $file", $log);
+    last if $gff_file;
 }
 
 ##################
 # Check the files
 ##################
 
-foreach my $chrom (@chroms) {
-  $wormbase->check_file("$dir/CHROMOSOME_${chrom}.gff", $log,
-                        minsize => 1500000,
-                        lines => ['^##',
-                                  "^CHROMOSOME_${chrom}\\s+\\S+\\s+\\S+\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+"],
-                        );
+if($gff_file){
+    $log->write_to("Not checking ad hoc file\n");
+}
+else { 
+    foreach my $chrom (@chroms) {
+	$wormbase->check_file("$dir/CHROMOSOME_${chrom}.gff", $log,
+			      minsize => 1500000,
+			      lines => ['^##',
+					"^CHROMOSOME_${chrom}\\s+\\S+\\s+\\S+\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+"],
+			      );
+    }
 }
 
 
@@ -133,6 +146,33 @@ sub usage {
     system ('perldoc',$0);
     exit (0);
   }
+}
+
+##########################################
+
+
+sub get_mol_changes{
+    $log->write_to("getting molecular change info\n");
+    my $table = $wormbase->table_maker_query($wormbase->autoace,&write_mol_change_def );
+
+    my %interested = ('Nonsense'    => 1,
+		      'Frameshift'  => 2,
+		      'Splice_site' => 3,
+		      'Missense'    => 4,
+		      );
+
+    while(<$table>) {
+	chomp;
+	s/\"//g; #"
+	next if (/acedb/ or /\/\//);
+	my @data = split(/\s+/,$_);
+	if($interested{$data[1]}){
+	    if( !(defined $SNP{$data[0]}->{'mol_change'}) or ($SNP{$data[0]}->{'mol_change'} and ($interested{$data[1]} < $interested{ $SNP{$data[0]}->{'mol_change'} }) ) ) {
+		$SNP{$data[0]}->{'mol_change'} = $data[1];
+	    }
+	}
+    }
+    close $table;
 }
 
 ##########################################
@@ -191,6 +231,135 @@ Class
 Class Species
 From 1
 Tag Species
+END
+
+	print TMP $txt;
+	close TMP;
+	return $def;
+}
+
+
+sub write_mol_change_def {
+	my $def = '/tmp/overload_SNP_GFF_mol_chng.def';
+	open TMP,">$def" or $log->log_and_die("cant write $def: $!\n");
+	 my $txt = <<END;
+Sortcolumn 1
+
+Colonne 1 
+Width 12 
+Optional 
+Visible 
+Class 
+Class Variation 
+From 1 
+
+Colonne 2
+Width 12
+Mandatory
+Hidden
+Show_Tag
+From 1
+Tag SNP
+
+Colonne 3
+Width 12 
+Mandatory 
+Hidden 
+Class 
+Class CDS 
+From 1 
+Tag Predicted_CDS 
+ 
+Colonne 4 
+Width 12 
+Optional 
+Visible 
+Show_Tag 
+Right_of 3 
+Tag  HERE  # Missense 
+ 
+Colonne 5 
+Width 12 
+Optional 
+Visible 
+Show_Tag 
+Right_of 3 
+Tag  HERE  # Nonsense 
+ 
+Colonne 6 
+Width 12 
+Optional 
+Visible 
+Show_Tag 
+Right_of 3 
+Tag  HERE  # Splice_site 
+ 
+Colonne  7
+Width 12 
+Optional 
+Visible 
+Show_Tag 
+Right_of 3 
+Tag  HERE  # Frameshift 
+ 
+Colonne 8 
+Width 12 
+Optional 
+Visible 
+Show_Tag 
+Right_of 3 
+Tag  HERE  # Intron 
+ 
+Colonne 9 
+Width 12 
+Optional 
+Visible 
+Show_Tag 
+Right_of 3 
+Tag  HERE  # Coding_exon 
+ 
+Colonne 10 
+Width 12 
+Optional 
+Visible 
+Show_Tag 
+Right_of 3 
+Tag  HERE  # Promoter 
+ 
+Colonne 11 
+Width 12 
+Optional 
+Visible 
+Show_Tag 
+Right_of 3 
+Tag  HERE  # UTR_3 
+ 
+Colonne 12 
+Width 12 
+Optional 
+Visible 
+Show_Tag 
+Right_of 3 
+Tag  HERE  # UTR_5 
+ 
+Colonne 13 
+Width 12 
+Optional 
+Visible 
+Show_Tag 
+Right_of 3 
+Tag  HERE  # Regulatory_feature 
+ 
+Colonne 14 
+Width 12 
+Optional 
+Visible 
+Show_Tag 
+Right_of 3  
+Tag  HERE  # Genomic_neighbourhood 
+ 
+ 
+
 END
 
 	print TMP $txt;
