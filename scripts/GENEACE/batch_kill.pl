@@ -83,7 +83,7 @@ my $output = $database."/NAMEDB_Files/batch_kill.ace";
 # warn/notify on use of -load.
 ##############################
 if (!defined$load) {$log->write_to("2) You have decided not to automatically load the output of this script\n\n");}
-elsif (defined$load) { $log->write_to("2) Output has beed scheduled for auto-loading.\n\n");}
+elsif (defined$load) { $log->write_to("2) Output has been scheduled for auto-loading.\n\n");}
 
 #open file and read
 open (FILE,"<$file") or $log->log_and_die("can't open $file : $!\n");
