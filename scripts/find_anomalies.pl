@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2009-06-04 08:42:47 $      
+# Last updated on: $Date: 2009-08-14 10:26:11 $      
 
 # Changes required by Ant: 2008-02-19
 # 
@@ -3375,12 +3375,6 @@ sub get_unconfirmed_introns {
       my $chrom_start = $homology->[1];
       my $chrom_end = $homology->[2];
       my $chrom_strand = $homology->[3];
-# seem to have the strand the wrong way round somehow - fix it
-      if ($chrom_strand eq '+') {
-	$chrom_strand = '-';
-      } else {
-	$chrom_strand = '+';
-      }
       my $est_score = $homology->[6];
       my $anomaly_score = 10;
       # use a lower score if the intron is marked as Confirmed_UTR/false/inconsistent
