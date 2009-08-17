@@ -1521,7 +1521,7 @@ sub build_store {
   store( $self, $store );
   
   #if user wormpipe this always gives an ERROR and confuses log msgs
-  $self->run_command( "chmod -f 775 $store") unless ($self->test_user_wormpub == 1);
+  $self->run_command( "chmod -f 775 $store", $log) unless ($self->test_user_wormpub == 1);
   return $store;
 }
 
