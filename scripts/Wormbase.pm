@@ -1533,7 +1533,7 @@ sub build_cmd_line {
   my $script = shift;
   my $store  = shift;
   
-  my $command = "perl $ENV{'CVS_DIR'}/$script -store $store";
+  my $command = "/software/bin/perl $ENV{'CVS_DIR'}/$script -store $store";
   print "$command\n" if $self->test;
   return $command;
 }
