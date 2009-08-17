@@ -1218,13 +1218,13 @@ EOF
 
     # check the current Build parse object numbers against the previous one
     if (defined $last_parsed) {
-      $log->write_to("Version WS$prev_prev_version parsed $last_but_one_parsed objects OK with $last_but_one_active Active Objects\n");
-      $log->write_to("Version WS$prev_version parsed $last_parsed objects OK with $last_active Active Objects\n");
-      $log->write_to("Version WS$version parsed $parsed objects OK with $active Active Objects\n\n");
+      $log->write_to("Version WS$prev_prev_version parsed $last_but_one_parsed objects OK with $last_but_one_active Active Objects\n") if ($log);
+      $log->write_to("Version WS$prev_version parsed $last_parsed objects OK with $last_active Active Objects\n") if ($log);
+      $log->write_to("Version WS$version parsed $parsed objects OK with $active Active Objects\n\n") if ($log);
       if (!defined $accept_large_differences) {
 	if ($parsed < $last_parsed * 0.9 || $parsed > $last_parsed * 1.1
 	    ||  $active < $last_active * 0.9 || $active > $last_active * 1.1) {
-	  $log->write_to("*** POSSIBLE ERROR found while parsing ACE file $file\n\n");
+	  $log->write_to("*** POSSIBLE ERROR found while parsing ACE file $file\n\n") if ($log);
 	  $log->error;
 	}
       }
@@ -1235,12 +1235,12 @@ EOF
       if ($version && $basename && $species) {
 	print PPARSE_ACE "$version $file $species $parsed $active\n";
       } else {
-	$log->write_to("*** POSSIBLE ERROR: Couldn't write to $pparse_file because some of the following is blank\nversion=$version, file=$file, species=$species, parsed=$parsed, active=$active\n\n");
+	$log->write_to("*** POSSIBLE ERROR: Couldn't write to $pparse_file because some of the following is blank\nversion=$version, file=$file, species=$species, parsed=$parsed, active=$active\n\n") if ($log);
 	$log->error;
       }
       close (PPARSE_ACE);
     } else {
-      $log->write_to("WARNING: Couldn't write to $pparse_file\n\n");
+      $log->write_to("WARNING: Couldn't write to $pparse_file\n\n") if ($log);
     }
   }
 }
