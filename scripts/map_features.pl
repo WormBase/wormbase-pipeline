@@ -8,8 +8,8 @@
 # Uses Ant's Feature_mapper.pm module
 #
 #
-# Last updated by: $Author: gw3 $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2009-02-06 11:12:18 $        # quickly see when script was last changed and by whom
+# Last updated by: $Author: ar2 $                      # These lines will get filled in by cvs and helps us
+# Last updated on: $Date: 2009-08-18 09:42:58 $        # quickly see when script was last changed and by whom
 
 
 $|=1;
@@ -179,6 +179,8 @@ EOF
 	next;
       }
       
+      $log->write_to("Feature $feature maps to different clone than suggested $clone -> $coords[0]\n") if ($clone ne $coords[0]);
+      $clone = $coords[0];
       $start = $coords[1];
       $stop  = $coords[2];
       
