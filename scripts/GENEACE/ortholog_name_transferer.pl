@@ -42,6 +42,9 @@ else {
 
 my $log = Log_files->make_build_log($wormbase);
 $log->log_and_die("-list is compulsory. This is the list of elegans genes to transfer names from!\n") unless ($genelist);
+if ($debug) {
+  print "-list is compulsory. This is the list of elegans genes to transfer names from!\n" unless ($genelist);
+}
 
 my %CGC_species = ('briggsae' => 'Cbr',
 		   'remanei'  => 'Cre',
@@ -73,6 +76,7 @@ unless (defined $user) {
   chomp $tmp;
   if (($tmp ne 'mt3') && ($tmp ne 'md9') && ($tmp ne 'pad') && ($tmp ne 'ar2') && ($tmp ne 'gw3') && ($tmp ne 'mh6')){
     $log->log_and_die("UNKNOWN USER.....TERMINATE\n\n");
+    print "UNKNOWN USER.....TERMINATE\n\n" if $debug;
   }
   else {
     $user = "$tmp";
@@ -127,6 +131,8 @@ close GENES;
 $log->write_to("\nCreated orthos.ace and bathch_load under /nfs/disk100/wormpub/DATABASES/geneace/ORTHOLOGS/\n\n
 Dont forget to load the ace file in to Geneace.(default is orthos.ace)\n\nFinished\n");
 $log->mail;
+print "\nCreated orthos.ace and bathch_load under /nfs/disk100/wormpub/DATABASES/geneace/ORTHOLOGS/\n\n
+Dont forget to load the ace file in to Geneace.(default is orthos.ace)\n\nFinished\n" if $debug;
 exit;
 
 sub write_new_orthology {
@@ -142,6 +148,7 @@ sub write_new_orthology {
     my ($class) = $new_name =~ /-(\w+)-/;
     print $ace "Gene_class $class\n";
     $log->write_to("Transfering CGC_name: $new_name from $gene to $ortholog");
+    print "Transfering CGC_name: $new_name from $gene to $ortholog" if $debug;
 
     if($geneObj->CGC_name) {
 	#get existing evidence
