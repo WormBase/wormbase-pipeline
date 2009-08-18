@@ -22,6 +22,7 @@ $VALID_USERS = {
 		'mt3' 		=> 2970,
 		'gw3' 		=> 4025,
 		'mh6' 		=> 4036,
+		'md9'           => 9133,
 		'tbieri' 	=> 1849,
 		'jspieth' 	=> 615,
 		'dblasiar' 	=> 1843,
@@ -35,9 +36,9 @@ $VALID_USERS = {
 
 ## a list of valid SSO login names for each DB operation
 $VALID_API_USERS = {
-		    'query'		=> [qw(avc ar2 pad gw3 mh6 mt3 tbieri bastiani jspieth dblasiar pozersky stlouis caltech cshl sanger)],
+		    'query'		=> [qw(avc ar2 pad gw3 mh6 mt3 md9 tbieri bastiani jspieth dblasiar pozersky stlouis caltech cshl sanger)],
 		    'merge_features'	=> [qw(ar2 pad gw3 mt3 mh6 tbieri jspieth dblasiar pozersky)],
-		    'new_feature'	=> [qw(ar2 pad gw3 mt3 mh6 tbieri bastiani jspieth dblasiar pozersky)],
+		    'new_feature'	=> [qw(ar2 pad gw3 mt3 mh6 md9 tbieri bastiani jspieth dblasiar pozersky)],
 		    'kill_feature'	=> [qw(ar2 pad gw3 mt3 mh6 tbieri jspieth dblasiar pozersky)],
 		   };
 
@@ -53,6 +54,7 @@ $MAILS = {
 	  'gw3'			=>	'gw3@sanger.ac.uk',
 	  'mh6'			=>	'mh6@sanger.ac.uk',
 	  'mt3'			=>	'mt3@sanger.ac.uk',
+	  'md9'                 =>      'md9@sanger.ac.uk',
 	  'tbieri'		=>	'tbieri@watson.wustl.edu',
 	  'jspieth'	=>	'jspieth@watson.wustl.edu',
 	  'dblasiar'	=>	'dblasiar@watson.wustl.edu',
