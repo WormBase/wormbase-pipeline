@@ -8,7 +8,7 @@
 # Originally written by Dan Lawson
 #
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2009-07-22 11:30:34 $
+# Last updated on: $Date: 2009-08-20 10:35:52 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -1041,6 +1041,7 @@ mSplicer_transcript.gff
 miranda.gff
 pictar.gff
 elegans_curation_anomalies.gff
+cisRed.gff
 
 ./genomes/c_briggsae/genome_feature_tables/GFF2
 chrI.gff
