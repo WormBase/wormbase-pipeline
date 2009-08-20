@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl -w
-# Last updated by: $Author: ar2 $     
-# Last updated on: $Date: 2009-08-06 10:43:25 $      
+# Last updated by: $Author: gw3 $     
+# Last updated on: $Date: 2009-08-20 08:25:55 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -78,7 +78,7 @@ sub parse_misc_elegans_files {
 		       $wormbase->misc_dynamic.'/misc_21urna_homol.ace'         => '21uRNAs'               ,
 		       $wormbase->misc_dynamic.'/misc_Expression_pattern_homol.ace'  => 'Expression_patterns'     ,
 		       $wormbase->acefiles.'/ensembl_protein_info.ace'          => 'ensembl_proteins_info',
-		       $wormbase->misc_dynamic.'misc_Tijsterman_G4.ace'         => 'Tijsterman_G4',
+		       $wormbase->misc_dynamic.'/misc_Tijsterman_G4.ace'         => 'Tijsterman_G4',
 		      );
 
   $log->write_to("Loading files to ".$wormbase->autoace."\n==================================\n");
