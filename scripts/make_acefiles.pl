@@ -8,7 +8,7 @@
 # autoace.
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2009-08-20 10:56:35 $
+# Last updated on: $Date: 2009-08-20 12:43:04 $
 
 #################################################################################
 # Variables                                                                     #
@@ -87,7 +87,7 @@ else {
       if( $tag and $value) {
 	if ($tag =~ /\ / || ($value =~ /\ / && $value !~ /\(/)) {
 	  $log->log_and_die("Ill formed config line with space instead of TAB around $tag=$value:\n$_\n");
-	} else {print "DEBUG $tag and $value OK\n";}
+	} #else {print "DEBUG $tag and $value OK\n";}
 	if($tag eq 'delete') {
 	  push(@{$makefile{$tag}},$value);
 	}else {
