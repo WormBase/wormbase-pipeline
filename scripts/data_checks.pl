@@ -7,7 +7,7 @@
 # This is a example of a good script template
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2009-08-21 09:23:02 $
+# Last updated on: $Date: 2009-08-21 10:46:28 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -174,6 +174,8 @@ sub read_acedb_queries {
     return @queries;
 }
 
+
+
 sub read_GFF_queries {
     @queries = ();
     my $i = 0;
@@ -235,7 +237,7 @@ sub read_GFF_queries {
     $i++;
     $queries[$i]{'DESC'}  = "mapped Oligo_set";
     $queries[$i]{'GFF'}   = "Oligo_set";
-    $queries[$i]{'QUERY'} = 'find Oligo_set';
+    $queries[$i]{'QUERY'} = 'find Oligo_set SMap';
 
     $i++;
     $queries[$i]{'DESC'}  = "mapped Operons";
@@ -258,20 +260,20 @@ sub read_GFF_queries {
     $queries[$i]{'QUERY'} = 'find Feature method = "polyA_site"';
 
     $i++;
-    $queries[$i]{'DESC'}  = "Non_coding_transcripts";
+    $queries[$i]{'DESC'}  = "Non_coding_transcript isoforms";
     $queries[$i]{'GFF'}   = "nc_primary_transcript";
     $queries[$i]{'QUERY'} = 'find Transcript; method = non_coding_transcript';
 
-#    $i++;
-#    $queries[$i]{'DESC'}  = "ncRNA";
-#    $queries[$i]{'GFF'}   = "ncRNA_primary_transcript";
-#    $queries[$i]{'QUERY'} = 'find Transcript; method = ncRNA';
+    $i++;
+    $queries[$i]{'DESC'}  = "ncRNA genes";
+    $queries[$i]{'GFF'}   = "ncRNA_primary_transcript"; # ncRNA genes including 21uRNA
+    $queries[$i]{'QUERY'} = 'find elegans_RNA_genes; method = ncRNA'; # this finds ncRNA genes including 21uRNA
 
     $i++;
     $queries[$i]{'DESC'}  = "tRNAs";
     $queries[$i]{'GFF'}   = "tRNA_primary_transcript";
     $queries[$i]{'QUERY'} = 'find elegans_RNA_genes tRNA';
-
+    
     $i++;
     $queries[$i]{'DESC'}  = "miRNAs";
     $queries[$i]{'GFF'}   = "miRNA_primary_transcript";
@@ -303,15 +305,10 @@ sub read_GFF_queries {
     $queries[$i]{'QUERY'} = 'find elegans_RNA_genes stRNA';
 
     $i++;
-    $queries[$i]{'DESC'}  = "ncRNAs";
-    $queries[$i]{'GFF'}   = "nc_primary_transcript";
-    $queries[$i]{'QUERY'} = 'find elegans_RNA_genes ncRNA';
-
-    $i++;
     $queries[$i]{'DESC'}   = "Mass Spectrometry peptides";
     $queries[$i]{'GFF'}    = "mass_spec_genome";
     $queries[$i]{'EXPECT'} = 136433;
-
+    
     $i++;
     $queries[$i]{'DESC'}  = "Expr_pattern mapped Expression Patterns";
     $queries[$i]{'GFF'}   = "Expr_pattern";
