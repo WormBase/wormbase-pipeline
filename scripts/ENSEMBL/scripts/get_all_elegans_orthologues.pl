@@ -10,6 +10,13 @@ use strict;
 use IO::File;
 use Bio::EnsEMBL::Compara::DBSQL::DBAdaptor;
 
+use Getopt::Long;
+
+my $comparadb;
+
+GetOptions(
+	'database=s' => \$comparadb,
+)||die();
 
 my %species = ( 
     6239   => 'Caenorhabditis elegans',
@@ -24,11 +31,12 @@ my %species = (
 my %cds2wbgene=%{&get_commondata('cds2wbgene_id')};
 my %cds2swiss=%{&get_cds2swiss('brugia')};
 
+$comparadb||='worm_compara';
 
 my $compara_db = new Bio::EnsEMBL::Compara::DBSQL::DBAdaptor(
     -host   => 'ia64d',        # change that
     -user   => 'wormro',       # and that
-    -dbname => 'worm_compara'
+    -dbname => $comparadb
 );
 
 
