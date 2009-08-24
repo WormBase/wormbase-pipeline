@@ -31,8 +31,8 @@ GetOptions (
 #>FBpp0072157 type=protein; loc=2R:join(19970258..19970592,19970994..19971107,19971175..19971808,19971862..19972342,19972455..19973683); ID=FBpp0072157; name=CG16786-PB; parent=FBgn0034974,FBtr0072248; dbxref=GB_protein:AAM68305.1,FlyBase:FBpp0072157,FlyBase_Annotation_IDs:CG16786-PB,GB_protein:AAM68305; MD5=6356cb499a107083f645b73322b5bd50; release=r5.1; species=Dmel; length=779;
 
 
-my $blastdir    = '/lustre/work1/ensembl/wormpipe/BlastDB';
-my $acedir      = '/lustre/work1/ensembl/wormpipe/ace_files';
+my $blastdir    = '/lustre/scratch103/ensembl/wormpipe/BlastDB';
+my $acedir      = '/lustre/scratch103/ensembl/wormpipe/ace_files';
 my $source_file = "$blastdir/gadfly${version}.pep";
 my $acefile     = "$acedir/flybase.ace";
 # output initally goes to tmp file

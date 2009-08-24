@@ -7,7 +7,7 @@
 # Converts yeastX.pep file to ace file, copies to wormsrv2, adds SGD as Accession field
 #
 # Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2008-01-30 15:12:35 $
+# Last edited on: $Date: 2009-08-24 10:05:03 $
 
 
 use strict;
@@ -22,8 +22,8 @@ GetOptions (
             );
 
 
-my $blastdir    = "/lustre/work1/ensembl/wormpipe/BlastDB";
-my $acedir      = "/lustre/work1/ensembl/wormpipe/ace_files";
+my $blastdir    = "/lustre/scratch103/ensembl/wormpipe/BlastDB";
+my $acedir      = "/lustre/scratch103/ensembl/wormpipe/ace_files";
 my $source_file = "$blastdir/yeast${version}.pep";
 my $acefile     = "$acedir/yeast.ace";
 # output initally goes to tmp file

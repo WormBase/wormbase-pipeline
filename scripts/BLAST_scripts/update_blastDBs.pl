@@ -1,7 +1,7 @@
 #!/usr/local/ensembl/bin/perl -w
 #
 # Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2009-05-26 09:51:41 $
+# Last edited on: $Date: 2009-08-24 10:05:03 $
 
 use lib $ENV{'CVS_DIR'};
 
@@ -49,8 +49,8 @@ else {
 
 $species = $wormbase->species;   #for load
 my $log = Log_files->make_build_log($wormbase);
-my $blastdir    = '/lustre/work1/ensembl/wormpipe/BlastDB';
-my $acedir      = '/lustre/work1/ensembl/wormpipe/ace_files';
+my $blastdir    = '/lustre/scratch103/ensembl/wormpipe/BlastDB';
+my $acedir      = '/lustre/scratch103/ensembl/wormpipe/ace_files';
 
 $human=$fly=$yeast=$uniprot=$interpro=$cleanup=1 if $all;
 
@@ -239,7 +239,7 @@ if ($fly) {
 #
 # If you have updated any of the blast databases ie not Interpro, which
 # are elsewhere, in the steps above you must ensure that you remove the
-# old versions from /lustre/work1/ensembl/wormpipe/BlastDB/. E.g. if
+# old versions from /lustre/scratch103/ensembl/wormpipe/BlastDB/. E.g. if
 # gadfly3.2 is a new database, then you should end up with gadfly3.2.pep
 # and remove gadfly3.1.pep.
 #
@@ -252,7 +252,7 @@ if ($cleanup) {
 
   $log->write_to("  Removing old blast databases . . .\n");
   
-  my $blast_dir = "/lustre/work1/ensembl/wormpipe/BlastDB/";
+  my $blast_dir = "/lustre/scratch103/ensembl/wormpipe/BlastDB/";
 
   # root name regular expressions of the databases to check
   my @roots = (
@@ -350,7 +350,7 @@ sub process_uniprot {
 
     #swissprot
     my $ver = shift;
-    my $swalldir = '/lustre/work1/ensembl/wormpipe/swall_data';
+    my $swalldir = '/lustre/scratch103/ensembl/wormpipe/swall_data';
     
     my $login = "anonymous";
     my $passw = 'wormbase@sanger.ac.uk';
@@ -370,7 +370,7 @@ sub process_uniprot {
     $wormbase->run_command("rm -f $target", $log);
 
     $wormbase->run_script("BLAST_scripts/swiss_trembl2slim.pl -s $ver",$log);
-    $wormbase->run_script("BLAST_scripts/fasta2gsi.pl -f /lustre/work1/ensembl/wormpipe/swall_data/slimswissprot",$log);
+    $wormbase->run_script("BLAST_scripts/fasta2gsi.pl -f /lustre/scratch103/ensembl/wormpipe/swall_data/slimswissprot",$log);
     copy ("$swalldir/slimswissprot", "$blastdir/slimswissprot${ver}.pep");
 
 #trembl
@@ -387,7 +387,7 @@ sub process_uniprot {
 
     $wormbase->run_script("BLAST_scripts/swiss_trembl2slim.pl -t $ver",$log);
 
-    $wormbase->run_script("BLAST_scripts/fasta2gsi.pl -f /lustre/work1/ensembl/wormpipe/swall_data/slimtrembl",$log);
+    $wormbase->run_script("BLAST_scripts/fasta2gsi.pl -f /lustre/scratch103/ensembl/wormpipe/swall_data/slimtrembl",$log);
     $wormbase->run_script("BLAST_script/blast_kill_list.pl -infile $swalldir/slimtrembl -outfile $blastdir/slimtrembl${ver}.pep -killfile $swalldir/kill_list.txt",$log);
     #copy("$swalldir/slimtrembl","$blastdir/slimtrembl${ver}.pep");
 }

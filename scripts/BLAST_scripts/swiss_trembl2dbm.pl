@@ -43,7 +43,7 @@ else {
 my $log = Log_files->make_build_log($wormbase);
 
 # store the database files in swall_data, but make them in /tmp as this goes MUCH faster
-my $output_dir = "/lustre/work1/ensembl/wormpipe/swall_data";
+my $output_dir = "/lustre/scratch103/ensembl/wormpipe/swall_data";
 my $tmp_dir = "/tmp";
 
 my %ORG;

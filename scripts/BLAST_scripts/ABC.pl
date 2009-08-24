@@ -6,8 +6,8 @@
 #
 # This is a script to automate the sections A, B and C of the BLAST Build
 #
-# Last updated by: $Author: ar2 $     
-# Last updated on: $Date: 2009-04-16 11:04:19 $      
+# Last updated by: $Author: mh6 $     
+# Last updated on: $Date: 2009-08-24 10:05:00 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -100,7 +100,7 @@ foreach my $species (@species) {
 
   $log->write_to("  Running dump.pl . . .\n");
   print "  Running dump.pl . . .\n" if ($verbose);
-  chdir "/lustre/work1/ensembl/wormpipe/sort_dump" || die "Can't cd to /lustre/work1/ensembl/wormpipe/sort_dump: $!";
+  chdir "/lustre/scratch103/ensembl/wormpipe/sort_dump" || die "Can't cd to /lustre/scratch103/ensembl/wormpipe/sort_dump: $!";
 
   # check that we have enough free disk-space to work in
   open (DF, "df . |") || die "Can't run 'df .'\n";
@@ -109,12 +109,12 @@ foreach my $species (@species) {
   my ($available) = ($df =~ /\d+\s+(\d+)/);
   close(DF);
   if ($available < 30000000) { # NB df returns the available space in 1Kb blocks
-    $log->error("\nThere is less than 30Gb of free disk space available on /lustre/work1/ensembl/wormpipe/sort_dump\nAborting - not running $species\n");
+    $log->error("\nThere is less than 30Gb of free disk space available on /lustre/scratch103/ensembl/wormpipe/sort_dump\nAborting - not running $species\n");
     next;
   }
 
   $ENV{PERL5LIB} =  ".:/software/worm/lib/site_perl:/software/worm/lib/bioperl-live:/software/worm/ensembl/ensembl-pipeline/modules:/software/worm/ensembl/old_ensembl/modules";
-  $wormbase->run_command('rm -f /lustre/work1/ensembl/wormpipe/sort_dump/junk*', $log);
+  $wormbase->run_command('rm -f /lustre/scratch103/ensembl/wormpipe/sort_dump/junk*', $log);
   $wormbase->run_command("/software/bin/perl ../script/dump.pl -db worm_ensembl_$species", $log);
 
 
@@ -141,7 +141,7 @@ foreach my $species (@species) {
   print "  Sorting $species.srt . . .\n" if ($verbose);
   $exp->send("setenv SORT_OPTS \"-k2,2 -k8,8n -k10,10nr\"\n");
   &wait_for_prompt($exp);
-  $exp->send("cd /lustre/work1/ensembl/wormpipe/sort_dump\n");
+  $exp->send("cd /lustre/scratch103/ensembl/wormpipe/sort_dump\n");
   &wait_for_prompt($exp);
   $exp->send("time sort -m -S 2G -T tmp \$SORT_OPTS junk*.srt -o $species.srt\n"); 
   &wait_for_prompt($exp);
@@ -153,7 +153,7 @@ foreach my $species (@species) {
   #print "cmd = $cmd\n";
   $exp->send("$cmd\n");
   &wait_for_prompt($exp);
-  $exp->send("rm -f /lustre/work1/ensembl/wormpipe/sort_dump/junk*.*\n");
+  $exp->send("rm -f /lustre/scratch103/ensembl/wormpipe/sort_dump/junk*.*\n");
   &wait_for_prompt($exp);
 
   $log->write_to("  Running Motif data . . .\n") if ($verbose);
@@ -193,7 +193,7 @@ foreach my $species (@species) {
   ##################
   # Check the files
   ##################
-  my $dump_dir = "/lustre/work1/ensembl/wormpipe/dumps/";
+  my $dump_dir = "/lustre/scratch103/ensembl/wormpipe/dumps/";
 
  
   $wormbase->check_file($dump_dir."/${species}_blastp.ace", 

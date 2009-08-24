@@ -6,7 +6,7 @@
 #
 # needs: to run on the farm
 # needs: mysql databases on ia64d called worm_ensembl_$SPECIES
-# needs: /lustre/work1/ensembl/wormpipe/swall_data/trembl2org
+# needs: /lustre/scratch103/ensembl/wormpipe/swall_data/trembl2org
 
 use GDBM_File;
 use File::Copy;
@@ -40,7 +40,7 @@ DESTROY{
 
 # GDBM fuffing around
 sub prepare_gdb{
-    copy '/lustre/work1/ensembl/wormpipe/swall_data/trembl2org','/tmp/trembl2org';
+    copy '/lustre/scratch103/ensembl/wormpipe/swall_data/trembl2org','/tmp/trembl2org';
     tie %ORG,'GDBM_File', "/tmp/trembl2org",&GDBM_WRCREAT, 0666 or die "cannot open trembl2des DBM file";
 }
 sub teardown_gdb{

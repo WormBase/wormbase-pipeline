@@ -52,7 +52,7 @@ my $dbname = $database;
 my $maintainers = "All";
 my $rundate    = `date +%y%m%d`; chomp $rundate;
 my $wormpipe = glob("~wormpipe");
-my $wormpipe_dir = "/lustre/work1/ensembl/wormpipe";
+my $wormpipe_dir = "/lustre/scratch103/ensembl/wormpipe";
 
 my $best_hits = "$wormpipe_dir/dumps/${species}_best_blastp_hits";
 my $ipi_file = "$wormpipe_dir/dumps/${species}_ipi_hits_list";
@@ -129,7 +129,7 @@ my $QUERY_SPECIES = $wormbase->full_name;
  
 #connect to GDBM_File databases for species determination and establish hashes
 
-my $db_files = "/lustre/work1/ensembl/wormpipe/swall_data";
+my $db_files = "/lustre/scratch103/ensembl/wormpipe/swall_data";
 
 my %file_mapping = ( 
 	"$db_files/swissprot2org" => '/tmp/swissprot2org',
