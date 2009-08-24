@@ -23,9 +23,9 @@ use YAML;
 use Getopt::Long;
 use Storable;
 # use Wormbase;
-use lib '/software/worm/ensembl/ensembl/modules';
-use lib '/software/worm/ensembl/ensembl-pipeline/modules';
-use lib '/software/worm/lib/bioperl-live';
+use lib '/software/worm/ensembl-55/ensembl/modules';
+use lib '/software/worm/ensembl-55/ensembl-pipeline/modules';
+use lib '/software/worm/ensembl-55/bioperl-live';
 use Bio::Seq;
 use Bio::SeqIO;
 use Bio::EnsEMBL::CoordSystem;
@@ -90,11 +90,12 @@ sub setupdb {
     print "loading table.sql from ensembl\n";
     system( "$mysql $db->{dbname} < " . $cvsDIR . "ensembl/sql/table.sql" ) && die;
     print "loading table.sql from ensembl-pipeline\n";
-    system( "$mysql $db->{dbname} < " . $cvsDIR . "ensembl-pipeline/sql/table.sql" )                                                         && die;
-    system("$mysql -e 'INSERT INTO coord_system VALUES (1,\"chromosome\",\"$version\",1,\"default_version,top_level\");' $db->{dbname}")       && die;
-    system("$mysql -e 'INSERT INTO coord_system VALUES (2,\"superlink\",\"$version\",2,\"default_version,sequence_level\");' $db->{dbname}") && die;
-    system("$mysql -e 'INSERT INTO coord_system VALUES (3,\"clone\",\"$version\",3,\"default_version\");' $db->{dbname}")                                   && die;
-    system("$mysql -e 'INSERT INTO meta (meta_key,meta_value) VALUES (\"genebuild.version\",\"$version\");' $db->{dbname}")                  && die;
+    system( "$mysql $db->{dbname} < " . $cvsDIR . "ensembl-pipeline/sql/table.sql" ) && die;
+    system("$mysql -e 'INSERT INTO coord_system VALUES (1,1,\"chromosome\",\"$version\",1,\"default_version,top_level\");' $db->{dbname}") && die;
+    system("$mysql -e 'INSERT INTO coord_system VALUES (2,1,\"superlink\",\"$version\",2,\"default_version,sequence_level\");' $db->{dbname}") && die;
+    system("$mysql -e 'INSERT INTO coord_system VALUES (3,1,\"clone\",\"$version\",3,\"default_version\");' $db->{dbname}") && die;
+    system("$mysql -e 'INSERT INTO meta (meta_key,meta_value) VALUES (\"genebuild.version\",\"$version\");' $db->{dbname}") && die;
+    system("$mysql -e 'INSERT INTO meta (meta_key,meta_value) VALUES (\"genebuild.start_date\",NOW());' $db->{dbname}") && die;
     system("$mysql -e 'INSERT INTO analysis (created,logic_name,module) VALUES ( NOW(),\"wormbase\",\"wormbase\");' $db->{dbname}")          && die;
     system( "$mysql -e 'INSERT INTO analysis_description (analysis_id,description,display_label) VALUES (1,\"imported from WormBase\",\"WormGene\");' $db->{dbname}") && die;
     system("$mysql $db->{dbname} </software/worm/ensembl/ensembl-pipeline/scripts/DataConversion/wormbase/attrib_type.sql") && die;
@@ -258,6 +259,7 @@ sub load_genes {
         &write_genes( $genes, $db );
     }
     $db->dbc->do('UPDATE gene SET biotype="protein_coding"');
+    $db->dbc->do('INSERT INTO meta (meta_key,meta_value) VALUES ("genebuild.start_dat",NOW())');
 
     # elegans cleanup
     ( system('rm -rf /tmp/compara') && die "could not clean up /tmp/compara" ) if ($species eq 'elegans' ||$species eq 'briggsae');
