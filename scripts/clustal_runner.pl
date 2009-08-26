@@ -6,8 +6,8 @@ $ENV{CLUSTALDIR} = '/software/worm/bin';
 
 use lib $ENV{CVS_DIR};
 use lib '/software/worm/lib/site_perl';
-use lib '/software/worm/ensembl-53/bioperl-live';
-use lib '/software/worm/ensembl-53/bioperl-run';
+use lib '/software/worm/ensembl-55/bioperl-live';
+use lib '/software/worm/ensembl-55/bioperl-run';
 use Wormbase;
 use Ace;
 use IO::String;
