@@ -410,13 +410,13 @@ lines => ['^WB\tWBGene\d+\t\S+\t\tGO\:\d+'],
 
 $wormbase->check_file("$output.cb", $log,
 minsize => 1500000,
-maxsize => 4500000,
+maxsize => 8000000,
 lines => ['^WB\tWBGene\d+\t\S+\t\tGO\:\d+'],
 );
 
 $wormbase->check_file("$output.cjp", $log,
 minsize =>  1600000,
-maxsize =>  5000000,
+maxsize =>  8000000,
 lines => ['^WB\tWBGene\d+\t\S+\t\tGO\:\d+'],
 );
 
@@ -435,7 +435,7 @@ lines => ['^WB\tWBGene\d+\t\S+\t\tGO\:\d+'],
 
 $wormbase->check_file("$output.rem", $log,
 minsize =>  2000000,
-maxsize =>  7000000,
+maxsize =>  8000000,
 lines => ['^WB\tWBGene\d+\t\S+\t\tGO\:\d+'],
 );
 
