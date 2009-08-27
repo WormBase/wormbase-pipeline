@@ -5,7 +5,7 @@
 # Usage : EMBL_Sequencefetch.pl [-options]
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2009-04-24 14:04:46 $
+# Last edited on: $Date: 2009-08-27 09:52:33 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -81,6 +81,7 @@ my %molecule2rnatype = ( 'genomic RNA' => "ncRNA",
 			 'snRNA' => "snRNA",
 			 'unassigned RNA' => "ncRNA",
 			 'tRNA' => "tRNA",
+			 'transcribed RNA' => "ncRNA",
 		       );
 
 my %species2taxonid = (
@@ -101,7 +102,7 @@ WARNING: You are running in test mode, only molecule(s) [@molecules] will be ret
 ---------------------------------------------------------------------------------------------------------\n";
 }
 else {
-  @molecules  = ("genomic RNA","mRNA","other RNA","pre-RNA","rRNA","snRNA","unassigned RNA","tRNA" );
+  @molecules  = ("genomic RNA","mRNA","other RNA","pre-RNA","rRNA","snRNA","unassigned RNA","tRNA","transcribed RNA");
 }
 
 # incremental mode
@@ -346,6 +347,7 @@ sub get_new_data {
   if ($submol eq "genomic RNA") {$submol_mod = "genomic_RNA";}
   elsif ($submol eq "other RNA") {$submol_mod = "other_RNA";}
   elsif ($submol eq "unassigned RNA") {$submol_mod = "unassigned_RNA";}
+  elsif ($submol eq "transcribed RNA") {$submol_mod = "transcribed_RNA";}
   else {$submol_mod = $submol;}
   #Output files
   $acefile = "$output_dir/new_${suborganism}_$submol_mod.ace";
@@ -690,6 +692,7 @@ sub load_data {
   if ($submol eq "genomic RNA") {$submol_mod = "genomic_RNA";}
   elsif ($submol eq "other RNA") {$submol_mod = "other_RNA";}
   elsif ($submol eq "unassigned RNA") {$submol_mod = "unassigned_RNA";}
+  elsif ($submol eq "transcribed RNA") {$submol_mod = "transcribed_RNA";}
   else {$submol_mod = $submol;}
 
   $acefile = "$output_dir/new_${suborganism}_$submol_mod.ace";
