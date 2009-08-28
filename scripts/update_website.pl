@@ -8,7 +8,7 @@
 # relevant WormBase and Wormpep web pages.
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2009-05-28 13:12:41 $      
+# Last updated on: $Date: 2009-08-28 13:40:14 $      
 
 
 #################################################################################
@@ -195,8 +195,8 @@ if ($all || $overlap) {
   }
 }
 if ($all || $EST_files) {
-  $wb->check_file("$www/$WS_name/Checks/EST_analysis.html", $log,
-		  minsize => 800,);
+#  $wb->check_file("$www/$WS_name/Checks/EST_analysis.html", $log,
+#		  minsize => 800,);
 #  $wb->check_file("$www/$WS_name/Checks/EST_no_accession.shtml", $log);
 #  $wb->check_file("$www/$WS_name/Checks/EST_unassigned.shtml", $log);
 #  $wb->check_file("$www/$WS_name/Checks/EST_mismatched.shtml", $log);
@@ -213,10 +213,10 @@ if ($all || $copyGFF) {
   }
 }
 if ($all || $create_GFF) {
-  $wb->check_file("$www/$WS_name/Checks/GFF_introns_confirmed_CDS_cam.html", $log,
-		  minsize => 10,);
-  $wb->check_file("$www/$WS_name/Checks/GFF_introns_confirmed_CDS_stl.html", $log,
-		  minsize => 10,);
+#  $wb->check_file("$www/$WS_name/Checks/GFF_introns_confirmed_CDS_cam.html", $log,
+#		  minsize => 10,);
+#  $wb->check_file("$www/$WS_name/Checks/GFF_introns_confirmed_CDS_stl.html", $log,
+#		  minsize => 10,);
 }
 if ($all || $update_wormpep) {
   $wb->check_file("$www/$WS_name/Checks/header.ini", $log);
