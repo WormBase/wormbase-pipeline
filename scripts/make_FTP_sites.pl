@@ -8,7 +8,7 @@
 # Originally written by Dan Lawson
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2009-08-28 12:40:36 $
+# Last updated on: $Date: 2009-08-28 15:01:08 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -562,13 +562,13 @@ sub copy_wormpep_files {
 	my %tierIII = $wormbase->tier3_species_accessors;
 	foreach my $t3 (keys %tierIII){ 
 	    my $wb = $tierIII{$t3};
-	    my $source =$wb->basedir . "/WORMPEP/".$wb->pepdir_prefix."pep$WS/".$wb->pepdir_prefix."pep.$WS_name";
+	    my $source =$wb->basedir . "/WORMPEP/".$wb->pepdir_prefix."pep$WS/".$wb->pepdir_prefix."pep.$WS_name.tar.gz";
 	    my $target = "$targetdir/$WS_name/genomes/".$wb->full_name('-g_species' => 1)."/sequences/protein";
 	    mkpath($target,1,0775);
-	    my $ftp_targ = "$target/".$wb->pepdir_prefix."pep.$WS_name.fa.gz";
+	    my $ftp_targ = "$target/".$wb->pepdir_prefix."pep.$WS_name.tar.gz";
 	    unless(-e $source) {
 		my $oldWS = -1 + $wormbase->get_wormbase_version;
-	       $source = "$targetdir/WS$oldWS/genomes/".$wb->full_name('-g_species' => 1)."/sequences/protein/".$wb->pepdir_prefix."pep$oldWS/".$wb->pepdir_prefix."pep.WS$oldWS";
+	       $source = "$targetdir/WS$oldWS/genomes/".$wb->full_name('-g_species' => 1)."/sequences/protein/".$wb->pepdir_prefix."pep$oldWS/".$wb->pepdir_prefix."pep.WS$oldWS.tar.gz";
 		$log->log_and_die("no peptide file for ".$wb->species."\n$source\n") unless (-e $source);
 	    }
 	    $wb->run_command("cp -f $source $ftp_targ", $log);
