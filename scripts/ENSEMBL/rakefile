@@ -103,41 +103,36 @@ end
 
 desc 'build homology database'
 task :build_homology => [:env_setup] do
-	conf='etc/my_compara.conf'
-	yml=YAML::load_file('etc/ensembl_lite.conf')
+  conf='etc/my_compara.conf'
+  yml=YAML::load_file('etc/ensembl_lite.conf')
   db=yml['elegans']['database']
 
   # base db+schema
   sh "mysql -h #{db['host']} -P#{db['port']} -u #{db['user']} -p#{db['password']} -e 'DROP DATABASE IF EXISTS worm_compara;CREATE DATABASE worm_compara;'"
-  sh "cat #{basedir}/ensembl-hive/sql/tables.sql #{basedir}/ensembl-compara/sql/table.sql #{basedir}/ensembl-compara/sql/pipeline-tables.sql |mysql -h #{db['host']} -P#{db['port']} -u #{db['user']} -p#{db['password']} worm_compara"
+  sh "cat #{basedir}/ensembl-compara/sql/table.sql #{basedir}/ensembl-hive/sql/tables.sql #{basedir}/ensembl-compara/sql/table.sql #{basedir}/ensembl-compara/sql/pipeline-tables.sql |mysql -h #{db['host']} -P#{db['port']} -u #{db['user']} -p#{db['password']} worm_compara"
 
   # taxonomy
   sh "bzcat #{basedir}/compara-conf/ncbi_taxon.sql.bz2 |mysql -h #{db['host']} -P#{db['port']} -u #{db['user']} -p#{db['password']} worm_compara"
-  
-  
-	sh "/software/bin/perl /software/worm/ensembl/ensembl-compara/scripts/pipeline/comparaLoadGenomes.pl -conf #{conf}"
-	sh "/software/bin/perl /software/worm/ensembl/ensembl-compara/scripts/pipeline/loadHomologySystem.pl -conf #{conf}"
-	sh "bzcat /software/worm/ensembl/compara-conf/ncbi_taxon.sql.bz2 |mysql -h #{db['host']} -u #{db['user']} -p#{db['password']} worm_compara"
-  
-  # load logics
-	sh "#{perl} #{basedir}/ensembl-compara/scripts/pipeline/comparaLoadGenomes.pl -conf #{conf}"
-	sh "#{perl} #{basedir}/ensembl-compara/scripts/pipeline/loadGeneTreeSystem.pl -conf #{conf}"
 
+  # load logics
+  sh "#{perl} #{basedir}/ensembl-compara/scripts/pipeline/comparaLoadGenomes.pl -conf #{conf}"
+  sh "#{perl} #{basedir}/ensembl-compara/scripts/pipeline/loadGeneTreeSystem.hcluster.pl -conf #{conf}"
+  
   # table hack
   `mysql -h ia64d -u wormadmin -pworms worm_compara -e 'INSERT INTO method_link (type, class) VALUES ("ENSEMBL_ORTHOLOGUES","Homology.homology"),("ENSEMBL_PARALOGUES","Homology.homology"),("PROTEIN_TREES","ProteinTree.protein_tree_node")'`
 
   # MLSS setup
   # For orthologues
-  sh "#{perl} #{basedir}/ensembl-compara/scripts/pipeline/create_mlss.pl --f --pw --reg_conf #{conf} --method_link_type ENSEMBL_ORTHOLOGUES --genome_db_id '1,2,3,4,5,6,7'"
+  sh "#{perl} #{basedir}/ensembl-compara/scripts/pipeline/create_mlss.pl --f --pw --reg_conf #{conf} --method_link_type ENSEMBL_ORTHOLOGUES --genome_db_id '1,2,3,4,5,6,7,8'"
 
   # For between-species paralogues
-  sh "#{perl} #{basedir}/ensembl-compara/scripts/pipeline/create_mlss.pl --f --pw --reg_conf #{conf} --method_link_type ENSEMBL_PARALOGUES --genome_db_id '1,2,3,4,5,6,7'"
+  sh "#{perl} #{basedir}/ensembl-compara/scripts/pipeline/create_mlss.pl --f --pw --reg_conf #{conf} --method_link_type ENSEMBL_PARALOGUES --genome_db_id '1,2,3,4,5,6,7,8'"
 
   # For same-species paralogues
-  sh "#{perl} #{basedir}/ensembl-compara/scripts/pipeline/create_mlss.pl --f --sg --reg_conf #{conf} --method_link_type ENSEMBL_PARALOGUES --genome_db_id '1,2,3,4,5,6,7'"
+  sh "#{perl} #{basedir}/ensembl-compara/scripts/pipeline/create_mlss.pl --f --sg --reg_conf #{conf} --method_link_type ENSEMBL_PARALOGUES --genome_db_id '1,2,3,4,5,6,7,8'"
 
   # For protein trees
-  sh "#{perl} #{basedir}create_mlss.pl --f --reg_conf #{conf} --method_link_type PROTEIN_TREES --genome_db_id '1,2,3,4,5,6,7'"
+  sh "#{perl} #{basedir}create_mlss.pl --f --reg_conf #{conf} --method_link_type PROTEIN_TREES --genome_db_id '1,2,3,4,5,6,7,8'"
 
 end
 
