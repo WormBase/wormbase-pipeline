@@ -7,8 +7,8 @@
 # 
 # Originally written by Dan Lawson
 #
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2009-08-20 10:35:52 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2009-08-28 12:40:36 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -602,7 +602,7 @@ sub _copy_pep_files {
 	mkpath($target,1,0775);
 
 	# if wormpep has not been rebuilt it may need to be carried from previous build.  Possibly done earlier but if not do it here.
-	unless (-e $source) {
+	unless (-e $source && -e $source . "/" . $wb->pepdir_prefix."pep$WS") { # look for the directory and an example expected file
 		require CarryOver;
 		my $carrier = CarryOver->new($wb, $log);
 		$carrier->carry_wormpep($WS,$wb->version);
