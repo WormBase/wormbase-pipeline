@@ -4,8 +4,8 @@
 #
 # written by Anthony Rogers
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2009-07-01 13:57:22 $
+# Last edited by: $Author: pad $
+# Last edited on: $Date: 2009-09-03 13:39:36 $
 #
 # it depends on:
 #    wormpep + history
@@ -132,7 +132,7 @@ GetOptions(
   )
   || die('cant parse the command line parameter');
 
-my $wormpipe_dir = '/lustre/work1/ensembl/wormpipe';
+my $wormpipe_dir = '/lustre/scratch103/ensembl/wormpipe';
 my $scripts_dir  = $ENV{'CVS_DIR'};
 
 # defaults
@@ -259,7 +259,7 @@ if ($cleanup) {
     $log->write_to("clearing up files generated in this build\n");
 
     # files to move to ~wormpub/last-build/
-    #   /lustre/work1/ensembl/wormpipe/dumps/
+    #   /lustre/scratch103/ensembl/wormpipe/dumps/
     #    ipi_hits_list
     #    trembllist.txt
     #    swisslist.txt
@@ -272,10 +272,10 @@ if ($cleanup) {
     #    ids.txt
 
     # to delete
-    #   /lustre/work1/ensembl/wormpipe/dumps/
+    #   /lustre/scratch103/ensembl/wormpipe/dumps/
     #      *.ace
     #      *.log
-    my $clear_dump = "/lustre/work1/ensembl/wormpipe/dumps";
+    my $clear_dump = "/lustre/scratch103/ensembl/wormpipe/dumps";
     $log->write_to("Removing . . . \n\t$clear_dump/*.ace\n");
     system("rm -f $clear_dump/*.ace $clear_dump/*.log") && warn "cant remove ace and log files from $clear_dump";
     $log->write_to ("Removing files currently in $wormpipe_dir/last_build/n");
