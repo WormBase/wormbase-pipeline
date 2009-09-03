@@ -6,8 +6,8 @@
 #
 # Builds a wormpep data set from the current autoace database
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2009-05-08 11:24:08 $
+# Last updated by: $Author: pad $
+# Last updated on: $Date: 2009-09-03 11:51:04 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -108,22 +108,24 @@ my %id2cds;
 my %aa_seq2id;
 
 if ($initial) {
-	$fasta=$accession=$history=$pepfile=$dna=$pepace=$additional=1 if $all;
-	&write_dna 			if $dna;	#writes dna file and pops %cds2aa [DataDumps]
-	&read_old_build;					#reads old fasta & pops %aa_seq2id. 
-	&assign_new_ids;					#iterates over %cds2aa assigns id. pops %id2cds and fills in %aa_seq2id for new
-	&write_wormpep_history_and_diff if $history;	#reads old history &updates based on %id2cds
-	&write_fasta 		if $fasta;
-	&run_pepace			if $pepace; #req history and fasta files
-	&write_accession 	if $accession;
-	&write_blast_pep 	if $pepfile;
-	&get_additional_data if $additional;
+  $fasta=$accession=$history=$pepfile=$dna=$pepace=$additional=1 if $all;
+  &write_dna 			if $dna;	#writes dna file and pops %cds2aa [DataDumps]
+  &read_old_build;					#reads old fasta & pops %aa_seq2id. 
+  &assign_new_ids;					#iterates over %cds2aa assigns id. pops %id2cds and fills in %aa_seq2id for new
+  &write_wormpep_history_and_diff if $history;	#reads old history &updates based on %id2cds
+  &write_fasta 		if $fasta;
+  &run_pepace			if $pepace; #req history and fasta files
+  &write_accession 	if $accession;
+  &write_blast_pep 	if $pepfile;
+  unless ((-e $wormbase->acefiles."/pfam_motifs.ace") && (-e $wormbase->acefiles."/interpro_motifs.ace")) {
+    &get_additional_data if $additional;
+  }
 }
 elsif( $final ) {
-	$pid=$pepfile=$table=1 if $all;
-	&get_embl_data		if ($pid and ($wormbase->species eq 'elegans'));
-	&write_final_pep 	if $pepfile;
-	&write_table 		if $table; #normally run within final pepfile
+  $pid=$pepfile=$table=1 if $all;
+  &get_embl_data		if ($pid and ($wormbase->species eq 'elegans'));
+  &write_final_pep 	if $pepfile;
+  &write_table 		if $table; #normally run within final pepfile
 }
 
 $log->mail;
