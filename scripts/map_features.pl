@@ -8,8 +8,8 @@
 # Uses Ant's Feature_mapper.pm module
 #
 #
-# Last updated by: $Author: ar2 $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2009-08-18 09:42:58 $        # quickly see when script was last changed and by whom
+# Last updated by: $Author: pad $                      # These lines will get filled in by cvs and helps us
+# Last updated on: $Date: 2009-09-07 09:37:56 $        # quickly see when script was last changed and by whom
 
 
 $|=1;
@@ -33,25 +33,27 @@ my $polyA_site;              #  polyA_site
 my $polyA_signal;            #  polyA_signal
 my $binding_site;            #  binding_site feature data.
 my $binding_site_reg;        #  binding_site_region feature data
+my $segmental_duplication;          #  segmental_duplication features
 my $adhoc;                   # Run against a file, output to screen
 my $start;
 my $stop;
 my $test;
 
 GetOptions (
-	    "all"          => \$all,
-	    "SL1"          => \$SL1,
-	    "SL2"          => \$SL2,
-	    "polyA_site"   => \$polyA_site,
-	    "polyA_signal" => \$polyA_signal,
-	    "binding_site" => \$binding_site,
-	    "binding_site_reg" => \$binding_site_reg,
-	    "adhoc=s"      => \$adhoc,
-            "debug=s"      => \$debug,
-            "verbose"      => \$verbose,
-	    "help"         => \$help,
-    	    'store=s'      => \$store,
-	    'test'         => \$test
+	    "all"                   => \$all,
+	    "SL1"                   => \$SL1,
+	    "SL2"                   => \$SL2,
+	    "polyA_site"            => \$polyA_site,
+	    "polyA_signal"          => \$polyA_signal,
+	    "binding_site"          => \$binding_site,
+	    "binding_site_reg"      => \$binding_site_reg,
+	    "segmental_duplication" => \$segmental_duplication,
+	    "adhoc=s"               => \$adhoc,
+            "debug=s"               => \$debug,
+            "verbose"               => \$verbose,
+	    "help"                  => \$help,
+    	    'store=s'               => \$store,
+	    'test'                  => \$test
 		);
 
 # Help pod if needed
@@ -89,8 +91,8 @@ my %sanity = (
 	      'polyA_site'   => 0,
 	      'polyA_signal_sequence' => 6,
 	      'binding_site' => -1,
-	      'binding_site_region' => -1
-
+	      'binding_site_region' => -1,
+	      'segmental_duplication' => 100,
 	      );
 
 # queue which Feature types you want to map
@@ -101,6 +103,7 @@ push (@features2map, "polyA_signal_sequence")  if (($polyA_signal) || ($all));
 push (@features2map, "polyA_site")    if (($polyA_site) || ($all));
 push (@features2map, "binding_site")  if (($binding_site) || ($all));
 push (@features2map, "binding_site_region")  if (($binding_site_reg) || ($all));
+push (@features2map, "segmental_duplication")  if (($segmental_duplication) || ($all));
 
 #############
 # main loop #
