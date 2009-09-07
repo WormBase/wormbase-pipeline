@@ -25,8 +25,8 @@ $VALID_USERS = {
                 'md9'           => 9133,
 		'tbieri' 	=> 1849,
 		'jspieth' 	=> 615,
-		'dblasiar' 	=> 1843,
 		'pozersky' 	=> 1867,
+		'wnash'         => 10213,
 		'stlouis' 	=> 1,
 		'caltech' 	=> 1,
 		'cshl' 		=> 1,
@@ -35,16 +35,16 @@ $VALID_USERS = {
 
 ## a list of valid SSO login names for each DB operation
 $VALID_API_USERS = {
-		    'query'		=> [qw(avc ar2 pad gw3 mh6 mt3 md9 tbieri jspieth dblasiar pozersky stlouis caltech cshl sanger)],
-		    'load_file'		=> [qw(avc ar2 pad gw3 mh6 mt3 md9 tbieri jspieth dblasiar pozersky stlouis caltech cshl sanger)],
-		    'merge_genes'	=> [qw(avc ar2 pad gw3 mt3 md9 tbieri jspieth dblasiar pozersky)],
-		    'split_gene'	=> [qw(avc ar2 pad gw3 mt3 md9 tbieri jspieth dblasiar pozersky)],
-		    'new_gene'		=> [qw(avc ar2 pad gw3 mt3 md9 tbieri jspieth dblasiar pozersky)],
-		    'kill_gene'		=> [qw(avc ar2 pad gw3 mt3 md9 tbieri jspieth dblasiar pozersky)],
-		    'add_name'		=> [qw(avc ar2 pad gw3 mt3 md9 tbieri jspieth dblasiar pozersky)],
-		    'remove_name'	=> [qw(avc ar2 pad gw3 mt3 md9 tbieri jspieth dblasiar pozersky)],
-		    'change_class'	=> [qw(avc ar2 pad gw3 mt3 md9 tbieri jspieth dblasiar pozersky)],
-		    'dump_all'          => [qw(ar2 pad gw3 mt3 md9 tbieri jspieth dblasiar pozersky caltech)],
+		    'query'		=> [qw(avc ar2 pad gw3 mh6 mt3 md9 tbieri jspieth wnash pozersky stlouis caltech cshl sanger)],
+		    'load_file'		=> [qw(avc ar2 pad gw3 mh6 mt3 md9 tbieri jspieth wnash pozersky stlouis caltech cshl sanger)],
+		    'merge_genes'	=> [qw(avc ar2 pad gw3 mt3 md9 tbieri wnash jspieth  pozersky)],
+		    'split_gene'	=> [qw(avc ar2 pad gw3 mt3 md9 tbieri jspieth wnash pozersky)],
+		    'new_gene'		=> [qw(avc ar2 pad gw3 mt3 md9 tbieri jspieth wnash pozersky)],
+		    'kill_gene'		=> [qw(avc ar2 pad gw3 mt3 md9 tbieri jspieth wnash pozersky)],
+		    'add_name'		=> [qw(avc ar2 pad gw3 mt3 md9 tbieri jspieth wnash pozersky)],
+		    'remove_name'	=> [qw(avc ar2 pad gw3 mt3 md9 tbieri jspieth wnash pozersky)],
+		    'change_class'	=> [qw(avc ar2 pad gw3 mt3 md9 tbieri jspieth wnash pozersky)],
+		    'dump_all'          => [qw(ar2 pad gw3 mt3 md9 tbieri jspieth wnash pozersky caltech)],
 		   };
 
 ## a list of valid SSO login names able to add GCG name
@@ -66,8 +66,8 @@ $MAILS = {
           'md9'                 =>      'md9@sanger.ac.uk',
 	  'tbieri'		=>	'tbieri@watson.wustl.edu',
 	  'jspieth'	        =>	'jspieth@watson.wustl.edu',
-	  'dblasiar'	        =>	'dblasiar@watson.wustl.edu',
 	  'pozersky'	        =>	'pozersky@watson.wustl.edu',
+	  'wnash'               =>      'wnash@watson.wustl.edu',
 	  'stlouis'	        =>	'stlouis@wormbase.org',
 	  'caltech'	        =>	'caltech@wormbase.org',
 	  'cshl'		=>	'cshl@wormbase.org',
