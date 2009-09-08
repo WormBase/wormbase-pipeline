@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2009-08-14 10:26:11 $      
+# Last updated on: $Date: 2009-09-08 13:27:07 $      
 
 # Changes required by Ant: 2008-02-19
 # 
@@ -236,6 +236,7 @@ while (my $run = <DATA>) {
 &delete_anomalies("JIGSAW_WITH_SIGNALP");
 &delete_anomalies("JIGSAW_DIFFERS_FROM_CDS");
 &delete_anomalies("CDS_DIFFERS_FROM_JIGSAW");
+&delete_anomalies("UNMATCHED_454_CLUSTER");
 
 
 # if we want the anomalies GFF file
@@ -379,6 +380,7 @@ foreach my $chromosome (@chromosomes) {
   my @ignored_introns = $ovlp->get_ignored_introns($chromosome) if (exists $run{UNCONFIRMED_INTRON}); 
 
   my @expression = &get_expression($chromosome) if (exists $run{UNMATCHED_EXPRESSION});
+  my @unmatched_454 = &get_unmatched_454($chromosome) if (exists $run{UNMATCHED_454_CLUSTER});
 
 
 ######################################################################
@@ -599,22 +601,61 @@ exit(0);
 
 sub get_expression {
   my ($chromosome) = @_;
+  
+  if ($wormbase->species eq 'elegans') {
+    
+    my %GFF_data = 
+      (
+       file => "~wormpub/CURATION_DATA/Tiling_array_data/tiling_array_${chromosome}.gff",
+       gff_source => 'tiling_array',
+       gff_type   => 'tiling_array',
+       ID_after   => 'ID\s+',
+      );
+    
+    return $ovlp->read_GFF_file($chromosome, \%GFF_data);
+    
+  } else {
+    return ();
+  }
+  
+}
+
+##############################################################
+# get the GFF data of the unmatched 454 clusters
+# precomputed by Paul Davis
+
+sub get_unmatched_454 {
+  my ($chromosome) = @_;
 
   if ($wormbase->species eq 'elegans') {
 
-  my %GFF_data = 
-   (
-    file => "~wormpub/CURATION_DATA/Tiling_array_data/tiling_array_${chromosome}.gff",
-    gff_source => 'tiling_array',
-    gff_type   => 'tiling_array',
-    ID_after   => 'ID\s+',
-    );
+    my %GFF_data = 
+      (
+       file => "~wormpub/CURATION_DATA/WS206_454_shin_cluster.gff",
+       gff_source => '454_read_cluster',
+       gff_type   => 'expressed_sequence_match',
+       ID_after   => 'position\s+',
+      );
+    
+    my @clusters = $ovlp->read_GFF_file($chromosome, \%GFF_data);
+    
+    foreach my $cluster (@clusters) { # $expression_id, $chrom_start, $chrom_end, $chrom_strand
 
-  return $ovlp->read_GFF_file($chromosome, \%GFF_data);
+      my $cluster_id = "454_cluster";
+      my $chrom_start = $cluster->[1];
+      my $chrom_end = $cluster->[2];
+      my $chrom_strand = $cluster->[3];
+      my $protein_score = $cluster->[6];
 
-} else {
-  return ();
-}
+      my $anomaly_score = 10;
+
+      #print "NOT got a match ANOMALY: $protein_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score\n";
+      &output_to_database("UNMATCHED_454_CLUSTER", $chromosome, $cluster_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score, '');
+    }
+
+  } else {
+    return ();
+  }
 
 }
 
@@ -4103,6 +4144,7 @@ UNMATCHED_MASS_SPEC_PEPTIDE  elegans
 EST_OVERLAPS_INTRON          elegans remanei briggsae japonica brenneri brugia
 UNMATCHED_EXPRESSION         elegans
 INCOMPLETE_PFAM_MOTIF        elegans remanei briggsae japonica brenneri
+UNMATCHED_454_CLUSTER        elegans
 END_DATA
 
 =pod
