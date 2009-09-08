@@ -10,6 +10,7 @@ new Bio::EnsEMBL::DBSQL::DBAdaptor(-host => 'ia64d',-user=>'wormro',-port=> 3306
 new Bio::EnsEMBL::DBSQL::DBAdaptor(-host => 'ia64d',-user=>'wormro',-port=> 3306, -species => 'Brugia malayi',-group => 'core',-dbname => 'worm_ensembl_brugia');
 new Bio::EnsEMBL::DBSQL::DBAdaptor(-host => 'ia64d',-user=>'wormro',-port=> 3306, -species => 'Pristionchus pacificus',-group => 'core',-dbname => 'worm_ensembl_pristionchus');
 new Bio::EnsEMBL::DBSQL::DBAdaptor(-host => 'ia64d',-user=>'wormro',-port=> 3306, -species => 'Caenorhabditis japonica',-group => 'core',-dbname => 'worm_ensembl_japonica');
+new Bio::EnsEMBL::DBSQL::DBAdaptor(-host => 'ia64d',-user=>'wormro',-port=> 3306, -species => 'Meloidogyne hapla',-group => 'core',-dbname => 'worm_ensembl_mhapla');
 
 new Bio::EnsEMBL::Compara::DBSQL::DBAdaptor(-host => 'ia64d',-user=>'wormro',-port=> 3306, -species => 'Compara',-dbname => 'worm_compara_pecan');
 
