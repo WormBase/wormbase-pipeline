@@ -4,8 +4,8 @@
 #
 # written by Anthony Rogers
 #
-# Last edited by: $Author: pad $
-# Last edited on: $Date: 2009-09-03 13:39:36 $
+# Last edited by: $Author: mh6 $
+# Last edited on: $Date: 2009-09-08 08:41:00 $
 #
 # it depends on:
 #    wormpep + history
@@ -22,10 +22,11 @@ wormBLAST.pl
 
 =cut
 
+my $ensembldir = '/software/worm/ensembl-55';
 
-use lib '/software/worm/ensembl/ensembl/modules';
-use lib '/software/worm/ensembl/ensembl-pipeline/modules';
-use lib '/software/worm/lib/bioperl-live';
+use lib "$ensembldir/ensembl/modules";
+use lib "$ensembldir/ensembl-pipeline/modules";
+use lib "$ensembldir/bioperl-live";
 
 use Bio::EnsEMBL::DBSQL::DBConnection;
 use strict;
@@ -292,7 +293,7 @@ if ($cleanup) {
     system("rm -f $wormpipe_dir/DUMP_PREP_RUN") && warn "cant remove $wormpipe_dir/DUMP_PREP_RUN\n";
 
     $log->write_to("\nRemoving farm output and error files from /lustre/scratch1/ensembl/wormpipe/*\n") if $debug;
-    my $scratch_dir = "/lustre/scratch1/ensembl/wormpipe";
+    my $scratch_dir = $wormpipe_dir;
     # Michael wants ensembl-brugia left as it is for now as he uses it for testing
     my @species_dir = qw( ensembl-pristionchus ensembl-japonica ensembl-brenneri ensembl-briggsae ensembl-elegans ensembl-remanei ); 
     my @directories = qw( 0 1 2 3 4 5 6 7 8 9 );
@@ -565,8 +566,8 @@ sub update_dna {
         $config->{database}->{host},   $config->{database}->{user}, $config->{database}->{password},
         $config->{database}->{dbname}, $config->{database}->{port}
     );
-    my $pipeline_scripts = '/software/worm/ensembl/ensembl-pipeline/scripts';
-    my $conf_dir         = ($config->{confdir}||'/software/worm/ensembl/ensembl-config/generic');
+    my $pipeline_scripts = "$ensembldir/ensembl-pipeline/scripts";
+    my $conf_dir         = ($config->{confdir}||"$ensembldir/ensembl-config/generic");
 
     $wormbase->run_command( "perl $pipeline_scripts/analysis_setup.pl $db_options -read -file $conf_dir/analysis.conf", $log );
     $wormbase->run_command( "perl $pipeline_scripts/rule_setup.pl $db_options -read -file $conf_dir/rule.conf", $log );
@@ -624,7 +625,7 @@ sub update_proteins {
         $config->{database}->{host},   $config->{database}->{user}, $config->{database}->{password},
         $config->{database}->{dbname}, $config->{database}->{port}
     );
-    my $pipeline_scripts = '/software/worm/ensembl/ensembl-pipeline/scripts';
+    my $pipeline_scripts = "$ensembldir/ensembl-pipeline/scripts";
 
     $wormbase->run_script( "ENSEMBL/scripts/worm_lite.pl -load_genes -species $species", $log );
     $wormbase->run_command( "perl $pipeline_scripts/make_input_ids $db_options -translation_id -logic SubmitTranslation", $log );
@@ -668,8 +669,8 @@ sub parse_genes {
               && die 'cannot concatenate GFFs';
         }
     }
-	# if it is remanei collect all needed GFFs and then split them based on their supercontig into a /tmp/ directory
-	elsif (ref($wormbase) eq 'Remanei'||ref($wormbase) eq 'Pristionchus'){
+    # if it is remanei collect all needed GFFs and then split them based on their supercontig into a /tmp/ directory
+    elsif (ref($wormbase) eq 'Remanei'||ref($wormbase) eq 'Pristionchus'){
 	           my ($path)=glob($config->{fasta})=~/(^.*)\/CHROMOSOMES\//;
 	           my $tmpdir="/tmp/compara/$species";
 			   print STDERR "mkdir -p $tmpdir\n" if $debug;
@@ -687,7 +688,7 @@ sub parse_genes {
 	                  close OUTF;
 	           }
 	           close INF;
-	}
+    }
 
 
     foreach my $file ( glob $config->{gff} ) {
