@@ -9,7 +9,7 @@
 #
 #
 # Last updated by: $Author: pad $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2009-09-07 09:37:56 $        # quickly see when script was last changed and by whom
+# Last updated on: $Date: 2009-09-09 22:16:03 $        # quickly see when script was last changed and by whom
 
 
 $|=1;
@@ -92,7 +92,7 @@ my %sanity = (
 	      'polyA_signal_sequence' => 6,
 	      'binding_site' => -1,
 	      'binding_site_region' => -1,
-	      'segmental_duplication' => 100,
+	      'segmental_duplication' => -1,
 	      );
 
 # queue which Feature types you want to map
