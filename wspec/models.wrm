@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: ar2 $
-// Last edited on: $Date: 2009-08-10 10:45:27 $
+// Last edited on: $Date: 2009-09-10 10:09:18 $
 
 
 ////////////////////////
@@ -3055,6 +3055,7 @@
 
 // the main Analysis class
 ?Analysis    DB_info Database ?Database ?Database_field ?Accession_number
+	     Title Text
              Based_on_WB_Release Int
              Based_on_DB_Release Text
              Description ?Text
