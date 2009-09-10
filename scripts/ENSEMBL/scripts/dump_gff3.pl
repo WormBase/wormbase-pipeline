@@ -10,6 +10,8 @@ use strict;
 use warnings;
 
 use lib '../lib';
+use lib '/software/worm/ensembl/ensembl/modules';
+use lib $ENV{'CVS_DIR'}."/ENSEMBL/lib";
 
 use Bio::EnsEMBL::DBSQL::DBAdaptor;
 use IO::File;
@@ -25,7 +27,7 @@ my $vega_dbhost = 'ia64d';
 my $vega_dbport =  3306;
 my $vega_dbuser = 'wormro'; 
 my $vega_dbpass = '';
-my $dump_slice ;
+my @dump_slice ;
 my $lsf;
 my $dumpdir;
 
@@ -35,10 +37,13 @@ GetOptions(
            'dbuser=s'     => \$vega_dbuser,
            'dbpass=s'     => \$vega_dbpass,
            'dbport=s'     => \$vega_dbport,
-	   'slice=s'      => \$dump_slice,
-	   'submit'       => \$lsf,
+	   'slice=s'      => \@dump_slice,
+	   'submit=i'     => \$lsf,
 	   'dumpdir=s'    => \$dumpdir,
           )or die ("Couldn't get options");
+
+
+@dump_slice = split(/,/,join(',',@dump_slice));
 
 my $vega_db = new Bio::EnsEMBL::DBSQL::DBAdaptor(
 	-dbname  => $vega_dbname,
@@ -55,105 +60,115 @@ my $mapper = Domain2Interpro->new();
 # Get all toplevel slices
 my $sa = $vega_db->get_SliceAdaptor();
 my $slices;
-if ($dump_slice){
-   push @$slices, $sa->fetch_by_region('toplevel',$dump_slice);
+if ($dump_slice[0]){
+    foreach (@dump_slice) {
+	push @$slices, $sa->fetch_by_region('toplevel',$_);
+    }
 }
 else {
    $slices = $sa->fetch_all('toplevel');
 }
+my $bsub_str = "bsub -R \"select[mem>3500] rusage[mem=3500]\" -o /dev/null -e /dev/null -J dump_$vega_dbname perl $0 -dbhost $vega_dbhost -dbname $vega_dbname -dbuser $vega_dbuser  -dbport $vega_dbport -dumpdir $dumpdir -slice ";
+$bsub_str .= " -dbpass $vega_dbpass" if $vega_dbpass;
 
+my $slice_counter =0;
+my $bsub_slices = "";
 while( my $slice = shift @$slices) {
-	my $slice_name = $slice->seq_region_name();
-	my $slice_size = $slice->length;
-
-        if ($lsf){
-		my $bsub="bsub -R \"select[mem>3500] rusage[mem=3500]\" -o /dev/null -e /dev/null -J dump_$slice_name perl $0 -dbhost $vega_dbhost -dbname $vega_dbname -dbuser $vega_dbuser  -dbport $vega_dbport -slice $slice_name -dumpdir $dumpdir";
-		$bsub.=" -dbpass $vega_dbpass" if $vega_dbpass;
-		print STDERR "$bsub\n" if $debug;
-		print `$bsub`;
-		
-	}else {
-
+    my $slice_name = $slice->seq_region_name();
+    my $slice_size = $slice->length;
+    
+    if ($lsf){
+	$bsub_slices .= "$slice_name,";
+	$slice_counter++;
+	
+	if($slice_counter == $lsf) {
+	    print STDERR "$bsub_str $bsub_slices\n" if $debug;
+	   # print `$bsub_str $bsub_slices`;
+	    $slice_counter =0;
+	    $bsub_slices = "";
+	}
+    }else {
+	
 	print STDERR "Dumping $slice_name to $dumpdir/$slice_name.gff3 \n" if $debug;
-        
+	
 	my $outf = new IO::File (">$dumpdir/$slice_name.gff3");
-
+	
 	print $outf "##gff-version 3\n";
 	print $outf "##sequence-region $slice_name 1 $slice_size\n";
 	
 	# Get all the genes on this slice
 	my $genes = $slice->get_all_Genes();
 	while( my $gene=shift @$genes) {
-		my $gene_stable_id = 'gene:'.$gene->stable_id();
-		print STDERR " Dumping $gene_stable_id\n" if $debug;
+	    my $gene_stable_id = 'gene:'.$gene->stable_id();
+	    print STDERR " Dumping $gene_stable_id\n" if $debug;
 
-		my %gene_to_dump = (
-			stable_id => $gene_stable_id,
-			name      => $slice_name,
-			start     => $gene->seq_region_start(),
-			end       => $gene->seq_region_end(),
-			strand    => $gene->strand(),
-			note      => ($gene->status()||'PREDICTED' ). " " . $gene->biotype(),
-			public_name => $gene->stable_id(),
-			display     => $gene->stable_id(), # wrong but fixes db's without xref_mapping
-		);
-
-		# get all transcripts of the gene
-		my $all_transcripts = $gene->get_all_Transcripts();
-		while( my $transcript = shift @{$all_transcripts}) {
-			my $translation = $transcript->translation;
-
-			my $transcript_stable_id = 'transcript:'.$transcript->stable_id();
-			my $translation_id = 'cds:'.$transcript->translation->stable_id();
-
-			print STDERR "  Dumping $transcript_stable_id\n" if $debug;
-			print STDERR "  Dumping $translation_id\n" if $debug;
-
-			push @{$gene_to_dump{'transcript'}}, {
-				stable_id => $transcript_stable_id,
-				translation_stable_id => $translation_id,
+	    my %gene_to_dump = (
+				stable_id => $gene_stable_id,
 				name      => $slice_name,
-				start     => $transcript->start(),
-				cds_start => $translation->genomic_start(),
-				cds_end   => $translation->genomic_end(),
-				end       => $transcript->end(),
-				strand    => $transcript->strand(),
-				note      => $transcript->biotype(),
-				info      => get_info($transcript),
-				public_name => $transcript->stable_id(),
-				display     => $transcript->stable_id(),
-			};
+				start     => $gene->seq_region_start(),
+				end       => $gene->seq_region_end(),
+				strand    => $gene->strand(),
+				note      => ($gene->status()||'PREDICTED' ). " " . $gene->biotype(),
+				public_name => $gene->stable_id(),
+				display     => $gene->stable_id(), # wrong but fixes db's without xref_mapping
+				);
 
-			# get all exons and translatable_exons of the transcript
-			my $all_exons=$transcript->get_all_Exons();
-			my $all_t_exons = $transcript->get_all_translateable_Exons();
+	    # get all transcripts of the gene
+	    my $all_transcripts = $gene->get_all_Transcripts();
+	    while( my $transcript = shift @{$all_transcripts}) {
+		my $translation = $transcript->translation;
 
-			while( my $exon = shift @{$all_exons}) {
-				my $exon_stable_id = 'exon:'.$exon->stable_id();
-				print STDERR "   Dumping $exon_stable_id\n" if $debug;
-				push @{${${$gene_to_dump{'transcript'}}[-1]}{'exon'}}, {
-					stable_id => $exon_stable_id,
-					name      => $slice_name,
-					start     => $exon->seq_region_start(),
-					end       => $exon->seq_region_end(),
-					strand    => $exon->strand(),
-				}
-			}
-			
-			$all_exons=undef;
+		my $transcript_stable_id = 'transcript:'.$transcript->stable_id();
+		my $translation_id = 'cds:'.$transcript->translation->stable_id();
 
-			while (my $cds = shift @{$all_t_exons}) {
-				push @{${${$gene_to_dump{'transcript'}}[-1]}{'cds'}}, {
-					stable_id => $translation_id,
-					name      => $slice_name,
-					start     => $cds->seq_region_start(),
-					end       => $cds->seq_region_end(),
-					strand    => $cds->strand(),
-					phase     => (3-$cds->phase())%3, # phase/frame conversion to a sane system
-				}
-			}
+		print STDERR "  Dumping $transcript_stable_id\n" if $debug;
+		print STDERR "  Dumping $translation_id\n" if $debug;
+
+		push @{$gene_to_dump{'transcript'}}, {
+		    stable_id => $transcript_stable_id,
+		    translation_stable_id => $translation_id,
+		    name      => $slice_name,
+		    start     => $transcript->start(),
+		    cds_start => $translation->genomic_start(),
+		    cds_end   => $translation->genomic_end(),
+		    end       => $transcript->end(),
+		    strand    => $transcript->strand(),
+		    note      => $transcript->biotype(),
+		    info      => get_info($transcript),
+		    public_name => $transcript->stable_id(),
+		    display     => $transcript->stable_id(),
+		};
+
+		# get all exons and translatable_exons of the transcript
+		my $all_exons=$transcript->get_all_Exons();
+		my $all_t_exons = $transcript->get_all_translateable_Exons();
+
+		while( my $exon = shift @{$all_exons}) {
+		    my $exon_stable_id = 'exon:'.$exon->stable_id();
+		    print STDERR "   Dumping $exon_stable_id\n" if $debug;
+		    push @{${${$gene_to_dump{'transcript'}}[-1]}{'exon'}}, {
+			stable_id => $exon_stable_id,
+			name      => $slice_name,
+			start     => $exon->seq_region_start(),
+			end       => $exon->seq_region_end(),
+			strand    => $exon->strand(),
+		    }
 		}
-		print $outf dump_gene(\%gene_to_dump);
+		
+		$all_exons=undef;
+
+		while (my $cds = shift @{$all_t_exons}) {
+		    push @{${${$gene_to_dump{'transcript'}}[-1]}{'cds'}}, {
+			stable_id => $translation_id,
+			name      => $slice_name,
+			start     => $cds->seq_region_start(),
+			end       => $cds->seq_region_end(),
+			strand    => $cds->strand(),
+			phase     => (3-$cds->phase())%3, # phase/frame conversion to a sane system
+		    }
+		}
+	    }
+	    print $outf dump_gene(\%gene_to_dump);
 	}
 
 	# get all protein align features on the slice
@@ -162,128 +177,133 @@ while( my $slice = shift @$slices) {
 
 	print STDERR "dumping ${\scalar @$features} Protein Align Features\n";
 	foreach my $feature(@$features){
-		my $stripped_feature = {
-			hit_id      => $feature->hseqname,
-			target_id   => $feature->slice->seq_region_name,
-			target_start=> $feature->hstart,
-			target_stop => $feature->hend,
-			strand      => ($feature->strand > 0?'+':'-'),
-			hit_start   => $feature->seq_region_start,
-			hit_stop    => $feature->seq_region_end,
-			score       => $feature->score,
-			p_value     => $feature->p_value,
-			dbid        => $feature->dbID,
-			logic_name  => $feature->analysis->logic_name,
-			cigar       => ($feature->strand > 0 ? $feature->cigar_string : reverse_cigar($feature->cigar_string)),
-			feature_type=> 'protein_match',
-		};
-		push @{$blastx_features{$stripped_feature->{logic_name}}}, $stripped_feature;
+	    my $stripped_feature = {
+		hit_id      => $feature->hseqname,
+		target_id   => $feature->slice->seq_region_name,
+		target_start=> $feature->hstart,
+		target_stop => $feature->hend,
+		strand      => ($feature->strand > 0?'+':'-'),
+		hit_start   => $feature->seq_region_start,
+		hit_stop    => $feature->seq_region_end,
+		score       => $feature->score,
+		p_value     => $feature->p_value,
+		dbid        => $feature->dbID,
+		logic_name  => $feature->analysis->logic_name,
+		cigar       => ($feature->strand > 0 ? $feature->cigar_string : reverse_cigar($feature->cigar_string)),
+		feature_type=> 'protein_match',
+	    };
+	    push @{$blastx_features{$stripped_feature->{logic_name}}}, $stripped_feature;
 	}
         $features=undef;
 
 	while (my($k,$v)=each %blastx_features){
-		  my @filtered_features=filter_features($v,$slice_size);
-		  map {print $outf dump_feature($_)} @filtered_features;
-	  }
+	    my @filtered_features=filter_features($v,$slice_size);
+	    map {print $outf dump_feature($_)} @filtered_features;
+	}
 
         # get all dna align features on the slice
 	
 	$features=$slice->get_all_DnaAlignFeatures();
 	print STDERR "dumping ${\scalar @$features} DNA Align Features\n";
         foreach my $feature(@$features){
-                 my $stripped_feature = {
-			hit_id      => $feature->hseqname,
-			target_id   => $feature->slice->seq_region_name,
-			target_start=> $feature->hstart,
-			target_stop => $feature->hend,
-			strand      => ($feature->strand > 0?'+':'-'),
-			hit_start   => $feature->seq_region_start,
-			hit_stop    => $feature->seq_region_end,
-			score       => $feature->score,
-			p_value     => $feature->p_value,
-			dbid        => $feature->dbID,
-			logic_name  => $feature->analysis->logic_name,
-			cigar       => ($feature->strand > 0 ? $feature->cigar_string : reverse_cigar($feature->cigar_string)),
-			feature_type=> 'nucleotide_match',
-		};
-                print $outf dump_feature($stripped_feature);
+	    my $stripped_feature = {
+		hit_id      => $feature->hseqname,
+		target_id   => $feature->slice->seq_region_name,
+		target_start=> $feature->hstart,
+		target_stop => $feature->hend,
+		strand      => ($feature->strand > 0?'+':'-'),
+		hit_start   => $feature->seq_region_start,
+		hit_stop    => $feature->seq_region_end,
+		score       => $feature->score,
+		p_value     => $feature->p_value,
+		dbid        => $feature->dbID,
+		logic_name  => $feature->analysis->logic_name,
+		cigar       => ($feature->strand > 0 ? $feature->cigar_string : reverse_cigar($feature->cigar_string)),
+		feature_type=> 'nucleotide_match',
+	    };
+	    print $outf dump_feature($stripped_feature);
 	}
 	
 
 	# get all repeat features on the slice
         my $repeats = $slice->get_all_RepeatFeatures;
         foreach my $feature (@$repeats){
-        	my $stripped_feature = {
-			target_id   => $feature->slice->seq_region_name,
-			strand      => ($feature->strand > 0?'+':'-'),
-			hit_start   => $feature->seq_region_start,
-			hit_stop    => $feature->seq_region_end,
-			score       => ($feature->score||'.'),
-			dbid        => $feature->dbID,
-			logic_name  => $feature->analysis->logic_name,
-			feature_type=> 'repeat_region',
-		};
-		print $outf dump_feature($stripped_feature);
+	    my $stripped_feature = {
+		target_id   => $feature->slice->seq_region_name,
+		strand      => ($feature->strand > 0?'+':'-'),
+		hit_start   => $feature->seq_region_start,
+		hit_stop    => $feature->seq_region_end,
+		score       => ($feature->score||'.'),
+		dbid        => $feature->dbID,
+		logic_name  => $feature->analysis->logic_name,
+		feature_type=> 'repeat_region',
+	    };
+	    print $outf dump_feature($stripped_feature);
 	}
 
 	print $outf '#'x80;
 	print $outf "\n";
 	$outf->close;
-      }
+    }
+}
+
+if( $lsf) {
+    print STDERR "$bsub_str $bsub_slices\n" if $debug;
+    print `$bsub_str $bsub_slices`;
 }
 
 # CIGAR to old GFF3 CIGAR format converter
 sub cigar_to_almost_cigar {
-	my $i=shift;
-	$i=~s/(\d*)(\w)/$2$1 /g;
-	return $i;
+    my $i=shift;
+    $i=~s/(\d*)(\w)/$2$1 /g;
+    return $i;
 }
 
 # reverse cigar string
 sub reverse_cigar {
-	my $i=shift;
-	my @pairs=$i=~/(\d*[MIDFR])/g;
-	my $reversed_cigar = join('',reverse @pairs);
-	return $i;
+    my $i=shift;
+    my @pairs=$i=~/(\d*[MIDFR])/g;
+    my $reversed_cigar = join('',reverse @pairs);
+    return $i;
 }
 
 # print the feature using some funky template
 sub dump_feature {
-	my $i=shift;
-	my %feature=%{$i};
-	my $gff_line=
-	 "$feature{target_id}\t$feature{logic_name}\t$feature{feature_type}\t$feature{hit_start}\t$feature{hit_stop}\t".
-	 "$feature{score}\t$feature{strand}\t.".
-	 "\tID=$feature{logic_name}.$feature{dbid}".
-	 ($feature{cigar}?";Name=$feature{hit_id};Target=$feature{hit_id} $feature{target_start} $feature{target_stop};Gap=$feature{cigar}\n":"\n");
-	return $gff_line;
+    my $i=shift;
+    my %feature=%{$i};
+    my $gff_line=
+	"$feature{target_id}\t$feature{logic_name}\t$feature{feature_type}\t$feature{hit_start}\t$feature{hit_stop}\t".
+	"$feature{score}\t$feature{strand}\t.".
+	"\tID=$feature{logic_name}.$feature{dbid}".
+	($feature{cigar}?";Name=$feature{hit_id};Target=$feature{hit_id} $feature{target_start} $feature{target_stop};Gap=$feature{cigar}\n":"\n");
+    return $gff_line;
 }
 
 
 # build the info tag including protein features and interpro
 sub get_info {
-	my $transcript= shift;
-	my $info='';
-	# get all protein_features on the transcript
-	my $features=$transcript->translation->get_all_ProteinFeatures();
-	# get logic_name and hit_id
-	
-	my %plain_features;
-        my $rest_features;
-	map {
-		if ($mapper->get_method2database($_->analysis->logic_name())) {
-			push @{$plain_features{$_->analysis->logic_name()}},[$_->id(),$_->start(),
-			$_->end(),$_->hstart(),$_->hend(),$_->score(),$_->p_value()]
-		}else {
-			push @$rest_features,$_
-		}
-	} @$features;
-	my @interpros=$mapper->get_mapping(\%plain_features);
-	map {$info.=sprintf( "position:%d-%d method:%s accession:%s description:%s %%0A", $_->[1], $_->[2],
-			'InterPro', $_->[0] , $_->[7]) if $_->[1]} @interpros;
+    my $transcript= shift;
+    my $info='';
+    # get all protein_features on the transcript
+    my $features=$transcript->translation->get_all_ProteinFeatures();
+    # get logic_name and hit_id
+    
+    my %plain_features;
+    my $rest_features;
+    map {
+	if ($mapper->get_method2database($_->analysis->logic_name())) {
+	    push @{$plain_features{$_->analysis->logic_name()}},[$_->display_id(),$_->start(),
+								 $_->end(),$_->hstart(),$_->hend(),$_->score(),$_->p_value()]
+								 }else {
+								     push @$rest_features,$_
+								     }
+    } @$features;
+    my @interpros=$mapper->get_mapping(\%plain_features);
+    map {$info.=sprintf( "position:%d-%d method:%s accession:%s description:%s %%0A", $_->[1], $_->[2],
+			 'InterPro', $_->[0] , $_->[7]) if $_->[1]} @interpros;
 
-	while ( my $pfeature = shift @$rest_features ) {
-         my $logic_name = $pfeature->analysis()->logic_name();
+    while ( my $pfeature = shift @$rest_features ) {
+	my $logic_name = $pfeature->analysis()->logic_name();
          $info.=sprintf( "position:%d-%d %s method:%s accession:%s %%0A", $pfeature->start(), $pfeature->end(), 
 		 $pfeature->p_value(),$logic_name, $pfeature->id());
 	}
