@@ -1293,6 +1293,15 @@ GFF_source "binding_site_region"
 GFF_feature "binding_site"	 
 Remark   "manually curated binding site region" 	 
 
+Method : "segmental_duplication" 	  
+Colour  ORANGE	  	 
+Width    1.000000 	 
+Show_up_strand 	 
+Show_text 	 
+GFF_source "segmental_duplication"
+GFF_feature "segmental_duplication"	 
+Remark   "Polymorphic segmental duplication as defined by the tool OrthoCluster." 
+
 Method : "regulatory_region"
 Colour  MAGENTA
 Strand_sensitive
@@ -1409,6 +1418,9 @@ EMBL_feature	 "CDS"
 //					      Fmap SECTION						  //
 // Use this section for adding the Right_priority to a Fmapped method........ this allows for easy update //
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+Method : "segmental_duplication"
+Right_priority 0.9 
 
 Method : "Promoterome"
 Right_priority  1
