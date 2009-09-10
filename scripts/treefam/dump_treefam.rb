@@ -53,7 +53,7 @@ Gene.find(:all).each{|g|
     # then take all Pfam features and create a nice text representation
     $stderr.puts "processing domains" if $DEBUG
     pfams=longest_transcript.translation.protein_features.map{|a| a if a.analysis.logic_name.eql?('Pfam')}.compact # removes non-Pfam features
-    d_line=pfams.map{|p| "#{p.hit_id}:#{p.seq_start}..#{p.seq_end}"}.join('; ')
+    d_line=pfams.map{|p| "#{p.hit_name}:#{p.seq_start}..#{p.seq_end}"}.join('; ')
 
     # mapping coordinates
     strand=g.strand>0?'+':'-'
