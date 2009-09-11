@@ -138,7 +138,7 @@ elsif (!defined($gene && $person && $remark)) {
 
 sub load_data {
 # load information to $database if -load is specified
-$wormbase->load_to_database("$database", "$output", 'batch_kill.pl');
+$wormbase->load_to_database("$database", "$output", 'batch_kill.pl', $log, undef, 1);
 $log->write_to("5) Loaded $output into $database\n\n");
 $wormbase->run_command("rm $output\n");
 $log->write_to("6) Output file has been cleaned away like a good little fellow\n\n");
