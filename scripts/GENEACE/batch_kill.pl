@@ -102,9 +102,9 @@ while(<FILE>){
 	else { $log->error("malformed line : $_\n") }
     }
 }
+&kill_gene; # remember the last one!
 $log->write_to("3) $count genes in file to be killed\n\n");
 $log->write_to("4) $count genes killed\n\n");
-&kill_gene; # remember the last one!
 &load_data if ($load);
 $log->write_to("5) Check $output file and load into geneace.\n") unless ($load);
 $log->mail();
