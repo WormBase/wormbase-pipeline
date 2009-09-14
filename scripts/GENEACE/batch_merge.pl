@@ -178,8 +178,14 @@ sub merge_gene {
 	$ok = 0;	
       }
 
-      my $ver = $deadgeneObj->Version->name;
+      my $ver;
+      if (exists $gene_versions{$livegene}) {
+	$ver = $gene_versions{$livegene};
+      } else {
+	$ver = $livegeneObj->Version->name;
+      }
       $ver++;
+      $gene_versions{$livegene} = $ver;
       $output .= "\nGene : $deadgene\nVersion $ver\nHistory Version_change $ver now $user Event Merged_into $livegene\nMerged_into $livegene\nDead\n";
 
       # get the Other_names
