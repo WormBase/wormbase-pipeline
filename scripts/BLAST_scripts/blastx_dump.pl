@@ -10,8 +10,8 @@
 #   reduce the memory footprint. If you change it, DON'T use foreach and a large
 #   array of EnsEMBL objects, it invites disaster as it makes a copy of the array.
 #
-# Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2009-04-23 11:25:24 $ 
+# Last edited by: $Author: pad $
+# Last edited on: $Date: 2009-09-15 11:01:28 $ 
 
 my $usage = <<USAGE;
 blastx_dump.pl options:
@@ -46,7 +46,8 @@ use strict;
 # for testing run it only on one clone
 # setting the environment variable TEST_FEATURE limits the whole thing to the specified feature
 
-my ($logicname,$test,$dbname,$toplevel,$store,$selfhits,$outfile,$debug,$sequence);
+my ($logicname,$test,$dbname,$toplevel,$store,$selfhits,$outfile,$debug);
+my @sequences;
 GetOptions(
     "logicname=s" => \$logicname,
     'database=s'  => \$dbname,
@@ -56,7 +57,7 @@ GetOptions(
     'selfhits'    => \$selfhits,
     'outfile=s'   => \$outfile,
     'debug=s'     => \$debug,
-    'sequence=s'  => \$sequence,
+    'sequence=s'  => \@sequences,
 ) || die ($usage);
 
 
@@ -100,13 +101,16 @@ my $feature_adaptor = $db->get_ProteinAlignFeatureAdaptor();
 
 # get all superlinks
 my @superlinks;
-if ($sequence){
-    @superlinks = $slice_adaptor->fetch_by_region('toplevel',$sequence);
+if ($sequences[0]){
+  @sequences = split(/,/,join(',',@sequences));
+  foreach my $sequence(@sequences) {
+    push @superlinks, $slice_adaptor->fetch_by_region('toplevel',$sequence);
+  }
 }elsif ($toplevel){
-    @superlinks = @{$slice_adaptor->fetch_all('toplevel')} if $toplevel;
+  @superlinks = @{$slice_adaptor->fetch_all('toplevel')} if $toplevel;
 }else {
-    @superlinks = @{$slice_adaptor->fetch_all('clone')};
-    @superlinks = @{$slice_adaptor->fetch_all('superlink')} if scalar(@superlinks)==0;
+  @superlinks = @{$slice_adaptor->fetch_all('clone')};
+  @superlinks = @{$slice_adaptor->fetch_all('superlink')} if scalar(@superlinks)==0;
 }
 
 # hardcoded bits
