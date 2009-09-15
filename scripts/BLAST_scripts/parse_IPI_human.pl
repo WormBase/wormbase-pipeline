@@ -1,7 +1,7 @@
 #!/usr/local/ensembl/bin/perl -w                  
 #
-# Last updated by: $Author: mh6 $     
-# Last updated on: $Date: 2009-08-24 10:05:03 $      
+# Last updated by: $Author: pad $     
+# Last updated on: $Date: 2009-09-15 09:14:53 $      
 
 use lib $ENV{'CVS_DIR'};
 use strict;
@@ -37,11 +37,11 @@ my $log = Log_files->make_build_log($wormbase);
 $log->log_and_die("\nYou need to give me a fasta file of the ipi_human proteins with the date appended eg ipi_human_03_05 (5th March)\n
 Get this from ftp://ftp.ebi.ac.uk/pub/databases/IPI/current/ipi.HUMAN.fasta.gz\n\n") unless (defined $file);
 
-#make sure on farm-login  -> otherwise GDBM_File fails.
+#make sure on farm2-login  -> otherwise GDBM_File fails.
 my $host = `hostname`;
 chomp $host;
 unless ( $host =~ /^bc/ ) {
-    $log->log_and_die( "You must run this from an farm-login machine, otherwise GDBM_File causes a segmentation fault\n\n");
+    $log->log_and_die( "You must run this from an farm2-login machine, otherwise GDBM_File causes a segmentation fault\n\n");
 }
 
 #extract date from file name
