@@ -103,13 +103,14 @@ end
 
 desc 'build homology database'
 task :build_homology => [:env_setup] do
-  conf='etc/my_compara.conf'
+  conf='etc/compara-genetree-test.conf'
+  reg='etc/compara_test8.reg'
   yml=YAML::load_file('etc/ensembl_lite.conf')
   db=yml['elegans']['database']
 
   # base db+schema
   sh "mysql -h #{db['host']} -P#{db['port']} -u #{db['user']} -p#{db['password']} -e 'DROP DATABASE IF EXISTS worm_compara;CREATE DATABASE worm_compara;'"
-  sh "cat #{basedir}/ensembl-compara/sql/table.sql #{basedir}/ensembl-hive/sql/tables.sql #{basedir}/ensembl-compara/sql/table.sql #{basedir}/ensembl-compara/sql/pipeline-tables.sql |mysql -h #{db['host']} -P#{db['port']} -u #{db['user']} -p#{db['password']} worm_compara"
+  sh "cat #{basedir}/ensembl-compara/sql/table.sql #{basedir}/ensembl-hive/sql/tables.sql #{basedir}/ensembl-compara/sql/pipeline-tables.sql |mysql -h #{db['host']} -P#{db['port']} -u #{db['user']} -p#{db['password']} worm_compara"
 
   # taxonomy
   sh "bzcat #{basedir}/compara-conf/ncbi_taxon.sql.bz2 |mysql -h #{db['host']} -P#{db['port']} -u #{db['user']} -p#{db['password']} worm_compara"
@@ -123,16 +124,16 @@ task :build_homology => [:env_setup] do
 
   # MLSS setup
   # For orthologues
-  sh "#{perl} #{basedir}/ensembl-compara/scripts/pipeline/create_mlss.pl --f --pw --reg_conf #{conf} --method_link_type ENSEMBL_ORTHOLOGUES --genome_db_id '1,2,3,4,5,6,7,8'"
+  sh "#{perl} #{basedir}/ensembl-compara/scripts/pipeline/create_mlss.pl --f --pw --reg_conf #{reg} --method_link_type ENSEMBL_ORTHOLOGUES --genome_db_id '1,2,3,4,5,6,7,8'"
 
   # For between-species paralogues
-  sh "#{perl} #{basedir}/ensembl-compara/scripts/pipeline/create_mlss.pl --f --pw --reg_conf #{conf} --method_link_type ENSEMBL_PARALOGUES --genome_db_id '1,2,3,4,5,6,7,8'"
+  sh "#{perl} #{basedir}/ensembl-compara/scripts/pipeline/create_mlss.pl --f --pw --reg_conf #{reg} --method_link_type ENSEMBL_PARALOGUES --genome_db_id '1,2,3,4,5,6,7,8'"
 
   # For same-species paralogues
-  sh "#{perl} #{basedir}/ensembl-compara/scripts/pipeline/create_mlss.pl --f --sg --reg_conf #{conf} --method_link_type ENSEMBL_PARALOGUES --genome_db_id '1,2,3,4,5,6,7,8'"
+  sh "#{perl} #{basedir}/ensembl-compara/scripts/pipeline/create_mlss.pl --f --sg --reg_conf #{reg} --method_link_type ENSEMBL_PARALOGUES --genome_db_id '1,2,3,4,5,6,7,8'"
 
   # For protein trees
-  sh "#{perl} #{basedir}create_mlss.pl --f --reg_conf #{conf} --method_link_type PROTEIN_TREES --genome_db_id '1,2,3,4,5,6,7,8'"
+  sh "#{perl} #{basedir}create_mlss.pl --f --reg_conf #{reg} --method_link_type PROTEIN_TREES --genome_db_id '1,2,3,4,5,6,7,8'"
 
 end
 
@@ -157,9 +158,9 @@ end
 #
 
 # hive shorthand
-def run_beehive(db_name)
+def run_beehive(db_name,perl,basedir)
 	yml=YAML::load_file('etc/ensembl_lite.conf')
-  db=yml['elegans']['database'] # lets default to elegans for dbconnection details
+        db=yml['elegans']['database'] # lets default to elegans for dbconnection details
 
 	# sh %Q(#{perl} #{basedir}/ensembl-hive/scripts/beekeeper.pl -url mysql://#{db['user']}:#{db['password']}@#{db['host']}:#{db['port']}/#{db_name} -loop -lsf_option '-R"rusage[myia64b=10:duration=10:decay=1] select[myia64b<400]" -W 120')
 	sh "#{perl} #{basedir}/ensembl-hive/scripts/beekeeper.pl -url mysql://#{db['user']}:#{db['password']}@#{db['host']}:#{db['port']}/#{db_name} -loop" # axe the old ressouce stuff
@@ -168,12 +169,12 @@ end
 
 desc 'run homology beehive'
 task :run_homology => [:env_setup] do
-	run_beehive('worm_compara')
+	run_beehive('worm_compara',perl,basedir)
 end
 
 desc 'run pecan beehive'
 task :run_pecan => [:env_setup] do
-	run_beehive('worm_compara_pecan')
+	run_beehive('worm_compara_pecan',perl,basedir)
 end
 
 
