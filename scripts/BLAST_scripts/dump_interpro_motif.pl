@@ -5,7 +5,7 @@
 # Dumps InterPro protein motifs from ensembl mysql (protein) database to an ace file
 #
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2009-09-15 12:28:18 $
+# Last updated on: $Date: 2009-09-15 13:33:39 $
 
 
 use strict;
@@ -348,7 +348,7 @@ foreach my $method (keys %counts) {
   print "$method: found $counts{$method} hits\n";
   if ($counts{$method} == 0) {
     $log->write_to("ERROR: ");
-    $log->error;
+    #$log->error;
   }
   $log->write_to("$method: found $counts{$method} hits\n");
 }
