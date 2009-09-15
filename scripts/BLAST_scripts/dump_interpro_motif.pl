@@ -5,7 +5,7 @@
 # Dumps InterPro protein motifs from ensembl mysql (protein) database to an ace file
 #
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2009-08-24 10:05:03 $
+# Last updated on: $Date: 2009-09-15 12:28:18 $
 
 
 use strict;
@@ -161,7 +161,7 @@ foreach my $method (@methods) {
 }
 
 # prepare the sql query
-my $sth_f = $dbh->prepare ( q{ SELECT stable_id, seq_start, seq_end, hit_id, hit_start, hit_end, score, evalue
+my $sth_f = $dbh->prepare ( q{ SELECT stable_id, seq_start, seq_end, hit_name, hit_start, hit_end, score, evalue
 				   FROM protein_feature,translation_stable_id
 				   WHERE evalue <= "0.1"
 				   AND analysis_id = ?
