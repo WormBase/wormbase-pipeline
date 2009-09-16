@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl -w
-# Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2009-08-20 08:25:55 $      
+# Last updated by: $Author: pad $     
+# Last updated on: $Date: 2009-09-16 14:12:14 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -135,8 +135,14 @@ sub parse_briggsae_data {
 	       "briggsae_bac_clone_ends.ace",
 	       "bac_ends_unique.ace"
 	      );
-
-  my $brig_dir = $wormbase->primary('brigace')."/BAC_ENDS";
+  my $brig_dir;
+  if (-e $wormbase->primary('brigace')."/BAC_ENDS") {
+    $brig_dir = $wormbase->primary('brigace')."/BAC_ENDS";
+  }
+  elsif (-e $wormbase->database('briggsae')."/BAC_ENDS") {
+    $brig_dir = $wormbase->database('briggsae')."/BAC_ENDS";
+    $log->write_to("\nWARNING: BAC_END data loaded from Sanger backup, not supplied in upload\n");
+  }
   $log->write_to("\nLoading briggsae BAC ends from $brig_dir\n===========================\n");
   foreach my $file (@files){
     $log->write_to("\tload $file\n");
