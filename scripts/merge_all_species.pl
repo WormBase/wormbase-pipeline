@@ -1,7 +1,7 @@
 #/software/bin/perl -w
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2009-02-16 12:16:18 $
+# Last updated by: $Author: pad $
+# Last updated on: $Date: 2009-09-16 14:18:33 $
 
 #################################################################################
 # Variables                                                                     #
@@ -46,6 +46,13 @@ my $log = Log_files->make_build_log($wormbase);
 $log->write_to("hacked version of merge_all_species\n\n");
 
 my %accessors = $wormbase->species_accessors;
+delete $accessors{pristionchus};
+#delete $accessors{remanei};
+delete $accessors{heterorhabditis};
+delete $accessors{japonica};
+delete $accessors{briggsae};
+delete $accessors{brenneri};
+
 
 
 # move all the old MERGE files out of the way
@@ -147,8 +154,6 @@ foreach my $spDB (values %accessors) {
 
 
 $log->write_to("\nNow loading briggsae TEC-RED homol data . . .\n");
-# NB use run_command, not run_script because we wish to force use of briggsae db, and not add on '-store Elegans'
-$wormbase->run_command("/software/bin/perl \$CVS_DIR/map_tec-reds.pl -species briggsae");
 my $briggsaeDB = Wormbase->new( 
 			       -debug   => $wormbase->debug,
 			       -test     => $wormbase->test,
