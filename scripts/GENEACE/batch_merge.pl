@@ -182,7 +182,7 @@ sub merge_gene {
       if (exists $gene_versions{$deadgene}) {
 	$ver = $gene_versions{$deadgene};
       } else {
-	$ver = $livegeneObj->Version->name;
+	$ver = $deadgeneObj->Version->name;
       }
       $ver++;
       $gene_versions{$deadgene} = $ver;
@@ -228,7 +228,7 @@ sub merge_gene {
 
 sub load_data {
 # load information to $database if -load is specified
-#$wormbase->load_to_database("$database", "$output", 'batch_merge.pl', $log, undef, 1);
+$wormbase->load_to_database("$database", "$output", 'batch_merge.pl', $log, undef, 1);
 $log->write_to("5) Loaded $output into $database\n\n");
 $wormbase->run_command("rm $output\n");
 $log->write_to("6) Output file has been cleaned away like a good little fellow\n\n");
