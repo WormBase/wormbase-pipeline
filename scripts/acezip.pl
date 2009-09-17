@@ -7,7 +7,7 @@
 # Usage : acezip.pl [-options]
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2009-08-07 08:38:04 $
+# Last edited on: $Date: 2009-09-17 09:42:46 $
 use lib $ENV{'CVS_DIR'};
 
 use strict;
@@ -55,6 +55,7 @@ $/ = "";
 open (FILE, "<$file") or $log->log_and_die("cant open $file : $!\n");
 open (FILE2, ">$presort") or $log->log_and_die("cant open $presort : $!\n");
 while (my $record = <FILE>) {
+  while ($record =~ /^\s*\/\//) {$record =~ s/^\s*\/\/.*?\n//} # strip out any comments at the start of the record
   $record =~ s/\t/ /g;
   $record =~ s/\n/\t/g;
   print FILE2 $record, "\n";
