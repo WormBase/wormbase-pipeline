@@ -121,6 +121,8 @@ task :build_homology => [:env_setup] do
   
   # table hack
   `mysql -h ia64d -u wormadmin -pworms worm_compara -e 'INSERT INTO method_link (type, class) VALUES ("ENSEMBL_ORTHOLOGUES","Homology.homology"),("ENSEMBL_PARALOGUES","Homology.homology"),("PROTEIN_TREES","ProteinTree.protein_tree_node")'`
+  `mysql -h ia64d -u wormadmin -pworms worm_compara -e 'INSERT INTO protein_tree_tag (tag,value) VALUES ("species_tree_string","(((((((6238*,31234)a,135651)b,6239*)c,281687)d,54126)e,63
+   05)f,6279)g;")'`
 
   # MLSS setup
   # For orthologues
