@@ -7,7 +7,7 @@
 # Usage : autoace_builder.pl [-options]
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2009-06-24 19:43:46 $
+# Last edited on: $Date: 2009-09-17 10:52:08 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -31,7 +31,7 @@ my $gene_span;
 my ( $load, $tsuser, $map_features, $remap_misc_dynamic, $map, $transcripts, $intergenic, $data_sets, $nem_contigs);
 my ( $GO_term, $rna , $dbcomp, $confirm, $operon ,$repeats, $remarks, $names, $treefam, $cluster);
 my ( $utr, $agp, $gff_munge, $extras , $ontologies, $interpolate, $check);
-my ( $data_check, $buildrelease, $public,$finish_build, $release, $user);
+my ( $data_check, $buildrelease, $public,$finish_build, $release, $user, $kegg);
 
 
 GetOptions(
@@ -85,6 +85,7 @@ GetOptions(
 	   'data_check'     => \$data_check,
 	   'species:s'      => \$species,
 	   'user:s'         => \$user,
+	   'kegg'           => \$kegg,
 	  )||die(@!);
 
 
@@ -154,6 +155,7 @@ $wormbase->run_script( 'molecular_names_for_genes.pl'            , $log) if $nam
 $wormbase->run_script( 'get_treefam.pl'                          , $log) if $treefam;
 $wormbase->run_script( 'cluster_gene_connection.pl'              , $log) if $cluster;
 $wormbase->run_script( 'inherit_GO_terms.pl -phenotype -motif -tmhmm', $log ) if $GO_term;
+$wormbase->run_script( 'KEGG.pl', $log )                                 if $kegg;
 
 # $build_dumpGFF.pl; (final) is run chronologically here but previous call will operate
 # $wormbase->run_script( "processGFF.pl -$processGFF",        $log ) if $processGFF;    #nematode - to add species to nematode BLATs
