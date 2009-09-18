@@ -1,5 +1,4 @@
 #!/usr/local/bin/perl5.6.1 -w
-
 use lib $ENV{'CVS_DIR'};
 use strict;
 use Getopt::Long;
@@ -9,20 +8,18 @@ use Storable;
 use Log_files;
 use File::Copy;
 
-
 my $file = shift;
 #######################################
 # command-line options                #
 #######################################
 my ($test, $debug, , $store, $verbose, $help, $species);
-my ($all, $WPver, $analysisTOdump, $just_matches, $matches, $list, $database);
+my ($all, $analysisTOdump, $just_matches, $matches, $list, $database);
 GetOptions ("debug=s"      => \$debug,
 	    "verbose"      => \$verbose,
 	    "test"         => \$test,
 	    "help"         => \$help,
 	    "all"          => \$all,
 	    "analysis=s"   => \$analysisTOdump,
-	    "version=s"    => \$WPver,
 	    "just_matches" => \$just_matches,
 	    "matches"      => \$matches,
 	    "dumplist=s"   => \$list,
@@ -37,9 +34,9 @@ if( $store ) {
 }
 else {
   $wormbase = Wormbase->new( -debug   => $debug,
-						     -test    => $test,
-						     -organism => $species
-						   );
+			     -test    => $test,
+			     -organism => $species
+			   );
 }
 $species = $wormbase->species; #in case defaulting to elegans when species not set.
 my $log = Log_files->make_build_log($wormbase);
@@ -77,9 +74,6 @@ print "DEBUG = \"$debug\"\n\n" if $debug;
 
 # assign $maintainers if $debug set
 ($maintainers = $debug . '\@sanger.ac.uk') if ($debug);
-
-$WPver-- if( $test );
-  
 
 #+-------------+----------------+
 #| analysis_id | logic_name     |
