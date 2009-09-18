@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl -w
-# Last updated by: $Author: pad $     
-# Last updated on: $Date: 2009-09-16 14:12:14 $      
+# Last updated by: $Author: gw3 $     
+# Last updated on: $Date: 2009-09-18 14:55:38 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -61,6 +61,7 @@ sub parse_misc_elegans_files {
   my %files_to_load = (
 		       $wormbase->misc_dynamic."/misc_genefinder.ace"           => "genefinder_predictions",
 		       $wormbase->misc_dynamic."/misc_twinscan.ace"             => "twinscan_predictions"  ,
+		       $wormbase->misc_dynamic."/misc_mgene.ace"                => "mgene_predictions"     ,
 		       $wormbase->misc_dynamic."/misc_jigsaw.ace"               => "jigsaw_predictions"    ,
 		       $wormbase->misc_dynamic."/misc_TEC_RED_homol_data.ace"   => "TEC_RED"               ,
 		       $wormbase->misc_dynamic."/misc_TEC_RED_homol.ace"        => "TEC_RED"               ,
