@@ -360,6 +360,14 @@ Bumpable
 Show_text
 EMBL_feature     "CDS"
 
+Method : "mGene"
+Colour	BROWN
+CDS_colour	BROWN
+Show_up_strand	BROWN
+Bumpable
+Show_text
+EMBL_feature	CDS
+
 
 ////////////////////////////////////////////////////
 // Homology related methods (BLAST, BLAT and Waba //
@@ -1608,6 +1616,9 @@ Right_priority  2.8
 
 Method : "twinscan"
 Right_priority  2.9
+
+Method : "mGene"
+Right_priority  2.95
 
 Method : "Genefinder"
 Right_priority  3.0
