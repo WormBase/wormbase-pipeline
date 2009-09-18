@@ -720,6 +720,10 @@ Method : "wublastp_brenneri"
 Colour "LIGHTGREEN"
 Remark   "wublastp search of Wormpep vs C. brenneri peptides"
 
+Method : "wublastp_pristionchus"
+Colour "LIGHTGREEN"
+Remark   "wublastp search of Wormpep vs Pristionchus pacificus peptides"
+
 
 Method : "wublastx_worm" 
 Colour "DARKBLUE"
