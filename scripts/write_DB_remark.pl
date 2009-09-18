@@ -7,8 +7,8 @@
 # This script interogates an ACEDB database and returns all pfam/Interpro/blastx 
 # data as appropriate and generates a suitable DB_remark
 #
-# Last updated on: $Date: 2008-04-18 10:27:06 $
-# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2009-09-18 11:13:03 $
+# Last updated by: $Author: pad $
 
 
 ### DB_remark is generated as follows:  ###
@@ -349,8 +349,14 @@ $log->write_to("$runtime: Processing pseudogene class\n");
 $object_count = 0;
 $remark_count = 0;
 
-
-my @pseudogenes = $db->fetch(-query => 'Find Pseudogene where species = "'.$wormbase->full_name.'" AND (NOT Method = history)');
+# get Pseudogenes
+my @pseudogenes;
+  if ($gene) {
+    @pseudogenes = $db->fetch(-query => 'Find Pseudogene $gene');
+  }
+else {
+  @pseudogenes = $db->fetch(-query => 'Find Pseudogene where species = "'.$wormbase->full_name.'" AND (NOT Method = history)');
+}
 
 PSEUDOGENE: foreach my $pseudogene (@pseudogenes) {
   
@@ -417,7 +423,14 @@ $log->write_to("$runtime: Processing transcript class\n");
 $object_count = 0;
 $remark_count = 0;
 
-my $transcripts = $db->fetch_many(-query => 'Find Transcript where (NOT Method = Coding_transcript) AND (NOT Method = history) AND (Species = "'.$wormbase->full_name.'")');
+# get Transcripts
+my $transcripts;
+if ($gene) {
+  $transcripts = $db->fetch_many(-query => 'Find Transcript $gene');
+}
+else {
+  $transcripts = $db->fetch_many(-query => 'Find Transcript where (NOT Method = Coding_transcript) AND (NOT Method = history) AND (Species = "'.$wormbase->full_name.'")');
+}
 
 TRANSCRIPT: while ( my $transcript = $transcripts->next ) {
 
@@ -531,17 +544,20 @@ close ACE;
 $db->close;
 
 # load the file to autoace
+unless ($gene) {
 $runtime= $wormbase->runtime;
 $log->write_to("$runtime: loading results to $database\n");
 $wormbase->load_to_database($database, $output_file, "DB_remark", $log) unless $debug;
-
-$runtime= $wormbase->runtime;
-$log->write_to("$runtime: Finished script\n\n");
 
 ##################
 # Check the files
 ##################
 $wormbase->check_files($log);
+}
+
+
+$runtime= $wormbase->runtime;
+$log->write_to("$runtime: Finished script\n\n");
 
 $log->mail();
 print "Finished.\n" if ($verbose);
