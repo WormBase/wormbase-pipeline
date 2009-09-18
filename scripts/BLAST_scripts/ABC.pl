@@ -6,8 +6,8 @@
 #
 # This is a script to automate the sections A, B and C of the BLAST Build
 #
-# Last updated by: $Author: mh6 $     
-# Last updated on: $Date: 2009-08-24 10:05:00 $      
+# Last updated by: $Author: pad $     
+# Last updated on: $Date: 2009-09-18 09:47:23 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -122,7 +122,7 @@ foreach my $species (@species) {
   print "  Logging in as wormpub . . .\n" if ($verbose);
   my $exp = new Expect;
   $exp->raw_pty(1);  
-  $exp->spawn('ssh wormpub@farm-login')
+  $exp->spawn('ssh wormpub@farm2-login')
       or die "Cannot spawn ssh: $!\n";
   my $timeout = 10;
   $exp->expect($timeout,
