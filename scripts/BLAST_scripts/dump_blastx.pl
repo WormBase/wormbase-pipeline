@@ -4,8 +4,8 @@
 #  script to submit blastx dumping scripts onto the farm
 #  and concatenate them at the end
 # 
-# Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2009-08-24 10:05:03 $
+# Last edited by: $Author: pad $
+# Last edited on: $Date: 2009-09-18 09:45:56 $
 # 
 
 
@@ -77,54 +77,44 @@ my $organism = lc (ref($wormbase));
 
 $database ||= "worm_ensembl_$organism";
 
+my $name = 1;
+my @outfiles;
 # here goes the main bit:
 foreach my $db(keys %logic2type){
-
-  my @chroms;
-  @chroms = $wormbase->get_chromosome_names(-prefix => 1, -mito => 1);
-  foreach my $chrom (@chroms) {
-    my $outfile = "$dumpdir/${organism}_${chrom}_$db.ace";
+  my @chroms = @{$wormbase->get_binned_chroms('5')}; # mo MtDNA
+  $log->write_to("bsub commands . . . . \n\n");
+  foreach my $chrom ( @chroms ) {
+    $name ++;
+    my $err = "/tmp/dump_blastx.$db.$name.err.$$";
+    my $outfile = "$dumpdir/${organism}_$db.$name.ace";
+    push @outfiles,$outfile;
     my $options="-database $database -logicname $db -outfile $outfile -store $storable -sequence $chrom";
     $options.=' -self' if $logic2type{$db} eq ref $wormbase; # set selfhit removal for the self-blasts
-
-    #print "Run /software/bin/perl $ENV{CVS_DIR}/BLAST_scripts/blastx_dump.pl $options\n";
-    $m->submit("/software/bin/perl $ENV{CVS_DIR}/BLAST_scripts/blastx_dump.pl $options");
+    my $cmd = "/software/bin/perl $ENV{CVS_DIR}/BLAST_scripts/blastx_dump.pl $options";
+    $m->submit($cmd);
   }
 }
-
-$m->wait_all_children( history => 1 );
-print "All children have completed!\n";
-
-for my $job ($m->jobs){ # much quicker if history is pre-cached
-  $log->write_to("$job exited non zero\n") if $job->history->exit_status != 0;
-}
-$m->clear; # clear out the job manager to reuse.
+  $m->wait_all_children( history => 1 );
+  $log->write_to("All children have completed!\n");
+  for my $job ( $m->jobs ) {
+    $log->error("Job $job (" . $job->history->command . ") exited non zero\n") if $job->history->exit_status != 0;
+  }
+  $m->clear;   
 
 # check that all files end with a blank line, 
 # otherwise the the job that created them was probably terminated prematurely by LSF
 $log->write_to("\nTesting output ace files to see if they completed\n");
-foreach my $db(keys %logic2type){
-  my @chroms;
-  @chroms = $wormbase->get_chromosome_names(-prefix => 1, -mito => 1);
-  foreach my $chrom (@chroms) {
-    my $outfile = "$dumpdir/${organism}_${chrom}_$db.ace";
-
-    $log->write_to("$outfile ");
-    my $endline = `tail -1 $outfile`;
-    if (-e $outfile && $endline =~ /^\s*\n$/) {
+foreach my $file (@outfiles) {
+   
+    $log->write_to("$file ");
+    my $endline = `tail -1 $file`;
+    if (-e $file && $endline =~ /^\s*\n$/) {
       $log->write_to("- looks OK\n");
     } else {
-      $log->write_to("- appears to be prematurely terminated.\nlast line in file is:\n$endline\n");
+      $log->write_to("- appears to be prematurely terminated.\nlast line in $file is:\n$endline\n");
       $log->error;
-
-      ## run it again from the head machine, not under LSF
-      #my $options="-database $database -logicname $db -outfile $outfile -sequence $chrom";
-      #$options.=' -self' if $logic2type{$db} eq ref $wormbase; # set selfhit removal for the self-blasts
-      #$log->write_to("Rerunning blastx_dump.pl not under LSF\n");
-      #$wormbase->run_script("BLAST_scripts/blastx_dump.pl $options", $log);
     }
   }
-}
 
 # concatenate the ace files into a big blob for later parsing with ensembl/ipi scripts
 my $outfile="$dumpdir/${organism}_blastx.ace";
@@ -140,7 +130,7 @@ if (ref $wormbase eq 'Elegans'){
       && die("cannot concatenate $file to $outfile\n" );
   }
 } else {
-  system ("cat $dumpdir/$organism*X.ace > $outfile") && die("cannot concatenate dumpdir/$organism*X.ace to $outfile\n" );
+  system ("cat $dumpdir/$organism*X*.ace > $outfile") && die("cannot concatenate dumpdir/$organism*X.ace to $outfile\n" );
 }
 
 
