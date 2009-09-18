@@ -6,8 +6,8 @@
 #
 # Usage : autoace_builder.pl [-options]
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2009-09-17 10:52:08 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2009-09-18 14:52:59 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -322,6 +322,13 @@ sub remap_misc_dynamic {
     if (-e $backup_jigsaw) {$wormbase->run_command("mv -f $backup_jigsaw $jigsaw", $log);}
     $wormbase->run_command("mv -f $jigsaw $backup_jigsaw", $log);
     $wormbase->run_script( "remap_genefinder_between_releases.pl -input $backup_jigsaw -out $jigsaw", $log);
+
+    # remap mGene - uses the remap genefinder script
+    my $mgene = $wormbase->misc_dynamic."/misc_mgene.ace";
+    my $backup_mgene = $wormbase->misc_dynamic."/BACKUP/misc_mgene.ace.$previous_release";
+    if (-e $backup_mgene) {$wormbase->run_command("mv -f $backup_mgene $mgene", $log);}
+    $wormbase->run_command("mv -f $mgene $backup_mgene", $log);
+    $wormbase->run_script( "remap_genefinder_between_releases.pl -input $backup_mgene -out $mgene", $log);
 
     # remap fosmids
     my $fosmids = $wormbase->misc_dynamic."/fosmids.ace";
