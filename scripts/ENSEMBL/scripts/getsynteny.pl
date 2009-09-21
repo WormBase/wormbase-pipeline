@@ -40,6 +40,8 @@ my $species6 = 'Pristionchus pacificus';
 my $species6_assembly;
 my $species7 = 'Caenorhabditis japonica';
 my $species7_assembly;
+my $species8 = 'Meloidogyne hapla';
+my $species8_assembly;
 
 my $method_link_type = "SYNTENY";
 
@@ -89,8 +91,9 @@ my $gdb4 = $gdba->fetch_by_name_assembly($species4,$species4_assembly);
 my $gdb5 = $gdba->fetch_by_name_assembly($species5,$species5_assembly);
 my $gdb6 = $gdba->fetch_by_name_assembly($species6,$species6_assembly);
 my $gdb7 = $gdba->fetch_by_name_assembly($species7,$species7_assembly);
+my $gdb8 = $gdba->fetch_by_name_assembly($species8,$species8_assembly);
 
-my $mlss = $mlssa->fetch_by_method_link_type_GenomeDBs($method_link_type, [$gdb1, $gdb2,$gdb3,$gdb4,$gdb5,$gdb6,$gdb7]);
+my $mlss = $mlssa->fetch_by_method_link_type_GenomeDBs($method_link_type, [$gdb1, $gdb2,$gdb3,$gdb4,$gdb5,$gdb6,$gdb7,$gdb8]);
 
 my $dfgs;
 
