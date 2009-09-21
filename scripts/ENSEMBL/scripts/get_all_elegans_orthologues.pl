@@ -26,6 +26,7 @@ my %species = (
     281687 => 'Caenorhabditis japonica',
     6279   => 'Brugia malayi',
     54126  => 'Pristionchus pacificus',
+    6305   => 'Meloidogyne hapla',
 );
 
 my %cds2wbgene=%{&get_commondata('cds2wbgene_id')};
@@ -47,11 +48,13 @@ my @members = @{$member_adaptor->fetch_all()};
 while( my $member = shift @members){
     
     next if $member->taxon_id == 6279; # skip brugia, as it does not have ?Gene objects
+    next if $member->taxon_id == 6305; # skip brugia, as it does not have ?Gene objects
     
     my @homologies = @{$homology_adaptor->fetch_all_by_Member( $member)};
 
     # needs some better way
     my %brugia;
+    my %hapla;
     my %all;
 
     foreach my $homology ( @homologies) {
@@ -65,6 +68,10 @@ while( my $member = shift @members){
                 if ($pepm->taxon_id==6279){
                     $brugia{ $pepm->stable_id } = [$pepm->taxon_id,$homology->description] 
                 }
+		elsif ($pepm->taxon_id==6305){
+                    $hapla{ $pepm->stable_id } = [$pepm->taxon_id,$homology->description] 
+                }
+
                 else {
                     $all{ $pepm->stable_id } = [$pepm->taxon_id,$homology->description]
                 }
