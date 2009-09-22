@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2009-09-08 13:27:07 $      
+# Last updated on: $Date: 2009-09-22 16:03:05 $      
 
 # Changes required by Ant: 2008-02-19
 # 
@@ -217,6 +217,8 @@ while (my $run = <DATA>) {
 &delete_anomalies("MERGE_GENES_BY_PROTEIN");
 &delete_anomalies("WEAK_INTRON_SPLICE_SITE");
 &delete_anomalies("UNMATCHED_TWINSCAN");
+&delete_anomalies("UNMATCHED_MGENE");
+#&delete_anomalies("MGENE_NOT_PREDICTED");
 &delete_anomalies("UNMATCHED_GENEFINDER");
 &delete_anomalies("CONFIRMED_INTRON");
 &delete_anomalies("UNCONFIRMED_INTRON");
@@ -351,6 +353,8 @@ foreach my $chromosome (@chromosomes) {
   my @twinscan_exons = $ovlp->get_twinscan_exons($chromosome);
   my @twinscan_transcripts = $ovlp->get_twinscan_transcripts($chromosome) if (exists $run{MERGE_GENES_BY_TWINSCAN});
 
+  my @mgene_exons = $ovlp->get_mgene_exons($chromosome);
+
   my @genefinder = $ovlp->get_genefinder_exons($chromosome) if (exists $run{UNMATCHED_GENEFINDER});
 
   #my @jigsaw = $ovlp->get_jigsaw_CDS($chromosome);                     # jigsaw coding transcript (START to STOP)
@@ -410,6 +414,9 @@ foreach my $chromosome (@chromosomes) {
 
   print "finding twinscan exons not overlapping CDS exons\n";
   &get_unmatched_twinscan_exons(\@twinscan_exons, \@cds_exons, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, \@repeatmasked_complex, $chromosome) if (exists $run{UNMATCHED_TWINSCAN});
+
+  print "finding mgene exons not overlapping CDS exons\n";
+  &get_unmatched_mgene_exons(\@mgene_exons, \@cds_exons, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, \@repeatmasked_complex, $chromosome) if (exists $run{UNMATCHED_MGENE});
 
   print "finding genefinder exons not overlapping CDS exons\n";
   &get_unmatched_genefinder_exons(\@genefinder, \@cds_exons, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, \@repeatmasked_complex, $chromosome) if (exists $run{UNMATCHED_GENEFINDER});
@@ -1944,6 +1951,75 @@ sub get_unmatched_twinscan_exons {
       my $anomaly_score = 1.0;
       #print "TWINSCAN NOT got a match ANOMALY: $TWINSCAN_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score\n";
       &output_to_database("UNMATCHED_TWINSCAN", $chromosome, $TWINSCAN_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score, '');
+    }
+  }
+
+}
+
+
+##########################################
+# get mgene exons that do not match a coding transcript or pseudogene
+# &get_unmatched_mgene_exons(\@mgene, \@exons, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, $chromosome)
+
+
+sub get_unmatched_mgene_exons {
+
+  my ($mgene_aref, $exons_aref, $pseudogenes_aref, $transposons_aref, $transposon_exons_aref, $noncoding_transcript_exons_aref, $rRNA_aref, $repeatmasked_aref, $chromosome) = @_;
+
+  $anomaly_count{UNMATCHED_MGENE} = 0 if (! exists $anomaly_count{UNMATCHED_MGENE});
+
+  my $exons_match = $ovlp->compare($exons_aref, same_sense => 1);
+  my $pseud_match = $ovlp->compare($pseudogenes_aref, same_sense => 1);
+  my $trans_match = $ovlp->compare($transposons_aref, same_sense => 1);
+  my $trane_match = $ovlp->compare($transposon_exons_aref, same_sense => 1);
+  my $nonco_match = $ovlp->compare($noncoding_transcript_exons_aref, same_sense => 1);
+  my $rrna_match  = $ovlp->compare($rRNA_aref, same_sense => 1);
+  my $repeat_match= $ovlp->compare($repeatmasked_aref, near => -20);
+
+  foreach my $mgene (@{$mgene_aref}) { # $mgene_id, $chrom_start, $chrom_end, $chrom_strand
+
+    my $got_a_match = 0;
+  
+    if ($exons_match->match($mgene)) { 
+      $got_a_match = 1;
+    }
+
+    if ($pseud_match->match($mgene)) { 
+      $got_a_match = 1;
+    }
+
+    if ($trans_match->match($mgene)) { 
+      $got_a_match = 1;
+    }
+
+    if ($trane_match->match($mgene)) { 
+      $got_a_match = 1;
+    }
+
+    if ($nonco_match->match($mgene)) { 
+      $got_a_match = 1;
+    }
+
+    if ($rrna_match->match($mgene)) { 
+      $got_a_match = 1;
+    }
+
+    # don't want to report unmatched mgene that overlaps with a repeat
+    if ($repeat_match->match($mgene)) {
+      $got_a_match = 1;
+    }
+
+    # output unmatched MGENE sites to the database
+    if (! $got_a_match) {
+      my $mgene_id = $mgene->[0];
+      my $chrom_start = $mgene->[1];
+      my $chrom_end = $mgene->[2];
+      my $chrom_strand = $mgene->[3];
+
+      # make the anomaly score 1
+      my $anomaly_score = 1.0;
+      #print "MGENE NOT got a match ANOMALY: $mgene_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score\n";
+      &output_to_database("UNMATCHED_MGENE", $chromosome, $mgene_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score, '');
     }
   }
 
