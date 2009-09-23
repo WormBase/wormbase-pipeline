@@ -7,7 +7,7 @@
 # Do fast overlap matching of positions of two sets of things.
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2009-09-22 16:02:36 $      
+# Last updated on: $Date: 2009-09-23 11:10:02 $      
 
 =pod
 
@@ -83,6 +83,7 @@ Routines to read GFF files from the database defined in $wormbase
 @list = $ovlp->get_genefinder_exons($chromosome)
 @list = $ovlp->get_twinscan_transcripts($chromosome)
 @list = $ovlp->get_twinscan_exons($chromosome)
+@list = $ovlp->get_mgene_transcripts($chromosome)
 @list = $ovlp->get_mgene_exons($chromosome)
 @list = $ovlp->get_transposons($chromosome)
 @list = $ovlp->get_transposon_exons($chromosome)
@@ -1294,6 +1295,32 @@ sub get_twinscan_exons {
      method			=> "twinscan",
      gff_source			=> "twinscan",
      gff_type			=> "coding_exon",
+     ID_after			=> "CDS\\s+",
+   );
+
+  return $self->read_GFF_file($chromosome, \%GFF_data);
+
+}
+
+=head2
+
+    Title   :   get_mgene_transcripts
+    Usage   :   my @gff = $ovlp->get_mgene_transcripts($chromosome)
+    Function:   reads the GFF data for mgene transcripts
+    Returns :   list of lists for GFF data
+    Args    :   chromosome number
+
+=cut
+
+sub get_mgene_transcripts {
+  my $self = shift;
+  my ($chromosome) = @_;
+
+  my %GFF_data = 
+   (
+     method			=> "mGene",
+     gff_source			=> "mGene",
+     gff_type			=> "CDS",
      ID_after			=> "CDS\\s+",
    );
 
