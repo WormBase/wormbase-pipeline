@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2009-09-22 16:03:05 $      
+# Last updated on: $Date: 2009-09-23 13:01:40 $      
 
 # Changes required by Ant: 2008-02-19
 # 
@@ -218,7 +218,8 @@ while (my $run = <DATA>) {
 &delete_anomalies("WEAK_INTRON_SPLICE_SITE");
 &delete_anomalies("UNMATCHED_TWINSCAN");
 &delete_anomalies("UNMATCHED_MGENE");
-#&delete_anomalies("MGENE_NOT_PREDICTED");
+&delete_anomalies("NOVEL_MGENE_PREDICTION");
+&delete_anomalies("NOT_PREDICTED_BY_MGENE");
 &delete_anomalies("UNMATCHED_GENEFINDER");
 &delete_anomalies("CONFIRMED_INTRON");
 &delete_anomalies("UNCONFIRMED_INTRON");
@@ -354,6 +355,7 @@ foreach my $chromosome (@chromosomes) {
   my @twinscan_transcripts = $ovlp->get_twinscan_transcripts($chromosome) if (exists $run{MERGE_GENES_BY_TWINSCAN});
 
   my @mgene_exons = $ovlp->get_mgene_exons($chromosome);
+  my @mgene_transcripts = $ovlp->get_mgene_transcripts($chromosome);
 
   my @genefinder = $ovlp->get_genefinder_exons($chromosome) if (exists $run{UNMATCHED_GENEFINDER});
 
@@ -417,6 +419,12 @@ foreach my $chromosome (@chromosomes) {
 
   print "finding mgene exons not overlapping CDS exons\n";
   &get_unmatched_mgene_exons(\@mgene_exons, \@cds_exons, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, \@repeatmasked_complex, $chromosome) if (exists $run{UNMATCHED_MGENE});
+
+  print "finding mgene predictions not overlapping curated genes\n";
+  &get_novel_mgene_predictions(\@mgene_transcripts, \@coding_transcripts, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, \@repeatmasked_complex, $chromosome) if (exists $run{NOVEL_MGENE_PREDICTION});
+
+  print "finding curated genes not predicted by mGene\n";
+  &get_not_predicted_by_mgene(\@mgene_transcripts, \@coding_transcripts, $chromosome) if (exists $run{NOT_PREDICTED_BY_MGENE});
 
   print "finding genefinder exons not overlapping CDS exons\n";
   &get_unmatched_genefinder_exons(\@genefinder, \@cds_exons, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, \@repeatmasked_complex, $chromosome) if (exists $run{UNMATCHED_GENEFINDER});
@@ -2025,6 +2033,105 @@ sub get_unmatched_mgene_exons {
 
 }
 
+##########################################
+# Finding mgene predictions not overlapping curated genes
+# &get_novel_mgene_predictions(\@mgene_transcripts, \@coding_transcripts, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, \@repeatmasked_complex, $chromosome) if (exists $run{NOVEL_MGENE_PREDICTION});
+
+sub get_novel_mgene_predictions {
+  my ($mgene_aref, $transcripts_aref, $pseudogenes_aref, $transposons_aref, $transposon_exons_aref, $noncoding_transcript_exons_aref, $rRNA_aref, $repeatmasked_aref, $chromosome) = @_;
+
+  $anomaly_count{NOVEL_MGENE_PREDICTION} = 0 if (! exists $anomaly_count{NOVEL_MGENE_PREDICTION});
+  
+  my $cds_match = $ovlp->compare($transcripts_aref, same_sense => 1);
+  my $pseud_match = $ovlp->compare($pseudogenes_aref, same_sense => 1);
+  my $trans_match = $ovlp->compare($transposons_aref, same_sense => 1);
+  my $trane_match = $ovlp->compare($transposon_exons_aref, same_sense => 1);
+  my $nonco_match = $ovlp->compare($noncoding_transcript_exons_aref, same_sense => 1);
+  my $rrna_match  = $ovlp->compare($rRNA_aref, same_sense => 1);
+  my $repeat_match= $ovlp->compare($repeatmasked_aref, near => -20);
+  
+  foreach my $mgene (@{$mgene_aref}) { # $mgene_id, $chrom_start, $chrom_end, $chrom_strand
+    
+    my $got_a_match = 0;
+  
+    if ($cds_match->match($mgene)) { 
+      $got_a_match = 1;
+    }
+
+    if ($pseud_match->match($mgene)) { 
+      $got_a_match = 1;
+    }
+
+    if ($trans_match->match($mgene)) { 
+      $got_a_match = 1;
+    }
+
+    if ($trane_match->match($mgene)) { 
+      $got_a_match = 1;
+    }
+
+    if ($nonco_match->match($mgene)) { 
+      $got_a_match = 1;
+    }
+
+    if ($rrna_match->match($mgene)) { 
+      $got_a_match = 1;
+    }
+
+    # don't want to report unmatched mgene that overlaps with a repeat
+    if ($repeat_match->match($mgene)) {
+      $got_a_match = 1;
+    }
+
+    # output unmatched MGENE sites to the database
+    if (! $got_a_match) {
+      my $mgene_id = $mgene->[0];
+      my $chrom_start = $mgene->[1];
+      my $chrom_end = $mgene->[2];
+      my $chrom_strand = $mgene->[3];
+
+      my $anomaly_score = 5.0;
+      #print "MGENE gene prediction NOT got a match ANOMALY: $mgene_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score\n";
+      &output_to_database("NOVEL_MGENE_PREDICTION", $chromosome, $mgene_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score, 'About half of these are probably real novel genes');
+    }
+  }
+
+}
+
+##########################################
+# get curated CDS that do not have a mGene prediction
+#  &get_not_predicted_by_mgene(\@mgene_transcripts, \@coding_transcripts, $chromosome) if (exists $run{NOT_PREDICTED_BY_MGENE});
+
+sub get_not_predicted_by_mgene {
+
+  my ($mgene_aref, $transcripts_aref, $chromosome) = @_;
+
+  $anomaly_count{NOT_PREDICTED_BY_MGENE} = 0 if (! exists $anomaly_count{NOT_PREDICTED_BY_MGENE});
+
+  my $mgene_match = $ovlp->compare($mgene_aref, same_sense => 1);
+
+  foreach my $gene (@{$transcripts_aref}) { # $mgene_id, $chrom_start, $chrom_end, $chrom_strand
+
+    my $got_a_match = 0;
+  
+    if ($mgene_match->match($gene)) { 
+      $got_a_match = 1;
+    }
+
+    # output gene with no MGENE prediction to the database
+    if (! $got_a_match) {
+      my $gene_id = $gene->[0];
+      my $chrom_start = $gene->[1];
+      my $chrom_end = $gene->[2];
+      my $chrom_strand = $gene->[3];
+
+      my $anomaly_score = 5.0;
+      #print "Gene with no MGENE prediction ANOMALY: $gene_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score\n";
+      &output_to_database("NOT_PREDICTED_BY_MGENE", $chromosome, $gene_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score, 'About a third of these should probably be retired');
+    }
+  }
+
+}
 
 ##########################################
 # get genefinder exons that do not match a coding transcript or pseudogene
