@@ -6,23 +6,31 @@
 # A simple script to send a check list to the person who will be performing the next
 # build to check the current build
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2009-04-23 15:43:16 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2009-09-23 10:20:59 $
 use strict;
 use warnings;
 use lib $ENV{'CVS_DIR'};
 use Wormbase;
 use Getopt::Long;
+use Ace;
+use File::Compare;
 
 my $store;                                          # to specify saved commandline arguments
 my $maintainers = "All";
-my ($help,$debug,$user);
+my ($help,$debug, $species);
+my ($clones, $pfam, $seq, $wormpep);
+
 
 GetOptions(
-    "help"    => \$help,
-    "debug=s" => \$debug,
-    "user=s"  => \$user,
-    'store=s' => \$store
+	   "help"    => \$help,
+	   "debug=s" => \$debug,
+	   'store=s' => \$store,
+	   'clones'  => \$clones,
+	   'pfam'    => \$pfam,
+	   'seq'     => \$seq,
+	   'wormpep' => \$wormpep, 
+	   'species:s'=>\$species
 );
 
 # Display help if required
@@ -33,38 +41,158 @@ GetOptions(
 ############################
 my $wb;
 if ($store) { $wb = Storable::retrieve($store) or croak("cant restore wormbase from $store\n") }
-else { $wb = Wormbase->new( -debug => $debug, -test => $debug, ) }
+else { $wb = Wormbase->new( -debug => $debug, -test => $debug, -organism => $species ) }
 
 ##########################################
 # Variables Part II (depending on $wb)    #
 ###########################################
 $debug = $wb->debug if $wb->debug;    # Debug mode, output only goes to one user
 my $WS_current = $wb->get_wormbase_version;
-
+my $wormbase = $wb;
 
 # Use debug mode?
 if ($debug) {
-    print "DEBUG = \"$debug\"\n\n";
-    $maintainers = $debug.'\@sanger.ac.uk';
-}
-
-# Use -user setting to send email
-if ($user) {
-    $maintainers = $user.'\@sanger.ac.uk';
+    $wb->debug($debug);
 }
 
 my $log = Log_files->make_build_log($wb);
 
-#######################
-#
-# Main part of script
-#
-#######################
+$wormpep=$pfam=$seq=$clones=1 unless($wormpep or $pfam or $seq or $clones);
+#only do some checks if elegans.
+unless ($wb->species eq 'elegans') {
+    $pfam=$seq=$clones=0;
+}
 
-$log->write_to("\nGreetings $user.  You are meant to be building the next release of WormBase, so\n");
-$log->write_to("you should take some time to check the current release.\n");
-$log->write_to("====================================================================================\n\n");
-$log->write_to("THINGS TO CHECK:\n\n");
+$log->write_to("Checking ".$wb->full_name.": - ".$wb->orgdb."\n\n");
+my $ace;
+#only connect once and if required.
+if($wormpep or $clones or $pfam){ $ace= Ace->connect('-path' => $wormbase->orgdb);}
+if($clones) {
+    $log->write_to("##################################\nChecking clones . .\n\n");
+    my @clones = qw(C25A1 F56A3 C04H5 B0432 C07A9 F30H5 C10C6 B0545 C12D8 K04F1 C02C6 AH9);
+
+    #expected no of objects per type
+    my %data_types = ('Homol_data' => 11,
+		      'Feature_data' => 3,
+		      );
+
+    foreach my $clone (@clones) {
+    $log->write_to("checking clone $clone \n");	
+	#Check Homol_data
+	my $query = "find Homol_data $clone*wublastx*";
+	my $homols = $ace->fetch_many(-query => $query);   
+    
+	my $hd;
+	my $count = 0;
+	while( $hd = $homols->next) {
+	    print $hd->name,"\n";
+	    $count++;
+	    if( defined $hd->Pep_homol(3) ) { # check for presence of a score.
+		#$log->write_to($hd->name." OK\n");
+	    }
+	    else{
+		$log->error("ERROR: ".$hd->name." missing data\n");
+	    }
+	}
+	
+	if($count < 11 ) {
+	    $log->error("ERROR: $clone has stuff missing\n");
+	}
+	
+	#check Feature_data
+	$query = "find Feature_data $clone*";
+	$homols = $ace->fetch_many(-query => $query); 
+	
+	$count = 0;
+	while( $hd = $homols->next) {
+	    print $hd->name,"\n";
+	    $count++;
+	    if( scalar $hd->Feature(2)->row > 3 ) {
+		#$log->write_to($hd->name." OK\n");
+	    }
+	    else{
+		$log->error("ERROR: ".$hd->name." missing data\n");
+	    }
+	}
+	if($count < 3 ) {
+	    $log->error("ERROR: $clone has stuff missing\n");
+	}
+    }
+}
+
+if ($seq) {
+    $log->write_to("\n##################################\nChecking sequence composition . .\n\n");
+    #check composition.all for n's
+    my $file = $wormbase->chromosomes ."/composition.all";
+    undef $/;
+    open (ALL,"<$file") or $log->log_and_die("cant open $file : $!\n");
+    my $in = <ALL>;
+    close ALL;
+    $/ = "\n";
+    $in =~ /n\s+(\d+)/;
+    if($1 == 0){
+	$log->write_to("no n's thanksfully\n");
+    }else {
+	$log->error("\n\nthere are n's in the genome!\n\n");
+    }
+
+    #check composition is same as start of build
+    $wormbase->run_command("ls ".$wormbase->orgdb."/CHROMOSOMES/*.dna | grep -v masked |grep -v Mt| xargs composition > /tmp/comp", $log);
+    if(compare($file,"/tmp/comp") == 0) { 
+	$log->write_to("composition same as start of build\n\n");
+    }else {
+	$log->error("composition has changed during build!\n\n");
+    }
+    $wormbase->run_command("rm -f /tmp/comp", $log);
+}
+
+if($pfam){
+    $log->write_to("\n##################################\nChecking PFAM motifs . .\n\n");
+    #check PFAM motifs have title
+    my $query = "query find motif PFAM* where !Title";
+    my $no_tits = $ace->count("-query"=>$query);
+    if($no_tits > 20) {
+	$log->error("$no_tits PFAM domains are missing a Title\n");
+    }else {
+	$log->write_to("Only $no_tits PFAM domains are missing a Title\n");
+    }
+}
+
+if($wormpep){
+    $log->write_to("\n##################################\nChecking new proteins . .\n\n");
+    #check that new wormpep entries have domains and blastp
+    my $new_pep_file = $wormbase->wormpep."/new_entries.".$wormbase->get_wormbase_version_name;
+    open (PEP,"<$new_pep_file") or $log->log_and_die("cant open $new_pep_file : $!\n");
+    my @newpeps;
+    while(<PEP>) {
+	if(/>(\S+)/) {
+	    push(@newpeps, $1);
+	}
+    }
+    close PEP;
+    my ($Pcount, $Mcount); #pephomol motifhomol
+    foreach my $pep(@newpeps){
+	my $pepObj = $ace->fetch('Protein' => $wormbase->wormpep_prefix.":$pep");
+	$Pcount++ if (defined $pepObj->Pep_homol);
+	#print STDERR $pepObj->name," P\n" unless(defined $pepObj->Pep_homol);
+	$Mcount++ if (defined $pepObj->Motif_homol);
+	#print STDERR $pepObj->name," M\n" unless(defined $pepObj->Motif_homol);
+    }
+    ($Pcount / scalar @newpeps < 0.5) ?
+	$log->error("ERROR: more than third ($Pcount / ".scalar @newpeps.") of new proteins dont have Pep_homols\n") :
+	$log->write_to("new proteins Pep_homols look ok\n");
+
+    ($Mcount / scalar @newpeps < 0.3) ?
+	$log->error("ERROR: only ($Mcount / ".scalar @newpeps.") of new proteins have Motif_homols\n") :
+	$log->write_to("new proteins Motif_homols look ok\n");
+}
+
+$ace->close if(defined $ace);
+
+$log->mail;
+exit;
+
+
 
 my $log_msg= <<'LOGMSG';
 1) The following 12 clones are representative of the whole genome in that
