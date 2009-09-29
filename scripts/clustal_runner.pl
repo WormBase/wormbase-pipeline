@@ -2,18 +2,20 @@
 
 # get a inputfile, a database, offset and windowsize and create clustal alignments for them.
 
-$ENV{CLUSTALDIR} = '/software/worm/bin';
+#$ENV{CLUSTALDIR} = '/software/worm/bin';
+$ENV{MUSCLEDIR} = '/software/worm/bin';
 
 use lib $ENV{CVS_DIR};
 use lib '/software/worm/lib/site_perl';
-use lib '/software/worm/ensembl-55/bioperl-live';
-use lib '/software/worm/ensembl-55/bioperl-run';
+use lib '/software/worm/ensembl/bioperl-live';
+use lib '/software/worm/ensembl/bioperl-run';
 use Wormbase;
 use Ace;
 use IO::String;
 use IO::File;
 use Bio::AlignIO;
-use Bio::Tools::Run::Alignment::Clustalw;
+#use Bio::Tools::Run::Alignment::Clustalw;
+use Bio::Tools::Run::Alignment::Muscle;
 use Getopt::Long;
 use DBI;
 
@@ -173,10 +175,10 @@ sub print_alignment{
   
 
   ######## HaCK from ClustalW bioperltut ################
-  use Bio::Tools::Run::Alignment::Clustalw;
+  use Bio::Tools::Run::Alignment::Muscle;
   my @parameters = (-quiet => 1);
-  my $factory = Bio::Tools::Run::Alignment::Clustalw->new(@parameters);
-  $factory->save_tempfiles(1);
+  my $factory = Bio::Tools::Run::Alignment::Muscle->new(@parameters);
+  # $factory->save_tempfiles(1);
   my $aln = $factory->align(\@sequences);
 
  ##############################################################
