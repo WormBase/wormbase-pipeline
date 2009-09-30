@@ -329,9 +329,9 @@ Show_text
 EMBL_feature     "CDS"
 
 Method : "jigsaw" 
-Colour   PURPLE
-CDS_colour       PURPLE
-Show_up_strand   PURPLE
+Colour   ORANGE
+CDS_colour       ORANGE
+Show_up_strand   ORANGE
 Bumpable
 Show_text
 EMBL_feature     "CDS"
@@ -346,8 +346,8 @@ EMBL_feature     "CDS"
 
 Method : "ensembl"
 Colour   ORANGE
-CDS_colour       ORANGE
-Show_up_strand   ORANGE
+CDS_colour       PALEORANGE
+Show_up_strand   PALEORANGE
 Bumpable
 Show_text
 EMBL_feature     "CDS"
