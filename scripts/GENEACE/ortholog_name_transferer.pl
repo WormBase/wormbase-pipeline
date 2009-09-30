@@ -128,10 +128,10 @@ while(<GENES>){
 close $ace;
 close $namedb;
 close GENES;
-$log->write_to("\nCreated orthos.ace and bathch_load under /nfs/disk100/wormpub/DATABASES/geneace/ORTHOLOGS/\n\n
+$log->write_to("\nCreated orthos.ace and batch_load under /nfs/disk100/wormpub/DATABASES/geneace/ORTHOLOGS/\n\n
 Dont forget to load the ace file in to Geneace.(default is orthos.ace)\n\nFinished\n");
 $log->mail;
-print "\nCreated orthos.ace and bathch_load under /nfs/disk100/wormpub/DATABASES/geneace/ORTHOLOGS/\n\n
+print "\nCreated orthos.ace and batch_load under /nfs/disk100/wormpub/DATABASES/geneace/ORTHOLOGS/\n\n
 Dont forget to load the ace file in to Geneace.(default is orthos.ace)\n\nFinished\n" if $debug;
 exit;
 
