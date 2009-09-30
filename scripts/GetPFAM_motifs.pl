@@ -6,8 +6,8 @@
 #
 # Gets latest PFAM motifs from sanger/pub and puts info in to ace file
 #
-# Last updated by: $Author: gw3 $                      
-# Last updated on: $Date: 2009-08-10 09:55:36 $         
+# Last updated by: $Author: ar2 $                      
+# Last updated on: $Date: 2009-09-30 09:54:22 $         
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -70,7 +70,7 @@ my $runtime         = $wormbase->runtime;
 
 
 #Get the latest version
-my $pfam_motifs_gz = "/tmp/Pfam_motifs.gz";
+my $pfam_motifs_gz = "/tmp/Pfam_motifs.gz_".$wormbase->species;
 $log->write_to("Attempting to wget the latest version\n");
 print "Attempting to wget the latest version\n";
 `wget -q -O $pfam_motifs_gz ftp://ftp.sanger.ac.uk/pub/databases/Pfam/current_release/Pfam-A.full.gz` and die "$0 Couldnt get Pfam-A.full.gz \n";
@@ -118,7 +118,7 @@ while (<PFAM>){
     $text = $1;
     $text =~ s/\"//g;
   }         
-}
+ }
   
 $log->write_to("added $pfcount PFAM motifs\n");
 
@@ -127,9 +127,10 @@ close PFAM;
 close PFAMOUT;
 
 # load file to autoace if -load specified
-$wormbase->load_to_database($wormbase->autoace, "$ace_dir/acefiles/pfam_motifs.ace", 'pfam_motifs', $log) if($load);
+  $wormbase->load_to_database($wormbase->autoace, "$ace_dir/acefiles/pfam_motifs.ace", 'pfam_motifs', $log) if($load);
 
-# tidy up and die
+# tidy up and exit
+  $wormbase->run_command("rm $pfam_motifs_gz",$log);
 $log->mail();
 print "Finished.\n" if ($verbose);
 exit(0);

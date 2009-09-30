@@ -6,8 +6,8 @@
 #
 # Gets latest Interpro:GO mappings from XXXX and puts info in to ace file
 #
-# Last updated by: $Author: gw3 $                      
-# Last updated on: $Date: 2008-01-15 11:46:11 $           
+# Last updated by: $Author: ar2 $                      
+# Last updated on: $Date: 2009-09-30 09:54:22 $           
 
 
 use strict;
@@ -55,7 +55,7 @@ if ($test) {
 my $log = Log_files->make_build_log($wormbase);
 
 
-my $latest_version = "/tmp/newip2gos";
+my $latest_version = "/tmp/newip2gos_".$wormbase->species;
 
 
 my $get_latest = 1;
@@ -137,6 +137,8 @@ $wormbase->load_to_database($wormbase->autoace, "$ace_dir/acefiles/interpro2go.a
 open (IP2GO,">$common_data_dir/interpro2go.dat") or die "cant open i2g\n";
 print IP2GO Data::Dumper->Dump([\%interpro_GO]);
 close IP2GO;
+
+$wormbase->run_command("rm $latest_version",$log);
 
 $log->mail();
 print "Finished.\n" if ($verbose);

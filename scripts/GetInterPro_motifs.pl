@@ -6,8 +6,8 @@
 #
 # Gets latest Interpro:GO mappings from XXXX and puts info in to ace file
 #
-# Last updated by: $Author: gw3 $                      
-# Last updated on: $Date: 2009-08-10 09:46:19 $         
+# Last updated by: $Author: ar2 $                      
+# Last updated on: $Date: 2009-09-30 09:54:22 $         
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -50,7 +50,7 @@ my $log = Log_files->make_build_log($wormbase);
 
   # store it here
   my $dir = "/tmp";
-  my $file = "$dir/interpro.xml";
+  my $file = "$dir/interpro.xml_".$wormbase->species;
 
   # get the interpro file from the EBI
   unlink $file;
@@ -108,6 +108,7 @@ $wormbase->load_to_database( $wormbase->autoace, "$ip_ace_file",
 			     'interpo_motifs', $log) if($load);
 
 # mail Log file
+$wormbase->run_command("rm $file",$log);
 $log->mail;
 exit(0);
 
