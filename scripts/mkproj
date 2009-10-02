@@ -1,9 +1,0 @@
-#!/bin/csh
-
-cd ~/analysis/cosmids
-
-mkmkproj ~/BioSW/squirrel/tables/databases >! proj.make
-
-time source proj.make
-
-pressdb proj
