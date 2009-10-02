@@ -5,7 +5,7 @@
 # written by Anthony Rogers
 #
 # Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2009-09-08 08:41:00 $
+# Last edited on: $Date: 2009-10-02 13:43:32 $
 #
 # it depends on:
 #    wormpep + history
@@ -22,7 +22,7 @@ wormBLAST.pl
 
 =cut
 
-my $ensembldir = '/software/worm/ensembl-55';
+my $ensembldir = '/software/worm/ensembl';
 
 use lib "$ensembldir/ensembl/modules";
 use lib "$ensembldir/ensembl-pipeline/modules";
