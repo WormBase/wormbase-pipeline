@@ -16,7 +16,7 @@ use Storable;
 use Species;
 
 our @core_organisms=qw(Elegans Briggsae Remanei Brenneri Japonica Heterorhabditis Pristionchus);
-our @tier3_organisms=qw(Brugia Mhapla Mincognita);
+our @tier3_organisms=qw(Brugia Mhapla Mincognita Hcontortus);
 our @allowed_organisms=(@core_organisms, @tier3_organisms); #class data
 
 sub initialize {
@@ -103,103 +103,6 @@ sub get_dev_version {
 }
 ###################################################################################
 
-sub version {
-  my $self = shift;
-  my $ver  = shift;
-  $self->{'version'} = $ver if $ver;
-  return $self->{'version'};
-}
-
-sub get_wormbase_release_date {
-
-  my $self   = shift;
-  my $format = shift;
-
-  if (!(defined($format))) {
-    $format = "long";
-  } elsif ($format eq "short") {
-    $format = "short";
-  } elsif ($format eq "both") {
-    $format = "both";
-  } else {
-    $format = "long";
-  }
-
-  
-  my $line = `ls -l /nfs/disk69/ftp/pub/wormbase/development_release/md5sum.WS*`;
-  my @split = split(/\s+/,$line);
-
-  my $month = $split[5];
-  my $month2;
-
-  if ($month eq "Jan") {
-    $month = "January";   $month2 = "01";
-  } elsif ($month eq "Feb") {
-    $month = "February";  $month2 = "02";
-  } elsif ($month eq "Mar") {
-    $month = "March";     $month2 = "03";
-  } elsif ($month eq "Apr") {
-    $month = "April";     $month2 = "04";
-  } elsif ($month eq "May") {
-    $month = "May";       $month2 = "05";
-  } elsif ($month eq "Jun") {
-    $month = "June";      $month2 = "06";
-  } elsif ($month eq "Jul") {
-    $month = "July";      $month2 = "07";
-  } elsif ($month eq "Aug") {
-    $month = "August";    $month2 = "08";
-  } elsif ($month eq "Sep") {
-    $month = "September"; $month2 = "09";
-  } elsif ($month eq "Oct") {
-    $month = "October";   $month2 = "10";
-  } elsif ($month eq "Nov") {
-    $month = "November";  $month2 = "11";
-  } elsif ($month eq "Dec") {
-    $month = "December";  $month2 = "12";
-  }
-
-  my $day = $split[6];
-
-  my $day2;
-  if (length($day) == 1) {
-    $day2 = "0".$day;
-  } else {
-    $day2 = $day;
-  }
-
-  if ($day eq "1") {
-    $day .= "st";
-  } elsif ($day eq "2") {
-    $day .= "nd";
-  } elsif ($day eq "3") {
-    $day .= "rd";
-  } elsif ($day eq "21") {
-    $day .= "st";
-  } elsif ($day eq "22") {
-    $day .= "nd";
-  } elsif ($day eq "23") {
-    $day .= "rd";
-  } elsif ($day eq "31") {
-    $day .= "st";
-  } else {
-    $day .= "th";
-  }
-
-  my $year = `date`;
-  $year = substr($year,-3,2);
-
-  # make a text style date
-  my $date = $day." ".$month;
-
-  # make a regular xx/xx/xx date
-  my $date2 = $day2."/".$month2."/".$year;
-
-  return($date)        if ($format eq "long");
-  return($date2)       if ($format eq "short");
-  return($date2,$date) if ($format eq "both"); 
-}
-
-###################################################################################
 
 sub FetchData {
   my $self = shift;
