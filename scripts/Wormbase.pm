@@ -103,6 +103,12 @@ sub get_dev_version {
 }
 ###################################################################################
 
+sub version { 	 
+    my $self = shift; 	 
+    my $ver  = shift; 	 
+    $self->{'version'} = $ver if $ver; 	 
+    return $self->{'version'}; 	 
+}
 
 sub FetchData {
   my $self = shift;
