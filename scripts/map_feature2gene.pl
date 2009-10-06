@@ -8,8 +8,8 @@
 #
 # Usage : map_feature2gene.pl [-options]
 #
-# Last edited by: $Author: pad $
-# Last edited on: $Date: 2007-08-08 10:55:59 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2009-10-06 13:02:32 $
 #################################################
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -28,6 +28,7 @@ my $verbose;    # Verbose mode
 my $load;       # upload acefile after run
 my $debug;      # Debug mode
 my $store;      # configuration file
+my $species;
 
 GetOptions(
     'help'    => \$help,
@@ -35,7 +36,8 @@ GetOptions(
     'verbose' => \$verbose,
     'test'    => \$test,
     'debug=s' => \$debug,
-    'store=s' => \$store
+    'store=s' => \$store,
+    'species=s'=>\$species,
 );
 
 # Help pod if needed
@@ -46,7 +48,7 @@ GetOptions(
 ############################
 my $wb;
 if ($store) { $wb = Storable::retrieve($store) or croak("cant restore wormbase from $store\n") }
-else { $wb = Wormbase->new( -debug => $debug, -test => $test, ) }
+else { $wb = Wormbase->new( -debug => $debug, -test => $test, -organism => $species ) }
 
 ###########################################
 # Variables Part II (depending on $wb)    #
