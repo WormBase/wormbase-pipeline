@@ -259,7 +259,7 @@ sub load_genes {
         &write_genes( $genes, $db );
     }
     $db->dbc->do('UPDATE gene SET biotype="protein_coding"');
-    $db->dbc->do('INSERT INTO meta (meta_key,meta_value) VALUES ("genebuild.start_dat",NOW())');
+    $db->dbc->do('INSERT INTO meta (meta_key,meta_value) VALUES ("genebuild.start_date",NOW())');
 
     # elegans cleanup
     ( system('rm -rf /tmp/compara') && die "could not clean up /tmp/compara" ) if ($species eq 'elegans' ||$species eq 'briggsae');
