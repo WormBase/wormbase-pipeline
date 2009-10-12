@@ -95,7 +95,7 @@ foreach my $seq ( @{$sa->fetch_all($seq_level)}){
 
 	foreach my $feature (@$repeats){
             my $copy_no=ceil(abs($feature->seq_region_start - $feature->seq_region_end) / length( $feature->repeat_consensus->seq ));
-	    printf OUT ("Feature tandem %s %s %s \"%i copies of %imer\"\n",
+	    printf OUT ("Feature tandem %s %s %s \"%i copies of %imer\"\nMethod tandem\n",
 		    $feature->seq_region_start,$feature->seq_region_end,$feature->score,$copy_no,length($feature->repeat_consensus->seq )); 
 	}
 
@@ -104,11 +104,13 @@ foreach my $seq ( @{$sa->fetch_all($seq_level)}){
          print OUT "\nSequence : \"$clone\"\n";
          print OUT "Feature_data $clone:Dust 1 $clonesize\n\n";
          print OUT "Feature_data : $clone:Dust\n";
+	 print OUT "Method dust\n";
         }
 
 	foreach my $feature (@$repeats){
 	    printf OUT ("Feature dust %i %i %i \"low_complexity region\"\n",
-		    $feature->seq_region_start,$feature->seq_region_end,length($feature->repeat_consensus->seq )); 
+		    $feature->seq_region_start,$feature->seq_region_end,length($feature->repeat_consensus->seq ));
+	    print OUT "Method low_complexity_region\n";
 	}
 
 }
@@ -118,13 +120,21 @@ close OUT;
 
 $log->mail;
 exit(0);
-sub help {
-    print "===============================================\n$0\n
-Extract RepeatMasker and TRF data from worm_ensembl databases on ia64d\n\n
-Writes ace file $output\n
 
-Must be able to access Wormbase.pm and /software/worm/ensembl/\
+sub help {
+    print<<END;
+===============================================
+$0
+Extract RepeatMasker and TRF data from worm_ensembl databases on ia64d
+
+
+Writes ace file $output
+
+Must be able to access Wormbase.pm and /software/worm/ensembl/
 Takes about 2 mins to dump whole genome\n\n
-================================================\n\n";
+================================================
+
+
+END
 }
 

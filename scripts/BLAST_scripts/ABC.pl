@@ -6,8 +6,8 @@
 #
 # This is a script to automate the sections A, B and C of the BLAST Build
 #
-# Last updated by: $Author: pad $     
-# Last updated on: $Date: 2009-09-18 09:47:23 $      
+# Last updated by: $Author: mh6 $     
+# Last updated on: $Date: 2009-10-12 13:07:58 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -148,7 +148,7 @@ foreach my $species (@species) {
 
   $log->write_to("  Running dump_blastp_from_file.pl . . .\n");
   print "  Running dump_blastp_from_file.pl . . .\n" if ($verbose);
-  my $cmd = "/software/bin/perl \$CVS_DIR/BLAST_scripts/dump_blastp_from_file.pl $species.srt -version $version -matches -database worm_$species";
+  my $cmd = "/software/bin/perl \$CVS_DIR/BLAST_scripts/dump_blastp_from_file.pl $species.srt -matches -database worm_$species";
   $cmd .= " -store $store_file";
   #print "cmd = $cmd\n";
   $exp->send("$cmd\n");
