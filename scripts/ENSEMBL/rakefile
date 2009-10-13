@@ -194,7 +194,7 @@ end
 desc 'dump conservation wiggle files'
 task :dump_gerp =>[:env_setup] do
 	FileUtils.mkdir_p("#{tmp_place}/compara")
-	['elegans','briggsae','brenneri','remanei','japonica','pristionchus','brugia'].each{|species|
+	['elegans','briggsae','brenneri','remanei','japonica','pristionchus','brugia','Mhapla'].each{|species|
           sh "#{perl} scripts/getConservationScores.pl -species #{species} -o #{tmp_place}/compara/#{species}.wig"
 	}
 end

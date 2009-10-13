@@ -60,7 +60,7 @@ my $mlss = $mlss_adaptor->fetch_by_method_link_type_registry_aliases("GERP_CONSE
     ['Caenorhabditis elegans', 'Caenorhabditis briggsae',
      'Caenorhabditis remanei', 'Brugia malayi', 
      'Pristionchus pacificus', 'Caenorhabditis brenneri',
-     'Caenorhabditis japonica']);
+     'Caenorhabditis japonica','Meloidogyne hapla']);
 
 
 foreach my $seq_region ($wb->get_chromosome_names(-prefix => 1)){
