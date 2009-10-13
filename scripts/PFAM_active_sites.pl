@@ -1,7 +1,7 @@
 #!/software/bin/perl -w
 
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2008-11-17 13:37:11 $
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2009-10-13 14:55:28 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -133,9 +133,9 @@ sub update_database {
 
 		# pfamseq table is subject to unannounced column re-ordering, so update the schema.
 		if ($table eq "pfamseq") {
-		  if (-e $ftp."/pfamseq.sql"){
+		  if (-e $ftp."/pfamseq.sql.gz"){
 		    $log->write_to("\tupdating the pfamseq table schema\n");
-		    $wormbase->run_command("cp -f $ftp/pfamseq.sql /tmp/pfamseq.sql", $log);
+		    $wormbase->run_command("zcat $ftp/pfamseq.sql.gz > /tmp/pfamseq.sql", $log);
 		    $wormbase->run_command("mysql -h ia64d -u wormadmin -p$pass worm_pfam < /tmp/pfamseq.sql", $log);
 		  }
 		  else {$log->write_to("\tcouldn't update the pfamseq table schema\n");}
