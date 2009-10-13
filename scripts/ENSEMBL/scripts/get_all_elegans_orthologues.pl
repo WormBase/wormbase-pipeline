@@ -27,6 +27,7 @@ my %species = (
     6279   => 'Brugia malayi',
     54126  => 'Pristionchus pacificus',
     6305   => 'Meloidogyne hapla',
+    6289   => 'Haemonchus contortus',
 );
 
 my %cds2wbgene=%{&get_commondata('cds2wbgene_id')};
@@ -55,6 +56,7 @@ while( my $member = shift @members){
     # needs some better way
     my %brugia;
     my %hapla;
+    my %hcont.
     my %all;
 
     foreach my $homology ( @homologies) {
@@ -69,9 +71,11 @@ while( my $member = shift @members){
                     $brugia{ $pepm->stable_id } = [$pepm->taxon_id,$homology->description] 
                 }
 		elsif ($pepm->taxon_id==6305){
-                    $hapla{ $pepm->stable_id } = [$pepm->taxon_id,$homology->description] 
+                    $hapla{$pepm->stable_id} = [$pepm->taxon_id,$homology->description] 
                 }
-
+                elsif ($pepm->taxon_id==6289){
+		    $hcont{$pepm->stable_id} = [$pepm->taxon_id,$homology->description]
+		}
                 else {
                     $all{ $pepm->stable_id } = [$pepm->taxon_id,$homology->description]
                 }
@@ -100,14 +104,17 @@ while( my $member = shift @members){
             print "\n";
     }
 
-    while (my ($k,$v)=each(%brugia)){ # brugia exception
-        
+    my %t3 = (%brugia,%hapla,%hcont);
+    while (my ($k,$v)=each(%t3)){ # brugia exception
             my $bid=$cds2swiss{$k}?$cds2swiss{$k}:$k;
             print "Ortholog_other $bid From_analysis WormBase-Compara\n";
     }
-
-    undef %all;
     print "\n";
+    
+
+    while (my ($k,$v)=each(%t3)){
+	    print "Protein : $k\nSpecies \"$species{$$v[0]}\"\n\n";
+    }
 
 }   
 
