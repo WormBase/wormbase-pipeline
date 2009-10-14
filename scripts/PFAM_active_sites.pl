@@ -1,7 +1,7 @@
 #!/software/bin/perl -w
 
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2009-10-14 09:40:25 $
+# Last updated on: $Date: 2009-10-14 13:21:30 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -146,8 +146,10 @@ sub update_database {
 		$log->write_to("\tclearing table $table\n");
 		$DB->do("DELETE FROM $table") or $log->log_and_die($DB->errstr."\n");
 		# load in the new data.
-		$log->write_to("\tloading data in to $table\n");		
+		$log->write_to("\tloading data in to $table\n");
+                $DB->do("SET FOREIGN_KEY_CHECKS=0");		
 		$DB->do("LOAD DATA LOCAL INFILE \"/tmp/$table.txt\" INTO TABLE $table") or $log->log_and_die($DB->errstr."\n");
+                $DB->do("SET FOREIGN_KEY_CHECKS=1");		
 		# clean up files
 		$wormbase->run_command("rm -f /tmp/pfamseq.sql",$log) if (-e "/tmp/pfamseq.sql");
 		$wormbase->run_command("rm -f /tmp/$table.txt", $log);
