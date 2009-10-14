@@ -1,7 +1,7 @@
 #!/software/bin/perl -w
 
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2009-10-13 14:55:28 $
+# Last updated on: $Date: 2009-10-14 09:40:25 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -105,7 +105,7 @@ sub update_database {
 	$log->write_to("\n\nUpdating database from PFAM ftp site\n");
 	
 	my $ftp = glob("~ftp/pub/databases/Pfam/current_release/database_files");
-	my @tables = qw(pfamseq markup_key pfamseq_markup);
+	my @tables = qw(ncbi_taxonomy pfamseq markup_key pfamseq_markup);
 	foreach my $table (@tables){
 		$log->write_to("\tfetching $table.txt\n");
 		
@@ -135,7 +135,9 @@ sub update_database {
 		if ($table eq "pfamseq") {
 		  if (-e $ftp."/pfamseq.sql.gz"){
 		    $log->write_to("\tupdating the pfamseq table schema\n");
-		    $wormbase->run_command("zcat $ftp/pfamseq.sql.gz > /tmp/pfamseq.sql", $log);
+                    $wormbase->run_command('echo "SET FOREIGN_KEY_CHECKS=0;">/tmp/pfamseq.sql',$log);
+		    $wormbase->run_command("zcat $ftp/pfamseq.sql.gz >> /tmp/pfamseq.sql", $log);
+                    $wormbase->run_command('echo "SET FOREIGN_KEY_CHECKS=1;">>/tmp/pfamseq.sql',$log);
 		    $wormbase->run_command("mysql -h ia64d -u wormadmin -p$pass worm_pfam < /tmp/pfamseq.sql", $log);
 		  }
 		  else {$log->write_to("\tcouldn't update the pfamseq table schema\n");}
