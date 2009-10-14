@@ -1,7 +1,7 @@
 #!/software/bin/perl -w
 
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2009-10-14 13:21:30 $
+# Last updated on: $Date: 2009-10-14 14:49:35 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -60,7 +60,7 @@ my $DB = DBI -> connect("DBI:mysql:worm_pfam:ia64d", $user, $pass, {RaiseError =
 my $sth_f = $DB->prepare ( 	q{	
 	SELECT pfamseq.pfamseq_id, pfamseq.sequence, pfamseq_markup.residue, markup_key.label, pfamseq_markup.annotation 
 	FROM pfamseq,pfamseq_markup, markup_key 
-	WHERE pfamseq.ncbi_code = ?
+	WHERE pfamseq.ncbi_taxid = ?
 	AND pfamseq.auto_pfamseq = pfamseq_markup.auto_pfamseq 
 	AND pfamseq_markup.auto_markup = markup_key.auto_markup;
 	  	  } );
