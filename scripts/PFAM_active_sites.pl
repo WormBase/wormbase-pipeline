@@ -1,7 +1,7 @@
 #!/software/bin/perl -w
 
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2009-10-14 14:49:35 $
+# Last updated on: $Date: 2009-10-14 20:23:19 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -76,7 +76,7 @@ $log->write_to("\twriting output\n");
 open (ACE,">".$wormbase->acefiles."/PFAM_active_sites.ace") or $log->log_and_die("cant open ".$wormbase->acefiles."/PFAM_active_sites.ace :$!");
 foreach (@$ref_results) {
 	my ($seq_id, $seq, $residue, $method, $annotation) = @$_;
-	($method) = $method =~ /^(\w+)/;
+	($method) = $method =~ /^(\S+)/;
 	if($method eq "Active") {
 		if(defined($annotation) and ($annotation !~ /NULL/)) {
 			$method = $annotation;
