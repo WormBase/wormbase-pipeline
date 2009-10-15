@@ -1,7 +1,7 @@
 #!/software/bin/perl -w
 
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2009-10-14 20:23:19 $
+# Last updated on: $Date: 2009-10-15 12:47:25 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -78,7 +78,7 @@ foreach (@$ref_results) {
 	my ($seq_id, $seq, $residue, $method, $annotation) = @$_;
 	($method) = $method =~ /^(\S+)/;
 	if($method eq "Active") {
-		if(defined($annotation) and ($annotation !~ /NULL/)) {
+		if($annotation and ($annotation !~ /NULL/)) {
 			$method = $annotation;
 		}else {
 			$method = 'Active_site';
@@ -88,6 +88,7 @@ foreach (@$ref_results) {
 		my $pepid = $wormbase->wormpep_prefix.":".$wormbase->pep_prefix.&pad($aa2pepid{$seq});
 		
 		print ACE "\nProtein : \"$pepid\"\n";
+		$log->write_to("can't find method for $seq_id, $seq, $residue, $method, $annotation \n") unless $method;
 		print ACE "Motif_homol Active_site \"$method\" 0 $residue $residue 1 1\n"; 
 	}
 	else {
