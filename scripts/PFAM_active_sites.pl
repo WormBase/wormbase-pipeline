@@ -1,7 +1,7 @@
 #!/software/bin/perl -w
 
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2009-10-15 12:47:25 $
+# Last updated on: $Date: 2009-10-16 15:06:23 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -126,10 +126,11 @@ sub update_database {
 		}
 		
 		$log->write_to("\t clearing quotes from /tmp/$table.txt\n");
-		$wormbase->run_command("cat /tmp/$table.txt | sed s/\\\"//g > /tmp/$table.txt2", $log);
+                # the idea is to replace \" ? then we need 5 backlashes in the shell escaped by 5 in perl +1 for the perly quotation mark = 11 ... urghs
+		$wormbase->run_command("cat /tmp/$table.txt | sed s/\\\\\\\\\\\"//g > /tmp/$table.txt2", $log);
 		$wormbase->run_command("mv /tmp/$table.txt2 /tmp/$table.txt", $log);
 		$log->write_to("\t checking quote clearing in /tmp/$table.txt\n");
-		$wormbase->run_command("cat /tmp/$table.txt | sed s/\\\'//g > /tmp/$table.txt3", $log);
+		$wormbase->run_command("cat /tmp/$table.txt | sed s/\\\\\\\\\\\'//g > /tmp/$table.txt3", $log); # the idea is to replace \' ?
 		$wormbase->run_command("mv /tmp/$table.txt3 /tmp/$table.txt", $log);
 
 		# pfamseq table is subject to unannounced column re-ordering, so update the schema.
