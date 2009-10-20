@@ -1,7 +1,7 @@
 #!/software/bin/perl -w
 
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2009-10-16 15:06:23 $
+# Last updated on: $Date: 2009-10-20 14:24:40 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -125,17 +125,9 @@ sub update_database {
 		  $log->log_and_die("Couldn't find $ftp/$table file to copy :(\n");
 		}
 		
-		$log->write_to("\t clearing quotes from /tmp/$table.txt\n");
-                # the idea is to replace \" ? then we need 5 backlashes in the shell escaped by 5 in perl +1 for the perly quotation mark = 11 ... urghs
-		$wormbase->run_command("cat /tmp/$table.txt | sed s/\\\\\\\\\\\"//g > /tmp/$table.txt2", $log);
-		$wormbase->run_command("mv /tmp/$table.txt2 /tmp/$table.txt", $log);
-		$log->write_to("\t checking quote clearing in /tmp/$table.txt\n");
-		$wormbase->run_command("cat /tmp/$table.txt | sed s/\\\\\\\\\\\'//g > /tmp/$table.txt3", $log); # the idea is to replace \' ?
-		$wormbase->run_command("mv /tmp/$table.txt3 /tmp/$table.txt", $log);
-
 		# pfamseq table is subject to unannounced column re-ordering, so update the schema.
-		if ($table eq "pfamseq") {
-		  if (-e $ftp."/pfamseq.sql.gz"){
+		if ($table eq 'pfamseq') {
+		  if (-e $ftp.'/pfamseq.sql.gz'){
 		    $log->write_to("\tupdating the pfamseq table schema\n");
                     $wormbase->run_command('echo "SET FOREIGN_KEY_CHECKS=0;">/tmp/pfamseq.sql',$log);
 		    $wormbase->run_command("zcat $ftp/pfamseq.sql.gz >> /tmp/pfamseq.sql", $log);
@@ -150,12 +142,19 @@ sub update_database {
 		# load in the new data.
 		$log->write_to("\tloading data in to $table\n");
                 $DB->do("SET FOREIGN_KEY_CHECKS=0");		
-		$DB->do("LOAD DATA LOCAL INFILE \"/tmp/$table.txt\" INTO TABLE $table") or $log->log_and_die($DB->errstr."\n");
-                $DB->do("SET FOREIGN_KEY_CHECKS=1");		
+		$DB->do("LOAD DATA LOCAL INFILE \"/tmp/$table.txt\" INTO TABLE $table".' FIELDS ENCLOSED BY \'\\\'\'') or $log->log_and_die($DB->errstr."\n");
+                $DB->do("SET FOREIGN_KEY_CHECKS=1");
+
+		# this will fall to pieces as soon as Rob changes the name of the column again
+		if ($table eq 'pfamseq') {
+                  $log->write_to("\tcleaning quotation marks from $table\n");
+		  $DB->do("UPDATE pfamseq SET description=REPLACE(description,'\\'','')");
+                  $DB->do("UPDATE pfamseq SET description=REPLACE(description,'\"','')");
+	        }
 		# clean up files
+		
 		$wormbase->run_command("rm -f /tmp/pfamseq.sql",$log) if (-e "/tmp/pfamseq.sql");
 		$wormbase->run_command("rm -f /tmp/$table.txt", $log);
-#select
 	      }
 	$log->write_to("Database update complete\n\n");
 }
