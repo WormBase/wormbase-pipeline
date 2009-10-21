@@ -103,8 +103,8 @@ end
 
 desc 'build homology database'
 task :build_homology => [:env_setup] do
-  conf='etc/compara-genetree-test.conf'
-  reg='etc/compara_test8.reg'
+  conf='etc/compara-genetree-9.conf'
+  reg='etc/compara_test9.reg'
   yml=YAML::load_file('etc/ensembl_lite.conf')
   db=yml['elegans']['database']
 
@@ -120,8 +120,8 @@ task :build_homology => [:env_setup] do
   sh "#{perl} #{basedir}/ensembl-compara/scripts/pipeline/loadGeneTreeSystem.hcluster.pl -conf #{conf}"
   
   # table hack
-  `mysql -h ia64d -u wormadmin -pworms worm_compara -e 'INSERT INTO method_link (type, class) VALUES ("ENSEMBL_ORTHOLOGUES","Homology.homology"),("ENSEMBL_PARALOGUES","Homology.homology"),("PROTEIN_TREES","ProteinTree.protein_tree_node")'`
-  `mysql -h ia64d -u wormadmin -pworms worm_compara -e 'INSERT INTO protein_tree_tag (tag,value) VALUES ("species_tree_string","(((((((6238*,31234)a,135651)b,6239*)c,281687)d,54126)e,63
+  `mysql -h #{db['host']} -u #{db['user']} -p#{db['password']} worm_compara -e 'INSERT INTO method_link (type, class) VALUES ("ENSEMBL_ORTHOLOGUES","Homology.homology"),("ENSEMBL_PARALOGUES","Homology.homology"),("PROTEIN_TREES","ProteinTree.protein_tree_node")'`
+  `mysql -h #{db['host']} -u #{db['user']} -p#{db['password']} worm_compara -e 'INSERT INTO protein_tree_tag (tag,value) VALUES ("species_tree_string","(((((((6238*,31234)a,135651)b,6239*)c,281687)d,54126)e,63
    05)f,6279)g;")'`
 
   # MLSS setup
@@ -136,6 +136,9 @@ task :build_homology => [:env_setup] do
 
   # For protein trees
   sh "#{perl} #{basedir}create_mlss.pl --f --reg_conf #{reg} --method_link_type PROTEIN_TREES --genome_db_id '1,2,3,4,5,6,7,8'"
+
+  # up the failure tolerance
+  `mysql -h #{db['host']} -u #{db['user']} -p#{db['password']} worm_compara -e 'UPDATE analysis_stats SET failed_job_tolerance = 20 WHERE analysis_id=(SELECT analysis_id FROM analysis WHERE logic_name = "MCoffee");`
 
 end
 
