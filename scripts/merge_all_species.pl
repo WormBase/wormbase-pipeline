@@ -1,7 +1,7 @@
 #/software/bin/perl -w
 #
-# Last updated by: $Author: pad $
-# Last updated on: $Date: 2009-09-16 14:18:33 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2009-10-22 09:28:35 $
 
 #################################################################################
 # Variables                                                                     #
@@ -46,14 +46,6 @@ my $log = Log_files->make_build_log($wormbase);
 $log->write_to("hacked version of merge_all_species\n\n");
 
 my %accessors = $wormbase->species_accessors;
-delete $accessors{pristionchus};
-#delete $accessors{remanei};
-delete $accessors{heterorhabditis};
-delete $accessors{japonica};
-delete $accessors{briggsae};
-delete $accessors{brenneri};
-
-
 
 # move all the old MERGE files out of the way
 $log->write_to("\nRemove the old MERGE ace files . . .\n");
