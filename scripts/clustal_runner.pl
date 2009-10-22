@@ -118,7 +118,7 @@ while (my $line = <$infile>){
     my ($found)=$qst->fetchrow_array;
     next if $found>0;
     
-    #print "processing $protein\n";
+    print "processing $protein\n" if $debug;
     
     my $cl_aln=print_alignment($protein);
     $sth->execute("$protein",$cl_aln);
