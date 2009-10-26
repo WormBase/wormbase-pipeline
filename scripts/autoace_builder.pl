@@ -7,7 +7,7 @@
 # Usage : autoace_builder.pl [-options]
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2009-09-18 14:52:59 $
+# Last edited on: $Date: 2009-10-26 10:40:42 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -329,6 +329,13 @@ sub remap_misc_dynamic {
     if (-e $backup_mgene) {$wormbase->run_command("mv -f $backup_mgene $mgene", $log);}
     $wormbase->run_command("mv -f $mgene $backup_mgene", $log);
     $wormbase->run_script( "remap_genefinder_between_releases.pl -input $backup_mgene -out $mgene", $log);
+
+    # remap Hillier RNASEQ_CDS - uses the remap genefinder script
+    my $rnaseq_cds = $wormbase->misc_dynamic."/misc_RNASEQ_CDS.ace";
+    my $backup_rnaseq_cds = $wormbase->misc_dynamic."/BACKUP/misc_RNASEQ_CDS.ace.$previous_release";
+    if (-e $backup_rnaseq_cds) {$wormbase->run_command("mv -f $backup_rnaseq_cds $rnaseq_cds", $log);}
+    $wormbase->run_command("mv -f $rnaseq_cds $backup_rnaseq_cds", $log);
+    $wormbase->run_script( "remap_genefinder_between_releases.pl -input $backup_rnaseq_cds -out $rnaseq_cds", $log);
 
     # remap fosmids
     my $fosmids = $wormbase->misc_dynamic."/fosmids.ace";
