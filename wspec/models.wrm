@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: ar2 $
-// Last edited on: $Date: 2009-09-10 10:09:18 $
+// Last edited on: $Date: 2009-10-26 12:02:41 $
 
 
 ////////////////////////
@@ -1235,9 +1235,11 @@
 			Database ?Database ?Database_field UNIQUE ?Accession_number XREF Pseudogene
                 Origin  From_laboratory UNIQUE ?Laboratory
                         Species UNIQUE ?Species
-                Type    UNIQUE Coding_pseudogene Text // [110803 dl] 
-                               RNA_pseudogene Text    // Text can store type of RNA (probably tRNA)
-                               Transposon_pseudogene
+                Type    UNIQUE Coding_pseudogene #Evidence
+                               RNA_pseudogene #Evidence
+                               Transposon_pseudogene #Evidence
+	        Attributes   Transcribed #Evidence
+			     Fragment #Evidence 
 		Properties Isoform #Evidence
                 Visible Gene         UNIQUE ?Gene XREF Corresponding_pseudogene         // when Pseudogene is live
                         Gene_history UNIQUE ?Gene XREF Corresponding_pseudogene_history // when Pseudogene is dead
@@ -2217,6 +2219,7 @@
 	Contains_gene ?Gene XREF Contained_in_operon #Trans_splice_leader
 	Associated_feature ?Feature XREF Associated_with_operon	#Evidence
 	Reference ?Paper XREF Operon
+	Description UNIQUE Text     #Evidence
 	Method UNIQUE ?Method
 	History    Merged_into      UNIQUE ?Operon XREF Acquires_merge #Evidence
 		   Acquires_merge   ?Operon XREF Merged_into #Evidence
