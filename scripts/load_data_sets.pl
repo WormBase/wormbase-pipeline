@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl -w
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2009-09-18 14:55:38 $      
+# Last updated on: $Date: 2009-10-26 10:43:42 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -62,6 +62,7 @@ sub parse_misc_elegans_files {
 		       $wormbase->misc_dynamic."/misc_genefinder.ace"           => "genefinder_predictions",
 		       $wormbase->misc_dynamic."/misc_twinscan.ace"             => "twinscan_predictions"  ,
 		       $wormbase->misc_dynamic."/misc_mgene.ace"                => "mgene_predictions"     ,
+		       $wormbase->misc_dynamic."/misc_RNASEQ_CDS.ace"           => "RNASEQ_CDS_predictions"     ,
 		       $wormbase->misc_dynamic."/misc_jigsaw.ace"               => "jigsaw_predictions"    ,
 		       $wormbase->misc_dynamic."/misc_TEC_RED_homol_data.ace"   => "TEC_RED"               ,
 		       $wormbase->misc_dynamic."/misc_TEC_RED_homol.ace"        => "TEC_RED"               ,
