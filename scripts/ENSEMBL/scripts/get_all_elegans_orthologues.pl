@@ -49,7 +49,8 @@ my @members = @{$member_adaptor->fetch_all()};
 while( my $member = shift @members){
     
     next if $member->taxon_id == 6279; # skip brugia, as it does not have ?Gene objects
-    next if $member->taxon_id == 6305; # skip brugia, as it does not have ?Gene objects
+    next if $member->taxon_id == 6305; # skip M.hapla, as it does not have ?Gene objects
+    next if $member->taxon_id == 6289; # skip H.contortus, as it does not have ?Gene objects
     
     my @homologies = @{$homology_adaptor->fetch_all_by_Member( $member)};
 
