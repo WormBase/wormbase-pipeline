@@ -23,9 +23,9 @@ use YAML;
 use Getopt::Long;
 use Storable;
 # use Wormbase;
-use lib '/software/worm/ensembl-55/ensembl/modules';
-use lib '/software/worm/ensembl-55/ensembl-pipeline/modules';
-use lib '/software/worm/ensembl-55/bioperl-live';
+use lib '/software/worm/ensembl/ensembl/modules';
+use lib '/software/worm/ensembl/ensembl-pipeline/modules';
+use lib '/software/worm/ensembl/bioperl-live';
 use Bio::Seq;
 use Bio::SeqIO;
 use Bio::EnsEMBL::CoordSystem;
@@ -62,6 +62,7 @@ my $cvsDIR = $test
   ? ( YAML::LoadFile($yfile) )->{test}->{cvsdir}
   : ( YAML::LoadFile($yfile) )->{generics}->{cvsdir};
 
+$WormBase::species=$species;
 our $gff_types = ($config->{gff_types} || "curated coding_exon");
 
 
@@ -224,7 +225,7 @@ sub load_genes {
     my $analysis = $db->get_AnalysisAdaptor()->fetch_by_logic_name('wormbase');
 
     # elegans hack for build
-    if ( $species eq 'elegans' || $species eq 'briggsae' ) {
+    if ( $species eq 'elegans' || $species eq 'briggsae'||$species eq 'elegans_test' ) {
         foreach my $chr ( glob $config->{fasta} ) {
             my ( $path, $name ) = ( $chr =~ /(^.*)\/CHROMOSOMES\/(.*?)\.\w+/ );
             `mkdir /tmp/compara` if !-e '/tmp/compara';

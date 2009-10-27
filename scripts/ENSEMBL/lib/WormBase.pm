@@ -46,7 +46,7 @@ use Bio::EnsEMBL::SimpleFeature;
 use Bio::EnsEMBL::CoordSystem;
 use Bio::EnsEMBL::Slice;
 
-$| = 1;    #turns off buffering on STDOUT
+my $species; # yes, I am not too prooud of class variables :-(
 
 =head2 get_seq_ids
 
@@ -800,7 +800,9 @@ sub create_transcripts {
         #print STDERR "\nWorking on $transcript.(".$exons[0]->strand.") ";
         #get the gene-name
 	$gene_name= ( $transcript =~ /(.*?\w+\.\d+)[a-z A-Z]*\.*\d*/ )?$1:$transcript; # elegans
-        $gene_name= ( $transcript =~ /([A-Z]{3,}\d+)[a-z]*(\.\d+)*$/ )?$1:$transcript if ($gene_name eq $transcript);
+	unless ($WormBase::species=~/elegans/) {
+                $gene_name= ( $transcript =~ /([A-Z]{3,}\d+)[a-z]*(\.\d+)*$/ )?$1:$transcript if ($gene_name eq $transcript);
+        }
 
         $transcript_id = $transcript;
         print STDERR "\nNote: Gene name= " . $gene_name . " Transcript_id= " . $transcript_id . " (for transcript " . $transcript . ")";
