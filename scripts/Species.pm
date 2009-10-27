@@ -498,6 +498,47 @@ sub chromosome_names {
 }
 
 #######################################################
+package Hcontortus;
+use Carp;
+our @ISA = qw(Wormbase Species);
+
+sub _new {	
+    my $class = shift;
+    my %param = %{ shift(@_) };
+
+    my $self = $class->initialize( $class->flatten_params( \%param ) );
+
+    # add stuff post object creation goes here
+
+    bless $self, $class;
+}
+sub full_name {
+	my $self = shift;
+	my %param = @_ ;
+	if($param{'-short'}){
+		return 'H. contortus';
+	}	elsif($param{'-g_species'}){
+		return 'h_contortus';
+	}
+	else { return'Haemonchus contortus'
+	};
+}
+sub chromosome_prefix {'Hcon_Contig'}
+sub pep_prefix {'HC'}
+sub pepdir_prefix{'hco'};
+sub ncbi_tax_id {'6289'};
+sub assembly_type {'contig'};
+sub chromosome_names {
+	my @contigs;
+	my $i = 0;
+	while($i < 59707){
+		push(@contigs, "$i");
+		$i++;
+	}
+	return @contigs;
+}
+
+#######################################################
 #######################################################
 
 
