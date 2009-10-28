@@ -174,8 +174,9 @@ sub merge_gene {
       # get the CGC name
       my $dead_CGC_name = $deadgeneObj->CGC_name;
       if (defined $dead_CGC_name) {
-	$log->error("ERROR: $deadgene has a CGC name ($dead_CGC_name) - this merge will not be done. Check this with Jonathon.\n");
-	$ok = 0;	
+	$log->error("Warning: $deadgene has a CGC name ($dead_CGC_name) - this merge needs checking as cgc names are involved. Check this with Jonathon. and only then load the .ace file\n");
+	if (defined$load) {undef$load;}
+	$ok = 1;
       }
 
       my $ver;
