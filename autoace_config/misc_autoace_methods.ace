@@ -1415,7 +1415,7 @@ GFF_feature "polyA_signal_sequence"
 Remark	 "polyadenylation signal sequences"
 
 Method : "transcription_start_site" 
-Colour	 GREEN
+Colour	 DARKGREEN
 Strand_sensitive	
 Width	 1.000000
 Show_up_strand
@@ -1424,7 +1424,7 @@ GFF_feature "transcription_start_site"
 Remark	 "transcription start site - N.B. this may only be the start of the mature transcript, rather than the original start site of transcription. This is determined from the Hillier RNASeq data."
 
 Method : "transcription_end_site" 
-Colour	 GREEN
+Colour	 DARKRED
 Strand_sensitive	
 Width	 1.000000
 Show_up_strand
