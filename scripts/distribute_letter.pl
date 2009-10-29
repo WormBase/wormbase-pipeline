@@ -8,8 +8,8 @@
 #                          ~wormpub/BUILD/autoace/release/
 #                          /nfs/WWW/SANGER_docs/htdocs/Projects/C_elegans/WORMBASE/current/release_notes.txt/
 #
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2008-07-25 23:00:30 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2009-10-29 12:11:19 $
 
 
 use strict;                                      
@@ -88,29 +88,23 @@ $log->write_to("about to spread the word . . . \n");
 # copy the letter around
 $log->write_to("copying to ftp site . . . . ");
 my ($ftp_dir) = glob("~ftp/pub2/wormbase");       
-      # ftp-site
-      &_copy( "$repdir/letter.${release}", "$ftp_dir/${release}/letter.${release}" ) || die "couldnt copy to $ftp_dir\n";
-      $log->write_to("DONE.\n");
+# ftp-site
+&_copy( "$repdir/letter.${release}", "$ftp_dir/${release}/letter.${release}" ) || $log->log_and_die("couldnt copy to $ftp_dir\n");
+$log->write_to("DONE.\n");
 
-      # local
-      $log->write_to("copying to autoace/release . . . . ");
-      &_copy( "$repdir/letter.${release}", "$acedir/release/letter.${release}" )
-      || die "couldnt copy to autoace/release\n";
-      $log->write_to("DONE.\n");
+# local
+$log->write_to("copying to autoace/release . . . . ");
+&_copy( "$repdir/letter.${release}", "$acedir/release/letter.${release}" )
+    || $log->log_and_die("couldnt copy to autoace/release\n");
+$log->write_to("DONE.\n");
 
-      # web fluff
-      $log->write_to("copying to intranet . . . . ");
-      &_copy( "$repdir/letter.${release}", "${www}/WORMBASE/${release}/release_notes.txt" )
-      || die "couldnt copy to ${www}/WORMBASE/${release}/\n";
-      $log->write_to("DONE.\n");
+# web fluff
+$log->write_to("copying to intranet . . . . ");
+&_copy( "$repdir/letter.${release}", "${www}/WORMBASE/${release}/release_notes.txt" )
+    || $log->log_and_die("couldnt copy to ${www}/WORMBASE/${release}/\n");
+$log->write_to("DONE.\n");
 
-  # Send email
-  print "\n\nMailing to wormbase-dev . .\n";
 
-my $to             = $debug?$maintainers:"wormbase-dev\@wormbase.org";
-my $name           = "Wormbase ${release} release";
-my $release_letter = "$repdir/letter.${release}";
-$wormbase->mail_maintainer( $name, $to, $release_letter);
 
 ###################################
 # Make data on FTP site available
@@ -161,6 +155,14 @@ $wormbase->check_file("$targetdir/development_release", $log);
 $wormbase->check_file("$wormpep_dir/wormpep_dev", $log);
 $wormbase->check_file("$www/WORMBASE/development_release", $log);
 
+
+# Send email
+print "\n\nMailing to wormbase-dev . .\n";
+
+my $to             = $debug?$maintainers:"wormbase-dev\@wormbase.org";
+my $name           = "Wormbase ${release} release";
+my $release_letter = "$repdir/letter.${release}";
+$wormbase->mail_maintainer( $name, $to, $release_letter);
 
 $log->mail();
 print "Finished.\n" if ($verbose);
