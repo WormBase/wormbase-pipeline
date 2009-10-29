@@ -1414,6 +1414,24 @@ Show_text
 GFF_feature "polyA_signal_sequence"
 Remark	 "polyadenylation signal sequences"
 
+Method : "transcription_start_site" 
+Colour	 GREEN
+Strand_sensitive	
+Width	 1.000000
+Show_up_strand
+Show_text
+GFF_feature "transcription_start_site"
+Remark	 "transcription start site - N.B. this may only be the start of the mature transcript, rather than the original start site of transcription. This is determined from the Hillier RNASeq data."
+
+Method : "transcription_end_site" 
+Colour	 GREEN
+Strand_sensitive	
+Width	 1.000000
+Show_up_strand
+Show_text
+GFF_feature "transcription_end_site"
+Remark	 "transcription end site - N.B. this may only be the end of the mature transcript, rather than the original end site of transcription This is determined from the Hillier RNASeq data."
+
 Method : "micro_ORF"
 Colour	"PALEMAGENTA"
 Strand_sensitive
@@ -1655,6 +1673,12 @@ Method : "polyA_signal_sequence"
 Right_priority  2.1
 
 Method : "predicted_polyA_signal_sequence"
+Right_priority  2.1
+
+Method : "transcription_start_site"
+Right_priority  2.1
+
+Method : "transcription_end_site"
 Right_priority  2.1
 
 Method : "micro_ORF"
