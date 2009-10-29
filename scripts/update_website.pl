@@ -7,8 +7,8 @@
 # A script to finish the last part of the weekly build by updating all of the
 # relevant WormBase and Wormpep web pages.
 #
-# Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2009-08-28 13:40:14 $      
+# Last updated by: $Author: ar2 $     
+# Last updated on: $Date: 2009-10-29 10:26:15 $      
 
 
 #################################################################################
@@ -37,7 +37,6 @@ my $all;                # option all - do everything
 my $header;             # create release_header.shtml
 my $dna;                # create DNA.shtml
 my $finished;           # create finished.shtml
-my $dbcomp;             # create dbcomp.shtml
 my $wormpep_diff;       # diff log for wormpep releases
 my $copyGFF;            # copy GFF files to WWW site 
 my $test;               # test run (requires a release number) careful: it doesnt change anything
@@ -57,7 +56,6 @@ GetOptions ("all"            => \$all,
 	    "header"         => \$header,
 	    "dna"            => \$dna,
 	    "finished"       => \$finished,
-            "dbcomp"         => \$dbcomp,
             "wormpepdiff"    => \$wormpep_diff,
 	    "copygff"        => \$copyGFF,
             "debug=s"        => \$debug,
@@ -126,12 +124,11 @@ my $log = Log_files->make_build_log($wb);
 &create_web_directories        if ($all || $directories);
 &create_release_header         if ($all || $header);    # makes release_header.shtml
 &create_DNA_table              if ($all || $dna);       # makes DNA.shtml
-&create_dbcomp                 if ($all || $dbcomp);    # makes dbcomp.shtml
 &create_wormpep_page           if ($all || $wormpep_diff); # the wormpep page accessible from the main wormbase page
-&copy_overlapcheck_files       if ($all || $overlap); # copies check files/wormsrv2/autoace/CHECKS and converts to HTML etc.
-&copy_EST_files                if ($all || $EST_files); # copies EST_analysis.html and then edits this file then copies other EST files
-&copy_GFF_files                if ($all || $copyGFF); # copies some of the GFF files in /wormsrv2/autoace/GFF_SPLITS
-&create_GFF_intron_files       if ($all || $create_GFF); # copies the GFF_introns_confirmed_CDS* files from previous WS release, updates totals
+#&copy_overlapcheck_files       if ($all || $overlap); # copies check files/wormsrv2/autoace/CHECKS and converts to HTML etc.
+#&copy_EST_files                if ($all || $EST_files); # copies EST_analysis.html and then edits this file then copies other EST files
+#&copy_GFF_files                if ($all || $copyGFF); # copies some of the GFF files in /wormsrv2/autoace/GFF_SPLITS
+#&create_GFF_intron_files       if ($all || $create_GFF); # copies the GFF_introns_confirmed_CDS* files from previous WS release, updates totals
 &update_wormpep_pages          if ($all || $update_wormpep); # update the main wormpep web pages
 
 
@@ -155,7 +152,6 @@ unless ($test or $debug) {
 
 if ($all || $directories) {
   $wb->check_file("$www/$WS_name", $log);
-  $wb->check_file("$www/$WS_name/Checks", $log);
   $wb->check_file("$www/$WS_name/GFF", $log);
 }
 if ($all || $header) {
@@ -168,39 +164,14 @@ if ($all || $dna) {
 		  minsize => 3200,
 		  maxsize => 3300);
 }
-if ($all || $dbcomp) {
-  $wb->check_file("$www/$WS_name/dbcomp.shtml", $log, 
-		  minsize => 48050,
-		  maxsize => 48080);
-}
+
+
 if ($all || $wormpep_diff) {
   $wb->check_file("$www/$WS_name/wormpep_diff.shtml", $log, 
 		  minsize => 1000,
 		  maxsize => 10000);
 }
-if ($all || $overlap) {
-  $wb->check_file("$www/$WS_name/Checks/header.ini", $log);
-  my @filenames = qw( overlapping_genes_cam overlapping_genes_stl EST_in_intron_cam EST_in_intron_stl repeat_in_exon_cam repeat_in_exon_stl );
-   foreach my $file (@filenames) {
-    my $line_total;
-    my @line_stats;
 
-    foreach my $chrom (@chrom) {
-      next unless (-s "$dbpath/CHECKS/CHROMOSOME_$chrom.$file");
-      $wb->check_file("$www/$WS_name/Checks/CHROMOSOME_$chrom.$file", $log,
-		      samesize => "$dbpath/CHECKS/CHROMOSOME_$chrom.$file");
-    }
-    $wb->check_file("$www/$WS_name/Checks/$file.html", $log,
-		    minsize => 10,);
-  }
-}
-if ($all || $EST_files) {
-#  $wb->check_file("$www/$WS_name/Checks/EST_analysis.html", $log,
-#		  minsize => 800,);
-#  $wb->check_file("$www/$WS_name/Checks/EST_no_accession.shtml", $log);
-#  $wb->check_file("$www/$WS_name/Checks/EST_unassigned.shtml", $log);
-#  $wb->check_file("$www/$WS_name/Checks/EST_mismatched.shtml", $log);
-}
 if ($all || $copyGFF) {
   foreach my $gff_file (glob("$dbpath/CHECKS/*.gff")) {
     my ($file_name, $dummy1, $dummy2) = fileparse($gff_file);
@@ -212,14 +183,8 @@ if ($all || $copyGFF) {
 		    minsize => 10000);
   }
 }
-if ($all || $create_GFF) {
-#  $wb->check_file("$www/$WS_name/Checks/GFF_introns_confirmed_CDS_cam.html", $log,
-#		  minsize => 10,);
-#  $wb->check_file("$www/$WS_name/Checks/GFF_introns_confirmed_CDS_stl.html", $log,
-#		  minsize => 10,);
-}
+
 if ($all || $update_wormpep) {
-  $wb->check_file("$www/$WS_name/Checks/header.ini", $log);
   $wb->check_file("$www/$WS_name/release_paragraph.shtml", $log,
 		  minsize => 10,);		
   $wb->check_file("$www/$WS_name/current_release.shtml", $log,
@@ -257,7 +222,6 @@ sub create_web_directories{
 
   if (! -e "$www/$WS_name"){
     system("mkdir $www/$WS_name") && warn "Cannot create $WS_name directory $!\n";
-    system("mkdir $www/$WS_name/Checks") && warn "Cannot create $WS_name/Checks directory $!\n";
     system("mkdir $www/$WS_name/GFF") && warn "Cannot create $WS_name/GFF directory $!\n";
   }
 
@@ -265,86 +229,9 @@ sub create_web_directories{
 
 
 
-###########################################################################################################
-# Copy overlapcheck files to website    
-###########################################################################################################
-
-sub copy_overlapcheck_files{
-
-  $log->write_to("\ncopy_overlapcheck_files\n");
-  $log->write_to("-----------------------\n");
-
-  # list of files to be copied
-  my @filenames = qw( overlapping_genes_cam overlapping_genes_stl EST_in_intron_cam EST_in_intron_stl repeat_in_exon_cam repeat_in_exon_stl );
-
-  $log->write_to("copying from $www/$WS_previous_name/Checks/index.shtml to $www/$WS_name/Checks\n"); 
-  system("cp -f $www/$WS_previous_name/Checks/index.shtml $www/$WS_name/Checks/") && warn "Cannot copy index.shtml $!\n";
-
-  $log->write_to("copying three ace files from $www/$WS_previous_name/Checks/*.ace to $www/$WS_name/Checks\n"); 
-  system("cp -f $www/$WS_previous_name/Checks/*.ace $www/$WS_name/Checks/") && warn "Cannot copy *.ace files $!\n";
-
-  #$log->write_to("copying short genes file $dbpath/CHECKS/short_spurious_genes.$WS_name.csv.html to $www/$WS_name/Checks/short_genes.html\n"); 
-  #system("cp -f $dbpath/CHECKS/short_spurious_genes.$WS_name.csv.html $www/$WS_name/Checks/short_genes.html") && warn "Cannot copy short_genes file $!\n";
-
-  $log->write_to("Creating symbolic link for header.ini file\n");
-  chdir("$www/$WS_name/Checks") || $log->write_to("Couldn't chdir to $www/$WS_name/Checks\n");
-  system("ln -sf ../../header.ini header.ini") && croak "Couldn't create new symlink\n";
-
-  foreach my $file (@filenames) {
-    my $line_total;
-    my @line_stats;
-
-    foreach my $chrom (@chrom) {
-      $log->write_to("Copying file CHROMOSOME_$chrom.$file to $www/$WS_name/Checks\n");
-      next unless (-s "$dbpath/CHECKS/CHROMOSOME_$chrom.$file");
-      system ("cp -f $dbpath/CHECKS/CHROMOSOME_$chrom.$file $www/$WS_name/Checks/")
-	&& croak "Could not copy $dbpath/CHECKS/CHROMOSOME_$chrom.$file $!\n";
-      
-      $log->write_to("Calculating line numbers for CHROMOSOME_$chrom.$file\n");
-      my $line = `wc -l $dbpath/CHECKS/CHROMOSOME_$chrom.$file`;
-      # take line count and add to array
-      my ($new) = ($line =~ /(\d+)/);
-      push @line_stats, $new;
-      # add to line total for all chromosomes
-      $line_total += $new;
-    }
-    
-    
-    # make new html files
-    $log->write_to("Generating new html files in $www/$WS_name/Checks/\n");
-    my $fh     = gensym();
-    my $newfh  = gensym();
-    my $count = 0;
-    
-    open ($fh, "$www/$WS_previous_name/Checks/$file.html") || carp "Cannot open old html file $!\n";
-    open ($newfh, ">$www/$WS_name/Checks/$file.html") || croak "Cannot open new html file $!\n";
-    
-    $log->write_to("Generating $www/$WS_name/Checks/$file.html\n");
-    
-    while (<$fh>) {
-      if ((/<TD ALIGN=\"center\" COLSPAN=\"2\"><B>\s*(\d+)\s+\[\s*\d+\]<\/B><\/TD>/) && ($count < 6)) {
-	my $old = $1;
-	print $newfh "<TD ALIGN=\"center\" COLSPAN=\"2\"><B> ".$line_stats[$count]." [$old]</B></TD>\n";
-	$count++;
-      }
-      elsif ((/<TD ALIGN=\"center\" COLSPAN=\"2\"><B>\s*(\d+)\s+\[\s*\d+\]<\/B><\/TD>/) && ($count > 5)) {
-	my $old = $1;
-	$count++;
-	print $newfh "<TD ALIGN=\"center\" COLSPAN=\"2\"><B> ".$line_total." [$old]</B></TD>\n";
-      }
-      else {
-	print $newfh $_;
-      }
-    }    
-    close($fh)    || carp "Cannot close old html file $!\n";
-    close($newfh) || croak "Cannot close new html file $!\n";
-  }
-}
-
 
 ###########################################################################################################
-# Creates: release_header.shtml, DNA_table.shtml,
-# dbcomp.shtml, and wormpep.shtml
+# Creates: release_header.shtml, DNA_table.shtml and wormpep.shtml
 ###########################################################################################################
 
 sub create_release_header {
@@ -496,94 +383,6 @@ sub create_DNA_table {
   close (DNA_table);
 }
 
-sub create_dbcomp {
-
-  # create dbcomp.shtml
-  $log->write_to("Creating $www/$WS_name/dbcomp.shtml\n");
-	my $compare_path = $wb->compare;
-  system ("cp $compare_path/current.out $wwwdata/WS.dbcomp_output") && croak "Couldn't copy current.out\n";
-  my $dbcomplen;
-  
-  open (DBCOMP, "wc -l $compare_path/current.dbcomp |");
-  while (<DBCOMP>) {
-      ($dbcomplen) = (/^\s*(\d+)/);
-  }
-  close DBCOMP;
-  
-  $dbcomplen = $dbcomplen -2;     # six lines of rubbish in the file but need 4 in the html
-
-
-  open (DB_comp, ">$www/$WS_name/dbcomp.shtml") || croak "Couldn't create dbcomp.shtml\n\n";
-  print DB_comp "<P>\n";
-  print DB_comp "<SPACER TYPE=\"horizontal\" SIZE=\"50\">\n";
-  print DB_comp "<TABLE WIDTH=\"40%\" CELLSPACING=\"0\" CELLWIDTH=\"0\" BORDER=\"0\">\n";
-
-  print DB_comp "\n<tr VALIGN=\"top\">\n";
-  print DB_comp "  <td rowspan=\"$dbcomplen\" class=\"grey1\"> <img src=\"/icons/blank.gif\" width=\"1\"   height=\"1\"></td>\n";
-  print DB_comp "  <td colspan=\"9\" class=\"grey1\"> <img src=\"/icons/blank.gif\" width=\"250\" height=\"1\"></td>\n";
-  print DB_comp "  <td rowspan=\"$dbcomplen\" class=\"grey1\"> <img src=\"/icons/blank.gif\" width=\"1\"   height=\"1\"></td>\n";
-  print DB_comp "</tr>\n\n";
-
-  print DB_comp "<tr class=\"violet3\">\n";
-  print DB_comp "  <td><img src=\"/icons/blank.gif\" width=\"16\" height=\"22\"></td>\n";
-  print DB_comp "  <th>Class</th>\n";
-  print DB_comp "  <td><img src=\"/icons/blank.gif\" width=\"16\" height=\"22\"></td>\n";
-  print DB_comp "  <th>$WS_previous_name</th>\n";
-  print DB_comp "  <td><img src=\"/icons/blank.gif\" width=\"16\" height=\"22\"></td>\n";
-  print DB_comp "  <th>$WS_name</th>\n";
-  print DB_comp "  <td><img src=\"/icons/blank.gif\" width=\"16\" height=\"22\"></td>\n";
-  print DB_comp "  <th>Diff</th>\n";
-  print DB_comp "  <td><img src=\"/icons/blank.gif\" width=\"16\" height=\"22\"></td>\n";
-  print DB_comp "</tr>\n";
-
-  print DB_comp "<tr valign=\"top\">\n";
-  print DB_comp "  <td colspan=\"11\" class=\"grey1\"><img src=\"/icons/blank.gif\" width=\"1\" height=\"1\"></td>\n";
-  print DB_comp "</tr>\n";
-
-  
-  my $dbcompcount = 0;
-
-  open (COMP, "<$compare_path/current.dbcomp") || croak "Failed to open current.dbcomp\n\n";
-  while (<COMP>) {
-      next if (/\+/);
-      next if (/ACEDB/);
-      next if (/change/);
-      
-      my ($nowt,$class,$count_1,$count_2,$diff) = split (/\|/,$_);
-      $class =~ s/^\s+//g;
-      
-      if ($dbcompcount % 2 == 0) {
-	  print DB_comp "<tr class=\"blue\">\n";
-      }
-      else {
-	  print DB_comp "<tr class=\"violet2\">\n";
-      }
-      
-      print DB_comp "  <td><img src=\"/icons/blank.gif\" width=\"16\" height=\"22\"></td>\n";
-      print DB_comp "  <td align=\"RIGHT\"><A  href=\"/cgi-bin/Projects/C_elegans/wormbase_dbcomp.pl?class=$class\" TARGET=\"_blank\">$class</A></td>\n";
-      print DB_comp "  <td><img src=\"/icons/blank.gif\" width=\"16\" height=\"22\"></td>\n";
-      print DB_comp "  <td ALIGN=\"RIGHT\">$count_1</td>\n";
-      print DB_comp "  <td><img src=\"/icons/blank.gif\" width=\"16\" height=\"22\"></td>\n";
-      print DB_comp "  <td ALIGN=\"RIGHT\">$count_2</td>\n";
-      print DB_comp "  <td><img src=\"/icons/blank.gif\" width=\"16\" height=\"22\"></td>\n";
-      print DB_comp "  <td ALIGN=\"RIGHT\">$diff</td>\n";
-      print DB_comp "</tr>\n";
-      print DB_comp "\n\n";
-
-      $dbcompcount++;
-
-  }
-  close (COMP);
-
-  print DB_comp "<tr valign=\"top\">\n";
-  print DB_comp "  <td colspan=\"11\" class=\"grey1\"><img src=\"/icons/blank.gif\" width=\"1\" height=\"1\"></td>\n";
-  print DB_comp "</tr>\n";
-
-  print DB_comp "</TABLE>\n";
-  print DB_comp "</P>\n";
-  close (DB_comp);
-}
-
 
 
 ###########################################################################################################
@@ -711,205 +510,6 @@ sub create_wormpep_page{
   print WORMPEP "</P>\n";
 
   close (WORMPEP);
-}
-
-
-###########################################################################################################
-# Makes the pages of loci designations for each letter of the alphabet
-###########################################################################################################
-
-sub copy_EST_files {
-
-  # make EST_*.shtml using EST_*.txt in /wormsrv2/autoace/CHECKS  
-  $log->write_to("\ncopy_EST_files\n");
-  $log->write_to("--------------\n");
-
-
-  my %files = (#"EST_no_accession" => "No Accession number", 
-               #"EST_unassigned" => "Unassigned reads",
-               #"EST_mismatched" => "mismatched CDS assignments"
-	      );
-
-  my @line_counts;
-  
-  foreach my $file (keys(%files)){
-    $log->write_to("creating $file.shtml in $www/$WS_name/Checks\n"); 
-    open(EST_HTML,">$www/$WS_name/Checks/$file.shtml") || croak "Couldn't create $file.shtml\n";
-    
-#    print EST_HTML &SangerWeb::virtual_header();
-print EST_HTML qq(<!--#include virtual="/perl/header" -->\n);
-   
-    print EST_HTML "<TABLE WIDTH=\"100%\" CELLSPACING=\"0\" CELLPADDING=\"0\"><TR VALIGN=\"top\" BGCOLOR=\"darkblue\" ><TD WIDTH=\"100%\"><BR><H2 align=\"center\"><FONT COLOR=\"white\">";
-    print EST_HTML "EST analysis: \"$files{$file}\"";
-    print EST_HTML "</FONT></H2></TD></TR></TABLE>\n";
-
-    print EST_HTML "<P><PRE>";
-    open (EST_TXT, "<$dbpath/CHECKS/$file.txt") || croak "Couldn't open $dbpath/CHECKS/$file.txt\n";
-
-    print "reading from $dbpath/CHECKS/$file.txt\n" if $debug;
-    my $line = `wc -l $dbpath/CHECKS/$file.txt`;
-    # take line count and add to array
-    my ($new) = ($line =~ /(\d+)/);
-    push(@line_counts,$new);
-
-    while (<EST_TXT>) {
-     print EST_HTML "$_";
-    }
-    print EST_HTML "</PRE></P>";
-#    print EST_HTML &SangerWeb::virtual_footer();
-    print EST_HTML qq(<!--#include virtual="/perl/footer" -->\n);
-    close(EST_TXT);
-    close(EST_HTML);
-  }
-
-  # need to add 'n/a' into the line_counts array to avoid problems later on
-  splice(@line_counts,2,0,"n/a");
-
-
-  $log->write_to("updating EST_analysis.shtml from $www/$WS_previous/Checks to $www/$WS_name/Checks, adding new info\n"); 
-
-  open(EST_OLD, "<$www/$WS_previous_name/Checks/EST_analysis.html") || carp "Couldn't read old version of EST_analysis.html\n";
-  open(EST_NEW, ">$www/$WS_name/Checks/EST_analysis.html") || croak "Couldn't create new version of EST_analysis.html\n";
-
-  my $count=0;
-  while (<EST_OLD>) {
-      if (/<TD ALIGN=\"center\" COLSPAN=\"2\"><B>.*<\/B><\/TD>/) {
-	print EST_NEW "<TD ALIGN=\"center\" COLSPAN=\"2\"><B> ".$line_counts[$count]."</B></TD>\n";
-	$count++;
-      }
-      else {
-	print EST_NEW $_;
-      }
-    }    
-
-  close(EST_NEW);
-  close(EST_OLD);
-}
-
-
-###########################################################################################################
-# Copy some of the GFF files from $gff and some from CHECKS/
-###########################################################################################################
-
-sub copy_GFF_files{
-  
-  $log->write_to("\ncopy_GFF_files\n");
-  $log->write_to("--------------\n");
-
-  $log->write_to("Copying across GFF files from $gff\n");
-
-  $wb->run_command("mkdir -p $wwwdata/WORMBASE/$WS_name/GFF/",$log);
-
-  foreach my $chrom (@chrom) {
-      $wb->run_command(
-	      "sort -u $gff/CHROMOSOME_${chrom}_clone_acc.gff | /software/bin/perl $ENV{CVS_DIR}/gff_sort > $wwwdata/WORMBASE/$WS_name/GFF/CHROMOSOME_${chrom}_clone_acc.gff", $log)
-      && $log->write_to("Couldn't copy CHROMOSOME_${chrom}_clone_acc.gff\n", $log);
-  }
-
-  # to recreate some GFF files
-
-  my @types =('clone_acc','clone_ends','repeats','CDS','rna','confirmed_CDS','exon','intron','UTR');
-  my $queue=Thread::Queue->new; 
-
-  foreach my $type(@types) {
-	  foreach my $chrom (@chrom) {
-		  $queue->enqueue("$type,$chrom");
-	  }
-  }
-
-  my @workers;
-  push @workers,threads->create('gff_worker');
-  push @workers,threads->create('gff_worker');
-  push @workers,threads->create('gff_worker');
-  push @workers,threads->create('gff_worker');
-  map {$_->join} @workers;
-
-  sub gff_worker {
-     my $threadid=threads->tid();
-     while (my $string = $queue->dequeue_nb){ # pop a file from the queue and return undef if empty
-	$log->write_to("processing $string in thread: $threadid\n");
-        my ($type,$chrom)=split(',',$string);
-
-             open INF ,"cat $chromdir/CHROMOSOME_${chrom}.gff|" || die "ERROR: @!\n";
-             my $outf= new IO::File "$wwwdata/WORMBASE/$WS_name/GFF/CHROMOSOME_${chrom}.$type.gff",'w' || die "ERROR: @!\n";
-             while (<INF>){
-		     my @F=split;
-		     switch($type){
-			  case ('clone_ends'){   print $outf $_ if /Clone_(left|right)_end/}
-			  case ('repeats'){      print $outf $_ if ($F[2] && $F[2]=~/repeat/)}
-			  case ('CDS'){          print $outf $_ if ($F[1] && $F[1]=~/Gene/)}
-			  case ('rna'){          print $outf $_ if ($F[2] && $F[2]=~/RNA_primary_transcript/)}
-			  case ('confirmed_CDS'){print $outf $_ if /intron.*Confirmed/}
-			  case ('exon'){         print $outf $_ if ($F[2] && $F[2]=~/exon/)}
-			  case ('intron'){       print $outf $_ if ($F[2] && $F[2]=~/intron/)}
-			  case ('UTR'){          print $outf $_ if ($F[2] && $F[2]=~/UTR/)}
-			  case ('clone_acc')     { print $outf $_ if ($F[1] && $F[2]
-					and $F[1] eq 'Genomic_canonical' && $F[2] eq 'region')}
-			  else {}
-	             }
-	     }
-	     close INF;
-     }
-     $log->write_to("finished creating GFF files for the website, main script will pick up from here.\n");
-     $log->mail("$maintainers", "BUILD REPORT: $0 finished child thread $threadid");
-  }
-
-
-  ##############
-  
-  $log->write_to("Copying across GFF files from $dbpath/CHECKS/\n");
-  $wb->run_command("cp $dbpath/CHECKS/*.gff $www/$WS_name/GFF/", $log) && $log->write_to("Could not copy GFF files from autoace/CHECKS $!\n");
-}
-
-
-###########################################################################################################
-# Creates the two GFF_introns_confirmed_CDS* files using format of previous WS release, and wc -l of the
-# GFF files in the GFF directory
-###########################################################################################################
-
-sub create_GFF_intron_files{
-  
-  $log->write_to("\ncreate_GFF_intron_files\n");
-  $log->write_to("---------------------\n");
-
-  $log->write_to("Creating new GFF_introns_confirmed_CDS... files in $www/$WS_name/Checks/\n");
-
- foreach my $lab ("cam", "stl"){
-   my @line_counts = ();
-   my $line_total = 0;
-
-   foreach my $chrom (@chrom) {
-     my $line = `wc -l $www/$WS_name/GFF/CHROMOSOME_$chrom.check_intron_$lab.gff`;
-     # take line count and add to array
-     my ($new) = ($line =~ /(\d+)/);
-     push(@line_counts,$new);
-     $line_total += $new;
-   }
-
-   # open old and new files
-   open(OLDFILE, "<$www/$WS_previous_name/Checks/GFF_introns_confirmed_CDS_$lab.html") || carp "Couldn't read old $lab GFF intron file\n";
-   open(NEWFILE, ">$www/$WS_name/Checks/GFF_introns_confirmed_CDS_$lab.html") || croak "Couldn't create new $lab GFF intron file\n";
-
-   my $count = 0;
-   # loop through old file replacing old info with new info from @line_counts 
-   while(<OLDFILE>){
-	  if ((/<TD ALIGN=\"center\" COLSPAN=\"2\"><B>\s*(\d+)\s+\[\s*\d+\]<\/B><\/TD>/) && ($count <6)) {
-	print NEWFILE "<TD ALIGN=\"center\" COLSPAN=\"2\"><B> ".$line_counts[$count]." [$1]</B></TD>\n";
-	$count++;
-
-     }
-     elsif ((/<TD ALIGN=\"center\" COLSPAN=\"2\"><B>\s*(\d+)\s+\[\s*\d+\]<\/B><\/TD>/) && ($count > 5)) {
-       print NEWFILE "<TD ALIGN=\"center\" COLSPAN=\"2\"><B> ".$line_total." [$1]</B></TD>\n";
-       $count++;
-     }
-     else{
-       print NEWFILE $_;
-     }
-   }
-   close(OLDFILE);
-   close(NEWFILE);
- }
-
 }
 
 
