@@ -7,8 +7,8 @@
 # 
 # Originally written by Dan Lawson
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2009-08-28 15:01:08 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2009-10-29 11:41:36 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -286,6 +286,8 @@ sub copy_dna_files{
   $log->write_to("$runtime: copying dna and agp files\n");
 
   my %accessors = ($wormbase->all_species_accessors);
+  $log->write_to("removing Heterorhabditis from species list\n");
+  delete $accessors{'heterorhabditis'};
   $accessors{elegans} = $wormbase;
 
   foreach my $wb (values %accessors) {
@@ -456,6 +458,8 @@ sub copy_rna_files{
 
     # run through all possible organisms
     my %accessors = ($wormbase->species_accessors);
+    $log->write_to("removing Heterorhabditis from species list\n");
+    delete $accessors{'heterorhabditis'};
     $accessors{elegans} = $wormbase;
     foreach my $wb (values %accessors) {
 	my $rnadir = $wormbase->basedir . "/WORMRNA/".$wb->pepdir_prefix."rna$WS";
@@ -553,6 +557,9 @@ sub copy_wormpep_files {
 	# copy wormpep file if one exists for that species.
 	$log->write_to("zip and copy other species\n");
 	my %accessors = ($wormbase->species_accessors);
+	$log->write_to("removing Heterorhabditis from species list\n");
+	delete $accessors{'heterorhabditis'};
+	
 	foreach my $species (keys %accessors){
 		$log->write_to("copying $species protein data to FTP site\n");
 		&_copy_pep_files($accessors{$species})
@@ -562,14 +569,14 @@ sub copy_wormpep_files {
 	my %tierIII = $wormbase->tier3_species_accessors;
 	foreach my $t3 (keys %tierIII){ 
 	    my $wb = $tierIII{$t3};
-	    my $source =$wb->basedir . "/WORMPEP/".$wb->pepdir_prefix."pep$WS/".$wb->pepdir_prefix."pep.$WS_name.tar.gz";
+	    my $source =$wb->basedir . "/WORMPEP/".$wb->pepdir_prefix."pep$WS/".$wb->pepdir_prefix."pep.$WS_name.fa.gz";
 	    my $target = "$targetdir/$WS_name/genomes/".$wb->full_name('-g_species' => 1)."/sequences/protein";
 	    mkpath($target,1,0775);
-	    my $ftp_targ = "$target/".$wb->pepdir_prefix."pep.$WS_name.tar.gz";
+	    my $ftp_targ = "$target/".$wb->pepdir_prefix."pep.$WS_name.fa.gz";
 	    unless(-e $source) {
 		my $oldWS = -1 + $wormbase->get_wormbase_version;
-	       $source = "$targetdir/WS$oldWS/genomes/".$wb->full_name('-g_species' => 1)."/sequences/protein/".$wb->pepdir_prefix."pep$oldWS/".$wb->pepdir_prefix."pep.WS$oldWS.tar.gz";
-		$log->log_and_die("no peptide file for ".$wb->species."\n$source\n") unless (-e $source);
+	       $source = "$targetdir/WS$oldWS/genomes/".$wb->full_name('-g_species' => 1)."/sequences/protein/".$wb->pepdir_prefix."pep.WS$oldWS.fa.gz";
+		$log->error("no peptide file for ".$wb->species."\n$source\n") unless (-e $source);
 	    }
 	    $wb->run_command("cp -f $source $ftp_targ", $log);
 	}
@@ -915,6 +922,7 @@ sub check_manifest {
 	my $count;
 	my %otherspecies = $wormbase->species_accessors;
 	$otherspecies{$wormbase->species} = $wormbase;
+	delete $otherspecies{'heterorhabditis'};
 	my $gspecies =0;
 	while(<DATA>) {
 		next unless /\w/;
