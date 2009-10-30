@@ -23,6 +23,8 @@ while (<>){
 	# schema
 	s/peptide_id\s+character\s+varying\(25\)/peptide_id VARCHAR\(25\)/; # varchar bit
 
+        s/alignment text/alignment MEDIUMTEXT/; # because everyone just tramples on SQL standards
+
 	# index
         next if /ALTER TABLE ONLY clustal/;
         if (/ADD CONSTRAINT/){
