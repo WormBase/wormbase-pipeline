@@ -5,7 +5,7 @@
 # A script to make multiple copies of camace for curation, and merge them back again
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2009-10-29 11:55:14 $
+# Last edited on: $Date: 2009-11-02 13:51:57 $
 #
 # Persisting errors.
 #running csh -c "reformat_acediff file 1 file2"
@@ -455,7 +455,7 @@ sub load_curation_data {
   foreach $file (@files) {
     $log->write_to ("Looking for $file......................\n");
     if (-e $file) {
-      &loadace("$file", '${version}_curation_data_update') or die "Failed to load $file\n";
+      &loadace("$file", '${WS_version}_curation_data_update') or die "Failed to load $file\n";
       $log->write_to ("SUCCESS! Loaded $file into $database_path\n\n");
     }
     else {
