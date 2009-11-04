@@ -5,7 +5,7 @@
 # map GO_terms to ?Sequence objects from ?Motif and ?Phenotype
 #
 # Last updated by: $Author: ar2 $     
-# Last updated on: $Date: 2009-01-21 13:51:11 $      
+# Last updated on: $Date: 2009-11-04 09:56:56 $      
 
 use strict;
 use warnings;
@@ -102,7 +102,6 @@ $log->mail();
 $db->close;
 exit(0);
 
-
 ########################################################################################
 ####################################   Subroutines   ###################################
 ########################################################################################
@@ -142,12 +141,11 @@ sub phenotype {
     my $db = shift;
     
     my $def = &write_phenotype_def;
-    my %skiplist = ( 'WBPaper00005976' => 1,
-		     'WBPaper00026667' => 1,
-		     'WBPaper00005655' => 1,
-		     'WBPaper00026715' => 1,
-		     'WBPaper00027756' => 1
-		     );
+    my %include_list; #only papers in this list should be included.
+  READARRAY: while (<DATA>) {
+      chomp;
+      $include_list{$_} =1;
+  }
 
     my $tm_query = $wormbase->table_maker_query($dbpath,$def);
     while(<$tm_query>) {
@@ -157,7 +155,7 @@ sub phenotype {
 	my ( $rnai, $paper, $cds, $gene, $phenotype_id,$go,$not) = @data;
 	chomp $not;
 	next if (($paper !~ /WBPaper/) or (! defined $phenotype_id) or ((defined $not)and ($not eq 'Not')));
-	next if ($skiplist{$paper});
+	next unless ($include_list{$paper});
 	my $phenotype; 
 	if($phenotype_id =~ /WBPheno/) {
 	    $phenotype = &get_phenotype_name($phenotype_id);
@@ -269,8 +267,31 @@ END
 	return $def;
 }
 
-__END__
 
+
+__DATA__
+WBPaper00004402
+WBPaper00004403
+WBPaper00004540
+WBPaper00004651
+WBPaper00004769
+WBPaper00005599
+WBPaper00005654
+WBPaper00006395
+WBPaper00024497
+WBPaper00024925
+WBPaper00025054
+WBPaper00026763
+WBPaper00005736
+WBPaper00026593
+WBPaper00028783
+WBPaper00029254
+WBPaper00030951
+
+
+
+
+__END__
 =pod
 
 =head2   NAME - inherit_GO_terms.pl
