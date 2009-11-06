@@ -95,10 +95,10 @@ sub main {
 
   # determine if live or WWWdev and select database accordingly
   if ($sw->is_dev()) {
-    $DB = 'test_wbgene_id;mcs4a;3307';
+    $DB = 'test_wbgene_id;web-mii-shap;3303';
     $sw->banner("This is the test server");
   } else {
-    $DB = 'wbgene_id;mcs2a;3305';
+    $DB = 'wbgene_id;web-mii-shap;3303';
   }
 
   $SSO_USER = $sw->username();	## for SSO
