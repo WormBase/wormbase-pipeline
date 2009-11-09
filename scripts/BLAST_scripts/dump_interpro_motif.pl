@@ -5,7 +5,7 @@
 # Dumps InterPro protein motifs from ensembl mysql (protein) database to an ace file
 #
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2009-09-15 13:33:39 $
+# Last updated on: $Date: 2009-11-09 16:06:16 $
 
 
 use strict;
@@ -229,8 +229,8 @@ foreach my $prot ( keys %motifs ) {
   $protein_count++;
 
   # sort the hits for this protein by ID and start position
-  my @array = @{$motifs{$prot}};
-  @array = sort { $a->[0] cmp $b->[0]  or  $a->[1] <=> $b->[1] } @array;
+  @{$motifs{$prot}} = sort { $a->[0] cmp $b->[0]  or  $a->[1] <=> $b->[1] } @{$motifs{$prot}};
+
  
   # go through the hits for this protein looking for the same InterPro Id hits that overlap
   # then merge them
@@ -242,12 +242,14 @@ foreach my $prot ( keys %motifs ) {
   my $merged_score;
   my $merged_evalue;
   my @merged_hit;
-  foreach my $hit (@array) {
+  my $hit;
+  while( $hit = shift @{$motifs{$prot}}) {
 
     my ( $ip_id, $start, $end, $hstart, $hend, $score, $evalue ) = @$hit;
 
     # is this a new ID or the same ID at a different part of the protein?
-    #print "merged($prev_id)= $merged_start $merged_end : this($ip_id)= $start $end\n";
+    # print "merged($prev_id)= $merged_start $merged_end : this($ip_id)= $start $end\n";
+
     if ($prev_id ne $ip_id || $start > $merged_end) {
 
       # save the merged hit
