@@ -6,8 +6,8 @@
 #
 # simple script for creating new (sequence based) Gene objects 
 #
-# Last edited by: $Author: pad $
-# Last edited on: $Date: 2009-03-13 11:52:33 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2009-11-09 11:06:08 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -104,7 +104,7 @@ if( $update_nameDB ) {
 # setup NameDB connection
 ######################################
 
-  my $DB   = 'wbgene_id;mcs2a;3305';
+  my $DB   = 'wbgene_id;shap;3303';
   my $USER = "$person";
   my $PASS = 'wormpub';
 

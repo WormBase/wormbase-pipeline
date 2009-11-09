@@ -39,9 +39,9 @@ $species = 'elegans' unless $species;
 my $log = Log_files->make_log("NAMEDB:$file", $USER);
 my $DB;
 if ($test) {
-    $DB = 'test_wbgene_id;mcs2a;3305';
+    $DB = 'test_wbgene_id;mcs4a;3307';
   } else {
-    $DB = 'wbgene_id;mcs2a;3305';
+    $DB = 'wbgene_id;shap;3303';
 }
 
 $log->write_to("loading $file to $DB\n\n");
