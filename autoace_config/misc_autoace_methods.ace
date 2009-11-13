@@ -495,6 +495,14 @@ Show_text
 EMBL_dump EMBL_feature CDS
 Remark "This is the male_mid-L4 genelet set from the Hillier & Waterston 2009 paper. Transcripts based solely on conservative analysis of the RNAseq data using methods similar to those described in Hillier et al., 2009. Briefly, the Illumina reads are aligned against the genome and an exhaustive coverage-based splice leader and splice junction database created using a permissive run of genefinder (Phil Green) allowing 0 scoring splice sites to be identified and then trimmed down to only include those sites with above threshold scores. Thresholds are set for an 0.05 false positive rate based on a ROC analysis.  Transcripts are then created by seeding with splice junctions confirmed at 0.05 fdr and then continued as long as there is above threshold coverage. Splice leaders and polyA data are used to aid in determining starting and stopping points for transcripts.  In the case of splice leaders, all splice leaders contained within a given prediction are used to create alternative versions of the transcript. In the case of polyAs, all transcripts stop when reaching a polyA (if additional polyAs are further downstream, still only a single shortest version of the transcript is created)."
 
+Method : "RNASEQ.Hillier"
+Colour   RED
+CDS_colour RED
+Show_up_strand RED
+Overlap_mode Bumpable
+Show_text
+EMBL_dump EMBL_feature CDS
+Remark "Method for the Camace version of the Hillier RNASEQ CDS data which is all collapsed into one method."
 
 ////////////////////////////////////////////////////
 // Homology related methods (BLAST, BLAT and Waba //
@@ -1979,4 +1987,7 @@ Method : "RNASEQ.lin-35_n745_mid-L1"
 Right_priority   2.93
 
 Method : "RNASEQ.male_mid-L4"
+Right_priority   2.93
+
+Method : "RNASEQ.Hillier"
 Right_priority   2.93
