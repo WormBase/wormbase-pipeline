@@ -6,8 +6,8 @@
 #
 # by Gary Williams
 #
-# Last updated by: $Author: gw3 $                      
-# Last updated on: $Date: 2009-06-09 08:08:30 $        
+# Last updated by: $Author: mh6 $                      
+# Last updated on: $Date: 2009-11-13 15:36:21 $        
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -290,7 +290,7 @@ foreach my $chromosome (@chromosomes) {
 
   }
 
-# and don't forget the intergenic region after the last gene to the end of the chromosome
+  # and don't forget the intergenic region after the last gene to the end of the chromosome
   if ($operons ne "only") {
     if ($proximity <= 0) {
       # just print the intergenic region
@@ -298,6 +298,10 @@ foreach my $chromosome (@chromosomes) {
       $width = 50000;
       $seq_start = $last_end;
       $print_start = $seq_start+1; # human-readable start coordinate
+
+      # next if it is exactly at the end of the chromosome.
+      next if $seq_start >= $seq_obj->{LENGTH}->{"${\$wormbase->chromosome_prefix}$chromosome"};
+
       print OUT ">${last_name}_end_of_chromosome ${\$wormbase->chromosome_prefix}$chromosome $print_start, len: $width\n";
       $sequence = $seq_obj->Sub_sequence("${\$wormbase->chromosome_prefix}$chromosome", "$seq_start", "$width");
 #      print OUT "$sequence\n";
