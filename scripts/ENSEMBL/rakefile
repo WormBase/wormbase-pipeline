@@ -126,16 +126,16 @@ task :build_homology => [:env_setup] do
 
   # MLSS setup
   # For orthologues
-  sh "#{perl} #{basedir}/ensembl-compara/scripts/pipeline/create_mlss.pl --f --pw --reg_conf #{reg} --method_link_type ENSEMBL_ORTHOLOGUES --genome_db_id '1,2,3,4,5,6,7,8'"
+  sh "#{perl} #{basedir}/ensembl-compara/scripts/pipeline/create_mlss.pl --f --pw --reg_conf #{reg} --method_link_type ENSEMBL_ORTHOLOGUES --genome_db_id '1,2,3,4,5,6,7,8,9'"
 
   # For between-species paralogues
-  sh "#{perl} #{basedir}/ensembl-compara/scripts/pipeline/create_mlss.pl --f --pw --reg_conf #{reg} --method_link_type ENSEMBL_PARALOGUES --genome_db_id '1,2,3,4,5,6,7,8'"
+  sh "#{perl} #{basedir}/ensembl-compara/scripts/pipeline/create_mlss.pl --f --pw --reg_conf #{reg} --method_link_type ENSEMBL_PARALOGUES --genome_db_id '1,2,3,4,5,6,7,8,9'"
 
   # For same-species paralogues
-  sh "#{perl} #{basedir}/ensembl-compara/scripts/pipeline/create_mlss.pl --f --sg --reg_conf #{reg} --method_link_type ENSEMBL_PARALOGUES --genome_db_id '1,2,3,4,5,6,7,8'"
+  sh "#{perl} #{basedir}/ensembl-compara/scripts/pipeline/create_mlss.pl --f --sg --reg_conf #{reg} --method_link_type ENSEMBL_PARALOGUES --genome_db_id '1,2,3,4,5,6,7,8,9'"
 
   # For protein trees
-  sh "#{perl} #{basedir}create_mlss.pl --f --reg_conf #{reg} --method_link_type PROTEIN_TREES --genome_db_id '1,2,3,4,5,6,7,8'"
+  sh "#{perl} #{basedir}create_mlss.pl --f --reg_conf #{reg} --method_link_type PROTEIN_TREES --genome_db_id '1,2,3,4,5,6,7,8,9'"
 
   # up the failure tolerance
   `mysql -h #{db['host']} -u #{db['user']} -p#{db['password']} worm_compara -e 'UPDATE analysis_stats SET failed_job_tolerance = 20 WHERE analysis_id=(SELECT analysis_id FROM analysis WHERE logic_name = "MCoffee");`
