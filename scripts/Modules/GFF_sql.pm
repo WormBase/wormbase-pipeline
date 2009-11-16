@@ -5,7 +5,7 @@
 # by Michael Han
 #
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2009-11-03 16:10:30 $
+# Last updated on: $Date: 2009-11-16 09:48:17 $
 ######
 
 package GFF_sql;
@@ -34,8 +34,8 @@ sub initialize {
     my $dsn="DBI:mysql:database=mh6;host=mcs4a;port=3307";
     my $user='mh6';
     my $pass='mh6';
-    if ($self->{'build'}) { $dsn='DBI:mysql:database=mh6_build;host=mcs4a;port=3307' }
-    elsif ($self->{fallback}) { $dsn='DBI:mysql:database=worm_testdb;host=ecs1f';$user='wormadmin';$pass='worms'}
+    if ($self->{'build'}) { $dsn='DBI:mysql:database=worm_gffdb;host=ia64d';$user='wormadmin';$pass='worms' }
+    elsif ($self->{fallback}) { $dsn='DBI:mysql:database=mh6;host=mcs4a;port=3307'}
  
 #    $self->{dbh} = DBI->connect( "DBI:mysql:database=worm_testdb;host=ecs1f",
 #        'wormadmin', 'worms' )
@@ -479,6 +479,6 @@ $Author: mh6 $
 
 =head1 VERSION
 
-$Date: 2009-11-03 16:10:30 $
+$Date: 2009-11-16 09:48:17 $
 
 =cut
