@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: ar2 $
-// Last edited on: $Date: 2009-11-18 10:12:23 $
+// Last edited on: $Date: 2009-11-18 12:24:46 $
 
 
 ////////////////////////
@@ -2557,7 +2557,7 @@
 // to mean that they are currently active at that particular role
 // added for Juancarlos by krb October 2003
 
-#Role   Assistant professor    DateType    UNIQUE    DateType
+#Role   Assistant_professor    DateType    UNIQUE    DateType
 	Phd		DateType UNIQUE DateType
         Postdoc		DateType UNIQUE DateType
         Masters		DateType UNIQUE DateType
