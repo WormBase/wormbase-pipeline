@@ -123,7 +123,7 @@ task :build_homology => [:env_setup] do
   protein_treesql=%q/'INSERT INTO method_link (type, class) VALUES ("ENSEMBL_ORTHOLOGUES","Homology.homology"),("ENSEMBL_PARALOGUES","Homology.homology"),("PROTEIN_TREES","ProteinTree.protein_tree_node")'/
   sh "mysql -h #{db['host']} -u #{db['user']} -p#{db['password']} worm_compara -e #{protein_treesql}"
 
-  nj_treesql=%q/'INSERT INTO protein_tree_tag (tag,value) VALUES ("species_tree_string","(((((((6238*,31234)a,135651)b,6239*)c,281687)d,54126)e,63 05)f,6279)g;")'/
+  nj_treesql=%q/'INSERT INTO protein_tree_tag (tag,value) VALUES ("species_tree_string","((((((((6238*,31234)a,135651)b,6239*)c,281687)d,54126)e,6305)f,6289)g,6279)h;")'/
   sh "mysql -h #{db['host']} -u #{db['user']} -p#{db['password']} worm_compara -e #{nj_treesql}"
 
   # MLSS setup
@@ -140,8 +140,15 @@ task :build_homology => [:env_setup] do
   sh "#{perl} #{basedir}/ensembl-compara/scripts/pipeline/create_mlss.pl --f --reg_conf #{reg} --method_link_type PROTEIN_TREES --genome_db_id '1,2,3,4,5,6,7,8,9'"
 
   # up the failure tolerance
-  error_sql=%q/'UPDATE analysis_stats SET failed_job_tolerance = 20 WHERE analysis_id=(SELECT analysis_id FROM analysis WHERE logic_name = "MCoffee");'/
-  sh "mysql -h #{db['host']} -u #{db['user']} -p#{db['password']} worm_compara -e #{error_sql}"
+
+  def up_error_for_analysis(db,analysis)
+      error_sql=%Q/'UPDATE analysis_stats SET failed_job_tolerance = 20 WHERE analysis_id=(SELECT analysis_id FROM analysis WHERE logic_name = "#{analysis}");'/
+      sh "mysql -h #{db['host']} -u #{db['user']} -p#{db['password']} worm_compara -e #{error_sql}"
+  end
+
+  up_error_for_analysis(db,'MCoffee')
+  up_error_for_analysis(db,'OrthoTree')
+  up_error_for_analysis(db,'QuickTreeBreak')
 
 end
 
@@ -199,9 +206,32 @@ end
 
 desc 'dump conservation wiggle files'
 task :dump_gerp =>[:env_setup] do
-	FileUtils.mkdir_p("#{tmp_place}/compara")
+
 	['elegans','briggsae','brenneri','remanei','japonica','pristionchus','brugia','Mhapla'].each{|species|
-          sh "#{perl} scripts/getConservationScores.pl -species #{species} -o #{tmp_place}/compara/#{species}.wig"
+	  spec_dir= "#{tmp_place}/compara/#{species}"
+	  FileUtils.mkdir_p(spec_dir)
+          sh "#{perl} scripts/getConservationScores.pl -species #{species} -o #{spec_dir}/#{species}.wig"
+          
+	  # split it
+          sh "#{perl} ~mh6/tmp/split_wig.pl #{spec_dir}/#{species}.wig" # change the location of the splitter
+	  FileUtils.unlink("#{spec_dir}/#{species}.wig")
+
+	  # wiblification
+          FileList["#{spec_dir}/#{species}.wig*"].each{|f|
+		  # wiblify it
+		  sh "#{perl} ../wiggle2gff3.pl --trackname gerp --method syntheny --source gerp --path #{spec_dir} >>! #{spec_dir}/#{species}_gerp.gff3"
+		  FileUtils.unlink(f)
+
+		  # path munglification
+	  }
+
+	  # archive it
+	  currentDir=FileUtils.pwd
+	  FileUtils.cd("#{tmp_place/compara}")
+	  sh "tar cvSf #{species}_gerp.tar #{species}"
+	  FileUtils.removedir(spec_dir,true)
+          sh "pbzip2 -9  #{species}_gerp.tar"
+	  FileUtils.cd(currentDir)
 	}
 end
 
