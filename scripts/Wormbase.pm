@@ -907,7 +907,16 @@ sub check_file {
 	    !($line =~ /Aff_Y116F11.ZZ33/) &&
 	    !($line =~ /F16H9.2/) &&
 	    !($line =~ /WBGene00008901/) &&
-	    !($line =~ /niDf/)) { 
+	    !($line =~ /niDf/) &&
+	    !($line =~ /PTC01264/) && # BLAT_NEMBASE sequence in briggsae
+	    !($line =~ /PT01856/) && # BLAT_WASHU sequence in briggsae
+            !($line =~ /CBG16975:bp208/) && # history CDS in briggsae
+	    !($line =~ /PT01856/) && # BLAT_WASHU sequence in briggsae
+	    !($line =~ /PTC01264/) && # BLAT_NEMBASE sequence in briggsae
+	    !($line =~ /CBN23456.2/) && # coding transcript in briggsae
+	    !($line =~ /RST3_519777/) && # RST in elegans
+	    !($line =~ /FF095578/) # BLAT_Caen_EST_OTHER in elegans
+	   ) { 
 	  push @problems, "line $line_count:\n$line\nGFF feature is longer than $MAX_FEATURE_LENGTH bases ($feature_length bases)";
 # report all length errors
 #	  last;
