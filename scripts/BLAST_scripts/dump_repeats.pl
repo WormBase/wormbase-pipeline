@@ -95,7 +95,7 @@ foreach my $seq ( @{$sa->fetch_all($seq_level)}){
 
 	foreach my $feature (@$repeats){
             my $copy_no=ceil(abs($feature->seq_region_start - $feature->seq_region_end) / length( $feature->repeat_consensus->seq ));
-	    printf OUT ("Feature tandem %s %s %s \"%i copies of %imer\"\nMethod tandem\n",
+	    printf OUT ("Feature tandem %s %s %s \"%i copies of %imer\"\n",
 		    $feature->seq_region_start,$feature->seq_region_end,$feature->score,$copy_no,length($feature->repeat_consensus->seq )); 
 	}
 
@@ -104,13 +104,11 @@ foreach my $seq ( @{$sa->fetch_all($seq_level)}){
          print OUT "\nSequence : \"$clone\"\n";
          print OUT "Feature_data $clone:Dust 1 $clonesize\n\n";
          print OUT "Feature_data : $clone:Dust\n";
-	 print OUT "Method dust\n";
         }
 
 	foreach my $feature (@$repeats){
 	    printf OUT ("Feature dust %i %i %i \"low_complexity region\"\n",
 		    $feature->seq_region_start,$feature->seq_region_end,length($feature->repeat_consensus->seq ));
-	    print OUT "Method low_complexity_region\n";
 	}
 
 }
