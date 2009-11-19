@@ -10,6 +10,8 @@ BEGIN {
 	$ENV{ENSEMBL_REGISTRY}='/nfs/team71/worm/mh6/wormbase/scripts/ENSEMBL/etc/E_registry.pl';
 }
 
+Bio::EnsEMBL::Registry->no_version_check(1);
+
 use strict;
 use lib '/software/worm/ensembl/ensembl/modules';
 use lib '/software/worm/ensembl/ensembl-compara/modules';
@@ -49,13 +51,14 @@ else {
 my $species = $wb->full_name;
 $wbspecies  = $wb->organism unless $wbspecies;
 
-$ofile = $wb->chromosomes."/$wbspecies.wig.bz2" unless $ofile;
-open OFH ,"|bzip2 -9> $ofile" || die($@);
+$ofile = $wb->chromosomes."/$wbspecies.wig" unless $ofile;
+print "opening $ofile\n" if $debug;
+open(OFH,'>',$ofile) || die($@);
 
 # get method_link_species_set adaptor
 my $mlss_adaptor = Bio::EnsEMBL::Registry->get_adaptor('Compara', 'compara', 'MethodLinkSpeciesSet');
 
-# get the method_link_species_set object for GERP_CONSERVATION_SCORE for 6 species
+# get the method_link_species_set object for GERP_CONSERVATION_SCORE for 8 species
 my $mlss = $mlss_adaptor->fetch_by_method_link_type_registry_aliases("GERP_CONSERVATION_SCORE", 
     ['Caenorhabditis elegans', 'Caenorhabditis briggsae',
      'Caenorhabditis remanei', 'Brugia malayi', 
@@ -101,4 +104,5 @@ foreach my $seq_region ($wb->get_chromosome_names(-prefix => 1)){
             }
         }
     }
+    last if $debug;
 }
