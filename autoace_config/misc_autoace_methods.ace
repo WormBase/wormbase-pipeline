@@ -1329,6 +1329,12 @@ Right_priority	 2.200000
 Method : "split"
 // never populated with data?
 
+// Usage of this should decrease with time as these errors are fixed - GWW 23 Nov 2009
+Method : "Genome_sequence_error"
+Colour	 BLUE
+Width    2.000000
+GFF_source	 "computational_prediction"
+GFF_feature	 "genome_sequence_error"
 
 
 ///////////////////////////////////////////////////////
@@ -1991,3 +1997,6 @@ Right_priority   2.93
 
 Method : "RNASEQ.Hillier"
 Right_priority   2.93
+
+Method : "Genome_sequence_error"
+Right_priority   2.1
