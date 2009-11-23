@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2009-09-23 13:01:40 $      
+# Last updated on: $Date: 2009-11-23 10:19:12 $      
 
 # Changes required by Ant: 2008-02-19
 # 
@@ -4328,6 +4328,9 @@ EST_OVERLAPS_INTRON          elegans remanei briggsae japonica brenneri brugia
 UNMATCHED_EXPRESSION         elegans
 INCOMPLETE_PFAM_MOTIF        elegans remanei briggsae japonica brenneri
 UNMATCHED_454_CLUSTER        elegans
+UNMATCHED_MGENE              elegans
+NOVEL_MGENE_PREDICTION       elegans
+NOT_PREDICTED_BY_MGENE       elegans
 END_DATA
 
 =pod
