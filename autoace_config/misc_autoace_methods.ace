@@ -1333,8 +1333,8 @@ Method : "split"
 Method : "Genome_sequence_error"
 Colour	 BLUE
 Width    2.000000
-GFF_source	 "computational_prediction"
-GFF_feature	 "genome_sequence_error"
+GFF_source	 "RNASeq" // LaDeana's work on her RNASeq with input from Gary Williams
+GFF_feature	 "possible_base_call_error" // SO:0000701
 
 
 ///////////////////////////////////////////////////////
