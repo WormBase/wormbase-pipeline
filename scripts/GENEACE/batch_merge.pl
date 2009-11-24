@@ -187,7 +187,7 @@ sub merge_gene {
       }
       $ver++;
       $gene_versions{$deadgene} = $ver;
-      $output .= "\nGene : $deadgene\nVersion $ver\nHistory Version_change $ver now $user Event Merged_into $livegene\nMerged_into $livegene\nDead\n";
+      $output .= "\nGene : $deadgene\nVersion $ver\nHistory Version_change $ver now $user Event Merged_into $livegene\nMerged_into $livegene\nDead\n\nGene : $deadgene\n-D Sequence_name\n-D method\n\n";
 
       # get the Other_names
       foreach my $dead_Other_names ($deadgeneObj->at('Identity.Name.Other_name')) {
