@@ -7,7 +7,7 @@
 # to celegans@ebi.ac.uk.
 #
 # Last updated by: $Author: pad $                      
-# Last updated on: $Date: 2009-11-16 15:47:35 $        
+# Last updated on: $Date: 2009-11-24 12:21:12 $        
 
 $|=1;
 use strict;
@@ -45,7 +45,7 @@ my $verbose; # this option actually sends a copy of every record to the person s
 GetOptions (
             "debug=s"   => \$debug,
             "help"      => \$help,
-	    "email"     => \$email,
+	    "email"     => \$email, # use the outdated email method to submit updates.
 	    "login:s"   => \$login, #supply the ebi ftp user id you whish to use.
 	    "test"      => \$test,
 	    "verbose"   => \$verbose,
@@ -174,8 +174,8 @@ sub submit_sub {
       print "Submitting $submitdir/$_\n" if $debug;
       $log->write_to("Submitting $submitdir/$_\n");
       (/^(\S+)\.\S+\.\S+/);
-      print LOG "$1\n";
-      #send the clones on thir way.
+      print LOG "$_\n";
+      #send the clones on their way.
       #FTP them
       $ftp->put("$submitdir/$_") or $log->log_and_die ("put failed for $submitdir/$_\n". $ftp->message) if (!defined $email);
       $log->write_to("\nFile: $_ added to $login ebi ftp account\n") if (!defined $email);
