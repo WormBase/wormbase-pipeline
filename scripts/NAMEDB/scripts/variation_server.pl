@@ -16,10 +16,10 @@ $| = 1;
 
 # determine if live or WWWdev and select database accordingly
 if( -e '/nfs/WWWdev/SANGER_docs/htdocs'){
-	$DB = 'test_wbgene_id;mcs2a';
+	$DB = 'test_wbgene_id;mcs4a:3307';
 }
 else {
-	$DB = 'wbgene_id;mcs2a';
+	$DB = 'wbgene_id;shap:3303';
 }
 
 ## a list of valid  IDs to use this resources
