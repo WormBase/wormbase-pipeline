@@ -5,7 +5,7 @@ use strict;
 
 use vars qw($SSO_USER $PASS $DB $VALID_USERS $VALID_API_USERS $VALID_CGCNAME_USERS $USER $MAIL_NOTIFY_LIST $MAILS $LIVE);
 
-use SangerPaths qw(core);
+use SangerPaths qw(core celegans);
 use SangerWeb;
 use NameDB_handler;
 use Data::Dumper;
