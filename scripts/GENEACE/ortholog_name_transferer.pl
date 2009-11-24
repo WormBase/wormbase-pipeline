@@ -94,10 +94,11 @@ my $acedb = Ace->connect('-path' => $database) or Ace->error;
 while(<GENES>){
     chomp;
     my $gene = $_;
-    unless ($gene =~ /WBGene\d{8}/) { warn "$_ bad gene format\n";next; }
+    unless ($gene =~ /WBGene\d{8}$/) { warn "$_ bad gene format\n";next; }
 
     my $geneObj = $acedb->fetch('Gene',$gene);
     unless ($geneObj->Species->name  eq $wormbase->full_name) { warn "$gene is not a ".$wormbase->full_name('-gspecies' => 1). " gene\n";next;}
+    if (!defined $geneObj) { warn "Could not retrieve $gene data, please check your input data is correct\n";next;}
 
     my $cgc;
     if($geneObj->CGC_name) {
@@ -148,7 +149,6 @@ sub write_new_orthology {
     my ($class) = $new_name =~ /-(\w+)-/;
     print $ace "Gene_class $class\n";
     $log->write_to("Transfering CGC_name: $new_name from $gene to $ortholog");
-    print "Transfering CGC_name: $new_name from $gene to $ortholog" if $debug;
 
     if($geneObj->CGC_name) {
 	#get existing evidence
