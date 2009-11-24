@@ -14,14 +14,6 @@ use Website::Utilities::Mail;
 use File::Path;
 $| = 1;
 
-# determine if live or WWWdev and select database accordingly
-if( -e '/nfs/WWWdev/SANGER_docs/htdocs'){
-	$DB = 'test_wbgene_id;mcs4a:3307';
-}
-else {
-	$DB = 'wbgene_id;shap:3303';
-}
-
 ## a list of valid  IDs to use this resources
 $VALID_USERS = {
 					# these are the users WBPerson id
@@ -89,7 +81,12 @@ sub main {
 				'author' => 'avc',
 				'onload' => 'init()',
 			   });
-
+	if ($sw->is_dev()) {
+	    $DB = 'test_wbgene_id;mcs4a;3307';
+	    $sw->banner("This is the test server");
+	} else {
+	    $DB = 'wbgene_id;shap;3303';
+	}
 
 	$SSO_USER = $sw->username(); ## for SSO
 	if( $SSO_USER =~ /^(\w+)@/) {
