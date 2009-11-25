@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2009-11-23 10:19:12 $      
+# Last updated on: $Date: 2009-11-25 09:57:32 $      
 
 # Changes required by Ant: 2008-02-19
 # 
@@ -3843,7 +3843,7 @@ sub find_incomplete_pfam_motifs {
 #  print "get lengths of Pfam motifs\n";
   my %pfam_length;
   my $pfam_file = "/tmp/Pfam";
-  $wormbase->run_command("scp -q farm-login:/data/blastdb/Worms/interpro_scan/iprscan/data/Pfam $pfam_file", $log);
+  $wormbase->run_command("scp -q farm2-login:/data/blastdb/Worms/interpro_scan/iprscan/data/Pfam $pfam_file", $log);
   open (PFAM, "< $pfam_file") || die "can't open $pfam_file\n";
   while (my $line = <PFAM>) {
     if ($line =~ /^ACC\s+(PF\d+)/) {
