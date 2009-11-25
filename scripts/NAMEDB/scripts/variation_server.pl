@@ -75,7 +75,6 @@ sub main {
 	my $web = 1;
  	my $path = SangerWeb->document_root();
 	my $sw = SangerWeb->new( {
-				'title'  => "WormBase Variation ID Server $DB",
 				'banner' => "Wormbase Variation Name Management<br><font color=red>This system is TEST only</font>",
 				'inifile'=> "$path/Projects/C_elegans/header.ini",
 				'author' => 'avc',
@@ -87,6 +86,7 @@ sub main {
 	} else {
 	    $DB = 'wbgene_id;shap;3303';
 	}
+	print $sw->header({'title'  => "WormBase Gene ID Server $DB"});
 
 	$SSO_USER = $sw->username(); ## for SSO
 	if( $SSO_USER =~ /^(\w+)@/) {
@@ -297,13 +297,13 @@ sub new_var {
 	}
 	else {
 		my $db = get_db_connection();
-  		my $var = $db->idGetByTypedName('CGCvar'=>$public)->[0];
+  		my $var = $db->idGetByTypedName('Public'=>$public)->[0];
 		if ( $var ) {	
 			print "$public already exists as $var"
 		}
 		else {
 			my $id = $db->idCreate;
-			$db->addName($id,'CGCvar'=>$public);
+			$db->addName($id,'Public'=>$public);
 			print "$id created with name $public<br>";
 		}
 	}
