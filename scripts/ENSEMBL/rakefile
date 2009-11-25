@@ -214,22 +214,22 @@ task :dump_gerp =>[:env_setup] do
           
 	  # split it
           sh "#{perl} ~mh6/tmp/split_wig.pl #{spec_dir}/#{species}.wig" # change the location of the splitter
-	  FileUtils.unlink("#{spec_dir}/#{species}.wig")
+	  File.unlink("#{spec_dir}/#{species}.wig")
 
 	  # wiblification
           FileList["#{spec_dir}/#{species}.wig*"].each{|f|
 		  # wiblify it
-		  sh "#{perl} ../wiggle2gff3.pl --trackname gerp --method syntheny --source gerp --path #{spec_dir} >>! #{spec_dir}/#{species}_gerp.gff3"
-		  FileUtils.unlink(f)
+		  system("#{perl} ../wiggle2gff3.pl --trackname gerp --method syntheny --source gerp --path=#{spec_dir} #{f} >> #{spec_dir}/#{species}_gerp.gff3")
+		  File.unlink(f)
 
 		  # path munglification
 	  }
 
 	  # archive it
 	  currentDir=FileUtils.pwd
-	  FileUtils.cd("#{tmp_place/compara}")
+	  FileUtils.cd("#{tmp_place}/compara")
 	  sh "tar cvSf #{species}_gerp.tar #{species}"
-	  FileUtils.removedir(spec_dir,true)
+	  FileUtils.remove_dir(spec_dir,true)
           sh "pbzip2 -9  #{species}_gerp.tar"
 	  FileUtils.cd(currentDir)
 	}
