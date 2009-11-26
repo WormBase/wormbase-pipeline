@@ -13,8 +13,8 @@
 #        NOTES:  ---
 #       Author: $Author: mh6 $
 #      COMPANY: WormBase
-# LAST CHANGED: $Date: 2009-11-26 14:48:37 $
-#     REVISION: $Revision: 1.1 $
+# LAST CHANGED: $Date: 2009-11-26 15:34:43 $
+#     REVISION: $Revision: 1.2 $
 #===============================================================================
 
 # find the dna files
@@ -22,6 +22,7 @@
 # stage them on ftp
 
 use strict;
+use lib $ENV{CVS_DIR};
 use Wormbase;
 use Getopt::Long;
 
@@ -91,8 +92,9 @@ system("rm $outfile.n* $outfile.p*")&& die(@!);
 unlink('/tmp/elegans.dna') if (-e '/tmp/elegans.dna');
 unlink("/tmp/$species.pep") if (-e "/tmp/$species.pep");
 unlink("$outfile.tar.bz2") if (-e "$outfile.tar.bz2");
+unlink("$outfile.tar.md5") if (-e "$outfile.tar.md5");
 
 system("bzip2 -9 $outfile.tar")&& die(@!);
-
+system("md5sum $outfile.tar.bz2 > $outfile.tar.md5")&& die(@!);
 
 $log->mail();
