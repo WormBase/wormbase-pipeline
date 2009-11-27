@@ -3,8 +3,8 @@
 #
 # completely rewritten by Keith Bradnam from list_loci_designations
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2008-06-24 12:48:35 $
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2009-11-27 15:07:35 $
 #
 # This script should be run under a cron job and simply update the webpages that show
 # current gene names and sequence connections.  Gets info from geneace.  
@@ -277,9 +277,9 @@ sub make_gene_lists{
   }	
   else {
   	# connect to AceDB using TableMaker, 
-  	my $geneace = $wormbase->database('geneace');
- 	my $command="Table-maker -p $geneace/wquery/gene2molecular_name.def\nquit\n";
-  	open (TACE, "echo '$command' | $tace $geneace |") || print LOG "ERROR: Can't open tace connection to $geneace\n";
+  	my $autoace = $wormbase->autoace;
+ 	my $command="Table-maker -p $autoace/wquery/gene2molecular_name.def\nquit\n";
+  	open (TACE, "echo '$command' | $tace $autoace |") || print LOG "ERROR: Can't open tace connection to $autoace\n";
   }
   while (<TACE>) {
     chomp;
