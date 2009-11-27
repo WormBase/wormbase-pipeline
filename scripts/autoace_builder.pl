@@ -6,11 +6,12 @@
 #
 # Usage : autoace_builder.pl [-options]
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2009-10-26 10:40:42 $
+# Last edited by: $Author: mh6 $
+# Last edited on: $Date: 2009-11-27 10:02:18 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
+use lib '/software/worm/lib/site_perl';
 
 use strict;
 use Wormbase;
