@@ -44,8 +44,9 @@ e.g. perl batch_merge.pl -file merger.txt
 
 =cut
 
-my ($test, $file, $debug, $load);
+my ($USER, $test, $file, $debug, $load);
 GetOptions(
+	   'user:s'     => \$USER,
 	   'test'       => \$test,
 	   'file:s'     => \$file,
 	   'debug:s'    => \$debug,
@@ -53,15 +54,17 @@ GetOptions(
 	  ) or die;
 
 
-my $wormbase = Wormbase->new( -debug   => $debug,
-			      -test    => $test,
-			    );
-
-my $log = Log_files->make_build_log($wormbase);
-
+my $species = 'elegans';
+my $log;
+if (defined $USER) {$log = Log_files->make_log("NAMEDB:$file", $USER);}
+elsif (defined $debug) {$log = Log_files->make_log("NAMEDB:$file", $debug);}
+else {$log = Log_files->make_log("NAMEDB:$file");}
+my $DB;
+my $db;
+my $ecount;
+my $wormbase = Wormbase->new("-organism" =>$species);
 my $database = "/nfs/disk100/wormpub/DATABASES/geneace";
-
-$log->write_to("Working.........\n-----------------------------------\n\n\n1) merging genes in file [${file}]\n\n");
+$log->write_to("Working.........\n-----------------------------------\n\n\n1) killing genes in file [${file}]\n\n");
 $log->write_to("TEST mode is ON!\n\n") if $test;
 
 my $ace = Ace->connect('-path', $database) or $log->log_and_die("cant open $database: $!\n");
