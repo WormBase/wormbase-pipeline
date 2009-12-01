@@ -1,16 +1,18 @@
 #!/usr/bin/perl
 
-use lib '../scripts';
+use lib $ENV{CVS_DIR};
 use Wormbase;
 use strict;
 use Ace;
 
-my $wb = Wormbase->new();
-my $db = Ace->connect( $wb->autoace ) or die "Can't open ace database:", Ace->error;
+# prop should get a -species option
+
+my $wb = Wormbase->new(-autoace => glob('~wormpub/DATABASES/current_DB' ));
+#my $db = Ace->connect( $wb->autoace ) or die "Can't open ace database:", Ace->error;
+my $db = Ace->connect( glob('~wormpub/DATABASES/current_DB') ) or die "Can't open ace database:", Ace->error;
 
 my $version = $db->version;
 
-@ARGV || die "Usage: $0 /path/to/gff/files | gzip -c > c_elegans.WSXXXX.gff.gz";
 
 my (
     %NOTES,          %LOCUS, %GENBANK,      %CONFIRMED,
@@ -27,13 +29,13 @@ get_confirmed( $db, \%CONFIRMED );
 print STDERR "getting genebank ids\n" if $debug;
 get_genbank( $db, \%GENBANK );
 print STDERR "getting transcript2cds\n" if $debug;
-get_transcript( $db, \%TRANSCRIPT2CDS );
+get_transcripts( $db, \%TRANSCRIPT2CDS );
 print STDERR "getting wormpep\n" if $debug;
 get_wormpep( $db, \%WORMPEP );
 print STDERR "getting loci information\n" if $debug;
 get_loci( $db, \%LOCUS );
-print STDERR "getting gene spans\n" if $debug;
-get_genes( $wb, \%GENES );
+print STDERR "getting genes\n" if $debug;
+get_genes( $db, \%GENES );
 print STDERR "getting notes\n" if $debug;
 get_notes( $db, \%NOTES );
 print STDERR "getting ORFEOME info\n" if $debug;
@@ -87,7 +89,8 @@ while (<>) {
             push @notes, map { qq(Note "$_") } @{$notes} if $notes;
 
             my $wormpep = $WORMPEP{$lookup} || $WORMPEP{$match};
-            push @notes, map { qq(WormPep "$_") } @{$wormpep} if $wormpep;
+#           push @notes, map { qq(WormPep "$_") } @{$wormpep} if $wormpep; # hmmm ....
+            push @notes, qq(WormPep "$wormpep") if $wormpep;
 
             # This should be a translated WBGene ID
             my $locus_notes = $LOCUS{$lookup} || $LOCUS{$match};
@@ -99,7 +102,7 @@ while (<>) {
             # Fudge factor: append WBGeneIDS to each transcript entry
             my $genes = $GENES{$lookup} || $GENES{$match};
             if ($genes) {
-                push @notes, map { qq(Gene "$_") } @$genes;
+                push @notes, map {qq(Gene "$_")} @$genes;
             }
         }
 
@@ -207,8 +210,16 @@ sub remember_gene_extents {
 
 # grab gene2cds.commondata
 sub get_genes {
-    my ( $wb, $hash ) = @_;    # Keys are CDSes; values are WBGeneIDs
-    $hash = $wb->FetchData( 'cds2wbgene_id', $hash );
+  my ($db,$hash) = @_;  # Keys are CDSes; values are WBGeneIDs
+  #  my @genes = $db->fetch(-query=>'find Gene IS WBGene0* AND Corresponding_CDS');
+  my @genes = $db->fetch(-query=>'find Gene');
+  foreach my $obj (@genes) {
+    my @cds = ($obj->Corresponding_CDS,$obj->Corresponding_Transcript);
+    next unless @cds;
+    foreach (@cds) {
+      push @{$hash->{$_}},$obj;
+    }
+  }
 }
 
 sub get_transcripts {
@@ -321,7 +332,6 @@ sub get_orfeome {
 # Translate WB gene IDs into more useful molecular or three-letter names
 sub bestname {
     my $gene = shift;
-q
     # Public name is, oddly, never filled in.
     my $bestname =
          $gene->Public_name
