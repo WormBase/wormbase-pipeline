@@ -6,8 +6,8 @@
 #
 # Gets latest Interpro:GO mappings from XXXX and puts info in to ace file
 #
-# Last updated by: $Author: ar2 $                      
-# Last updated on: $Date: 2009-09-30 09:54:22 $         
+# Last updated by: $Author: gw3 $                      
+# Last updated on: $Date: 2009-12-01 11:32:29 $         
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -108,7 +108,6 @@ $wormbase->load_to_database( $wormbase->autoace, "$ip_ace_file",
 			     'interpo_motifs', $log) if($load);
 
 # mail Log file
-$wormbase->run_command("rm $file",$log);
 $log->mail;
 exit(0);
 
