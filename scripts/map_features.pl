@@ -9,7 +9,7 @@
 #
 #
 # Last updated by: $Author: gw3 $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2009-12-02 16:25:15 $        # quickly see when script was last changed and by whom
+# Last updated on: $Date: 2009-12-02 16:37:09 $        # quickly see when script was last changed and by whom
 
 
 $|=1;
@@ -99,9 +99,9 @@ my %sanity = (
 	      'binding_site' => -1,
 	      'binding_site_region' => -1,
 	      'segmental_duplication' => -1,
-	      'Genome_sequence_error' => 0,
-	      'transcription_end_site' => 0,
-	      'transcription_start_site' => 0,
+	      'Genome_sequence_error' => 1,
+	      'transcription_end_site' => 1,
+	      'transcription_start_site' => 1,
 	      );
 
 # queue which Feature types you want to map
