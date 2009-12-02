@@ -4,8 +4,8 @@
 # 
 # A script to make multiple copies of camace for curation, and merge them back again
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2009-11-03 10:29:51 $
+# Last edited by: $Author: pad $
+# Last edited on: $Date: 2009-12-02 14:46:45 $
 #
 # Persisting errors.
 #running csh -c "reformat_acediff file 1 file2"
@@ -429,6 +429,7 @@ sub load_curation_data {
 	"$wormpub/BUILD_DATA/MISC_DYNAMIC/misc_mgene.ace",
 	"$wormpub/BUILD_DATA/MISC_DYNAMIC/misc_RNASEQ_CDS_camace.ace", # this camace version of misc_RNASEQ_CDS.ace has all of the RNASEQ methods reduced to one method for easier display in FMAP
 	"$wormpub/BUILD_DATA/MISC_DYNAMIC/misc_genefinder.ace",
+	"$wormpub/wormbase/autoace_config/misc_autoace_methods.ace",
 	"$acefiles/misc_DB_remark.ace",
 	"$acefiles/elegans_blastx.ace",
 	"$acefiles/elegans_blastp.ace",
@@ -443,6 +444,9 @@ sub load_curation_data {
 	"$acefiles/feature_binding_site.ace",
 	"$acefiles/feature_binding_site_region.ace",
 	"$acefiles/feature_segmental_duplication.ace",
+	"$acefiles/feature_transcription_end_site",
+	"$acefiles/feature_transcription_start_site",
+	"$acefiles/feature_Genome_sequence_error.ace",
 	"$wormpub/CURATION_DATA/PAD_DATA/elegans.public_names_ws196.ace", #needs scripting to update
 	"$wormpub/CURATION_DATA/PAD_DATA/genomic_signals-no-splicing.ace", #needs remapping
   	"$wormpub/BUILD_DATA/MISC_DYNAMIC/misc_mass_spec_GenniferMerrihew.ace",
