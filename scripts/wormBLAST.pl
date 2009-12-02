@@ -5,7 +5,7 @@
 # written by Anthony Rogers
 #
 # Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2009-10-02 13:43:32 $
+# Last edited on: $Date: 2009-12-02 16:45:27 $
 #
 # it depends on:
 #    wormpep + history
@@ -22,11 +22,10 @@ wormBLAST.pl
 
 =cut
 
-my $ensembldir = '/software/worm/ensembl';
 
-use lib "$ensembldir/ensembl/modules";
-use lib "$ensembldir/ensembl-pipeline/modules";
-use lib "$ensembldir/bioperl-live";
+use lib '/software/worm/ensembl/ensembl/modules';
+use lib '/software/worm/ensembl/ensembl-pipeline/modules';
+use lib '/software/worm/ensembl/bioperl-live';
 
 use Bio::EnsEMBL::DBSQL::DBConnection;
 use strict;
