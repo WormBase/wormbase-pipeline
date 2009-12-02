@@ -5,7 +5,7 @@
 # written by Anthony Rogers
 #
 # Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2009-12-02 16:45:27 $
+# Last edited on: $Date: 2009-12-02 16:52:33 $
 #
 # it depends on:
 #    wormpep + history
@@ -565,8 +565,8 @@ sub update_dna {
         $config->{database}->{host},   $config->{database}->{user}, $config->{database}->{password},
         $config->{database}->{dbname}, $config->{database}->{port}
     );
-    my $pipeline_scripts = "$ensembldir/ensembl-pipeline/scripts";
-    my $conf_dir         = ($config->{confdir}||"$ensembldir/ensembl-config/generic");
+    my $pipeline_scripts = "/software/worm/ensembl/ensembl-pipeline/scripts";
+    my $conf_dir         = ($config->{confdir}||"/software/worm/ensembl/ensembl-config/generic");
 
     $wormbase->run_command( "perl $pipeline_scripts/analysis_setup.pl $db_options -read -file $conf_dir/analysis.conf", $log );
     $wormbase->run_command( "perl $pipeline_scripts/rule_setup.pl $db_options -read -file $conf_dir/rule.conf", $log );
@@ -624,7 +624,7 @@ sub update_proteins {
         $config->{database}->{host},   $config->{database}->{user}, $config->{database}->{password},
         $config->{database}->{dbname}, $config->{database}->{port}
     );
-    my $pipeline_scripts = "$ensembldir/ensembl-pipeline/scripts";
+    my $pipeline_scripts = "/software/worm/ensembl/ensembl-pipeline/scripts";
 
     $wormbase->run_script( "ENSEMBL/scripts/worm_lite.pl -load_genes -species $species", $log );
     $wormbase->run_command( "perl $pipeline_scripts/make_input_ids $db_options -translation_id -logic SubmitTranslation", $log );
