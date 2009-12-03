@@ -9,7 +9,7 @@
 #
 #
 # Last updated by: $Author: gw3 $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2009-12-02 16:50:06 $        # quickly see when script was last changed and by whom
+# Last updated on: $Date: 2009-12-03 15:17:27 $        # quickly see when script was last changed and by whom
 
 
 $|=1;
@@ -37,6 +37,8 @@ my $segmental_duplication;          #  segmental_duplication features
 my $genome_sequence_error;   # genome_sequence_error
 my $transcription_start_site;# transcription_start_site
 my $transcription_end_site;  # transcription_end_site
+my $promoter;                # promoter region
+my $regulatory_region;       # regulatory region
 my $adhoc;                   # Run against a file, output to screen
 my $start;
 my $stop;
@@ -54,6 +56,8 @@ GetOptions (
 	    "Genome_sequence_error" => \$genome_sequence_error,
 	    "transcription_start_site"=> \$transcription_start_site,
 	    "transcription_end_site"=> \$transcription_end_site,
+	    "promoter"              => \$promoter,
+	    "regulatory_region"     => \$regulatory_region,
 	    "adhoc=s"               => \$adhoc,
             "debug=s"               => \$debug,
             "verbose"               => \$verbose,
@@ -102,6 +106,8 @@ my %sanity = (
 	      'Genome_sequence_error' => -1,
 	      'transcription_end_site' => -1,
 	      'transcription_start_site' => -1,
+	      'promoter' => -1,
+	      'regulatory_region' => -1,
 	      );
 
 # queue which Feature types you want to map
@@ -116,6 +122,8 @@ push (@features2map, "segmental_duplication")  if (($segmental_duplication) || (
 push (@features2map, "Genome_sequence_error")  if (($genome_sequence_error) || ($all));
 push (@features2map, "transcription_end_site")  if (($transcription_end_site) || ($all));
 push (@features2map, "transcription_start_site")  if (($transcription_start_site) || ($all));
+push (@features2map, "promoter")  if (($promoter) || ($all));
+push (@features2map, "regulatory_region")  if (($regulatory_region) || ($all));
 
 #############
 # main loop #
