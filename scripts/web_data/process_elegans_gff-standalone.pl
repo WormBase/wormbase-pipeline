@@ -41,6 +41,8 @@ get_notes( $db, \%NOTES );
 print STDERR "getting ORFEOME info\n" if $debug;
 get_orfeome( $db, \%ORFEOME );
 
+$db->close;
+
 while (<>) {
     chomp;
     next if /^\#/;
