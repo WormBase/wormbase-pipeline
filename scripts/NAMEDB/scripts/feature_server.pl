@@ -86,9 +86,9 @@ sub main {
 			    'onload' => 'init()',
 			   });
   if ($sw->is_dev()) {
-    $DB = 'test_wbgene_id;mcs2a;3305';
+    $DB = 'test_wbgene_id;mcs4a;3307';
   } else {
-    $DB = 'wbgene_id;mcs2a;3305';
+    $DB = 'wbgene_id;shapi;3303';
   }
 
   $SSO_USER = $sw->username();	## for SSO
