@@ -6,8 +6,8 @@
 #
 # Script to run consistency checks on the geneace database
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2009-04-08 13:18:44 $
+# Last updated by: $Author: mt3 $
+# Last updated on: $Date: 2009-12-04 14:09:15 $
 
 use strict;
 use lib $ENV{"CVS_DIR"};
@@ -49,7 +49,7 @@ my $curr_db = "/nfs/disk100/wormpub/DATABASES/current_DB"; # Used for some cross
 my $def_dir = "$database/wquery";                          # where lots of table-maker definitions are kept
 
 my $rundate = $wb->rundate;                                # Used by various parts of script for filename creation
-my $maintainers = "ar2\@sanger.ac.uk, pad\@sanger.ac.uk, mt3\@sanger.ac.uk, gw3\@sanger.ac.uk, md9\@sanger.ac.uk";                                   # Default for emailing interested people
+my $maintainers = "ar2\@sanger.ac.uk, pad\@sanger.ac.uk, mt3\@sanger.ac.uk, gw3\@sanger.ac.uk";                                   # Default for emailing interested people
 my $caltech_errors = 0;                                    # counter for tracking errors going into Caltech email
 my $jah_errors = 0;                                        # counter for tracking errors going into Caltech email
 
