@@ -33,7 +33,7 @@ GetOptions('database:s' => \$DB,
 	  ) or die $USAGE;
 
 unless ($DB) {
-	$DB = 'wbgene_id;shapi;3303';
+	$DB = 'wbgene_id;shap;3303';
 	$DB = 'test_wbgene_id;mcs4a;3307' if $test;
 }
 $USER ||= $ENV{NAMEDB_USER};
