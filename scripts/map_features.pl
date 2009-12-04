@@ -9,7 +9,7 @@
 #
 #
 # Last updated by: $Author: gw3 $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2009-12-03 15:17:27 $        # quickly see when script was last changed and by whom
+# Last updated on: $Date: 2009-12-04 10:46:17 $        # quickly see when script was last changed and by whom
 
 
 $|=1;
@@ -194,7 +194,12 @@ EOF
     # when it finds a good line
     if (/^\"(\S+)\"\s+\"(\S+)\"\s+\"(\S+)\"\s+\"(\S+)\"/) {
       ($feature,$clone,$flanking_left,$flanking_right) = ($1,$2,$3,$4);
-      
+      print "NEXT FEATURE: $feature,$clone,$flanking_left,$flanking_right\n" if ($debug);
+      print "Unintialised feature in line $_" if (!defined $feature);
+      print "Unintialised $feature clone" if (!defined $clone);
+      print "Unintialised $feature flanking_left" if (!defined $flanking_left);
+      print "Unintialised $feature flanking_right" if (!defined $flanking_right);
+
       my @coords = $mapper->map_feature($clone,$flanking_left,$flanking_right);
       if (!defined $coords[2]) {
 	$log->write_to("ERROR: Can't map feature $feature on clone $clone flanking sequences: $flanking_left $flanking_right\n");
