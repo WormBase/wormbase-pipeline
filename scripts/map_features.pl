@@ -9,7 +9,7 @@
 #
 #
 # Last updated by: $Author: gw3 $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2009-12-04 10:46:17 $        # quickly see when script was last changed and by whom
+# Last updated on: $Date: 2009-12-04 16:02:27 $        # quickly see when script was last changed and by whom
 
 
 $|=1;
@@ -197,8 +197,12 @@ EOF
       print "NEXT FEATURE: $feature,$clone,$flanking_left,$flanking_right\n" if ($debug);
       print "Unintialised feature in line $_" if (!defined $feature);
       print "Unintialised $feature clone" if (!defined $clone);
-      print "Unintialised $feature flanking_left" if (!defined $flanking_left);
-      print "Unintialised $feature flanking_right" if (!defined $flanking_right);
+      #print "Unintialised $feature flanking_left" if (!defined $flanking_left);
+      #print "Unintialised $feature flanking_right" if (!defined $flanking_right);
+
+      if (!defined $flanking_left && !defined $flanking_right) {
+	$log->write_to("WARNING: Feature $feature has no flanking sequence - not mapped\n");
+      }
 
       my @coords = $mapper->map_feature($clone,$flanking_left,$flanking_right);
       if (!defined $coords[2]) {
