@@ -62,8 +62,7 @@ open($ace, ">$acefile")      or $log->log_and_die("cant write acefile - $acefile
 open($namedb, ">$batchfile") or $log->log_and_die("cant write batch load file - $batchfile: $!\n");
 open(GENES,"<$genelist")     or $log->log_and_die("cant read gene list - $genelist : $!\n");
 
-my %person = ('mt3' => 'WBPerson9133',
-	      'md9' => 'WBPerson2970',
+my %person = ('mt3' => 'WBPerson2970',
 	      'pad' => 'WBPerson1983',
 	      'ar2' => 'WBPerson1847',
 	      'gw3' => 'WBPerson4025',
@@ -74,7 +73,7 @@ unless (defined $user) {
   print "\nERROR: please specify a user ID - e.g. mt3\n\n[INPUT]:";
   my $tmp = <STDIN>;
   chomp $tmp;
-  if (($tmp ne 'mt3') && ($tmp ne 'md9') && ($tmp ne 'pad') && ($tmp ne 'ar2') && ($tmp ne 'gw3') && ($tmp ne 'mh6')){
+  if (($tmp ne 'mt3') && ($tmp ne 'pad') && ($tmp ne 'ar2') && ($tmp ne 'gw3') && ($tmp ne 'mh6')){
     $log->log_and_die("UNKNOWN USER.....TERMINATE\n\n");
     print "UNKNOWN USER.....TERMINATE\n\n" if $debug;
   }
