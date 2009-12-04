@@ -8,7 +8,7 @@
 # in ace
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2009-06-18 15:33:15 $      
+# Last updated on: $Date: 2009-12-04 12:05:32 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -670,38 +670,42 @@ sub process_cds {
 	print OUT "Pep_homol \"MSP:$ms_peptide\" mass-spec 1 $pos $end 1 $len\n"; # note where the peptide maps to a wormpep protein
 	# output the posttranslation modifications (if any) for this protein
 	foreach my $experiment_id (keys %experiment) {
-	  if (exists $experiment{$experiment_id}{'posttranslation_modification_database'}) {
-	    my $pt_db = $experiment{$experiment_id}{'posttranslation_modification_database'};
-	    my $got_a_post_trans_modification_in_this_protein = 0;
-	    my @pt_positions = &pos_underscore($ms_peptide);
-	    foreach my $pt_pos (@pt_positions) {
-	      my $pt_pos_in_protein = $pt_pos + $pos - 1;
-	      print OUT "Motif_homol \"$pt_db:$CDS_name_isoform\" $pt_db 0 $pt_pos_in_protein $pt_pos_in_protein 1 1\n";
-	      $got_a_post_trans_modification_in_this_protein = 1;
-	    }
+	  if (exists $experiment{$experiment_id}{HAS_PEPTIDE}{$ms_peptide}) {
+	    if (exists $experiment{$experiment_id}{'posttranslation_modification_database'}) {
+	      my $pt_db = $experiment{$experiment_id}{'posttranslation_modification_database'};
+	      my $got_a_post_trans_modification_in_this_protein = 0;
+	      my @pt_positions = &pos_underscore($ms_peptide);
+	      foreach my $pt_pos (@pt_positions) {
+		my $pt_pos_in_protein = $pt_pos + $pos - 1;
+		print OUT "Motif_homol \"$pt_db:$CDS_name_isoform\" $pt_db 0 $pt_pos_in_protein $pt_pos_in_protein 1 1\n";
+		$got_a_post_trans_modification_in_this_protein = 1;
+	      }
+	      
+	      if ($got_a_post_trans_modification_in_this_protein) {
+		# and write some details for the Motif Object
+		$motif_out .= "\n";
+		$motif_out .= "\n";
+		$motif_out .= "Motif : \"$pt_db:$CDS_name_isoform\"\n";
+		$motif_out .= "Title \"$experiment{$experiment_id}{'posttranslation_modification_type'}\"\n";
+		$motif_out .= "Database \"$pt_db\" \"${pt_db}_ID\" \"$CDS_name_isoform\"\n";
+		$motif_out .= "Pep_homol \"WP:$wormpep_id\"\n";
+		$motif_out .= "\n";
+		$motif_out .= "\n";
+	      }
 	    
-	    if ($got_a_post_trans_modification_in_this_protein) {
-	      # and write some details for the Motif Object
-	      $motif_out .= "\n";
-	      $motif_out .= "\n";
-	      $motif_out .= "Motif : \"$pt_db:$CDS_name_isoform\"\n";
-	      $motif_out .= "Title \"$experiment{$experiment_id}{'posttranslation_modification_type'}\"\n";
-	      $motif_out .= "Database \"$pt_db\" \"${pt_db}_ID\" \"$CDS_name_isoform\"\n";
-	      $motif_out .= "Pep_homol \"WP:$wormpep_id\"\n";
-	      $motif_out .= "\n";
-	      $motif_out .= "\n";
-	    }
-	    
-	  } elsif (exists $experiment{$experiment_id}{'posttranslation_modification_type'}) {
-	    #print "*** Posttranslation_modification_type specified, but no Posttranslation_modification_database found\nShould add in output for the postranslational data to be a Feature in the Protein? A bit like this maybe?:\n";
-	    my $pt_type = $experiment{$experiment_id}{'posttranslation_modification_type'};
-	    my @pt_positions = &pos_underscore($ms_peptide);
-	    foreach my $pt_pos (@pt_positions) {
-	      my $pt_pos_in_protein = $pt_pos + $pos - 1;
-	      print OUT "Feature \"$pt_type\" $pt_pos_in_protein $pt_pos_in_protein 0\n";
+	    } elsif (exists $experiment{$experiment_id}{'posttranslation_modification_type'}) {
+	      #print "*** Posttranslation_modification_type specified, but no Posttranslation_modification_database found\nShould add in output for the postranslational data to be a Feature in the Protein? A bit like this maybe?:\n";
+	      my $pt_type = $experiment{$experiment_id}{'posttranslation_modification_type'};
+	      my @pt_positions = &pos_underscore($ms_peptide);
+	      foreach my $pt_pos (@pt_positions) {
+		my $pt_pos_in_protein = $pt_pos + $pos - 1;
+		print OUT "Feature \"$pt_type\" $pt_pos_in_protein $pt_pos_in_protein 0\n";
+		print OUT "Remark \"$pt_type defined by mass-spec peptide MSP:$ms_peptide from mass-spec experiment $experiment_id\"\n";
+	      }
 	    }
 	  }
 	}
+
 	# now output the motif objects, if any
 	print OUT $motif_out;
 	$motif_out = "";
@@ -1031,7 +1035,7 @@ sub get_genome_mapping {
   my @exons_internal_end = ();
 
   # get the peptide length
-  my $peptide_length = length($ms_peptide);
+  my $peptide_length = length(&no_underscore($ms_peptide));
 
   print "ms_peptide = $ms_peptide CDS_name = $CDS_name\n" if ($verbose);
 
