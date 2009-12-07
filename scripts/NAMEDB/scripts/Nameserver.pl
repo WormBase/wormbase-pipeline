@@ -22,7 +22,7 @@ $VALID_USERS = {
 		'mt3' 		=> 2970,
 		'gw3' 		=> 4025,
 		'mh6' 		=> 4036,
-                'md9'           => 9133,
+ #               'md9'           => 9133,
 		'tbieri' 	=> 1849,
 		'jspieth' 	=> 615,
 		'pozersky' 	=> 1867,
@@ -57,7 +57,7 @@ $VALID_CGCNAME_USERS = {
 		       };
 
 $MAILS = {
-	  'gnw'                 =>      'md9@sanger.ac.uk', #person responsible for geneace
+	  'gnw'                 =>      'mt3@sanger.ac.uk', #person responsible for geneace
 	  'ar2'			=>	'ar2@sanger.ac.uk',
 	  'pad'			=>	'pad@sanger.ac.uk',
 	  'gw3'			=>	'gw3@sanger.ac.uk',
