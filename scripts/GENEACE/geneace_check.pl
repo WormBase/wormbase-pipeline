@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: mt3 $
-# Last updated on: $Date: 2009-12-04 14:09:15 $
+# Last updated on: $Date: 2009-12-07 13:25:32 $
 
 use strict;
 use lib $ENV{"CVS_DIR"};
@@ -300,7 +300,7 @@ sub process_gene_class{
   }
 
   # checks for genes that have no Live tag but a split_from tag
-  foreach my $gene ($db->fetch(-query=>"Find Gene WHERE Split_from AND NOT Live AND NOT Merged_into")){
+  foreach my $gene ($db->fetch(-query=>"Find Gene WHERE Split_from AND NOT Live AND NOT Merged_into AND NOT Made_into_transposon")){
     print LOG "ERROR: $gene has Split_from tag but no Live tag\n";
   }
 
