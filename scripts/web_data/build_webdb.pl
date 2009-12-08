@@ -9,8 +9,8 @@
 #      $AUTHOR:$
 #      COMPANY:  WormBase
 #      CREATED:  11/27/09 10:10:08 GMT
-#      CHANGED: $Date: 2009-12-07 10:29:27 $
-#    $Revision: 1.1 $
+#      CHANGED: $Date: 2009-12-08 13:55:02 $
+#    $Revision: 1.2 $
 #===============================================================================
 
 # need to set the PERl5LIb  to pick up bioperl for the load_gff thing ... maybe have to hardcode it
@@ -25,36 +25,41 @@ use strict;
 
 my @species;
 my %tmpfiles;
-my ($debug,$compress,$currentDB);
+my ($debug,$compress,$currentDB,$ftp,$version);
 
 GetOptions(
       'species:s' => \@species,
       'debug:s'   => \$debug,
       'compress'  => \$compress,
       'currentDB' => \$currentDB, # use current_DB instead of the build databases
+      'ftp'       => \$ftp, # grab it from the ftp-site
+      'version:s' => \$version, # grab a specific version from the FTP site
 )||die(@!);
 
 # postprocess the collected GFF files per species
 
-@species = qw(elegans) if $currentDB;
+@species = qw(elegans) unless $species[0];
 
 ## for each species
 foreach my $worm(@species){
 	my $wormbase = Wormbase->new(
-		-species => $worm,
-		-debug   => $debug,
+		-organism => $worm,
+		-debug    => $debug,
 	);
 
 	if ($currentDB){
 	   $wormbase = Wormbase->new(
-		-species => $worm,
-		-debug   => $debug,
-		-autoace => glob('~wormpub/DATABASES/current_DB'),
+		-organism => $worm,
+		-debug    => $debug,
+		-autoace  => glob('~wormpub/DATABASES/current_DB'),
 	   );
 	}
 
+	$wormbase->version($version) if $version; # override the default one
+
 	my $log = Log_files->make_build_log($wormbase);
 	$$wormbase{log}=$log; # crude, but works
+	$$wormbase{ftp}=1 if $ftp; # even cruder
 
 	$log->write_to("... creating MySQL server\n");
 	
@@ -109,10 +114,10 @@ sub tar_and_feather {
 	my $sp = $wb->species;
 	my $gspecies = $wb->full_name(-g_species => 1);
 	my $ftpDir = $wb->ftp_site.'/web_data/';
-	system("cd /tmp/${sp}_datadir/ && tar cvf $gspecies.tar") && die(@!);
-	system("pbzip2 -9 /tmp/${sp}_data/$gspecies.tar") && die(@!);
-	system("mv /tmp/${sp}_datadir/$gspecies.tar.bz2 $ftpDir") && die(@!);
-	system("md5sum $ftpDir/$gspecies.tar.bz2 > /$gspecies.tar.md5") && die(@!);
+	system("cd /tmp/${sp}_datadir/ && tar cvf $gspecies.tar $sp/") && die(@!);
+	system("pbzip2 -9 /tmp/${sp}_datadir/$gspecies.tar") && die(@!);
+	system("mv /tmp/${sp}_datadir/$gspecies.tar.bz2 $ftpDir/gff_dbs") && die(@!);
+	system("cd $ftpDir/gff_dbs/ && md5sum $gspecies.tar.bz2 > $gspecies.tar.md5") && die(@!);
 }
 
 # compresses the myisam tables
@@ -137,7 +142,7 @@ sub load_db {
 	       '/software/worm/ensembl/bioperl-live/scripts/Bio-DB-GFF/bulk_load_gff.PLS '.
 	       "--create --user=root --fasta /tmp/$species.dna --local ".
 	       "--database dbi:mysql:$species:localhost:mysql_socket=/tmp/$species.sock ".
-	       "--defaults /tmp/$species.cnf") && die(@!);
+	       "--defaults /tmp/$species.cnf /tmp/$species.gff") && die(@!);
 }
 
 # create mysql database directories
@@ -151,21 +156,43 @@ sub create_database {
 # concatenate the fasta files and remove the CHROMOSOME_
 sub munge_fasta {
 	my($wb)=@_;
+
 	&tmpfile_hook("/tmp/${\$wb->species}.dna");
-	system("cat ${\$wb->chromosomes}/*.dna|sed s/CHORMOSOME_//>/tmp/${\$wb->species}.dna");
+
+	if ($$wb{ftp}){
+		#~ftp/pub2/wormbase/WS209/genomes/c_elegans/sequences/dna/c_elegans.WS209.dna.fa.gz
+		my $infile = $wb->ftp_site .'/WS'. $wb->version .'/genomes/'. $wb->full_name(-g_species => 1) 
+		.'/sequences/dna/'.$wb->full_name(-g_species => 1) .'.WS'. $wb->version .'.dna.fa.gz';
+		system("zcat $infile |sed s/CHORMOSOME_//>/tmp/${\$wb->species}.dna");
+        }
+	else {
+	   system("cat ${\$wb->chromosomes}/*.dna|sed s/CHORMOSOME_//>/tmp/${\$wb->species}.dna");
+        }
 }
 
 # takes GFFs from $wormbase and creates a big one in /tmp/$species.gff
 sub process_worm {
 	my ($wb)=@_;
 
-	my $buildDataDir = '/nfs/disk100/wormpub/BUILD_DATA/SUPPLEMENTARY_GFF';
-	my @raw_gffs = glob($wb->chromosomes.'/*.gff');
-	my @gz_gffs  = glob($wb->chromosomes.'/*.gff.gz');
-        push @gz_gffs, glob("$buildDataDir/*.gff2.gz");
-	push @raw_gffs,glob("$buildDataDir/*.gff");
+	my @raw_gffs;
+	my @gz_gffs;
+	if ($$wb{ftp}){
+		# ~ftp/pub2/wormbase/WS209/genomes/c_elegans/genome_feature_tables/SUPPLEMENTARY_GFF/*.gff
+		@raw_gffs = glob($wb->ftp_site .'/WS'. $wb->version .'/genomes/'.$wb->full_name(-g_species => 1)
+		.'/genome_feature_tables/SUPPLEMENTARY_GFF/*.gff');
 
-	$$wb{log}->write_to("processing GFF files from ${\$wb->chromosomes} and $buildDataDir\n");
+	        # ~ftp/pub2/wormbase/WS209/genomes/c_elegans/genome_feature_tables/GFF2/c_elegans.WS209.gff.gz
+		@gz_gffs = glob($wb->ftp_site .'/WS'. $wb->version .'/genomes/'.$wb->full_name(-g_species => 1)
+		.'/genome_feature_tables/GFF2/'.$wb->full_name(-g_species => 1).'.WS'.$wb->version.'.gff.gz');
+	}
+	else {
+	   my $buildDataDir = '/nfs/disk100/wormpub/BUILD_DATA/SUPPLEMENTARY_GFF';
+	   @raw_gffs = glob($wb->chromosomes.'/*.gff');
+	   @gz_gffs  = glob($wb->chromosomes.'/*.gff.gz');
+           push @gz_gffs, glob("$buildDataDir/*.gff2.gz");
+	   push @raw_gffs,glob("$buildDataDir/*.gff");
+        }
+
 	$$wb{log}->write_to("... processing @gz_gffs\n");
 	$$wb{log}->write_to("... processing @raw_gffs\n");
 
@@ -182,13 +209,16 @@ sub concatenate_gff {
 	tmpfile_hook($outfile);
 
 	# gzipped ones
-	$gz = join(' ',@$gz);
-	system("zcat $gz>$outfile") && die(@!);
-        
+	if ($$gz[0]){
+	  $gz = join(' ',@$gz);
+	  system("zcat $gz>$outfile") && die(@!);
+        }        
 
 	# normal ones
-	$gff = join(' ',@$gff);
-	system("cat $gff>>$outfile") && die(@!);
+	if ($$gff[0]){
+	  $gff = join(' ',@$gff);
+	  system("cat $gff>>$outfile") && die(@!);
+        }
 
 	return $outfile;
 }
@@ -200,7 +230,7 @@ sub process_gff {
 	&tmpfile_hook("/tmp/$species.gff");
 
         print STDERR "/software/bin/perl $ENV{CVS_DIR}/web_data/process_elegans_gff-standalone.pl ".
-	       ">/tmp/$species.gff <$file\n";
+	       ">/tmp/$species.gff <$file\n" if $debug;
 	system("/software/bin/perl $ENV{CVS_DIR}/web_data/process_elegans_gff-standalone.pl ".
 	       ">/tmp/$species.gff <$file") && die(@!);
 }
@@ -254,7 +284,7 @@ sub cleanup_mysql {
 
 sub clean_tmpfiles {
 	foreach my $key (keys %tmpfiles){
-		unlink($key) if (-e $key);
+	     unlink($key) if (-e $key);
 	}
 }
 

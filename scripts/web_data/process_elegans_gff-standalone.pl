@@ -41,7 +41,6 @@ get_notes( $db, \%NOTES );
 print STDERR "getting ORFEOME info\n" if $debug;
 get_orfeome( $db, \%ORFEOME );
 
-$db->close;
 
 while (<>) {
     chomp;
@@ -195,6 +194,8 @@ for my $cds ( keys %GENES ) {
     }
 }
 
+$db->close;
+
 exit 0;
 
 # remember the extreme left and right of transcripts
@@ -257,7 +258,13 @@ sub get_loci {
 # allow lookup by wormpep id
 sub get_wormpep {
     my ( $db, $hash ) = @_ ; # hash keys are predicted CDS names, values are one or more wormpep names
-    $hash = $wb->FetchData( 'cds2wormpep', $hash );
+#   $hash = $wb->FetchData( 'cds2wormpep', $hash );
+
+    my @genes = $db->fetch(-query=>'find CDS Corresponding_protein', -filltag=>'Corresponding_protein');
+    foreach my $obj (@genes) {
+      my $wormpep = $obj->Corresponding_protein or next;
+      $hash->{"$obj"} = "$wormpep";
+    }
 }
 
 # This could probably be shifted to the ?Gene class.
