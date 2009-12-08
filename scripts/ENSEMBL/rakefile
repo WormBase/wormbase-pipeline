@@ -306,7 +306,7 @@ desc 'build and setup all databases'
 task :build => [:check_clean,:env_setup,:build_homology,:run_homology,:build_pecan,:run_pecan,:cleanup]
 
 desc 'dump all databases into the various flatfiles'
-task :dump => [:dump_homology,:dump_pecan,:dump_gerp,:dump_compara,:copy_release,:cleanup]
+task :dump => [:dump_homology,:dump_pecan,:dump_compara,:copy_release,:cleanup]
 
 desc 'hack around some of the more recent bugs in compara (build and run bit)'
 task :mt3_run => [:check_clean,:env_setup,:build_homology,:run_homology]
