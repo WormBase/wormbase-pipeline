@@ -25,7 +25,7 @@ exit;
 
 sub check {
     my $mail = shift;
-    my $file = `wget -O /tmp/$mail "http://www.stopforumspam.com/api?email=$mail"`;
+    my $file = `wget -q -O /tmp/$mail "http://www.stopforumspam.com/api?email=$mail"`;
     open (SPAM,"</tmp/$mail");
 	while(<SPAM>) {
 	    if( /appears\>yes/ ) {
