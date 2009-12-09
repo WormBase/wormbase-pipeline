@@ -6,8 +6,8 @@
 #
 # Usage : autoace_builder.pl [-options]
 #
-# Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2009-11-27 10:02:18 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2009-12-09 16:44:02 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -29,7 +29,7 @@ my ( $make_wormpep, $finish_wormpep );
 my ( $prep_blat, $run_blat,     $finish_blat );
 my ( $gff_dump,     $processGFF, $gff_split );
 my $gene_span;
-my ( $load, $tsuser, $map_features, $remap_misc_dynamic, $map, $transcripts, $intergenic, $data_sets, $nem_contigs);
+my ( $load, $tsuser, $map_features, $remap_misc_dynamic, $map, $transcripts, $intergenic, $misc_data_sets, $homol_data_sets, $nem_contigs);
 my ( $GO_term, $rna , $dbcomp, $confirm, $operon ,$repeats, $remarks, $names, $treefam, $cluster);
 my ( $utr, $agp, $gff_munge, $extras , $ontologies, $interpolate, $check);
 my ( $data_check, $buildrelease, $public,$finish_build, $release, $user, $kegg);
@@ -61,7 +61,8 @@ GetOptions(
 	   'transcripts'    => \$transcripts,
 	   'intergenic'     => \$intergenic,
 	   'nem_contig'     => \$nem_contigs,
-	   'data_sets'      => \$data_sets,
+	   'misc_data_sets' => \$misc_data_sets,
+	   'homol_data_sets'=> \$homol_data_sets,
 	   'go_term'        => \$GO_term,
 	   'rna'            => \$rna,
 	   'dbcomp'         => \$dbcomp,
@@ -145,7 +146,8 @@ $wormbase->run_script( 'find_intergenic.pl'               , $log ) if $intergeni
 
 &get_repeats                                                             if $repeats; # loaded with homols
 #must have farm complete by this point.
-$wormbase->run_script( 'load_data_sets.pl -homol -misc', $log) if $data_sets;
+$wormbase->run_script( 'load_data_sets.pl -misc', $log) if $misc_data_sets;
+$wormbase->run_script( 'load_data_sets.pl -homol', $log) if $homol_data_sets;
 # $build_dumpGFF.pl; (homol) is run chronologically here but previous call will operate
 $wormbase->run_script( 'make_wormrna.pl'                         , $log) if $rna;
 $wormbase->run_script( 'confirm_genes.pl -load'                  , $log) if $confirm;
