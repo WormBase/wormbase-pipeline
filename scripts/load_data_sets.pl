@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl -w
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2009-10-26 10:43:42 $      
+# Last updated on: $Date: 2009-12-09 15:37:28 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -44,15 +44,14 @@ my $log = Log_files->make_build_log($wormbase);
 
 my @core_organisms = $wormbase->core_species;
 if( $species eq 'elegans') {
-	&parse_misc_elegans_files	if $misc;
-	&parse_homol_data    		if $homol;
-}
-else {
-	if(grep(/$species/, map(lc $_,  @core_organisms))){  #other core (tierII) species)
-		&parse_homol_data;
-		&parse_briggsae_data if ($species eq 'briggsae');
-		&parse_nematode_seqs;
-	}
+  &parse_misc_elegans_files	if $misc;
+  &parse_homol_data    		if $homol;
+} else {
+  if(grep(/$species/, map(lc $_,  @core_organisms))){  #other core (tierII) species)
+    &parse_homol_data           if $homol;
+    &parse_briggsae_data        if ($misc && $species eq 'briggsae');
+    &parse_nematode_seqs        if $misc;
+  }
 }
 $log->mail();
 exit(0);
@@ -91,17 +90,17 @@ sub parse_misc_elegans_files {
 }
 
 sub parse_nematode_seqs {
-	my %files2load = (
-		"nembase_nematode_contigs.ace"   => "nembase_ace"           ,
-		"other_nematode_ESTs.ace"        => "other_nematode_ace"    ,
-		"washu_nematode_contigs.ace"     => "washu_nem_ace"         ,
-		);
-	$log->write_to("loading nematode sequences to $species database\n");
-	foreach my $file ( keys %files2load ) {
-		my $tsuser = $files2load{"$file"};
-		$log->write_to("\tloading $file -tsuser -$tsuser\n");
-		$wormbase->load_to_database($wormbase->autoace,$wormbase->misc_static."/$file",$tsuser, $log);
-	}
+  my %files2load = (
+		    "nembase_nematode_contigs.ace"   => "nembase_ace"           ,
+		    "other_nematode_ESTs.ace"        => "other_nematode_ace"    ,
+		    "washu_nematode_contigs.ace"     => "washu_nem_ace"         ,
+		   );
+  $log->write_to("loading nematode sequences to $species database\n");
+  foreach my $file ( keys %files2load ) {
+    my $tsuser = $files2load{"$file"};
+    $log->write_to("\tloading $file -tsuser -$tsuser\n");
+    $wormbase->load_to_database($wormbase->autoace,$wormbase->misc_static."/$file",$tsuser, $log);
+  }
 }
 
 sub parse_homol_data {
