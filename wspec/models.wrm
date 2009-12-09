@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: ar2 $
-// Last edited on: $Date: 2009-11-18 12:24:46 $
+// Last edited on: $Date: 2009-12-09 17:09:41 $
 
 
 ////////////////////////
@@ -1417,6 +1417,7 @@
 		      Associated_with_operon      ?Operon XREF Associated_feature #Evidence
 		      Associated_with_gene_regulation      ?Gene_regulation XREF Associated_feature #Evidence
 		      Associated_with_expression_pattern	 ?Expr_pattern XREF Associated_feature #Evidence 
+		      Associated_with_Feature ?Feature XREF Associated_with_Feature #Evidence 
 	 Bound_by_product_of ?Gene XREF Gene_product_binds #Evidence //pad added this to show what gene it binds
 	 Annotation UNIQUE ?LongText		// added for data attribution [030220 dl]
 	 Confidential_remark ?Text //pad
