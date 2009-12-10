@@ -1,7 +1,7 @@
 #!/software/bin/perl -w
 
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2009-10-20 14:24:40 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2009-12-10 17:45:24 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -106,31 +106,32 @@ sub update_database {
 	$log->write_to("\n\nUpdating database from PFAM ftp site\n");
 	
 	my $ftp = glob("~ftp/pub/databases/Pfam/current_release/database_files");
+	chdir ($ftp);
 	my @tables = qw(ncbi_taxonomy pfamseq markup_key pfamseq_markup);
 	foreach my $table (@tables){
 		$log->write_to("\tfetching $table.txt\n");
 		
-		if (-e $ftp."/".$table.".txt.gz"){
-		  $wormbase->run_command("cp -f $ftp/$table.txt.gz /tmp/$table.txt.gz", $log);
+		if (-e $table.".txt.gz"){
+		  $wormbase->run_command("cp -f $table.txt.gz /tmp/$table.txt.gz", $log);
 		  $log->write_to("\tunzippping /tmp/$table.txt\n");
 		  $wormbase->run_command("gunzip -f /tmp/$table.txt.gz", $log);
 		}
 		
-		elsif (-e $ftp."/".$table.".txt"){
+		elsif (-e $table.".txt"){
 		  $log->write_to("\tgzip archive abscent....using $table.txt.\n");
-		  $wormbase->run_command("cp -f $ftp/$table.txt /tmp/$table.txt", $log);
+		  $wormbase->run_command("cp -f $table.txt /tmp/$table.txt", $log);
 		}
 
 		else {
-		  $log->log_and_die("Couldn't find $ftp/$table file to copy :(\n");
+		  $log->log_and_die("Couldn't find $table file to copy :(\n");
 		}
 		
 		# pfamseq table is subject to unannounced column re-ordering, so update the schema.
 		if ($table eq 'pfamseq') {
-		  if (-e $ftp.'/pfamseq.sql.gz'){
+		  if (-e 'pfamseq.sql.gz'){
 		    $log->write_to("\tupdating the pfamseq table schema\n");
                     $wormbase->run_command('echo "SET FOREIGN_KEY_CHECKS=0;">/tmp/pfamseq.sql',$log);
-		    $wormbase->run_command("zcat $ftp/pfamseq.sql.gz >> /tmp/pfamseq.sql", $log);
+		    $wormbase->run_command("zcat pfamseq.sql.gz >> /tmp/pfamseq.sql", $log);
                     $wormbase->run_command('echo "SET FOREIGN_KEY_CHECKS=1;">>/tmp/pfamseq.sql',$log);
 		    $wormbase->run_command("mysql -h ia64d -u wormadmin -p$pass worm_pfam < /tmp/pfamseq.sql", $log);
 		  }
