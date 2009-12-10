@@ -177,6 +177,7 @@ while( my $slice = shift @$slices) {
 
 	print STDERR "dumping ${\scalar @$features} Protein Align Features\n";
 	foreach my $feature(@$features){
+	    my $cigar_line = flipCigarReference($feature->cigar_string); # for Lincoln
 	    my $stripped_feature = {
 		hit_id      => $feature->hseqname,
 		target_id   => $feature->slice->seq_region_name,
@@ -189,7 +190,7 @@ while( my $slice = shift @$slices) {
 		p_value     => $feature->p_value,
 		dbid        => $feature->dbID,
 		logic_name  => $feature->analysis->logic_name,
-		cigar       => ($feature->strand > 0 ? $feature->cigar_string : reverse_cigar($feature->cigar_string)),
+		cigar       => ($feature->strand > 0 ? $cigar_line : reverse_cigar($cigar_line)),
 		feature_type=> 'protein_match',
 	    };
 	    push @{$blastx_features{$stripped_feature->{logic_name}}}, $stripped_feature;
@@ -206,6 +207,7 @@ while( my $slice = shift @$slices) {
 	$features=$slice->get_all_DnaAlignFeatures();
 	print STDERR "dumping ${\scalar @$features} DNA Align Features\n";
         foreach my $feature(@$features){
+	    my $cigar_line = flipCigarReference($feature->cigar_string); # for Lincoln
 	    my $stripped_feature = {
 		hit_id      => $feature->hseqname,
 		target_id   => $feature->slice->seq_region_name,
@@ -218,7 +220,7 @@ while( my $slice = shift @$slices) {
 		p_value     => $feature->p_value,
 		dbid        => $feature->dbID,
 		logic_name  => $feature->analysis->logic_name,
-		cigar       => ($feature->strand > 0 ? $feature->cigar_string : reverse_cigar($feature->cigar_string)),
+		cigar       => ($feature->strand > 0 ? $cigar_line : reverse_cigar($cigar_line)),
 		feature_type=> 'nucleotide_match',
 	    };
 	    print $outf dump_feature($stripped_feature);
@@ -257,6 +259,13 @@ sub cigar_to_almost_cigar {
     my $i=shift;
     $i=~s/(\d*)(\w)/$2$1 /g;
     return $i;
+}
+
+#convert refernece strand for Lincoln
+sub flipCigarReference {
+   my $i=shift;
+   $i=~tr/ID/DI/;
+   return $i;
 }
 
 # reverse cigar string
