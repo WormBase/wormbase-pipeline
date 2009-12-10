@@ -114,7 +114,7 @@ while (<LIST>) {
 	print ACE "Database UniProt UniProt_AC $ID\n";
 	print ACE "Database UniProt UniProtID $acc2id{$ID}\n" if $acc2id{$ID};
 
-	print ACE "Gene_name \"$swiss_id2gene{$othername}\"\n" if $swiss_id2gene{$othername};
+	print ACE "Gene_name \"$swiss_id2gene{$othername}\"\n" if (exists $swiss_id2gene{$othername});
 
       }
       elsif("$DB" eq 'H-INV'){
