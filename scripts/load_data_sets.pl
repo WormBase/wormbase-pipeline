@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl -w
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2009-12-09 15:37:28 $      
+# Last updated on: $Date: 2009-12-10 10:31:57 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -78,7 +78,6 @@ sub parse_misc_elegans_files {
 		       $wormbase->misc_dynamic.'/fosmids.ace'                   => 'vancouver_fosmids'     ,
 		       $wormbase->misc_dynamic.'/misc_21urna_homol.ace'         => '21uRNAs'               ,
 		       $wormbase->misc_dynamic.'/misc_Expression_pattern_homol.ace'  => 'Expression_patterns'     ,
-		       $wormbase->acefiles.'/ensembl_protein_info.ace'          => 'ensembl_proteins_info',
 		       $wormbase->misc_dynamic.'/misc_Tijsterman_G4.ace'         => 'Tijsterman_G4',
 		      );
 
@@ -115,7 +114,8 @@ sub parse_homol_data {
 		    "worm_ensembl_${species}_interpro_motif_info.ace",
 		    #other data
 		    "repeat_homologies.ace",
-		    "inverted_repeats.ace"
+		    "inverted_repeats.ace",
+		    "ensembl_protein_info.ace",
 		   );
 
   $log->write_to("\nLoading homol data\n==============================\n");
