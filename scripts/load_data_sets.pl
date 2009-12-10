@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl -w
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2009-12-10 10:31:57 $      
+# Last updated on: $Date: 2009-12-10 11:04:49 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -46,6 +46,7 @@ my @core_organisms = $wormbase->core_species;
 if( $species eq 'elegans') {
   &parse_misc_elegans_files	if $misc;
   &parse_homol_data    		if $homol;
+  &parse_elegans_homol_data     if $homol;
 } else {
   if(grep(/$species/, map(lc $_,  @core_organisms))){  #other core (tierII) species)
     &parse_homol_data           if $homol;
@@ -115,7 +116,6 @@ sub parse_homol_data {
 		    #other data
 		    "repeat_homologies.ace",
 		    "inverted_repeats.ace",
-		    "ensembl_protein_info.ace",
 		   );
 
   $log->write_to("\nLoading homol data\n==============================\n");
@@ -126,6 +126,24 @@ sub parse_homol_data {
     $wormbase->load_to_database($wormbase->autoace,$wormbase->acefiles."/$file",$tsuser, $log);
   }
 }
+
+sub parse_elegans_homol_data {
+
+  my @files2Load = (
+		    "ensembl_protein_info.ace",
+		   );
+
+  $log->write_to("\nLoading homol data\n==============================\n");
+  
+  foreach my $file ( @files2Load ) {
+    my $tsuser = substr($file,0,-4); #file name without ace
+    $log->write_to("\tloading $file -tsuser -$tsuser\n");
+    $wormbase->load_to_database($wormbase->autoace,$wormbase->acefiles."/$file",$tsuser, $log);
+  }
+
+
+}
+
 
 sub parse_briggsae_data {
 
