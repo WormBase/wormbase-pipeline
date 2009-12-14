@@ -915,7 +915,9 @@ sub check_file {
 	    !($line =~ /PTC01264/) && # BLAT_NEMBASE sequence in briggsae
 	    !($line =~ /CBN23456.2/) && # coding transcript in briggsae
 	    !($line =~ /RST3_519777/) && # RST in elegans
-	    !($line =~ /FF095578/) # BLAT_Caen_EST_OTHER in elegans
+	    !($line =~ /FF095578/) && # BLAT_Caen_EST_OTHER in elegans
+	    !($line =~ /"WBsf041392"/) && # segmental_duplication
+	    !($line =~ /"WBsf041396"/)    # segmental_duplication
 	   ) { 
 	  push @problems, "line $line_count:\n$line\nGFF feature is longer than $MAX_FEATURE_LENGTH bases ($feature_length bases)";
 # report all length errors
