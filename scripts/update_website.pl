@@ -7,8 +7,8 @@
 # A script to finish the last part of the weekly build by updating all of the
 # relevant WormBase and Wormpep web pages.
 #
-# Last updated by: $Author: ar2 $     
-# Last updated on: $Date: 2009-10-29 10:26:15 $      
+# Last updated by: $Author: gw3 $     
+# Last updated on: $Date: 2009-12-22 13:31:50 $      
 
 
 #################################################################################
@@ -137,15 +137,6 @@ my $log = Log_files->make_build_log($wb);
 # final bit of tidying up
 #########################
 
-unless ($test or $debug) {
-	# update 'current' symlink on dev site
-	$log->write_to("\nChanging 'current symbolic link to point to new release\n"); 	
-	chdir("$www") || $log->write_to("Couldn't chdir to $www\n");	
-	system("rm -f $wwwdata/WORMBASE/current") && croak "Couldn't remove 'current' symlink in the data directory\n";
-	system("cd  $wwwdata/WORMBASE/ && ln -s $WS_name current") && croak "Couldn't create new symlink in the data directory\n";
-        chdir("$www") || $log->write_to("Couldn't chdir to $www\n");
-}
-
 ##################
 # Check the files
 ##################
@@ -170,18 +161,6 @@ if ($all || $wormpep_diff) {
   $wb->check_file("$www/$WS_name/wormpep_diff.shtml", $log, 
 		  minsize => 1000,
 		  maxsize => 10000);
-}
-
-if ($all || $copyGFF) {
-  foreach my $gff_file (glob("$dbpath/CHECKS/*.gff")) {
-    my ($file_name, $dummy1, $dummy2) = fileparse($gff_file);
-    $wb->check_file("$www/$WS_name/GFF/$file_name", $log,
-		    samesize => $gff_file);
-  }
-  foreach my $chrom (@chrom) {
-    $wb->check_file("$wwwdata/WORMBASE/$WS_name/GFF/CHROMOSOME_${chrom}_clone_acc.gff", $log,
-		    minsize => 10000);
-  }
 }
 
 if ($all || $update_wormpep) {
