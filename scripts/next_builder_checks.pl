@@ -6,8 +6,8 @@
 # A simple script to send a check list to the person who will be performing the next
 # build to check the current build
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2009-09-23 10:20:59 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2009-12-23 11:09:29 $
 use strict;
 use warnings;
 use lib $ENV{'CVS_DIR'};
@@ -65,59 +65,70 @@ unless ($wb->species eq 'elegans') {
 
 $log->write_to("Checking ".$wb->full_name.": - ".$wb->orgdb."\n\n");
 my $ace;
+my $aceold;
 #only connect once and if required.
-if($wormpep or $clones or $pfam){ $ace= Ace->connect('-path' => $wormbase->orgdb);}
+if($wormpep or $clones or $pfam){ 
+  $ace    = Ace->connect('-path' => $wormbase->orgdb);
+  #$aceold = Ace->connect('-path' => $wormbase->database('currentdb'));
+  $aceold = Ace->connect('-path' => $wormbase->database('WS209'));
+}
 if($clones) {
-    $log->write_to("##################################\nChecking clones . .\n\n");
-    my @clones = qw(C25A1 F56A3 C04H5 B0432 C07A9 F30H5 C10C6 B0545 C12D8 K04F1 C02C6 AH9);
+  $log->write_to("##################################\nChecking clones . .\n\n");
+  my @clones = qw(C25A1 F56A3 C04H5 B0432 C07A9 F30H5 C10C6 B0545 C12D8 K04F1 C02C6 AH9);
 
-    #expected no of objects per type
-    my %data_types = ('Homol_data' => 11,
-		      'Feature_data' => 3,
-		      );
+  #expected no of objects per type
+  my %data_types = ('Homol_data' => 11,
+		    'Feature_data' => 3,
+		   );
 
-    foreach my $clone (@clones) {
+  foreach my $clone (@clones) {
     $log->write_to("checking clone $clone \n");	
-	#Check Homol_data
-	my $query = "find Homol_data $clone*wublastx*";
-	my $homols = $ace->fetch_many(-query => $query);   
+    my $query = "find Homol_data $clone*";
+    my @hd    = $ace->fetch(-query => $query);
+    my @hdold = $aceold->fetch(-query => $query);
     
-	my $hd;
-	my $count = 0;
-	while( $hd = $homols->next) {
-	    print $hd->name,"\n";
-	    $count++;
-	    if( defined $hd->Pep_homol(3) ) { # check for presence of a score.
-		#$log->write_to($hd->name." OK\n");
-	    }
-	    else{
-		$log->error("ERROR: ".$hd->name." missing data\n");
-	    }
+    &check_for_missing_data(\@hd, \@hdold, 'Homol_data');
+    
+    # check the blastx Homol_data
+    my $hd;
+    my $count = 0;
+    foreach my $hd (@hd) {
+      if ($hd->name =~ /wublastx/) {
+	print $hd->name,"\n";
+	$count++;
+	if (defined $hd->Pep_homol(3) ) { # check for presence of a score.
+	  #$log->write_to($hd->name." OK\n");
+	} else {
+	  $log->error("ERROR: ".$hd->name." missing data\n");
 	}
-	
-	if($count < 11 ) {
-	    $log->error("ERROR: $clone has stuff missing\n");
-	}
-	
-	#check Feature_data
-	$query = "find Feature_data $clone*";
-	$homols = $ace->fetch_many(-query => $query); 
-	
-	$count = 0;
-	while( $hd = $homols->next) {
-	    print $hd->name,"\n";
-	    $count++;
-	    if( scalar $hd->Feature(2)->row > 3 ) {
-		#$log->write_to($hd->name." OK\n");
-	    }
-	    else{
-		$log->error("ERROR: ".$hd->name." missing data\n");
-	    }
-	}
-	if($count < 3 ) {
-	    $log->error("ERROR: $clone has stuff missing\n");
-	}
+      }
     }
+    
+    if($count < 11 ) {
+      $log->error("ERROR: $clone has stuff missing\n");
+    }
+    
+    #check Feature_data
+    $query = "find Feature_data $clone*";
+    @hd    = $ace->fetch(-query => $query);
+    @hdold = $aceold->fetch(-query => $query);
+
+    &check_for_missing_data(\@hd, \@hdold, 'Feature_data');
+
+    $count = 0;
+    foreach my $hd (@hd) {
+      print $hd->name,"\n";
+      $count++;
+      if( scalar $hd->Feature(2)->row > 3 ) {
+	#$log->write_to($hd->name." OK\n");
+      } else {
+	$log->error("ERROR: ".$hd->name." missing data\n");
+      }
+    }
+    if($count < 3 ) {
+      $log->error("ERROR: $clone has stuff missing\n");
+    }
+  }
 }
 
 if ($seq) {
@@ -265,6 +276,28 @@ sub usage {
         system( 'perldoc', $0 );
         exit(0);
     }
+}
+
+##################################################################
+
+# check for missing data compared to currentdb, 
+# (see Perl Cookbook p.126)
+
+sub check_for_missing_data {
+
+  my ($hd_aref, $hdold_aref, $data_name) = @_;    
+
+  my %seen=();
+  my @oldonly=();
+  foreach my $hd (@{$hd_aref}) {$seen{$hd->name}=1} # get the name of objects in the clone in the Build
+  foreach my $hdold (@{$hdold_aref}) {
+    unless ($seen{$hdold->name}) {push(@oldonly, $hdold->name)} # compare them to the objects in the clone in currentDB
+  }
+  if (@oldonly) {
+    foreach my $hd (@oldonly) {
+      $log->error("ERROR: ".$hd->name." missing $data_name data compared to currentdb\n");
+    }
+  }
 }
 
 ##################################################################
