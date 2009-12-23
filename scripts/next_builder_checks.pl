@@ -7,7 +7,7 @@
 # build to check the current build
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2009-12-23 11:09:29 $
+# Last updated on: $Date: 2009-12-23 11:11:08 $
 use strict;
 use warnings;
 use lib $ENV{'CVS_DIR'};
@@ -68,9 +68,10 @@ my $ace;
 my $aceold;
 #only connect once and if required.
 if($wormpep or $clones or $pfam){ 
+  print "Conecting to Ace\n";
   $ace    = Ace->connect('-path' => $wormbase->orgdb);
-  #$aceold = Ace->connect('-path' => $wormbase->database('currentdb'));
-  $aceold = Ace->connect('-path' => $wormbase->database('WS209'));
+  print "Conecting to currentdb Ace\n";
+  $aceold = Ace->connect('-path' => $wormbase->database('currentdb'));
 }
 if($clones) {
   $log->write_to("##################################\nChecking clones . .\n\n");
