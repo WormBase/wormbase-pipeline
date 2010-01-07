@@ -1029,6 +1029,195 @@ Join_blocks
 Remark   "wublastx search of C. elegans genomic clones vs proteins from reduced TrEmbl dataset"
 Gapped
 
+
+
+			////////////
+			// RNASeq //
+			////////////
+
+
+Method : "RNASeq_Hillier.Adult_spe-9"
+Colour   BLACK
+Show_up_strand
+Score_by_width
+Score_bounds     1.000000 300.000000
+Overlap
+Blixem_N
+Join_blocks
+GFF_source	"RNASeq"
+GFF_feature	"overlapping_EST_set"
+Remark "This is the Adult_spe-9 read set from the Hillier & Waterston 2009 paper."
+
+Method : "RNASeq_Hillier.L1"
+Colour   BLACK
+Show_up_strand
+Score_by_width
+Score_bounds     1.000000 300.000000
+Overlap
+Blixem_N
+Join_blocks
+GFF_source	"RNASeq"
+GFF_feature	"overlapping_EST_set"
+Remark "This is the L1 read set from the Hillier & Waterston 2009 paper."
+
+Method : "RNASeq_Hillier.L2"
+Colour   BLACK
+Show_up_strand
+Score_by_width
+Score_bounds     1.000000 300.000000
+Overlap
+Blixem_N
+Join_blocks
+GFF_source	"RNASeq"
+GFF_feature	"overlapping_EST_set"
+Remark "This is the L2 read set from the Hillier & Waterston 2009 paper."
+
+Method : "RNASeq_Hillier.L3"
+Colour   BLACK
+Show_up_strand
+Score_by_width
+Score_bounds     1.000000 300.000000
+Overlap
+Blixem_N
+Join_blocks
+GFF_source	"RNASeq"
+GFF_feature	"overlapping_EST_set"
+Remark "This is the L3 read set from the Hillier & Waterston 2009 paper."
+
+Method : "RNASeq_Hillier.L4"
+Colour   BLACK
+Show_up_strand
+Score_by_width
+Score_bounds     1.000000 300.000000
+Overlap
+Blixem_N
+Join_blocks
+GFF_source	"RNASeq"
+GFF_feature	"overlapping_EST_set"
+Remark "This is the L4 read set from the Hillier & Waterston 2009 paper."
+
+Method : "RNASeq_Hillier.Young_Adult"
+Colour   BLACK
+Show_up_strand
+Score_by_width
+Score_bounds     1.000000 300.000000
+Overlap
+Blixem_N
+Join_blocks
+GFF_source	"RNASeq"
+GFF_feature	"overlapping_EST_set"
+Remark "This is the Young_Adult read set from the Hillier & Waterston 2009 paper."
+
+Method : "RNASeq_Hillier.dauer_daf-2"
+Colour   BLACK
+Show_up_strand
+Score_by_width
+Score_bounds     1.000000 300.000000
+Overlap
+Blixem_N
+Join_blocks
+GFF_source	"RNASeq"
+GFF_feature	"overlapping_EST_set"
+Remark "This is the dauer_daf-2 read set from the Hillier & Waterston 2009 paper."
+
+Method : "RNASeq_Hillier.dauer_entry_daf-2"
+Colour   BLACK
+Show_up_strand
+Score_by_width
+Score_bounds     1.000000 300.000000
+Overlap
+Blixem_N
+Join_blocks
+GFF_source	"RNASeq"
+GFF_feature	"overlapping_EST_set"
+Remark "This is the dauer_entry_daf-2 read set from the Hillier & Waterston 2009 paper."
+
+Method : "RNASeq_Hillier.dauer_exit_daf-2"
+Colour   BLACK
+Show_up_strand
+Score_by_width
+Score_bounds     1.000000 300.000000
+Overlap
+Blixem_N
+Join_blocks
+GFF_source	"RNASeq"
+GFF_feature	"overlapping_EST_set"
+Remark "This is the dauer_exit_daf-2 read set from the Hillier & Waterston 2009 paper."
+
+Method : "RNASeq_Hillier.early_embryo"
+Colour   BLACK
+Show_up_strand
+Score_by_width
+Score_bounds     1.000000 300.000000
+Overlap
+Blixem_N
+Join_blocks
+GFF_source	"RNASeq"
+GFF_feature	"overlapping_EST_set"
+Remark "This is the early_embryo read set from the Hillier & Waterston 2009 paper."
+
+Method : "RNASeq_Hillier.embryo_him-8"
+Colour   BLACK
+Show_up_strand
+Score_by_width
+Score_bounds     1.000000 300.000000
+Overlap
+Blixem_N
+Join_blocks
+GFF_source	"RNASeq"
+GFF_feature	"overlapping_EST_set"
+Remark "This is the embryo_him-8 read set from the Hillier & Waterston 2009 paper."
+
+Method : "RNASeq_Hillier.late_embryo"
+Colour   BLACK
+Show_up_strand
+Score_by_width
+Score_bounds     1.000000 300.000000
+Overlap
+Blixem_N
+Join_blocks
+GFF_source	"RNASeq"
+GFF_feature	"overlapping_EST_set"
+Remark "This is the late_embryo read set from the Hillier & Waterston 2009 paper."
+
+Method : "RNASeq_Hillier.lin-35_n745_mid-L1"
+Colour   BLACK
+Show_up_strand
+Score_by_width
+Score_bounds     1.000000 300.000000
+Overlap
+Blixem_N
+Join_blocks
+GFF_source	"RNASeq"
+GFF_feature	"overlapping_EST_set"
+Remark "This is the lin-35_n745_mid-L1 read set from the Hillier & Waterston 2009 paper."
+
+Method : "RNASeq_Hillier.male_mid-L4"
+Colour   BLACK
+Show_up_strand
+Score_by_width
+Score_bounds     1.000000 300.000000
+Overlap
+Blixem_N
+Join_blocks
+GFF_source	"RNASeq"
+GFF_feature	"overlapping_EST_set"
+Remark "This is the male_mid-L4 read set from the Hillier & Waterston 2009 paper."
+
+Method : "RNASeq_Hillier.Hillier"
+Colour   BLACK
+Show_up_strand
+Score_by_width
+Score_bounds     1.000000 300.000000
+Overlap
+Blixem_N
+Join_blocks
+GFF_source	"RNASeq"
+GFF_feature	"overlapping_EST_set"
+Remark "Method for the Camace version of the Hillier read data which is all collapsed into one method."
+
+
+
  
 			///////////
 			// OTHER //
@@ -2000,5 +2189,47 @@ Right_priority   2.93
 Method : "RNASEQ.Hillier"
 Right_priority   2.93
 
-Method : "Genome_sequence_error"
-Right_priority   2.1
+Method : "RNASeq_Hillier.Adult_spe-9"
+Right_priority   3.37
+
+Method : "RNASeq_Hillier.L1"
+Right_priority   3.37
+
+Method : "RNASeq_Hillier.L2"
+Right_priority   3.37
+
+Method : "RNASeq_Hillier.L3"
+Right_priority   3.37
+
+Method : "RNASeq_Hillier.L4"
+Right_priority   3.37
+
+Method : "RNASeq_Hillier.Young_Adult"
+Right_priority   3.37
+
+Method : "RNASeq_Hillier.dauer_daf-2"
+Right_priority   3.37
+
+Method : "RNASeq_Hillier.dauer_entry_daf-2"
+Right_priority   3.37
+
+Method : "RNASeq_Hillier.dauer_exit_daf-2"
+Right_priority   3.37
+
+Method : "RNASeq_Hillier.early_embryo"
+Right_priority   3.37
+
+Method : "RNASeq_Hillier.embryo_him-8"
+Right_priority   3.37
+
+Method : "RNASeq_Hillier.late_embryo"
+Right_priority   3.37
+
+Method : "RNASeq_Hillier.lin-35_n745_mid-L1"
+Right_priority   3.37
+
+Method : "RNASeq_Hillier.male_mid-L4"
+Right_priority   3.37
+
+
+
