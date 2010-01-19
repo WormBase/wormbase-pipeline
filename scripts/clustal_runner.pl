@@ -194,9 +194,8 @@ sub print_alignment{
   print $aligner $aln;
   
   #my $calign = _postprocess($alignString);
-  my $calign=$alignStringi;
 
-  return "<table border='0'>$header</table><pre>$calign</pre>";
+  return "<table border='0'>$header</table><pre>$alignString</pre>";
 }
 
 # from the website
