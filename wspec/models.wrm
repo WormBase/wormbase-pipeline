@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: ar2 $
-// Last edited on: $Date: 2009-12-09 17:09:41 $
+// Last edited on: $Date: 2010-01-20 17:09:15 $
 
 
 ////////////////////////
@@ -419,6 +419,9 @@
 			Compound	Text
                 Phenotype ?Phenotype XREF Rearrangement #Phenotype_info
 		Balances ?Map #Balancer
+		Marked By_variation ?Variation XREF Marked_rearrangement
+		       By_transgene ?Transgene XREF Marked_rearrangement
+		       By_other ?Text
 //	possibility to refer to other Intervals to describe a complex rearrangement
 //	for the worm this is not too necessary, but important for fly and mouse
 //	or perhaps there should be another class Complex_Rear that refers to
@@ -429,6 +432,8 @@
 				Person ?Person
 				Date DateType
 				Mutagen UNIQUE Text UNIQUE Text // Text is dose
+				Source_rearrangement  ?Rearrangement XREF Derived_rearrangement
+				Derived_rearrangement ?Rearrangement XREF Source_rearrangement
                 Map     ?Map XREF Rearrangement #Map_position
 		Positive Gene_inside  ?Gene  XREF Inside_rearr #Evidence
 			 Locus_inside ?Locus XREF Inside_rearr ?Author
@@ -444,6 +449,7 @@
 		Display	Hide_under UNIQUE ?Rearrangement XREF Hides
 			Hides ?Rearrangement	// no XREF on purpose
 		Location ?Laboratory #Lab_Location
+		URL Text
 	        Strain   ?Strain XREF Rearrangement
         	Reference ?Paper XREF Rearrangement
 
@@ -729,6 +735,7 @@
 	  From_analysis ?Analysis				      // Reference an analysis
 	  Variation_evidence ?Variation				      // Explicitly record variation from which IMP manual GO annotations are made
 	  Mass_spec_evidence ?Mass_spec_peptide
+	  Sequence_evidence ?Sequence				      // for sequence data that hasn't been submitted to a public resource
 
 ////////////////////////////////////////////////////////
 //
@@ -1435,9 +1442,9 @@
                   Site_values      Text UNIQUE Float REPEAT
                   Threshold        Float
                   Associated_feature ?Feature XREF Associated_with_Position_Matrix #Evidence
+                  Sites_used Int
 		  Derived_from_matrix ?Position_Matrix
                   Remark ?Text  #Evidence
-
 
 ?Oligo  Sequence UNIQUE Text  // verbatim sequence 
         Length UNIQUE Int
@@ -2057,7 +2064,8 @@
 		Phenotype ?Phenotype XREF Transgene #Phenotype_info // [2006-04-20 ar2] changed for Carols Phenotype changes
 		Rescue ?Gene XREF Rescued_by_Transgene ?Variation XREF Rescued_by_Transgene
 		Expr_pattern ?Expr_pattern XREF Transgene                                        // Related Expr_pattern
-		Marker_for   ?Text #Evidence//Marker Summary
+		Marker_for   ?Text #Evidence //Marker Summary
+		Marked_rearrangement ?Rearrangement XREF By_transgene
 		Gene_regulation ?Gene_regulation XREF Transgene
 		Interactor ?Interaction
 		Reference ?Paper XREF Transgene                                                  // papers refered to the transgene.
@@ -2621,27 +2629,24 @@
 
 
 ?Paper  Original_timestamp Datetype // temporary tag in transition period [krb 040223]
-	Name    CGC_name ?Paper_name XREF CGC_name_for
-		PMID     ?Paper_name XREF PMID_for
-		Medline_name ?Paper_name XREF Medline_name_for
-		Meeting_abstract ?Paper_name XREF Meeting_abstract_name
-		WBG_abstract    ?Paper_name XREF WBG_abstract_name
-		Other_name ?Paper_name XREF Other_name_for // e.g. agriola etc ...
+	Name ?Text
+	DB_info Database ?Database ?Database_field ?Accession_number     //used for storing PubMed
 	History Merged_into UNIQUE ?Paper XREF Acquires_merge
 	        Acquires_merge ?Paper XREF Merged_into
 	Status  Valid
 		Invalid
 	Nematode_paper ?Species // for flagging worm specific papers, ?Species part is optional
-	Erratum #Paper
+ 	Erratum_in	?Paper
+ 	Erratum_for	?Paper
 	Reference       Title UNIQUE ?Text
-                        Journal UNIQUE ?Journal XREF Paper
+                        Journal UNIQUE Text
                         Publisher UNIQUE Text
                         Editor ?Text            //used for books put in as whole objects
                         Page  UNIQUE  Text UNIQUE Text
                         Volume UNIQUE Text Text
-                        Year UNIQUE Datetype   //changed from Int for Tristan to help WormBook links
-                        In_book #Paper
+                        Year UNIQUE Text         //YYYY-MM-DD or YYYY-MM
                         Contained_in ?Paper XREF Contains       // old form
+			Contains ?Paper XREF Contained_in
         Author ?Author XREF Paper #Affiliation
         Person ?Person XREF Paper #Evidence
 	Describes_analysis ?Analysis XREF Reference
@@ -2649,10 +2654,31 @@
         Affiliation Text        // Authors' affiliation if available
         Brief_citation UNIQUE Text
         Abstract ?LongText
-        Type UNIQUE Text        //meaning review, article, chapter,
-                                //monograph, news, book,
-                                //meeting_abstract
-        Contains ?Paper XREF Contained_in
+	URL Text
+        Type	Journal_article	#Evidence
+ 		Review	#Evidence
+ 		Comment	#Evidence
+ 		News	#Evidence
+ 		Letter	#Evidence
+ 		Editorial	#Evidence
+ 		Congresses	#Evidence
+ 		Historical_article	#Evidence
+ 		Biography	#Evidence
+ 		Interview	#Evidence
+ 		Lectures	#Evidence
+ 		Interactive_tutorial	#Evidence
+ 		Retracted_publication	#Evidence
+  		Technical_report	#Evidence
+ 		Directory	#Evidence
+ 		Monograph	#Evidence
+ 		Published_erratum	#Evidence
+ 		Meeting_abstract	#Evidence
+ 		Gazette_abstract	#Evidence
+ 		Book_chapter	#Evidence
+ 		Book	#Evidence
+ 		Email	#Evidence
+ 		WormBook	#Evidence
+ 		Other	#Evidence
         Refers_to Gene ?Gene XREF Reference #Evidence
 		  Locus ?Locus XREF Reference #Evidence
                   Allele ?Variation XREF Reference #Evidence
@@ -2684,18 +2710,9 @@
 		  YH ?YH XREF Reference ?Text
 		  Interaction ?Interaction XREF Paper
 		  Mass_spec_experiment ?Mass_spec_experiment XREF Reference
+	Curation_pipeline  Phenotype2GO
         Keyword ?Keyword
 	Remark  ?Text   #Evidence
-
-// new supporting class to index various paper names
-
-?Paper_name CGC_name_for ?Paper XREF CGC_name
-            PMID_for ?Paper XREF PMID
-            Medline_name_for ?Paper XREF Medline_name
-            Meeting_abstract_name ?Paper XREF Meeting_abstract
-            WBG_abstract_name     ?Paper XREF WBG_abstract
-            Other_name_for ?Paper XREF Other_name
-
 
 
 #Affiliation Affiliation_address UNIQUE Text
@@ -2893,6 +2910,7 @@
                                  In_pos_neg_data ?Pos_neg_data
                                 // these are for when the locus is mapped
 		    Rescued_by_transgene ?Transgene	 
+		    Marked_rearrangement ?Rearrangement XREF By_variation
 	   Description Phenotype ?Phenotype XREF Variation #Phenotype_info
                        Phenotype_remark ?Text #Evidence
                        Recessive
