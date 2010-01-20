@@ -234,7 +234,7 @@ sub load_data {
 # load information to $database if -load is specified
 $wormbase->load_to_database("$database", "$output", 'batch_merge.pl', $log, undef, 1);
 $log->write_to("5) Loaded $output into $database\n\n");
-$wormbase->run_command("rm $output\n");
+$wormbase->run_command("mv $output /nfs/disk100/wormpub/DATABASES/geneace/NAMEDB_Files/BACKUPS/$output\n");
 $log->write_to("6) Output file has been cleaned away like a good little fellow\n\n");
 print "Finished!!!!\n";
 }

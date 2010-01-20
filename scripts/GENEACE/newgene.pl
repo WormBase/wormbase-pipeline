@@ -6,8 +6,8 @@
 #
 # simple script for creating new (sequence based) Gene objects 
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2009-11-09 11:06:08 $
+# Last edited by: $Author: pad $
+# Last edited on: $Date: 2010-01-20 16:50:43 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -179,7 +179,7 @@ if ($load){
   open (GENEACE,"| $tace -tsuser newgene $database") || die "Failed to open pipe to $database\n";
   print GENEACE $command;
   close GENEACE;
-  $wormbase->run_command("rm $outfile\n");
+  $wormbase->run_command("mv $outfile /nfs/disk100/wormpub/DATABASES/geneace/NAMEDB_Files/BACKUPS/$output\n");
   print "Output file has been cleaned away like a good little fellow\n";
 }
 

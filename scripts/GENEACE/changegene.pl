@@ -7,7 +7,7 @@
 # simple script for changing class of gene objects (e.g. CDS->Pseudogene)
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2009-08-17 11:26:59 $
+# Last edited on: $Date: 2010-01-20 16:50:45 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -147,7 +147,7 @@ close(OUT);
 
 # load information to geneace if -load is specified
 $wormbase->load_to_database($database, "$outfile", 'changegene', $log, undef, 1 ) if $load;
-$wormbase->run_command("rm $outfile\n") if $load;
+$wormbase->run_command("mv $outfile /nfs/disk100/wormpub/DATABASES/geneace/NAMEDB_Files/BACKUPS/$outfile\n") if $load;
 print "Output file has been cleaned away like a good little fellow\n" if $load;
 $log->mail;
 

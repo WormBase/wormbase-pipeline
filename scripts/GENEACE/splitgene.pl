@@ -8,7 +8,7 @@
 # existing gene 
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2009-03-13 11:52:33 $
+# Last edited on: $Date: 2010-01-20 16:50:44 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -107,7 +107,7 @@ close(OUT);
 
 # load information to geneace if -load is specified
 $wormbase->load_to_database($database, "$outfile", 'split_gene') if $load;
-$wormbase->run_command("rm $outfile\n") if $load;
+$wormbase->run_command("mv $outfile /nfs/disk100/wormpub/DATABASES/geneace/NAMEDB_Files/BACKUPS/$outfile\n") if $load;
 print "Output file has been cleaned away like a good little fellow\n" if $load;
 print "Finished!!!!\n";
 exit(0);
