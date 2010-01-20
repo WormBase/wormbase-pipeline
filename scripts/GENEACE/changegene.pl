@@ -7,7 +7,7 @@
 # simple script for changing class of gene objects (e.g. CDS->Pseudogene)
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2010-01-20 16:50:45 $
+# Last edited on: $Date: 2010-01-20 17:44:33 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -78,11 +78,16 @@ my $database = $wormbase->database('geneace');
 my $db = Ace->connect(-path  => $database,
 		      -program =>$tace) || do { print "Connection failure: ",Ace->error; die();};
 
-my $outfile;
-if (!$id) {$outfile = "$database/NAMEDB_Files/changegene_".&seq2gene($seq).".ace";}
-elsif ($id) {$outfile = "$database/NAMEDB_Files/changegene_".$id.".ace";}
-else {$outfile = "$database/NAMEDB_Files/changegene_".$seq.".ace";}
+my $outdir = $database."/NAMEDB_Files/";
+my $backupsdir = $outdir."BACKUPS/";
+my $outname;
+if (!$id) {$outname = "changegene_".&seq2gene($seq).".ace";}
+elsif ($id) {$outname = "changegene_".$id.".ace";}
+else {$outname = "changegene_".$seq.".ace";}
+
+my $outfile = "$outdir"."$outname";
 if (-e $outfile) {print "Warning this gene has probably already been processed.\n";}
+
 
 open(OUT, ">$outfile") || die "Can't write to output file $outfile \n";
 
@@ -147,7 +152,7 @@ close(OUT);
 
 # load information to geneace if -load is specified
 $wormbase->load_to_database($database, "$outfile", 'changegene', $log, undef, 1 ) if $load;
-$wormbase->run_command("mv $outfile /nfs/disk100/wormpub/DATABASES/geneace/NAMEDB_Files/BACKUPS/$outfile\n") if $load;
+$wormbase->run_command("mv $outfile $backupsdir/$outname\n") if $load;
 print "Output file has been cleaned away like a good little fellow\n" if $load;
 $log->mail;
 

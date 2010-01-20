@@ -7,7 +7,7 @@
 # simple script for creating new (sequence based) Gene objects 
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2010-01-20 16:52:44 $
+# Last edited on: $Date: 2010-01-20 17:44:33 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -124,8 +124,12 @@ $database = glob("~wormpub/DATABASES/geneace") if $test;
 my $db = Ace->connect(-path  => $database,
 		      -program =>$tace) || do { print "Connection failure: ",Ace->error; die();};
 
-my $outfile = "$database/NAMEDB_Files/newgene_".$id.".ace";
+my $outdir = $database."/NAMEDB_Files/";
+my $backupsdir = $outdir."BACKUPS/";
+my $outname = "newgene_".$id.".ace";
+my $outfile = "$outdir"."$outname";
 if (-e $outfile) {print "Warning this split has probably already been processed.\n";}
+
 
 open(OUT, ">$outfile") || die "Can't write to output file\n";
 
@@ -179,7 +183,7 @@ if ($load){
   open (GENEACE,"| $tace -tsuser newgene $database") || die "Failed to open pipe to $database\n";
   print GENEACE $command;
   close GENEACE;
-  $wormbase->run_command("mv $outfile /nfs/disk100/wormpub/DATABASES/geneace/NAMEDB_Files/BACKUPS/$outfile\n");
+  $wormbase->run_command("mv $outfile $backupsdir"."$outname\n");
   print "Output file has been cleaned away like a good little fellow\n";
 }
 

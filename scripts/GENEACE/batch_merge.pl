@@ -69,7 +69,11 @@ $log->write_to("TEST mode is ON!\n\n") if $test;
 
 my $ace = Ace->connect('-path', $database) or $log->log_and_die("cant open $database: $!\n");
 
-my $output = $database."/NAMEDB_Files/batch_merge.ace";
+
+my $outdir = $database."/NAMEDB_Files/";
+my $backupsdir = $outdir."BACKUPS/";
+my $outname = "batch_merge.ace";
+my $output = "$outdir"."$outname";
 
 my %gene_versions; # remember the latest version used in all genes altered in case a gene is being merged in to more than once
 
@@ -234,7 +238,7 @@ sub load_data {
 # load information to $database if -load is specified
 $wormbase->load_to_database("$database", "$output", 'batch_merge.pl', $log, undef, 1);
 $log->write_to("5) Loaded $output into $database\n\n");
-$wormbase->run_command("mv $output /nfs/disk100/wormpub/DATABASES/geneace/NAMEDB_Files/BACKUPS/$output\n");
+$wormbase->run_command("mv $output $backupsdir"."$outname". $wormbase->rundate. "\n"); #append date to filename when moving.
 $log->write_to("6) Output file has been cleaned away like a good little fellow\n\n");
 print "Finished!!!!\n";
 }

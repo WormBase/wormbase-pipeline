@@ -8,7 +8,7 @@
 # existing gene 
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2010-01-20 16:50:44 $
+# Last edited on: $Date: 2010-01-20 17:44:33 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -84,7 +84,12 @@ elsif (defined$load) { print "Update will be loaded into $database\n";}
 my $db = Ace->connect(-path  => $database,
 		      -program =>$tace) || do { print "Connection failure: ",Ace->error; die();};
 
-my $outfile = "$database/NAMEDB_Files/splitgene_".$id.".ace";
+my $outdir = $database."/NAMEDB_Files/";
+my $backupsdir = $outdir."BACKUPS/";
+my $outname = "splitgene_".$id.".ace";
+my $outfile = "$outdir"."$outname";
+
+
 if (-e $outfile) {print "Warning this split has probably already been processed.\n";}
 
 open(OUT, ">$outfile") || die "Can't write to output file\n";
@@ -107,7 +112,7 @@ close(OUT);
 
 # load information to geneace if -load is specified
 $wormbase->load_to_database($database, "$outfile", 'split_gene') if $load;
-$wormbase->run_command("mv $outfile /nfs/disk100/wormpub/DATABASES/geneace/NAMEDB_Files/BACKUPS/$outfile\n") if $load;
+$wormbase->run_command("mv $outfile $backupsdir/$outname\n") if $load;
 print "Output file has been cleaned away like a good little fellow\n" if $load;
 print "Finished!!!!\n";
 exit(0);
