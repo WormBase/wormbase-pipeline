@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: ar2 $
-// Last edited on: $Date: 2010-01-20 17:09:15 $
+// Last edited on: $Date: 2010-01-25 09:59:22 $
 
 
 ////////////////////////
@@ -2627,26 +2627,28 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-
 ?Paper  Original_timestamp Datetype // temporary tag in transition period [krb 040223]
-	Name ?Text
-	DB_info Database ?Database ?Database_field ?Accession_number     //used for storing PubMed
+	Name    CGC_name ?Paper_name XREF CGC_name_for
+		PMID     ?Paper_name XREF PMID_for
+		Medline_name ?Paper_name XREF Medline_name_for
+		Meeting_abstract ?Paper_name XREF Meeting_abstract_name
+		WBG_abstract    ?Paper_name XREF WBG_abstract_name
+		Other_name ?Paper_name XREF Other_name_for // e.g. agriola etc ...
 	History Merged_into UNIQUE ?Paper XREF Acquires_merge
 	        Acquires_merge ?Paper XREF Merged_into
 	Status  Valid
 		Invalid
 	Nematode_paper ?Species // for flagging worm specific papers, ?Species part is optional
- 	Erratum_in	?Paper
- 	Erratum_for	?Paper
+	Erratum #Paper
 	Reference       Title UNIQUE ?Text
-                        Journal UNIQUE Text
+                        Journal UNIQUE ?Journal XREF Paper
                         Publisher UNIQUE Text
                         Editor ?Text            //used for books put in as whole objects
                         Page  UNIQUE  Text UNIQUE Text
                         Volume UNIQUE Text Text
-                        Year UNIQUE Text         //YYYY-MM-DD or YYYY-MM
+                        Year UNIQUE Datetype   //changed from Int for Tristan to help WormBook links
+                        In_book #Paper
                         Contained_in ?Paper XREF Contains       // old form
-			Contains ?Paper XREF Contained_in
         Author ?Author XREF Paper #Affiliation
         Person ?Person XREF Paper #Evidence
 	Describes_analysis ?Analysis XREF Reference
@@ -2654,31 +2656,10 @@
         Affiliation Text        // Authors' affiliation if available
         Brief_citation UNIQUE Text
         Abstract ?LongText
-	URL Text
-        Type	Journal_article	#Evidence
- 		Review	#Evidence
- 		Comment	#Evidence
- 		News	#Evidence
- 		Letter	#Evidence
- 		Editorial	#Evidence
- 		Congresses	#Evidence
- 		Historical_article	#Evidence
- 		Biography	#Evidence
- 		Interview	#Evidence
- 		Lectures	#Evidence
- 		Interactive_tutorial	#Evidence
- 		Retracted_publication	#Evidence
-  		Technical_report	#Evidence
- 		Directory	#Evidence
- 		Monograph	#Evidence
- 		Published_erratum	#Evidence
- 		Meeting_abstract	#Evidence
- 		Gazette_abstract	#Evidence
- 		Book_chapter	#Evidence
- 		Book	#Evidence
- 		Email	#Evidence
- 		WormBook	#Evidence
- 		Other	#Evidence
+        Type UNIQUE Text        //meaning review, article, chapter,
+                                //monograph, news, book,
+                                //meeting_abstract
+        Contains ?Paper XREF Contained_in
         Refers_to Gene ?Gene XREF Reference #Evidence
 		  Locus ?Locus XREF Reference #Evidence
                   Allele ?Variation XREF Reference #Evidence
@@ -2710,9 +2691,21 @@
 		  YH ?YH XREF Reference ?Text
 		  Interaction ?Interaction XREF Paper
 		  Mass_spec_experiment ?Mass_spec_experiment XREF Reference
-	Curation_pipeline  Phenotype2GO
         Keyword ?Keyword
 	Remark  ?Text   #Evidence
+
+// new supporting class to index various paper names
+
+?Paper_name CGC_name_for ?Paper XREF CGC_name
+            PMID_for ?Paper XREF PMID
+            Medline_name_for ?Paper XREF Medline_name
+            Meeting_abstract_name ?Paper XREF Meeting_abstract
+            WBG_abstract_name     ?Paper XREF WBG_abstract
+            Other_name_for ?Paper XREF Other_name
+
+
+
+
 
 
 #Affiliation Affiliation_address UNIQUE Text
