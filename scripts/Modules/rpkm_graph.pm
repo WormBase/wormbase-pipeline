@@ -1,7 +1,6 @@
 package rpkm_graph;use strict;
 use DBI;
 use DBD::mysql;
-use lib "/software/worm/lib/perl5";
 use GD::Graph::lines;
 
 my @STAGES = qw (SRX004863 SRX004865 SRX001872 SRX001875 SRX001874 SRX001873);
