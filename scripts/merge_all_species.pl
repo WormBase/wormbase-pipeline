@@ -1,7 +1,7 @@
 #/software/bin/perl -w
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2009-10-22 09:28:35 $
+# Last updated by: $Author: pad $
+# Last updated on: $Date: 2010-01-28 10:03:14 $
 
 #################################################################################
 # Variables                                                                     #
@@ -46,6 +46,7 @@ my $log = Log_files->make_build_log($wormbase);
 $log->write_to("hacked version of merge_all_species\n\n");
 
 my %accessors = $wormbase->species_accessors;
+my $WS_name         = $wormbase->get_wormbase_version_name();
 
 # move all the old MERGE files out of the way
 $log->write_to("\nRemove the old MERGE ace files . . .\n");
@@ -57,7 +58,6 @@ foreach my $spDB (values %accessors) {
     }
   }
 }
-
 
 # dump out the files in parallel.
 my $lsf =  LSF::JobManager->new();
@@ -130,15 +130,24 @@ foreach my $spDB (values %accessors) {
 $log->write_to("\nNow loading BLAST, protein and repeat data . . .\n");
 foreach my $spDB (values %accessors) {
   my $species = $spDB->species;
-  $log->write_to("  Load BLAST from $species . . .\n");
+  $log->write_to("  Copy BLAST data from $species . . .\n");
+  my $ftpdir = $wormbase->ftp_site."/StLouis_Blast_data/";
   my @blastfiles = qw( SPECIES_blastp.ace SPECIES_blastx.ace worm_ensembl_SPECIES_interpro_motif_info.ace worm_ensembl_SPECIES_motif_info.ace repeat_homologies.ace inverted_repeats.ace pepace.ace);
   foreach my $f (@blastfiles){
     my $file = $f;		# don't use $f as it is a reference to the array element
     $file =~ s/SPECIES/$species/;
     if (-e $spDB->acefiles."/$file") {
-      $log->write_to("    loading $file\n");
-      $wormbase->load_to_database($wormbase->orgdb, $spDB->acefiles."/$file", "merge_all_species", $log);
-    } else {
+      if ($file =~ /blastx.ace/){
+	$log->write_to("    copying $file\n");
+	my $acefiles_dir = $spDB->acefiles;
+	$wormbase->run_command("scp ".$acefiles_dir."/".$file." ".$ftpdir."/".$file."_".$WS_name, $log);
+      }
+      else {
+	$log->write_to("    loading $file\n");
+	$wormbase->load_to_database($wormbase->orgdb, $spDB->acefiles."/$file", "merge_all_species", $log);
+      } 
+    } 
+    else {
       $log->error("ERROR: Can't find $file\n");
     }
   }
