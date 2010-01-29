@@ -6,8 +6,8 @@
 #
 # Usage : autoace_builder.pl [-options]
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2009-12-22 14:55:27 $
+# Last edited by: $Author: pad $
+# Last edited on: $Date: 2010-01-29 11:26:48 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -32,7 +32,7 @@ my $gene_span;
 my ( $load, $tsuser, $map_features, $remap_misc_dynamic, $map, $transcripts, $intergenic, $misc_data_sets, $homol_data_sets, $nem_contigs);
 my ( $GO_term, $rna , $dbcomp, $confirm, $operon ,$repeats, $remarks, $names, $treefam, $cluster);
 my ( $utr, $agp, $gff_munge, $extras , $ontologies, $interpolate, $check);
-my ( $data_check, $buildrelease, $public,$finish_build, $gffdb, $release, $user, $kegg);
+my ( $data_check, $buildrelease, $public,$finish_build, $gffdb, $autoace, $release, $user, $kegg);
 
 
 GetOptions(
@@ -83,6 +83,7 @@ GetOptions(
 	   'public'         => \$public,
 	   'finish_build'   => \$finish_build,
 	   'gffdb'          => \$gffdb,
+	   'autoace'        => \$autoace,
 	   'release'        => \$release,
 	   'check'    	    => \$check,
 	   'data_check'     => \$data_check,
@@ -191,7 +192,12 @@ $wormbase->run_script( "build_release_files.pl"                  , $log) if $bui
 $wormbase->run_script( "distribute_letter.pl"                    , $log) if $release;
 
 $wormbase->run_script("finish_build.pl"                          , $log) if $finish_build;
-$wormbase->run_command("update_gffdb.csh"                         , $log) if $gffdb;
+# Update the gffdb to reflect the database being built.
+if  ($gffdb && $autoace) {
+  $wormbase->run_command("update_gffdb.csh -autoace"               , $log);
+}
+else {$wormbase->run_command("update_gffdb.csh"                  , $log) if $gffdb;
+}
 
 if ($load) {
     $log->write_to("loading $load to ".$wormbase->autoace."\n");
