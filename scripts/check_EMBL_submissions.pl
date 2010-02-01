@@ -7,7 +7,7 @@
 # clones. Entries which have failed to load or return are highlighted
 # and changes in sequence version are notified.
 
-# Last updated on: $Date: 2008-08-05 16:10:27 $
+# Last updated on: $Date: 2010-02-01 10:27:30 $
 # Last updated by: $Author: pad $
 
 use strict;
@@ -185,7 +185,7 @@ print ("Populated hashes with data for " . scalar (keys %embl_status) . " entrie
  
 open (SUBMITTED, "<$submitted_file") || die "Cannot open submit_TO_SUBMIT log file\n";;
 while (<SUBMITTED>) {
-  ($name) = (/^(\S+)/);
+  ($name) = (/^(\S+)\.\d+.embl/);
   if (!defined $clone2id{$name}) {$log->write_to("eek .. no ID for clone $name\n");}
   $id = $clone2id{$name};
   $log->write_to("# $name   \tSubmitted_to_EMBL - ");
