@@ -7,8 +7,8 @@
 # 
 # Originally written by Dan Lawson
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2009-10-29 11:41:36 $
+# Last updated by: $Author: pad $
+# Last updated on: $Date: 2010-02-02 10:20:12 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -243,6 +243,9 @@ sub copy_release_files{
 
   my $ftp_acedb_dir = "$targetdir/$WS_name/acedb";
   mkpath("$ftp_acedb_dir",1,0775);
+  my $blastx_dir = "$ftp_acedb_dir/Non_C_elegans_BLASTX";
+  mkpath("$blastx_dir",1,0775);
+  $wormbase->run_command("mv $targetdir/tmp_blastx_data/* $blastx_dir/.", $log);
 
   my $filename;
 
