@@ -86,6 +86,17 @@ Show_text
 EMBL_threshold	 0.000000
 EMBL_qualifier	 "\/note=\"\%s\"" "note"
 
+Method : "Transposon_Pseudogene" 
+Colour	 DARKGRAY
+Show_up_strand	
+Width	 1.500000
+Show_text	
+EMBL_threshold	 0.000000
+EMBL_qualifier	 "\/note=\"\%s\"" "note"
+Remark "This object corresponds to a Pseudogene that has been classified as being part of a degraded transposon or has sequence similarity to a fragment of protein of Transposon origin."
+GFF_source	 "Transposon_Pseudogene"
+GFF_feature	 "transposable_element"
+
 Method : "Coding_transcript" 
 Colour DARKGREEN
 Show_up_strand
@@ -1920,6 +1931,9 @@ Method : "curated"
 Right_priority  2.5
 
 Method : "Pseudogene"
+Right_priority  2.55
+
+Method : "Transposon_Pseudogene"
 Right_priority  2.55
 
 Method : "Non_coding_transcript"
