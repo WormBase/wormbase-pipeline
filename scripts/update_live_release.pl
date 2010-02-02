@@ -6,7 +6,7 @@
 #
 # Updates the local webpages in synch with the main website
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2009-01-21 10:10:48 $
+# Last updated on: $Date: 2010-02-02 10:43:38 $
 
 
 use strict;
@@ -88,12 +88,26 @@ $wormbase->run_command("cd $wormbase_ftp_dir && rm -f live_release && ln -fs WS$
 
 my $webpublish = "/software/bin/webpublish";
 
-# Now update WORMBASE current link
-$wormbase->run_command("cd $www/WORMBASE && rm -f current && ln -fs WS${release} current", $log) && $log->error("Couldn't update 'current' symlink\n", $log);
-$wormbase->worm_webpublish("-file" => "$www/WORMBASE/current") or $log->error("Couldn't run webpublish on current symlink files\n");
-# Now need to update big dbcomp output in data directory
-$wormbase->worm_webpublish("-file" => "/nfs/WWWdev/SANGER_docs/data/Projects/C_elegan/WS.dbcomp_output") or $log->error("Couldn't webpublish data directory\n");
+# symlinks are not allowed on the website so we have a "current" directory containing a file for each file we want to link to that is just "include virtual" 
+# the place that these link to need to be updated.
+my $currentdir = "$www/WORMBASE/current";
+opendir(DIR,"$currentdir") or $log->log_and_die("cant opendir $currentdir\n :$!\n");
+while(my $file = readdir(DIR) ){
+    next unless ($file =~ /shtml/);
+    open (OLD,"<$currentdir/$file") or $log->log_and_die("cant opendir $currentdir/$file\n :$!\n");
+    open (NEW,">/tmp/$file") or $log->log_and_die("cant opendir /tmp/$file\n :$!\n");
+    while(<OLD>){
+	s/WS\d+/WS$release/;
+	print NEW;
+    }
+    close OLD;
+    close NEW;
+    $wormbase->run_command("mv /tmp/$file $currentdir/$file", $log);
+    $wormbase->run_command("cd $currentdir && webpublish $file", $log);
+}
+close DIR;
 
+$wormbase->worm_webpublish("-file" => "$www/WORMBASE/current") or $log->error("Couldn't run webpublish on current symlink files\n");
 # The end
 $log->mail;
 exit(0);
