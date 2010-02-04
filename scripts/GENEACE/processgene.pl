@@ -1,4 +1,4 @@
-/#!/usr/bin/perl5.8.0 -w
+#!/usr/bin/perl5.8.0 -w
 # creating WBGene objects from gene data
 # mt3 June 2007
 
