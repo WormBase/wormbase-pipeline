@@ -17,10 +17,11 @@
 require 'optparse'
 
 require 'rubygems'
-require 'rdoc/ri/ri_paths'
-require 'rdoc/usage'
+#require 'rdoc/ri/ri_paths'
+#require 'rdoc/usage'
 require 'ensembl'
 include Ensembl::Core
+
 
 database='worm_ensembl_elegans'
 species='Caenorhabdits elegans'
@@ -32,7 +33,7 @@ opt.on("-d", "--database DATABASE",''){|database|}
 opt.on("-s","--species SPECIES",''){|species|}
 opt.on("-p","--protein"){|protein|}
 opt.on("-o","--outfile FILENAME"){|o|out=File.new(o,'w+')}
-opt.parse(ARGV) rescue RDoc::usage('Usage')
+opt.parse(ARGV) #rescue RDoc::usage('Usage')
 
 # generate a species suffix from the two names
 (spec_prefix,spec_suffix)=species.split
