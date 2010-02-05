@@ -15,10 +15,7 @@
 
 
 require 'optparse'
-
 require 'rubygems'
-#require 'rdoc/ri/ri_paths'
-#require 'rdoc/usage'
 require 'ensembl'
 include Ensembl::Core
 
@@ -28,12 +25,13 @@ species='Caenorhabdits elegans'
 protein=false
 out=$stdout
 
-opt=OptionParser.new
-opt.on("-d", "--database DATABASE",''){|database|}
-opt.on("-s","--species SPECIES",''){|species|}
-opt.on("-p","--protein"){|protein|}
-opt.on("-o","--outfile FILENAME"){|o|out=File.new(o,'w+')}
-opt.parse(ARGV) #rescue RDoc::usage('Usage')
+ARGV.options do |opt|
+  opt.on("-d", "--database DATABASE",''){|d|database=d}
+  opt.on("-s","--species SPECIES",''){|s|species=s}
+  opt.on("-p","--protein"){|p|protein=p}
+  opt.on("-o","--outfile FILENAME"){|o|out=File.new(o,'w+')}
+  opt.parse!
+end
 
 # generate a species suffix from the two names
 (spec_prefix,spec_suffix)=species.split
