@@ -5,7 +5,7 @@
 # To not remap, set the release to be 0.
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-02-14 11:02:17 $      
+# Last updated on: $Date: 2010-02-08 15:05:38 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -43,6 +43,7 @@ GetOptions ("help"       => \$help,
 my $organism_species;
 if ($species) {
   ($organism_species) = ($species =~ /\S+\s+(\S+)/); # get the second name of the binomial species name
+  if (! defined $organism_species) {die "the -species name should be the Linnean binomial name, e.g. 'Caenorhabditis brenneri'\n"}
 }
 
 
@@ -107,8 +108,8 @@ while (my $line = <IN>) {
   $sources{$fields[1]} = 1;	# keep a note of the sources
   if (defined $source && $fields[1] ne $source) {next;}
 
-  # ignore everything except the CDS and mRNA/transcript
-  if ($fields[2] ne "CDS" && $fields[2] ne "mRNA" && $fields[2] ne "transcript") {next;}
+  # ignore everything except the CDS, exon and mRNA/transcript lines
+  if ($fields[2] ne "CDS" && $fields[2] !~ /exon/ && $fields[2] ne "mRNA" && $fields[2] ne "transcript") {next;}
 
   my ($clone, $start, $end);
 
@@ -118,6 +119,18 @@ while (my $line = <IN>) {
 
     #print "$id[0] $fields[0] $fields[3] $fields[4] $fields[6]\n";
     my $id = $id[0];
+
+    # for converting the genBlastG files from Jack Chen's lab we would like to populate the Remark field
+    if ($method eq "genBlastG") {
+      my @name = map { /Name=(\S+)/ ? $1 : ()} @other; 
+      my @pid = map { /PID=(\S+)/ ? $1 : ()} @other; 
+      my @coverage = map { /Coverage=(\S+)/ ? $1 : ()} @other; 
+      if (@name) {
+	$gene_info{$id}{'remark'} = "Elegans homolog: $name[0], homology % ID: $pid[0], homology coverage: $coverage[0]";
+      } else {
+	$gene_info{$id}{'remark'} = "curated gene used";
+      }
+    }
 
     # remap to current genome positions
     if ($release != 0) {
@@ -185,16 +198,19 @@ while (my $line = <IN>) {
 
 # write out the exons of the gene
 foreach my $id (keys %gene_info) {
+  if ($#{$gene_info{$id}{'starts'}} == -1) {die "There is no exon information avalable for gene $id\n"}
   if ($gene_info{$id}{'sense'} eq '-') {			# reverse sense
     @{$gene_info{$id}{'starts'}} = reverse @{$gene_info{$id}{'starts'}};
     @{$gene_info{$id}{'ends'}} = reverse @{$gene_info{$id}{'ends'}};
   }
   my $clone = $gene_info{$id}{'clone'};
+  my $remark = $gene_info{$id}{'remark'};
   print OUT "\nCDS : \"$id\"\n";
   print OUT "Sequence \"$clone\"\n";
   print OUT "Species \"$species\"\n";
   print OUT "CDS\n";
   print OUT "Method \"$method\"\n";
+  print OUT "Remark \"$remark\"\n";
   for (my $i = 0; $i < @{$gene_info{$id}{'starts'}}; $i++) {
     my $start = $gene_info{$id}{'starts'}[$i];
     my $end = $gene_info{$id}{'ends'}[$i];
