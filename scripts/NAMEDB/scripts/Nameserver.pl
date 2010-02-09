@@ -22,7 +22,6 @@ $VALID_USERS = {
 		'mt3' 		=> 2970,
 		'gw3' 		=> 4025,
 		'mh6' 		=> 4036,
- #               'md9'           => 9133,
 		'tbieri' 	=> 1849,
 		'jspieth' 	=> 615,
 		'pozersky' 	=> 1867,
@@ -35,23 +34,22 @@ $VALID_USERS = {
 
 ## a list of valid SSO login names for each DB operation
 $VALID_API_USERS = {
-		    'query'		=> [qw(avc ar2 pad gw3 mh6 mt3 md9 tbieri jspieth wnash pozersky stlouis caltech cshl sanger)],
-		    'load_file'		=> [qw(avc ar2 pad gw3 mh6 mt3 md9 tbieri jspieth wnash pozersky stlouis caltech cshl sanger)],
-		    'merge_genes'	=> [qw(avc ar2 pad gw3 mt3 md9 tbieri wnash jspieth  pozersky)],
-		    'split_gene'	=> [qw(avc ar2 pad gw3 mt3 md9 tbieri jspieth wnash pozersky)],
-		    'new_gene'		=> [qw(avc ar2 pad gw3 mt3 md9 tbieri jspieth wnash pozersky)],
-		    'kill_gene'		=> [qw(avc ar2 pad gw3 mt3 md9 tbieri jspieth wnash pozersky)],
-		    'add_name'		=> [qw(avc ar2 pad gw3 mt3 md9 tbieri jspieth wnash pozersky)],
-		    'remove_name'	=> [qw(avc ar2 pad gw3 mt3 md9 tbieri jspieth wnash pozersky)],
-		    'change_class'	=> [qw(avc ar2 pad gw3 mt3 md9 tbieri jspieth wnash pozersky)],
-		    'dump_all'          => [qw(ar2 pad gw3 mt3 md9 tbieri jspieth wnash pozersky caltech)],
+		    'query'		=> [qw(avc ar2 pad gw3 mh6 mt3 tbieri jspieth wnash pozersky stlouis caltech cshl sanger)],
+		    'load_file'		=> [qw(avc ar2 pad gw3 mh6 mt3 tbieri jspieth wnash pozersky stlouis caltech cshl sanger)],
+		    'merge_genes'	=> [qw(avc ar2 pad gw3 mt3 tbieri wnash jspieth  pozersky)],
+		    'split_gene'	=> [qw(avc ar2 pad gw3 mt3 tbieri jspieth wnash pozersky)],
+		    'new_gene'		=> [qw(avc ar2 pad gw3 mt3 tbieri jspieth wnash pozersky)],
+		    'kill_gene'		=> [qw(avc ar2 pad gw3 mt3 tbieri jspieth wnash pozersky)],
+		    'add_name'		=> [qw(avc ar2 pad gw3 mt3 tbieri jspieth wnash pozersky)],
+		    'remove_name'	=> [qw(avc ar2 pad gw3 mt3 tbieri jspieth wnash pozersky)],
+		    'change_class'	=> [qw(avc ar2 pad gw3 mt3 tbieri jspieth wnash pozersky)],
+		    'dump_all'          => [qw(avc ar2 pad gw3 mt3 tbieri jspieth wnash pozersky caltech)],
 		   };
 
 ## a list of valid SSO login names able to add GCG name
 $VALID_CGCNAME_USERS = {
 			'mt3'			=> 1,
 			'ar2'			=> 1,
-                        'md9'                   => 1,
 			'pad'                   => 1,
 			'gw3'                   => 1,
 		       };
@@ -63,7 +61,6 @@ $MAILS = {
 	  'gw3'			=>	'gw3@sanger.ac.uk',
 	  'mh6'			=>	'mh6@sanger.ac.uk',
 	  'mt3'			=>	'mt3@sanger.ac.uk',
-          'md9'                 =>      'md9@sanger.ac.uk',
 	  'tbieri'		=>	'tbieri@watson.wustl.edu',
 	  'jspieth'	        =>	'jspieth@watson.wustl.edu',
 	  'pozersky'	        =>	'pozersky@watson.wustl.edu',
@@ -75,7 +72,7 @@ $MAILS = {
 	 };
 
 ## a list of people to mail when a DB operation occurs
-$MAIL_NOTIFY_LIST = [qw(ar2 mt3 pad gw3 md9)];
+$MAIL_NOTIFY_LIST = [qw(ar2 mt3 pad gw3)];
 
 &main();
 1;
@@ -731,7 +728,7 @@ sub change_class {
     if ( $gene->[0] ) {		
       #kill transposon genes
       if ( $class eq 'transposon') {
-	&kill_gene($gene->[0], "made in to transposon");
+	&kill_gene($gene->[0], "[$USER] Converted this Gene into a Transposon_CDS/Pseudogene as it appears to be part of a transposable element.");
       } else {
       my $msg = "$cds converted to $class - $USER\nThis does not affect Nameserver DB\n\nchangegene.pl -seq $cds -who ".$VALID_USERS->{$USER}." -load -class\n\nRemember you need to add a 2 letter change code eg. CP after -class";
 	send_mail("webserver",[$MAILS->{$USER},$MAILS->{'gnw'},$MAILS->{'ar2'},$MAILS->{'pad'},$MAILS->{'gw3'},$MAILS->{'caltech'}],"$cds to $class", $msg);
