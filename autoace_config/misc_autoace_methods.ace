@@ -1299,13 +1299,13 @@ Score_bounds	 0.000000 3.000000
 Right_priority	 4.200000
 Remark "GeneFinder method"
 
-Method : "GF_coding5_seg" 
+Method : "GF_coding_seg" 
 Colour	 LIGHTGRAY
 Frame_sensitive	
 Strand_sensitive	
 Score_by_width	
 Score_bounds	 3.000000 12.000000
-Right_priority	 4.400000
+Right_priority	 4.3
 Remark "GeneFinder method"
 
 Method : "GF_splice" 
@@ -1323,7 +1323,7 @@ Frame_sensitive
 Strand_sensitive	
 Score_by_width	
 Score_bounds	 10.000000 100.000000
-Right_priority	 4.450000
+Right_priority	 4.55
 Remark "GeneFinder method"
 
 Method : "worm_EMBL-dump"
