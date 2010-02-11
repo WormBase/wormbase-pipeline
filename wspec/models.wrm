@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: ar2 $
-// Last edited on: $Date: 2010-01-25 09:59:22 $
+// Last edited on: $Date: 2010-02-11 11:19:09 $
 
 
 ////////////////////////
@@ -227,7 +227,6 @@
                         Pos_neg_data ?Pos_neg_data
 //        Allele  ?Variation XREF Locus #Evidence // just for SNPs for now
         Laboratory ?Laboratory
-        Reference ?Paper XREF Locus
         Remark ?Text #Evidence
  
 
@@ -308,6 +307,7 @@
 			  3d_data ?3d_data XREF Gene // for NESGC structure information
 			  Interaction ?Interaction
 			  Anatomy_function ?Anatomy_function XREF Gene
+			  Product_binds_matrix ?Position_Matrix XREF Bound_by_gene_product #Evidence
         Map_info  Map UNIQUE ?Map XREF Gene #Map_position
                   Well_ordered          // "on the line"
                   Hide_under ?Gene XREF Representative_for
@@ -755,7 +755,6 @@
 	 Parent Instance_of ?GO_term XREF Instance
                 Component_of ?GO_term XREF Component
 	 Attributes_of Cell       ?Cell       XREF GO_term
-		       Reference  ?Paper      XREF GO_term
 		       Motif      ?Motif      XREF GO_term
 		       Gene       ?Gene       XREF GO_term // will this replace CDS? [040203 krb]
 		       CDS        ?CDS        XREF GO_term
@@ -1163,8 +1162,6 @@
 	        //Structure_data ?Structure_data XREF Corresponding_CDS #Evidence
                 Remark ?Text #Evidence
 	Associated_feature ?Feature XREF Associated_with_CDS #Evidence
-	Drives_transgene  ?Transgene XREF Driven_by_CDS_promoter
-	Transgene_product ?Transgene XREF CDS
         Method UNIQUE ?Method
 
 
@@ -1261,7 +1258,6 @@
                         Detailed_description ?Text #Evidence
                         Concise_description ?Text #Evidence
                         GO_term ?GO_term XREF Pseudogene ?GO_code #Evidence
-                        Reference ?Paper XREF Pseudogene // added [011030 krb]
 			SAGE_tag ?SAGE_tag XREF Pseudogene #SAGE_mapping_info
 			Microarray_results ?Microarray_results XREF Pseudogene  //added for Microarray_results
 			Remark ?Text #Evidence	  
@@ -1442,8 +1438,9 @@
                   Site_values      Text UNIQUE Float REPEAT
                   Threshold        Float
                   Associated_feature ?Feature XREF Associated_with_Position_Matrix #Evidence
-                  Sites_used Int
-		  Derived_from_matrix ?Position_Matrix
+                  Sites_used UNIQUE Int
+		  Derived_from_matrix ?Position_Matrix                  
+		  Bound_by_gene_product ?Gene XREF Product_binds_matrix #Evidence
                   Remark ?Text  #Evidence
 
 ?Oligo  Sequence UNIQUE Text  // verbatim sequence 
@@ -1502,7 +1499,6 @@
 		  History Int Text ?Text //new history logging [020801 krb]
                   Live       // new tag to replace use of 'Inactive' krb 06/12/01
           Visible Corresponding_CDS ?CDS XREF Corresponding_protein
-                  Reference ?Paper XREF Protein
                   Expr_pattern ?Expr_pattern XREF Protein
 		  Homology_group ?Homology_group XREF Protein // added [031120 krb]
 		  Ortholog_gene ?Gene XREF Ortholog_other #Evidence //[change Ortholog others to link to proteins rather than accessions]
@@ -2032,17 +2028,20 @@
 
 //transgene class from Wen Chen 12/00
 	    
-?Transgene      Evidence #Evidence
-		Summary UNIQUE ?Text //Searchable description of the transgene
+?Transgene     	Summary UNIQUE ?Text //Searchable description of the transgene
 		Synonym	?Text //for alternative names 
-		Driven_by Driven_by_CDS_promoter   ?CDS  XREF Drives_transgene Text //driving promoter
-			  Driven_by_gene           ?Gene XREF Drives_transgene
+		Driven_by Driven_by_gene           ?Gene XREF Drives_transgene
 			  Driven_by_construct	   ?Text //for artificial promoters	
 		Reporter_product GFP
+				 YFP //Added by Wen
+				 CFP //Added by Wen
+				 Venus //Added by Wen
+				 DsRed //Added by Wen
+				 mCherry //Added by Wen
+				 RFP //Added by Wen
 				 LacZ
 			         Other_reporter ?Text
 				 Gene ?Gene XREF Transgene_product Text
-				 CDS  ?CDS  XREF Transgene_product Text
 		Isolation Author ?Author
 			  Clone ?Clone XREF Transgene Text //injected clone conc.
 			  Fragment Text Text //injected DNA fragment conc. 
@@ -2061,7 +2060,7 @@
 		Map_evidence #Evidence //For wen - many papers refer to Transgene. This will allow curators to track which is used.
 		Mapping_data 2_point ?2_point_data 
 			     Multi_point ?Multi_pt_data
-		Phenotype ?Phenotype XREF Transgene #Phenotype_info // [2006-04-20 ar2] changed for Carols Phenotype changes
+		Phenotype ?Phenotype XREF Transgene ?Gene #Phenotype_info // [2006-04-20 ar2] changed for Carols Phenotype changes
 		Rescue ?Gene XREF Rescued_by_Transgene ?Variation XREF Rescued_by_Transgene
 		Expr_pattern ?Expr_pattern XREF Transgene                                        // Related Expr_pattern
 		Marker_for   ?Text #Evidence //Marker Summary
@@ -2625,87 +2624,86 @@
 // krb 040223
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-?Paper  Original_timestamp Datetype // temporary tag in transition period [krb 040223]
-	Name    CGC_name ?Paper_name XREF CGC_name_for
-		PMID     ?Paper_name XREF PMID_for
-		Medline_name ?Paper_name XREF Medline_name_for
-		Meeting_abstract ?Paper_name XREF Meeting_abstract_name
-		WBG_abstract    ?Paper_name XREF WBG_abstract_name
-		Other_name ?Paper_name XREF Other_name_for // e.g. agriola etc ...
-	History Merged_into UNIQUE ?Paper XREF Acquires_merge
-	        Acquires_merge ?Paper XREF Merged_into
-	Status  Valid
-		Invalid
-	Nematode_paper ?Species // for flagging worm specific papers, ?Species part is optional
-	Erratum #Paper
-	Reference       Title UNIQUE ?Text
-                        Journal UNIQUE ?Journal XREF Paper
-                        Publisher UNIQUE Text
-                        Editor ?Text            //used for books put in as whole objects
-                        Page  UNIQUE  Text UNIQUE Text
-                        Volume UNIQUE Text Text
-                        Year UNIQUE Datetype   //changed from Int for Tristan to help WormBook links
-                        In_book #Paper
-                        Contained_in ?Paper XREF Contains       // old form
-        Author ?Author XREF Paper #Affiliation
-        Person ?Person XREF Paper #Evidence
-	Describes_analysis ?Analysis XREF Reference
-	Not_person ?Person XREF Not_Paper #Evidence
-        Affiliation Text        // Authors' affiliation if available
-        Brief_citation UNIQUE Text
-        Abstract ?LongText
-        Type UNIQUE Text        //meaning review, article, chapter,
-                                //monograph, news, book,
-                                //meeting_abstract
-        Contains ?Paper XREF Contained_in
-        Refers_to Gene ?Gene XREF Reference #Evidence
-		  Locus ?Locus XREF Reference #Evidence
-                  Allele ?Variation XREF Reference #Evidence
-                  Rearrangement ?Rearrangement XREF Reference #Evidence
-                  Sequence ?Sequence XREF Reference #Evidence
-		  CDS ?CDS XREF Reference #Evidence
-		  Transcript ?Transcript XREF Reference #Evidence
-		  Pseudogene ?Pseudogene XREF Reference #Evidence // new [030801 krb]
-                  Strain ?Strain XREF Reference #Evidence
-                  Clone ?Clone XREF Reference #Evidence
-                  Protein ?Protein XREF Reference #Evidence
-                  Expr_pattern ?Expr_pattern XREF Reference #Evidence
-                  Expr_profile ?Expr_profile XREF Reference #Evidence
-                  Cell ?Cell XREF Reference #Evidence
-                  Cell_group ?Cell_group XREF Reference #Evidence
-                  Life_stage ?Life_stage XREF Reference #Evidence
-                  RNAi ?RNAi XREF Reference #Evidence
-                  Transgene ?Transgene XREF Reference #Evidence
-                  GO_term ?GO_term XREF Reference ?GO_code #Evidence
-                  Operon ?Operon XREF Reference #Evidence
-		  Expression_cluster ?Expression_cluster XREF Reference #Evidence
-		  Feature ?Feature XREF Defined_by_paper                 // added [030424 dl]
-		  Gene_regulation ?Gene_regulation XREF Reference // added [030804 krb]
-		  Microarray_experiment ?Microarray_experiment XREF Reference //added for Microarray_experiment model
-		  Anatomy_term ?Anatomy_term XREF Reference #Evidence
-		  Anatomy_function ?Anatomy_function XREF Reference
-		  Antibody ?Antibody XREF Reference #Evidence // added [031120 krb]
-		  SAGE_experiment ?SAGE_experiment XREF Reference
-		  YH ?YH XREF Reference ?Text
-		  Interaction ?Interaction XREF Paper
-		  Mass_spec_experiment ?Mass_spec_experiment XREF Reference
-        Keyword ?Keyword
-	Remark  ?Text   #Evidence
-
-// new supporting class to index various paper names
-
-?Paper_name CGC_name_for ?Paper XREF CGC_name
-            PMID_for ?Paper XREF PMID
-            Medline_name_for ?Paper XREF Medline_name
-            Meeting_abstract_name ?Paper XREF Meeting_abstract
-            WBG_abstract_name     ?Paper XREF WBG_abstract
-            Other_name_for ?Paper XREF Other_name
-
-
-
-
+?Paper Original_timestamp Datetype // temporary tag in transition period [krb 040223]
+       Name ?Text     //used for storing legacy names, like cgc5654 or wm95p426
+       DB_info Database ?Database ?Database_field ?Accession_number     //used for storing PubMed or other database identifiers, for PubMed, Database_field would be PMID 
+       History Merged_into UNIQUE ?Paper XREF Acquires_merge
+               Acquires_merge ?Paper XREF Merged_into
+       Status  Valid
+               Invalid
+       Erratum_in      ?Paper XREF Erratum_for
+       Erratum_for     ?Paper XREF Erratum_in
+       Reference       Title UNIQUE ?Text
+                       Journal UNIQUE ?Text     //we are cleaning up Journal names and considering retiring the class
+                       Publisher UNIQUE Text
+                       Editor ?Text            //used for books put in as objects
+                       Page  UNIQUE  Text 
+                       Volume UNIQUE Text
+                       Publication_date UNIQUE ?Text         //YYYY-MM-DD or YYYY-MM, replaces DateType which led to erroneous pub dates
+                       Contained_in ?Paper XREF Contains       // old form
+                       Contains ?Paper XREF Contained_in
+       Author ?Author XREF Paper #Affiliation
+       Person ?Person XREF Paper #Evidence
+       Describes_analysis ?Analysis XREF Reference
+       Not_person ?Person XREF Not_Paper #Evidence
+       Affiliation Text        // Authors' affiliation if available
+       Brief_citation UNIQUE Text
+       Abstract ?LongText
+       URL Text   //will be used for Worm Breeder's Gazette articles and other citations available online but not through PubMed
+       Type    Journal_article        #Evidence
+               Review        #Evidence
+               Comment        #Evidence
+               News        #Evidence
+               Letter        #Evidence
+               Editorial        #Evidence
+               Congresses        #Evidence
+               Historical_article        #Evidence
+               Biography        #Evidence
+               Interview        #Evidence
+               Lectures        #Evidence
+               Interactive_tutorial        #Evidence
+               Retracted_publication        #Evidence
+               Technical_report        #Evidence
+               Directory        #Evidence
+               Monograph        #Evidence
+               Published_erratum        #Evidence
+               Meeting_abstract        #Evidence
+               Gazette_article        #Evidence
+               Book_chapter        #Evidence
+               Book        #Evidence
+               Email        #Evidence
+               WormBook        #Evidence
+               Other        #Evidence
+       Refers_to Gene ?Gene XREF Reference #Evidence
+                 Allele ?Variation XREF Reference #Evidence
+                 Rearrangement ?Rearrangement XREF Reference #Evidence
+                 Sequence ?Sequence XREF Reference #Evidence
+                 CDS ?CDS XREF Reference #Evidence
+                 Transcript ?Transcript XREF Reference #Evidence
+                 Strain ?Strain XREF Reference #Evidence
+                 Clone ?Clone XREF Reference #Evidence
+                 Expr_pattern ?Expr_pattern XREF Reference #Evidence
+                 Expr_profile ?Expr_profile XREF Reference #Evidence
+                 Cell ?Cell XREF Reference #Evidence
+                 Cell_group ?Cell_group XREF Reference #Evidence
+                 Life_stage ?Life_stage XREF Reference #Evidence
+                 RNAi ?RNAi XREF Reference #Evidence
+                 Transgene ?Transgene XREF Reference #Evidence
+                 Operon ?Operon XREF Reference #Evidence
+                 Expression_cluster ?Expression_cluster XREF Reference #Evidence
+                 Feature ?Feature XREF Defined_by_paper                 // added [030424 dl]
+                 Gene_regulation ?Gene_regulation XREF Reference // added [030804 krb]
+                 Microarray_experiment ?Microarray_experiment XREF Reference //added for Microarray_experiment model
+                 Anatomy_term ?Anatomy_term XREF Reference #Evidence
+                 Anatomy_function ?Anatomy_function XREF Reference
+                 Antibody ?Antibody XREF Reference #Evidence // added [031120 krb]
+                 SAGE_experiment ?SAGE_experiment XREF Reference
+                 YH ?YH XREF Reference ?Text
+                 Interaction ?Interaction XREF Paper
+                 Mass_spec_experiment ?Mass_spec_experiment XREF Reference
+       Curation_pipeline Phenotype2GO
+       Keyword ?Keyword
+       Remark  ?Text   #Evidence
 
 
 #Affiliation Affiliation_address UNIQUE Text
