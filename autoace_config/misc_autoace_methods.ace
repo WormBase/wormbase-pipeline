@@ -347,6 +347,14 @@ Bumpable
 Show_text
 EMBL_feature     "CDS"
 
+Method : "genBlastG"    // homology-based predictions for Tier II species from Jack Chen's group
+Colour   GREEN
+CDS_colour       GREEN
+Show_up_strand   GREEN
+Bumpable
+Show_text
+EMBL_feature     "CDS"
+
 Method : "Genefinder" 
 Colour   DARKGRAY
 CDS_colour       DARKGRAY
@@ -2247,3 +2255,9 @@ Right_priority   3.37
 
 
 
+Method :g enBlastG    // homology-based predictions for Tier II species from Jack Chen's group
+Colour GREEN
+CDS_colour GREEN
+Show_up_strand GREEN
+Overlap_mode Bumpable
+Right_priority 2.95
