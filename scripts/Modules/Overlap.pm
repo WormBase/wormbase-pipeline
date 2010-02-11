@@ -7,7 +7,7 @@
 # Do fast overlap matching of positions of two sets of things.
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2009-09-23 11:10:02 $      
+# Last updated on: $Date: 2010-02-11 14:19:20 $      
 
 =pod
 
@@ -1399,6 +1399,32 @@ sub get_jigsaw_exons {
    (
      method			=> "jigsaw",
      gff_source			=> "jigsaw",
+     gff_type			=> "coding_exon",
+     ID_after			=> "CDS\\s+",
+   );
+
+  return $self->read_GFF_file($chromosome, \%GFF_data);
+
+}
+
+=head2
+
+    Title   :   get_genblastg_exons
+    Usage   :   my @gff = $ovlp->get_genblastg_exons($chromosome)
+    Function:   reads the GFF data for genblastg exons (Jack Chen's homology predictions in Tier II species)
+    Returns :   list of lists for GFF data
+    Args    :   chromosome number
+
+=cut
+
+sub get_genblastg_exons {
+  my $self = shift;
+  my ($chromosome) = @_;
+
+  my %GFF_data = 
+   (
+     method			=> "genblastg",
+     gff_source			=> "genblastg",
      gff_type			=> "coding_exon",
      ID_after			=> "CDS\\s+",
    );
