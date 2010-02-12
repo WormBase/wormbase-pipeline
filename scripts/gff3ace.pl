@@ -5,7 +5,7 @@
 # To not remap, set the release to be 0.
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2010-02-08 15:05:38 $      
+# Last updated on: $Date: 2010-02-12 16:27:42 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -199,6 +199,11 @@ while (my $line = <IN>) {
 # write out the exons of the gene
 foreach my $id (keys %gene_info) {
   if ($#{$gene_info{$id}{'starts'}} == -1) {die "There is no exon information avalable for gene $id\n"}
+
+  # sort the start and end exons into ascending order as there is no guarantee that they are in any order
+  @{$gene_info{$id}{'starts'}} = sort {$a <=> $b} @{$gene_info{$id}{'starts'}};
+  @{$gene_info{$id}{'ends'}} = sort {$a <=> $b} @{$gene_info{$id}{'ends'}};
+
   if ($gene_info{$id}{'sense'} eq '-') {			# reverse sense
     @{$gene_info{$id}{'starts'}} = reverse @{$gene_info{$id}{'starts'}};
     @{$gene_info{$id}{'ends'}} = reverse @{$gene_info{$id}{'ends'}};
