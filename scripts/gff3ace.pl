@@ -5,7 +5,7 @@
 # To not remap, set the release to be 0.
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2010-02-12 16:27:42 $      
+# Last updated on: $Date: 2010-02-12 16:53:30 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -204,10 +204,6 @@ foreach my $id (keys %gene_info) {
   @{$gene_info{$id}{'starts'}} = sort {$a <=> $b} @{$gene_info{$id}{'starts'}};
   @{$gene_info{$id}{'ends'}} = sort {$a <=> $b} @{$gene_info{$id}{'ends'}};
 
-  if ($gene_info{$id}{'sense'} eq '-') {			# reverse sense
-    @{$gene_info{$id}{'starts'}} = reverse @{$gene_info{$id}{'starts'}};
-    @{$gene_info{$id}{'ends'}} = reverse @{$gene_info{$id}{'ends'}};
-  }
   my $clone = $gene_info{$id}{'clone'};
   my $remark = $gene_info{$id}{'remark'};
   print OUT "\nCDS : \"$id\"\n";
