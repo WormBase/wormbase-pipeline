@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2009-11-25 09:57:32 $      
+# Last updated on: $Date: 2010-02-15 09:35:15 $      
 
 # Changes required by Ant: 2008-02-19
 # 
@@ -239,6 +239,8 @@ while (my $run = <DATA>) {
 &delete_anomalies("JIGSAW_WITH_SIGNALP");
 &delete_anomalies("JIGSAW_DIFFERS_FROM_CDS");
 &delete_anomalies("CDS_DIFFERS_FROM_JIGSAW");
+&delete_anomalies("GENBLASTG_DIFFERS_FROM_CDS");
+&delete_anomalies("CDS_DIFFERS_FROM_GENBLASTG");
 &delete_anomalies("UNMATCHED_454_CLUSTER");
 
 
@@ -361,6 +363,19 @@ foreach my $chromosome (@chromosomes) {
 
   #my @jigsaw = $ovlp->get_jigsaw_CDS($chromosome);                     # jigsaw coding transcript (START to STOP)
   my @jigsaw_exons = $ovlp->get_jigsaw_exons($chromosome);             # jigsaw coding exons 
+
+  my @genblastg_exons = $ovlp->get_genblastg_exons($chromosome);             # Jack Chen's genBlastG coding exons 
+# until the genBlastG data is in the acedb data and has been dumped to GFF, use the GFF files from Jack Chen.
+  if (! @genblastg_exons) {
+    my %GFF_data = 
+      (
+       file		=> "~wormpub/BUILD_DATA/MISC_DYNAMIC/genBlastG/${species}_v128.gff3", 
+       gff_source	=> "hybrid2",
+       gff_type		=> "coding_exon",
+       ID_after		=> "Parent=",
+      );
+    @genblastg_exons = $ovlp->read_GFF_file($chromosome, \%GFF_data);
+  }
 
   my @UTRs_5 = $ovlp->get_5_UTRs($chromosome) if (exists $run{INTRONS_IN_UTR});
   my @UTRs_3 = $ovlp->get_3_UTRs($chromosome) if (exists $run{INTRONS_IN_UTR});
@@ -490,6 +505,9 @@ foreach my $chromosome (@chromosomes) {
 
   print "get jigsaw different to curated CDS\n";
   my @unmatched_jigsaw = &get_jigsaw_different_to_curated_CDS(\@jigsaw_exons, \@cds_exons, \@pseudogenes, $chromosome) if (exists $run{JIGSAW_DIFFERS_FROM_CDS});
+
+  print "get genBlastG different to curated CDS\n";
+  my @unmatched_genblastg = &get_genblastg_different_to_curated_CDS(\@genblastg_exons, \@cds_exons, $chromosome) if (exists $run{GENBLASTG_DIFFERS_FROM_CDS});
 
   print "get jigsaw differing from curated CDS with SignalP where the CDS has no signalP\n";
   &get_jigsaw_with_signalp(\@unmatched_jigsaw, \@jigsaw_exons, \@CDS, $chromosome) if (exists $run{JIGSAW_WITH_SIGNALP});
@@ -3721,6 +3739,79 @@ sub get_jigsaw_different_to_curated_CDS {
 }
 
 ####################################################################################
+# get genBlastG different to curated CDS
+
+sub get_genblastg_different_to_curated_CDS {
+
+  my ($genblastg_exons_aref, $CDS_exons_aref, $chromosome) = @_;
+
+  $anomaly_count{GENBLASTG_DIFFERS_FROM_CDS} = 0 if (! exists $anomaly_count{GENBLASTG_DIFFERS_FROM_CDS});
+
+  # here we don't use the overlap module, we do it more efficiently using a hash
+  my %unmatched_genblastg;		# list of genblastg exons left when we remove matching CDS exons
+
+  my %all_genblastg_exons;		# list of all genblastg exons
+  my %all_cds_exons;		        # list of all CDS exons
+
+  # first load all the genblastg exons into the hash
+  foreach my $genblastg (@{$genblastg_exons_aref}) { # $genblastg_id, $chrom_start, $chrom_end, $chrom_strand
+    my $key = $genblastg->[3]."_".$genblastg->[1]."_".$genblastg->[2];  # the key is the chromosomal sense and position
+    $unmatched_genblastg{$key} = $genblastg;
+    $all_genblastg_exons{$key} = 1;
+  }
+
+  # now remove any genblastg hash entries that have a key that matches the position of any curated CDS exon 
+  my @unmatched_cds;		        # list of CDS exons left when we remove matching genblastg exons
+  my %matched_cds;		# hash of CDS IDs where there is at least one exon in the CDS that matches a genblastg exon
+  foreach my $cds (@{$CDS_exons_aref}) { # $cds_id, $chrom_start, $chrom_end, $chrom_strand
+    my $key = $cds->[3]."_".$cds->[1]."_".$cds->[2];
+    my $cds_id = $cds->[0];
+    
+    if (exists $all_genblastg_exons{$key}) { # check we have got a match
+
+      if (exists $unmatched_genblastg{$key}) {
+	delete $unmatched_genblastg{$key};	# delete the genblastg exon that matches a CDS exon
+      }
+      
+    } else {			# no match
+      push @unmatched_cds, $cds; # store the CDS exon that doesn't match a genblastg exon
+
+    }
+  }
+
+  # now we output a hash of genblastg details that don't match a CDS exon
+  foreach my $genblastg (values %unmatched_genblastg) {
+
+    # output unmatched genblastg to the database
+      my $genblastg_id = $genblastg->[0];
+      my $chrom_start = $genblastg->[1];
+      my $chrom_end = $genblastg->[2];
+      my $chrom_strand = $genblastg->[3];
+      my $est_score = $genblastg->[6];
+      my $anomaly_score = 2;
+      #print "GENBLASTG_DIFFERS_FROM_CDS ANOMALY: $genblastg_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score\n";
+      # get the unique list of CDS IDs that overlap with this GENBLASTG (see p124 in the Perl Cookbook)
+      &output_to_database("GENBLASTG_DIFFERS_FROM_CDS", $chromosome, $genblastg_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score, '');
+  }
+
+  # now we output a list of CDS details where no exon of the CDS has a match to a genblastg exon
+  foreach my $cds (@unmatched_cds) {
+
+    # output unmatched cds to the database
+      my $cds_id = $cds->[0];
+      my $chrom_start = $cds->[1];
+      my $chrom_end = $cds->[2];
+      my $chrom_strand = $cds->[3];
+      my $est_score = $cds->[6];
+      my $anomaly_score = 2;
+      #print "CDS_DIFFERS_FROM_GENBLASTG ANOMALY: $cds_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score\n";
+      &output_to_database("CDS_DIFFERS_FROM_GENBLASTG", $chromosome, $cds_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score, '');
+  }
+
+  return (values %unmatched_genblastg);
+}
+
+####################################################################################
 # get jigsaw differing from curated CDS with SignalP where the CDS has no signalP
 
 sub get_jigsaw_with_signalp {
@@ -4308,6 +4399,7 @@ UNMATCHED_TSL                elegans
 UNMATCHED_RST5               elegans
 UNMATCHED_TWINSCAN           elegans
 UNMATCHED_GENEFINDER         elegans
+GENBLASTG_DIFFERS_FROM_CDS            remanei briggsae japonica brenneri
 JIGSAW_DIFFERS_FROM_CDS      elegans
 JIGSAW_WITH_SIGNALP          elegans
 UNMATCHED_SAGE               elegans
