@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl -w
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2010-02-15 10:51:03 $      
+# Last updated on: $Date: 2010-02-18 10:02:24 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -95,7 +95,6 @@ sub parse_nematode_seqs {
 		    "nembase_nematode_contigs.ace"   => "nembase_ace"           ,
 		    "other_nematode_ESTs.ace"        => "other_nematode_ace"    ,
 		    "washu_nematode_contigs.ace"     => "washu_nem_ace"         ,
-		    "genBlastG_${species}.ace"       => "genBlastG_${species}_ace",
 		   );
   $log->write_to("loading nematode sequences to $species database\n");
   foreach my $file ( keys %files2load ) {
