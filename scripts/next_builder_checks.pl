@@ -7,7 +7,7 @@
 # build to check the current build
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2010-02-22 15:08:54 $
+# Last updated on: $Date: 2010-02-22 15:15:33 $
 use strict;
 use warnings;
 use lib $ENV{'CVS_DIR'};
@@ -296,7 +296,7 @@ sub check_for_missing_data {
   }
   if (@oldonly) {
     foreach my $hd (@oldonly) {
-      $log->error("ERROR: ".$hd->name." missing $data_name data compared to currentdb\n");
+      $log->error("ERROR: $hd missing $data_name data compared to currentdb\n");
     }
   }
 }
