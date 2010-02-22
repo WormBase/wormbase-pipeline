@@ -99,7 +99,7 @@ my $gdb8 = $gdba->fetch_by_name_assembly($species8,$species8_assembly);
 my $gdb9 = $gdba->fetch_by_name_assembly($species9,$species9_assembly);
 my $gdb10 = $gdba->fetch_by_name_assembly($species10,$species10_assembly);
 
-my $mlss = $mlssa->fetch_by_method_link_type_GenomeDBs($method_link_type, [$gdb1, $gdb2,$gdb3,$gdb4,$gdb5,$gdb6,$gdb7,$gdb8]);
+my $mlss = $mlssa->fetch_by_method_link_type_GenomeDBs($method_link_type, [$gdb1, $gdb2,$gdb3,$gdb4,$gdb5,$gdb6,$gdb7,$gdb8,$gdb9,$gdb10]);
 
 my $dfgs;
 
