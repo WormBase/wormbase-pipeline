@@ -6,8 +6,8 @@
 #
 # Do fast overlap matching of positions of two sets of things.
 #
-# Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2010-02-11 14:19:20 $      
+# Last updated by: $Author: pad $     
+# Last updated on: $Date: 2010-02-25 16:46:07 $      
 
 =pod
 
@@ -1827,8 +1827,8 @@ sub get_miRNA {
   my %GFF_data = 
    (
      method			=> "miRNA",
-     gff_source			=> "miRNA",
-     gff_type			=> "miRNA_primary_transcript",
+     gff_source			=> "miRNA_mature_transcript",
+     gff_type			=> "miRNA",
      ID_after			=> 'Transcript\s+',
 
    );
@@ -1883,8 +1883,8 @@ sub get_scRNA {
   my %GFF_data = 
    (
      method			=> "scRNA",
-     gff_source			=> "scRNA",
-     gff_type			=> "scRNA_primary_transcript",
+     gff_source			=> "scRNA_mature_transcript",
+     gff_type			=> "scRNA",
      ID_after			=> 'Transcript\s+',
 
    );
@@ -1911,8 +1911,8 @@ sub get_snRNA {
   my %GFF_data = 
    (
      method			=> "snRNA",
-     gff_source			=> "snRNA",
-     gff_type			=> "snRNA_primary_transcript",
+     gff_source			=> "snRNA_mature_transcript",
+     gff_type			=> "snRNA",
      ID_after			=> 'Transcript\s+',
 
    );
@@ -1939,8 +1939,8 @@ sub get_snoRNA {
   my %GFF_data = 
    (
      method			=> "snoRNA",
-     gff_source			=> "snoRNA",
-     gff_type			=> "snoRNA_primary_transcript",
+     gff_source			=> "snoRNA_mature_transcript",
+     gff_type			=> "snoRNA",
      ID_after			=> 'Transcript\s+',
 
    );
@@ -1968,7 +1968,7 @@ sub get_stRNA {
    (
      method			=> "stRNA",
      gff_source			=> "stRNA",
-     gff_type			=> "stRNA_primary_transcript",
+     gff_type			=> "stRNA",
      ID_after			=> 'Transcript\s+',
 
    );
@@ -1995,8 +1995,8 @@ sub get_tRNA {
   my %GFF_data = 
    (
      method			=> "tRNA",
-     gff_source			=> "tRNA",
-     gff_type			=> "tRNA_primary_transcript",
+     gff_source			=> "tRNA_mature_transcript",
+     gff_type			=> "tRNA",
      ID_after			=> 'Transcript\s+',
 
    );
@@ -2024,7 +2024,7 @@ sub get_tRNAscan_SE_1_23RNA {
    (
      method			=> "tRNAscan-SE-1.23",
      gff_source			=> "tRNAscan-SE-1.23",
-     gff_type			=> "tRNA_primary_transcript",
+     gff_type			=> "tRNA",
      ID_after			=> 'Transcript\s+',
 
    );

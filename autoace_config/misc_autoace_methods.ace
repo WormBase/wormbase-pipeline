@@ -4,7 +4,7 @@
 //
 // all methods should be stored here
 //
-// GFF_source  = program/method/experiment used to determine what the thing is
+// GFF_source  = program/method/experiment used to determine what the thing is (Free text)
 // GFF_feature = what the thing actually is (should try to use SO_terms where possible)
 //
 // E.g. a tRNA gene predicted by the program tRNA-scan would be GFF_source = 'tRNA-scan'
@@ -148,21 +148,25 @@ Show_text
 EMBL_feature	 "ncRNA"
 GFF_source "ncRNA"
 GFF_feature "ncRNA_primary_transcript"
-Remark  "An mRNA sequence that does not encode for a protein rather the RNA molecule is the gene product."
 
 Method : "rRNA" 
 Colour   GREEN
 Show_up_strand  
 Width    2.000000
-Show_text       
+Show_text
+Remark "SO:0000252"   
 GFF_source "rRNA"
 GFF_feature "rRNA_primary_transcript"
 EMBL_feature "rRNA"
 
 Method : "tRNA" 
-Colour	 PURPLE
-GFF_source	 "tRNA"
-GFF_feature	 "tRNA_primary_transcript"
+Colour	 GREEN
+Show_up_strand	
+Bumpable	
+Show_text
+Remark "SO:0000253"
+GFF_source	 "tRNA_mature_transcript"
+GFF_feature	 "tRNA"
 
 Method : "tRNAscan-SE-1.23" 
 Colour	 GREEN
@@ -171,7 +175,7 @@ Bumpable
 Show_text	
 EMBL_feature	 "tRNA"
 GFF_source "tRNAscan-SE-1.23"
-GFF_feature "tRNA_primary_transcript"
+GFF_feature "tRNA"
 
 Method : "scRNA" 
 Colour   GREEN
@@ -179,8 +183,9 @@ Show_up_strand
 Width    2.000000
 Show_text       
 EMBL_feature     "scRNA"
-GFF_source "scRNA"
-GFF_feature "scRNA_primary_transcript"
+Remark "SO:0000013"
+GFF_source "scRNA_mature_transcript"
+GFF_feature "scRNA"
 
 Method : "snRNA" 
 Colour   GREEN
@@ -188,8 +193,9 @@ Show_up_strand
 Width    2.000000
 Show_text       
 EMBL_feature     "snRNA"
-GFF_source "snRNA"
-GFF_feature "snRNA_primary_transcript"
+Remark "SO:0000274"
+GFF_source "snRNA_mature_transcript"
+GFF_feature "snRNA"
 
 Method : "snlRNA" 
 Colour   GREEN
@@ -198,7 +204,7 @@ Width    2.000000
 Show_text       
 EMBL_feature     "snlRNA"
 GFF_source "snlRNA"
-GFF_feature "snlRNA_primary_transcript"
+GFF_feature "snlRNA"
 
 Method : "snoRNA" 
 Colour   GREEN
@@ -206,8 +212,9 @@ Show_up_strand
 Width    2.000000
 Show_text       
 EMBL_feature     "snoRNA"
-GFF_source "snoRNA"
-GFF_feature "snoRNA_primary_transcript"
+Remark "SO:0000275"
+GFF_source "snoRNA_mature_transcript"
+GFF_feature "snoRNA"
 
 Method : "miRNA" 
 Colour   GREEN
@@ -215,8 +222,9 @@ Show_up_strand
 Width    2.000000
 Show_text       
 EMBL_feature     "misc_RNA"
-GFF_source "miRNA"
-GFF_feature "miRNA_primary_transcript"
+Remark "SO:0000276"
+GFF_source "miRNA_mature_transcript" //expanded to be more descriptive
+GFF_feature "miRNA" //Changed inline with SO:0000276
 
 Method : "stRNA" 
 Colour   GREEN
@@ -224,8 +232,9 @@ Show_up_strand
 Width    2.000000
 Show_text       
 EMBL_feature     "misc_RNA"
-GFF_source "stRNA"
-GFF_feature "stRNA_primary_transcript"
+Remark "SO:0000649"
+GFF_source "stRNA_mature_transcript"
+GFF_feature "stRNA"
 
 ////////////////////////////
 // Allele related methods //

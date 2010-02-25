@@ -6,8 +6,8 @@
 #
 # This is a example of a good script template
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2009-08-21 10:46:28 $
+# Last updated by: $Author: pad $
+# Last updated on: $Date: 2010-02-25 16:45:51 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -266,27 +266,27 @@ sub read_GFF_queries {
 
     $i++;
     $queries[$i]{'DESC'}  = "ncRNA genes";
-    $queries[$i]{'GFF'}   = "ncRNA_primary_transcript"; # ncRNA genes including 21uRNA
+    $queries[$i]{'GFF'}   = "ncRNA"; # ncRNA genes including 21uRNA
     $queries[$i]{'QUERY'} = 'find elegans_RNA_genes; method = ncRNA'; # this finds ncRNA genes including 21uRNA
 
     $i++;
     $queries[$i]{'DESC'}  = "tRNAs";
-    $queries[$i]{'GFF'}   = "tRNA_primary_transcript";
+    $queries[$i]{'GFF'}   = "tRNA";
     $queries[$i]{'QUERY'} = 'find elegans_RNA_genes tRNA';
     
     $i++;
     $queries[$i]{'DESC'}  = "miRNAs";
-    $queries[$i]{'GFF'}   = "miRNA_primary_transcript";
+    $queries[$i]{'GFF'}   = "miRNA";
     $queries[$i]{'QUERY'} = 'find elegans_RNA_genes miRNA';
 
     $i++;
     $queries[$i]{'DESC'}  = "snoRNAs";
-    $queries[$i]{'GFF'}   = "snoRNA_primary_transcript";
+    $queries[$i]{'GFF'}   = "snoRNA";
     $queries[$i]{'QUERY'} = 'find elegans_RNA_genes snoRNA';
 
     $i++;
     $queries[$i]{'DESC'}  = "snRNAs";
-    $queries[$i]{'GFF'}   = "snRNA_primary_transcript";
+    $queries[$i]{'GFF'}   = "snRNA";
     $queries[$i]{'QUERY'} = 'find elegans_RNA_genes snRNA';
 
     $i++;
@@ -296,12 +296,12 @@ sub read_GFF_queries {
 
     $i++;
     $queries[$i]{'DESC'}  = "scRNAs";
-    $queries[$i]{'GFF'}   = "scRNA_primary_transcript";
+    $queries[$i]{'GFF'}   = "scRNA";
     $queries[$i]{'QUERY'} = 'find elegans_RNA_genes scRNA';
 
     $i++;
     $queries[$i]{'DESC'}  = "stRNAs";
-    $queries[$i]{'GFF'}   = "stRNA_primary_transcript";
+    $queries[$i]{'GFF'}   = "stRNA";
     $queries[$i]{'QUERY'} = 'find elegans_RNA_genes stRNA';
 
     $i++;
