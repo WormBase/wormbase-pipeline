@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2010-02-15 09:35:15 $      
+# Last updated on: $Date: 2010-03-01 10:20:19 $      
 
 # Changes required by Ant: 2008-02-19
 # 
@@ -1056,9 +1056,13 @@ sub get_protein_split_merged {
   my $average_blast_score;
   my $anomaly_score;
 
-  # sort the homologies grouped by protein ID and then score and then chromosomal position
+  my %seen_elegans_protein;
+
+  # sort the homologies grouped by elegans proteins first then protein ID and then score and then chromosomal position
+
   #my @homologies = sort {$a->[0] cmp $b->[0] or $a->[1] <=> $b->[1]} @matched;
-  my @homologies = sort {$a->[0] cmp $b->[0] or $a->[6] <=> $b->[6] or $a->[1] <=> $b->[1]} @matched;
+  #my @homologies = sort {$a->[0] cmp $b->[0] or $a->[6] <=> $b->[6] or $a->[1] <=> $b->[1]} @matched;
+  my @homologies = sort {$a =~ /CE:/ <=> $b =~ /CE:/ or $a->[0] cmp $b->[0] or $a->[6] <=> $b->[6] or $a->[1] <=> $b->[1]} @matched;
 
   foreach my $homology (@homologies) { # $protein_id, $chrom_start, $chrom_end, $chrom_strand, $hit_start, $hit_end, $protein_score, $matching_exon, $matching_sense
 
@@ -1072,20 +1076,42 @@ sub get_protein_split_merged {
     # $homology->[7] can hold the the other_data field from the GFF line, but is usually undef
     my $matching_exon = $homology->[8];
 
-    # we don't use the briggsae or remanei proteins in this analysis
-    # because their predictions are heavily based on twinscan
-    # predictions and so we would be simply confirming possibly
-    # erroneous twinscan data.
-    if ($protein_id =~ /^BP:/ || $protein_id =~ /^RP:/) {next;}
+    # change the transcript isoform names like H25P06.1.1, H25P06.1.2 to H25P06.1
+    if ($matching_exon =~ /(\S+\.\d+)\.\d+/) {
+      $matching_exon = $1;
+    }
 
     #  check if these are isoforms of the same gene and if so then treat them as the same gene
     if ($matching_exon =~ /(\S+\.\d+)[a-z]/) {
       $matching_exon = $1;
     }
-    # and change the strange transcript names like H25P06.1.1, H25P06.1.2 to H25P06.1
-    if ($matching_exon =~ /(\S+\.\d+)\.\d+/) {
-      $matching_exon = $1;
+
+    # we don't use the Tier II proteins in an elegans analysis
+    # because their predictions are heavily based on twinscan/jigsaw
+    # predictions and so we would be simply confirming possibly
+    # erroneous ab initio data.
+    my $flag_for_lower_score = 0;
+    if ($protein_id =~ /^BP:/ || 
+	$protein_id =~ /^RP:/ ||
+	$protein_id =~ /^CN:/ ||
+	$protein_id =~ /^JA:/ ||
+	$protein_id =~ /^PP:/
+       ) {
+      if ($species eq 'elegans') {
+	next; # don't use Tier II in an elegans analysis
+      } else {
+	# this is a Tier II organism
+	# if we have seen a elegans protein matching this gene, then give the match of other Tier II proteins a lower score than otherwise
+	if ($protein_id =~ /^CE:/) {
+	  $seen_elegans_protein{$matching_exon} = 1; # remember that we have seenan elegans protein matching this gene
+	} else {
+	  if ($seen_elegans_protein{$matching_exon}) {
+	    $flag_for_lower_score = 1;
+	  }
+	}
+      }
     }
+
 
     #print "Matched: $protein_id, $chrom_start, $chrom_end, $chrom_strand, $hit_start, $hit_end, $protein_score, $matching_exon\n";
 
@@ -1143,7 +1169,8 @@ sub get_protein_split_merged {
 	if ($anomaly_score > 3) {$anomaly_score = 3;}
 	if ($anomaly_score < 0) {$anomaly_score = 0;}
 
-	if ($anomaly_score > 0.1) {
+	if ($flag_for_lower_score && $anomaly_score > 0.5) {$anomaly_score = 0.5} # in Tier II species we prefer the elegans homologies
+	if ($anomaly_score >= 0.1) {
 	  &output_to_database("MERGE_GENES_BY_PROTEIN", $chromosome, $protein_id, $prev_chrom_start, $chrom_end, $chrom_strand, $anomaly_score, "merge $prev_exon and $matching_exon");
 	}
 
@@ -1162,7 +1189,10 @@ sub get_protein_split_merged {
 	if ($anomaly_score > 3) {$anomaly_score = 3;}
 	if ($anomaly_score < 0) {$anomaly_score = 0;}
 
-	&output_to_database("SPLIT_GENES_BY_PROTEIN", $chromosome, $protein_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score, "split $matching_exon");
+	if ($flag_for_lower_score && $anomaly_score > 0.5) {$anomaly_score = 0.5} # in Tier II species we prefer the elegans homologies
+	if ($anomaly_score >= 0.1) {
+	  &output_to_database("SPLIT_GENES_BY_PROTEIN", $chromosome, $protein_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score, "split $matching_exon");
+	}
       }
     }
 
