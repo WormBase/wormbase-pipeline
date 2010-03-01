@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2010-03-01 10:36:49 $      
+# Last updated on: $Date: 2010-03-01 10:55:36 $      
 
 # Changes required by Ant: 2008-02-19
 # 
@@ -1062,7 +1062,7 @@ sub get_protein_split_merged {
 
   #my @homologies = sort {$a->[0] cmp $b->[0] or $a->[1] <=> $b->[1]} @matched;
   #my @homologies = sort {$a->[0] cmp $b->[0] or $a->[6] <=> $b->[6] or $a->[1] <=> $b->[1]} @matched;
-  my @homologies = sort {$a =~ /CE:/ <=> $b =~ /CE:/ or $a->[0] cmp $b->[0] or $a->[6] <=> $b->[6] or $a->[1] <=> $b->[1]} @matched;
+  my @homologies = sort {$a =~ /WP:/ <=> $b =~ /WP:/ or $a->[0] cmp $b->[0] or $a->[6] <=> $b->[6] or $a->[1] <=> $b->[1]} @matched;
 
   foreach my $homology (@homologies) { # $protein_id, $chrom_start, $chrom_end, $chrom_strand, $hit_start, $hit_end, $protein_score, $matching_exon, $matching_sense
 
@@ -1102,7 +1102,7 @@ sub get_protein_split_merged {
       } else {
 	# this is a Tier II organism
 	# if we have seen a elegans protein matching this gene, then give the match of other Tier II proteins a lower score than otherwise
-	if ($protein_id =~ /^CE:/) {
+	if ($protein_id =~ /^WP:/) {
 	  $seen_elegans_protein{$matching_exon} = 1; # remember that we have seenan elegans protein matching this gene
 	} else {
 	  if ($seen_elegans_protein{$matching_exon}) {
