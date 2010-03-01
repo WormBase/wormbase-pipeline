@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2010-03-01 10:20:19 $      
+# Last updated on: $Date: 2010-03-01 10:36:49 $      
 
 # Changes required by Ant: 2008-02-19
 # 
@@ -364,9 +364,9 @@ foreach my $chromosome (@chromosomes) {
   #my @jigsaw = $ovlp->get_jigsaw_CDS($chromosome);                     # jigsaw coding transcript (START to STOP)
   my @jigsaw_exons = $ovlp->get_jigsaw_exons($chromosome);             # jigsaw coding exons 
 
-  my @genblastg_exons = $ovlp->get_genblastg_exons($chromosome);             # Jack Chen's genBlastG coding exons 
+  my @genblastg_exons = $ovlp->get_genblastg_exons($chromosome) if (exists $run{GENBLASTG_DIFFERS_FROM_CDS});             # Jack Chen's genBlastG coding exons 
 # until the genBlastG data is in the acedb data and has been dumped to GFF, use the GFF files from Jack Chen.
-  if (! @genblastg_exons) {
+  if (! @genblastg_exons && exists $run{GENBLASTG_DIFFERS_FROM_CDS}) {
     my %GFF_data = 
       (
        file		=> "~wormpub/BUILD_DATA/MISC_DYNAMIC/genBlastG/${species}_v128.gff3", 
