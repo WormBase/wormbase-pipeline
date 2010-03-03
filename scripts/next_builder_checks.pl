@@ -7,7 +7,7 @@
 # build to check the current build
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2010-02-22 15:15:33 $
+# Last updated on: $Date: 2010-03-03 12:16:01 $
 use strict;
 use warnings;
 use lib $ENV{'CVS_DIR'};
@@ -19,7 +19,7 @@ use File::Compare;
 my $store;                                          # to specify saved commandline arguments
 my $maintainers = "All";
 my ($help,$debug, $species);
-my ($clones, $pfam, $seq, $wormpep);
+my ($clones, $pfam, $seq, $wormpep, $test);
 
 
 GetOptions(
@@ -30,7 +30,8 @@ GetOptions(
 	   'pfam'    => \$pfam,
 	   'seq'     => \$seq,
 	   'wormpep' => \$wormpep, 
-	   'species:s'=>\$species
+	   'species:s'=>\$species,
+	   'test'    => \$test,
 );
 
 # Display help if required
@@ -58,9 +59,14 @@ if ($debug) {
 my $log = Log_files->make_build_log($wb);
 
 $wormpep=$pfam=$seq=$clones=1 unless($wormpep or $pfam or $seq or $clones);
-#only do some checks if elegans.
-unless ($wb->species eq 'elegans') {
-    $pfam=$seq=$clones=0;
+if (
+    $wb->species eq 'brenneri' ||
+    $wb->species eq 'remanei' ||
+    $wb->species eq 'japonica' ||
+    $wb->species eq 'briggsae') {
+  $pfam=$seq=0;
+} elsif ($wb->species ne 'elegans') {
+  $log->log_and_die("\tSORRY, Don't know how to check this species: $species\n");
 }
 
 $log->write_to("Checking ".$wb->full_name.": - ".$wb->orgdb."\n\n");
@@ -73,22 +79,44 @@ if($wormpep or $clones or $pfam){
   print "Connecting to currentdb Ace\n";
   $aceold = Ace->connect('-path' => $wormbase->database('current'));
 }
+
+# these clones are chosen because they all have protein matches to all of the protein databases blasted against
 if($clones) {
   $log->write_to("##################################\nChecking clones . .\n\n");
-  my @clones = qw(C25A1 F56A3 C04H5 B0432 C07A9 F30H5 C10C6 B0545 C12D8 K04F1 C02C6 AH9);
-
-  #expected no of objects per type
-  my %data_types = ('Homol_data' => 11,
-		    'Feature_data' => 3,
-		   );
+  my @clones;
+  if ($wb->species eq 'elegans') {
+    @clones = qw(C25A1 F56A3 C04H5 B0432 C07A9 F30H5 C10C6 B0545 C12D8 K04F1 C02C6 AH9);
+  } elsif ($wb->species eq 'brenneri') {
+    @clones = qw(Cbre_Contig1 Cbre_Contig10 Cbre_Contig20 Cbre_Contig50 Cbre_Contig100 Cbre_Contig200  Cbre_Contig400 Cbre_Contig600 Cbre_Contig800);
+  } elsif ($wb->species eq 'briggsae') {
+    @clones = qw(chrI chrI_random chrII chrII_random chrIII chrIII_random chrIV chrIV_random);
+  } elsif ($wb->species eq 'remanei') {
+    @clones = qw(Crem_Contig0 Crem_Contig10 Crem_Contig15 Crem_Contig30 Crem_Contig100 Crem_Contig200 Crem_Contig300 Crem_Contig500 Crem_Contig800);
+  } elsif ($wb->species eq 'japonica') {
+    @clones = qw(Cjap_Contig0 Cjap_Contig10 Cjap_Contig15 Cjap_Contig30 Cjap_Contig100 Cjap_Contig200 Cjap_Contig300 Cjap_Contig500 Cjap_Contig800);
+  }
 
   foreach my $clone (@clones) {
-    $log->write_to("checking clone $clone \n");	
-    my $query = "find Homol_data $clone*";
+    $log->write_to("\n##################################\nchecking clone $clone\n");	
+    my $query = "find Homol_data \"$clone:*\"";
     my @hd    = $ace->fetch(-query => $query);
     my @hdold = $aceold->fetch(-query => $query);
+
+    # add in the BLAT Homol_data objects in brenneri and briggsae
+    if ($wb->species eq 'brenneri' || 
+	$wb->species eq 'briggsae' || 
+	$wb->species eq 'remanei') {
+      $query = "find Homol_data \"*:${clone}_*\"";
+      push @hd, $ace->fetch(-query => $query);
+      push @hdold, $aceold->fetch(-query => $query);
+    }
+    if ($wb->species eq 'briggsae') {
+      $query = "find Homol_data \"*:${clone}\"";
+      push @hd, $ace->fetch(-query => $query);
+      push @hdold, $aceold->fetch(-query => $query);
+    }
     
-    &check_for_missing_data(\@hd, \@hdold, 'Homol_data');
+    &check_for_missing_data(\@hd, \@hdold, 'Homol_data', 'currentdb');
     
     # check the blastx Homol_data
     my $hd;
@@ -97,38 +125,49 @@ if($clones) {
       if ($hd->name =~ /wublastx/) {
 	print $hd->name,"\n";
 	$count++;
-	if (defined $hd->Pep_homol(3) ) { # check for presence of a score.
+	# check for presence of an alignment of one of this type of protein to the clone.
+	if (defined $hd->Pep_homol(3) ) { 
 	  #$log->write_to($hd->name." OK\n");
 	} else {
-	  $log->error("ERROR: ".$hd->name." missing data\n");
+	  $log->error("\tERROR: Homol_data ".$hd->name." does not contain any wublastx alignments\n");
 	}
       }
     }
     
-    if($count < 11 ) {
-      $log->error("ERROR: $clone has stuff missing\n");
-    }
+    # check for 11 wublastx Homol_data objects (fly, brenenri, briggsae,
+    # human, japonica, pristionchus, remanei, slimSwissProt,
+    # slimTrEmbl, worm, yeast)
+    my @expected = qw(fly brenneri briggsae human japonica pristionchus remanei slimSwissProt slimTrEmbl worm yeast);
+    &check_for_missing_data2(\@hd, \@expected, 'Feature_data', 'what is expected');
+
+#    if($count < 11) {
+#      $log->error("\tERROR: $clone has wublastx Homol_data objects missing\n");
+#    }
     
     #check Feature_data
-    $query = "find Feature_data $clone*";
+    $query = "find Feature_data \"$clone:*\"";
     @hd    = $ace->fetch(-query => $query);
     @hdold = $aceold->fetch(-query => $query);
 
-    &check_for_missing_data(\@hd, \@hdold, 'Feature_data');
+    &check_for_missing_data(\@hd, \@hdold, 'Feature_data', 'currentdb');
 
     $count = 0;
     foreach my $hd (@hd) {
+      if (! defined $hd->Feature(2)) {$log->write_to("Undefined object for ".$hd."\n");}
       print $hd->name,"\n";
       $count++;
-      if( scalar $hd->Feature(2)->row > 3 ) {
+      # check the Feature_data line
+      #$log->write_to("Testing line for ".$hd->name."\n");
+      if (scalar $hd->Feature(2)->row > 3 ) {
 	#$log->write_to($hd->name." OK\n");
       } else {
-	$log->error("ERROR: ".$hd->name." missing data\n");
+	$log->error("\tERROR: ".$hd->name." missing clone-length data?\n");
       }
     }
-    if($count < 3 ) {
-      $log->error("ERROR: $clone has stuff missing\n");
-    }
+    
+    @expected = qw(TRF Dust inverted);
+    &check_for_missing_data2(\@hd, \@expected, 'Feature_data', 'what is expected');
+
   }
 }
 
@@ -286,7 +325,7 @@ sub usage {
 
 sub check_for_missing_data {
 
-  my ($hd_aref, $hdold_aref, $data_name) = @_;    
+  my ($hd_aref, $hdold_aref, $data_name, $compared_to) = @_;    
 
   my %seen=();
   my @oldonly=();
@@ -296,7 +335,38 @@ sub check_for_missing_data {
   }
   if (@oldonly) {
     foreach my $hd (@oldonly) {
-      $log->error("ERROR: $hd missing $data_name data compared to currentdb\n");
+      $log->error("\tERROR: $hd missing $data_name data compared to $compared_to\n");
+    }
+  }
+}
+
+##################################################################
+
+# check for missing data compared to currentdb, 
+# that compares the objects to a simple list of things that should match in a regexp
+
+sub check_for_missing_data2 {
+
+  my ($hd_aref, $list_aref, $data_name, $compared_to) = @_;    
+
+  my %seen=();
+  my @notseen=();
+  foreach my $hd (@{$hd_aref}) {$seen{$hd->name}=1} # get the name of objects in the clone in the Build
+  foreach my $expected (@{$list_aref}) {
+    my $found=0;
+    foreach my $seen (keys %seen) {
+      if ($seen =~ /$expected/) {
+	$found=1;
+	last;
+      }
+    }
+    if (!$found) {
+      push @notseen, $expected;
+    }
+  }
+  if (@notseen) {
+    foreach my $hd (@notseen) {
+      $log->error("\tERROR: missing $data_name '$hd' compared to $compared_to\n");
     }
   }
 }
