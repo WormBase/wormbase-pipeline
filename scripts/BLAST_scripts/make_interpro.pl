@@ -9,7 +9,7 @@
 # indexing program on it.
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2009-08-03 12:45:37 $      
+# Last updated on: $Date: 2010-03-04 13:24:49 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -66,6 +66,8 @@ my @species_list = qw(
 		      elegans
 		      briggsae
 		      remanei
+                      japonica
+                      brenneri
 		      );
 my @species;			# species databases to remove old results from
 if (! $species) {
