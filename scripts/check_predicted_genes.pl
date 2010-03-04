@@ -4,7 +4,7 @@
 #
 # by Keith Bradnam
 #
-# Last updated on: $Date: 2009-07-01 11:46:42 $
+# Last updated on: $Date: 2010-03-04 15:02:20 $
 # Last updated by: $Author: pad $
 #
 # see pod documentation at end of file for more information about this script
@@ -24,7 +24,7 @@ GetOptions ("verbose"    => \$verbose, # prints screen output.
 	    "database=s" => \$db_path, # Path to the database you want to check.
 	    "basic"      => \$basic,   # Ignores some of the checks.
 	    "debug:s"    => \$debug,   # turns on more printing and errorlogging
-	    "test1"      => \$test1,   # only checks the CDSs from 1 clone in the database.
+	    "test1:s"    => \$test1,   # only checks the CDSs from 1 clone in the database.
 	    "store:s"    => \$store,   # 
 	    "test"       => \$test,    # Test build
 	   );
@@ -66,13 +66,13 @@ our @error4;
 our @error5;
 
 #Permitted exceptions
-#small genes
-#my $smallgenes = ('C40H5.1', 'H12D21.1', 'H12D21.12','H12D21.13', 'H12D21.14',  'H12D21.15','W06A7.5','Y50E8A.17', 'ZC412.6', 'ZC412.7');
+#List of verified small genes or have confirmed small introns.
+my @checkedgenes = ('F56H11.3b','F13E9.8','Y45F10D.7','T21C12.8','F58G11.2','F54E4.3','F43D9.3a','F43D9.3b','F36H1.3','F02C12.1','C40H5.1', 'H12D21.1', 'H12D21.12','H12D21.13', 'H12D21.14',  'H12D21.15','W06A7.5','Y50E8A.17', 'ZC412.6', 'ZC412.7', 'R74.3a');
 
 
 # Check for non-standard methods in CDS class
 my $CDSfilter = "";
-my @CDSfilter = $db->fetch (-query => 'FIND CDS; method != Transposon_CDS; method != curated; method !=history; method !=Genefinder; method !=twinscan; method !=jigsaw');
+my @CDSfilter = $db->fetch (-query => 'FIND CDS; method != Transposon_CDS; method != Transposon_Pseudogene; method != curated; method !=history; method !=Genefinder; method !=twinscan; method !=jigsaw; method !=mGene');
 foreach $CDSfilter (@CDSfilter) {
   push(@error4, "ERROR! CDS:$CDSfilter contains an invalid method please check\n");
 }
@@ -82,8 +82,9 @@ foreach $CDSfilter (@CDSfilter) {
 ################################
 my @Predictions;
 if ($test1) {
+  $log->write_to("Only checking genes on ${test1}.......\n");
 #  @Predictions = $db->fetch('All_genes','Y32B12C*');
-@Predictions = $db->fetch('All_genes','C15A11*');
+@Predictions = $db->fetch('All_genes',"${test1}*");
   foreach my $Predictions(@Predictions) {
     print $Predictions->name."\n";
   }
@@ -127,13 +128,14 @@ foreach my $gene_model ( @Predictions ) {
   
   for ($i=1; $i<@exon_coord2;$i++) {
     my $intron_size = ($exon_coord1[$i] - $exon_coord2[$i-1] -1);
-    if (($intron_size < 34) && ($method_test eq 'curated')) {
-      print "ERROR: $gene_model has a small intron ($intron_size bp)\n";
-      push(@error4,"ERROR: $gene_model has a very small intron ($intron_size bp)\n");
+    my @ck = grep(/^$gene_model/, @checkedgenes);
+    unless (defined $ck[0]) {
+      if (($intron_size < 34) && ($method_test eq 'curated')) {
+	push(@error4,"ERROR: $gene_model has a very small intron ($intron_size bp)\n");
+      }
+      push(@error5,"WARNING: $gene_model has a small intron ($intron_size bp)\n") if (($intron_size > 33) && ($intron_size < 39) && (!$basic) && ($method_test eq 'curated') && ($ck[0] ne $gene_model->name));
     }
-    push(@error5,"WARNING: $gene_model has a small intron ($intron_size bp)\n") if (($intron_size > 33) && ($intron_size < 39) && (!$basic) && ($method_test eq 'curated'));
   }
-  #print "$gene_model\n"; bebug line
 	
   for ($i=0; $i<@exon_coord1; $i++) {
     my $start = $exon_coord1[$i];
@@ -259,7 +261,7 @@ foreach my $gene_model ( @Predictions ) {
     if (defined $Gene_ID) {
       push(@error2, "ERROR: The Gene ID '$Gene_ID' in $gene_model is invalid!\n") unless ($Gene_ID =~ /WBGene[0-9]{8}/);
     } else {
-      push(@error2, "ERROR: $gene_model does not have a Gene ID!\n");
+      push(@error2, "ERROR: $gene_model does not have a Gene ID!\n") unless (($method_test eq 'Transposon_Pseudogene') && (defined $Genehist_ID));
     }
   }
   #History genes have to have a Gene_history ID of 8 digits.
@@ -335,9 +337,11 @@ sub test_gene_sequence_for_errors{
   ($Lab) = ($gene_model->get('From_laboratory'));
 	    
   # check for length errors(CDS specific)
+  my @ck;
   if (!$basic) {
     my $warning;
-    if (($gene_model_length < 75) && ($method_test eq 'curated')) {
+    @ck = grep(/^$gene_model/, @checkedgenes);
+    if (($gene_model_length < 75) && ($method_test eq 'curated') && ($ck[0] ne $gene_model->name)) {
       $warning = "WARNING: $gene_model is very short ($gene_model_length bp),";
       print "WARNING: $gene_model is very short ($gene_model_length bp), " if $verbose;
       if (defined($gene_model->at('Properties.Coding.Confirmed_by'))) {
@@ -347,7 +351,7 @@ sub test_gene_sequence_for_errors{
       elsif (defined($gene_model->at('Visible.Matching_cDNA'))) {
 	$warning .= "gene is Partially_confirmed\n";
 	print "gene is Partially_confirmed\n" if $verbose;
-      } 
+      }
       else {
 	$warning .= "gene is Predicted\n";
 	print "gene is predicted\n" if $verbose;
