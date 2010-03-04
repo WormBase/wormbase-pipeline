@@ -5,7 +5,7 @@
 # A script to make multiple copies of camace for curation, and merge them back again
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2009-12-02 14:46:45 $
+# Last edited on: $Date: 2010-03-04 14:58:32 $
 #
 # Persisting errors.
 #running csh -c "reformat_acediff file 1 file2"
@@ -133,7 +133,9 @@ if ($merge) {
     foreach my $class (@classes) {
       my $path_new = $directory . "/${class}_${database}.ace";
       my $path_ref = $directory . "/${class}_orig.ace";
+      print "running.... acediff $path_ref $path_new > $directory/${class}_diff_${database}.ace\n";
       $wormbase->run_command("csh -c \"/software/worm/bin/acedb/acediff $path_ref $path_new >! $directory/${class}_diff_${database}.ace\"", $log) && die "acediff Failed for ${path_new}\n";
+      print "running.... reformat_acediff -file $directory/${class}_diff_${database}.ace -fileout $directory/update_${class}_${database}.ace\n";
       $wormbase->run_script("reformat_acediff -file $directory/${class}_diff_${database}.ace -fileout $directory/update_${class}_${database}.ace", $log) && die "reformat Failed for ${class}_diff_${database}.ace\n";
     }
   }
@@ -447,7 +449,7 @@ sub load_curation_data {
 	"$acefiles/feature_transcription_end_site",
 	"$acefiles/feature_transcription_start_site",
 	"$acefiles/feature_Genome_sequence_error.ace",
-	"$wormpub/CURATION_DATA/PAD_DATA/elegans.public_names_ws196.ace", #needs scripting to update
+	"$wormpub/CURATION_DATA/PAD_DATA/elegans.public_names_ws212", #needs scripting to update
 	"$wormpub/CURATION_DATA/PAD_DATA/genomic_signals-no-splicing.ace", #needs remapping
   	"$wormpub/BUILD_DATA/MISC_DYNAMIC/misc_mass_spec_GenniferMerrihew.ace",
 	"$acefiles/mass-spec-data.ace",
