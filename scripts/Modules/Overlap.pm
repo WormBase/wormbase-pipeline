@@ -7,7 +7,7 @@
 # Do fast overlap matching of positions of two sets of things.
 #
 # Last updated by: $Author: pad $     
-# Last updated on: $Date: 2010-02-25 16:46:07 $      
+# Last updated on: $Date: 2010-03-05 15:26:20 $      
 
 =pod
 
@@ -99,7 +99,8 @@ Routines to read GFF files from the database defined in $wormbase
 @list = $ovlp->get_3_UTRs($chromosome)
 @list = $ovlp->get_Genes($chromosome)
 @list = $ovlp->get_Operons($chromosome)
-@list = $ovlp->get_miRNA($chromosome);
+@list = $ovlp->get_miRNA_mature($chromosome);
+@list = $ovlp->get_miRNA_primary($chromosome);
 @list = $ovlp->get_ncRNA($chromosome);
 @list = $ovlp->get_scRNA($chromosome);
 @list = $ovlp->get_snRNA($chromosome);
@@ -1812,15 +1813,15 @@ sub get_Operons {
 
 =head2
 
-    Title   :   get_miRNA
-    Usage   :   my @gff = $ovlp->get_miRNA($chromosome)
-    Function:   reads the GFF data for the miRNA transcipts
+    Title   :   get_miRNA_mature
+    Usage   :   my @gff = $ovlp->get_miRNA_mature($chromosome)
+    Function:   reads the GFF data for the mature miRNA transcipts
     Returns :   list of lists for GFF data
     Args    :   chromosome number
 
 =cut
 
-sub get_miRNA {
+sub get_miRNA_mature {
   my $self = shift;
   my ($chromosome) = @_;
 
@@ -1829,6 +1830,33 @@ sub get_miRNA {
      method			=> "miRNA",
      gff_source			=> "miRNA_mature_transcript",
      gff_type			=> "miRNA",
+     ID_after			=> 'Transcript\s+',
+
+   );
+
+  return $self->read_GFF_file($chromosome, \%GFF_data);
+
+}
+
+=head2
+
+    Title   :   get_miRNA_primary
+    Usage   :   my @gff = $ovlp->get_miRNA_primary($chromosome)
+    Function:   reads the GFF data for the primary miRNA transcipts
+    Returns :   list of lists for GFF data
+    Args    :   chromosome number
+
+=cut
+
+sub get_miRNA_primary {
+  my $self = shift;
+  my ($chromosome) = @_;
+
+  my %GFF_data = 
+   (
+     method			=> "miRNA_primary_transcript",
+     gff_source			=> "curated",
+     gff_type			=> "miRNA_primary_transcript",
      ID_after			=> 'Transcript\s+',
 
    );
@@ -1967,7 +1995,7 @@ sub get_stRNA {
   my %GFF_data = 
    (
      method			=> "stRNA",
-     gff_source			=> "stRNA",
+     gff_source			=> "stRNA_mature_transcript",
      gff_type			=> "stRNA",
      ID_after			=> 'Transcript\s+',
 
