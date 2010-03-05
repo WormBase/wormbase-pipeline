@@ -5,7 +5,7 @@
 # backup database and compare to last backed up database to look for lost data
 #
 # Last updated by: $Author: pad $     
-# Last updated on: $Date: 2007-05-24 13:15:26 $      
+# Last updated on: $Date: 2010-03-05 12:11:46 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -23,10 +23,10 @@ my $db;
 
 GetOptions (
 	    "help"           => \$help,
-	    "db=s"           => \$db,
+	    "db=s"           => \$db, #usually camace or geneace but differs if using just_compare
             "debug:s"        => \$debug,
-	    "just_compare=s" => \$just_compare,
-	    "store:s"        => \$store
+	    "just_compare=s" => \$just_compare, # specify what 2nd database to use for comparison
+	    "store:s"        => \$store 
 	   );
 
 my $wormbase;
@@ -272,10 +272,12 @@ sub usage {
 
 
 __DATA__
+Analysis
 2_point_data
 Accession_number
 Variation
 Author
+elegans_CDS
 CDS
 Cell
 Cell_group
@@ -301,7 +303,11 @@ Laboratory
 Life_stage
 Lineage
 Locus
+LongText
 Map
+Mass_spec_data
+Mass_spec_experiment
+Mass_spec_peptide
 Method
 Microarray_aff
 Microarray_result
@@ -319,6 +325,7 @@ Phenotype
 Picture
 Pos_neg_data
 Protein
+elegans_pseudogenes
 Pseudogene
 Rearrangement
 Reference
@@ -326,13 +333,19 @@ Repeat_Info
 RNAi
 Sequence
 SK_map
+SO_term
 Species
 Strain
 Table
 Tag
 Transgene
+elegans_RNA_genes
 Transcript
+elegans_transposons
 Transposon
+Transposon_CDS
+Transposon_Pseudogene
+Transposon_family
 Url
 __END__
 
