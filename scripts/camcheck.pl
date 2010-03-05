@@ -6,8 +6,8 @@
 #
 # Usage: camcheck.pl
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2009-06-11 15:03:14 $
+# Last updated by: $Author: pad $
+# Last updated on: $Date: 2010-03-05 12:15:25 $
 #
 # see pod documentation (i.e. 'perldoc camcheck.pl') for more information.
 #
@@ -122,6 +122,8 @@ $log->write_to("** Monthly edition **\n\n") if ($Montly);
 &check_worm_transcripts;
 
 &CheckPredictedGenes;
+
+&DBBackupandCompare;
 
 &SingleSequenceMap;
 
@@ -291,6 +293,16 @@ sub CheckPredictedGenes {
   else {
     $wormbase->run_script("check_predicted_genes.pl -database $dbpath" , $log);
   }
+}
+
+
+#########################
+# Check for lost data   #
+#########################
+
+sub DBBackupandCompare {
+  $log->write_to("runnning DB_backup_and_compare\n");
+  $wormbase->run_script("db_backup_and_compare.pl -db camace" , $log);
 }
 
 ################################################
