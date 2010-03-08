@@ -4,8 +4,8 @@
 # 
 # by Dan Lawson
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2008-11-07 16:56:05 $
+# Last updated by: $Author: pad $
+# Last updated on: $Date: 2010-03-08 10:37:18 $
 #
 
 #
@@ -136,7 +136,7 @@ foreach my $file (@gff_files) {
 	
 		my ($chromosome,$source,$feature,$start,$stop,$score,$strand,$other,$name) = split /\t/;
 	
-		if( $source eq 'curated') {
+		if(( $source eq 'curated') && ($feature ne 'miRNA_primary_transcript')) {
 			my ($i) = $name =~ (/CDS \"(\S+)\"/);
 	
 			print OUT "$chromosome\t$source\t$feature\t$start\t$stop\t$score\t$strand\t$other\tCDS \"$i\" ;";
