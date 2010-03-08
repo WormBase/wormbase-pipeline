@@ -6,7 +6,7 @@
 # dl
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2008-10-22 12:24:11 $
+# Last updated on: $Date: 2010-03-08 12:13:29 $
  
 $!=1;
 use strict;
@@ -281,6 +281,7 @@ foreach $seq (keys %CDSStart) {
     
     # assign parent for problem child (it spans clones Y41C4A to Y66A7AR)
     if ($seq eq "Y66A7A.8") {$parent = "Y66A7AR";}
+    if ($seq =~ /^Y66A7A.8\:wp/) {$parent = "Y66A7AR";}
     
     # next if no coordinate for parent clone
     if (!$currStart{$parent}) { 
