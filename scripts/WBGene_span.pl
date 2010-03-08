@@ -6,8 +6,8 @@
 #
 # Creates SMapped Gene spans for Gene objects
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2008-10-15 16:10:01 $
+# Last edited by: $Author: pad $
+# Last edited on: $Date: 2010-03-08 10:22:22 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -96,15 +96,14 @@ else {
                     or ( $data[1] eq 'Pseudogene' )
                     or ( $data[1] eq 'curated' )
                     or ( $data[1] eq 'tRNAscan-SE-1.23' )
-                    or ( $data[1] eq 'tRNA' )
-                    or ( $data[1] eq 'snRNA' )
-                    or ( $data[1] eq 'miRNA' )
+                    or ( $data[1] eq 'tRNA_mature_transcript' )
+                    or ( $data[1] eq 'snRNA_mature_transcript' )
+                    or ( $data[1] eq 'miRNA_mature_transcript' )
                     or ( $data[1] eq 'rRNA' )
-                    or ( $data[1] eq 'scRNA' )
-                    or ( $data[1] eq 'snoRNA' )
-                    or ( $data[1] eq 'tRNA' )
+                    or ( $data[1] eq 'scRNA_mature_transcript' )
+                    or ( $data[1] eq 'snoRNA_mature_transcript' )
                     or ( $data[1] eq 'stRNA' )
-                    or ( $data[1] eq 'snRNA' )
+                    or ( $data[1] eq 'snRNA_mature_transcript' )
                     or ( $data[1] eq 'ncRNA' ) ) {
                     next if ( $data[2] eq 'exon'
                          or $data[2] eq 'coding_exon'
