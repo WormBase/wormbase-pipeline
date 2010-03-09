@@ -8,7 +8,7 @@
 # stores the results in the mysql database 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-02-29 11:35:37 $      
+# Last updated on: $Date: 2010-03-09 14:43:17 $      
 
 use strict;                                      
 use Getopt::Long;
@@ -217,7 +217,9 @@ sub put_anomaly_record_in_database {
     print "In test mode - so not updating the mysql database\n";
   } else {
     if ($nearest <= 20) {
+      $mysql->do("LOCK TABLES anomaly WRITE");
       $mysql->do(qq{ UPDATE anomaly SET clone="$clone", clone_start=$clone_start, clone_end=$clone_end, centre="$lab", chromosome_start=$chrom_start, chromosome_end=$chrom_end, thing_score=$anomaly_score, explanation="$explanation"   WHERE anomaly_id = $nearest_db_key_id; });
+      $mysql->do("UNLOCK TABLES");
       # NB we do not write the status record for this anomaly_id
       print "*** updating existing record for $anomaly_id in $clone\n" if ($verbose);
 
@@ -226,7 +228,9 @@ sub put_anomaly_record_in_database {
       # we want a new record inserted
       # write the data to the database
       $db_key_id++;
+      $mysql->do("LOCK TABLES anomaly WRITE");
       $mysql->do(qq{ insert into anomaly values ($db_key_id, "$anomaly_type", "$clone", $clone_start, $clone_end, "$lab", "$chromosome", $chrom_start, $chrom_end, "$chrom_strand", "$anomaly_id", $anomaly_score, "$explanation", $window, 1, NULL); });
+      $mysql->do("UNLOCK TABLES");
       print "*** inserting new record for $anomaly_id in $clone\n" if ($verbose);
     }
   }
@@ -261,13 +265,14 @@ sub tidy_up_senseless_records {
       print "In test mode - so not updating the mysql database\n";
     } else {
 
+      $mysql->do("LOCK TABLES anomaly WRITE");
       $mysql->do(qq{ INSERT INTO anomaly VALUES ($db_key_id, "$anomaly_type", "$clone", $clone_start, $clone_end, "$lab", "$chromosome", $chrom_start, $chrom_end, "+", "$anomaly_id", $anomaly_score, "$explanation", $window, $active, NULL); });
       $db_key_id++;
       $mysql->do(qq{ INSERT INTO anomaly VALUES ($db_key_id, "$anomaly_type", "$clone", $clone_start, $clone_end, "$lab", "$chromosome", $chrom_start, $chrom_end, "-", "$anomaly_id", $anomaly_score, "$explanation", $window, $active, NULL); });
-      
-    
+
       # and we want to delete the old record with no sense
       $mysql->do(qq{ DELETE FROM anomaly WHERE anomaly_id = $old_db_key_id; });
+      $mysql->do("UNLOCK TABLES");
     }
   }
 }
@@ -294,7 +299,9 @@ sub delete_anomalies{
   if ($test) {
     print "In test mode - so not updating the mysql database\n";
   } else {
+    $mysql->do("LOCK TABLES anomaly WRITE");
     $mysql->do(qq{ DELETE FROM anomaly WHERE type = "$type" AND active = 1 });
+    $mysql->do("UNLOCK TABLES");
     print "*** deleting old $type anomalies\n" if ($verbose);
   }
 }
