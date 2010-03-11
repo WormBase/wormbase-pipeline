@@ -4,8 +4,8 @@
 #
 # map GO_terms to ?Sequence objects from ?Motif and ?Phenotype
 #
-# Last updated by: $Author: ar2 $     
-# Last updated on: $Date: 2009-11-04 09:56:56 $      
+# Last updated by: $Author: mh6 $     
+# Last updated on: $Date: 2010-03-11 15:09:47 $      
 
 use strict;
 use warnings;
@@ -162,7 +162,7 @@ sub phenotype {
 	}
 	else {next;}
 	unless($cds and $phenotype and $go) {
-	    $log->write_to("bad data $_");
+	    $log->write_to("bad data (causes a phenotype, but doesn't affect a gene) $_");
 	    next;
 	}
 	print OUT "\nCDS : \"$cds\"\nGO_term \"$go\" IMP Inferred_automatically \"$phenotype ($phenotype_id|$rnai)\"\n" ;
