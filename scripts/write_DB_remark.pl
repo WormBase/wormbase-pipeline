@@ -7,8 +7,8 @@
 # This script interogates an ACEDB database and returns all pfam/Interpro/blastx 
 # data as appropriate and generates a suitable DB_remark
 #
-# Last updated on: $Date: 2009-09-18 11:13:03 $
-# Last updated by: $Author: pad $
+# Last updated on: $Date: 2010-03-11 13:50:55 $
+# Last updated by: $Author: mh6 $
 
 
 ### DB_remark is generated as follows:  ###
@@ -355,7 +355,7 @@ my @pseudogenes;
     @pseudogenes = $db->fetch(-query => 'Find Pseudogene $gene');
   }
 else {
-  @pseudogenes = $db->fetch(-query => 'Find Pseudogene where species = "'.$wormbase->full_name.'" AND (NOT Method = history)');
+  @pseudogenes = $db->fetch(-query => 'Find Pseudogene where species = "'.$wormbase->full_name.'" AND (NOT Method = history) AND (NOT Method = Transposon_Pseudogene)');
 }
 
 PSEUDOGENE: foreach my $pseudogene (@pseudogenes) {
