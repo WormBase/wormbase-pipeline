@@ -7,8 +7,6 @@ use vars qw($SSO_USER $PASS $DB $VALID_USERS $VALID_API_USERS $VALID_CGCNAME_USE
 
 use SangerPaths qw(core celegans);
 use SangerWeb;
-use NameDB_handler;
-use Data::Dumper;
 use CGI::Carp qw(fatalsToBrowser warningsToBrowser);
 use Website::Utilities::Mail;
 use File::Path;
@@ -18,14 +16,9 @@ $| = 1;
 $VALID_USERS = {
 					# these are the users WBPerson id
 					'ar2' 		=> 1847,
-					'pad' 		=> 1983,
 					'mt3' 		=> 2970,
-					'gw3' 		=> 4025,
 					'mh6' 		=> 4036,
-					'tbieri' 	=> 1849,
-					'jspieth' 	=> 615,
-					'dblasiar' 	=> 1843,
-					'pozersky' 	=> 1867,
+					'jolenef'       => 2021,
 					'stlouis' 	=> 1,
 					'caltech' 	=> 1,
 					'cshl' 		=> 1,
@@ -34,10 +27,10 @@ $VALID_USERS = {
 
 ## a list of valid SSO login names for each DB operation
 $VALID_API_USERS = {
-		'query'		=> [qw(avc ar2 pad gw3 mh6 mt3 tbieri jspieth dblasiar pozersky stlouis caltech cshl sanger)],
-   	'merge_var'	=> [qw(avc ar2 pad gw3 mt3 tbieri jspieth dblasiar pozersky)],
-		'new_var'	=> [qw(avc ar2 pad gw3 mt3 tbieri jspieth dblasiar pozersky)],
-		'kill_var'	=> [qw(avc ar2 pad gw3 mt3 tbieri jspieth dblasiar pozersky)],
+		'query'		=> [qw( ar2 pad gw3 mh6 mt3 stlouis caltech cshl sanger)],
+		'merge_var'	=> [qw( ar2 mt3 mh6 jolenef)],
+		'new_var'	=> [qw( ar2 mt3 mh6 jolenef)], 
+		'kill_var'	=> [qw( ar2 mt3 mh6 jolenef)],
 };
 
 ## a list of valid SSO login names able to add GCG name
@@ -47,20 +40,15 @@ $VALID_CGCNAME_USERS = {
 };
 
 $MAILS = {
-	'ar2'			=>	'ar2@sanger.ac.uk',
-	'pad'			=>	'pad@sanger.ac.uk',
-	'gw3'			=>	'gw3@sanger.ac.uk',
-	'mh6'			=>	'mh6@sanger.ac.uk',
-	'mt3'			=>	'mt3@sanger.ac.uk',
-	'tbieri'		=>	'tbieri@watson.wustl.edu',
-	'jspieth'	=>	'jspieth@watson.wustl.edu',
-	'dblasiar'	=>	'dblasiar@watson.wustl.edu',
-	'pozersky'	=>	'pozersky@watson.wustl.edu',
+	'ar2'		=>	'ar2@sanger.ac.uk',
+	'mh6'		=>	'mh6@sanger.ac.uk',
+	'mt3'		=>	'mt3@sanger.ac.uk',
+	'jolenef'       =>      'jolenef@caltech.edu',
 	'stlouis'	=>	'stlouis@wormbase.org',
 	'caltech'	=>	'caltech@wormbase.org',
 	'cshl'		=>	'cshl@wormbase.org',
-	'sanger'		=>	'sanger@wormbase.org',
-	'cgc'       => 'mt3@sanger.ac.uk'
+	'sanger'	=>	'sanger@wormbase.org',
+	'cgc'           =>      'mt3@sanger.ac.uk'
 };
 
 ## a list of people to mail when a DB operation occurs
@@ -86,7 +74,7 @@ sub main {
 	} else {
 	    $DB = 'wbgene_id;shap;3303';
 	}
-	print $sw->header({'title'  => "WormBase Gene ID Server $DB"});
+
 
 	$SSO_USER = $sw->username(); ## for SSO
 	if( $SSO_USER =~ /^(\w+)@/) {
@@ -111,8 +99,8 @@ sub main {
 		print $sw->footer();
 		return;
 	}
-			
-	print $sw->header();
+	print $sw->header({'title'  => "WormBase Gene ID Server $DB"});
+	#print $sw->header();
 	
   	if (!defined $VALID_USERS->{$USER}) {
 		print qq(<h3>Sorry, you $USER are not authorised to access this resource. Please contact the Wormbase team</h3>);
@@ -277,38 +265,34 @@ sub merge
 			print "Sorry, the variation merge failed<br>";
       }
     }
-  }
-  
-sub new_var {
-	my $public = shift;
-	unless ($public) {
-		## print the query form
-		print qq(
-    	<form action="$ENV{'SCRIPT_NAME'}" method="GET">
-		<BR><BR>
-    	  <h3>Request a new Variation Id</h3>
-    	  Enter Public name of Variation<br>  
-    	  <INPUT TYPE="text" NAME="name" SIZE="10" MAXLENGTH="10" VALUE="">
-    	  <INPUT TYPE="hidden" NAME="action" VALUE="new_var">
-		<br><br>
-    	  <INPUT TYPE="submit" VALUE="Search">
-    	</form>
-		);
-	}
-	else {
-		my $db = get_db_connection();
-  		my $var = $db->idGetByTypedName('Public'=>$public)->[0];
-		if ( $var ) {	
-			print "$public already exists as $var"
-		}
-		else {
-			my $id = $db->idCreate;
-			$db->addName($id,'Public'=>$public);
-			print "$id created with name $public<br>";
-		}
-	}
 }
   
+sub new_var {
+    my $public = shift;
+    unless ($public) {
+	## print the query form
+	print qq(
+		 <form action="$ENV{'SCRIPT_NAME'}" method="GET">
+		 <BR><BR>
+		 <h3>Request a new Variation Id</h3>
+		 Enter Public name of Variation<br>  
+		 <INPUT TYPE="text" NAME="name" SIZE="10" MAXLENGTH="10" VALUE="">
+		 <INPUT TYPE="hidden" NAME="action" VALUE="new_var">
+		 <br><br>
+		 <INPUT TYPE="submit" VALUE="Search">
+		 </form>
+		 );
+    }
+    else {
+	if(&_check_name($var) == 0) {
+	    my $id = $db->idCreate;
+	    $db->addName($id,'Public'=>$public);
+	    print "$id created with name $public<br>";
+	    
+	}
+    }
+}  
+
 sub kill_var {
 	my $kill_id = shift;
 	unless ($kill_id) {
@@ -380,6 +364,24 @@ sub query {
 
 }
 
+sub _check_name {
+    my $name = shift;
+    my $db = get_db_connection();
+    my $var = $db->idGetByTypedName('Public'=>$name)->[0];
+
+    if($var) {	
+	print "$public already exists as $var";
+	return 0;
+    }
+    elsif ($var =~ /(\w+)[a-z]+$/) {
+	my $short_var = $db->idGetByTypedName('Public'=>$1)->[0];
+	if($short_var) {	
+	    print "$var looks like a poorly name version of $short_var";
+	    retun 0;
+	}
+    }
+    return 1;
+}
 
 
 
