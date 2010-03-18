@@ -2,8 +2,8 @@
 #
 # This is to add Confirmed / Predicted Status and RFLP to SNP gff lines as requested by Todd
 #
-# Last updated by: $Author: ar2 $     
-# Last updated on: $Date: 2009-08-12 12:54:12 $      
+# Last updated by: $Author: mh6 $     
+# Last updated on: $Date: 2010-03-18 17:12:51 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -72,11 +72,11 @@ while(<$table>) {
 	$SNP{$snp}->{'RFLP'} = 1 if ($rflp =~ /\w/);
 }
 
-my @chroms = qw(I II III IV V X MtDNA);
+my @chroms = $wormbase->get_chromosome_names(-mito => 1);
 my $dir = $wormbase->chromosomes;
 my $stat = 0;
 foreach my $chrom (@chroms) {
-    my $file = ($gff_file or "$dir/CHROMOSOME_${chrom}.gff");
+    my $file = ($gff_file or "$dir/${\$wormbase->chromosome_prefix}${chrom}.gff");
     open(GFF,"<$file") or $log->log_and_die("cant open $file");
     open(NEW,">$file.tmp") or $log->log_and_die("cant open $file tmp file\n");
     while( <GFF> ) {
@@ -106,10 +106,10 @@ if($gff_file){
 }
 else { 
     foreach my $chrom (@chroms) {
-	$wormbase->check_file("$dir/CHROMOSOME_${chrom}.gff", $log,
+	$wormbase->check_file("$dir/${\$wormbase->chromosome_prefix}${chrom}.gff", $log,
 			      minsize => 1500000,
 			      lines => ['^##',
-					"^CHROMOSOME_${chrom}\\s+\\S+\\s+\\S+\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+"],
+					"^${\$wormbase->chromosome_prefix}${chrom}\\s+\\S+\\s+\\S+\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+"],
 			      );
     }
 }
@@ -167,7 +167,8 @@ sub get_mol_changes{
 	next if (/acedb/ or /\/\//);
 	my @data = split(/\s+/,$_);
 	if($interested{$data[1]}){
-	    if( !(defined $SNP{$data[0]}->{'mol_change'}) or ($SNP{$data[0]}->{'mol_change'} and ($interested{$data[1]} < $interested{ $SNP{$data[0]}->{'mol_change'} }) ) ) {
+	    if( !(defined $SNP{$data[0]}->{'mol_change'}) or  
+		 ($interested{$data[1]} < $interested{ $SNP{$data[0]}->{'mol_change'} }) ){
 		$SNP{$data[0]}->{'mol_change'} = $data[1];
 	    }
 	}
@@ -180,7 +181,7 @@ sub get_mol_changes{
 sub write_def_file {
 	my $def = '/tmp/overload_SNP_GFF.def';
 	open TMP,">$def" or $log->log_and_die("cant write $def: $!\n");
-	 my $txt = <<END;
+	my $txt = <<END;
 Sortcolumn 1
 
 Colonne 1
@@ -242,7 +243,7 @@ END
 sub write_mol_change_def {
 	my $def = '/tmp/overload_SNP_GFF_mol_chng.def';
 	open TMP,">$def" or $log->log_and_die("cant write $def: $!\n");
-	 my $txt = <<END;
+	my $txt = <<END;
 Sortcolumn 1
 
 Colonne 1 
