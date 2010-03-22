@@ -8,8 +8,8 @@
 # matching a CDS and stores the results in in a data file ready to be read into the SQL database
 # 'worm_anomaly'
 #
-# Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2010-03-01 10:55:36 $      
+# Last updated by: $Author: mh6 $     
+# Last updated on: $Date: 2010-03-22 10:18:17 $      
 
 # Changes required by Ant: 2008-02-19
 # 
@@ -381,7 +381,7 @@ foreach my $chromosome (@chromosomes) {
   my @UTRs_3 = $ovlp->get_3_UTRs($chromosome) if (exists $run{INTRONS_IN_UTR});
 
   my @rRNA = $ovlp->get_rRNA_transcripts($chromosome);
-  my @miRNA = $ovlp->get_miRNA($chromosome) if (exists $run{UNMATCHED_EXPRESSION});
+  my @miRNA = $ovlp->get_miRNA_primary($chromosome) if (exists $run{UNMATCHED_EXPRESSION});
   my @ncRNA = $ovlp->get_ncRNA($chromosome) if (exists $run{UNMATCHED_EXPRESSION});
   my @scRNA = $ovlp->get_scRNA($chromosome) if (exists $run{UNMATCHED_EXPRESSION});
   my @snRNA = $ovlp->get_snRNA($chromosome) if (exists $run{UNMATCHED_EXPRESSION});
