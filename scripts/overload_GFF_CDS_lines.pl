@@ -4,9 +4,8 @@
 # 
 # by Dan Lawson
 #
-# Last updated by: $Author: pad $
-# Last updated on: $Date: 2010-03-08 10:37:18 $
-#
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2010-03-23 12:22:06 $
 
 #
 #    1. Brief_identification
@@ -129,7 +128,7 @@ foreach my $file (@gff_files) {
 	chomp;
 	
 		#skip header lines of file
-		unless  (/^\S+\s+(curated|miRNA|ncRNA|snRNA|snlRNA|snoRNA|tRNAscan-SE-1\.23|snl)\s+(\w+primary_transcript|CDS)/) {
+		unless  (/^\S+\s+(curated|miRNA|ncRNA|snRNA|snlRNA|snoRNA|tRNAscan-SE-1|snl)\s+(\w+primary_transcript|CDS)/) {
 		    print OUT "$_\n";
 		    next;
 		}

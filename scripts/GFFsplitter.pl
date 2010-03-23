@@ -4,7 +4,7 @@
 # 
 # by Dan Lawson
 #
-# Last updated on: $Date: 2006-12-05 10:44:59 $
+# Last updated on: $Date: 2010-03-23 12:22:06 $
 #
 # Usage GFFsplitter.pl [-options]
 
@@ -215,7 +215,7 @@ foreach $file (@gff_files) {
     elsif (($source eq "Non_coding_transcript") && ($feature eq "exon"))        {push (@{$GFF{$file}{exon_noncoding}},$_);}
     elsif (($source eq "ncRNA")                 && ($feature eq "exon"))        {push (@{$GFF{$file}{exon_noncoding}},$_);}
     elsif (($source eq "tRNAscan-SE-1.23")      && ($feature eq "exon"))        {push (@{$GFF{$file}{exon_tRNA}},$_);}
-
+    elsif (($source eq "tRNAscan-SE-1.3")       && ($feature eq "exon"))        {push (@{$GFF{$file}{exon_tRNA}},$_);}
 
     # Intron    
     elsif (($source eq "curated")               && ($feature eq "intron"))      {push (@{$GFF{$file}{intron}},$_);}

@@ -7,7 +7,7 @@
 # This script interogates an ACEDB database and returns all pfam/Interpro/blastx 
 # data as appropriate and generates a suitable DB_remark
 #
-# Last updated on: $Date: 2010-03-11 13:50:55 $
+# Last updated on: $Date: 2010-03-23 12:22:06 $
 # Last updated by: $Author: mh6 $
 
 
@@ -480,7 +480,7 @@ TRANSCRIPT: while ( my $transcript = $transcripts->next ) {
       $full_string .= $wormbase->full_name('-short' => 1)." predicted non-coding isoform ";
     } 
   }   
-  elsif ($method eq 'tRNAscan-SE-1.23') { # tRNAs
+  elsif ($method =~/tRNAscan/) { # tRNAs
     if ($cgc_name) {
       $full_string .= $wormbase->full_name('-short' => 1)." tRNA $cgc_name ";
     } 
