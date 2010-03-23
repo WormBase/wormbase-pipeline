@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: ar2 $
-// Last edited on: $Date: 2010-02-11 11:19:09 $
+// Last edited on: $Date: 2010-03-23 10:49:04 $
 
 
 ////////////////////////
@@ -410,6 +410,8 @@
           Locus ?Locus
 	  Gene ?Gene
 
+#Rearrangement class
+
 ?Rearrangement 	Evidence #Evidence
 		Name    Other_name ?Text
 			Variation ?Variation XREF Rearrangement
@@ -427,6 +429,7 @@
 //	or perhaps there should be another class Complex_Rear that refers to
 //	several intervals.
 	        Reference_strain ?Strain
+		Species	UNIQUE	?Species
 		Remark ?Text #Evidence
 		Isolation	Author ?Author  // use Person where possible, else use Author
 				Person ?Person
@@ -2026,7 +2029,7 @@
       StandAloneDisplay Text
 
 
-//transgene class from Wen Chen 12/00
+//Transgene class from Wen Chen 12/00
 	    
 ?Transgene     	Summary UNIQUE ?Text //Searchable description of the transgene
 		Synonym	?Text //for alternative names 
@@ -2060,7 +2063,7 @@
 		Map_evidence #Evidence //For wen - many papers refer to Transgene. This will allow curators to track which is used.
 		Mapping_data 2_point ?2_point_data 
 			     Multi_point ?Multi_pt_data
-		Phenotype ?Phenotype XREF Transgene ?Gene #Phenotype_info // [2006-04-20 ar2] changed for Carols Phenotype changes
+		Phenotype ?Phenotype XREF Transgene #Phenotype_info // [2006-04-20 ar2] changed for Carols Phenotype changes
 		Rescue ?Gene XREF Rescued_by_Transgene ?Variation XREF Rescued_by_Transgene
 		Expr_pattern ?Expr_pattern XREF Transgene                                        // Related Expr_pattern
 		Marker_for   ?Text #Evidence //Marker Summary
@@ -2145,6 +2148,8 @@
                 	Semi_dominant           #Evidence
                 	Dominant                #Evidence
                 	Haplo_insufficient      #Evidence
+			Caused_by ?Gene #Evidence
+			Caused_by_other ?Text #Evidence
                 	Loss_of_function  UNIQUE  	Hypomorph                               #Evidence
                                  			Amorph                                  #Evidence
                                                 	Uncharacterised_loss_of_function        #Evidence
