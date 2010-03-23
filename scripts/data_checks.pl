@@ -7,7 +7,7 @@
 # This is a example of a good script template
 #
 # Last updated by: $Author: pad $
-# Last updated on: $Date: 2010-02-25 16:45:51 $
+# Last updated on: $Date: 2010-03-23 10:32:53 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -81,7 +81,7 @@ if ($gff) {
     &read_GFF_queries;
     foreach my $query (@queries) {
         $log->write_to( "\nTEST   (grep GFF): " . $$query{'GFF'} . ' (' . $$query{'DESC'}  . ')');
-        my $actual = `cat $gff_dir/CHROMOSOME*.gff | grep -c $$query{'GFF'}`;
+        my $actual = `cat $gff_dir/CHROMOSOME*.gff | grep -c \'$$query{'GFF'}\'`;
         my $expect = $$query{'EXPECT'} ? $$query{'EXPECT'} : $autoace->count( -query => $$query{'QUERY'} );
         $log->write_to(" . . . ok") if ( &pass_check( $expect, $actual ) == 0 );
     }
@@ -122,7 +122,7 @@ sub read_acedb_queries {
     my $species = $wormbase->species;
     if($species eq 'elegans'){    
 	@queries = (
-		   ["The number of RNAi experiments with more than one associated Gene", 'find rnai COUNT gene > 1 AND uniquely_mapped', 2034],
+	           ["The number of RNAi experiments with more than one associated Gene", 'find rnai COUNT gene > 1 AND uniquely_mapped', 2034],
 		   ["The number of RNAi results with connections to genes", 'find RNAi Gene', 73394],
 		   ["The number of microarray results with connections to genes", 'find microarray_results gene', 95545],
 		   ["PCR products overlapping CDS", "find PCR_product Overlaps_CDS", 62852],
@@ -141,6 +141,7 @@ sub read_acedb_queries {
 		   ["Operons without parent ", 'find Operon !History AND !Canonical_parent',  0],
 		   ["GO_term without Term or Definition", 'find GO_term !(Term or Definition)',  0],
 		   ["Homol mapped Expression Patterns", 'find Expr_pattern where Homol_homol', 4506],
+		   ["Transposon 0bjects mapped in the database", 'find Transposon where Sequence', 127],
 		   );
     }
     elsif( $species eq 'japonica'){  
@@ -180,6 +181,46 @@ sub read_GFF_queries {
     @queries = ();
     my $i = 0;
 
+    $queries[$i]{'DESC'}  = "ncRNA genes";
+    $queries[$i]{'GFF'}   = "ncRNA\tncRNA_primary_transcript"; # ncRNA genes including 21uRNA
+    $queries[$i]{'QUERY'} = 'find elegans_RNA_genes; method = ncRNA'; # this finds ncRNA genes including 21uRNA
+
+    $i++;
+    $queries[$i]{'DESC'}  = "tRNAs";
+    $queries[$i]{'GFF'}   = "tRNAscan-SE-1.23\ttRNA";
+    $queries[$i]{'QUERY'} = 'find elegans_RNA_genes tRNA';
+    
+    $i++;
+    $queries[$i]{'DESC'}  = "miRNAs";
+    $queries[$i]{'GFF'}   = "miRNA_mature_transcript\tmiRNA";
+    $queries[$i]{'QUERY'} = 'find elegans_RNA_genes miRNA';
+
+    $i++;
+    $queries[$i]{'DESC'}  = "snoRNAs";
+    $queries[$i]{'GFF'}   = "snoRNA_mature_transcript\tsnoRNA";
+    $queries[$i]{'QUERY'} = 'find elegans_RNA_genes snoRNA';
+
+    $i++;
+    $queries[$i]{'DESC'}  = "snRNAs";
+    $queries[$i]{'GFF'}   = "snRNA_mature_transcript\tsnRNA";
+    $queries[$i]{'QUERY'} = 'find elegans_RNA_genes snRNA';
+
+    $i++;
+    $queries[$i]{'DESC'}  = "rRNAs";
+    $queries[$i]{'GFF'}   = "rRNA_primary_transcript";
+    $queries[$i]{'QUERY'} = 'find elegans_RNA_genes rRNA';
+
+    $i++;
+    $queries[$i]{'DESC'}  = "scRNAs";
+    $queries[$i]{'GFF'}   = "scRNA_mature_transcript\tscRNA";
+    $queries[$i]{'QUERY'} = 'find elegans_RNA_genes scRNA';
+
+    $i++;
+    $queries[$i]{'DESC'}  = "stRNAs";
+    $queries[$i]{'GFF'}   = "stRNA_mature_transcript\tstRNA";
+    $queries[$i]{'QUERY'} = 'find elegans_RNA_genes stRNA';
+
+    $i++;
     $queries[$i]{'DESC'}  = "Deletion and insertion alleles";
     $queries[$i]{'GFF'}   = "complex_change_in_nucleotide_sequence";
     $queries[$i]{'QUERY'} = 'find Variation flanking_sequences AND method = "Deletion_and_insertion_allele"';
@@ -263,46 +304,6 @@ sub read_GFF_queries {
     $queries[$i]{'DESC'}  = "Non_coding_transcript isoforms";
     $queries[$i]{'GFF'}   = "nc_primary_transcript";
     $queries[$i]{'QUERY'} = 'find Transcript; method = non_coding_transcript';
-
-    $i++;
-    $queries[$i]{'DESC'}  = "ncRNA genes";
-    $queries[$i]{'GFF'}   = "ncRNA"; # ncRNA genes including 21uRNA
-    $queries[$i]{'QUERY'} = 'find elegans_RNA_genes; method = ncRNA'; # this finds ncRNA genes including 21uRNA
-
-    $i++;
-    $queries[$i]{'DESC'}  = "tRNAs";
-    $queries[$i]{'GFF'}   = "tRNA";
-    $queries[$i]{'QUERY'} = 'find elegans_RNA_genes tRNA';
-    
-    $i++;
-    $queries[$i]{'DESC'}  = "miRNAs";
-    $queries[$i]{'GFF'}   = "miRNA";
-    $queries[$i]{'QUERY'} = 'find elegans_RNA_genes miRNA';
-
-    $i++;
-    $queries[$i]{'DESC'}  = "snoRNAs";
-    $queries[$i]{'GFF'}   = "snoRNA";
-    $queries[$i]{'QUERY'} = 'find elegans_RNA_genes snoRNA';
-
-    $i++;
-    $queries[$i]{'DESC'}  = "snRNAs";
-    $queries[$i]{'GFF'}   = "snRNA";
-    $queries[$i]{'QUERY'} = 'find elegans_RNA_genes snRNA';
-
-    $i++;
-    $queries[$i]{'DESC'}  = "rRNAs";
-    $queries[$i]{'GFF'}   = "rRNA_primary_transcript";
-    $queries[$i]{'QUERY'} = 'find elegans_RNA_genes rRNA';
-
-    $i++;
-    $queries[$i]{'DESC'}  = "scRNAs";
-    $queries[$i]{'GFF'}   = "scRNA";
-    $queries[$i]{'QUERY'} = 'find elegans_RNA_genes scRNA';
-
-    $i++;
-    $queries[$i]{'DESC'}  = "stRNAs";
-    $queries[$i]{'GFF'}   = "stRNA";
-    $queries[$i]{'QUERY'} = 'find elegans_RNA_genes stRNA';
 
     $i++;
     $queries[$i]{'DESC'}   = "Mass Spectrometry peptides";
