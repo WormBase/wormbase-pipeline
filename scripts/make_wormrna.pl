@@ -6,8 +6,8 @@
 #
 # Builds a wormrna data set from the current autoace database
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2009-01-29 10:40:09 $
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2010-03-24 13:54:32 $
 
 
 #################################################################################
@@ -75,13 +75,14 @@ $ENV{'ACEDB'} = $dbdir;
 ###############################################
 
 my $db = Ace->connect (-path => $dbdir, -program => $tace) || $log->log_and_die("Couldn't connect to $dbdir\n");
+
 # Get RNA genes, but not other Transcript objects
 my $query = "FIND Transcript WHERE Method != Coding_transcript AND Method != History AND Species = \"".$wormbase->full_name."\"";
 $log->write_to("$query\n");
-my @transcripts = $db->fetch (-query => $query); #Filtered composite Transcripts(NOT Method = Coding_transcript/history/non_coding_transcript).
+my $transcript_it = $db->fetch_many (-query => $query);
 
-my $count = scalar(@transcripts);
-$log->write_to("Finding ". $count . " RNA sequences, writing output file\n\n");
+my $count;#= scalar(@transcripts);
+#$log->write_to("Found ". $count . " RNA sequences, writing output file\n\n");
 
 
 ###########################################################################
@@ -91,27 +92,19 @@ my $rnafile = "$new_wrdir/".$wormbase->pepdir_prefix."rna$release.rna";
 open (DNA , ">$rnafile") || die "Couldn't write $rnafile : $!\n"; 
 my (%dot2num , @dotnames , @c_dotnames);
 
-foreach my $transcript (@transcripts) {    
-  undef (my $dna);
-  undef (my $cgc_name);
-  undef (my $brief_id);
-  undef (my $method);
-  undef (my $gene);
-    
-  my $obj = $db->fetch(Transcript=>"$transcript");
-  
+while( my $obj = $transcript_it->next) {    
 
   # Grab Brief_identification
-  $brief_id = $obj->Brief_identification;
+  my $brief_id = $obj->Brief_identification;
   if ((!defined ($brief_id)) || ($brief_id eq "")) {
-    $log->write_to("ERROR: No Brief_id for $transcript\n");
+    $log->write_to("ERROR: No Brief_id for $obj\n");
     $log->error;
     undef ($brief_id);
   }
   
-  $dna = $obj->asDNA();
+  my $dna = $obj->asDNA();
   if ((!defined ($dna)) || ($dna eq "")) {
-    $log->error("ERROR: cannot extract dna sequence for $transcript\n");
+    $log->error("ERROR: cannot extract dna sequence for $obj\n");
     # can't include in WormRNA if there is no DNA!
     next; 
   }
@@ -123,23 +116,22 @@ foreach my $transcript (@transcripts) {
   $dseq =~ s/\s//g;
   
   # Grab locus name if present
-  $gene = $obj->Gene;
-  $cgc_name = $gene->CGC_name if (defined $gene);
+  my $gene = $obj->Gene;
+  my $cgc_name = $gene->CGC_name if ($gene);
   
 
   my $rseq = &reformat($dseq);
   if ($cgc_name) {
-    print DNA ">$transcript $brief_id locus:$cgc_name\n$rseq";
+    print DNA ">$obj $brief_id locus:$cgc_name\n$rseq";
   }
   elsif($brief_id) {
-    print DNA ">$transcript $brief_id\n$rseq";
+    print DNA ">$obj $brief_id\n$rseq";
   }
-  else{
-    print DNA ">$transcript\n$rseq";
+  else {
+    print DNA ">$obj\n$rseq";
   }
   
-  $obj->DESTROY();
-  
+#  $count++;
 }   
 
 close DNA;
