@@ -7,7 +7,7 @@
 # Builds a wormrna data set from the current autoace database
 #
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2010-03-24 13:54:32 $
+# Last updated on: $Date: 2010-03-25 10:56:51 $
 
 
 #################################################################################
@@ -23,6 +23,7 @@ use Ace;
 use Socket;
 use Storable;
 
+$|=1;
     
 ######################################
 # variables and command-line options # 
@@ -79,9 +80,9 @@ my $db = Ace->connect (-path => $dbdir, -program => $tace) || $log->log_and_die(
 # Get RNA genes, but not other Transcript objects
 my $query = "FIND Transcript WHERE Method != Coding_transcript AND Method != History AND Species = \"".$wormbase->full_name."\"";
 $log->write_to("$query\n");
-my $transcript_it = $db->fetch_many (-query => $query);
+my @transcripts = $db->fetch (-query => $query);
 
-my $count;#= scalar(@transcripts);
+my $count = scalar(@transcripts);
 #$log->write_to("Found ". $count . " RNA sequences, writing output file\n\n");
 
 
@@ -92,7 +93,10 @@ my $rnafile = "$new_wrdir/".$wormbase->pepdir_prefix."rna$release.rna";
 open (DNA , ">$rnafile") || die "Couldn't write $rnafile : $!\n"; 
 my (%dot2num , @dotnames , @c_dotnames);
 
-while( my $obj = $transcript_it->next) {    
+while( my $obj = shift @transcripts) {    
+
+  print "processing $obj\n" if $debug;
+
 
   # Grab Brief_identification
   my $brief_id = $obj->Brief_identification;
@@ -101,7 +105,8 @@ while( my $obj = $transcript_it->next) {
     $log->error;
     undef ($brief_id);
   }
-  
+  print "$obj -> brief_id is \"$brief_id\"\n" if $debug;
+
   my $dna = $obj->asDNA();
   if ((!defined ($dna)) || ($dna eq "")) {
     $log->error("ERROR: cannot extract dna sequence for $obj\n");
@@ -115,10 +120,12 @@ while( my $obj = $transcript_it->next) {
   $dseq =~ tr /T/U/; 
   $dseq =~ s/\s//g;
   
+  print "$obj -> dna is ${\length($dseq)} bp long\n" if $debug;
+
   # Grab locus name if present
   my $gene = $obj->Gene;
   my $cgc_name = $gene->CGC_name if ($gene);
-  
+  print "$obj -> CGC name is $cgc_name\n" if ($debug && $cgc_name);
 
   my $rseq = &reformat($dseq);
   if ($cgc_name) {
@@ -130,8 +137,8 @@ while( my $obj = $transcript_it->next) {
   else {
     print DNA ">$obj\n$rseq";
   }
-  
 #  $count++;
+  exit(0) if $count > 50 && $debug;  
 }   
 
 close DNA;
