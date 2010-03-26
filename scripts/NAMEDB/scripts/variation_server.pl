@@ -1,12 +1,11 @@
 #!/usr/local/bin/perl -wT
 #author ar2
-use lib "../lib";
+#use lib "../lib";
 use strict;
-
 use vars qw($SSO_USER $PASS $DB $VALID_USERS $VALID_API_USERS $VALID_CGCNAME_USERS $USER $MAIL_NOTIFY_LIST $MAILS $LIVE);
-
 use SangerPaths qw(core celegans);
 use SangerWeb;
+use NameDB_handler;
 use CGI::Carp qw(fatalsToBrowser warningsToBrowser);
 use Website::Utilities::Mail;
 use File::Path;
@@ -63,9 +62,9 @@ sub main {
 	my $web = 1;
  	my $path = SangerWeb->document_root();
 	my $sw = SangerWeb->new( {
-				'banner' => "Wormbase Variation Name Management<br><font color=red>This system is TEST only</font>",
+				'banner' => "Wormbase Variation Name Management",
 				'inifile'=> "$path/Projects/C_elegans/header.ini",
-				'author' => 'avc',
+				'author' => 'ar2',
 				'onload' => 'init()',
 			   });
 	if ($sw->is_dev()) {
@@ -73,6 +72,7 @@ sub main {
 	    $sw->banner("This is the test server");
 	} else {
 	    $DB = 'wbgene_id;shap;3303';
+	    $sw->banner("This is the LIVE server");
 	}
 
 
@@ -284,11 +284,14 @@ sub new_var {
 		 );
     }
     else {
-	if(&_check_name($var) == 0) {
+	if(&_check_name($public) == 0) {
+	    my $db = get_db_connection();
 	    my $id = $db->idCreate;
-	    $db->addName($id,'Public'=>$public);
+	    $db->addName($id,'Public_name'=>$public);
 	    print "$id created with name $public<br>";
-	    
+	}
+	else {
+	    print "not a good Var name\n";
 	}
     }
 }  
@@ -367,20 +370,20 @@ sub query {
 sub _check_name {
     my $name = shift;
     my $db = get_db_connection();
-    my $var = $db->idGetByTypedName('Public'=>$name)->[0];
+    my $var = $db->idGetByTypedName('Public_name'=>$name)->[0];
 
     if($var) {	
-	print "$public already exists as $var";
-	return 0;
+	print "$name already exists as $var";
+	return 1;
     }
     elsif ($var =~ /(\w+)[a-z]+$/) {
-	my $short_var = $db->idGetByTypedName('Public'=>$1)->[0];
+	my $short_var = $db->idGetByTypedName('Public_name'=>$1)->[0];
 	if($short_var) {	
 	    print "$var looks like a poorly name version of $short_var";
-	    retun 0;
+	    return 1;
 	}
     }
-    return 1;
+    return 0;
 }
 
 
