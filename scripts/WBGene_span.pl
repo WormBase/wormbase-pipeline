@@ -6,8 +6,8 @@
 #
 # Creates SMapped Gene spans for Gene objects
 #
-# Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2010-03-23 12:22:06 $
+# Last edited by: $Author: pad $
+# Last edited on: $Date: 2010-03-26 14:53:58 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -81,9 +81,8 @@ else {
     foreach my $chrom (@chromosomes) {
         my %gene_coords;
         my %gene_span;
-        my @methods =
-          qw(Coding_transcript Non_coding_transcript tRNAscan-SE-1.23 tRNAscan-SE-1.3 miRNA Pseudogene snRNA snoRNA rRNA scRNA stRNA ncRNA);
-        @methods = qw(Coding_transcript) unless ( $wormbase->species eq "elegans" );
+        my @methods = qw(Coding_transcript Non_coding_transcript tRNAscan-SE-1.23 tRNAscan-SE-1.3 miRNA_primary_transcript Pseudogene snRNA snoRNA rRNA scRNA stRNA ncRNA);
+     #   @methods = qw(Coding_transcript) unless ($wormbase->species eq "elegans"); removed as we probably want all, in future.
 
         foreach my $method (@methods) {
             print "checking $method \n" if $test;
