@@ -5,8 +5,8 @@
 # Counts the number of objects in an ACEDB database for each Class stated in the config file
 # Compares this number to those from a second database.
 #
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2010-03-04 09:57:36 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2010-03-30 11:33:36 $
 
 
 use strict;
@@ -408,7 +408,6 @@ sub set_classes {
 		"Cell",
 		"Cell_group",
 		"Paper",
-		"Journal",
 		"Author",
 		"Person",
 		"LongText",
