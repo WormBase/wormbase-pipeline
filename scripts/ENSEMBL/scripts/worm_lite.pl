@@ -78,7 +78,7 @@ our $gff_types = ($config->{gff_types} || "curated coding_exon");
 #      /nfs/acari/wormpipe/ensembl/ensembl-pipeline/scripts/DataConversion/wormbase/attrib_type.sql
 #      /nfs/acari/wormpipe/ensembl/ensembl-pipeline/scripts/load_taxonomy.pl
 #
-# taxondb: ia64f -taxondbport 3365 -taxondbname ncbi_taxonomy
+# taxondb: ia64f -taxondbport 3365 -taxondbname ncbi_taxonomy / ens-livemirror 
 #  if the taxondb goes down bully Abel
 
 sub setupdb {
@@ -100,7 +100,7 @@ sub setupdb {
     system("$mysql -e 'INSERT INTO analysis (created,logic_name,module) VALUES ( NOW(),\"wormbase\",\"wormbase\");' $db->{dbname}")          && die;
     system( "$mysql -e 'INSERT INTO analysis_description (analysis_id,description,display_label) VALUES (1,\"imported from WormBase\",\"WormGene\");' $db->{dbname}") && die;
     system("$mysql $db->{dbname} </software/worm/ensembl/ensembl-pipeline/scripts/DataConversion/wormbase/attrib_type.sql") && die;
-    system("perl $cvsDIR/ensembl-pipeline/scripts/load_taxonomy.pl -name \"$config->{species}\" -taxondbhost ia64f -taxondbport 3306 -taxondbname ncbi_taxonomy -lcdbhost $db->{host} -lcdbport $db->{port} -lcdbname $db->{dbname} -lcdbuser $db->{user} -lcdbpass $db->{password}"
+    system("perl $cvsDIR/ensembl-pipeline/scripts/load_taxonomy.pl -name \"$config->{species}\" -taxondbhost ens-livemirror -taxondbport 3306 -taxondbname ncbi_taxonomy -lcdbhost $db->{host} -lcdbport $db->{port} -lcdbname $db->{dbname} -lcdbuser $db->{user} -lcdbpass $db->{password}"
       )
       && die("cannot run taxondb update");
 
@@ -232,7 +232,8 @@ sub load_genes {
             system("cat $path/GFF_SPLITS/${\$name}_gene.gff $path/GFF_SPLITS/${\$name}_curated.gff > /tmp/compara/${\$name}.gff");
         }
     # if it is remanei collect all needed GFFs and then split them based on their supercontig into a /tmp/ directory
-    } elsif ($species eq 'remanei' || $species eq 'pristionchus' || $species eq 'japonica' || $species eq 'brenneri'){
+    } elsif ($species eq 'remanei' || $species eq 'pristionchus' || $species eq 'japonica' || $species eq 'brenneri'||
+    $species eq 'mincognita'){ #grumble ... seems to become the default nowadays
 	   my ($path)=glob($config->{fasta})=~/(^.*)\/CHROMOSOMES\//;
 	   `mkdir -p /tmp/compara/$species` if !-e "/tmp/compara/$species";
 	   unlink glob("/tmp/compara/$species/*.gff"); # clean old leftovers
