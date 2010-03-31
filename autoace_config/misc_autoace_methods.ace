@@ -242,7 +242,7 @@ Width    2.000000
 Show_text       
 EMBL_feature     "misc_RNA"
 Remark "SO:0000647
-GFF_source "curated"
+GFF_source "curated_miRNA"
 GFF_feature "miRNA_primary_transcript" //Inline with SO:0000647
 
 Method : "stRNA" 
