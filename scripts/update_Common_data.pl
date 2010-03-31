@@ -4,8 +4,8 @@
 # 
 # by Anthony Rogers et al
 #
-# Last updated by: $Author: pad $
-# Last updated on: $Date: 2009-09-08 14:21:00 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2010-03-31 15:20:28 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -94,6 +94,8 @@ else {
 }
 
 my $log = Log_files->make_build_log( $wormbase );
+
+$species = $wormbase->species;
 
 my %Table_defs = (
 		  'cds2protein'      => 'CommonData:CDS_proteinID.def',
