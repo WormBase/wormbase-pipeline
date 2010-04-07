@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: ar2 $
-// Last edited on: $Date: 2010-03-23 10:49:04 $
+// Last edited on: $Date: 2010-04-07 14:19:52 $
 
 
 ////////////////////////
@@ -581,6 +581,7 @@
 
 
 ?Species Common_name ?Text
+	 NCBITaxonomyID UNIQUE Int
          Phylogeny Kingdom UNIQUE Text
 		   Phylum UNIQUE Text
 		   Subphylum UNIQUE Text
@@ -2356,6 +2357,12 @@
 		     Anatomy_term ?Anatomy_term XREF Expression_cluster #Evidence //Igor: to describe microarray experiments involving expression profiling in a particular tissue or cell Dec 06
 
 ?Condition Life_stage      ?Life_stage
+	   Sex		   UNIQUE Hermaphrodite
+				  Male
+				  Female	//not all worms are elegans!
+				  Unknown
+	   Food		   Text
+	   Exposure_time   Text
 	   Strain	   ?Strain // added for Microarry_result [030127 krb]
 	   Preparation	   ?Text // added for Microarray_result [030127 krb]
            Temperature     Int
@@ -2716,22 +2723,6 @@
 
 
 ///////////////////////
-// Journal class     //
-///////////////////////
-
-?Journal Paper ?Paper XREF Journal
-	 Full_name ?Text // added for Wen [020607 krb]
-	 Other_name ?Text // added for Wen [020607 krb]
-	 Previous_name ?Text // added for Wen [020607 krb]
-	 URL Text            //[ar2 4-DEC-05] Link to journal homepage
-
-
-
-
-
-
-
-///////////////////////
 // Laboratory class  //
 ///////////////////////
 
@@ -3077,6 +3068,8 @@
 	     Title Text
              Based_on_WB_Release Int
              Based_on_DB_Release Text
+	     Group Project UNIQUE ?Analysis XREF Subproject
+		   Subproject	  ?Analysis XREF Project
              Description ?Text
 	     Sample ?Condition XREF Analysis
              Reference ?Paper XREF Describes_analysis
