@@ -4,8 +4,8 @@
 #
 # Dumps InterPro protein motifs from ensembl mysql (protein) database to an ace file
 #
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2009-11-09 16:06:16 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2010-04-15 10:27:10 $
 
 
 use strict;
@@ -316,6 +316,13 @@ foreach my $p (sort {$a cmp $b} keys %merged) {
       my ($ip_id, $start, $end, $hstart, $hend, $score, $evalue) = @$hit;
       my $line = "Motif_homol \"INTERPRO:$ip_id\" \"interpro\" $evalue $start $end $hstart $hend";
       print "$line\n" if ($verbose);
+      # skip known invalid interpro hits
+      # IPR001412 (aminoacyl-tRNA ligase activity) is from the PROSITE domain PS00178 which is not a valid hit in ZK617.1a to .1e according to Moerman <moerman@zoology.ubc.ca>
+      if ($ip_id eq 'IPR001412' && $prot eq 'CE33017') {next} 
+      if ($ip_id eq 'IPR001412' && $prot eq 'CE33018') {next} 
+      if ($ip_id eq 'IPR001412' && $prot eq 'CE44671') {next} 
+      if ($ip_id eq 'IPR001412' && $prot eq 'CE40796') {next} 
+      if ($ip_id eq 'IPR001412' && $prot eq 'CE44668') {next} 
       print ACE "$line\n";
     }
 }
