@@ -57,10 +57,12 @@ Gene.find(:all).each{|g|
     # mapping coordinates
     strand=g.strand>0?'+':'-'
     m_line="#{g.seq_region.name}(#{strand}):#{longest_transcript.start}-#{longest_transcript.stop}"
-    
+
+    frame = (3 - longest_transcript.translation.start_exon.phase)%3 +1
+
     # and print it as Fasta file
     $stderr.puts "printing fasta" if $DEBUG
-    seq=Bio::Sequence::AA.new(longest_transcript.protein_seq.sub('*','')) if protein
+    seq=Bio::Sequence::NA.new(longest_transcript.cds_seq).translate(frame) if protein
     seq=Bio::Sequence::NA.new(longest_transcript.cds_seq) unless protein
 
     out.puts seq.to_fasta("#{g.stable_id}\t#{g.stable_id}_#{species_string}\t#{longest_transcript.translation.stable_id}\t#{m_line}\t#{d_line}",60)
