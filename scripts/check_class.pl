@@ -6,7 +6,7 @@
 # Compares this number to those from a second database.
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2010-03-30 11:33:36 $
+# Last updated on: $Date: 2010-04-16 10:32:31 $
 
 
 use strict;
@@ -125,7 +125,7 @@ my $got_prev_results=0;
 my $got_prev_prev_results=0;
 for (my $version_count = 10; $version_count; $version_count--) { # go back up to 5 releases
   %results_0 = ();
-  %results_1 = ();
+  if (!$got_prev_results) {%results_1 = ()}
   foreach my $class (@classes) {
     $results_0{$class} = &get_prev_count($species, $prev_prev_version, $class, $stage);
     if (!$got_prev_results) {$results_1{$class} = &get_prev_count($species, $prev_version, $class, $stage)}
