@@ -7,7 +7,7 @@
 # build to check the current build
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2010-03-03 12:16:01 $
+# Last updated on: $Date: 2010-04-19 11:01:42 $
 use strict;
 use warnings;
 use lib $ENV{'CVS_DIR'};
@@ -165,7 +165,12 @@ if($clones) {
       }
     }
     
-    @expected = qw(TRF Dust inverted);
+    if ($wb->species eq 'briggsae') {
+      @expected = qw(TRF Dust); # briggsae inverted feature_data is on the clones, not the chromosomes
+    } else {
+      @expected = qw(TRF Dust inverted);
+    }
+
     &check_for_missing_data2(\@hd, \@expected, 'Feature_data', 'what is expected');
 
   }
