@@ -99,7 +99,7 @@ sub main {
 		print $sw->footer();
 		return;
 	}
-	print $sw->header({'title'  => "WormBase Gene ID Server $DB"});
+	print $sw->header({'title'  => "WormBase Variation ID Server $DB"});
 	#print $sw->header();
 	
   	if (!defined $VALID_USERS->{$USER}) {
@@ -153,7 +153,7 @@ sub send_mail {
 	Website::Utilities::Mail->new({
     'to'      => $to,
     'from'    => $from,
-    'subject' => ($DB =~ 'test' ? 'TEST : ' : " ")."NAMEDB: $subject",
+    'subject' => ($DB =~ 'test' ? 'TEST : ' : " ")."Var_NAMEDB: $subject",
     'message' => $message,
 	})->send(); 
 }
@@ -358,7 +358,7 @@ sub query {
 			<hr align="left">
 			<BR><BR><BR>
 			);
-			send_mail("webserver",[$MAILS->{$USER}],"query", "$USER queried for $var");
+			#send_mail("webserver",[$MAILS->{$USER}],"query", "$USER queried for $var");
 		}
 		else {
 			print qq( $lookup is not known to the Variation nameserver<br>);
