@@ -19,7 +19,7 @@ use DBI;
 use Domain2Interpro;
 use Getopt::Long;
 
-my $debug = 1;
+my $debug;
 
 # Vega database
 my $vega_dbname = '';
@@ -30,6 +30,7 @@ my $vega_dbpass = '';
 my @dump_slice ;
 my $lsf;
 my $dumpdir;
+my $file;
 
 GetOptions(
            'dbhost=s'     => \$vega_dbhost,
@@ -40,6 +41,7 @@ GetOptions(
 	   'slice=s'      => \@dump_slice,
 	   'submit=i'     => \$lsf,
 	   'dumpdir=s'    => \$dumpdir,
+	   'file:s'       => \$file,
           )or die ("Couldn't get options");
 
 
@@ -56,6 +58,12 @@ my $vega_db = new Bio::EnsEMBL::DBSQL::DBAdaptor(
 
 my $mapper = Domain2Interpro->new();
 
+
+#if single file passed print all to that rather than file per slice (chr or contig)
+my  $pout;
+if($file) {
+    $pout = new IO::File (">$dumpdir/$file.gff3");
+}
 
 # Get all toplevel slices
 my $sa = $vega_db->get_SliceAdaptor();
@@ -91,7 +99,7 @@ while( my $slice = shift @$slices) {
 	
 	print STDERR "Dumping $slice_name to $dumpdir/$slice_name.gff3 \n" if $debug;
 	
-	my $outf = new IO::File (">$dumpdir/$slice_name.gff3");
+	my $outf = $pout || new IO::File (">$dumpdir/$slice_name.gff3");
 	
 	print $outf "##gff-version 3\n";
 	print $outf "##sequence-region $slice_name 1 $slice_size\n";
@@ -175,7 +183,7 @@ while( my $slice = shift @$slices) {
 	my $features = $slice->get_all_ProteinAlignFeatures();
         my %blastx_features;
 
-	print STDERR "dumping ${\scalar @$features} Protein Align Features\n";
+	print STDERR "dumping ${\scalar @$features} Protein Align Features\n" if $debug;
 	foreach my $feature(@$features){
 	    my $cigar_line = flipCigarReference($feature->cigar_string); # for Lincoln
 	    my $stripped_feature = {
@@ -205,7 +213,7 @@ while( my $slice = shift @$slices) {
         # get all dna align features on the slice
 	
 	$features=$slice->get_all_DnaAlignFeatures();
-	print STDERR "dumping ${\scalar @$features} DNA Align Features\n";
+	print STDERR "dumping ${\scalar @$features} DNA Align Features\n" if $debug;
         foreach my $feature(@$features){
 	    my $cigar_line = flipCigarReference($feature->cigar_string); # for Lincoln
 	    my $stripped_feature = {
@@ -245,9 +253,10 @@ while( my $slice = shift @$slices) {
 
 	print $outf '#'x80;
 	print $outf "\n";
-	$outf->close;
+	$outf->close unless $file;
     }
 }
+$pout->close if $file;
 
 if( $lsf) {
     print STDERR "$bsub_str $bsub_slices\n" if $debug;
