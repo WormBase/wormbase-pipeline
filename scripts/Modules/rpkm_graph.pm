@@ -1,7 +1,11 @@
-package rpkm_graph;use strict;
+package rpkm_graph;
+use strict;
 use DBI;
 use DBD::mysql;
 use GD::Graph::lines;
+use Carp;
+use warnings;
+#$author:$
 
 my @STAGES = qw (SRX004863 SRX004865 SRX001872 SRX001875 SRX001874 SRX001873);
 my %STAGE_NAMES = ('SRX004863' => 'EEMB',
@@ -23,7 +27,7 @@ sub new {
     my $dsn = "dbi:mysql:worm_rgasp:ia64d:3306";
 
     # PERL DBI CONNECT
-    my $db = DBI->connect($dsn, 'wormro');
+    my $db = DBI->connect($dsn, 'wormro') or croak("Cant connect to database");
     $self->{'db'} = $db;
     return $self;
 }
@@ -86,18 +90,13 @@ sub draw_graph {
 		  line_width  => 2,    # Set colors for datasets
 		  dclrs       => ['black', 'red','blue','green','purple','orange'],
 		  legend_placement => 'CR',
-		  ) or warn $mygraph->error;
+		  ) or carp $mygraph->error;
 
     $mygraph->set_legend_font('gdMediumBoldFont',12);
     $mygraph->set_legend('stage ave',@legend_list);
-    my $myimage = $mygraph->plot(\@graph_data) or die $mygraph->error;
+    my $myimage = $mygraph->plot(\@graph_data) or croak $mygraph->error;
     
     return \$myimage;
-#    my $png;
-#    open($png,">/tmp/$trans.png");
-#    print $png $myimage->png;
-#    close $png;
-#    return
 }
 
 1;
