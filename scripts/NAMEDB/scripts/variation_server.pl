@@ -27,6 +27,7 @@ $VALID_USERS = {
 ## a list of valid SSO login names for each DB operation
 $VALID_API_USERS = {
 		'query'		=> [qw( ar2 pad gw3 mh6 mt3 stlouis caltech cshl sanger)],
+		'dump'		=> [qw( ar2 pad gw3 mh6 mt3 stlouis caltech cshl sanger)],
 		'merge_var'	=> [qw( ar2 mt3 mh6 jolenef)],
 		'new_var'	=> [qw( ar2 mt3 mh6 jolenef)], 
 		'kill_var'	=> [qw( ar2 mt3 mh6 jolenef)],
@@ -59,91 +60,94 @@ $MAIL_NOTIFY_LIST = [qw(ar2)];
 
 #################################################################
 sub main {
-	my $web = 1;
- 	my $path = SangerWeb->document_root();
-	my $sw = SangerWeb->new( {
-				'banner' => "Wormbase Variation Name Management",
-				'inifile'=> "$path/Projects/C_elegans/header.ini",
-				'author' => 'ar2',
-				'onload' => 'init()',
-			   });
-	if ($sw->is_dev()) {
-	    $DB = 'test_wbgene_id;mcs4a;3307';
-	    $sw->banner("This is the test server");
-	} else {
-	    $DB = 'wbgene_id;shap;3303';
-	    $sw->banner("This is the LIVE server");
-	}
+    my $web = 1;
+    my $path = SangerWeb->document_root();
+    my $sw = SangerWeb->new( {
+	'banner' => "Wormbase Variation Name Management",
+	'inifile'=> "$path/Projects/C_elegans/header.ini",
+	'author' => 'ar2',
+	'onload' => 'init()',
+    });
+    if ($sw->is_dev()) {
+	$DB = 'test_wbgene_id;mcs4a;3307';
+	$sw->banner("This is the test server");
+    } else {
+	$DB = 'wbgene_id;shap;3303';
+	$sw->banner("This is the LIVE server");
+    }
 
 
-	$SSO_USER = $sw->username(); ## for SSO
-	if( $SSO_USER =~ /^(\w+)@/) {
-		$PASS = $1;
-	}
-	else {
-		$PASS = $SSO_USER;
-	}
-	$USER = $PASS;
-	if(!$SSO_USER) {
-		my $url  = "http://$ENV{'HTTP_X_FORWARDED_HOST'}$ENV{'SCRIPT_NAME'}?$ENV{'QUERY_STRING'}";
-		$sw->cookie($sw->cgi->cookie(	
-									'-name'    => 'sssodestination',
+    $SSO_USER = $sw->username(); ## for SSO
+    if( $SSO_USER =~ /^(\w+)@/) {
+	$PASS = $1;
+    }
+    else {
+	$PASS = $SSO_USER;
+    }
+    $USER = $PASS;
+    if(!$SSO_USER) {
+	my $url  = "http://$ENV{'HTTP_X_FORWARDED_HOST'}$ENV{'SCRIPT_NAME'}?$ENV{'QUERY_STRING'}";
+	$sw->cookie($sw->cgi->cookie(	
+					'-name'    => 'sssodestination',
                             		'-value'   => $url,
-                	   				'-expires' => '+10m',
-                					'-domain'  => '.sanger.ac.uk'));
+					'-expires' => '+10m',
+					'-domain'  => '.sanger.ac.uk'));
 
-		$sw->redirect("https://enigma.sanger.ac.uk/sso/login");
-		$sw->redirect_delay(5);
-		print $sw->header();
-		print qq(<b>You need to log in to use this resource. You will shortly be redirected to a log in page...</b>);
-		print $sw->footer();
-		return;
-	}
-	print $sw->header({'title'  => "WormBase Variation ID Server $DB"});
-	#print $sw->header();
-	
-  	if (!defined $VALID_USERS->{$USER}) {
-		print qq(<h3>Sorry, you $USER are not authorised to access this resource. Please contact the Wormbase team</h3>);
-		print $sw->footer();
-		return;
-	} else {
-		print qq(Authenticated database user: "$USER"<BR>		);
-		#send_mail('webserver', $MAILS->{'ar2'}, "user $USER", "is using nameserver");
-	}
-
-	## get CGI parameters
-	my $action   = $sw->cgi->param('action')|| "query";
-	my $name     = $sw->cgi->param('name');
-	my $varid    = $sw->cgi->param('varid');
-	my $lookup   = $sw->cgi->param('lookup');
-	my $keep_id   = $sw->cgi->param('keep_id');
-	my $kill_id   = $sw->cgi->param('kill_id');
-
-
-	print_javascript();
-	print_selector($action);
-
-	if($action eq "query") {
-		&query($lookup);
-
-	} elsif($action =~ /new_var/) {
-		if( is_authorised($USER,$action) == 1) {
-			&new_var($name);
-		}
-
-	} elsif($action =~ /merge/) {
-		if( is_authorised($USER,$action) == 1) {
-			&merge($keep_id, $kill_id);
-		}
-	} elsif( $action =~ /kill_var/) {
-		if( is_authorised($USER,$action) == 1) {
-			&kill_var($kill_id);
-		}
-	} else {
-		&query();
-	}
-
+	$sw->redirect("https://enigma.sanger.ac.uk/sso/login");
+	$sw->redirect_delay(5);
+	print $sw->header();
+	print qq(<b>You need to log in to use this resource. You will shortly be redirected to a log in page...</b>);
 	print $sw->footer();
+	return;
+    }
+    print $sw->header({'title'  => "WormBase Variation ID Server $DB"});
+    #print $sw->header();
+    
+    if (!defined $VALID_USERS->{$USER}) {
+	print qq(<h3>Sorry, you $USER are not authorised to access this resource. Please contact the Wormbase team</h3>);
+	print $sw->footer();
+	return;
+    } else {
+	print qq(Authenticated database user: "$USER"<BR>		);
+    }
+
+    ## get CGI parameters
+    my $action   = $sw->cgi->param('action')|| "query";
+    my $name     = $sw->cgi->param('name');
+    my $varid    = $sw->cgi->param('varid');
+    my $lookup   = $sw->cgi->param('lookup');
+    my $keep_id   = $sw->cgi->param('keep_id');
+    my $kill_id   = $sw->cgi->param('kill_id');
+
+
+    print_javascript();
+    print_selector($action);
+
+    if($action eq "query") {
+	&query($lookup);
+
+    } elsif($action =~ /new_var/) {
+	if( is_authorised($USER,$action) == 1) {
+	    &new_var($name);
+	}
+
+    } elsif($action =~ /merge/) {
+	if( is_authorised($USER,$action) == 1) {
+	    &merge($keep_id, $kill_id);
+	}
+    } elsif( $action =~ /kill_var/) {
+	if( is_authorised($USER,$action) == 1) {
+	    &kill_var($kill_id);
+	}
+    
+    } elsif( $action eq "dump") {
+	&dump_all("dump");
+    }
+    else {
+	&query();
+    }
+    
+    print $sw->footer();
 
 }
 #################################################################
@@ -289,6 +293,7 @@ sub new_var {
 	    my $id = $db->idCreate;
 	    $db->addName($id,'Public_name'=>$public);
 	    print "$id created with name $public<br>";
+	    send_mail('webserver', $MAILS->{'cgc'}, "WBVarID request $public $USER", "WBVarID request $public : $id $USER");
 	}
 	else {
 	    print "not a good Var name\n";
@@ -318,6 +323,7 @@ sub kill_var {
 		if ( $death ) {	
 			if( $db->idKill($death) ) {
 				print qq( $death killed<br>);
+				send_mail('webserver', $MAILS->{'cgc'}, "WBVarID $death killed by $USER", "WBVarID $death (user entererd:$kill_id) killed by  $USER");
 			}
 		}
 		else {
@@ -396,10 +402,12 @@ sub print_selector {
 	my $qv = "";
 	my $mv = "";
 	my $kv = "";
+	my $da = "";
 	if ($action eq "query") 		{ $qv = " selected" };
 	if ($action eq "new_var") 		{ $nv = " selected" };
 	if ($action eq "merge_var")   { $mv = " selected" };
 	if ($action eq "kill_var") 	{ $kv = " selected" };
+	if ($action eq "dump") 		{ $da = " selected" };
 
 	print qq(
     What do you want to do ?  <br><br>
@@ -423,6 +431,11 @@ sub print_selector {
 	if (grep {/$USER/} @{$VALID_API_USERS->{$action}} ){
 		print qq(
     	 <OPTION $kv LABEL="kill_var" value="kill_var">Kill a Variation Id</OPTION>
+		);
+	}
+	if (grep {/$USER/} @{$VALID_API_USERS->{$action}} ){
+		print qq(
+    	 <OPTION $da LABEL="dump" value="dump">Dump all Variation Ids</OPTION>
 		);
 	}
 	print qq(    
@@ -475,6 +488,50 @@ sub printAllNames
     }
   }
 
+sub dump_all {
+  my $dump = shift;
+  if ( $dump ) {
+    # iterate over all genes and print details
+      print qq( <meta http-equiv="REFRESH" content="0; URL=make_vars.txt.pl?user=$USER">);
+      exit(0);
+      my $db = get_db_connection();
+      my $query =<<END;
+    SELECT primary_identifier.object_public_id, secondary_identifier.object_name
+	FROM primary_identifier,secondary_identifier 
+	WHERE secondary_identifier.object_id = primary_identifier.object_id and primary_identifier.domain_id = 3
+	ORDER by object_public_id
+	LIMIT 10;
+END
+    my $sth = $db->dbh->prepare($query);
+    $sth->execute or die "Unable to execute query: $db->errstr\n";
+    my $row;
+    print "query executed<br>";
+    #write a new version of webpage for stl
+    my $path = SangerWeb->document_root()."/tmp/Projects/C_elegans/LOCI";
+    mkpath $path unless -e $path;
+    my $IDpage = "$path/variation_ids.txt";
+    print "$IDpage<br>";
+    open (ID,">$IDpage") or die "cant open $IDpage : $!\n";
 
+    while ($row = $sth->fetchrow_arrayref) {
+      print ID "$row->[0]\t$row->[1]<br>";
+      print "$row->[0]\t$row->[1]<br>";
+    }
+    $sth->finish;
+
+    close ID;	
+    print qq(<a href="http://www.sanger.ac.uk/tmp/Projects/C_elegans/LOCI/variation_ids.txt">Updated here</a>);
+   # print qq( <meta http-equiv="REFRESH" content="0; URL=http://www.sanger.ac.uk/tmp/Projects/C_elegans/variation_ids.txt">);
+  } else {
+    print qq( 
+			<h3>Print page of all variation ids</h3>
+			<form action="$ENV{'SCRIPT_NAME'}" method="GET">
+			<INPUT TYPE="hidden" NAME="action" VALUE="dump">
+			<br><br>
+			<INPUT TYPE="submit" VALUE="Dump">
+		</form>
+		);
+  }
+}
 
 
