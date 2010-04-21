@@ -1,7 +1,7 @@
 #/software/bin/perl -w
 #
-# Last updated by: $Author: pad $
-# Last updated on: $Date: 2010-02-02 10:20:12 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2010-04-21 13:55:39 $
 
 #################################################################################
 # Variables                                                                     #
@@ -43,8 +43,6 @@ else {
 
 my $log = Log_files->make_build_log($wormbase);
 
-$log->write_to("hacked version of merge_all_species\n\n");
-
 my %accessors = $wormbase->species_accessors;
 my $WS_name         = $wormbase->get_wormbase_version_name();
 
@@ -75,7 +73,6 @@ foreach my $spDB (values %accessors) {
   my $dir = $spDB->acefiles."/MERGE/".$spDB->species."/";
   unlink "$dir".$spDB->species."_Homol_data.ace";
 }
-
 
 $log->write_to("\nAbout to load . . .\n");
 #and then load then one after another.
