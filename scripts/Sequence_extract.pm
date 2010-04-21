@@ -233,6 +233,13 @@ sub DNA_revcomp
     $revseq =~ tr/g/x/;
     $revseq =~ tr/c/g/;
     $revseq =~ tr/x/c/;
+
+    $revseq =~ tr/A/X/;
+    $revseq =~ tr/T/A/;
+    $revseq =~ tr/X/T/;
+    $revseq =~ tr/G/X/;
+    $revseq =~ tr/C/G/;
+    $revseq =~ tr/X/C/;
     return ($revseq);
   }
 
@@ -275,6 +282,13 @@ sub DNA_comp
     $seq =~ tr/g/x/;
     $seq =~ tr/c/g/;
     $seq =~ tr/x/c/;
+
+    $seq =~ tr/A/X/;
+    $seq =~ tr/T/A/;
+    $seq =~ tr/X/T/;
+    $seq =~ tr/G/X/;
+    $seq =~ tr/C/G/;
+    $seq =~ tr/X/C/;
     return ($seq);
   }
   
