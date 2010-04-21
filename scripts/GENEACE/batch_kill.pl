@@ -62,9 +62,9 @@ my $DB;
 my $db;
 my $ecount;
 if ($test) {
-    $DB = 'test_wbgene_id;mcs2a;3305';
+    $DB = 'test_wbgene_id;mcs4a;3307';
   } else {
-    $DB = 'wbgene_id;mcs2a;3305';
+    $DB = 'wbgene_id;shap;3303';
 }
 my $wormbase = Wormbase->new("-organism" =>$species);
 my $database = "/nfs/disk100/wormpub/DATABASES/geneace";
