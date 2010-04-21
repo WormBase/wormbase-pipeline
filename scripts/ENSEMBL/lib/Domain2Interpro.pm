@@ -4,8 +4,8 @@
 #
 # Dumps InterPro protein motifs from ensembl mysql (protein) database to an ace file
 #
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2009-08-07 15:15:03 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2010-04-21 14:00:59 $
 =pod
 
 =head1 NAME
@@ -284,6 +284,32 @@ sub get_ip_mappings {
 sub DESTROY {
   my $file ='/tmp/interpro.xml.gz';
   unlink  $file if -e $file;
+}
+
+=head2 domain_lookup
+
+     Title    : domain_lookup
+     usage    : $m->domain_lookup('PFAM', $pf)
+     Function : convert database entry to InterPro domain
+     returns  : string or undef
+     Args     : source db as string, db id as string.
+
+=cut
+
+sub domain_lookup {
+    my $self = shift;
+    my $db = shift;
+    my $lookup = shift;
+    return unless $lookup;
+
+    my $domain = $self->{'ip_ids'}->{$db}->{$lookup};
+    return $domain ? $domain : undef;
+}
+
+sub get_domain_name {
+    my $self= shift;
+    my $domain = shift;
+    return $self->{'ip2name'}->{$domain} ? $self->{'ip2name'}->{$domain} : undef ;
 }
 
 1;
