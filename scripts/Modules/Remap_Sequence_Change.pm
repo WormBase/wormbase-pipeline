@@ -9,11 +9,11 @@
 #        FILES:  ---
 #         BUGS:  ---
 #        NOTES: 
-#      $Author: gw3 $
+#      $Author: ar2 $
 #      COMPANY:
 #     $Version:  $
 #      CREATED: 2006-02-27
-#        $Date: 2008-02-14 10:55:51 $
+#        $Date: 2010-04-21 14:29:37 $
 #===============================================================================
 package Remap_Sequence_Change;
 
@@ -297,7 +297,7 @@ sub unmap_gff {
 
   my $indel = 0;		# true if indels affect this location
   my $change = 0;		# true if non-indel base changes affect this location
-                                                                                                                                                            
+                                                                                                                                                             
   if ($chromosome =~ /CHROMOSOME_(\S+)/) {$chromosome = $1;}
                                                                                                                                                             
   foreach my $release ($release2 .. ($release1+1)) {
@@ -527,6 +527,21 @@ sub write_changes {
   return $title . $text;
 }
 
+sub remap_wig {
+    my ($chrom, $coord, $release1, $release2,$map) = @_;
+    my @map_data = @{$map}; #deref as req array
+    my @stuff = remap_gff($chrom,$coord,$coord,'+',$release1,$release2,@map_data);
+    my $ret = $stuff[4] == 1 ? 'change' : $stuff[0];
+    return $ret;
+}
+sub remap_BED{
+    my ($chrom, $coord1, $coord2, $release1, $release2,$map) = @_;
+    my @map_data = @{$map}; #deref as req array
+    my @stuff = remap_gff($chrom,$coord1,$coord2,'+',$release1,$release2,@map_data);
+    my $ret = $stuff[4] == 1 ? 'change' : $stuff[0];
+    return $ret;
+}
+
 
 1;
 
@@ -577,6 +592,6 @@ coordinates, with their sense ("+" or "-") to the new coordinates.
 =back
 
 =head3 AUTHOR
-$Author: gw3 $
+$Author: ar2 $
 
 =cut
