@@ -532,7 +532,7 @@ sub chromosome_names {
 	my @contigs;
 	my $i = 0;
 	while($i < 59707){
-		push(@contigs, "$i");
+		push(@contigs, sprintf("%7d",$i));
 		$i++;
 	}
 	return @contigs;
