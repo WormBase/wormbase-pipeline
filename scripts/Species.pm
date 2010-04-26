@@ -489,8 +489,8 @@ sub ncbi_tax_id {'6306'};
 sub assembly_type {'contig'};
 sub chromosome_names {
 	my @contigs;
-	my $i = 0;
-	while($i < 9538){
+	my $i = 1;
+	while($i < 9539){
 		push(@contigs, "$i");
 		$i++;
 	}
