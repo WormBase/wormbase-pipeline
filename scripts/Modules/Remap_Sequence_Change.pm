@@ -9,11 +9,11 @@
 #        FILES:  ---
 #         BUGS:  ---
 #        NOTES: 
-#      $Author: ar2 $
+#      $Author: gw3 $
 #      COMPANY:
 #     $Version:  $
 #      CREATED: 2006-02-27
-#        $Date: 2010-04-21 14:29:37 $
+#        $Date: 2010-04-27 09:02:58 $
 #===============================================================================
 package Remap_Sequence_Change;
 
@@ -56,9 +56,9 @@ sub read_mapping_data {
   foreach my $release (($release1+1) .. $release2) {
     my %chroms;
     
-    my $infile = "/lustre/cbi4/work1/wormpub/CHROMOSOME_DIFFERENCES/sequence_differences.WS$release";
+    my $infile = "/nfs/disk100/wormpub/CHROMOSOME_DIFFERENCES/sequence_differences.WS$release"
     if ($species and $species ne 'elegans') {
-      $infile = "/lustre/cbi4/work1/wormpub/CHROMOSOME_DIFFERENCES/sequence_differences_$species.WS$release";
+      $infile = "/nfs/disk100/wormpub/CHROMOSOME_DIFFERENCES/sequence_differences_$species.WS$release";
     }
 
     open (IN, "< $infile") || die "Can't open $infile\n";
@@ -592,6 +592,6 @@ coordinates, with their sense ("+" or "-") to the new coordinates.
 =back
 
 =head3 AUTHOR
-$Author: ar2 $
+$Author: gw3 $
 
 =cut
