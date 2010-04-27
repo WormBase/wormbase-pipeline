@@ -17,7 +17,7 @@
 # foreach? end
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2009-08-05 10:13:15 $      
+# Last updated on: $Date: 2010-04-27 08:53:45 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -74,7 +74,7 @@ my $log = Log_files->make_build_log($wormbase);
 # MAIN BODY OF SCRIPT
 ##########################
 
-my $outdir = "/lustre/cbi4/work1/wormpub/CHROMOSOME_DIFFERENCES";
+my $outdir = "/nfs/disk100/wormpub/CHROMOSOME_DIFFERENCES";
 my $outfile = "$outdir/sequence_differences.WS$version";
 $species = $wormbase->species;
 if ($species ne 'elegans') {
