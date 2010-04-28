@@ -1,13 +1,20 @@
 #!/software/bin/perl -w
 #
-# script_template.pl                           
+# get_splice_flanks.pl                          
 # 
-# by xxx                         
-#
-# This is a example of a good script template
+# by ar2            
 #
 # Last updated by: $Author: ar2 $     
-# Last updated on: $Date: 2010-04-28 15:55:29 $      
+# Last updated on: $Date: 2010-04-28 16:00:45 $      
+#
+#
+# This to get the sequences either side of exon splice sites.
+# cat in a GFF file of the exons (or any other feature) and it will return some bases (default 20)
+# either side of that feature eg
+#
+# grep curated $CURRENT/CHROMOSOMES/CHROMOSOME_III.gff | grep exon | perl get_splice_flanks.pl -store ~wormpub/BUILD/autoace/Elegans.store -database $CURRENT > ~/chrIII_splice_seqs.txt
+#
+#
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -66,7 +73,7 @@ while(<>) {
     print "$cds:$exStart-$exEnd($strand)\t$p5seq\t$p3seq\n";
 }
 
-exit(0);
+exit();
 
 
 
