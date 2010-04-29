@@ -18,7 +18,6 @@ $VALID_USERS = {
 					'mt3' 		=> 2970,
 					'mh6' 		=> 4036,
 					'jolenef'       => 2021,
-		                        'pad'           => 1983,
 					'stlouis' 	=> 1,
 					'caltech' 	=> 1,
 					'cshl' 		=> 1,
@@ -29,16 +28,16 @@ $VALID_USERS = {
 $VALID_API_USERS = {
 		'query'		=> [qw( ar2 pad gw3 mh6 mt3 stlouis caltech cshl sanger)],
 		'dump'		=> [qw( ar2 pad gw3 mh6 mt3 stlouis caltech cshl sanger)],
-		'merge_var'	=> [qw( ar2 pad mt3 mh6 jolenef)],
-		'new_var'	=> [qw( ar2 pad mt3 mh6 jolenef)], 
-		'kill_var'	=> [qw( ar2 pad mt3 mh6 jolenef)],
+		'merge_var'	=> [qw( ar2 mt3 mh6 jolenef)],
+		'new_var'	=> [qw( ar2 mt3 mh6 jolenef)], 
+		'kill_var'	=> [qw( ar2 mt3 mh6 jolenef)],
+		'change_name'	=> [qw( ar2 mt3 mh6 jolenef)],
 };
 
 ## a list of valid SSO login names able to add GCG name
 $VALID_CGCNAME_USERS = {
 		'mt3'			=> 1,
 		'ar2'			=> 1,
-		'pad'                   => 1,
 };
 
 $MAILS = {
@@ -50,8 +49,7 @@ $MAILS = {
 	'caltech'	=>	'caltech@wormbase.org',
 	'cshl'		=>	'cshl@wormbase.org',
 	'sanger'	=>	'sanger@wormbase.org',
-	'cgc'           =>      'mt3@sanger.ac.uk',
-	'pad'           =>      'pad@sanger.ac.uk',
+	'cgc'           =>      'mt3@sanger.ac.uk'
 };
 
 ## a list of people to mail when a DB operation occurs
@@ -119,8 +117,9 @@ sub main {
     my $name     = $sw->cgi->param('name');
     my $varid    = $sw->cgi->param('varid');
     my $lookup   = $sw->cgi->param('lookup');
-    my $keep_id   = $sw->cgi->param('keep_id');
-    my $kill_id   = $sw->cgi->param('kill_id');
+    my $keep_id  = $sw->cgi->param('keep_id');
+    my $kill_id  = $sw->cgi->param('kill_id');
+    my $change   = $sw->cgi->param('change_name');
 
 
     print_javascript();
@@ -143,8 +142,16 @@ sub main {
 	    &kill_var($kill_id);
 	}
     
+    }elsif( $action =~ /change_name/) {
+	if( is_authorised($USER,$action) == 1) {
+	    &change_name($varid,$change);
+	}
+    
     } elsif( $action eq "dump") {
 	&dump_all("dump");
+    } 
+    elsif( $action eq "last") {
+	&last("last");
     }
     else {
 	&query();
@@ -313,7 +320,7 @@ sub kill_var {
 		<BR><BR>
     	  <h3>Kill a Variation Id</h3>
     	  Enter Public name or Id of Variation<br>  
-    	  <INPUT TYPE="text" NAME="kill_id" SIZE="10" MAXLENGTH="10" VALUE="">
+    	  <INPUT TYPE="text" NAME="kill_id" SIZE="13" MAXLENGTH="13" VALUE="">
     	  <INPUT TYPE="hidden" NAME="action" VALUE="kill_var">
 		<br><br>
     	  <INPUT TYPE="submit" VALUE="Search">
@@ -363,6 +370,7 @@ sub query {
 			<BR><BR><BR>
 			);
 			&printAllNames($db,$var);
+			&print_history($db,$var);
 			print qq(
 			<hr align="left">
 			<BR><BR><BR>
@@ -406,11 +414,13 @@ sub print_selector {
 	my $mv = "";
 	my $kv = "";
 	my $da = "";
+	my $cn = "";
 	if ($action eq "query") 		{ $qv = " selected" };
 	if ($action eq "new_var") 		{ $nv = " selected" };
 	if ($action eq "merge_var")   { $mv = " selected" };
 	if ($action eq "kill_var") 	{ $kv = " selected" };
 	if ($action eq "dump") 		{ $da = " selected" };
+	if ($action eq "changename") 		{ $cn = " selected" };
 
 	print qq(
     What do you want to do ?  <br><br>
@@ -438,7 +448,17 @@ sub print_selector {
 	}
 	if (grep {/$USER/} @{$VALID_API_USERS->{$action}} ){
 		print qq(
+    	 <OPTION $kv LABEL="change_name" value="change_name">Change name of existing Variation Id</OPTION>
+		);
+	}
+	if (grep {/$USER/} @{$VALID_API_USERS->{$action}} ){
+		print qq(
     	 <OPTION $da LABEL="dump" value="dump">Dump all Variation Ids</OPTION>
+		);
+	}
+	if (grep {/$USER/} @{$VALID_API_USERS->{$action}} ){
+		print qq(
+    	 <OPTION $da LABEL="last" value="last">Show last used Variation Id</OPTION>
 		);
 	}
 	print qq(    
@@ -491,6 +511,19 @@ sub printAllNames
     }
   }
 
+sub last {
+    my $db = get_db_connection();
+    my $domain    = $db->getDomain;
+    my $domain_id = $db->getDomainId($domain);
+    my $query = " select primary_identifier.object_public_id from primary_identifier where domain_id=? order by object_id desc limit 1";
+    my $last_object = $db->dbh->selectcol_arrayref($query,undef, $domain_id);
+    my $id = $last_object->[0];
+
+    print "Last used $domain ID is <b>$id<b><br>";
+}
+
+
+
 sub dump_all {
   my $dump = shift;
   if ( $dump ) {
@@ -537,4 +570,66 @@ END
   }
 }
 
+sub change_name {
+    my $id = shift;
+    my $name = shift;
 
+     unless ($id) {
+	## print the query form
+	print qq(
+		 <form action="$ENV{'SCRIPT_NAME'}" method="GET">
+		 <BR><BR>
+		 <h3>Change the name of an existing Variation</h3>
+		 Enter Id of Variation<br>  
+		 <INPUT TYPE="text" NAME="varid" SIZE="14" MAXLENGTH="14" VALUE="">
+		 <INPUT TYPE="text" NAME="change_name" SIZE="10" MAXLENGTH="10" VALUE="">
+		 <INPUT TYPE="hidden" NAME="action" VALUE="change_name">
+		 <br><br>
+		 <INPUT TYPE="submit" VALUE="Search">
+		 </form>
+		 );
+    }else {
+	print  "attempting to rename $id to $name<br>";
+	my $db = get_db_connection();
+	if($db->addName($id,'Public_name'=>$name)) {
+	    print "successfully changed $id to $name<br>";
+	}
+	else {
+	    print "<font color=red>FAILED to rename</font>";
+	}
+    }
+}
+    
+
+sub print_history {
+  my $db = shift;
+  my $id = shift;
+
+  &validate_id($db,$id);
+
+  my $history = $db->idGetHistory($id);
+  print "$id<br>";
+  foreach my $event (@{$history}) {
+    print $event->{version}," ";
+    print $event->{date}," ";
+    print $event->{event}," ";
+    print $event->{name_type}," " if (defined $event->{name_type});
+    print $event->{name_value}," " if (defined $event->{name_value});
+    print $event->{user},"<br>";
+  }
+  return;
+}
+sub validate_id
+  {
+    my $db = shift;
+    my $id = shift;
+    unless ( $db->idExists($id) ) {
+      $db->dienice("$id does not exist");
+      return undef ;
+    }
+    unless( $db->idLive($id) == 1) {
+      $db->dienice("$id is not live");
+      return undef;
+    }
+    return $id;
+  }
