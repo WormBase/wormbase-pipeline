@@ -18,6 +18,7 @@ $VALID_USERS = {
 					'mt3' 		=> 2970,
 					'mh6' 		=> 4036,
 					'jolenef'       => 2021,
+		                        'pad'           => 1983,
 					'stlouis' 	=> 1,
 					'caltech' 	=> 1,
 					'cshl' 		=> 1,
@@ -28,15 +29,16 @@ $VALID_USERS = {
 $VALID_API_USERS = {
 		'query'		=> [qw( ar2 pad gw3 mh6 mt3 stlouis caltech cshl sanger)],
 		'dump'		=> [qw( ar2 pad gw3 mh6 mt3 stlouis caltech cshl sanger)],
-		'merge_var'	=> [qw( ar2 mt3 mh6 jolenef)],
-		'new_var'	=> [qw( ar2 mt3 mh6 jolenef)], 
-		'kill_var'	=> [qw( ar2 mt3 mh6 jolenef)],
+		'merge_var'	=> [qw( ar2 pad mt3 mh6 jolenef)],
+		'new_var'	=> [qw( ar2 pad mt3 mh6 jolenef)], 
+		'kill_var'	=> [qw( ar2 pad mt3 mh6 jolenef)],
 };
 
 ## a list of valid SSO login names able to add GCG name
 $VALID_CGCNAME_USERS = {
 		'mt3'			=> 1,
 		'ar2'			=> 1,
+		'pad'                   => 1,
 };
 
 $MAILS = {
@@ -48,7 +50,8 @@ $MAILS = {
 	'caltech'	=>	'caltech@wormbase.org',
 	'cshl'		=>	'cshl@wormbase.org',
 	'sanger'	=>	'sanger@wormbase.org',
-	'cgc'           =>      'mt3@sanger.ac.uk'
+	'cgc'           =>      'mt3@sanger.ac.uk',
+	'pad'           =>      'pad@sanger.ac.uk',
 };
 
 ## a list of people to mail when a DB operation occurs
