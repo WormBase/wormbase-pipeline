@@ -18,6 +18,7 @@ $VALID_USERS = {
 					'mt3' 		=> 2970,
 					'mh6' 		=> 4036,
 					'jolenef'       => 2021,
+					'pad'           => 1983,
 					'stlouis' 	=> 1,
 					'caltech' 	=> 1,
 					'cshl' 		=> 1,
@@ -28,10 +29,10 @@ $VALID_USERS = {
 $VALID_API_USERS = {
 		'query'		=> [qw( ar2 pad gw3 mh6 mt3 stlouis caltech cshl sanger)],
 		'dump'		=> [qw( ar2 pad gw3 mh6 mt3 stlouis caltech cshl sanger)],
-		'merge_var'	=> [qw( ar2 mt3 mh6 jolenef)],
-		'new_var'	=> [qw( ar2 mt3 mh6 jolenef)], 
-		'kill_var'	=> [qw( ar2 mt3 mh6 jolenef)],
-		'change_name'	=> [qw( ar2 mt3 mh6 jolenef)],
+		'merge_var'	=> [qw( ar2 pad gw3 mt3 mh6 jolenef)],
+		'new_var'	=> [qw( ar2 pad gw3 mt3 mh6 jolenef)], 
+		'kill_var'	=> [qw( ar2 pad gw3 mt3 mh6 jolenef)],
+		'change_name'	=> [qw( ar2 pad gw3 mt3 mh6 jolenef)],
 };
 
 ## a list of valid SSO login names able to add GCG name
@@ -600,7 +601,7 @@ sub change_name {
     }
 }
     
-
+#These are the bits that are stopping the use of NameDB_handler.pm - because of NameDB_handler::validate_name.
 sub print_history {
   my $db = shift;
   my $id = shift;
