@@ -63,6 +63,7 @@ my $query = "SELECT primary_identifier.object_public_id,
              FROM primary_identifier,secondary_identifier 
              WHERE  primary_identifier.object_id = secondary_identifier.object_id 
              AND   (secondary_identifier.name_type_id = 5) 
+             AND   (primary_identifier.object_live = 1) 
              ORDER BY object_public_id";
 
 #RESULTS . . 
