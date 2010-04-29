@@ -42,6 +42,7 @@ $def = $wormbase->database('geneace')."/wquery/variation_nameserver_comm.def" un
 my $TABLE = $wormbase->table_maker_query($acedb, $def);
 my %ace_ids;
 while(<$TABLE>) {
+    next unless /WBVar/;
     s/\"//g;
     my ($id,$name) = split;
     $ace_ids{$id} = $name;
