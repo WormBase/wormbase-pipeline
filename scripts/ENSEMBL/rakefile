@@ -10,7 +10,7 @@
 require 'yaml'
 require 'fileutils'
 
-tmp_place = '/lustre/scratch103/ensembl/wormpipe/compara_build'
+tmp_place = '/lustre/scratch101/ensembl/wormpipe/compara_build'
 perl='/software/worm/perl_510/bin/perl'
 basedir='/software/worm/ensembl'
 
@@ -18,7 +18,7 @@ basedir='/software/worm/ensembl'
 # will raise an error if not
 desc 'check if the directories are cleaned up'
 task :check_clean do
-	files=Dir.glob('/lustre/scratch103/ensembl/wormpipe/compara/Caenorhabditis* /lustre/scratch103/ensembl/wormpipe/compara/Brugia*  /lustre/scratch103/ensembl/wormpipe/compara/Pristionchus*')
+	files=Dir.glob('/lustre/scratch101/ensembl/wormpipe/compara/Caenorhabditis* /lustre/scratch101/ensembl/wormpipe/compara/Brugia*  /lustre/scratch101/ensembl/wormpipe/compara/Pristionchus*')
 	raise("the last run was not cleaned up! delete:\n#{files.join("\n")}") unless files.size == 0
 end
 
@@ -294,10 +294,10 @@ end
 
 desc 'cleanup the compara work directories'
 task :cleanup do
-	sh 'rm -rf /lustre/scratch103/ensembl/wormpipe/compara/logs/*'      # remove the logs
-	sh 'rm -f /lustre/scratch103/ensembl/wormpipe/compara/Caenorhabditis*' # remove the blast databases
-	sh 'rm -f /lustre/scratch103/ensembl/wormpipe/compara/Brugia*' # remove the blast databases
-	sh 'rm -f /lustre/scratch103/ensembl/wormpipe/compara/Pristionchus*' # remove the blast databases
+	sh 'rm -rf /lustre/scratch101/ensembl/wormpipe/compara/logs/*'      # remove the logs
+	sh 'rm -f /lustre/scratch101/ensembl/wormpipe/compara/Caenorhabditis*' # remove the blast databases
+	sh 'rm -f /lustre/scratch101/ensembl/wormpipe/compara/Brugia*' # remove the blast databases
+	sh 'rm -f /lustre/scratch101/ensembl/wormpipe/compara/Pristionchus*' # remove the blast databases
 	sh "rm -f #{tmp_place}/compara.ace" # remove the compara ace file
 	sh "rm -rf #{tmp_place}/compara"    # remove the compara dump directory
 end

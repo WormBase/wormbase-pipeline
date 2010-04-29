@@ -31,7 +31,7 @@ my $dump_one_script;
 	    'test'         => \$test,
 	    'dump_script:s'  => \$dump_one_script,
 	   );
-$dump_one_script = $dump_one_script?glob($dump_one_script):'/lustre/scratch103/ensembl/wormpipe/script/dump_one_new.pl';
+$dump_one_script = $dump_one_script?glob($dump_one_script):'/lustre/scratch101/ensembl/wormpipe/script/dump_one_new.pl';
 
 my $dbh=DBI->connect("dbi:mysql:database=$db;host=$host;port=$port", "wormro");
 

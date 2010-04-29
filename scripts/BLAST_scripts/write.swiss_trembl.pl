@@ -50,7 +50,7 @@ my $ensembl_info_file = "$wormpipe_dump/ensembl_protein_info.ace";
 my $swiss_list_txt    = "$wormpipe_dump/swisslist.txt";
 my $trembl_list_txt   = "$wormpipe_dump/trembllist.txt";
 
-my $db_files        = "/lustre/scratch103/ensembl/wormpipe/swall_data";
+my $db_files        = "/lustre/scratch101/ensembl/wormpipe/swall_data";
 
 my $blast_files = "$wormpipe_dump/*blastp.ace $wormpipe_dump/*X*.ace ";
 
@@ -231,4 +231,4 @@ This script creates ace files containing the details of any proteins that have b
 
 The input list are simply a list of ID's of matching proteins.
 
-The .gsi databases are written by fasta2gsi.pl -f /lustre/scratch103/ensembl/wormpipe/swall_data/slimswissprot whenever the swissprot/trembl are updated.
+The .gsi databases are written by fasta2gsi.pl -f /lustre/scratch101/ensembl/wormpipe/swall_data/slimswissprot whenever the swissprot/trembl are updated.

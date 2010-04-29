@@ -4,8 +4,8 @@
 #  script to submit blastx dumping scripts onto the farm
 #  and concatenate them at the end
 # 
-# Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2009-11-09 12:21:44 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2010-04-29 14:41:33 $
 # 
 
 
@@ -72,7 +72,7 @@ my %logic2type = (
 my $m=LSF::JobManager->new(-q => 'normal',-o => '/dev/null',-e=>'/dev/null',-R => '"select[mem>4000] rusage[mem=4000]"',-M => 4000000, -F => 400000);
 
 my $storable =  $wormbase->autoace . '/'. ref($wormbase).'.store';
-$dumpdir ||= '/lustre/scratch103/ensembl/wormpipe/dumps';
+$dumpdir ||= '/lustre/scratch101/ensembl/wormpipe/dumps';
 my $organism = lc (ref($wormbase));
 
 $database ||= "worm_ensembl_$organism";

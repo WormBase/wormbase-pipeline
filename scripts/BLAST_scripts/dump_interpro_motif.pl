@@ -5,7 +5,7 @@
 # Dumps InterPro protein motifs from ensembl mysql (protein) database to an ace file
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2010-04-15 10:27:10 $
+# Last updated on: $Date: 2010-04-29 14:42:19 $
 
 
 use strict;
@@ -545,7 +545,7 @@ script_template.pl  OPTIONAL arguments:
  
 =over 4
  
-=item This script must be run where it can see /lustre/scratch103/ensembl/wormpipe/ as it puts the temporary interpro.xml file in there.
+=item This script must be run where it can see /lustre/scratch101/ensembl/wormpipe/ as it puts the temporary interpro.xml file in there.
  
 =back
  

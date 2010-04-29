@@ -6,15 +6,15 @@
 #
 # Script to run consistency checks on the geneace database
 #
-# Last updated by: $Author: pad $
-# Last updated on: $Date: 2009-09-03 13:44:35 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2010-04-29 14:29:59 $
 
 
 use strict;
 
 my $rundate = `date +%m_%d`; chomp $rundate;
 
-chdir "/lustre/scratch103/ensembl/wormpipe/BlastDB";
+chdir "/lustre/scratch101/ensembl/wormpipe/BlastDB";
 
 `wget ftp://ftp.ebi.ac.uk/pub/databases/IPI/current/ipi.HUMAN.fasta.gz`;
 

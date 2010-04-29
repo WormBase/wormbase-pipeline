@@ -4,8 +4,8 @@
 #
 # written by Anthony Rogers
 #
-# Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2009-12-02 16:52:33 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2010-04-29 14:33:19 $
 #
 # it depends on:
 #    wormpep + history
@@ -132,7 +132,7 @@ GetOptions(
   )
   || die('cant parse the command line parameter');
 
-my $wormpipe_dir = '/lustre/scratch103/ensembl/wormpipe';
+my $wormpipe_dir = '/lustre/scratch101/ensembl/wormpipe';
 my $scripts_dir  = $ENV{'CVS_DIR'};
 
 # defaults
@@ -259,7 +259,7 @@ if ($cleanup) {
     $log->write_to("clearing up files generated in this build\n");
 
     # files to move to ~wormpub/last-build/
-    #   /lustre/scratch103/ensembl/wormpipe/dumps/
+    #   /lustre/scratch101/ensembl/wormpipe/dumps/
     #    ipi_hits_list
     #    trembllist.txt
     #    swisslist.txt
@@ -272,10 +272,10 @@ if ($cleanup) {
     #    ids.txt
 
     # to delete
-    #   /lustre/scratch103/ensembl/wormpipe/dumps/
+    #   /lustre/scratch101/ensembl/wormpipe/dumps/
     #      *.ace
     #      *.log
-    my $clear_dump = "/lustre/scratch103/ensembl/wormpipe/dumps";
+    my $clear_dump = "/lustre/scratch101/ensembl/wormpipe/dumps";
     $log->write_to("Removing . . . \n\t$clear_dump/*.ace\n");
     system("rm -f $clear_dump/*.ace $clear_dump/*.log") && warn "cant remove ace and log files from $clear_dump";
     $log->write_to ("Removing files currently in $wormpipe_dir/last_build/n");
@@ -291,7 +291,7 @@ if ($cleanup) {
     $log->write_to ("\nRemoving the $wormpipe_dir/DUMP_PREP_RUN lock file\n");
     system("rm -f $wormpipe_dir/DUMP_PREP_RUN") && warn "cant remove $wormpipe_dir/DUMP_PREP_RUN\n";
 
-    $log->write_to("\nRemoving farm output and error files from /lustre/scratch1/ensembl/wormpipe/*\n") if $debug;
+    $log->write_to("\nRemoving farm output and error files from /lustre/scratch101/ensembl/wormpipe/*\n") if $debug;
     my $scratch_dir = $wormpipe_dir;
     # Michael wants ensembl-brugia left as it is for now as he uses it for testing
     my @species_dir = qw( ensembl-pristionchus ensembl-japonica ensembl-brenneri ensembl-briggsae ensembl-elegans ensembl-remanei ); 

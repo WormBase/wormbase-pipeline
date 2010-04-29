@@ -30,8 +30,8 @@ my %exclude = (
 	) ;
 
 our $output; # file to write
-my $output_dir = "/lustre/scratch103/ensembl/wormpipe/swall_data";
-my $input_dir = "/lustre/scratch103/ensembl/wormpipe/swall_data";
+my $output_dir = "/lustre/scratch101/ensembl/wormpipe/swall_data";
+my $input_dir = "/lustre/scratch101/ensembl/wormpipe/swall_data";
 
 my %HASH;
 

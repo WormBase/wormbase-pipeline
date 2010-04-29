@@ -1306,7 +1306,7 @@ sub establish_paths {
     my $wormpipe= glob("~wormpipe");
     $self->{'autoace'}     = $wormpipe;
     $self->{'acefiles'}    = $self->autoace . "/acefiles";
-    $self->{'dump_dir'}    = '/lustre/scratch103/ensembl/wormpipe/dumps';
+    $self->{'dump_dir'}    = '/lustre/scratch101/ensembl/wormpipe/dumps';
     $self->{'orgdb'}       =  $wormpipe;
     $self->{'logs'}        = "$wormpipe/logs";
     $self->{'common_data'} = $self->orgdb . "/COMMON_DATA";
@@ -1378,7 +1378,7 @@ sub establish_paths {
     $self->{'cdna_acedir'} = $self->{'build_data'} . "/cDNAace/".$self->{'species'};
     $self->{'maskedcdna'}  = $basedir . "/cDNA/".$self->{'species'};
 
-    $self->{'farm_dump'}    = '/lustre/scratch103/ensembl/wormpipe/dumps';
+    $self->{'farm_dump'}    = '/lustre/scratch101/ensembl/wormpipe/dumps';
 
     # create dirs if missing
     mkpath( $self->logs )        unless ( -e $self->logs );
