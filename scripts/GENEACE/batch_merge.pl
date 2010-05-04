@@ -196,23 +196,35 @@ sub merge_gene {
       $gene_versions{$deadgene} = $ver;
       $output .= "\nGene : $deadgene\nVersion $ver\nHistory Version_change $ver now $user Event Merged_into $livegene\nMerged_into $livegene\nDead\n\nGene : $deadgene\n-D Sequence_name\n-D method\n\n";
 
-      # get the Other_names
-      foreach my $dead_Other_names ($deadgeneObj->at('Identity.Name.Other_name')) {
-	if (defined $dead_Other_names) {
-	  my @row = $dead_Other_names->row;
-	  $output .= "\nGene : $livegene\nOther_name @row\n";
-	}
+      # transfer the Other_names
+      foreach my $dead_Other_names ($deadgeneObj->at('Identity.Name.Other_name')->col) {
+	$output .= "\nGene : $livegene\nOther_name $dead_Other_names\n";
       }	
       
       
-      # get the Ortholog tags
+      # transfer the Ortholog tags
       foreach my $dead_Orthologs ($deadgeneObj->at('Gene_info.Ortholog')) {
 	if (defined $dead_Orthologs) {
 	  my @row = $dead_Orthologs->row;
-	  $row[1] = '"' . $row[1] . '"'; # add quotes to the species name
-	  $output .= "\nGene : $livegene\nOrtholog @row\n";
+	  my $row0=$row[0]->name;
+	  my $row1=$row[1]->name;
+	  my $row2=$row[2]->name;
+	  my @col = $deadgeneObj->at("Gene_info.Ortholog.$row0.$row1.$row2")->col;
+	  $row1 = '"' . $row1 . '"'; # add quotes to the species name
+	  foreach my $col (@col) {
+	    $output .= "\nGene : $livegene\nOrtholog $row0 $row1 $row2 $col\n";
+	  }
 	}
       }	
+      $output .= "\nGene : $deadgene\n-D Ortholog\n"; # remove orthologs from the dead gene
+
+      # remove the Paralog data
+      $output .= "\nGene : $deadgene\n-D Paralog\n"; # remove Paralogs from the dead gene
+
+      # remove the Map_info data
+      $output .= "\nGene : $deadgene\n-D Map_info\n"; # remove Map_info from the dead gene
+
+
       
     } else {
       $log->error("ERROR: no such gene $deadgene\n");
