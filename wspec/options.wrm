@@ -111,7 +111,7 @@ _VLife_stage       -H
 _VAccession_number -H
 _VDatabase         -V
 _VAnalysis         -V
-
+_VLibrary	   -V
 
 
 // classes curated from literature
