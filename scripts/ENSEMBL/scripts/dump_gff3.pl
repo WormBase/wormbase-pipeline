@@ -19,7 +19,7 @@ use DBI;
 use Domain2Interpro;
 use Getopt::Long;
 
-my $debug;
+my $debug =1;
 
 # Vega database
 my $vega_dbname = '';
@@ -76,8 +76,9 @@ if ($dump_slice[0]){
 else {
    $slices = $sa->fetch_all('toplevel');
 }
-my $bsub_str = "bsub -R \"select[mem>3500] rusage[mem=3500]\" -o /dev/null -e /dev/null -J dump_$vega_dbname perl $0 -dbhost $vega_dbhost -dbname $vega_dbname -dbuser $vega_dbuser  -dbport $vega_dbport -dumpdir $dumpdir -slice ";
+my $bsub_str = "bsub -R \"select[mem>3500] rusage[mem=3500]\" -o /dev/null -e /dev/null -J dump_$vega_dbname perl $0 -dbhost $vega_dbhost -dbname $vega_dbname -dbuser $vega_dbuser  -dbport $vega_dbport -dumpdir $dumpdir";
 $bsub_str .= " -dbpass $vega_dbpass" if $vega_dbpass;
+$bsub_str.=' -slice ';
 
 my $slice_counter =0;
 my $bsub_slices = "";
@@ -91,7 +92,7 @@ while( my $slice = shift @$slices) {
 	
 	if($slice_counter == $lsf) {
 	    print STDERR "$bsub_str $bsub_slices\n" if $debug;
-	   # print `$bsub_str $bsub_slices`;
+	    print `$bsub_str $bsub_slices`;
 	    $slice_counter =0;
 	    $bsub_slices = "";
 	}
@@ -258,10 +259,10 @@ while( my $slice = shift @$slices) {
 }
 $pout->close if $file;
 
-if( $lsf) {
-    print STDERR "$bsub_str $bsub_slices\n" if $debug;
-    print `$bsub_str $bsub_slices`;
-}
+#if( $lsf) {
+#    print STDERR "$bsub_str $bsub_slices\n" if $debug;
+#    print `$bsub_str $bsub_slices`;
+#}
 
 # CIGAR to old GFF3 CIGAR format converter
 sub cigar_to_almost_cigar {
@@ -310,11 +311,12 @@ sub get_info {
     my $rest_features;
     map {
 	if ($mapper->get_method2database($_->analysis->logic_name())) {
-	    push @{$plain_features{$_->analysis->logic_name()}},[$_->display_id(),$_->start(),
-								 $_->end(),$_->hstart(),$_->hend(),$_->score(),$_->p_value()]
-								 }else {
-								     push @$rest_features,$_
-								     }
+	    push @{$plain_features{$_->analysis->logic_name()}},
+	        [$_->display_id(),$_->start(), $_->end(),$_->hstart(),$_->hend(),$_->score(),$_->p_value()]
+	}
+	else {
+	    push @$rest_features,$_
+	}
     } @$features;
     my @interpros=$mapper->get_mapping(\%plain_features);
     map {$info.=sprintf( "position:%d-%d method:%s accession:%s description:%s %%0A", $_->[1], $_->[2],
