@@ -1,11 +1,11 @@
 #!/software/bin/perl -w
 #
-# Small script to convert GF3 gene predictions to ace
+# Small script to convert GFF3 gene predictions to ace
 # It remaps the genomic locations from WS160 to the current version
 # To not remap, set the release to be 0.
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2010-02-12 16:53:30 $      
+# Last updated on: $Date: 2010-05-05 10:16:03 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -24,7 +24,7 @@ use Modules::Remap_Sequence_Change;
 ######################################
 
 my ($help, $debug, $test, $verbose, $store, $wormbase);
-my ($input, $output, $source, $release, $method, $species);
+my ($input, $output, $source, $release, $method, $species, $addend);
 
 GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
@@ -37,6 +37,7 @@ GetOptions ("help"       => \$help,
 	    "release:i"  => \$release, # version to map from, set to zero to not remap at all
 	    "method:s"   => \$method, # method to specify in ace output
 	    "species:s"  => \$species,
+	    "addend"     => \$addend, # use this if the CDS in the GFF does not include the STOP codon (acedb models should include it)
 	    );
 
 
@@ -142,6 +143,11 @@ while (my $line = <IN>) {
     # get the clone coords
     ($clone, $start, $end) = $coords->LocateSpan($fields[0], $fields[3], $fields[4]);
 
+    # adjust the end to include the STOP codon if it has been copied over from elegans
+    if ($addend) {
+      if ($fields[6] eq '+') {$end += 3;} else {$start -= 3;}
+    }
+
     # store the CDS_child data
     $clone_child{$clone}{$id}{'start'} = $start;
     $clone_child{$clone}{$id}{'end'} = $end;
@@ -215,6 +221,7 @@ foreach my $id (keys %gene_info) {
   for (my $i = 0; $i < @{$gene_info{$id}{'starts'}}; $i++) {
     my $start = $gene_info{$id}{'starts'}[$i];
     my $end = $gene_info{$id}{'ends'}[$i];
+    if ($addend && $i ==  $#{$gene_info{$id}{'ends'}}) {$end += 3;}
     print OUT "Source_exons $start $end\n";
   }
 }
