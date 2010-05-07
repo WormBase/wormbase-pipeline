@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl5.8.0 -w
-# Last updated by $Author: ar2 $
-# Last updated on: $Date: 2008-12-01 11:26:25 $
+# Last updated by $Author: mh6 $
+# Last updated on: $Date: 2010-05-07 11:23:15 $
 
 package Geneace;
 
@@ -55,14 +55,19 @@ sub gene_info {
 	 my $gene_info_def="$def_dir/geneace_gene_info.def";
 
     my $fh = $this->{'wormbase'}->table_maker_query($db,$gene_info_def);
+
+    my $lastline='';
+
     while (<$fh>) {
       chomp;
-      next if /acedb/;
-      s/\"//g;#"
+      next if /acedb|\/\/|^\s*\n{0,1}$/;
+      s/\"//g;
       my @gene_info = split("\t",$_);
       my ($gene, $cgc_name,$seq_name,$other_name, $public_name) = @gene_info;
+      print STDERR "BLEEP:\n(-1)$lastline\n(0)$_\n" unless $gene;
+      $lastline=$_;
       $gene =~ s/\"//g;
-      $cgc_name =~ s/\"//g;
+      $cgc_name =~ s/\"//g if $cgc_name;
       $gene_info{$gene}{'CGC_name'} 		= $cgc_name 		if $cgc_name;
       $gene_info{$cgc_name}{'Gene'} 		= $gene     		if $cgc_name;
       $gene_info{$gene}{'Sequence_name'} 	= $seq_name 		if $seq_name;

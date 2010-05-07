@@ -6,8 +6,8 @@
 #
 # Script to run consistency checks on the geneace database
 #
-# Last updated by: $Author: mt3 $
-# Last updated on: $Date: 2009-12-07 13:25:32 $
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2010-05-07 11:23:15 $
 
 use strict;
 use lib $ENV{"CVS_DIR"};
@@ -46,7 +46,7 @@ print "Using database $database.\n\n";
 
 my $tace = $wb->tace;          # tace executable path
 my $curr_db = "/nfs/disk100/wormpub/DATABASES/current_DB"; # Used for some cross checking with geneace
-my $def_dir = "$database/wquery";                          # where lots of table-maker definitions are kept
+my $def_dir = "$ENV{CVS_DIR}/wquery/geneace";                          # where lots of table-maker definitions are kept
 
 my $rundate = $wb->rundate;                                # Used by various parts of script for filename creation
 my $maintainers = "ar2\@sanger.ac.uk, pad\@sanger.ac.uk, mt3\@sanger.ac.uk, gw3\@sanger.ac.uk";                                   # Default for emailing interested people
@@ -1077,14 +1077,20 @@ sub process_strain_class {
     }
   }
   
+
+
   my ($locus, %allele_locus, %strain_genotype, $cds, %locus_cds, $main, $allele);
 
-  my $get_genotype_in_strain="Table-maker -p \"$def_dir/strain_genotype.def\"\nquit\n";
-  my $allele_to_locus="Table-maker -p \"$def_dir/allele_to_locus.def\"\nquit\n";
+  my $geneaceWqueryDir=$ENV{CVS_DIR}.'/../wquery/geneace';
+
+  my $get_genotype_in_strain="Table-maker -p \"$geneaceWqueryDir/strain_genotype.def\"\nquit\n";
+  my $allele_to_locus="Table-maker -p \"$geneaceWqueryDir/allele_to_locus.def\"\nquit\n";
 
   open (FH1, "echo '$get_genotype_in_strain' | $tace $database | ") || warn $!;
   open (FH2, "echo '$allele_to_locus' | $tace $database | ") || warn $!;
 
+  # looks like:
+  # "AA1"	"daf-12(rh257) X."
   while(<FH1>){
     chomp;
      if ($_ =~ /\"(.+)\"\s+\"(.+)\"/){
@@ -1093,31 +1099,36 @@ sub process_strain_class {
   }
   close FH1;
 
-  while (<FH2>){
+  # looks like:
+  # "ad418"	"WBGene00000086"
+  while (<FH2>){ # only genes with Alleles
     chomp $_;
     if ($_ =~ /\"(.+)\"\s+\"(.+)\"/){
-      my $gene_id = $2;
-      $gene_id =~ s/\\//;
-      push(@{$allele_locus{$1}}, $Gene_info{$gene_id}{'CGC_name'}) if exists $Gene_info{$gene_id}{'CGC_name'};
+      push(@{$allele_locus{$1}}, $Gene_info{$2}{'CGC_name'}) if $Gene_info{$2}{'CGC_name'};
+      print STDERR "$allele_locus{$1} ${\$Gene_info{$2}{CGC_name}}\n" if $Gene_info{$2}{'CGC_name'};# bleh
     }
   }
   close FH2;
 
+  # test with: "daf-12(rh257) X."
   foreach my $strain (keys %strain_genotype){
-    my @matches = ($strain_genotype{$strain} =~  /((Cb-\w{3,4}-\d+|Cr-\w{3,4}-\d+|\w{3,4}-\d+)\(\w+\d+\))/g);
+    my @matches = ($strain_genotype{$strain} =~  /((C[brjn]-\w{3,4}-\d+\w{0,1}|\w{3,4}-\d+\w{0,1})\(\w+\d+\))/g); # daf-12(rh257)
     foreach (@matches){
       my @la = split(/\s+/, $_);
       foreach (@la){
-	if ($_ =~ /(Cb-\w{3,4}-\d+|Cr-\w{3,4}-\d+|\w{3,4}-\d+)\((\w+\d+)\)/){
-	  $locus = $1; $allele = $2; 
+	if ($_ =~ /(C[brjn]-\w{3,4}-\d+\w{0,1}|\w{3,4}-\d+\w{0,1})\((\w+\d+)\)/){
+	  $locus = $1; $allele = $2;
+
 	  # diff allele->locus link in geneace and allele->locus in strain genotype
 	  # if diff, print error LOG
 	
 	  if ( defined @{$allele_locus{$allele}} ){
 	    my @LOci = @{$allele_locus{$allele}};
 	    my %LOci;
-	    foreach (@LOci){$LOci{$_}++};
-	    if( ($locus ne 'lin-15') and (!exists $LOci{$locus}) ){
+	    map {$LOci{$_}++} @LOci;
+
+
+	    unless ($LOci{$locus} ){
 	      print LOG "ERROR: Strain $strain has $locus($allele) in genotype: ";
 	      print LOG "change each $locus to @{$allele_locus{$allele}}\n";
 	    }
