@@ -1,6 +1,6 @@
 // Spread sheet definition for the ACeDB software 
-// User: wormpub
-// Date: 2005-02-11_10:35:07
+// User: mh6
+// Date: 2010-05-07_11:25:09
 
 // %n (%%n in the graphic) are parameter to be given on the command line in tace
 // or by default by the Parameters given in this file
@@ -12,24 +12,33 @@ Title Variations with allele, gene
 Sortcolumn 1
 
 Colonne 1 
-Width 12 
+Width 15 
 Optional 
-Visible 
+Hidden 
 Class 
 Class Variation 
 From 1 
  
 Colonne 2 
+Width 12 
+Optional 
+Visible 
+Class 
+Class Variation_name 
+From 1 
+Tag Public_name 
+ 
+Colonne 3 
 Width 20 
 Mandatory 
 Visible 
 Class 
 Class Gene 
 From 1 
-Tag Gene  
+Tag Gene 
  
-Colonne 3 
-Width 12 
+Colonne 4 
+Width 15 
 Mandatory 
 Hidden 
 Show_Tag 
