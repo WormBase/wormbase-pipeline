@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2010-05-07 11:23:15 $
+# Last updated on: $Date: 2010-05-07 11:25:09 $
 
 use strict;
 use lib $ENV{"CVS_DIR"};
@@ -1105,7 +1105,6 @@ sub process_strain_class {
     chomp $_;
     if ($_ =~ /\"(.+)\"\s+\"(.+)\"/){
       push(@{$allele_locus{$1}}, $Gene_info{$2}{'CGC_name'}) if $Gene_info{$2}{'CGC_name'};
-      print STDERR "$allele_locus{$1} ${\$Gene_info{$2}{CGC_name}}\n" if $Gene_info{$2}{'CGC_name'};# bleh
     }
   }
   close FH2;
