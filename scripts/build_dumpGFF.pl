@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl -w
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2010-03-05 12:45:45 $
+# Last edited on: $Date: 2010-05-11 14:36:19 $
 
 use strict;
 use lib  $ENV{'CVS_DIR'};
@@ -79,7 +79,7 @@ init scRNA elegans
 init snoRNA elegans
 init tRNA elegans
 init stRNA elegans
-init ncRNA elegans
+init ncRNA elegans briggsae
 init miRNA elegans
 init miRNA_primary_transcript elegans
 init GenePairs elegans
