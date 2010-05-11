@@ -1,4 +1,4 @@
- #!/nfs/disk100/wormpub/bin/perl
+#!/software/bin/perl
           
 use lib $ENV{'CVS_DIR'};
 use strict;
@@ -96,12 +96,14 @@ foreach (@aql_results) {
 warn scalar keys %seq_name_hash , " gene sequence names read\n";
 
 
-my %papers=();
-@aql_results=$db->aql('select a, a->pmid from a in class paper');
+my %paper_fields=();
+my %paper_accno=();
+@aql_results=$db->aql('select a, a->Database[2], a->Database[3]  from a in class paper');
 foreach (@aql_results) {
-    $papers{$_->[0]}=$_->[1];
+  $paper_fields{$_->[0]} = $_->[1]; # database field e.g. 'PMID'
+  $paper_accno{$_->[0]} = $_->[2];  # database accession number e.g. '12393910'
 }
-warn scalar keys %papers , " papers read\n";
+warn scalar keys %paper_fields , " papers read\n";
 
 my %papers_to_skip=();
 if ($skiplist) {
@@ -162,8 +164,8 @@ if ($gene) {
 		my $ref='';
 		if ($tmp[5]=~/WBPaper/) {
 		    $ref="WB:$tmp[5]";
-		    if ($papers{$tmp[5]}) {
-			$ref.="|PMID:$papers{$tmp[5]}";
+		    if ($paper_fields{$tmp[5]}) {
+			$ref.="|$paper_fields{$tmp[5]}:$paper_accno{$tmp[5]}"; # type of database field and the accession_number e.g. 'PMID:12393910'
 		    }
 		}
 		if (!$ref and $tmp[3] eq "IEA") {
@@ -254,8 +256,8 @@ if ($rnai) {
 		    $public_name=$name_hash{$gene};
 		}
 		my $ref_field='';
-		if ($papers{$ref}) {
-		    $ref_field="WB:$ref|PMID:$papers{$ref}";
+		if ($paper_fields{$ref}) {
+		    $ref_field="WB:$ref|$paper_fields{$ref}:$paper_accno{$ref}"; # type of database field and the accession_number e.g. 'PMID:12393910'";
 		}
 		elsif ($ref) {
 		    $ref_field="WB:$ref";
@@ -345,8 +347,8 @@ if ($variation) {
 		}
 		my $ref_field='';
 		if ($phen_hash{$phen}{Paper_evidence}) {
-		    if ($papers{$phen_hash{$phen}{Paper_evidence}}) {
-			$ref_field="WB:$phen_hash{$phen}{Paper_evidence}|PMID:$papers{$phen_hash{$phen}{Paper_evidence}}";
+		    if ($paper_fields{$phen_hash{$phen}{Paper_evidence}}) {
+			$ref_field="WB:$phen_hash{$phen}{Paper_evidence}|$paper_fields{$phen_hash{$phen}{Paper_evidence}}:$paper_accno{$phen_hash{$phen}{Paper_evidence}}"; # type of database field and the accession_number e.g. 'PMID:12393910'";
 		    }
 		    else {
 			$ref_field="WB:$phen_hash{$phen}{Paper_evidence}";
