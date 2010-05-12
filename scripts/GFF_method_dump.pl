@@ -9,7 +9,7 @@
 # dumps the method through sace / tace and concatenates them.
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2009-05-21 14:39:12 $
+# Last edited on: $Date: 2010-05-12 08:25:19 $
 
 
 use lib $ENV{CVS_DIR};
@@ -66,6 +66,12 @@ my $port = 23100;
 
 $database = $wormbase->autoace unless $database;
 $dump_dir = "/tmp/GFF_CLASS" unless $dump_dir;
+
+# ensure that there is no '/' at the end of $dump_dir because 'gif
+# seqfeatures' removes everything after a '//' as it looks like a
+# comment in acedb!
+$dump_dir =~ s#/$##g;
+
 &check_options;
 `mkdir -p $dump_dir/tmp` unless -e "$dump_dir/tmp";
 
