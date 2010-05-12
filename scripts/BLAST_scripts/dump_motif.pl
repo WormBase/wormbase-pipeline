@@ -5,7 +5,7 @@
 # Dumps protein motifs from ensembl mysql (protein) database to an ace file
 #
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2009-09-15 12:28:18 $
+# Last updated on: $Date: 2010-05-12 16:12:08 $
 
 use lib $ENV{'CVS_DIR'};
 
@@ -39,7 +39,7 @@ if ( $store ) {
 }
 
 my $log = Log_files->make_build_log($wormbase);
-$dump_dir ||= '/lustre/scratch103/ensembl/wormpipe/dumps';
+$dump_dir ||= '/lustre/scratch101/ensembl/wormpipe/dumps';
 
 # define the names of the methods to be dumped
 @methods = qw(Ncoils Seg Signalp Tmhmm Pfam) unless @methods;
