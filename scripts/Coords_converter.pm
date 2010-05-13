@@ -176,7 +176,7 @@ sub invoke
 	#
 	##########################
 
-	} elsif ($species eq 'branneri') {
+	} elsif ($species eq 'brenneri') {
 
 		# read data from the AGP file
 		carp "Although contig data is read, there is no contig data in the acedb database, only supercontig data, as of 13 June 2007\n";
