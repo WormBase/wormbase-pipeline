@@ -6,8 +6,8 @@
 #
 # This is a script to automate the sections A, B and C of the BLAST Build
 #
-# Last updated by: $Author: mh6 $     
-# Last updated on: $Date: 2009-08-24 10:05:01 $      
+# Last updated by: $Author: pad $     
+# Last updated on: $Date: 2010-05-13 09:58:59 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -138,7 +138,7 @@ sub dump {
 
   $log->write_to("  Running dump.pl . . .\n");
 
-  my $sort_dir = "/lustre/scratch103/ensembl/wormpipe/sort_dump";
+  my $sort_dir = "/lustre/scratch101/ensembl/wormpipe/sort_dump";
   chdir $sort_dir || die "Can't cd to $sort_dir: $!";
   $spDB->run_command('rm -f $sort_dir/junk*', $log);
 
@@ -160,7 +160,7 @@ sub dump {
 
   $log->write_to("  Sorting $species.srt . . .\n");
   $ENV{SORT_OPTS} = "-k2,2 -k8,8n -k10,10nr";
-  chdir "/lustre/scratch103/ensembl/wormpipe/sort_dump";
+  chdir "/lustre/scratch101/ensembl/wormpipe/sort_dump";
   $spDB->run_command("time sort -m -S 2G -T tmp \$SORT_OPTS junk*.srt -o $species.srt", $log); 
     
 }
@@ -171,7 +171,7 @@ sub blastp_dump {
 
   $log->write_to("  Running dump_blastp_from_file.pl . . .\n");
   $spDB->run_script("BLAST_scripts/dump_blastp_from_file.pl $species.srt -version $version -matches -database worm_$species", $log);  
-  $spDB->run_command('rm -f /lustre/scratch103/ensembl/wormpipe/sort_dump/junk*.*', $log);
+  $spDB->run_command('rm -f /lustre/scratch101/ensembl/wormpipe/sort_dump/junk*.*', $log);
     
 }
 
@@ -201,7 +201,7 @@ sub check {
 
   my ($species) = @_;
 
-  my $dump_dir = "/lustre/scratch103/ensembl/wormpipe/dumps/";
+  my $dump_dir = "/lustre/scratch101/ensembl/wormpipe/dumps/";
 
   $spDB->check_file($dump_dir."/${species}_blastx.ace", 
 		    $log,

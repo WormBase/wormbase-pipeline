@@ -1,6 +1,6 @@
 #!/usr/local/ensembl/bin/perl -w 
-# Last updated by: $Author: mh6 $     
-# Last updated on: $Date: 2009-08-24 10:05:03 $      
+# Last updated by: $Author: pad $     
+# Last updated on: $Date: 2010-05-13 09:58:59 $      
 
 use strict;
 use Getopt::Long;
@@ -33,8 +33,8 @@ if($debug){
 # Do SlimSwissProt
 `cat ~pubseq/data/swall/splitted_files/sprot.dat | ~/scripts/BLAST_scripts/swiss_trembl2dbm.pl -s`
 `cat ~pubseq/blastdb/swall-1 ~pubseq/blastdb/swall-2 | ~/scripts/BLAST_scripts/swiss_trembl2slim.pl -s $ver`
-`fasta2gsi.pl -f /lustre/scratch103/ensembl/wormpipe/swall_data/slimswissprot`
-`cp /lustre/scratch103/ensembl/wormpipe/swall_data/slimswissprot ~/BlastDB/slimswissprot$ver.pep`
+`fasta2gsi.pl -f /lustre/scratch101/ensembl/wormpipe/swall_data/slimswissprot`
+`cp /lustre/scratch101/ensembl/wormpipe/swall_data/slimswissprot ~/BlastDB/slimswissprot$ver.pep`
 
 
 # SlimTrEMBL
