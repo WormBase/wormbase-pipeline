@@ -712,6 +712,29 @@ GFF_feature "expressed_sequence_match"
 Remark "This method describes C. elegans RST sequences...."
 // Need GFF_source and GFF_feature?
 
+Method : "BLAT_Caen_OST_BEST" 
+Colour   "PALEGRAY"
+Show_up_strand
+Score_by_width
+Score_bounds     50.000000 100.000000
+Join_blocks
+Blixem_N
+GFF_feature "expressed_sequence_match"
+Remark "This method describes C. elegans OST sequences...."
+// Need GFF_source and GFF_feature?
+
+Method : "BLAT_Caen_OST_OTHER" 
+Colour   "GRAY"
+Show_up_strand
+Score_by_width
+Score_bounds     50.000000 100.000000
+Overlap
+Join_blocks
+Blixem_N
+GFF_feature "expressed_sequence_match"
+Remark "This method describes C. elegans RST sequences...."
+// Need GFF_source and GFF_feature?
+
 Method : "BLAT_RST_BEST" 
 Colour   "LIGHTGRAY"
 Show_up_strand
