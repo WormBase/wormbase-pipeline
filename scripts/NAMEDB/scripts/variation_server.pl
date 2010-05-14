@@ -27,8 +27,8 @@ $VALID_USERS = {
 
 ## a list of valid SSO login names for each DB operation
 $VALID_API_USERS = {
-		'query'		=> [qw( ar2 pad gw3 mh6 mt3 jolenef stlouis caltech cshl sanger)],
-		'dump'		=> [qw( ar2 pad gw3 mh6 mt3 jolenef stlouis caltech cshl sanger)],
+		'query'		=> [qw( ar2 pad gw3 mh6 mt3 stlouis caltech cshl sanger jolenef)],
+		'dump'		=> [qw( ar2 pad gw3 mh6 mt3 stlouis caltech cshl sanger jolenef)],
 		'merge_var'	=> [qw( ar2 pad gw3 mt3 mh6 jolenef)],
 		'new_var'	=> [qw( ar2 pad gw3 mt3 mh6 jolenef)], 
 		'kill_var'	=> [qw( ar2 pad gw3 mt3 mh6 jolenef)],
