@@ -27,12 +27,20 @@ $VALID_USERS = {
 
 ## a list of valid SSO login names for each DB operation
 $VALID_API_USERS = {
+<<<<<<< variation_server.pl
+		'query'		=> [qw( ar2 pad gw3 mh6 mt3 jolenef stlouis caltech cshl sanger)],
+		'dump'		=> [qw( ar2 pad gw3 mh6 mt3 jolenef stlouis caltech cshl sanger)],
+		'merge_var'	=> [qw( ar2 pad mt3 mh6 jolenef)],
+		'new_var'	=> [qw( ar2 pad mt3 mh6 jolenef)], 
+		'kill_var'	=> [qw( ar2 pad mt3 mh6 jolenef)],
+=======
 		'query'		=> [qw( ar2 pad gw3 mh6 mt3 stlouis caltech cshl sanger)],
 		'dump'		=> [qw( ar2 pad gw3 mh6 mt3 stlouis caltech cshl sanger)],
 		'merge_var'	=> [qw( ar2 pad gw3 mt3 mh6 jolenef)],
 		'new_var'	=> [qw( ar2 pad gw3 mt3 mh6 jolenef)], 
 		'kill_var'	=> [qw( ar2 pad gw3 mt3 mh6 jolenef)],
 		'change_name'	=> [qw( ar2 pad gw3 mt3 mh6 jolenef)],
+>>>>>>> 1.12
 };
 
 ## a list of valid SSO login names able to add GCG name
