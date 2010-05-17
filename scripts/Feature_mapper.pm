@@ -45,8 +45,13 @@ use lib $ENV{'CVS_DIR'};
 
 use Sequence_extract;
 use Carp;
+use String::Approx qw(aindex aslice adist);
+use Modules::Remap_Sequence_Change;
+
 
 @ISA = ('Sequence_extract');
+
+##########################################
 
 =head2 new
 
@@ -68,6 +73,7 @@ sub new
     return $self;
 }
 
+##########################################
 
 =head2 map_feature
 
@@ -111,6 +117,7 @@ sub map_feature
     return ($seq,$left_coord, $right_coord);
   }
 
+##########################################
 
 =head2 _check_for_match
 
@@ -131,7 +138,7 @@ sub map_feature
                                             RL
 =cut
 
-sub _check_for_match
+sub _check_for_match 
   {
     my ($self, $dna, $flank_L, $flank_R) = @_;
     my ($rev_left,$rev_right,$offset);
@@ -181,6 +188,7 @@ sub _check_for_match
     }
   }
 
+##########################################
 
 =head2 check_overlapping_CDS
 
@@ -269,6 +277,7 @@ sub check_overlapping_CDS
   }
 
 
+##########################################
 
 =head2 get_flanking_sequence
 
@@ -347,28 +356,218 @@ sub get_flanking_sequence
 }
 
 ##########################################
+=head2 suggest_fix
+
+  Title   :   suggest_fix
+              used when map_feature() has failed. It suggests a possible fix for the mapping
+  Usage   :   my @flank_seq = $mapper->suggest_fix($feature_id, $length, $seq, $flank_L, $flank_R, $version, @mapping_data);
+  Returns :   $seq - clone or superlink
+              suggested new $flank_L, $flank_R
+              explanation for the suggested change
+              1 = fixed, 0 = not fixed
+  Args    :   Feature ID
+              expected length of the feature, or -1 if the type of feature does not have a single fixed length
+              any seq obj as string, e.g 'AC3'
+              left and right flanking sequences that were tried
+              version of database
+              @mapping_data for remapping between currentdb and the current release
+
+=cut
+
+sub suggest_fix
+{
+
+  my ($self, $feature_id, $length, $clone, $flank_L, $flank_R, $version, @mapping_data) = @_;
+  my @result;
+  my $FIXED = 1;
+  my $NOT_FIXED = 0;
+
+  # We can try to use the GFF file positions of features in the previous release
+  # look for feature in currentdb
+  # remap to current coordinates
+
+  my $dir = "/nfs/disk100/wormpub/DATABASES/current_DB/CHROMOSOMES";
+  foreach my $chromosome qw(I II III IV V X) {
+    my $gff = "$dir/CHROMOSOME_${chromosome}.gff";
+    open (GFF, "< $gff") || die "Can't open GFF file $gff\n";
+
+    while (my $line = <GFF>) {
+      chomp $line;
+      if ($line =~ /^\s*$/) {next;}
+      if ($line =~ /^#/) {next;}
+      my @f = split /\t/, $line;
+      if (!$f[8] || ($f[8] !~ /Feature \"$feature_id\"/)) {next;}
+      my ($chromosome, $start, $end, $sense) = ($f[0], $f[3], $f[4], $f[6]);
+      my ($indel, $change);
+      ($start, $end, $sense, $indel, $change) = Remap_Sequence_Change::remap_gff($chromosome, $start, $end, $sense, $version - 1, $version, @mapping_data);
+      # get clone or superlink in the 4 Kb region around the feature
+      my $left_coord = $start - 2000;
+      my $right_coord = $end + 2000;
+      my $new_clone;
+      ($new_clone, $left_coord, $right_coord) = $self->LocateSpan($chromosome, $left_coord, $right_coord);
+      $left_coord += 2000;
+      $right_coord -= 2000;
+      if ($sense eq '+') {
+	($flank_L, $flank_R) = $self->get_flanking_sequence($new_clone, $left_coord, $right_coord);
+      } else {
+	($flank_L, $flank_R) = $self->get_flanking_sequence($new_clone, $right_coord, $left_coord);
+      }
+      if (defined $flank_L) {
+	return ($new_clone, $flank_L, $flank_R, "New flanking sequences remapped from position in previous WormBase release", $FIXED);
+      }
+      last;
+    }
+    close (GFF);
+  }
+
+
+  # If that didn't work, try to repair the existing flanking sequences
+
+  my $dna = uc $self->Sub_sequence($clone);
+  $flank_L = uc $flank_L;
+  $flank_R = uc $flank_R;
+
+
+  # check for non-ACGT characters in the flanking sequences
+  if ($flank_L =~ s/\s//g || $flank_R =~ s/\s//g) {
+    @result = ($clone,  $flank_L, $flank_R, "Space characters were found in the flanking sequences and corrected", $FIXED);
+    return;
+  } elsif ($flank_L =~ s/[^ACGT]//g || $flank_R =~ s/[^ACGT]//g) {
+    @result = ($clone,  $flank_L, $flank_R, "Non-ACGT characters were found in the flanking sequences and corrected", $FIXED);
+    return;
+  }
+  
+
+  # which flank has an exact match in which orientation?
+  my @matchesR = $self->_matches($dna, $flank_R);
+  my @matchesL = $self->_matches($dna, $flank_L);
+
+  # check rev strand
+  $rev_flank_R = $self->DNA_revcomp($flank_R);
+  $rev_flank_L = $self->DNA_revcomp($flank_L);
+  my @rev_matchesR = $self->_matches($dna, $rev_flank_R);
+  my @rev_matchesL = $self->_matches($dna, $rev_flank_L);
+
+  # two missing flanking sequences: nothing can be done
+  if (!@matchesR && !@matchesL && !@rev_matchesR && !@rev_matchesL) {
+    @result = ($clone,  $flank_L, $flank_R, "Neither of the flanking sequences map - nothing can be done with this", $NOT_FIXED);
+    return @result;
+  }
+
+
+  # more than one match on both flanks
+  if (scalar @matchesR > 1 && scalar @matchesL > 1 || scalar @rev_matchesR > 1 && scalar @rev_matchesL > 1 ) {
+    @result = ($clone,  $flank_L, $flank_R, "Both flanks match more than once - nothing can be done with this", $NOT_FIXED);
+    return @result;
+  }
+
+
+  # more than one match on one flank
+  # this needs work to check each of the multiple hits to see which is closest to the flank with one hit
+  if (scalar @matchesR == 1 && scalar @matchesL > 1 || scalar @rev_matchesR == 1 && scalar @rev_matchesL > 1 ) {
+    @result = ($clone,  $flank_L, $flank_R, "Left flank matches more than once - nothing can be done with this", $NOT_FIXED);
+    return @result;
+
+  } elsif (scalar @matchesL == 1 && scalar @matchesR > 1 || scalar @rev_matchesL == 1 && scalar @rev_matchesR > 1) {
+    @result = ($clone,  $flank_L, $flank_R, "Right flank matches more than once - nothing can be done with this", $NOT_FIXED);
+    return @result;
+  }
+
+  # is the feature a fixed size?
+  if ($length ne -1) {
+    my ($start, $end);
+    if (scalar @matchesR == 1) {
+      $end = $matchesR[0];
+      $start = $end - $length -1;
+      ($flank_L, $flank_R) = $self->get_flanking_sequence($clone, $start+1, $end+1); # convert pos to human coords
+      return ($clone,  $flank_L, $flank_R, "Left flank sequence has been updated based on the right flank position", $FIXED);
+
+    } elsif (scalar @matchesL == 1) {
+      $start = $matchesL[0] + length ($flank_L) - 1;
+      $end = $start + $length +1;
+      ($flank_L, $flank_R) = $self->get_flanking_sequence($clone, $start+1, $end+1); # convert pos to human coords
+      return ($clone,  $flank_L, $flank_R, "Right flank sequence has been updated based on the left flank position", $FIXED);
+
+      
+    } elsif (scalar @rev_matchesR == 1) {
+      $end = $rev_matchesR[0] + length ($flank_R) - 1;
+      $start = $end + $length +1;
+      ($flank_L, $flank_R) = $self->get_flanking_sequence($clone, $start+1, $end+1); # convert pos to human coords
+      return ($clone,  $flank_L, $flank_R, "Left flank sequence has been updated based on the right flank position (reverse sense)", $FIXED);
+
+    } elsif (scalar @rev_matchesL == 1) {
+      $start = $rev_matchesL[0];
+      $end = $start - $length -1;
+      ($flank_L, $flank_R) = $self->get_flanking_sequence($clone, $start+1, $end+1); # convert pos to human coords
+      return ($clone,  $flank_L, $flank_R, "Right flank sequence has been updated based on the left flank position (reverse sense)", $FIXED);
+
+    }
+  }
+
+  # can't do anything else
+  return ($clone,  $flank_L, $flank_R, "Can't suggest a fix for this", $NOT_FIXED);
+
+}
+                          
+##########################################
+
+=head2 _approx_matches
+
+  Title   :   _approx_matches
+              finds the approximate matches of a string in the clone sequence
+  Usage   :   my (@matches) = _approx_matches($sequence, $flanking_sequence)
+  Returns :   array of (match start position, match end position, edit distance)
+  Args    :   clone sequence string, flanking sequence string
+
+=cut
+
+sub _approx_matches () {
+  my ($self, $seq, $flank) = @_;
+
+  my $matches = 0;
+
+  # [i] - ignore case modifier
+  # ($index, $size)   = String::Approx::aslice("pattern", [ modifiers ])
+
+  $_ = $seq;
+  my $offset=0;
+  my ($pos, $size);
+  while (($pos, $size) = aslice($flank, ["i"])) { # aslice() searches for $flank in $_
+    $offset += $pos+$size;
+    print "match = pos: $pos to $offset, size: $size\n";
+    push @matches, [$pos, $offset-1];
+    $_ = substr($seq, $offset);
+  }
+
+  return @matches;
+}
+
+
+
+
+##########################################
                                                                                                                                                       
 =head2 _matches
 
   Title   :   _matches
   Usage   :   my $matches = _matches($sequence, $flanking_sequence)
-  Returns :   the number of unique matches of the flanking_sequence in the sequence
-  Args    :   any seq obj as string, coordinates relative to that seq obj
+  Returns :   list of positions of unique matches of the flanking_sequence in the sequence
+  Args    :   clone sequence string, flanking sequence string
 
 =cut
 
 sub _matches () {
   my ($self, $seq, $flank) = @_;
-                                                                                                                                                      
-  my $matches = 0;
-                                                                                                                                                      
+
+  my @matches;
+
   my $pos = -1;
   while (($pos = index($seq, $flank, $pos)) > -1) {
-    $matches++;
+    push @matches, $pos;
     $pos++;
   }
                                                                                                                                                       
-  return $matches;
+  return @matches;
 }
 
 
