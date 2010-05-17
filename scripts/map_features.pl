@@ -9,7 +9,7 @@
 #
 #
 # Last updated by: $Author: gw3 $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2009-12-04 16:28:29 $        # quickly see when script was last changed and by whom
+# Last updated on: $Date: 2010-05-17 09:38:00 $        # quickly see when script was last changed and by whom
 
 
 $|=1;
@@ -19,6 +19,7 @@ use Feature_mapper;
 use Wormbase;
 use Ace;
 use Getopt::Long;
+use Modules::Remap_Sequence_Change;
 
 
 my ($feature, $clone, $flanking_left, $flanking_right, $coords, $span,$store);
@@ -79,13 +80,27 @@ else { $wb = Wormbase->new( -debug => $debug,
 my $log = Log_files->make_build_log($wb);
 
 #######################
+# Remapping stuff
+#######################
+
+# some database paths
+my $currentdb = $wb->database('current');
+my $version = $wb->get_wormbase_version;
+
+print "Getting mapping data for WS$version\n";
+my @mapping_data = Remap_Sequence_Change::read_mapping_data($version - 1, $version, $wb->species);
+
+
+
+
+#######################
 # ACEDB and databases #
 #######################
 
 my $tace   = $wb->tace;
 my $dbdir  = $wb->autoace;
 my $outdir = $wb->acefiles;
-$log->write_to("writing to ".$wb->acefiles."\n\n");
+$log->write_to("// writing to ".$wb->acefiles."\n\n");
 
 # WS version for output files
 our ($WS_version) = $wb->get_wormbase_version_name;
@@ -132,7 +147,7 @@ push (@features2map, "regulatory_region")  if (($regulatory_region) || ($all));
 foreach my $query (@features2map) {
 
   my $table_file = "/tmp/map_features_table_$query.def";
-  $log->write_to("Mapping $query features\n");
+  $log->write_to("// Mapping $query features\n\n");
 
   # open output files
   open (OUTPUT, ">$outdir/feature_${query}.ace") or die "Failed to open output file\n" unless ($adhoc);
@@ -194,21 +209,32 @@ EOF
     # when it finds a good line
     if (/^\"(\S+)\"\s+\"(\S+)\"\s+\"(\S+)\"\s+\"(\S+)\"/) {
       ($feature,$clone,$flanking_left,$flanking_right) = ($1,$2,$3,$4);
-      print "NEXT FEATURE: $feature,$clone,$flanking_left,$flanking_right\n" if ($debug);
+      #print "NEXT FEATURE: $feature,$clone,$flanking_left,$flanking_right\n" if ($debug);
 
       if ($flanking_left eq "" && $flanking_right eq "") {
-	$log->write_to("WARNING: Feature $feature has no flanking sequence - not mapped\n");
+	$log->write_to("// WARNING: Feature $feature has no flanking sequence - not mapped\n");
 	next;
       }
 
       my @coords = $mapper->map_feature($clone,$flanking_left,$flanking_right);
       if (!defined $coords[2]) {
-	$log->write_to("ERROR: Can't map feature $feature on clone $clone flanking sequences: $flanking_left $flanking_right\n");
+	$log->write_to("// ERROR: Can't map feature $feature on clone $clone flanking sequences: $flanking_left $flanking_right\n");
 	$log->error;
+
+	my @suggested_fix = $mapper->suggest_fix($feature, $sanity{$query}, $clone, $flanking_left, $flanking_right, $version, @mapping_data);
+	if ($suggested_fix[4]) { # FIXED :-)
+	  $log->write_to("// Suggested fix for $feature : $suggested_fix[3]\n");
+	  $log->write_to("\nFeature : $feature\n");
+	  $log->write_to("Flanking_sequences $suggested_fix[0] $suggested_fix[1] $suggested_fix[2]\n");
+	  $log->write_to("Remark \"Flanking sequence automatically fixed: $suggested_fix[3]\"\n\n");
+	} else { # NOT_FIXED :-(
+	  $log->write_to("// $feature : $suggested_fix[3]\n");
+	}
+
 	next;
       }
       
-      $log->write_to("Feature $feature maps to different clone than suggested $clone -> $coords[0]\n") if ($clone ne $coords[0]);
+      $log->write_to("// Feature $feature maps to different clone than suggested $clone -> $coords[0]\n") if ($clone ne $coords[0]);
       $clone = $coords[0];
       $start = $coords[1];
       $stop  = $coords[2];
@@ -254,14 +280,14 @@ EOF
 	}
       }
       else {
-	$log->write_to("ERROR: $feature maps to $clone $start -> $stop, feature span is $span bp\n");
+	$log->write_to("// ERROR: $feature maps to $clone $start -> $stop, feature span is $span bp\n");
 	$log->error;
       }
     } #_ if match line
 
     # lines that look like features but there is a problem eg. whitespace in flanks.
     elsif (/^\"(\S+)\"/) {
-      $log->write_to("ERROR: $1 has a problem, please check flanking sequences!! (whitespace is one cause)\n");
+      $log->write_to("// ERROR: $1 has a problem, please check flanking sequences!! (whitespace is one cause)\n");
       $log->error;
     }
   }				 
@@ -269,6 +295,7 @@ EOF
   unlink $table_file if (-e $table_file);
 
   $wb->load_to_database($wb->autoace, "$outdir/feature_${query}.ace", "feature_mapping", $log);
+
 }
 
 
