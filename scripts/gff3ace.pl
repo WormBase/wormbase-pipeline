@@ -4,8 +4,8 @@
 # It remaps the genomic locations from WS160 to the current version
 # To not remap, set the release to be 0.
 #
-# Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2010-05-05 10:16:03 $      
+# Last updated by: $Author: mh6 $     
+# Last updated on: $Date: 2010-05-17 16:04:58 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -41,19 +41,12 @@ GetOptions ("help"       => \$help,
 	    );
 
 
-my $organism_species;
-if ($species) {
-  ($organism_species) = ($species =~ /\S+\s+(\S+)/); # get the second name of the binomial species name
-  if (! defined $organism_species) {die "the -species name should be the Linnean binomial name, e.g. 'Caenorhabditis brenneri'\n"}
-}
-
-
 if ( $store ) {
   $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
 } else {
   $wormbase = Wormbase->new( -debug   => $debug,
                              -test    => $test,
-			     -organism => $organism_species,
+			     -organism => $species,
 			     );
 }
 
@@ -76,7 +69,7 @@ my $log = Log_files->make_build_log($wormbase);
 
 die "-method name must be set to give the name of the Method in the ace file\n" unless $method;
 
-$species = "Caenorhabditis elegans" unless $species;
+$species = $wormbase->full_name;
 
 # the default remapping action is not to remap from a past release
 $release = 0 unless $release;
@@ -355,7 +348,7 @@ script_template.pl  OPTIONAL arguments:
 
 =over 4
 
-=item -species Linaean_species_name. By default, this script will write ACE data specifying the species as 'Caenorhabditis elegans'. This specifies a different species.
+=item -species species_name. By default, this script will write ACE data specifying the species as 'elegans'. This specifies a different species.
 
 =back
 
