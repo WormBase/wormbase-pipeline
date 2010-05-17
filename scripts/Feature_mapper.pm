@@ -404,9 +404,12 @@ sub suggest_fix
       my $left_coord = $start - 2000;
       my $right_coord = $end + 2000;
       my $new_clone;
-      ($new_clone, $left_coord, $right_coord) = $self->LocateSpan($chromosome, $left_coord, $right_coord);
+      # shift the coords in zero-based coordinates
+      ($new_clone, $left_coord, $right_coord) = $self->LocateSpan($chromosome, $left_coord-1, $right_coord-1);
       $left_coord += 2000;
       $right_coord -= 2000;
+      $left_coord++; # convert back to human coords
+      $right_coord++;
       if ($sense eq '+') {
 	($flank_L, $flank_R) = $self->get_flanking_sequence($new_clone, $left_coord, $right_coord);
       } else {
