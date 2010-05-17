@@ -104,7 +104,7 @@ end
 desc 'build homology database'
 task :build_homology => [:env_setup] do
   conf='etc/compara-genetree-9.conf'
-  reg='etc/compara_test9.reg'
+  reg='etc/compara_test10.reg'
   yml=YAML::load_file('etc/ensembl_lite.conf')
   db=yml['elegans']['database']
 
