@@ -6,8 +6,8 @@
 #
 # Usage : autoace_builder.pl [-options]
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2010-04-29 11:00:18 $
+# Last edited by: $Author: mh6 $
+# Last edited on: $Date: 2010-05-18 11:11:31 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -267,7 +267,7 @@ sub map_features {
     ## elegans or briggsae
     if (($wormbase->species eq 'elegans') or ($wormbase->species eq 'briggsae')){
 	# alleles
-	$wormbase->run_script( 'map_Alleles.pl', $log );
+	$wormbase->run_script( 'split_alleles.pl', $log );
     }
 
     ## all species
