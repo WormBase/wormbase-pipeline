@@ -1,7 +1,7 @@
 #!/software/bin/perl -w
 
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2009-12-10 17:45:24 $
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2010-05-19 16:04:26 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -18,6 +18,8 @@ use Bio::SeqIO;
 
 my ($help, $debug, $test, $verbose, $store, $wormbase);
 my $species = 'elegans';
+my $port= 3306;
+my $server='ia64d';
 my ($user, $pass, $update);
 
 GetOptions ("help"       => \$help,
@@ -26,9 +28,11 @@ GetOptions ("help"       => \$help,
 	    	"verbose"    => \$verbose,
 	    	"store:s"    => \$store,
 	    	"species:s"  => \$species,
-	    	"user:s"	 => \$user,
+	    	"user:s"     => \$user,
 	    	"pass:s"     => \$pass,
-	    	"update"     => \$update
+	    	"update"     => \$update,
+		"port=s"     => \$port,
+		'server=s'   => \$server,
            );
 
 if ( $store ) {
@@ -51,8 +55,8 @@ my $log = Log_files->make_build_log($wormbase);
 $log->write_to("Getting PFAM active sites for $species\n");
 
 
-$log->write_to("\tconnecting to worm_pfam:ia64d as $user\n");
-my $DB = DBI -> connect("DBI:mysql:worm_pfam:ia64d", $user, $pass, {RaiseError => 1})
+$log->write_to("\tconnecting to worm_pfam:$server as $user\n");
+my $DB = DBI -> connect("DBI:mysql:worm_pfam:$server;port=$port", $user, $pass, {RaiseError => 1})
     or  $log->log_and_die("cannot connect to db, $DBI::errstr");
 
 &update_database if $update;
@@ -107,7 +111,7 @@ sub update_database {
 	
 	my $ftp = glob("~ftp/pub/databases/Pfam/current_release/database_files");
 	chdir ($ftp);
-	my @tables = qw(ncbi_taxonomy pfamseq markup_key pfamseq_markup);
+	my @tables = qw(pfamseq ncbi_taxonomy markup_key pfamseq_markup);
 	foreach my $table (@tables){
 		$log->write_to("\tfetching $table.txt\n");
 		
@@ -127,19 +131,19 @@ sub update_database {
 		}
 		
 		# pfamseq table is subject to unannounced column re-ordering, so update the schema.
-		if ($table eq 'pfamseq') {
-		  if (-e 'pfamseq.sql.gz'){
-		    $log->write_to("\tupdating the pfamseq table schema\n");
-                    $wormbase->run_command('echo "SET FOREIGN_KEY_CHECKS=0;">/tmp/pfamseq.sql',$log);
-		    $wormbase->run_command("zcat pfamseq.sql.gz >> /tmp/pfamseq.sql", $log);
-                    $wormbase->run_command('echo "SET FOREIGN_KEY_CHECKS=1;">>/tmp/pfamseq.sql',$log);
-		    $wormbase->run_command("mysql -h ia64d -u wormadmin -p$pass worm_pfam < /tmp/pfamseq.sql", $log);
+#		if ($table eq 'pfamseq') {
+		  if (-e "$table.sql.gz"){
+		    $log->write_to("\tupdating the $table table schema\n");
+                    $wormbase->run_command("echo \"SET FOREIGN_KEY_CHECKS=0;\">/tmp/$table.sql",$log);
+		    $wormbase->run_command("zcat $table.sql.gz >> /tmp/$table.sql", $log);
+                    $wormbase->run_command("echo \"SET FOREIGN_KEY_CHECKS=1;\">>/tmp/$table.sql",$log);
+		    $wormbase->run_command("mysql -h $server -P$port -u$user -p$pass worm_pfam < /tmp/$table.sql", $log);
 		  }
-		  else {$log->write_to("\tcouldn't update the pfamseq table schema\n");}
-		}
+		  else {$log->write_to("\tcouldn't update the $table table schema\n");}
+#		}
 		# flush the table
 		$log->write_to("\tclearing table $table\n");
-		$DB->do("DELETE FROM $table") or $log->log_and_die($DB->errstr."\n");
+		$DB->do("TRUNCATE TABLE $table") or $log->log_and_die($DB->errstr."\n");
 		# load in the new data.
 		$log->write_to("\tloading data in to $table\n");
                 $DB->do("SET FOREIGN_KEY_CHECKS=0");		
