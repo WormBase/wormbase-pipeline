@@ -1,12 +1,12 @@
-#!/usr/local/bin/perl5.8.0 -w
+#!/software/bin/perl -w
 #
 # dbcomp.pl
 #
 # Counts the number of objects in an ACEDB database for each Class stated in the config file
 # Compares this number to those from a second database.
 #
-# Last updated by: $Author: pad $
-# Last updated on: $Date: 2008-08-26 13:20:41 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2010-05-20 14:52:42 $
 
 
 use strict;
@@ -27,23 +27,20 @@ $|=1;
 ######################################
 
 my ($help, $debug, $test, $verbose, $store, $wormbase);
-my ($database, $database2, $midway, $wee,$full);
+my ($database, $database2);
 our ($errfile,$outfile); 
 our ($db_1, $db_2, $dbname_1, $dbname_2);
 
 GetOptions (
 	    "help"          => \$help,
-        "debug=s"       => \$debug,
+            "debug=s"       => \$debug,
 	    "test"          => \$test,
 	    "verbose"       => \$verbose,
-	    "store:s"         => \$store,
+	    "store:s"       => \$store,
 	    "database=s"    => \$database,
 	    "database2=s"   => \$database2,
-	    "wee"           => \$wee,
-	    "midway"        => \$midway,
 	    );
 
-$full = 1 unless ($midway or $wee);
 if ( $store ) {
   $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
 } else {
@@ -116,64 +113,26 @@ printf OUT " |                        | %7s | %7s |    +    |    -    |   Net   
 print OUT  " +------------------------+---------+---------+---------+---------+---------+\n";
 
 #########################################################################
-# Read list of classes
-# The complete set of classes to dump is between the DATA and END tokens
+# Check numbers of of classes
 #########################################################################
 
-my @TotalClasses;
+&classes("Sanger and St. Louis", &sanger_stlouis);
+#&classes("Sanger", &sanger);
+#&classes("CalTech", &caltech);
+&classes("Cold Spring Harbor", &csh);
 
-# run midway list if asked too, else default to the full list
-@TotalClasses = &wee_run;
-push(@TotalClasses, &mid_run)  if ($midway or $full);
-push(@TotalClasses, &full_run) if ($full);
+#########################################################################
+# Get numbers of genes curated
+#########################################################################
+my %clonelab;
 
-#######################
-# Main loop
-#######################
+get_curation_stats('elegans');
+get_curation_stats('briggsae');
+get_curation_stats('brenneri');
+get_curation_stats('japonica');
 
-my $counter = 1; # for indexing each class to be counted
-
-foreach my $query (@TotalClasses) {
-  next if ($query eq "");
-
-  $log->write_to(" Counting '$query'\n");
-  printf OUT " | %22s |", $query;
-
-  ##################################################
-  # Get class counts from both databases           #
-  ################################################## 
-  
-  my ($class_count_1,$class_count_2) = &count_class($query,$counter);
-
-  $log->write_to(" Counting $dbname_1 : $class_count_1\n");  
-  $log->write_to(" Counting $dbname_2 : $class_count_2\n\n");
-  
-  printf OUT " %7s ",$class_count_1;
-  print OUT "|";  
-  printf OUT " %7s ",$class_count_2;
-
-
-  ##################################################
-  # Calculate difference between databases         #
-  ##################################################
-  
-  my ($added, $removed) = &diff($counter);
-  my $diff = $added - $removed;
-
-#  printf OUT "| %6s |\n",$diff;
-
-  printf OUT "| %7s ", $added;
-  printf OUT "| %7s ", $removed;
-  printf OUT "| %7s |\n",$diff;
-
-  $counter++;
-}
-
-
-print OUT  " +------------------------+---------+---------+---------+---------+---------+\n";
-
-
-
+close (OUT);
+close (ERR);
 
 
 # create symbolic links to current.out and current.dbcomp
@@ -184,11 +143,14 @@ $wormbase->run_command("ln -s $errfile ".$wormbase->compare."/current.out",$log)
 $wormbase->run_command("ln -s $outfile ".$wormbase->compare."/current.dbcomp",$log);
 
 
-close (OUT);
-close (ERR);
-
 # write to the release letter - subroutine in Wormbase.pm
 $wormbase->release_databases;
+
+$log->write_to("\nClass and Gene-curation Statistics are in: $outfile\n\n");
+
+# mail the results file to Paul Sternberg
+$wormbase->mail_maintainer("Class and Gene-curation Statistics for $dbname_2", 'All', $outfile);
+$wormbase->mail_maintainer("Class and Gene-curation Statistics for $dbname_2", 'pws@caltech.edu', $outfile);
 
 # Email log file
 $log->mail();
@@ -220,6 +182,61 @@ sub usage {
 }
 
 ##########################################
+
+sub classes {
+
+  my ($name, @classes) = @_;
+
+  print OUT  " +------------------------+\n";
+  printf OUT  " | %20s   |\n", $name;
+  print OUT  " |------------------------|---------+---------+---------+---------+---------+\n";
+
+  my $counter = 1; # for indexing each class to be counted
+
+  foreach my $query (@classes) {
+    next if ($query eq "");
+    
+    $log->write_to(" Counting '$query'\n");
+    printf OUT " | %22s |", $query;
+    
+    ##################################################
+    # Get class counts from both databases           #
+    ################################################## 
+    
+    my ($class_count_1,$class_count_2) = &count_class($query,$counter);
+    
+    $log->write_to(" Counting $dbname_1 : $class_count_1\n");  
+    $log->write_to(" Counting $dbname_2 : $class_count_2\n");
+    
+    printf OUT " %7s ",$class_count_1;
+    print OUT "|";  
+    printf OUT " %7s ",$class_count_2;
+    
+    
+    ##################################################
+    # Calculate difference between databases         #
+    ##################################################
+    
+    my ($added, $removed) = &diff($counter);
+    my $diff = $added - $removed;
+    
+    #  printf OUT "| %6s |\n",$diff;
+    $log->write_to(" Diff $diff\n\n");
+
+    printf OUT "| %7s ", $added;
+    printf OUT "| %7s ", $removed;
+    printf OUT "| %7s |\n",$diff;
+    
+    
+    $counter++;
+  }
+  
+  
+  print OUT  " +------------------------+---------+---------+---------+---------+---------+\n";
+
+}
+
+##################################################
 
 sub count_class{
 
@@ -311,125 +328,229 @@ sub diff {
 
 ###############################################
 
-sub full_run {
-
-    my @classes = (
-		   "Accession_number",
-		   "Expression_cluster",
-		   "GO_code",
-		   "Operon",
-		   "Peptide",
-		   "Protein",
-		   "Species",
-		   "Structure_data",
-		   "Transposon_CDS",
-		   "Transposon_family",
-		   "Variation",
-		   );
-
-    return (@classes);
-    
+sub sanger_stlouis {
+  my @classes = (
+		 "Sequence",
+		 "CDS",
+		 "Transposon",
+		 "Transcript",
+		 "Pseudogene",
+		 "PCR_product",
+		 "Transposon_CDS",
+		 "cDNA_sequence",
+		 "elegans_CDS",
+		 "elegans_pseudogenes",
+		 "elegans_RNA_genes",
+		 );
 }
 
-sub mid_run {
-
-    my @classes = (
-		"2_point_data",
-		   "Anatomy_name",
-		   "Anatomy_term",
-		   "Antibody",
-		   "Author",
-		   "briggsae_CDS",
-		   "briggsae_genomic",
-		   "cDNA_sequence",
-		   "CDS",
-		   "Cell",
-		   "Cell_group",
-		   "Class",
-		   "Clone",
-		   "Expression_cluster", #renamed from Cluster
-		   "Coding_transcripts",
-		   "Comment",
-		   "Condition",
-		   "Contig",
-		   "Database",
-		   "Display",
-		   "DNA",
-		   "Expr_pattern",
-		   "Expr_profile",
-		   "Feature",
-		   "Feature_data",
-		   "Gene",
-		   "Gene_class",
-		   "Gene_name",
-		   "Gene_regulation",
-		   "Genome_Sequence",
-		   "GO_term",
-		   "Homology_group",
-		   "Homol_data",
-		   "Interaction",
-		   "Journal",
-		   "Keyword",
-		   "Laboratory",
-		   "Life_stage",
-		   "Lineage",
-		   "Locus",
-		   "LongText",
-		   "Map",
-		   "Method",
-		   "Microarray_experiment",
-		   "Microarray_results",
-		   "Model",
-		   "Motif",
-		   "Movie",
-		   "Multi_pt_data",
-		   "NDB_Sequence",
-		   "nematode_ESTs",
-		   "Oligo",
-		   "Oligo_set",
-		   "Paper",
-		   "Paper_name",
-		   "PCR_product",
-		   "Person",
-		   "Person_name",
-		   "Phenotype",
-		   "Phenotype_name",
-		   "Picture",
-		   "Pos_neg_data",
-		   "Pseudogene",
-		   "Rearrangement",
-		   "RNAi",
-		   "SAGE_tag",
-		   "SAGE_experiment",
-		   "Sequence",
-		   "SK_map",
-		   "SO_term",
-		   "Strain",
-		   "Table",
-		   "Transcript",
-		   "Transgene",
-		   "Variation",
-		   "YH"
-		   );
-
-    return (@classes);
-    
+sub sanger {
+  my @classes = (
+		 "Class",
+		 "Model",
+		 "Method",
+		 "Clone",
+		 "Coding_transcripts",
+		 "Accession_number",
+		 "Variation",
+		 "Motif",
+		 "Feature",
+		 "Feature_data",
+		 "Laboratory",
+		 "Locus",
+		 "Gene",
+		 "Gene_class",
+		 "Gene_name",
+		 "Gene_regulation",
+		 "Genome_Sequence",
+		 "Map",
+		 "Multi_pt_data",
+		 "Picture",
+		 "Pos_neg_data",
+		 "Rearrangement",
+		 "2_point_data",
+		 "Strain",
+		 "Operon",
+		 "Analysis",
+		 "Condition",
+		 "GO_code",
+		 "Peptide",
+		 "Protein",
+		 "Species",
+		 "Transposon_family",
+		 "Comment",
+		 "Contig",
+		 "Database",
+		 "Display",
+		 "DNA",
+		 "Homol_data",
+		 "NDB_Sequence",
+		 "nematode_ESTs",
+		 "SO_term",
+		 "Table",
+		 "Mass_spec_data",
+		 "Mass_spec_experiment",
+		 "Mass_spec_peptide",
+		 );
 }
 
-sub wee_run {
+sub caltech {
+  my @classes = (
+		 "Transgene",
+		 "Expr_pattern",
+		 "Expr_profile",
+		 "Life_stage",
+		 "Lineage",
+		 "Cell",
+		 "Cell_group",
+		 "Paper",
+		 "Paper_name",
+		 "Author",
+		 "Person",
+		 "Person_name",
+		 "LongText",
+		 "Keyword",
+		 "Oligo",
+		 "Oligo_set",
+		 "Phenotype",
+		 "Phenotype_name",
+		 "SK_map",
+		 "Tree",
+		 "TreeNode",
+		 "Microarray",
+		 "Microarray_results",
+		 "Microarray_experiment",
+		 "Expression_cluster",
+		 "Anatomy_name",
+		 "Anatomy_term",
+		 "Anatomy_function",
+		 "Homology_group",
+		 "Antibody",
+		 "RNAi",
+		 "SAGE_tag",
+		 "SAGE_experiment",
+		 "Gene_regulation",
+		 "GO_term",
+		 "Interaction",
+		 "YH",
+		 "Position_matrix",
+		 );
+}
 
-    my @classes = (
-		   "elegans_CDS",
-		   "elegans_pseudogenes",
-		   "elegans_RNA_genes",
-		   "Transposon",
-		   );
-
-    return (@classes);
-    
+sub csh {
+  my @classes = (
+		 "LongText",
+		 "Movie",
+		 "Structure_data",
+		 );
 }
 
 
+
+###############################################
+
+sub get_curation_stats {
+
+  my ($species) = @_;
+
+  my %species_prefix = (
+			elegans => 'wormpep',
+			briggsae => 'brigpep',
+			brenneri => 'brepep',
+			japonica => 'jappep',
+		       );
+
+  # get the centre that sequenced the clones
+  %clonelab = $wormbase->FetchData("clone2centre", undef, "$db_2/COMMON_DATA");
+
+  my $prefix = $species_prefix{$species};
+
+  my $release = $WS_current;
+
+  my $file;
+  $file = "/nfs/disk100/wormpub/BUILD/WORMPEP/${prefix}${release}/${prefix}.diff${release}";
+  
+  if (!open (IN, "<$file")) {
+    print OUT "\n\nNo curation data available for $species.\n\n";
+  } else {
+    
+    my %lab_count;
+    $lab_count{HX} = $lab_count{RW} = 0;
+    $lab_count{HX_lost} = $lab_count{RW_lost} = 0;
+    $lab_count{HX_changed} = $lab_count{RW_changed} = 0;
+    $lab_count{HX_new_gene} = $lab_count{RW_new_gene} = 0;
+    $lab_count{HX_new_isoform} = $lab_count{RW_new_isoform} = 0;
+    
+    while (my $line = <IN>) {
+      my @f = split /\s+/, $line;
+      my $type = $f[0];
+      $type =~ s/://;
+      my ($clone) = ($f[1] =~ /^(\S+)\.\S+/);
+      #print $clone, "\n";
+      my $lab;
+      if ($species eq 'elegans') {
+	$lab = &get_lab($clone);
+      } else {
+	$lab = 'RW';
+      }
+      #print "$clone $lab\n";
+      $lab_count{$lab}++;
+      
+      if ($type eq 'lost') {
+	$lab_count{"${lab}_lost"}++;
+	
+      } elsif ($type eq 'changed') {
+	$lab_count{"${lab}_changed"}++;
+	
+      } elsif ($type eq 'new') {
+	if ($f[1] =~ /[a-z]$/) { # new isoform
+	  $lab_count{"${lab}_new_isoform"}++;
+	  
+	  # if we have a new first isoform, we should ignore the old gene that is now lost
+	  if ($f[1] =~ /a$/) {
+	    $lab_count{"${lab}_lost"}--;
+	    $lab_count{$lab}--;
+	  }
+	  
+	} else { # new gene (usually a result of splitting old gene)
+	  $lab_count{"${lab}_new_gene"}++;
+	}
+      } elsif ($type eq 'reappeared') { # ignore for now
+      } else {
+	die "Unrecognised type: $type\n";
+      }
+      
+    }
+  
+
+    print OUT "\n\n-----------------------------------------\n";
+    print OUT "Gene model curation changes for $species\n";
+    print OUT "-----------------------------------------\n\n";
+
+    my $RW = $lab_count{RW_lost} + $lab_count{RW_changed} + $lab_count{RW_new_gene} + $lab_count{RW_new_isoform};
+    my $HX = $lab_count{HX_lost} + $lab_count{HX_changed} + $lab_count{HX_new_gene} + $lab_count{HX_new_isoform};
+    my $total = $HX + $RW;
+    if ($species eq 'elegans') {
+      print OUT "Total ", $total,"\nHinxton: $HX\nSt. Louis: $RW\n\nlost (Hinxton): $lab_count{HX_lost}\nlost (St. Louis): $lab_count{RW_lost}\n\nchanged (Hinxton): $lab_count{HX_changed}\nchanged (St. Louis): $lab_count{RW_changed}\n\nnew gene (Hinxton): $lab_count{HX_new_gene}\nnew gene (St. Louis): $lab_count{RW_new_gene}\n\nnew isoform (Hinxton): $lab_count{HX_new_isoform}\nnew isoform (St. Louis): $lab_count{RW_new_isoform}\n";
+    } else {
+      print OUT "Total $RW\nlost: $lab_count{RW_lost}\nchanged: $lab_count{RW_changed}\nnew gene: $lab_count{RW_new_gene}\nnew isoform: $lab_count{RW_new_isoform}\n";
+    }
+  }
+
+}
+
+###############################################
+
+sub get_lab {
+
+  my ($clone_name) = @_;
+
+  my $centre = $clonelab{$clone_name};          # get the lab that sequenced this clone
+  if (!defined $centre) {return 'RW'}
+  return $centre;
+}
+
+###############################################
 
 =pod
 
@@ -472,7 +593,7 @@ by -database (rather than compare with previous build)
 
 =back
 
-=head1 AUTHOR - Dan Lawson (but completely rewritten by Keith Bradnam)
+=head1 AUTHOR - Dan Lawson (but completely rewritten by Keith Bradnam, and rewritten again by Gary Williams)
 
 
 Email krb@sanger.ac.uk
