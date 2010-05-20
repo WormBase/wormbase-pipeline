@@ -6,7 +6,7 @@
 # Compares this number to those from a second database.
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2010-05-20 14:52:42 $
+# Last updated on: $Date: 2010-05-20 16:10:08 $
 
 
 use strict;
@@ -117,8 +117,8 @@ print OUT  " +------------------------+---------+---------+---------+---------+-
 #########################################################################
 
 &classes("Sanger and St. Louis", &sanger_stlouis);
-#&classes("Sanger", &sanger);
-#&classes("CalTech", &caltech);
+&classes("Sanger", &sanger);
+&classes("CalTech", &caltech);
 &classes("Cold Spring Harbor", &csh);
 
 #########################################################################
