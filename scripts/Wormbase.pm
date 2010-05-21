@@ -1138,6 +1138,7 @@ EOF
 
     # check the current Build parse object numbers against the previous one
     if (defined $last_parsed) {
+      $log->write_to("File: $file\n") if ($log);
       $log->write_to("Version WS$prev_prev_version parsed $last_but_one_parsed objects OK with $last_but_one_active Active Objects\n") if ($log);
       $log->write_to("Version WS$prev_version parsed $last_parsed objects OK with $last_active Active Objects\n") if ($log);
       $log->write_to("Version WS$version parsed $parsed objects OK with $active Active Objects\n\n") if ($log);
