@@ -6,7 +6,7 @@
 # Compares this number to those from a second database.
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2010-05-20 16:10:08 $
+# Last updated on: $Date: 2010-05-21 08:50:03 $
 
 
 use strict;
@@ -27,7 +27,7 @@ $|=1;
 ######################################
 
 my ($help, $debug, $test, $verbose, $store, $wormbase);
-my ($database, $database2);
+my ($database, $database2, $mail_paulsternberg);
 our ($errfile,$outfile); 
 our ($db_1, $db_2, $dbname_1, $dbname_2);
 
@@ -39,6 +39,7 @@ GetOptions (
 	    "store:s"       => \$store,
 	    "database=s"    => \$database,
 	    "database2=s"   => \$database2,
+	    "mail_paulsternberg" => \$mail_paulsternberg,
 	    );
 
 if ( $store ) {
@@ -150,7 +151,7 @@ $log->write_to("\nClass and Gene-curation Statistics are in: $outfile\n\n");
 
 # mail the results file to Paul Sternberg
 $wormbase->mail_maintainer("Class and Gene-curation Statistics for $dbname_2", 'All', $outfile);
-$wormbase->mail_maintainer("Class and Gene-curation Statistics for $dbname_2", 'pws@caltech.edu', $outfile);
+$wormbase->mail_maintainer("Class and Gene-curation Statistics for $dbname_2", 'pws@caltech.edu', $outfile) if ($mail_paulsternberg);
 
 # Email log file
 $log->mail();
@@ -498,13 +499,16 @@ sub get_curation_stats {
       
       if ($type eq 'lost') {
 	$lab_count{"${lab}_lost"}++;
-	
+	print "lost $clone $lab\n";
+
       } elsif ($type eq 'changed') {
 	$lab_count{"${lab}_changed"}++;
+	print "changed $clone $lab\n";
 	
       } elsif ($type eq 'new') {
 	if ($f[1] =~ /[a-z]$/) { # new isoform
 	  $lab_count{"${lab}_new_isoform"}++;
+	  print "new isoform $clone $lab\n";
 	  
 	  # if we have a new first isoform, we should ignore the old gene that is now lost
 	  if ($f[1] =~ /a$/) {
@@ -514,6 +518,8 @@ sub get_curation_stats {
 	  
 	} else { # new gene (usually a result of splitting old gene)
 	  $lab_count{"${lab}_new_gene"}++;
+	  print "new gene $clone $lab\n";
+
 	}
       } elsif ($type eq 'reappeared') { # ignore for now
       } else {
