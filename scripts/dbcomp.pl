@@ -6,7 +6,7 @@
 # Compares this number to those from a second database.
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2010-05-21 08:50:03 $
+# Last updated on: $Date: 2010-05-21 10:26:30 $
 
 
 use strict;
@@ -469,8 +469,9 @@ sub get_curation_stats {
   my $release = $WS_current;
 
   my $file;
+
   $file = "/nfs/disk100/wormpub/BUILD/WORMPEP/${prefix}${release}/${prefix}.diff${release}";
-  
+
   if (!open (IN, "<$file")) {
     print OUT "\n\nNo curation data available for $species.\n\n";
   } else {
@@ -499,16 +500,16 @@ sub get_curation_stats {
       
       if ($type eq 'lost') {
 	$lab_count{"${lab}_lost"}++;
-	print "lost $clone $lab\n";
+	print "lost $f[1] $lab\n";
 
       } elsif ($type eq 'changed') {
 	$lab_count{"${lab}_changed"}++;
-	print "changed $clone $lab\n";
+	print "changed $f[1] $lab\n";
 	
       } elsif ($type eq 'new') {
 	if ($f[1] =~ /[a-z]$/) { # new isoform
 	  $lab_count{"${lab}_new_isoform"}++;
-	  print "new isoform $clone $lab\n";
+	  print "new isoform $f[1] $lab\n";
 	  
 	  # if we have a new first isoform, we should ignore the old gene that is now lost
 	  if ($f[1] =~ /a$/) {
@@ -518,7 +519,7 @@ sub get_curation_stats {
 	  
 	} else { # new gene (usually a result of splitting old gene)
 	  $lab_count{"${lab}_new_gene"}++;
-	  print "new gene $clone $lab\n";
+	  print "new gene $f[1] $lab\n";
 
 	}
       } elsif ($type eq 'reappeared') { # ignore for now
