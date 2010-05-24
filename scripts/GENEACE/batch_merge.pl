@@ -197,7 +197,7 @@ sub merge_gene {
       $output .= "\nGene : $deadgene\nVersion $ver\nHistory Version_change $ver now $user Event Merged_into $livegene\nMerged_into $livegene\nDead\n\nGene : $deadgene\n-D Sequence_name\n-D method\n\n";
 
       # transfer the Other_names
-      foreach my $dead_Other_names ($deadgeneObj->at('Identity.Name.Other_name')->col) {
+      foreach my $dead_Other_names ($deadgeneObj->at('Identity.Name.Other_name')) {
 	$output .= "\nGene : $livegene\nOther_name $dead_Other_names\n";
       }	
       
