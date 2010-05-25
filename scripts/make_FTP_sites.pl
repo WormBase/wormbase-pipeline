@@ -8,7 +8,7 @@
 # Originally written by Dan Lawson
 #
 # Last updated by: $Author: pad $
-# Last updated on: $Date: 2010-03-01 17:27:55 $
+# Last updated on: $Date: 2010-05-25 09:26:49 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -107,28 +107,28 @@ my $gff;
 my $supplementary;
 my $clustal;
 
-GetOptions ("help"     => \$help,
-	    "debug=s"  => \$debug,
-	    "test"     => \$test,
-	    "verbose"  => \$verbose,
-	    "store:s"    => \$store,
-	    "release"  => \$release,
-	    "dna"      => \$dna,
-	    "rna"      => \$rna,
-	    "gff"      => \$gff,
-	    "supplementary"      => \$supplementary,
-	    "ont"      => \$ont,
-	    "misc"     => \$misc,
-	    "wormpep"  => \$wormpep,
-	    "genes"    => \$genes,
-	    "cDNAlist" => \$cDNA,
-	    "geneIDs"  => \$geneIDs,
-	    "clustal"  => \$clustal,
-	    "pcr"      => \$pcr,
-	    "homols"   => \$homols,
-	    "manifest"=> \$manifest,
-	    "knockout" => \$dump_ko,
-	    "all"      => \$all);
+GetOptions ("help"          => \$help,
+	    "debug=s"       => \$debug,
+	    "test"          => \$test,   # Copies data from the test env to a test ftp under ~/tmp/pub
+	    "verbose"       => \$verbose,
+	    "store:s"       => \$store,
+	    "release"       => \$release,
+	    "dna"           => \$dna,
+	    "rna"           => \$rna,
+	    "gff"           => \$gff,
+	    "supplementary" => \$supplementary,
+	    "ont"           => \$ont,
+	    "misc"          => \$misc,
+	    "wormpep"       => \$wormpep,
+	    "genes"         => \$genes,
+	    "cDNAlist"      => \$cDNA,
+	    "geneIDs"       => \$geneIDs,
+	    "clustal"       => \$clustal,
+	    "pcr"           => \$pcr,
+	    "homols"        => \$homols,
+	    "manifest"      => \$manifest,
+	    "knockout"      => \$dump_ko,
+	    "all"           => \$all);
 
 
 if ( $store ) {
@@ -144,8 +144,7 @@ if ( $store ) {
 
 # in test mode?
 if ($test) {
-  print "In test mode\n" if ($verbose);
-
+  print "In test mode, data will onlg get copied to ~/tmp/pub\n" if ($verbose);
 }
 
 # establish log file.
@@ -158,7 +157,13 @@ my $log = Log_files->make_build_log($wormbase);
 my $base_dir = $wormbase->basedir;    # The BUILD directory
 my $ace_dir = $wormbase->autoace;     # AUTOACE DATABASE DIR
 my $citace_dir = $wormbase->primaries."/citace";
-my $targetdir = $wormbase->ftp_site;  # default directory, can be overidden
+my $targetdir;
+if ($test){$targetdir = glob("~/tmp/pub/wormbase");
+	   $log->write_to("TEST: targetdir set to $targetdir\n");
+	 }
+else {$targetdir = $wormbase->ftp_site;
+      $log->write_to("LIVE: targetdir set to $targetdir\n");
+    }
 my $WS              = $wormbase->get_wormbase_version();      # e.g.   132
 my $WS_name         = $wormbase->get_wormbase_version_name(); # e.g. WS132
 my $annotation_dir = "$targetdir/$WS_name/genomes/".$wormbase->full_name('-g_species' => 1)."/annotation";
@@ -546,66 +551,88 @@ sub copy_misc_files{
 #############################################
 
 sub copy_wormpep_files {
-
-	$runtime = $wormbase->runtime;
-	$log->write_to("$runtime: copying wormpep files\n");
-
-	my $wp_source_dir = $wormbase->wormpep;
-	my $wormpep_ftp_root = glob("~ftp/pub/databases/wormpep");
-	my $wp_ftp_dir = "$wormpep_ftp_root/wormpep$WS";
-	mkpath($wp_ftp_dir,1,0775);
-
-	&_copy_pep_files($wormbase);#elegans
-
-	# copy wormpep file if one exists for that species.
-	$log->write_to("zip and copy other species\n");
-	my %accessors = ($wormbase->species_accessors);
-	$log->write_to("removing Heterorhabditis from species list\n");
-	delete $accessors{'heterorhabditis'};
-	
-	foreach my $species (keys %accessors){
-		$log->write_to("copying $species protein data to FTP site\n");
-		&_copy_pep_files($accessors{$species})
-	}
-
-	#tierIII's just have a single file to take care of.
-	my %tierIII = $wormbase->tier3_species_accessors;
-	foreach my $t3 (keys %tierIII){ 
-	    my $wb = $tierIII{$t3};
-	    my $source =$wb->basedir . "/WORMPEP/".$wb->pepdir_prefix."pep$WS/".$wb->pepdir_prefix."pep.$WS_name.fa.gz";
-	    my $target = "$targetdir/$WS_name/genomes/".$wb->full_name('-g_species' => 1)."/sequences/protein";
-	    mkpath($target,1,0775);
-	    my $ftp_targ = "$target/".$wb->pepdir_prefix."pep.$WS_name.fa.gz";
-	    unless(-e $source) {
-		my $oldWS = -1 + $wormbase->get_wormbase_version;
-	       $source = "$targetdir/WS$oldWS/genomes/".$wb->full_name('-g_species' => 1)."/sequences/protein/".$wb->pepdir_prefix."pep.WS$oldWS.fa.gz";
-		$log->error("no peptide file for ".$wb->species."\n$source\n") unless (-e $source);
+  
+  $runtime = $wormbase->runtime;
+  $log->write_to("$runtime: copying wormpep files\n");
+  
+  my $wp_source_dir = $wormbase->wormpep;
+  my $wormpep_ftp_root;
+  #Test path
+  if ($test) {$wormpep_ftp_root = glob("~/tmp/pub/databases/wormpep");
+	      $log->write_to("TEST: wormpep_ftp_root set to $wormpep_ftp_root\n");
 	    }
-	    $wb->run_command("cp -f $source $ftp_targ", $log);
-	}
-	#need to update ftp/databases/wormpep for website links
-	if($wormbase->species eq 'elegans') {
-	    $log->write_to("updating ftp/database/wormpep//\n");
-	    my @wormpep_files = $wormbase->wormpep_files;
-	    my $WS = $wormbase->get_wormbase_version;
-	    my $source = $wormbase->basedir . "/WORMPEP/".$wormbase->pepdir_prefix."pep$WS";
-	    chdir $wormpep_ftp_root;
-	    foreach my $file ( @wormpep_files ){
+  #Live path
+  else {$wormpep_ftp_root = glob("~ftp/pub/databases/wormpep");
+	$log->write_to("LIVE: wormpep_ftp_root set to $wormpep_ftp_root\n");
+      }
+  my $wp_ftp_dir = "$wormpep_ftp_root/wormpep$WS";
+  mkpath($wp_ftp_dir,1,0775);
+  
+  &copy_pep_files($wormbase);#elegans
+  
+  # copy wormpep file if one exists for that species.
+  $log->write_to("zip and copy other species\n");
+  my %accessors = ($wormbase->species_accessors);
+  $log->write_to("removing Heterorhabditis from species list\n");
+  delete $accessors{'heterorhabditis'};
+  
+  foreach my $species (keys %accessors){
+    $log->write_to("copying $species protein data to FTP site\n");
+    &copy_pep_files($accessors{$species})
+  }
+
+  #tierIII's just have a single file to take care of.
+  my %tierIII = $wormbase->tier3_species_accessors;
+  foreach my $t3 (keys %tierIII){ 
+    my $wb = $tierIII{$t3};
+    my $source =$wb->basedir . "/WORMPEP/".$wb->pepdir_prefix."pep$WS/".$wb->pepdir_prefix."pep.$WS_name.fa.gz";
+    my $target = "$targetdir/$WS_name/genomes/".$wb->full_name('-g_species' => 1)."/sequences/protein";
+    mkpath($target,1,0775);
+    my $ftp_targ = "$target/".$wb->pepdir_prefix."pep.$WS_name.fa.gz";
+    unless(-e $source) {
+      my $oldWS = -1 + $wormbase->get_wormbase_version;
+      $source = "$targetdir/WS$oldWS/genomes/".$wb->full_name('-g_species' => 1)."/sequences/protein/".$wb->pepdir_prefix."pep.WS$oldWS.fa.gz";
+      $log->error("no peptide file for ".$wb->species."\n$source\n") unless (-e $source);
+	    }
+    $wb->run_command("cp -f $source $ftp_targ", $log);
+  }
+  #need to update ftp/databases/wormpep for website links
+  
+  if($wormbase->species eq 'elegans') {
+    $log->write_to("updating ftp/database/wormpep//\n");
+    my @wormpep_files = $wormbase->wormpep_files;
+    my $WS = $wormbase->get_wormbase_version;
+    my $source = $wormbase->basedir . "/WORMPEP/".$wormbase->pepdir_prefix."pep$WS";
+    chdir $wormpep_ftp_root;
+    foreach my $file ( @wormpep_files ){
 		my $sourcefile = "$source/$file$WS";
 		$wormbase->run_command("cp -f $sourcefile $wp_ftp_dir/$file$WS", $log);
 		&CheckSize("$sourcefile","$wp_ftp_dir/$file$WS");
-	    }
-	}
-	
-	
-	$runtime = $wormbase->runtime;
-	$log->write_to("$runtime: Finished copying\n\n");
-
-	# change group ownership
-	$wormbase->run_command("chgrp -R  worm $wp_ftp_dir", $log);
+	      }
+    
+    #adds the current brigpep file to the databases/wormpep as requested by uniprot......
+    #this is usually done for elegans by update_live_release, but fits ok here for a single file.
+    #we might like to start archiving brigpep + others in the same was as we do elegans????
+    my $brig_source = $wormbase->basedir . "/WORMPEP/brigpep$WS";
+    if (-e $brig_source) {
+      $log->write_to("updating ftp/database/wormpep/brigpep/\n");
+      chdir $wormpep_ftp_root;
+      $wormbase->run_command("cp -f $brig_source/brigpep$WS $wormpep_ftp_root/brigpep", $log);
+      &CheckSize("$brig_source/brigpep$WS","$wormpep_ftp_root/brigpep");
+    }
+    else {
+      $log->write_to("Skipping C. briggsae databases cp as NOT rebuilt for WS$WS.\n");
+    }
+  }
+  
+  $runtime = $wormbase->runtime;
+  $log->write_to("$runtime: Finished copying\n\n");
+  
+  # change group ownership
+  $wormbase->run_command("chgrp -R  worm $wp_ftp_dir", $log);
 }
 
-sub _copy_pep_files {
+sub copy_pep_files {
 	my $wb = shift;
 	my $source = $wb->basedir . "/WORMPEP/".$wb->pepdir_prefix."pep$WS";
 	my $target = "$targetdir/$WS_name/genomes/".$wb->full_name('-g_species' => 1)."/sequences/protein";
