@@ -1816,7 +1816,7 @@ GFF_feature "transcription_end_site" // SO:0000616
 Remark	 "transcription end site - N.B. this may only be the end of the mature transcript, rather than the original end site of transcription This is determined from the Hillier RNASeq data."
 
 Method : "curation_remark" 
-Colour	 DARKMAGENTA
+Colour	 MAGENTA
 Strand_sensitive	
 Width	 2.000000
 Show_up_strand
