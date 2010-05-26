@@ -1262,7 +1262,7 @@ GFF_source	"RNASeq"
 GFF_feature	"overlapping_EST_set"
 Remark "This is the lin-35_n745_mid-L1 read set from the Hillier & Waterston 2009 paper."
 
-Method : "RNASeq_Hillier.male_mid-L4"
+Method : "RNASeq_Hillier.L4_larva_Male"
 Colour   BLACK
 Show_up_strand
 Score_by_width
@@ -1274,7 +1274,7 @@ GFF_source	"RNASeq"
 GFF_feature	"overlapping_EST_set"
 Remark "This is the male_mid-L4 read set from the Hillier & Waterston 2009 paper."
 
-Method : "RNASeq_Hillier.Hillier"
+Method : "RNASeq_Hillier.L4_soma_JK1107_no_DNaseI"
 Colour   BLACK
 Show_up_strand
 Score_by_width
@@ -1284,7 +1284,115 @@ Blixem_N
 Join_blocks
 GFF_source	"RNASeq"
 GFF_feature	"overlapping_EST_set"
-Remark "Method for the Camace version of the Hillier read data which is all collapsed into one method."
+Remark "This is the L4 soma tissue read set from the Hillier & Waterston 2009 paper."
+
+Method : "RNASeq_Hillier.L1_larva_lin-35"
+Colour   BLACK
+Show_up_strand
+Score_by_width
+Score_bounds     1.000000 300.000000
+Overlap
+Blixem_N
+Join_blocks
+GFF_source	"RNASeq"
+GFF_feature	"overlapping_EST_set"
+Remark "This is the L1 lin-35 read set from the Hillier & Waterston 2009 paper."
+
+Method : "RNASeq_Hillier.L1_larva"
+Colour   BLACK
+Show_up_strand
+Score_by_width
+Score_bounds     1.000000 300.000000
+Overlap
+Blixem_N
+Join_blocks
+GFF_source	"RNASeq"
+GFF_feature	"overlapping_EST_set"
+Remark "This is the L1 read set from the Hillier & Waterston 2009 paper."
+
+Method : "RNASeq_Hillier.L2_larva"
+Colour   BLACK
+Show_up_strand
+Score_by_width
+Score_bounds     1.000000 300.000000
+Overlap
+Blixem_N
+Join_blocks
+GFF_source	"RNASeq"
+GFF_feature	"overlapping_EST_set"
+Remark "This is the L2 read set from the Hillier & Waterston 2009 paper."
+
+Method : "RNASeq_Hillier.L3_larva"
+Colour   BLACK
+Show_up_strand
+Score_by_width
+Score_bounds     1.000000 300.000000
+Overlap
+Blixem_N
+Join_blocks
+GFF_source	"RNASeq"
+GFF_feature	"overlapping_EST_set"
+Remark "This is the L3 read set from the Hillier & Waterston 2009 paper."
+
+Method : "RNASeq_Hillier.L4_larva"
+Colour   BLACK
+Show_up_strand
+Score_by_width
+Score_bounds     1.000000 300.000000
+Overlap
+Blixem_N
+Join_blocks
+GFF_source	"RNASeq"
+GFF_feature	"overlapping_EST_set"
+Remark "This is the L4 read set from the Hillier & Waterston 2009 paper."
+
+Method : "RNASeq_Hillier.young_adult_Harposporium"
+Colour   BLACK
+Show_up_strand
+Score_by_width
+Score_bounds     1.000000 300.000000
+Overlap
+Blixem_N
+Join_blocks
+GFF_source	"RNASeq"
+GFF_feature	"overlapping_EST_set"
+Remark "This is the young adult exposed to Harposporium read set from the Hillier & Waterston 2009 paper."
+
+Method : "RNASeq_Hillier.young_adult_Harposporium_control"
+Colour   BLACK
+Show_up_strand
+Score_by_width
+Score_bounds     1.000000 300.000000
+Overlap
+Blixem_N
+Join_blocks
+GFF_source	"RNASeq"
+GFF_feature	"overlapping_EST_set"
+Remark "This is the young adult exposed to Harposporium control read set from the Hillier & Waterston 2009 paper."
+
+Method : "RNASeq_Hillier.young_adult_S_macescens"
+Colour   BLACK
+Show_up_strand
+Score_by_width
+Score_bounds     1.000000 300.000000
+Overlap
+Blixem_N
+Join_blocks
+GFF_source	"RNASeq"
+GFF_feature	"overlapping_EST_set"
+Remark "This is the young adult exposed to S. macescens read set from the Hillier & Waterston 2009 paper."
+
+Method : "RNASeq_Hillier.young_adult_S_macescens_control"
+Colour   BLACK
+Show_up_strand
+Score_by_width
+Score_bounds     1.000000 300.000000
+Overlap
+Blixem_N
+Join_blocks
+GFF_source	"RNASeq"
+GFF_feature	"overlapping_EST_set"
+Remark "This is the young adult exposed to S. macescens read set from the Hillier & Waterston 2009 paper."
 
 
 
