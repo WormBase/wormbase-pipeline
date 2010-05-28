@@ -3,8 +3,8 @@
 #
 # completely rewritten by Keith Bradnam from list_loci_designations
 #
-# Last updated by: $Author: pad $
-# Last updated on: $Date: 2010-01-29 14:10:12 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2010-05-28 08:43:02 $
 #
 # This script should be run under a cron job and simply update the webpages that show
 # current gene names and sequence connections.  Gets info from geneace.  
@@ -95,7 +95,7 @@ $log->write_to("check http://www.sanger.ac.uk/Projects/C_elegans/LOCI/genes2mole
                   minsize => 700000);
 
   $wormbase->check_file("$www/molecular_names2genes.txt", $log,
-                  minsize => 700000);
+                  minsize => 600000);
 
 
 $log->mail;
