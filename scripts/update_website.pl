@@ -8,7 +8,7 @@
 # relevant WormBase and Wormpep web pages.
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2009-12-22 13:31:50 $      
+# Last updated on: $Date: 2010-05-28 08:38:37 $      
 
 
 #################################################################################
@@ -160,7 +160,7 @@ if ($all || $dna) {
 if ($all || $wormpep_diff) {
   $wb->check_file("$www/$WS_name/wormpep_diff.shtml", $log, 
 		  minsize => 1000,
-		  maxsize => 10000);
+		  maxsize => 15000);
 }
 
 if ($all || $update_wormpep) {
