@@ -3,8 +3,8 @@
 #
 # completely rewritten by Keith Bradnam from list_loci_designations
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2010-05-28 08:43:02 $
+# Last updated by: $Author: pad $
+# Last updated on: $Date: 2010-05-28 09:51:51 $
 #
 # This script should be run under a cron job and simply update the webpages that show
 # current gene names and sequence connections.  Gets info from geneace.  
@@ -116,7 +116,7 @@ sub create_currentDB_loci_pages{
   # query against current_DB
   $database = $wormbase->database('current');
   my $db = Ace->connect(-path  => "$database",
-                        -program =>$tace) or $log->log_and_die("Connection failure: ".Ace->error);
+                       -program =>$tace) or $log->log_and_die("Connection failure: ".Ace->error);
 
 
   # open text file which will contain all genes
@@ -128,8 +128,8 @@ sub create_currentDB_loci_pages{
     my @gene_names = $db->fetch(-query=>"Find Gene_name $letter\* WHERE Public_name_for");
     
     # loop through each file (one for each letter a-z)
-    open (HTML, ">$www/loci_designations_${letter}.shtml") || croak "Couldn't open file for writing to\n";
-    
+    open (HTML, ">$www/loci_designations_${letter}.shtml") || croak "Couldn't open file for writing to $www/loci_designations_${letter}.shtml\n";
+    system("touch $www/loci_${letter}.shtml"); # this just updates the footer date on the webpage :)
     my $line = 0;
 
     # cycle through each locus in database
