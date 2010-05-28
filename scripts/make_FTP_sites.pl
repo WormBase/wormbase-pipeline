@@ -7,8 +7,8 @@
 # 
 # Originally written by Dan Lawson
 #
-# Last updated by: $Author: pad $
-# Last updated on: $Date: 2010-05-25 09:26:49 $
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2010-05-28 09:19:59 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -358,7 +358,7 @@ sub copy_gff_files{
   my %accessors = ($wormbase->species_accessors);
   $accessors{elegans} = $wormbase;
   foreach my $wb (values %accessors) {
-    my $species = $wb->species;
+    my $species  = $wb->species;
     my $gspecies = $wb->full_name('-g_species' => 1);
     my $chromdir = $wb->chromosomes;
 
@@ -366,58 +366,48 @@ sub copy_gff_files{
       my $gff_dir = "$targetdir/$WS_name/genomes/$gspecies/genome_feature_tables/GFF2";
       mkpath($gff_dir,1,0775);
 
-      # we don't want to end up with thousands of files for species with DNA still in contigs, so make one file
-      my @contigs = $wb->get_chromosome_names(-prefix => 1, -mito => 1);
-	my $whole_filename = "$gspecies.$WS_name.gff"; #concatenated whole genome file require for all species
-	$wormbase->run_command("rm -f $gff_dir/$whole_filename", $log);
-	if($wb->assembly_type eq 'contig') {
+      my $whole_filename = "$gspecies.$WS_name.gff"; #concatenated whole genome file require for all species
+      $wormbase->run_command("rm -f $gff_dir/$whole_filename", $log);
+
+      if($wb->assembly_type eq 'contig') {
 	      if (-e "$chromdir/$species.gff") { # tierII does it this way
-			$wormbase->run_command("cp -f -R $chromdir/$species.gff $gff_dir/$whole_filename", $log);
-      	}
-      	else {
-      		$log->error("$chromdir/$species.gff missing\n");
-      	}
-      }
-      else {
+		$wormbase->run_command("cp -f -R $chromdir/$species.gff $gff_dir/$whole_filename", $log);
+      	      } else { $log->error("$chromdir/$species.gff missing\n")}
+      } else {
            $wormbase->run_command("cat $chromdir/*.gff* > $gff_dir/$whole_filename", $log);
            $wormbase->run_command("cp -f $chromdir/*.gff* $gff_dir/", $log); #individual files too
       }
 
-	#add supplementary and nGASP GFF
-	my $ngaspdir;
-	if($species eq 'elegans') {
-		my $supdir = $wb->build_data."/SUPPLEMENTARY_GFF";
-		my @gfffiles = glob("$supdir/*.gff");
-		foreach my $sup (@gfffiles){
-			$wb->run_command("cat $sup >> $gff_dir/$whole_filename", $log);
-		}
-		$ngaspdir = $supdir;
+      # add supplementary and nGASP GFF
+      my $ngaspdir;
+      if($species eq 'elegans') {
+	my $supdir = $wb->build_data."/SUPPLEMENTARY_GFF";
+	my @gfffiles = glob("$supdir/*.gff");
+	foreach my $sup (@gfffiles){
+		$wb->run_command("cat $sup >> $gff_dir/$whole_filename", $log);
 	}
-	$ngaspdir = $wb->database("$species")."/nGASP" unless $ngaspdir;
+	$ngaspdir = $supdir;
+      }
+      $ngaspdir = $wb->database("$species")."/nGASP" unless $ngaspdir;
 	
-	#nGASP - zcat files stored under primaries (or BUILD_DATA for C_ele) on to FTP full GFF file.
-	if(-e $ngaspdir){
-		my @ngasp_methods = qw(augustus fgenesh jigsaw mgene);
-		foreach my $method(@ngasp_methods){
-			my $file = "$ngaspdir/$species.$method.gff2.gz";
-			if(-e $file){
-				$wb->run_command("zcat $file >> $gff_dir/$whole_filename", $log);
-			}else {
-				$log->error("$file missing\n");
-			}
-		}
+      # nGASP - zcat files stored under primaries (or BUILD_DATA for C_ele) on to FTP full GFF file.
+      if(-e $ngaspdir){
+	my @ngasp_methods = qw(augustus fgenesh jigsaw mgene);
+	foreach my $method(@ngasp_methods){
+		my $file = "$ngaspdir/$species.$method.gff2.gz";
+		if(-e $file){
+			$wb->run_command("zcat $file >> $gff_dir/$whole_filename", $log);
+		} else { $log->error("$file missing\n")}
 	}
-	else{
-		$log->write_to("no ngasp for $gspecies\n");
-	}
+      } else { $log->write_to("no ngasp for $gspecies\n")}
       
-	$wormbase->run_command("/bin/gzip -9 -f $gff_dir/$whole_filename",$log);
-	$wormbase->run_command("cp -f -R $chromdir/composition.all $gff_dir/", $log) if (-e "$chromdir/composition.all");
+      $wormbase->run_command("/bin/gzip -9 -f $gff_dir/$whole_filename",$log);
+      $wormbase->run_command("cp -f -R $chromdir/composition.all $gff_dir/", $log) if (-e "$chromdir/composition.all");
       $wormbase->run_command("cp -f -R $chromdir/totals $gff_dir/", $log) if (-e "$chromdir/totals");
 
       # change group ownership
-      $wormbase->run_command("chgrp -R  worm $gff_dir", $log);  
-    }
+      $wormbase->run_command("chgrp -R  worm $gff_dir", $log); 
+   }
   }
   $runtime = $wormbase->runtime;
   $log->write_to("$runtime: Finished copying\n\n");
