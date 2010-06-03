@@ -193,7 +193,7 @@ if ($gene) {
 		if (!exists $species_taxon_hash{$species}) {print "ERROR: missing species = $species\n";}
 		my $a=$aspect{lc $go_type};
 		my $type="gene";
-		print $out "WB\t$obj\t$public_name\t\t$term\t$ref\t$tmp[3]\t$with\t$a\t\t$syn\t$type\t$taxon\t$date\tWB\n";
+		print $out "WB\t$obj\t$public_name\t\t$term\t$ref\t$tmp[3]\t$with\t$a\t\t$syn\t$type\t$taxon\t$date\tWB\t\t\n";
 		$line_count++;
 	    }
 	}
@@ -271,7 +271,7 @@ if ($rnai) {
 		foreach my $term (keys %{$phen2go{$phen}}) {
 		    my $go_type=$db->fetch('GO_term', $term)->Type;
 		    my $a=$aspect{lc $go_type};
-		    print $out "WB\t$gene\t$public_name\t\t$term\t$ref_field\tIMP\t$with\t$a\t\t$syn\t$type\t$taxon\t$date\tWB\n";
+		    print $out "WB\t$gene\t$public_name\t\t$term\t$ref_field\tIMP\t$with\t$a\t\t$syn\t$type\t$taxon\t$date\tWB\t\t\n";
 		    $line_count++;
 		}
 	    }
@@ -369,7 +369,7 @@ if ($variation) {
 		foreach my $term (keys %{$phen2go{$phen}}) {
 		    my $go_type=$db->fetch('GO_term', $term)->Type;
 		    my $a=$aspect{lc $go_type};
-		    print $out "WB\t$gene\t$public_name\t\t$term\t$ref_field\tIMP\t$with\t$a\t\t$syn\t$type\t$taxon\t$date\tWB\n";
+		    print $out "WB\t$gene\t$public_name\t\t$term\t$ref_field\tIMP\t$with\t$a\t\t$syn\t$type\t$taxon\t$date\tWB\t\t\n";
 		    $line_count++;
 		}
 	    }
