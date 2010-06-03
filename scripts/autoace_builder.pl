@@ -6,8 +6,8 @@
 #
 # Usage : autoace_builder.pl [-options]
 #
-# Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2010-05-18 11:11:31 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2010-06-03 08:09:24 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -347,13 +347,6 @@ sub remap_misc_dynamic {
     $wormbase->run_command("mv -f $rnaseq_cds $backup_rnaseq_cds", $log);
     $wormbase->run_script( "remap_genefinder_between_releases.pl -input $backup_rnaseq_cds -out $rnaseq_cds", $log);
 
-    # remap Hillier RNASEQ_CDS_camace (the version of the Hillier CDS for camace) - uses the remap genefinder script
-    my $rnaseq_cds_camace = $wormbase->misc_dynamic."/misc_RNASEQ_CDS_camace.ace";
-    my $backup_rnaseq_cds_camace = $wormbase->misc_dynamic."/BACKUP/misc_RNASEQ_CDS_camace.ace.$previous_release";
-    if (-e $backup_rnaseq_cds_camace) {$wormbase->run_command("mv -f $backup_rnaseq_cds_camace $rnaseq_cds_camace", $log);}
-    $wormbase->run_command("mv -f $rnaseq_cds_camace $backup_rnaseq_cds_camace", $log);
-    $wormbase->run_script( "remap_genefinder_between_releases.pl -input $backup_rnaseq_cds_camace -out $rnaseq_cds_camace", $log);
-
     # remap fosmids
     my $fosmids = $wormbase->misc_dynamic."/fosmids.ace";
     my $backup_fosmids = $wormbase->misc_dynamic."/BACKUP/fosmids.ace.$previous_release";
@@ -363,13 +356,6 @@ sub remap_misc_dynamic {
    
     # the TEC-REDs are placed back on the genome by using the location of the Features they defined
     $wormbase->run_script( "map_tec-reds.pl", $log);
-
-    # remap the Hillier clusters of reads Homol_data file ~wormpub/BUILD_DATA/MISC_DYNAMIC/RNASeq_HOMOL.ace
-    my $rnaseq_homol_data = $wormbase->misc_dynamic."/RNASeq_HOMOL.ace";
-    my $backup_rnaseq_homol_data = $wormbase->misc_dynamic."/BACKUP/RNASeq_HOMOL.ace.$previous_release";
-    if (-e $backup_rnaseq_homol_data) {$wormbase->run_command("mv -f $backup_rnaseq_homol_data $rnaseq_homol_data", $log);}
-    $wormbase->run_command("mv -f $rnaseq_homol_data $backup_rnaseq_homol_data", $log);
-    $wormbase->run_script( "remap_chromosome_homol_data.pl -input $backup_rnaseq_cds_camace -out $rnaseq_cds_camace", $log);
 
     # remap and copy over the SUPPLEMENTARY_GFF dir from BUILD_DATA
     my $sup_dir = $wormbase->build_data."/SUPPLEMENTARY_GFF";
