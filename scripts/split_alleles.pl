@@ -35,7 +35,8 @@ USAGE
 exit 1;	
 }
 
-my ( $debug, $store, $outdir,$database,$help,$test,$species,$wb);
+my $outdir = '/tmp';
+my ( $debug, $store,$database,$help,$test,$species,$wb);
 
 GetOptions(
     'species=s'=> \$species,
