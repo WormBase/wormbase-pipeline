@@ -50,12 +50,14 @@ map_Allele.pl options:
 	-weak_checks        relax sequence sanity checks
 	-help               print this message
 	-test               use the test database
+	-idfile             use ids from an input file (one id per line)
+	-species SPECIES_NAME use species as reference
 USAGE
 
 exit 1;	
 }
 
-my ( $debug, $species, $store, $outdir,$allele ,$noload,$database,$weak_checks,$help,$test);
+my ( $debug, $species, $store, $outdir,$allele ,$noload,$database,$weak_checks,$help,$test,$idfile);
 
 GetOptions(
     'species=s'=> \$species,
@@ -69,6 +71,7 @@ GetOptions(
     'weak_checks' => \$weak_checks,
     'help'        => \$help,
     'test'        => \$test,
+    'idfile=s'    => \$idfile,
 ) or &print_usage();
 
 &print_usage if $help;
@@ -87,14 +90,21 @@ MapAlleles::setup($log,$wb) unless $database;
 MapAlleles::set_wb_log($log,$wb,$weak_checks) if $database;
 
 my $release=$wb->get_wormbase_version;
-my $acefile=( $outdir ? $outdir : $wb->acefiles ) . "/allele_mapping.WS$release.ace";
+my $acefile=( $outdir ? $outdir : $wb->acefiles ) . "/allele_mapping.WS$release.$$.ace";
 
 if ($debug) {
     print "DEBUG \"$debug\"\n\n";
 }
 
 # get filtered arrayref of the alleles
-my $alleles = $allele? MapAlleles::get_allele($allele) : MapAlleles::get_all_alleles();
+my $alleles;
+if ($allele){
+       $alleles= MapAlleles::get_allele($allele);
+}elsif ($idfile){
+       $alleles= MapAlleles::get_alleles_fromFile($idfile);
+}else{
+       $alleles= MapAlleles::get_all_alleles();
+}
 
 # map them
 my $mapped_alleles = MapAlleles::map($alleles);
