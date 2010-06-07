@@ -6,8 +6,8 @@
 #
 # Creates SMapped Gene spans for Gene objects
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2010-04-01 09:57:58 $
+# Last edited by: $Author: mh6 $
+# Last edited on: $Date: 2010-06-07 10:36:40 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -85,7 +85,8 @@ else {
 	if ($wormbase->species eq "elegans") {
 	  @methods = qw(Coding_transcript Non_coding_transcript tRNAscan-SE-1.23 miRNA_primary_transcript Pseudogene snRNA snoRNA rRNA scRNA stRNA ncRNA); # elegans still uses tRNAscan-SE-1.23
 	} else {
-	  @methods = qw(Coding_transcript Non_coding_transcript tRNAscan-SE-1.3 miRNA_primary_transcript Pseudogene snRNA snoRNA rRNA scRNA stRNA ncRNA);
+		#@methods = qw(Coding_transcript Non_coding_transcript tRNAscan-SE-1.3 miRNA_primary_transcript Pseudogene snRNA snoRNA rRNA scRNA stRNA ncRNA);
+		@methods = qw(Coding_transcript Non_coding_transcript tRNAscan-SE-1.3 Pseudogene snRNA snoRNA rRNA scRNA stRNA ncRNA);
 	}
 
      #   @methods = qw(Coding_transcript) unless ($wormbase->species eq "elegans"); removed as we probably want all, in future.
