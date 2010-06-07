@@ -75,13 +75,13 @@ while (my $a = shift @$variations){
 		$bin++;
 		$counter=1;
 		$of->close;
-                &map_Alleles($bin-1);
+                &mapAlleles($bin-1);
 		$of->open("> $outdir/map_alleles.$bin");
 	}
 	print $of "$a\n";
 }
 $of->close;
-&map_Alleles($bin-1);
+&mapAlleles($bin-1);
 
 sub mapAlleles {
 	my ($lastBin) = @_;
