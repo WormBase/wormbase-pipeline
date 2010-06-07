@@ -87,6 +87,6 @@ $of->close;
 sub mapAlleles {
 	my ($lastBin) = @_;
 	my $binfile="$outdir/map_alleles.$lastBin";
-	$wb->run_script("map_alleles.pl -idfile $binfile",$log);
+	$wb->run_script("map_Alleles.pl -idfile $binfile",$log);
 	unlink $binfile;
 }
