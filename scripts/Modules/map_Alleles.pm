@@ -127,6 +127,31 @@ sub get_allele {
     return \@alleles;
 }
 
+=head2 get_all_alleles_fromFile
+
+    Title   : get_all_alleles_fromFile
+    Usage   : MapAlleles::get_alleles_fromFile($filename)
+    Function: get alleles from acedb
+    Returns : array_ref containing Ace::Allele
+    Args    : (string) file name
+
+=cut
+
+sub get_alleles_fromFile {
+    my ($filename)=@_;
+    my @alleles;
+
+    my $db = Ace->connect( -path => $wb->autoace ) || do { print "cannot connect to ${$wb->autoace}:", Ace->error; die };
+
+    my $fh = new IO::File $filename ,'r';
+    while (<$fh>){
+	chomp;
+    	push @alleles, $db->fetch(Variation => "$_");
+    }
+    return \@alleles;
+}
+
+
 =head2 _filter_alleles
 
     Title   : _filter_alleles
@@ -205,7 +230,7 @@ sub map {
     my ($alleles)=@_;
     my %alleles;
     my $mapper = Feature_mapper->new( $wb->autoace, undef, $wb );
-        my $coords = Coords_converter->invoke( $wb->autoace, 1, $wb );
+        my $coords = Coords_converter->invoke( $wb->autoace, 0, $wb );
 
     foreach my $x (@$alleles) {
         # $chromosome_name,$start,$stop
@@ -289,7 +314,7 @@ sub map_cgh {
     my ($alleles)=@_;
 
     my $mapper = Feature_mapper->new( $wb->autoace, undef, $wb );
-        my $coords = Coords_converter->invoke( $wb->autoace, 1, $wb );
+        my $coords = Coords_converter->invoke( $wb->autoace, 0, $wb );
 
     while( my($k,$x)=each %$alleles ){
         my $v=$x->{allele};
