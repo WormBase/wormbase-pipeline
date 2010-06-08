@@ -6,8 +6,8 @@
 #
 # wrapper script for running transcript_builder.pl
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2009-08-11 10:31:35 $
+# Last edited by: $Author: mh6 $
+# Last edited on: $Date: 2010-06-08 09:21:55 $
 
 use lib $ENV{CVS_DIR};
 use Wormbase;
@@ -65,7 +65,7 @@ unless ( $no_run ){
   $dump_dir = $wormbase->transcripts unless $dump_dir;
 
   # make a Coords_converter to write the coords files. Otherwise all 6 processes try and do it.
-  my $coords = Coords_converter->invoke($database,undef, $wormbase);
+  my $coords = Coords_converter->invoke($database,1, $wormbase);
 
   # clean up output files created in any possible previous runs of this script
   $wormbase->run_command("rm -f ".$wormbase->transcripts."/transcripts*.ace", $log);
