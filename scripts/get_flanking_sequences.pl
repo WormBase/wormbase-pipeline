@@ -5,8 +5,8 @@
 # Script to grab two unique flanking sequences after specifying a sequence 
 # and two coordinates
 #
-# Last updated by: $Author: ar2 $     
-# Last updated on: $Date: 2009-09-25 08:53:21 $      
+# Last updated by: $Author: mh6 $     
+# Last updated on: $Date: 2010-06-08 09:36:01 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};                  
@@ -40,8 +40,8 @@ if ( $store ) {
 			     );
 }
 
-$db |= $wormbase->orgdb;
-my $mapper = Feature_mapper->new($db,undef,$wormbase);
+$db ||= $wormbase->orgdb;
+my $mapper = Feature_mapper->new($db,0,$wormbase);
 my($l, $r) = $mapper->get_flanking_sequence($seq, $x, $y);
 if($l and $r) {print "Left  flank: $l\nRight flank: $r\n";}
 else { print "ERROR: cant find flanks for $seq:$x-$y\n";}
