@@ -34,29 +34,27 @@ $VALID_USERS = {
 
 ## a list of valid SSO login names for each DB operation
 $VALID_API_USERS = {
-		    'query'		=> [qw(avc ar2 pad gw3 mh6 mt3 tbieri jspieth wnash pozersky stlouis caltech cshl sanger)],
-		    'load_file'		=> [qw(avc ar2 pad gw3 mh6 mt3 tbieri jspieth wnash pozersky stlouis caltech cshl sanger)],
-		    'merge_genes'	=> [qw(avc ar2 pad gw3 mt3 tbieri wnash jspieth  pozersky)],
-		    'split_gene'	=> [qw(avc ar2 pad gw3 mt3 tbieri jspieth wnash pozersky)],
-		    'new_gene'		=> [qw(avc ar2 pad gw3 mt3 tbieri jspieth wnash pozersky)],
-		    'kill_gene'		=> [qw(avc ar2 pad gw3 mt3 tbieri jspieth wnash pozersky)],
-		    'add_name'		=> [qw(avc ar2 pad gw3 mt3 tbieri jspieth wnash pozersky)],
-		    'remove_name'	=> [qw(avc ar2 pad gw3 mt3 tbieri jspieth wnash pozersky)],
-		    'change_class'	=> [qw(avc ar2 pad gw3 mt3 tbieri jspieth wnash pozersky)],
-		    'dump_all'          => [qw(avc ar2 pad gw3 mt3 tbieri jspieth wnash pozersky caltech)],
+		    'query'		=> [qw(avc pad gw3 mh6 mt3 tbieri jspieth wnash pozersky stlouis caltech cshl sanger)],
+		    'load_file'		=> [qw(avc pad gw3 mh6 mt3 tbieri jspieth wnash pozersky stlouis caltech cshl sanger)],
+		    'merge_genes'	=> [qw(avc pad gw3 mt3 tbieri wnash jspieth  pozersky)],
+		    'split_gene'	=> [qw(avc pad gw3 mt3 tbieri jspieth wnash pozersky)],
+		    'new_gene'		=> [qw(avc pad gw3 mt3 tbieri jspieth wnash pozersky)],
+		    'kill_gene'		=> [qw(avc pad gw3 mt3 tbieri jspieth wnash pozersky)],
+		    'add_name'		=> [qw(avc pad gw3 mt3 tbieri jspieth wnash pozersky)],
+		    'remove_name'	=> [qw(avc pad gw3 mt3 tbieri jspieth wnash pozersky)],
+		    'change_class'	=> [qw(avc pad gw3 mt3 tbieri jspieth wnash pozersky)],
+		    'dump_all'          => [qw(avc pad gw3 mt3 tbieri jspieth wnash pozersky caltech)],
 		   };
 
 ## a list of valid SSO login names able to add GCG name
 $VALID_CGCNAME_USERS = {
 			'mt3'			=> 1,
-			'ar2'			=> 1,
 			'pad'                   => 1,
 			'gw3'                   => 1,
 		       };
 
 $MAILS = {
 	  'gnw'                 =>      'mt3@sanger.ac.uk', #person responsible for geneace
-	  'ar2'			=>	'ar2@sanger.ac.uk',
 	  'pad'			=>	'pad@sanger.ac.uk',
 	  'gw3'			=>	'gw3@sanger.ac.uk',
 	  'mh6'			=>	'mh6@sanger.ac.uk',
@@ -72,7 +70,7 @@ $MAILS = {
 	 };
 
 ## a list of people to mail when a DB operation occurs
-$MAIL_NOTIFY_LIST = [qw(ar2 mt3 pad gw3)];
+$MAIL_NOTIFY_LIST = [qw(mt3 pad gw3)];
 
 &main();
 1;
@@ -131,7 +129,7 @@ sub main {
     return;
   } else {
     print qq(Authenticated database user: "$USER"<BR>		);
-    #send_mail('webserver', $MAILS->{'ar2'}, "user $USER", "is using nameserver");
+    #send_mail('ar2', $MAILS->{'ar2'}, "user $USER", "is using nameserver");
   }
 
   ## get CGI parameters
@@ -207,7 +205,7 @@ sub main {
 sub send_mail {
   my ($from, $to, $subject, $message,) = @_;
 
-  #send_mail("webserver",
+  #send_mail("ar2",
   #$MAIL_NOTIFY_LIST,
   #"Merged gene $gene_id : $merge_id",
   #"GENE MERGE\nUSER : $USER\nLIVE:retained geneID $gene_id\nDEAD: killed geneID $merge_id");
@@ -306,7 +304,7 @@ sub merge_genes
       if ( my $ids = $db->merge_genes($gene_gene, $merge_gene) ) {
 	print "Merge complete, $merge_gene is DEAD and has been merged into gene $gene_gene <br>";
 	#notify
-	send_mail("webserver",[$MAILS->{$USER},$MAILS->{'gnw'},$MAILS->{'ar2'},$MAILS->{'pad'},$MAILS->{'gw3'},$MAILS->{'caltech'}],"Merged gene $gene_gene : $merge_gene", "GENE MERGE\nUSER : $USER - WBPerson". $$VALID_USERS{$USER} ."\nLIVE:retained geneID for $gene_gene - ".$ids->[0]."\nDEAD: killed geneID $merge_gene - ".$ids->[1]."\n");
+	send_mail("ar2",[$MAILS->{$USER},$MAILS->{'gnw'},$MAILS->{'pad'},$MAILS->{'gw3'},$MAILS->{'caltech'}],"Merged gene $gene_gene : $merge_gene", "GENE MERGE\nUSER : $USER - WBPerson". $$VALID_USERS{$USER} ."\nLIVE:retained geneID for $gene_gene - ".$ids->[0]."\nDEAD: killed geneID $merge_gene - ".$ids->[1]."\n");
       } else {
 	print "Sorry, the gene merge failed<br>";
       }
@@ -353,7 +351,7 @@ Species :
 		if ( $new_id ) {
 		  my $msg = "USER : $USER\nACTION : Split $gene_id\nNEW geneId : $new_id\nNEW CDS : $type $name\n\n splitgene.pl -old $gene_id -new $name -who ". $$VALID_USERS{$USER} ." -id $new_id -load -species $species\n";
 		  $msg .= "\n\n$remark" if $remark;
-		  send_mail("webserver",[$MAILS->{$USER},$MAILS->{'gnw'},$MAILS->{'ar2'},$MAILS->{'pad'},$MAILS->{'gw3'},$MAILS->{'caltech'}],"Split gene $gene_id",$msg);
+		  send_mail("ar2",[$MAILS->{$USER},$MAILS->{'gnw'},$MAILS->{'pad'},$MAILS->{'gw3'},$MAILS->{'caltech'}],"Split gene $gene_id",$msg);
 
 		  #report to screen
 		  #$new_id = 'secret' unless ( $LIVE or defined $$VALID_CGCNAME_USERS{$USER});
@@ -392,7 +390,7 @@ sub kill_gene {
     if ($db->kill_gene($gene_id)) {
       print qq(Gene "$gene_id" has been killed because \"$remark\"<br>);
 			
-      send_mail("webserver",[$MAILS->{$USER},$MAILS->{'gnw'},$MAILS->{'ar2'},$MAILS->{'pad'},$MAILS->{'gw3'},$MAILS->{'caltech'}],"Kill request $gene_id", "$gene_id\nRemark \"$remark\"\nWBPerson".$VALID_USERS->{$USER}."//\t$USER\n\n");
+      send_mail("ar2",[$MAILS->{$USER},$MAILS->{'gnw'},$MAILS->{'pad'},$MAILS->{'gw3'},$MAILS->{'caltech'}],"Kill request $gene_id", "$gene_id\nRemark \"$remark\"\nWBPerson".$VALID_USERS->{$USER}."//\t$USER\n\n");
     } else {
       print qq(FAILED to kill "$gene_id" <br>);
     }
@@ -445,7 +443,7 @@ sub remove_name {
       print "<br>removed $name from $gene_id";
       #print remaining names
       $db->printAllNames($gene_id);
-      send_mail("webserver",$USER,"Remove gene name", "$USER removed a gene name (gene $gene_id had name $type $name removed)");
+      send_mail("ar2",$USER,"Remove gene name", "$USER removed a gene name (gene $gene_id had name $type $name removed)");
     } else {
       print "name removal failed<br>Names for $gene_id";
     }
@@ -511,7 +509,7 @@ Species :
 
 	my $msg = "$type $name added to $gene_id", "USER : $USER\nWBGeneID : $gene_id\nName added : $name $type\n";
 	$msg .= "\nWARNING: CGC name ".$existing_names->{'CGC'}." overwritten\n" if defined $existing_CGC;
-	send_mail("webserver",[$MAILS->{$USER},$MAILS->{'gnw'},$MAILS->{'ar2'},$MAILS->{'pad'},$MAILS->{'gw3'},$MAILS->{'caltech'}],"$type added to $gene_id","$msg");
+	send_mail("ar2",[$MAILS->{$USER},$MAILS->{'gnw'},$MAILS->{'pad'},$MAILS->{'gw3'},$MAILS->{'caltech'}],"$type added to $gene_id","$msg");
       } else {
 	print "<p>FAILED: cant add name $name to $gene_id</p>";
       }
@@ -585,7 +583,7 @@ sub new_gene {
 	$msg .= "\n\n";
       }
 		
-      send_mail("webserver",[$MAILS->{$USER},$MAILS->{'gnw'},$MAILS->{'ar2'},$MAILS->{'pad'},$MAILS->{'gw3'}], "WBGeneID request $name $USER",$msg );
+      send_mail("ar2",[$MAILS->{$USER},$MAILS->{'gnw'},$MAILS->{'pad'},$MAILS->{'gw3'}], "WBGeneID request $name $USER",$msg );
       #report to screen
       #$id = 'secret' unless ( $LIVE or defined $$VALID_CGCNAME_USERS{$USER});
       print "The new id for $type: $name is $id\n";
@@ -639,7 +637,7 @@ sub query {
 		<hr align="left">
 		<BR><BR><BR>
 		);
-    #send_mail("webserver",[$MAILS->{$USER}],"query", "$USER queried for $gene");
+    #send_mail("ar2",[$MAILS->{$USER}],"query", "$USER queried for $gene");
   }
 
 }
@@ -731,7 +729,7 @@ sub change_class {
 	&kill_gene($gene->[0], "[$USER] Converted this Gene into a Transposon_CDS/Pseudogene as it appears to be part of a transposable element.");
       } else {
       my $msg = "$cds converted to $class - $USER\nThis does not affect Nameserver DB\n\nchangegene.pl -seq $cds -who ".$VALID_USERS->{$USER}." -load -class\n\nRemember you need to add a 2 letter change code eg. CP after -class";
-	send_mail("webserver",[$MAILS->{$USER},$MAILS->{'gnw'},$MAILS->{'ar2'},$MAILS->{'pad'},$MAILS->{'gw3'},$MAILS->{'caltech'}],"$cds to $class", $msg);
+	send_mail("ar2",[$MAILS->{$USER},$MAILS->{'gnw'},$MAILS->{'pad'},$MAILS->{'gw3'},$MAILS->{'caltech'}],"$cds to $class", $msg);
 	print "changing $cds to $class.";
       }
     } else {

@@ -36,16 +36,15 @@ $VALID_USERS = {
 
 ## a list of valid SSO login names for each DB operation
 $VALID_API_USERS = {
-		    'query'		=> [qw(avc ar2 pad gw3 mh6 mt3 md9 tbieri bastiani jspieth dblasiar pozersky stlouis caltech cshl sanger)],
-		    'merge_features'	=> [qw(ar2 pad gw3 mt3 mh6 tbieri jspieth dblasiar pozersky)],
-		    'new_feature'	=> [qw(ar2 pad gw3 mt3 mh6 md9 tbieri bastiani jspieth dblasiar pozersky)],
-		    'kill_feature'	=> [qw(ar2 pad gw3 mt3 mh6 tbieri jspieth dblasiar pozersky)],
+		    'query'		=> [qw(avc pad gw3 mh6 mt3 md9 tbieri bastiani jspieth dblasiar pozersky stlouis caltech cshl sanger)],
+		    'merge_features'	=> [qw(pad gw3 mt3 mh6 tbieri jspieth dblasiar pozersky)],
+		    'new_feature'	=> [qw(pad gw3 mt3 mh6 md9 tbieri bastiani jspieth dblasiar pozersky)],
+		    'kill_feature'	=> [qw(pad gw3 mt3 mh6 tbieri jspieth dblasiar pozersky)],
 		   };
 
 ## a list of valid SSO login names able to add GCG name
 $VALID_CGCNAME_USERS = {
 			'mt3'			=> 1,
-			'ar2'			=> 1,
 		       };
 
 $MAILS = {
@@ -68,7 +67,7 @@ $MAILS = {
 	 };
 
 ## a list of people to mail when a DB operation occurs
-$MAIL_NOTIFY_LIST = [qw(ar2)];
+$MAIL_NOTIFY_LIST = [qw(gw3)];
 
 &main();
 1;
@@ -272,7 +271,7 @@ sub main {
 	if ( my $id = $db->idMerge($kill_id,$keep_id) ) {
 	  print "Merge complete, $kill_id is DEAD and has been merged into feature $keep_id <br>";
 	  #notify
-	  send_mail("webserver",[$MAILS->{$USER},$MAILS->{'cgc'}],"Merged features $keep ($keep_id) and $kill ($kill_id)", "FEATURE MERGE\nUSER : $USER\nLIVE:retained Feature id for $keep_id\nDEAD: killed Feature id $kill_id \n");
+	  send_mail("ar2",[$MAILS->{$USER},$MAILS->{'cgc'}],"Merged features $keep ($keep_id) and $kill ($kill_id)", "FEATURE MERGE\nUSER : $USER\nLIVE:retained Feature id for $keep_id\nDEAD: killed Feature id $kill_id \n");
 	} else {
 	  print "Sorry, the merge failed<br>";
 	}
@@ -298,7 +297,7 @@ sub main {
 	print "$id created<br>";
 			
 	my $mail_msg = "Feature ID $id created\n";
-	send_mail("webserver",
+	send_mail("ar2",
 		  [$MAILS->{$USER},$MAILS->{'cgc'}],
 		  "New Feature : $id", 
 		  "$mail_msg");
@@ -331,7 +330,7 @@ sub main {
 	if ( $db->idExists($kill_id) ) {	
 	  if ( $db->idKill($kill_id) ) {
 	    print qq( $kill_id killed<br>);
-	    send_mail("webserver",
+	    send_mail("ar2",
 		      [$MAILS->{$USER},$MAILS->{'cgc'}],
 		      "Feature killed - $kill_id", 
 		      "\nUSER : $USER\nID : $kill_id\nREASON : $remark"
