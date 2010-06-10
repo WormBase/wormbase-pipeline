@@ -48,7 +48,7 @@ $MAILS = {
 	'caltech'	=>	'caltech@wormbase.org',
 	'cshl'		=>	'cshl@wormbase.org',
 	'sanger'	=>	'sanger@wormbase.org',
-	'cgc'           =>      'mt3@sanger.ac.uk'
+	'cgc'           =>      'mt3@sanger.ac.uk',
 	'gw3'           =>      'gw3@sanger.ac.uk'
 };
 
