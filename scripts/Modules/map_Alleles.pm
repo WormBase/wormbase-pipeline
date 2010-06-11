@@ -250,7 +250,7 @@ sub map {
           # Since this dataset is pretty much complete I think
           # it would be OK to exclude niDf* alleles from the "is it massive"
           # check.
-          if ($x->name !~ /^niDf/) {
+          if ($x->public_name !~ /^niDf/) {
             $log->write_to("ERROR: $x is massive\n");
             $errors++;
             next;
