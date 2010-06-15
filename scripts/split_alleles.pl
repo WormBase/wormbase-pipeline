@@ -67,7 +67,7 @@ $database||=$wb->autoace();
 MapAlleles::set_wb_log($log,$wb);
 
 my $variations = MapAlleles::get_all_alleles();
-my $binsize = int(@$variations / 10);
+my $binsize = int(@$variations / 9;
 my $counter = 0;
 my $bin=1;
 my $of = new IO::File "$outdir/map_alleles.$bin",'w';
@@ -76,13 +76,13 @@ while (my $a = shift @$variations){
 		$bin++;
 		$counter=1;
 		$of->close;
-                &mapAlleles($bin-1);
+		&mapAlleles($bin-1);
 		$of->open("> $outdir/map_alleles.$bin");
 	}
 	print $of "$a\n";
 }
 $of->close;
-&mapAlleles($bin-1);
+&mapAlleles($bin);
 
 sub mapAlleles {
 	my ($lastBin) = @_;
