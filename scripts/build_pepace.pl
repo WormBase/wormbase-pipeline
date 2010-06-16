@@ -10,7 +10,7 @@
 #
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2009-08-10 09:07:41 $
+# Last updated on: $Date: 2010-06-16 11:20:23 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -253,6 +253,8 @@ open( ACE, ">$acefile" ) || die "cant write $acefile\n";
 if($wormbase->species eq 'elegans') {
 	$CE_live{'CE25872'} =1;# hard coded as this history is confused. Remove if CE25873 no longer valid
 	push( @{ $CE_corr_CDS{'CE25872'} }, "F36D3.1" );
+	$CE_live{'CE24071'} =1;# hard coded as this history is confused. Remove if CE24071 no longer valid
+	push( @{ $CE_corr_CDS{'CE24071'} }, "Y105C5B.21c" );
 }
 
 #ace file for new Protein model (with History)
@@ -303,11 +305,12 @@ if( $wormbase->species eq "elegans") {
 	$log->write_to("$wormpepdir/${PEPDIR}pep$ver suggests there should be $table_peps\n");
 
 	if ( ($live_peps) == $table_peps ) {
-   		$log->write_to("\nso thats OK!\ntaking in to account 1 known problem - CE25872 -hard coded as live in the script\n");
+   		$log->write_to("\nso thats OK!\ntaking in to account 2 known problem - CE25872 & CE24071 -hard coded as live in the script\n");
 	}
 	else {
     	$log->write_to("\n\n! ! ! ! THIS NEEDS ATTENTION ! ! ! !\n\n\n");
     	$log->write_to("\n1 known problem - CE25872 is hard coded as LIVE in $0\n Check this is still valid sequence F36D3.1\n\n");
+    	$log->write_to("\n1 known problem - CE24071 is hard coded as LIVE in $0\n Check this is still valid sequence Y105C5B.21c\n\n");
 	}
 }
 #load files in to autoace.
