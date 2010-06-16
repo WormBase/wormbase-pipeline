@@ -5,7 +5,7 @@
 # map GO_terms to ?Sequence objects from ?Motif and ?Phenotype
 #
 # Last updated by: $Author: mh6 $     
-# Last updated on: $Date: 2010-03-11 15:09:47 $      
+# Last updated on: $Date: 2010-06-16 16:07:41 $      
 
 use strict;
 use warnings;
@@ -161,7 +161,7 @@ sub phenotype {
 	    $phenotype = &get_phenotype_name($phenotype_id);
 	}
 	else {next;}
-	unless($cds and $phenotype and $go) {
+	unless($gene and $phenotype and $go) {
 	    $log->write_to("bad data (causes a phenotype, but doesn't affect a gene) $_");
 	    next;
 	}
@@ -232,7 +232,7 @@ Optional
 Visible 
 Class 
 Class Gene 
-From 3
+From 1
 Tag Gene  
  
 Colonne 5
