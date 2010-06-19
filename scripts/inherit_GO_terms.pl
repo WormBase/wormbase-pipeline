@@ -5,7 +5,7 @@
 # map GO_terms to ?Sequence objects from ?Motif and ?Phenotype
 #
 # Last updated by: $Author: mh6 $     
-# Last updated on: $Date: 2010-06-16 16:07:41 $      
+# Last updated on: $Date: 2010-06-19 22:02:58 $      
 
 use strict;
 use warnings;
@@ -165,8 +165,8 @@ sub phenotype {
 	    $log->write_to("bad data (causes a phenotype, but doesn't affect a gene) $_");
 	    next;
 	}
-	print OUT "\nCDS : \"$cds\"\nGO_term \"$go\" IMP Inferred_automatically \"$phenotype ($phenotype_id|$rnai)\"\n" ;
-	print OUT "\nGene : \"$gene\"\nGO_term \"$go\" IMP Inferred_automatically \"$phenotype ($phenotype_id|$rnai)\"\n" ;
+	print OUT "\nCDS : \"$cds\"\nGO_term \"$go\" IMP Inferred_automatically \"$phenotype ($phenotype_id|$rnai)\"\n" if $cds ;
+	print OUT "\nGene : \"$gene\"\nGO_term \"$go\" IMP Inferred_automatically \"$phenotype ($phenotype_id|$rnai)\"\n" if $gene;
     }
     #tidy up
     $wormbase->run_command("rm -f $def", $log);
