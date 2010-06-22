@@ -6,7 +6,7 @@
 # Compares this number to those from a second database.
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2010-05-21 10:26:30 $
+# Last updated on: $Date: 2010-06-22 08:45:30 $
 
 
 use strict;
@@ -459,6 +459,14 @@ sub get_curation_stats {
 			briggsae => 'brigpep',
 			brenneri => 'brepep',
 			japonica => 'jappep',
+			remanei => 'remapep',
+			pristionchus => 'ppapep',
+			heterorhabditis => 'hetpep',
+			brugia => 'brugpep',
+			mhapla => 'happep',
+			mincognita => 'incpep',
+			hcontortus => 'hcopep',
+
 		       );
 
   # get the centre that sequenced the clones
