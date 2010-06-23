@@ -7,15 +7,19 @@
 # Script to convert cgc strain file into ace file for geneace
 # Page download and update upload to geneace has been automated [ck1]
 
-# Last updated by: $Author: mt3 $
-# Last updated on: $Date: 2008-08-27 13:57:32 $
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2010-06-23 12:58:20 $
 
 use strict;
-use Getopt::Long;
 use lib $ENV{'CVS_DIR'};
+use lib '/nfs/WWWdev/SANGER_docs/lib/Projects/C_elegans';
+use lib '/software/worm/lib/perl';
+
 use Wormbase;
 use GENEACE::Geneace;
 use Log_files;
+use NameDB_handler;
+
 use Storable;
 use Getopt::Long;
 
@@ -24,13 +28,15 @@ use Getopt::Long;
 #######################
 
 
-my ($help, $debug, $test, $verbose, $store, $load, $wormbase);
+my ($help, $debug, $test, $verbose, $store, $load, $wormbase,$ndbUser,$ndbPass);
 GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
 	    "test"       => \$test,
 	    "verbose"    => \$verbose,
 	    "store:s"    => \$store,
-	    "load"       => \$load 
+	    "load"       => \$load,
+	    'ndbuser=s'  => \$ndbUser,
+	    'ndbpass=s'  => \$ndbPass,
 	   );
 
 
@@ -87,11 +93,13 @@ my $delete_strain_ace       = "$path/cgc_strain_info_$rundate.delete.ace";
 my $gene_allele_connections = "$path/gene_allele_connections.$rundate.ace";
 my $potential_new_genes     = "$path/potential_new_genes.$rundate.ace";
 my $backup_file             = "$path/strain_class_backup.$rundate.ace";
+my $allelefluff             = "$path/allele_public_name.$rundate.ace";
 
 open(STRAIN,       ">$current_strain_ace") || die "cant create output file $current_strain_ace\n";
 open(DELETE_STRAIN,">$delete_strain_ace") || die "can't create $delete_strain_ace\n";
 open(GENE2ALLELE,  ">$gene_allele_connections") || die "\nCan't open $gene_allele_connections\n";
 open(NEWGENES,     ">$potential_new_genes") || die "\nCan't open $potential_new_genes\n";
+open(ALLELEFLUFF,  ">$allelefluff") || die "\nCan't open $allelefluff\n";
 
 print NEWGENES "// This file should *ONLY* be loaded to geneace when it has been fully checked\n";
 print NEWGENES "// by hand.  If these Gene objects are ok, then they will need Gene IDs added.\n";
@@ -112,6 +120,14 @@ my $big_counter=0;
 my $strain_count = `grep Strain: $input_file | wc -l`;
 
 open(INPUT, $input_file) || die "Can't open inputfile!"; 
+
+
+
+# setup the nameserver
+
+my $DB = $test ? 'test_wbgene_id;mcs4a:3307' : 'wbgene_id;shap:3303';
+my $db = NameDB_handler->new($DB,$ndbUser,$ndbPass,'/nfs/WWWdev/SANGER_docs/data');
+$db->setDomain('Variation');
 
 while(<INPUT>){
   # drop out of loop before you reach last line of file
@@ -290,7 +306,7 @@ close(STRAIN);
 close(DELETE_STRAIN);
 close(GENE2ALLELE);
 close(NEWGENES);
-
+close(ALLELEFLUFF);
 
 ##################################################
 # 1. backup strain class with timestamp
@@ -318,6 +334,7 @@ show -a -T -f $backup_file
 pparse $last_delete_ace
 pparse $current_strain_ace
 pparse $gene_allele_connections
+pparse $allelefluff
 save
 quit
 END
@@ -340,6 +357,23 @@ exit(0);
 # subroutines
 ################
 
+###########################
+# function to find/get a variation id from the variation name server
+#   depends on the user/password from main, as well as the $test
+#
+sub _get_variationId {
+	my ($id)=$_;
+
+
+	my $var = $db->idGetByTypedName('Public_name'=>$id)->[0];
+
+	return $var if $var;
+
+        my $newId = $db->idCreate;
+        $db->addName($newId,'Public_name'=>$id);
+
+        return $newId;
+}
 
 ###########################################################################################
 # subroutine to do some basic checking of allele and gene details from strain genotype
@@ -353,15 +387,17 @@ sub check_details{
   my $strain = shift;
   my $species = shift;
 
+  my $variationId=_get_variationId($allele);
+
   # First thing is to make Strain->Allele connection (this assumes that the allele name
   # will link to a valid ?Allele object)
-  print STRAIN "Variation \"$allele\"\n";
-  print DELETE_STRAIN  "-D Variation \"$allele\"\n";  
+  print STRAIN "Variation \"$variationId\"\n";
+  print DELETE_STRAIN  "-D Variation \"$variationId\"\n";  
 
   # if the gene name corresponds to a valid Gene object, add a Gene->Allele and Strain->Gene connections
   if(defined($Gene_info{$gene}{'Gene'})){
     print GENE2ALLELE "Gene : $Gene_info{$gene}{'Gene'}\n";
-    print GENE2ALLELE "Allele $allele Inferred_automatically \"From strain object: $strain\"\n\n";
+    print GENE2ALLELE "Allele $variationId Inferred_automatically \"From strain object: $strain\"\n\n";
 
     print STRAIN "Gene \"$Gene_info{$gene}{'Gene'}\"\n";
     print DELETE_STRAIN "-D Gene \"$Gene_info{$gene}{'Gene'}\"\n";  
@@ -390,9 +426,10 @@ sub check_details{
       print NEWGENES "Other_name \"$gene\"\n";
       print NEWGENES "Public_name \"$gene\"\n";
     }
-    print NEWGENES "Allele \"$allele\" Inferred_automatically \"From strain object: $strain\"\n\n";
+    print NEWGENES "Allele \"$variationId\" Inferred_automatically \"From strain object: $strain\"\n\n";
 
-  } 
+  }
+  print ALLELEFLUFF "Variation : $variationId\nPublic_name \"$allele\"\n\n"; 
 }
 
 ##################################################################################################
