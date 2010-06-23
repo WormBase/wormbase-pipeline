@@ -6,7 +6,7 @@
 # Compares this number to those from a second database.
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2010-06-22 08:45:30 $
+# Last updated on: $Date: 2010-06-23 10:10:46 $
 
 
 use strict;
@@ -131,6 +131,11 @@ get_curation_stats('elegans');
 get_curation_stats('briggsae');
 get_curation_stats('brenneri');
 get_curation_stats('japonica');
+get_curation_stats('remanei');
+get_curation_stats('pristionchus');
+#get_curation_stats('heterorhabditis');
+#get_curation_stats('brugia');
+#get_curation_stats('mhapla');
 
 close (OUT);
 close (ERR);
