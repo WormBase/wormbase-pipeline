@@ -7,7 +7,7 @@
 # Gets latest Interpro:GO mappings from XXXX and puts info in to ace file
 #
 # Last updated by: $Author: mh6 $                      
-# Last updated on: $Date: 2010-04-16 14:58:10 $         
+# Last updated on: $Date: 2010-06-24 14:44:54 $         
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -90,7 +90,7 @@ my $GOterm;
 
       print IPDESC "Title  \"$IPdesc\"\n";
 
-    } elsif ($line =~ /\<classification class_type=\"GO\" id=\"(\S+)\"\>/) {
+    } elsif ($line =~ /\<classification id=\"(\S+)\" class_type=\"GO\"\>/) {
       $GOterm = $1;
 
       print IPDESC "GO_term \"$GOterm\"\n";
