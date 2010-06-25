@@ -18,6 +18,10 @@ $VALID_USERS = {
 					'mt3' 		=> 2970,
 					'mh6' 		=> 4036,
 					'jolenef'       => 2021,
+                                        'xdwang'        => 1760,
+                                        'wen'           => 101,
+                                        'ranjana'       => 324,
+                                        'vanauken'      => 1843,
 					'pad'           => 1983,
 					'stlouis' 	=> 1,
 					'caltech' 	=> 1,
@@ -27,12 +31,12 @@ $VALID_USERS = {
 
 ## a list of valid SSO login names for each DB operation
 $VALID_API_USERS = {
-		'query'		=> [qw( pad gw3 mh6 mt3 stlouis caltech cshl sanger jolenef)],
-		'dump'		=> [qw( pad gw3 mh6 mt3 stlouis caltech cshl sanger jolenef)],
-		'merge_var'	=> [qw( pad gw3 mt3 mh6 jolenef)],
-		'new_var'	=> [qw( pad gw3 mt3 mh6 jolenef)], 
-		'kill_var'	=> [qw( pad gw3 mt3 mh6 jolenef)],
-		'change_name'	=> [qw( pad gw3 mt3 mh6 jolenef)],
+		'query'		=> [qw( pad gw3 mh6 mt3 stlouis caltech cshl sanger jolenef xdwang wen ranjana vanauken)],
+		'dump'		=> [qw( pad gw3 mh6 mt3 stlouis caltech cshl sanger jolenef xdwang wen ranjana vanauken)],
+		'merge_var'	=> [qw( pad gw3 mt3 mh6 jolenef xdwang wen ranjana vanauken)],
+		'new_var'	=> [qw( pad gw3 mt3 mh6 jolenef xdwang wen ranjana vanauken)], 
+		'kill_var'	=> [qw( pad gw3 mt3 mh6 jolenef xdwang wen ranjana vanauken)],
+		'change_name'	=> [qw( pad gw3 mt3 mh6 jolenef xdwang wen ranjana vanauken)],
 };
 
 ## a list of valid SSO login names able to add GCG name
@@ -44,7 +48,11 @@ $MAILS = {
 	'mh6'		=>	'mh6@sanger.ac.uk',
 	'mt3'		=>	'mt3@sanger.ac.uk',
 	'jolenef'       =>      'jolenef@caltech.edu',
-	'stlouis'	=>	'stlouis@wormbase.org',
+        'xdwang'        =>      'xdwang@caltech.edu',
+        'wen'           =>      'wchen@its.caltech.edu',
+        'ranjana'       =>      'ranjana@its.caltech.edu',
+        'vanauken'      =>      'vanauken@caltech.edu',	
+        'stlouis'	=>	'stlouis@wormbase.org',
 	'caltech'	=>	'caltech@wormbase.org',
 	'cshl'		=>	'cshl@wormbase.org',
 	'sanger'	=>	'sanger@wormbase.org',
