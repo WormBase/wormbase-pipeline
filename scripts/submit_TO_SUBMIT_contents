@@ -7,7 +7,7 @@
 # to celegans@ebi.ac.uk.
 #
 # Last updated by: $Author: pad $                      
-# Last updated on: $Date: 2009-11-24 12:21:12 $        
+# Last updated on: $Date: 2010-06-25 09:21:33 $        
 
 $|=1;
 use strict;
@@ -108,7 +108,7 @@ else {
 ###################################################
 my $ftp;
 if (!defined $email) {
-  $ftp = Net::FTP->new("ftp.ebi.ac.uk", Debug => 0) or die "Cannot connect to ftp.ebi.ac.uk: $@";
+  $ftp = Net::FTP->new("ftp-private.ebi.ac.uk", Debug => 0) or die "Cannot connect to ftp.ebi.ac.uk: $@";
   $ftp->login("$login","$password\@") or $log->log_and_die ("Cannot login to ftp.ebi.ac.uk using celegans credentials\n". $ftp->message);
   $ftp->cwd("/TXhExzF7KgVBMHtJXDct/to_ena") or $log->log_and_die ("Cannot change into to_ena dir for upload of files\n". $ftp->message);
 }
