@@ -26,7 +26,8 @@ use Wormbase;
     WBPerson1849 
 
     The blank line between entries is ESSENTIAL
-
+  
+  -domain    set domain to whatever (Gene Variation Feature)
   -debug     limits to specified user <Optional>
   -species   can be used to specify non elegans genes
   -load      loads the resulting .ace file into geneace.
@@ -43,6 +44,8 @@ e.g. perl batch_kill.pl -file deathrow.txt [simple example]
 =cut
 
 my ($USER,$PASS, $test, $file, $ns, $debug, $load);
+my $domain='Gene';
+my $species = 'elegans';
 GetOptions(
 	   'user:s'     => \$USER,
 	   'password:s' => \$PASS,
@@ -51,9 +54,10 @@ GetOptions(
 	   'ns'         => \$ns,
 	   'debug:s'    => \$debug,
 	   'load'       => \$load,
+	   'domain:s'   => \$domain,
+	   'species:s'  => \$species,
 	  ) or die;
 
-my $species = 'elegans';
 my $log;
 if (defined $USER) {$log = Log_files->make_log("NAMEDB:$file", $USER);}
 elsif (defined $debug) {$log = Log_files->make_log("NAMEDB:$file", $debug);}
@@ -68,18 +72,18 @@ if ($test) {
 }
 my $wormbase = Wormbase->new("-organism" =>$species);
 my $database = "/nfs/disk100/wormpub/DATABASES/geneace";
-$log->write_to("Working.........\n-----------------------------------\n\n\n1) killing genes in file [${file}]\n\n");
+$log->write_to("Working.........\n-----------------------------------\n\n\n1) killing ${domain}s in file [${file}]\n\n");
 $log->write_to("TEST mode is ON!\n\n") if $test;
 
 if ($ns) {
 $db = NameDB_handler->new($DB,$USER,$PASS,'/nfs/WWWdev/SANGER_docs/htdocs');
-$db->setDomain('Gene');
+$db->setDomain($domain);
 }
 my $ace = Ace->connect('-path', $database) or $log->log_and_die("cant open $database: $!\n");
 
 my $outdir = $database."/NAMEDB_Files/";
 my $backupsdir = $outdir."BACKUPS/";
-my $outname = "batch_kill.ace";
+my $outname = $test?'batch_kill.ace_test':"batch_kill.ace";
 my $output = "$outdir"."$outname";
 
 ##############################
@@ -99,15 +103,15 @@ while(<FILE>){
 	&kill_gene;
     }
     else { #gather info
-	if   (/^(WBGene\d{8})/) { $gene = $1; } 
+	if   (/^(WBGene\d{8}|WBVar\d{8})/) { $gene = $1; } 
 	elsif(/^(WBPerson\d+)/) { $person = $1; }
 	elsif(/^Remark\s+\"(.*)\"/){$remark = $1}
 	else { $log->error("malformed line : $_\n") }
     }
 }
 &kill_gene; # remember the last one!
-$log->write_to("3) $count genes in file to be killed\n\n");
-$log->write_to("4) $count genes killed\n\n");
+$log->write_to("3) $count ${domain}s in file to be killed\n\n");
+$log->write_to("4) $count ${domain}s killed\n\n");
 &load_data if ($load);
 $log->write_to("5) Check $output file and load into geneace.\n") unless ($load);
 $log->mail();
@@ -116,23 +120,29 @@ $log->mail();
 sub kill_gene {
     if($gene and $person and $remark) {
 	$count++;
-	my $geneObj = $ace->fetch('Gene', $gene);
+	my $geneObj = $ace->fetch($domain, $gene);
 	if($gene) {
-	    my $ver = $geneObj->Version->name;
-	    $ver++;
-	    print ACE "\nGene : $gene\nVersion $ver\nHistory Version_change $ver now $person Event Killed\nDead\nRemark \"$remark\" Curator_confirmed $person\n-D Sequence_name\n-D Method\n-D Map_info\n-D Allele\n";
+
+	    if ($domain eq 'Gene'){
+	       my $ver = $geneObj->Version->name;
+	       $ver++;
+	       print ACE "\nGene : $gene\nVersion $ver\nHistory Version_change $ver now $person Event Killed\nDead\nRemark \"$remark\" Curator_confirmed $person\n-D Sequence_name\n-D Method\n-D Map_info\n-D Allele\n";
+            }
+	    elsif($domain eq 'Variation'){
+		    print ACE "\nVariation : $gene\nStatus Dead Curator_confirmed $person\nRemark \"$remark\"\n";
+	    }
 	    #nameserver kill
 	    $db->kill_gene($gene) if $ns;
 	}
 	else {
-	    $log->error("no such gene $gene\n");
+	    $log->error("no such $domain $gene\n");
 	}
     }
-#    elsif (!defined($gene) && !defined($person)&& !defined($remark)) {
-elsif (!defined($gene && $person && $remark)) {
-  $ecount++;
+    #    elsif (!defined($gene) && !defined($person)&& !defined($remark)) {
+    elsif (!defined($gene && $person && $remark)) {
+      $ecount++;
       $log->error("Warning: additional blank ($ecount) line in input file has been ignored\n");
-}
+    }
     else {
 	$log->error("missing info on $gene : $person : $remark\n");
     }
@@ -140,10 +150,10 @@ elsif (!defined($gene && $person && $remark)) {
 }
 
 sub load_data {
-# load information to $database if -load is specified
-$wormbase->load_to_database("$database", "$output", 'batch_kill.pl', $log, undef, 1);
-$log->write_to("5) Loaded $output into $database\n\n");
-$wormbase->run_command("mv $output $backupsdir"."$outname". $wormbase->rundate. "\n");
-$log->write_to("6) Output file has been cleaned away like a good little fellow\n\n");
-print "Finished!!!!\n";
+  # load information to $database if -load is specified
+  $wormbase->load_to_database("$database", "$output", 'batch_kill.pl', $log, undef, 1);
+  $log->write_to("5) Loaded $output into $database\n\n");
+  $wormbase->run_command("mv $output $backupsdir"."$outname". $wormbase->rundate. "\n");
+  $log->write_to("6) Output file has been cleaned away like a good little fellow\n\n");
+  print "Finished!!!!\n";
 }
