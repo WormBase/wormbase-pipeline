@@ -10,12 +10,12 @@
 
 use strict;
 use IO::File;
-use lib '/software/worm/ensembl-55/ensembl/modules';
-use lib '/software/worm/ensembl-55/ensembl-compara/modules';
+use lib '/software/worm/ensembl-58/ensembl/modules';
+use lib '/software/worm/ensembl-58/ensembl-compara/modules';
 use lib '/software/worm/ensembl/bioperl-live';
 
 use Bio::EnsEMBL::Registry;
-Bio::EnsEMBL::Registry->load_registry_from_db(-host => 'ens-livemirror', -user => 'wormro',-port => 3306,-verbose => 0,-db_version => 55);
+Bio::EnsEMBL::Registry->load_registry_from_db(-host => 'ens-livemirror', -user => 'wormro',-port => 3306,-verbose => 0,-db_version => 58);
 
 use Bio::EnsEMBL::DBSQL::DBAdaptor;
 use Bio::EnsEMBL::Compara::DBSQL::DBAdaptor;
