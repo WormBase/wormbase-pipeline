@@ -7,7 +7,7 @@
 # clones. Entries which have failed to load or return are highlighted
 # and changes in sequence version are notified.
 
-# Last updated on: $Date: 2010-02-01 10:27:30 $
+# Last updated on: $Date: 2010-06-29 10:44:28 $
 # Last updated by: $Author: pad $
 
 use strict;
@@ -18,7 +18,7 @@ use Wormbase;
 use Log_files;
 use Storable;
 
-my ($embl_file,$maintainer,$wormbase,$store,$test);
+my ($embl_file,$maintainer,$wormbase,$store,$test,$load);
 
 ##############################
 # command-line options       #
@@ -38,6 +38,7 @@ GetOptions (
 	    "verbose"    => \$verbose,
             "test"       => \$test,
 	    "database:s" => \$database,
+	    "load"       => \$load
 	   );
 
  ########################################
@@ -85,6 +86,7 @@ my $errors2 = 0;
 my $errors3 = 0;
 my $updates = 0;
 my $loaded = 0;
+my @prob_clones;
 
  ########################################
  # simple consistency checks            #
@@ -146,7 +148,7 @@ while (<EMBL>) {
   chomp;
   print "$_\n" if ($verbose);
   # Z81068         Z81068           -                                              Finished   1
-if ($_ =~ /^(\S+)\s+(\S+)\s+\-\s+(\S+)\s+(\d+)$/) {
+if ($_ =~ /^(\S+)\s+(\S+)\s+\-\s+(\S+)\s+(\d+)/) {
     $embl_acc{$1}    = $2;
     $embl_status{$1} = $3;
     $embl_sv{$1}     = $4;
@@ -155,7 +157,7 @@ if ($_ =~ /^(\S+)\s+(\S+)\s+\-\s+(\S+)\s+(\d+)$/) {
     next;
   }
   # Entries that haven't loaded for some reason.
-  elsif ($_ =~ /^(\S+)\s+(\S+)\s+\-\s+(\S+\s\S+)\s+(-)$/) {
+  elsif ($_ =~ /^(\S+)\s+(\S+)\s+\-\s+(\S+\s\S+)\s+(-)/) {
     $embl_acc{$1}    = $2;
     $embl_status{$1} = $3;
     $embl_sv{$1}     = undef;
@@ -165,7 +167,7 @@ if ($_ =~ /^(\S+)\s+(\S+)\s+\-\s+(\S+)\s+(\d+)$/) {
   }
   # EMBL lines with hidden tokens
   # 0  'CU457739       CU457739         _AF043691                                      Finished   1'
-  elsif ($_ =~ /^(\S+)\s+(\S+)\s+\S+\s+(\S+)\s+(\d+)$/) {
+  elsif ($_ =~ /^(\S+)\s+(\S+)\s+\S+\s+(\S+)\s+(\d+)/) {
     $embl_acc{$1}    = $2;
     $embl_status{$1} = $3;
     $embl_sv{$1}     = $4;
@@ -200,6 +202,7 @@ while (<SUBMITTED>) {
   }
   elsif ($embl_status{$id} eq "Not\ Loaded") {
     $log->write_to("***failed to load***\t\n");
+    push (@prob_clones,"$name");
     $errors2++;
     next;
   }
@@ -224,8 +227,22 @@ $log->write_to("$updates clone(s) have an new SV from EMBL\n");
 $log->write_to("$errors1 clones were not returned\n");
 $log->write_to("$errors2 clones Failed to load\n");
 $log->write_to("$errors3 clones returned with an incorrect error code?\n--------------------------------------------------------------------\n\n");
+$log->write_to("Problem_clones: @prob_clones\n");
+foreach my $prob_clone(@prob_clones){
+  $wormbase->run_command("gunzip /lustre/cbi4/work1/wormpub/analysis/TO_SUBMIT/${prob_clone}*", $log);
+}
 
-$log->write_to("The update file $out_file needs to be loaded into camace") if ($updates > 0);
+close OUT;
+
+if (defined$load) {
+# load information to $database if -load is specified
+#$wormbase->load_to_database($dbdir, $out_file, 'check_EMBL_submission.pl', $log, undef, 1);
+$wormbase->load_to_database($wormbase->database('camace'), $out_file, 'check_EMBL_submission.pl', $log);
+$log->write_to("\n\nThe update file $out_file has been loaded into $dbdir\n\n");
+}
+else {
+$log->write_to("\n\nThe update file $out_file needs to be loaded into camace") if ($updates > 0);
+}
 
 $log->write_to("check_EMBL_submissions.pl has Finished.\nUpdated sequence version info can be found here -> $out_file\n");
 
@@ -237,7 +254,6 @@ $log->mail($maintainer);
 #Tidy-up#
 close EMBL;
 close SUBMITTED;
-close OUT;
 exit(0);
 
 ##############################
@@ -291,6 +307,7 @@ sub usage {
       }
     }
   }
+
 
 __END__
 
