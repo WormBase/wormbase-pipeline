@@ -8,7 +8,7 @@
 # Page download and update upload to geneace has been automated [ck1]
 
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2010-06-23 12:58:20 $
+# Last updated on: $Date: 2010-06-29 13:15:21 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -174,7 +174,8 @@ while(<INPUT>){
   while($genotype =~ m/$reg_exp/){
     my $gene = $1;
     my $allele = $2;
-    &check_details($gene,$allele,$strain,$species);   
+    print STDERR "simple combination: $genotype\n" if $verbose;
+    &check_details($gene,$allele,$strain,$species);
     $genotype =~ s/$reg_exp//;
   }
 
@@ -205,6 +206,8 @@ while(<INPUT>){
     # need to split up allele name into two fields
     my $allele1 = $2;
     my $allele2 = $3;
+    
+    print STDERR "double barreled allele ($allele1 / $allele2): $genotype\n" if $verbose;
 
     &check_details($gene,$allele1,$strain,$species);
     &check_details($gene,$allele2,$strain,$species);
@@ -217,6 +220,7 @@ while(<INPUT>){
     my $gene1 = $1;
     my $gene2 = $2;
     my $allele = $3;
+    print STDERR "allele affecting 2 genes: $genotype\n" if $verbose;
     &check_details($gene1,$allele,$strain,$species);   
     &check_details($gene2,$allele,$strain,$species);   
     $genotype =~ s/$reg_exp//;
@@ -228,6 +232,7 @@ while(<INPUT>){
   while($genotype =~ m/(\w+\S*)\(([a-z]{1,2}\d+)\)/){
     my $gene = $1;
     my $allele = $2;
+    print STDERR "allele attached to non-approved gene: $genotype\n" if $verbose;
     &check_details($gene,$allele,$strain,$species);
     $genotype =~ s/\([a-z]{1,2}\d+\)//;
   }
@@ -362,15 +367,19 @@ exit(0);
 #   depends on the user/password from main, as well as the $test
 #
 sub _get_variationId {
-	my ($id)=$_;
+	my ($id)=@_;
 
 
 	my $var = $db->idGetByTypedName('Public_name'=>$id)->[0];
+
+	print STDERR "found: $id -> $var\n" if ($var && $verbose);
 
 	return $var if $var;
 
         my $newId = $db->idCreate;
         $db->addName($newId,'Public_name'=>$id);
+
+        print STDERR "found: $id -> $newId\n" if $verbose;
 
         return $newId;
 }
@@ -381,13 +390,10 @@ sub _get_variationId {
 # connection can be made
 ###########################################################################################
 
-sub check_details{
-  my $gene = shift;
-  my $allele = shift;
-  my $strain = shift;
-  my $species = shift;
+sub check_details {
+  my ($gene,$_allele,$strain,$species)= @_;
 
-  my $variationId=_get_variationId($allele);
+  my $variationId=_get_variationId($_allele);
 
   # First thing is to make Strain->Allele connection (this assumes that the allele name
   # will link to a valid ?Allele object)
@@ -429,7 +435,7 @@ sub check_details{
     print NEWGENES "Allele \"$variationId\" Inferred_automatically \"From strain object: $strain\"\n\n";
 
   }
-  print ALLELEFLUFF "Variation : $variationId\nPublic_name \"$allele\"\n\n"; 
+  print ALLELEFLUFF "Variation : $variationId\nPublic_name \"$_allele\"\n\n"; 
 }
 
 ##################################################################################################
