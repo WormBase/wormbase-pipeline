@@ -342,6 +342,7 @@ sub pepdir_prefix{'ppa'};
 sub ncbi_tax_id {'54126'};
 sub assembly_type {'contig'};
 sub wormpep_prefix {'PP'}
+sub upload_db_name {''}; # we already hold the data in the primary database, it is not downloaded
 
 #######################################################
 
