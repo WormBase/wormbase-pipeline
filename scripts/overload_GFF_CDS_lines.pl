@@ -5,7 +5,7 @@
 # by Dan Lawson
 #
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2010-03-23 12:22:06 $
+# Last updated on: $Date: 2010-07-06 13:08:38 $
 
 #
 #    1. Brief_identification
@@ -119,42 +119,45 @@ else {
 foreach my $file (@gff_files) {
     
     # Check for existance of GFFfile
-	$log->log_and_die("$file doesnt exist\n") unless (-e "$gffdir/$file.gff") ;
+    $log->log_and_die("$file doesnt exist\n") unless (-e "$gffdir/$file.gff") ;
  
     open (OUT, ">$gffdir/${file}.CSHL.gff");
 
     open (GFF, "<$gffdir/${file}.gff")  || die "Cannot open $file.gff\n";
     while (<GFF>) {
-	chomp;
+      chomp;
 	
-		#skip header lines of file
-		unless  (/^\S+\s+(curated|miRNA|ncRNA|snRNA|snlRNA|snoRNA|tRNAscan-SE-1|snl)\s+(\w+primary_transcript|CDS)/) {
-		    print OUT "$_\n";
-		    next;
-		}
+      #skip header lines of file
+    
+      unless  (/^\S+\s+(curated|ncRNA|snlRNA|tRNAscan-SE-1\.\d+)\s+(\w+primary_transcript|CDS|tRNA)/ ||
+               /^\S+\s+(rRNA)\s+(\w+_primary_transcript)/ ||
+               /^\S+\s+(curated_miRNA)\s+(miRNA_primary_transcript)/ ||
+               /^\S+\s+(\w+_mature_transcript)\s+(snRNA|snoRNA|tRNA|scRNA|miRNA|stRNA)/) {
+		   print OUT "$_\n";
+		   next;
+      }
 	
-		my ($chromosome,$source,$feature,$start,$stop,$score,$strand,$other,$name) = split /\t/;
+      my ($chromosome,$source,$feature,$start,$stop,$score,$strand,$other,$name) = split /\t/;
 	
-		if(( $source eq 'curated') && ($feature ne 'miRNA_primary_transcript')) {
-			my ($i) = $name =~ (/CDS \"(\S+)\"/);
-	
-			print OUT "$chromosome\t$source\t$feature\t$start\t$stop\t$score\t$strand\t$other\tCDS \"$i\" ;";
-			print OUT " Note \"$briefID{$i}\" ;"        if ($briefID{$i} ne "");
-			print OUT " WormPep \"".$wormbase->pep_prefix.":$wormpep{$i}\" ; " if ($wormpep{$i} ne "");
-			print OUT " Locus \"$locus{$i}\" ; "         if ($locus{$i} ne "");
-			print OUT " Status \"$status{$i}\" ; "      if ($status{$i} ne "");
-			print OUT " Gene \"$geneID{$i}\" ; "        if ($geneID{$i} ne "");
-	    }
-	    else {
+      if(( $source eq 'curated') && ($feature eq 'CDS')) {
+	my ($i) = $name =~ (/CDS \"(\S+)\"/);
+	print OUT "$chromosome\t$source\t$feature\t$start\t$stop\t$score\t$strand\t$other\tCDS \"$i\" ;";
+	print OUT " Note \"$briefID{$i}\" ;"        if ($briefID{$i} ne "");
+	print OUT " WormPep \"".$wormbase->pep_prefix.":$wormpep{$i}\" ; " if ($wormpep{$i} ne "");
+	print OUT " Locus \"$locus{$i}\" ; "        if ($locus{$i} ne "");
+	print OUT " Status \"$status{$i}\" ; "      if ($status{$i} ne "");
+	print OUT " Gene \"$geneID{$i}\" ; "        if ($geneID{$i} ne "");
+      }
+      else {
 	    	#non-coding genes
 	    	my ($transcript) = $name =~ (/Transcript \"(\S+)\"/);
 	    	print OUT "$chromosome\t$source\t$feature\t$start\t$stop\t$score\t$strand\t$other\tTranscript \"$transcript\" ;";
 	    	print OUT " Note \"".$RNAgenes{$transcript}->{'remark'}."\" ; " if $RNAgenes{$transcript}->{'remark'} ;
-	    	print OUT " Locus \"".$RNAgenes{$transcript}->{'locus'}."\" ; "  if $RNAgenes{$transcript}->{'locus'} ;;
-	    	print OUT " Gene \"".$seqname2geneid{$transcript}."\" ; "  if $seqname2geneid{$transcript} ;
-	    }
-		print OUT "\n";
-	}
+	    	print OUT " Locus \"".$RNAgenes{$transcript}->{'locus'}."\" ; " if $RNAgenes{$transcript}->{'locus'} ;;
+	    	print OUT " Gene \"".$seqname2geneid{$transcript}."\" ; "       if $seqname2geneid{$transcript} ;
+      }
+      print OUT "\n";
+    }
     close GFF; #_ end of input GFF file
     close OUT; #_ end of output GFF file
 }
