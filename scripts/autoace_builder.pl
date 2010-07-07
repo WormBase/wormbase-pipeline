@@ -6,8 +6,8 @@
 #
 # Usage : autoace_builder.pl [-options]
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2010-06-03 08:09:24 $
+# Last edited by: $Author: mh6 $
+# Last edited on: $Date: 2010-07-07 12:46:04 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -170,9 +170,10 @@ $wormbase->run_script( "make_agp_file.pl"                        , $log) if $agp
 
 #several GFF manipulation steps
 if ($gff_munge) {
- $wormbase->run_script( "landmark_genes2gff.pl"                   , $log) if ($wormbase->species eq 'elegans');
- $wormbase->run_script( "GFFmunger.pl -all"                       , $log);
- $wormbase->run_script( "over_load_SNP_gff.pl"                    , $log);
+ $wormbase->run_script( 'landmark_genes2gff.pl', $log) if ($wormbase->species eq 'elegans');
+ $wormbase->run_script( 'GFFmunger.pl -all', $log);
+ $wormbase->run_script( 'over_load_SNP_gff.pl', $log);
+ $wormbase->run_script( 'overload_rnai.pl', $log);
  # these are currently elegans specific.
  if ($wormbase->species eq 'elegans') {
    $wormbase->run_script( "Map_pos_GFFprocess.pl"                  , $log);	# must be run before CGH_GFFprocess.pl as it looks for 'Allele' lines
@@ -248,8 +249,6 @@ sub map_features {
 	#Oligo_sets
 	$wormbase->run_script( 'map_Oligo_set.pl', $log );
 
-	# RNAi experiments
-	$wormbase->run_script( 'map_RNAi.pl -load', $log );
 
 	# writes tables listing microarrays to genes
 	$wormbase->run_script( 'make_oligo_set_mapping_table.pl -all', $log );
@@ -266,6 +265,10 @@ sub map_features {
 
     ## elegans or briggsae
     if (($wormbase->species eq 'elegans') or ($wormbase->species eq 'briggsae')){
+
+    	# RNAi experiments
+	$wormbase->run_script( 'map_RNAi.pl -load', $log );
+
 	# alleles
 	$wormbase->run_script( 'split_alleles.pl', $log );
     }
