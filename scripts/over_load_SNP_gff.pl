@@ -3,7 +3,7 @@
 # This is to add Confirmed / Predicted Status and RFLP to SNP gff lines as requested by Todd
 #
 # Last updated by: $Author: mh6 $     
-# Last updated on: $Date: 2010-03-18 17:12:51 $      
+# Last updated on: $Date: 2010-07-07 09:32:51 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -65,11 +65,13 @@ my $table = $wormbase->table_maker_query($wormbase->autoace, &write_def_file);
 while(<$table>) {
 	s/\"//g; #"
 	next if (/acedb/ or /\/\//);
-	my ($snp, $conf, $pred, $rflp, $from_species) = split(/\t/,$_);
+	chomp;
+	my ($snp, $conf, $pred, $rflp, $from_species,$public_name) = split(/\t/,$_);
 	next if (! defined $from_species);
 	next unless ($from_species =~ /$species/);
 	$SNP{$snp}->{'confirm'} = ($conf or $pred);
 	$SNP{$snp}->{'RFLP'} = 1 if ($rflp =~ /\w/);
+	$SNP{$snp}->{'Public_name'} = $public_name if $public_name;
 }
 
 my @chroms = $wormbase->get_chromosome_names(-mito => 1);
@@ -85,10 +87,11 @@ foreach my $chrom (@chroms) {
 	#CHROMOSOME_V    Allele  SNP     155950  155951  .       +       .       Variation "uCE5-508"
 	#I       Allele  SNP     126950  126950  .       +       .       Variation "pkP1003"  ;  Status "Confirmed_SNP" ; RFLP "Yes"
 	if( /SNP/ and /Allele/) {
-	    my ($allele) = /Variation \"(.+)\"$/;
+	    my ($allele) = /Variation \"(\S+)\"/;
 	    print NEW " ; Status \"",$SNP{$allele}->{'confirm'},"\"" if $SNP{$allele}->{'confirm'};
 	    print NEW " ; RFLP ", (defined $SNP{$allele}->{'RFLP'}? '"Yes"' : '"No"');
 	    print NEW " ; Mutation_type \"".$SNP{$allele}->{'mol_change'}."\"" if $SNP{$allele}->{'mol_change'};
+	    print NEW " ; Public_name \"${\$SNP{$allele}->{'Public_name'}}\"" if $SNP{$allele}->{'Public_name'};
 	    $stat++;
 	}
 	print NEW "\n";
@@ -149,8 +152,6 @@ sub usage {
 }
 
 ##########################################
-
-
 sub get_mol_changes{
     $log->write_to("getting molecular change info\n");
     my $table = $wormbase->table_maker_query($wormbase->autoace,&write_mol_change_def );
@@ -232,6 +233,16 @@ Class
 Class Species
 From 1
 Tag Species
+
+Colonne 7
+Width 12
+Optional
+Visible
+Class
+Class Variation_name
+From 1
+Tag Public_name
+
 END
 
 	print TMP $txt;
