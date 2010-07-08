@@ -4,8 +4,8 @@
 # 
 # by Anthony Rogers                             
 #
-# Last updated by: $Author: mt3 $               
-# Last updated on: $Date: 2008-06-26 10:04:45 $
+# Last updated by: $Author: pad $               
+# Last updated on: $Date: 2010-07-08 11:43:48 $
 
 # Generates a release letter at the end of build.
 #
@@ -145,7 +145,6 @@ if( defined($opt_l)) {
                         -program =>$tace) || $log->log_and_die("Connection failure: ",Ace->error);
   my $query = "Find Gene WHERE (Corresponding_CDS OR Corresponding_transcript OR Corresponding_pseudogene) AND CGC_name AND Species = \"*elegans\"";
   my $gene_seq_count = $db->fetch(-query=> "$query");
-  $db->close;
 
   # wormpep status overview
   my %wp_status;
@@ -159,61 +158,119 @@ if( defined($opt_l)) {
   $wp_status{Protein_ID} = `grep 'protein_id' $wormpep_datafile | wc -l`;
   $wp_status{Total}      = $wp_status{Confirmed} + $wp_status{Supported} + $wp_status{Predicted}; 
   
-  print  RL "\n\n";
-  print  RL "Status of entries: Confidence level of prediction (based on the amount of transcript evidence)\n";
-  print  RL "-------------------------------------------------\n";
+  printf RL "\n\n";
+  printf RL "Status of entries: Confidence level of prediction (based on the amount of transcript evidence)\n";
+  printf RL "-------------------------------------------------\n";
   printf RL "Confirmed            %6d (%2.1f%%)\tEvery base of every exon has transcription evidence (mRNA, EST etc.)\n", $wp_status{Confirmed}, (($wp_status{Confirmed}/$wp_status{Total}) * 100);
   printf RL "Partially_confirmed  %6d (%2.1f%%)\tSome, but not all exon bases are covered by transcript evidence\n", $wp_status{Supported}, (($wp_status{Supported}/$wp_status{Total}) * 100);
   printf RL "Predicted            %6d (%2.1f%%)\tNo transcriptional evidence at all\n", $wp_status{Predicted}, (($wp_status{Predicted}/$wp_status{Total}) * 100);
 
-  print  RL "\n\n\n";
-  print  RL "Status of entries: Protein Accessions\n";
-  print  RL "-------------------------------------\n";
+  printf RL "\n\n\n";
+  printf RL "Status of entries: Protein Accessions\n";
+  printf RL "-------------------------------------\n";
   printf RL "UniProtKB accessions %6d (%2.1f%%)\n", $wp_status{Uniprot}, (($wp_status{Uniprot}/$wp_status{Total}) * 100);
-  print  RL "\n\n\n";
-  print  RL "Status of entries: Protein_ID's in EMBL\n";
-  print  RL "---------------------------------------\n";
+  printf RL "\n\n\n";
+  printf RL "Status of entries: Protein_ID's in EMBL\n";
+  printf RL "---------------------------------------\n";
   printf RL "Protein_id           %6d (%2.1f%%)\n", $wp_status{Protein_ID}, (($wp_status{Protein_ID}/$wp_status{Total}) * 100);
-  print  RL "\n\n\n";
-  print  RL "Gene <-> CDS,Transcript,Pseudogene connections\n";
-  print  RL "----------------------------------------------\n";
+  printf RL "\n\n\n";
+  printf RL "Gene <-> CDS,Transcript,Pseudogene connections\n";
+  printf RL "----------------------------------------------\n";
   printf RL "Caenorhabditis elegans entries with WormBase-approved Gene name %6d\n", $wp_status{Gene};
-  print  RL "\n\n";
+  printf RL "\n\n";
   
-#  # Get the GeneModel corrections
-  my %cam_introns;
-  $cam_introns{$ver}     = `grep CHROMO $webdir/WS$ver/GFF/CHROMOSOME_*.check_intron_cam.gff | wc -l`;
-  $cam_introns{$old_ver} = `grep CHROMO $webdir/WS$old_ver/GFF/CHROMOSOME_*.check_intron_cam.gff | wc -l`;
-  $cam_introns{change}   = $cam_introns {$ver} - $cam_introns {$old_ver};
-  
-  my %stl_introns;
-  $stl_introns{$ver}     = `grep CHROMO $webdir/WS$ver/GFF/CHROMOSOME_*.check_intron_stl.gff | wc -l`;
-  $stl_introns{$old_ver} = `grep CHROMO $webdir/WS$old_ver/GFF/CHROMOSOME_*.check_intron_stl.gff | wc -l`;
-  $stl_introns{change}   = $stl_introns {$ver} - $stl_introns {$old_ver};
-  
-  print RL "GeneModel correction progress WS$old_ver -\> WS$ver\n-----------------------------------------\n";
-  print RL "Confirmed introns not in a CDS gene model;\n\n\t\t+---------+--------+\n\t\t| Introns | Change |\n\t\t+---------+--------+\n";
-  printf RL ("Cambridge\t|  %5d  |  %4d  |\n", $cam_introns{$ver},$cam_introns{change});
-  printf RL ("St Louis \t|  %5d  |  %4d  |\n", $stl_introns{$ver},$stl_introns{change});
-  print RL "\t\t+---------+--------+\n\n\n";
- 
+  ######################################
+  #  Get the GO annotations  - Ranjana #
+  ######################################
+
+  #Table maker definition
+  #SCRIPT:GeneGO_codes.def
+  # WBgene00000001 GO:0000001 IEA
+  if (-e "$basedir/autoace/wquery/SCRIPT:GeneGO_codes.def") {
+    my $def = "$basedir/autoace/wquery/SCRIPT:GeneGO_codes.def";
+    my $command = "Table-maker -p $def\nquit\n";
+    $log->write_to("Retrieving GO::Gene data, using Table-maker...\n");
+
+    my %Gene2code;
+    my %GO2code;
+
+    open (TACE, "echo '$command' | $tace $ace_dir | ") || die "Cannot query acedb. $command  $tace\n";
+    while (<TACE>) {
+      chomp;
+      s/"//g;
+      s/GO://g;
+      unless (/(WBGene\d+)\s+(\d+)\s+(\w+)/) {next;}
+      if (/(WBGene\d+)\s+(\d+)\s+(\w+)/){
+	#query with WBGene and GO_code is returned
+	$Gene2code{$1} = $3;
+	#query with GO term and GO_code is returned
+	$GO2code{$2} = $3;
+      } 
+    }
+    close TACE;
+
+    # of genes with GO terms
+    my $query1 = "Find Gene WHERE GO_term";
+    my $gc = $db->fetch(-query=> "$query1");
     
-#  # Members of known repeat families that overlap predicited exons
-  my %cam_repeats;
-  $cam_repeats{$ver}     = `grep match $webdir/WS$ver/Checks/CHROMOSOME_*.repeat_in_exon_cam | wc -l`;
-  $cam_repeats{$old_ver} = `grep match $webdir/WS$old_ver/Checks/CHROMOSOME_*.repeat_in_exon_cam | wc -l`;
-  $cam_repeats{change}   = $cam_repeats{$ver} - $cam_repeats{$old_ver};
+    #RNAi_mapping::Gene GO associations
+    my $rnai = `cat $basedir/autoace/acefiles/RNAi_mappings.ace | tr -d "\n" | sed 's/Gene : /@/g' | tr "@" "\n" | grep GO_term | sed 's/GO_term /@/' | tr "@" "\n" | tr -d '"' | grep WBGene | sort -u | wc -l`;
+    chomp $rnai;
+    #Citace::Gene GO associations
+    my $citace = `cat $basedir/autoace/acefiles/primaries/citace/caltech_GO_term.ace | tr -d "\n" | sed 's/Gene : /@/g' | tr "@" "\n" | grep GO_term | sed 's/GO_term /@/' | tr "@" "\n" | tr -d '"' | grep WBGene | sort -u | wc -l`;
+    chomp $citace;
+    #Inherit_GO_terms:Gene GO associations
+    my $inherit = `cat $basedir/autoace/acefiles/inherited_GO_terms.ace | tr -d "\n" | sed 's/Gene : /@/g' | tr "@" "\n" | grep GO_term | sed 's/GO_term /@/' | tr "@" "\n" | tr -d '"' | grep WBGene | sort -u | wc -l`;
+    chomp $inherit;
+    # of genes with IEA GO terms
+    my $IEA_gc  = grep {/IEA/} values %Gene2code;
     
-  my %stl_repeats;
-  $stl_repeats{$ver}     = `grep match $webdir/WS$ver/Checks/CHROMOSOME_*.repeat_in_exon_stl | wc -l`;
-  $stl_repeats{$old_ver} = `grep match $webdir/WS$old_ver/Checks/CHROMOSOME_*.repeat_in_exon_stl | wc -l`;
-  $stl_repeats{change}   = $stl_repeats{$ver} - $stl_repeats{$old_ver};
-  
-  print RL "Members of known repeat families that overlap predicted exons;\n\n\t\t+---------+--------+\n\t\t| Repeats | Change |\n\t\t+---------+--------+\n";
-  printf RL ("Cambridge\t|  %5d  |  %4d  |\n", $cam_repeats{$ver},$cam_repeats{change});
-  printf RL ("St Louis \t|  %5d  |  %4d  |\n", $stl_repeats{$ver},$stl_repeats{change});
-  print RL "\t\t+---------+--------+\n\n\n";
-  
+    # need to know how many Gene keys for next $non_IEA_gc calc.
+    my $Genekeys = keys %Gene2code;
+
+    # of genes with non_IEA GO terms
+    my $non_IEA_gc = $Genekeys - $IEA_gc;
+
+    #and the same for the annotations
+    # of GO annotations
+    my $query2  = "Find GO_term";
+    my $GO_annotations = $db->fetch(-query=> "$query2");
+    # GO2Gene
+    my $query3  = "Find GO_term WHERE Gene";
+    my $GOwithgene = $db->fetch(-query=> "$query3");
+    # of IEA GO annotations
+    my $IEAno = grep {/IEA/} values %GO2code; 
+
+    # need to know how many GO_terms keys for next $non_IEAno calc.
+    my $GOkeys = keys %GO2code;
+
+    # of non-IEA GO annotations
+    my $nonIEAno = $GOkeys - $IEAno; 
+    
+    
+    print RL "GO Annotation Stats WS$ver\n----------------------------------------------\n\n";
+    print RL "		+----------------------------------------+--------+\n";
+    print RL "		| Genes with GO_term connections         | $gc  |\n";
+    print RL "		|             From RNAi mappings         | $rnai  |\n";
+    print RL "		|                    From citace         |  $citace  |\n";
+    print RL "		|                      Inherited         | $inherit  |\n";
+    print RL "		|            IEA GO_code present         | $IEA_gc  |\n";
+    print RL "		|        non-IEA GO_code present         |  $non_IEA_gc  |\n";
+    print RL "		+----------------------------------------+--------+\n";
+    print RL "		| Total No. GO_terms                     | $GO_annotations  |\n";
+    print RL "		| GO_terms connected to Genes            |  $GOwithgene  |\n";
+    print RL "		| GO annotations connected with IEA      |  $IEAno  |\n";
+    print RL "		| GO annotations connected with non-IEA  |  $nonIEAno  |\n";
+    print RL "		+----------------------------------------+--------+\n";
+  }
+  else {
+    $log->write_to("\nERROR - GeneGO_codes.def abscent from autoace/wquery\nThese stats will be missing from the release letter\n\n");
+  }
+  # Close the database connection now we have finished with it
+  $db->close;
+
+
+#################################################################################################
   
   # Synchronisation with GenBank / EMBL
   my @chromosomes = ("I","II","III","IV","V","X");
