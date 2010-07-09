@@ -75,7 +75,14 @@ my $database = "/nfs/disk100/wormpub/DATABASES/geneace";
 $log->write_to("Working.........\n-----------------------------------\n\n\n1) killing ${domain}s in file [${file}]\n\n");
 $log->write_to("TEST mode is ON!\n\n") if $test;
 
+##############################
+# warn/notify on use of -load.
+##############################
+if (!defined$load) {$log->write_to("2) You have decided not to automatically load the output of this script\n\n");}
+elsif (defined$load) { $log->write_to("2) Output has been scheduled for auto-loading.\n\n");}
+
 if ($ns) {
+$log->write_to("Contacting NameServer.....\n");
 $db = NameDB_handler->new($DB,$USER,$PASS,'/nfs/WWWdev/SANGER_docs/htdocs');
 $db->setDomain($domain);
 }
@@ -85,12 +92,6 @@ my $outdir = $database."/NAMEDB_Files/";
 my $backupsdir = $outdir."BACKUPS/";
 my $outname = $test?'batch_kill.ace_test':"batch_kill.ace";
 my $output = "$outdir"."$outname";
-
-##############################
-# warn/notify on use of -load.
-##############################
-if (!defined$load) {$log->write_to("2) You have decided not to automatically load the output of this script\n\n");}
-elsif (defined$load) { $log->write_to("2) Output has been scheduled for auto-loading.\n\n");}
 
 #open file and read
 open (FILE,"<$file") or $log->log_and_die("can't open $file : $!\n");
@@ -110,7 +111,7 @@ while(<FILE>){
     }
 }
 &kill_gene; # remember the last one!
-$log->write_to("3) $count ${domain}s in file to be killed\n\n");
+$log->write_to("\n3) $count ${domain}s in file to be killed\n\n");
 $log->write_to("4) $count ${domain}s killed\n\n");
 &load_data if ($load);
 $log->write_to("5) Check $output file and load into geneace.\n") unless ($load);
@@ -132,6 +133,7 @@ sub kill_gene {
 		    print ACE "\nVariation : $gene\nStatus Dead Curator_confirmed $person\nRemark \"$remark\"\n";
 	    }
 	    #nameserver kill
+	    $log->write_to("NS->kill $gene\n");
 	    $db->kill_gene($gene) if $ns;
 	}
 	else {
