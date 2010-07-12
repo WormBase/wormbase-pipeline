@@ -8,7 +8,7 @@
 # autoace.
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2009-08-20 12:43:04 $
+# Last updated on: $Date: 2010-07-12 09:54:28 $
 
 #################################################################################
 # Variables                                                                     #
@@ -45,8 +45,8 @@ GetOptions (	"debug=s"    => \$debug,
 		"test"       => \$test,
 		"store:s"    => \$store,
 		"species:s"	 => \$species,
-		"syntax"	 => \$syntax,
-		"merge"		 => \$merge
+		"syntax"	 => \$syntax, # checks the syntax of the config file without dumping the acefile
+		"merge"		 => \$merge   # create the ace file for mrging databases at the end of the Build
 	   	);
 
 my $wormbase;
@@ -67,16 +67,18 @@ my $config = $wormbase->basedir."/autoace_config/".$wormbase->species;
 $config .= ".merge" if $merge;
 $config .=".config";
 
+# debug
+$config = "/nfs/users/nfs_g/gw3/wormbase/autoace_config/elegans.config";
+
 my $tace = $wormbase->tace;
 my $path = $wormbase->acefiles.($merge ? "/MERGE" :"/primaries");
 mkpath $path unless -e $path;
  
 unless (-e $config) {
-	$log->write_to("merge config file absent - database being skipped\n");
-}
-else {
+  $log->write_to("merge config file absent - database being skipped\n");
+} else {
   open (CFG,"<$config") or $log->log_and_die("cant open $config :$!\n");
-
+  
   my $dbpath = "";
   while(<CFG>) {
     next if /#/;
@@ -85,12 +87,15 @@ else {
     foreach my $pair (split(/\t+/,$_)) {
       my($tag,$value) = ($pair =~ /(\w+)=(.*)/);
       if( $tag and $value) {
-	if ($tag =~ /\ / || ($value =~ /\ / && $value !~ /\(/)) {
+	if ($tag eq 'format') {
+	  $value =~ s/"//g;
+	  my ($classname, $classregex) = split /\s/, $value;
+	  push(@{$makefile{$tag}},[$classname, $classregex]);
+	} elsif ($tag =~ /\ / || ($value =~ /\ / && $value !~ /\(/)) {
 	  $log->log_and_die("Ill formed config line with space instead of TAB around $tag=$value:\n$_\n");
-	} #else {print "DEBUG $tag and $value OK\n";}
-	if($tag eq 'delete') {
+	} elsif ($tag eq 'delete') {
 	  push(@{$makefile{$tag}},$value);
-	}else {
+	} else {
 	  $makefile{$tag} = $value;
 	}
       }
@@ -106,6 +111,8 @@ else {
       }
       mkpath("$path/".$makefile{'db'}) unless -e "$path/".$makefile{'db'};
       my $file = $path."/".$makefile{'db'}."/".$makefile{'file'};
+# debug
+$file .= '.test';
       open(ACE,">$file") or $log->log_and_die("cant open file $file : $!\n");
       
       if($makefile{'class'} eq 'DNA') {
@@ -136,20 +143,37 @@ else {
       $query .= "\n";
       my $acedb = $dbpath."/".$makefile{'db'};
       $log->write_to("dumping $makefile{'class'} from $acedb\n");
+      my $object_name;
       open(TACE,"echo '$query' | $tace $acedb | ") or $log->log_and_die("cant do query : $!\n");
-    LINE: while(<TACE>) {
-	next if (/acedb>/ or /^\/\//);
+    LINE: while(my $line = <TACE>) {
+	next if ($line =~ /acedb>/ or $line =~ /^\/\//);
 	if( $makefile{'regex'} ) {	
-	  unless (/[^\w]/ or /$makefile{'class'}\s+\:\s+/ or /$makefile{'follow'}\s+\:\s+/) {
-	    next LINE unless /$makefile{'regex'}/;
+	  unless ($line =~ /[^\w]/ or $line =~ /$makefile{'class'}\s+\:\s+/ or $line =~ /$makefile{'follow'}\s+\:\s+/) {
+	    next LINE unless ($line =~ /$makefile{'regex'}/);
 	  }			
 	}
-	print ACE;
+
+	# check the integrity of the object names and tag values
+	if ($makefile{'format'}) {
+	  if ($line =~ /$makefile{'class'}\s+\:\s+(\S+)/) {
+	    $object_name=$1; # remember the name of this object so the error can be reported nicely
+	  } else {
+	    foreach my $format (@{$makefile{'format'}}) {
+	      if ($line =~ /$format->[0]\s+\-O\s+\S+\s+\"(\S+)\"/) {
+		my $regex = $format->[1];
+		if ($1 !~ /^${regex}$/) {
+		  $log->write_to("Invalid object name format: $file\n$makefile{'class'} : $object_name\n$format->[0] $1\n\n")
+		}
+	      }
+	    }
+	  }
+	}
+
+	print ACE $line;
       }
       close TACE;
       close ACE;
-    }
-    elsif ($makefile{'path'}) {
+    } elsif ($makefile{'path'}) {
       my $sub = $makefile{'path'};
       $dbpath = $wormbase->$sub;
     }
