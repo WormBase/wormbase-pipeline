@@ -8,7 +8,7 @@
 # autoace.
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2010-07-12 09:54:28 $
+# Last updated on: $Date: 2010-07-13 11:40:22 $
 
 #################################################################################
 # Variables                                                                     #
@@ -67,9 +67,6 @@ my $config = $wormbase->basedir."/autoace_config/".$wormbase->species;
 $config .= ".merge" if $merge;
 $config .=".config";
 
-# debug
-$config = "/nfs/users/nfs_g/gw3/wormbase/autoace_config/elegans.config";
-
 my $tace = $wormbase->tace;
 my $path = $wormbase->acefiles.($merge ? "/MERGE" :"/primaries");
 mkpath $path unless -e $path;
@@ -111,8 +108,6 @@ unless (-e $config) {
       }
       mkpath("$path/".$makefile{'db'}) unless -e "$path/".$makefile{'db'};
       my $file = $path."/".$makefile{'db'}."/".$makefile{'file'};
-# debug
-$file .= '.test';
       open(ACE,">$file") or $log->log_and_die("cant open file $file : $!\n");
       
       if($makefile{'class'} eq 'DNA') {
