@@ -7,8 +7,8 @@
 # clones. Entries which have failed to load or return are highlighted
 # and changes in sequence version are notified.
 
-# Last updated on: $Date: 2010-07-14 14:43:11 $
-# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2010-07-14 14:50:34 $
+# Last updated by: $Author: pad $
 
 use strict;
 use Getopt::Long;
@@ -61,7 +61,7 @@ else {
   $maintainer = $debug;
 }
 
-#"/nfs/disk100/wormpub/logs/check_EMBL_submissions.$rundate.$$";
+#"/nfs/wormpub/logs/check_EMBL_submissions.$rundate.$$";
 
  ########################################
  # Paths/variables etc                  #
@@ -76,11 +76,11 @@ else {
     $dbdir = glob "/nfs/wormpub/DATABASES/camace";
 }
 &usage(5) if !(-e "$dbdir/database/ACEDB.wrm");
-
+my $base_dir = $wormbase->wormpub;
 my $tace = $wormbase->tace;
-my $submitted_file = "/nfs/wormpub/analysis/TO_SUBMIT/submitted_to_EMBL";
+my $submitted_file = $base_dir."/analysis/TO_SUBMIT/submitted_to_EMBL";
 my (%clone2id,%id2sv,%embl_acc,%embl_status,%embl_sv);
-my $out_file = "/nfs/wormpub/analysis/TO_SUBMIT/SV_update.ace";
+my $out_file = $base_dir."/analysis/TO_SUBMIT/SV_update.ace";
 my $errors1 = 0;
 my $errors2 = 0;
 my $errors3 = 0;
@@ -279,14 +279,14 @@ sub usage {
     elsif ($error == 3) {
       print "\nERROR: Output file $out_file already exists!\nPlease specify a file name - e.g. SV_update_". $wormbase->rundate. ".ace\n\n[INPUT]:";
       my $tmp = <STDIN>;
-      $out_file = "/nfs/wormpub/analysis/TO_SUBMIT/$tmp";
+      $out_file = $base_dir."/analysis/TO_SUBMIT/$tmp";
     }
     elsif ($error == 4) {
       print "ERROR: Table-maker $dbdir/wquery/SCRIPT:check_EMBL_submissions.def does not exist!\n\nDo you want to default to the canonical camace version of the definition?......yes/no\n\n[INPUT]:";
       my $tmp2 = <STDIN>;
       chomp $tmp2;
       if ($tmp2 =~ "yes") {
-      $def = "/nfs/wormpub/DATABASES/camace/wquery/SCRIPT:check_EMBL_submissions.def";
+      $def = $base_dir."/DATABASES/camace/wquery/SCRIPT:check_EMBL_submissions.def";
     }
       elsif ($tmp2 =~ "no"){
 	die "ERROR: Alternate .def file not accepted!!!\n";
