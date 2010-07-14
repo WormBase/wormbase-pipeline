@@ -9,8 +9,8 @@
 #      $AUTHOR:$
 #      COMPANY:  WormBase
 #      CREATED:  11/27/09 10:10:08 GMT
-#      CHANGED: $Date: 2009-12-08 13:55:02 $
-#    $Revision: 1.2 $
+#      CHANGED: $Date: 2010-07-14 15:25:41 $
+#    $Revision: 1.3 $
 #===============================================================================
 
 # need to set the PERl5LIb  to pick up bioperl for the load_gff thing ... maybe have to hardcode it
@@ -186,7 +186,7 @@ sub process_worm {
 		.'/genome_feature_tables/GFF2/'.$wb->full_name(-g_species => 1).'.WS'.$wb->version.'.gff.gz');
 	}
 	else {
-	   my $buildDataDir = '/nfs/disk100/wormpub/BUILD_DATA/SUPPLEMENTARY_GFF';
+	   my $buildDataDir = '/nfs/wormpub/BUILD_DATA/SUPPLEMENTARY_GFF';
 	   @raw_gffs = glob($wb->chromosomes.'/*.gff');
 	   @gz_gffs  = glob($wb->chromosomes.'/*.gff.gz');
            push @gz_gffs, glob("$buildDataDir/*.gff2.gz");

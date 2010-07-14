@@ -123,8 +123,8 @@ while( my $member = shift @members){
 
 
 # needs a merging step
-# /nfs/disk100/wormpub/BUILD/autoace/COMMON_DATA/
-# /nfs/disk100/wormpub/BUILD/remanei/COMMON_DATA/
+# /nfs/wormpub/BUILD/autoace/COMMON_DATA/
+# /nfs/wormpub/BUILD/remanei/COMMON_DATA/
 sub get_commondata {
     my ($name)=@_;
     my %genehash;

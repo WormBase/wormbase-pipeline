@@ -7,8 +7,8 @@
 # simple script for creating new (sequence based) Gene objects when splitting 
 # existing gene 
 #
-# Last edited by: $Author: pad $
-# Last edited on: $Date: 2010-01-20 17:44:33 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2010-07-14 15:18:53 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -273,7 +273,7 @@ sub process_gene{
     A script designed to create new gene objects to load into geneace by splitting an
     existing gene.  Just supply an old (existing) sequence name, a new sequence name 
     for the result of the split, a person ID of curator providing the information and 
-    optionally a new Gene object ID.  Resulting acefile will be made in /nfs/disk100/wormpub/DATABASES/geneace/
+    optionally a new Gene object ID.  Resulting acefile will be made in /nfs/wormpub/DATABASES/geneace/
     the file will be called splitgene_<newgeneid>.ace
 
     Example 1 

@@ -6,8 +6,8 @@
 #
 # Script to run consistency checks on the geneace database
 #
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2010-05-07 11:28:53 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2010-07-14 15:09:16 $
 
 use strict;
 use lib $ENV{"CVS_DIR"};
@@ -40,12 +40,12 @@ GetOptions ("help"        => \$help,
 # Miscellaneous important variables               # 
 ###################################################
 my $wb = Wormbase->new(-test => $test, -debug => $debug );
-# choose database to query: default is /nfs/disk100/wormpub/DATABASES/geneace
-$database = "/nfs/disk100/wormpub/DATABASES/geneace" unless $database;
+# choose database to query: default is /nfs/wormpub/DATABASES/geneace
+$database = "/nfs/wormpub/DATABASES/geneace" unless $database;
 print "Using database $database.\n\n";
 
 my $tace = $wb->tace;          # tace executable path
-my $curr_db = "/nfs/disk100/wormpub/DATABASES/current_DB"; # Used for some cross checking with geneace
+my $curr_db = "/nfs/wormpub/DATABASES/current_DB"; # Used for some cross checking with geneace
 my $def_dir = "$ENV{CVS_DIR}/wquery/geneace";                          # where lots of table-maker definitions are kept
 
 my $rundate = $wb->rundate;                                # Used by various parts of script for filename creation
@@ -58,7 +58,7 @@ my $log;                                                   # main log file for m
 my $caltech_log;                                           # Additional log file for problems that need to be sent to Caltech
 my $jah_log;                                               # Additional log file for problems to be sent to Jonathan Hodgkin at CGC
 my (%L_name_F_WBP, %L_name_F_M_WBP);                       # hashes for checking Person and Author merging?
-my $OPERON_FILE = "/nfs/disk100/wormpub/analysis/OPERONS/operon.dat";
+my $OPERON_FILE = "/nfs/wormpub/analysis/OPERONS/operon.dat";
 
 
 ##################################################
@@ -1199,7 +1199,7 @@ sub check_genetics_coords_mapping {
   print JAHLOG "--------------------------------------------------\n";
   system ("$ENV{'CVS_DIR'}/GENEACE/get_interpolated_gmap.pl -database $database -diff");
 
-  my $map_diff = "/nfs/disk100/wormpub/logs/mapping_diff.".$rundate;
+  my $map_diff = "/nfs/wormpub/logs/mapping_diff.".$rundate;
   open(IN, $map_diff) || die $!;
   while(<IN>){
     print LOG $_;
@@ -1226,7 +1226,7 @@ sub check_dubious_multipt_gene_connections {
   print LOG `cat $log_dir/dubious_multiPt_2_locus.$rundate`;
   print JAHLOG `cat $log_dir/dubious_multiPt_2_locus.$rundate`;
   print ACE `cat $database/CHECKS/multiPt_2_locus.ace` if $ace;
-  #`rm -f /nfs/disk100/wormpub/DATABASES/geneace/CHECKS/multiPt_2_locus.ace`;
+  #`rm -f /nfs/wormpub/DATABASES/geneace/CHECKS/multiPt_2_locus.ace`;
 }
 
 sub usage {
@@ -1325,7 +1325,7 @@ B<-class:>
 
 B<-database:>
             Allows specifying path to a specific database.
-            Default database path is /nfs/disk100/wormpub/DATABASES/geneace without this option.
+            Default database path is /nfs/wormpub/DATABASES/geneace without this option.
 
             For example: -database /wormsrv2/autoace or -database /wormsrv1/someone/Test_DB
 
@@ -1334,7 +1334,7 @@ B<-ace:>
             Allows generating ace file for fixing erros spotted by
             this checking script.
             Default location and filename of ace file:
-            /nfs/disk100/wormpub/DATABASES/geneace/CHECKS/geneace_check.rundate.processid.ace
+            /nfs/wormpub/DATABASES/geneace/CHECKS/geneace_check.rundate.processid.ace
             For example: -ace
 
 

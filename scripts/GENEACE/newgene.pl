@@ -6,8 +6,8 @@
 #
 # simple script for creating new (sequence based) Gene objects 
 #
-# Last edited by: $Author: pad $
-# Last edited on: $Date: 2010-01-20 17:44:33 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2010-07-14 15:16:28 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -400,7 +400,7 @@ sub process_gene{
 A script designed to create new gene objects to load into geneace.  Mainly written to
 save time from adding all the mandatory tags that each new object needs.  Just supply
 a sequence name, person ID of curator providing the information and a new Gene object
-ID.  Resulting acefile will be made in /nfs/disk100/wormpub/DATABASES/geneace/newgene_WBGeneid.ace
+ID.  Resulting acefile will be made in /nfs/wormpub/DATABASES/geneace/newgene_WBGeneid.ace
 
 More powerfully the script can additionally assign CGC names to genes as it creates
 them, or just assign CGC names to pre-existing genes.  Finally, the script can process
@@ -410,7 +410,7 @@ Example 1
 newgene.pl -seq AH6.4 -who 2970 -id 5027 -load
  
  
-This would produce the following acefile at /nfs/disk100/wormpub/DATABASES/geneace/newgene_WBGene00005027.ace 
+This would produce the following acefile at /nfs/wormpub/DATABASES/geneace/newgene_WBGene00005027.ace 
 and attempt to load it into geneace:
  
 Gene WBGene00005027

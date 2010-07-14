@@ -25,7 +25,7 @@ die "no scripts\n" unless ( -e "$scripts_dir" );
 
 my $ver = shift;
 die "please give WS version no. eq $0 123\n" unless $ver;
-my $ORTHO = "/nfs/disk100/wormpub/ORTHOLOGS";
+my $ORTHO = "/nfs/wormpub/ORTHOLOGS";
 my $BEST_MUTUALS_SEG_OFF = "$ORTHO/orthologs.best_mutuals.seg-off";
 my $ORTHOLOG_SPANS="${ORTHO}/orthologs.ortholog.spans";
 my $ORTHOLOGS_100K="${ORTHO}/orthologs.100k_spans";

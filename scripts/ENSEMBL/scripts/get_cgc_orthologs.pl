@@ -30,13 +30,13 @@ my $config = ( YAML::LoadFile(glob('~/wormbase/scripts/ENSEMBL/etc/ensembl_lite.
 
 
 
-my %tmp1=%{&get_commondata('/nfs/disk100/wormpub/BUILD/autoace/COMMON_DATA/cds2wbgene_id.dat')};
-my %wbgene2cgc=reverse %{&get_commondata('/nfs/disk100/wormpub/BUILD/autoace/COMMON_DATA/cgc_name2gene.dat',1)};
-my %tmp2=%{&get_commondata('/nfs/disk100/wormpub/BUILD/brenneri/COMMON_DATA/cds2wbgene_id.dat')};
+my %tmp1=%{&get_commondata('/nfs/wormpub/BUILD/autoace/COMMON_DATA/cds2wbgene_id.dat')};
+my %wbgene2cgc=reverse %{&get_commondata('/nfs/wormpub/BUILD/autoace/COMMON_DATA/cgc_name2gene.dat',1)};
+my %tmp2=%{&get_commondata('/nfs/wormpub/BUILD/brenneri/COMMON_DATA/cds2wbgene_id.dat')};
 my %cds2wbgene=(%tmp1,%tmp2);
 
-#my %cds2wbgene=%{&get_commondata('/nfs/disk100/wormpub/DATABASES/current_DB/COMMON_DATA/worm_gene2geneID_name.dat')};
-#my %wbgene2cgc=reverse %{&get_commondata('/nfs/disk100/wormpub/DATABASES/current_DB/COMMON_DATA/cgc_name2gene.dat',1)};
+#my %cds2wbgene=%{&get_commondata('/nfs/wormpub/DATABASES/current_DB/COMMON_DATA/worm_gene2geneID_name.dat')};
+#my %wbgene2cgc=reverse %{&get_commondata('/nfs/wormpub/DATABASES/current_DB/COMMON_DATA/cgc_name2gene.dat',1)};
 
 
 my $db = new Bio::EnsEMBL::DBSQL::DBAdaptor(

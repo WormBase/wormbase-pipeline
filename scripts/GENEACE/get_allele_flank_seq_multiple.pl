@@ -6,8 +6,8 @@
 
 # Author: Chao-Kung Chen
 
-# Last updated by: $Author: pad $
-# Last updated on: $Date: 2005-12-12 11:20:20 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2010-07-14 15:11:55 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'}; 
@@ -119,9 +119,9 @@ print $cds, "\n";
 #####################################
 
 my $tace = &tace;  
-my $curr_db = "/nfs/disk100/wormpub/DATABASES/current_DB";
-my $exon_tbl = "/nfs/disk100/wormpub/DATABASES/geneace/ALLELE_DATA/EXON_TABLES";
-my $base_dir = "/nfs/disk100/wormpub/DATABASES/geneace";
+my $curr_db = "/nfs/wormpub/DATABASES/current_DB";
+my $exon_tbl = "/nfs/wormpub/DATABASES/geneace/ALLELE_DATA/EXON_TABLES";
+my $base_dir = "/nfs/wormpub/DATABASES/geneace";
 
 my ($current, $archive);
 $current = get_wormbase_version() -1; # digits only
@@ -184,7 +184,7 @@ my @DNA = split(//, $DNA);
 # get protein sequence (exon/intron) of a CDS/Transcript
 ########################################################
 
-open(IN1, "/nfs/disk100/wormpub/WORMPEP/wormpep_current") || die $!; 
+open(IN1, "/nfs/wormpub/WORMPEP/wormpep_current") || die $!; 
 
 my ($prot_seq, $DNA_seq, @prot);  
 

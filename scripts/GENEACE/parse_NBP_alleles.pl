@@ -1,8 +1,8 @@
 #!/usr/local/bin/perl5.8.0 -w
 
 # Author: Chao-Kung Chen
-# Last updated by $Author: ar2 $
-# Last updated on: $Date: 2005-12-13 10:09:50 $ 
+# Last updated by $Author: gw3 $
+# Last updated on: $Date: 2010-07-14 15:17:51 $ 
 
 use strict;
 use lib  $ENV{'CVS_DIR'};
@@ -36,7 +36,7 @@ my $ga = init Geneace();
 my $database = $ga->curr_db;
 my $tace = &tace;
 
-$allele_dir = "/nfs/disk100/wormpub/DATABASES/geneace/ALLELE_DATA/JAPANESE_KNOCKOUTS" unless $allele_dir;
+$allele_dir = "/nfs/wormpub/DATABASES/geneace/ALLELE_DATA/JAPANESE_KNOCKOUTS" unless $allele_dir;
 my $acedb = Ace->connect( -path => "$database") or die Ace->error;
 
 
@@ -439,7 +439,7 @@ B<What you need to do>
 
      1) tr '\r' '\n' < input_file > NBP_alleles.yymmdd.txt
 
-     This processed file should be saved in /nfs/disk100/wormpub/DATABASES/geneace/ALLELE_DATA/JAPANESE_KNOCKOUTS 
+     This processed file should be saved in /nfs/wormpub/DATABASES/geneace/ALLELE_DATA/JAPANESE_KNOCKOUTS 
      (need to be wormpub for write access).  Then run the script, specifying the input file 
      that you have just generated:
 

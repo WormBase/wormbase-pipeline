@@ -4,8 +4,8 @@
 #
 # by Chao-Kung Chen [030625]
 
-# Last updated on: $Date: 2007-02-26 15:12:24 $
-# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2010-07-14 15:10:56 $
+# Last updated by: $Author: gw3 $
 
 use Tk;
 use strict;
@@ -35,7 +35,7 @@ GetOptions (
 my $paper_name;          # Will store paper object names in form 'WBPaperXXXXXXXX'
 my $wbgene;
 my $tace = &tace;        # gets default path to tace binary
-$database = "/nfs/disk100/wormpub/DATABASES/current_DB" unless $database;
+$database = "/nfs/wormpub/DATABASES/current_DB" unless $database;
 my $WB_version = $version or (&get_wormbase_version()); # get release number for last release (i.e. not current one)
 my $top;
 
@@ -52,7 +52,7 @@ else{
 # check for latest exon table version
 #####################################
 
-my $exon_table_dir = "/nfs/disk100/wormpub/DATABASES/geneace/ALLELE_DATA/EXON_TABLES";
+my $exon_table_dir = "/nfs/wormpub/DATABASES/geneace/ALLELE_DATA/EXON_TABLES";
 
 # check that an ExonTable_XXX file exists that corresponds to last release of WormBase
 # if not, then need to make new Exon_Table file
@@ -363,8 +363,8 @@ my (#ck1_vars - $cds_or_locus, $aa_or_dna, $mutation, $allele, $cgc_name, $posit
 
 sub update {
   system ("rm -f $exon_table_dir/* ");
-  `echo "table-maker -o $exon_table_dir/CDS_table_$WB_version -p /nfs/disk100/wormpub/DATABASES/geneace/wquery/get_elegans_CDS_source_exons.def" | $tace $database`;
-  `echo "table-maker -o $exon_table_dir/RNA_table_$WB_version -p /nfs/disk100/wormpub/DATABASES/geneace/wquery/get_elegans_RNA_gene_source_exons.def" | $tace $database`;
+  `echo "table-maker -o $exon_table_dir/CDS_table_$WB_version -p /nfs/wormpub/DATABASES/geneace/wquery/get_elegans_CDS_source_exons.def" | $tace $database`;
+  `echo "table-maker -o $exon_table_dir/RNA_table_$WB_version -p /nfs/wormpub/DATABASES/geneace/wquery/get_elegans_RNA_gene_source_exons.def" | $tace $database`;
   system ("cat $exon_table_dir/CDS_table_$WB_version $exon_table_dir/RNA_table_$WB_version > $exon_table_dir/ExonTable_$WB_version; rm -f $exon_table_dir/*table_$WB_version");
   system ("chmod 775 $exon_table_dir/* ");
   $top->after(1, sub { $top->destroy } );
@@ -469,7 +469,7 @@ sub upload_ace_GA{
 
     my $command="pparse $filename\nsave\nquit\n";
 
-    my $db_dir="/nfs/disk100/wormpub/DATABASES/geneace/";
+    my $db_dir="/nfs/wormpub/DATABASES/geneace/";
     open (Load_GA,"| tace $db_dir > $log") || die "Failed to upload to test_Geneace";
     print Load_GA $command;
     close Load_GA;
@@ -656,7 +656,7 @@ sub run {
     # get protein sequence (exon/intron) of a CDS/Transcript wormpep.current file
     #############################################################################
 
-    open(IN1, "/nfs/disk100/wormpub/WORMPEP/wormpep_current") || die $!;
+    open(IN1, "/nfs/wormpub/WORMPEP/wormpep_current") || die $!;
 
     my ($prot_seq, $DNA_seq);
 

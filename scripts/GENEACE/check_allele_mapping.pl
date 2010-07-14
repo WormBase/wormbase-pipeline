@@ -6,8 +6,8 @@
 #
 # Script to check if allele sequence from allele mapping script is the same as current 
 #
-# Last updated by: $Author: mt3 $
-# Last updated on: $Date: 2005-12-09 13:21:41 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2010-07-14 15:06:27 $
 
 # What it does: this script is a small integrity check before loading data generated from 
 # map_alleles.pl during the build it should warn you if mapping result returns a clone different 
@@ -19,15 +19,15 @@ use Wormbase;
 
 
 my $tace = &tace;
-my $curr_db = "/nfs/disk100/wormpub/DATABASES/current_DB";
-my $ga_dir = "/nfs/disk100/wormpub/DATABASES/geneace/";
+my $curr_db = "/nfs/wormpub/DATABASES/current_DB";
+my $ga_dir = "/nfs/wormpub/DATABASES/geneace/";
 my (@mapping, $allele, $seq, %allele_seq, %allele_seq_map);
 
 my $WS_release = &get_wormbase_version_name();  
 print "Using data from $WS_release\n";
 
 
-@mapping = `echo "table-maker -p /nfs/disk100/wormpub/DATABASES/geneace/wquery/allele_has_seq.def" | $tace $ga_dir`;
+@mapping = `echo "table-maker -p /nfs/wormpub/DATABASES/geneace/wquery/allele_has_seq.def" | $tace $ga_dir`;
 
 foreach (@mapping){
   chomp;

@@ -6,8 +6,8 @@
 #
 # Script to convert cgc allele/lab links into ace file for geneace
 #
-# Last updated by: $Author: mt3 $
-# Last updated on: $Date: 2005-12-09 11:55:17 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2010-07-14 15:05:03 $
 
 use strict;
 use lib "/wormsrv2/scripts/";
@@ -57,7 +57,7 @@ while(<INPUT>){
 close(INPUT);
 
 # open a local database connection
-my $db = Ace->connect(-path  =>  '/nfs/disk100/wormpub/DATABASES/geneace') || die "Couldn't connect to geneace\n";
+my $db = Ace->connect(-path  =>  '/nfs/wormpub/DATABASES/geneace') || die "Couldn't connect to geneace\n";
 
 
 foreach my $key (sort keys %alleles_labs){

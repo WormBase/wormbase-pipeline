@@ -36,7 +36,7 @@ desc 'update the configuration file'
 task :update_conf do
   yml_file='etc/ensembl_lite.conf'
 	yml=YAML::load_file(yml_file)
-	yml['elegans']['version']="WS#{Dir.glob("/nfs/disk100/wormpub/DATABASES/WS*").sort[-2].scan(/\d+/)[-1].to_i+1}"
+	yml['elegans']['version']="WS#{Dir.glob("/nfs/wormpub/DATABASES/WS*").sort[-2].scan(/\d+/)[-1].to_i+1}"
 	File.open(yml_file,'w') do |out|
 		YAML.dump(yml,out)
 	end
@@ -281,7 +281,7 @@ end
 
 desc 'copy release files'
 task :copy_release do
-	target_dir='/nfs/disk100/wormpub/BUILD/autoace/'
+	target_dir='/nfs/wormpub/BUILD/autoace/'
 	cp "#{tmp_place}/compara.ace","#{target_dir}acefiles/"
 	cp "#{tmp_place}/compara.tar.bz2",target_dir
 end

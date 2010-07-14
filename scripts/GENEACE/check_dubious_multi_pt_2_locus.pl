@@ -1,8 +1,8 @@
 #!/usr/local/bin/perl5.8.0 -w
 
 # Author: Chao-Kung Chen
-# Last updated by $Author: wormpub $
-# Last updated on: $Date: 2006-02-13 15:14:23 $ 
+# Last updated by $Author: gw3 $
+# Last updated on: $Date: 2010-07-14 15:07:06 $ 
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -17,8 +17,8 @@ my $geneace_dir = $ga->geneace();
 my $db          = Ace->connect(-path => $geneace_dir, -program =>$tace) || print Ace->error;
 my $rundate = rundate();
 
-open(LOG, ">/nfs/disk100/wormpub/DATABASES/geneace/logs/dubious_multiPt_2_locus.$rundate") || die $!;
-open(ACE, ">/nfs/disk100/wormpub/DATABASES/geneace/CHECKS/multiPt_2_locus.ace");
+open(LOG, ">/nfs/wormpub/DATABASES/geneace/logs/dubious_multiPt_2_locus.$rundate") || die $!;
+open(ACE, ">/nfs/wormpub/DATABASES/geneace/CHECKS/multiPt_2_locus.ace");
 
 push( my @multi_pt, $db->find("Find Multi_pt_data *") );
 

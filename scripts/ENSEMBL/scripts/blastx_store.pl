@@ -33,7 +33,7 @@ foreach my $chromosome_info ( @{$WB_CHR_INFO} ) {
     my $chr = $db->get_SliceAdaptor->fetch_by_region( 'Chromosome', $chromosome_info->{'chr_name'},
         1, ( $chromosome_info->{'length'}, 1, $WB_NEW_COORD_SYSTEM_VERSION ) );
 
-     my $blast = Wormy->new($chr,'/nfs/disk100/wormpub/DATABASES/WS158/CHROMOSOMES/'.$chromosome_info->{gff_file},$analysis);
+     my $blast = Wormy->new($chr,'/nfs/wormpub/DATABASES/WS158/CHROMOSOMES/'.$chromosome_info->{gff_file},$analysis);
      $blast->save($db);
      print "have " . scalar @{$blast->{hits}} . " blastxfeatures.\n"; #if ($WB_DEBUG);
 

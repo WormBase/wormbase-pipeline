@@ -15,7 +15,7 @@ my $wormbase = Wormbase->new(-test => 1, -debug => 'ar2');
 ################
 
 my $tace = $wormbase->tace;
-my $ga_dir = "/nfs/disk100/wormpub/DATABASES/geneace";
+my $ga_dir = "/nfs/wormpub/DATABASES/geneace";
 
 #######################
 # Create a main windows
@@ -287,7 +287,7 @@ sub upload_ace_test {
 
   if (!$filename){
     my $command="pparse $filename\nsave\nquit\n";
-    my $test_db_dir="/nfs/disk100/wormpub/DATABASES/TEST_DBs/CK1TEST/";
+    my $test_db_dir="/nfs/wormpub/DATABASES/TEST_DBs/CK1TEST/";
 
     open (Load_testGA,"| tace $test_db_dir ") || die "Failed to upload to test_Geneace";
     print Load_testGA $command;
@@ -301,7 +301,7 @@ sub upload_ace_test {
 
 sub upload_ace_GA {
   my $command="pparse $filename\nsave\nquit\n";
-  my $db_dir="/nfs/disk100/wormpub/DATABASES/geneace/";
+  my $db_dir="/nfs/wormpub/DATABASES/geneace/";
   open (Load_GA,"| tace $db_dir ") || die "Failed to upload to test_Geneace";
   print Load_GA $command;
   close Load_GA;

@@ -71,7 +71,7 @@ if ($test) {
     $DB = 'wbgene_id;shap;3303';
 }
 my $wormbase = Wormbase->new("-organism" =>$species);
-my $database = "/nfs/disk100/wormpub/DATABASES/geneace";
+my $database = "/nfs/wormpub/DATABASES/geneace";
 $log->write_to("Working.........\n-----------------------------------\n\n\n1) killing ${domain}s in file [${file}]\n\n");
 $log->write_to("TEST mode is ON!\n\n") if $test;
 

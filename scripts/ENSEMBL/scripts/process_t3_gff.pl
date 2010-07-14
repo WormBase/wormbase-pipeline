@@ -67,8 +67,8 @@ sub grab_ids {
 
        my $config = ( YAML::LoadFile(glob('~/wormbase/scripts/ENSEMBL/etc/ensembl_lite.conf')) )->{'elegans'};
 
-       my %cds2wbgene=%{&get_commondata('/nfs/disk100/wormpub/BUILD/autoace/COMMON_DATA/cds2wbgene_id.dat')};
-       my %wbgene2cgc=reverse %{&get_commondata('/nfs/disk100/wormpub/DATABASES/current_DB/COMMON_DATA/cgc_name2gene.dat',1)};
+       my %cds2wbgene=%{&get_commondata('/nfs/wormpub/BUILD/autoace/COMMON_DATA/cds2wbgene_id.dat')};
+       my %wbgene2cgc=reverse %{&get_commondata('/nfs/wormpub/DATABASES/current_DB/COMMON_DATA/cgc_name2gene.dat',1)};
 
 
        my $db = new Bio::EnsEMBL::DBSQL::DBAdaptor(

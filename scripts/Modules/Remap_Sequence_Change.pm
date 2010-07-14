@@ -13,7 +13,7 @@
 #      COMPANY:
 #     $Version:  $
 #      CREATED: 2006-02-27
-#        $Date: 2010-04-27 09:08:30 $
+#        $Date: 2010-07-14 14:54:37 $
 #===============================================================================
 package Remap_Sequence_Change;
 
@@ -56,9 +56,9 @@ sub read_mapping_data {
   foreach my $release (($release1+1) .. $release2) {
     my %chroms;
     
-    my $infile = "/nfs/disk100/wormpub/CHROMOSOME_DIFFERENCES/sequence_differences.WS$release";
+    my $infile = "/nfs/wormpub/CHROMOSOME_DIFFERENCES/sequence_differences.WS$release";
     if ($species and $species ne 'elegans') {
-      $infile = "/nfs/disk100/wormpub/CHROMOSOME_DIFFERENCES/sequence_differences_$species.WS$release";
+      $infile = "/nfs/wormpub/CHROMOSOME_DIFFERENCES/sequence_differences_$species.WS$release";
     }
 
     open (IN, "< $infile") || die "Can't open $infile\n";

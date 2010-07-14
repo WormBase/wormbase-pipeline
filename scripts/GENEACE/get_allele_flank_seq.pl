@@ -6,8 +6,8 @@
 
 # Author: Chao-Kung Chen
 
-# Last updated by: $Author: mt3 $
-# Last updated on: $Date: 2005-12-09 13:34:25 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2010-07-14 15:12:58 $
 
 use strict;
 use lib "/wormsrv2/scripts/"; 
@@ -93,8 +93,8 @@ print $cds, "\n";
 #####################################
 
 my $tace = &tace;  
-my $curr_db = "/nfs/disk100/wormpub/DATABASES/current_DB";
-my $exon_tbl = "/nfs/disk100/wormpub/DATABASES/geneace/ALLELE_DATA/EXON_TABLES";
+my $curr_db = "/nfs/wormpub/DATABASES/current_DB";
+my $exon_tbl = "/nfs/wormpub/DATABASES/geneace/ALLELE_DATA/EXON_TABLES";
 
 my ($current, $archive);
 $current = get_wormbase_version() -1; # digits only
@@ -106,8 +106,8 @@ if ("$current" ne "$archive") {
 
   print "New WS release ($current) available . .\nFetching latest source exons of all CDS/Transcripts and 6 chromosomal DNA sequencs\n\n";
   system ("rm -f $exon_tbl/* ");
-  `echo "table-maker -o $exon_tbl/CDS_table_$current -p /nfs/disk100/wormpub/DATABASES/geneace/wquery/get_elegans_CDS_source_exons.def" | $tace $curr_db`;
-  `echo "table-maker -o $exon_tbl/RNA_table_$current -p /nfs/disk100/wormpub/DATABASES/geneace/wquery/get_elegans_RNA_gene_source_exons.def" | $tace $curr_db`;
+  `echo "table-maker -o $exon_tbl/CDS_table_$current -p /nfs/wormpub/DATABASES/geneace/wquery/get_elegans_CDS_source_exons.def" | $tace $curr_db`;
+  `echo "table-maker -o $exon_tbl/RNA_table_$current -p /nfs/wormpub/DATABASES/geneace/wquery/get_elegans_RNA_gene_source_exons.def" | $tace $curr_db`;
   system ("cat $exon_tbl/CDS_table_$current $exon_tbl/RNA_table_$current > $exon_tbl/ExonTable_$current; rm -f $exon_tbl/*table_$current");
   system ("chmod 775 $exon_tbl/* ");
 }
@@ -157,7 +157,7 @@ my @DNA = split(//, $DNA);
 # get protein sequence (exon/intron) of a CDS/Transcript
 ########################################################
 
-open(IN1, "/nfs/disk100/wormpub/WORMPEP/wormpep_current") || die $!; 
+open(IN1, "/nfs/wormpub/WORMPEP/wormpep_current") || die $!; 
 
 my ($prot_seq, $DNA_seq, @prot);  
 

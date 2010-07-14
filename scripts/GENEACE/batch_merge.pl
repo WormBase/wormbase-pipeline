@@ -63,7 +63,7 @@ my $DB;
 my $db;
 my $ecount;
 my $wormbase = Wormbase->new("-organism" =>$species);
-my $database = "/nfs/disk100/wormpub/DATABASES/geneace";
+my $database = "/nfs/wormpub/DATABASES/geneace";
 $log->write_to("Working.........\n-----------------------------------\n\n\n1) killing genes in file [${file}]\n\n");
 $log->write_to("TEST mode is ON!\n\n") if $test;
 

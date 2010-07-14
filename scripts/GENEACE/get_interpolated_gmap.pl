@@ -7,8 +7,8 @@
 # This script calculates interpolated genetic map positions for CDS, Transcripts
 # and Pseudogenes lying between and outside genetic markers.
 #
-# Last updated on: $Date: 2007-02-26 15:13:32 $
-# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2010-07-14 15:14:54 $
+# Last updated by: $Author: gw3 $
 
 use strict;
 use warnings;
@@ -1021,7 +1021,7 @@ B<-db: / -database:>
 
             Specifies database to look for marker map positions and gff coordinates
             Eg.
-                -db /nfs/disk100/wormpub/DATABASES/geneace
+                -db /nfs/wormpub/DATABASES/geneace
 
                 if this option is omitted and this script is run during the build, it points to autoace
 
