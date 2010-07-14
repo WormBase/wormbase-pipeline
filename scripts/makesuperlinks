@@ -57,7 +57,7 @@ our %clone2super = ("H06O01"  => "I",
 my $tace = $wormbase->tace;
 
 
-my $campath = "/nfs/disk100/wormpub/DATABASES/camace";
+my $campath = "/nfs/wormpub/DATABASES/camace";
 ($campath = $db) if ($db ne "");
 print "$campath";
 warn "Acessing database $campath\n" if ($debug);

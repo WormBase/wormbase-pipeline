@@ -9,7 +9,7 @@
 # dumps the method through sace / tace and concatenates them.
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2010-05-12 08:25:19 $
+# Last edited on: $Date: 2010-07-14 14:29:22 $
 
 
 use lib $ENV{CVS_DIR};
@@ -83,7 +83,7 @@ system("touch $dump_dir/tmp_file") and $log->log_and_die ("cant write to $dump_d
 if ($wormbase->assembly_type eq 'contig'){
     $via_server = 1;
     unless ($host) {
-	print STDERR "you need to start a server first and tell me the host\neg /software/worm/bin/acedb/sgifaceserver /nfs/disk100/wormpub/BUILD/remanei 23100 600:6000000:1000:600000000>/dev/null)>&/dev/null\n";
+	print STDERR "you need to start a server first and tell me the host\neg /software/worm/bin/acedb/sgifaceserver /nfs/wormpub/BUILD/remanei 23100 600:6000000:1000:600000000>/dev/null)>&/dev/null\n";
 	$log->log_and_die("no host passed for contig assembly");
     }
 }

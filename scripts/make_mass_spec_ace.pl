@@ -8,7 +8,7 @@
 # in ace
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2009-12-04 12:05:32 $      
+# Last updated on: $Date: 2010-07-14 14:25:42 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -845,7 +845,7 @@ sub map_peptides_to_protein {
 
 sub get_wormpep_history {
   # get database version file
-  my $data_file = "/nfs/disk100/wormpub/BUILD/WORMPEP/wormpep${database_version}/wormpep.history$database_version";
+  my $data_file = "/nfs/wormpub/BUILD/WORMPEP/wormpep${database_version}/wormpep.history$database_version";
 
   my %wormpep_history;
 
@@ -928,7 +928,7 @@ sub get_previous_wormpep_ids {
 
 sub get_wormpep_by_wp_id {
 
-  my $data_file = "/nfs/disk100/wormpub/BUILD/WORMPEP/wormpep${database_version}/wormpep.fasta${database_version}";
+  my $data_file = "/nfs/wormpub/BUILD/WORMPEP/wormpep${database_version}/wormpep.fasta${database_version}";
   my $seq="";
   my $id="";
   my %wormpep;
