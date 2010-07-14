@@ -5,7 +5,7 @@
 # by Anthony Rogers                             
 #
 # Last updated by: $Author: pad $               
-# Last updated on: $Date: 2010-07-08 11:43:48 $
+# Last updated on: $Date: 2010-07-14 14:55:14 $
 
 # Generates a release letter at the end of build.
 #
@@ -190,9 +190,8 @@ if( defined($opt_l)) {
     my $def = "$basedir/autoace/wquery/SCRIPT:GeneGO_codes.def";
     my $command = "Table-maker -p $def\nquit\n";
     $log->write_to("Retrieving GO::Gene data, using Table-maker...\n");
-
-    my %Gene2code;
-    my %GO2code;
+    my $count = "0";
+    my (%Gene2code,%GO2code,%GO2gene,%gene2GO);
 
     open (TACE, "echo '$command' | $tace $ace_dir | ") || die "Cannot query acedb. $command  $tace\n";
     while (<TACE>) {
@@ -205,6 +204,14 @@ if( defined($opt_l)) {
 	$Gene2code{$1} = $3;
 	#query with GO term and GO_code is returned
 	$GO2code{$2} = $3;
+	#query with GO code and get Genes that it connects to.
+	# this stores all of the values in an array which makes it complicated to get a total.
+	# so count the number times something is pushed onto the value arrays and you will have the 
+	#total number of Gene::GO connections
+	$count++;
+	push @{$gene2GO{$1}} , $2;
+	#query with WBGene gived GO_terms connected.
+	push @{$GO2gene{$2}} , $1;
       } 
     }
     close TACE;
@@ -231,6 +238,9 @@ if( defined($opt_l)) {
     # of genes with non_IEA GO terms
     my $non_IEA_gc = $Genekeys - $IEA_gc;
 
+    # How many Gene -> GO_term connections are there?
+    my $Genevalues = values %Gene2code;
+
     #and the same for the annotations
     # of GO annotations
     my $query2  = "Find GO_term";
@@ -239,35 +249,82 @@ if( defined($opt_l)) {
     my $query3  = "Find GO_term WHERE Gene";
     my $GOwithgene = $db->fetch(-query=> "$query3");
     # of IEA GO annotations
-    my $IEAno = grep {/IEA/} values %GO2code; 
+    my $IEA = grep {/IEA/} values %GO2code;
+    my $IC = grep {/IC/} values %GO2code;
+    my $IDA = grep {/IDA/} values %GO2code;
+    my $IEP = grep {/IEP/} values %GO2code;
+    my $IGI = grep {/IGI/} values %GO2code;
+    my $IMP = grep {/IMP/} values %GO2code;
+    my $IPI = grep {/IPI/} values %GO2code;
+    my $ISS = grep {/ISS/} values %GO2code;
+    my $NAS = grep {/NAS/} values %GO2code;
+    my $ND = grep {/ND/} values %GO2code;
+    my $RCA = grep {/RCA/} values %GO2code;
+    my $TAS = grep {/TAS/} values %GO2code;
 
     # need to know how many GO_terms keys for next $non_IEAno calc.
     my $GOkeys = keys %GO2code;
 
+    # How many GO_term -> Gene connections are there?
+    my $GOvalues = values %GO2code;
+
     # of non-IEA GO annotations
-    my $nonIEAno = $GOkeys - $IEAno; 
+    my $nonIEAno = $GOkeys - $IEA; 
+
+    print RL "GO Annotation Stats WS$ver\n--------------------------------------\n\n";
+
+    print RL "GO_codes - used for assigning evidence\n";
+    print RL "--------------------------------------\n";
+    print RL "IC (Inferred by Curator)\n";
+    print RL "IDA Inferred from Direct Assay\n";
+    print RL "IEA Inferred from Electronic Annotation\n";
+    print RL "IEP Inferred from Expression Pattern\n";
+    print RL "IGI Inferred from Genetic Interaction\n";
+    print RL "IMP Inferred from Mutant Phenotype\n";
+    print RL "IPI Inferred from Physical Interaction\n";
+    print RL "ISS Inferred from Sequence (or Structural) Similarity\n";
+    print RL "NAS Non-traceable Author Statement\n";
+    print RL "NDNo Biological Data available\n";
+    print RL "RCA ?\n";
+    print RL "TAS Traceable Author Statement\n\n";
+
+    print RL "------------------------------------------------\n";
+    print RL "Total number of Gene::GO connections:  $count\n\n"; 
+
+    print RL "Genes Stats:\n";
+    print RL "----------------\n\n";
     
+    print RL "Genes with GO_term connections         $gc  \n";
+    print RL "           IEA GO_code present         $IEA_gc  \n";
+    print RL "       non-IEA GO_code present         $non_IEA_gc  \n\n";
     
-    print RL "GO Annotation Stats WS$ver\n----------------------------------------------\n\n";
-    print RL "		+----------------------------------------+--------+\n";
-    print RL "		| Genes with GO_term connections         | $gc  |\n";
-    print RL "		|             From RNAi mappings         | $rnai  |\n";
-    print RL "		|                    From citace         |  $citace  |\n";
-    print RL "		|                      Inherited         | $inherit  |\n";
-    print RL "		|            IEA GO_code present         | $IEA_gc  |\n";
-    print RL "		|        non-IEA GO_code present         |  $non_IEA_gc  |\n";
-    print RL "		+----------------------------------------+--------+\n";
-    print RL "		| Total No. GO_terms                     | $GO_annotations  |\n";
-    print RL "		| GO_terms connected to Genes            |  $GOwithgene  |\n";
-    print RL "		| GO annotations connected with IEA      |  $IEAno  |\n";
-    print RL "		| GO annotations connected with non-IEA  |  $nonIEAno  |\n";
-    print RL "		+----------------------------------------+--------+\n";
+    print RL "Source of the mapping data             \n";
+    print RL "Source: *RNAi (GFF mapping overlaps)   $rnai  \n";
+    print RL "        *citace                        $citace  \n";
+    print RL "        *Inherited (motif & phenotype) $inherit  \n\n";
+
+
+    print RL "GO_terms Stats:\n";
+    print RL "---------------\n\n";
+    print RL "Total No. GO_terms                     $GO_annotations  \n";
+    print RL "GO_terms connected to Genes            $GOwithgene  \n";
+    print RL "GO annotations connected with IEA      $IEA  \n";
+    print RL "GO annotations connected with non-IEA  $nonIEAno  \n";
+    print RL "   Breakdown  IC - $IC   IDA - $IDA   ISS - $ISS \n";
+    print RL "             IEP - $IEP   IGI - $IGI   IMP - $IMP \n";
+    print RL "             IPI - $IPI  NAS - $NAS     ND  - $ND  \n";
+    print RL "             RCA - $RCA   TAS - $TAS   \n\n";
+
   }
   else {
     $log->write_to("\nERROR - GeneGO_codes.def abscent from autoace/wquery\nThese stats will be missing from the release letter\n\n");
   }
   # Close the database connection now we have finished with it
   $db->close;
+
+#################################################################################################
+# Operon Stats
+########################
 
 
 #################################################################################################
