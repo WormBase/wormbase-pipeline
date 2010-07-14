@@ -386,7 +386,7 @@ sub suggest_fix
   # look for feature in currentdb
   # remap to current coordinates
 
-  my $dir = "/nfs/disk100/wormpub/DATABASES/current_DB/CHROMOSOMES";
+  my $dir = "/nfs/wormpub/DATABASES/current_DB/CHROMOSOMES";
   foreach my $chromosome qw(I II III IV V X) {
     my $gff = "$dir/CHROMOSOME_${chromosome}.gff";
     open (GFF, "< $gff") || die "Can't open GFF file $gff\n";

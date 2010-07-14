@@ -6,7 +6,7 @@
 # Compares this number to those from a second database.
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2010-06-23 10:10:46 $
+# Last updated on: $Date: 2010-07-14 14:39:18 $
 
 
 use strict;
@@ -483,7 +483,7 @@ sub get_curation_stats {
 
   my $file;
 
-  $file = "/nfs/disk100/wormpub/BUILD/WORMPEP/${prefix}${release}/${prefix}.diff${release}";
+  $file = "/nfs/wormpub/BUILD/WORMPEP/${prefix}${release}/${prefix}.diff${release}";
 
   if (!open (IN, "<$file")) {
     print OUT "\n\nNo curation data available for $species.\n\n";

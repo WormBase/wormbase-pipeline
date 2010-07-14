@@ -4,8 +4,8 @@
 #
 # Usage : EMBL_Sequencefetch.pl [-options]
 #
-# Last edited by: $Author: pad $
-# Last edited on: $Date: 2009-08-27 09:52:33 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2010-07-14 14:40:19 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -505,7 +505,7 @@ sub get_new_data {
 
 sub generate_data_from_flat {
   my $inputfile = shift;
-  $output_dir = "/nfs/disk100/wormpub";
+  $output_dir = "/nfs/wormpub";
   #Output files
   $acefile = "$inputfile.ace";
   $wormbase->run_command ("rm $acefile", $log) if (-e $acefile);

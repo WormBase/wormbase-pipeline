@@ -2,8 +2,8 @@
 #
 # EMBLdump.pl :  makes modified EMBL dumps from camace.
 # 
-#  Last updated on: $Date: 2010-03-31 15:49:44 $
-#  Last updated by: $Author: pad $
+#  Last updated on: $Date: 2010-07-14 14:37:58 $
+#  Last updated by: $Author: gw3 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -351,11 +351,11 @@ else {
 }
 
 #CommonData hash Key: Genome sequence Value: Sequence version integer
-if (!(-e "/nfs/disk100/wormpub/BUILD/autoace/COMMON_DATA/clone2accession.dat")) {
+if (!(-e "/nfs/wormpub/BUILD/autoace/COMMON_DATA/clone2accession.dat")) {
 print "Copying COMMON_DATA around as the build has finished!!!\n";
-system ("scp ~/DATABASES/current_DB/COMMON_DATA/clone2accession.dat  /nfs/disk100/wormpub/BUILD/autoace/COMMON_DATA/");
-system ("scp ~/DATABASES/current_DB/COMMON_DATA/clone2type.dat /nfs/disk100/wormpub/BUILD/autoace/COMMON_DATA/");
-system ("scp ~/DATABASES/current_DB/COMMON_DATA/cds2cgc.dat /nfs/disk100/wormpub/BUILD/autoace/COMMON_DATA/");
+system ("scp ~/DATABASES/current_DB/COMMON_DATA/clone2accession.dat  /nfs/wormpub/BUILD/autoace/COMMON_DATA/");
+system ("scp ~/DATABASES/current_DB/COMMON_DATA/clone2type.dat /nfs/wormpub/BUILD/autoace/COMMON_DATA/");
+system ("scp ~/DATABASES/current_DB/COMMON_DATA/cds2cgc.dat /nfs/wormpub/BUILD/autoace/COMMON_DATA/");
 }
 %clone2accession = $wormbase->FetchData('clone2accession', undef, "$dir");
 #CommonData hash Key: Clone/Sequence name Value: Type information (cosmid|fosmid|yac|Other);
