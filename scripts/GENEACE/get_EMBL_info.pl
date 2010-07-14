@@ -1,8 +1,8 @@
 #!/usr/local/bin/perl5.8.0 -w
 
 # Author: Chao-Kung Chen
-# Last updated by $Author: ck1 $
-# Last updated on: $Date: 2004-06-11 15:47:18 $ 
+# Last updated by $Author: gw3 $
+# Last updated on: $Date: 2010-07-14 15:14:22 $ 
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -44,7 +44,7 @@ my $start = &runtime;
  my $embl = init EMBL_feature_parser($version);
  my $out_dir = "/nfs/team71/worm/ck1/EMBL";
  my $embl_query = "$out_dir/embl_60bp_L_flank";   # input FASTA format file for blat
- my $database = "/nfs/disk100/wormpub/DATABASES/current_DB/";
+ my $database = "/nfs/wormpub/DATABASES/current_DB/";
 
 #############################################################
 # tasks of get_EMBL_info.pl: 
@@ -213,7 +213,7 @@ sub blat {
   ############
 
   my $psl_file = "$out_dir/embl.psl";                                   # specify BLAT psl output file
-  my $blat = "/nfs/disk100/wormpub/blat/blat";                          # blat binary
+  my $blat = "/nfs/wormpub/blat/blat";                          # blat binary
   my $DNAs = "/nfs/team71/worm/ck1/SEQUENCES/CHROMOSOME_all.dna";       # sequence input for blat
 
   # run blat and output a psl file as $output

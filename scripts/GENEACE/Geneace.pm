@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl5.8.0 -w
-# Last updated by $Author: mh6 $
-# Last updated on: $Date: 2010-05-07 11:23:15 $
+# Last updated by $Author: gw3 $
+# Last updated on: $Date: 2010-07-14 15:10:09 $
 
 package Geneace;
 
@@ -12,9 +12,9 @@ use strict;
 use Data::Dumper;
 
 # constant stuff (hopefully not modified anywhere)
-my $def_dir = '/nfs/disk100/wormpub/DATABASES/geneace/wquery';           # location of table-maker definitions
-my $curr_db = '/nfs/disk100/wormpub/DATABASES/current_DB';
-my $geneace_dir = '/nfs/disk100/wormpub/DATABASES/geneace';
+my $def_dir = '/nfs/wormpub/DATABASES/geneace/wquery';           # location of table-maker definitions
+my $curr_db = '/nfs/wormpub/DATABASES/current_DB';
+my $geneace_dir = '/nfs/wormpub/DATABASES/geneace';
 
 sub init {
   my ($class,$wormbase) = @_;
@@ -36,7 +36,7 @@ sub get_geneace_db_handle {
 # accessors, that are not used as far as i can see
 sub geneace {return $geneace_dir}
 sub curr_db {return $curr_db}
-sub test_geneace {return  '/nfs/disk100/wormpub/DATABASES/TEST_DBs/CK1TEST'}
+sub test_geneace {return  '/nfs/wormpub/DATABASES/TEST_DBs/CK1TEST'}
 
 sub gene_info {
   my ($this, $db, $option) = @_;
@@ -49,7 +49,7 @@ sub gene_info {
     $this->{'wormbase'}->FetchData('gene_info',\%gene_info);
   }
   else {
-    $db = "/nfs/disk100/wormpub/DATABASES/geneace" if !$db;
+    $db = "/nfs/wormpub/DATABASES/geneace" if !$db;
     print "----- Doing Gene id <-> Gene_name conversion based on $db ... -----\n\n";
 
 	 my $gene_info_def="$def_dir/geneace_gene_info.def";
@@ -94,7 +94,7 @@ sub parse_inferred_multi_pt_obj {
   print "\n\nYou have just called a subroutine in Genace.pm that was assumed to be redundant, please notify mt3/pad as whatever you were doing will not have worked correctly.\n\n";
   my ($this, $version) = @_;
   my ($multi_obj, %locus_multi, $locus);
-  my $multi_file = glob("/nfs/disk100/wormpub/DATABASES/geneace/JAH_DATA/MULTI_PT_INFERRED/inferred_multi_pt_obj_WS$version");
+  my $multi_file = glob("/nfs/wormpub/DATABASES/geneace/JAH_DATA/MULTI_PT_INFERRED/inferred_multi_pt_obj_WS$version");
   my @multi_file = `cat $multi_file`;
 
   foreach (@multi_file){
@@ -201,7 +201,7 @@ sub get_clone_chrom_coords {
 
   my %clone_info;
   my $gff_version = get_wormbase_version() - 1;  # current_DB version
-  my @clone_coords = `cut -f 1,4,5,9 /nfs/disk100/wormpub/DATABASES/WS$gff_version/GFF_SPLITS/CHROMOSOME_*.clone_acc.gff`;
+  my @clone_coords = `cut -f 1,4,5,9 /nfs/wormpub/DATABASES/WS$gff_version/GFF_SPLITS/CHROMOSOME_*.clone_acc.gff`;
   foreach (@clone_coords){
     chomp;
     my ($chrom, $start, $end, $nineth) = split(/\t+/, $_);
