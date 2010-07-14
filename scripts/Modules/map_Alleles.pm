@@ -353,7 +353,7 @@ sub map_cgh {
 =head2 print_cgh
 
     Title   : print_cgh
-    Usage   : MapAlleles::print_genes(hash_ref alleles)
+    Usage   : MapAlleles::print_cgh(hash_ref alleles)
     Function: print ACE format for CGH arrays ranges
     Returns : nothing
     Args    : (hash_ref) of {allele_name}={allele_data} 
@@ -406,6 +406,11 @@ sub print_genes {
             print $fh "Gene $gene\n";
         }
         print $fh "\n";
+
+	foreach my $gene(@$gene_list){
+	    print "Gene : $gene\n",
+	          "Allele $allele Inferred_automatically map_Alleles.pl\n\n";
+	}
     }
     return \%all2genes;
 }
