@@ -6,8 +6,8 @@
 #
 # Usage : autoace_builder.pl [-options]
 #
-# Last edited by: $Author: pad $
-# Last edited on: $Date: 2010-07-14 14:10:38 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2010-07-16 09:34:57 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -109,7 +109,7 @@ $wormbase->run_script( 'make_acefiles.pl',                  $log ) if $acefile;
 $wormbase->run_script( 'make_autoace.pl',                   $log ) if $build;
 
 # check the primary databases once all files have been loaded and you are ready for the 1st gff dumps.
-$wormbase->run_script( "check_primary_database.pl -organism ${\$wormbase->species}", $log ) if ($gff_dump eq 'init');
+$wormbase->run_script( "check_primary_database.pl -organism ${\$wormbase->species}", $log ) if (defined $gff_dump && $gff_dump eq 'init');
 
 #//--------------------------- batch job submission -------------------------//
 $wormbase->run_script( "build_dumpGFF.pl -stage $gff_dump", $log ) if $gff_dump;      #init
