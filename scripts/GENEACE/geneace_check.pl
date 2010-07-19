@@ -6,8 +6,8 @@
 #
 # Script to run consistency checks on the geneace database
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2010-07-14 15:09:16 $
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2010-07-19 14:24:14 $
 
 use strict;
 use lib $ENV{"CVS_DIR"};
@@ -46,7 +46,7 @@ print "Using database $database.\n\n";
 
 my $tace = $wb->tace;          # tace executable path
 my $curr_db = "/nfs/wormpub/DATABASES/current_DB"; # Used for some cross checking with geneace
-my $def_dir = "$ENV{CVS_DIR}/wquery/geneace";                          # where lots of table-maker definitions are kept
+my $def_dir = "$ENV{CVS_DIR}/../wquery/geneace";                          # where lots of table-maker definitions are kept
 
 my $rundate = $wb->rundate;                                # Used by various parts of script for filename creation
 my $maintainers = "pad\@sanger.ac.uk, mt3\@sanger.ac.uk, gw3\@sanger.ac.uk";                                   # Default for emailing interested people
