@@ -315,4 +315,4 @@ desc 'hack around some of the more recent bugs in compara (dump)'
 task :mt3_dump => [:dump_homology,:dump_compara,:copy_release,:cleanup] 
 
 # task :default => [:update_conf,:build,:dump]
-task :default => [:update_conf,:mt3_run]
+task :default => [:update_conf]
