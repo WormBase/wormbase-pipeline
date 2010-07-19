@@ -10,8 +10,8 @@
 
 use strict;
 use IO::File;
-use lib '/software/worm/ensembl-58/ensembl/modules';
-use lib '/software/worm/ensembl-58/ensembl-compara/modules';
+use lib '/software/worm/ensembl-branch58/ensembl/modules';
+use lib '/software/worm/ensembl-branch58/ensembl-compara/modules';
 use lib '/software/worm/ensembl/bioperl-live';
 
 use Bio::EnsEMBL::Registry;
@@ -21,9 +21,9 @@ use Bio::EnsEMBL::DBSQL::DBAdaptor;
 use Bio::EnsEMBL::Compara::DBSQL::DBAdaptor;
 
 
-my %cds2wbgene=%{&get_commondata('/nfs/disk100/wormpub/DATABASES/current_DB/COMMON_DATA/cds2wbgene_id.dat')};
+my %cds2wbgene=%{&get_commondata('/nfs/wormpub/DATABASES/current_DB/COMMON_DATA/cds2wbgene_id.dat')};
 
-my $slice_adaptor = Bio::EnsEMBL::Registry->get_adaptor('Caenorhabditis elegans','core','Slice');
+my $slice_adaptor = Bio::EnsEMBL::Registry->get_adaptor('c.elegans','core','Slice');
 my $member_adaptor = Bio::EnsEMBL::Registry->get_adaptor('Multi','compara','Member');
 my $homology_adaptor = Bio::EnsEMBL::Registry->get_adaptor('Multi','compara','Homology');;
 
