@@ -67,7 +67,7 @@ $database||=$wb->autoace();
 MapAlleles::set_wb_log($log,$wb);
 
 my $variations = MapAlleles::get_all_alleles();
-my $binsize = int(@$variations / 9;
+my $binsize = int(@$variations / 9 );
 my $counter = 0;
 my $bin=1;
 my $of = new IO::File "$outdir/map_alleles.$bin",'w';
