@@ -408,7 +408,7 @@ sub print_genes {
         print $fh "\n";
 
 	foreach my $gene(@$gene_list){
-	    print "Gene : $gene\n",
+	    print $fh "Gene : $gene\n",
 	          "Allele $allele Inferred_automatically map_Alleles.pl\n\n";
 	}
     }
