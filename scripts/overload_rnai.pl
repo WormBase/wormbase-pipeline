@@ -7,8 +7,8 @@
 #
 #  DESCRIPTION:  adds additional information to RNAi GFF lines
 #
-#       AUTHOR:  $Author: mh6 $
-#      VERSION:  $Revision: 1.2 $
+#       AUTHOR:  $Author: gw3 $
+#      VERSION:  $Revision: 1.3 $
 #      CREATED:  06/07/10 10:40:04 BST
 #===============================================================================
 
@@ -56,7 +56,7 @@ foreach my $chromosome(@chromosomes){
 
   while (<$fh>){
 	unless(/RNAi_(primary|secondary)\s+RNAi_reagent/){
-		print $_;
+		print $outf $_;
 		next;
 	}
 	chomp;
