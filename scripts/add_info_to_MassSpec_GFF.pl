@@ -7,7 +7,7 @@
 # This add some extraneous information to the MassSpec peptides lines in the GFF file
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2007-09-03 12:37:16 $      
+# Last updated on: $Date: 2010-07-21 10:10:52 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -232,7 +232,7 @@ sub get_protein_history {
                             
   my $release = $wormbase->get_wormbase_version;
                                                                                                               
-  my $data_file = "/nfs/disk100/wormpub/BUILD/WORMPEP/wormpep$release/wormpep.history$release";
+  my $data_file = "/nfs/wormpub/BUILD/WORMPEP/wormpep$release/wormpep.history$release";
  
   open (HIST, "< $data_file") || die "Can't open $data_file\n";
   while (my $line = <HIST>) {
