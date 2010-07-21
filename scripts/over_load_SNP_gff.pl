@@ -3,7 +3,7 @@
 # This is to add Confirmed / Predicted Status and RFLP to SNP gff lines as requested by Todd
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2010-07-21 14:43:09 $      
+# Last updated on: $Date: 2010-07-21 14:45:03 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -135,7 +135,7 @@ else {
     $wormbase->check_file($file, $log,
 			      minsize => 1500000,
 			      lines => ['^##',
-					"^${\S+\\s+\\S+\\s+\\S+\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+"],
+					"^${\\S+\\s+\\S+\\s+\\S+\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+"],
 			      );
     }
 }
