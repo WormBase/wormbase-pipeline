@@ -8,10 +8,11 @@
 #  DESCRIPTION:  adds additional information to RNAi GFF lines
 #
 #       AUTHOR:  $Author: mh6 $
-#      VERSION:  $Revision: 1.1 $
+#      VERSION:  $Revision: 1.2 $
 #      CREATED:  06/07/10 10:40:04 BST
 #===============================================================================
 
+use lib $ENV{CVS_DIR};
 use Wormbase;
 use Storable;
 use IO::File;
