@@ -2,8 +2,8 @@
 #
 # This is to add Confirmed / Predicted Status and RFLP to SNP gff lines as requested by Todd
 #
-# Last updated by: $Author: mh6 $     
-# Last updated on: $Date: 2010-07-07 09:32:51 $      
+# Last updated by: $Author: gw3 $     
+# Last updated on: $Date: 2010-07-21 14:30:47 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -77,8 +77,30 @@ while(<$table>) {
 my @chroms = $wormbase->get_chromosome_names(-mito => 1);
 my $dir = $wormbase->chromosomes;
 my $stat = 0;
-foreach my $chrom (@chroms) {
-    my $file = ($gff_file or "$dir/${\$wormbase->chromosome_prefix}${chrom}.gff");
+
+
+my @gff_files;
+if ($gff_file) {
+  @gff_files = ($gff_file);
+} else {
+  if ($wormbase->assembly_type eq 'contig'){
+    @gff_files = ($wormbase->species);
+  } else {
+    @gff_files = $wormbase->get_chromosome_names('-prefix' => 1, '-mito' => 1);
+  }
+}
+# check to see if full chromosome gff dump files exist
+foreach my $file (@gff_files) {
+  unless (-e "$dir/$file.gff") {
+    $log->log_and_die("No GFF file: $dir/$file.gff\n");
+  }
+  if (-e -z "$dir/$file.gff") {
+    $log->log_and_die("Zero length GFF file: $dir/$file.gff");
+  }
+}
+
+foreach my $gff_file (@gff_files) {
+    my $file = "$dir/$gff_file.gff";
     open(GFF,"<$file") or $log->log_and_die("cant open $file");
     open(NEW,">$file.tmp") or $log->log_and_die("cant open $file tmp file\n");
     while( <GFF> ) {
