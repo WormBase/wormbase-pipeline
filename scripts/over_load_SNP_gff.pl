@@ -3,7 +3,7 @@
 # This is to add Confirmed / Predicted Status and RFLP to SNP gff lines as requested by Todd
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2010-07-21 14:30:47 $      
+# Last updated on: $Date: 2010-07-21 14:43:09 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -130,11 +130,12 @@ if($gff_file){
     $log->write_to("Not checking ad hoc file\n");
 }
 else { 
-    foreach my $chrom (@chroms) {
-	$wormbase->check_file("$dir/${\$wormbase->chromosome_prefix}${chrom}.gff", $log,
+  foreach my $gff_file (@gff_files) {
+    my $file = "$dir/$gff_file.gff";
+    $wormbase->check_file($file, $log,
 			      minsize => 1500000,
 			      lines => ['^##',
-					"^${\$wormbase->chromosome_prefix}${chrom}\\s+\\S+\\s+\\S+\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+"],
+					"^${\S+\\s+\\S+\\s+\\S+\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+"],
 			      );
     }
 }
@@ -187,6 +188,7 @@ sub get_mol_changes{
     while(<$table>) {
 	chomp;
 	s/\"//g; #"
+	next if (! defined $_);
 	next if (/acedb/ or /\/\//);
 	my @data = split(/\s+/,$_);
 	if($interested{$data[1]}){
