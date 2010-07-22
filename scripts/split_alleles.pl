@@ -5,19 +5,24 @@
 #
 #        USAGE:  ./split_alleles.pl 
 #
-#  DESCRIPTION: iterates over 10 bins of alleles for mapping 
+#  DESCRIPTION: creates bins of alleles for mapping and submits them to LSF
 #
 #       AUTHOR:   (Michael Paulini), <mh6@sanger.ac.uk>
 #      COMPANY:  
-#      VERSION:  $version:$
 #      CREATED:  13/05/10 12:14:18 BST
 #===============================================================================
 
 use Ace;
 use IO::File;
 use Getopt::Long;
-use lib  "$ENV{CVS_DIR}/Modules";
-use map_Alleles;
+use FindBin qw($Bin);
+
+use Modules::map_Alleles;
+
+use lib '/software/worm/lib/site_perl/5.8.8/'; # that is where the Wormbaseified LSF module is
+use LSF RaiseError => 0, PrintError => 1, PrintOutput => 0;
+use LSF::JobManager;
+
 use strict;
 
 sub print_usage{
@@ -35,8 +40,8 @@ USAGE
 exit 1;	
 }
 
-my $outdir = '/tmp';
-my ( $debug, $store,$database,$help,$test,$species,$wb);
+my $outdir = '/lustre/cbi4/scratch1/worm/tmp/map_allele_test';
+my ( $debug, $store,$database,$help,$test,$species,$wb,$noload);
 
 GetOptions(
     'species=s'=> \$species,
@@ -46,6 +51,7 @@ GetOptions(
     'database=s'  => \$database,
     'help'        => \$help,
     'test'        => \$test,
+    'noload'      => \$noload,
 ) or &print_usage();
 
 &print_usage if $help;
@@ -64,29 +70,47 @@ if ($debug) {
 }
 
 $database||=$wb->autoace();
-MapAlleles::set_wb_log($log,$wb);
+MapAlleles::set_wb_log($log,$wb); # that is a bit crude, but makes $log available to the MapAlleles funtions
+
+my $lsf = LSF::JobManager->new();
+my @bsub_options =(-e => '/dev/null', -o => '/dev/null',-M => "3500000", -R => "\"select[mem>3500] rusage[mem=3500]\"");
 
 my $variations = MapAlleles::get_all_alleles();
-my $binsize = int(@$variations / 9 );
+
+my $binsize = int(@$variations / 10 );
 my $counter = 0;
-my $bin=1;
-my $of = new IO::File "$outdir/map_alleles.$bin",'w';
+my $bucket=1;
+
+my $of = new IO::File "$outdir/map_alleles.$bucket",'w';
+
+my @outfiles = ("$outdir/map_alleles.$bucket"); # to collect the names for later
+
 while (my $a = shift @$variations){
 	if ($counter++ > $binsize){
-		$bin++;
+		$bucket++;
 		$counter=1;
 		$of->close;
-		&mapAlleles($bin-1);
-		$of->open("> $outdir/map_alleles.$bin");
+		&mapAlleles($bucket-1);
+		$of->open("> $outdir/map_alleles.$bucket");
+		push(@outfiles,"$outdir/map_alleles.$bucket");
 	}
 	print $of "$a\n";
 }
 $of->close;
-&mapAlleles($bin);
+&mapAlleles($bucket);
+
+$lsf->wait_all_children( history => 1 );
+
+unless($noload){
+    map {$wb->load_to_database($wb->autoace,$_,'map_alleles.pl',$log)} glob("$outdir/*.ace") ;
+    map {unlink $_} @outfiles;
+    map {unlink "$_.ace"} glob("$outdir/*.ace");
+}
 
 sub mapAlleles {
 	my ($lastBin) = @_;
 	my $binfile="$outdir/map_alleles.$lastBin";
-	$wb->run_script("map_Alleles.pl -idfile $binfile",$log);
-	unlink $binfile;
+	my $submitstring="/software/worm/perl_512/bin/perl $Bin/map_Alleles.pl -idfile $binfile -noload -outdir $outdir";
+	$submitstring.=" -debug $debug" if $debug;
+	$lsf->submit($submitstring);
 }

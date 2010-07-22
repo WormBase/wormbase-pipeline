@@ -171,21 +171,21 @@ sub _filter_alleles {
 
     foreach my $allele (@{$alleles}) {
         my $name = $allele->name;
-    my $remark = $allele->Remark;
+        my $remark = ($allele->Remark||'none');
 
-    # print STDERR "checking $name\n";
+       # print STDERR "checking $name\n";
         
-    # has no sequence connection
-    if ( ! defined $allele->Sequence ) {
+       # has no sequence connection
+       if ( ! defined $allele->Sequence ) {
             $log->write_to("ERROR: $name has missing Sequence tag (Remark: $remark)\n");$errors++
-    }
+       }
 
-# The bit below is commented out, as there are sadly some alleles connected to sequences without source that can't be moved :-(
+     # The bit below is commented out, as there are sadly some alleles connected to sequences without source that can't be moved :-(
 
-#   # connected sequence has no source
-#        elsif ( !defined $allele->Sequence->Source && !defined $weak_checks) { 
-#            $log->write_to("ERROR: $name connects to ${\$allele->Sequence} which has no Source tag (Remark: $remark)\n");$errors++
-#        }
+     #   # connected sequence has no source
+     #        elsif ( !defined $allele->Sequence->Source && !defined $weak_checks) { 
+     #            $log->write_to("ERROR: $name connects to ${\$allele->Sequence} which has no Source tag (Remark: $remark)\n");$errors++
+     #        }
 
     # no left flanking sequence
     elsif (!defined $allele->Flanking_sequences){
