@@ -250,7 +250,7 @@ sub map {
           # Since this dataset is pretty much complete I think
           # it would be OK to exclude niDf* alleles from the "is it massive"
           # check.
-          if ($x->public_name !~ /^niDf/) {
+          if ($x->Public_name !~ /^niDf/) {
             $log->write_to("ERROR: $x is massive\n");
             $errors++;
             next;
@@ -1044,14 +1044,15 @@ sub print_pseudogenes{
 
 # load ncrna
 sub load_ncrnas{
-    my @files = glob "${\$wb->gff_splits}/*RNA.gff" ;
+    my @types = map {"${\$wb->gff_splits}/*$_.gff "} ('miRNAprimary_transcript','ncRNA','rRNA','scRNA','snoRNA','snRNA','snlRNA','stRNA','tRNA');
+    my @files = glob(join(' ',@types));
     my %nc_rnas;
     foreach my $file(@files){
         my $inf=new IO::File $file, 'r';
         print "processing: $file\n" if $wb->debug;
         while (<$inf>) {
             next if /\#/;
-            next if ! /primary_transcript/;
+            next if ! /(mature_transcript|primary_transcript)/;
             s/\"//g;
             my @fields=split;
             my ($chromosome,$start,$stop,$transcript)=($fields[0],$fields[3],$fields[4],$fields[-1]);
