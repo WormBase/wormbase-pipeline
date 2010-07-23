@@ -6,8 +6,8 @@
 #
 # Creates SMapped Gene spans for Gene objects
 #
-# Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2010-06-07 10:38:37 $
+# Last edited by: $Author: pad $
+# Last edited on: $Date: 2010-07-23 12:49:22 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -38,11 +38,11 @@ GetOptions(
 
 my $wormbase;
 if ($store) {
-    $wormbase = retrieve($store)
-      or croak("cant restore wormbase from $store\n");
+  $wormbase = retrieve($store)
+    or croak("cant restore wormbase from $store\n");
 }
 else {
-    $wormbase = Wormbase->new( -debug => $debug, -test => $test, -organism => $species );
+  $wormbase = Wormbase->new( -debug => $debug, -test => $test, -organism => $species );
 }
 
 my $log = Log_files->make_build_log($wormbase);
@@ -52,150 +52,146 @@ $log->write_to("Generating WBGene spans from database $database\n");
 
 # get the required GFF files in place
 if ($prepare) {
-
-    # gff dump Coding_transcript
-    print "dumping CDSes\n" if $test;
-
-    $wormbase->run_script("GFF_method_dump.pl -database $database -method Coding_transcript -dump_dir "
-          . $wormbase->gff_splits,$log);
-
+  
+  # gff dump Coding_transcript
+  print "dumping CDSes\n" if $test;
+  
+  $wormbase->run_script("GFF_method_dump.pl -database $database -method Coding_transcript -dump_dir "
+			. $wormbase->gff_splits,$log);
+  
 }
 else {
-    my %CDS_data;
-    my $cds;
-
-    my $coords = Coords_converter->invoke( $database, undef, $wormbase );
-
-    my %worm_gene2geneID_name = $wormbase->FetchData('worm_gene2geneID_name');
-    my @chromosomes =
-      $wormbase->get_chromosome_names( -prefix => 1, -mito => 1 );
-    @chromosomes = ("$chromosome") if $chromosome;
-
-    my $acefile = $wormbase->acefiles . "/WBgene_spans.ace";
-    unless ($no_ace) {
-        open( ACE, ">$acefile" ) or do {
-            $log->write_to("cant open output $acefile:\t$!\n");
-            die "cant open output $acefile:\t$!\n";
-          }
+  my %CDS_data;
+  my $cds;
+  
+  my $coords = Coords_converter->invoke( $database, undef, $wormbase );
+  
+  my %worm_gene2geneID_name = $wormbase->FetchData('worm_gene2geneID_name');
+  my @chromosomes = $wormbase->get_chromosome_names( -prefix => 1, -mito => 1 );
+  @chromosomes = ("$chromosome") if $chromosome;
+  
+  my $acefile = $wormbase->acefiles . "/WBgene_spans.ace";
+  unless ($no_ace) {
+    open( ACE, ">$acefile" ) or do {
+      $log->write_to("cant open output $acefile:\t$!\n");
+      die "cant open output $acefile:\t$!\n";
     }
-    foreach my $chrom (@chromosomes) {
-        my %gene_coords;
-        my %gene_span;
-        my @methods;
-	if ($wormbase->species eq "elegans") {
-	  @methods = qw(Coding_transcript Non_coding_transcript tRNAscan-SE-1.23 miRNA_primary_transcript Pseudogene snRNA snoRNA rRNA scRNA stRNA ncRNA); # elegans still uses tRNAscan-SE-1.23
-	} else {
-		#@methods = qw(Coding_transcript Non_coding_transcript tRNAscan-SE-1.3 miRNA_primary_transcript Pseudogene snRNA snoRNA rRNA scRNA stRNA ncRNA);
-		@methods = qw(Coding_transcript Non_coding_transcript tRNAscan-SE-1.3 Pseudogene ncRNA);
+  }
+
+  my @methods;
+  if ($wormbase->species eq "elegans") {
+    @methods = qw(Coding_transcript Non_coding_transcript tRNAscan-SE-1.23 miRNA_primary_transcript Pseudogene snRNA snoRNA rRNA scRNA stRNA ncRNA);
+  } else {
+    @methods = qw(Coding_transcript Non_coding_transcript tRNAscan-SE-1.3 ncRNA Pseudogene);
+  }
+  
+  foreach my $chrom (@chromosomes) {
+    my %gene_coords;
+    my %gene_span;
+    foreach my $method (@methods) {
+      print "checking $method \n" if $test;
+      my $GFF = $wormbase->open_GFF_file( $chrom,$method,$log );
+      while (<$GFF>) {
+	my @data = split;
+	if (   ( $data[1] eq 'Coding_transcript' )
+	       or ( $data[1] eq 'Non_coding_transcript' )
+	       or ( $data[1] eq 'Pseudogene' )
+	       or ( $data[1] eq 'curated' )
+	       or ( $data[1] eq 'tRNAscan-SE-1.23' )
+	       or ( $data[1] eq 'tRNAscan-SE-1.3' )
+	       or ( $data[1] eq 'tRNA_mature_transcript' )
+	       or ( $data[1] eq 'snRNA_mature_transcript' )
+	       or ( $data[1] eq 'curated_miRNA' )
+	       or ( $data[1] eq 'rRNA' )
+	       or ( $data[1] eq 'scRNA_mature_transcript' )
+	       or ( $data[1] eq 'snoRNA_mature_transcript' )
+	       or ( $data[1] eq 'stRNA' )
+	       or ( $data[1] eq 'snRNA_mature_transcript' )
+	       or ( $data[1] eq 'ncRNA' ) ) {
+	  next if ( $data[2] eq 'exon'
+		    or $data[2] eq 'coding_exon'
+		    or $data[2] eq 'intron' );
+	  my ($gene) = $data[9] =~ /\"(\S+)\"$/;
+	  push( @{ $gene_coords{$gene} },[ ( $data[3], $data[4], $data[6] ) ]);
 	}
-
-     #   @methods = qw(Coding_transcript) unless ($wormbase->species eq "elegans"); removed as we probably want all, in future.
-
-        foreach my $method (@methods) {
-            print "checking $method \n" if $test;
-
-            my $GFF = $wormbase->open_GFF_file( $chrom,$method,$log );
-            while (<$GFF>) {
-                my @data = split;
-                if (   ( $data[1] eq 'Coding_transcript' )
-                    or ( $data[1] eq 'Non_coding_transcript' )
-                    or ( $data[1] eq 'Pseudogene' )
-                    or ( $data[1] eq 'curated' )
-                    or ( $data[1] eq 'tRNAscan-SE-1.23' )
-		    or ( $data[1] eq 'tRNAscan-SE-1.3' )
-                    or ( $data[1] eq 'tRNA_mature_transcript' )
-                    or ( $data[1] eq 'snRNA_mature_transcript' )
-                    or ( $data[1] eq 'miRNA_mature_transcript' )
-                    or ( $data[1] eq 'rRNA' )
-                    or ( $data[1] eq 'scRNA_mature_transcript' )
-                    or ( $data[1] eq 'snoRNA_mature_transcript' )
-                    or ( $data[1] eq 'stRNA' )
-                    or ( $data[1] eq 'snRNA_mature_transcript' )
-                    or ( $data[1] eq 'ncRNA' ) ) {
-                    next if ( $data[2] eq 'exon'
-                         or $data[2] eq 'coding_exon'
-                         or $data[2] eq 'intron' );
-                    my ($gene) = $data[9] =~ /\"(\S+)\"$/;
-                    push( @{ $gene_coords{$gene} },[ ( $data[3], $data[4], $data[6] ) ]);
-                }
-            }
-            close $GFF;
-        }
-
-        foreach my $CDS ( keys %gene_coords ) {
-            my $WBgene = $worm_gene2geneID_name{$CDS};
-            if ( !defined $WBgene ) {
-                my $cds = $CDS;
-                my $cdsregex = $wormbase->cds_regex_noend;
-                $cds =~ s/($cdsregex)\.\d+/$1/;# convert transcript ID to sequence name to get WBGene ID
-                $WBgene = $worm_gene2geneID_name{$cds};
-                if ( !defined $WBgene ) {
-                    $log->write_to("*** $CDS is not a key of worm_gene2geneID_name\n");
-                    next;
-                }
-            }
-            foreach my $transcript ( @{ $gene_coords{$CDS} } ) {
-                if ( !( defined $gene_span{$WBgene} ) ) {
-                    $gene_span{$WBgene}->{'min'}    = $transcript->[0];
-                    $gene_span{$WBgene}->{'max'}    = $transcript->[1];
-                    $gene_span{$WBgene}->{'strand'} = $transcript->[2];
-                }
-                else {
-                    if ( $transcript->[0] < $gene_span{$WBgene}->{'min'} ) {
-                        $gene_span{$WBgene}->{'min'} = $transcript->[0];
-                    }
-                    if ( $gene_span{$WBgene}->{'max'} < $transcript->[1] ) {
-                        $gene_span{$WBgene}->{'max'} = $transcript->[1];
-                    }
-                }
-            }
-        }
-        if ($gff) {
-            open( OUTGFF, ">>".$wormbase->GFF_file_name($chrom,'WBgene'))
-              or do {
-                $log->write_to("cant open output\n");
-                die "cant open output\n";
-              }
-        }
-
-        foreach my $gene ( keys %gene_span ) {
-            if ($gff) {
-                print OUTGFF "${chrom}\tgene\tgene\t";
-                print OUTGFF $gene_span{$gene}->{'min'}, "\t",
-                  $gene_span{$gene}->{'max'}, "\t";
-                print OUTGFF ".\t", $gene_span{$gene}->{'strand'},
-                  "\t.\tGene \"$gene\"\n";
-            }
-
-            # write S-map details back to database
-            unless ($no_ace) {
-                my @coords;
-                @coords =
-                  $gene_span{$gene}->{'strand'} eq "+"
-                  ? $coords->LocateSpan(
-                    $chrom,
-                    $gene_span{$gene}->{'min'},
-                    $gene_span{$gene}->{'max'}
-                  )
-                  : $coords->LocateSpan(
-                    $chrom,
-                    $gene_span{$gene}->{'max'},
-                    $gene_span{$gene}->{'min'}
-                  );
-                print ACE "\nSequence : \"$coords[0]\"\n";
-                print ACE "Gene_child $gene $coords[1] $coords[2]\n";
-            }
-        }
+      }
+      close $GFF;
     }
-    close ACE unless $no_ace;
-    close OUTGFF if $gff;
-    $wormbase->load_to_database( "$database", "$acefile", "WBGene_span", $log )
-      unless ($no_ace);
+    
+    foreach my $CDS ( keys %gene_coords ) {
+      my $WBgene = $worm_gene2geneID_name{$CDS};
+      if ( !defined $WBgene ) {
+	my $cds = $CDS;
+	my $cdsregex = $wormbase->cds_regex_noend;
+	$cds =~ s/($cdsregex)\.\d+/$1/;# convert transcript ID to sequence name to get WBGene ID
+	$WBgene = $worm_gene2geneID_name{$cds};
+	if ( !defined $WBgene ) {
+	  $log->write_to("*** $CDS is not a key of worm_gene2geneID_name\n");
+	  next;
+	}
+      }
+      foreach my $transcript ( @{ $gene_coords{$CDS} } ) {
+	if ( !( defined $gene_span{$WBgene} ) ) {
+	  $gene_span{$WBgene}->{'min'}    = $transcript->[0];
+	  $gene_span{$WBgene}->{'max'}    = $transcript->[1];
+	  $gene_span{$WBgene}->{'strand'} = $transcript->[2];
+	}
+	else {
+	  if ( $transcript->[0] < $gene_span{$WBgene}->{'min'} ) {
+	    $gene_span{$WBgene}->{'min'} = $transcript->[0];
+	  }
+	  if ( $gene_span{$WBgene}->{'max'} < $transcript->[1] ) {
+	    $gene_span{$WBgene}->{'max'} = $transcript->[1];
+	  }
+	}
+      }
+    }
+    if ($gff) {
+      open( OUTGFF, ">>".$wormbase->GFF_file_name($chrom,'WBgene'))
+	or do {
+	  $log->write_to("cant open output\n");
+	  die "cant open output\n";
+	}
+      }
+    
+    foreach my $gene ( keys %gene_span ) {
+      if ($gff) {
+	print OUTGFF "${chrom}\tgene\tgene\t";
+	print OUTGFF $gene_span{$gene}->{'min'}, "\t",
+	  $gene_span{$gene}->{'max'}, "\t";
+	print OUTGFF ".\t", $gene_span{$gene}->{'strand'},
+	  "\t.\tGene \"$gene\"\n";
+      }
+      
+      # write S-map details back to database
+      unless ($no_ace) {
+	my @coords;
+	@coords =
+	  $gene_span{$gene}->{'strand'} eq "+"
+	    ? $coords->LocateSpan(
+				  $chrom,
+				  $gene_span{$gene}->{'min'},
+				  $gene_span{$gene}->{'max'}
+				 )
+	      : $coords->LocateSpan(
+				    $chrom,
+				    $gene_span{$gene}->{'max'},
+				    $gene_span{$gene}->{'min'}
+				   );
+	print ACE "\nSequence : \"$coords[0]\"\n";
+	print ACE "Gene_child $gene $coords[1] $coords[2]\n";
+      }
+    }
+  }
+  close ACE unless $no_ace;
+  close OUTGFF if $gff;
+  $wormbase->load_to_database( "$database", "$acefile", "WBGene_span", $log )
+    unless ($no_ace);
 }
 
 $wormbase->run_script("dump_gff_batch.pl -database ". $wormbase->autoace
-      . " -methods gene -dump_dir ". $wormbase->gff_splits,$log
-) unless $no_gff;
+		      . " -methods gene -dump_dir ". $wormbase->gff_splits,$log
+		     ) unless $no_gff;
 
 $log->mail;
 
