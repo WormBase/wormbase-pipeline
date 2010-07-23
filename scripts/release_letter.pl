@@ -5,7 +5,7 @@
 # by Anthony Rogers                             
 #
 # Last updated by: $Author: pad $               
-# Last updated on: $Date: 2010-07-14 14:55:14 $
+# Last updated on: $Date: 2010-07-23 08:51:47 $
 
 # Generates a release letter at the end of build.
 #
@@ -92,7 +92,7 @@ if( defined($opt_l)) {
   open (RL,">$release_letter");
   print RL "New release of WormBase WS$ver, Wormpep$ver and Wormrna$ver $date\n\n";
   print RL "WS$ver was built by [INSERT NAME HERE]\n";
-  print RL "======================================================================\n\n";
+  print RL "-===================================================================================-\n";
   print RL "This directory includes:\n";
   print RL "i)   database.WS$ver.*.tar.gz    -   compressed data for new release\n";
   print RL "ii)  models.wrm.WS$ver           -   the latest database schema (also in above database files)\n";
@@ -117,12 +117,32 @@ if( defined($opt_l)) {
   print RL "Release notes on the web:\n-------------------------\n";
   print RL "http://www.wormbase.org/wiki/index.php/Release_Schedule\n\n\n\n";
   
+
+  # Synchronisation with GenBank / EMBL
+  my @chromosomes = ("I","II","III","IV","V","X");
+  my $csome = shift @chromosomes;
+  print RL "\nSynchronisation with GenBank / EMBL:\n------------------------------------\n\n";
+  my $check = 0;
+  while ($csome) {
+    my $errors = `grep ERROR $ace_dir/yellow_brick_road/CHROMOSOME_$csome.agp_seq.log`;
+    while( $errors =~ m/for\s(\p{IsUpper}\w+)/g ) {
+      print RL "CHROMOSOME_$csome\tsequence $1\n";
+      $check = 1;
+    }
+    $csome = shift @chromosomes;
+  }
+  if ($check == 0) {
+    print RL "No synchronisation issues\n\n\n";
+  }
+
   # make the chromosomal sequence changes file
+  $log->write_to("\nGenerating chromosomal sequence changes Data\n");
   open (CC, "> $reports_dir/chromosome_changes") || die "Can't open file $reports_dir/chromosome_changes\n";
   my @mapping_data = Remap_Sequence_Change::read_mapping_data($ver-1, $ver, $wormbase->species);
   my $text = Remap_Sequence_Change::write_changes($wormbase, $ver, @mapping_data);
   print CC $text;
   close(CC);
+
 
   my @release_files = ("$reports_dir/composition","$reports_dir/chromosome_changes","$reports_dir/genedata","$reports_dir/wormpep");
   
@@ -147,6 +167,7 @@ if( defined($opt_l)) {
   my $gene_seq_count = $db->fetch(-query=> "$query");
 
   # wormpep status overview
+  $log->write_to("\nGenerating wormpep overview stats\n");
   my %wp_status;
   my $wormpep_datafile = "$basedir/WORMPEP/wormpep$ver/wormpep_current";
   
@@ -177,8 +198,30 @@ if( defined($opt_l)) {
   printf RL "Gene <-> CDS,Transcript,Pseudogene connections\n";
   printf RL "----------------------------------------------\n";
   printf RL "Caenorhabditis elegans entries with WormBase-approved Gene name %6d\n", $wp_status{Gene};
-  printf RL "\n\n";
+  printf RL "\n\n\n";
+ 
+
   
+  ######################################
+  #  Get the Operon stats    - Paul    #
+  ######################################
+      $log->write_to("\nRetrieving Operon Data\n");
+  my $operon_query = "Find Operon WHERE method = \"Operon\" AND Species = \"*elegans\"";
+  my $gene_query = "Find Gene where Contained_in_operon AND NEXT";
+  my $Operon_count = $db->fetch(-query=> "$operon_query");
+  my $Operon_genes = $db->fetch(-query=> "$gene_query");
+  
+
+  print RL "C. elegans Operons Stats\n";
+  print RL "---------------------------------------------\n";
+  print RL "Description: These exist as closely spaced gene clusters similar to bacterial operons\n";
+  print RL "---------------------------------------------\n";
+  print RL "| Live Operons        $Operon_count                |\n";
+  print RL "| Genes in Operons    $Operon_genes                |\n";
+  print RL "\n\n\n";
+
+
+
   ######################################
   #  Get the GO annotations  - Ranjana #
   ######################################
@@ -189,7 +232,7 @@ if( defined($opt_l)) {
   if (-e "$basedir/autoace/wquery/SCRIPT:GeneGO_codes.def") {
     my $def = "$basedir/autoace/wquery/SCRIPT:GeneGO_codes.def";
     my $command = "Table-maker -p $def\nquit\n";
-    $log->write_to("Retrieving GO::Gene data, using Table-maker...\n");
+    $log->write_to("\nRetrieving GO::Gene data, using Table-maker...\n");
     my $count = "0";
     my (%Gene2code,%GO2code,%GO2gene,%gene2GO);
 
@@ -275,7 +318,7 @@ if( defined($opt_l)) {
 
     print RL "GO_codes - used for assigning evidence\n";
     print RL "--------------------------------------\n";
-    print RL "IC (Inferred by Curator)\n";
+    print RL "IC  Inferred by Curator\n";
     print RL "IDA Inferred from Direct Assay\n";
     print RL "IEA Inferred from Electronic Annotation\n";
     print RL "IEP Inferred from Expression Pattern\n";
@@ -286,14 +329,13 @@ if( defined($opt_l)) {
     print RL "NAS Non-traceable Author Statement\n";
     print RL "NDNo Biological Data available\n";
     print RL "RCA ?\n";
-    print RL "TAS Traceable Author Statement\n\n";
+    print RL "TAS Traceable Author Statement\n";
+    print RL "------------------------------------------------\n\n";
 
-    print RL "------------------------------------------------\n";
     print RL "Total number of Gene::GO connections:  $count\n\n"; 
 
     print RL "Genes Stats:\n";
-    print RL "----------------\n\n";
-    
+    print RL "----------------\n";
     print RL "Genes with GO_term connections         $gc  \n";
     print RL "           IEA GO_code present         $IEA_gc  \n";
     print RL "       non-IEA GO_code present         $non_IEA_gc  \n\n";
@@ -303,9 +345,8 @@ if( defined($opt_l)) {
     print RL "        *citace                        $citace  \n";
     print RL "        *Inherited (motif & phenotype) $inherit  \n\n";
 
-
     print RL "GO_terms Stats:\n";
-    print RL "---------------\n\n";
+    print RL "---------------\n";
     print RL "Total No. GO_terms                     $GO_annotations  \n";
     print RL "GO_terms connected to Genes            $GOwithgene  \n";
     print RL "GO annotations connected with IEA      $IEA  \n";
@@ -313,47 +354,41 @@ if( defined($opt_l)) {
     print RL "   Breakdown  IC - $IC   IDA - $IDA   ISS - $ISS \n";
     print RL "             IEP - $IEP   IGI - $IGI   IMP - $IMP \n";
     print RL "             IPI - $IPI  NAS - $NAS     ND  - $ND  \n";
-    print RL "             RCA - $RCA   TAS - $TAS   \n\n";
-
+    print RL "             RCA - $RCA   TAS - $TAS   \n\n\n";
+    print RL "------------------------------------------------\n\n";
   }
   else {
     $log->write_to("\nERROR - GeneGO_codes.def abscent from autoace/wquery\nThese stats will be missing from the release letter\n\n");
   }
+
+
+
+  ######################################
+  #  Tier II Species Gene Stats        #
+  ######################################
+  print "\nRetrieving Tier II Species Gene Stats\n";
+  my %accessors = ($wormbase->species_accessors);
+  my @tierII = (keys%accessors);
+  my $tierII;
+  print RL "Tier II Gene counts\n";
+  print RL "---------------------------------------------\n";
+  foreach $tierII(@tierII) {
+    my $gene_count_query = "Find Gene where Species = \"*${tierII}*\" AND Live";
+    my $gene_count = $db->fetch(-query=> "$gene_count_query");
+    my $Coding_count_query = "Find CDS where Species = \"*${tierII}*\" AND method = \"curated\"";
+    my $Coding_count = $db->fetch(-query=> "$Coding_count_query");
+    print RL "$tierII Gene count $gene_count (Coding ${Coding_count})\n";
+  }
+  print RL "---------------------------------------------\n\n\n\n\n";
+
+
+
+
   # Close the database connection now we have finished with it
   $db->close;
 
-#################################################################################################
-# Operon Stats
-########################
-
-
-#################################################################################################
   
-  # Synchronisation with GenBank / EMBL
-  my @chromosomes = ("I","II","III","IV","V","X");
-  my $csome = shift @chromosomes;
-  print RL "\nSynchronisation with GenBank / EMBL:\n------------------------------------\n\n";
-  my $check = 0;
-  while ($csome) {
-    my $errors = `grep ERROR $ace_dir/yellow_brick_road/CHROMOSOME_$csome.agp_seq.log`;
-    while( $errors =~ m/for\s(\p{IsUpper}\w+)/g ) {
-      print RL "CHROMOSOME_$csome\tsequence $1\n";
-      $check = 1;
-    }
-    $csome = shift @chromosomes;
-  }
-  if ($check == 0) {
-    print RL "No synchronisation issues\n\n";
-  }
-  
-  print RL "\n";
-  
-  # Gap summary (hard coded at the moment)
-  print RL "There are no gaps remaining in the genome sequence\n";
-  print RL "---------------\n";
-  print RL "For more info mail worm\@sanger.ac.uk\n";
   print RL "-===================================================================================-\n";
-  
   # User filled sections
   print RL "\n\n\n";
   print RL "New Data:\n---------\n\n\n";
@@ -363,7 +398,8 @@ if( defined($opt_l)) {
   print RL "Other Changes:\n--------------\n\n";
   print RL "Proposed Changes / Forthcoming Data:\n-------------------------------------\n\n\n";
   print RL "Model Changes:\n------------------------------------\n\n\n";
-  
+  print RL "For more info mail worm\@sanger.ac.uk\n";
+
   # Installation guide
   print RL "-===================================================================================-\n";
   print RL "\n\n";
