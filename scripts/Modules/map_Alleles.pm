@@ -170,14 +170,14 @@ sub _filter_alleles {
     my @good_alleles;
 
     foreach my $allele (@{$alleles}) {
-        my $name = $allele->name;
+        my $name = $allele->Public_name;
         my $remark = ($allele->Remark||'none');
 
        # print STDERR "checking $name\n";
         
        # has no sequence connection
        if ( ! defined $allele->Sequence ) {
-            $log->write_to("ERROR: $name has missing Sequence tag (Remark: $remark)\n");$errors++
+            $log->write_to("ERROR: $allele ($name) has missing Sequence tag (Remark: $remark)\n");$errors++
        }
 
      # The bit below is commented out, as there are sadly some alleles connected to sequences without source that can't be moved :-(
@@ -189,26 +189,26 @@ sub _filter_alleles {
 
     # no left flanking sequence
     elsif (!defined $allele->Flanking_sequences){
-            $log->write_to("ERROR: $name has no left Flanking_sequence (Remark: $remark)\n");$errors++
+            $log->write_to("ERROR: $allele ($name) has no left Flanking_sequence (Remark: $remark)\n");$errors++
     }                                                                        
 
     # no right flanking sequence
     elsif (!defined $allele->Flanking_sequences->right || ! defined $allele->Flanking_sequences->right->name ) {
-                    $log->write_to("ERROR: $name has no right Flanking_sequence (Remark: $remark)\n");$errors++
+                    $log->write_to("ERROR: $allele ($name) has no right Flanking_sequence (Remark: $remark)\n");$errors++
     }       
 
     # empty flanking sequence
     elsif (!defined $allele->Flanking_sequences->name ) {
-                    $log->write_to("ERROR: $name has no left Flanking_sequence (Remark: $remark)\n");$errors++
+                    $log->write_to("ERROR: $allele ($name) has no left Flanking_sequence (Remark: $remark)\n");$errors++
     }
     elsif ($allele->Type_of_mutation eq 'Substitution' && !defined $allele->Type_of_mutation->right){
-                    $log->write_to("WARNING: $name has no from in the substitution tag (Remark: $remark)\n");
+                    $log->write_to("WARNING: $allele ($name) has no from in the substitution tag (Remark: $remark)\n");
     }
     
     # has spaces or numbers in the DNA sequence strings
     elsif (($allele->Type_of_mutation eq 'Substitution') && 
         ($allele->Type_of_mutation->right=~/\d|\s/ || $allele->Type_of_mutation->right->right=~/\d|\s/)){
-        $log->write_to("ERROR: $name has numbers an/or spaces in the from/to tags (Remark: $remark)\n");$errors++
+        $log->write_to("ERROR: $allele ($name) has numbers an/or spaces in the from/to tags (Remark: $remark)\n");$errors++
     }
     else { push @good_alleles, $allele }
     }
@@ -236,7 +236,7 @@ sub map {
         # $chromosome_name,$start,$stop
         my @map=$mapper->map_feature($x->Sequence->name,$x->Flanking_sequences->name,$x->Flanking_sequences->right->name);
         if ($map[0] eq '0'){
-            $log->write_to("ERROR: Couldn't map ${\$x->name} to sequence ${\$x->Sequence->name} with ${\$x->Flanking_sequences->name} and ${\$x->Flanking_sequences->right->name} (Remark: ${\$x->Remark})\n");
+            $log->write_to("ERROR: Couldn't map $x (${\$x->Public_name}) to sequence ${\$x->Sequence->name} with ${\$x->Flanking_sequences->name} and ${\$x->Flanking_sequences->right->name} (Remark: ${\$x->Remark})\n");
             $errors++;
             next
         }
@@ -251,7 +251,7 @@ sub map {
           # it would be OK to exclude niDf* alleles from the "is it massive"
           # check.
           if ($x->Public_name !~ /^niDf/) {
-            $log->write_to("ERROR: $x is massive\n");
+            $log->write_to("ERROR: $x (${\$x->Public_name}) is massive\n");
             $errors++;
             next;
           }
@@ -288,7 +288,7 @@ sub map {
         if($x->CGH_deleted_probes){
             my @map=$mapper->map_feature($x->Sequence->name,$x->CGH_deleted_probes->name,$x->CGH_deleted_probes->right->name);
             if ($map[0] eq '0'){
-                $log->write_to("ERROR: Couldn't map CGH_deleted_probes for ${\$x->name} to sequence ${\$x->Sequence->name} with ${\$x->Flanking_sequences->name} and ${\$x->Flanking_sequences->right->name} (Remark: ${\$x->Remark})\n");
+                $log->write_to("ERROR: Couldn't map CGH_deleted_probes for $x (${\$x->Public_name}) to sequence ${\$x->Sequence->name} with ${\$x->Flanking_sequences->name} and ${\$x->Flanking_sequences->right->name} (Remark: ${\$x->Remark})\n");
                 $errors++;
                 next
             }
@@ -322,7 +322,7 @@ sub map_cgh {
         next unless $v->CGH_deleted_probes;
         my @cgh_map=$mapper->map_feature($v->Sequence->name,$v->CGH_deleted_probes->name,$v->CGH_deleted_probes->right->name);
         if ($cgh_map[0] eq '0'){
-            $log->write_to("ERROR: Couldn't map inner probes of $k to sequence ${\$v->Sequence->name} with ${\$v->CGH_deleted_probes->name} and ${\$v->CGH_deleted_probes->right->name} (Remark: ${\$v->Remark})\n");
+            $log->write_to("ERROR: Couldn't map inner probes of $v (${\$v->Public_name}) to sequence ${\$v->Sequence->name} with ${\$v->CGH_deleted_probes->name} and ${\$v->CGH_deleted_probes->right->name} (Remark: ${\$v->Remark})\n");
             $errors++;
             next
         }
@@ -529,7 +529,7 @@ sub get_cds {
                     
                     # insanity check: insane tags are ignored and reported as warnings
                     if (!$v->{allele}->Type_of_mutation->right || !$v->{allele}->Type_of_mutation->right->right){
-                        $log->write_to("WARNING: $k is missing FROM and/or TO (Remark: ${\$v->{allele}->Remark})\n");
+                        $log->write_to("WARNING: ${\$v->{allele}->Public_name} is missing FROM and/or TO (Remark: ${\$v->{allele}->Remark})\n");
                                                 $errors++;
                         next;
                     }
@@ -571,11 +571,11 @@ sub get_cds {
                     # enforce some assertion
                     next unless ($frame + length($from_na) < 4); # has to fit in the codon
                     unless ($frame <= 2 && $frame >= 0){ # has to be 0 1 2
-                        $log->write_to("BUG: $k has a strange frame ($frame)\n");
+                        $log->write_to("BUG: $k (${\$v->{allele}->Public_name}) has a strange frame ($frame)\n");
                         next;
                     }
                     unless(length($from_codon)==3){ # codons have to be 3bp long
-                        $log->write_to("BUG: $k has a strange mutated codon ($from_codon)\n");
+                        $log->write_to("BUG: $k (${\$v->{allele}->Public_name} h)as a strange mutated codon ($from_codon)\n");
                         next;
                     }
 
@@ -636,7 +636,7 @@ sub get_cds {
                         elsif (uc($stop_codon) eq 'TRA') {
                             $cds{$hit->{name}}{"Nonsense Ochre_UAA_or_Opal_UGA \"$other_aa to opal or ochre stop (${\int(($cds_position-1)/3+1)})\""}{$k}=1;
                         }
-                        else {$log->write_to("ERROR: whatever stop $stop_codon is in $k, it is not Amber/Opal/Ochre (Remark: ${\$v->{allele}->Remark})\n");$errors++}
+                        else {$log->write_to("ERROR: whatever stop $stop_codon is in $k (${\$v->{allele}->Public_name},) it is not Amber/Opal/Ochre (Remark: ${\$v->{allele}->Remark})\n");$errors++}
                     }
                     # missense
                     else{
@@ -779,7 +779,7 @@ sub compare {
         while(my ($gene,$y)=each %$v){           
             if ($y==1) {
                 my $remark=$old->{$allele}->{allele}->Remark;
-                $log->write_to("ERROR: $allele -> $gene connection is only in geneace (Remark: $remark)\n");$errors++}
+                $log->write_to("ERROR: $allele (${\$old->{$allele}->{allele}->Public_name}) -> $gene connection is only in geneace (Remark: $remark)\n");$errors++}
             elsif($y==2){
                 #$log->write_to("WARNING: $allele -> $gene connection created by script\n");
             }
