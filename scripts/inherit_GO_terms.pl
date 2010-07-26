@@ -4,8 +4,8 @@
 #
 # map GO_terms to ?Sequence objects from ?Motif and ?Phenotype
 #
-# Last updated by: $Author: mh6 $     
-# Last updated on: $Date: 2010-06-19 22:02:58 $      
+# Last updated by: $Author: gw3 $     
+# Last updated on: $Date: 2010-07-26 10:28:40 $      
 
 use strict;
 use warnings;
@@ -25,6 +25,7 @@ my $maintainers = "All"; # who receives emails from script
 my $noload;              # generate results but do not load to autoace
 my $database;
 my $species;
+my $test;
 
 ##############################
 # command-line options       #
@@ -38,7 +39,8 @@ GetOptions ("help"      => \$help,
 	    "noload"    => \$noload,
     	    "store:s"   => \$store,
     	    "database:s" => \$database,
-    	    "species:s"  => \$species
+    	    "species:s"  => \$species,
+	    "test"       => \$test,
     	);
 
 # Display help if required
@@ -47,7 +49,7 @@ GetOptions ("help"      => \$help,
 # recreate configuration 
 my $wormbase;
 if ($store) { $wormbase = Storable::retrieve($store) or croak("cant restore wormbase from $store\n") }
-else { $wormbase = Wormbase->new( -debug => $debug, -test => $debug, -organism => $species ) }
+else { $wormbase = Wormbase->new( -debug => $debug, -test => $test, -organism => $species ) }
 
 # Variables Part II (depending on $wormbase) 
 $debug = $wormbase->debug if $wormbase->debug;    # Debug mode, output only goes to one user
@@ -68,6 +70,7 @@ my %cds2gene;
 $wormbase->FetchData('cds2wbgene_id',\%cds2gene);                                
 
 my $out=$wormbase->acefiles."/inherited_GO_terms.ace";
+
 open (OUT,">$out") or $log->log_and_die("cant open $out :$!\n");
 
 ########################################
@@ -111,15 +114,38 @@ exit(0);
 ########################################################################################
 
 sub motif {
-	my $db = shift;
-	my $def = "$db/wquery/SCRIPT:inherit_GO_terms.def";
+	my ($dbpath, $db) = @_;
+	my $def = "$dbpath/wquery/SCRIPT:inherit_GO_terms.def";
 	
-	my $query = $wormbase->	table_maker_query($db, $def);
+	# these GO terms should not be attached to the Gene or CDS
+	my $terms = <<STOPTERMS;
+sporulation
+forespore
+photosynthesis
+chlorophyll
+STOPTERMS
+	my @stopterms = split /\n/,$terms;
+
+	# get the GO terms
+	my $term_def = &write_GO_def;
+	my $term_query = $wormbase->table_maker_query($dbpath,$term_def);
+	my %terms;
+	while(<$term_query>) {
+	  chomp;
+	  s/\"//g;  #remove "
+	  next if (/acedb/ or /\/\//);
+	  my @data = split("\t",$_);
+	  my ( $GO, $term) = @data;
+	  $terms{$GO} = $term;
+	}
+
+	my $query = $wormbase->	table_maker_query($dbpath, $def);
 	while(<$query>) {
 		s/\"//g;#"
   		next if (/acedb/ or /\/\//);
 		my($motif,$GO,$protein,$cds,$gene) = split;
 		next if (! defined $gene || ! defined $cds || ! defined $GO || ! defined $motif);
+		next if (&matching(\@stopterms, $terms{$GO}, $GO, $motif, $protein, $gene));
 		print OUT "\nGene : $gene\nGO_term \"$GO\" IEA inferred_automatically \"$motif\"\n";
 		print OUT "\nCDS  : \"$cds\"\nGO_term \"$GO\" IEA inferred_automatically \"$motif\"\n";
 	}
@@ -128,6 +154,21 @@ sub motif {
 ########################################################################################
 # phenotype to sequence mappings                                                       #
 ########################################################################################
+
+sub matching {
+  my ($stopterms_aref, $GO_term, $GO, $motif, $protein, $gene) = @_;
+  if (! defined $GO_term) {return 0;}
+  foreach my $term (@{$stopterms_aref}) {
+    if ($GO_term =~ /\b$term\b/) {
+      $log->write_to("The invalid term '$term' was found in the description '$GO_term' of GO-term $GO ($motif) from protein $protein and will not be attached to $gene\n");
+      return 1;
+      
+    }
+  }
+  return 0;
+}
+
+
 
 sub tmhmmGO {
 	my $query = "find protein where species = \"".$wormbase->full_name."\" where Feature AND NEXT = \"Tmhmm\"; follow Corresponding_CDS; follow Gene";
@@ -162,7 +203,7 @@ sub phenotype {
 	}
 	else {next;}
 	unless($gene and $phenotype and $go) {
-	    $log->write_to("bad data (causes a phenotype, but doesn't affect a gene) $_");
+	    $log->write_to("bad data (causes a phenotype, but doesn't affect a gene - inform CalTech) $_");
 	    next;
 	}
 	print OUT "\nCDS : \"$cds\"\nGO_term \"$go\" IMP Inferred_automatically \"$phenotype ($phenotype_id|$rnai)\"\n" if $cds ;
@@ -267,6 +308,38 @@ END
 	return $def;
 }
 
+
+# this will write out an acedb tablemaker defn to a temp file
+sub write_GO_def {
+	my $def = '/tmp/inherit_GO_term.def';
+	open TMP,">$def" or $log->log_and_die("cant write $def: $!\n");
+	my $txt = <<END;
+Sortcolumn 1
+
+Colonne 1 
+Width 12 
+Optional 
+Visible 
+Class 
+Class GO_term 
+From 1 
+  
+Colonne 2 
+Width 120
+Mandatory
+Visible 
+Class 
+Class Text 
+From 1 
+Tag Term
+
+
+END
+
+	print TMP $txt;
+	close TMP;
+	return $def;
+}
 
 
 __DATA__
