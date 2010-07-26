@@ -62,10 +62,12 @@ my $job = 1;
 
 $species ||= $wb->species;
 
-# submit jobs, one for every 4k of sequences
-while ($job <= ($count/4000)+1){
-	my $script="/software/worm/perl_510/bin/perl ~/wormbase/scripts/clustal_runner.pl -window 4000 -offset $job -user $user -pass $pass -pepfile $infile -database $acedb -species $species";
-	print `bsub -q long -e /dev/null -o /dev/null -J clw -R "select[mem>4000] rusage[mem=4000]" -M 4000000 $script`;
+my $window=3500;
+
+# submit jobs, one for every 3.5k of sequences
+while ($job <= ($count/$window)+1){
+	my $script="/software/worm/perl_512/bin/perl ~/wormbase/scripts/clustal_runner.pl -window $window -offset $job -user $user -pass $pass -pepfile $infile -database $acedb -species $species";
+	print `bsub -q long -e /dev/null -o /dev/null -J clw -R "select[mem>3700] rusage[mem=3700]" -M 3700000 $script`;
 	$job++;
 }
 
