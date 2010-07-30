@@ -5,7 +5,7 @@
 # by Anthony Rogers                             
 #
 # Last updated by: $Author: pad $               
-# Last updated on: $Date: 2010-07-23 08:51:47 $
+# Last updated on: $Date: 2010-07-30 10:49:51 $
 
 # Generates a release letter at the end of build.
 #
@@ -27,6 +27,7 @@ use Log_files;
 use Storable;
 use Ace;
 use Modules::Remap_Sequence_Change;
+use Species;
 
 
 ######################################
@@ -56,15 +57,13 @@ if ( $store ) {
 # Display help if required
 &usage("Help") if ($help);
 
-# in test mode?
-if ($test) {
-  print "In test mode\n" if ($verbose);
-
-}
-
 # establish log file.
 my $log = Log_files->make_build_log($wormbase);
 
+# in test mode?
+if ($test) {
+  $log->write_to("In test mode\n") if ($verbose);
+}
 
 
 ##############
@@ -73,10 +72,11 @@ my $log = Log_files->make_build_log($wormbase);
 
 my $basedir         = $wormbase->basedir;     # BASE DIR
 my $ace_dir         = $wormbase->autoace;     # AUTOACE DATABASE DIR
-my $reports_dir     = $wormbase->reports;     # AUTOACE REPORTS
 my $wormpep_dir     = $wormbase->wormpep;     # CURRENT WORMPEP
-
-
+my $reports_dir     = $wormbase->reports;     # AUTOACE REPORTS
+my $tace = $wormbase->tace;
+my $db = Ace->connect(-path  => $ace_dir,
+		      -program =>$tace) || $log->log_and_die("Connection failure: ",Ace->error);
 my $ver     = $wormbase->get_wormbase_version;
 my $old_ver = $ver -1;
 
@@ -90,117 +90,180 @@ $wormbase->release_composition($log) if defined($opt_c);
 if( defined($opt_l)) {
   my $release_letter = "$reports_dir/letter.WS$ver";
   open (RL,">$release_letter");
-  print RL "New release of WormBase WS$ver, Wormpep$ver and Wormrna$ver $date\n\n";
-  print RL "WS$ver was built by [INSERT NAME HERE]\n";
-  print RL "-===================================================================================-\n";
-  print RL "This directory includes:\n";
-  print RL "i)   database.WS$ver.*.tar.gz    -   compressed data for new release\n";
-  print RL "ii)  models.wrm.WS$ver           -   the latest database schema (also in above database files)\n";
-  print RL "iii) CHROMOSOMES/subdir         -   contains 3 files (DNA, GFF & AGP per chromosome)\n";
-  print RL "iv)  WS$ver-WS$old_ver.dbcomp         -   log file reporting difference from last release\n";
-  print RL "v)   wormpep$ver.tar.gz          -   full Wormpep distribution corresponding to WS$ver\n";
-  print RL "vi)   wormrna$ver.tar.gz          -   latest WormRNA release containing non-coding RNA's in the genome\n";
-  print RL "vii)  confirmed_genes.WS$ver.gz   -   DNA sequences of all genes confirmed by EST &/or cDNA\n";
-  print RL "viii) cDNA2orf.WS$ver.gz           -   Latest set of ORF connections to each cDNA (EST, OST, mRNA)\n";
-  print RL "ix)   gene_interpolated_map_positions.WS$ver.gz    - Interpolated map positions for each coding/RNA gene\n";
-  print RL "x)    clone_interpolated_map_positions.WS$ver.gz   - Interpolated map positions for each clone\n";
-  print RL "xi)   best_blastp_hits.WS$ver.gz  - for each C. elegans WormPep protein, lists Best blastp match to
-                            human, fly, yeast, C. briggsae, and SwissProt & TrEMBL proteins.\n";
-
-  print RL "xii)  best_blastp_hits_brigprot.WS$ver.gz   - for each C. briggsae protein, lists Best blastp match to
-                                     human, fly, yeast, C. elegans, and SwissProt & TrEMBL proteins.\n";  
-
-  print RL "xiii) geneIDs.WS$ver.gz   - list of all current gene identifiers with CGC & molecular names (when known)\n";
-  print RL "xiv)  PCR_product2gene.WS$ver.gz   - Mappings between PCR products and overlapping Genes\n";
-
-  print RL "\n\n";
-  print RL "Release notes on the web:\n-------------------------\n";
-  print RL "http://www.wormbase.org/wiki/index.php/Release_Schedule\n\n\n\n";
+  printf RL "New release of WormBase WS$ver, Wormpep$ver and Wormrna$ver $date\n\n";
+  printf RL "WS$ver was built by [INSERT NAME HERE]\n";
+  printf RL "-===================================================================================-\n";
+  printf RL "The WS$ver build directory includes:\n";
+  printf RL "genomes DIR              -  contains a sub dir for each WormBase species with sequence, gff, and agp data\n";
+  printf RL "        genomes/b_malayi:        - genome_feature_tables/	sequences/\n";
+  printf RL "        genomes/c_brenneri:      - genome_feature_tables/	sequences/\n";
+  printf RL "        genomes/c_briggsae:      - genome_feature_tables/	sequences/\n";
+  printf RL "        genomes/c_elegans:       - annotation/  genome_feature_tables/  sequences/\n";
+  printf RL "        genomes/c_japonica:      - genome_feature_tables/	sequences/\n";
+  printf RL "        genomes/c_remanei:       - genome_feature_tables/	sequences/\n";
+  printf RL "        genomes/h_bacteriophora: - genome_feature_tables/	sequences/\n";
+  printf RL "        genomes/h_contortus:     - genome_feature_tables/	sequences/\n";
+  printf RL "        genomes/m_hapla:         - genome_feature_tables/	sequences/\n";
+  printf RL "        genomes/m_incognita:     - sequences/\n";
+  printf RL "        genomes/p_pacificus:     - genome_feature_tables/	sequences/\n";
+  printf RL "          *annotation/                    - contains additional annotations\n";
+  printf RL "      i) confirmed_genes.WS$ver.gz  - DNA sequences of all genes confirmed by EST &/or cDNA\n";
+  printf RL "     ii) cDNA2orf.WS$ver.gz         - Latest set of ORF connections to each cDNA (EST, OST, mRNA)\n";      
+  printf RL "    iii) geneIDs.WS$ver.gz          - list of all current gene identifiers with CGC & molecular names (when known)\n";
+  printf RL "     iv) PCR_product2gene.WS$ver.gz - Mappings between PCR products and overlapping Genes\n";
+  printf RL "      v) oligo_mapping.gz           - V \n";
+  printf RL "          *genome_feature_tables/         - contains the main .gff files and supplementary .gff data\n";
+  printf RL "          *sequences/                     - contains dna/      protein/  rna/  sub dirs\n";
+  printf RL "            sequences/protein           - WormBase protein set for species + history etc.\n";
+  printf RL "     vi) wormpep$ver.tar.gz         - full Wormpep distribution corresponding to WS$ver\n";
+  printf RL "    vii) wormrna$ver.tar.gz         - latest WormRNA release containing non-coding RNA's in the genome\n";
+  printf RL "   viii) best_blastp_hits_species.WS$ver.gz  - for each C. elegans WormPep protein, lists Best blastp match to\n";
+  printf RL "                        human, fly, yeast, C. briggsae, and SwissProt & TrEMBL proteins.\n";
+  printf RL "            sequences/dna               - WormBase dna data genomic sequence (raw, soft_masked masked), agp\n";
+  printf RL "     ix) intergenic_sequences.dna.gz\n";
+  printf RL "            sequences/rna               - WormBase rna gene data.\n";
+  printf RL "acedb DIR                -  Everything needed to generate a local copy of the The Primary database\n";
+  printf RL "      x) database.WS$ver.*.tar.gz   - compressed acedb database for new release\n";
+  printf RL "     xi) models.wrm.WS$ver          - the latest database schema (also in above database files)\n";
+  printf RL "    xii) WS$ver-WS$old_ver.dbcomp   - log file reporting difference from last release\n";
+  printf RL "          *Non_C_elegans_BLASTX/          - This directory contains the blastx data for non-elegans species\n";
+  printf RL "                                                    (reduces the size of the main database)\n";
+  printf RL "COMPARATIVE_ANALYSIS DIR - compara.tar.bz2 wormpep217_clw.sql.bz2\n";
+  printf RL "ONTOLOGY DIR             - gene_associations, obo files for (phenotype GO anatomy) and associated association files\n";
+  printf RL "\n\n";
+  printf RL "Release notes on the web:\n-------------------------\n";
+  printf RL "http://www.wormbase.org/wiki/index.php/Release_Schedule\n\n\n\n";
   
 
   # Synchronisation with GenBank / EMBL
   my @chromosomes = ("I","II","III","IV","V","X");
   my $csome = shift @chromosomes;
-  print RL "\nSynchronisation with GenBank / EMBL:\n------------------------------------\n\n";
+  printf RL "\nC. elegans Synchronisation with GenBank / EMBL:\n------------------------------------\n\n";
   my $check = 0;
   while ($csome) {
     my $errors = `grep ERROR $ace_dir/yellow_brick_road/CHROMOSOME_$csome.agp_seq.log`;
     while( $errors =~ m/for\s(\p{IsUpper}\w+)/g ) {
-      print RL "CHROMOSOME_$csome\tsequence $1\n";
+      printf RL "CHROMOSOME_$csome\tsequence $1\n";
       $check = 1;
     }
     $csome = shift @chromosomes;
   }
   if ($check == 0) {
-    print RL "No synchronisation issues\n\n\n";
+    printf RL "No synchronisation issues\n";
   }
+  printf RL "\n\n";
+
 
   # make the chromosomal sequence changes file
-  $log->write_to("\nGenerating chromosomal sequence changes Data\n");
+  $log->write_to("\nGenerating C. elegans chromosomal sequence changes Data\n\n");
   open (CC, "> $reports_dir/chromosome_changes") || die "Can't open file $reports_dir/chromosome_changes\n";
   my @mapping_data = Remap_Sequence_Change::read_mapping_data($ver-1, $ver, $wormbase->species);
   my $text = Remap_Sequence_Change::write_changes($wormbase, $ver, @mapping_data);
-  print CC $text;
+  printf CC $text;
   close(CC);
 
-
-  my @release_files = ("$reports_dir/composition","$reports_dir/chromosome_changes","$reports_dir/genedata","$reports_dir/wormpep");
+  my @release_files = ("$reports_dir/chromosome_changes","$reports_dir/genedata","$reports_dir/wormpep","$reports_dir/composition");
   
   #include all the pre-generated reports
   my $file = shift(@release_files);
   while (defined($file)) {
+    
     open (READIN, "<$file") || die "cant open $file\n";
+    printf RL "C. elegans ";
+    #    if ($file eq  $reports_dir."/composition") {printf RL "C. elegans ";}
     while(<READIN>) {
       print RL "$_";
     }
     close READIN;
-    print RL "\n\n";
+    printf RL "\n\n";
     $file = shift(@release_files);
   }
-
-
-  # Find out Gene->CDS, Transcript, Pseudogene connections
-  my $tace = $wormbase->tace;
-  my $db = Ace->connect(-path  => $ace_dir,
-                        -program =>$tace) || $log->log_and_die("Connection failure: ",Ace->error);
-  my $query = "Find Gene WHERE (Corresponding_CDS OR Corresponding_transcript OR Corresponding_pseudogene) AND CGC_name AND Species = \"*elegans\"";
-  my $gene_seq_count = $db->fetch(-query=> "$query");
-
-  # wormpep status overview
-  $log->write_to("\nGenerating wormpep overview stats\n");
-  my %wp_status;
-  my $wormpep_datafile = "$basedir/WORMPEP/wormpep$ver/wormpep_current";
   
-  $wp_status{Confirmed}  = `grep Confirmed    $wormpep_datafile | wc -l`;
-  $wp_status{Supported}  = `grep confirmed    $wormpep_datafile | wc -l`;
-  $wp_status{Predicted}  = `grep Predicted    $wormpep_datafile | wc -l`;
-  $wp_status{Gene}       = $gene_seq_count;
-  $wp_status{Uniprot}    = `grep 'UniProt:'        $wormpep_datafile | wc -l`;
-  $wp_status{Protein_ID} = `grep 'protein_id' $wormpep_datafile | wc -l`;
-  $wp_status{Total}      = $wp_status{Confirmed} + $wp_status{Supported} + $wp_status{Predicted}; 
-  
-  printf RL "\n\n";
-  printf RL "Status of entries: Confidence level of prediction (based on the amount of transcript evidence)\n";
-  printf RL "-------------------------------------------------\n";
-  printf RL "Confirmed            %6d (%2.1f%%)\tEvery base of every exon has transcription evidence (mRNA, EST etc.)\n", $wp_status{Confirmed}, (($wp_status{Confirmed}/$wp_status{Total}) * 100);
-  printf RL "Partially_confirmed  %6d (%2.1f%%)\tSome, but not all exon bases are covered by transcript evidence\n", $wp_status{Supported}, (($wp_status{Supported}/$wp_status{Total}) * 100);
-  printf RL "Predicted            %6d (%2.1f%%)\tNo transcriptional evidence at all\n", $wp_status{Predicted}, (($wp_status{Predicted}/$wp_status{Total}) * 100);
+  ## For all curated/gemones with a gene set do the following ##
+  my %accessors = ($wormbase->species_accessors);
+  $accessors{$wormbase->species} = $wormbase;
+  delete $accessors{'heterorhabditis'};
+  delete $accessors{'elegans'};
+  my @wormpep_species = (keys%accessors);
+  my $wormpep_species;
+  my ($species,$name);
+  foreach $wormpep_species(@wormpep_species) {
+    $species = $accessors{$wormpep_species};
+    $name = $species->full_name;
 
-  printf RL "\n\n\n";
-  printf RL "Status of entries: Protein Accessions\n";
-  printf RL "-------------------------------------\n";
-  printf RL "UniProtKB accessions %6d (%2.1f%%)\n", $wp_status{Uniprot}, (($wp_status{Uniprot}/$wp_status{Total}) * 100);
-  printf RL "\n\n\n";
-  printf RL "Status of entries: Protein_ID's in EMBL\n";
-  printf RL "---------------------------------------\n";
-  printf RL "Protein_id           %6d (%2.1f%%)\n", $wp_status{Protein_ID}, (($wp_status{Protein_ID}/$wp_status{Total}) * 100);
-  printf RL "\n\n\n";
-  printf RL "Gene <-> CDS,Transcript,Pseudogene connections\n";
-  printf RL "----------------------------------------------\n";
-  printf RL "Caenorhabditis elegans entries with WormBase-approved Gene name %6d\n", $wp_status{Gene};
-  printf RL "\n\n\n";
- 
+    $log->write_to("Getting $name genomic sequence info\n\n");
+    #Do a genome composition to follow the elegans composition above.
+    printf RL "$name Genome sequence composition:\n----------------------------\n";
+    $file = $species->chromosomes."/composition.all";
+    
+    if (defined($file)) {
+      open (READIN, "<$file") || die "cant open $file\n";
+      while(<READIN>) {
+	printf RL "$_";
+      }
+      close READIN;
+      printf RL "\n\n";
+    }
+  }
 
+  ######################################
+  #  Tier II Species Gene Stats        #
+  ######################################
+  $log->write_to("Retrieving Tier II Species Gene Stats\n\n");
+  my %tierII_species = ($wormbase->species_accessors);
+  my @tierII = (keys%tierII_species);
+  my $tierII;
+  printf RL "\n\nTier II Gene counts\n";
+  printf RL "---------------------------------------------\n";
+  foreach $tierII(@tierII) {
+    my $gene_count_query = "Find Gene where Species = \"*${tierII}*\" AND Live";
+    my $gene_count = $db->fetch(-query=> "$gene_count_query");
+    my $Coding_count_query = "Find CDS where Species = \"*${tierII}*\" AND method = \"curated\"";
+    my $Coding_count = $db->fetch(-query=> "$Coding_count_query");
+    printf RL "$tierII Gene count $gene_count (Coding ${Coding_count})\n";
+  }
+  printf RL "---------------------------------------------\n\n\n";
+
+
+  foreach $wormpep_species(@wormpep_species) {
+    $species = $accessors{$wormpep_species};
+    $name = $species->full_name;
+    my %wp_status;
+    my $wormpep_datafile;
+    # Find out Gene->CDS, Transcript, Pseudogene connections
+    
+    my $query = "Find Gene WHERE (Corresponding_CDS OR Corresponding_transcript OR Corresponding_pseudogene) AND CGC_name AND Species = \"$name\"";
+    my $gene_seq_count = $db->fetch(-query=> "$query");
+
+    # wormpep status overview
+    $log->write_to("Generating $name wormpep overview stats\n\n");
+    #species specific wormpeps
+    $wormpep_datafile = $species->wormpep."/".$species->pepdir_prefix."pep".$species->version;
+    $wp_status{Confirmed}  = `grep Confirmed    $wormpep_datafile | wc -l`;
+    $wp_status{Supported}  = `grep confirmed    $wormpep_datafile | wc -l`;
+    $wp_status{Predicted}  = `grep Predicted    $wormpep_datafile | wc -l`;
+    $wp_status{Gene}       = $gene_seq_count;
+    $wp_status{Uniprot}    = `grep 'UniProt:'        $wormpep_datafile | wc -l`;
+    $wp_status{Protein_ID} = `grep 'protein_id' $wormpep_datafile | wc -l`;
+    $wp_status{Total}      = $wp_status{Confirmed} + $wp_status{Supported} + $wp_status{Predicted}; 
+    
+    printf RL "\n\n";
+    printf RL "-------------------------------------------------\n";
+    printf RL "$name Protein Stats:\n";
+    printf RL "-------------------------------------------------\n";
+    printf RL "Status of entries: Confidence level of prediction (based on the amount of transcript evidence)\n";
+    printf RL "-------------------------------------------------\n";
+    printf RL "Confirmed            %6d (%2.1f%%)\tEvery base of every exon has transcription evidence (mRNA, EST etc.)\n", $wp_status{Confirmed}, (($wp_status{Confirmed}/$wp_status{Total}) * 100);
+    printf RL "Partially_confirmed  %6d (%2.1f%%)\tSome, but not all exon bases are covered by transcript evidence\n", $wp_status{Supported}, (($wp_status{Supported}/$wp_status{Total}) * 100);
+    printf RL "Predicted            %6d (%2.1f%%)\tNo transcriptional evidence at all\n", $wp_status{Predicted}, (($wp_status{Predicted}/$wp_status{Total}) * 100);
+    printf RL "\n\n\n";
+    printf RL "Status of entries: Protein Accessions\n-------------------------------------\nUniProtKB accessions %6d (%2.1f%%)\n\n", $wp_status{Uniprot}, (($wp_status{Uniprot}/$wp_status{Total}) * 100) if ($wp_status{Uniprot} >0);
+    printf RL "Status of entries: Protein_ID's in EMBL\n---------------------------------------\nProtein_id           %6d (%2.1f%%)\n\n", $wp_status{Protein_ID}, (($wp_status{Protein_ID}/$wp_status{Total}) * 100) if ($wp_status{Protein_ID} >0);
+    printf RL "Gene <-> CDS,Transcript,Pseudogene connections\n";
+    printf RL "----------------------------------------------\n";
+    printf RL "$name entries with WormBase-approved Gene name %6d\n", $wp_status{Gene};
+    printf RL "\n\n";
+  }
   
   ######################################
   #  Get the Operon stats    - Paul    #
@@ -212,13 +275,13 @@ if( defined($opt_l)) {
   my $Operon_genes = $db->fetch(-query=> "$gene_query");
   
 
-  print RL "C. elegans Operons Stats\n";
-  print RL "---------------------------------------------\n";
-  print RL "Description: These exist as closely spaced gene clusters similar to bacterial operons\n";
-  print RL "---------------------------------------------\n";
-  print RL "| Live Operons        $Operon_count                |\n";
-  print RL "| Genes in Operons    $Operon_genes                |\n";
-  print RL "\n\n\n";
+  printf RL "C. elegans Operons Stats\n";
+  printf RL "---------------------------------------------\n";
+  printf RL "Description: These exist as closely spaced gene clusters similar to bacterial operons\n";
+  printf RL "---------------------------------------------\n";
+  printf RL "| Live Operons        $Operon_count                |\n";
+  printf RL "| Genes in Operons    $Operon_genes                |\n";
+  printf RL "\n\n\n";
 
 
 
@@ -259,7 +322,7 @@ if( defined($opt_l)) {
     }
     close TACE;
 
-    # of genes with GO terms
+    # no. of genes with GO terms
     my $query1 = "Find Gene WHERE GO_term";
     my $gc = $db->fetch(-query=> "$query1");
     
@@ -314,48 +377,47 @@ if( defined($opt_l)) {
     # of non-IEA GO annotations
     my $nonIEAno = $GOkeys - $IEA; 
 
-    print RL "GO Annotation Stats WS$ver\n--------------------------------------\n\n";
+    printf RL "GO Annotation Stats WS$ver\n--------------------------------------\n\n";
 
-    print RL "GO_codes - used for assigning evidence\n";
-    print RL "--------------------------------------\n";
-    print RL "IC  Inferred by Curator\n";
-    print RL "IDA Inferred from Direct Assay\n";
-    print RL "IEA Inferred from Electronic Annotation\n";
-    print RL "IEP Inferred from Expression Pattern\n";
-    print RL "IGI Inferred from Genetic Interaction\n";
-    print RL "IMP Inferred from Mutant Phenotype\n";
-    print RL "IPI Inferred from Physical Interaction\n";
-    print RL "ISS Inferred from Sequence (or Structural) Similarity\n";
-    print RL "NAS Non-traceable Author Statement\n";
-    print RL "NDNo Biological Data available\n";
-    print RL "RCA ?\n";
-    print RL "TAS Traceable Author Statement\n";
-    print RL "------------------------------------------------\n\n";
+    printf RL "GO_codes - used for assigning evidence\n";
+    printf RL "--------------------------------------\n";
+    printf RL "IC  Inferred by Curator\n";
+    printf RL "IDA Inferred from Direct Assay\n";
+    printf RL "IEA Inferred from Electronic Annotation\n";
+    printf RL "IEP Inferred from Expression Pattern\n";
+    printf RL "IGI Inferred from Genetic Interaction\n";
+    printf RL "IMP Inferred from Mutant Phenotype\n";
+    printf RL "IPI Inferred from Physical Interaction\n";
+    printf RL "ISS Inferred from Sequence (or Structural) Similarity\n";
+    printf RL "NAS Non-traceable Author Statement\n";
+    printf RL "NDNo Biological Data available\n";
+    printf RL "RCA ?\n";
+    printf RL "TAS Traceable Author Statement\n";
+    printf RL "------------------------------------------------\n\n";
 
-    print RL "Total number of Gene::GO connections:  $count\n\n"; 
+    printf RL "Total number of Gene::GO connections:  $count\n\n"; 
 
-    print RL "Genes Stats:\n";
-    print RL "----------------\n";
-    print RL "Genes with GO_term connections         $gc  \n";
-    print RL "           IEA GO_code present         $IEA_gc  \n";
-    print RL "       non-IEA GO_code present         $non_IEA_gc  \n\n";
+    printf RL "Genes Stats:\n";
+    printf RL "----------------\n";
+    printf RL "Genes with GO_term connections         $gc  \n";
+    printf RL "           IEA GO_code present         $IEA_gc  \n";
+    printf RL "       non-IEA GO_code present         $non_IEA_gc  \n\n";
     
-    print RL "Source of the mapping data             \n";
-    print RL "Source: *RNAi (GFF mapping overlaps)   $rnai  \n";
-    print RL "        *citace                        $citace  \n";
-    print RL "        *Inherited (motif & phenotype) $inherit  \n\n";
+    printf RL "Source of the mapping data             \n";
+    printf RL "Source: *RNAi (GFF mapping overlaps)   $rnai  \n";
+    printf RL "        *citace                        $citace  \n";
+    printf RL "        *Inherited (motif & phenotype) $inherit  \n\n";
 
-    print RL "GO_terms Stats:\n";
-    print RL "---------------\n";
-    print RL "Total No. GO_terms                     $GO_annotations  \n";
-    print RL "GO_terms connected to Genes            $GOwithgene  \n";
-    print RL "GO annotations connected with IEA      $IEA  \n";
-    print RL "GO annotations connected with non-IEA  $nonIEAno  \n";
-    print RL "   Breakdown  IC - $IC   IDA - $IDA   ISS - $ISS \n";
-    print RL "             IEP - $IEP   IGI - $IGI   IMP - $IMP \n";
-    print RL "             IPI - $IPI  NAS - $NAS     ND  - $ND  \n";
-    print RL "             RCA - $RCA   TAS - $TAS   \n\n\n";
-    print RL "------------------------------------------------\n\n";
+    printf RL "GO_terms Stats:\n";
+    printf RL "---------------\n";
+    printf RL "Total No. GO_terms                     $GO_annotations  \n";
+    printf RL "GO_terms connected to Genes            $GOwithgene  \n";
+    printf RL "GO annotations connected with IEA      $IEA  \n";
+    printf RL "GO annotations connected with non-IEA  $nonIEAno  \n";
+    printf RL "   Breakdown  IC - $IC   IDA - $IDA   ISS - $ISS \n";
+    printf RL "             IEP - $IEP   IGI - $IGI   IMP - $IMP \n";
+    printf RL "             IPI - $IPI  NAS - $NAS     ND  - $ND  \n";
+    printf RL "             RCA - $RCA   TAS - $TAS   \n\n\n";
   }
   else {
     $log->write_to("\nERROR - GeneGO_codes.def abscent from autoace/wquery\nThese stats will be missing from the release letter\n\n");
@@ -363,59 +425,62 @@ if( defined($opt_l)) {
 
 
 
-  ######################################
-  #  Tier II Species Gene Stats        #
-  ######################################
-  print "\nRetrieving Tier II Species Gene Stats\n";
-  my %accessors = ($wormbase->species_accessors);
-  my @tierII = (keys%accessors);
-  my $tierII;
-  print RL "Tier II Gene counts\n";
-  print RL "---------------------------------------------\n";
-  foreach $tierII(@tierII) {
-    my $gene_count_query = "Find Gene where Species = \"*${tierII}*\" AND Live";
-    my $gene_count = $db->fetch(-query=> "$gene_count_query");
-    my $Coding_count_query = "Find CDS where Species = \"*${tierII}*\" AND method = \"curated\"";
-    my $Coding_count = $db->fetch(-query=> "$Coding_count_query");
-    print RL "$tierII Gene count $gene_count (Coding ${Coding_count})\n";
-  }
-  print RL "---------------------------------------------\n\n\n\n\n";
 
-
-
-
+  
+  printf RL "-===================================================================================-\n";
+  $log->write_to("\nUseful Gene Stats\n");
+  printf RL "\nUseful Stats:\n---------\n\n";
+  
+  my $gene_seq_cgc_q = "Find Gene WHERE (Corresponding_CDS OR Corresponding_transcript OR Corresponding_pseudogene) AND CGC_name";
+  my $ele_seq_cgc_q = "Find Gene WHERE (Corresponding_CDS OR Corresponding_transcript OR Corresponding_pseudogene) AND CGC_name AND Species = \"Caenorhabditis elegans\"";
+  my $briggsae_seq_cgc_q = "Find Gene WHERE (Corresponding_CDS OR Corresponding_transcript OR Corresponding_pseudogene) AND CGC_name AND Species = \"Caenorhabditis briggsae\""; 
+  my $remanei_seq_cgc_q = "Find Gene WHERE (Corresponding_CDS OR Corresponding_transcript OR Corresponding_pseudogene) AND CGC_name AND Species = \"Caenorhabditis remanei\""; 
+  my $japonica_seq_cgc_q = "Find Gene WHERE (Corresponding_CDS OR Corresponding_transcript OR Corresponding_pseudogene) AND CGC_name AND Species = \"Caenorhabditis japonica\""; 
+  my $brenneri_seq_cgc_q = "Find Gene WHERE (Corresponding_CDS OR Corresponding_transcript OR Corresponding_pseudogene) AND CGC_name AND Species = \"Caenorhabditis brenneri\""; 
+  my $pristionchus_seq_cgc_q= "Find Gene WHERE (Corresponding_CDS OR Corresponding_transcript OR Corresponding_pseudogene) AND CGC_name AND Species = \"Pristionchus pacificus\""; 
+  
+  my $gene_seq_cgc = $db->fetch(-query=> "$gene_seq_cgc_q");
+  my $ele = $db->fetch(-query=> "$ele_seq_cgc_q");
+  my $briggsae_seq_cgc = $db->fetch(-query=> "$briggsae_seq_cgc_q");
+  my $remanei_seq_cgc = $db->fetch(-query=> "$remanei_seq_cgc_q");
+  my $japonica_seq_cgc = $db->fetch(-query=> "$japonica_seq_cgc_q");
+  my $brenneri_seq_cgc = $db->fetch(-query=> "$brenneri_seq_cgc_q");
+  my $pristionchus_seq_cgc = $db->fetch(-query=> "$pristionchus_seq_cgc_q");
+  
+  printf RL "Genes with Sequence and CGC name\n";
+  printf RL "WS$ver $gene_seq_cgc ($ele elegans / $briggsae_seq_cgc briggsae / $remanei_seq_cgc remanei / $japonica_seq_cgc japonica / $brenneri_seq_cgc brenneri / $pristionchus_seq_cgc pristionchus)\n\n\n";
   # Close the database connection now we have finished with it
   $db->close;
 
-  
-  print RL "-===================================================================================-\n";
-  # User filled sections
-  print RL "\n\n\n";
-  print RL "New Data:\n---------\n\n\n";
-  print RL "Genome sequence updates:\n-----------------------\n\n\n";
-  print RL "New Fixes:\n----------\n\n\n";
-  print RL "Known Problems:\n---------------\n\n\n";
-  print RL "Other Changes:\n--------------\n\n";
-  print RL "Proposed Changes / Forthcoming Data:\n-------------------------------------\n\n\n";
-  print RL "Model Changes:\n------------------------------------\n\n\n";
-  print RL "For more info mail worm\@sanger.ac.uk\n";
+
+printf RL "-===================================================================================-\n";
+# User filled sections
+printf RL "\n\n\n";
+  printf RL "New Data:\n---------\n\n\n";
+  printf RL "Genome sequence updates:\n-----------------------\n\n\n";
+  printf RL "New Fixes:\n----------\n\n\n";
+  printf RL "Known Problems:\n---------------\n\n\n";
+  printf RL "Other Changes:\n--------------\n\n";
+  printf RL "Proposed Changes / Forthcoming Data:\n-------------------------------------\n\n\n";
+  printf RL "Model Changes:\n------------------------------------\n\n\n";
+  printf RL "For more info mail worm\@sanger.ac.uk\n";
 
   # Installation guide
-  print RL "-===================================================================================-\n";
-  print RL "\n\n";
-  print RL "Quick installation guide for UNIX/Linux systems\n-----------------------------------------------\n\n";
-  print RL "1. Create a new directory to contain your copy of WormBase,\n\te.g. /users/yourname/wormbase\n\n";
-  print RL "2. Unpack and untar all of the database.*.tar.gz files into\n\tthis directory. You will need approximately 2-3 Gb of disk space.\n\n";
-  print RL "3. Obtain and install a suitable acedb binary for your system\n\t(available from www.acedb.org).\n\n";
-  print RL "4. Use the acedb 'xace' program to open your database, e.g.\n\ttype 'xace /users/yourname/wormbase' at the command prompt.\n\n";
-  print RL "5. See the acedb website for more information about acedb and\n\tusing xace.\n\n";
+  printf RL "-===================================================================================-\n";
+  printf RL "\n\n";
+  printf RL "Quick installation guide for UNIX/Linux systems\n-----------------------------------------------\n\n";
+  printf RL "1. Create a new directory to contain your copy of WormBase,\n\te.g. /users/yourname/wormbase\n\n";
+  printf RL "2. Unpack and untar all of the database.*.tar.gz files into\n\tthis directory. You will need approximately 2-3 Gb of disk space.\n\n";
+  printf RL "3. Obtain and install a suitable acedb binary for your system\n\t(available from www.acedb.org).\n\n";
+  printf RL "4. Use the acedb 'xace' program to open your database, e.g.\n\ttype 'xace /users/yourname/wormbase' at the command prompt.\n\n";
+  printf RL "5. See the acedb website for more information about acedb and\n\tusing xace.\n\n";
   
   
-  print RL "____________  END _____________\n";
+  printf RL "____________  END _____________\n";
   close(RL);
 
 
-  print "DONT FORGET TO FILL IN THE LAST FEW FIELDS IN THE LETTER\n found at $release_letter\n";
+  $log->write_to("DONT FORGET TO FILL IN THE LAST FEW FIELDS IN THE LETTER\n found at $release_letter\n");
   
 
 ##################
@@ -430,7 +495,7 @@ if( defined($opt_l)) {
 
 # say goodbye
 $log->mail();
-print "Finished.\n" if ($verbose);
+$log->write_to("Finished.\n") if ($verbose);
 exit(0);
 
 
