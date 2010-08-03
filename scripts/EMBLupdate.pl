@@ -10,7 +10,7 @@
 #     * Update all necessary files on disk.
 #
 # Last updated by: $Author: pad $     
-# Last updated on: $Date: 2008-12-19 14:33:48 $      
+# Last updated on: $Date: 2010-08-03 10:42:14 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -63,7 +63,7 @@ $mon++;
 if ($mon < 10) {$mon="0".$mon;}
 if ($mday < 10) {$mday="0".$mday;}
 $year = $year-100;
-my $datestamp = "0" . $year . $mon . $mday;
+my $datestamp = $year . $mon . $mday;
 
 ###################################################################################
 #                               Main body of script                               #
