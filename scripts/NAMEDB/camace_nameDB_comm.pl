@@ -66,6 +66,8 @@ my $PASS 	= "wormpub";
 my $USER 	= "wormpub";
 my $DOMAIN  = 'Gene';
 my $db = NameDB_handler->new($DB,$USER,$PASS,'/nfs/WWWdev/SANGER_docs/htdocs');
+my $count =0;
+my $ace_genes;
 
 # get nameserver data
 my $query = "SELECT primary_identifier.object_public_id, 
@@ -89,21 +91,33 @@ my %name_types = (
 		  '3' => 'seq'
 		  );
 
-my %server_genes;					 
+my %server_genes;
+					 
 while (my ( $gene, $live, $name, $name_type ) = $sth->fetchrow_array){
     $server_genes{$gene}->{ 'name'} = $name;
     $server_genes{$gene}->{ 'sts' } = $live;
 }
 
+#How much work is to be done
+my $genecount = scalar keys %ace_genes;
+$log->write_to("Checking $genecount genes\n");
 
+#Main foreach loop
 foreach my $gene (keys %ace_genes) {
     &check_gene($gene);
     delete($ace_genes{$gene}) if $ace_genes{$gene};
 }
-$log->write_to("Work Done!\n");
+
+#finish up
+$log->write_to("There were $count errors found\n");
+
 $log->mail();
 exit(0);
 
+
+#########################
+# Check_gene subroutine #
+#########################
 
 sub check_gene {
     my $gene = shift;
@@ -112,7 +126,7 @@ sub check_gene {
 	if( $server_genes{"$gene"} ){
         # check Live 
 	    if ($ace_genes{"$gene"}->{'sts'} != $server_genes{"$gene"}->{'sts'}){
-		$log->write_to("ERROR: $gene live or dead ? ace".$ace_genes{"$gene"}->{'sts'}." ns".$server_genes{"$gene"}->{'sts'}."\n");
+		$log->error("ERROR: $gene live or dead ? ace".$ace_genes{"$gene"}->{'sts'}." ns".$server_genes{"$gene"}->{'sts'}."\n");
 		return;
 	    }
 	    if($server_genes{"$gene"}->{'name'} ){
@@ -122,16 +136,19 @@ sub check_gene {
 		}
 	    }
 	    else{ 
-		$log->write_to("ERROR: no name for $gene in nameserver\n");
+		$log->error("ERROR: no name for $gene in nameserver\n");
+		$count++;
 	    }
 	}
 	else {
-	    $log->write_to("ERROR: $gene missing from server\n");
+	    $log->error("ERROR: $gene missing from server\n");
+	    $count++;
 	    return;
 	}	
     }
     else {
-	$log->write_to("ERROR: $gene missing from acedb\n");
+	$log->error("ERROR: $gene missing from acedb\n");
+	$count++;
 	return;
     }
 }
