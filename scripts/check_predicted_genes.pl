@@ -4,7 +4,7 @@
 #
 # by Keith Bradnam
 #
-# Last updated on: $Date: 2010-03-04 15:02:20 $
+# Last updated on: $Date: 2010-08-04 10:36:17 $
 # Last updated by: $Author: pad $
 #
 # see pod documentation at end of file for more information about this script
@@ -38,48 +38,29 @@ if ( $store ) {
 			   );
 }
 
+#Establish Log
 my $log = Log_files->make_build_log($wormbase);
 
-# verbose model
-# toggle reporting of genes with improper stop/start codons and/or genes which have length's 
-# not divisible by three but have 'Start_not_found' and/or 'End_not_found' tags.
-# 'ON' setting means that you will get full output, 'OFF' means that you will get restricted output,
-# Also outputs gene names as you cycle through main loop
-
-
-################################
-# Establish database connection
-################################
-
+# Establish database connection etc.
 $log->log_and_die("Please use -database <path> specify a valid database directory.\n\n") if (!defined($db_path));
-
 # Specify which tace to use if you are using -program flag
-
 my $tace = $wormbase->tace;
 my $db = Ace->connect(-path=>$db_path) or  $log->log_and_die("Couldn't connect to $db_path\n". Ace->error);
 
 # create separate arrays for different classes of errors (1 = most severe, 4 = least severe)
-our @error1;
-our @error2;
-our @error3;
-our @error4;
-our @error5;
+our (@error1, @error2, @error3, @error4, @error5);
 
-#Permitted exceptions
+#Permitted exceptions where the error has been checked.
 #List of verified small genes or have confirmed small introns.
 my @checkedgenes = ('F56H11.3b','F13E9.8','Y45F10D.7','T21C12.8','F58G11.2','F54E4.3','F43D9.3a','F43D9.3b','F36H1.3','F02C12.1','C40H5.1', 'H12D21.1', 'H12D21.12','H12D21.13', 'H12D21.14',  'H12D21.15','W06A7.5','Y50E8A.17', 'ZC412.6', 'ZC412.7', 'R74.3a');
 
 
-# Check for non-standard methods in CDS class
-my $CDSfilter = "";
-my @CDSfilter = $db->fetch (-query => 'FIND CDS; method != Transposon_CDS; method != Transposon_Pseudogene; method != curated; method !=history; method !=Genefinder; method !=twinscan; method !=jigsaw; method !=mGene');
-foreach $CDSfilter (@CDSfilter) {
-  push(@error4, "ERROR! CDS:$CDSfilter contains an invalid method please check\n");
-}
 
 ################################
-# Fetch Gene Models (All_genes)
+#         Main Body            # 
 ################################
+
+# Fetch Gene Models to be tested (All_genes) #
 my @Predictions;
 if ($test1) {
   $log->write_to("Only checking genes on ${test1}.......\n");
@@ -96,10 +77,30 @@ my $gene_model_count=@Predictions;
 $log->write_to("Checking $gene_model_count Predictions in $db_path\n\n");
 print "\nChecking $gene_model_count Predictions in '$db_path'\n\n" if $verbose;
 
-################################
-# Run checks on genes
-################################
+&main_gene_checks;
+&single_query_tests;
 
+# print warnings to log file, log all category 1 errors, and then fill up.
+my $count_errors =0;
+my @error_list = ( \@error1, \@error2, \@error3,  \@error4, \@error5);
+foreach my $list (@error_list) {
+  foreach my $error (@{$list}) {
+    $count_errors++;
+    $log->write_to("$count_errors $error");
+    last if $count_errors > 190;
+  }
+}
+
+$db->close;
+$log->mail;
+exit(0);
+
+
+#################################################################
+# Main Subroutines
+#################################################################
+
+sub main_gene_checks {
 CHECK_GENE:
 foreach my $gene_model ( @Predictions ) {
   #next unless ($gene_model eq "Y32B12C.2b"); #stop the script at a specified gene. debug line
@@ -109,7 +110,6 @@ foreach my $gene_model ( @Predictions ) {
   my @exon_coord2 = sort by_number ($gene_model->get('Source_exons',2));
   my $i;
   my $j;
-  
 
 #  if (!defined($method_test)) {print "$gene_model\n";}
   
@@ -200,9 +200,7 @@ foreach my $gene_model ( @Predictions ) {
     my $prob_prediction = $gene_model->at('Visible.Brief_identification');
     push(@error3, "ERROR: The Transcript $gene_model does not have a Brief_identification and will throw an error in the build :(!\n") if (!defined($prob_prediction));
   }
-
-  
-
+ 
   ###################################
   #All gene predictions should have #
   ###################################
@@ -290,24 +288,40 @@ foreach my $gene_model ( @Predictions ) {
   # feed DNA sequence to function for checking
   &test_gene_sequence_for_errors($gene_model,$start_tag,$end_tag,$dna,$method_test);
 }
-	
-# print warnings to log file, log all category 1 errors, and then fill up a top
-# 20 with what is left
-	
-my $count_errors =0;
-
-my @error_list = ( \@error1, \@error2, \@error3,  \@error4, \@error5);
-foreach my $list (@error_list) {
-  foreach my $error (@{$list}) {
-    $count_errors++;
-    $log->write_to("$count_errors $error");
-    last if $count_errors > 190;
-  }
 }
 
-$db->close;
-$log->mail;
-exit(0);
+
+#####################################
+# Additional Tests on whole classes #
+#####################################
+sub single_query_tests {
+
+#Transcript checks from camcheck
+  my @Transcripts= $db->fetch(-query=>'find elegans_RNA_genes NOT Transcript');
+  if(@Transcripts){
+    foreach (@Transcripts){
+      $log->write_to("ERROR: $_ has no Transcript tag, this will cause errors in the build\n");
+    }
+  }
+  else {
+    $log->write_to("\nTranscripts OK\n");
+  }
+
+# Transposon checks
+  my @Transposons= $db->fetch(-query=>'find Transposon');
+  my $Transposon_no = @Transposons;
+  unless ($Transposon_no eq "98"){print "\nChange in Transposon_numbers\n"}
+  
+
+  # Check for non-standard methods in CDS class
+  my @CDSfilter = $db->fetch (-query => 'FIND CDS; method != Transposon_CDS; method != Transposon_Pseudogene; method != curated; method !=history; method !=Genefinder; method !=twinscan; method !=jigsaw; method !=mGene');
+  foreach my $CDSfilter (@CDSfilter) {
+    push(@error4, "ERROR! CDS:$CDSfilter contains an invalid method please check\n");
+  }
+}
+	
+
+
 
 #################################################################
 # Subroutines
