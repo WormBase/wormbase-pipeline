@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: pad $
-// Last edited on: $Date: 2010-06-23 13:38:29 $
+// Last edited on: $Date: 2010-08-09 13:49:27 $
 
 
 ////////////////////////
@@ -440,6 +440,7 @@
 			Translocation
 			Compound	Text
                 Phenotype ?Phenotype XREF Rearrangement #Phenotype_info
+		Phenotype_not_observed ?Phenotype XREF Not_in_Rearrangement #Phenotype_info  //added by Wen to separate Not phenotype from real phenotypes
 		Balances ?Map #Balancer
 		Marked By_variation ?Variation XREF Marked_rearrangement
 		       By_transgene ?Transgene XREF Marked_rearrangement
@@ -484,6 +485,7 @@
 
 ?Strain  Evidence #Evidence
 	 Genotype Text
+	 Extended_genotype ?Variation
 	 Contains  Gene	 ?Gene XREF Strain
 	  	   Variation  ?Variation XREF Strain 
 		   Rearrangement	 ?Rearrangement XREF Strain
@@ -495,6 +497,7 @@
 		     Mutagen Text
 		     CGC_received DateType
 		     Phenotype ?Phenotype XREF Strain #Phenotype_info
+		     Phenotype_not_observed ?Phenotype XREF Not_in_Strain #Phenotype_info //added by Wen to separate Not phenotype from real phenotypes 
          Location ?Laboratory #Lab_Location
 	 Made_by Text
 	 Remark	?Text #Evidence
@@ -2097,6 +2100,7 @@
 		Mapping_data 2_point ?2_point_data 
 			     Multi_point ?Multi_pt_data
 		Phenotype ?Phenotype XREF Transgene #Phenotype_info // [2006-04-20 ar2] changed for Carols Phenotype changes
+		Phenotype_not_observed ?Phenotype XREF Not_in_Transgene #Phenotype_info  //added by Wen to separate Not phenotype from real phenotypes
 		Rescue ?Gene XREF Rescued_by_Transgene ?Variation XREF Rescued_by_Transgene
 		Expr_pattern ?Expr_pattern XREF Transgene                                        // Related Expr_pattern
 		Marker_for   ?Text #Evidence //Marker Summary
@@ -2158,6 +2162,7 @@
 	Interaction ?Interaction
         Reference UNIQUE ?Paper XREF RNAi //[070215 ar2] made reference unique so Paper sort of equates to a Study class for Will S
         Phenotype ?Phenotype XREF RNAi #Phenotype_info
+	Phenotype_not_observed ?Phenotype XREF Not_in_RNAi #Phenotype_info //added by Wen to separate Not phenotype from real phenotypes
         Expr_profile ?Expr_profile XREF RNAi_result // connection added during build [030106 krb]
         Remark ?Text #Evidence
 	Method UNIQUE ?Method
@@ -2176,7 +2181,7 @@
 		    	Remark  ?Text   #Evidence // specific remarks about the phenotype
 			Quantity_description ?Text #Evidence //Remark to describe what quantity describes, below
 			Quantity        UNIQUE  Int UNIQUE      Int     #Evidence
-			Not      	#Evidence
+			Not      	#Evidence //This is being phased out but is needed for the next phase [06/08/10].
 			Anatomy_term	?Anatomy_term #Evidence 
                 	Penetrance      	Incomplete      Text    #Evidence
                                 		Low             Text    #Evidence
@@ -2255,6 +2260,11 @@
 			      Interaction ?Interaction
 			      Rearrangement ?Rearrangement XREF Phenotype
 			      Strain ?Strain XREF Phenotype
+			      Not_in_RNAi ?RNAi XREF Phenotype_not_observed //added by Wen for Not observed phenotypes
+			      Not_in_Variation ?Variation XREF Phenotype_not_observed //added by Wen for Not observed phenotypes
+			      Not_in_Strain ?Strain XREF Phenotype_not_observed //added by Wen for Not observed phenotypes
+			      Not_in_Transgene ?Transgene XREF Phenotype_not_observed //added by Wen for Not observed phenotypes
+			      Not_in_Rearrangement ?Rearrangement XREF Phenotype_not_observed //added by Wen for Not observed phenotypes
 	   Associated_with    GO_term   ?GO_term   XREF Phenotype   ?GO_code  #Evidence	// Tag Associated_with changed by Carol
 
 
@@ -2848,10 +2858,9 @@
 //////////////////////////////////////////////////////////////////////////////////////////////
 
 ?Variation Evidence #Evidence
-	   Name CGC_name	UNIQUE ?Variation_name XREF CGC_name_for
-		Other_name	       ?Variation_name XREF Other_name_for #Evidence
-                Rearrangement	       ?Rearrangement  XREF Variation // some alleles are really rearrangements
-		Public_name	UNIQUE ?Variation_name XREF Public_name_for
+	   Name Public_name	UNIQUE ?Variation_name XREF Public_name_for
+		Other_name	?Variation_name XREF Other_name_for #Evidence
+                Rearrangement	?Rearrangement  XREF Variation // some alleles are really rearrangements		
 	   Sequence_details SMap S_parent UNIQUE Sequence UNIQUE ?Sequence XREF Allele
 			    Flanking_sequences UNIQUE Text UNIQUE Text
 			    CGH_deleted_probes UNIQUE Text UNIQUE Text
@@ -2920,21 +2929,7 @@
 		    Marked_rearrangement ?Rearrangement XREF By_variation
 	   Description Phenotype ?Phenotype XREF Variation #Phenotype_info
                        Phenotype_remark ?Text #Evidence
-                       Recessive
-                       Semi_dominant
-                       Dominant
-		       Partially_penetrant Text // percentage of animals displaying phenotype
-		       Completely_penetrant
-                       Temperature_sensitive Heat_sensitive Text #Evidence // text field stores temperature
-                                             Cold_sensitive Text #Evidence
-                       Loss_of_function UNIQUE Haplo_insufficient #Evidence //krb 021210
-                                               Hypomorph #Evidence
-                                               Amorph #Evidence
-                                               Uncharacterised_loss_of_function #Evidence
-                       Gain_of_function UNIQUE Dominant_negative #Evidence //krb 021210
-                                               Hypermorph #Evidence
-                                               Neomorph #Evidence
-                                               Uncharacterised_gain_of_function #Evidence
+		       Phenotype_not_observed ?Phenotype XREF Not_in_Variation #Phenotype_info  //added by Wen to separate Not phenotype from real phenotypes 
                        Nonsense UNIQUE Amber_UAG Text #Evidence
                                        Ochre_UAA Text #Evidence
                                        Opal_UGA  Text #Evidence
@@ -2943,9 +2938,6 @@
                        Splice_site Donor Text #Evidence
                                    Acceptor Text #Evidence
                        Frameshift Text #Evidence  // added sdm
-                       Maternal Strictly_maternal
-                                With_maternal_effect
-                       Paternal
            Reference ?Paper XREF Allele
            Remark  ?Text #Evidence
 	   Method UNIQUE ?Method
@@ -2953,8 +2945,7 @@
                            Picture ?Picture XREF Variation #Evidence
 
 
-?Variation_name CGC_name_for       ?Variation XREF CGC_name
-                Other_name_for     ?Variation XREF Other_name // main reason for this class
+?Variation_name Other_name_for     ?Variation XREF Other_name // main reason for this class
                 Public_name_for    ?Variation XREF Public_name // the main name for a gene
 
 
@@ -3119,7 +3110,7 @@
 
 //////////////////////////////////////////////////
 //
-// Molecule Model - Proposed by Karen Yook WS217
+// Molecule class Model - Proposed by Karen Yook WS217
 // Connects to: #Phenotype_info
 //              ?Gene_regulation 
 //
@@ -3130,10 +3121,12 @@
            Synonym ?Text
            DB_info Database ?Database ?Database_field ?Accession_number
            Gene_regulation Gene_regulator ?Gene_regulation XREF Molecule_regulator
-           Affects_phenotype_of     Variation ?Variation #Evidence
-                                    Strain    ?Strain    #Evidence
-                                    Transgene ?Transgene #Evidence
-                                    RNAi      ?RNAi      #Evidence 
+           Affects_phenotype_of     Variation ?Variation ?Phenotype #Evidence
+                                    Strain    ?Strain    ?Phenotype #Evidence
+                                    Transgene ?Transgene ?Phenotype #Evidence
+                                    RNAi      ?RNAi      ?Phenotype #Evidence 
+	   Molecule_use  ?Text  #Evidence
+	   Remark ?Text #Evidence
 
 
 ////////////////////////
