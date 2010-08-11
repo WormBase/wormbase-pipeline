@@ -126,7 +126,18 @@ foreach my $chromosome (@chromosomes) {
         print "Oligo_set : '$name'\n" if ($verbose);
     }
     close(GFF);
-#######################
+
+#####################################
+# extract data from GFF_split files #
+#####################################
+
+    #Check that the gff files exists so as to not waste time.
+    $log->log_and_die("ERROR: $gffdir/CHROMOSOME_${chromosome}_UTR.gff does not exist\n") unless (-e "$gffdir/CHROMOSOME_${chromosome}_UTR.gff");
+    $log->log_and_die("ERROR: $gffdir/CHROMOSOME_${chromosome}_curated.gff does not exist\n") unless (-e "$gffdir/CHROMOSOME_${chromosome}_curated.gff");
+    $log->log_and_die("ERROR: $gffdir/CHROMOSOME_${chromosome}_Pseudogene.gff does not exist\n") unless (-e "$gffdir/CHROMOSOME_${chromosome}_Pseudogene.gff");
+    $log->log_and_die("ERROR: $gffdir/CHROMOSOME_${chromosome}_Non_coding_transcript.gff does not exist\n") unless (-e "$gffdir/CHROMOSOME_${chromosome}_Non_coding_transcript.gff");
+    $log->log_and_die("ERROR: $gffdir/CHROMOSOME_${chromosome}_ncRNA.gff does not exist\n") unless (-e "$gffdir/CHROMOSOME_${chromosome}_ncRNA.gff");
+
     # Get exon info from split UTR GFF files
     Map_Helper::get_from_gff( "$gffdir/CHROMOSOME_${chromosome}_UTR.gff", 'Transcript', 'UTR', \%genes );
 
@@ -141,7 +152,7 @@ foreach my $chromosome (@chromosomes) {
 
     # Get exon info from split ncRNA exon GFF file
     Map_Helper::get_from_gff( "$gffdir/CHROMOSOME_${chromosome}_ncRNA.gff", 'Transcript', qw{exon}, \%genes );
-#######################
+
     print "Finished GFF loop\n" if ($verbose);
 
     ###################
@@ -157,8 +168,8 @@ foreach my $chromosome (@chromosomes) {
     # map it #
     ##########
     Map_Helper::map_it( \%output, \%Oligo, \@sorted_genes, \%genes );
-
 }
+#foreach chromosome loop end
 
 ########################
 # produce output files #
