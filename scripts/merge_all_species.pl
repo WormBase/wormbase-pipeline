@@ -1,7 +1,7 @@
 #/software/bin/perl -w
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2010-04-21 13:55:39 $
+# Last updated by: $Author: pad $
+# Last updated on: $Date: 2010-08-11 15:45:05 $
 
 #################################################################################
 # Variables                                                                     #
@@ -128,7 +128,7 @@ $log->write_to("\nNow loading BLAST, protein and repeat data . . .\n");
 foreach my $spDB (values %accessors) {
   my $species = $spDB->species;
   $log->write_to("  Copy BLAST data from $species . . .\n");
-  my $ftpdir = $wormbase->ftp_site."/tmp_blastx_data/";
+  my $ftpdir = $wormbase->ftp_site."/data/tmp_blastx_data/";
   my @blastfiles = qw( SPECIES_blastp.ace SPECIES_blastx.ace worm_ensembl_SPECIES_interpro_motif_info.ace worm_ensembl_SPECIES_motif_info.ace repeat_homologies.ace inverted_repeats.ace pepace.ace);
   foreach my $f (@blastfiles){
     my $file = $f;		# don't use $f as it is a reference to the array element
