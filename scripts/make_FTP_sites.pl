@@ -8,7 +8,7 @@
 # Originally written by Dan Lawson
 #
 # Last updated by: $Author: pad $
-# Last updated on: $Date: 2010-08-11 15:45:05 $
+# Last updated on: $Date: 2010-08-13 13:06:19 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -215,6 +215,8 @@ close FTP_LOCK;
 &extract_ko if ($dump_ko);            # dumps KO-consortium data to FTP site
 
 &copy_clustal if ($clustal);          # copies the clustal sql-dump to the FTP site
+
+&make_frozen_links;                   # creates a frozen symbolic link if it is a 5 or 0 release
 
 ################################
 #
@@ -933,8 +935,14 @@ sub usage {
 }
 
 ##################################################################################
+sub make_frozen_links {
+  my $lnpath = $wormbase->ftp_site;
+  if ($WS =~ /\d+5$/ || $WS =~ /\d+0$/) {
+    $wormbase->run_command("ln -sf $lnpath/$WS_name $lnpath/FROZEN_RELEASES/$WS_name", $log);
+  }
+}
 
-
+##################################################################################
 sub check_manifest {
 	my $rel = $wormbase->get_wormbase_version;
 	my $ftp_dir = $wormbase->ftp_site."/WS$rel";
