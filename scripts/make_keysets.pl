@@ -7,7 +7,7 @@
 # Usage : make_keysets.pl [-options]
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2010-08-16 16:15:04 $
+# Last edited on: $Date: 2010-08-16 16:24:35 $
 
 #################################################################################
 # variables                                                                     #
@@ -42,10 +42,10 @@ GetOptions (
 	    "history=s" => \$history,
 	    "noload"    => \$noload,
 	    "test"      => \$test,
-	    "debug"     => \$debug,
+	    "debug=s"   => \$debug,
 	    "help"      => \$help,
 	    "verbose"   => \$verbose,
-	    "store:s"     => \$store,
+	    "store:s"   => \$store,
 	    );
 
 if ( $store ) {
