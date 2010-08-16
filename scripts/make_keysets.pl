@@ -6,8 +6,8 @@
 #
 # Usage : make_keysets.pl [-options]
 #
-# Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2008-03-17 16:54:14 $
+# Last edited by: $Author: pad $
+# Last edited on: $Date: 2010-08-16 16:15:04 $
 
 #################################################################################
 # variables                                                                     #
@@ -139,22 +139,27 @@ if (($touched) || ($all)) {
 
 # wormpep histories
 if (($history) || ($all)) {
-    print "Tace query for wormpep_mods_since_WSnn\n" if ($debug);
+  print "Generating wormpep_mods release files\n" if ($debug);
+  my @releases;
+  my @rdirs = `ls /nfs/disk69/ftp/pub2/wormbase/FROZEN_RELEASES/ | grep WS`;
+  my $rdirs;
+  foreach $rdirs(@rdirs){
+    if ($rdirs =~ /WS(\d+)$/){
+      push (@releases,$1);
+    }
+  }
+  push (@releases,$history-1);
 
-    my @releases = (77,100,110,120,130,140,150,160,170);
-    push (@releases,$history-1);
-
-    foreach my $i (@releases) {
-	my $wsname = "wormpep_mods_since_WS" . $i;
-	(print "Tace query for " . $wsname . "\t") if ($debug);
-	my $command ="nosave\nquery find wormpep where history AND NEXT > $i\nlist -a\nquit\n";
-	&tace_it($command,$wsname);
-	print "....load into db\t" if ($debug);
-	&load_it($wsname,'keyset_lists') unless ($noload);
- 	print "...hasta luego\n\n" if ($debug);
-    } 
-    print "calculated keysets of changed wormpep entries\n\n";
-} 
+  foreach my $i (@releases) {
+    my $wsname = "wormpep_mods_since_WS" . $i;
+    (print "Tace query for " . $wsname . "\t") if ($debug);
+    my $command ="nosave\nquery find wormpep where history AND NEXT > $i\nlist -a\nquit\n";
+    &tace_it($command,$wsname);
+    print "....load into db\t" if ($debug);
+    &load_it($wsname,'keyset_lists') unless ($noload);
+  }
+  print "calculated keysets of changed wormpep entries\n\n";
+}
 
 my $misc_static_dir = $wormbase->misc_static;
 $wormbase->load_to_database($dbpath, "$misc_static_dir/represent_clone.ace", "clone_check", $log) if $all;
