@@ -9,11 +9,12 @@
    Clone                                          Expr_pattern
    Strain                 CDS                     Expr_profile
                            elegans_CDS
-  Variation                briggsae_CDS           Feature
-    Insertion_allele                              Motif
-    Deletion_allele       Transcript
-    Substitution_allele    elegans_RNA_genes      Operon
-    KO_allele              Coding_transcripts
+  Variation                briggsae_CDS
+  Variation_name                                  Feature
+    Insertion_allele      Transcript              Motif
+    Deletion_allele        elegans_RNA_genes
+    Substitution_allele    Coding_transcripts     Operon
+    KO_allele              
     NBP_allele                                    Cell
                           Pseudogene              Cell_group
    Model                   elegans_pseudogenes    GO_term
