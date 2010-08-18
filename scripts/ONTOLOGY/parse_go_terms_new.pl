@@ -559,7 +559,7 @@ sub check_go_term {
     close GOOUT;
     
     # load file to autoace if -load specified
-    #$wormbase->load_to_database($wormbase->autoace, "$acefile", 'go_defs', $log);
+    $wormbase->load_to_database($wormbase->autoace, "$acefile", 'go_defs', $log);
     
     # tidy up and exit
     $wormbase->run_command("rm $go_obo_file",$log);
