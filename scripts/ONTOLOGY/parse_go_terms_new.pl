@@ -265,6 +265,10 @@ if ($rnai) {
 		}
 		elsif ($ref) {
 		    $ref_field="WB:$ref";
+		} else {
+		  # if the RNAi object does not have a Reference, give a warning and skip this RNAi because the $ref_field is a mandatory term
+		  warn "No reference for $obj\n";
+		  next;
 		}
 		my $with="WB:$obj|WB:$phen";
 		my $syn="";
