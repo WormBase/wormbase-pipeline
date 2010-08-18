@@ -7,8 +7,8 @@
 #
 #      CREATED:  03/08/06 13:26:19 BST
 #      
-#  DESCRIPTION:  pulls from mysql the orthologs and from the build the gene/cds connections
-#                to add an Alias to the GFF3 gene name    
+#  DESCRIPTION:  pulls from mysql the orthologs and from the build the gene/cds 
+#                connections to add an Alias to the GFF3 gene name 
 #===============================================================================
 
 use strict;
@@ -20,7 +20,9 @@ use lib '/software/worm/ensembl/ensembl-compara/modules/';
 use lib '/software/worm/ensembl/ensembl/modules/';
 
 my $le_species=shift;
-$le_species=~/^(\w)\w+\s(\w\w\w)/;
+#$le_species=~/^(\w)\w+\s(\w\w\w)/;
+$le_species=~/^(\w)\w+\s(\w\w)/;
+
 my $prefix="$1$2";
 
 print STDERR "\x1b[38;5;31m","slurping gene names from ensembl for $le_species / $prefix\n","\x1b[0m";
@@ -62,14 +64,14 @@ sub grab_ids {
 		54126  => 'Pristionchus pacificus',
                 6305   => 'Meloidogyne hapla',
                 6289   => 'Haemonchus contortus',
+		96668  => 'Caenorhabditis angaria',
 	);
 
 
        my $config = ( YAML::LoadFile(glob('~/wormbase/scripts/ENSEMBL/etc/ensembl_lite.conf')) )->{'elegans'};
 
-       my %cds2wbgene=%{&get_commondata('/nfs/wormpub/BUILD/autoace/COMMON_DATA/cds2wbgene_id.dat')};
+       my %cds2wbgene=%{&get_commondata('/nfs/wormpub/DATABASES/current_DB/COMMON_DATA/cds2wbgene_id.dat')};
        my %wbgene2cgc=reverse %{&get_commondata('/nfs/wormpub/DATABASES/current_DB/COMMON_DATA/cgc_name2gene.dat',1)};
-
 
        my $db = new Bio::EnsEMBL::DBSQL::DBAdaptor(
         -host   => $config->{database}->{host},
@@ -103,9 +105,11 @@ sub grab_ids {
 			foreach my $ma ( @{ $homology->get_all_Member_Attribute } ) {
 				my ( $me, $at ) = @{$ma};
 				map { 
-				    my $id=($cds2wbgene{$_->stable_id} || $_->stable_id);
+#				    my $id=($cds2wbgene{$_->stable_id} || $_->stable_id);
+                                    my $id=($cds2wbgene{$_->stable_id} ||  $_->get_Gene->stable_id);
 				    if (($homology->{_description} eq 'ortholog_one2one') && ($species{$_->taxon_id} eq $speci) && $wbgene2cgc{$gid} && $_->taxon_id != 6239){
 					    $gid2cgc{$id}=$wbgene2cgc{$gid};
+					    print STDERR "$id -> $wbgene2cgc{$gid}\n";
 				    }
 				}
 				@{ $me->get_all_peptide_Members() };
