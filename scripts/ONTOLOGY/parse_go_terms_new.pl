@@ -1,4 +1,4 @@
-#!/software/bin/perl
+#!/software/bin/perl -w
           
 use lib $ENV{'CVS_DIR'};
 use strict;
@@ -64,6 +64,10 @@ my $day   = (localtime)[3];
 $date=sprintf("%04d%02d%02d", $year, $month, $day);
 
 $acedbpath = $wormbase->autoace unless $acedbpath;
+
+# check that the GO_term objects all have a Type tag set
+&check_go_term();
+
 warn "connecting to database... $acedbpath";
 my $db = Ace->connect(-path => $acedbpath,  -program => $wormbase->tace) or $log->log_and_die("Connection failure: ". Ace->error);
 warn "... done\n";
@@ -446,4 +450,123 @@ $db->close;
 
 $log->mail;
 exit();
+
+
+
+#####################################################################################
+
+
+
+
+# Even though the GO term definitions are imported to autoace from
+# citace, there may be some GO terms that are referenced by InterPro
+# etc. that have not yet been defined by Caltech. We therefore do a
+# check for those GO_term object that do not have a fully populated
+# set of tags and we populate them here.
+
+sub check_go_term {
+
+  # get the set of GO_term objects missing a Type tag
+
+  my $tace            = $wormbase->tace;        # TACE PATH
+  my $cmd = "Query Find GO_term Where !Type\nlist -a\nquit";
+
+  my @go;
+  my %go;
+  open (TACE, "echo '$cmd' | $tace $acedbpath |");
+  while (<TACE>) {
+    chomp;
+    next if (/acedb\>/);
+    next if (/\/\//);
+    if (/GO_term\s+:\s+\"(\S+)\"/) {
+      push @go, $1;
+      $go{$1} = 1;
+    }
+  }
+  close TACE;
+  
+  if (@go == 0) {
+    $log->write_to("No GO_terms are missing a Type tag.\nAll appear OK.\n");
+  } else {
+    
+    $log->write_to("There are " . scalar @go . " GO_terms that are incomplete - fixing them\n");
+    
+    $log->write_to("GO_terms objects are:\n@go\n\n");
+    
+    my $gocount = 0;
+    # get the full GO file - this is in OBO format
+    # http://www.geneontology.org/ontology/obo_format_1_2/gene_ontology_ext.obo
+    
+    #[Term]
+    #id: GO:0000003
+    #name: reproduction
+    #namespace: biological_process
+    #alt_id: GO:0019952
+    #alt_id: GO:0050876
+    #def: "The production by an organism of new individuals that contain some portion of their genetic material inherited from that organism." [GOC:go_curators, GOC:isa_complete, ISBN:0198506732 "Oxford Dictionary of Biochemistry and Molecular Biology"]
+    #subset: goslim_generic
+    #subset: goslim_pir
+    #subset: goslim_plant
+    #subset: gosubset_prok
+    #synonym: "reproductive physiological process" EXACT []
+    #xref: Wikipedia:Reproduction
+    #is_a: GO:0008150 ! biological_process
+    
+    # We only really want the 'namespace' field for the 'Type' tag, but
+    # grap a few other things as well
+    
+    
+    my $go_obo_file = "/tmp/GO_file_.".$wormbase->species;
+    $log->write_to("Attempting to wget the latest GO data\n");
+    `wget -q -O $go_obo_file http://www.geneontology.org/ontology/obo_format_1_2/gene_ontology_ext.obo` and die "$0 Couldnt get goslim_generic.obo\n";
+    
+    
+    $log->write_to("Opening file $go_obo_file\n");
+    open (GOIN,"<$go_obo_file") or die "cant open $go_obo_file\n";
+    
+    
+    my $acefile = "$acedbpath/acefiles/go_defs.ace";
+    
+    open (GOOUT,">$acefile") or die "cant write to $acefile\n";
+    
+    
+    print "\treading data . . . \n";
+    
+    my $id="";
+    my $namespace="";
+    my $name="";
+    my $def="";
+    
+    while (<GOIN>){
+      chomp;
+      if ($_ =~ /id:\s+(\S+)/) {$id = $1}
+      if ($_ =~ /name:\s+(\S+)/) {$name = $1}
+      if ($_ =~ /namespace:\s+(\S+)/) {$namespace = $1}
+      if ($_ =~ /def:\s+\"(.+)\"/) {$def = $1}
+      if ($_ =~ /^\s*$/ && exists $go{$id}) {
+	print GOOUT "\nGO_term : \"$id\"\n";
+	print GOOUT "Definition \"$def\"\n";
+	print GOOUT "Term \"$name\"\n";
+	print GOOUT "Type \"".ucfirst($namespace)."\"\n";
+	print GOOUT "\n";
+	$gocount++;
+      }
+    }
+    
+    $log->write_to("added $gocount GO definitions\n");
+    
+    close GOIN;
+    close GOOUT;
+    
+    # load file to autoace if -load specified
+    #$wormbase->load_to_database($wormbase->autoace, "$acefile", 'go_defs', $log);
+    
+    # tidy up and exit
+    $wormbase->run_command("rm $go_obo_file",$log);
+  }
+}
+
+
+
+
 
