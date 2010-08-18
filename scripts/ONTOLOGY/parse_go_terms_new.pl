@@ -539,7 +539,7 @@ sub check_go_term {
     
     while (<GOIN>){
       chomp;
-      if ($_ =~ /id:\s+(\S+)/) {$id = $1}
+      if ($_ =~ /^id:\s+(\S+)/) {$id = $1}
       if ($_ =~ /name:\s+(\S+)/) {$name = $1}
       if ($_ =~ /namespace:\s+(\S+)/) {$namespace = $1}
       if ($_ =~ /def:\s+\"(.+)\"/) {$def = $1}
