@@ -4,8 +4,8 @@
 #
 # Usage : EMBL_Sequencefetch.pl [-options]
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2010-07-14 14:40:19 $
+# Last edited by: $Author: mh6 $
+# Last edited on: $Date: 2010-08-19 13:29:20 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -69,7 +69,7 @@ my $new_sequence;
 my $acefile;
 my $dnafile;
 my $Longtextfile;
-my $miscdir = "/.automount/evs-users2/root/wormpub/BUILD_DATA/MISC_DYNAMIC";
+my $miscdir = glob('~wormpub/BUILD_DATA/MISC_DYNAMIC');
 
 #Molecules types
 #molecule type to Type tag data hash. key:molecule value:type
@@ -93,10 +93,11 @@ my %species2taxonid = (
 		       'pristionchus'      => "54126",
 		       'heterorhabditis'   => "37862",
 		       'brugia'            => "6279",
+		       'cangaria'          => '96668',
 		      );
 
 if ($test) {
-  @molecules  = ("mRNA");
+  @molecules  = ('mRNA');
   print "\n---------------------------------------------------------------------------------------------------------\n
 WARNING: You are running in test mode, only molecule(s) [@molecules] will be returned!!!!!!!\n
 ---------------------------------------------------------------------------------------------------------\n";
