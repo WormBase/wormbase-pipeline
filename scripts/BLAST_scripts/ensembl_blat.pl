@@ -4,7 +4,7 @@
 #   setting up the BLAT pipeline
 #
 # Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2009-06-09 13:26:29 $
+# Last edited on: $Date: 2010-08-19 10:46:49 $
 
 use constant USAGE => <<HERE;
 ensembl_blat.pl options:
@@ -92,37 +92,37 @@ $log->mail();
 sub make_input_ids {
     # locations for each fasta_file
     my %est_files = (
-        'blat_brugia_ests'    => '/nfs/disk100/wormpub/BUILD/cDNA/brugia/EST.masked*',
-        'blat_brugia_cdnas'   => '/nfs/disk100/wormpub/BUILD/cDNA/brugia/mRNA.masked*',
+        'blat_brugia_ests'    => '/nfs/wormpub/BUILD/cDNA/brugia/EST.masked*',
+        'blat_brugia_cdnas'   => '/nfs/wormpub/BUILD/cDNA/brugia/mRNA.masked*',
 
-        'blat_elegans_ests'   => '/nfs/disk100/wormpub/BUILD/cDNA/elegans/EST.masked*',
-        'blat_elegans_cdnas'  => '/nfs/disk100/wormpub/BUILD/cDNA/elegans/mRNA.masked*',
-        'blat_elegans_osts'   => '/nfs/disk100/wormpub/BUILD/cDNA/elegans/OST.masked*',
-        'blat_elegans_rsts'   => '/nfs/disk100/wormpub/BUILD/cDNA/elegans/RST.masked*',
-        'blat_elegans_ncrnas' => '/nfs/disk100/wormpub/BUILD/cDNA/elegans/ncRNA.masked*',
-        'blat_elegans_tc1s'   => '/nfs/disk100/wormpub/BUILD/cDNA/elegans/tc1.masked*',
+        'blat_elegans_ests'   => '/nfs/wormpub/BUILD/cDNA/elegans/EST.masked*',
+        'blat_elegans_cdnas'  => '/nfs/wormpub/BUILD/cDNA/elegans/mRNA.masked*',
+        'blat_elegans_osts'   => '/nfs/wormpub/BUILD/cDNA/elegans/OST.masked*',
+        'blat_elegans_rsts'   => '/nfs/wormpub/BUILD/cDNA/elegans/RST.masked*',
+        'blat_elegans_ncrnas' => '/nfs/wormpub/BUILD/cDNA/elegans/ncRNA.masked*',
+        'blat_elegans_tc1s'   => '/nfs/wormpub/BUILD/cDNA/elegans/tc1.masked*',
 
-        'blat_briggsae_ests'  => '/nfs/disk100/wormpub/BUILD/cDNA/briggsae/EST.masked*',
-        'blat_briggsae_cdnas' => '/nfs/disk100/wormpub/BUILD/cDNA/briggsae/mRNA.masked*',
+        'blat_briggsae_ests'  => '/nfs/wormpub/BUILD/cDNA/briggsae/EST.masked*',
+        'blat_briggsae_cdnas' => '/nfs/wormpub/BUILD/cDNA/briggsae/mRNA.masked*',
         
-        'blat_brenneri_ests'  => '/nfs/disk100/wormpub/BUILD/cDNA/brenneri/EST.masked*',
-        'blat_brenneri_cdnas' => '/nfs/disk100/wormpub/BUILD/cDNA/brenneri/mRNA.masked*',
+        'blat_brenneri_ests'  => '/nfs/wormpub/BUILD/cDNA/brenneri/EST.masked*',
+        'blat_brenneri_cdnas' => '/nfs/wormpub/BUILD/cDNA/brenneri/mRNA.masked*',
 
-        'blat_remanei_ests'   => '/nfs/disk100/wormpub/BUILD/cDNA/remanei/EST.masked*',
-        'blat_remanei_cdnas'  => '/nfs/disk100/wormpub/BUILD/cDNA/remanei/mRNA.masked*',
+        'blat_remanei_ests'   => '/nfs/wormpub/BUILD/cDNA/remanei/EST.masked*',
+        'blat_remanei_cdnas'  => '/nfs/wormpub/BUILD/cDNA/remanei/mRNA.masked*',
         
-        'blat_japonica_ests'  => '/nfs/disk100/wormpub/BUILD/cDNA/japonica/EST.masked*',
-        'blat_japonica_cdnas' => '/nfs/disk100/wormpub/BUILD/cDNA/japonica/mRNA.masked*',
+        'blat_japonica_ests'  => '/nfs/wormpub/BUILD/cDNA/japonica/EST.masked*',
+        'blat_japonica_cdnas' => '/nfs/wormpub/BUILD/cDNA/japonica/mRNA.masked*',
         
-        'blat_heterorhabditis_ests'  => '/nfs/disk100/wormpub/BUILD/cDNA/heterorhabditis/EST.masked*',
-        'blat_heterorhabditis_cdnas' => '/nfs/disk100/wormpub/BUILD/cDNA/heterorhabditis/mRNA.masked*',
+        'blat_heterorhabditis_ests'  => '/nfs/wormpub/BUILD/cDNA/heterorhabditis/EST.masked*',
+        'blat_heterorhabditis_cdnas' => '/nfs/wormpub/BUILD/cDNA/heterorhabditis/mRNA.masked*',
 
-        'blat_pristionchus_ests'  => '/nfs/disk100/wormpub/BUILD/cDNA/pristionchus/EST.masked*',
-        'blat_pristionchus_cdnas' => '/nfs/disk100/wormpub/BUILD/cDNA/pristionchus/mRNA.masked*',
+        'blat_pristionchus_ests'  => '/nfs/wormpub/BUILD/cDNA/pristionchus/EST.masked*',
+        'blat_pristionchus_cdnas' => '/nfs/wormpub/BUILD/cDNA/pristionchus/mRNA.masked*',
         
-        'blat_nembase_ests'   => '/nfs/disk100/wormpub/BUILD/cDNA/nembase/EST.masked*',
-        'blat_washu_ests'     => '/nfs/disk100/wormpub/BUILD/cDNA/washu/EST.masked*',
-        'blat_nematode_ests'  => '/nfs/disk100/wormpub/BUILD/cDNA/nematode/EST.masked*',
+        'blat_nembase_ests'   => '/nfs/wormpub/BUILD/cDNA/nembase/EST.masked*',
+        'blat_washu_ests'     => '/nfs/wormpub/BUILD/cDNA/washu/EST.masked*',
+        'blat_nematode_ests'  => '/nfs/wormpub/BUILD/cDNA/nematode/EST.masked*',
         ); 
 
     # SQL handles
