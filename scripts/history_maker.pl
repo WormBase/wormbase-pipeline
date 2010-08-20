@@ -111,9 +111,13 @@ $main_gui->geometry("${gui_width}x$gui_height");
 # this is the value used to construct the window IDs in the script 'find_anomalies.pl'
 my $WINDOW_SIZE = 10000;
 
-if (defined $chromosome) {
-  $chromosome =~ s/CHROMOSOME_//;
+my $chromosome_list;
+my @chroms = split /,/, $chromosome;
+foreach my $chrom (@chroms) {
+  $chrom =~ s/CHROMOSOME_//;
+  $chrom = "'".$chrom."'";
 }
+$chromosome_list = join(',', @chroms);
 
 my $results; # the globally-accesible anomaly details that are summarised in the anomalies detail window
 my $check;			# state of the check button for the weights
@@ -394,7 +398,7 @@ if ( $anomaly ) {
   my $zero_weight_list = $anomaly_find->BrowseEntry(-label => '',
 						    -background => 'wheat',
 						    -listwidth => '350',
-						    -browsecmd => [\&reweight_anomalies, \$mysql, \$lab, \$chromosome, \$anomaly_list, \$anomaly_detail_list, \$zero_weight, \$check],
+						    -browsecmd => [\&reweight_anomalies, \$mysql, \$lab, \$chromosome_list, \$anomaly_list, \$anomaly_detail_list, \$zero_weight, \$check],
 						    -variable => \$zero_weight
 						    )->pack(-pady => '6',
 							    -padx => '2',
@@ -420,11 +424,11 @@ if ( $anomaly ) {
 
 # populate the list of types that we may zero-weight
 # and create the weight 'view' table
-  &populate_zero_weight_list($mysql, $lab, $chromosome, \$zero_weight_list);
+  &populate_zero_weight_list($mysql, $lab, $chromosome_list, \$zero_weight_list);
 
 
 # populate $anomaly_list here from database
-  &populate_anomaly_window_list($mysql, $lab, $chromosome, \$anomaly_list);
+  &populate_anomaly_window_list($mysql, $lab, $chromosome_list, \$anomaly_list);
 
 
 
@@ -782,10 +786,10 @@ sub connect_to_database {
 
 sub populate_zero_weight_list {
 
-  my ($mysql, $lab, $chromosome, $zero_weight_list_ref) = @_;
+  my ($mysql, $lab, $chromosome_list, $zero_weight_list_ref) = @_;
 
   # get the available anomaly types
-  my $query = qq{ SELECT type, COUNT(*) FROM anomaly WHERE chromosome = "$chromosome" AND centre = "$lab" AND active = 1 GROUP BY type; };
+  my $query = qq{ SELECT type, COUNT(*) FROM anomaly WHERE chromosome IN ( $chromosome_list ) AND centre = "$lab" AND active = 1 GROUP BY type; };
   my $db_query = $mysql->prepare ( $query );
   $db_query->execute() or &error_warning("WARNING", "MySQL server appears to be down");
   $results = $db_query->fetchall_arrayref;
@@ -825,7 +829,7 @@ sub populate_zero_weight_list {
 # populate_anomaly_window_list($mysql, $lab, $chromosome, \$anomaly_list);
 
 sub populate_anomaly_window_list {
-  my ($mysql, $lab, $chromosome, $anomaly_list_ref) = @_;
+  my ($mysql, $lab, $chromosome_list, $anomaly_list_ref) = @_;
 
   # name of the temporary 'view' weighting table
   my $view = "weight_$user";
@@ -838,7 +842,7 @@ sub populate_anomaly_window_list {
   my $query;
   if ($display_by_clones) { # St. Louis people like to have the anomalies from a clone lumped together
 
-    $query = qq{ SELECT a.window, SUM(a.thing_score * w.weight), a.sense, a.clone FROM anomaly AS a INNER JOIN $view AS w ON a.type = w.type     WHERE a.chromosome = "$chromosome" AND a.centre = "$lab" AND a.active = 1 GROUP BY clone, sense ORDER BY 2 DESC; };
+    $query = qq{ SELECT a.window, SUM(a.thing_score * w.weight), a.sense, a.clone, a.chromosome FROM anomaly AS a INNER JOIN $view AS w ON a.type = w.type     WHERE a.chromosome IN ( $chromosome_list ) AND a.centre = "$lab" AND a.active = 1 GROUP BY clone, sense ORDER BY 2 DESC; };
 
 
   } else { # normal display by 10Kb window
@@ -847,11 +851,11 @@ sub populate_anomaly_window_list {
 #
 #  $query = qq{ SELECT a.window, SUM(a.thing_score), a.sense, a.clone FROM anomaly AS a INNER JOIN $view AS w ON a.type = w.type    WHERE a.chromosome = "$chromosome" AND a.centre = "$lab" AND a.active = 1 AND w.weight = 1 GROUP BY window, sense ORDER BY 2 DESC; };
 #
-    $query = qq{ SELECT a.window, SUM(a.thing_score * w.weight), a.sense, a.clone FROM anomaly AS a INNER JOIN $view AS w ON a.type = w.type     WHERE a.chromosome = "$chromosome" AND a.centre = "$lab" AND a.active = 1 GROUP BY window, sense ORDER BY 2 DESC; };
+    $query = qq{ SELECT a.window, SUM(a.thing_score * w.weight), a.sense, a.clone, a.chromosome FROM anomaly AS a INNER JOIN $view AS w ON a.type = w.type     WHERE a.chromosome IN ( $chromosome_list ) AND a.centre = "$lab" AND a.active = 1 GROUP BY window, sense ORDER BY 2 DESC; };
   }
 
   print "\n";
-  print "chromosome=$chromosome\n";
+  print "chromosome=$chromosome_list\n";
   print "lab=$lab\n";
   #print "query=$query\n";
   #print "\n";
@@ -871,10 +875,10 @@ sub populate_anomaly_window_list {
   my $under_quarter = 0;
   foreach my $result_row (@$results) {
     if ($display_by_clones) { # St. Louis people like to have the anomalies from a clone lumped together
-      $$anomaly_list_ref->insert('end', $chromosome . " " . $result_row->[3] . " Sense: " . $result_row->[2] . " Score: " . $result_row->[1] );      
+      $$anomaly_list_ref->insert('end', $result_row->[4] . " " . $result_row->[3] . " Sense: " . $result_row->[2] . " Score: " . $result_row->[1] );      
     } else { # normal display by 10Kb window
       # clone, sense, score, window
-      $$anomaly_list_ref->insert('end', $chromosome . " " . $result_row->[3] . " Sense: " . $result_row->[2] . " Score: " . $result_row->[1] . " ID: " . $result_row->[0] );
+      $$anomaly_list_ref->insert('end', $result_row->[4] . " " . $result_row->[3] . " Sense: " . $result_row->[2] . " Score: " . $result_row->[1] . " ID: " . $result_row->[0] );
     }
 
     # count the numbers in various score bins
@@ -936,7 +940,7 @@ sub toggle_weighting {
 
 
 sub reweight_anomalies {
-  my ($mysql_ref, $lab_ref, $chromosome_ref, $anomaly_list_ref, $anomaly_detail_list_ref, $zero_weight_ref, $check_ref) = @_;
+  my ($mysql_ref, $lab_ref, $chromosome_list_ref, $anomaly_list_ref, $anomaly_detail_list_ref, $zero_weight_ref, $check_ref) = @_;
 
   #print "In reweight_anomalies, zero_weight = $$zero_weight_ref check = $$check_ref\n";
 
@@ -963,7 +967,7 @@ sub reweight_anomalies {
   }
 
   # re-populate the anomaly_window_list
-  &populate_anomaly_window_list($$mysql_ref, $$lab_ref, $$chromosome_ref, $anomaly_list_ref);
+  &populate_anomaly_window_list($$mysql_ref, $$lab_ref, $$chromosome_list_ref, $anomaly_list_ref);
 
 
 
