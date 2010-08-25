@@ -6,8 +6,8 @@
 #
 # Usage : autoace_builder.pl [-options]
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2010-07-16 09:34:57 $
+# Last edited by: $Author: pad $
+# Last edited on: $Date: 2010-08-25 14:07:49 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -170,16 +170,15 @@ $wormbase->run_script( "make_agp_file.pl"                        , $log) if $agp
 
 #several GFF manipulation steps
 if ($gff_munge) {
- $wormbase->run_script( 'landmark_genes2gff.pl', $log) if ($wormbase->species eq 'elegans');
- $wormbase->run_script( 'GFFmunger.pl -all', $log);
- $wormbase->run_script( 'over_load_SNP_gff.pl', $log);
- $wormbase->run_script( 'overload_rnai.pl', $log);
- # these are currently elegans specific.
- if ($wormbase->species eq 'elegans') {
-   $wormbase->run_script( "Map_pos_GFFprocess.pl"                  , $log);	# must be run before CGH_GFFprocess.pl as it looks for 'Allele' lines
-   $wormbase->run_script( "CGH_GFFprocess.pl"                      , $log);
-   $wormbase->run_script( "chromosome_script_lsf_manager.pl -command '/software/bin/perl $ENV{'CVS_DIR'}/process_sage_gff.pl' -mito -prefix", $log);
- }
+  $wormbase->run_script( 'GFFmunger.pl -all', $log);
+  $wormbase->run_script( 'over_load_SNP_gff.pl' , $log);
+  $wormbase->run_script( 'overload_rnai.pl'     , $log);
+  if ($wormbase->species eq 'elegans') {
+    $wormbase->run_script( 'landmark_genes2gff.pl', $log);
+    $wormbase->run_script( "Map_pos_GFFprocess.pl", $log); # must be run before CGH_GFFprocess.pl as it looks for 'Allele' lines
+    $wormbase->run_script( "CGH_GFFprocess.pl"    , $log); 
+    $wormbase->run_script( "chromosome_script_lsf_manager.pl -command '/software/bin/perl $ENV{'CVS_DIR'}/process_sage_gff.pl' -mito -prefix", $log);
+  }
 }
 
 &ontologies								if $ontologies;
