@@ -13,8 +13,8 @@
 #        NOTES:  ---
 #       Author: $Author: mh6 $
 #      COMPANY: WormBase
-# LAST CHANGED: $Date: 2009-11-26 15:34:43 $
-#     REVISION: $Revision: 1.2 $
+# LAST CHANGED: $Date: 2010-08-25 14:20:35 $
+#     REVISION: $Revision: 1.3 $
 #===============================================================================
 
 # find the dna files
@@ -27,20 +27,25 @@ use Wormbase;
 use Getopt::Long;
 
 
-my ($species,$test,$debug);
+my ($species,$test,$debug,$store,$wormbase);
 
 GetOptions(
      'species:s' => \$species,
      'test'      => \$test,
      'debug:s'   => \$debug,
+     'store:s'   => \$store,
 )||die(@!);
 
-
-my $wormbase = Wormbase->new(
+if ($store){
+    $wormbase = Storable::retrieve($store)
+      or croak("cannot restore wormbase from $store");}
+else{
+ $wormbase = Wormbase->new(
     -test    => $test,
     -debug   => $debug,
     -organism=> $species
-);
+ );
+}
 
 $species||=$wormbase->species;
 
