@@ -2,8 +2,8 @@
 #
 # This is to add Confirmed / Predicted Status and RFLP to SNP gff lines as requested by Todd
 #
-# Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2010-07-21 14:46:11 $      
+# Last updated by: $Author: pad $     
+# Last updated on: $Date: 2010-08-25 14:09:11 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -81,6 +81,9 @@ my $stat = 0;
 
 my @gff_files;
 if ($gff_file) {
+  if ($gff_file =~ m/.gff$/){
+    $gff_file =~ s/.gff$//;
+  }
   @gff_files = ($gff_file);
 } else {
   if ($wormbase->assembly_type eq 'contig'){
@@ -91,35 +94,42 @@ if ($gff_file) {
 }
 # check to see if full chromosome gff dump files exist
 foreach my $file (@gff_files) {
-  unless (-e "$dir/$file.gff") {
-    $log->log_and_die("No GFF file: $dir/$file.gff\n");
+  unless (-e "$dir/$file\.gff" || -e "$file\.gff") {
+    $log->log_and_die("No GFF file: $file\.gff\n");
   }
-  if (-e -z "$dir/$file.gff") {
-    $log->log_and_die("Zero length GFF file: $dir/$file.gff");
+  unless (!(-e -z "$dir/$file\.gff" || -e -z "$file\.gff")){
+    $log->log_and_die("Zero length GFF file: $dir/$file\.gff");
   }
 }
 
-foreach my $gff_file (@gff_files) {
-    my $file = "$dir/$gff_file.gff";
-    open(GFF,"<$file") or $log->log_and_die("cant open $file");
-    open(NEW,">$file.tmp") or $log->log_and_die("cant open $file tmp file\n");
-    while( <GFF> ) {
-	chomp;	
-	print NEW "$_";
-	#CHROMOSOME_V    Allele  SNP     155950  155951  .       +       .       Variation "uCE5-508"
-	#I       Allele  SNP     126950  126950  .       +       .       Variation "pkP1003"  ;  Status "Confirmed_SNP" ; RFLP "Yes"
-	if( /SNP/ and /Allele/) {
-	    my ($allele) = /Variation \"(\S+)\"/;
-	    print NEW " ; Status \"",$SNP{$allele}->{'confirm'},"\"" if $SNP{$allele}->{'confirm'};
-	    print NEW " ; RFLP ", (defined $SNP{$allele}->{'RFLP'}? '"Yes"' : '"No"');
-	    print NEW " ; Mutation_type \"".$SNP{$allele}->{'mol_change'}."\"" if $SNP{$allele}->{'mol_change'};
-	    print NEW " ; Public_name \"${\$SNP{$allele}->{'Public_name'}}\"" if $SNP{$allele}->{'Public_name'};
-	    $stat++;
-	}
-	print NEW "\n";
+my $file;
+
+foreach my $gff_f (@gff_files) {
+  unless ($gff_file) {
+    $file = "$dir/${gff_f}.gff";
+  }
+  else {$file = "${gff_file}.gff";
+      }
+  
+  open(GFF,"<$file") or $log->log_and_die("cant open $file");
+  open(NEW,">$file.tmp") or $log->log_and_die("cant open $file tmp file\n");
+  while( <GFF> ) {
+    chomp;	
+    print NEW "$_";
+    #CHROMOSOME_V    Allele  SNP     155950  155951  .       +       .       Variation "uCE5-508"
+    #I       Allele  SNP     126950  126950  .       +       .       Variation "pkP1003"  ;  Status "Confirmed_SNP" ; RFLP "Yes"
+    if( /SNP/ and /Allele/) {
+      my ($allele) = /Variation \"(\S+)\"/;
+      print NEW " ; Status \"",$SNP{$allele}->{'confirm'},"\"" if $SNP{$allele}->{'confirm'};
+      print NEW " ; RFLP ", (defined $SNP{$allele}->{'RFLP'}? '"Yes"' : '"No"');
+      print NEW " ; Mutation_type \"".$SNP{$allele}->{'mol_change'}."\"" if $SNP{$allele}->{'mol_change'};
+      print NEW " ; Public_name \"${\$SNP{$allele}->{'Public_name'}}\"" if $SNP{$allele}->{'Public_name'};
+      $stat++;
     }
-    $wormbase->run_command("mv -f $file.tmp $file", $log);
-    last if $gff_file;
+    print NEW "\n";
+  }
+  $wormbase->run_command("mv -f $file.tmp $file", $log);
+  last if $gff_f;
 }
 
 ##################
@@ -130,8 +140,8 @@ if($gff_file){
     $log->write_to("Not checking ad hoc file\n");
 }
 else { 
-  foreach my $gff_file (@gff_files) {
-    my $file = "$dir/$gff_file.gff";
+  foreach my $gff_f (@gff_files) {
+    my $file = "$dir/$gff_f.gff";
     $wormbase->check_file($file, $log,
 			      minsize => 1500000,
 			      lines => ['^##',
