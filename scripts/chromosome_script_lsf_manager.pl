@@ -62,10 +62,17 @@ my $log = Log_files->make_build_log($wormbase);
 
 my $m      = LSF::JobManager->new();
 
+# ask for a file size limit of 2 Gb and a memory limit of 4 Gb
+my $job_name = "worm_".$wormbase->species."_manager";
+my @bsub_options = (-F => "2000000",
+		    -M => "4000000",
+		    -R => "\"select[mem>4000] rusage[mem=4000]\"",
+		    -J => $job_name);
+
 my @chroms = $wormbase->get_chromosome_names(-mito =>$mito, -prefix => $prefix);
 
 foreach my $chrom ( @chroms ) {
-  my $mother = $m->submit("$command -chromosome $chrom $flags");
+  my $mother = $m->submit(@bsub_options, "$command -chromosome $chrom $flags");
 }
 
 $m->wait_all_children( history => 1 );
