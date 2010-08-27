@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl5.8.0 -w
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2009-05-06 16:05:55 $
+# Last edited on: $Date: 2010-08-27 14:35:32 $
 
 
 use lib $ENV{'CVS_DIR'};
@@ -205,9 +205,13 @@ if ( $process or $virtual ) {
       #create virtual objects
       $log->write_to("Submitting $species $type for virtual procesing\n");
 
+      my $job_name = "worm_".$wormbase->species."_blat";
       my $cmd1 = $wormbase->build_cmd("blat2ace.pl -virtual -type $type -qspecies $species");
       # ask for a file size limit of 2 Gb and a memory limit of 4 Gb
-      my @bsub_options = (-F => "2000000", -M => "4000000", -R => "\"select[mem>4000] rusage[mem=4000]\"");
+      my @bsub_options = (-F => "2000000", 
+			  -M => "4000000", 
+			  -R => "\"select[mem>4000] rusage[mem=4000]\"",
+			  -J => $job_name);
       $lsf1->submit(@bsub_options, $cmd1) if $virtual;
     	
     }
@@ -226,8 +230,12 @@ if ( $process or $virtual ) {
       #create virtual objects
       $log->write_to("Submitting $species $type for intron processing\n");
     	
+      my $job_name = "worm_".$wormbase->species."_blat";
       my $cmd2 = $wormbase->build_cmd("blat2ace.pl -type $type -qspecies $species -intron");
-      my @bsub_options = (-F => "2000000", -M => "4000000", -R => "\"select[mem>4000] rusage[mem=4000]\"");
+      my @bsub_options = (-F => "2000000", 
+			  -M => "4000000", 
+			  -R => "\"select[mem>4000] rusage[mem=4000]\"",
+			  -J => $job_name);
       $lsf2->submit(@bsub_options, $cmd2) if $process;
 
     }
