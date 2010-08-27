@@ -43,8 +43,14 @@ my ($nrow) = $sth->fetchrow;
 my $nseg = int(($nrow/$segsize))+1;
 
 print "N seg = $nseg\n";
+my $job_name = "worm_${db}_dump";
 
-my $lsf=LSF::JobManager->new(-q => 'normal', -P => 'wormbase', -R => '"select[mem>4000] rusage[mem=4000]"', -M => 4000000, -F => 2000000);
+my $lsf=LSF::JobManager->new(-q => 'normal', 
+                             -P => 'wormbase', 
+			     -R => '"select[mem>4000] rusage[mem=4000]"', 
+			     -M => 4000000, 
+			     -F => 2000000, 
+			     -J => $job_name);
 
 for (my $i=0; $i<$nseg; $i++) {
   my $start = $i*$segsize;
