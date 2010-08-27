@@ -6,8 +6,8 @@
 #
 # wrapper script for running transcript_builder.pl
 #
-# Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2010-06-08 09:21:55 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2010-08-27 14:22:37 $
 
 use lib $ENV{CVS_DIR};
 use Wormbase;
@@ -88,6 +88,8 @@ unless ( $no_run ){
     print PAIRS "$data[0]\t$data[1]\n";
   }
   close PAIRS;
+  
+  my $job_name = "worm_".$wormbase->species."_transcript";
 
   # create and submit LSF jobs.
   $log->write_to("bsub commands . . . . \n\n");
@@ -99,7 +101,11 @@ unless ( $no_run ){
 	    $log->write_to("$cmd\n");
 	    print "$cmd\n";
 	    $cmd = $wormbase->build_cmd($cmd);
-	  	my @bsub_options = (-e => "$err", -F => "2000000", -M => "3500000", -R => "\"select[mem>3500] rusage[mem=3500]\"");
+	  	my @bsub_options = (-e => "$err", 
+				    -F => "2000000", 
+				    -M => "3500000", 
+				    -R => "\"select[mem>3500] rusage[mem=3500]\"",
+				    -J => $job_name);
 	    $lsf->submit(@bsub_options, $cmd);
 	  }  
   $lsf->wait_all_children( history => 1 );
