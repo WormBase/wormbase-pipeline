@@ -74,7 +74,6 @@ $database||=$wb->autoace();
 MapAlleles::set_wb_log($log,$wb); # that is a bit crude, but makes $log available to the MapAlleles funtions
 
 my $lsf = LSF::JobManager->new();
-my @bsub_options =(-e => '/dev/null', -o => '/dev/null',-M => "3500000", -R => "\"select[mem>3500] rusage[mem=3500]\"");
 
 my $variations = MapAlleles::get_all_alleles();
 
@@ -113,5 +112,11 @@ sub mapAlleles {
 	my $binfile="$outdir/map_alleles.$lastBin";
 	my $submitstring="/software/worm/perl_512/bin/perl $Bin/map_Alleles.pl -idfile $binfile -noload -outdir $outdir";
 	$submitstring.=" -debug $debug" if $debug;
-	$lsf->submit($submitstring);
+	my $job_name = "worm_".$wb->species."_splitalleles";
+	my @bsub_options =(-e => '/dev/null', 
+			   -o => '/dev/null',
+			   -M => "3500000", 
+			   -R => "\"select[mem>3500] rusage[mem=3500]\"",
+			   -J => $job_name);
+	$lsf->submit(@bsub_options, $submitstring);
 }

@@ -5,7 +5,7 @@
 # by Anthony Rogers et al
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2010-03-31 15:20:28 $
+# Last updated on: $Date: 2010-08-27 15:03:22 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -147,12 +147,17 @@ if ($all) {
   my $lsf = LSF::JobManager->new();
   my $store_file = $wormbase->build_store; # make the store file to use in all commands
   my $scratch_dir = $wormbase->logs;
-  
+  my $job_name = "worm_".$wormbase->species."_commondata";
+
+
   foreach my $arg (@all_args) {
     my $err = "$scratch_dir/update_Common_data.pl.lsf.${arg}.err";
     my $out = "$scratch_dir/update_Common_data.pl.lsf.${arg}.out";
     my @bsub_options = (-e => "$err", -o => "$out");
-    if ($arg eq 'clone2seq') {push @bsub_options, (-F => "3000000", -M => "3500000", -R => "\"select[mem>3500] rusage[mem=3500]\"");}
+    if ($arg eq 'clone2seq') {push @bsub_options, (-F => "3000000", 
+						   -M => "3500000", 
+						   -R => "\"select[mem>3500] rusage[mem=3500]\"",
+						   -J => $job_name);}
     my $cmd = "update_Common_data.pl -${arg}";
     if ($arg eq 'clone2seq') {
       if ($species eq 'elegans') {$cmd .= ' all'} # write out sequence hash for all species in main build
@@ -650,11 +655,17 @@ sub write_clones2seq  {
     my $lsf = LSF::JobManager->new();
     my $store_file = $wormbase->build_store; # make the store file to use in all commands
     my $scratch_dir = $wormbase->logs;
-  
+    my $job_name = "worm_".$wormbase->species."_commondata";
+
     foreach my $this_species (keys %full_names) {
       my $err = "$scratch_dir/update_Common_data.pl.lsf.clone2seq.$clone2seq.err";
       my $out = "$scratch_dir/update_Common_data.pl.lsf.clone2seq.$clone2seq.out";
-      my @bsub_options = (-e => "$err", -o => "$out", -F => "3000000", -M => "3500000", -R => "\"select[mem>3500] rusage[mem=3500]\"");
+      my @bsub_options = (-e => "$err", 
+			  -o => "$out", 
+			  -F => "3000000", 
+			  -M => "3500000", 
+			  -R => "\"select[mem>3500] rusage[mem=3500]\"",
+			  -J => $job_name);
       my $cmd = "update_Common_data.pl -clone2seq $this_species";
       $cmd = $wormbase->build_cmd_line($cmd, $store_file);
       $log->write_to("Submitting LSF job: $cmd\n");
