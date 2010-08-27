@@ -87,7 +87,11 @@ CHROMLOOP: foreach my $chrom ( @chromosomes ) {
     foreach my $method ( @methods ) {
       my $err = scalar(@chromosomes) < 50 ? "$scratch_dir/wormpubGFFdump.$chrom.$method.err" : "$scratch_dir/wormpubGFFdump.$submitchunk.$method.err";
       my $out = scalar(@chromosomes) < 50 ? "$scratch_dir/wormpubGFFdump.$chrom.$method.out" : "$scratch_dir/wormpubGFFdump.$submitchunk.$method.out";
-      my @bsub_options = (-e => "$err", -o => "$out");
+      my $job_name = "worm_".$wormbase->species."_gffbatch";
+
+      my @bsub_options = (-e => "$err", 
+			  -o => "$out",
+			  -J => $job_name);
 
       my $cmd = "$dumpGFFscript -database $database -dump_dir $dump_dir -method $method -species $species";
       $cmd.=" -host $host" if scalar(@chromosomes) > 50;
@@ -112,10 +116,16 @@ CHROMLOOP: foreach my $chrom ( @chromosomes ) {
   else {
     # for large chromosomes, ask for a file size limit of 2 Gb and a memory limit of 3.5 Gb
     # See: http://scratchy.internal.sanger.ac.uk/wiki/index.php/Submitting_large_memory_jobs
-    my @bsub_options = scalar(@chromosomes) < 50 ? (-F => "2000000", -M => "3500000", -R => "\"select[mem>3500] rusage[mem=3500]\"") : ();
+    my $job_name = "worm_".$wormbase->species."_gffbatch";
+    my @bsub_options = scalar(@chromosomes) < 50 ? (-F => "2000000", 
+						    -M => "3500000", 
+						    -R => "\"select[mem>3500] rusage[mem=3500]\"",
+						   ) : ();
     my $err = scalar(@chromosomes) < 50 ? "$scratch_dir/wormpubGFFdump.$chrom.err" : "$scratch_dir/wormpubGFFdump.$submitchunk.err";
     my $out = scalar(@chromosomes) < 50 ? "$scratch_dir/wormpubGFFdump.$chrom.out" : "$scratch_dir/wormpubGFFdump.$submitchunk.out";
-    push @bsub_options, (-e => "$err", -o => "$out");
+    push @bsub_options, (-e => "$err", 
+			 -o => "$out",
+			 -J => $job_name);
 
     my $cmd = "$dumpGFFscript -database $database -dump_dir $dump_dir -species $species";
     $cmd.=" -chromosome $chrom" if scalar(@chromosomes) < 50;
@@ -155,10 +165,16 @@ $lsf->clear;
 ##################################################################
 # now try re-runnning any commands that failed
 $lsf = LSF::JobManager->new();
-    my @bsub_options = scalar(@chromosomes) < 50 ? (-F => "2000000", -M => "3500000", -R => "\"select[mem>3500] rusage[mem=3500]\"") : ();
+my @bsub_options = scalar(@chromosomes) < 50 ? (-F => "2000000", 
+						-M => "3500000", 
+						-R => "\"select[mem>3500] rusage[mem=3500]\""
+					       ) : ();
 my $err = "$scratch_dir/wormpubGFFdump.rerun.err";
 my $out = "$scratch_dir/wormpubGFFdump.rerun.out";
-push @bsub_options, (-e => "$err", -o => "$out");
+my $job_name = "worm_".$wormbase->species."_gffbatch";
+push @bsub_options, (-e => "$err", 
+		     -o => "$out",
+		     -J => $job_name);
 if (scalar @problem_cmds < 120) { # we don't want to re-run too many jobs!
   foreach my $cmd_file (@problem_cmds) {
     $log->write_to("*** Attempting to re-run job: $cmd_file\n");

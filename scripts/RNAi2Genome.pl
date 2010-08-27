@@ -1,8 +1,8 @@
 #!/software/bin/perl -w
 
 # Version: $Version: $
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2009-04-22 15:49:54 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2010-08-27 14:50:53 $
 
 use lib '/software/worm/ensembl/bioperl-live';
 use lib '/software/worm/lib';
@@ -161,8 +161,10 @@ sub submit_job {
     my($seq, $file, $lsfm, $count) = @_;
     close $seq;
     $wormbase->remove_blank_lines( $file, $log);
+    my $job_name = "worm_".$wormbase->species."_rnai";
+    my @bsub_options = (-J => $job_name);
     my $cmd = $wormbase->build_cmd("RNAi2Genome.pl -seqs $file -genome $db/genome_seq");
-    $lsfm->submit($cmd);
+    $lsfm->submit(@bsub_options, $$cmd);
 
     $file = "/lustre/cbi4/work1/wormpub/RNAi/seqs_$count";
     open($seq,">$file");
