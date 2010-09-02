@@ -8,7 +8,7 @@
 # autoace.
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2010-07-13 11:40:22 $
+# Last updated on: $Date: 2010-09-02 12:52:21 $
 
 #################################################################################
 # Variables                                                                     #
@@ -136,6 +136,12 @@ unless (-e $config) {
 	$query .= " -t ".$makefile{'tag'};
       }
       $query .= "\n";
+
+      # prepare the required tags
+      my @required = split ',', $makefile{'required'};
+      my %required;
+
+      # run the command
       my $acedb = $dbpath."/".$makefile{'db'};
       $log->write_to("dumping $makefile{'class'} from $acedb\n");
       my $object_name;
@@ -149,10 +155,19 @@ unless (-e $config) {
 	}
 
 	# check the integrity of the object names and tag values
-	if ($makefile{'format'}) {
-	  if ($line =~ /$makefile{'class'}\s+\:\s+(\S+)/) {
+	if ($makefile{'format'} || $makefile{'required'}) {
+	  if ($line =~ /$makefile{'class'}\s+\:\s+(\S+)/) { # checkfor the start of a new object
+	    # check to see if the required tags are in the previous object
+	    if (defined $object_name) { # ignore if we are at the first object
+	      foreach my $req (@required) {
+		if (! exists $required{$req}) {$log->write_to("Missing required tag '$req' in object:\n$makefile{'class'} : $object_name\nFile: $file\n\n")}
+		delete $required{$req}; # reset the existence of the required tags in this object
+	      }
+	    }
+
 	    $object_name=$1; # remember the name of this object so the error can be reported nicely
 	  } else {
+	    # check for the correct regex format in selected tags
 	    foreach my $format (@{$makefile{'format'}}) {
 	      if ($line =~ /$format->[0]\s+\-O\s+\S+\s+\"(\S+)\"/) {
 		my $regex = $format->[1];
@@ -161,6 +176,14 @@ unless (-e $config) {
 		}
 	      }
 	    }
+	    
+	    # check for required tags in this line
+	    foreach my $req (@required) {
+	      if ($line =~ /$req\s+\-O\s+\S+/) {
+		$required{$req} = 1; # note we have found this required tag
+	      }
+	    }
+
 	  }
 	}
 
