@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: pad $
-// Last edited on: $Date: 2010-08-09 13:49:27 $
+// Last edited on: $Date: 2010-09-03 09:29:54 $
 
 
 ////////////////////////
@@ -485,7 +485,6 @@
 
 ?Strain  Evidence #Evidence
 	 Genotype Text
-	 Extended_genotype ?Variation
 	 Contains  Gene	 ?Gene XREF Strain
 	  	   Variation  ?Variation XREF Strain 
 		   Rearrangement	 ?Rearrangement XREF Strain
