@@ -7,8 +7,8 @@
 # This parses a file of mass spec peptide data and creates an ace file
 # in ace
 #
-# Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2010-07-14 14:25:42 $      
+# Last updated by: $Author: mh6 $     
+# Last updated on: $Date: 2010-09-08 14:45:49 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -529,7 +529,7 @@ sub parse_file {
 	push @CDS_names, $cgc_name; # store clone name with 'clone:' prefix - this will be dealt with specially
 
       } else {
-	die "gene name '$cgc_name' not recognised\n";
+	die($input_file ,":gene name '$cgc_name' not recognised\n");
       }
 
       # construct the peptide data - these peptides map to these CDSs
