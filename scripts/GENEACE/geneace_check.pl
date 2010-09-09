@@ -6,8 +6,8 @@
 #
 # Script to run consistency checks on the geneace database
 #
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2010-07-19 14:24:14 $
+# Last updated by: $Author: mt3 $
+# Last updated on: $Date: 2010-09-09 09:53:10 $
 
 use strict;
 use lib $ENV{"CVS_DIR"};
@@ -942,11 +942,6 @@ sub process_allele_class{
 #	print LOG "ERROR: $allele has an incorrect Missense value ($missense)\n";
  #     }
  #   }
-
-    # Check for CGC_name tag missing
-    if (!defined($allele->CGC_name)) {
-	print LOG "ERROR: $allele has no CGC_name tag\n";
-    }
 
     # Check for Public_name tag missing
     if (!defined($allele->Public_name)) {
