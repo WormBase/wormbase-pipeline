@@ -135,8 +135,11 @@ $wormbase->run_command("tar -C $output_dir -zcf ${tmp_dir}$outfile .",$log) if (
 #mv tar back to UCSC dir.
 $wormbase->run_command("cp ${tmp_dir}$outfile ${output_dir}",$log) if ($package or $all);
 $wormbase->run_command("rm ${tmp_dir}$outfile",$log) if ($package or $all);
+# create md5sum file.
+$wormbase->run_command("md5sum ${output_dir}/$outfile > $output_dir/${version}_md5sum",$log) if ($package or $all);
 #copy the data to the ftp dir.
 $wormbase->run_command("scp ${output_dir}/$outfile ${ftp_dir}data/UCSC/",$log) if ($ftp or $all);
+$wormbase->run_command("scp ${output_dir}/${version}_md5sum ${ftp_dir}data/UCSC/",$log) if ($ftp or $all);
 
 $log->mail;
 exit;
