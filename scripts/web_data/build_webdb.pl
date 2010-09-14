@@ -9,8 +9,8 @@
 #      $AUTHOR:$
 #      COMPANY:  WormBase
 #      CREATED:  11/27/09 10:10:08 GMT
-#      CHANGED: $Date: 2010-07-14 15:25:41 $
-#    $Revision: 1.3 $
+#      CHANGED: $Date: 2010-09-14 15:56:56 $
+#    $Revision: 1.4 $
 #===============================================================================
 
 # need to set the PERl5LIb  to pick up bioperl for the load_gff thing ... maybe have to hardcode it
@@ -163,7 +163,7 @@ sub munge_fasta {
 		#~ftp/pub2/wormbase/WS209/genomes/c_elegans/sequences/dna/c_elegans.WS209.dna.fa.gz
 		my $infile = $wb->ftp_site .'/WS'. $wb->version .'/genomes/'. $wb->full_name(-g_species => 1) 
 		.'/sequences/dna/'.$wb->full_name(-g_species => 1) .'.WS'. $wb->version .'.dna.fa.gz';
-		system("zcat $infile |sed s/CHORMOSOME_//>/tmp/${\$wb->species}.dna");
+		system("zcat $infile |sed s/CHROMOSOME_//>/tmp/${\$wb->species}.dna");
         }
 	else {
 	   system("cat ${\$wb->chromosomes}/*.dna|sed s/CHORMOSOME_//>/tmp/${\$wb->species}.dna");
