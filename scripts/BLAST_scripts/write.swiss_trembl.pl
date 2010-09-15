@@ -186,10 +186,13 @@ sub output_list
 	my $accession = $1;
 	
 	if ($seq) {
+	  # that is a cleanup for already existing dodgy description lines
+	  my $description = $DES{$accession}=~/Full=([^;]*)/?$1:$DES{$accession};
+
 	  print ACE "Protein : \"$prefix:$accession\"\n";
 	  print ACE "Peptide \"$prefix:$accession\"\n";
 	  print ACE "Species \"$ORG{$accession}\"\n";
-	  print ACE "Description \"$DES{$accession}\"\n";
+	  print ACE "Description \"$description\"\n";
 	  print ACE "Database UniProt UniProtAcc $accession\n";
 	  print ACE "Database UniProt UniProtID $id\n" if $id;
 	  print ACE  "\n";
