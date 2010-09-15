@@ -1164,6 +1164,37 @@ if (!exists $self->{SENSE}->{$seq} || $self->{SENSE}->{$seq} eq '+') {
 return ($chrom, $coord);
 }
 
+=head2 Chrom2slink_coords
+
+Title   :   Chrom2slink_coords
+Usage   :   my ($chrom, $coord) = $coords->Chrom2slink_coords("III", 2343, 2409);
+Function:   convert chromosomal coordinates to slink relative coords
+Returns :   slink as string, coordinate1 relative to that slink, coordinate2 relative to that slink, 
+Args    :   chromosome as string
+	    chromosome coordinate1
+	    chromosome coordinate2
+Non-elegans : Not sure - not tested this
+
+=cut
+
+sub Chrom2slink_coords {
+  my ($self, $chrom, $coord1, $coord2) = @_;
+  
+  if ($self->{chromosome_prefix} eq "CHROMOSOME_" &&  $chrom !~ /CHROMOSOME_/) {
+    $chrom = "CHROMOSOME_$chrom";
+  }
+  
+  foreach my $slink ( keys %{$self->{"$chrom"}->{'SUPERLINK'}} ) {
+    if($self->{"$chrom"}->{'SUPERLINK'}->{$slink}->[0] <= $coord1 and
+       $self->{"$chrom"}->{'SUPERLINK'}->{$slink}->[1] >= $coord1
+      ) {
+	my $sl_start = $self->{"$chrom"}->{'SUPERLINK'}->{$slink}->[0];
+	$coord1 = $coord1 - $sl_start + 1;	# so $coord1 is now the coordinate in the $parent superlink
+	$coord2 = $coord2 - $sl_start + 1;	# so $coord2 is now the coordinate in the $parent superlink
+	return ($slink, $coord1, $coord2);
+    }
+  }
+}
 
 =head2 Superlink_length
 
