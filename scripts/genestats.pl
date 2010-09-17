@@ -1,13 +1,13 @@
-#!/usr/local/bin/perl
+#!/usr/bin/env perl
 #
 # genestats.pl
 #
 # dl
 #
-# Usage : genestatsr.pl [-options]
+# Usage : genestats.pl [-options]
 #
 # Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2007-09-27 13:21:02 $
+# Last edited on: $Date: 2010-09-17 14:34:03 $
  
 
 use strict;                                      
@@ -26,11 +26,11 @@ use IO::Handle;
 
 my ($help, $debug, $test, $verbose, $store, $wormbase);
 
-GetOptions ("help"       => \$help,
-            "debug=s"    => \$debug,
-	    "test"       => \$test,
-	    "verbose"    => \$verbose,
-	    "store:s"      => \$store,
+GetOptions ('help'       => \$help,
+            'debug=s'    => \$debug,
+	    'test'       => \$test,
+	    'verbose'    => \$verbose,
+	    'store:s'    => \$store,
 	    );
 
 if ( $store ) {
@@ -70,21 +70,21 @@ my $reports_dir     = $wormbase->reports;     # AUTOACE REPORTS
 my @values;
 my $command;
 
-$command  = "query find Gene where Species = \"*elegans\" AND Live\nspush\n";
-$command .= "query where Molecular_info\n";
-$command .= "spop\nspush\n";
-$command .= "query where Concise_description\n";
-$command .= "spop\nspush\n";
-$command .= "query where Reference\n";
-$command .= "spop\nspush\n";
-$command .= "query where CGC_name\n";
-$command .= "spop\nspush\n";
-$command .= "query where RNAi_result\n";
-$command .= "spop\nspush\n";
-$command .= "query where Microarray_results\n";
-$command .= "spop\nspush\n";
-$command .= "query where SAGE_tag\n";
-$command .= "quit\n";
+$command  = "query find Gene where Species = \"*elegans\" AND Live\nspush\n"
+          . "query where Molecular_info\n"
+          . "spop\nspush\n"
+          . "query where Concise_description\n"
+          . "spop\nspush\n"
+          . "query where Reference\n"
+          . "spop\nspush\n"
+          . "query where CGC_name\n"
+          . "spop\nspush\n"
+          . "query where RNAi_result\n"
+          . "spop\nspush\n"
+          . "query where Microarray_results\n"
+          . "spop\nspush\n"
+          . "query where SAGE_tag\n"
+          . "quit\n";
 
 # database connection
 
@@ -124,13 +124,13 @@ my $percent_SAGE_transcript     = (int ( ( ($SAGE_transcript / $live_genes) * 10
 open (OUT, ">$reports_dir/genedata") || die "Failed to open output file\n";
 print OUT "Gene data set (Live C.elegans genes $values[0])\n";
 print OUT "------------------------------------------\n";
-print OUT "Molecular_info              "  . $values[1] . " (" . $percent_molecular_info . "%)\n";
+print OUT "Molecular_info              " . $values[1] . " (" . $percent_molecular_info . "%)\n";
 print OUT "Concise_description         " . $values[2] . " (" . $percent_concise_description . "%)\n";
 print OUT "Reference                   " . $values[3] . " (" . $percent_reference . "%)\n";
-print OUT "WormBase_approved Gene name " . $values[4] . " (" . $percent_CGC_name . "%)\n";
-print OUT "RNAi_result                 "  . $values[5] . " (" . $percent_RNAi_result . "%)\n";
-print OUT "Microarray_results          "  . $values[6] . " (" . $percent_microarray_result . "%)\n";
-print OUT "SAGE_transcript             "  . $values[7] . " (" . $percent_SAGE_transcript . "%)\n";
+print OUT "WormBase_approved_Gene_name " . $values[4] . " (" . $percent_CGC_name . "%)\n";
+print OUT "RNAi_result                 " . $values[5] . " (" . $percent_RNAi_result . "%)\n";
+print OUT "Microarray_results          " . $values[6] . " (" . $percent_microarray_result . "%)\n";
+print OUT "SAGE_transcript             " . $values[7] . " (" . $percent_SAGE_transcript . "%)\n";
 close OUT;
 
 ##################
@@ -148,7 +148,6 @@ lines => ['^\S+\s+\d+\s+\(\d+(\.\d)*\%\)', '^\S+\s+\S+\s+\S+\s+\d+\s+\(\d+(\.\d)
 
 $log->mail();
 print "Finished.\n" if ($verbose);
-exit(0);
 
 
 ##############################################################
@@ -167,7 +166,6 @@ sub usage {
   if ($error eq "Help") {
     # Normal help menu
     system ('perldoc',$0);
-    exit (0);
   }
 }
 
