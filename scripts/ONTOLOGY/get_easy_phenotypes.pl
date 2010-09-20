@@ -73,8 +73,11 @@ warn scalar keys %description , " phenotypes read\n";
 
 
 my $out;
+my $out_quick;
 $output = $wormbase->ontology."/rnai_phenotypes.".$wormbase->get_wormbase_version_name.".wb" unless $output;
 open($out, ">$output") or $log->log_and_die("cannot open $output : $!\n");
+$output = $wormbase->ontology."/rnai_phenotypes_quick.".$wormbase->get_wormbase_version_name.".wb";
+open($out_quick, ">$output") or $log->log_and_die("cannot open $output : $!\n");
 
 
 
@@ -109,52 +112,22 @@ while (my $RNAi_obj=$it->next) {
 # print the result
 $count=0;
 foreach my $gene (keys %names) {
+  my $phenotypes='';
   foreach my $phenotype (keys %{$result{$gene}}) {
     $count++;
     if ($count % 1000 == 0) {
       warn "$count Gene Phenotypes output\n";
     }    
     print $out "$gene\t$names{$gene}\t$description{$phenotype}\t$phenotype\t@{$result{$gene}{$phenotype}}\n";
+    $phenotypes .= ', ' if ($phenotypes);
+    $phenotypes .= $description{$phenotype};
   }
+  if ($phenotypes) {print $out_quick "$gene\t$names{$gene}\t$phenotypes\n";}
 }
 
 
-
-
-#while (my $obj=$it->next) {
-#    next unless $obj->isObject();
-#    $count++;
-#    if ($count % 1000 == 0) {
-#	warn "$count RNAi objects processed\n";
-#    }
-#    
-#    my @genes_tmp=$obj->Gene;
-#    my @genes=();
-#    my %pheno=();
-#    foreach (@genes_tmp) {
-#	if ($_->right(2) eq 'RNAi_primary') {
-#	    push @genes, $_;
-#	}
-#    }
-#    my $ref=$obj->Reference;
-#    my @phen_array_tmp=$obj->Phenotype;
-#    foreach (@phen_array_tmp) {
-#	my $not=grep {/Not/} $_->tags();
-#
-#	$pheno{$_}[1]='NOT' if $not;
-#	$pheno{$_}[0]++;
-#    }
-#    foreach my $g (@genes) {
-#	foreach my $p (keys %pheno) {
-#	  if ($pheno{$p}[1] eq 'NOT') {next}
-#	  if (!exists $names{$g}) {next} # not C. elegans
-#	  print $out "$g\t$names{$g}\t$description{$p}\t$p\t$ref\t$obj\n";
-#	}
-#    }
-
-
-
 close($out);
+close($out_quick);
 
 
 ##################
@@ -163,7 +136,7 @@ close($out);
 
 
 $wormbase->check_file($output, $log,
-minsize => 3000000,
+minsize => 700000,
 maxsize => 6000000,
 );
 
