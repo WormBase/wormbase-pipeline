@@ -177,48 +177,51 @@ sub invoke
 	##########################
 
 	} elsif ($species eq 'brenneri') {
+                # read data from the Supercontig* Sequence:Subsequence tags in
+		# the acedb database
 
-		# read data from the AGP file
-		carp "Although contig data is read, there is no contig data in the acedb database, only supercontig data, as of 13 June 2007\n";
 		if ( $refresh ) {
 			print "refreshing coordinates for $database\n";
-			my $agp_file = "$database/AGP/supercontigs.agp";
+			my $tace = $wormbase->tace;
 
-			my $prev_supercontig = "";
-			my $prev_contig = "";
-			my $gap_count = 0;
-			open (SL, ">$SL_coords_file") || croak "Can't open $SL_coords_file\n";
-			open (AGP, "<$agp_file") || croak "Can't open $agp_file\n";
-			while (my $line = <AGP>) {
-			my ($supercontig, $pos1, $pos2, $number, $type, $contig, $start, $len, $strand) = split /\s+/, $line;
-			if ($type eq "N") {	# this is a gap, not a true contig
-				$contig = $prev_contig . ".GAP_" . ++$gap_count; # make up a unique name for this gap-contig
-				$strand = '+';
+			my $command = "find sequence ".$wormbase->chromosome_prefix."*\nshow -a DNA -f ${SL_coords_file}\n";
+
+			open (ACE,"| $tace $database") or croak "cant open $database\n";
+			print ACE $command ;
+			close(ACE);
+
+			# convert the GAP name into a unique gap name
+			my %data;
+			my $supercontig;
+			open (SL, "< $SL_coords_file") or croak "cant open $SL_coords_file\t$!";
+			while(my $line = <SL>) {
+				$line =~ s/\"//g;#"
+				if ($line =~ /Sequence\s+:\s+(\S+)/) {
+					$supercontig = $1;
+				} elsif ($line =~ /DNA\s+(\S+)\s+(\d+)/) {
+					my $contig = $1;
+					my $pos1 = $2;
+					push @{$data{$supercontig}}, [($contig, $pos1)];
+				}
 			}
-			if ($prev_supercontig ne $supercontig) { # starting a new supercontig
-			# we fake the extra layer of superlink data by duplicating the superlink and clone coords
-			# this makes it easier to use the existing elegans routines
-				print SL "\nSequence : \"$supercontig\"\n";
-				$prev_contig = "";
-			}
-			if ($strand eq '+') {
-				print SL "Subsequence \"$contig\" $pos1 $pos2\n";
-			} else {		# I think that all of the brenneri contigs are in the + sense, but just in case:
-				print SL "Subsequence \"$contig\" $pos2 $pos1\n";
-			}
-			$prev_contig = $contig;
-			$prev_supercontig = $supercontig;
-			}
-			close (AGP);
 			close (SL);
 
-			system("cp $SL_coords_file $clone_coords_file") and croak "cant cp $SL_coords_file\n" ;
-			system("chmod 777 $clone_coords_file") and carp "cant chmod on $clone_coords_file - This could cause problems in future" ;
+			my $prev_pos;
+			my $prev_contig = "";
+			open (SLB, "> $SL_coords_file") or croak "cant open $SL_coords_file\t$!";
+			# now sort by start position and write out again including the gap information
+			foreach my $supercontig (keys %data) {
+				print SLB "\nSequence : \"$supercontig\"\n";
+				print SLB "Subsequence \"$supercontig\" 1 ".$data{$supercontig}->[0]->[1]."\n";
+			}
 
+			close (SLB);
+			system("cp $SL_coords_file $clone_coords_file") and croak "cant cp $SL_coords_file\n" ;
 		}
 
 		# now read and load the data
 		&_read_data_file($database, $species, $self);
+
 
 	##########################
 	#
