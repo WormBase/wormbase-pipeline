@@ -4,8 +4,8 @@
 # 
 # by Dan Lawson
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2009-05-22 08:47:06 $
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2010-09-27 16:05:52 $
 #
 # Usage GFFmunger.pl [-options]
 
@@ -27,16 +27,15 @@ use Ace;
 ##################################################
 # Script variables and command-line options      #
 ##################################################
-my ($help, $debug, $test, $verbose, $store, $wormbase);
+my ($help, $debug, $test, $verbose, $store, $wormbase,$gffdir,$datadir);
 
-my $all;                       # All of the following:
-my $landmark;                  #   Landmark genes
-my $UTR;                       #   UTRs 
-my $WBGene;                    #   WBGene spans
-my $CDS;                       #   CDS overload
-my $chrom;                     # single chromosome mode
-my $datadir;
-my $gffdir;
+my $all;      # All of the following:
+my $landmark; #   Landmark genes
+my $UTR;      #   UTRs 
+my $WBGene;   #   WBGene spans
+my $CDS;      #   CDS overload
+my $rnai;     #   RNAi
+my $chrom;    # single chromosome mode
 my $version;
 
 GetOptions (
@@ -48,11 +47,12 @@ GetOptions (
 	    "gff:s"     => \$gffdir,
 	    "splits:s"  => \$datadir,
 	    "release:s" => \$version,
-            "help"       => \$help,
-            "debug=s"    => \$debug,
-	    "test"       => \$test,
-	    "verbose"    => \$verbose,
-	    "store:s"      => \$store,
+            "help"      => \$help,
+            "debug=s"   => \$debug,
+	    "test"      => \$test,
+	    "verbose"   => \$verbose,
+	    "store:s"   => \$store,
+	    'rnai'      => \$rnai,
 	    );
 
 if ( $store ) {
@@ -91,8 +91,8 @@ if ($version) {
 # Paths etc                  #
 ##############################
 
-$datadir = $wormbase->gff_splits unless $datadir;
-$gffdir  = $wormbase->gff        unless $gffdir;
+$datadir ||= $wormbase->gff_splits;
+$gffdir  ||= $wormbase->gff;
 my @gff_files;
 
 # prepare array of file names and sort names
@@ -101,11 +101,11 @@ if (defined($chrom)){
     push(@gff_files,$chrom);
 }
 else {
-	if ($wormbase->assembly_type eq 'contig'){
+    if ($wormbase->assembly_type eq 'contig'){
 	  @gff_files = ($wormbase->species);
-	} else {
+    } else {
           @gff_files = $wormbase->get_chromosome_names('-prefix' => 1, '-mito' => 1);
-        }
+    }
  }
 
 # check to see if full chromosome gff dump files exist
@@ -214,14 +214,18 @@ exit(0);
 
 sub check_its_worked {
 	my $file = shift;
-	my $landmark = qx{grep landmark $file | wc -l }; #qx{} captures system command output.
-	my $fiveprime = qx{grep five_prime  $file | wc -l };
+        my $fiveprime = qx{grep five_prime  $file | wc -l };
 	my $partially = qx{grep Partially  $file | wc -l };
 	
 	my $msg;
-	if ($landmark < 10) {
+
+        if (($landmark || $all) && ($file ne "CHROMOSOME_MtDNA") && ($wormbase->species eq 'elegans')) {
+           my $landmark_genes = qx{grep landmark $file | wc -l }; #qx{} captures system command output.
+
+	   if ($landmark_genes < 10) {
 		$msg .= "landmark genes are not present\n";
-	}
+	   }
+        }
 	if ( $fiveprime  < 10 ) {
 		$msg .= "UTRs are not present\n";
 	}
