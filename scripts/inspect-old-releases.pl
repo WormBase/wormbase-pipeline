@@ -17,7 +17,7 @@
 # foreach? end
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2010-07-14 14:28:04 $      
+# Last updated on: $Date: 2010-09-29 12:24:10 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -83,7 +83,7 @@ if ($species ne 'elegans') {
 
 open (OUT, "> $outfile") || die "Can't open $outfile";
 
-my @chromosomes = $wormbase->get_chromosome_names(-mito => 0, -prefix => 0);
+my @chromosomes = $wormbase->get_chromosome_names(-mito => 0, -prefix => 1);
 
 foreach my $chromosome (@chromosomes) {
   my @differences = ();
@@ -93,6 +93,13 @@ foreach my $chromosome (@chromosomes) {
   $log->write_to("Chromosome: $chromosome\n");
 
   my @chromosome_pair = &get_chromosomes($chromosome, $database1, $database2);
+  if ($chromosome_pair[0] eq '') {$log->log_and_die("Could not find the old contig $chromosome\n")} 
+  if ($chromosome_pair[1] eq '') { # does the second contig no longer exist?
+    print OUT "DELETED\tDELETED\tDELETED\tDELETED\tDELETED\tDELETED\tDELETED\n";
+    $log->write_to("Could not find the new contig $chromosome\n");
+    next;
+  }
+
   @differences = &compare_chromosomes(@chromosome_pair);
 
   foreach my $diffs (@differences) {
@@ -412,7 +419,6 @@ sub get_chromosomes {
 
   $chrom_pair[0] = read_chromosome($chrom, $db1);
   $chrom_pair[1] = read_chromosome($chrom, $db2);
-
   return @chrom_pair;
 }
 
@@ -425,25 +431,62 @@ sub get_chromosomes {
 sub read_chromosome() {
   my ($chromosome, $db) = @_;
   my $seq;
-                                                                                                                                                            
-  my $file = "$db/CHROMOSOMES/CHROMOSOME_$chromosome.dna";
+                                                                                                                                                          
+  my $file;
+  my $title;
 
-  my $old_rs = $/;              # save the current value of the record separator
 
-  if (! open (SEQ, "<$file")) {	# try to open the sequence file
-    open (SEQ, "/bin/gunzip -c $file.gz |") || die "Can't open file $file\n"; # ... or try to open the gzipped sequence file
+  $file = "$db/CHROMOSOMES/$chromosome.dna";
+  if (-e $file) {
+    my $old_rs = $/;              # save the current value of the record separator
+    
+    if (! open (SEQ, "<$file")) {	# try to open the sequence file
+      open (SEQ, "/bin/gunzip -c $file.gz |") || die "Can't open file $file\n"; # ... or try to open the gzipped sequence file
+    }
+    $title = <SEQ>;                        # skip the title line
+    if ($title !~ /^\>/) {
+      $log->log_and_die("The first line of the chromosome file $file does not start with a '>' character\n");
+    }
+    undef $/;                     # don't use record separator when reading file
+    $seq = <SEQ>;                 # slurp up the whole file
+    $seq =~ s/\n//g;              # remove newline characters
+    close (SEQ);
+    $/ = $old_rs;                 # restore the old value of the record separator
+    if (! length $seq) {$log->log_and_die("no sequence found in file $file");}
+    return $seq;
+
+  } else {	# contig-based chromosomes in one file
+
+    $file = "$db/CHROMOSOMES/supercontig.fa";
+    
+    my $old_rs = $/;              # save the current value of the record separator
+    
+    if (! open (SEQ, "<$file")) {	# try to open the sequence file
+      open (SEQ, "/bin/gunzip -c $file.gz |") || die "Can't open file $file\n"; # ... or try to open the gzipped sequence file
+    }
+    while ($title = <SEQ>) {
+      if ($title =~ /^\>(\S+)/ && $1 eq $chromosome) {last} 
+    }
+
+    # if we don't find the chromosome, then bomb out but handle it because we may have a contig that has been deprecated
+    if ($title !~ /^\>/) {
+      $log->write_to("NOT FOUND contig $chromosome\n");
+      return '';
+    }
+    while (my $line = <SEQ>) {
+      if ($line =~ /^\>/) {last}
+      chomp $line;
+      $seq .= $line;    
+    }
+    close (SEQ);
+
+    if (! length $seq) {$log->log_and_die("no sequence found in file $file");}
+    return $seq;
+
   }
-  my $title = <SEQ>;                        # skip the title line
-  if ($title !~ /^\>/) {
-    $log->log_and_die("The first line of the chromosome file $file does not start with a '>' character\n");
-  }
-  undef $/;                     # don't use record separator when reading file
-  $seq = <SEQ>;                 # slurp up the whole file
-  $seq =~ s/\n//g;              # remove newline characters
-  close (SEQ);
-  $/ = $old_rs;                 # restore the old value of the record separator
-  if (! length $seq) {$log->log_and_die("no sequence found in file $file");}
-  return $seq;
+
+
+
 }
 
 
