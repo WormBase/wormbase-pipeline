@@ -51,7 +51,7 @@ sub new
     my %clones;
     while (<CLONE>) {
       chomp;
-      $db->{clones}->{$_} = 1;
+      $db->{clones}->{uc($_)} = 1;
     }
     close CLONE;
     return $db;
