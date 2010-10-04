@@ -81,11 +81,12 @@ _VPaper            -V -T Brief_citation
 
 // genetics / CGC stuff
 
+_VGene             -V -T Public_name
+_VGene_cluster     -V
 _VGene_class       -V
 _VGene_name	   -V
 _VLocus            -V -D GMAP
 _VLocus            -V 
-_VGene             -V -T Public_name
 _VRearrangement    -V -D GMAP
 _VMap              -V -D GMAP  
 _VMultiMap	   -H -D DtMULTIMAP
@@ -104,7 +105,9 @@ _VVariation        -V -T Public_name
 _VCell             -V
 _VCell_group       -H
 _VLife_stage       -H
-
+_VNeurodata        -V
+_VNeuro_location   -V
+_VMolecule         -V
 
 // database related classes
 
