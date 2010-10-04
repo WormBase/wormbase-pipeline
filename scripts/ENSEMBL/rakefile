@@ -103,7 +103,7 @@ end
 
 desc 'build homology database'
 task :build_homology => [:env_setup] do
-  conf='etc/compara-genetree-9.conf'
+  conf='etc/compara-genetree-10.conf'
   reg='etc/compara_test10.reg'
   yml=YAML::load_file('etc/ensembl_lite.conf')
   db=yml['elegans']['database']
@@ -123,21 +123,21 @@ task :build_homology => [:env_setup] do
   protein_treesql=%q/'INSERT INTO method_link (type, class) VALUES ("ENSEMBL_ORTHOLOGUES","Homology.homology"),("ENSEMBL_PARALOGUES","Homology.homology"),("PROTEIN_TREES","ProteinTree.protein_tree_node")'/
   sh "mysql -h #{db['host']} -u #{db['user']} -p#{db['password']} worm_compara -e #{protein_treesql}"
 
-  nj_treesql=%q/'INSERT INTO protein_tree_tag (tag,value) VALUES ("species_tree_string","((((((((6238*,31234)a,135651)b,6239*)c,281687)d,54126)e,6305)f,6289)g,6279)h;")'/
+  nj_treesql=%q/'INSERT INTO protein_tree_tag (tag,value) VALUES ("species_tree_string","(((((((((6238*,31234)a,135651)b,6239*)c,281687)d,96668)e,54126)f,6305)g,6289)h,6279)i;")'/
   sh "mysql -h #{db['host']} -u #{db['user']} -p#{db['password']} worm_compara -e #{nj_treesql}"
 
   # MLSS setup
   # For orthologues
-  sh "#{perl} #{basedir}/ensembl-compara/scripts/pipeline/create_mlss.pl --f --pw --reg_conf #{reg} --method_link_type ENSEMBL_ORTHOLOGUES --genome_db_id '1,2,3,4,5,6,7,8,9'"
+  sh "#{perl} #{basedir}/ensembl-compara/scripts/pipeline/create_mlss.pl --f --pw --reg_conf #{reg} --method_link_type ENSEMBL_ORTHOLOGUES --genome_db_id '1,2,3,4,5,6,7,8,9i,10'"
 
   # For between-species paralogues
-  sh "#{perl} #{basedir}/ensembl-compara/scripts/pipeline/create_mlss.pl --f --pw --reg_conf #{reg} --method_link_type ENSEMBL_PARALOGUES --genome_db_id '1,2,3,4,5,6,7,8,9'"
+  sh "#{perl} #{basedir}/ensembl-compara/scripts/pipeline/create_mlss.pl --f --pw --reg_conf #{reg} --method_link_type ENSEMBL_PARALOGUES --genome_db_id '1,2,3,4,5,6,7,8,9,10'"
 
   # For same-species paralogues
-  sh "#{perl} #{basedir}/ensembl-compara/scripts/pipeline/create_mlss.pl --f --sg --reg_conf #{reg} --method_link_type ENSEMBL_PARALOGUES --genome_db_id '1,2,3,4,5,6,7,8,9'"
+  sh "#{perl} #{basedir}/ensembl-compara/scripts/pipeline/create_mlss.pl --f --sg --reg_conf #{reg} --method_link_type ENSEMBL_PARALOGUES --genome_db_id '1,2,3,4,5,6,7,8,9,10'"
 
   # For protein trees
-  sh "#{perl} #{basedir}/ensembl-compara/scripts/pipeline/create_mlss.pl --f --reg_conf #{reg} --method_link_type PROTEIN_TREES --genome_db_id '1,2,3,4,5,6,7,8,9'"
+  sh "#{perl} #{basedir}/ensembl-compara/scripts/pipeline/create_mlss.pl --f --reg_conf #{reg} --method_link_type PROTEIN_TREES --genome_db_id '1,2,3,4,5,6,7,8,9,10'"
 
   # up the failure tolerance
 
@@ -155,7 +155,7 @@ end
 desc 'build PECAN database'
 task :build_pecan => [:env_setup] do
   conf='etc/pecan_test.conf'
-	yml=YAML::load_file('etc/ensembl_lite.conf')
+  yml=YAML::load_file('etc/ensembl_lite.conf')
   db=yml['elegans']['database']
 
 	sh "mysql -h #{db['host']} -P#{db['port']} -u #{db['user']} -p#{db['password']} -e 'DROP DATABASE IF EXISTS worm_compara_pecan;CREATE DATABASE worm_compara_pecan;'"
