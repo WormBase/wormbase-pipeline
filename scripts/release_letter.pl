@@ -5,7 +5,7 @@
 # by Anthony Rogers                             
 #
 # Last updated by: $Author: pad $               
-# Last updated on: $Date: 2010-07-30 10:49:51 $
+# Last updated on: $Date: 2010-10-05 16:08:57 $
 
 # Generates a release letter at the end of build.
 #
@@ -183,7 +183,7 @@ if( defined($opt_l)) {
   my %accessors = ($wormbase->species_accessors);
   $accessors{$wormbase->species} = $wormbase;
   delete $accessors{'heterorhabditis'};
-  delete $accessors{'elegans'};
+  delete $accessors{'elegans'}; #this aviods duplicating stats for elegans as we also pull in a preprepared report.
   my @wormpep_species = (keys%accessors);
   my $wormpep_species;
   my ($species,$name);
@@ -225,6 +225,12 @@ if( defined($opt_l)) {
   printf RL "---------------------------------------------\n\n\n";
 
 
+  ######################################
+  #  CDS Status stats                  #
+  ######################################
+
+  #add back in elegans for this step.
+  push(@wormpep_species,"elegans");
   foreach $wormpep_species(@wormpep_species) {
     $species = $accessors{$wormpep_species};
     $name = $species->full_name;
@@ -281,7 +287,7 @@ if( defined($opt_l)) {
   printf RL "---------------------------------------------\n";
   printf RL "| Live Operons        $Operon_count                |\n";
   printf RL "| Genes in Operons    $Operon_genes                |\n";
-  printf RL "\n\n\n";
+  printf RL "---------------------------------------------\n\n\n";
 
 
 
@@ -390,8 +396,8 @@ if( defined($opt_l)) {
     printf RL "IPI Inferred from Physical Interaction\n";
     printf RL "ISS Inferred from Sequence (or Structural) Similarity\n";
     printf RL "NAS Non-traceable Author Statement\n";
-    printf RL "NDNo Biological Data available\n";
-    printf RL "RCA ?\n";
+    printf RL "ND  No Biological Data available\n";
+    printf RL "RCA Inferred from Reviewed Computational Analysis\n";
     printf RL "TAS Traceable Author Statement\n";
     printf RL "------------------------------------------------\n\n";
 
