@@ -86,18 +86,20 @@ sub make_build_log {
     my $log_file = "$path/$filename" . ".WS${ver}." . $$;
     my $log;
 
-	#resolve options passed to script
-	
-	foreach my $opt(@{$opts}) {
-		next if ($opt eq 'test' or $opt eq 'debug' or $opt eq 'store' or $opt eq 'species');
-		next unless $opt =~ /\w/;
-		$opt =~ s/^\s+//;
-		$opt =~ s/\s+$//;
-		$filename .= " -$opt";
-	}
+    #resolve options passed to script
+    
+    if (defined $opts) {         
+      foreach my $opt(@{$opts}) {
+        next if ($opt eq 'test' or $opt eq 'debug' or $opt eq 'store' or $opt eq 'species');
+	next unless $opt =~ /\w/;
+	$opt =~ s/^\s+//;
+	$opt =~ s/\s+$//;
+	$filename .= " -$opt";
+      }
+    }
 
-    open( $log, ">$log_file" ) or croak "cant open file $log_file : $!";
-    print $log "WS$ver ($species) Build script : $filename\n\n";
+    open( $log, ">$log_file" ) or croak "cant open file $log_file $!";
+    print $log "WS$ver ($species) Build script : $filename @ARGV\n\n";
     print $log "Started at ", $wormbase->runtime, "\n";
     print $log "-----------------------------------\n\n";
 
