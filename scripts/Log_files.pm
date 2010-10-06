@@ -86,7 +86,7 @@ sub make_build_log {
     my $log_file = "$path/$filename" . ".WS${ver}." . $$;
     my $log;
     open( $log, ">$log_file" ) or croak "cant open file $log_file : $!";
-    print $log "WS$ver ($species) Build script : $filename \n\n";
+    print $log "WS$ver ($species) Build script : $filename @{$opts}\n\n";
     print $log "Started at ", $wormbase->runtime, "\n";
     print $log "-----------------------------------\n\n";
 
