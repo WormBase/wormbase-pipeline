@@ -4,8 +4,8 @@
 # 
 # by Anthony Rogers                             
 #
-# Last updated by: $Author: pad $               
-# Last updated on: $Date: 2010-10-05 16:08:57 $
+# Last updated by: $Author: mh6 $               
+# Last updated on: $Date: 2010-10-06 09:07:49 $
 
 # Generates a release letter at the end of build.
 #
@@ -183,6 +183,7 @@ if( defined($opt_l)) {
   my %accessors = ($wormbase->species_accessors);
   $accessors{$wormbase->species} = $wormbase;
   delete $accessors{'heterorhabditis'};
+  my $elegansAccessor= $accessors{elegans};
   delete $accessors{'elegans'}; #this aviods duplicating stats for elegans as we also pull in a preprepared report.
   my @wormpep_species = (keys%accessors);
   my $wormpep_species;
@@ -232,7 +233,7 @@ if( defined($opt_l)) {
   #add back in elegans for this step.
   push(@wormpep_species,"elegans");
   foreach $wormpep_species(@wormpep_species) {
-    $species = $accessors{$wormpep_species};
+    $species = $wormpep_species eq 'elegans' ? $elegansAccessor : $accessors{$wormpep_species};
     $name = $species->full_name;
     my %wp_status;
     my $wormpep_datafile;
