@@ -284,99 +284,9 @@ sub map {
 
         print "${\$x->name} ($chromosome ($orientation): $start - $stop) clone: $map[0] $map[1]-$map[2]\n" if $wb->debug;
         
-        #map the CGH inner seqs
-        if($x->CGH_deleted_probes){
-            my @map=$mapper->map_feature($x->Sequence->name,$x->CGH_deleted_probes->name,$x->CGH_deleted_probes->right->name);
-            if ($map[0] eq '0'){
-                $log->write_to("ERROR: Couldn't map CGH_deleted_probes for $x (${\$x->Public_name}) to sequence ${\$x->Sequence->name} with ${\$x->Flanking_sequences->name} and ${\$x->Flanking_sequences->right->name} (Remark: ${\$x->Remark})\n");
-                $errors++;
-                next
-            }
-            $alleles{$x->name}{'CGH5'} = $map[1] - $alleles{$x->name}->{'clone_start'} ;
-            $alleles{$x->name}{'CGH3'} = $alleles{$x->name}->{'clone_stop'} - $map[2];
-        }
     }
     return \%alleles
 }
-
-=head2 map_cgh 
-
-    Title   : map_cgh
-    Usage   : MapAlleles::map_cgh(hash_ref of Ace::Alleles)
-    Function: maps determines cgh flank sizes
-    Returns : 
-    Args    : (hash_ref) of Ace::Alleles from MapAlleles::map
-    
-=cut
-
-# get the chromosome coordinates for CGH arrays
-sub map_cgh {
-    my ($alleles)=@_;
-
-    my $mapper = Feature_mapper->new( $wb->autoace, undef, $wb );
-        my $coords = Coords_converter->invoke( $wb->autoace, 0, $wb );
-
-    while( my($k,$x)=each %$alleles ){
-        my $v=$x->{allele};
-        # $chromosome_name,$start,$stop
-        next unless $v->CGH_deleted_probes;
-        my @cgh_map=$mapper->map_feature($v->Sequence->name,$v->CGH_deleted_probes->name,$v->CGH_deleted_probes->right->name);
-        if ($cgh_map[0] eq '0'){
-            $log->write_to("ERROR: Couldn't map inner probes of $v (${\$v->Public_name}) to sequence ${\$v->Sequence->name} with ${\$v->CGH_deleted_probes->name} and ${\$v->CGH_deleted_probes->right->name} (Remark: ${\$v->Remark})\n");
-            $errors++;
-            next
-        }
-
-        # from flanks to variation
-        if ($cgh_map[2]>$cgh_map[1]){$cgh_map[1]++;$cgh_map[2]--}else {$cgh_map[1]--;$cgh_map[2]++}
-    
-        my ($chrom,$cgh_start)=$mapper->Coords_2chrom_coords($cgh_map[0],$cgh_map[1]);
-        my ($drop,$cgh_stop)=$mapper->Coords_2chrom_coords($cgh_map[0],$cgh_map[2]);
-    
-        # orientation
-        my $orientation='+';
-        if ($stop < $start){
-            my $tmp=$cgh_start;
-            $tmp=$cgh_start;
-            $cgh_start=$cgh_stop;
-            $cgh_stop=$tmp;
-        }
-
-        $$alleles{$k}->{cgh_start}=$cgh_start;
-        $$alleles{$k}->{cgh_stop}=$cgh_stop;
-
-        print "$k ($chrom ($orientation): $cgh_start - $cgh_stop) clone: $cgh_map[0] $cgh_map[1]-$cgh_map[2]\n" if $wb->debug;
-    }
-    # no need to return anything, as we fiddle around with the reference
-}
-
-=head2 print_cgh
-
-    Title   : print_cgh
-    Usage   : MapAlleles::print_cgh(hash_ref alleles)
-    Function: print ACE format for CGH arrays ranges
-    Returns : nothing
-    Args    : (hash_ref) of {allele_name}={allele_data} 
-
-=cut
-
-sub print_cgh{
-    my ($alleles,$fh)=@_;
-    while (my($k,$v)=each %$alleles){
-        next unless ($v->{cgh_start}&&$v->{cgh_stop}); # skip it if it is not a cgh allele
-
-        my $left_range=$v->{cgh_start} - $v->{start};
-        my $right_range=$v->{stop} - $v->{cgh_stop};
-
-        my @order=qw(Five Three);
-        @order=qw(Three Five) if ($v->{orientation} eq '+');
-
-        print $fh "Variation : \"$k\"\n";
-        print $fh "$order[0]PrimeGap $left_range\n";            
-        print $fh "$order[1]PrimeGap $right_range\n\n";
-    }
-}
-
 
 
 =head2 print_genes
@@ -431,12 +341,8 @@ sub get_genes {
     my %genes;
     while(my($k,$v)=each(%{$alleles})){
         my @hits;
-        if ($v->{cgh_start}) {
-           @hits=$index->search_genes($v->{'chromosome'},$v->{'cgh_start'},$v->{'cgh_stop'});
-        }
-        else {
-           @hits=$index->search_genes($v->{'chromosome'},$v->{'start'},$v->{'stop'});
-            }
+
+        @hits=$index->search_genes($v->{'chromosome'},$v->{'start'},$v->{'stop'});
         foreach my $hit(@hits){
             $genes{$hit->{name}}||=[];
             push @{$genes{$hit->{name}}}, $k;
@@ -448,42 +354,6 @@ sub get_genes {
     return \%genes;
 }
 
-# map cgh alleles to possible genes (test)
-sub get_possible_genes {
-    my ($alleles)=@_;
-    my %allele2gene;
-    while(my($k,$v)=each(%{$alleles})){
-        my @hits;
-        if ($v->{cgh_start}) {
-           @hits=$index->search_genes($v->{'chromosome'},$v->{'start'},$v->{'stop'});
-        }
-        else { next }
-        foreach my $hit(@hits){
-            $allele2gene{$k}||=[];
-            push @{$allele2gene{$k}}, $hit->{name};
-        }
-    }
-    if ($wb->debug){
-        foreach my $y (keys %allele2gene) {print "$y -> ",join " ",@{$allele2gene{$y}},"\n"}
-    }
-    return \%allele2gene;
-}
-
-# print possible gene things for CGH (test)
-sub print_possible_genes {
-    my ($name,$possible,$real,$fh)=@_;
-    my %bad_keys;
-    my %good_ones;
-    map {$bad_keys{$_}++} @$real;
-    map {$good_ones{$_}++ unless $bad_keys{$_}} @$possible;
-    if (scalar keys %good_ones >=1){
-        print $fh "Variation : \"$name\"\n";
-        foreach my $gene(keys %good_ones){
-            print $fh "Possibly_affects $gene Inferred_automatically map_Alleles.pl\n";
-        }
-        print $fh "\n";
-    }
-}
 
 =head2 get_cds
 
@@ -501,12 +371,8 @@ sub get_cds {
     my %cds;
     while(my($k,$v)=each(%{$alleles})){
         my @hits;
-        if ($v->{cgh_start}) {
-           @hits=$index->search_cds($v->{'chromosome'},$v->{'cgh_start'},$v->{'cgh_stop'});
-        }
-        else {
-           @hits=$index->search_cds($v->{'chromosome'},$v->{'start'},$v->{'stop'});
-        }
+
+        @hits=$index->search_cds($v->{'chromosome'},$v->{'start'},$v->{'stop'});
         foreach my $hit(@hits){
             print $hit->{name},"\n" if $wb->debug;
             my @exons=grep {($v->{'stop'}>=$_->{start}) && ($v->{start}<=$_->{stop})} $hit->get_all_exons;
@@ -920,13 +786,7 @@ sub search_utr{
     my ($alleles,$utrs)=@_;
     my %allele_utr;
     while(my($k,$v)=each(%{$alleles})){
-        my @hits;
-        if ($v->{cgh_start}) {
-           @hits = grep {$_->{start}<=$v->{cgh_stop} && $_->{stop}>=$v->{cgh_start}} @{$$utrs{$v->{chromosome}}};
-        }
-        else {
-           @hits = grep {$_->{start}<=$v->{stop} && $_->{stop}>=$v->{start}} @{$$utrs{$v->{chromosome}}};
-        }
+        my @hits = grep {$_->{start}<=$v->{stop} && $_->{stop}>=$v->{start}} @{$$utrs{$v->{chromosome}}};
         foreach my $hit(@hits){
             $allele_utr{$k}{$hit->{transcript}}{$hit->{type}}=1;
             print "$k -> ${\$hit->{transcript}} (${\$hit->{type}})\n" if $wb->debug;
@@ -1002,13 +862,7 @@ sub search_pseudogenes{
     my ($alleles,$pgenes)=@_;
     my %allele_pgenes;
     while(my($k,$v)=each(%{$alleles})){
-        my @hits;
-        if ($v->{cgh_start}) {
-           @hits = grep {$_->{start}<=$v->{cgh_stop} && $_->{stop}>=$v->{cgh_start}} @{$$pgenes{$v->{chromosome}}};
-        }
-        else {
-           @hits = grep {$_->{start}<=$v->{stop} && $_->{stop}>=$v->{start}} @{$$pgenes{$v->{chromosome}}};
-        }
+        my @hits = grep {$_->{start}<=$v->{stop} && $_->{stop}>=$v->{start}} @{$$pgenes{$v->{chromosome}}};
         foreach my $hit(@hits){
             $allele_pgenes{$k}{$hit->{pgene}}=1;
             print "$k -> ${\$hit->{pgene}}\n" if $wb->debug;
@@ -1084,13 +938,7 @@ sub search_ncrnas{
     my ($alleles,$ncrnas)=@_;
     my %allele_ncrnas;
     while(my($k,$v)=each(%{$alleles})){
-        my @hits;
-        if ($v->{cgh_start}) {
-           @hits = grep {$_->{start}<=$v->{cgh_stop} && $_->{stop}>=$v->{cgh_start}} @{$$ncrnas{$v->{chromosome}}};
-        }
-        else {
-           @hits = grep {$_->{start}<=$v->{stop} && $_->{stop}>=$v->{start}} @{$$ncrnas{$v->{chromosome}}};
-        }
+        my @hits = grep {$_->{start}<=$v->{stop} && $_->{stop}>=$v->{start}} @{$$ncrnas{$v->{chromosome}}};
         foreach my $hit(@hits){
             $allele_ncrnas{$k}{$hit->{transcript}}=1;
             print "$k -> ${\$hit->{transcript}}\n" if $wb->debug;

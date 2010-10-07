@@ -119,14 +119,7 @@ my $fh = new IO::File ">$acefile" || die($!);
 while( my($key,$allele)=each %$mapped_alleles){
 	print $fh "Sequence : \"$allele->{clone}\"\nAllele $key $allele->{clone_start} $allele->{clone_stop}\n\n";
 	print $fh "Variation : \"$key\"\nSequence  $allele->{clone}\n\n";
-	if($allele->{'CGH5'}) {
-		print $fh "Variation : \"$key\"\nFivePrimeGap ".$allele->{CGH5}."\nThreePrimeGap ".$allele->{CGH3}."\n\n";
-	}
 }
-
-# CGH fun
-MapAlleles::map_cgh($mapped_alleles);
-MapAlleles::print_cgh($mapped_alleles,$fh);
 
 # get overlaps with genes
 # gene_name->[allele_names,...]
@@ -139,11 +132,6 @@ my $inversegenes=MapAlleles::print_genes($genes,$fh);
 
 # compare old<->new genes
 MapAlleles::compare($mapped_alleles,$inversegenes);
-
-my $cgh_allele2gene = MapAlleles::get_possible_genes($mapped_alleles);
-while (my($k,$v)=each %$cgh_allele2gene){
-    MapAlleles::print_possible_genes ($k,$v,$$inversegenes{$k},$fh);
-}
 
 # get overlaps with CDSs (intron,exon,coding_exon,cds)
 # cds_name->allele_name->type
