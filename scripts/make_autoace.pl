@@ -7,8 +7,8 @@
 #
 # This makes the autoace database from its composite sources.
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2009-05-01 10:31:52 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2010-10-07 13:40:19 $
 
 use strict;
 use lib  $ENV{'CVS_DIR'};
@@ -171,6 +171,7 @@ sub remove_pariah_gene {
 
   my $command  = "query find elegans_CDS method = hand_built\nkill\n";                                  # Any objects with Method "hand_build"
   $command    .= "query find elegans_CDS temp*\nkill\n";                                                # Any objects "temp*"
+  $command    .= "query find elegans_CDS RNASEQ*\nkill\n";                                                # Any objects "temp*"
   $command    .= "query find CDS where Method = Genefinder AND Species = \"*elegans\"\nkill\n";         # Any elegans objects with Method "Genefinder"
   $command    .= "query find CDS where Method = twinscan AND Species = \"*elegans\"\nkill\n";           # Any elegans objects with Method "twinscan"
   $command    .= "save\nquit\n";
