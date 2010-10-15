@@ -60,7 +60,8 @@ _VTransposon_family -V -D TREE
 
 // other sequence/SMapped related classes
 
-_VFeature	   -V
+_VFeature	   -V -D FMAP
+_VTranscription_factor -V -D FMAP
 _VHomol_data       -V -D FMAP
 _VFeature_data     -V -D FMAP
 _VMotif            -V -D WWW
@@ -160,8 +161,8 @@ _VGenetic_code     -V
 _VHomology_group   -V
 _VMovie            -H
 _VGO_term	   -V -T Term
-_VSO_term	   -V
 _VGO_code	   -V
+_VSO_term	   -V
 _VPosition_Matrix  -V 
 
 // Mass Spec class
