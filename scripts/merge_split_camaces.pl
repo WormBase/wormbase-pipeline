@@ -5,7 +5,7 @@
 # A script to make multiple copies of camace for curation, and merge them back again
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2010-06-28 15:29:05 $
+# Last edited on: $Date: 2010-10-15 15:43:36 $
 #
 # Persisting errors.
 #running csh -c "reformat_acediff file 1 file2"
@@ -449,6 +449,7 @@ sub load_curation_data {
 	"$acefiles/feature_transcription_end_site.ace",
 	"$acefiles/feature_transcription_start_site.ace",
 	"$acefiles/feature_Genome_sequence_error.ace",
+	"$acefiles/feature_three_prime_UTR.ace",
 	"$wormpub/CURATION_DATA/PAD_DATA/elegans.public_names_ws212", #needs scripting to update
 	"$wormpub/CURATION_DATA/PAD_DATA/genomic_signals-no-splicing.ace", #needs remapping
   	"$wormpub/BUILD_DATA/MISC_DYNAMIC/misc_mass_spec_GenniferMerrihew.ace",
