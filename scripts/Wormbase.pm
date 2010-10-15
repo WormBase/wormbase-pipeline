@@ -1236,8 +1236,8 @@ sub cdna_dir    { my $self = shift; return $self->{'cdna_dir'};}
 sub cdna_acedir { my $self = shift; return $self->{'cdna_acedir'};}
 sub maskedcdna  { my $self = shift; return $self->{'maskedcdna'} ;}
 sub genome_seq  { my $self = shift; return $self->autoace."/genome_seq";}
-sub seq_db	    { my $self = shift; return $self->database($self->{'species'});}
-
+sub seq_db	{ my $self = shift; return $self->database($self->{'species'});}
+sub ebi         { my $self = shift; return $self->{'ebi'} ;}
 
 		  # this can be modified by calling script
 ####################################
@@ -1298,6 +1298,9 @@ sub set_debug {
 
 sub establish_paths {
   my $self = shift;
+
+  # are we runing on an EBI machine?
+  if ($ENV{'HOST'} =~ /ebi/) {$self->{'ebi'} = 1}
 
   # Some farm code uses Wormbase.pm subs so to maintain this farm code needs to be OO Wormbase.pm compliant but we dont want 
   # multiple paths of the build (main and farm) reading/writing the same wormbase.store file . Store the farm version in ~wormpipe
