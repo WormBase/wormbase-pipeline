@@ -8,8 +8,8 @@
 # Uses Ant's Feature_mapper.pm module
 #
 #
-# Last updated by: $Author: gw3 $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2010-05-17 09:38:00 $        # quickly see when script was last changed and by whom
+# Last updated by: $Author: pad $                      # These lines will get filled in by cvs and helps us
+# Last updated on: $Date: 2010-10-15 15:35:50 $        # quickly see when script was last changed and by whom
 
 
 $|=1;
@@ -38,6 +38,7 @@ my $segmental_duplication;          #  segmental_duplication features
 my $genome_sequence_error;   # genome_sequence_error
 my $transcription_start_site;# transcription_start_site
 my $transcription_end_site;  # transcription_end_site
+my $three_prime_UTR;         # three prime UTRs
 my $promoter;                # promoter region
 my $regulatory_region;       # regulatory region
 my $adhoc;                   # Run against a file, output to screen
@@ -57,6 +58,7 @@ GetOptions (
 	    "Genome_sequence_error" => \$genome_sequence_error,
 	    "transcription_start_site"=> \$transcription_start_site,
 	    "transcription_end_site"=> \$transcription_end_site,
+	    "three_prime_UTR"       => \$three_prime_UTR,
 	    "promoter"              => \$promoter,
 	    "regulatory_region"     => \$regulatory_region,
 	    "adhoc=s"               => \$adhoc,
@@ -123,6 +125,7 @@ my %sanity = (
 	      'transcription_start_site' => -1,
 	      'promoter' => -1,
 	      'regulatory_region' => -1,
+	      'three_prime_UTR' => -1,
 	      );
 
 # queue which Feature types you want to map
@@ -139,6 +142,7 @@ push (@features2map, "transcription_end_site")  if (($transcription_end_site) ||
 push (@features2map, "transcription_start_site")  if (($transcription_start_site) || ($all));
 push (@features2map, "promoter")  if (($promoter) || ($all));
 push (@features2map, "regulatory_region")  if (($regulatory_region) || ($all));
+push (@features2map, "three_prime_UTR")  if (($three_prime_UTR) || ($all));
 
 #############
 # main loop #
