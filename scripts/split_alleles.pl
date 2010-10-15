@@ -57,7 +57,6 @@ GetOptions(
 
 &print_usage if $help;
 
-my $maintainer = 'All';
 if ($store) {
     $wb = Storable::retrieve($store) 
 	    or croak("cannot restore wormbase from $store");
@@ -76,6 +75,8 @@ MapAlleles::set_wb_log($log,$wb); # that is a bit crude, but makes $log availabl
 my $lsf = LSF::JobManager->new();
 
 my $variations = MapAlleles::get_all_alleles();
+
+map {unlink $_} glob("$outdir/*.ace"); # prerun cleanup
 
 my $binsize = int(@$variations / 10 );
 my $counter = 0;
@@ -104,8 +105,10 @@ $lsf->wait_all_children( history => 1 );
 unless($noload){
     map {$wb->load_to_database($wb->autoace,$_,'map_alleles.pl',$log)} glob("$outdir/*.ace") ;
     map {unlink $_} @outfiles;
-    map {unlink "$_.ace"} glob("$outdir/*.ace");
+    map {unlink $_} glob("$outdir/*.ace");
 }
+
+$log->mail();
 
 sub mapAlleles {
 	my ($lastBin) = @_;
