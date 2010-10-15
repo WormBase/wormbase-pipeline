@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: pad $
-// Last edited on: $Date: 2010-09-03 09:29:54 $
+// Last edited on: $Date: 2010-10-15 11:06:08 $
 
 
 ////////////////////////
@@ -184,12 +184,18 @@
                 	Ne  #Colour // negative, error
 
 
-/////////////////////////  CLASSICAL GENETICS STUFF ///////////////////////////////
+/////////////////////////  CLASSICAL GENETICS ///////////////////////////////
 //
 // ?Locus class, ?Allele class, ?Gene_class class
 //
 ///////////////////////////////////////////////////////////////////////////////////
 
+///////////////////////////////////////
+//
+// Gene_class class
+// Used for grouping genes into families
+//
+///////////////////////////////////////
 
 ?Gene_class     Evidence #Evidence
 		Phenotype ?Text
@@ -294,6 +300,7 @@
                        Other_sequence ?Sequence XREF Gene #Evidence  // for linking to mRNAs etc. that correspond to a gene		   
 		       Associated_feature ?Feature XREF Associated_with_gene #Evidence
 		       Gene_product_binds ?Feature XREF Bound_by_product_of
+		       Transcription_factor ?Transcription_factor XREF Product_of
         Experimental_info RNAi_result ?RNAi XREF Gene #Evidence
                           Expr_pattern ?Expr_pattern XREF Gene
                           Drives_Transgene ?Transgene XREF Driven_by_gene
@@ -485,6 +492,7 @@
 
 ?Strain  Evidence #Evidence
 	 Genotype Text
+	 Other_name ?Text #Evidence
 	 Contains  Gene	 ?Gene XREF Strain
 	  	   Variation  ?Variation XREF Strain 
 		   Rearrangement	 ?Rearrangement XREF Strain
@@ -498,10 +506,26 @@
 		     Phenotype ?Phenotype XREF Strain #Phenotype_info
 		     Phenotype_not_observed ?Phenotype XREF Not_in_Strain #Phenotype_info //added by Wen to separate Not phenotype from real phenotypes 
          Location ?Laboratory #Lab_Location
-	 Made_by Text
+	 Made_by ?Person //updated from ?text
+	 Contact ?Person
 	 Remark	?Text #Evidence
          Reference ?Paper XREF Strain
 	 Species UNIQUE ?Species // added by krb [021021]
+         Wild_isolate // to identify wild isolates - since genotype is free text
+         Isolation GPS UNIQUE Float UNIQUE Float // Latitude +/-DD.DDDDD Longitude +/-DD.DDDDD
+	 	   Place UNIQUE ?Text 
+         	   Landscape UNIQUE Urban_garden
+				    Wild_forest
+				    Wild_grassland
+				    Agricultural_land
+				    Oasis
+				    Rural_garden
+                   Substrate UNIQUE ?Text // e.g. snail, soil, apple, rotting fruit
+	 	   Associated_organisms ?Species
+	 	   Life_stage ?Life_stage
+	 	   Log_size_of_population UNIQUE Float 
+	 	   Sampled_by Text // the person who found the worms
+                   Isolated_by ?Person // the person who isolated the worms from the sample
 
 ////////////////////////////////////////////////////////////////////////////////
 // ?Lab_Location class
@@ -754,7 +778,7 @@
 		     Transgene	   UNIQUE ?Transgene	 XREF Multi_point UNIQUE Int #Multi_counts  
 
 ////////////////////////////////////////////////////////////////////////////////
-//			      #Evidence hash
+//			      Evidence hash
 ////////////////////////////////////////////////////////////////////////////////
 
 #Evidence Paper_evidence ?Paper                                       // Data from a Paper
@@ -1438,6 +1462,7 @@
 		    Defined_by_person   ?Person
 		    Defined_by_author   ?Author
 		    Defined_by_analysis ?Analysis 
+	 Score Float           // this would be a log score as indicated by the analysis used in gff dump
 	 Associations Associated_with_gene	 ?Gene	     XREF Associated_feature #Evidence // richard
                       Associated_with_CDS	 ?CDS	     XREF Associated_feature #Evidence  // richard
                       Associated_with_transcript ?Transcript XREF Associated_feature #Evidence  // richard
@@ -1450,6 +1475,7 @@
 		      Associated_with_expression_pattern	 ?Expr_pattern XREF Associated_feature #Evidence 
 		      Associated_with_Feature ?Feature XREF Associated_with_Feature #Evidence 
 	 Bound_by_product_of ?Gene XREF Gene_product_binds #Evidence //pad added this to show what gene it binds
+	 Transcription_factor UNIQUE ?Transcription_factor XREF Binding_site 
 	 Annotation UNIQUE ?LongText		// added for data attribution [030220 dl]
 	 Confidential_remark ?Text //pad
 	 Remark ?Text #Evidence
@@ -1469,8 +1495,27 @@
                // keep the same model as in Sequence, so same code works
               Method UNIQUE ?Method // Lincoln RNAi [001213 dl]
 
-//Position_Matrix class
-//General data model for known or inferred binding sites of transcription factors to DNA, accomodating either a straight position-frequency matrix (PFM), or a position-specific weight matrix 
+//////////////////////////////////////////////////////////////////////////////////////////
+//
+// Transcription_factor  class This describes a type of transcription factor (and Pol II)
+// Gary W. 14/10/2010
+//
+//////////////////////////////////////////////////////////////////////////////////////////
+
+?Transcription_factor	Name UNIQUE Text
+			Position_matrix  ?Position_Matrix XREF Transcription_factor #Evidence
+			Product_of ?Gene XREF Transcription_factor 
+			Remark Text #Evidence
+			Binding_site ?Feature XREF Transcription_factor 
+
+////////////////////////////////////////////////////////////////////////////////////////////
+//
+// Position_Matrix class
+// General data model for known or inferred binding sites of transcription factors to DNA, 
+// accomodating either a straight position-frequency matrix (PFM), or a position-specific 
+// weight matrix 
+//
+////////////////////////////////////////////////////////////////////////////////////////////
 
 ?Position_Matrix  Description  ?Text #Evidence
 		  Brief_id  UNIQUE ?Text			// Addition Xiaodong 
@@ -1483,7 +1528,14 @@
                   Sites_used UNIQUE Int
 		  Derived_from_matrix ?Position_Matrix                  
 		  Bound_by_gene_product ?Gene XREF Product_binds_matrix #Evidence
+		  Transcription_factor  UNIQUE ?Transcription_factor XREF Position_matrix #Evidence //gw3	  
                   Remark ?Text  #Evidence
+
+////////////////////////////////////////////////////////////////////////////////////////////
+//
+// Oligo class
+//
+////////////////////////////////////////////////////////////////////////////////////////////
 
 ?Oligo  Sequence UNIQUE Text  // verbatim sequence 
         Length UNIQUE Int
@@ -1889,7 +1941,9 @@
 
 
 ///////////////////////////////////////////////////////////////////////
+//
 // ?Anatomy_name - Raymond, krb [030916]
+//
 ///////////////////////////////////////////////////////////////////////
 
 ?Anatomy_name Primary   Name_for_cell            ?Cell XREF Main_name
