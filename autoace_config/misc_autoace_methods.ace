@@ -1853,6 +1853,18 @@ GFF_source "segmental_duplication"
 GFF_feature "segmental_duplication"	 
 Remark   "Polymorphic segmental duplication as defined by the tool OrthoCluster." 
 
+Method : "three_prime_UTR"
+Colour  MIDBLUE
+CDS_colour LIGHTBLUE
+Overlap_mode Bumpable
+Join_blocks
+Width 1.000000
+Show_up_strand
+Show_text
+GFF_source "three_prime_UTR"
+GFF_feature "three_prime_UTR"	 
+Remark   "UTR (unspliced) span as defined in the modENCODE UTRome project submission"
+
 Method : "regulatory_region"
 Colour  MAGENTA
 Strand_sensitive
@@ -2100,6 +2112,9 @@ Method : "TEC_RED"
 Right_priority  2.3
 
 Method : "Transposon"
+Right_priority  2.4
+
+Method : "three_prime_UTR"
 Right_priority  2.4
 
 Method : "Transposon_CDS"
