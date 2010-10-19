@@ -1861,7 +1861,7 @@ Join_blocks
 Width 1.000000
 Show_up_strand
 Show_text
-GFF_source "three_prime_UTR"
+GFF_source "UTRome"
 GFF_feature "three_prime_UTR"	 
 Remark   "UTR (unspliced) span as defined in the modENCODE UTRome project submission"
 
