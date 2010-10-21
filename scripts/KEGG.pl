@@ -40,7 +40,7 @@ $log->write_to("connecting to $dbhost:$dbname as $dbuser . . \n");
 my $dbh = DBI -> connect("DBI:mysql:$dbname:$dbhost", $dbuser, "",{RaiseError => 1});
 my $tax_id = $wormbase->ncbi_tax_id
 ;
-my $query =  "select dbxref.entry_id, dbxref.database_id, dbxref.primary_id from taxonomy,dbxref where taxonomy.ncbi_tax_id = \"".$tax_id."\" and taxonomy.entry_id = dbxref.entry_id and (database_id = \"Enzyme\" or database_id = \"WormBase\");";
+my $query =  "select dbxref.entry_id, dbxref.database_id, dbxref.tertiary_id from taxonomy,dbxref where taxonomy.ncbi_tax_id = \"".$tax_id."\" and taxonomy.entry_id = dbxref.entry_id and (database_id = \"Enzyme\" or database_id = \"WormBase\");";
 
 $log->write_to("\tquerying . . \n");
 my $sth = $dbh->prepare($query);
