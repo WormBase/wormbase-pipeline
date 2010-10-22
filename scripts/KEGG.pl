@@ -38,18 +38,18 @@ my $dbname = &get_latest_uniprot;
 
 $log->write_to("connecting to $dbhost:$dbname as $dbuser . . \n");
 my $dbh = DBI -> connect("DBI:mysql:$dbname:$dbhost", $dbuser, "",{RaiseError => 1});
-my $tax_id = $wormbase->ncbi_tax_id
-;
-my $query =  "select dbxref.entry_id, dbxref.database_id, dbxref.tertiary_id from taxonomy,dbxref where taxonomy.ncbi_tax_id = \"".$tax_id."\" and taxonomy.entry_id = dbxref.entry_id and (database_id = \"Enzyme\" or database_id = \"WormBase\");";
+my $tax_id = $wormbase->ncbi_tax_id;
+
+my $query =  "select dbxref.entry_id, dbxref.database_id, dbxref.primary_id, dbxref.tertiary_id from taxonomy,dbxref where taxonomy.ncbi_tax_id = \"".$tax_id."\" and taxonomy.entry_id = dbxref.entry_id and (database_id = \"Enzyme\" or database_id = \"WormBase\");";
 
 $log->write_to("\tquerying . . \n");
 my $sth = $dbh->prepare($query);
 $sth->execute;
 my %enzyme;
 
-while (my ($entry,$db,$dbid) = $sth->fetchrow()) {
-    $enzyme{$entry}->{'gene'} = $dbid if($db eq 'WormBase');
-    $enzyme{$entry}->{'kegg'} = $dbid if($db eq 'Enzyme');
+while (my ($entry, $db, $enzid, $geneid) = $sth->fetchrow()) {
+    $enzyme{$entry}->{'gene'} = $geneid if($db eq 'WormBase');
+    $enzyme{$entry}->{'kegg'} = $enzid if($db eq 'Enzyme');
 }
 $sth->finish;
 
@@ -82,11 +82,20 @@ sub get_latest_uniprot {
     my $sth = $dbh->prepare($query);
     $sth->execute;
     my $up;
+    my $year=0;
+    my $month=0;
     while (my $db = $sth->fetchrow()) {
-	if($db =~ /uniprot_\d+_\d+/) {
-	    $up = $db;
-	    last;
+      if ($db =~ /uniprot_(\d+)_(\d+)/) {
+	if ($1 > $year) {
+	  $year = $1;
+	  $month = $2;
+	  $up = $db;
+	} elsif ($1 == $year && $2 > $month) {
+	  $month = $2;
+	  $up = $db;
 	}
+
+      }
     }
     $log->write_to("\tusing UniProt version $up\n");
     return $up;
