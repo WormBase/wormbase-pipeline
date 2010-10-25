@@ -166,6 +166,10 @@ sub print_one {
 	my $c_stop  = " ";
         ($chrom,$c_start,$c_stop) = get_coords($self,$clone,$start,$stop) if $stop=~/\d+/;
 	if ($chrom eq " " && $allele->Sequence){
+	        unless ($allele->Sequence->Source){
+		    $log->write_to("ERROR: can't find source for: $allele\n");
+		    return undef;
+	        }
 		$chrom=$allele->Sequence->Source->Source;
 	}
 
