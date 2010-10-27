@@ -9,8 +9,8 @@
 #      $AUTHOR:$
 #      COMPANY:  WormBase
 #      CREATED:  11/27/09 10:10:08 GMT
-#      CHANGED: $Date: 2010-09-14 15:56:56 $
-#    $Revision: 1.4 $
+#      CHANGED: $Date: 2010-10-27 15:00:13 $
+#    $Revision: 1.5 $
 #===============================================================================
 
 # need to set the PERl5LIb  to pick up bioperl for the load_gff thing ... maybe have to hardcode it
@@ -138,7 +138,7 @@ sub compress_tables {
 sub load_db {
 	my ($wb)=@_;
 	my $species=$wb->species;
-	system('/software/worm/perl_510/bin/perl '.
+	system('/software/bin/perl '.
 	       '/software/worm/ensembl/bioperl-live/scripts/Bio-DB-GFF/bulk_load_gff.PLS '.
 	       "--create --user=root --fasta /tmp/$species.dna --local ".
 	       "--database dbi:mysql:$species:localhost:mysql_socket=/tmp/$species.sock ".
