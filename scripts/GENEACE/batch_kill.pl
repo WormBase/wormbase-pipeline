@@ -127,7 +127,7 @@ sub kill_gene {
 	    if ($domain eq 'Gene'){
 	       my $ver = $geneObj->Version->name;
 	       $ver++;
-	       print ACE "\nGene : $gene\nVersion $ver\nHistory Version_change $ver now $person Event Killed\nDead\nRemark \"$remark\" Curator_confirmed $person\n-D Sequence_name\n-D Method\n-D Map_info\n-D Allele\n";
+	       print ACE "\nGene : $gene\nVersion $ver\nHistory Version_change $ver now $person Event Killed\nDead\nRemark \"$remark\" Curator_confirmed $person\n-D Sequence_name\n-D Method\n-D Map_info\n-D Other_name\n-D Allele\n";
             }
 	    elsif($domain eq 'Variation'){
 		    print ACE "\nVariation : $gene\nStatus Dead Curator_confirmed $person\nRemark \"$remark\"\n";
