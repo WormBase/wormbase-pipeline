@@ -176,7 +176,7 @@ sub agp_files {
   $log->write_to("Creating AGP files . . . ");
   #	III     1       3906    1       F       AL031226.2      1       3906    +
   # just need to change III -> chrIII and accn to clone name
-  my %acc2clone = $wormbase->FetchData('accession2clone');
+  my %acc2clone = $wormbase->FetchData('accession2clone', undef, "$database/COMMON_DATA");
   foreach my $chrom (@chromosomes) {
     
     #Find the agp files
