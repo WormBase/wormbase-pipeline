@@ -167,7 +167,7 @@ if ($gene) {
 		
 		my $ref='';
 		if ($tmp[5]=~/WBPaper/) {
-		    $ref="WB:$tmp[5]";
+		    $ref="WB_REF:$tmp[5]";
 		    if ($paper_fields{$tmp[5]}) {
 			$ref.="|$paper_fields{$tmp[5]}:$paper_accno{$tmp[5]}"; # type of database field and the accession_number e.g. 'PMID:12393910'
 		    }
@@ -261,10 +261,10 @@ if ($rnai) {
 		}
 		my $ref_field='';
 		if ($paper_fields{$ref}) {
-		    $ref_field="WB:$ref|$paper_fields{$ref}:$paper_accno{$ref}"; # type of database field and the accession_number e.g. 'PMID:12393910'";
+		    $ref_field="WB_REF:$ref|$paper_fields{$ref}:$paper_accno{$ref}"; # type of database field and the accession_number e.g. 'PMID:12393910'";
 		}
 		elsif ($ref) {
-		    $ref_field="WB:$ref";
+		    $ref_field="WB_REF:$ref";
 		} else {
 		  # if the RNAi object does not have a Reference, give a warning and skip this RNAi because the $ref_field is a mandatory term
 		  warn "No reference for $obj\n";
@@ -356,10 +356,10 @@ if ($variation) {
 		my $ref_field='';
 		if ($phen_hash{$phen}{Paper_evidence}) {
 		    if ($paper_fields{$phen_hash{$phen}{Paper_evidence}}) {
-			$ref_field="WB:$phen_hash{$phen}{Paper_evidence}|$paper_fields{$phen_hash{$phen}{Paper_evidence}}:$paper_accno{$phen_hash{$phen}{Paper_evidence}}"; # type of database field and the accession_number e.g. 'PMID:12393910'";
+			$ref_field="WB_REF:$phen_hash{$phen}{Paper_evidence}|$paper_fields{$phen_hash{$phen}{Paper_evidence}}:$paper_accno{$phen_hash{$phen}{Paper_evidence}}"; # type of database field and the accession_number e.g. 'PMID:12393910'";
 		    }
 		    else {
-			$ref_field="WB:$phen_hash{$phen}{Paper_evidence}";
+			$ref_field="WB_REF:$phen_hash{$phen}{Paper_evidence}";
 		    }
 		}
 		elsif ($phen_hash{$phen}{Person_evidence}) {
