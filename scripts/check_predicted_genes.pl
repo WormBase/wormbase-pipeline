@@ -4,7 +4,7 @@
 #
 # by Keith Bradnam
 #
-# Last updated on: $Date: 2010-08-04 10:36:17 $
+# Last updated on: $Date: 2010-10-29 08:06:36 $
 # Last updated by: $Author: pad $
 #
 # see pod documentation at end of file for more information about this script
@@ -314,7 +314,7 @@ sub single_query_tests {
   
 
   # Check for non-standard methods in CDS class
-  my @CDSfilter = $db->fetch (-query => 'FIND CDS; method != Transposon_CDS; method != Transposon_Pseudogene; method != curated; method !=history; method !=Genefinder; method !=twinscan; method !=jigsaw; method !=mGene');
+  my @CDSfilter = $db->fetch (-query => 'FIND CDS; method != Transposon_CDS; method != Transposon_Pseudogene; method != curated; method !=history; method !=Genefinder; method !=twinscan; method !=jigsaw; method !=mGene; method !=RNASEQ.Hillier');
   foreach my $CDSfilter (@CDSfilter) {
     push(@error4, "ERROR! CDS:$CDSfilter contains an invalid method please check\n");
   }
