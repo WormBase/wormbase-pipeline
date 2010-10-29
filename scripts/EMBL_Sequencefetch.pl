@@ -5,7 +5,7 @@
 # Usage : EMBL_Sequencefetch.pl [-options]
 #
 # Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2010-08-19 13:29:20 $
+# Last edited on: $Date: 2010-10-29 12:51:47 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -141,7 +141,11 @@ if (!defined$input){
   foreach my $organism(@organism) {
     $log->write_to("============================================\nProcessing: $organism\n============================================\n");
     my $sourceDB;
-    if ($organism eq "elegans") {
+
+    if ($database){
+	   $sourceDB = $database;
+	}
+    elsif ($organism eq "elegans") {
       $sourceDB = $wormbase->database('camace');
     }
     elsif ($organism eq "heterorhabditis") {
