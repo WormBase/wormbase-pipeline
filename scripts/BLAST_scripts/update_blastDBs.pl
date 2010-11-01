@@ -1,7 +1,7 @@
 #!/usr/local/ensembl/bin/perl -w
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2010-04-29 14:50:52 $
+# Last edited by: $Author: klh $
+# Last edited on: $Date: 2010-11-01 21:35:33 $
 
 use lib $ENV{'CVS_DIR'};
 
@@ -58,22 +58,23 @@ if( $human ) { &process_human; }
 if ($interpro) { $wormbase->run_script("BLAST_scripts/make_interpro.pl",$log); }
 
 if($uniprot) {
-    #get current ver.
-    my $cver = determine_last_vers('slimswissprot');
-
-    #find latest ver
-    open (WG,"wget -O - -q http://www.expasy.org/sprot |") or $log->log_and_die("cant get sprot page\n");
-    my $lver;
-    while(<WG>) { #to make processing easier we use the uniprot release no.rather than separate SwissProt and Trembl
-	if (/UniProt\s+Knowledgebase\s+Release\s+(\d+)\.(\d+)/){
-	    if($2 == 0 and $1 != $cver){
-		&process_uniprot($1);
-		last;
-	    }
-	    else { $log->write_to("\tdont need to update($1.$2)\n"); }
-	}
+  #get current ver.
+  my $cver = determine_last_vers('slimswissprot');
+  
+  #find latest ver
+  open (WG,"wget -O - -q http://www.expasy.org/sprot |") or $log->log_and_die("cant get sprot page\n");
+  my $lver;
+  while(<WG>) { #to make processing easier we use the uniprot release no.rather than separate SwissProt and Trembl
+    if (/UniProt\s+Knowledgebase\s+Release\s+(\d+)_(\d+)/){
+      my $newver = sprintf("%d%d", $1, $2);
+      if($newver != $cver){
+        &process_uniprot($newver);
+        last;
+      }
+      else { $log->write_to("\tdont need to update($newver)\n"); }
     }
-    close WG;
+  }
+  close WG;
 }
 
 
