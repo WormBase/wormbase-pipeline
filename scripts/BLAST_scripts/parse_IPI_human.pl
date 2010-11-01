@@ -1,7 +1,7 @@
 #!/usr/local/ensembl/bin/perl -w                  
 #
-# Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2010-04-29 14:46:16 $      
+# Last updated by: $Author: klh $     
+# Last updated on: $Date: 2010-11-01 14:54:30 $      
 
 use lib $ENV{'CVS_DIR'};
 use strict;
@@ -40,7 +40,7 @@ Get this from ftp://ftp.ebi.ac.uk/pub/databases/IPI/current/ipi.HUMAN.fasta.gz\n
 #make sure on farm2-login  -> otherwise GDBM_File fails.
 my $host = `hostname`;
 chomp $host;
-unless ( $host =~ /^bc/ ) {
+unless ( $host =~ /^farm2/ or $host =~ /^bc/ ) {
     $log->log_and_die( "You must run this from an farm2-login machine, otherwise GDBM_File causes a segmentation fault\n\n");
 }
 
