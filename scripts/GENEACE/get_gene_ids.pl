@@ -47,8 +47,8 @@ $db->setDomain($DOMAIN);
 
 while (<>) {
 	chomp;
-	@F=split;
-	$gene_id = $db->new_gene($F[0], 'Sequence', $species);
+	my @F=split;
+	my $gene_id = $db->new_gene($F[0], 'Sequence', $species,'/nfs/WWWdev/SANGER_docs/htdocs/');
 	print "$F[0] $gene_id\n";
 }
 
