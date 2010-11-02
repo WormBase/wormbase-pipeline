@@ -42,13 +42,13 @@ if ( $store ) {
 # establish log file.
 my $log = Log_files->make_build_log($wormbase);
 my $DB = $wormbase->test ? 'test_wbgene_id;mcs4a:3307' : 'wbgene_id;shap:3303';
-my $db = NameDB_handler->new($DB,$USER,$PASS);
+my $db = NameDB_handler->new($DB,$USER,$PASS,'/nfs/WWWdev/SANGER_docs/htdocs/');
 $db->setDomain($DOMAIN);
 
 while (<>) {
 	chomp;
 	my @F=split;
-	my $gene_id = $db->new_gene($F[0], 'Sequence', $species,'/nfs/WWWdev/SANGER_docs/htdocs/');
+	my $gene_id = $db->new_gene($F[0], 'Sequence', $species);
 	print "$F[0] $gene_id\n";
 }
 
