@@ -126,15 +126,15 @@ while (my $line = <SW>) {
                 s/\s+$//;
                 if ($_ eq "") {
                     next;
-	        }
-                if (exists $seen{$_}) {
+	            }
+                elsif (exists $seen{$_}) {
                     next;
-	        }
+	            }
                 else {
                     $seen{$_} = 1;
                     push (@tmp, $_);
-                }                
-	    }
+                }              
+	        }
             $org .= join (";", @tmp);
             if (exists $ORG{$id}) {
                 print "ORG PRESENT\t$id\t($org)\n" if $verbose;
@@ -143,13 +143,14 @@ while (my $line = <SW>) {
                 $ORG{$id} = $org;
                 print "ORG ADDED\t$id\t($org)\n" if $verbose;
             }
-            #
+            
             chomp $des;
             $des =~ s/\n/\s/g;
-	    $des =~ s/\"//g;
-	    if ($des=~/Full=([^\;]+)\;/){
-		    $des="$1";
-	    }
+	        $des =~ s/\"//g;
+	        if ($des=~/Full=([^;]+)/){		
+		       $des="$1";
+	        }
+	      
             if (exists $DES{$id}) {
                 print "DES PRESENT\t$id\t($des)\n" if $verbose;
             }
@@ -167,10 +168,10 @@ while (my $line = <SW>) {
                 $KEY{$id} = $key;
                 print "KEY ADDED\t$id\t($key)\n" if $verbose;
             }
-	}
+	    }
         else {
             print "\tINCORRECT ID: $id\n";
-	}
+	    }
         $id = "";
         $org = "";
         $total_org = "";
