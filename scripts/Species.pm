@@ -327,7 +327,7 @@ sub chromosome_prefix {'Ppa_Contig'}
 sub chromosome_names {
 	my @contigs;
 	my $i = 0;
-	while($i < 5106){
+	while($i < 18083){
 		push(@contigs, "$i");
 		$i++;
 	}
