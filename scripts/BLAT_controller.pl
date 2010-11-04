@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl5.8.0 -w
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2010-08-27 14:35:32 $
+# Last edited by: $Author: mh6 $
+# Last edited on: $Date: 2010-11-04 15:29:55 $
 
 
 use lib $ENV{'CVS_DIR'};
@@ -163,7 +163,7 @@ if ( $run ) {
 		my $seq_dir = $wormbase->maskedcdna;
 		&check_and_shatter($wormbase->maskedcdna, "$moltype.masked");
 		foreach my $seq_file (glob ($seq_dir."/$moltype.masked*")) {
-			my $cmd = "bsub -E \"ls /software/worm\" -J ".$wormbase->pepdir_prefix."_$moltype \"/software/worm/bin/blat/blat -noHead ";
+			my $cmd = "bsub -E \"ls /software/worm\" -o /dev/null -e /dev/null -J ".$wormbase->pepdir_prefix."_$moltype \"/software/worm/bin/blat/blat -noHead ";
 			$cmd .= $wormbase->genome_seq ." $seq_file ";
 			$cmd .= $wormbase->blat."/".$wormbase->species."_${moltype}_${split_count}.psl\"";
 			$wormbase->run_command($cmd, $log);	
