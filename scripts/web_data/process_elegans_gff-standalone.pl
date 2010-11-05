@@ -56,9 +56,7 @@ while (<>) {
     $source = '' if $source eq '*UNKNOWN*';
 
     # Process top-level CDS and Transcript entries
-    if (   $method =~ /Transcript|CDS|.*primary_transcript/
-        && ( $source =~ /Coding_transcript|curated|.*RNA|miRNA/i )
-        && $group =~ /[Transcript|CDS] "(\w+\.\d+[a-z]?\.?\d?)"/ ){
+    if ( $method=~/Transcript|CDS|.*primary_transcript/ && $source=~/Coding_transcript|curated|.*RNA|miRNA/i && $group=~/[Transcript|CDS] "(\w+\.\d+[a-z]?\.?\d?)"/ ) {
         ### Need to pick up transcript IDs, too
 
         my $match = $1;
@@ -144,28 +142,35 @@ while (<>) {
     }
 
     # Skip Ant's fix for WBGenes
-    next if $source eq 'Gene' && $method eq 'processed_transcript';
+    elsif ($source eq 'Gene' && $method eq 'processed_transcript'){next}
 
-    if (   $method eq 'region'
-        && $source eq 'Genomic_canonical'
-        && $group =~ /Sequence "(\w+)"/ ){
-        if ( my $accession = $GENBANK{$1} ) {
+    elsif ( $method eq 'region' && $source eq 'Genomic_canonical' && $group=~ /Sequence "(\w+)"/ ){
+        if ( my $accession = $GENBANK{$1}) {
             $group .= qq( ; Note "Clone $1; Genbank $accession");
-            print join( "\t",
-                $ref, 'Genbank', $method, $start, $stop, $score, $strand,
-                $phase, "Genbank \"$accession\"" ),"\n";
+            print join( "\t",$ref, 'Genbank', $method, $start, $stop, $score, $strand,$phase, "Genbank \"$accession\"" ),"\n";
         }
     }
 
-    next if ( $method eq 'intron' && $source =~ /^tRNAscan/ ) ; # messing up tRNA scanning
+    elsif ( $method eq 'intron' && $source =~ /^tRNAscan/ ){next} # messing up tRNA scanning
 
-    if (   $method eq 'PCR_product'
-        && $source eq 'Orfeome'
-        && $group =~ /PCR_product "([^\"]+)"/ ) {
+    elsif ( $method eq 'PCR_product' && $source eq 'Orfeome' && $group =~ /PCR_product "([^\"]+)"/ ) {
         my $amp = $ORFEOME{$1};
         $group .= qq( ; Amplified $amp) if defined $amp;
     }
 
+    # Tier II id flunkification
+    elsif ( $source eq 'Gene' && $method eq 'gene'){
+		$group=~/(WBGene\d+)/;
+        my $gene_id = $1;
+        my $gene = $db->fetch(Gene => $gene_id);
+
+        #grab all C.elegans orthologs
+        my @elegansOrthologs = grep {$_->Species eq 'Caenorhabditis elegans'} $gene->Ortholog;
+        foreach my $eGene(@elegansOrthologs){
+                map {$group.=" ; Alias \"$_\"" if $_}($eGene->CGC_name,$eGene->Sequence_name,"$eGene")
+        }	
+    }
+    
     # fix variant fields: Variant "T" => Note "T"
     $group =~ s/(?:Variant|Insert) "(\w+)"/Note "$1"/;
 
