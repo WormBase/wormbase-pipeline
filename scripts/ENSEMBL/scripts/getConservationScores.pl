@@ -64,7 +64,8 @@ my $mlss = $mlss_adaptor->fetch_by_method_link_type_registry_aliases("GERP_CONSE
      'Caenorhabditis remanei', 'Brugia malayi', 
      'Pristionchus pacificus', 'Caenorhabditis brenneri',
      'Caenorhabditis japonica','Meloidogyne hapla',
-     'Meloidogyne incognita','Haemonchus contortus']);
+     'Meloidogyne incognita','Haemonchus contortus',
+     'Caenorhabditis angaria']);
 
 
 foreach my $seq_region ($wb->get_chromosome_names(-prefix => 1)){
