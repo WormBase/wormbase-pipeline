@@ -33,7 +33,7 @@ split_alleles.pl options:
 	-store FILE_NAME             use a Storable wormbase configuration file
 	-outdir DIR_NAME             print allele_mapping_VERSION.ace to DIR_NAME
 	-database DATABASE_DIRECTORY use a different AceDB
-	-noload                      don't write back to AceDB
+	-noload                      do not write back to AceDB
 	-help                        print this message
 	-test                        use the test database
 	-species SPECIES_NAME        specify a non-elegans species
@@ -114,7 +114,7 @@ $log->mail();
 sub mapAlleles {
 	my ($lastBin) = @_;
 	my $binfile="$outdir/map_alleles.$lastBin";
-	my $submitstring="/software/worm/perl_512/bin/perl $Bin/map_Alleles.pl -idfile $binfile -noload -outdir $outdir";
+	my $submitstring="/software/bin/perl $Bin/map_Alleles.pl -idfile $binfile -noload -outdir $outdir";
 	$submitstring.=" -debug $debug" if $debug;
 	my $job_name = "worm_".$wb->species."_splitalleles";
 	my @bsub_options =(-e => '/dev/null', 

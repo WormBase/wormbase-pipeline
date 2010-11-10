@@ -9,11 +9,11 @@ use strict;
 # use lib $ENV{'CVS_DIR'};
 use Carp;
 use Ace;
-use Log_files;
+#use Log_files;
 use File::Path;
 use File::stat;
 use Storable;
-use Species;
+#use Species;
 
 our @core_organisms=qw(Elegans Briggsae Remanei Brenneri Japonica Heterorhabditis Pristionchus);
 our @tier3_organisms=qw(Brugia Mhapla Mincognita Hcontortus Cangaria);
