@@ -16,6 +16,7 @@ use Ace;
 use IO::File;
 use Getopt::Long;
 use FindBin qw($Bin);
+use lib "$Bin";
 
 use Modules::map_Alleles;
 
