@@ -23,12 +23,14 @@ use Storable;
 use lib '/software/worm/lib/bioperl-live';
 use lib '/software/worm/ensembl/ensembl/modules';
 use Bio::EnsEMBL::DBSQL::DBAdaptor;
+use Bio::PrimarySeq;
+use Bio::SeqIO;
 
 ######################################
 # variables and command-line options # 
 ######################################
 
-my ($help, $debug, $test, $verbose, $store, $species, $wormbase,$database);
+my ($help, $debug, $test, $verbose, $store, $species, $wormbase,$database, $softmask);
 
 my $agp;
 my $out_dir;
@@ -38,10 +40,11 @@ GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
 	    "test"       => \$test,
 	    "verbose"    => \$verbose,
-	    "store:s"      => \$store,
+	    "store:s"    => \$store,
 	    "output:s"   => \$out_dir,
 	    "database:s" => \$database,
 	    "species:s"  => \$species,
+            "softmask"   => \$softmask,
 	    );
 
 if ( $store ) {
@@ -58,119 +61,70 @@ if ( $store ) {
 # in test mode?
 if ($test) {
   print "In test mode\n" if ($verbose);
-
 }
 # establish log file.
 my $log = Log_files->make_build_log($wormbase);
 
 $species = $wormbase->species;
 unless ($database =~ /$species/) {
-	$log->log_and_die("are you sure you have the right species / database combo\n Species :$species\nDatabase : $database\n");
+  $log->log_and_die("are you sure you have the right species / database combo\n Species :$species\nDatabase : $database\n");
 }
-
-#################################
-# Set up some useful paths      #
-#################################
-
 
 
 $out_dir = $wormbase->chromosomes unless $out_dir;
 die "cant write to $out_dir\t$!\n" unless (-w $out_dir );
 
-# open connection to EnsEMBL DB
-my $dbobj;
-
 $log->write_to("Connecting to worm_dna\n");
 
-$dbobj = Bio::EnsEMBL::DBSQL::DBAdaptor->new(
-						       '-host'   => 'ia64d',
-						       '-user'   => 'wormro',
-						       '-dbname' => $database
-						      )
-  or die "Can't connect to Database $database";
-
-
+my $dbobj = Bio::EnsEMBL::DBSQL::DBAdaptor->
+    new(
+        '-host'   => 'ia64d',
+        '-user'   => 'wormro',
+        '-dbname' => $database
+        )
+    or die "Can't connect to Database $database";
 
 $log->write_to("Building chromosomes\n");
 
-print STDERR "Outputting     ";
+my $file_suffix = $softmask ? "softmasked.dna" : "masked.dna";
+my $chr_assembly = ($wormbase->assembly_type eq 'contig') ? 0 : 1;
 
-my $sa=$dbobj->get_SliceAdaptor();
+my ($seqio, $filename);
 
-my $chr_assembly;
-if ($wormbase->assembly_type eq 'contig') {
-	$wormbase->run_command(" rm -f $out_dir/${species}_masked.dna", $log);
-	$wormbase->run_command(" rm -f $out_dir/${species}_softmasked.dna", $log);
-}else {
-	$chr_assembly = 1;
+if (not $chr_assembly) {
+  $filename = "$out_dir/${species}_${file_suffix}";
+  $seqio = Bio::SeqIO->new(-format => 'fasta',
+                           -file => ">$filename");
 }
 
-foreach my $seq ( @{$sa->fetch_all('toplevel')}) {
-	my $name=$seq->seq_region_name();
 
-	my($masked, $soft);
-	if( $chr_assembly ) {
-		my $outfile = "$out_dir"."/${name}_masked.dna";
-		my $outfile2 = "$out_dir"."/${name}_softmasked.dna";
-		open($masked,">$outfile") or $log->log_and_die("cant write $outfile :$!\n");
-		open($soft,">$outfile2") or $log->log_and_die("cant write $outfile2 :$!\n");
-	}
-	else {
-		my $outfile = "$out_dir"."/${species}_masked.dna";
-		my $outfile2 = "$out_dir"."/${species}_softmasked.dna";
-		open($masked,">>$outfile") or $log->log_and_die("cant write $outfile :$!\n");
-		open($soft,">>$outfile2") or $log->log_and_die("cant write $outfile2 :$!\n");
+foreach my $seq ( @{$dbobj->get_SliceAdaptor->fetch_all('toplevel')}) {
+  my $name = $seq->seq_region_name();
 
-	}
-	print_seq($masked,$name,$seq);
-	print_seq($soft,$name,$seq,1);
-}
-
-unless ($chr_assembly){
-	$wormbase->run_command("gzip -9 $out_dir/${species}_masked.dna", $log);
-	$wormbase->run_command("gzip -9 $out_dir/${species}_softmasked.dna", $log);
-}
-
-sub print_seq {
-  my ($file,$name,$seq,$softmasked) = @_;
- 
-  $log->write_to("\twriting chromosome $name\n");
-  print $file ">$name 1 ",$seq->seq_region_length,"\n";
-
-  my $width = 50;
-  my $start_point = 0;
-  my $sequence=$softmasked?
-         $seq->get_repeatmasked_seq(undef,1)->seq()
-	 :$seq->get_repeatmasked_seq->seq();
-  
-  while ( $start_point + $width < length( $sequence ) ) {
-    print $file substr($sequence, $start_point, $width ),"\n";
-    $start_point += $width;
+  my ($outfile, $outfh);
+  if ($chr_assembly) {
+    $filename = "$out_dir/${name}_${file_suffix}";
+    $seqio = Bio::SeqIO->new(-format => 'fasta',
+                             -file => ">$filename");
   }
 
-  print $file substr($sequence, $start_point),"\n";
+  &print_seq($seqio, $seq);
 
-  # crude linux hack (will not work on Alphas)
-  my $dno=fileno($file);
-  my $fname = (`lsof -Fn -a -d $dno -p $$`)[1];
-  $fname = substr($fname,1);
-  $fname =~ s/\s\(.*\)//;
-  ###  lifted from perlmonks ###
+  if ($chr_assembly) {
+    $seqio->close();
+    $wormbase->run_command("gzip -9 $filename", $log);
+  }
+}
 
-  close $file;
-  system("gzip -9 $fname") if ($chr_assembly);
+if (not $chr_assembly){
+  $seqio->close();
+  $wormbase->run_command("gzip -9 $filename", $log);
 }
 
 $log->write_to("Done\n");
-
-
 $log->mail();
 print "Finished.\n" if ($verbose);
 exit(0);
-
-
-
-
 
 
 ##############################################################
@@ -179,9 +133,23 @@ exit(0);
 #
 ##############################################################
 
+sub print_seq {
+  my ($seqio,$ens_slice) = @_;
+ 
+  my $seq_name = $ens_slice->seq_region_name;
 
+  $log->write_to("\twriting chromosome $seq_name\n");
 
-##########################################
+  $ens_slice = $softmask
+      ? $ens_slice->get_repeatmasked_seq(undef, 1) 
+      : $ens_slice->get_repeatmasked_seq;
+
+  my $seqobj = Bio::PrimarySeq->new(-seq => $ens_slice->seq,
+                                    -id => $seq_name,
+                                    -desc => "1 " . $ens_slice->seq_region_length);
+
+  $seqio->write_seq($seqobj);
+}
 
 sub usage {
   my $error = shift;

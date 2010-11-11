@@ -6,8 +6,8 @@
 #
 # Usage : autoace_builder.pl [-options]
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2010-10-20 15:44:44 $
+# Last edited by: $Author: klh $
+# Last edited on: $Date: 2010-11-11 14:46:53 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -473,6 +473,7 @@ sub get_repeats {
   #repeatmasked chromosomes
   my $species= lc (ref $wormbase);
   $wormbase->run_script("get_repeatmasked_chroms.pl -database worm_ensembl_$species", $log);
+  $wormbase->run_script("get_repeatmasked_chroms.pl -database worm_ensembl_$species -softmask", $log);
 
   #inverted
   $wormbase->run_script("run_inverted.pl -all" , $log);
