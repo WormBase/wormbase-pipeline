@@ -1,4 +1,4 @@
-#!/usr/local/ensembl/bin/perl -w
+#!/usr/bin/env perl -w
 
 =pod
 
@@ -45,7 +45,6 @@ data from the wormbase in an automated fashion.
 ensembl-dev@ebi.ac.uk
 
 =cut
-$|=1; #turns off buffering on STDOUT
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ##  PREPARATION:  ##
@@ -58,25 +57,25 @@ $|=1; #turns off buffering on STDOUT
 
 #necessary fixes
 # 1.
-# defined resource=linux for the protein annotations to avoidsystem-specific differences
+# defined resource=linux for the protein annotations to avoid system-specific differences
 # some machines dont have gawk installed: signalp fails!
 # Fix: copy signalp-bin and set AWK=awk; point entry in analysis-table to this bin
 
 #configuration variables:
-my $release       = "WS160";	
-my $workDIR       = "/acari/work2a/wormpipe/ensembl/";	
-my $cvsDIR        = "/nfs/acari/wormpipe/ensembl/";	
-my $analysisConf  = "$cvsDIR/ensembl-config/celegans/WB160/pipe_conf/analysis.conf"; 
-my $ruleConf      = "$cvsDIR/ensembl-config/celegans/WB160/pipe_conf/rule.conf";     
+my $release       = 'WS220';	
+my $workDIR       = '/lustre/scratch103/ensembl/wormpipe/tmp/ws220_ensembl/';	
+my $cvsDIR        = "/software/worm/ensembl-60/";	
+my $analysisConf  = "$cvsDIR/ensembl-config/celegans/WS220/pipe_conf/analysis.conf"; 
+my $ruleConf      = "$cvsDIR/ensembl-config/celegans/WS220/pipe_conf/rule.conf";     
 
-my $WB_DBHOST     = "ecs1f";		
-my $WB_DBPORT     = "3306";		
-my $WB_DBNAME     = 'worm_WB160';#$ENV{'USER'}."_caenorhabditis_elegans_core_".$release;
-my $WB_DBUSER     = "wormadmin";		
-my $WB_DBPASS     = "XXXX";		
+my $WB_DBHOST     = 'wormbase2';		
+my $WB_DBPORT     = 3307;		
+my $WB_DBNAME     = 'worm_ensembl_elegans_ws220';#$ENV{'USER'}."_caenorhabditis_elegans_core_".$release;
+my $WB_DBUSER     = 'mh6';		
+my $WB_DBPASS     = 'blablub';		
 
 use FindBin;
-use lib "$FindBin::Bin/../lib";"
+use lib "$FindBin::Bin/../lib";
 ###########################################
 # You should not need to change any settings below this line
 #-----------------------------------------------------------
@@ -85,7 +84,6 @@ use strict;
 use WormBaseConf;
 use WormBase;
 use Bio::EnsEMBL::DBSQL::DBAdaptor;
-$| = 1;
 
 my $db;
 my $perllib;
@@ -94,7 +92,7 @@ my $blastbd;
 my $MtDNA_length = 0;
 my $cmd;
 my $comm = $ARGV[0];
-if(!$comm or ($comm ne "setup" && $comm ne "run" && $comm ne "xref" && $comm ne "sqlcheck")){
+if(!$comm or ($comm ne 'setup' && $comm ne 'run' && $comm ne 'xref' && $comm ne 'sqlcheck')){
   exec('perldoc', $0);
   exit 1;
 
@@ -105,7 +103,7 @@ print "\nbuilding the worm...\n";
 # 0-set environment
 set_env(1);
 
-if($comm eq "setup"){
+if($comm eq 'setup'){
 
   print "\npreparing for Wormbase data import\n";
 
@@ -119,32 +117,32 @@ if($comm eq "setup"){
 					   -dbname => $WB_DBNAME,
 					   -pass   => $WB_DBPASS,
 					   -port   => $WB_DBPORT,
-					  ) or die "cannot access the database!";
+					  ) or die 'cannot access the database!';
 
   # 3-create config-files
   # TODO
 
   # 4-insert  analysis entries
-  if(insert_analysis($analysisConf, $ruleConf)){ die "error inserting analysis entries."; }
+  if(insert_analysis($analysisConf, $ruleConf)){ die 'error inserting analysis entries.'; }
 
   # 5-insert mtDNA
   insert_mtDNA($db);
 
   # 6-store other chromosomes
-  my $script_path = $cvsDIR."ensembl-pipeline/scripts/DataConversion/wormbase/sequence_store.pl";
-  if( system("perl", $script_path) ){ die "could not store genomic sequence"; }
+  my $script_path = $cvsDIR.'ensembl-pipeline/scripts/DataConversion/wormbase/sequence_store.pl';
+  if( system('perl', $script_path) ){ die 'could not store genomic sequence'; }
 
   # 7-insert meta data & toplevel
   insert_meta($db);
 
   #7a fix the feature table
   print "loading analysis descriptions";
-  print `/nfs/team71/worm//mh6/bin/perl load_analysis_descriptions.pl -user $WB_DBUSER -host $WB_DBHOST -dbname $WB_DBNAME -pass $WB_DBPASS < ../analysis.descriptions`;
+  print `/software/bin/perl load_analysis_descriptions.pl -user $WB_DBUSER -host $WB_DBHOST -dbname $WB_DBNAME -dbport $WB_DBPORT -pass $WB_DBPASS < ../analysis.descriptions`;
   # 8-insert other features
   my @steps = ($WB_LOGIC_NAME, $WB_OPERON_LOGIC_NAME, $WB_PSEUDO_LOGIC_NAME, $WB_EXPR_LOGIC_NAME, $WB_TRNA_LOGIC_NAME, $WB_RNAI_LOGIC_NAME, $WB_rRNA_LOGIC_NAME, $WB_ce_mrna_LOGIC_NAME, $WB_ce_est_LOGIC_NAME, $WB_other_EST_LOGIC_NAME, $WB_fosmid_LOGIC_NAME);
 						     
   foreach my $step (@steps){
-    run_scripts($step); 
+	  run_scripts($step); 
   }
 
   # 9-create dummy entries
@@ -230,11 +228,11 @@ sub set_env{
 }
 
 
-sub getfiles{
+sub getfiles {
     use LWP::Simple;
 
     #base FTP location
-    my $baseurl = "ftp://ftp.sanger.ac.uk/pub/wormbase/$release/CHROMOSOMES/";
+    my $baseurl = "ftp://ftp.sanger.ac.uk/pub2/wormbase/$release/genomes/c_elegans";
     #base file location
     my $basefile = $workDIR;
     my $file;
@@ -245,30 +243,30 @@ sub getfiles{
       #get agps - beware that some clone versions may be outdated     
       $file = "CHROMOSOME_".$chromosome.".agp";
       print ">>getting file ".$file."\n";
-      _fetchfile($baseurl, $basefile, $file);
+      _fetchfile("$baseurl/sequences/dna/", $basefile, $file);
       
       #get gffs
-      $file = "CHROMOSOME_".$chromosome.".gff.gz";
+      $file = "CHROMOSOME_".$chromosome.".gff";
       print ">>getting file ".$file."\n";
-      _fetchfile($baseurl, $basefile, $file);
-      _unzipfile($basefile, $file);
+      _fetchfile("$baseurl/genome_feature_tables/GFF2/", $basefile, $file);
+      #   _unzipfile($basefile, $file);
       
       #get dna
       $file = "CHROMOSOME_".$chromosome.".dna.gz";
       print ">>getting file ".$file."\n";
-      _fetchfile($baseurl, $basefile, $file);
+      _fetchfile("$baseurl/sequences/dna/", $basefile, $file);
       _unzipfile($basefile, $file);      
     }
 
     #get mt-dna
-    $file = "CHROMOSOME_MtDNA.gff.gz";
+    $file = "CHROMOSOME_MtDNA.gff";
     print ">>getting file ".$file."\n";
-    _fetchfile($baseurl, $basefile, $file);
-    _unzipfile($basefile, $file);
+    _fetchfile("$baseurl/genome_feature_tables/GFF2/", $basefile, $file);
+    #_unzipfile($basefile, $file);
     #get dna file for Mt-DNA 
     $file = "CHROMOSOME_MtDNA.dna.gz";
     print ">>getting file ".$file."\n";
-    _fetchfile($baseurl, $basefile, $file);
+    _fetchfile("$baseurl/sequences/dna/", $basefile, $file);
     _unzipfile($basefile, $file);     
     #create agp file for Mt-DNA
     $file = "CHROMOSOME_MtDNA.agp";
@@ -375,7 +373,7 @@ sub insert_mtDNA{
 }
 
 
-sub insert_meta{
+sub insert_meta {
   my $db = shift;
   my $cmd;
   # adding assembly type to meta table
@@ -407,12 +405,12 @@ sub insert_meta{
 
   #set toplevel
   $cmd = "perl ".$cvsDIR."ensembl-pipeline/scripts/set_toplevel.pl ".
-         "-dbhost $WB_DBHOST -dbuser $WB_DBUSER -dbpass $WB_DBPASS -dbname $WB_DBNAME";
+         "-dbhost $WB_DBHOST -dbuser $WB_DBUSER -dbpass $WB_DBPASS -dbname $WB_DBNAME -dbport $WB_DBPORT";
   if(system($cmd)){ warn "error seting toplevel!"; }
 }
 
 
-sub run_scripts{
+sub run_scripts {
   my $analysis = shift;
   my $status = 0;
   print ">>running: $analysis\n";
@@ -428,7 +426,7 @@ sub run_scripts{
 }
 
 
-sub check_translation{
+sub check_translation {
   my $db = shift;
   print ">>running: translation check\n";
   $| = 1;
@@ -451,7 +449,7 @@ sub check_translation{
 }
 
 
-sub insert_analysis{
+sub insert_analysis {
   my ($analysis_file, $rule_file) = @_;
   my $cmd;
   my $status = 0;
@@ -470,7 +468,7 @@ sub insert_analysis{
 }
 
 
-sub make_input_ids{
+sub make_input_ids {
   my $set = shift;
   my $status = 0;
 
@@ -507,14 +505,14 @@ sub make_input_ids{
 }
 
 
-sub run{
+sub run {
   my $cmd= "perl ".$cvsDIR."ensembl-pipeline/scripts/rulemanager.pl -dbhost $WB_DBHOST -dbport ".
            "$WB_DBPORT -dbname $WB_DBNAME -dbuser $WB_DBUSER -dbpass $WB_DBPASS";
   exec($cmd);
 }
 
 
-sub dump_translations{
+sub dump_translations {
   my $cmd;
   my $status = 0;
 

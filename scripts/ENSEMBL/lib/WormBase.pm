@@ -827,9 +827,9 @@ sub create_transcripts {
             eval {
                 $transcript->add_Exon($exon);
 
-                #print "adding exon ".$exon->stable_id." \n";
-            };
-            if ($@) { print STDERR "\n>>$transcript_id EXON ERROR: " . $@ . "\n"; }
+#                print "\nadding exon ".$exon->stable_id." \n";
+           };
+            if ($@) { print STDERR "\n>>$transcript_id EXON ERROR: " . $@ . "\n";}
         }
         my $start_exon_ind;
         if ( exists( $trans_start_exon->{$transcript_id} ) ) {
@@ -1088,6 +1088,10 @@ sub translation_check {
 
     my @transcripts = @{ $gene->get_all_Transcripts };
     foreach my $t (@transcripts) {
+	unless ($t->translate){
+	    $DB::single=1; # le hacque
+            $t->adaptor()->db()->get_TranslationAdaptor()->fetch_by_Transcript($t);
+        }
         my $pep = $t->translate->seq;
         if ( $pep =~ /\*/g ) {
             if ( $gene->stable_id eq 'C06G3.7' and $db ) {
