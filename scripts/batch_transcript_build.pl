@@ -6,8 +6,8 @@
 #
 # wrapper script for running transcript_builder.pl
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2010-08-27 14:22:37 $
+# Last edited by: $Author: pad $
+# Last edited on: $Date: 2010-11-11 15:59:02 $
 
 use lib $ENV{CVS_DIR};
 use Wormbase;
@@ -118,7 +118,7 @@ unless ( $no_run ){
 
 
 $log->write_to("all batch jobs done - cating outputs to ".$wormbase->transcripts."/transcripts.ace\n");
-$wormbase->run_command("cp " .$wormbase->misc_dynamic."/MtDNA_Transcripts.ace ".$wormbase->transcripts."/chromosome_MtDNA.ace", $log) if ($wormbase->species eq 'elegans'); #hard coded cp of fixed MtDNA Transcripts.
+$wormbase->run_command("cp " .$wormbase->misc_dynamic."/MtDNA_Transcripts.ace ".$wormbase->transcripts."/transcripts_MtDNA.ace", $log) if ($wormbase->species eq 'elegans'); #hard coded cp of fixed MtDNA Transcripts.
 
 my $allfile = $wormbase->transcripts."/".$wormbase->species."_transcripts.ace";
 $wormbase->run_command("cat ".$wormbase->transcripts."/transcripts*.ace > $allfile", $log);
