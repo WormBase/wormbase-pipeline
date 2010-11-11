@@ -1656,22 +1656,26 @@ sub format_sequence
 }
 
 sub get_binned_chroms {
-	my $self = shift;	
-	my $bin_size = shift;
-	$bin_size = 64 unless $bin_size;
-	
-	my @chroms = $self->get_chromosome_names(-prefix => 1, -mito => 1);
-	if (scalar @chroms > 50){
-		my @bins;
-		my $i=0;
-		while ($i<scalar @chroms){
-			push (@{$bins[$i % $bin_size]},$chroms[$i]);
-			$i++;
-		}
-		map {$_=join(',',@$_)} @bins;
-		@chroms = @bins;
-		}
-	return \@chroms;
+  my $self = shift;
+  my %par = @_;
+  my $bin_size;
+  $bin_size = $par{'-bin_size'} if (defined $par{'-bin_size'});
+  $bin_size = 64 unless (defined $par{'-bin_size'});
+  my %opt;
+  $opt{-prefix} = 1;
+  $opt{-mito} = 1 if $par{'-mito'};
+  my @chroms = $self->get_chromosome_names(%opt);
+  if (scalar @chroms > 50){
+    my @bins;
+    my $i=0;
+    while ($i<scalar @chroms){
+      push (@{$bins[$i % $bin_size]},$chroms[$i]);
+      $i++;
+    }
+    map {$_=join(',',@$_)} @bins;
+    @chroms = @bins;
+  }
+  return \@chroms;
 }
 
 
