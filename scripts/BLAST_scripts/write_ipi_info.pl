@@ -110,12 +110,12 @@ while (<LIST>) {
 	print ACE "Database ENSEMBL ENSEMBL_geneID $ENSpep_gene{$ID}\n" if ($ENSpep_gene{$ID});
       }
       elsif( "$DB" eq "SWISS-PROT" or "$DB" eq "TREMBL"){ 
-	my $othername = $acc2id{$ID} if $acc2id{$ID};
 	print ACE "Database UniProt UniProt_AC $ID\n";
-	print ACE "Database UniProt UniProtID $acc2id{$ID}\n" if $acc2id{$ID};
-
-	print ACE "Gene_name \"$swiss_id2gene{$othername}\"\n" if (exists $swiss_id2gene{$othername});
-
+        if ($acc2id{$ID}) {
+          my $othername = $acc2id{$ID};
+          print ACE "Database UniProt UniProtID $othername\n";
+          print ACE "Gene_name \"$swiss_id2gene{$othername}\"\n" if (exists $swiss_id2gene{$othername});
+        }
       }
       elsif("$DB" eq 'H-INV'){
 	print ACE "Database H-INV HIT $ID\n";
