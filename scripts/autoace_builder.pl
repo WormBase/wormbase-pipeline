@@ -7,7 +7,7 @@
 # Usage : autoace_builder.pl [-options]
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2010-11-15 16:06:08 $
+# Last edited on: $Date: 2010-11-16 10:25:40 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -176,8 +176,10 @@ if ($gff_munge) {
   $wormbase->run_script( 'GFFmunger.pl -all', $log); # GFFmunger uses the files created by landmark_genes2gff.pl
   $wormbase->run_script( 'over_load_SNP_gff.pl' , $log);
   $wormbase->run_script( 'overload_rnai.pl'     , $log);
-  $wormbase->run_script( "Map_pos_GFFprocess.pl", $log); # must be run before CGH_GFFprocess.pl as it looks for 'Allele' lines
-
+  
+  if ($wormbase->assembly_type eq 'chromosome') {
+    $wormbase->run_script( "Map_pos_GFFprocess.pl", $log); # must be run before CGH_GFFprocess.pl as it looks for 'Allele' lines
+  }
   if ($wormbase->species eq 'elegans') {
     $wormbase->run_script( "CGH_GFFprocess.pl"    , $log); 
     $wormbase->run_script( "chromosome_script_lsf_manager.pl -command '/software/bin/perl $ENV{'CVS_DIR'}/process_sage_gff.pl' -mito -prefix", $log);
