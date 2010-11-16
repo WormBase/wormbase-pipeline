@@ -2,8 +2,8 @@
 #
 # This is to add Confirmed / Predicted Status and RFLP to SNP gff lines as requested by Todd
 #
-# Last updated by: $Author: pad $     
-# Last updated on: $Date: 2010-08-25 14:09:11 $      
+# Last updated by: $Author: klh $     
+# Last updated on: $Date: 2010-11-16 09:35:54 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -30,14 +30,16 @@ GetOptions ("help"       => \$help,
 	    "file:s"     => \$gff_file
 	    );
 
-$species = 'elegans' unless $species;
 if ( $store ) {
   $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
 } else {
   $wormbase = Wormbase->new( '-debug'   => $debug,
                              '-test'    => $test,
+                             '-organism' => $species,
 			     );
 }
+
+$species = $wormbase->species;
 
 # Display help if required
 &usage("Help") if ($help);
@@ -63,15 +65,15 @@ my %SNP;
 #load SNP details from table maker query
 my $table = $wormbase->table_maker_query($wormbase->autoace, &write_def_file);
 while(<$table>) {
-	s/\"//g; #"
-	next if (/acedb/ or /\/\//);
-	chomp;
-	my ($snp, $conf, $pred, $rflp, $from_species,$public_name) = split(/\t/,$_);
-	next if (! defined $from_species);
-	next unless ($from_species =~ /$species/);
-	$SNP{$snp}->{'confirm'} = ($conf or $pred);
-	$SNP{$snp}->{'RFLP'} = 1 if ($rflp =~ /\w/);
-	$SNP{$snp}->{'Public_name'} = $public_name if $public_name;
+  s/\"//g; #"
+  next if (/acedb/ or /\/\//);
+  chomp;
+  my ($snp, $conf, $pred, $rflp, $from_species,$public_name) = split(/\t/,$_);
+  next if (! defined $from_species);
+  next unless ($from_species =~ /$species/);
+  $SNP{$snp}->{'confirm'} = ($conf or $pred);
+  $SNP{$snp}->{'RFLP'} = 1 if ($rflp =~ /\w/);
+  $SNP{$snp}->{'Public_name'} = $public_name if $public_name;
 }
 
 my @chroms = $wormbase->get_chromosome_names(-mito => 1);
@@ -94,22 +96,23 @@ if ($gff_file) {
 }
 # check to see if full chromosome gff dump files exist
 foreach my $file (@gff_files) {
-  unless (-e "$dir/$file\.gff" || -e "$file\.gff") {
-    $log->log_and_die("No GFF file: $file\.gff\n");
+  
+  unless (-e "$dir/${file}.gff" || -e "${file}.gff") {
+    $log->log_and_die("No GFF file: ${file}.gff\n");
   }
-  unless (!(-e -z "$dir/$file\.gff" || -e -z "$file\.gff")){
-    $log->log_and_die("Zero length GFF file: $dir/$file\.gff");
+  unless (not -z "$dir/${file}.gff" or not -z "${file}.gff") {
+    $log->log_and_die("Zero length GFF file: $dir/${file}.gff");
   }
 }
 
 my $file;
 
 foreach my $gff_f (@gff_files) {
-  unless ($gff_file) {
+  if ($gff_file) {
+    $file = "${gff_file}.gff";
+  } else {
     $file = "$dir/${gff_f}.gff";
   }
-  else {$file = "${gff_file}.gff";
-      }
   
   open(GFF,"<$file") or $log->log_and_die("cant open $file");
   open(NEW,">$file.tmp") or $log->log_and_die("cant open $file tmp file\n");
