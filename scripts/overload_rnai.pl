@@ -7,8 +7,8 @@
 #
 #  DESCRIPTION:  adds additional information to RNAi GFF lines
 #
-#       AUTHOR:  $Author: gw3 $
-#      VERSION:  $Revision: 1.3 $
+#       AUTHOR:  $Author: klh $
+#      VERSION:  $Revision: 1.4 $
 #      CREATED:  06/07/10 10:40:04 BST
 #===============================================================================
 
@@ -19,13 +19,14 @@ use IO::File;
 use Getopt::Long;
 use strict;
 
-my ($debug,$test,$species,$store,$file,$dontOverwrite);
+my ($debug,$test,$species,$store,$file,$dontOverwrite, $gff_dir);
 GetOptions(
    'debug=s'   => \$debug,
    'test'      => \$test,
    'species:s' => \$species,
    'store:s'   => \$store,
    'file:s'    => \$file,
+   'gffdir:s'  => \$gff_dir,
    'dontoverwrite' => \$dontOverwrite,
 )||die(@!);
 
@@ -46,27 +47,50 @@ my $log = Log_files->make_build_log($wormbase);
 # fill some reference hashes
 my ($r2lab,$r2hist) = &get_rnai2lab();
 
-my @chromosomes = $wormbase->get_chromosome_names(-prefix => 1, -mito => 1);
-@chromosomes = qw(contigs) if ($wormbase->assembly_type eq 'contig' || $file);
+my @gff_files;
+$gff_dir = $wormbase->chromosomes if not defined $gff_dir;
 
-foreach my $chromosome(@chromosomes){
-  my $fh = $file ? (new IO::File $file) : $wormbase->open_GFF_file($chromosome,undef,$log);
-  my $outfileName = ($file || $wormbase->GFF_file_name($chromosome,undef));
-  my $outf = new IO::File $outfileName.'_rnai','w';
+if (defined($file)){
+  push(@gff_files,$file);
+}
+else {
+  if($wormbase->assembly_type eq 'contig') {
+    push(@gff_files,lc($wormbase->species));
+  } else {
+    @gff_files = $wormbase->get_chromosome_names('-prefix' => 1, '-mito' => 1);
+  }
+}
 
-  while (<$fh>){
-	unless(/RNAi_(primary|secondary)\s+RNAi_reagent/){
-		print $outf $_;
-		next;
-	}
-	chomp;
-	print $outf $_;
-	my ($rnaid) = /(WBRNAi\d+)/;
-	print $outf " ; Laboratory \"$$r2lab{$rnaid}\"" if $$r2lab{$rnaid};
-	print $outf " ; History_name \"$$r2hist{$rnaid}\"" if $$r2hist{$rnaid};
-	print $outf "\n";
- }
- $wormbase->run_command("mv -f ${outfileName}_rnai $outfileName", $log) unless $dontOverwrite;
+foreach my $fileprefix (@gff_files) {
+  my $in_file = "$gff_dir/${fileprefix}.gff";
+  my $out_file = "$gff_dir/${fileprefix}.rnai.gff";
+
+  if (not -e $in_file) {
+    $log->log_and_die("GFF file $in_file not found\n");
+  }
+  if (-z $in_file) { 
+    $log->log_and_die("GFF file $in_file zero length\n");
+  }
+
+  open(my $in_fh, $in_file) or $log->log_and_die("Could not open $in_file for reading\n");
+  open(my $out_fh, ">$out_file") or $log->log_and_die("Could not open $out_file for writing\n");
+  
+  while (<$in_fh>){
+    unless(/RNAi_(primary|secondary)\s+RNAi_reagent/){
+      print $out_fh $_;
+      next;
+    }
+    chomp;
+    print $out_fh $_;
+    my ($rnaid) = /(WBRNAi\d+)/;
+    print $out_fh " ; Laboratory \"$$r2lab{$rnaid}\"" if $$r2lab{$rnaid};
+    print $out_fh " ; History_name \"$$r2hist{$rnaid}\"" if $$r2hist{$rnaid};
+    print $out_fh "\n";
+  }
+  close($out_fh);
+  close($in_fh);
+
+  $wormbase->run_command("mv -f $out_file $in_file", $log) unless $dontOverwrite;
 }
 
 # Close log files and exit
