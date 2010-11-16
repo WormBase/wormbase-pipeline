@@ -2,8 +2,8 @@
 #
 # This is to add Confirmed / Predicted Status and RFLP to SNP gff lines as requested by Todd
 #
-# Last updated by: $Author: klh $     
-# Last updated on: $Date: 2010-11-16 09:35:54 $      
+# Last updated by: $Author: mh6 $     
+# Last updated on: $Date: 2010-11-16 10:27:41 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -18,7 +18,7 @@ use strict;
 # variables and command-line options # 
 ######################################
 
-my ($help, $debug, $test, $verbose, $store, $wormbase);
+my ($help, $debug, $test, $verbose, $store, $wormbase,$database);
 my ($species, $gff_file);
 
 GetOptions ("help"       => \$help,
@@ -27,6 +27,7 @@ GetOptions ("help"       => \$help,
 	    "verbose"    => \$verbose,
 	    "store:s"    => \$store,
 	    "species:s"  => \$species,
+	    "database:s" => \$database,
 	    "file:s"     => \$gff_file
 	    );
 
@@ -39,6 +40,7 @@ if ( $store ) {
 			     );
 }
 
+$wormbase->{autoace} = $database if $database;
 $species = $wormbase->species;
 
 # Display help if required
@@ -76,10 +78,11 @@ while(<$table>) {
   $SNP{$snp}->{'Public_name'} = $public_name if $public_name;
 }
 
+my $db = Ace->connect(-path => $wormbase->autoace);
+
 my @chroms = $wormbase->get_chromosome_names(-mito => 1);
 my $dir = $wormbase->chromosomes;
 my $stat = 0;
-
 
 my @gff_files;
 if ($gff_file) {
@@ -121,7 +124,8 @@ foreach my $gff_f (@gff_files) {
     print NEW "$_";
     #CHROMOSOME_V    Allele  SNP     155950  155951  .       +       .       Variation "uCE5-508"
     #I       Allele  SNP     126950  126950  .       +       .       Variation "pkP1003"  ;  Status "Confirmed_SNP" ; RFLP "Yes"
-    if( /SNP/ and /Allele/) {
+    if (/Public_name/){}
+    elsif( /SNP/ and /Allele/) {
       my ($allele) = /Variation \"(\S+)\"/;
       print NEW " ; Status \"",$SNP{$allele}->{'confirm'},"\"" if $SNP{$allele}->{'confirm'};
       print NEW " ; RFLP ", (defined $SNP{$allele}->{'RFLP'}? '"Yes"' : '"No"');
@@ -129,6 +133,21 @@ foreach my $gff_f (@gff_files) {
       print NEW " ; Public_name \"${\$SNP{$allele}->{'Public_name'}}\"" if $SNP{$allele}->{'Public_name'};
       $stat++;
     }
+    # public_names for non-snp variations
+    elsif(/\"(WBVar\d+)\"/){
+	my $allele = $db->fetch(Variation => "$1");
+	my $pubid = $allele->Public_name;
+	print NEW " ; Public_name \"$pubid\"" if $pubid;
+        $stat++;	
+    }
+    # but the genes used as alleles might need also public names
+    elsif(/\.\s+Allele\s+\"(WBGene\d+)\"/){
+	my $allele = $db->fetch(Gene => "$1");
+	my $pubid = $allele->Public_name;
+	print NEW " ; Public_name \"$pubid\"" if $pubid; 
+	$stat++;
+    }
+
     print NEW "\n";
   }
   $wormbase->run_command("mv -f $file.tmp $file", $log);
