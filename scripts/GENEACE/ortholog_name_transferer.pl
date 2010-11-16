@@ -48,7 +48,7 @@ if ($debug) {
 
 my %CGC_species = ('briggsae' => 'Cbr',
 		   'remanei'  => 'Cre',
-		   'japonica' => 'Cja',
+		   'japonica' => 'Cjp',
 		   'brenneri' => 'Cbn',
 		   'pacificus'=> 'Ppa',
 		  );
