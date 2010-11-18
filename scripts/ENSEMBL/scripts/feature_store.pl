@@ -151,10 +151,10 @@ foreach my $chromosome_info ( @{$WB_CHR_INFO} ) {
 	    case 'tRNA' {
                 #parse out tRNA-genes
                 #there only seem to be tRNA in MtDNA (tRNAscan in CHROMOSOMES)
-                my $tRNAgenes = parse_tRNA_genes( $WB_workDIR . "" . $chromosome_info->{'gff_file'}, $chr, $analysis );
-                print "have " . scalar @$tRNAgenes . " tRNA genes.\n" if ($WB_DEBUG);
+		#my $tRNAgenes = parse_tRNA_genes( $WB_workDIR . "" . $chromosome_info->{'gff_file'}, $chr, $analysis );
+		#print "have " . scalar @$tRNAgenes . " tRNA genes.\n" if ($WB_DEBUG);
                 #store tRNA-genes
-                &write_genes( $tRNAgenes, $db );
+		#&write_genes( $tRNAgenes, $db );
 
 		my $tRNA_scan_genes = parse_pseudo_files( $WB_workDIR . "" . $chromosome_info->{'gff_file'}, $chr, $analysis,'tRNAscan-SE-1.23' );
 		print "have " . scalar @$tRNA_scan_genes . " genomic tRNA genes.\n" if ($WB_DEBUG);
@@ -180,7 +180,7 @@ foreach my $chromosome_info ( @{$WB_CHR_INFO} ) {
             }
 	    case 'snRNA' {
                 #parse out snRNA-genes
-                my $rRNAgenes = parse_pseudo_files( $WB_workDIR . "" . $chromosome_info->{'gff_file'}, $chr, $analysis,'snRNA' );
+                my $rRNAgenes = parse_pseudo_files( $WB_workDIR . "" . $chromosome_info->{'gff_file'}, $chr, $analysis,'snRNA_mature_transcript' );
                 print "have " . scalar @$rRNAgenes . " snRNA genes.\n" if ($WB_DEBUG);
 
                 #store snRNA-genes
@@ -188,7 +188,7 @@ foreach my $chromosome_info ( @{$WB_CHR_INFO} ) {
             }
 	    case 'snoRNA' {
                 #parse out snoRNA-genes
-                my $rRNAgenes = parse_pseudo_files( $WB_workDIR . "" . $chromosome_info->{'gff_file'}, $chr, $analysis,'snoRNA' );
+                my $rRNAgenes = parse_pseudo_files( $WB_workDIR . "" . $chromosome_info->{'gff_file'}, $chr, $analysis,'snoRNA_mature_transcript' );
                 print "have " . scalar @$rRNAgenes . " snoRNA genes.\n" if ($WB_DEBUG);
 
                 #store snoRNA-genes
