@@ -12,6 +12,7 @@ require 'fileutils'
 
 tmp_place = '/lustre/scratch101/ensembl/wormpipe/compara_build'
 perl='/software/bin/perl'
+perl512='/software/worm/perl_512/bin/perl'
 basedir='/software/worm/ensembl'
 
 # check to see if the old build was cleaned
@@ -27,7 +28,7 @@ end
 desc 'setup environment variables'
 task :env_setup do
         old_perl5=ENV['PERL5LIB']
-        additional='/software/worm/lib/perl5:/software/worm/lib/bioperl-run_last_cvs/:/software/worm/ensembl/ensembl-config/celegans/generic-elegans:/software/worm/ensembl/ensembl-pipeline/modules:/software/worm/ensembl/ensembl-analysis/modules:/software/worm/ensembl/bioperl-live:/software/worm/ensembl/bioperl-run:/software/worm/ensembl/ensembl/modules:/software/worm/ensembl/ensembl-hive/modules:/software/worm/ensembl/ensembl-compara/modules:/software/worm/ensembl/ensembl-analysis:/software/worm/lib:.'
+        additional='/software/worm/lib/bioperl-run_last_cvs/:/software/worm/ensembl/ensembl-config/celegans/generic-elegans:/software/worm/ensembl/ensembl-pipeline/modules:/software/worm/ensembl/ensembl-analysis/modules:/software/worm/ensembl/bioperl-live:/software/worm/ensembl/bioperl-run:/software/worm/ensembl/ensembl/modules:/software/worm/ensembl/ensembl-hive/modules:/software/worm/ensembl/ensembl-compara/modules:/software/worm/ensembl/ensembl-analysis:/software/worm/lib:.'
         ENV['PERL5LIB']=additional+old_perl5
 end
 
@@ -207,19 +208,23 @@ end
 desc 'dump conservation wiggle files'
 task :dump_gerp =>[:env_setup] do
 
+       yml=YAML::load_file('etc/ensembl_lite.conf')
+       db=yml['elegans']['database'] # that one is technically not cool
+
+       sh "mysql -h #{db['host']} -P#{db['port']} -u #{db['user']} -p#{db['password']} worm_ensembl_pecan -e 'INSERT IGNORE INTO meta (meta_key,meta_value) VALUES ('max_align_2',(SELECT MAX(dnafrag_end-dnafrag_start) FROM genomic_align));'"
 	['elegans','briggsae','brenneri','remanei','japonica','pristionchus','brugia','Mhapla','Mincognita','Hcontortus','cangaria'].each{|species|
 	  spec_dir= "#{tmp_place}/compara/#{species}"
 	  FileUtils.mkdir_p(spec_dir)
-          sh "#{perl} scripts/getConservationScores.pl -species #{species} -o #{spec_dir}/#{species}.wig"
+          sh "#{perl512} scripts/getConservationScores.pl -species #{species} -o #{spec_dir}/#{species}.wig"
           
 	  # split it
-          sh "#{perl} ~mh6/tmp/split_wig.pl #{spec_dir}/#{species}.wig" # change the location of the splitter
+          sh "#{perl512} ~mh6/tmp/split_wig.pl #{spec_dir}/#{species}.wig" # change the location of the splitter
 	  File.unlink("#{spec_dir}/#{species}.wig")
 
 	  # wiblification
           FileList["#{spec_dir}/#{species}.wig*"].each{|f|
 		  # wiblify it
-		  system("#{perl} ../wiggle2gff3.pl --trackname gerp --method syntheny --source gerp --path=#{spec_dir} #{f} >> #{spec_dir}/#{species}_gerp.gff3")
+		  system("#{perl512} ../wiggle2gff3.pl --trackname gerp --method syntheny --source gerp --path=#{spec_dir} #{f} >> #{spec_dir}/#{species}_gerp.gff3")
 		  File.unlink(f)
 
 		  # path munglification
