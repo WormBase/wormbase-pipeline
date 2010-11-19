@@ -7,7 +7,7 @@
 # TAGS: perl510_clean
 
 BEGIN {
-	$ENV{ENSEMBL_REGISTRY}='/nfs/team71/worm/mh6/wormbase/scripts/ENSEMBL/etc/E_registry.pl';
+	$ENV{ENSEMBL_REGISTRY}='/nfs/users/nfs_w/wormpub/wormbase/scripts/ENSEMBL/etc/E_registry.pl';
 }
 
 Bio::EnsEMBL::Registry->no_version_check(1);
