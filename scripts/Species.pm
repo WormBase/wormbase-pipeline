@@ -571,10 +571,7 @@ sub ncbi_tax_id {'96668'};
 sub assembly_type {'contig'};
 
 sub chromosome_names {
-  my @supercontigs;
-  foreach my $sct ($CANCONTIGS =~ /(\d+)/g) {
-    push @supercontigs, $sct;
-  }
+  my @supercontigs = split(/\s*,\s*/, $CANCONTIGS);
   return @supercontigs;
 }
 #######################################################
