@@ -7,8 +7,8 @@
 # 
 # Originally written by Dan Lawson
 #
-# Last updated by: $Author: pad $
-# Last updated on: $Date: 2010-08-13 13:06:19 $
+# Last updated by: $Author: klh $
+# Last updated on: $Date: 2010-11-23 14:47:19 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -411,6 +411,30 @@ sub copy_gff_files{
       $wormbase->run_command("chgrp -R  worm $gff_dir", $log); 
    }
   }
+
+  # copy tierIIIs from the previous build
+  my %tierIII = $wormbase->tier3_species_accessors;
+  foreach my $t3 (keys %tierIII){ 
+    my $wb = $tierIII{$t3};
+    my $species  = $wb->species;
+    my $gspecies = $wb->full_name('-g_species' => 1);
+    my $gff_dir = "$targetdir/$WS_name/genomes/$gspecies/genome_feature_tables";
+    mkpath($gff_dir,1,0775);
+
+    my $source = sprintf("%s/%s.gff3", $wb->chromosomes, $species);
+    my $target = sprintf("%s/%s.%s.gff3", $gff_dir, $gspecies, $WS_name);
+
+    if (-e $source) {
+      $wb->run_command("cp -f $source $target", $log);
+      $wb->run_command("bin/gzip -9 -f $target",$log);
+    } else {
+      $log->write_to("No GFF3 data found for species $species\n");
+    }
+
+    $wormbase->run_command("chgrp -R  worm $gff_dir", $log); 
+  }
+
+
   $runtime = $wormbase->runtime;
   $log->write_to("$runtime: Finished copying\n\n");
 }
