@@ -66,7 +66,7 @@ my $window=3500;
 
 # submit jobs, one for every 3.5k of sequences
 while ($job <= ($count/$window)+1){
-	my $script="/software/worm/perl_512/bin/perl ~/wormbase/scripts/clustal_runner.pl -window $window -offset $job -user $user -pass $pass -pepfile $infile -database $acedb -species $species";
+	my $script="/software/worm/perl_512/bin/perl $ENV{CVS_DIR}/clustal_runner.pl -window $window -offset $job -user $user -pass $pass -pepfile $infile -database $acedb -species $species";
 	print `bsub -q long -e /dev/null -o /dev/null -J clw -R "select[mem>3700] rusage[mem=3700]" -M 3700000 $script`;
 	$job++;
 }
