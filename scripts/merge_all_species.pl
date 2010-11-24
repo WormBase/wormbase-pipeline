@@ -1,7 +1,7 @@
 #/software/bin/perl -w
 #
 # Last updated by: $Author: pad $
-# Last updated on: $Date: 2010-08-11 15:45:05 $
+# Last updated on: $Date: 2010-11-24 12:19:31 $
 
 #################################################################################
 # Variables                                                                     #
@@ -160,6 +160,26 @@ my $briggsaeDB = Wormbase->new(
 $wormbase->load_to_database($wormbase->orgdb, $briggsaeDB->acefiles."/misc_briggsae_TEC_RED_homol.ace", "merge_all_species", $log);
 $wormbase->load_to_database($wormbase->orgdb, $briggsaeDB->acefiles."/misc_briggsae_TEC_RED_homol_data.ace", "merge_all_species", $log);
 
+
+$log->write_to("\nNow loading briggsae BAC end data . . .\n");
+# briggsae BAC end data
+my @brigfiles = ("briggsae_BAC_ends.fasta",
+		 "briggsae_homol_data.ace",
+		 "briggsae_BAC_ends_data.ace",
+		 "briggsae_bac_clone_ends.ace",
+		 "bac_ends_unique.ace"
+		);
+my $brig_dir;
+if (-e $wormbase->primary('brigace')."/BAC_ENDS") {
+  $brig_dir = $wormbase->primary('brigace')."/BAC_ENDS";
+}
+elsif (-e $wormbase->database('briggsae')."/BAC_ENDS") {
+  $brig_dir = $wormbase->database('briggsae')."/BAC_ENDS";
+}
+foreach my $brigfile (@brigfiles){
+  $log->write_to("\tload $brigfile\n");
+  $wormbase->load_to_database($wormbase->autoace,"$brig_dir/$brigfile","BAC_ends", $log);
+}
 
 $log->mail;
 
