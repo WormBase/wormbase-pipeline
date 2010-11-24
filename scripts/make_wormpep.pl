@@ -6,8 +6,8 @@
 #
 # Builds a wormpep data set from the current autoace database
 #
-# Last updated by: $Author: pad $
-# Last updated on: $Date: 2009-09-03 11:51:04 $
+# Last updated by: $Author: klh $
+# Last updated on: $Date: 2010-11-24 11:03:10 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -485,10 +485,10 @@ sub count_isoforms{
       my $letter = $2;
       my $new_name = $cds_prefix."_".$number;
       unless (exists ($new_name2x{$new_name})) {
-		$no_isoform_count++;
+        $no_isoform_count++;
       } 
       else {
-		$isoform_count++;
+        $isoform_count++;
       }
       $new_name2x{$new_name} = "x";
     } 
@@ -497,7 +497,7 @@ sub count_isoforms{
       next;
     }
   }
-  $log->write_to("\n\nthere are $no_isoform_count CDS in autoace, $total_cds_count when counting \($isoform_count\) alternate splice_forms\n");
+  $log->write_to("\n\nThis release of Wormpep derives from $total_cds_count CDSs from $no_isoform_count protein-coding genes\n");
 
   # write the release letter (also does some checks)
     $wormbase->release_wormpep($no_isoform_count,$total_cds_count,$isoform_count);
