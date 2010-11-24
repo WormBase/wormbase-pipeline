@@ -2,8 +2,8 @@
 #
 # prepare_primary_databases.pl
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2009-08-07 08:59:49 $
+# Last edited by: $Author: pad $
+# Last edited on: $Date: 2010-11-24 14:48:14 $
 
 use strict;
 my $scriptdir = $ENV{'CVS_DIR'};
@@ -98,18 +98,22 @@ unless ($options eq "") {
   $wormbase->run_script("unpack_db.pl $options", $log);
 }
 
-#only do genace and camace if doing elegans.  Assume genace ready if other species.
+#only do geneace and camace if doing elegans.  Assume genace ready if other species.
 if( $species eq 'elegans') {
-	# transfer camace and geneace  and brigace to correct PRIMARIES dir
-	$log->write_to("Transfering geneace and camace\n");
-
-	foreach ( qw(camace geneace ) ){
-	next if (defined $database and ($database ne $_));
-	$wormbase->delete_files_from($wormbase->primary("$_"),'*','+');
-	$wormbase->run_script("TransferDB.pl -start ".$wormbase->database("$_"). " -end ".$wormbase->primary("$_") ." -database -wspec", $log);
-	$wormbase->run_command("ln -sf ".$wormbase->autoace."/wspec/models.wrm ".$wormbase->primary("$_")."/wspec/models.wrm", $log);
-	}
+  # transfer camace to correct PRIMARIES dir
+  $log->write_to("Transfering camace\n");
+  
+  foreach ( qw(camace) ){
+    next if (defined $database and ($database ne $_));
+    $wormbase->delete_files_from($wormbase->primary("camace"),'*','+');
+    $wormbase->run_script("TransferDB.pl -start ".$wormbase->database("camace"). " -end ".$wormbase->primary("$_") ." -database -wspec", $log);
+  }
+  foreach ( qw(camace geneace ) ){
+    next if (defined $database and ($database ne $_));
+    $wormbase->run_command("ln -sf ".$wormbase->autoace."/wspec/models.wrm ".$wormbase->primary("$_")."/wspec/models.wrm", $log);
+  }
 }
+
 #################################################
 # Check that the databases have unpack correctly #
 #################################################
