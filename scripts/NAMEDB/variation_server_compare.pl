@@ -36,7 +36,7 @@ my $log = Log_files->make_build_log($wormbase);
 my $acedb = ($database or $wormbase->database('geneace'));
 $log->write_to("Checking $acedb for errors\n");
 
-my $def = "$ENV{CVS_DIR}/wquery/geneace/variation_nameserver_comm.def";
+my $def = "$ENV{CVS_DIR}/../wquery/geneace/variation_nameserver_comm.def";
 
 my $TABLE = $wormbase->table_maker_query($acedb, $def);
 my %ace_ids;
