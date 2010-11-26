@@ -16,7 +16,7 @@ my ($help, $debug, $test, $store, $database);
 
 GetOptions (    'help'       => \$help,
                 'debug=s'    => \$debug,
-                'test'       => \$testt,
+                'test'       => \$test,
                 'store:s'    => \$store,
                 'database:s' => \$database,
            );
