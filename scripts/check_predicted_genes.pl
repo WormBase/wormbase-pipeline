@@ -4,7 +4,7 @@
 #
 # by Keith Bradnam
 #
-# Last updated on: $Date: 2010-10-29 08:06:36 $
+# Last updated on: $Date: 2010-11-29 10:38:00 $
 # Last updated by: $Author: pad $
 #
 # see pod documentation at end of file for more information about this script
@@ -127,8 +127,9 @@ foreach my $gene_model ( @Predictions ) {
   }
   
   for ($i=1; $i<@exon_coord2;$i++) {
-    my $intron_size = ($exon_coord1[$i] - $exon_coord2[$i-1] -1);
+    my $intron_size = ($exon_coord1[$i] - $exon_coord2[$i-1] -1); 
     my @ck = grep(/^$gene_model/, @checkedgenes);
+    push(@ck,"0"); #this gets rid of undef issues.
     unless (defined $ck[0]) {
       if (($intron_size < 34) && ($method_test eq 'curated')) {
 	push(@error4,"ERROR: $gene_model has a very small intron ($intron_size bp)\n");
@@ -310,7 +311,7 @@ sub single_query_tests {
 # Transposon checks
   my @Transposons= $db->fetch(-query=>'find Transposon');
   my $Transposon_no = @Transposons;
-  unless ($Transposon_no eq "98"){print "\nChange in Transposon_numbers\n"}
+  unless ($Transposon_no eq "234"){print "\nChange in Transposon_numbers\n"}
   
 
   # Check for non-standard methods in CDS class
@@ -356,7 +357,7 @@ sub test_gene_sequence_for_errors{
     my $warning;
     @ck = grep(/^$gene_model/, @checkedgenes);
     if (($gene_model_length < 75) && ($method_test eq 'curated') && ($ck[0] ne $gene_model->name)) {
-      $warning = "WARNING: $gene_model is very short ($gene_model_length bp),";
+       $warning = "WARNING: $gene_model is very short ($gene_model_length bp),";
       print "WARNING: $gene_model is very short ($gene_model_length bp), " if $verbose;
       if (defined($gene_model->at('Properties.Coding.Confirmed_by'))) {
 	$warning .= "gene is Confirmed\n";
