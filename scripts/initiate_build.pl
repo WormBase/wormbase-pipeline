@@ -2,8 +2,8 @@
 #
 # initiate_build.pl
 #
-# Last edited by: $Author: tjrc $
-# Last edited on: $Date: 2009-04-30 10:55:12 $
+# Last edited by: $Author: mh6 $
+# Last edited on: $Date: 2010-11-29 14:39:09 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -43,7 +43,7 @@ if (-e "${\$wormbase->autoace}/database") {
   die( "There appears to still be data left over from the previous Build in autoace\nPlease check that finish_build.pl has completed.\n" );
 
 }
-my $old_primary = $wormbase->primaries."/".$wormbase->upload_db_name."/temp_unpack_dir";
+my $old_primary = $wormbase->primaries."/".$wormbase->upload_db_name.'/temp_unpack_dir';
 if($species and -e($old_primary) ) {
     die( "You should really clear out the old files from $old_primary before starting\n");
 }
@@ -64,7 +64,7 @@ else {
 
 	$wormbase->establish_paths;
 	#copy the genefinder files 
-	$wormbase->run_command("cp -r ".$wormbase->build_data."/wgf ".$wormbase->autoace."/wgf", 'no_log');
+	$wormbase->run_command('cp -r '.$wormbase->build_data.'/wgf '.$wormbase->autoace.'/wgf', 'no_log');
 }
 # set the new version number
 $wormbase->version($version);
@@ -73,6 +73,9 @@ $wormbase->version($version);
 my $log = Log_files->make_build_log($wormbase);
 
 $log->log_and_die( "version to build not specified\n") unless $wormbase->version;
+
+# update the main scripts
+$wormbase->run_command("cd $ENV{CVS_DIR}; cvs update .", $log);
 
 #################################################################################
 # initiate autoace build                                                        #
@@ -86,7 +89,7 @@ $wormbase->run_command("cd ".$wormbase->basedir.'; cvs -d :pserver:cvsuser@cvs.s
 ## make new build_in_process flag ( not done yet in rebuild )
 
 ## update database.wrm using cvs
-my $cvs_file = $wormbase->autoace."/wspec/database.wrm";
+my $cvs_file = $wormbase->autoace.'/wspec/database.wrm';
 $species = $wormbase->species;
 $wormbase->run_command("sed 's/WS0/WS${version}/' < $cvs_file > /tmp/cvsfile", $log);  #  the version in CVS is WS0
 my $short_name = $wormbase->full_name('-short'=>1);
