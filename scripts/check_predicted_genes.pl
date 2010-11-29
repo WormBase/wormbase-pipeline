@@ -4,7 +4,7 @@
 #
 # by Keith Bradnam
 #
-# Last updated on: $Date: 2010-11-29 10:38:00 $
+# Last updated on: $Date: 2010-11-29 10:49:02 $
 # Last updated by: $Author: pad $
 #
 # see pod documentation at end of file for more information about this script
@@ -356,6 +356,7 @@ sub test_gene_sequence_for_errors{
   if (!$basic) {
     my $warning;
     @ck = grep(/^$gene_model/, @checkedgenes);
+    push (@ck,"0");
     if (($gene_model_length < 75) && ($method_test eq 'curated') && ($ck[0] ne $gene_model->name)) {
        $warning = "WARNING: $gene_model is very short ($gene_model_length bp),";
       print "WARNING: $gene_model is very short ($gene_model_length bp), " if $verbose;
