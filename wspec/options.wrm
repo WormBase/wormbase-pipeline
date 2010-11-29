@@ -103,7 +103,6 @@ _VVariation        -V -T Public_name
 
 // worm biology
 
-_VTranscription_factor -V
 _VCell             -V
 _VCell_group       -H
 _VLife_stage       -H
