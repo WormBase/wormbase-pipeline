@@ -4,8 +4,8 @@
 #
 # by Dan Lawson (dl1@sanger.ac.uk)
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2007-09-03 12:55:08 $
+# Last edited by: $Author: mh6 $
+# Last edited on: $Date: 2010-11-30 10:56:37 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -168,7 +168,7 @@ foreach my $chromosome (@gff_files) {
     # fudge to try to get sequence version using mfetch via a different query if 1st mfetch fails
     if($seqver{$acc} eq ""){
       print "There has been a problem retrieving one or more entries" if $debug;
-      my $embl_acc = `/usr/local/pubseq/bin/mfetch -d embl -i \"sv:$acc.\*\" | grep ">"`;
+      my $embl_acc = `/software/bin/mfetch -d embl -i \"sv:$acc.\*\"`;
       $embl_acc =~ s/.*\.(\d+)\s+.*/$1/;
       $ver{$1} = $embl_acc;
     }
