@@ -58,10 +58,12 @@ open (FILE,"<$file") or die "can't open $file : $!\n";
 my $method = defined($force) ? 'force_name' : 'add_name';
 my $count=0;
 while(<FILE>) {
+    eval{
 	my($id,$name) = split;
 	my $success = $db->$method($id,$name,'CGC',$species);
 	my $msg = defined $success ? 'ok' : 'FAILED';
 	$log->write_to("$id\t$name\t$msg\n");
+    };
 	$count++;
 }
 
