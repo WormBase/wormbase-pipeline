@@ -19,6 +19,7 @@ $VALID_USERS = {
 					'mh6' 		=> 4036,
                                         'xdwang'        => 1760,
                                         'kyook'         => 712,
+                                        'jolenef'       => 2021,
                                         'wen'           => 101,
                                         'ranjana'       => 324,
                                         'vanauken'      => 1843,
@@ -31,12 +32,12 @@ $VALID_USERS = {
 
 ## a list of valid SSO login names for each DB operation
 $VALID_API_USERS = {
-		'query'		=> [qw( pad gw3 mh6 mt3 stlouis caltech cshl sanger kyook xdwang wen ranjana vanauken)],
-		'dump'		=> [qw( pad gw3 mh6 mt3 stlouis caltech cshl sanger kyook xdwang wen ranjana vanauken)],
-		'merge_var'	=> [qw( pad gw3 mt3 mh6 kyook xdwang wen ranjana vanauken)],
-		'new_var'	=> [qw( pad gw3 mt3 mh6 kyook xdwang wen ranjana vanauken)], 
-		'kill_var'	=> [qw( pad gw3 mt3 mh6 kyook xdwang wen ranjana vanauken)],
-		'change_name'	=> [qw( pad gw3 mt3 mh6 kyook xdwang wen ranjana vanauken)],
+		'query'		=> [qw( pad gw3 mh6 mt3 stlouis caltech cshl sanger kyook jolenef xdwang wen ranjana vanauken)],
+		'dump'		=> [qw( pad gw3 mh6 mt3 stlouis caltech cshl sanger kyook jolenef xdwang wen ranjana vanauken)],
+		'merge_var'	=> [qw( pad gw3 mt3 mh6 kyook jolenef xdwang wen ranjana vanauken)],
+		'new_var'	=> [qw( pad gw3 mt3 mh6 kyook jolenef xdwang wen ranjana vanauken)], 
+		'kill_var'	=> [qw( pad gw3 mt3 mh6 kyook jolenef xdwang wen ranjana vanauken)],
+		'change_name'	=> [qw( pad gw3 mt3 mh6 kyook jolenef xdwang wen ranjana vanauken)],
 };
 
 ## a list of valid SSO login names able to add GCG name
