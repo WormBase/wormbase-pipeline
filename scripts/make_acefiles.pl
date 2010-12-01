@@ -8,7 +8,7 @@
 # autoace.
 #
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2010-12-01 11:15:22 $
+# Last updated on: $Date: 2010-12-01 11:57:32 $
 
 #################################################################################
 # Variables                                                                     #
@@ -18,9 +18,7 @@ use strict;
 use lib $ENV{'CVS_DIR'};
 use Wormbase;
 use Getopt::Long;
-use File::Copy;
-use File::Spec;
-use File::Path;
+use File::Path qw(make_path);
 use Log_files;
 use Storable;
 
@@ -28,23 +26,21 @@ use Storable;
 # command-line options       #
 ##############################
 
-our $help;       # Help perdoc
-our $debug;      # Debug mode, verbose output to runner only
+my $debug;      # Debug mode, verbose output to runner only
 my $test;        # If set, script will use TEST_BUILD directory under ~wormpub
 my $db;
 my $store;
 my $species;
 my ($syntax, $merge);
 
-GetOptions (    "debug=s"    => \$debug,
-        "help"       => \$help,
-        "db:s"       => \$db,     # seems to be the primary database name, to dump subsets
-        "test"       => \$test,
-        "store:s"    => \$store,
-        "species:s"  => \$species,
-        "syntax"     => \$syntax, # checks the syntax of the config file without dumping the acefile
-        "merge"      => \$merge   # create the ace file for mrging databases at the end of the Build
-        );
+GetOptions (    'debug=s'    => \$debug,
+        		'db:s'       => \$db,     # seems to be the primary database name, to dump subsets
+        		'test'       => \$test,
+        		'store:s'    => \$store,
+        		'species:s'  => \$species,
+        		'syntax'     => \$syntax, # checks the syntax of the config file without dumping the acefile
+        		'merge'      => \$merge   # create the ace file for mrging databases at the end of the Build
+) ||die($!);
 
 my $wormbase;
 if( $store ) {
@@ -52,28 +48,28 @@ if( $store ) {
 }
 else {
     $wormbase = Wormbase->new( -debug   => $debug,
-                   -test    => $test,
-                   -organism => $species
-                   );
+                   			   -test    => $test,
+                   			   -organism => $species
+    );
 }
 
 my $log = Log_files->make_build_log($wormbase);
 my $elegans = $wormbase->build_accessor;
 
-my $config = $wormbase->basedir."/autoace_config/".$wormbase->species;
-$config .= ".merge" if $merge;
-$config .=".config";
+my $config = $wormbase->basedir.'/autoace_config/'.$wormbase->species;
+$config .= '.merge' if $merge;
+$config .='.config';
 
 my $tace = $wormbase->tace;
-my $path = $wormbase->acefiles.($merge ? "/MERGE" :"/primaries");
-mkpath $path unless -e $path;
+my $path = $wormbase->acefiles.($merge ? '/MERGE':'/primaries');
+make_path $path unless -e $path;
  
 unless (-e $config) {
   $log->write_to("merge config file absent - database being skipped\n");
 } else {
-  open (CFG,"<$config") or $log->log_and_die("cant open $config :$!\n");
+  open(CFG,"<$config") or $log->log_and_die("cant open $config :$!\n");
   
-  my $dbpath = "";
+  my $dbpath = '';
   while(<CFG>) {
     next if /#/;
     next unless /\w/;
@@ -103,17 +99,17 @@ unless (-e $config) {
       if ($db) {
           next unless ($makefile{'db'} eq $db);
       }
-      mkpath("$path/".$makefile{'db'}) unless -e "$path/".$makefile{'db'};
+      make_path("$path/".$makefile{'db'}) unless -e "$path/".$makefile{'db'};
       my $file = $path."/".$makefile{'db'}."/".$makefile{'file'};
       open(ACE,">$file") or $log->log_and_die("cant open file $file : $!\n");
       
       if($makefile{'class'} eq 'DNA') {
-        $query .= "find Sequence";
+        $query .= 'find Sequence';
       }else {
-        $query .= "find ".$makefile{'class'};
+        $query .= 'find '.$makefile{'class'};
       }
       if( $makefile{'query'} ) {
-        $query .= " WHERE ".$makefile{'query'};
+        $query .= ' WHERE '.$makefile{'query'};
       }
       $query .= "\n";    
       if( $makefile{'delete'} ) {    
@@ -128,9 +124,9 @@ unless (-e $config) {
         $query .= "show -T ".$makefile{'follow'}." -a\n"; #output parent + followed tag
         $query .= "FOLLOW ".$makefile{'follow'}."\n";
       }
-      $query .= "show -T -a ";
+      $query .= 'show -T -a ';
       if( $makefile{'tag'} ) {
-        $query .= " -t ".$makefile{'tag'};
+        $query .= ' -t '.$makefile{'tag'};
       }
       $query .= "\n";
 
@@ -139,17 +135,17 @@ unless (-e $config) {
       my %required;
 
       # run the command
-      my $acedb = $dbpath."/".$makefile{'db'};
+      my $acedb = $dbpath.'/'.$makefile{'db'};
       $log->write_to("dumping $makefile{'class'} from $acedb\n");
       my $object_name;
       open(TACE,"echo '$query' | $tace $acedb | ") or $log->log_and_die("cant do query : $!\n");
     LINE: while(my $line = <TACE>) {
-    next if ($line =~ /acedb>/ or $line =~ /^\/\//);
-    if( $makefile{'regex'} ) {  
-      unless ($line =~ /[^\w]/ or $line =~ /$makefile{'class'}\s+\:\s+/ or $line =~ /$makefile{'follow'}\s+\:\s+/) {
-        next LINE unless ($line =~ /$makefile{'regex'}/);
-      }         
-    }
+    	next if ($line =~ /acedb>/ or $line =~ /^\/\//);
+    	if( $makefile{'regex'} ) {  
+      		unless ($line =~ /[^\w]/ or $line =~ /$makefile{'class'}\s+\:\s+/ or $line =~ /$makefile{'follow'}\s+\:\s+/) {
+        		next LINE unless ($line =~ /$makefile{'regex'}/);
+      		}         
+    	}
 
     # check the integrity of the object names and tag values
     if ($makefile{'format'} || $makefile{'required'}) {
@@ -184,13 +180,13 @@ unless (-e $config) {
     }
 
     print ACE $line;
-      }
-      close TACE;
-      close ACE;
-    } elsif ($makefile{'path'}) {
+    }
+    close TACE;
+    close ACE;
+   } elsif ($makefile{'path'}) {
       my $sub = $makefile{'path'};
       $dbpath = $wormbase->$sub;
-    }
+   }
   }
 }   
 
