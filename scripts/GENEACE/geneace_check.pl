@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: mt3 $
-# Last updated on: $Date: 2010-09-09 09:53:10 $
+# Last updated on: $Date: 2010-12-01 15:28:04 $
 
 use strict;
 use lib $ENV{"CVS_DIR"};
@@ -22,7 +22,6 @@ use File::Path;
 ###################################################
 # command line options                            # 
 ###################################################
-
 my ($help, $debug, $test, $class, @classes, $database, $ace, $verbose);
 my $weekly;
 
@@ -109,7 +108,7 @@ my %Gene_info = %{$Gene_info};
 
 
 # Process separate classes if specified on the command line else process all classes, 
-@classes = ("gene", "laboratory", "evidence", "allele", "strain", "rearrangement", "mapping", "xref", "multipoint") if (!@classes);
+@classes = ("gene", "laboratory", "evidence", "allele", "strain", "rearrangement", "mapping", "xref", "multipoint", "feature") if (!@classes);
 
 foreach $class (@classes){
   if ($class =~ m/gene/i)          {&process_gene_class}
@@ -119,6 +118,7 @@ foreach $class (@classes){
   if ($class =~ m/strain/i)        {&process_strain_class}
   if ($class =~ m/rearrangement/i) {&process_rearrangement}
   if ($class =~ m/paper/i)         {&process_paper_class}
+  if ($class =~ m/feature/i)       {&process_feature_cass}
 #  if ($class =~ m/mapping/i)       {&check_genetics_coords_mapping}
 #  if ($class =~ m/multipoint/i)    {&check_dubious_multipt_gene_connections}
 }
@@ -135,7 +135,7 @@ close(JAHLOG);
 close(ACE) if ($ace);
 
 # email everyone specified by $maintainers
-$wb->mail_maintainer("geneace_check: SANGER",$maintainers,$log);
+# $wb->mail_maintainer("geneace_check: SANGER",$maintainersd,$log);
 
 # Also mail to Erich unless in debug mode or unless there is no errors
 my $interested ="mt3\@sanger.ac.uk, emsch\@its.caltech.edu, kimberly\@minerva.caltech.edu";
@@ -1020,6 +1020,31 @@ sub process_allele_class{
     }  
   }
 }
+                          ###########################################################
+                          #         SUBROUTINES FOR -class feature option           #
+                          ###########################################################
+
+sub process_feature_class{
+
+  print "\n\nChecking Feature class for errors:\n";
+  print LOG "\n\nChecking Feature class for errors:\n";
+
+  # get all features
+  my @features = $db->fetch('Feature','*');
+}
+
+  # find features that have flanking_seqs but no SMAPPED sequence
+  foreach my $feature ($db->fetch(-query=>'Find Feature WHERE Flanking_sequencee AND NOT Sequence')){
+	 print LOG "ERROR: $feature has Flanking_sequences tag but has no Sequence tag\n"; 
+}
+
+
+     # find features that have SMAPPED sequence but no flanking_seqs
+  #   if ( $feature ->Sequence && ! defined $feature ->Flanking_sequences ) {
+  #       print LOG "WARNING: Feature $features has a Sequence tag but not Flanking_sequences\n";
+  #   }
+  # }   
+
                           ###########################################################
                           #         SUBROUTINES FOR -class strain option            #
                           ###########################################################
