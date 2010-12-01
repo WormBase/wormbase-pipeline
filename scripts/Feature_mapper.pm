@@ -291,14 +291,15 @@ sub check_overlapping_CDS
               is returned.
     	      This routine is the inverse of map_feature().
   Args    :   any seq obj as string, 
-              coordinates of the region relative to that seq obj
+              start/end coordinates of the region relative to that seq obj
+	      (optional) the minimum length you want the flanking sequences to be, defaults to 30
 
 =cut
 
 sub get_flanking_sequence
 {
 
-  my ($self, $clone, $pos1, $pos2) = @_;
+  my ($self, $clone, $pos1, $pos2, $min_len) = @_;
 
 
   # get sequence of clone
@@ -318,8 +319,9 @@ sub get_flanking_sequence
   }
 
   # set the initial flanking lengths
-  my $flank1 = 30;
-  my $flank2 = 30;
+  if (! defined $min_len) {$min_len = 30}
+  my $flank1 = $min_len;
+  my $flank2 = $min_len;
                                                                                                                                                       
   # loop to extend the sequence
   my $matches1 = 2;              # force at least one test of the flank by saying the last (imaginary) test found 2 matches
