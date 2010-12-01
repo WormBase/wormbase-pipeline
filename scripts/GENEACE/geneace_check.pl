@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: mt3 $
-# Last updated on: $Date: 2010-12-01 15:36:27 $
+# Last updated on: $Date: 2010-12-01 15:41:36 $
 
 use strict;
 use lib $ENV{"CVS_DIR"};
@@ -1034,7 +1034,7 @@ sub process_feature_class{
 }
 
   # find features that have flanking_seqs but no SMAPPED sequence
-  foreach my $feature ($db->fetch(-query=>'Find Feature WHERE Flanking_sequencee AND NOT Sequence')){
+  foreach my $feature ($db->fetch(-query=>'Find Feature WHERE Flanking_sequences AND NOT Sequence')){
 	 print LOG "ERROR: $feature has Flanking_sequences tag but has no Sequence tag\n"; 
 }
 
