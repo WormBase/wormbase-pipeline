@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: mt3 $
-# Last updated on: $Date: 2010-12-01 15:28:04 $
+# Last updated on: $Date: 2010-12-01 15:36:27 $
 
 use strict;
 use lib $ENV{"CVS_DIR"};
@@ -118,7 +118,7 @@ foreach $class (@classes){
   if ($class =~ m/strain/i)        {&process_strain_class}
   if ($class =~ m/rearrangement/i) {&process_rearrangement}
   if ($class =~ m/paper/i)         {&process_paper_class}
-  if ($class =~ m/feature/i)       {&process_feature_cass}
+  if ($class =~ m/feature/i)       {&process_feature_class}
 #  if ($class =~ m/mapping/i)       {&check_genetics_coords_mapping}
 #  if ($class =~ m/multipoint/i)    {&check_dubious_multipt_gene_connections}
 }
@@ -1039,7 +1039,7 @@ sub process_feature_class{
 }
 
 
-     # find features that have SMAPPED sequence but no flanking_seqs
+  # find features that have SMAPPED sequence but no flanking_seqs
   #   if ( $feature ->Sequence && ! defined $feature ->Flanking_sequences ) {
   #       print LOG "WARNING: Feature $features has a Sequence tag but not Flanking_sequences\n";
   #   }
