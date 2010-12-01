@@ -6,7 +6,7 @@
 # and two coordinates
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2010-12-01 10:10:12 $      
+# Last updated on: $Date: 2010-12-01 11:59:18 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};                  
@@ -17,13 +17,12 @@ use Getopt::Long;
 
 
 my ($help, $store, $wormbase, $species);
-my ($seq,$x,$y,$db);
+my ($seq,$x,$y,$db, $input, $output);
 GetOptions ("store:s" => \$store,
-            "x:i"     => \$x,
-            "y:i"     => \$y,
             "db:s"    => \$db,
-            "seq:s"   => \$seq,
             "species:s"=>\$species,
+	    "input:s" => \$input,
+	    "output:s" =>\$output,
             "help"    => \$help,
             );
 
@@ -32,11 +31,6 @@ GetOptions ("store:s" => \$store,
 
 
 my $flanking_seq_length    = 50;
-
-# if you only provide one coordinate, use the x again (i.e. 1 bp feature)
-if (!defined $y) {$y = $x+1;$x--}
-
-print "Looking for flanking sequences to $x - $y in $seq\n";
 
 if ( $store ) {
   $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
@@ -47,9 +41,27 @@ if ( $store ) {
 
 $db ||= $wormbase->orgdb;
 my $mapper = Feature_mapper->new($db,0,$wormbase);
-my($l, $r) = $mapper->get_flanking_sequence($seq, $x, $y, $flanking_seq_length);
-if($l and $r) {print "Left  flank: $l\nRight flank: $r\n";}
-else { print "ERROR: cant find flanks for $seq:$x-$y\n";}
+
+# get the input file
+open(IN, "<$input") || die "Can't open $input\n";
+open(OUT, ">$output") || die "Can't open $output\n";
+
+while (my $line = <IN>) {
+
+  next if ($line =~ /^\s*$/);
+  my ($seq, $x, $y, $id) = split /\s+/, $line;
+
+  my ($l, $r) = $mapper->get_flanking_sequence($seq, $x, $y, $flanking_seq_length);
+  if ($l and $r) {
+    print OUT "SNP: $id\n5'_FLANK: $l\n3'_FLANK: $r\nCOMMENT:  $seq\n||\n\n"
+  } else { 
+    print "ERROR: cant find flanks for $id $seq:$x-$y\n";
+  }
+}
+
+close(OUT);
+close(IN);
+
 
 exit(0);
 
@@ -104,19 +116,13 @@ script_template.pl MANDATORY arguments:
 
 =over 4
 
-=item -x, starting coordinate in the sequence of your object
+=item -input, file containing the following columns: sequence_name, start, end, ID
 
 =back
 
 =over 4
 
-=item -y, ending coordinate in the sequence of your object
-
-=back
-
-=over 4
-
-=item -seq, the sequence that you are specifying the coordinates of - this can be a chomosome, a superlink or a clone.
+=item -output, output filename
 
 =back
 
