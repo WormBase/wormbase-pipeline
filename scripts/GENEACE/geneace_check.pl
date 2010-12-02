@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2010-12-02 12:03:33 $
+# Last updated on: $Date: 2010-12-02 12:20:55 $
 
 use strict;
 use lib $ENV{"CVS_DIR"};
@@ -135,7 +135,7 @@ close(JAHLOG);
 close(ACE) if ($ace);
 
 # email everyone specified by $maintainers
-# $wb->mail_maintainer("geneace_check: SANGER",$maintainersd,$log);
+$wb->mail_maintainer("geneace_check: SANGER",$maintainers,$log);
 
 # Also mail to Erich unless in debug mode or unless there is no errors
 my $interested ="mt3\@sanger.ac.uk, emsch\@its.caltech.edu, kimberly\@minerva.caltech.edu";
@@ -1038,6 +1038,10 @@ sub process_feature_class{
   # find features that have flanking_seqs but no SMAPPED sequence
   foreach my $feature ($db->fetch(-query=>'Find Feature WHERE Flanking_sequences AND NOT Sequence')){
     print LOG "ERROR: $feature has Flanking_sequences tag but has no Sequence tag\n"; 
+  }
+
+  foreach my $feature ($db->fetch(-query=>'Find Feature WHERE Sequence AND NOT Flanking_sequences')){
+    print LOG "WARNING: $feature has Sequence but no Flanking_sequences tag\n"; 
   }
 
 }
