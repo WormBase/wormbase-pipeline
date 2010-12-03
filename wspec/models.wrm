@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: pad $
-// Last edited on: $Date: 2010-12-03 11:08:52 $
+// Last edited on: $Date: 2010-12-03 11:17:32 $
 
 
 ////////////////////////
@@ -1340,6 +1340,13 @@
 	    Visible Remark ?Text #Evidence
             Associated_feature ?Feature XREF Associated_with_transposon #Evidence
             Method UNIQUE ?Method
+
+
+//////////////////////////////////////////////////////////////////////////////////
+//
+// ?Transposon_family class - used for grouping Transposons and adding meta data.
+//
+//////////////////////////////////////////////////////////////////////////////////
 
 
 ?Transposon_family Title UNIQUE ?Text                                   // Information on the Transposon family 
@@ -3201,4 +3208,3 @@
 ////////////////////////
 //    END OF FILE     //
 ////////////////////////
-
