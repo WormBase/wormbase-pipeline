@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: pad $
-// Last edited on: $Date: 2010-11-08 14:36:01 $
+// Last edited on: $Date: 2010-12-03 11:08:52 $
 
 
 ////////////////////////
@@ -526,6 +526,7 @@
 	 	   Log_size_of_population UNIQUE Float 
 	 	   Sampled_by Text // the person who found the worms
                    Isolated_by ?Person // the person who isolated the worms from the sample
+		   Date UNIQUE DateType 
 
 ////////////////////////////////////////////////////////////////////////////////
 // ?Lab_Location class
@@ -832,6 +833,7 @@
 		       Anatomy_term ?Anatomy_term XREF GO_term // added [031107 krb]
 		       Homology_group ?Homology_group XREF GO_term // added [031120 krb]
 		       Expr_pattern ?Expr_pattern XREF GO_term
+		       Picture ?Picture XREF Cellular_component
  	 Version UNIQUE Text UNIQUE Text // Lincoln, to store version number of GO
 					 // only to be attached to three parent GO_terms [krb 031028]
 
@@ -1342,6 +1344,7 @@
 
 ?Transposon_family Title UNIQUE ?Text                                   // Information on the Transposon family 
                    Description ?Text
+		   DB_annotation ?Database UNIQUE ?LongText
 		   Family_members ?Transposon XREF Member_of            // Connects to Transposon object
                    In_variation ?Variation XREF Transposon_insertion
 		   Associated_motif   ?Motif   XREF Associated_transposon_family // to connect Transposon famillies to Repeat motifs ar2
@@ -1866,15 +1869,31 @@
 	  Reference ?Paper XREF Antibody
 	  Remark ?Text #Evidence 
 
+
+/////////////////////////////////////////////////////
+//
+// ?Picture class - substantially modified by Daniela 
+//
+/////////////////////////////////////////////////////
+
+
 ?Picture Description ?Text
-	 Pick_me_to_call Text Text
-	 Expr_pattern ?Expr_pattern XREF Picture
-	 RNAi ?RNAi XREF Picture		// Lincoln.  krb [010807]
-         Variation ?Variation XREF Picture
-         Transgene ?Transgene XREF Picture      // Carol.  ar2 [2006-04-21]
-	 Remark ?Text #Evidence			//  
-
-
+         Name UNIQUE Text
+         Crop Crop_picture ?Picture XREF Cropped_from
+              Cropped_from ?Picture XREF Crop_picture
+         Pick_me_to_call Text Text
+         Remark ?Text #Evidence
+         Depict  Expr_pattern ?Expr_pattern XREF Picture
+                 Anatomy ?Anatomy_term XREF Picture
+	         Cellular_component ?GO_term XREF Picture
+         Acknowledgment Template UNIQUE Text
+                        Publication_year UNIQUE Text
+                        Article_URL UNIQUE ?Database UNIQUE ?Database_field UNIQUE ?Accession_number
+                        Journal_URL UNIQUE ?Database 
+                        Publisher_URL UNIQUE ?Database 
+                        Person_name UNIQUE Text
+         Reference ?Paper XREF Picture
+         Contact ?Person
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////
@@ -2020,6 +2039,7 @@
                 Index   Ancestor ?Anatomy_term XREF Descendent  //store ancestors of relationship IS_A and PART_OF
                         Descendent ?Anatomy_term XREF Ancestor  //store descendents of relationship IS_A and PART_OF
                 Remark  ?Text #Evidence
+		Picture ?Picture XREF Anatomy
 
 // Anatomy_function class for Raymond 
 // allow the connection between ?Anatomy_term, ?Phenotype (proxy of biological function), and
@@ -2164,8 +2184,7 @@
 		Species UNIQUE ?Species                                                          // added by krb for consistency with other classes 021030
 		Remark ?Text #Evidence                                                           // More comments on the transgene
 		Supporting_data Movie ?Movie XREF Transgene #Evidence
-		                Picture ?Picture XREF Transgene #Evidence
-
+        
 
 
 
@@ -2208,7 +2227,6 @@
                         Transcript ?Transcript XREF RNAi_result #Evidence // [021126 krb]
                         Pseudogene ?Pseudogene XREF RNAi_result #Evidence // [030801 krb]
         Supporting_data Movie ?Movie XREF RNAi    // Lincoln, krb [010807]
-                        Picture ?Picture XREF RNAi
 	DB_info    Database ?Database ?Database_field ?Accession_number //to link out to Phenobank ar2 02-DEC-05 //removed UNIQUE as reqs multiple connections
 	Species UNIQUE ?Species
 	Gene_regulation ?Gene_regulation XREF RNAi  // this tag is used when an RNAi experiment describes gene regulation ar2 29-MAR-06 for igor
@@ -2798,6 +2816,7 @@
                  YH ?YH XREF Reference ?Text
                  Interaction ?Interaction XREF Paper
                  Mass_spec_experiment ?Mass_spec_experiment XREF Reference
+		 Picture ?Picture XREF Reference
        Curation_pipeline Phenotype2GO
        Keyword ?Keyword
        Remark  ?Text   #Evidence
@@ -2993,7 +3012,6 @@
            Remark  ?Text #Evidence
 	   Method UNIQUE ?Method
            Supporting_data Movie   ?Movie   XREF Variation #Evidence  //Carol [060421 ar2] 
-                           Picture ?Picture XREF Variation #Evidence
 
 
 ?Variation_name Other_name_for     ?Variation XREF Other_name // main reason for this class
