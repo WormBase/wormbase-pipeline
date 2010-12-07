@@ -18,7 +18,7 @@ $VALID_USERS = {
 					'mt3' 		=> 2970,
 					'mh6' 		=> 4036,
                                         'xdwang'        => 1760,
-                                        'kyook'         => 712,
+                                        'karen@wormbase.org'         => 712,
                                         'jolenef'       => 2021,
                                         'wen'           => 101,
                                         'ranjana'       => 324,
@@ -32,12 +32,12 @@ $VALID_USERS = {
 
 ## a list of valid SSO login names for each DB operation
 $VALID_API_USERS = {
-		'query'		=> [qw( pad gw3 mh6 mt3 stlouis caltech cshl sanger kyook jolenef xdwang wen ranjana vanauken)],
-		'dump'		=> [qw( pad gw3 mh6 mt3 stlouis caltech cshl sanger kyook jolenef xdwang wen ranjana vanauken)],
-		'merge_var'	=> [qw( pad gw3 mt3 mh6 kyook jolenef xdwang wen ranjana vanauken)],
-		'new_var'	=> [qw( pad gw3 mt3 mh6 kyook jolenef xdwang wen ranjana vanauken)], 
-		'kill_var'	=> [qw( pad gw3 mt3 mh6 kyook jolenef xdwang wen ranjana vanauken)],
-		'change_name'	=> [qw( pad gw3 mt3 mh6 kyook jolenef xdwang wen ranjana vanauken)],
+		'query'		=> [qw( pad gw3 mh6 mt3 stlouis caltech cshl sanger karen@wormbase.org jolenef xdwang wen ranjana vanauken)],
+		'dump'		=> [qw( pad gw3 mh6 mt3 stlouis caltech cshl sanger karen@wormbase.org jolenef xdwang wen ranjana vanauken)],
+		'merge_var'	=> [qw( pad gw3 mt3 mh6 karen@wormbase.org jolenef xdwang wen ranjana vanauken)],
+		'new_var'	=> [qw( pad gw3 mt3 mh6 karen@wormbase.org jolenef xdwang wen ranjana vanauken)], 
+		'kill_var'	=> [qw( pad gw3 mt3 mh6 karen@wormbase.org jolenef xdwang wen ranjana vanauken)],
+		'change_name'	=> [qw( pad gw3 mt3 mh6 karen@wormbase.org jolenef xdwang wen ranjana vanauken)],
 };
 
 ## a list of valid SSO login names able to add GCG name
@@ -48,7 +48,7 @@ $VALID_CGCNAME_USERS = {
 $MAILS = {
 	'mh6'		=>	'mh6@sanger.ac.uk',
 	'mt3'		=>	'mt3@sanger.ac.uk',
-	'kyook'         =>      'karen@wormbase.org',
+	'karen@wormbase.org'         =>      'karen@wormbase.org',
         'xdwang'        =>      'xdwang@caltech.edu',
         'wen'           =>      'wchen@its.caltech.edu',
         'ranjana'       =>      'ranjana@its.caltech.edu',
