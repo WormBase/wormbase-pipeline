@@ -359,7 +359,6 @@ Remark "Comparative Genomic Hybridization"
 Display Colour ORANGE
         Strand_sensitive
         Width 1.1
-        Right_priority 2.5
         Show_text
 GFF GFF_source "CGH_allele"
     GFF_feature "deletion"
@@ -2132,6 +2131,9 @@ Right_priority  2.5
 
 Method : "curated"
 Right_priority  2.5
+
+Method : "CGH_allele"
+Right_priority 2.5
 
 Method : "Pseudogene"
 Right_priority  2.55
