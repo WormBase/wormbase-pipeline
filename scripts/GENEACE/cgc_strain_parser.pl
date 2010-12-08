@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.8.0 -w
+#status!/usr/local/bin/perl5.8.0 -w
 # 
 # cgc_strain_parser.pl
 #
@@ -8,7 +8,7 @@
 # Page download and update upload to geneace has been automated [ck1]
 
 # Last updated by: $Author: mt3 $
-# Last updated on: $Date: 2010-12-08 14:23:04 $
+# Last updated on: $Date: 2010-12-08 14:35:54 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -435,7 +435,7 @@ sub check_details {
     print NEWGENES "Allele \"$variationId\" Inferred_automatically \"From strain object: $strain\"\n\n";
 
   }
-  print ALLELEFLUFF "Variation : $variationId\nPublic_name \"$_allele\"\nStatus Live\"\n"; 
+  print ALLELEFLUFF "Variation : $variationId\nPublic_name \"$_allele\"\nStatus Live\"\n\n"; 
 }
 
 ##################################################################################################
