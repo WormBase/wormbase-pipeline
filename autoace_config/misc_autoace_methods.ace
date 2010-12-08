@@ -354,6 +354,16 @@ GFF_source	 "Variation_PCR"
 GFF_feature	 "PCR_product"
 Remark "PCR products used in Variation objects"
 
+Method : "CGH_allele"
+Remark "Comparative Genomic Hybridization"
+Display Colour ORANGE
+        Strand_sensitive
+        Width 1.1
+        Right_priority 2.5
+        Show_text
+GFF GFF_source "CGH_allele"
+    GFF_feature "deletion"
+
 
 ////////////////////////////
 // Gene predicter methods //
