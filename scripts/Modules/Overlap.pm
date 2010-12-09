@@ -6,8 +6,8 @@
 #
 # Do fast overlap matching of positions of two sets of things.
 #
-# Last updated by: $Author: pad $     
-# Last updated on: $Date: 2010-03-05 15:26:20 $      
+# Last updated by: $Author: gw3 $     
+# Last updated on: $Date: 2010-12-09 14:31:32 $      
 
 =pod
 
@@ -83,6 +83,7 @@ Routines to read GFF files from the database defined in $wormbase
 @list = $ovlp->get_genefinder_exons($chromosome)
 @list = $ovlp->get_twinscan_transcripts($chromosome)
 @list = $ovlp->get_twinscan_exons($chromosome)
+@list = $ovlp->get_genelets($chromosome)
 @list = $ovlp->get_mgene_transcripts($chromosome)
 @list = $ovlp->get_mgene_exons($chromosome)
 @list = $ovlp->get_transposons($chromosome)
@@ -1253,6 +1254,32 @@ sub get_genefinder_exons {
 
 =head2
 
+    Title   :   get_genelets
+    Usage   :   my @gff = $ovlp->get_genelets($chromosome)
+    Function:   reads the GFF data for RNASeq genelet transcripts
+    Returns :   list of lists for GFF data
+    Args    :   chromosome number
+
+=cut
+
+sub get_genelets {
+  my $self = shift;
+  my ($chromosome) = @_;
+
+  my %GFF_data = 
+   (
+     method			=> "genelets",
+     gff_source			=> "RNASEQ.Hillier",
+     gff_type			=> "CDS",
+     ID_after			=> "CDS\\s+",
+   );
+
+  return $self->read_GFF_file($chromosome, \%GFF_data);
+
+}
+
+=head2
+
     Title   :   get_twinscan_transcripts
     Usage   :   my @gff = $ovlp->get_twinscan_transcripts($chromosome)
     Function:   reads the GFF data for twinscan transcripts
@@ -1357,9 +1384,9 @@ sub get_mgene_exons {
 
 =head2
 
-    Title   :   get_twinscan_CDS
-    Usage   :   my @gff = $ovlp->get_twinscan_CDS($chromosome)
-    Function:   reads the GFF data for twinscan coding transcripts (START to STOP)
+    Title   :   get_jigsaw_CDS
+    Usage   :   my @gff = $ovlp->get_jigsaw_CDS($chromosome)
+    Function:   reads the GFF data for jigsaw coding transcripts (START to STOP)
     Returns :   list of lists for GFF data
     Args    :   chromosome number
 
