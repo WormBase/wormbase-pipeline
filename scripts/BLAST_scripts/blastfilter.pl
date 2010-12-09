@@ -51,11 +51,11 @@ sub teardown_gdb{
 # generates database connections and prepared statements
 sub prepare_mysql{
     my %h;
-    my @species = ('brugia','pristionchus','japonica','briggsae','remanei','brenneri','elegans');  
+    my @species = ('brugia','pristionchus','japonica','briggsae','remanei','brenneri','elegans','cangaria','hcontortus','mhapla','mincognita');  
     foreach my $key(@species){
         $h{$key}{dbi}=DBI->connect("dbi:mysql:dbname=worm_ensembl_${key};host=ia64d",'wormro');
         $h{$key}{sth1}=$h{$key}{dbi}->prepare('SELECT COUNT(protein_align_feature_id) FROM protein_align_feature WHERE hit_name=?');
-        $h{$key}{sth2}=$h{$key}{dbi}->prepare('SELECT COUNT(protein_feature_id) FROM protein_feature WHERE hit_id=?');
+        $h{$key}{sth2}=$h{$key}{dbi}->prepare('SELECT COUNT(protein_feature_id) FROM protein_feature WHERE hit_name=?');
     }
     return \%h;
 }
