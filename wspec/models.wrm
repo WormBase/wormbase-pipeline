@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: pad $
-// Last edited on: $Date: 2010-12-03 11:17:32 $
+// Last edited on: $Date: 2010-12-10 09:20:40 $
 
 
 ////////////////////////
@@ -1349,8 +1349,10 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 
-?Transposon_family Title UNIQUE ?Text                                   // Information on the Transposon family 
+?Transposon_family Evidence #Evidence
+		   Title UNIQUE ?Text                                   // Information on the Transposon family 
                    Description ?Text
+		   Remark Text #Evidence
 		   DB_annotation ?Database UNIQUE ?LongText
 		   Family_members ?Transposon XREF Member_of            // Connects to Transposon object
                    In_variation ?Variation XREF Transposon_insertion
@@ -1879,12 +1881,13 @@
 
 /////////////////////////////////////////////////////
 //
-// ?Picture class - substantially modified by Daniela 
+// ?Picture class - substantially modified by Daniela
 //
 /////////////////////////////////////////////////////
 
 
-?Picture Description ?Text
+?Picture Evidence #Evidence
+	 Description ?Text
          Name UNIQUE Text
          Crop Crop_picture ?Picture XREF Cropped_from
               Cropped_from ?Picture XREF Crop_picture
