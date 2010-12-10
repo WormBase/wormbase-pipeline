@@ -8,8 +8,8 @@
 # matching a CDS and stores the results in in a data file ready to be read into the SQL database
 # 'worm_anomaly'
 #
-# Last updated by: $Author: mh6 $     
-# Last updated on: $Date: 2010-03-22 13:40:06 $      
+# Last updated by: $Author: gw3 $     
+# Last updated on: $Date: 2010-12-10 10:07:25 $      
 
 # Changes required by Ant: 2008-02-19
 # 
@@ -148,7 +148,7 @@ my %dna_entry;		# store for dna sequences for when reading remanei-style multi-e
 my $ovlp;			# Overlap object
 
 # output file of data to write to database, primarily for St. Louis to read in
-my $datafile = $wormbase->wormpub . "/CURATION_DATA/anomalies_$species.dat";
+my $datafile = $wormbase->wormpub . "/CURATION_DATA/anomalies_${species}.dat";
 open (DAT, "> $datafile") || die "Can't open $datafile\n";
 
 # and output the species line for the data file
@@ -242,6 +242,7 @@ while (my $run = <DATA>) {
 &delete_anomalies("GENBLASTG_DIFFERS_FROM_CDS");
 &delete_anomalies("CDS_DIFFERS_FROM_GENBLASTG");
 &delete_anomalies("UNMATCHED_454_CLUSTER");
+&delete_anomalies("MERGE_GENES_BY_RNASEQ");
 
 
 # if we want the anomalies GFF file
@@ -252,7 +253,7 @@ if ($supplementary) {
 }
 
 
-my $ace_output = $wormbase->wormpub . "/CURATION_DATA/anomalies_$species.ace";
+my $ace_output = $wormbase->wormpub . "/CURATION_DATA/anomalies_${species}.ace";
 open (OUT, "> $ace_output") || die "Can't open $ace_output to write the Method\n";
 print OUT "\n\n";
 print OUT "Method : \"curation_anomaly\"\n";
@@ -355,6 +356,8 @@ foreach my $chromosome (@chromosomes) {
 
   my @twinscan_exons = $ovlp->get_twinscan_exons($chromosome);
   my @twinscan_transcripts = $ovlp->get_twinscan_transcripts($chromosome) if (exists $run{MERGE_GENES_BY_TWINSCAN});
+
+  my @genelets = $ovlp->get_genelets($chromosome) if (exists $run{MERGE_GENES_BY_RNASEQ});
 
   my @mgene_exons = $ovlp->get_mgene_exons($chromosome);
   my @mgene_transcripts = $ovlp->get_mgene_transcripts($chromosome);
@@ -469,6 +472,9 @@ foreach my $chromosome (@chromosomes) {
 
   print "finding genes to be split/merged based on twinscan\n";
   &get_twinscan_split_merged(\@twinscan_transcripts, \@CDS, $chromosome) if (exists $run{MERGE_GENES_BY_TWINSCAN});
+
+  print "finding genes to be merged based on RNASeq\n";
+  &get_rnaseq_merged(\@genelets, \@CDS, $chromosome) if (exists $run{MERGE_GENES_BY_RNASEQ});
 
   print "finding unmatched mass spec peptides\n";
   &get_unmatched_mass_spec_peptides(\@mass_spec_peptides, \@cds_exons, \@transposon_exons, $chromosome) if (exists $run{UNMATCHED_MASS_SPEC_PEPTIDE});
@@ -3100,6 +3106,66 @@ sub get_twinscan_split_merged {
 }
 
 ####################################################################################
+
+#  &get_rnaseq_merged(\@genelets, \@CDS, $chromosome) if (exists $run{MERGE_GENES_BY_RNASEQ});
+
+sub get_rnaseq_merged {
+
+  my ($genelets_aref, $CDS_aref, $chromosome) = @_;
+
+  $anomaly_count{MERGE_GENES_BY_RNASEQ} = 0 if (! exists $anomaly_count{MERGE_GENES_BY_RNASEQ});
+
+
+  my $genelets_match = $ovlp->compare($genelets_aref, same_sense => 1);
+  my @results;
+  my @names;
+
+  my $CDS_match = $ovlp->compare($CDS_aref, same_sense => 1);
+
+  foreach my $genelet (@{$genelets_aref}) { # $genelets_id, $chrom_start, $chrom_end, $chrom_strand
+
+    my $got_a_merge = 0;
+    my $matching_ids;
+    my @simple_names;
+
+    if (@results = $CDS_match->match($genelet)) { #&match($genelet, $CDS_aref, \%CDS_match)) {
+      @names = $CDS_match->matching_IDs;
+      #  check if these are isoforms of the same gene and if so then treat them as the same gene
+      my $prev_name = "";
+
+      foreach my $name (@names) {
+	my $simple_name = $name;
+	if ($name =~ /(\S+\.\d+)[a-z]*/) {
+	  $simple_name = $1;
+	}
+
+	if (! grep /$simple_name$/, @simple_names) {
+	  $got_a_merge++;
+	  push @simple_names, $simple_name;
+	}
+      }
+
+      #print "MERGE $genelet->[0] @names\n";
+    }
+
+    # output matched genelets to the database
+    if ($got_a_merge>1) {
+      my $genelet_id = $genelet->[0];
+      my $chrom_start = $genelet->[1];
+      my $chrom_end = $genelet->[2];
+      my $chrom_strand = $genelet->[3];
+
+      my $anomaly_score = 1;
+
+      #print "MERGE_GENES_BY_RNASEQ, $chromosome, $genelet_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score, CDS: @names\n";
+      &output_to_database("MERGE_GENES_BY_RNASEQ", $chromosome, $genelet_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score, "CDS: @names");
+    }
+  }
+
+}
+
+
+####################################################################################
 sub get_checked_confirmed_introns {
   my ($check_introns_EST_aref, $check_introns_cDNA_aref, $chromosome) = @_;
 
@@ -4443,6 +4509,7 @@ REPEAT_OVERLAPS_EXON         elegans remanei briggsae japonica brenneri brugia
 INTRONS_IN_UTR               elegans remanei briggsae japonica brenneri brugia
 SPLIT_GENE_BY_TWINSCAN       elegans
 MERGE_GENES_BY_TWINSCAN      elegans
+MERGE_GENES_BY_RNASEQ      elegans
 CONFIRMED_INTRON             
 UNCONFIRMED_INTRON           elegans remanei briggsae japonica brenneri brugia
 UNMATCHED_MASS_SPEC_PEPTIDE  elegans
