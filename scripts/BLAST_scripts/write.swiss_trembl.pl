@@ -85,7 +85,7 @@ $db_files = "$database" if defined $database;  # can use other database files if
 
 my %input2output;
 $input2output{"$swiss_list_txt"}  = [ ("$output_swiss", "SwissProt", "SW", "$db_files/slimswissprot" ) ];
-$input2output{"$trembl_list_txt"} = [ ("$output_trembl", "TrEMBL", "TR", "$db_files/slimtrembl_filtered" ) ];
+$input2output{"$trembl_list_txt"} = [ ("$output_trembl", "TrEMBL", "TR", "$db_files/slimtrembl_f" ) ];
 
 my @lists_to_dump;
 $db_files = "$database" if defined $database;  # can use other database files if desired

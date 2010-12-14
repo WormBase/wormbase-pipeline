@@ -1,7 +1,7 @@
 #!/usr/local/ensembl/bin/perl -w
 #
 # Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2010-12-10 11:00:56 $
+# Last edited on: $Date: 2010-12-14 10:36:00 $
 
 use lib $ENV{'CVS_DIR'};
 
@@ -390,8 +390,8 @@ sub process_uniprot {
 
     
     $wormbase->run_script("BLAST_scripts/blast_kill_list.pl -infile $swalldir/slimtrembl -outfile $blastdir/slimtrembl${ver}.pep -killfile $swalldir/kill_list.txt",$log);
-    copy("$blastdir/slimtrembl${ver}.pep","$swalldir/slimtrembl_filtered");
-    $wormbase->run_script("BLAST_scripts/fasta2gsi.pl -f $swalldir/slimtrembl_filtered",$log);
+    copy("$blastdir/slimtrembl${ver}.pep","$swalldir/slimtrembl_f");
+    $wormbase->run_script("BLAST_scripts/fasta2gsi.pl -f $swalldir/slimtrembl_f",$log);
 }
 
 
