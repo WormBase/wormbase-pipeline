@@ -114,7 +114,7 @@ $log->mail();
 sub mapAlleles {
 	my ($lastBin) = @_;
 	my $binfile="$outdir/map_alleles.$lastBin";
-	my $submitstring="/software/bin/perl $Bin/map_Alleles.pl -idfile $binfile -noload -outdir $outdir";
+	my $submitstring="/software/bin/perl $Bin/map_Alleles.pl -idfile $binfile -noload -outdir $outdir -species ${\$wb->species}";
 	$submitstring.=" -debug $debug" if $debug;
 	my $job_name = "worm_".$wb->species."_splitalleles";
 	my @bsub_options =(-e => '/dev/null', 
