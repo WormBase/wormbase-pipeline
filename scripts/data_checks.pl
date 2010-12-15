@@ -6,8 +6,8 @@
 #
 # This is a example of a good script template
 #
-# Last updated by: $Author: pad $
-# Last updated on: $Date: 2010-03-23 10:32:53 $
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2010-12-15 10:39:59 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -134,14 +134,14 @@ sub read_acedb_queries {
 		   ["TRF repeat Feature_data without features", 'find Feature_data *TRF !Feature', 0],
 		   ["Oligo_sets with overlapping_CDS", 'find Oligo_Set Overlaps_CDS', 74615],
 		   ["operons without genes", 'find operon !contains Gene', 0],
-		   ["variation gene connection", 'find Variation Gene', 124046],
+		   ["variation gene connection", 'find Variation Gene', 139835],
 		   ["genes with structured description", 'find Gene Structured_description', 5546],
-		   ["genes with GO_term", 'find Gene GO_term', 14318],
+		   ["genes with GO_term", 'find Gene GO_term', 15785],
 		   ["CDSs with no source_exons", 'find CDS !Source_exons, method', 0],
 		   ["Operons without parent ", 'find Operon !History AND !Canonical_parent',  0],
 		   ["GO_term without Term or Definition", 'find GO_term !(Term or Definition)',  0],
 		   ["Homol mapped Expression Patterns", 'find Expr_pattern where Homol_homol', 4506],
-		   ["Transposon 0bjects mapped in the database", 'find Transposon where Sequence', 127],
+		   ["Transposon Objects mapped in the database", 'find Transposon where Sequence', 295],
 		   );
     }
     elsif( $species eq 'japonica'){  
@@ -194,6 +194,7 @@ sub read_GFF_queries {
     $queries[$i]{'DESC'}  = "miRNAs";
     $queries[$i]{'GFF'}   = "miRNA_mature_transcript\tmiRNA";
     $queries[$i]{'QUERY'} = 'find elegans_RNA_genes miRNA';
+    $queries[$i]{'EXPECT'} = 203;
 
     $i++;
     $queries[$i]{'DESC'}  = "snoRNAs";
@@ -243,7 +244,7 @@ sub read_GFF_queries {
     $i++;
     $queries[$i]{'DESC'}   = "RNAi secondary locations";
     $queries[$i]{'GFF'}    = "RNAi_secondary";
-    $queries[$i]{'EXPECT'} = '14165';
+    $queries[$i]{'EXPECT'} = 40803;
 
     $i++;
     $queries[$i]{'DESC'}  = "Alleles";
