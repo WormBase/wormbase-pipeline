@@ -6,8 +6,8 @@
 #
 # Usage : autoace_builder.pl [-options]
 #
-# Last edited by: $Author: klh $
-# Last edited on: $Date: 2010-11-16 10:25:40 $
+# Last edited by: $Author: mh6 $
+# Last edited on: $Date: 2010-12-15 16:05:54 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -178,10 +178,9 @@ if ($gff_munge) {
   $wormbase->run_script( 'overload_rnai.pl'     , $log);
   
   if ($wormbase->assembly_type eq 'chromosome') {
-    $wormbase->run_script( "Map_pos_GFFprocess.pl", $log); # must be run before CGH_GFFprocess.pl as it looks for 'Allele' lines
+    $wormbase->run_script( "Map_pos_GFFprocess.pl", $log);
   }
   if ($wormbase->species eq 'elegans') {
-    $wormbase->run_script( "CGH_GFFprocess.pl"    , $log); 
     $wormbase->run_script( "chromosome_script_lsf_manager.pl -command '/software/bin/perl $ENV{'CVS_DIR'}/process_sage_gff.pl' -mito -prefix", $log);
   }
 }
