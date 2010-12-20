@@ -7,8 +7,8 @@
 # 
 # Originally written by Dan Lawson
 #
-# Last updated by: $Author: klh $
-# Last updated on: $Date: 2010-11-23 14:47:19 $
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2010-12-20 14:55:29 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -418,7 +418,7 @@ sub copy_gff_files{
     my $wb = $tierIII{$t3};
     my $species  = $wb->species;
     my $gspecies = $wb->full_name('-g_species' => 1);
-    my $gff_dir = "$targetdir/$WS_name/genomes/$gspecies/genome_feature_tables";
+    my $gff_dir = "$targetdir/$WS_name/genomes/$gspecies/genome_feature_tables/GFF3";
     mkpath($gff_dir,1,0775);
 
     my $source = sprintf("%s/%s.gff3", $wb->chromosomes, $species);
