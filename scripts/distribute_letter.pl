@@ -8,8 +8,8 @@
 #                          ~wormpub/BUILD/autoace/release/
 #                          /nfs/WWW/SANGER_docs/htdocs/Projects/C_elegans/WORMBASE/current/release_notes.txt/
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2009-10-29 12:11:19 $
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2010-12-20 15:21:25 $
 
 
 use strict;                                      
@@ -33,11 +33,11 @@ my $maintainers = 'All';
 
 
 
-GetOptions ("help"       => \$help,
-            "debug=s"    => \$debug,
-	    "test"       => \$test,
-	    "verbose"    => \$verbose,
-	    "store:s"      => \$store,
+GetOptions ('help'       => \$help,
+            'debug=s'    => \$debug,
+	        'test'       => \$test,
+	        'verbose'    => \$verbose,
+	        'store:s'      => \$store,
 	    );
 
 if ( $store ) {
@@ -49,7 +49,7 @@ if ( $store ) {
 }
 
 # Display help if required
-&usage("Help") if ($help);
+&usage('Help') if ($help);
 
 # in test mode?
 if ($test) {
@@ -113,7 +113,7 @@ $log->write_to("DONE.\n");
 # FTP site data is there but sym link needs to be updated so people can easily point to it
 $log->write_to("Updating symlink on FTP site\n");
 
-my $targetdir = "/nfs/disk69/ftp/pub2/wormbase";    # default directory, can be overidden
+my $targetdir = '/nfs/disk69/ftp/pub2/wormbase';    # default directory, can be overidden
 
 # delete the old symbolic link and make the new one
 $wormbase->run_command("rm -f $targetdir/development_release", $log);
@@ -159,7 +159,7 @@ $wormbase->check_file("$www/WORMBASE/development_release", $log);
 # Send email
 print "\n\nMailing to wormbase-dev . .\n";
 
-my $to             = $debug?$maintainers:"wormbase-dev\@wormbase.org";
+my $to             = $debug?$maintainers:'dev@wormbase.org';
 my $name           = "Wormbase ${release} release";
 my $release_letter = "$repdir/letter.${release}";
 $wormbase->mail_maintainer( $name, $to, $release_letter);
