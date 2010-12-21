@@ -9,8 +9,8 @@
 #      $AUTHOR:$
 #      COMPANY:  WormBase
 #      CREATED:  11/27/09 10:10:08 GMT
-#      CHANGED: $Date: 2010-10-27 15:00:13 $
-#    $Revision: 1.5 $
+#      CHANGED: $Date: 2010-12-21 11:07:43 $
+#    $Revision: 1.6 $
 #===============================================================================
 
 # need to set the PERl5LIb  to pick up bioperl for the load_gff thing ... maybe have to hardcode it
@@ -178,10 +178,13 @@ sub process_worm {
 	my @gz_gffs;
 	if ($$wb{ftp}){
 		# ~ftp/pub2/wormbase/WS209/genomes/c_elegans/genome_feature_tables/SUPPLEMENTARY_GFF/*.gff
-		@raw_gffs = glob($wb->ftp_site .'/WS'. $wb->version .'/genomes/'.$wb->full_name(-g_species => 1)
-		.'/genome_feature_tables/SUPPLEMENTARY_GFF/*.gff');
+		
+		# commented out, as we probably don't need them
+		
+		# @raw_gffs = glob($wb->ftp_site .'/WS'. $wb->version .'/genomes/'.$wb->full_name(-g_species => 1)
+		# .'/genome_feature_tables/SUPPLEMENTARY_GFF/*.gff');
 
-	        # ~ftp/pub2/wormbase/WS209/genomes/c_elegans/genome_feature_tables/GFF2/c_elegans.WS209.gff.gz
+	    # ~ftp/pub2/wormbase/WS209/genomes/c_elegans/genome_feature_tables/GFF2/c_elegans.WS209.gff.gz
 		@gz_gffs = glob($wb->ftp_site .'/WS'. $wb->version .'/genomes/'.$wb->full_name(-g_species => 1)
 		.'/genome_feature_tables/GFF2/'.$wb->full_name(-g_species => 1).'.WS'.$wb->version.'.gff.gz');
 	}
