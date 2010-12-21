@@ -7,7 +7,7 @@
 # Reads protein ids and gets SwissProt IDs
 #
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2010-12-21 16:29:24 $
+# Last updated on: $Date: 2010-12-21 16:36:09 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -75,7 +75,7 @@ while(<MAIL>){
   my($cloneacc, $pid, $version, $cds, $uniprot) = ($data[0],$data[2],$data[3],$data[-1],$data[-2]);  
   
   next unless (defined $pid);
-  print "ERROR: $_" unless ($cloneacc and $pid and $version and $cds and $uniprot);
+  print "Potential New Protein: $_" unless ($cloneacc and $pid and $version and $cds and $uniprot);
   
   next unless $accession2clone{$cloneacc}; #mail includes some mRNAs
   
