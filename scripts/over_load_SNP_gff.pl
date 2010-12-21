@@ -2,8 +2,8 @@
 #
 # This is to add Confirmed / Predicted Status and RFLP to SNP gff lines as requested by Todd
 #
-# Last updated by: $Author: mh6 $     
-# Last updated on: $Date: 2010-11-16 10:27:41 $      
+# Last updated by: $Author: klh $     
+# Last updated on: $Date: 2010-12-21 11:39:39 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -80,14 +80,13 @@ while(<$table>) {
 
 my $db = Ace->connect(-path => $wormbase->autoace);
 
-my @chroms = $wormbase->get_chromosome_names(-mito => 1);
 my $dir = $wormbase->chromosomes;
 my $stat = 0;
 
 my @gff_files;
 if ($gff_file) {
-  if ($gff_file =~ m/.gff$/){
-    $gff_file =~ s/.gff$//;
+  if (not -e $gff_file or -z $gff_file) {
+    $log->log_and_die("Non-existent or zero length GFF file");
   }
   @gff_files = ($gff_file);
 } else {
@@ -96,26 +95,15 @@ if ($gff_file) {
   } else {
     @gff_files = $wormbase->get_chromosome_names('-prefix' => 1, '-mito' => 1);
   }
+  for(my $i=0; $i < @gff_files; $i++) {
+    $gff_files[$i] = sprintf("%s/%s.gff", $dir, $gff_files[$i]);
+    if (not -e $gff_files[$i] or -z $gff_files[$i]) {
+      $log->log_and_die("Non-existent or zero-length GFF file $gff_files[$i]");
+    }
+  }
 }
-# check to see if full chromosome gff dump files exist
+
 foreach my $file (@gff_files) {
-  
-  unless (-e "$dir/${file}.gff" || -e "${file}.gff") {
-    $log->log_and_die("No GFF file: ${file}.gff\n");
-  }
-  unless (not -z "$dir/${file}.gff" or not -z "${file}.gff") {
-    $log->log_and_die("Zero length GFF file: $dir/${file}.gff");
-  }
-}
-
-my $file;
-
-foreach my $gff_f (@gff_files) {
-  if ($gff_file) {
-    $file = "${gff_file}.gff";
-  } else {
-    $file = "$dir/${gff_f}.gff";
-  }
   
   open(GFF,"<$file") or $log->log_and_die("cant open $file");
   open(NEW,">$file.tmp") or $log->log_and_die("cant open $file tmp file\n");
@@ -151,7 +139,6 @@ foreach my $gff_f (@gff_files) {
     print NEW "\n";
   }
   $wormbase->run_command("mv -f $file.tmp $file", $log);
-  last if $gff_f;
 }
 
 ##################
@@ -162,8 +149,7 @@ if($gff_file){
     $log->write_to("Not checking ad hoc file\n");
 }
 else { 
-  foreach my $gff_f (@gff_files) {
-    my $file = "$dir/$gff_f.gff";
+  foreach my $file (@gff_files) {
     $wormbase->check_file($file, $log,
 			      minsize => 1500000,
 			      lines => ['^##',
