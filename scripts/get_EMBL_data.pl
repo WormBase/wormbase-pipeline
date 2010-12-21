@@ -6,8 +6,8 @@
 #
 # Reads protein ids and gets SwissProt IDs
 #
-# Last updated by: $Author: klh $
-# Last updated on: $Date: 2010-11-10 14:46:45 $
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2010-12-21 16:29:24 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -69,21 +69,16 @@ open (MAIL,"<$mail") or $log->log_and_die("cant read $mail\n");
 
 while(<MAIL>){
   #U10401  105     AAA19054        4       1408728171      T20B12.1        P41842  T20B12.1
-  my @data = split;
+  my @data = split("\t",$_);
   
-  next unless scalar(@data) >= 7;
+  next unless scalar(@data) == 8;
   my($cloneacc, $pid, $version, $cds, $uniprot) = ($data[0],$data[2],$data[3],$data[-1],$data[-2]);  
   
   next unless (defined $pid);
-  print unless ($cloneacc and $pid and $version and $cds and $uniprot);
+  print "ERROR: $_" unless ($cloneacc and $pid and $version and $cds and $uniprot);
+  
   next unless $accession2clone{$cloneacc}; #mail includes some mRNAs
   
-  if (scalar(@data < 8 and $cds =~ /^$uniprot/)) {
-    # Uniprot id was missing so contains the gene id instead (i.e. CDS id with the isoform suffix)
-    # Replace it with the CDS id
-    $uniprot = $cds;
-  }
-
   print ACE "\nCDS : \"$cds\"\n";
   print ACE "Protein_id ".$accession2clone{$cloneacc}." $pid $version\n";
   if($cds2wormpep{$cds}) {
@@ -124,29 +119,3 @@ sub getIDs {
     undef $id;
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
