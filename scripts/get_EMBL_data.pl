@@ -7,7 +7,7 @@
 # Reads protein ids and gets SwissProt IDs
 #
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2010-12-21 16:42:29 $
+# Last updated on: $Date: 2010-12-21 16:48:51 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -69,7 +69,7 @@ open (MAIL,"<$mail") or $log->log_and_die("cant read $mail\n");
 
 while(<MAIL>){
   #U10401  105     AAA19054        4       1408728171      T20B12.1        P41842  T20B12.1
-  s/[\n\r]//m;
+  s/[\n\r]//g;
   my @data = split("\t",$_);
   
   next unless scalar(@data) == 8;
