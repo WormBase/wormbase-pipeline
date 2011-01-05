@@ -3,7 +3,7 @@
 # blast_kill_list.pl
 #
 # Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2009-05-26 09:51:41 $
+# Last edited on: $Date: 2011-01-05 15:09:45 $
 
 use GDBM_File;
 use lib '/software/worm/ensembl/bioperl-live/';
@@ -12,12 +12,13 @@ use Getopt::Long;
 use strict;
 
 my %id_hash;
-my ($infile,$killfile,$outfile,$debug);
+my ($store,$infile,$killfile,$outfile,$debug);
 GetOptions(
     'infile=s'   => \$infile,
     'killfile=s' => \$killfile,
     'outfile=s'  => \$outfile,
     'debug'      => \$debug,
+    'store:s'    => \$store,
 )||die($!);
 
 &prepare_db($killfile);
