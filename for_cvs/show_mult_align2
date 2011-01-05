@@ -1,0 +1,368 @@
+#!/data/bin/perl
+use strict;
+use Ace;
+use Ace::Browser::AceSubs qw(:DEFAULT);
+use CGI qw(-nosticky :standard); # import standard CGI functions to be able to write an HTML page
+use Bio::Graphics::Browser::PadAlignment;
+use Bio::Graphics::Browser::Markup;
+use ElegansSubs qw(:DEFAULT);
+use Data::Dumper;
+
+
+use CGI::Carp qw/fatalsToBrowser/; # for debugging
+use IO::String;
+use Bio::AlignIO;
+use Bio::Tools::Run::Alignment::Clustalw;
+
+use constant DEBUG => 0;
+
+# color table
+my %colours = ( 
+'*'       =>  '666666',         #mismatch          (dark grey)
+'.'       =>  '999999',         #unknown           (light grey)
+ A        =>  '33cc00',         #hydrophobic       (bright green)
+ B        =>  '666666',         #D or N            (dark grey)
+ C        =>  'ffff00',         #cysteine          (yellow)
+ D        =>  '0033ff',         #negative charge   (bright blue)
+ E        =>  '0033ff',         #negative charge   (bright blue)
+ F        =>  '009900',         #large hydrophobic (dark green)
+ G        =>  '33cc00',         #hydrophobic       (bright green)
+ H        =>  '009900',         #large hydrophobic (dark green)
+ I        =>  '33cc00',         #hydrophobic       (bright green)
+ K        =>  'cc0000',         #positive charge   (bright red)
+ L        =>  '33cc00',         #hydrophobic       (bright green)
+ M        =>  '33cc00',         #hydrophobic       (bright green)
+ N        =>  '6600cc',         #polar             (purple)
+ P        =>  '33cc00',         #hydrophobic       (bright green)
+ Q        =>  '6600cc',         #polar             (purple)
+ R        =>  'cc0000',         #positive charge   (bright red)
+ S        =>  '0099ff',         #small alcohol     (dull blue)
+ T        =>  '0099ff',         #small alcohol     (dull blue)
+ V        =>  '33cc00',         #hydrophobic       (bright green)
+ W        =>  '009900',         #large hydrophobic (dark green)
+ X        =>  '666666',         #any               (dark grey)
+ Y        =>  '009900',         #large hydrophobic (dark green)
+ Z        =>  '666666',         #E or Q            (dark grey)
+);
+
+
+our @alignments; # start-end alignments of best BLAST matches of given Worm protein (1st entry)
+our @sequences;	 # Sequences of best BLAST matches of given Worm protein (1st entry)
+
+my $protRecord = GetAceObject();
+
+unless ($protRecord){
+  PrintTop();
+  print_prompt();
+  PrintBottom();
+  exit 0;
+}
+
+PrintTop($protRecord,'Protein',"Protein Alignments for ".param('name'));
+
+$protRecord->db->class('Ace::Object::Wormbase');
+print_prompt();
+modify_display_mode($protRecord);
+my $color_mode = param('color_mode') || 'OFF';
+my $protein_align_color = ($color_mode =~ /ON/)? 1:0;
+print_alignment($protRecord, $protein_align_color);
+
+PrintBottom();
+exit 0;
+
+#############
+# SUBROUTINES
+#############
+sub protein_url {
+     my $p=shift;
+     return "$p" unless ref ($p->Database);
+     my @row = $p->DB_info->row(1);
+     my $db=$row[0];
+     my $id=$row[2];
+     return "$p" unless ref($db);
+     my $url=sprintf($db->URL_constructor,$id);
+     return "<a href=\"$url\">$p</a>";
+}
+
+
+sub _postprocess{
+     my $raw_al=shift;
+     my @line=split("\n",$raw_al);
+     my $coloured;
+     foreach my $l(@line) {
+         my @cols=split(//,$l);
+	 my $flip=0;
+	 for(my $position=0;$position < scalar(@cols);$position++){
+	   next if $l=~/CLUSTAL/;
+	   $flip=1 if $cols[$position]=~/\s/;
+	   next unless $flip;
+	   $cols[$position]="<font color=\"#$colours{$cols[$position]}\">$cols[$position]</font>"
+	    if $colours{$cols[$position]};
+	 }
+	 $coloured.=join('',@cols);
+	 $coloured.="\n";
+     }
+     return $coloured; 
+}
+
+sub print_alignment{
+  my $protRecord          = shift;
+  my $protein_align_color = shift;
+  my $peptide = $protRecord->asPeptide();
+  $peptide =~ s/^.+?[\s\n]//;
+  $peptide =~ s/\s//g;
+ 
+  push( @sequences, Bio::Seq->new(-id => $protRecord, -seq => $peptide));
+
+  my ($candObjs,) = Best_BLAST_Objects($protRecord);
+  
+
+  my $header;
+
+  foreach (@$candObjs) {
+    $peptide = $_->asPeptide();
+    $peptide =~ s/^.+?[\s\n]//;
+    $peptide =~ s/\s+//g;    # remove any space
+    next unless length($peptide) > 3;
+    if ($_->Corresponding_CDS){
+      $header.=sprintf("<tr><td>%s</td><td>%s</td><td><a href=\"db/gene/gene?name=%s\">%s</a></td><td>%s</td><td>%s</td></tr>",
+      &protein_url($_),$_->Corresponding_CDS,$_->Corresponding_CDS->Gene,$_->Corresponding_CDS->Gene,($_->Corresponding_CDS->Gene->CGC_name||''),$_->Species);
+      }else{
+        $header.=sprintf("<tr><td>%s</td><td>%s</td><td></td><td></td><td>%s</td></tr>",&protein_url($_),$_->Description,$_->Species);
+      }
+    push(@sequences, Bio::Seq->new(-id => $_ , -seq => $peptide));
+   }
+
+
+
+  # at this point, sequences and alignment should be ready
+  print "Sequences is empty" if (!@sequences);
+
+  ######## HaCK from ClustalW bioperltut ################
+  use Bio::Tools::Run::Alignment::Clustalw;
+  my @parameters = (-quiet => 1);#-maxiters 1 -diags -sv -distance1 kbit20_3
+  my $factory = Bio::Tools::Run::Alignment::Clustalw->new(\@parameters);
+  $factory->quiet(1);
+  my $aln = $factory->align(\@sequences);
+  #my $aln = $factory->align('/tmp/fart1.fas');
+
+ ##############################################################
+  my $alignString;
+  my $alignIO = IO::String->new($alignString);
+
+  my $aligner = Bio::AlignIO->newFh(
+      -interleaved => 0,
+      -fh => $alignIO,
+      -format => 'clustalw',
+      -idlength => 15,
+  );
+  print $aligner $aln;
+
+  my $calign = _postprocess($alignString);
+
+  # print HTML page
+  print "<table border='0'>$header</table>";
+  print pre($calign);
+}
+
+sub modify_display_mode {
+  my $protRecord = shift;
+  print start_form();
+
+  for my $param ('class', 'name') {
+    #print hidden($param);
+  }
+  print end_form();
+}
+
+sub print_prompt {
+  print start_form,
+    ("Type in a protein name, such as", cite('WP:CE25104.'),"&nbsp;&nbsp;&nbsp;&nbsp;"),
+       ("Symbol: ",
+         textfield(-name=>'name')
+        ),
+          hidden(-name=>'class',-value=>'Protein'),
+    end_form;
+}
+
+# Returns an array with the best BLAST matches from every species for the supplied worm protein
+# Params:
+# 1. AceDB Object: Worm Protein (ex. : WP:CE00042)
+# Returns:
+sub Best_BLAST_Objects {
+    my $protein = shift;  # ace object
+    my %matchCtr;
+
+    my @pep_homol = $protein->Pep_homol;
+    my $length    = $protein->Peptide(2);
+
+    # find the best pep_homol in each category
+    my %best;
+    return "no hits" unless @pep_homol;
+
+    for my $hit (@pep_homol) {
+    	next if $hit eq $protein;
+    	my($method,$score) = $hit->row(1) or next;
+
+        # Perl is interpreting integers as strings here (5.8.5, crap need to upgrade)
+    	my $prev_score     = (!$best{$method}) ? $score : $best{$method}{score};
+    	$prev_score        = ($prev_score =~ /\d+\.\d+/) ? $prev_score . '0': "$prev_score.0000";
+    	my $curr_score     = ($score =~ /\d+\.\d+/) ? $score . '0': "$score.0000";
+
+    	$best{$method}     = {score=>$score,hit=>$hit,adjusted_score=>$curr_score} if !$best{$method} || $prev_score < $curr_score;
+    }
+
+    my @bestIDs;  # Ace objects; best matches in different species
+
+    foreach my $currVal (sort {$b->{adjusted_score}<=>$a->{adjusted_score}}(values %best)) {
+        push(@bestIDs, $currVal->{hit});
+    }
+    return (\@bestIDs);
+} # end Best_BLAST_Match  
+
+
+# Given a (non-reference) protein, retrieves the alignment coordinates for the BLAST match between it and the reference worm protein
+# It is intended that this method only be called with the *best* BLAST match of a given species against worm 
+sub Set_Align_Coords {
+my @starts = @_;
+  # linearize
+  my @segs;
+  for my $s (@starts) {
+    my @ends = $s->col;
+	# Here begins code to retrieve the gapped-alignment positions
+	my (@left_aligns, @alignScores);
+	push(@left_aligns, $s->col(5));					# get left column of gapped alignment scores
+	map { push(@alignScores, [$_,$_->right]) } @left_aligns;	# hack to get right column since $s->col(6) doesn't work
+	push (@alignScores, [$s->right, $s->right(3)]);			# push in ends of protein alignment
+
+    push @segs,map {[$s,$_, $s->right(2), $s->right(3), \@alignScores]} @ends;
+  }
+ my @sorted = sort {$a->[2]<=>$b->[2]} @segs;
+ return @sorted;	# return set of (start,end) for given protein
+} # end Set_Align_Coords
+
+# Using the gapped alignment position pairs stored in AceDB, generates entries for the two sequences (reference and homolog)
+# that are inserted into the alignments array
+sub Ins_Into_Alignments_Array {
+    my $seq2_name = $_[0];
+    my @gapped = @{$_[1]};				            # array of gapped alignment position pairs
+    my @ends = @{$gapped[(scalar @gapped)-1]};		# ends of protein for markers
+    my $ctr = 0;
+    while   ((${$gapped[$ctr+1]}[0] ne $ends[0])||(${$gapped[$ctr+1]}[1] ne $ends[1])) {
+
+        my ($seq1_currStart, $seq2_currStart, $seq1_nextStart, $seq2_nextStart) =
+                (${$gapped[$ctr]}[0],
+                ${$gapped[$ctr]}[1],
+                ${$gapped[$ctr+1]}[0],
+                ${$gapped[$ctr+1]}[1]);
+
+        my @gap_result = Gap_Calc($seq1_currStart, $seq2_currStart, $seq1_nextStart, $seq2_nextStart);
+
+        my $seq1_currEnd = $gap_result[0] == 2 ?
+                ($seq1_nextStart-($gap_result[1]+1)) :
+                ($seq1_nextStart-1);
+        my $seq2_currEnd = $gap_result[0] == 1 ?
+                ($seq2_nextStart-($gap_result[1]+1)) :
+                ($seq2_nextStart-1);
+
+        push (@alignments, [$seq2_name,
+                        $seq1_currStart-1,
+                        $seq1_currEnd-1,
+                        $seq2_currStart-1,
+                        $seq2_currEnd-1
+                ]);
+        $ctr++;
+    }
+    push (@alignments, [$seq2_name, 
+    	${$gapped[$ctr]}[0]-1, 
+    	${$gapped[$ctr+1]}[0]-1,
+    	${$gapped[$ctr]}[1]-1, 
+    	${$gapped[$ctr+1]}[1]-1
+    ]);
+
+} # end Ins_Into_Alignments_Array
+
+# Input Params:
+# 1. seq1_currStart
+# 2. seq2_currStart
+# 3. seq1_nextStart
+# 4. seq2_nextStart
+#
+# Returns: An array
+# 1. seq1_or_seq2 : SEQ1 if seq1 has the gaps, else SEQ2
+# 2. Number of gaps
+sub Gap_Calc {
+    my ($seq1_currStart, $seq2_currStart, $seq1_nextStart, $seq2_nextStart) =
+      ($_[0], $_[1], $_[2], $_[3]);
+
+    my $seq1Diff = ($seq1_nextStart - $seq1_currStart);
+    my $seq2Diff = ($seq2_nextStart - $seq2_currStart);
+
+    my @returnVal;
+    ($seq1Diff < $seq2Diff) ? push(@returnVal, 1) : push(@returnVal, 2);
+    push(@returnVal, abs($seq1Diff - $seq2Diff));
+
+    return @returnVal;
+} # end Gap_Calc
+
+# This method takes:
+# 1. A non-reference sequence name (ex. 'ENSEMBL:00000294657')
+# 2. A list of all HSP ranges
+# It uses the greedy approach to generate the minimum number of non-overlapping global alignments
+sub Merge_Alignments {
+    my $hit = $_[0];
+    my $posSegs = $_[1];
+    my $currSeg;                            # placeholder vars
+    my $curr;
+    # Note: At this point, $posSegs is already sorted by human co-ordinates
+    my @mergedAlignments;                   # array that will contain minimum number of non-overlapping global alignments
+    foreach $currSeg ( @{$posSegs} ) {      # go through each position segment
+    my $minDiff = 10 ** 9;                  # How much space is there between current segment and the candidate alignment? (MAX: 1 GB)
+    my $candidate_align = "NONE";           # To which alignment (index) should this segment be inserted?
+    my $ctr = 0;
+            foreach $curr (@mergedAlignments) {
+                    my $alignment = ${$curr}[1];
+    				my $lastSegment = ${$alignment}[(scalar @$alignment) - 1];
+                    my $lastEndPos = ${$lastSegment}[3];
+                    if (${$currSeg}[2] > $lastEndPos) {
+                            my $tempDiff = (${$currSeg}[2] - $lastEndPos);
+                            if ($tempDiff < $minDiff) {
+                            	$minDiff = $tempDiff;
+                            	$candidate_align = $ctr;
+                            }                       
+                    }
+                    $ctr++;
+            } # end FOREACH - looking through each merged alignment in turn
+
+            # Start a new alignment for final display
+            if ($candidate_align eq "NONE" ) {                      # overlaps with everything found!
+                    my $newName = ( scalar @mergedAlignments == 0 ) ? $hit : $hit . "(" . scalar @mergedAlignments . ")";
+                    my @temp;
+                    push(@temp, $currSeg);
+                    push(@mergedAlignments, [$newName, \@temp]);        # this segment starts a new alignment
+            }
+            # This segment can be inserted in one of the previous alignments
+            else {
+                    push( @{${$mergedAlignments[$candidate_align]}[1]}, $currSeg);
+            }
+    } # end FOREACH - processing each segment in turn
+
+    #Print_Merged_Alignments(\@mergedAlignments);
+    return @mergedAlignments;
+} # sub Merge_Alignments
+
+sub Print_Merged_Alignments {
+    my $mergedAlignments = $_[0];
+    print "This array has " . scalar @$mergedAlignments . " entries\n";
+
+    foreach my $curr (@$mergedAlignments) {
+    	print "Name: " . ${$curr}[0] . "\n";
+    	print "Positions:\n";
+    	my $positions = ${$curr}[1];
+    	foreach my $currSeg (@$positions) {
+    		print ${$currSeg}[0] . "\t" . ${$currSeg}[1] . "\t" . ${$currSeg}[2] . "\t" . ${$currSeg}[3] . "\t" . ${$currSeg}[4] . "\n";
+    	}
+    }
+}# sub Print_Merged_Alignments
+
+
