@@ -1,0 +1,13 @@
+#!/bin/bash
+while (true)
+  do
+   /Users/michaelhan/bin/git-cvsimport -p x -v -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/CVSmaster wormbase
+   git push origin master
+   cd ..
+   hg convert git_base wormbase-pipeline
+   cd wormbase-pipeline
+   hg push
+   cd ../git_base
+   date
+   sleep 1800
+done
