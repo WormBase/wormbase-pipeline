@@ -7,7 +7,7 @@
 # This is a example of a good script template
 #
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2010-12-16 10:09:22 $
+# Last updated on: $Date: 2011-01-05 14:13:35 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -126,11 +126,11 @@ sub read_acedb_queries {
 		   ["The number of RNAi results with connections to genes", 'find RNAi Gene', 73394],
 		   ["The number of microarray results with connections to genes", 'find microarray_results gene', 95545],
 		   ["PCR products overlapping CDS", "find PCR_product Overlaps_CDS", 62852],
-		   ["The number of wormpep without pep_homol", 'find wormpep !pep_homol', 528],
+		   ["The number of wormpep without pep_homol", 'find wormpep !pep_homol', 660],
 		   ["tRNAs not attached to parent properly", 'Transcript AND NEXT AND NOT NEXT', 0],
 		   ["Homol_data without waba", 'find Homol_data *waba !DNA_homol', 0],
 		   ["Homol_data without Pep_homol", 'find Homol_data *wublastx* !Pep_homol', 0],
-		   ["Inverted repeat Feature_data without features", 'find Feature_data *inverted !feature', 188],
+		   ["Inverted repeat Feature_data without features", 'find Feature_data *inverted !feature', 263],
 		   ["TRF repeat Feature_data without features", 'find Feature_data *TRF !Feature', 0],
 		   ["Oligo_sets with overlapping_CDS", 'find Oligo_Set Overlaps_CDS', 74615],
 		   ["operons without genes", 'find operon !contains Gene', 0],
