@@ -12,8 +12,8 @@
 # 3) Archives old GFF_SPLITS directory
 # 4) Makes current_DB (copy of latest release) in ~wormpub/DATABASES
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2009-08-05 10:26:19 $
+# Last updated by: $Author: klh $
+# Last updated on: $Date: 2011-01-10 14:55:10 $
 
 
 use strict;
@@ -192,11 +192,14 @@ sub archive_old_releases{
   # turn the old release into a tarball, move into $archive_dir and remove old directory
   $log->write_to("\nCreating $WS_old_name.tar.gz\n");
 
+  my $WS_old_dir = $WS_old_path;
+  $WS_old_dir = s/\/${WS_old_name}\/?//;
+
   my $tar = "${archive_dir}/${WS_old_name}.tar.gz";
-  $wormbase->run_command("tar -cvzf $tar ".$wormbase->database("$WS_old_name"), $log) && 
+  $wormbase->run_command("tar -C $WS_old_dir -cvzf $tar $WS_old_name", $log) && 
       $log->log_and_die("ERROR in tar -cvzf $tar\n");
-  $wormbase->run_command("rm -rf ".$wormbase->database("$WS_old_name"), $log) && 
-      $log->log_and_die("ERROR in rm -rf " . $wormbase->database("$WS_old_name") . "\n");
+  $wormbase->run_command("rm -rf $WS_old_path", $log) && 
+      $log->log_and_die("ERROR in rm -rf $WS_old_path\n");
 
 }
 
