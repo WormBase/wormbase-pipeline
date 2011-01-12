@@ -159,7 +159,7 @@ while (<>) {
     }
 
     # Tier II id flunkification
-    elsif ( $source eq 'Gene' && $method eq 'gene'){
+    elsif ( $source eq 'gene' && $method eq 'gene'){
 		$group=~/(WBGene\d+)/;
         my $gene_id = $1;
         my $gene = $db->fetch(Gene => $gene_id);
