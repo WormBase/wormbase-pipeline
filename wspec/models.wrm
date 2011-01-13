@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: pad $
-// Last edited on: $Date: 2010-12-10 09:20:40 $
+// Last edited on: $Date: 2011-01-13 13:32:57 $
 
 
 ////////////////////////
@@ -499,6 +499,10 @@
                    Clone ?Clone XREF In_strain		  
 		   Transgene ?Transgene XREF Strain
 	 Properties  Males Text
+		     Inbreeding_state UNIQUE Selfed Text
+                                             Isofemale Text
+                                             Multifemale Text
+                                             Inbred Text 
 		     Reference_strain Text
 		     Outcrossed Text
 		     Mutagen Text
@@ -515,11 +519,14 @@
          Isolation GPS UNIQUE Float UNIQUE Float // Latitude +/-DD.DDDDD Longitude +/-DD.DDDDD
 	 	   Place UNIQUE ?Text 
          	   Landscape UNIQUE Urban_garden
-				    Wild_forest
+				    Forest
 				    Wild_grassland
 				    Agricultural_land
 				    Oasis
 				    Rural_garden
+				    Botanical_garden_zoo
+                                    Wet_shrubland
+                                    Dry_shrubland 
                    Substrate UNIQUE ?Text // e.g. snail, soil, apple, rotting fruit
 	 	   Associated_organisms ?Species
 	 	   Life_stage ?Life_stage
@@ -1703,37 +1710,48 @@
 //
 ///////////////////////////////////////////////////////////////////////////////////////////
 
-
 ?Method	Remark ?Text #Evidence
-	  // the Display information controls how the column looks.
-	Display No_display
+        // the Display information controls how the column looks.
+	Display No_display			// column is not displayed at all.
 		Colour #Colour
-		CDS_colour #Colour
+		CDS_colour #Colour		// CDS outlined in this colour.
 		Frame_sensitive
 		Strand_sensitive Show_up_strand #Colour
-		Score	Score_by_offset	// has priority over width, for Jean
+		Score	Score_by_offset // has priority over width, for Jean
 			Score_by_width
 			Score_by_histogram UNIQUE Float	// baseline value
-			Score_bounds UNIQUE Float UNIQUE Float 
+			Score_bounds UNIQUE Float UNIQUE Float
 				// limits for squashing
-			Percent // '%' in text, + default bounds 25, 100
+			Percent // Score will be displayed as a '%' in fmap reportline + bounds default to 25 & 100.
 		Overlap_mode UNIQUE	Overlap		  // draw on top - default
 					Bumpable	  // bump to avoid overlap
 			     		Cluster		  // one column per homol target
 		Width UNIQUE Float
-		Symbol UNIQUE Text	// first char only is used
+		Symbol UNIQUE Text          // first char only is used
 		Right_priority UNIQUE Float // the greater the more right
-		Max_mag UNIQUE Float	// don't show if more bases per line
-		Min_mag UNIQUE Float	// don't show if fewer bases per line
-		Show_text      // only put text in right-hand column if set
-		Gapped // draw sequences or homols with gaps
-		Allow_misalign // Homol reference/match coords do not have to align exactly, ref coords override. 
-		Join_blocks // link up all blocks of a single feature with lines
+		Max_mag UNIQUE Float        // don't show if more bases per line
+		Min_mag UNIQUE Float        // don't show if fewer bases per line
+		Show_text                   // only put text in right-hand column if set
+		Join_blocks                 // link up all blocks of a single feature with lines
+		Display_gaps                // draw sequences or homols with gaps 
+		Gapped                      // draw sequences or homols with gaps //leaving this is preserved backwards compatibility
+        // Alignment options (default is map only with no misaligns or clipping and do not map gaps).
+        Align_mapping Allow_misalign        // Homol reference/match coords do not have to align exactly, ref coords override.
+                      Allow_clipping        // Map gaps even if they need to be clipped.
+                      Map_gaps              // Map gaps for gapped aligns.
 	Blastn		// can calculate percent from score if blastn
 	Blixem  Blixem_X
 		Blixem_N
                 Blixem_P
 	Belvu
+	EMBL_dump EMBL_feature UNIQUE Text		// require this
+		  EMBL_threshold UNIQUE Float		// apply to score unless overridden
+		  EMBL_qualifier Text UNIQUE Text
+	  // if 1 Text, it is the entire qualifier including '/'
+	  // if 2 Texts, 1st is an sprintf format and 2nd is
+	  //   an argument.  If this is "score", "note", "y1", "y2" or "target"
+	  //   then use the corresponding field of the Feature or Homol line.
+	  // multiple formats will be concatenated until one starts with '/'.
         Gene_assemble	Gene_assemble_method ?Method UNIQUE Float
 				// Float factor to multiply score by
 			Intron_min UNIQUE Int
@@ -1747,18 +1765,9 @@
 			GF_ATG_cutoff UNIQUE Float
 			GF_5_cutoff UNIQUE Float
 			GF_3_cutoff UNIQUE Float
-	EMBL_dump_info #EMBL_dump_info
-	EMBL_dump EMBL_feature UNIQUE Text		// require this
-		  EMBL_threshold UNIQUE Float		// apply to score unless overridden
-		  EMBL_qualifier Text UNIQUE Text
-	  // if 1 Text, it is the entire qualifier including '/'
-	  // if 2 Texts, 1st is an sprintf format and 2nd is
-	  //   an argument.  If this is "score", "note", "y1", "y2" or "target"
-	  //   then use the corresponding field of the Feature or Homol line.
-	  // multiple formats will be concatenated until one starts with '/'.
 	GFF	GFF_source UNIQUE Text
-		GFF_feature UNIQUE ?SO_term
-
+		GFF_feature UNIQUE Text
+	EMBL_dump_info #EMBL_dump_info // when used for controlling dump
 
 ?Reference	Reference ?Paper
 		Remark ?Text #Evidence
