@@ -959,6 +959,7 @@ GFF_source       "wublastx"
 GFF_feature      "protein_match"
 Join_blocks
 Remark   "wublastx search of C. elegans genomic clones vs Wormpep"
+Display_gaps
 Gapped
 
 Method : "wublastx_briggsae" 
@@ -973,6 +974,7 @@ GFF_source       "wublastx"
 GFF_feature      "protein_match"
 Join_blocks
 Remark   "wublastx search of C. elegans genomic clones vs C. briggsae peptides"
+Display_gaps
 Gapped
 
 Method : "wublastx_remanei" 
@@ -987,6 +989,7 @@ GFF_source       "wublastx"
 GFF_feature      "protein_match"
 Join_blocks
 Remark   "wublastx search of C. elegans genomic clones vs C. remanei peptides"
+Display_gaps
 Gapped
 
 Method : "wublastx_brenneri" 
@@ -1001,6 +1004,7 @@ GFF_source       "wublastx"
 GFF_feature      "protein_match"
 Join_blocks
 Remark   "wublastx search of genomic clones vs Brepep"
+Display_gaps
 Gapped
 
 
@@ -1016,6 +1020,7 @@ GFF_source       "wublastx"
 GFF_feature      "protein_match"
 Join_blocks
 Remark   "wublastx search vs P. pacificus peptides"
+Display_gaps
 Gapped
 
 
@@ -1031,6 +1036,7 @@ GFF_source       "wublastx"
 GFF_feature      "protein_match"
 Join_blocks
 Remark   "wublastx search vs C. japonica peptides"
+Display_gaps
 Gapped
 
 
@@ -1046,6 +1052,7 @@ GFF_source       "wublastx"
 GFF_feature      "protein_match"
 Join_blocks
 Remark   "wublastx search of C. elegans genomic clones vs Drosophila melanogaster proteins from GadFly"
+Display_gaps
 Gapped
 
 
@@ -1061,6 +1068,7 @@ GFF_source       "wublastx"
 GFF_feature      "protein_match"
 Join_blocks
 Remark   "wublastx search of C. elegans genomic clones vs Saccharomyces cerevisiae proteins from SGD"
+Display_gaps
 Gapped
 
 
@@ -1076,6 +1084,7 @@ GFF_source       "wublastx"
 GFF_feature      "protein_match"
 Join_blocks
 Remark   "wublastx search of C. elegans genomic clones vs Human proteins from IPI human protein set"
+Display_gaps
 Gapped
 
 
@@ -1091,6 +1100,7 @@ GFF_source       "wublastx"
 GFF_feature      "protein_match"
 Join_blocks
 Remark   "wublastx search of C. elegans genomic clones vs proteins from reduced SwissProt dataset"
+Display_gaps
 Gapped
 
 
@@ -1106,6 +1116,7 @@ GFF_source       "wublastx"
 GFF_feature      "protein_match"
 Join_blocks
 Remark   "wublastx search of C. elegans genomic clones vs proteins from reduced TrEmbl dataset"
+Display_gaps
 Gapped
 
 
