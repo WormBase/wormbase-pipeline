@@ -7,8 +7,8 @@
 # Script to convert cgc strain file into ace file for geneace
 # Page download and update upload to geneace has been automated [ck1]
 
-# Last updated by: $Author: mt3 $
-# Last updated on: $Date: 2010-12-08 14:40:20 $
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2011-01-14 14:56:18 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -19,6 +19,7 @@ use Wormbase;
 use GENEACE::Geneace;
 use Log_files;
 use NameDB_handler;
+use Ace;
 
 use Storable;
 use Getopt::Long;
@@ -29,15 +30,15 @@ use Getopt::Long;
 
 
 my ($help, $debug, $test, $verbose, $store, $load, $wormbase,$ndbUser,$ndbPass);
-GetOptions ("help"       => \$help,
-            "debug=s"    => \$debug,
-	    "test"       => \$test,
-	    "verbose"    => \$verbose,
-	    "store:s"    => \$store,
-	    "load"       => \$load,
-	    'ndbuser=s'  => \$ndbUser,
-	    'ndbpass=s'  => \$ndbPass,
-	   );
+GetOptions ('help'       => \$help,
+            'debug=s'    => \$debug,
+            'test'       => \$test,
+            'verbose'    => \$verbose,
+            'store:s'    => \$store,
+            'load'       => \$load,
+            'ndbuser=s'  => \$ndbUser,
+            'ndbpass=s'  => \$ndbPass,
+       );
 
 
 &usage if ($help);
@@ -90,6 +91,7 @@ my $last_gene_id_number = $ga ->get_last_gene_id();
 
 my $current_strain_ace      = "$path/cgc_strain_info_$rundate.ace";
 my $delete_strain_ace       = "$path/cgc_strain_info_$rundate.delete.ace";
+my $missingAuthors          = "$path/missingStrainAuthors_$rundate.txt";
 my $gene_allele_connections = "$path/gene_allele_connections.$rundate.ace";
 my $potential_new_genes     = "$path/potential_new_genes.$rundate.ace";
 my $backup_file             = "$path/strain_class_backup.$rundate.ace";
@@ -100,6 +102,7 @@ open(DELETE_STRAIN,">$delete_strain_ace") || die "can't create $delete_strain_ac
 open(GENE2ALLELE,  ">$gene_allele_connections") || die "\nCan't open $gene_allele_connections\n";
 open(NEWGENES,     ">$potential_new_genes") || die "\nCan't open $potential_new_genes\n";
 open(ALLELEFLUFF,  ">$allelefluff") || die "\nCan't open $allelefluff\n";
+open(MISSINGPERSON,">$missingAuthors") || die "\nCan't open $missingAuthors\n";
 
 print NEWGENES "// This file should *ONLY* be loaded to geneace when it has been fully checked\n";
 print NEWGENES "// by hand.  If these Gene objects are ok, then they will need Gene IDs added.\n";
@@ -127,6 +130,7 @@ open(INPUT, $input_file) || die "Can't open inputfile!";
 
 my $DB = $test ? 'test_wbgene_id;mcs4a:3307' : 'wbgene_id;shap:3303';
 my $db = NameDB_handler->new($DB,$ndbUser,$ndbPass,'/nfs/WWWdev/SANGER_docs/data');
+my $geneAceDB = Ace->connect(-path => $geneace_dir) or die Ace->error;
 $db->setDomain('Variation');
 
 while(<INPUT>){
@@ -283,8 +287,11 @@ while(<INPUT>){
   $made_by = $1;
   $made_by =~ s/\s{2,}/ /g;
   $made_by =~ s/\s+$//g;
-  print STRAIN "Made_by \"$made_by\"\n" unless ($made_by eq "");
-  print DELETE_STRAIN  "-D Made_by \"$made_by\"\n" unless ($made_by eq "");
+  
+  my $wperson = sub find_author($made_by);
+  
+  print STRAIN "Made_by \"$made_by\"\n";
+  print DELETE_STRAIN  "-D Made_by \"$made_by\"\n";
 
 
   if (m/Received: (\d+\/\d+\/\d+)/){
@@ -306,12 +313,17 @@ while(<INPUT>){
   }
 
 }
+
+$geneAceDB->close();
+
 close(INPUT);
 close(STRAIN);
 close(DELETE_STRAIN);
 close(GENE2ALLELE);
 close(NEWGENES);
 close(ALLELEFLUFF);
+close(MISSINGPERSON);
+
 
 ##################################################
 # 1. backup strain class with timestamp
@@ -367,14 +379,14 @@ exit(0);
 #   depends on the user/password from main, as well as the $test
 #
 sub _get_variationId {
-	my ($id)=@_;
+    my ($id)=@_;
 
 
-	my $var = $db->idGetByTypedName('Public_name'=>$id)->[0];
+    my $var = $db->idGetByTypedName('Public_name'=>$id)->[0];
 
-	print STDERR "found: $id -> $var\n" if ($var && $verbose);
+    print STDERR "found: $id -> $var\n" if ($var && $verbose);
 
-	return $var if $var;
+    return $var if $var;
 
         my $newId = $db->idCreate;
         $db->addName($newId,'Public_name'=>$id);
@@ -383,6 +395,17 @@ sub _get_variationId {
 
         return $newId;
 }
+
+######################################################################
+# funtion to find a WBPerson by searching through a collection of tags
+
+sub find_author {
+    my ($searchterm)=@_;
+    my ($wbperson) = $geneAceDB->aql("select all class Person where ->Standard_name like \"$searchterm\"".
+                    " or ->Full_name like \"$searchterm\" or ->Also_known_as like \"$searchterm\"");
+    return ($wbperson||'Agent007');
+}
+
 
 ###########################################################################################
 # subroutine to do some basic checking of allele and gene details from strain genotype
