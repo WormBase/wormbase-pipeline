@@ -1853,6 +1853,19 @@ GFF_source "binding_site_region"
 GFF_feature "binding_site"	 
 Remark   "manually curated binding site region" 	 
 
+
+Method : "CHiP_seq_region"
+Colour  MAGENTA 	 
+Strand_sensitive 	 
+Width    1.000000 	 
+Show_up_strand 	 
+Show_text 	 
+GFF_source "binding_site_region" 
+GFF_feature "CHiP_seq_region" // SO:0001697	 
+Remark "region containng a protein binding site experimentally confirmed by CHiP_seq."
+Remark "SO:0001697"
+
+
 Method : "segmental_duplication" 	  
 Colour  ORANGE	  	 
 Width    1.000000 	 
@@ -2100,6 +2113,9 @@ Method : "micro_ORF"
 Right_priority  2.1
 
 Method : "binding_site_region"
+Right_priority  2.1
+
+Method : "CHiP_seq_region"
 Right_priority  2.1
 
 Method : "binding_site"
