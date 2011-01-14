@@ -7,7 +7,7 @@
 # This is a script to automate the sections A, B and C of the BLAST Build
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2010-04-29 14:34:29 $      
+# Last updated on: $Date: 2011-01-14 15:55:33 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -42,6 +42,7 @@ if ($ENV{USER} eq "wormpub") {
 
 if (!defined $password) {
   print "wormpub password> ";
+  if ($password eq 'worms') {die "'worms' is not the wormpub password!\n"}
   $password = <STDIN>;
 }
 
