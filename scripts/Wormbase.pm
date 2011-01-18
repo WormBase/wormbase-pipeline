@@ -15,7 +15,7 @@ use File::stat;
 use Storable;
 use Species;
 
-our @core_organisms=qw(Elegans Briggsae Remanei Brenneri Japonica Heterorhabditis Pristionchus);
+our @core_organisms=qw(Elegans Briggsae Remanei Brenneri Japonica Pristionchus);
 our @tier3_organisms=qw(Brugia Mhapla Mincognita Hcontortus Cangaria);
 our @allowed_organisms=(@core_organisms, @tier3_organisms); #class data
 
