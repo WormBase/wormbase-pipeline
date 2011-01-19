@@ -6,8 +6,8 @@
 #
 # This is a example of a good script template
 #
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2011-01-05 14:13:35 $
+# Last updated by: $Author: pad $
+# Last updated on: $Date: 2011-01-19 12:33:49 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -122,8 +122,8 @@ sub read_acedb_queries {
     my $species = $wormbase->species;
     if($species eq 'elegans'){    
 	@queries = (
-	           ["The number of RNAi experiments with more than one associated Gene", 'find rnai COUNT gene > 1 AND uniquely_mapped', 2034],
-		   ["The number of RNAi results with connections to genes", 'find RNAi Gene', 73394],
+	           ["The number of RNAi experiments with more than one associated Gene", 'find rnai COUNT gene > 1 AND uniquely_mapped', 5450],
+		   ["The number of RNAi results with connections to genes", 'find RNAi Gene', 81625],
 		   ["The number of microarray results with connections to genes", 'find microarray_results gene', 95545],
 		   ["PCR products overlapping CDS", "find PCR_product Overlaps_CDS", 62852],
 		   ["The number of wormpep without pep_homol", 'find wormpep !pep_homol', 660],
@@ -141,7 +141,7 @@ sub read_acedb_queries {
 		   ["Operons without parent ", 'find Operon !History AND !Canonical_parent',  0],
 		   ["GO_term without Term or Definition", 'find GO_term !(Term or Definition)',  0],
 		   ["Homol mapped Expression Patterns", 'find Expr_pattern where Homol_homol', 4506],
-		   ["Transposon Objects mapped in the database", 'find Transposon where Sequence', 295],
+		   ["Transposon Objects mapped in the database", 'find Transposon where Sequence', 591],
 		   );
     }
     elsif( $species eq 'japonica'){  
@@ -243,7 +243,7 @@ sub read_GFF_queries {
     $i++;
     $queries[$i]{'DESC'}   = "RNAi primary locations";
     $queries[$i]{'GFF'}    = "RNAi_primary";
-    $queries[$i]{'EXPECT'} = '150537';
+    $queries[$i]{'EXPECT'} = '228053';
 
     $i++;
     $queries[$i]{'DESC'}   = "RNAi secondary locations";
