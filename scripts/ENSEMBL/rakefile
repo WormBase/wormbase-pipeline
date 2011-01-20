@@ -259,7 +259,7 @@ task :dump_compara do
 	conf=YAML.load_file('etc/ensembl_lite.conf')
 
 	#mysqldir=''
-	#dump_options='--add-drop-table -u wormro -a -h ia64d'
+	#dump_options='--add-drop-table -u wormro -a -h farmdb1'
 
 	# to_dump =[ 'briggsae','elegans','remanei','brenneri','brugia']
 

@@ -4,8 +4,8 @@
 #
 # Dumps protein motifs from ensembl mysql (protein) database to an ace file
 #
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2010-05-12 16:12:08 $
+# Last updated by: $Author: pad $
+# Last updated on: $Date: 2011-01-20 11:09:57 $
 
 use lib $ENV{'CVS_DIR'};
 
@@ -47,7 +47,7 @@ $dump_dir ||= '/lustre/scratch101/ensembl/wormpipe/dumps';
 $log->write_to("Dumping methods".@methods."\n");
 
 # mysql database parameters
-my $dbhost = "ia64d";
+my $dbhost = "farmdb1";
 my $dbuser = "wormro";
 $dbname ||= "worm_ensembl_elegans";
 print "Dumping motifs from $dbname\n";

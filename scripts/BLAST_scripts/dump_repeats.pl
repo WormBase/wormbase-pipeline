@@ -37,7 +37,7 @@ if ( $store ) {
 }
 
 my $dbobj = Bio::EnsEMBL::DBSQL::DBAdaptor->new(
-                                                       '-host'   => 'ia64d',
+                                                       '-host'   => 'farmdb1',
                                                        '-user'   => 'wormro',
                                                        '-dbname' => $database
                                                       ) || die (@!);
@@ -123,7 +123,7 @@ sub help {
     print<<END;
 ===============================================
 $0
-Extract RepeatMasker and TRF data from worm_ensembl databases on ia64d
+Extract RepeatMasker and TRF data from worm_ensembl databases on farmdb1
 
 
 Writes ace file $output

@@ -1,7 +1,7 @@
 #!/software/bin/perl -w
 
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2010-05-19 16:04:26 $
+# Last updated by: $Author: pad $
+# Last updated on: $Date: 2011-01-20 11:06:11 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -19,7 +19,7 @@ use Bio::SeqIO;
 my ($help, $debug, $test, $verbose, $store, $wormbase);
 my $species = 'elegans';
 my $port= 3306;
-my $server='ia64d';
+my $server='farmdb1';
 my ($user, $pass, $update);
 
 GetOptions ("help"       => \$help,

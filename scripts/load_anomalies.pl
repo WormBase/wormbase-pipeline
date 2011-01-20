@@ -7,8 +7,8 @@
 # This read curation anomalies from a data file prepared by Sanger and
 # stores the results in the mysql database 'worm_anomaly'
 #
-# Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2010-03-09 14:43:17 $      
+# Last updated by: $Author: pad $     
+# Last updated on: $Date: 2011-01-20 11:06:11 $      
 
 use strict;                                      
 use Getopt::Long;
@@ -56,7 +56,7 @@ if ($species && $species ne 'elegans') {$sqldb = $sqldb . "_" . lc $species;}
 ##########################
 # CHANGE YOUR DETAILS HERE
 ##########################
-my $dbsn = "DBI:mysql:database=$sqldb;host=ia64d";
+my $dbsn = "DBI:mysql:database=$sqldb;host=farmdb1";
 my $dbuser = "wormadmin";
 my $dbpass = "worms";
 

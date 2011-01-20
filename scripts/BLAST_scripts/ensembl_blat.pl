@@ -3,8 +3,8 @@
 # DESCRIPTION:
 #   setting up the BLAT pipeline
 #
-# Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2010-08-19 10:46:49 $
+# Last edited by: $Author: pad $
+# Last edited on: $Date: 2011-01-20 11:09:57 $
 
 use constant USAGE => <<HERE;
 ensembl_blat.pl options:
@@ -63,7 +63,7 @@ my $database = sprintf('worm_ensembl_%s',lc(ref $wormbase));
 my $log = Log_files->make_build_log($wormbase);
 $log->write_to("Updating BLAT input files for $database\n");
 
-$host||='ia64d';
+$host||='farmdb1';
 $port||=3306;
 
 # MYSQL setup

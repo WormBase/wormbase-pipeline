@@ -24,7 +24,7 @@ sub new {
 
     
     #DATA SOURCE NAME
-    my $dsn = "dbi:mysql:worm_rgasp:ia64d:3306";
+    my $dsn = "dbi:mysql:worm_rgasp:farmdb1:3306";
 
     # PERL DBI CONNECT
     my $db = DBI->connect($dsn, 'wormro') or croak("Cant connect to database");

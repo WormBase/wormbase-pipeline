@@ -10,7 +10,7 @@ if (!exists($ENV{SORT_OPTS})) {
   die "You must set SORT_OPTS (to something like '-k2,2 -k8,8n -k10,10nr')\n";
 }
 
-my $host = 'ia64d';
+my $host = 'farmdb1';
 my $user = 'wormro';
 my $db   = 'worm_ensembl_elegans';
 my $port = 3306;

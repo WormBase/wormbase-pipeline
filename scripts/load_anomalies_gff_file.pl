@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: pad $     
-# Last updated on: $Date: 2008-03-12 14:04:53 $      
+# Last updated on: $Date: 2011-01-20 11:06:11 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -124,7 +124,7 @@ my $giface          = $wormbase->giface;      # GIFACE PATH
 ##########################
 
 # mysql database parameters
-my $dbsn = "DBI:mysql:database=worm_anomaly;host=ia64d";
+my $dbsn = "DBI:mysql:database=worm_anomaly;host=farmdb1";
 my $dbuser = "wormadmin";
 my $dbpass = "worms";
 

@@ -4,8 +4,8 @@
 #
 # Dumps InterPro protein motifs from ensembl mysql (protein) database to an ace file
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2010-04-29 14:42:19 $
+# Last updated by: $Author: pad $
+# Last updated on: $Date: 2011-01-20 11:09:57 $
 
 
 use strict;
@@ -106,7 +106,7 @@ if ($method ) {
 
 
 # mysql database parameters
-my $dbhost = "ia64d";
+my $dbhost = "farmdb1";
 my $dbuser = "wormro";		# worm read-only access
 my $dbname = "worm_ensembl_elegans";
 $dbname = $database if $database;

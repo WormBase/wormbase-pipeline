@@ -5,7 +5,7 @@
 # if it can't find any, it will print out ID SPECIES CRC64
 #
 # needs: to run on the farm
-# needs: mysql databases on ia64d called worm_ensembl_$SPECIES
+# needs: mysql databases on farmdb1 called worm_ensembl_$SPECIES
 # needs: /lustre/scratch101/ensembl/wormpipe/swall_data/trembl2org
 
 use GDBM_File;
@@ -53,7 +53,7 @@ sub prepare_mysql{
     my %h;
     my @species = ('brugia','pristionchus','japonica','briggsae','remanei','brenneri','elegans','cangaria','hcontortus','mhapla','mincognita');  
     foreach my $key(@species){
-        $h{$key}{dbi}=DBI->connect("dbi:mysql:dbname=worm_ensembl_${key};host=ia64d",'wormro');
+        $h{$key}{dbi}=DBI->connect("dbi:mysql:dbname=worm_ensembl_${key};host=farmdb1",'wormro');
         $h{$key}{sth1}=$h{$key}{dbi}->prepare('SELECT COUNT(protein_align_feature_id) FROM protein_align_feature WHERE hit_name=?');
         $h{$key}{sth2}=$h{$key}{dbi}->prepare('SELECT COUNT(protein_feature_id) FROM protein_feature WHERE hit_name=?');
     }

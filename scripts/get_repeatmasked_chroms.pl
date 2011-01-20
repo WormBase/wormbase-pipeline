@@ -78,7 +78,7 @@ $log->write_to("Connecting to worm_dna\n");
 
 my $dbobj = Bio::EnsEMBL::DBSQL::DBAdaptor->
     new(
-        '-host'   => 'ia64d',
+        '-host'   => 'farmdb1',
         '-user'   => 'wormro',
         '-dbname' => $database
         )

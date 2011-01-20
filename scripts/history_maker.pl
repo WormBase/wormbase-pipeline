@@ -760,7 +760,7 @@ sub connect_to_database {
 
   if ($lab eq "HX") {
 
-    $dbsn = "DBI:mysql:database=$sqldb;host=ia64d";
+    $dbsn = "DBI:mysql:database=$sqldb;host=farmdb1";
     $dbuser = "wormadmin";
     $dbpass = "worms";
 

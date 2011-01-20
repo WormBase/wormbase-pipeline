@@ -8,8 +8,8 @@
 # It copies over the latest file, nupacks it into place and runs the InterPro
 # indexing program on it.
 #
-# Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2010-03-04 13:24:49 $      
+# Last updated by: $Author: pad $     
+# Last updated on: $Date: 2011-01-20 11:09:57 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -270,7 +270,7 @@ sub delete_results {
 
 
   # mysql database parameters
-  my $dbhost = "ia64d";
+  my $dbhost = "farmdb1";
   my $dbuser = "wormadmin";          
   my $dbname = "worm_ensembl_" . $species; # construct the database name for this species
 #  my $dbpass = "XXXXXX";

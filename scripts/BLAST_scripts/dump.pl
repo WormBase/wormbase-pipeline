@@ -11,7 +11,7 @@ $| = 1;
 
 my $db = "worm_ensembl_elegans";
 my $user = 'wormro';
-my $host = 'ia64d';
+my $host = 'farmdb1';
 my $port = 3306;
 my $segsize = 1000000;
 my $resource;

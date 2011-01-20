@@ -11,7 +11,7 @@
 #   array of EnsEMBL objects, it invites disaster as it makes a copy of the array.
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2009-09-15 11:01:28 $ 
+# Last edited on: $Date: 2011-01-20 11:09:57 $ 
 
 my $usage = <<USAGE;
 blastx_dump.pl options:
@@ -88,7 +88,7 @@ if ($dbname=~/elegans/){
 
 my $database_name = ($dbname ||'worm_ensembl_briggsae_test');
 my $db = new Bio::EnsEMBL::DBSQL::DBAdaptor(
-        -host   => 'ia64d',
+        -host   => 'farmdb1',
         -user   => 'wormro',
         -dbname => $database_name,
         -port   => 3306,
