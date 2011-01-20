@@ -589,15 +589,38 @@ Remark "This method is used to map flanking sequences of Tc1 insertions in anoth
 // Need new GFF_feature?
 
 
-Method : "BLAT_BAC_END" 
-Colour   PALEYELLOW
+//Method : "BLAT_BAC_END" 
+//Colour   PALEYELLOW
+//Score_by_width
+//Score_bounds     50.000000 100.000000
+//Overlap
+//Blixem_N
+//GFF_source "BLAT_BAC_END"
+//GFF_feature "nucleotide_match"
+//Remark "This method is used to map C.briggsae BAC end sequences."
+
+
+Method : "EXONERATE_BAC_END_BEST" 
+Colour   RED
 Score_by_width
 Score_bounds     50.000000 100.000000
 Overlap
 Blixem_N
-GFF_source "BLAT_BAC_END"
+GFF_source "EXONERATE_BAC_END_BEST"
 GFF_feature "nucleotide_match"
-Remark "This method is used to map C.briggsae BAC end sequences."
+Remark "Best-in-genome placements for C.briggsae BAC end sequences."
+
+
+Method : "EXONERATE_BAC_END_OTHER" 
+Colour   ORANGE
+Score_by_width
+Score_bounds     50.000000 100.000000
+Overlap
+Blixem_N
+GFF_source "EXONERATE_BAC_END_OTHER"
+GFF_feature "nucleotide_match"
+Remark "Secondary placements for C.briggsae BAC end sequences."
+
 
 Method : "BLAT_EMBL_BEST" 
 Colour   VIOLET
