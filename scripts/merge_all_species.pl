@@ -1,7 +1,7 @@
 #/software/bin/perl -w
 #
-# Last updated by: $Author: pad $
-# Last updated on: $Date: 2010-11-24 12:19:31 $
+# Last updated by: $Author: klh $
+# Last updated on: $Date: 2011-01-21 15:56:44 $
 
 #################################################################################
 # Variables                                                                     #
@@ -162,23 +162,21 @@ $wormbase->load_to_database($wormbase->orgdb, $briggsaeDB->acefiles."/misc_brigg
 
 
 $log->write_to("\nNow loading briggsae BAC end data . . .\n");
+#
 # briggsae BAC end data
-my @brigfiles = ("briggsae_BAC_ends.fasta",
-		 "briggsae_homol_data.ace",
-		 "briggsae_BAC_ends_data.ace",
-		 "briggsae_bac_clone_ends.ace",
-		 "bac_ends_unique.ace"
-		);
-my $brig_dir;
-if (-e $wormbase->primary('brigace')."/BAC_ENDS") {
-  $brig_dir = $wormbase->primary('brigace')."/BAC_ENDS";
-}
-elsif (-e $wormbase->database('briggsae')."/BAC_ENDS") {
-  $brig_dir = $wormbase->database('briggsae')."/BAC_ENDS";
-}
-foreach my $brigfile (@brigfiles){
-  $log->write_to("\tload $brigfile\n");
-  $wormbase->load_to_database($wormbase->autoace,"$brig_dir/$brigfile","BAC_ends", $log);
+#
+my $brigdb = $wormbase->database('briggsae');
+my $bac_end_dir = "BAC_ENDS";
+if (-d  "$brigdb/$bac_end_dir") {
+  $log->write_to("\nLoading briggsae BAC ends from $brigdb/$bac_end_dir\n===========================\n");
+  
+  foreach my $be_file ("briggsae_BAC_ends.fasta",
+                    "briggsae_BAC_end_homols.ace") {
+    $log->write_to("\tLoading $be_file\n");
+    $wormbase->load_to_database($wormbase->autoace,"$brigdb/$bac_end_dir/$be_file","BAC_ends", $log);
+  }
+} else {
+  $log->write_to("\tWARNING : $brigdb/$bac_end_dir dir not found; will NOT load BAC_END data\n");
 }
 
 $log->mail;

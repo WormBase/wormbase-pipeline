@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl -w
-# Last updated by: $Author: mh6 $     
-# Last updated on: $Date: 2010-09-27 13:30:28 $      
+# Last updated by: $Author: klh $     
+# Last updated on: $Date: 2011-01-21 15:56:44 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -148,31 +148,27 @@ sub parse_elegans_homol_data {
 
 
 sub parse_briggsae_data {
-
+  #
   # briggsae BAC end data
-  my @files = ("briggsae_BAC_ends.fasta",
-	       "briggsae_homol_data.ace",
-	       "briggsae_BAC_ends_data.ace",
-	       "briggsae_bac_clone_ends.ace",
-	       "bac_ends_unique.ace"
-	      );
-  my $brig_dir;
-  if (-e $wormbase->primary('brigace')."/BAC_ENDS") {
-    $brig_dir = $wormbase->primary('brigace')."/BAC_ENDS";
+  #
+  my $brigdb = $wormbase->database('briggsae');
+  my $bac_end_dir = "BAC_ENDS";
+  if (-d  "$brigdb/$bac_end_dir") {
+    $log->write_to("\nLoading briggsae BAC ends from $brigdb/$bac_end_dir\n===========================\n");
+    
+    foreach my $be_file ("briggsae_BAC_ends.fasta",
+                         "briggsae_BAC_end_homols.ace") {
+      $log->write_to("\tLoading $be_file\n");
+      $wormbase->load_to_database($wormbase->autoace,"$brigdb/$bac_end_dir/$be_file","BAC_ends", $log);
+    }
+  } else {
+    $log->write_to("\tWARNING : $brigdb/$bac_end_dir dir not found; will NOT load BAC_END data\n");
   }
-  elsif (-e $wormbase->database('briggsae')."/BAC_ENDS") {
-    $brig_dir = $wormbase->database('briggsae')."/BAC_ENDS";
-    $log->write_to("\nWARNING: BAC_END data loaded from Sanger backup, not supplied in upload\n");
-  }
-  $log->write_to("\nLoading briggsae BAC ends from $brig_dir\n===========================\n");
-  foreach my $file (@files){
-    $log->write_to("\tload $file\n");
-    $wormbase->load_to_database($wormbase->autoace,"$brig_dir/$file","BAC_ends", $log);
-  }
+
 
   # this could be in the parse_homol_data() routine but it is restricted to briggsae
   # load the briggsae TEC-RED acefiles/ homol data
-  @files = (
+  my @files = (
 	    "misc_briggsae_TEC_RED_homol_data.ace",
 	    "misc_briggsae_TEC_RED_homol.ace"
 	   );
