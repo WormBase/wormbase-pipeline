@@ -12,8 +12,8 @@
 # 3) Archives old GFF_SPLITS directory
 # 4) Makes current_DB (copy of latest release) in ~wormpub/DATABASES
 #
-# Last updated by: $Author: klh $
-# Last updated on: $Date: 2011-01-10 14:55:10 $
+# Last updated by: $Author: pad $
+# Last updated on: $Date: 2011-01-24 15:25:12 $
 
 
 use strict;
@@ -193,7 +193,7 @@ sub archive_old_releases{
   $log->write_to("\nCreating $WS_old_name.tar.gz\n");
 
   my $WS_old_dir = $WS_old_path;
-  $WS_old_dir = s/\/${WS_old_name}\/?//;
+  $WS_old_dir =~ s/\/${WS_old_name}\/?//;
 
   my $tar = "${archive_dir}/${WS_old_name}.tar.gz";
   $wormbase->run_command("tar -C $WS_old_dir -cvzf $tar $WS_old_name", $log) && 
