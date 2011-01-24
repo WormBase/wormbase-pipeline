@@ -5,7 +5,7 @@
 # by Anthony Rogers                             
 #
 # Last updated by: $Author: klh $               
-# Last updated on: $Date: 2010-11-24 10:51:44 $
+# Last updated on: $Date: 2011-01-24 10:20:25 $
 
 # Generates a release letter at the end of build.
 #
@@ -219,7 +219,8 @@ if( defined($opt_l)) {
   foreach $tierII(@tierII) {
     my $gene_count_query = "Find Gene where Species = \"*${tierII}*\" AND Live";
     my $gene_count = $db->fetch(-query=> "$gene_count_query");
-    my $Coding_count_query = "Find CDS where Species = \"*${tierII}*\" AND method = \"curated\"";
+    #my $Coding_count_query = "Find CDS where Species = \"*${tierII}*\" AND method = \"curated\"";
+    # now count coding genes, rather than coding isoforms
     my $Coding_count_query = "Find Gene where Species = \"*${tierII}*\" AND Corresponding_CDS";
     my $Coding_count = $db->fetch(-query=> "$Coding_count_query");
     printf RL "$tierII Gene count $gene_count (Coding ${Coding_count})\n";
