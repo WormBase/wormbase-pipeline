@@ -92,6 +92,9 @@ sub main {
     if( $SSO_USER =~ /^(\S+)\@wormbase.org/) {
       $PASS = $1;
     }
+    elsif( $SSO_USER =~ /^(\S+)\@caltech.edu/){
+     $PASS = $1; 
+    }
     else {
       $PASS = $SSO_USER;
     }
