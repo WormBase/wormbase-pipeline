@@ -7,7 +7,7 @@
 # to celegans@ebi.ac.uk.
 #
 # Last updated by: $Author: pad $                      
-# Last updated on: $Date: 2010-06-25 09:21:33 $        
+# Last updated on: $Date: 2011-02-08 13:04:14 $        
 
 $|=1;
 use strict;
@@ -37,6 +37,7 @@ my $logfile = "$submitdir/submitted_to_EMBL";
 
 my $help;       # Help perdoc
 my $debug;      # Debug mode, verbose output to dl1 only
+my $conf;       # Confidential mode, don't email duncan
 my $email;
 my $login;
 my $test;
@@ -49,6 +50,7 @@ GetOptions (
 	    "login:s"   => \$login, #supply the ebi ftp user id you whish to use.
 	    "test"      => \$test,
 	    "verbose"   => \$verbose,
+	    "confidential" => \$conf,
 	   );
 
 my $wormbase = Wormbase->new(
@@ -152,8 +154,8 @@ unless (-e "$submitdir/submitted_to_EMBL") {
 # Submit files to EBI and append clone name to log file
 &submit_sub if (!defined $email);
 
-$log->write_to("Duncan has been sent a summary of clones submitted.\n");
-system ("/usr/bin/mail duncan.legge\@ebi.ac.uk --subject=WormBase_EMBL_submission_summary < $submitdir/submitted_to_EMBL");
+$log->write_to("Duncan has been sent a summary of clones submitted.\n") unless ($conf);
+system ("/usr/bin/mail duncan.legge\@ebi.ac.uk --subject=WormBase_EMBL_submission_summary < $submitdir/submitted_to_EMBL") unless ($conf);
 system ("/usr/bin/mail $maintainers --subject=WormBase_EMBL_submission_summary < $submitdir/submitted_to_EMBL") if ($debug);
 $ftp->quit if (!defined $email);
 $log->mail;
