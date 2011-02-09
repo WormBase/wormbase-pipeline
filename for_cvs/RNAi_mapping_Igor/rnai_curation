@@ -1,0 +1,3556 @@
+#!/usr/bin/perl 
+
+#do not use -w flag. asAce method generates a lot of warnings but otherwise works fine (used in CheckClone)
+
+use strict;
+use CGI;
+use CGI::Carp qw(fatalsToBrowser);
+use Ace;
+use URI::Escape;
+use IgorSubs;
+use Bio::DB::GFF;
+use DBI;
+
+use constant BUFFER_SIZE=>16384;
+use constant MAX_FILE_SIZE=>50 * 1048576;  #10 MB
+use constant REAL_MAX_FILE_SIZE=>2 * 1048576; #do not allow more than this
+use constant MAX_DIR_SIZE=>500 * 1048576;  #500 MB
+
+
+$CGI::DISABLE_UPLOADS=0;
+$CGI::POST_MAX=MAX_FILE_SIZE;
+
+my $q=new CGI;
+$|=1; #turn off output buffering
+
+my $real=1;    # set TRUE for real WBRNAi and WBInteraction IDs
+
+my $db_file="/home2/igor/AceDB/CHROMOSOMES/CHROMOSOME_all.dna";  #fasta file for e-PCR
+my $temp_dir="/var/www/cgi-bin/igor/rnai_data/";
+my ($temp_out_file,$temp_in_file,$temp_sql_out_file);
+#my $version="rnaitools/rnai_curation";
+my $myself=$q->url(-absolute=>1);
+#my $db_name="elegans_ws177";       #MySQL GFF database
+my $rnai_email="igorant\@caltech.edu";
+#my $phenotype_email="igor\@elbrus.caltech.edu, igorant\@caltech.edu";
+my $phenotype_email="igorant\@caltech.edu";
+my $rnai_db="WBRNAi";              #MySQL RNAi DB name
+my $table="wbrnai";    #WBRNAi ID table in $rnaidb
+if (! $real) {
+    $table="rnai_curation_temp";
+}
+my $upload_dir="/var/www/cgi-bin/igor/rnai_data/upload/";    #for picture upload
+my $ontology="/home/igor/Projects/Phenotype_ontology/PhenOnt/PhenOnt.obo";     #phenotype ontology; it is updated every day by /home/igor/crontab/daily_update_PhenOnt from http://tazendra.caltech.edu/~azurebrd/cgi-bin/forms/phenotype_ontology_obo.cgi
+
+my $gene_variation_table="/home2/igor/AceDB/gene_variation.csv";
+my %curators=("Igor Antoshechkin"=>'igorant@caltech.edu',
+	      #"Igor Antoshechkin"=>'igor@elbrus.caltech.edu',
+	      "Andrei Petcherski"=>'andrei@tuco.caltech.edu',
+	      "Raymond Lee"=>'raymond@caltech.edu',
+	      "Kimberly Van Auken"=>'vanauken@caltech.edu',
+	      "Gary Schindelman"=>'garys@caltech.edu',
+	      "Chris Grove"=>'cgrove@caltech.edu');
+
+my %curators_interaction=("Igor Antoshechkin"=>'two22',
+			  "Andrei Petcherski"=>'two480',
+			  "Raymond Lee"=>'',
+			  "Kimberly Van Auken"=>'',
+			  "Gary Schindelman"=>'two557',
+			  "Chris Grove"=>'two2987');
+
+
+my %attr=(user=>'igor');      
+my @data_sources = grep {/elegans_latest/i} DBI->data_sources('mysql', \%attr); # get available GFF databases, use the latest
+if (!@data_sources) {
+    @data_sources = grep {/elegans_ws/i} DBI->data_sources('mysql', \%attr); # get available GFF databases, use the latest by release number
+    @data_sources = sort {
+	my $ver_a=$a=~/elegans_ws(\d+)/i ? $1 : die "cannot parse database version: $a\n";
+	my $ver_b=$b=~/elegans_ws(\d+)/i ? $1 : die "cannot parse database version: $b\n";
+	$ver_b <=>  $ver_a
+	} 
+    @data_sources;
+}
+my $db_name=$data_sources[0];
+if (!$db_name) {
+    PrintError("no C. elegans GFF databases found.");
+    exit;
+}
+	  
+
+#################### creating parameter list #####################
+my %probe;
+
+$probe{pcr_product}=$q->param("pcr_product");
+$probe{primer_name1}=$q->param("primer_name1");
+$probe{primer_name2}=$q->param("primer_name2");
+$probe{primer_seq1}=$q->param("primer_seq1");
+$probe{primer_seq2}=$q->param("primer_seq2");
+$probe{coord}=$q->param("coord");
+$probe{clone}=$q->param("clone");
+$probe{sequence}=$q->param("sequence");
+
+my $probe_count=$q->param("probe_count");
+my $probe_string=$q->param("probe_string");
+my $ace_file=$q->param("ace_file");
+my $paper_obj=$q->param("paper_obj");
+my $pcr_count=$q->param("pcr_count");
+my $wbrnai=$q->param("wbrnai");
+
+my $add_another=$q->param("add_another");
+my $submit_seq=$q->param("submit_seq");
+my $send_email=$q->param("send_email");
+
+my $paper=$q->param("paper");
+my $lab=$q->param("lab");
+my $author_list=$q->param("author");
+my $date=$q->param("date");
+#my $experiment_name=$q->param("experiment_name");
+#$experiment_name=~s/\s+/_/g;
+my $strain=$q->param("strain");
+my $genotype=$q->param("genotype");
+my $treatment=$q->param("treatment");
+my $stage=$q->param("stage");
+my $temperature=$q->param("temperature");
+my $delivered=$q->param("delivered");
+my @phenotype=$q->param("phenotype");
+my $new_phenotype=$q->param("new_phenotype");
+my $movie=$q->param("movie");
+my $picture=$q->param("picture");
+my $species=$q->param("species");
+my $remark=$q->param("remark");
+my $name=$q->param("name");
+#my $email=$q->param("email");
+my $submit_exp=$q->param("submit_exp");
+my $new_phenotype_check=$q->param("new_phenotype_check");
+my $gene_regulation_check=$q->param("gene_regulation_check");
+my $gene_regulation_details=$q->param("gene_regulation_details");
+my $gene_regulation_object=$q->param("gene_regulation_object");
+
+my $interaction_check=$q->param("interaction_check");
+my $interaction_details=$q->param("interaction_details");
+my $interaction_object=$q->param("interaction_object");
+
+my $phenotype_id_string=$q->param("phenotype_id");
+my @phenotype_id=split('\s+', $phenotype_id_string);
+
+my $phenotype_details=$q->param("phenotype_details");
+
+my $submit_paper=$q->param("submit_paper");
+
+my $email=$curators{$name};
+
+my $interactionID='';
+
+################# done creating parameter list ###################
+
+
+
+########################### print form ############################
+
+
+my ($tmp_string);
+
+
+if ($submit_exp ne "Submit" and $submit_seq ne "Submit" and $submit_paper ne "Submit") {
+    print $q->header("text/html");
+    PrintTop("RNAi Data Submission Form");
+    PrintRNAi0(0, $probe_string, 'NULL', $temp_dir, $name, $email, $paper, $lab, $author_list, $date, 0);
+    PrintBottomIgor;
+    print $q->end_html;
+}
+elsif ($submit_paper eq "Submit") {
+    ($paper_obj, $wbrnai)=CheckPaperForm($paper, $lab, $author_list, $date, $name, $email, $ace_file, $rnai_db, $table);
+    print $q->header("text/html");
+    PrintTop("RNAi Data Submission Form");
+    PrintRNAi1(0, $probe_string, $ace_file, $name, $email, $paper, $paper_obj, $lab, $author_list, $date, $wbrnai, 0);
+    PrintBottomIgor;
+    print $q->end_html;
+}
+elsif ($submit_seq eq "Submit" and $add_another eq "yes") {
+    CheckSeqForm(\%probe, $ace_file, $probe_count, $paper, $paper_obj, $wbrnai);
+    $tmp_string=MakeString(\%probe);
+    $probe_string.="\t".$tmp_string;
+    print $q->header("text/html");
+    PrintTop("RNAi Data Submission Form");
+    PrintRNAi1($probe_count, $probe_string,  $ace_file, $name, $email, $paper, $paper_obj, $lab, $author_list, $date, $wbrnai, $pcr_count);
+    PrintBottomIgor;
+    print $q->end_html;
+}
+elsif ($submit_seq eq "Submit" and $add_another eq "no") {
+    CheckSeqForm(\%probe, $ace_file, $probe_count, $paper, $paper_obj, $wbrnai);
+    $tmp_string=MakeString(\%probe);
+    $probe_string.="\t".$tmp_string;
+
+    open (VAR, "<$gene_variation_table") || die "cannot open $gene_variation_table: $!\n";
+    my @tmp=();
+    while (<VAR>) {
+	chomp;
+	s/\"//g;
+	my @tmp2=split("\t");
+	push @tmp, $tmp2[1], $tmp2[0];
+    }
+=head
+    my $db = Ace->connect('sace://elbrus.caltech.edu:40004')
+	    || die print "Connection failure: ", Ace->error;
+    my $query="select a, a->allele from a in class gene where exists a->allele";
+    my @results=$db->aql($query);
+    my @tmp=();
+    foreach (@results) {
+	push @tmp, $$_[1], $$_[0];
+    }
+=cut
+    my $variation_string=join(";", @tmp);
+
+    open(ACE, "<$ace_file") || die "Cannot open $ace_file: $!\n";
+    my %overlapping_genes=();
+    my $temp_rnaiID;
+    while(<ACE>) {
+	chomp;
+	if (/Probe Information:\s+(WBRNAi\d+)/) {
+	    $temp_rnaiID=$1;
+	}
+	next unless /Overlapping_genes/;
+	next unless $temp_rnaiID eq $wbrnai;
+	my @tmp=split("\t");
+	my @tmp2=split(/\|/, $tmp[1]);
+	foreach (@tmp2) {
+	    $overlapping_genes{$_}=1;
+	}
+    }
+    my $overlapping_genes_string=join("; ", sort {$a cmp $b} keys %overlapping_genes);
+    
+    print $q->header("text/html");
+    PrintTop("RNAi Data Submission Form");
+    PrintRNAi2($probe_count, $probe_string,  $ace_file, $name, $email, $paper, $paper_obj, $lab, $author_list, $date, $wbrnai, $pcr_count, $ontology, $variation_string, $overlapping_genes_string);
+    PrintBottomIgor;
+    print $q->end_html;
+}
+elsif ($submit_exp eq "Submit" and $add_another eq "yes") {
+    CheckExpForm($ace_file, $probe_count, $paper, $paper_obj, $wbrnai, $rnai_db, $table);
+    $probe_string='';
+    print $q->header("text/html");
+    PrintTop("RNAi Data Submission Form");
+    PrintRNAi0(0, $probe_string, $ace_file, $temp_dir, $name, $email, $paper, $lab, $author_list, $date, 0);
+    PrintBottomIgor;
+    print $q->end_html;
+
+    if ($new_phenotype_check) {
+	my $now_time=localtime();
+	open MAIL, "| /usr/lib/sendmail -i -t" || die "$!";
+	print MAIL "To: $phenotype_email\n";
+	print MAIL "From: $name <$email>\n";
+	print MAIL "Subject: New RNAi phenotype $paper_obj $now_time\n";
+	print MAIL "//RNAi submission $paper_obj $now_time\n";
+	print MAIL "//From:\t\t$name\n";
+	print MAIL "//E-mail:\t$email\n\n";
+	print MAIL "$new_phenotype";
+	close MAIL;
+    }
+    if ($gene_regulation_check) {
+	my $now_time=localtime();
+	open MAIL, "| /usr/lib/sendmail -i -t" || die "$!";
+	print MAIL "To: $email\n";
+	print MAIL "From: $name <$email>\n";
+	print MAIL "Subject: Gene Regulation Data from RNAi submission $paper_obj $wbrnai $now_time\n";
+	print MAIL "Gene Regulation Data from RNAi submission $paper_obj $wbrnai $now_time\n";
+	print MAIL "$gene_regulation_details\n";
+	close MAIL;
+    }
+
+
+}
+elsif ($submit_exp eq "Submit" and $add_another eq "no") {
+    CheckExpForm($ace_file, $probe_count, $paper, $paper_obj, $wbrnai, $rnai_db, $table);
+    my $now_time=localtime();
+    if ($send_email eq "yes") {
+	open MAIL, "| /usr/lib/sendmail -i -t" || die "$!";
+	print MAIL "To: $email\n";
+	print MAIL "From: $name <$email>\n";
+	print MAIL "Subject: RNAi submission $paper_obj $now_time\n";
+	open ACE, "<$ace_file" || die "$!";
+	while (<ACE>) {
+	    print MAIL $_;
+	}
+	close MAIL;
+	close ACE;
+    }
+    if ($gene_regulation_check) {
+	my $now_time=localtime();
+	open MAIL, "| /usr/lib/sendmail -i -t" || die "$!";
+	print MAIL "To: $email\n";
+	print MAIL "From: $name <$email>\n";
+	print MAIL "Subject: Gene Regulation Data from RNAi submission $paper_obj $wbrnai $now_time\n";
+	print MAIL "Gene Regulation Data from RNAi submission $paper_obj $wbrnai $now_time\n";
+	print MAIL "$gene_regulation_details\n";
+	close MAIL;
+    }
+
+=head
+    open MAIL, "| /usr/lib/sendmail -i -t" || die "$!";
+    print MAIL "To: $rnai_email\n";
+    print MAIL "From: $name <$email>\n";
+    print MAIL "Subject: RNAi submission $paper_obj $now_time\n";
+    open ACE, "<$ace_file" || die "$!";
+    print MAIL "//RNAi submission $paper_obj $now_time\n";
+    print MAIL "//From:\t\t$name\n";
+    print MAIL "//E-mail:\t$email\n\n";
+    while (<ACE>) {
+	print MAIL $_;
+    }
+    close MAIL;
+    close ACE;
+=cut
+
+    print $q->header("text/plain");
+    print "//RNAi submission $paper_obj $now_time\n";
+    print "//From:\t\t$name\n";
+    print "//E-mail:\t$email\n\n";
+    open ACE, "<$ace_file" || die "$!";
+    while (<ACE>) {
+	print $_;
+    }
+    close ACE;
+    
+    if ($new_phenotype_check) {
+	open MAIL, "| /usr/lib/sendmail -i -t" || die "$!";
+	print MAIL "To: $phenotype_email\n";
+	print MAIL "From: $name <$email>\n";
+	print MAIL "Subject: New RNAi phenotype $paper_obj $now_time\n";
+	print MAIL "//RNAi submission $paper_obj $now_time\n";
+	print MAIL "//From:\t\t$name\n";
+	print MAIL "//E-mail:\t$email\n\n";
+	print MAIL "$new_phenotype";
+	close MAIL;
+    }
+    
+#    print $q->header("text/html");
+#    PrintTop("RNAi Data Submission Form");
+#    PrintThankYou();
+#    PrintBottomIgor;
+#    print $q->end_html;
+
+
+
+#    unlink $ace_file;
+
+}
+
+
+################### done printing form ######################
+
+
+
+
+
+
+
+
+
+
+
+###########################################################################
+#                            SUBs
+###########################################################################
+sub CheckExpForm {
+    my ($ace_file, $probe_count, $paper, $paper_obj, $wbrnai, $rnai_db, $table)=@_;
+    my $empty=1;
+    my ($query,@obj,$strain_obj,$stage_obj,$species_obj, $picture_file);
+
+#($strain,$genotype,$treatment,$stage,$temperature,$delivered,@phenotype,$new_phenotype,$movie,$picture,$species,$remark)
+
+    foreach (@phenotype,$new_phenotype_check,$gene_regulation_check,@phenotype_id, $gene_regulation_object) {
+    	next unless $_;
+	$empty=0;
+    }
+    if ($empty) {
+	PrintError("No phenotype information was entered. Please go back.");
+	exit;
+    }
+
+    if ($new_phenotype_check and !$new_phenotype) {
+	PrintError("No new phenotype description was entered. Please go back.");
+	exit;
+    }
+
+    my $db = Ace->connect('sace://elbrus.caltech.edu:40004')
+	|| die print "Connection failure: ", Ace->error;
+
+    if ($strain) {
+	$query="find strain \"$strain\"";
+	@obj=$db->find(-query=>$query);
+	$strain_obj=$obj[0];
+	unless (@obj) {
+	    PrintError("Strain $strain does not exist in the database. Please go back.");
+	    exit;	
+	}
+	if ($genotype) {
+	    PrintError("Genotype is not necessary if strain information is entered. Please go back.");
+	    exit;	
+	}
+    }
+
+    if ($stage) {
+	$query="find life_stage \"$stage\"";
+	@obj=$db->find(-query=>$query);
+	$stage_obj=$obj[0];
+	unless (@obj) {
+	    PrintError("Life stage $stage does not exist in the database. Please go back.");
+	    exit;	
+	}
+    }
+
+    if ($species) {
+	$query="find species \"$species\"";
+	@obj=$db->find(-query=>$query);
+	$species_obj=$obj[0];
+	unless (@obj) {
+	    PrintError("Species $species does not exist in the database. Please go back.");
+	    exit;	
+	}
+    }
+
+    if ($temperature) {
+	unless ($temperature=~/^\d+$/) {
+	    PrintError("Incorrect temperature format. Should be Integer type. Please go back.");
+	    exit;	
+	}
+    }
+
+
+    if ($picture) {
+	my $fh=$q->upload("picture") || print "invalid file handle\n";
+	if (dir_size($upload_dir)+$ENV{CONTENT_LENGTH} > MAX_DIR_SIZE) {
+	    PrintError("Upload directory is full.");
+	    exit;
+	}
+	if ($ENV{CONTENT_LENGTH} > REAL_MAX_FILE_SIZE) {
+	    PrintError("Picture file size is too big. Please go back.");
+	    exit;
+	}
+
+	$picture_file="$wbrnai.pic";
+	my $i;
+	while (-e "$upload_dir/$picture_file") {
+	    $i++;
+	    $picture_file="$wbrnai.pic$i";
+	}
+	
+	open UPLOAD, ">$upload_dir/$picture_file" || die "$!";
+	my $buffer="";
+	while (read($fh, $buffer, BUFFER_SIZE)) {
+	    print UPLOAD $buffer;
+	}
+	close UPLOAD;
+    }
+	
+
+
+    my $string="//\tExperimental Information: $wbrnai\n";
+    RollBackAce($ace_file,$string);
+
+    
+    open ACE, ">>$ace_file" || die "$!";
+
+    print ACE "\n";
+    print ACE "///////////////////////////////////////////////////////////////\n";
+    print ACE "//\tExperimental Information: $wbrnai\n";
+    print ACE "///////////////////////////////////////////////////////////////\n";
+    print ACE "\n";
+
+
+    print ACE "RNAi : \"$wbrnai\"\n";
+    if ($strain) {
+	print ACE "Strain\t\"$strain_obj\"\n";
+    }
+    if ($genotype) {
+	print ACE "Genotype\t\"$genotype\"\n";
+    }
+    if ($treatment) {
+	print ACE "Treatment\t\"$treatment\"\n";
+    }
+    if ($stage) {
+	print ACE "Life_stage\t\"$stage_obj\"\n";
+    }
+    if ($temperature) {
+	print ACE "Temperature\t$temperature\n";
+    }
+    if ($delivered) {
+	print ACE "Delivered_by\t\"$delivered\"\n";
+    }
+    if (@phenotype) {
+	foreach (@phenotype) {
+	    print ACE "Phenotype\t\"$_\"\n";
+	}
+    }
+    if (@phenotype_id) {
+	foreach (@phenotype_id) {
+	    print ACE "Phenotype\t\"$_\"\n";
+	}
+    }
+    if ($new_phenotype) {
+	if ($new_phenotype_check) {
+	    print ACE "Phenotype\t\"Unclassified\"\n";
+	}
+	$new_phenotype=~s/\'//g;
+	$new_phenotype=~s/\"//g;
+	$new_phenotype=~s/\s+/ /g;
+	print ACE "Remark\t\"$new_phenotype\"\n";
+    }
+    if ($species) {
+	print ACE "Species\t\"$species_obj\"\n";
+    }
+    if ($remark) {
+	$remark=~s/\'//g;
+	$remark=~s/\"//g;
+	$remark=~s/\s+/ /g;
+	print ACE "Remark\t\"$remark\"\n";
+    }
+    if ($picture) {
+	print ACE "Picture\t\"$picture_file\"\n";
+	print ACE "\/\/remember to submit $picture renamed as $picture_file\n";
+    }
+
+
+    #this is generated by the javascript form
+    if ($phenotype_details) {
+#	print ACE "$phenotype_details\n";
+	my @tmp=split(';&=',$phenotype_details);
+	my $details_count=scalar @tmp / 21;
+	my ($pheno);
+	for (my $i=0; $i<$details_count; $i++) {
+	    $tmp[$i*21]=~s/^>//;
+	    $pheno=$tmp[$i*21];
+	    foreach my $j (1..20) {
+		$tmp[$i*21+$j]=~s/^>//;
+		next unless $tmp[$i*21+$j];
+		if ($j == 1) {
+		    $tmp[$i*21+$j]=int($tmp[$i*21+$j]+0.5);
+		    $tmp[$i*21+$j+1]=~s/^>//;
+		    $tmp[$i*21+$j+1]=int($tmp[$i*21+$j+1]+0.5);
+		    print ACE "Phenotype\t\"$pheno\"\tRange\t$tmp[$i*21+$j]";
+		    if ($tmp[$i*21+$j+1]) {
+			print ACE "\t$tmp[$i*21+$j+1]\n";
+		    }
+		    else {
+			print ACE "\n";
+		    }
+		    
+		}
+		elsif ($j == 2) {
+		    next;
+		}
+		elsif($j == 3 and $tmp[$i*21+$j] eq 'checked') {
+		    print ACE "Phenotype\t\"$pheno\"\tIncomplete\n";
+		}
+		elsif ($j == 4) {
+		    $tmp[$i*21+$j]=~s/\'//g;
+		    $tmp[$i*21+$j]=~s/\"//g;
+		    $tmp[$i*21+$j]=~s/\s+/ /g;
+		    print ACE "Phenotype\t\"$pheno\"\tIncomplete\t\"$tmp[$i*21+$j]\"\n";
+		}
+		elsif($j == 5 and $tmp[$i*21+$j] eq 'checked') {
+		    print ACE "Phenotype\t\"$pheno\"\tLow\n";
+		}
+		elsif ($j == 6) {
+		    $tmp[$i*21+$j]=~s/\'//g;
+		    $tmp[$i*21+$j]=~s/\"//g;
+		    $tmp[$i*21+$j]=~s/\s+/ /g;
+		    print ACE "Phenotype\t\"$pheno\"\tLow\t\"$tmp[$i*21+$j]\"\n";
+		}
+		elsif($j == 7 and $tmp[$i*21+$j] eq 'checked') {
+		    print ACE "Phenotype\t\"$pheno\"\tHigh\n";
+		}
+		elsif ($j == 8) {
+		    $tmp[$i*21+$j]=~s/\'//g;
+		    $tmp[$i*21+$j]=~s/\"//g;
+		    $tmp[$i*21+$j]=~s/\s+/ /g;
+		    print ACE "Phenotype\t\"$pheno\"\tHigh\t\"$tmp[$i*21+$j]\"\n";
+		}
+		elsif($j == 9 and $tmp[$i*21+$j] eq 'checked') {
+		    print ACE "Phenotype\t\"$pheno\"\tComplete\n";
+		}
+		elsif ($j == 10) {
+		    $tmp[$i*21+$j]=~s/\'//g;
+		    $tmp[$i*21+$j]=~s/\"//g;
+		    $tmp[$i*21+$j]=~s/\s+/ /g;
+		    print ACE "Phenotype\t\"$pheno\"\tComplete\t\"$tmp[$i*21+$j]\"\n";
+		}
+		elsif($j == 11 and $tmp[$i*21+$j] eq 'checked') {
+		    print ACE "Phenotype\t\"$pheno\"\tHeat_sensitive\n";
+		}
+		elsif ($j == 12) {
+		    $tmp[$i*21+$j]=~s/\'//g;
+		    $tmp[$i*21+$j]=~s/\"//g;
+		    $tmp[$i*21+$j]=~s/\s+/ /g;
+		    print ACE "Phenotype\t\"$pheno\"\tHeat_sensitive\t\"$tmp[$i*21+$j]\"\n";
+		}
+		elsif($j == 13 and $tmp[$i*21+$j] eq 'checked') {
+		    print ACE "Phenotype\t\"$pheno\"\tCold_sensitive\n";
+		}
+		elsif ($j == 14) {
+		    $tmp[$i*21+$j]=~s/\'//g;
+		    $tmp[$i*21+$j]=~s/\"//g;
+		    $tmp[$i*21+$j]=~s/\s+/ /g;
+		    print ACE "Phenotype\t\"$pheno\"\tCold_sensitive\t\"$tmp[$i*21+$j]\"\n";
+		}
+		elsif ($j == 15) {
+		    $tmp[$i*21+$j]=int($tmp[$i*21+$j]+0.5);
+		    $tmp[$i*21+$j+1]=~s/^>//;
+		    $tmp[$i*21+$j+1]=int($tmp[$i*21+$j+1]+0.5);
+		    print ACE "Phenotype\t\"$pheno\"\tQuantity\t$tmp[$i*21+$j]";
+		    if ($tmp[$i*21+$j+1]) {
+			print ACE "\t$tmp[$i*21+$j+1]\n";
+		    }
+		    else {
+			print ACE "\n";
+		    }
+		    
+		}
+		elsif ($j == 16) {
+		    next;
+		}
+		elsif ($j == 17) {
+		    $tmp[$i*21+$j]=~s/\'//g;
+		    $tmp[$i*21+$j]=~s/\"//g;
+		    $tmp[$i*21+$j]=~s/\s+/ /g;
+		    print ACE "Phenotype\t\"$pheno\"\tQuantity_description\t\"$tmp[$i*21+$j]\"\n";
+		}
+		elsif ($j == 18) {
+		    $tmp[$i*21+$j]=~s/\'//g;
+		    $tmp[$i*21+$j]=~s/\"//g;
+		    $tmp[$i*21+$j]=~s/\s+/ /g;
+		    print ACE "Phenotype\t\"$pheno\"\tMolecule\t\"$tmp[$i*21+$j]\"\n";
+		}
+		elsif ($j == 19) {
+		    if ($tmp[$i*21+$j] eq "NOT") {
+			print ACE "Phenotype\t\"$pheno\"\tNOT\n";
+		    }
+		}
+		elsif ($j == 20) {
+		    $tmp[$i*21+$j]=~s/\'//g;
+		    $tmp[$i*21+$j]=~s/\"//g;
+		    $tmp[$i*21+$j]=~s/\s+/ /g;
+		    print ACE "Phenotype\t\"$pheno\"\tRemark\t\"$tmp[$i*21+$j]\"\n";
+		}
+
+	    }
+	}
+	
+    }
+    if ($gene_regulation_check) {
+	print ACE "ATTENTION: Phenotype for $wbrnai is Gene_regulation-based. Remove this line (or comment it out) when you're ready to submit the file.\n";
+    }
+    if ($gene_regulation_object) {
+	print ACE "Gene_regulation\t\"$gene_regulation_object\"\n";
+    }
+    if ($interaction_object) {
+	print ACE "Interaction\t\"$interaction_object\"\n";
+    }
+    if ($interaction_details) {
+	if ($real) {
+	    my $ref=getInteractionID(1, $curators_interaction{$name});   # get ID here
+	    if (!$ref) {
+		PrintError("Cannot fetch new interaction ID. Please go back.");
+		exit;	
+	    }
+	    $interactionID=$$ref[0];
+	}
+	else {
+	    $interactionID="WBInteractionTEST";
+	}
+	print ACE "Interaction\t\"$interactionID\"\n";
+	print ACE "//Interaction_details\t\"$interaction_details\"\n";
+    }
+    print ACE "\n";
+
+    
+    if ($interactionID) {
+	my %interaction_data=();
+	my @tmp1=split(";", $interaction_details);
+	my $db = Ace->connect('sace://elbrus.caltech.edu:40004')
+	    || die print "Connection failure: ", Ace->error;
+	foreach (@tmp1) {
+	    my @tmp2=split("=>");
+	    if ($tmp2[0] eq "interaction_phenotype") {
+		my @tmp3=split(",", $tmp2[1]);
+=head #do not check for phenotype in AceDB - they are parsed from the obo file and may be new
+		foreach (@tmp3) {
+		    my $obj=$db->fetch('phenotype', $_);
+		    unless ($obj) {
+			PrintError("Phenotype $_ (interaction information form) does not exist in the database. Please go back.");
+			exit;	
+		    }
+		}
+=cut
+		$interaction_data{'common'}{$tmp2[0]}=\@tmp3;
+	    }
+	    elsif ($tmp2[0]=~/(.+)(\d+)/) {
+		my $key=$1;
+		my $number=$2;
+		$interaction_data{$number}{$key}=$tmp2[1];
+		if ($key eq 'gene') {
+		    my $obj=$db->fetch('gene', $tmp2[1]);
+		    unless ($obj) {
+			PrintError("Gene ID $tmp2[1] (interaction information form) does not exist in the database. Please go back.");
+			exit;	
+		    }
+		}
+		elsif ($key eq 'var') {
+		    my $wbvar_name=$db->fetch(Variation_name => $tmp2[1]);		    
+		    unless ($wbvar_name) {
+			PrintError("Variation $tmp2[1] (interaction information form) does not exist in the database. Please go back.");
+			exit;	
+		    }
+		}
+		elsif ($key eq 'trans') {
+		    my $obj=$db->fetch('transgene', $tmp2[1]);
+		    unless ($obj) {
+			PrintError("Transgene $tmp2[1] (interaction information form) does not exist in the database. Please go back.");
+			exit;	
+		    }
+		}
+		    
+	    }
+	    else {
+		$interaction_data{'common'}{$tmp2[0]}=$tmp2[1];
+	    }
+	}
+	print ACE "Interaction : \"$interactionID\"\n";
+	print ACE "Paper\t$paper_obj\n";
+	foreach my $number (sort {$a cmp $b} keys %interaction_data) {
+	    next if $number=~/common/;
+	    print ACE "Interactor\t$interaction_data{$number}{'gene'}";
+	    if ($interaction_data{$number}{'var'}) {
+		my $wbvar_name=$db->fetch(Variation_name => $interaction_data{$number}{'var'});
+		unless ($wbvar_name) {
+		    PrintError("Variation $interaction_data{$number}{'var'} (interaction information form) does not exist in the database. Please go back.");
+		    exit;	
+		}
+		my $wbvar=$wbvar_name->right(2);
+#		print ACE "\tVariation\t$interaction_data{$number}{'var'}";
+		print ACE "\tVariation\t$wbvar";
+	    }
+	    elsif ($interaction_data{$number}{'trans'}) {
+		print ACE "\tTransgene\t$interaction_data{$number}{'trans'}";
+	    }
+	    print ACE "\n";
+
+#	    if ($interaction_data{$number}{'direction'} eq "Non-directional") {   # hack for now... add Non-directional to model?
+#		if ($number == 1) {
+#		    $interaction_data{$number}{'direction'}="Effector";
+#		}
+#		else {
+#		    $interaction_data{$number}{'direction'}="Effected";
+#		}
+#	    }
+
+	    print ACE "Interaction_type\t$interaction_data{'common'}{'interaction_type'}\t$interaction_data{$number}{'direction'}\t$interaction_data{$number}{'gene'}\n";
+	    if ($interaction_data{$number}{'rnai'}) {
+		print ACE "Interaction_type\t$interaction_data{'common'}{'interaction_type'}\tInteraction_RNAi\t$wbrnai\n";
+	    }
+	}
+	foreach (@{$interaction_data{'common'}{'interaction_phenotype'}}) {
+	    print ACE "Interaction_type\t$interaction_data{'common'}{'interaction_type'}\tInteraction_phenotype\t$_\n";
+	}
+	
+	if ($interaction_data{'common'}{'remark'}) {
+	    print ACE "Remark\t\"$interaction_data{'common'}{'remark'}\"\n";
+	}
+	print ACE "\n";
+    }
+	    
+	    
+
+    
+   
+    close ACE;
+
+
+
+    my $dbh=DBI->connect("DBI:mysql:database=$rnai_db", "igor");
+    unless ($dbh) {
+	PrintError("Could not connect to $rnai_db"); 
+	exit;
+    }
+    $dbh->do("LOCK TABLES $table WRITE");
+    $dbh->do("UPDATE $table SET data=\"YES\" WHERE id=\"$wbrnai\"");
+    $dbh->do("UNLOCK TABLES");
+    $dbh->disconnect();
+}
+
+sub getInteractionID {
+    my $interaction_count=shift;
+    my $curator=shift;
+    my @interactionID;
+    my $url="http://tazendra.caltech.edu/~postgres/cgi-bin/interaction_ticket.cgi?action=Ticket+%21&curator=$curator&tickets=";
+    $url.=$interaction_count;
+    my $line=`wget -O - \"$url\"`;
+    my @lines=split(/\n/, $line);
+    foreach (@lines) {
+	if (/(WBInteraction\d{7})/) {
+	    push (@interactionID, $1);
+	}
+    }
+    if (@interactionID) {
+	return \@interactionID;
+    }
+    else {
+	return undef;
+    }
+}
+
+
+sub CheckPaperForm {
+    my ($paper, $lab, $author_list, $date, $name, $email, $ace_file, $rnai_db, $table)=@_;
+    my ($wbrnai, $id_number, $length, $deprecated);
+
+    if (!$paper) {
+	PrintError("No paper ID was entered. Please go back.");
+	exit;
+    }
+    if (!$name) {
+	PrintError("No name was entered. Please go back.");
+	exit;
+    }
+    if (!$email) {
+	PrintError("No e-mail address was entered. Please go back.$name, $email");
+	exit;
+    }
+
+    my $db = Ace->connect('sace://elbrus.caltech.edu:40004')
+	|| die print "Connection failure: ", Ace->error;
+
+    my $query="find paper \"$paper\" OR cgc_name=\"$paper\" OR pmid=\"$paper\"";
+    my @obj=$db->find(-query=>$query);
+    my $paper_obj=$obj[0];
+    unless (@obj) {
+	PrintError("Paper ID does not exist in the database. Please go back.");
+	exit;	
+    }
+    
+    my $lab_obj;
+    if ($lab) {
+	$query="find laboratory \"$lab\"";
+	@obj=$db->find(-query=>$query);
+	$lab_obj=$obj[0];
+	unless (@obj) {
+	    PrintError("Laboratory symbol does not exist in the database. Please go back.");
+	    exit;	
+	} 
+    }
+
+    if ($date) {
+	if (!$date=~/\d{4}-\d{2}-\d{2}/) {
+	    PrintError("Incorrect date format. Should be YYYY-MM-DD (e.g. 1999-07-29). Please go back.");
+	    exit;
+	}
+	$date=~/(\d{4})-(\d{2})-(\d{2})/;
+	if (int($2) < 1 or int($2) > 12 or int($3) < 1 or int($3) > 31) {
+	    PrintError("Incorrect date format. Should be YYYY-MM-DD (e.g. 1999-07-29). Please go back.");
+	    exit;
+	}	
+    }
+
+    
+#    $query="find paper $paper_obj; follow author";
+    $query="select a->author from a in class paper where a=\"$paper_obj\"";
+    my @authors=$db->aql($query);
+    
+#    my @authors=$db->find(-query=>$query);
+
+    my $tmp_email=$email=~/^([0-9a-zA-Z_.]+\@[0-9a-zA-Z_.]+)$/ ? $1 : '';
+    unless ($tmp_email) {
+	PrintError("Invalid e-mail address ($email). Please go back.");
+	exit;
+    }
+
+
+
+    my $dbh=DBI->connect("DBI:mysql:database=$rnai_db", "igor");
+    unless ($dbh) {
+	PrintError("Could not connect to $rnai_db"); 
+	exit;
+    }
+    $dbh->do("LOCK TABLES $table WRITE");
+    
+=head
+    my $sth = $dbh->prepare("SELECT id_number AS ID from $table WHERE DATE_ADD(id_assigned, interval 7 day) < CURDATE() AND data IS NULL");
+    $sth->execute();
+
+    while (my $ref_to_deprecate=$sth->fetchrow_hashref) {
+	$id_number=$ref_to_deprecate->{'ID'};
+	$dbh->do("UPDATE $table SET deprecated=\"YES\" WHERE id_number=$id_number"); 
+    }
+    $sth->finish();
+    
+    $sth = $dbh->prepare("SELECT id_number AS ID from $table WHERE deprecated=\"YES\" ORDER BY id_number");
+    $sth->execute();
+    my $ref=$sth->fetchrow_hashref;
+    $sth->finish();
+    if ($ref) {
+	$id_number=$ref->{'ID'};
+	$deprecated=1;
+    }
+    else {
+	$sth = $dbh->prepare("SELECT MAX(id_number) AS MAX_ID from $table");
+	$sth->execute();
+	$ref=$sth->fetchrow_hashref;
+	$sth->finish();
+	$id_number=$ref->{'MAX_ID'};
+	$id_number++;
+    }
+=cut
+
+    my $sth = $dbh->prepare("SELECT MAX(id_number) AS MAX_ID from $table");  #do not try to deprecate ids - just assign the next one
+    $sth->execute();
+    my $ref=$sth->fetchrow_hashref;
+    $sth->finish();
+    $id_number=$ref->{'MAX_ID'};
+    $id_number++;
+
+    my $length=length $id_number;
+    $wbrnai="WBRNAi";
+    for (my $i=1; $i<=8-$length; $i++) {
+	$wbrnai.='0';
+    }
+    $wbrnai.="$id_number";
+    my @tmp_date=localtime();
+    $tmp_date[5]+=1900;
+    $tmp_date[4]++;
+    if (length $tmp_date[4] == 1) {
+	$tmp_date[4]="0".$tmp_date[4];
+    }
+    if (length $tmp_date[3] == 1) {
+	$tmp_date[3]="0".$tmp_date[3];
+    }
+    
+    if (!$deprecated) {
+	$dbh->do("INSERT INTO $table (id, id_number, created_date, created_by, email) VALUES (\"$wbrnai\", $id_number, \'$tmp_date[5]-$tmp_date[4]-$tmp_date[3]\', \"$name\", \"$email\")") || die PrintError($dbh->errstr);
+    }
+    else {
+	$dbh->do("UPDATE $table SET history_name=NULL, created_date=\"$tmp_date[5]-$tmp_date[4]-$tmp_date[3]\", created_by=\"$name\", email=\"$email\", data=NULL, deprecated=NULL WHERE id_number=$id_number"); 
+    }
+    $dbh->do("UNLOCK TABLES");
+    $dbh->disconnect();
+
+
+    open ACE, ">>$ace_file" || die "$!";
+    close ACE;
+
+    my $string="//\tPaper Information: $wbrnai\n";
+    RollBackAce($ace_file, $string);
+
+    open ACE, ">>$ace_file" || die "$!";
+    
+    print ACE "\n";
+    print ACE "///////////////////////////////////////////////////////////////\n";
+    print ACE "//\tPaper Information: $wbrnai\n";
+    print ACE "///////////////////////////////////////////////////////////////\n";
+    print ACE "\n";
+    
+    print ACE "RNAi : \"$wbrnai\"\n";
+    print ACE "Reference\t\"$paper_obj\"\n";
+    print ACE "Laboratory\t\"$lab_obj\"\n" if $lab;
+    foreach (@authors) {
+	print ACE "Author\t\"$$_[0]\"\n";
+    }
+    print ACE "Date\t$date\n" if $date;
+    print ACE "Method\t\"RNAi\"\n";
+    print ACE "\n";
+
+    $db->close;
+    close ACE;
+
+    return ($paper_obj, $wbrnai);
+}
+
+sub RollBackAce {
+    my ($ace_file, $string)=@_;
+    
+    open ACE, "<$ace_file" || die "$!";
+    my (@lines, $line_count, $last_line);
+    while (<ACE>) {
+	push @lines, $_;
+	$line_count++;
+    }
+    close ACE;
+    
+    for (my $i=0; $i<$line_count; $i++) {
+	if ($lines[$i] eq $string) {
+	    $last_line=$i-2;
+	    last;
+	}
+    }
+    
+    unless ($last_line) {
+	$last_line=$line_count;
+    }
+    
+    open ACE, ">$ace_file" || die "$!";
+    for (my $i=0; $i<$last_line; $i++) {
+	print ACE $lines[$i];
+    }
+    
+    close ACE;
+    
+}
+
+
+
+sub CheckPCRproduct {
+    my $ace_file=shift;
+    my $db=shift;
+    my $query="find pcr_product \"$probe{pcr_product}\"";
+    my @obj=$db->find(-query=>$query);
+    my $pcr_obj=$obj[0];
+    unless (@obj) {
+	PrintError("PCR product name does not exist in the database. Please go back.");
+	exit;	
+    }
+    if ($probe{primer_name1} or $probe{primer_name2} or $probe{primer_seq1} or $probe{primer_seq2} or $probe{coord} or $probe{clone} or $probe{sequence}) {
+	PrintError("Only one section should be filled. Please go back.");
+	exit;
+    }
+    $query="find pcr_product \"$pcr_obj\"; follow canonical_parent";
+    @obj=$db->find(-query=>$query);
+    unless (@obj) {
+	PrintError("PCR product does not have a canonical parent.");
+	exit;	
+    }
+    my $seq_obj=$obj[0];
+    $query="select a, b, b[1], b[2] from a in class sequence where a=\"$seq_obj\", b in a->pcr_product where b=\"$pcr_obj\"";
+    my @obj=$db->aql($query);
+    my ($start,$stop)=(${$obj[0]}[2],${$obj[0]}[3]);
+    unless ($start and $stop) {
+	PrintError("Could not fetch PCR product coordinates.");
+	exit;
+    }
+    
+    my $sqldb=Bio::DB::GFF->new(-dsn=>$db_name) || die "cannot open $db_name $!";
+    my $seg=$sqldb->segment(-name=>$seq_obj,-start=>$start,-end=>$stop) || die "cannot fetch segment";
+    my $dna=$seg->dna;
+    my $length=$seg->length;
+    my $gc_length=$sqldb->segment(-name=>$seq_obj)->length;
+
+    my $string="//\tProbe Information: $wbrnai probe_$probe_count\n";
+    RollBackAce($ace_file,$string);
+
+    my $method="RNAi_primary";
+
+    open ACE, ">>$ace_file" || die "$!";
+    
+    print ACE "\n";
+    print ACE "///////////////////////////////////////////////////////////////\n";
+    print ACE "//\tProbe Information: $wbrnai probe_$probe_count\n";
+    print ACE "///////////////////////////////////////////////////////////////\n";
+    print ACE "\n";
+
+    RunBlat($dna, $pcr_obj, $db);
+
+    print ACE "\n";
+
+=head	
+    
+    print ACE "RNAi : \"$wbrnai\"\n";
+    print ACE "Homol_homol\t\"$seq_obj:RNAi\"\n";
+    print ACE "PCR_product\t\"$pcr_obj\"\n";
+#   print ACE "DNA_text\t\"$pcr_obj\"\t\"$dna\"\n";
+    print ACE "DNA_text\t\"$dna\"\t\"$pcr_obj\"\n";
+    print ACE "\n";
+
+    print ACE "Homol_data : \"$seq_obj:RNAi\"\n";
+    print ACE "Sequence\t\"$seq_obj\"\n";
+#    print ACE "RNAi_homol\t\"$wbrnai\"\t\"RNAi\"\t100\t$start\t$stop\t1\t$length\n";
+    print ACE "RNAi_homol\t\"$wbrnai\"\t\"$method\"\t100\t$start\t$stop\t1\t$length\n";
+    print ACE "\n";
+    
+    print ACE "Sequence : \"$seq_obj\"\n";
+    print ACE "Homol_data\t\"$seq_obj:RNAi\"\t1\t$gc_length\n";
+    print ACE "\n";
+
+    my $overlapping_genes_ref=getOverlappingGenes($seg, $db);
+    if ($overlapping_genes_ref) {
+	print ACE "\n";
+	print ACE "//Overlapping_genes\t", join("|", map {"$_($$overlapping_genes_ref{$_})"}sort {$a cmp $b} keys %{$overlapping_genes_ref}), "\n";
+	print ACE "\n";
+    }
+=cut
+    
+    close ACE;
+}
+
+
+
+sub CheckPrimerSeq {
+
+    my $ace_file=shift;
+    my $db=shift;
+
+    $temp_in_file=$temp_dir.int(rand(1000000));
+    while (-e $temp_in_file) {
+	$temp_in_file=$temp_dir.int(rand(1000000));
+    }
+    $temp_out_file=$temp_dir.int(rand(1000000));
+    while (-e $temp_out_file) {
+	$temp_out_file=$temp_dir.int(rand(1000000));
+    }
+
+    unless (-e $db_file) {
+	PrintError("Cannot run e-PCR. Database file $db_file does not exist.");
+	exit;
+    }
+    
+    open OUT, ">$temp_in_file" || die $!;
+    print OUT "assay_1\t".uc($probe{primer_seq1})."\t".uc($probe{primer_seq2})."\t3000\n";
+    close OUT;
+    
+   
+#    eval {    `e-PCR -m 3000 -t 3 -o $temp_out_file $temp_in_file $db_file`; };
+    eval {    `e-PCR -m 3000 -t 3 -n 1 -o $temp_out_file $temp_in_file $db_file`; }; #allow one mismatch
+    if ($@) {
+	PrintError("e-PCR generated an error:<br><br></b>$@<b>");
+	unlink $temp_in_file, $temp_out_file;
+	exit;
+    }
+    
+    
+    
+    open (IN, "<$temp_out_file") || die $!;
+    my @epcr_results=();
+    my $sqldb=Bio::DB::GFF->new(-dsn=>$db_name) || die "cannot open $db_name $!";
+    my $result_count=0;
+
+    while (<IN>) {
+	chomp;
+	@epcr_results=split('\s+');
+	$result_count++;
+    
+	$epcr_results[0]=~/(CHROMOSOME_)(.*)/;
+	my $chrom=$2;
+	my ($strand,$start,$stop)=($epcr_results[2],$epcr_results[3],$epcr_results[4]);
+	unless ($chrom and $start and $stop and $strand) {
+	    PrintError("The primer pair does not generate a PCR product. Please go back.");
+	    unlink $temp_in_file, $temp_out_file;
+	    exit;
+	}
+ 
+	my ($seg, @features, $rel_name, $rel_start, $rel_stop, $gc, $tmp_name, $tmp_start, $tmp_stop);
+	
+	$seg=$sqldb->segment(-name=>$epcr_results[0],-start=>$start,-end=>$stop, -absolute=>'1') || die "cannot fetch segment";
+	@features=$seg->features(-types=>'region');    # Sequence:Link and Sequence:Genomic_canonical were replaced by region:Link and region:Genomic_canonical starting from ws121
+    
+	$gc=0;
+	$rel_name='';
+	$rel_start='';
+	$rel_stop='';
+	foreach (@features) {
+	    my $fname=$_->name;
+	    my $fsource=$_->source;
+	    my $fmethod=$_->method;
+	    my $ftype=$_->type;
+	    my $flength=$_->length;
+	    if ($fsource eq 'Genomic_canonical') {
+		$seg->refseq($fname);
+		$rel_name=$fname;
+		$rel_start=$seg->start;
+		$rel_stop=$seg->stop;
+		$gc=1 and last unless ($rel_start <= 0 or $rel_stop <= 0 or $rel_start > $flength or $rel_stop > $flength);
+	    }
+	    if ($fsource eq 'Link' and $fname=~/SUPERLINK/) {
+		$seg->refseq($fname);
+		$tmp_name=$fname;
+		$tmp_start=$seg->start;
+		$tmp_stop=$seg->stop;
+	    }
+	}
+	($rel_name,$rel_start,$rel_stop)=($tmp_name,$tmp_start,$tmp_stop) unless $gc;
+	
+	($rel_name,$rel_start,$rel_stop)=('MTCE', $start,$stop) if $chrom eq 'MtDNA';
+	
+	unless ($rel_name) {
+	    PrintError("The primer pair does not generate a PCR product. Please go back.");
+	    unlink $temp_in_file, $temp_out_file;
+	    exit;
+	}
+
+	my $dna=$seg->dna;
+	my $length=$seg->length;
+	my $gc_length=$sqldb->segment(-name=>$rel_name)->length;
+
+	
+	my $pcr_product="$paper_obj:$rel_name"."_$pcr_count".".$result_count";
+	while ($db->find(-query=>"find pcr_product \"$pcr_product\"")) {
+	    $pcr_count++;
+	    $pcr_product="$paper_obj:$rel_name"."_$pcr_count".".$result_count";
+	}
+
+	my $string="//\tProbe Information: $wbrnai probe_$probe_count\n";
+	RollBackAce($ace_file,$string);
+
+	my $method="RNAi_primary";
+	
+	open ACE, ">>$ace_file" || die "$!";
+
+	print ACE "\n";
+	print ACE "///////////////////////////////////////////////////////////////\n";
+	print ACE "//\tProbe Information: $wbrnai probe_$probe_count\n";
+	print ACE "///////////////////////////////////////////////////////////////\n";
+	print ACE "\n";
+
+	print ACE "Oligo : \"$paper_obj:".uc($probe{primer_seq1})."\"\n";
+	print ACE "Sequence\t\"".uc($probe{primer_seq1})."\"\n";
+	print ACE "Length\t".length($probe{primer_seq1})."\n";
+	print ACE "In_sequence\t\"$rel_name\"\n";
+	print ACE "PCR_product\t\"$pcr_product\"\n";
+	print ACE "\n";
+
+	print ACE "Oligo : \"$paper_obj:".uc($probe{primer_seq2})."\"\n";
+	print ACE "Sequence\t\"".uc($probe{primer_seq2})."\"\n";
+	print ACE "Length\t".length($probe{primer_seq2})."\n";
+	print ACE "In_sequence\t$rel_name\n";
+	print ACE "PCR_product\t\"$pcr_product\"\n";
+	print ACE "\n";
+	
+	print ACE "PCR_product : \"$pcr_product\"\n";
+	print ACE "Canonical_parent\t$rel_name\n";
+	print ACE "Oligo\t\"$paper_obj:".uc($probe{primer_seq1})."\"\n";
+	print ACE "Oligo\t\"$paper_obj:".uc($probe{primer_seq2})."\"\n";
+#	print ACE "RNAi\t\"$wbrnai\"\t1\t".($rel_stop-$rel_start+1)."\n";
+	print ACE "RNAi\t\"$wbrnai\"\n";
+	print ACE "Method\t\"GenePairs\"\n";
+	print ACE "\n";
+
+	print ACE "Sequence : \"$rel_name\"\n";
+	print ACE "PCR_product\t\"$pcr_product\"\t$rel_start\t$rel_stop\n";
+	print ACE "Oligo\t\"$paper_obj:".uc($probe{primer_seq1})."\"";
+	if ($strand eq '+') {
+	    print ACE "\t$rel_start\t".($rel_start+length($probe{primer_seq1})-1)."\n";
+	}
+	else {
+	    print ACE "\t$rel_stop\t".($rel_stop-length($probe{primer_seq1})+1)."\n";
+	}
+	print ACE "Oligo\t\"$paper_obj:".uc($probe{primer_seq2})."\"";
+	if ($strand eq '-') {
+	    print ACE "\t$rel_start\t".($rel_start+length($probe{primer_seq2})-1)."\n";
+	}
+	else {
+	    print ACE "\t$rel_stop\t".($rel_stop-length($probe{primer_seq2})+1)."\n";
+	}
+	print ACE "\n";
+
+
+	my $probe_name="$paper_obj:$rel_name"."_$probe_count".".$result_count";
+
+	RunBlat($dna, $probe_name, $db);
+	
+	print ACE "\n";
+
+	print ACE "RNAi : \"$wbrnai\"\n";	
+	print ACE "PCR_product\t\"$pcr_product\"\n";
+	print ACE "\n";
+
+=head
+	
+	print ACE "RNAi : \"$wbrnai\"\n";
+	print ACE "Homol_homol\t\"$rel_name:RNAi\"\n";
+	print ACE "PCR_product\t\"$pcr_product\"\n";
+#	print ACE "DNA_text\t\"$paper_obj:$rel_name"."_$probe_count".".$result_count\"\t\"$dna\"\n";
+	print ACE "DNA_text\t\"$dna\"\t\"$paper_obj:$rel_name"."_$probe_count".".$result_count\"\n";
+	print ACE "\n";
+	
+	print ACE "Homol_data : \"$rel_name:RNAi\"\n";
+	print ACE "Sequence\t\"$rel_name\"\n";
+#	print ACE "RNAi_homol\t\"$wbrnai\"\t\"RNAi\"\t100\t$rel_start\t$rel_stop\t1\t$length\n";
+	print ACE "RNAi_homol\t\"$wbrnai\"\t\"$method\"\t100\t$rel_start\t$rel_stop\t1\t$length\n";
+	print ACE "\n";
+	
+	print ACE "Sequence : \"$rel_name\"\n";
+	print ACE "Homol_data\t\"$rel_name:RNAi\"\t1\t$gc_length\n";
+	print ACE "\n";
+
+	my $overlapping_genes_ref=getOverlappingGenes($seg, $db);
+	if ($overlapping_genes_ref) {
+	    print ACE "\n";
+	    print ACE "//Overlapping_genes\t", join("|", map {"$_($$overlapping_genes_ref{$_})"}sort {$a cmp $b} keys %{$overlapping_genes_ref}), "\n";
+	    print ACE "\n";
+	}
+
+=cut
+
+    }
+
+    close ACE;
+    
+    if ($result_count == 0) {
+	PrintError("e-PCR did not produce any results. Check your primers.");
+	unlink $temp_in_file, $temp_out_file;
+	exit;
+    }
+ 
+    unlink $temp_in_file, $temp_out_file;
+}
+
+
+
+sub CheckCoordinates {
+    my $ace_file=shift;
+    my $db=shift;
+    my ($seq,$start,$stop)=$probe{coord}=~/(.+):(\d+)..(\d+)/ ? ($1,$2,$3) : ('','','');
+    unless ($seq and $start and $stop) {
+	PrintError("Invalid genomic coordinates. Please go back");
+	exit;
+    }
+    if ($probe{primer_name1} or $probe{primer_name2} or $probe{primer_seq1} or $probe{primer_seq2} or $probe{pcr_product} or $probe{clone} or $probe{sequence}) {
+	PrintError("Only one section should be filled. Please go back.");
+	exit;
+    }
+
+    if (uc $seq eq "MTDNA") {
+	$seq='MTCE';
+    }
+
+    my $sqldb=Bio::DB::GFF->new(-dsn=>$db_name) || die "cannot open $db_name $!";
+
+
+    my ($seg, @features, $rel_name, $rel_start, $rel_stop, $gc, $tmp_name, $tmp_start, $tmp_stop);
+    
+    if ($seq eq 'I' or $seq eq 'II' or $seq eq 'III' or $seq eq 'IV' or $seq eq 'V' or $seq eq 'X') {
+	$seg=$sqldb->segment(-name=>"CHROMOSOME_$seq",-start=>$start,-end=>$stop, -absolute=>'1') || die "cannot fetch segment";
+    }
+    else {
+	$seg=$sqldb->segment(-name=>$seq,-start=>$start,-end=>$stop) || die "cannot fetch segment";
+    }
+
+    
+    
+
+    if ($seq eq 'I' or $seq eq 'II' or $seq eq 'III' or $seq eq 'IV' or $seq eq 'V' or $seq eq 'X') {
+	@features=$seg->features(-types=>'region');    # Sequence:Link and Sequence:Genomic_canonical were replaced by region:Link and region:Genomic_canonical starting from ws121
+	$gc=0;
+	$rel_name='';
+	$rel_start='';
+	$rel_stop='';
+	foreach (@features) {
+	    my $fname=$_->name;
+	    my $fsource=$_->source;
+	    my $fmethod=$_->method;
+	    my $ftype=$_->type;
+	    my $flength=$_->length;
+	    if ($fsource eq 'Genomic_canonical') {
+		$seg->refseq($fname);
+		$rel_name=$fname;
+		$rel_start=$seg->start;
+		$rel_stop=$seg->stop;
+		$gc=1 and last unless ($rel_start <= 0 or $rel_stop <= 0 or $rel_start > $flength or $rel_stop > $flength);
+	    }
+	    if ($fsource eq 'Link' and $fname=~/SUPERLINK/) {
+		$seg->refseq($fname);
+		$tmp_name=$fname;
+		$tmp_start=$seg->start;
+		$tmp_stop=$seg->stop;
+	    }
+	}
+	($rel_name,$rel_start,$rel_stop)=($tmp_name,$tmp_start,$tmp_stop) unless $gc;
+	
+	unless ($rel_name) {
+	    PrintError("Incorrect genomic coordinates. Please go back.");
+	    exit;
+	}
+    }
+    else {
+	($rel_name,$rel_start,$rel_stop)=(uc $seq,$start,$stop);
+    }
+
+    my $dna=$seg->dna;
+    my $length=$seg->length;
+    my $gc_length=$sqldb->segment(-name=>$rel_name)->length;
+
+    my $string="//\tProbe Information: $wbrnai probe_$probe_count\n";
+    RollBackAce($ace_file,$string);
+
+    my $method="RNAi_primary";
+
+    open ACE, ">>$ace_file" || die "$!";
+
+    print ACE "\n";
+    print ACE "///////////////////////////////////////////////////////////////\n";
+    print ACE "//\tProbe Information: $wbrnai probe_$probe_count\n";
+    print ACE "///////////////////////////////////////////////////////////////\n";
+    print ACE "\n";
+
+    RunBlat($dna, "probe_$probe_count:$rel_name", $db);
+
+    print ACE "\n";
+
+=head
+
+    print ACE "RNAi : \"$wbrnai\"\n";
+    print ACE "Homol_homol\t\"$rel_name:RNAi\"\n";
+#   print ACE "DNA_text\t\"probe_$probe_count:$rel_name\"\t\"$dna\"\n";
+    print ACE "DNA_text\t\"$dna\"\t\"probe_$probe_count:$rel_name\"\n";
+    print ACE "\n";
+
+    print ACE "Homol_data : \"$rel_name:RNAi\"\n";
+    print ACE "Sequence\t\"$rel_name\"\n";
+#    print ACE "RNAi_homol\t\"$wbrnai\"\t\"RNAi\"\t100\t$rel_start\t$rel_stop\t1\t$length\n";
+    print ACE "RNAi_homol\t\"$wbrnai\"\t\"$method\"\t100\t$rel_start\t$rel_stop\t1\t$length\n";
+    print ACE "\n";
+    
+    print ACE "Sequence : \"$rel_name\"\n";
+    print ACE "Homol_data\t\"$rel_name:RNAi\"\t1\t$gc_length\n";
+    print ACE "\n";
+
+    my $overlapping_genes_ref=getOverlappingGenes($seg, $db);
+    if ($overlapping_genes_ref) {
+	print ACE "\n";
+	print ACE "//Overlapping_genes\t", join("|", map {"$_($$overlapping_genes_ref{$_})"}sort {$a cmp $b} keys %{$overlapping_genes_ref}), "\n";
+	print ACE "\n";
+    }
+
+=cut
+    
+    close ACE;
+
+}
+
+
+sub CheckClone {
+    my $ace_file=shift;
+    my $db=shift;
+
+    my $clone="no";
+    my $clone_name;
+
+    my $query="find sequence \"$probe{clone}\"";
+    my @obj=$db->find(-query=>$query);
+    unless (@obj) {
+	$query="find clone \"$probe{clone}\"; follow sequence; follow homol_homol";
+	@obj=$db->find(-query=>$query);
+	if (!@obj) {
+	    PrintError("Clone name does not exist in the database. Please go back.");
+	    exit;	
+	}
+	else {
+	    $clone="yes";
+	    $query="find clone \"$probe{clone}\"";
+	    my @tmp_clone_name=$db->find(-query=>$query);
+	    $clone_name=$tmp_clone_name[0];
+	}
+    }
+
+    if ($probe{primer_name1} or $probe{primer_name2} or $probe{primer_seq1} or $probe{primer_seq2} or $probe{coord} or $probe{pcr_product} or $probe{sequence}) {
+	PrintError("Only one section should be filled. Please go back.");
+	exit;
+    }
+
+    if ($clone eq "yes") {
+	my (@starts, @ends, $maxstart, $maxend, $minstart, $minend, $max, $min, $homol_seq);
+	$query="find homol_data \"$obj[0]\"";
+	my @obj_tmp=$db->find(-query=>$query);
+	my $line=$obj_tmp[0]->asAce;
+	my @lines=split('\n', $line);
+	my @tmp_data;
+	foreach (@lines) {
+	    $_=~s/\"//g;
+	    @tmp_data=split('\t');
+	    if ($tmp_data[2] eq "Sequence" and $tmp_data[1] eq "S_parent") {
+		$homol_seq=$tmp_data[3];
+		next;
+	    }
+# 	    unless ($tmp_data[2]=~/^$probe{clone}/ and $tmp_data[3] eq "BLAT_EST_BEST") {
+	    unless ($tmp_data[2]=~/^$clone_name/ and $tmp_data[3] eq "BLAT_EST_BEST") {
+		next;
+	    }
+	    push @starts, $tmp_data[5];
+	    push @ends, $tmp_data[6];
+	}
+
+	my @sorted_starts=sort {$a <=> $b} @starts;
+	my @sorted_ends=sort {$a <=> $b} @ends;
+	
+	$minstart=$sorted_starts[0];
+	$maxstart=$sorted_starts[$#starts];
+	
+	$minend=$sorted_ends[0];
+	$maxend=$sorted_ends[$#ends];
+	
+	if ($maxstart > $maxend) {
+	    $max=$maxstart;
+	}
+	else {
+	    $max=$maxend;
+	}
+
+	if ($minstart < $minend) {
+	    $min=$minstart;
+	}
+	else {
+	    $min=$minend;
+	}
+
+	
+	unless ($min and $max and $homol_seq) {
+	    PrintError("Could not fetch clone coordinates.");
+	    exit;
+	}
+
+	if ($obj[0]=~/SUPERLINK/) {
+	    my $sup_index=$obj[0]=~/.+_(\d+)$/ ? $1 : '';
+	    if ($sup_index) {
+		my $offset=($sup_index-1)*100000;
+		$min+=$offset;
+		$max+=$offset;
+	    }
+	}
+	
+	my $sqldb=Bio::DB::GFF->new(-dsn=>$db_name) || die "cannot open $db_name $!";
+	my $abs=0;
+	if ($homol_seq=~/CHROMOSOME/i) {
+	    $abs=1;
+	}
+	my $seg=$sqldb->segment(-name=>$homol_seq,-start=>$min,-end=>$max,-absolute=>$abs) || die "cannot fetch segment";
+	my $dna=$seg->dna;
+	my $length=$seg->length;
+	
+	my @features=$seg->features(-types=>'region');    # Sequence:Link and Sequence:Genomic_canonical were replaced by region:Link and region:Genomic_canonical starting from ws121
+	    
+	my $gc=0;
+	my $rel_name='';
+	my $rel_start='';
+	my $rel_stop='';
+	my ($tmp_name,$tmp_start,$tmp_stop);
+	
+	foreach (@features) {
+	    my $fname=$_->name;
+	    my $fsource=$_->source;
+	    my $fmethod=$_->method;
+	    my $ftype=$_->type;
+	    my $flength=$_->length;
+	    if ($fsource eq 'Genomic_canonical') {
+		$seg->refseq($fname);
+		$rel_name=$fname;
+		$rel_start=$seg->start;
+		$rel_stop=$seg->stop;
+		$gc=1 and last unless ($rel_start <= 0 or $rel_stop <= 0 or $rel_start > $flength or $rel_stop > $flength);
+	    }
+	    if ($fsource eq 'Link' and $fname=~/SUPERLINK/) {
+		$seg->refseq($fname);
+		$tmp_name=$fname;
+		$tmp_start=$seg->start;
+		$tmp_stop=$seg->stop;
+	    }
+	}
+	($rel_name,$rel_start,$rel_stop)=($tmp_name,$tmp_start,$tmp_stop) unless $gc;
+
+	my $rel_length=$sqldb->segment(-name=>$rel_name)->length;
+	
+	    
+	my $string="//\tProbe Information: $wbrnai probe_$probe_count\n";
+	RollBackAce($ace_file,$string);
+
+	my $method="RNAi_primary";
+
+	open ACE, ">>$ace_file" || die "$!";
+
+	print ACE "\n";
+	print ACE "///////////////////////////////////////////////////////////////\n";
+	print ACE "//\tProbe Information: $wbrnai probe_$probe_count\n";
+	print ACE "///////////////////////////////////////////////////////////////\n";
+	print ACE "\n";
+
+	RunBlat($dna, $clone_name, $db);
+
+	print ACE "\n";
+
+=head
+	print ACE "RNAi : \"$wbrnai\"\n";
+	print ACE "Homol_homol\t\"$rel_name:RNAi\"\n";
+#	print ACE "DNA_text\t\"$dna\"\t\"$probe{clone}\"\n";
+	print ACE "DNA_text\t\"$dna\"\t\"$clone_name\"\n";
+	print ACE "\n";
+
+	print ACE "Homol_data : \"$rel_name:RNAi\"\n";
+	print ACE "Sequence\t\"$rel_name\"\n";
+#	print ACE "RNAi_homol\t\"$wbrnai\"\t\"RNAi\"\t100\t$rel_start\t$rel_stop\t1\t$length\n";
+	print ACE "RNAi_homol\t\"$wbrnai\"\t\"$method\"\t100\t$rel_start\t$rel_stop\t1\t$length\n";
+	print ACE "\n";
+    
+	print ACE "Sequence : \"$rel_name\"\n";
+	print ACE "Homol_data\t\"$rel_name:RNAi\"\t1\t$rel_length\n";
+	print ACE "\n";
+
+	my $overlapping_genes_ref=getOverlappingGenes($seg, $db);
+	if ($overlapping_genes_ref) {
+	    print ACE "\n";
+	    print ACE "//Overlapping_genes\t", join("|", map {"$_($$overlapping_genes_ref{$_})"}sort {$a cmp $b} keys %{$overlapping_genes_ref}), "\n";
+	    print ACE "\n";
+	}
+
+=cut
+
+	close ACE;
+    }
+    else {
+	
+	my $clone_obj=$obj[0];
+
+	$query="find sequence \"$clone_obj\"; follow genomic_parent";
+	@obj=$db->find(-query=>$query);
+	if (@obj) {   # cDNA_for_RNAi sequences mostly
+	    
+	    my $seq_obj=$obj[0];
+	    $query="select a, b, b[1], b[2] from a in class sequence where a=\"$seq_obj\", b in a->nongenomic where b=\"$clone_obj\"";
+	    my @obj=$db->aql($query);
+	    my ($start,$stop)=(${$obj[0]}[2],${$obj[0]}[3]);
+	    unless ($start and $stop) {
+		PrintError("Could not fetch clone coordinates.");
+		exit;
+	    }
+	    
+	    my $sqldb=Bio::DB::GFF->new(-dsn=>$db_name) || die "cannot open $db_name $!";
+	    my $seg=$sqldb->segment(-name=>$seq_obj,-start=>$start,-end=>$stop) || die "cannot fetch segment";
+	    my $dna=$seg->dna;
+	    my $length=$seg->length;
+	    my $gc_length=$sqldb->segment(-name=>$seq_obj)->length;
+	    
+	    my $string="//\tProbe Information: $wbrnai probe_$probe_count\n";
+	    RollBackAce($ace_file,$string);
+
+	    my $method="RNAi_primary";
+	    
+	    open ACE, ">>$ace_file" || die "$!";
+	    
+	    print ACE "\n";
+	    print ACE "///////////////////////////////////////////////////////////////\n";
+	    print ACE "//\tProbe Information: $wbrnai probe_$probe_count\n";
+	    print ACE "///////////////////////////////////////////////////////////////\n";
+	    print ACE "\n";
+
+	    RunBlat($dna, $clone_obj, $db);
+
+	    print ACE "RNAi : \"$wbrnai\"\n";
+	    print ACE "Sequence\t\"$clone_obj\"\n";
+	    print ACE "\n";
+
+=head
+	    
+	    print ACE "RNAi : \"$wbrnai\"\n";
+	    print ACE "Homol_homol\t\"$seq_obj:RNAi\"\n";
+	    print ACE "Sequence\t\"$clone_obj\"\n";
+#	print ACE "DNA_text\t\"$clone_obj\"\t\"$dna\"\n";
+	    print ACE "DNA_text\t\"$dna\"\t\"$clone_obj\"\n";
+	    print ACE "\n";
+	    
+	    print ACE "Homol_data : \"$seq_obj:RNAi\"\n";
+	    print ACE "Sequence\t\"$seq_obj\"\n";
+#	    print ACE "RNAi_homol\t\"$wbrnai\"\t\"RNAi\"\t100\t$start\t$stop\t1\t$length\n";
+	    print ACE "RNAi_homol\t\"$wbrnai\"\t\"$method\"\t100\t$start\t$stop\t1\t$length\n";
+	    print ACE "\n";
+	    
+	    print ACE "Sequence : \"$seq_obj\"\n";
+	    print ACE "Homol_data\t\"$seq_obj:RNAi\"\t1\t$gc_length\n";
+	    print ACE "\n";
+
+	    my $overlapping_genes_ref=getOverlappingGenes($seg, $db);
+	    if ($overlapping_genes_ref) {
+		print ACE "\n";
+		print ACE "//Overlapping_genes\t", join("|", map {"$_($$overlapping_genes_ref{$_})"}sort {$a cmp $b} keys %{$overlapping_genes_ref}), "\n";
+		print ACE "\n";
+	    }
+
+=cut
+	    
+	    close ACE;
+	}
+	else { #EST mapped by homol
+	    $query="find sequence \"$clone_obj\"; follow dna";
+	    @obj=$db->find(-query=>$query);
+	    my $dna_obj=$obj[0];
+	    my $dna=$dna_obj->right;
+	    unless ($dna) {
+		PrintError("Could not fetch clone sequence.");
+		exit;
+	    }
+	    
+	    my $string="//\tProbe Information: $wbrnai probe_$probe_count\n";
+	    RollBackAce($ace_file,$string);
+	    
+	    open ACE, ">>$ace_file" || die "$!";
+	    
+	    print ACE "\n";
+	    print ACE "///////////////////////////////////////////////////////////////\n";
+	    print ACE "//\tProbe Information: $wbrnai probe_$probe_count\n";
+	    print ACE "///////////////////////////////////////////////////////////////\n";
+	    print ACE "\n";
+	    
+	    RunBlat($dna, $clone_obj, $db);
+	    
+	    print ACE "RNAi : \"$wbrnai\"\n";
+	    print ACE "Sequence\t\"$clone_obj\"\n";
+	    print ACE "\n";
+	    
+	    close ACE;
+	}
+    }
+}
+
+
+
+sub RunBlat {
+
+    my $dna=shift;            # probe name that is stored under DNA_text tag in RNAi objects
+    my $probe_name=shift;
+    my $db=shift;             # acedb - used to in getOverlappingGenes together with GFF MySQL database
+
+    my $first=1;
+
+    $dna=~s/\n//g;
+    $dna=~s/\s+//g;
+	
+    $temp_in_file=$temp_dir.int(rand(1000000));
+    while (-e $temp_in_file) {
+	$temp_in_file=$temp_dir.int(rand(1000000));
+    }
+    $temp_out_file=$temp_dir.int(rand(1000000));
+    while (-e $temp_out_file) {
+	$temp_out_file=$temp_dir.int(rand(1000000));
+    }
+
+    unless (-e $db_file) {  # $db_file is BLAT database (fasta)
+	PrintError("Cannot run BLAT. Database file $db_file does not exist.");
+	exit;
+    }
+    
+    open OUT, ">$temp_in_file" || die $!;
+    print OUT ">tmp_sequence\n";
+    print OUT "$dna\n";
+    close OUT;
+    
+    `blat $db_file $temp_in_file $temp_out_file -minIdentity=80 -maxIntron=10000 -noHead`;  # -minIdentity=80 -maxIntron=10000 are required to identify secondary targets
+
+    open (IN, "<$temp_out_file") || die $!;
+    my %blat_results=();
+    while (<IN>) {
+	chomp;
+	next if /psLayout/;
+	next if /match/;
+	next if /------------------------------/;
+	next unless $_;
+	my @data=split('\t');
+	push @{$blat_results{$data[9]}}, $_;
+    }
+    close IN;
+    
+    my $sqldb=Bio::DB::GFF->new(-dsn=>$db_name) || die "cannot open $db_name $!";   # $db_name is GFF MySQL database name - used to convert chromosomal coordinates to genomic canonical and in getOverlappingGenes
+
+
+    my ($count,$ambigously_mapped_count,$ambiguous,$start,$stop,$strand,$mapped_count,$quality_match_count,$quality_partial_match_count,$quality_length_count,$quality_identity_count,$qstop,$qstart,$qsize,$unique_count);
+    
+    my ($seg, @features, $rel_name, $rel_start, $rel_stop, $gc, $tmp_name, $tmp_start, $tmp_stop);
+
+    my ($primary_length, $primary_quality, $secondary_length, $secondary_quality, $max_hit_number, $block_size)  = (100, 95, 200, 80, 10, 1);  # parameters for primary/secondary targets
+    my ($query_gap_cutoff, $target_gap_cutoff);
+    
+    foreach my $name (sort {$a cmp $b} keys %blat_results) {
+	$count++;
+	my $not_empty=0;
+	my $hit_count=0;
+	my @multiple_hits=();
+	foreach (@{$blat_results{$name}}) {
+	    my @blat=split('\t');
+	    $hit_count++;
+	    push @multiple_hits, \@blat;
+	}
+	
+	my %best_hit_data_hash=%{findTargets(\@multiple_hits, $primary_length, $primary_quality, $secondary_length, $secondary_quality, $max_hit_number, $query_gap_cutoff, $target_gap_cutoff, $block_size)};  # find hits that satisfy primary/secondary criteria
+
+	if ($probe_name=~/yk\d+/ || $probe_name=~/mv_/) {   # since true sequences of yk clones are not known, use just the best hit to avoid false hits from intronic sequences - a hack; same for Orfeome PCR products mv_
+	    delete $best_hit_data_hash{'RNAi_secondary'};
+	    splice @{$best_hit_data_hash{'RNAi_primary'}}, 1;
+	}
+		
+	foreach my $method (keys %best_hit_data_hash) {
+	    foreach (@{$best_hit_data_hash{$method}}) {
+		    
+	    my @best_hit_data=@{$_};
+	    my $match_length=shift(@best_hit_data);
+	    my $match_quality=shift(@best_hit_data);
+
+	    $best_hit_data[13]=~/(CHROMOSOME_)(.*)/;
+	    my $chrom=$2;
+	    
+	    $best_hit_data[15]++;  # blat coordinates are off-by-one
+	    
+	    ($start, $stop)=($best_hit_data[15], $best_hit_data[16]) if $best_hit_data[8] eq "+";
+	    ($start, $stop)=($best_hit_data[16], $best_hit_data[15]) if $best_hit_data[8] eq "-";
+	    ($qsize,$qstart,$qstop)=($best_hit_data[10], $best_hit_data[11], $best_hit_data[12]);
+	    $strand=$best_hit_data[8];
+	    
+	    $mapped_count++;
+	    
+	    $seg=$sqldb->segment(-name=>$best_hit_data[13],-start=>$start,-end=>$stop, -absolute=>'1') || die "cannot fetch segment";  # start converting to genomic canonical using GFF database - pretty slow
+
+	    my @f=$seg->contained_in(-type=>'region:Genomic_canonical');
+	    if (!@f) {
+		@f=grep {/super/i} $seg->contained_in(-type=>'region:Link');
+	    }
+	    if (!@f) {
+		@f=$seg->contained_in(-type=>'region:Link');
+	    }
+	    my $rel_name=$f[0]->name;
+	    $seg->refseq($rel_name);
+	    my $rel_start=$seg->start;
+	    my $rel_stop=$seg->stop;
+
+            my @exon_starts=();
+	    my @exon_ends=();
+		
+	    my @self_exon_starts=();   #within CDS itself
+	    my @self_exon_ends=();
+		
+	    if ($best_hit_data[8] eq "+") {
+		@exon_starts=split(',', $best_hit_data[20]);
+		@self_exon_starts=split(',', $best_hit_data[19]);
+		my @blocks=split(',', $best_hit_data[18]);
+		my $diff=$start-$rel_start;
+		for (my $e=0; $e<=$#exon_starts; $e++) {
+		    $exon_starts[$e]++;
+		    $exon_starts[$e]-=$diff;
+		    $exon_ends[$e]=$exon_starts[$e]+$blocks[$e]-1;
+		    
+		    $self_exon_starts[$e]++;
+		    $self_exon_ends[$e]=$self_exon_starts[$e]+$blocks[$e]-1;
+		}
+	    }
+	    else {
+		@exon_ends=split(',', $best_hit_data[20]);
+		@self_exon_ends=split(',', $best_hit_data[19]);
+		my @blocks=split(',', $best_hit_data[18]);
+		my $diff=$stop-$rel_start;
+		for (my $e=0; $e<=$#exon_ends; $e++) {
+		    $exon_ends[$e]++;
+		    $exon_ends[$e]-=$diff;
+		    $exon_starts[$e]=$exon_ends[$e]+$blocks[$e]-1;
+		    $self_exon_ends[$e]=$qsize-$self_exon_ends[$e];
+		    $self_exon_starts[$e]=$self_exon_ends[$e]-($blocks[$e]-1);
+		}
+		    
+		@exon_starts=sort {$a<=>$b} @exon_starts;
+		@exon_ends=sort {$a<=>$b} @exon_ends;
+		    
+		@self_exon_starts=sort {$b<=>$a} @self_exon_starts;
+		@self_exon_ends=sort {$b<=>$a} @self_exon_ends;
+	    }
+
+	   
+	    
+	    unless ($rel_name) {
+		PrintError("$name not mapped correctly.");
+		exit;
+	    }
+	    if ($rel_name) { 
+		#do not merge adjacent blocks
+		my $gc_length=$sqldb->segment(-name=>$rel_name)->length;
+
+		print ACE "RNAi : \"$wbrnai\"\n";
+		print ACE "Homol_homol\t\"$rel_name:RNAi\"\n";   # record homol_data object in RNAi
+		if ($first) {                                    # record DNA_text - this can be done outside on RunBlat
+		    if ($probe_name eq 'NULL') {
+			print ACE "DNA_text\t\"".lc $dna."\"\t";
+			print ACE "\"probe_$probe_count:$rel_name\"\n";
+		    }
+		    else {
+			print ACE "DNA_text\t\"".lc $dna."\"\t";
+			print ACE "\"$probe_name\"\n";
+		    }
+		    $first=0;
+		}
+		print ACE "\n";
+     		
+		print ACE "Homol_data : \"$rel_name:RNAi\"\n";   # add RNAi object data to Homol_data object
+		print ACE "Sequence\t\"$rel_name\"\n";
+		my %overlapping_genes;
+		for (my $e=0; $e<=$#exon_starts; $e++) {
+		    my $seg;
+		    if ($best_hit_data[8] eq "+") {
+			print ACE "RNAi_homol\t\"$wbrnai\"\t\"$method\"\t$match_quality\t$exon_starts[$e]\t$exon_ends[$e]\t$self_exon_starts[$e]\t$self_exon_ends[$e]\n";
+			$seg=$sqldb->segment(-name=>$rel_name, -start=>$exon_starts[$e], -stop=>$exon_ends[$e]) || die "cannot fetch segment $rel_name:$exon_starts[$e]..$exon_ends[$e]:$!\n";
+		    }
+		    else {
+			print ACE "RNAi_homol\t\"$wbrnai\"\t\"$method\"\t$match_quality\t$exon_ends[$e]\t$exon_starts[$e]\t$self_exon_ends[$e]\t$self_exon_starts[$e]\n";
+			$seg=$sqldb->segment(-name=>$rel_name, -start=>$exon_starts[$e], -stop=>$exon_ends[$e]) || die "cannot fetch segment $rel_name:$exon_ends[$e]..$exon_starts[$e]:$!\n";
+			
+		    }
+		    my $temp_ref=getOverlappingGenes($seg, $db);  # find overlapping gene - this is done at this point only for curator's reference and is commented out in the ace file
+		    foreach (keys %{$temp_ref}) {
+			$overlapping_genes{$_}=$$temp_ref{$_};
+		    }
+		}
+		print ACE "\n";
+		
+		print ACE "Sequence : \"$rel_name\"\n";
+		print ACE "Homol_data\t\"$rel_name:RNAi\"\t1\t$gc_length\n";
+		print ACE "\n";
+
+		if (%overlapping_genes) {
+		    print ACE "\n";
+		    print ACE "//Overlapping_genes\t", join("|", map {"$_($overlapping_genes{$_})"}sort {$a cmp $b} keys %overlapping_genes), "\n";
+		    print ACE "\n";
+		}
+    
+	    }
+	}
+    }
+    }
+  
+    unlink $temp_in_file, $temp_out_file;
+
+}
+
+
+
+
+
+
+
+sub CheckSequence {
+    my $ace_file=shift;
+    my $db=shift;
+	
+    if ($probe{primer_name1} or $probe{primer_name2} or $probe{primer_seq1} or $probe{primer_seq2} or $probe{coord} or $probe{clone} or $probe{pcr_product}) {
+	PrintError("Only one section should be filled. Please go back.");
+	exit;
+    }
+
+    my $string="//\tProbe Information: $wbrnai probe_$probe_count\n";
+    RollBackAce($ace_file,$string);
+
+    open ACE, ">>$ace_file" || die "$!";
+
+    print ACE "\n";
+    print ACE "///////////////////////////////////////////////////////////////\n";
+    print ACE "//\tProbe Information: $wbrnai probe_$probe_count\n";
+    print ACE "///////////////////////////////////////////////////////////////\n";
+    print ACE "\n";
+
+    RunBlat($probe{sequence}, 'NULL', $db);
+
+    close ACE;
+}
+
+
+sub getOverlappingGenes { # find overlapping gene - this is done at this point only for curator's reference and is commented out in the ace file
+    my $segment=shift;
+    my $db=shift;
+    my %genes;
+
+    my %transcript_hash=();
+    my %cds_hash=();
+    my %pseudo_hash=();
+    my %non_coding_transcript_hash=();
+    my $non_coding_transcript_count=0;
+    my $transcript_count=0;
+    my $cds_count=0;
+    my $pseudo_count=0;
+
+    my @features=$segment->features(-types=>'exon');
+    
+    foreach (@features) {
+	my $fname=$_->name;
+	my $fsource=$_->source;
+	if ($fsource eq "Coding_transcript") {
+	    unless ($transcript_hash{$fname}) {
+		$transcript_hash{$fname}=1;
+		$transcript_count++;
+	    }
+	}
+	if ($fsource eq "Non_coding_transcript") {
+	    unless ($non_coding_transcript_hash{$fname}) {
+		$non_coding_transcript_hash{$fname}=1;
+		$non_coding_transcript_count++;
+	    }
+	}
+	if ($fsource=~/curated/) {        #coding_exon:curated, exon:curated, intron:curated, CDS:curated
+	    unless ($cds_hash{$fname}) {
+		$cds_hash{$fname}=1;
+		$cds_count++;
+	    }
+	}
+	if ($fsource=~/Pseudogene/) {     #added for pseudogene mapping 6/8/04
+	    unless ($pseudo_hash{$fname}) {
+		$pseudo_hash{$fname}=1;
+		$pseudo_count++;
+	    }
+	}
+    }
+    
+    foreach (keys %transcript_hash) {
+	my ($tr)=$db->fetch('Transcript', $_);
+	my $cds=$tr->Corresponding_CDS if $tr;
+	my $gene=$cds->Gene if $cds;
+	$genes{$gene}=$gene->Public_name if $gene;
+    }
+    foreach (keys %non_coding_transcript_hash) {
+	my ($tr)=$db->fetch('Transcript', $_);
+	my $gene=$tr->Gene if $tr;
+	$genes{$gene}=$gene->Public_name if $gene;
+    }
+    foreach (keys %pseudo_hash) {
+	my ($ps)=$db->fetch('Pseudogene', $_);
+	my $gene=$ps->Gene if $ps;
+	$genes{$gene}=$gene->Public_name if $gene;
+    }
+    foreach (keys %cds_hash) {
+	my ($cds)=$db->fetch('CDS', $_);
+	my $gene=$cds->Gene if $cds;
+	$genes{$gene}=$gene->Public_name if $gene;
+    }
+
+    if (%genes) {
+	return \%genes;
+    }
+    else {
+	return undef;
+    }
+}
+
+
+
+sub CheckSeqForm {
+    my $probe_ref=shift;
+    my ($ace_file, $probe_count, $paper, $paper_obj, $wbrnai)=@_;
+    my %probe=%$probe_ref;
+    my $empty=1;
+
+    foreach my $probe_key (keys %probe) {
+	next unless $probe{$probe_key};
+	$empty=0;
+    }
+    if ($empty) {
+	PrintError("No information was entered. Please go back.");
+	exit;
+    }
+    
+#    open ACE, ">>$ace_file" || die "$!";
+
+    my $db = Ace->connect('sace://elbrus.caltech.edu:40004')
+	|| die print "Connection failure: ", Ace->error;
+    
+###################  pcr product #########################
+
+    if ($probe{pcr_product}) {
+	CheckPCRproduct($ace_file,$db);
+   }
+    
+######################  primer names #####################
+############### removed from the form for now ############
+
+    if ($probe{primer_name1}) {
+	unless ($probe{primer_name2}) {
+	    PrintError("Only one primer name entered. Please go back.");
+	    exit;
+	}
+	my $query="find oligo \"$probe{primer_name1}\"";
+	my $obj=$db->find(-query=>$query);
+	unless ($obj) {
+	    PrintError("Primer name 1 does not exist in the database. Please go back.");
+	    exit;	
+	}
+	if ($probe{primer_name1} eq $probe{primer_name2}) {
+	    PrintError("Primer names are identical. Please go back.");
+	    exit;
+	}
+	if ($probe{pcr_product} or $probe{primer_seq1} or $probe{primer_seq2} or $probe{coord} or $probe{clone} or $probe{sequence}) {
+	    PrintError("Only one section should be filled. Please go back.");
+	    exit;
+	}
+	
+    }
+    if ($probe{primer_name2}) {
+	unless ($probe{primer_name1}) {
+	    PrintError("Only one primer name entered. Please go back.");
+	    exit;
+	}
+	my $query="find oligo \"$probe{primer_name2}\"";
+	my $obj=$db->find(-query=>$query);
+	unless ($obj) {
+	    PrintError("Primer name 2 does not exist in the database. Please go back.");
+	    exit;	
+	}
+	if ($probe{pcr_product} or $probe{primer_seq1} or $probe{primer_seq2} or $probe{coord} or $probe{clone} or $probe{sequence}) {
+	    PrintError("Only one section should be filled. Please go back.");
+	    exit;
+	}
+    }
+
+   
+#################  primer sequences #######################
+
+    if ($probe{primer_seq1}) {
+	unless ($probe{primer_seq2}) {
+	    PrintError("Only one primer sequence entered. Please go back.");
+	    exit;
+	}
+	if ($probe{primer_seq1} eq $probe{primer_seq2}) {
+	    PrintError("Primer sequences are identical. Please go back.");
+	    exit;
+	}
+	if ($probe{pcr_product} or $probe{primer_name1} or $probe{primer_name2} or $probe{coord} or $probe{clone} or $probe{sequence}) {
+	    PrintError("Only one section should be filled. Please go back.");
+	    exit;
+	}
+	
+    }
+    if ($probe{primer_seq2}) {
+	unless ($probe{primer_seq1}) {
+	    PrintError("Only one primer sequence entered. Please go back.");
+	    exit;
+	}
+	if ($probe{pcr_product} or $probe{primer_name1} or $probe{primer_name2} or $probe{coord} or $probe{clone} or $probe{sequence}) {
+	    PrintError("Only one section should be filled. Please go back.");
+	    exit;
+	}
+    }
+
+    if ($probe{primer_seq1} and $probe{primer_seq2}) {
+	CheckPrimerSeq($ace_file,$db);
+    }
+
+   
+##################  coordinates #############################
+
+    if ($probe{coord}) {
+	CheckCoordinates($ace_file,$db);
+    }
+    
+#####################  clone ################################
+
+    if ($probe{clone}) {
+	CheckClone($ace_file,$db);
+    }
+  
+#################### sequence ###############################
+
+    if ($probe{sequence}) {
+	CheckSequence($ace_file,$db);
+    }
+
+    
+    $db->close;
+
+}
+
+sub findTargets { # find hits that satisfy primary/secondary criteria
+    my ($blat_ref, $primary_length, $primary_quality, $secondary_length, $secondary_quality, $max_hit_number, $query_gap_cutoff, $target_gap_cutoff, $block_size)=@_;
+
+    my %targets=();
+    
+    my $hits;
+    my @blat_data=();
+    my $i=0;
+    my $j=0;
+
+    foreach (@$blat_ref) {
+	$j=0;
+	foreach (@$_) {
+	    $blat_data[$i][$j]=$_;
+	    $j++;
+	}
+	$i++;
+    }
+    $hits=$i;
+    
+    for ($i=0; $i<$hits; $i++) {
+	my $target_type='';
+	if ((defined($query_gap_cutoff) && $blat_data[$i][5] > $query_gap_cutoff) || (defined($target_gap_cutoff) && $blat_data[$i][7] > $target_gap_cutoff)) {
+	    next;
+	}
+
+	my $match_length=$blat_data[$i][0]+$blat_data[$i][1];
+	my $match_quality=100*$blat_data[$i][0]/$match_length;
+	if ($match_quality >= $primary_quality && $match_length >= $primary_length) {
+	    $target_type='RNAi_primary';
+	}
+	elsif ($match_quality >= $secondary_quality && $match_length >= $secondary_length) {
+	    $target_type='RNAi_secondary';
+	}
+	else {
+	    next;
+	}
+	
+	push (@{$targets{$target_type}}, [$match_length, $match_quality, @{$blat_data[$i]}]); # store all hits by target type
+    }
+
+    my $result_count=0;
+    foreach (keys %targets) {
+	@{$targets{$_}}=sort {$$b[0] <=> $$a[0]} @{$targets{$_}}; # sort by match length - longest hit first
+	$result_count+=scalar @{$targets{$_}};
+    }
+    
+    if ($max_hit_number && $result_count > $max_hit_number) {     # return at most $max_hit_number of hits; remove secondary first, then shorted primary
+	if ($targets{'RNAi_primary'} && scalar @{$targets{'RNAi_primary'}} >= $max_hit_number) {
+	    delete $targets{'RNAi_secondary'};
+	    splice @{$targets{'RNAi_primary'}}, $max_hit_number;
+	}
+	else {
+	    splice @{$targets{'RNAi_secondary'}}, $max_hit_number-scalar @{$targets{'RNAi_primary'}};
+	}
+    }
+
+    if ($result_count > 1 && defined($block_size)) {
+	my %tmp_targets=();
+	foreach my $target_type (keys %targets) {
+	    for (my $i=0; $i <= $#{$targets{$target_type}}; $i++) {
+		if ($target_type eq 'RNAi_primary' && $i == 0) {
+		    push (@{$tmp_targets{$target_type}}, $targets{$target_type}[$i]);  # always return at least one (best) hit		    
+		}
+		else {
+		    my @blat_data = @{$targets{$target_type}[$i]};
+		    shift @blat_data;
+		    shift @blat_data;
+		    if ($blat_data[0] < $blat_data[10]) {  # match length is less than query length - go through blocks to make sure that at least one matches the length criteria (ensures that there is a continuous stretch of matched sequence that satisfies the lentgh criterion)
+			my @blocks=split(/,/, $blat_data[18]);
+			my $match;
+			foreach (@blocks) {
+			    if ($target_type eq 'RNAi_primary' && $_ >= $primary_length) {
+				$match=1;
+				last;
+			    }
+			    if ($target_type eq 'RNAi_secondary' && $_ >= $secondary_length) {
+				$match=1;
+				last;
+			    }
+			}
+			if ($match) {
+			    push (@{$tmp_targets{$target_type}}, $targets{$target_type}[$i]);
+			}
+		    }
+		}
+	    }
+	}
+	%targets=%tmp_targets;
+    }
+				
+    return \%targets;
+}
+
+sub find_best_hit {
+    my $blat_ref=shift;
+    my $criterion=shift;
+    my $hits;
+    my @blat_data=();
+    my %amb_blat_data=();
+    my $i=0;
+    my $j=0;
+    my $percent_match=0;    # match/original query size
+    my $query_length=0;     # length of the query that matched/original query size
+    my $percent_query=0;    # match/length of the query that matched
+    my $best_hit=0;
+    my $best_hit_data;
+    my $quality=1;
+    my $number_of_hits=0;
+    foreach (@$blat_ref) {
+	$j=0;
+	foreach (@$_) {
+	    $blat_data[$i][$j]=$_;
+	    $j++;
+	}
+	$i++;
+    }
+    $hits=$i;
+    if ($criterion eq "percent_match") {
+	for ($i=0; $i<$hits; $i++) {
+	    if (($blat_data[$i][0]/$blat_data[$i][10])*100 > $percent_match) {
+		$percent_match=($blat_data[$i][0]/$blat_data[$i][10])*100;
+		$best_hit=$i;
+	    }
+	}
+    }
+    if ($criterion eq "query_length") {
+	for ($i=0; $i<$hits; $i++) {
+	    if ((($blat_data[$i][12]-$blat_data[$i][11])/$blat_data[$i][10])*100 > $query_length) {
+		$query_length=(($blat_data[$i][12]-$blat_data[$i][11])/$blat_data[$i][10])*100;
+		$best_hit=$i;
+	    }
+	}
+    }	
+    if ($criterion eq "percent_query") {
+	for ($i=0; $i<$hits; $i++) {
+	    if (($blat_data[$i][0]/($blat_data[$i][12]-$blat_data[$i][11]))*100 > $percent_query) {
+		$percent_query=($blat_data[$i][0]/($blat_data[$i][12]-$blat_data[$i][11]))*100;
+		$best_hit=$i;
+	    }
+	}
+    }
+
+    
+    if ($criterion eq "percent_match") {
+	for ($i=0; $i<$hits; $i++) {
+	    if (($blat_data[$i][0]/$blat_data[$i][10])*100 >= (($blat_data[$best_hit][0]/$blat_data[$best_hit][10])*100) * $quality) {
+		$number_of_hits++;
+		@{$amb_blat_data{$number_of_hits}}=@{$blat_data[$i]};
+	    }
+	}
+    }
+    if ($criterion eq "query_length") {
+	for ($i=0; $i<$hits; $i++) {
+	    if ((($blat_data[$i][12]-$blat_data[$i][11])/$blat_data[$i][10])*100 >= ((($blat_data[$best_hit][12]-$blat_data[$best_hit][11])/$blat_data[$best_hit][10])*100) * $quality) {
+		
+		$number_of_hits++;
+		@{$amb_blat_data{$number_of_hits}}=@{$blat_data[$i]};
+
+	    }
+	}
+    }
+    if ($criterion eq "percent_query") {
+	for ($i=0; $i<$hits; $i++) {
+	    if (($blat_data[$i][0]/($blat_data[$i][12]-$blat_data[$i][11]))*100 >=(($blat_data[$best_hit][0]/($blat_data[$best_hit][12]-$blat_data[$best_hit][11]))*100) * $quality) {
+		
+		$number_of_hits++;
+		@{$amb_blat_data{$number_of_hits}}=@{$blat_data[$i]};
+	    }
+	}
+    }
+
+
+
+
+    @{$best_hit_data}=(@{$blat_data[$best_hit]}, $number_of_hits);
+    
+#    return $best_hit_data;
+    
+    my $amb_blat_data_ref=\%amb_blat_data;
+    return $amb_blat_data_ref;
+   
+}
+
+
+    
+
+
+sub PrintError {
+    my $message=shift;
+    print $q->header("text/html");
+    PrintTop("RNAi Data Submission Form");
+    print "<h3><font color=\"#3333ff\" face=\"Helvetica, Arial, sans-serif\">RNAi Data Submission Form</font></h3>";
+#    print $q->h3("RNAi Data Submission Form");
+    print $q->b($message);
+    print $q->end_html;
+}
+
+sub MakeString {
+    my $hash_ref=shift;
+    my %hash=%$hash_ref;
+    my $string='';
+    my $first=1;
+    foreach (sort {$a cmp $b} keys %hash) {
+	if ($first) {
+	    $string.=$_.'='.$hash{$_};
+	    $first=0;
+	}
+	else {
+	    $string.='&'.$_.'='.$hash{$_};
+	}
+    }
+    return $string;
+}
+
+sub MakeHash {
+    my $string=shift;
+    my %hash=();
+    my @fields=split('&', $string);
+    my ($key, $value);
+    foreach (@fields) {
+	($key, $value)=split ('=', $_);
+	$hash{$key}=$value;
+    }
+    return %hash;
+}
+
+
+
+
+sub PrintRNAi0 {
+    my $probe_count=shift;
+    my $probe_string=shift;
+    my $ace_file=shift;
+    my $temp_dir=shift;
+    my ($name, $email, $paper, $lab, $author_list, $date, $pcr_count)=@_;
+
+    if ($ace_file eq 'NULL') {
+	$ace_file=$temp_dir.int(rand(100000000)).'.ace';
+	while (-e $ace_file) {
+	    $ace_file=$temp_dir.int(rand(100000000)).'.ace';
+	}
+    }
+#    open ACE, ">>$ace_file" || die $!;
+#    close ACE;
+
+
+print <<END_OF_MESSAGE1;
+
+<script language='JavaScript'>
+
+function startingServer () {
+    var msg="Starting AceDB Server. This may take a few seconds. Click OK to continue.";
+    var x=screen.availWidth / 2 - 200;
+    var y=screen.availHeight / 2 - 20;
+    var features="width=400, height=40, left="+x+", top="+y+", screenX="+x+", screenY="+y; 
+    server_win=window.open("", "Phenotype_Information", features);  // if var is used server_win will be local variable - cannot be accessed outside the function
+    var d=server_win.document;
+    d.write('<title>Server Info</title>');
+    d.write("<link rel='stylesheet' href='http://elbrus.caltech.edu/~igor/wormbase.css'>");
+    d.write('<table><tbody><tr><td width="100%" align="center">');
+    d.write('<font color="#000000">Starting AceDB Server. This may take a few seconds...<br><br>');
+//    d.write('Click OK to continue.</font><br><br>');
+//    d.write('<input type="button" value="OK" onclick="window.close();">');
+    d.write('</td></tr></tbody></table>');
+    d.close();
+    return true;
+}
+
+
+function checkServerWindow() {
+    if (! server_win.closed) {
+	server_win.close();
+    }
+}
+
+</script>
+
+<body onunload="checkServerWindow()">
+
+
+<h3><font color="#3333ff" face="Helvetica, Arial, sans-serif">RNAi Data Submission Form</font></h3>
+<form action=$myself method="post" onsubmit="return startingServer();">
+
+<h4><font color="#000000" face="Helvetica, Arial, sans-serif">Step 1: Paper Information</font></h4>
+<font color="#000000"><b>Enter the following information (* fields are required):</b></font>
+<br><br>
+
+<input type="hidden" name="probe_count" value="$probe_count">
+<input type="hidden" name="probe_string" value="$probe_string">
+<input type="hidden" name="ace_file" value="$ace_file">
+<input type="hidden" name="pcr_count" value="$pcr_count">
+
+<table cellpadding="25" width="100%" cellspacing="1" border="1">
+<tbody>
+<tr><td class="searchbody" align="center" valign="center" width="25%"><b>Paper *</b>&nbsp;</td>
+<td class="searchbody" width="30%" valign="center"><input type="text" name="paper" size="40" value="$paper"><br></td>
+<td class="searchbody" align="left" valign="center"><font color="#000000">WormBase paper or CGC  or PubMed identifier (e.g. <a href="http://dev.wormbase.org/db/misc/paper?name=WBPaper00005344;class=Paper">WBPaper00005344</a> or <a href="http://dev.wormbase.org/db/misc/paper?name=WBPaper00005989;class=Paper">cgc5989</a> or <a href="http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?cmd=Retrieve&db=pubmed&dopt=Abstract&list_uids=15073148">15073148</a>)</font><br></td>
+</tr>
+
+<tr><td class="searchbody" align="center" valign="center" width="25%"><b>Laboratory</b>&nbsp;</td>
+<td class="searchbody" width="30%" valign="center"><input type="text" name="lab" size="40" value="$lab"><br></td>
+<td class="searchbody" align="left" valign="center"><font color="#000000">Official laboratory symbol if available (e.g. <a href="http://www.wormbase.org/db/misc/laboratory?name=CB;class=Laboratory">CB</a>)</font><br></td>
+</tr>
+
+END_OF_MESSAGE1
+
+#<tr><td class="searchbody" align="center" valign="top" width="25%"><b>Authors</b>&nbsp;</td>
+#<td class="searchbody" width="30%"><textarea rows="15" cols="38" name="author" wrap="virtual">$author_list</textarea></td>
+#<td class="searchbody" align="left" valign="top"><font color="#000000">Author names as they appear in the paper (e.g. <a href="http://www.wormbase.org/db/misc/person?name=Sternberg%20PW;class=Author">Sternberg PW</a> or <a href="http://www.wormbase.org/db/misc/person?name=Bradnam%20K;class=Author">Bradnam K</a> or <a href="http://www.wormbase.org/db/misc/person?name=Lee%20RYN;class=Author">Lee RYN</a>). One author per line</font><br></td>
+#</tr>
+
+print <<END_OF_MESSAGE2;
+
+<tr><td class="searchbody" align="center" valign="center" width="25%"><b>Date</b>&nbsp;</td>
+<td class="searchbody" width="30%"><input type="text" name="date" size="40" value="$date"><br></td>
+<td class="searchbody" align="left" valign="center"><font color="#000000">Publication date (YYYY-MM-DD, e.g. 2001-08-22)</font><br></td>
+</tr>
+
+END_OF_MESSAGE2
+
+#<tr><td class="searchbody" align="center" valign="center" width="25%"><b>Experiment name *</b>&nbsp;</td>
+#<td class="searchbody" width="30%"><input type="text" name="experiment_name" size="40"><br></td>
+#<td class="searchbody" align="left" valign="center"><font color="#000000">Experiment name. The name should reflect the RNAi target (e.g. <a href="http://www.wormbase.org/db/seq/rnai?name=%5Bcgc5344%5D%3Asur-8;class=RNAi">sur-8</a> or <a href="http://www.wormbase.org/db/seq/rnai?name=%5Bcgc5456%5D%3AY37E3.10;class=RNAi">Y37E3.10</a> for single target, <a href="http://www.wormbase.org/db/seq/rnai?name=%5Bcgc5257%5D%3Asmp-1%3Asmp-2;class=RNAi">smp-1:smp-2</a> for multiple targets). The final object name will be automatically generated to include paper ID</font><br></td>
+#</tr>
+
+
+
+print qq(<tr><td class="searchbody" align="center" valign="center" width="25%"><b>Curator *</b>&nbsp;</td>);
+    if ($name) {
+	print qq(<td class="searchbody" width="30%" align="center"><select name="name" size=1>);
+	foreach (sort {$a cmp $b} keys %curators) {
+	    if ($name eq $_) {
+		print qq(<option selected value="$name">$name</option>);
+	    }
+	    else {
+		print qq(<option value="$_">$_</option>);
+	    }
+	}
+	print qq(</td>);
+    }
+    else {
+	print qq(<td class="searchbody" width="30%" align="center"><select name="name" size=1><option value="Igor Antoshechkin">Igor Antoshechkin</option><option value="Andrei Petcherski">Andrei Petcherski</option><option value="Raymond Lee">Raymond Lee</option><option value="Kimberly Van Auken">Kimberly Van Auken</option><option selected value="Gary Schindelman">Gary Schindelman</option><option value="Chris Grove">Chris Grove</option></td>);
+    }
+print qq(<td class="searchbody" align="left" valign="center"><font color="#000000">Curator name</font><br></td></tr>);
+
+print <<END_OF_MESSAGE3;
+
+</tbody>
+</table>
+<br><br>
+
+
+<input value="Submit" type="submit" name="submit_paper">&nbsp;<input value="Reset" type="reset">
+
+</form>
+<br>
+
+END_OF_MESSAGE3
+}
+
+
+
+
+
+
+
+sub PrintRNAi1 {
+    my ($probe_count, $probe_string,  $ace_file, $name, $email, $paper, $paper_obj, $lab, $author_list, $date, $wbrnai, $pcr_count)=@_;
+#    my $probe_count=shift;
+    $probe_count++;
+    $pcr_count++;
+#    my $probe_string=shift;
+#    my $ace_file=shift;
+#    my $submitter=shift;
+
+print <<END_OF_MESSAGE1;
+
+<h3><font color="#3333ff" face="Helvetica, Arial, sans-serif">RNAi Data Submission Form</font></h3>
+<form action=$myself method="post">
+
+<input type="hidden" name="probe_count" value="$probe_count">
+<input type="hidden" name="probe_string" value="$probe_string">
+<input type="hidden" name="ace_file" value="$ace_file">
+<input type="hidden" name="pcr_count" value="$pcr_count">
+
+
+<input type="hidden" name="name" value="$name">
+<input type="hidden" name="email" value="$email">
+<input type="hidden" name="paper" value="$paper">
+<input type="hidden" name="lab" value="$lab">
+<input type="hidden" name="author" value="$author_list">
+<input type="hidden" name="date" value="$date">
+<input type="hidden" name="wbrnai" value="$wbrnai">
+<input type="hidden" name="paper_obj" value="$paper_obj">
+
+
+<h4><font color="#000000" face="Helvetica, Arial, sans-serif">Step 2: Sequence Information</font></h4>
+
+<font color="#000000"><b>Probe Number $probe_count</b></font>
+<br><br>
+
+<font color="#000000"><b>Enter one of the following:</b></font>
+<br><br>
+
+
+<table cellpadding="25" width="100%" cellspacing="1" border="1">
+<tbody>
+<tr><td class="searchbody" align="center" valign="center" width="25%"><b>PCR Product Name</b>&nbsp;</td>
+<td class="searchbody" width="30%" valign="center"><input type="text" name="pcr_product" size="40"><br></td>
+<td class="searchbody" align="left" valign="center"><font color="#000000">WormBase PCR_product name (e.g. <a href="http://www.wormbase.org/db/seq/pcr?name=sjj_ZK1067.1;class=PCR_product">sjj_ZK1067.1</a>)</font><br></td>
+</tr>
+
+END_OF_MESSAGE1
+
+#remove these for now - maybe will add back later. removed only from the form - nowhere else rnai.14.cgi
+
+#<tr><td class="searchbody" align="center" valign="center" width="25%"><b>PCR Primer Names</b>&nbsp;</td>
+#<td class="searchbody" width="30%"><input type="text" name="primer_name1" size="40"><br><br><input type="text" name="primer_name2" size="40"><br></td>
+#<td class="searchbody" align="left" valign="center"><font color="#000000">two corresponding WormBase primer names (e.g. <a href="http://www.wormbase.org/db/misc/etree?name=sjj_ZK1067.1_b;class=Oligo">sjj_ZK1067.1_b</a> and <a href="http://www.wormbase.org/db/misc/etree?name=sjj_ZK1067.1_f;class=Oligo">sjj_ZK1067.1_f</a>)</font><br></td>
+#</tr>
+
+print <<END_OF_MESSAGE2;
+
+<tr><td class="searchbody" align="center" valign="center" width="25%"><b>PCR Primer Sequences</b>&nbsp;</td>
+<td class="searchbody" width="30%"><input type="text" name="primer_seq1" size="40"><br><br><input type="text" name="primer_seq2" size="40"><br></td>
+<td class="searchbody" align="left" valign="center"><font color="#000000">two corresponding primer sequences</font><br></td>
+</tr>
+
+<tr><td class="searchbody" align="center" valign="center" width="25%"><b>Genomic Coordinates</b>&nbsp;</td>
+<td class="searchbody" width="30%"><input type="text" name="coord" size="40"><br></td>
+<td class="searchbody" align="left" valign="center"><font color="#000000">genomic start and stop coordinates of the probe (e.g. II:9198257..9206849 or ZK1067:13703..22295 or MtDNA:4504..5613)</font><br></td>
+</tr>
+
+<tr><td class="searchbody" align="center" valign="center" width="25%"><b>cDNA/EST/OST Clone</b>&nbsp;</td>
+<td class="searchbody" width="30%"><input type="text" name="clone" size="40"><br></td>
+<td class="searchbody" align="left" valign="center"><font color="#000000">WormBase cDNA/EST/OST clone (e.g. <a href="http://www.wormbase.org/db/seq/sequence?name=AF071375;class=Sequence">AF071375</a>, <a href="http://www.wormbase.org/db/seq/sequence?name=yk275g9;class=Sequence">yk275g9</a>, <a href="http://www.wormbase.org/db/seq/sequence?name=OSTR215B4_1;class=Sequence">OSTR215B4_1</a>)</font><br></td>
+</tr>
+
+<tr><td class="searchbody" align="center" valign="top" width="25%"><b>Probe Sequence</b>&nbsp;</td>
+<td class="searchbody" width="30%"><textarea rows="25" cols="38" name="sequence" wrap="virtual"></textarea></td>
+<td class="searchbody" align="left" valign="top"><font color="#000000">actual DNA sequence of the probe</font><br></td>
+</tr>
+</tbody>
+</table>
+<br><br>
+<font color="#000000" face="Helvetica, Arial, sans-serif"><b>Add another probe?&nbsp;</b></font>
+<input type="radio" name="add_another" value="yes">Yes&nbsp;<input type="radio" name="add_another" value="no" checked="checked">No
+<br><br>
+
+<input value="Submit" type="submit" name="submit_seq">&nbsp;<input value="Reset" type="reset">
+
+</form>
+<br>
+
+END_OF_MESSAGE2
+}
+
+
+sub PrintRNAi2 {
+    my ($probe_count, $probe_string,  $ace_file, $name, $email, $paper, $paper_obj, $lab, $author_list, $date, $wbrnai, $pcr_count, $ontology, $variation_string, $overlapping_genes_string)=@_;
+#    my $probe_count=shift;
+#    my $probe_string=shift;
+#    my $ace_file=shift;
+#    my $submitter=shift;
+
+    open(IN, "<$ontology") || die "cannot open $ontology\n";
+    my @ontology_array=();
+    while (<IN>) {
+	chomp;
+	my @tmp=split('\s');
+	next unless $tmp[1];
+	if ($tmp[0] eq "id:") {
+	    push @ontology_array, $tmp[1];
+	}
+	elsif ($tmp[0] eq "name:") {
+	    push @ontology_array, $tmp[1];
+	}
+    }
+    close IN;
+    my $ontology_string=join(';', @ontology_array);
+	    
+
+print <<END_OF_MESSAGE1;
+
+<script language='JavaScript'>
+
+function verifyForm(thisform) {
+    if (thisform.new_phenotype.value.match(/\"/)) {
+	alert('Additional phenotype information field cannot contain " characters.');
+	thisform.new_phenotype.focus();
+	return false;
+    }
+    if (thisform.new_phenotype.value.match(/\'/)) {
+	alert("Additional phenotype information field cannot contain ' characters.");
+	thisform.new_phenotype.focus();
+	return false;
+    }
+    if (thisform.remark.value.match(/\"/)) {
+	alert('Remark field cannot contain " characters.');
+	thisform.remark.focus();
+	return false;
+    }
+    if (thisform.remark.value.match(/\'/)) {
+	alert("Remark field cannot contain ' characters.");
+	thisform.remark.focus();
+	return false;
+    }
+    return true;
+}
+
+
+function submit_gene_regulation_info(form) {
+    if (form.info.value == null || form.info.value == '') {
+	alert('Please enter experiment description');
+	return false;
+    }
+    window.document.forms[0].gene_regulation_details.value=form.info.value;
+    return true;
+}
+
+
+function gene_regulation_info (wbrnai,gene_regulation_check) {
+
+    if (gene_regulation_check.checked != true) {
+	return;
+    }
+
+    var info_win=window.open("", "Gene_Regulation_Information", "width=750, height=600 ,scrollbars=yes");
+    var header_text = wbrnai;
+    info_win.focus();
+    var d=info_win.document;
+    d.write('<title>Gene Regulation Information</title>');
+    d.write("<link rel='stylesheet' href='http://elbrus.caltech.edu/~igor/wormbase.css'>");
+    d.write('<h3><font color="#3333ff" face="Helvetica, Arial, sans-serif">Gene Regulation Information</font></h3>');
+    d.write('<ul><li>Enter information relevant to the experiment below and click "Submit"</li>');
+    d.write('<li>Information will be e-mailed to you. Do not forget to submit it to Xiaodong.</li></ul>');
+    d.write('<form name="info_form" onsubmit="if (opener.submit_gene_regulation_info(this)) {window.close(); return true;} else {return false;}">');
+    d.write('<textarea name="info" rows="25" cols="80" wrap="virtual">' + header_text + '</textarea>');
+    d.write('<br><br>');
+    
+    d.write('<input type="submit" value="Submit">&nbsp');
+    d.write('<input type="button" name="cancel_info" value="Cancel" onclick="opener.document.forms[0].gene_regulation_check.checked=false; window.close();">');
+    d.write('</form>');
+    d.close();
+    return;
+}
+
+
+function submit_interaction_info(form,variation_string) {
+    var interaction_info_string="";
+    var tmp_array = new Array;
+    var existPhenotype = false;
+    var thisRNAi = false;
+
+    var variationObj = new Object();
+    var variation_array = new Array();
+    variation_array=variation_string.split(/;/g);
+    for (var i=0; i<variation_array.length; i+=2) {
+	variationObj[variation_array[i].toLowerCase()]=variation_array[i+1];
+    }
+
+
+    for (var i=0; i<form.elements.length; i++) {
+	if (form.elements[i].name.match("gene") && (form.elements[i].value == null || form.elements[i].value == '')) {
+	    var number=form.elements[i].name.slice(4);
+	    alert("Gene " + number + " cannot be left blank");
+	    return false;
+	}
+	if (form.elements[i].value != null && form.elements[i].value != '' && form.elements[i].value != 'Submit' && form.elements[i].value != 'Cancel') {
+	    if (form.elements[i].name.match("rnai")) {
+		if (form.elements[i].checked == true) {
+		    tmp_array.push(form.elements[i].name+"=>YES");
+		    thisRNAi = true;
+		}
+	    }
+	    else if (form.elements[i].name.match("interaction_phenotype")) {
+		var tmp="";
+		for (var j=0; j<form.elements[i].options.length; j++) {
+		    if (form.elements[i].options[j].selected == true) {
+			tmp=tmp+form.elements[i].options[j].value+",";
+		    }
+		}
+		if (tmp != "") {
+		    tmp_array.push(form.elements[i].name+"=>"+tmp);
+		    existPhenotype = true;
+		}
+	    }
+	    else if (form.elements[i].name.match("var")) {
+		if (variationObj[form.elements[i].value.toLowerCase()]) {
+		    if (variationObj[form.elements[i].value.toLowerCase()].toLowerCase() != form.elements[i-1].value.toLowerCase()) {
+			var response1 = prompt("WARNING: Variation "+form.elements[i].value + " and Gene ID " + form.elements[i-1].value + " do not match. Consider changing it to " + variationObj[form.elements[i].value.toLowerCase()] + ". Press OK to change Gene ID (you can edit the value first), Cancel to continue with the current value.", variationObj[form.elements[i].value.toLowerCase()]);
+			if (response1 != null && response1 != "") {
+			    form.elements[i-1].value=response1;
+			    tmp_array.pop();
+			    tmp_array.push(form.elements[i-1].name+"=>"+form.elements[i-1].value);
+			}
+		    }
+		}
+		else {
+		    var number=form.elements[i].name.slice(3);
+		    alert("Variation " + number + " (" + form.elements[i].value + ") does not exist in the database");
+		    return false;
+		}
+		tmp_array.push(form.elements[i].name+"=>"+form.elements[i].value);
+	    }
+
+	    else {
+		tmp_array.push(form.elements[i].name+"=>"+form.elements[i].value);
+	    }
+	}
+    }
+    interaction_info_string=tmp_array.join(";");
+    window.document.forms[0].interaction_details.value=interaction_info_string;
+
+    if (existPhenotype == false) {
+	alert("At least one Interaction-relevant phenotype has to be selected");
+	return false;
+    }
+    if (thisRNAi == false) {
+	alert("At least one interactor should be RNAi-based");
+	return false;
+    }
+
+    if (form.remark.value.match(/;/)) {
+	alert('Remark field cannot contain ; characters.');
+	form.remark.focus();
+	return false;
+    }
+    if (form.remark.value.match(/=>/)) {
+	alert("Remark field cannot contain => characters.");
+	form.remark.focus();
+	return false;
+    }
+    return true;
+}
+
+
+function interaction_info (wbrnai,interaction_number,phenotypes,ontology_string,variation_string,overlapping_genes_string) {
+    if (interaction_number.value == null || interaction_number.value == '' || interaction_number.value == 0) {
+	return;
+    }
+    var info_win=window.open("", "Interaction_Information", "width=1200, height=800, scrollbars=yes");
+    info_win.focus();
+    var d=info_win.document;
+
+
+    var pheno_array = new Array();
+    var tmp_pheno_array = new Array();
+    tmp_pheno_array = phenotypes.value.split(/\\s/g);
+
+    for (var i=0; i<tmp_pheno_array.length; i++) {
+	if (tmp_pheno_array[i].length != 0) {
+	    pheno_array.push(tmp_pheno_array[i]);
+	}
+    }
+
+    var ontologyObj = new Object();
+    var ontology_array = new Array();
+    ontology_array=ontology_string.split(/;/g);
+    for (var i=0; i<ontology_array.length; i+=2) {
+	ontologyObj[ontology_array[i].toLowerCase()]=ontology_array[i+1];
+    }
+
+    
+    if (pheno_array.length == 0) {
+	d.write ('<h3><font color="#3333ff" face="Helvetica, Arial, sans-serif">No phenotype entered. Please go back.</font></h3>');
+	d.write('<input type="button" name="no_info" value="OK" onclick="window.close();">&nbsp');
+	d.close();
+	return;
+    }
+
+
+    d.write('<title>Interaction Information</title>');
+    d.write("<link rel='stylesheet' href='http://elbrus.caltech.edu/~igor/wormbase.css'>");
+    d.write('<h3><font color="#3333ff" face="Helvetica, Arial, sans-serif">Interaction Information</font></h3>');
+    d.write('Possible target genes for RNAi probe(s): ' + overlapping_genes_string + '<br><br>');
+//    d.write('number of interactions ', interaction_number.value, '<br>');
+    d.write('<form name="info_form" onsubmit="if (opener.submit_interaction_info(window.document.forms[0],',"'",variation_string,"'",')) {window.close(); return true;} else {return false;}">');
+
+ 
+		
+    d.write("<table cellpadding='15' width='100%' cellspacing='1' border='1'><tbody>");
+    for (i=1; i<=interaction_number.value; i++) {
+	d.write("<tr><td class='searchbody' align='center' valign='center' width='20%'><b>Gene ", i ,"</b></td>");
+//	d.write("<td class='searchbody' align='center' valign='center' width='20%'>Gene</td>");
+	d.write("<td class='searchbody' align='center' valign='center'><input type='text' name='gene", i, "' size='20'></td>");
+	d.write("<td class='searchbody' align='center' valign='center' width='20%'>Variation</td>");
+	d.write("<td class='searchbody' align='center' valign='center'><input type='text' name='var", i, "' size='20'></td></tr>");
+	d.write("<tr><td colspan='2' class='searchbody' align='center' valign='center'>&nbsp;</td><td class='searchbody' align='center' valign='center'>Transgene</td><td class='searchbody' align='center' valign='center'><input type='text' name='trans", i, "' size='20'></td></tr>");
+	d.write("<tr><td colspan='2' class='searchbody' align='center' valign='center'>&nbsp;</td><td class='searchbody' align='center' valign='center'>This RNAi</td><td class='searchbody' align='center' valign='center'><input type='checkbox' name='rnai", i, "' value='yes' unchecked=''></td></tr>");
+	d.write("<tr><td colspan='2' class='searchbody' align='center' valign='center'>&nbsp;</td><td class='searchbody' align='center' valign='center'>Direction</td><td class='searchbody' align='center' valign='center'><select name='direction", i ,"' size=1><option selected value='Non_directional'>Non-directional</option><option value='Effector'>Effector</option><option value='Effected'>Effected</option></td></tr>");
+
+    }
+    
+    d.write("<tr><td class='searchbody' align='center' valign='center' width='20%'><b>Interaction Type</b></td>");
+    d.write("<td colspan='3' class='searchbody' align='center' valign='center' width='20%'><select name='interaction_type' size=1><option selected value='Genetic'>Genetic</option><option value='Regulatory'>Regulatory</option><option value='No_interaction'>No_interaction</option><option value='Predicted_interaction'>Predicted_interaction</option><option value='Physical_interaction'>Physical_interaction</option><option value='Suppression'>Suppression</option><option value='Enhancement'>Enhancement</option><option value='Synthetic'>Synthetic</option><option value='Epistasis'>Epistasis</option><option value='Mutual_enhancement'>Mutual_enhancement</option><option value='Mutual_suppression'>Mutual_suppression</option></td></tr>");
+    d.write("<tr><td class='searchbody' align='center' valign='center' width='20%'><b>Interaction-relevant Phenotype</b></td>");
+    d.write("<td colspan='3' class='searchbody' align='center' valign='center' width='20%'><select name='interaction_phenotype' size=", pheno_array.length, " multiple>");
+    for (var j=0; j<pheno_array.length; j++) {
+	var name="";
+	if (ontologyObj[pheno_array[j].toLowerCase()]) {
+	    name = ontologyObj[pheno_array[j].toLowerCase()];
+	}
+	else {
+	    name = "ID not in ontology";
+	}
+	d.write("<option value=",pheno_array[j], ">", pheno_array[j], " (" , name , ")" , "</option>");
+
+    }
+    d.write("</td></tr>");
+   
+    d.write("<tr><td class='searchbody' align='center' valign='center' width='20%'><b>Remark</b></td>");
+    d.write("<td colspan='3' class='searchbody' align='center' valign='center' width='20%'><textarea rows='10' cols='70' name='remark' wrap='virtual'></textarea></td></tr>");
+
+    d.write("</tbody></table>");
+    d.write('<br><br>');
+
+    d.write('<input type="submit" value="Submit">&nbsp');
+    d.write('<input type="button" name="cancel_info" value="Cancel" onclick="opener.document.forms[0].interaction_number.value=0; window.close();">');
+    d.write('</form>');
+
+    d.close();
+    return;
+}
+
+
+</script>
+
+
+
+
+<h3><font color="#3333ff" face="Helvetica, Arial, sans-serif">RNAi Data Submission Form</font></h3>
+<form action=$myself method="post" enctype="multipart/form-data" onsubmit="return verifyForm(this)">
+
+<h4><font color="#000000" face="Helvetica, Arial, sans-serif">Step 3: Experimental Information</font></h4>
+<font color="#000000"><b>Enter all that applies:</b></font>
+<br><br>
+
+<input type="hidden" name="probe_count" value="$probe_count">
+<input type="hidden" name="probe_string" value="$probe_string">
+<input type="hidden" name="ace_file" value="$ace_file">
+<input type="hidden" name="pcr_count" value="$pcr_count">
+
+
+<input type="hidden" name="name" value="$name">
+<input type="hidden" name="email" value="$email">
+<input type="hidden" name="paper" value="$paper">
+<input type="hidden" name="lab" value="$lab">
+<input type="hidden" name="author" value="$author_list">
+<input type="hidden" name="date" value="$date">
+<input type="hidden" name="wbrnai" value="$wbrnai">
+<input type="hidden" name="paper_obj" value="$paper_obj">
+
+<input type="hidden" name="phenotype_details" value="">
+
+<input type="hidden" name="gene_regulation_details" value="">
+
+<input type="hidden" name="interaction_details" value="">
+
+
+<table cellpadding="25" width="100%" cellspacing="1" border="1">
+<tbody>
+<tr><td class="searchbody" align="center" valign="center" width="25%"><b>Strain</b>&nbsp;</td>
+<td class="searchbody" width="30%" align="center" valign="center"><input type="text" name="strain" size="40"><br></td>
+<td class="searchbody" align="left" valign="center"><font color="#000000">Strain used in the experiment (e.g. <a href="http://www.wormbase.org/db/gene/strain?name=CB1467;class=Strain">CB1467</a>)</font><br></td>
+</tr>
+
+<tr><td class="searchbody" align="center" valign="center" width="25%"><b>Genotype</b>&nbsp;</td>
+<td class="searchbody" align="center" width="30%"><input type="text" name="genotype" size="40"><br></td>
+<td class="searchbody" align="left" valign="center"><font color="#000000">Genotype of the strain(e.g. unc-32(e189); rde-1(ne219)). Only needed if no strain information exists in WormBase</font><br></td>
+</tr>
+
+<tr><td class="searchbody" align="center" valign="center" width="25%"><b>Treatment</b>&nbsp;</td>
+<td class="searchbody" align="center" width="30%"><textarea rows="20" cols="38" name="treatment" wrap="virtual"></textarea></td>
+<td class="searchbody" align="left" valign="center"><font color="#000000">Treatment (e.g. Young adult hermaphrodite animals were treated with 5 mkg/ml tunicamycin for 5 hours.)</font><br></td>
+</tr>
+
+<tr><td class="searchbody" align="center" valign="center" width="25%"><b>Life stage</b>&nbsp;</td>
+<td class="searchbody" width="30%" align="center" valign="center"><input type="text" name="stage" size="40"><br></td>
+<td class="searchbody" align="left" valign="center"><font color="#000000">Life stage (e.g. <a href="http://www.wormbase.org/db/misc/life_stage?name=L4%20larva;class=Life_stage">L4 larva</a>)</font><br></td>
+</tr>
+
+<tr><td class="searchbody" align="center" valign="center" width="25%"><b>Temperature</b>&nbsp;</td>
+<td class="searchbody" align="center" width="30%"><input type="text" name="temperature" size="40"><br></td>
+<td class="searchbody" align="left" valign="center"><font color="#000000">Temperature in C</font><br></td>
+</tr>
+
+<tr><td class="searchbody" align="center" valign="center" width="25%"><b>Delivered by</b>&nbsp;</td>
+<td class="searchbody" align="center" width="30%"><select name="delivered" size=1><option selected value="Injection">Injection</option><option value="Bacterial_feeding">Bacterial feeding</option><option value="Soaking">Soaking</option><option value="Transgene_expression">Transgene expression</option><br></td>
+<td class="searchbody" align="left" valign="center"><font color="#000000">RNAi method</font><br></td>
+</tr>
+
+<!--
+<tr><td class="searchbody" align="center" valign="center" width="25%"><b>Phenotype class</b>&nbsp;</td>
+<td class="searchbody" align="center" width="30%"><select name="phenotype" size=15 multiple>
+<option>Abnormal coloration</option>
+<option>Abs</option>
+<option>Adl</option>
+<option>Age</option>
+<option>Bli</option>
+<option>Bmd</option>
+<option>Ced</option>
+<option>Clr</option>
+<option>Con</option>
+<option>Cpa</option>
+<option>Cyk</option>
+<option>Daf</option>
+<option>Defect</option>
+<option>Dpy</option>
+<option>Egl</option>
+<option>Emb</option>
+<option>embryonic defect</option>
+<option>Esp</option>
+<option>Etv</option>
+<option>Evl</option>
+<option>Fem</option>
+<option>Fgc</option>
+<option>Fog</option>
+<option>Glp</option>
+<option>Gom</option>
+<option>Gon</option>
+<option>Gro</option>
+<option>Growth defect</option>
+<option>Him</option>
+<option>Hya</option>
+<option>Lag</option>
+<option>Led</option>
+<option>Let</option>
+<option>Lethal</option>
+<option>Lin</option>
+<option>Lon</option>
+<option>Lpd</option>
+<option>Lva</option>
+<option>Lvl</option>
+<option>Mab</option>
+<option>Mec</option>
+<option>Mei</option>
+<option>Mel</option>
+<option>Mig</option>
+<option>Mlt</option>
+<option>Mog</option>
+<option>Morphology defect</option>
+<option>Movement defect</option>
+<option>Mul</option>
+<option>mult</option>
+<option>Mut</option>
+<option>Muv</option>
+<option>Nmo</option>
+<option>Npo</option>
+<option>Ocs</option>
+<option>Oma</option>
+<option>Ooc</option>
+<option>Oth</option>
+<option>Pat</option>
+<option>Pch</option>
+<option>Pna</option>
+<option>Pnm</option>
+<option>post-embryonic defect</option>
+<option>Prl</option>
+<option>Prm</option>
+<option>Prz</option>
+<option>Pvl</option>
+<option>Pvu</option>
+<option>Rde</option>
+<option>Reproductive defect</option>
+<option>Rol</option>
+<option>Rot</option>
+<option>Rup</option>
+<option>Sck</option>
+<option>Sle</option>
+<option>Slu</option>
+<option>Sma</option>
+<option>Spd</option>
+<option>Spi</option>
+<option>Spn</option>
+<option>Spo</option>
+<option>Ste</option>
+<option>Stp</option>
+<option>Tum</option>
+<option>Unc</option>
+<option>Unclassified</option>
+<option>Var</option>
+<option>Vul</option>
+<option>WT</option>
+<br></td>
+<td class="searchbody" align="left" valign="center"><font color="#000000">WormBase phenotype. Multiple phenotypes can be chosen by holding Ctrl key while making the selection. For phenotype description follow this <a href="http://www.wormbase.org/db/searches/wb_query?query=find%20phenotype">link</a></font><br><br>
+<font color="#000000">To add additional information about selected phenotypes such as penetrance, temperature sensitivity or any other details, click on button below (note: popup window blocker should be disabled for this feature to work).</font><br><br>
+<input type="button" name="phenotype_info" value="Phenotype Info" onclick="add_phenotype_info(window.document.forms[0].phenotype);">
+
+</td>
+</tr>
+-->
+
+<tr><td class="searchbody" align="center" valign="top" width="25%"><b>WormBase phenotype ID</b>&nbsp;</td>
+<td class="searchbody" width="30%" align="center" valign="center"><textarea rows="10" cols="38" name="phenotype_id" wrap="virtual"></textarea><br></td>
+<td class="searchbody" align="left" valign="top"><font color="#000000">Enter one phenotype ID per line.</font><br><br>
+<font color="#000000">To add additional information about these phenotypes such as penetrance, temperature sensitivity, NOT qualifier, or any other details, click on button below (note: popup window blocker should be disabled for this feature to work).</font><br><br>
+<input type="button" name="phenotype_info" value="Phenotype Info" onclick="add_phenotype_info_new(window.document.forms[0].phenotype_id, '$ontology_string');">
+</td>
+</tr>
+
+<tr><td class="searchbody" align="center" valign="top" width="25%"><b>Additional phenotype information, including new phenotypes</b>&nbsp;</td>
+<td class="searchbody" width="30%" align="center" valign="center"><textarea rows="20" cols="38" name="new_phenotype" wrap="virtual"></textarea><br></td>
+<td class="searchbody" align="left" valign="top"><font color="#000000">If an appropriate phenotype class does not exist in WormBase, describe phenotype here and check the \"New phenotype\" box below. We will review the description and create a new class as appropriate. This field may also be used to enter more detailed information about observed phenotype in addition to the phenotype class information.</font><br><br><input type="checkbox" name="new_phenotype_check" value="yes" unchecked=""><b> New Phenotype</b></td>
+</tr>
+
+<tr><td class="searchbody" align="center" valign="top" width="25%"><b>New Gene Regulation</b>&nbsp;</td>
+<td class="searchbody" width="30%" align="center" valign="center"><input type="checkbox" name="gene_regulation_check" value="yes" unchecked="" onchange="gene_regulation_info('$wbrnai', this);"><br></td>
+<td class="searchbody" align="left" valign="top"><font color="#000000">Check this box if the phenotype is Gene Regulation-based and you want to request a new Gene_regulation object to be created</font><br></td>
+</tr>
+
+<tr><td class="searchbody" align="center" valign="top" width="25%"><b>Gene Regulation Object</b>&nbsp;</td>
+<td class="searchbody" width="30%" align="center" valign="center"><input type="text" name="gene_regulation_object" size="40"><br></td>
+<td class="searchbody" align="left" valign="top"><font color="#000000">Gene Regulation object name (from Xiaodong)</font><br></td>
+</tr>
+<!--
+<tr><td class="searchbody" align="center" valign="top" width="25%"><b>New Interaction</b>&nbsp;</td>
+<td class="searchbody" width="30%" align="center" valign="center"><input type="checkbox" name="interaction_check" value="yes" unchecked="" onchange="interaction_info('$wbrnai', this);"><br></td>
+<td class="searchbody" align="left" valign="top"><font color="#000000">Check this box if the phenotype is Interaction-based</font><br></td>
+</tr>
+-->
+<tr><td class="searchbody" align="center" valign="top" width="25%"><b>New Interaction</b>&nbsp;</td>
+<td class="searchbody" width="30%" align="center" valign="center"><select name="interaction_number" size=1 onchange="interaction_info('$wbrnai', this, window.document.forms[0].phenotype_id,'$ontology_string','$variation_string','$overlapping_genes_string');"><option selected value="0"><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><br></td>
+<td class="searchbody" align="left" valign="top"><font color="#000000">Number of interacting genes</font><br></td>
+</tr>
+
+
+<tr><td class="searchbody" align="center" valign="top" width="25%"><b>Interaction Object</b>&nbsp;</td>
+<td class="searchbody" width="30%" align="center" valign="center"><input type="text" name="interaction_object" size="40"><br></td>
+<td class="searchbody" align="left" valign="top"><font color="#000000">Interaction object name (from Andrei)</font><br></td>
+</tr>
+
+END_OF_MESSAGE1
+
+#<tr><td class="searchbody" align="center" valign="center" width="25%"><b>Movie</b>&nbsp;</td>
+#<td class="searchbody" width="30%" valign="center"><input type="text" name="movie" size="40"><br></td>
+#<td class="searchbody" align="left" valign="center"><font color="#000000">Supporting data: movie (e.g. <a href="http://www.wormbase.org/db/misc/etree?name=014.D02.term.mov;class=Movie">014.D02.term.mov</a>)</font><br></td>
+#</tr>
+
+print <<END_OF_MESSAGE2;
+
+<tr><td class="searchbody" align="center" valign="center" width="25%"><b>Picture</b>&nbsp;</td>
+<td class="searchbody" width="30%" align="center" valign="center"><input type="file" name="picture" size="30"><br></td>
+<td class="searchbody" align="left" valign="center"><font color="#000000">Supporting data: picture (e.g. <a href="http://www.wormbase.org/db/misc/etree?name=b0280_3_emb.jpeg;class=Picture">b0280_3_emb.jpeg</a>)</font><br></td>
+</tr>
+
+<tr><td class="searchbody" align="center" valign="center" width="25%"><b>Species</b>&nbsp;</td>
+<td class="searchbody" width="30%" align="center" valign="center"><input type="text" name="species" size="40" value="Caenorhabditis elegans"><br></td>
+<td class="searchbody" align="left" valign="center"><font color="#000000">Species (e.g. Caenorhabditis elegans, Caenorhabditis briggsae)</font><br></td>
+</tr>
+
+<tr><td class="searchbody" align="center" valign="top" width="25%"><b>Remark</b>&nbsp;</td>
+<td class="searchbody" width="30%" align="center" valign="center"><textarea rows="20" cols="38" name="remark" wrap="virtual"></textarea><br></td>
+<td class="searchbody" align="left" valign="top"><font color="#000000">Any additional information about the experiment</font><br></td>
+</tr>
+
+</tbody>
+</table>
+<br><br>
+<font color="#000000" face="Helvetica, Arial, sans-serif"><b>Add another experiment from this paper?&nbsp;</b></font>
+<input type="radio" name="add_another" value="yes">Yes&nbsp;<input type="radio" name="add_another" value="no" checked="checked">No
+<br><br>
+
+<font color="#000000" face="Helvetica, Arial, sans-serif"><b>Would you like to receive a copy of the ace file via e-mail?&nbsp;</b></font>
+<input type="radio" name="send_email" value="yes" checked="checked">Yes&nbsp;<input type="radio" name="send_email" value="no">No
+<br><br>
+
+
+<input value="Submit" type="submit" name="submit_exp">&nbsp;<input value="Reset" type="reset">
+
+</form>
+<br>
+
+
+<script language="JavaScript">
+
+window.document.forms[0].phenotype_details.value="";    //this is needed to clear browser cash from the previous value
+
+function add_phenotype_info (phenotypes) {
+
+    var info_win=window.open("", "Phenotype_Information", "width=1000, height=600");
+
+    info_win.focus();
+    var d=info_win.document;
+    var pheno_array = new Array();
+    for (var i=0; i<phenotypes.options.length; i++) {
+	if (phenotypes.options[i].selected.toString() == "true") {
+	    pheno_array.push(phenotypes.options[i].value);
+	}
+    }
+    
+    d.write('<title>Phenotype Information</title>');
+    d.write("<link rel='stylesheet' href='http://elbrus.caltech.edu/~igor/wormbase.css'>");
+
+    if (pheno_array.length == 0) {
+	d.write ('<h3><font color="#3333ff" face="Helvetica, Arial, sans-serif">No phenotypes selected. Please go back.</font></h3>');
+	d.write('<input type="button" name="no_info" value="OK" onclick="window.close();">&nbsp');
+	d.close();
+	return;
+    }
+
+    d.write('<h3><font color="#3333ff" face="Helvetica, Arial, sans-serif">Phenotype Information</font></h3>');
+    d.write('<form name="info_form" onsubmit="if (opener.submit_info(window.document.forms[0])) {window.close(); return true;} else {return false;}">');
+//    d.write('<form name="info_form">');
+
+    d.write('<input type="hidden" name="phenotype_count" value="',pheno_array.length,'">');
+
+    d.write('<table cellpadding="0" width="100%" cellspacing="1" border="1"><tbody>');
+    for (i=0; i<pheno_array.length; i++) {
+	d.write("<tr><td class='databody' align='center' valign='top' width='10%'><br><b>",pheno_array[i],"</b>&nbsp;</td>");
+	d.write('<input type="hidden" name="phenotype" value="',pheno_array[i],'">');
+	
+	d.write("<td class='searchbody' align='center' valign='center'><table cellpadding='15' width='100%' cellspacing='1' border='1'><tbody>");
+	d.write("<tr><td class='searchbody' align='center' valign='center' width='20%'>Penetrance</td>");
+	d.write("<td class='searchbody' align='center' valign='center'><table width='100%'><tbody><tr><td align='right' width='20%'>from&nbsp;</td><td width='30%'><input type='text' name='p1' size='10'></td><td align='right' width='20%'>to&nbsp;</td><td width='30%'><input type='text' name='p2' size='10'></td></tr></tbody></table></td>");
+	d.write("<td class='searchbody' align='left' valign='center'><font color='#000000'>Estimated percent penetrance range (0-100)</font></td></tr>");
+	
+	d.write("<td class='searchbody' align='center' valign='center' width='20%'>Temperature sensitive</td>");
+	d.write("<td class='searchbody' align='center' valign='center'><table width='100%'><tbody><tr><td align='right' width='20%'>T&nbsp;</td><td width='30%'><input type='text' name='t1' size='10'></td><td align='right' width='20%'>%&nbsp;</td><td width='30%'><input type='text' name='t2' size='10'></td></tr></tbody></table></td>");
+	d.write("<td class='searchbody' align='left' valign='center'><font color='#000000'>Temperature (degrees C), penetrance (%)</font></td></tr>");
+	
+	d.write("<td class='searchbody' align='center' valign='center' width='20%'>Quantity</td>");
+	d.write("<td class='searchbody' align='center' valign='center'><table width='100%'><tbody><tr><td align='right' width='20%'>low&nbsp;</td><td width='30%'><input type='text' name='q1' size='10'></td><td align='right' width='20%'>high&nbsp;</td><td width='30%'><input type='text' name='q2' size='10'></td></tr></tbody></table></td>");
+	d.write("<td class='searchbody' align='left' valign='center'><font color='#000000'>Use for quantitative phenotypes low/high</font></td></tr>");
+	
+	d.write("<td class='searchbody' align='center' valign='top' width='20%'>Details</td>");
+	d.write("<td class='searchbody' align='center' valign='center'><textarea name='rem' rows='15' cols='40' wrap='virtual'></textarea></td>");
+	d.write("<td class='searchbody' align='left' valign='top'><font color='#000000'>Additional information about this phenotype</font></td></tr>");
+	d.write('</tbody></table></td></tr>');
+    }
+    
+    d.write('</tbody></table><br>');
+
+
+    d.write('<input type="submit" value="Submit">&nbsp');
+//    d.write('<input type="button" name="submit_info" value="Submit" onclick="opener.submit_info(window.document.forms[0]); window.close();">&nbsp');
+    d.write('<input type="reset" name="reset_info" value="Clear">&nbsp');
+    d.write('<input type="button" name="cancel_info" value="Cancel" onclick="window.close();">');
+    
+    d.write('</form>');
+    d.close();
+
+}
+
+
+function add_phenotype_info_new (phenotypes, ontology_string) {
+
+    var info_win=window.open("", "Phenotype_Information", "width=1200, height=600, scrollbars=yes");
+
+    info_win.focus();
+    var d=info_win.document;
+    var pheno_array = new Array();
+    var tmp_pheno_array = new Array();
+    tmp_pheno_array = phenotypes.value.split(/\\s/g);
+
+    var ontologyObj = new Object();
+    
+    for (var i=0; i<tmp_pheno_array.length; i++) {
+	if (tmp_pheno_array[i].length != 0) {
+	    pheno_array.push(tmp_pheno_array[i]);
+	}
+    }
+
+    var ontology_array = new Array();
+    ontology_array=ontology_string.split(/;/g);
+    for (var i=0; i<ontology_array.length; i+=2) {
+	ontologyObj[ontology_array[i].toLowerCase()]=ontology_array[i+1];
+    }
+    
+    
+    
+    
+    d.write('<title>Phenotype Information</title>');
+    d.write("<link rel='stylesheet' href='http://elbrus.caltech.edu/~igor/wormbase.css'>");
+
+    if (pheno_array.length == 0) {
+	d.write ('<h3><font color="#3333ff" face="Helvetica, Arial, sans-serif">No phenotype entered. Please go back.</font></h3>');
+	d.write('<input type="button" name="no_info" value="OK" onclick="window.close();">&nbsp');
+	d.close();
+	return;
+    }
+    
+    d.write('<h3><font color="#3333ff" face="Helvetica, Arial, sans-serif">Phenotype Information</font></h3>');
+    d.write('<form name="info_form" onsubmit="if (opener.submit_info_new(window.document.forms[0])) {window.close(); return true;} else {return false;}">');
+//    d.write('<form name="info_form">');
+    
+    d.write('<input type="hidden" name="phenotype_count" value="',pheno_array.length,'">');
+
+    d.write('<table cellpadding="0" width="100%" cellspacing="1" border="1"><tbody>');
+    for (i=0; i<pheno_array.length; i++) {
+	var name="";
+	if (ontologyObj[pheno_array[i].toLowerCase()]) {
+	    name = ontologyObj[pheno_array[i].toLowerCase()];
+	}
+	else {
+	    name = "ID not in ontology";
+	}
+	d.write("<tr><td class='databody' align='center' valign='top' width='10%'><br><b>",pheno_array[i],"</b>&nbsp;<br>",name,"</td>");
+	d.write('<input type="hidden" name="phenotype" value="',pheno_array[i],'">');
+		
+	d.write("<td class='searchbody' align='center' valign='center'><table cellpadding='15' width='100%' cellspacing='1' border='1'><tbody>");
+	d.write("<tr><td class='searchbody' align='center' valign='center' width='20%'><b>Penetrance</b></td>");
+	d.write("<td class='searchbody' align='center' valign='center' width='20%'>Range</td>");
+	d.write("<td class='searchbody' align='center' valign='center'><table width='100%'><tbody><tr><td align='right' width='20%'>from&nbsp;</td><td width='30%'><input type='text' name='p1' size='10'></td><td align='right' width='20%'>to&nbsp;</td><td width='30%'><input type='text' name='p2' size='10'></td></tr></tbody></table></td>");
+	d.write("<td class='searchbody' align='left' valign='center'><font color='#000000'>Percent penetrance range (0-100)</font></td></tr>");
+
+	d.write("<tr><td class='searchbody' align='center' valign='center' width='20%'>&nbsp;</td>");
+	d.write("<td class='searchbody' align='right' valign='center' width='20%'>Incomplete&nbsp;&nbsp;&nbsp;&nbsp;<input type='checkbox' name='incomplete_check'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>");
+	d.write("<td class='searchbody' align='center' valign='center'><textarea name='p3' rows='2' cols='40' wrap='virtual'></textarea></td>");
+	d.write("<td class='searchbody' align='left' valign='center'><font color='#000000'>Description</font></td></tr>");
+
+
+	d.write("<tr><td class='searchbody' align='center' valign='center' width='20%'>&nbsp;</td>");
+	d.write("<td class='searchbody' align='right' valign='center' width='20%'>Low&nbsp;&nbsp;&nbsp;&nbsp;<input type='checkbox' name='low_check'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>");
+	d.write("<td class='searchbody' align='center' valign='center'><textarea name='p4' rows='2' cols='40' wrap='virtual'></textarea></td>");
+	d.write("<td class='searchbody' align='left' valign='center'><font color='#000000'>Description</font></td></tr>");
+
+
+	d.write("<tr><td class='searchbody' align='center' valign='center' width='20%'>&nbsp;</td>");
+	d.write("<td class='searchbody' align='right' valign='center' width='20%'>High&nbsp;&nbsp;&nbsp;&nbsp;<input type='checkbox' name='high_check'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>");
+	d.write("<td class='searchbody' align='center' valign='center'><textarea name='p5' rows='2' cols='40' wrap='virtual'></textarea></td>");
+	d.write("<td class='searchbody' align='left' valign='center'><font color='#000000'>Description</font></td></tr>");
+
+
+	d.write("<tr><td class='searchbody' align='center' valign='center' width='20%'>&nbsp;</td>");
+	d.write("<td class='searchbody' align='right' valign='center' width='20%'>Complete&nbsp;&nbsp;&nbsp;&nbsp;<input type='checkbox' name='complete_check'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>");
+	d.write("<td class='searchbody' align='center' valign='center'><textarea name='p6' rows='2' cols='40' wrap='virtual'></textarea></td>");
+	d.write("<td class='searchbody' align='left' valign='center'><font color='#000000'>Description</font></td></tr>");
+
+	d.write("<tr><td class='searchbody' align='center' valign='center' width='20%'><b>Temperature sensitive</b></td>");
+	d.write("<td class='searchbody' align='right' valign='center' width='20%'>Heat sensitive&nbsp;&nbsp;&nbsp;&nbsp;<input type='checkbox' name='hs_check'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>");
+	d.write("<td class='searchbody' align='center' valign='center'><textarea name='t1' rows='2' cols='40' wrap='virtual'></textarea></td>");
+	d.write("<td class='searchbody' align='left' valign='center'><font color='#000000'>Description</font></td></tr>");
+
+	d.write("<tr><td class='searchbody' align='center' valign='center' width='20%'>&nbsp;</td>");
+	d.write("<td class='searchbody' align='right' valign='center' width='20%'>Cold sensitive&nbsp;&nbsp;&nbsp;&nbsp;<input type='checkbox' name='cs_check'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>");
+	d.write("<td class='searchbody' align='center' valign='center'><textarea name='t2' rows='2' cols='40' wrap='virtual'></textarea></td>");
+	d.write("<td class='searchbody' align='left' valign='center'><font color='#000000'>Description</font></td></tr>")
+	
+	
+	d.write("<td class='searchbody' align='center' valign='center' width='20%'><b>Quantity</b></td>");
+	d.write("<td class='searchbody' align='center' valign='center' width='20%'>Range</td>");
+	d.write("<td class='searchbody' align='center' valign='center'><table width='100%'><tbody><tr><td align='right' width='20%'>low&nbsp;</td><td width='30%'><input type='text' name='q1' size='10'></td><td align='right' width='20%'>high&nbsp;</td><td width='30%'><input type='text' name='q2' size='10'></td></tr></tbody></table></td>");
+	d.write("<td class='searchbody' align='left' valign='center'><font color='#000000'>Use for quantitative phenotypes low/high</font></td></tr>");
+
+	d.write("<tr><td class='searchbody' align='center' valign='center' width='20%'>&nbsp;</td>");
+	d.write("<td class='searchbody' align='center' valign='center' width='20%'>Description</td>");
+	d.write("<td class='searchbody' align='center' valign='center'><textarea name='q3' rows='2' cols='40' wrap='virtual'></textarea></td>");
+	d.write("<td class='searchbody' align='left' valign='center'><font color='#000000'>Description of use</font></td></tr>");
+
+	d.write("<td class='searchbody' align='center' valign='center' width='20%'><b>Affected by</b></td>");
+	d.write("<td class='searchbody' align='center' valign='center' width='20%'>Molecule</td>");
+	d.write("<td class='searchbody' align='center' valign='center'><textarea name='molecule' rows='2' cols='40' wrap='virtual'></textarea></td>");
+	d.write("<td class='searchbody' align='left' valign='center'><font color='#000000'>Molecule name</font></td></tr>");
+	
+	d.write("<tr><td class='searchbody' align='center' valign='center' width='20%'><b>NOT</b></td>");
+	d.write("<td class='searchbody' align='center' valign='center'><input type='checkbox' name='not'></td>");
+	d.write("<td class='searchbody' align='left' valign='center'><font color='#000000'>Check if this specific phenotype was NOT observed in the experiment</font></td>");
+	d.write("<td class='searchbody' align='center' valign='center' width='20%'>&nbsp;</td></tr>");
+	    
+	d.write("<td class='searchbody' align='center' valign='top' width='20%'><b>Details</b></td>");
+	d.write("<td class='searchbody' align='center' valign='center'><textarea name='rem' rows='15' cols='40' wrap='virtual'></textarea></td>");
+	d.write("<td class='searchbody' align='left' valign='top'><font color='#000000'>Additional information about this phenotype</font></td>");
+	d.write("<td class='searchbody' align='center' valign='center' width='20%'>&nbsp;</td></tr>");
+	d.write('</tbody></table></td></tr>');
+    }
+    
+    d.write('</tbody></table><br>');
+
+
+    d.write('<input type="submit" value="Submit">&nbsp');
+//    d.write('<input type="button" name="submit_info" value="Submit" onclick="opener.submit_info(window.document.forms[0]); window.close();">&nbsp');
+    d.write('<input type="reset" name="reset_info" value="Clear">&nbsp');
+    d.write('<input type="button" name="cancel_info" value="Cancel" onclick="window.close();">');
+    
+    d.write('</form>');
+    d.close();
+
+}
+
+
+function submit_info_new(phenotypes) {
+
+    var phenotype_string="";
+    var tmp_array = new Array;
+
+    for (var i=0; i<phenotypes.phenotype_count.value; i++) {
+	for (var j=0; j<21; j++) {
+	    if (j == 19) {
+		if (phenotypes.elements[i*21+j+1].checked == true ) {
+		    tmp_array.push("NOT");
+		}
+		else {
+		    tmp_array.push("");
+		}
+	    }
+	    else if (j == 3 || j == 5 || j == 7 || j == 9 || j == 11 || j == 13) {
+		if (phenotypes.elements[i*21+j+1].checked == true ) {
+		    tmp_array.push("checked");
+		}
+		else {
+		    tmp_array.push("");
+		}
+	    }
+	    else {
+		tmp_array.push(phenotypes.elements[i*21+j+1].value);
+	    }
+	}
+    }
+
+    var notEmpty='no';
+    for (i=0; i<phenotypes.phenotype_count.value; i++) {
+	for (j=1; j<21; j++) {
+	    if (j == 19) {
+		if (phenotypes.elements[i*21+j+1].checked == true ) {
+		    notEmpty='yes';
+		}
+		else {
+		    continue;
+		}
+		
+	    }
+	    else {
+		if ((phenotypes.elements[i*21+j+1].value != null) && (phenotypes.elements[i*21+j+1].value != '')) {
+		    notEmpty='yes';
+		}
+		else {
+		    continue;
+		}
+	    }
+	    if (j == 1 || j == 2) {
+                var num=parseInt(phenotypes.elements[i*21+j+1].value);
+		if (num < 0 || num > 100 || isNaN(num)) {
+		    alert('Penetrance range should be a number between 0 and 100.');
+		    phenotypes.elements[i*21+j+1].focus();
+		    return false;
+		}
+	    }
+	    else if (j == 4 || j == 6 || j == 8 || j == 10 || j == 12 || j == 14 || j == 17) {
+		if (phenotypes.elements[i*21+j+1].value.match(/\"/)) {
+		    alert('Description field cannot contain " characters.');
+		    phenotypes.elements[i*21+j+1].focus();
+		    return false;
+		}
+		if (phenotypes.elements[i*21+j+1].value.match(/\'/)) {
+		    alert("Description field cannot contain ' characters.");
+		    phenotypes.elements[i*21+j+1].focus();
+		    return false;
+		}
+	    }
+	    if (j == 15 || j == 16) {
+                var num=parseInt(phenotypes.elements[i*21+j+1].value);
+		if (isNaN(num)) {
+		    alert('Quantity range should be a number.');
+		    phenotypes.elements[i*21+j+1].focus();
+		    return false;
+		}
+	    }
+	    else if (j == 18) {
+		if (phenotypes.elements[i*21+j+1].value.match(/\"/)) {
+		    alert('Molecule field cannot contain " characters.');
+		    phenotypes.elements[i*21+j+1].focus();
+		    return false;
+		}
+		if (phenotypes.elements[i*21+j+1].value.match(/\'/)) {
+		    alert("Molecule field cannot contain ' characters.");
+		    phenotypes.elements[i*21+j+1].focus();
+		    return false;
+		}
+	    }
+	    else if (j == 20) {
+		if (phenotypes.elements[i*21+j+1].value.match(/\"/)) {
+		    alert('Details field cannot contain " characters.');
+		    phenotypes.elements[i*21+j+1].focus();
+		    return false;
+		}
+		if (phenotypes.elements[i*21+j+1].value.match(/\'/)) {
+		    alert("Details field cannot contain ' characters.");
+		    phenotypes.elements[i*21+j+1].focus();
+		    return false;
+		}
+	    }
+	}
+    }
+    
+    if (notEmpty == 'no') {
+	alert('The form is empty!');
+	return false;
+    }
+    
+
+    phenotype_string=tmp_array.join(";&=>");
+    window.document.forms[0].phenotype_details.value=phenotype_string;
+    
+    return true;
+}
+
+
+    
+
+function submit_info(phenotypes) {
+
+    var phenotype_string="";
+    var tmp_array = new Array;
+
+    for (var i=0; i<phenotypes.phenotype_count.value; i++) {
+	for (var j=0; j<8; j++) {
+	    tmp_array.push(phenotypes.elements[i*8+j+1].value);
+	}
+    }
+
+    var notEmpty='no';
+    for (i=0; i<phenotypes.phenotype_count.value; i++) {
+	for (j=1; j<8; j++) {
+	    if ((phenotypes.elements[i*8+j+1].value != null) && (phenotypes.elements[i*8+j+1].value != '')) {
+		notEmpty='yes';
+	    }
+	    else {
+		continue;
+	    }
+	    if (j<=2 || j == 4) {
+                var num=parseInt(phenotypes.elements[i*8+j+1].value);
+		if (num < 0 || num > 100 || isNaN(num)) {
+		    alert('Penetrance should be a number between 0 and 100.');
+		    phenotypes.elements[i*8+j+1].focus();
+		    return false;
+		}
+	    }
+	    else if (j == 3) {
+		var num=parseInt(phenotypes.elements[i*8+j+1].value);
+		if (num < 0 || isNaN(num)) {
+		    alert('Temperature should be a positive number.');
+		    phenotypes.elements[i*8+j+1].focus();
+		    return false;
+		}
+	    }
+	    else if (j == 5 || j == 6) {
+		var num=parseInt(phenotypes.elements[i*8+j+1].value);
+		if (num < 0 || isNaN(num)) {
+		    alert('Quantity should be a positive number.');
+		    phenotypes.elements[i*8+j+1].focus();
+		    return false;
+		}
+	    }
+	    else {
+		if (phenotypes.elements[i*8+j+1].value.match(/\"/)) {
+		    alert('Details field cannot contain " characters.');
+		    phenotypes.elements[i*8+j+1].focus();
+		    return false;
+		}
+		if (phenotypes.elements[i*8+j+1].value.match(/\'/)) {
+		    alert("Details field cannot contain ' characters.");
+		    phenotypes.elements[i*8+j+1].focus();
+		    return false;
+		}
+	    }
+		
+	}
+    }
+    
+    if (notEmpty == 'no') {
+	alert('The form is empty!');
+	return false;
+    }
+    
+
+    phenotype_string=tmp_array.join(";&=>");
+    window.document.forms[0].phenotype_details.value=phenotype_string;
+    
+    return true;
+}
+
+</script>
+
+
+
+END_OF_MESSAGE2
+}
+
+
+sub PrintThankYou {
+
+print <<END_OF_MESSAGE;
+
+<h3><font color="#3333ff" face="Helvetica, Arial, sans-serif">RNAi Data Submission Form</font></h3>
+<form action=$myself method="post">
+
+<h4><font color="#000000" face="Helvetica, Arial, sans-serif">Thank you for submitting your data!</font></h4>
+<font color="#000000">Click Next to continue</font>
+<br><br>
+
+
+<input value="Next" type="submit" name="submit_paper">
+
+</form>
+<br>
+
+END_OF_MESSAGE
+
+}
+
+
+sub dir_size {
+    my $dir=shift;
+    $dir=$dir=~/(.*)\/$/ ? $1 : $dir;
+    my $dir_size=0;
+    opendir(DIR, $dir) || die "Cannot open $dir: $!";
+    my @files=readdir DIR;
+    foreach (@files) {
+	$dir_size += -s "$dir/$_";
+    }
+    return $dir_size;
+}

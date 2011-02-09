@@ -1,0 +1,14 @@
+Hi all,
+
+First, I apologize to Sanger people for sending this to two addresses - I don't know which one you use.
+
+Attached is a tarball containing the full rnai_curation script that is used at Caltech for RNAi curation via web forms and three subroutines that are relevant to mapping probe sequences and creating homol_data objects (RunBlat.pl). Unless for you enjoy looking at bad code, I would not recommend spending too much time on rnai_curation. Essentially, it collects various pieces of experimental information such as paper ID, treatment, genotype, temperature, etc. and importantly for this conversation probe information, which could be a PCR product, cDNA, EST, genomic coordinates, raw sequence, etc. The probe information is eventually converted to a sequence string that gets recorded under the DNA_text tag in RNAi objects. At this point, DNA_text data become completely self sufficient - it looks exactly the same for all types of probes. It is then passed to RunBlat, which maps it to the genome, identifies primary and secondary targets using findTargets and writes the relevant portions of the ace file. That is all that really has to be done at Sanger conceptually (RunBlat also identifies overlapping genes using getOverlappingGenes, but that is done only for curator convenience and is commented out in the ace file - this step is done at Sanger already).
+
+There are some comments in the files that highlight the major steps. While it makes the flow relatively clear to me, you will have questions. Don't hesitate to ask. The important thing is parsing primary/secondary targets, which requires blat to be run with  -minIdentity=80 -maxIntron=10000 parameters. There is an exception for yk and orfeome probes that returns only the best blat hit (as opposed to 10) because of the unknown nature of the probe sequence for them. The script uses MySQL GFF database to convert chromosomal coordinates to genomic canonicals, which is slow and you certainly have better procedures for that. GFF and AceDB are also used to find overlapping genes, which is unnecessary as I mentioned before. So really, once the DNA_text data are fetched, there should be no need to communicate with any of these databases until it's time to write data into AceDB (if you do that directly).
+
+I am going to stop now and let you take a look at the scripts. Once you have questions, please ask. I'm sure the whole procedure can be rewritten in a better way, which I have no problem with at all :). As long as the concept is preserved, it is all good.
+
+It was nice to see you all again (and meet Kevin) and hope your trip back was pleasant enough.
+
+Cheers,
+Igor.
