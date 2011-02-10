@@ -1,13 +1,15 @@
 #!/bin/bash
 while (true)
   do
-   /Users/michaelhan/bin/git-cvsimport -p x -v -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/CVSmaster wormbase
-   git push origin master
+   cd git_base/wormbase-pipeline
+   /homes/mh6/bin/git-cvsimport -p x -v -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/CVSmaster wormbase
+   git push git@github.com:epaule/wormbase-pipeline.git origin:master
+   git push git@github.com:WormBase/wormbase-pipeline.git origin:master
+   cd ../../wormbase-pipeline
+   hg pull ../git_base/wormbase-pipeline
+   hg update
+   hg push ssh://hg@bitbucket.org/elpaule/wormbase-pipeline
    cd ..
-   hg convert git_base wormbase-pipeline
-   cd wormbase-pipeline
-   hg push
-   cd ../git_base
    date
-   sleep 1800
+   sleep 7200
 done
