@@ -2,12 +2,12 @@
 #
 # transcript_builder.pl
 # 
-# by Anthony Rogers
+# by Anthony Rogers and Gary Williams
 #
 # Script to make ?Transcript objects
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2009-04-02 09:36:55 $
+# Last updated on: $Date: 2011-02-11 09:45:51 $
 use strict;
 use lib $ENV{'CVS_DIR'};
 use Getopt::Long;
@@ -18,14 +18,16 @@ use Modules::SequenceObj;
 use Modules::Transcript;
 use Modules::CDS;
 use Modules::Strand_transformer;
+use Modules::Overlap;
 use File::Path;
 use Storable;
 
 my ($debug, $store, $help, $verbose, $really_verbose, $est, $gff,
     $database, $build, $new_coords, $test, $UTR_range, @chromosomes, 
-    $gff_dir, $test_cds, $wormbase, $db, $species);
+    $gff_dir, $test_cds, $wormbase, $species);
 
 my $gap = 15;			# $gap is the gap allowed in an EST alignment before it is considered a "real" intron
+my $COVERAGE_THRESHOLD = 95.0;  # the alignment score threshold below which any cDNAs that overlap two genes will not be considered.
 
 # to track failings of system calls
 my $errors = 0;
@@ -34,7 +36,7 @@ GetOptions ( "debug:s"          => \$debug,
 	     "help"             => \$help,
 	     "verbose"          => \$verbose,
 	     "really_verbose"   => \$really_verbose,
-	     "est:s"            => \$est,
+	     "est:s"            => \$est, # only use the specified EST sequence - for debugging
 	     "gap:s"            => \$gap,
 	     "gff:s"            => \$gff,
 	     "database:s"       => \$database,
@@ -44,9 +46,9 @@ GetOptions ( "debug:s"          => \$debug,
 	     "utr_size:s"       => \$UTR_range,
 	     "chromosome:s"     => \@chromosomes,
 	     "gff_dir:s"        => \$gff_dir,
-	     "cds:s"            => \$test_cds,
+	     "cds:s"            => \$test_cds, # only use the specified CDS object - for debugging
 	     "store:s"          => \$store,
-	     "species:s"		=> \$species
+	     "species:s"	=> \$species
 	   ) ;
 
 if ( $store ) {
@@ -58,8 +60,9 @@ if ( $store ) {
                            );
 }
 
+my $db;
 if ($database eq "autoace") { 
-  my $db = $wormbase->autoace;
+  $db = $wormbase->autoace;
 } else {
   $db = $database;
 }
@@ -82,7 +85,7 @@ if ($wormbase->debug) {
 my $log = Log_files->make_build_log($wormbase);
 
 &check_opts;
-$log->log_and_die("no database\n") unless $database;
+$log->log_and_die("no database\n") unless $db;
 
 #setup directory for transcript
 my $transcript_dir = $wormbase->transcripts;
@@ -91,18 +94,25 @@ $gff_dir = $wormbase->gff_splits unless $gff_dir;
 my $coords;
 # write out the transcript objects
 # get coords obj to return clone and coords from chromosomal coords
-$coords = Coords_converter->invoke($database, undef, $wormbase);
+$coords = Coords_converter->invoke($db, undef, $wormbase);
+
+my $ovlp;			# Overlap object
 
 #Load in Feature_data : cDNA associations from COMMON_DATA
 my %feature_data;
 &load_features( \%feature_data );
 
+my $problem_file = "$transcript_dir/transcripts.problems";
+open (PROBLEMS, ">$problem_file") || $log->log_and_die "Can't open $problem_file\n";
 
 # process chromosome at a time
-@chromosomes = $wormbase->get_chromosome_names('-prefix') unless @chromosomes;
+@chromosomes = $wormbase->get_chromosome_names('-prefix' => 1) unless @chromosomes;
 my $contigs = 1 if ($wormbase->assembly_type eq 'contig');
 
 foreach my $chrom ( @chromosomes ) {
+
+  # get the Overlap object
+  $ovlp = Overlap->new($db, $wormbase);
 
   #$chrom = $wormbase->chromosome_prefix.$chrom;
   # links store start /end chrom coords
@@ -120,13 +130,13 @@ foreach my $chrom ( @chromosomes ) {
   my $index = 0;
   my $gff_file;
 
-	my $gff_stem = $contigs ? $gff_dir.'/' : $gff_dir."/${chrom}_";
+  my $gff_stem = $contigs ? $gff_dir.'/' : $gff_dir."/${chrom}_";
 
 
   # parse GFF file to get CDS and exon info
   $gff_file = $gff_stem."curated.gff";
   my $GFF = $wormbase->open_GFF_file($chrom, 'curated',$log);
-  $log->write_to("reading gff file $gff_file\n");
+  $log->write_to("reading gff file $gff_file\n") if ($verbose);
   while (<$GFF>) {
     my @data = split;
     next if( $data[1] eq "history" );
@@ -144,9 +154,9 @@ foreach my $chrom ( @chromosomes ) {
     }
   }
   close $GFF;
-
+  
   # read BLAT data
-  my @BLAT_methods = qw( BLAT_EST_BEST BLAT_mRNA_BEST BLAT_OST_BEST BLAT_RST_BEST RNASeq_Hillier_elegans);
+  my @BLAT_methods = qw( BLAT_EST_BEST BLAT_mRNA_BEST BLAT_OST_BEST BLAT_RST_BEST);
   foreach my $method (@BLAT_methods) {
     $gff_file = $gff_stem."$method.gff";
     next unless (-e $gff_file); #not all contigs will have these mol_types
@@ -161,16 +171,18 @@ foreach my $chrom ( @chromosomes ) {
       $cDNA{$data[9]}{$data[3]} = $data[4];
       # keep min max span of cDNA
       if ( !(defined($cDNA_span{$data[9]}[0])) or ($cDNA_span{$data[9]}[0] > $data[3]) ) {
-		$cDNA_span{$data[9]}[0] = $data[3];
-		$cDNA_span{$data[9]}[2] = $data[6]; #store strand of cDNA
+	$cDNA_span{$data[9]}[0] = $data[3];
+	$cDNA_span{$data[9]}[2] = $data[6]; #store strand of cDNA
       } 
       if ( !(defined($cDNA_span{$data[9]}[1])) or ($cDNA_span{$data[9]}[1] < $data[4]) ) {
-		$cDNA_span{$data[9]}[1] = $data[4];
+	$cDNA_span{$data[9]}[1] = $data[4];
       }
+      
+      $cDNA_span{$data[9]}[5] = $data[5]; # coverage score of the alignment
     }
     close $GFF;
   }
-
+  
   #Chromomsome info
 
   $gff_file = $gff_stem."Link.gff";
@@ -268,6 +280,11 @@ foreach my $chrom ( @chromosomes ) {
       $cdna->paired_read( $cDNA_span{"$_"}[4] );
     }
 
+    # add coverage score
+    if ( $cDNA_span{"$_"}[5] ) {
+      $cdna->coverage( $cDNA_span{"$_"}[5] );
+    }
+
     # index info
     $cDNA_index{"$_"} = $index;
     $index++;
@@ -277,7 +294,7 @@ foreach my $chrom ( @chromosomes ) {
     if ( $cdna->SL ) {
       if ( $cdna->start < $cdna->SL->[0] ) {
 	my $gap = $cdna->SL->[0] - $cdna->start;
-	$log->write_to($cdna->name." has internal SL ".$cdna->SL->[2]."gap = $gap\n");
+	$log->write_to($cdna->name." has internal SL ".$cdna->SL->[2]."gap = $gap\n") if ($verbose);
 	next;
       }
     }
@@ -291,124 +308,282 @@ foreach my $chrom ( @chromosomes ) {
   %cDNA = ();
   %cDNA_span = ();
 
-  ################################################
-  #            DATA LOADED           #
-  ################################################
+  ##########################################################
+  # DATA LOADED - START EXTENDING THE TRANSCRIPTS          #
+  ##########################################################
 
+  # First round
+  #
+  # remove any cDNA that overlaps two CDSs and which has a score of
+  # less than $COVERAGE_THRESHOLD for the alignment coverage score
+  #
+  # +++ At present this does a very simple check to see if the EST
+  # overlaps with two or more geens, but it should be improved to
+  # check whether the EST exons overlap with the CDS exons because at
+  # the moment genes in the introns of other genes in the same sense
+  # have their weak EST rejected.
 
- CDNA:
+  my $round = 'First (poor quality) round:';
+  my $count1 = 0;
+
+  $log->write_to("$round\n") if ($verbose);
+
   foreach my $CDNA ( @cdna_objs) {
     next if ( defined $est and $CDNA->name ne "$est"); #debug line
-
     #sanity check features on cDNA ie SLs are at start
     next if ( &sanity_check_features( $CDNA ) == 0 );
 
     foreach my $cds ( @cds_objs ) {
-      if ( $cds->map_cDNA($CDNA) ) {
-	$CDNA->mapped($cds );
-	next CDNA;
+      if ($CDNA->overlap($cds)) {
+	$CDNA->probably_matching_cds($cds, 1);
       }
     }
-    last if $est;
+    # now check how many genes the cDNA overlaps - we only want those that overlap one
+    my @matching_genes = $CDNA->list_of_matched_genes;
+    if ($#matching_genes > 0 && $CDNA->coverage < $COVERAGE_THRESHOLD) { 
+      $log->write_to("$round cDNA ",$CDNA->name," overlaps two or more genes and has an alignment score of less than $COVERAGE_THRESHOLD so it will not be used in transcript-building:") if ($verbose);
+      foreach my $gene (@matching_genes) {
+	$log->write_to("\t" . $gene) if ($verbose);
+      }
+      $log->write_to("\n") if ($verbose);
+      print PROBLEMS "$round cDNA ",$CDNA->name," overlaps two or more genes and has an alignment score of less than $COVERAGE_THRESHOLD so it will not be used in transcript-building: @matching_genes \n";
+      $count1++;
+      $CDNA->mapped(1);  # mark the cDNA as used with a dummy CDS reference
+    } else {
+      #print "Quality of ",$CDNA->name," looks OK\n" if ($verbose);
+    }
   }
 
-  # tie up read pairs - only use cDNAs from read-pairs if both of the cDNAs in a pair match the CDS
-  # needs further work
-#  foreach my $cds ( @cds_objs ) {
-#    my $name = $cds->name;
-#    if ($cDNA_index{$name}) {
-#    }
-#  }
-      
-  $log->write_to("Second round additions\n");
+  
+
+
+  # Second round.
+  #
+  # here we go through all of the cDNAs looking for matches of their
+  # introns with the introns of the CDS structures. We store all
+  # instances of a match in the cDNA structure so that we can go
+  # through them all later and check first of all whenther there are
+  # any cDNAs with introns matching two or more genes - these are
+  # candidates for merging genes or chimeric ESTs and the cDNA is not
+  # used to build the transcritps as they will almost certainly
+  # produce erroneous structures. Where the cDNA matches just one
+  # gene, the cDNA may match several CDSs equally well. All of the
+  # CDSs that match with an equal number of consecutive introns are
+  # then given the option of adding the cDNA to their transcripts.
+
+  $round = "Second (intron) round:";
+  my $count2 = 0;
+
+  $log->write_to("$round\n") if ($verbose);
+
+  # want to check if the cDNA has introns that match one and only one gene
+  foreach my $CDNA ( @cdna_objs) {
+    next if ( defined($CDNA->mapped) );
+    next if ( defined $est and $CDNA->name ne "$est"); #debug line
+    
+    #sanity check features on cDNA ie SLs are at start
+    next if ( &sanity_check_features( $CDNA ) == 0 );
+
+    # want to see which fresh set of CDSs this matches
+    $CDNA->reset_probably_matching_cds;
+
+    foreach my $cds ( @cds_objs ) {
+      if ($cds->map_introns_cDNA($CDNA) ) { 
+	# note each CDS and gene that this cDNA matches, together with the number of contiguous CDS introns matched
+	print "$round Have stored the no. of introns in common between ",$cds->name," and ",$CDNA->name,"\n" if ($verbose);
+      }
+    }
+
+
+    # now that this cDNA has information on which CDS's introns it
+    # matches, we can add any cDNA that matches just one gene at the
+    # introns level to the transcripts.  There may be more than one
+    # CDS in a gene that matches the same number of CDS introns with
+    # no mismatches
+
+    my @matching_genes = $CDNA->list_of_matched_genes;
+    if ($#matching_genes == 0) { # just one matching gene
+      my @best_cds = &get_best_CDS_matches($CDNA); # get those CDSs for this cDNA that have the most introns matching
+      foreach my $cds (@best_cds) {
+	if ( $cds->map_cDNA($CDNA) ) { # add it to the transcript structure
+	  $CDNA->mapped($cds );  # mark the cDNA as used
+	  print "$round Have used intron match of ",$CDNA->name," in the transcript ",$cds->name,"\n" if ($verbose);
+	}
+      }
+    } elsif ($#matching_genes > 0) { # we want to report those ESTs that have introns that match two or more CDSs as this may indicate required gene mergers.
+      $log->write_to("$round cDNA ",$CDNA->name," matches introns in two or more genes and will not be used in transcript-building:") if ($verbose);
+      foreach my $gene (@matching_genes) {
+	$log->write_to("\t" . $gene) if ($verbose);
+      }
+      $log->write_to("\n") if ($verbose);
+      print PROBLEMS "$round cDNA ",$CDNA->name," matches introns in two or more genes and will not be used in transcript-building: @matching_genes \n";
+      $count2++;
+      $CDNA->mapped(1);  # mark the cDNA as used with a dummy CDS reference
+    }
+  }
+
+
+
+  # Here we use the cDNAs that were not used in the intron round
+  
+  $round = "Third (extend transcripts) round:";
+  $count3 = 0;
+  $log->write_to("$round\n") if ($verbose);
+
 
   foreach my $CDNA ( @cdna_objs) {
     next if ( defined $est and $CDNA->name ne "$est"); #debug line
     next if ( defined($CDNA->mapped) );
+    #sanity check features on cDNA ie SLs are at start
+    next if ( &sanity_check_features( $CDNA ) == 0 );
+
+
+    # want to see which fresh set of CDSs this matches
+    $CDNA->reset_probably_matching_cds;
+
+    # here we are now looking for overlapped transcripts and want to
+    # avoid using cDNAs that overlap two genes with no intron evidence
+    # as to which one it should be added to.
+
     foreach my $cds ( @cds_objs ) {
-      if ( $cds->map_cDNA($CDNA) ) {
-	$CDNA->mapped($cds);
-	print $CDNA->name," overlaps ",$cds->name,"on 2nd round \n" if $verbose;
+      if ($CDNA->overlap($cds)) {
+	$CDNA->probably_matching_cds($cds, 1);
       }
     }
+    # now check how many genes the cDNA overlaps - we only want those that overlap one
+    my @matching_genes = $CDNA->list_of_matched_genes; 
+    if ($#matching_genes == 0) { # just one matching gene
+      foreach my $cds_match (@{$CDNA->probably_matching_cds}) {
+	my $cds = $cds_match->[0];
+	if ( $cds->map_cDNA($CDNA) ) { # add it to the transcript structure
+	  $CDNA->mapped($cds );  # mark the cDNA as used
+	  print "$round Have used first round addition of ",$CDNA->name," in the transcript ",$cds->name,"\n" if ($verbose);
+	}
+      }
+    } elsif ($#matching_genes > 0) { 
+      $log->write_to("$round cDNA ",$CDNA->name," overlaps two or more genes and will not be used in transcript-building:") if ($verbose);
+      foreach my $gene (@matching_genes) {
+	$log->write_to("\t" . $gene) if ($verbose);
+      }
+      $log->write_to("\n") if ($verbose);
+      print PROBLEMS "$round cDNA ",$CDNA->name," overlaps two or more genes and will not be used in transcript-building: @matching_genes \n";
+      $count3+;
+      $CDNA->mapped(1);  # mark the cDNA as used with a dummy CDS reference
+    }
   }
+
+
+#  $round = "Nth round:";
+#  $log->write_to("$round\n") if ($verbose);
+#
+#  foreach my $CDNA ( @cdna_objs) {
+#    next if ( defined $est and $CDNA->name ne "$est"); #debug line
+#    next if ( defined($CDNA->mapped) );
+#    #sanity check features on cDNA ie SLs are at start
+#    next if ( &sanity_check_features( $CDNA ) == 0 );
+#
+#    foreach my $cds ( @cds_objs ) {
+#      if ( $cds->map_cDNA($CDNA) ) {
+#	$CDNA->mapped($cds);
+#	print "$round ",$CDNA->name," overlaps ",$cds->name,"\n" if $verbose if ($verbose);
+#      }
+#    }
+#  }
+
+  $round = "Fourth (read pairs) round:";
+
   # try and attach paired reads that dont overlap
+  $log->write_to("$round\n") if ($verbose);
+
  PAIR: foreach my $CDNA ( @cdna_objs) {
     next if ( defined $est and $CDNA->name ne "$est"); #debug line
     next if $CDNA->mapped;
+    #sanity check features on cDNA ie SLs are at start
+    next if ( &sanity_check_features( $CDNA ) == 0 );
 
     # get name of paired read
     next unless (my $mapped_pair_name = $CDNA->paired_read );
 
-    # retreive object from array
+    # retrieve object from array
     next unless ($cDNA_index{"$mapped_pair_name"} and (my $pair = $cdna_objs[ $cDNA_index{"$mapped_pair_name"} ] ) );
 
     # get cds that paired read maps to 
-    if (my $cds = $pair->mapped ) {
-      my $index = $cds->array_index;
+    if (my $cds = $pair->mapped) {
+      if ($cds != 1) { # don't want to start using the dummy 'cds = 1' flags we used earlier to mark cDNAs we don't wish to use in a transcript
+	my $index = $cds->array_index;
 
-      # find next downstream CDS - must be on same strand
-      my $downstream_CDS;
-    DOWN: while (! defined $downstream_CDS ) {
-	$index++;
-	if ( $downstream_CDS = $cds_objs[ $index ] ) {
-	
-	  unless ( $downstream_CDS ) {
-	    last;
-	    $log->write_to("last gene in array\n");
+	# find next downstream CDS - must be on same strand
+	my $downstream_CDS;
+      DOWN: while (! defined $downstream_CDS ) {
+	  $index++;
+	  if ( $downstream_CDS = $cds_objs[ $index ] ) {
+	    
+	    unless ( $downstream_CDS ) {
+	      last;
+	      $log->write_to("last gene in array\n") if ($verbose);
+	    }
+	    # dont count isoforms
+	    my $down_name = $downstream_CDS->name;
+	    my $name = $cds->name;
+	    $name =~ s/[a-z]//;
+	    $down_name =~ s/[a-z]//;
+	    if ( $name eq $down_name ) {
+	      undef $downstream_CDS;
+	      next;
+	    }
+	    # @cds_objs is structured so that + strand genes are in a block at start, then - strand
+	    last DOWN if( $downstream_CDS->strand ne $cds->strand );
+	    
+	    # check unmapped cdna ( $CDNA ) lies within 1kb of CDS that paired read maps to ( $cds ) and before $downstream_CDS
+	    
+	    #print "$round trying ",$cds->name, " downstream is ", $downstream_CDS->name," with ",$CDNA->name,"\n" if ($verbose);
+	    if ( ($CDNA->start > $cds->gene_end) and ($CDNA->start - $cds->gene_end < 1000) and ($CDNA->end < $downstream_CDS->gene_start) ) {
+	      #print " $round adding 3' cDNA ",$CDNA->name," to ",$cds->name,"\n" if ($verbose);
+	      $cds->add_3_UTR($CDNA);
+	      $CDNA->mapped($cds);
+	      last;
+	    }
+	  } else {
+	    last DOWN;
 	  }
-	  # dont count isoforms
-	  my $down_name = $downstream_CDS->name;
-	  my $name = $cds->name;
-	  $name =~ s/[a-z]//;
-	  $down_name =~ s/[a-z]//;
-	  if ( $name eq $down_name ) {
-	    undef $downstream_CDS;
-	    next;
-	  }
-	  # @cds_objs is structured so that + strand genes are in a block at start, then - strand
-	  last DOWN if( $downstream_CDS->strand ne $cds->strand );
-
-	  # check unmapped cdna ( $CDNA ) lies within 1kb of CDS that paired read maps to ( $cds ) and before $downstream_CDS
-	
-	  #print "trying ",$cds->name, " downstream is ", $downstream_CDS->name," with ",$CDNA->name,"\n";
-	  if ( ($CDNA->start > $cds->gene_end) and ($CDNA->start - $cds->gene_end < 1000) and ($CDNA->end < $downstream_CDS->gene_start) ) {
-	    #print " adding 3' cDNA ",$CDNA->name," to ",$cds->name,"\n";
-	    $cds->add_3_UTR($CDNA);
-	    $CDNA->mapped($cds);
-	    last;
-	  }
-	} else {
-	  last DOWN;
 	}
       }
     }
   }
 
-  $log->write_to("Third round additions\n");
-
-  foreach my $CDNA ( @cdna_objs) {
-    next if ( defined $est and $CDNA->name ne "$est"); #debug line
-    next if ( defined($CDNA->mapped) );
-    foreach my $cds ( @cds_objs ) {
-      if ( $cds->map_cDNA($CDNA) ) {
-	$CDNA->mapped($cds);
-	print $CDNA->name," overlaps ",$cds->name,"on 2nd round \n" if $verbose;
-      }
-    }
-  }
+#  $round = "Fifth (extend transcripts again) round:";
+#  $log->write_to("$round\n") if ($verbose);
+#
+#  foreach my $CDNA ( @cdna_objs) {
+#    next if ( defined $est and $CDNA->name ne "$est"); #debug line
+#    next if ( defined($CDNA->mapped) );
+#    #sanity check features on cDNA ie SLs are at start
+#    next if ( &sanity_check_features( $CDNA ) == 0 );
+#    foreach my $cds ( @cds_objs ) {
+#      if ( $cds->map_cDNA($CDNA) ) {
+#	$CDNA->mapped($cds);
+#	print "$round ",$CDNA->name," overlaps ",$cds->name,"\n" if ($verbose);
+#      }
+#    }
+#  }
 
 
   my $out_file = "$transcript_dir/transcripts$$.ace";
-  $log->write_to("writing output to $out_file\n");
+  $log->write_to("writing output to $out_file\n") if ($verbose);
   open (FH,">>$out_file") or $log->log_and_die("cant open $out_file\n");
   foreach my $cds (@cds_objs ) {
-    $log->write_to("reporting : ".$cds->name."\n") if $wormbase->debug;
+    #$log->write_to("reporting : ".$cds->name."\n") if $wormbase->debug;
     $cds->report(*FH, $coords, $transformer, $wormbase->full_name);
   }
 
+  print "$count1 cDNAs rejected in round 1 (low quality and overlaps two or more genes)\n";
+  print "$count2 cDNAs rejected in round 2 (introns matched in two or more genes)\n";
+  print "$count3 cDNAs rejected in round 3 (overlaps two or more genes)\n";
+
   last if $gff;			# if only doing a specified gff file exit after this is complete
 }
+
+close(PROBLEMS);
 
 $log->mail();
 exit(0);
@@ -426,7 +601,7 @@ exit(0);
 sub eradicateSingleBaseDiff
   {
     my $cDNA = shift;
-    $log->write_to( "removing small cDNA mismatches\n\n\n");
+    $log->write_to( "removing small cDNA mismatches\n\n\n") if ($verbose);
     foreach my $cdna_hash (keys %{$cDNA} ) {
       my $last_key;
       my $check;
@@ -506,7 +681,7 @@ sub load_EST_data
     }
 
     # load paired read info
-    $log->write_to("Loading EST paired read info\n");
+    $log->write_to("Loading EST paired read info\n") if ($verbose);
     my $pairs = $wormbase->autoace."/EST_pairs.txt";
     
     if ( -e $pairs ) {
@@ -523,7 +698,7 @@ sub load_EST_data
     } else {
       my $cmd = "select cdna, pair from cdna in class cDNA_sequence where exists_tag cdna->paired_read, pair in cdna->paired_read";
       
-      open (TACE, "echo '$cmd' | $tace $db |") or die "cant open tace to $database using $tace\n";
+      open (TACE, "echo '$cmd' | $tace $db |") or die "cant open tace to $db using $tace\n";
       open ( PAIRS, ">$pairs") or die "cant open $pairs :\t$!\n";
       while ( <TACE> ) { 
 	chomp;
@@ -532,7 +707,7 @@ sub load_EST_data
 	next unless ($data[0] && $data[1]);
 	next if $data[0]=~/acedb/;
 	$$cDNA_span{$data[0]}->[4] = $data[1];
-	print PAIRS "$data[0]\t$data[1]\n";
+	print PAIRS "$data[0]\t$data[1]\n" if ($verbose);
       }
       close PAIRS;
     }
@@ -557,15 +732,32 @@ sub sanity_check_features
     my $return = 1;
     if ( my $SL = $cdna->SL ) {
       $return = 0 if( $SL->[0] != $cdna->start );
-      print STDERR $SL->[2]," inside ",$cdna->name,"\n";
+      print STDERR $SL->[2]," inside ",$cdna->name,"\n" if ($verbose);
     }
     if ( my $polyA = $cdna->polyA_site ) {
       $return = 0 if( $polyA->[1] != $cdna->end );
-      print STDERR $polyA->[2]," inside ",$cdna->name,"\n";
+      print STDERR $polyA->[2]," inside ",$cdna->name,"\n" if ($verbose);
     }
 
     return $return;
   }
+
+# get the list of CDS objects from the $cdna->probably_matching_cds
+# and return those with the highest number of matching introns
+sub get_best_CDS_matches {
+  my ($CDNA) = @_;
+  my $probably_matching_cds = $CDNA->probably_matching_cds;
+  my @cds_matches = @{$probably_matching_cds};
+  @cds_matches = sort {$b->[1] <=> $a->[1]} @cds_matches; # reverse sort by number of matching introns
+  my $max_introns = $cds_matches[0][1]; # get the highest number of matching introns
+  my @result;
+  foreach my $next_cds (@cds_matches) {
+    if ($next_cds->[1] == $max_introns) {push @result, $next_cds->[0]} # store all $cds objects with an equal highest score
+  }
+  return @result;
+}
+
+
 
 __END__
 
