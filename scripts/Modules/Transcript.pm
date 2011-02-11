@@ -61,6 +61,34 @@ sub map_cDNA
     }
   }
 
+# check whether any of the cDNA introns match the introns in this CDS
+# store the number of consecutive introns in $cDNA with the name of the CDS
+sub map_introns_cDNA {
+  my $self = shift;
+  my $cdna = shift;
+  
+  # check for overlap
+  if( $self->start > $cdna->end ) {
+    return 0;
+  }
+  elsif( $cdna->start > $self->end ) {
+    return 0;
+  }
+  else {
+    #this must overlap - check Splice Leader
+    return 0 unless ($self->check_features($cdna) == 1);
+    
+    # count the number of contiguous introns which match
+    my $matching_introns = $self->check_intron_match( $cdna );
+
+    # want to check later on if this cDNA matches any other CDSs
+    # better, so don't make a hard match assignment yet, just store
+    # the results
+    $cdna->probably_matching_cds( $self, $matching_introns ); 
+    return $matching_introns;
+  }
+}
+  
 sub add_3_UTR
   {
     my $self = shift;
@@ -229,6 +257,8 @@ sub report
       print $fh "Matching_transcript ",$self->name," Inferred_Automatically \"transcript_builder.pl\"\n";
     }
   }
+
+
 
 
 1;
