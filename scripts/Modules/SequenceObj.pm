@@ -123,8 +123,33 @@ sub new
       $self->{'start'} = $start;
       $self->{'end'}   = $end;
       $self->{'strand'}= $strand ;
+      $self->{'probably_matching_cds'} = [];
     }
     bless ( $self, $class );
+
+    # do this stuff after the object has been blessed into the
+    # SequenceObj class, because it is using data stored in this
+    # object: @{$self->sorted_exons}.
+
+    if ($name) {
+      # get the sorted_introns
+      my $exon_end;
+      my @exon_tmp;
+      foreach my $exon ( @{$self->sorted_exons}) {
+	my $exon_start = $exon->[0];
+	if (defined $exon_end) {
+
+	  # We actually store the intron splice sites plus 1 base
+	  # here, but this is ok as we only compare to other instances
+	  # of this class data and it is faster to not fiddle about
+	  # with getting the size 1 base smaller each side.
+	  push(@exon_tmp,[$exon_end, $exon_start]); 
+	  $self->{'introns'}->{$exon_end} = $exon_start; # store the hash for the introns
+	}
+	$exon_end = $exon->[1];
+      }
+      @{$self->{'sorted_introns'}} = @exon_tmp;
+    }
     return $self;
   }
 
@@ -162,6 +187,10 @@ sub sort_exons
     @{$self->{'sorted_exons'}} = sort { $a->[0] <=> $b->[0] } @tmp;
     $self->start( $start );
     $self->end( $end );
+
+    # don't bother to update the sorted_introns here as we only ever
+    # use the sorted_introns at the zeroth round of transcript
+    # building when the SequenceObj objects haven't been changed
   }
 
 =head2 transform_strand
@@ -360,6 +389,73 @@ sub check_exon_match
     return 1;
   }
 
+=head2 check_intron_match
+
+    Title   :   check_intron_match
+    Usage   :   $seq->check_intron_match( $cdna )
+    Function:   count the number of consecutive introns that the cdna and SequenceObj structures have in common
+    Returns :   number of consecutive matched introns
+    Args    :   SequenceObj
+               
+
+=cut
+
+sub check_intron_match {
+  my $self = shift;
+  my $cdna = shift;
+  
+  # check if cDNA introns fit with CDS introns
+  my $max_cdna_contiguous_introns = 0;
+  my $these_introns = 0; # count the introns in this contiguous series
+  foreach my $intron ( @{$cdna->sorted_introns}) {
+    my $intron_start = $intron->[0];
+    # do cDNA and gene share exon start position
+    if ( $self->{'introns'}->{"$intron_start"} ) { # does CDS intron start exist?
+      if ($self->{'introns'}->{"$intron_start"} == $cdna->{'introns'}->{"$intron_start"} ) { # do intron ends match
+	#exact match
+	print "\tExact Intron Match\n" if $debug;
+	$these_introns++; # count the number of contiguous introns
+	if ($these_introns > $max_cdna_contiguous_introns) {$max_cdna_contiguous_introns = $these_introns}
+      } else {
+	$these_introns = 0;
+      }
+    }
+  }
+
+  # now do it again looking at all the CDS introns in case we have an
+  # extra intron in the middle that doesn't match
+  #
+  # but we don't need to check again if there are no introns matching
+  # or if there is only one as there can't be a missed intron in the
+  # middle of one intron.
+  if ($max_cdna_contiguous_introns <= 1) {return $max_cdna_contiguous_introns}
+
+  my $max_cds_contiguous_introns = 0;
+  # check if CDS introns fit with cDNA introns
+  $these_introns = 0; # count the introns in this contiguous series
+  foreach my $intron ( @{$self->sorted_introns}) {
+    my $intron_start = $intron->[0];
+    # do cDNA and gene share exon start position
+    if ( $cdna->{'introns'}->{"$intron_start"} ) { # does cDNA intron start exist?
+      if ($cdna->{'introns'}->{"$intron_start"} == $self->{'introns'}->{"$intron_start"} ) { # do intron ends match
+	#exact match
+	print "\tExact Intron Match\n" if $debug;
+	$these_introns++; # count the number of contiguous introns
+	if ($these_introns > $max_cds_contiguous_introns) {$max_cds_contiguous_introns = $these_introns}
+      } else {
+	$these_introns = 0;
+      }
+    }
+  }
+  # return min value of the cdna or cds contiguous introns
+  if ($max_cds_contiguous_introns > $max_cdna_contiguous_introns) {
+    return $max_cds_contiguous_introns;
+  } else {
+    return $max_cdna_contiguous_introns;
+  }
+}
+
+
 =head2 _cDNA_wholelyInExon
 
     Title   :   _cDNA_wholelyInExon
@@ -383,6 +479,75 @@ sub _cDNA_wholelyInExon
     }
     return 0;
   }
+
+
+=head2 probably_matching_cds
+
+    Function:   get / set the CDSs that probably match a cDNA together with the number of consecutive matching introns
+    Returns / Args : ($cds object, number of introns) as a list
+
+=cut
+
+sub probably_matching_cds
+  {
+    my $self = shift;
+    my $cds = shift;
+    my $no_of_introns = shift;
+    if ($no_of_introns) {
+      push ( @{$self->{'probably_matching_cds'}}, [$cds, $no_of_introns] );
+    }
+    return $self->{'probably_matching_cds'};
+  }
+
+
+=head2 reset_probably_matching_cds
+
+    Function:   reset the array of CDSs that probably match a cDNA
+    Args:       none
+    Returns:    none
+
+=cut
+
+sub reset_probably_matching_cds
+  {
+    my $self = shift;
+    @{$self->{'probably_matching_cds'}} = ();
+  }
+
+
+=head2 list_of_matched_genes
+
+    Title   :   list_of_matched_genes
+    Usage   :   $self->intron_matched_genes
+    Function:   returns the list of genes derived from the names of the CDSs in $cdna->probably_matching_cds
+    Returns :   list of gene names
+    Args    :   
+               
+
+=cut
+
+sub list_of_matched_genes {
+  my $self = shift;
+  
+  my %genes;
+  #print "Checking probably_matching_cds for ",$self->name,"\n";
+  my @matches = @{$self->probably_matching_cds};
+  if (! @matches) {return ()}
+  foreach my $match (@matches ) {
+    my $gene;
+    my $cds = $match->[0];
+    # briggsae
+    if ($cds->name =~ /^CBG/) { # briggsae
+      ($gene) = ($cds->name =~ /^(^CBG\d{5})/);
+    } else { # assume elegans
+      ($gene) = ($cds->name =~ /^(^[A-Z0-9_cel]+\.[1-9]\d?\d?)/);
+    }
+    $genes{$gene} = 1;
+  }
+  return keys %genes;
+}
+
+
 
 
 =head2 _exon_that_end
@@ -545,6 +710,24 @@ sub sorted_exons
   {
     my $self = shift;
     return $self->{'sorted_exons'};
+  }
+
+=head2 sorted_introns
+
+    Title   :  sorted_introns
+    Usage   :  my $second_intron = $seq->sorted_introns->[1]
+               my $second_intron_start = $second_intron->[0]
+    Function:  get sorted introns
+    Returns :  sorted array of intron arrays ( sees synopsis )
+    Args    :  none
+               
+
+=cut
+
+sub sorted_introns
+  {
+    my $self = shift;
+    return $self->{'sorted_introns'};
   }
 
 =head2 mapped
@@ -780,6 +963,31 @@ sub matching_cDNAs
     return $self->{'matching_cdna'};
   }
 
+=head2 overlap
+
+    Function:   check to see if the CDS object overlaps with a cDNA object
+    Returns :   1 if the overlap, else 0
+    Args    :   CDS object               
+
+=cut
+
+# check to see if the CDS object overlaps with a cDNA object in the same strand sense
+# return 1 if the overlap, else 0
+sub overlap {
+  my $self = shift;
+  my $cdna = shift;
+  
+  # check for overlap
+  if ($self->strand ne $cdna->strand) {return 0;}
+  if( $self->start > $cdna->end ) {
+    return 0;
+  } elsif( $cdna->start > $self->end ) {
+    return 0;
+  } else {
+    return 1;
+  }
+}
+
 =head2 paired_read
 
     Function:   get / set paired read for ESTs
@@ -796,6 +1004,24 @@ sub paired_read
 
     $self->{'paired_read'} = $pair if $pair;
     return $self->{'paired_read'};
+  }
+
+=head2 coverage
+
+    Function:   get / set coverage score for ESTs
+    Returns :   coverage score
+    Args    :   coverage score
+               
+
+=cut
+
+sub coverage
+  {
+    my $self = shift;
+    my $coverage = shift;
+
+    $self->{'coverage'} = $coverage if $coverage;
+    return $self->{'coverage'};
   }
 
 sub check_features
