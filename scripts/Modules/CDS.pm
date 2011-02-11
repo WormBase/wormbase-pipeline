@@ -119,7 +119,10 @@ sub map_introns_cDNA {
   foreach my $transcript ( $self->transcripts ) {
     # see how many contiguous introns there are in common between the
     # CDS and the cDNA and store the resilt in the cDNA object
-    $matches_me = 1 if ( $transcript->map_introns_cDNA( $cdna ));
+    if ( my $matching_introns = $transcript->map_introns_cDNA( $cdna )) {
+      $cdna->probably_matching_cds( $self, $matching_introns ); 
+      $matches_me = 1;
+    }    
   }
   return $matches_me;
 }

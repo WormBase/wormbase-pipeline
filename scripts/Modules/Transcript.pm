@@ -84,7 +84,6 @@ sub map_introns_cDNA {
     # want to check later on if this cDNA matches any other CDSs
     # better, so don't make a hard match assignment yet, just store
     # the results
-    $cdna->probably_matching_cds( $self, $matching_introns ); 
     return $matching_introns;
   }
 }
