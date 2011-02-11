@@ -7,7 +7,7 @@
 # Script to make ?Transcript objects
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2011-02-11 09:45:51 $
+# Last updated on: $Date: 2011-02-11 10:06:24 $
 use strict;
 use lib $ENV{'CVS_DIR'};
 use Getopt::Long;
@@ -103,7 +103,7 @@ my %feature_data;
 &load_features( \%feature_data );
 
 my $problem_file = "$transcript_dir/transcripts.problems";
-open (PROBLEMS, ">$problem_file") || $log->log_and_die "Can't open $problem_file\n";
+open (PROBLEMS, ">$problem_file") || $log->log_and_die("Can't open $problem_file\n");
 
 # process chromosome at a time
 @chromosomes = $wormbase->get_chromosome_names('-prefix' => 1) unless @chromosomes;
@@ -427,7 +427,7 @@ foreach my $chrom ( @chromosomes ) {
   # Here we use the cDNAs that were not used in the intron round
   
   $round = "Third (extend transcripts) round:";
-  $count3 = 0;
+  my $count3 = 0;
   $log->write_to("$round\n") if ($verbose);
 
 
@@ -467,7 +467,7 @@ foreach my $chrom ( @chromosomes ) {
       }
       $log->write_to("\n") if ($verbose);
       print PROBLEMS "$round cDNA ",$CDNA->name," overlaps two or more genes and will not be used in transcript-building: @matching_genes \n";
-      $count3+;
+      $count3++;
       $CDNA->mapped(1);  # mark the cDNA as used with a dummy CDS reference
     }
   }
