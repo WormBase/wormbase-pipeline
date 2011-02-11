@@ -88,6 +88,45 @@ sub new
     return $self;
   }
 
+# $CDS->map_introns_cDNA results in calls to
+# Transcript->map_introns_cDNA for each transcript.  The transcript
+# will have the same structure as the CDSs because this is called
+# before any transcript additions.
+
+=head2 map_introns_cDNA
+
+    Title   :   map_introns_cDNA
+    Usage   :   $cds->map_introns_cDNA( $cdna )
+    Function:   check if the passed sequence object matches the intron structure if itself.
+    Returns :   1 if match 0 otherwise, stores the matching CDS names and numbers of consequetive introns in the cds object
+    Args    :   sequence_object
+
+
+=cut
+
+sub map_introns_cDNA {
+  my $self = shift;
+  my $cdna = shift;
+  
+  # check strandedness
+  if( $SequenceObj::debug ) { # class data
+    ( print $self->name," has no strand\n" and return 0 ) unless $self->strand;
+    ( print $cdna->name," has no strand\n" and return 0 ) unless $cdna->strand;
+  }
+  return 0 if $self->strand ne $cdna->strand;
+  
+  my $matches_me = 0;
+  foreach my $transcript ( $self->transcripts ) {
+    # see how many contiguous introns there are in common between the
+    # CDS and the cDNA and store the resilt in the cDNA object
+    $matches_me = 1 if ( $transcript->map_introns_cDNA( $cdna ));
+  }
+  return $matches_me;
+}
+
+
+
+
 # $CDS->map_cDNA results in calls to Transcript->map_cDNA for each transcript. One of which will be derived from the initial CDS structure.
 
 =head2 map_cDNA
