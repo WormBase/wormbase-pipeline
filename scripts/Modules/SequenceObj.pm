@@ -536,6 +536,7 @@ sub list_of_matched_genes {
   foreach my $match (@matches ) {
     my $gene;
     my $cds = $match->[0];
+    # +++ should really use Species->seq_name_regex here to get the sequence-name of the gene
     # briggsae
     if ($cds->name =~ /^CBG/) { # briggsae
       ($gene) = ($cds->name =~ /^(^CBG\d{5})/);
