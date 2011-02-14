@@ -6,8 +6,8 @@
 #
 # wrapper script for running transcript_builder.pl
 #
-# Last edited by: $Author: pad $
-# Last edited on: $Date: 2010-11-11 15:59:02 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2011-02-14 10:08:12 $
 
 use lib $ENV{CVS_DIR};
 use Wormbase;
@@ -140,9 +140,9 @@ if ($wormbase->assembly_type ne 'contig') { # elegans, briggsae
     if($wormbase->species eq 'elegans') {
 
       my %sizes = (
-		   'CHROMOSOME_I'       => 4800000,
-		   'CHROMOSOME_II'      => 5000000,
-		   'CHROMOSOME_III'     => 4500000,
+		   'CHROMOSOME_I'       => 4500000,
+		   'CHROMOSOME_II'      => 4500000,
+		   'CHROMOSOME_III'     => 4000000,
 		   'CHROMOSOME_IV'      => 5000000,
 		   'CHROMOSOME_V'       => 6000000,
 		   'CHROMOSOME_X'       => 5000000,
@@ -160,15 +160,15 @@ if ($wormbase->assembly_type ne 'contig') { # elegans, briggsae
 
       my %sizes = (
 		   'chrI'          => 2000000,
-		   'chrI_random'   =>  500000,
+		   'chrI_random'   =>    6000,
 		   'chrII'         => 2500000,
 		   'chrII_random'  =>  350000,
 		   'chrIII'        => 2300000,
-		   'chrIII_random' =>  100000,
+		   'chrIII_random' =>   20000,
 		   'chrIV'         => 2500000,
-		   'chrIV_random'  =>   80000,
+		   'chrIV_random'  =>    2000,
 		   'chrV'          => 3100000,
-		   'chrV_random'   =>  500000,
+		   'chrV_random'   =>   30000,
 		   'chrX'          => 3400000,
 		   'chrUn'         =>  950000,
 		  );
