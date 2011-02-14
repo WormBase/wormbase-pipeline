@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: pad $
-// Last edited on: $Date: 2011-01-13 13:32:57 $
+// Last edited on: $Date: 2011-02-14 10:48:42 $
 
 
 ////////////////////////
@@ -318,6 +318,7 @@
 			  Interaction ?Interaction
 			  Anatomy_function ?Anatomy_function XREF Gene
 			  Product_binds_matrix ?Position_Matrix XREF Bound_by_gene_product #Evidence
+			  WBProcess ?WBProcess XREF Gene #Evidence
         Map_info  Map UNIQUE ?Map XREF Gene #Map_position
                   Well_ordered          // "on the line"
                   Hide_under ?Gene XREF Representative_for
@@ -391,6 +392,7 @@
 
 ?Interaction   Evidence #Evidence
                Interactor    ?Gene    XREF Interaction    #Interactor_info
+	       WBProcess ?WBProcess XREF Interaction
                Interaction_type    Genetic    #Interaction_info
 				   Regulatory    #Interaction_info
                                    No_interaction    #Interaction_info
@@ -2059,6 +2061,7 @@
                         Descendent ?Anatomy_term XREF Ancestor  //store descendents of relationship IS_A and PART_OF
                 Remark  ?Text #Evidence
 		Picture ?Picture XREF Anatomy
+		WBProcess ?WBProcess XREF Anatomy_term
 
 // Anatomy_function class for Raymond 
 // allow the connection between ?Anatomy_term, ?Phenotype (proxy of biological function), and
@@ -2091,6 +2094,7 @@
                 Preceded_by ?Life_stage XREF Followed_by
 		Followed_by ?Life_stage XREF Preceded_by
 		Expr_pattern ?Expr_pattern XREF Life_stage
+		WBProcess ?WBProcess XREF Life_stage
 		Remark	?Text #Evidence
 		Definition ?Text // Wen [020607 krb]
 		Other_name ?Text // Wen [020607 krb]
@@ -2356,6 +2360,7 @@
 			      Not_in_Transgene ?Transgene XREF Phenotype_not_observed //added by Wen for Not observed phenotypes
 			      Not_in_Rearrangement ?Rearrangement XREF Phenotype_not_observed //added by Wen for Not observed phenotypes
 	   Associated_with    GO_term   ?GO_term   XREF Phenotype   ?GO_code  #Evidence	// Tag Associated_with changed by Carol
+			      WBProcess ?WBProcess XREF Phenotype
 
 
 ?Phenotype_name	Primary_name_for UNIQUE	?Phenotype	XREF	Primary_name	#Evidence
@@ -2520,7 +2525,7 @@
 		     Expr_pattern       ?Expr_pattern XREF Expression_cluster #Evidence //added by Wen originally for Localizome
 		     Remark ?Text #Evidence    
 		     Anatomy_term ?Anatomy_term XREF Expression_cluster #Evidence //Describes microarray experiments involving expression profiling in a particular tissue or cell Igor Dec 06
-
+		     WBProcess ?WBProcess XREF Expression_cluster #Evidence
 
 //////////////////////////////////////////////////////////////////
 //      SAGE_tag model
@@ -3209,12 +3214,48 @@
            Synonym ?Text
            DB_info Database ?Database ?Database_field ?Accession_number
            Gene_regulation Gene_regulator ?Gene_regulation XREF Molecule_regulator
+	   WBProcess ?WBProcess XREF Molecule
            Affects_phenotype_of     Variation ?Variation ?Phenotype #Evidence
                                     Strain    ?Strain    ?Phenotype #Evidence
                                     Transgene ?Transgene ?Phenotype #Evidence
                                     RNAi      ?RNAi      ?Phenotype #Evidence 
 	   Molecule_use  ?Text  #Evidence
 	   Remark ?Text #Evidence
+
+
+//////////////////////////////////////////////////
+//
+// WBProcess class Model - Proposed by Karen Yook WS225
+// Connects to: ?Gene
+//              ?Expression_cluster
+//              ?Interaction
+//              ?Anatomy_term
+//              ?Life_stage
+//              ?Molecule
+//              ?Phenotype
+//
+//////////////////////////////////////////////////	
+
+?WBProcess      Name  ?Text
+                Summary ?Text #Evidence
+                Process_term ?Text
+                Other_name ?Text
+                Related_process ?WBProcess XREF Related_process
+                Taxon   NCBITaxonomyID ?Text
+                Involved_entity         Gene ?Gene XREF WBProcess #Evidence  
+                                        Expression_cluster ?Expression_cluster XREF WBProcess  #Evidence
+                                        Interaction ?Interaction XREF WBProcess #Evidence
+                                        Anatomy_term ?Anatomy_term XREF WBProcess #Evidence
+                                        Life_stage ?Life_stage XREF WBProcess #Evidence 
+                                        Molecule ?Molecule XREF WBProcess #Evidence 
+                Associated_with         Phenotype ?Phenotype XREF WBProcess #Evidence
+                                        GO_term ?GO_term  #Evidence
+                Picture ?Picture #Evidence
+                Movie ?Movie  #Evidence
+                Pathway DB_info Database ?Database_field ?Accession_number //Can be used for any pathway db with unique accessionIDs
+                Remark ?Text #Evidence
+                Reference ?Paper
+
 
 
 ////////////////////////
