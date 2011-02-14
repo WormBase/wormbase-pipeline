@@ -230,7 +230,7 @@ Colour   GREEN
 Show_up_strand  
 Width    2.000000
 Show_text       
-EMBL_feature     "misc_RNA"
+EMBL_feature     "miRNA"
 Remark "SO:0000276"
 GFF_source "miRNA_mature_transcript" //expanded to be more descriptive
 GFF_feature "miRNA" //Changed inline with SO:0000276
@@ -240,7 +240,7 @@ Colour   GREEN
 Show_up_strand  
 Width    2.000000
 Show_text       
-EMBL_feature     "misc_RNA"
+EMBL_feature     "miRNA"
 Remark "SO:0000647
 GFF_source "curated_miRNA"
 GFF_feature "miRNA_primary_transcript" //Inline with SO:0000647
