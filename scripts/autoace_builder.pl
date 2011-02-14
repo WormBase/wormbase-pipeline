@@ -6,8 +6,8 @@
 #
 # Usage : autoace_builder.pl [-options]
 #
-# Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2010-12-15 16:05:54 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2011-02-14 10:11:57 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -431,10 +431,10 @@ sub make_UTR {
 	my %sizes = (
 		     'CHROMOSOME_I'       => 3400000,
 		     'CHROMOSOME_II'      => 3500000,
-		     'CHROMOSOME_III'     => 3200000,
+		     'CHROMOSOME_III'     => 3000000,
 		     'CHROMOSOME_IV'      => 3500000,
 		     'CHROMOSOME_V'       => 4200000,
-		     'CHROMOSOME_X'       => 3600000,
+		     'CHROMOSOME_X'       => 3400000,
 		     'CHROMOSOME_MtDNA'   =>    2000,
 		    );
 	$wormbase->check_file($wormbase->gff_splits."/${sequence}_UTR.gff", $log,
