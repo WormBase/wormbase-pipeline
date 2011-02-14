@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: pad $
-// Last edited on: $Date: 2011-02-14 10:48:42 $
+// Last edited on: $Date: 2011-02-14 11:19:44 $
 
 
 ////////////////////////
@@ -2840,6 +2840,7 @@
                  YH ?YH XREF Reference ?Text
                  Interaction ?Interaction XREF Paper
                  Mass_spec_experiment ?Mass_spec_experiment XREF Reference
+		 WBProcess ?WBProcess XREF Reference
 		 Picture ?Picture XREF Reference
        Curation_pipeline Phenotype2GO
        Keyword ?Keyword
@@ -3254,7 +3255,7 @@
                 Movie ?Movie  #Evidence
                 Pathway DB_info Database ?Database_field ?Accession_number //Can be used for any pathway db with unique accessionIDs
                 Remark ?Text #Evidence
-                Reference ?Paper
+                Reference ?Paper XREF WBProcess
 
 
 
