@@ -10,8 +10,8 @@
 
 use strict;
 use IO::File;
-use lib '/software/worm/ensembl-branch58/ensembl/modules';
-use lib '/software/worm/ensembl-branch58/ensembl-compara/modules';
+use lib '/software/worm/ensembl-62/ensembl/modules';
+use lib '/software/worm/ensembl-62/ensembl-compara/modules';
 use lib '/software/worm/ensembl/bioperl-live';
 
 use Bio::EnsEMBL::Registry;
