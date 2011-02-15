@@ -7,7 +7,7 @@
 # Script to make ?Transcript objects
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2011-02-11 10:06:24 $
+# Last updated on: $Date: 2011-02-15 15:11:01 $
 use strict;
 use lib $ENV{'CVS_DIR'};
 use Getopt::Long;
@@ -102,14 +102,14 @@ my $ovlp;			# Overlap object
 my %feature_data;
 &load_features( \%feature_data );
 
-my $problem_file = "$transcript_dir/transcripts.problems";
-open (PROBLEMS, ">$problem_file") || $log->log_and_die("Can't open $problem_file\n");
-
 # process chromosome at a time
 @chromosomes = $wormbase->get_chromosome_names('-prefix' => 1) unless @chromosomes;
 my $contigs = 1 if ($wormbase->assembly_type eq 'contig');
 
 foreach my $chrom ( @chromosomes ) {
+
+  my $problem_file = "$transcript_dir/transcripts.${chrom}.problems";
+  open (PROBLEMS, ">$problem_file") || $log->log_and_die("Can't open $problem_file\n");
 
   # get the Overlap object
   $ovlp = Overlap->new($db, $wormbase);
@@ -581,9 +581,11 @@ foreach my $chrom ( @chromosomes ) {
   print "$count3 cDNAs rejected in round 3 (overlaps two or more genes)\n";
 
   last if $gff;			# if only doing a specified gff file exit after this is complete
-}
 
-close(PROBLEMS);
+
+  close(PROBLEMS);
+
+}
 
 $log->mail();
 exit(0);
