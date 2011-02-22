@@ -6,8 +6,8 @@
 #
 # Script to make ?Transcript objects
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2011-02-15 15:11:01 $
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2011-02-22 14:09:00 $
 use strict;
 use lib $ENV{'CVS_DIR'};
 use Getopt::Long;
@@ -32,7 +32,7 @@ my $COVERAGE_THRESHOLD = 95.0;  # the alignment score threshold below which any 
 # to track failings of system calls
 my $errors = 0;
 
-GetOptions ( "debug:s"          => \$debug,
+GetOptions ( "debug:s"      => \$debug,
 	     "help"             => \$help,
 	     "verbose"          => \$verbose,
 	     "really_verbose"   => \$really_verbose,
@@ -48,7 +48,7 @@ GetOptions ( "debug:s"          => \$debug,
 	     "gff_dir:s"        => \$gff_dir,
 	     "cds:s"            => \$test_cds, # only use the specified CDS object - for debugging
 	     "store:s"          => \$store,
-	     "species:s"	=> \$species
+	     "species:s"        => \$species
 	   ) ;
 
 if ( $store ) {
@@ -60,22 +60,16 @@ if ( $store ) {
                            );
 }
 
-my $db;
-if ($database eq "autoace") { 
-  $db = $wormbase->autoace;
-} else {
-  $db = $database;
-}
+my $db = ($database eq "autoace") ? $wormbase->autoace : $database;
 
 # call tace from Wormbase.pm
 my $tace = $wormbase->tace;
 
 # other variables and paths.
 @chromosomes = split(/,/,join(',',@chromosomes));
-*STDERR = *STDOUT;
+*STDERR = *STDOUT; # hiss ... booh, but then you only need to redirect one stream
 
 # Log Info
-
 if ($wormbase->debug) {
   # this uses a class variable in SequenceObj - not sure of Storable impact at mo' - this will still work.
   my $set_debug = SequenceObj->new();
@@ -87,7 +81,7 @@ my $log = Log_files->make_build_log($wormbase);
 &check_opts;
 $log->log_and_die("no database\n") unless $db;
 
-#setup directory for transcript
+# setup directory for transcript
 my $transcript_dir = $wormbase->transcripts;
 $gff_dir = $wormbase->gff_splits unless $gff_dir;
 
@@ -96,9 +90,9 @@ my $coords;
 # get coords obj to return clone and coords from chromosomal coords
 $coords = Coords_converter->invoke($db, undef, $wormbase);
 
-my $ovlp;			# Overlap object
+my $ovlp; # Overlap object
 
-#Load in Feature_data : cDNA associations from COMMON_DATA
+# Load in Feature_data : cDNA associations from COMMON_DATA
 my %feature_data;
 &load_features( \%feature_data );
 
@@ -114,10 +108,9 @@ foreach my $chrom ( @chromosomes ) {
   # get the Overlap object
   $ovlp = Overlap->new($db, $wormbase);
 
-  #$chrom = $wormbase->chromosome_prefix.$chrom;
+  # $chrom = $wormbase->chromosome_prefix.$chrom;
   # links store start /end chrom coords
-  my $link_start;
-  my $link_end;
+  my ($link_start,$link_end);
   my %genes_exons;
   my %genes_span;
   my %cDNA;
@@ -128,15 +121,12 @@ foreach my $chrom ( @chromosomes ) {
   my @cdna_objs;
   my @cds_objs;
   my $index = 0;
-  my $gff_file;
 
   my $gff_stem = $contigs ? $gff_dir.'/' : $gff_dir."/${chrom}_";
 
-
   # parse GFF file to get CDS and exon info
-  $gff_file = $gff_stem."curated.gff";
+  my $gff_file;
   my $GFF = $wormbase->open_GFF_file($chrom, 'curated',$log);
-  $log->write_to("reading gff file $gff_file\n") if ($verbose);
   while (<$GFF>) {
     my @data = split;
     next if( $data[1] eq "history" );
@@ -145,11 +135,11 @@ foreach my $chrom ( @chromosomes ) {
       $data[9] =~ s/\"//g;#"
       next if( defined $test_cds and ($data[9] ne $test_cds)) ;
       if ( $data[2] eq "CDS" ) {
-	# GENE SPAN
-	$genes_span{$data[9]} = [($data[3], $data[4], $data[6])];
+    	# GENE SPAN
+    	$genes_span{$data[9]} = [($data[3], $data[4], $data[6])];
       } elsif ($data[2] eq "exon" ) {
-	# EXON 
-	$genes_exons{$data[9]}{$data[3]} = $data[4];
+    	# EXON 
+    	$genes_exons{$data[9]}{$data[3]} = $data[4];
       }
     }
   }
@@ -160,7 +150,6 @@ foreach my $chrom ( @chromosomes ) {
   foreach my $method (@BLAT_methods) {
     $gff_file = $gff_stem."$method.gff";
     next unless (-e $gff_file); #not all contigs will have these mol_types
-    #open( GFF,"grep \"$chrom\\W\" $gff_file |") or $log->write_to("cant open $gff_file : $!\n");
     my $GFF = $wormbase->open_GFF_file($chrom, $method, $log);
     while ( <$GFF> ) {
       next if (/#/); 		 # miss header
@@ -171,11 +160,11 @@ foreach my $chrom ( @chromosomes ) {
       $cDNA{$data[9]}{$data[3]} = $data[4];
       # keep min max span of cDNA
       if ( !(defined($cDNA_span{$data[9]}[0])) or ($cDNA_span{$data[9]}[0] > $data[3]) ) {
-	$cDNA_span{$data[9]}[0] = $data[3];
-	$cDNA_span{$data[9]}[2] = $data[6]; #store strand of cDNA
+    	$cDNA_span{$data[9]}[0] = $data[3];
+    	$cDNA_span{$data[9]}[2] = $data[6]; #store strand of cDNA
       } 
       if ( !(defined($cDNA_span{$data[9]}[1])) or ($cDNA_span{$data[9]}[1] < $data[4]) ) {
-	$cDNA_span{$data[9]}[1] = $data[4];
+    	$cDNA_span{$data[9]}[1] = $data[4];
       }
       
       $cDNA_span{$data[9]}[5] = $data[5]; # coverage score of the alignment
@@ -183,7 +172,7 @@ foreach my $chrom ( @chromosomes ) {
     close $GFF;
   }
   
-  #Chromomsome info
+  # Chromomsome info
 
   $gff_file = $gff_stem."Link.gff";
   #open (GFF,"grep \"$chrom\\W\" $gff_file |") or $log->log_and_die("cant open gff_file :$!\n");  
@@ -199,31 +188,31 @@ foreach my $chrom ( @chromosomes ) {
     }
   }
   close $GFF;
+  
   # add feature_data to cDNA
-  #CHROMOSOME_I  SL1  SL1_acceptor_site   182772  182773 .  -  .  Feature "WBsf016344"
+  # CHROMOSOME_I  SL1  SL1_acceptor_site   182772  182773 .  -  .  Feature "WBsf016344"
   #
   # want to add in transcription_start_site and
   # transcription_end_site, but these are not currently defined by a
   # cDNA or even a 'bundle of short reads' in the Hillier data
-  #
+
   my @feature_types = qw(SL1 SL2 polyA_site polyA_signal_sequence);
   foreach my $Type (@feature_types){
     my $gff_file = $gff_stem."$Type.gff";
-    next unless (-e $gff_file); #not all contigs will have these features
-    #open(GFF, "grep \"$chrom\\W\" $gff_file |") or $log->write_to ("cant open $gff_file : $!\n");
+    next unless (-e $gff_file); # not all contigs will have these features
     my $GFF = $wormbase->open_GFF_file($chrom, $Type, $log);
     while( <$GFF> ){
       my @data = split;
-      if ( $data[9] and $data[9] =~ /(WBsf\d+)/) { #Feature "WBsf003597"
-	my $feat_id = $1;
-	my $dnas = $feature_data{$feat_id};
-	if ( $dnas ) {
-	  foreach my $dna ( @{$dnas} ) {
-	    #	print "$dna\t$data[9]  --- $data[6] ---  ",$cDNA_span{"$dna"}[2],"\n";
-	    next unless ( $cDNA_span{"$dna"}[2] and $data[6] eq $cDNA_span{"$dna"}[2] ); # ensure same strand
-	    $cDNA_span{"$dna"}[3]{"$data[1]"} = [ $data[3], $data[4], $1 ]; # 182772  182773 WBsf01634
-	  }
-	}
+      if ( $data[9] and $data[9] =~ /(WBsf\d+)/) { # Feature "WBsf003597"
+    	my $feat_id = $1;
+    	my $dnas = $feature_data{$feat_id};
+    	if ( $dnas ) {
+    	  foreach my $dna ( @{$dnas} ) {
+    	    # print "$dna\t$data[9]  --- $data[6] ---  ",$cDNA_span{"$dna"}[2],"\n";
+    	    next unless ( $cDNA_span{"$dna"}[2] and $data[6] eq $cDNA_span{"$dna"}[2] ); # ensure same strand
+    	    $cDNA_span{"$dna"}[3]{"$data[1]"} = [ $data[3], $data[4], $1 ]; # 182772  182773 WBsf01634
+    	  }
+    	}
       }
     }
     close $GFF;
@@ -463,7 +452,7 @@ foreach my $chrom ( @chromosomes ) {
     } elsif ($#matching_genes > 0) { 
       $log->write_to("$round cDNA ",$CDNA->name," overlaps two or more genes and will not be used in transcript-building:") if ($verbose);
       foreach my $gene (@matching_genes) {
-	$log->write_to("\t" . $gene) if ($verbose);
+          $log->write_to("\t" . $gene) if ($verbose);
       }
       $log->write_to("\n") if ($verbose);
       print PROBLEMS "$round cDNA ",$CDNA->name," overlaps two or more genes and will not be used in transcript-building: @matching_genes \n";
@@ -723,25 +712,31 @@ sub load_features
     foreach my $seq ( keys %tmp ) {
       my @feature = @{$tmp{$seq}};
       foreach my $feat ( @feature ) {
-	push(@{$$features{$feat}},$seq);
+    	push(@{$$features{$feat}},$seq);
       }
     }
   }
 
-sub sanity_check_features
-  {
-    my $cdna = shift;
-    my $return = 1;
-    if ( my $SL = $cdna->SL ) {
-      $return = 0 if( $SL->[0] != $cdna->start );
-      print STDERR $SL->[2]," inside ",$cdna->name,"\n" if ($verbose);
+sub sanity_check_features {
+    my ($cdna) = @_;
+    
+    if ( my $sl = $cdna->SL ) {
+      print STDERR $sl->[2],' inside ',$cdna->name,"\n" if $verbose;
+      if( abs($sl->[0] - $cdna->start) != 1 ) {
+        print STDERR "skipping ${\$cdna->name} because of a dodgy start (+TSL)\n" if $verbose;
+        return 0;
+      }
     }
+    
     if ( my $polyA = $cdna->polyA_site ) {
-      $return = 0 if( $polyA->[1] != $cdna->end );
-      print STDERR $polyA->[2]," inside ",$cdna->name,"\n" if ($verbose);
+      print STDERR $polyA->[2],' inside ',$cdna->name,"\n" if ($verbose);
+      if($polyA->[1] != $cdna->end){
+          print STDERR "skipping ${\$cdna->name} because of a dodgy end (+polyA)\n" if $verbose;
+          return 0
+      }
     }
 
-    return $return;
+    return 1;
   }
 
 # get the list of CDS objects from the $cdna->probably_matching_cds
