@@ -8,7 +8,7 @@
 # Page download and update upload to geneace has been automated [ck1]
 
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2011-01-14 16:04:43 $
+# Last updated on: $Date: 2011-02-23 15:02:04 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -290,7 +290,10 @@ while(<INPUT>){
   
   my $wperson = &find_author($made_by);
   
-  print MISSINGPERSON "$made_by $strain\n" if $wperson eq 'Agent007';
+  if ($wperson eq 'Agent007'){
+      print MISSINGPERSON "$made_by $strain\n";
+      $wperson = "\"$made_by\"";    
+  }
   print STRAIN "Made_by $wperson\n";
   print DELETE_STRAIN  "-D Made_by $wperson\n";
 
