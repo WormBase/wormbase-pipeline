@@ -104,7 +104,7 @@ sub set_wb_log {
 sub get_all_alleles {
     my $db = Ace->connect( -path => $wb->autoace ) || do { print "cannot connect to ${$wb->autoace}:", Ace->error; die };
     my $species=$wb->full_name;
-    my @alleles = $db->fetch( -query =>"Find Variation WHERE Flanking_sequences AND species = \"$species\"");
+    my @alleles = $db->fetch( -query =>"Find Variation WHERE Flanking_sequences AND Live AND species = \"$species\"");
     return &_filter_alleles(\@alleles);
 }        
 
