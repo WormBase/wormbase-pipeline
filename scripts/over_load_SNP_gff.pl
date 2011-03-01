@@ -2,8 +2,8 @@
 #
 # This is to add Confirmed / Predicted Status and RFLP to SNP gff lines as requested by Todd
 #
-# Last updated by: $Author: klh $     
-# Last updated on: $Date: 2010-12-21 11:39:39 $      
+# Last updated by: $Author: mh6 $     
+# Last updated on: $Date: 2011-03-01 00:07:39 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -150,8 +150,9 @@ if($gff_file){
 }
 else { 
   foreach my $file (@gff_files) {
+    my $minsize = ($file=~/random|un/)?170000:1500000;
     $wormbase->check_file($file, $log,
-			      minsize => 1500000,
+			      minsize => $minsize,
 			      lines => ['^##',
 					"^\\S+\\s+\\S+\\s+\\S+\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+"],
 			      );
