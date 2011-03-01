@@ -6,8 +6,8 @@
 #
 # Usage : autoace_builder.pl [-options]
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2011-02-15 09:35:29 $
+# Last edited by: $Author: klh $
+# Last edited on: $Date: 2011-03-01 15:57:29 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -264,14 +264,14 @@ sub map_features {
 	
 	# Y2H objects
 	$wormbase->run_script( 'map_Y2H.pl -load', $log );
+
+
+    	# RNAi experiments
+	$wormbase->run_script( 'map_RNAi.pl -load', $log );
     }
 
     ## elegans or briggsae
     if (($wormbase->species eq 'elegans') or ($wormbase->species eq 'briggsae')){
-
-    	# RNAi experiments
-	$wormbase->run_script( 'map_RNAi.pl -load', $log );
-
 	# alleles
 	$wormbase->run_script( 'split_alleles.pl', $log );
     }
