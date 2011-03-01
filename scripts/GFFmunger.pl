@@ -5,7 +5,7 @@
 # by Dan Lawson
 #
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2011-02-28 23:59:59 $
+# Last updated on: $Date: 2011-03-01 00:04:12 $
 #
 # Usage GFFmunger.pl [-options]
 
@@ -193,8 +193,9 @@ if ($wormbase->assembly_type eq 'contig') {
 
 } else {
   foreach  my $file (@gff_files) {
+    my $minsize = ($file=~/random|un/)?350000:1500000;
     $wormbase->check_file("$gffdir/${file}.gff", $log,
-			  minsize => 350000,
+			  minsize => $minsize,
 			  lines => ['^##',
 				    "^$file\\s+\\S+\\s+\\S+\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+"],
 			  );
