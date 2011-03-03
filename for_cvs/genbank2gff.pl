@@ -79,7 +79,8 @@ foreach my $filename (@argv) {
     	    my $source = $use_source ? $sf->source_tag : $default_source;
     	    my $score = $sf->score || '.';
             my $phase = $sf->frame;
-    	    my @gff = ($seq->display_id, $source, $sf->primary_tag, $sf->start, $sf->end, $score, $sf->strand, $phase, $description);
+            my $strand = ($sf->strand > 0)?'+':'-';
+    	    my @gff = ($seq->display_id, $source, $sf->primary_tag, $sf->start, $sf->end, $score, $strand, $phase, $description);
     	    # iron out a few bioperl wrinkles
     	    $gff[5] = '+' unless defined $gff[5];  # strand
     	    @gff = map (defined($_) ? $_ : ".", @gff);  # everything else
@@ -92,7 +93,7 @@ foreach my $filename (@argv) {
                my @subFeature = sort{if($sf->strand <0){$b->start <=> $a->start}else{$a->start <=> $b->start}} $sf->location->sub_Location;
                $description=~s/codon_start=(\d)\s*//;
                for my $loc (@subFeature){
-     	         my @gff = ($seq->display_id, $source,'coding_exon', $loc->start, $loc->end, $score, $sf->strand,$phase, $description);
+     	         my @gff = ($seq->display_id, $source,'coding_exon', $loc->start, $loc->end, $score, $strand,$phase, $description);
     	         # iron out a few bioperl wrinkles
     	         $gff[5] = '+' unless defined $gff[5];  # strand
     	         @gff = map (defined($_) ? $_ : ".", @gff);  # everything else
@@ -102,7 +103,7 @@ foreach my $filename (@argv) {
             }
             elsif ($sf->primary_tag eq 'CDS'){
                  $description=~s/codon_start=(\d)\s*//;
-                 my @gff = ($seq->display_id, $source,'coding_exon', $sf->start, $sf->end, $score, $sf->strand,$phase, $description);
+                 my @gff = ($seq->display_id, $source,'coding_exon', $sf->start, $sf->end, $score, $strand,$phase, $description);
     	         # iron out a few bioperl wrinkles
     	         $gff[5] = '+' unless defined $gff[5];  # strand
     	         @gff = map (defined($_) ? $_ : ".", @gff);  # everything else
