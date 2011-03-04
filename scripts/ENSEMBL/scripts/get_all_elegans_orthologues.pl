@@ -37,7 +37,7 @@ my %cds2swiss=%{&get_cds2swiss('brugia')};
 $comparadb||='worm_compara';
 
 my $compara_db = new Bio::EnsEMBL::Compara::DBSQL::DBAdaptor(
-    -host   => 'ia64d',        # change that
+    -host   => 'farmdb1',        # change that
     -user   => 'wormro',       # and that
     -dbname => $comparadb
 );
