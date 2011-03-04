@@ -7,8 +7,8 @@
 # 
 # Originally written by Dan Lawson
 #
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2010-12-20 14:55:29 $
+# Last updated by: $Author: klh $
+# Last updated on: $Date: 2011-03-04 15:36:36 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -974,7 +974,7 @@ sub check_manifest {
 	my $count;
 	my %otherspecies = $wormbase->species_accessors;
 	$otherspecies{$wormbase->species} = $wormbase;
-	delete $otherspecies{'heterorhabditis'};
+
 	my $gspecies =0;
 	while(<DATA>) {
 		next unless /\w/;
@@ -1103,19 +1103,6 @@ pictar.gff
 elegans_curation_anomalies.gff
 cisRed.gff
 
-./genomes/c_briggsae/genome_feature_tables/GFF2
-chrI.gff
-chrII.gff
-chrIII.gff
-chrIII_random.gff
-chrII_random.gff
-chrIV.gff
-chrIV_random.gff
-chrI_random.gff
-chrUn.gff
-chrV.gff
-chrV_random.gff
-chrX.gff
 
 ./ONTOLOGY
 anatomy_association.WSREL.wb
