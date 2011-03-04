@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: pad $
-// Last edited on: $Date: 2011-02-14 11:19:44 $
+// Last edited on: $Date: 2011-03-04 14:43:55 $
 
 
 ////////////////////////
@@ -234,7 +234,6 @@
                         2_point ?2_point_data
                         Multi_point ?Multi_pt_data
                         Pos_neg_data ?Pos_neg_data
-//        Allele  ?Variation XREF Locus #Evidence // just for SNPs for now
         Laboratory ?Laboratory
         Remark ?Text #Evidence
  
@@ -663,7 +662,14 @@
 	Clone ?Clone XREF pMap
 
 
+///////////////////////////////
+//
+//  Species class
+//
+///////////////////////////////
+
 ?Species Common_name ?Text
+	 Other_name ?Text
 	 NCBITaxonomyID UNIQUE Int
          Phylogeny Kingdom UNIQUE Text
 		   Phylum UNIQUE Text
@@ -672,7 +678,6 @@
 		   Order UNIQUE Text 
 		   Family UNIQUE Text 
 		   Genus UNIQUE Text
-         Protein ?Protein XREF Species
 
 ///////////////////////////////
 //
@@ -1603,7 +1608,7 @@
                   Gene_name  ?Text
                   Description   UNIQUE ?Text
 		  Molecular_weight Float #Evidence
-          Origin  Species UNIQUE ?Species   //XREF Protein in geneace
+          Origin  Species UNIQUE ?Species
                   Wormpep // for C. elegans or C. briggsae  proteins, used by subclass definitions
 		  Brigpep // 
 		  History Int Text ?Text //history logging [020801 krb]
@@ -2334,6 +2339,7 @@
 	     Remark ?Text #Evidence
  	     Method UNIQUE ?Method
 
+
 ///////////////////////////////////////////////
 // ?Phenotype class
 ///////////////////////////////////////////////
@@ -2369,6 +2375,7 @@
 
 
 ?Phenotype_Assay Description ?Text
+
 
 //////////////////////////////////////////////
 //
@@ -3145,6 +3152,7 @@
 //
 // The data from an experiment describing the peptide
 //
+
 #Mass_spec_data  XCorr   UNIQUE Float   // SEQUEST score
                  DeltaCN UNIQUE Float   // SEQUEST score
                  Charge_state UNIQUE Int // SEQUEST score
