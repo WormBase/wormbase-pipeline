@@ -111,7 +111,7 @@ while( my $member = shift @members){
             print "\n";
     }
 
-    my %t3 = (%brugia,%hapla,%hcont);
+    my %t3 = (%brugia,%hapla,%hcont,%cang);
     while (my ($k,$v)=each(%t3)){ # brugia exception
             my $bid=$cds2swiss{$k}?$cds2swiss{$k}:$k;
             print "Ortholog_other $bid From_analysis WormBase-Compara\n";
