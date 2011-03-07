@@ -155,14 +155,15 @@ sub mail {
         	if ( $self->report_errors != 0 ) {
         	    $subject = "ERROR: $subject";
         	    $script = "ERROR : $script";
-        	    print RL "$script\tFAIL";
+        	    print RL "$script\tFAIL\n";
         	}
     	    else {
         		print RL "$script:run\n";
     	    }
+    	    close RL;
     	}
     }    
-    close RL;
+    
     
     #send the mail;
     Wormbase::mail_maintainer(undef, $subject, $recipient, $file ); #pass undef as not using in object based way.  method expects self.
