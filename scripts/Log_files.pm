@@ -81,7 +81,7 @@ Generate log file in the logs directory with WS version and processID appended t
 sub make_build_log {
     my $class    = shift;
     my $wormbase = shift;
-    my $opts = shift;
+    my $opts     = shift;
     my $ver      = $wormbase->get_wormbase_version;
     my $species  = $wormbase->species;
     my $filename;
@@ -96,10 +96,10 @@ sub make_build_log {
     if (defined $opts) {         
       foreach my $opt(@{$opts}) {
         next if ($opt eq 'test' or $opt eq 'debug' or $opt eq 'store' or $opt eq 'species');
-	next unless $opt =~ /\w/;
-	$opt =~ s/^\s+//;
-	$opt =~ s/\s+$//;
-	$filename .= " -$opt";
+    	next unless $opt =~ /\w/;
+    	$opt =~ s/^\s+//;
+    	$opt =~ s/\s+$//;
+    	$filename .= " -$opt";
       }
     }
 
@@ -148,23 +148,21 @@ sub mail {
     
     #write out status of script to runlog for dependancy checks
     if($self->{'wormbase'}) {
-	$subject .= $self->{'wormbase'}->species;
-	if($self->{'wormbase'}->autoace) {
-	    my $runlog = $self->{'wormbase'}->autoace."/runlog";
-	    open(RL,">>$runlog") or $self->error("cant write runlog\t$!\n");#warning of failure?
-    	if ( $self->report_errors != 0 ) {
-	    $subject = "ERROR: $subject";
-	    $script = "ERROR : $script";
-	    print RL "$script\tFAIL";
+    	$subject .= $self->{'wormbase'}->species;
+    	if($self->{'wormbase'}->autoace) {
+    	    my $runlog = $self->{'wormbase'}->autoace."/runlog";
+    	    open(RL,">>$runlog") or $self->error("cant write runlog\t$!\n"); #warning of failure?
+        	if ( $self->report_errors != 0 ) {
+        	    $subject = "ERROR: $subject";
+        	    $script = "ERROR : $script";
+        	    print RL "$script\tFAIL";
+        	}
+    	    else {
+        		print RL "$script:run\n";
+    	    }
     	}
-	    else {
-    		print RL "$script:run\n";
-	    }
-	    close RL;
-	}
-    }
-    
-    
+    }    
+    close RL;
     
     #send the mail;
     Wormbase::mail_maintainer(undef, $subject, $recipient, $file ); #pass undef as not using in object based way.  method expects self.
@@ -200,6 +198,7 @@ sub log_and_die {
         $self->write_to("ERROR: $report\n");
         print STDERR "$report\n";
     }
+    $self->mail;
     die;
 }
 
