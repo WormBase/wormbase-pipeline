@@ -164,11 +164,16 @@ while (<>) {
         my $gene_id = $1;
         my $gene = $db->fetch(Gene => $gene_id);
 
-        #grab all C.elegans orthologs
-        my @elegansOrthologs = grep {$_->Species eq 'Caenorhabditis elegans'} $gene->Ortholog;
-        foreach my $eGene(@elegansOrthologs){
-                map {$group.=" ; Alias \"$_\"" if $_}($eGene->CGC_name,$eGene->Sequence_name,"$eGene")
-        }	
+        if ($gene){
+            #grab all C.elegans orthologs
+            my @elegansOrthologs = grep {$_->Species eq 'Caenorhabditis elegans'} $gene->Ortholog;
+            foreach my $eGene(@elegansOrthologs){
+                    map {$group.=" ; Alias \"$_\"" if $_}($eGene->CGC_name,$eGene->Sequence_name,"$eGene")
+            }	
+        }
+        else {
+            print STDERR "ERROR: cannot find $gene_id from ($group) in line:\nERROR: $_\n";
+        }
     }
     
     # fix variant fields: Variant "T" => Note "T"
