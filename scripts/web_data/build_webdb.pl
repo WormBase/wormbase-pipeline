@@ -9,8 +9,8 @@
 #      $AUTHOR:$
 #      COMPANY:  WormBase
 #      CREATED:  11/27/09 10:10:08 GMT
-#      CHANGED: $Date: 2011-02-09 10:44:32 $
-#    $Revision: 1.8 $
+#      CHANGED: $Date: 2011-03-08 09:30:59 $
+#    $Revision: 1.9 $
 #===============================================================================
 
 # need to set the PERl5LIb  to pick up bioperl for the load_gff thing ... maybe have to hardcode it
@@ -116,6 +116,12 @@ sub process_worm {
     my $gffile = concatenate_gff($wb,\@gz_gffs,\@raw_gffs);
 
     process_gff($wb->species,$gffile);
+    
+    # deploying stuff onto the FTP site
+    my $outfile = $wb->ftp_site .'/WS'. $wb->version .'/genomes/'.$wb->full_name(-g_species => 1)
+    .'/genome_feature_tables/GFF2/'.$wb->full_name(-g_species => 1).'.WS'.$wb->version.'.GBrowse.gff';
+    cp "/tmp/${\$wb->species}.gff" $outfile || die("cannot copy $outfile\n");
+    system("gzip -9 $outfile") && die("cannot gzip $outfile\n");
 }
 
 # concatenate the files
