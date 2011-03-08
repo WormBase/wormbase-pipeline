@@ -9,13 +9,14 @@
 #      $AUTHOR:$
 #      COMPANY:  WormBase
 #      CREATED:  11/27/09 10:10:08 GMT
-#      CHANGED: $Date: 2011-03-08 09:30:59 $
-#    $Revision: 1.9 $
+#      CHANGED: $Date: 2011-03-08 09:36:20 $
+#    $Revision: 1.10 $
 #===============================================================================
 
 # need to set the PERl5LIb  to pick up bioperl for the load_gff thing ... maybe have to hardcode it
 
 use Getopt::Long;
+use File::Copy "cp";
 use lib $ENV{CVS_DIR};
 use Wormbase;
 use strict;
@@ -62,6 +63,9 @@ foreach my $worm(@species){
     $log->write_to("... creating munged GFFs\n");
     &process_worm($wormbase);
 
+    # deploy it
+    &tar_and_feather($wormbase);
+     
     # deletes the tmp directory
     &clean_tmpfiles;
 
@@ -116,12 +120,7 @@ sub process_worm {
     my $gffile = concatenate_gff($wb,\@gz_gffs,\@raw_gffs);
 
     process_gff($wb->species,$gffile);
-    
-    # deploying stuff onto the FTP site
-    my $outfile = $wb->ftp_site .'/WS'. $wb->version .'/genomes/'.$wb->full_name(-g_species => 1)
-    .'/genome_feature_tables/GFF2/'.$wb->full_name(-g_species => 1).'.WS'.$wb->version.'.GBrowse.gff';
-    cp "/tmp/${\$wb->species}.gff" $outfile || die("cannot copy $outfile\n");
-    system("gzip -9 $outfile") && die("cannot gzip $outfile\n");
+
 }
 
 # concatenate the files
