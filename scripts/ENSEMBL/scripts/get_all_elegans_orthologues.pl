@@ -29,6 +29,7 @@ my %species = (
     6305   => 'Meloidogyne hapla',
     6289   => 'Haemonchus contortus',
     96668  => 'Caenorhabditis angaria',
+    6334   => 'Trichinella spiralis',
 );
 
 my %cds2wbgene=%{&get_commondata('cds2wbgene_id')};
@@ -53,15 +54,12 @@ while( my $member = shift @members){
     next if $member->taxon_id == 6305; # skip M.hapla, as it does not have ?Gene objects
     next if $member->taxon_id == 6289; # skip H.contortus, as it does not have ?Gene objects
     next if $member->taxon_id == 96668;# skip C.angaria, because it does not have ?Gene objects
-
+    next if $member->taxon_id == 6334; # skip T.spiralis, as it does not have ?Gene objects
     my @homologies = @{$homology_adaptor->fetch_all_by_Member( $member)};
 
     # needs some better way
-    my %brugia;
-    my %hapla;
-    my %hcont;
-    my %cang;
-    my %all;
+    my (%t3,%t2);
+
 
     foreach my $homology ( @homologies) {
         
@@ -72,19 +70,22 @@ while( my $member = shift @members){
             foreach my $pepm ( @{ $me->get_all_peptide_Members() } ) {
                 
                 if ($pepm->taxon_id==6279){
-                    $brugia{ $pepm->stable_id } = [$pepm->taxon_id,$homology->description] 
+                    $t3{ $pepm->stable_id } = [$pepm->taxon_id,$homology->description] 
                 }
 		elsif ($pepm->taxon_id==6305){
-                    $hapla{$pepm->stable_id} = [$pepm->taxon_id,$homology->description] 
+                    $t3{$pepm->stable_id} = [$pepm->taxon_id,$homology->description] 
                 }
                 elsif ($pepm->taxon_id==6289){
-		    $hcont{$pepm->stable_id} = [$pepm->taxon_id,$homology->description]
+		    $t3{$pepm->stable_id} = [$pepm->taxon_id,$homology->description]
 		}
 	    	elsif ($pepm->taxon_id==96668){
-		    $cang{$pepm->stable_id} = [$pepm->taxon_id,$homology->description]
+		    $t3{$pepm->stable_id} = [$pepm->taxon_id,$homology->description]
+		}
+		elsif ($pepm->taxon_id==6334){
+		    $t3{$pepm->stable_id} = [$pepm->taxon_id,$homology->description]
 		}
                 else {
-                    $all{ $pepm->stable_id } = [$pepm->taxon_id,$homology->description]
+                    $t2{ $pepm->stable_id } = [$pepm->taxon_id,$homology->description]
                 }
             }
 
@@ -93,11 +94,11 @@ while( my $member = shift @members){
 
     my $gid=$cds2wbgene{$member->stable_id}?$cds2wbgene{$member->stable_id}:$member->stable_id;
 
-    next unless (scalar keys %all > 1);
+    next unless (scalar keys %t2 > 1);
 
     print "Gene : \"$gid\"\n";
     
-    while (my ($k,$v)=each(%all)){
+    while (my ($k,$v)=each(%t2)){
             my $sid=$cds2wbgene{$k}?$cds2wbgene{$k}:$k;
             next if $gid eq $sid;
             
@@ -111,7 +112,6 @@ while( my $member = shift @members){
             print "\n";
     }
 
-    my %t3 = (%brugia,%hapla,%hcont,%cang);
     while (my ($k,$v)=each(%t3)){ # brugia exception
             my $bid=$cds2swiss{$k}?$cds2swiss{$k}:$k;
             print "Ortholog_other $bid From_analysis WormBase-Compara\n";
@@ -138,7 +138,7 @@ sub get_commondata {
     my $dir=glob('~wormpub/BUILD/');
     foreach my $loc(@locations) {
         my $file_name="$dir/$loc/COMMON_DATA/$name.dat";
-        my $file= new IO::File "< $file_name" || die("@! can't open $file_name");
+	my $file= new IO::File "< $file_name" || die("@! can't open $file_name");
         $/=undef;
         my $data=<$file>;
         $/="\n";
