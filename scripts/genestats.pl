@@ -1,4 +1,4 @@
-#!/usr/bin/env perl
+!/usr/bin/env perl
 #
 # genestats.pl
 #
@@ -6,8 +6,8 @@
 #
 # Usage : genestats.pl [-options]
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2010-09-17 15:21:03 $
+# Last edited by: $Author: mt3 $
+# Last edited on: $Date: 2011-03-08 16:36:04 $
  
 
 use strict;                                      
@@ -122,7 +122,7 @@ my $percent_SAGE_transcript     = (int ( ( ($SAGE_transcript / $live_genes) * 10
 # report to file #
 ##################
 open (OUT, ">$reports_dir/genedata") || die "Failed to open output file\n";
-print OUT "Gene data set (Live C.elegans genes $values[0])\n";
+print OUT "Gene data set (Live C. elegans genes $values[0])\n";
 print OUT "------------------------------------------\n";
 print OUT "Molecular_info              " . $values[1] . " (" . $percent_molecular_info . "%)\n";
 print OUT "Concise_description         " . $values[2] . " (" . $percent_concise_description . "%)\n";
@@ -140,7 +140,7 @@ close OUT;
 $wormbase->check_file("$reports_dir/genedata", $log,
 minlines => 9,
 maxlines => 9,
-line1 => '^Gene data set \(Live C.elegans genes \d+\)',
+line1 => '^Gene data set \(Live C. elegans genes \d+\)',
 line2 => '^\-+',
 lines => ['^\S+\s+\d+\s+\(\d+(\.\d)*\%\)', '^\S+\s+\S+\s+\S+\s+\d+\s+\(\d+(\.\d)*\%\)'],
 );
