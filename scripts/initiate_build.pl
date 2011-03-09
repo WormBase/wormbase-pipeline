@@ -2,8 +2,8 @@
 #
 # initiate_build.pl
 #
-# Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2010-11-29 14:39:09 $
+# Last edited by: $Author: klh $
+# Last edited on: $Date: 2011-03-09 16:43:45 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -82,7 +82,7 @@ $wormbase->run_command("cd $ENV{CVS_DIR}; cvs update .", $log);
 #################################################################################
 
 ## update CVS wspec, wquery and autoace_config from CVS
-$wormbase->run_command("cd ".$wormbase->autoace.'; cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl checkout -d wspec wormbase/wspec', $log);
+$wormbase->run_command("cd ".$wormbase->autoace.'; cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl checkout -d wspec -r WS${version}wormbase/wspec', $log);
 $wormbase->run_command("cd ".$wormbase->autoace.'; cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl checkout -d wquery wormbase/wquery', $log);
 $wormbase->run_command("cd ".$wormbase->basedir.'; cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl checkout -d autoace_config wormbase/autoace_config', $log);
 
