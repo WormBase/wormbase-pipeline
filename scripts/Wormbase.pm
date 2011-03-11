@@ -1238,6 +1238,7 @@ sub maskedcdna  { my $self = shift; return $self->{'maskedcdna'} ;}
 sub genome_seq  { my $self = shift; return $self->autoace."/genome_seq";}
 sub seq_db	{ my $self = shift; return $self->database($self->{'species'});}
 sub ebi         { my $self = shift; return $self->{'ebi'} ;}
+sub rnaseq      { my $self = shift; return $self->{'rnaseq'} ;}
 
 		  # this can be modified by calling script
 ####################################
@@ -1383,6 +1384,7 @@ sub establish_paths {
     $self->{'maskedcdna'}  = $basedir . "/cDNA/".$self->{'species'};
 
     $self->{'farm_dump'}    = '/lustre/scratch101/ensembl/wormpipe/dumps';
+    $self->{'rnaseq'}       = '/lustre/scratch103/ensembl/wormpipe/RNASeq/'.$self->{'species'}.'/SRA';
 
     # create dirs if missing
     mkpath( $self->logs )        unless ( -e $self->logs );
