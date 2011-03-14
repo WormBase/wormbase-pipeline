@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2010-12-02 12:20:55 $
+# Last updated on: $Date: 2011-03-14 10:57:42 $
 
 use strict;
 use lib $ENV{"CVS_DIR"};
@@ -32,7 +32,7 @@ GetOptions ("help"        => \$help,
             "ace"         => \$ace,
 	    "verbose"     => \$verbose,
 	    "weekly"      => \$weekly,
-	    	"test"    => \$test
+            "test"    => \$test
 	   );
 
 ###################################################
@@ -48,7 +48,13 @@ my $curr_db = "/nfs/wormpub/DATABASES/current_DB"; # Used for some cross checkin
 my $def_dir = "$ENV{CVS_DIR}/../wquery/geneace";                          # where lots of table-maker definitions are kept
 
 my $rundate = $wb->rundate;                                # Used by various parts of script for filename creation
-my $maintainers = "pad\@sanger.ac.uk, mt3\@sanger.ac.uk, gw3\@sanger.ac.uk";                                   # Default for emailing interested people
+my $maintainers = join (", ", 
+                        "paul.davis\@wormbase.org",
+                        "gary.williams\@wormbase.org",
+                        "maryann.tuli\@wormbase.org",
+                        "kevin.howe\@wormbase.org",
+                        );
+
 my $caltech_errors = 0;                                    # counter for tracking errors going into Caltech email
 my $jah_errors = 0;                                        # counter for tracking errors going into Caltech email
 
@@ -57,7 +63,6 @@ my $log;                                                   # main log file for m
 my $caltech_log;                                           # Additional log file for problems that need to be sent to Caltech
 my $jah_log;                                               # Additional log file for problems to be sent to Jonathan Hodgkin at CGC
 my (%L_name_F_WBP, %L_name_F_M_WBP);                       # hashes for checking Person and Author merging?
-my $OPERON_FILE = "/nfs/wormpub/analysis/OPERONS/operon.dat";
 
 
 ##################################################
@@ -137,14 +142,12 @@ close(ACE) if ($ace);
 # email everyone specified by $maintainers
 $wb->mail_maintainer("geneace_check: SANGER",$maintainers,$log);
 
-# Also mail to Erich unless in debug mode or unless there is no errors
-my $interested ="mt3\@sanger.ac.uk, emsch\@its.caltech.edu, kimberly\@minerva.caltech.edu";
+my $interested ="mt3\@sanger.ac.uk, kimberly\@minerva.caltech.edu";
 $wb->mail_maintainer("geneace_check: CALTECH","$interested",$caltech_log) unless ($debug || $caltech_errors == 0);
 
 # Email Jonathan Hodgkin subset of errors that he might be able to help with unless
 # in debug mode or no errors
 $wb->mail_maintainer("geneace_check: CGC","cgc\@wormbase.org",$jah_log) unless ($debug || $jah_errors == 0);
-
 
 exit(0);
 
@@ -315,13 +318,13 @@ sub process_gene_class{
     # useful to see where you are in the script if running on command line
 
     my $species = $gene_id->Species;
-    if($species eq "Caenorhabditis elegans"){
-      print "$gene_id: $Gene_info{$gene_id}{'Public_name'}\n" if ($verbose);
+    if ($verbose) {
+      print "$gene_id:";
+      if($species eq "Caenorhabditis elegans" and exists $Gene_info{$gene_id}{'Public_name'}) {
+        print $Gene_info{$gene_id}{'Public_name'};
+      }
+      print "\n";
     }
-    else{
-      print "$gene_id:\n" if ($verbose);
-    }
-    my $warnings;
     &test_locus_for_errors($gene_id);
   }
 
@@ -347,7 +350,8 @@ sub test_locus_for_errors{
     my @ver_changes = $gene_id->Version_change;
     my $ver = $gene_id->Version;
     if ( "$ver" ne "$ver_changes[-1]" ){
-      $warnings .= "ERROR: $gene_id ($Gene_info{$gene_id}{'Public_name'}) has Version problem: current ($ver) => history ($ver_changes[-1])\n";
+      my $dname = (exists $Gene_info{$gene_id}{'Public_name'}) ? $Gene_info{$gene_id}{'Public_name'} : "No public name";
+      $warnings .= "ERROR: $gene_id ($dname) has Version problem: current ($ver) => history ($ver_changes[-1])\n";
     }
   }
 
@@ -470,7 +474,7 @@ sub test_locus_for_errors{
     my @other_names =  $gene_id->Other_name;
     foreach my $o (@other_names) {
       if ( $o eq $gene_id->CGC_name ){
-	$warnings .= "ERROR: $gene_id ($Gene_info{$gene_id}{'CGC_name'}) has an identical Other_name\n";
+	$warnings .= "ERROR: $gene_id (" . $gene_id->CGC_name . ") has an identical Other_name\n";
       }
     }
   }
