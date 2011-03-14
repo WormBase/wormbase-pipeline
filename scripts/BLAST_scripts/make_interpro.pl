@@ -8,8 +8,8 @@
 # It copies over the latest file, nupacks it into place and runs the InterPro
 # indexing program on it.
 #
-# Last updated by: $Author: pad $     
-# Last updated on: $Date: 2011-01-20 11:09:57 $      
+# Last updated by: $Author: klh $     
+# Last updated on: $Date: 2011-03-14 14:48:58 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -33,7 +33,6 @@ GetOptions ("help"       => \$help,
 	    "test"       => \$test,
 	    "verbose"    => \$verbose,
 	    "store:s"    => \$store,
-	    "species:s"  => \$species, # for testing puposes, comma-delimted list of species to delete old results from, all species are done if none are specified
 	    "nodownload" => \$nodownload,  # for testing purposes, inhibit the downloading and indexing of the databases even if they should be downloaded
 #	    "dbpass:s"   => \$dbpass, # the worm_ensembl_* mysql databases password
 	    );
@@ -57,24 +56,6 @@ if ($test) {
 
 # establish log file.
 my $log = Log_files->make_build_log($wormbase);
-
-# if no species are specified, then assume that we need to clean out
-# the old results from the database of all species
-# We may wish to specify the name of a species not in this list
-# for testing purposes, e.g. 'brugia'
-my @species_list = qw(
-		      elegans
-		      briggsae
-		      remanei
-                      japonica
-                      brenneri
-		      );
-my @species;			# species databases to remove old results from
-if (! $species) {
-  @species = @species_list;
-} else {
-  @species = split /[\,\s+]/, $species;
-}
 
 
 ##########################
@@ -130,24 +111,6 @@ if ($get_main || $get_panther) {
     $log->write_to("Indexing the databases for interproscan\n");
     $wormbase->run_command("perl /software/worm/iprscan/bin/index_data.pl -p /data/blastdb/Worms/interpro_scan/iprscan/data/ -inx -bin -v", $log);
   }
-
-####################################################################################
-#
-# NO. Do not run this routine to delete the old result for all species.
-# We will run the ensembl pipeline for some species very rarely
-# and will wish the results to be kept until the next analysis run.
-#
-####################################################################################
-# for each species, delete the results of previous runs of the
-# analysis pipeline for interpro
-#  foreach my $species_to_delete (@species) {
-#    if ($test) {
-#      $log->write_to("In test mode - the Interpro results for $species_to_delete will not be changed\n");
-#    } else {
-#      $log->write_to("Deleting old Interpro analysis results\n");
-#      &delete_results($get_main, $get_panther, $species_to_delete);
-#    }
-#  }
 
 # save the version number of the new database
   $log->write_to("Saving record of latest database versions\n");
@@ -252,12 +215,16 @@ sub get_file {
 
   $log->write_to("Downloading file $filename\n");
 
-#  `wget --quiet -O $dir/$filename ftp://ftp.ebi.ac.uk/pub/databases/interpro/iprscan/DATA/$filename`;
-  `wget -O $dir/$filename ftp://ftp.ebi.ac.uk/pub/databases/interpro/iprscan/DATA/$filename`;
+  $wormbase->run_command("wget -O $dir/$filename ftp://ftp.ebi.ac.uk/pub/databases/interpro/iprscan/DATA/$filename", $log);
 
   $log->write_to("Gunzipping file $filename\n");
-  `gunzip -c "$dir/$filename" | tar -xvf -`;
+  $wormbase->run_command("tar -C $dir zxvf $dir/$filename", $log);
   unlink "$dir/$filename";
+
+  # after any download, remove the match_complete file; it takes ages to index, and we don't use it. 
+  foreach my $mcfile (glob("$dir/iprscan/data/match_complete.*")) {
+    unlink $mcfile;
+  }
 }
 
 ##########################################
