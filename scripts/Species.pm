@@ -539,6 +539,46 @@ sub chromosome_names {
 	}
 	return @contigs;
 }
+######################
+package Tspiralis;
+use Carp;
+our @ISA = qw(Wormbase Species);
+
+sub _new {	
+    my $class = shift;
+    my %param = %{ shift(@_) };
+
+    my $self = $class->initialize( $class->flatten_params( \%param ) );
+
+    # add stuff post object creation goes here
+
+    bless $self, $class;
+}
+sub full_name {
+	my $self = shift;
+	my %param = @_ ;
+	if($param{'-short'}){
+		return 'T. spiralis';
+	}	elsif($param{'-g_species'}){
+		return 't_spiralis';
+	}
+	else { return'Trichinella spiralis'
+	};
+}
+sub chromosome_prefix {''}
+sub pep_prefix {'TP'}
+sub pepdir_prefix{'tri'};
+sub ncbi_tax_id {'6334'};
+sub assembly_type {'contig'};
+
+sub chromosome_names {
+  my @supercontigs;
+  for(my $i = 622784;$i<629647;$i++){
+	  push @superncontigs,"GL$i";
+  }
+  return @supercontigs;
+}
+
 #######################################################
 package Cangaria;
 use Carp;
