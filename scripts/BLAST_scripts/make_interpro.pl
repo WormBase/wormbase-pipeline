@@ -9,7 +9,7 @@
 # indexing program on it.
 #
 # Last updated by: $Author: klh $     
-# Last updated on: $Date: 2011-03-14 14:48:58 $      
+# Last updated on: $Date: 2011-03-14 15:13:08 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -218,7 +218,7 @@ sub get_file {
   $wormbase->run_command("wget -O $dir/$filename ftp://ftp.ebi.ac.uk/pub/databases/interpro/iprscan/DATA/$filename", $log);
 
   $log->write_to("Gunzipping file $filename\n");
-  $wormbase->run_command("tar -C $dir zxvf $dir/$filename", $log);
+  $wormbase->run_command("tar -C $dir -zxf $dir/$filename", $log);
   unlink "$dir/$filename";
 
   # after any download, remove the match_complete file; it takes ages to index, and we don't use it. 
