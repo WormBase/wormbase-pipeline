@@ -2,8 +2,8 @@
 #
 # prepare_primary_databases.pl
 #
-# Last edited by: $Author: pad $
-# Last edited on: $Date: 2010-11-24 14:48:14 $
+# Last edited by: $Author: klh $
+# Last edited on: $Date: 2011-03-14 13:49:28 $
 
 use strict;
 my $scriptdir = $ENV{'CVS_DIR'};
@@ -62,14 +62,6 @@ else {
 	$databases{'cshace'}->{'search'} = 'csh/csh*';
 }
 
-
-# establish databases for other TierII sp
-$log->write_to("Updating TierII databases . . \n");
-my (%access) = $wormbase->species_accessors;
-foreach my $species (keys %access) {
-	$log->write_to("\t$species\n");
-	$access{$species}->run_script("initiate_build.pl -update", $log);
-}
 
 &FTP_versions;
 &last_versions;
