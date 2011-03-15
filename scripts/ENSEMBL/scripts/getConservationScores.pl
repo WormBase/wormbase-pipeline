@@ -65,7 +65,7 @@ my $mlss = $mlss_adaptor->fetch_by_method_link_type_registry_aliases("GERP_CONSE
      'Pristionchus pacificus', 'Caenorhabditis brenneri',
      'Caenorhabditis japonica','Meloidogyne hapla',
      'Meloidogyne incognita','Haemonchus contortus',
-     'Caenorhabditis angaria']);
+     'Caenorhabditis angaria','Trichinella spiralis']);
 
 
 foreach my $seq_region ($wb->get_chromosome_names(-prefix => 1)){
@@ -79,7 +79,7 @@ foreach my $seq_region ($wb->get_chromosome_names(-prefix => 1)){
     throw("No Slice can be created with coordinates $seq_region") if (!@_slice);
 
     print OFH 'track type=wiggle_0 name="GERP scores" description="single nucleotide ',
-              'conservation scores from GERP/PECAN of 7 Nematodes" ',
+              'conservation scores from GERP/PECAN of 12 Nematodes" ',
               'visibility=full color=255,0,0 windowingFunction=mean smoothingWindow=5',"\n",
               "variableStep chrom=$seq_region span=1\n";
 
