@@ -23,7 +23,7 @@ my $debug =1;
 
 # Vega database
 my $vega_dbname = '';
-my $vega_dbhost = 'ia64d';
+my $vega_dbhost = 'farmdb1';
 my $vega_dbport =  3306;
 my $vega_dbuser = 'wormro'; 
 my $vega_dbpass = '';
@@ -38,10 +38,10 @@ GetOptions(
            'dbuser=s'     => \$vega_dbuser,
            'dbpass=s'     => \$vega_dbpass,
            'dbport=s'     => \$vega_dbport,
-	   'slice=s'      => \@dump_slice,
-	   'submit=i'     => \$lsf,
-	   'dumpdir=s'    => \$dumpdir,
-	   'file:s'       => \$file,
+    	   'slice=s'      => \@dump_slice,
+    	   'submit=i'     => \$lsf,
+    	   'dumpdir=s'    => \$dumpdir,
+    	   'file:s'       => \$file,
           )or die ("Couldn't get options");
 
 
