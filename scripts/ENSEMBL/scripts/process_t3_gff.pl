@@ -82,7 +82,7 @@ sub grab_ids {
        );
 
    my $compara_db = new Bio::EnsEMBL::Compara::DBSQL::DBAdaptor(
-    -host   => 'ia64d',        # change that
+    -host   => 'farmdb1',        # change that
     -user   => 'wormro',       # and that
     -dbname => 'worm_compara'
    );
