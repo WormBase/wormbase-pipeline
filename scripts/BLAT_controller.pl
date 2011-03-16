@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl5.8.0 -w
 #
-# Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2010-11-04 15:29:55 $
+# Last edited by: $Author: klh $
+# Last edited on: $Date: 2011-03-16 15:48:41 $
 
 
 use lib $ENV{'CVS_DIR'};
@@ -18,7 +18,7 @@ use LSF RaiseError => 0, PrintError => 1, PrintOutput => 0;
 use LSF::JobManager;
 
 my ($test, $database, $debug);
-my ($mask, $dump, $run, $postprocess, $load, $process, $virtual, $intron);
+my ($mask, $dump_dna, $run, $postprocess, $load, $process, $virtual, $intron);
 my @types;
 my $all;
 my $store;
@@ -31,7 +31,7 @@ GetOptions (
 	    'store:s'     => \$store,
 	    'species:s'   => \$species,  #target species (ie genome seq)
 	    'mask'        => \$mask,
-	    'dump'        => \$dump,
+	    'dump'        => \$dump_dna,
 	    'process'     => \$process,
 	    'virtual'     => \$virtual,
 	    'run'         => \$run,
@@ -55,12 +55,12 @@ else {
 			   );
 }
 
-$species = $wormbase->species;#for load
-my $log = Log_files->make_build_log($wormbase);
-my $wormpub = $wormbase->wormpub;
-$database = $wormbase->autoace unless $database;
+$species     = $wormbase->species;#for load
+my $log      = Log_files->make_build_log($wormbase);
+my $wormpub  = $wormbase->wormpub;
+$database    = $wormbase->autoace unless $database;
 my $blat_dir = $wormbase->blat;
-my $seq_obj      = Sequence_extract->invoke($database, undef, $wormbase) if $intron;
+my $seq_obj  = Sequence_extract->invoke($database, undef, $wormbase) if $intron;
 
 #The mol_types available for each species is different
 #defaults lists - can be overridden by -types
@@ -83,106 +83,93 @@ my @nematodes = qw(nematode washu nembase);
 
 #remove other species if single one specified
 if( $qspecies ){
-	if( grep(/$qspecies/, keys %mol_types)) {
-		foreach (keys %mol_types){
-			delete $mol_types{$_} unless ($qspecies eq $_);
-		}
-	}
-	else {
-		$log->log_and_die("we only deal in certain species!\n");
-	}
-	@nematodes = ();
+  if( grep(/$qspecies/, keys %mol_types)) {
+    foreach (keys %mol_types){
+      delete $mol_types{$_} unless ($qspecies eq $_);
+    }
+  } else {
+    $log->log_and_die("we only deal in certain species!\n");
+  }
+  @nematodes = ();
 }
 	
 #set specific mol_types if specified.
 if(@types) {
-	foreach (keys %mol_types){
-		($mol_types{$_}) = [(@types)];
-	}
-	@nematodes = ();
+  foreach (keys %mol_types){
+    ($mol_types{$_}) = [(@types)];
+  }
+  @nematodes = ();
 }
 
 #only do the "other nematode" stuff
 if($nematode) {
   foreach my $mt (keys %mol_types){
-  	next if (grep /$mt/ ,@nematodes);
+    next if (grep /$mt/ ,@nematodes);
     delete $mol_types{$mt};
   }
 }
 
 # mask the sequences based on Feature_data within the species database (or autoace for elegans.)
 if( $mask ) {
-	foreach my $qspecies ( keys %mol_types ) {
-		next if (grep /$qspecies/, @nematodes);
-		foreach my $moltype (@{$mol_types{$qspecies}}) {
-			#transcriptmasker is designed to be run on a sinlge species at a time.
-			#therefore this uses the query species ($qspecies) as the -species parameter so that 
-			#transcriptmasker creates a different Species opbject and gets the correct paths! 
-			$wormbase->bsub_script("transcriptmasker.pl -species $qspecies -mol_type $moltype", $qspecies, $log);
-		}
-	}
-	
-	#copy the nematode ESTs from BUILD_DATA
-	foreach (@nematodes) {
-	  mkpath ($wormbase->basedir."/cDNA/$_") unless  -e ($wormbase->basedir."/cDNA/$_");
-	  if (! -e $wormbase->build_data."/cDNA/$_/EST") {$wormbase->log_and_die("Can't find file " . $wormbase->build_data."/cDNA/$_/EST\n");};
-	  copy($wormbase->build_data."/cDNA/$_/EST", $wormbase->basedir."/cDNA/$_/EST.masked") 
-	}
+  foreach my $qspecies ( keys %mol_types ) {
+    next if (grep /$qspecies/, @nematodes);
+    foreach my $moltype (@{$mol_types{$qspecies}}) {
+      #transcriptmasker is designed to be run on a sinlge species at a time.
+      #therefore this uses the query species ($qspecies) as the -species parameter so that 
+      #transcriptmasker creates a different Species opbject and gets the correct paths! 
+      $wormbase->bsub_script("transcriptmasker.pl -species $qspecies -mol_type $moltype", $qspecies, $log);
+    }
+  }
 }
 
 # Now make blat target database using autoace (will be needed for all possible blat jobs)
 
-&dump_dna if $dump;
+&dump_dna if $dump_dna;
 
 
 # run all blat jobs on cluster ( eg cbi4 )
 if ( $run ) {
-	#create Wormbase.pm objects for each species to access cdna directores
-	my %accessors = $wormbase->species_accessors;
-	
-	# run other species
-	foreach my $species (keys %accessors) { #doesn't include own species.
-		my $cdna_dir = $accessors{$species}->maskedcdna;
-		foreach my $moltype ( @{$mol_types{$accessors{$species}->species}} ) {
-			my $split_count = 1;
-			
-			&check_and_shatter($accessors{$species}->maskedcdna, "$moltype.masked");
-			foreach my $seq_file (glob ($accessors{$species}->maskedcdna."/$moltype.masked*")) {
-				my $cmd = "bsub -E \"ls /software/worm\" -J ".$accessors{$species}->pepdir_prefix."_$moltype \"/software/worm/bin/blat/blat -noHead -t=dnax -q=dnax ";
-				$cmd .= $wormbase->genome_seq ." $seq_file ";
-				$cmd .= $wormbase->blat."/${species}_${moltype}_${split_count}.psl\"";
-				$wormbase->run_command($cmd, $log);
-				$split_count++;
-			}
-		}
-	}			
-	
-	#run own species.
-	foreach my $moltype (@{$mol_types{$wormbase->species}} ){
-		my $split_count = 1;
-		my $seq_dir = $wormbase->maskedcdna;
-		&check_and_shatter($wormbase->maskedcdna, "$moltype.masked");
-		foreach my $seq_file (glob ($seq_dir."/$moltype.masked*")) {
-			my $cmd = "bsub -E \"ls /software/worm\" -o /dev/null -e /dev/null -J ".$wormbase->pepdir_prefix."_$moltype \"/software/worm/bin/blat/blat -noHead ";
-			$cmd .= $wormbase->genome_seq ." $seq_file ";
-			$cmd .= $wormbase->blat."/".$wormbase->species."_${moltype}_${split_count}.psl\"";
-			$wormbase->run_command($cmd, $log);	
-			$split_count++;	
-		}		
-	}
-	#run other nematodes - these dont have Species.pm so cant use maskedcdna method.
-	foreach my $moltype (@nematodes ){
-		my $split_count = 1;
-		my $seq_dir = $wormbase->basedir."/cDNA/$moltype";
-		&check_and_shatter($seq_dir, "EST.masked");
-		foreach my $seq_file (glob ($seq_dir."/EST*")) {
-			my $cmd = "bsub -E \"ls /software/worm\" -J ".$wormbase->pepdir_prefix."_$moltype \"/software/worm/bin/blat/blat -noHead -q=dnax -t=dnax ";
-			$cmd .= $wormbase->genome_seq ." $seq_file ";
-			$cmd .= $wormbase->blat."/${moltype}_EST_${split_count}.psl\"";
-			$wormbase->run_command($cmd, $log);	
-			$split_count++;				
-		}		
-	}			
+
+  # run other species
+  foreach my $species (keys %mol_types) {
+    # skip own species
+    next if $species = $wormbase->species;
+
+    foreach my $moltype( @{$mol_types{$species}} ) {
+      my $seq_dir = join("/", $wormbase->basedir, "cDNA", $species );
+      &check_and_shatter( $seq_dir, "$moltype.masked" );
+
+      foreach my $seq_file (glob("${seq_dir}/${moltype}.masked*")) {
+        my $chunk_num = 1; 
+        if ($seq_file =~ /_(\d+)$/) {
+          $chunk_num = $1;
+        }
+        
+        my $cmd = "bsub -E \"ls /software/worm\" -J ${species}_${moltype}_${chunk_num} \"/software/worm/bin/blat/blat -noHead -t=dnax -q=dnax ";
+        $cmd .= $wormbase->genome_seq ." $seq_file ";
+        $cmd .= $wormbase->blat."/${species}_${moltype}_${chunk_num}.psl\"";
+        $wormbase->run_command($cmd, $log);
+      }
+    }
+  }
+
+
+  # run own species.
+  foreach my $moltype (@{$mol_types{$wormbase->species}} ){
+    my $seq_dir = $wormbase->maskedcdna;
+    &check_and_shatter($wormbase->maskedcdna, "$moltype.masked");
+    foreach my $seq_file (glob ($seq_dir."/$moltype.masked*")) {
+      my $chunk_num = 1; 
+      if ($seq_file =~ /_(\d+)$/) {
+        $chunk_num = $1;
+      }
+      
+      my $cmd = "bsub -E \"ls /software/worm\" -o /dev/null -e /dev/null -J ".$wormbase->species . "_${moltype}_${chunk_num} \"/software/worm/bin/blat/blat -noHead ";
+      $cmd .= $wormbase->genome_seq ." $seq_file ";
+      $cmd .= $wormbase->blat."/".$wormbase->species."_${moltype}_${chunk_num}.psl\"";
+      $wormbase->run_command($cmd, $log);	
+    }
+  }
 }
 
 if( $postprocess ) {
@@ -190,21 +177,21 @@ if( $postprocess ) {
   $log->write_to("merging PSL files \n");
   my $blat_dir = $wormbase->blat;
   foreach my $species (keys %mol_types) {
-  	foreach my $moltype ( @{$mol_types{$species}}){
- 	 $wormbase->run_command("cat $blat_dir/${species}_${moltype}_* |sort -u  > $blat_dir/${species}_${moltype}_out.psl", $log); # /d causes compiler warning (?)
+    foreach my $moltype ( @{$mol_types{$species}}){
+      $wormbase->run_command("cat $blat_dir/${species}_${moltype}_* |sort -u  > $blat_dir/${species}_${moltype}_out.psl", $log);
     }
   }
 }
 
 if ( $process or $virtual ) {
-
+  
   # first run all the blat2ace.pl -virtual jobs
   my $lsf1 = LSF::JobManager->new();
   foreach my $species (keys %mol_types) {
     foreach my $type (@{$mol_types{$species}} ) {
       #create virtual objects
       $log->write_to("Submitting $species $type for virtual procesing\n");
-
+      
       my $job_name = "worm_".$wormbase->species."_blat";
       my $cmd1 = $wormbase->build_cmd("blat2ace.pl -virtual -type $type -qspecies $species");
       # ask for a file size limit of 2 Gb and a memory limit of 4 Gb
@@ -213,7 +200,7 @@ if ( $process or $virtual ) {
 			  -R => "\"select[mem>4000] rusage[mem=4000]\"",
 			  -J => $job_name);
       $lsf1->submit(@bsub_options, $cmd1) if $virtual;
-    	
+      
     }
   }
   $lsf1->wait_all_children( history => 1 );
@@ -222,7 +209,7 @@ if ( $process or $virtual ) {
     $log->error("$job exited non zero\n") if $job->history->exit_status != 0;
   }
   $lsf1->clear;   
-
+  
   # now run all the blat2ace.pl -intron jobs
   my $lsf2 = LSF::JobManager->new();
   foreach my $species (keys %mol_types) {
@@ -319,29 +306,29 @@ sub confirm_introns {
       $link = $1;
       print "Sequence : $link\n" if $debug;
       @introns = split /\n/, $_;
-       
+      
       # evaluate introns #
       $/ = "";
       foreach my $test (@introns) {
 	if ($test =~ /Confirmed_intron/) {
-	    my @f = split / /, $test;
+          my @f = split / /, $test;
 	  
 	  #######################################
 	  # get the donor and acceptor sequence #
 	  #######################################
 	  
-	    my ($first,$last,$start,$end,$pastfirst,$prelast);
-	    if ($f[1] < $f[2]) {
-		($first,$last,$pastfirst,$prelast) = ($f[1]-1,$f[2]-1,$f[1],$f[2]-2);
-	    }
-	    else {
-		($first,$last,$pastfirst,$prelast) = ($f[2]-1,$f[1]-1,$f[2],$f[1]-2);
-	    }	
-	    
-	    $start = $seq_obj->Sub_sequence($link,$first,2);
-	    $end   = $seq_obj->Sub_sequence($link,$prelast,2);
+          my ($first,$last,$start,$end,$pastfirst,$prelast);
+          if ($f[1] < $f[2]) {
+            ($first,$last,$pastfirst,$prelast) = ($f[1]-1,$f[2]-1,$f[1],$f[2]-2);
+          }
+          else {
+            ($first,$last,$pastfirst,$prelast) = ($f[2]-1,$f[1]-1,$f[2],$f[1]-2);
+          }	
+          
+          $start = $seq_obj->Sub_sequence($link,$first,2);
+          $end   = $seq_obj->Sub_sequence($link,$prelast,2);
 	  
-	    print "Coords start $f[1] => $start, end $f[2] => $end\n" if $debug;
+          print "Coords start $f[1] => $start, end $f[2] => $end\n" if $debug;
 	  
 	  ##################
 	  # map to S_child #
@@ -364,7 +351,7 @@ sub confirm_introns {
 	  
 	  if ($startvirt == $endvirt) { 
 	    $virtual = "Confirmed_intron_$type:" .$link."_".$startvirt;
-	   }
+          }
 	  elsif (($startvirt == ($endvirt - 1)) && (($last%100000) <= 50000)) {
 	    $virtual = "Confirmed_intron_$type:" .$link."_".$startvirt;
 	  }
@@ -373,56 +360,56 @@ sub confirm_introns {
 	  # check introns #
 	  #################
 	  
-	    my $firstcalc = int($f[1]/100000);
-	    my $seccalc   = int($f[2]/100000);
-	    print STDERR "Problem with $test\n" unless (defined $firstcalc && defined $seccalc); 
-	    my ($one,$two);
-	    if ($firstcalc == $seccalc) {
-		$one = $f[1]%100000;
-		$two = $f[2]%100000;
+          my $firstcalc = int($f[1]/100000);
+          my $seccalc   = int($f[2]/100000);
+          print STDERR "Problem with $test\n" unless (defined $firstcalc && defined $seccalc); 
+          my ($one,$two);
+          if ($firstcalc == $seccalc) {
+            $one = $f[1]%100000;
+            $two = $f[2]%100000;
+          }
+          elsif ($firstcalc == ($seccalc-1)) {
+            $one = $f[1]%100000;
+            $two = $f[2]%100000 + 100000;
+            print STDERR "$virtual: $one $two\n";
 	    }
-	    elsif ($firstcalc == ($seccalc-1)) {
-		$one = $f[1]%100000;
-		$two = $f[2]%100000 + 100000;
-		print STDERR "$virtual: $one $two\n";
-	    }
-	    elsif (($firstcalc-1) == $seccalc) {
-		$one = $f[1]%100000 + 100000;
-		$two = $f[2]%100000;
-		print STDERR "$virtual: $one $two\n";
-	    } 
-	    print STDERR "Problem with $test\n" unless (defined $one && defined $two); 
-	    
-	    if ( ( (($start eq 'gt') || ($start eq 'gc')) && ($end eq 'ag')) ||
-		 (  ($start eq 'ct') && (($end eq 'ac') || ($end eq 'gc')) ) ) {	 
-		print GOOD "Feature_data : \"$virtual\"\n";
-		
-		# check to see intron length. If less than 25 bp then mark up as False
-		# dl 040414
-		
-		if (abs ($one - $two) <= 25) {
-		    print GOOD "Confirmed_intron $one $two False $f[4]\n\n";
-		}
-		else {
-		  if ($type eq "mRNA"){
-		    print GOOD "Confirmed_intron $one $two cDNA $f[4]\n\n";
-		  }
-		  else {
-		    print GOOD "Confirmed_intron $one $two EST $f[4]\n\n";
-		  }
-		}
-	      }
-	    else {
-	      if ($type eq "mRNA"){
-		print BAD "Feature_data : \"$virtual\"\n";
-		print BAD "Confirmed_intron $one $two cDNA $f[4]\n\n";		
-	      }
-	      else {
-		print BAD "Feature_data : \"$virtual\"\n";
+          elsif (($firstcalc-1) == $seccalc) {
+            $one = $f[1]%100000 + 100000;
+            $two = $f[2]%100000;
+            print STDERR "$virtual: $one $two\n";
+          } 
+          print STDERR "Problem with $test\n" unless (defined $one && defined $two); 
+          
+          if ( ( (($start eq 'gt') || ($start eq 'gc')) && ($end eq 'ag')) ||
+               (  ($start eq 'ct') && (($end eq 'ac') || ($end eq 'gc')) ) ) {	 
+            print GOOD "Feature_data : \"$virtual\"\n";
+            
+            # check to see intron length. If less than 25 bp then mark up as False
+            # dl 040414
+            
+            if (abs ($one - $two) <= 25) {
+              print GOOD "Confirmed_intron $one $two False $f[4]\n\n";
+            }
+            else {
+              if ($type eq "mRNA"){
+                print GOOD "Confirmed_intron $one $two cDNA $f[4]\n\n";
+              }
+              else {
+                print GOOD "Confirmed_intron $one $two EST $f[4]\n\n";
+              }
+            }
+          }
+          else {
+            if ($type eq "mRNA"){
+              print BAD "Feature_data : \"$virtual\"\n";
+              print BAD "Confirmed_intron $one $two cDNA $f[4]\n\n";		
+            }
+            else {
+              print BAD "Feature_data : \"$virtual\"\n";
 		print BAD "Confirmed_intron $one $two EST $f[4]\n\n";
-	      }
-	    }
-	  }
+            }
+          }
+        }
       }
     }
   }
@@ -441,22 +428,22 @@ exit(0);
 ###############################################################################################################
 
 sub check_and_shatter {
-	my $dir = shift;
-	my $file = shift;
-	
-	unless( -e "$dir/$file" ) {
-		$log->write_to("$file doesnt exist - hopefully already shattered for other species\n");
-		my @shatteredfiles = glob("$dir/$file*");
-		if(scalar @shatteredfiles == 0){
-			$log->log_and_die("shattered files also missing - not good");
-		}
-	}else {		
-		my $seq_count = qx(grep -c '>' $dir/$file);
-		if( $seq_count > 10000) {
-			$wormbase->run_script("shatter $dir/$file 10000 $dir/$file", $log);
-			$wormbase->run_command("rm -f $dir/$file", $log);
-		}
-	}
+  my $dir = shift;
+  my $file = shift;
+  
+  unless( -e "$dir/$file" ) {
+    $log->write_to("$file doesnt exist - hopefully already shattered for other species\n");
+    my @shatteredfiles = glob("$dir/$file*");
+    if(scalar @shatteredfiles == 0){
+      $log->log_and_die("shattered files also missing - not good");
+    }
+  }else {		
+    my $seq_count = qx(grep -c '>' $dir/$file);
+    if( $seq_count > 10000) {
+      $wormbase->run_script("shatter $dir/$file 10000 $dir/$file", $log);
+      $wormbase->run_command("rm -f $dir/$file", $log);
+    }
+  }
 }
 
 #############################################################################
@@ -466,15 +453,15 @@ sub check_and_shatter {
 #############################################################################
 
 sub dump_dna {
-    my @files = glob($wormbase->chromosomes."/*.dna");
-    push(@files,glob($wormbase->chromosomes."/*.fa"));
-    
-    open(GENOME,">".$wormbase->autoace."/genome_seq") or $log->log_and_die("cant open genome sequence file".$wormbase->autoace."/genome_seq: $!\n");
-    foreach (@files){
-	next if (/supercontig/ && scalar @files>1); # don't touch this
-	print GENOME "$_\n";
-    }
-    close GENOME;
+  my @files = glob($wormbase->chromosomes."/*.dna");
+  push(@files,glob($wormbase->chromosomes."/*.fa"));
+  
+  open(GENOME,">".$wormbase->autoace."/genome_seq") or $log->log_and_die("cant open genome sequence file".$wormbase->autoace."/genome_seq: $!\n");
+  foreach (@files){
+    next if (/supercontig/ && scalar @files>1); # don't touch this
+    print GENOME "$_\n";
+  }
+  close GENOME;
 }
 __END__
 
