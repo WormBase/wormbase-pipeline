@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl5.8.0 -w
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2011-03-16 15:48:41 $
+# Last edited on: $Date: 2011-03-16 16:36:46 $
 
 
 use lib $ENV{'CVS_DIR'};
@@ -133,7 +133,7 @@ if ( $run ) {
   # run other species
   foreach my $species (keys %mol_types) {
     # skip own species
-    next if $species = $wormbase->species;
+    next if $species eq $wormbase->species;
 
     foreach my $moltype( @{$mol_types{$species}} ) {
       my $seq_dir = join("/", $wormbase->basedir, "cDNA", $species );
