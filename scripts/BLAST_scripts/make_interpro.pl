@@ -9,7 +9,7 @@
 # indexing program on it.
 #
 # Last updated by: $Author: klh $     
-# Last updated on: $Date: 2011-03-14 15:13:08 $      
+# Last updated on: $Date: 2011-03-16 10:10:52 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -26,7 +26,7 @@ use DBI;
 ######################################
 
 my ($help, $debug, $test, $verbose, $store, $wormbase);
-my ($species, $nodownload, $dbpass);
+my ($species, $nodownload, $dbpass, $update_panther);
 
 GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
@@ -35,6 +35,7 @@ GetOptions ("help"       => \$help,
 	    "store:s"    => \$store,
 	    "nodownload" => \$nodownload,  # for testing purposes, inhibit the downloading and indexing of the databases even if they should be downloaded
 #	    "dbpass:s"   => \$dbpass, # the worm_ensembl_* mysql databases password
+            "updatepanther" => \$update_panther,
 	    );
 
 if ( $store ) {
@@ -84,8 +85,12 @@ if ($latest_main eq $current_main) {
 if ($latest_panther eq $current_panther) {
   $log->write_to("No new release required for Panther InterPro database\n");
 } else {
-  $log->write_to("Getting new release for Panther InterPro database\n");
-  $get_panther=1;
+  if ($get_panther) {
+    $log->write_to("Getting new release for Panther InterPro database\n");
+    $get_panther=1;
+  } else {
+    $log->write_to("Panther needs updating, but skipping the update\n");
+  }
 }
 
 # if the main databases changed, get them
@@ -207,6 +212,11 @@ sub get_file {
     $wormbase->run_command("rm -rf $dir/iprscan/data/*.psq", $log);
     $wormbase->run_command("rm -rf $dir/iprscan/data/*.phr", $log);
     $wormbase->run_command("rm -rf $dir/iprscan/data/*.pin", $log);
+    $wormbase->run_command("rm -rf $dir/iprscan/data/*.psd", $log);
+    $wormbase->run_command("rm -rf $dir/iprscan/data/*.h3f", $log);
+    $wormbase->run_command("rm -rf $dir/iprscan/data/*.h3i", $log);
+    $wormbase->run_command("rm -rf $dir/iprscan/data/*.h3m", $log);
+    $wormbase->run_command("rm -rf $dir/iprscan/data/*.h3p", $log);
 
   } elsif ($type eq 'match_data') {
     $filename = "iprscan_MATCH_DATA_${version}.tar.gz";
