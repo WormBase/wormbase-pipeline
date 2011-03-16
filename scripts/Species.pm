@@ -574,7 +574,7 @@ sub assembly_type {'contig'};
 sub chromosome_names {
   my @supercontigs;
   for(my $i = 622784;$i<629647;$i++){
-	  push @superncontigs,"GL$i";
+    push @supercontigs,"GL$i";
   }
   return @supercontigs;
 }
