@@ -42,6 +42,15 @@ Show_text
 GFF_source	 "operon"
 GFF_feature	 "operon"
 
+Method : "Deprecated_operon"
+Colour	 PURPLE 
+Show_up_strand
+Width    1.300000
+Show_text	
+GFF_source	 "operon"
+GFF_feature	 "deprecated_operon"
+
+
 Method : "Gene" 
 Colour	 LIGHTRED
 Show_up_strand	
@@ -2079,6 +2088,9 @@ Method : "Oligo_set"
 Right_priority  1.6
 
 Method : "operon"
+Right_priority  1.7
+
+Method : "Deprecated_operon"
 Right_priority  1.7
 
 Method : "Gene"
