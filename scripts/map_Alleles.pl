@@ -43,6 +43,7 @@ map_Allele.pl options:
 	-debug USER_NAME    sets email address and debug mode
 	-store FILE_NAME    use a Storable wormbase configuration file
 	-outdir DIR_NAME    print allele_mapping_VERSION.ace to DIR_NAME
+        -outfile FILE_NAME  write results to given file name
 	-allele ALLELE_NAME check only ALLELE_NAME instead of all
 	-noload             dont update AceDB
 	-noupdate           same as -noload
@@ -57,13 +58,14 @@ USAGE
 exit 1;	
 }
 
-my ( $debug, $species, $store, $outdir,$allele ,$noload,$database,$weak_checks,$help,$test,$idfile);
+my ( $debug, $species, $store, $outdir,$acefile,$allele ,$noload,$database,$weak_checks,$help,$test,$idfile);
 
 GetOptions(
     'species=s'=> \$species,
     'debug=s'  => \$debug,
     'store=s'  => \$store,
     'outdir=s' => \$outdir,
+    'outfile=s' => \$acefile,
     'allele=s' => \$allele,
     'noload'   => \$noload,
     'noupdate' => \$noload,
@@ -90,7 +92,14 @@ MapAlleles::setup($log,$wb) unless $database;
 MapAlleles::set_wb_log($log,$wb,$weak_checks) if $database;
 
 my $release=$wb->get_wormbase_version;
-my $acefile=( $outdir ? $outdir : $wb->acefiles ) . "/allele_mapping.WS$release.$$.ace";
+if ($outdir and $acefile) {
+  croak("Should not give -outdir and -outfile - choose one");
+}
+if (not $acefile) {
+  $outdir = $wb->acefiles if not $outdir;
+  $acefile = "$outdir/allele_mapping.WS${release}.$$.ace";
+}
+
 
 if ($debug) {
     print "DEBUG \"$debug\"\n\n";

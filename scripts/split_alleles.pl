@@ -20,7 +20,6 @@ use lib "$Bin";
 
 use Modules::map_Alleles;
 
-use lib '/software/worm/lib/site_perl/5.8.8/'; # that is where the Wormbaseified LSF module is
 use LSF RaiseError => 0, PrintError => 1, PrintOutput => 0;
 use LSF::JobManager;
 
@@ -59,10 +58,15 @@ GetOptions(
 &print_usage if $help;
 
 if ($store) {
-    $wb = Storable::retrieve($store) 
-	    or croak("cannot restore wormbase from $store");
+  $wb = Storable::retrieve($store) 
+      or croak("cannot restore wormbase from $store");
 }
-else { $wb = Wormbase->new( -debug => $debug, -test => $test, -organism => $species, -autoace => $database ) }
+else { 
+  $wb = Wormbase->new( -debug => $debug, 
+                       -test => $test, 
+                       -organism => $species, 
+                       -autoace => $database ); 
+}
 
 my $log = Log_files->make_build_log($wb);
 
@@ -70,57 +74,72 @@ if ($debug) {
     print "DEBUG \"$debug\"\n\n";
 }
 
-$database||=$wb->autoace();
+$database = $wb->autoace() if not defined $database;
+$species = $wb->species if not defined $species;
+
 MapAlleles::set_wb_log($log,$wb); # that is a bit crude, but makes $log available to the MapAlleles funtions
 
 my $lsf = LSF::JobManager->new();
-
 my $variations = MapAlleles::get_all_alleles();
-
-map {unlink $_} glob("$outdir/*.ace"); # prerun cleanup
-
 my $binsize = int(@$variations / 10 );
-my $counter = 0;
-my $bucket=1;
 
-my $of = new IO::File "$outdir/map_alleles.$bucket",'w';
 
-my @outfiles = ("$outdir/map_alleles.$bucket"); # to collect the names for later
+my (@bins, @id_files, @out_files);
 
 while (my $a = shift @$variations){
-	if ($counter++ > $binsize){
-		$bucket++;
-		$counter=1;
-		$of->close;
-		&mapAlleles($bucket-1);
-		$of->open("> $outdir/map_alleles.$bucket");
-		push(@outfiles,"$outdir/map_alleles.$bucket");
-	}
-	print $of "$a\n";
+  if (not @bins or scalar(@{$bins[-1]}) == $binsize) {
+    push @bins, [];
+  }
+
+  push @{$bins[-1]}, $a;
 }
-$of->close;
-&mapAlleles($bucket);
+
+for(my $bn=1; $bn <= @bins; $bn++) {
+  my $list = $bins[$bn-1];
+
+  my $id_file = "$outdir/map_alleles.$$.${species}.${bn}.txt";
+  my $out_file = "$outdir/allele_mapping.$$.${species}.${bn}.ace";
+
+  open(my $fh, ">$id_file");  
+  foreach my $nm (@$list) {
+    print $fh "$nm\n";
+  }
+  close($fh);
+
+  &mapAlleles($id_file, $out_file);
+
+  push @id_files, $id_file;
+  push @out_files, $out_file;
+}
 
 $lsf->wait_all_children( history => 1 );
 
-unless($noload){
-    map {$wb->load_to_database($wb->autoace,$_,'map_alleles.pl',$log)} glob("$outdir/*.ace") ;
-    map {unlink $_} @outfiles;
-    map {unlink $_} glob("$outdir/*.ace");
+if (not $noload) {
+  foreach my $ace (@out_files) {
+    if (-e $ace) {
+      $wb->load_to_database($wb->autoace, $ace, 'map_alleles.pl',$log);
+    } else {
+      croak("Expected to find $ace, but its not there. Strange.\n");
+    }
+  }
+  map { unlink $_ } (@out_files, @id_files);
 }
+
 
 $log->mail();
 
 sub mapAlleles {
-	my ($lastBin) = @_;
-	my $binfile="$outdir/map_alleles.$lastBin";
-	my $submitstring="/software/bin/perl $Bin/map_Alleles.pl -idfile $binfile -noload -outdir $outdir -species ${\$wb->species}";
-	$submitstring.=" -debug $debug" if $debug;
-	my $job_name = "worm_".$wb->species."_splitalleles";
-	my @bsub_options =(-e => '/dev/null', 
-			   -o => '/dev/null',
-			   -M => "3500000", 
-			   -R => "\"select[mem>3500] rusage[mem=3500]\"",
-			   -J => $job_name);
-	$lsf->submit(@bsub_options, $submitstring);
+  my ($id_file, $out_file) = @_;
+  
+  my $submitstring="/software/bin/perl $Bin/map_Alleles.pl -idfile $id_file -outfile $out_file -noload -outdir -species $species";
+  $submitstring .= " -debug $debug" if $debug;
+  $submitstring .= " -test"  if $test;
+
+  my $job_name = "worm_".$species."_splitalleles";
+  my @bsub_options =(-e => '/dev/null', 
+                     -o => '/dev/null',
+                     -M => "3500000", 
+                     -R => "\"select[mem>3500] rusage[mem=3500]\"",
+                     -J => $job_name);
+  $lsf->submit(@bsub_options, $submitstring);
 }
