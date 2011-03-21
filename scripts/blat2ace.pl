@@ -6,8 +6,8 @@
 #
 # Exporter to map blat data to genome and to find the best match for each EST, mRNA, OST, etc.
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2009-05-06 11:13:22 $
+# Last edited by: $Author: klh $
+# Last edited on: $Date: 2011-03-21 11:01:49 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -22,10 +22,9 @@ use File::Copy;
 # Command line options  #
 #########################
 
-my ($est, $mrna, $ncrna, $ost, $tc1, $nematode, $embl, $camace, $intron, $washu, $nembase);
 my ($help, $debug, $test, $verbose, $store, $wormbase, $species);
-my ($database, $virtualobjs, $type, $qspecies);
-my ($acefile,$pslfile);
+my ($database, $confirmed_introns, $virtualobjs, $qtype, $qspecies);
+my ($acefile, $pslfile, $virtualobjsfile, $confirmedfile);
 
 GetOptions (
 	    "help"       => \$help,
@@ -35,18 +34,11 @@ GetOptions (
 	    "store:s"    => \$store,
 	    "species:s"  => \$species,
 	    "database:s" => \$database,
-	    "est"        => \$est,
-	    "mrna"       => \$mrna,
-	    "ncrna"      => \$ncrna,
-	    "ost"        => \$ost,
-	    "tc1"        => \$tc1,
-	    "nematode"   => \$nematode,
-	    "nembase"    => \$nembase,
-	    "washu"      => \$washu,
-	    "embl"       => \$embl,
-	    "intron"     => \$intron,
+	    "intron"     => \$confirmed_introns,
+            "cifile:s"   => \$confirmedfile,
 	    "virtual"    => \$virtualobjs,
-	    "type:s"     => \$type,
+            "vfile:s"    => \$virtualobjsfile,
+	    "type:s"     => \$qtype,
 	    "qspecies:s" => \$qspecies, #query species
 	    "ace:s"      => \$acefile,
 	    "psl:s"      => \$pslfile
@@ -64,6 +56,7 @@ if ( $store ) {
 # establish log file.
 my $log = Log_files->make_build_log($wormbase);
 
+$log->log_and_die("no type specified\n") unless $qtype;
 
 #############################
 # variables and directories #
@@ -71,444 +64,238 @@ my $log = Log_files->make_build_log($wormbase);
 
 # set database paths, default to autoace unless -camace
 my $ace_dir   = $wormbase->orgdb;
-my $blat_dir = (defined $database ? $database."/BLAT" : $wormbase->blat);
+my $blat_dir = (defined $database) ? $database."/BLAT" : $wormbase->blat;
 my @nematodes = qw(nematode washu nembase);
 
 #############################
 # CommonData hash retrieval #
 #############################
-my %NDBaccession2est;
-my %estorientation;
-if ($qspecies eq 'elegans'){ #this should change if other species need this too.
-# if we're processing elegans cDNAs we need to use the elegans common data to convert acc -> yk
-	my $accessor = $wormbase;
-	unless ($wormbase->species eq 'elegans') {
-		$accessor = Wormbase->new( 	-debug   => $wormbase->debug,
-                             		-test    => $wormbase->test,
-                            		-organism => 'elegans'
-                             );
-    }
-	%NDBaccession2est = $accessor->FetchData('NDBaccession2est');     # EST accession => name
-	%estorientation   = $accessor->FetchData('estorientation');       # EST accession => orientation [5|3]
-}
-my %hash;
-my (%best,%other,%bestclone,%match,%ci);
+my ($accessor, %estorientation);
 
-$log->log_and_die("no type specified\n") unless $type;
+if ($qspecies ne $wormbase->species) {
+  my (%sa) = $wormbase->species_accessors;
+  if (exists $sa{$qspecies}) {
+    $accessor = $sa{$qspecies};
+  }
+} else {
+  $accessor = $wormbase;
+}
+
+if (defined $accessor) {
+  eval {
+    %estorientation   = $accessor->FetchData('estorientation');
+  };
+  if ($@) {
+    $log->write_to("Could not successfully retrieve orientation info for $qspecies\n");
+    %estorientation = ();
+  }
+}
+
 
 ##########################################################################################
 # map the blat hits to ace - i.e. process blat output (*.psl) file into set of ace files #
 ##########################################################################################
-$log->write_to($wormbase->runtime.": Start mapping $qspecies $type\n\n");
+$log->write_to($wormbase->runtime.": Start mapping $qspecies $qtype\n\n");
 
 # open input and output filehandles
-$acefile = "$blat_dir/".$wormbase->species.".${qspecies}_$type.ace" unless $acefile;
-$pslfile = "$blat_dir/${qspecies}_${type}_out.psl" unless $pslfile;
-open(ACE,  ">$acefile")  or die "Cannot open $acefile $!\n";
-open(BLAT, "<$pslfile")    or die "Cannot open $pslfile $!\n";
+$acefile = sprintf("%s/%s.blat.%s_%s.ace", $blat_dir, $wormbase->species, $qspecies, $qtype)
+    unless $acefile;
+$pslfile = sprintf("%s/%s_%s_out.psl", $blat_dir, $qspecies, $qtype) 
+    unless $pslfile;
+$virtualobjsfile = sprintf("%s/virtual_objects.%s.blat.%s.%s.ace", $blat_dir, $wormbase->species, $qtype, $qspecies) 
+    unless defined $virtualobjsfile;
 
-my $number_of_replacements = 0;
-my %reported_this_query_before;
-my %make_virt_obj;
-# loop through each blat hit
-my $method = $qspecies eq $wormbase->species ? "BLAT_${type}_OTHER" : "BLAT_Caen_${type}_OTHER";
-$method = "BLAT_".uc($qspecies) if grep(/$qspecies/, @nematodes);
+
+open(BLAT, "<$pslfile") or $log->log_and_die("Could open $pslfile $!\n");
+
+my (%hits, %hits_by_tname, %target_lengths);
 
 while (<BLAT>) {
-
+  
   next unless (/^\d/);
   my @f            = split "\t";
-
+  
   my $match        = $f[0];                    # number of bases matched by blat
   my $strand       = $f[8];                    # strand that match is on
-  my $query        = $f[9];                    # query sequence name
-  my $query_size   = $f[10];                   # query sequence length
-  my $superlink    = $f[13];                   # name of superlink that was used as blat target sequence
-  my $slsize       = $f[14];                   # target seq size (used to be superlink hence sl)
-  my $lastvirt     = int($slsize/100000) + 1;  # for tracking how many virtual sequences have been created???
-  my $matchstart   = $f[15];                   # target (superlink) start coordinate...
-  my $matchend     = $f[16];                   # ...and end coordinate
+  my $qname        = $f[9];                    # query sequence name
+  my $qsize        = $f[10];                   # query sequence length
+  my $qstart       = $f[11];
+  my $qend         = $f[12];
+  my $tname        = $f[13];                   # name of superlink that was used as blat target sequence
+  my $tsize        = $f[14];                   # target seq size (used to be superlink hence sl)
+  my $tstart       = $f[15];                   # target (superlink) start coordinate...
+  my $tend         = $f[16];                   # ...and end coordinate
   my $block_count  = $f[17];                   # block count
   my @lengths      = split (/,/, $f[18]);      # sizes of each blat 'block' in any individual blat match
-  my @query_starts = split (/,/, $f[19]);      # start coordinates of each query block
-  my @slink_starts = split (/,/, $f[20]);      # start coordinates of each target (superlink) block
-
-  next if ($strand eq '--');
-  $make_virt_obj{$superlink} = $slsize  if($virtualobjs);# store which sequence to make virtual objects for 
-  # replace EST name (usually accession number) by yk... name 
-  if ( ($est || $ost) && (exists $NDBaccession2est{$query}) ) {
-    my $estname  = $NDBaccession2est{$query};
-    if ($query ne $estname) {
-#	  $log->write_to("EST name $query was replaced by $estname\n\n");
-      $number_of_replacements++;
-      $query = $estname;
-    }
-  }
-
-  ###############################
-  # find virtual superlink part #
-  ###############################
-	
-  my ($virtual,$startvirtual,$endvirtual);
-
-  if ((int($matchstart/100000) + 1) > $lastvirt) { 
-      $startvirtual = $lastvirt;
-  }
-  else {
-      $startvirtual = int($matchstart/100000) +1;
-  }  
-    
-  if ( (int($matchend/100000) +1) > $lastvirt) { 
-      $endvirtual = $lastvirt;
-  }
-  else {
-      $endvirtual = int($matchend/100000) +1;
-  }  
+  my @q_starts     = split (/,/, $f[19]);      # start coordinates of each query block
+  my @t_starts     = split (/,/, $f[20]);      # start coordinates of each target (superlink) block
   
-  if ($startvirtual == $endvirtual) {
-      $virtual = "BLAT_${type}:${superlink}_${startvirtual}";
-  }	
-  elsif (($startvirtual == ($endvirtual - 1)) && (($matchend%100000) <= 50000)) {
-      $virtual = "BLAT_${type}:${superlink}_${startvirtual}";
+  if (not exists $target_lengths{$tname}) {
+    $target_lengths{$tname} = $tsize;
   }
-  else {
-    if (! exists $reported_this_query_before{$query}) {
-      $reported_this_query_before{$query} = 1; # don't want to report this one again
-    # $log->write_to("$query wasn't assigned to a virtual object as match size was too big\n") if $wormbase->debug;
-    #  $log->write_to("Start is $matchstart, end is $matchend on $superlink\n\n") if $wormbase->debug;
-    }
-    next;
-  }
-
+  
+  # -- hits are usually shadows of ++ hits (apparently)
+  # next if ($strand eq '--');
+  
   # calculate (acedb) score for each blat match
   # new way of calculating score, divide by query size rather than sum of matching blocks, 
-  my $score = ($match/$query_size)*100;
+  my $score = ($match/$qsize)*100;
   
-  #########################
-  # calculate coordinates #
-  #########################
-    
-  # need to allow for est exons in the next virtual object, otherwise they get remapped to the start 
-  # of the virtual by performing %100000
-  my @exons = ();  
-  my $calc = int(($slink_starts[0]+1)/100000);
+  if ($strand =~ /^\S$/) {
+    # single strand reported; BLAT always reports forward on the target in this case, 
+    # flipping the query if necessary. 
+    $strand .= "+";
+  }
+  
+  my ($qstrand, $tstrand) = $strand =~ /^(\S)(\S)$/;
+  
+  my @segs = ();  
   
   for (my $x = 0;$x < $block_count; $x++) {
-      my $newcalc = int(($slink_starts[$x]+1)/100000);
-      my $virtualstart;
-
-      if ($calc == $newcalc) {	
-	  $virtualstart =  ($slink_starts[$x] +1)%100000;
-      }
-      elsif ($calc == ($newcalc - 1)) {
-	  $virtualstart = (($slink_starts[$x] +1)%100000) + 100000;
-      }
-      
-
-      my $virtualend = $virtualstart + $lengths[$x] -1;
-      
-      if ($calc != $newcalc) {
-	  #$log->write_to("// MISMATCH: $query [$strand] $virtualstart $virtualend :: [virtual slice $calc -> $newcalc, offset ".($matchend%100000)."]\n\n");
-      }
-
-      if (!defined $virtualstart) {
-	  #$log->write_to("$query will be discarded as the match is too long\n");
-	  #$log->write_to("$query [$strand] $virtualstart $virtualend  [virtual slice $calc -> $newcalc, offset ".($matchend%100000)."]\n\n");
-	  next;
-      }
-
-      my ($query_start,$query_end);
-      
-        # blatx 6-frame translation v 6-frame translation
-#      if ($nematode || $washu || $nembase) {
-	  if( $wormbase->species ne $qspecies) {
-	  my $temp;
-	  if (($strand eq '++') || ($strand eq '-+')) {
-	      $query_start = $query_starts[$x] +1;
-	      $query_end   = $query_start + $lengths[$x] -1;
-	      if ($strand eq '-+') {
-		  $temp        = $query_end;
-		  $query_end   = $query_start;
-		  $query_start = $temp; 
-	      }
-	  }
-	  elsif ($strand eq '+-') {
-	      $temp         = $virtualstart;
-	      $virtualstart = $virtualend;
-	      $virtualend   = $temp;
-
-	      $query_start  = $query_size  - $query_starts[$x];
-	      $query_end    = $query_start - $lengths[$x] +1;
-
-	      if ($strand eq '--') {
-		  $temp        = $query_end;
-		  $query_end   = $query_start;
-		  $query_start = $temp; 
-	      }
-	  }
-      }
-      else {
-	  if ($strand eq '+'){
-	      $query_start   = $query_starts[$x] +1;
-	      $query_end     = $query_start + $lengths[$x] -1;
-	  }
-	  elsif ($strand eq '-') {
-	      $query_start   = $query_size - $query_starts[$x];
-	      $query_end     = $query_start - $lengths[$x] +1;
-	  }		
-      }		
-      
-      # 1 out of 8000,000 cDNAs ends up with 0 as a start and breaks the mapping, this hack is to stop it
-      $virtualstart++ if($virtualstart == 0);
-      $query_start++ if ($query_start == 0);
-
-      # write to output file
-      print ACE "Homol_data : \"$virtual\"\n";
-      if ($type eq "nematode" || $type eq "washu" || $type eq "nembase") {
-	  printf ACE "DNA_homol\t\"%s\"\t\"BLAT_${type}\"\t%.1f\t%d\t%d\t%d\t%d\n\n",$query,$score,$virtualstart,$virtualend,$query_start,$query_end;
-      }
-      else {
-	printf ACE "DNA_homol\t\"%s\"\t$method\t%.1f\t%d\t%d\t%d\t%d\n\n",$query,$score,$virtualstart,$virtualend,$query_start,$query_end;
-      }
-      push @exons, [$virtualstart,$virtualend,$query_start,$query_end];				
+    
+    my ($query_start,$query_end, $target_start, $target_end);
+    
+    $query_start = $q_starts[$x] + 1;
+    $query_end   = $query_start + $lengths[$x] - 1;
+    
+    $target_start = $t_starts[$x] + 1;
+    $target_end   = $target_start + $lengths[$x] - 1;
+    
+    if ($qstrand eq '-') {
+      $query_end = $qsize - $q_starts[$x];
+      $query_start   = $query_end - $lengths[$x] + 1;
+    }
+    
+    if ($tstrand eq '-') {
+      $target_end = $tsize - $t_starts[$x];
+      $target_start = $target_end - $lengths[$x] + 1;
+    }
+    
+    # 1 out of 8000,000 cDNAs ends up with 0 as a start and breaks the mapping, this hack is to stop it
+    $target_start++ if $target_start == 0;
+    $query_start++ if  $query_start == 0;
+    
+    push @segs, {
+      tstart => $target_start,
+      tend   => $target_end,
+      qstart => $query_start,
+      qend   => $query_end,
+    }			
   }
   
-    
-  # collect best hits for each query sequence 
-  # Choose hit with highest score (% of query length which are matching bases) 
-  # If multiple hits have same scores (also meaning that $match must be same) store 
-  # details of extra hits against same primary key in %best
-  if (exists $best{$query}) {
-      if (($score > $best{$query}->{'score'})) { 
-	  # Add all new details if score is better...
-	  $best{$query}->{'score'} = $score;
-	  $best{$query}->{'match'} = $match;
-	  @{$best{$query}->{'entry'}} = ({'clone' => $virtual,'link' => $superlink,'exons' => \@exons});
-      }
-      elsif($score == $best{$query}->{'score'}){
-	  #...only add details (name and coordinates) of extra hits if scores are same
-	  push @{$best{$query}->{'entry'}}, {'clone' => $virtual,'link' => $superlink,'exons' => \@exons};
-      }
+  # we want to flip the strands such that the query is always forward (easier that way)
+  if ($qstrand eq '-') {
+    $qstrand = '+';
+    $tstrand = ($tstrand eq '+') ? "-" : "+";
   }
-  else {
-      $best{$query}->{'match'} = $match;
-      $best{$query}->{'score'} = $score;
-      @{$best{$query}->{'entry'}} = ({'clone' => $virtual,'link' => $superlink,'exons' => \@exons});
-  }
-
+  
+  my $hit =  {
+    tname    => $tname,
+    tstart   => $tstart,
+    tend     => $tend,
+    tstrand  => $tstrand,
+    qname    => $qname,
+    qstart   => $qstart,
+    qend     => $qend,
+    qstrand  => $qstrand,
+    score    => $score,
+    #match    => $match,
+    segments => \@segs,
+    isbest   => 0,
+  };
+  
+  push @{$hits{$qname}}, $hit;
+ 
 }
 close(BLAT);
-close(ACE);
-&make_virt_objs($type) if $virtualobjs;
 
-# concise report
-if ($est || $ost) {
-  $log->write_to("\nThere were $number_of_replacements replacements of EST names\n\n");
+foreach my $qname (keys %hits) {
+  # BLAT is prone to produce "shadow" alignments (trivial variants of another
+  # higher scoring alignment, usually with the query and target strand reversed)
+  # Check for these here and filter them out
+
+  my @nr_hits;
+  foreach my $hit (sort { $b->{score} <=> $a->{score} } @{$hits{$qname}}) {
+    my $overlaps = 0;
+
+    KEPT: foreach my $kept (@nr_hits) {
+      if ($hit->{tname} eq $kept->{tname} and 
+          $hit->{tstrand} eq $kept->{tstrand} and 
+          $hit->{tstart} <= $kept->{tend} and
+          $hit->{tend} >= $kept->{tstart}) {
+        # check for exon overlap
+        foreach my $seg (@{$hit->{segments}}) {
+          foreach my $kseg (@{$kept->{segments}}) {
+            if ($kseg->{tstart} <= $seg->{tend} and
+                $kseg->{tend} >= $seg->{tstart} and
+                $kseg->{qstart} <= $seg->{qend} and
+                $kseg->{qend} >= $seg->{qstart}) {
+              $overlaps = 1;
+              last KEPT;
+            }
+          }
+        }
+
+      }
+    }
+
+    if (not $overlaps) {
+      push @nr_hits, $hit;
+    }
+  }
+
+  # finally, mark the best-scoring hit as best iff it is the single best-scoring alignment
+
+  if (scalar(@nr_hits) == 1 or
+      $nr_hits[0]->{score} > $nr_hits[1]->{score}) {
+    $nr_hits[0]->{isbest} = 1;
+  }
+
+  foreach my $hit (@nr_hits) {
+    push @{$hits_by_tname{ $hit->{tname} }}, $hit;
+  }
+  delete $hits{$qname};
 }
 
-####################################
-# produce outfile for best matches #
-####################################
-if ($nematode || $washu || $nembase) {
-  #$wormbase->run_command("mv $blat_dir/".$wormbase->species.".$type.ace $blat_dir/".$wormbase->species.".blat.$type.ace", $log);
-  my $fromace = "$blat_dir/".$wormbase->species.".$type.ace";
-  my $toace = "$blat_dir/".$wormbase->species.".blat.$type.ace";
-  move($fromace, $toace) || do {$log->write_to("ERROR: move of $fromace to $toace failed: $!\n"); $log->error};
+
+if ($confirmed_introns) {
+  my $out_file = (defined $confirmedfile)
+      ? $confirmedfile
+      : sprintf("%s/%s.ci.%s_%s.ace", $blat_dir, $wormbase->species, $qspecies, $qtype);
+  &confirm_introns($out_file, $qtype, \%hits_by_tname);
+}
+
+
+my ($bestm, $otherm);
+ 
+if (grep(/$qspecies/, @nematodes)) {
+  $bestm = $otherm = "BLAT_".uc($qspecies);
+
 } else {
-  my $no_direction = 0;		# count of transcripts with no specified orientation
-
-  open (AUTBEST, ">$blat_dir/".$wormbase->species.".best.${qspecies}_$type.ace");
-  my $method = $qspecies eq $wormbase->species ? "BLAT_${type}_BEST" : "BLAT_Caen_${type}_BEST";
-  $method = "BLAT_".uc($qspecies) if grep(/$qspecies/, @nematodes);
-  foreach my $found (sort keys %best) {
-    if (exists $best{$found}) {
-      foreach my $entry (@{$best{$found}->{'entry'}}) {
-# comment this out to allow two or more $entry's with equal scores to all be 'BEST'
-	if (@{$best{$found}->{'entry'}} < 2) {
-	  my $virtual   = $entry->{'clone'};
-	  my $superlink = $entry->{'link'};
-	  foreach my $ex (@{$entry->{'exons'}}) {
-	    my $score        = $best{$found}->{'score'};
-	    my $virtualstart = $ex->[0];
-	    my $virtualend   = $ex->[1];
-	    my $query_start  = $ex->[2];
-	    my $query_end    = $ex->[3];
-		    
-	    # print output for autoace, camace, and stlace
-	    print  AUTBEST "Homol_data : \"$virtual\"\n";
-	    printf AUTBEST "DNA_homol\t\"%s\"\t$method\t%.1f\t%d\t%d\t%d\t%d\n\n",$found,$score,$virtualstart,$virtualend,$query_start,$query_end;
-	  }
-
-		
-	  #############################
-	  # produce confirmed introns #
-	  #############################
-	  if ($intron) {
-	    #$log->write_to("Producing confirmed introns\n");
-	    my ($n) = ($virtual =~ /\S+_(\d+)$/);
-	    for (my $y = 1; $y < @{$entry->{'exons'}}; $y++) {
-	      my $last   = $y - 1;
-	      my $first  =  (${$entry->{"exons"}}[$last][1] + 1) + (($n-1)*100000);
-	      my $second =  (${$entry->{'exons'}}[$y][0]    - 1) + (($n-1)*100000);
-	      if ($type eq 'mRNA' && !exists $estorientation{$found}) {	# default orientation of mRNA is forwards
-		$estorientation{$found} = 5;
-	      }
-	      if (${$entry->{'exons'}}[0][2] < ${$entry->{'exons'}}[0][3]) {
-		if ((${$entry->{'exons'}}[$y][2] == ${$entry->{'exons'}}[$last][3] + 1) && (($second - $first) > 2)) {
-		  if (exists $estorientation{$found} && $estorientation{$found} eq '3') {
-		    push @{$ci{$superlink}}, [$second,$first,$found];
-		  } elsif (exists $estorientation{$found} && $estorientation{$found} eq '5') {
-		    push @{$ci{$superlink}}, [$first,$second,$found];
-		  } else {
-		    $no_direction++
-		  }
-		}
-	      } elsif (${$entry->{'exons'}}[0][2] > ${$entry->{'exons'}}[0][3]) {
-		if ((${$entry->{'exons'}}[$last][3] == ${$entry->{'exons'}}[$y][2] + 1) && (($second - $first) > 2)) {
-		  if (exists $estorientation{$found} && $estorientation{$found} eq '3') {
-		    push @{$ci{$superlink}}, [$first,$second,$found];
-		  } elsif (exists $estorientation{$found} && $estorientation{$found} eq '5') {
-		    push @{$ci{$superlink}}, [$second,$first,$found]; 
-		  } else {
-		    $no_direction++
-		  }
-		}
-	      }
-	    }
-	  }
-	}
-      }
-    }
-  }
-  $log->write_to("WARNING: Direction not found for $no_direction transcripts\n\n") if ($no_direction);
-  close(AUTBEST);
+  my $mpre = $qspecies eq $wormbase->species 
+    ? "BLAT_${qtype}" 
+    : "BLAT_Caen_${qtype}";
+  $bestm = $mpre . "_BEST";
+  $otherm = $mpre . "_OTHER";
 }
-########################################################
-# produce final BLAT output (including BEST and OTHER) #
-########################################################
 
-unless ($nematode || $washu || $nembase) {
-  # Open new (final) output files for autoace, camace, and stlace
+# need to write separate out hits into BEST and OTHER
+my $virt_hash = &write_ace($acefile, $qtype, $bestm, $otherm, \%hits_by_tname);
 
-  open (OUT_autoace, ">$blat_dir/".$wormbase->species.".blat.${qspecies}_$type.ace") or $log->log_and_die("cant open $blat_dir/".$wormbase->species.".blat.${qspecies}_$type.ace :$!");
+if ($virtualobjs) {
+  # write virtuals sequences here
+  open my $vfh, ">$virtualobjsfile" or $log->log_and_die("Could not open $virtualobjsfile for writing\n");
 
-  # Change input separator to paragraph mode, but store what it old mode in $oldlinesep
-  my $oldlinesep = $/;
-  $/ = "";
-
-  my (%line);
-  my $superlink = "";
-
-  # assign 
-  open(ABEST,  "<$blat_dir/".$wormbase->species.".best.${qspecies}_$type.ace") or $log->log_and_die("cant open $blat_dir/".$wormbase->species.".best.${qspecies}_$type.ace $!\n");
-
-  while (<ABEST>) {
-    if ($_ =~ /^Homol_data/) {
-      # flag each blat hit which is best (all of them) - set $line{$_} to 1
-      # %line thus stores keys which are combos of virtual object name + blat hit details
-      $line{$_} = 1;
-      ($superlink) = (/\"BLAT_${type}\:(\S+)\_\d+\"/);
-
-      # Print blat best hits to final output file
-      print OUT_autoace "// Source $superlink\n\n";
-      print OUT_autoace $_;
+  foreach my $tname (keys %$virt_hash) {
+    print $vfh "\nSequence : \"$tname\"\n";
+    foreach my $child (sort { my ($na) = ($a =~ /_(\d+)$/); my ($nb) = ($b =~ /_(\d+)$/); $na <=> $nb } keys %{$virt_hash->{$tname}}) {
+      printf $vfh "S_Child Homol_data %s %d %d\n", $child, @{$virt_hash->{$tname}->{$child}};
     }
   }
-  close ABEST;
-
-  # we expect to have BEST hits in elegans
-  if ($qspecies eq 'elegans' && scalar (keys %line) == 0) {
-    $log->error;
-    $log->write_to("ERROR: we don't have any BEST $type in:\n$blat_dir/".$wormbase->species.".best.${qspecies}_$type.ace\n\n");
-  }
-  $log->write_to("Have " . scalar (keys %line) . " BEST $type in:\n$blat_dir/".$wormbase->species.".best.${qspecies}_$type.ace\n");
-
-  # Now look through original output file (where everything is set to BLAT_OTHER) to
-  # output those blat OTHER hits which are not flagged as BLAT_BEST in the .best.ace file
-  # Does this by comparing entries in %line hash
-
-  my $count_other_hits = 0;
-  my $count_total_hits = 0;
-  open(AOTHER, "<$blat_dir/".$wormbase->species.".${qspecies}_$type.ace");
-  while (<AOTHER>) {
-    if ($_ =~ /^Homol_data/) {
-      my $line = $_;
-      if ($line =~ /OTHER/) {$count_total_hits++};
-      # for comparison to %line hash, need to change OTHER to BEST in $_
-      s/OTHER/BEST/g;
-      # Only output BLAT_OTHER hits in first output file which we now know NOT to
-      # really be BEST hits
-      unless (exists $line{$_}) {
-	print OUT_autoace $line;
-	$count_other_hits++;
-      }	
-    }
-  }
-  close AOTHER;
-
-  # we expect to have OTHER hits in elegans
-  if ($qspecies eq 'elegans' && $count_other_hits == 0) {
-    $log->error;
-    $log->write_to("ERROR: we don't have any OTHER $type in:\n$blat_dir/".$wormbase->species.".${qspecies}_$type.ace\n");
-  }
-  $log->write_to("Have $count_other_hits OTHER $type in:\n$blat_dir/".$wormbase->species.".${qspecies}_$type.ace\n");
-  $log->write_to("Have a total of $count_total_hits (BEST & OTHER) $type in:\n$blat_dir/".$wormbase->species.".${qspecies}_$type.ace\n");
-
-  # reset input line separator
-  $/= $oldlinesep;
-
-  ###################################
-  # produce confirmed intron output #
-  ###################################
-
-  if ($intron) {
-    open(CI_auto, ">$blat_dir/".$wormbase->species.".ci.${qspecies}_${type}.ace");
-
-    foreach my $link (sort keys %ci) {
-      my %double;
-      
-      print CI_auto "\nSequence : \"$link\"\n";
-      
-      for (my $i = 0; $i < @{$ci{$link}}; $i++) {
-	my $merge = $ci{$link}->[$i][0].":".$ci{$link}->[$i][1];
-	if (!exists $double{$merge}) {
-	  # If RST or OST modify output.
-	  if (($type eq "RST") or ($type eq "OST")) {
-	    printf CI_auto "Confirmed_intron %d %d EST $ci{$link}->[$i][2]\n",  $ci{$link}->[$i][0], $ci{$link}->[$i][1];
-	  }
-	  elsif ($type eq "mRNA") {
-	    printf CI_auto "Confirmed_intron %d %d cDNA $ci{$link}->[$i][2]\n",  $ci{$link}->[$i][0], $ci{$link}->[$i][1];
-	  }
-	  else {
-	    printf CI_auto "Confirmed_intron %d %d $type $ci{$link}->[$i][2]\n",  $ci{$link}->[$i][0], $ci{$link}->[$i][1];
-	  }
-	}
-	$double{$merge} = 1;
-      }
-    }
-    
-    close CI_auto;
-  }
+  close($vfh);
 }
 
 
-#compress acefiles so that all object data is loaded together, expanded to run on all homol
-
-my @filenames = ($wormbase->species.".${qspecies}_$type.ace", $wormbase->species.".best.${qspecies}_$type.ace", $wormbase->species.".blat.${qspecies}_$type.ace", );
-my $filename;
-$log->write_to("\n#########################################\nCompressing DNA_homolo acefiles\n#########################################\n");
-foreach $filename (@filenames) {
-  # $wormbase->run_command("/bin/mv $blat_dir/$filename $blat_dir/${filename}"."_uncompressed",$log);
-  my $fromace = "$blat_dir/$filename";
-  my $toace = "$blat_dir/${filename}_uncompressed";
-  move($fromace, $toace) || $log->write_to("WARNING: move of $fromace to $toace failed: $!\n");
-
-  if (-e $toace ) {
-    $log->write_to("Compressing $toace\n");
-    $wormbase->run_script("acezip.pl -file $toace -build", $log);
-    $log->write_to("Compressed........\n");
-  }
-}
 
 $log->mail;
 print "Finished.\n" if ($verbose);
@@ -523,151 +310,191 @@ exit(0);
 #                                                                               #
 #################################################################################
 
-sub usage {
-    my $error = shift;
-    
-    if ($error == 1) {
-	# No data-type choosen
-	print "\nNo data option choosen [-est|-mrna|-ost|-nematode|-ost|-washu|-nembase]\n";
-	print "Run with one of the above options\n\n";
-	exit(0);
-    }
-    if ($error == 2) {
-	# 'Multiple data-types choosen
-	print "\nMultiple data option choosen [-est|-mrna|-ost|-nematode|-embl|-washu|-nembase]\n";
-	print "Run with one of the above options\n\n";
-	exit(0);
-    }
-    if ($error == 3) {
-	# 'chromosome.ace' file is not there or unreadable
-	print "\nThe WormBase 'chromosome.ace' file you specified does not exist or is non-readable.\n";
-	print "Check File: ''\n\n";
-	exit(0);
-    }
-   if ($error == 20) {
-	# 
-	print "\nDon't want to do this for the -nematode or -washu or -nembase options.\n";
-	print "hasta luego\n\n";
-	exit(0);
-    }
-    elsif ($error == 0) {
-	# Normal help menu
-	exec ('perldoc',$0);
-    }
-}
 
-#############################
-# virtual object generation #
-#############################
+sub write_ace {
+  my ($out_file, $type, $best_m, $other_m, $hits) = @_;
 
-sub make_virt_objs {
-    
-  my $data = shift;
-  local (*OUT_autoace_homol);
-  local (*OUT_autoace_feat);
-  my ($name,$length,$total,$first,$second,$m,$n);
+  # strategy; divide the parent sequence into 150000-sized bins, and place each alignment
+  # into a bin. Also create an SChild for the whole parent sequence containing alignments that
+  # do not fit completely inside a bin
+  my $binsize = 100000;
   
-  # autoace
-  open (OUT_autoace_homol, ">$blat_dir/virtual_objects.".$wormbase->species.".blat.$data.$qspecies.ace") or die "$!";
-  open (OUT_autoace_feat,  ">$blat_dir/virtual_objects.".$wormbase->species.".ci.$data.$qspecies.ace")   or die "$!";
-  
-  foreach my $name (keys %make_virt_obj) {
-	$length = $make_virt_obj{$name};
-    $total = int($length/100000) +1;
-      # autoace
-    print OUT_autoace_homol "Sequence : \"$name\"\n";
-    print OUT_autoace_feat  "Sequence : \"$name\"\n";
+  my %virtuals;
 
-    for ($n = 0; $n <= $total; $n++) {
-		$m      = $n + 1;
-		$first  = ($n*100000) + 1;
-		$second = $first + 149999;
-		if (($length - $first) < 100000) {
-			$second = $length;
-		  # autoace
-	  		print OUT_autoace_homol "S_child Homol_data BLAT_$data:$name"."_$m $first $second\n";
-	  		print OUT_autoace_feat  "S_child Feature_data Confirmed_intron_$data:$name"."_$m $first $second\n";
+  foreach my $tname (keys %$hits) {
+    foreach my $hit (@{$hits->{$tname}}) {
+      my $bin = 1 +  int( $hit->{tstart} / $binsize );
+      my $bin_start = ($bin - 1) * $binsize + 1;
+      my $bin_end   = $bin_start + $binsize - 1;
+      
+      if ($bin_end > $target_lengths{$tname}) {
+        $bin_end = $target_lengths{$tname};
+      }
+      my $bin_of_end = 1 +  int( $hit->{tend} / $binsize );
 
-	  		last;
-		}					
-		else {
-	  		($second = $length) if ($second >  $length);
-	  		# autoace
-	  		print OUT_autoace_homol "S_child Homol_data BLAT_$data:$name"."_$m $first $second\n";
-	  		print OUT_autoace_feat  "S_child Feature_data Confirmed_intron_$data:$name"."_$m $first $second\n";
-		}
-	}
-    print OUT_autoace_homol "\n";
-    print OUT_autoace_feat  "\n";
+      if ($bin == $bin_of_end or
+          ($bin == $bin_of_end - 1 and $hit->{tend} - $bin_end < ($binsize / 2))) {
+        # both start and end lie in the same bin or adjacent bins - okay
+        foreach my $seg (@{$hit->{segments}}) {
+          $seg->{tstart} = $seg->{tstart} - $bin_start + 1;
+          $seg->{tend}   = $seg->{tend} - $bin_start + 1;
+        }
+      } else {
+        # hit has too great a span; skip it
+        next;
+      }
+
+      # the code below places hits that span multiple bins onto
+      # a special Homol_data that spans the whole parent sequence. 
+      # However, this is not what happens in the old code, so I 
+      # will not activiate it (for now) - klh 110317
+
+      #if ($hit->{tend} > $bin_end) {
+      #  $bin = 0;
+      #  $bin_start = 1;
+      #  $bin_end   = $target_lengths{$tname};
+      #} else {
+      #  foreach my $seg (@{$hit->{segments}}) {
+      #    $seg->{tstart} = $seg->{tstart} - $bin_start + 1;
+      #    $seg->{tend}   = $seg->{tend} - $bin_start + 1;
+      #  }
+      #}
+    
+      $hit->{bin} = $bin;
+      my $parent = "BLAT_$type:$tname";
+      if ($bin) {
+        $parent .= "_$bin";
+      }
+      
+      if (not exists $virtuals{$tname}->{$parent}) {
+        $virtuals{$tname}->{$parent} = [$bin_start, $bin_end];
+      }
+    }
   }
-  close OUT_autoace_homol;
-  close OUT_autoace_feat;
 
+ 
+  # finally, write out the results
+  open(my $out_fh, ">$out_file") or $log->log_and_die("Could not open $out_file for writing\n");
+  foreach my $tname (keys %$hits) {
+    my @list =  grep { exists $_->{bin} } @{$hits->{$tname}};
+    @list = sort { $a->{bin} <=> $b->{bin} or $a->{tstart} <=> $b->{tstart} } @list;
+
+    my $prev_bin;
+    foreach my $hit (@list) {
+
+      if (not defined $prev_bin or $hit->{bin} != $prev_bin) {
+        printf($out_fh 
+               "\nHomol_data : \"BLAT_%s:%s%s\"\n", 
+               $type,
+               $tname,
+               $hit->{bin} ? "_" . $hit->{bin} : "");
+        $prev_bin = $hit->{bin};
+      }
+      
+      
+      foreach my $seg (@{$hit->{segments}}) {
+        printf($out_fh "DNA_homol\t\"%s\"\t%s\t%.1f\t%d\t%d\t%d\t%d\n",
+               $hit->{qname},
+               ($hit->{isbest}) ? $best_m : $other_m,
+               $hit->{score},
+               $hit->{tstrand} eq "+" ? $seg->{tstart} : $seg->{tend},
+               $hit->{tstrand} eq "+" ? $seg->{tend}   : $seg->{tstart},
+               $seg->{qstart},
+               $seg->{qend});
+        
+      }
+    }
+  }
+
+  close($out_fh);
+
+  return \%virtuals;
 }
 
+
+#########################
+# confirm introns
+########################
+sub confirm_introns {
+  my ($outfile, $type, $hits) = @_;
+
+  my (%ci, $no_direction);
+
+  foreach my $tname (keys %$hits) {
+    
+    my @alns = grep { $_->{isbest} } @{$hits->{$tname}};
+
+    foreach my $aln (@alns) {
+      my $qname = $aln->{qname};
+
+      if ($type eq 'mRNA' and not exists $estorientation{$qname}) {
+        $estorientation{$aln->{qname}} = 5;
+      }
+
+      my @segs = sort { $a->{tstart} <=> $b->{tstart} } @{$aln->{segments}};
+
+      for(my $y=1; $y < @segs; $y++) {
+        my $first = $segs[$y-1]->{tend} + 1;
+        my $second = $segs[$y]->{tstart} - 1;
+
+        if ($aln->{qstrand} eq $aln->{tstrand}) {
+          if ($segs[$y-1]->{qend} + 1 == $segs[$y]->{qstart} and ($second - $first) > 2) {
+            if (exists $estorientation{$qname} && $estorientation{$qname} eq '3') {
+              push @{$ci{$tname}}, [$second,$first,$qname];
+            } elsif (exists $estorientation{$qname} && $estorientation{$qname} eq '5') {
+              push @{$ci{$tname}}, [$first,$second,$qname];
+            } else {
+              $no_direction++;
+            }
+          }
+        } else {
+          if ($segs[$y-1]->{qstart} - 1 == $segs[$y]->{qend} and (($second - $first) > 2)) {
+            if (exists $estorientation{$qname} && $estorientation{$qname} eq '3') {
+              push @{$ci{$tname}}, [$first,$second,$qname];
+            } elsif (exists $estorientation{$qname} && $estorientation{$qname} eq '5') {
+              push @{$ci{$tname}}, [$second,$first,$qname]; 
+            } else {
+              $no_direction++;
+            }
+          }
+        }
+      }
+    }
+  }
+    
+  $log->write_to("WARNING: Direction not found for $no_direction transcripts\n\n") if ($no_direction);
+
+  ###################################
+  # produce confirmed intron output #
+  # Write them out as-is (i.e. not on virtuals)
+  # because they are not loaded directly but processed 
+  # another script
+  ###################################
+
+  open(my $ci_fh, ">$outfile");
+
+  foreach my $tname (sort keys %ci) {
+    my %double;
+      
+    print $ci_fh "\nSequence : \"$tname\"\n";
+      
+    foreach my $intr (@{$ci{$tname}}) {
+      my $merge = $intr->[0].":".$intr->[1];
+      if (not exists $double{$merge}) {
+        # If RST or OST modify output.
+        if (($type eq "RST") or ($type eq "OST")) {
+          printf $ci_fh "Confirmed_intron %d %d EST %s\n", @$intr;
+        } elsif ($type eq "mRNA") {
+          printf $ci_fh "Confirmed_intron %d %d cDNA %s\n", @$intr;
+        } else {
+          printf $ci_fh "Confirmed_intron %d %d $type %s\n", @$intr;
+        }
+      }
+      $double{$merge} = 1;
+    }
+  }
+  close($ci_fh);
+}
 
 __END__
-
-=pod
-
-=head1 NAME - blat2ace.pl
-
-=head2 USAGE
-
-blat2ace.pl maps blat output to acedb. Thereby, it produces output for autoace and camace
-(species.ace and camace,ace). In addition, it produces files assigning the ESTs to one place 
-in the genome (species.best.ace and camace.best.ace). ESTs that have more than one best 
-match are reported in morethan1match.txt. 
-
-blat2ace.pl  arguments:
-
-=over 4
-
-=item 
-
--camace => produce output for camace (camace.blat.ace, /helpfiles/camace.best.ace, /helpfiles/camace.ace)
-
-=item 
-
--intron => produce output for confirmed introns (species.ci.ace, camace.ci.ace)
-
-=item 
-
--mrna => perform everything for mRNAs
-
-=item 
-
--ncrna => perform everything for ncRNAs
-
-=item
-
--est => perform everything for ESTs
-
-=item
-
--ost => perform everything for OSTs
-
-=item
-
--nematode => perform everything for non-C. elegans ESTs
-
-=item
-
--nembase => perform everything for NemBase contigs
-
-=item
-
--washu => perform everything for WashU Nematode.net - John Martin <jmartin@watson.wustl.edu> contigs
-
-=item
-
--embl => perform everything for non-WormBase CDSs in EMBL
-
-=back
-
-=head1 AUTHOR
-
-Kerstin Jekosch (kj2@sanger.ac.uk)
-
-=cut
 

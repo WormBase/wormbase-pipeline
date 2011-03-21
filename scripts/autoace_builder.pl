@@ -7,7 +7,7 @@
 # Usage : autoace_builder.pl [-options]
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2011-03-01 15:57:29 $
+# Last edited on: $Date: 2011-03-21 11:01:48 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -124,7 +124,7 @@ $wormbase->run_script( 'BLAT_controller.pl -dump', $log ) if $prep_blat;
 #//--------------------------- batch job submission -------------------------//
 $wormbase->run_script( 'BLAT_controller.pl -run', $log )        if $run_blat;
 #//--------------------------- batch job submission -------------------------//
-$wormbase->run_script( 'BLAT_controller.pl -virtual -process -postprocess -intron -load', $log ) if $finish_blat;
+$wormbase->run_script( 'BLAT_controller.pl -postprocess -process -intron -load', $log ) if $finish_blat;
 #//--------------------------- batch job submission -------------------------//
 # $build_dumpGFF.pl; (blat) is run chronologically here but previous call will operate
 

@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl5.8.0 -w
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2011-03-16 16:36:46 $
+# Last edited on: $Date: 2011-03-21 11:01:49 $
 
 
 use lib $ENV{'CVS_DIR'};
@@ -18,7 +18,7 @@ use LSF RaiseError => 0, PrintError => 1, PrintOutput => 0;
 use LSF::JobManager;
 
 my ($test, $database, $debug);
-my ($mask, $dump_dna, $run, $postprocess, $load, $process, $virtual, $intron);
+my ($mask, $dump_dna, $run, $postprocess, $load, $process, $intron);
 my @types;
 my $all;
 my $store;
@@ -33,14 +33,12 @@ GetOptions (
 	    'mask'        => \$mask,
 	    'dump'        => \$dump_dna,
 	    'process'     => \$process,
-	    'virtual'     => \$virtual,
 	    'run'         => \$run,
 	    'postprocess' => \$postprocess,
 	    'load'        => \$load,
 	    'types:s'     => \@types,
 	    'all'         => \$all,
 	    'qspecies:s'  => \$qspecies,    #query species (ie cDNA seq)
-	    'nematode'    => \$nematode,
 	    'intron'      => \$intron
 	   );
 
@@ -55,10 +53,12 @@ else {
 			   );
 }
 
-$species     = $wormbase->species;#for load
+
+$database    = $wormbase->autoace unless $database;
+$species  = $wormbase->species;
+
 my $log      = Log_files->make_build_log($wormbase);
 my $wormpub  = $wormbase->wormpub;
-$database    = $wormbase->autoace unless $database;
 my $blat_dir = $wormbase->blat;
 my $seq_obj  = Sequence_extract->invoke($database, undef, $wormbase) if $intron;
 
@@ -101,13 +101,6 @@ if(@types) {
   @nematodes = ();
 }
 
-#only do the "other nematode" stuff
-if($nematode) {
-  foreach my $mt (keys %mol_types){
-    next if (grep /$mt/ ,@nematodes);
-    delete $mol_types{$mt};
-  }
-}
 
 # mask the sequences based on Feature_data within the species database (or autoace for elegans.)
 if( $mask ) {
@@ -145,7 +138,7 @@ if ( $run ) {
           $chunk_num = $1;
         }
         
-        my $cmd = "bsub -E \"ls /software/worm\" -J ${species}_${moltype}_${chunk_num} \"/software/worm/bin/blat/blat -noHead -t=dnax -q=dnax ";
+        my $cmd = "bsub -E \"test -d /software/worm\" -o /dev/null -e /dev/null -J ${species}_${moltype}_${chunk_num} \"/software/worm/bin/blat/blat -noHead -t=dnax -q=dnax ";
         $cmd .= $wormbase->genome_seq ." $seq_file ";
         $cmd .= $wormbase->blat."/${species}_${moltype}_${chunk_num}.psl\"";
         $wormbase->run_command($cmd, $log);
@@ -164,7 +157,7 @@ if ( $run ) {
         $chunk_num = $1;
       }
       
-      my $cmd = "bsub -E \"ls /software/worm\" -o /dev/null -e /dev/null -J ".$wormbase->species . "_${moltype}_${chunk_num} \"/software/worm/bin/blat/blat -noHead ";
+      my $cmd = "bsub -E \"test -d /software/worm\" -o /dev/null -e /dev/null -J ".$wormbase->species . "_${moltype}_${chunk_num} \"/software/worm/bin/blat/blat -noHead ";
       $cmd .= $wormbase->genome_seq ." $seq_file ";
       $cmd .= $wormbase->blat."/".$wormbase->species."_${moltype}_${chunk_num}.psl\"";
       $wormbase->run_command($cmd, $log);	
@@ -183,9 +176,8 @@ if( $postprocess ) {
   }
 }
 
-if ( $process or $virtual ) {
+if ( $process ) {
   
-  # first run all the blat2ace.pl -virtual jobs
   my $lsf1 = LSF::JobManager->new();
   foreach my $species (keys %mol_types) {
     foreach my $type (@{$mol_types{$species}} ) {
@@ -193,13 +185,27 @@ if ( $process or $virtual ) {
       $log->write_to("Submitting $species $type for virtual procesing\n");
       
       my $job_name = "worm_".$wormbase->species."_blat";
-      my $cmd1 = $wormbase->build_cmd("blat2ace.pl -virtual -type $type -qspecies $species");
+
+      my $cmd;
+      # only get data for confirmed introns from same-species alignmenrs
+      if ($species eq $wormbase->species and $intron) {
+        $cmd = $wormbase->build_cmd("blat2ace.pl -virtual -intron -type $type -qspecies $species");
+      } else {
+        $cmd = $wormbase->build_cmd("blat2ace.pl -virtual -type $type -qspecies $species");
+      }
+      if ($test) {
+        $cmd .= " -test";
+      }
+      if ($debug) {
+        $cmd .= " -debug $debug";
+      }
+
       # ask for a file size limit of 2 Gb and a memory limit of 4 Gb
       my @bsub_options = (-F => "2000000", 
 			  -M => "4000000", 
 			  -R => "\"select[mem>4000] rusage[mem=4000]\"",
 			  -J => $job_name);
-      $lsf1->submit(@bsub_options, $cmd1) if $virtual;
+      $lsf1->submit(@bsub_options, $cmd);
       
     }
   }
@@ -210,36 +216,21 @@ if ( $process or $virtual ) {
   }
   $lsf1->clear;   
   
-  # now run all the blat2ace.pl -intron jobs
-  my $lsf2 = LSF::JobManager->new();
-  foreach my $species (keys %mol_types) {
-    foreach my $type (@{$mol_types{$species}} ) {
-      #create virtual objects
-      $log->write_to("Submitting $species $type for intron processing\n");
-    	
-      my $job_name = "worm_".$wormbase->species."_blat";
-      my $cmd2 = $wormbase->build_cmd("blat2ace.pl -type $type -qspecies $species -intron");
-      my @bsub_options = (-F => "2000000", 
-			  -M => "4000000", 
-			  -R => "\"select[mem>4000] rusage[mem=4000]\"",
-			  -J => $job_name);
-      $lsf2->submit(@bsub_options, $cmd2) if $process;
-
-    }
-  }
-  $lsf2->wait_all_children( history => 1 );
-  $log->write_to("All blat2ace runs have completed!\n");
-  for my $job ( $lsf2->jobs ) {    # much quicker if history is pre-cached
-    $log->error("$job exited non zero\n") if $job->history->exit_status != 0;
-  }
-  $lsf2->clear;   
-
   if($intron) {
     $log->write_to("confirming introns . . \n");
     #only do for self species matches
     foreach my $type (@{$mol_types{$wormbase->species}} ) {
-      $log->write_to("\t$type\n");
-      &confirm_introns($type);
+      my $virt_hash = &confirm_introns($wormbase->species, $type);
+      my $vfile = "$blat_dir/virtual_objects." . $wormbase->species . ".ci.${type}." . $wormbase->species . ".ace";
+      open(my $vfh, ">$vfile") or $log->log_and_die("Could not open $vfile for writing\n");
+
+      foreach my $tname (keys %$virt_hash) {
+        print $vfh "\nSequence : \"$tname\"\n";
+        foreach my $child (sort { my ($na) = ($a =~ /_(\d+)$/); my ($nb) = ($b =~ /_(\d+)$/); $na <=> $nb } keys %{$virt_hash->{$tname}}) {
+          printf $vfh "S_Child Feature_data %s %d %d\n", $child, @{$virt_hash->{$tname}->{$child}};
+        }
+      }
+      close($vfh);
     }
   }
 }
@@ -250,27 +241,29 @@ if( $load ) {
     $log->write_to("Loading $species BLAT data\n");
     foreach my $type (@{$mol_types{$species}}){
       $log->write_to("\tloading BLAT data - $type\n"); 
+
       # virtual objs
       my $file =  "$blat_dir/virtual_objects." . $wormbase->species . ".blat.$type.$species.ace";
-      # skip the virtual_objects ace files that are not created
-      if ($wormbase->species eq $species || -e $file) {
+      if (-e $file) {
 	$wormbase->load_to_database( $database, $file,"virtual_objects_$type", $log);
       } else {
 	$log->write_to("\tskipping $file\n"); 
       }
 
-      # Don't need to add confirmed introns from nematode data (because there are none!)
-      unless ( ($type eq "nematode") || ($type eq "washu") || ($type eq "nembase") || ($type eq "tc1") || ($type eq "embl")|| ($type eq "ncrna") ) {
-	$file = "$blat_dir/virtual_objects.".$wormbase->species.".ci.$type.$species.ace"; 
-	$wormbase->load_to_database($database, $file, "blat_confirmed_introns_$type", $log);
+      # confirmed introns - will only be any for within-species alignments
+      if ($species eq $wormbase->species) {
 
-	# only load in the good_intron files that have been created in confirm_introns()
-        if ($species eq $wormbase->species) {
-	  $file = "$blat_dir/".$wormbase->species.".good_introns.$type.ace";
-	  $wormbase->load_to_database($database, $file, "blat_good_introns_$type", $log);
-	}
+        my ($in_v_tag, $in_v_file) = ("blat_introns_virtual$type",  "$blat_dir/virtual_objects.".$wormbase->species.".ci.$type.$species.ace");
+        my ($in_tag, $in_file) = ("blat_good_introns_${type}", "$blat_dir/".$wormbase->species.".good_introns.$type.ace");
+
+        if (-e $in_v_file and -e $in_file) {
+          $wormbase->load_to_database($database, $in_v_file, $in_v_tag, $log);
+          $wormbase->load_to_database($database, $in_file, $in_tag, $log);
+        } else {
+          $log->write_to("\tskipping ci file(s) for $type because one or both is missing\n"); 
+        }
       }
-
+        
       # BLAT results
       $file = "$blat_dir/".$wormbase->species.".blat.${species}_$type.ace";
       $wormbase->load_to_database($database, $file, "blat_${species}_${type}_data", $log,1);
@@ -281,143 +274,123 @@ if( $load ) {
 
 #confirm introns
 sub confirm_introns {
-
-  my $type = shift;
-  local (*GOOD,*BAD);
+  my ($qspecies, $type) = @_;
   
   # open the output files
-  open (GOOD, ">$blat_dir/".$wormbase->species.".good_introns.$type.ace") or die "$!";
-  open (BAD,  ">$blat_dir/".$wormbase->species.".bad_introns.$type.ace")  or die "$!";
+  open (my $good_fh, ">$blat_dir/".$wormbase->species.".good_introns.$type.ace") or die "$!";
+  open (my $bad_fh,  ">$blat_dir/".$wormbase->species.".bad_introns.$type.ace")  or die "$!";
   
-  my ($link,@introns,$dna,$switch);
- 
-  
+  my ($link,@introns, %seqlength, %virtuals);
+   
   $/ = "";
   	
-  # set qspecies to be just 'elegans' for now
-  # is this meant to iterate over all species?
-  # if so, then we need separate $blat_dir/".$wormbase->species.".{good,bad}_introns.$type.ace files for each species
-  my $qspecies = $wormbase->species;
-  	
-  open (CI, "<$blat_dir/".$wormbase->species.".ci.${qspecies}_${type}.ace")  or $log->log_and_die("Cannot open $blat_dir/".$wormbase->species.".ci.${qspecies}_${type}.ace $!\n");
+  open (CI, "<$blat_dir/".$wormbase->species.".ci.${qspecies}_${type}.ace")  
+      or $log->log_and_die("Cannot open $blat_dir/".$wormbase->species.".ci.${qspecies}_${type}.ace $!\n");
+
   while (<CI>) {
     next unless /^\S/;
     if (/Sequence : \"(\S+)\"/) {
       $link = $1;
-      print "Sequence : $link\n" if $debug;
+
+      if (not exists $seqlength{$link}) {
+        $seqlength{$link} = length($seq_obj->Sub_sequence($link));
+      }
+
       @introns = split /\n/, $_;
       
       # evaluate introns #
       $/ = "";
       foreach my $test (@introns) {
 	if ($test =~ /Confirmed_intron/) {
-          my @f = split / /, $test;
+          my @f = split /\s+/, $test;
 	  
 	  #######################################
 	  # get the donor and acceptor sequence #
 	  #######################################
-	  
-          my ($first,$last,$start,$end,$pastfirst,$prelast);
-          if ($f[1] < $f[2]) {
-            ($first,$last,$pastfirst,$prelast) = ($f[1]-1,$f[2]-1,$f[1],$f[2]-2);
+	            
+          my ($tstart, $tend, $strand) = ($f[1], $f[2], 1);
+          if ($tend < $tstart) {
+            ($tstart, $tend, $strand) = ($tend, $tstart, -1);
           }
-          else {
-            ($first,$last,$pastfirst,$prelast) = ($f[2]-1,$f[1]-1,$f[2],$f[1]-2);
-          }	
+
           
-          $start = $seq_obj->Sub_sequence($link,$first,2);
-          $end   = $seq_obj->Sub_sequence($link,$prelast,2);
+          my $start_splice = $seq_obj->Sub_sequence($link,$tstart - 1, 2);
+          my $end_splice   = $seq_obj->Sub_sequence($link,$tend - 2,2);
 	  
-          print "Coords start $f[1] => $start, end $f[2] => $end\n" if $debug;
+          print "Coords start => $tstart, end $tend\n" if $debug;
 	  
 	  ##################
 	  # map to S_child #
 	  ##################
-	  
-	  my $lastvirt = int((length $seq_obj->Sub_sequence($link)) /100000) + 1;
-	  my ($startvirt,$endvirt,$virtual);
-	  if ((int($first/100000) + 1 ) > $lastvirt) {
-	    $startvirt = $lastvirt;
-	  }
-	  else {
-	    $startvirt = int($first/100000) + 1;
-	  }
-	  if ((int($last/100000) + 1 ) > $lastvirt) {
-	    $endvirt = $lastvirt;
-	  }
-	  else {
-	    $endvirt = int($first/100000) + 1;
-	  }
-	  
-	  if ($startvirt == $endvirt) { 
-	    $virtual = "Confirmed_intron_$type:" .$link."_".$startvirt;
-          }
-	  elsif (($startvirt == ($endvirt - 1)) && (($last%100000) <= 50000)) {
-	    $virtual = "Confirmed_intron_$type:" .$link."_".$startvirt;
-	  }
-	  
-	  #################
-	  # check introns #
-	  #################
-	  
-          my $firstcalc = int($f[1]/100000);
-          my $seccalc   = int($f[2]/100000);
-          print STDERR "Problem with $test\n" unless (defined $firstcalc && defined $seccalc); 
-          my ($one,$two);
-          if ($firstcalc == $seccalc) {
-            $one = $f[1]%100000;
-            $two = $f[2]%100000;
-          }
-          elsif ($firstcalc == ($seccalc-1)) {
-            $one = $f[1]%100000;
-            $two = $f[2]%100000 + 100000;
-            print STDERR "$virtual: $one $two\n";
-	    }
-          elsif (($firstcalc-1) == $seccalc) {
-            $one = $f[1]%100000 + 100000;
-            $two = $f[2]%100000;
-            print STDERR "$virtual: $one $two\n";
-          } 
-          print STDERR "Problem with $test\n" unless (defined $one && defined $two); 
+          my $binsize = 100000;
+
+          my $bin = 1 +  int( $tstart / $binsize );
+          my $bin_start = ($bin - 1) * $binsize + 1;
+          my $bin_end   = $bin_start + $binsize - 1;
           
-          if ( ( (($start eq 'gt') || ($start eq 'gc')) && ($end eq 'ag')) ||
-               (  ($start eq 'ct') && (($end eq 'ac') || ($end eq 'gc')) ) ) {	 
-            print GOOD "Feature_data : \"$virtual\"\n";
+          if ($bin_end > $seqlength{$link}) {
+            $bin_end = $seqlength{$link};
+          }
+          my $bin_of_end = 1 +  int( $tend / $binsize );
+          
+          if ($bin == $bin_of_end or
+              ($bin == $bin_of_end - 1 and $tend - $bin_end < ($binsize / 2))) {
+            # both start and end lie in the same bin or adjacent bins - okay
+            $tstart = $tstart - $bin_start + 1;
+            $tend = $tend - $bin_start + 1;
+
+            if ($strand < 0) {
+              ($tstart, $tend) = ($tend, $tstart);
+            }
+          } else {
+            # intron has too great a span; skip it. 
+            next;
+          }
+          
+          my $virtual = "Confirmed_intron_${type}:${link}_${bin}";
+      
+          if (not exists $virtuals{$link}->{$virtual}) {
+            $virtuals{$link}->{$virtual} = [$bin_start, $bin_end];
+          }
+          
+          if ( ( (($start_splice eq 'gt') || ($start_splice eq 'gc')) && ($end_splice eq 'ag')) ||
+               (  ($start_splice eq 'ct') && (($end_splice eq 'ac') || ($end_splice eq 'gc')) ) ) {	 
+
+            print $good_fh "Feature_data : \"$virtual\"\n";
             
             # check to see intron length. If less than 25 bp then mark up as False
             # dl 040414
             
-            if (abs ($one - $two) <= 25) {
-              print GOOD "Confirmed_intron $one $two False $f[4]\n\n";
-            }
-            else {
+            if (abs($tend - $tstart) <= 25) {
+              print $good_fh "Confirmed_intron $tstart $tend False $f[4]\n\n";
+            } else {
               if ($type eq "mRNA"){
-                print GOOD "Confirmed_intron $one $two cDNA $f[4]\n\n";
+                print $good_fh "Confirmed_intron $tstart $tend cDNA $f[4]\n\n";
               }
               else {
-                print GOOD "Confirmed_intron $one $two EST $f[4]\n\n";
+                print $good_fh "Confirmed_intron $tstart $tend EST $f[4]\n\n";
               }
             }
           }
           else {
             if ($type eq "mRNA"){
-              print BAD "Feature_data : \"$virtual\"\n";
-              print BAD "Confirmed_intron $one $two cDNA $f[4]\n\n";		
+              print $bad_fh "Feature_data : \"$virtual\"\n";
+              print $bad_fh "Confirmed_intron $tstart $tend cDNA $f[4]\n\n";		
             }
             else {
-              print BAD "Feature_data : \"$virtual\"\n";
-		print BAD "Confirmed_intron $one $two EST $f[4]\n\n";
+              print $bad_fh "Feature_data : \"$virtual\"\n";
+              print $bad_fh "Confirmed_intron $tstart $tend EST $f[4]\n\n";
             }
           }
         }
       }
     }
   }
-  close CI;
+  close(CI);
+  close($good_fh);
+  close($bad_fh);
   
-  close GOOD;
-  close BAD;
-  
+  return \%virtuals;
 }
 
 
@@ -465,71 +438,3 @@ sub dump_dna {
 }
 __END__
 
-=pod
-
-=head1 NAME - BLAT_controller.pl
-
-=head2 USAGE
-
-BLAT_controller.pl is a wrapper for the several scripts involved in running the various BLAT jobs in the WormBase build
-
-BLAT_controller.pl  arguments:
-
-=over 4
-
-=item 
-
--debug user  =  debug mode to specify who gets log mail
-
-=item 
-
--test        =  use the test build
-
-=item 
-
--store string  =  load a previously serialised Wormbase object ( from Wormbase.pm ) to maintain test and debug setting when called from autoace_builder.pl
-
-=item 
-
--database string = run on database other than build
-
-
- * script action options
-
-=item 
-
--mask        runs transcriptmasker.pl  to mask ESTs polyA TSLs etc
-
-=item 
-
--dump        dumps the target DNA sequences to
-
-=item 
-
--process     runs blat_them_all.pl -process which runs blat2ace.pl to convert psl -> ace files
-
-=item 
-
--virtual     runs blat_them_all.pl -virtual to create the virtual object the BLAT results hang off
-
-=item 
-
--run         runs batch_BLAT.pl which shatters ESTs and nematode and submits bsub jobs to cbi1
-
-=item 
-
--postprocess merges the psl files from the shattered EST and nematode files
-
-=item 
-
--load       loads the BLAT acefiles in to the specified database
-
-=item 
-
--types string  allows the specification of certain types to run BLAT. Valid types : est mrna ncrna ost nematode embl tc1 washu nembase
-
-=item 
-
--all        runs all of the above tpyes.
-
-=cut
