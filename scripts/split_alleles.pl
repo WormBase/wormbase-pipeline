@@ -131,7 +131,7 @@ $log->mail();
 sub mapAlleles {
   my ($id_file, $out_file) = @_;
   
-  my $submitstring="/software/bin/perl $Bin/map_Alleles.pl -idfile $id_file -outfile $out_file -noload -outdir -species $species";
+  my $submitstring="/software/bin/perl $Bin/map_Alleles.pl -idfile $id_file -outfile $out_file -noload -species $species";
   $submitstring .= " -debug $debug" if $debug;
   $submitstring .= " -test"  if $test;
 
