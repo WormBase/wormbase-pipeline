@@ -7,7 +7,7 @@
 # Usage : autoace_builder.pl [-options]
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2011-03-21 11:01:48 $
+# Last edited on: $Date: 2011-03-23 22:55:14 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -393,7 +393,7 @@ sub make_UTR {
   
   $log->write_to("bsub commands . . . . \n\n");
   my $lsf = LSF::JobManager->new(-J => "make_UTRs", -o => "/dev/null");
-  foreach (@{$wormbase->get_binned_chroms('-mito')} ) {
+  foreach (@{$wormbase->get_binned_chroms(-mito => 1)} ) {
     my $cmd = "make_UTR_GFF.pl -chromosome $_";
     $log->write_to("$cmd\n");
     $cmd = $wormbase->build_cmd($cmd);
