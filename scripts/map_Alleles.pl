@@ -36,6 +36,7 @@ use map_Alleles;
 use Wormbase;
 use Getopt::Long;
 use IO::File;              
+use Carp;
 
 sub print_usage{
 print  <<USAGE;
@@ -82,10 +83,15 @@ my $maintainer = 'All';
 my $wb;
 
 if ($store) {
-    $wb = Storable::retrieve($store)
+  $wb = Storable::retrieve($store)
       or croak("cannot restore wormbase from $store");
 }
-else { $wb = Wormbase->new( -debug => $debug, -test => $test, -organism => $species, -autoace => $database ) }
+else { 
+  $wb = Wormbase->new( -debug => $debug, 
+                       -test => $test, 
+                       -organism => $species, 
+                       -autoace => $database ); 
+}
 
 my $log = Log_files->make_build_log($wb);
 MapAlleles::setup($log,$wb) unless $database;
@@ -102,17 +108,18 @@ if (not $acefile) {
 
 
 if ($debug) {
-    print "DEBUG \"$debug\"\n\n";
+    print STDERR "DEBUG \"$debug\"\n\n";
 }
 
 # get filtered arrayref of the alleles
 my $alleles;
 if ($allele){
-       $alleles= MapAlleles::get_allele($allele);
+  $alleles= MapAlleles::get_allele($allele);
 }elsif ($idfile){
-       $alleles= MapAlleles::get_alleles_fromFile($idfile);
+  croak("Idfile $idfile does not exist\n") if not -e $idfile;
+  $alleles= MapAlleles::get_alleles_fromFile($idfile);
 }else{
-       $alleles= MapAlleles::get_all_alleles();
+  $alleles= MapAlleles::get_all_alleles();
 }
 
 # map them
