@@ -39,7 +39,9 @@ use Carp;
 use Wormbase;
 use Coords_converter;
 use Bio::SeqIO;    
+use strict;
 
+our @ISA;
 @ISA = ('Coords_converter');
 
 
@@ -96,7 +98,7 @@ find sequence $seqname
 dna -f $database/CHROMOSOMES/$seqname.dna
 EOF
 	            close ACE;
-                    $wormbase->remove_blank_lines("$database/CHROMOSOMES/$seqname.dna", $log);
+                    $wormbase->remove_blank_lines("$database/CHROMOSOMES/$seqname.dna");
 	          }
 
 		  # read the file/sequence into $self
@@ -199,8 +201,8 @@ sub Sub_sequence
 	return;
       }
       $length = $seqlength unless $length; #full sequence of object.
-      return $self->{SEQUENCE}->{"$chrom"} unless ($start and $length);#return whole seq if no coords passed
       $subseq = substr( ($self->{SEQUENCE}->{"$chrom"} ),$start, $length+(2*$extend) ); #extend either end
+
     } else {
       carp "couldn't work out chromosome that sequence $seq derives from\n";
     }
@@ -311,7 +313,7 @@ sub flanking_sequences {
 	$flanks[1] = $self->Sub_sequence($seq,$end,$length);
 	
 	if( $end < $start ){
-		$tmp = $self->DNA_revcomp($flanks[0]);
+		my $tmp = $self->DNA_revcomp($flanks[0]);
 		$flanks[0] = $self->DNA_revcomp($flanks[1]);
 		$flanks[1] = $tmp;
 	}
