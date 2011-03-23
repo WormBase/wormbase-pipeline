@@ -45,8 +45,9 @@ sub map_cDNA
       return 0;
     }
     else {
-      #this must overlap - check Splice Leader
-      return 0 unless ($self->check_features($cdna) == 1);
+      if (not $self->check_features($cdna)) {
+        return 0;
+      }
       
       #check exon matching
       my $match = $self->check_exon_match( $cdna );
