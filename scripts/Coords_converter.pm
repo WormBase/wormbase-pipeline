@@ -910,10 +910,11 @@ sub LocateSpan {
           if (!exists $self->{SENSE}->{$clone} || $self->{SENSE}->{$clone} eq '+') {
             $x += $offset;
             $y += $offset;
-          } else {			# are some contigs in briggsae in the reverse orientation?
+          } else {
             my $seqlen = $self->{LENGTH}->{$clone};
             $x = $offset + $seqlen - $x + 1;
             $y = $offset + $seqlen - $y + 1;
+            ($x, $y) = ($y, $x);
           }
           last SLINKS;
         }
@@ -928,15 +929,8 @@ sub LocateSpan {
     $y += $self->{$chrom}->{'SUPERLINK'}->{$slink}->[0] - 1;
   }
   
-  my $strand = "+";
   my ($seq, $rel_x, $rel_y);  # coordinates relative to returned seq
    
-  # set strand and make sure $x is always lower coord
-  if( $y < $x ) {
-    $strand = "-";
-    $self->swap(\$x, \$y);
-  }
-
   # see if the span is within a clone
   my ($clone, $x_slink, $y_slink, $sl_start) = $self->GetCloneFromCoords($chrom, $x, $y);
   
@@ -951,6 +945,7 @@ sub LocateSpan {
       my $seqlen = $self->{LENGTH}->{$clone};
       $rel_x = $seqlen - $rel_x + 1;
       $rel_y = $seqlen - $rel_y + 1;
+      ($rel_x, $rel_y) = ($rel_y, $rel_x);
     } 
 
   } else {
@@ -965,12 +960,71 @@ sub LocateSpan {
       $seq = "$chrom";
     }
   }
-  if( $strand eq "-" ){
-    $self->swap(\$rel_x,\$rel_y);
-  }
   
   return ($seq, $rel_x, $rel_y);
 }
+
+
+=head2 LocateSpanUp
+
+Title   :   LocateSpanUp
+Usage   :   my @data = $coords->LocateSpan("AH6", 25, 100);
+Function:   Returns the toplevel sequence coords of the given low(er) level piece
+Returns :   ($chromosome, $start, $end)
+Args    :   Sequence obj (CHROMOSOME or SUPERLINK) and two coordinates within that eg ("CHROMOSOME_I", 3000, 3100)
+Non-elegans : Works as expected.
+
+=cut
+
+sub LocateSpanUp {
+  my $self = shift;
+  my $seqid = shift;
+  my $x = shift;
+  my $y = shift;
+  
+  $x = 1 if not defined $x;
+  $y = $self->{LENGTH}->{$seqid} if not defined $y;
+
+  if ( $self->isa_superlink( $seqid ) ) {
+    my $chrom = $self->{SUPERLINK2CHROM}->{$seqid};
+
+    $x += $self->{$chrom}->{'SUPERLINK'}->{$seqid}->[0] - 1;
+    $y += $self->{$chrom}->{'SUPERLINK'}->{$seqid}->[0] - 1;
+
+    $seqid = $chrom;
+  } elsif ( not $self->isa_chromosome ) {
+    my ($superlink, $chromosome, $seq);
+    
+    SLINKS:
+    foreach my $slink (keys %{$self->{SUPERLINK}} ) {
+      foreach my $clone (keys %{$self->{SUPERLINK}->{$slink}} ) {
+        
+        if( "$clone" eq "$seqid" ) {
+          my $chrom = $self->_getChromFromSlink($slink);
+          
+          # modify the starting coordinate
+          my $offset = $self->{$chrom}->{SUPERLINK}->{$slink}->[0] - 1 ; # superlink base coords
+          $offset += $self->{SUPERLINK}->{$slink}->{$clone}->[0] - 1; # clone base coords
+          
+          if (!exists $self->{SENSE}->{$clone} || $self->{SENSE}->{$clone} eq '+') {
+            $x += $offset;
+            $y += $offset;
+          } else {
+            my $seqlen = $self->{LENGTH}->{$clone};
+            $x = $offset + $seqlen - $x + 1;
+            $y = $offset + $seqlen - $y + 1;
+            ($x, $y) = ($y, $x);
+          }
+          $seqid = $chrom;
+          last SLINKS;
+        }
+      }
+    }
+  }
+
+  return ($seqid, $x, $y);
+}
+
 
 =head2 isa_chromosome
 
