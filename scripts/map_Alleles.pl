@@ -36,7 +36,6 @@ use map_Alleles;
 use Wormbase;
 use Getopt::Long;
 use IO::File;              
-use Carp;
 
 sub print_usage{
 print  <<USAGE;
@@ -99,7 +98,7 @@ MapAlleles::set_wb_log($log,$wb,$weak_checks) if $database;
 
 my $release=$wb->get_wormbase_version;
 if ($outdir and $acefile) {
-  croak("Should not give -outdir and -outfile - choose one");
+  $log->log_and_die("Should not give -outdir and -outfile - choose one");
 }
 if (not $acefile) {
   $outdir = $wb->acefiles if not $outdir;
@@ -116,7 +115,7 @@ my $alleles;
 if ($allele){
   $alleles= MapAlleles::get_allele($allele);
 }elsif ($idfile){
-  croak("Idfile $idfile does not exist\n") if not -e $idfile;
+  $log->log_and_die("Idfile $idfile does not exist\n") if not -e $idfile;
   $alleles= MapAlleles::get_alleles_fromFile($idfile);
 }else{
   $alleles= MapAlleles::get_all_alleles();
