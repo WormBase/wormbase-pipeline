@@ -43,11 +43,13 @@ package Feature_mapper;
 
 use lib $ENV{'CVS_DIR'};
 
+use strict;
 use Sequence_extract;
 use Carp;
 use String::Approx qw(aindex aslice adist);
 use Modules::Remap_Sequence_Change;
 
+our (@ISA);
 
 @ISA = ('Sequence_extract');
 
@@ -85,37 +87,42 @@ sub new
 =cut
 
 
-sub map_feature
-  {
-    my ($self, $seq, $flank_L, $flank_R) = @_;
-    my $dna = $self->Sub_sequence($seq);
-    my ($left_coord, $right_coord) = $self->_check_for_match($dna,$flank_L, $flank_R);
+sub map_feature {
+  my ($self, $seq, $flank_L, $flank_R) = @_;
+  
+  my ($left_coord, $right_coord);
+  
+  # convert to chromosome coords
+  my ($chr_id, $chr_st, $chr_en) = $self->LocateSpanUp($seq);
+  
+  #print STDERR "Mapped to $chr_id, $chr_st, $chr_en\n";
 
-  NOT_MAPPED:
-    while( ! (defined $right_coord) ) {
-      my $extension = 1000;
-      while( $extension < 5001 ) {
-	$dna = $self->Sub_sequence($seq,"-$extension","+$extension");
-	($left_coord, $right_coord) = $self->_check_for_match($dna,$flank_L, $flank_R);
+  my ($max_extension, $extend_by) = (5, 1000);
+  
+  for(my $cur_extension = 0; $cur_extension < $max_extension; $cur_extension++) {
+    $chr_st -= ($cur_extension * $extend_by);
+    $chr_en += ($cur_extension * $extend_by);
 
-	
-	if ( $left_coord and $right_coord) {
-	  # make coordinate adjsutments for -+ extension
-	  # at this stage they'll be something like AH6 (-+2000), 1500, 37500)
+    $chr_st = 1 if $chr_st < 1;
+    $chr_en = $self->Superlink_length($chr_id) if $chr_en > $self->Superlink_length($chr_id);
 
-	  $left_coord -= $extension;
-	  $right_coord -= $extension;
-	  ($seq,$left_coord, $right_coord) = $self->LocateSpan($seq,$left_coord,$right_coord);
-	  last NOT_MAPPED ;
-	}
-	$extension += 1000;
-      }
-      print "cant map to $seq +- $extension\n";
-      return 0;
-    }
+    my $reg_len = ($chr_en - $chr_st + 1);
 
-    return ($seq,$left_coord, $right_coord);
+    my $dna = $self->Sub_sequence($chr_id, $chr_st - 1, $reg_len);
+    my ($dna_left_coord, $dna_right_coord) = $self->_check_for_match($dna,$flank_L, $flank_R);
+    
+    if (defined $dna_left_coord and defined $dna_right_coord) {
+      my ($chr_left_coord, $chr_right_coord) = ($dna_left_coord + $chr_st - 1, $dna_right_coord + $chr_st - 1);
+
+      my ($seq, $left_coord, $right_coord) = $self->LocateSpan($chr_id, $chr_left_coord, $chr_right_coord);
+      #print STDERR "Mapped back down from $chr_id, $chr_left_coord $chr_right_coord to $seq, $left_coord, $right_coord\n";
+      return ($seq, $left_coord, $right_coord);
+    } 
   }
+  
+  print "Cant map to $seq\n";
+  return 0;
+}
 
 ##########################################
 
@@ -448,8 +455,8 @@ sub suggest_fix
   my @matchesL = $self->_matches($dna, $flank_L);
 
   # check rev strand
-  $rev_flank_R = $self->DNA_revcomp($flank_R);
-  $rev_flank_L = $self->DNA_revcomp($flank_L);
+  my $rev_flank_R = $self->DNA_revcomp($flank_R);
+  my $rev_flank_L = $self->DNA_revcomp($flank_L);
   my @rev_matchesR = $self->_matches($dna, $rev_flank_R);
   my @rev_matchesL = $self->_matches($dna, $rev_flank_L);
 
@@ -529,7 +536,7 @@ sub suggest_fix
 sub _approx_matches () {
   my ($self, $seq, $flank) = @_;
 
-  my $matches = 0;
+  my @matches;
 
   # [i] - ignore case modifier
   # ($index, $size)   = String::Approx::aslice("pattern", [ modifiers ])
