@@ -105,6 +105,7 @@ sub get_all_alleles {
     my $db = Ace->connect( -path => $wb->autoace ) || do { print "cannot connect to ${$wb->autoace}:", Ace->error; die };
     my $species=$wb->full_name;
     my @alleles = $db->fetch( -query =>"Find Variation WHERE Flanking_sequences AND Live AND species = \"$species\"");
+
     return &_filter_alleles(\@alleles);
 }        
 
@@ -121,6 +122,7 @@ sub get_all_alleles {
 # get allele for testing
 sub get_allele {
     my ($allele)=@_;
+
     my $db = Ace->connect( -path => $wb->autoace ) || do { print "cannot connect to ${$wb->autoace}:", Ace->error; die };
     my @alleles = $db->fetch(Variation => "$allele");
 
@@ -165,54 +167,64 @@ sub get_alleles_fromFile {
 # filter the alleles
 # removes alleles without 2 flanking sequences, no Sequence or not Source attached to the parent sequence
 sub _filter_alleles {
-    my ($alleles) = @_;
-
-    my @good_alleles;
-
-    foreach my $allele (@{$alleles}) {
-        my $name = $allele->Public_name;
-        my $remark = ($allele->Remark||'none');
-
-       # print STDERR "checking $name\n";
-        
-       # has no sequence connection
-       if ( ! defined $allele->Sequence ) {
-            $log->write_to("ERROR: $allele ($name) has missing Sequence tag (Remark: $remark)\n");$errors++
-       }
-
-     # The bit below is commented out, as there are sadly some alleles connected to sequences without source that can't be moved :-(
-
-     #   # connected sequence has no source
-     #        elsif ( !defined $allele->Sequence->Source && !defined $weak_checks) { 
-     #            $log->write_to("ERROR: $name connects to ${\$allele->Sequence} which has no Source tag (Remark: $remark)\n");$errors++
-     #        }
-
-    # no left flanking sequence
-    elsif (!defined $allele->Flanking_sequences){
-            $log->write_to("ERROR: $allele ($name) has no left Flanking_sequence (Remark: $remark)\n");$errors++
-    }                                                                        
-
-    # no right flanking sequence
-    elsif (!defined $allele->Flanking_sequences->right || ! defined $allele->Flanking_sequences->right->name ) {
-                    $log->write_to("ERROR: $allele ($name) has no right Flanking_sequence (Remark: $remark)\n");$errors++
-    }       
-
-    # empty flanking sequence
-    elsif (!defined $allele->Flanking_sequences->name ) {
-                    $log->write_to("ERROR: $allele ($name) has no left Flanking_sequence (Remark: $remark)\n");$errors++
-    }
-    elsif ($allele->Type_of_mutation eq 'Substitution' && !defined $allele->Type_of_mutation->right){
-                    $log->write_to("WARNING: $allele ($name) has no from in the substitution tag (Remark: $remark)\n");
+  my ($alleles) = @_;
+  
+  my @good_alleles;
+  
+  foreach my $allele (@{$alleles}) {
+    my $name = $allele->Public_name || "No_public_name";
+    my $remark = ($allele->Remark||'none');
+    
+    # has no sequence connection
+    if ( ! defined $allele->Sequence ) {
+      $log->write_to("ERROR: $allele ($name) has missing Sequence tag (Remark: $remark)\n");
+      $errors++;
+      next;
     }
     
-    # has spaces or numbers in the DNA sequence strings
-    elsif (($allele->Type_of_mutation eq 'Substitution') && 
-        ($allele->Type_of_mutation->right=~/\d|\s/ || $allele->Type_of_mutation->right->right=~/\d|\s/)){
-        $log->write_to("ERROR: $allele ($name) has numbers an/or spaces in the from/to tags (Remark: $remark)\n");$errors++
+    # The bit below is commented out, as there are sadly some alleles connected to sequences without source that can't be moved :-(
+    
+    #   # connected sequence has no source
+    #        elsif ( !defined $allele->Sequence->Source && !defined $weak_checks) { 
+    #            $log->write_to("ERROR: $name connects to ${\$allele->Sequence} which has no Source tag (Remark: $remark)\n");$errors++
+    #        }
+
+    # no left flanking sequence
+    elsif (!defined $allele->Flanking_sequences->name ) {
+      $log->write_to("ERROR: $allele ($name) has no left Flanking_sequence (Remark: $remark)\n");
+      $errors++;
+      next;
     }
-    else { push @good_alleles, $allele }
+    
+    # no right flanking sequence
+    elsif (!defined $allele->Flanking_sequences->right || ! defined $allele->Flanking_sequences->right->name ) {
+      $log->write_to("ERROR: $allele ($name) has no right Flanking_sequence (Remark: $remark)\n");
+      $errors++;
+      next;
+    }       
+    
+    elsif (defined $allele->Type_of_mutation and $allele->Type_of_mutation eq 'Substitution') {
+
+      if (not defined $allele->Type_of_mutation->right){
+        $log->write_to("WARNING: $allele ($name) has no FROM in the substitution tag (Remark: $remark)\n");
+        $errors++;
+        next;
+      } elsif (not defined $allele->Type_of_mutation->right->right) {
+        $log->write_to("ERROR: $allele ($name) has no TO in the substitution tag (Remark: $remark)\n");
+        $errors++;
+        next;
+      } elsif ($allele->Type_of_mutation->right =~ /\d|\s/ or $allele->Type_of_mutation->right->right =~ /\d|\s/) {
+        $log->write_to("ERROR: $allele ($name) has numbers an/or spaces in the FROM/TO tags (Remark: $remark)\n");
+        $errors++;
+        next;
+      }
+    } else {
+      $log->write_to("WARNING: $allele ($name) has no Type_of_mutation (Remark: $remark)\n");
     }
-    return \@good_alleles;
+
+    push @good_alleles, $allele; 
+  }
+  return \@good_alleles;
 }
 
 =head2 map
@@ -227,65 +239,79 @@ sub _filter_alleles {
 
 # get the chromosome coordinates
 sub map {
-    my ($alleles)=@_;
-    my %alleles;
-    my $mapper = Feature_mapper->new( $wb->autoace, undef, $wb );
-        my $coords = Coords_converter->invoke( $wb->autoace, 0, $wb );
-
-    foreach my $x (@$alleles) {
-        # $chromosome_name,$start,$stop
-        my @map=$mapper->map_feature($x->Sequence->name,$x->Flanking_sequences->name,$x->Flanking_sequences->right->name);
-        if ($map[0] eq '0'){
-            $log->write_to("ERROR: Couldn't map $x (${\$x->Public_name}) to sequence ${\$x->Sequence->name} with ${\$x->Flanking_sequences->name} and ${\$x->Flanking_sequences->right->name} (Remark: ${\$x->Remark})\n");
-            $errors++;
-            next
-        }
-
-        if( abs($map[1] - $map[2]) > 100000) {
-          # Note from Mary Ann 20 june 2008:
-          # I have heard back from Mark Edgley and he confirms
-          # that the few Massive deletions which map_alleles
-          # is spitting out as an error are in fact massive and
-          # OK.
-          # Since this dataset is pretty much complete I think
-          # it would be OK to exclude niDf* alleles from the "is it massive"
-          # check.
-          if ($x->Public_name !~ /^niDf/) {
-            $log->write_to("ERROR: $x (${\$x->Public_name}) is massive\n");
-            $errors++;
-            next;
-          }
-        } 
-
-        # from flanks to variation
-        if ($map[2]>$map[1]){$map[1]++;$map[2]--}
-        else {$map[1]--;$map[2]++}
-
-        #------------------------------------------------------------------------
-        my ($chromosome,$start)=$mapper->Coords_2chrom_coords($map[0],$map[1]);
-        my ($drop,$stop)=$mapper->Coords_2chrom_coords($map[0],$map[2]);
-        
-        # orientation
-        my $orientation='+';
-        if ($stop < $start){
-            my $tmp;
-            $tmp=$start;
-            $start=$stop;
-            $stop=$tmp;
-            $orientation='-';
-        }
-
-        # in case that the parent is the chromosome
-        if ($chromosome eq $map[0]){
-         ($map[0],$map[1],$map[2]) = $coords->LocateSpan( $chromosome,$start,$stop);            
-        }
-        $alleles{$x->name}={allele => $x, chromosome =>$chromosome, start=>$start, stop=>$stop, 
-            clone => $map[0],clone_start => $map[1], clone_stop => $map[2],orientation => $orientation};
-
-        print "${\$x->name} ($chromosome ($orientation): $start - $stop) clone: $map[0] $map[1]-$map[2]\n" if $wb->debug;
-        
+  my ($alleles)=@_;
+  my %alleles;
+  my $mapper = Feature_mapper->new( $wb->autoace, undef, $wb );
+  my $coords = Coords_converter->invoke( $wb->autoace, 0, $wb );
+  
+  foreach my $x (@$alleles) {
+    # $chromosome_name,$start,$stop
+    my @map = $mapper->map_feature($x->Sequence->name,$x->Flanking_sequences->name,$x->Flanking_sequences->right->name);
+    if ($map[0] eq '0'){
+      $log->write_to("ERROR: Couldn't map $x (${\$x->Public_name}) to sequence ${\$x->Sequence->name} with ${\$x->Flanking_sequences->name} and ${\$x->Flanking_sequences->right->name} (Remark: ${\$x->Remark})\n");
+      $errors++;
+      next;
     }
-    return \%alleles
+
+    if( abs($map[1] - $map[2]) > 100000) {
+      # Note from Mary Ann 20 june 2008:
+      # I have heard back from Mark Edgley and he confirms
+      # that the few Massive deletions which map_alleles
+      # is spitting out as an error are in fact massive and
+      # OK.
+      # Since this dataset is pretty much complete I think
+      # it would be OK to exclude niDf* alleles from the "is it massive"
+      # check.
+      if ($x->Public_name !~ /^niDf/) {
+        $log->write_to("ERROR: $x (${\$x->Public_name}) is massive\n");
+        $errors++;
+        next;
+      }
+    } 
+    
+    # from flanks to variation
+    if ($map[2] > $map[1]){
+      $map[1]++;
+      $map[2]--;
+    }
+    else {
+      $map[1]--;
+      $map[2]++;
+    }
+    
+    #------------------------------------------------------------------------
+    my ($chromosome,$start) = $mapper->Coords_2chrom_coords($map[0],$map[1]);
+    my ($drop,$stop) = $mapper->Coords_2chrom_coords($map[0],$map[2]);
+    
+    # orientation
+    my $orientation = '+';
+    if ($stop < $start){
+      my $tmp;
+      $tmp         = $start;
+      $start       = $stop;
+      $stop        = $tmp;
+      $orientation = '-';
+    }
+
+    # in case that the parent is the chromosome
+    if ($chromosome eq $map[0]){
+      ($map[0],$map[1],$map[2]) = $coords->LocateSpan( $chromosome,$start,$stop);            
+    }
+    $alleles{$x->name} = {
+      allele      => $x, 
+      chromosome  => $chromosome, 
+      start       => $start, 
+      stop        => $stop, 
+      clone       => $map[0],
+      clone_start => $map[1], 
+      clone_stop  => $map[2],
+      orientation => $orientation,
+    };
+    
+    print "${\$x->name} ($chromosome ($orientation): $start - $stop) clone: $map[0] $map[1]-$map[2]\n" if $wb->debug;
+    
+  }
+  return \%alleles;
 }
 
 
@@ -699,7 +725,7 @@ sub _build_index {
     my ( $exon, $intron );
     my $gdir=$wb->gff_splits;
     foreach my $file (glob "$gdir/*_gene.gff $gdir/*curated.gff") {
-        print "processing $file\n" if $wb->debug;
+        #print "processing $file\n" if $wb->debug;
         my $fh = new IO::File $file, 'r';
         my @lines = <$fh>
           ; # works with the relatively small GFF_splits, but stay away from the full GFF files
@@ -750,7 +776,7 @@ sub load_utr{
     my %utrs;
     foreach my $file(@files){
         my $inf=new IO::File $file, 'r';
-        print "processing: $file\n" if $wb->debug;
+        #print "processing: $file\n" if $wb->debug;
         while (<$inf>) {
             next if /\#/;
             next if ! /UTR/;
@@ -826,7 +852,7 @@ sub load_pseudogenes{
     my %pgenes;
     foreach my $file(@files){
         my $inf=new IO::File $file, 'r';
-        print "processing: $file\n" if $wb->debug;
+        #print "processing: $file\n" if $wb->debug;
         while (<$inf>) {
             next if /\#/;
             next unless /Pseudogene/;
@@ -903,7 +929,7 @@ sub load_ncrnas{
     my %nc_rnas;
     foreach my $file(@files){
         my $inf=new IO::File $file, 'r';
-        print "processing: $file\n" if $wb->debug;
+        #print "processing: $file\n" if $wb->debug;
         while (<$inf>) {
             next if /\#/;
             next if ! /(mature_transcript|primary_transcript)/;
