@@ -6,8 +6,8 @@
 #
 # wrapper script for running transcript_builder.pl
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2011-02-14 10:08:12 $
+# Last edited by: $Author: klh $
+# Last edited on: $Date: 2011-03-23 22:55:14 $
 
 use lib $ENV{CVS_DIR};
 use Wormbase;
@@ -22,21 +22,19 @@ my $dump_dir;
 my $database;
 my $builder_script = "transcript_builder.pl";
 my $scratch_dir = "/tmp";
-my $chrom_choice;
 my $gff_dir;
-my ($store, $debug, $test, $no_run, $species);
+my ($store, $debug, $test, @no_run, $no_load, $species, @outfile_names);
 
 GetOptions (
 	    "database:s"    => \$database,
 	    "dump_dir:s"    => \$dump_dir,
 	    "gff_dir:s"     => \$gff_dir,
-	    "chromosomes:s" => \$chrom_choice,
-	    "chromosome:s"  => \$chrom_choice,
 	    "store:s"       => \$store,
 	    "debug:s"       => \$debug,
 	    "test"          => \$test,
-	    "no_run"        => \$no_run,
-	    "species:s"		=> \$species
+	    "no_run:s"      => \@no_run,
+            "noload"        => \$no_load,
+	    "species:s"	    => \$species
 
 	   );
 
@@ -54,12 +52,11 @@ my $log = Log_files->make_build_log($wormbase);
 $wormbase->checkLSF($log);
 
 $database = $wormbase->autoace unless $database;
-unless ( $no_run ){
-  my @chromosomes = @{$wormbase->get_binned_chroms()}; # mo MtDNA
-  if ($chrom_choice) {
-  	my @chrs = split(/,/,join(',',$chrom_choice)) ;
-  	$chromosomes[0] = @chrs;
-  }  
+
+if (@no_run) {
+  @outfile_names = @no_run;
+} else {
+  my @chromosomes = @{$wormbase->get_binned_chroms()}; # no MtDNA
 
   $gff_dir  = $wormbase->gff_splits unless $gff_dir;
   $dump_dir = $wormbase->transcripts unless $dump_dir;
@@ -93,21 +90,29 @@ unless ( $no_run ){
 
   # create and submit LSF jobs.
   $log->write_to("bsub commands . . . . \n\n");
+  my @outfile_names;
   my $lsf = LSF::JobManager->new();
- 	 foreach my $chrom ( @chromosomes ) {
- 	 	my $name = substr($chrom,0, 15);
- 	    my $err = "$scratch_dir/transcipt_builder.$name.err.$$";
- 	    my $cmd = "$builder_script -database $database -chromosome $chrom";
-	    $log->write_to("$cmd\n");
-	    print "$cmd\n";
-	    $cmd = $wormbase->build_cmd($cmd);
-	  	my @bsub_options = (-e => "$err", 
-				    -F => "2000000", 
-				    -M => "3500000", 
-				    -R => "\"select[mem>3500] rusage[mem=3500]\"",
-				    -J => $job_name);
-	    $lsf->submit(@bsub_options, $cmd);
-	  }  
+  foreach my $chrom ( @chromosomes ) {
+    my $batchname = $chrom;
+    if ($chrom =~ /,/) {
+      # if submitting a batch of chromsomes, use the name of the first
+      # one - it will be sufficiently unique to identify the batch
+      ($batchname) = split(/,/, $chrom);
+    }
+    my $outfname = "transcripts_${batchname}.ace";
+    my $err = "$scratch_dir/transcript_builder.$batchname.err.$$";
+    my $cmd = "$builder_script -database $database -chromosome $chrom -acefname $outfname ";
+    $log->write_to("$cmd\n");
+    print "$cmd\n";
+    $cmd = $wormbase->build_cmd($cmd);
+    my @bsub_options = (-e => "$err", 
+                        -F => "2000000", 
+                        -M => "3500000", 
+                        -R => "\"select[mem>3500] rusage[mem=3500]\"",
+                        -J => $job_name);
+    $lsf->submit(@bsub_options, $cmd);
+    push @outfile_names, sprintf("%s/%s", $wormbase->transcripts, $outfname);
+  }  
   $lsf->wait_all_children( history => 1 );
   $log->write_to("All transcript builder jobs have completed!\n");
   for my $job ( $lsf->jobs ) {
@@ -117,84 +122,89 @@ unless ( $no_run ){
 }
 
 
-$log->write_to("all batch jobs done - cating outputs to ".$wormbase->transcripts."/transcripts.ace\n");
-$wormbase->run_command("cp " .$wormbase->misc_dynamic."/MtDNA_Transcripts.ace ".$wormbase->transcripts."/transcripts_MtDNA.ace", $log) if ($wormbase->species eq 'elegans'); #hard coded cp of fixed MtDNA Transcripts.
 
-my $allfile = $wormbase->transcripts."/".$wormbase->species."_transcripts.ace";
-$wormbase->run_command("cat ".$wormbase->transcripts."/transcripts*.ace > $allfile", $log);
-
-$log->write_to("loading file to ".$wormbase->autoace."\n");
-$wormbase->load_to_database($wormbase->autoace,$allfile,'transcript_builder', $log);
-
-$log->write_to("batch_dumping GFF files\n");
-$wormbase->run_script("dump_gff_batch.pl -method Coding_transcript");
-
-
-##################
-# Check the files
-##################
-#CHROMOSOME_III  Coding_transcript       protein_coding_primary_transcript       3933602 3935885 .       -       .       Transcript "F37A8.4"
-
-if ($wormbase->assembly_type ne 'contig') { # elegans, briggsae
-  foreach my $sequence ( $wormbase->get_chromosome_names(-prefix => 1, -mito => 1) ) {
-    if($wormbase->species eq 'elegans') {
-
-      my %sizes = (
-		   'CHROMOSOME_I'       => 4500000,
-		   'CHROMOSOME_II'      => 4500000,
-		   'CHROMOSOME_III'     => 4000000,
-		   'CHROMOSOME_IV'      => 5000000,
-		   'CHROMOSOME_V'       => 6000000,
-		   'CHROMOSOME_X'       => 5000000,
-		   'CHROMOSOME_MtDNA'   =>    2000,
-		  );
-      $wormbase->check_file("$gff_dir/${sequence}_Coding_transcript.gff", $log,
-			    minsize => $sizes{$sequence},
-			    lines => ['^##', 
-				      "^${sequence}\\s+Coding_transcript\\s+(protein_coding_primary_transcript|intron|exon)\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+\\s+Transcript\\s+\\S+",
-				      "^${sequence}\\s+Link\\s+region\\s+1\\s+\\d+\\s+\\.\\s+\\+\\s+\\.\\s+Sequence\\s+\\\"${sequence}\\\"",
-				     ],
-			    gff => 1,
-			   );   
-    } elsif ($wormbase->species eq 'briggsae') {
-
-      my %sizes = (
-		   'chrI'          => 2000000,
-		   'chrI_random'   =>    6000,
-		   'chrII'         => 2500000,
-		   'chrII_random'  =>  350000,
-		   'chrIII'        => 2300000,
-		   'chrIII_random' =>   20000,
-		   'chrIV'         => 2500000,
-		   'chrIV_random'  =>    2000,
-		   'chrV'          => 3100000,
-		   'chrV_random'   =>   30000,
-		   'chrX'          => 3400000,
-		   'chrUn'         =>  950000,
-		  );
-      $wormbase->check_file("$gff_dir/${sequence}_Coding_transcript.gff", $log,
-			    minsize => $sizes{$sequence},
-			    lines => ['^##', 
-				      "^${sequence}\\s+Coding_transcript\\s+(protein_coding_primary_transcript|intron|exon)\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+\\s+Transcript\\s+\\S+",
-				      "^${sequence}\\s+Link\\s+region\\s+1\\s+\\d+\\s+\\.\\s+\\+\\s+\\.\\s+Sequence\\s+\\\"${sequence}\\\"",
-				     ],
-			    gff => 1,
-			   );   
-    }
-  }
-} else { # remanei, brenneri, japonica, prist, het
-      
-  $wormbase->check_file("$gff_dir/Coding_transcript.gff", $log,
-			lines => ['^##', 
-				  "^\\S+\\s+Coding_transcript\\s+(protein_coding_primary_transcript|intron|exon)\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+\\s+Transcript\\s+\\S+",
-				  "^\\S+\\s+Link\\s+region\\s+1\\s+\\d+\\s+\\.\\s+\\+\\s+\\.\\s+Sequence\\s+\\\"\\S+\\\"",
-				  "^\\S+\\s+Genomic_canonical\\s+region\\s+1\\s+\\d+\\s+\\.\\s+\\+\\s+\\.\\s+Sequence\\s+\\\"\\S+\\\"",
-				 ],
-			gff => 1,
-		       );   
+if ($wormbase->species eq 'elegans') {
+  my $source = sprintf("%s/MtDNA_Transcripts.ace", $wormbase->misc_dynamic);
+  my $target = sprintf("%s/transcripts_MtDNA.ace", $wormbase->transcripts);
+  $wormbase->run_command("cp $source $target", $log);
+  push @outfile_names, $target;
 }
 
+$log->write_to("all batch jobs done - cating outputs to ".$wormbase->transcripts."/transcripts.ace\n");
+my $allfile = sprintf("%s/%s_transcripts.ace",  $wormbase->transcripts, $wormbase->species );
+$wormbase->run_command("cat @outfile_names > $allfile", $log);
 
+if (not $no_load) {
+  $log->write_to("loading file to ".$wormbase->autoace."\n");
+  $wormbase->load_to_database($wormbase->autoace,$allfile,'transcript_builder', $log);
+  
+  $log->write_to("batch_dumping GFF files\n");
+  $wormbase->run_script("dump_gff_batch.pl -method Coding_transcript");
+
+  ##################
+  # Check the files
+  ##################
+  #CHROMOSOME_III  Coding_transcript       protein_coding_primary_transcript       3933602 3935885 .       -       .       Transcript "F37A8.4"
+
+  if ($wormbase->assembly_type ne 'contig') { # elegans, briggsae
+    foreach my $sequence ( $wormbase->get_chromosome_names(-prefix => 1, -mito => 1) ) {
+      if($wormbase->species eq 'elegans') {
+        
+        my %sizes = (
+                     'CHROMOSOME_I'       => 4500000,
+                     'CHROMOSOME_II'      => 4500000,
+                     'CHROMOSOME_III'     => 4000000,
+                     'CHROMOSOME_IV'      => 5000000,
+                     'CHROMOSOME_V'       => 6000000,
+                     'CHROMOSOME_X'       => 5000000,
+                     'CHROMOSOME_MtDNA'   =>    2000,
+                     );
+        $wormbase->check_file("$gff_dir/${sequence}_Coding_transcript.gff", $log,
+                              minsize => $sizes{$sequence},
+                              lines => ['^##', 
+                                        "^${sequence}\\s+Coding_transcript\\s+(protein_coding_primary_transcript|intron|exon)\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+\\s+Transcript\\s+\\S+",
+                                        "^${sequence}\\s+Link\\s+region\\s+1\\s+\\d+\\s+\\.\\s+\\+\\s+\\.\\s+Sequence\\s+\\\"${sequence}\\\"",
+                                        ],
+                              gff => 1,
+                              );   
+      } elsif ($wormbase->species eq 'briggsae') {
+        
+        my %sizes = (
+                     'chrI'          => 2000000,
+                     'chrI_random'   =>    6000,
+                     'chrII'         => 2500000,
+                     'chrII_random'  =>  350000,
+                     'chrIII'        => 2300000,
+                     'chrIII_random' =>   20000,
+                     'chrIV'         => 2500000,
+                     'chrIV_random'  =>    2000,
+                     'chrV'          => 3100000,
+                     'chrV_random'   =>   30000,
+                     'chrX'          => 3400000,
+                     'chrUn'         =>  950000,
+                     );
+        $wormbase->check_file("$gff_dir/${sequence}_Coding_transcript.gff", $log,
+                              minsize => $sizes{$sequence},
+                              lines => ['^##', 
+                                        "^${sequence}\\s+Coding_transcript\\s+(protein_coding_primary_transcript|intron|exon)\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+\\s+Transcript\\s+\\S+",
+                                        "^${sequence}\\s+Link\\s+region\\s+1\\s+\\d+\\s+\\.\\s+\\+\\s+\\.\\s+Sequence\\s+\\\"${sequence}\\\"",
+                                        ],
+                              gff => 1,
+                              );   
+      }
+    }
+  } else { # remanei, brenneri, japonica, prist, het
+    
+    $wormbase->check_file("$gff_dir/Coding_transcript.gff", $log,
+                          lines => ['^##', 
+                                    "^\\S+\\s+Coding_transcript\\s+(protein_coding_primary_transcript|intron|exon)\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+\\s+Transcript\\s+\\S+",
+                                    "^\\S+\\s+Link\\s+region\\s+1\\s+\\d+\\s+\\.\\s+\\+\\s+\\.\\s+Sequence\\s+\\\"\\S+\\\"",
+                                    "^\\S+\\s+Genomic_canonical\\s+region\\s+1\\s+\\d+\\s+\\.\\s+\\+\\s+\\.\\s+Sequence\\s+\\\"\\S+\\\"",
+                                    ],
+                          gff => 1,
+                          );   
+  }
+} 
 
 
 
