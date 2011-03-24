@@ -113,8 +113,12 @@ sub map_introns_cDNA {
     ( print "CDS::map_introns_cDNA\t", $self->name," has no strand\n" and return 0 ) unless $self->strand;
     ( print "CDS::map_introns_cDNA\t", $cdna->name," has no strand\n" and return 0 ) unless $cdna->strand;
   }
-  return 0 if $self->strand ne $cdna->strand;
   
+  if ($self->strand ne $cdna->strand) {
+    print "CDS::map_introns_cDNA\t", $self->name,  " and  ", $cdna->name, " have different strands\n";
+    return 0;
+  }
+
   my $matches_me = 0;
   foreach my $transcript ( $self->transcripts ) {
     # see how many contiguous introns there are in common between the

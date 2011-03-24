@@ -70,15 +70,20 @@ sub map_introns_cDNA {
   
   # check for overlap
   if( $self->start > $cdna->end ) {
+    #printf "REJECTING CDS starts beyond cDNA %s %s\n", $self->name, $cdna->name;
     return 0;
   }
   elsif( $cdna->start > $self->end ) {
+    #printf "REJECTING cDNA starts beyond CDS %s %s\n", $self->name, $cdna->name;
     return 0;
   }
   else {
     #this must overlap - check Splice Leader
-    return 0 unless ($self->check_features($cdna) == 1);
-    
+    if (not $self->check_features($cdna)) {
+      #printf "REJECTING - failed feature check %s %s\n", $self->name, $cdna->name;
+      return 0;
+    }
+
     # count the number of contiguous introns which match
     my $matching_introns = $self->check_intron_match( $cdna );
 

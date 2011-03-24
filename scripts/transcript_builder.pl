@@ -7,7 +7,7 @@
 # Script to make ?Transcript objects
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2011-03-23 22:55:14 $
+# Last updated on: $Date: 2011-03-24 15:16:47 $
 use strict;
 use lib $ENV{'CVS_DIR'};
 use Getopt::Long;
@@ -295,6 +295,7 @@ foreach my $chrom ( @chromosomes ) {
     # index info
     $cDNA_index{$cdna_id} = $index;
     $index++;
+
     $cdna->transform_strand($transformer,"transform") if ( $cdna->strand eq "-" );
 
     #check for and remove ESTs with internal SL's 
@@ -391,6 +392,8 @@ foreach my $chrom ( @chromosomes ) {
       if ($cds->map_introns_cDNA($cdna) ) { 
 	# note each CDS and gene that this cDNA matches, together with the number of contiguous CDS introns matched
 	$log->write_to("TB : $round : Registered intron match between " . $cds->name . " and " . $cdna->name ."\n") if ($verbose);
+      } else {
+        $log->write_to("TB : $round : No intron match between " . $cds->name . " and " . $cdna->name . "\n") if $verbose;
       }
     }
 
@@ -453,7 +456,7 @@ foreach my $chrom ( @chromosomes ) {
     }
     # now check how many genes the cDNA overlaps - we only want those that overlap one
     my @matching_genes = $cdna->list_of_matched_genes; 
-    if ($#matching_genes == 0) { # just one matching gene
+    if (scalar(@matching_genes) == 1) { # just one matching gene
       foreach my $cds_match (@{$cdna->probably_matching_cds}) {
 	my $cds = $cds_match->[0];
 	if ( $cds->map_cDNA($cdna) ) { # add it to the transcript structure
@@ -461,7 +464,7 @@ foreach my $chrom ( @chromosomes ) {
 	  $log->write_to("TB : $round : Have used first round addition of " . $cdna->name . " in the transcript " . $cds->name ."\n") if ($verbose);
 	}
       }
-    } elsif ($#matching_genes > 0) { 
+    } elsif (scalar(@matching_genes) > 1) { 
       $log->write_to("TB : $round : cDNA ",$cdna->name," overlaps two or more genes and will not be used in transcript-building:") if ($verbose);
       foreach my $gene (@matching_genes) {
           $log->write_to("TB : $round :\t" . $gene) if ($verbose);
@@ -634,69 +637,70 @@ sub checkData
 
 ###################################################################################
 
-sub load_EST_data
-  {
-    my $cDNA_span = shift;
-    my $chrom = shift;
-    my %est_orient;
-    $wormbase->FetchData("estorientation",\%est_orient) unless (5 < scalar keys %est_orient);
-    foreach my $EST ( keys %est_orient ) {
-      if ( exists $$cDNA_span{$EST} && defined $$cDNA_span{$EST}->[2]) {
-	my $GFF_strand = $$cDNA_span{$EST}->[2];
-	my $read_dir = $est_orient{$EST};
-      CASE:{
-	  ($GFF_strand eq "+" and $read_dir eq "5") && do {
-	    $$cDNA_span{$EST}->[2] = "+";
-	    last CASE;
-	  };
-	  ($GFF_strand eq "+" and $read_dir eq "3") && do {
-	    $$cDNA_span{$EST}->[2] = "-";
-	    last CASE;
-	  };
-	  ($GFF_strand eq "-" and $read_dir eq "5") && do {
-	    $$cDNA_span{$EST}->[2] = "-";
-	    last CASE;
-	  };
-	  ($GFF_strand eq "-" and $read_dir eq "3") && do {
-	    $$cDNA_span{$EST}->[2] = "+";
-	    last CASE;
-	  };
-	}
-      }
-    }
+sub load_EST_data {
+  my $cDNA_span = shift;
+  my $chrom = shift;
+  my %est_orient;
 
-    # load paired read info
-    $log->write_to("Loading EST paired read info\n") if ($verbose);
-    my $pairs = $wormbase->autoace."/EST_pairs.txt";
-    
-    if ( -e $pairs ) {
-      open ( PAIRS, "<$pairs") or $log->log_and_die("cant open $pairs :\t$!\n");
-      while ( <PAIRS> ) {
-	chomp;
-	s/\"//g;#"
-	s/Sequence://g;
-	next if( ( $_ =~ /acedb/) or ($_ =~ /\/\//) );
-	my @data = split;
-	$$cDNA_span{$data[0]}->[4] = $data[1];
+  $wormbase->FetchData("estorientation",\%est_orient) unless (5 < scalar keys %est_orient);
+  
+  foreach my $EST ( keys %est_orient ) {
+    if ( exists $$cDNA_span{$EST} && defined $$cDNA_span{$EST}->[2]) {
+      my $GFF_strand = $$cDNA_span{$EST}->[2];
+      my $read_dir = $est_orient{$EST};
+      CASE:{
+        ($GFF_strand eq "+" and $read_dir eq "5") && do {
+          $cDNA_span->{$EST}->[2] = "+";
+          last CASE;
+        };
+        ($GFF_strand eq "+" and $read_dir eq "3") && do {
+          $cDNA_span->{$EST}->[2] = "-";
+          last CASE;
+        };
+        ($GFF_strand eq "-" and $read_dir eq "5") && do {
+          $cDNA_span->{$EST}->[2] = "-";
+          last CASE;
+        };
+        ($GFF_strand eq "-" and $read_dir eq "3") && do {
+          $cDNA_span->{$EST}->[2] = "+";
+          last CASE;
+        };
       }
-      close PAIRS;
-    } else {
-      my $cmd = "select cdna, pair from cdna in class cDNA_sequence where exists_tag cdna->paired_read, pair in cdna->paired_read";
-      
-      open (TACE, "echo '$cmd' | $tace $db |") or die "cant open tace to $db using $tace\n";
-      open ( PAIRS, ">$pairs") or die "cant open $pairs :\t$!\n";
-      while ( <TACE> ) { 
-	chomp;
-	s/\"//g;#"
-	my @data = split;
-	next unless ($data[0] && $data[1]);
-	next if $data[0]=~/acedb/;
-	$$cDNA_span{$data[0]}->[4] = $data[1];
-	print PAIRS "$data[0]\t$data[1]\n";
-      }
-      close PAIRS;
     }
   }
+
+  # load paired read info
+  $log->write_to("Loading EST paired read info\n") if ($verbose);
+  my $pairs = $wormbase->autoace."/EST_pairs.txt";
+  
+  if ( -e $pairs ) {
+    open ( PAIRS, "<$pairs") or $log->log_and_die("cant open $pairs :\t$!\n");
+    while ( <PAIRS> ) {
+      chomp;
+      s/\"//g;#"
+          s/Sequence://g;
+      next if( ( $_ =~ /acedb/) or ($_ =~ /\/\//) );
+      my @data = split;
+      $cDNA_span->{$data[0]}->[4] = $data[1];
+    }
+    close PAIRS;
+  } else {
+    my $cmd = "select cdna, pair from cdna in class cDNA_sequence where exists_tag cdna->paired_read, pair in cdna->paired_read";
+    
+    open (TACE, "echo '$cmd' | $tace $db |") or die "cant open tace to $db using $tace\n";
+    open ( PAIRS, ">$pairs") or die "cant open $pairs :\t$!\n";
+    while ( <TACE> ) { 
+      chomp;
+      s/\"//g;#"
+          my @data = split;
+      next unless ($data[0] && $data[1]);
+      next if $data[0]=~/acedb/;
+      $$cDNA_span{$data[0]}->[4] = $data[1];
+      print PAIRS "$data[0]\t$data[1]\n";
+    }
+    close PAIRS;
+  }
+}
 
 sub load_features {
   my $features = shift;
@@ -733,14 +737,16 @@ sub sanity_check_features {
 # get the list of CDS objects from the $cdna->probably_matching_cds
 # and return those with the highest number of matching introns
 sub get_best_CDS_matches {
-  my ($CDNA) = @_;
-  my $probably_matching_cds = $CDNA->probably_matching_cds;
-  my @cds_matches = @{$probably_matching_cds};
+  my ($cdna) = @_;
+
+  my @cds_matches = @{$cdna->probably_matching_cds};
   @cds_matches = sort {$b->[1] <=> $a->[1]} @cds_matches; # reverse sort by number of matching introns
   my $max_introns = $cds_matches[0][1]; # get the highest number of matching introns
   my @result;
   foreach my $next_cds (@cds_matches) {
-    if ($next_cds->[1] == $max_introns) {push @result, $next_cds->[0]} # store all $cds objects with an equal highest score
+    if ($next_cds->[1] == $max_introns) {
+      push @result, $next_cds->[0];
+    }
   }
   return @result;
 }

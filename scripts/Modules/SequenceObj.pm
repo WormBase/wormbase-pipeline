@@ -96,62 +96,39 @@ our $debug; # class variable - available to all instances of SequenceObj and cla
 
 =cut
 
-sub new
-  {
-    my $class = shift;
-    my $name = shift;
-    my $exon_data = shift; # \%
-    my $strand = shift;
+sub new {
+  my ($class, 
+      $name, 
+      $exon_hash, 
+      $strand) = @_;
 
-    my $self = {};
-    if ($name) {
-      $self->{'name'}   = $name;
+  my $self = {};
+  bless $self, $class;
 
-      my ($start, $end);
-      my @tmp;
-      foreach ( keys %{$exon_data} ) {
-	if ( !(defined $start) or $start > $_ ) {
-	  $start = $_;
-	}
-	if ( !(defined $end) or $end < $$exon_data{$_} ) {
-	  $end = $$exon_data{$_};
-	}
-	$self->{'exons'}->{$_} = $$exon_data{$_};
-	push(@tmp,[($_,$$exon_data{$_})]);
+  if ($name) {
+    $self->exon_data($exon_hash);
+    $self->sort_exons;
+
+    $self->{name} = $name;
+    $self->{strand} = $strand;
+    $self->{probably_matching_cds} = [];
+
+    my $prev_exon_end;
+    my (%introns, @introns);
+    
+    foreach my $exon ( @{$self->sorted_exons}) {
+      my $exon_start = $exon->[0];
+      if (defined $prev_exon_end) {
+        push @introns, [$prev_exon_end + 1, $exon_start - 1];
+          $introns{$prev_exon_end + 1} = $exon_start - 1;
       }
-      @{$self->{'sorted_exons'}} = sort { $a->[0] <=> $b->[0] } @tmp;
-      $self->{'start'} = $start;
-      $self->{'end'}   = $end;
-      $self->{'strand'}= $strand ;
-      $self->{'probably_matching_cds'} = [];
+      $prev_exon_end = $exon->[1];
     }
-    bless ( $self, $class );
-
-    # do this stuff after the object has been blessed into the
-    # SequenceObj class, because it is using data stored in this
-    # object: @{$self->sorted_exons}.
-
-    if ($name) {
-      # get the sorted_introns
-      my $exon_end;
-      my @exon_tmp;
-      foreach my $exon ( @{$self->sorted_exons}) {
-	my $exon_start = $exon->[0];
-	if (defined $exon_end) {
-
-	  # We actually store the intron splice sites plus 1 base
-	  # here, but this is ok as we only compare to other instances
-	  # of this class data and it is faster to not fiddle about
-	  # with getting the size 1 base smaller each side.
-	  push(@exon_tmp,[$exon_end, $exon_start]); 
-	  $self->{'introns'}->{$exon_end} = $exon_start; # store the hash for the introns
-	}
-	$exon_end = $exon->[1];
-      }
-      @{$self->{'sorted_introns'}} = @exon_tmp;
-    }
-    return $self;
+    $self->intron_data(\%introns);
+    $self->{sorted_introns} = \@introns;
   }
+    return $self;
+}
 
 =head2 sort_exons
 
@@ -167,31 +144,60 @@ sub new
 
 =cut
 
-sub sort_exons
-  {
-    my $self = shift;
-    my ($start, $end);
-    my $exon_data = $self->exon_data;
+sub sort_exons {
+  my $self = shift;
+  my ($start, $end);
+  my $exon_data = $self->exon_data;
+  
+  my (%new_exons, @new_exons);
 
-    my @tmp;
-    foreach ( keys %{$exon_data} ) {
-      if( !(defined $start) or $start > $_ ) {
-	$start = $_;
-      }
-      if( !(defined $end) or $end < $$exon_data{$_} ) {
-	$end = $$exon_data{$_};
-      }
-      $self->{'exons'}->{$_} = $$exon_data{$_};
-      push(@tmp,[($_,$$exon_data{$_})]);
+  foreach ( keys %{$exon_data} ) {
+    if(not defined $start or $start > $_ ) {
+      $start = $_;
     }
-    @{$self->{'sorted_exons'}} = sort { $a->[0] <=> $b->[0] } @tmp;
-    $self->start( $start );
-    $self->end( $end );
-
-    # don't bother to update the sorted_introns here as we only ever
-    # use the sorted_introns at the zeroth round of transcript
-    # building when the SequenceObj objects haven't been changed
+    if(not defined $end or $end < $$exon_data{$_} ) {
+      $end = $exon_data->{$_};
+    }
+    $new_exons{$_} = $exon_data->{$_};
+    push @new_exons, [$_,$exon_data->{$_}];
   }
+
+  $self->{sorted_exons} = [sort { $a->[0] <=> $b->[0] } @new_exons];
+  $self->exon_data(\%new_exons);
+
+  $self->start( $start );
+  $self->end( $end );
+}
+
+
+sub sort_introns {
+  my $self = shift;
+
+  my ($start, $end);
+  my $intron_data = $self->intron_data;
+  
+  my (%new_introns, @new_introns);
+
+  foreach ( keys %{$intron_data} ) {
+    if(not defined $start or $start > $_ ) {
+      $start = $_;
+    }
+    if(not defined $end or $end < $intron_data->{$_} ) {
+      $end = $intron_data->{$_};
+    }
+    $new_introns{$_} = $intron_data->{$_};
+
+    $self->{introns}->{$_} = $intron_data->{$_};
+    push @new_introns, [$_,$intron_data->{$_}];
+  }
+  $self->{sorted_introns} = [sort { $a->[0] <=> $b->[0] } @new_introns];
+  $self->intron_data(\%new_introns);
+
+  $self->start( $start );
+  $self->end( $end );
+ 
+}
+
 
 =head2 transform_strand
 
@@ -205,41 +211,61 @@ sub sort_exons
 
 =cut
 
-sub transform_strand
-  {
-    my $self = shift;
-    my $transformer = shift;
-    my $direction = shift;
+sub transform_strand {
+  my $self = shift;
+  my $transformer = shift;
+  my $direction = shift;
+  
+  my (%tmp_exons, %tmp_introns);
 
-    my %tmp_exons;
-    foreach ( keys %{$self->exon_data} ){
-      my ($key,$value);
-      if( $direction eq "transform" ){
-	# swap exon start / end too
-	$value = $transformer->transform_neg_coord( $_);
-	$key   = $transformer->transform_neg_coord( $self->exon_data->{$_});
-      }
-      elsif ( $direction eq "revert" ) {
-	# swap exon start / end too
-	$value = $transformer->revert_to_neg( $_);
-	$key   = $transformer->revert_to_neg( $self->exon_data->{$_});
-      }
-      else { die "need a transformation direction\n";	   }
-	
-      $tmp_exons{$key} = $value;
+  foreach ( keys %{$self->exon_data} ){
+    my ($key,$value);
+    if( $direction eq "transform" ){
+      # swap exon start / end too
+      $value = $transformer->transform_neg_coord( $_);
+      $key   = $transformer->transform_neg_coord( $self->exon_data->{$_});
     }
-    $self->exon_data(\%tmp_exons);
-
-    $self->sort_exons;
-
-    # transform feature data ( SL1 etc ).
-    foreach my $feature ( keys %{ $self->{'feature'}} ) {
-      $self->{'feature'}->{"$feature"} = [( $transformer->transform_neg_coord( $self->{'feature'}->{"$feature"}->[1]),
-					    $transformer->transform_neg_coord( $self->{'feature'}->{"$feature"}->[0]),
-					    $self->{'feature'}->{"$feature"}->[2]
-					  )];
+    elsif ( $direction eq "revert" ) {
+      # swap exon start / end too
+      $value = $transformer->revert_to_neg( $_);
+      $key   = $transformer->revert_to_neg( $self->exon_data->{$_});
     }
+    else { 
+      die "need a transformation direction\n";	   
+    }
+    
+    $tmp_exons{$key} = $value;
   }
+  $self->exon_data(\%tmp_exons); 
+  $self->sort_exons;
+
+  foreach ( keys %{$self->intron_data} ){
+    my ($key,$value);
+    if( $direction eq "transform" ){
+      # swap exon start / end too
+      $value = $transformer->transform_neg_coord($_);
+      $key   = $transformer->transform_neg_coord($self->intron_data->{$_});
+    } elsif ( $direction eq "revert" ) {
+      # swap exon start / end too
+      $value = $transformer->revert_to_neg($_);
+      $key   = $transformer->revert_to_neg($self->intron_data->{$_});
+    } else { 
+      die "need a transformation direction\n";	   
+    }
+    
+    $tmp_introns{$key} = $value;
+  }
+  $self->intron_data(\%tmp_introns); 
+  $self->sort_introns;
+
+  # transform feature data ( SL1 etc ).
+  foreach my $feature ( keys %{ $self->{'feature'}} ) {
+    $self->{feature}->{$feature} = [( $transformer->transform_neg_coord( $self->{feature}->{$feature}->[1]),
+                                          $transformer->transform_neg_coord( $self->{feature}->{$feature}->[0]),
+                                          $self->{feature}->{$feature}->[2]
+					  )];
+  }
+}
 
 =head2 check_exon_match
 
@@ -404,16 +430,20 @@ sub check_intron_match {
   my $self = shift;
   my $cdna = shift;
   
+  if ($debug) {
+    printf("SequenceObj::check_intron_match - comparing introns of %s and %s\n", $self->name, $cdna->name);
+  }
+
   # check if cDNA introns fit with CDS introns
   my $max_cdna_contiguous_introns = 0;
   my $these_introns = 0; # count the introns in this contiguous series
   foreach my $intron ( @{$cdna->sorted_introns}) {
     my $intron_start = $intron->[0];
     # do cDNA and gene share exon start position
-    if ( $self->{'introns'}->{"$intron_start"} ) { # does CDS intron start exist?
-      if ($self->{'introns'}->{"$intron_start"} == $cdna->{'introns'}->{"$intron_start"} ) { # do intron ends match
+    if ( $self->{introns}->{$intron_start} ) { # does CDS intron start exist?
+      if ($self->{introns}->{$intron_start} == $cdna->{introns}->{$intron_start} ) { # do intron ends match
 	#exact match
-	print "SequenceObj::check_intron_match\tExact Intron Match\n" if $debug;
+	printf("SequenceObj::check_intron_match\tExact Intron Match: %s %s\n", $self->name, $cdna->name) if $debug;
 	$these_introns++; # count the number of contiguous introns
 	if ($these_introns > $max_cdna_contiguous_introns) {$max_cdna_contiguous_introns = $these_introns}
       } else {
@@ -591,6 +621,15 @@ sub exon_data
     $self->{'exons'} = $new_exons if $new_exons;
     return $self->{'exons'};
   }
+
+sub intron_data {
+  my ($self, $val) = @_;
+
+  if (defined $val) {
+    $self->{introns} = $val;
+  }
+  return $self->{introns};
+}
 
 =head2 first_exon
 
