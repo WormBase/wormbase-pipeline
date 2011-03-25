@@ -7,7 +7,7 @@
 # Script to make ?Transcript objects
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2011-03-24 15:16:47 $
+# Last updated on: $Date: 2011-03-25 10:15:29 $
 use strict;
 use lib $ENV{'CVS_DIR'};
 use Getopt::Long;
@@ -25,7 +25,7 @@ use Storable;
 my ($debug, $store, $help, $verbose, $really_verbose, $est,
     $database, $test, @chromosomes,
     $gff_dir, $transcript_dir, $ace_fname, $problem_fname,
-    $test_cds, $wormbase, $species);
+    $test_cds, $wormbase, $species, $detailed_debug);
 
 my $gap = 15;			# $gap is the gap allowed in an EST alignment before it is considered a "real" intron
 my $COVERAGE_THRESHOLD = 95.0;  # the alignment score threshold below which any cDNAs that overlap two genes will not be considered.
@@ -49,6 +49,7 @@ GetOptions ( "debug:s"      => \$debug,
              "transcriptdir:s"  => \$transcript_dir,
              "acefname:s"       => \$ace_fname,
              "problemfname:s"   => \$problem_fname,
+             "detaileddebug"    => \$detailed_debug,
 	   ) ;
 
 
@@ -73,10 +74,9 @@ my $tace = $wormbase->tace;
 
 
 # Log Info
-if ($wormbase->debug) {
+if ($detailed_debug) {
   # this uses a class variable in SequenceObj - not sure of Storable impact at mo' - this will still work.
-  my $set_debug = SequenceObj->new();
-  $set_debug->debug($debug);
+  SequenceObj->debug(1);
 }
 
 my $log = Log_files->make_build_log($wormbase);
@@ -719,7 +719,7 @@ sub sanity_check_features {
   
   if ( my $sl = $cdna->SL ) {
     if( abs($sl->[0] - $cdna->start) != 1 ) {
-      $log->write_to("${\$cdna->name} failed sanity check because attached SL feature (" . $sl->[2] . ") not at expected position\n") if $verbose;
+      $log->write_to("${\$cdna->name} failed sanity check because attached SL feature (" . $sl->[2] . ") not at expected position " . $sl->[0] . ":".$sl->[1] ." " . $cdna->start . ":" . $cdna->end . "\n") if $verbose;
       return 0;
     }
   }
