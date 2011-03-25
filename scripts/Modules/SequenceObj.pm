@@ -155,7 +155,7 @@ sub sort_exons {
     if(not defined $start or $start > $_ ) {
       $start = $_;
     }
-    if(not defined $end or $end < $$exon_data{$_} ) {
+    if(not defined $end or $end < $exon_data->{$_} ) {
       $end = $exon_data->{$_};
     }
     $new_exons{$_} = $exon_data->{$_};
@@ -173,29 +173,18 @@ sub sort_exons {
 sub sort_introns {
   my $self = shift;
 
-  my ($start, $end);
   my $intron_data = $self->intron_data;
   
   my (%new_introns, @new_introns);
 
   foreach ( keys %{$intron_data} ) {
-    if(not defined $start or $start > $_ ) {
-      $start = $_;
-    }
-    if(not defined $end or $end < $intron_data->{$_} ) {
-      $end = $intron_data->{$_};
-    }
     $new_introns{$_} = $intron_data->{$_};
 
     $self->{introns}->{$_} = $intron_data->{$_};
     push @new_introns, [$_,$intron_data->{$_}];
   }
   $self->{sorted_introns} = [sort { $a->[0] <=> $b->[0] } @new_introns];
-  $self->intron_data(\%new_introns);
-
-  $self->start( $start );
-  $self->end( $end );
- 
+  $self->intron_data(\%new_introns); 
 }
 
 
@@ -259,11 +248,18 @@ sub transform_strand {
   $self->sort_introns;
 
   # transform feature data ( SL1 etc ).
-  foreach my $feature ( keys %{ $self->{'feature'}} ) {
-    $self->{feature}->{$feature} = [( $transformer->transform_neg_coord( $self->{feature}->{$feature}->[1]),
-                                          $transformer->transform_neg_coord( $self->{feature}->{$feature}->[0]),
-                                          $self->{feature}->{$feature}->[2]
-					  )];
+  foreach my $ftype ( keys %{ $self->{feature}} ) {
+    if ($direction eq "transform") {
+      $self->{feature}->{$ftype} = [( $transformer->transform_neg_coord( $self->{feature}->{$ftype}->[1]),
+                                      $transformer->transform_neg_coord( $self->{feature}->{$ftype}->[0]),
+                                      $self->{feature}->{$ftype}->[2]
+                                      )];
+    } elsif ($direction eq "revert") {
+      $self->{feature}->{$ftype} = [( $transformer->revert_to_neg( $self->{feature}->{$ftype}->[1]),
+                                      $transformer->revert_to_neg( $self->{feature}->{$ftype}->[0]),
+                                      $self->{feature}->{$ftype}->[2]
+                                      )];
+    }
   }
 }
 
