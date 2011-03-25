@@ -45,8 +45,9 @@ my $hadb = $gdb_a->fetch_by_name_assembly('Meloidogyne hapla');
 my $midb = $gdb_a->fetch_by_name_assembly('Meloidogyne incognita');
 my $hcdb = $gdb_a->fetch_by_name_assembly('Haemonchus contortus');
 my $cadb = $gdb_a->fetch_by_name_assembly('Caenorhabditis angaria');
+my $tsdb = $gdb_a->fetch_by_name_assembly('Trichinella spiralis');
 
-my $mlss = $mlss_a->fetch_by_method_link_type_GenomeDBs( 'PECAN', [ $edb, $bdb, $rdb,$ndb,$brdb,$pdb,$jdb,$hadb,$midb,$hcdb,$cadb] );
+my $mlss = $mlss_a->fetch_by_method_link_type_GenomeDBs( 'PECAN', [ $edb, $bdb, $rdb,$ndb,$brdb,$pdb,$jdb,$hadb,$midb,$hcdb,$cadb,$tsdb] );
 
 my $alignIO = Bio::AlignIO->newFh(
     -interleaved => 0,
