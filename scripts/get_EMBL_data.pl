@@ -6,8 +6,8 @@
 #
 # Reads protein ids and gets SwissProt IDs
 #
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2010-12-21 16:51:07 $
+# Last updated by: $Author: klh $
+# Last updated on: $Date: 2011-03-25 11:40:53 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -64,7 +64,7 @@ my $aceoutput = $wormbase->acefiles."/cds_embl_data.ace";
 open(ACE,">$aceoutput") or $log->log_and_die("cant write $aceoutput : $!\n");
 
 #read protein id mail
-$mail = $mail ? $mail : $wormbase->wormpub."/protein_ID.mail";
+$mail = $mail ? $mail : $wormbase->autoace."/protein_ID.mail";
 open (MAIL,"<$mail") or $log->log_and_die("cant read $mail\n");
 
 while(<MAIL>){
