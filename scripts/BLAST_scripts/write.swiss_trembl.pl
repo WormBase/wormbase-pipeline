@@ -46,7 +46,6 @@ my $output_swiss      = "$wormpipe_dump/swissproteins.ace";
 my $output_trembl     = "$wormpipe_dump/tremblproteins.ace";
 my $blastx_file       = "$wormpipe_dump/blastx_ensembl.ace";
 my $blastp_file       = "$wormpipe_dump/blastp_ensembl.ace";
-my $ensembl_info_file = "$wormpipe_dump/ensembl_protein_info.ace";
 my $swiss_list_txt    = "$wormpipe_dump/swisslist.txt";
 my $trembl_list_txt   = "$wormpipe_dump/trembllist.txt";
 
@@ -136,8 +135,6 @@ if ($trembl) {
   untie %ORG;
   untie %DES;
 }
-
-system("cat $output_swiss $output_trembl > $ensembl_info_file");
 
 $log->mail;
 exit(0);
