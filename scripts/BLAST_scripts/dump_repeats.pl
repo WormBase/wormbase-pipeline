@@ -24,7 +24,7 @@ GetOptions ("debug:s" => \$debug,
 	    "help"    => \$help,
 	    "store:s" => \$store,
 	    'database:s' => \$database,
-	    'dump_dir=s' => \$dumpdir,
+	    'dumpdir=s' => \$dumpdir,
            );
 
 my $wormbase;
@@ -36,19 +36,18 @@ if ( $store ) {
 			     );
 }
 
-my $dbobj = Bio::EnsEMBL::DBSQL::DBAdaptor->new(
-                                                       '-host'   => 'farmdb1',
-                                                       '-user'   => 'wormro',
-                                                       '-dbname' => $database
-                                                      ) || die (@!);
-
-
 # establish log file.
 my $log = Log_files->make_build_log($wormbase);
 
+my $dbobj = Bio::EnsEMBL::DBSQL::DBAdaptor->new(
+                                                '-host'   => 'farmdb1',
+                                                '-user'   => 'wormro',
+                                                '-dbname' => $database
+                                                ) or $log->log_and_die(@!);
+
+
 my $dump_dir = ($dumpdir || $wormbase->acefiles);
 my $output = "$dump_dir/repeat_homologies.ace";
-die &help if $help;
 
 $log->write_to("Dumping to $output\n");
 
