@@ -1,5 +1,7 @@
 #!/software/bin/perl -w
 
+use lib '/software/worm/lib/site_perl';
+
 use strict;
 use Getopt::Long;
 use Carp;
@@ -14,11 +16,10 @@ my $user = 'wormro';
 my $host = 'farmdb1';
 my $port = 3306;
 my $segsize = 1000000;
+
+my ($dump_loc, $dump_one_script, $out_file_prefix);
 my $resource;
-#my $resource = 'model=ES40_667';
-my $machines = undef;
 my $test;
-my $dump_one_script;
 
 &GetOptions(
 	    'host:s'       => \$host,
@@ -26,12 +27,17 @@ my $dump_one_script;
 	    'db:s'         => \$db,
 	    'port:n'       => \$port,
 	    'segsize:n'    => \$segsize,
-	    'machines:s'   => \$machines,
 	    'resource:s'   => \$resource,
 	    'test'         => \$test,
-	    'dump_script:s'  => \$dump_one_script,
+	    'dump_script:s'=> \$dump_one_script,
+            'dumploc:s'    => \$dump_loc,
+            'prefix:s'     => \$out_file_prefix,
 	   );
-$dump_one_script = $dump_one_script?glob($dump_one_script):'/lustre/scratch101/ensembl/wormpipe/script/dump_one_new.pl';
+
+croak("You must supply a valid location for the dump") 
+    if not defined $dump_loc or not -d $dump_loc;
+croak("You must supply an executable script for dumping one batch with -dump_script")
+    if not defined $dump_one_script or not -x $dump_one_script;
 
 my $dbh=DBI->connect("dbi:mysql:database=$db;host=$host;port=$port", "wormro");
 
@@ -42,7 +48,6 @@ my ($nrow) = $sth->fetchrow;
 
 my $nseg = int(($nrow/$segsize))+1;
 
-print "N seg = $nseg\n";
 my $job_name = "worm_${db}_dump";
 
 my $lsf=LSF::JobManager->new(-q => 'normal', 
@@ -54,13 +59,12 @@ my $lsf=LSF::JobManager->new(-q => 'normal',
 
 for (my $i=0; $i<$nseg; $i++) {
   my $start = $i*$segsize;
-  print "start = $start\n";
 
   my @bsub_options = (-o => "junk$i.log", -e => "junk$i.err");
-  push @bsub_options, (-m => "\"$machines\"") if ($machines);
 
-  my $cmd = "$dump_one_script -host $host -user $user -port $port -db $db -start $start -count $segsize -out junk$i.srt";
+  my $cmd = "$dump_one_script -host $host -user $user -port $port -db $db -start $start -count $segsize -out $dump_loc/$out_file_prefix.$i.srt";
   print "$cmd\n";
+
   $lsf->submit(@bsub_options, $cmd);
 
   last if $test;
