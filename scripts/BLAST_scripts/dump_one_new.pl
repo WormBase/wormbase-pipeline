@@ -14,25 +14,34 @@ my $host = 'farmdb1';
 my $user = 'wormro';
 my $db   = 'worm_ensembl_elegans';
 my $port = 3306;
-my $start = undef;
-my $count = undef;
+my ($start, $count, $analysis, $outfile);
 
-my $outfile = undef;
 
 &GetOptions(
-  'host:s'       => \$host,
-  'user:s'       => \$user,
-  'db:s'         => \$db,
-  'port:n'       => \$port,
-  'start:n'      => \$start,
-  'count:n'      => \$count,
-  'outfile:s'    => \$outfile,
+            'host:s'       => \$host,
+            'user:s'       => \$user,
+            'db:s'         => \$db,
+            'port:n'       => \$port,
+            'start:n'      => \$start,
+            'count:n'      => \$count,
+            'outfile:s'    => \$outfile,
+            'analysis:i'   => \$analysis,
+
 );
+
+my $single = " ";
+if($analysis){
+    $single = "a.analysis_id = $analysis AND";
+}
+
 
 if (!defined($start) || !defined($count) || !defined($outfile)) {
   die "Must supply start, count and outfile\n";
 }
 
-my $comstr = "mysql -u $user -h $host -D$db -P $port -N -B -e 'select protein_feature_id, stable_id, seq_start, seq_end, hit_start, hit_end, hit_id, analysis_id, score, -log10(evalue), perc_ident from protein_feature p,translation_stable_id t where p.translation_id=t.translation_id and analysis_id in (select analysis_id from analysis where module=\"BlastPep\") limit $start,$count' | sort $ENV{SORT_OPTS} -S 1G -o $outfile";
+
+
+
+my $comstr = "mysql -u $user -h $host -D$db -P $port -N -B -e 'SELECT protein_feature_id, stable_id, seq_start, seq_end, hit_start, hit_end, hit_name, logic_name, score, -log10(evalue), perc_ident FROM protein_feature p,translation_stable_id t , analysis a WHERE $single p.translation_id=t.translation_id AND a.analysis_id=p.analysis_id AND module=\"BlastPep\" limit $start,$count' | sort $ENV{SORT_OPTS} -S 1G -o $outfile";
 
 system($comstr);
