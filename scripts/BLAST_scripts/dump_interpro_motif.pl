@@ -4,8 +4,8 @@
 #
 # Dumps InterPro protein motifs from ensembl mysql (protein) database to an ace file
 #
-# Last updated by: $Author: pad $
-# Last updated on: $Date: 2011-01-20 11:09:57 $
+# Last updated by: $Author: klh $
+# Last updated on: $Date: 2011-03-28 13:34:49 $
 
 
 use strict;
@@ -22,23 +22,28 @@ my $WPver;
 my $database; 
 my $method; 
 my $verbose; 
-my ($ddir,$help);
+my ($ddir,$interpro_xml, $latest_xml,$help);
 my ($store, $test, $debug);
 
 
 
-GetOptions("debug:s"    => \$debug,
-	   "database:s" => \$database,
-	   "method=s"   => \$method,
-	   "verbose"    => \$verbose,
-	   "test"       => \$test,
-	   "help"       => \$help,
-	   "store:s"    => \$store,
+GetOptions("debug:s"       => \$debug,
+	   "database:s"    => \$database,
+	   "method=s"      => \$method,
+	   "verbose"       => \$verbose,
+	   "test"          => \$test,
+	   "help"          => \$help,
+	   "store:s"       => \$store,
+           "interproxml=s" => \$interpro_xml,
+           "latestxml"     => \$latest_xml,
 	   'dumpdir=s'     => \$ddir,
 	  );
 
 # Display help if required
 &usage("Help") if ($help);
+
+$interpro_xml = "/data/blastdb/Worms/interpro_scan/iprscan/data/interpro.xml"
+    if not defined $interpro_xml;
 
 my $wormbase;
 if ( $store ) {
@@ -418,16 +423,17 @@ sub get_ip_mappings {
   # the interpro.xml file can be obtained from:
   # ftp.ebi.ac.uk/pub/databases/interpro/interpro.xml.gz
 
-  # store it here
-  my $dir = "/tmp";
-  my $file = "$dir/interpro.xml";
-
   # get the interpro file from the EBI
-  unlink $file;
-  get_interpro($file);
-
+  if ($latest_xml) {
+    my $tmpfile = "/tmp/interpro.xml";
+    unlink $tmpfile if -e $tmpfile;
+    get_interpro($tmpfile);
+    
+    $interpro_xml = $tmpfile;
+  }
  
-  open (XML, "< $file") || die "Failed to open file $file\n";
+  open (XML, "< $interpro_xml")
+      or $log->log_and_die("Failed to open file $interpro_xml\n");
  
   my $in_member_list = 0;       # flag for in data ID section of XML file
   my $IPid;
@@ -450,7 +456,9 @@ sub get_ip_mappings {
     }
   }
   close (XML);
-  unlink $file;
+  if ($latest_xml) {
+    unlink $interpro_xml;
+  }
 
   return %ip_ids;
 }
