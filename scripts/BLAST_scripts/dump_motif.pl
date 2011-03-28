@@ -4,8 +4,8 @@
 #
 # Dumps protein motifs from ensembl mysql (protein) database to an ace file
 #
-# Last updated by: $Author: pad $
-# Last updated on: $Date: 2011-01-20 11:09:57 $
+# Last updated by: $Author: klh $
+# Last updated on: $Date: 2011-03-28 13:33:18 $
 
 use lib $ENV{'CVS_DIR'};
 
@@ -39,7 +39,7 @@ if ( $store ) {
 }
 
 my $log = Log_files->make_build_log($wormbase);
-$dump_dir ||= '/lustre/scratch101/ensembl/wormpipe/dumps';
+$dump_dir ||= $wormbase->farm_dump;
 
 # define the names of the methods to be dumped
 @methods = qw(Ncoils Seg Signalp Tmhmm Pfam) unless @methods;
@@ -60,8 +60,8 @@ sub now {
 }
 
 # create output files
-open(ACE,">$dump_dir/".$dbname."_motif_info.ace") || die "cannot create ace file:$!\n";
-open(LOG,">$dump_dir/".$dbname."_motif_info.log") || die "cannot create log file:$!\n";
+open(ACE,">$dump_dir/".$dbname."_motif_info.ace") or $log->log_and_die("cannot create ace file:$!\n");
+open(LOG,">$dump_dir/".$dbname."_motif_info.log") or $log->log_and_die( "cannot create log file:$!\n");
 
 # make the LOG filehandle line-buffered
 my $old_fh = select(LOG);
