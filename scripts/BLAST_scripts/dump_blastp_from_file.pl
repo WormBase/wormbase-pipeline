@@ -1,5 +1,7 @@
-#!/usr/local/bin/perl5.6.1 -w
+#!/software/bin/perl -w
+
 use lib $ENV{'CVS_DIR'};
+
 use strict;
 use Getopt::Long;
 use GDBM_File;
@@ -13,7 +15,7 @@ my $file = shift;
 # command-line options                #
 #######################################
 my ($test, $debug, , $store, $verbose, $help, $species);
-my ($all, $analysisTOdump, $just_matches, $matches, $list, $database);
+my ($all, $analysisTOdump, $just_matches, $matches, $list, $database, $dumps_dir);
 GetOptions ("debug=s"      => \$debug,
 	    "verbose"      => \$verbose,
 	    "test"         => \$test,
@@ -25,7 +27,8 @@ GetOptions ("debug=s"      => \$debug,
 	    "dumplist=s"   => \$list,
 	    "database=s"   => \$database,
 	    "store:s"      => \$store,
-	    "species:s"    => \$species
+	    "species:s"    => \$species,
+            "dumpdir:s"   =>  \$dumps_dir,
            );
 
 my $wormbase;
@@ -42,28 +45,27 @@ $species = $wormbase->species; #in case defaulting to elegans when species not s
 my $log = Log_files->make_build_log($wormbase);
 
 $log->log_and_die("please give me a mysql protein database eg -database worm_ensembl_elegans\n") unless $database;
+$log->log_and_die("Please supply a valid location for the dumps") if not defined $dumps_dir or not -d $dumps_dir;
 
 my @sample_peps = @_;
 my $dbname = $database;
 
 my $maintainers = "All";
 my $rundate    = `date +%y%m%d`; chomp $rundate;
-my $wormpipe = glob("~wormpipe");
-my $wormpipe_dir = "/lustre/scratch101/ensembl/wormpipe";
 
-my $best_hits = "$wormpipe_dir/dumps/${species}_best_blastp_hits";
-my $ipi_file = "$wormpipe_dir/dumps/${species}_ipi_hits_list";
-my $output = "$wormpipe_dir/dumps/${species}_blastp.ace";
-my $recip_file = "$wormpipe_dir/dumps/${database}_wublastp_recip.ace";
+my $best_hits = "$dumps_dir/${species}_best_blastp_hits";
+my $ipi_file = "$dumps_dir/${species}_ipi_hits_list";
+my $output = "$dumps_dir/${species}_blastp.ace";
+my $recip_file = "$dumps_dir/${database}_wublastp_recip.ace";
 
-open (BEST, ">$best_hits") or die "cant open $best_hits for writing\n";
+open (BEST, ">$best_hits") or $log->log_and_die("cant open $best_hits for writing\n");
 
 # $log->write_to("Dump_new_prot_only.pl log file $rundate\n"); ### don't see how that could have ever worked after ecs1f was axed
 $log->write_to("-----------------------------------------------------\n\n");
 
 # to be able to include only those proteins that have homologies we need to record those that do
 # this file is then used by write_ipi_info.pl
-open (IPI_HITS,">$ipi_file") or die "cant open $ipi_file\n";
+open (IPI_HITS,">$ipi_file") or $log->log_and_die("cant open $ipi_file\n");
 
 # help page
 &usage("Help") if ($help);
@@ -123,24 +125,26 @@ my $QUERY_SPECIES = $wormbase->full_name;
  
 #connect to GDBM_File databases for species determination and establish hashes
 
-my $db_files = "/lustre/scratch101/ensembl/wormpipe/swall_data";
+my $wormpipe_dir  = "/lustre/scratch101/ensembl/wormpipe";
+my $db_files_dir  = "$wormpipe_dir/swall_data";
+my $dbm_files_dir = "$wormpipe_dir/dumps";
 
 my %file_mapping = ( 
-	"$db_files/swissprot2org" => '/tmp/swissprot2org',
-	"$db_files/trembl2org"    => '/tmp/trembl2org',
-	"$wormpipe_dir/dumps/acc2db.dbm" => '/tmp/acc2db.dbm',
+	"$db_files_dir/swissprot2org" => '/tmp/swissprot2org',
+	"$db_files_dir/trembl2org"    => '/tmp/trembl2org',
+	"$dbm_files_dir/acc2db.dbm" => '/tmp/acc2db.dbm',
 );
 while (my($from,$to)=each %file_mapping ){
-	unlink $to if -e $to;
-	copy $from,$to or die "Copy of $from to $to failed: $!";
+  unlink $to if -e $to;
+  copy $from,$to or $log->log_and_die("Copy of $from to $to failed: $!");
 }
 
 my (%SWISSORG, %TREMBLORG);
-tie %SWISSORG, 'GDBM_File',"/tmp/swissprot2org",&GDBM_WRCREAT,0666 or die "cannot open swissprot2org DBM file /tmp/swissprot2org";
-unless (-s "$db_files/swissprot2des") {die "swissprot2des not found or empty";}
+tie %SWISSORG, 'GDBM_File',"/tmp/swissprot2org",&GDBM_WRCREAT,0666 or $log->log_and_die("cannot open swissprot2org DBM file /tmp/swissprot2org");
+unless (-s "$db_files_dir/swissprot2des") { $log->log_and_die("swissprot2des not found or empty");}
 
-tie %TREMBLORG, 'GDBM_File',"/tmp/trembl2org",&GDBM_WRCREAT ,0666 or die "cannot open /tmp/trembl2org DBM file";
-unless (-s "$db_files/trembl2des") { die "trembl2des not found or empty";}
+tie %TREMBLORG, 'GDBM_File',"/tmp/trembl2org",&GDBM_WRCREAT ,0666 or $log->log_and_die("cannot open /tmp/trembl2org DBM file");
+unless (-s "$db_files_dir/trembl2des") { $log->log_and_die("trembl2des not found or empty");}
 
 # gene CE info from COMMON_DATA files
 # using flattened arrays to merge hashes ... don't try this at home ... or with big hashes
@@ -162,13 +166,13 @@ foreach my $key(keys %species_accessor){
 
 my @results;
 
-open (OUT,">$output") or die "cant open $output\n";
+open (OUT,">$output") or $log->log_and_die("cant open $output\n");
 
 # reciprocals of matches ie if CE00000 matches XXXX_CAEEL the homology details need to be written for XXXX_CAEEL 
 # as well.  These are put in a separate file and post processed so that all matches for XXXX_CAEEL are loaded 
 # in one go for efficient loading ( cf acecompress.pl )
 print "opening $recip_file";
-open (RECIP,">$recip_file") or die "cant open recip file $recip_file: $!\n";
+open (RECIP,">$recip_file") or $log->log_and_die("cant open recip file $recip_file: $!\n");
 
 tie our %ACC2DB, 'GDBM_File',"/tmp/acc2db.dbm",&GDBM_WRCREAT ,0666 or warn "cannot open /tmp/acc2db.dbm \n";
 
@@ -176,7 +180,7 @@ my $count;
 my $count_limit = 10;
 $count_limit = 1 if ($just_matches);
 
-open (BLAST,"<$file") or die "file $file\n";
+open (BLAST,"<$file") or $log->log_and_die("file $file\n");
 
 my $current_pep;  
 my %worm_matches;
@@ -305,7 +309,7 @@ $log->write_to(" : Data extraction complete\n\n");
 # process the recip file so that proteins are grouped
 $log->write_to(": processing the reciprocal data file for efficient loading.\n");
 open (SORT,"sort -t \" \" -k2 $recip_file | ");
-open (RS,">>$output") or die "rs"; #append this sorted data to the main homols file and load together.
+open (RS,">>$output") or $log->log_and_die("Failed to open $output for appending");
 
 print RS "\n\n";		# just to make sure we're not adding to last object.
 
@@ -339,7 +343,7 @@ untie %TREMBLORG;
 
 # cleanup
 while (my($from,$to)=each %file_mapping ){
-	 unlink $to or die "delete of $to failed: $!";
+	 unlink $to or $log->log_and_die("delete of $to failed: $!");
 }
 
 print "\nEnd of dump/\n";
