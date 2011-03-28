@@ -2,8 +2,8 @@
 #
 # map_operons.pl
 
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2008-01-15 11:58:22 $
+# Last edited by: $Author: pad $
+# Last edited on: $Date: 2011-03-28 16:32:57 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -15,13 +15,14 @@ use File::Copy;
 use Ace;
 use Log_files;
 
-my ($debug, $store, $test, $noload);
+my ($quicktest, $debug, $store, $test, $noload);
 
 GetOptions(
-	   'debug=s'  => \$debug,
-	   'store=s'  => \$store,
-	   'test'     => \$test,
-	   'noload'   => \$noload,
+	   'debug=s'   => \$debug,
+	   'store=s'   => \$store,
+	   'test'      => \$test,
+	   'noload'    => \$noload,
+	   'quicktest' => \$quicktest,
 );
 
 ############################
@@ -34,7 +35,7 @@ else { $wb = Wormbase->new( -debug => $debug, -test => $test, ) }
 my $log = Log_files->make_build_log($wb);
 my $acefile = $wb->acefiles."/operon_coords.ace";
 
-my @chromosomes = $test ? qw(III) : qw(I II III IV V X);
+my @chromosomes = $quicktest ? qw(III) : qw(I II III IV V X);
 my %gene_span;
 foreach (@chromosomes){
   open (GS,"<".$wb->gff_splits."/CHROMOSOME_${_}_gene.gff") or $log->log_and_die("Cant open ".$wb->gff_splits."/CHROMOSOME_${_}_gene.gff :$!\n");
