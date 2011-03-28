@@ -212,8 +212,8 @@ task :dump_gerp =>[:env_setup] do
        db=yml['elegans']['database'] # that one is technically not cool
 
        sh "mysql -h #{db['host']} -P#{db['port']} -u #{db['user']} -p#{db['password']} worm_compara_pecan -e 'INSERT IGNORE INTO meta (meta_key,meta_value) VALUES (\"max_align_2\",(SELECT MAX(dnafrag_end-dnafrag_start) FROM genomic_align));'"
-	['elegans','briggsae','brenneri','remanei','japonica','pristionchus','brugia','Mhapla','Mincognita','Hcontortus','cangaria'].each{|species|
-        #['cangaria'].each{|species| 
+	['elegans','briggsae','brenneri','remanei','japonica','pristionchus','brugia','Mhapla','Mincognita','Hcontortus','cangaria','tspiralis'].each{|species|
+
 	  spec_dir= "#{tmp_place}/compara/#{species}"
 	  FileUtils.mkdir_p(spec_dir)
           sh "#{perl512} scripts/getConservationScores.pl -species #{species} -o #{spec_dir}/#{species}.wig"
