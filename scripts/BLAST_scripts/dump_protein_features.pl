@@ -7,15 +7,20 @@
 # This is a script to automate the sections A, B and C of the BLAST Build
 #
 # Last updated by: $Author: klh $     
-# Last updated on: $Date: 2011-03-28 13:40:34 $      
+# Last updated on: $Date: 2011-03-29 09:27:02 $      
 
 use strict;                                      
-use lib $ENV{'CVS_DIR'};
-use Wormbase;
+
+use FindBin qw($Bin);
+use lib "${Bin}/..";
+
 use Getopt::Long;
 use Carp;
-use Log_files;
 use Storable;
+
+use Wormbase;
+use Log_files;
+
 
 ######################################
 # variables and command-line options # 
@@ -26,12 +31,12 @@ use Storable;
 # are the core parameters required for those sorts
 #
 $ENV{SORT_OPTS} = "-k2,2 -k8,8n -k10,10nr";
-my $PERL = "/software/bin/perl";
-my $SCRIPTS = $ENV{CVS_DIR} . "/BLAST_scripts";
+
+
+my $Blast_scripts = "BLAST_scripts";
 my $WORMPIPE_DIR = "/lustre/scratch101/ensembl/wormpipe";
 my $SORT_DUMP_DIR = "$WORMPIPE_DIR/sort_dump";
 
-croak("$PERL does not exist") if not -x $PERL;
 croak("The target directory $WORMPIPE_DIR must exist") if not -d $WORMPIPE_DIR;
 
 my ($help, $debug, $test, $verbose, $store, $wormbase);
@@ -69,8 +74,8 @@ if (!$checkonly) {
   my $sort_file_pre = join(".", $species, "junk");
   my $sort_file_out = "$species.srt";
 
-  my $dump_one_cmd = "$SCRIPTS/dump_one_new.pl";
-  my $dump_all_cmd = "$PERL $SCRIPTS/dump.pl -db worm_ensembl_${species} -dump_script $dump_one_cmd -dumploc $SORT_DUMP_DIR -prefix $sort_file_pre";
+  my $dump_one_cmd = "${Bin}/dump_one_new.pl";
+  my $dump_all_cmd = "perl ${Bin}/dump.pl -db worm_ensembl_${species} -dump_script $dump_one_cmd -dumploc $SORT_DUMP_DIR -prefix $sort_file_pre";
 
   $wormbase->run_command($dump_all_cmd, $log)
       and $log->log_and_die("Failed to successfully run command - stopping ($dump_all_cmd)\n");
@@ -84,22 +89,22 @@ if (!$checkonly) {
   unlink @sort_input;
 
   $log->write_to("  Running dump_blastp_from_file.pl . . .\n");
-  my $dump_bp_cmd = "$PERL $SCRIPTS/dump_blastp_from_file.pl $SORT_DUMP_DIR/${sort_file_out} -matches -database worm_${species} -dumpdir $dumpdir -store $store";
+  my $dump_bp_cmd = $wormbase->build_cmd_line("${Blast_scripts}/dump_blastp_from_file.pl", $store) . " $SORT_DUMP_DIR/${sort_file_out} -matches -database worm_${species} -dumpdir $dumpdir ";
   $wormbase->run_command($dump_bp_cmd, $log)
       and $log->log_and_die("Failed to successfully run command - stopping ($dump_bp_cmd)\n");
 
   $log->write_to("  Running Motif data . . .\n");
-  my $motif_cmd = "$PERL $SCRIPTS/dump_motif.pl -database worm_ensembl_${species} -dumpdir $dumpdir -store $store";
+  my $motif_cmd = $wormbase->build_cmd_line("${Blast_scripts}/dump_motif.pl", $store) . " -database worm_ensembl_${species} -dumpdir $dumpdir ";
   $wormbase->run_command($motif_cmd, $log)
       and $log->log_and_die("Failed to successfully run command - stopping ($motif_cmd)\n");
   
-  my $interpro_cmd = "$PERL $SCRIPTS/dump_interpro_motif.pl -database worm_ensembl_${species} -store $store";
+  my $interpro_cmd = $wormbase->build_cmd_line("${Blast_scripts}/dump_interpro_motif.pl", $store) . " -database worm_ensembl_${species} ";
   $wormbase->run_command($interpro_cmd, $log)
       and $log->log_and_die("Failed to successfully run command - stopping ($interpro_cmd)\n");
 
   $log->write_to("  Running Repeat data . . .\n");
 
-  my $repeat_cmd = "$PERL $SCRIPTS/dump_repeats.pl -database worm_ensembl_${species} -dumpdir $acedir -store $store";
+  my $repeat_cmd = $wormbase->build_cmd_line("${Blast_scripts}/dump_repeats.pl", $store) . " -database worm_ensembl_${species} -dumpdir $acedir ";
   $wormbase->run_command($repeat_cmd, $log)
       and $log->log_and_die("Failed to successfully run command - stopping ($repeat_cmd)\n");
 }
