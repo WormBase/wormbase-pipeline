@@ -1,4 +1,4 @@
-!/usr/bin/env perl
+#!/usr/bin/env perl
 #
 # genestats.pl
 #
@@ -6,8 +6,8 @@
 #
 # Usage : genestats.pl [-options]
 #
-# Last edited by: $Author: mt3 $
-# Last edited on: $Date: 2011-03-08 16:36:04 $
+# Last edited by: $Author: klh $
+# Last edited on: $Date: 2011-03-29 10:54:15 $
  
 
 use strict;                                      
