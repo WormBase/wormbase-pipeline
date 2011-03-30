@@ -8,7 +8,7 @@
 # Originally written by Dan Lawson
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2011-03-04 15:36:36 $
+# Last updated on: $Date: 2011-03-30 14:40:01 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -383,7 +383,7 @@ sub copy_gff_files{
       # add supplementary and nGASP GFF
       my $ngaspdir;
       if($species eq 'elegans') {
-	my $supdir = $wb->build_data."/SUPPLEMENTARY_GFF";
+	my $supdir = "$chromdir/SUPPLEMENTARY_GFF";
 	my @gfffiles = glob("$supdir/*.gff");
 	foreach my $sup (@gfffiles){
 		$wb->run_command("cat $sup >> $gff_dir/$whole_filename", $log);
