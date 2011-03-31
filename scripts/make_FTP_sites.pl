@@ -8,7 +8,7 @@
 # Originally written by Dan Lawson
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2011-03-30 14:40:01 $
+# Last updated on: $Date: 2011-03-31 14:29:25 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -152,7 +152,10 @@ my $log = Log_files->make_build_log($wormbase);
 
 
 # using -all option?
-($clustal=$release=$dump_ko=$dna=$gff=$supplementary=$rna=$misc=$wormpep=$genes=$cDNA=$geneIDs=$pcr=$homols=$manifest=$ont = 1 ) if ($all);
+#($clustal=$release=$dump_ko=$dna=$gff=$supplementary=$rna=$misc=$wormpep=$genes=$cDNA=$geneIDs=$pcr=$homols=$manifest=$ont = 1 ) if ($all);
+# remove supplementary from above list, now off by default
+($clustal=$release=$dump_ko=$dna=$gff=$rna=$misc=$wormpep=$genes=$cDNA=$geneIDs=$pcr=$homols=$manifest=$ont = 1 ) if ($all);
+
 
 my $base_dir = $wormbase->basedir;    # The BUILD directory
 my $ace_dir = $wormbase->autoace;     # AUTOACE DATABASE DIR
@@ -296,14 +299,12 @@ sub copy_dna_files{
   $log->write_to("$runtime: copying dna and agp files\n");
 
   my %accessors = ($wormbase->all_species_accessors);
-  $log->write_to("removing Heterorhabditis from species list\n");
-  delete $accessors{'heterorhabditis'};
   $accessors{elegans} = $wormbase;
 
   foreach my $wb (values %accessors) {
     my $gspecies = $wb->full_name('-g_species'=>1);
     my $chromdir = $wb->chromosomes;
-
+    
     if (-e "$chromdir") {
       my $dna_dir = "$targetdir/$WS_name/genomes/$gspecies/sequences/dna";
       mkpath($dna_dir,1,0775);
@@ -320,31 +321,60 @@ sub copy_dna_files{
 	
       } elsif ($wb->assembly_type eq 'chromosome') {
 	# copy the chromosome files across
-	$wormbase->run_command("cp -f -R $chromdir/*.dna* $dna_dir/", $log);
-	$wormbase->run_command("/bin/gzip -f -9 $dna_dir/*.dna", $log);
-
+	#$wormbase->run_command("cp -f -R $chromdir/*.dna* $dna_dir/", $log);
+	#$wormbase->run_command("/bin/gzip -f -9 $dna_dir/*.dna", $log);
+        
 	# do for each type of unmasked and masked sequence
 	foreach my $type ("",  "_masked",  "_softmasked") {
 	  # delete any existing whole-genome files produced by running this script more than once
 	  unlink "$dna_dir/${gspecies}${type}.${WS_name}.dna.fa";
-
-        # and construct the whole-genome dna files
+          
+          # and construct the whole-genome dna and agp files
 	  foreach my $chrom ($wb->get_chromosome_names(-mito => 1, -prefix => 1)) {
 	    my $chrom_file = "$chromdir/$chrom"; # basic form of the dna file
 	    $wormbase->run_command("touch $dna_dir/${gspecies}${type}.${WS_name}.dna.fa",$log);
+            
 	    # is the data gzipped?
 	    if (-e "$chrom_file${type}.dna") {
 	      $wormbase->run_command("cat ${chrom_file}${type}.dna >> $dna_dir/${gspecies}${type}.${WS_name}.dna.fa", $log);
 	    } elsif (-e "${chrom_file}${type}.dna.gz") {
 	      $wormbase->run_command("/bin/gunzip -c  ${chrom_file}${type}.dna.gz >> $dna_dir/${gspecies}${type}.${WS_name}.dna.fa", $log);
-	    } else {$log->error("$gspecies : missing file: $chrom_file${type}.dna\n")}
+	    } else {
+              $log->error("$gspecies : missing file: $chrom_file${type}.dna\n");
+            }
 	  }
+          
 	  # gzip the resulting file
 	  $wormbase->run_command("/bin/gzip -9 -f $dna_dir/${gspecies}${type}.${WS_name}.dna.fa", $log);	
 	}
-
-      } else {$log->error("$gspecies : unknown assembly_type\n")}
-      $wb->run_command("cp -f -R $chromdir/*.agp $dna_dir/", $log) if (scalar glob("$chromdir/*.agp"));
+      }
+        
+      my @agp_files = scalar(glob("$chromdir/*.agp"));
+      
+      if (scalar(@agp_files)) {
+        my $target_agp_file =  "$dna_dir/${gspecies}.${WS_name}.agp"; 
+        
+        if (scalar(@agp_files) == 1) {
+          # just the one - assume its for whole genome and copy it across
+          my ($single_file) = @agp_files;
+          $wormbase->run_command("cp -f $single_file $target_agp_file", $log); 
+        } else {
+          # assume per-chromosome
+          unlink $target_agp_file;
+          $wormbase->run_command("touch $target_agp_file", $log);
+          foreach my $chrom ($wb->get_chromosome_names(-mito => 1, -prefix => 1)) {
+            my $agp = "$chromdir/$chrom.agp";
+            if (-e "$chromdir/$chrom.agp") {
+              $wormbase->run_command("cat $agp >> $target_agp_file", $log);
+            } else {
+              $log->error("$gspecies : missing file: $chromdir/$chrom.agp");
+            }
+          }
+        }
+     
+      } else {
+        $log->error("$gspecies : unknown assembly_type\n");
+      }
 
       # change group ownership
       $wb->run_command("chgrp -R  worm $dna_dir", $log);
@@ -372,12 +402,14 @@ sub copy_gff_files{
       $wormbase->run_command("rm -f $gff_dir/$whole_filename", $log);
 
       if($wb->assembly_type eq 'contig') {
-	      if (-e "$chromdir/$species.gff") { # tierII does it this way
-		$wormbase->run_command("cp -f -R $chromdir/$species.gff $gff_dir/$whole_filename", $log);
-      	      } else { $log->error("$chromdir/$species.gff missing\n")}
+        if (-e "$chromdir/$species.gff") { # tierII does it this way
+          $wormbase->run_command("cp -f -R $chromdir/$species.gff $gff_dir/$whole_filename", $log);
+        } else { 
+          $log->error("$chromdir/$species.gff missing\n");
+        }
       } else {
-           $wormbase->run_command("cat $chromdir/*.gff* > $gff_dir/$whole_filename", $log);
-           $wormbase->run_command("cp -f $chromdir/*.gff* $gff_dir/", $log); #individual files too
+        $wormbase->run_command("cat $chromdir/*.gff* > $gff_dir/$whole_filename", $log);
+        #$wormbase->run_command("cp -f $chromdir/*.gff* $gff_dir/", $log); #individual files too
       }
 
       # add supplementary and nGASP GFF
@@ -386,7 +418,7 @@ sub copy_gff_files{
 	my $supdir = "$chromdir/SUPPLEMENTARY_GFF";
 	my @gfffiles = glob("$supdir/*.gff");
 	foreach my $sup (@gfffiles){
-		$wb->run_command("cat $sup >> $gff_dir/$whole_filename", $log);
+          $wb->run_command("cat $sup >> $gff_dir/$whole_filename", $log);
 	}
 	$ngaspdir = $supdir;
       }
@@ -396,10 +428,10 @@ sub copy_gff_files{
       if(-e $ngaspdir){
 	my @ngasp_methods = qw(augustus fgenesh jigsaw mgene);
 	foreach my $method(@ngasp_methods){
-		my $file = "$ngaspdir/$species.$method.gff2.gz";
-		if(-e $file){
-			$wb->run_command("zcat $file >> $gff_dir/$whole_filename", $log);
-		} else { $log->error("$file missing\n")}
+          my $file = "$ngaspdir/$species.$method.gff2.gz";
+          if(-e $file){
+            $wb->run_command("zcat $file >> $gff_dir/$whole_filename", $log);
+          } else { $log->error("$file missing\n")}
 	}
       } else { $log->write_to("no ngasp for $gspecies\n")}
       
