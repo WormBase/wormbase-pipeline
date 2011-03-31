@@ -8,7 +8,7 @@
 # Originally written by Dan Lawson
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2011-03-31 14:29:25 $
+# Last updated on: $Date: 2011-03-31 14:42:16 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -213,11 +213,11 @@ close FTP_LOCK;
 
 &copy_homol_data if ($homols);        # copies best blast hits files across
 
-&check_manifest if ($manifest);       # compares whats on the FTP site with what should be
-
 &extract_ko if ($dump_ko);            # dumps KO-consortium data to FTP site
 
 &copy_clustal if ($clustal);          # copies the clustal sql-dump to the FTP site
+
+&check_manifest if ($manifest);       # compares whats on the FTP site with what should be
 
 &make_frozen_links;                   # creates a frozen symbolic link if it is a 5 or 0 release
 
@@ -1079,28 +1079,13 @@ cDNA2orf.WSREL.gz
 confirmed_genes.WSREL.gz
 
 ./genomes/c_elegans/sequences/dna
-CHROMOSOME_I.agp
-CHROMOSOME_I.dna.gz
-CHROMOSOME_II.agp
-CHROMOSOME_II.dna.gz
-CHROMOSOME_III.agp
-CHROMOSOME_III.dna.gz
-CHROMOSOME_III_masked.dna.gz
-CHROMOSOME_II_masked.dna.gz
-CHROMOSOME_IV.agp
-CHROMOSOME_IV.dna.gz
-CHROMOSOME_IV_masked.dna.gz
-CHROMOSOME_I_masked.dna.gz
-CHROMOSOME_MtDNA.dna.gz
-CHROMOSOME_V.agp
-CHROMOSOME_V.dna.gz
-CHROMOSOME_V_masked.dna.gz
-CHROMOSOME_X.agp
-CHROMOSOME_X.dna.gz
-CHROMOSOME_X_masked.dna.gz
+gspecies.WSREL.agp
 intergenic_sequences.dna.gz
 
+# for all species
 ./genomes/gspecies/sequences/dna
+gspecies_masked.WSREL.dna.fa.gz
+gspecies_softmasked.WSREL.dna.fa.gz
 gspecies.WSREL.dna.fa.gz
 
 ./genomes/gspecies/sequences/protein
@@ -1112,29 +1097,11 @@ best_blastp_hits_SPECIES.WSREL.gz
 gspecies.WSREL.rna.fa.gz
 
 ./genomes/c_elegans/genome_feature_tables/GFF2
-CHROMOSOME_I.gff
-CHROMOSOME_II.gff
-CHROMOSOME_III.gff
-CHROMOSOME_IV.gff
-CHROMOSOME_MtDNA.gff
-CHROMOSOME_V.gff
-CHROMOSOME_X.gff
 composition.all
 totals
 
 ./genomes/gspecies/genome_feature_tables/GFF2
 gspecies.WSREL.gff.gz
-
-./genomes/c_elegans/genome_feature_tables/SUPPLEMENTARY_GFF
-RNAz.gff
-genemark.gff
-mSplicer_orf.gff
-mSplicer_transcript.gff
-miranda.gff
-pictar.gff
-elegans_curation_anomalies.gff
-cisRed.gff
-
 
 ./ONTOLOGY
 anatomy_association.WSREL.wb
