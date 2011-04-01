@@ -5,8 +5,8 @@
 # Counts the number of objects in an ACEDB database for each Class stated in the config file
 # Compares this number to those from a second database.
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2010-07-14 14:39:18 $
+# Last updated by: $Author: klh $
+# Last updated on: $Date: 2011-04-01 13:08:58 $
 
 
 use strict;
@@ -147,10 +147,6 @@ $wormbase->run_command("rm -f ".$wormbase->compare."/current.out",$log);
 $wormbase->run_command("rm -f ".$wormbase->compare."/current.dbcomp",$log);
 $wormbase->run_command("ln -s $errfile ".$wormbase->compare."/current.out",$log);
 $wormbase->run_command("ln -s $outfile ".$wormbase->compare."/current.dbcomp",$log);
-
-
-# write to the release letter - subroutine in Wormbase.pm
-$wormbase->release_databases;
 
 $log->write_to("\nClass and Gene-curation Statistics are in: $outfile\n\n");
 
