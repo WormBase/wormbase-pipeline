@@ -7,17 +7,18 @@
 # dl
 # 
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2007-06-14 10:48:15 $
+# Last edited on: $Date: 2011-04-01 11:57:19 $
  
 
 use strict;
 use Getopt::Long;
 
-my ($file, $fileout,);
+my ($file, $fileout,$sclass);
 
   GetOptions (
               "file:s"        => \$file,
 	      "fileout:s"     => \$fileout,
+	      "sclass:s"       => \$sclass,
 );
 
 
@@ -41,84 +42,91 @@ open (OUT, ">$fileout");
 open (FILE, "<$file");
 while (<FILE>) {
 
-    chomp;
-    next if (/^\/\//);
-    $line = $_;
+  chomp;
+  next if (/^\/\//);
+  $line = $_;
 
-#    print  "// [$in_block] '$line' \n";
-
-    if (($line =~/^CDS \"(\S+)\"/) && ($in_block == 0)) {
-	$class = "CDS";
-	$name = $1;
-	&report unless ($oldname eq "nill");
-	$in_block = 1;
-	$oldname = $name;
-	next;
-    }    
-    elsif (($line =~/^Sequence \"(\S+)\"/) && ($in_block == 0)) {
-	$class = "Sequence";
-	$name = $1;
-	&report unless ($oldname eq "nill");
-	$in_block = 1;
-	$oldname = $name;
-	next;
-    }    
-    elsif (($line =~/^Feature \"(\S+)\"/) && ($in_block == 0)) {
-	$class = "Feature";
-	$name = $1;
-	&report unless ($oldname eq "nill");
-	$in_block = 1;
-	$oldname = $name;
-	next;
-    }    
-    elsif (($line =~/^Feature_data \"(\S+)\"/) && ($in_block == 0)) {
-	$class = "Feature_data";
-	$name = $1;
-	&report unless ($oldname eq "nill");
-	$in_block = 1;
-	$oldname = $name;
-	next;
-    }    
-    elsif (($line =~/^Pseudogene \"(\S+)\"/) && ($in_block == 0)) {
-	$class = "Pseudogene";
-	$name = $1;
-	&report unless ($oldname eq "nill");
-	$in_block = 1;
-	$oldname = $name;
-	next;
-    }    
-    elsif (($line =~/^Transcript \"(\S+)\"/) && ($in_block == 0)) {
-	$class = "Transcript";
-	$name = $1;
-	&report unless ($oldname eq "nill");
-	$in_block = 1;
-	$oldname = $name;
-	next;
-    }
-    elsif (($line =~/^Transposon \"(\S+)\"/) && ($in_block == 0)) {
-	$class = "Transposon";
-	$name = $1;
-	&report unless ($oldname eq "nill");
-	$in_block = 1;
-	$oldname = $name;
-	next;
-    }
-    elsif ($line eq "") {
-	$in_block = 0;
-	next;
-    }
-    # parse delete/addition lines
-    if (/^-D/) {
-	push (@delete,$_);
-	print OUT "- $_\n" if ($debug);
-    }
-    else {
-	push (@add,$_);
-	print OUT "+ $_\n" if ($debug);
-    }
+  #    print  "// [$in_block] '$line' \n";
+  
+  if (($line =~/^CDS \"(\S+)\"/) && ($in_block == 0)) {
+    $class = "CDS";
+    $name = $1;
+    &report unless ($oldname eq "nill");
+    $in_block = 1;
+    $oldname = $name;
+    next;
+  }    
+  elsif (($line =~/^Sequence \"(\S+)\"/) && ($in_block == 0)) {
+    $class = "Sequence";
+    $name = $1;
+    &report unless ($oldname eq "nill");
+    $in_block = 1;
+    $oldname = $name;
+    next;
+  }    
+  elsif (($line =~/^Feature \"(\S+)\"/) && ($in_block == 0)) {
+    $class = "Feature";
+    $name = $1;
+    &report unless ($oldname eq "nill");
+    $in_block = 1;
+    $oldname = $name;
+    next;
+  }    
+  elsif (($line =~/^Feature_data \"(\S+)\"/) && ($in_block == 0)) {
+    $class = "Feature_data";
+    $name = $1;
+    &report unless ($oldname eq "nill");
+    $in_block = 1;
+    $oldname = $name;
+    next;
+  }    
+  elsif (($line =~/^Pseudogene \"(\S+)\"/) && ($in_block == 0)) {
+    $class = "Pseudogene";
+    $name = $1;
+    &report unless ($oldname eq "nill");
+    $in_block = 1;
+    $oldname = $name;
+    next;
+  }    
+  elsif (($line =~/^Transcript \"(\S+)\"/) && ($in_block == 0)) {
+    $class = "Transcript";
+    $name = $1;
+    &report unless ($oldname eq "nill");
+    $in_block = 1;
+    $oldname = $name;
+    next;
+  }
+  elsif (($line =~/^Transposon \"(\S+)\"/) && ($in_block == 0)) {
+    $class = "Transposon";
+    $name = $1;
+    &report unless ($oldname eq "nill");
+    $in_block = 1;
+    $oldname = $name;
+    next;
+  }
+  elsif (defined($sclass) && (($line =~/^$sclass \"(\S+)\"/) && ($in_block == 0))) {
+    $class = $sclass;
+    $name = $1;
+    &report unless ($oldname eq "nill");
+    $in_block = 1;
+    $oldname = $name;
+    next;
+  }
+    
+  elsif ($line eq "") {
+    $in_block = 0;
+    next;
+  }
+  # parse delete/addition lines
+  if (/^-D/) {
+    push (@delete,$_);
+    print OUT "- $_\n" if ($debug);
+  }
+  else {
+    push (@add,$_);
+    print OUT "+ $_\n" if ($debug);
+  }
 }
-
-
 
 &report;
 close FILE;
