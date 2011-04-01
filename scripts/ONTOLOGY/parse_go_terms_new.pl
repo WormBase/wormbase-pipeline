@@ -546,7 +546,9 @@ sub check_go_term {
       if ($_ =~ /^id:\s+(\S+)/) {$id = $1}
       if ($_ =~ /name:\s+(\S+)/) {$name = $1}
       if ($_ =~ /namespace:\s+(\S+)/) {$namespace = $1}
-      if ($_ =~ /def:\s+\"(.+)\"/) {$def = $1}
+      if ($_ =~ /def:\s+\"(.+)\"$/ or $_ =~ /def:\s+\"(.+)\"\s+\[.+\]$/) {
+        $def = $1;
+      }
       if ($_ =~ /^\s*$/ && exists $go{$id}) {
 	print GOOUT "\nGO_term : \"$id\"\n";
 	print GOOUT "Definition \"$def\"\n";
