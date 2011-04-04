@@ -8,7 +8,7 @@
 # Originally written by Dan Lawson
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2011-03-31 14:42:16 $
+# Last updated on: $Date: 2011-04-04 10:40:01 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -315,14 +315,14 @@ sub copy_dna_files{
 	my $masked_file = "$chromdir/".$species."_masked.dna.gz";
 	my $soft_file = "$chromdir/".$species."_softmasked.dna.gz";
 		
-	$wormbase->run_command("/bin/gzip -9 -c $dna_file > $dna_dir/".$gspecies.".$WS_name.dna.fa.gz",$log);
+	$wormbase->run_command("gzip -9 -c $dna_file > $dna_dir/".$gspecies.".$WS_name.dna.fa.gz",$log);
 	$wormbase->run_command("cp -f $soft_file $dna_dir/".$gspecies."_softmasked.$WS_name.dna.fa.gz", $log);
 	$wormbase->run_command("cp -f $masked_file $dna_dir/".$gspecies."_masked.$WS_name.dna.fa.gz", $log);
 	
       } elsif ($wb->assembly_type eq 'chromosome') {
 	# copy the chromosome files across
 	#$wormbase->run_command("cp -f -R $chromdir/*.dna* $dna_dir/", $log);
-	#$wormbase->run_command("/bin/gzip -f -9 $dna_dir/*.dna", $log);
+	#$wormbase->run_command("gzip -f -9 $dna_dir/*.dna", $log);
         
 	# do for each type of unmasked and masked sequence
 	foreach my $type ("",  "_masked",  "_softmasked") {
@@ -338,14 +338,14 @@ sub copy_dna_files{
 	    if (-e "$chrom_file${type}.dna") {
 	      $wormbase->run_command("cat ${chrom_file}${type}.dna >> $dna_dir/${gspecies}${type}.${WS_name}.dna.fa", $log);
 	    } elsif (-e "${chrom_file}${type}.dna.gz") {
-	      $wormbase->run_command("/bin/gunzip -c  ${chrom_file}${type}.dna.gz >> $dna_dir/${gspecies}${type}.${WS_name}.dna.fa", $log);
+	      $wormbase->run_command("gunzip -c  ${chrom_file}${type}.dna.gz >> $dna_dir/${gspecies}${type}.${WS_name}.dna.fa", $log);
 	    } else {
               $log->error("$gspecies : missing file: $chrom_file${type}.dna\n");
             }
 	  }
           
 	  # gzip the resulting file
-	  $wormbase->run_command("/bin/gzip -9 -f $dna_dir/${gspecies}${type}.${WS_name}.dna.fa", $log);	
+	  $wormbase->run_command("gzip -9 -f $dna_dir/${gspecies}${type}.${WS_name}.dna.fa", $log);	
 	}
       }
         
@@ -435,7 +435,7 @@ sub copy_gff_files{
 	}
       } else { $log->write_to("no ngasp for $gspecies\n")}
       
-      $wormbase->run_command("/bin/gzip -9 -f $gff_dir/$whole_filename",$log);
+      $wormbase->run_command("gzip -9 -f $gff_dir/$whole_filename",$log);
       $wormbase->run_command("cp -f -R $chromdir/composition.all $gff_dir/", $log) if (-e "$chromdir/composition.all");
       $wormbase->run_command("cp -f -R $chromdir/totals $gff_dir/", $log) if (-e "$chromdir/totals");
 
@@ -458,7 +458,7 @@ sub copy_gff_files{
 
     if (-e $source) {
       $wb->run_command("cp -f $source $target", $log);
-      $wb->run_command("bin/gzip -9 -f $target",$log);
+      $wb->run_command("gzip -9 -f $target",$log);
     } else {
       $log->write_to("No GFF3 data found for species $species\n");
     }
@@ -534,7 +534,7 @@ sub copy_rna_files{
 	}
 
 	$wormbase->run_command("cp -f -R $file $ftpfile", $log);
-	$wormbase->run_command("/bin/gzip -9 -f $ftpfile",$log);
+	$wormbase->run_command("gzip -9 -f $ftpfile",$log);
 
 	# change group ownership
 	$wormbase->run_command("chgrp -R  worm $ftprna_dir", $log);  
@@ -575,7 +575,7 @@ sub copy_misc_files{
   $log->write_to("$runtime: copying misc files\n");
   # zip and copy the microarray oligo mapping files.
   chdir "$ace_dir";
-  $wormbase->run_command("/bin/gzip  -9 -f *oligo_mapping", $log);
+  $wormbase->run_command("gzip  -9 -f *oligo_mapping", $log);
   my $annotation_dir = "$targetdir/$WS_name/genomes/".$wormbase->full_name('-g_species' => 1)."/annotation";
   mkpath($annotation_dir,1,0775);
   $wormbase->run_command("cp -f $ace_dir/*oligo_mapping.gz $annotation_dir/", $log);
@@ -746,7 +746,7 @@ sub extract_confirmed_genes{
 
 
   close(OUT);
-  $wormbase->run_command("/bin/gzip -9 -f $annotation_dir/confirmed_genes.$WS_name", $log);
+  $wormbase->run_command("gzip -9 -f $annotation_dir/confirmed_genes.$WS_name", $log);
 
   $db->close;
   $wormbase->run_command("chgrp -R  worm $annotation_dir", $log);  
@@ -819,7 +819,7 @@ EOF
   }
   close(OUT);
 
-  $wormbase->run_command("/bin/gzip -9 -f $out", $log);
+  $wormbase->run_command("gzip -9 -f $out", $log);
   $wormbase->run_command("chgrp -R  worm $annotation_dir", $log);  
 
   $runtime = $wormbase->runtime;
@@ -855,7 +855,7 @@ sub make_geneID_list {
   close(TACE);
   close(OUT);
 
-  $wormbase->run_command("/bin/gzip -9 -f $out", $log);
+  $wormbase->run_command("gzip -9 -f $out", $log);
   $wormbase->run_command("chgrp -R  worm $annotation_dir", $log);  
 
   $runtime = $wormbase->runtime;
@@ -929,7 +929,7 @@ sub make_pcr_list {
 
   close(OUT);
 
-  $wormbase->run_command("/bin/gzip -9 -f $out", $log);
+  $wormbase->run_command("gzip -9 -f $out", $log);
   $wormbase->run_command("chgrp -R  worm $annotation_dir", $log);  
 
   $runtime = $wormbase->runtime;
@@ -955,7 +955,7 @@ sub copy_homol_data {
       my $protein_dir = "$targetdir/$WS_name/genomes/".$wb->full_name('-g_species'=>1)."/sequences/protein";
       mkpath($protein_dir,1,0775);
       my $target_file = "$protein_dir/best_blastp_hits_${species}.$WS_name.gz";
-      $wormbase->run_command("/bin/gzip -9 -f $source_file",$log) if (! -e "$source_file.gz"); # this script might be run more than once if there are problems
+      $wormbase->run_command("gzip -9 -f $source_file",$log) if (! -e "$source_file.gz"); # this script might be run more than once if there are problems
       $wormbase->run_command("scp $source_file.gz $target_file", $log);
     }
     $runtime = $wormbase->runtime;
