@@ -17,7 +17,7 @@
 # foreach? end
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2010-09-29 12:24:10 $      
+# Last updated on: $Date: 2011-04-04 09:48:16 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -116,7 +116,7 @@ foreach my $chromosome (@chromosomes) {
 close (OUT);
 
 # copy the data files to the FTP site
-my $FTP = "/nfs/disk69/ftp/pub2/wormbase/Remap-between-versions";
+my $FTP = "/nfs/disk69/ftp/pub2/wormbase/software/Remap-between-versions";
 chdir $outdir;
 $wormbase->run_command("rm $outdir/remap.tar.bz2", $log);
 $wormbase->run_command("chmod -R u+w $outdir/Remap-for-other-groups/CHROMOSOME_DIFFERENCES/", $log);
