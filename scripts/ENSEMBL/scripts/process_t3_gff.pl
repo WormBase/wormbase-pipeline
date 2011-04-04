@@ -65,6 +65,7 @@ sub grab_ids {
                 6305   => 'Meloidogyne hapla',
                 6289   => 'Haemonchus contortus',
 		96668  => 'Caenorhabditis angaria',
+		6334   => 'Trichinella spiralis',
 	);
 
 
