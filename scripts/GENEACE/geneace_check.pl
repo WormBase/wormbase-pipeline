@@ -6,8 +6,8 @@
 #
 # Script to run consistency checks on the geneace database
 #
-# Last updated by: $Author: klh $
-# Last updated on: $Date: 2011-03-14 10:57:42 $
+# Last updated by: $Author: mt3 $
+# Last updated on: $Date: 2011-04-05 10:56:39 $
 
 use strict;
 use lib $ENV{"CVS_DIR"};
@@ -295,6 +295,11 @@ sub process_gene_class{
   # checks that a gene with orthologs has not been merged into something else ie Dead. nb. It is OK for Transposon_CDSs to have Orthologs
   foreach my $gene ($db->fetch(-query=>"Find Gene WHERE NOT Live AND Merged_into AND Ortholog")){
       print LOG "ERROR: Zut alors! $gene has been merged (and is Dead) but is still connected to an ortholog\n";
+  }
+  
+  # checks that a gene with mapping data is not dead.
+  foreach my $gene ($db->fetch(-query=>"Find Gene WHERE NOT Live AND Map_info")){
+    print LOG "ERROR: ERROR: Bleedin' Nora! $gene is dead but still has mapping data\n";
   }
 
   # checks that a Gene doesn't have both Map and Interpolated_map_position tags
