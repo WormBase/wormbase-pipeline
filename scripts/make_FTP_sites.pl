@@ -8,7 +8,7 @@
 # Originally written by Dan Lawson
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2011-04-04 10:40:01 $
+# Last updated on: $Date: 2011-04-05 11:35:35 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -349,9 +349,9 @@ sub copy_dna_files{
 	}
       }
         
-      my @agp_files = scalar(glob("$chromdir/*.agp"));
+      my @agp_files = glob("$chromdir/*.agp");
       
-      if (scalar(@agp_files)) {
+      if (@agp_files) {
         my $target_agp_file =  "$dna_dir/${gspecies}.${WS_name}.agp"; 
         
         if (scalar(@agp_files) == 1) {
