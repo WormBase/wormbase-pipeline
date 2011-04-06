@@ -9,8 +9,8 @@
 #      $AUTHOR:$
 #      COMPANY:  WormBase
 #      CREATED:  11/27/09 10:10:08 GMT
-#      CHANGED: $Date: 2011-03-08 09:36:20 $
-#    $Revision: 1.10 $
+#      CHANGED: $Date: 2011-04-06 14:42:38 $
+#    $Revision: 1.11 $
 #===============================================================================
 
 # need to set the PERl5LIb  to pick up bioperl for the load_gff thing ... maybe have to hardcode it
@@ -119,7 +119,7 @@ sub process_worm {
 
     my $gffile = concatenate_gff($wb,\@gz_gffs,\@raw_gffs);
 
-    process_gff($wb->species,$gffile);
+    process_gff($wb,$gffile);
 
 }
 
@@ -147,13 +147,16 @@ sub concatenate_gff {
 
 # just the processing bit
 sub process_gff {
-    my($species,$file)=@_;
+    my($wb,$file)=@_;
+
+    my $species = $wb->species;
+    my $database = $wb->autoace;
 
     &tmpfile_hook("/tmp/$species.gff");
 
-    print STDERR "/software/bin/perl $ENV{CVS_DIR}/web_data/process_elegans_gff-standalone.pl ".
+    print STDERR "/software/bin/perl $ENV{CVS_DIR}/web_data/process_elegans_gff-standalone.pl -database $database ".
            ">/tmp/$species.gff <$file\n" if $debug;
-    system("/software/bin/perl $ENV{CVS_DIR}/web_data/process_elegans_gff-standalone.pl ".
+    system("/software/bin/perl $ENV{CVS_DIR}/web_data/process_elegans_gff-standalone.pl -database $database ".
            ">/tmp/$species.gff <$file") && die(@!);
 }
 

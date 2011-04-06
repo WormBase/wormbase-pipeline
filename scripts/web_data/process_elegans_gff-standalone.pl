@@ -1,26 +1,38 @@
 #!/usr/bin/perl
 
+use strict;
+use Getopt::Long;
+
 use lib $ENV{CVS_DIR};
 use Wormbase;
-use strict;
 use Ace;
+
+my (
+    $debug, 
+    $database,
+    $species,
+    );
+
+GetOptions('species:s' => \$species,
+           'debug:s'   => \$debug,
+           'database:s' => \$database,
+           )||die(@!);
+
 
 # prop should get a -species option
 
-my $wb = Wormbase->new(-autoace => glob('~wormpub/DATABASES/current_DB' ));
-#my $db = Ace->connect( $wb->autoace ) or die "Can't open ace database:", Ace->error;
-my $db = Ace->connect( glob('~wormpub/DATABASES/current_DB') ) or die "Can't open ace database:", Ace->error;
+my $wb = (defined $database) 
+    ? Wormbase->new(-autoace => $database, -debug => $debug, -organism => $species)
+    : Wormbase->new(-debug => $debug, -organism => $species);
 
+my $db = Ace->connect( $wb->autoace ) or die "Can't open ace database:", Ace->error;
 my $version = $db->version;
-
 
 my (
     %NOTES,          %LOCUS, %GENBANK,      %CONFIRMED,
     %ORFEOME,        %GENES, %GENE_EXTENTS, %WORMPEP,
     %TRANSCRIPT2CDS, %genes_seen,         , %loci_seen
 );
-
-my $debug = 1 if $ENV{DEBUG};
 
 # setting up things
 
