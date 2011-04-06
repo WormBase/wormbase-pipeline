@@ -1,4 +1,4 @@
-// Spread sheet definition for the ACeDB software 
+bi// Spread sheet definition for the ACeDB software 
 // User: wormpub
 // Date: 2010-11-26_11:08:57
 
@@ -28,12 +28,11 @@ Tag Public_name
  
 Colonne 3 
 Width 12 
-Null 
+Optional
 Visible 
-Show_Tag 
+Next_Tag 
 From 1 
-Tag Suppressed 
- 
+Tag Status
  
 
 // End of these definitions
