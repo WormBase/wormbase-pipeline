@@ -5,7 +5,7 @@
 # A script to make patch files between the last upload and the current geneace.
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2011-04-05 16:21:10 $
+# Last edited on: $Date: 2011-04-06 09:25:23 $
 #
 #====================
 
@@ -55,7 +55,7 @@ my $next_build = $WS_version + 1;
 my $date = `date +%y%m%d`;
 chomp $date;
 #debugging
-$date++;
+#$date++;
 
 
 # directory paths
@@ -149,7 +149,7 @@ __END__
 =back
 
 geneace_patch.pl is a wrapper with options to automate the production of the 
-incremental patch files for the web team to update the WS realease mid cycle.
+incremental patch files for the web team to update the WS release mid cycle.
 
 geneace_patch.pl mandatory arguments:
 
@@ -167,15 +167,37 @@ geneace_patch.pl optional arguments:
 
 =back
 
-=head1 RUN REQUIREMENTS:
+=over 4
+
+=item -ldate, compares the current annotation against the previous patch files giving an incremental update.
 
 =back
 
-=head1 RUN OUTPUT:
+=head1 RUN REQUIREMENTS:
+
+Access to geneace and permission to write under the geneace directory
 
 =back
 
 =head1 EXAMPLES:
+
+=over 4
+
+=item geneace_patch.pl
+
+Does a comparison between the current geneace instance and the one used in the 
+current/last build
+
+=back
+
+=over 4
+
+=item geneace_patch.pl -ldate 110405
+
+Does a comparison between the current geneace instance and the data dumped from
+the patch data done on 110405
+
+=back
 
 =over 4
 
