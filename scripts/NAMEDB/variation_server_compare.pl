@@ -12,7 +12,7 @@ use Carp;
 use Getopt::Long;
 use Storable;
 
-my ($help, $debug, $test, $store, $database);
+my ($help, $debug, $test, $store, $database, $paranoid);
 
 GetOptions (    'help'       => \$help,
                 'debug=s'    => \$debug,
@@ -41,12 +41,15 @@ my $def = "$ENV{CVS_DIR}/../wquery/geneace/variation_nameserver_comm.def";
 my $TABLE = $wormbase->table_maker_query($acedb, $def);
 my %ace_ids;
 while(<$TABLE>) {
-    next unless /WBVar/;
-    s/\"//g;
-    my ($id,$name) = split;
-    $ace_ids{$id} = $name;
+  next unless /WBVar/;
+  s/\"//g;
+  my ($id,$status,$name) = split;
+  
+  $ace_ids{$id} = {
+    name => $name,
+    status => $status,
+  };
 }
-delete $ace_ids{'acedb>'};
 close $TABLE;
 
 #connect to name server and set domain to 'Gene'
@@ -58,48 +61,69 @@ my $db = NameDB_handler->new($DB,$USER,$PASS,'/nfs/WWWdev/SANGER_docs/htdocs');
 
 # get nameserver data
 my $query = 'SELECT primary_identifier.object_public_id, 
-                    secondary_identifier.object_name
+                    secondary_identifier.object_name,
+                    primary_identifier.object_live
              FROM primary_identifier,secondary_identifier 
              WHERE  primary_identifier.object_id = secondary_identifier.object_id 
              AND   (secondary_identifier.name_type_id = 5) 
-             AND   (primary_identifier.object_live = 1) 
              ORDER BY object_public_id';
-
-#RESULTS . . 
-#+------------------+-------------+
-#| object_public_id | object_name |
-#+------------------+-------------+
-#| WBVar00000001    | a83         |
-#| WBVar00000002    | ac1         |
-#| WBVar00000003    | act-123     |
-#+------------------+-------------+
 
 my $sth = $db->dbh->prepare($query);
 $sth->execute();
 
 my %server_ids;
-while (my ( $var, $name ) = $sth->fetchrow_array){
-    $server_ids{$var} = $name;
+while (my ( $var, $name, $live ) = $sth->fetchrow_array){
+  $server_ids{$var} = {
+    name => $name,
+    status => ($live) ? 'Live' : 'Dead',
+  };
 }
 
-foreach my $var (keys %ace_ids) {
-    if($server_ids{$var}){
-      if($server_ids{$var} eq $ace_ids{$var}) {
-        #print "$var ok\n";
-      }
-      else {
-        $log->error("$var - acedb = $ace_ids{$var} : var-server = $server_ids{$var}\n");
-      }
-      delete($server_ids{$var});
-    } else {
-        $log->error("$var missing from var-server\n");
+my %ids = map { $_ => 1 } (keys %server_ids, keys %ace_ids);
+
+foreach my $var (keys %ids) {
+  if (exists $server_ids{$var} and not exists $ace_ids{$var}) {
+    if ($server_ids{$var}->{status} eq 'Live') {
+      $log->error(sprintf("%s (%s in server) missing from Acedb\n", 
+                          $var, 
+                          $server_ids{$var}->{status}));
     }
-}
+  } elsif (exists $ace_ids{$var} and not exists $server_ids{$var}) {
+    if ($ace_ids{$var}->{status} eq 'Live') {
+      $log->error(sprintf("%s (%s in Acedb) missing from Server or has no secondary namer\n", 
+                          $var, 
+                          $ace_ids{$var}->{status}));
+    }
+  } else {
+    # must be present in both
 
-foreach my $var (keys %server_ids) {
-    $log->error("$var missing Public_name or absent from acedb\n");
+    if(exists $server_ids{$var}){
+      next if $ace_ids{$var}->{status} eq 'Dead' and $server_ids{$var}->{status} eq 'Dead';
+      
+      if ($server_ids{$var}->{name} ne $ace_ids{$var}->{name}) {
+        $log->error(sprintf("%s (%s in Acedb) public names disagree: acedb = %s : var-server = %s\n", 
+                            $var,
+                            $ace_ids{$var}->{status},
+                            $ace_ids{$var}->{name},
+                            $server_ids{$var}->{name}));
+        
+      } elsif ($ace_ids{$var}->{status} ne $server_ids{$var}->{status} and
+               ($server_ids{$var}->{status} eq 'Dead' and $ace_ids{$var}->{status} eq 'Live' or
+                $server_ids{$var}->{status} eq 'Live' and $ace_ids{$var}->{status} eq 'Dead')) {
+        
+        $log->error(sprintf("%s acedb status = %-10s : var-server status = %-10s\n", 
+                            $var,
+                            #$ace_ids{$var}->{name},
+                            $ace_ids{$var}->{status}, 
+                            $server_ids{$var}->{status}, 
+                            ));
+        
+      }
+    }  
+  }
 }
-
+  
+  
 $log->write_to("Work Done!\n");
 $log->mail();
 exit(0);
