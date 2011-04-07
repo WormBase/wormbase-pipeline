@@ -1,4 +1,4 @@
-bi// Spread sheet definition for the ACeDB software 
+// Spread sheet definition for the ACeDB software 
 // User: wormpub
 // Date: 2010-11-26_11:08:57
 
@@ -19,20 +19,20 @@ From 1
  
 Colonne 2 
 Width 12 
-Mandatory 
+Mandatory
 Visible 
-Class 
-Class Variation_name 
+Next_Tag 
 From 1 
-Tag Public_name  
+Tag Status
  
 Colonne 3 
 Width 12 
 Optional
 Visible 
-Next_Tag 
+Class 
+Class Variation_name 
 From 1 
-Tag Status
+Tag Public_name  
  
 
 // End of these definitions
