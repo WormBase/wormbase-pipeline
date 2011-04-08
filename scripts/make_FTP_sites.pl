@@ -8,7 +8,7 @@
 # Originally written by Dan Lawson
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2011-04-05 11:35:35 $
+# Last updated on: $Date: 2011-04-08 15:47:06 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -324,6 +324,7 @@ sub copy_dna_files{
 	#$wormbase->run_command("cp -f -R $chromdir/*.dna* $dna_dir/", $log);
 	#$wormbase->run_command("gzip -f -9 $dna_dir/*.dna", $log);
         
+        my %copied_files;
 	# do for each type of unmasked and masked sequence
 	foreach my $type ("",  "_masked",  "_softmasked") {
 	  # delete any existing whole-genome files produced by running this script more than once
@@ -336,9 +337,13 @@ sub copy_dna_files{
             
 	    # is the data gzipped?
 	    if (-e "$chrom_file${type}.dna") {
-	      $wormbase->run_command("cat ${chrom_file}${type}.dna >> $dna_dir/${gspecies}${type}.${WS_name}.dna.fa", $log);
+              my $source = "${chrom_file}${type}.dna";
+	      $wormbase->run_command("cat $source >> $dna_dir/${gspecies}${type}.${WS_name}.dna.fa", $log);
+              $copied_files{$source} = 1;
 	    } elsif (-e "${chrom_file}${type}.dna.gz") {
-	      $wormbase->run_command("gunzip -c  ${chrom_file}${type}.dna.gz >> $dna_dir/${gspecies}${type}.${WS_name}.dna.fa", $log);
+              my $source = "${chrom_file}${type}.dna.gz";
+	      $wormbase->run_command("gunzip -c $source >> $dna_dir/${gspecies}${type}.${WS_name}.dna.fa", $log);
+              $copied_files{$source} = 1;
 	    } else {
               $log->error("$gspecies : missing file: $chrom_file${type}.dna\n");
             }
@@ -347,6 +352,13 @@ sub copy_dna_files{
 	  # gzip the resulting file
 	  $wormbase->run_command("gzip -9 -f $dna_dir/${gspecies}${type}.${WS_name}.dna.fa", $log);	
 	}
+
+        # copy over outstanding dna files
+        foreach my $dna_file (glob("$chromdir/*.dna.gz")) {
+          if (not exists $copied_files{$dna_file}) {
+             $wormbase->run_command("cp $dna_file $dna_dir", $log);
+          }
+        }
       }
         
       my @agp_files = glob("$chromdir/*.agp");
@@ -1079,7 +1091,7 @@ cDNA2orf.WSREL.gz
 confirmed_genes.WSREL.gz
 
 ./genomes/c_elegans/sequences/dna
-gspecies.WSREL.agp
+c_elegans.WSREL.agp
 intergenic_sequences.dna.gz
 
 # for all species
