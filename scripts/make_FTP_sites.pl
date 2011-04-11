@@ -8,7 +8,7 @@
 # Originally written by Dan Lawson
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2011-04-08 15:47:06 $
+# Last updated on: $Date: 2011-04-11 14:28:45 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -705,19 +705,18 @@ sub copy_pep_files {
 		$carrier->carry_wormpep($WS,$wb->version);
 	}
 	# tar up the latest wormpep release and copy across (files added in next loop)
-	my $tgz_file = "$source/".$wb->pepdir_prefix."pep$WS.tar.gz";
-	my $command = "tar -c -z -h -C \"$base_dir/WORMPEP/\" -f $tgz_file";
+	my $tgz_file = "$target/".$wb->pepdir_prefix."pep$WS.tar.gz";
+	my $command = "tar -c -z -h -C $target -f $tgz_file";
 	
 	# copy em over
 	my @wormpep_files = $wb->wormpep_files;
 	foreach my $file ( @wormpep_files ){
-		my $sourcefile = "$source/$file$WS";
-		$wb->run_command("cp -f $sourcefile $target/$file$WS", $log);
-		&CheckSize("$sourcefile","$target/$file$WS");
-		$command .= " $sourcefile";
+          my $sourcefile = "$source/$file$WS";
+          $wb->run_command("cp -f $sourcefile $target/$file$WS", $log);
+          &CheckSize("$sourcefile","$target/$file$WS");
+          $command .= " $file$WS";
 	}
 	$wb->run_command("$command", $log);
-	$wb->run_command("cp -f $tgz_file $target", $log);
 
 	#single gzipped fasta file for Todd
 	my $WS_name = $wormbase->get_wormbase_version_name;
