@@ -7,7 +7,7 @@
 # Exporter to map blat data to genome and to find the best match for each EST, mRNA, OST, etc.
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2011-03-21 11:01:49 $
+# Last edited on: $Date: 2011-04-13 15:24:09 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -287,8 +287,12 @@ if ($virtualobjs) {
   open my $vfh, ">$virtualobjsfile" or $log->log_and_die("Could not open $virtualobjsfile for writing\n");
 
   foreach my $tname (keys %$virt_hash) {
+    my @schild = sort {
+      my ($na) = ($a =~ /_(\d+)$/); my ($nb) = ($b =~ /_(\d+)$/); $na <=> $nb; 
+    } keys %{$virt_hash->{$tname}};
+
     print $vfh "\nSequence : \"$tname\"\n";
-    foreach my $child (sort { my ($na) = ($a =~ /_(\d+)$/); my ($nb) = ($b =~ /_(\d+)$/); $na <=> $nb } keys %{$virt_hash->{$tname}}) {
+    foreach my $child (@schild) {
       printf $vfh "S_Child Homol_data %s %d %d\n", $child, @{$virt_hash->{$tname}->{$child}};
     }
   }
@@ -317,7 +321,7 @@ sub write_ace {
   # strategy; divide the parent sequence into 150000-sized bins, and place each alignment
   # into a bin. Also create an SChild for the whole parent sequence containing alignments that
   # do not fit completely inside a bin
-  my $binsize = 100000;
+  my $binsize = 150000;
   
   my %virtuals;
 
@@ -330,41 +334,34 @@ sub write_ace {
       if ($bin_end > $target_lengths{$tname}) {
         $bin_end = $target_lengths{$tname};
       }
+
       my $bin_of_end = 1 +  int( $hit->{tend} / $binsize );
 
-      if ($bin == $bin_of_end or
-          ($bin == $bin_of_end - 1 and $hit->{tend} - $bin_end < ($binsize / 2))) {
-        # both start and end lie in the same bin or adjacent bins - okay
-        foreach my $seg (@{$hit->{segments}}) {
-          $seg->{tstart} = $seg->{tstart} - $bin_start + 1;
-          $seg->{tend}   = $seg->{tend} - $bin_start + 1;
-        }
-      } else {
-        # hit has too great a span; skip it
+      # propagate rule from old code: if feature spans more than
+      # 2 bins, junk it. 
+      if ($bin != $bin_of_end and $bin != $bin_of_end - 1) {
         next;
       }
 
       # the code below places hits that span multiple bins onto
       # a special Homol_data that spans the whole parent sequence. 
-      # However, this is not what happens in the old code, so I 
-      # will not activiate it (for now) - klh 110317
 
-      #if ($hit->{tend} > $bin_end) {
-      #  $bin = 0;
-      #  $bin_start = 1;
-      #  $bin_end   = $target_lengths{$tname};
-      #} else {
-      #  foreach my $seg (@{$hit->{segments}}) {
-      #    $seg->{tstart} = $seg->{tstart} - $bin_start + 1;
-      #    $seg->{tend}   = $seg->{tend} - $bin_start + 1;
-      #  }
-      #}
+      if ($hit->{tend} > $bin_end) {
+        $bin = 0;
+        $bin_start = 1;
+        $bin_end   = $target_lengths{$tname};
+      } else {
+        foreach my $seg (@{$hit->{segments}}) {
+          $seg->{tstart} = $seg->{tstart} - $bin_start + 1;
+          $seg->{tend}   = $seg->{tend} - $bin_start + 1;
+        }
+      }
     
       $hit->{bin} = $bin;
-      my $parent = "BLAT_$type:$tname";
-      if ($bin) {
-        $parent .= "_$bin";
-      }
+      my $parent = sprintf("BLAT_%s:%s%s", 
+                           $type,
+                           $tname,
+                           ($bin) ? "_$bin" : "");
       
       if (not exists $virtuals{$tname}->{$parent}) {
         $virtuals{$tname}->{$parent} = [$bin_start, $bin_end];

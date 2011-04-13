@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl5.8.0 -w
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2011-03-21 11:01:49 $
+# Last edited on: $Date: 2011-04-13 15:24:09 $
 
 
 use lib $ENV{'CVS_DIR'};
@@ -225,8 +225,12 @@ if ( $process ) {
       open(my $vfh, ">$vfile") or $log->log_and_die("Could not open $vfile for writing\n");
 
       foreach my $tname (keys %$virt_hash) {
+        my @schild = sort { 
+          my ($na) = ($a =~ /_(\d+)$/ or 0); my ($nb) = ($b =~ /_(\d+)$/ or 0); $na <=> $nb;
+        } keys %{$virt_hash->{$tname}};
+
         print $vfh "\nSequence : \"$tname\"\n";
-        foreach my $child (sort { my ($na) = ($a =~ /_(\d+)$/); my ($nb) = ($b =~ /_(\d+)$/); $na <=> $nb } keys %{$virt_hash->{$tname}}) {
+        foreach my $child (@schild) {
           printf $vfh "S_Child Feature_data %s %d %d\n", $child, @{$virt_hash->{$tname}->{$child}};
         }
       }
@@ -322,7 +326,7 @@ sub confirm_introns {
 	  ##################
 	  # map to S_child #
 	  ##################
-          my $binsize = 100000;
+          my $binsize = 150000;
 
           my $bin = 1 +  int( $tstart / $binsize );
           my $bin_start = ($bin - 1) * $binsize + 1;
@@ -333,21 +337,28 @@ sub confirm_introns {
           }
           my $bin_of_end = 1 +  int( $tend / $binsize );
           
-          if ($bin == $bin_of_end or
-              ($bin == $bin_of_end - 1 and $tend - $bin_end < ($binsize / 2))) {
-            # both start and end lie in the same bin or adjacent bins - okay
-            $tstart = $tstart - $bin_start + 1;
-            $tend = $tend - $bin_start + 1;
-
-            if ($strand < 0) {
-              ($tstart, $tend) = ($tend, $tstart);
-            }
-          } else {
-            # intron has too great a span; skip it. 
+          # propagate rule from old code: if feature spans more than 2 bins, junk it
+          if ($bin != $bin_of_end and $bin != $bin_of_end - 1) {
             next;
           }
-          
-          my $virtual = "Confirmed_intron_${type}:${link}_${bin}";
+
+          if ($tend > $bin_end) {
+            $bin = 0;
+            $bin_start = 1;
+            $bin_end   = $seqlength{$link};
+          } else {
+            $tstart = $tstart - $bin_start + 1;
+            $tend   = $tend - $bin_start + 1;
+          }
+
+          if ($strand < 0) {
+            ($tstart, $tend) = ($tend, $tstart);
+          }
+
+          my $virtual = sprintf("Confirmed_intron_%s:%s%s", 
+                                $type, 
+                                $link, 
+                                $bin ? "_$bin" : "");
       
           if (not exists $virtuals{$link}->{$virtual}) {
             $virtuals{$link}->{$virtual} = [$bin_start, $bin_end];
