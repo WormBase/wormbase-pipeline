@@ -13,31 +13,32 @@ $| = 1;
 
 ## a list of valid  IDs to use this resources
 $VALID_USERS = {
-		# these are the users WBPerson id
-		'ar2' 		          => 1847,
-		'mt3' 		          => 2970,
-		'mh6' 		          => 4036,
-		'xdwang'                  => 1760,
-		'kyook'                   => 712,
-		'jolenef'                 => 2021,
-		'wen'                     => 101,
-		'ranjana'                 => 324,
-		'vanauken'                => 1843,
-		'pad'                     => 1983,
-		'stlouis' 	          => 1,
-		'caltech' 	          => 1,
-		'cshl' 		          => 1,
-		'sanger' 	          => 1,
-	       };
+  # these are the users WBPerson id
+  'klh'       => 3111,
+  'ar2'       => 1847,
+  'mt3'       => 2970,
+  'mh6'       => 4036,
+  'xdwang'    => 1760,
+  'kyook'     => 712,
+  'jolenef'   => 2021,
+  'wen'       => 101,
+  'ranjana'   => 324,
+  'vanauken'  => 1843,
+  'pad'       => 1983,
+  'stlouis'   => 1,
+  'caltech'   => 1,
+  'cshl'      => 1,
+  'sanger'    => 1,
+};
 
 ## a list of valid SSO login names for each DB operation
 $VALID_API_USERS = {
-		'query'		=> [qw( pad gw3 mh6 mt3 stlouis caltech cshl sanger kyook jolenef xdwang wen ranjana vanauken)],
-		'dump'		=> [qw( pad gw3 mh6 mt3 stlouis caltech cshl sanger kyook jolenef xdwang wen ranjana vanauken)],
-		'merge_var'	=> [qw( pad gw3 mt3 mh6 kyook jolenef xdwang wen ranjana vanauken)],
-		'new_var'	=> [qw( pad gw3 mt3 mh6 kyook jolenef xdwang wen ranjana vanauken)], 
-		'kill_var'	=> [qw( pad gw3 mt3 mh6 kyook jolenef xdwang wen ranjana vanauken)],
-		'change_name'	=> [qw( pad gw3 mt3 mh6 kyook jolenef xdwang wen ranjana vanauken)],
+		'query'		=> [qw( pad gw3 mh6 mt3 klh stlouis caltech cshl sanger kyook jolenef xdwang wen ranjana vanauken)],
+		'dump'		=> [qw( pad gw3 mh6 mt3 klh stlouis caltech cshl sanger kyook jolenef xdwang wen ranjana vanauken)],
+		'merge_var'	=> [qw( pad gw3 mt3 mh6 klh kyook jolenef xdwang wen ranjana vanauken)],
+		'new_var'	=> [qw( pad gw3 mt3 mh6 klh kyook jolenef xdwang wen ranjana vanauken)], 
+		'kill_var'	=> [qw( pad gw3 mt3 mh6 klh kyook jolenef xdwang wen ranjana vanauken)],
+		'change_name'	=> [qw( pad gw3 mt3 mh6 klh kyook jolenef xdwang wen ranjana vanauken)],
 };
 
 ## a list of valid SSO login names able to add GCG name
@@ -46,6 +47,7 @@ $VALID_CGCNAME_USERS = {
 };
 
 $MAILS = {
+        'klh'           =>      'klh@sanger.ac.uk',
 	'mh6'		=>	'mh6@sanger.ac.uk',
 	'mt3'		=>	'mt3@sanger.ac.uk',
 	'kyook'         =>      'karen@wormbase.org',
@@ -63,7 +65,7 @@ $MAILS = {
 };
 
 ## a list of people to mail when a DB operation occurs
-$MAIL_NOTIFY_LIST = [qw(gw3)];
+$MAIL_NOTIFY_LIST = [qw(gw3 klh)];
 
 &main();
 1;
@@ -76,7 +78,7 @@ sub main {
     my $sw = SangerWeb->new( {
 	'banner' => "Wormbase Variation Name Management",
 	'inifile'=> "$path/Projects/C_elegans/header.ini",
-	'author' => 'ar2',
+	'author' => 'mt3',
 	'onload' => 'init()',
     });
     if ($sw->is_dev()) {
@@ -294,7 +296,11 @@ sub merge
 		if( my $id = $db->idMerge($kill_id,$keep_id) ) {
 			print "Merge complete, $kill_id is DEAD and has been merged into variation $keep_id <br>";
 			#notify
-			send_mail("ar2",[$MAILS->{$USER},$MAILS->{'cgc'}],"Merged Variations $keep ($keep_id) and $kill ($kill_id)", "VARIATION MERGE\nUSER : $USER\nLIVE:retained WBVarID for $keep_id\nDEAD: killed VarID $kill_id \n");
+			send_mail("mt3",
+                                  [$MAILS->{$USER},
+                                   $MAILS->{'cgc'}],
+                                  "Merged Variations $keep ($keep_id) and $kill ($kill_id)", 
+                                  "VARIATION MERGE\nUSER : $USER\nLIVE:retained WBVarID for $keep_id\nDEAD: killed VarID $kill_id \n");
       }
      	else {
 			print "Sorry, the variation merge failed<br>";
@@ -324,7 +330,10 @@ sub new_var {
 	    my $id = $db->idCreate;
 	    $db->addName($id,'Public_name'=>$public);
 	    print "$id created with name $public<br>";
-	    send_mail('ar2', $MAILS->{'cgc'}, "WBVarID request $public $USER", "WBVarID request $public : $id $USER");
+	    send_mail('mt3', 
+                      $MAILS->{'cgc'}, 
+                      "WBVarID request $public $USER", 
+                      "WBVarID request $public : $id $USER");
 	}
 	else {
 	    print "not a good Var name\n";
@@ -354,7 +363,10 @@ sub kill_var {
 		if ( $death ) {	
 			if( $db->idKill($death) ) {
 				print qq( $death killed<br>);
-				send_mail('ar2', $MAILS->{'cgc'}, "WBVarID $death killed by $USER", "WBVarID $death (user entererd:$kill_id) killed by  $USER");
+				send_mail('mt3', 
+                                          $MAILS->{'cgc'}, 
+                                          "WBVarID $death killed by $USER", 
+                                          "WBVarID $death (user entererd:$kill_id) killed by  $USER");
 			}
 		}
 		else {
@@ -396,7 +408,6 @@ sub query {
 			<hr align="left">
 			<BR><BR><BR>
 			);
-			#send_mail("ar2",[$MAILS->{$USER}],"query", "$USER queried for $var");
 		}
 		else {
 			print qq( $lookup is not known to the Variation nameserver<br>);
