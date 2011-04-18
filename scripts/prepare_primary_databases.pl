@@ -3,7 +3,7 @@
 # prepare_primary_databases.pl
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2011-04-18 08:36:02 $
+# Last edited on: $Date: 2011-04-18 09:06:55 $
 
 use strict;
 my $scriptdir = $ENV{'CVS_DIR'};
@@ -84,13 +84,13 @@ if (@errors) {
 }
 
 # confirm unpack_db details and execute
-#foreach my $prim (@delete_from) {
-#  $log->write_to("Deleting old files from $prim\n");
-#  $wormbase->delete_files_from($wormbase->primary($prim),'*','+');
-#}
+foreach my $prim (@delete_from) {
+  $log->write_to("Deleting old files from $prim\n");
+  $wormbase->delete_files_from($wormbase->primary($prim),'*','+');
+}
 
-#$log->write_to(" running unpack_db.pl @options\n\n");
-#$wormbase->run_script("unpack_db.pl @options", $log);
+$log->write_to(" running unpack_db.pl @options\n\n");
+$wormbase->run_script("unpack_db.pl @options", $log);
 
 #only do geneace and camace if doing elegans.  Assume genace ready if other species.
 if( $species eq 'elegans') {
