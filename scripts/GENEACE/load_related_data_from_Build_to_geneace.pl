@@ -8,7 +8,7 @@
 # RUN this script anytime during the build or after the build when get_interpolated_map 
 # and update_inferred multi-pt data are done
 #
-# Last updated on: $Date: 2011-04-12 10:42:33 $
+# Last updated on: $Date: 2011-04-18 09:03:17 $
 # Last updated by: $Author: klh $
 
 
@@ -74,14 +74,17 @@ $wormbase->load_to_database($geneace, $file, 'genetic_map_fixes_from_autoace', $
 #
 # Update geneace with person/person_name data from Caltech
 # 
-$log->write_to("Updating person name information from caltech_Person.ace file\n");
+my $person = $wormbase->acefiles."/primaries/citace/caltech_Person.ace";
+if (-e $person) {
 
-# 
-# Upate Paper. First need to remove person/person_name data from geneace
-# Note that the value of "CGC_representative_for" is kept as geneace keeps this record
-# i.e. you can't delete *all* of the Person class from geneace
-$log->write_to("First removing old Person data\n");
-$command=<<END;
+  $log->write_to("Updating person name information from caltech_Person.ace file\n");
+
+  # 
+  # First need to remove person/person_name data from geneace
+  # Note that the value of "CGC_representative_for" is kept as geneace keeps this record
+  # i.e. you can't delete *all* of the Person class from geneace
+  $log->write_to("First removing old Person data\n");
+  $command=<<END;
 find Person *
 edit -D PostgreSQL_id
 edit -D Name
@@ -95,23 +98,31 @@ save
 quit
 END
 
-open (Load_GA,"| $tace -tsuser \"person_update_from_autoace\" $geneace") || die "Failed to upload to Geneace\n";
-print Load_GA $command;
-close Load_GA;
+  open (Load_GA,"| $tace -tsuser \"person_update_from_autoace\" $geneace") || die "Failed to upload to Geneace\n";
+  print Load_GA $command;
+  close Load_GA;
 
-#
-# new Person data will have been dumped from citace
-#
-$log->write_to("Adding new person data\n");
-my $person = $wormbase->acefiles."/primaries/citace/caltech_Person.ace";
-$wormbase->load_to_database($geneace, $person,"caltech_Person",$log);
+  #
+  # new Person data will have been dumped from citace
+  #
+  $log->write_to("Adding new person data\n");
+
+  $wormbase->load_to_database($geneace, $person,"caltech_Person",$log);
+} else {
+  $log->write_to("NOT updating person name information - could not find file $person\n");
+}
 
 #
 # new Paper data will have been dumped from citace
 #
-$log->write_to("Adding new paper data\n");
 my $paper = $wormbase->acefiles."/primaries/citace/caltech_Paper.ace";
-$wormbase->load_to_database($geneace, $paper,"caltech_Paper",$log);
+if (-e $paper) {
+  $log->write_to("Adding new paper data\n");
+
+  $wormbase->load_to_database($geneace, $paper,"caltech_Paper",$log);
+} else {
+  $log->write_to("NOT updating Paper information - could not find file $paper\n");
+}
 
 $log->mail();
 exit(0);
