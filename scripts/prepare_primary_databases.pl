@@ -3,7 +3,7 @@
 # prepare_primary_databases.pl
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2011-04-18 09:06:55 $
+# Last edited on: $Date: 2011-04-18 13:32:28 $
 
 use strict;
 my $scriptdir = $ENV{'CVS_DIR'};
@@ -19,16 +19,16 @@ use File::Path;
 # prepare primary databases                                                     #
 #################################################################################
 my %search_places = (
-                     elegans => [['citace', 'caltech'],
-                                 ['stlace', 'stl']],
+                     elegans => [['citace', 'caltech', 'citace*'],
+                                 ['stlace', 'stl',     'stlace*'],
+                                 ['cshace', 'csh',     'cshl*'],
+                                 ],
 
-                     briggsae => [['brigace', 'stl']],
+                     briggsae => [['brigace', 'stl', 'brigace*']],
 
-                     brenneri => [['brenace', 'stl']],
+                     brenneri => [['brenace', 'stl', 'brenace*']],
 
-                     japonica => [['japace', 'stl']],
-                                  
-                     remanei  => [['remace', 'stl']]);
+                     remanei  => [['remace', 'stl', 'remace*']]);
 
 my ($test,$debug,$database, $store, $wormbase, $species);
 
@@ -54,7 +54,7 @@ else {
 my $log = Log_files->make_build_log($wormbase);
 $species = $wormbase->species;
 
-my (%databases, @search_places);
+my (%databases);
 
 &FTP_versions();
 &last_versions();
@@ -102,9 +102,9 @@ if( $species eq 'elegans') {
     next if (defined $database and ($database ne $_));
     
     my $primary_path = $wormbase->primary($_);
-
+    
     my $test_file = "$primary_path/database/block1.wrm";
-
+    
     ($databases{$_}->{last_date}) = $wormbase->find_file_last_modified($test_file);
     
     $wormbase->delete_files_from($wormbase->primary($_),'*','+');
@@ -155,16 +155,16 @@ sub FTP_versions {
 
   my $ftp = $wormbase->ftp_upload;
   foreach my $location (@{$search_places{$species}}) {
-    my ($prefix, $dir) = @$location;
+    my ($db, $dir, $prefix_pat) = @$location;
 
-    my ($file) = glob("$ftp/$dir/${prefix}*.tar.gz");
+    my ($file) = glob("$ftp/$dir/${prefix_pat}*.tar.gz");
 
     if (defined $file and $file =~ /\/[^\/]+_(\d{4}\-\d{2}\-\d{2})\./) {
       my $date = $1;
-      $databases{$prefix}->{new_date} = $date;
+      $databases{$db}->{new_date} = $date;
     } else {
-      $databases{$prefix}->{new_date} = 0;
-      $log->write_to("Could not find any version of $prefix in ftp_uploads\n");
+      $databases{$db}->{new_date} = 0;
+      $log->write_to("Could not find any version of $db in ftp_uploads\n");
     }
   }
 }
