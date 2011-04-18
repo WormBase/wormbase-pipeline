@@ -12,8 +12,8 @@
 # the Cold Spring Harbor Laboratory database (cshace)
 # the Caltech database (citace)
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2009-08-07 15:04:30 $
+# Last updated by: $Author: klh $
+# Last updated on: $Date: 2011-04-18 08:34:23 $
 
 
 #################################################################################
@@ -40,19 +40,22 @@ my ($debug,$test,$database,$basedir);
 my $store;
 
 GetOptions (
-            "help"      => \$help,
-            "citace=s"  => \$citace,
-            "cshace=s"  => \$cshace,
-            "stlace=s"  => \$stlace,
-            "brigace=s" => \$brigace,
+            "help"       => \$help,
+            "citace=s"   => \$citace,
+            "cshace=s"   => \$cshace,
+            "stlace=s"   => \$stlace,
+            "brigace=s"  => \$brigace,
             "briggsae=s" => \$brigace,
-	    'remanei=s' => \$remanei,
+	    'remanei=s'  => \$remanei,
+	    'remace=s'   => \$remanei,
 	    'brenneri=s' => \$brenneri,
-	    'japonica=s'  => \$japonica,
-            "test"      => \$test,
-	    "debug:s"   => \$debug,
+	    'brenace=s'  => \$brenneri,
+	    'japonica=s' => \$japonica,
+	    'japace=s'   => \$japonica,
+            "test"       => \$test,
+	    "debug:s"    => \$debug,
 	    "database|basedir:s"  => \$basedir,
-	    "store:s"   => \$store,
+	    "store:s"    => \$store,
 	   );
 
 my $wormbase;
@@ -149,8 +152,10 @@ sub unpack_stuff {
   # open logfile               #
   ##############################
 
-  # year 2000 pragmatic programming, remember to alter script in 2100 !
-  my $today = "20" . substr($opt,0,2) . "-" . substr($opt,2,2) . "-" . substr($opt,4,2);
+  # check that command line argument is correct and form new date string
+  &error(1,$database,$opt) if $opt !~ /^\d{4}\-\d{2}\-\d{2}$/;
+
+  my $today = $opt;
 
   my $msg = "# unpack_db.pl - $database\n#\n".
     "# run details         : $rundate ".$wormbase->runtime."\n".
@@ -162,8 +167,8 @@ sub unpack_stuff {
   $log->write_to("$msg");
 
 
-  # check that command line argument is correct and form new date string
-  &error(1,$database,$opt) if ((length $opt) != 6);
+
+
 
  ##########################################
  # copy the tar.gz file from the ftp site #
@@ -456,14 +461,9 @@ unpack_db.pl arguments:
 
 =back
 
--brigace, -citace, -stlace, and -citace options each require a 6-figure datestamp 
-(e.g. 001106).  You can work with individual databases or work with all three in one 
-go (note though that the script will always process each database in the following order: 
-brigace, cshace, stlace, citace).
-
 Example usage:
 
-unpack_db.pl -stlace 010719 -brigace 010725
+unpack_db.pl -stlace 2001-07-19 -brigace 2001-07-25
 
 This will unpack the St. Louis C. elegans data and the St. Louis C. briggsae data and 
 read them into their respective databases (stlace and brigace).  In this example it will 
