@@ -3,28 +3,25 @@
 # initiate_build.pl
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2011-03-14 12:07:26 $
+# Last edited on: $Date: 2011-04-18 08:36:02 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
 use Wormbase;
 use Getopt::Long;
-use Coords_converter;
 use File::Copy;
 use File::Spec;
 use Storable;
 
 my ($test,$debug,$database, $version, $species);
-my ($store, $wormbase, $user, $update);
+my ($store, $wormbase, $update);
 GetOptions (
 	    'test'       => \$test,
 	    'debug:s'    => \$debug,
 	    'database:s' => \$database,
 	    'version:s'  => \$version,
 	    'store:s'    => \$store,
-	    'user:s'     => \$user,
 	    'species:s'  => \$species,
-	    'update'     => \$update
 	   );
 
 if( $store ) {
@@ -37,75 +34,85 @@ else {
 			   );
 }
 
-# sanity check
-print STDERR "CHECKING: ${\$wormbase->autoace}/database\n";
-if (-e "${\$wormbase->autoace}/database") {
-  die( "There appears to still be data left over from the previous Build in autoace\nPlease check that finish_build.pl has completed.\n" );
-
-}
-my $old_primary = $wormbase->primaries."/".$wormbase->upload_db_name.'/temp_unpack_dir';
-if($species and -e($old_primary) ) {
-    die( "You should really clear out the old files from $old_primary before starting\n");
-}
-
-if($update) {
-	die "you cant just update elegans - nice try!\n" if ($wormbase->species eq 'elegans');
-	$version = $wormbase->build_accessor->version;
-}
-else {
-	# strip off the WS if given
-	if ($version =~ /^WS(\d+)/) {
-	  $version = $1;
-	}
-	# check it looks OK
-	if ($version !~ /^\d\d\d$/) {
-	  die "The version should be given as three digits\n";
-	}
-
-	$wormbase->establish_paths;
-	#copy the genefinder files 
-	$wormbase->run_command('cp -r '.$wormbase->build_data.'/wgf '.$wormbase->autoace.'/wgf', 'no_log');
-}
-# set the new version number
-$wormbase->version($version);
-
 # establish log file.
 my $log = Log_files->make_build_log($wormbase);
 
-$log->log_and_die( "version to build not specified\n") unless $wormbase->version;
+$log->log_and_die( "version to build not specified\n") unless $version;
 
-# update the main scripts
-$wormbase->run_command("cd $ENV{CVS_DIR}; cvs update .", $log);
+if ($version =~ /^WS(\d+)/) {
+  $version = $1;
+}
+if ($version !~ /^\d\d\d$/) {
+  $log->log_and_die("The version should be given as three digits\n");
+}
+$wormbase->version($version);
+
+if (-e "${\$wormbase->autoace}/database") {
+  $log->log_and_die( "There appears to still be data left over from the previous Build in autoace\nPlease check that finish_build.pl has completed.\n" );
+}
+
+# update the main scripts, autoace_contig and wgf for elegans only
+if ($wormbase->species eq 'elegans') {
+  $wormbase->run_command("cd $ENV{CVS_DIR}; cvs update .", $log)
+      and $log->log_and_die("Failed to cvs update scripts dir; stopping\n");
+  
+  # update autoace_config
+  $wormbase->run_command("cd ". $wormbase->basedir . "/autoace_config ; cvs update .", $log)
+      and $log->log_and_die("Failed to cvs update autoace_config dir; stopping\n");
+  
+  #copy the genefinder files 
+  $wormbase->run_command('cp -r '.$wormbase->build_data.'/wgf '.$wormbase->autoace.'/wgf', 'no_log');
+}
 
 #################################################################################
 # initiate autoace build                                                        #
 #################################################################################
 
 ## update CVS wspec, wquery and autoace_config from CVS
-$wormbase->run_command("cd ".$wormbase->autoace."; cvs -d :pserver:cvsuser\@cvs.sanger.ac.uk:/cvsroot/ensembl checkout -d wspec -r WS${version} wormbase/wspec", $log);
-$wormbase->run_command("cd ".$wormbase->autoace."; cvs -d :pserver:cvsuser\@cvs.sanger.ac.uk:/cvsroot/ensembl checkout -d wquery wormbase/wquery", $log);
-$wormbase->run_command("cd ".$wormbase->basedir."; cvs -d :pserver:cvsuser\@cvs.sanger.ac.uk:/cvsroot/ensembl checkout -d autoace_config wormbase/autoace_config", $log);
+$wormbase->run_command("cd ".$wormbase->autoace."; cvs -d :pserver:cvsuser\@cvs.sanger.ac.uk:/cvsroot/ensembl checkout -d wspec -r WS${version} wormbase/wspec", $log)
+    and $log->log_and_die("Failed to checkout wspec dir; not proceeding\n");
+$wormbase->run_command("cd ".$wormbase->autoace."; cvs -d :pserver:cvsuser\@cvs.sanger.ac.uk:/cvsroot/ensembl checkout -d wquery wormbase/wquery", $log)
+    and $log->log_and_die("Failed to checkout wquery directory; not proceeding\n");
 
-## make new build_in_process flag ( not done yet in rebuild )
+#$wormbase->run_command("cd ".$wormbase->autoace."; cvs -d :ext:cvs.sanger.ac.uk:/cvsroot/ensembl checkout -d wspec -r WS${version} wormbase/wspec", $log);
+#$wormbase->run_command("cd ".$wormbase->autoace."; cvs -d :ext:cvs.sanger.ac.uk:/cvsroot/ensembl checkout -d wquery wormbase/wquery", $log);
 
 ## update database.wrm using cvs
-my $cvs_file = $wormbase->autoace.'/wspec/database.wrm';
-$species = $wormbase->species;
-$wormbase->run_command("sed 's/WS0/WS${version}/' < $cvs_file > /tmp/cvsfile", $log);  #  the version in CVS is WS0
-my $short_name = $wormbase->full_name('-short'=>1);
-$wormbase->run_command("sed 's/species/${short_name}/' < /tmp/cvsfile > ${cvs_file}.new", $log);  #  the version in CVS is WS94
+eval {
+  my $dbwrm = $wormbase->autoace .  "/wspec/database.wrm";
+  $wormbase->run_command("chmod u+w $dbwrm") 
+      and die "Could not make database.wrm writable in order to update the version number\n";
 
+  my $tmp_dbwrm = "/tmp/database.wrm";
 
-my $status = move(${cvs_file}.".new", "$cvs_file") or $log->write_to("ERROR: renaming file: $!\n");
-$log->write_to("ERROR: Couldn't move file: $!\n") if ($status == 0);
-$wormbase->run_command("rm /tmp/cvsfile",$log);
+  open my $new_fh, ">$tmp_dbwrm" or die "Could not open $tmp_dbwrm for writing\n";
+  open my $old_fh, $dbwrm or die "Could not open $dbwrm for reading\n";
+
+  $species = $wormbase->species;
+  my $short_name = $wormbase->full_name('-short'=>1);
+  
+  while(<$old_fh>) {
+    s/WS0/WS${version}/;
+    s/species/${short_name}/;
+    print $new_fh $_;
+  };
+
+  close($old_fh);
+  close($new_fh);
+
+  move($tmp_dbwrm, $dbwrm) or die "Could not move $tmp_dbwrm to $dbwrm\n";
+};
+$@ and $log->log_and_die("Failed to inject version number into database.wrm; stopping\n");
 
 # Dump the sequence data from the species primary database being build.
 $log->write_to("Dumping sequence data to file for ".$wormbase->species."\n");
-$wormbase->run_script("dump_primary_seq_data.pl -organism $species", $log) unless $update;
+$wormbase->run_script("dump_primary_seq_data.pl -organism $species", $log)
+    and $log->log_and_die("Failed to successfully dump primary sequence data; stopping\n");
+
 # Mask the sequences ready for BLATting
 $log->write_to("Masking sequence data for ".$wormbase->species."\n");
-$wormbase->run_script("BLAT_controller.pl -mask -qspecies $species", $log) unless $update;
+$wormbase->run_script("BLAT_controller.pl -mask -qspecies $species", $log)
+    and $log->log_and_die("Failed to successfully mask sequence data; stopping\n");
 
 # add lines to the logfile
 my $msg = "Updated ".$wormbase->species." version number to WS".$wormbase->version."\n";

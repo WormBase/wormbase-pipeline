@@ -1,9 +1,9 @@
-#!/usr/local/bin/perl5.8.0 -w
+#!/software/bin/perl -w
 #
 # prepare_primary_databases.pl
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2011-03-14 13:49:28 $
+# Last edited on: $Date: 2011-04-18 08:36:02 $
 
 use strict;
 my $scriptdir = $ENV{'CVS_DIR'};
@@ -18,22 +18,25 @@ use File::Path;
 #################################################################################
 # prepare primary databases                                                     #
 #################################################################################
-#
-# Requirements : [01] - Presence of the Primary_databases_used_in_build file
-#
-# Checks       : [01] - Fail if the build_in_progess flag is absent.
-#              : [02] - Fail if the Primary_databases_used_in_build file is absent
-#
-# Does         : [01] - checks the Primary_database_used_in_build data
+my %search_places = (
+                     elegans => [['citace', 'caltech'],
+                                 ['stlace', 'stl']],
 
-my ($test,$debug,$database, $store, $wormbase, $caen, $species);
+                     briggsae => [['brigace', 'stl']],
+
+                     brenneri => [['brenace', 'stl']],
+
+                     japonica => [['japace', 'stl']],
+                                  
+                     remanei  => [['remace', 'stl']]);
+
+my ($test,$debug,$database, $store, $wormbase, $species);
 
 GetOptions ( 
 	    "test"       => \$test,
 	    'debug:s'    => \$debug,
 	    'database:s' => \$database,
 	    'store:s'    => \$store,
-	    'caen'      => \$caen,
 	    'species:s'  => \$species
 	   );
 
@@ -41,83 +44,103 @@ if( $store ) {
   $wormbase = retrieve( $store ) or croak("cant restore wormbase from $store\n");
 }
 else {
-  $wormbase = Wormbase->new( 	-debug   => $debug,
-			     				-test    => $test,
-			     				-organism => $species
-			   				);
+  $wormbase = Wormbase->new(-debug   => $debug,
+                            -test    => $test,
+                            -organism => $species
+                            );
 }
 
 # establish log file.
 my $log = Log_files->make_build_log($wormbase);
 $species = $wormbase->species;
 
-my %databases;
-if( $species ne 'elegans') {
-	my $shorthand = substr($species,0,3);
-	$databases{$species}->{'search'} = "stl/$shorthand*";
-}
-else {
-	$databases{'stlace'}->{'search'} = 'stl/stlace*';
-	$databases{'citace'}->{'search'} = 'caltech/citace*';
-	$databases{'cshace'}->{'search'} = 'csh/csh*';
-}
+my (%databases, @search_places);
 
+&FTP_versions();
+&last_versions();
 
-&FTP_versions;
-&last_versions;
-my $options = "";
+my (@errors, @options, @delete_from);
 
 foreach my $primary (keys %databases){
   next if (defined $database and ($database ne $primary));
-  if( $databases{$primary}->{'ftp_date'} ) {
-    unless ( $databases{$primary}->{'last_date'} == $databases{$primary}->{'ftp_date'} ) {
-      $options .= " -".$primary." ".$databases{$primary}->{'ftp_date'};
-      print " => Update $primary";
-      # clean out anything left from previous build
-      $wormbase->delete_files_from($wormbase->primary("$primary"),'*','+');
-    }
-  }else {
-    $log->write_to("no version of $primary on FTP site");
+
+  if( not $databases{$primary}->{new_date}) {
+    push @errors, "Could not find latest data for $primary in FTP uploads\n";
+  } elsif ($databases{$primary}->{new_date} le $databases{$primary}->{last_date}) {
+    push @errors, "New version of $primary does not have newer date stamp than previous\n";
+  } else {
+    push @options, sprintf("-%s %s", $primary, $databases{$primary}->{new_date});
+    push @delete_from, $primary;
     
-  }
+    $log->write_to("For $primary, version on FTP site is newer than current - will delete and unpack\n");
+  } 
 }
 
-print "\n\nrunning unpack_db.pl $options\n";
+if (@errors) {
+  foreach my $error (@errors) {
+    $log->write_to("$error\n");
+  }
+  #$log->log_and_die("Did not find expected set of new data files; bailing\n");
+}
 
 # confirm unpack_db details and execute
-unless ($options eq "") {
-  $log->write_to(" running unpack_db.pl $options\n\n");
-  $wormbase->run_script("unpack_db.pl $options", $log);
-}
+#foreach my $prim (@delete_from) {
+#  $log->write_to("Deleting old files from $prim\n");
+#  $wormbase->delete_files_from($wormbase->primary($prim),'*','+');
+#}
+
+#$log->write_to(" running unpack_db.pl @options\n\n");
+#$wormbase->run_script("unpack_db.pl @options", $log);
 
 #only do geneace and camace if doing elegans.  Assume genace ready if other species.
 if( $species eq 'elegans') {
-  # transfer camace to correct PRIMARIES dir
+  # transfer camace to correct PRIMARIES dir; 
+  # geneace should have already been staged by the geneace curator
   $log->write_to("Transfering camace\n");
   
   foreach ( qw(camace) ){
     next if (defined $database and ($database ne $_));
-    $wormbase->delete_files_from($wormbase->primary("camace"),'*','+');
-    $wormbase->run_script("TransferDB.pl -start ".$wormbase->database("camace"). " -end ".$wormbase->primary("$_") ." -database -wspec", $log);
+    
+    my $primary_path = $wormbase->primary($_);
+
+    my $test_file = "$primary_path/database/block1.wrm";
+
+    ($databases{$_}->{last_date}) = $wormbase->find_file_last_modified($test_file);
+    
+    $wormbase->delete_files_from($wormbase->primary($_),'*','+');
+    $wormbase->run_script("TransferDB.pl -start ".$wormbase->database("camace"). " -end $primary_path -database -wspec", $log);
+    
+    ($databases{$_}->{new_date}) = $wormbase->find_file_last_modified($test_file);
   }
   foreach ( qw(camace geneace ) ){
     next if (defined $database and ($database ne $_));
+    
     $wormbase->run_command("ln -sf ".$wormbase->autoace."/wspec/models.wrm ".$wormbase->primary("$_")."/wspec/models.wrm", $log);
+    
+    my $test_file = $wormbase->primary($_) . "/database/block1.wrm";
+    ($databases{$_}->{new_date}) = $wormbase->find_file_last_modified($test_file);
   }
 }
 
-#################################################
-# Check that the databases have unpack correctly #
-#################################################
+my $log_msg = "\nDatabase versions used in the build (Previous => New):\n";
 
-$log->write_to("writing Primary_databases_used_in_build\n");
-# rewrite Primary_databases_used_in_build
-my $new_primary = $wormbase->basedir."/Primary_databases_used_in_build";
-open (LAST_VER, ">$new_primary");
-foreach my $primary ( keys %databases){
-  print LAST_VER "$primary : ".$databases{$primary}->{'ftp_date'}."\n";
+foreach my $db (keys %databases) {
+  $log_msg .= sprintf("\t%s\t%s => %s\n", 
+                      $db, 
+                      exists($databases{$db}->{last_date}) ? $databases{$db}->{last_date} : "-",
+                      exists($databases{$db}->{new_date}) ? $databases{$db}->{new_date} : "-");
 }
-close LAST_VER;
+$log->write_to("$log_msg\n\n");
+
+my $record = join("/", $wormbase->reports, "Databases_used_in_build");
+open my $rfh, ">$record";
+foreach my $db (keys %databases) {
+  if (exists $databases{$db}->{new_date}) {
+    printf $rfh "%s\t%s\n", $db, $databases{$db}->{new_date};
+  }
+}
+close($rfh);
+
 
 $log->mail;
 exit(0);
@@ -128,49 +151,50 @@ exit(0);
 ##################
 
 sub FTP_versions {
-
-  $log->write_to("\tgetting FTP versions . . \n");
+  $log->write_to("Getting FTP versions . . \n");
 
   my $ftp = $wormbase->ftp_upload;
-  foreach my $db (keys %databases){
-    open(my $dir, "/bin/ls -t $ftp/$databases{$db}->{'search'} |") or $log->log_and_die("Cant open $ftp/$databases{$db}->{'search'}"."\n");
-    while (<$dir>) {
-      unless (/\_\d+\-\d+\-\d+\./) {next;}
-      chomp; 
-      (/\_(\d+)\-(\d+)\-(\d+)\./); 
-      $databases{$db}->{'ftp_date'} = substr($1,-2).$2.$3; 
-      last;
+  foreach my $location (@{$search_places{$species}}) {
+    my ($prefix, $dir) = @$location;
+
+    my ($file) = glob("$ftp/$dir/${prefix}*.tar.gz");
+
+    if (defined $file and $file =~ /\/[^\/]+_(\d{4}\-\d{2}\-\d{2})\./) {
+      my $date = $1;
+      $databases{$prefix}->{new_date} = $date;
+    } else {
+      $databases{$prefix}->{new_date} = 0;
+      $log->write_to("Could not find any version of $prefix in ftp_uploads\n");
     }
-    close $dir;
   }
 }
 
 #####################################################################################################################
 
 sub last_versions {
-    
-  $log->write_to("\tgetting last versions . . \n");
+  $log->write_to("Getting previous versions . . \n");
 
-  my $file = $wormbase->basedir."/Primary_databases_used_in_build";
-  if (-e $file ){
-    open (LAST_VER, "<$file") or $log->log_and_die("cant $file $!\n");
-    while (<LAST_VER>) {
-      if (/^(\w+) \: (\d+)$/) {
-	$databases{"$1"}->{'last_date'} = $2;
+  foreach my $db (keys %databases) {
+    my $primary = $wormbase->primary($db);
+    my $unpack_dir = "$primary/temp_unpack_dir";
+    if (-d $unpack_dir) {
+      my @current_dates;
+      foreach my $f (glob("$unpack_dir/${db}*.tar.gz")) {
+        my ($date) = $f =~ /_(\d{4}\-\d{2}\-\d{2})/;
+        push @current_dates, $date;
+      }
+      @current_dates = sort @current_dates;
+      if (@current_dates) {
+        $databases{$db}->{last_date} = $current_dates[-1];
       }
     }
-    close LAST_VER;
-  }
 
-  foreach my $db ( keys %databases ) {
-    unless (defined $databases{$db}->{'last_date'} ) {
-      $databases{$db}->{'last_date'} = '000000';
-      $log->write_to("Database not defined - using FTP version\n");
+    unless (defined $databases{$db}->{last_date} ) {
+      $databases{$db}->{last_date} = '0000-00-00';
+      $log->write_to("Could not find last update date for $db - assuming 0000-00-00\n");
     }
   }
 }
 
-sub usage {
-  print "usage\n";
-}
+
 __END__

@@ -248,79 +248,6 @@ sub gff_sort {
 
 #  Subroutines for generating release letter
 
-##################################################################################
-# Databases used in build                                                        #
-##################################################################################
-
-sub release_databases
-  {
-    my $self = shift;
-    #GET THE DATABASES USED IN THIS BUILD
-
-    #get the non_cambridge DB info from file
-    open( DBS, $self->basedir."/Primary_databases_used_in_build" );
-    my ( $stlace, $citace, $brigdb, $cshace );
-    my %dates;
-    while (<DBS>) {
-      chomp;
-      my @info = split(/ : /,$_);
-      $dates{$info[0]} = $info[1];
-    }
-    foreach my $key ( keys %dates) {
-      my $oldstyle = $dates{$key};
-      my $newstyle = "20".substr($oldstyle,0,2)."-".substr($oldstyle,2,2)."-".substr($oldstyle,4);
-      $dates{$key} = $newstyle;
-    }
-
-
-    #get the Cambridge dates directly from block file 1
-    my @date = $self->find_file_last_modified($self->database("camace")."/database/block1.wrm");
-    $dates{camace} = $date[0];
-    @date = $self->find_file_last_modified($self->database("geneace")."/database/block1.wrm");
-    $dates{genace} = $date[0];
-
-    #PARSE THE RELEASE LETTER FOR LAST BUILD INFO
-    my $old_ver = $self->get_wormbase_version - 1;
-    my $ver     = $old_ver + 1;
-
-    my %old_dates;
-    my $located = 0;
-    my $count   = 0;		#determines how many lines to read = no databases
-    open( OLD_LETTER, $self->reports."letter.WS$old_ver" );
-    while (<OLD_LETTER>) {
-      if ( ( $located == 1 ) && ( $count <= 6 ) ) {
-	chomp;
-	my @info = split( / : | - / , $_ );
-
-	#this will put some crap in the hash from the 1st two line of the section but it no matter
-	$old_dates{ $info[0] } = $info[1];
-	$count++;
-      } elsif ( $_ =~ m/Primary/ ) {
-	$located = 1;
-      }
-    }
-    my $dbaseFile = $self->reports."/dbases";
-    open( WRITE, ">$dbaseFile" );
-
-    print WRITE "Primary databases used in build WS$ver\n------------------------------------\n";
-    foreach my $key ( sort keys %dates ) {
-      print WRITE "$key : $dates{$key}";
-      if ( "$dates{$key}" gt "$old_dates{$key}" ) {
-	print WRITE " - updated\n";
-      } elsif ( "$dates{$key}" lt "$old_dates{$key}" ) {
-	print WRITE "you're using a older version of $key than for WS$old_ver ! ! \n";
-      } else {
-	print WRITE "\n";
-      }
-    }
-    close WRITE;
-
-    my $name       = "Database update report";
-    my $maintainer = "All";
-    $self->mail_maintainer( $name, $maintainer, $dbaseFile );
-
-    return 1;
-  }
 
 ##################################################################################
 # Returns the date yyyy-mm-dd and time hh:mm:ss file was last modified           #
@@ -328,10 +255,10 @@ sub release_databases
 sub find_file_last_modified {
   my $self     = shift;
   my $filename = shift;
-  open( FILE, "<$filename" ) || die "cant open file $filename\n";
-  my @fileinfo = stat $filename;
-  my @date     = localtime( $fileinfo[9] );
-  close(FILE);
+
+  my $fileinfo = stat($filename);
+  my @date     = localtime( $fileinfo->mtime );
+
   my $year = sprintf( "%d-%02d-%02d\n", $date[5] + 1900, $date[4] + 1, $date[3] );
   my $time = "$date[2]:$date[1]:$date[0]";
   chomp $year;
@@ -1316,8 +1243,11 @@ sub establish_paths {
     $self->{'logs'}        = "$wormpipe/logs";
     $self->{'common_data'} = $self->orgdb . "/COMMON_DATA";
   } else {
-    my $basedir;
-    ( $self->{'wormpub'} ) = glob("~wormpub");
+    my ($basedir,
+        $ftp_uploads,
+        $ftp_site);
+
+    $self->{'wormpub'} = "/nfs/wormpub";
 
     # if a specified non-build database is being used
 
@@ -1325,15 +1255,22 @@ sub establish_paths {
       ($basedir) = $self->autoace =~ /(.*)\/\w+\/*$/;
       $self->{'orgdb'} = $self->{'autoace'};
     } else {
-      $basedir = $self->wormpub . "/BUILD";
-      $basedir = $self->wormpub . "/TEST_BUILD" if $self->test;
+      $basedir = ($self->test) ? $self->wormpub . "/TEST/BUILD" : $self->wormpub . "/BUILD";
       $self->{'autoace'}    = $self->species eq 'elegans' ? "$basedir/autoace" : "$basedir/".$self->species;
       $self->{'orgdb'}      = $self->{'autoace'}; #."/".$self->{'organism'};
     }
 
     $self->{'basedir'}    = $basedir;
-    $self->{'ftp_upload'} = "/nfs/ftp_uploads/wormbase";
-    $self->{'ftp_site'}   = "/nfs/disk69/ftp/pub2/wormbase";
+
+    if ($self->test) {
+      $self->{'ftp_upload'} = $self->wormpub . "/TEST/ftp_uploads/wormbase";
+      $self->{'ftp_site'}   = $self->wormpub . "/TEST/FTP_site/pub/wormbase";
+      $self->{'build_data'} = $self->wormpub . "/TEST/BUILD_DATA";
+    } else {
+      $self->{'ftp_upload'} = "/nfs/ftp_uploads/wormbase";
+      $self->{'ftp_site'}   = "/nfs/disk69/ftp/pub2/wormbase";
+      $self->{'build_data'} = $self->wormpub . "/BUILD_DATA";
+    }
     
     #species specific paths
     $self->{'peproot'}    = $basedir . "/WORMPEP";
@@ -1374,8 +1311,6 @@ sub establish_paths {
     $self->{'primary'}->{'japace'}  = $self->primaries .'/japace';
     $self->{'primary'}->{'brenace'} = $self->primaries .'/brenace';
 
-
-    $self->{'build_data'} = $self->{'basedir'} . "_DATA"; # BUILD_DATA or TEST_BUILD_DATA
     $self->{'misc_static'} = $self->{'build_data'} . "/MISC_STATIC";
     $self->{'misc_dynamic'} = $self->{'build_data'} . "/MISC_DYNAMIC";
     $self->{'compare'}      = $self->{'build_data'} . "/COMPARE";
