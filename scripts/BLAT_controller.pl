@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl5.8.0 -w
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2011-04-13 15:24:09 $
+# Last edited on: $Date: 2011-04-18 08:33:11 $
 
 
 use lib $ENV{'CVS_DIR'};
@@ -104,14 +104,35 @@ if(@types) {
 
 # mask the sequences based on Feature_data within the species database (or autoace for elegans.)
 if( $mask ) {
-  foreach my $qspecies ( keys %mol_types ) {
-    next if (grep /$qspecies/, @nematodes);
-    foreach my $moltype (@{$mol_types{$qspecies}}) {
-      #transcriptmasker is designed to be run on a sinlge species at a time.
-      #therefore this uses the query species ($qspecies) as the -species parameter so that 
-      #transcriptmasker creates a different Species opbject and gets the correct paths! 
-      $wormbase->bsub_script("transcriptmasker.pl -species $qspecies -mol_type $moltype", $qspecies, $log);
+  my $lsf = LSF::JobManager->new();
+
+  foreach my $moltype (@{$mol_types{$species}}) {
+    my $cmd;
+    if ($store) {
+      $cmd = $wormbase->build_cmd_line("transcriptmasker.pl -mol_type $moltype", $store);
+    } else {
+      $cmd = $wormbase->build_cmd("transcriptmasker.pl -mol_type $moltype");
     }
+
+    $cmd .= " -test" if $test;
+    $cmd .= " -debug $debug" if $debug;
+
+    my @bsub_opts = (-J => "${species}_${moltype}_masking",
+                     -o => "/dev/null",
+                     -e => "/dev/null");
+
+    $lsf->submit(@bsub_opts, $cmd);    
+  }
+  $lsf->wait_all_children( history => 1 );
+
+  $log->write_to("All transcriptmasker runs have completed!\n");
+  for my $job ( $lsf->jobs ) {    # much quicker if history is pre-cached
+    $log->error("$job exited non zero\n") if $job->history->exit_status != 0;
+  }
+  $lsf->clear;   
+
+  foreach my $moltype ( @{$mol_types{$species}} ) {
+    &check_and_shatter( $wormbase->maskedcdna, "$moltype.masked" );
   }
 }
 
@@ -122,14 +143,17 @@ if( $mask ) {
 
 # run all blat jobs on cluster ( eg cbi4 )
 if ( $run ) {
+  my $lsf = LSF::JobManager->new();
 
   # run other species
-  foreach my $species (keys %mol_types) {
+  foreach my $qs (keys %mol_types) {
     # skip own species
-    next if $species eq $wormbase->species;
+    next if $qs eq $wormbase->species;
 
-    foreach my $moltype( @{$mol_types{$species}} ) {
-      my $seq_dir = join("/", $wormbase->basedir, "cDNA", $species );
+    my $seq_dir = join("/", $wormbase->basedir, "cDNA", $qs );
+
+    foreach my $moltype( @{$mol_types{$qs}} ) {
+
       &check_and_shatter( $seq_dir, "$moltype.masked" );
 
       foreach my $seq_file (glob("${seq_dir}/${moltype}.masked*")) {
@@ -138,10 +162,15 @@ if ( $run ) {
           $chunk_num = $1;
         }
         
-        my $cmd = "bsub -E \"test -d /software/worm\" -o /dev/null -e /dev/null -J ${species}_${moltype}_${chunk_num} \"/software/worm/bin/blat/blat -noHead -t=dnax -q=dnax ";
+        my $cmd = "/software/worm/bin/blat/blat -noHead -t=dnax -q=dnax ";
         $cmd .= $wormbase->genome_seq ." $seq_file ";
-        $cmd .= $wormbase->blat."/${species}_${moltype}_${chunk_num}.psl\"";
-        $wormbase->run_command($cmd, $log);
+        $cmd .= $wormbase->blat."/${qs}_${moltype}_${chunk_num}.psl\"";
+
+        my @bsub_opts = (-J => "${qs}_${moltype}_${chunk_num}",
+                         -o => "/dev/null", 
+                         -e => "/dev/null"); 
+
+        $lsf->submit(@bsub_opts, $cmd);
       }
     }
   }
@@ -156,13 +185,26 @@ if ( $run ) {
       if ($seq_file =~ /_(\d+)$/) {
         $chunk_num = $1;
       }
-      
-      my $cmd = "bsub -E \"test -d /software/worm\" -o /dev/null -e /dev/null -J ".$wormbase->species . "_${moltype}_${chunk_num} \"/software/worm/bin/blat/blat -noHead ";
+      # "bsub -E \"test -d /software/worm\" -o /dev/null -e /dev/null -J ". \"
+      my $cmd = "/software/worm/bin/blat/blat -noHead ";
       $cmd .= $wormbase->genome_seq ." $seq_file ";
       $cmd .= $wormbase->blat."/".$wormbase->species."_${moltype}_${chunk_num}.psl\"";
-      $wormbase->run_command($cmd, $log);	
+
+      my @bsub_opts = (-J => $wormbase->species . "_${moltype}_${chunk_num}",
+                       -o => "/dev/null",
+                       -e => "/dev/null");
+
+      $lsf->submit(@bsub_opts, $cmd);
     }
   }
+
+  $lsf->wait_all_children( history => 1 );
+
+  $log->write_to("All transcriptmasker runs have completed!\n");
+  for my $job ( $lsf->jobs ) {    # much quicker if history is pre-cached
+    $log->error("$job exited non zero\n") if $job->history->exit_status != 0;
+  }
+  $lsf->clear;  
 }
 
 if( $postprocess ) {
@@ -416,7 +458,7 @@ sub check_and_shatter {
   my $file = shift;
   
   unless( -e "$dir/$file" ) {
-    $log->write_to("$file doesnt exist - hopefully already shattered for other species\n");
+    $log->write_to("$dir/$file doesnt exist - hopefully already shattered for other species\n");
     my @shatteredfiles = glob("$dir/$file*");
     if(scalar @shatteredfiles == 0){
       $log->log_and_die("shattered files also missing - not good");
