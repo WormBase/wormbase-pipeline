@@ -7,8 +7,8 @@
 
 # 031023 dl1
 
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2009-07-03 10:15:19 $
+# Last edited by: $Author: klh $
+# Last edited on: $Date: 2011-04-18 08:31:45 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -60,7 +60,7 @@ GetOptions (
 	    "store:s"        => \$store,
 	    "file:s"         => \$file,
 	    "species:s"      => \$species,
-	    "qspecies:s"	 => \$qspecies,
+	    "qspecies:s"     => \$qspecies,
 	    "mol_type:s"     => \$mol_type
 	   );
 
@@ -77,23 +77,22 @@ if( $store ) {
 }
 else {
   $wormbase = Wormbase->new( -debug   => $debug,
-			     			-test     => $test,
-			     			-organism => $species
-						   );
+                             -test     => $test,
+                             -organism => $species
+                             );
 }
 
 if( $qspecies and ($qspecies ne $wormbase->species) ){
-	  $wormbase = Wormbase->new( -debug   => $wormbase->debug,
-			     			-test     => $wormbase->test,
-			     			-organism => $qspecies
-						   );
+  $wormbase = Wormbase->new( -debug   => $wormbase->debug,
+                             -test     => $wormbase->test,
+                             -organism => $qspecies
+                             );
 }						
-						  
+
 my $log = Log_files->make_build_log($wormbase);
 $log->write_to("mol_type must be specifies\n") unless $mol_type;
 
-# datafiles for input
-my $EST_dir = $wormbase->cdna_dir;
+$species = $wormbase->species;
 
 # valid Feature_data methods
 my %valid_methods = (
@@ -113,13 +112,13 @@ my %valid_methods = (
 
 # which database?
 if (-e $wormbase->orgdb."/database/block1.wrm") {
-$database = $wormbase->orgdb unless $database;
+  $database = $wormbase->orgdb unless $database;
 }
 elsif ($species eq "elegans"){
-$database = $wormbase->database('camace');
+  $database = $wormbase->database('camace');
 }
 else {
-$database = $wormbase->database($species);
+  $database = $wormbase->database($species);
 }
 
 my $blat_dir =  $wormbase->blat;
@@ -269,7 +268,7 @@ sub fetch_features {
       $log->error("something wrong with $seq:$type\n");
     }
   }
-	 $log->write_to( scalar(keys %seq2feature) ." sequences to be masked\n");
+  $log->write_to( scalar(keys %seq2feature) ." sequences to be masked\n");
 }
 
 __END__
