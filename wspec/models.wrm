@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: pad $
-// Last edited on: $Date: 2011-03-04 14:43:55 $
+// Last edited on: $Date: 2011-04-19 10:57:41 $
 
 
 ////////////////////////
@@ -578,6 +578,7 @@
 		 Negative_probe  ?Clone XREF Does_not_hybridize_to ?Grid
 		 Does_not_hybridize_to ?Clone XREF Negative_probe ?Grid
         In_strain ?Strain XREF Clone
+	Species UNIQUE ?Species
 	Sequence    ?Sequence XREF Clone
 	PCR_product ?PCR_product XREF Clone
 	Length	Seq_length UNIQUE Int 			// bp
@@ -1478,6 +1479,7 @@
 	 DNA_text UNIQUE ?Text       // for storing the sequence of the feature...can use IUPAC codes to be able
 				     // store consensus sequences, e.g. binding site consensus sequence
 	 Origin     Species UNIQUE ?Species  //added by pad, as we are moving towards multi species readyness.
+		    Strain  UNIQUE ?Strain//added by pad, as we are moving towards multi strain readyness.
 	 History    Merged_into	   UNIQUE    ?Feature XREF Acquires_merge #Evidence
 		    Acquires_merge ?Feature XREF Merged_into #Evidence
 		    Deprecated	   Text	     #Evidence 
@@ -1513,7 +1515,9 @@
 //
 ///////////////////////////////////////////////////////////////////////////
 
-?Feature_data SMap S_parent UNIQUE Sequence UNIQUE ?Sequence XREF Feature_data
+?Feature_data Species UNIQUE ?Species
+	      Strain  UNIQUE ?Strain
+	      SMap S_parent UNIQUE Sequence UNIQUE ?Sequence XREF Feature_data
 	      Feature ?Method Int Int UNIQUE Float UNIQUE Text #Feature_info
 	      Splices	Confirmed_intron  Int Int #Splice_confirmation
 			Predicted_5 ?Method Int Int UNIQUE Float // (x, x+1) or (x, x-1)
@@ -1529,6 +1533,7 @@
 //////////////////////////////////////////////////////////////////////////////////////////
 
 ?Transcription_factor	Name UNIQUE Text
+			Species UNIQUE ?Species
 			Position_matrix  ?Position_Matrix XREF Transcription_factor #Evidence
 			Product_of ?Gene XREF Transcription_factor 
 			Remark Text #Evidence
@@ -1837,6 +1842,7 @@
               Expr_map ?SK_map XREF Expr_profile
               Reference ?Paper XREF Expr_profile
 	      RNAi_result ?RNAi XREF Expr_profile // Connection made by script during build [030106 krb]
+	      Species UNIQUE ?Species
               Remark ?Text #Evidence
               Method UNIQUE ?Method
 
@@ -2322,6 +2328,7 @@
 
 ?PCR_product SMap S_parent UNIQUE Canonical_parent UNIQUE ?Sequence XREF PCR_product
  		  S_child Expr_profile ?Expr_profile XREF PCR_product UNIQUE Int UNIQUE Int #SMap_info // added for Expr_profile class [010912 krb]
+	     Species UNIQUE ?Species
  	     Overlaps_CDS ?CDS XREF Corresponding_PCR_product  // Dan PCR mappings [010419 dl]
  	     Overlaps_transcript ?Transcript XREF Corresponding_PCR_product  
 	     Overlaps_pseudogene ?Pseudogene XREF Corresponding_PCR_product // [030801 krb]
@@ -2485,6 +2492,7 @@
 ////////////////////////////////
 
 ?Microarray_experiment  Microarray ?Microarray XREF Microarray_experiment
+			Species UNIQUE ?Species
                         Sample  Sample_A     UNIQUE      ?Condition     //for PCR product-base (SMD-type) chips
                                 Sample_B     UNIQUE      ?Condition     //for PCR product-base (SMD-type) chips
                                 Microarray_sample UNIQUE ?Condition     //for oligo-based (Affymetrix-type) chips
@@ -2530,7 +2538,8 @@
 		     SAGE_tag ?SAGE_tag Text #Evidence
 		     Gene ?Gene XREF Expression_cluster #Evidence           //Igor: populated during build based on Microarray_results mapping
 		     Expr_pattern       ?Expr_pattern XREF Expression_cluster #Evidence //added by Wen originally for Localizome
-		     Remark ?Text #Evidence    
+		     Remark ?Text #Evidence 
+		     Species UNIQUE ?Species  
 		     Anatomy_term ?Anatomy_term XREF Expression_cluster #Evidence //Describes microarray experiments involving expression profiling in a particular tissue or cell Igor Dec 06
 		     WBProcess ?WBProcess XREF Expression_cluster #Evidence
 
@@ -2580,6 +2589,7 @@
 ///////////////////////////////////////////////////////
 
 ?SAGE_experiment Sample  UNIQUE  ?Condition XREF SAGE_experiment
+		 Species UNIQUE ?Species
                  Reference  ?Paper XREF SAGE_experiment
                  Remark ?Text #Evidence
 
@@ -3194,6 +3204,7 @@
 				  Unknown
 	   Food		   Text
 	   Exposure_time   Text
+	   Species	   UNIQUE ?Species
 	   Strain	   ?Strain // added for Microarry_result [030127 krb]
 	   Preparation	   ?Text // added for Microarray_result [030127 krb]
            Temperature     Int
