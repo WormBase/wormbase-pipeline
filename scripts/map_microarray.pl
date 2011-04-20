@@ -4,10 +4,10 @@
 #
 # Add information to Microarray_results objects based on overlaps in GFF files 
 #
-# by Anon
+# by Dan
 #
-# Last updated by: $Author: gw3 $                      
-# Last updated on: $Date: 2008-01-17 16:07:02 $        
+# Last updated by: $Author: mh6 $                      
+# Last updated on: $Date: 2011-04-20 09:41:42 $        
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -30,7 +30,7 @@ my $outfile;
 GetOptions ("debug=s"   => \$debug,
 	    "test"      => \$test,
 	    "load"      => \$load,
-            "help"      => \$help,
+        "help"      => \$help,
 	    "outace=s"	=> \$outfile,
 	    'store=s'	=> \$store
     );
@@ -55,7 +55,7 @@ $debug = $wb->debug if $wb->debug;    # Debug mode, output only goes to one user
 #further variables
 my $dbdir= $wb->autoace;                    # Database path
 $outfile = $outfile ? $outfile : $wb->acefiles."/microarray_mappings.ace";
-my $tace        = $wb->tace;                                  # tace executable path
+my $tace = $wb->tace;                                  # tace executable path
 
 # create log
 my $log = Log_files->make_build_log($wb);
@@ -157,7 +157,7 @@ while (my $obj = $i->next) {
 
   if (@CDSs) {
     foreach my $cds (@CDSs) {
-      my $gene = $obj->Overlaps_CDS->Gene;
+      my $gene = $cds->Gene;
       print OUTPUT "\nMicroarray_results : \"$microarray_results\"\n";
       print OUTPUT "CDS \"$cds\"\n";
       print OUTPUT "Gene $gene\n" if (defined $gene);
@@ -167,7 +167,7 @@ while (my $obj = $i->next) {
 
   if (@pseudogenes) {
     foreach my $pseudogene (@pseudogenes) {
-      my $gene = $obj->Overlaps_pseudogene->Gene;
+      my $gene = $pseudogene->Gene;
       print OUTPUT "\nMicroarray_results : \"$microarray_results\"\n";
       print OUTPUT "Pseudogene \"$pseudogene\"\n";
       print OUTPUT "Gene $gene\n" if (defined $gene);
@@ -177,7 +177,7 @@ while (my $obj = $i->next) {
 
   if (@transcripts) {
     foreach my $transcript (@transcripts) {
-      my $gene = $obj->Overlaps_transcript->Gene;
+      my $gene = ($transcript->Gene || $transcript->Corresponding_CDS->Gene);
       print OUTPUT "\nMicroarray_results : \"$microarray_results\"\n";
       print OUTPUT "Transcript \"$transcript\"\n";
       print OUTPUT "Gene $gene\n" if (defined $gene);
