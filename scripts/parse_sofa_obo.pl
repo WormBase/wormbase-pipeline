@@ -3,7 +3,7 @@
 use strict;
 use Getopt::Long;
 
-my ($sofa_version, 
+my (
     $in_term,
     $current_term,
     %terms);
@@ -59,23 +59,13 @@ while(<>) {
   };
 }
 
-my $root_term;
 foreach my $k (keys %terms) {
   next if $terms{$k}->{is_obsolete};
 
   if (not exists $terms{$k}->{isa}) {
-    if (not defined $root_term) {
-      $terms{$k}->{is_root} = 1;
-      $root_term = $k;
-    } else {
-      die "Should not be two root terms: $k, $root_term\n";
-    }
+    $terms{$k}->{is_root} = 1;
   }
 }
-if (not defined $root_term) {
-  die "Could not find any terms with no ancestors\n";
-}
-
 
 foreach my $acc (sort keys %terms) {
 
@@ -83,7 +73,7 @@ foreach my $acc (sort keys %terms) {
   # we must traverse the tree downwards
   next if $terms{$acc}->{is_obsolete};
 
-  my (%ancestors, $root_child_ancestor);
+  my (%ancestors, $root_ancestor, $root_ancestor_child);
   my @list = ($acc);
 
   do {
@@ -99,7 +89,8 @@ foreach my $acc (sort keys %terms) {
           if (exists $terms{$ot}->{is_root}) {
             # immediate parent of current term is root, so current term is one
             # level below
-            $root_child_ancestor = $k;
+            $root_ancestor_child = $k;
+            $root_ancestor = $ot;
           }
         }
       }
@@ -111,9 +102,12 @@ foreach my $acc (sort keys %terms) {
   if (keys %ancestors) {
     $terms{$acc}->{ancestors} = \%ancestors;
   }
-  if (defined $root_child_ancestor) {
-    $terms{$acc}->{root_child_ancestor} = $root_child_ancestor;;
-  } 
+  if (defined $root_ancestor_child) {
+    $terms{$acc}->{root_ancestor_child} = $root_ancestor_child;
+  }
+  if (defined $root_ancestor) {
+    $terms{$acc}->{root_ancestor} = $root_ancestor;
+  }
 
   &print_term($terms{$acc}, \*STDOUT);
 }
@@ -123,14 +117,16 @@ foreach my $acc (sort keys %terms) {
 sub print_term {
   my ($term, $fh) = @_;
 
-  return if $term->{acc} eq $root_term;
+  return if not exists $term->{root_ancestor};
+
+  return if $terms{$term->{root_ancestor}}->{name} ne 'sequence_feature' and not $all;
 
   printf $fh "\nSO_term : \"%s\"\n", $term->{acc};
   printf $fh "SO_name \"%s\"\n", $term->{name};
   if ($term->{def}) {
     printf $fh "SO_definition \"%s\"\n", $term->{def};
   }
-  printf $fh "Located_sequence_feature\t%s\n", ucfirst($terms{$term->{root_child_ancestor}}->{name});
+  printf $fh "Located_sequence_feature\t%s\n", ucfirst($terms{$term->{root_ancestor_child}}->{name});
   if ($term->{synonyms}) {
     foreach my $syn (@{$term->{synonyms}}) {
       printf $fh "Synonym\t\"%s\"\n", $syn;
@@ -138,31 +134,31 @@ sub print_term {
   }
   if ($term->{isa}) {
     foreach my $isa (sort keys %{$term->{isa}}) {
-      next if $isa eq $root_term;
+      next if $terms{$isa}->{is_root};
       printf $fh "Is_a\t\"%s\"\n", $isa;
     }
   }
   if ($term->{part_of}) {
     foreach my $po (sort keys %{$term->{part_of}}) {
-      next if $po eq $root_term;
+      next if $terms{$po}->{is_root};
       printf $fh "Part_of\t\"%s\"\n", $po;
     }
   }
   if ($term->{member_of}) {
     foreach my $mo (sort keys %{$term->{member_of}}) {
-      next if $mo eq $root_term;
+      next if $terms{$mo}->{is_root};
       printf $fh "Member_of\t\"%s\"\n", $mo;
     }
   }
   if ($term->{derived_from}) {
     foreach my $df (sort keys %{$term->{derived_from}}) {
-      next if $df eq $root_term;
+      next if $terms{$df}->{is_root};
       printf $fh "Derived_from\t\"%s\"\n", $df;
     }
   }
   if (exists $term->{ancestors}) {
     foreach my $an (sort keys %{$term->{ancestors}}) {
-      next if $an eq $root_term;
+      next if $terms{$an}->{is_root};
       printf $fh "Ancestor\t\"%s\"\n", $an;
     }
   }
