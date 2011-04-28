@@ -6,8 +6,8 @@
 #
 # Script to run consistency checks on the geneace database
 #
-# Last updated by: $Author: mt3 $
-# Last updated on: $Date: 2011-04-05 10:56:39 $
+# Last updated by: $Author: klh $
+# Last updated on: $Date: 2011-04-28 15:06:10 $
 
 use strict;
 use lib $ENV{"CVS_DIR"};
@@ -55,13 +55,8 @@ my $maintainers = join (", ",
                         "kevin.howe\@wormbase.org",
                         );
 
-my $caltech_errors = 0;                                    # counter for tracking errors going into Caltech email
-my $jah_errors = 0;                                        # counter for tracking errors going into Caltech email
-
 my $log_dir = "$database/logs";                            # some of the many output files are put here (ar2)
 my $log;                                                   # main log file for most output
-my $caltech_log;                                           # Additional log file for problems that need to be sent to Caltech
-my $jah_log;                                               # Additional log file for problems to be sent to Jonathan Hodgkin at CGC
 my (%L_name_F_WBP, %L_name_F_M_WBP);                       # hashes for checking Person and Author merging?
 
 
@@ -135,19 +130,10 @@ foreach $class (@classes){
 
 $db->close;
 close(LOG);
-close(CALTECHLOG);
-close(JAHLOG);
 close(ACE) if ($ace);
 
 # email everyone specified by $maintainers
 $wb->mail_maintainer("geneace_check: SANGER",$maintainers,$log);
-
-my $interested ="mt3\@sanger.ac.uk, kimberly\@minerva.caltech.edu";
-$wb->mail_maintainer("geneace_check: CALTECH","$interested",$caltech_log) unless ($debug || $caltech_errors == 0);
-
-# Email Jonathan Hodgkin subset of errors that he might be able to help with unless
-# in debug mode or no errors
-$wb->mail_maintainer("geneace_check: CGC","cgc\@wormbase.org",$jah_log) unless ($debug || $jah_errors == 0);
 
 exit(0);
 
@@ -242,8 +228,6 @@ sub process_gene_class{
 
     my @gene_ids = $gene_name->Sequence_name_for;
     print LOG "ERROR: $gene_name is connected to multiple gene IDs: @gene_ids\n";
-    print JAHLOG "ERROR: $gene_name is connected to multiple gene IDs: @gene_ids\n";
-    $jah_errors++;
   }
 
   # Look for missing Method tag for Live genes
@@ -1286,26 +1270,6 @@ sub create_log_files{
     print LOG "The (a) following ERROR, or UPDT, eg, indicates ace output \n$acefile for direct upload to correct problems.\n\n";
   }
   
-
-  $jah_log = "$log_dir/geneace_check.jahlog.$rundate.$$";
-
-
-  open(JAHLOG, ">>$jah_log") || warn "Can't open $jah_log\n";
-  print JAHLOG "This mail is generated automatically for CGC on $rundate\n"; 
-  print JAHLOG "If you have any queries please email mt3\@sanger.ac.uk\n\n";
-  print JAHLOG "=========================================================================\n";
-
-  # create separate log with errors for Erich
-  $caltech_log = "$log_dir/geneace_check.caltech_log.$rundate.$$";
-
-  open(CALTECHLOG,">$caltech_log") || warn "cant open $caltech_log";
-  print CALTECHLOG "$0 started at ",`date`,"\n";
-  print CALTECHLOG "This mail is generated automatically for Caltech\n";
-  print CALTECHLOG "If you have any queries please email mt3\@sanger.ac.uk\n\n";
-  print CALTECHLOG "================================================================================================\n";
-
-  `chmod 777 $log $jah_log $caltech_log`; # so that they can be deleted by script
-
 }}
 
 
