@@ -4,8 +4,8 @@
 # 
 # by Dan Lawson
 #
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2011-03-01 00:04:12 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2011-04-28 15:31:08 $
 #
 # Usage GFFmunger.pl [-options]
 
@@ -140,11 +140,25 @@ if ($CDS || $all) {
   }
   foreach my $file (@gff_files) {
     next if ($file eq ""); 
-    $gffpath = "$gffdir/${file}.gff";
     system ("mv -f $gffdir/$file.CSHL.gff $gffdir/$file.gff");        # copy *.CSHL.gff files back to *.gff name
   }
 
 }
+
+############################################################
+# remove unwanted lines from the GFF files
+############################################################
+
+$log->write_to("# Removing unwanted lines\n");
+if (defined($chrom)){
+  $log->write_to("remove_unwanted_GFF_lines.pl -chrom $chrom -gff $gffdir\n");
+  $wormbase->run_script("remove_unwanted_GFF_lines.pl -chrom $chrom -gff $gffdir", $log);
+  
+} else {
+  $log->write_to("remove_unwanted_GFF_lines.pl -gff $gffdir\n");
+  $wormbase->run_script("remove_unwanted_GFF_lines.pl -gff $gffdir", $log);
+}
+
 
 ############################################################
 # loop through each GFF file                               #
