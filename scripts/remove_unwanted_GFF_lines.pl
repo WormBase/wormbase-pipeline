@@ -5,9 +5,9 @@
 # by Gary Williams
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2011-04-28 15:22:41 $
+# Last updated on: $Date: 2011-05-03 16:15:00 $
 
-# removes lines from GFF files that have no 'source' column and are of type 'intron'
+# removes lines from GFF files that have no 'source' column and are of type 'intron' or 'ALLELE'
 # these come from the Confirmed_intron tags in the clone Sequence
 # objects - they are created by curators but are not updated.
 
@@ -91,7 +91,9 @@ foreach my $file (@gff_files) {
     
     #skip header lines of file
     
-      unless  (/^\S+\s+(\.)\s+(intron)/) {
+      unless  (/^\S+\s+\.\s+intron\s+/ ||
+	       /^\S+\s+\.\s+ALLELE\s+/   
+	      ) {
 	print OUT "$_\n";
 	next;
       }
