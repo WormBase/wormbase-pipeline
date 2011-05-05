@@ -8,8 +8,8 @@
 # sequence of two relreases
 #
 #
-# Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-02-14 11:13:09 $      
+# Last updated by: $Author: mh6 $     
+# Last updated on: $Date: 2011-05-05 09:32:33 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -28,25 +28,27 @@ use Modules::Remap_Sequence_Change;
 # variables and command-line options # 
 ######################################
 
-my ($help, $debug, $test, $verbose, $store, $wormbase);
+my ($help, $debug, $test, $verbose, $store, $wormbase,$species);
 my ($release1, $release2, $version, $gff, $output);
 
 GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
-	    "test"       => \$test,
-	    "verbose"    => \$verbose,
-	    "store:s"      => \$store,
-	    "gff=s"      => \$gff,
-	    "output=s"   => \$output,
-	    "release1=i"  => \$release1,
-	    "release2=i"  => \$release2,
+	        "test"       => \$test,
+	        "verbose"    => \$verbose,
+	        "store:s"    => \$store,
+	        "gff=s"      => \$gff,
+	        "output=s"   => \$output,
+	        "release1=i" => \$release1,
+	        "release2=i" => \$release2,
+	        'species=s'  => \$species,
 	    );
 
 if ( $store ) {
   $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
 } else {
-  $wormbase = Wormbase->new( -debug   => $debug,
-                             -test    => $test,
+  $wormbase = Wormbase->new( -debug    => $debug,
+                             -test     => $test,
+                             -organism => $species,
 			     );
 }
 
@@ -94,15 +96,15 @@ while (my $line = <GFF>) {
 
       my ($chromosome, $start, $end, $sense) = ($f[0], $f[3], $f[4], $f[6]);
       $chromosome =~ s/^chr_//;
-      if ($chromosome !~ /^CHROMOSOME_/) {$chromosome = "CHROMOSOME_$chromosome"};
+      if ($chromosome !~ /^CHROMOSOME_/ && $wormbase->species eq 'elegans') {$chromosome = "CHROMOSOME_$chromosome"};
 
       print "chrom, start, end=$chromosome, $start, $end\n" if ($verbose);
       ($f[3], $f[4], $f[6], $indel, $change) = Remap_Sequence_Change::remap_gff($chromosome, $start, $end, $sense, $release1, $release2, @mapping_data);
  
       if ($indel) {
-	$log->write_to("There is an indel in the sequence in CHROMOSOME $chromosome, $start, $end\n");
+	      $log->write_to("There is an indel in the sequence in CHROMOSOME $chromosome, $start, $end\n");
       } elsif ($change) {
-	$log->write_to("There is a change in the sequence in CHROMOSOME $chromosome, $start, $end\n");
+	      $log->write_to("There is a change in the sequence in CHROMOSOME $chromosome, $start, $end\n");
       }
 
       $line = join "\t", @f;
