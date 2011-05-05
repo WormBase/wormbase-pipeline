@@ -4,8 +4,8 @@
 # 
 # by Anthony Rogers                             
 #
-# Last updated by: $Author: klh $               
-# Last updated on: $Date: 2011-01-24 10:20:25 $
+# Last updated by: $Author: pad $               
+# Last updated on: $Date: 2011-05-05 09:27:22 $
 
 # Generates a release letter at the end of build.
 #
@@ -456,7 +456,7 @@ if( defined($opt_l)) {
   my $brenneri_seq_cgc = $db->fetch(-query=> "$brenneri_seq_cgc_q");
   my $pristionchus_seq_cgc = $db->fetch(-query=> "$pristionchus_seq_cgc_q");
   
-  printf RL "Genes with Sequence and CGC name\n";
+  printf RL "Genes with Sequence and WormBase-approved Gene names\n";
   printf RL "WS$ver $gene_seq_cgc ($ele elegans / $briggsae_seq_cgc briggsae / $remanei_seq_cgc remanei / $japonica_seq_cgc japonica / $brenneri_seq_cgc brenneri / $pristionchus_seq_cgc pristionchus)\n\n\n";
   # Close the database connection now we have finished with it
   $db->close;
