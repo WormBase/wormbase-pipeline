@@ -992,7 +992,7 @@ sub LocateSpanUp {
     $y += $self->{$chrom}->{'SUPERLINK'}->{$seqid}->[0] - 1;
 
     $seqid = $chrom;
-  } elsif ( not $self->isa_chromosome ) {
+  } elsif ( not $self->isa_chromosome($seqid) ) {
     my ($superlink, $chromosome, $seq);
     
     SLINKS:
