@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl5.8.0 -w
 #
-# Last edited by: $Author: klh $
-# Last edited on: $Date: 2011-04-18 08:33:11 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2011-05-09 14:27:28 $
 
 
 use lib $ENV{'CVS_DIR'};
@@ -164,7 +164,7 @@ if ( $run ) {
         
         my $cmd = "/software/worm/bin/blat/blat -noHead -t=dnax -q=dnax ";
         $cmd .= $wormbase->genome_seq ." $seq_file ";
-        $cmd .= $wormbase->blat."/${qs}_${moltype}_${chunk_num}.psl\"";
+        $cmd .= $wormbase->blat."/${qs}_${moltype}_${chunk_num}.psl";
 
         my @bsub_opts = (-J => "${qs}_${moltype}_${chunk_num}",
                          -o => "/dev/null", 
@@ -188,7 +188,7 @@ if ( $run ) {
       # "bsub -E \"test -d /software/worm\" -o /dev/null -e /dev/null -J ". \"
       my $cmd = "/software/worm/bin/blat/blat -noHead ";
       $cmd .= $wormbase->genome_seq ." $seq_file ";
-      $cmd .= $wormbase->blat."/".$wormbase->species."_${moltype}_${chunk_num}.psl\"";
+      $cmd .= $wormbase->blat."/".$wormbase->species."_${moltype}_${chunk_num}.psl";
 
       my @bsub_opts = (-J => $wormbase->species . "_${moltype}_${chunk_num}",
                        -o => "/dev/null",
