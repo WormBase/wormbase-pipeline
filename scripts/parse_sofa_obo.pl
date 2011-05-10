@@ -6,7 +6,14 @@ use Getopt::Long;
 my (
     $in_term,
     $current_term,
+    $so_version,
+    $full_so,
     %terms);
+
+&GetOptions('soversion=s' => \$so_version,
+            'fullso'      => \$full_so,
+            );
+
 
 while(<>) {
   /^\[(\S+)\]/ and do {
@@ -119,7 +126,7 @@ sub print_term {
 
   return if not exists $term->{root_ancestor};
 
-  return if $terms{$term->{root_ancestor}}->{name} ne 'sequence_feature' and not $all;
+  return if $terms{$term->{root_ancestor}}->{name} ne 'sequence_feature' and not $full_so;
 
   printf $fh "\nSO_term : \"%s\"\n", $term->{acc};
   printf $fh "SO_name \"%s\"\n", $term->{name};
@@ -129,7 +136,7 @@ sub print_term {
   printf $fh "Located_sequence_feature\t%s\n", ucfirst($terms{$term->{root_ancestor_child}}->{name});
   if ($term->{synonyms}) {
     foreach my $syn (@{$term->{synonyms}}) {
-      printf $fh "Synonym\t\"%s\"\n", $syn;
+      printf $fh "SO_synonym\t\"%s\"\n", $syn;
     }
   }
   if ($term->{isa}) {
@@ -163,4 +170,10 @@ sub print_term {
     }
   }
 
+  if ($so_version) {
+    my @non_root_parents = grep { not $terms{$_}->{is_root} } keys %{$term->{isa}};
+    if (not @non_root_parents) {
+      printf $fh "SO_version \"$so_version\"\n";
+    } 
+  }
 }
