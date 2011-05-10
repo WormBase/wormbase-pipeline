@@ -115,7 +115,7 @@ sub map_introns_cDNA {
   }
   
   if ($self->strand ne $cdna->strand) {
-    print "CDS::map_introns_cDNA\t", $self->name,  " and  ", $cdna->name, " have different strands\n";
+    #print "CDS::map_introns_cDNA\t", $self->name,  " and  ", $cdna->name, " have different strands\n";
     return 0;
   }
 
