@@ -756,13 +756,19 @@ sub GetCloneFromCoord {
     }
   }
   
+  my @matching_clones;
   foreach my $clone (keys %{$self->{'SUPERLINK'}->{"$parent"}} ) {
     if( $self->{'SUPERLINK'}->{"$parent"}->{"$clone"}->[0] <= $coord and
 	$self->{'SUPERLINK'}->{"$parent"}->{"$clone"}->[1] >= $coord
 	){
-      return $clone;
+      push @matching_clones, {
+        clone => $clone,
+        lower_bound => $self->{'SUPERLINK'}->{"$parent"}->{"$clone"}->[0],
+      };
     }
   }
+  @matching_clones = sort { $b->{lower_bound} <=> $a->{lower_bound} } @matching_clones;
+  return $matching_clones[0]->{clone};
 }
 
 =head2 GetCloneFromCoords
@@ -855,6 +861,7 @@ sub GetCloneFromCoords {
     $sl_start = 1;
   }
   
+  my @matched_clones;
   foreach my $clone (keys %{$self->{'SUPERLINK'}->{"$parent"}} ) {
     if(
        $self->{'SUPERLINK'}->{"$parent"}->{"$clone"}->[0] <= $coord1 &&
@@ -862,10 +869,19 @@ sub GetCloneFromCoords {
        $self->{'SUPERLINK'}->{"$parent"}->{"$clone"}->[0] <= $coord2 &&
        $self->{'SUPERLINK'}->{"$parent"}->{"$clone"}->[1] >= $coord2
        ){
-      return ($clone, $parent, $parent2, $sl_start);
+      push @matched_clones, {
+        clone => $clone,
+        lower_bound => $self->{'SUPERLINK'}->{"$parent"}->{"$clone"}->[0],
+      };
     }
   }
-  return ("", $parent, $parent2, $sl_start);
+  
+  if (@matched_clones) {
+    @matched_clones = sort { $b->{lower_bound} <=> $a->{lower_bound} } @matched_clones;
+    return ($matched_clones[0]->{clone},$parent,$parent2,$sl_start);
+  } else {
+    return ("", $parent, $parent2, $sl_start);
+  }
 }
 
 =head2 LocateSpan
