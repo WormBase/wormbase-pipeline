@@ -2,8 +2,8 @@
 #
 # map_operons.pl
 
-# Last edited by: $Author: pad $
-# Last edited on: $Date: 2011-03-28 16:32:57 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2011-05-11 09:53:35 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -57,20 +57,23 @@ open (OUT,">$acefile") or $log->log_and_die("cant open $acefile : $!\n");
 my $db = Ace->connect(-path => $wb->autoace) or $log->log_and_die("cant connect to ".$wb->autoace." :".Ace->error."\n");
 my @operons = $db->fetch('Operon' => '*');
 foreach my $operon(@operons) {
-	next if $operon->Merged_into;
-	next if ($operon->Method eq "history");
+  next if $operon->Merged_into;
+  next if ($operon->Method eq "history");
   my @genes = map($_->name, $operon->Contains_gene);
   my ($op_start, $op_end, $op_strand, $op_chrom);
   foreach my $gene (@genes) {
+    next if (!exists $gene_span{$gene}); # some Deprecated_operons contain Transposon_CDSs which won't have a gene-span
     $op_start =  $gene_span{$gene}->{'start'} if (!(defined $op_start) or $op_start > $gene_span{$gene}->{'start'});
     $op_end   =  $gene_span{$gene}->{'end'}   if (!(defined $op_end)   or $op_end   < $gene_span{$gene}->{'end'});
     $op_strand = $gene_span{$gene}->{'strand'}if(!(defined $op_strand) or $op_strand eq $gene_span{$gene}->{'strand'});
     $op_chrom  = $gene_span{$gene}->{'chrom'} if $gene_span{$gene}->{'chrom'};
   }
-
-  print OUT "\nSequence : $op_chrom\nOperon $operon ";
-  ($op_strand eq '+') ? print OUT "$op_start $op_end" : print OUT "$op_end $op_start";
-  print OUT "\n";
+  
+  if (defined $op_chrom && defined $op_start && defined $op_end) { # some Deprecated_operons only contain Transposon_CDSs, not genes
+    print OUT "\nSequence : $op_chrom\nOperon $operon ";
+    ($op_strand eq '+') ? print OUT "$op_start $op_end" : print OUT "$op_end $op_start";
+    print OUT "\n";
+  }
 }
 $db->close;
 $wb->load_to_database($wb->autoace, "$acefile", 'operon_span', $log) unless $noload;
