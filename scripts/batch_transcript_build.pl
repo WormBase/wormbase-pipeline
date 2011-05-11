@@ -6,8 +6,8 @@
 #
 # wrapper script for running transcript_builder.pl
 #
-# Last edited by: $Author: klh $
-# Last edited on: $Date: 2011-03-23 22:55:14 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2011-05-11 09:00:54 $
 
 use lib $ENV{CVS_DIR};
 use Wormbase;
@@ -90,7 +90,6 @@ if (@no_run) {
 
   # create and submit LSF jobs.
   $log->write_to("bsub commands . . . . \n\n");
-  my @outfile_names;
   my $lsf = LSF::JobManager->new();
   foreach my $chrom ( @chromosomes ) {
     my $batchname = $chrom;
