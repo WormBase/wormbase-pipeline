@@ -6,8 +6,8 @@
 #
 # Builds a wormpep data set from the current autoace database
 #
-# Last updated by: $Author: klh $
-# Last updated on: $Date: 2010-11-24 11:05:19 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2011-05-12 10:14:45 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -450,7 +450,7 @@ sub run_pepace {
 }
 
 sub get_embl_data {
-	my $pid_mail = $wormbase->wormpub."/protein_ID.mail";
+	my $pid_mail = $wormbase->autoace."/protein_ID.mail";
 	$log->log_and_die("no mail $pid_mail: !$\n") unless (-e $pid_mail);
 	$wormbase->run_script("get_EMBL_data.pl", $log);
 }
