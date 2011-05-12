@@ -417,8 +417,9 @@ The $number_total sequences contain $codingDNA base pairs in total.\n\n";
       print LETTER "cat of wormpep.diff$ver does not add up to the changes (from $0)";
     }
     if ( $oldCDS + $net != $number_total ) {
+      my $thediff = $number_total - $oldCDS;
       print LETTER
-	"\nThe difference between the total CDS's of this ($number_total) and the last build ($oldCDS) does not equal the net change $net\nPlease investigate! ! \n";
+	"\nThe difference ($thediff) between the total CDS's of this ($number_total) and the last build ($oldCDS) does not equal the net change $net\nPlease investigate! ! \n";
     }
 
     close LETTER;
