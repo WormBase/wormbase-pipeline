@@ -218,7 +218,7 @@ sub _filter_alleles {
         $errors++;
         next;
       }
-    } else {
+    } elsif(! (defined $allele->Type_of_mutation)){
       $log->write_to("WARNING: $allele ($name) has no Type_of_mutation (Remark: $remark)\n");
     }
 
