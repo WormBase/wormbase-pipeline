@@ -118,6 +118,7 @@ if (not $noload) {
   foreach my $ace (@out_files) {
     if (-e $ace) {
       $wb->load_to_database($wb->autoace, $ace, 'map_alleles.pl',$log);
+      system("cat $ace >> ${\$wb->acefiles}/map_alleles4geneace.ace");
     } else {
       croak("Expected to find $ace, but its not there. Strange.\n");
     }
