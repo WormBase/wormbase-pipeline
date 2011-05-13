@@ -1,6 +1,6 @@
 #!/software/bin/perl -w
 # a script to batch request variation ids based on lists of public_names
-# Last change by $Author: mh6 $ on $Date: 2011-05-13 10:05:07 $
+# Last change by $Author: mh6 $ on $Date: 2011-05-13 10:38:15 $
 # usage: perl get_variation_ids.pl -species elegans -user me -pass me -in one_public_id_per_line -out varId_pubId_per_line
 
 
@@ -17,7 +17,7 @@ use strict;
 
 my ($PASS,$USER); # mysql ones
 my $DOMAIN  = 'Variation'; # hardcoded to variation
-my ($debug, $test, $store, $species, $maria,$infile,$outfile);
+my ($debug, $test, $store, $species, $maria,$infile,$outfile,$weak,$nocheck);
 
 GetOptions (
 	    "debug=s"    => \$debug,   # send log emails only to one user
@@ -29,6 +29,8 @@ GetOptions (
 	    'maria'      => \$maria,   # try the more experimantal MariaDB for testing
 	    'infile:s'   => \$infile,  # input file name
 	    'outfile:s'  => \$outfile, # output file name
+	    'weak'       => \$weak,    # weak check public_names
+	    'nocheck'    => \$nocheck, # don'tcheck public_names
 	   )||die(@!);
 
 
@@ -63,7 +65,7 @@ my $outHandle = new IO::File $outfile,'w' ||die(@!);
 while (<$inHandle>) {
 	chomp;
 	
-        if(&_check_name($_)) {
+        if(&_check_name($_)||$nocheck) {
            my $id = $db->idCreate;
            $db->addName($id,'Public_name'=>$_);
            print $outHandle "$id\t$_\n";
@@ -84,10 +86,12 @@ sub _check_name {
         return undef;
     }
     elsif ($name =~ /(\w+)[a-z]+$/) {
-        my $short_var = $db->idGetByTypedName('Public_name'=>$1)->[0];
-        if($short_var) {        
+	unless ($weak){
+         my $short_var = $db->idGetByTypedName('Public_name'=>$1)->[0];
+         if($short_var) {        
             print STDERR "ERROR: $name looks like a poorly name version of $short_var";
             return undef;
+         }
         }
     }
     return 1;
