@@ -252,6 +252,9 @@ sub map {
       $errors++;
       next;
     }
+    elsif ($map[0] ne $x->Sequence->name){
+      $log->write_to("WARNING: moved $x (${\$x->Public_name}) from sequence ${\$x->Sequence->name} to $map[0]\n");
+    }
 
     if( abs($map[1] - $map[2]) > 100000) {
       # Note from Mary Ann 20 june 2008:
