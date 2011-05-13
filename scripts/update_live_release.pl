@@ -5,8 +5,8 @@
 # by Anthony Rogers
 #
 # Updates the local webpages in synch with the main website
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2010-02-02 10:43:38 $
+# Last updated by: $Author: klh $
+# Last updated on: $Date: 2011-05-13 14:08:37 $
 
 
 use strict;
@@ -79,8 +79,6 @@ $wormbase->run_command("cd $wormpep_ftp_root && ln -fs wormpep${prev_release}/wo
 $wormbase->run_command("cd $wormbase_ftp_dir && rm -f live_release && ln -fs WS${release} live_release",$log);
 
 
-
-
 ##############################################
 # Update pages using webpublish
 # Separate webpublish commands (for safety!) on the two top level directories that need updating
@@ -88,24 +86,8 @@ $wormbase->run_command("cd $wormbase_ftp_dir && rm -f live_release && ln -fs WS$
 
 my $webpublish = "/software/bin/webpublish";
 
-# symlinks are not allowed on the website so we have a "current" directory containing a file for each file we want to link to that is just "include virtual" 
-# the place that these link to need to be updated.
-my $currentdir = "$www/WORMBASE/current";
-opendir(DIR,"$currentdir") or $log->log_and_die("cant opendir $currentdir\n :$!\n");
-while(my $file = readdir(DIR) ){
-    next unless ($file =~ /shtml/);
-    open (OLD,"<$currentdir/$file") or $log->log_and_die("cant opendir $currentdir/$file\n :$!\n");
-    open (NEW,">/tmp/$file") or $log->log_and_die("cant opendir /tmp/$file\n :$!\n");
-    while(<OLD>){
-	s/WS\d+/WS$release/;
-	print NEW;
-    }
-    close OLD;
-    close NEW;
-    $wormbase->run_command("mv /tmp/$file $currentdir/$file", $log);
-    $wormbase->run_command("cd $currentdir && webpublish $file", $log);
-}
-close DIR;
+$wormbase->run_command("cd $www/WORMBASE && rm -f current && ln -fs WS${release} current", $log) 
+    && $log->error("Couldn't update 'current' symlink\n", $log);
 
 $wormbase->worm_webpublish("-file" => "$www/WORMBASE/current") or $log->error("Couldn't run webpublish on current symlink files\n");
 # The end
