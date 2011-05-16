@@ -10,12 +10,12 @@ use Storable;
 use Log_files;
 use File::Copy;
 
-my $file = shift;
+
 #######################################
 # command-line options                #
 #######################################
 my ($test, $debug, , $store, $verbose, $help, $species);
-my ($all, $analysisTOdump, $just_matches, $matches, $list, $database, $dumps_dir);
+my ($all, $analysisTOdump, $just_matches, $matches, $list, $database, $dumps_dir, $file);
 GetOptions ("debug=s"      => \$debug,
 	    "verbose"      => \$verbose,
 	    "test"         => \$test,
@@ -28,7 +28,8 @@ GetOptions ("debug=s"      => \$debug,
 	    "database=s"   => \$database,
 	    "store:s"      => \$store,
 	    "species:s"    => \$species,
-            "dumpdir:s"   =>  \$dumps_dir,
+            "dumpdir:s"    => \$dumps_dir,
+	    "file:s"       => \$file,
            );
 
 my $wormbase;
@@ -46,6 +47,7 @@ my $log = Log_files->make_build_log($wormbase);
 
 $log->log_and_die("please give me a mysql protein database eg -database worm_ensembl_elegans\n") unless $database;
 $log->log_and_die("Please supply a valid location for the dumps") if not defined $dumps_dir or not -d $dumps_dir;
+$log->log_and_die("Missing -file filename on command line\n") if not defined  $file;
 
 my @sample_peps = @_;
 my $dbname = $database;
