@@ -32,7 +32,7 @@
 # by Gary Williams
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2011-05-13 08:45:26 $
+# Last updated on: $Date: 2011-05-16 08:30:18 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -380,6 +380,7 @@ sub run_tophat {
   my ($check, $arg, $solexa, $illumina) = @_;
   
   chdir "$RNASeqDir/$arg";
+  my $G_species = $wormbase->full_name('-g_species' => 1);
 
   my $cmd_extra = "";
   if ($solexa)   {$cmd_extra = "--solexa-quals"} 
@@ -679,6 +680,7 @@ sub TSL_stuff {
   unlink $hitsdb;
 
   # now run tophat on this set of TSL reads
+  my $G_species = $wormbase->full_name('-g_species' => 1);
   $log->write_to("run tophat $output\n");
   $status = $wormbase->run_command("/software/worm/tophat/tophat $cmd_extra --output-dir TSL /nfs/wormpub/RNASeq/$species/reference-indexes/$G_species $output", $log);
   $log->write_to("gzip -f fastq files\n");
