@@ -8,8 +8,8 @@
 # Uses Ant's Feature_mapper.pm module
 #
 #
-# Last updated by: $Author: pad $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2010-10-15 15:35:50 $        # quickly see when script was last changed and by whom
+# Last updated by: $Author: klh $                      # These lines will get filled in by cvs and helps us
+# Last updated on: $Date: 2011-05-16 11:10:40 $        # quickly see when script was last changed and by whom
 
 
 $|=1;
@@ -22,7 +22,7 @@ use Getopt::Long;
 use Modules::Remap_Sequence_Change;
 
 
-my ($feature, $clone, $flanking_left, $flanking_right, $coords, $span,$store);
+my ($feature, $smap_parent, $clone, $flanking_left, $flanking_right, $coords, $span,$store);
 
 my $help;                    # Help menu
 my $debug;                   # Debug mode 
@@ -45,28 +45,30 @@ my $adhoc;                   # Run against a file, output to screen
 my $start;
 my $stop;
 my $test;
+my $no_load;
 
 GetOptions (
-	    "all"                   => \$all,
-	    "SL1"                   => \$SL1,
-	    "SL2"                   => \$SL2,
-	    "polyA_site"            => \$polyA_site,
-	    "polyA_signal"          => \$polyA_signal,
-	    "binding_site"          => \$binding_site,
-	    "binding_site_reg"      => \$binding_site_reg,
-	    "segmental_duplication" => \$segmental_duplication,
-	    "Genome_sequence_error" => \$genome_sequence_error,
-	    "transcription_start_site"=> \$transcription_start_site,
-	    "transcription_end_site"=> \$transcription_end_site,
-	    "three_prime_UTR"       => \$three_prime_UTR,
-	    "promoter"              => \$promoter,
-	    "regulatory_region"     => \$regulatory_region,
-	    "adhoc=s"               => \$adhoc,
-            "debug=s"               => \$debug,
-            "verbose"               => \$verbose,
-	    "help"                  => \$help,
-    	    'store=s'               => \$store,
-	    'test'                  => \$test
+	    "all"                      => \$all,
+	    "SL1"                      => \$SL1,
+	    "SL2"                      => \$SL2,
+	    "polyA_site"               => \$polyA_site,
+	    "polyA_signal"             => \$polyA_signal,
+	    "binding_site"             => \$binding_site,
+	    "binding_site_reg"         => \$binding_site_reg,
+	    "segmental_duplication"    => \$segmental_duplication,
+	    "Genome_sequence_error"    => \$genome_sequence_error,
+	    "transcription_start_site" => \$transcription_start_site,
+	    "transcription_end_site"   => \$transcription_end_site,
+	    "three_prime_UTR"          => \$three_prime_UTR,
+	    "promoter"                 => \$promoter,
+	    "regulatory_region"        => \$regulatory_region,
+	    "adhoc=s"                  => \$adhoc,
+            "debug=s"                  => \$debug,
+            "verbose"                  => \$verbose,
+	    "help"                     => \$help,
+    	    'store=s'                  => \$store,
+	    'test'                     => \$test,
+            'noload'                   => \$no_load,
 		);
 
 # Help pod if needed
@@ -179,18 +181,18 @@ Colonne 2
 Width 12
 Optional
 Visible
+Class Sequence
+From 1
+Tag Sequence
+
+Colonne 3
+Width 12
+Optional
+Visible
 Class
 Class Sequence
 From 1
 Tag Flanking_sequences
-
-Colonne 3
-Width 32
-Optional
-Visible
-Text
-Right_of 2
-Tag  HERE
 
 Colonne 4
 Width 32
@@ -198,6 +200,14 @@ Optional
 Visible
 Text
 Right_of 3
+Tag  HERE
+
+Colonne 5
+Width 32
+Optional
+Visible
+Text
+Right_of 4
 Tag  HERE
 
 // End of these definitions
@@ -211,8 +221,8 @@ EOF
   while (<TACE>) {
     
     # when it finds a good line
-    if (/^\"(\S+)\"\s+\"(\S+)\"\s+\"(\S+)\"\s+\"(\S+)\"/) {
-      ($feature,$clone,$flanking_left,$flanking_right) = ($1,$2,$3,$4);
+    if (/^\"(\S+)\"\s+\"(\S+)\"\s+\"(\S+)\"\s+\"(\S+)\"\s+\"(\S+)\"/) {
+      ($feature,$smap_parent,$clone,$flanking_left,$flanking_right) = ($1,$2,$3,$4,$5);
       #print "NEXT FEATURE: $feature,$clone,$flanking_left,$flanking_right\n" if ($debug);
 
       if ($flanking_left eq "" && $flanking_right eq "") {
@@ -220,12 +230,12 @@ EOF
 	next;
       }
 
-      my @coords = $mapper->map_feature($clone,$flanking_left,$flanking_right);
+      my @coords = $mapper->map_feature($smap_parent,$flanking_left,$flanking_right);
       if (!defined $coords[2]) {
 	$log->write_to("// ERROR: Can't map feature $feature on clone $clone flanking sequences: $flanking_left $flanking_right\n");
 	$log->error;
 
-	my @suggested_fix = $mapper->suggest_fix($feature, $sanity{$query}, $clone, $flanking_left, $flanking_right, $version, @mapping_data);
+	my @suggested_fix = $mapper->suggest_fix($feature, $sanity{$query}, $smap_parent, $flanking_left, $flanking_right, $version, @mapping_data);
 	if ($suggested_fix[4]) { # FIXED :-)
 	  $log->write_to("// Suggested fix for $feature : $suggested_fix[3]\n");
 	  $log->write_to("\nFeature : $feature\n");
@@ -238,8 +248,7 @@ EOF
 	next;
       }
       
-      $log->write_to("// Feature $feature maps to different clone than suggested $clone -> $coords[0]\n") if ($clone ne $coords[0]);
-      $clone = $coords[0];
+      my $new_clone = $coords[0];
       $start = $coords[1];
       $stop  = $coords[2];
       
@@ -275,16 +284,22 @@ EOF
       if ( exists $sanity{$query} && (($span == $sanity{$query}) || ($sanity{$query} < 0)) ) {
 	
 	if ($adhoc) {
-	  print "$feature maps to $clone $start -> $stop, feature span is $span bp\n";
+	  print "$feature maps to $new_clone $start -> $stop, feature span is $span bp\n";
 	}
 	else {
-	  print OUTPUT "//$feature maps to $clone $start -> $stop, feature span is $span bp\n";
-	  print OUTPUT "\nSequence : \"$clone\"\n";
-	  print OUTPUT "Feature_object $feature $start  $stop\n\n";
+	  print OUTPUT "//$feature maps to $new_clone $start -> $stop, feature span is $span bp\n";
+	  print OUTPUT "\nSequence : \"$new_clone\"\n";
+	  print OUTPUT "Feature_object $feature $start $stop\n\n";
+
+          if ($clone ne $new_clone) {
+            $log->write_to("// Feature $feature maps to different clone than suggested $clone -> $new_clone; changing parent\n");
+            print OUTPUT "\nFeature : \"$feature\"\n";
+            print OUTPUT "Flanking_sequences $new_clone $flanking_left $flanking_right\n\n";
+          }
 	}
       }
       else {
-	$log->write_to("// ERROR: $feature maps to $clone $start -> $stop, feature span is $span bp\n");
+	$log->write_to("// ERROR: $feature maps to $new_clone $start -> $stop, feature span is $span bp\n");
 	$log->error;
       }
     } #_ if match line
@@ -298,7 +313,7 @@ EOF
   close TACE;	
   unlink $table_file if (-e $table_file);
 
-  $wb->load_to_database($wb->autoace, "$outdir/feature_${query}.ace", "feature_mapping", $log);
+  $wb->load_to_database($wb->autoace, "$outdir/feature_${query}.ace", "feature_mapping", $log) unless $no_load;
 
 }
 
