@@ -6,8 +6,8 @@
 #
 # This is a script to automate the sections A, B and C of the BLAST Build
 #
-# Last updated by: $Author: klh $     
-# Last updated on: $Date: 2011-03-29 09:27:02 $      
+# Last updated by: $Author: gw3 $     
+# Last updated on: $Date: 2011-05-16 14:37:49 $      
 
 use strict;                                      
 
@@ -89,7 +89,7 @@ if (!$checkonly) {
   unlink @sort_input;
 
   $log->write_to("  Running dump_blastp_from_file.pl . . .\n");
-  my $dump_bp_cmd = $wormbase->build_cmd_line("${Blast_scripts}/dump_blastp_from_file.pl", $store) . " $SORT_DUMP_DIR/${sort_file_out} -matches -database worm_${species} -dumpdir $dumpdir ";
+  my $dump_bp_cmd = $wormbase->build_cmd_line("${Blast_scripts}/dump_blastp_from_file.pl", $store) . " -file $SORT_DUMP_DIR/${sort_file_out} -matches -database worm_${species} -dumpdir $dumpdir ";
   $wormbase->run_command($dump_bp_cmd, $log)
       and $log->log_and_die("Failed to successfully run command - stopping ($dump_bp_cmd)\n");
 
