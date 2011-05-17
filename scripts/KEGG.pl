@@ -32,7 +32,7 @@ if ( $store ) {
 my $log = Log_files->make_build_log($wormbase);
 
 # MYSQL CONFIG VARIABLES
-my $dbhost = "cbi3";
+my $dbhost = "cbi5d";
 my $dbuser = "genero";
 my $dbname = &get_latest_uniprot;
 
