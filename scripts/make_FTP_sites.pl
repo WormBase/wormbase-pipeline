@@ -6,7 +6,7 @@
 # builds wormbase & wormpep FTP sites
 # 
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2011-05-17 10:03:36 $
+# Last updated on: $Date: 2011-05-18 19:41:30 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -639,7 +639,7 @@ sub copy_ontology_files {
 
   my $obo_dir = $wormbase->primaries . "/citace/temp_unpack_dir/home/citace/Data_for_${WS_name}/Data_for_Ontology/";
   my $ace_ontology_dir = "$ace_dir/ONTOLOGY";
-  my $ftp_ontology_dir = "$targetdir/$WS_name/ontology";
+  my $ftp_ontology_dir = "$targetdir/$WS_name/ONTOLOGY";
 
   mkpath($ace_ontology_dir,1,0775);
   mkpath($ftp_ontology_dir,1,0775);
