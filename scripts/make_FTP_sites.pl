@@ -6,7 +6,7 @@
 # builds wormbase & wormpep FTP sites
 # 
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2011-05-18 19:41:30 $
+# Last updated on: $Date: 2011-05-18 21:05:00 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -448,7 +448,8 @@ sub copy_gff_files{
       my $gff_dir = "$targetdir/$WS_name/species/$gspecies";
       mkpath($gff_dir,1,0775);
 
-      my $whole_filename = "$gspecies.$WS_name.gff2"; #concatenated whole genome file require for all species
+      #concatenated whole genome file require for all species
+      my $whole_filename = "$gspecies.$WS_name.annotation.gff2"; 
       $wormbase->run_command("rm -f $gff_dir/$whole_filename", $log);
 
       if($wb->assembly_type eq 'contig') {
