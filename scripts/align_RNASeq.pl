@@ -32,7 +32,7 @@
 # by Gary Williams
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2011-05-19 12:55:02 $
+# Last updated on: $Date: 2011-05-19 12:57:57 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -265,12 +265,14 @@ if (!$expt) {
     push @arg, $SRX[$i];
     if (($i % 10) == 9) {
       $log->write_to("Running alignments on: @arg\n");
+      print "Running alignments on: @arg\n";
       &run_align($check, @arg);
       @arg=();
     }
   }
   if (@arg) {
     $log->write_to("Running alignments on: @arg\n");
+    print "Running alignments on: @arg\n";
     &run_align($check, @arg);
   }
   
