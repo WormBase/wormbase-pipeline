@@ -32,7 +32,7 @@
 # by Gary Williams
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2011-05-16 08:30:18 $
+# Last updated on: $Date: 2011-05-19 10:18:48 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -306,7 +306,8 @@ if (!$expt) {
   $status = $wormbase->run_command("tar cf expr.tar *.out", $log);
   unlink "expr.tar.gz";
   $status = $wormbase->run_command("gzip -f expr.tar", $log);
-
+  my $autoace = $wormbase->autoace;
+  $status = $wormbase->run_command("cp expr.tar.gz $autoace", $log); # this will probably be chanegd to the autoace/OUTPUT directory soon
 
 
 } else { # we have a -expt parameter
