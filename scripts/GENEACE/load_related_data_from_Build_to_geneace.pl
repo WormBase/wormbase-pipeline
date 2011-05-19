@@ -8,7 +8,7 @@
 # RUN this script anytime during the build or after the build when get_interpolated_map 
 # and update_inferred multi-pt data are done
 #
-# Last updated on: $Date: 2011-05-16 12:30:34 $
+# Last updated on: $Date: 2011-05-19 10:56:28 $
 # Last updated by: $Author: klh $
 
 
@@ -147,7 +147,7 @@ $log->mail();
 exit(0);
 
 
-sub parse_out_parent_sequence {
+sub parse_out_parent_sequences {
   my ($infile) = @_;
 
   my $tmp_file = "/tmp/gene_ace_load_file.$$.ace";
