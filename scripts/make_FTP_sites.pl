@@ -6,7 +6,7 @@
 # builds wormbase & wormpep FTP sites
 # 
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2011-05-18 21:05:00 $
+# Last updated on: $Date: 2011-05-19 10:33:08 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -677,6 +677,12 @@ sub copy_misc_files{
     my $target = "$annotation_dir/$gspecies.$WS_name.${pre}.txt.gz";
     
     $wormbase->run_command("cat $file | gzip -9 -c > $target", $log);
+  }
+  
+  my $expr = "$srcdir/expr.tar.gz";
+  if (-e $expr) {
+    my $target = "$annotation_dir/$gspecies.$WS_name.SRA_gene_expression.tar.gz";
+    $wormbase->run_command("cp -f $expr $target", $log);
   }
 
   # change group ownership
