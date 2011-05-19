@@ -32,7 +32,7 @@
 # by Gary Williams
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2011-05-19 10:18:48 $
+# Last updated on: $Date: 2011-05-19 12:55:02 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -214,6 +214,16 @@ my $host = `hostname`;
 if (!$expt) {
 
   if (!$check) {
+
+    # delete results from the previous run
+    foreach my $SRX (@SRX) {
+      chdir "$RNASeqDir/$SRX";
+      $wormbase->run_command("rm -rf tophat_out/", $log);
+      $wormbase->run_command("rm -rf cufflinks/genes.expr", $log);
+      $wormbase->run_command("rm -rf TSL/TSL_evidence.ace", $log);
+      $wormbase->run_command("rm -rf Introns/Intron_evidence.ace", $log);
+    }
+
     # Build the bowtie index for the reference sequences by:
 
     chdir "/nfs/wormpub/RNASeq/$species/reference-indexes/";
