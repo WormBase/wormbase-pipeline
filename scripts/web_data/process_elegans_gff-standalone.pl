@@ -62,8 +62,8 @@ while (<>) {
     next if $source eq 'assembly_tag';    # don't want 'em, don't need 'em
     next if $method eq 'HOMOL_GAP';       # don't want that neither
 
-    $ref   =~ s/^CHROMOSOME_//;
-    $group =~ s/CHROMOSOME_//;
+    #$ref   =~ s/^CHROMOSOME_//;
+    #$group =~ s/CHROMOSOME_//;
 
     $source = '' if $source eq '*UNKNOWN*';
 
@@ -170,24 +170,6 @@ while (<>) {
         $group .= qq( ; Amplified $amp) if defined $amp;
     }
 
-    # Tier II id flunkification
-    elsif ( $source eq 'gene' && $method eq 'gene'){
-		$group=~/(WBGene\d+)/;
-        my $gene_id = $1;
-        my $gene = $db->fetch(Gene => $gene_id);
-
-        if ($gene){
-            #grab all C.elegans orthologs
-            my @elegansOrthologs = grep {$_->Species eq 'Caenorhabditis elegans'} $gene->Ortholog;
-            foreach my $eGene(@elegansOrthologs){
-                    map {$group.=" ; Alias \"$_\"" if $_}($eGene->CGC_name,$eGene->Sequence_name,"$eGene")
-            }	
-        }
-        else {
-            print STDERR "ERROR: cannot find $gene_id from ($group) in line:\nERROR: $_\n";
-        }
-    }
-    
     # fix variant fields: Variant "T" => Note "T"
     $group =~ s/(?:Variant|Insert) "(\w+)"/Note "$1"/;
 
