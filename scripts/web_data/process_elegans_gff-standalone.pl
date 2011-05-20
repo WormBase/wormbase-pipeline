@@ -163,7 +163,7 @@ while (<>) {
         }
     }
 
-    elsif ( $method eq 'intron' && $source =~ /^tRNAscan/ ){next} # messing up tRNA scanning
+    # elsif ( $method eq 'intron' && $source =~ /^tRNAscan/ ){next} # messing up tRNA scanning
 
     elsif ( $method eq 'PCR_product' && $source eq 'Orfeome' && $group =~ /PCR_product "([^\"]+)"/ ) {
         my $amp = $ORFEOME{$1};
