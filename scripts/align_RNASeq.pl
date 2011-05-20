@@ -23,6 +23,7 @@
 # alias perl /software/bin/perl
 # otherwise it can't find LSF.pm
 
+# Run this after TSL Features have been mapped in the Build.
 # Run on farm-login2 as:
 # bsub -I -q long align_RNASeq.pl
 #
@@ -32,7 +33,7 @@
 # by Gary Williams
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2011-05-19 12:57:57 $
+# Last updated on: $Date: 2011-05-20 16:07:32 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -248,11 +249,12 @@ if (!$expt) {
     
     # Make a GTF file of current transcripts. Used by cufflinks.
     my $gtf_file = "/nfs/wormpub/RNASeq/$species/transcripts.gtf";
-    unlink $gtf_file;;
-    $status = $wormbase->bsub_script("make_GTF_transcript.pl -out $gtf_file", $wormbase->species, $log);
+    unlink $gtf_file;
+    my $current = $wormbase->database('current');
+    $status = $wormbase->run_command("bsub -I -q long make_GTF_transcript.pl -database $current -out $gtf_file", $log);
     if ($status != 0) {  $log->log_and_die("Didn't create the $gtf_file file\n"); }
     $wormbase->check_file($gtf_file, $log,
-			  minsize => 29000000,
+			  minsize => 17000000,
 			 );
   }
 
