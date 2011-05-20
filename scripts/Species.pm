@@ -413,9 +413,131 @@ sub pep_prefix {'BM'}
 sub pepdir_prefix{'brug'};
 sub ncbi_tax_id {'6279'};
 sub assembly_type {'contig'};
+######################################################
+package Sratti;
+use Carp;
+our @ISA = qw(Wormbase Species);
 
+sub _new {	
+    my $class = shift;
+    my %param = %{ shift(@_) };
 
+    my $self = $class->initialize( $class->flatten_params( \%param ) );
 
+    # add stuff post object creation goes here
+
+    bless $self, $class;
+}
+sub full_name {
+	my $self = shift;
+	my %param = @_ ;
+	if($param{'-short'}){
+		return 'S. ratti';
+	}	elsif($param{'-g_species'}){
+		return 's_ratti';
+	}
+	else { return'Strongyloides ratti'
+	};
+}
+sub chromosome_prefix {'RATTI_contig_'}
+sub pep_prefix {'SR'}
+sub pepdir_prefix{'rat'};
+sub ncbi_tax_id {'34506'};
+sub assembly_type {'contig'};
+
+######################################################
+package Csp7;
+use Carp;
+our @ISA = qw(Wormbase Species);
+
+sub _new {	
+    my $class = shift;
+    my %param = %{ shift(@_) };
+
+    my $self = $class->initialize( $class->flatten_params( \%param ) );
+
+    # add stuff post object creation goes here
+
+    bless $self, $class;
+}
+sub full_name {
+	my $self = shift;
+	my %param = @_ ;
+	if($param{'-short'}){
+		return 'C. species7';
+	}	elsif($param{'-g_species'}){
+		return 'c_sp7';
+	}
+	else { return'Caenorhabditis species 7'
+	};
+}
+sub chromosome_prefix {'Contig'}
+sub pep_prefix {'S7'}
+sub pepdir_prefix{'csp7'};
+sub ncbi_tax_id {'870436'};
+sub assembly_type {'contig'};
+######################################################
+package Csp9;
+use Carp;
+our @ISA = qw(Wormbase Species);
+
+sub _new {	
+    my $class = shift;
+    my %param = %{ shift(@_) };
+
+    my $self = $class->initialize( $class->flatten_params( \%param ) );
+
+    # add stuff post object creation goes here
+
+    bless $self, $class;
+}
+sub full_name {
+	my $self = shift;
+	my %param = @_ ;
+	if($param{'-short'}){
+		return 'C. species9';
+	}	elsif($param{'-g_species'}){
+		return 'c_sp9';
+	}
+	else { return'Caenorhabditis species 9'
+	};
+}
+sub chromosome_prefix {'Scaffold'}
+sub pep_prefix {'S9'}
+sub pepdir_prefix{'csp9'};
+sub ncbi_tax_id {'870437'};
+sub assembly_type {'contig'};
+######################################################
+package Csp11;
+use Carp;
+our @ISA = qw(Wormbase Species);
+
+sub _new {	
+    my $class = shift;
+    my %param = %{ shift(@_) };
+
+    my $self = $class->initialize( $class->flatten_params( \%param ) );
+
+    # add stuff post object creation goes here
+
+    bless $self, $class;
+}
+sub full_name {
+	my $self = shift;
+	my %param = @_ ;
+	if($param{'-short'}){
+		return 'C. species11';
+	}	elsif($param{'-g_species'}){
+		return 'c_sp11';
+	}
+	else { return'Caenorhabditis species 11'
+	};
+}
+sub chromosome_prefix {'Scaffold'}
+sub pep_prefix {'S11'}
+sub pepdir_prefix{'csp11'};
+sub ncbi_tax_id {'886184'};
+sub assembly_type {'contig'};
 ######################################################
 
 package Mhapla;
