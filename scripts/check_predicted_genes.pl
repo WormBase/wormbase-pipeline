@@ -4,7 +4,7 @@
 #
 # by Keith Bradnam
 #
-# Last updated on: $Date: 2010-11-29 10:49:02 $
+# Last updated on: $Date: 2011-05-23 11:23:58 $
 # Last updated by: $Author: pad $
 #
 # see pod documentation at end of file for more information about this script
@@ -18,7 +18,7 @@ use Getopt::Long;
 use Log_files;
 use Storable;
 
-my ($verbose, $db_path, $basic, $test1, $debug, $store, $test,);
+my ($verbose, $db_path, $basic, $test1, $debug, $store, $test,$build);
 
 GetOptions ("verbose"    => \$verbose, # prints screen output.
 	    "database=s" => \$db_path, # Path to the database you want to check.
@@ -27,6 +27,7 @@ GetOptions ("verbose"    => \$verbose, # prints screen output.
 	    "test1:s"    => \$test1,   # only checks the CDSs from 1 clone in the database.
 	    "store:s"    => \$store,   # 
 	    "test"       => \$test,    # Test build
+	    "build"      => \$build,   # Checks specific to a full database containing genes and models.
 	   );
 
 my $wormbase;
@@ -59,35 +60,41 @@ my @checkedgenes = ('F56H11.3b','F13E9.8','Y45F10D.7','T21C12.8','F58G11.2','F54
 ################################
 #         Main Body            # 
 ################################
-
-# Fetch Gene Models to be tested (All_genes) #
 my @Predictions;
-if ($test1) {
-  $log->write_to("Only checking genes on ${test1}.......\n");
-#  @Predictions = $db->fetch('All_genes','Y32B12C*');
-@Predictions = $db->fetch('All_genes',"${test1}*");
-  foreach my $Predictions(@Predictions) {
-    print $Predictions->name."\n";
-  }
+
+
+if ($build) {
+  &extra_build_checks;
 }
 else {
-@Predictions = $db->fetch (-query => 'FIND All_genes');
-}
-my $gene_model_count=@Predictions;
-$log->write_to("Checking $gene_model_count Predictions in $db_path\n\n");
-print "\nChecking $gene_model_count Predictions in '$db_path'\n\n" if $verbose;
-
-&main_gene_checks;
-&single_query_tests;
-
-# print warnings to log file, log all category 1 errors, and then fill up.
-my $count_errors =0;
-my @error_list = ( \@error1, \@error2, \@error3,  \@error4, \@error5);
-foreach my $list (@error_list) {
-  foreach my $error (@{$list}) {
-    $count_errors++;
-    $log->write_to("$count_errors $error");
-    last if $count_errors > 190;
+  # Fetch Gene Models to be tested (All_genes) #
+  if ($test1) {
+    $log->write_to("Only checking genes on ${test1}.......\n");
+    #  @Predictions = $db->fetch('All_genes','Y32B12C*');
+    @Predictions = $db->fetch('All_genes',"${test1}*");
+    foreach my $Predictions(@Predictions) {
+      print $Predictions->name."\n";
+    }
+  }
+  else {
+    @Predictions = $db->fetch (-query => 'FIND All_genes');
+  }
+  my $gene_model_count=@Predictions;
+  $log->write_to("Checking $gene_model_count Predictions in $db_path\n\n");
+  print "\nChecking $gene_model_count Predictions in '$db_path'\n\n" if $verbose;
+  &main_gene_checks;
+  &single_query_tests;
+  
+  
+  # print warnings to log file, log all category 1 errors, and then fill up.
+  my $count_errors =0;
+  my @error_list = ( \@error1, \@error2, \@error3,  \@error4, \@error5);
+  foreach my $list (@error_list) {
+    foreach my $error (@{$list}) {
+      $count_errors++;
+      $log->write_to("$count_errors $error");
+      last if $count_errors > 190;
+    }
   }
 }
 
@@ -321,8 +328,20 @@ sub single_query_tests {
   }
 }
 	
+##########################################
+# Additional Tests on the build instance #
+##########################################
 
-
+sub extra_build_checks {
+  my $Gene_model;
+  my @Gene_models = $db->fetch (-query => 'Find Gene where Live AND Species = "Caenorhabditis elegans" AND Sequence_name AND NOT Corresponding_CDS AND NOT Corresponding_pseudogene AND NOT Corresponding_transcript');
+  my $count = scalar(@Gene_models);
+  print "\nThere are $count genes that are Live but not attached to a current gene model\n\n";
+  $log->write_to("\nThere are $count genes that are Live but not attached to a current gene model\n\n");
+  foreach $Gene_model (@{Gene_models}){
+    $log->write_to("$Gene_model \n");
+  }
+}
 
 #################################################################
 # Subroutines
