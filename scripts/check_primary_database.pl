@@ -8,7 +8,7 @@
 # so that gene discrepancies can be identified early in the build.
 #
 # Last updated by: $Author: pad $     
-# Last updated on: $Date: 2009-02-13 16:18:55 $      
+# Last updated on: $Date: 2011-05-23 14:53:24 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -100,13 +100,26 @@ if ((-e $japace) && ($species eq 'japonica')) {push(@xaceinstances,"$japace");}
 # example of running anther script
 
 foreach $xaceinstances (@xaceinstances) {
-    print "running camace_nameDB_comm.pl -database $xaceinstances\n";
-    $wormbase->run_script("NAMEDB/camace_nameDB_comm.pl -database $xaceinstances", $log);
+  print "running camace_nameDB_comm.pl -database $xaceinstances\n";
+  $wormbase->run_script("NAMEDB/camace_nameDB_comm.pl -database $xaceinstances", $log);
+  
+  # Run additional checks for camace and stlace
+  if (($xaceinstances eq "/nfs/wormpub/BUILD/PRIMARIES/camace") || ($xaceinstances eq "/nfs/wormpub/BUILD/PRIMARIES/stlace")){
+    print "Checking $xaceinstances for gene curation errors\n\nrunning check_predicted_genes.pl -database $xaceinstances\n";
+    $wormbase->run_script("check_predicted_genes.pl -database $xaceinstances -basic", $log);
+  }
 }
 
+# Checking primary gene database
 if ((-e $geneace) && ($species eq 'elegans'))  {
-  print "running geneace_nameDB_comm.pl -debug pad\n";
+$log->write_to("running geneace_nameDB_comm.pl\n");
   $wormbase->run_script("NAMEDB/geneace_nameDB_comm.pl", $log);
+}
+
+# Check for missing curation by checking for Live genes that have a Sequence name but aren't connected to a current gene model.
+if ($species eq 'elegans')  {
+$log->write_to("Checking for missing curation data in autoace\n\nrunning check_predicted_genes.pl -build\n");
+  $wormbase->run_script("check_predicted_genes.pl -database ".$wormbase->autoace." -build", $log);
 }
 
 # Close log files and exit
