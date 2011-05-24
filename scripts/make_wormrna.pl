@@ -6,8 +6,8 @@
 #
 # Builds a wormrna data set from the current autoace database
 #
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2010-03-25 10:56:51 $
+# Last updated by: $Author: klh $
+# Last updated on: $Date: 2011-05-24 12:29:18 $
 
 
 #################################################################################
@@ -129,13 +129,13 @@ while( my $obj = shift @transcripts) {
 
   my $rseq = &reformat($dseq);
   if ($cgc_name) {
-    print DNA ">$obj $brief_id locus:$cgc_name\n$rseq";
+    print DNA ">$obj $brief_id gene=$gene locus:$cgc_name\n$rseq";
   }
   elsif($brief_id) {
-    print DNA ">$obj $brief_id\n$rseq";
+    print DNA ">$obj $brief_id gene=$gene\n$rseq";
   }
   else {
-    print DNA ">$obj\n$rseq";
+    print DNA ">$obj gene=$gene\n$rseq";
   }
 #  $count++;
   exit(0) if $count > 50 && $debug;  
@@ -144,36 +144,6 @@ while( my $obj = shift @transcripts) {
 close DNA;
 chmod (0444 , $rnafile) || $log->write_to("cannot chmod $rnafile\n");
 
-
-###########################################################################
-# Create the associated README file          
-###########################################################################
-
-open (README , ">$new_wrdir/README") || $log->log_and_die("Couldn't creat README file\n"); 
-my $orgname = $wormbase->full_name('-short' => 1);
-my $readme = <<END;
-WormRNA
--------
-WormRNA is an additional database that accompanies the main WormBase 
-database (see http://www.wormbase.org for more details) and simply comprises
-the sequences of all known non-coding RNA molecules in the $orgname genome.  
-
-This release (WormRNA$release) corresponds to release WS$release of WormBase.
-The accompanying file (wormrna$release.rna) contains $count RNA sequences in FASTA
-format.
-
-WormBase group, Sanger Institute
-
-END
-
-print README "$readme";
-
-
-##################
-# Tidy up
-##################
-
-close(README);
 $db->close;
 
 ##################
