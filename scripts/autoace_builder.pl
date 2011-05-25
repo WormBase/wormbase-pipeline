@@ -7,7 +7,7 @@
 # Usage : autoace_builder.pl [-options]
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2011-05-24 16:33:21 $
+# Last edited on: $Date: 2011-05-25 22:01:11 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -32,7 +32,7 @@ my $gene_span;
 my ( $load, $tsuser, $map_features, $remap_misc_dynamic, $map, $transcripts, $intergenic, $misc_data_sets, $homol_data_sets, $nem_contigs);
 my ( $GO_term, $rna , $dbcomp, $confirm, $operon ,$repeats, $remarks, $names, $treefam, $cluster);
 my ( $utr, $agp, $gff_munge, $extras , $ontologies, $interpolate, $check);
-my ( $data_check, $buildrelease, $public,$finish_build, $gffdb, $autoace, $release, $user, $kegg, $custom);
+my ( $data_check, $buildrelease, $public,$finish_build, $gffdb, $autoace, $release, $user, $kegg);
 
 
 GetOptions(
@@ -90,7 +90,6 @@ GetOptions(
 	   'species:s'      => \$species,
 	   'user:s'         => \$user,
 	   'kegg'           => \$kegg,
-           'custom'         => \$custom,
 	  )||die(@!);
 
 
@@ -186,10 +185,8 @@ if ($gff_munge) {
   }
 }
 
-&ontologies								 if $ontologies;
+&ontologies								if $ontologies;
 &make_extras                                                             if $extras;
-&custom_files                                                            if $custom;
-
 #run some checks
 $wormbase->run_script( "post_build_checks.pl -a"                 , $log) if $check;
 $wormbase->run_script( "data_checks.pl -ace -gff"                , $log) if $data_check;
@@ -203,8 +200,7 @@ $wormbase->run_script("finish_build.pl"                          , $log) if $fin
 if  ($gffdb && $autoace) {
   $wormbase->run_command("update_gffdb.csh -autoace"               , $log);
 }
-else {
-  $wormbase->run_command("update_gffdb.csh"                  , $log) if $gffdb;
+else {$wormbase->run_command("update_gffdb.csh"                  , $log) if $gffdb;
 }
 
 if ($load) {
@@ -500,11 +496,6 @@ sub make_extras {
   $wormbase->run_script( "genestats.pl" , $log);
 }
 
-sub custom_files {
-  my $ko_file = $wormbase->autoace . "/knockout_consortium_alleles.xml.bz2";
-  $wormbase->run_script("dump_ko.pl -file $ko_file", $log);
-
-}
 
 sub public_sites {
   # gets everything on the to FTP and websites and prepares release letter ready for final edit and sending.
