@@ -138,7 +138,8 @@ task :build_homology => [:env_setup] do
   sh "#{perl} #{basedir}/ensembl-compara/scripts/pipeline/create_mlss.pl --f --sg --reg_conf #{reg} --method_link_type ENSEMBL_PARALOGUES --genome_db_id '1,2,3,4,5,6,7,8,9,10,11'"
 
   # For protein trees
-  sh "#{perl} #{basedir}/ensembl-compara/scripts/pipeline/create_mlss.pl --f --reg_conf #{reg} --method_link_type PROTEIN_TREES --genome_db_id '1,2,3,4,5,6,7,8,9,10',11"
+  sh "#{perl} #{basedir}/ensembl-compara/scripts/pipeline/create_mlss.pl --f --reg_conf #{reg} --method_link_type PROTEIN_TREES --genome_db_id '1,2,3,4,5,6,7,8,9,10,11'"
+
 
   # up the failure tolerance
 
@@ -155,7 +156,7 @@ end
 
 desc 'build PECAN database'
 task :build_pecan => [:env_setup] do
-  conf='etc/pecan_test.conf'
+  conf='etc/pecan-12.conf'
   yml=YAML::load_file('etc/ensembl_lite.conf')
   db=yml['elegans']['database']
 
