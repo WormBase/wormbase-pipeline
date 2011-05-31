@@ -220,7 +220,7 @@ task :dump_gerp =>[:env_setup] do
           sh "#{perl512} scripts/getConservationScores.pl -species #{species} -o #{spec_dir}/#{species}.wig"
           
 	  # split it
-          sh "#{perl512} ~mh6/tmp/split_wig.pl #{spec_dir}/#{species}.wig" # change the location of the splitter
+          sh "#{perl512} scripts/split_wig.pl #{spec_dir}/#{species}.wig"
 	  File.unlink("#{spec_dir}/#{species}.wig")
 
 	  # wiblification
