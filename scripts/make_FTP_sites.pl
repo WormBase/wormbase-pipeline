@@ -6,7 +6,7 @@
 # builds wormbase & wormpep FTP sites
 # 
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2011-05-26 19:25:58 $
+# Last updated on: $Date: 2011-05-31 15:49:43 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -99,6 +99,7 @@ my $dna;
 my $rna;
 my $gff;
 my $ests;
+my $gbrowse_gff;
 my $blastx;
 my $dump_ko;
 my $md5;
@@ -128,11 +129,12 @@ GetOptions ("help"          => \$help,
 	    "cDNAlist"      => \$cDNA,
 	    "geneIDs"       => \$geneIDs,
 	    "pcr"           => \$pcr,
+            "gbrowsegff"    => \$gbrowse_gff,
             "knockout"      => \$dump_ko,
 	    "manifest"      => \$manifest,
             "md5"            => \$md5,
             "skipspecies=s@" => \@skip_species,
-            "onlyspecies=s@" => \@only_species, 
+            "onlyspecies=s@" => \@only_species,
 	    "all"            => \$all);
 
 
@@ -155,7 +157,7 @@ map { $only_species{$_} = 1 } @only_species;
 # using -all option?
 #($clustal=$release=$dump_ko=$dna=$gff=$supplementary=$rna=$misc=$wormpep=$genes=$cDNA=$geneIDs=$pcr=$homols=$manifest=$ont = 1 ) if ($all);
 # remove supplementary from above list, now off by default
-($compara=$release=$dna=$gff=$rna=$misc=$wormpep=$genes=$cDNA=$ests=$geneIDs=$pcr=$homols=$manifest=$ont=$blastx=$dump_ko=$md5=1 ) if ($all);
+($compara=$release=$dna=$gff=$rna=$misc=$wormpep=$genes=$cDNA=$ests=$geneIDs=$pcr=$homols=$manifest=$ont=$blastx=$dump_ko=$gbrowse_gff=$md5=1 ) if ($all);
 
 my $wormpep_ftp_root = ($testout) 
     ? "$testout/databases/wormpep"
@@ -219,6 +221,8 @@ close FTP_LOCK;
 &make_pcr_list if ($pcr);             # make file of PCR products -> WBGene IDs, CDS, CGC name
 
 &extract_ko if ($dump_ko);
+
+&make_gbrowse_gff if ($gbrowse_gff);
 
 &check_manifest if ($manifest);       # compares whats on the FTP site with what should be
 
@@ -743,16 +747,6 @@ sub copy_misc_files{
     $log->write_to("Warning: gene expression file for $gspecies not found ($expr)\n");
   }
 
-  #
-  # KO consortium
-  # 
-  my $ko_file = "$srcdir/knockout_consortium_alleles.xml.bz2";
-  if (-e $ko_file) {
-    my $outfile = "$annotation_dir/${gspecies}.${WS_name}.knockout_consortium_alleles.xml.bz2";
-    $wormbase->run_command("cp -f $ko_file $outfile", $log);
-  }
-
-
   $runtime = $wormbase->runtime;
   $log->write_to("$runtime: Finished copying misc files\n\n");
 
@@ -1229,6 +1223,43 @@ sub copy_homol_data {
   } 
 }
 
+##############################################################
+sub make_gbrowse_gff {
+  my $runtime = $wormbase->runtime;
+  $log->write_to("$runtime: Making Gbrowse GFF\n");
+
+  my %accessors = ($wormbase->species_accessors);
+  $accessors{elegans} = $wormbase;
+  
+  foreach my $wb (values %accessors) {
+    my $species = $wb->species;
+
+    next if exists $skip_species{$species};
+    next if @only_species and not exists $only_species{$species};
+
+    my $gspecies = $wb->full_name('-g_species' => 1);
+    my $tgt_dir = "$targetdir/species/$gspecies";
+
+    my $in_filename = "$tgt_dir/$gspecies.$WS_name.annotations.gff2.gz"; 
+
+    if (not -e $in_filename) {
+      $log->error("Could not make GBrowse-ready GFF for $species; in file $in_filename not found\n");
+      next;
+    }
+
+    my $out_filename = "$tgt_dir/$gspecies.$WS_name.GBrowse.gff2.gz";
+
+    my @pipe = ("gunzip -c $in_filename",
+                "perl $ENV{CVS_DIR}/web_data/process_elegans_gff-standalone.pl -debug $debug -species $species -database ". $wormbase->autoace,
+                "gzip -c -9 > $out_filename");
+
+    $wb->run_command( join("|", @pipe), $log);
+  }
+
+  $runtime = $wormbase->runtime;
+  $log->write_to("$runtime: Finished generating Gbrowse GFF\n\n");
+}
+
 
 ##################################################################################
 sub make_md5sums {
@@ -1384,6 +1415,7 @@ GSPECIES.WSREL.assembly.agp.gz
 [elegans,briggsae,remanei,brenneri,pristionchus,japonica]species/GSPECIES
 GSPECIES.WSREL.best_blastp_hits.txt.gz
 GSPECIES.WSREL.intergenic_sequences.fa.gz
+GSPECIES.WSREL.GBrowse.gff2.gz
 
 # for all species
 []species/GSPECIES
