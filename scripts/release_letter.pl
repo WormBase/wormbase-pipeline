@@ -4,8 +4,8 @@
 # 
 # by Anthony Rogers                             
 #
-# Last updated by: $Author: pad $               
-# Last updated on: $Date: 2011-05-05 09:27:22 $
+# Last updated by: $Author: klh $               
+# Last updated on: $Date: 2011-05-31 18:38:14 $
 
 # Generates a release letter at the end of build.
 #
@@ -90,45 +90,40 @@ $wormbase->release_composition($log) if defined($opt_c);
 if( defined($opt_l)) {
   my $release_letter = "$reports_dir/letter.WS$ver";
   open (RL,">$release_letter");
-  printf RL "New release of WormBase WS$ver, Wormpep$ver and Wormrna$ver $date\n\n";
+  printf RL "New release of WormBase WS$ver\n\n";
   printf RL "WS$ver was built by [INSERT NAME HERE]\n";
   printf RL "-===================================================================================-\n";
   printf RL "The WS$ver build directory includes:\n";
-  printf RL "genomes DIR              -  contains a sub dir for each WormBase species with sequence, gff, and agp data\n";
-  printf RL "        genomes/b_malayi:        - genome_feature_tables/	sequences/\n";
-  printf RL "        genomes/c_brenneri:      - genome_feature_tables/	sequences/\n";
-  printf RL "        genomes/c_briggsae:      - genome_feature_tables/	sequences/\n";
-  printf RL "        genomes/c_elegans:       - annotation/  genome_feature_tables/  sequences/\n";
-  printf RL "        genomes/c_japonica:      - genome_feature_tables/	sequences/\n";
-  printf RL "        genomes/c_remanei:       - genome_feature_tables/	sequences/\n";
-  printf RL "        genomes/h_bacteriophora: - genome_feature_tables/	sequences/\n";
-  printf RL "        genomes/h_contortus:     - genome_feature_tables/	sequences/\n";
-  printf RL "        genomes/m_hapla:         - genome_feature_tables/	sequences/\n";
-  printf RL "        genomes/m_incognita:     - sequences/\n";
-  printf RL "        genomes/p_pacificus:     - genome_feature_tables/	sequences/\n";
-  printf RL "          *annotation/                    - contains additional annotations\n";
-  printf RL "      i) confirmed_genes.WS$ver.gz  - DNA sequences of all genes confirmed by EST &/or cDNA\n";
-  printf RL "     ii) cDNA2orf.WS$ver.gz         - Latest set of ORF connections to each cDNA (EST, OST, mRNA)\n";      
-  printf RL "    iii) geneIDs.WS$ver.gz          - list of all current gene identifiers with CGC & molecular names (when known)\n";
-  printf RL "     iv) PCR_product2gene.WS$ver.gz - Mappings between PCR products and overlapping Genes\n";
-  printf RL "      v) oligo_mapping.gz           - V \n";
-  printf RL "          *genome_feature_tables/         - contains the main .gff files and supplementary .gff data\n";
-  printf RL "          *sequences/                     - contains dna/      protein/  rna/  sub dirs\n";
-  printf RL "            sequences/protein           - WormBase protein set for species + history etc.\n";
-  printf RL "     vi) wormpep$ver.tar.gz         - full Wormpep distribution corresponding to WS$ver\n";
-  printf RL "    vii) wormrna$ver.tar.gz         - latest WormRNA release containing non-coding RNA's in the genome\n";
-  printf RL "   viii) best_blastp_hits_species.WS$ver.gz  - for each C. elegans WormPep protein, lists Best blastp match to\n";
-  printf RL "                        human, fly, yeast, C. briggsae, and SwissProt & TrEMBL proteins.\n";
-  printf RL "            sequences/dna               - WormBase dna data genomic sequence (raw, soft_masked masked), agp\n";
-  printf RL "     ix) intergenic_sequences.dna.gz\n";
-  printf RL "            sequences/rna               - WormBase rna gene data.\n";
+  printf RL "g_species DIR              -  contains a sub dir for each WormBase species with the following files:\n";
+  printf RL "     - G_SPECIES.WS$ver.genomic.fa.gz                - Unmasked genomic DNA\n";
+  printf RL "     - G_SPECIES.WS$ver.genomic_masked.fa.gz         - Hard-masked (repeats replaced with Ns) genomic DNA\n";
+  printf RL "     - G_SPECIES.WS$ver.genomic_softmasked.fa.gz     - Soft-masked (repeats lower-cased) genomic DNA\n";
+  printf RL "     - G_SPECIES.WS$ver.protein.fa.gz                - Current live protein set\n";
+  printf RL "     - G_SPECIES.WS$ver.cds_transcripts.fa.gz        - Spliced cDNA sequence for the CDS portion of protein-coding transcripts\n";
+  printf RL "     - G_SPECIES.WS$ver.ncrna_transcripts.fa.gz      - Spliced cDNA sequence for non-coding RNA transcripts\n";
+  printf RL "     - G_SPECIES.WS$ver.intergenic_sequences.fa.gz   - DNA sequence between pairs of adjacent genes\n";
+  printf RL "     - G_SPECIES.WS$ver.annotations.gff[2|3].gz      - Sequence features in either GFF2 or GFF3 format\n";
+  printf RL "     - G_SPECIES.WS$ver.ests.fa.gz                   - ESTs and mRNA sequences extracted from the public databases\n";
+  printf RL "     - G_SPECIES.WS$ver.best_blastp_hits.txt.gz      - Best blastp matches to human, fly, yeast, and non-WormBase Uniprot proteains\n";
+  printf RL "     - G_SPECIES.WS$ver.*pep_package.tar.gz          - latest version of the [worm|brig|bren|rema|jap|ppa]pep package (if updated since last release)\n";
+  printf RL "     - annotation/                    - contains additional annotations:\n";
+  printf RL "        - G_SPECIES.WS$ver.confirmed_genes.txt.gz              - DNA sequences of all genes confirmed by EST &/or cDNA\n";
+  printf RL "        - G_SPECIES.WS$ver.cDNA2orf.txt.gz                     - Latest set of ORF connections to each cDNA (EST, OST, mRNA)\n";      
+  printf RL "        - G_SPECIES.WS$ver.geneIDs.txtgz                       - list of all current gene identifiers with CGC & molecular names (when known)\n";
+  printf RL "        - G_SPECIES.WS$ver.PCR_product2gene.txt.gz             - Mappings between PCR products and overlapping Genes\n";
+  printf RL "        - G_SPECIES.WS$ver.*oligo_mapping.txt.gz               - Oligo array mapping files\n";
+  printf RL "        - G_SPECIES.WS$ver.knockout_consortium_alleles.xml.gz  - Table of Knockout Consortium alleles\n";
+  printf RL "        - G_SPECIES.WS$ver.SRA_gene_expression.tar.gz          - Tables of gene expression values computed from SRA RNASeq data\n";
+
   printf RL "acedb DIR                -  Everything needed to generate a local copy of the The Primary database\n";
-  printf RL "      x) database.WS$ver.*.tar.gz   - compressed acedb database for new release\n";
-  printf RL "     xi) models.wrm.WS$ver          - the latest database schema (also in above database files)\n";
-  printf RL "    xii) WS$ver-WS$old_ver.dbcomp   - log file reporting difference from last release\n";
-  printf RL "          *Non_C_elegans_BLASTX/          - This directory contains the blastx data for non-elegans species\n";
+  printf RL "     - database.WS$ver.*.tar.gz   - compressed acedb database for new release\n";
+  printf RL "     - models.wrm.WS$ver          - the latest database schema (also in above database files)\n";
+  printf RL "     - WS$ver-WS$old_ver.dbcomp   - log file reporting difference from last release\n";
+  printf RL "     - *Non_C_elegans_BLASTX/          - This directory contains the blastx data for non-elegans species\n";
   printf RL "                                                    (reduces the size of the main database)\n";
-  printf RL "COMPARATIVE_ANALYSIS DIR - compara.tar.bz2 wormpep217_clw.sql.bz2\n";
+  printf RL "COMPARATIVE_ANALYSIS DIR - comparative analysis files\n";
+  printf RL "     - compara.WS$ver.tar.bz2     - gene-tree and alignment GFF files\n";
+  printf RL "     - wormpep_clw.WS$ver.sql.bz2 - ClustalW protein multiple alignments\n";
   printf RL "ONTOLOGY DIR             - gene_associations, obo files for (phenotype GO anatomy) and associated association files\n";
   printf RL "\n\n";
   printf RL "Release notes on the web:\n-------------------------\n";
@@ -311,7 +306,7 @@ if( defined($opt_l)) {
     open (TACE, "echo '$command' | $tace $ace_dir | ") || die "Cannot query acedb. $command  $tace\n";
     while (<TACE>) {
       chomp;
-      s/"//g;
+      s/\"//g;
       s/GO://g;
       unless (/(WBGene\d+)\s+(\d+)\s+(\w+)/) {next;}
       if (/(WBGene\d+)\s+(\d+)\s+(\w+)/){
