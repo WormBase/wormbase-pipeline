@@ -927,7 +927,7 @@ sub print_pseudogenes{
 
 # load ncrna
 sub load_ncrnas{
-    my @types = map {"${\$wb->gff_splits}/*$_.gff "} ('miRNAprimary_transcript','ncRNA','rRNA','scRNA','snoRNA','snRNA','snlRNA','stRNA','tRNA');
+    my @types = map {"${\$wb->gff_splits}/*$_.gff "} ('miRNA','miRNA_primary_transcript','ncRNA','rRNA','scRNA','snoRNA','snRNA','snlRNA','stRNA','tRNA');
     my @files = glob(join(' ',@types));
     my %nc_rnas;
     foreach my $file(@files){
