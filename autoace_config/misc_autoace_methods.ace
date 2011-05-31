@@ -569,6 +569,15 @@ Show_text
 EMBL_dump EMBL_feature CDS
 Remark "Method for the Camace version of the Hillier RNASEQ CDS data which is all collapsed into one method."
 
+
+Method : "RNASEQ.Hillier.Aggregate"
+Colour BROWN
+CDS_colour BROWN
+Overlap_mode Bumpable
+Show_text
+EMBL_dump EMBL_feature CDS
+Remark "The CDS part of the aggregate transcripts predicted by LaDeana Hillier's anaysis of modENCODE data."
+
 ////////////////////////////////////////////////////
 // Homology related methods (BLAST, BLAT and Waba //
 ////////////////////////////////////////////////////
@@ -2520,4 +2529,7 @@ Method : "genBlastG"
 Right_priority 2.95
 
 Method : "curation_remark" 
+Right_priority 1.05
+
+Method : "RNASEQ.Hillier.Aggregate"
 Right_priority 1.05
