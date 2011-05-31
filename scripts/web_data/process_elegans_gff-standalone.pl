@@ -27,6 +27,8 @@ my $wb = (defined $database)
 
 my $db = Ace->connect( $wb->autoace ) or die "Can't open ace database:", Ace->error;
 my $version = $db->version;
+my $species_full = $wb->full_name;
+$species = $wb->species;
 
 my (
     %NOTES,          %LOCUS, %GENBANK,      %CONFIRMED,
@@ -38,20 +40,31 @@ my (
 
 print STDERR "getting confirmed genes\n" if $debug;
 get_confirmed( $db, \%CONFIRMED );
-print STDERR "getting genebank ids\n" if $debug;
-get_genbank( $db, \%GENBANK );
+
+if ($species eq 'elegans') {
+  print STDERR "getting genebank ids\n" if $debug;
+  get_genbank( $db, \%GENBANK );
+}
+
 print STDERR "getting transcript2cds\n" if $debug;
 get_transcripts( $db, \%TRANSCRIPT2CDS );
+
 print STDERR "getting wormpep\n" if $debug;
 get_wormpep( $db, \%WORMPEP );
+
 print STDERR "getting loci information\n" if $debug;
 get_loci( $db, \%LOCUS );
+
 print STDERR "getting genes\n" if $debug;
 get_genes( $db, \%GENES );
+
 print STDERR "getting notes\n" if $debug;
 get_notes( $db, \%NOTES );
-print STDERR "getting ORFEOME info\n" if $debug;
-get_orfeome( $db, \%ORFEOME );
+
+if ($species eq 'elegans') {
+  print STDERR "getting ORFEOME info\n" if $debug;
+  get_orfeome( $db, \%ORFEOME );
+}
 
 
 while (<>) {
@@ -68,7 +81,8 @@ while (<>) {
     $source = '' if $source eq '*UNKNOWN*';
 
     # Process top-level CDS and Transcript entries
-    if ( $method=~/Transcript|CDS|.*primary_transcript/ && $source=~/Coding_transcript|curated|.*RNA|miRNA/i && $group=~/[Transcript|CDS] "(\w+\.\d+[a-z]?\.?\d?)"/ ) {
+    #if ( $method=~/Transcript|CDS|.*primary_transcript/ && $source=~/Coding_transcript|curated|.*RNA|miRNA/i && $group=~/[Transcript|CDS] "(\w+\.\d+[a-z]?\.?\d?)"/ ) {
+    if ( $method=~/Transcript|CDS|.*primary_transcript/ && $source=~/Coding_transcript|curated|.*RNA|miRNA/i && $group=~/[Transcript|CDS] "(\S+)"/ ) {
         ### Need to pick up transcript IDs, too
 
         my $match = $1;
@@ -237,7 +251,7 @@ sub remember_gene_extents {
 sub get_genes {
   my ($db,$hash) = @_;  # Keys are CDSes; values are WBGeneIDs
   #  my @genes = $db->fetch(-query=>'find Gene IS WBGene0* AND Corresponding_CDS');
-  my @genes = $db->fetch(-query=>'find Gene');
+  my @genes = $db->fetch(-query=> sprintf("find GENE WHERE Species = \"%s\"", $species_full));
   foreach my $obj (@genes) {
     my @cds = ($obj->Corresponding_CDS,$obj->Corresponding_Transcript);
     next unless @cds;
@@ -249,7 +263,7 @@ sub get_genes {
 
 sub get_transcripts {
     my ( $db, $hash ) = @_;    # Keys are transcript; values are CDSids
-    my @transcripts = $db->fetch( -query => 'find Transcript' );
+    my @transcripts = $db->fetch( -query => sprintf("find Transcript WHERE Species = \"%s\"", $species_full ));
     foreach my $obj (@transcripts) {
         my $cds = $obj->Corresponding_CDS;
         $hash->{$obj} = $cds;
@@ -266,7 +280,7 @@ sub get_loci {
 
     # Fetch out all the cloned loci
     # This approach means that some genes will have duplicate entries (arising form the Other_names)
-    my @loci = $db->fetch( -query => 'find Gene Molecular_info AND (CGC_name OR Other_name)' );
+    my @loci = $db->fetch( -query => sprintf("find Gene Molecular_info AND (CGC_name OR Other_name) AND Species = \"%s\"", $species_full));
 
     foreach my $obj (@loci) {
         my @genomic = ( $obj->Corresponding_CDS, $obj->Corresponding_Transcript );
@@ -282,7 +296,8 @@ sub get_wormpep {
     my ( $db, $hash ) = @_ ; # hash keys are predicted CDS names, values are one or more wormpep names
 #   $hash = $wb->FetchData( 'cds2wormpep', $hash );
 
-    my @genes = $db->fetch(-query=>'find CDS Corresponding_protein', -filltag=>'Corresponding_protein');
+    my @genes = $db->fetch(-query => sprintf("find CDS Corresponding_protein AND Species = \"%s\"", $species_full), 
+                           -filltag =>'Corresponding_protein');
     foreach my $obj (@genes) {
       my $wormpep = $obj->Corresponding_protein or next;
       $hash->{"$obj"} = "$wormpep";
@@ -293,15 +308,15 @@ sub get_wormpep {
 sub get_notes {
     my ( $db, $hash ) = @_ ; # hash keys are predicted gene names, values are one or more brief identifications
     my @genes = $db->fetch(
-        -query   => 'find CDS Brief_identification',
-        -filltag => 'Brief_identification'
-    );
+                           -query   => sprintf("find CDS Brief_identification AND Species = \"%s\"", $species_full),
+                           -filltag => 'Brief_identification',
+                           );
 
     # Should probably also look for notes attached to sequences, yes? As before...
     push(
         @genes,
         $db->fetch(
-            -query   => 'find Sequence Brief_identification',
+            -query   => sprintf("find Sequence Brief_identification AND Species = \"%s\"", $species_full),
             -filltag => 'Brief_identification'
         )
     );
@@ -309,7 +324,7 @@ sub get_notes {
     push(
         @genes,
         $db->fetch(
-            -query   => 'find Transcript Brief_identification',
+            -query   => sprintf("find Transcript Brief_identification AND Species = \"%s\"", $species_full),
             -filltag => 'Brief_identification'
         )
     );
@@ -344,7 +359,7 @@ sub get_genbank {
 # This has changed with WS133
 sub get_confirmed {
     my ( $db, $hash ) = @_; # hash keys are predicted gene names, values are confirmation type
-    my @confirmed = $db->fetch( -query => 'find CDS Prediction_status' );
+    my @confirmed = $db->fetch( -query => sprintf("find CDS Prediction_status AND Species = \"%s\"", $species_full));
     foreach my $obj (@confirmed) {
         my ($tag) = $obj->Prediction_status->row if ( $obj->Prediction_status );
         $hash->{$obj} = $tag;
