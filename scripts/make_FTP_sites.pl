@@ -6,7 +6,7 @@
 # builds wormbase & wormpep FTP sites
 # 
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2011-06-01 15:31:52 $
+# Last updated on: $Date: 2011-06-01 15:37:20 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -237,8 +237,8 @@ close FTP_LOCK;
 # Tidy up and exit
 #
 ################################
-#$wormbase->run_command("chgrp -R  worm $targetdir", $log);  
-#$wormbase->run_command("chmod -R ug+w $targetdir", $log);  
+$wormbase->run_command("chgrp -R  worm $targetdir", $log);  
+$wormbase->run_command("chmod -R ug+w $targetdir", $log);  
 
 # warn about errors in subject line if there were any
 $wormbase->run_command("rm -f $lockfile",$log) if ($log->report_errors == 0);
