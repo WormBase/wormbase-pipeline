@@ -5,7 +5,7 @@
 # by Anthony Rogers                             
 #
 # Last updated by: $Author: klh $               
-# Last updated on: $Date: 2011-05-31 18:38:14 $
+# Last updated on: $Date: 2011-06-01 16:28:32 $
 
 # Generates a release letter at the end of build.
 #
@@ -94,7 +94,7 @@ if( defined($opt_l)) {
   printf RL "WS$ver was built by [INSERT NAME HERE]\n";
   printf RL "-===================================================================================-\n";
   printf RL "The WS$ver build directory includes:\n";
-  printf RL "g_species DIR              -  contains a sub dir for each WormBase species with the following files:\n";
+  printf RL "species/ DIR              -  contains a sub dir for each WormBase species (G_SPECIES) with the following files:\n";
   printf RL "     - G_SPECIES.WS$ver.genomic.fa.gz                - Unmasked genomic DNA\n";
   printf RL "     - G_SPECIES.WS$ver.genomic_masked.fa.gz         - Hard-masked (repeats replaced with Ns) genomic DNA\n";
   printf RL "     - G_SPECIES.WS$ver.genomic_softmasked.fa.gz     - Soft-masked (repeats lower-cased) genomic DNA\n";
