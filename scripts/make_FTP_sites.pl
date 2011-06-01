@@ -6,7 +6,7 @@
 # builds wormbase & wormpep FTP sites
 # 
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2011-05-31 15:49:43 $
+# Last updated on: $Date: 2011-06-01 15:31:52 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -237,8 +237,8 @@ close FTP_LOCK;
 # Tidy up and exit
 #
 ################################
-$wormbase->run_command("chgrp -R  worm $targetdir", $log);  
-$wormbase->run_command("chmod -R ug+w $targetdir", $log);  
+#$wormbase->run_command("chgrp -R  worm $targetdir", $log);  
+#$wormbase->run_command("chmod -R ug+w $targetdir", $log);  
 
 # warn about errors in subject line if there were any
 $wormbase->run_command("rm -f $lockfile",$log) if ($log->report_errors == 0);
@@ -432,7 +432,7 @@ sub copy_dna_files{
         if (scalar(@agp_files) == 1) {
           # just the one - assume its for whole genome and copy it across
           my ($single_file) = @agp_files;
-          $wormbase->run_command("cp -f $single_file $target_agp_file", $log); 
+          $wormbase->run_command("cat $single_file | gzip -9 -c > ${target_agp_file}.gz", $log); 
         } else {
           # assume per-chromosome
           unlink $target_agp_file;
@@ -1248,12 +1248,16 @@ sub make_gbrowse_gff {
     }
 
     my $out_filename = "$tgt_dir/$gspecies.$WS_name.GBrowse.gff2.gz";
+    my $command = "perl $ENV{CVS_DIR}/web_data/process_elegans_gff-standalone.pl -species $species -database ". $wormbase->autoace;
+    if ($debug) {
+      $command .= " -debug $debug ";
+    }
 
     my @pipe = ("gunzip -c $in_filename",
-                "perl $ENV{CVS_DIR}/web_data/process_elegans_gff-standalone.pl -debug $debug -species $species -database ". $wormbase->autoace,
+                
                 "gzip -c -9 > $out_filename");
 
-    $wb->run_command( join("|", @pipe), $log);
+    $wb->run_command( "gunzip -c $in_filename | $command | gzip -c -9 > $out_filename", $log);
   }
 
   $runtime = $wormbase->runtime;
@@ -1318,12 +1322,19 @@ sub usage {
 ##################################################################################
 sub check_manifest {
 
-  my %species    = $wormbase->species_accessors;
+  my %t2_species = $wormbase->species_accessors;
+  $t2_species{$wormbase->species} = $wormbase;
+  
   my %t3_species = $wormbase->tier3_species_accessors;
+
+  my %species;
   foreach my $sp (keys %t3_species) {
     $species{$sp} = $t3_species{$sp};
+  }  
+  foreach my $sp (keys %t2_species) {
+    $species{$sp} = $t2_species{$sp};
   }
-  $species{$wormbase->species} = $wormbase;
+  
   
   my (@stanzas, $count);
 
@@ -1338,7 +1349,21 @@ sub check_manifest {
         species => {},
       };
       foreach my $tsp (split(/,/, $sp)) {
-        $stanzas[-1]->{species}->{$tsp} = 1;
+        if ($tsp eq 'TIER3') {
+          foreach my $ntsp (keys %t3_species) {
+            $stanzas[-1]->{species}->{$ntsp} = 1;
+          }
+        } elsif ($tsp eq 'TIER2') {
+          foreach my $ntsp (keys %t2_species) {
+            $stanzas[-1]->{species}->{$ntsp} = 1;
+          }
+        } elsif ($tsp eq 'ALL') {
+          foreach my $ntsp (keys %species) {
+            $stanzas[-1]->{species}->{$ntsp} = 1;
+          }
+        } else {
+          $stanzas[-1]->{species}->{$tsp} = 1;
+        }
       }
       next;
     };
@@ -1349,30 +1374,43 @@ sub check_manifest {
   }
   
   foreach my $block (@stanzas) {
-    foreach my $worm (keys %species) {
-      next if exists $skip_species{$worm};
-      next if @only_species and not exists $only_species{$worm};
-
-      next if (keys %{$block->{species}} and not exists $block->{species}->{$worm});
-
-      my $gspecies = $species{$worm}->full_name('-g_species'=>1);
-      my $gWORM = $species{$worm}->pepdir_prefix;
-      my $species = $species{$worm}->species;
-      
+    if (not keys %{$block->{species}}) {
       my $parent = $block->{parent};
-      $parent =~ s/GSPECIES/$gspecies/g;
-      $parent =~ s/WSREL/$WS_name/g;
       $parent = "$targetdir/$parent";
-      
-      #print "PARENT = $parent\n";
-
-      foreach my $file (@{$block->{files}}) {
-        $file =~ s/GSPECIES/$gspecies/g;
+      foreach my $ofile (@{$block->{files}}) {
+        my $file = $ofile;
         $file =~ s/WSREL/$WS_name/g;
-        $file =~ s/WORM/$gWORM/g;
         $file = "$parent/$file";
-        #print "FILE = $file\n";
         $count += &checkfile($file);
+      }
+    } else {
+      foreach my $worm (keys %species) {
+        next if exists $skip_species{$worm};
+        next if @only_species and not exists $only_species{$worm};
+        
+        next if (keys %{$block->{species}} and not exists $block->{species}->{$worm});
+        
+        my $gspecies = $species{$worm}->full_name('-g_species'=>1);
+        my $gWORM = $species{$worm}->pepdir_prefix;
+        my $species = $species{$worm}->species;
+        
+        my $parent = $block->{parent};
+        $parent =~ s/GSPECIES/$gspecies/g;
+        $parent =~ s/WSREL/$WS_name/g;
+        $parent = "$targetdir/$parent";
+        
+        #print "PARENT = $parent\n";
+        
+        foreach my $ofile (@{$block->{files}}) {
+          my $file = $ofile;
+          
+          $file =~ s/GSPECIES/$gspecies/g;
+          $file =~ s/WSREL/$WS_name/g;
+          $file =~ s/WORM/$gWORM/g;
+          $file = "$parent/$file";
+          #print "FILE = $file\n";
+          $count += &checkfile($file);
+        }
       }
     }
   }
@@ -1400,7 +1438,7 @@ __DATA__
 c_elegans.WSREL.affy_oligo_mapping.txt.gz
 c_elegans.WSREL.agil_oligo_mapping.txt.gz
 c_elegans.WSREL.pcr_product2gene.txt.gz
-c_elegnas.WSREL.geneIDs.txt.gz
+c_elegans.WSREL.geneIDs.txt.gz
 c_elegans.WSREL.gsc_oligo_mapping.txt.gz
 c_elegans.WSREL.cdna2orf.txt.gz
 c_elegans.WSREL.confirmed_genes.fa.gz
@@ -1412,20 +1450,24 @@ GSPECIES.WSREL.WORMpep_package.tar.gz
 GSPECIES.WSREL.assembly.agp.gz
 
 # tierII specific stuff
-[elegans,briggsae,remanei,brenneri,pristionchus,japonica]species/GSPECIES
+[TIER2]species/GSPECIES
 GSPECIES.WSREL.best_blastp_hits.txt.gz
 GSPECIES.WSREL.intergenic_sequences.fa.gz
 GSPECIES.WSREL.GBrowse.gff2.gz
+GSPECIES.WSREL.ncrna_transcripts.fa.gz
+GSPECIES.WSREL.annotations.gff2.gz
+
+[TIER3]species/GSPECIES
+GSPECIES.WSREL.annotations.gff3.gz
 
 # for all species
-[]species/GSPECIES
+[ALL]species/GSPECIES
 GSPECIES.WSREL.genomic.fa.gz
 GSPECIES.WSREL.genomic_masked.fa.gz
 GSPECIES.WSREL.genomic_softmasked.fa.gz
 GSPECIES.WSREL.protein.fa.gz
 GSPECIES.WSREL.cds_transcripts.fa.gz
-GSPECIES.WSREL.ncrna_transcripts.fa.gz
-GSPECIES.WSREL.annotations.gff2.gz
+
 
 []acedb
 files_in_tar
@@ -1444,5 +1486,5 @@ phenotype_ontology.WSREL.obo
 
 
 []COMPARATIVE_ANALYSIS
-compara.WSREL.tar.bz2
+compara.WSREL.tar.gz
 wormpep_clw.WSREL.sql.bz2
