@@ -5,8 +5,8 @@
 # A PERL wrapper to automate the process of building the FTP sites 
 # builds wormbase & wormpep FTP sites
 # 
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2011-06-03 09:26:47 $
+# Last updated by: $Author: klh $
+# Last updated on: $Date: 2011-06-03 18:55:48 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -841,16 +841,22 @@ sub copy_wormpep_files {
 
 
     if ($WS == $rel_last_built) {
-      my $source =$wb->wormpep . "/${peppre}pep$WS";
-      my $target = "$wormpep_ftp_root/${peppre}pep$WS";
+      my $sourcedir =$wb->wormpep . "/${peppre}pep$WS";
+      my $targetdir = "$wormpep_ftp_root/${peppre}pep$WS";
 
-      $wormbase->run_command("cp -f $source $target", $log);
-      $wormbase->run_command("chgrp worm $target", $log);
+      mkpath($tgt,1,0775);
+
+      foreach my $wpf ($wb->wormpep_files) {
+        $wormbase->run_command("cp -f $sourcedir/$wpf${WS} $targetdir/", $log);
+      }
+
+      $wormbase->run_command("chgrp -R worm $targetdir", $log);
 
       # Uniprot require symlinks to "wormpep" and "brigpep"
       if ($species eq 'elegans' or $species eq 'briggsae') {
-        my $link_target = "$wormpep_ftp_root/${peppre}pep";
-        $wormbase->run_command("ln -sf $target $link_target", $log);
+        my $link_source = "${peppre}pep${WS}/${peppre}pep${WS}";
+        my $link_target = "${peppre}pep";
+        $wormbase->run_command("cd $wormpep_ftp_root && ln -sf $link_source $link_target", $log);
         $wormbase->run_command("chgrp worm $link_target", $log);
       }
     } else {
@@ -891,10 +897,6 @@ sub copy_wormpep_files {
       $log->error("Could not find $src_cdna_file for $t3; worrysome\n");
     }
   }
-
-  #
-  # finally, need to update ftp/databases/wormpep 
-  #
 
   $runtime = $wormbase->runtime;
   $log->write_to("$runtime: Finished copying Pep files\n\n");
