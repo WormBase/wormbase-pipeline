@@ -6,7 +6,7 @@
 #
 # Updates the local webpages in synch with the main website
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2011-05-13 14:08:37 $
+# Last updated on: $Date: 2011-06-03 19:32:10 $
 
 
 use strict;
@@ -76,7 +76,7 @@ $wormbase->run_command("cd $wormpep_ftp_root && ln -fs wormpep${prev_release}/wo
 # Update Sanger WORMBASE ftp site to change live_release symlink
 ##################################################################
 #Should point at the current WSXXX release folder eg. WS167/, basically one less than the development_release link which will appear above it.
-$wormbase->run_command("cd $wormbase_ftp_dir && rm -f live_release && ln -fs WS${release} live_release",$log);
+$wormbase->run_command("cd $wormbase_ftp_dir && rm -f live_release && ln -fs releases/WS${release} live_release",$log);
 
 
 ##############################################

@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.6.1 -w
+!/usr/local/bin/perl5.6.1 -w
 #
 # distribute_letter.pl
 #
@@ -9,7 +9,7 @@
 #                          /nfs/WWW/SANGER_docs/htdocs/Projects/C_elegans/WORMBASE/current/release_notes.txt/
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2011-05-24 16:19:02 $
+# Last updated on: $Date: 2011-06-03 19:30:01 $
 
 
 use strict;                                      
@@ -117,7 +117,7 @@ my $targetdir = '/nfs/disk69/ftp/pub2/wormbase';    # default directory, can be 
 
 # delete the old symbolic link and make the new one
 $wormbase->run_command("rm -f $targetdir/development_release", $log);
-$wormbase->run_command("cd $targetdir; ln -s $release development_release", $log);
+$wormbase->run_command("cd $targetdir; ln -s releases/$release development_release", $log);
 
 # update wormpep_dev symbolic link in wormpep ftp site
 my $wormpep_dir = glob("~ftp/pub/databases/wormpep"); 
