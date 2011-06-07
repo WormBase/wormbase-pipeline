@@ -5,8 +5,8 @@
 # A PERL wrapper to automate the process of building the FTP sites 
 # builds wormbase & wormpep FTP sites
 # 
-# Last updated by: $Author: klh $
-# Last updated on: $Date: 2011-06-03 18:55:48 $
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2011-06-07 14:47:55 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -1011,7 +1011,7 @@ sub extract_ko {
   my $annotation_dir = "$targetdir/species/$gspecies/annotation";
   mkpath("$annotation_dir",1,0775);
 
-  my $outfile = "$annotation_dir/${gspecies}.${WS_name}.knockout_consortium_alleles.xml.bz2";
+  my $outfile = "$annotation_dir/${gspecies}.${WS_name}.knockout_consortium_alleles.xml.gz";
 
   $wormbase->run_script("dump_ko.pl -file $outfile",$log);
   $wormbase->run_command("chgrp -R  worm $annotation_dir", $log);  

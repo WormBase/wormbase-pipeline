@@ -40,7 +40,7 @@ my $jeff = new Jeff $database,$wormbase || die 'cannot create connections to $da
 $jeff->get_all_alleles;
 $log->write_to("dumping ".(scalar $jeff->get_alleles)." knockout consortium alleles\n");
 
-my $outfile= new IO::File "|/software/worm/bin/tidy -xml | bzip2 -9 -c > $file" if $file;
+my $outfile= new IO::File "|/software/worm/bin/tidy -xml | gzip -9 -c > $file" if $file;
 
 $jeff->print_alleles($outfile);
 $outfile->close;
@@ -294,7 +294,7 @@ If the script is called directly, it will use the main block and dump the data.
 =head1 USAGE
 
 dump_ko.pl [-store WORMBASE_STORABLE] [-test] [-debug USERNAME] [-database DATABASE_DIRECTORY] [-file OUTFILE]
-It will default to BUILD / *STDOUT if no options are set and the outputfile will be bzip2 compressed.
+It will default to BUILD / *STDOUT if no options are set and the outputfile will be gzip compressed.
 
 =head1 CONSTRUCTIR
 
