@@ -372,6 +372,16 @@ Display Colour ORANGE
 GFF GFF_source "CGH_allele"
     GFF_feature "deletion"
 
+Method : Million_mutation
+Remark "A collaborative project between the Genome Sciences Department in Seattle (R.H. Waterston, L. Hillier and J. Shendure) and the Moerman Lab. Starting April 1, 2010, a collection of 1,500 to 2,000 mutagenized lines using various mutagens, including EMS, ENU and UV/TMP will be built"
+Display Colour Orange
+        Strand_sensitive
+        Width 1.1
+        Show_text
+GFF GFF_source "Million_mutation"
+    GFF_feature "SNP"
+
+
 
 ////////////////////////////
 // Gene predicter methods //
