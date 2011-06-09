@@ -5,8 +5,8 @@
 # A PERL wrapper to automate the process of building the FTP sites 
 # builds wormbase & wormpep FTP sites
 # 
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2011-06-07 14:47:55 $
+# Last updated by: $Author: klh $
+# Last updated on: $Date: 2011-06-09 10:26:33 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -666,7 +666,7 @@ sub copy_rna_files{
     mkpath($gff_dir,1,0775);
 
     my $target = sprintf("%s/%s.%s.ncrna_transcripts.fa.gz", $gff_dir, $gspecies, $WS_name);
-    my $unzipped_source = sprintf("%s/SEQUENCES/%s.ncrna.fa", $wb->autoace, $species);
+    my $unzipped_source = sprintf("%s/%s.ncrna.fa", $wb->sequences, $species);
 
     if (-e $unzipped_source) {
       $wb->run_command("gzip -9 -c $unzipped_source > $target", $log);
@@ -879,8 +879,8 @@ sub copy_wormpep_files {
     my $tgt = "$targetdir/species/$gspecies";
     mkpath($tgt,1,0775);
 
-    my $src_pep_file = $wb->autoace . "/SEQUENCES/$t3.prot.fas";
-    my $src_cdna_file = $wb->autoace . "/SEQUENCES/$t3.cdna.fas";
+    my $src_pep_file = $wb->sequences . "/$t3.prot.fas";
+    my $src_cdna_file = $wb->sequences . "/$t3.cdna.fas";
 
     my $tgt_pep_file = "$tgt/$gspecies.$WS_name.protein.fa.gz";
     my $tgt_cdna_file = "$tgt/$gspecies.$WS_name.cds_transcripts.fa.gz";

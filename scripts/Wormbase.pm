@@ -1144,6 +1144,7 @@ sub wormrna     { my $self = shift; return $self->{'wormrna'}; }
 sub gff         { my $self = shift; return $self->{'gff'}; }
 sub gff_splits  { my $self = shift; return $self->{'gff_splits'}; }
 sub chromosomes { my $self = shift; return $self->{'chromosomes'}; }
+sub sequences   { my $self = shift; return $self->{'sequences'}; }
 sub logs        { my $self = shift; return $self->{'logs'}; }
 sub ftp_upload  { my $self = shift; return $self->{'ftp_upload'}; }
 sub ftp_site    { my $self = shift; return $self->{'ftp_site'}; }
@@ -1282,6 +1283,7 @@ sub establish_paths {
     $self->{'logs'}        = $self->orgdb . "/logs";
     $self->{'common_data'} = $self->orgdb . "/COMMON_DATA";
     $self->{'chromosomes'} = $self->orgdb . "/CHROMOSOMES";
+    $self->{'sequences'}   = $self->orgdb . "/SEQUENCES";
     $self->{'transcripts'} = $self->orgdb . "/TRANSCRIPTS";
     $self->{'reports'}     = $self->orgdb . "/REPORTS";
     $self->{'acefiles'}    = $self->orgdb . "/acefiles";
@@ -1328,6 +1330,7 @@ sub establish_paths {
     mkpath( $self->wormpep )     unless ( -e $self->wormpep );
     mkpath( $self->wormrna )     unless ( -e $self->wormrna ); 
     mkpath( $self->chromosomes ) unless ( -e $self->chromosomes );
+    mkpath( $self->sequences )   unless ( -e $self->sequences );
     mkpath( $self->transcripts ) unless ( -e $self->transcripts ); 
     mkpath( $self->reports )     unless ( -e $self->reports );
     mkpath( $self->ontology )    unless ( -e $self->ontology );
