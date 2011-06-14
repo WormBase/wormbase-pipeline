@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: pad $
-// Last edited on: $Date: 2011-04-19 10:57:41 $
+// Last edited on: $Date: 2011-06-14 09:02:23 $
 
 
 ////////////////////////
@@ -40,7 +40,7 @@
 		 Sequence ?Sequence XREF Map
 		 Variation ?Variation XREF Map
 		 Map_shown ?Map XREF Map
-                 Transgene  ?Transgene XREF Map //sdm added to display gmaps 
+                 Transgene  ?Transgene //sdm added to display gmaps //removed XREF ky 2011 
 		// tag2 system for items shown in main region
 	EMBL_chromosome UNIQUE Text
 
@@ -254,7 +254,7 @@
 			Molecular_name         ?Gene_name XREF Molecular_name_for  // for linking to full CDS names, wormpep etc.
                         Other_name             ?Gene_name XREF Other_name_for #Evidence // other unapproved CGC-style gene names
                         Public_name     UNIQUE ?Gene_name XREF Public_name_for // the one name that should be used
-		  DB_info Database ?Database ?Database_field ?Accession_number //For Darin genbank genpep ids
+		  DB_info Database ?Database ?Database_field ?Accession_number Text //For Darin genbank genpep ids
                   Species UNIQUE ?Species
                   History Version_change Int UNIQUE DateType UNIQUE ?Person #Gene_history_action
                           Merged_into UNIQUE ?Gene XREF Acquires_merge
@@ -290,6 +290,7 @@
                                          Biological_process ?Text #Evidence              // Carol [050202 dl]
                                          Molecular_function ?Text #Evidence              // Carol [050202 dl]
                                          Expression ?Text #Evidence                      // Carol [050202 dl]
+					 Human_disease_relevance ?Text #Evidence	 // Ranjana [110601 pad]
         Molecular_info Corresponding_CDS ?CDS XREF Gene #Evidence             // to link to live CDSs
                        Corresponding_CDS_history ?CDS XREF Gene_history       // to link to history CDSs
                        Corresponding_transcript ?Transcript XREF Gene #Evidence
@@ -304,7 +305,6 @@
                           Expr_pattern ?Expr_pattern XREF Gene
                           Drives_Transgene ?Transgene XREF Driven_by_gene
                           Transgene_product ?Transgene XREF Gene
-                          Rescued_by_transgene ?Transgene
                           Gene_regulation Trans_regulator ?Gene_regulation XREF Trans_regulator_gene
                                           Trans_target    ?Gene_regulation XREF Trans_regulated_gene
                           Antibody ?Antibody XREF Gene
@@ -411,7 +411,7 @@
                Remark  ?Text   #Evidence
 
 #Interactor_info    Variation    ?Variation    XREF    Interactor
-		    Transgene ?Transgene XREF   Interactor
+		    Transgene ?Transgene XREF Interactor
 		    Remark  ?Text   #Evidence    //info about the reagents that the model can't capture goes here (e.g. co_suppression, RNA_reagent, etc.)
 
 #Interaction_info    Interaction_RNAi ?RNAi XREF Interaction
@@ -447,6 +447,7 @@
 			Duplication	Free_dup
 			Translocation
 			Compound	Text
+			Introgression
                 Phenotype ?Phenotype XREF Rearrangement #Phenotype_info
 		Phenotype_not_observed ?Phenotype XREF Not_in_Rearrangement #Phenotype_info  //added by Wen to separate Not phenotype from real phenotypes
 		Balances ?Map #Balancer
@@ -669,16 +670,12 @@
 //
 ///////////////////////////////
 
-?Species Common_name ?Text
-	 Other_name ?Text
-	 NCBITaxonomyID UNIQUE Int
-         Phylogeny Kingdom UNIQUE Text
-		   Phylum UNIQUE Text
-		   Subphylum UNIQUE Text
-		   Class UNIQUE Text
-		   Order UNIQUE Text 
-		   Family UNIQUE Text 
-		   Genus UNIQUE Text
+?Species Short_name UNIQUE Text   // e.g. 'C. elegans'
+	 Other_name Text	  // sp. 7 etc.
+	 G_species UNIQUE Text    // e.g. 'c_elegans' - used internally for file generation
+	 NCBITaxonomyID UNIQUE Int 
+	 Assembly UNIQUE ?Sequence_collection //used for linking to the species assembly.
+
 
 ///////////////////////////////
 //
@@ -771,12 +768,12 @@
 				  Locus_A         UNIQUE ?Locus UNIQUE ?Variation XREF In_multi_point
 				  Allele_A        UNIQUE ?Variation
 				  Rearrangement_A UNIQUE ?Rearrangement
-                                  Transgene_A     UNIQUE ?Transgene XREF Multi_point
+                                  Transgene_A     UNIQUE ?Transgene XREF Multi_point 	
 			 B UNIQUE Gene_B          UNIQUE ?Gene UNIQUE ?Variation XREF In_multi_point
 				  Locus_B         UNIQUE ?Locus UNIQUE ?Variation XREF In_multi_point
 				  Allele_B        UNIQUE ?Variation
 				  Rearrangement_B UNIQUE ?Rearrangement
-                                  Transgene_B UNIQUE ?Transgene XREF Multi_point 		
+                                  Transgene_B UNIQUE ?Transgene XREF Multi_point	
 		Gene  ?Gene  UNIQUE ?Variation XREF In_multi_point     // Connect to ?Gene model
 		Locus ?Locus UNIQUE ?Variation XREF In_multi_point     // Pair up alleles
 		Results A_non_B #Multi_counts
@@ -785,6 +782,7 @@
 		Old_CGC_results Text
 		Remark ?Text #Evidence
 	// code uses all the Results subtags, and the #Multi_counts structure
+	// There is acedb magic associated with the #?Multi_counts usage.
 
 
 ?Multi_counts UNIQUE Gene          UNIQUE ?Gene	         XREF Multi_point UNIQUE Int #Multi_counts
@@ -1033,6 +1031,8 @@
 	  Properties    Genomic_canonical Gene_count UNIQUE Int                  // added tag for dot name tracking [020128 dl]
                         Briggsae_canonical
                         Genomic                                                  // added tag to define genomic sequences not from the consortium
+                        Checksum MD5 Text     //checksums should only be created for an upper-cased sequence.
+                                 CRC64 Text   //checksums should only be created for an upper-cased sequence.
 			cDNA cDNA_EST
 			     EST_5		       // Indicate whether this is a 5' or 3' read [010423 dl]
 			     EST_3
@@ -1121,6 +1121,8 @@
                      EST ?Sequence  // or falsifying the intron in question, added [031121 krb]
 		     OST ?Sequence
 		     RST ?Sequence
+		     RNASeq ?Analysis Int
+		     Mass_spec ?Mass_spec_peptide
 		     mRNA	?Sequence
 		     Homology ?Accession_number
 		     UTR ?Sequence
@@ -1175,6 +1177,27 @@
 	   Display Max_mag UNIQUE Float	// don't show if more bases per line
 		   Min_mag UNIQUE Float	// don't show if fewer bases per line
 
+
+///////////////////////////////////////////////////////////////////////////
+// Sequence_collection class
+// holds a collection of sequences and some descriptions
+///////////////////////////////////////////////////////////////////////////
+
+?Sequence_collection Origin	Evidence #Evidence
+				Name ?Text // name that the author gave this collection
+				Species UNIQUE ?Species
+				Strain UNIQUE ?Strain
+				Laboratory ?Laboratory
+				Database ?Database ?Database_field ?Accession_number
+		     History    First_WS_release Int // first WormBase release this assembly was used
+				Latest_WS_release Int // latest release where it was used
+				Supercedes    UNIQUE ?Sequence_collection XREF Superceded_by
+				Superceded_by UNIQUE ?Sequence_collection XREF Supercedes
+		     Remark	?Text
+		     Status     UNIQUE Live #Evidence
+				       Suppressed #Evidence
+				       Dead #Evidence   
+		     Sequences	?Sequence
 
 
 
@@ -1406,13 +1429,10 @@
 ?Homology_group Evidence #Evidence
                 Title ?Text
                 DB_info Database ?Database ?Database_field ?Accession_number XREF Homology_group
-                Group_type  UNIQUE COG  COG_type KOG
-                                                 TWOG
-                                                 FOG
-                                                 LSE
-                                        COG_code #COG_codes
-                                   HOPS_group    // Sonnhammer
-                                   RIO_group     // Eddy
+                Group_type  UNIQUE COG	   COG_type #Homology_type
+					   COG_code #COG_codes
+				   eggNOG  eggNOG_type #Homology_type
+					   eggNOG_code #COG_codes
 				   InParanoid_group
 				   OrthoMCL_group     //erich Nov06
                 GO_term ?GO_term XREF Homology_group
@@ -1452,6 +1472,14 @@
 // R, S == Poorly characterized
 
 
+#Homology_type KOG
+               TWOG
+               FOG
+               LSE
+               NOG   //eggNOG - standard cluster
+               euNOG //eggNOG - eukaryote cluster
+               meNOG //eggNOG - metazoan cluster
+
 
 
 ?Homol_data SMap S_parent UNIQUE Sequence UNIQUE ?Sequence XREF Homol_data
@@ -1489,7 +1517,7 @@
 		    Defined_by_paper    ?Paper XREF Feature #Evidence
 		    Defined_by_person   ?Person
 		    Defined_by_author   ?Author
-		    Defined_by_analysis ?Analysis 
+		    Defined_by_analysis ?Analysis Int
 	 Score Float           // this would be a log score as indicated by the analysis used in gff dump
 	 Associations Associated_with_gene	 ?Gene	     XREF Associated_feature #Evidence // richard
                       Associated_with_CDS	 ?CDS	     XREF Associated_feature #Evidence  // richard
@@ -2171,55 +2199,45 @@
       StandAloneDisplay Text
 
 ///////////////////////////////////////////////////////////////////////////////
-//Transgene class from Wen Chen 12/00
+//
+// Transgene class from Wen Chen 12/00
+// Reorganised by Karen/Wen May 2011
+//
 /////////////////////////////////////////////////////////////////////////////// 
 
-?Transgene     	Summary UNIQUE ?Text //Searchable description of the transgene
-		Synonym	?Text //for alternative names 
-		Driven_by Driven_by_gene           ?Gene XREF Drives_transgene
-			  Driven_by_construct	   ?Text //for artificial promoters	
-		Reporter_product GFP
-				 YFP //Added by Wen
-				 CFP //Added by Wen
-				 Venus //Added by Wen
-				 DsRed //Added by Wen
-				 mCherry //Added by Wen
-				 RFP //Added by Wen
-				 LacZ
-			         Other_reporter ?Text
-				 Gene ?Gene XREF Transgene_product Text
-		Isolation Author ?Author
-			  Clone ?Clone XREF Transgene Text //injected clone conc.
-			  Fragment Text Text //injected DNA fragment conc. 
-			  Injected_into_CGC_strain ?Strain
-			  Injected_into Text 	// for strains not available in CGC
-			  Integrated_by UNIQUE Gamma_ray
-					       X_ray
-				   	       Spontaneous
-				     	       UV
-					       Particle_bombardment
-				     	       Not_integrated
-				     	       Other_integration_method	Text 
-		Location ?Laboratory #Lab_Location //Which Labs have the transgene.
-		Strain ?Strain XREF Transgene //All strains in CGC with the transgene.
-		Map ?Map  #Map_position 
-		Map_evidence #Evidence //For wen - many papers refer to Transgene. This will allow curators to track which is used.
-		Mapping_data 2_point ?2_point_data 
-			     Multi_point ?Multi_pt_data
-		Phenotype ?Phenotype XREF Transgene #Phenotype_info // [2006-04-20 ar2] changed for Carols Phenotype changes
-		Phenotype_not_observed ?Phenotype XREF Not_in_Transgene #Phenotype_info  //added by Wen to separate Not phenotype from real phenotypes
-		Rescue ?Gene XREF Rescued_by_Transgene ?Variation XREF Rescued_by_Transgene
-		Expr_pattern ?Expr_pattern XREF Transgene                                        // Related Expr_pattern
-		Marker_for   ?Text #Evidence //Marker Summary
-		Marked_rearrangement ?Rearrangement XREF By_transgene
-		Gene_regulation ?Gene_regulation XREF Transgene
-		Interactor ?Interaction
-		Reference ?Paper XREF Transgene                                                  // papers refered to the transgene.
-		Species UNIQUE ?Species                                                          // added by krb for consistency with other classes 021030
-		Remark ?Text #Evidence                                                           // More comments on the transgene
-		Supporting_data Movie ?Movie XREF Transgene #Evidence
-        
-
+?Transgene      Evidence #Evidence
+		Summary UNIQUE ?Text								// concise genomic description of the transgene
+                Synonym ?Text									// for alternative names
+                Promoter  Driven_by_gene ?Gene XREF Drives_transgene				// eventually change this tag to promoter_gene
+                          Driven_by_construct  ?Text						// eventually change this tag to promoter_artificial
+                Reporter  Reporter_product ?Text						// removed multiple tags for Reporter_product
+                          Gene ?Gene XREF Transgene_product Text 
+                Reporter_type  ?Text								// added for Transcriptional fusion or Translational fusion
+                Construction  Fragment ?Text							// new tag to collect the following as subtags, Fragment may be deleted later
+			      Coinjection_marker ?Text
+                              Integration_method UNIQUE ?Text					// changed from Integrated_by
+                              Laboratory ?Laboratory #Lab_Location				// changed from Location
+                              Author ?Author							// may eventually be deleted
+			      Person ?Person							// new tag ky 2011
+                Genetic_information  Extrachromosomal						// new subtag and tags
+                                     Integrated							// new subtag and collects the mapping tags
+				     Map ?Map  #Map_position  
+                                     Map_evidence #Evidence 
+                                     Mapping_data  2_point ?2_point_data			// if no data can be removed
+                                                   Multi_point ?Multi_pt_data			// if no data can be removed
+                         	     Phenotype ?Phenotype XREF Transgene #Phenotype_info
+                         	     Phenotype_not_observed ?Phenotype XREF Not_in_Transgene #Phenotype_info   
+                Used_for   Rescue ?Variation XREF Rescued_by_Transgene				//removed ?Gene XREF Rescued_by_transgene
+                           Expr_pattern ?Expr_pattern XREF Transgene  
+                           Marker_for   ?Text #Evidence 
+                           Gene_regulation ?Gene_regulation XREF Transgene 
+                           Interactor ?Interaction 
+                Associated_with   Marked_rearrangement ?Rearrangement XREF By_transgene		//new tag to collect the following as subtags
+                          	  Clone ?Clone XREF Transgene Text 
+                          	  Strain ?Strain XREF Transgene 
+                Reference ?Paper XREF Transgene  
+                Species UNIQUE ?Species       
+                Remark ?Text #Evidence								//contains a lot of construction notes
 
 
 //////////////////////////////////////////////////////////////////
@@ -2418,10 +2436,8 @@
        Pick_me_to_call Text Text
        RNAi ?RNAi XREF Movie
        Variation ?Variation XREF Movie  //[2006-04-21 ar2] Carol
-       Transgene ?Transgene XREF Movie
        Expr_pattern ?Expr_pattern XREF Movie //Added by Wen to curate Expr_pattern video 
        Remark ?Text #Evidence
-
 
 /////////////////////////////////////////////////////////////////////
 //
@@ -2680,6 +2696,7 @@
                 Also_known_as   ?Person_name XREF Other_name_of // new XREF added [030310 krb]
         CGC_representative_for ?Laboratory XREF Representative
         Laboratory ?Laboratory XREF Registered_lab_members
+	Affiliation Text // used for storing institute affiliations that aren't in their Address
 	Conducted ?Analysis XREF Conducted_by
         Address #Address
         Tracking        Old_laboratory ?Laboratory XREF Past_lab_members      // Lab(s) the person previously worked in
@@ -2711,8 +2728,7 @@
           Lab_phone     Text
           Office_phone  Text
           Other_phone   Text UNIQUE Text  // second text can be used to indicate type
-          Fax           Text UNIQUE Text  // second text can be used to differentiate
-                                          // multiple fax numbers if present (optional)
+          Fax           Text 
           Web_page      Text    // web page is part of the address info I think
 
 
@@ -3238,7 +3254,8 @@
            Affects_phenotype_of     Variation ?Variation ?Phenotype #Evidence
                                     Strain    ?Strain    ?Phenotype #Evidence
                                     Transgene ?Transgene ?Phenotype #Evidence
-                                    RNAi      ?RNAi      ?Phenotype #Evidence 
+                                    RNAi      ?RNAi      ?Phenotype #Evidence
+				    Rearrangement  ?Rearrangement  ?Phenotype  #Evidence  //KY [110602 pad]
 	   Molecule_use  ?Text  #Evidence
 	   Remark ?Text #Evidence
 
