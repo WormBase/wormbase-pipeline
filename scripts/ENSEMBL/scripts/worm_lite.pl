@@ -252,7 +252,7 @@ sub load_genes {
     }
 
     foreach my $file ( glob $config->{gff} ) {
-        next if $file =~ /masked|CSHL|BLAT_BAC_END|MtDNA/;
+        next if $file =~ /masked|CSHL|BLAT_BAC_END/;
 	if ($species !~/briggsae/){next if $file=~/briggsae/}
         $file =~ /.*\/(.*)\.gff/;
         print "parsing $1 from $file\n";
