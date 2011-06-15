@@ -8,7 +8,7 @@ use Wormbase;
 use Storable;
 use Log_files;
 
-use Bio::EnsEMBL::Compara::DBSQL::DBAdaptor;
+use Bio::EnsEMBL::Registry;
 
 my ($gff_source, 
     $gff_type,
@@ -18,10 +18,7 @@ my ($gff_source,
     $species,
     $new_lines,
     $store,
-    $compara_dbname,
-    $compara_dbhost,
-    $compara_dbport,
-    $compara_dbuser,
+    $ens_regconf,
     $wormbase,
     );
 
@@ -31,31 +28,19 @@ my ($gff_source,
             'species=s'   => \$species,
             'test'        => \$test,
             'debug=s'     => \$debug,
-            'comparaname=s' => \$compara_dbname,
-            'comparahost=s' => \$compara_dbhost,
-            'comparaport=s' => \$compara_dbport,
-            'comparauser=s' => \$compara_dbuser,
+            'ensreg=s'    => \$ens_regconf,
             );
 
 $gff_type = "gene" if not defined $gff_type;
 $gff_source = "gene" if not defined $gff_source;
 
-$compara_dbname = "worm_compara" if not defined $compara_dbname;
-$compara_dbhost = "farmdb1" if not defined $compara_dbhost;
-$compara_dbport = "3306" if not defined $compara_dbport;
-$compara_dbuser = "wormro" if not defined $compara_dbuser;
+my $reg = "Bio::EnsEMBL::Registry";
+$reg->load_all($ens_regconf);
 
-
-my $compara_db = Bio::EnsEMBL::Compara::DBSQL::DBAdaptor->
-    new(
-        -host   => $compara_dbhost,
-        -user   => $compara_dbuser,
-        -dbname => $compara_dbname,
-        -port   => $compara_dbport
-        );
-
-my $member_adaptor = $compara_db->get_MemberAdaptor();
-my $homology_adaptor = $compara_db->get_HomologyAdaptor();
+my $member_adaptor = $reg->get_adaptor('compara_trees', 'compara', 'Member');
+my $homology_adaptor = $reg->get_adaptor('compara_trees', 'compara', 'Homology');
+my $genomedb_adaptor = $reg->get_adaptor('compara_trees', 'compara', 'GenomeDB');
+my $mlss_adaptor = $reg->get_adaptor('compara_trees', 'compara', 'MethodLinkSpeciesSet');
 
 if ( $store ) {
   $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
@@ -81,12 +66,12 @@ my %elegans_cds2wbgeneid = $sa{elegans}->FetchData('cds2wbgene_id');
 my $elegans_tax_id = $sa{elegans}->ncbi_tax_id;
 my $this_tax_id = $wormbase->ncbi_tax_id;
 
-my $elegans_genome_db = $compara_db->get_GenomeDBAdaptor->fetch_by_taxon_id($elegans_tax_id);
-my $this_genome_db = $compara_db->get_GenomeDBAdaptor->fetch_by_taxon_id($this_tax_id);
+my $elegans_genome_db = $genomedb_adaptor->fetch_by_taxon_id($elegans_tax_id);
+my $this_genome_db = $genomedb_adaptor->fetch_by_taxon_id($this_tax_id);
 
-my $mlss = $compara_db->get_MethodLinkSpeciesSetAdaptor->fetch_by_method_link_type_GenomeDBs('ENSEMBL_ORTHOLOGUES',
-                                                                                          [$elegans_genome_db,
-                                                                                           $this_genome_db]);
+my $mlss = $mlss_adaptor->fetch_by_method_link_type_GenomeDBs('ENSEMBL_ORTHOLOGUES',
+                                                              [$elegans_genome_db,
+                                                               $this_genome_db]);
 
 my %elegans_aliases;
 
@@ -95,7 +80,7 @@ if ($elegans_tax_id ne $this_tax_id) {
 
   $log->write_to(sprintf("Fetched %d members for source=ENSEMBLGENE and taxid=$this_tax_id\n", scalar(@members)));;
 
-  #@members = @members[0..100];
+  @members = @members[0..100];
 
   while( my $member = shift @members){
     
@@ -106,7 +91,6 @@ if ($elegans_tax_id ne $this_tax_id) {
 
     my @homologies = @{$homology_adaptor->fetch_all_by_Member_MethodLinkSpeciesSet( $member, $mlss)};
     $log->write_to(sprintf("  Got %d homologies for %s\n", scalar(@homologies), $name));  
-
 
     foreach my $homology ( @homologies) {  
 
