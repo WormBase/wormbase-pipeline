@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl -w
-# Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2011-05-31 13:11:29 $      
+# Last updated by: $Author: klh $     
+# Last updated on: $Date: 2011-06-15 11:03:57 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -35,7 +35,7 @@ if ( $store ) {
 } else {
   $wormbase = Wormbase->new( -debug   => $debug,
                              -test    => $test,
-                             -organsim => $species
+                             -organism => $species
 			     );
 }
 $species = $wormbase->species;
