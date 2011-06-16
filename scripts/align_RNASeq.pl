@@ -4,7 +4,9 @@
 #
 # script to process the RNASeq data using Tophat and Cufflinks , etc.
 #
-# currently we have the Waterston elegans RNASeq data:
+# currently we have for elegans:
+#
+# Waterston elegans RNASeq data:
 #
 # SRX001872 SRX001875 SRX004865 SRX004868 SRX008138 SRX008144 SRX014007
 # SRX014010 SRX036882 SRX036970 SRX037198 SRX037288 SRX001873 SRX004863
@@ -13,11 +15,20 @@
 # SRX014006 SRX014009 SRX036881 SRX036969 SRX037197 SRX037200
 #
 #
-# Soon we will add the Andy Fraser and Andy Fire data - the latter has
-# a different organisation - the SRR read files are different
-# experimental conditions rather than the SRX.  Should also do checks
-# that the data is in Solexa format and whether it is single or paired
-# read.
+## Andy Fraser's Lab 
+#     
+# SRX007069	     SRX007170	     SRX007171	     SRX007172	     SRX007173	     
+#
+## Andy Fire's Lab
+#	     
+# SRX028190	     SRX028191	     SRX028192	     SRX028193	     SRX028194	     
+# SRX028195	     SRX028196	     SRX028197	     SRX028198	     SRX028199	     
+# SRX028200	     SRX028202	     SRX028203	     SRX028204
+#
+#
+# and for brugia:
+#
+
 
 # Perl should be set to:
 # alias perl /software/bin/perl
@@ -25,15 +36,19 @@
 
 # Run this after TSL Features have been mapped in the Build.
 # Run on farm-login2 as:
-# bsub -I -q long align_RNASeq.pl
+# bsub -I -q basement align_RNASeq.pl -noalign
 #
-# bsub -I -e /nfs/wormpub/BUILD/autoace/logs/align.err -o /nfs/wormpub/BUILD/autoace/logs/align.out -q long  align_RNASeq.pl [-check]
+# omit the '-noalign' if this is a frozen release and a fresh alignment will be done
+# add '-check' if the run died and is being resumed
+# add '-species' to run on a non-elegans Build
+#
+# bsub -I -e /nfs/wormpub/BUILD/autoace/logs/align.err -o /nfs/wormpub/BUILD/autoace/logs/align.out -q basement  align_RNASeq.pl [-noalign] [-check] [-species $SPECIES]
 
 
 # by Gary Williams
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2011-05-20 16:07:32 $
+# Last updated on: $Date: 2011-06-16 10:45:55 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -58,18 +73,21 @@ use GDBM_File; # for tied hash
 ##############################
 
 
-my ($test, $store, $debug, $species, $verbose, $expt, $check, $solexa, $illumina, $database);
+my ($test, $store, $debug, $species, $verbose, $expt, $noalign, $check, $solexa, $illumina, $database, $nogtf, $norawjuncs);
 GetOptions (
 	    "test"               => \$test,
 	    "store:s"            => \$store,
 	    "debug:s"            => \$debug,
-	    "species:s"		 => \$species,  # set species explicitly
 	    "verbose"            => \$verbose,
-	    "expt:s"             => \$expt,     # do the alignment etc. for this experiment
-	    "check"              => \$check,    # in each experiment, check to see if tophat/cufflinks worked - if not repeat them
-	    "solexa"             => \$solexa,   # reads have solexa quality scores, not phred + 33 scores
-	    "illumina"           => \$illumina, # read have illumina GA-Pipeline 1.3 quality scores, not phred + 33 scores
 	    "database:s"         => \$database, # acedb database to use for GTF, splice junctions and TSL Features
+	    "species:s"		 => \$species,  # set species explicitly
+	    "noalign"            => \$noalign,  # do not run tophat to align unless the old BAM file is missing
+	    "check"              => \$check,    # in each experiment, check to see if tophat/cufflinks worked - if not repeat them
+	    "nogtf"              => \$nogtf,    # don't use the GTF file of existing gene models to create the predicted gene models
+	    "norawjuncs"         => \$norawjuncs,  # don't use the raw junctions file of splice hints (for example in a new brugia assembly)
+	    "solexa"             => \$solexa,   # reads have solexa quality scores, not phred + 33 scores
+	    "expt:s"             => \$expt,     # do the alignment etc. for this experiment
+	    "illumina"           => \$illumina, # read have illumina GA-Pipeline 1.3 quality scores, not phred + 33 scores
 	   );
 
 my $wormbase;
@@ -107,8 +125,11 @@ my $status;
 
 
 # quality score description in: http://en.wikipedia.org/wiki/FASTQ_format
+my %expts;
 
-my %expts = ( # key= SRA 'SRX' experiment ID, values = [Analysis ID, quality score metric]
+if ($species eq 'elegans') {
+
+  %expts = ( # key= SRA 'SRX' experiment ID, values = [Analysis ID, quality score metric]
 
 #	     SRX001872  => ["RNASeq_Hillier.L2_larva", 'phred'], # needs a lot of memory to run tophat
 	     SRX001873  => ["RNASeq_Hillier.Young_Adult", 'phred'],
@@ -189,7 +210,47 @@ my %expts = ( # key= SRA 'SRX' experiment ID, values = [Analysis ID, quality sco
 	     SRX028204   => ["RNASeq.Fire.all_stages_polysomes", 'phred'],   # GSM577122: N2_mixed-stage_polysomes
 
 	    );
+} elsif ($species eq 'brugia') {
 
+# data from Matt Berriman's group.
+# /nfs/disk69/ftp/pub4/pathogens/Brugia/malayi
+#
+# Seven libraries have thus far been sequenced :-
+#
+# Adult male
+# Adult female
+# mature microfillariae
+# immature microfillariae
+# L3 stage
+# L4 stage
+# eggs embryos
+#
+# The directory is structured as follows
+#
+# DATA : contains the raw sequence data in gzipped fastq files and is
+# organised as follows
+#
+# - DATA/SLX/library_name/lane/lane_1.fastq.gz - first of the pair
+# - DATA/SLX/library_name/lane/lane_2.fastq.gz - second of the pair
+
+# The dataset names are what the Berriman group called them - these data are not downloaded from the SRA
+
+  %expts = ( # key= SRA 'SRX' experiment ID, values = [Analysis ID, quality score metric]
+
+	    Adult_female => ["RNASeq.Berriman.Adult_female", 'phred'],
+	    Adult_male => ["RNASeq.Berriman.Adult_male", 'phred'],
+	    BmL3_1361258 => ["RNASeq.Berriman.BmL3_1361258", 'phred'],
+	    eggs_embryos => ["RNASeq.Berriman.eggs_embryos", 'phred'],
+	    immature_female => ["RNASeq.Berriman.immature_female", 'phred'],
+	    L3_stage => ["RNASeq.Berriman.L3_stage", 'phred'],
+	    L4 => ["RNASeq.Berriman.L4", 'phred'],
+	    microfillariae => ["RNASeq.Berriman.microfillariae", 'phred'],
+	   );
+	    
+
+} else {
+  $log->log_and_die("Unkown species: $species\n");
+}
 
 
 
@@ -198,20 +259,22 @@ my %expts = ( # key= SRA 'SRX' experiment ID, values = [Analysis ID, quality sco
 ##########################################
 
 my $script = "align_RNASeq.pl";
+my $lsf;
+my $store_file;
+my $scratch_dir;
+my $job_name;
+$wormbase->checkLSF;
+$lsf = LSF::JobManager->new();
+$store_file = $wormbase->build_store; # make the store file to use in all wormpub perl commands
+$scratch_dir = $wormbase->logs;
+$job_name = "worm_".$wormbase->species."_RNASeq";
+
 
 my $RNASeqDir   = $wormbase->rnaseq;
 chdir $RNASeqDir;
 
-$wormbase->checkLSF;
-my $lsf = LSF::JobManager->new();
-my $store_file = $wormbase->build_store; # make the store file to use in all wormpub perl commands
-my $scratch_dir = $wormbase->logs;
-my $job_name = "worm_".$wormbase->species."_RNASeq";
-
 my @SRX = keys %expts;
   
-my $host = `hostname`;
-
 if (!$expt) {
 
   if (!$check) {
@@ -219,43 +282,79 @@ if (!$expt) {
     # delete results from the previous run
     foreach my $SRX (@SRX) {
       chdir "$RNASeqDir/$SRX";
-      $wormbase->run_command("rm -rf tophat_out/", $log);
+      $wormbase->run_command("rm -rf tophat_out/", $log) unless ($noalign);
       $wormbase->run_command("rm -rf cufflinks/genes.expr", $log);
       $wormbase->run_command("rm -rf TSL/TSL_evidence.ace", $log);
-      $wormbase->run_command("rm -rf Introns/Intron_evidence.ace", $log);
+      $wormbase->run_command("rm -rf Introns/Intron.ace", $log);
     }
 
-    # Build the bowtie index for the reference sequences by:
+    my @chrom_files;
+    if ($wormbase->assembly_type eq 'contig') {
+      @chrom_files = ('supercontigs.fa');
+    } else {
+      @chrom_files = $wormbase->get_chromosome_names('-prefix' => 1, '-mito' => 1);
+    }
 
-    chdir "/nfs/wormpub/RNASeq/$species/reference-indexes/";
-    my $G_species = $wormbase->full_name('-g_species' => 1);
-    unlink glob("${G_species}*");
-    $status = $wormbase->run_command("cp /nfs/wormpub/DATABASES/current_DB/CHROMOSOMES/CHROMOSOME_*.dna .", $log);
-    $status = $wormbase->run_command("bsub -I /software/worm/bowtie/bowtie-build CHROMOSOME_I.dna,CHROMOSOME_II.dna,CHROMOSOME_III.dna,CHROMOSOME_IV.dna,CHROMOSOME_V.dna,CHROMOSOME_X.dna,CHROMOSOME_MtDNA.dna  $G_species", $log);
-    if ($status != 0) {  $log->log_and_die("Didn't create the bowtie indexes /nfs/wormpub/RNASeq/$species/reference-indexes/${G_species}.*\n"); }
-    
-    # make the file of splice junctions:
-    
+    if (! $noalign) { # only create the genome sequence index if the assembly changed
+      # Build the bowtie index for the reference sequences by:
+      mkdir "/nfs/wormpub/RNASeq/$species/", 0777;
+      mkdir "/nfs/wormpub/RNASeq/$species/reference-indexes/", 0777;
+      chdir "/nfs/wormpub/RNASeq/$species/reference-indexes/";
+      my $G_species = $wormbase->full_name('-g_species' => 1);
+      unlink glob("${G_species}*");
+      
+      foreach my $chrom_file (@chrom_files) {
+	if ($wormbase->assembly_type eq 'chromosome') {$chrom_file .= '.dna'} # changes the contents of @chrom_files
+	my $copy_cmd = "cp ${database}/CHROMOSOMES/${chrom_file} .";
+	
+	###################################################################
+#	# debug for brugia to get the latest assembly
+#	if ($species eq 'brugia') { # +++ debug 
+#	  $log->write_to("USING THE NEW ASSEMBLY OF BRUGIA IN ~wormpub/tmp/brugia.dna!\n");
+#	  $copy_cmd = "cp /nfs/wormpub/tmp/brugia.dna ."; # +++ debug
+#	  @chrom_files = ('brugia.dna'); # +++ debug 
+#	}  # +++ debug 
+	###################################################################
+	
+	$status = $wormbase->run_command($copy_cmd, $log);
+      }
+      my $bowtie_cmd = "bsub -I /software/worm/bowtie/bowtie-build " . (join ',', @chrom_files) . " $G_species";
+      $status = $wormbase->run_command($bowtie_cmd, $log);
+      if ($status != 0) {  $log->log_and_die("Didn't create the bowtie indexes /nfs/wormpub/RNASeq/$species/reference-indexes/${G_species}.*\n"); }
+    }
+
+    # make the file of splice junctions:    
     # CDS, Pseudogene and non-coding-transcript etc introns
     # allows:
     # Coding_transcript Transposon_CDS Pseudogene tRNAscan-SE-1.23 Non_coding_transcript ncRNA Confirmed_cDNA Confirmed_EST Confirmed_UTR
     # Note: the curated CDS model introns are also added to this file
     
-    my $splice_juncs_file = " /nfs/wormpub/RNASeq/$species/reference-indexes/splice_juncs_file";
-    unlink $splice_juncs_file;
-    $status = $wormbase->run_command("bsub -I grep -h intron ~wormpub/DATABASES/current_DB/CHROMOSOMES/CHROMOSOME_{I,II,III,IV,V,X,MtDNA}.gff | egrep 'curated|Coding_transcript|Transposon_CDS|Pseudogene|tRNAscan-SE-1.23|Non_coding_transcript|ncRNA Confirmed_cDNA|Confirmed_EST|Confirmed_UTR' | awk '{OFS=\"\t\"}{print \$1,\$4-2,\$5,\$7}' | sort -u >! $splice_juncs_file", $log);
-    if ($status != 0) {  $log->log_and_die("Didn't create the splice_juncs_file\n"); }
-    
+    my $splice_juncs_file = "/nfs/wormpub/RNASeq/$species/reference-indexes/splice_juncs_file";
+    unless ($norawjuncs) {
+      unlink $splice_juncs_file;
+      unlink "${splice_juncs_file}.tmp";
+      $status = $wormbase->run_command("touch ${splice_juncs_file}.tmp", $log);
+      foreach my $chrom_file (@chrom_files) {
+	my $splice_junk_cmd = "bsub -I grep -h intron ${database}/CHROMOSOMES/$chrom_file.gff | egrep 'curated|Coding_transcript|Transposon_CDS|Pseudogene|tRNAscan-SE-1.23|Non_coding_transcript|ncRNA Confirmed_cDNA|Confirmed_EST|Confirmed_UTR' | awk '{OFS=\"\t\"}{print \$1,\$4-2,\$5,\$7}' >> ${splice_juncs_file}.tmp";
+	$status = $wormbase->run_command($splice_junk_cmd, $log);
+      }
+      $status = $wormbase->run_command("bsub -I sort -u ${splice_juncs_file}.tmp > $splice_juncs_file", $log);
+      if ($status != 0) {  $log->log_and_die("Didn't create the splice_juncs_file\n"); }
+    }
     
     # Make a GTF file of current transcripts. Used by cufflinks.
     my $gtf_file = "/nfs/wormpub/RNASeq/$species/transcripts.gtf";
-    unlink $gtf_file;
-    my $current = $wormbase->database('current');
-    $status = $wormbase->run_command("bsub -I -q long make_GTF_transcript.pl -database $current -out $gtf_file", $log);
-    if ($status != 0) {  $log->log_and_die("Didn't create the $gtf_file file\n"); }
-    $wormbase->check_file($gtf_file, $log,
-			  minsize => 17000000,
-			 );
+    unless ($nogtf) {
+      unlink $gtf_file;
+      my $scripts_dir = $ENV{'CVS_DIR'};
+      $status = $wormbase->run_command("bsub -I -q long $scripts_dir/make_GTF_transcript.pl -database $database -out $gtf_file", $log);
+      if ($status != 0) {  $log->log_and_die("Didn't create the $gtf_file file\n"); }
+      if ($species eq 'elegans') {
+	$wormbase->check_file($gtf_file, $log,
+			      minsize => 17000000,
+			     );
+      }
+    }
   }
 
   # run tophat against a few experiments at a time - we don't want to
@@ -268,14 +367,14 @@ if (!$expt) {
     if (($i % 10) == 9) {
       $log->write_to("Running alignments on: @arg\n");
       print "Running alignments on: @arg\n";
-      &run_align($check, @arg);
+      &run_align($check, $noalign, @arg);
       @arg=();
     }
   }
   if (@arg) {
     $log->write_to("Running alignments on: @arg\n");
     print "Running alignments on: @arg\n";
-    &run_align($check, @arg);
+    &run_align($check, $noalign, @arg);
   }
   
 
@@ -291,8 +390,10 @@ if (!$expt) {
     if (-e "$SRX/tophat_out/accepted_hits.bam") {$log->write_to("\ttophat OK");} else {{$log->write_to("\ttophat ERROR");}}
     if (-e "$SRX/cufflinks/genes.expr") {$log->write_to("\tcufflinks OK");} else {$log->write_to("\tcufflinks ERROR");}
     if (-e "$SRX/TSL/TSL_evidence.ace") {$log->write_to("\tTSL OK");} else {$log->write_to("\tTSL ERROR");}
-    if (-e "$SRX/Introns/Intron_evidence.ace") {$log->write_to("\tIntrons OK");} else {$log->write_to("\tintron ERROR");}
+    if (-e "$SRX/Introns/Intron.ace") {$log->write_to("\tIntrons OK");} else {$log->write_to("\tintron ERROR");}
     $log->write_to("\n");
+
+    # make the expresssion tarball for Wen to put into SPELL
 
 # Wen says: "Gary, the file is good, I just wonder what should we do
 # with the "0" values. SPELL data are all log2 transformed. That is
@@ -316,17 +417,28 @@ if (!$expt) {
       close (EXPR);
     }
   }
+  $log->write_to("\n");
+
   # make a tarball
   $status = $wormbase->run_command("tar cf expr.tar *.out", $log);
   unlink "expr.tar.gz";
   $status = $wormbase->run_command("gzip -f expr.tar", $log);
   my $autoace = $wormbase->autoace;
-  $status = $wormbase->run_command("cp expr.tar.gz $autoace", $log); # this will probably be chanegd to the autoace/OUTPUT directory soon
+  $status = $wormbase->run_command("cp expr.tar.gz $autoace", $log); # this will probably be changed to the autoace/OUTPUT directory soon
 
+
+  # make the ace file of RNASeq spanned introns to load into acedb
+  my $splice_file = $wormbase->misc_dynamic."/RNASeq_splice_${species}.ace";
+  chdir $RNASeqDir;
+  $status = $wormbase->run_command("rm -f $splice_file", $log);
+  $status = $wormbase->run_command("cat */Introns/virtual_objects.elegans.RNASeq.ace > $splice_file", $log);
+  $status = $wormbase->run_script("acezip.pl -file $splice_file", $log);
+  $status = $wormbase->run_command("cat */Introns/Intron.ace >> $splice_file", $log);
+  
 
 } else { # we have a -expt parameter
   
-  &run_tophat($check, $expt, $solexa, $illumina);
+  &run_tophat($check, $noalign, $expt, $solexa, $illumina);
 }
 
 
@@ -344,7 +456,7 @@ exit(0);
 # and wait for the jobs to complete.  Check that the job worked.
 
 sub run_align {
-  my ($check, @args) = @_;
+  my ($check, $noalign, @args) = @_;
 
   foreach my $arg (@args) {
 
@@ -357,8 +469,12 @@ sub run_align {
 			 -M =>  "14000000", 
 			 -R => "\"select[mem>14000 && tmp>10000] rusage[mem=14000]\"", # want 10Gb free on /tmp for the hash tie file
 			 -J => $job_name);
-    my $cmd = "$script -expt $arg";
+    my $cmd = "$script -expt $arg";      # -expt is the parameter to make the script run an alignment and analysis on a dataset $arg
     if ($check) {$cmd .= " -check";}
+    if ($noalign) {$cmd .= " -noalign";}
+    if ($nogtf) {$cmd .= " -nogtf";}
+    if ($database) {$cmd .= " -database $database";}
+    if ($norawjuncs) {$cmd .= " -norawjuncs";}
     if ($expts{$arg}[1] eq 'solexa') {$cmd .= " -solexa";}
     if ($expts{$arg}[1] eq 'illumina1.3') {$cmd .= " -illumina";}
     $log->write_to("$cmd\n");
@@ -369,8 +485,8 @@ sub run_align {
   $lsf->wait_all_children( history => 1 );
   $log->write_to("This set of Tophat jobs have completed!\n");
   for my $job ( $lsf->jobs ) {
-    if ($job->history->exit_status != 0) {
-      $log->write_to("Job $job (" . $job->history->command . ") exited non zero\n");
+    if ($job->history->exit_status ne '0') {
+      $log->write_to("Job $job (" . $job->history->command . ") exited non zero: " . $job->history->exit_status . "\n");
     }
   }
   $lsf->clear;
@@ -392,7 +508,7 @@ sub run_align {
 
 sub run_tophat {
   
-  my ($check, $arg, $solexa, $illumina) = @_;
+  my ($check, $noalign, $arg, $solexa, $illumina) = @_;
   
   chdir "$RNASeqDir/$arg";
   my $G_species = $wormbase->full_name('-g_species' => 1);
@@ -401,33 +517,39 @@ sub run_tophat {
   if ($solexa)   {$cmd_extra = "--solexa-quals"} 
   if ($illumina) {$cmd_extra = "--solexa1.3-quals"} 
 
-  if (!$check || !-e "tophat_out/accepted_hits.bam") {
+  if ((!$check && !$noalign) || !-e "tophat_out/accepted_hits.bam") {
     $wormbase->run_command("rm -rf tophat_out/", $log);
 
     $log->write_to("gunzipping fastq files\n");
-    my $status = $wormbase->run_command("gunzip -f */*.gz", $log);
-    my @files = glob("SRR*/*.fastq");
+    foreach my $gzip_file (glob("SRR/*/*.fastq*.gz")) {
+      my $gunzip_file = $gzip_file;
+      $gunzip_file =~ s/.gz$//;
+      my $status = $wormbase->run_command("gunzip -c $gzip_file > $gunzip_file", $log);
+    }
+    my @files = glob("SRR/*/*.fastq");
     my $joined_file = join ",", @files;
     
     # do we have paired reads?
-    if ($joined_file eq '') {
-      print "No joined files found, so try to make paired-read joined files\n";
-      my @files1 = sort glob("SRR*/*.fastq_1"); # sort to ensure the two sets of files are in the same order
-      my @files2 = sort glob("SRR*/*.fastq_2");
+    my @files1 = sort glob("SRR/*/*_1.fastq"); # sort to ensure the two sets of files are in the same order
+    my @files2 = sort glob("SRR/*/*_2.fastq");
+    if ((@files1 == @files2) && @files2 > 0) {
+      $log->write_to("Have paired-end files.\n");
       my $joined1 = join ",", @files1;
       my $joined2 = join ",", @files2;
       $joined_file = "$joined1 $joined2";
       print "Made paired-read joined files: $joined_file\n";
       # set the inner-distance -r parameter
-      # assume the read length is 36 and the insert size is 200 bp (we only have one exampe of a read-paired experiment)
+      # assume the read length is 36 and the insert size is 200 bp (we only have one example of a read-paired experiment)
       # so the inner-distance is 200 - (2*36) = 128
       $cmd_extra .= ' -r 128';
     }
 
     $log->write_to("run tophat $joined_file\n");
-    $status = $wormbase->run_command("/software/worm/tophat/tophat $cmd_extra --min-intron-length 30 --max-intron-length 5000 --raw-juncs /nfs/wormpub/RNASeq/$species/reference-indexes/splice_juncs_file /nfs/wormpub/RNASeq/$species/reference-indexes/$G_species $joined_file", $log);
-    $log->write_to("gzip -f fastq files\n");
-    $wormbase->run_command("gzip -f */*.fastq*", $log);
+    my $raw_juncs = ''; # use the raw junctions hint file unless we specify otherwise
+    $raw_juncs = "--raw-juncs /nfs/wormpub/RNASeq/$species/reference-indexes/splice_juncs_file" unless $norawjuncs;
+    $status = $wormbase->run_command("/software/worm/tophat/tophat $cmd_extra --min-intron-length 30 --max-intron-length 5000 $raw_juncs /nfs/wormpub/RNASeq/$species/reference-indexes/$G_species $joined_file", $log);
+    $log->write_to("remove fastq files\n");
+    $wormbase->run_command("rm -f SRR/*/*.fastq", $log);
     if ($status != 0) {  $log->log_and_die("Didn't run tophat to do the alignment successfully\n"); } # only exit on error after gzipping the files
 
   }
@@ -447,7 +569,9 @@ sub run_tophat {
     chdir "$RNASeqDir/$arg";
     mkdir "cufflinks", 0777;
     chdir "cufflinks";
-    $status = $wormbase->run_command("/software/worm/cufflinks/cufflinks --GTF /nfs/wormpub/RNASeq/$species/transcripts.gtf ../tophat_out/accepted_hits.bam", $log);
+    my $gtf = ''; # use the existing gene models unless we specify otherwise
+    $gtf = "--GTF /nfs/wormpub/RNASeq/$species/transcripts.gtf" unless $nogtf;
+    $status = $wormbase->run_command("/software/worm/cufflinks/cufflinks $gtf ../tophat_out/accepted_hits.bam", $log);
     if ($status != 0) {  $log->log_and_die("Didn't run cufflinks to get the isoform/gene expression successfully\n"); }
   }
 
@@ -471,7 +595,7 @@ sub run_tophat {
 # now get the intron spans
 #############################################################
 
-  if (!$check || !-e "Introns/Intron_evidence.ace") {
+  if (!$check || !-e "Introns/Intron.ace") {
     $log->write_to("run Introns\n");
     chdir "$RNASeqDir/$arg";
     mkdir "Introns", 0777;
@@ -631,7 +755,7 @@ sub TSL_stuff {
   $log->write_to("Finding non-hits\n");
   open (OUT, ">$output") || $log->log_and_die("can't open $output\n");
   # now go through the read files looking for reads that don't match
-  my @readfiles = glob("SRR*/*gz");
+  my @readfiles = glob("SRR/*/*.gz");
   my $id;
   my $seq;
   my $line3;
@@ -698,8 +822,8 @@ sub TSL_stuff {
   my $G_species = $wormbase->full_name('-g_species' => 1);
   $log->write_to("run tophat $output\n");
   $status = $wormbase->run_command("/software/worm/tophat/tophat $cmd_extra --output-dir TSL /nfs/wormpub/RNASeq/$species/reference-indexes/$G_species $output", $log);
-  $log->write_to("gzip -f fastq files\n");
-  $wormbase->run_command("gzip -f $output", $log);
+  $log->write_to("remove TSL fastq files\n");
+  $wormbase->run_command("rm -f $output", $log);
   if ($status != 0) { return $status;  } # only exit on error after gzipping the files
 
   # now parse the results looking for TSL sites
@@ -1018,44 +1142,30 @@ sub Intron_stuff {
     my @blocksizes = split /,/, $cols[10];
     my $splice_5 = $start + $blocksizes[0]; # first base of intron
     my $splice_3 = $end - $blocksizes[1]; # last base of intron
+
+    # get the clone that this intron is on
+    my ($clone, $clone_start, $clone_end) = $coords->LocateSpan($chrom, $splice_5, $splice_3);
+
     
-    # get the block of the chromosome and write a line in the Feature_data object
-    my $binsize = 100000;
-    my $bin = 1 +  int( $start / $binsize );
-    my $bin_start = ($bin - 1) * $binsize + 1;
-    my $bin_end   = $bin_start + $binsize - 1;
-
-    if (not exists $seqlength{$chrom}) {
-      $seqlength{$chrom} = $coords->Superlink_length($chrom);
+    if (not exists $seqlength{$clone}) {
+      $seqlength{$clone} = $coords->Superlink_length($clone);
     }
 
-    if ($bin_end > $seqlength{$chrom}) {
-      $bin_end = $seqlength{$chrom};
-    }
-
-    my $bin_of_end = 1 + int( $end / $binsize );
-    if ($bin == $bin_of_end or ($bin == $bin_of_end - 1 and $end - $bin_end < ($binsize / 2))) {
-      # both start and end lie in the same bin or adjacent bins - okay
-      $start = $start - $bin_start + 1;
-      $end   = $end   - $bin_start + 1;
-      if ($sense eq '-') {
-	($start, $end) = ($end, $start);
-      }
-    } else {
-      next;      # intron has too great a span; skip it. 
-    }
-
-    my $virtual = "Confirmed_intron_RNASeq:${chrom}_${bin}";
+    my $virtual = "${clone}:Confirmed_intron_RNASeq";
       
-    if (not exists $virtuals{$chrom}->{$virtual}) {
-      $virtuals{$chrom}->{$virtual} = [$bin_start, $bin_end];
-    }
-
     if ($old_virtual ne $virtual) {
       print ACE "\nFeature_data : \"$virtual\"\n";
       $old_virtual = $virtual
     }
-    print ACE "Confirmed_intron $start $end RNASeq $analysis $reads\n";
+
+    if ($sense eq '-') {
+      ($clone_end, $clone_start) = ($clone_start, $clone_end)
+    }
+
+# when we have changes to acedb that can deal with a Feature_data Confirmed_intron from RNASeq, then do this:
+#    print ACE "Confirmed_intron $clone_start $clone_end RNASeq $analysis $reads\n";
+# until then we store it as a Feature_data Feature, which works quite well:
+    print ACE "Feature RNASeq_splice $clone_start $clone_end $reads $analysis\n";
 
   }
   close(BED);
@@ -1065,13 +1175,10 @@ sub Intron_stuff {
   # now add the Feature_data objects to the chromosome objects
   my $vfile = "Introns/virtual_objects." . $wormbase->species . ".RNASeq.ace";
   open(my $vfh, ">$vfile") or $log->log_and_die("Could not open $vfile for writing\n");
-  foreach my $tname (keys %virtuals) {
-    print $vfh "\nSequence : \"$tname\"\n";
-    foreach my $child (sort { my ($na) = ($a =~ /_(\d+)$/); 
-			      my ($nb) = ($b =~ /_(\d+)$/);
-			      $na <=> $nb } keys %{$virtuals{$tname}}) {
-      printf $vfh "S_Child Feature_data %s %d %d\n", $child, @{$virtuals{$tname}{$child}};
-    }
+  foreach my $clone (keys %seqlength) {
+    print $vfh "\nSequence : \"$clone\"\n";
+    my $virtual = "${clone}:Confirmed_intron_RNASeq";
+          printf $vfh "S_Child Feature_data $virtual 1 $seqlength{$clone}\n";
   }
   close($vfh);
 
@@ -1107,7 +1214,23 @@ bsub -I -e align.err -o align.out -q long  align_RNASeq.pl [-check]
 
 =item *
 
--check - don't run everything, only re-run the things that appear to have failed in the previous run
+-check - don't run everything, resume running and only run the things that appear to have failed or not run yet.
+
+=back
+
+=over 4
+
+=item *
+
+-noalign - don't do a short-read alignment against the genome - use the results remaining from the previous alignment in the rest of the analyses
+
+=back
+
+=over 4
+
+=item *
+
+-species $SPECIES - specify the species to use
 
 =back
 
