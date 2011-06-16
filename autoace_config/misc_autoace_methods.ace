@@ -1772,6 +1772,16 @@ Width    2.000000
 GFF_source	 "RNASeq" // LaDeana's work on her RNASeq with input from Gary Williams
 GFF_feature	 "possible_base_call_error" // SO:0000701
 
+Method : "RNASeq_splice"
+Remark   "RNASeq splice region. These are the regions spanned by the SRA RNASeq short reads aligned to the genome by tophat/bowtie."
+Colour   RED
+Score_by_width
+Score_bounds     1.0 100.0
+GFF_source       "RNASeq_splice"
+GFF_feature      "intron"
+Strand_sensitive Show_up_strand
+
+
 
 ///////////////////////////////////////////////////////
 // Methods for Feature markup and transcript masking //
@@ -2543,3 +2553,6 @@ Right_priority 1.05
 
 Method : "RNASEQ.Hillier.Aggregate"
 Right_priority 1.05
+
+Method : "RNASeq_splice"
+Right_priority  2.1
