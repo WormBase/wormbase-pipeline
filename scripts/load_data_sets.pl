@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl -w
-# Last updated by: $Author: klh $     
-# Last updated on: $Date: 2011-06-15 11:03:57 $      
+# Last updated by: $Author: gw3 $     
+# Last updated on: $Date: 2011-06-16 10:41:41 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -75,13 +75,14 @@ sub parse_misc_elegans_files {
 		       $wormbase->misc_static."/washu_nematode_contigs.ace"     => "washu_nem_ace"         ,
 		       $wormbase->misc_dynamic."/misc_mass_spec_GenniferMerrihew.ace"  => "mass_spec"      ,
 		       $wormbase->wormpub."/analysis/GI_numbers/GI_numbers.ace" => "gi_number"             ,
-		       $wormbase->misc_static.'/misc_mtce_protein_IDs.ace'     => 'mtce_protein_IDs'      ,
+		       $wormbase->misc_static.'/misc_mtce_protein_IDs.ace'      => 'mtce_protein_IDs'      ,
 		       $wormbase->misc_dynamic.'/Caenorhabditae_sequence_data_to_load.ace'     => 'Caenorhabditae_seq_data',
 		       #$wormbase->misc_dynamic.'/waba.ace' => 'el_brig_waba',
 		       $wormbase->misc_dynamic.'/fosmids.ace'                   => 'vancouver_fosmids'     ,
 		       $wormbase->misc_dynamic.'/misc_21urna_homol.ace'         => '21uRNAs'               ,
-		       $wormbase->misc_dynamic.'/misc_Expression_pattern_homol.ace'  => 'Expression_patterns'     ,
-		       $wormbase->misc_dynamic.'/misc_Tijsterman_G4.ace'         => 'Tijsterman_G4',
+		       $wormbase->misc_dynamic.'/misc_Expression_pattern_homol.ace'  => 'Expression_patterns',
+		       $wormbase->misc_dynamic.'/misc_Tijsterman_G4.ace'        => 'Tijsterman_G4',
+		       $wormbase->misc_dynamic.'/RNASeq_splice_elegans.ace'     => 'RNASeq_splice',
 		      );
 
   $log->write_to("Loading files to ".$wormbase->autoace."\n==================================\n");
