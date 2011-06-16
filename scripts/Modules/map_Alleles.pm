@@ -470,7 +470,7 @@ sub get_cds {
                         next;
                     }
                     unless(length($from_codon)==3){ # codons have to be 3bp long
-                        $log->write_to("BUG: $k (${\$v->{allele}->Public_name} h)as a strange mutated codon ($from_codon)\n");
+                        $log->write_to("BUG: $k (${\$v->{allele}->Public_name}) has a strange mutated codon ($from_codon)\n");
                         next;
                     }
 
