@@ -48,7 +48,7 @@
 # by Gary Williams
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2011-06-16 10:45:55 $
+# Last updated on: $Date: 2011-06-17 08:39:37 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -433,8 +433,53 @@ if (!$expt) {
   $status = $wormbase->run_command("rm -f $splice_file", $log);
   $status = $wormbase->run_command("cat */Introns/virtual_objects.elegans.RNASeq.ace > $splice_file", $log);
   $status = $wormbase->run_script("acezip.pl -file $splice_file", $log);
-  $status = $wormbase->run_command("cat */Introns/Intron.ace >> $splice_file", $log);
-  
+  $status = $wormbase->run_command("cat */Introns/Intron.ace >> ${splice_file}.tmp", $log);
+  $status = $wormbase->run_script("acezip.pl -file ${splice_file}.tmp", $log);
+  # flatten the results of all libraries at a position into one entry
+  open (FEAT, "< ${splice_file}.tmp") || $log->log_and_die("Can't open file ${splice_file}.tmp\n");
+  open (FLAT, ">> $splice_file") || $log->log_and_die("Can't open file $splice_file\n");
+  my %splice;
+  while (my $line = <FEAT>) {
+    if ($line =~ /^Feature_data/ || $line =~ /^\s*$/) { # new clone
+      foreach my $start (keys %splice) {
+	foreach my $end (keys %{$splice{$start}}) {
+	  my $total= 0;
+	  my $string = "";
+	  foreach my $library (keys %{$splice{$start}{$end}}) {
+	    my $value = $splice{$start}{$end}{$library};
+	    $total += $value;
+	    $string .= "$library $value "
+	  }
+	  # filter out any spurious introns with only 1 or 2 reads
+	  if ($total > 2) {print FLAT "Feature RNASeq_splice $start $end $total \"$string\"\n";}
+	}
+      }
+      # reset things for the new clone
+      %splice = ();
+      print FLAT $line;
+    } else {
+      my @feat = split /\s+/, $line;
+      $splice{$feat[2]}{$feat[3]}{$feat[5]} = $feat[4];
+    }
+  }
+  # and do the last clone
+  foreach my $start (keys %splice) {
+    foreach my $end (keys %{$splice{$start}}) {
+      my $total= 0;
+      my $string = "";
+      foreach my $library (keys %{$splice{$start}{$end}}) {
+	my $value = $splice{$start}{$end}{$library};
+	$total += $value;
+	$string .= "$library $value "
+      }
+	  # filter out any spurious introns with only 1 or 2 reads
+      if ($total > 2) {print FLAT "Feature RNASeq_splice $start $end $total \"$string\"\n";}
+    }
+  }
+  close(FLAT);
+  close(FEAT);
+  $status = $wormbase->run_command("rm -f ${splice_file}.tmp", $log);
+
 
 } else { # we have a -expt parameter
   
