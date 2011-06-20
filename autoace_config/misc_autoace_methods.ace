@@ -581,8 +581,8 @@ Remark "Method for the Camace version of the Hillier RNASEQ CDS data which is al
 
 
 Method : "RNASEQ.Hillier.Aggregate"
-Colour BROWN
-CDS_colour BROWN
+Colour BLACK
+CDS_colour BLACK
 Overlap_mode Bumpable
 Show_text
 EMBL_dump EMBL_feature CDS
@@ -2080,6 +2080,9 @@ Right_priority 0.9
 Method : "Promoterome"
 Right_priority  1
 
+Method : "curation_remark" 
+Right_priority 1.05
+
 Method : "GenePairs"
 Right_priority  1.1
 
@@ -2141,7 +2144,7 @@ Method : "Deletion_allele"
 Right_priority  1.9
 
 Method : "Insertion_allele"
-Right_priority 2.5
+Right_priority 1.9
 
 Method : "Deletion_and_insertion_allele"
 Right_priority  1.9
@@ -2157,6 +2160,9 @@ Right_priority  1.9
 
 Method : "Mos_insertion"
 Right_priority  1.9
+
+Method : "CGH_allele"
+Right_priority 1.9
 
 Method : "Coding_transcript"
 Right_priority  2
@@ -2221,9 +2227,6 @@ Right_priority  2.5
 Method : "curated"
 Right_priority  2.5
 
-Method : "CGH_allele"
-Right_priority 2.5
-
 Method : "Pseudogene"
 Right_priority  2.55
 
@@ -2275,8 +2278,17 @@ Right_priority  2.65
 Method : "history"
 Right_priority  2.7
 
+Method : "RNASeq_splice"
+Right_priority  2.73
+
+Method : "RNASEQ.Hillier.Aggregate"
+Right_priority 2.75
+
+Method : "genBlastG"
+Right_priority 2.8
+
 Method : "jigsaw"
-Right_priority  2.8
+Right_priority  2.85
 
 Method : "twinscan"
 Right_priority  2.9
@@ -2544,15 +2556,3 @@ Right_priority   3.37
 
 Method : "RNASeq_Hillier.male_mid-L4"
 Right_priority   3.37
-
-Method : "genBlastG"
-Right_priority 2.95
-
-Method : "curation_remark" 
-Right_priority 1.05
-
-Method : "RNASEQ.Hillier.Aggregate"
-Right_priority 1.05
-
-Method : "RNASeq_splice"
-Right_priority  2.85
