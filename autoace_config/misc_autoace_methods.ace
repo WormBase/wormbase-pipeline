@@ -1774,7 +1774,7 @@ GFF_feature	 "possible_base_call_error" // SO:0000701
 
 Method : "RNASeq_splice"
 Remark   "RNASeq splice region. These are the regions spanned by the SRA RNASeq short reads aligned to the genome by tophat/bowtie."
-Colour   RED
+Colour   BLACK
 Score_by_width
 Score_bounds     1.0 100.0
 GFF_source       "RNASeq_splice"
@@ -2555,4 +2555,4 @@ Method : "RNASEQ.Hillier.Aggregate"
 Right_priority 1.05
 
 Method : "RNASeq_splice"
-Right_priority  2.1
+Right_priority  2.85
