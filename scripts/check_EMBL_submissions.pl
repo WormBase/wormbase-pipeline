@@ -7,8 +7,8 @@
 # clones. Entries which have failed to load or return are highlighted
 # and changes in sequence version are notified.
 
-# Last updated on: $Date: 2010-07-14 14:50:34 $
-# Last updated by: $Author: pad $
+# Last updated on: $Date: 2011-06-24 10:50:53 $
+# Last updated by: $Author: gw3 $
 
 use strict;
 use Getopt::Long;
@@ -229,7 +229,7 @@ $log->write_to("$errors2 clones Failed to load\n");
 $log->write_to("$errors3 clones returned with an incorrect error code?\n--------------------------------------------------------------------\n\n");
 $log->write_to("Problem_clones: @prob_clones\n");
 foreach my $prob_clone(@prob_clones){
-  $wormbase->run_command("gunzip /lustre/cbi4/work1/wormpub/analysis/TO_SUBMIT/${prob_clone}*", $log);
+  $wormbase->run_command("gunzip /lustre/scratch101/ensembl/wormpipe/wormpub/analysis/TO_SUBMIT/${prob_clone}*", $log);
 }
 
 close OUT;
