@@ -2,7 +2,7 @@
 
 # Version: $Version: $
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2011-06-12 09:09:33 $
+# Last updated on: $Date: 2011-06-28 14:26:06 $
 
 use strict;
 use warnings;
@@ -48,7 +48,8 @@ my ($debug,
     $outdir,
     $species, 
     $load,
-    $problem_file,
+    $keep_best,
+    $verbose,
     );
 
 GetOptions(
@@ -63,7 +64,8 @@ GetOptions(
            "acefile:s"      => \$acefile,
            "pslfile:s"      => \$pslfile,
            "load"           => \$load,
-           "problemfile=s"  => \$problem_file,
+           "keepbest=s"     => \$keep_best,
+           "verbose"        => \$verbose,
 	   );
 
 
@@ -77,7 +79,7 @@ if ($store) {
 else { 
   $wormbase = Wormbase->new( -debug => $debug, 
                              -test => $test, 
-                             -organsim => $species); 
+                             -organism => $species); 
 }
 
 $db = $wormbase->autoace if not $db;
@@ -95,23 +97,30 @@ my $coords = Coords_converter->invoke($db, 0, $wormbase);
 
 if (not $query) {
   ###### Fetch the queries (if not supplied)
-  my (@rnai, @query, @rnai_chunks, @out_ace_files, @out_pslfiles, %bad_clones);
+  my (@rnai, @query, @rnai_chunks, @out_ace_files, @out_pslfiles, %best_hit_only, %seen);
   
-  my $ace = Ace->connect('-path' => $db, 
-                         '-program' => $wormbase->tace ) or $log->log_and_die(Ace->error."\n");
-  
-  my $RNAis = $ace->fetch_many('-class' => "RNAi");
-  while(my $rnai = $RNAis->next) {
-    if ($rnai->DNA_text) {
-      # we need to register yk clones and mv PCR products for a hack later
-      if ($rnai->PCR_product and $rnai->PCR_product->name =~ /^mv_/ or
-          $rnai->Sequence and $rnai->Sequence->name =~ /^yk\d+/) {
-        $bad_clones{$rnai->name} = 1;
+  my $tace = $wormbase->tace;
+  my $tb_file = "$db/wquery/RNAi_dna.def";
+  if (not -e $tb_file) {
+    $log->log_and_die("Could not find Table-maker definition file $tb_file\n");
+  }
+  my $tb_cmd = "Table-maker -p \"$tb_file\"\nquit\n";
+  open(my $tace_fh, "echo '$tb_cmd' | $tace $db |");
+  while(<$tace_fh>) {
+    if (/^\"(\S+)\"\s+\"(\S+)\"\s+\"(\S+)\"/) {
+      my ($rnai_id, $dna_text, $clone_id) = ($1, $2, $3);
+      $seen{$rnai_id}++;
+      my $unique_rnai_id = sprintf("%s.DNA_text_%d", $rnai_id,  $seen{$rnai_id});
+      
+      if ($clone_id =~ /^mv_/ or
+          $clone_id =~ /^yk\d+/) {
+        $best_hit_only{$unique_rnai_id} = 1;
       }
-      push @rnai, $rnai;
+      push @rnai, [$unique_rnai_id, $dna_text];
     }
   }
-  
+  close($tace_fh);
+
   my $chunk_size = 2000;      
   my $total_rnai = scalar(@rnai);
   my $chunk_count = int(scalar(@rnai) / $chunk_size);
@@ -129,16 +138,18 @@ if (not $query) {
     my $file = $wormbase->blat . "/rnai_query.$i.fa";
     open my $fh, ">$file" or $log->log_and_die("Could not open $file for writing\n");
     foreach my $rnai (@{$rnai_chunks[$i]}) {
-      printf $fh ">%s\n%s\n", $rnai->name, $rnai->DNA_text;
+      printf $fh ">%s\n%s\n", @$rnai;
     }
     close($fh);
     push @query, $file;
   }
   
-  my $prob_file = $wormbase->blat . "/rnai.problem_clones.txt";
-  open my $pcf, ">$prob_file" 
-      or $log->log_and_die("Could not open $prob_file for writing\n");
-  foreach my $pc (keys %bad_clones) {
+  if (not defined $keep_best) {
+    $keep_best =  $wormbase->blat . "/rnai.best_hit_only.txt";
+  }
+  open my $pcf, ">$keep_best" 
+      or $log->log_and_die("Could not open $keep_best for writing\n");
+  foreach my $pc (keys %best_hit_only) {
     print $pcf "$pc\n";
   }
   close($pcf);
@@ -152,8 +163,8 @@ if (not $query) {
     my $psl = $wormbase->blat . "/rnai_out.$i.psl";
 
     my $command = ($store) 
-        ? $wormbase->build_cmd_line("RNAi2Genome.pl -query $query -problem $prob_file -acefile $out_file -pslfile $psl", $store)
-        : $wormbase->build_cmd("RNAi2Genome.pl -query $query -problem $prob_file -acefile $out_file -pslfile $psl");
+        ? $wormbase->build_cmd_line("RNAi2Genome.pl -query $query -keepbest $keep_best -acefile $out_file -pslfile $psl", $store)
+        : $wormbase->build_cmd("RNAi2Genome.pl -query $query -problem $keep_best -acefile $out_file -pslfile $psl");
     
     my @bsub_options = (-J => $jname, 
                         #-o => "/nfs/users/nfs_k/klh/test." . $i . ".out",
@@ -201,12 +212,12 @@ if (not $query) {
   }
 } else {
 
-  my (%problem_clones, $primary, $secondary, %results, %results_by_parent);
+  my (%keep_best_clones, $primary, $secondary, %results, %results_by_parent);
   
-  if ($problem_file) {
-    open my $pf, $problem_file or $log->log_and_die("Could not open $problem_file\n");
+  if ($keep_best) {
+    open my $pf, $keep_best or $log->log_and_die("Could not open $keep_best\n");
     while(<$pf>) {
-      /^(\S+)/ and $problem_clones{$1} = 1;
+      /^(\S+)/ and $keep_best_clones{$1} = 1;
     }
   }
   
@@ -235,10 +246,9 @@ if (not $query) {
       }
     }
 
-    &print_blat($percent, $total_aligned, $max_block_size, $result);
+    &log_blat($percent, $total_aligned, $max_block_size, $result) if $verbose;
     
-    # only need to keep the best primary hit for the problem clones
-    if ($problem_clones{$result->seq_id}) {
+    if ($keep_best_clones{$result->seq_id}) {
       if ($total_aligned >= $PRIMARY_LEN and $percent >= $PRIMARY_QUAL and
           (not exists $results{$result->seq_id} or
            $total_aligned > $results{$result->seq_id}->[0]->[1])) {
@@ -289,6 +299,9 @@ if (not $query) {
       }
       
       my $parent = ($map_down) ? $m_tid : $tid;
+      # strip off the suffix added earlier to make the ids unique
+      $qid =~ s/\.DNA_text_\d+$//;
+
       push @{$results_by_parent{$parent}->{$qid}->{$method}}, [$percent, \@blocks];
     }
   }
@@ -300,7 +313,7 @@ if (not $query) {
     
     foreach my $query (keys %$t_res) {
       my $t_q_res = $t_res->{$query};
-      
+
       foreach my $meth (keys %$t_q_res) {
         my @hits = @{$t_q_res->{$meth}};
         
@@ -363,24 +376,32 @@ sub filter_hits {
       @secondary = grep { $_->[2] >= $SECONDARY_LEN } @secondary;
     }
 
-    #if (exists $problem_clones{$qid}) {
-    #  push @all_primary, $primary[0]->[3]; 
-    #} else {
     push @all_primary, map { $_->[3] } @primary;
     push @all_secondary, map { $_->[3] } @secondary;
-    #}
   }
 
   return (\@all_primary, \@all_secondary);
 }
 
 
-sub print_blat {
+sub log_blat {
   my ($perc, $aligned, $max_bsize, $res) = @_;
 
   my @b = $res->get_SeqFeatures;
-  printf "RESULT: %s %d-%d %s %s %d %d\n", $b[0]->feature1->seq_id, $res->start, $res->end, $res->seq_id, $perc, $aligned, $max_bsize;;
+  $log->write_to(sprintf("RESULT: %s %d-%d %s %s %d %d\n", 
+                         $b[0]->feature1->seq_id, 
+                         $res->start, 
+                         $res->end, 
+                         $res->seq_id, 
+                         $perc, 
+                         $aligned, 
+                         $max_bsize));
   foreach my $b (@b) {
-    printf " SEG: %d-%d  %d-%d (%d)\n", $b->feature1->start, $b->feature1->end, $b->feature2->start, $b->feature2->end, ($b->feature1->end - $b->feature1->start + 1);
+    $log->write_to(sprintf(" SEG: %d-%d  %d-%d (%d)\n", 
+                           $b->feature1->start, 
+                           $b->feature1->end, 
+                           $b->feature2->start, 
+                           $b->feature2->end, 
+                           ($b->feature1->end - $b->feature1->start + 1)));
   }
 }
