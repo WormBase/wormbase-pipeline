@@ -4,7 +4,7 @@
 #
 # by Keith Bradnam
 #
-# Last updated on: $Date: 2011-05-23 11:23:58 $
+# Last updated on: $Date: 2011-06-30 13:18:33 $
 # Last updated by: $Author: pad $
 #
 # see pod documentation at end of file for more information about this script
@@ -238,7 +238,7 @@ foreach my $gene_model ( @Predictions ) {
   print "ERROR: $gene_model method is hand_built\n" if ($method_test eq 'hand_built' && $verbose);
 	
   # check From_laboratory tag is present.
-  if (($method_test ne 'Genefinder') && ($method_test ne 'twinscan') && ($method_test ne 'jigsaw')) {
+  if (($method_test ne 'Genefinder') && ($method_test ne 'twinscan') && ($method_test ne 'jigsaw') && ($method_test ne 'RNASEQ.Hillier.Aggregate')) {
     my $laboratory = ($gene_model->From_laboratory);
     push(@error3, "ERROR: $gene_model does not have From_laboratory tag\n") if (!defined($laboratory));
     print "ERROR: $gene_model does not have From_laboratory tag\n" if (!defined($laboratory) && $verbose);
@@ -322,7 +322,7 @@ sub single_query_tests {
   
 
   # Check for non-standard methods in CDS class
-  my @CDSfilter = $db->fetch (-query => 'FIND CDS; method != Transposon_CDS; method != Transposon_Pseudogene; method != curated; method !=history; method !=Genefinder; method !=twinscan; method !=jigsaw; method !=mGene; method !=RNASEQ.Hillier');
+  my @CDSfilter = $db->fetch (-query => 'FIND CDS; method != Transposon_CDS; method != Transposon_Pseudogene; method != curated; method !=history; method !=Genefinder; method !=twinscan; method !=jigsaw; method !=mGene; method !=RNASEQ.Hillier !=RNASEQ.Hillier.Aggregate');
   foreach my $CDSfilter (@CDSfilter) {
     push(@error4, "ERROR! CDS:$CDSfilter contains an invalid method please check\n");
   }
