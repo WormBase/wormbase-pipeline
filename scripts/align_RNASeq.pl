@@ -28,6 +28,16 @@
 #
 # and for brugia:
 #
+# some data taken directly from Matt Berriman group's FTP server
+#
+#
+# and for remanei:
+#
+# SRX052082 SRX052083
+#
+# and for briggsae:
+#
+# SRX052079 SRX052081 SRX053351
 
 
 # Perl should be set to:
@@ -48,7 +58,7 @@
 # by Gary Williams
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2011-06-17 08:39:37 $
+# Last updated on: $Date: 2011-07-04 12:37:15 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -247,6 +257,19 @@ if ($species eq 'elegans') {
 	    microfillariae => ["RNASeq.Berriman.microfillariae", 'phred'],
 	   );
 	    
+} elsif ($species eq 'remanei') {
+
+  %expts = ( SRX052082 => ["RNASeq.remanei.L2_larva", 'phred'],
+	     SRX052083 => ["RNASeq.remanei.L4_larva", 'phred']
+	   )
+
+} elsif ($species eq 'briggsae') {
+
+  %expts = ( SRX052079 => ["RNASeq.briggsae.L2_larva", 'phred'],
+	     SRX052081 => ["RNASeq.briggsae.L4_larva", 'phred'],
+	     SRX053351 => ["RNASeq.briggsae.all_stages", 'phred']
+	   )
+
 
 } else {
   $log->log_and_die("Unkown species: $species\n");
@@ -347,7 +370,7 @@ if (!$expt) {
     unless ($nogtf) {
       unlink $gtf_file;
       my $scripts_dir = $ENV{'CVS_DIR'};
-      $status = $wormbase->run_command("bsub -I -q long $scripts_dir/make_GTF_transcript.pl -database $database -out $gtf_file", $log);
+      $status = $wormbase->run_command("bsub -q long $scripts_dir/make_GTF_transcript.pl -database $database -out $gtf_file -species $species", $log);
       if ($status != 0) {  $log->log_and_die("Didn't create the $gtf_file file\n"); }
       if ($species eq 'elegans') {
 	$wormbase->check_file($gtf_file, $log,
