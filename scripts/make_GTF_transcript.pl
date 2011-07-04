@@ -8,7 +8,7 @@
 # by Gary Williams
 #
 # Last updated by: $Author: gw3 $                      
-# Last updated on: $Date: 2011-05-13 08:46:45 $        
+# Last updated on: $Date: 2011-07-04 12:36:44 $        
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -28,7 +28,7 @@ use Coords_converter;
 # variables and command-line options #
 ######################################
 
-my ($help, $debug, $test, $verbose, $store, $wormbase);
+my ($help, $debug, $test, $verbose, $store, $wormbase, $species);
 my ($output, $dbdir);
 
 GetOptions ("help"        => \$help,
@@ -38,6 +38,7 @@ GetOptions ("help"        => \$help,
 	    "store:s"     => \$store,
 	    "output=s"    => \$output,
 	    "database=s"  => \$dbdir,
+	    "species=s"   => \$species,
 	    );
 
 $test = 0;
@@ -48,6 +49,7 @@ if ( $store ) {
 } else {
   $wormbase = Wormbase->new( -debug   => $debug,
                              -test    => $test,
+			     -organism => $species,
 			     );
 }
 
@@ -91,7 +93,7 @@ my $next_start = 1;
 my $prev_start = 1;
 
 # foreach gene's transcripts  (coding_transcript, non-coding-transcript, tRNA, ncRNA, etc)
-my $transcripts = $db->fetch_many(-query => 'Find Transcript where (NOT Method = history) AND (Species = "Caenorhabditis elegans")');
+my $transcripts = $db->fetch_many(-query => 'Find Transcript where (NOT Method = history) AND (Species = "'.$wormbase->full_name.'")');
 while ( my $transcript = $transcripts->next ) {
 
   my $gene_id = Transcript_gene($transcript);
@@ -184,7 +186,7 @@ while ( my $transcript = $transcripts->next ) {
   }
 }
 
-my @pseudogenes = $db->fetch(-query => 'Find Pseudogene where species = "Caenorhabditis elegans" AND (NOT Method = history) AND (NOT Method = Transposon_Pseudogene)');
+my @pseudogenes = $db->fetch(-query => 'Find Pseudogene where species = "'.$wormbase->full_name.'" AND (NOT Method = history) AND (NOT Method = Transposon_Pseudogene)');
 
 
 foreach my $pseudogene (@pseudogenes) {
