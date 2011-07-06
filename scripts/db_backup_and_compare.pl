@@ -4,8 +4,8 @@
 #
 # backup database and compare to last backed up database to look for lost data
 #
-# Last updated by: $Author: pad $     
-# Last updated on: $Date: 2010-03-05 12:11:46 $      
+# Last updated by: $Author: gw3 $     
+# Last updated on: $Date: 2011-07-06 13:27:10 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -13,6 +13,8 @@ use Wormbase;
 use IO::Handle;
 use Getopt::Long;
 use Carp;
+use Storable;
+
 
 ######################################
 # variables and command-line options # 
