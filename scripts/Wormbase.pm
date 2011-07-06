@@ -390,10 +390,8 @@ sub release_wormpep		#($number_cds $number_total $number_alternate )
     open( LETTER, ">$wormpepFile" ) || die "cant open $wormpepFile\n";
 
     print LETTER "\n\nWormpep data set:\n----------------------------\n";
-    print LETTER
-      "\nThere are $number_cds CDS in autoace, $number_total when counting $number_alternate alternate splice forms.\n
-The $number_total sequences contain $codingDNA base pairs in total.\n\n";
-
+    print LETTER "\nThere are $number_total CDSs, from $number_cds protein-coding genes\n";
+    print LETTER "\nThe $number_total sequences contain $codingDNA base pairs in total.\n\n";
     print LETTER "Modified entries      $changed";
     print LETTER "Deleted entries       $lost";
     print LETTER "New entries           $new";
