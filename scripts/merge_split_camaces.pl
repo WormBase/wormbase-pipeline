@@ -5,7 +5,7 @@
 # A script to make multiple copies of camace for curation, and merge them back again
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2011-07-06 14:33:25 $
+# Last edited on: $Date: 2011-07-06 14:52:13 $
 #
 # Persisting errors.
 #running csh -c "reformat_acediff file 1 file2"
@@ -529,8 +529,8 @@ sub load_curation_data {
   $command  = "query find ALL_genes where !method\n";
   $command  .= "kill\n";
   $command  .= "y\n";
-  $command  .= "save";
-  $command  .= "quit";
+  $command  .= "save\n";
+  $command  .= "quit\n";
 
   my $tsuser = "bogus_genes";
   open (TACE, "| $tace $database_path -tsuser $tsuser") || die "Couldn't open $database_path\n";
