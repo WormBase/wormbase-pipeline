@@ -4,8 +4,8 @@
 # 
 # A script to make multiple copies of camace for curation, and merge them back again
 #
-# Last edited by: $Author: pad $
-# Last edited on: $Date: 2011-06-28 16:29:50 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2011-07-06 14:33:25 $
 #
 # Persisting errors.
 #running csh -c "reformat_acediff file 1 file2"
@@ -484,6 +484,7 @@ sub load_curation_data {
 	"$wormpub/BUILD_DATA/MISC_DYNAMIC/misc_RNASEQ_CDS.ace", #all RNASEQ methods reduced to one Fmap method.
 	"$wormpub/BUILD_DATA/MISC_DYNAMIC/misc_genefinder.ace",
 	"$wormpub/BUILD_DATA/MISC_DYNAMIC/misc_modENCODE_aggregate_transcripts.ace",
+	"$wormpub/BUILD_DATA/MISC_DYNAMIC/RNASeq_splice_elegans.ace",
 	"$wormpub/wormbase/autoace_config/misc_autoace_methods.ace",
 	"$acefiles/misc_DB_remark.ace",
 	"$acefiles/elegans_blastx.ace",
