@@ -58,7 +58,7 @@
 # by Gary Williams
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2011-07-04 12:37:15 $
+# Last updated on: $Date: 2011-07-07 14:02:57 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -358,10 +358,10 @@ if (!$expt) {
       unlink "${splice_juncs_file}.tmp";
       $status = $wormbase->run_command("touch ${splice_juncs_file}.tmp", $log);
       foreach my $chrom_file (@chrom_files) {
-	my $splice_junk_cmd = "bsub -I grep -h intron ${database}/CHROMOSOMES/$chrom_file.gff | egrep 'curated|Coding_transcript|Transposon_CDS|Pseudogene|tRNAscan-SE-1.23|Non_coding_transcript|ncRNA Confirmed_cDNA|Confirmed_EST|Confirmed_UTR' | awk '{OFS=\"\t\"}{print \$1,\$4-2,\$5,\$7}' >> ${splice_juncs_file}.tmp";
+	my $splice_junk_cmd = "grep -h intron ${database}/CHROMOSOMES/$chrom_file.gff | egrep 'curated|Coding_transcript|Transposon_CDS|Pseudogene|tRNAscan-SE-1.23|Non_coding_transcript|ncRNA Confirmed_cDNA|Confirmed_EST|Confirmed_UTR' | awk '{OFS=\"\t\"}{print \$1,\$4-2,\$5,\$7}' >> ${splice_juncs_file}.tmp";
 	$status = $wormbase->run_command($splice_junk_cmd, $log);
       }
-      $status = $wormbase->run_command("bsub -I sort -u ${splice_juncs_file}.tmp > $splice_juncs_file", $log);
+      $status = $wormbase->run_command("sort -u ${splice_juncs_file}.tmp > $splice_juncs_file", $log);
       if ($status != 0) {  $log->log_and_die("Didn't create the splice_juncs_file\n"); }
     }
     
