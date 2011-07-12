@@ -181,30 +181,44 @@ while( my $slice = shift @$slices) {
 	}
 
 	# get all protein align features on the slice
-	my $features = $slice->get_all_ProteinAlignFeatures();
         my %blastx_features;
 
-	print STDERR "dumping ${\scalar @$features} Protein Align Features\n" if $debug;
-	foreach my $feature(@$features){
-	    my $cigar_line = flipCigarReference($feature->cigar_string); # for Lincoln
+        my $sth = $vega_db->prepare('SELECT seq_region_start,seq_region_end,seq_region_strand,evalue,hit_name,cigar_line,hit_start,hit_end,seq_region_strand,score,protein_align_feature_id,logic_name FROM protein_align_feature JOIN analysis USING(analysis_id) WHERE seq_region_id=?');
+        my ($seq_region_start,$seq_region_end,$seq_region_strand,$e_value,$hit_name,$cigar,$hstart,$hend,$strand,$score,$dbID,$logic_name);
+    	$sth->execute($slice->get_seq_region_id);
+
+    	$sth->bind_col(1,\$seq_region_start);
+	$sth->bind_col(2,\$seq_region_end);
+	$sth->bind_col(3,\$seq_region_strand);
+    	$sth->bind_col(4,\$e_value);
+    	$sth->bind_col(5,\$hit_name);
+    	$sth->bind_col(6,\$cigar);
+	$sth->bind_col(7,\$hstart);
+	$sth->bind_col(8,\$hend);
+	$sth->bind_col(9,\$strand);
+	$sth->bind_col(10,\$score);
+	$sth->bind_col(11,\$dbID);
+	$sth->bind_col(12,\$logic_name);
+
+        while($sth->fetch){
+	    my $cigar_line = flipCigarReference($cigar); # for Lincoln
 	    my $stripped_feature = {
-		hit_id      => $feature->hseqname,
-		target_id   => $feature->slice->seq_region_name,
-		target_start=> $feature->hstart,
-		target_stop => $feature->hend,
-		strand      => ($feature->strand > 0?'+':'-'),
-		hit_start   => $feature->seq_region_start,
-		hit_stop    => $feature->seq_region_end,
-		score       => $feature->score,
-		p_value     => $feature->p_value,
-		dbid        => $feature->dbID,
-		logic_name  => $feature->analysis->logic_name,
-		cigar       => ($feature->strand > 0 ? $cigar_line : reverse_cigar($cigar_line)),
+		hit_id      => $hit_name,
+		target_id   => $slice->seq_region_name,
+		target_start=> $hstart,
+		target_stop => $hend,
+		strand      => ($strand > 0?'+':'-'),
+		hit_start   => $seq_region_start,
+		hit_stop    => $seq_region_end,
+		score       => $score,
+		p_value     => $e_value,
+		dbid        => $dbID,
+		logic_name  => $logic_name,
+		cigar       => ($strand > 0 ? $cigar_line : reverse_cigar($cigar_line)),
 		feature_type=> 'protein_match',
 	    };
 	    push @{$blastx_features{$stripped_feature->{logic_name}}}, $stripped_feature;
 	}
-        $features=undef;
 
 	while (my($k,$v)=each %blastx_features){
 	    my @filtered_features=filter_features($v,$slice_size);
@@ -213,7 +227,7 @@ while( my $slice = shift @$slices) {
 
         # get all dna align features on the slice
 	
-	$features=$slice->get_all_DnaAlignFeatures();
+	my $features=$slice->get_all_DnaAlignFeatures();
 	print STDERR "dumping ${\scalar @$features} DNA Align Features\n" if $debug;
         foreach my $feature(@$features){
 	    my $cigar_line = flipCigarReference($feature->cigar_string); # for Lincoln
