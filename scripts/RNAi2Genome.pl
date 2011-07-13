@@ -2,23 +2,23 @@
 
 # Version: $Version: $
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2011-06-28 14:26:06 $
+# Last updated on: $Date: 2011-07-13 08:38:42 $
 
 use strict;
 use warnings;
 use Getopt::Long;
 
 use lib $ENV{'CVS_DIR'};
-use lib '/software/worm/ensembl/bioperl-live';
-use lib '/software/worm/lib';
 
 use Wormbase;
 use Log_files;
 
+use LSF RaiseError => 0, PrintError => 1, PrintOutput => 0;
 use LSF::JobManager;
 use Ace;
 use Coords_converter;
 use Bio::Tools::Blat;
+use Bio::SeqIO;
 
 my $BLAT = "/software/worm/bin/blat/blat";
 #my $BLAT = "/nfs/users/nfs_k/klh/bin/x86_64/blat";
@@ -97,7 +97,7 @@ my $coords = Coords_converter->invoke($db, 0, $wormbase);
 
 if (not $query) {
   ###### Fetch the queries (if not supplied)
-  my (@rnai, @query, @rnai_chunks, @out_ace_files, @out_pslfiles, %best_hit_only, %seen);
+  my (@rnai, @query, @rnai_chunks, @out_ace_files, @out_lsf_files, @out_psl_files, %best_hit_only, %seen);
   
   my $tace = $wormbase->tace;
   my $tb_file = "$db/wquery/RNAi_dna.def";
@@ -161,22 +161,23 @@ if (not $query) {
     my $jname = "worm_rna2genome.$i.$$";
     my $out_file = $wormbase->blat . "/rnai_out.$i.ace";
     my $psl = $wormbase->blat . "/rnai_out.$i.psl";
+    my $lsf_out = $wormbase->blat . "/rnai_out.$i.lsf_out";
 
     my $command = ($store) 
         ? $wormbase->build_cmd_line("RNAi2Genome.pl -query $query -keepbest $keep_best -acefile $out_file -pslfile $psl", $store)
-        : $wormbase->build_cmd("RNAi2Genome.pl -query $query -problem $keep_best -acefile $out_file -pslfile $psl");
+        : $wormbase->build_cmd("RNAi2Genome.pl -query $query -keepbest $keep_best -acefile $out_file -pslfile $psl");
     
     my @bsub_options = (-J => $jname, 
-                        #-o => "/nfs/users/nfs_k/klh/test." . $i . ".out",
-                        #-e => "/nfs/users/nfs_k/klh/test." . $i . ".err",
-                        -o => '/dev/null',
-                        -e => '/dev/null',
+                        -o => $lsf_out,
                         -E => 'test -w ' . $wormbase->blat,
+                        -M => 2600000,
+                        -R => 'select[mem>=2600] rusage[mem=2600]'
                         );
     $lsf->submit(@bsub_options, $command);
 
     push @out_ace_files, $out_file;
-    push @out_pslfiles, $psl;
+    push @out_psl_files, $psl;
+    push @out_lsf_files, $lsf_out;
   }     
        
   $lsf->wait_all_children( history => 1 );
@@ -204,21 +205,29 @@ if (not $query) {
     printf $out_fh "Homol_data %s:RNAi %d %d\n", $parent, 1, $coords->Superlink_length($parent); 
   }
   close($out_fh);
-      
-  #unlink @out_ace_file, @query, @out_pslfiles;
+     
+  if (not $log->report_errors and not $test) {
+    unlink @out_ace_files, @out_psl_files, @out_lsf_files, @query;
+  }
 
   if ($load) {
     $wormbase->load_to_database($db, $acefile, "RNAi_mapping", $log);
   }
 } else {
 
-  my (%keep_best_clones, $primary, $secondary, %results, %results_by_parent);
+  my (%keep_best_clones, %qlengths, $primary, $secondary, %results, %results_by_parent);
   
   if ($keep_best) {
     open my $pf, $keep_best or $log->log_and_die("Could not open $keep_best\n");
     while(<$pf>) {
       /^(\S+)/ and $keep_best_clones{$1} = 1;
     }
+  }
+  
+  my $seqio = Bio::SeqIO->new(-format => 'fasta',
+                              -file => $query);
+  while(my $seq = $seqio->next_seq) {
+    $qlengths{$seq->id} = $seq->length;
   }
   
   my $command = "$BLAT $target $query $pslfile $BLAT_OPTIONS";
@@ -233,41 +242,47 @@ if (not $query) {
   open(my $fh, "<$pslfile") or $log->log_and_die("cant open blat output $pslfile : $!\n");
   my $parser = Bio::Tools::Blat->new('-fh' => $fh);
   
-  while(my $result = $parser->next_result) {
+  {
+    my %results;
 
-    my ($percent) = $result->get_tag_values('percent_id');
-    
-    my ($total_aligned, $max_block_size) = (0, 0);
-    foreach my $sf ($result->get_SeqFeatures) {
-      my $len = ($sf->feature1->end - $sf->feature1->start + 1);
-      $total_aligned += $len;
-      if ($len > $max_block_size) {
-        $max_block_size = $len;
+    while(my $result = $parser->next_result) {
+      
+      my ($percent) = $result->get_tag_values('percent_id');
+      
+      my ($total_aligned, $max_block_size) = (0, 0);
+      foreach my $sf ($result->get_SeqFeatures) {
+        my $len = ($sf->feature1->end - $sf->feature1->start + 1);
+        $total_aligned += $len;
+        if ($len > $max_block_size) {
+          $max_block_size = $len;
+        }
+      }
+      
+      # note that filter hits will check that minimum length and quality
+      # criteria are met. However, we weed out some stuff here that we know
+      # immediately will fail the filter, to save memory.
+      if ($keep_best_clones{$result->seq_id}) {
+        if ($percent >= $PRIMARY_QUAL and
+            ($total_aligned >= $PRIMARY_LEN or $qlengths{$result->seq_id} == $total_aligned) and 
+            (not exists $results{$result->seq_id} or
+             $total_aligned > $results{$result->seq_id}->[0]->[1])) {
+          $results{$result->seq_id} = [[$percent, $total_aligned, $max_block_size, $result]];
+        }
+      } else {
+        if ( ( ($total_aligned == $qlengths{$result->seq_id} or $total_aligned >= $PRIMARY_LEN) and $percent >= $PRIMARY_QUAL) or
+             ($total_aligned >= $SECONDARY_LEN and $percent > $SECONDARY_QUAL) ) {
+          push @{$results{$result->seq_id}}, [$percent, $total_aligned, $max_block_size, $result];
+        }
       }
     }
-
-    &log_blat($percent, $total_aligned, $max_block_size, $result) if $verbose;
     
-    if ($keep_best_clones{$result->seq_id}) {
-      if ($total_aligned >= $PRIMARY_LEN and $percent >= $PRIMARY_QUAL and
-          (not exists $results{$result->seq_id} or
-           $total_aligned > $results{$result->seq_id}->[0]->[1])) {
-        $results{$result->seq_id} = [[$percent, $total_aligned, $max_block_size, $result]];
-      }
-    } else {
-      if ($total_aligned >= $PRIMARY_LEN and $percent >= $PRIMARY_QUAL or
-          $total_aligned >= $SECONDARY_LEN and $percent > $SECONDARY_QUAL) {
-        push @{$results{$result->seq_id}}, [$percent, $total_aligned, $max_block_size, $result];
-      }
-    }
+    ($primary, $secondary) = &filter_hits(\%results, \%qlengths, $CHECK_BLOCK_SIZE);
   }
-  
-  ($primary, $secondary) = &filter_hits(\%results, $CHECK_BLOCK_SIZE);
-  
+
   foreach my $type_pair ([$primary, 'RNAi_primary'], [$secondary, 'RNAi_secondary']) {
     my ($list, $method) = @$type_pair;
     
-    foreach my $result (@$list) {
+    while( my $result = shift @$list) {
       
       my @b = $result->get_SeqFeatures;
       
@@ -341,7 +356,7 @@ exit;
 ################################################################
 
 sub filter_hits {
-  my ($res, $check_block_size) = @_;
+  my ($res, $qlengths, $check_block_size) = @_;
 
   my (@all_primary, @all_secondary);
 
@@ -352,13 +367,13 @@ sub filter_hits {
     foreach my $quad (@{$res->{$qid}}) {
       my ($percent, $total_aligned, $max_block_size, $hit) = @$quad;
 
-      if ($total_aligned >= $PRIMARY_LEN and $percent >= $PRIMARY_QUAL) {
+      if ( ($total_aligned eq $qlengths->{$qid} or $total_aligned >= $PRIMARY_LEN) and $percent >= $PRIMARY_QUAL) {
         push @primary, $quad;
       } elsif ($total_aligned >= $SECONDARY_LEN and $percent >= $SECONDARY_QUAL) {
         push @secondary, $quad;
       }
     }
-
+    
     @primary = sort { $b->[1] <=> $a->[1] } @primary;
     @secondary = sort { $b->[1] <=> $a->[1] } @secondary;
 
@@ -372,7 +387,11 @@ sub filter_hits {
     }
 
     if (defined $check_block_size and scalar(@primary) + scalar(@secondary) > 1) {
-      @primary = grep { $_->[2] >= $PRIMARY_LEN } @primary;
+      # always keep the best primary hit, regardless
+      if (@primary) {
+        my ($best, @others) = @primary;
+        @primary = ($best, grep { $_->[2] >= $PRIMARY_LEN } @others);
+      }
       @secondary = grep { $_->[2] >= $SECONDARY_LEN } @secondary;
     }
 
