@@ -388,7 +388,7 @@ sub generate_transcripts {
     my @global_exons;
     my %overlapcheck;
 
-    use Bio::EnsEMBL::Pipeline::Tools::ExonUtils;
+#    use Bio::EnsEMBL::Pipeline::Tools::ExonUtils;
 
     #go through all genes
   GENE: foreach my $gene_name ( keys(%$genesRef) ) {
