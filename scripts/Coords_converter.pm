@@ -949,7 +949,7 @@ sub LocateSpan {
    
   # see if the span is within a clone
   my ($clone, $x_slink, $y_slink, $sl_start) = $self->GetCloneFromCoords($chrom, $x, $y);
-  
+
   if( $clone ) { # span maps within clone
     $seq = $clone;
     my $clone_start = $self->{SUPERLINK}->{$x_slink}->{$clone}->[0];
@@ -961,7 +961,6 @@ sub LocateSpan {
       my $seqlen = $self->{LENGTH}->{$clone};
       $rel_x = $seqlen - $rel_x + 1;
       $rel_y = $seqlen - $rel_y + 1;
-      ($rel_x, $rel_y) = ($rel_y, $rel_x);
     } 
 
   } else {
