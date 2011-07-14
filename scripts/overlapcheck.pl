@@ -7,8 +7,8 @@
 # checks whether genes overlap, ESTs match introns and repeats match exons                                   
 # sorts output for stl and cam clones
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2007-03-02 11:55:23 $
+# Last updated by: $Author: pad $
+# Last updated on: $Date: 2011-07-14 11:00:07 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -91,7 +91,7 @@ if (! -f "$camace/database/ACEDB.wrm") {
 }
 my $camdb  = Ace->connect(-path => $camace) || die "Couldn't connect to camace\n", Ace->error;
 
-my @camclones = $camdb->fetch(-query => 'FIND Genome_Sequence');
+my @camclones = $camdb->fetch(-query => 'FIND Elegans_genomic');
 foreach my $camclone (@camclones) {
   my $string = $camclone->Confidential_remark(1);
   if ((defined $string) && (($string =~ /Louis/) || ($string =~ /not in Cambridge/))) {
@@ -105,7 +105,7 @@ if (! -f "$stlace/database/ACEDB.wrm") {
   $stlace = $wormbase->database('current');  
 }
 my $stldb    = Ace->connect(-path => $stlace) || die "Couldn't connect to stlace\n", Ace->error;
-my @stlclones = $stldb->fetch(-query => 'FIND Genome_Sequence');
+my @stlclones = $stldb->fetch(-query => 'FIND Elegans_genomic');
 foreach my $stlclone (@stlclones) {
   my $string = $stlclone->Source(1);
   if ((defined $string) && ($string =~ /_CB/)) {

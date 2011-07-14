@@ -39,7 +39,7 @@ print $structure, "\n";
 
 # get clone out of databases 
 my $camdb     = Ace->connect(-path => '/wormsrv2/camace/') || die "Couldn't connect to camace\n", Ace->error;
-my @camclones = $camdb->fetch(-query => 'FIND Genome_Sequence');
+my @camclones = $camdb->fetch(-query => 'FIND Elegans_genomic');
 foreach my $camclone (@camclones) {
 	my $string = $camclone->Confidential_remark(1);
 	if ((defined $string) && (($string =~ /not in Cambridge LINK/) || ($string =~ /Louis/))) {
@@ -49,7 +49,7 @@ foreach my $camclone (@camclones) {
 }
 
 my $stldb     = Ace->connect(-path => '/wormsrv2/stlace/') || die "Couldn't connect to stlace\n", Ace->error;
-my @stlclones = $stldb->fetch(-query => 'FIND Genome_Sequence');
+my @stlclones = $stldb->fetch(-query => 'FIND Elegans_genomic');
 foreach my $stlclone (@stlclones) {
     $stlace{$stlclone} = 1;
 }

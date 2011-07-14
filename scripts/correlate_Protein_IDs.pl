@@ -222,7 +222,7 @@ sub get_accession2 {
     $EMBL_ac = "";
 
 my $command2=<<EOF;
-find Genome_Sequence $sequence
+find Elegans_genomic $sequence
 show -a Database
 quit
 EOF
@@ -249,7 +249,7 @@ EOF
 sub make_accession_list {
 
     my $command3=<<EOF;
-find Genome_Sequence
+find Elegans_genomic
 show -a Database
 quit
 EOF
@@ -294,7 +294,7 @@ correlate_Protein_IDs.pl <file>
 correlate_Protein_IDs.pl will query an ACeDB database
 to produce two flatfiles:
 
-/tmp/camace_accessions        : NDB_ID & NDBL_AC for all Genome_Sequences
+/tmp/camace_accessions        : NDB_ID & NDBL_AC for all Elegans_genomic
 /tmp/protein_ID_list.camace   : Protein_IDs for all C. elegans CDSs
 
 The list of Protein_IDs is correlated with the input flatfile (weekly dump
