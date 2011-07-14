@@ -41,7 +41,7 @@ USAGE
 exit 1;	
 }
 
-my $outdir = '/lustre/cbi4/scratch1/worm/tmp/map_allele_test';
+my $outdir = '/nfs/wormpub/tmp/map_allele';
 my ( $debug, $store,$database,$help,$test,$species,$wb,$noload);
 
 GetOptions(
