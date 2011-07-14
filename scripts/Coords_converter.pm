@@ -1028,7 +1028,6 @@ sub LocateSpanUp {
             my $seqlen = $self->{LENGTH}->{$clone};
             $x = $offset + $seqlen - $x + 1;
             $y = $offset + $seqlen - $y + 1;
-            ($x, $y) = ($y, $x);
           }
           $seqid = $chrom;
           last SLINKS;

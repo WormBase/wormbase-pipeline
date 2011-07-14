@@ -94,8 +94,10 @@ sub map_feature {
   
   # convert to chromosome coords
   my ($chr_id, $chr_st, $chr_en) = $self->LocateSpanUp($seq);
-  
-  #print STDERR "Mapped to $chr_id, $chr_st, $chr_en\n";
+  # for reverse-oriented assembly components, coords come back in reverse order
+  if ($chr_en < $chr_st) {
+    ($chr_st, $chr_en) = ($chr_en, $chr_st);
+  }
 
   my ($max_extension, $extend_by) = (5, 1000);
   
@@ -115,32 +117,38 @@ sub map_feature {
       my ($chr_left_coord, $chr_right_coord) = ($dna_left_coord + $chr_st - 1, $dna_right_coord + $chr_st - 1);
 
       #print " Feature maps to $chr_id $chr_left_coord, $chr_right_coord\n";
-
+      my $orig_strand = ($chr_right_coord >= $chr_left_coord) ? "+" : "-";
+      
       # need to map down to a region that contains the feature AND the flanking sequence
       my ($left_offset, $right_offset);
-
-      if ($chr_right_coord > $chr_left_coord) { 
+      
+      if ($orig_strand eq '+') { 
         $left_offset = 1 - length($flank_L);
         $right_offset = length($flank_R) - 1;
       } else {
         $left_offset = length($flank_L) - 1;
         $right_offset = 1 - length($flank_R);
       }
-
+      
       #printf " Adjusted to %d %d\n", $chr_left_coord + $left_offset, $chr_right_coord + $right_offset;
-
-      #my ($seq, $left_coord, $right_coord) = $self->LocateSpan($chr_id, $chr_left_coord, $chr_right_coord);
+      
       my ($seq, $left_coord, $right_coord) = 
           $self->LocateSpan($chr_id, $chr_left_coord + $left_offset, $chr_right_coord + $right_offset);
-
+      
       #printf " Got back %s %d %d\n", $seq, $left_coord, $right_coord;
-
-      $left_coord -= $left_offset;
-      $right_coord -= $right_offset;
+      
+      my $new_strand = ($left_coord <= $right_coord) ? "+" : "-";
+      
+      if ($orig_strand eq $new_strand) {
+        $left_coord -= $left_offset;
+        $right_coord -= $right_offset;
+      } else {
+        $left_coord -= $right_offset;
+        $right_coord -= $left_offset;
+      }
 
       #printf " Adjusted to %s %d %d\n", $seq, $left_coord, $right_coord;
 
-      #print STDERR "Mapped back down from $chr_id, $chr_left_coord $chr_right_coord to $seq, $left_coord, $right_coord\n";
       return ($seq, $left_coord, $right_coord);
     } 
   }
