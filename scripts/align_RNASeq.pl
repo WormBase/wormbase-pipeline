@@ -58,7 +58,7 @@
 # by Gary Williams
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2011-07-07 14:02:57 $
+# Last updated on: $Date: 2011-07-14 14:33:09 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -357,6 +357,11 @@ if (!$expt) {
       unlink $splice_juncs_file;
       unlink "${splice_juncs_file}.tmp";
       $status = $wormbase->run_command("touch ${splice_juncs_file}.tmp", $log);
+      if ($wormbase->assembly_type eq 'contig') {
+	@chrom_files = ($wormbase->species);
+      } else {
+	@chrom_files = $wormbase->get_chromosome_names('-prefix' => 1, '-mito' => 1);
+      }
       foreach my $chrom_file (@chrom_files) {
 	my $splice_junk_cmd = "grep -h intron ${database}/CHROMOSOMES/$chrom_file.gff | egrep 'curated|Coding_transcript|Transposon_CDS|Pseudogene|tRNAscan-SE-1.23|Non_coding_transcript|ncRNA Confirmed_cDNA|Confirmed_EST|Confirmed_UTR' | awk '{OFS=\"\t\"}{print \$1,\$4-2,\$5,\$7}' >> ${splice_juncs_file}.tmp";
 	$status = $wormbase->run_command($splice_junk_cmd, $log);
@@ -542,6 +547,7 @@ sub run_align {
     if ($noalign) {$cmd .= " -noalign";}
     if ($nogtf) {$cmd .= " -nogtf";}
     if ($database) {$cmd .= " -database $database";}
+    if ($species) {$cmd .= " -species $species";}
     if ($norawjuncs) {$cmd .= " -norawjuncs";}
     if ($expts{$arg}[1] eq 'solexa') {$cmd .= " -solexa";}
     if ($expts{$arg}[1] eq 'illumina1.3') {$cmd .= " -illumina";}
