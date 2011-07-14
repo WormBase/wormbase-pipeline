@@ -167,7 +167,7 @@ sub get_alleles_fromFile {
 # filter the alleles
 # removes alleles without 2 flanking sequences, no Sequence or not Source attached to the parent sequence
 sub _filter_alleles {
-  my ($alleles) = @_;
+  my ($alleles, $aggressive) = @_;
   
   my @good_alleles;
   
@@ -204,19 +204,20 @@ sub _filter_alleles {
     }       
     
     elsif (defined $allele->Type_of_mutation and $allele->Type_of_mutation eq 'Substitution') {
-
-      if (not defined $allele->Type_of_mutation->right){
-        $log->write_to("WARNING: $allele ($name) has no FROM in the substitution tag (Remark: $remark)\n");
-        $errors++;
-        next;
-      } elsif (not defined $allele->Type_of_mutation->right->right) {
-        $log->write_to("ERROR: $allele ($name) has no TO in the substitution tag (Remark: $remark)\n");
-        $errors++;
-        next;
-      } elsif ($allele->Type_of_mutation->right =~ /\d|\s/ or $allele->Type_of_mutation->right->right =~ /\d|\s/) {
-        $log->write_to("ERROR: $allele ($name) has numbers an/or spaces in the FROM/TO tags (Remark: $remark)\n");
-        $errors++;
-        next;
+      if ($aggressive) {
+        if (not defined $allele->Type_of_mutation->right){
+          $log->write_to("WARNING: $allele ($name) has no FROM in the substitution tag (Remark: $remark)\n");
+          $errors++;
+          next;
+        } elsif (not defined $allele->Type_of_mutation->right->right) {
+          $log->write_to("ERROR: $allele ($name) has no TO in the substitution tag (Remark: $remark)\n");
+          $errors++;
+          next;
+        } elsif ($allele->Type_of_mutation->right =~ /\d|\s/ or $allele->Type_of_mutation->right->right =~ /\d|\s/) {
+          $log->write_to("ERROR: $allele ($name) has numbers an/or spaces in the FROM/TO tags (Remark: $remark)\n");
+          $errors++;
+          next;
+        }
       }
     } elsif(! (defined $allele->Type_of_mutation)){
       $log->write_to("WARNING: $allele ($name) has no Type_of_mutation (Remark: $remark)\n");
@@ -421,12 +422,20 @@ sub get_cds {
                 }                                                     
                 # coding_exon -> space for substitutions (silent mutations / stops / AA changes)
                 if ($v->{start}-$v->{stop} < 3 && $v->{allele}->Type_of_mutation eq 'Substitution'){
-                    
+                  
                     # insanity check: insane tags are ignored and reported as warnings
-                    if (!$v->{allele}->Type_of_mutation->right || !$v->{allele}->Type_of_mutation->right->right){
-                        $log->write_to("WARNING: ${\$v->{allele}->Public_name} is missing FROM and/or TO (Remark: ${\$v->{allele}->Remark})\n");
-                                                $errors++;
-                        next;
+                    if (!$v->{allele}->Type_of_mutation->right) {
+                      $log->write_to("WARNING: ${\$v->{allele}->Public_name} is missing FROM (Remark: ${\$v->{allele}->Remark})\n");
+                      $errors++;
+                      next;
+                    } elsif (!$v->{allele}->Type_of_mutation->right->right) {
+                      $log->write_to("ERROR: ${\$v->{allele}->Public_name} is missing TO (Remark: ${\$v->{allele}->Remark})\n");
+                      $errors++;
+                      next;
+                    } elsif ($v->{allele}->Type_of_mutation->right =~ /\d|\s/ or $v->{allele}->Type_of_mutation->right->right =~ /\d|\s/) {
+                      $log->write_to("ERROR: ${\$v->{allele}->Public_name} has numbers an/or spaces in the FROM/TO tags (Remark: ${\$v->{allele}->Remark})\n");
+                      $errors++;
+                      next;
                     }
                     
                     # get cds
