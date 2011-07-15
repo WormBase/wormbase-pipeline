@@ -58,7 +58,7 @@
 # by Gary Williams
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2011-07-14 14:33:09 $
+# Last updated on: $Date: 2011-07-15 10:46:29 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -375,11 +375,10 @@ if (!$expt) {
     unless ($nogtf) {
       unlink $gtf_file;
       my $scripts_dir = $ENV{'CVS_DIR'};
-      $status = $wormbase->run_command("bsub -q long $scripts_dir/make_GTF_transcript.pl -database $database -out $gtf_file -species $species", $log);
-      if ($status != 0) {  $log->log_and_die("Didn't create the $gtf_file file\n"); }
+      $status = $wormbase->run_command("bsub -I -q long $scripts_dir/make_GTF_transcript.pl -database $database -out $gtf_file -species $species", $log);
       if ($species eq 'elegans') {
 	$wormbase->check_file($gtf_file, $log,
-			      minsize => 17000000,
+			      minsize => 29900000,
 			     );
       }
     }
