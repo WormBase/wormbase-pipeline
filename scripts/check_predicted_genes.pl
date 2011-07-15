@@ -4,7 +4,7 @@
 #
 # by Keith Bradnam
 #
-# Last updated on: $Date: 2011-07-15 09:41:59 $
+# Last updated on: $Date: 2011-07-15 10:08:51 $
 # Last updated by: $Author: gw3 $
 #
 # see pod documentation at end of file for more information about this script
@@ -62,6 +62,7 @@ my @checkedgenes = ('F56H11.3b','F13E9.8','Y45F10D.7','T21C12.8','F58G11.2','F54
 ################################
 my @Predictions;
 my %sequence_names;
+my %sequence_classes;
 
 if ($build) {
   &extra_build_checks;
@@ -123,10 +124,12 @@ foreach my $gene_model ( @Predictions ) {
   
   # check for duplicated sequence names
   if (exists $sequence_names{$gene_model->name}) {
-    push(@error1, "ERROR: $gene_model is both a $method_test and a $sequence_names{$gene_model->name}\n");
-    print "ERROR: $gene_model is both a $method_test and a $sequence_names{$gene_model->name}\n";
+    my $class = $gene_model->class;
+    push(@error1, "ERROR: $class $gene_model is both a $method_test and a $sequence_classes{$gene_model->name} $sequence_names{$gene_model->name}\n");
+    print "ERROR: $class $gene_model is both a $method_test and a $sequence_classes{$gene_model->name} $sequence_names{$gene_model->name}\n";
   }
   $sequence_names{$gene_model->name} = $method_test; # save all the names and methods
+  $sequence_classes{$gene_model->name} = $gene_model->class;
 
   if ($method_test ne 'Transposon') {
       if (!defined($exon_coord2[0])) {
