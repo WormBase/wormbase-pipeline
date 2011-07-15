@@ -4,8 +4,8 @@
 #
 # by Keith Bradnam
 #
-# Last updated on: $Date: 2011-06-30 13:18:33 $
-# Last updated by: $Author: pad $
+# Last updated on: $Date: 2011-07-15 09:41:59 $
+# Last updated by: $Author: gw3 $
 #
 # see pod documentation at end of file for more information about this script
 
@@ -61,7 +61,7 @@ my @checkedgenes = ('F56H11.3b','F13E9.8','Y45F10D.7','T21C12.8','F58G11.2','F54
 #         Main Body            # 
 ################################
 my @Predictions;
-
+my %sequence_names;
 
 if ($build) {
   &extra_build_checks;
@@ -82,6 +82,7 @@ else {
   my $gene_model_count=@Predictions;
   $log->write_to("Checking $gene_model_count Predictions in $db_path\n\n");
   print "\nChecking $gene_model_count Predictions in '$db_path'\n\n" if $verbose;
+
   &main_gene_checks;
   &single_query_tests;
   
@@ -120,6 +121,13 @@ foreach my $gene_model ( @Predictions ) {
 
 #  if (!defined($method_test)) {print "$gene_model\n";}
   
+  # check for duplicated sequence names
+  if (exists $sequence_names{$gene_model->name}) {
+    push(@error1, "ERROR: $gene_model is both a $method_test and a $sequence_names{$gene_model->name}\n");
+    print "ERROR: $gene_model is both a $method_test and a $sequence_names{$gene_model->name}\n";
+  }
+  $sequence_names{$gene_model->name} = $method_test; # save all the names and methods
+
   if ($method_test ne 'Transposon') {
       if (!defined($exon_coord2[0])) {
 	  print "ERROR: $gene_model has a problem with it\'s exon co-ordinates\n";
@@ -296,6 +304,27 @@ foreach my $gene_model ( @Predictions ) {
   # feed DNA sequence to function for checking
   &test_gene_sequence_for_errors($gene_model,$start_tag,$end_tag,$dna,$method_test);
 }
+
+# now check that the isoform names are consistent
+foreach my $sequence_name (keys %sequence_names) {
+  # don't want to look at history objects
+  if ($sequence_names{$sequence_name} =~ /history/) {next}
+
+  # does the isoform have multiple letters in
+  if ($sequence_name =~ /\w+\.\d+([a-z]{2,})$/) {
+    push(@error1, "ERROR: The sequence_name '$sequence_name' is invalid! Multiple letters in the isoform name.\n")
+
+
+  # if it is an isoform name, check for non-isoforms
+  } elsif ($sequence_name =~ /(\w+\.\d+)[a-z]$/) {
+    my $base = $1;
+    if (exists $sequence_names{$base}) {
+      if ($sequence_names{$base} eq 'miRNA_primary_transcript' && $sequence_names{"${base}a"} eq 'miRNA') {next} # ignore the primary and mature miRNA forms
+      push(@error1, "ERROR: The $sequence_names{$base} sequence '$base' and the $sequence_names{$sequence_name} sequence '$sequence_name' both exist!\n")
+    }
+  }
+}
+
 }
 
 
