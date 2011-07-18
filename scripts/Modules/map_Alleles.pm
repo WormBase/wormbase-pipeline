@@ -247,7 +247,9 @@ sub map {
   
   foreach my $x (@$alleles) {
     # $chromosome_name,$start,$stop
+
     my @map = $mapper->map_feature($x->Sequence->name,$x->Flanking_sequences->name,$x->Flanking_sequences->right->name);
+
     if ($map[0] eq '0'){
       $log->write_to("ERROR: Couldn't map $x (${\$x->Public_name}) to sequence ${\$x->Sequence->name} with ${\$x->Flanking_sequences->name} and ${\$x->Flanking_sequences->right->name} (Remark: ${\$x->Remark})\n");
       $errors++;
@@ -272,7 +274,7 @@ sub map {
         next;
       }
     } 
-    
+
     # from flanks to variation
     if ($map[2] > $map[1]){
       $map[1]++;
@@ -318,6 +320,27 @@ sub map {
   return \%alleles;
 }
 
+
+sub remove_insanely_mapped_alleles {
+  my ($alleles) = @_;
+
+  while (my ($k, $v) = each %$alleles) {
+    if ($v->{allele}->Type_of_mutation eq 'Substitution') {
+      if ($v->{allele}->Type_of_mutation->right) {
+        my ($from) = $v->{allele}->Type_of_mutation->right;
+        my $len_of_from = length($from);
+        my $mapped_region_len = $v->{stop} - $v->{start} + 1;
+
+        if (length($from) != $mapped_region_len) {
+          $log->write_to("ERROR: $k (${\$v->{allele}->Public_name}) maps to a region (length $mapped_region_len) that does not match length of FROM ($from) - non-unique flanks?\n");
+          $errors++;
+          delete $alleles->{$k};
+        }
+      }
+    }
+  }
+
+}
 
 =head2 print_genes
 

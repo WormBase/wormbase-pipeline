@@ -125,6 +125,7 @@ if ($allele){
 my $mapped_alleles = MapAlleles::map($alleles);
 undef $alleles;# could theoretically undef the alleles here 
 
+MapAlleles::remove_insanely_mapped_alleles($mapped_alleles);
 
 # for other databases don't run through the GFF_SPLITs
 &finish() if $database;
