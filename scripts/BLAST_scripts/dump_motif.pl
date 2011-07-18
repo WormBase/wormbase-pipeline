@@ -4,8 +4,8 @@
 #
 # Dumps protein motifs from ensembl mysql (protein) database to an ace file
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2011-05-16 15:02:43 $
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2011-07-18 10:51:57 $
 
 use lib $ENV{'CVS_DIR'};
 
@@ -51,7 +51,7 @@ if ($method ) {
 $log->write_to("Dumping methods".@methods."\n");
 
 # mysql database parameters
-my $dbhost = "ia64b";
+my $dbhost = "farmdb1";
 my $dbuser = "wormro";
 my $dbname = "worm_pep";
 $dbname = $database if $database;
