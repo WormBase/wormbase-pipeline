@@ -5,7 +5,7 @@
 # Dumps protein motifs from ensembl mysql (protein) database to an ace file
 #
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2011-07-18 10:51:57 $
+# Last updated on: $Date: 2011-07-19 08:54:03 $
 
 use lib $ENV{'CVS_DIR'};
 
@@ -16,17 +16,17 @@ use Wormbase;
 use Storable;
 use Log_files;
 
-my ($WPver, $database, $mysql, $method);
-my ($store, $test, $debug, $dump_dir);
+my ($WPver, @methods);
+my ($store, $test, $debug,$dump_dir,$dbname);
 
 GetOptions(
-	   "database:s" => \$database,
-	   "mysql"      => \$mysql,
-	   "method=s"   => \$method,
+	   "database:s" => \$dbname,
+	   "methods=s"   => \@methods,
 	   "store:s"   => \$store,
 	   "test"      => \$test,
 	   "debug:s"   => \$debug,
-           "dumpdir:s" => \$dump_dir,
+	   "dumpdir=s" => \$dump_dir,
+	   "dbname=s"  => \$dbname,
 	  );
 
 my $wormbase;
@@ -39,22 +39,17 @@ if ( $store ) {
 }
 
 my $log = Log_files->make_build_log($wormbase);
-$log->log_and_die("Please supply a valid location for the dumps") if not defined $dump_dir or not -d $dump_dir;
+$dump_dir ||= $wormbase->farm_dump;
 
 # define the names of the methods to be dumped
-my @methods;
-if ($method ) {
-  push(@methods,$method)
-}else{
-  @methods= qw(ncoils seg signalp tmhmm hmmpfam);
-}
+@methods = qw(Ncoils Seg Signalp Tmhmm Pfam) unless @methods;
+
 $log->write_to("Dumping methods".@methods."\n");
 
 # mysql database parameters
 my $dbhost = "farmdb1";
 my $dbuser = "wormro";
-my $dbname = "worm_pep";
-$dbname = $database if $database;
+$dbname ||= "worm_ensembl_elegans";
 print "Dumping motifs from $dbname\n";
 my $dbpass = "";
 
@@ -65,8 +60,8 @@ sub now {
 }
 
 # create output files
-open(ACE,">$dump_dir/".$dbname."_motif_info.ace") || die "cannot create ace file:$!\n";
-open(LOG,">$dump_dir/".$dbname."_motif_info.log") || die "cannot create log file:$!\n";
+open(ACE,">$dump_dir/".$dbname."_motif_info.ace") or $log->log_and_die("cannot create ace file:$!\n");
+open(LOG,">$dump_dir/".$dbname."_motif_info.log") or $log->log_and_die( "cannot create log file:$!\n");
 
 # make the LOG filehandle line-buffered
 my $old_fh = select(LOG);
@@ -90,33 +85,37 @@ my %method2analysis;
 print LOG "get mapping of method to analysis id [".&now."]:\n";
 my $sth = $dbh->prepare ( q{ SELECT analysis_id
                                FROM analysis
-                              WHERE program = ?
+                              WHERE logic_name = ?
                            } );
 
 foreach my $meth (@methods) {
     $sth->execute ($meth);
     (my $anal) = $sth->fetchrow_array;
     $method2analysis{$meth} = $anal;
-    $log->write_to("$meth  $anal\n");
+    $log->write_to("method: $meth => analyis_id: $anal\n");
 }
 
 # prepare the sql querie
-my $sth_f = $dbh->prepare ( q{ SELECT protein_id, seq_start, seq_end, hit_id, hit_start, hit_end, score
-                                 FROM protein_feature
-                                WHERE analysis_id = ?
+my $sth_f = $dbh->prepare ( q{ SELECT stable_id, seq_start, seq_end, hit_name, hit_start, hit_end, score
+                                 FROM protein_feature,translation_stable_id
+                                WHERE analysis_id = ? AND translation_stable_id.translation_id = protein_feature.translation_id
                              } );
 
 # get the motifs
 my %motifs;
 my %pfams;
+my %cds2wormpep;
+$wormbase->FetchData('cds2wormpep',\%cds2wormpep);
+
 foreach my $meth (@methods) {
   $log->write_to("processing $meth\n");
   $sth_f->execute ($method2analysis{$meth});
   my $ref = $sth_f->fetchall_arrayref;
   foreach my $aref (@$ref) {
-    my ($prot, $start, $end, $hid, $hstart, $hend, $score) = @$aref;
+    my ($_prot, $start, $end, $hid, $hstart, $hend, $score) = @$aref;
+    my $prot=($cds2wormpep{$_prot}||$_prot);
     my $line;
-    if ($meth eq "hmmpfam") {
+    if ($meth eq "Pfam") {
       if( $hid =~ /(\w+)\.\d+/ ) {
 	$hid = $1;
       }
@@ -131,12 +130,12 @@ foreach my $meth (@methods) {
 }
 
 # print ace file
-my $prefix = "WP";
-if( "$database" eq "worm_brigpep") {
-  $prefix = "BP";
-}
+my $prefix = $wormbase->wormpep_prefix;
+
+
 foreach my $prot (sort {$a cmp $b} keys %motifs) {
     print ACE "\n";
+    # cds2wormpep conversion
     print ACE "Protein : \"$prefix:$prot\"\n";
     foreach my $line (@{$motifs{$prot}}) {
         print ACE "$line\n";
@@ -151,7 +150,6 @@ $dbh->disconnect;
 close ACE;
 
 $log->write_to("\nEnd of Motif dump\n");
-print "\nEnd of Motif dump\n";
 
 $log->mail;
 exit(0);
