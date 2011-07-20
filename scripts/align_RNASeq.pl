@@ -58,7 +58,7 @@
 # by Gary Williams
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2011-07-15 10:46:29 $
+# Last updated on: $Date: 2011-07-20 15:47:59 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -306,7 +306,8 @@ if (!$expt) {
     foreach my $SRX (@SRX) {
       chdir "$RNASeqDir/$SRX";
       $wormbase->run_command("rm -rf tophat_out/", $log) unless ($noalign);
-      $wormbase->run_command("rm -rf cufflinks/genes.expr", $log);
+      $wormbase->run_command("rm -rf cufflinks/genes.fpkm_tracking", $log);
+      $wormbase->run_command("rm -rf cufflinks/isoforms.fpkm_tracking", $log);
       $wormbase->run_command("rm -rf TSL/TSL_evidence.ace", $log);
       $wormbase->run_command("rm -rf Introns/Intron.ace", $log);
     }
@@ -415,7 +416,7 @@ if (!$expt) {
   foreach my $SRX (@SRX) {
     $log->write_to("$SRX");
     if (-e "$SRX/tophat_out/accepted_hits.bam") {$log->write_to("\ttophat OK");} else {{$log->write_to("\ttophat ERROR");}}
-    if (-e "$SRX/cufflinks/genes.expr") {$log->write_to("\tcufflinks OK");} else {$log->write_to("\tcufflinks ERROR");}
+    if (-e "$SRX/cufflinks/genes.fpkm_tracking") {$log->write_to("\tcufflinks OK");} else {$log->write_to("\tcufflinks ERROR");}
     if (-e "$SRX/TSL/TSL_evidence.ace") {$log->write_to("\tTSL OK");} else {$log->write_to("\tTSL ERROR");}
     if (-e "$SRX/Introns/Intron.ace") {$log->write_to("\tIntrons OK");} else {$log->write_to("\tintron ERROR");}
     $log->write_to("\n");
@@ -431,14 +432,15 @@ if (!$expt) {
 # you tarzip them together and place them on a ftp site for me to
 # download."
     
-    if (-e "$SRX/cufflinks/genes.expr") {
-      open (EXPR, "<$SRX/cufflinks/genes.expr") || $log->log_and_die("Can't open $SRX/cufflinks/genes.expr\n");
+    if (-e "$SRX/cufflinks/genes.fpkm_tracking") {
+      open (EXPR, "<$SRX/cufflinks/genes.fpkm_tracking") || $log->log_and_die("Can't open $SRX/cufflinks/genes.fpkm_tracking\n");
       open (EXPROUT, ">$SRX.out") || $log->log_and_die("Can't open $SRX.out\n");
       while (my $line = <EXPR>) {
 	my @f = split /\s+/, $line;
-	if ($f[0] eq 'gene_id') {next;}
-	if ($f[5] == 0) {$f[5] = 0.0000000001}
-	if ($f[8] eq "OK") {print EXPROUT "$f[0]\t$f[5]\n"}
+	if ($f[0] eq 'tracking_id') {next;}
+	if ($f[0] =~ /CUFF/) {$log->log_and_die("Cufflinks for $SRX has failed to put the Gene IDs in the output file - problem with the GTF file?\n");}
+	if ($f[10] == 0) {$f[10] = 0.0000000001}
+	if ($f[9] eq "OK" || $f[9] eq "LOWDATA") {print EXPROUT "$f[0]\t$f[10]\n"}
       }
       close(EXPROUT);
       close (EXPR);
@@ -637,7 +639,7 @@ sub run_tophat {
 
 
 # now run cufflinks
-  if (!$check || !-e "cufflinks/genes.expr") {
+  if (!$check || !-e "cufflinks/genes.fpkm_tracking") {
     $log->write_to("run cufflinks\n");
     chdir "$RNASeqDir/$arg";
     mkdir "cufflinks", 0777;
@@ -1251,7 +1253,7 @@ sub Intron_stuff {
   foreach my $clone (keys %seqlength) {
     print $vfh "\nSequence : \"$clone\"\n";
     my $virtual = "${clone}:Confirmed_intron_RNASeq";
-          printf $vfh "S_Child Feature_data $virtual 1 $seqlength{$clone}\n";
+          printf $vfh "S_Child Feature_data $virtual 1 $seqlength{$clone}\n\n";
   }
   close($vfh);
 
