@@ -6,8 +6,8 @@
 # A simple script to send a check list to the person who will be performing the next
 # build to check the current build
 #
-# Last updated by: $Author: klh $
-# Last updated on: $Date: 2010-11-24 10:49:37 $
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2011-07-21 11:04:16 $
 use strict;
 use warnings;
 use lib $ENV{'CVS_DIR'};
@@ -156,7 +156,7 @@ if($clones) {
 
     $count = 0;
     foreach my $hd (@hd) {
-      if (! defined $hd->Feature(2)) {$log->write_to("Undefined object for ".$hd."\n");}
+      if (! defined $hd->Feature(2)) {$log->write_to("Undefined object for ".$hd."\n");next}
       print $hd->name,"\n";
       $count++;
       # check the Feature_data line
