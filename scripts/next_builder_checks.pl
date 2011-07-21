@@ -7,7 +7,7 @@
 # build to check the current build
 #
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2011-07-21 11:04:16 $
+# Last updated on: $Date: 2011-07-21 11:21:48 $
 use strict;
 use warnings;
 use lib $ENV{'CVS_DIR'};
@@ -237,13 +237,15 @@ if($wormpep){
 	$Mcount++ if (defined $pepObj->Motif_homol);
 	#print STDERR $pepObj->name," M\n" unless(defined $pepObj->Motif_homol);
     }
-    ($Pcount / scalar @newpeps < 0.5) ?
+    if ($newpeps[0]){ # else you get a funky division by zero
+     ($Pcount / scalar @newpeps < 0.5) ?
 	$log->error("ERROR: more than third ($Pcount / ".scalar @newpeps.") of new proteins dont have Pep_homols\n") :
 	$log->write_to("new proteins Pep_homols look ok\n");
 
-    ($Mcount / scalar @newpeps < 0.3) ?
+     ($Mcount / scalar @newpeps < 0.3) ?
 	$log->error("ERROR: only ($Mcount / ".scalar @newpeps.") of new proteins have Motif_homols\n") :
 	$log->write_to("new proteins Motif_homols look ok\n");
+    }
 }
 
 $ace->close if(defined $ace);
