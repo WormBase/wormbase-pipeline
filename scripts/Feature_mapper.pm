@@ -72,6 +72,9 @@ sub new
     my $self = Sequence_extract->invoke($database, $refresh,$wormbase);
 
     bless $self, $class;
+
+    $self->wormbase($wormbase);
+
     return $self;
 }
 
@@ -82,13 +85,27 @@ sub new
   Title   :   map_feature
   Usage   :   my @map_info = $mapper->map_feature("AH6","actgtacgtagcgagcaccgatcaggacgag","tgactagcggacagcgagcagctagctgat");
   Returns :   smallest sequence object that contains the given flanking seq and coords
-  Args    :   sequence obj as string, 2 flanking seqs as strings
+              of last bp of left flank and first bp of right flank. E.g. for a 4 bp feature:
 
+                        flank_L                          flank_R
+              actgtacgtagcgagcaccgatcaggacgagXXXXtgactagcggacagcgagcagctagctgat
+                                            ^    ^                       
+    
+              and for a 0-bp feature:
+
+
+              actgtacgtagcgagcaccgatcaggacgagTGACTACGTGCTATGCAGCGAGCAT
+                                            ^^
+
+              Note therefore that for 0-bp features (e.g. SL-sites), the returned coords define
+              the conventional extent of the feature and are thus ready for use; for non-0-bp
+              features however, the caller will need to so some +1/-1 adjustment to the coords
+              to make them define the extent of the feature itself.
 =cut
 
 
 sub map_feature {
-  my ($self, $seq, $flank_L, $flank_R) = @_;
+  my ($self, $seq, $flank_L, $flank_R, $min_len, $max_len) = @_;
   
   my ($left_coord, $right_coord);
   
@@ -111,9 +128,10 @@ sub map_feature {
     my $reg_len = ($chr_en - $chr_st + 1);
 
     my $dna = $self->Sub_sequence($chr_id, $chr_st - 1, $reg_len);
-    my ($dna_left_coord, $dna_right_coord) = $self->_check_for_match($dna,$flank_L, $flank_R);
-    
-    if (defined $dna_left_coord and defined $dna_right_coord) {
+    my @start_ends = $self->_check_for_match($dna,$flank_L, $flank_R, $min_len, $max_len);
+
+    if (@start_ends) {
+      my ($dna_left_coord, $dna_right_coord) = @{$start_ends[0]};
       my ($chr_left_coord, $chr_right_coord) = ($dna_left_coord + $chr_st - 1, $dna_right_coord + $chr_st - 1);
 
       #print " Feature maps to $chr_id $chr_left_coord, $chr_right_coord\n";
@@ -150,10 +168,9 @@ sub map_feature {
       #printf " Adjusted to %s %d %d\n", $seq, $left_coord, $right_coord;
 
       return ($seq, $left_coord, $right_coord);
-    } 
+    }
   }
   
-  print "Cant map to $seq\n";
   return 0;
 }
 
@@ -165,68 +182,78 @@ sub map_feature {
 
   Title   :   _check_for_match
   Usage   :   $self->_check_for_match($dna,"actgtacgtagcgagcaccgatcaggacgag","tgactagcggacagcgagcagctagctgat");
-  Returns :   coords of feature being mapped ie 1 base after the left flank ends and 1 before right flank starts
+  Returns :   coords of last bp of left flank and first bp of right flank. E.g. for a 4 bp feature:
 
-                        flank_L                                                     flank_R
-              actgtacgtagcgagcaccgatcaggacgag-----------------------------tgactagcggacagcgagcagctagctgat
-                                             ^                           ^ 
+                        flank_L                          flank_R
+              actgtacgtagcgagcaccgatcaggacgagXXXXtgactagcggacagcgagcagctagctgat
+                                            ^    ^                       
+    
+              and for a 0-bp feature:
+
+
+              actgtacgtagcgagcaccgatcaggacgagTGACTACGTGCTATGCAGCGAGCAT
+                                            ^^
+
   Args    :   dna as string, 2 flanking seqs as strings
 
-
-                        flank_L             vv       flank_R
-              actgtacgtagcgagcaccgatcaggacgagTGACTACGTGCTATGCAGCGAGCAT
-                                            RL
 =cut
 
-sub _check_for_match 
-  {
-    my ($self, $dna, $flank_L, $flank_R) = @_;
-    my ($rev_left,$rev_right,$offset);
-    my ($match_left,$match_right,$span);
+sub _check_for_match {
+  my ($self, $dna, $flank_L, $flank_R, $min_len, $max_len) = @_;
 
-    # make sure all in same case !
-    $dna = lc($dna);
-    $flank_L = lc($flank_L);
-    $flank_R = lc($flank_R);
+  my (@left_matches, @right_matches, @revleft_matches, @revright_matches, @good_pairs);
+  
+  # make sure all in same case !
+  $dna = lc($dna);
+  $flank_L = lc($flank_L);
+  $flank_R = lc($flank_R);
+  
+  # check forward strand
+  
+  while ($dna =~ /$flank_L/ig) {
+    push @left_matches, length($`) + length($flank_L), 
+  }
+  while($dna =~ /$flank_R/ig) {
+    push @right_matches, length($`) + 1;
+  }
+  foreach my $left_c (@left_matches) {
+    foreach my $right_c (@right_matches) {
+      my $flen = $right_c - $left_c - 1;
 
-    my $dna_length = length $dna;
-
-    # check forward strand
-    if ($dna =~ /$flank_L/i) {
-      $match_left = length ($`);
-    }
-    if ($dna =~ /$flank_R/i) {
-      $match_right = length ($`) + 1;
-    }
-
-    if( $match_left and $match_right ) {
-      $match_left += (length $flank_L);
-    }
-
-    # check rev strand
-    else  { 
-      $rev_left     = $self->DNA_revcomp($flank_L);
-      $rev_right    = $self->DNA_revcomp($flank_R);
-
-      if ($dna =~ /$rev_left/) {
-	$offset = length ($`);
-	$match_left = $offset +1 ;
-	
-	#only try the right if the left is success
-	if ($dna =~ /$rev_right/) {
-	  $offset = length ($`);
-	  $match_right = $offset + (length $flank_R);
-	}
+      if ((not defined $min_len or $flen >= $min_len) and
+          (not defined $max_len or $flen <= $max_len)) {
+        push @good_pairs, [$left_c, $right_c];
       }
     }
+  }
+
+  if (not @good_pairs) {
+    # check reverse strand
+    my $rev_left = $self->DNA_revcomp($flank_L);
+    my $rev_right =  $self->DNA_revcomp($flank_R);
     
-    if($match_left and $match_right ){ 
-      return ($match_left,$match_right);
+    while($dna =~ /$rev_left/ig) {
+      push @revleft_matches, length($`) + 1;
     }
-    else {
-      return undef;
+    while($dna =~ /$rev_right/ig) {
+      push @revright_matches, length($`) + length($flank_R);
+    }
+    
+    foreach my $left_c (@revleft_matches) {
+      foreach my $right_c (@revright_matches) {
+        my $flen = $left_c - $right_c - 1;
+        
+        if ((not defined $min_len or $flen >= $min_len) and
+            (not defined $max_len or $flen <= $max_len)) {
+          push @good_pairs, [$left_c, $right_c];
+        }
+      }
     }
   }
+
+  return @good_pairs;
+}
+
 
 ##########################################
 
@@ -362,7 +389,7 @@ sub get_flanking_sequence
   if (! defined $min_len) {$min_len = 30}
   my $flank1 = $min_len;
   my $flank2 = $min_len;
-                                                                                                                                                      
+
   # loop to extend the sequence
   my $matches1 = 2;              # force at least one test of the flank by saying the last (imaginary) test found 2 matches
   my $matches2 = 2;
@@ -376,13 +403,11 @@ sub get_flanking_sequence
     # get flanking sequences
     $flankseq1 = substr($seq, $pos1-$flank1+1, $flank1);
     $flankseq2 = substr($seq, $pos2, $flank2);
-                                                                                                                                                      
+
     # find the number of matches
     $matches1 = $self->_matches($seq, $flankseq1);
     $matches2 = $self->_matches($seq, $flankseq2);
-                                                                                                                                                      
-    #print uc($flankseq1) . " ($matches1) " . uc($flankseq2) ." ($matches2)\n";
-                                                                                                                                                      
+
     # if there are more than one match, extend the length of the flank
     if ($matches1 > 1) {
       $flank1++;
@@ -391,10 +416,10 @@ sub get_flanking_sequence
       $flank2++;
     }
   }
-                                                                                                                                                      
+
   # report the unique flanking sequences
   return (uc($flankseq1), uc($flankseq2));
-                                                                                                                                                      
+
 }
 
 ##########################################
@@ -428,7 +453,9 @@ sub suggest_fix
   # look for feature in currentdb
   # remap to current coordinates
 
-  my $dir = "/nfs/wormpub/DATABASES/current_DB/CHROMOSOMES";
+  my $current_db = $self->wormbase->database('current');
+  my $dir = "$current_db/CHROMOSOMES";
+
   foreach my $chromosome qw(I II III IV V X) {
     my $gff = "$dir/CHROMOSOME_${chromosome}.gff";
     open (GFF, "< $gff") || die "Can't open GFF file $gff\n";
@@ -441,7 +468,13 @@ sub suggest_fix
       if (!$f[8] || ($f[8] !~ /Feature \"$feature_id\"/)) {next;}
       my ($chromosome, $start, $end, $sense) = ($f[0], $f[3], $f[4], $f[6]);
       my ($indel, $change);
-      ($start, $end, $sense, $indel, $change) = Remap_Sequence_Change::remap_gff($chromosome, $start, $end, $sense, $version - 1, $version, @mapping_data);
+      ($start, $end, $sense, $indel, $change) = Remap_Sequence_Change::remap_gff($chromosome, 
+                                                                                 $start, 
+                                                                                 $end, 
+                                                                                 $sense, 
+                                                                                 $version - 1, 
+                                                                                 $version, 
+                                                                                 @mapping_data);
       # get clone or superlink in the 4 Kb region around the feature
       my $left_coord = $start - 2000;
       my $right_coord = $end + 2000;
@@ -616,6 +649,14 @@ sub _matches () {
 }
 
 
+sub wormbase {
+  my ($self, $wb) = @_;
 
+  if (defined $wb) {
+    $self->{_wormbase} = $wb;
+  }
+
+  return $self->{_wormbase};
+}
 
 1;
