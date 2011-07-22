@@ -51,8 +51,6 @@ foreach my $chrom (sort keys %$chr_lengths) {
 
   open my $out_fh, ">" . $wormbase->gff_splits . "/${chr_prefix}${chrom}_gmap2pmap.gff";
 
-  printf $out_fh "##sequence-region %s%s 1 %d\n", $chr_prefix, $chrom, $chr_lengths->{$chrom};
-
   if (exists $markers->{$chrom}) {
 
     # Sort all markers on the chromosome according to their genetic map position
