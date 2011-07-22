@@ -7,7 +7,7 @@
 # Usage : autoace_builder.pl [-options]
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2011-05-25 22:01:11 $
+# Last edited on: $Date: 2011-07-22 16:43:43 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -170,10 +170,17 @@ $wormbase->run_script( "make_agp_file.pl"                        , $log) if $agp
 
 #several GFF manipulation steps
 if ($gff_munge) {
+
   if ($wormbase->species eq 'elegans') {
     $wormbase->run_script( 'landmark_genes2gff.pl', $log); # this has to be run before GFFmunger.pl
+    $wormbase->run_script( 'web_data/interpolate_gmap2pmap.pl', $log);
   }
-  $wormbase->run_script( 'GFFmunger.pl -all', $log); # GFFmunger uses the files created by landmark_genes2gff.pl
+  $wormbase->run_script( 'web_data/map_translated_features_to_genome.pl', $log);
+
+  ###
+  $wormbase->run_script( 'GFFmunger.pl -all', $log); # GFFmunger uses the files created by the previous scripts
+  ###
+
   $wormbase->run_script( 'over_load_SNP_gff.pl' , $log);
   $wormbase->run_script( 'overload_rnai.pl'     , $log);
   
