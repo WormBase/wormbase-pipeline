@@ -9,7 +9,7 @@
 #
 #
 # Last updated by: $Author: klh $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2011-05-16 11:10:40 $        # quickly see when script was last changed and by whom
+# Last updated on: $Date: 2011-07-22 14:33:26 $        # quickly see when script was last changed and by whom
 
 
 $|=1;
@@ -115,19 +115,19 @@ my $mapper      = Feature_mapper->new($dbdir,undef, $wb);
 
 # sanity checks for the length of feature types
 my %sanity = (
-	      'SL1'          => 0,
-	      'SL2'          => 0,
-	      'polyA_site'   => 0,
-	      'polyA_signal_sequence' => 6,
-	      'binding_site' => -1,
-	      'binding_site_region' => -1,
-	      'segmental_duplication' => -1,
-	      'Genome_sequence_error' => -1,
-	      'transcription_end_site' => -1,
-	      'transcription_start_site' => -1,
-	      'promoter' => -1,
-	      'regulatory_region' => -1,
-	      'three_prime_UTR' => -1,
+	      'SL1'                      => [0,0],
+	      'SL2'                      => [0,0],
+	      'polyA_site'               => [0,0],
+	      'polyA_signal_sequence'    => [6,6],
+	      'transcription_end_site'   => [1,1],
+	      'transcription_start_site' => [1,1],
+	      'Genome_sequence_error'    => undef,
+	      'binding_site'             => undef,
+	      'binding_site_region'      => undef,
+	      'segmental_duplication'    => undef,
+	      'promoter'                 => undef,
+	      'regulatory_region'        => undef,
+	      'three_prime_UTR'          => undef,
 	      );
 
 # queue which Feature types you want to map
@@ -230,12 +230,33 @@ EOF
 	next;
       }
 
-      my @coords = $mapper->map_feature($smap_parent,$flanking_left,$flanking_right);
+      # note below that we pass through an expected mapping distance where possible. This
+      # can help with the mapping
+
+      my @coords = $mapper->map_feature($smap_parent,
+                                        $flanking_left,
+                                        $flanking_right, 
+                                        ($sanity{$query}) ? $sanity{$query}->[0] : undef,
+                                        ($sanity{$query}) ? $sanity{$query}->[1] : undef,
+          );
       if (!defined $coords[2]) {
-	$log->write_to("// ERROR: Can't map feature $feature on clone $clone flanking sequences: $flanking_left $flanking_right\n");
+	$log->write_to(sprintf("// ERROR: Cannot map feature %s on clone %s (%s) flanking sequences: %s %s\n", 
+                               $feature,
+                               $clone,
+                               ($sanity{$query}) ? "defined range @{$sanity{$query}}" : "no defined range",
+                               $flanking_left, 
+                               $flanking_right));
 	$log->error;
 
-	my @suggested_fix = $mapper->suggest_fix($feature, $sanity{$query}, $smap_parent, $flanking_left, $flanking_right, $version, @mapping_data);
+        # if the max leng is defined, and it is 0, we assert that all features of this kind are 0-length.
+        # this info is passed through to suggest_fix, which uses it to work out the correct coords in 
+	my @suggested_fix = $mapper->suggest_fix($feature, 
+                                                 ($sanity{$query} and $sanity{$query}->[0] == $sanity{$query}->[1]) ? $sanity{$query}->[0] : undef,
+                                                 $smap_parent, 
+                                                 $flanking_left, 
+                                                 $flanking_right, 
+                                                 $version, 
+                                                 @mapping_data);
 	if ($suggested_fix[4]) { # FIXED :-)
 	  $log->write_to("// Suggested fix for $feature : $suggested_fix[3]\n");
 	  $log->write_to("\nFeature : $feature\n");
@@ -260,52 +281,48 @@ EOF
 
       # munge returned coordinates to get the span of the mapped feature
       
-      if ($query eq "polyA_signal_sequence") {
+      if (abs($stop - $start) == 1) {
+        # this is  zero-length (i.e. between bases) feature. We cannot represent 
+        # these properly in Acedb as 0-length, so we instead represent them as 2bp features
+        # (including 1bp if each flank in the feature extent)
+        if ($start > $stop) {
+          $span = $start - $stop - 1;
+        }
+        else {
+          $span = $stop - $start - 1;
+        }
+      } else {
+        # non-zero-bp feature, therefore need to adjust for fact
+        # that reported coords contain 1bp of the flanks
 	if ($start < $stop) {
-	  $start++;
-	  $stop--;
+          $start++;
+          $stop--;
 	  $span = $stop - $start + 1;
 	}
 	else {
-	  $start--;
-	  $stop++;
+          $start--;
+          $stop++;
 	  $span = $start - $stop + 1;
 	}
       }
-      # else deal with butt-ended features (e.g. SL1, SL2 & polyA_site)
-      elsif ($start > $stop) {
-	$span = $start - $stop - 1;
-      }
-      else {
-	$span = $stop - $start - 1;
-      }
       
-      # check feature span is sane
-      if ( exists $sanity{$query} && (($span == $sanity{$query}) || ($sanity{$query} < 0)) ) {
-	
-	if ($adhoc) {
-	  print "$feature maps to $new_clone $start -> $stop, feature span is $span bp\n";
-	}
-	else {
-	  print OUTPUT "//$feature maps to $new_clone $start -> $stop, feature span is $span bp\n";
-	  print OUTPUT "\nSequence : \"$new_clone\"\n";
-	  print OUTPUT "Feature_object $feature $start $stop\n\n";
-
-          if ($clone ne $new_clone) {
-            $log->write_to("// Feature $feature maps to different clone than suggested $clone -> $new_clone; changing parent\n");
-            print OUTPUT "\nFeature : \"$feature\"\n";
-            print OUTPUT "Flanking_sequences $new_clone $flanking_left $flanking_right\n\n";
-          }
-	}
+      if ($adhoc) {
+        print "$feature maps to $new_clone $start -> $stop, feature span is $span bp\n";
       }
       else {
-	$log->write_to("// ERROR: $feature maps to $new_clone $start -> $stop, feature span is $span bp\n");
-	$log->error;
+        print OUTPUT "//$feature maps to $new_clone $start -> $stop, feature span is $span bp\n";
+        print OUTPUT "\nSequence : \"$new_clone\"\n";
+        print OUTPUT "Feature_object $feature $start $stop\n\n";
+        
+        if ($clone ne $new_clone) {
+          $log->write_to("// Feature $feature maps to different clone than suggested $clone -> $new_clone; changing parent\n");
+          print OUTPUT "\nFeature : \"$feature\"\n";
+          print OUTPUT "Flanking_sequences $new_clone $flanking_left $flanking_right\n\n";
+        }
       }
-    } #_ if match line
 
-    # lines that look like features but there is a problem eg. whitespace in flanks.
-    elsif (/^\"(\S+)\"/) {
+    } elsif (/^\"(\S+)\"/) {
+      # lines that look like features but there is a problem eg. whitespace in flanks.
       $log->write_to("// ERROR: $1 has a problem, please check flanking sequences!! (whitespace is one cause)\n");
       $log->error;
     }
