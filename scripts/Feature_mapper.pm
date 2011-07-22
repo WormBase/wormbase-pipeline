@@ -115,7 +115,7 @@ sub map_feature {
     ($chr_st, $chr_en) = ($chr_en, $chr_st);
   }
 
-  my ($max_extension, $extend_by) = (5, 1000);
+  my ($max_extension, $extend_by) = (5, 5000);
   
   for(my $cur_extension = 0; $cur_extension < $max_extension; $cur_extension++) {
     $chr_st -= ($cur_extension * $extend_by);
@@ -232,7 +232,6 @@ sub _check_for_match {
     foreach my $left_c (@revleft_matches) {
       foreach my $right_c (@revright_matches) {
         my $flen = $left_c - $right_c - 1;
-        
         if ((not defined $min_len or $flen >= $min_len) and
             (not defined $max_len or $flen <= $max_len)) {
           push @good_pairs, [$left_c, $right_c];
