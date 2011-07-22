@@ -109,6 +109,7 @@ sub get_all_alleles {
     return &_filter_alleles(\@alleles);
 }        
 
+
 =head2 get_all_allele
 
     Title   : get_all_allele
@@ -247,8 +248,14 @@ sub map {
   
   foreach my $x (@$alleles) {
     # $chromosome_name,$start,$stop
+    my ($min_len, $max_len);
 
-    my @map = $mapper->map_feature($x->Sequence->name,$x->Flanking_sequences->name,$x->Flanking_sequences->right->name);
+    if ($x->Type_of_mutation eq 'Substitution') {
+      my $from = $x->Type_of_mutation->right;
+      $min_len = $max_len = length($from);
+    }
+        
+    my @map = $mapper->map_feature($x->Sequence->name,$x->Flanking_sequences->name,$x->Flanking_sequences->right->name, $min_len, $max_len);
 
     if ($map[0] eq '0'){
       $log->write_to("ERROR: Couldn't map $x (${\$x->Public_name}) to sequence ${\$x->Sequence->name} with ${\$x->Flanking_sequences->name} and ${\$x->Flanking_sequences->right->name} (Remark: ${\$x->Remark})\n");
