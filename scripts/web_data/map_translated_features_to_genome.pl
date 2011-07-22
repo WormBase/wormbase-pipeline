@@ -21,6 +21,7 @@ use constant PHASE        => '.';
 use constant TOP_SOURCE   => 'translated_feature';
 use constant TOP_METHOD   => 'Motif';
 
+use constant OUT_FILE_SUFFIX => 'proteinmotifs';
 
 my ($acedb,
     $species,
@@ -94,7 +95,12 @@ if ($out_file) {
   } else {
     open $outfh, ">$out_file" or $log->log_and_die("Could not open $out_file for writing\n");
   }
-} 
+} else {
+  if ($wormbase->assembly_type eq 'contig') {
+    $out_file = $wormbase->gff_splits . "/" . OUT_FILE_SUFFIX . ".gff";
+    open $outfh, ">$out_file" or $log->log_and_die("Could not open $out_file for writing\n");
+  }
+}
 
 
 while (my $gene = &get_next_gene) {
@@ -184,8 +190,8 @@ while (my $gene = &get_next_gene) {
   }
 }
 
-foreach my $chr (sort keys %motifs_by_chr) {
-  &generate_gff($chr, $motifs_by_chr{$chr});
+foreach my $chr ($wormbase->get_chromosome_names(-prefix=>1, -mito=>1)) {
+  &generate_gff($chr);
 }
 
 
@@ -193,78 +199,79 @@ $log->mail;
 exit(0);
 
 sub generate_gff {
-  my ($chr, $motifs) = @_;
+  my ($chr) = @_;
 
   my $this_out_fh;
   
   if (defined $outfh) {
     $this_out_fh = $outfh;
   } else {
-    my $outf = $wormbase->gff_splits . "/" . $wormbase->chromosome_prefix . $chr . "_proteinmotifs.gff";
+    my $outf = $wormbase->gff_splits . "/${chr}_" . OUT_FILE_SUFFIX . ".gff";
     open($this_out_fh, ">$outf") or $log->log_and_die("Could not open $outf for writing\n");
   }
     
-  foreach my $motif (@$motifs) {
-    my ($refseq,$protein,$cds,$type,$mstart,$mstop,$start, $stop, $strand,$score,$id,$desc,$public_name, $exons) =
-        map { $motif->{$_} } qw/chrom protein cds type aa_start aa_stop start stop strand score id desc public_name exons/;
-    my @segs = @{$motif->{segs}};
-    
-    $strand = ($strand == -1 or $strand eq '-') ? "-" : "+";
-    $score  ||= SCORE;
-    
-    my $aarange = $mstart . '-' . $mstop;
-    
-    # Change the name of the group if filtering duplicates
-    # Doesn't make sense to identify these by their protein name
-    my $motif_name = ($filter) ? "$public_name-${type}.$id" : "$protein-$type.$id";
-    $motif_name =~ s/[;:]/_/g;
-    my $motif_id = "motif:$motif_name";
-    
-    my ($group, $full_group);
-    if ($gff3) {
-      $group =  "ID=$motif_id";
-      $full_group = "$group;CDS=$cds;Type=$type;Range=$aarange;Exons=$exons;Protein=$protein";
-      if ($desc) {
-        $desc =~ s/[\;]/\%3B/g;
-        $desc =~ s/[\=]/\%2C/g;
-        $desc =~ s/[\,]/\%3D/g;
-        $full_group .= qq{;Description=$desc};
-      }
-    } else {
-      $group = qq(Motif "$motif_name");
-      $full_group = join(" ; ", 
-                         $group,
-                         qq{Note "CDS=$cds"},
-                         qq{Note "Type=$type"}, 
-                         qq{Note "Range=$aarange"},
-                         qq{Note "Exons=$exons"},
-                         qq{Note "Protein=$protein"});
-      if ($desc) {
-        $full_group .= qq{ ; Note "Description=$desc"};
-      }
-    }
-    
-    if ($format eq 'segmented') {
-      # Create a top-level entry to ensure aggregation
-      print_gff($this_out_fh, $refseq,TOP_SOURCE,TOP_METHOD,$start,$stop,$score,$strand,PHASE,$full_group);
-      my $seg_count = 1;
-      foreach my $seg (sort { $a->start <=> $b->start } @segs) {
-        my $child_group;
-        if ($gff3) {
-          my $seg_id = $motif_id . "." . $seg_count++;
-          $child_group = "ID=$seg_id;Parent=$motif_id";
-        } else {
-          $child_group = qq(Motif "$motif_name");
+  if (exists $motifs_by_chr{$chr}) {
+    foreach my $motif (@{$motifs_by_chr{$chr}}) {
+      my ($refseq,$protein,$cds,$type,$mstart,$mstop,$start, $stop, $strand,$score,$id,$desc,$public_name, $exons) =
+          map { $motif->{$_} } qw/chrom protein cds type aa_start aa_stop start stop strand score id desc public_name exons/;
+      my @segs = @{$motif->{segs}};
+      
+      $strand = ($strand == -1 or $strand eq '-') ? "-" : "+";
+      $score  ||= SCORE;
+      
+      my $aarange = $mstart . '-' . $mstop;
+      
+      # Change the name of the group if filtering duplicates
+      # Doesn't make sense to identify these by their protein name
+      my $motif_name = ($filter) ? "$public_name-${type}.$id" : "$protein-$type.$id";
+      $motif_name =~ s/[;:]/_/g;
+      my $motif_id = "motif:$motif_name";
+      
+      my ($group, $full_group);
+      if ($gff3) {
+        $group =  "ID=$motif_id";
+        $full_group = "$group;CDS=$cds;Type=$type;Range=$aarange;Exons=$exons;Protein=$protein";
+        if ($desc) {
+          $desc =~ s/[\;]/\%3B/g;
+          $desc =~ s/[\=]/\%2C/g;
+          $desc =~ s/[\,]/\%3D/g;
+          $full_group .= qq{;Description=$desc};
         }
-        print_gff($this_out_fh, $refseq,SOURCE,METHOD,$seg->start,$seg->end,$score,$strand,PHASE,$child_group);
+      } else {
+        $group = qq(Motif "$motif_name");
+        $full_group = join(" ; ", 
+                           $group,
+                           qq{Note "CDS=$cds"},
+                           qq{Note "Type=$type"}, 
+                           qq{Note "Range=$aarange"},
+                           qq{Note "Exons=$exons"},
+                           qq{Note "Protein=$protein"});
+        if ($desc) {
+          $full_group .= qq{ ; Note "Description=$desc"};
+        }
       }
-    } else {
-      print_gff($this_out_fh, $refseq,SOURCE,METHOD,$start,$stop,$score,$strand,PHASE,$full_group);
+      
+      if ($format eq 'segmented') {
+        # Create a top-level entry to ensure aggregation
+        print_gff($this_out_fh, $refseq,TOP_SOURCE,TOP_METHOD,$start,$stop,$score,$strand,PHASE,$full_group);
+        my $seg_count = 1;
+        foreach my $seg (sort { $a->start <=> $b->start } @segs) {
+          my $child_group;
+          if ($gff3) {
+            my $seg_id = $motif_id . "." . $seg_count++;
+            $child_group = "ID=$seg_id;Parent=$motif_id";
+          } else {
+            $child_group = qq(Motif "$motif_name");
+          }
+          print_gff($this_out_fh, $refseq,SOURCE,METHOD,$seg->start,$seg->end,$score,$strand,PHASE,$child_group);
+        }
+      } else {
+        print_gff($this_out_fh, $refseq,SOURCE,METHOD,$start,$stop,$score,$strand,PHASE,$full_group);
+      }
     }
   }
 }
-
-
+  
 ################################
 sub get_next_gene {
   if ($iterator) {
