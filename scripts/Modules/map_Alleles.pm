@@ -252,9 +252,11 @@ sub map {
 
     if ($x->Type_of_mutation eq 'Substitution') {
       my $from = $x->Type_of_mutation->right;
-      $min_len = $max_len = length($from);
+      if ($from) {
+        $min_len = $max_len = length($from);
+      }
     }
-        
+
     my @map = $mapper->map_feature($x->Sequence->name,$x->Flanking_sequences->name,$x->Flanking_sequences->right->name, $min_len, $max_len);
 
     if ($map[0] eq '0'){
@@ -282,14 +284,19 @@ sub map {
       }
     } 
 
-    # from flanks to variation
-    if ($map[2] > $map[1]){
-      $map[1]++;
-      $map[2]--;
-    }
-    else {
-      $map[1]--;
-      $map[2]++;
+    # from flanks to variation. If the retured coords defined a 2bp span, then
+    # the flanked feature is 0bp. In this case, we leave the coords as they are
+    # (i.e. including 1bp from each flank), because this this the only way in 
+    # which Acedb/GFF allows us to define 0-bp features
+    if (abs($map[2] - $map[1]) != 1) {
+      if ($map[2] > $map[1]){
+        $map[1]++;
+        $map[2]--;
+      }
+      else {
+        $map[1]--;
+        $map[2]++;
+      }
     }
     
     #------------------------------------------------------------------------
