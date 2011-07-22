@@ -66,8 +66,7 @@ our (@ISA);
 
 =cut
 
-sub new
-  {
+sub new {
     my ($class,$database,$refresh,$wormbase) = @_;
     my $self = Sequence_extract->invoke($database, $refresh,$wormbase);
 
@@ -210,12 +209,9 @@ sub _check_for_match {
   
   # check forward strand
   
-  while ($dna =~ /$flank_L/ig) {
-    push @left_matches, length($`) + length($flank_L), 
-  }
-  while($dna =~ /$flank_R/ig) {
-    push @right_matches, length($`) + 1;
-  }
+  @left_matches = $self->_check_for_match_left($dna, $flank_L, 0);
+  @right_matches = $self->_check_for_match_right($dna, $flank_R, 0);
+
   foreach my $left_c (@left_matches) {
     foreach my $right_c (@right_matches) {
       my $flen = $right_c - $left_c - 1;
@@ -229,15 +225,9 @@ sub _check_for_match {
 
   if (not @good_pairs) {
     # check reverse strand
-    my $rev_left = $self->DNA_revcomp($flank_L);
-    my $rev_right =  $self->DNA_revcomp($flank_R);
     
-    while($dna =~ /$rev_left/ig) {
-      push @revleft_matches, length($`) + 1;
-    }
-    while($dna =~ /$rev_right/ig) {
-      push @revright_matches, length($`) + length($flank_R);
-    }
+    @revleft_matches = $self->_check_for_match_left($dna, $flank_L, 1);
+    @revright_matches = $self->_check_for_match_right($dna, $flank_R, 1);
     
     foreach my $left_c (@revleft_matches) {
       foreach my $right_c (@revright_matches) {
@@ -253,6 +243,47 @@ sub _check_for_match {
 
   return @good_pairs;
 }
+
+
+sub _check_for_match_left {
+  my ($self, $dna, $flank, $rev) = @_;
+
+  my @matches;
+
+  if ($rev) {
+    my $revflank = $self->DNA_revcomp($flank);
+    while($dna =~/$revflank/ig) {
+      push @matches, length($`) + 1;
+    }
+  } else {
+    while($dna =~ /$flank/ig) {
+      push @matches, length($`) + length($flank);
+    }
+  }
+
+  return @matches;
+}
+
+
+sub _check_for_match_right {
+  my ($self, $dna, $flank, $rev) = @_;
+  
+  my @matches;
+  
+  if ($rev) {
+    my $revflank = $self->DNA_revcomp($flank);
+    while($dna =~ /$revflank/ig) {
+      push @matches, length($`) + length($flank);
+    }
+  } else {
+    while($dna =~ /$flank/ig) {
+      push @matches, length($`) + 1;
+    }
+  }
+  
+  return @matches;
+}
+
 
 
 ##########################################
@@ -346,9 +377,9 @@ sub check_overlapping_CDS
 
 ##########################################
 
-=head2 get_flanking_sequence
+=head2 _get_flanking_sequence
 
-  Title   :   get_flanking_sequence
+  Title   :   _get_flanking_sequence
   Usage   :   my @flank_seq = $mapper->get_flanking_sequence("$seq", 1000, 2000);
   Returns :   array of two uppercase sequence strings of 30 bases or 
               more which uniquely define a region
@@ -361,11 +392,16 @@ sub check_overlapping_CDS
               start/end coordinates of the region relative to that seq obj
 	      (optional) the minimum length you want the flanking sequences to be, defaults to 30
 
+  IMPORTANT NOTE: The returned left flank will end at coord $pos1, and the returned right-flank will
+                  start at $pos2 - in other words, the returned flanks will overlap the given extent
+                  by 1bp on each side. Therefore, in order to get the flanking sequence for a feature with 
+                  extent defined by $x - $y, this method should be called with $pos1 = $x-1 and $pos2 - $x+1. 
+                  The reason for this hoopla is to be able to deal with 0-bp features (which can only be
+                  defined with a 2bp extent)
+ 
 =cut
 
-sub get_flanking_sequence
-{
-
+sub _get_flanking_sequence {
   my ($self, $clone, $pos1, $pos2, $min_len) = @_;
 
 
@@ -422,6 +458,39 @@ sub get_flanking_sequence
 
 }
 
+
+=head2 get_flanking_sequence_for_feature
+
+  Title   :   get_flanking_sequence_for_feature
+  Usage   :   my @flank_seq = $mapper->get_flanking_sequence($seq, 100, 105);
+  Returns :   array of two uppercase sequence strings of 30 bases or 
+              more which uniquely define a region
+    	      if a unique flanking sequence cannot be produced within the 
+              bounds of this clone and the next larger sequence object 
+              (superlink or chromosome) needs to be used, then 'undef' 
+              is returned.
+  Args    :   1. any seq obj as string, 
+              2. start/end coordinates of the feature you wish to generate flanks for, relative to that seq obj
+              3. whether or not given feature is 0-length
+	      4. (optional) the minimum length you want the flanking sequences to be, defaults to 30
+
+  NOTE: when abs(end - start) == 1, the code cannot tell whether the supplied extent is
+        a 2-bp feature or a 0-bp feature (lying in between the two basws). This information
+        should therefore be supplied as the third arg
+=cut
+
+sub get_flanking_sequence_for_feature {
+  my ($self, $clone, $start, $end, $is_zero_length, $min_flank_length) = @_;
+
+  if (abs($end - $start) != 1 or not $is_zero_length) {
+    $start--;
+    $end++;
+  }
+
+  return $self->_get_flanking_sequence($clone, $start, $end, $min_flank_length);
+  
+}
+
 ##########################################
 =head2 suggest_fix
 
@@ -433,7 +502,7 @@ sub get_flanking_sequence
               explanation for the suggested change
               1 = fixed, 0 = not fixed
   Args    :   Feature ID
-              expected length of the feature, or -1 if the type of feature does not have a single fixed length
+              is_zero_length - 1 if the given feature is a 0-length feature (e.g. SL1, SL2), 0/undef otherwise
               any seq obj as string, e.g 'AC3'
               left and right flanking sequences that were tried
               version of database
@@ -441,10 +510,9 @@ sub get_flanking_sequence
 
 =cut
 
-sub suggest_fix
-{
+sub suggest_fix {
 
-  my ($self, $feature_id, $length, $clone, $flank_L, $flank_R, $version, @mapping_data) = @_;
+  my ($self, $feature_id, $expected_length, $clone, $flank_L, $flank_R, $version, @mapping_data) = @_;
   my @result;
   my $FIXED = 1;
   my $NOT_FIXED = 0;
@@ -456,8 +524,8 @@ sub suggest_fix
   my $current_db = $self->wormbase->database('current');
   my $dir = "$current_db/CHROMOSOMES";
 
-  foreach my $chromosome qw(I II III IV V X) {
-    my $gff = "$dir/CHROMOSOME_${chromosome}.gff";
+  foreach my $chromosome ($self->wormbase->get_chromosome_names(-prefix => 1)) {
+    my $gff = "$dir/${chromosome}.gff";
     open (GFF, "< $gff") || die "Can't open GFF file $gff\n";
 
     while (my $line = <GFF>) {
@@ -475,20 +543,32 @@ sub suggest_fix
                                                                                  $version - 1, 
                                                                                  $version, 
                                                                                  @mapping_data);
+
+      # when getting new flanks, the returned flanks will include 1bp on each side of the 
+      # extent that we supply. We therefore need to "extend" the feature by 1bp in each direction.
+
+      # 0bp features appear in the GFF files as 2bp features. The GFF extent for these 
+      # already includes 1bp of sequence. These therefore do not need adjustment. But how can 
+      # we tell these from real 2bp features? The only option is to check the given min_len and
+      # max_len
+      if (abs($end - $start) != 1 or not defined $expected_length or $expected_length != 0) {
+        $start--;
+        $end++;
+      }
+
       # get clone or superlink in the 4 Kb region around the feature
       my $left_coord = $start - 2000;
       my $right_coord = $end + 2000;
       my $new_clone;
-      # shift the coords in zero-based coordinates
-      ($new_clone, $left_coord, $right_coord) = $self->LocateSpan($chromosome, $left_coord-1, $right_coord-1);
+
+      ($new_clone, $left_coord, $right_coord) = $self->LocateSpan($chromosome, $left_coord, $right_coord);
       $left_coord += 2000;
       $right_coord -= 2000;
-      $left_coord++; # convert back to human coords
-      $right_coord++;
+
       if ($sense eq '+') {
-	($flank_L, $flank_R) = $self->get_flanking_sequence($new_clone, $left_coord, $right_coord);
+	($flank_L, $flank_R) = $self->_get_flanking_sequence($new_clone, $left_coord, $right_coord);
       } else {
-	($flank_L, $flank_R) = $self->get_flanking_sequence($new_clone, $right_coord, $left_coord);
+	($flank_L, $flank_R) = $self->_get_flanking_sequence($new_clone, $right_coord, $left_coord);
       }
       if (defined $flank_L) {
 	return ($new_clone, $flank_L, $flank_R, "New flanking sequences remapped from position in previous WormBase release", $FIXED);
@@ -498,89 +578,55 @@ sub suggest_fix
     close (GFF);
   }
 
-
   # If that didn't work, try to repair the existing flanking sequences
 
   my $dna = uc $self->Sub_sequence($clone);
   $flank_L = uc $flank_L;
   $flank_R = uc $flank_R;
 
-
   # check for non-ACGT characters in the flanking sequences
   if ($flank_L =~ s/\s//g || $flank_R =~ s/\s//g) {
-    @result = ($clone,  $flank_L, $flank_R, "Space characters were found in the flanking sequences and corrected", $FIXED);
-    return;
+    return ($clone,  $flank_L, $flank_R, "Space characters were found in the flanking sequences and corrected", $FIXED);
   } elsif ($flank_L =~ s/[^ACGT]//g || $flank_R =~ s/[^ACGT]//g) {
-    @result = ($clone,  $flank_L, $flank_R, "Non-ACGT characters were found in the flanking sequences and corrected", $FIXED);
-    return;
+    return ($clone,  $flank_L, $flank_R, "Non-ACGT characters were found in the flanking sequences and corrected", $FIXED);
   }
   
+  # finally, if one of the flanking sequences maps uniquely, and a given feature length
+  # is given, suggest another flank
+  if (defined $expected_length) {
+    my $total_hits = 0;
 
-  # which flank has an exact match in which orientation?
-  my @matchesR = $self->_matches($dna, $flank_R);
-  my @matchesL = $self->_matches($dna, $flank_L);
+    my @left_hits_for = $self->_check_for_match_left($dna, $flank_L, 0); $total_hits += scalar(@left_hits_for);
+    my @left_hits_rev = $self->_check_for_match_right($dna, $flank_R, 0); $total_hits += scalar(@left_hits_rev);
 
-  # check rev strand
-  my $rev_flank_R = $self->DNA_revcomp($flank_R);
-  my $rev_flank_L = $self->DNA_revcomp($flank_L);
-  my @rev_matchesR = $self->_matches($dna, $rev_flank_R);
-  my @rev_matchesL = $self->_matches($dna, $rev_flank_L);
+    my @right_hits_for = $self->_check_for_match_left($dna, $flank_L, 1); $total_hits += scalar(@right_hits_for);
+    my @right_hits_rev = $self->_check_for_match_left($dna, $flank_R, 1); $total_hits += scalar(@right_hits_rev);
 
-  # two missing flanking sequences: nothing can be done
-  if (!@matchesR && !@matchesL && !@rev_matchesR && !@rev_matchesL) {
-    @result = ($clone,  $flank_L, $flank_R, "Neither of the flanking sequences map - nothing can be done with this", $NOT_FIXED);
-    return @result;
-  }
+    if ($total_hits == 1) {
+      my ($left_c, $right_c);
+      if (@left_hits_for) {
+        ($left_c) = @left_hits_for;
+        $right_c = $left_c + $expected_length + 1;
+      } elsif (@right_hits_for) {
+        ($right_c) = @right_hits_for;
+        $left_c = $right_c - $expected_length - 1;
+      } elsif (@left_hits_rev) {
+        ($left_c) = @left_hits_rev;
+        $right_c = $left_c - $expected_length - 1;
+      } elsif (@right_hits_rev) {
+        ($right_c) = @right_hits_rev;
+        $left_c = $right_c + $expected_length + 1;
+      }
 
-
-  # more than one match on both flanks
-  if (scalar @matchesR > 1 && scalar @matchesL > 1 || scalar @rev_matchesR > 1 && scalar @rev_matchesL > 1 ) {
-    @result = ($clone,  $flank_L, $flank_R, "Both flanks match more than once - nothing can be done with this", $NOT_FIXED);
-    return @result;
-  }
-
-
-  # more than one match on one flank
-  # this needs work to check each of the multiple hits to see which is closest to the flank with one hit
-  if (scalar @matchesR == 1 && scalar @matchesL > 1 || scalar @rev_matchesR == 1 && scalar @rev_matchesL > 1 ) {
-    @result = ($clone,  $flank_L, $flank_R, "Left flank matches more than once - nothing can be done with this", $NOT_FIXED);
-    return @result;
-
-  } elsif (scalar @matchesL == 1 && scalar @matchesR > 1 || scalar @rev_matchesL == 1 && scalar @rev_matchesR > 1) {
-    @result = ($clone,  $flank_L, $flank_R, "Right flank matches more than once - nothing can be done with this", $NOT_FIXED);
-    return @result;
-  }
-
-  # is the feature a fixed size?
-  if ($length ne -1) {
-    my ($start, $end);
-    if (scalar @matchesR == 1) {
-      $end = $matchesR[0];
-      $start = $end - $length -1;
-      ($flank_L, $flank_R) = $self->get_flanking_sequence($clone, $start+1, $end+1); # convert pos to human coords
-      return ($clone,  $flank_L, $flank_R, "Left flank sequence has been updated based on the right flank position", $FIXED);
-
-    } elsif (scalar @matchesL == 1) {
-      $start = $matchesL[0] + length ($flank_L) - 1;
-      $end = $start + $length +1;
-      ($flank_L, $flank_R) = $self->get_flanking_sequence($clone, $start+1, $end+1); # convert pos to human coords
-      return ($clone,  $flank_L, $flank_R, "Right flank sequence has been updated based on the left flank position", $FIXED);
-
+      ($flank_L, $flank_R) = $self->_get_flanking_sequence($clone, $left_c, $right_c);
       
-    } elsif (scalar @rev_matchesR == 1) {
-      $end = $rev_matchesR[0] + length ($flank_R) - 1;
-      $start = $end + $length +1;
-      ($flank_L, $flank_R) = $self->get_flanking_sequence($clone, $start+1, $end+1); # convert pos to human coords
-      return ($clone,  $flank_L, $flank_R, "Left flank sequence has been updated based on the right flank position (reverse sense)", $FIXED);
-
-    } elsif (scalar @rev_matchesL == 1) {
-      $start = $rev_matchesL[0];
-      $end = $start - $length -1;
-      ($flank_L, $flank_R) = $self->get_flanking_sequence($clone, $start+1, $end+1); # convert pos to human coords
-      return ($clone,  $flank_L, $flank_R, "Right flank sequence has been updated based on the left flank position (reverse sense)", $FIXED);
-
+      if (defined $flank_L and defined $flank_R) {
+        return ($clone, $flank_L, $flank_R, "Found unique match for one flank, extracted other based on positin", $FIXED);
+      }
     }
+
   }
+
 
   # can't do anything else
   return ($clone,  $flank_L, $flank_R, "Can't suggest a fix for this", $NOT_FIXED);
