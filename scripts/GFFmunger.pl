@@ -4,8 +4,8 @@
 # 
 # by Dan Lawson
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2011-04-28 15:31:08 $
+# Last updated by: $Author: klh $
+# Last updated on: $Date: 2011-07-22 16:43:00 $
 #
 # Usage GFFmunger.pl [-options]
 
@@ -29,31 +29,35 @@ use Ace;
 ##################################################
 my ($help, $debug, $test, $verbose, $store, $wormbase,$gffdir,$datadir);
 
-my $all;      # All of the following:
-my $landmark; #   Landmark genes
-my $UTR;      #   UTRs 
-my $WBGene;   #   WBGene spans
-my $CDS;      #   CDS overload
-my $rnai;     #   RNAi
-my $chrom;    # single chromosome mode
+my $all;       # All of the following:
+my $landmark;  #   Landmark genes
+my $motifs;    #   Protein motifs mapped down to genome
+my $gmap2pmap; #   Physical positions for genes based on interpolation using GMap
+my $UTR;       #   UTRs 
+my $WBGene;    #   WBGene spans
+my $CDS;       #   CDS overload
+my $rnai;      #   RNAi
+my $chrom;     # single chromosome mode
 my $version;
 
 GetOptions (
-	    "all"       => \$all,
-	    "landmark"  => \$landmark,
-	    "UTR"       => \$UTR,
-	    "CDS"       => \$CDS,
-	    "chrom:s"   => \$chrom,
-	    "gff:s"     => \$gffdir,
-	    "splits:s"  => \$datadir,
-	    "release:s" => \$version,
-            "help"      => \$help,
-            "debug=s"   => \$debug,
-	    "test"      => \$test,
-	    "verbose"   => \$verbose,
-	    "store:s"   => \$store,
-	    'rnai'      => \$rnai,
-	    );
+  "all"        => \$all,
+  "landmark"   => \$landmark,
+  "motifs"     => \$motifs,
+  "gmap2pmap"  => \$gmap2pmap,
+  "UTR"        => \$UTR,
+  "CDS"        => \$CDS,
+  "chrom:s"    => \$chrom,
+  "gff:s"      => \$gffdir,
+  "splits:s"   => \$datadir,
+  "release:s"  => \$version,
+  "help"       => \$help,
+  "debug=s"    => \$debug,
+  "test"       => \$test,
+  "verbose"    => \$verbose,
+  "store:s"    => \$store,
+  'rnai'       => \$rnai,
+    );
 
 if ( $store ) {
   $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
@@ -93,33 +97,32 @@ if ($version) {
 
 $datadir ||= $wormbase->gff_splits;
 $gffdir  ||= $wormbase->gff;
-my @gff_files;
+my @file_prefices;
 
 # prepare array of file names and sort names
 
 if (defined($chrom)){
-    push(@gff_files,$chrom);
+  push(@file_prefices,$chrom);
 }
 else {
-    if ($wormbase->assembly_type eq 'contig'){
-	  @gff_files = ($wormbase->species);
-    } else {
-          @gff_files = $wormbase->get_chromosome_names('-prefix' => 1, '-mito' => 1);
-    }
- }
+  if ($wormbase->assembly_type eq 'contig'){
+    @file_prefices = ($wormbase->species);
+  } else {
+    @file_prefices = $wormbase->get_chromosome_names('-prefix' => 1, '-mito' => 1);
+  }
+}
 
 # check to see if full chromosome gff dump files exist
-foreach my $file (@gff_files) {
-    unless (-e "$gffdir/$file.gff") {
-	&usage("No GFF file");
-    }
-    if (-e -z "$gffdir/$file.gff") {
-	&usage("Zero length GFF file");
-    }
+foreach my $filep (@file_prefices) {
+  unless (-e "$gffdir/$filep.gff") {
+    &usage("No GFF file");
+  }
+  if (-e -z "$gffdir/$filep.gff") {
+    &usage("Zero length GFF file");
+  }
 }
 
 
-my $addfile;
 my $gffpath;
 
 
@@ -138,11 +141,6 @@ if ($CDS || $all) {
     $log->write_to("overload_GFF_CDS_lines.pl -gff $gffdir\n");
     $wormbase->run_script("overload_GFF_CDS_lines.pl -gff $gffdir", $log);
   }
-  foreach my $file (@gff_files) {
-    next if ($file eq ""); 
-    system ("mv -f $gffdir/$file.CSHL.gff $gffdir/$file.gff");        # copy *.CSHL.gff files back to *.gff name
-  }
-
 }
 
 ############################################################
@@ -164,29 +162,41 @@ if (defined($chrom)){
 # loop through each GFF file                               #
 ############################################################
 
-foreach my $file (@gff_files) {
+foreach my $filep (@file_prefices) {
 
-  next if ($file eq "");               # end loop if no filename
+  next if ($filep eq "");               # end loop if no filename
+
+  $gffpath = "$gffdir/${filep}.gff";
+  $log->write_to("# File $filep\n");
     
-  $gffpath = "$gffdir/${file}.gff";
-
-  $log->write_to("# File $file\n");
+  my @addfiles;
   
-  if (($landmark || $all) && ($file ne "CHROMOSOME_MtDNA") && ($wormbase->species eq 'elegans')) {
-    $log->write_to("# Adding ${file}_landmarks.gff file\n");
-    $addfile = $wormbase->assembly_type eq 'contig' ? "$datadir/landmarks.gff" : "$datadir/${file}_landmarks.gff";
-    &addtoGFF($addfile,$gffpath);
+  if (($landmark || $all) && ($filep ne "CHROMOSOME_MtDNA") && ($wormbase->species eq 'elegans')) {
+    push @addfiles, "$datadir/${filep}_landmarks.gff";
+  }
+
+  if (($gmap2pmap or $all) and $wormbase->species eq 'elegans') {
+    push @addfiles, "$datadir/${filep}_gmap2pmap.gff";
+  }
+
+  if ($motifs or $all) {
+    push @addfiles, $wormbase->assembly_type eq 'contig' ? "$datadir/proteinmotifs.gff" : "$datadir/${filep}_proteinmotifs.gff";
   }
 
   if ($UTR || $all) {
-    $log->write_to("# Adding ${file}_UTR.gff file\n");
-    $addfile = $wormbase->assembly_type eq 'contig' ? "$datadir/UTR.gff" : "$datadir/${file}_UTR.gff";
-    &addtoGFF($addfile,$gffpath);
+    push @addfiles, $wormbase->assembly_type eq 'contig' ? "$datadir/UTR.gff" : "$datadir/${filep}_UTR.gff";
   }
-  
-  $log->write_to("\n");
-  
-  unless ($file =~ (/MtDNA/)) {
+
+  foreach my $addfile (@addfiles) {
+    if (-e $addfile) {
+      $log->write_to("# Adding $addfile file\n");
+      &addtoGFF($addfile,$gffpath);
+    } else {
+      $log->log_and_die("Could not find $addfile - badness\n");
+    }
+  }
+
+  unless ($filep =~ (/MtDNA/)) {
     &check_its_worked($gffpath) if $all;
   }
 }
@@ -197,7 +207,7 @@ foreach my $file (@gff_files) {
 
 
 if ($wormbase->assembly_type eq 'contig') {
-  my ($file) = @gff_files;
+  my ($file) = @file_prefices;
   my $prefix = $wormbase->chromosome_prefix;
   $wormbase->check_file("$gffdir/${file}.gff", $log,
 			minsize => 1500000,
@@ -206,7 +216,7 @@ if ($wormbase->assembly_type eq 'contig') {
 			);
 
 } else {
-  foreach  my $file (@gff_files) {
+  foreach  my $file (@file_prefices) {
     my $minsize = ($file=~/random|un/)?350000:1500000;
     $wormbase->check_file("$gffdir/${file}.gff", $log,
 			  minsize => $minsize,
