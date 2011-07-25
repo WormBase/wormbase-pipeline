@@ -7,7 +7,7 @@
 # Do fast overlap matching of positions of two sets of things.
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2010-12-09 14:31:32 $      
+# Last updated on: $Date: 2011-07-25 15:17:26 $      
 
 =pod
 
@@ -84,6 +84,9 @@ Routines to read GFF files from the database defined in $wormbase
 @list = $ovlp->get_twinscan_transcripts($chromosome)
 @list = $ovlp->get_twinscan_exons($chromosome)
 @list = $ovlp->get_genelets($chromosome)
+@list = $ovlp->get_RNASeq_splice($chromosome)
+@list = $ovlp->get_Aggregated_CDS_exons($chromosome)
+@list = $ovlp->get_Aggregated_CDS_introns($chromosome)
 @list = $ovlp->get_mgene_transcripts($chromosome)
 @list = $ovlp->get_mgene_exons($chromosome)
 @list = $ovlp->get_transposons($chromosome)
@@ -1271,6 +1274,85 @@ sub get_genelets {
      method			=> "genelets",
      gff_source			=> "RNASEQ.Hillier",
      gff_type			=> "CDS",
+     ID_after			=> "CDS\\s+",
+   );
+
+  return $self->read_GFF_file($chromosome, \%GFF_data);
+
+}
+
+=head2
+
+    Title   :   get_RNASeq_splice
+    Usage   :   my @gff = $ovlp->get_RNASeq_splice($chromosome)
+    Function:   reads the GFF data for RNASeq spliced introns
+    Returns :   list of lists for GFF data
+    Args    :   chromosome number
+
+=cut
+
+sub get_RNASeq_splice {
+  my $self = shift;
+  my ($chromosome) = @_;
+
+  my %GFF_data = 
+   (
+     method			=> "RNASeq_splice",
+     gff_source			=> "RNASeq_splice",
+     gff_type			=> "intron",
+     # no ID as it is a Feature_data object
+     homology                   => 1, # force it to store the score even though this is not a homology object 
+   );
+
+  return $self->read_GFF_file($chromosome, \%GFF_data);
+
+}
+
+=head2
+
+    Title   :   get_Aggregated_CDS_introns
+    Usage   :   my @gff = $ovlp->get_Aggregated_CDS_introns($chromosome)
+    Function:   reads the GFF data for the Hilllier Aggregated CDS introns
+    Returns :   list of lists for GFF data
+    Args    :   chromosome number
+
+=cut
+
+sub get_Aggregated_CDS_introns {
+  my $self = shift;
+  my ($chromosome) = @_;
+
+  my %GFF_data = 
+   (
+     method			=> "Aggregated_CDS_introns",
+     gff_source			=> "RNASEQ.Hillier.Aggregate",
+     gff_type			=> "intron",
+     ID_after			=> "CDS\\s+",
+   );
+
+  return $self->read_GFF_file($chromosome, \%GFF_data);
+
+}
+
+=head2
+
+    Title   :   get_Aggregated_CDS_exons
+    Usage   :   my @gff = $ovlp->get_Aggregated_CDS_exons($chromosome)
+    Function:   reads the GFF data for the Hilllier Aggregated CDS exons
+    Returns :   list of lists for GFF data
+    Args    :   chromosome number
+
+=cut
+
+sub get_Aggregated_CDS_exons {
+  my $self = shift;
+  my ($chromosome) = @_;
+
+  my %GFF_data = 
+   (
+     method			=> "Aggregated_CDS_exons",
+     gff_source			=> "RNASEQ.Hillier.Aggregate",
+     gff_type			=> "exon",
      ID_after			=> "CDS\\s+",
    );
 
