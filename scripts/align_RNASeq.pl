@@ -58,7 +58,7 @@
 # by Gary Williams
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2011-07-20 15:47:59 $
+# Last updated on: $Date: 2011-07-25 14:07:07 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -460,7 +460,7 @@ if (!$expt) {
   my $splice_file = $wormbase->misc_dynamic."/RNASeq_splice_${species}.ace";
   chdir $RNASeqDir;
   $status = $wormbase->run_command("rm -f $splice_file", $log);
-  $status = $wormbase->run_command("cat */Introns/virtual_objects.elegans.RNASeq.ace > $splice_file", $log);
+  $status = $wormbase->run_command("cat */Introns/virtual_objects.${species}.RNASeq.ace > $splice_file", $log);
   $status = $wormbase->run_script("acezip.pl -file $splice_file", $log);
   $status = $wormbase->run_command("cat */Introns/Intron.ace >> ${splice_file}.tmp", $log);
   $status = $wormbase->run_script("acezip.pl -file ${splice_file}.tmp", $log);
@@ -1253,7 +1253,7 @@ sub Intron_stuff {
   foreach my $clone (keys %seqlength) {
     print $vfh "\nSequence : \"$clone\"\n";
     my $virtual = "${clone}:Confirmed_intron_RNASeq";
-          printf $vfh "S_Child Feature_data $virtual 1 $seqlength{$clone}\n\n";
+    printf $vfh "S_Child Feature_data $virtual 1 $seqlength{$clone}\n\n";
   }
   close($vfh);
 
