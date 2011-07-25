@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl -w
-# Last updated by: $Author: mh6 $     
-# Last updated on: $Date: 2011-07-19 13:35:16 $      
+# Last updated by: $Author: gw3 $     
+# Last updated on: $Date: 2011-07-25 14:23:56 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -51,6 +51,7 @@ if( $species eq 'elegans') {
   if(grep(/$species/, map(lc $_,  @core_organisms))){  #other core (tierII) species)
     &parse_homol_data           if $homol;
     &parse_briggsae_data        if ($misc && $species eq 'briggsae');
+    &parse_remanei_data        if ($misc && $species eq 'remanei');
     &parse_nematode_seqs        if $misc;
     &parse_genBlastG            if $misc;
   }
@@ -151,6 +152,13 @@ sub parse_elegans_homol_data {
 }
 
 
+sub parse_remanei_data {
+
+  # RNASeq_splice data
+  $wormbase->load_to_database($wormbase->autoace, $wormbase->misc_dynamic.'/RNASeq_splice_remanei.ace', 'RNASeq_splice_remanei', $log);
+}
+
+
 sub parse_briggsae_data {
   #
   # briggsae BAC end data
@@ -181,6 +189,10 @@ sub parse_briggsae_data {
     my $tsuser = substr($file,0,-4); #file name without ace
     $wormbase->load_to_database($wormbase->autoace,$wormbase->acefiles."/$file", $tsuser, $log);
   }
+
+  # RNASeq_splice data
+  $wormbase->load_to_database($wormbase->autoace, $wormbase->misc_dynamic.'/RNASeq_splice_briggsae.ace', 'RNASeq_splice_briggsae', $log);
+
 }
 
 # Jack Chen's predictions based on homology with WS204 elegans curated CDS
