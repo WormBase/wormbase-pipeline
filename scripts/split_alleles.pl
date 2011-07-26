@@ -80,7 +80,7 @@ $species = $wb->species if not defined $species;
 MapAlleles::set_wb_log($log,$wb); # that is a bit crude, but makes $log available to the MapAlleles funtions
 
 my $lsf = LSF::JobManager->new();
-my $variations = MapAlleles::get_all_alleles();
+my $variations = MapAlleles::get_all_allele_ids();
 my $binsize = int(@$variations / 10 );
 
 

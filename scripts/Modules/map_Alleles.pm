@@ -106,9 +106,36 @@ sub get_all_alleles {
     my $species=$wb->full_name;
     my @alleles = $db->fetch( -query =>"Find Variation WHERE Flanking_sequences AND Live AND species = \"$species\"");
 
-    return &_filter_alleles(\@alleles);
+    return \@alleles;
 }        
 
+
+
+=head2 get_all_allele_ids
+
+    Title   : get_all_allele_ids
+    Usage   : MapAlleles::get_all_allele_ids
+    Function: get a list of filtered alleles from acedb
+    Returns : array_ref of ids
+    Args    : none
+
+=cut
+
+sub get_all_allele_ids {
+  my $db = Ace->connect( -path => $wb->autoace ) || do { print "cannot connect to ${$wb->autoace}:", Ace->error; die };
+
+  my $species=$wb->full_name;
+  my $iter = $db->fetch_many( -query =>"Find Variation WHERE Flanking_sequences AND Live AND species = \"$species\"");
+
+  my @all_names;
+  
+  while (my $var = $iter->next) {
+    push @all_names, $var->name;
+    $var->DESTROY;
+  }
+
+  return \@all_names;
+}
 
 =head2 get_all_allele
 
@@ -155,7 +182,7 @@ sub get_alleles_fromFile {
 }
 
 
-=head2 _filter_alleles
+=head2 filter_alleles
 
     Title   : _filter_alleles
     Usage   : _filter_alleles(array_ref of Ace::Alleles)
@@ -167,7 +194,7 @@ sub get_alleles_fromFile {
 
 # filter the alleles
 # removes alleles without 2 flanking sequences, no Sequence or not Source attached to the parent sequence
-sub _filter_alleles {
+sub filter_alleles {
   my ($alleles, $aggressive) = @_;
   
   my @good_alleles;

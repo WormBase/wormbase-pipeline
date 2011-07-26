@@ -58,22 +58,23 @@ USAGE
 exit 1;	
 }
 
-my ( $debug, $species, $store, $outdir,$acefile,$allele ,$noload,$database,$weak_checks,$help,$test,$idfile);
+my ( $debug, $species, $store, $outdir,$acefile,$allele ,$noload,$database,$weak_checks,$help,$test,$idfile,$nofilter);
 
 GetOptions(
-    'species=s'=> \$species,
-    'debug=s'  => \$debug,
-    'store=s'  => \$store,
-    'outdir=s' => \$outdir,
-    'outfile=s' => \$acefile,
-    'allele=s' => \$allele,
-    'noload'   => \$noload,
-    'noupdate' => \$noload,
-    'database=s'  => \$database,
-    'weak_checks' => \$weak_checks,
-    'help'        => \$help,
-    'test'        => \$test,
-    'idfile=s'    => \$idfile,
+  'species=s'=> \$species,
+  'debug=s'  => \$debug,
+  'store=s'  => \$store,
+  'outdir=s' => \$outdir,
+  'outfile=s' => \$acefile,
+  'allele=s' => \$allele,
+  'noload'   => \$noload,
+  'noupdate' => \$noload,
+  'database=s'  => \$database,
+  'weak_checks' => \$weak_checks,
+  'help'        => \$help,
+  'test'        => \$test,
+  'nofilter'    => \$nofilter,
+  'idfile=s'    => \$idfile,
 ) or &print_usage();
 
 &print_usage if $help;
@@ -110,7 +111,6 @@ if ($debug) {
     print STDERR "DEBUG \"$debug\"\n\n";
 }
 
-# get filtered arrayref of the alleles
 my $alleles;
 if ($allele){
   $alleles= MapAlleles::get_allele($allele);
@@ -119,6 +119,10 @@ if ($allele){
   $alleles= MapAlleles::get_alleles_fromFile($idfile);
 }else{
   $alleles= MapAlleles::get_all_alleles();
+}
+
+if (not $nofilter) {
+  $alleles = MapAlleles::filter_alleles( $alleles );
 }
 
 # map them
