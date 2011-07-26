@@ -7,7 +7,7 @@
 # Do fast overlap matching of positions of two sets of things.
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2011-07-25 15:17:26 $      
+# Last updated on: $Date: 2011-07-26 14:28:02 $      
 
 =pod
 
@@ -318,7 +318,7 @@ sub _init_match {
                   reverse_orientation   => 1, optional - specifies that the orientation should be reversed if this is a 3-prime read
                   homology              => 1, optional - specifies that the $hit_start, $hit_end, $score data from a homology alignment should also be read
                   other_data            => 1, optional - specifies that the 'other' data field should be appended to the result
-
+                  score                 => 1, optional - specifies the GFF score column should be read and stored in element 5
 
 =cut
 
@@ -405,22 +405,28 @@ sub read_GFF_file {
 	}
       }
 
+      if (exists $GFF_data->{score}) {	# store the score whether or not we are doing homology stuff
+	if ($f[5] =~ /\d+/) {$score = $f[5]} # if the score is numeric, store it
+      }
+
       if (exists $GFF_data->{homology}) {	# do we need to store the homology data?
 	($id, $hit_start, $hit_end) = ($f[8] =~ /$GFF_data->{ID_after}(\S+)\s+(\d+)\s+(\d+)/);
-	if ($f[5] =~ /\d+/) {$score = $f[5]}; # if the score is numeric, store it
+	if ($f[5] =~ /\d+/) {$score = $f[5]} # if the score is numeric, store it
       } else {
 	($id) = (exists $GFF_data->{ID_after}) ? 
 	    ($f[8] =~ /$GFF_data->{ID_after}(\S+)/) : 
 	    ($f[8]);	# if no 'ID_after' then the ID is just the Other field
       }
 #      print "$line\n";  
-      if (! defined $id) {print "ID NOT DEFINED\nwhen reading $line\nin file $file\n";next;}
+      if (! defined $id && exists $GFF_data->{ID_after}) {print "ID NOT DEFINED\nwhen reading $line\nin file $file\n";next;}
       $id =~ s/\"//g;	# remove quotes
       $id =~ s/\;\S+//;	# remove anything after a ';' as this is s field separator in the 'other' field
       my $other_data;
       if (exists $GFF_data->{'other_data'}) {$other_data = $f[8]}
       if (exists $GFF_data->{homology}) {	# do we need to store the homology data?
 	push @result, [$id, $start, $end, $sense, $hit_start, $hit_end, $score, $other_data];
+      } elsif (exists $GFF_data->{score}) {
+	push @result, [$id, $start, $end, $sense, $other_data, $score];	
       } else {
 	push @result, [$id, $start, $end, $sense, $other_data];	
       }
@@ -1301,7 +1307,7 @@ sub get_RNASeq_splice {
      gff_source			=> "RNASeq_splice",
      gff_type			=> "intron",
      # no ID as it is a Feature_data object
-     homology                   => 1, # force it to store the score even though this is not a homology object 
+     score                      => 1, # force it to store the score
    );
 
   return $self->read_GFF_file($chromosome, \%GFF_data);
