@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2011-04-28 14:56:25 $      
+# Last updated on: $Date: 2011-07-26 14:27:16 $      
 
 # Changes required by Ant: 2008-02-19
 # 
@@ -243,6 +243,7 @@ while (my $run = <DATA>) {
 &delete_anomalies("CDS_DIFFERS_FROM_GENBLASTG");
 &delete_anomalies("UNMATCHED_454_CLUSTER");
 &delete_anomalies("MERGE_GENES_BY_RNASEQ");
+&delete_anomalies("UNMATCHED_RNASEQ_INTRONS");
 
 
 # if we want the anomalies GFF file
@@ -368,6 +369,10 @@ foreach my $chromosome (@chromosomes) {
   my @jigsaw_exons = $ovlp->get_jigsaw_exons($chromosome);             # jigsaw coding exons 
 
   my @genblastg_exons = $ovlp->get_genblastg_exons($chromosome) if (exists $run{GENBLASTG_DIFFERS_FROM_CDS});             # Jack Chen's genBlastG coding exons 
+
+  my @RNASeq_splice = $ovlp->get_RNASeq_splice($chromosome);
+  my @Aggregated_CDS_introns = $ovlp->get_Aggregated_CDS_introns($chromosome);
+
 # until the genBlastG data is in the acedb data and has been dumped to GFF, use the GFF files from Jack Chen.
   if (! @genblastg_exons && exists $run{GENBLASTG_DIFFERS_FROM_CDS}) {
     my %GFF_data = 
@@ -401,7 +406,7 @@ foreach my $chromosome (@chromosomes) {
 
   my @check_introns_EST  = (); #$ovlp->get_check_introns_EST($chromosome);
   my @check_introns_cDNA = (); #$ovlp->get_check_introns_cDNA($chromosome);
-  my @ignored_introns = $ovlp->get_ignored_introns($chromosome) if (exists $run{UNCONFIRMED_INTRON}); 
+  my @ignored_introns = $ovlp->get_ignored_introns($chromosome) if (exists $run{UNCONFIRMED_INTRON} || exists $run{UNMATCHED_RNASEQ_INTRONS}); 
 
   my @expression = &get_expression($chromosome) if (exists $run{UNMATCHED_EXPRESSION});
   my @unmatched_454 = &get_unmatched_454($chromosome) if (exists $run{UNMATCHED_454_CLUSTER});
@@ -518,7 +523,11 @@ foreach my $chromosome (@chromosomes) {
   print "get jigsaw differing from curated CDS with SignalP where the CDS has no signalP\n";
   &get_jigsaw_with_signalp(\@unmatched_jigsaw, \@jigsaw_exons, \@CDS, $chromosome) if (exists $run{JIGSAW_WITH_SIGNALP});
 
-
+  print "get RNASeq introns not matching CDS introns\n";
+  # filter out the spurious RNASeq spliced introns
+  my @filtered_RNASeq_splice;
+  &filter_RNASeq_splice(\@RNASeq_splice, \@filtered_RNASeq_splice) if (exists $run{UNMATCHED_RNASEQ_INTRONS});
+  &get_unconfirmed_RNASeq_introns(\@filtered_RNASeq_splice, \@CDS_introns, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, \@ignored_introns, $chromosome) if (exists $run{UNMATCHED_RNASEQ_INTRONS});
 
 #################################################
 # these don't work very well - don't use
@@ -4010,6 +4019,150 @@ sub get_jigsaw_with_signalp {
 }
 
 ####################################################################################
+# remove the RNASeq introns that are less than 10% of the score of the best RNASeq intron that overlaps them
+sub filter_RNASeq_splice {
+
+  my ($RNASeq_splice_aref, $filtered_RNASeq_splice_aref) = @_;
+
+  # this is a bit dirty - it doesn't revise the status of introns that
+  # were removed but whose intron that caused them to be removed has
+  # also now been removed by a strong third exon.
+
+  # it is fairly quick. it is going down the list of introns
+  # looking at the past few we know have overlapped recently and
+  # checking them against each new intron.
+
+
+  # keep track of the last intron we know overlaps with this current intron
+  my $last_overlap = 0;
+  # keep a corresponding list of the introns that we consider to be filtered out
+  my @dead;
+
+  my $no_of_introns = scalar @{$RNASeq_splice_aref};
+  for (my $i=0; $i<$no_of_introns; $i++) {
+    my $have_an_overlap = 0;
+    for (my $j=$last_overlap; $j<$i; $j++) {
+      # is this intron $j overlapping the intron we are checking $i
+      if ($RNASeq_splice_aref->[$i][1] <= $RNASeq_splice_aref->[$j][2] && $RNASeq_splice_aref->[$i][2] >= $RNASeq_splice_aref->[$j][1]) {
+	# if they overlap keep a note
+	$have_an_overlap = 1;
+	# compare the scores
+	if ($RNASeq_splice_aref->[$i][5] < $RNASeq_splice_aref->[$j][5]/10) {
+	  $dead[$i] = 1;
+	}
+	if ($RNASeq_splice_aref->[$i][5]/10 > $RNASeq_splice_aref->[$j][5]) {
+	  $dead[$j] = 1;
+	}
+      }
+    }
+    # if there were no overlaps then set $last_overlap to be this intron
+    if (! $have_an_overlap) {$last_overlap = $i}
+  }
+
+  # now make the list of live introns
+  for (my $i=0; $i<$no_of_introns; $i++) {
+    if (! $dead[$i]) {push @{$filtered_RNASeq_splice_aref}, $RNASeq_splice_aref->[$i]}
+  }
+
+}
+
+####################################################################################
+# find RNASeq introns that do not match CDS etc gene model introns
+
+sub get_unconfirmed_RNASeq_introns {
+
+  my ($filtered_RNASeq_splice_aref, $cds_introns_aref, $pseudogenes_aref, $transposons_aref, $transposon_exons_aref, $noncoding_transcript_exons_aref, $rRNA_aref, $ignored_introns_aref, $chromosome) = @_;
+
+  $anomaly_count{UNMATCHED_RNASEQ_INTRONS} = 0 if (! exists $anomaly_count{UNMATCHED_RNASEQ_INTRONS});
+
+  # get the introns of the non_coding_transcripts
+  my @non_coding_introns = $ovlp->get_intron_from_exons(@{$noncoding_transcript_exons_aref});
+
+  # get the chromosomal sequence for checking canonical splice sites
+  my $seq = read_chromosome($chromosome);
+
+  # we want an exact match of the CDS intron to the EST confirmed intron
+  # we are not too sure of the orientation (hence sense) of the EST hit
+  my $cds_introns_match = $ovlp->compare($cds_introns_aref, exact_match => 1);
+  my $pseud_match = $ovlp->compare($pseudogenes_aref);
+  my $trans_match = $ovlp->compare($transposons_aref);
+  my $trane_match = $ovlp->compare($transposon_exons_aref);
+  my $rrna_match  = $ovlp->compare($rRNA_aref);
+  my $ignored_match  = $ovlp->compare($ignored_introns_aref, exact_match => 1); # introns marked as Confirmed_UTR/false/inconsistent
+  my $noncoding_match  = $ovlp->compare(\@non_coding_introns, exact_match => 1); # want to ignore non-coding_transcript introns
+
+
+  foreach my $homology (@{$filtered_RNASeq_splice_aref}) { # $est_id, $chrom_start, $chrom_end, $chrom_strand
+
+    my $got_a_match = 0;	        # not yet seen a match to anything
+    
+    # flag for got a match to an intron marked as Confirmed_UTR/false/inconsistent
+    my $confirmed_ignored = 0;
+
+
+    # check to see if the splice sites are canonical
+    my $splice5 = uc(substr($seq, $homology->[1]-1, 2));
+    my $splice3 = uc(substr($seq, $homology->[2]-2, 2));
+
+    # we are not sure of the orientation of the RNASeqs especially in briggsae, so here we accept splice sites in either orientation
+    if ((($splice5 ne 'GT' && $splice5 ne 'GC') || $splice3 ne 'AG') &&
+	(($splice3 ne 'AC' && $splice3 ne 'GC') || $splice5 ne 'CT')) {
+      $got_a_match = 1; # pretend that all introns with non-canonical splice match a CDS intron so that we ignore them
+      #print "*************** non-canonical\n";
+    } else {
+      #print "OK canonical\n";
+    }
+
+    if ($ignored_match->match($homology)) {
+      #$confirmed_ignored = 1;
+      #print "*************** ignored\n";
+      $got_a_match = 1; # don't want to see the Confirmed_UTR/false/inconsistent intron
+    }
+
+    # now check to see if the RNASeq intron matches a gene's intron
+    if ($cds_introns_match->match($homology)) {
+      $got_a_match = 1;
+    }
+
+    if ($noncoding_match->match($homology)) { 
+      $got_a_match = 1;
+    }
+
+    if ($pseud_match->match($homology)) { 
+      $got_a_match = 1;
+    }
+
+    if ($trans_match->match($homology)) {   
+      $got_a_match = 1;
+    }
+
+    if ($trane_match->match($homology)) {      
+      $got_a_match = 1;
+    }
+
+    if ($rrna_match->match($homology)) {       
+      $got_a_match = 1;
+    }
+
+    # output unmatched RNASeq to the database
+    if (! $got_a_match) {
+      my $est_id = $homology->[0];
+      my $chrom_start = $homology->[1];
+      my $chrom_end = $homology->[2];
+      my $chrom_strand = $homology->[3];
+      my $est_score = $homology->[5];
+      my $anomaly_score = 10;
+      #print "NOT got an RNASeq intron match ANOMALY: $est_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score\n";
+      &output_to_database("UNMATCHED_RNASEQ_INTRONS", $chromosome, $est_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score, '');
+    }
+
+  }
+
+}
+
+
+
+####################################################################################
 ####################################################################################
 ####################################################################################
 ####################################################################################
@@ -4487,8 +4640,8 @@ START_DATA
 UNMATCHED_PROTEIN            elegans remanei briggsae japonica brenneri brugia
 UNMATCHED_EST                
 FRAMESHIFTED_PROTEIN         elegans remanei briggsae japonica brenneri brugia
-MERGE_GENES_BY_PROTEIN       elegans remanei briggsae japonica brenneri brugia
-SPLIT_GENE_BY_PROTEIN_GROUPS elegans remanei briggsae japonica brenneri brugia
+MERGE_GENES_BY_PROTEIN               remanei briggsae japonica brenneri brugia
+SPLIT_GENE_BY_PROTEIN_GROUPS         remanei briggsae japonica brenneri brugia
 MERGE_GENES_BY_EST
 UNATTACHED_EST
 UNATTACHED_TSL
@@ -4508,9 +4661,9 @@ SHORT_EXON                   elegans remanei briggsae japonica brenneri brugia
 SHORT_INTRON                 elegans remanei briggsae japonica brenneri brugia
 REPEAT_OVERLAPS_EXON         elegans remanei briggsae japonica brenneri brugia
 INTRONS_IN_UTR               elegans remanei briggsae japonica brenneri brugia
-SPLIT_GENE_BY_TWINSCAN       elegans
-MERGE_GENES_BY_TWINSCAN      elegans
-MERGE_GENES_BY_RNASEQ      elegans
+SPLIT_GENE_BY_TWINSCAN       
+MERGE_GENES_BY_TWINSCAN      
+MERGE_GENES_BY_RNASEQ        elegans
 CONFIRMED_INTRON             
 UNCONFIRMED_INTRON           elegans remanei briggsae japonica brenneri brugia
 UNMATCHED_MASS_SPEC_PEPTIDE  elegans
@@ -4521,6 +4674,7 @@ UNMATCHED_454_CLUSTER        elegans
 UNMATCHED_MGENE              elegans
 NOVEL_MGENE_PREDICTION       elegans
 NOT_PREDICTED_BY_MGENE       elegans
+UNMATCHED_RNASEQ_INTRONS     elegans remanei briggsae
 END_DATA
 
 =pod
