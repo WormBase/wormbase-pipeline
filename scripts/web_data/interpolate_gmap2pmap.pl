@@ -203,9 +203,12 @@ foreach my $chrom (sort keys %$chr_lengths) {
       $ferror = sprintf("%2.2f",$ferror);
       
       # Adjust absurd coordinates
-      $fpmap_lower = ($fpmap_lower < 1) ? 1 : $fpmap_lower;
-      $fpmap_upper = ($fpmap_upper > $chr_lengths->{$chrom}) ? $chr_lengths->{$chrom} : $fpmap_upper;
-      
+      $fpmap_lower = 1 if $fpmap_lower < 1;
+      $fpmap_upper = 1 if $fpmap_upper < 1;
+
+      $fpmap_lower = $chr_lengths->{$chrom} if $fpmap_lower > $chr_lengths->{$chrom};
+      $fpmap_upper = $chr_lengths->{$chrom} if $fpmap_upper > $chr_lengths->{$chrom};
+
       # Flip coords on the minus strand
       ($fpmap_lower,$fpmap_upper) = ($fpmap_upper,$fpmap_lower) if ($fpmap_upper < $fpmap_upper);
       print $out_fh join("\t",$chr_prefix . $chrom, $source,'gene',$fpmap_lower,$fpmap_upper,'.','.','.');
