@@ -24,6 +24,16 @@ setenv SCRIPTS $CVS_DIR
 setenv BUILD_HOME $WORMPUB
 setenv ACEDB_NO_BANNER
 
+
+
+
+
+####################
+# perl 5 libraries
+####################
+setenv PERL5LIB ${WORMPUB}/software/lib/perl5/site_perl
+
+
 # To do:
 # PATH
 # PERL5LIB
