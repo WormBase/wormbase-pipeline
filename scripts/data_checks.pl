@@ -6,8 +6,8 @@
 #
 # This is a example of a good script template
 #
-# Last updated by: $Author: pad $
-# Last updated on: $Date: 2011-01-19 12:33:49 $
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2011-07-27 10:06:50 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -126,20 +126,20 @@ sub read_acedb_queries {
 		   ["The number of RNAi results with connections to genes", 'find RNAi Gene', 81625],
 		   ["The number of microarray results with connections to genes", 'find microarray_results gene', 95545],
 		   ["PCR products overlapping CDS", "find PCR_product Overlaps_CDS", 62852],
-		   ["The number of wormpep without pep_homol", 'find wormpep !pep_homol', 660],
+		   ["The number of wormpep without pep_homol", 'find wormpep !pep_homol', 752],
 		   ["tRNAs not attached to parent properly", 'Transcript AND NEXT AND NOT NEXT', 0],
 		   ["Homol_data without waba", 'find Homol_data *waba !DNA_homol', 0],
 		   ["Homol_data without Pep_homol", 'find Homol_data *wublastx* !Pep_homol', 0],
-		   ["Inverted repeat Feature_data without features", 'find Feature_data *inverted !feature', 263],
+		   ["Inverted repeat Feature_data without features", 'find Feature_data *inverted !feature', 188],
 		   ["TRF repeat Feature_data without features", 'find Feature_data *TRF !Feature', 0],
 		   ["Oligo_sets with overlapping_CDS", 'find Oligo_Set Overlaps_CDS', 74615],
 		   ["operons without genes", 'find operon !contains Gene', 0],
-		   ["variation gene connection", 'find Variation Gene', 139835],
+		   ["variation gene connection", 'find Variation Gene', 291405],
 		   ["genes with structured description", 'find Gene Structured_description', 5546],
 		   ["genes with GO_term", 'find Gene GO_term', 15785],
 		   ["CDSs with no source_exons", 'find CDS !Source_exons, method', 0],
 		   ["Operons without parent ", 'find Operon !History AND !Canonical_parent',  0],
-		   ["GO_term without Term or Definition", 'find GO_term !(Term or Definition)',  0],
+		   ["GO_term without Term or Definition", 'find GO_term !(Term or Definition)',  100],
 		   ["Homol mapped Expression Patterns", 'find Expr_pattern where Homol_homol', 4506],
 		   ["Transposon Objects mapped in the database", 'find Transposon where Sequence', 591],
 		   );
