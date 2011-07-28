@@ -5,7 +5,7 @@
 # by Dan Lawson
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2011-07-22 16:43:00 $
+# Last updated on: $Date: 2011-07-28 16:01:23 $
 #
 # Usage GFFmunger.pl [-options]
 
@@ -140,6 +140,11 @@ if ($CDS || $all) {
   } else {
     $log->write_to("overload_GFF_CDS_lines.pl -gff $gffdir\n");
     $wormbase->run_script("overload_GFF_CDS_lines.pl -gff $gffdir", $log);
+  }
+
+  foreach my $filep (@file_prefices) {
+    next if not $filep;
+    system ("mv -f $gffdir/$filep.CSHL.gff $gffdir/$filep.gff");        # copy *.CSHL.gff files back to *.gff name
   }
 }
 
