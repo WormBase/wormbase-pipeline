@@ -233,7 +233,7 @@ sub load_genes {
         }
     # if it is remanei collect all needed GFFs and then split them based on their supercontig into a /tmp/ directory
     } elsif ($species eq 'remanei' || $species eq 'pristionchus' || $species eq 'japonica' || $species eq 'brenneri'||
-    $species eq 'mincognita'){ #grumble ... seems to become the default nowadays
+    $species eq 'mincognita'|| $species eq 'japonica'){ #grumble ... seems to become the default nowadays
 	   my ($path)=glob($config->{fasta})=~/(^.*)\/CHROMOSOMES\//;
 	   `mkdir -p /tmp/compara/$species` if !-e "/tmp/compara/$species";
 	   unlink glob("/tmp/compara/$species/*.gff"); # clean old leftovers
