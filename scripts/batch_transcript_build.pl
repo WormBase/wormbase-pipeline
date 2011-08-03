@@ -6,8 +6,8 @@
 #
 # wrapper script for running transcript_builder.pl
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2011-05-11 09:00:54 $
+# Last edited by: $Author: mh6 $
+# Last edited on: $Date: 2011-08-03 09:43:12 $
 
 use lib $ENV{CVS_DIR};
 use Wormbase;
@@ -56,7 +56,7 @@ $database = $wormbase->autoace unless $database;
 if (@no_run) {
   @outfile_names = @no_run;
 } else {
-  my @chromosomes = @{$wormbase->get_binned_chroms()}; # no MtDNA
+  my @chromosomes = @{$wormbase->get_binned_chroms(-bin_size => 62)}; # no MtDNA
 
   $gff_dir  = $wormbase->gff_splits unless $gff_dir;
   $dump_dir = $wormbase->transcripts unless $dump_dir;
