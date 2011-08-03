@@ -1599,7 +1599,7 @@ sub get_binned_chroms {
   my %par = @_;
   my $bin_size;
   $bin_size = $par{'-bin_size'} if (defined $par{'-bin_size'});
-  $bin_size = 64 unless (defined $par{'-bin_size'});
+  $bin_size = 55 unless (defined $par{'-bin_size'});
   my %opt;
   $opt{-prefix} = 1;
   $opt{-mito} = 1 if $par{'-mito'};
