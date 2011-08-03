@@ -6,8 +6,8 @@
 #
 # Script to make ?Transcript objects
 #
-# Last updated by: $Author: klh $
-# Last updated on: $Date: 2011-03-25 10:15:29 $
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2011-08-03 13:01:12 $
 use strict;
 use lib $ENV{'CVS_DIR'};
 use Getopt::Long;
@@ -66,7 +66,7 @@ if ( $store ) {
 my $db;
 if (not defined $database or $database eq "autoace") {
   $db = $wormbase->autoace;
-}
+}else{$db = $database}
 my $tace = $wormbase->tace;
 
 # other variables and paths.
