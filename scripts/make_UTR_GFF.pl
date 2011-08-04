@@ -15,7 +15,7 @@
 #      COMPANY:
 #      VERSION:  2 
 #      CREATED:  21/02/06 14:11:30 GMT
-#     REVISION:  $Revision: 1.23 $ 
+#     REVISION:  $Revision: 1.24 $ 
 #===============================================================================
 
 use strict;
@@ -67,9 +67,9 @@ CHROM:foreach my $chr (@chromosome) {
     my $pref = $wormbase->chromosome_prefix;
     $chr =~ s/$pref//; #seems silly but is safest way to ensure that its not missing or duplicated!
     my $file_prefix = $contig_assembly ? $wormbase->species : $wormbase->chromosome_prefix.$chr;
-   	my $long_name = $wormbase->chromosome_prefix.$chr;
+    my $long_name = $wormbase->chromosome_prefix.$chr;
    		
-   	&write_tmp_gff($file_prefix,$long_name) if $contig_assembly;
+    &write_tmp_gff($file_prefix,$long_name) if $contig_assembly;
    	
     # load    
     $db->load_gff( "$gffdir/${file_prefix}_curated.gff$suffix", $long_name, 1 ) if !$load;
@@ -82,7 +82,6 @@ CHROM:foreach my $chr (@chromosome) {
     
     # iterate over exons GFF
     while (<$infile>) {
-
         next if /\#/;
         s/\"//g;#"
         my @f = split;
@@ -95,9 +94,9 @@ CHROM:foreach my $chr (@chromosome) {
     }
 
     $log->write_to("processed $n_exons exons\n");
-	#clean up
-	if( $wormbase->assembly_type eq 'contig') {
-	    $wormbase->run_command("cat $outdir/${file_prefix}_UTR.gff$$ >> $outdir/UTR.gff$$", 'no_log');
+    # clean up
+    if( $wormbase->assembly_type eq 'contig') {
+	$wormbase->run_command("cat $outdir/${file_prefix}_UTR.gff$$ >> $outdir/UTR.gff$$", 'no_log');
     	$wormbase->run_command("rm $gffdir/".$wormbase->species."*$$",'no_log');
     }
 }
@@ -154,7 +153,7 @@ sub get_cds {
 
     if ( $cds_cache{ &short_name($id) } ) { return @{ $cds_cache{ &short_name($id) } } } # hmpf
     else {
-        my @hits = $db->get_chr( $chrom, { feature => 'curated', source => 'coding_exon', fluff => '"' . &short_name($id) . '"' } );
+        my @hits = $db->get_chr( $chrom, { feature => 'curated', source => 'exon', fluff => '"' . &short_name($id) . '"' } );
         my @sorted_hits = sort { $a->{start} <=> $b->{start} || $a->{stop} <=> $b->{stop} } @hits;
 	$cds_cache{ &short_name($id)}=[$sorted_hits[0]->{start}, $sorted_hits[-1]->{stop}];
         return $sorted_hits[0]->{start}, $sorted_hits[-1]->{stop};
@@ -166,8 +165,7 @@ sub make_gff {
     my ( $db, $chrom, $start, $stop, $orientation, $name ) = @_;
     
     # get_hits , get cds
-    my @hits =
-      $db->get_chr( $chrom, { start => $start, stop => $stop, feature => 'curated', source => 'exon', 'fluff' => '"' . &short_name($name) . '"' } );
+    my @hits = $db->get_chr($chrom,{start=>$start,stop=>$stop,feature=>'curated',source=>'exon','fluff' =>'"'.&short_name($name).'"'});
     my @cds = get_cds( $db, $chrom, &short_name($name) );
 
     if (@hits) {
