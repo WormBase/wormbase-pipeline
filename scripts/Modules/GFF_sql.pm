@@ -4,8 +4,8 @@
 # class to manage GFF stuff
 # by Michael Han
 #
-# Last updated by: $Author: pad $
-# Last updated on: $Date: 2011-01-20 11:12:00 $
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2011-08-04 11:03:56 $
 ######
 
 package GFF_sql;
@@ -30,7 +30,8 @@ sub new {
 sub initialize {
     my $self = shift;
     my ( $load, $chromosome ) = @_;
-    
+    $chromosome =~s/\./_/g;    
+ 
     my $dsn="DBI:mysql:database=mh6;host=mcs4a;port=3307";
     my $user='mh6';
     my $pass='mh6';
@@ -49,6 +50,8 @@ sub initialize {
 sub clean {
 	my $self=shift;
 	my $chromosome=shift;
+        $chromosome =~s/\./_/g;    
+
 	$self->{dbh}->do("DROP TABLE $chromosome");
 	$self->{dbh}->do("CREATE TABLE $chromosome (tag_id SMALLINT UNSIGNED NOT NULL, type_id SMALLINT UNSIGNED NOT NULL, start INT UNSIGNED NOT NULL, stop INT UNSIGNED NOT NULL, frame ENUM('.','0','1','2') NOT NULL default '.', orientation ENUM('+','-','.') NOT NULL default '.',fluff TEXT not null, INDEX (start) )");
 
@@ -66,6 +69,7 @@ sub load_gff {
     my $self = shift;
     my ( $file, $chromosome, $overwrite ) = @_;
     $self->{dbh}->{AutoCommit} = 0;
+    $chromosome =~s/\./_/g;    
 
     #prepare db
     if ($overwrite) {
@@ -88,6 +92,7 @@ sub load_gff {
     while (<$fh>) {
         my @fields      = split;
         my $chromosome_ = shift @fields;          #never used
+        $chromosome =~s/\./_/g;    
         my $tag         = shift @fields;
         my $type        = shift @fields;
         my $start       = shift @fields;
@@ -124,8 +129,7 @@ sub generate_tags {
 
     #prepare db
 
-    my $typeh =
-      $self->{dbh}->prepare("INSERT IGNORE INTO gff_types (name) VALUES (?)");
+    my $typeh = $self->{dbh}->prepare("INSERT IGNORE INTO gff_types (name) VALUES (?)");
     my $tagh = $self->{dbh}->prepare("INSERT IGNORE INTO gff_tag (name) VALUES (?)");
     $self->{dbh}->commit;
 
@@ -135,6 +139,8 @@ sub generate_tags {
     while (<$fh>) {
         my @fields      = split;
         my $chromosome_ = shift @fields;          #never used
+           $chromosome_ = ~s/\./_/g;    
+
         my $tag         = shift @fields;
         my $type        = shift @fields;
         my $start       = shift @fields;
@@ -160,6 +166,8 @@ sub generate_tags {
 sub get_gff {
     my $self = shift;
     my ( $chromosome, $start, $stop, @limit ) = @_;
+    $chromosome =~s/\./_/g;    
+
     my $sth;
     my $queryprefix =
 "SELECT gff_tag.name as feature ,gff_types.name as source,start,stop,frame,orientation,fluff FROM $chromosome LEFT JOIN gff_types ON $chromosome.type_id=gff_types.id LEFT JOIN gff_tag ON $chromosome.tag_id=gff_tag.id WHERE ";
@@ -193,6 +201,7 @@ sub get_gff {
 sub get_gff2 {
     my $self = shift;
     my ( $chromosome, $start, $stop, $limit ) = @_;
+    $chromosome =~s/\./_/g;    
     $limit->{'start'} = $start;
     $limit->{'stop'}  = $stop;
     return $self->get_chr( $chromosome, $limit );
@@ -204,6 +213,7 @@ sub get_gff2 {
 sub get_by_source {
     my $self = shift;
     my ( $chromosome, $type ) = @_;
+    $chromosome =~s/\./_/g;    
     return $self->get_chr( $chromosome, { 'source' => $type } );
 }
 
@@ -214,6 +224,7 @@ sub get_by_source {
 sub get_bestblat_byfluff {
     my $self = shift;
     my ( $chromosome, $fluff ) = @_;
+    $chromosome =~s/\./_/g;    
 
     return $self->get_chr( $chromosome,
         { 'feature' => 'BLAT_mRNA_BEST', 'fluff' => $fluff } );
@@ -225,6 +236,7 @@ sub get_bestblat_byfluff {
 sub get_chr {
     my $self = shift;
     my ( $chromosome, $limit ) = @_;
+    $chromosome =~s/\./_/g;    
 
     my @where;
     my $queryprefix =
@@ -475,10 +487,10 @@ perl -mGFF_sql -e '$bla=GFF_sql->new();@line=$bla->get_by_source($ARGV[0],"gene"
 
 =head1 AUTHOR
 
-$Author: pad $
+$Author: mh6 $
 
 =head1 VERSION
 
-$Date: 2011-01-20 11:12:00 $
+$Date: 2011-08-04 11:03:56 $
 
 =cut
