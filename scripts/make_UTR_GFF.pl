@@ -11,11 +11,11 @@
 # REQUIREMENTS:  Wormbase.pm, Modules::GFF_sql.pm
 #         BUGS:  ---
 #        NOTES:  ---
-#       AUTHOR:  $Author: gw3 $
+#       AUTHOR:  $Author: mh6 $
 #      COMPANY:
 #      VERSION:  2 
 #      CREATED:  21/02/06 14:11:30 GMT
-#     REVISION:  $Revision: 1.22 $ 
+#     REVISION:  $Revision: 1.23 $ 
 #===============================================================================
 
 use strict;
@@ -167,7 +167,7 @@ sub make_gff {
     
     # get_hits , get cds
     my @hits =
-      $db->get_chr( $chrom, { start => $start, stop => $stop, feature => 'curated', source => 'coding_exon', 'fluff' => '"' . &short_name($name) . '"' } );
+      $db->get_chr( $chrom, { start => $start, stop => $stop, feature => 'curated', source => 'exon', 'fluff' => '"' . &short_name($name) . '"' } );
     my @cds = get_cds( $db, $chrom, &short_name($name) );
 
     if (@hits) {
