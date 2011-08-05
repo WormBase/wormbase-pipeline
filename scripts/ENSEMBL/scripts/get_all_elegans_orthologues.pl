@@ -56,6 +56,7 @@ while( my $member = shift @members){
     next if $member->taxon_id == 6289; # skip H.contortus, as it does not have ?Gene objects
     next if $member->taxon_id == 96668;# skip C.angaria, because it does not have ?Gene objects
     next if $member->taxon_id == 6334; # skip T.spiralis, as it does not have ?Gene objects
+    next if $member->taxon_id == 886184; # skip C.sp11, as it has no gene objects
     my @homologies = @{$homology_adaptor->fetch_all_by_Member( $member)};
 
     # needs some better way
@@ -84,7 +85,10 @@ while( my $member = shift @members){
 		}
 		elsif ($pepm->taxon_id==6334){
 		    $t3{$pepm->stable_id} = [$pepm->taxon_id,$homology->description]
-		}
+	        }
+		elsif ($pepm->taxon_id==886184){
+		    $t3{$pepm->stable_id} = [$pepm->taxon_id,$homology->description]
+	        }
                 else {
                     $t2{ $pepm->stable_id } = [$pepm->taxon_id,$homology->description]
                 }
