@@ -30,6 +30,7 @@ my %species = (
     6289   => 'Haemonchus contortus',
     96668  => 'Caenorhabditis angaria',
     6334   => 'Trichinella spiralis',
+    886184 => 'Caenorhabditis sp.11',
 );
 
 my %cds2wbgene=%{&get_commondata('cds2wbgene_id')};
