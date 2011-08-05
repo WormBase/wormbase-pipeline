@@ -7,7 +7,7 @@
 # build to check the current build
 #
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2011-07-21 11:21:48 $
+# Last updated on: $Date: 2011-08-05 16:11:11 $
 use strict;
 use warnings;
 use lib $ENV{'CVS_DIR'};
@@ -94,7 +94,7 @@ if($clones) {
   } elsif ($wb->species eq 'remanei') {
     @clones = qw(Crem_Contig0 Crem_Contig10 Crem_Contig15 Crem_Contig30 Crem_Contig100 Crem_Contig200 Crem_Contig300 Crem_Contig500 Crem_Contig800);
   } elsif ($wb->species eq 'japonica') {
-    @clones = qw(Cjap_Contig0 Cjap_Contig10 Cjap_Contig15 Cjap_Contig30 Cjap_Contig100 Cjap_Contig200 Cjap_Contig300 Cjap_Contig500 Cjap_Contig800);
+    @clones = qw(Cjap.Contig0 Cjap.Contig10 Cjap.Contig15 Cjap.Contig30 Cjap.Contig100 Cjap.Contig200 Cjap.Contig300 Cjap.Contig500 Cjap.Contig800);
   } elsif ($wb->species eq 'pristionchus') {
     @clones = qw(Ppa_Contig0 Ppa_Contig10 Ppa_Contig15 Ppa_Contig30 Ppa_Contig100 Ppa_Contig200);
   }
