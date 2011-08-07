@@ -168,7 +168,7 @@ while (my $gene = &get_next_gene) {
 	
         my $motif = {
           chrom       => $transcript->slice->seq_region_name,
-          strand      => $gen_coords[0]->strand,
+          strand      => $transcript->strand,
           public_name => $public_name,
           protein     => $protein,
           cds         => $cds,
