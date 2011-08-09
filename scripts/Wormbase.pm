@@ -1617,6 +1617,40 @@ sub get_binned_chroms {
   return \@chroms;
 }
 
+###################################
+# Method: get_chunked_chroms
+#
+# Given chunk_total and chunk_id, deterministically chunks chromosomes
+# into chunk_total chunks and returns the chunk_id'th chunk. 
+###################################
+
+sub get_chunked_chroms {
+  my ($self, %opt) = @_;
+
+  my @chroms = sort $self->get_chromosome_names(%opt);
+  if (exists $opt{-chunk_id} and exists $opt{-chunk_total} and
+      $opt{-chunk_id} =~ /^\d+$/ and $opt{-chunk_total} =~ /^\d+$/ and
+      $opt{-chunk_id} <= $opt{-chunk_total}) {
+    my ($c_id, $c_tot) = ($opt{-chunk_id}, $opt{-chunk_total});
+
+    if (scalar(@chroms) < $c_tot) {
+      $c_tot = scalar(@chroms);
+    }
+
+    my @chunks;
+    for(my $i=0; $i < @chroms; $i++) {
+      my $chunk_idx = $i % $c_tot;
+      push @{$chunks[$chunk_idx]}, $chroms[$i];
+    }
+
+    @chroms = @{$chunks[$c_id - 1]};
+  } else {
+    warn("get_chunked_chroms: Could not get sensible values for -chunk_id and -chunk_total " . 
+         "  - returning full list\n");
+    
+  }
+  return @chroms;
+}
 
 ##################################################################################
 # Wrapper for handling the opening of GFF files for both chromosome or contig
