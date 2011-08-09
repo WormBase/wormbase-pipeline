@@ -104,7 +104,7 @@ end
 
 desc 'build homology database'
 task :build_homology => [:env_setup] do
-  conf='etc/compara-genetree-11.conf'
+  conf='etc/compara-genetree-12.conf'
   reg='etc/compara_test11.reg'
   yml=YAML::load_file('etc/ensembl_lite.conf')
   db=yml['elegans']['database']
@@ -115,6 +115,8 @@ task :build_homology => [:env_setup] do
 
   # taxonomy
   sh "bzcat #{basedir}/compara-conf/ncbi_taxon.sql.bz2 |mysql -h #{db['host']} -P#{db['port']} -u #{db['user']} -p#{db['password']} worm_compara"
+  sh "mysql -h #{db['host']} -P#{db['port']} -u #{db['user']} -p#{db['password']} -e 'UPDATE ncbi_taxa_name SET name=\"Caenorhabditis angaria\" WHERE taxon_id=96668'"
+  sh "mysql -h #{db['host']} -P#{db['port']} -u #{db['user']} -p#{db['password']} -e 'UPDATE ncbi_taxa_name SET name=\"Caenorhabditis csp11\" WHERE taxon_id=886184'"
 
   # load logics
   sh "#{perl} #{basedir}/ensembl-compara/scripts/pipeline/comparaLoadGenomes.pl -conf #{conf}"
@@ -124,21 +126,21 @@ task :build_homology => [:env_setup] do
   protein_treesql=%q/'INSERT INTO method_link (type, class) VALUES ("ENSEMBL_ORTHOLOGUES","Homology.homology"),("ENSEMBL_PARALOGUES","Homology.homology"),("PROTEIN_TREES","ProteinTree.protein_tree_node")'/
   sh "mysql -h #{db['host']} -u #{db['user']} -p#{db['password']} worm_compara -e #{protein_treesql}"
 
-  nj_treesql=%q/'INSERT INTO protein_tree_tag (tag,value) VALUES ("species_tree_string","((((((((((6238*,31234)a,135651)b,6239*)c,281687)d,96668)e,54126)f,6305)g,6289)h,6279)i,6334)j;")'/
+  nj_treesql=%q/'INSERT INTO protein_tree_tag (tag,value) VALUES ("species_tree_string","((((((((((6238*,31234)a,(135651,886184)b)c,6239*)d,281687)e,96668)f,54126)g,6305)h,6289)i,6279)j,6334)k;")'/
   sh "mysql -h #{db['host']} -u #{db['user']} -p#{db['password']} worm_compara -e #{nj_treesql}"
 
   # MLSS setup
   # For orthologues
-  sh "#{perl} #{basedir}/ensembl-compara/scripts/pipeline/create_mlss.pl --f --pw --reg_conf #{reg} --method_link_type ENSEMBL_ORTHOLOGUES --genome_db_id '1,2,3,4,5,6,7,8,9,10,11'"
+  sh "#{perl} #{basedir}/ensembl-compara/scripts/pipeline/create_mlss.pl --f --pw --reg_conf #{reg} --method_link_type ENSEMBL_ORTHOLOGUES --genome_db_id '1,2,3,4,5,6,7,8,9,10,11,12'"
 
   # For between-species paralogues
-  sh "#{perl} #{basedir}/ensembl-compara/scripts/pipeline/create_mlss.pl --f --pw --reg_conf #{reg} --method_link_type ENSEMBL_PARALOGUES --genome_db_id '1,2,3,4,5,6,7,8,9,10,11'"
+  sh "#{perl} #{basedir}/ensembl-compara/scripts/pipeline/create_mlss.pl --f --pw --reg_conf #{reg} --method_link_type ENSEMBL_PARALOGUES --genome_db_id '1,2,3,4,5,6,7,8,9,10,11,12'"
 
   # For same-species paralogues
-  sh "#{perl} #{basedir}/ensembl-compara/scripts/pipeline/create_mlss.pl --f --sg --reg_conf #{reg} --method_link_type ENSEMBL_PARALOGUES --genome_db_id '1,2,3,4,5,6,7,8,9,10,11'"
+  sh "#{perl} #{basedir}/ensembl-compara/scripts/pipeline/create_mlss.pl --f --sg --reg_conf #{reg} --method_link_type ENSEMBL_PARALOGUES --genome_db_id '1,2,3,4,5,6,7,8,9,10,11,12'"
 
   # For protein trees
-  sh "#{perl} #{basedir}/ensembl-compara/scripts/pipeline/create_mlss.pl --f --reg_conf #{reg} --method_link_type PROTEIN_TREES --genome_db_id '1,2,3,4,5,6,7,8,9,10,11'"
+  sh "#{perl} #{basedir}/ensembl-compara/scripts/pipeline/create_mlss.pl --f --reg_conf #{reg} --method_link_type PROTEIN_TREES --genome_db_id '1,2,3,4,5,6,7,8,9,10,11,12'"
 
 
   # up the failure tolerance
@@ -156,7 +158,7 @@ end
 
 desc 'build PECAN database'
 task :build_pecan => [:env_setup] do
-  conf='etc/pecan-12.conf'
+  conf='etc/pecan-ws227.conf'
   yml=YAML::load_file('etc/ensembl_lite.conf')
   db=yml['elegans']['database']
 
@@ -213,7 +215,7 @@ task :dump_gerp =>[:env_setup] do
        db=yml['elegans']['database'] # that one is technically not cool
 
        sh "mysql -h #{db['host']} -P#{db['port']} -u #{db['user']} -p#{db['password']} worm_compara_pecan -e 'INSERT IGNORE INTO meta (meta_key,meta_value) VALUES (\"max_align_2\",(SELECT MAX(dnafrag_end-dnafrag_start) FROM genomic_align));'"
-	['elegans','briggsae','brenneri','remanei','japonica','pristionchus','brugia','Mhapla','Mincognita','Hcontortus','cangaria','tspiralis'].each{|species|
+	['elegans','briggsae','brenneri','remanei','japonica','pristionchus','brugia','Mhapla','Csp11','cangaria','tspiralis'].each{|species|
 
 	  spec_dir= "#{tmp_place}/compara/#{species}"
 	  FileUtils.mkdir_p(spec_dir)
