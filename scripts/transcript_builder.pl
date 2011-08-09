@@ -6,8 +6,8 @@
 #
 # Script to make ?Transcript objects
 #
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2011-08-03 13:01:12 $
+# Last updated by: $Author: klh $
+# Last updated on: $Date: 2011-08-09 15:20:06 $
 use strict;
 use lib $ENV{'CVS_DIR'};
 use Getopt::Long;
@@ -23,7 +23,7 @@ use File::Path;
 use Storable;
 
 my ($debug, $store, $help, $verbose, $really_verbose, $est,
-    $database, $test, @chromosomes,
+    $database, $test, @chromosomes, $chunk_total, $chunk_id,
     $gff_dir, $transcript_dir, $ace_fname, $problem_fname,
     $test_cds, $wormbase, $species, $detailed_debug);
 
@@ -42,6 +42,8 @@ GetOptions ( "debug:s"      => \$debug,
 	     "database:s"       => \$database,
 	     "test"             => \$test,
 	     "chromosome:s"     => \@chromosomes,
+             "chunktotal:s"     => \$chunk_total,
+             "chunkid:s"        => \$chunk_id,
 	     "cds:s"            => \$test_cds, # only use the specified CDS object - for debugging
 	     "store:s"          => \$store,
 	     "species:s"        => \$species,
@@ -104,7 +106,16 @@ my %feature_data;
 &load_features( \%feature_data );
 
 # process chromosome at a time
-@chromosomes = $wormbase->get_chromosome_names('-prefix' => 1) unless @chromosomes;
+if (not @chromosomes) {
+  if (defined $chunk_total and defined $chunk_id) {
+    @chromosomes = $wormbase->get_chunked_chroms(-prefix => 1, 
+                                                 -chunk_total => $chunk_total,
+                                                 -chunk_id    => $chunk_id);
+  } else {
+    @chromosomes = $wormbase->get_chromosome_names('-prefix' => 1) unless @chromosomes;
+  }
+}
+
 my $contigs = 1 if ($wormbase->assembly_type eq 'contig');
 
 $ace_fname = sprintf("transcripts.%s.ace", $chromosomes[0]) if not defined $ace_fname;

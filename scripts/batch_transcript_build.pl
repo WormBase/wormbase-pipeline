@@ -6,8 +6,8 @@
 #
 # wrapper script for running transcript_builder.pl
 #
-# Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2011-08-03 10:08:47 $
+# Last edited by: $Author: klh $
+# Last edited on: $Date: 2011-08-09 15:20:06 $
 
 use lib $ENV{CVS_DIR};
 use Wormbase;
@@ -56,7 +56,7 @@ $database = $wormbase->autoace unless $database;
 if (@no_run) {
   @outfile_names = @no_run;
 } else {
-  my @chromosomes = @{$wormbase->get_binned_chroms(-bin_size => 60)}; # no MtDNA
+  my $chunk_total = 24;
 
   $gff_dir  = $wormbase->gff_splits unless $gff_dir;
   $dump_dir = $wormbase->transcripts unless $dump_dir;
@@ -91,16 +91,12 @@ if (@no_run) {
   # create and submit LSF jobs.
   $log->write_to("bsub commands . . . . \n\n");
   my $lsf = LSF::JobManager->new();
-  foreach my $chrom ( @chromosomes ) {
-    my $batchname = $chrom;
-    if ($chrom =~ /,/) {
-      # if submitting a batch of chromsomes, use the name of the first
-      # one - it will be sufficiently unique to identify the batch
-      ($batchname) = split(/,/, $chrom);
-    }
+  foreach my $chunk_id (1..$chunk_total) {
+    my $batchname = "batch_${chunk_id}";
     my $outfname = "transcripts_${batchname}.ace";
+    my $pfname = "problems_${batchname}.txt";
     my $err = "$scratch_dir/transcript_builder.$batchname.err.$$";
-    my $cmd = "$builder_script -database $database -chromosome $chrom -acefname $outfname ";
+    my $cmd = "$builder_script -database $database -chunkid $chunk_id -chunktotal $chunk_total -acefname $outfname -problemfname $pfname";
     $log->write_to("$cmd\n");
     print "$cmd\n";
     $cmd = $wormbase->build_cmd($cmd);
@@ -172,7 +168,6 @@ if (not $no_load) {
                      'chrI'          => 2000000,
                      'chrI_random'   =>    6000,
                      'chrII'         => 2500000,
-                     'chrII_random'  =>  350000,
                      'chrIII'        => 2300000,
                      'chrIII_random' =>   20000,
                      'chrIV'         => 2500000,
@@ -180,7 +175,8 @@ if (not $no_load) {
                      'chrV'          => 3100000,
                      'chrV_random'   =>   30000,
                      'chrX'          => 3400000,
-                     'chrUn'         =>  950000,
+                     'chrX_random'   =>    2500,
+                     'chrun'         =>  350000,
                      );
         $wormbase->check_file("$gff_dir/${sequence}_Coding_transcript.gff", $log,
                               minsize => $sizes{$sequence},
