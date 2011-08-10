@@ -1,4 +1,4 @@
-!/usr/local/bin/perl5.6.1 -w
+#!/usr/local/bin/perl5.6.1 -w
 #
 # distribute_letter.pl
 #
@@ -8,8 +8,8 @@
 #                          ~wormpub/BUILD/autoace/release/
 #                          /nfs/WWW/SANGER_docs/htdocs/Projects/C_elegans/WORMBASE/current/release_notes.txt/
 #
-# Last updated by: $Author: klh $
-# Last updated on: $Date: 2011-06-03 19:30:01 $
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2011-08-10 15:14:11 $
 
 
 use strict;                                      
