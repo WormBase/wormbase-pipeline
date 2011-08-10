@@ -5,8 +5,8 @@
 # A PERL wrapper to automate the process of building the FTP sites 
 # builds wormbase & wormpep FTP sites
 # 
-# Last updated by: $Author: klh $
-# Last updated on: $Date: 2011-06-09 10:26:33 $
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2011-08-10 11:30:11 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -841,7 +841,7 @@ sub copy_wormpep_files {
 
 
     if ($WS == $rel_last_built) {
-      my $sourcedir =$wb->wormpep . "/${peppre}pep$WS";
+      my $sourcedir =$wb->wormpep;
       my $targetdir = "$wormpep_ftp_root/${peppre}pep$WS";
 
       mkpath($tgt,1,0775);
