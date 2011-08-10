@@ -5,8 +5,8 @@
 # A PERL wrapper to automate the process of building the FTP sites 
 # builds wormbase & wormpep FTP sites
 # 
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2011-08-10 11:30:11 $
+# Last updated by: $Author: klh $
+# Last updated on: $Date: 2011-08-10 14:21:23 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -789,7 +789,6 @@ sub copy_wormpep_files {
       # release etc, forward propagation of the complete package and
       # incrementing the suffices is not appropriate. 
       
-      my @wormpep_files = $wb->wormpep_files;
       foreach my $file ( $wb->wormpep_files ){
         if (-e "$src/$file${rel_last_built}") {
           $command .= " $file${rel_last_built}";
@@ -844,7 +843,7 @@ sub copy_wormpep_files {
       my $sourcedir =$wb->wormpep;
       my $targetdir = "$wormpep_ftp_root/${peppre}pep$WS";
 
-      mkpath($tgt,1,0775);
+      mkpath($targetdir,1,0775);
 
       foreach my $wpf ($wb->wormpep_files) {
         $wormbase->run_command("cp -f $sourcedir/$wpf${WS} $targetdir/", $log);
@@ -1447,7 +1446,7 @@ c_elegans.WSREL.confirmed_genes.fa.gz
 [elegans]species/c_elegans
 GSPECIES.WSREL.WORMpep_package.tar.gz
 
-[elegans,briggsae]species/GSPECIES
+[elegans]species/GSPECIES
 GSPECIES.WSREL.assembly.agp.gz
 
 # tierII specific stuff
