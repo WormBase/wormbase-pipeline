@@ -6,7 +6,7 @@
 #
 # Updates the local webpages in synch with the main website
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2011-06-03 19:32:10 $
+# Last updated on: $Date: 2011-08-11 11:11:56 $
 
 
 use strict;
@@ -62,15 +62,6 @@ foreach my $file ( @wormpep_files ) {
 }
 $wormbase->run_command("/software/farm/bin/xdformat -p $wormpub_dir/wormpep_current", $log);
 $wormbase->run_command("/software/farm/bin/setdb $wormpub_dir/wormpep_current", $log);
-# create a symbolic link from top level wormpep into the release on the wormpep ftp site
-foreach my $file ( @wormpep_files ) {
-  $wormbase->run_command("cd $wormpep_ftp_root && ln -fs wormpep${release}/${file}${release} $file", $log);
-}
-
-# delete the old symbolic link and make the new one to wormpep.prev
-my $prev_release = $release -1;
-$wormbase->run_command("cd $wormpep_ftp_root && ln -fs wormpep${prev_release}/wormpep${prev_release} wormpep.prev",$log);
-
 
 ##################################################################
 # Update Sanger WORMBASE ftp site to change live_release symlink
