@@ -7,7 +7,7 @@
 # Builds a wormpep data set from the current autoace database
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2011-08-11 09:43:54 $
+# Last updated on: $Date: 2011-08-11 10:21:38 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -391,11 +391,7 @@ sub write_final_pep
 		print PEP "\n".$wormbase->format_sequence( $cds2aa{$cds} )."\n";
 	}
 	close PEP;
-	my $dir = $wormbase->wormpep;
 
-	$wormbase->run_command("cd $dir && ln -s ${PEP_FILE_STEM}${release} ${PEP_FILE_STEM}_current", $log);
-	$wormbase->run_command("setdb $dir/${PEP_FILE_STEM}_current > $dir/${PEP_FILE_STEM}_current.log", $log);
-	
 	&write_table;
 	&count_isoforms if ($wormbase->species eq 'elegans');
 }
