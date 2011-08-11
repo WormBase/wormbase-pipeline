@@ -8,8 +8,8 @@
 #                          ~wormpub/BUILD/autoace/release/
 #                          /nfs/WWW/SANGER_docs/htdocs/Projects/C_elegans/WORMBASE/current/release_notes.txt/
 #
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2011-08-10 15:14:11 $
+# Last updated by: $Author: klh $
+# Last updated on: $Date: 2011-08-11 11:10:35 $
 
 
 use strict;                                      
@@ -118,11 +118,6 @@ my $targetdir = '/nfs/disk69/ftp/pub2/wormbase';    # default directory, can be 
 # delete the old symbolic link and make the new one
 $wormbase->run_command("rm -f $targetdir/development_release", $log);
 $wormbase->run_command("cd $targetdir; ln -s releases/$release development_release", $log);
-
-# update wormpep_dev symbolic link in wormpep ftp site
-my $wormpep_dir = glob("~ftp/pub/databases/wormpep"); 
-$wormbase->run_command("rm -f $wormpep_dir/wormpep_dev", $log);
-$wormbase->run_command("ln -fs $wormpep_dir/wormpep${release_number}/wormpep${release_number} $wormpep_dir/wormpep_dev", $log);
 
 #######################################
 # Webpublish to live site
