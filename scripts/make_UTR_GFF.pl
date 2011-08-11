@@ -11,11 +11,11 @@
 # REQUIREMENTS:  Wormbase.pm, Modules::GFF_sql.pm
 #         BUGS:  ---
 #        NOTES:  ---
-#       AUTHOR:  $Author: mh6 $
+#       AUTHOR:  $Author: klh $
 #      COMPANY:
 #      VERSION:  2 
 #      CREATED:  21/02/06 14:11:30 GMT
-#     REVISION:  $Revision: 1.24 $ 
+#     REVISION:  $Revision: 1.25 $ 
 #===============================================================================
 
 use strict;
@@ -26,17 +26,20 @@ use Wormbase;
 use Getopt::Long;
 use IO::File;
 
-my ( $help, $debug, $test, $store, $wormbase, $chrom, $load , $verbose);
+my ( $help, $debug, $test, $store, $wormbase, $chrom, $chunk_total, $chunk_id, $output_file, $noload , $verbose);
 
 GetOptions(
-    "help"         => \$help,
-    "debug=s"      => \$debug,
-    "test"         => \$test,
-    "store:s"      => \$store,
-    "chromosome:s" => \$chrom,
-    "noload"       => \$load,
-    'verbose'	   => \$verbose
-);
+  "help"         => \$help,
+  "debug=s"      => \$debug,
+  "test"         => \$test,
+  "store:s"      => \$store,
+  "chromosome:s" => \$chrom,
+  "chunktotal:s" => \$chunk_total,
+  "chunkid:s"    => \$chunk_id,
+  "outfile:s"    => \$output_file,
+  "noload"       => \$noload,
+  'verbose'	 => \$verbose,
+    );
 
 die `perldoc $0` if $help;
 if ($store) { $wormbase = Storable::retrieve($store) or croak("Can't restore wormbase from $store\n") }
@@ -45,84 +48,104 @@ else { $wormbase = Wormbase->new( -debug => $debug, -test => $test ) }
 my $log = Log_files->make_build_log($wormbase);    # prewarning will be misused in a global way
 
 # do a single chromosome if prompted else do the lot......
-my @chromosome;
+my @chromosomes;
+
 if ($chrom) {
-	@chromosome = split(/,/,join(',',$chrom));
+  @chromosomes = split(/,/,join(',',$chrom));
 }
-else {
-    @chromosome = $wormbase->get_chromosome_names(-mito => 1);
+elsif (defined $chunk_total and defined $chunk_id) {
+  @chromosomes = $wormbase->get_chunked_chroms(-mito => 1,
+                                               -prefix => 1,
+                                               -chunk_total => $chunk_total,
+                                               -chunk_id    => $chunk_id);
+
+} else {
+  @chromosomes = $wormbase->get_chromosome_names(-mito => 1, 
+                                                -prefix => 1);
 }
 
 # global setup setup
 
 my $gffdir = $wormbase->gff_splits;
-my $db     =  $test ? GFF_sql->new() : GFF_sql->new( { -build => 1 } );
-my $outdir = $gffdir;
-my %cds_cache;  # crude hack to speed up the cds lookup
-my $contig_assembly = ($wormbase->assembly_type eq 'contig') ? 1 : undef;
-my $suffix = $contig_assembly ? $$ : '';
-# main
-CHROM:foreach my $chr (@chromosome) {
-    %cds_cache=(); # clean out old data
-    my $pref = $wormbase->chromosome_prefix;
-    $chr =~ s/$pref//; #seems silly but is safest way to ensure that its not missing or duplicated!
-    my $file_prefix = $contig_assembly ? $wormbase->species : $wormbase->chromosome_prefix.$chr;
-    my $long_name = $wormbase->chromosome_prefix.$chr;
-   		
-    &write_tmp_gff($file_prefix,$long_name) if $contig_assembly;
-   	
-    # load    
-    $db->load_gff( "$gffdir/${file_prefix}_curated.gff$suffix", $long_name, 1 ) if !$load;
-    $db->load_gff( "$gffdir/${file_prefix}_Coding_transcript.gff$suffix", $long_name ) if !$load;
-
-    my $outfile = IO::File->new( "$outdir/${file_prefix}_UTR.gff$suffix",          ">>" ) or $log->log_and_die("cant open ${file_prefix}_UTR.gff$suffix"); # append or create
-    my $infile  = IO::File->new( "$gffdir/${file_prefix}_Coding_transcript.gff$suffix", "r" ) or $log->log_and_die("cant open ${file_prefix}_Coding_transcrit.gff$suffix");
-
-    my $n_exons=0;
-    
-    # iterate over exons GFF
-    while (<$infile>) {
-        next if /\#/;
-        s/\"//g;#"
-        my @f = split;
-        my ( $chrom, $start, $stop, $ori, $name ) = ( $f[0], $f[3], $f[4], $f[6], $f[9] );
-        next if ( $f[1] ne 'Coding_transcript' || $f[2] ne 'exon' );
-	print "processing transcript: $name \n" if $verbose;
-        #make the gff
-        print $outfile &make_gff( $db, $chrom, $start, $stop, $ori, $name );
-	$n_exons++;
-    }
-
-    $log->write_to("processed $n_exons exons\n");
-    # clean up
-    if( $wormbase->assembly_type eq 'contig') {
-	$wormbase->run_command("cat $outdir/${file_prefix}_UTR.gff$$ >> $outdir/UTR.gff$$", 'no_log');
-    	$wormbase->run_command("rm $gffdir/".$wormbase->species."*$$",'no_log');
-    }
+if (not defined $output_file) {
+  $output_file = "$gffdir/UTR.gff";
 }
 
+my $db     =  $test ? GFF_sql->new() : GFF_sql->new( { -build => 1 } );
+my %cds_cache;  # crude hack to speed up the cds lookup
+
+my $outfh = IO::File->new( $output_file, ">" ) or 
+    $log->log_and_die("cant open $output_file for writing");
+
+# main
+CHROM:foreach my $chr (@chromosomes) {
+  %cds_cache=(); # clean out old data
+  
+  my ($curated_gff, $cod_trans_gff, @tmp_files);
+  
+  if ($wormbase->assembly_type eq 'contig') {
+    ($curated_gff, $cod_trans_gff) = &write_tmp_contig_gff($chr);
+    push @tmp_files, $curated_gff, $cod_trans_gff;
+  } else {
+    $curated_gff = "$gffdir/${chr}_curated.gff";
+    $cod_trans_gff = "$gffdir/${chr}_Coding_transcript.gff";
+  }   	
+  
+  # load    
+  $db->load_gff( $curated_gff, $chr, 1 ) unless $noload;
+  $db->load_gff( $cod_trans_gff, $chr ) unless $noload;
+
+  
+  my $infile  = IO::File->new( $cod_trans_gff, "r" ) or $log->log_and_die("cant open $cod_trans_gff for reading\n");
+
+  my $n_exons=0;
+  
+  # iterate over exons GFF
+  while (<$infile>) {
+    next if /\#/;
+    s/\"//g;#"
+    my @f = split;
+    my ( $chrom, $start, $stop, $ori, $name ) = ( $f[0], $f[3], $f[4], $f[6], $f[9] );
+    next if ( $f[1] ne 'Coding_transcript' || $f[2] ne 'exon' );
+    print "processing transcript: $name \n" if $verbose;
+    #make the gff
+    print $outfh &make_gff( $db, $chrom, $start, $stop, $ori, $name );
+    $n_exons++;
+  }
+  
+  $log->write_to("processed $n_exons exons\n");
+  unlink @tmp_files;
+}
+
+close($outfh);
 $log->mail();
 
 ##########################
 
 #
-sub write_tmp_gff {
-	my $prefix = shift;
-	my $contig = shift;
-	open(OUT,">$gffdir/${prefix}_curated.gff$suffix") or $log->log_and_die("cant make curated tmp GFF for $prefix $contig: $!\n");
-	my $handle = $wormbase->open_GFF_file($contig,'curated', $log);
-	while (<$handle>) {
-		print OUT;
-	}
-	close $handle;
-	close OUT;
-	open(OUT,">$gffdir/${prefix}_Coding_transcript.gff$suffix") or $log->log_and_die("cant make Coding tmp GFF for $prefix $contig: $!\n");
-	$handle = $wormbase->open_GFF_file($contig,'Coding_transcript', $log);
-	while (<$handle>) {
-		print OUT;
-	}
-	close $handle;
-	close OUT;
+sub write_tmp_contig_gff {
+  my ($contig) = @_;
+
+  my $curated_tmp = "/tmp/${contig}_curated.gff";
+  my $transcript_tmp = "/tmp/${contig}_Coding_transcript.gff";
+
+  open(OUT,">$curated_tmp") or $log->log_and_die("cant make curated tmp GFF for $contig: $!\n");
+  my $handle = $wormbase->open_GFF_file($contig,'curated', $log);
+  while (<$handle>) {
+    print OUT;
+  }
+  close $handle;
+  close OUT;
+
+  open(OUT,">$transcript_tmp") or $log->log_and_die("cant make Coding tmp GFF for $contig: $!\n");
+  $handle = $wormbase->open_GFF_file($contig,'Coding_transcript', $log);
+  while (<$handle>) {
+    print OUT;
+  }
+  close $handle;
+  close OUT;
+
+  return ($curated_tmp, $transcript_tmp);
 }
 
 

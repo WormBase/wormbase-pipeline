@@ -7,7 +7,7 @@
 # Usage : autoace_builder.pl [-options]
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2011-07-22 16:43:43 $
+# Last edited on: $Date: 2011-08-11 15:00:30 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -400,8 +400,25 @@ sub make_UTR {
   
   $log->write_to("bsub commands . . . . \n\n");
   my $lsf = LSF::JobManager->new(-J => "make_UTRs", -o => "/dev/null");
-  foreach (@{$wormbase->get_binned_chroms(-mito => 1)} ) {
-    my $cmd = "make_UTR_GFF.pl -chromosome $_";
+
+  my $out_dir = $wormbase->gff_splits;
+  my (@commands, @out_files);
+
+  if ($wormbase->assembly_type eq 'contig') {
+    my $chunk_total = 24;
+    foreach my $chunk_id (1..$chunk_total) {
+      my $outfile = "$out_dir/UTR.chunk_${chunk_id}.gff";
+      push @commands, "make_UTR_GFF.pl -chunkid $chunk_id -chunktotal $chunk_total -outfile $outfile";
+      push @out_files, $outfile;
+    }
+  } else {
+    foreach my $chrom ($wormbase->get_chromosome_names(-mito => 1, -prefix => 1)) {
+      my $outfile = "$out_dir/${chrom}_UTR.gff";
+      push @commands, "make_UTR_GFF.pl -chrom $chrom -outfile $outfile";
+    }
+  }
+
+  foreach my $cmd (@commands) {
     $log->write_to("$cmd\n");
     $cmd = $wormbase->build_cmd($cmd);
     $lsf->submit($cmd);
@@ -413,11 +430,14 @@ sub make_UTR {
   }
   $lsf->clear;   
   
+  foreach my $outfile (@out_files) {
+    $log->error("$outfile is missing or empty") if not -e $outfile or not -s $outfile;
+  }
+
   #merge into single file.
   if($wormbase->assembly_type eq 'contig') {
-    $wormbase->run_command("cat ".$wormbase->gff_splits."/UTR.gff* >> ".$wormbase->gff_splits."/allUTR.gff",$log);
-    $wormbase->run_command("rm -f ".$wormbase->gff_splits."/UTR.gff*",$log);
-    $wormbase->run_command("mv -f ".$wormbase->gff_splits."/allUTR.gff ".$wormbase->gff_splits."/UTR.gff",$log);
+    $wormbase->run_command("cat @out_files  > $out_dir/UTR.gff",$log);
+    $wormbase->run_command("rm -f @out_files",$log);
 	
 # check the files      
 #Crem_Contig35   Coding_transcript       three_prime_UTR 74394   74463   .       -       .       Transcript "CRE24456"
