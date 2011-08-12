@@ -5,8 +5,8 @@
 # by Kerstin Jekosch
 #
 # Version: $Version: $
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2009-05-07 15:20:35 $
+# Last updated by: $Author: klh $
+# Last updated on: $Date: 2011-08-12 10:30:26 $
 
 use strict;
 use warnings;
@@ -35,23 +35,23 @@ my $verbose;
 my $load;          # use to automatically load file to autoace
 my $ace;           # specify where to put the output ace file
 my $store;         # specify a frozen configuration file
-my $chrom;         # specify a chromosome
+my @chromosomes;   # specify a chromosome
 
 my $gffdir;        # use a specific GFF_SPLIT directory
 my $dbdir;         # connect to a different acedb
 my $noparse;	   # don't parse the ace file
 
 GetOptions(
-	   "debug=s"      => \$debug,
-	   "verbose"      => \$verbose,
-	   "test"         => \$test,
-	   "help"         => \$help,
-	   "load"         => \$load,
-	   "acefile=s"    => \$ace,
-	   'store=s'      => \$store,
-	   'chromosome=s' => \$chrom,
-	   'gffdir=s'     => \$gffdir,
-	   'dbdir=s'      => \$dbdir,
+	   "debug=s"       => \$debug,
+	   "verbose"       => \$verbose,
+	   "test"          => \$test,
+	   "help"          => \$help,
+	   "load"          => \$load,
+	   "acefile=s"     => \$ace,
+	   'store=s'       => \$store,
+	   'chrom=s@'      => \@chromosomes,
+	   'gffdir=s'      => \$gffdir,
+	   'dbdir=s'       => \$dbdir,
 	   'noparse'	   => \$noparse,
 	   );
 
@@ -62,8 +62,13 @@ GetOptions(
 # recreate configuration   #
 ############################
 my $wb;
-if ($store) { $wb = Storable::retrieve($store) or croak("cant restore wormbase from $store\n") }
-else { $wb = Wormbase->new( -debug => $debug, -test => $test, ) }
+if ($store) { 
+  $wb = Storable::retrieve($store) or croak("cant restore wormbase from $store\n"); 
+}
+else { 
+  $wb = Wormbase->new(-debug => $debug, 
+                      -test => $test);
+}
 
 ###########################################
 # Variables Part II (depending on $wb)    #
@@ -87,8 +92,11 @@ my $log = Log_files->make_build_log($wb);
 my $tace = $wb->tace;    # tace executable path
 $dbdir  = $wb->autoace    if ( !$dbdir );     # Database path
 $gffdir = $wb->gff_splits if ( !$gffdir );    # GFF_SPLITS directory
-my @chromosomes = $test ? qw ( IV ) : qw( I II III IV V X );    # chromosomes
-@chromosomes = ($chrom) if $chrom;
+
+if (not @chromosomes) {
+  @chromosomes = $wb->get_chromosome_names();
+}
+
 my $acefile = $ace ? $ace : $wb->acefiles . "/RNAi_mappings.ace";
 ################
 # Structs      #
