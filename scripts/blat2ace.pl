@@ -7,7 +7,7 @@
 # Exporter to map blat data to genome and to find the best match for each EST, mRNA, OST, etc.
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2011-05-11 11:00:32 $
+# Last edited on: $Date: 2011-08-16 14:16:42 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -17,32 +17,34 @@ use Carp;
 use Log_files;
 use Storable;
 use File::Copy;
+use Coords_converter;
 
 #########################
 # Command line options  #
 #########################
 
 my ($help, $debug, $test, $verbose, $store, $wormbase, $species);
-my ($database, $confirmed_introns, $virtualobjs, $qtype, $qspecies);
-my ($acefile, $pslfile, $virtualobjsfile, $confirmedfile, $bestm, $otherm);
+my ($database, $confirmed_introns, $qtype, $qspecies, $map_to_clone);
+my ($acefile, $pslfile, $virtualobjsfile, $confirmedfile, $bestm, $otherm, $group_align_segs);
 
 GetOptions (
-	    "help"       => \$help,
-	    "debug=s"    => \$debug,
-	    "test"       => \$test,
-	    "verbose"    => \$verbose,
-	    "store:s"    => \$store,
-	    "species:s"  => \$species,
-	    "database:s" => \$database,
-	    "intron"     => \$confirmed_introns,
-            "cifile:s"   => \$confirmedfile,
-	    "virtual"    => \$virtualobjs,
-            "vfile:s"    => \$virtualobjsfile,
-	    "type:s"     => \$qtype,
-	    "qspecies:s" => \$qspecies, #query species
-	    "ace:s"      => \$acefile,
-	    "psl:s"      => \$pslfile
-	   );
+  "help"        => \$help,
+  "debug=s"     => \$debug,
+  "test"        => \$test,
+  "verbose"     => \$verbose,
+  "store:s"     => \$store,
+  "species:s"   => \$species,
+  "database:s"  => \$database,
+  "intron"      => \$confirmed_introns,
+  "cifile:s"    => \$confirmedfile,
+  "clone"       => \$map_to_clone,
+  "vfile:s"     => \$virtualobjsfile,
+  "type:s"      => \$qtype,
+  "qspecies:s"  => \$qspecies, #query species
+  "ace:s"       => \$acefile,
+  "psl:s"       => \$pslfile,
+  "groupaligns" => \$group_align_segs,
+    );
 
 
 if ( $store ) {
@@ -61,6 +63,7 @@ $log->log_and_die("no type specified\n") unless $qtype;
 #############################
 # variables and directories #
 #############################
+my $coords_con = Coords_converter->invoke($wormbase->autoace, undef, $wormbase);
 
 # set database paths, default to autoace unless -camace
 my $ace_dir   = $wormbase->orgdb;
@@ -172,7 +175,6 @@ if ($confirmed_introns) {
   open $confirmed_fh, ">$confirmedfile" or $log->log_and_die("Could not open $confirmedfile for writing\n");
 }
 
-
 foreach my $seq_group (@sequence_groups) {
   my (%hits, %hits_by_tname, %target_lengths, %target_batch);
 
@@ -191,11 +193,11 @@ foreach my $seq_group (@sequence_groups) {
     my $strand       = $f[8];                    # strand that match is on
     my $qname        = $f[9];                    # query sequence name
     my $qsize        = $f[10];                   # query sequence length
-    my $qstart       = $f[11];
+    my $qstart       = $f[11] + 1;
     my $qend         = $f[12];
     my $tname        = $f[13];                   # name of superlink that was used as blat target sequence
     my $tsize        = $f[14];                   # target seq size (used to be superlink hence sl)
-    my $tstart       = $f[15];                   # target (superlink) start coordinate...
+    my $tstart       = $f[15] + 1;               # target (superlink) start coordinate...
     my $tend         = $f[16];                   # ...and end coordinate
     my $block_count  = $f[17];                   # block count
     my @lengths      = split (/,/, $f[18]);      # sizes of each blat 'block' in any individual blat match
@@ -225,7 +227,7 @@ foreach my $seq_group (@sequence_groups) {
     
     my @segs = ();  
     
-    for (my $x = 0;$x < $block_count; $x++) {
+    for (my $x = 0; $x < $block_count; $x++) {
       
       my ($query_start,$query_end, $target_start, $target_end);
       
@@ -244,10 +246,6 @@ foreach my $seq_group (@sequence_groups) {
         $target_end = $tsize - $t_starts[$x];
         $target_start = $target_end - $lengths[$x] + 1;
       }
-      
-      # 1 out of 8000,000 cDNAs ends up with 0 as a start and breaks the mapping, this hack is to stop it
-      $target_start++ if $target_start == 0;
-      $query_start++ if  $query_start == 0;
       
       push @segs, {
         tstart => $target_start,
@@ -344,30 +342,30 @@ foreach my $seq_group (@sequence_groups) {
     &confirm_introns($confirmed_fh, $qtype, \%hits_by_tname);
   }
  
-  # need to write separate out hits into BEST and OTHER
-  my $virt_hash = &write_ace($out_fh, $qtype, $bestm, $otherm, \%hits_by_tname, \%target_lengths);
-  push @all_virt_hashes, $virt_hash;
+  if ($map_to_clone) {
+    push @all_virt_hashes, &write_ace_bottom_level($out_fh, $qtype, $bestm, $otherm, \%hits_by_tname);
+  } else {
+    push @all_virt_hashes, &write_ace_top_level($out_fh, $qtype, $bestm, $otherm, \%hits_by_tname, \%target_lengths);
+  }
 }
 
-if ($virtualobjs) {
-  # write virtuals sequences here
-  open my $vfh, ">$virtualobjsfile" or $log->log_and_die("Could not open $virtualobjsfile for writing\n");
+# write virtuals sequences here
+open my $vfh, ">$virtualobjsfile" or $log->log_and_die("Could not open $virtualobjsfile for writing\n");
 
-  foreach my $virt_hash (@all_virt_hashes) {
-    foreach my $tname (keys %$virt_hash) {
-      my @schild = sort {
-        my ($na) = ($a =~ /_(\d+)$/); my ($nb) = ($b =~ /_(\d+)$/); $na <=> $nb; 
-      } keys %{$virt_hash->{$tname}};
-      
-      print $vfh "\nSequence : \"$tname\"\n";
-      foreach my $child (@schild) {
-        printf $vfh "S_Child Homol_data %s %d %d\n", $child, @{$virt_hash->{$tname}->{$child}};
-      }
+foreach my $virt_hash (@all_virt_hashes) {
+  foreach my $tname (keys %$virt_hash) {
+    my @schild = sort {
+      my ($na) = ($a =~ /_(\d+)$/); my ($nb) = ($b =~ /_(\d+)$/); $na <=> $nb; 
+    } keys %{$virt_hash->{$tname}};
+    
+    print $vfh "\nSequence : \"$tname\"\n";
+    foreach my $child (@schild) {
+      printf $vfh "S_Child Homol_data %s %d %d\n", $child, @{$virt_hash->{$tname}->{$child}};
     }
   }
-
-  close($vfh);
 }
+
+close($vfh);
 
 close($out_fh);
 if (defined $confirmed_fh) {
@@ -388,7 +386,7 @@ exit(0);
 #################################################################################
 
 
-sub write_ace {
+sub write_ace_top_level {
   my ($outfh, $type, $best_m, $other_m, $hits, $tlengths) = @_;
 
   # strategy; divide the parent sequence into 150000-sized bins, and place each alignment
@@ -403,7 +401,7 @@ sub write_ace {
       my $bin = 1 +  int( $hit->{tstart} / $binsize );
       my $bin_start = ($bin - 1) * $binsize + 1;
       my $bin_end   = $bin_start + $binsize - 1;
-      
+
       if ($bin_end > $tlengths->{$tname}) {
         $bin_end = $tlengths->{$tname};
       }
@@ -430,6 +428,7 @@ sub write_ace {
         }
       }
     
+
       $hit->{bin} = $bin;
       my $parent = sprintf("BLAT_%s:%s%s", 
                            $type,
@@ -442,8 +441,71 @@ sub write_ace {
     }
   }
 
- 
   # finally, write out the results
+  &write_ace($outfh, $type, $best_m, $other_m, $hits);
+
+  return \%virtuals;
+}
+
+
+#########################
+# write_bottom_level_ace
+#########################
+
+sub write_ace_bottom_level {
+  my ($outfh, $type, $best_m, $other_m, $hits) = @_;
+
+  my (%mapped_down_hits, %virtuals);
+
+  foreach my $tname (%$hits) {
+    foreach my $hit (@{$hits->{$tname}}) {
+      $hit->{bin} = 0;
+
+      my ($seq, $seq_start, $seq_end) = $coords_con->LocateSpan($tname, $hit->{tstart}, $hit->{tend});
+      #printf STDERR "%s %d %d => %s %d %d\n", $tname, $hit->{tstart}, $hit->{tend}, $seq, $seq_start, $seq_end;
+
+      if ($seq ne $tname and $coords_con->isa_clone($seq)) {        
+
+        $hit->{tname} = $seq;
+        $hit->{tstart} = ($seq_start < $seq_end) ? $seq_start : $seq_end;
+        $hit->{tend}   = ($seq_start < $seq_end) ? $seq_end : $seq_start;
+
+        if ($seq_end < $seq_start) {
+          # flip strand
+          $hit->{tstrand} = ($hit->{tstrand} eq "+") ? "-" : "+";
+        }
+
+        foreach my $seg (@{$hit->{segments}}) {
+          my ($seg_seq, $seg_st, $seg_en) = $coords_con->LocateSpan($tname, $seg->{tstart}, $seg->{tend});
+
+          $seg->{tstart} = ($seg_st < $seg_en) ? $seg_st : $seg_en;
+          $seg->{tend}   = ($seg_st < $seg_en) ? $seg_en : $seg_st;
+        }
+      }
+
+      push @{$mapped_down_hits{$hit->{tname}}}, $hit;
+
+      my $parent = sprintf("BLAT_%s:%s", 
+                           $type,
+                           $hit->{tname});
+
+      if (not exists $virtuals{$hit->{tname}}->{$parent}) {
+        my $len = $coords_con->Superlink_length($hit->{tname});
+        $virtuals{$hit->{tname}}->{$parent} = [1, $len];
+      }
+    }
+  }
+
+  &write_ace($outfh, $type, $best_m, $other_m, \%mapped_down_hits);
+
+  return \%virtuals;
+}
+
+
+sub write_ace {
+  my ($outfh, $type, $best_m, $other_m, $hits) = @_;
+
+  my %query_seen;
 
   foreach my $tname (keys %$hits) {
     my @list =  grep { exists $_->{bin} } @{$hits->{$tname}};
@@ -461,28 +523,28 @@ sub write_ace {
         $prev_bin = $hit->{bin};
       }
       
-      
+      $query_seen{$hit->{qname}}++;
+
       foreach my $seg (@{$hit->{segments}}) {
-        printf($outfh "DNA_homol\t\"%s\"\t%s\t%.1f\t%d\t%d\t%d\t%d\n",
+        printf($outfh "DNA_homol\t\"%s\"\t%s\t%.1f\t%d\t%d\t%d\t%d%s\n", 
                $hit->{qname},
                ($hit->{isbest}) ? $best_m : $other_m,
                $hit->{score},
                $hit->{tstrand} eq "+" ? $seg->{tstart} : $seg->{tend},
                $hit->{tstrand} eq "+" ? $seg->{tend}   : $seg->{tstart},
                $seg->{qstart},
-               $seg->{qend});
+               $seg->{qend}, 
+               ($group_align_segs) ? "\tAlign_id " . $query_seen{$hit->{qname}} : "",
+               );
         
       }
     }
   }
-
-  return \%virtuals;
 }
-
 
 #########################
 # confirm introns
-########################
+#########################
 sub confirm_introns {
   my ($ci_fh, $type, $hits) = @_;
 
