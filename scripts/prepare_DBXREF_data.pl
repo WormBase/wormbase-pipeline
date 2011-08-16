@@ -33,9 +33,9 @@ unless (defined $store) {
     print "Using BUILD database storable\n";
     $store = "/nfs/users/nfs_w/wormpub/BUILD/autoace/Elegans.store";
   }
-  elsif (-e "/nfs/users/nfs_w/wormpub/DATABASES/".$database."Elegans.store") {
+  elsif (-e "/nfs/users/nfs_w/wormpub/DATABASES/".$database."/Elegans.store") {
     print "Using $database storable\n";
-    $store = "~wormpub/DATABASES/".$database."Elegans.store";
+    $store = "/nfs/users/nfs_w/wormpub/DATABASES/".$database."/Elegans.store";
   }
   else {
     print "No storable specified and cannot retrieve $database store therefore defaulting to using current_DB storable\n";
