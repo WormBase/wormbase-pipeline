@@ -44,7 +44,7 @@ my $brdb = $gdb_a->fetch_by_name_assembly('Brugia malayi');
 my $hadb = $gdb_a->fetch_by_name_assembly('Meloidogyne hapla');
 my $cadb = $gdb_a->fetch_by_name_assembly('Caenorhabditis angaria');
 my $tsdb = $gdb_a->fetch_by_name_assembly('Trichinella spiralis');
-my $csp11= $gdb_a->fetch_by_name_assembly('Caenorhabditis sp11')
+my $csp11= $gdb_a->fetch_by_name_assembly('Caenorhabditis sp11');
 
 my $mlss = $mlss_a->fetch_by_method_link_type_GenomeDBs( 'PECAN', [ $edb, $bdb, $rdb,$ndb,$brdb,$pdb,$jdb,$hadb,$cadb,$tsdb,$csp11] );
 
