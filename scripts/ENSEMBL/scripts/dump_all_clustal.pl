@@ -28,10 +28,10 @@ use Bio::LocatableSeq;
 Bio::EnsEMBL::Registry->load_all();
 
 # adaptors setup
-my $mlss_a = Bio::EnsEMBL::Registry->get_adaptor( 'Compara', 'compara_alignments', 'MethodLinkSpeciesSet' );
-my $gdb_a  = Bio::EnsEMBL::Registry->get_adaptor( 'Compara', 'compara_alignments', 'GenomeDB' );
-my $ga_a   = Bio::EnsEMBL::Registry->get_adaptor( 'Compara', 'compara_alignments', 'GenomicAlignBlock' );
-my $dnaf_a = Bio::EnsEMBL::Registry->get_adaptor( 'Compara', 'compara_alignments', 'DnaFrag' );
+my $mlss_a = Bio::EnsEMBL::Registry->get_adaptor( 'Compara alignments', 'compara', 'MethodLinkSpeciesSet' );
+my $gdb_a  = Bio::EnsEMBL::Registry->get_adaptor( 'Compara alignments', 'compara', 'GenomeDB' );
+my $ga_a   = Bio::EnsEMBL::Registry->get_adaptor( 'Compara alignments', 'compara', 'GenomicAlignBlock' );
+my $dnaf_a = Bio::EnsEMBL::Registry->get_adaptor( 'Compara alignments', 'compara', 'DnaFrag' );
 
 # genome databases setup
 my $edb = $gdb_a->fetch_by_name_assembly('Caenorhabditis elegans');
