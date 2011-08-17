@@ -60,12 +60,12 @@ my $mlss_adaptor = Bio::EnsEMBL::Registry->get_adaptor('Compara', 'compara', 'Me
 
 # get the method_link_species_set object for GERP_CONSERVATION_SCORE for 8 species
 my $mlss = $mlss_adaptor->fetch_by_method_link_type_registry_aliases("GERP_CONSERVATION_SCORE", 
-    ['Caenorhabditis elegans', 'Caenorhabditis briggsae',
-     'Caenorhabditis remanei', 'Brugia malayi', 
-     'Pristionchus pacificus', 'Caenorhabditis brenneri',
+    ['Caenorhabditis elegans' ,'Caenorhabditis briggsae',
+     'Caenorhabditis remanei' ,'Brugia malayi', 
+     'Pristionchus pacificus' ,'Caenorhabditis brenneri',
      'Caenorhabditis japonica','Meloidogyne hapla',
-     'Meloidogyne incognita','Haemonchus contortus',
-     'Caenorhabditis angaria','Trichinella spiralis']);
+     'Caenorhabditis sp11'    ,'Caenorhabditis angaria',
+     'Trichinella spiralis']);
 
 
 foreach my $seq_region ($wb->get_chromosome_names(-prefix => 1)){
