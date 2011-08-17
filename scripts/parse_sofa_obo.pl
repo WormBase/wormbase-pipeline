@@ -1,4 +1,13 @@
-#!/software/bin/perl
+#!/usr/bin/env perl 
+
+# parse_sofa_obo.pl
+
+########################################################
+# This script parses a SO obo file into Ace objects. It
+# can be run either to parse the full SO (not normal), 
+# or the sequence_feature subset (more normal), formerly
+# known as the "SOFA"
+#######################################################
 
 use strict;
 use Getopt::Long;
