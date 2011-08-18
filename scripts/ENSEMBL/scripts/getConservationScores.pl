@@ -56,7 +56,7 @@ print "opening $ofile\n" if $debug;
 open(OFH,'>',$ofile) || die($@);
 
 # get method_link_species_set adaptor
-my $mlss_adaptor = Bio::EnsEMBL::Registry->get_adaptor('Compara', 'compara', 'MethodLinkSpeciesSet');
+my $mlss_adaptor = Bio::EnsEMBL::Registry->get_adaptor('Compara alignments', 'compara', 'MethodLinkSpeciesSet');
 
 # get the method_link_species_set object for GERP_CONSERVATION_SCORE for 8 species
 my $mlss = $mlss_adaptor->fetch_by_method_link_type_registry_aliases("GERP_CONSERVATION_SCORE", 
