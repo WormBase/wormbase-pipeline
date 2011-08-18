@@ -58,14 +58,30 @@ open(OFH,'>',$ofile) || die($@);
 # get method_link_species_set adaptor
 my $mlss_adaptor = Bio::EnsEMBL::Registry->get_adaptor('Compara alignments', 'compara', 'MethodLinkSpeciesSet');
 
-# get the method_link_species_set object for GERP_CONSERVATION_SCORE for 8 species
-my $mlss = $mlss_adaptor->fetch_by_method_link_type_registry_aliases("GERP_CONSERVATION_SCORE", 
-    ['Caenorhabditis elegans' ,'Caenorhabditis briggsae',
-     'Caenorhabditis remanei' ,'Brugia malayi', 
-     'Pristionchus pacificus' ,'Caenorhabditis brenneri',
-     'Caenorhabditis japonica','Meloidogyne hapla',
-     'Caenorhabditis sp11'    ,'Caenorhabditis angaria',
-     'Trichinella spiralis']);
+# hackety hack
+my $gdb_a  = Bio::EnsEMBL::Registry->get_adaptor( 'Compara alignments', 'compara', 'GenomeDB' );
+my $edb = $gdb_a->fetch_by_name_assembly('Caenorhabditis elegans');
+my $bdb = $gdb_a->fetch_by_name_assembly('Caenorhabditis briggsae');
+my $rdb = $gdb_a->fetch_by_name_assembly('Caenorhabditis remanei');
+my $ndb = $gdb_a->fetch_by_name_assembly('Caenorhabditis brenneri');
+my $pdb = $gdb_a->fetch_by_name_assembly('Pristionchus pacificus');
+my $jdb = $gdb_a->fetch_by_name_assembly('Caenorhabditis japonica');
+my $brdb = $gdb_a->fetch_by_name_assembly('Brugia malayi');
+my $hadb = $gdb_a->fetch_by_name_assembly('Meloidogyne hapla');
+my $cadb = $gdb_a->fetch_by_name_assembly('Caenorhabditis angaria');
+my $tsdb = $gdb_a->fetch_by_name_assembly('Trichinella spiralis');
+my $csp11= $gdb_a->fetch_by_name_assembly('Caenorhabditis sp11');
+
+my $mlss = $mlss_adaptor->fetch_by_method_link_type_GenomeDBs( 'PECAN', [ $edb, $bdb, $rdb,$ndb,$brdb,$pdb,$jdb,$hadb,$cadb,$tsdb,$csp11] );
+
+# get the method_link_species_set object for GERP_CONSERVATION_SCORE for 11 species
+# my $mlss = $mlss_adaptor->fetch_by_method_link_type_registry_aliases("GERP_CONSERVATION_SCORE", 
+#    ['Caenorhabditis elegans' ,'Caenorhabditis briggsae',
+#     'Caenorhabditis remanei' ,'Brugia malayi', 
+#     'Pristionchus pacificus' ,'Caenorhabditis brenneri',
+#     'Caenorhabditis japonica','Meloidogyne hapla',
+#     'Caenorhabditis sp11'    ,'Caenorhabditis angaria',
+#     'Trichinella spiralis']);
 
 
 foreach my $seq_region ($wb->get_chromosome_names(-prefix => 1)){
@@ -87,7 +103,7 @@ foreach my $seq_region ($wb->get_chromosome_names(-prefix => 1)){
     my $slices                = split_Slices(\@_slice, $window, 0);
 
     #get conservation score adaptor
-    my $cs_adaptor            = Bio::EnsEMBL::Registry->get_adaptor('Compara', 'compara', 'ConservationScore');			
+    my $cs_adaptor            = Bio::EnsEMBL::Registry->get_adaptor('Compara alignments', 'compara', 'ConservationScore');			
 
     my $count                 = 1;
     while (my $slice          = shift @$slices){
