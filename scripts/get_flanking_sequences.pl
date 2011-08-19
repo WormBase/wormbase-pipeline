@@ -5,8 +5,8 @@
 # Script to grab two unique flanking sequences after specifying a sequence 
 # and two coordinates
 #
-# Last updated by: $Author: klh $     
-# Last updated on: $Date: 2011-07-22 12:22:22 $      
+# Last updated by: $Author: mt3 $     
+# Last updated on: $Date: 2011-08-19 13:49:14 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};                  
@@ -84,7 +84,9 @@ This script finds the flanking sequences of a region on the genome.
 
 =item -zero - raise this if your extent is a 2bp one defining a 0-bp object (i.e. between bases)
 
-=item -species - the species you are working on
+=item -length - the length of the flank requried - the default is 30bp
+
+=item -species - the species you are working on - the default is elegans
 
 =item -db, the database you wisk to look in - the default is autoace
 
