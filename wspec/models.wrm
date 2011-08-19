@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: pad $
-// Last edited on: $Date: 2011-06-14 09:02:23 $
+// Last edited on: $Date: 2011-08-19 12:15:42 $
 
 
 ////////////////////////
@@ -307,6 +307,7 @@
                           Transgene_product ?Transgene XREF Gene
                           Gene_regulation Trans_regulator ?Gene_regulation XREF Trans_regulator_gene
                                           Trans_target    ?Gene_regulation XREF Trans_regulated_gene
+					  Regulate_expr_cluster ?Expression_cluster XREF Regulated_by_gene // Wen WS228
                           Antibody ?Antibody XREF Gene
                           Microarray_results ?Microarray_results XREF Gene
 			  Expression_cluster ?Expression_cluster XREF Gene #Evidence	//Igor: create clusters of Genes from microarray exps
@@ -1224,7 +1225,7 @@
 						   Partially_confirmed
 						   Confirmed
 		   Isoform #Evidence
-		   Start_not_found Int
+		   Start_not_found UNIQUE Int
 		   End_not_found
 		   Merge Text  // ar2 270106 added by request for StLoius
 		   Split Text  // ar2 270106 added by request for StLoius
@@ -1302,8 +1303,8 @@
                                               stRNA UNIQUE Text            // [010723 dl]
                                               miRNA UNIQUE Text            // [020306 kj]
                                               ncRNA UNIQUE Text            // true non-coding RNAs
-					      snlRNA UNIQUE Text	   //small nuclear like 
-					      u21RNA UNIQUE Text	   //21U-RNA
+					      snlRNA UNIQUE Text	   // small nuclear like 
+					      piRNA UNIQUE Text		   // 21U-RNA/piwi-interacting RNA/piRNA
 		           Isoform #Evidence                               // Set if this is a RNA isoform
 			   Ignore #Evidence                                // Set for putative NMD targets which we do not want to see in wormrna
                            Start_not_found                                 // [020306 kj]
@@ -1479,6 +1480,7 @@
                NOG   //eggNOG - standard cluster
                euNOG //eggNOG - eukaryote cluster
                meNOG //eggNOG - metazoan cluster
+	       COG   //eggNOG - COG cluster
 
 
 
@@ -2508,6 +2510,7 @@
 ////////////////////////////////
 
 ?Microarray_experiment  Microarray ?Microarray XREF Microarray_experiment
+			Expression_cluster ?Expression_cluster XREF Microarray_experiment // Wen WS228
 			Species UNIQUE ?Species
                         Sample  Sample_A     UNIQUE      ?Condition     //for PCR product-base (SMD-type) chips
                                 Sample_B     UNIQUE      ?Condition     //for PCR product-base (SMD-type) chips
@@ -2547,17 +2550,26 @@
 //
 //////////////////////////////////
 
-?Expression_cluster  Description  ?Text // refers to Biological meaning of this cluster group
-		     Algorithm    Text  // refers to the algorithm that was used to get this clustering result.
+?Expression_cluster  Description  ?Text				             // refers to Biological meaning of this cluster group
+		     Species UNIQUE ?Species  
+		     Algorithm    Text				             // refers to the algorithm that was used to get this clustering result.
 		     Reference    ?Paper XREF Expression_cluster
+		     Based_on_WB_Release     Int //Wen - to identify clusters not mapped if authors did not provide probe information.
 		     Microarray_results ?Microarray_results  Text #Evidence  //refers to all experimental results included in the cluster.
 		     SAGE_tag ?SAGE_tag Text #Evidence
-		     Gene ?Gene XREF Expression_cluster #Evidence           //Igor: populated during build based on Microarray_results mapping
-		     Expr_pattern       ?Expr_pattern XREF Expression_cluster #Evidence //added by Wen originally for Localizome
-		     Remark ?Text #Evidence 
-		     Species UNIQUE ?Species  
-		     Anatomy_term ?Anatomy_term XREF Expression_cluster #Evidence //Describes microarray experiments involving expression profiling in a particular tissue or cell Igor Dec 06
-		     WBProcess ?WBProcess XREF Expression_cluster #Evidence
+		     Gene ?Gene XREF Expression_cluster Text #Evidence       //Igor: populated during build based on Microarray_results mapping
+		     Attribute_of Microarray_experiment ?Microarray_experiment  XREF Expression_cluster //Wen
+				  Analysis ?Analysis XREF Expression_cluster //Wen, for cluster obtained from RNAseq or Tiling array
+				  Expr_pattern ?Expr_pattern XREF Expression_cluster #Evidence          //Wen originally for Localizome
+                     Regulation   Regulated_by_gene ?Gene		     //Wen WS228
+                                  Regulated_by_treatment Text                //Wen WS228
+                                  Regulated_by_molecule ?Molecule            //Wen WS228
+                     Associated_with  Life_stage ?Life_stage                 //Wen WS228
+                                      GO_term ?GO_term                       //Wen WS228
+                                      Anatomy_term ?Anatomy_term XREF Expression_cluster #Evidence //Describes microarray experiments involving expression profiling in a particular tissue or cell Igor Dec 06
+                                      WBProcess ?WBProcess XREF Expression_cluster #Evidence
+		     Remark ?Text #Evidence
+     
 
 //////////////////////////////////////////////////////////////////
 //      SAGE_tag model
@@ -3066,6 +3078,7 @@
                        Splice_site Donor Text #Evidence
                                    Acceptor Text #Evidence
                        Frameshift Text #Evidence  // added sdm
+		       Readthrough Text #Evidence // klh WS228
            Reference ?Paper XREF Allele
            Remark  ?Text #Evidence
 	   Method UNIQUE ?Method
@@ -3203,6 +3216,7 @@
 		   Subproject	  ?Analysis XREF Project
              Description ?Text
 	     Sample ?Condition XREF Analysis
+	     Expression_cluster ?Expression_cluster XREF Analysis //Wen WS228
              Reference ?Paper XREF Describes_analysis
              Conducted_by ?Person XREF Conducted		// not always the same as the author of the paper - eg Erich running OrthoMCL
              URL Text					// eg www.treefam.org  (or would this be covered by Source_database?)
@@ -3250,6 +3264,7 @@
            Synonym ?Text
            DB_info Database ?Database ?Database_field ?Accession_number
            Gene_regulation Gene_regulator ?Gene_regulation XREF Molecule_regulator
+			   Regulate_expr_cluster ?Expression_cluster XREF Regulated_by_molecule //Wen WS228
 	   WBProcess ?WBProcess XREF Molecule
            Affects_phenotype_of     Variation ?Variation ?Phenotype #Evidence
                                     Strain    ?Strain    ?Phenotype #Evidence
