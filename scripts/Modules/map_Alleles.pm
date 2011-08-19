@@ -581,13 +581,14 @@ sub get_cds {
                         $cds{$hit->{name}}{"Silent \"$to_aa (${\int(($cds_position-1)/3+1)})\""}{$k}=1;
                         print "silent mutation: " if $wb->debug;
                     }
-                    # readthrough; model does not capture these yet, so mark them as mis-sense for now
+                    # readthrough; 
                     elsif ($table->is_ter_codon($from_codon) and not $table->is_ter_codon($to_codon)) {
                       my $stop_codon = $from_codon;
                       my $other_codon = $to_codon;
                       my $other_aa=$table->translate($other_codon);
 
-                      $cds{$hit->{name}}{"Missense ${\int(($cds_position-1)/3+1)} \"$from_aa to $to_aa (readthrough)\"" }{$k} = 1;
+                      #$cds{$hit->{name}}{"Missense ${\int(($cds_position-1)/3+1)} \"$from_aa to $to_aa (readthrough)\"" }{$k} = 1;
+                      $cds{$hit->{name}}{"Readthrough \"$from_aa to $to_aa\""}{$k} = 1;
                     }
                     # premature stop
                     elsif ($table->is_ter_codon($to_codon) and not $table->is_ter_codon($from_codon)){
