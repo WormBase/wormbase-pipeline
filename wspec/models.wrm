@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: pad $
-// Last edited on: $Date: 2011-08-19 12:15:42 $
+// Last edited on: $Date: 2011-08-19 12:21:09 $
 
 
 ////////////////////////
@@ -1225,7 +1225,7 @@
 						   Partially_confirmed
 						   Confirmed
 		   Isoform #Evidence
-		   Start_not_found UNIQUE Int
+		   Start_not_found UNIQUE Int //UNIQUE added by MH6 WS228
 		   End_not_found
 		   Merge Text  // ar2 270106 added by request for StLoius
 		   Split Text  // ar2 270106 added by request for StLoius
@@ -1304,7 +1304,7 @@
                                               miRNA UNIQUE Text            // [020306 kj]
                                               ncRNA UNIQUE Text            // true non-coding RNAs
 					      snlRNA UNIQUE Text	   // small nuclear like 
-					      piRNA UNIQUE Text		   // 21U-RNA/piwi-interacting RNA/piRNA
+					      piRNA UNIQUE Text		   // 21U-RNA/piwi-interacting RNA/piRNA Gary W. WS228
 		           Isoform #Evidence                               // Set if this is a RNA isoform
 			   Ignore #Evidence                                // Set for putative NMD targets which we do not want to see in wormrna
                            Start_not_found                                 // [020306 kj]
@@ -1480,7 +1480,7 @@
                NOG   //eggNOG - standard cluster
                euNOG //eggNOG - eukaryote cluster
                meNOG //eggNOG - metazoan cluster
-	       COG   //eggNOG - COG cluster
+	       COG   //eggNOG - COG cluster // MH6 WS228
 
 
 
