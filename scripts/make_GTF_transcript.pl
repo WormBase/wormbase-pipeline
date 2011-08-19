@@ -7,8 +7,8 @@
 #
 # by Gary Williams
 #
-# Last updated by: $Author: gw3 $                      
-# Last updated on: $Date: 2011-07-04 12:36:44 $        
+# Last updated by: $Author: pad $                      
+# Last updated on: $Date: 2011-08-19 12:54:35 $        
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -359,8 +359,8 @@ sub Transcript_description {
   elsif ($type eq 'scRNA') { # scRNA genes
     $full_string .= $wormbase->full_name('-short' => 1)." small cytoplasmic RNA ";
   }
-  elsif ($type eq 'u21RNA') { # u21RNA genes
-    $full_string .= $wormbase->full_name('-short' => 1)." U21-RNA ";
+  elsif ($type eq 'piRNA') { # piRNA genes
+    $full_string .= $wormbase->full_name('-short' => 1)." piRNA ";
   }
 
   return $full_string;
