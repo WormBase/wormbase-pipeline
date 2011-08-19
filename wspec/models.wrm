@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: pad $
-// Last edited on: $Date: 2011-08-19 12:21:09 $
+// Last edited on: $Date: 2011-08-19 13:30:35 $
 
 
 ////////////////////////
@@ -3101,6 +3101,7 @@
                     Splice_site UNIQUE  Donor    Text #Evidence
                                         Acceptor Text #Evidence
                     Frameshift Text #Evidence
+                    Readthrough Text #Evidence //klh WS228
                     Intron #Evidence
                     Coding_exon #Evidence
                     Noncoding_exon #Evidence 
