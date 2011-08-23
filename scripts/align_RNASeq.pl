@@ -58,7 +58,7 @@
 # by Gary Williams
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2011-07-25 14:07:07 $
+# Last updated on: $Date: 2011-08-23 08:49:53 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -314,7 +314,7 @@ if (!$expt) {
 
     my @chrom_files;
     if ($wormbase->assembly_type eq 'contig') {
-      @chrom_files = ('supercontigs.fa');
+      @chrom_files = ('${species}_masked.dna');
     } else {
       @chrom_files = $wormbase->get_chromosome_names('-prefix' => 1, '-mito' => 1);
     }
@@ -328,7 +328,7 @@ if (!$expt) {
       unlink glob("${G_species}*");
       
       foreach my $chrom_file (@chrom_files) {
-	if ($wormbase->assembly_type eq 'chromosome') {$chrom_file .= '.dna'} # changes the contents of @chrom_files
+	if ($wormbase->assembly_type eq 'chromosome') {$chrom_file .= '_masked.dna'} # changes the contents of @chrom_files
 	my $copy_cmd = "cp ${database}/CHROMOSOMES/${chrom_file} .";
 	
 	###################################################################
