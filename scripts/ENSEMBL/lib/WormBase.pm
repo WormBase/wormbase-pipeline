@@ -45,6 +45,7 @@ use Bio::EnsEMBL::Translation;
 use Bio::EnsEMBL::SimpleFeature;
 use Bio::EnsEMBL::CoordSystem;
 use Bio::EnsEMBL::Slice;
+use Bio::EnsEMBL::Analysis::Tools::GeneBuildUtils::ExonUtils;
 
 my $species; # yes, I am not too prooud of class variables :-(
 
@@ -388,7 +389,7 @@ sub generate_transcripts {
     my @global_exons;
     my %overlapcheck;
 
-    use Bio::EnsEMBL::Pipeline::Tools::ExonUtils;
+    use Bio::EnsEMBL::Analysis::Tools::GeneBuildUtils::ExonUtils;
 
     #go through all genes
   GENE: foreach my $gene_name ( keys(%$genesRef) ) {
@@ -568,7 +569,7 @@ sub generate_transcripts {
             $transcriptcount++;
             my @exons = ();
             foreach my $temp_exon (@global_exons) {
-                push( @exons, Bio::EnsEMBL::Pipeline::Tools::ExonUtils->_clone_Exon($temp_exon) );
+                push( @exons, &clone_Exon($temp_exon) );
             }
             my $translation_start = 1;
             my $first             = 1;
