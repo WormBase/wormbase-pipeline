@@ -5,7 +5,7 @@
 # written by Anthony Rogers
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2010-04-29 14:33:19 $
+# Last edited on: $Date: 2011-08-26 13:46:22 $
 #
 # it depends on:
 #    wormpep + history
@@ -15,17 +15,7 @@
 #    ENSEMBL/etc/ensembl_lite.yml
 #    /software/worm/ensembl/ensembl-conf/<species>
 
-=head1 NAME 
 
-wormBLAST.pl
-- script to manage the EnsEMBL pipeline
-
-=cut
-
-
-use lib '/software/worm/ensembl/ensembl/modules';
-use lib '/software/worm/ensembl/ensembl-pipeline/modules';
-use lib '/software/worm/ensembl/bioperl-live';
 
 use Bio::EnsEMBL::DBSQL::DBConnection;
 use strict;
@@ -36,6 +26,7 @@ use lib "$Bin/BLAST_scripts";
 use lib "$Bin/ENSEMBL/lib";
 
 use WormBase;
+
 use Wormbase;
 use Getopt::Long;
 use File::Path;
@@ -43,70 +34,6 @@ use File::Copy;
 use Storable;
 use YAML;
 
-#######################################
-# command-line options                #
-#######################################
-
-=head1 USAGE
-
-wormBLAST.pl -copy -prep_dump ...
-
-Options
-
-=head2 -update_dna
-
-updates the dna sequence (removes old genes+dna+features)
-
-=head2 -update_genes
-
-updates the genes (removes old genes + protein features)
-
-=head2 -update_analysis
-
-updates the blast and blat databases to the last version
-
-=head2 -prep_dump
-
-prepares helper files for dumping (do we need this?)
-
-=head2 -version XYZ
-
-overrides the WormBase Version found in the storable
-
-=head2 -cleanup
-
-removes dogy blast features from the database (e > 0.001)
-actually they should not exist, but just in case.
-
-=head2 -debug XYZ
-
-redirects the log mail to XYZ
-
-=head2 -test
-
-creates the Storable in the TEST_BUILD directory
-
-=head2 -store XYZ
-
-reads from XYZ storable for the WormBase object
-
-=head2 -species XYZ
-
-update species XYZ instead of elegans
-
-=head2 -clean_blasts
-
-cleans the blast logs
-
-=head2 -copy
-
-copy protein and chromosome files before running blast
-
-=head2 -yfile
-
-specify a different YAML configuration file
-
-=cut
 
 
 my ( $species, $update_dna, $clean_blasts, $update_analysis, $update_genes);
@@ -167,6 +94,7 @@ $species =~ tr/[A-Z]/[a-z]/;
 my $species_ = ref $wormbase;
 $species =~ s/^[A-Z]/[a-z]/;
 
+if (-e glob("~/wormbase/scripts/ENSEMBL/etc/ensembl_lite.conf")) {$yfile_name = "~/wormbase/scripts/ENSEMBL/etc/ensembl_lite.conf"} # use a personal yfile if there is one
 $yfile_name||='~wormpub/wormbase/scripts/ENSEMBL/etc/ensembl_lite.conf';
 my $yfile  = glob("$yfile_name"); # hardcoded path ... meh :-(
 print STDERR "using $yfile\n" if $debug;
@@ -197,22 +125,23 @@ my %wormprotprocessIDs  = %{ get_logic2analysis( $raw_dbh, '%blastp' ) };
 ####################### copy files around ######################
 # for chromosome , brigpep , wormpep , remapep
 #
-if ($copy) {
-    foreach my $option (qw(brepep jappep ppapep wormpep remapep brigpep chrom)) { copy2acari($option) }    # don't need the chromosomes
+if ($copy && !$test) { # if testing use the Build protein and DNA files, but don't overwrite them
+  foreach my $option (qw(brepep jappep ppapep wormpep remapep brigpep chrom)) { copy2acari($option) }    # don't need the chromosomes
 }
 
 ########### updating databases ###############
-my ( $updated_dbs, $current_dbs ) = &update_blast_dbs() if ($copy);
+my ( $updated_dbs, $current_dbs ) = &update_blast_dbs() if ($copy && !$test); # if testing use the Build protein and DNA files, but don't overwrite them
 
 my @updated_DBs;# = @{$updated_dbs};
 my %currentDBs;#  = %{$current_dbs};se
 
 # update mySQL database
 if ($update_dna){
-   &update_dna();    # replace dna sequences based on md5?
-}elsif($update_genes){
-   &update_proteins();    # axe transcripts
+  &update_dna();
+} elsif ($update_genes){
+  &update_proteins();    # axe transcripts
 }
+
 &update_analysis() if ($update_analysis||$update_genes||$update_genes);
 
 $log->write_to("\nFinished setting up MySQL databases\n\n");
@@ -225,10 +154,10 @@ if ($run_pipeline) {
 }
 
 ################ cleanup dodgy blast hits -clean_blasts ##################
-&clean_blasts( $raw_dbh, \%worm_dna_processIDs, \%wormprotprocessIDs ) if $clean_blasts;
+&clean_blasts( $raw_dbh, \%worm_dna_processIDs, \%wormprotprocessIDs ) if ($clean_blasts && !$test);  # if testing don't clean up
 
 ################## -prep_dump #####################################
-if ($prep_dump) {
+if ($prep_dump && !$test) {
 
     # prepare helper files gff2cds and gff2cos
     my $autoace = $wormbase->autoace;
@@ -255,7 +184,7 @@ if ($prep_dump) {
 }
 
 ##################### -cleanup ##################################
-if ($cleanup) {
+if ($cleanup && !$test) {
     $log->write_to("clearing up files generated in this build\n");
 
     # files to move to ~wormpub/last-build/
@@ -430,6 +359,7 @@ sub get_updated_database_list {
 
     # compare old and new database list
     foreach ( keys %currentDBs ) {
+      print "Updating $_\n";
         if ( "$currentDBs{$_}" ne "$prevDBs{$_}" ) {
             push( @updated_DBs,     "$_" );
             push( @updated_dbfiles, $currentDBs{$_} );
@@ -541,7 +471,6 @@ updates the whole database
 ###############################
 # updating the dna sequences
 #
-# parse Gary's diff ?
 # identify seq_region and axe any genes/transcripts/exons/translations/simple_features/protein_align_features/dna on it
 # make input_ids for the new one
 #
@@ -789,8 +718,8 @@ sub update_analysis {
     }
     
     # update BLAT stuff
-    my $db_options = sprintf('-user %s -password %s -host %s -port %i', 
-       $config->{database}->{user}, $config->{database}->{password},$config->{database}->{host},$config->{database}->{port});
+    my $db_options = sprintf('-user %s -password %s -host %s -port %i -dbname %s', 
+       $config->{database}->{user}, $config->{database}->{password},$config->{database}->{host},$config->{database}->{port},$config->{database}->{dbname});
     $wormbase->run_script( "BLAST_scripts/ensembl_blat.pl $db_options -species $species", $log );    
 }
 
@@ -860,3 +789,78 @@ sub process_file {
 \n";
     return \%genes, \%five_prime, \%three_prime;
 }
+
+__END__
+
+
+#######################################
+# command-line options                #
+#######################################
+
+=pod
+
+=head2 NAME - wormBLAST.pl
+            - script to manage the EnsEMBL pipeline
+
+=head1 USAGE
+
+wormBLAST.pl -copy -prep_dump ...
+
+Options
+
+=head2 -update_dna
+
+updates the dna sequence (removes old genes+dna+features)
+
+=head2 -update_genes
+
+updates the genes (removes old genes + protein features)
+
+=head2 -update_analysis
+
+updates the blast and blat databases to the last version
+
+=head2 -prep_dump
+
+prepares helper files for dumping (do we need this?)
+
+=head2 -version XYZ
+
+overrides the WormBase Version found in the storable
+
+=head2 -cleanup
+
+removes dogy blast features from the database (e > 0.001)
+actually they should not exist, but just in case.
+
+=head2 -debug XYZ
+
+redirects the log mail to XYZ
+
+=head2 -test
+
+creates the Storable in the TEST_BUILD directory
+
+omits many steps that would result in changes to the Blast databases
+
+=head2 -store XYZ
+
+reads from XYZ storable for the WormBase object
+
+=head2 -species XYZ
+
+update species XYZ instead of elegans
+
+=head2 -clean_blasts
+
+cleans the blast logs
+
+=head2 -copy
+
+copy protein and chromosome files before running blast
+
+=head2 -yfile
+
+specify a different YAML configuration file
+
+=cut
