@@ -3,8 +3,8 @@
 # DESCRIPTION:
 #   setting up the BLAT pipeline
 #
-# Last edited by: $Author: pad $
-# Last edited on: $Date: 2011-01-20 11:09:57 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2011-08-26 14:17:13 $
 
 use constant USAGE => <<HERE;
 ensembl_blat.pl options:
@@ -16,11 +16,6 @@ ensembl_blat.pl options:
 	    -host DBHOSTNAME    database host
 	    -port DBPORT        database port
 HERE
-
-###################
-use lib '/software/worm/ensembl/ensembl/modules/';
-use lib '/software/worm/lib/bioperl-live/';
-###################
 
 use Getopt::Long;
 use Storable;
@@ -34,7 +29,7 @@ verbose('OFF');
 use Wormbase;
 use strict;
 
-my($debug,$store,$database,$port,$user,$password,$species,$host);
+my($debug,$store,$database,$port,$user,$password,$species,$host,$dbname);
 GetOptions(
  'debug=s'    => \$debug,
  'store=s'    => \$store,
@@ -43,6 +38,7 @@ GetOptions(
  'species=s'  => \$species,
  'host=s'     => \$host,
  'port=s'     => \$port,
+ 'dbname=s'   => \$dbname,
 )||die(USAGE);
 
 # WormBase setup
@@ -70,7 +66,7 @@ $port||=3306;
 my $db = Bio::EnsEMBL::DBSQL::DBAdaptor->new(
         -host     => $host,
         -user     => $user,
-        -dbname   => $database,
+        -dbname   => $dbname || $database,
         -port     => $port,
         -driver   => 'mysql', 
     );

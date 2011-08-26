@@ -22,10 +22,7 @@ use strict;
 use YAML;
 use Getopt::Long;
 use Storable;
-# use Wormbase;
-use lib '/software/worm/ensembl/ensembl/modules';
-use lib '/software/worm/ensembl/ensembl-pipeline/modules';
-use lib '/software/worm/ensembl/bioperl-live';
+
 use Bio::Seq;
 use Bio::SeqIO;
 use Bio::EnsEMBL::CoordSystem;
@@ -47,7 +44,7 @@ GetOptions(
     'load_agp'   => \$agp,
     'debug'      => \$debug,
     'test'       => \$test,
-    'store=s'     => \$store,
+    'store=s'    => \$store,
 ) || die("bad commandline parameter\n");
 
 if ($store){
@@ -58,6 +55,9 @@ if ($store){
 
 my $yfile="$FindBin::Bin/../etc/ensembl_lite.conf";
 my $config = ( YAML::LoadFile($yfile) )->{$species};
+if ($test) {
+  $config = ( YAML::LoadFile($yfile) )->{"${species}_test"};
+}
 my $cvsDIR = $test
   ? ( YAML::LoadFile($yfile) )->{test}->{cvsdir}
   : ( YAML::LoadFile($yfile) )->{generics}->{cvsdir};
@@ -89,17 +89,18 @@ sub setupdb {
     system("$mysql -e \"DROP DATABASE IF EXISTS $db->{dbname};\"") && die;
     system("$mysql -e \"create database $db->{dbname};\"")         && die;
     print "loading table.sql from ensembl\n";
-    system( "$mysql $db->{dbname} < " . $cvsDIR . "ensembl/sql/table.sql" ) && die;
+    system("$mysql $db->{dbname} < " . $cvsDIR . "ensembl/sql/table.sql" ) && die;
     print "loading table.sql from ensembl-pipeline\n";
-    system( "$mysql $db->{dbname} < " . $cvsDIR . "ensembl-pipeline/sql/table.sql" ) && die;
+    system("$mysql $db->{dbname} < " . $cvsDIR . "ensembl-pipeline/sql/table.sql" ) && die;
     system("$mysql -e 'INSERT INTO coord_system VALUES (1,1,\"chromosome\",\"$version\",1,\"default_version,top_level\");' $db->{dbname}") && die;
     system("$mysql -e 'INSERT INTO coord_system VALUES (2,1,\"superlink\",\"$version\",2,\"default_version,sequence_level\");' $db->{dbname}") && die;
     system("$mysql -e 'INSERT INTO coord_system VALUES (3,1,\"clone\",\"$version\",3,\"default_version\");' $db->{dbname}") && die;
     system("$mysql -e 'INSERT INTO meta (meta_key,meta_value) VALUES (\"genebuild.version\",\"$version\");' $db->{dbname}") && die;
     system("$mysql -e 'INSERT INTO meta (meta_key,meta_value) VALUES (\"genebuild.start_date\",NOW());' $db->{dbname}") && die;
     system("$mysql -e 'INSERT INTO analysis (created,logic_name,module) VALUES ( NOW(),\"wormbase\",\"wormbase\");' $db->{dbname}")          && die;
-    system( "$mysql -e 'INSERT INTO analysis_description (analysis_id,description,display_label) VALUES (1,\"imported from WormBase\",\"WormGene\");' $db->{dbname}") && die;
-    system("$mysql $db->{dbname} </software/worm/ensembl/ensembl-pipeline/scripts/DataConversion/wormbase/attrib_type.sql") && die;
+    system("$mysql -e 'INSERT INTO analysis_description (analysis_id,description,display_label) VALUES (1,\"imported from WormBase\",\"WormGene\");' $db->{dbname}") && die;
+    system("$mysql $db->{dbname} <$cvsDIR/ensembl-pipeline/scripts/DataConversion/wormbase/master_attrib_type.sql") && die;
+    system("$mysql $db->{dbname} <$cvsDIR/ensembl-pipeline/scripts/DataConversion/wormbase/attrib_type.sql") && die;
     system("perl $cvsDIR/ensembl-pipeline/scripts/load_taxonomy.pl -name \"$config->{species}\" -taxondbhost ens-livemirror -taxondbport 3306 -taxondbname ncbi_taxonomy -lcdbhost $db->{host} -lcdbport $db->{port} -lcdbname $db->{dbname} -lcdbuser $db->{user} -lcdbpass $db->{password}"
       )
       && die("cannot run taxondb update");
