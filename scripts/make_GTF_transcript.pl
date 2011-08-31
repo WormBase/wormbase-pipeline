@@ -7,8 +7,8 @@
 #
 # by Gary Williams
 #
-# Last updated by: $Author: pad $                      
-# Last updated on: $Date: 2011-08-19 12:54:35 $        
+# Last updated by: $Author: gw3 $                      
+# Last updated on: $Date: 2011-08-31 11:09:25 $        
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -97,6 +97,7 @@ my $transcripts = $db->fetch_many(-query => 'Find Transcript where (NOT Method =
 while ( my $transcript = $transcripts->next ) {
 
   my $gene_id = Transcript_gene($transcript);
+  if (! defined $gene_id) {next;} # some mir transcripts are not attached to Genes
   my $transcript_id = $transcript->name;
 
   # get chromosomal position
@@ -300,7 +301,7 @@ sub Transcript_gene {
     $gene_name = $transcript->Gene;
     return $gene_name;
   }  else {
-    die "What is $transcript\n";
+    print "Ignoring transcript '$transcript' as it has not connection to a gene\n";
   }
   
 }
