@@ -12,7 +12,6 @@ require 'fileutils'
 
 tmp_place = '/lustre/scratch101/ensembl/wormpipe/compara_build'
 perl='/software/bin/perl'
-perl512='/software/worm/perl_512/bin/perl'
 basedir='/software/worm/ensembl'
 
 # check to see if the old build was cleaned
@@ -28,8 +27,10 @@ end
 desc 'setup environment variables'
 task :env_setup do
         old_perl5=ENV['PERL5LIB']
-        additional='/software/worm/lib/bioperl-run_last_cvs/:/software/worm/ensembl/ensembl-config/celegans/generic-elegans:/software/worm/ensembl/ensembl-pipeline/modules:/software/worm/ensembl/ensembl-analysis/modules:/software/worm/ensembl/bioperl-live:/software/worm/ensembl/bioperl-run:/software/worm/ensembl/ensembl/modules:/software/worm/ensembl/ensembl-hive/modules:/software/worm/ensembl/ensembl-compara/modules:/software/worm/ensembl/ensembl-analysis:/software/worm/lib:.'
-        ENV['PERL5LIB']=additional+old_perl5
+        additional='/software/worm/ensembl-63/ensembl-config/celegans/generic-elegans:/software/worm/ensembl-63/ensembl-pipeline/modules:/software/worm/ensembl-63/ensembl-analysis/modules:/software/worm/ensembl-63/bioperl-live:/software/worm/ensembl/bioperl-run:/software/worm/ensembl-63/ensembl/modules:/software/worm/ensembl-63/ensembl-hive/modules:/software/worm/ensembl-63/ensembl-compara/modules:/software/worm/lib:.:/software/worm/lib/perl5:'
+
+        ENV['ENSEMBL_CVS_ROOT_DIR'] = '/software/worm/ensembl/'
+        ENV['PERL5LIB']             = additional+old_perl5
 end
 
 # updates the C.elegans assembly version to the current build
@@ -52,113 +53,30 @@ def build_db(db_name)
 	sh "/software/bin/perl scripts/worm_lite.pl -species #{db_name} -setup -load_dna -load_gene"
 end
 
-desc 'build elegans database'
-task :build_elegans => [:env_setup] do
-	build_db(:elegans)
-end
-
-desc 'build briggsae database'
-task :build_briggsae => [:env_setup] do
-	build_db(:briggsae)
-end
-
-desc 'build brenneri database'
-task :build_brenneri => [:env_setup] do
-	build_db(:brenneri)
-end
-
-desc 'build remanei database'
-task :build_remanei => [:env_setup] do
-	build_db(:remanei)
-end
-
-desc 'build remanei test database'
-task :build_remanei_test => [:env_setup] do
-	build_db(:remanei_test)
-end
-
-desc 'build brugia database'
-task :build_brugia => [:env_setup] do
-	build_db(:brugia)
-end
-
-desc 'build briggsae test database'
-task :build_briggsae_test => [:env_setup] do
-	build_db(:briggsae_test)
-end
-
-desc 'build pristionchus database'
-task :build_pristionchus => [:env_setup] do
-	build_db(:pristionchus)
-end
-
-desc 'build japonica database'
-task :build_japonica => [:env_setup] do
-	build_db(:japonica)
-end
 
 ##############################################
 # setup of the compara databases
 # - note the hardcoded paths to the sql-files
 #
 
-desc 'build homology database'
-task :build_homology => [:env_setup] do
-  conf='etc/compara-genetree-12.conf'
-  reg='etc/compara_test11.reg'
+desc 'build genetree database'
+task :build_homology  do
   yml=YAML::load_file('etc/ensembl_lite.conf')
   db=yml['elegans']['database']
 
-  # base db+schema
-  sh "mysql -h #{db['host']} -P#{db['port']} -u #{db['user']} -p#{db['password']} -e 'DROP DATABASE IF EXISTS worm_compara;CREATE DATABASE worm_compara;'"
-  sh "cat #{basedir}/ensembl-compara/sql/table.sql #{basedir}/ensembl-hive/sql/tables.sql #{basedir}/ensembl-compara/sql/pipeline-tables.sql |mysql -h #{db['host']} -P#{db['port']} -u #{db['user']} -p#{db['password']} worm_compara"
-
-  # taxonomy
-  sh "bzcat #{basedir}/compara-conf/ncbi_taxon.sql.bz2 |mysql -h #{db['host']} -P#{db['port']} -u #{db['user']} -p#{db['password']} worm_compara"
-  sh "mysql -h #{db['host']} -P#{db['port']} -u #{db['user']} -p#{db['password']} -e 'UPDATE ncbi_taxa_name SET name=\"Caenorhabditis angaria\" WHERE taxon_id=96668'"
-  sh "mysql -h #{db['host']} -P#{db['port']} -u #{db['user']} -p#{db['password']} -e 'UPDATE ncbi_taxa_name SET name=\"Caenorhabditis csp11\" WHERE taxon_id=886184'"
-
-  # load logics
-  sh "#{perl} #{basedir}/ensembl-compara/scripts/pipeline/comparaLoadGenomes.pl -conf #{conf}"
-  sh "#{perl} #{basedir}/ensembl-compara/scripts/pipeline/loadGeneTreeSystem.hcluster.pl -conf #{conf}"
-  
-  # table hacks
-  protein_treesql=%q/'INSERT INTO method_link (type, class) VALUES ("ENSEMBL_ORTHOLOGUES","Homology.homology"),("ENSEMBL_PARALOGUES","Homology.homology"),("PROTEIN_TREES","ProteinTree.protein_tree_node")'/
-  sh "mysql -h #{db['host']} -u #{db['user']} -p#{db['password']} worm_compara -e #{protein_treesql}"
-
-  nj_treesql=%q/'INSERT INTO protein_tree_tag (tag,value) VALUES ("species_tree_string","((((((((((6238*,31234)a,(135651,886184)b)c,6239*)d,281687)e,96668)f,54126)g,6305)h,6289)i,6279)j,6334)k;")'/
-  sh "mysql -h #{db['host']} -u #{db['user']} -p#{db['password']} worm_compara -e #{nj_treesql}"
-
-  # MLSS setup
-  # For orthologues
-  sh "#{perl} #{basedir}/ensembl-compara/scripts/pipeline/create_mlss.pl --f --pw --reg_conf #{reg} --method_link_type ENSEMBL_ORTHOLOGUES --genome_db_id '1,2,3,4,5,6,7,8,9,10,11,12'"
-
-  # For between-species paralogues
-  sh "#{perl} #{basedir}/ensembl-compara/scripts/pipeline/create_mlss.pl --f --pw --reg_conf #{reg} --method_link_type ENSEMBL_PARALOGUES --genome_db_id '1,2,3,4,5,6,7,8,9,10,11,12'"
-
-  # For same-species paralogues
-  sh "#{perl} #{basedir}/ensembl-compara/scripts/pipeline/create_mlss.pl --f --sg --reg_conf #{reg} --method_link_type ENSEMBL_PARALOGUES --genome_db_id '1,2,3,4,5,6,7,8,9,10,11,12'"
-
-  # For protein trees
-  sh "#{perl} #{basedir}/ensembl-compara/scripts/pipeline/create_mlss.pl --f --reg_conf #{reg} --method_link_type PROTEIN_TREES --genome_db_id '1,2,3,4,5,6,7,8,9,10,11,12'"
+  # set up the pipeline and output database
+  # +++ need to update the pt_species_tree.txt to add all required species
+  # the -mlss_id value is the number of species we are comparing
+##  sh "#{perl} #{basedir}/init_pipeline.pl Bio::EnsEMBL::Compara::PipeConfig::WormProteinTrees_conf -password #{db['password']} -mlss_id 11 -species_tree_input_file /software/worm/ensembl/compara-conf/pt_species_tree.txt"
+  sh "#{perl} #{basedir}/init_pipeline.pl Bio::EnsEMBL::Compara::PipeConfig::WormProteinTrees_conf -password #{db['password']} -mlss_id 12 -species_tree_input_file /software/worm/ensembl/compara-conf/njtree.12.worm_compara_test_orthotree.nh"
 
 
-  # up the failure tolerance
-
-  def up_error_for_analysis(db,analysis)
-      error_sql=%Q/'UPDATE analysis_stats SET failed_job_tolerance = 20 WHERE analysis_id=(SELECT analysis_id FROM analysis WHERE logic_name = "#{analysis}");'/
-      sh "mysql -h #{db['host']} -u #{db['user']} -p#{db['password']} worm_compara -e #{error_sql}"
-  end
-
-  up_error_for_analysis(db,'MCoffee')
-  up_error_for_analysis(db,'OrthoTree')
-  up_error_for_analysis(db,'QuickTreeBreak')
 
 end
 
 desc 'build PECAN database'
 task :build_pecan => [:env_setup] do
-  conf='etc/pecan-ws227.conf'
+  conf='etc/pecan-12.conf'
   yml=YAML::load_file('etc/ensembl_lite.conf')
   db=yml['elegans']['database']
 
@@ -180,20 +98,21 @@ end
 def run_beehive(db_name,perl,basedir)
 	yml=YAML::load_file('etc/ensembl_lite.conf')
         db=yml['elegans']['database'] # lets default to elegans for dbconnection details
+	FileUtils.cd("/tmp") # now go to a directory where mcoffee can write its temporary files
+	sh "#{perl} #{basedir}/ensembl-hive/scripts/beekeeper.pl -url mysql://wormadmin:db['password']@farmdb1:3306/#{db_name} -sync"
+	sh "#{perl} #{basedir}/ensembl-hive/scripts/beekeeper.pl -url mysql://wormadmin:db['password']@farmdb1:3306/#{db_name} -loop"
 
-	# sh %Q(#{perl} #{basedir}/ensembl-hive/scripts/beekeeper.pl -url mysql://#{db['user']}:#{db['password']}@#{db['host']}:#{db['port']}/#{db_name} -loop -lsf_option '-R"rusage[myia64b=10:duration=10:decay=1] select[myia64b<400]" -W 120')
-	sh "#{perl} #{basedir}/ensembl-hive/scripts/beekeeper.pl -url mysql://#{db['user']}:#{db['password']}@#{db['host']}:#{db['port']}/#{db_name} -loop" # axe the old ressouce stuff
 end
 
 
 desc 'run homology beehive'
 task :run_homology => [:env_setup] do
-	run_beehive('worm_compara',perl,basedir)
+	run_beehive("worm_compara_homology_63WS#{ENV['WORMBASE_RELEASE']}",perl,basedir)
 end
 
 desc 'run pecan beehive'
 task :run_pecan => [:env_setup] do
-	run_beehive('worm_compara_pecan',perl,basedir)
+	#run_beehive('worm_compara_pecan',perl,basedir)
 end
 
 
@@ -215,20 +134,20 @@ task :dump_gerp =>[:env_setup] do
        db=yml['elegans']['database'] # that one is technically not cool
 
        sh "mysql -h #{db['host']} -P#{db['port']} -u #{db['user']} -p#{db['password']} worm_compara_pecan -e 'INSERT IGNORE INTO meta (meta_key,meta_value) VALUES (\"max_align_2\",(SELECT MAX(dnafrag_end-dnafrag_start) FROM genomic_align));'"
-	['elegans','briggsae','brenneri','remanei','japonica','pristionchus','brugia','Mhapla','Csp11','cangaria','tspiralis'].each{|species|
+	['elegans','briggsae','brenneri','remanei','japonica','pristionchus','brugia','Mhapla','Mincognita','Hcontortus','cangaria','tspiralis'].each{|species|
 
 	  spec_dir= "#{tmp_place}/compara/#{species}"
 	  FileUtils.mkdir_p(spec_dir)
-          sh "#{perl512} scripts/getConservationScores.pl -species #{species} -o #{spec_dir}/#{species}.wig"
+          sh "#{perl} scripts/getConservationScores.pl -species #{species} -o #{spec_dir}/#{species}.wig"
           
 	  # split it
-          sh "#{perl512} scripts/split_wig.pl #{spec_dir}/#{species}.wig"
+          sh "#{perl} scripts/split_wig.pl #{spec_dir}/#{species}.wig"
 	  File.unlink("#{spec_dir}/#{species}.wig")
 
 	  # wiblification
           FileList["#{spec_dir}/#{species}.wig*"].each{|f|
 		  # wiblify it
-		  system("#{perl512} ../wiggle2gff3.pl --trackname gerp --method syntheny --source gerp --path=#{spec_dir} #{f} >> #{spec_dir}/#{species}_gerp.gff3")
+		  system("#{perl} ../wiggle2gff3.pl --trackname gerp --method syntheny --source gerp --path=#{spec_dir} #{f} >> #{spec_dir}/#{species}_gerp.gff3")
 		  File.unlink(f)
 
 		  # path munglification
@@ -244,6 +163,7 @@ task :dump_gerp =>[:env_setup] do
 	}
 end
 
+### this may still need attention - it has not been tested under ensembl release 63
 desc 'dump pecan files'
 task :dump_pecan => [:env_setup] do
 	FileUtils.mkdir_p("#{tmp_place}/compara")
@@ -317,11 +237,4 @@ task :build => [:check_clean,:env_setup,:build_homology,:run_homology,:build_pec
 desc 'dump all databases into the various flatfiles'
 task :dump => [:dump_homology,:dump_pecan,:dump_gerp,:dump_compara,:copy_release,:cleanup]
 
-desc 'hack around some of the more recent bugs in compara (build and run bit)'
-task :mt3_run => [:check_clean,:env_setup,:build_homology,:run_homology]
-
-desc 'hack around some of the more recent bugs in compara (dump)'
-task :mt3_dump => [:dump_homology,:dump_compara,:copy_release,:cleanup] 
-
-# task :default => [:update_conf,:build,:dump]
-task :default => [:update_conf]
+task :default => [:build,:dump]
