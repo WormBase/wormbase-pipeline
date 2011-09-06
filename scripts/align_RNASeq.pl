@@ -58,7 +58,7 @@
 # by Gary Williams
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2011-08-23 08:49:53 $
+# Last updated on: $Date: 2011-09-06 08:54:55 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -141,7 +141,7 @@ if ($species eq 'elegans') {
 
   %expts = ( # key= SRA 'SRX' experiment ID, values = [Analysis ID, quality score metric]
 
-#	     SRX001872  => ["RNASeq_Hillier.L2_larva", 'phred'], # needs a lot of memory to run tophat
+	     SRX001872  => ["RNASeq_Hillier.L2_larva", 'phred'], # needs a lot of memory to run tophat
 	     SRX001873  => ["RNASeq_Hillier.Young_Adult", 'phred'],
 	     SRX001874  => ["RNASeq_Hillier.L4_larva", 'phred'],
 	     SRX001875  => ["RNASeq_Hillier.L3_larva", 'phred'],
@@ -376,7 +376,27 @@ if (!$expt) {
     unless ($nogtf) {
       unlink $gtf_file;
       my $scripts_dir = $ENV{'CVS_DIR'};
-      $status = $wormbase->run_command("bsub -I -q long $scripts_dir/make_GTF_transcript.pl -database $database -out $gtf_file -species $species", $log);
+      my $err = "$scratch_dir/make_GTF_transcript.pl.lsf.err";
+      my $out = "$scratch_dir/make_GTF_transcript.pl.lsf.out";
+      my @bsub_options = (-e => "$err", -o => "$out");
+      push @bsub_options, (-q =>  "long",
+			   -F =>  "100000000", # maybe increase this?
+			   -M =>  "14000000", 
+			   -R => "\"select[mem>14000] rusage[mem=14000]\"", 
+			   -J => $job_name);
+      my $cmd = "$scripts_dir/make_GTF_transcript.pl -database $database -out $gtf_file -species $species";
+      $log->write_to("$cmd\n");
+      $cmd = $wormbase->build_cmd($cmd);
+      $lsf->submit(@bsub_options, $cmd);
+      $lsf->wait_all_children( history => 1 );
+      $log->write_to("The GTF file is written.\n");
+      for my $job ( $lsf->jobs ) {
+	if ($job->history->exit_status ne '0') {
+	  $log->write_to("Job $job (" . $job->history->command . ") exited non zero: " . $job->history->exit_status . "\n");
+	}
+      }
+      $lsf->clear;
+
       if ($species eq 'elegans') {
 	$wormbase->check_file($gtf_file, $log,
 			      minsize => 29900000,
