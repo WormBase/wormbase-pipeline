@@ -99,8 +99,8 @@ def run_beehive(db_name,perl,basedir)
 	yml=YAML::load_file('etc/ensembl_lite.conf')
         db=yml['elegans']['database'] # lets default to elegans for dbconnection details
 	FileUtils.cd("/tmp") # now go to a directory where mcoffee can write its temporary files
-	sh "#{perl} #{basedir}/ensembl-hive/scripts/beekeeper.pl -url mysql://wormadmin:db['password']@farmdb1:3306/#{db_name} -sync"
-	sh "#{perl} #{basedir}/ensembl-hive/scripts/beekeeper.pl -url mysql://wormadmin:db['password']@farmdb1:3306/#{db_name} -loop"
+	sh "#{perl} #{basedir}/ensembl-hive/scripts/beekeeper.pl -url mysql://wormadmin:#{db['password']}@farmdb1:3306/#{db_name} -sync"
+	sh "#{perl} #{basedir}/ensembl-hive/scripts/beekeeper.pl -url mysql://wormadmin:#{db['password']}@farmdb1:3306/#{db_name} -loop"
 
 end
 
