@@ -7,7 +7,7 @@
 # wrapper script for running transcript_builder.pl
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2011-08-09 15:20:06 $
+# Last edited on: $Date: 2011-09-09 08:29:17 $
 
 use lib $ENV{CVS_DIR};
 use Wormbase;
@@ -56,7 +56,9 @@ $database = $wormbase->autoace unless $database;
 if (@no_run) {
   @outfile_names = @no_run;
 } else {
+  my @chrs = $wormbase->get_chromosome_names;
   my $chunk_total = 24;
+  $chunk_total = scalar(@chrs) if $chunk_total > scalar(@chrs);
 
   $gff_dir  = $wormbase->gff_splits unless $gff_dir;
   $dump_dir = $wormbase->transcripts unless $dump_dir;

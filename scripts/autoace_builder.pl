@@ -7,7 +7,7 @@
 # Usage : autoace_builder.pl [-options]
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2011-08-11 15:00:30 $
+# Last edited on: $Date: 2011-09-09 08:29:17 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -405,7 +405,10 @@ sub make_UTR {
   my (@commands, @out_files);
 
   if ($wormbase->assembly_type eq 'contig') {
+    my @chrs = $wormbase->get_chromosome_names;
     my $chunk_total = 24;
+    $chunk_total = scalar(@chrs) if $chunk_total > scalar(@chrs);
+
     foreach my $chunk_id (1..$chunk_total) {
       my $outfile = "$out_dir/UTR.chunk_${chunk_id}.gff";
       push @commands, "make_UTR_GFF.pl -chunkid $chunk_id -chunktotal $chunk_total -outfile $outfile";
