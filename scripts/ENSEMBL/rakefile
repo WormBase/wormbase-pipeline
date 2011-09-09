@@ -124,7 +124,7 @@ desc 'dump homology ace file'
 task :dump_homology => [:env_setup] do
 	puts "making #{tmp_place}/compara"
 	FileUtils.mkdir_p("#{tmp_place}/compara")
-	sh "/software/bin/perl scripts/get_all_elegans_orthologues.pl -database "worm_compara_homology_63WS#{ENV['WORMBASE_RELEASE']}" > #{tmp_place}/compara.ace"
+	sh "/software/bin/perl scripts/get_all_elegans_orthologues.pl -database worm_compara_homology_63WS#{ENV['WORMBASE_RELEASE']} > #{tmp_place}/compara.ace"
 end
 
 desc 'dump conservation wiggle files'
