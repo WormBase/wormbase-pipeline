@@ -58,7 +58,7 @@
 # by Gary Williams
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2011-09-06 08:54:55 $
+# Last updated on: $Date: 2011-09-09 13:07:59 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -357,16 +357,9 @@ if (!$expt) {
     unless ($norawjuncs) {
       unlink $splice_juncs_file;
       unlink "${splice_juncs_file}.tmp";
-      $status = $wormbase->run_command("touch ${splice_juncs_file}.tmp", $log);
-      if ($wormbase->assembly_type eq 'contig') {
-	@chrom_files = ($wormbase->species);
-      } else {
-	@chrom_files = $wormbase->get_chromosome_names('-prefix' => 1, '-mito' => 1);
-      }
-      foreach my $chrom_file (@chrom_files) {
-	my $splice_junk_cmd = "grep -h intron ${database}/CHROMOSOMES/$chrom_file.gff | egrep 'curated|Coding_transcript|Transposon_CDS|Pseudogene|tRNAscan-SE-1.23|Non_coding_transcript|ncRNA Confirmed_cDNA|Confirmed_EST|Confirmed_UTR' | awk '{OFS=\"\t\"}{print \$1,\$4-2,\$5,\$7}' >> ${splice_juncs_file}.tmp";
-	$status = $wormbase->run_command($splice_junk_cmd, $log);
-      }
+      my $splice_junk_cmd = "grep -h intron ${database}/GFF_SPLITS/*.gff | egrep 'curated|Coding_transcript|Transposon_CDS|Pseudogene|tRNAscan-SE-1.23|Non_coding_transcript|ncRNA Confirmed_cDNA|Confirmed_EST|Confirmed_UTR' | awk '{OFS=\"\t\"}{print \$1,\$4-2,\$5,\$7}' > ${splice_juncs_file}.tmp";
+      $status = $wormbase->run_command($splice_junk_cmd, $log);
+      
       $status = $wormbase->run_command("sort -u ${splice_juncs_file}.tmp > $splice_juncs_file", $log);
       if ($status != 0) {  $log->log_and_die("Didn't create the splice_juncs_file\n"); }
     }
@@ -384,7 +377,7 @@ if (!$expt) {
 			   -M =>  "14000000", 
 			   -R => "\"select[mem>14000] rusage[mem=14000]\"", 
 			   -J => $job_name);
-      my $cmd = "$scripts_dir/make_GTF_transcript.pl -database $database -out $gtf_file -species $species";
+      my $cmd = "make_GTF_transcript.pl -database $database -out $gtf_file -species $species";
       $log->write_to("$cmd\n");
       $cmd = $wormbase->build_cmd($cmd);
       $lsf->submit(@bsub_options, $cmd);
