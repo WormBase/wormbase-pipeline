@@ -100,7 +100,8 @@ for(my $bn=1; $bn <= @bins; $bn++) {
   my $id_file = "$outdir/map_alleles.$$.${species}.${bn}.txt";
   my $out_file = "$outdir/allele_mapping.$$.${species}.${bn}.ace";
 
-  open(my $fh, ">$id_file");  
+  open(my $fh, ">$id_file") or 
+      $log->log_and_die("Could not open IDfile $id_file for writing\n");  
   foreach my $nm (@$list) {
     print $fh "$nm\n";
   }
