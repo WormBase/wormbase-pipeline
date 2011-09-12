@@ -17,7 +17,7 @@ use IO::File;
 use Getopt::Long;
 use FindBin qw($Bin);
 use lib "$Bin";
-
+use Wormbase;
 use Modules::map_Alleles;
 
 use LSF RaiseError => 0, PrintError => 1, PrintOutput => 0;
@@ -41,7 +41,7 @@ USAGE
 exit 1;	
 }
 
-my ( $debug, $store,$database,$help,$test,$species,$wb,$noload, $outdir);
+my ( $debug, $store,$database,$help,$test,$species,$wb,$noload,$outdir);
 
 GetOptions(
     'species=s'=> \$species,
@@ -73,7 +73,7 @@ if ($debug) {
     print "DEBUG \"$debug\"\n\n";
 }
 
-$outdir = $wormbase->autoace . "/TMP" if not defined $outdir;
+$outdir = $wb->autoace."/TMP" if not defined $outdir;
 mkdir $outdir if not -d $outdir;
 
 $database = $wb->autoace() if not defined $database;
@@ -126,7 +126,7 @@ if (not $noload) {
     }
   }
   my $outfile = $wb->acefiles . "/map_alleles4geneace.ace";
-  $wormbase->run_command("cat @out_files > $outfile", $log);
+  $wb->run_command("cat @out_files > $outfile", $log);
 
   map { unlink $_ } (@out_files, @id_files);
 }
