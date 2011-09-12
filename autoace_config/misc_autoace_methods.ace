@@ -1485,7 +1485,6 @@ Width 1
 GFF_feature "translated_nucleotide_match"
 Remark "Mass Spectrometry peptide matching a protein."
 
-
 /////////////////////////////////////////////////////////////////////
 // GeneFinder/acedb FMAP methods				   //
 // These still have Right_priority tags as they might be "special" //
@@ -1781,6 +1780,11 @@ GFF_source       "RNASeq_splice"
 GFF_feature      "intron"
 Strand_sensitive Show_up_strand
 
+Method : "DNAseI_hypersensitive_site"
+Remark   "A hypersensitive site is a short region of chromatin and is detected by its super sensitivity to cleavage by DNase I. In a hypersensitive site, the nucleosomal structure is not organized in the usual fashion, which results in a 100 fold increase in sensitivity to enzyme attack than in bulk chromatin."
+Colour   BLACK
+GFF_source       "DNAseI_hypersensitive_site"
+GFF_feature      "SO:0000685" // DNAseI_hypersensitive_site
 
 
 ///////////////////////////////////////////////////////
@@ -2446,6 +2450,9 @@ Right_priority 4.95
 Method : "wublastx_slimTrEmbl"
 Right_priority 5.0
 
+Method : "DNAseI_hypersensitive_site"
+Right_priority 5.1
+
 Method : "WABA_coding"
 Right_priority 5.4
 
@@ -2553,3 +2560,4 @@ Right_priority   3.37
 
 Method : "RNASeq_Hillier.male_mid-L4"
 Right_priority   3.37
+
