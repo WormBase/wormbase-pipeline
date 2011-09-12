@@ -41,8 +41,7 @@ USAGE
 exit 1;	
 }
 
-my $outdir = '/nfs/wormpub/tmp/map_allele';
-my ( $debug, $store,$database,$help,$test,$species,$wb,$noload);
+my ( $debug, $store,$database,$help,$test,$species,$wb,$noload, $outdir);
 
 GetOptions(
     'species=s'=> \$species,
@@ -73,6 +72,9 @@ my $log = Log_files->make_build_log($wb);
 if ($debug) {
     print "DEBUG \"$debug\"\n\n";
 }
+
+$outdir = $wormbase->autoace . "/TMP" if not defined $outdir;
+mkdir $outdir if not -d $outdir;
 
 $database = $wb->autoace() if not defined $database;
 $species = $wb->species if not defined $species;
@@ -119,11 +121,13 @@ if (not $noload) {
   foreach my $ace (@out_files) {
     if (-e $ace) {
       $wb->load_to_database($wb->autoace, $ace, 'map_alleles.pl',$log);
-      system("cat $ace >> ${\$wb->acefiles}/map_alleles4geneace.ace");
     } else {
       croak("Expected to find $ace, but its not there. Strange.\n");
     }
   }
+  my $outfile = $wb->acefiles . "/map_alleles4geneace.ace";
+  $wormbase->run_command("cat @out_files > $outfile", $log);
+
   map { unlink $_ } (@out_files, @id_files);
 }
 
