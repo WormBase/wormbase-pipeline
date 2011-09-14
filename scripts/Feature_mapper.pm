@@ -620,7 +620,7 @@ sub suggest_fix {
       ($flank_L, $flank_R) = $self->_get_flanking_sequence($clone, $left_c, $right_c);
       
       if (defined $flank_L and defined $flank_R) {
-        return ($clone, $flank_L, $flank_R, "Found unique match for one flank, extracted other based on positin", $FIXED);
+        return ($clone, $flank_L, $flank_R, "Found unique match for one flank, extracted other based on position", $FIXED);
       }
     }
 
