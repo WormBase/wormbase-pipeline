@@ -5,7 +5,7 @@
 # by Anthony Rogers                             
 #
 # Last updated by: $Author: klh $               
-# Last updated on: $Date: 2011-06-01 16:28:32 $
+# Last updated on: $Date: 2011-09-19 10:28:56 $
 
 # Generates a release letter at the end of build.
 #
@@ -81,8 +81,6 @@ my $ver     = $wormbase->get_wormbase_version;
 my $old_ver = $ver -1;
 
 my $date        = `date`;
-
-my $webdir = "/nfs/WWWdev/SANGER_docs/htdocs/Projects/C_elegans/WORMBASE";
 
 $wormbase->release_composition($log) if defined($opt_c);
 
