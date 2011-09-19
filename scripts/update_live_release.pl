@@ -6,7 +6,7 @@
 #
 # Updates the local webpages in synch with the main website
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2011-08-11 11:11:56 $
+# Last updated on: $Date: 2011-09-19 10:22:56 $
 
 
 use strict;
@@ -41,8 +41,6 @@ if ( $store ) {
 my $log = Log_files->make_build_log($wormbase);
 
 
-my $www = "/nfs/WWWdev/SANGER_docs/htdocs/Projects/C_elegans";
-
 ############################################
 # update wormpep files
 #############################################
@@ -69,19 +67,6 @@ $wormbase->run_command("/software/farm/bin/setdb $wormpub_dir/wormpep_current", 
 #Should point at the current WSXXX release folder eg. WS167/, basically one less than the development_release link which will appear above it.
 $wormbase->run_command("cd $wormbase_ftp_dir && rm -f live_release && ln -fs releases/WS${release} live_release",$log);
 
-
-##############################################
-# Update pages using webpublish
-# Separate webpublish commands (for safety!) on the two top level directories that need updating
-##############################################
-
-my $webpublish = "/software/bin/webpublish";
-
-$wormbase->run_command("cd $www/WORMBASE && rm -f current && ln -fs WS${release} current", $log) 
-    && $log->error("Couldn't update 'current' symlink\n", $log);
-
-$wormbase->worm_webpublish("-file" => "$www/WORMBASE/current") or $log->error("Couldn't run webpublish on current symlink files\n");
-# The end
 $log->mail;
 exit(0);
 
