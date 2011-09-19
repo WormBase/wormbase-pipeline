@@ -9,7 +9,7 @@
 #                          /nfs/WWW/SANGER_docs/htdocs/Projects/C_elegans/WORMBASE/current/release_notes.txt/
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2011-08-11 11:10:35 $
+# Last updated on: $Date: 2011-09-19 10:32:27 $
 
 
 use strict;                                      
@@ -80,7 +80,6 @@ my $acedir = $wormbase->autoace;             # base directory of the build
 
 my $release        = $wormbase->get_wormbase_version_name;
 my $release_number = $wormbase->get_wormbase_version;
-my $www            = "/nfs/WWWdev/SANGER_docs/htdocs/Projects/C_elegans";
 my $errors         = 0;
 
 $log->write_to("about to spread the word . . . \n");
@@ -98,12 +97,6 @@ $log->write_to("copying to autoace/release . . . . ");
     || $log->log_and_die("couldnt copy to autoace/release\n");
 $log->write_to("DONE.\n");
 
-# web fluff
-$log->write_to("copying to intranet . . . . ");
-&_copy( "$repdir/letter.${release}", "${www}/WORMBASE/${release}/release_notes.txt" )
-    || $log->log_and_die("couldnt copy to ${www}/WORMBASE/${release}/\n");
-$log->write_to("DONE.\n");
-
 
 
 ###################################
@@ -119,24 +112,6 @@ my $targetdir = '/nfs/disk69/ftp/pub2/wormbase';    # default directory, can be 
 $wormbase->run_command("rm -f $targetdir/development_release", $log);
 $wormbase->run_command("cd $targetdir; ln -s releases/$release development_release", $log);
 
-#######################################
-# Webpublish to live site
-#######################################
-
-$log->write_to("Updating some WormBase webpages to live site\n");
-
-# update development_release symbolic link
-chdir("$www/WORMBASE");
-$wormbase->run_command("rm -f development_release", $log);
-$wormbase->run_command("ln -fs $release development_release", $log);
-
-# Now update WORMBASE pages
-# these won't be seen until current symlink is also updated
-my $webpublish = "/software/bin/webpublish";
-$wormbase->run_command("$webpublish  -q -r $release", $log)            && $log->write_to("Couldn't run webpublish on release directory\n");
-$wormbase->run_command("$webpublish  -q -r development_release", $log) && $log->write_to("Couldn't run webpublish on dev sym link\n");
-
-
 ##################
 # Check the files
 ##################
@@ -144,11 +119,7 @@ $wormbase->check_file("$ftp_dir/${release}/letter.${release}", $log,
 		      samesize => "$repdir/letter.${release}");
 $wormbase->check_file("$acedir/release/letter.${release}", $log,
 		      samesize => "$repdir/letter.${release}");
-$wormbase->check_file("${www}/WORMBASE/${release}/release_notes.txt", $log,
-		      samesize => "$repdir/letter.${release}");
 $wormbase->check_file("$targetdir/development_release", $log);
-$wormbase->check_file("$wormpep_dir/wormpep_dev", $log);
-$wormbase->check_file("$www/WORMBASE/development_release", $log);
 
 
 # Send email
