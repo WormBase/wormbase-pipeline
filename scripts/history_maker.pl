@@ -123,51 +123,6 @@ my $results; # the globally-accesible anomaly details that are summarised in the
 my $check;			# state of the check button for the weights
 
 ################################################################
-#intron locator frame
-if ( $intron && $chromosome ) {
-  my $intron_find = $main_gui->Frame( -background => "wheat", # was red
-				      #				    -height     => "400",
-				      -label      => "Intron locator",
-				      -relief     => "raised",
-				      -borderwidth => 5,
-				    )->pack( -pady => "20",
-					     -fill => "x"
-					   );
-
-  my $intron_list = $intron_find->Scrolled("Listbox", -scrollbars => "osoe",
-					   -selectmode => "single",
-					   -height     => "5",
-					   -width      => "100"
-					  )->pack();
-
-
-  my $go_to_intron = $intron_find->Button ( -text    => "Go to intron",
-					    -command => [\&goto_intron,\$intron_list]
-					  )->pack ( -side => 'right',
-						    -pady => '2',
-						    -padx => '6',
-						    -anchor => "w"
-						  );
-
-
-  my $coords = Coords_converter->invoke(undef, undef, $wormbase);
-
-  my $file = "/nfs/WWWdev/SANGER_docs/htdocs/Projects/C_elegans/WORMBASE/development_release/GFF/CHROMOSOME_${chromosome}.check_intron_cam.gff";
-  open (INTRONS, "<$file") or die "$file\n";
-  while ( <INTRONS> ) {
-    #CHROMOSOME_X    .       intron  12117028        12117072        .       -       .       Confirmed_EST OSTF209B10_1      Clone:T01H10 8265 8309  Lab:HX
-    my @data = split;
-    my $seq = $data[0]; 
-    my $x = $data[3];
-    my $y = $data[4];
-    my @clone_coords = $coords->LocateSpan("$seq","$x","$y" );
-    $intron_list->insert('end',"$clone_coords[0] $clone_coords[1] $clone_coords[2]");
-    #last if $count++ > 15;
-  }
-  close INTRONS;
-}
-
-################################################################
 
 # history_maker
 
