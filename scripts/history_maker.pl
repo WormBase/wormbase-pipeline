@@ -83,7 +83,8 @@ if (! defined $lab || $lab eq "") {
 my $version = &get_history_version($wormbase->database('current'));
 
 # file where temp ace files written
-my $tidy_dir = glob("~/.history_maker");
+if (! defined $user) {$user = "wormpub"}
+my $tidy_dir = glob("~${user}/.history_maker");
 mkdir $tidy_dir, 0777;
 system("rm -f $tidy_dir/*"); # clean out old files
 my $session_file = "$tidy_dir/history_session.$version";
