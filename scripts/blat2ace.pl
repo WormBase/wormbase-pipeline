@@ -7,7 +7,7 @@
 # Exporter to map blat data to genome and to find the best match for each EST, mRNA, OST, etc.
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2011-08-16 14:16:42 $
+# Last edited on: $Date: 2011-09-20 15:51:47 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -252,7 +252,8 @@ foreach my $seq_group (@sequence_groups) {
         tend   => $target_end,
         qstart => $query_start,
         qend   => $query_end,
-      }			
+      };	
+
     }
     
     # we want to flip the strands such that the query is always forward (easier that way)
@@ -398,7 +399,7 @@ sub write_ace_top_level {
 
   foreach my $tname (keys %$hits) {
     foreach my $hit (@{$hits->{$tname}}) {
-      my $bin = 1 +  int( $hit->{tstart} / $binsize );
+      my $bin = 1 +  int( ($hit->{tstart} - 1) / $binsize );
       my $bin_start = ($bin - 1) * $binsize + 1;
       my $bin_end   = $bin_start + $binsize - 1;
 
@@ -406,7 +407,7 @@ sub write_ace_top_level {
         $bin_end = $tlengths->{$tname};
       }
 
-      my $bin_of_end = 1 +  int( $hit->{tend} / $binsize );
+      my $bin_of_end = 1 +  int( ($hit->{tend} - 1) / $binsize );
 
       # propagate rule from old code: if feature spans more than
       # 2 bins, junk it. 
