@@ -22,7 +22,7 @@ setenv PERL5LIB /software/worm/ensembl/bioperl-run:${PERL5LIB}
 setenv PERL5LIB ${ENSEMBL_CVS_ROOT_DIR}/ensembl-hive/modules:${PERL5LIB}
 setenv PERL5LIB /software/worm/lib:${PERL5LIB}
 # this is used in the Compara Build docs section on troubleshooting
-setenv COMPARA_URL "mysql://wormadmin:dbworms@farmdb1:3306/worm_compara_homology_63WS${WORMBASE_RELEASE}"
+setenv COMPARA_URL "mysql://wormadmin:worms@farmdb1:3306/worm_compara_homology_63WS${WORMBASE_RELEASE}"
 
 
 # for the EFuncGen database
