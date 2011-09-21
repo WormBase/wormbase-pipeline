@@ -5,8 +5,8 @@
 # Script to grab two unique flanking sequences after specifying a sequence 
 # and two coordinates
 #
-# Last updated by: $Author: mt3 $     
-# Last updated on: $Date: 2011-08-19 13:49:14 $      
+# Last updated by: $Author: klh $     
+# Last updated on: $Date: 2011-09-21 16:00:53 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};                  
@@ -16,7 +16,7 @@ use Storable;
 use Getopt::Long;
 
 
-my ($store, $wormbase, $species, $min_length, $test, $is_zero);
+my ($store, $wormbase, $species, $min_length, $test, $is_zero, $infile, $id, $outfile);
 
 my ($seq,$x,$y,$db);
 
@@ -25,9 +25,12 @@ my ($seq,$x,$y,$db);
              "species:s" => \$species,
              "start:i"   => \$x,
              "end:i"     => \$y,
+             "id:s"      => \$id,
              "db:s"      => \$db,
              "zero"      => \$is_zero,
              "seq:s"     => \$seq,
+             "infile:s"  => \$infile,
+             "outfile:s" => \$outfile,
              "length:s"  => \$min_length, 
 	    );
 
@@ -41,18 +44,60 @@ if ( $store ) {
     -test => $test);
 }
 
-$y = $x if not defined $y;
+my ($outfh, @feats);
 
-print STDERR "Looking for flanking sequences to $x - $y in $seq\n";
+if (defined $outfile) {
+  open $outfh, ">$outfile" or die "Could not open $outfile for writing\n";
+} else {
+  $outfh = \*STDOUT;
+}
+
+if (defined $infile) {
+  print STDERR "Reading input from file...\n";
+  open my $in_fh, $infile or die "Could not open $infile\n";
+  while(<$in_fh>) {
+    if (/^(\S+)\s+(\d+)\s+(\d+)\s+(\S+)/) {
+      my $feat = {
+        seq   => $1,
+        start => $2, 
+        stop  => $3, 
+        id    => $4,
+      };
+      push @feats, $feat;
+    }
+  }
+} elsif (defined $seq and defined $x) {
+  $y = $x if not defined $y;
+
+  print STDERR "Looking for flanking sequences to $x - $y in $seq\n";
+
+  push @feats, {
+    seq   => $seq,
+    start => $x,
+    end   => $y,
+    id    => defined($id) ? $id : "NO_ID",
+  };
+} else {
+  die "You must supply either -infile <file>, or -seq <seq> -start <start> -end <end>\n";
+}
+
 
 $db ||= $wormbase->orgdb;
 my $mapper = Feature_mapper->new($db,0,$wormbase);
-my($l, $r) = $mapper->get_flanking_sequence_for_feature($seq, $x, $y, $is_zero, $min_length);
-if($l and $r) {
-  print "Left  flank: $l\nRight flank: $r\n";
-}
-else { 
-  print "ERROR: cant find flanks for $seq:$x-$y\n";
+
+foreach my $feat (@feats) {
+  my($l, $r) = $mapper->get_flanking_sequence_for_feature($feat->{seq}, $feat->{start}, $feat->{end}, $is_zero, $min_length);
+
+  if($l and $r) {
+    print $outfh "SNP: ", $feat->{id}, "\n";
+    print $outfh "5'FLANK: $l\n";
+    print $outfh "3'FLANK: $r\n";
+    print $outfh "COMMENT: $seq\n";
+    print $outfh "||\n\n"
+  }
+  else { 
+    printf "ERROR: cant find flanks for %s/%d-%d\n\n", $feat->{seq}, $feat->{start}, $feat->{end};
+  }
 }
 
 exit(0);
