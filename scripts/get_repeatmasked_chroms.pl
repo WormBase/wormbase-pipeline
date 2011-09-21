@@ -1,15 +1,5 @@
 #!/usr/local/bin/perl5.8.0 -w
 #
-# agp2ensembl
-#
-# Cared for by Simon Potter
-# (C) GRL/EBI 2001
-#
-# You may distribute this module under the same terms as perl itself
-#
-# POD documentation - main docs before the code
-#
-# modified for reading in .agp files for worm ensembl
 
 
 use strict;                                      
@@ -174,26 +164,4 @@ sub usage {
 
 __END__
 
-=pod
 
-=head1 NAME
-
-agp2ensembl.pl
-
-=head1 SYNOPSIS
-
-get_repeatmasked_chroms.pl -agp ~wormpipe/Elegans/WSXXX.agp
-
-=head1 DESCRIPTION
-
-extracts RepeatMasked sequence from DNA database using specified AGP file
-
-=head1 OPTIONS
-
-    -agp     agp file
-
-=head1 CONTACT
-
-ar2@sanger.ac.uk
-
-=cut
