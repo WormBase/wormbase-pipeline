@@ -65,7 +65,7 @@ my $DB    	= 'wbgene_id;shap;3303';
 my $PASS 	= "wormpub";
 my $USER 	= "wormpub";
 my $DOMAIN  = 'Gene';
-my $db = NameDB_handler->new($DB,$USER,$PASS,'/nfs/WWWdev/SANGER_docs/htdocs');
+my $db = NameDB_handler->new($DB,$USER,$PASS,'/nfs/WWWdev/SANGER_docs/cgi-bin');
 my $count =0;
 my $ace_genes;
 

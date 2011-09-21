@@ -57,7 +57,7 @@ my $DB      = 'wbgene_id;shap;3303';
 my $PASS    = "wormpub";
 my $USER    = "wormpub";
 my $DOMAIN  = 'Variation';
-my $db = NameDB_handler->new($DB,$USER,$PASS,'/nfs/WWWdev/SANGER_docs/htdocs');
+my $db = NameDB_handler->new($DB,$USER,$PASS,'/nfs/WWWdev/SANGER_docs/cgi-bin');
 
 # get nameserver data
 my $query = 'SELECT primary_identifier.object_public_id, 
