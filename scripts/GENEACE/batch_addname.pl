@@ -48,7 +48,7 @@ $log->write_to("loading $file to $DB\n\n");
 $log->write_to("FORCE mode is ON!\n\n") if $force;
 $log->write_to("TEST mode is ON!\n\n") if $test;
 
-my $db = NameDB_handler->new($DB,$USER,$PASS,'/nfs/WWWdev/SANGER_docs/htdocs');
+my $db = NameDB_handler->new($DB,$USER,$PASS,'/nfs/WWWdev/SANGER_docs/cgi-bin');
 
 $db->setDomain('Gene');
 
