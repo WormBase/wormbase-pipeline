@@ -5,7 +5,7 @@
 # by Anthony Rogers et al
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2011-09-23 14:03:23 $
+# Last updated on: $Date: 2011-09-23 16:15:27 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -79,7 +79,7 @@ GetOptions (
 	    "store:s"            => \$store,
 	    "debug:s"            => \$debug,
 	    "clone2type"         => \$clone2type,
-            "clone2dbis"         => \$clone2dbid,
+            "clone2dbid"         => \$clone2dbid,
 	    "cds2cgc"            => \$cds2cgc,
 	    "rna2cgc"            => \$rna2cgc,
 	    "species:s"		 => \$species,
@@ -108,7 +108,7 @@ my %Table_defs = (
 		  'clone2size'       => "CommonData:Clone_Size_${\$wormbase->species}.def",
                   'clone2type'       => 'CommonData:Clone_Type.def',
 		  'clone2centre'     => 'CommonData:Clone_Lab.def',
-                  'clone2dbid'       => 'CommonData:Clone_dbid.def',
+                  'clone2dbid'       => 'CommonData:clone2dbid.def',
 		  'cds2status'       => 'CommonData:CDS_Status.def',
                   'cds2cgc'          => 'CommonData:CDS_CGCname.def',
 		  'rna2cgc'          => 'CommonData:RNA_CGCname.def',
@@ -1014,16 +1014,16 @@ sub write_clone2dbid {
   
   open (TACE, "echo '$command' | $tace $ace_dir |");
   while (<TACE>) {
-      chomp;
-      s/\"//g;
-      next if ($_ eq "");
-      next if (/acedb\>/);
-      last if (/\/\//);
-      if (/(\S+)\s+(\S+)/) {
-        $clone2dbid{$1} = $2;
-      } elsif (/^(\S+)/) {
-        $clone2dbid{$1} = "";
-      }
+    chomp;
+    s/\"//g;
+    next if ($_ eq "");
+    next if (/acedb\>/);
+    last if (/\/\//);
+    if (/(\S+)\s+(\S+)/) {
+      $clone2dbid{$1} = $2;
+    } elsif (/^(\S+)/) {
+      $clone2dbid{$1} = "";
+    }
   }
   close TACE;
   
