@@ -4,8 +4,8 @@
 # 
 # by Anthony Rogers et al
 #
-# Last updated by: $Author: pad $
-# Last updated on: $Date: 2010-11-25 11:03:31 $
+# Last updated by: $Author: klh $
+# Last updated on: $Date: 2011-09-23 14:03:23 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -46,6 +46,7 @@ my $clone2seq;         # Hash: %clone2seq           Key: Genomic_canonical      
 my $clone2sv;          # Hash: %clone2sv            Key: Genomic_canonical                 Value: Sequence version (integer)
 my $clone2type;        # Hash: %clone2type          Key: Genomic_canonical                 Value: Type information (Cosmid, Fosmid, YAC, Plasmid)
 my $clone2centre;      # Hash: %clone2type          Key: Genomic_canonical                 Value: From_laboratory (HX, RW, DRW)
+my $clone2dbid;        # Hash: %clone2dbid          Key: Genomic_canonical                 Value: EMBL dbID (_*)
 my $genes2lab;         # Hash: %worm_gene2lab       Key: Gene (CDS|Transcript|Pseudogene)  Value: From_laboratory (HX, RW, DRW)
 my $worm_gene2cgc;     # Hash: %worm_gene2cgc_name  Key: CGC name                          Value: Gene ID, plus molecular name (e.g. AH6.1), also a hash of cgc_name2gene
 my $worm_gene2geneID;  # Hash: %worm_gene2geneID    Key: Gene (CDS|Transcript|Pseudogene)  Value: Gene ID
@@ -78,6 +79,7 @@ GetOptions (
 	    "store:s"            => \$store,
 	    "debug:s"            => \$debug,
 	    "clone2type"         => \$clone2type,
+            "clone2dbis"         => \$clone2dbid,
 	    "cds2cgc"            => \$cds2cgc,
 	    "rna2cgc"            => \$rna2cgc,
 	    "species:s"		 => \$species,
@@ -106,6 +108,7 @@ my %Table_defs = (
 		  'clone2size'       => "CommonData:Clone_Size_${\$wormbase->species}.def",
                   'clone2type'       => 'CommonData:Clone_Type.def',
 		  'clone2centre'     => 'CommonData:Clone_Lab.def',
+                  'clone2dbid'       => 'CommonData:Clone_dbid.def',
 		  'cds2status'       => 'CommonData:CDS_Status.def',
                   'cds2cgc'          => 'CommonData:CDS_CGCname.def',
 		  'rna2cgc'          => 'CommonData:RNA_CGCname.def',
@@ -144,7 +147,7 @@ if ($all) {
   my @all_args = qw( clone2acc clone2size cds2wormpep cds2pid
 	    cds2status clone2seq clone2sv clone2centre genes2lab
 	    worm_gene2cgc worm_gene2geneID worm_gene2class est
-	    est2feature gene_id clone2type cds2cgc rna2cgc );
+	    est2feature gene_id clone2type cds2cgc rna2cgc clone2dbid);
 
   $wormbase->checkLSF;
   my $lsf = LSF::JobManager->new();
@@ -201,6 +204,7 @@ if ($all) {
   &write_Gene_id          if ($cds2gene_id);
   &write_worm_gene2geneID if ($worm_gene2geneID);
   &write_worm_gene2cgc    if ($worm_gene2cgc);
+  &write_clone2dbid       if ($clone2dbid);
 }
 
 $log->mail;
@@ -999,6 +1003,39 @@ sub write_worm_gene2class  {
   close DAT;
 
 }
+
+sub write_clone2dbid {
+  
+  $log->write_to("Updating clone2dbid\n");
+  my %clone2dbid;
+    
+  # connect to AceDB using TableMaker,
+  my $command="Table-maker -p $wquery_dir/$Table_defs{'clone2dbid'}\nquit\n";
+  
+  open (TACE, "echo '$command' | $tace $ace_dir |");
+  while (<TACE>) {
+      chomp;
+      s/\"//g;
+      next if ($_ eq "");
+      next if (/acedb\>/);
+      last if (/\/\//);
+      if (/(\S+)\s+(\S+)/) {
+        $clone2dbid{$1} = $2;
+      } elsif (/^(\S+)/) {
+        $clone2dbid{$1} = "";
+      }
+  }
+  close TACE;
+  
+  # now dump data to file
+  my $datafile = "$data_dir/clone2dbid.dat";
+
+  open (my $c2dbid, ">$datafile") or die "Cant write $datafile $!\n";
+  print $c2dbid Data::Dumper->Dump([\%clone2dbid]);
+  close($c2dbid);
+}
+
+
 
 #################################################################################################################
 
