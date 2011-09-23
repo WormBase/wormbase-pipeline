@@ -6,7 +6,7 @@
 # and two coordinates
 #
 # Last updated by: $Author: klh $     
-# Last updated on: $Date: 2011-09-21 16:00:53 $      
+# Last updated on: $Date: 2011-09-23 10:38:26 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};                  
@@ -60,7 +60,7 @@ if (defined $infile) {
       my $feat = {
         seq   => $1,
         start => $2, 
-        stop  => $3, 
+        end   => $3, 
         id    => $4,
       };
       push @feats, $feat;
@@ -92,7 +92,7 @@ foreach my $feat (@feats) {
     print $outfh "SNP: ", $feat->{id}, "\n";
     print $outfh "5'FLANK: $l\n";
     print $outfh "3'FLANK: $r\n";
-    print $outfh "COMMENT: $seq\n";
+    print $outfh "COMMENT: $feat->{seq}\n";
     print $outfh "||\n\n"
   }
   else { 
