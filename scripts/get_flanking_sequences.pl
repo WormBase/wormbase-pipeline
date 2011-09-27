@@ -5,8 +5,8 @@
 # Script to grab two unique flanking sequences after specifying a sequence 
 # and two coordinates
 #
-# Last updated by: $Author: klh $     
-# Last updated on: $Date: 2011-09-23 10:38:26 $      
+# Last updated by: $Author: mt3 $     
+# Last updated on: $Date: 2011-09-27 10:21:05 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};                  
@@ -126,6 +126,10 @@ This script finds the flanking sequences of a region on the genome.
 =item -start - starting coordinate in the sequence of your object
 
 =item -end - ending coordinate in the sequence of your object
+
+=item -infile - name of input file. Format is: Sequence start end id  e.g. CHROMOSOME_I 15024 15024 RY765
+
+=item -outfile - name of file output should be written to. nb. format is dbSNP compliant
 
 =item -zero - raise this if your extent is a 2bp one defining a 0-bp object (i.e. between bases)
 
