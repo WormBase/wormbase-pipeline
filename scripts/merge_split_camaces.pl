@@ -4,8 +4,8 @@
 # 
 # A script to make multiple copies of camace for curation, and merge them back again
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2011-07-06 14:52:13 $
+# Last edited by: $Author: klh $
+# Last edited on: $Date: 2011-09-27 16:04:12 $
 #
 # Persisting errors.
 #running csh -c "reformat_acediff file 1 file2"
@@ -35,7 +35,6 @@ my $WS_version;            # Removes final wormsrv2 dependancy.
 my $store;                 # Storable not needed as this is not a build script!
 my $test;
 my $wormbase;
-my $extra;                 # remove the GeneIDupdater call as this is run outside this script.
 my $email;                 # Option for child scripts that can tace a user email option.
 my $nodump;                # don't dump from split camaces.
 my $nosplit;               # use this option with the split if you only remove the mass_spec and tiling array data.
@@ -57,7 +56,6 @@ my $nochecks;              # dont run camcheck as this can take ages.
 	      "version:s"  => \$WS_version,
 	      "store"      => \$store,
 	      "test"       => \$test,
-	      "extra"      => \$extra,
 	      "email:s"    => \$email,
 	      "nodump"     => \$nodump,
 	      "nosplit"    => \$nosplit,
@@ -338,12 +336,6 @@ sub update_camace {
   print "loading Data requited for EMBL submission into camace\n" if ($debug);
   &load_curation_data("camace");
 
-  ## Update Protein ID's and check embl sequence_versions                         ##
-  $log->write_to ("\n\nRunning Gene_ID_update.pl to refresh Protein_ID\'s and clone sequence version\'s\n\n");
-  if ($debug) {$wormbase->run_script("GeneID_updater.pl -proteinID -sv -version $WS_version -debug $debug -update", $log) && die "Failed to run Gene_ID_updater.pl\n";}
-  else {$wormbase->run_script("GeneID_updater.pl -proteinID -sv -version $WS_version -update", $log) && die "Failed to run Gene_ID_updater.pl\n";}
-  $log->write_to ("Updated Protein_ID\'s and clone Sequence_versions\n");
-  
   ## Check if camace is in sync with the name server. ##
   $log->write_to ("\n\nRunning camace_nameDB_comm.pl.\n\n");
   $wormbase->run_script("NAMEDB/camace_nameDB_comm.pl", $log) && die "Failed to run camace_nameDB_comm.pl\n";
@@ -437,16 +429,16 @@ sub load_curation_data {
   my $acefiles;
   if (-e $wormbase->acefiles."/sorted_exons.ace") {
     $acefiles = $wormbase->acefiles;
-    $log->write_to ("The BUIlD is still in place, using autoace/acefiles\n");
+    $log->write_to ("The BUILD is still in place, using autoace/acefiles\n");
   }
   else {
     $acefiles = $wormbase->database('current')."/acefiles";
-    $log->write_to ("The BUIlD has finished...using currentDB/acefiles\n");
+    $log->write_to ("The BUILD has finished...using currentDB/acefiles\n");
   }
   
-  # updates core data that is usually stored in promary database.
+  # updates core data that is usually stored in primary database.
   if ($sub_database eq "camace"){
-    push (@files,"$acefiles/misc_DB_remark.ace",
+    push (@files,
 	  "$wormpub/CURATION_DATA/assign_orientation.WS${WS_version}.ace",
 	  "$acefiles/sorted_exons.ace",
 	  "$wormpub/wormbase/autoace_config/misc_autoace_methods.ace",
