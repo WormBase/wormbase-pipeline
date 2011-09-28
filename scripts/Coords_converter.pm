@@ -579,7 +579,7 @@ sub _read_data_file {
     close (SL);
 
     undef $parent;
-    open (CLONE,"</$database/clone_coords") or croak "cant open clone coordinate file $database/clone_coords\t$!";
+    open (CLONE,"<$database/clone_coords") or croak "cant open clone coordinate file $database/clone_coords\t$!";
     while(<CLONE>) {
       if (/Sequence.*\"(SUPERLINK_\w+)/) {
 	$parent = $1;
@@ -609,7 +609,7 @@ sub _read_data_file {
 
     my $supercontig;
     my $contig;
-    open (CLONE,"</$database/clone_coords") or croak "cant open clone coordinate file $database/clone_coords\t$!";
+    open (CLONE,"<$database/clone_coords") or croak "cant open clone coordinate file $database/clone_coords\t$!";
     while(<CLONE>) {
       if (/Sequence\s+:\s+\"(\S+)\"/) {
 	$supercontig = $1;
