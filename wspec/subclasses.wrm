@@ -5,10 +5,12 @@
 
 // ?Sequence subclasses
 
-
-// This is a test header
-
 Class Genome_Sequence
+Visible
+Is_a_subclass_of Sequence
+Filter "Genomic_Canonical AND (Species = C*elegans)"
+
+Class Elegans_genomic
 Visible
 Is_a_subclass_of Sequence
 Filter "Genomic_Canonical AND (Species = C*elegans)"
@@ -38,8 +40,6 @@ Visible
 Is_a_subclass_of Sequence
 Filter "Method = NDB"
 
-
-
 // ?CDS subclasseses
 Class elegans_CDS
 Visible
@@ -54,7 +54,7 @@ Filter "((Method = curated) OR (Method = provisional)) AND (Species = C*briggsae
 Class curated_CDS
 Visible
 Is_a_subclass_of CDS
-Filter "((Method = curated) OR (Method = history)) AND (Species = C*elegans)"
+Filter "((Method = curated) OR (Method = history) OR (!Method))"
 
 Class Transposon_CDS
 Visible
@@ -75,7 +75,7 @@ Filter "(NOT Method = Coding_transcript) AND (NOT Method = history) AND (Species
 Class Coding_transcripts
 Visible
 Is_a_subclass_of Transcript
-Filter "(Method = Coding_transcript) AND (Species = C*elegans)"
+Filter "(Method = Coding_transcript)"
 
 // ?Pseudogene subclasseses
 Class elegans_pseudogenes
@@ -94,9 +94,7 @@ Visible
 Is_a_subclass_of Transposon
 Filter "Species = C*elegans"
 
-
 // ?Protein subclasses
-
 Class Wormpep
 Visible
 Is_a_subclass_of Protein
@@ -106,7 +104,6 @@ Class Brigpep
 Visible
 Is_a_subclass_of Protein
 Filter "Brigpep AND Live AND (Species = C*briggsae)"
-
 
 // ?Map subclasses
 
@@ -119,7 +116,6 @@ Class Sequence_map
 Visible
 Is_a_subclass_of Map
 Filter "IS *Sequence*"
-
 
 // ?Variation subclasses
 
@@ -150,15 +146,13 @@ Filter "NBP_allele"
 
 // Gene subclasses
 
-// capture just C. elegans genes that are live
-
+// capture just genes that are live
 Class Live_genes
 Visible
 Is_a_subclass_of Gene
-Filter "Live AND Species = Caenorhabditis*elegans AND Sequence_name"
+Filter "Live"
 
 // Other Misc. subclasses
-
 Class Clone_Grid
 Visible
 Is_a_subclass_of Grid
