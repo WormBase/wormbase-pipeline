@@ -4,8 +4,8 @@
 #
 # written by Anthony Rogers
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2011-08-26 13:46:22 $
+# Last edited by: $Author: mh6 $
+# Last edited on: $Date: 2011-09-29 15:41:34 $
 #
 # it depends on:
 #    wormpep + history
@@ -546,6 +546,8 @@ sub update_proteins {
     
     $raw_dbh->do('DELETE FROM protein_feature')  or die $raw_dbh->errstr;
     $raw_dbh->do('DELETE FROM input_id_analysis WHERE input_id_type = "TRANSLATIONID"')  or die $raw_dbh->errstr;
+
+    $raw_dbh->do('DELETE FROM meta WHERE meta_key = "genebuild.start_date"')  or die $raw_dbh->errstr;
 
     # load new ones
 
