@@ -439,6 +439,39 @@ sub ncbi_tax_id {'34506'};
 sub assembly_type {'contig'};
 
 ######################################################
+package Asuum;
+use Carp;
+our @ISA = qw(Wormbase Species);
+
+sub _new {	
+    my $class = shift;
+    my %param = %{ shift(@_) };
+
+    my $self = $class->initialize( $class->flatten_params( \%param ) );
+
+    # add stuff post object creation goes here
+
+    bless $self, $class;
+}
+sub full_name {
+	my $self = shift;
+	my %param = @_ ;
+	if($param{'-short'}){
+		return 'A. suum';
+	}	elsif($param{'-g_species'}){
+		return 'a_suum';
+	}
+	else { return'Strongyloides ratti'
+	};
+}
+sub chromosome_prefix {'Scaffold'}
+sub pep_prefix {'AS'}
+sub pepdir_prefix{'as'};
+sub ncbi_tax_id {'6253'};
+sub assembly_type {'contig'};
+
+######################################################
+
 package Csp7;
 use Carp;
 our @ISA = qw(Wormbase Species);
