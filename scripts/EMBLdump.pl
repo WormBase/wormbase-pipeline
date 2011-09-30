@@ -2,60 +2,90 @@
 #
 # EMBLdump.pl :  makes modified EMBL dumps from camace.
 # 
-#  Last updated on: $Date: 2011-03-04 14:24:55 $
-#  Last updated by: $Author: pad $
+#  Last updated on: $Date: 2011-09-30 16:25:28 $
+#  Last updated by: $Author: klh $
 
 use strict;
-use lib $ENV{'CVS_DIR'};
-use Wormbase;
 use Getopt::Long;
 use File::Copy;
 use Storable;
+use Text::Wrap;
+
+$Text::Wrap::columns = 60;
+
+use lib $ENV{'CVS_DIR'};
+use Wormbase;
+
+
+
 
 ##############################
 # command-line options       #
 ##############################
 
-my $test;
-my $single;
-my $debug;
-my $store;
-my $wormbase;
-my $quicktest;
-my $version;
-my $database;
+my %species_info = (
+  genome_project_id => {
+    elegans  => 13758,
+    briggsae => 10731,
+  },
+
+  taxon_id => {
+    elegans  => 6239,
+    briggsae => 473542,
+  },
+
+  strain => {
+    elegans => 'Bristol N2',
+    briggsae => 'AF16',
+  }
+);    
+
+
+
+my ($test,
+    $debug,
+    $store,
+    $species,
+    $full_species_name,
+    $raw_dump_file,
+    $mod_dump_file,
+    $wormbase,
+    $single,
+    $database,
+    $use_builddb_for_ref,
+    $quicktest,
+    );
+
 GetOptions (
-	    "test"         => \$test,
-	    "debug=s"      => \$debug,     # Only emails specified recipient and turns on extra printing.
-	    "store:s"      => \$store,
-	    "quicktest"    => \$quicktest, # only dumps B0250
-	    "single=s"     => \$single,    # only dumps specified clone
-	    "version=s"    => \$version,   # Specifies what WS version COMMON_DATA to use.
-	    "database=s"   => \$database,  # Requires full path to database eg.c ~wormpub/DATABASES/BACKUPS/camace_backup.061116
-	    );
+  "test"            => \$test,
+  "debug=s"         => \$debug,     # Only emails specified recipient and turns on extra printing.
+  "store:s"         => \$store,
+  "single=s@"       => \$single,
+  "species:s"       => \$species,
+  "database:s"      => \$database,
+  "buildref"        => \$use_builddb_for_ref,
+  "rawdumpfile:s"   => \$raw_dump_file,
+  "moddumpfile:s"   => \$mod_dump_file,
+  "quicktest"       => \$quicktest,
+    );
 
 
 if( $store ) {
   $wormbase = retrieve( $store ) or croak("cant restore wormbase from $store\n");
 }
 else {
-  $wormbase = Wormbase->new( -debug   => $debug,
-                            -test    => $test,
-                           );
+  $wormbase = Wormbase->new( -debug    => $debug,
+                             -test     => $test,
+                             -organism => $species,
+                             -autoace  => $database,
+      );
 }
 
 # establish log file.
 my $log = Log_files->make_build_log($wormbase);
 
-# who will receive log file?
-my $maintainers = "All";
-
-# Use debug mode?
-if($debug){
-  $log->write_to("DEBUG = \"$debug\"\n\n");
-  ($maintainers = $debug . '\@sanger.ac.uk');
-}
-
+$species = $wormbase->species;
+$full_species_name = $wormbase->full_name;
 
 ###############################
 # misc. variables             #
@@ -63,383 +93,247 @@ if($debug){
 
 my $basedir = $wormbase->wormpub;
 my $giface = $wormbase->giface;
-my $dbdir;
-if ($database) {$dbdir = $database;}
-else {$dbdir = $wormbase->database('camace');}
-my $refdb = $wormbase->database('current');
 my $tace = $wormbase->tace;
-
-my $outfilename = "$basedir/tmp/EMBLdump.$$";
-my $mod_file = "$basedir/tmp/EMBLdump.mod";
-my $dir;
-my $flag;
-my %cds2status;
-my %cds2cgc;
-my %clone2type;
-my %clone2accession;
-my %specialclones;
-my %rnagenes;
-#These are clones that were swapped with St Louis
-$specialclones{'CU457737'} = "AC006622";
-$specialclones{'CU457738'} = "AC006690";
-$specialclones{'CU457739'} = "AF043691";
-$specialclones{'CU457740'} = "AF098988";
-$specialclones{'CU457741'} = "AF043695";
-$specialclones{'CU457742'} = "AF045637";
-$specialclones{'CU457743'} = "AF003149";
-$specialclones{'CU457744'} = "AF099926";
-
-$log->write_to("You are embl dumping from $dbdir\n\n");
-
-#Fetch additional info#
-&fetch_database_info;
-
-#############################################
-# Use giface to dump EMBL files from camace #
-#############################################
-
-my $command;
-if ($quicktest) {  # quicktest mode only works on B0250
-  $single = "B0250";
-}
-
-if ($single) {
-  $command  = "nosave\n"; # Don't really want to do this
-  $command .= "query find CDS where Method = \"Genefinder\"\nkill\ny\n";# remove Genefinder predictions
-  $command .= "query find CDS where Method = \"twinscan\"\nkill\ny\n";# remove twinscan predictions
-  $command .= "query find CDS where Method = \"jigsaw\"\nkill\ny\n";# remove jigsaw predictions
-  $command .= "query find Genome_sequence $single From_laboratory = HX AND Finished AND DNA\ngif EMBL $outfilename\n";# find sequence and dump
-  $command .= "quit\nn\n";# say you don't want to save and exit
-}
-
-else {
-  $command  = "nosave\n"; # Don't really want to do this
-  $command .= "query find CDS where Method = \"Genefinder\"\nkill\ny\n";# remove Genefinder predictions
-  $command .= "query find CDS where Method = \"twinscan\"\nkill\ny\n";# remove twinscan predictions
-  $command .= "query find CDS where Method = \"jigsaw\"\nkill\ny\n";# remove jigsaw predictions
-  $command .= "query find Genome_sequence From_laboratory = HX AND Finished AND DNA\ngif EMBL $outfilename\n";# find sequence and dump
-  $command .= "quit\nn\n";# say you don't want to save and exit
-}
-
-$log->write_to("$command\n");
-open (READ, "echo '$command' | $giface $dbdir |") or die ("Could not open $giface $dbdir\n");
-while (<READ>) {
-  next if ($_ =~ /\/\//);
-  next if ($_ =~ /acedb/);
-}
-close (READ);
-
+my $dbdir = ($database) ? $database : $wormbase->autoace;
+my $refdb = ($use_builddb_for_ref) ? $dbdir : $wormbase->database('current');
 
 
 #########################
 # Get COMMONDATA hashes #
 #########################
+my %clone2type      = $wormbase->FetchData('clone2type');
+my %cds2cgc         = $wormbase->FetchData('cds2cgc');
+my %rnagenes        = $wormbase->FetchData('rna2cgc');
+my %clone2dbid      = $wormbase->FetchData('clone2dbid');
 
-# This is needed to fix missing sequence version and accession info in dumped EMBL files
-# Where to get data from? If the build has been released COMMON_DATA has been removed, 
-# Therefore need to be able to specify the latest/last build COMMON_DATA.
 
-if ($version) {
-  $dir = $wormbase->database("WS$version")."/COMMON_DATA";
-  $log->write_to("***$dir\n");
+#
+# Some information is not yet available in autoace (too early in the build)
+# Therefore pull it across from previous build. 
+#
+my ($cds2status_h, $cds2proteinid_h,  $cds2dbremark_h) = &fetch_database_info($refdb);
+
+
+#############################################
+# Use giface to dump EMBL files from camace #
+#############################################
+
+my $delete_raw_dump_file = 0;
+
+if (not defined $raw_dump_file) {
+  $log->write_to("You are embl dumping from $dbdir\n\n");
+  
+  $raw_dump_file = "$basedir/tmp/EMBLdump.$$";
+  $delete_raw_dump_file = 1;
+
+  my $command;
+  if ($single) {
+    $command  = "nosave\n"; # Don't really want to do this
+    $command .= "query find CDS where Method = \"Genefinder\"\nkill\ny\n";# remove Genefinder predictions
+    $command .= "query find CDS where Method = \"twinscan\"\nkill\ny\n";# remove twinscan predictions
+    $command .= "query find CDS where Method = \"jigsaw\"\nkill\ny\n";# remove jigsaw predictions
+    $command .= "query find Genome_sequence $single\ngif EMBL $raw_dump_file\n";# find sequence and dump
+    $command .= "quit\nn\n";# say you don't want to save and exit
+  } else {
+    $command  = "nosave\n"; # Don't really want to do this
+    $command .= "query find CDS where Method = \"Genefinder\"\nkill\ny\n";# remove Genefinder predictions
+    $command .= "query find CDS where Method = \"twinscan\"\nkill\ny\n";# remove twinscan predictions
+    $command .= "query find CDS where Method = \"jigsaw\"\nkill\ny\n";# remove jigsaw predictions
+    $command .= "query find Genome_sequence Finished AND DNA\ngif EMBL $raw_dump_file\n";# find sequence and dump
+    $command .= "quit\nn\n";# say you don't want to save and exit
+  }
+  
+  $log->write_to("$command\n");
+  open (READ, "echo '$command' | $giface $dbdir |") or die ("Could not open $giface $dbdir\n");
+  while (<READ>) {
+    next if ($_ =~ /\/\//);
+    next if ($_ =~ /acedb/);
+  }
+  close (READ);
+} else {
+  $log->write_to("You are processing the pre-dumped file $raw_dump_file\n");
 }
-
-else {
-  $dir = $wormbase->database("current")."/COMMON_DATA";
-}
-
-#CommonData hash Key: Genome sequence Value: Sequence version integer
-if (!(-e $dir."/clone2accession.dat")) {
-  $dir = $wormbase->common_data;
-  $log->write_to("Switching to the build copy of COMMON_DATA $dir!!!\n");
-}
-
-%clone2accession = $wormbase->FetchData('clone2accession', undef, "$dir");
-#CommonData hash Key: Clone/Sequence name Value: Type information (cosmid|fosmid|yac|Other);
-%clone2type = $wormbase->FetchData('clone2type', undef, "$dir");
-%cds2cgc  = $wormbase->FetchData('cds2cgc', undef, "$dir");
-#my %cds2gene = $wormbase->FetchData('cds2wbgene_id', undef "$dir");
-%rnagenes  = $wormbase->FetchData('rna2cgc', undef, "$dir");
 
 
 
 ######################################################################
 # cycle through the EMBL dump file, replacing info where appropriate #
 ######################################################################
+$mod_dump_file = "./EMBL_dump.embl" if not defined $mod_dump_file;
 
-open (OUT, ">$mod_file") or  die "Can't process new EMBL dump file\n";
-open (EMBL, "<$outfilename.embl") or die "Can't process EMBL dump file\n";
+open(my $out_fh, ">$mod_dump_file") or $log->log_and_die("Could not open $mod_dump_file for writing\n");
+open(my $raw_fh, $raw_dump_file) or $log->log_and_die("Could not open $raw_dump_file for reading\n");
 
-my $id = "";
-my $cds;
-my $locus;
-my $clone;
-my $ID2;
+my ($clone, $seqlen, $idline_suffix, @accs, @features, $written_header);
 
-our $reference_remove = 0;
-our $author_change;
+while (<$raw_fh>) {
 
-while (<EMBL>) {
   # Store the necessary default ID line elements ready for use in the new style EMBL ID lines.
-  if(/^ID\s+CE(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)/){
-    $ID2 = "XXX; linear; genomic $3 STD; "."$4 "."$5 "."$6";
-    $id = $1;
-    next;
-  }
-  # print new format ID line and AC lines with XX lines once the accession lookup has been done.
-  if( /^AC/ ) {
-    my $acc = $clone2accession{$id};
-    print OUT "ID   $clone2accession{$id}; $ID2\nXX\n";
-#    next;
-#AC * _AC006622
-#AC   CU457737; AC006622;
+  if(/^ID\s+CE(\S+)\s+\S+\s+\S+\s+\S+\s+(\d+)\s+\S+/){
+    ($clone, $seqlen) = ($1, $2);
+    $idline_suffix = "SV XXX; linear; genomic DNA; STD; INV; $seqlen BP."; 
 
-    if (defined$specialclones{$acc}) {
-      print OUT "AC * _$specialclones{$acc}\n";
-      print OUT "AC   $clone2accession{$id}; $specialclones{$acc};\nXX\n";
-    }
-    else { 
-      print OUT "AC   $clone2accession{$id};\nXX\n";
-    }
-    next;
-  }
-  # DE   Caenorhabditis elegans cosmid C05G5    
-  if (/^DE   Caenorhabditis elegans cosmid (\S+)/) {
-    $clone = $1;
-    # can now reset $id
-    $id = "";
-    
-    if (!defined($clone2type{$clone})){
-      print OUT "DE   Caenorhabditis elegans clone $clone\n";
-      $log->write_to("WARNING: no clone type for $_");
-    }
-    elsif ($clone2type{$clone} eq "other") {
-      print OUT "DE   Caenorhabditis elegans clone $clone\n";
-    }
-    elsif ($clone2type{$clone} eq "yac") {
-      print OUT "DE   Caenorhabditis elegans YAC $clone\n";
-    }
-    else {
-      print OUT "DE   Caenorhabditis elegans $clone2type{$clone} $clone\n";
-    }
-    next;
-  }
-  # species line
-  if (/\/organism/) {
-    print OUT "FT                   /db_xref=\"taxon:6239\"\n";
-    print OUT "$_";
-    print OUT "FT                   /strain=\"Bristol N2\"\n";
-    print OUT "FT                   /mol_type=\"genomic DNA\"\n";
+    @accs = ();
+    @features = ();
+    $written_header = 0;
+
     next;
   }
 
-  # print OC line and next XX, tag for WormBase inclusion
-  if (/^RP\s+(\S+)/) {
-    $author_change = $1;
-    print OUT "$_";
-    #      print OUT "RX   MEDLINE; 99069613.\n"; # Stripped by EMBL
-    print OUT "RX   PUBMED; 9851916.\n";
-    print OUT "RG   WormBase Consortium\n";
-    print OUT "RA   Caenorhabditis elegans Sequencing Consortium;\n";
-    print OUT "RT   \"Genome sequence of the nematode C. elegans: a platform for investigating\n";
-    print OUT "RT   biology\";\n";
-    print OUT "RL   Science 282(5396):2012-2018(1998).\n";
-    print OUT "XX\n";
-    print OUT "RN   [2]\n";
-    print OUT "$_";
+  if( /^AC\s+(\S+);/ ) {
+    push @accs, $1;
     next;
   }
-  if (/^RN   \[2\]/) {
-    $reference_remove = 5;
-    next;
-  }
-  
-  if ($reference_remove > 0) {
-    $reference_remove--;
-    next;
-  }
-  if (/^RL   E-mail: jes/) {
-    next;
-  }
-  # locus_tag name.....
-  if (/\/gene=\"(\S+)\"/) {
-    $locus = $1;
-    #strip the isoform letter
-    if ($locus =~ /(\S+\.\d+)\l/){
-#    if ($locus =~ /(\S+\.\d+)/){
-      $cds = $1;
+
+  if (/^DE/) {
+    # should now have parsed everything necessary to write first block of entry
+    #
+    # ID
+    #
+    print $out_fh "ID   $accs[0]; $idline_suffix\n";
+    print $out_fh "XX\n";
+
+    #
+    # AC
+    #
+    print $out_fh "AC   $accs[0];";
+    for(my $i=1; $i < @accs; $i++) {
+      print $out_fh " $accs[$i];";
     }
-    else {
-      $cds = $locus;
+    print $out_fh "\nXX\n";
+
+    #
+    # AC *
+    #
+    if ($clone2dbid{$clone}) {
+      print $out_fh "AC * $clone2dbid{$clone}\n";
+      print $out_fh "XX\n";
     }
     
-    if ((defined$cds2cgc{$cds}) || (defined$cds2cgc{$locus}) ) {
-      print OUT "FT                   /gene=\"" . $cds2cgc{$locus}  ."\"\n" if defined($cds2cgc{$locus});
-      print OUT "FT                   /gene=\"" . $cds2cgc{$cds}  ."\"\n" if (($cds ne $locus) && defined($cds2cgc{$cds}));
-      print OUT "FT                   /locus_tag=\"$locus\"\n";
-      next unless defined($flag);#allows non-coding_transcript isoform addition
-    }
-    elsif ((defined$rnagenes{$cds}) || (defined$rnagenes{$locus})) {
-      print OUT "FT                   /gene=\"" . $rnagenes{$cds}  ."\"\n" if defined($rnagenes{$cds});
-      print OUT "FT                   /gene=\"" . $rnagenes{$locus}  ."\"\n" if ($cds ne $locus);
-      print OUT "FT                   /locus_tag=\"$locus\"\n";
-      next unless defined($flag);#allows non-coding_transcript isoform addition
-    }
-    else {
-      print OUT "FT                   /locus_tag=\"$locus\"\n";
-      next unless defined($flag);#allows non-coding_transcript isoform addition
-    }
-  }
+    #
+    # PR
+    #
+    print $out_fh "PR   Project:$species_info{genome_project_id}->{$species};\n";
+    print $out_fh "XX\n";
 
-  next if (/^CC   For a graphical/);
-  next if (/^CC   see:-/);
-  if (/^CC   name=/) {
-    print OUT "CC   For a graphical representation of this sequence and its analysis\n";
-    print OUT "CC   see:- http://www.wormbase.org/perl/ace/elegans/seq/sequence?\n";
-    print OUT "CC   name=$clone;class=Sequence\n";
-    $reference_remove = 1;
+    #
+    # DE
+    #
+    my $de_line;
+
+    if ($species eq 'elegans') {
+      if (!defined($clone2type{$clone})){
+        $de_line =  "$full_species_name clone $clone";
+        $log->write_to("WARNING: no clone type for $_");
+      } elsif (lc($clone2type{$clone}) eq "other") {
+        $de_line = "$full_species_name clone $clone";
+      } elsif (lc($clone2type{$clone}) eq "yac") {
+        $de_line = "$full_species_name YAC $clone";
+      } else {
+        $de_line = "$full_species_name $clone2type{$clone} $clone";
+      }
+    } elsif ($species eq 'briggsae') {
+      $de_line = "$full_species_name AF16 supercontig $clone from assembly CB4";
+    }
+
+    print $out_fh "DE   $de_line\n";
+    $written_header = 1;
     next;
   }
 
-##################################################################################################################
-   #  Modify the /product lines for genes that have EST evidence
-   # /product="Hypothetical protein XXX.X"
-   # /product="C. elegans protein XXX.X, partially confirmed by transcript evidence"
-   # /product="C. elegans protein XXX.X, confirmed by transcript evidence"
-  if (/\/product=\"Hypothetical protein (\S+.\S+)\"/) {
-    $cds = $1;
-    if (!defined$cds2status{$cds}) {
-      $log->write_to("Warning data missing for $cds\n$_\n");
-      print OUT "$_";
-      next;
-    }
-    if ($cds2status{$cds} eq ("Confirmed")) {
-      print OUT "FT                   \/product=\"C. elegans protein $cds,\nFT                   confirmed by transcript evidence\"\n";
-      next;
-    }
-    elsif ($cds2status{$cds} eq ("Partially_confirmed")) {
-      print OUT "FT                   \/product=\"C. elegans protein $cds,\nFT                   partially confirmed by transcript evidence\"\n";
-      next;
-    }
-    else {
-      print OUT "FT                   \/product=\"C. elegans predicted protein $cds\"\n";
-      next;
-    }
-  }
-
- # Modify Product lines for RNA genes
-  if (/\/product=\"Hypothetical RNA transcript (\S+.\S+)\"/) {
-    my $name = $1;
-    if (defined$rnagenes{$name}) {
-      print OUT "FT                   \/product=\"C. elegans RNA transcript $name ($rnagenes{$name})\"\n";
-      next;
-    }
-    else {
-      print OUT "FT                   \/product=\"C. elegans RNA transcript $name\"\n";
-      next;
-    }
-  }
-#############################################################################################################
-  ###########################################################
-  ## Feature Table edits that are necessary for submission.##
-  ###########################################################
-
-
-  # RNA line edits for ncRNA type data.
-  # All RNAs should be converted if they aren't tRNA or rRNA
   #
-  # 1st FT line should be one of 3
-  # FT    ncRNA
-  # FT    rRNA
-  # FT    tRNA
-  # Supported bio types for ncRNA
-  #  /ncRNA_class="miRNA"
-  #  /ncRNA_class="siRNA"
-  #  /ncRNA_class="scRNA"              
-  #  /ncRNA_class="Other"
-  #  /ncRNA_class="snoRNA"
-  #  /ncRNA_class="snRNA"
-  # Nothing else counts
-  
-  if ((/^FT\s+(\w{1}RNA)\s+/) || (/^FT\s+(\w{2}RNA)\s+/) || (/^FT\s+(\w{3}RNA)\s+/) || (/^FT\s+(misc_RNA)\s+/)) {
-    my $mol = $1;
+  # References
+  #
+  if (/^RN\s+\[1\]/) {
+    my ($primary_RA, $primary_RL); 
 
-    # Supported bio-types
-    if (($mol eq "tRNA") || ($mol eq "rRNA")) {
-      print OUT "$_";
-      next;
-    }
-    elsif (($mol eq "snoRNA") || ($mol eq "miRNA") || ($mol eq "siRNA") || ($mol eq "scRNA") || ($mol eq "snRNA")) {
-      if ($mol =~ (/^\w{2}RNA/)) {
-	s/$mol/ncRNA/g;
+    while(<$raw_fh>) {
+      last if /^XX/;
+      if (/^RA/) {
+        $primary_RA = $_;
+        next;
       }
-      elsif ($mol =~ (/^\w{3}RNA/)) {
-	s/$mol/ncRNA /g;
+      if (/^RL/) {
+        $primary_RL = $_;
       }
-      print OUT "$_";
-      print OUT "FT                   /ncRNA_class=\"$mol\"\n";
-      next;
     }
-    
-    # Un-supported bio-types
-    elsif (($1 eq "ncRNA") || ($1 eq "misc_RNA")) {
-      if ($1 eq "misc_RNA") {
-	s/$1/ncRNA   /g;
-      }
-      else {
-	s/$1/ncRNA/g;
-      }
-      print OUT "$_";
-      print OUT "FT                   /ncRNA_class=\"Other\"\n" unless (/,/);
-      $flag = "$_" if (/,/);
-      next;
-    }
-    elsif ($1 eq "snlRNA") {
-      s/$1/ncRNA /g;
-      print OUT "$_";
-      print OUT "FT                   /ncRNA_class=\"Other\"\n";
-      print OUT "FT                   /note=\"$mol\"\n";
-      next;
-    }
-    else {
-      print OUT "RNA LINE ERROR:$_\n";
-      next;
-    }
-  }
 
-  #non_coding_transcript Isoform notes section
-  #FT                   /gene="
-  # this is a bit messy as it relies on a skip of the next when converting /gene=" up above.
-  # This might be a bit inclusive as it works on all Transcripts with complexed structure.
-  if ((/\/gene/) && defined($flag)){
-    print OUT "FT                   /ncRNA_class=\"Other\"\n";
-    print OUT "FT                   /note=\"non-functional Isoform from coding locus\"\n";
-    undef $flag;
+    my @refs = @{&get_references()};
+    for(my $i=0; $i < @refs; $i++) {
+      printf $out_fh "RN   [%d]\n", $i+1;
+      print $out_fh "RP   1-$seqlen\n";
+      map { print $out_fh "$_\n" } @{$refs[$i]};
+      print $out_fh "XX\n";
+    }
+
+    printf $out_fh "RN   [%d]\n", scalar(@refs) + 1;
+    printf $out_fh "RP   1-%d\n", $seqlen;
+    print $out_fh "RG   WormBase Consortium\n";
+    print $out_fh $primary_RA;
+    print $out_fh "RT   ;\n";
+    print $out_fh $primary_RL;
+    print $out_fh "RL   Nematode Sequencing Project: Sanger Institute, Hinxton, Cambridge\n";
+    print $out_fh "RL   CB10 1SA, UK and The Genome Institute at Washington University,\n"; 
+    print $out_fh "RL   St. Louis, MO 63110, USA. E-mail: help\@wormbase.org\n";
+    print $out_fh "XX\n";
     next;
   }
 
-  # standard_name......
-  # don't print out first few lines until they have been converted 
-  # can only do this when it gets to DE line
-  print OUT if ($id eq "");
+  #
+  # Comments
+  #
+  if (/^CC   For a graphical/) {
+    while(<$raw_fh>) {
+      last if /^XX/;
+      
+      print $out_fh "CC   For a graphical representation of this sequence and its analysis\n";
+      print $out_fh "CC   see:- http://www.wormbase.org/perl/ace/elegans/seq/sequence?\n";
+      print $out_fh "CC   name=$clone;class=Sequence\n";
+      print $out_fh "XX\n";
+    }
+    next;
+  }
+
+  #
+  # Feature table
+  #
+  if (/^FT   (\S+)\s+(.+)/) {
+    my ($ftype, $content) = ($1, $2);
+
+    push @features, {
+      ftype     => $ftype,
+      location  => [$content],
+      quals     => [],
+    };
+    next;
+  } elsif (/^FT\s+(.+)/) {
+    my $content = $1;
+    if ($content =~ /^\/\w+=/) {
+      push @{$features[-1]->{quals}}, [$content];
+    } else {
+      if (not @{$features[-1]->{quals}}) {
+        push @{$features[-1]->{location}}, $content;
+      } else {        
+        push @{$features[-1]->{quals}->[-1]}, $content;
+      }
+    }
+    next;
+  }
+
+  if (/^SQ/) {
+    &process_feature_table(@features);
+  }
+
+  print $out_fh $_ if $written_header;
 }
-close EMBL;
-close OUT;
 
-# copy modified copy back onto output file
-# It's useful to keep a copy when debugging
-if ($debug) {
-  $log->write_to("debug selected therefore a copy of the original embl dump will be made for backup \n");
-  system ("mv $outfilename.embl $outfilename.bk");
-}
+close($raw_fh);
+close($out_fh);
 
-my $status = move("$mod_file","$outfilename.embl");
-$log->write_to("ERROR: Couldn't move file: $!\n") if ($status == 0);
+unlink $raw_dump_file if $delete_raw_dump_file;
 
-$log->write_to("\nOutfile is $outfilename.*\n\n");
-
+$log->write_to("\nOutfile is $mod_dump_file\n");
 $log->mail();
-
 exit(0); 
 
 ###################################################
@@ -447,29 +341,470 @@ exit(0);
 ###################################################
 
 
-#######################
-# fetch_database_info #
-#######################
+############################
+sub process_feature_table {
+  my @feats = @_;
 
-sub fetch_database_info {
-  my $query;
-  my $def_dir = $wormbase->database('current')."/wquery";
-  my @queries = ("${def_dir}/SCRIPT:CDS_status.def");
-  foreach $query(@queries) {
-    my $command = "Table-maker -p $query\nquit\n";
-    
-    open (TACE, "echo '$command' | $tace $refdb |");
-    while (<TACE>) {
-      #my $status;
-      chomp;
-      s/\"//g;
-      next unless (/^([A-Z,0-9,.]+?\w)\s+(\w+)/) ;
-      my $cds = $1;
-      my $status = $2;
-      $cds2status{$cds} = "$status";
+  foreach my $feat (@feats) {
+    if (&check_for_bad_location($feat->{location})) {
+      $log->write_to("Discarding non-local feature:\n");
+      $log->write_to(sprintf("FT   %-16s%s\n", $feat->{ftype}, $feat->{location}->[0]));
+      for(my $i=1; $i < @{$feat->{location}}; $i++) {
+        $log->write_to(sprintf("FT   %16s%s\n", " ", $feat->{location}->[$i]));
+      }
+      foreach my $qual (@{$feat->{quals}}) {
+        foreach my $ln (@$qual) {
+          $log->write_to(sprintf("FT   %16s%s\n", " ", $ln));
+        }
+      }
+      next;
     }
-    close TACE;
+
+    if ($feat->{ftype} eq 'source') {
+      printf $out_fh "FT   %-16s%s\n", $feat->{ftype}, $feat->{location}->[0];
+      printf $out_fh "FT   %16s/db_xref=\"taxon:%d\"\n", " ", $species_info{taxon_id}->{$species};
+      printf $out_fh "FT   %16s/strain=\"%s\"\n", " ", $species_info{strain}->{$species};
+      printf $out_fh "FT   %16s/mol_type=\"genomic DNA\"\n", " ";
+      foreach my $tag (@{$feat->{quals}}) {
+        foreach my $ln (@$tag) {
+          printf $out_fh "FT   %16s%s\n", " ", $ln;
+        }
+      }
+      next;
+    } elsif ($feat->{ftype} =~ /RNA$/) {
+      #
+      # 1st FT line should be one of 3
+      # FT    ncRNA
+      # FT    rRNA
+      # FT    tRNA
+      # Supported bio types for ncRNA
+      #  /ncRNA_class="miRNA"
+      #  /ncRNA_class="siRNA"
+      #  /ncRNA_class="scRNA"              
+      #  /ncRNA_class="other"
+      #  /ncRNA_class="snoRNA"
+      #  /ncRNA_class="snRNA"
+      # Nothing else counts
+
+      my $mod_dir = $feat->{ftype};
+      my $rna_class = $mod_dir;
+
+      if ($mod_dir eq 'snoRNA' or 
+          $mod_dir eq 'miRNA' or
+          $mod_dir eq 'siRNA' or 
+          $mod_dir eq 'scRNA' or
+          $mod_dir eq 'snRNA') {
+        $rna_class = $mod_dir;
+        $mod_dir = 'ncRNA';
+      } elsif ($mod_dir eq 'misc_RNA' or
+               $mod_dir eq 'ncRNA') {
+        $rna_class = 'other';
+        $mod_dir = 'ncRNA';
+      } elsif ($mod_dir eq 'tRNA' or 
+               $mod_dir eq 'rRNA' or
+               $mod_dir eq 'ncRNA') {
+        # do nothing
+      } else {
+        # for all other RNA types, pass them through as
+        # ncRNA/other, but record the type in a note
+        push @{$feat->{quals}}, ["/note=\"$mod_dir\""];
+        $mod_dir = "ncRNA";
+        $rna_class = "other";
+      }
+
+      push @{$feat->{quals}}, ["/gene_class=\"$rna_class\""];
+      $feat->{ftype} = $mod_dir;
+    } elsif ($feat->{ftype} =~ /Pseudogene/) {
+      my $new_dv = "CDS";
+
+      # hack: all Pseudogenes with .t\d+ suffices are
+      # tRNA pseudogenes.
+      foreach my $tg (@{$feat->{quals}}) {
+        if ($tg->[0] =~ /\/gene=\"\S+\.t\d+\"/) {
+          $new_dv = "tRNA";
+        } 
+      }
+
+      $feat->{ftype} = $new_dv;
+      push @{$feat->{quals}}, ["/pseudo"];
+    }
+
+    printf $out_fh "FT   %-16s%s\n", $feat->{ftype}, $feat->{location}->[0];
+    for(my $i=1; $i < @{$feat->{location}}; $i++) {
+      printf $out_fh "FT   %16s%s\n", " ", $feat->{location}->[$i];
+    }
+
+    foreach my $tag (@{$feat->{quals}}) {
+      my @ln = @$tag;
+      my @extra_ln;
+
+      if ($ln[0] =~ /^\/product=/) {
+
+        if ($feat->{ftype} =~ /RNA/ and $ln[0] =~ /\"Hypothetical RNA transcript (\S+.\S+)\"/) {
+          my $gid = $1;
+          my $product = sprintf("/product=\"RNA transcript %s%s\"", 
+                                $gid, ($rnagenes{$gid}) ? " ($rnagenes{$gid})" : "");
+          @ln = ($product);
+        } elsif ($feat->{ftype} eq 'CDS' and $ln[0] =~ /\"Hypothetical protein (\S+.\S+)\"/) {
+          my $cds = $1;
+          my $product = "/product=\"Protein ";
+          if ($cds =~ /^(\S+)([a-z])/) {
+            $product .= "$1, isoform $2\"";
+          } else {
+            $product .= "$cds\"";
+          }
+          @ln = ($product);
+
+          if (exists $cds2proteinid_h->{$cds} and
+              exists $cds2proteinid_h->{$cds}->{$clone}) {
+            my $pid = $cds2proteinid_h->{$cds}->{$clone};
+            push @extra_ln, "/protein_id=\"$pid\"";
+          }
+          
+          my $status_note;
+          if (defined $cds2status_h->{$cds}) {
+            if ($cds2status_h->{$cds} eq 'Confirmed') {
+              $status_note = "/note=\"Confirmed by transcript evidence\"";
+            } elsif ($cds2status_h->{$cds} eq 'Partially_confirmed') {
+              $status_note = "/note=\"Partially confirmed by transcript evidence\"";
+            } else {
+              $status_note = "/note=\"Predicted\"";
+            }
+          }
+          if (defined $status_note) {
+            push @extra_ln, $status_note;
+          }
+        }
+
+      } elsif ($ln[0] =~ /\/gene=\"(\S+)\"/) {
+        my ($isoform_name, $locus_name) = ($1, $1);
+        if ($locus_name =~ /^(\S+\.\d+)([a-z])/) {
+          $locus_name = $1;
+        }
+        
+        if ($cds2cgc{$isoform_name}) {
+          @ln = ("/gene=\"$cds2cgc{$isoform_name}\"");
+        } elsif ($rnagenes{$isoform_name}) {
+          @ln = ("/gene=\"$rnagenes{$isoform_name}\"");
+        } else {
+          @ln = ("/gene=\"$locus_name\"");
+        }
+        push @extra_ln, sprintf("/locus_tag=\"%s\"", $locus_name);
+        
+        if ($cds2dbremark_h->{$isoform_name}) {
+          my $rem_line = "/note=\"$cds2dbremark_h->{$isoform_name}\"";
+          my @wl = split(/\n/, wrap('','',$rem_line));
+          
+          push @extra_ln, @wl;
+        }
+      } elsif ($ln[0] =~ /\/note=\"preliminary prediction\"/) {
+        # these notes are historical quirk of Acedb dumping - remove them
+        @ln = ();
+      }
+      
+      foreach my $ln (@ln, @extra_ln) {
+        printf $out_fh "FT   %16s%s\n", " ", $ln;
+      }
+    }
+  }
+  print $out_fh "XX\n";
+}
+
+##########################
+sub check_for_bad_location {
+  my ($loc_a) = @_;
+
+  my $loc_string = "";
+  foreach my $loc (@{$loc_a}) {
+    chomp($loc);
+    $loc_string .= $loc;
+  }
+
+  while(1) {
+    if ($loc_string =~ /^[^\(]*(complement|join)\(.+\)[^\)]*$/) {
+      $loc_string =~ s/^([^\(]*)(complement|join)\((.+)\)([^\)]*)$/$1$3/;
+    } else {
+      last;
+    }
+  }
+  
+  my @comps = split(/,/, $loc_string);
+  my @local_components = grep { $_ =~ /^\d+\.\.\d+$/ } @comps;
+
+  if (not @local_components) {
+    return 1;
+  } else {
+    return 0;
   }
 }
+
+##########################
+sub get_references {
+
+  my %primary_references = (
+    elegans =>  [
+      [ 
+        "RX   PUBMED; 9851916.",
+        "RA   Caenorhabditis elegans Sequencing Consortium;",
+        "RT   \"Genome sequence of the nematode C. elegans: a platform for investigating",
+        "RT   biology\";",
+        "RL   Science 282(5396):2012-2018(1998).",
+      ],
+    ],
+    
+    briggsae => [
+      [
+       "RX   PUBMED; 14624247.",
+       "RA   Stein L.D., Bao Z., Blasiar D., Blumenthal T., Brent M.R., Chen N.,",
+       "RA   Chinwalla A., Clarke L., Clee C., Coghlan A., Coulson A., D'Eustachio P.,",
+       "RA   Fitch D.H., Fulton L.A., Fulton R.E., Griffiths-Jones S., Harris T.W.,",
+       "RA   Hillier L.W., Kamath R., Kuwabara P.E., Mardis E.R., Marra M.A.,",
+       "RA   Miner T.L., Minx P., Mullikin J.C., Plumb R.W., Rogers J., Schein J.E.,",
+       "RA   Sohrmann M., Spieth J., Stajich J.E., Wei C., Willey D., Wilson R.K.,",
+       "RA   Durbin R., Waterston R.H.;",
+       "RT   \"The genome sequence of Caenorhabditis briggsae: a platform for comparative",
+       "RT   genomics\";",
+       "RL   PLoS Biol. 1(2):E45-E45(2003).",
+      ],
+      [ 
+        "RX   PUBMED; 21779179.",
+        "RA   Ross J.A., Koboldt D.C., Staisch J.E., Chamberlin H.M., Gupta B.P.,",
+        "RA   Miller R.D., Baird S.E., Haag E.S.;",
+        "RT   \"Caenorhabditis briggsae recombinant inbred line genotypes reveal",
+        "RT   inter-strain incompatibility and the evolution of recombination\";",
+        "RL   PLoS Gen. 7(7):E1002174-E1002174(2011).",
+      ],
+    ],
+  
+      );
+
+  return $primary_references{$species};
+}
+
+#######################
+sub fetch_database_info {
+  my ($ref_db) = @_;
+
+  my (%cds2status, %cds2dbremark, %cds2proteinid);
+
+  if ($quicktest) {
+    return (\%cds2status, \%cds2proteinid, \%cds2dbremark);
+  }
+
+  $log->write_to("You are using $refdb to get protein_ids, CDS status and DB_Remarks\n\n");
+  my (@qfiles);
+
+  #
+  # CDS -> status
+  #
+
+  my $query = &get_status_query();
+  push @qfiles, $query;
+  my $command = "Table-maker -p $query\nquit\n";
+  
+  open (TACE, "echo '$command' | $tace $ref_db |");
+  while (<TACE>) {
+    print;
+    chomp;
+    s/\"//g;
+    next unless (/^([A-Z,0-9,.]+?\w)\s+(\w+)/) ;
+    my ($cds, $status) = ($1, $2);
+    $cds2status{$cds} = $status;
+  }
+  close TACE;
+
+  #
+  # CDS -> protein_ID
+  #
+  $query = &get_protein_id_query();
+  push @qfiles, $query;
+  $command = "Table-maker -p $query\nquit\n";
+  open(TACE, "echo '$command' | $tace $ref_db |");
+  while(<TACE>) {
+    chomp;
+    s/\"//g;
+    if (/^(\S+)\s+(\S+)\s+(\S+)\s+(\d+)$/) {
+      my ($cds, $clone, $protein_id, $version) = ($1, $2, $3, $4);
+      $cds2proteinid{$cds}->{$clone} = "${protein_id}.${version}";
+    }   
+  }
+  close(TACE);
+
+  #
+  # CDS/RNA -> DB_Remark
+  #
+  foreach my $class ("CDS", "RNA") {
+    $query = &get_db_remark_query($class);
+    push @qfiles, $query;
+    $command = "Table-maker -p $query\nquit\n";
+    open(TACE, "echo '$command' | $tace $ref_db |");
+    while(<TACE>) {
+      chomp;
+      if (/^\"(\S+)\"\s+\"(.+)\"$/) {
+        my ($obj, $dbremark) = ($1, $2);
+        $dbremark =~ s/\\//g;
+        
+        $cds2dbremark{$obj} = $dbremark;
+      }
+    }
+  }
+
+  unlink @qfiles;
+
+  return (\%cds2status, \%cds2proteinid, \%cds2dbremark);
+
+}
+
+
+########################
+sub get_db_remark_query {
+  my ($class) = @_;
+
+  my $tmdef = "/tmp/dbremark_tmquery.$class.$$.def";
+  open my $qfh, ">$tmdef" or 
+      $log->log_and_die("Could not open $tmdef for writing\n");
+
+  my $condition = "";
+  if ($single) {
+    $condition = "Condition Sequence = \"$single\""
+  }
+
+  my $db_remark_tablemaker_query = <<"EOF";
+Sortcolumn 1
+
+Colonne 1 
+Width 12 
+Optional 
+Visible 
+Class 
+Class ${species}_${class}
+From 1 
+$condition
+
+Colonne 2 
+Width 12 
+Mandatory 
+Visible 
+Class 
+Class Text 
+From 1 
+Tag DB_remark 
+
+EOF
+
+  print $qfh $db_remark_tablemaker_query;
+  close($qfh);
+
+  return $tmdef;
+}
+
+##########################
+sub get_protein_id_query {
+
+  my $tmdef = "/tmp/pid_tmquery.$$.def";
+  open my $qfh, ">$tmdef" or 
+      $log->log_and_die("Could not open $tmdef for writing\n");  
+
+  my $condition = "";
+  if ($single) {
+    $condition = "Condition Sequence = \"$single\""
+  }
+
+  my $protein_id_tablemaker_template = <<"EOF";
+
+Sortcolumn 1
+
+Colonne 1 
+Width 12 
+Optional 
+Visible 
+Class 
+Class ${species}_CDS
+From 1 
+$condition
+ 
+Colonne 2 
+Width 12 
+Mandatory 
+Visible 
+Class 
+Class Sequence 
+From 1 
+Tag Protein_id 
+ 
+Colonne 3 
+Width 12 
+Optional 
+Visible 
+Text 
+Right_of 2 
+Tag  HERE  
+ 
+Colonne 4 
+Width 12 
+Optional 
+Visible 
+Integer 
+Right_of 3 
+Tag  HERE  
+ 
+EOF
+
+  print $qfh $protein_id_tablemaker_template;
+  return $tmdef;
+
+}
+
+##########################
+sub get_status_query {
+
+  my $tmdef = "/tmp/status_tmquery.$$.def";
+  open my $qfh, ">$tmdef" or 
+      $log->log_and_die("Could not open $tmdef for writing\n");  
+
+
+  my $condition = "Condition Live AND Species = \"$full_species_name\"";
+  if ($single) {
+    $condition .= " AND Sequence = \"$single\""
+  }
+
+  my $status_query = <<"EOF";
+
+Sortcolumn 1
+
+Colonne 1 
+Width 30 
+Optional 
+Hidden 
+Class 
+Class Gene 
+From 1 
+$condition
+ 
+Colonne 2 
+Width 30 
+Optional 
+Visible 
+Class 
+Class CDS 
+From 1 
+Tag Corresponding_CDS 
+ 
+Colonne 3 
+Width 30 
+Optional 
+Visible 
+Next_Tag 
+From 2 
+Tag Prediction_status 
+
+EOF
+
+  print $qfh $status_query;
+  return $tmdef;
+}
+ 
+
+
 
 __END__
