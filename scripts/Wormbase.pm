@@ -16,7 +16,7 @@ use Storable;
 use Species;
 
 our @core_organisms=qw(Elegans Briggsae Remanei Brenneri Japonica Pristionchus);
-our @tier3_organisms=qw(Brugia Mhapla Mincognita Hcontortus Cangaria Tspiralis Sratti Csp7 Csp9 Csp11);
+our @tier3_organisms=qw(Brugia Mhapla Mincognita Hcontortus Cangaria Tspiralis Sratti Csp7 Csp9 Csp11 Asuum);
 our @allowed_organisms=(@core_organisms, @tier3_organisms); #class data
 
 sub initialize {
@@ -1291,8 +1291,8 @@ sub establish_paths {
     $self->{'blat'}        = $self->orgdb . "/BLAT";
     $self->{'checks'}      = $self->autoace . "/CHECKS";
     $self->{'ontology'}    = $self->autoace . "/ONTOLOGY";
-    $self->{'tace'}   = '/software/worm/bin/acedb/tace';
-    $self->{'giface'} = '/software/worm/bin/acedb/giface';
+    $self->{'tace'}   = '/nfs/users/nfs_a/acedb/RELEASE.2011_02_18.BUILD/bin.LINUX_64/tace';
+    $self->{'giface'} = '/nfs/users/nfs_a/acedb/RELEASE.2011_02_18.BUILD/bin.LINUX_64/giface';
 
     $self->{'databases'}->{'geneace'} = $self->wormpub . "/DATABASES/geneace";
     $self->{'databases'}->{'camace'}  = $self->wormpub . "/DATABASES/camace";
