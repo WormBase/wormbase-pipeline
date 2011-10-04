@@ -2,7 +2,7 @@
 #
 # EMBLdump.pl :  makes modified EMBL dumps from camace.
 # 
-#  Last updated on: $Date: 2011-09-30 16:25:28 $
+#  Last updated on: $Date: 2011-10-04 10:25:35 $
 #  Last updated by: $Author: klh $
 
 use strict;
@@ -387,7 +387,7 @@ sub process_feature_table {
       # Nothing else counts
 
       my $mod_dir = $feat->{ftype};
-      my $rna_class = $mod_dir;
+      my $rna_class;
 
       if ($mod_dir eq 'snoRNA' or 
           $mod_dir eq 'miRNA' or
@@ -401,9 +401,8 @@ sub process_feature_table {
         $rna_class = 'other';
         $mod_dir = 'ncRNA';
       } elsif ($mod_dir eq 'tRNA' or 
-               $mod_dir eq 'rRNA' or
-               $mod_dir eq 'ncRNA') {
-        # do nothing
+               $mod_dir eq 'rRNA') {
+        # no class, do nothing
       } else {
         # for all other RNA types, pass them through as
         # ncRNA/other, but record the type in a note
@@ -412,7 +411,9 @@ sub process_feature_table {
         $rna_class = "other";
       }
 
-      push @{$feat->{quals}}, ["/gene_class=\"$rna_class\""];
+      if (defined $rna_class) {
+        push @{$feat->{quals}}, ["/ncRNA_class=\"$rna_class\""];
+      }
       $feat->{ftype} = $mod_dir;
     } elsif ($feat->{ftype} =~ /Pseudogene/) {
       my $new_dv = "CDS";
@@ -604,7 +605,6 @@ sub fetch_database_info {
   
   open (TACE, "echo '$command' | $tace $ref_db |");
   while (<TACE>) {
-    print;
     chomp;
     s/\"//g;
     next unless (/^([A-Z,0-9,.]+?\w)\s+(\w+)/) ;
