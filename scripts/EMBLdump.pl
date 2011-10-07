@@ -2,7 +2,7 @@
 #
 # EMBLdump.pl :  makes modified EMBL dumps from camace.
 # 
-#  Last updated on: $Date: 2011-10-07 16:14:46 $
+#  Last updated on: $Date: 2011-10-07 18:16:03 $
 #  Last updated by: $Author: klh $
 
 use strict;
@@ -45,7 +45,7 @@ my %species_info = (
 my %additional_qualifiers = (
 
   "C06G3.7" => { 
-    transl_excep => ["(pos:4060..4062,aa:Sec)"],
+    transl_except => ["(pos:4060..4062,aa:Sec)"],
   },
 );
 
