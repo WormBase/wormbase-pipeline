@@ -2,7 +2,7 @@
 #
 # EMBLdump.pl :  makes modified EMBL dumps from camace.
 # 
-#  Last updated on: $Date: 2011-10-04 10:25:35 $
+#  Last updated on: $Date: 2011-10-07 16:14:46 $
 #  Last updated by: $Author: klh $
 
 use strict;
@@ -12,16 +12,10 @@ use Storable;
 use Text::Wrap;
 
 $Text::Wrap::columns = 60;
+$Text::Wrap::unexpand = 0;
 
 use lib $ENV{'CVS_DIR'};
 use Wormbase;
-
-
-
-
-##############################
-# command-line options       #
-##############################
 
 my %species_info = (
   genome_project_id => {
@@ -40,6 +34,21 @@ my %species_info = (
   }
 );    
 
+#
+# Yuk. The below is a selenoprotein, the only one
+# currently in elegans or briggsae. Since we do not store
+# in the database the information required to populate the
+# the transl_exep qualifier, we need to hard-code it here. 
+# Like I said: yuk.
+#
+
+my %additional_qualifiers = (
+
+  "C06G3.7" => { 
+    transl_excep => ["(pos:4060..4062,aa:Sec)"],
+  },
+);
+
 
 
 my ($test,
@@ -54,6 +63,7 @@ my ($test,
     $database,
     $use_builddb_for_ref,
     $quicktest,
+    $exclude_sequence,
     );
 
 GetOptions (
@@ -67,6 +77,7 @@ GetOptions (
   "rawdumpfile:s"   => \$raw_dump_file,
   "moddumpfile:s"   => \$mod_dump_file,
   "quicktest"       => \$quicktest,
+  "excludeseq"      => \$exclude_sequence,
     );
 
 
@@ -87,6 +98,8 @@ my $log = Log_files->make_build_log($wormbase);
 $species = $wormbase->species;
 $full_species_name = $wormbase->full_name;
 
+$exclude_sequence = 1 if $species eq 'briggsae';
+
 ###############################
 # misc. variables             #
 ###############################
@@ -105,6 +118,7 @@ my %clone2type      = $wormbase->FetchData('clone2type');
 my %cds2cgc         = $wormbase->FetchData('cds2cgc');
 my %rnagenes        = $wormbase->FetchData('rna2cgc');
 my %clone2dbid      = $wormbase->FetchData('clone2dbid');
+my %pseudo2cgc      = $wormbase->FetchData('pseudo2cgc');
 
 
 #
@@ -132,14 +146,14 @@ if (not defined $raw_dump_file) {
     $command .= "query find CDS where Method = \"Genefinder\"\nkill\ny\n";# remove Genefinder predictions
     $command .= "query find CDS where Method = \"twinscan\"\nkill\ny\n";# remove twinscan predictions
     $command .= "query find CDS where Method = \"jigsaw\"\nkill\ny\n";# remove jigsaw predictions
-    $command .= "query find Genome_sequence $single\ngif EMBL $raw_dump_file\n";# find sequence and dump
+    $command .= "query find Sequence $single\ngif EMBL $raw_dump_file\n";# find sequence and dump
     $command .= "quit\nn\n";# say you don't want to save and exit
   } else {
     $command  = "nosave\n"; # Don't really want to do this
     $command .= "query find CDS where Method = \"Genefinder\"\nkill\ny\n";# remove Genefinder predictions
     $command .= "query find CDS where Method = \"twinscan\"\nkill\ny\n";# remove twinscan predictions
     $command .= "query find CDS where Method = \"jigsaw\"\nkill\ny\n";# remove jigsaw predictions
-    $command .= "query find Genome_sequence Finished AND DNA\ngif EMBL $raw_dump_file\n";# find sequence and dump
+    $command .= "query find Sequence Genomic_canonical AND Finished AND DNA\ngif EMBL $raw_dump_file\n";# find sequence and dump
     $command .= "quit\nn\n";# say you don't want to save and exit
   }
   
@@ -322,9 +336,16 @@ while (<$raw_fh>) {
 
   if (/^SQ/) {
     &process_feature_table(@features);
+    if (not $exclude_sequence) {
+      print $out_fh $_;
+    }
+    next;
   }
 
-  print $out_fh $_ if $written_header;
+  if ($written_header and 
+      (not $exclude_sequence or /^\S/)) {
+    print $out_fh $_;
+  }
 }
 
 close($raw_fh);
@@ -413,6 +434,7 @@ sub process_feature_table {
 
       if (defined $rna_class) {
         push @{$feat->{quals}}, ["/ncRNA_class=\"$rna_class\""];
+        $feat->{class} = $rna_class;
       }
       $feat->{ftype} = $mod_dir;
     } elsif ($feat->{ftype} =~ /Pseudogene/) {
@@ -435,76 +457,195 @@ sub process_feature_table {
       printf $out_fh "FT   %16s%s\n", " ", $feat->{location}->[$i];
     }
 
-    foreach my $tag (@{$feat->{quals}}) {
-      my @ln = @$tag;
-      my @extra_ln;
+    #
+    # Now do qualifiers. Pass through the list picking out information
+    # we are interested in, and filter out the ones we don't want. 
+    # The rest we keep as-are
+    #
+    
+    my (%revised_quals,
+        $wb_isoform_name,
+        $gene_qual, 
+        $locus_tag_qual, 
+        $standard_name_qual, 
+        $product_qual, 
+        $db_remark, 
+        $brief_ident);
 
-      if ($ln[0] =~ /^\/product=/) {
+    foreach my $qual (@{$feat->{quals}}) {
+      if ($qual->[0] =~ /^\/standard_name=\"(\S+)\"/) {
+        $wb_isoform_name = $1;
+        $standard_name_qual = $qual;
 
-        if ($feat->{ftype} =~ /RNA/ and $ln[0] =~ /\"Hypothetical RNA transcript (\S+.\S+)\"/) {
-          my $gid = $1;
-          my $product = sprintf("/product=\"RNA transcript %s%s\"", 
-                                $gid, ($rnagenes{$gid}) ? " ($rnagenes{$gid})" : "");
-          @ln = ($product);
-        } elsif ($feat->{ftype} eq 'CDS' and $ln[0] =~ /\"Hypothetical protein (\S+.\S+)\"/) {
-          my $cds = $1;
-          my $product = "/product=\"Protein ";
-          if ($cds =~ /^(\S+)([a-z])/) {
-            $product .= "$1, isoform $2\"";
-          } else {
-            $product .= "$cds\"";
-          }
-          @ln = ($product);
+        if ($cds2dbremark_h->{$wb_isoform_name}) {
+          my $rem = sprintf("%s", $cds2dbremark_h->{$wb_isoform_name});
+          $rem =~ s/\s+/ /g;
 
-          if (exists $cds2proteinid_h->{$cds} and
-              exists $cds2proteinid_h->{$cds}->{$clone}) {
-            my $pid = $cds2proteinid_h->{$cds}->{$clone};
-            push @extra_ln, "/protein_id=\"$pid\"";
-          }
-          
-          my $status_note;
-          if (defined $cds2status_h->{$cds}) {
-            if ($cds2status_h->{$cds} eq 'Confirmed') {
-              $status_note = "/note=\"Confirmed by transcript evidence\"";
-            } elsif ($cds2status_h->{$cds} eq 'Partially_confirmed') {
-              $status_note = "/note=\"Partially confirmed by transcript evidence\"";
-            } else {
-              $status_note = "/note=\"Predicted\"";
-            }
-          }
-          if (defined $status_note) {
-            push @extra_ln, $status_note;
-          }
-        }
-
-      } elsif ($ln[0] =~ /\/gene=\"(\S+)\"/) {
-        my ($isoform_name, $locus_name) = ($1, $1);
-        if ($locus_name =~ /^(\S+\.\d+)([a-z])/) {
-          $locus_name = $1;
-        }
-        
-        if ($cds2cgc{$isoform_name}) {
-          @ln = ("/gene=\"$cds2cgc{$isoform_name}\"");
-        } elsif ($rnagenes{$isoform_name}) {
-          @ln = ("/gene=\"$rnagenes{$isoform_name}\"");
-        } else {
-          @ln = ("/gene=\"$locus_name\"");
-        }
-        push @extra_ln, sprintf("/locus_tag=\"%s\"", $locus_name);
-        
-        if ($cds2dbremark_h->{$isoform_name}) {
-          my $rem_line = "/note=\"$cds2dbremark_h->{$isoform_name}\"";
+          my $rem_line = "/note=\"$rem\"";
           my @wl = split(/\n/, wrap('','',$rem_line));
           
-          push @extra_ln, @wl;
+          $db_remark = \@wl;
+        }        
+      } elsif ($qual->[0] =~ /\/note=\"similar to (.+\S)\s*$/) {
+        my $bi = "\"$1";
+        for(my $i=1; $i < @$qual; $i++) {
+          $qual->[$i] =~ /^\s*(.+\S)\s*$/ and $bi .= " $1";
         }
-      } elsif ($ln[0] =~ /\/note=\"preliminary prediction\"/) {
-        # these notes are historical quirk of Acedb dumping - remove them
-        @ln = ();
+        $bi =~ s/^\"//;
+        $bi =~ s/\"$//;
+
+        my @wl = split(/\n/, wrap('','',"/note=\"$bi\""));
+
+        $brief_ident = \@wl;
+        $feat->{brief_identification} = $bi;
+
+      } elsif ($qual->[0] =~ /\/note=\"(.+)\-RNA\"/) {
+        $feat->{rna_identification} = $1;
+      } elsif ($qual->[0] =~ /\/note=\"preliminary prediction\"/ or
+               $qual->[0] =~ /\/note=\"cDNA EST/ or 
+               $qual->[0] =~ /\/product=/ or
+               $qual->[0] =~ /\/gene=/) {
+        next;
+      } elsif ($qual->[0] =~ /\/([^=]+)=?/) {
+        push @{$revised_quals{$1}}, $qual;
+      }
+    }
+    
+    
+    #
+    # /product
+    #
+    if ($feat->{ftype} eq 'CDS') {
+      $product_qual = "/product=\"Protein ";
+      if ($wb_isoform_name =~ /^(\S+)([a-z])$/) {
+        $product_qual .= "$1, isoform $2\"";
+      } else {
+        $product_qual .= "$wb_isoform_name\"";
+      }
+    } elsif ($feat->{ftype} =~ /RNA/) {
+      if ($feat->{ftype} eq 'tRNA' and 
+          exists $feat->{brief_identification}) {
+        $product_qual = "/product=\"$feat->{brief_identification}\"";
+      } elsif ($feat->{ftype} eq 'rRNA' and 
+               exists $feat->{rna_identification}) {
+        $product_qual = "/product=\"$feat->{rna_identification}\"";
+      } else {
+        if ($rnagenes{$wb_isoform_name}) {
+          $product_qual = "/product=\"RNA transcript $rnagenes{$wb_isoform_name}\"";
+        } else {
+          $product_qual = "/product=\"RNA transcript $wb_isoform_name\"";
+        }
+      }
+    }
+    $product_qual = [$product_qual];
+
+    #
+    # /protein_id and prediction_status note
+    #
+    if ($feat->{ftype} eq 'CDS') {
+      if (exists $cds2proteinid_h->{$wb_isoform_name} and
+          exists $cds2proteinid_h->{$wb_isoform_name}->{$clone}) {
+        my $pid = $cds2proteinid_h->{$wb_isoform_name}->{$clone};
+        push @{$revised_quals{protein_id}}, ["/protein_id=\"$pid\""];
       }
       
-      foreach my $ln (@ln, @extra_ln) {
-        printf $out_fh "FT   %16s%s\n", " ", $ln;
+      my $status_note;
+      if (defined $cds2status_h->{$wb_isoform_name}) {
+        if ($cds2status_h->{$wb_isoform_name} eq 'Confirmed') {
+          $status_note = "/note=\"Confirmed by transcript evidence\"";
+        } elsif ($cds2status_h->{$wb_isoform_name} eq 'Partially_confirmed') {
+          $status_note = "/note=\"Partially confirmed by transcript evidence\"";
+        } else {
+          $status_note = "/note=\"Predicted\"";
+        }
+      }
+      if (defined $status_note) {
+        push @{$revised_quals{note}}, [$status_note];
+      }
+    }
+
+    #
+    # /gene
+    #
+    if ($cds2cgc{$wb_isoform_name}) {
+      $gene_qual = ["/gene=\"$cds2cgc{$wb_isoform_name}\""];
+    } elsif ($rnagenes{$wb_isoform_name}) {
+      $gene_qual = ["/gene=\"$rnagenes{$wb_isoform_name}\""];
+    } elsif ($pseudo2cgc{$wb_isoform_name}) {
+      $gene_qual = ["/gene=\"$pseudo2cgc{$wb_isoform_name}\""];
+    } else {
+      if ($wb_isoform_name =~ /^(\S+\.\d+)[a-z]?/) {
+        $gene_qual = ["/gene=\"$1\""];
+      } else {
+        $gene_qual = ["/gene=\"$wb_isoform_name\""];
+      }
+    }
+      
+    #
+    # locus_tag
+    #
+    my $lt = $wb_isoform_name;
+    if ($lt =~ /^(\S+\.\d+)[a-z]?/) {
+      $lt = $1;
+    }
+    $locus_tag_qual = [sprintf("/locus_tag=\"%s\"", $lt)];
+        
+    #
+    # Other qualifiers
+    #
+    
+    if ($additional_qualifiers{$wb_isoform_name}) {
+      foreach my $qk (keys %{$additional_qualifiers{$wb_isoform_name}}) {
+        foreach my $qual (@{$additional_qualifiers{$wb_isoform_name}->{$qk}}) {
+          my $qual_string = "/$qk=$qual";
+          my @wqs = split(/\n/, wrap('','',$qual_string));
+          push @{$revised_quals{$qk}}, \@wqs;
+        }
+      }
+    }
+
+    if ($feat->{ftype} eq 'CDS') {
+      if (defined $brief_ident) {
+        push @{$revised_quals{note}}, $brief_ident;
+      } elsif (defined $db_remark) {
+        push @{$revised_quals{note}}, $db_remark;
+      }
+    } elsif ($feat->{ftype} eq 'ncRNA' and $feat->{class} eq 'other') {
+      # only attempt to add notes to ncRNAs defined with "other" class
+      if (exists $feat->{rna_identification}) {
+        push @{$revised_quals{note}}, ["/note=\"$feat->{rna_identification}\""];
+      } elsif (exists $feat->{brief_identification} and 
+               $feat->{brief_identification} ne 'ncRNA' and
+               $feat->{brief_identification} !~ /non-coding RNA gene$/) {
+        push @{$revised_quals{note}}, $brief_ident;
+      } elsif (defined $db_remark) {
+        push @{$revised_quals{note}}, $db_remark;
+      }
+    }
+
+
+    #
+    # Finally, print them all out in a consistent sensible order
+    #
+    
+    foreach my $qual ($gene_qual, $locus_tag_qual, $standard_name_qual, $product_qual) {
+      foreach my $line (@$qual) {
+        printf $out_fh "FT   %16s%s\n", " ", $line;
+      }
+    }
+    foreach my $k (sort keys %revised_quals) {
+      next if $k eq 'note';
+      foreach my $qual (@{$revised_quals{$k}}) {
+        foreach my $line (@$qual) {
+          printf $out_fh "FT   %16s%s\n", " ", $line;
+        }
+      }
+    }
+    if (exists ($revised_quals{note})) {
+      foreach my $qual (@{$revised_quals{note}}) {
+        foreach my $line (@$qual) {
+          printf $out_fh "FT   %16s%s\n", " ", $line;
+        }
       }
     }
   }
@@ -804,7 +945,6 @@ EOF
   return $tmdef;
 }
  
-
 
 
 __END__
