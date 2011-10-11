@@ -2,7 +2,7 @@
 #
 # EMBLdump.pl :  makes modified EMBL dumps from camace.
 # 
-#  Last updated on: $Date: 2011-10-07 18:16:03 $
+#  Last updated on: $Date: 2011-10-11 12:26:52 $
 #  Last updated by: $Author: klh $
 
 use strict;
@@ -153,7 +153,8 @@ if (not defined $raw_dump_file) {
     $command .= "query find CDS where Method = \"Genefinder\"\nkill\ny\n";# remove Genefinder predictions
     $command .= "query find CDS where Method = \"twinscan\"\nkill\ny\n";# remove twinscan predictions
     $command .= "query find CDS where Method = \"jigsaw\"\nkill\ny\n";# remove jigsaw predictions
-    $command .= "query find Sequence Genomic_canonical AND Finished AND DNA\ngif EMBL $raw_dump_file\n";# find sequence and dump
+    $command .= "query find Sequence Genomic_canonical AND (From_laboratory = \"HX\" OR From_Laboratory = \"RW\"\n";
+    $command .= "gif EMBL $raw_dump_file\n";# find sequence and dump
     $command .= "quit\nn\n";# say you don't want to save and exit
   }
   
