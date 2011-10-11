@@ -13,6 +13,7 @@ use Log_files;
 use File::Path;
 use File::stat;
 use Storable;
+use Digest::MD5 qw(md5_hex);
 use Species;
 
 our @core_organisms=qw(Elegans Briggsae Remanei Brenneri Japonica Pristionchus);
@@ -1129,43 +1130,44 @@ sub wormpep_files {
 }
 
 
-sub test        { my $self = shift; return $self->{'test'}; }
-sub debug       { my $self = shift; return $self->{'debug'}; }
-sub wormpub     { my $self = shift; return $self->{'wormpub'}; }
-sub basedir     { my $self = shift; return $self->{'basedir'}; }
-sub autoace     { my $self = shift; return $self->{'autoace'}; }
-sub wormpep     { my $self = shift; return $self->{'wormpep'}; }
-sub peproot     { my $self = shift; return $self->{'peproot'}; }
-sub rnaroot     { my $self = shift; return $self->{'rnaroot'}; }
-sub brigpep     { my $self = shift; return $self->{'brigpep'}; }
-sub wormrna     { my $self = shift; return $self->{'wormrna'}; }
-sub gff         { my $self = shift; return $self->{'gff'}; }
-sub gff_splits  { my $self = shift; return $self->{'gff_splits'}; }
-sub chromosomes { my $self = shift; return $self->{'chromosomes'}; }
-sub sequences   { my $self = shift; return $self->{'sequences'}; }
-sub logs        { my $self = shift; return $self->{'logs'}; }
-sub ftp_upload  { my $self = shift; return $self->{'ftp_upload'}; }
-sub ftp_site    { my $self = shift; return $self->{'ftp_site'}; }
-sub reports     { my $self = shift; return $self->{'reports'}; }
-sub misc_static { my $self = shift; return $self->{'misc_static'}; }
-sub misc_dynamic{ my $self = shift; return $self->{'misc_dynamic'}; }
-sub primaries   { my $self = shift; return $self->{'primaries'}; }
-sub acefiles    { my $self = shift; return $self->{'acefiles'}; }
-sub transcripts { my $self = shift; return $self->{'transcripts'}; }
-sub blat        { my $self = shift; return $self->{'blat'}; }
-sub farm_dump   { my $self = shift; return $self->{'farm_dump'}; }
-sub compare     { my $self = shift; return $self->{'compare'}; }
-sub checks      { my $self = shift; return $self->{'checks'}; }
-sub build_data  { my $self = shift; return $self->{'build_data'}; }
-sub ontology    { my $self = shift; return $self->{'ontology'}; }
-sub orgdb       { my $self = shift; return $self->{'orgdb'}; }
-sub cdna_dir    { my $self = shift; return $self->{'cdna_dir'};}
-sub cdna_acedir { my $self = shift; return $self->{'cdna_acedir'};}
-sub maskedcdna  { my $self = shift; return $self->{'maskedcdna'} ;}
-sub genome_seq  { my $self = shift; return $self->autoace."/genome_seq";}
-sub seq_db	{ my $self = shift; return $self->database($self->{'species'});}
-sub ebi         { my $self = shift; return $self->{'ebi'} ;}
-sub rnaseq      { my $self = shift; return $self->{'rnaseq'} ;}
+sub test         { my $self = shift; return $self->{'test'}; }
+sub debug        { my $self = shift; return $self->{'debug'}; }
+sub wormpub      { my $self = shift; return $self->{'wormpub'}; }
+sub basedir      { my $self = shift; return $self->{'basedir'}; }
+sub autoace      { my $self = shift; return $self->{'autoace'}; }
+sub wormpep      { my $self = shift; return $self->{'wormpep'}; }
+sub peproot      { my $self = shift; return $self->{'peproot'}; }
+sub rnaroot      { my $self = shift; return $self->{'rnaroot'}; }
+sub brigpep      { my $self = shift; return $self->{'brigpep'}; }
+sub wormrna      { my $self = shift; return $self->{'wormrna'}; }
+sub gff          { my $self = shift; return $self->{'gff'}; }
+sub gff_splits   { my $self = shift; return $self->{'gff_splits'}; }
+sub chromosomes  { my $self = shift; return $self->{'chromosomes'}; }
+sub sequences    { my $self = shift; return $self->{'sequences'}; }
+sub logs         { my $self = shift; return $self->{'logs'}; }
+sub ftp_upload   { my $self = shift; return $self->{'ftp_upload'}; }
+sub ftp_site     { my $self = shift; return $self->{'ftp_site'}; }
+sub submit_repos { my $self = shift; return $self->{'submit_repos'}; }
+sub reports      { my $self = shift; return $self->{'reports'}; }
+sub misc_static  { my $self = shift; return $self->{'misc_static'}; }
+sub misc_dynamic { my $self = shift; return $self->{'misc_dynamic'}; }
+sub primaries    { my $self = shift; return $self->{'primaries'}; }
+sub acefiles     { my $self = shift; return $self->{'acefiles'}; }
+sub transcripts  { my $self = shift; return $self->{'transcripts'}; }
+sub blat         { my $self = shift; return $self->{'blat'}; }
+sub farm_dump    { my $self = shift; return $self->{'farm_dump'}; }
+sub compare      { my $self = shift; return $self->{'compare'}; }
+sub checks       { my $self = shift; return $self->{'checks'}; }
+sub build_data   { my $self = shift; return $self->{'build_data'}; }
+sub ontology     { my $self = shift; return $self->{'ontology'}; }
+sub orgdb        { my $self = shift; return $self->{'orgdb'}; }
+sub cdna_dir     { my $self = shift; return $self->{'cdna_dir'};}
+sub cdna_acedir  { my $self = shift; return $self->{'cdna_acedir'};}
+sub maskedcdna   { my $self = shift; return $self->{'maskedcdna'} ;}
+sub genome_seq   { my $self = shift; return $self->autoace."/genome_seq";}
+sub seq_db	 { my $self = shift; return $self->database($self->{'species'});}
+sub ebi          { my $self = shift; return $self->{'ebi'} ;}
+sub rnaseq       { my $self = shift; return $self->{'rnaseq'} ;}
 
 		  # this can be modified by calling script
 ####################################
@@ -1272,12 +1274,13 @@ sub establish_paths {
       $self->{'build_data'} = $self->wormpub . "/BUILD_DATA";
     }
     
-    #species specific paths
     $self->{'peproot'}    = $basedir . "/WORMPEP";
     $self->{'rnaroot'}    = $basedir . "/WORMRNA/";
     $self->{'wormrna'}    = $basedir . "/WORMRNA/".$self->pepdir_prefix."rna" . $self->get_wormbase_version;
     $self->{'wormpep'}    = $basedir . "/WORMPEP/".$self->pepdir_prefix."pep" . $self->get_wormbase_version;
+    $self->{'submit_repos'}  = $basedir . "/analysis/submissions/" . $self->{'species'};
 
+    #species specific paths
     $self->{'logs'}        = $self->orgdb . "/logs";
     $self->{'common_data'} = $self->orgdb . "/COMMON_DATA";
     $self->{'chromosomes'} = $self->orgdb . "/CHROMOSOMES";
@@ -1726,7 +1729,14 @@ sub worm_webpublish {
     return 1;
 }
 
+sub submit_repos_hash_from_sequence_name {
+  my ($self, $seqname) = @_;
 
+  my $hash = hex(substr(md5_hex($seqname), -2, 2)) % 64;
+
+  return $hash;
+
+}
 
 ################################################################################
 #Return a true value
