@@ -3,7 +3,7 @@
 # This is to add Confirmed / Predicted Status and RFLP to SNP gff lines as requested by Todd
 #
 # Last updated by: $Author: mh6 $     
-# Last updated on: $Date: 2011-03-01 00:07:39 $      
+# Last updated on: $Date: 2011-10-13 14:43:58 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -119,6 +119,27 @@ foreach my $file (@gff_files) {
       print NEW " ; RFLP ", (defined $SNP{$allele}->{'RFLP'}? '"Yes"' : '"No"');
       print NEW " ; Mutation_type \"".$SNP{$allele}->{'mol_change'}."\"" if $SNP{$allele}->{'mol_change'};
       print NEW " ; Public_name \"${\$SNP{$allele}->{'Public_name'}}\"" if $SNP{$allele}->{'Public_name'};
+
+      ###########################
+      # from the Waterstone hack
+      my $variation = $db->fetch(Variation => $allele);
+      if ($SNP{$allele}->{'mol_change'} eq 'Substitution'){
+      	my @substitution = $variation->Substitution->row;
+      	print NEW " ; Substitution \"$substitution[0]/$substitution[1]\"";
+      }
+      my @types = $variation->at('Affects.Predicted_CDS[2]');
+
+      if (grep {$_=/Missense|Nonsense/} @types){
+        # 2.) the missense
+        my @missense = $variation->at('Affects.Predicted_CDS[4]');
+        @missense = grep {/to/} @missense;
+        print NEW " ; AAChange \"$missense[0]\"";
+      }
+    
+      # 3.) the strain
+      print NEW " ; Strain \"${\$variation->Strain}\"" if $variation->Strain;
+      ############################
+
       $stat++;
     }
     # public_names for non-snp variations
