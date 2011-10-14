@@ -58,7 +58,7 @@
 # by Gary Williams
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2011-09-09 13:07:59 $
+# Last updated on: $Date: 2011-10-14 08:23:26 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -179,7 +179,7 @@ if ($species eq 'elegans') {
  	     SRX036970  => ["RNASeq_Hillier.adult_P_luminescens", 'phred'], # 76 bp reads
 
  	     SRX037186  => ["RNASeq_Hillier.early_embryo_Replicate2", 'phred'], # 76 bp reads
- 	     SRX037197  => ["RNASeq_Hillier.early_embryo_Replicate1", 'phred'],
+ 	     SRX037197  => ["RNASeq_Hillier.early_embryo_Replicate1", 'phred'], # modENCODE_3526
  	     SRX037198  => ["RNASeq_Hillier.embryo_Male_him-8-Replicate1", 'phred'], # 76 bp reads
  	     SRX037199  => ["RNASeq_Hillier.dauer_exit_daf-2-Replicate1", 'phred'], # 76 bp reads
  	     SRX037200  => ["RNASeq_Hillier.L4_larva_JK1107_Replicate1", 'phred'], # 76 bp reads
@@ -189,7 +189,7 @@ if ($species eq 'elegans') {
  	     SRX047446  => ["RNASeq_Hillier.late_embryo_Replicate2", 'phred'], # 76 bp reads
  	     SRX047469  => ["RNASeq_Hillier.L4_larva_Male_Replicate1", 'phred'], # 76 bp reads
  	     SRX047470  => ["RNASeq_Hillier.dauer_entry_daf-2_Replicate1", 'phred'], # 76 bp reads
- 	     #SRX047635  => 0, # no runs done
+
  	     SRX047653  => ["RNASeq_Hillier.L2_larva_Replicate1", 'phred'], # 76 bp reads
  	     SRX047787  => ["RNASeq_Hillier.Young_Adult_Replicate1", 'phred'], # 76 bp reads
 	     
@@ -218,6 +218,59 @@ if ($species eq 'elegans') {
 	     SRX028202   => ["RNASeq.Fire.L2_larva_CircLigSeq", 'phred'],    # GSM577120: N2_L2_CircLigSeq
 	     SRX028203   => ["RNASeq.Fire.L3_larva_CircLigSeq", 'phred'],    # GSM577121: N2_L3_CircLigSeq
 	     SRX028204   => ["RNASeq.Fire.all_stages_polysomes", 'phred'],   # GSM577122: N2_mixed-stage_polysomes
+
+## new entries 7 Oct 2011
+	    SRX017684 => ["RNASeq.Shin.L1_larva", 'phred'], # 454 sequencing http://www.biomedcentral.com/1741-7007/6/30
+
+	    SRX006984 => ["RNASeq.Gerstein.embryo_Replicate1", 'phred'], # 
+	    SRX006985 => ["RNASeq.Gerstein.embryo_Replicate2", 'phred'], # 
+	    SRX006986 => ["RNASeq.Gerstein.embryo_Replicate3", 'phred'], # 
+	    SRX006987 => ["RNASeq.Gerstein.L1_larva.starved_Replicate1", 'phred'], # 
+	    SRX006988 => ["RNASeq.Gerstein.L1_larva.starved_Replicate2", 'phred'], # 
+	    SRX006989 => ["RNASeq.Gerstein.L1_larva.starved_Replicate3", 'phred'], # 
+
+	    SRX026728 => ["RNASeq.Martazavi.L3_larva", 'phred'], # paired-end http://genome.cshlp.org/content/20/12/1740.long
+	    SRX026729 => ["RNASeq.Martazavi.L1_larva", 'phred'], # paired-end http://genome.cshlp.org/content/20/12/1740.long
+
+	    SRX047635 => ["RNASeq_Hillier.adult_D_coniospora_12hrs_Replicate2", 'phred'], # 76 bp reads
+
+	    SRX049268 => ["RNASeq_Hillier.L4_larva_cap4", 'phred'], # 76 bp reads. Array capture experiment to remove messages already detected in other RNAseq experiments on C. elegans N2 larval L4 library.
+	    SRX049269 => ["RNASeq_Hillier.L4_larva_RRcap3", 'phred'], # 76 bp reads. Ribominus kit was used on the C. elegans N2 larval L4 library and subjected to array capture to remove messages already detected in other RNAseq experiments. 
+	    SRX049270 => ["RNASeq_Hillier.late_embryo_cap6", 'phred'], # 76 bp reads. Array capture experiment on late embryo LE-2 library to remove messages already detected in other RNAseq experiments.
+
+	    SRX049744 => ["RNASeq_Hillier.L1_larva_lin-35_cap1", 'phred'], # 	modENCODE_3521 76 bp reads. Array capture experiment to remove messages already detected in other RNAseq experiments on C. elegans N2 larva L1 (lin-35) library.
+	    SRX049745 => ["RNASeq_Hillier.L4_larva_Male_cap2", 'phred'], #  modENCODE_3524 76 bp reads. Array capture experiment to remove messages already detected in other RNAseq experiments on C. elegans N2 larva L4 male library.
+
+	    SRX050610 => ["RNASeq_Hillier.L1_larva_lin-35-cap1", 'phred'], # 76 bp reads. Array capture experiment to remove messages already detected in other RNAseq experiments on C. elegans N2 larva L1 (lin-35) library. 
+
+	    SRX050630 => ["RNASeq_Hillier.L4_larva_Male_cap2_Replicate2", 'phred'], # NOT SURE IF THIS IS A REPLICATE - ASKED LADEANA. Array capture experiment to remove messages already detected in other RNAseq experiments on C. elegans N2 larva L4 male library.
+
+	    SRX085111 => ["RNASeq_Hillier.blastula_embryo", 'phred'], # 100 bp reads. paired-end. EE_50-60
+	    SRX085112 => ["RNASeq_Hillier.blastula_embryo_Replicate2", 'phred'], # 100 bp reads. paired-end. EE_50-60 NOT SURE IF THIS IS A REPLICATE
+
+	    SRX085217 => ["RNASeq_Hillier.gastrulating_embryo", 'phred'], # 76 bp reads. paired-end. EE_50-120
+	    SRX085218 => ["RNASeq_Hillier.gastrulating_embryo_Replicate2", 'phred'], # 100 bp reads. paired-end. EE_50-120
+	    SRX085219 => ["RNASeq_Hillier.4-cell_embryo", 'phred'], # Illumina sequencing of C. elegans N2 hand-picked 4 cell embryos DSN-Negative, total RNA.
+	    SRX085220 => ["RNASeq_Hillier.gastrulating_embryo_Replicate3", 'phred'], # 100 bp reads. paired-end. EE_50-120
+
+	    SRX085286 => ["RNASeq_Hillier.Pharyngeal_muscle_late_embryo", 'phred'], # 100 bp reads. paired-end. Pharyngeal muscle total RNA, late embryo. 
+	    SRX085287 => ["RNASeq_Hillier.Pharyngeal_muscle_late_embryo_Replicate2", 'phred'], # 76 bp reads. paired-end. Pharyngeal muscle total RNA, late embryo.
+
+	    SRX092371 => ["RNASeq_Hillier.2-cell_embryo", 'phred'], # 76 bp reads. paired-end. EE_50-30
+	    SRX092372 => ["RNASeq_Hillier.2-cell_embryo_Replicate2", 'phred'], # 100 bp reads. paired-end. EE_50-30
+
+	    SRX092477 => ["RNASeq_Hillier.1-cell_embryo", 'phred'], # 76 bp reads. paired-end. EE_50-0
+	    SRX092478 => ["RNASeq_Hillier.1-cell_embryo_Replicate2", 'phred'], # 100 bp reads. paired-end. EE_50-0
+	    SRX092479 => ["RNASeq_Hillier.28-cell_embryo", 'phred'], #  100 bp reads. paired-end. EE_50-90
+	    SRX092480 => ["RNASeq_Hillier.28-cell_embryo_Replicate2", 'phred'], # 76 bp reads. paired-end. EE_50-90
+
+	    SRX099901 => ["RNASeq_Hillier.1-cell_embryo_Replicate3", 'phred'], # 100 bp reads. EE_50-0
+	    SRX099902 => ["RNASeq_Hillier.1-cell_embryo_Replicate4", 'phred'], # 101 bp reads. EE_50-0
+
+	    SRX099907 => ["RNASeq_Hillier.2-cell_embryo_Replicate3", 'phred'], # 100 bp reads. EE_50-30
+	    SRX099908 => ["RNASeq_Hillier.2-cell_embryo_Replicate4", 'phred'], # 101 bp reads. EE_50-30
+
+	    SRX099915 => ["RNASeq_Hillier.28-cell_embryo_Replicate3", 'phred'], # 101 bp reads. paired-end. EE_50-90
 
 	    );
 } elsif ($species eq 'brugia') {
@@ -295,6 +348,7 @@ $job_name = "worm_".$wormbase->species."_RNASeq";
 
 my $RNASeqDir   = $wormbase->rnaseq;
 chdir $RNASeqDir;
+
 
 my @SRX = keys %expts;
   
@@ -405,7 +459,7 @@ if (!$expt) {
   my @arg;
   for ( my $i=0; $i < @SRX; $i++) {
     push @arg, $SRX[$i];
-    if (($i % 10) == 9) {
+    if (($i % 15) == 14) {
       $log->write_to("Running alignments on: @arg\n");
       print "Running alignments on: @arg\n";
       &run_align($check, $noalign, @arg);
@@ -547,6 +601,10 @@ sub run_align {
 
   foreach my $arg (@args) {
 
+    # pull over the SRA files and unpack them to make a fastq file
+    # the aspera commmand to pull across the files only works on the farm2-login head node
+    get_SRA_files($arg);
+
     # "the normal queue can deal with memory requests of up to 15 Gb, but 14 Gb is better" - Peter Clapham, ISG
     my $err = "$scratch_dir/align_RNASeq.pl.lsf.${arg}.err";
     my $out = "$scratch_dir/align_RNASeq.pl.lsf.${arg}.out";
@@ -579,6 +637,11 @@ sub run_align {
   }
   $lsf->clear;
 
+  # clear up the fastq files
+  foreach my $arg (@args) {
+    # if it is a SRA file, then we can safely  delete it and pull it over again next time
+    if ($arg =~ /SRX/) {my $status = $wormbase->run_command("rm -rf $RNASeqDir/$arg/SRR", $log);}
+  }
 
 
 }
@@ -608,6 +671,7 @@ sub run_tophat {
   if ((!$check && !$noalign) || !-e "tophat_out/accepted_hits.bam") {
     $wormbase->run_command("rm -rf tophat_out/", $log);
 
+    chdir "$RNASeqDir/$arg";
     $log->write_to("gunzipping fastq files\n");
     foreach my $gzip_file (glob("SRR/*/*.fastq*.gz")) {
       my $gunzip_file = $gzip_file;
@@ -627,7 +691,7 @@ sub run_tophat {
       $joined_file = "$joined1 $joined2";
       print "Made paired-read joined files: $joined_file\n";
       # set the inner-distance -r parameter
-      # assume the read length is 36 and the insert size is 200 bp (we only have one example of a read-paired experiment)
+      # assume the read length is 36 and the insert size is 200 bp
       # so the inner-distance is 200 - (2*36) = 128
       $cmd_extra .= ' -r 128';
     }
@@ -695,6 +759,53 @@ sub run_tophat {
 
 
 }
+
+#################################################################################################################
+# pull over the SRR files from the Short Read Archive
+# when the files have come across, unpack them
+
+sub get_SRA_files {
+  my ($arg) = @_;
+
+  # is this a SRA ID?
+  if ($arg !~ /^SRX/) {return}
+
+  chdir "$RNASeqDir";
+
+  # get the name of the subdirectory in the SRA
+  my ($dirbit) = ($arg =~ /SRX(\d\d\d)/);
+
+  # the Aspera file transfer system is error prone and (in Sanger) only works when run on the farm2-login head node
+  $log->write_to("Get the SRA files for $arg\n");
+  my $failed = 1;
+  while ($failed) {
+    my $return_status = system("~gw3/.aspera/connect/bin/ascp -k 1 -l 300M -QTr -i /nfs/users/nfs_g/gw3/.aspera/connect/etc/asperaweb_id_dsa.putty anonftp\@ftp-private.ncbi.nlm.nih.gov:/sra/sra-instant/reads/ByExp/litesra/SRX/SRX${dirbit}/$arg ./");
+    if ( ( $return_status >> 8 ) == 0 )  {$failed=0}
+  }
+
+  chdir "$RNASeqDir/$arg";
+  mkdir "SRR", 0777;
+  my $status;
+
+  # now unpack the sra.lite files
+  $log->write_to("Unpack the $arg .lite.sra file to fastq files\n");
+  
+  foreach my $dir (glob("SRR*")) {
+    if ($dir eq "SRR") {next}
+    $status = $wormbase->run_command("mv -f $dir $RNASeqDir/$arg/SRR", $log);
+  }
+  foreach my $dir (glob("$RNASeqDir/$arg/SRR/SRR*")) {
+    chdir $dir;
+    foreach my $srr (glob("*.lite.sra")) {
+      $log->write_to("Unpack $srr\n");
+      $status = $wormbase->run_command("/software/worm/sratoolkit/fastq-dump $srr", $log);
+      $status = $wormbase->run_command("rm -f $srr", $log);
+      $status = $wormbase->run_command("gzip -f *.fastq", $log);
+    }
+  }
+
+}
+
 
 #################################################################################################################
 # gets the reads that don't align and which have a bit of TSL sequence
