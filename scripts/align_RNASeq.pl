@@ -58,7 +58,7 @@
 # by Gary Williams
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2011-10-14 08:23:26 $
+# Last updated on: $Date: 2011-10-17 12:54:32 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -290,11 +290,11 @@ if ($species eq 'elegans') {
 #
 # The directory is structured as follows
 #
-# DATA : contains the raw sequence data in gzipped fastq files and is
+# DATA : contains the raw sequence data in fastq files and is
 # organised as follows
 #
-# - DATA/SLX/library_name/lane/lane_1.fastq.gz - first of the pair
-# - DATA/SLX/library_name/lane/lane_2.fastq.gz - second of the pair
+# - DATA/SLX/library_name/lane/lane_1.fastq - first of the pair
+# - DATA/SLX/library_name/lane/lane_2.fastq - second of the pair
 
 # The dataset names are what the Berriman group called them - these data are not downloaded from the SRA
 
@@ -456,20 +456,31 @@ if (!$expt) {
   # have too many fastq files ungzipped at a time otherwise we may run
   # out of quota filespace.
 
-  my @arg;
-  for ( my $i=0; $i < @SRX; $i++) {
-    push @arg, $SRX[$i];
-    if (($i % 15) == 14) {
-      $log->write_to("Running alignments on: @arg\n");
-      print "Running alignments on: @arg\n";
-      &run_align($check, $noalign, @arg);
-      @arg=();
+  my @args;
+  my $count=0;
+  foreach my $arg (@SRX) {
+
+    if ($check) {
+      if (-e "$RNASeqDir/$arg/tophat_out/accepted_hits.bam" &&
+	  -e "$RNASeqDir/$arg/cufflinks/genes.fpkm_tracking" &&
+	  -e "$RNASeqDir/$arg/TSL/TSL_evidence.ace" &&
+	  -e "$RNASeqDir/$arg/Introns/Intron.ace") {next}
     }
+
+    push @args, $arg;
+    if (($count % 15) == 14) {
+      $log->write_to("Running alignments on: @args\n");
+      print "Running alignments on: @args\n";
+      &run_align($check, $noalign, @args);
+      @args=();
+      $count = 0;
+    }
+    $count++;
   }
-  if (@arg) {
-    $log->write_to("Running alignments on: @arg\n");
-    print "Running alignments on: @arg\n";
-    &run_align($check, $noalign, @arg);
+  if (@args) {
+    $log->write_to("Running alignments on: @args\n");
+    print "Running alignments on: @args\n";
+    &run_align($check, $noalign, @args);
   }
   
 
@@ -668,16 +679,22 @@ sub run_tophat {
   if ($solexa)   {$cmd_extra = "--solexa-quals"} 
   if ($illumina) {$cmd_extra = "--solexa1.3-quals"} 
 
+  # unpack any .lite.sra file to make the .fastq files
+  # now unpack the sra.lite files
+  $log->write_to("Unpack the $arg .lite.sra file to fastq files\n");
+  foreach my $dir (glob("$RNASeqDir/$arg/SRR/SRR*")) {
+    chdir $dir;
+    foreach my $srr (glob("*.lite.sra")) {
+      $log->write_to("Unpack $srr\n");
+      $status = $wormbase->run_command("/software/worm/sratoolkit/fastq-dump $srr", $log);
+      $status = $wormbase->run_command("rm -f $srr", $log);
+    }
+  }
+
   if ((!$check && !$noalign) || !-e "tophat_out/accepted_hits.bam") {
     $wormbase->run_command("rm -rf tophat_out/", $log);
 
     chdir "$RNASeqDir/$arg";
-    $log->write_to("gunzipping fastq files\n");
-    foreach my $gzip_file (glob("SRR/*/*.fastq*.gz")) {
-      my $gunzip_file = $gzip_file;
-      $gunzip_file =~ s/.gz$//;
-      my $status = $wormbase->run_command("gunzip -c $gzip_file > $gunzip_file", $log);
-    }
     my @files = glob("SRR/*/*.fastq");
     my $joined_file = join ",", @files;
     
@@ -700,10 +717,10 @@ sub run_tophat {
     my $raw_juncs = ''; # use the raw junctions hint file unless we specify otherwise
     $raw_juncs = "--raw-juncs /nfs/wormpub/RNASeq/$species/reference-indexes/splice_juncs_file" unless $norawjuncs;
     $status = $wormbase->run_command("/software/worm/tophat/tophat $cmd_extra --min-intron-length 30 --max-intron-length 5000 $raw_juncs /nfs/wormpub/RNASeq/$species/reference-indexes/$G_species $joined_file", $log);
-    $log->write_to("remove fastq files\n");
-    $wormbase->run_command("rm -f SRR/*/*.fastq", $log);
     if ($status != 0) {  $log->log_and_die("Didn't run tophat to do the alignment successfully\n"); } # only exit on error after gzipping the files
 
+  } else {
+    $log->write_to("Check tophat_out/accepted_hits.bam: already done\n");
   }
 
 ##############################################################################
@@ -725,7 +742,10 @@ sub run_tophat {
     $gtf = "--GTF /nfs/wormpub/RNASeq/$species/transcripts.gtf" unless $nogtf;
     $status = $wormbase->run_command("/software/worm/cufflinks/cufflinks $gtf ../tophat_out/accepted_hits.bam", $log);
     if ($status != 0) {  $log->log_and_die("Didn't run cufflinks to get the isoform/gene expression successfully\n"); }
+  } else {
+    $log->write_to("Check cufflinks/genes.fpkm_tracking: already done\n");
   }
+
 
 #############################################################
 # now get the TSL sites
@@ -740,7 +760,10 @@ sub run_tophat {
     $status = &TSL_stuff($cmd_extra, $analysis);
 
     if ($status != 0) {  $log->log_and_die("Didn't run the TSL stuff successfully\n"); }
+  } else {
+    $log->write_to("Check TSL/TSL_evidence.ace: already done\n");
   }
+
 
 
 #############################################################
@@ -755,20 +778,25 @@ sub run_tophat {
     my $status = &Intron_stuff($cmd_extra, $analysis);
 
     if ($status != 0) {  $log->log_and_die("Didn't run the Intron stuff successfully\n"); }
+  } else {
+    $log->write_to("Check Introns/Intron.ace: already done\n");
   }
+
 
 
 }
 
 #################################################################################################################
 # pull over the SRR files from the Short Read Archive
-# when the files have come across, unpack them
+
 
 sub get_SRA_files {
   my ($arg) = @_;
 
   # is this a SRA ID?
   if ($arg !~ /^SRX/) {return}
+
+  my $status = $wormbase->run_command("rm -rf $RNASeqDir/$arg/SRR", $log);
 
   chdir "$RNASeqDir";
 
@@ -785,23 +813,10 @@ sub get_SRA_files {
 
   chdir "$RNASeqDir/$arg";
   mkdir "SRR", 0777;
-  my $status;
 
-  # now unpack the sra.lite files
-  $log->write_to("Unpack the $arg .lite.sra file to fastq files\n");
-  
   foreach my $dir (glob("SRR*")) {
     if ($dir eq "SRR") {next}
     $status = $wormbase->run_command("mv -f $dir $RNASeqDir/$arg/SRR", $log);
-  }
-  foreach my $dir (glob("$RNASeqDir/$arg/SRR/SRR*")) {
-    chdir $dir;
-    foreach my $srr (glob("*.lite.sra")) {
-      $log->write_to("Unpack $srr\n");
-      $status = $wormbase->run_command("/software/worm/sratoolkit/fastq-dump $srr", $log);
-      $status = $wormbase->run_command("rm -f $srr", $log);
-      $status = $wormbase->run_command("gzip -f *.fastq", $log);
-    }
   }
 
 }
@@ -954,7 +969,7 @@ sub TSL_stuff {
   $log->write_to("Finding non-hits\n");
   open (OUT, ">$output") || $log->log_and_die("can't open $output\n");
   # now go through the read files looking for reads that don't match
-  my @readfiles = glob("SRR/*/*.gz");
+  my @readfiles = glob("SRR/*/*.fastq");
   my $id;
   my $seq;
   my $line3;
@@ -963,7 +978,7 @@ sub TSL_stuff {
   my $tsllen;
   foreach my $readfile (@readfiles) {
     $log->write_to("\nStarting to read $readfile\n");
-    open (READ, "gunzip -c $readfile |") || $log->log_and_die("can't open read file: $readfile\n");
+    open (READ, "$readfile") || $log->log_and_die("can't open read file: $readfile\n");
     while (my $line = <READ>) {
       
       #@SRR006514.1 length=36
