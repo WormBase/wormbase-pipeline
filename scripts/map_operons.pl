@@ -2,8 +2,8 @@
 #
 # map_operons.pl
 
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2011-05-11 09:53:35 $
+# Last edited by: $Author: pad $
+# Last edited on: $Date: 2011-10-17 11:47:40 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -57,11 +57,16 @@ open (OUT,">$acefile") or $log->log_and_die("cant open $acefile : $!\n");
 my $db = Ace->connect(-path => $wb->autoace) or $log->log_and_die("cant connect to ".$wb->autoace." :".Ace->error."\n");
 my @operons = $db->fetch('Operon' => '*');
 foreach my $operon(@operons) {
-  next if $operon->Merged_into;
   next if ($operon->Method eq "history");
   my @genes = map($_->name, $operon->Contains_gene);
   my ($op_start, $op_end, $op_strand, $op_chrom);
   foreach my $gene (@genes) {
+    if (!exists $gene_span{$gene}) {
+      if ($operon->Method eq "Deprecated_operon") {
+	$log->write_to ("Warning:Operon $operon (method \"".$operon->Method."\") contains $gene which does not have a span defined meaning the Old operon doesn't appear as it once did\n\n"); }
+      else {
+	$log->write_to ("ERROR:Operon $operon (method \"".$operon->Method."\") contains $gene which does not have a span defined!\nPlease refer this back to the Operon curation team\n\n"); }
+    }
     next if (!exists $gene_span{$gene}); # some Deprecated_operons contain Transposon_CDSs which won't have a gene-span
     $op_start =  $gene_span{$gene}->{'start'} if (!(defined $op_start) or $op_start > $gene_span{$gene}->{'start'});
     $op_end   =  $gene_span{$gene}->{'end'}   if (!(defined $op_end)   or $op_end   < $gene_span{$gene}->{'end'});
