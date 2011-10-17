@@ -14,6 +14,7 @@ set noclobber
 # set an environment variable to point to this directory for easy access
 setenv WORMPUB /nfs/panda/ensemblgenomes/wormbase
 setenv WORMBASE $WORMPUB # wormpub and wormbase are interchangeable terms
+setenv WORM_SW_ROOT ${WORMPUB}/software
 
 ###############
 # Convenience environment for Build
@@ -31,7 +32,17 @@ setenv ACEDB_NO_BANNER
 ####################
 # perl 5 libraries
 ####################
-setenv PERL5LIB ${WORMPUB}/software/lib/perl5/site_perl
+setenv PERL5LIB ${WORM_SW_ROOT}/lib/perl5/site_perl
+setenv PERL5LIB ${PERL5LIB}:${WORM_SW_ROOT}/lib/bioperl-live
+
+# for worm ensembl
+setenv PERL5LIB ${PERL5LIB}:${WORM_SW_ROOT}/packages/ensembl/ensembl/modules
+setenv PERL5LIB ${PERL5LIB}:${WORM_SW_ROOT}/packages/ensembl/ensembl-compara/modules
+setenv PERL5LIB ${PERL5LIB}:${WORM_SW_ROOT}/packages/ensembl/ensembl-pipeline/modules
+setenv PERL5LIB ${PERL5LIB}:${WORM_SW_ROOT}/packages/ensembl/ensembl-analysis/modules
+setenv PERL5LIB ${PERL5LIB}:${SCRIPTS}
+
+setenv ENSEMBL_REGISTRY $SCRIPTS/ENSEMBL/etc/E_registry.pl
 
 
 # To do:
