@@ -2,7 +2,7 @@
 #
 # EMBLdump.pl :  makes modified EMBL dumps from camace.
 # 
-#  Last updated on: $Date: 2011-10-11 12:26:52 $
+#  Last updated on: $Date: 2011-10-17 16:47:05 $
 #  Last updated by: $Author: klh $
 
 use strict;
@@ -15,6 +15,7 @@ $Text::Wrap::columns = 60;
 $Text::Wrap::unexpand = 0;
 
 use lib $ENV{'CVS_DIR'};
+use Bio::SeqIO;
 use Wormbase;
 
 my %species_info = (
@@ -55,6 +56,9 @@ my ($test,
     $debug,
     $store,
     $species,
+    $dump_raw,
+    $dump_modified,
+    $stage_to_repository,
     $full_species_name,
     $raw_dump_file,
     $mod_dump_file,
@@ -63,7 +67,9 @@ my ($test,
     $database,
     $use_builddb_for_ref,
     $quicktest,
-    $exclude_sequence,
+    $private,
+    %clone2type, %cds2cgc, %rnagenes, %clone2dbid, %pseudo2cgc, $multi_gene_loci,
+    $cds2status_h, $cds2proteinid_h,  $cds2dbremark_h
     );
 
 GetOptions (
@@ -73,11 +79,15 @@ GetOptions (
   "single=s@"       => \$single,
   "species:s"       => \$species,
   "database:s"      => \$database,
-  "buildref"        => \$use_builddb_for_ref,
-  "rawdumpfile:s"   => \$raw_dump_file,
+  "dumpraw"         => \$dump_raw,
+  "dumpmodified"    => \$dump_modified,
+  "stagetorepo"     => \$stage_to_repository,
+  "modbuildref"     => \$use_builddb_for_ref,
+  "modprivate=s"    => \$private,
   "moddumpfile:s"   => \$mod_dump_file,
+  "rawdumpfile:s"   => \$raw_dump_file,
   "quicktest"       => \$quicktest,
-  "excludeseq"      => \$exclude_sequence,
+
     );
 
 
@@ -97,49 +107,33 @@ my $log = Log_files->make_build_log($wormbase);
 
 $species = $wormbase->species;
 $full_species_name = $wormbase->full_name;
+my $dbdir = ($database) ? $database : $wormbase->autoace;
+my $tace = $wormbase->tace;
+my $refdb = ($use_builddb_for_ref) ? $dbdir : $wormbase->database('current');
 
-$exclude_sequence = 1 if $species eq 'briggsae';
 
 ###############################
 # misc. variables             #
 ###############################
 
-my $basedir = $wormbase->wormpub;
-my $giface = $wormbase->giface;
-my $tace = $wormbase->tace;
-my $dbdir = ($database) ? $database : $wormbase->autoace;
-my $refdb = ($use_builddb_for_ref) ? $dbdir : $wormbase->database('current');
 
+my ($delete_raw_dump_file, $delete_mod_dump_file) = (0,0);
 
-#########################
-# Get COMMONDATA hashes #
-#########################
-my %clone2type      = $wormbase->FetchData('clone2type');
-my %cds2cgc         = $wormbase->FetchData('cds2cgc');
-my %rnagenes        = $wormbase->FetchData('rna2cgc');
-my %clone2dbid      = $wormbase->FetchData('clone2dbid');
-my %pseudo2cgc      = $wormbase->FetchData('pseudo2cgc');
+if ($dump_raw) {
+  #############################################
+  # Use giface to dump EMBL files from camace #
+  #############################################
 
+  my $giface = $wormbase->giface;
 
-#
-# Some information is not yet available in autoace (too early in the build)
-# Therefore pull it across from previous build. 
-#
-my ($cds2status_h, $cds2proteinid_h,  $cds2dbremark_h) = &fetch_database_info($refdb);
-
-
-#############################################
-# Use giface to dump EMBL files from camace #
-#############################################
-
-my $delete_raw_dump_file = 0;
-
-if (not defined $raw_dump_file) {
-  $log->write_to("You are embl dumping from $dbdir\n\n");
+  if (not defined $raw_dump_file) {    
+    $raw_dump_file = "/tmp/EMBLdump.$$";
+    $log->write_to("You are raw embl dumping from $dbdir to $raw_dump_file wihch will be delted\n\n");
+    $delete_raw_dump_file = 1;
+  } else {
+    $log->write_to("You are raw embl dumping from $dbdir to $raw_dump_file which will be retained\n\n");
+  }
   
-  $raw_dump_file = "$basedir/tmp/EMBLdump.$$";
-  $delete_raw_dump_file = 1;
-
   my $command;
   if ($single) {
     $command  = "nosave\n"; # Don't really want to do this
@@ -165,196 +159,245 @@ if (not defined $raw_dump_file) {
     next if ($_ =~ /acedb/);
   }
   close (READ);
-} else {
-  $log->write_to("You are processing the pre-dumped file $raw_dump_file\n");
-}
+
+  $log->write_to("RAW dumped to $raw_dump_file\n");
+} 
 
 
-
-######################################################################
-# cycle through the EMBL dump file, replacing info where appropriate #
-######################################################################
-$mod_dump_file = "./EMBL_dump.embl" if not defined $mod_dump_file;
-
-open(my $out_fh, ">$mod_dump_file") or $log->log_and_die("Could not open $mod_dump_file for writing\n");
-open(my $raw_fh, $raw_dump_file) or $log->log_and_die("Could not open $raw_dump_file for reading\n");
-
-my ($clone, $seqlen, $idline_suffix, @accs, @features, $written_header);
-
-while (<$raw_fh>) {
-
-  # Store the necessary default ID line elements ready for use in the new style EMBL ID lines.
-  if(/^ID\s+CE(\S+)\s+\S+\s+\S+\s+\S+\s+(\d+)\s+\S+/){
-    ($clone, $seqlen) = ($1, $2);
-    $idline_suffix = "SV XXX; linear; genomic DNA; STD; INV; $seqlen BP."; 
-
-    @accs = ();
-    @features = ();
-    $written_header = 0;
-
-    next;
+if ($dump_modified) {
+  ######################################################################
+  # cycle through the EMBL dump file, replacing info where appropriate #
+  ######################################################################
+  if (not $raw_dump_file) {
+    $log->log_and_die("You cannot produce a modified dump file without producing a raw one first" .
+                      " (either with -dumpraw or -rawdumpfile <file>\n");
   }
 
-  if( /^AC\s+(\S+);/ ) {
-    push @accs, $1;
-    next;
+  %clone2type      = $wormbase->FetchData('clone2type');
+  %cds2cgc         = $wormbase->FetchData('cds2cgc');
+  %rnagenes        = $wormbase->FetchData('rna2cgc');
+  %clone2dbid      = $wormbase->FetchData('clone2dbid');
+  %pseudo2cgc      = $wormbase->FetchData('pseudo2cgc');
+
+  $multi_gene_loci = &get_multi_gene_loci(\%cds2cgc, \%rnagenes, \%pseudo2cgc);
+
+  #
+  # Some information is not yet available in autoace (too early in the build)
+  # Therefore pull it across from previous build. 
+  #
+  ($cds2status_h, $cds2proteinid_h,  $cds2dbremark_h) = &fetch_database_info($refdb);
+  
+  if (not defined $mod_dump_file) {
+    $mod_dump_file = "/tmp/EMBL_dump.$$.mod.embl";
+    $log->write_to("You are MODIFIED embl dumping to $mod_dump_file which will be deleted\n");
+    $delete_mod_dump_file = 1;
+  } else {
+    $log->write_to("You are MODIFIED embl dumping to $mod_dump_file which will be retained\n");
   }
-
-  if (/^DE/) {
-    # should now have parsed everything necessary to write first block of entry
-    #
-    # ID
-    #
-    print $out_fh "ID   $accs[0]; $idline_suffix\n";
-    print $out_fh "XX\n";
-
-    #
-    # AC
-    #
-    print $out_fh "AC   $accs[0];";
-    for(my $i=1; $i < @accs; $i++) {
-      print $out_fh " $accs[$i];";
+  
+  open(my $out_fh, ">$mod_dump_file") or $log->log_and_die("Could not open $mod_dump_file for writing\n");
+  open(my $raw_fh, $raw_dump_file) or $log->log_and_die("Could not open $raw_dump_file for reading\n");
+  
+  my ($clone, $seqlen, $idline_suffix, @accs, @features, $written_header);
+  
+  while (<$raw_fh>) {
+    
+    # Store the necessary default ID line elements ready for use in the new style EMBL ID lines.
+    if(/^ID\s+CE(\S+)\s+\S+\s+\S+\s+\S+\s+(\d+)\s+\S+/){
+      ($clone, $seqlen) = ($1, $2);
+      $idline_suffix = "SV XXX; linear; genomic DNA; STD; INV; $seqlen BP."; 
+      
+      @accs = ();
+      @features = ();
+      $written_header = 0;
+      
+      next;
     }
-    print $out_fh "\nXX\n";
-
-    #
-    # AC *
-    #
-    if ($clone2dbid{$clone}) {
-      print $out_fh "AC * $clone2dbid{$clone}\n";
+    
+    if( /^AC\s+(\S+);/ ) {
+      push @accs, $1;
+      next;
+    }
+    
+    if (/^DE/) {
+      # should now have parsed everything necessary to write first block of entry
+      #
+      # ID
+      #
+      print $out_fh "ID   $accs[0]; $idline_suffix\n";
       print $out_fh "XX\n";
+      
+      #
+      # ST * private
+      #
+      if ($private) {
+        print $out_fh "ST * private $private\n";
+        print $out_fh "XX\n";
+      }
+      
+      #
+      # AC
+      #
+      print $out_fh "AC   $accs[0];";
+      for(my $i=1; $i < @accs; $i++) {
+        print $out_fh " $accs[$i];";
+      }
+      print $out_fh "\nXX\n";
+      
+      #
+      # AC *
+      #
+      if ($clone2dbid{$clone}) {
+        print $out_fh "AC * $clone2dbid{$clone}\n";
+        print $out_fh "XX\n";
+      }
+      
+      #
+      # PR
+      #
+      print $out_fh "PR   Project:$species_info{genome_project_id}->{$species};\n";
+      print $out_fh "XX\n";
+      
+      #
+      # DE
+      #
+      my $de_line;
+      
+      if ($species eq 'elegans') {
+        if (!defined($clone2type{$clone})){
+          $de_line =  "$full_species_name clone $clone";
+          $log->write_to("WARNING: no clone type for $_");
+        } elsif (lc($clone2type{$clone}) eq "other") {
+          $de_line = "$full_species_name clone $clone";
+        } elsif (lc($clone2type{$clone}) eq "yac") {
+          $de_line = "$full_species_name YAC $clone";
+        } else {
+          $de_line = "$full_species_name $clone2type{$clone} $clone";
+        }
+      } elsif ($species eq 'briggsae') {
+        $de_line = "$full_species_name AF16 supercontig $clone from assembly CB4";
+      }
+      
+      print $out_fh "DE   $de_line\n";
+      $written_header = 1;
+      next;
     }
     
     #
-    # PR
+    # References
     #
-    print $out_fh "PR   Project:$species_info{genome_project_id}->{$species};\n";
-    print $out_fh "XX\n";
-
-    #
-    # DE
-    #
-    my $de_line;
-
-    if ($species eq 'elegans') {
-      if (!defined($clone2type{$clone})){
-        $de_line =  "$full_species_name clone $clone";
-        $log->write_to("WARNING: no clone type for $_");
-      } elsif (lc($clone2type{$clone}) eq "other") {
-        $de_line = "$full_species_name clone $clone";
-      } elsif (lc($clone2type{$clone}) eq "yac") {
-        $de_line = "$full_species_name YAC $clone";
-      } else {
-        $de_line = "$full_species_name $clone2type{$clone} $clone";
-      }
-    } elsif ($species eq 'briggsae') {
-      $de_line = "$full_species_name AF16 supercontig $clone from assembly CB4";
-    }
-
-    print $out_fh "DE   $de_line\n";
-    $written_header = 1;
-    next;
-  }
-
-  #
-  # References
-  #
-  if (/^RN\s+\[1\]/) {
-    my ($primary_RA, $primary_RL); 
-
-    while(<$raw_fh>) {
-      last if /^XX/;
-      if (/^RA/) {
-        $primary_RA = $_;
-        next;
-      }
-      if (/^RL/) {
-        $primary_RL = $_;
-      }
-    }
-
-    my @refs = @{&get_references()};
-    for(my $i=0; $i < @refs; $i++) {
-      printf $out_fh "RN   [%d]\n", $i+1;
-      print $out_fh "RP   1-$seqlen\n";
-      map { print $out_fh "$_\n" } @{$refs[$i]};
-      print $out_fh "XX\n";
-    }
-
-    printf $out_fh "RN   [%d]\n", scalar(@refs) + 1;
-    printf $out_fh "RP   1-%d\n", $seqlen;
-    print $out_fh "RG   WormBase Consortium\n";
-    print $out_fh $primary_RA;
-    print $out_fh "RT   ;\n";
-    print $out_fh $primary_RL;
-    print $out_fh "RL   Nematode Sequencing Project: Sanger Institute, Hinxton, Cambridge\n";
-    print $out_fh "RL   CB10 1SA, UK and The Genome Institute at Washington University,\n"; 
-    print $out_fh "RL   St. Louis, MO 63110, USA. E-mail: help\@wormbase.org\n";
-    print $out_fh "XX\n";
-    next;
-  }
-
-  #
-  # Comments
-  #
-  if (/^CC   For a graphical/) {
-    while(<$raw_fh>) {
-      last if /^XX/;
+    if (/^RN\s+\[1\]/) {
+      my ($primary_RA, $primary_RL); 
       
-      print $out_fh "CC   For a graphical representation of this sequence and its analysis\n";
-      print $out_fh "CC   see:- http://www.wormbase.org/perl/ace/elegans/seq/sequence?\n";
-      print $out_fh "CC   name=$clone;class=Sequence\n";
-      print $out_fh "XX\n";
-    }
-    next;
-  }
-
-  #
-  # Feature table
-  #
-  if (/^FT   (\S+)\s+(.+)/) {
-    my ($ftype, $content) = ($1, $2);
-
-    push @features, {
-      ftype     => $ftype,
-      location  => [$content],
-      quals     => [],
-    };
-    next;
-  } elsif (/^FT\s+(.+)/) {
-    my $content = $1;
-    if ($content =~ /^\/\w+=/) {
-      push @{$features[-1]->{quals}}, [$content];
-    } else {
-      if (not @{$features[-1]->{quals}}) {
-        push @{$features[-1]->{location}}, $content;
-      } else {        
-        push @{$features[-1]->{quals}->[-1]}, $content;
+      while(<$raw_fh>) {
+        last if /^XX/;
+        if (/^RA/) {
+          $primary_RA = $_;
+          next;
+        }
+        if (/^RL/) {
+          $primary_RL = $_;
+        }
       }
+      
+      my @refs = @{&get_references()};
+      for(my $i=0; $i < @refs; $i++) {
+        printf $out_fh "RN   [%d]\n", $i+1;
+        print $out_fh "RP   1-$seqlen\n";
+        map { print $out_fh "$_\n" } @{$refs[$i]};
+        print $out_fh "XX\n";
+      }
+      
+      printf $out_fh "RN   [%d]\n", scalar(@refs) + 1;
+      printf $out_fh "RP   1-%d\n", $seqlen;
+      print $out_fh "RG   WormBase Consortium\n";
+      print $out_fh $primary_RA;
+      print $out_fh "RT   ;\n";
+      print $out_fh $primary_RL;
+      print $out_fh "RL   Nematode Sequencing Project: Sanger Institute, Hinxton, Cambridge\n";
+      print $out_fh "RL   CB10 1SA, UK and The Genome Institute at Washington University,\n"; 
+      print $out_fh "RL   St. Louis, MO 63110, USA. E-mail: help\@wormbase.org\n";
+      print $out_fh "XX\n";
+      next;
     }
-    next;
-  }
-
-  if (/^SQ/) {
-    &process_feature_table(@features);
-    if (not $exclude_sequence) {
+    
+    #
+    # Comments
+    #
+    if (/^CC   For a graphical/) {
+      while(<$raw_fh>) {
+        last if /^XX/;
+        
+        print $out_fh "CC   For a graphical representation of this sequence and its analysis\n";
+        print $out_fh "CC   see:- http://www.wormbase.org/perl/ace/elegans/seq/sequence?\n";
+        print $out_fh "CC   name=$clone;class=Sequence\n";
+        print $out_fh "XX\n";
+      }
+      next;
+    }
+    
+    #
+    # Feature table
+    #
+    if (/^FT   (\S+)\s+(.+)/) {
+      my ($ftype, $content) = ($1, $2);
+      
+      push @features, {
+        ftype     => $ftype,
+        location  => [$content],
+        quals     => [],
+      };
+      next;
+    } elsif (/^FT\s+(.+)/) {
+      my $content = $1;
+      if ($content =~ /^\/\w+=/) {
+        push @{$features[-1]->{quals}}, [$content];
+      } else {
+        if (not @{$features[-1]->{quals}}) {
+          push @{$features[-1]->{location}}, $content;
+        } else {        
+          push @{$features[-1]->{quals}->[-1]}, $content;
+        }
+      }
+      next;
+    }
+    
+    if (/^SQ/) {
+      &process_feature_table($out_fh, $clone, @features);
+      if ($species eq 'elegans') {
+        print $out_fh $_;
+      }
+      next;
+    }
+    
+    if ($written_header and 
+        (/^\S/ or $species eq 'elegans')) {
       print $out_fh $_;
     }
-    next;
   }
-
-  if ($written_header and 
-      (not $exclude_sequence or /^\S/)) {
-    print $out_fh $_;
-  }
+  
+  close($raw_fh);
+  close($out_fh);
 }
 
-close($raw_fh);
-close($out_fh);
+
+if ($stage_to_repository) {
+  ######################################################################
+  # stage the dump to the per-cosmid submissions repository
+  ######################################################################
+
+  if (not $mod_dump_file) {
+    $log->log_and_die("You cannot stage without producing a modified dump file first " .
+                      "(either with -dumpmodified or -moddumpfile <file>\n");
+  }
+
+  my $modified = &stage_dump_to_submissions_repository($mod_dump_file);
+  $log->write_to("\nStaged EMBL dumps to submission repository - $modified files are now locally modified\n");
+}
 
 unlink $raw_dump_file if $delete_raw_dump_file;
+unlink $mod_dump_file if $delete_mod_dump_file;
 
-$log->write_to("\nOutfile is $mod_dump_file\n");
 $log->mail();
 exit(0); 
 
@@ -365,7 +408,7 @@ exit(0);
 
 ############################
 sub process_feature_table {
-  my @feats = @_;
+  my ($out_fh, $clone, @feats) = @_;
 
   foreach my $feat (@feats) {
     if (&check_for_bad_location($feat->{location})) {
@@ -517,12 +560,20 @@ sub process_feature_table {
     # /product
     #
     if ($feat->{ftype} eq 'CDS') {
-      $product_qual = "/product=\"Protein ";
+      my ($isoform_suf, $prod_name);
       if ($wb_isoform_name =~ /^(\S+)([a-z])$/) {
-        $product_qual .= "$1, isoform $2\"";
+        $prod_name = $1;
+        $isoform_suf = $2;
       } else {
-        $product_qual .= "$wb_isoform_name\"";
+        $prod_name = $wb_isoform_name;
       }
+      if (exists $cds2cgc{$wb_isoform_name}) {
+        $prod_name = uc($cds2cgc{$wb_isoform_name});
+      }
+
+      $product_qual = sprintf("/product=\"Protein %s%s\"",
+                              $prod_name,
+                              defined $isoform_suf ? ", isoform $isoform_suf" : "");
     } elsif ($feat->{ftype} =~ /RNA/) {
       if ($feat->{ftype} eq 'tRNA' and 
           exists $feat->{brief_identification}) {
@@ -586,11 +637,19 @@ sub process_feature_table {
     # locus_tag
     #
     my $lt = $wb_isoform_name;
+    $lt = $wb_isoform_name;
+      
     if ($lt =~ /^(\S+\.\d+)[a-z]?/) {
       $lt = $1;
+      if ($species eq 'briggsae' and $lt =~ /CBG(\d+)/) {
+        $lt = "CBG_$1";
+      }
     }
-    $locus_tag_qual = [sprintf("/locus_tag=\"%s\"", $lt)];
-        
+    $locus_tag_qual = [];
+    if (not exists $multi_gene_loci->{$lt}) {
+      push @{$locus_tag_qual}, sprintf("/locus_tag=\"%s\"", $lt);
+    }
+   
     #
     # Other qualifiers
     #
@@ -679,6 +738,38 @@ sub check_for_bad_location {
   } else {
     return 0;
   }
+}
+
+##########################
+sub get_multi_gene_loci {
+  my @hashes = @_;
+
+  my (%locus2gene, %multi_gene_loci);
+  foreach my $h (@hashes) {
+    foreach my $iso (keys %$h) {
+      my $locus_id = $iso;
+      if ($iso =~ /^(\S+\d)[a-z]$/) {
+        $locus_id = $1;
+      }
+
+      $locus2gene{$locus_id}->{$h->{$iso}} = 1;
+    }
+  }
+
+  foreach my $locus_id (keys %locus2gene) {
+    if (scalar(keys %{$locus2gene{$locus_id}}) > 1) {
+      # pathological case: multiple gene at same
+      # "locus". In these cases, we could choose to
+      # (a) omit the locus_tag, or 
+      # (b) use the locus_id as the gene_name (so that it
+      # matches /locus_tag) and pass through the gene 
+      # name as a note. Pass back a structure that allows
+      # both of these possibilities. 
+      $multi_gene_loci{$locus_id} = 1;
+    }
+  }
+  
+  return \%multi_gene_loci;
 }
 
 ##########################
@@ -946,6 +1037,109 @@ EOF
   return $tmdef;
 }
  
+###################################
+sub stage_dump_to_submissions_repository {
+  my ($dump_file) = @_;
+
+  my (%records, $current_lines, $cosmid);
+
+  my $submit_repo = $wormbase->submit_repos;
+
+  open(my $dfg, $dump_file) or $log->log_and_die("Could not open $dump_file for reading\n");
+
+  while(<$dfg>) {
+    /^ID/ and do {
+      $current_lines = [];
+    };
+
+    /^DE\s+.+\s+(\S+)$/ and do {
+      $cosmid = $1;
+      
+      foreach my $line (@$current_lines) {
+        push @{$records{$cosmid}->{embl}}, $line;
+      }
+      $current_lines = $records{$cosmid}->{embl};
+    };
+    
+    if (/^\s+(.+)$/) {
+      my $seq = $1;
+      $seq =~ s/\s+//g;
+      $records{$cosmid}->{seq} .= uc($seq);
+    }
+    
+    push @$current_lines, $_;
+  }
+  
+  # only do sequences for C.elegans, because we do not do the
+  # submission of primary sequence records for other species
+  if ($species eq 'elegans') {
+    foreach my $cosmid (sort keys %records) {
+      my $hash = $wormbase->submit_repos_hash_from_sequence_name($cosmid);
+      
+      my $seq_file  = "$submit_repo/$hash/$cosmid/$cosmid.fasta";
+      
+      if (not -e $seq_file) {
+        $log->log_and_die("Could not find the FASTA file for $cosmid ($seq_file)");
+      }
+      
+      my $sio = Bio::SeqIO->new(-format => 'fasta',
+                                -file   => $seq_file);
+      my $seqobj = $sio->next_seq;
+      
+      if (uc($seqobj->seq) ne $records{$cosmid}->{seq}) {
+        # sequence has changed
+        my $newseqobj = Bio::PrimarySeq->new(-id => $cosmid,
+                                             -seq => $records{$cosmid}->{seq});
+        my $sioout = Bio::SeqIO->new(-format => 'fasta',
+                                     -file   => ">$seq_file");
+        $sioout->write_seq($newseqobj);
+        $sioout->close();
+      }
+    }
+  }
+  
+  foreach my $cosmid (sort keys %records) {
+     my $hash = $wormbase->submit_repos_hash_from_sequence_name($cosmid);
+      
+     my $embl_file = "$submit_repo/$hash/$cosmid/$cosmid.embl";
+     if (not -e $embl_file) {
+       $log->log_and_die("Could not find the EMBL file for $cosmid ($embl_file)");
+     }
+       
+     # for C. briggsae, we need to propagate the CO lines forward through submissions, 
+     # because these are not included in the AceDB dumps. Insert them into the line
+     # for the clone just before the terminating //
+     if ($species eq 'briggsae') {
+       open(my $emblfh, $embl_file);
+       while(<$emblfh>) {
+         /^CO\s+/ and do {
+           splice(@{$records{$cosmid}->{embl}}, -1, 0, $_);
+         };
+       }
+     }
+     
+     open my $emblfh, ">$embl_file" or $log->log_and_die("Could not open $embl_file for writing\n");
+     foreach my $ln (@{$records{$cosmid}->{embl}}) {
+       print $emblfh $ln;
+     }
+     close($emblfh);
+  }
+
+
+  my $modified_count = 0;
+
+  open(my $gitcmd, "git --git-dir=$submit_repo/.git ls-files -m |")
+      or $log->write_to("Warning: could not run git command to get list of locally modified files\n");
+  while(<$gitcmd>) {
+    /^(\S+)/ and do {
+      $log->write_to("   $1 locally modified\n");
+      $modified_count++;
+    };
+  }
+
+  return $modified_count;
+}
+
 
 
 __END__
