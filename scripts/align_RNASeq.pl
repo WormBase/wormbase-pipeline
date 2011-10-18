@@ -58,7 +58,7 @@
 # by Gary Williams
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2011-10-17 12:54:32 $
+# Last updated on: $Date: 2011-10-18 11:10:32 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -687,6 +687,7 @@ sub run_tophat {
     foreach my $srr (glob("*.lite.sra")) {
       $log->write_to("Unpack $srr\n");
       $status = $wormbase->run_command("/software/worm/sratoolkit/fastq-dump $srr", $log);
+      if ($status) {$log->log_and_die("Didn't unpack the fastq file successfully\n")}
       $status = $wormbase->run_command("rm -f $srr", $log);
     }
   }
