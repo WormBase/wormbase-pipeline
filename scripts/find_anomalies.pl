@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2011-10-19 08:37:30 $      
+# Last updated on: $Date: 2011-10-19 10:53:31 $      
 
 # Changes required by Ant: 2008-02-19
 # 
@@ -417,7 +417,9 @@ foreach my $chromosome (@chromosomes) {
 
   print "finding anomalies\n";
 
-  #if (0) {
+##########################
+#  if (0) {
+##########################
 
   print "finding protein homologies not overlapping CDS exons\n";
   my $matched_protein_aref = &get_protein_differences(\@cds_exons, \@pseudogenes, \@homologies, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, $chromosome) if (exists $run{UNMATCHED_PROTEIN});
@@ -528,7 +530,9 @@ foreach my $chromosome (@chromosomes) {
   &filter_RNASeq_splice(\@RNASeq_splice, \@filtered_RNASeq_splice) if (exists $run{UNMATCHED_RNASEQ_INTRONS});
   &get_unconfirmed_RNASeq_introns(\@filtered_RNASeq_splice, \@CDS_introns, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, \@ignored_introns, $chromosome) if (exists $run{UNMATCHED_RNASEQ_INTRONS});
 
+##########################
 #}
+##########################
 
   print "find introns that are missing RNASeq/EST/mRNA evidence";
   &get_spurious_introns(\@RNASeq_splice, \@CDS_introns, $chromosome) if (exists $run{SPURIOUS_INTRONS});
@@ -4188,7 +4192,7 @@ sub get_spurious_introns {
     if (my @results = $rnaseq_introns_match->match($CDS_intron)) { 
       foreach my $result (@results) {
 	my $RNASeq_score = $result->[5]; # get the score of the matching RNASeq
-	push @{$CDS_intron}, $RNASeq_score; # add the RNASeq intron score to the CDS intron object
+	$CDS_intron->[5] = $RNASeq_score; # add the RNASeq intron score to the CDS intron object
       }
     }
   }
@@ -4196,18 +4200,18 @@ sub get_spurious_introns {
   # now get the CDS introns that have an anomalous lack of a matching RNASeq intron
   my @CDS_introns = sort {$a->[0] cmp $b->[0]} @{$cds_introns_aref}; # sort by ID sequence name
   my $prev_name="";
-  my @no_scores;
+  my @no_scores=();
   my $scores = 0;
   my $count = 0;
   foreach my $CDS_intron (@CDS_introns) {
     my $name = $CDS_intron->[0];
     my $score = $CDS_intron->[5];
+    my $other = $CDS_intron->[4];
     if ($prev_name ne $name) { # starting a new CDS - look at the introns from the old CDS
       if ($count) {
 	my $average = int $scores/$count;
-	if ($average > 20) {
+	if ($average > 10) {
 	  foreach my $spurious_intron (@no_scores) {
-	    if ($spurious_intron->[4] =~ /Confirmed/) {} #  see if there is confirmed EST evidence for this intron
 	    my $cds_id = $spurious_intron->[0];
 	    my $chrom_start = $spurious_intron->[1];
 	    my $chrom_end = $spurious_intron->[2];
@@ -4229,8 +4233,10 @@ sub get_spurious_introns {
 
     # store the details of this intron
     if (!defined $score) {
-      push @no_scores, $CDS_intron;
-      print " <no intron> ";
+      if ($other !~ /Confirmed/) { #  see if there is confirmed EST evidence for this intron
+	push @no_scores, $CDS_intron;
+	print " <no intron> ";
+      }
     } else {
       $scores+=$score;
       $count++;
