@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2011-07-26 14:27:16 $      
+# Last updated on: $Date: 2011-10-19 08:37:30 $      
 
 # Changes required by Ant: 2008-02-19
 # 
@@ -244,6 +244,7 @@ while (my $run = <DATA>) {
 &delete_anomalies("UNMATCHED_454_CLUSTER");
 &delete_anomalies("MERGE_GENES_BY_RNASEQ");
 &delete_anomalies("UNMATCHED_RNASEQ_INTRONS");
+&delete_anomalies("SPURIOUS_INTRONS");
 
 
 # if we want the anomalies GFF file
@@ -416,7 +417,7 @@ foreach my $chromosome (@chromosomes) {
 
   print "finding anomalies\n";
 
-#  if (0) {
+  #if (0) {
 
   print "finding protein homologies not overlapping CDS exons\n";
   my $matched_protein_aref = &get_protein_differences(\@cds_exons, \@pseudogenes, \@homologies, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, $chromosome) if (exists $run{UNMATCHED_PROTEIN});
@@ -512,8 +513,6 @@ foreach my $chromosome (@chromosomes) {
   print "finding isolated RST5\n";
   &get_isolated_RST5(\@rst_hsp, \@CDS, \@coding_transcripts, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, $chromosome) if (exists $run{UNMATCHED_RST5});
 
-#}
-
   print "get jigsaw different to curated CDS\n";
   my @unmatched_jigsaw = &get_jigsaw_different_to_curated_CDS(\@jigsaw_exons, \@cds_exons, \@pseudogenes, $chromosome) if (exists $run{JIGSAW_DIFFERS_FROM_CDS});
 
@@ -528,6 +527,11 @@ foreach my $chromosome (@chromosomes) {
   my @filtered_RNASeq_splice;
   &filter_RNASeq_splice(\@RNASeq_splice, \@filtered_RNASeq_splice) if (exists $run{UNMATCHED_RNASEQ_INTRONS});
   &get_unconfirmed_RNASeq_introns(\@filtered_RNASeq_splice, \@CDS_introns, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, \@ignored_introns, $chromosome) if (exists $run{UNMATCHED_RNASEQ_INTRONS});
+
+#}
+
+  print "find introns that are missing RNASeq/EST/mRNA evidence";
+  &get_spurious_introns(\@RNASeq_splice, \@CDS_introns, $chromosome) if (exists $run{SPURIOUS_INTRONS});
 
 #################################################
 # these don't work very well - don't use
@@ -4160,6 +4164,83 @@ sub get_unconfirmed_RNASeq_introns {
 
 }
 
+####################################################################################
+# find introns that are missing RNASeq/EST/mRNA evidence
+
+sub get_spurious_introns {
+
+  my ($RNASeq_splice_aref, $cds_introns_aref, $chromosome) = @_;
+
+  $anomaly_count{SPURIOUS_INTRONS} = 0 if (! exists $anomaly_count{SPURIOUS_INTRONS});
+
+  # for each CDS, get its introns
+  # get the counts of the RNASeqs spanning each intron
+  # foreach CDS intron:
+  #   if the intron matches an EST intron, then it is OK
+  #   if the RNASeq counts of the other introns are low, then it is OK
+  #   if there is no RNASeq evidence for the intron, then it is an anomaly
+
+
+  # get the scores of the RNASeq introns that match the CDS introns and add then to the CDS introns
+  my $rnaseq_introns_match = $ovlp->compare($RNASeq_splice_aref, exact_match => 1);
+  foreach my $CDS_intron (@{$cds_introns_aref}) { # $cds_id, $chrom_start, $chrom_end, $chrom_strand
+    
+    if (my @results = $rnaseq_introns_match->match($CDS_intron)) { 
+      foreach my $result (@results) {
+	my $RNASeq_score = $result->[5]; # get the score of the matching RNASeq
+	push @{$CDS_intron}, $RNASeq_score; # add the RNASeq intron score to the CDS intron object
+      }
+    }
+  }
+
+  # now get the CDS introns that have an anomalous lack of a matching RNASeq intron
+  my @CDS_introns = sort {$a->[0] cmp $b->[0]} @{$cds_introns_aref}; # sort by ID sequence name
+  my $prev_name="";
+  my @no_scores;
+  my $scores = 0;
+  my $count = 0;
+  foreach my $CDS_intron (@CDS_introns) {
+    my $name = $CDS_intron->[0];
+    my $score = $CDS_intron->[5];
+    if ($prev_name ne $name) { # starting a new CDS - look at the introns from the old CDS
+      if ($count) {
+	my $average = int $scores/$count;
+	if ($average > 20) {
+	  foreach my $spurious_intron (@no_scores) {
+	    if ($spurious_intron->[4] =~ /Confirmed/) {} #  see if there is confirmed EST evidence for this intron
+	    my $cds_id = $spurious_intron->[0];
+	    my $chrom_start = $spurious_intron->[1];
+	    my $chrom_end = $spurious_intron->[2];
+	    my $chrom_strand = $spurious_intron->[3];
+	    my $est_score = $spurious_intron->[5];
+	    my $anomaly_score = $average/10;
+	    print "\nNOT got an RNASeq intron match ANOMALY: $cds_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score\n";
+	    &output_to_database("SPURIOUS_INTRONS", $chromosome, $cds_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score, 'No RNASeq or EST evidence for this intron.');
+	  }
+	}
+      }
+
+      $prev_name = $name;
+      $count=0;
+      $scores=0;
+      @no_scores=();
+      print "\n$name\n";
+    }
+
+    # store the details of this intron
+    if (!defined $score) {
+      push @no_scores, $CDS_intron;
+      print " <no intron> ";
+    } else {
+      $scores+=$score;
+      $count++;
+      print " $score ";
+    }
+
+  }
+
+}
+
 
 
 ####################################################################################
@@ -4675,6 +4756,7 @@ UNMATCHED_MGENE              elegans
 NOVEL_MGENE_PREDICTION       elegans
 NOT_PREDICTED_BY_MGENE       elegans
 UNMATCHED_RNASEQ_INTRONS     elegans remanei briggsae
+SPURIOUS_INTRONS             elegans remanei briggsae
 END_DATA
 
 =pod
