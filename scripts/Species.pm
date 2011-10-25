@@ -365,7 +365,7 @@ sub full_name {
 	};
 }
 sub ncbi_tax_id {'37862'};
-sub chromosome_prefix {'Contig'}
+sub chromosome_prefix {''}
 sub pep_prefix {'HB'}
 sub pepdir_prefix{'het'};
 sub assembly_type {'contig'};
