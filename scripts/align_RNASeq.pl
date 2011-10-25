@@ -58,7 +58,7 @@
 # by Gary Williams
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2011-10-18 11:10:32 $
+# Last updated on: $Date: 2011-10-25 15:02:40 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -483,14 +483,33 @@ if (!$expt) {
     &run_align($check, $noalign, @args);
   }
   
+  ####################################################################################
+  # all analyses have now run - munge results and put them where they are expected
+  ####################################################################################
 
 
- # now write out a table of what has worked
+  # now write out a table of what has worked
+  # and make the expresssion tarball for Wen to put into SPELL
+  # and write out .ace files for the FPKM expression levels of genes, transcripts, pseudogenes and CDSs
+
 
   $log->write_to("\nResults\n");
   $log->write_to("-------\n\n");
 
+
   chdir $RNASeqDir;
+
+  # get the Life_stages of the Condition objects (same name as the Analysis objects)
+  my %life_stages = get_life_stage_from_conditions();
+
+  # get the valid CDS and Pseudogenes IDs
+  my %CDSs = get_CDSs();
+  my %Pseudogenes = get_Pseudogenes();
+
+  # open a .ace file to hold the FPKM expression levels of genes, transcripts and CDSs
+  my $misc_dynamic = $wormbase->misc_dynamic;
+  open (EXPRACE, "> $misc_dynamic/expression_levels.ace") || $log->log_and_die("Can't open $misc_dynamic/expression_levels.ace\n");
+
   foreach my $SRX (@SRX) {
     $log->write_to("$SRX");
     if (-e "$SRX/tophat_out/accepted_hits.bam") {$log->write_to("\ttophat OK");} else {{$log->write_to("\ttophat ERROR");}}
@@ -499,7 +518,11 @@ if (!$expt) {
     if (-e "$SRX/Introns/Intron.ace") {$log->write_to("\tIntrons OK");} else {$log->write_to("\tintron ERROR");}
     $log->write_to("\n");
 
-    # make the expresssion tarball for Wen to put into SPELL
+    my $analysis = $expts{$SRX}->[0];
+    my $life_stage = $life_stages{$analysis};
+    if (!defined $life_stage) {$log->write_to("WARNING: no Condition object found for Analysis object $analysis\n");}
+    my %CDS_SRX;
+    my %Pseudogene_SRX;
 
 # Wen says: "Gary, the file is good, I just wonder what should we do
 # with the "0" values. SPELL data are all log2 transformed. That is
@@ -517,14 +540,58 @@ if (!$expt) {
 	my @f = split /\s+/, $line;
 	if ($f[0] eq 'tracking_id') {next;}
 	if ($f[0] =~ /CUFF/) {$log->log_and_die("Cufflinks for $SRX has failed to put the Gene IDs in the output file - problem with the GTF file?\n");}
-	if ($f[10] == 0) {$f[10] = 0.0000000001}
-	if ($f[9] eq "OK" || $f[9] eq "LOWDATA") {print EXPROUT "$f[0]\t$f[10]\n"}
+	my $gene_expr = $f[10];
+	if ($f[10] == 0) {$gene_expr = 0.0000000001}
+	if ($f[9] eq "OK" || $f[9] eq "LOWDATA") {
+	  # print the file for Wen's SPELL data
+	  print EXPROUT "$f[0]\t$gene_expr\n";
+	  # and print to the Gene model ace file
+	  if (defined $life_stage) {
+	    print EXPRACE "\nGene : \"$f[0]\"\n";
+	    print EXPRACE "RNASeq_FPKM  $life_stage  \"$f[10]\"  From_analysis \"$analysis\"\n";
+	  }
+	}
       }
       close(EXPROUT);
       close (EXPR);
     }
-  }
+
+    # now get the isoform (coding transcript and CDS) expression values and write out to the ace file
+    open (EXPR, "<$SRX/cufflinks/isoforms.fpkm_tracking") || $log->log_and_die("Can't open $SRX/cufflinks/isoforms.fpkm_tracking\n");
+    while (my $line = <EXPR>) {
+      my @f = split /\s+/, $line;
+      if ($f[0] eq 'tracking_id') {next;}
+      if ($f[0] =~ /CUFF/) {$log->log_and_die("Cufflinks for $SRX has failed to put the Transcript IDs in the output file - problem with the GTF file?\n");}
+      if ($f[9] eq "OK" || $f[9] eq "LOWDATA") {
+	if (defined $life_stage) {
+	  print EXPRACE "\nTranscript : \"$f[0]\"\n";
+	  print EXPRACE "RNASeq_FPKM  \"$life_stage\"  \"$f[10]\"  From_analysis \"$analysis\"\n";
+	  my ($sequence_name) = ($f[0] =~ /(^\S+?\.\d+[a-z]?)/);
+	  if (exists $CDSs{$sequence_name}) {
+	    $CDS_SRX{$sequence_name} += $f[10]; # sum the FPKMs for this CDS
+	  } elsif (exists $Pseudogenes{$sequence_name}) {
+	    $Pseudogene_SRX{$sequence_name} += $f[10]; # sum the FPKMs for this Pseudogene
+	  }
+	}
+      }
+    }
+    close (EXPR);
+
+    # now get the CDSs and Pseudogenes that were seen and output their FPKMs to the ace file
+    foreach my $CDS (keys %CDS_SRX) {
+      print EXPRACE "\nCDS : \"$CDS\"\n";
+      print EXPRACE "RNASeq_FPKM  \"$life_stage\"  \"$CDS_SRX{$CDS}\"  From_analysis \"$analysis\"\n";
+    }
+    foreach my $Pseudogene (keys %Pseudogene_SRX) {
+      print EXPRACE "\nPseudogene : \"$Pseudogene\"\n";
+      print EXPRACE "RNASeq_FPKM  \"$life_stage\"  \"$Pseudogene_SRX{$Pseudogene}\"  From_analysis \"$analysis\"\n";
+    }
+
+
+  } # foreach SRX
   $log->write_to("\n");
+
+  close(EXPRACE);
 
   # make a tarball
   $status = $wormbase->run_command("tar cf expr.tar *.out", $log);
@@ -532,6 +599,9 @@ if (!$expt) {
   $status = $wormbase->run_command("gzip -f expr.tar", $log);
   my $autoace = $wormbase->autoace;
   $status = $wormbase->run_command("cp expr.tar.gz $autoace", $log); # this will probably be changed to the autoace/OUTPUT directory soon
+
+  
+
 
 
   # make the ace file of RNASeq spanned introns to load into acedb
@@ -1400,6 +1470,169 @@ sub Intron_stuff {
 
   return $status;
 }
+
+############################################################################
+
+sub get_life_stage_from_conditions {
+
+  my %life_stages;
+  my $table_def = &write_life_stage_def;
+  my $table_query = $wormbase->table_maker_query($database, $table_def);
+  while(<$table_query>) {
+    chomp;
+    s/\"//g;  #remove "
+    next if (/acedb/ or /\/\//);
+    my @data = split("\t",$_);
+    my ($condition, $life_stage) = @data;
+    if (!defined $condition || !defined $life_stage) {next}
+    $life_stages{$condition} = $life_stage; # multiple life-stages get overwritten leaving just the last one
+  }
+
+  return %life_stages;
+}
+############################################################################
+# this will write out an acedb tablemaker defn to a temp file
+############################################################################
+
+sub write_life_stage_def {
+  my $def = "/tmp/Life_stages_$$.def";
+  open TMP,">$def" or $log->log_and_die("cant write $def: $!\n");
+  my $species = $wormbase->full_name;
+  my $txt = <<END2;
+
+Sortcolumn 1
+
+Colonne 1 
+Subtitle Analysis 
+Width 50 
+Optional 
+Visible 
+Class 
+Class Analysis 
+From 1 
+Condition Sample
+ 
+Colonne 2 
+Subtitle Condition 
+Width 50 
+Mandatory 
+Hidden
+Class 
+Class Condition 
+From 1 
+Tag Sample 
+ 
+Colonne 3 
+Width 40 
+Mandatory 
+Visible 
+Class 
+Class Life_stage 
+From 2 
+Tag Life_stage
+
+END2
+
+  print TMP $txt;
+  close TMP;
+  return $def;
+}
+############################################################################
+
+sub get_CDSs {
+
+  my %CDS;
+  my $table_def = &write_CDS_def;
+  my $table_query = $wormbase->table_maker_query($database, $table_def);
+  while(<$table_query>) {
+    chomp;
+    s/\"//g;  #remove "
+    next if (/acedb/ or /\/\//);
+    my @data = split("\t",$_);
+    my ($CDS) = @data;
+    if (!defined $CDS) {next}
+    $CDS{$CDS} = -1;
+  }
+
+  return %CDS;
+}
+############################################################################
+# this will write out an acedb tablemaker defn to a temp file
+############################################################################
+
+sub write_CDS_def {
+  my $def = "/tmp/CDS_$$.def";
+  open TMP,">$def" or $log->log_and_die("cant write $def: $!\n");
+  my $species = $wormbase->full_name;
+  my $txt = <<END3;
+
+Sortcolumn 1
+
+Colonne 1
+//Subtitle CDS
+Width 80
+Optional
+Visible
+Class
+Class CDS
+From 1
+
+END3
+
+  print TMP $txt;
+  close TMP;
+  return $def;
+}
+############################################################################
+
+sub get_Pseudogenes {
+
+  my %pseudogenes;
+  my $table_def = &write_Pseudogenes_def;
+  my $table_query = $wormbase->table_maker_query($database, $table_def);
+  while(<$table_query>) {
+    chomp;
+    s/\"//g;  #remove "
+    next if (/acedb/ or /\/\//);
+    my @data = split("\t",$_);
+    my ($Pseudogene) = @data;
+    if (!defined $Pseudogene) {next}
+    $pseudogenes{$Pseudogene} = -1;
+  }
+
+  return %pseudogenes;
+}
+############################################################################
+# this will write out an acedb tablemaker defn to a temp file
+############################################################################
+
+sub write_Pseudogenes_def {
+  my $def = "/tmp/Life_stages_$$.def";
+  open TMP,">$def" or $log->log_and_die("cant write $def: $!\n");
+  my $species = $wormbase->full_name;
+  my $txt = <<END4;
+
+Sortcolumn 1
+
+Colonne 1
+//Subtitle Pseudogene
+Width 80
+Optional
+Visible
+Class
+Class Pseudogene
+From 1
+
+END4
+
+  print TMP $txt;
+  close TMP;
+  return $def;
+}
+
+
+
+############################################################################
 
 
 __END__
