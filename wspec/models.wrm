@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: pad $
-// Last edited on: $Date: 2011-10-26 09:22:39 $
+// Last edited on: $Date: 2011-10-26 09:37:22 $
 
 
 ////////////////////////
@@ -275,6 +275,7 @@
                   Complementation_data Text
                   Strain ?Strain XREF Gene
                   In_cluster ?Gene_cluster XREF Contains_gene // linking to Clusters in locus class
+		  RNASeq_FPKM  ?Life_stage  Float  #Evidence
                   GO_term ?GO_term XREF Gene ?GO_code #Evidence
                   Contained_in_operon ?Operon XREF Contains_gene
                   Ortholog ?Gene XREF Ortholog ?Species #Evidence
@@ -335,6 +336,7 @@
 		  Pseudo_map_position // should be added to flag those genes which have Map position tags that
 				      // were 'promoted' from Interpolated_map_position tags
         Reference ?Paper XREF Gene #Evidence
+	
         Remark ?Text #Evidence
 	Method UNIQUE ?Method
 
