@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: pad $
-// Last edited on: $Date: 2011-08-19 13:30:35 $
+// Last edited on: $Date: 2011-10-26 09:22:39 $
 
 
 ////////////////////////
@@ -509,6 +509,8 @@
 		     Reference_strain Text
 		     Outcrossed Text
 		     Mutagen Text
+		     Sample_history Text
+		     Date_first_frozen UNIQUE DateType
 		     CGC_received DateType
 		     Phenotype ?Phenotype XREF Strain #Phenotype_info
 		     Phenotype_not_observed ?Phenotype XREF Not_in_Strain #Phenotype_info //added by Wen to separate Not phenotype from real phenotypes 
@@ -1032,8 +1034,8 @@
 	  Properties    Genomic_canonical Gene_count UNIQUE Int                  // added tag for dot name tracking [020128 dl]
                         Briggsae_canonical
                         Genomic                                                  // added tag to define genomic sequences not from the consortium
-                        Checksum MD5 Text     //checksums should only be created for an upper-cased sequence.
-                                 CRC64 Text   //checksums should only be created for an upper-cased sequence.
+                        Checksum MD5 UNIQUE Text     //checksums should only be created for an upper-cased sequence.
+                                 CRC64 UNIQUE Text   //checksums should only be created for an upper-cased sequence.
 			cDNA cDNA_EST
 			     EST_5		       // Indicate whether this is a 5' or 3' read [010423 dl]
 			     EST_3
@@ -1255,6 +1257,7 @@
 		YH_target ?YH XREF Target_overlapping_CDS ?Text
 		3d_data ?3d_data XREF CDS
 	        //Structure_data ?Structure_data XREF Corresponding_CDS #Evidence
+		RNASeq_FPKM  ?Life_stage  Float  #Evidence
                 Remark ?Text #Evidence
 	Associated_feature ?Feature XREF Associated_with_CDS #Evidence
         Method UNIQUE ?Method
@@ -1288,9 +1291,10 @@
                         Provisional_description ?Text #Evidence
                         Detailed_description ?Text #Evidence
                         Concise_description ?Text #Evidence
-                        Brief_identification UNIQUE Text                           // [020306 kj]
+                        Brief_identification UNIQUE ?Text
                         Confidential_remark ?Text
 			SAGE_tag ?SAGE_tag XREF Transcript #SAGE_mapping_info
+			RNASeq_FPKM  ?Life_stage  Float  #Evidence
                         Remark ?Text #Evidence
                 Properties Transcript UNIQUE  mRNA UNIQUE Processed_mRNA
                                                           Unprocessed_mRNA
@@ -1351,6 +1355,7 @@
                         GO_term ?GO_term XREF Pseudogene ?GO_code #Evidence
 			SAGE_tag ?SAGE_tag XREF Pseudogene #SAGE_mapping_info
 			Microarray_results ?Microarray_results XREF Pseudogene  //added for Microarray_results
+			RNASeq_FPKM  ?Life_stage  Float  #Evidence
 			Remark ?Text #Evidence	  
 		Associated_feature ?Feature XREF Associated_with_pseudogene #Evidence
                 Confidential_remark ?Text
