@@ -74,11 +74,12 @@ while (<>) {
     
     next if $source eq 'assembly_tag';    # don't want 'em, don't need 'em
     next if $method eq 'HOMOL_GAP';       # don't want that neither
+    next if $method eq 'intron';
 
     $ref   =~ s/^CHROMOSOME_//;
     $group =~ s/CHROMOSOME_//;
 
-    $source = '' if $source eq '*UNKNOWN*';
+    $source = '.' if $source eq '*UNKNOWN*';
 
     # Process top-level CDS and Transcript entries
     #if ( $method=~/Transcript|CDS|.*primary_transcript/ && $source=~/Coding_transcript|curated|.*RNA|miRNA/i && $group=~/[Transcript|CDS] "(\w+\.\d+[a-z]?\.?\d?)"/ ) {
