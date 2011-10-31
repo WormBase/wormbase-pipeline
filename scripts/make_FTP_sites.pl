@@ -6,7 +6,7 @@
 # builds wormbase & wormpep FTP sites
 # 
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2011-08-10 14:21:23 $
+# Last updated on: $Date: 2011-10-31 12:27:21 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -866,6 +866,7 @@ sub copy_wormpep_files {
   }
 
   #tierIII's have no "pep" package, so lift protein and transcript files from build dir
+  # Note: not all tierIIIs will have protein/cDNA sets
   my %tierIII = $wormbase->tier3_species_accessors;
   foreach my $t3 (keys %tierIII){ 
     next if exists $skip_species{$t3};
@@ -874,7 +875,6 @@ sub copy_wormpep_files {
     my $wb = $tierIII{$t3};
     my $gspecies = $wb->full_name('-g_species' => 1);
 
-    my $src =$wb->basedir . "/WORMPEP/".$wb->pepdir_prefix."pep$WS/".$wb->pepdir_prefix."pep.$WS_name.fa.gz";
     my $tgt = "$targetdir/species/$gspecies";
     mkpath($tgt,1,0775);
 
@@ -887,13 +887,13 @@ sub copy_wormpep_files {
     if (-e $src_pep_file) {
       $wb->run_command("gzip -9 -c $src_pep_file > $tgt_pep_file", $log);
     } else {
-      $log->error("Could not find $src_pep_file for $t3; worrysome\n");
+      $log->write_to("Did not find $src_pep_file for $t3 - proceeding\n");
     }
 
     if (-e $src_cdna_file) {
       $wb->run_command("gzip -9 -c $src_cdna_file > $tgt_cdna_file", $log);
     } else {
-      $log->error("Could not find $src_cdna_file for $t3; worrysome\n");
+      $log->write_to("Did not find $src_cdna_file for $t3 - proceeding\n");
     }
   }
 
@@ -1348,7 +1348,16 @@ sub check_manifest {
         parent => $par,
         species => {},
       };
-      foreach my $tsp (split(/,/, $sp)) {
+      my (%include, %exclude);
+      if ($sp =~ /^(.*):(.*)$/) {
+        my ($inc, $exc) = ($1, $2);
+        map { $include{$_} = 1 } split(/,/, $inc);
+        map { $exclude{$_} = 1 } split(/,/, $exc);
+      } else {
+        map { $include{$_} = 1 } split(/,/, $sp);
+      }
+
+      foreach my $tsp (keys %include) {
         if ($tsp eq 'TIER3') {
           foreach my $ntsp (keys %t3_species) {
             $stanzas[-1]->{species}->{$ntsp} = 1;
@@ -1363,6 +1372,11 @@ sub check_manifest {
           }
         } else {
           $stanzas[-1]->{species}->{$tsp} = 1;
+        }
+      }
+      foreach my $tsp (keys %exclude) {
+        if (exists $stanzas[-1]->{species}->{$tsp}) {
+          delete $stanzas[-1]->{species}->{$tsp};
         }
       }
       next;
@@ -1465,6 +1479,8 @@ GSPECIES.WSREL.annotations.gff3.gz
 GSPECIES.WSREL.genomic.fa.gz
 GSPECIES.WSREL.genomic_masked.fa.gz
 GSPECIES.WSREL.genomic_softmasked.fa.gz
+
+[ALL:assum,mincognita,heterorhabditis]species/GSPECIES
 GSPECIES.WSREL.protein.fa.gz
 GSPECIES.WSREL.cds_transcripts.fa.gz
 
