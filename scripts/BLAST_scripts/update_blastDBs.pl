@@ -1,7 +1,7 @@
 #!/usr/local/ensembl/bin/perl -w
 #
 # Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2010-12-14 10:36:00 $
+# Last edited on: $Date: 2011-11-03 11:19:30 $
 
 use lib $ENV{'CVS_DIR'};
 
@@ -16,7 +16,7 @@ use Bio::SeqIO;
 use Net::FTP;
 use Time::localtime;
 
-my ($test, $debug, $database);
+my ($test, $debug);
 my ($fly, $yeast, $human, $uniprot, $interpro, $cleanup, $all);
 my $store;
 my ($species, $qspecies, $nematode);
@@ -24,7 +24,6 @@ my ($species, $qspecies, $nematode);
 GetOptions (
 	    'debug:s'     => \$debug,
 	    'test'        => \$test,
-	    'database:s'  => \$database,
 	    'store:s'     => \$store,
 	    'species:s'   => \$species,
 	    'fly'	  => \$fly,
@@ -80,18 +79,10 @@ if($uniprot) {
 
 if ($yeast) {
     $log->write_to("Updating yeast\n");
-    my $sourcedir = "pub/yeast/data_download/sequence/genomic_sequence/orf_protein";
     my $target = '/tmp/download.yeast.gz';
-    my $filename1 = "orf_trans.fasta.gz";
-    my $login = "anonymous";
-    my $passw = 'wormbase@sanger.ac.uk';
-    my $server = "genome-ftp.stanford.edu";
+    my $source='http://downloads.yeastgenome.org/sequence/S288C_reference/orf_protein/orf_trans.fasta.gz';
 
-    my $ftp = Net::FTP->new("$server");
-    $ftp->login($login,$passw);
-    $ftp->cwd($sourcedir);
-    $ftp->get($filename1,$target) or $log->log_and_die("failed getting $filename1: ".$ftp->message."\n");
-    $ftp->quit;
+    $wormbase->run_command("wget -O $target $source",$log);
     
     $wormbase->run_command("gunzip -f $target",$log);
     $target =~ s/\.gz//; #no longer gzipped
