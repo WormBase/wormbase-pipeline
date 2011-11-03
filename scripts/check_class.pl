@@ -5,8 +5,8 @@
 # Counts the number of objects in an ACEDB database for each Class stated in the config file
 # Compares this number to those from a second database.
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2010-04-16 10:32:31 $
+# Last updated by: $Author: pad $
+# Last updated on: $Date: 2011-11-03 14:43:46 $
 
 
 use strict;
@@ -428,7 +428,7 @@ sub set_classes {
 		"Oligo_set",
 		"Anatomy_name",
 		"Anatomy_term",
-		"Homology_group",
+#		"Homology_group", data is now stored locally in Hinxton.
 		"Antibody",
 		"RNAi",
 #	        "Homol_data",
