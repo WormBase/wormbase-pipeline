@@ -58,7 +58,7 @@
 # by Gary Williams
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2011-10-25 15:02:40 $
+# Last updated on: $Date: 2011-11-04 12:04:37 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -567,6 +567,10 @@ if (!$expt) {
 	  print EXPRACE "\nTranscript : \"$f[0]\"\n";
 	  print EXPRACE "RNASeq_FPKM  \"$life_stage\"  \"$f[10]\"  From_analysis \"$analysis\"\n";
 	  my ($sequence_name) = ($f[0] =~ /(^\S+?\.\d+[a-z]?)/);
+	  if (!defined $sequence_name) {
+	    if ($f[0] !~ /(^\S+?\.t\d+)/) {print "Sequence name $f[0] is not in the normal format\n";} # complain if it is not even like 'T27B1.t1' - a tRNA gene
+	    $sequence_name = $f[0]; # use the name as given
+	  }
 	  if (exists $CDSs{$sequence_name}) {
 	    $CDS_SRX{$sequence_name} += $f[10]; # sum the FPKMs for this CDS
 	  } elsif (exists $Pseudogenes{$sequence_name}) {
@@ -819,6 +823,22 @@ sub run_tophat {
 
 
 #############################################################
+# now get the intron spans
+#############################################################
+
+  if (!$check || !-e "Introns/Intron.ace") {
+    $log->write_to("run Introns\n");
+    chdir "$RNASeqDir/$arg";
+    mkdir "Introns", 0777;
+    my $analysis = $expts{$arg}[0];
+    my $status = &Intron_stuff($cmd_extra, $analysis);
+
+    if ($status != 0) {  $log->log_and_die("Didn't run the Intron stuff successfully\n"); }
+  } else {
+    $log->write_to("Check Introns/Intron.ace: already done\n");
+  }
+
+#############################################################
 # now get the TSL sites
 #############################################################
 
@@ -836,22 +856,6 @@ sub run_tophat {
   }
 
 
-
-#############################################################
-# now get the intron spans
-#############################################################
-
-  if (!$check || !-e "Introns/Intron.ace") {
-    $log->write_to("run Introns\n");
-    chdir "$RNASeqDir/$arg";
-    mkdir "Introns", 0777;
-    my $analysis = $expts{$arg}[0];
-    my $status = &Intron_stuff($cmd_extra, $analysis);
-
-    if ($status != 0) {  $log->log_and_die("Didn't run the Intron stuff successfully\n"); }
-  } else {
-    $log->write_to("Check Introns/Intron.ace: already done\n");
-  }
 
 
 
@@ -1129,7 +1133,7 @@ sub TSL_stuff {
       $pos = $pos + 1; # go past the 'A' of the 'AG' we added on to ensure we hit a splice site
     }
     $results{$chrom}{$pos}{$sense}{$tsl}++;
-    print "store: ${chrom} ${pos} ${sense} ${tsl} value: $results{$chrom}{$pos}{$sense}{$tsl} $seq\n";
+    #print "store: ${chrom} ${pos} ${sense} ${tsl} value: $results{$chrom}{$pos}{$sense}{$tsl} $seq\n";
   }
   close(HITS);
 
@@ -1177,7 +1181,7 @@ sub TSL_stuff {
 
   # the only data left in %results now are the matches to the genome
   # where there is no defined TSL Feature object, so these are all new
-  # TSL sies that we could define a new Feature for. This has been
+  # TSL sites that we could define a new Feature for. This has been
   # started, but needs more work to get the flanking sequences and the
   # clone name.
 
@@ -1192,7 +1196,7 @@ sub TSL_stuff {
     foreach my $TSL_coord (keys %{$results{$TSL_chrom}}) {
       foreach my $sense (keys %{$results{$TSL_chrom}{$TSL_coord}}) {
 	foreach my $method (keys %{$results{$TSL_chrom}{$TSL_coord}{$sense}}) {
-	  if (!defined $results{$TSL_chrom}{$TSL_coord}{'+'}{$method}) {next}
+	  if (!defined $results{$TSL_chrom}{$TSL_coord}{$sense}{$method}) {next} # ignore the deleted entries
 	  my $ft_id = "WBsf#${TSL_chrom}#${TSL_coord}#${sense}#${method}"; # totally bogus Feature ID, needs to be changed before loading to acedb
 	  print NEWACE "\n\nFeature : \"$ft_id\"\n";
 #	  print NEWACE "Sequence \n";
@@ -1201,8 +1205,9 @@ sub TSL_stuff {
 	  print NEWACE "Description \"$method trans-splice leader acceptor site\"\n";
 	  print NEWACE "SO_term SO:0000706\n";
 	  print NEWACE "Method $method\n";
-	  my $reads =  $results{$TSL_chrom}{$TSL_coord}{'+'}{$method}; # reads
-	  print NEWACE "Defined_by_analysis $analysis $reads\n";
+	  print NEWACE "Defined_by_analysis $analysis\n";
+	  my $reads =  $results{$TSL_chrom}{$TSL_coord}{$sense}{$method}; # reads
+	  print NEWACE "Remark \"Defined by RNASeq data from $analysis with $reads reads\"\n";
 
 	  #$log->write_to("No Feature object for: chrom: $TSL_chrom pos: $TSL_coord sense: $sense type: $method, reads= $results{$TSL_chrom}{$TSL_coord}{$sense}{$method}\n");
 	}
@@ -1222,8 +1227,9 @@ sub TSL_stuff {
   open (ACE, ">$aceout") || $log->log_and_die("Can't open ace file $aceout\n");
   foreach my $feature (keys %found) {
     print ACE "\n\nFeature : \"$feature\"\n";
+    print ACE "Defined_by_analysis $analysis\n";
     my $reads = $found{$feature}; # reads
-    print ACE "Defined_by_analysis $analysis $reads\n";
+    print ACE "Remark \"Defined by RNASeq data from $analysis with $reads reads\"\n";
   }
   close(ACE);
 
