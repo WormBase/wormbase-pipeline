@@ -8,8 +8,8 @@
 # Uses Ant's Feature_mapper.pm module
 #
 #
-# Last updated by: $Author: klh $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2011-07-22 14:33:26 $        # quickly see when script was last changed and by whom
+# Last updated by: $Author: gw3 $                      # These lines will get filled in by cvs and helps us
+# Last updated on: $Date: 2011-11-04 15:47:39 $        # quickly see when script was last changed and by whom
 
 
 $|=1;
@@ -39,6 +39,7 @@ my $genome_sequence_error;   # genome_sequence_error
 my $transcription_start_site;# transcription_start_site
 my $transcription_end_site;  # transcription_end_site
 my $three_prime_UTR;         # three prime UTRs
+my $DNAseI_hypersensitive_site; # DNAseI_hypersensitive_site
 my $promoter;                # promoter region
 my $regulatory_region;       # regulatory region
 my $adhoc;                   # Run against a file, output to screen
@@ -128,6 +129,7 @@ my %sanity = (
 	      'promoter'                 => undef,
 	      'regulatory_region'        => undef,
 	      'three_prime_UTR'          => undef,
+	      'DNAseI_hypersensitive_site' => undef,
 	      );
 
 # queue which Feature types you want to map
@@ -145,6 +147,8 @@ push (@features2map, "transcription_start_site")  if (($transcription_start_site
 push (@features2map, "promoter")  if (($promoter) || ($all));
 push (@features2map, "regulatory_region")  if (($regulatory_region) || ($all));
 push (@features2map, "three_prime_UTR")  if (($three_prime_UTR) || ($all));
+push (@features2map, "DNAseI_hypersensitive_site")  if (($DNAseI_hypersensitive_site) || ($all));
+
 
 #############
 # main loop #
