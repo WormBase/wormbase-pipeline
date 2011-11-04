@@ -1,4 +1,4 @@
-#!/software/worm/perl_510/bin/perl
+#!/bin/env perl
 #===============================================================================
 #
 #         FILE:  get_all_elegans_orthologues.pl
@@ -31,6 +31,7 @@ my %species = (
     96668  => 'Caenorhabditis angaria',
     6334   => 'Trichinella spiralis',
     886184 => 'Caenorhabditis sp.11',
+    6253   => 'Ascaris suum',
 );
 
 my %cds2wbgene=%{&get_commondata('cds2wbgene_id')};
@@ -56,7 +57,9 @@ while( my $member = shift @members){
     next if $member->taxon_id == 6289; # skip H.contortus, as it does not have ?Gene objects
     next if $member->taxon_id == 96668;# skip C.angaria, because it does not have ?Gene objects
     next if $member->taxon_id == 6334; # skip T.spiralis, as it does not have ?Gene objects
-    next if $member->taxon_id == 886184; # skip C.sp11, as it has no gene objects
+    next if $member->taxon_id == 886184; # skip C.sp11, as it has no ?Gene objects
+    next if $member->taxon_id == 6253; # skip A.suum, as it has no ?Gene objects
+
     my @homologies = @{$homology_adaptor->fetch_all_by_Member( $member)};
 
     # needs some better way
@@ -87,6 +90,9 @@ while( my $member = shift @members){
 		    $t3{$pepm->stable_id} = [$pepm->taxon_id,$homology->description]
 	        }
 		elsif ($pepm->taxon_id==886184){
+		    $t3{$pepm->stable_id} = [$pepm->taxon_id,$homology->description]
+	        }
+		elsif ($pepm->taxon_id==6253){
 		    $t3{$pepm->stable_id} = [$pepm->taxon_id,$homology->description]
 	        }
                 else {
