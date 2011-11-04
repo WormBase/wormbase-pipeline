@@ -1294,8 +1294,8 @@ sub establish_paths {
     $self->{'blat'}        = $self->orgdb . "/BLAT";
     $self->{'checks'}      = $self->autoace . "/CHECKS";
     $self->{'ontology'}    = $self->autoace . "/ONTOLOGY";
-    $self->{'tace'}   = '/nfs/users/nfs_a/acedb/RELEASE.2011_02_18.BUILD/bin.LINUX_64/tace';
-    $self->{'giface'} = '/nfs/users/nfs_a/acedb/RELEASE.2011_02_18.BUILD/bin.LINUX_64/giface';
+    $self->{'tace'}   = '/software/worm/bin/acedb/tace';
+    $self->{'giface'} = '/software/worm/bin/acedb/giface';
 
     $self->{'databases'}->{'geneace'} = $self->wormpub . "/DATABASES/geneace";
     $self->{'databases'}->{'camace'}  = $self->wormpub . "/DATABASES/camace";
