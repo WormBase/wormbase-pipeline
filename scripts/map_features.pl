@@ -9,7 +9,7 @@
 #
 #
 # Last updated by: $Author: gw3 $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2011-11-04 15:47:39 $        # quickly see when script was last changed and by whom
+# Last updated on: $Date: 2011-11-04 15:50:09 $        # quickly see when script was last changed and by whom
 
 
 $|=1;
@@ -61,6 +61,7 @@ GetOptions (
 	    "transcription_start_site" => \$transcription_start_site,
 	    "transcription_end_site"   => \$transcription_end_site,
 	    "three_prime_UTR"          => \$three_prime_UTR,
+	    "DNAseI_hypersensitive_site" => \$DNAseI_hypersensitive_site,
 	    "promoter"                 => \$promoter,
 	    "regulatory_region"        => \$regulatory_region,
 	    "adhoc=s"                  => \$adhoc,
