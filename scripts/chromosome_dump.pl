@@ -8,8 +8,8 @@
 # A script for dumping dna and/or gff files for chromosome objects in autoace
 # see pod for more details
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2009-05-01 11:01:53 $
+# Last updated by: $Author: klh $
+# Last updated on: $Date: 2011-11-07 12:29:15 $
 
 
 use strict;
@@ -68,8 +68,8 @@ our $giface = $wormbase->giface;
 if(!$database && $dump_dir){
   die "You have specified a destination directory to dump to (-dump_dir flag) but not\na source database (-database flag).\n";
 }
-if(!$gff && !$dna && !$composition && !$zipgff && !$zipdna){
-  die "No major option (-dna, -gff, -composition, -zipdna, or -zipgff) has been specified, try again\n";
+if(!$dna && !$composition && !$zipdna){
+  die "No major option (-dna, -composition, -zipdna) has been specified, try again\n";
 }
 
 # Set up top level base directory which is different if in test mode
@@ -88,7 +88,7 @@ my $log = Log_files->make_build_log($wormbase);
 
 &dump_dna    if ($dna);
 &composition if ($composition );
-&zip_files   if ($zipdna || $zipgff);
+&zip_files   if ($zipdna);
 
 # say goodnight Barry
 $log->mail;
@@ -135,29 +135,6 @@ sub dump_dna {
     }
   }
   $log->write_to("Finished dumping DNA\n\n");
-}
-
-
-
-#########################
-# dump gff files
-#########################
-
-sub dump_gff {
-
- my $command;
- if($quicktest) {
-	 $command = "gif seqget CHROMOSOME_III ; seqfeatures -version 2 -file $dump_dir/CHROMOSOME_III.gff";
- }
- else {
-	foreach my $c ($wormbase->get_chromosome_names(-mito => 1,-prefix=> 1)) {
-		$command.="gif seqget $c ; seqfeatures -version 2 -file $dump_dir/$c.gff\n"; # a bit iffy, as it does a memcopy for every .=
-  	}
- }
- $command.='quit';
-
-  &execute_ace_command($command,$giface,$database);
-  $log->write_to("Finished dumping GFF files\n\n");
 }
 
 
@@ -274,8 +251,6 @@ sub zip_files {
 
   foreach my $chr (@chromosomes){
     my $dna_file = "$dump_dir"."/$prefix".$chr.".dna";
-    my $gff_file = "$dump_dir"."/$prefix".$chr.".gff";
-    my $msk_file = "$dump_dir"."/$prefix".$chr."_masked.dna";
 
     if ($zipdna){
       if (-e $dna_file.".gz" ) {
@@ -287,31 +262,6 @@ sub zip_files {
       }
       else {
 	$log->write_to("\n ERROR: Couldn't find any dna chromosome files in $dump_dir\n");
-      }
-    }
-    
-    if ($zipgff){
-      if (-e $gff_file.".gz" ) {
-	$log->write_to(" ${gff_file}.gz exists\n");
-      }
-      elsif (-e $gff_file ) {
-	$log->write_to(" Compressing $gff_file\n");
-	system ("/bin/gzip -f $gff_file");
-      }
-      else {
-	$log->write_to(" ERROR: Couldn't find any gff chromosome files in $dump_dir\n");
-      }
-    }	
-    if (-e $msk_file.".gz" ) {
-      $log->write_to(" ${msk_file}.gz exists\n");
-    }
-    elsif (-e $msk_file ) {
-      $log->write_to(" Compressing $msk_file\n");
-      system ("/bin/gzip -f $msk_file");
-    }
-    else {
-      if ($chr ne "MtDNA") {	# it is OK for there not to be a repeat-masked file for the mitochondrion
-	$log->write_to(" ERROR: Couldn't find any repeat-masked chromosomes in $dump_dir\n");
       }
     }
   }
@@ -354,19 +304,10 @@ __END__
 
 =head1 NAME - chromosome_dump.pl
 
-=head2 USAGE
+chromosome_dump.pl dumps chromosome fasta files from autoace,
+calculates composition stats, and compresses output fules. 
 
-chromosome_dump.pl is a replacement script for the two existing
-shell scripts: chrom_dump_3.0 and gff_dump.  This script can dump
-chromosome-length DNA sequences for entire chromsomes in the autoace
-database.  It can additionally generate chromosome GFF files, and
-finally it can compress these files using gzip.
-
-A log file is written to $basedir/logs/
-
-All dumped files are written to $basedir/autoace/CHROMOSOMES/
-
-chromosome_dump.pl arguments:
+=head1 OPTIONS
 
 =over 4
 
@@ -375,105 +316,43 @@ chromosome_dump.pl arguments:
 Dump dna files from specified database (see -p flag), dumps one file for each of 
 the six nuclear chromosomes, plus one file for the mitochondrial chromosome.
 
-=back
-
-
-=over 4
-
-=item -gff
-
-Dump gff files, dumps one file for each chromosome in the database.
-
-=back
-
-
-=over 4
-
 =item -composition (optional)
 
 Calculates composition statistics for any dna files that are generated.
 Use in combination with -d option (see above).  Excludes mitochondrial 
 chromosome.
 
-=back
-
 =item -database <database>
 
 Specify database that you wish to dump dna/gff files from.  If -database is not specified
 the script will dump from $basedir/autoace by default
-
-=back
-
-
-=over 4
 
 =item -dump_dir <destination directory for dump files>
 
 Specify destination of the dna and/or gff dump files generated from the -dna or -gff options.
 If -dump_dir is not specified, dump files will be written to $basedir/autoace/CHROMOSOMES by default
 
-=back
-
-
-=over 4
-
 =item -zipdna (optional)
 
 Compresses any dna files using gzip (will remove any existing files first).  The -composition
 option will be run before this stage if -composition is specified.
 
-=back
-
-=over 4
-
-=item -zipgff (optional) 
-
-Compresses any gff files using gzip (will remove any existing files first).      
-
-=back
-
-=over 4
-
 =item -help
 
 Show these help files.
-
-=back
-
-
-=over 4
 
 =item -debug <user>
 
 Only email log file to specified user
 
-=back
-
-
-=over 4
-
 =item -test
 
 Run in test mode and use test environment in ~wormpub/TEST_BUILD
-
-=back
-
-
-=over 4
 
 =item -quicktest
 
 Same as -test but only runs analysis for one chromosome (III)
 
 =back
-
-
-=over 4
-
-=over 4
-
-=head1 AUTHOR - Keith Bradnam
-
-Email krb@sanger.ac.uk
 
 =cut
