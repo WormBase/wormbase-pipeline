@@ -4,8 +4,8 @@
 #
 # by Dan Lawson (dl1@sanger.ac.uk)
 #
-# Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2010-11-30 10:56:37 $
+# Last edited by: $Author: klh $
+# Last edited on: $Date: 2011-11-07 15:02:28 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -15,6 +15,7 @@ use File::Copy;
 use File::Path;
 use Storable;
 
+my $mfetch = "mfetch";
 
 #################################
 # Command-line options          #
@@ -75,7 +76,7 @@ my @gff_files = ('I','II','III','IV','V','X');
 our %seqver = ();
 our %seqlen = ();
 
-open (SEQUENCES, "mfetch -d embl -f id -i \"mol:genomic dna\&org:Caenorhabditis elegans\&div:std\" | ");
+open (SEQUENCES, "$mfetch -d embl -f id -i \"mol:genomic dna\&org:Caenorhabditis elegans\&div:std\" | ");
 #Returns ID   AC006607; SV 1; linear; genomic DNA; STD; INV; 40255 BP.
 while (<SEQUENCES>) {
     s/\;//g;
@@ -86,19 +87,13 @@ while (<SEQUENCES>) {
     
     $seqlen{$id} = $len;
     $seqver{$id} = $sv;
-    
 }
 close(SEQUENCES);
 
-print "Finished assigning to hash\n" if $debug;
 
 #################################################################################
 # Main Loop                                                                     #
 #################################################################################
-
-my $seq_len;
-my $sv_acc;
-my $sv_ver;
 
 foreach my $chromosome (@gff_files) {
 
@@ -109,28 +104,28 @@ foreach my $chromosome (@gff_files) {
   our %clone=();
   our %ver=();
   my @report="";
+  my @version_mismatches;
 
   my $i = 1;
-  my ($start,$stop,$clone,$acc,$gap_span,$offset,$span,$gpseq,$gspan,$limit,$span2get,$unique_stop) = "";
+  my ($start,$stop,$clone,$acc,$ver,$gap_span,$offset,$span,$gpseq,$gspan,$limit,$span2get,$unique_stop) = "";
   my ($last_stop,$last_start);
   $last_start =0;
   $last_stop = 2;
 
   my $file = "$outdir/CHROMOSOME_$chromosome.agp";
 
-  $log->log_and_die("The gff file $outdir/CHROMOSOME_${chromosome}_clone_acc.gff doesn't exist.\n") unless ("-e $gff_dir/CHROMOSOME_${chromosome}_clone_acc.gff");
+  if (not "-e $gff_dir/CHROMOSOME_${chromosome}_clone_acc.gff") {
+    $log->log_and_die("The gff file $outdir/CHROMOSOME_${chromosome}_clone_acc.gff doesn't exist.\n");
+  }
   
   # read data from gff file
-  open (GFF, "<$gff_dir/CHROMOSOME_${chromosome}_clone_acc.gff") or $log->log_and_die("cant open $gff_dir/CHROMOSOME_${chromosome}_clone_acc.gff");
-  while (<GFF>) {
-    
-    $seq_len = "";
-    $sv_acc  = "";
-    $sv_ver  = "";
-    
+  open (GFF, "<$gff_dir/CHROMOSOME_${chromosome}_clone_acc.gff") 
+      or $log->log_and_die("cant open $gff_dir/CHROMOSOME_${chromosome}_clone_acc.gff");
+
+  while (<GFF>) {   
     # parse from each line
     ($start, $stop) = (/(\d+)\s+(\d+)/); 
-    ($clone, $acc) = (/Sequence \"(\S+)\" acc\=(\S+)/);
+    ($clone, $acc, $ver) = (/Sequence \"(\S+)\" acc\=(\S+)\s+ver=(\d+)/);
     
     # catch gaps
     if ($last_stop < $start) {
@@ -140,7 +135,6 @@ foreach my $chromosome (@gff_files) {
 	push (@report,"Putative butt-end join\n");
       }
       else {
-	print "[ " . ($stop{$i-1}+1) . " : " . ($start-1) ."] so insert padding characters over the gap\n" if ($debug);
 	push (@report, "$chromosome\t$stop{$i-1}\t" . ($start - 1) . "\t$i\tN\t$gap_span\n");
 	$start{$i}  = $stop{$i-1} + 1;
 	$stop{$i}   = $start-1;
@@ -166,14 +160,23 @@ foreach my $chromosome (@gff_files) {
     $span{$i}  = $stop - $start + 1;
     
     # fudge to try to get sequence version using mfetch via a different query if 1st mfetch fails
-    if($seqver{$acc} eq ""){
-      print "There has been a problem retrieving one or more entries" if $debug;
-      my $embl_acc = `/software/bin/mfetch -d embl -i \"sv:$acc.\*\"`;
+    if(not exists $seqver{$acc} or $seqver{$acc} eq ""){
+      my $embl_acc = `$mfetch -d embl -i \"sv:$acc.\*\"`;
       $embl_acc =~ s/.*\.(\d+)\s+.*/$1/;
-      $ver{$1} = $embl_acc;
+      $ver{$i} = $embl_acc;
     }
     else{
       $ver{$i}    = $seqver{$acc};
+    }
+
+    if ($ver{$i} != $ver) {
+      push @version_mismatches, {
+        clone => $clone,
+        acc => $acc,
+        gffver => $ver,
+        mfetchver => $ver{$i},
+      };
+      $log->write_to("WARNING: sequence version for acc in Ace was $ver, but in current EMBL is $ver{$i}\n");
     }
     
     $last_stop  = $stop;
@@ -182,11 +185,9 @@ foreach my $chromosome (@gff_files) {
   }
     
   close GFF;
-    
+
   $start{$i} = $stop{$i-1} + 1;
   $limit = $i;
-  
-  print "\n";
   
   # write report lines (redundant clones, butt-ends, gaps) to the log file
   foreach (@report) {
@@ -199,7 +200,8 @@ foreach my $chromosome (@gff_files) {
     $span2get = $start{$i+1} - $start{$i};
     
     if ($clone{$i} eq "gap") {
-      my $msg = sprintf "%3d %8s\t[%8d => %8d] [%8d] : Pad with %6d bp of '-'s}\n", $i, $clone{$i}, $start{$i}, $stop{$i}, $start{$i+1},$span2get;
+      my $msg = sprintf("%3d %8s\t[%8d => %8d] [%8d] : Pad with %6d bp of '-'s}\n", 
+                        $i, $clone{$i}, $start{$i}, $stop{$i}, $start{$i+1},$span2get);
       $log->write_to($msg);
 
       $unique_stop = $start{$i} + $span2get -1;
@@ -213,6 +215,14 @@ foreach my $chromosome (@gff_files) {
     }
   }
   close OUT;
+
+  if (@version_mismatches) {
+    $log->write_to("WARNING: For the following clones, the sequence version differed between EMBL and Acedb\n");
+    $log->write_to("This is probably due to EMBL-lag, but should probably check it out to be safe\n");
+    foreach my $vmm (@version_mismatches) {
+      $log->write_to(sprintf("  %s - %s - Acedb=%d  EMBL=%d\n", $vmm->{clone}, $vmm->{acc}, $vmm->{gffver}, $vmm->{fetchver}));
+    }
+  }
 
   # copy agp file to correct directory
   # copy command returns 0 for failed
@@ -234,7 +244,6 @@ foreach my $chromosome (@gff_files) {
 }
 
 $log->mail();
-print "Finished.\n" if ($verbose);
 exit(0);
 
 
