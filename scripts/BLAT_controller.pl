@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl5.8.0 -w
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2011-05-09 14:27:28 $
+# Last edited by: $Author: klh $
+# Last edited on: $Date: 2011-11-08 10:26:52 $
 
 
 use lib $ENV{'CVS_DIR'};
@@ -200,7 +200,7 @@ if ( $run ) {
 
   $lsf->wait_all_children( history => 1 );
 
-  $log->write_to("All transcriptmasker runs have completed!\n");
+  $log->write_to("All BLAT runs have completed!\n");
   for my $job ( $lsf->jobs ) {    # much quicker if history is pre-cached
     $log->error("$job exited non zero\n") if $job->history->exit_status != 0;
   }
@@ -458,7 +458,6 @@ sub check_and_shatter {
   my $file = shift;
   
   unless( -e "$dir/$file" ) {
-    $log->write_to("$dir/$file doesnt exist - hopefully already shattered for other species\n");
     my @shatteredfiles = glob("$dir/$file*");
     if(scalar @shatteredfiles == 0){
       $log->log_and_die("shattered files also missing - not good");
