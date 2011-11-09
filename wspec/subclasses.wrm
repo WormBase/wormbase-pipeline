@@ -147,6 +147,38 @@ Filter "NBP_allele"
 // Gene subclasses
 
 // capture just genes that are live
+// Capture all genes from different species
+
+Class Genes_elegans
+Visible
+Is_a_subclass_of Gene
+Filter "Species = Caenorhabditis*elegans"
+
+Class Genes_briggsae
+Visible
+Is_a_subclass_of Gene
+Filter "Species = Caenorhabditis*briggsae"
+
+Class Genes_brenneri
+Visible
+Is_a_subclass_of Gene
+Filter "Species = Caenorhabditis*brenneri"
+
+Class Genes_japonica
+Visible
+Is_a_subclass_of Gene
+Filter "Species = Caenorhabditis*japonica"
+
+Class Genes_remanei
+Visible
+Is_a_subclass_of Gene
+Filter "Species = Caenorhabditis*remanei"
+
+Class Genes_Pristionchus
+Visible
+Is_a_subclass_of Gene
+Filter "Species = Pristionchus*"
+
 Class Live_genes
 Visible
 Is_a_subclass_of Gene
