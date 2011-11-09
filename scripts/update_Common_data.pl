@@ -5,7 +5,7 @@
 # by Anthony Rogers et al
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2011-09-23 16:15:27 $
+# Last updated on: $Date: 2011-11-09 12:13:24 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -41,6 +41,7 @@ my $cds2protein_id;    # Hash: %cds2protein_id      Key: CDS name               
                        # Hash: %protein_id2cds      Key: Protein_ID                        Value: CDS name
 my $cds2cgc;           # Hash: %cds2cgc             Key: CDS name                          Value: CGC name
 my $rna2cgc;           # Hash: %rna2cgc             Key: transcript name                   Value: CGC name
+my $pseudo2cgc;        # Hash: %pseudo2cgc          Key: Pseudogene name                   Value: CGC name
 my $cds2status;        # Hash: %cds2status          Key: CDS name                          Value: Prediction status 
 my $clone2seq;         # Hash: %clone2seq           Key: Genomic_canonical                 Value: DNA sequence (lower case)
 my $clone2sv;          # Hash: %clone2sv            Key: Genomic_canonical                 Value: Sequence version (integer)
@@ -82,6 +83,7 @@ GetOptions (
             "clone2dbid"         => \$clone2dbid,
 	    "cds2cgc"            => \$cds2cgc,
 	    "rna2cgc"            => \$rna2cgc,
+	    "pseudo2cgc"         => \$pseudo2cgc,
 	    "species:s"		 => \$species,
 	    "verbose"            => \$verbose,
 	   );
@@ -112,6 +114,7 @@ my %Table_defs = (
 		  'cds2status'       => 'CommonData:CDS_Status.def',
                   'cds2cgc'          => 'CommonData:CDS_CGCname.def',
 		  'rna2cgc'          => 'CommonData:RNA_CGCname.def',
+		  'pseudo2cgc'       => 'CommonData:Pseudogene_CGCname.def',
 		  'est2feature'      => 'CommonData:EST_Feature.def',
 		  'estdata'          => 'CommonData:EST_data.def',
 		  'cds2lab'          => 'CommonData:CDS_Lab.def',
@@ -147,7 +150,7 @@ if ($all) {
   my @all_args = qw( clone2acc clone2size cds2wormpep cds2pid
 	    cds2status clone2seq clone2sv clone2centre genes2lab
 	    worm_gene2cgc worm_gene2geneID worm_gene2class est
-	    est2feature gene_id clone2type cds2cgc rna2cgc clone2dbid);
+	    est2feature gene_id clone2type cds2cgc rna2cgc pseudo2cgc clone2dbid);
 
   $wormbase->checkLSF;
   my $lsf = LSF::JobManager->new();
@@ -193,6 +196,7 @@ if ($all) {
   &write_cds2status       if ($cds2status);
   &write_cds2cgc          if ($cds2cgc);
   &write_rna2cgc          if ($rna2cgc);
+  &write_pseudo2cgc       if ($pseudo2cgc);
   &write_clones2seq       if ($clone2seq);
   &write_clones2sv        if ($clone2sv);
   &write_clone2type       if ($clone2type);
@@ -252,8 +256,8 @@ sub write_cds2protein_id {
   
   # now dump data to file
   
-  open (G2P, ">$data_dir/cds2protein_id.dat") or die "cant write $data_dir/cds2protein_id.dat :$!";
-  open (P2G, ">$data_dir/protein_id2cds.dat") or die "cant write $data_dir/protein_id2cds.dat :$! ";
+  open (G2P, ">$data_dir/cds2protein_id.dat") or $log->log_and_die("cant write $data_dir/cds2protein_id.dat :$!");
+  open (P2G, ">$data_dir/protein_id2cds.dat") or $log->log_and_die("cant write $data_dir/protein_id2cds.dat :$! ");
   
   print G2P Data::Dumper->Dump([\%cds2protein_id]);
   print P2G Data::Dumper->Dump([\%protein_id2cds]);
@@ -291,8 +295,8 @@ sub write_clone2accession  {
   
   # now dump data to file
   
-  open (C2A, ">$data_dir/clone2accession.dat") or die "cant write $data_dir/clone2accession.dat :$!";
-  open (A2C, ">$data_dir/accession2clone.dat") or die "cant write $data_dir/accession2clone.dat :$! ";
+  open (C2A, ">$data_dir/clone2accession.dat") or $log->log_and_die("cant write $data_dir/clone2accession.dat :$!");
+  open (A2C, ">$data_dir/accession2clone.dat") or $log->log_and_die( "cant write $data_dir/accession2clone.dat :$! ");
   
   print C2A Data::Dumper->Dump([\%clone2accession]);
   print A2C Data::Dumper->Dump([\%accession2clone]);
@@ -327,7 +331,7 @@ sub write_clone2centre{
   
   # now dump data to file
   
-  open (C2c, ">$data_dir/clone2centre.dat") or die "cant write $data_dir/clone2centre.dat :$!";
+  open (C2c, ">$data_dir/clone2centre.dat") or $log->log_and_die("cant write $data_dir/clone2centre.dat :$!");
   print C2c Data::Dumper->Dump([\%clone2centre]);
   close C2c;
   
@@ -357,7 +361,7 @@ sub write_clones2sv  {
 	
     # now dump data to file
 
-    open (C2SV, ">$data_dir/clone2sv.dat") or die "cant write $data_dir/clone2sv.dat :$!";
+    open (C2SV, ">$data_dir/clone2sv.dat") or $log->log_and_die("cant write $data_dir/clone2sv.dat :$!");
     
     print C2SV Data::Dumper->Dump([\%clone2sv]);
     
@@ -388,7 +392,7 @@ sub write_clone2type  {
 	
     # now dump data to file
 
-    open (C2TYPE, ">$data_dir/clone2type.dat") or die "cant write $data_dir/clone2type.dat :$!";
+    open (C2TYPE, ">$data_dir/clone2type.dat") or $log->log_and_die("cant write $data_dir/clone2type.dat :$!");
     
     print C2TYPE Data::Dumper->Dump([\%clone2type]);
     
@@ -426,7 +430,7 @@ sub write_clonesize  {
 
   # now dump data to file
 
-  open (CLONESIZE, ">$data_dir/clonesize.dat") or die "cant write $data_dir/clonesize.dat :$!";
+  open (CLONESIZE, ">$data_dir/clonesize.dat") or $log->log_and_die("cant write $data_dir/clonesize.dat :$!");
   
   print CLONESIZE Data::Dumper->Dump([\%clonesize]);
 
@@ -472,8 +476,8 @@ sub write_cds2wormpep  {
   unlink $fname;
 
   #now dump data to file
-  open (C2G, ">$data_dir/wormpep2cds.dat") or die "$data_dir/wormpep2cds.dat";
-  open (G2C, ">$data_dir/cds2wormpep.dat") or die "$data_dir/cds2wormpep.dat";
+  open (C2G, ">$data_dir/wormpep2cds.dat") or $log->log_and_die("$data_dir/wormpep2cds.dat");
+  open (G2C, ">$data_dir/cds2wormpep.dat") or $log->log_and_die("$data_dir/cds2wormpep.dat");
 
   print C2G Data::Dumper->Dump([\%wormpep2cds]);
   print G2C Data::Dumper->Dump([\%cds2wormpep]);
@@ -516,7 +520,7 @@ sub write_cds2status  {
     
     # now dump data to file
 
-    open (CDS, ">$data_dir/cds2status.dat") or die "Can't open file: $data_dir/cds2status.dat";
+    open (CDS, ">$data_dir/cds2status.dat") or $log->log_and_die("Can't open file: $data_dir/cds2status.dat");
     print CDS Data::Dumper->Dump([\%cds2status]);
     close CDS;
 }
@@ -545,7 +549,7 @@ sub write_cds2cgc {
   }
 
   # now dump data to file
-  open (cds2cgc, ">$data_dir/cds2cgc.dat") or die "$data_dir/cds2cgc.dat";
+  open (cds2cgc, ">$data_dir/cds2cgc.dat") or $log->log_and_die("$data_dir/cds2cgc.dat");
 
   print cds2cgc Data::Dumper->Dump([\%cds2cgc]);
   
@@ -575,12 +579,42 @@ sub write_rna2cgc {
   }
 
   # now dump data to file
-  open (rna2cgc, ">$data_dir/rna2cgc.dat") or die "$data_dir/rna2cgc.dat";
+  open (rna2cgc, ">$data_dir/rna2cgc.dat") or $log->log_and_die("$data_dir/rna2cgc.dat");
 
   print rna2cgc Data::Dumper->Dump([\%rna2cgc]);
   
   close rna2cgc;
+}
+
+########################################################################################################
+
+sub write_pseudo2cgc {
+  $log->write_to("Updating pseudo2cgc\n");
+
+  # connect to AceDB using TableMaker,
+  my $command="Table-maker -p $wquery_dir/$Table_defs{'pseudo2cgc'}\nquit\n";
+  
+  open (TACE, "echo '$command' | $tace $ace_dir |");
+  my %pseudo2cgc;
+
+  while (<TACE>) {
+      chomp;
+      s/\"//g;
+      next if ($_ eq "");
+      next if (/acedb\>/);
+
+      if (/^\S+\s+(\S+)\s+(\S+)/) {
+	  $pseudo2cgc{$2} = $1;
+      }
   }
+
+  # now dump data to file
+  open (ps2cgc, ">$data_dir/pseudo2cgc.dat") or $log->log_and_die("$data_dir/pseudo2cgc.dat");
+
+  print ps2cgc Data::Dumper->Dump([\%pseudo2cgc]);
+  
+  close ps2cgc;
+}
 
 
 ########################################################################################################
@@ -610,7 +644,7 @@ sub write_Feature  {
   
   # now dump data to file
 
-  open (CDS, ">$data_dir/est2feature.dat") or die "Can't open file: $data_dir/est2feature.dat";
+  open (CDS, ">$data_dir/est2feature.dat") or $log->log_and_die("Can't open file: $data_dir/est2feature.dat");
   print CDS Data::Dumper->Dump([\%est2feature]);
   close CDS;
 }
@@ -647,11 +681,11 @@ sub write_EST  {
   close TACE;
   
   # now dump data to file
-  open (EST, ">$data_dir/NDBaccession2est.dat") or die "Can't open file: $data_dir/NDBaccession2est.dat";
+  open (EST, ">$data_dir/NDBaccession2est.dat") or $log->log_and_die("Can't open file: $data_dir/NDBaccession2est.dat");
   print EST Data::Dumper->Dump([\%NDBaccession2est]);
   close EST;
 
-  open (ESTorient, ">$data_dir/estorientation.dat") or die "Can't open file: $data_dir/estorientation.dat";
+  open (ESTorient, ">$data_dir/estorientation.dat") or $log->log_and_die("Can't open file: $data_dir/estorientation.dat");
   print ESTorient Data::Dumper->Dump([\%estorientation]);
   close ESTorient;
 
@@ -791,7 +825,7 @@ sub write_clones2seq  {
     }
 
     #now dump data to file for this species
-    open (CDS, ">$data_dir/clone2sequence_$clone2seq.dat") or die "Can't open file: $data_dir/clone2sequence_$clone2seq.dat";
+    open (CDS, ">$data_dir/clone2sequence_$clone2seq.dat") or $log->log_and_die("Can't open file: $data_dir/clone2sequence_$clone2seq.dat");
     print CDS Data::Dumper->Dump([\%clone2seq]);
     close CDS;
   }
@@ -828,7 +862,7 @@ sub write_genes2lab  {
 
 
   #now dump data to file
-  open (GENES2LAB, ">$data_dir/worm_gene2lab.dat") or die "Can't open file: $data_dir/worm_gene2lab.dat";
+  open (GENES2LAB, ">$data_dir/worm_gene2lab.dat") or $log->log_and_die("Can't open file: $data_dir/worm_gene2lab.dat");
   print GENES2LAB Data::Dumper->Dump([\%genes2lab]);
   close GENES2LAB;
 }
@@ -877,12 +911,12 @@ sub write_worm_gene2cgc  {
   
   # now dump data to file
 
-  open (CGC, ">$data_dir/worm_gene2cgc_name.dat") or die "Can't open file: $data_dir/worm_gene2cgc_name.dat";
+  open (CGC, ">$data_dir/worm_gene2cgc_name.dat") or $log->log_and_die("Can't open file: $data_dir/worm_gene2cgc_name.dat");
   print CGC Data::Dumper->Dump([\%worm_gene2cgc]);
   close CGC;
 
   #now dump data to file
-  open (CGC, ">$data_dir/cgc_name2gene.dat") or die "Can't open file: $data_dir/cgc_name2gene.dat";
+  open (CGC, ">$data_dir/cgc_name2gene.dat") or $log->log_and_die("Can't open file: $data_dir/cgc_name2gene.dat");
   print CGC Data::Dumper->Dump([\%cgc_name2gene]);
   close CGC;
 
@@ -924,7 +958,7 @@ sub write_worm_gene2geneID  {
   
   # now dump data to file
 
-  open (OUT, ">$data_dir/worm_gene2geneID_name.dat") or die "Can't open file: $data_dir/worm_gene2geneID_name.dat";
+  open (OUT, ">$data_dir/worm_gene2geneID_name.dat") or $log->log_and_die("Can't open file: $data_dir/worm_gene2geneID_name.dat");
   print OUT Data::Dumper->Dump([\%worm_gene2geneID]);
   close OUT;
 
@@ -937,7 +971,8 @@ sub write_Gene_id{
   my %gene2CDS;
   
   my $query = "select CDS, CDS->Gene from CDS in class CDS where CDS->method = \"curated\"";
-  open (TACE, "echo 'select CDS, CDS->Gene from CDS in class CDS where CDS->method = \"curated\"' | $tace $ace_dir |") or die "cant open tace connection :Gene_id\t$!\n";
+  open (TACE, "echo 'select CDS, CDS->Gene from CDS in class CDS where CDS->method = \"curated\"' | $tace $ace_dir |") 
+      or $log->log_and_die("cant open tace connection :Gene_id\t$!\n");
   while( <TACE> ) {
     next if ($_ eq "");
     next if (/acedb\>/);
@@ -956,8 +991,8 @@ sub write_Gene_id{
   
   # now dump data to file
 
-  open (C2G, ">$data_dir/cds2wbgene_id.dat") or die "cant write $data_dir/cds2wbgene_id.dat :$!";
-  open (G2C, ">$data_dir/wbgene_id2cds.dat") or die "cant write $data_dir/wbgene_id2cds.dat :$! ";
+  open (C2G, ">$data_dir/cds2wbgene_id.dat") or $log->log_and_die("cant write $data_dir/cds2wbgene_id.dat :$!");
+  open (G2C, ">$data_dir/wbgene_id2cds.dat") or $log->log_and_die("cant write $data_dir/wbgene_id2cds.dat :$! ");
   
   print C2G Data::Dumper->Dump([\%CDS2gene]);
   print G2C Data::Dumper->Dump([\%gene2CDS]);
@@ -998,7 +1033,7 @@ sub write_worm_gene2class  {
 
   # now dump data to file
 
-  open (DAT, ">$data_dir/worm_gene2class.dat") or die "Can't open file: $data_dir/worm_gene2class.dat";
+  open (DAT, ">$data_dir/worm_gene2class.dat") or $log->log_and_die("Can't open file: $data_dir/worm_gene2class.dat");
   print DAT Data::Dumper->Dump([\%worm_gene2class]);
   close DAT;
 
@@ -1030,7 +1065,7 @@ sub write_clone2dbid {
   # now dump data to file
   my $datafile = "$data_dir/clone2dbid.dat";
 
-  open (my $c2dbid, ">$datafile") or die "Cant write $datafile $!\n";
+  open (my $c2dbid, ">$datafile") or $log->log_and_die("Cant write $datafile $!\n");
   print $c2dbid Data::Dumper->Dump([\%clone2dbid]);
   close($c2dbid);
 }
