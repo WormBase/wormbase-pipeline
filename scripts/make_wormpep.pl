@@ -7,7 +7,7 @@
 # Builds a wormpep data set from the current autoace database
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2011-08-11 10:21:38 $
+# Last updated on: $Date: 2011-11-10 13:54:05 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -127,7 +127,6 @@ if ($initial) {
 }
 elsif( $final ) {
   $pid=$pepfile=$table=1 if $all;
-  &get_embl_data		if ($pid and ($wormbase->species eq 'elegans'));
   &write_final_pep 	if $pepfile;
   &write_table 		if $table; #normally run within final pepfile
 }
