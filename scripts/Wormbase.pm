@@ -17,7 +17,7 @@ use Digest::MD5 qw(md5_hex);
 use Species;
 
 our @core_organisms=qw(Elegans Briggsae Remanei Brenneri Japonica Pristionchus);
-our @tier3_organisms=qw(Brugia Mhapla Mincognita Heterorhabditis Hcontortus Cangaria Tspiralis Sratti Csp7 Csp9 Csp11 Asuum);
+our @tier3_organisms=qw(Brugia Mhapla Mincognita Heterorhabditis Hcontortus Cangaria Tspiralis Sratti Csp7 Csp9 Csp11 Asuum Bxylophilus);
 our @allowed_organisms=(@core_organisms, @tier3_organisms); #class data
 
 sub initialize {

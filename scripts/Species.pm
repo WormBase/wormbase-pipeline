@@ -565,6 +565,38 @@ sub pepdir_prefix{'csp11'};
 sub ncbi_tax_id {'886184'};
 sub assembly_type {'contig'};
 ######################################################
+package Bxylophilus;
+use Carp;
+our @ISA = qw(Wormbase Species);
+
+sub _new {	
+    my $class = shift;
+    my %param = %{ shift(@_) };
+
+    my $self = $class->initialize( $class->flatten_params( \%param ) );
+
+    # add stuff post object creation goes here
+
+    bless $self, $class;
+}
+sub full_name {
+	my $self = shift;
+	my %param = @_ ;
+	if($param{'-short'}){
+		return 'B. xylophilus';
+	}	elsif($param{'-g_species'}){
+		return 'b_xylophilus';
+	}
+	else { return'Bursaphelenchus xylophilus'
+	};
+}
+sub chromosome_prefix {'contig'}
+sub pep_prefix {'BXY'}
+sub pepdir_prefix{'bxylophilus'};
+sub ncbi_tax_id {'6326'};
+sub assembly_type {'contig'};
+
+######################################################
 
 package Mhapla;
 use Carp;
