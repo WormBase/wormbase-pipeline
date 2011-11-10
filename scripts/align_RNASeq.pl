@@ -58,7 +58,7 @@
 # by Gary Williams
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2011-11-04 12:04:37 $
+# Last updated on: $Date: 2011-11-10 10:17:42 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -83,7 +83,7 @@ use GDBM_File; # for tied hash
 ##############################
 
 
-my ($test, $store, $debug, $species, $verbose, $expt, $noalign, $check, $solexa, $illumina, $database, $nogtf, $norawjuncs);
+my ($test, $store, $debug, $species, $verbose, $expt, $noalign, $check, $solexa, $illumina, $database, $nogtf, $norawjuncs, $tsl);
 GetOptions (
 	    "test"               => \$test,
 	    "store:s"            => \$store,
@@ -95,6 +95,7 @@ GetOptions (
 	    "check"              => \$check,    # in each experiment, check to see if tophat/cufflinks worked - if not repeat them
 	    "nogtf"              => \$nogtf,    # don't use the GTF file of existing gene models to create the predicted gene models
 	    "norawjuncs"         => \$norawjuncs,  # don't use the raw junctions file of splice hints (for example in a new brugia assembly)
+	    "tsl"                => \$tsl,      # look for reads with a trans-splice leader sequence
 	    "solexa"             => \$solexa,   # reads have solexa quality scores, not phred + 33 scores
 	    "expt:s"             => \$expt,     # do the alignment etc. for this experiment
 	    "illumina"           => \$illumina, # read have illumina GA-Pipeline 1.3 quality scores, not phred + 33 scores
@@ -195,29 +196,29 @@ if ($species eq 'elegans') {
 	     
 ## Andy Fraser's Lab 
 	     
-	     SRX007069   => ["RNASeq.Fraser.L4_larva", 'phred'], # N2, L4 larva
-	     SRX007170   => ["RNASeq.Fraser.adult", 'phred'], # N2, Young Adult
-	     SRX007171   => ["RNASeq.Fraser.smg-1_L4_larva", 'phred'], # smg-1, L4 larva
-	     SRX007172   => ["RNASeq.Fraser.smg-1_adult", 'phred'], # smg-1, Young Adult
-	     SRX007173   => ["RNASeq.Fraser.all_stages", 'phred'], # N2, all_stages, paired end reads
+	     SRX007069   => ["RNASeq_Fraser.L4_larva", 'phred'], # N2, L4 larva
+	     SRX007170   => ["RNASeq_Fraser.adult", 'phred'], # N2, Young Adult
+	     SRX007171   => ["RNASeq_Fraser.smg-1_L4_larva", 'phred'], # smg-1, L4 larva
+	     SRX007172   => ["RNASeq_Fraser.smg-1_adult", 'phred'], # smg-1, Young Adult
+	     SRX007173   => ["RNASeq_Fraser.all_stages", 'phred'], # N2, all_stages, paired end reads
 	     
 ## Andy Fire's Lab
 	     
-	     SRX028190   => ["RNASeq.Fire.all_stages_dsDNALigSeq", 'phred'], # GSM577107: N2_mixed-stage_dsDNALigSeq
-	     SRX028191   => ["RNASeq.Fire.all_stages_ssRNALigSeq", 'phred'], # GSM577108: N2_mixed-stage_ssRNALigSeq
-	     SRX028192   => ["RNASeq.Fire.fem-3_dsDNALigSeq", 'phred'],      # GSM577110: fem-3_dsDNALigSeq
-	     SRX028193   => ["RNASeq.Fire.fem-1_dsDNALigSeq", 'phred'],      # GSM577111: fem-1_dsDNALigSeq
-	     SRX028194   => ["RNASeq.Fire.him-8_dsDNALigSeq", 'phred'],      # GSM577112: him-8_dsDNALigSeq
-	     SRX028195   => ["RNASeq.Fire.him-8_ssRNALigSeq", 'phred'],      # GSM577113: him-8_ssRNALigSeq
-	     SRX028196   => ["RNASeq.Fire.rrf-3_him-8_ssRNALigSeq", 'phred'], # GSM577114: rrf-3_him-8_ssRNALigSeq
-	     SRX028197   => ["RNASeq.Fire.L1_larva_ssRNALigSeq", 'phred'],   # GSM577115: N2_L1_ssRNALigSeq
-	     SRX028198   => ["RNASeq.Fire.L2_larva_ssRNALigSeq", 'phred'],   # GSM577116: N2_L2_ssRNALigSeq
-	     SRX028199   => ["RNASeq.Fire.L3_larva_ssRNALigSeq", 'phred'],   # GSM577117: N2_L3_ssRNALigSeq
-	     SRX028200   => ["RNASeq.Fire.L4_larva_ssRNALigSeq", 'phred'],   # GSM577118: N2_L4_ssRNALigSeq
-	     SRX028201   => ["RNASeq.Fire.L1_larva_CircLigSeq", 'phred'],    # GSM577119: N2_L1_CircLigSeq
-	     SRX028202   => ["RNASeq.Fire.L2_larva_CircLigSeq", 'phred'],    # GSM577120: N2_L2_CircLigSeq
-	     SRX028203   => ["RNASeq.Fire.L3_larva_CircLigSeq", 'phred'],    # GSM577121: N2_L3_CircLigSeq
-	     SRX028204   => ["RNASeq.Fire.all_stages_polysomes", 'phred'],   # GSM577122: N2_mixed-stage_polysomes
+	     SRX028190   => ["RNASeq_Fire.all_stages_dsDNALigSeq", 'phred'], # GSM577107: N2_mixed-stage_dsDNALigSeq
+	     SRX028191   => ["RNASeq_Fire.all_stages_ssRNALigSeq", 'phred'], # GSM577108: N2_mixed-stage_ssRNALigSeq
+	     SRX028192   => ["RNASeq_Fire.fem-3_dsDNALigSeq", 'phred'],      # GSM577110: fem-3_dsDNALigSeq
+	     SRX028193   => ["RNASeq_Fire.fem-1_dsDNALigSeq", 'phred'],      # GSM577111: fem-1_dsDNALigSeq
+	     SRX028194   => ["RNASeq_Fire.him-8_dsDNALigSeq", 'phred'],      # GSM577112: him-8_dsDNALigSeq
+	     SRX028195   => ["RNASeq_Fire.him-8_ssRNALigSeq", 'phred'],      # GSM577113: him-8_ssRNALigSeq
+	     SRX028196   => ["RNASeq_Fire.rrf-3_him-8_ssRNALigSeq", 'phred'], # GSM577114: rrf-3_him-8_ssRNALigSeq
+	     SRX028197   => ["RNASeq_Fire.L1_larva_ssRNALigSeq", 'phred'],   # GSM577115: N2_L1_ssRNALigSeq
+	     SRX028198   => ["RNASeq_Fire.L2_larva_ssRNALigSeq", 'phred'],   # GSM577116: N2_L2_ssRNALigSeq
+	     SRX028199   => ["RNASeq_Fire.L3_larva_ssRNALigSeq", 'phred'],   # GSM577117: N2_L3_ssRNALigSeq
+	     SRX028200   => ["RNASeq_Fire.L4_larva_ssRNALigSeq", 'phred'],   # GSM577118: N2_L4_ssRNALigSeq
+	     SRX028201   => ["RNASeq_Fire.L1_larva_CircLigSeq", 'phred'],    # GSM577119: N2_L1_CircLigSeq
+	     SRX028202   => ["RNASeq_Fire.L2_larva_CircLigSeq", 'phred'],    # GSM577120: N2_L2_CircLigSeq
+	     SRX028203   => ["RNASeq_Fire.L3_larva_CircLigSeq", 'phred'],    # GSM577121: N2_L3_CircLigSeq
+	     SRX028204   => ["RNASeq_Fire.all_stages_polysomes", 'phred'],   # GSM577122: N2_mixed-stage_polysomes
 
 ## new entries 7 Oct 2011
 	    SRX017684 => ["RNASeq.Shin.L1_larva", 'phred'], # 454 sequencing http://www.biomedcentral.com/1741-7007/6/30
@@ -362,7 +363,7 @@ if (!$expt) {
       $wormbase->run_command("rm -rf tophat_out/", $log) unless ($noalign);
       $wormbase->run_command("rm -rf cufflinks/genes.fpkm_tracking", $log);
       $wormbase->run_command("rm -rf cufflinks/isoforms.fpkm_tracking", $log);
-      $wormbase->run_command("rm -rf TSL/TSL_evidence.ace", $log);
+      $wormbase->run_command("rm -rf TSL/TSL_evidence.ace", $log) if ($tsl);
       $wormbase->run_command("rm -rf Introns/Intron.ace", $log);
     }
 
@@ -463,7 +464,7 @@ if (!$expt) {
     if ($check) {
       if (-e "$RNASeqDir/$arg/tophat_out/accepted_hits.bam" &&
 	  -e "$RNASeqDir/$arg/cufflinks/genes.fpkm_tracking" &&
-	  -e "$RNASeqDir/$arg/TSL/TSL_evidence.ace" &&
+	  (-e "$RNASeqDir/$arg/TSL/TSL_evidence.ace" || !$tsl) &&
 	  -e "$RNASeqDir/$arg/Introns/Intron.ace") {next}
     }
 
@@ -471,7 +472,7 @@ if (!$expt) {
     if (($count % 15) == 14) {
       $log->write_to("Running alignments on: @args\n");
       print "Running alignments on: @args\n";
-      &run_align($check, $noalign, @args);
+      &run_align($check, $noalign, $tsl, @args);
       @args=();
       $count = 0;
     }
@@ -480,7 +481,7 @@ if (!$expt) {
   if (@args) {
     $log->write_to("Running alignments on: @args\n");
     print "Running alignments on: @args\n";
-    &run_align($check, $noalign, @args);
+    &run_align($check, $noalign, $tsl, @args);
   }
   
   ####################################################################################
@@ -514,7 +515,7 @@ if (!$expt) {
     $log->write_to("$SRX");
     if (-e "$SRX/tophat_out/accepted_hits.bam") {$log->write_to("\ttophat OK");} else {{$log->write_to("\ttophat ERROR");}}
     if (-e "$SRX/cufflinks/genes.fpkm_tracking") {$log->write_to("\tcufflinks OK");} else {$log->write_to("\tcufflinks ERROR");}
-    if (-e "$SRX/TSL/TSL_evidence.ace") {$log->write_to("\tTSL OK");} else {$log->write_to("\tTSL ERROR");}
+    if ($tsl) {if (-e "$SRX/TSL/TSL_evidence.ace") {$log->write_to("\tTSL OK");} else {$log->write_to("\tTSL ERROR");}}
     if (-e "$SRX/Introns/Intron.ace") {$log->write_to("\tIntrons OK");} else {$log->write_to("\tintron ERROR");}
     $log->write_to("\n");
 
@@ -664,7 +665,7 @@ if (!$expt) {
 
 } else { # we have a -expt parameter
   
-  &run_tophat($check, $noalign, $expt, $solexa, $illumina);
+  &run_tophat($check, $noalign, $tsl, $expt, $solexa, $illumina);
 }
 
 
@@ -682,13 +683,13 @@ exit(0);
 # and wait for the jobs to complete.  Check that the job worked.
 
 sub run_align {
-  my ($check, $noalign, @args) = @_;
+  my ($check, $noalign, $tsl, @args) = @_;
 
   foreach my $arg (@args) {
 
     # pull over the SRA files and unpack them to make a fastq file
     # the aspera commmand to pull across the files only works on the farm2-login head node
-    get_SRA_files($arg);
+    if (!$noalign || $tsl) {get_SRA_files($arg);}
 
     # "the normal queue can deal with memory requests of up to 15 Gb, but 14 Gb is better" - Peter Clapham, ISG
     my $err = "$scratch_dir/align_RNASeq.pl.lsf.${arg}.err";
@@ -703,6 +704,7 @@ sub run_align {
     if ($check) {$cmd .= " -check";}
     if ($noalign) {$cmd .= " -noalign";}
     if ($nogtf) {$cmd .= " -nogtf";}
+    if ($tsl) {$cmd .= " -tsl";}
     if ($database) {$cmd .= " -database $database";}
     if ($species) {$cmd .= " -species $species";}
     if ($norawjuncs) {$cmd .= " -norawjuncs";}
@@ -744,7 +746,7 @@ sub run_align {
 
 sub run_tophat {
   
-  my ($check, $noalign, $arg, $solexa, $illumina) = @_;
+  my ($check, $noalign, $tsl, $arg, $solexa, $illumina) = @_;
   
   chdir "$RNASeqDir/$arg";
   my $G_species = $wormbase->full_name('-g_species' => 1);
@@ -753,16 +755,18 @@ sub run_tophat {
   if ($solexa)   {$cmd_extra = "--solexa-quals"} 
   if ($illumina) {$cmd_extra = "--solexa1.3-quals"} 
 
-  # unpack any .lite.sra file to make the .fastq files
-  # now unpack the sra.lite files
-  $log->write_to("Unpack the $arg .lite.sra file to fastq files\n");
-  foreach my $dir (glob("$RNASeqDir/$arg/SRR/SRR*")) {
-    chdir $dir;
-    foreach my $srr (glob("*.lite.sra")) {
-      $log->write_to("Unpack $srr\n");
-      $status = $wormbase->run_command("/software/worm/sratoolkit/fastq-dump $srr", $log);
-      if ($status) {$log->log_and_die("Didn't unpack the fastq file successfully\n")}
-      $status = $wormbase->run_command("rm -f $srr", $log);
+  if (!$noalign || $tsl) {
+    # unpack any .lite.sra file to make the .fastq files
+    # now unpack the sra.lite files
+    $log->write_to("Unpack the $arg .lite.sra file to fastq files\n");
+    foreach my $dir (glob("$RNASeqDir/$arg/SRR/SRR*")) {
+      chdir $dir;
+      foreach my $srr (glob("*.lite.sra")) {
+	$log->write_to("Unpack $srr\n");
+	$status = $wormbase->run_command("/software/worm/sratoolkit/fastq-dump $srr", $log);
+	if ($status) {$log->log_and_die("Didn't unpack the fastq file successfully\n")}
+	$status = $wormbase->run_command("rm -f $srr", $log);
+      }
     }
   }
 
@@ -843,22 +847,19 @@ sub run_tophat {
 #############################################################
 
 # now run TSL stuff
-  if (!$check || !-e "TSL/TSL_evidence.ace") {
-    $log->write_to("run TSL\n");
-    chdir "$RNASeqDir/$arg";
-    mkdir "TSL", 0777;
-    my $analysis = $expts{$arg}[0];
-    $status = &TSL_stuff($cmd_extra, $analysis);
-
-    if ($status != 0) {  $log->log_and_die("Didn't run the TSL stuff successfully\n"); }
-  } else {
-    $log->write_to("Check TSL/TSL_evidence.ace: already done\n");
+  if ($tsl) {
+    if (!$check || !-e "TSL/TSL_evidence.ace") {
+      $log->write_to("run TSL\n");
+      chdir "$RNASeqDir/$arg";
+      mkdir "TSL", 0777;
+      my $analysis = $expts{$arg}[0];
+      $status = &TSL_stuff($cmd_extra, $analysis);
+      
+      if ($status != 0) {  $log->log_and_die("Didn't run the TSL stuff successfully\n"); }
+    } else {
+      $log->write_to("Check TSL/TSL_evidence.ace: already done\n");
+    }
   }
-
-
-
-
-
 }
 
 #################################################################################################################
@@ -1250,12 +1251,12 @@ sub match_tsl {
 
   my ($seq, $sense, $SL_hashref)=@_;
 
-  # searches for n-mers of the TLS (max 18, not 23 so that we have a decent 16 bases left to search with)
+  # searches for n-mers of the TSL (max 18, not 23 so that we have a decent 16 bases left to search with)
   # min 8 so that we are fairly confident that we have a TSL
   if ($sense eq '+') {
     for (my $i=18; $i>8; $i--) {
       
-      # loops through the TLS sequences 
+      # loops through the TSL sequences 
       foreach my $slname (keys %{$SL_hashref}){
 	
 	#next if $i > length $SL_hashref->{$slname};
