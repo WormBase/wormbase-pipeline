@@ -2,7 +2,7 @@
 #
 
 # Last updated by: $Author: klh $                      
-# Last updated on: $Date: 2011-11-10 13:31:03 $        
+# Last updated on: $Date: 2011-11-10 15:05:20 $        
 
 use strict;
 use Getopt::Long;
@@ -158,11 +158,6 @@ close($collatedfh)
     or $log->log_and_die("Could not successfully complete the collation of .embl files for submission\n");
 close($submitlogfh)
     or $log->log_and_die("Could not successfully close submit log file $submit_log_file\n");
-
-
-system("gzip $collated_file")
-    and $log->log_and_die("Failed to gzip collated submissions file\n");
-$collated_file .= ".gz";
 
 ##################################
 # Deposit the data on the FTP site
