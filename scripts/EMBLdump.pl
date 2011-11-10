@@ -2,7 +2,7 @@
 #
 # EMBLdump.pl :  makes modified EMBL dumps from camace.
 # 
-#  Last updated on: $Date: 2011-11-09 13:49:14 $
+#  Last updated on: $Date: 2011-11-10 09:13:16 $
 #  Last updated by: $Author: klh $
 
 use strict;
@@ -1129,7 +1129,7 @@ sub stage_dump_to_submissions_repository {
 
   my $modified_count = 0;
 
-  open(my $gitcmd, "git --git-dir=$submit_repo/.git ls-files -m |")
+  open(my $gitcmd, "cd $submit_repo && git ls-files -m |")
       or $log->write_to("Warning: could not run git command to get list of locally modified files\n");
   while(<$gitcmd>) {
     /^(\S+)/ and do {
