@@ -361,74 +361,73 @@ sub release_composition
 #  Wormpep                                                                       #
 ##################################################################################
 
-sub release_wormpep		#($number_cds $number_total $number_alternate )
-  {  
-    my $self = shift;
-    my ($number_cds, $number_total, $number_alternate) = @_;
-    my $ver = $self->get_wormbase_version;
-    my $old_ver = $ver -1;
+sub release_wormpep {		
+  #($number_cds $number_total $number_alternate )
+  my $self = shift;
+  my ($number_cds, $number_total, $number_alternate) = @_;
+  my $ver = $self->get_wormbase_version;
+  my $old_ver = $ver -1;
+  
+  #extract data from new wormpep files
+  my $wormpep = $self->wormpep;
+  my $lost     = `grep -c 'lost' $wormpep/wormpep.diff$ver`;
+  my $new      = `grep -c 'new' $wormpep/wormpep.diff$ver`;
+  my $changed  = `grep -c 'changed' $wormpep/wormpep.diff$ver`;
+  my $appeared = `grep -c 'appear' $wormpep/wormpep.diff$ver`;
 
-    #extract data from new wormpep files
-    my $wormpep = $self->wormpep;
-    my $lost     = `grep -c 'lost' $wormpep/wormpep.diff$ver`;
-    my $new      = `grep -c 'new' $wormpep/wormpep.diff$ver`;
-    my $changed  = `grep -c 'changed' $wormpep/wormpep.diff$ver`;
-    my $appeared = `grep -c 'appear' $wormpep/wormpep.diff$ver`;
-    my $entries  = `cat $wormpep/wormpep.diff$ver | wc -l`;
-    my $net      = $new + $appeared - $lost;
-    my $codingDNA;
-
-    #get no of coding bases from log file
-    open( THIS_LOG, "$wormpep/wormpep_current.log" );
-    while (<THIS_LOG>) {
-      if ( $_ =~ /No\. of sequences \(letters\) written:\s+\d+\,\d+\s+\((.*)\)/ ) {
-	$codingDNA = $1;
-      }
-    }
-
-    #write new letter
-    my $wormpepFile = $self->reports."/wormpep";
-    open( LETTER, ">$wormpepFile" ) || die "cant open $wormpepFile\n";
-
-    print LETTER "\n\nWormpep data set:\n----------------------------\n";
-    print LETTER "\nThere are $number_total CDSs, from $number_cds protein-coding genes\n";
-    print LETTER "\nThe $number_total sequences contain $codingDNA base pairs in total.\n\n";
-    print LETTER "Modified entries      $changed";
-    print LETTER "Deleted entries       $lost";
-    print LETTER "New entries           $new";
-    print LETTER "Reappeared entries    $appeared\n";
-    printf LETTER "Net change  %+d", $net;
-
-    #get the number of CDS's in the previous build
-    open( OLD_LOG, $self->basedir."/WORMPEP/wormpep$old_ver/wormpep_current.log" );
-    my $oldCDS;
-    while (<OLD_LOG>) {
-      if ( $_ =~ /No\. of sequences \(letters\) written:\s+(\d+\,\d+)\s+\(.*\)/ ) {
-	$oldCDS = $1;
-	$oldCDS =~ s/,//g;
-      }
-    }
-    close OLD_LOG;
-
-    #check
-    my $mail;
-    if ( $lost + $new + $changed + $appeared != $entries ) {
-      print LETTER "cat of wormpep.diff$ver does not add up to the changes (from $0)";
-    }
-    if ( $oldCDS + $net != $number_total ) {
-      my $thediff = $number_total - $oldCDS;
-      print LETTER
-	"\nThe difference ($thediff) between the total CDS's of this ($number_total) and the last build ($oldCDS) does not equal the net change $net\nPlease investigate! ! \n";
-    }
-
-    close LETTER;
-
-    my $name       = "Wormpep release stats";
-    my $maintainer = $self->debug ? $self->debug : "All";
-    $self->mail_maintainer( $name, $maintainer, $wormpepFile );
-
-    return 1;
+  my $entries  = `cat $wormpep/wormpep.diff$ver | wc -l`;
+  my $net      = $new + $appeared - $lost;
+  my $codingDNA;
+  
+  #get no of coding bases 
+  open( DNA, "$wormpep/wormpep.dna$ver" );
+  while (<DNA>) {
+    /^\>/ and next;
+    /^(\S+)/ and $codingDNA += length($1);
   }
+
+  
+  #write new letter
+  my $wormpepFile = $self->reports."/wormpep";
+  open( LETTER, ">$wormpepFile" ) || die "cant open $wormpepFile\n";
+  
+  print LETTER "\n\nWormpep data set:\n----------------------------\n";
+  print LETTER "\nThere are $number_total CDSs, from $number_cds protein-coding genes\n";
+  print LETTER "\nThe $number_total sequences contain $codingDNA base pairs in total.\n\n";
+  print LETTER "Modified entries      $changed";
+  print LETTER "Deleted entries       $lost";
+  print LETTER "New entries           $new";
+  print LETTER "Reappeared entries    $appeared\n";
+  printf LETTER "Net change  %+d", $net;
+  
+  #get the number of CDS's in the previous build
+  my $oldCDS = 0;
+  open( OLD_PEP, $self->basedir."/WORMPEP/wormpep$old_ver/wormpep${old_ver}.pep" );
+  while (<OLD_PEP>) {
+    if (/^\>/) {
+      $oldCDS++;
+    }
+  }
+  close OLD_PEP;
+  
+  #check
+  my $mail;
+  if ( $lost + $new + $changed + $appeared != $entries ) {
+    print LETTER "cat of wormpep.diff$ver does not add up to the changes (from $0)";
+  }
+  if ( $oldCDS + $net != $number_total ) {
+    my $thediff = $number_total - $oldCDS;
+    print LETTER
+	"\nThe difference ($thediff) between the total CDS's of this ($number_total) and the last build ($oldCDS) does not equal the net change $net\nPlease investigate! ! \n";
+  }
+  close LETTER;
+  
+  my $name       = "Wormpep release stats";
+  my $maintainer = $self->debug ? $self->debug : "All";
+  $self->mail_maintainer( $name, $maintainer, $wormpepFile );
+  
+  return 1;
+}
 
 #end of release letter generating subs
 #############################################
