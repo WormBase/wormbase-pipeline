@@ -58,7 +58,7 @@
 # by Gary Williams
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2011-11-10 10:17:42 $
+# Last updated on: $Date: 2011-11-15 10:44:04 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -252,7 +252,7 @@ if ($species eq 'elegans') {
 	    SRX085217 => ["RNASeq_Hillier.gastrulating_embryo", 'phred'], # 76 bp reads. paired-end. EE_50-120
 	    SRX085218 => ["RNASeq_Hillier.gastrulating_embryo_Replicate2", 'phred'], # 100 bp reads. paired-end. EE_50-120
 	    SRX085219 => ["RNASeq_Hillier.4-cell_embryo", 'phred'], # Illumina sequencing of C. elegans N2 hand-picked 4 cell embryos DSN-Negative, total RNA.
-	    SRX085220 => ["RNASeq_Hillier.gastrulating_embryo_Replicate3", 'phred'], # 100 bp reads. paired-end. EE_50-120
+# get "terminate called after throwing an instance of 'std::bad_alloc'" in cufflinks with this one	    SRX085220 => ["RNASeq_Hillier.gastrulating_embryo_Replicate3", 'phred'], # 100 bp reads. paired-end. EE_50-120
 
 	    SRX085286 => ["RNASeq_Hillier.Pharyngeal_muscle_late_embryo", 'phred'], # 100 bp reads. paired-end. Pharyngeal muscle total RNA, late embryo. 
 	    SRX085287 => ["RNASeq_Hillier.Pharyngeal_muscle_late_embryo_Replicate2", 'phred'], # 76 bp reads. paired-end. Pharyngeal muscle total RNA, late embryo.
@@ -549,7 +549,7 @@ if (!$expt) {
 	  # and print to the Gene model ace file
 	  if (defined $life_stage) {
 	    print EXPRACE "\nGene : \"$f[0]\"\n";
-	    print EXPRACE "RNASeq_FPKM  $life_stage  \"$f[10]\"  From_analysis \"$analysis\"\n";
+	    print EXPRACE "RNASeq_FPKM  \"$life_stage\"  \"$f[10]\"  From_analysis \"$analysis\"\n";
 	  }
 	}
       }
