@@ -6,7 +6,7 @@
 # builds wormbase & wormpep FTP sites
 # 
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2011-10-31 12:27:21 $
+# Last updated on: $Date: 2011-11-15 14:50:03 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -158,10 +158,6 @@ map { $only_species{$_} = 1 } @only_species;
 #($clustal=$release=$dump_ko=$dna=$gff=$supplementary=$rna=$misc=$wormpep=$genes=$cDNA=$geneIDs=$pcr=$homols=$manifest=$ont = 1 ) if ($all);
 # remove supplementary from above list, now off by default
 ($compara=$release=$dna=$gff=$rna=$misc=$wormpep=$genes=$cDNA=$ests=$geneIDs=$pcr=$homols=$manifest=$ont=$blastx=$dump_ko=$gbrowse_gff=$md5=1 ) if ($all);
-
-my $wormpep_ftp_root = ($testout) 
-    ? "$testout/databases/wormpep"
-    : "/nfs/disk69/ftp/pub/databases/wormpep";
 
 my $WS              = $wormbase->get_wormbase_version();      # e.g.   132
 my $WS_name         = $wormbase->get_wormbase_version_name(); # e.g. WS132
@@ -837,32 +833,6 @@ sub copy_wormpep_files {
     } else {
       $log->error("Could not find transcript file for $gspecies ($source_cdnafile)\n");
     }
-
-
-    if ($WS == $rel_last_built) {
-      my $sourcedir =$wb->wormpep;
-      my $targetdir = "$wormpep_ftp_root/${peppre}pep$WS";
-
-      mkpath($targetdir,1,0775);
-
-      foreach my $wpf ($wb->wormpep_files) {
-        $wormbase->run_command("cp -f $sourcedir/$wpf${WS} $targetdir/", $log);
-      }
-
-      $wormbase->run_command("chgrp -R worm $targetdir", $log);
-
-      # Uniprot require symlinks to "wormpep" and "brigpep"
-      if ($species eq 'elegans' or $species eq 'briggsae') {
-        my $link_source = "${peppre}pep${WS}/${peppre}pep${WS}";
-        my $link_target = "${peppre}pep";
-        $wormbase->run_command("cd $wormpep_ftp_root && ln -sf $link_source $link_target", $log);
-        $wormbase->run_command("chgrp worm $link_target", $log);
-      }
-    } else {
-      $log->write_to("Skipping $gspecies databases cp as NOT rebuilt for WS$WS.\n");
-    }
-
-
   }
 
   #tierIII's have no "pep" package, so lift protein and transcript files from build dir
