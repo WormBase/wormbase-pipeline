@@ -953,7 +953,6 @@ sub load_to_database {
   # tsuser is optional but if set, should replace any dots with underscores just in case
   # if not set im using the filename with dots replaced by '_'
   unless ($tsuser) {
-
     # remove trailing path of filename
     $tsuser = $basename
   }
@@ -967,7 +966,13 @@ pparse $file
 save
 quit
 EOF
-  open( WRITEDB, "echo '$command'| $tace -tsuser $tsuser $database |" ) || die "Couldn't open pipe to database\n";
+  if (not open( WRITEDB, "echo '$command'| $tace -tsuser $tsuser $database |" )) {
+    if ($log) {
+      $log->log_and_die("Could not open write pipe to database\n");
+    } else {
+      die "Couldn't open pipe to database\n";
+    }
+  }
 
 # expect output like:
 #
@@ -993,7 +998,13 @@ EOF
       $active = $1;
     }
   }
-  close(WRITEDB);
+  if (not close(WRITEDB)) {
+    if ($log) {
+      $log->log_and_die("Could not close write pipe to database\n");
+    } else {
+      die "Could not close write pipe to database\n";
+    }
+  }
 
   if (! $error) {
     # check against previous loads of this file
