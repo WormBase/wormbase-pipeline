@@ -1,4 +1,4 @@
-// $Id: passwd.wrm,v 1.6 2010-10-18 09:25:39 mh6 Exp $
+// $Id: passwd.wrm,v 1.7 2011-11-18 10:22:18 klh Exp $
 //
 //  wspec/passwd.wrm
 //
@@ -14,6 +14,7 @@
 //
 
 wormpub
+wormbase
 klh
 mh6
 pad
