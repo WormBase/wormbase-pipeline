@@ -3,7 +3,7 @@
 # This is to add Confirmed / Predicted Status and RFLP to SNP gff lines as requested by Todd
 #
 # Last updated by: $Author: mh6 $     
-# Last updated on: $Date: 2011-10-13 14:43:58 $      
+# Last updated on: $Date: 2011-11-21 13:40:24 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -123,7 +123,7 @@ foreach my $file (@gff_files) {
       ###########################
       # from the Waterstone hack
       my $variation = $db->fetch(Variation => $allele);
-      if ($SNP{$allele}->{'mol_change'} eq 'Substitution'){
+      if ($SNP{$allele}->{mol_change} && ($SNP{$allele}->{'mol_change'} eq 'Substitution')){
       	my @substitution = $variation->Substitution->row;
       	print NEW " ; Substitution \"$substitution[0]/$substitution[1]\"";
       }
@@ -219,10 +219,18 @@ sub get_mol_changes{
     $log->write_to("getting molecular change info\n");
     my $table = $wormbase->table_maker_query($wormbase->autoace,&write_mol_change_def );
 
-    my %interested = ('Nonsense'    => 1,
-		      'Frameshift'  => 2,
-		      'Splice_site' => 3,
-		      'Missense'    => 4,
+    my %interested = ('Genomic_neighbourhood' => 1,
+	              'Regulatory_feature'    => 2,
+	              'Promoter'              => 3,
+	              'UTR_5'                 => 4,
+		      'UTR_3'                 => 5,
+	              'Intron'                => 6,
+	              'Coding_exon'           => 7,
+	              'Silent'                => 8,
+	              'Splice_site'           => 9,
+	              'Nonsense'              => 10,
+		      'Frameshift'            => 11,
+		      'Missense'              => 12,
 		      );
 
     while(<$table>) {
@@ -231,9 +239,8 @@ sub get_mol_changes{
 	next if (! defined $_);
 	next if (/acedb/ or /\/\//);
 	my @data = split(/\s+/,$_);
-	if($interested{$data[1]}){
-	    if( !(defined $SNP{$data[0]}->{'mol_change'}) or  
-		 ($interested{$data[1]} < $interested{ $SNP{$data[0]}->{'mol_change'} }) ){
+	if($data[1] && $interested{$data[1]}){
+	    if( !(defined $SNP{$data[0]}->{'mol_change'}) or ($interested{$data[1]} > $interested{ $SNP{$data[0]}->{'mol_change'} }) ){
 		$SNP{$data[0]}->{'mol_change'} = $data[1];
 	    }
 	}
@@ -434,7 +441,14 @@ Show_Tag
 Right_of 3  
 Tag  HERE  # Genomic_neighbourhood 
  
- 
+Colonne 15 
+Width 12 
+Optional 
+Visible 
+Show_Tag 
+Right_of 3  
+Tag  HERE  # Silent 
+
 
 END
 
