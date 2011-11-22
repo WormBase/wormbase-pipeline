@@ -976,7 +976,7 @@ sub fix_case
 
 #################################################################
 sub get_db_connection {
-    my $path = SangerWeb->document_root();
+    my $path = SangerWeb->data_root();
   my $DOMAIN = 'Gene';
   my $db = NameDB_handler->new($DB,$USER,$PASS,$path);
 	
