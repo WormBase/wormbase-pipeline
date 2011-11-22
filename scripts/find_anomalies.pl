@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2011-10-19 10:53:31 $      
+# Last updated on: $Date: 2011-11-22 15:12:31 $      
 
 # Changes required by Ant: 2008-02-19
 # 
@@ -245,6 +245,7 @@ while (my $run = <DATA>) {
 &delete_anomalies("MERGE_GENES_BY_RNASEQ");
 &delete_anomalies("UNMATCHED_RNASEQ_INTRONS");
 &delete_anomalies("SPURIOUS_INTRONS");
+&delete_anomalies("PREMATURE_STOP");
 
 
 # if we want the anomalies GFF file
@@ -530,12 +531,14 @@ foreach my $chromosome (@chromosomes) {
   &filter_RNASeq_splice(\@RNASeq_splice, \@filtered_RNASeq_splice) if (exists $run{UNMATCHED_RNASEQ_INTRONS});
   &get_unconfirmed_RNASeq_introns(\@filtered_RNASeq_splice, \@CDS_introns, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, \@ignored_introns, $chromosome) if (exists $run{UNMATCHED_RNASEQ_INTRONS});
 
+  print "find introns that are missing RNASeq/EST/mRNA evidence";
+  &get_spurious_introns(\@RNASeq_splice, \@CDS_introns, $chromosome) if (exists $run{SPURIOUS_INTRONS});
+
 ##########################
 #}
 ##########################
 
-  print "find introns that are missing RNASeq/EST/mRNA evidence";
-  &get_spurious_introns(\@RNASeq_splice, \@CDS_introns, $chromosome) if (exists $run{SPURIOUS_INTRONS});
+  &get_premature_stop(\@CDS, $chromosome) if (exists $run{PREMATURE_STOP});
 
 #################################################
 # these don't work very well - don't use
@@ -4247,6 +4250,40 @@ sub get_spurious_introns {
 
 }
 
+####################################################################################
+# find premature STOP codons in a CDS model
+# This should never happen  - but some Tier II species have shoddy models
+sub premature_stop {
+  my ($cds_aref, $chromosome) = @_;
+
+  $anomaly_count{PREMATURE_STOP} = 0 if (! exists $anomaly_count{PREMATURE_STOP});
+
+  foreach my $CDS (@{$cds_aref}) { # $cds_id, $chrom_start, $chrom_end, $chrom_strand
+    my $cds_id = $CDS->[0];
+    my ($protein_name, $protein_seq) = &get_protein_from_cds($cds_id);
+    if ($protein_seq =~ /\*/) {
+      my $chrom_start = $CDS->[1];
+      my $chrom_end = $CDS->[2];
+      my $chrom_strand = $CDS->[3];
+      my $anomaly_score = 100; # very high score for a very big problem :-)
+      print "\nPremature STOP codon ANOMALY: $cds_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score\n";
+      &output_to_database("PREMATURE_STOP", $chromosome, $cds_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score, "$cds_id : STOP codon found in translation!");
+    }
+  }
+}
+##########################################
+#  my (protein_name, protein_seq) = &get_protein_from_cds($cds_id);
+# get the protein ID and sequence from the CDS ID
+
+sub get_protein_from_cds {
+  my ($cds_id) = @_;
+
+  my $cds_obj = $ace->fetch("CDS" => $cds_id);
+  my $protein_fasta = $cds_obj->asPeptide();
+  my ($title, $protein_seq) = ($protein_fasta =~ /(.+)\n(.+)\n/); # get the first and second lines
+  return ($title, $protein_seq);
+
+}
 
 
 ####################################################################################
@@ -4736,11 +4773,11 @@ UNMATCHED_TSL                elegans
 UNMATCHED_RST5               elegans
 UNMATCHED_TWINSCAN           elegans
 UNMATCHED_GENEFINDER         elegans
-GENBLASTG_DIFFERS_FROM_CDS            remanei briggsae japonica brenneri
+GENBLASTG_DIFFERS_FROM_CDS            remanei briggsae japonica brenneri brugia
 JIGSAW_DIFFERS_FROM_CDS      elegans
 JIGSAW_WITH_SIGNALP          elegans
 UNMATCHED_SAGE               elegans
-UNMATCHED_WABA               elegans
+UNMATCHED_WABA               
 OVERLAPPING_EXONS            elegans remanei briggsae japonica brenneri brugia
 MISMATCHED_EST               elegans remanei briggsae japonica brenneri brugia
 WEAK_INTRON_SPLICE_SITE      elegans remanei briggsae japonica brenneri brugia
@@ -4761,8 +4798,9 @@ UNMATCHED_454_CLUSTER        elegans
 UNMATCHED_MGENE              elegans
 NOVEL_MGENE_PREDICTION       elegans
 NOT_PREDICTED_BY_MGENE       elegans
-UNMATCHED_RNASEQ_INTRONS     elegans remanei briggsae
-SPURIOUS_INTRONS             elegans remanei briggsae
+UNMATCHED_RNASEQ_INTRONS     elegans remanei briggsae japonica
+SPURIOUS_INTRONS             elegans remanei briggsae japonica
+PREMATURE_STOP               elegans remanei briggsae japonica brenneri brugia
 END_DATA
 
 =pod
