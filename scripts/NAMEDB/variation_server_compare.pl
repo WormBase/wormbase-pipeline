@@ -1,7 +1,7 @@
 #!/software/bin/perl -w
 
-use lib '/nfs/WWWdev/SANGER_docs/lib/Projects/C_elegans/';
 use lib $ENV{'CVS_DIR'};
+use lib "$ENV{CVS_DIR}/NAMEDB/lib";
 
 use strict;
 use NameDB_handler;
@@ -54,10 +54,10 @@ close $TABLE;
 
 #connect to name server and set domain to 'Gene'
 my $DB      = 'wbgene_id;shap;3303';
-my $PASS    = "wormpub";
-my $USER    = "wormpub";
+my $PASS    = 'wormpub';
+my $USER    = 'wormpub';
 my $DOMAIN  = 'Variation';
-my $db = NameDB_handler->new($DB,$USER,$PASS,'/nfs/WWWdev/SANGER_docs/cgi-bin');
+my $db = NameDB_handler->new($DB,$USER,$PASS,$wormbase->wormpub . '/DATABASES/NameDB');
 
 # get nameserver data
 my $query = 'SELECT primary_identifier.object_public_id, 
