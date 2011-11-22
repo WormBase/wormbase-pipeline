@@ -17,8 +17,9 @@ Width 20
 Optional 
 Visible 
 Class 
-Class Genome_Sequence 
-From 1 
+Class Sequence 
+From 1
+Condition Genomic_canonical 
  
 Colonne 2 
 Width 20 
