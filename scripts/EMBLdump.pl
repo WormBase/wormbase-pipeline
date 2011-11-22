@@ -1,8 +1,8 @@
-#!/usr/local/bin/perl5.8.0 -w
+#!/usr/bin/env perl
 #
 # EMBLdump.pl :  makes modified EMBL dumps from camace.
 # 
-#  Last updated on: $Date: 2011-11-21 17:07:51 $
+#  Last updated on: $Date: 2011-11-22 10:14:59 $
 #  Last updated by: $Author: klh $
 
 use strict;
@@ -83,7 +83,7 @@ GetOptions (
   "dumpmodified"    => \$dump_modified,
   "stagetorepo"     => \$stage_to_repository,
   "modbuildref"     => \$use_builddb_for_ref,
-  "modprivate=s"    => \$private,
+  "modprivate"      => \$private,
   "moddumpfile:s"   => \$mod_dump_file,
   "rawdumpfile:s"   => \$raw_dump_file,
   "quicktest"       => \$quicktest,
