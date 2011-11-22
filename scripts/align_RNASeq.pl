@@ -38,6 +38,10 @@
 # and for briggsae:
 #
 # SRX052079 SRX052081 SRX053351
+#
+# and for japonica:
+#
+# SRX100095 SRX100094 SRX100093 SRX100092 SRX100091 SRX100090
 
 
 # Perl should be set to:
@@ -58,7 +62,7 @@
 # by Gary Williams
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2011-11-15 10:44:04 $
+# Last updated on: $Date: 2011-11-22 16:11:22 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -315,15 +319,24 @@ if ($species eq 'elegans') {
 
   %expts = ( SRX052082 => ["RNASeq.remanei.L2_larva", 'phred'],
 	     SRX052083 => ["RNASeq.remanei.L4_larva", 'phred']
-	   )
+	   );
 
 } elsif ($species eq 'briggsae') {
 
   %expts = ( SRX052079 => ["RNASeq.briggsae.L2_larva", 'phred'],
 	     SRX052081 => ["RNASeq.briggsae.L4_larva", 'phred'],
 	     SRX053351 => ["RNASeq.briggsae.all_stages", 'phred']
-	   )
+	   );
 
+} elsif ($species eq 'japonica') {
+
+  %expts = ( SRX100095 => ["RNASeq_Hillier.japonica.early_embryo", 'phred'],
+	     SRX100094 => ["RNASeq_Hillier.japonica.adult_female", 'phred'],
+	     SRX100093 => ["RNASeq_Hillier.japonica.adult_male", 'phred'],
+	     SRX100092 => ["RNASeq_Hillier.japonica.L4_larva", 'phred'],
+	     SRX100091 => ["RNASeq_Hillier.japonica.L4_larva", 'phred'],
+	     SRX100090 => ["RNASeq_Hillier.japonica.L2_larva", 'phred'],
+	   )
 
 } else {
   $log->log_and_die("Unkown species: $species\n");
@@ -369,7 +382,7 @@ if (!$expt) {
 
     my @chrom_files;
     if ($wormbase->assembly_type eq 'contig') {
-      @chrom_files = ('${species}_masked.dna');
+      @chrom_files = ("${species}_masked.dna");
     } else {
       @chrom_files = $wormbase->get_chromosome_names('-prefix' => 1, '-mito' => 1);
     }
@@ -383,19 +396,20 @@ if (!$expt) {
       unlink glob("${G_species}*");
       
       foreach my $chrom_file (@chrom_files) {
+	$wormbase->run_command("rm -f ./$chrom_file", $log);
 	if ($wormbase->assembly_type eq 'chromosome') {$chrom_file .= '_masked.dna'} # changes the contents of @chrom_files
-	my $copy_cmd = "cp ${database}/CHROMOSOMES/${chrom_file} .";
-	
-	###################################################################
-#	# debug for brugia to get the latest assembly
-#	if ($species eq 'brugia') { # +++ debug 
-#	  $log->write_to("USING THE NEW ASSEMBLY OF BRUGIA IN ~wormpub/tmp/brugia.dna!\n");
-#	  $copy_cmd = "cp /nfs/wormpub/tmp/brugia.dna ."; # +++ debug
-#	  @chrom_files = ('brugia.dna'); # +++ debug 
-#	}  # +++ debug 
-	###################################################################
-	
-	$status = $wormbase->run_command($copy_cmd, $log);
+	my $source_file = "${database}/CHROMOSOMES/${chrom_file}";
+	if (-e $source_file) {
+	  my $copy_cmd = "cp $source_file .";
+	  $status = $wormbase->run_command($copy_cmd, $log);
+
+	} elsif (-e "${source_file}.gz") {
+	  my $copy_cmd = "gunzip -c ${source_file}.gz > ./$chrom_file";
+	  $status = $wormbase->run_command($copy_cmd, $log);
+
+	} else {
+	  $log->log_and_die("Can't locate the repeat-masked genome file: $source_file\n");
+	}
       }
       my $bowtie_cmd = "bsub -I /software/worm/bowtie/bowtie-build " . (join ',', @chrom_files) . " $G_species";
       $status = $wormbase->run_command($bowtie_cmd, $log);
