@@ -62,7 +62,7 @@
 # by Gary Williams
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2011-11-22 16:11:22 $
+# Last updated on: $Date: 2011-11-23 16:04:19 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -523,7 +523,7 @@ if (!$expt) {
 
   # open a .ace file to hold the FPKM expression levels of genes, transcripts and CDSs
   my $misc_dynamic = $wormbase->misc_dynamic;
-  open (EXPRACE, "> $misc_dynamic/expression_levels.ace") || $log->log_and_die("Can't open $misc_dynamic/expression_levels.ace\n");
+  open (EXPRACE, "> $misc_dynamic/RNASeq_expression_levels_${species}.ace") || $log->log_and_die("Can't open $misc_dynamic/RNASeq_expression_levels_${species}.ace\n");
 
   foreach my $SRX (@SRX) {
     $log->write_to("$SRX");
