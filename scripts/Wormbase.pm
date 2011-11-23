@@ -1507,17 +1507,18 @@ sub wait_for_LSF {
 }
 
 ####################################
-sub checkLSF
-  {
-    my ($self, $log) = @_;
-    unless ( -e "/usr/local/lsf"){
-      if ($log) {
-	$log->log_and_die("You need to be on cbi1 or other LSF enabled system to run this");
-      } else {
-	die "You need to be on cbi1 or other LSF enabled system to run this";
-      }
+sub checkLSF {
+  my ($self, $log) = @_;
+  
+  if (system("bsub -V")) {
+    if ($log) {
+      $log->log_and_die("You need to be on an LSF enabled system to run this");
+    } else {
+      die "You need to be on an LSF enabled system to run this";
     }
   }
+}
+
 
 ####################################
 sub table_maker_query {
