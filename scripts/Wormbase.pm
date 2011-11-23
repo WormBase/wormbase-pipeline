@@ -1143,6 +1143,7 @@ sub wormpep_files {
 sub test         { my $self = shift; return $self->{'test'}; }
 sub debug        { my $self = shift; return $self->{'debug'}; }
 sub wormpub      { my $self = shift; return $self->{'wormpub'}; }
+sub scratch_area { my $self = shift; return $self->{'scratch_area'}; }
 sub basedir      { my $self = shift; return $self->{'basedir'}; }
 sub autoace      { my $self = shift; return $self->{'autoace'}; }
 sub wormpep      { my $self = shift; return $self->{'wormpep'}; }
@@ -1178,8 +1179,9 @@ sub genome_seq   { my $self = shift; return $self->autoace."/genome_seq";}
 sub seq_db	 { my $self = shift; return $self->database($self->{'species'});}
 sub ebi          { my $self = shift; return $self->{'ebi'} ;}
 sub rnaseq       { my $self = shift; return $self->{'rnaseq'} ;}
+sub build_lsfout { my $self = shift; return $self->{'build_lsfout'} ;}
 
-		  # this can be modified by calling script
+# this can be modified by calling script
 ####################################
 sub common_data {
   my $self = shift;
@@ -1260,6 +1262,7 @@ sub establish_paths {
         $ftp_site);
 
     $self->{'wormpub'} = "/nfs/wormpub";
+    $self->{'scratch_area'} = '/nfs/wormpub/tmp';
 
     # if a specified non-build database is being used
 
@@ -1334,6 +1337,7 @@ sub establish_paths {
 
     $self->{'farm_dump'}    = '/lustre/scratch101/ensembl/wormpipe/dumps';
     $self->{'rnaseq'}       = '/lustre/scratch103/ensembl/wormpipe/RNASeq/'.$self->{'species'}.'/SRA';
+    $self->{'build_lsfout'} = $self->scratch_area . "/BUILD/LSF_OUT/" . $self->{species};
 
     # create dirs if missing
     mkpath( $self->logs )        unless ( -e $self->logs );
@@ -1351,6 +1355,7 @@ sub establish_paths {
     mkpath( $self->acefiles )    unless ( -e $self->acefiles );
     mkpath( $self->blat )        unless ( -e $self->blat );
     mkpath( $self->checks )      unless ( -e $self->checks );
+    mkpath( $self->build_lsfout) unless ( -e $self->build_lsfout );
   }
 }
 
