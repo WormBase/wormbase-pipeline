@@ -6,7 +6,7 @@
 # builds wormbase & wormpep FTP sites
 # 
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2011-11-15 14:50:03 $
+# Last updated on: $Date: 2011-11-23 16:33:06 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -700,7 +700,7 @@ sub copy_ontology_files {
   }
 
   # change group ownership
-  $wormbase->run_command("chgrp -R  worm $ace_ontology_dir", $log);  
+  $wormbase->run_command("chgrp -R  worm $ftp_ontology_dir", $log);  
 
   $runtime = $wormbase->runtime;
   $log->write_to("$runtime: Finished copying ontology files\n\n");
@@ -1217,17 +1217,14 @@ sub make_gbrowse_gff {
       next;
     }
 
-    my $out_filename = "$tgt_dir/$gspecies.$WS_name.GBrowse.gff2.gz";
-    my $command = "perl $ENV{CVS_DIR}/web_data/process_elegans_gff-standalone.pl -species $species -database ". $wormbase->autoace;
+    my $out_filename = "$tgt_dir/$gspecies.$WS_name.GBrowse.gff2";
+    my $command = "perl $ENV{CVS_DIR}/web_data/process_elegans_gff-standalone.pl -species $species -outfile $out_filename";
     if ($debug) {
       $command .= " -debug $debug ";
     }
 
-    my @pipe = ("gunzip -c $in_filename",
-                
-                "gzip -c -9 > $out_filename");
-
-    $wb->run_command( "gunzip -c $in_filename | $command | gzip -c -9 > $out_filename", $log);
+    $wb->run_command("gunzip -c $in_filename | $command", $log);
+    $wb->run_command("gzip -9 $out_filename", $log);
   }
 
   $runtime = $wormbase->runtime;

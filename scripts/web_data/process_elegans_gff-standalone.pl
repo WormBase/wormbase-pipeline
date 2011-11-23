@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 use strict;
 use Getopt::Long;
@@ -6,29 +6,56 @@ use Getopt::Long;
 use lib $ENV{CVS_DIR};
 use Wormbase;
 use Ace;
+use Log_files;
 
 my (
-    $debug, 
-    $database,
-    $species,
+  $debug, 
+  $test,
+  $species,
+  $species_full,
+  $store,
+  $wormbase,
+  $outfile,
+  $outfh,
     );
 
 GetOptions('species:s' => \$species,
            'debug:s'   => \$debug,
-           'database:s' => \$database,
+           'test'      => \$test,
+           'store=s'   => \$store,
+           'outfile=s' => \$outfile,
            )||die(@!);
 
 
-# prop should get a -species option
+# Note: because this script pulls in comparative data and up-to-date gene names,
+# it is only ever run on a post-merge autoace. 
 
-my $wb = (defined $database) 
-    ? Wormbase->new(-autoace => $database, -debug => $debug, -organism => $species)
-    : Wormbase->new(-debug => $debug, -organism => $species);
+if ( $store ) {
+  $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
+} else {
+  $wormbase = Wormbase->new( -debug   => $debug,
+                             -test    => $test,                             );
+}
 
-my $db = Ace->connect( $wb->autoace ) or die "Can't open ace database:", Ace->error;
-my $version = $db->version;
-my $species_full = $wb->full_name;
-$species = $wb->species;
+my $log = Log_files->make_build_log($wormbase);
+
+if (not defined $species) {
+  $species = $wormbase->species;
+  $species_full = $wormbase->full_name;
+} else {
+  if ($species ne $wormbase->species) {
+    my %sa = $wormbase->species_accessors;
+    if (exists $sa{$species}) {
+      $species_full = $sa{$species}->full_name;
+    } else {
+      $log->log_and_die("Species '$species' is not a recognised WormBase tierII species\n");
+    }
+  } else {
+    $species_full = $wormbase->full_name;
+  }
+}
+
+my $db = Ace->connect( $wormbase->autoace ) or $log->log_and_die("Can't open ace database:". Ace->error );
 
 my (
     %NOTES,          %LOCUS, %GENBANK,      %CONFIRMED,
@@ -37,32 +64,37 @@ my (
 );
 
 # setting up things
+if (defined $outfile) {
+  open($outfh, ">$outfile") or $log->log_and_die("Could not open $outfile for writing\n");
+} else {
+  $outfh = \*STDOUT;
+}
 
-print STDERR "getting confirmed genes\n" if $debug;
+$log->write_to("getting confirmed genes\n") if $debug;
 get_confirmed( $db, \%CONFIRMED );
 
 if ($species eq 'elegans') {
-  print STDERR "getting genebank ids\n" if $debug;
+  $log->write_to("getting genebank ids\n") if $debug;
   get_genbank( $db, \%GENBANK );
 }
 
-print STDERR "getting transcript2cds\n" if $debug;
+$log->write_to("getting transcript2cds\n") if $debug;
 get_transcripts( $db, \%TRANSCRIPT2CDS );
 
-print STDERR "getting wormpep\n" if $debug;
+$log->write_to("getting wormpep\n") if $debug;
 get_wormpep( $db, \%WORMPEP );
 
-print STDERR "getting loci information\n" if $debug;
+$log->write_to("getting loci information\n") if $debug;
 get_loci( $db, \%LOCUS );
 
-print STDERR "getting genes\n" if $debug;
+$log->write_to("getting genes\n") if $debug;
 get_genes( $db, \%GENES );
 
-print STDERR "getting notes\n" if $debug;
+$log->write_to("getting notes\n") if $debug;
 get_notes( $db, \%NOTES );
 
 if ($species eq 'elegans') {
-  print STDERR "getting ORFEOME info\n" if $debug;
+  $log->write_to("getting ORFEOME info\n") if $debug;
   get_orfeome( $db, \%ORFEOME );
 }
 
@@ -103,7 +135,7 @@ while (<>) {
                 my $bestname = bestname($_);
 
                 # Span for curated loci - only once per WBGene
-                print join( "\t", $ref, 'curated', 'gene', $start, $stop, $score, $strand, $phase, "Locus $bestname" ), "\n"
+                print $outfh join( "\t", $ref, 'curated', 'gene', $start, $stop, $score, $strand, $phase, "Locus $bestname" ), "\n"
                   if ( !$loci_seen{$bestname}++ );
             }
         }
@@ -147,7 +179,7 @@ while (<>) {
             # What are the ramifications of this on things like RNAs?
             $group = join ' ; ', $group, @notes;
             if ( $method =~ /protein_coding_primary_transcript/ ) {
-                print join( "\t",
+                print $outfh join( "\t",
                     $ref, 'Coding_transcript', 'Transcript', $start, $stop,
                     $score, $strand, $phase, $group ), "\n";
             }
@@ -157,13 +189,13 @@ while (<>) {
                 # Should I also preserve the original entries? (This is basicallt the original entry)
                 # Do I need a top level feature of method Transcript in order for aggregation to work correctly?
                 
-                print join( "\t", $ref, $source, $method, $start, $stop, $score, $strand, $phase, $group ), "\n";
+                print $outfh join( "\t", $ref, $source, $method, $start, $stop, $score, $strand, $phase, $group ), "\n";
             }
             next;
         }
 
         $group = join ' ; ', $group, @notes;
-        print join( "\t", $ref, $source, $method, $start, $stop, $score, $strand, $phase, $group ), "\n";
+        print $outfh join( "\t", $ref, $source, $method, $start, $stop, $score, $strand, $phase, $group ), "\n";
 
         next;
     }
@@ -174,7 +206,7 @@ while (<>) {
     elsif ( $method eq 'region' && $source eq 'Genomic_canonical' && $group=~ /Sequence "(\w+)"/ ){
         if ( my $accession = $GENBANK{$1}) {
             $group .= qq( ; Note "Clone $1; Genbank $accession");
-            print join( "\t",$ref, 'Genbank', $method, $start, $stop, $score, $strand,$phase, "Genbank \"$accession\"" ),"\n";
+            print $outfh join( "\t",$ref, 'Genbank', $method, $start, $stop, $score, $strand,$phase, "Genbank \"$accession\"" ),"\n";
         }
     }
 
@@ -199,7 +231,7 @@ while (<>) {
             }	
         }
         else {
-            print STDERR "ERROR: cannot find $gene_id from ($group) in line:\nERROR: $_\n";
+            $log->write_to("ERROR: cannot find $gene_id from ($group) in line:\nERROR: $_\n");
         }
     }
     
@@ -213,7 +245,7 @@ while (<>) {
             $strand = '-';
         }
     }
-    print join( "\t",
+    print $outfh join( "\t",
         $ref,   $source, $method, $start, $stop,
         $score, $strand, $phase,  $group ),
         "\n";
@@ -227,11 +259,15 @@ for my $cds ( keys %GENES ) {
     next unless $GENE_EXTENTS{$base};
     my ( $seqid, $start, $stop, $strand ) = @{ $GENE_EXTENTS{$base} }{qw(seqid start stop strand)};
     for my $gene ( @{ $GENES{$cds} } ) {    # there *should* be only one gene per cds
-        print join( "\t", $seqid, 'gene', 'processed_transcript', $start, $stop, '.', $strand, '.', qq(Gene "$gene") ), "\n";
+        print $outfh join( "\t", $seqid, 'gene', 'processed_transcript', $start, $stop, '.', $strand, '.', qq(Gene "$gene") ), "\n";
     }
 }
 
+if (defined $outfile) {
+  close($outfh);
+}
 $db->close;
+$log->mail();
 
 exit 0;
 
