@@ -53,6 +53,10 @@ sub _new {
     bless $self, $class;
 }
 
+sub TSL {  
+  ('SL1'  => "GGTTTAATTACCCAAGTTTGAG");
+}
+
 
 
 
@@ -115,21 +119,24 @@ sub wormpep_prefix{'WP'}
 sub assembly_type {'chromosome'};
 sub seq_db {my $self = shift;return $self->database('camace');}
 sub upload_db_name {return ('stlace','citace')};
-sub TSL {(
-	  'SL1' => 'GGTTTAATTACCCAAGTTTGAG',
-	  'SL2' => 'GGTTTTAACCCAGTTACTCAAG',
-	  'SL2a' => 'GGTTTATACCCAGTTAACCAAG',
-	  'SL2b' => 'GGTTTTAACCCAGTTTAACCAAG',
-	  'SL2c' => 'GGTTTTAACCCAGTTACCAAG',
-	  'SL2d' => 'GGTTTTTACCCAGTTAACCAAG',
-	  'SL2e' => 'GGTTTAAAACCCAGTTAACAAG',
-	  'SL2f' => 'GGTTTTAACCCAGTTAACCAAG',
-	  'SL2g' => 'GGTTTTAACCAGTTAACTAAG',
-	  'SL2h' => 'GGTTTTAACCCATATAACCAAG',
-	  'SL2i' => 'GGTTTTAACCCAAGTTAACCAAG',
-	  'SL2j' => 'GGTTTAAAACCCAGTTACCAAG',
-	  'SL2k' => 'GGTTTTAACCCAGTTAATTGAG',
-)};
+sub TSL {
+  (
+    'SL1' => 'GGTTTAATTACCCAAGTTTGAG',
+    'SL2' => 'GGTTTTAACCCAGTTACTCAAG',
+    'SL2a' => 'GGTTTATACCCAGTTAACCAAG',
+    'SL2b' => 'GGTTTTAACCCAGTTTAACCAAG',
+    'SL2c' => 'GGTTTTAACCCAGTTACCAAG',
+    'SL2d' => 'GGTTTTTACCCAGTTAACCAAG',
+    'SL2e' => 'GGTTTAAAACCCAGTTAACAAG',
+    'SL2f' => 'GGTTTTAACCCAGTTAACCAAG',
+    'SL2g' => 'GGTTTTAACCAGTTAACTAAG',
+    'SL2h' => 'GGTTTTAACCCATATAACCAAG',
+    'SL2i' => 'GGTTTTAACCCAAGTTAACCAAG',
+    'SL2j' => 'GGTTTAAAACCCAGTTACCAAG',
+    'SL2k' => 'GGTTTTAACCCAGTTAATTGAG',
+  );
+
+};
 
 ########################################
 package Briggsae;
@@ -235,10 +242,6 @@ sub seq_name_regex{qr/^CRE\d{5}/};
 sub cds_regex_noend{qr/CRE\d{5}[a-z]*/}; # for getting the CDS part of a Transcript name
 sub assembly_type {'contig'};
 sub upload_db_name {'remace'};
-sub TSL {(
-	  'SL1'  => "GGTTTAATTACCCAAGTTTGAG",
-)};
-
 
 #######################################################
 package Brenneri;
@@ -287,10 +290,6 @@ sub cds_regex{qr/CBN\d{5}[a-z]*/};
 sub seq_name_regex{qr/^CBN\d{5}/};
 sub cds_regex_noend{qr/CBN\d{5}[a-z]*/}; # for getting the CDS part of a Transcript name
 sub upload_db_name {'brenace'};
-sub TSL {(
-	  'SL1'  => "GGTTTAATTACCCAAGTTTGAG",
-)};
-
 
 #######################################################
 
@@ -332,9 +331,6 @@ sub full_name {
 }
 
 sub upload_db_name {'japace'};
-sub TSL {(
-	  'SL1'  => "GGTTTAATTACCCAAGTTTGAG",
-)};
 
 #######################################################
 
@@ -431,9 +427,6 @@ sub chromosome_prefix {''}
 sub pep_prefix {'HB'}
 sub pepdir_prefix{'het'};
 sub assembly_type {'contig'};
-sub TSL {(
-	  'SL1'  => "GGTTTAATTACCCAAGTTTGAG",
-)};
 
 
 ######################################################
@@ -604,9 +597,6 @@ sub pep_prefix {'S7'}
 sub pepdir_prefix{'csp7'};
 sub ncbi_tax_id {'870436'};
 sub assembly_type {'contig'};
-sub TSL {(
-	  'SL1'  => "GGTTTAATTACCCAAGTTTGAG",
-)};
 
 ######################################################
 package Csp9;
@@ -639,9 +629,6 @@ sub pep_prefix {'S9'}
 sub pepdir_prefix{'csp9'};
 sub ncbi_tax_id {'870437'};
 sub assembly_type {'contig'};
-sub TSL {(
-	  'SL1'  => "GGTTTAATTACCCAAGTTTGAG",
-)};
 
 ######################################################
 package Csp11;
@@ -674,9 +661,6 @@ sub pep_prefix {'S11'}
 sub pepdir_prefix{'csp11'};
 sub ncbi_tax_id {'886184'};
 sub assembly_type {'contig'};
-sub TSL {(
-	  'SL1'  => "GGTTTAATTACCCAAGTTTGAG",
-)};
 
 ######################################################
 package Bxylophilus;
@@ -709,10 +693,6 @@ sub pep_prefix {'BXY'}
 sub pepdir_prefix{'bxylophilus'};
 sub ncbi_tax_id {'6326'};
 sub assembly_type {'contig'};
-sub TSL {(
-	  'SL1'  => "GGTTTAATTACCCAAGTTTGAG",
-)};
-
 
 ######################################################
 
@@ -755,9 +735,6 @@ sub chromosome_names {
 	}
 	return @contigs;
 }
-sub TSL {(
-	  'SL1'  => "GGTTTAATTACCCAAGTTTGAG",
-)};
 
 ######################################################
 
@@ -800,10 +777,6 @@ sub chromosome_names {
 	}
 	return @contigs;
 }
-sub TSL {(
-	  'SL1'  => "GGTTTAATTACCCAAGTTTGAG",
-)};
-
 
 #######################################################
 package Hcontortus;
@@ -845,9 +818,6 @@ sub chromosome_names {
 	}
 	return @contigs;
 }
-sub TSL {(
-	  'SL1'  => "GGTTTAATTACCCAAGTTTGAG",
-)};
 
 ######################
 package Tspiralis;
@@ -888,10 +858,6 @@ sub chromosome_names {
   }
   return @supercontigs;
 }
-sub TSL {(
-	  'SL1'  => "GGTTTAATTACCCAAGTTTGAG",
-)};
-
 
 #######################################################
 package Cangaria;
@@ -929,9 +895,6 @@ sub chromosome_names {
   my @supercontigs = split(/\s*,\s*/, $CANCONTIGS);
   return @supercontigs;
 }
-sub TSL {(
-	  'SL1'  => "GGTTTAATTACCCAAGTTTGAG",
-)};
 
 #######################################################
 #######################################################
@@ -1393,9 +1356,6 @@ sub chromosome_names {
   my @supercontigs = split(/\s*,\s*/, $TESTCONTIGS);
   return @supercontigs;
 }
-sub TSL {(
-	  'SL1'  => "GGTTTAATTACCCAAGTTTGAG",
-)};
 
 #######################################################
 #######################################################
