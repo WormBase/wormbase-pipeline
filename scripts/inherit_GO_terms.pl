@@ -5,7 +5,7 @@
 # map GO_terms to ?Sequence objects from ?Motif and ?Phenotype
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2010-07-26 10:28:40 $      
+# Last updated on: $Date: 2011-11-24 09:50:49 $      
 
 use strict;
 use warnings;
@@ -118,13 +118,19 @@ sub motif {
 	my $def = "$dbpath/wquery/SCRIPT:inherit_GO_terms.def";
 	
 	# these GO terms should not be attached to the Gene or CDS
-	my $terms = <<STOPTERMS;
-sporulation
-forespore
-photosynthesis
-chlorophyll
-STOPTERMS
-	my @stopterms = split /\n/,$terms;
+	my @stopterms = (
+		     'sporulation',
+		     'forespore',
+		     'photosynthesis',
+		     'photosynthetic',
+		     'chlorophyll',
+		    );
+	my @stopGO = (
+		       'GO:0009772', # photosynthetic electron transport in photosystem II
+		       'GO:0045282', # plasma membrane succinate dehydrogenase complex (only_in_taxon Bacteria)
+		       'GO:0009288', # bacterial-type flagellum
+		       'GO:0007391', # dorsal closure (only_in_taxon	Insecta)
+		      );
 
 	# get the GO terms
 	my $term_def = &write_GO_def;
@@ -145,7 +151,7 @@ STOPTERMS
   		next if (/acedb/ or /\/\//);
 		my($motif,$GO,$protein,$cds,$gene) = split;
 		next if (! defined $gene || ! defined $cds || ! defined $GO || ! defined $motif);
-		next if (&matching(\@stopterms, $terms{$GO}, $GO, $motif, $protein, $gene));
+		next if (&matching(\@stopterms, \@stopGO, $terms{$GO}, $GO, $motif, $protein, $gene));
 		print OUT "\nGene : $gene\nGO_term \"$GO\" IEA inferred_automatically \"$motif\"\n";
 		print OUT "\nCDS  : \"$cds\"\nGO_term \"$GO\" IEA inferred_automatically \"$motif\"\n";
 	}
@@ -156,13 +162,18 @@ STOPTERMS
 ########################################################################################
 
 sub matching {
-  my ($stopterms_aref, $GO_term, $GO, $motif, $protein, $gene) = @_;
+  my ($stopterms_aref, $stopGO_aref, $GO_term, $GO, $motif, $protein, $gene) = @_;
   if (! defined $GO_term) {return 0;}
   foreach my $term (@{$stopterms_aref}) {
     if ($GO_term =~ /\b$term\b/) {
       $log->write_to("The invalid term '$term' was found in the description '$GO_term' of GO-term $GO ($motif) from protein $protein and will not be attached to $gene\n");
       return 1;
-      
+    }
+  }
+  foreach my $term (@{$stopGO_aref}) {
+    if ($GO eq $term) {
+      $log->write_to("The invalid GO ID '$term' ('$GO_term' $motif) from protein $protein was found and will not be attached to $gene\n");
+      return 1;
     }
   }
   return 0;
