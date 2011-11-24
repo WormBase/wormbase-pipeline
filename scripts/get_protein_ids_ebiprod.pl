@@ -4,18 +4,17 @@ use DBI;
 use strict;
 use Getopt::Long;
 
-my ($org_id, $ena_db, $spidx, $tridx, $verbose); 
+my ($org_id, $ena_db, $uniprot_db, $verbose); 
 
 &GetOptions(
-            'swissidx=s'      => \$spidx,
-            'tremblidx=s'     => \$tridx,
-            'enadb=s'         => \$ena_db,
-            'orgid=s'         => \$org_id,
-            'verbose'         => \$verbose,
+  'enadb=s'         => \$ena_db,
+  'uniprotdb=s'     => \$uniprot_db,
+  'orgid=s'         => \$org_id,
+  'verbose'         => \$verbose,
     );
 
-if (not defined $spidx or
-    not defined $tridx or
+
+if (not defined $uniprot_db or
     not defined $org_id or
     not defined $ena_db) {
   die "Incorrect invocation\n";
@@ -26,15 +25,19 @@ my %attr   = ( PrintError => 0,
                RaiseError => 0,
                AutoCommit => 0 );
 
-my $dbh = DBI->connect("dbi:Oracle:$ena_db", 'ena_reader', 'reader', \%attr)
-    || die "Can't connect to database: $DBI::errstr";
+
+##############
+# Query ENA
+#############
+
+my $ena_dbh = &get_ena_dbh();
 
 # locus_tag = 84
 # pseudo = 28
 # standard name = 23
 # gene = 12
 # Get most info for each PID with a /locus_tag + featID was gene (#12)
-my $sql1 =  "SELECT d.primaryacc#, d.version#, c.PROTEIN_ACC, c.version, c.chksum, fq.text, c.featid, d.project#, d.statusid"
+my $ena_sql =  "SELECT d.primaryacc#, d.version#, c.PROTEIN_ACC, c.version, c.chksum, fq.text, c.featid, d.project#, d.statusid"
     . " FROM cdsfeature c, dbentry d, feature_qualifiers fq"
     . " WHERE d.primaryacc# IN ("
     . "   SELECT primaryacc#"
@@ -49,19 +52,18 @@ my $sql1 =  "SELECT d.primaryacc#, d.version#, c.PROTEIN_ACC, c.version, c.chksu
     . "   FROM feature_qualifiers a"
     . "   WHERE a.featid = c.featid"
     . "   AND a.fqualid = 28)"
-    . " AND fq.fqualid   = 12";
-my $sql2 = "SELECT fq.text FROM feature_qualifiers fq WHERE fq.featID = ? AND fq.fqualid = 23";
+    . " AND fq.fqualid   = 23";
+
     
-my $sth1 = $dbh->prepare($sql1);
-my $sth2 = $dbh->prepare($sql2);
+my $ena_sth = $ena_dbh->prepare($ena_sql);
 
 print STDERR "Doing primary lookup of CDS entries in ENA ORACLE database...\n" if $verbose;
 
-$sth1->execute || die "Can't execute statement: $DBI::errstr";
+$ena_sth->execute || die "Can't execute statement: $DBI::errstr";
 
 my (@resultsArr, %resultsHash);
 
-while ( ( my @results ) = $sth1->fetchrow_array ) {
+while ( ( my @results ) = $ena_sth->fetchrow_array ) {
   push @{$resultsHash{$results[2]}}, {  
     NT_AC       => $results[0],
     NT_version  => $results[1],
@@ -72,41 +74,48 @@ while ( ( my @results ) = $sth1->fetchrow_array ) {
     AA_ID       => $results[6],
   };
 }
-die $sth1->errstr if $sth1->err;
-$sth1->finish;
+die $ena_sth->errstr if $ena_sth->err;
+$ena_sth->finish;
+$ena_dbh->disconnect;
 
-print STDERR "Reading Uniprot idx files to get accessions...\n" if $verbose;
+#################
+# query uniprot
+#################
 
-foreach my $file ($spidx, $tridx) {
-  open(my $fh, $file) or die "Could not open $file for reading\n";
+my $uniprot_dbh = &get_uniprot_dbh();
 
-  print STDERR " reading through file $file...\n" if $verbose;
+my $uniprot_sql =  "SELECT e.accession, e.name, p.protein_id "
+      . "FROM sptr.dbentry e, sptr.embl_protein_id p "
+      . "WHERE p.dbentry_id = e.dbentry_id "
+      . "AND e.deleted='N' "
+      . "AND e.merge_status <> 'R' "
+      . "AND e.entry_type in ('0', '1') "
+      . "AND e.tax_id = $org_id";
 
-  while(<$fh>) {
-    /^(\S+)\.(\d+)\s+(\S+)/ and do {
-      my ($pidacc, $pidver, $uniprot_acc) = ($1, $2, $3);
 
-      if (exists $resultsHash{$pidacc}) {
-        foreach my $el (@{$resultsHash{$pidacc}}) {
-          $el->{SWALL_AC}->{$uniprot_acc} = 1;
-        }
-      }
+my $uniprot_sth = $uniprot_dbh->prepare($uniprot_sql);
+print STDERR "Reading Uniprot database to get accessioans and ids...\n" if $verbose;
+$uniprot_sth->execute();
+
+while( (my @results) = $uniprot_sth->fetchrow_array) {
+  if (exists $resultsHash{$results[2]}) {
+    foreach my $el (@{$resultsHash{$results[2]}}) {
+      $el->{SWALL_AC} = $results[0];
+      $el->{SWALL_ID} = $results[1];
     }
   }
 }
 
+die $uniprot_sth->errstr if $uniprot_sth->err;
+$uniprot_sth->finish;
+$uniprot_dbh->disconnect;
+
+##################
+# output results
+##################
+
 @resultsArr = sort { $a->{NT_AC} cmp $b->{NT_AC} or $a->{AA_PID} cmp $b->{AA_PID} } map { @$_ } values(%resultsHash);
 foreach my $entry (@resultsArr) {
-  my @standard_names;
-  
-  $sth2->bind_param( 1, $entry->{AA_ID} );
-  $sth2->execute || die "Can't execute statement: $DBI::errstr";
-  while ( ( my @results ) = $sth2->fetchrow_array ) {
-    push @standard_names, @results;
-  }
-  
-  # not interested in things without a standard_name
-  #next if not @standard_names;
   
   printf("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n", 
          $entry->{NT_AC},
@@ -115,13 +124,37 @@ foreach my $entry (@resultsArr) {
          $entry->{AA_version},
          $entry->{AA_checksum},
          $entry->{AA_text},
-         exists($entry->{SWALL_AC}) ? join(";", sort keys %{$entry->{SWALL_AC}}) : "UNDEFINED",
-         @standard_names ? join(";", @standard_names) : "UNDEFINED");
+         exists($entry->{SWALL_AC}) ? $entry->{SWALL_AC} : "UNDEFINED",
+         exists($entry->{SWALL_ID}) ? $entry->{SWALL_ID} : "UNDEFINED");
+
 }
 
-die $sth2->errstr if $sth2->err;
-$sth2->finish;
-$dbh->disconnect;
 
 exit(0);
 
+
+
+#####################
+sub get_ena_dbh {
+
+  my $dbh = DBI->connect("dbi:Oracle:$ena_db", 
+                         'ena_reader', 
+                         'reader', 
+                         \%attr)
+      or die "Can't connect to ENA database: $DBI::errstr";
+
+  return $dbh;
+}
+
+
+#####################
+sub get_uniprot_dbh {
+  print STDERR "Connecting to $uniprot_db\n" if $verbose;
+
+   my $dbh = DBI->connect("dbi:Oracle:$uniprot_db", 
+                         "spselect", 
+                         "spselect", 
+                          \%attr) 
+      or die "Cannot connect to Uniprot database $DBI::errstr\n";
+   return $dbh;
+}

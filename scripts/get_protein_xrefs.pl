@@ -43,12 +43,13 @@ my ($ggenus, $gspecies) = $wb->full_name =~ /^(\S+)\s+(\S+)/;
 $ncbi_tax_id = $wb->ncbi_tax_id;
 $acefile = $wb->acefiles . "/cds_embl_data.ace" if not defined $acefile;
 
-my $table_fh;
-if (defined $table_file) {
-  open($table_fh, $table_file);
-} else {
-  $table_fh = &lookup_from_ebi_production_dbs();
+if (not defined $table_file) {
+  $table_file = $wb->acefiles . "/EBI_protein_ids.txt";
+  &lookup_from_ebi_production_dbs($table_file);
 }
+
+open(my $table_fh, $table_file)
+    or $log->log_and_die("Could not open $table_file for reading\n");
 
 open(my $acefh, ">$acefile")
     or $log->log_and_die("Could not open $acefile for writing\n");
@@ -57,24 +58,30 @@ while(<$table_fh>) {
   chomp;
   my @data = split("\t",$_);
   
-  next unless scalar(@data) == 8;
-  my($cloneacc, $pid, $version, $cds, $uniprot) = ($data[0],$data[2],$data[3],$data[-1],$data[-2]);  
+  next unless scalar(@data) == 9;
+  my($cloneacc, $pid, $version, $cds, $uniprot_ac, $uniprot_id, $cds) 
+      = ($data[0],$data[2],$data[3],$data[6],$data[7],$data[8]);  
   
   next unless (defined $pid);
-  $log->write_to("Potential New Protein: $_\n") if $uniprot eq 'UNDEFINED';
+  $log->write_to("Potential New Protein: $_\n") if $uniprot_ac eq 'UNDEFINED';
   
   next unless $accession2clone{$cloneacc}; #data includes some mRNAs
   
   push @{$cds_xrefs{$cds}->{Protein_id}}, [$accession2clone{$cloneacc}, $pid, $version];
 
-  if($cds2wormpep{$cds} and defined $uniprot and $uniprot ne 'UNDEFINED') {
-    $cds_xrefs{$cds}->{UniProtAcc}->{$uniprot} = 1;
-    $pep_xrefs{"WP:".$cds2wormpep{$cds}}->{UniProtAcc}->{$uniprot} = 1;
+  if($cds2wormpep{$cds}) {
+    if (defined $uniprot_ac and $uniprot_ac ne 'UNDEFINED') {
+      $cds_xrefs{$cds}->{UniProtAcc}->{$uniprot_ac} = 1;
+      $pep_xrefs{"WP:".$cds2wormpep{$cds}}->{UniProtAcc}->{$uniprot_ac} = 1;
+
+      if (defined $uniprot_id and $uniprot_id ne 'UNDEFINED') {
+        $cds_xrefs{$cds}->{UniProtId}->{$uniprot_id} = 1;
+        $pep_xrefs{"WP:".$cds2wormpep{$cds}}->{UniProtId}->{$uniprot_id} = 1;
+      }
+    }
   }
 }
 close($table_fh) or $log->log_and_die("Could not close the protein_id command/file\n");
-
-my $acc2idmap = &get_uniprot_acc2idmap();
 
 foreach my $pair (["CDS",\%cds_xrefs], ["Protein", \%pep_xrefs]) {
   my ($class, $hash) = @$pair;
@@ -90,9 +97,11 @@ foreach my $pair (["CDS",\%cds_xrefs], ["Protein", \%pep_xrefs]) {
     if (exists $hash->{$k}->{UniProtAcc}) {
       foreach my $acc (keys %{$hash->{$k}->{UniProtAcc}}) {
         print $acefh "Database UniProt UniProtAcc $acc\n";
-
-        if (exists $acc2idmap->{$acc}) {
-          printf $acefh "Database UniProt UniProtID %s\n", $acc2idmap->{$acc};
+        
+        if (exists $hash->{$k}->{UniProtId}) {
+          foreach my $id (keys %{$hash->{$k}->{UniProtId}}) {
+            print $acefh "Database UniProt UniProtID $id\n";
+          }
         }
       }
     }
@@ -111,6 +120,7 @@ exit(0);
 
 #########################
 sub lookup_from_ebi_production_dbs {
+  my ($output_file) = @_;
 
   my $ebi_prod_dir = $wb->wormpub . "/ebi_resources";
   my $ena_perl     = "$ebi_prod_dir/ena_perl";
@@ -123,12 +133,11 @@ sub lookup_from_ebi_production_dbs {
       . "  -swissidx $swiss_idx"
       . "  -tremblidx $trembl_idx"
       . "  -enadb ENAPRO" 
+      . "  -uniprotdb 'host=whisky.ebi.ac.uk;sid=SWPREAD;port=1531'", 
       . "  -orgid $ncbi_tax_id";
   
-  open(my $cmdfh, "$cmd |")
-      or $log->log_and_die("Could not successfully invoke '$cmd'\n");
-
-  return $cmdfh;
+  system("$cmd > $output_file") 
+      and $log->log_and_die("Could not successfully run '$cmd'\n");
 }
 
 
