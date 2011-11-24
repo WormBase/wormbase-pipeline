@@ -9,7 +9,7 @@
 #                          /nfs/WWW/SANGER_docs/htdocs/Projects/C_elegans/WORMBASE/current/release_notes.txt/
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2011-09-19 10:32:27 $
+# Last updated on: $Date: 2011-11-24 12:13:03 $
 
 
 use strict;                                      
@@ -73,6 +73,7 @@ if ($debug) {
 
 my $repdir = $wormbase->reports;            # Reports path
 my $acedir = $wormbase->autoace;             # base directory of the build
+my $ftpdir = $wormbase->ftp_site;
 
 ##############
 # variables  #
@@ -86,9 +87,9 @@ $log->write_to("about to spread the word . . . \n");
 
 # copy the letter around
 $log->write_to("copying to ftp site . . . . ");
-my ($ftp_dir) = glob("~ftp/pub2/wormbase/releases");       
+
 # ftp-site
-&_copy( "$repdir/letter.${release}", "$ftp_dir/${release}/letter.${release}" ) || $log->log_and_die("couldnt copy to $ftp_dir\n");
+&_copy( "$repdir/letter.${release}", "$ftpdir/${release}/letter.${release}" ) || $log->log_and_die("couldnt copy to $ftpdir\n");
 $log->write_to("DONE.\n");
 
 # local
@@ -98,28 +99,14 @@ $log->write_to("copying to autoace/release . . . . ");
 $log->write_to("DONE.\n");
 
 
-
-###################################
-# Make data on FTP site available
-###################################
-
-# FTP site data is there but sym link needs to be updated so people can easily point to it
-$log->write_to("Updating symlink on FTP site\n");
-
-my $targetdir = '/nfs/disk69/ftp/pub2/wormbase';    # default directory, can be overidden
-
-# delete the old symbolic link and make the new one
-$wormbase->run_command("rm -f $targetdir/development_release", $log);
-$wormbase->run_command("cd $targetdir; ln -s releases/$release development_release", $log);
-
 ##################
 # Check the files
 ##################
-$wormbase->check_file("$ftp_dir/${release}/letter.${release}", $log,
+$wormbase->check_file("$ftpdir/${release}/letter.${release}", $log,
 		      samesize => "$repdir/letter.${release}");
 $wormbase->check_file("$acedir/release/letter.${release}", $log,
 		      samesize => "$repdir/letter.${release}");
-$wormbase->check_file("$targetdir/development_release", $log);
+
 
 
 # Send email

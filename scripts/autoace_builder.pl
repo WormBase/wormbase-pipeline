@@ -7,7 +7,7 @@
 # Usage : autoace_builder.pl [-options]
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2011-09-20 16:05:23 $
+# Last edited on: $Date: 2011-11-24 12:13:03 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -200,7 +200,7 @@ $wormbase->run_script( "data_checks.pl -ace -gff"                , $log) if $dat
 $wormbase->run_script( "dbcomp.pl"                               , $log) if $data_check;
 $wormbase->run_script( "build_release_files.pl"                  , $log) if $buildrelease;
 &public_sites                                                            if $public;
-$wormbase->run_script( "distribute_letter.pl"                    , $log) if $release;
+&release                                                                 if $release;
 
 $wormbase->run_script("finish_build.pl"                          , $log) if $finish_build;
 # Update the gffdb to reflect the database being built.
@@ -531,4 +531,18 @@ sub public_sites {
   # gets everything on the to FTP and websites and prepares release letter ready for final edit and sending.
   $wormbase->run_script( "make_FTP_sites.pl -all", $log);
   $wormbase->run_script( "release_letter.pl -l"  , $log);
+}
+
+
+sub release {
+  # copy and send the release letter around
+  $wormbase->run_script( "distribute_letter.pl", $log);
+  
+  # Make data on FTP site available
+  $log->write_to("Updating symlink on FTP site\n");
+
+  my $ftpdir = $wormbase->ftp_site;
+  my $rel   = $wormbase->get_wormbase_version_name;
+  $wormbase->run_command("rm -f $ftpdir/development_release", $log);
+  $wormbase->run_command("cd $ftpdir; ln -s releases/$rel development_release", $log);  
 }
