@@ -10,7 +10,7 @@ use Storable;
 
 my ($ep, $ref, %genes, %at, %auth, $date);
 my ($help, $debug, $test, $store, $wormbase);
-my ($output, $acedbpath, $rnai, $gene, $variation, $skiplist);
+my ($output, $acedbpath, $rnai, $gene, $variation, $skiplist, $noload);
 
 $|=9;
 
@@ -25,7 +25,8 @@ GetOptions ("help"       => \$help,
 	    "gene"     	 => \$gene,
 	    "variation"  => \$variation,
 	    "output:s"   => \$output,
-	    "skiplist:s" => \$skiplist, 
+	    "skiplist:s" => \$skiplist,
+            "noload"     => \$noload,
 	    );
 
 my $program_name=$0=~/([^\/]+)$/ ? $1 : '';
@@ -197,8 +198,11 @@ if ($gene) {
 		if (!exists $species_taxon_hash{$species}) {print "ERROR: missing species = $species\n";}
 		my $a=$aspect{lc $go_type};
 		my $type="gene";
-		print $out "WB\t$obj\t$public_name\t\t$term\t$ref\t$tmp[3]\t$with\t$a\t\t$syn\t$type\t$taxon\t$date\tWB\t\t\n";
-		$line_count++;
+
+                if ($public_name) {
+                  print $out "WB\t$obj\t$public_name\t\t$term\t$ref\t$tmp[3]\t$with\t$a\t\t$syn\t$type\t$taxon\t$date\tWB\t\t\n";
+                  $line_count++;
+                }
 	    }
 	}
 	
@@ -279,8 +283,10 @@ if ($rnai) {
 		foreach my $term (keys %{$phen2go{$phen}}) {
 		    my $go_type=$db->fetch('GO_term', $term)->Type;
 		    my $a=$aspect{lc $go_type};
-		    print $out "WB\t$gene\t$public_name\t\t$term\t$ref_field\tIMP\t$with\t$a\t\t$syn\t$type\t$taxon\t$date\tWB\t\t\n";
-		    $line_count++;
+                    if ($public_name) {
+                      print $out "WB\t$gene\t$public_name\t\t$term\t$ref_field\tIMP\t$with\t$a\t\t$syn\t$type\t$taxon\t$date\tWB\t\t\n";
+                      $line_count++;
+                    }
 		}
 	    }
 	}
@@ -377,8 +383,10 @@ if ($variation) {
 		foreach my $term (keys %{$phen2go{$phen}}) {
 		    my $go_type=$db->fetch('GO_term', $term)->Type;
 		    my $a=$aspect{lc $go_type};
-		    print $out "WB\t$gene\t$public_name\t\t$term\t$ref_field\tIMP\t$with\t$a\t\t$syn\t$type\t$taxon\t$date\tWB\t\t\n";
-		    $line_count++;
+                    if ($public_name) {
+                      print $out "WB\t$gene\t$public_name\t\t$term\t$ref_field\tIMP\t$with\t$a\t\t$syn\t$type\t$taxon\t$date\tWB\t\t\n";
+                      $line_count++;
+                    }
 		}
 	    }
 	}
@@ -536,26 +544,42 @@ sub check_go_term {
     
     print "\treading data . . . \n";
     
-    my $id="";
     my $namespace="";
     my $name="";
     my $def="";
-    
+    my @id;
+
     while (<GOIN>){
       chomp;
-      if ($_ =~ /^id:\s+(\S+)/) {$id = $1}
-      if ($_ =~ /name:\s+(\S+)/) {$name = $1}
-      if ($_ =~ /namespace:\s+(\S+)/) {$namespace = $1}
+      if ($_ =~ /^id:\s+(\S+)/) {
+        push @id, $1;
+      }
+      if ($_ =~ /^alt_id:\s+(\S+)/) {
+        push @id, $1;
+      }
+      if ($_ =~ /name:\s+(\S+)/) {
+        $name = $1;
+      }
+      if ($_ =~ /namespace:\s+(\S+)/) {
+        $namespace = $1;
+      }
       if ($_ =~ /def:\s+\"(.+)\"$/ or $_ =~ /def:\s+\"(.+)\"\s+\[.+\]$/) {
         $def = $1;
       }
-      if ($_ =~ /^\s*$/ && exists $go{$id}) {
-	print GOOUT "\nGO_term : \"$id\"\n";
-	print GOOUT "Definition \"$def\"\n";
-	print GOOUT "Term \"$name\"\n";
-	print GOOUT "Type \"".ucfirst($namespace)."\"\n";
-	print GOOUT "\n";
-	$gocount++;
+      if ($_ =~ /^\s*$/) {
+        my @match = grep { $go{$_} } @id;
+        
+        if (scalar(@match) == 1) {
+          my ($wbid) = @match;
+        
+          print GOOUT "\nGO_term : \"$wbid\"\n";
+          print GOOUT "Definition \"$def\"\n";
+          print GOOUT "Term \"$name\"\n";
+          print GOOUT "Type \"".ucfirst($namespace)."\"\n";
+          print GOOUT "\n";
+          $gocount++;
+        }
+        @id = ();
       }
     }
     
@@ -565,7 +589,9 @@ sub check_go_term {
     close GOOUT;
     
     # load file to autoace if -load specified
-    $wormbase->load_to_database($wormbase->autoace, "$acefile", 'go_defs', $log);
+    if (-s $acefile and not $noload) {
+      $wormbase->load_to_database($wormbase->autoace, "$acefile", 'go_defs', $log);
+    }
     
     # tidy up and exit
     $wormbase->run_command("rm $go_obo_file",$log);
