@@ -1,8 +1,8 @@
-#!/usr/bin/env perl
+#!/usr/local/bin/perl5.8.0 -w
 #
 # EMBLdump.pl :  makes modified EMBL dumps from camace.
 # 
-#  Last updated on: $Date: 2011-11-22 10:14:59 $
+#  Last updated on: $Date: 2011-11-24 14:24:38 $
 #  Last updated by: $Author: klh $
 
 use strict;
@@ -299,7 +299,7 @@ if ($dump_modified) {
           $primary_RL = $_;
         }
       }
-      
+
       my @refs = @{&get_references()};
       for(my $i=0; $i < @refs; $i++) {
         printf $out_fh "RN   [%d]\n", $i+1;
@@ -311,9 +311,13 @@ if ($dump_modified) {
       printf $out_fh "RN   [%d]\n", scalar(@refs) + 1;
       printf $out_fh "RP   1-%d\n", $seqlen;
       print $out_fh "RG   WormBase Consortium\n";
-      print $out_fh $primary_RA;
+      if (defined $primary_RA) {
+        print $out_fh $primary_RA;
+      } else {
+        print $out_fh "RA   ;\n";
+      }
       print $out_fh "RT   ;\n";
-      print $out_fh $primary_RL;
+      print $out_fh $primary_RL if defined $primary_RL;
       print $out_fh "RL   Nematode Sequencing Project: Sanger Institute, Hinxton, Cambridge\n";
       print $out_fh "RL   CB10 1SA, UK and The Genome Institute at Washington University,\n"; 
       print $out_fh "RL   St. Louis, MO 63110, USA. E-mail: help\@wormbase.org\n";
@@ -628,6 +632,8 @@ sub process_feature_table {
     } else {
       if ($wb_isoform_name =~ /^(\S+\.\d+)[a-z]?/) {
         $gene_qual = ["/gene=\"$1\""];
+      } elsif ($species eq 'briggsae' and $wb_isoform_name =~ /^(\S+\d+)[a-z]$/) {
+        $gene_qual = ["/gene=\"$1\""];
       } else {
         $gene_qual = ["/gene=\"$wb_isoform_name\""];
       }
@@ -637,13 +643,10 @@ sub process_feature_table {
     # locus_tag
     #
     my $lt = $wb_isoform_name;
-    $lt = $wb_isoform_name;
-      
     if ($lt =~ /^(\S+\.\d+)[a-z]?/) {
       $lt = $1;
-      if ($species eq 'briggsae' and $lt =~ /CBG(\d+)/) {
-        $lt = "CBG_$1";
-      }
+    } elsif ($species eq 'briggsae' and $lt =~ /CBG(\d+)[a-z]?/) {
+      $lt = "CBG_$1";
     }
     $locus_tag_qual = [];
     if (not exists $multi_gene_loci->{$lt}) {
