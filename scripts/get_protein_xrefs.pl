@@ -125,13 +125,9 @@ sub lookup_from_ebi_production_dbs {
   my $ebi_prod_dir = $wb->wormpub . "/ebi_resources";
   my $ena_perl     = "$ebi_prod_dir/ena_perl";
   my $ena_env      = "$ebi_prod_dir/ena_oracle_setup.sh";
-  my $swiss_idx    = "$ebi_prod_dir/swiss_idx.txt";
-  my $trembl_idx   = "$ebi_prod_dir/trembl_idx.txt";
   
   my $cmd =  "source $ena_env &&"
       . " $ena_perl  $ENV{CVS_DIR}/get_protein_ids_ebiprod.pl"
-      . "  -swissidx $swiss_idx"
-      . "  -tremblidx $trembl_idx"
       . "  -enadb ENAPRO" 
       . "  -uniprotdb 'host=whisky.ebi.ac.uk;sid=SWPREAD;port=1531'", 
       . "  -orgid $ncbi_tax_id";
