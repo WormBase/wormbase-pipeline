@@ -9,7 +9,7 @@
 #                          /nfs/WWW/SANGER_docs/htdocs/Projects/C_elegans/WORMBASE/current/release_notes.txt/
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2011-11-24 12:13:03 $
+# Last updated on: $Date: 2011-11-25 13:55:03 $
 
 
 use strict;                                      
@@ -89,7 +89,7 @@ $log->write_to("about to spread the word . . . \n");
 $log->write_to("copying to ftp site . . . . ");
 
 # ftp-site
-&_copy( "$repdir/letter.${release}", "$ftpdir/${release}/letter.${release}" ) || $log->log_and_die("couldnt copy to $ftpdir\n");
+&_copy( "$repdir/letter.${release}", "$ftpdir/releases/${release}/letter.${release}" ) || $log->log_and_die("couldnt copy to $ftpdir\n");
 $log->write_to("DONE.\n");
 
 # local
@@ -102,7 +102,7 @@ $log->write_to("DONE.\n");
 ##################
 # Check the files
 ##################
-$wormbase->check_file("$ftpdir/${release}/letter.${release}", $log,
+$wormbase->check_file("$ftpdir/releases/${release}/letter.${release}", $log,
 		      samesize => "$repdir/letter.${release}");
 $wormbase->check_file("$acedir/release/letter.${release}", $log,
 		      samesize => "$repdir/letter.${release}");
