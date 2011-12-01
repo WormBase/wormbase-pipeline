@@ -43,7 +43,7 @@ else {
 $species||=lc(ref($wormbase));
 
 my $log = Log_files->make_build_log($wormbase);
-my $scratch_dir = $wormbase->logs;
+my $scratch_dir = $wormbase->build_lsfout;
 
 my @chroms = $wormbase->get_chromosome_names(-prefix => 1,-mito => 1);
 $wormbase->checkLSF;
@@ -72,7 +72,7 @@ my $lsf = LSF::JobManager->new();
 my $host = qx('hostname');chomp $host;
 my $port = 23100;
 if (scalar(@chromosomes) > 50){
-	$wormbase->run_command("(/software/worm/bin/acedb/sgifaceserver $database $port 600:6000000:1000:600000000>/dev/null)>&/dev/null &",$log);
+	$wormbase->run_command("(sgifaceserver $database $port 600:6000000:1000:600000000>/dev/null)>&/dev/null &",$log);
 	sleep 20;
 }
 
@@ -85,13 +85,19 @@ my $store_file = $wormbase->build_store; # get the store file to use in all comm
 CHROMLOOP: foreach my $chrom ( @chromosomes ) {
   if ( @methods ) {
     foreach my $method ( @methods ) {
-      my $err = scalar(@chromosomes) < 50 ? "$scratch_dir/wormpubGFFdump.$chrom.$method.err" : "$scratch_dir/wormpubGFFdump.$submitchunk.$method.err";
-      my $out = scalar(@chromosomes) < 50 ? "$scratch_dir/wormpubGFFdump.$chrom.$method.out" : "$scratch_dir/wormpubGFFdump.$submitchunk.$method.out";
+      my $out = scalar(@chromosomes) < 50 ? 
+          "$scratch_dir/wormpubGFFdump.$chrom.$method.lsfout" 
+          : "$scratch_dir/wormpubGFFdump.$submitchunk.$method.lsfout";
       my $job_name = "worm_".$wormbase->species."_gffbatch";
 
-      my @bsub_options = (-e => "$err", 
-			  -o => "$out",
+      my @bsub_options = (-o => "$out",
 			  -J => $job_name);
+
+      if (scalar(@chromosomes) < 50) {
+        push @bsub_options, (-F => "2000000", 
+                             -M => "3500000", 
+                             -R => "\"select[mem>3500] rusage[mem=3500]\"");
+      }
 
       my $cmd = "$dumpGFFscript -database $database -dump_dir $dump_dir -method $method -species $species";
       $cmd.=" -host $host" if scalar(@chromosomes) > 50;
@@ -121,10 +127,10 @@ CHROMLOOP: foreach my $chrom ( @chromosomes ) {
 						    -M => "3500000", 
 						    -R => "\"select[mem>3500] rusage[mem=3500]\"",
 						   ) : ();
-    my $err = scalar(@chromosomes) < 50 ? "$scratch_dir/wormpubGFFdump.$chrom.err" : "$scratch_dir/wormpubGFFdump.$submitchunk.err";
-    my $out = scalar(@chromosomes) < 50 ? "$scratch_dir/wormpubGFFdump.$chrom.out" : "$scratch_dir/wormpubGFFdump.$submitchunk.out";
-    push @bsub_options, (-e => "$err", 
-			 -o => "$out",
+    my $out = scalar(@chromosomes) < 50 
+        ? "$scratch_dir/wormpubGFFdump.$chrom.lsfout" 
+        : "$scratch_dir/wormpubGFFdump.$submitchunk.lsfout";
+    push @bsub_options, (-o => "$out",
 			 -J => $job_name);
 
     my $cmd = "$dumpGFFscript -database $database -dump_dir $dump_dir -species $species";
@@ -169,11 +175,10 @@ my @bsub_options = scalar(@chromosomes) < 50 ? (-F => "2000000",
 						-M => "3500000", 
 						-R => "\"select[mem>3500] rusage[mem=3500]\""
 					       ) : ();
-my $err = "$scratch_dir/wormpubGFFdump.rerun.err";
-my $out = "$scratch_dir/wormpubGFFdump.rerun.out";
+
+my $out = "$scratch_dir/wormpubGFFdump.rerun.lsfout";
 my $job_name = "worm_".$wormbase->species."_gffbatch";
-push @bsub_options, (-e => "$err", 
-		     -o => "$out",
+push @bsub_options, (-o => "$out",
 		     -J => $job_name);
 if (scalar @problem_cmds < 120) { # we don't want to re-run too many jobs!
   foreach my $cmd_file (@problem_cmds) {
@@ -187,13 +192,13 @@ if (scalar @problem_cmds < 120) { # we don't want to re-run too many jobs!
       unlink $job->history->command;
     } else {
       $failed++;
-      $log->error("\n\nERROR: Job $job (" . $job->history->command . ") exited non zero at the second attempt. See $err\n");
+      $log->error("\n\nERROR: Job $job (" . $job->history->command . ") exited non zero at the second attempt. See $out\n");
       push @problem_cmds, $job->history->command;
     }
     $log->write_to("\n\nNumber of jobs that failed after the second attempt: $failed\n");
   }
 } else {
-  $log->error("ERROR: There are ". scalar @problem_cmds ." GFF_method_dump.pl LSF jobs that have failed. See $err\n");
+  $log->error("ERROR: There are ". scalar @problem_cmds ." GFF_method_dump.pl LSF jobs that have failed. See $out\n");
   $log->write_to("Not attempting to re-run all of these jobs.\nPlease investigate what went wrong!\n");
   for my $job ( $lsf->jobs ) {
     unlink $job->history->command;
