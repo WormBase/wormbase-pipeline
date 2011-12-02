@@ -4,8 +4,8 @@
 // "Read Models" or "Add Update File" from the main menu.
 
 // ALL WormBase groups should be in sync with this set of models
-// Last edited by: $Author: pad $
-// Last edited on: $Date: 2011-10-26 09:37:22 $
+// Last edited by: $Author: klh $
+// Last edited on: $Date: 2011-12-02 10:03:37 $
 
 
 ////////////////////////
@@ -868,27 +868,45 @@
 ///////////////////////////////////////////////////////////////
 //
 // ?SO_term class - krb 30062004
-//
+//                - klh 2011-04
 ////////////////////////////////////////////////////////////////
 
 
-?SO_term Term ?Text
+?SO_term SO_name ?Text
+         SO_definition ?Text
+         SO_synonym ?Text
+         SO_version ?Text
          Located_sequence_feature UNIQUE Junction
                                          Region
-                                         Sequence_variant
-         Synonym ?Text
-         Definition ?Text
+                                         Sequence_alteration
          Parent Is_a ?SO_term XREF Is
                 Part_of ?SO_term XREF Part
-                Derived_from ?SO_term XREF Derived
+                Derived_from ?SO_term XREF Derives
+                Member_of ?SO_term XREF Member
          Child Is ?SO_term XREF Is_a
                Part ?SO_term XREF Part_of
-               Derived ?SO_term XREF Derived_from
-         Attributes_of Feature ?Feature XREF SO_term
+               Derives ?SO_term XREF Derived_from
+               Member ?SO_term XREF Member_of
          Ancestor   ?SO_term XREF Descendent
          Descendent ?SO_term XREF Ancestor
-         Version SOFA_ontology   UNIQUE Float  // Analogous to GO, the SO version number is only to be attached
-                 SOFA_definition UNIQUE Float  // to three parent SOFA terms under Located_sequence_feature
+
+
+// Ace2SO class: gives a mapping from Acedb objects to their SO terms.
+//
+// SO_subpart_tags    - Tag pointing to subpart of this object, e.g. "Source_exon".
+// SO_parent_obj_tag  - Tag pointing to semantic parent of this object, e.g. "Gene"
+// SO_children        - this object has child objects which refer to it.
+
+?Ace2SO Description UNIQUE Text
+        SO_subpart_tags Text UNIQUE ?SO_Term
+        SO_parent_obj_tag UNIQUE Text
+        SO_children
+
+
+
+
+
+
 
 //////////////////////////////////////////////////////////
 // AO_code class -  Raymond Lee 040203
@@ -1138,18 +1156,22 @@
 // Homol and Feature info
 
 #Homol_info Align Int UNIQUE Int UNIQUE Int 
-		        // not needed if full alignment is ungapped
-			// one row per ungapped alignment section
-			// first int is position in query, second in target
-			// third int is length - only necessary when gaps in both sequences align
+	// not needed if full alignment is ungapped
+	// one row per ungapped alignment section
+	// first int is position in query, second in target
+	// third int is length - only necessary when gaps in both sequences align
             AlignDNAPep Int UNIQUE Int UNIQUE Int
             AlignPepDNA Int UNIQUE Int UNIQUE Int
-	    Target_species UNIQUE ?Species
-	    EMBL_dump UNIQUE EMBL_dump_YES
-			     EMBL_dump_NO
-			// overrides for embl dump based on method
-	    EMBL_qualifier Text
-			// additional to those in the method, includes '/'
+            Match_string UNIQUE RefFwd_HitFwd UNIQUE Text
+                                RefFwd_HitRev UNIQUE Text
+                                RefRev_HitFwd UNIQUE Text
+                                RefRev_HitRev UNIQUE Text
+            Align_id Text
+            Target_species UNIQUE ?Species
+            EMBL_dump UNIQUE EMBL_dump_YES
+                             EMBL_dump_NO
+	// overrides for embl dump based on method
+            EMBL_qualifier Text// additional to those in the method, includes '/'
 
 #Feature_info	EMBL_dump UNIQUE EMBL_dump_YES
 				 EMBL_dump_NO
@@ -1521,7 +1543,7 @@
 		    Acquires_merge ?Feature XREF Merged_into #Evidence
 		    Deprecated	   Text	     #Evidence 
          Visible    Description ?Text
-		    SO_term ?SO_term XREF Feature
+		    SO_term ?SO_term
 	 Defined_by Defined_by_sequence ?Sequence XREF Defines_feature #Evidence
 		    Defined_by_paper    ?Paper XREF Feature #Evidence
 		    Defined_by_person   ?Person
@@ -1816,6 +1838,7 @@
 			GF_3_cutoff UNIQUE Float
 	GFF	GFF_source UNIQUE Text
 		GFF_feature UNIQUE Text
+		GFF_SO UNIQUE ?SO_term UNIQUE ?Ace2SO
 	EMBL_dump_info #EMBL_dump_info // when used for controlling dump
 
 ?Reference	Reference ?Paper
