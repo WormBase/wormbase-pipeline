@@ -1262,7 +1262,7 @@ sub establish_paths {
         $ftp_site);
 
     $self->{'wormpub'} = "/nfs/wormpub";
-    $self->{'scratch_area'} = '/nfs/wormpub/tmp';
+    $self->{'scratch_area'} = '/nfs/wormpub/tmp/BUILD_scratch';
 
     # if a specified non-build database is being used
 
@@ -1337,7 +1337,8 @@ sub establish_paths {
 
     $self->{'farm_dump'}    = '/lustre/scratch101/ensembl/wormpipe/dumps';
     $self->{'rnaseq'}       = '/lustre/scratch103/ensembl/wormpipe/RNASeq/'.$self->{'species'}.'/SRA';
-    $self->{'build_lsfout'} = $self->scratch_area . "/BUILD/LSF_OUT/" . $self->{species};
+    $self->{'build_lsfout'} = $self->scratch_area 
+        . "/LSF_OUT/" . $self->{species} . '/' . $self->get_wormbase_version_name;
 
     # create dirs if missing
     mkpath( $self->logs )        unless ( -e $self->logs );
