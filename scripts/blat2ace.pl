@@ -7,7 +7,7 @@
 # Exporter to map blat data to genome and to find the best match for each EST, mRNA, OST, etc.
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2011-09-20 15:51:47 $
+# Last edited on: $Date: 2011-12-02 21:40:34 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -25,7 +25,7 @@ use Coords_converter;
 
 my ($help, $debug, $test, $verbose, $store, $wormbase, $species);
 my ($database, $confirmed_introns, $qtype, $qspecies, $map_to_clone);
-my ($acefile, $pslfile, $virtualobjsfile, $confirmedfile, $bestm, $otherm, $group_align_segs);
+my ($acefile, $pslfile, $virtualobjsfile, $confirmedfile, $bestm, $otherm, $group_align_segs, %query_seen);
 
 GetOptions (
   "help"        => \$help,
@@ -505,8 +505,6 @@ sub write_ace_bottom_level {
 
 sub write_ace {
   my ($outfh, $type, $best_m, $other_m, $hits) = @_;
-
-  my %query_seen;
 
   foreach my $tname (keys %$hits) {
     my @list =  grep { exists $_->{bin} } @{$hits->{$tname}};
