@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl5.8.0 -w
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2011-11-08 10:26:52 $
+# Last edited on: $Date: 2011-12-02 21:43:24 $
 
 
 use lib $ENV{'CVS_DIR'};
@@ -60,6 +60,7 @@ $species  = $wormbase->species;
 my $log      = Log_files->make_build_log($wormbase);
 my $wormpub  = $wormbase->wormpub;
 my $blat_dir = $wormbase->blat;
+my $lsfdir   = $wormbase->build_lsfout;
 my $seq_obj  = Sequence_extract->invoke($database, undef, $wormbase) if $intron;
 
 #The mol_types available for each species is different
@@ -117,9 +118,9 @@ if( $mask ) {
     $cmd .= " -test" if $test;
     $cmd .= " -debug $debug" if $debug;
 
-    my @bsub_opts = (-J => "${species}_${moltype}_masking",
-                     -o => "/dev/null",
-                     -e => "/dev/null");
+    my @bsub_opts = (-J => "BLAT_mask_${species}_${moltype}",
+                     -o => "$lsfdir/BLAT_mask_${species}_${moltype}.lsfout");
+
 
     $lsf->submit(@bsub_opts, $cmd);    
   }
@@ -148,7 +149,7 @@ if ( $run ) {
   # run other species
   foreach my $qs (keys %mol_types) {
     # skip own species
-    next if $qs eq $wormbase->species;
+    next if $qs eq $species;
 
     my $seq_dir = join("/", $wormbase->basedir, "cDNA", $qs );
 
@@ -166,9 +167,8 @@ if ( $run ) {
         $cmd .= $wormbase->genome_seq ." $seq_file ";
         $cmd .= $wormbase->blat."/${qs}_${moltype}_${chunk_num}.psl";
 
-        my @bsub_opts = (-J => "${qs}_${moltype}_${chunk_num}",
-                         -o => "/dev/null", 
-                         -e => "/dev/null"); 
+        my @bsub_opts = (-J => "BLAT_run_${species}_${qs}_${moltype}_${chunk_num}",
+                         -o => "$lsfdir/BLAT_run_${species}_${qs}_${moltype}_${chunk_num}.lsfout");
 
         $lsf->submit(@bsub_opts, $cmd);
       }
@@ -177,7 +177,7 @@ if ( $run ) {
 
 
   # run own species.
-  foreach my $moltype (@{$mol_types{$wormbase->species}} ){
+  foreach my $moltype (@{$mol_types{$species}} ){
     my $seq_dir = $wormbase->maskedcdna;
     &check_and_shatter($wormbase->maskedcdna, "$moltype.masked");
     foreach my $seq_file (glob ($seq_dir."/$moltype.masked*")) {
@@ -188,11 +188,10 @@ if ( $run ) {
       # "bsub -E \"test -d /software/worm\" -o /dev/null -e /dev/null -J ". \"
       my $cmd = "/software/worm/bin/blat/blat -noHead ";
       $cmd .= $wormbase->genome_seq ." $seq_file ";
-      $cmd .= $wormbase->blat."/".$wormbase->species."_${moltype}_${chunk_num}.psl";
+      $cmd .= $wormbase->blat."/${species}_${moltype}_${chunk_num}.psl";
 
-      my @bsub_opts = (-J => $wormbase->species . "_${moltype}_${chunk_num}",
-                       -o => "/dev/null",
-                       -e => "/dev/null");
+      my @bsub_opts = (-J => "BLAT_run_${species}_${species}_${moltype}_${chunk_num}",
+                       -o => sprintf("BLAT_run_%s/%s_%s_%s_%d.lsfout", $lsfdir, $species, $species, $moltype, $chunk_num));
 
       $lsf->submit(@bsub_opts, $cmd);
     }
@@ -221,19 +220,17 @@ if( $postprocess ) {
 if ( $process ) {
   
   my $lsf1 = LSF::JobManager->new();
-  foreach my $species (keys %mol_types) {
-    foreach my $type (@{$mol_types{$species}} ) {
+  foreach my $qspecies (keys %mol_types) {
+    foreach my $type (@{$mol_types{$qspecies}} ) {
       #create virtual objects
-      $log->write_to("Submitting $species $type for virtual procesing\n");
+      $log->write_to("Submitting $qspecies $type for virtual procesing\n");
       
-      my $job_name = "worm_".$wormbase->species."_blat";
-
       my $cmd;
       # only get data for confirmed introns from same-species alignmenrs
-      if ($species eq $wormbase->species and $intron) {
-        $cmd = $wormbase->build_cmd("blat2ace.pl -virtual -intron -type $type -qspecies $species");
+      if ($qspecies eq $species and $intron) {
+        $cmd = $wormbase->build_cmd("blat2ace.pl -groupaligns -virtual -intron -type $type -qspecies $qspecies");
       } else {
-        $cmd = $wormbase->build_cmd("blat2ace.pl -virtual -type $type -qspecies $species");
+        $cmd = $wormbase->build_cmd("blat2ace.pl -groupaligns -virtual -type $type -qspecies $qspecies");
       }
       if ($test) {
         $cmd .= " -test";
@@ -242,11 +239,13 @@ if ( $process ) {
         $cmd .= " -debug $debug";
       }
 
+      my $job_name = "BLAT_blat2ace_${species}_${qspecies}_${type}";
       # ask for a file size limit of 2 Gb and a memory limit of 4 Gb
       my @bsub_options = (-F => "2000000", 
 			  -M => "4000000", 
 			  -R => "\"select[mem>4000] rusage[mem=4000]\"",
-			  -J => $job_name);
+			  -J => $job_name, 
+                          -o => "$lsfdir/$job_name.lsfout");
       $lsf1->submit(@bsub_options, $cmd);
       
     }
@@ -261,9 +260,9 @@ if ( $process ) {
   if($intron) {
     $log->write_to("confirming introns . . \n");
     #only do for self species matches
-    foreach my $type (@{$mol_types{$wormbase->species}} ) {
+    foreach my $type (@{$mol_types{$species}} ) {
       my $virt_hash = &confirm_introns($wormbase->species, $type);
-      my $vfile = "$blat_dir/virtual_objects." . $wormbase->species . ".ci.${type}." . $wormbase->species . ".ace";
+      my $vfile = "$blat_dir/virtual_objects.${species}.ci.${type}.${species}.ace";
       open(my $vfh, ">$vfile") or $log->log_and_die("Could not open $vfile for writing\n");
 
       foreach my $tname (keys %$virt_hash) {
@@ -283,13 +282,13 @@ if ( $process ) {
 
 
 if( $load ) {
-  foreach my $species (keys %mol_types){
-    $log->write_to("Loading $species BLAT data\n");
-    foreach my $type (@{$mol_types{$species}}){
+  foreach my $qspecies (keys %mol_types){
+    $log->write_to("Loading $qspecies BLAT data\n");
+    foreach my $type (@{$mol_types{$qspecies}}){
       $log->write_to("\tloading BLAT data - $type\n"); 
 
       # virtual objs
-      my $file =  "$blat_dir/virtual_objects." . $wormbase->species . ".blat.$type.$species.ace";
+      my $file =  "$blat_dir/virtual_objects.$species.blat.$type.$qspecies.ace";
       if (-e $file) {
 	$wormbase->load_to_database( $database, $file,"virtual_objects_$type", $log);
       } else {
@@ -297,10 +296,11 @@ if( $load ) {
       }
 
       # confirmed introns - will only be any for within-species alignments
-      if ($species eq $wormbase->species) {
+      if ($qspecies eq $species) {
 
-        my ($in_v_tag, $in_v_file) = ("blat_introns_virtual$type",  "$blat_dir/virtual_objects.".$wormbase->species.".ci.$type.$species.ace");
-        my ($in_tag, $in_file) = ("blat_good_introns_${type}", "$blat_dir/".$wormbase->species.".good_introns.$type.ace");
+        my ($in_v_tag, $in_v_file) = ("blat_introns_virtual$type",  
+                                      "$blat_dir/virtual_objects.".$wormbase->species.".ci.$type.$qspecies.ace");
+        my ($in_tag, $in_file) = ("blat_good_introns_${type}", "$blat_dir/$species.good_introns.$type.ace");
 
         if (-e $in_v_file and -e $in_file) {
           $wormbase->load_to_database($database, $in_v_file, $in_v_tag, $log);
@@ -311,8 +311,8 @@ if( $load ) {
       }
         
       # BLAT results
-      $file = "$blat_dir/".$wormbase->species.".blat.${species}_$type.ace";
-      $wormbase->load_to_database($database, $file, "blat_${species}_${type}_data", $log,1);
+      $file = "$blat_dir/$species.blat.${qspecies}_$type.ace";
+      $wormbase->load_to_database($database, $file, "blat_${qspecies}_${type}_data", $log, $test ? 0 : 1);
     }
   }
 }
@@ -323,15 +323,15 @@ sub confirm_introns {
   my ($qspecies, $type) = @_;
   
   # open the output files
-  open (my $good_fh, ">$blat_dir/".$wormbase->species.".good_introns.$type.ace") or die "$!";
-  open (my $bad_fh,  ">$blat_dir/".$wormbase->species.".bad_introns.$type.ace")  or die "$!";
+  open (my $good_fh, ">$blat_dir/$species.good_introns.$type.ace") or die "$!";
+  open (my $bad_fh,  ">$blat_dir/$species.bad_introns.$type.ace")  or die "$!";
   
   my ($link,@introns, %seqlength, %virtuals);
    
   $/ = "";
   	
-  open (CI, "<$blat_dir/".$wormbase->species.".ci.${qspecies}_${type}.ace")  
-      or $log->log_and_die("Cannot open $blat_dir/".$wormbase->species.".ci.${qspecies}_${type}.ace $!\n");
+  open (CI, "<$blat_dir/$species.ci.${qspecies}_${type}.ace")  
+      or $log->log_and_die("Cannot open $blat_dir/$species.ci.${qspecies}_${type}.ace $!\n");
 
   while (<CI>) {
     next unless /^\S/;
