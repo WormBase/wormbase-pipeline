@@ -65,12 +65,12 @@ Filter "Method = Transposon_CDS"
 Class elegans_RNA_genes
 Visible
 Is_a_subclass_of Transcript
-Filter "(NOT Method = Coding_transcript) AND (NOT Method = history) AND (Species = C*elegans)"
+Filter "(NOT Method = Coding_transcript) AND (NOT Method = history_transcript) AND (Species = C*elegans)"
 
 Class briggsae_RNA_genes
 Visible
 Is_a_subclass_of Transcript
-Filter "(NOT Method = Coding_transcript) AND (NOT Method = history) AND (Species = C*briggsae)"
+Filter "(NOT Method = Coding_transcript) AND (NOT Method = history_transcript) AND (Species = C*briggsae)"
 
 Class Coding_transcripts
 Visible
