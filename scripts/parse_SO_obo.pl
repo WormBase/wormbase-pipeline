@@ -133,9 +133,12 @@ foreach my $acc (sort keys %terms) {
 sub print_term {
   my ($term, $fh) = @_;
 
-  return if not exists $term->{root_ancestor};
-
-  return if $terms{$term->{root_ancestor}}->{name} ne 'sequence_feature' and not $full_so;
+  if ($term->{is_root}) {
+    return if $term->{name} ne 'sequence_feature' and not $full_so;
+  } else {
+    return if not exists $term->{root_ancestor};
+    return if $terms{$term->{root_ancestor}}->{name} ne 'sequence_feature' and not $full_so;
+  }
 
   printf $fh "\nSO_term : \"%s\"\n", $term->{acc};
   printf $fh "SO_name \"%s\"\n", $term->{name};
@@ -178,11 +181,7 @@ sub print_term {
       printf $fh "Ancestor\t\"%s\"\n", $an;
     }
   }
-
-  if ($so_version) {
-    my @non_root_parents = grep { not $terms{$_}->{is_root} } keys %{$term->{isa}};
-    if (not @non_root_parents) {
-      printf $fh "SO_version \"$so_version\"\n";
-    } 
+  if ($so_version and $term->{is_root}) {
+    printf $fh "SO_version \"$so_version\"\n";
   }
 }
