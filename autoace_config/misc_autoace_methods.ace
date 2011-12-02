@@ -11,24 +11,59 @@
 // and GFF_feature = 'tRNA'
 
 
-//////////////////////////////////////////////////////////////////////////
-//									//
-//            TO ADD A NEW METHOD YOU HAVE TO DO 2 THINGS       	//
-//	      -------------------------------------------		//
-//									//
-// i)  FIND A RELEVANT PLACE IN THE OBJECTS SECTION AND			//
-//     POPULATE THE NEW METHOD						//
-//									//
-// ii) GO TO THE Fmap SECTION (if it is to be mapped) AT THE BOTTOM AND //
-//     DECIDED WHERE IT SHOULD GO ON THE Fmap VIA Right_priority	//
-//									//
-//////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+//									 //
+//            TO ADD A NEW METHOD YOU HAVE TO DO 3 THINGS       	 //
+//	      -------------------------------------------		 //
+//									 //
+// i)   FIND A RELEVANT PLACE IN THE OBJECTS SECTION AND	         //
+//      POPULATE THE NEW METHOD						 //
+//									 //
+// ii)  GO TO THE Fmap SECTION (if it is to be mapped) AT THE BOTTOM AND //
+//      DECIDED WHERE IT SHOULD GO ON THE Fmap VIA Right_priority        //
+//                                                                       // 
+// iii) IF GFF3 DUMPING FOR THE OBJECT(s) ASSOCIATED WITH THE METHOD IS  // 
+//      NOT SIMPLE (i.e. HIERARCHICAL), YOU WILL NEED TO CONNECT IT TO   //
+//      THE APPROPRIATE Ace2SO OBJECT                                    //
+//									 //
+///////////////////////////////////////////////////////////////////////////
 
 				//////////////////////////////
 				//			    //
 				//      OBJECTS SECTION     //
 				//			    //
 				//////////////////////////////
+
+///////////////////////////////////////
+// ?Ace2SO objects
+///////////////////////////////////////
+
+Ace2SO : "CDS_ace2so"
+SO_parent_obj_tag "Gene"
+SO_subpart_tags Source_exons "SO:0000147"   // exon
+SO_subpart_tags Source_introns "SO:0000188" // intron
+SO_subpart_tags Source_CDS "SO:0000316" // CDS
+SO_children
+
+Ace2SO : "primary_transcript_ace2so"
+SO_parent_obj_tag "Gene"
+SO_subpart_tags Source_exons "SO:0000147"
+
+Ace2SO : "coding_transcript_ace2so"
+SO_parent_obj_tag Corresponding_CDS
+SO_subpart_tags Source_exons "SO:0000147"
+SO_subpart_tags Source_introns "SO:0000188"
+
+Ace2SO : "transposable_element_ace2so"
+SO_subpart_tags Source_exons "SO:0000147"
+
+Ace2SO : "predicted_CDS_ace2so"
+SO_subpart_tags Source_CDS "SO:0000316"
+
+Ace2SO : "gene_ace2so"
+SO_children
+
+
 
 ///////////////////////////////////////
 // Sequence and gene related methods //
@@ -41,15 +76,16 @@ Width    1.000000
 Show_text	
 GFF_source	 "operon"
 GFF_feature	 "operon"
+GFF_SO "SO:0000178" // operon
 
 Method : "Deprecated_operon"
 Colour	 PURPLE 
 Show_up_strand
 Width    1.300000
 Show_text	
-GFF_source	 "operon"
+GFF_source	 "deprecated_operon"
 GFF_feature	 "deprecated_operon"
-
+GFF_SO "SO:0000178" // operon
 
 Method : "Gene" 
 Colour	 LIGHTRED
@@ -58,16 +94,8 @@ Width    1.000000
 Show_text	
 GFF_source	 "gene"
 GFF_feature	 "gene"
+GFF_SO "SO:0000704" "gene_ace2so"
 
-Method : "UTR"
-Colour   CERISE
-Show_up_strand CERISE
-Show_text
-Width 1
-GFF_source "UTR"
-GFF_feature "UTR"
-Remark "UTRs in WormBase are currently predicted on the basis of available transcript evidence."
-// Need new GFF_source?
 
 Method : "curated" 
 Colour	 DARKBLUE
@@ -77,6 +105,7 @@ Bumpable
 Show_text	
 EMBL_feature	 "CDS"
 GFF_source	 "curated"
+GFF_SO "SO:0000120" "CDS_ace2so"
 Remark "Predicted protein-coding genes are flagged with this method.  All of these genes have been looked at by a human curator at some point and have usually been modified with respect to the initial computer prediction."
 
 Method : "history" 
@@ -84,8 +113,51 @@ Colour	 GRAY
 CDS_colour	 MAGENTA
 Show_up_strand	 GRAY
 Bumpable	
-Show_text	
+Show_text
+GFF_source       "history"
+GFF_SO "SO:0000185" "primary_transcript_ace2so"	
 Remark "History objects represent old gene predictions which have since been removed, merged with other gene predictions or refined to make a better gene prediction according to the latest evidence"
+
+
+Method : "history_pseudogene"
+Colour	 GRAY
+CDS_colour	 MAGENTA
+Show_up_strand	 GRAY
+Bumpable	
+Show_text
+GFF_source       "history"
+GFF_SO "SO:0000516" "primary_transcript_ace2so"
+Remark "History objects represent old gene predictions which have since been removed, merged with other gene predictions or refined to make a better gene prediction according to the latest evidence"
+
+Method : "history_transcript"
+Colour	 GRAY
+CDS_colour	 MAGENTA
+Show_up_strand	 GRAY
+Bumpable	
+Show_text
+GFF_source      "history"
+GFF_SO "SO:0000483" "primary_transcript_ace2so"	
+Remark "History objects represent old gene predictions which have since been removed, merged with other gene predictions or refined to make a better gene prediction according to the latest evidence"
+
+Method : "history_operon" 
+Colour	 GRAY
+CDS_colour	 MAGENTA
+Show_up_strand	 GRAY
+Bumpable	
+Show_text
+GFF_source       "history"
+GFF_SO "SO:0000178" // operon
+Remark "History objects represent old gene predictions which have since been removed, merged with other gene predictions or refined to make a better gene prediction according to the latest evidence"
+
+Method : "history_feature" 
+Colour	 GRAY
+CDS_colour	 MAGENTA
+Show_up_strand	 GRAY
+Bumpable	
+Show_text
+GFF_source       "history"
+GFF_SO "SO:0000110" // sequence_feature
+Remark "History features represented features that have been removed (e.g. because they have been merged with another feature)"
 
 Method : "Pseudogene" 
 Colour	 DARKGRAY
@@ -94,6 +166,7 @@ Width	 1.500000
 Show_text
 EMBL_feature "Pseudogene"
 EMBL_qualifier	 "\/note=\"\%s\"" "note"
+GFF_SO "SO:0000516" "primary_transcript_ace2so"
 
 Method : "Transposon_Pseudogene" 
 Colour	 DARKGRAY
@@ -105,6 +178,7 @@ EMBL_qualifier	 "\/note=\"\%s\"" "note"
 Remark "This object corresponds to a Pseudogene that has been classified as being part of a degraded transposon or has sequence similarity to a fragment of protein of Transposon origin."
 GFF_source	 "Transposon_Pseudogene"
 GFF_feature	 "transposable_element"
+GFF_SO "SO:0000101" "transposable_element_ace2so"
 
 Method : "Coding_transcript" 
 Colour DARKGREEN
@@ -112,7 +186,7 @@ Show_up_strand
 Width 1.5
 GFF_source "Coding_transcript"
 GFF_feature "protein_coding_primary_transcript"
-
+GFF_SO "SO:0000185" "coding_transcript_ace2so" 
 
 // Use for isoforms of coding genes which don't translate
 Method : "Non_coding_transcript" 
@@ -122,6 +196,7 @@ Show_text
 EMBL_feature	 "misc_RNA"
 GFF_source "Non_coding_transcript"
 GFF_feature "nc_primary_transcript"
+GFF_SO "SO:0000483" "primary_transcript_ace2so"
 
 Method : "Transposon" 
 Colour	 DARKGRAY
@@ -130,6 +205,7 @@ Show_text
 Show_up_strand	
 GFF_source	 "Transposon"
 GFF_feature	 "transposable_element"
+GFF_SO "SO:0000101" "transposable_element_ace2so"
 
 Method : "Transposon_CDS"
 Colour	 DARKGRAY
@@ -139,15 +215,8 @@ Width	 2.000000
 Show_text	
 GFF_source	 "Transposon_CDS"
 GFF_feature	 "transposable_element"
+GFF_SO "SO:0000101" "transposable_element_ace2so"
 
-Method : "RNA" 
-Colour	 GREEN
-Show_up_strand	
-Width	 2.000000
-Show_text	
-EMBL_feature	 "misc_RNA"
-GFF_source "RNA"
-GFF_feature "transcript"
 
 Method : "ncRNA" 
 Colour	 GREEN
@@ -157,6 +226,7 @@ Show_text
 EMBL_feature	 "ncRNA"
 GFF_source "ncRNA"
 GFF_feature "ncRNA_primary_transcript"
+GFF_SO "SO:0000483" "primary_transcript_ace2so"
 
 Method : "rRNA" 
 Colour   GREEN
@@ -167,6 +237,7 @@ Remark "SO:0000252"
 GFF_source "rRNA"
 GFF_feature "rRNA_primary_transcript"
 EMBL_feature "rRNA"
+GFF_SO "SO:0000209" "primary_transcript_ace2so"
 
 Method : "tRNA" 
 Colour	 GREEN
@@ -176,6 +247,7 @@ Show_text
 Remark "SO:0000253"
 GFF_source	 "tRNA_mature_transcript"
 GFF_feature	 "tRNA"
+GFF_SO "SO:0000253" "primary_transcript_ace2so"
 
 Method : "tRNAscan-SE-1.23" 
 Colour	 GREEN
@@ -185,6 +257,7 @@ Show_text
 EMBL_feature	 "tRNA"
 GFF_source "tRNAscan-SE-1.23"
 GFF_feature "tRNA"
+GFF_SO "SO:0000253" "primary_transcript_ace2so"
 
 Method : "tRNAscan-SE-1.3" 
 Colour	 GREEN
@@ -194,6 +267,7 @@ Show_text
 EMBL_feature	 "tRNA"
 GFF_source "tRNAscan-SE-1.3"
 GFF_feature "tRNA"
+GFF_SO "SO:0000253" "primary_transcript_ace2so"
 
 Method : "scRNA" 
 Colour   GREEN
@@ -204,6 +278,7 @@ EMBL_feature     "scRNA"
 Remark "SO:0000013"
 GFF_source "scRNA_mature_transcript"
 GFF_feature "scRNA"
+GFF_SO "SO:0000013" "primary_transcript_ace2so"
 
 Method : "snRNA" 
 Colour   GREEN
@@ -214,6 +289,7 @@ EMBL_feature     "snRNA"
 Remark "SO:0000274"
 GFF_source "snRNA_mature_transcript"
 GFF_feature "snRNA"
+GFF_SO "SO:0000274" "primary_transcript_ace2so"
 
 Method : "snlRNA" 
 Colour   GREEN
@@ -223,6 +299,7 @@ Show_text
 EMBL_feature     "snlRNA"
 GFF_source "snlRNA"
 GFF_feature "snlRNA"
+GFF_SO "SO:0000483" "primary_transcript_ace2so"
 
 Method : "snoRNA" 
 Colour   GREEN
@@ -233,6 +310,7 @@ EMBL_feature     "snoRNA"
 Remark "SO:0000275"
 GFF_source "snoRNA_mature_transcript"
 GFF_feature "snoRNA"
+GFF_SO "SO:0000275" "primary_transcript_ace2so"
 
 Method : "miRNA" 
 Colour   GREEN
@@ -243,6 +321,7 @@ EMBL_feature     "miRNA"
 Remark "SO:0000276"
 GFF_source "miRNA_mature_transcript" //expanded to be more descriptive
 GFF_feature "miRNA" //Changed inline with SO:0000276
+GFF_SO "SO:0000276" "primary_transcript_ace2so"
 
 Method : "miRNA_primary_transcript"
 Colour   GREEN
@@ -253,6 +332,7 @@ EMBL_feature     "miRNA"
 Remark "SO:0000647
 GFF_source "curated_miRNA"
 GFF_feature "miRNA_primary_transcript" //Inline with SO:0000647
+GFF_SO "SO:0000647" "primary_transcript_ace2so"
 
 Method : "stRNA" 
 Colour   GREEN
@@ -263,6 +343,7 @@ EMBL_feature     "misc_RNA"
 Remark "SO:0000649"
 GFF_source "stRNA_mature_transcript"
 GFF_feature "stRNA"
+GFF_SO "SO:0000649" "primary_transcript_ace2so"
 
 ////////////////////////////
 // Allele related methods //
@@ -276,6 +357,7 @@ Show_text
 Strand_sensitive
 GFF_source "Allele"
 GFF_feature "sequence_variant"
+GFF_SO "SO:0001059" // sequence_alteration
 Remark "Alleles in WormBase represent small sequence mutations (substitutions or indels) with the differences usually being between the sequenced (N2) strain of C. elegans and some other strain.  The Allele track on the WormBase web site also includes SNPs and transposon mediated insertions"
 
 
@@ -286,8 +368,8 @@ Show_text
 Strand_sensitive
 GFF_source "Allele"
 GFF_feature "deletion"
+GFF_SO "SO:0000159" // deletion
 Remark "Deletion alleles in WormBase represent where other strains of C. elegans have a tract of genomic sequence deleted (with respect to the sequenced N2 strain).  Many deletion alleles in WormBase were generated by the C. elegans Knockout Consortium, though details of many other deletion alleles have been extracted from the literature.  Some deletion alleles represent deletions which have also been associated with a insertion, i.e. a large tract of sequence is deleted and replaced by a smaller tract of different sequence."
-// Need new GFF_source?
 
 
 Method : "SNP" 
@@ -297,8 +379,8 @@ Show_text
 Strand_sensitive
 GFF_source "Allele"
 GFF_feature "SNP"
+GFF_SO "SO:0000694"
 Remark "Single Nucleotide Polymorphisms.  Most SNPs in WormBase determined from comparison with C. elegans strain CB4856"
-// Need new GFF_source?
 
 
 Method : "Insertion_allele"
@@ -308,9 +390,8 @@ Show_text
 Strand_sensitive
 GFF_source "Allele"
 GFF_feature "insertion"
+GFF_SO "SO:0000366" // insertion_site
 Remark "Simple insertion alleles, which are not due to transposon insertions.  Allele object should (ideally) capture nature of inserted sequence"
-// Need new GFF_source?
-
 
 Method : "Deletion_and_insertion_allele" 
 Width 1.1
@@ -319,8 +400,8 @@ Show_text
 Strand_sensitive
 GFF_source "Allele"
 GFF_feature "complex_change_in_nucleotide_sequence"
+GFF_SO "SO:1000005" // complex_substitution
 Remark "Basically, these are deletion alleles where the deletion is replaced by (a usually smaller length) insertion sequence"
-// Need new GFF_source?
 
 
 Method : "Transposon_insertion" 
@@ -330,8 +411,8 @@ Show_text
 Strand_sensitive
 GFF_source "Allele"
 GFF_feature "transposable_element_insertion_site"
+GFF_SO "SO:0000368" // transposable_element_insertion_site
 Remark "Most of the annotated transposon-mediated insertion sites in WormBase were engineered by Laurent Segalat and others [Alvarez et al., Towards a genome-wide collection of transposon insertions, International C. elegans Meeting 1999 #757]."
-// Need new GFF_source?
 
 
 Method : "Mos_insertion" 
@@ -342,7 +423,7 @@ Width "1.1"
 Show_text
 GFF_source "Mos_insertion_allele"
 GFF_feature "transposable_element_insertion_site"
-
+GFF_SO "SO:0000368" // transposable_element_insertion_site
 
 Method : "Substitution_allele" 
 Remark "Simple allelic changes, i.e. mono or di-nucleotide substitutions"
@@ -352,6 +433,7 @@ Width "1.1"
 Show_text
 GFF_source "Allele"
 GFF_feature "substitution"
+GFF_SO "SO:1000002" // substitution
 
 
 Method : "Variation_PCR" 
@@ -361,7 +443,9 @@ Width	 1.000000
 Show_text	
 GFF_source	 "Variation_PCR"
 GFF_feature	 "PCR_product"
+GFF_SO "SO:0000006" // PCR_product
 Remark "PCR products used in Variation objects"
+
 
 Method : "CGH_allele"
 Remark "Comparative Genomic Hybridization"
@@ -369,8 +453,9 @@ Display Colour ORANGE
         Strand_sensitive
         Width 1.1
         Show_text
-GFF GFF_source "CGH_allele"
-    GFF_feature "deletion"
+GFF_source "CGH_allele"
+GFF_feature "deletion"
+GFF_SO "SO:0000159" // deletion
 
 Method : Million_mutation
 Remark "A collaborative project between the Genome Sciences Department in Seattle (R.H. Waterston, L. Hillier and J. Shendure) and the Moerman Lab. Starting April 1, 2010, a collection of 1,500 to 2,000 mutagenized lines using various mutagens, including EMS, ENU and UV/TMP will be built"
@@ -378,9 +463,9 @@ Display Colour Orange
         Strand_sensitive
         Width 1.1
         Show_text
-GFF GFF_source "Million_mutation"
-    GFF_feature "SNP"
-
+GFF_source "Million_mutation"
+GFF_feature "SNP"
+GFF_SO "SO:0000694"
 
 
 ////////////////////////////
@@ -393,6 +478,7 @@ CDS_colour       DARKRED
 Show_up_strand   DARKRED
 Bumpable
 Show_text
+GFF_SO "SO:0000185" "predicted_CDS_ace2so"
 
 Method : "jigsaw" 
 Colour   ORANGE
@@ -407,6 +493,7 @@ CDS_colour       GREEN
 Show_up_strand   GREEN
 Bumpable
 Show_text
+GFF_SO "SO:0000185" "predicted_CDS_ace2so"
 
 Method : "Genefinder" 
 Colour   DARKGRAY
@@ -414,6 +501,7 @@ CDS_colour       DARKGRAY
 Show_up_strand   DARKGRAY
 Bumpable
 Show_text
+GFF_SO "SO:0000185" "predicted_CDS_ace2so"
 
 Method : "ensembl"
 Colour   ORANGE
@@ -421,6 +509,7 @@ CDS_colour       PALEORANGE
 Show_up_strand   PALEORANGE
 Bumpable
 Show_text
+GFF_SO "SO:0000185" "predicted_CDS_ace2so"
 
 Method : "twinscan" 
 Colour   DARKGREEN
@@ -428,6 +517,7 @@ CDS_colour       DARKGREEN
 Show_up_strand   DARKGREEN
 Bumpable
 Show_text
+GFF_SO "SO:0000185" "predicted_CDS_ace2so"
 
 Method : "mGene"
 Colour	BROWN
@@ -435,7 +525,7 @@ CDS_colour	BROWN
 Show_up_strand	BROWN
 Bumpable
 Show_text
-
+GFF_SO "SO:0000185" "predicted_CDS_ace2so"
 
 Method : "RNASEQ.Adult_spe-9"
 Colour   RED
@@ -556,7 +646,7 @@ Show_up_strand RED
 Overlap_mode Bumpable
 Show_text
 Remark "Method for the Camace version of the Hillier RNASEQ CDS data which is all collapsed into one method."
-
+GFF_SO "SO:0000185" "predicted_CDS_ace2so"
 
 Method : "RNASEQ.Hillier.Aggregate"
 Colour BLACK
@@ -564,6 +654,7 @@ CDS_colour BLACK
 Overlap_mode Bumpable
 Show_text
 Remark "The CDS part of the aggregate transcripts predicted by LaDeana Hillier's anaysis of modENCODE data."
+GFF_SO "SO:0000185" "predicted_CDS_ace2so"
 
 ////////////////////////////////////////////////////
 // Homology related methods (BLAST, BLAT and Waba //
@@ -590,8 +681,8 @@ Score_bounds	 50.000000 100.000000
 Blixem_N	
 GFF_source	 "BLAT_TC1_OTHER"
 GFF_feature	 "nucleotide_match"
+GFF_SO "SO:0000347" // nucleotide_match
 Remark "This method is used to map flanking sequences of Tc1 insertions in another strain of C. elegans against the N2 genome sequence."
-// Need new GFF_feature?
 
 
 //Method : "BLAT_BAC_END" 
@@ -612,6 +703,7 @@ Display_gaps
 Blixem_N
 GFF_source "EXONERATE_BAC_END_BEST"
 GFF_feature "nucleotide_match"
+GFF_SO "SO:0000347" // nucleotide_match
 Remark "Best-in-genome placements for C.briggsae BAC end sequences."
 
 
@@ -622,6 +714,7 @@ Display_gaps
 Blixem_N
 GFF_source "EXONERATE_BAC_END_OTHER"
 GFF_feature "nucleotide_match"
+GFF_SO "SO:0000347" // nucleotide_match
 Remark "Secondary placements for C.briggsae BAC end sequences."
 
 
@@ -634,8 +727,8 @@ Overlap
 Blixem_N
 Join_blocks
 GFF_feature "nucleotide_match"
+GFF_SO "SO:0000347" // nucleotide_match
 Remark "This method is used to match C. elegans coding sequences (using the BLAT program) from EMBL entries that were sequenced/predicted outside of the genome project..."
-// Need GFF_source and GFF_feature?
 
 
 Method : "BLAT_EMBL_OTHER" 
@@ -646,8 +739,8 @@ Overlap
 Blixem_N
 Join_blocks
 GFF_feature "nucleotide_match"
+GFF_SO "SO:0000347" // nucleotide_match
 Remark "This method is used to match C. elegans coding sequences (using the BLAT program) from EMBL entries that were sequenced/predicted outside of the genome project..."
-// Need GFF_source and GFF_feature?
 
 
 Method : "BLAT_EST_BEST" 
@@ -659,8 +752,8 @@ Overlap
 Blixem_N
 Join_blocks
 GFF_feature "EST_match"
+GFF_SO "SO:0000668" // EST_match
 Remark "This method describes C. elegans EST sequences..."
-// Need GFF_source and GFF_feature?
 
 
 Method : "BLAT_EST_OTHER" 
@@ -671,8 +764,8 @@ Overlap
 Blixem_N
 Join_blocks
 GFF_feature "EST_match"
+GFF_SO "SO:0000668" // EST_match
 Remark "This method describes C. elegans EST sequences..."
-// Need GFF_source and GFF_feature?
 
 
 Method : "BLAT_mRNA_BEST" 
@@ -684,8 +777,8 @@ Overlap
 Blixem_N
 Join_blocks
 GFF_feature "cDNA_match"
+GFF_SO "SO:0000689" // cDNA_match
 Remark "This method describes C. elegans mRNA sequences..."
-// Need GFF_source and GFF_feature?
 
 
 Method : "BLAT_mRNA_OTHER" 
@@ -696,8 +789,8 @@ Overlap
 Blixem_N
 Join_blocks
 GFF_feature "cDNA_match"
+GFF_SO "SO:0000689" // cDNA_match
 Remark "This method describes C. elegans mRNA sequences...."
-// Need GFF_source and GFF_feature?
 
 Method : "BLAT_ncRNA_BEST" 
 COLOUR "RED"
@@ -708,8 +801,8 @@ Overlap
 Blixem_N
 Join_blocks
 GFF_feature "nucleotide_match"
+GFF_SO "SO:0000347" // nucleotide_match
 Remark "This method describes C. elegans ncRNA sequences..."
-// Need GFF_source and GFF_feature?
 
 
 Method : "BLAT_ncRNA_OTHER" 
@@ -720,8 +813,8 @@ Overlap
 Blixem_N
 Join_blocks
 GFF_feature "nucleotide_match"
+GFF_SO "SO:0000347" // nucleotide_match
 Remark "This method describes C. elegans ncRNA sequences...."
-// Need GFF_source and GFF_feature?
 
 
 Method : "BLAT_OST_BEST" 
@@ -732,8 +825,8 @@ Score_bounds     50.000000 100.000000
 Join_blocks
 Blixem_N
 GFF_feature "expressed_sequence_match"
+GFF_SO "SO:0000102" // expressed_sequence_match
 Remark "This method describes C. elegans OST sequences...."
-// Need GFF_source and GFF_feature?
 
 Method : "BLAT_OST_OTHER" 
 Colour   "GRAY"
@@ -744,8 +837,8 @@ Overlap
 Join_blocks
 Blixem_N
 GFF_feature "expressed_sequence_match"
+GFF_SO "SO:0000102" // expressed_sequence_match
 Remark "This method describes C. elegans RST sequences...."
-// Need GFF_source and GFF_feature?
 
 Method : "BLAT_Caen_OST_BEST" 
 Colour   "PALEGRAY"
@@ -755,8 +848,8 @@ Score_bounds     50.000000 100.000000
 Join_blocks
 Blixem_N
 GFF_feature "expressed_sequence_match"
+GFF_SO "SO:0000181" // translated_nucleotide_match
 Remark "This method describes C. elegans OST sequences...."
-// Need GFF_source and GFF_feature?
 
 Method : "BLAT_Caen_OST_OTHER" 
 Colour   "GRAY"
@@ -767,8 +860,9 @@ Overlap
 Join_blocks
 Blixem_N
 GFF_feature "expressed_sequence_match"
+GFF_SO "SO:0000181" // translated_nucleotide_match
+GFF_SO "SO:0000102" // expressed_sequence_match
 Remark "This method describes C. elegans RST sequences...."
-// Need GFF_source and GFF_feature?
 
 Method : "BLAT_RST_BEST" 
 Colour   "LIGHTGRAY"
@@ -778,8 +872,8 @@ Score_bounds     50.000000 100.000000
 Join_blocks
 Blixem_N
 GFF_feature "expressed_sequence_match"
+GFF_SO "SO:0000102" // expressed_sequence_match
 Remark "This method describes C. elegans RST sequences...."
-// Need GFF_source and GFF_feature?
 
 Method : "BLAT_RST_OTHER" 
 Colour   "DARKGRAY"
@@ -790,8 +884,8 @@ Overlap
 Join_blocks
 Blixem_N
 GFF_feature "expressed_sequence_match"
+GFF_SO "SO:0000102" // expressed_sequence_match
 Remark "This method describes C. elegans OST sequences...."
-// Need GFF_source and GFF_feature?
 
 Method : "BLAT_Caen_EST_BEST" 
 Colour   "GREEN"
@@ -801,8 +895,8 @@ Score_bounds     50.000000 100.000000
 Join_blocks
 Blixem_N
 GFF_feature "expressed_sequence_match"
+GFF_SO "SO:0000181" // translated_nucleotide_match
 Remark "This method describes the best location of ESTs from other Caenorhabditae sp aligned to geneome"
-// Need GFF_source and GFF_feature?
 
 Method : "BLAT_Caen_EST_OTHER" 
 Colour   "PALEGREEN"
@@ -813,9 +907,8 @@ Overlap
 Join_blocks
 Blixem_N
 GFF_feature "expressed_sequence_match"
+GFF_SO "SO:0000181" // translated_nucleotide_match
 Remark "This method describes the secondary location of ESTs from other Caenorhabditae sp aligned to geneome"
-// Need GFF_source and GFF_feature?
-
 
 Method : "BLAT_Caen_mRNA_BEST" 
 Colour   "PALEYELLOW"
@@ -825,8 +918,8 @@ Score_bounds     50.000000 100.000000
 Join_blocks
 Blixem_N
 GFF_feature "expressed_sequence_match"
+GFF_SO "SO:0000181" // translated_nucleotide_match
 Remark "This method describes the best location of mRNAs from other Caenorhabditae sp aligned to geneome"
-// Need GFF_source and GFF_feature?
 
 Method : "BLAT_Caen_mRNA_OTHER" 
 Colour   "BROWN"
@@ -836,8 +929,8 @@ Score_bounds     50.000000 100.000000
 Join_blocks
 Blixem_N
 GFF_feature "expressed_sequence_match"
+GFF_SO "SO:0000181" // translated_nucleotide_match
 Remark "This method describes the secondary locations of mRNA from other Caenorhabditae sp aligned to geneome"
-// Need GFF_source and GFF_feature?
 
 Method : "BLAT_NEMATODE" 
 Colour "GREEN"
@@ -848,8 +941,8 @@ Overlap
 Blixem_N
 Join_blocks
 GFF_feature "translated_nucleotide_match"
+GFF_SO "SO:0000181" // translated_nucleotide_match
 Remark "This method describes cDNA sequences from other nematode species (i.e. non-C. elegans)..."
-// Need GFF_source and GFF_feature?
 
 Method : "BLAT_WASHU" 
 Colour "LIGHTGREEN"
@@ -860,8 +953,8 @@ Overlap
 Blixem_N
 Join_blocks
 GFF_feature "translated_nucleotide_match"
+GFF_SO "SO:0000181" // translated_nucleotide_match
 Remark "This method describes EST contigs of non-elegans nematode species from the WashU NemaGene project"
-// Need GFF_source and GFF_feature?
 
 Method : "BLAT_NEMBASE" 
 Colour "LIGHTGREEN"
@@ -872,8 +965,8 @@ Overlap
 Blixem_N
 Join_blocks
 GFF_feature "translated_nucleotide_match"
+GFF_SO "SO:0000181" // translated_nucleotide_match
 Remark "This method describes EST contigs of non-elegans nematode species from the Edinburgh NemBase project"
-// Need GFF_source and GFF_feature?
 
 
 			//////////
@@ -888,6 +981,7 @@ Score_by_width
 Score_bounds 40 120
 Allow_misalign
 GFF_feature "nucleotide_match"
+GFF_SO "SO:0000347" // nucleotide_match
 Remark "WABA 'Coding' matches resulting from a search of C. briggsae assembly against C. elegans genome"
 Strand_sensitive
 
@@ -900,6 +994,7 @@ Score_by_width
 Score_bounds 40 120
 Allow_misalign
 GFF_feature "nucleotide_match"
+GFF_SO "SO:0000347" // nucleotide_match
 Remark "WABA 'Strong' matches resulting from a search of C. briggsae assembly against C. elegans genome"
 Strand_sensitive
 
@@ -912,6 +1007,7 @@ Score_by_width
 Score_bounds 40 120
 Allow_misalign
 GFF_feature "nucleotide_match"
+GFF_SO "SO:0000347" // nucleotide_match
 Remark "WABA 'weak' matches resulting from a search of C. briggsae assembly against C. elegans genome"
 Strand_sensitive
 
@@ -983,6 +1079,7 @@ Allow_misalign
 Blixem_X
 GFF_source       "wublastx"  
 GFF_feature      "protein_match"
+GFF_SO "SO:0000349" // protein_match
 Join_blocks
 Remark   "wublastx search of C. elegans genomic clones vs Wormpep"
 Display_gaps
@@ -998,6 +1095,7 @@ Allow_misalign
 Blixem_X
 GFF_source       "wublastx"  
 GFF_feature      "protein_match"
+GFF_SO "SO:0000349" // protein_match
 Join_blocks
 Remark   "wublastx search of C. elegans genomic clones vs C. briggsae peptides"
 Display_gaps
@@ -1013,6 +1111,7 @@ Allow_misalign
 Blixem_X
 GFF_source       "wublastx"
 GFF_feature      "protein_match"
+GFF_SO "SO:0000349" // protein_match
 Join_blocks
 Remark   "wublastx search of C. elegans genomic clones vs C. remanei peptides"
 Display_gaps
@@ -1028,6 +1127,7 @@ Allow_misalign
 Blixem_X
 GFF_source       "wublastx"  
 GFF_feature      "protein_match"
+GFF_SO "SO:0000349" // protein_match
 Join_blocks
 Remark   "wublastx search of genomic clones vs Brepep"
 Display_gaps
@@ -1044,6 +1144,7 @@ Allow_misalign
 Blixem_X
 GFF_source       "wublastx"
 GFF_feature      "protein_match"
+GFF_SO "SO:0000349" // protein_match
 Join_blocks
 Remark   "wublastx search vs P. pacificus peptides"
 Display_gaps
@@ -1060,6 +1161,7 @@ Allow_misalign
 Blixem_X
 GFF_source       "wublastx"
 GFF_feature      "protein_match"
+GFF_SO "SO:0000349" // protein_match
 Join_blocks
 Remark   "wublastx search vs C. japonica peptides"
 Display_gaps
@@ -1076,6 +1178,7 @@ Allow_misalign
 Blixem_X
 GFF_source       "wublastx"
 GFF_feature      "protein_match"
+GFF_SO "SO:0000349" // protein_match
 Join_blocks
 Remark   "wublastx search of C. elegans genomic clones vs Drosophila melanogaster proteins from GadFly"
 Display_gaps
@@ -1092,6 +1195,7 @@ Allow_misalign
 Blixem_X
 GFF_source       "wublastx"  
 GFF_feature      "protein_match"
+GFF_SO "SO:0000349" // protein_match
 Join_blocks
 Remark   "wublastx search of C. elegans genomic clones vs Saccharomyces cerevisiae proteins from SGD"
 Display_gaps
@@ -1108,6 +1212,7 @@ Allow_misalign
 Blixem_X
 GFF_source       "wublastx"  
 GFF_feature      "protein_match"
+GFF_SO "SO:0000349" // protein_match
 Join_blocks
 Remark   "wublastx search of C. elegans genomic clones vs Human proteins from IPI human protein set"
 Display_gaps
@@ -1124,6 +1229,7 @@ Allow_misalign
 Blixem_X
 GFF_source       "wublastx"  
 GFF_feature      "protein_match"
+GFF_SO "SO:0000349" // protein_match
 Join_blocks
 Remark   "wublastx search of C. elegans genomic clones vs proteins from reduced SwissProt dataset"
 Display_gaps
@@ -1140,6 +1246,7 @@ Allow_misalign
 Blixem_X
 GFF_source       "wublastx"  
 GFF_feature      "protein_match"
+GFF_SO "SO:0000349" // protein_match
 Join_blocks
 Remark   "wublastx search of C. elegans genomic clones vs proteins from reduced TrEmbl dataset"
 Display_gaps
@@ -1160,8 +1267,6 @@ Score_bounds     1.000000 300.000000
 Overlap
 Blixem_N
 Join_blocks
-GFF_source	"RNASeq"
-GFF_feature	"overlapping_EST_set"
 Remark "This is the Adult_spe-9 read set from the Hillier & Waterston 2009 paper."
 
 Method : "RNASeq_Hillier.L1"
@@ -1172,8 +1277,6 @@ Score_bounds     1.000000 300.000000
 Overlap
 Blixem_N
 Join_blocks
-GFF_source	"RNASeq"
-GFF_feature	"overlapping_EST_set"
 Remark "This is the L1 read set from the Hillier & Waterston 2009 paper."
 
 Method : "RNASeq_Hillier.L2"
@@ -1184,8 +1287,6 @@ Score_bounds     1.000000 300.000000
 Overlap
 Blixem_N
 Join_blocks
-GFF_source	"RNASeq"
-GFF_feature	"overlapping_EST_set"
 Remark "This is the L2 read set from the Hillier & Waterston 2009 paper."
 
 Method : "RNASeq_Hillier.L3"
@@ -1196,8 +1297,6 @@ Score_bounds     1.000000 300.000000
 Overlap
 Blixem_N
 Join_blocks
-GFF_source	"RNASeq"
-GFF_feature	"overlapping_EST_set"
 Remark "This is the L3 read set from the Hillier & Waterston 2009 paper."
 
 Method : "RNASeq_Hillier.L4"
@@ -1208,8 +1307,6 @@ Score_bounds     1.000000 300.000000
 Overlap
 Blixem_N
 Join_blocks
-GFF_source	"RNASeq"
-GFF_feature	"overlapping_EST_set"
 Remark "This is the L4 read set from the Hillier & Waterston 2009 paper."
 
 Method : "RNASeq_Hillier.Young_Adult"
@@ -1220,8 +1317,6 @@ Score_bounds     1.000000 300.000000
 Overlap
 Blixem_N
 Join_blocks
-GFF_source	"RNASeq"
-GFF_feature	"overlapping_EST_set"
 Remark "This is the Young_Adult read set from the Hillier & Waterston 2009 paper."
 
 Method : "RNASeq_Hillier.dauer_daf-2"
@@ -1232,8 +1327,6 @@ Score_bounds     1.000000 300.000000
 Overlap
 Blixem_N
 Join_blocks
-GFF_source	"RNASeq"
-GFF_feature	"overlapping_EST_set"
 Remark "This is the dauer_daf-2 read set from the Hillier & Waterston 2009 paper."
 
 Method : "RNASeq_Hillier.dauer_entry_daf-2"
@@ -1244,8 +1337,6 @@ Score_bounds     1.000000 300.000000
 Overlap
 Blixem_N
 Join_blocks
-GFF_source	"RNASeq"
-GFF_feature	"overlapping_EST_set"
 Remark "This is the dauer_entry_daf-2 read set from the Hillier & Waterston 2009 paper."
 
 Method : "RNASeq_Hillier.dauer_exit_daf-2"
@@ -1256,8 +1347,6 @@ Score_bounds     1.000000 300.000000
 Overlap
 Blixem_N
 Join_blocks
-GFF_source	"RNASeq"
-GFF_feature	"overlapping_EST_set"
 Remark "This is the dauer_exit_daf-2 read set from the Hillier & Waterston 2009 paper."
 
 Method : "RNASeq_Hillier.early_embryo"
@@ -1268,8 +1357,6 @@ Score_bounds     1.000000 300.000000
 Overlap
 Blixem_N
 Join_blocks
-GFF_source	"RNASeq"
-GFF_feature	"overlapping_EST_set"
 Remark "This is the early_embryo read set from the Hillier & Waterston 2009 paper."
 
 Method : "RNASeq_Hillier.embryo_him-8"
@@ -1280,8 +1367,6 @@ Score_bounds     1.000000 300.000000
 Overlap
 Blixem_N
 Join_blocks
-GFF_source	"RNASeq"
-GFF_feature	"overlapping_EST_set"
 Remark "This is the embryo_him-8 read set from the Hillier & Waterston 2009 paper."
 
 Method : "RNASeq_Hillier.late_embryo"
@@ -1292,8 +1377,6 @@ Score_bounds     1.000000 300.000000
 Overlap
 Blixem_N
 Join_blocks
-GFF_source	"RNASeq"
-GFF_feature	"overlapping_EST_set"
 Remark "This is the late_embryo read set from the Hillier & Waterston 2009 paper."
 
 Method : "RNASeq_Hillier.lin-35_n745_mid-L1"
@@ -1304,8 +1387,6 @@ Score_bounds     1.000000 300.000000
 Overlap
 Blixem_N
 Join_blocks
-GFF_source	"RNASeq"
-GFF_feature	"overlapping_EST_set"
 Remark "This is the lin-35_n745_mid-L1 read set from the Hillier & Waterston 2009 paper."
 
 Method : "RNASeq_Hillier.L4_larva_Male"
@@ -1316,8 +1397,6 @@ Score_bounds     1.000000 300.000000
 Overlap
 Blixem_N
 Join_blocks
-GFF_source	"RNASeq"
-GFF_feature	"overlapping_EST_set"
 Remark "This is the male_mid-L4 read set from the Hillier & Waterston 2009 paper."
 
 Method : "RNASeq_Hillier.L4_soma_JK1107_no_DNaseI"
@@ -1328,8 +1407,6 @@ Score_bounds     1.000000 300.000000
 Overlap
 Blixem_N
 Join_blocks
-GFF_source	"RNASeq"
-GFF_feature	"overlapping_EST_set"
 Remark "This is the L4 soma tissue read set from the Hillier & Waterston 2009 paper."
 
 Method : "RNASeq_Hillier.L1_larva_lin-35"
@@ -1340,8 +1417,6 @@ Score_bounds     1.000000 300.000000
 Overlap
 Blixem_N
 Join_blocks
-GFF_source	"RNASeq"
-GFF_feature	"overlapping_EST_set"
 Remark "This is the L1 lin-35 read set from the Hillier & Waterston 2009 paper."
 
 Method : "RNASeq_Hillier.L1_larva"
@@ -1352,8 +1427,6 @@ Score_bounds     1.000000 300.000000
 Overlap
 Blixem_N
 Join_blocks
-GFF_source	"RNASeq"
-GFF_feature	"overlapping_EST_set"
 Remark "This is the L1 read set from the Hillier & Waterston 2009 paper."
 
 Method : "RNASeq_Hillier.L2_larva"
@@ -1364,8 +1437,6 @@ Score_bounds     1.000000 300.000000
 Overlap
 Blixem_N
 Join_blocks
-GFF_source	"RNASeq"
-GFF_feature	"overlapping_EST_set"
 Remark "This is the L2 read set from the Hillier & Waterston 2009 paper."
 
 Method : "RNASeq_Hillier.L3_larva"
@@ -1376,8 +1447,6 @@ Score_bounds     1.000000 300.000000
 Overlap
 Blixem_N
 Join_blocks
-GFF_source	"RNASeq"
-GFF_feature	"overlapping_EST_set"
 Remark "This is the L3 read set from the Hillier & Waterston 2009 paper."
 
 Method : "RNASeq_Hillier.L4_larva"
@@ -1388,8 +1457,6 @@ Score_bounds     1.000000 300.000000
 Overlap
 Blixem_N
 Join_blocks
-GFF_source	"RNASeq"
-GFF_feature	"overlapping_EST_set"
 Remark "This is the L4 read set from the Hillier & Waterston 2009 paper."
 
 Method : "RNASeq_Hillier.young_adult_Harposporium"
@@ -1400,8 +1467,6 @@ Score_bounds     1.000000 300.000000
 Overlap
 Blixem_N
 Join_blocks
-GFF_source	"RNASeq"
-GFF_feature	"overlapping_EST_set"
 Remark "This is the young adult exposed to Harposporium read set from the Hillier & Waterston 2009 paper."
 
 Method : "RNASeq_Hillier.young_adult_Harposporium_control"
@@ -1412,8 +1477,6 @@ Score_bounds     1.000000 300.000000
 Overlap
 Blixem_N
 Join_blocks
-GFF_source	"RNASeq"
-GFF_feature	"overlapping_EST_set"
 Remark "This is the young adult exposed to Harposporium control read set from the Hillier & Waterston 2009 paper."
 
 Method : "RNASeq_Hillier.young_adult_S_macescens"
@@ -1424,8 +1487,6 @@ Score_bounds     1.000000 300.000000
 Overlap
 Blixem_N
 Join_blocks
-GFF_source	"RNASeq"
-GFF_feature	"overlapping_EST_set"
 Remark "This is the young adult exposed to S. macescens read set from the Hillier & Waterston 2009 paper."
 
 Method : "RNASeq_Hillier.young_adult_S_macescens_control"
@@ -1436,8 +1497,6 @@ Score_bounds     1.000000 300.000000
 Overlap
 Blixem_N
 Join_blocks
-GFF_source	"RNASeq"
-GFF_feature	"overlapping_EST_set"
 Remark "This is the young adult exposed to S. macescens read set from the Hillier & Waterston 2009 paper."
 
 
@@ -1491,10 +1550,12 @@ Remark "This method is used by acedb to show protein-coding genes on the FMAP di
 Method : "Link"
 GFF_source "Link"
 GFF_feature "region"
+GFF_SO "SO:0000143" // assembly_component
 No_display	
 
 Method : "Genomic_canonical"
 GFF_feature "region"
+GFF_SO "SO:0000143" // assembly_component
 Remark	 "Method for sequences of genomic clones selected for use in the genome sequencing project of C. elegans"
 No_display	
 
@@ -1585,34 +1646,41 @@ Method : "Oligo_set"
 Remark          "A collection of oligonucleotide probes found in a microarray spot that defines the spot hybridization target."
 GFF_source      "Oligo_set"
 GFF_feature     "reagent"
+GFF_SO "SO:0000695" // reagent
 Width    1.000000
 
 Method : "SAGE_tag" 
 Remark  "A short diagnostic sequence tag, serial analysis of gene expression (SAGE), that allows the quantitative and simultaneous analysis of a large number of transcripts. A SAGE tag can be mapped to multiple transcripts and genomic locations."
 GFF_source      "SAGE_tag"
 GFF_feature     "SAGE_tag"
+GFF_SO "SO:0000326" // SAGE_tag
 
 Method : "SAGE_tag_unambiguously_mapped" 
 Remark  "A SAGE tag that is mapped to a single transcript or to multiple transcripts corresponding to a single gene. An unambiguously mapped SAGE tag has a unique genomic location."
 GFF_source      "SAGE_tag_unambiguously_mapped"
 GFF_feature     "SAGE_tag"
+GFF_SO "SO:0000326" // SAGE_tag
+
 
 Method : "SAGE_tag_most_three_prime" 
 Remark  "A SAGE tag that is mapped to multiple transcripts but is most likely derived from the one, to which it is mapped closest to the 3' end due to the SAGE experimental procedure. Proximity to the 3' end is determined based on the number of anchoring enzyme restriction sites (the 3' most site corresponds to position 1)."
 GFF_source      "SAGE_tag_most_three_prime"
 GFF_feature     "SAGE_tag"
+GFF_SO "SO:0000326" // SAGE_tag
+
 
 Method : "SAGE_tag_genomic_unique" 
 Remark  "A SAGE tag that is not mapped to any transcript but is mapped to a unique genomic location."
 GFF_source      "SAGE_tag_genomic_unique"
 GFF_feature     "SAGE_tag"
+GFF_SO "SO:0000326" // SAGE_tag
 
 
 Method : "cDNA_for_RNAi" 
 Width    1.000000
 GFF_source	 "cDNA_for_RNAi"
 GFF_feature	 "experimental_result_region"
-// Need new GFF_source and GFF_feature?
+GFF_SO "SO:0000703" // experimental_result_region
 
 
 Method : "Expr_profile" 
@@ -1622,10 +1690,13 @@ Allow_misalign
 Show_text
 GFF_source "Expr_profile"
 GFF_feature	 "experimental_result_region"
+GFF_SO "SO:0000703"  // experimental_result_region
+
 
 Method : "Expr_pattern" 
 GFF_source	"Expr_pattern"
 GFF_feature	"reagent"
+GFF_SO "SO:0000695" // reagent
 Colour "RED"
 Allow_misalign
 Width 1.000000
@@ -1634,6 +1705,7 @@ Strand_sensitive Show_up_strand
 Method : "Chronogram" 
 GFF_source      "Chronogram"
 GFF_feature     "reagent"
+GFF_SO "SO:0000695" // reagent
 Colour ORANGE
 Allow_misalign
 Width 1
@@ -1645,6 +1717,7 @@ Width    1.000000
 Show_text	
 GFF_source	 "Orfeome"
 GFF_feature	 "PCR_product"
+GFF_SO "SO:0000006" // PCR_product
 
 Method : "GenePairs" 
 Colour	BLUE
@@ -1652,14 +1725,8 @@ Width    1.000000
 Show_text	
 GFF_source	 "GenePair_STS"
 GFF_feature	 "PCR_product"
+GFF_SO "SO:0000006" // PCR_product
 Remark "PCR product"
-
-Method : "RNAi"
-Width    1.000000
-Allow_misalign
-Colour "DARKGREEN"
-GFF_source	 "RNAi"
-GFF_feature	 "RNAi_reagent"
 
 //RNAi Homols primary and secondary to distinguish identity to genomic target
 Method : "RNAi_primary" 
@@ -1668,6 +1735,7 @@ Allow_misalign
 Colour "DARKGREEN"
 GFF_source	"RNAi_primary"
 GFF_feature	"RNAi_reagent"
+GFF_SO "SO:0000337" // RNAi_reagent
 Remark	"SO:0000337"
 Remark  "Primary matches for RNAi probes. Criteria Blast/BLAT >95% sequence identity over a stretch of at least 100 nt."
 
@@ -1677,16 +1745,15 @@ Allow_misalign
 Colour "LIGHTGREEN"
 GFF_source	"RNAi_secondary"
 GFF_feature	"RNAi_reagent"
+GFF_SO "SO:0000337" // RNAi_reagent
 Remark	"SO:0000337"
 Remark  "Secondary matches for RNAi probes. Criteria Blast 80-94.99% sequence identity over a stretch of at least 200 nt."
 
-Method : "RNAi_EST"
-GFF_source	 "cDNA_for_RNAi"
-GFF_feature	 "similarity"
 
 Method : "Vancouver_fosmid"
 GFF_source Vancouver_fosmid
 GFF_feature region
+GFF_SO "SO:0000347" // nucleotide_match
 No_display
 Remark "Method for the Vancouver fosmid clones"
 
@@ -1694,6 +1761,7 @@ Remark "Method for the Vancouver fosmid clones"
 Method : "Promoterome"  
 GFF_source      "Promoterome"
 GFF_feature     "PCR_product"
+GFF_SO "SO:0000006" // PCR_product
 Remark          "SO:0000006"
 
 
@@ -1763,6 +1831,7 @@ Colour	 BLUE
 Width    2.000000
 GFF_source	 "RNASeq" // LaDeana's work on her RNASeq with input from Gary Williams
 GFF_feature	 "possible_base_call_error" // SO:0000701
+GFF_SO : "SO:0001526" // base_call_error_correction
 
 Method : "RNASeq_splice"
 Remark   "RNASeq splice region. These are the regions spanned by the SRA RNASeq short reads aligned to the genome by tophat/bowtie."
@@ -1771,14 +1840,16 @@ Score_by_width
 Score_bounds     1.0 100.0
 GFF_source       "RNASeq_splice"
 GFF_feature      "intron"
+GFF_SO "SO:0000188" // intron
 Strand_sensitive Show_up_strand
+
 
 Method : "DNAseI_hypersensitive_site"
 Remark   "A hypersensitive site is a short region of chromatin and is detected by its super sensitivity to cleavage by DNase I. In a hypersensitive site, the nucleosomal structure is not organized in the usual fashion, which results in a 100 fold increase in sensitivity to enzyme attack than in bulk chromatin."
 Colour   BLACK
 GFF_source       "DNAseI_hypersensitive_site"
 GFF_feature      "SO:0000685" // DNAseI_hypersensitive_site
-
+GFF_SO "SO:0000685" // DNAseI_hypersensitive_site
 
 ///////////////////////////////////////////////////////
 // Methods for Feature markup and transcript masking //
@@ -1792,6 +1863,7 @@ Show_up_strand
 Show_text
 GFF_source "computational_prediction"
 GFF_feature "polyA_site"
+GFF_SO "SO:0000553" // polyA_site
 Remark	 "Predicted polyadenylation site.  Derived from an analysis by Ashwin Hajarnavis and Ian Korf at the Wellcome Trust Sanger Insitute.  This analysis used hidden Markov models and polyadenylation signal and site predictions were made for all annotated genes in the WS110 release of WormBase.  These predictions will help extend many 3' UTR predictions in WormBase as many previous UTRs were only extended as far as the 3' most matching EST sequence, but many of these are known to be clipped at the 3' end."
 
 Method : "predicted_polyA_signal_sequence"
@@ -1802,6 +1874,7 @@ Show_up_strand
 Show_text
 GFF_source "computational_prediction"
 GFF_feature "polyA_signal_sequence"
+GFF_SO "SO:0000551" // polyA_signal_sequence
 Remark	 "Predicted polyadenylation signal sequences.  Derived from an analysis by Ashwin Hajarnavis and Ian Korf at the Wellcome Trust Sanger Insitute.  This analysis used hidden Markov models and polyadenylation signal and site predictions were made for all annotated genes in the WS110 release of WormBase.  These predictions will help extend many 3' UTR predictions in WormBase as many previous UTRs were only extended as far as the 3' most matching EST sequence, but many of these are known to be clipped at the 3' end."
 
 Method : "SL1" 
@@ -1812,6 +1885,7 @@ Width	 2.200000
 Show_text	
 GFF_source	 "SL1"
 GFF_feature	 "SL1_acceptor_site"
+GFF_SO "SO:0000708" // SL1_acceptor_site
 
 Method : "SL2" 
 Remark	 "SL2 trans-splice acceptor site"
@@ -1821,6 +1895,7 @@ Width	 2.500000
 Show_text	
 GFF_source	 "SL2"
 GFF_feature	 "SL2_acceptor_site"
+GFF_SO "SO:0000709" // SL2_acceptor_site
 
 Method : "TSL"
 Remark	 "Indeterminate trans-splice acceptor site."
@@ -1850,7 +1925,6 @@ Strand_sensitive
 Width	 1.000000
 Show_up_strand
 Show_text
-GFF_feature "polyA"
 Remark	 "polyA run on Transcript sequence."
 
 Method : "polyA_site" 
@@ -1860,6 +1934,7 @@ Width	 1.000000
 Show_up_strand
 Show_text
 GFF_feature "polyA_site"
+GFF_SO "SO:0000553" // polyA_site
 Remark	 "polyadenylation site"
 
 Method : "polyA_signal_sequence" 
@@ -1869,6 +1944,7 @@ Width	 1.000000
 Show_up_strand
 Show_text
 GFF_feature "polyA_signal_sequence"
+GFF_SO "SO:0000551" // polyA_signal_sequence
 Remark	 "polyadenylation signal sequences"
 
 Method : "transcription_start_site" 
@@ -1879,6 +1955,7 @@ Show_up_strand
 Show_text
 GFF_source  "RNASeq" // LaDeana's work on her RNASeq with input from Gary Williams
 GFF_feature "TSS" // SO:0000315
+GFF_SO "SO:0000315" // TSS
 Remark	 "transcription start site - N.B. this may only be the start of the mature transcript, rather than the original start site of transcription. This is determined from the Hillier RNASeq data."
 
 Method : "transcription_end_site" 
@@ -1889,6 +1966,7 @@ Show_up_strand
 Show_text
 GFF_source  "RNASeq" // LaDeana's work on her RNASeq with input from Gary Williams
 GFF_feature "transcription_end_site" // SO:0000616
+GFF_SO "SO:0000616" // transcription_end_site
 Remark	 "transcription end site - N.B. this may only be the end of the mature transcript, rather than the original end site of transcription This is determined from the Hillier RNASeq data."
 
 Method : "curation_remark" 
@@ -1899,6 +1977,7 @@ Show_up_strand
 Show_text
 GFF_source  "curation_remark" 
 GFF_feature "remark"  // SO:0000700
+GFF_SO "SO:0000700" // remark
 Remark	 "Interesting region marked by curator. This can include regions that the curator is not sure about, interesting complex genes, unusual things and anything else that should be noted."
 
 
@@ -1907,7 +1986,6 @@ Colour	"PALEMAGENTA"
 Strand_sensitive
 Width "1.000000"
 Show_text
-GFF_feature "micro_ORF"
 Remark "Published micro-ORF"
 
 Method : "binding_site_region" 	  
@@ -1917,7 +1995,8 @@ Width    1.000000
 Show_up_strand 	 
 Show_text 	 
 GFF_source "binding_site_region"
-GFF_feature "binding_site"	 
+GFF_feature "binding_site"
+GFF_SO : "SO:0000409" // binding_site
 Remark   "manually curated binding site region" 	 
 
 
@@ -1928,8 +2007,9 @@ Width    1.000000
 Show_up_strand 	 
 Show_text 	 
 GFF_source "binding_site_region" 
-GFF_feature "CHiP_seq_region" // SO:0001697	 
-Remark "region containng a protein binding site experimentally confirmed by CHiP_seq."
+GFF_feature "CHiP_seq_region" // SO:0001697
+GFF_SO "SO:0001697" // CHiP_seq_region	 
+Remark "region containing a protein binding site experimentally confirmed by CHiP_seq."
 Remark "SO:0001697"
 
 
@@ -1939,7 +2019,8 @@ Width    1.000000
 Show_up_strand 	 
 Show_text 	 
 GFF_source "segmental_duplication"
-GFF_feature "segmental_duplication"	 
+GFF_feature "segmental_duplication"
+GFF_SO : "SO:1000035" // duplication	 
 Remark   "Polymorphic segmental duplication as defined by the tool OrthoCluster." 
 
 Method : "three_prime_UTR"
@@ -1951,7 +2032,8 @@ Width 1.000000
 Show_up_strand
 Show_text
 GFF_source "UTRome"
-GFF_feature "three_prime_UTR"	 
+GFF_feature "three_prime_UTR"
+GFF_SO "SO:0000205" // three_prime_UTR	 
 Remark   "UTR (unspliced) span as defined in the modENCODE UTRome project submission"
 
 Method : "regulatory_region"
@@ -1961,6 +2043,7 @@ Width    1.000000
 Show_up_strand
 Show_text
 GFF_source "regulatory_region"
+GFF_SO "SO:0005836" // regulatory_region
 Remark   "manually curated regulatory region"	 
 
 Method : "promoter" 	 
@@ -1969,7 +2052,8 @@ Strand_sensitive
 Width    1.000000 	 
 Show_up_strand 	 
 Show_text 	 
-GFF_source "promoter" 	 
+GFF_source "promoter"
+GFF_SO "SO:0000167" // promoter	 
 Remark   "manually curated promoter region"
 
 Method : "binding_site"  
@@ -1979,7 +2063,8 @@ Width	 1.000000
 Show_up_strand
 Show_text
 GFF_source "binding_site"
-GFF_feature "binding_site"	 
+GFF_feature "binding_site"
+GFF_SO : "SO:0000409" // binding_site	 
 Remark	 "manually curated binding site feature"
 
 Method : "Oligo_cap" /not mapped
@@ -2014,6 +2099,7 @@ Score_bounds	 50.000000 500.000000
 Allow_misalign
 GFF_source	 "RepeatMasker"
 GFF_feature	 "repeat_region"
+GFF_SO "SO:0000657" // repeat_region
 
 Method : "tandem"
 Remark	 "Tandem region"
@@ -2023,6 +2109,7 @@ Score_bounds	 50.000000 100.000000
 Percent	
 GFF_source	 "tandem"
 GFF_feature	 "tandem_repeat"
+GFF_SO "SO:0000705" // tandem_repeat
 
 Method : "inverted"
 Remark	 "Poly-G number may not be accurate"
@@ -2032,15 +2119,18 @@ Score_bounds	 50.000000 100.000000
 Percent	
 GFF_source	 "inverted"
 GFF_feature	 "inverted_repeat"
+GFF_SO "SO:0000294" // inverted_repeat
 
 Method : "dust" //ordred	 
 Remark           "DUST low complexity regions" 	 
 GFF_source       "dust" 	 
 GFF_feature      "low_complexity_region"
+GFF_SO "SO:0001005" // low_complexity_region
 
 Method : "G4_DNA"
 GFF_source "pmid18538569"
 GFF_feature "G-quartet"
+GFF_SO : "SO:0000003" // G_quartet
 Colour LIGHTGRAY
 Bumpable
 Remark "Intrinsically mutagenic motif, probably because it can form secondary structures during DNA replication" Paper_evidence WBPaper00031945
@@ -2061,6 +2151,33 @@ Colour	 DARKBLUE
 Show_up_strand	
 Bumpable	
 Show_text	
+
+Method : "UTR"
+Colour   CERISE
+Show_up_strand CERISE
+Show_text
+Width 1
+Remark "UTRs in WormBase are currently predicted on the basis of available transcript evidence."
+
+Method : "RNA" 
+Colour	 GREEN
+Show_up_strand	
+Width	 2.000000
+Show_text	
+EMBL_feature	 "misc_RNA"
+GFF_source "RNA"
+GFF_feature "transcript"
+
+Method : "RNAi"
+Width    1.000000
+Allow_misalign
+Colour "DARKGREEN"
+GFF_source	 "RNAi"
+GFF_feature	 "RNAi_reagent"
+
+Method : "RNAi_EST"
+GFF_source	 "cDNA_for_RNAi"
+GFF_feature	 "similarity"
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
