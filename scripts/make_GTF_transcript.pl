@@ -7,8 +7,8 @@
 #
 # by Gary Williams
 #
-# Last updated by: $Author: gw3 $                      
-# Last updated on: $Date: 2011-08-31 11:09:25 $        
+# Last updated by: $Author: klh $                      
+# Last updated on: $Date: 2011-12-02 10:33:44 $        
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -93,7 +93,7 @@ my $next_start = 1;
 my $prev_start = 1;
 
 # foreach gene's transcripts  (coding_transcript, non-coding-transcript, tRNA, ncRNA, etc)
-my $transcripts = $db->fetch_many(-query => 'Find Transcript where (NOT Method = history) AND (Species = "'.$wormbase->full_name.'")');
+my $transcripts = $db->fetch_many(-query => 'Find Transcript where (NOT Method = history_transcript) AND (Species = "'.$wormbase->full_name.'")');
 while ( my $transcript = $transcripts->next ) {
 
   my $gene_id = Transcript_gene($transcript);
@@ -187,7 +187,7 @@ while ( my $transcript = $transcripts->next ) {
   }
 }
 
-my @pseudogenes = $db->fetch(-query => 'Find Pseudogene where species = "'.$wormbase->full_name.'" AND (NOT Method = history) AND (NOT Method = Transposon_Pseudogene)');
+my @pseudogenes = $db->fetch(-query => 'Find Pseudogene where species = "'.$wormbase->full_name.'" AND (NOT Method = history_pseudogene) AND (NOT Method = Transposon_Pseudogene)');
 
 
 foreach my $pseudogene (@pseudogenes) {

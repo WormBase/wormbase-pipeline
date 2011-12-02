@@ -4,8 +4,8 @@
 #
 # by Keith Bradnam
 #
-# Last updated on: $Date: 2011-07-15 10:08:51 $
-# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2011-12-02 10:33:44 $
+# Last updated by: $Author: klh $
 #
 # see pod documentation at end of file for more information about this script
 
@@ -162,7 +162,7 @@ foreach my $gene_model ( @Predictions ) {
     for ($j=$i+1;$j<@exon_coord1;$j++) {
       if (($end > $exon_coord1[$j]) && ($start < $exon_coord2[$j])) {
 	print "ERROR: $gene_model exon inconsistency, exons overlap\n" if $verbose;
-	push(@error1,"ERROR: $gene_model exon inconsistency, exons overlap\n") if ($method_test ne 'history');
+	push(@error1,"ERROR: $gene_model exon inconsistency, exons overlap\n") if ($method_test !~ /^history/);
       }
     }
   }
@@ -184,19 +184,19 @@ foreach my $gene_model ( @Predictions ) {
   }
 
   #All Isoforms should have the Isoform tag set.
-  if (($gene_model->name =~ (/\w+\.\d+[a-z]$/)) && ($method_test ne 'history')) {
+  if (($gene_model->name =~ (/\w+\.\d+[a-z]$/)) && ($method_test !~  /^history/)) {
     my $Isoform = $gene_model->at('Properties.Isoform');
     push(@error3, "ERROR: $gene_model requires an Isoform\n") if !$Isoform;
   }
 
   #All with an Isoform tag should be named correctly
-  if (($gene_model->name =~ (/\w+\.\d+$/)) && ($method_test ne 'history')) {
+  if (($gene_model->name =~ (/\w+\.\d+$/)) && ($method_test !~ /^history/)) {
     my $Isoform = $gene_model->at('Properties.Isoform');
     push(@error3, "ERROR: $gene_model requires an Isoform\n") if $Isoform;
   }
 
   #Test for erroneous Isoform tags.??
-  if (($gene_model->name =~ (/\b\w+\.[0-9]{1,2,3}\b/)) && ($method_test ne 'history')) {
+  if (($gene_model->name =~ (/\b\w+\.[0-9]{1,2,3}\b/)) && ($method_test !~ /^history/)) {
     my $Isoform = $gene_model->at('Properties.Isoform');
     push(@error3, "ERROR: $gene_model contains an invalid Isoform tag\n") if $Isoform;
   }
@@ -256,12 +256,12 @@ foreach my $gene_model ( @Predictions ) {
   }
 	
   # check that history genes have a history method.
-  if ($method_test ne "history" && $gene_model->name =~ /\w+\.\w+\:\w+/) {
+  if ($method_test !~ /^history/ && $gene_model->name =~ /\w+\.\w+\:\w+/) {
     push(@error3, "ERROR: $gene_model history object doesn't have a history method.\n");
   } 
 	
   # check that history genes are renamed.
-  if ($method_test eq "history" && !($gene_model->name =~ /\:/)) {
+  if ($method_test =~ /^history/ && !($gene_model->name =~ /\:/)) {
     push(@error3, "ERROR: $gene_model needs to be renamed as it is part of history.\n");
   }
 

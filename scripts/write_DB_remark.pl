@@ -7,8 +7,8 @@
 # This script interogates an ACEDB database and returns all pfam/Interpro/blastx 
 # data as appropriate and generates a suitable DB_remark
 #
-# Last updated on: $Date: 2010-03-23 12:22:06 $
-# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2011-12-02 10:33:44 $
+# Last updated by: $Author: klh $
 
 
 ### DB_remark is generated as follows:  ###
@@ -355,7 +355,7 @@ my @pseudogenes;
     @pseudogenes = $db->fetch(-query => 'Find Pseudogene $gene');
   }
 else {
-  @pseudogenes = $db->fetch(-query => 'Find Pseudogene where species = "'.$wormbase->full_name.'" AND (NOT Method = history) AND (NOT Method = Transposon_Pseudogene)');
+  @pseudogenes = $db->fetch(-query => 'Find Pseudogene where species = "'.$wormbase->full_name.'" AND (NOT Method = history_pseudogene) AND (NOT Method = Transposon_Pseudogene)');
 }
 
 PSEUDOGENE: foreach my $pseudogene (@pseudogenes) {
@@ -429,7 +429,7 @@ if ($gene) {
   $transcripts = $db->fetch_many(-query => 'Find Transcript $gene');
 }
 else {
-  $transcripts = $db->fetch_many(-query => 'Find Transcript where (NOT Method = Coding_transcript) AND (NOT Method = history) AND (Species = "'.$wormbase->full_name.'")');
+  $transcripts = $db->fetch_many(-query => 'Find Transcript where (NOT Method = Coding_transcript) AND (NOT Method = history_transcript) AND (Species = "'.$wormbase->full_name.'")');
 }
 
 TRANSCRIPT: while ( my $transcript = $transcripts->next ) {
