@@ -7,8 +7,8 @@
 # This parses a file of mass spec peptide data and creates an ace file
 # in ace
 #
-# Last updated by: $Author: mh6 $     
-# Last updated on: $Date: 2010-09-08 14:45:49 $      
+# Last updated by: $Author: gw3 $     
+# Last updated on: $Date: 2011-12-05 11:54:52 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -38,7 +38,7 @@ GetOptions ("help"       => \$help,
 	    "input:s"    => \$input,
 	    "output:s"   => \$output,
 	    "database:s" => \$database,
-	    "directory"  => \$directory,
+	    "directory:s"  => \$directory,
 	    "load"       => \$load,
 	    );
 
@@ -112,8 +112,8 @@ if (! defined $output) {$output = $wormbase->acefiles."/mass-spec-data.ace";}
 
 my $database_version = $wormbase->get_wormbase_version;
 if ($database_version == 666) {
-  print "In test - setting database version to 203 not 666\n";
-  $database_version = 203;
+  print "In test - setting database version to 228 not 666\n";
+  $database_version = 228;
 }
 
 # open an ACE connection to parse details for mapping to genome
@@ -127,6 +127,20 @@ my $db = Ace->connect (-path => $database,
 open (OUT, "> $output") || die "Can't open output file $output\n";
 print OUT "\n";			# blank line at start just in case we concatenate this to another ace file
 
+# get the wormpep sequences
+print "Reading wormpep sequences\n";
+my $wormpep = &get_wormpep_by_wp_id;
+
+print "Reading wormpep history file\n";
+# get the wormpep protein IDs used by previous version of the gene
+my $wormpep_history = &get_wormpep_history;
+
+# get the hash of wormpep sequence names keyed by old wormpep protein IDs
+my $wormpep_history_proteins = &get_wormpep_history_proteins($wormpep_history);
+
+###############################
+# parse the data files
+###############################
 
 # this gives a hash with key=experiment ID value=list of details
 my ($experiment_hashref, $peptide_hashref) = &parse_data();
@@ -158,19 +172,15 @@ foreach my $experiment_id (keys %experiment) {
 # get the proteins and their peptides
 # %proteins is lists of peptides matching the key CDS
 foreach my $peptide_sequence (keys %unique_peptides) {
+  if (! defined $peptide{$peptide_sequence} ) { # sometimes we did't identify the CDSs for a peptide sequence
+    #print "No CDS names known for peptide $peptide_sequence in experiment $experiment_id\n";
+    next
+  } 
   my @CDS_names = @{ $peptide{$peptide_sequence} };
   foreach my $CDS (@CDS_names) {
     push @{ $proteins{$CDS} }, $peptide_sequence;
   }
 }
-
-# get the wormpep sequences
-print "Reading wormpep sequences\n";
-my $wormpep = &get_wormpep_by_wp_id;
-
-print "Reading wormpep history file\n";
-# get the wormpep protein IDs used by previous version of the gene
-my $wormpep_history = &get_wormpep_history;
 
 my $final_count_ok = 0;
 my $final_count_not_ok = 0;
@@ -184,6 +194,10 @@ foreach my $CDS_name (keys %proteins) {
 
   # do the normal CDSs first
   if ($CDS_name !~ /^clone:/) {  
+
+    # strip off any version number and we will search all versions
+    $CDS_name =~ s/:wp\d+//;
+
     # see if there is an isoform that we should investigate first
     my $CDS_name_isoform = "${CDS_name}a";
     if (&has_current_history($wormpep_history, $CDS_name_isoform)) {
@@ -517,10 +531,15 @@ sub parse_file {
   
       } elsif ($cgc_name =~ /^CE\d{5}$/) { # wormpep ID
 	if (!exists $wormpep2cds->{$cgc_name}) {
-	  print "line $line has a non-existent wormpep ID\n";
-	  next;
+	  if (! exists $wormpep_history_proteins->{$cgc_name}) {
+	    print "line $line has a non-existent wormpep ID\n";
+	    next;
+	  } else {
+	    push @CDS_names, $wormpep_history_proteins->{$cgc_name}; # the CDS names for this wormpep ID	
+	  }
+	} else {
+	  push @CDS_names, (split /\s+/, $wormpep2cds->{$cgc_name}); # the CDS names for this wormpep ID
 	}
-	push @CDS_names, (split /\s+/, $wormpep2cds->{$cgc_name}); # the CDS names for this wormpep ID
 
       } elsif ($cgc_name =~ /\S+\.\d+/) {	# standard Sequence style CDS name e.g. C25A7.2
 	push @CDS_names, $cgc_name; # use CDS name as-is
@@ -555,15 +574,21 @@ sub process_cds {
   # name.
   my ($CDS_name, $CDS_name_isoform, $wormpep_history, $unique_clones, %proteins) = @_;
 
+  my $all_maps_to_genome_ok = 0;		# flag for mapping all peptides to the CDS genome position OK
+
+  if (! defined $proteins{$CDS_name}) {
+    print "process_cds() : Can't find any proteins for CDS $CDS_name\n";
+    return $all_maps_to_genome_ok
+  }
 
   print "$CDS_name_isoform " . @{ $proteins{$CDS_name} } . "\n" if ($verbose);
+
   my @peptides_in_protein = @{ $proteins{$CDS_name} };
 
   # go through each of the historical wormpep proteins for this gene
   # looking for the most recent one that all the peptides map to
   # and get the version of that protein so we can then get the history CDS if it is not the latest version
 
-  my $all_maps_to_genome_ok = 0;		# flag for mapping all peptides to the CDS genome position OK
   my ($wormpep_ids_aref, $versions_aref) = &get_previous_wormpep_ids($CDS_name_isoform, $wormpep_history);
   my @wormpep_ids = @{$wormpep_ids_aref};
   my @versions = @{$versions_aref};
@@ -574,7 +599,6 @@ sub process_cds {
   foreach my $wormpep_id (@wormpep_ids) {
 
     my $wormpep_seq = $wormpep->{$wormpep_id};
-
     my ($all_peptides_mapped_ok, %protein_positions);
     # check to see if the protein exists!!!
     if (defined $wormpep_seq) {
@@ -599,9 +623,16 @@ sub process_cds {
 #	$all_maps_to_genome_ok = 0;
 #      } elsif (defined $versions[$latest_cds] && $latest_cds != 0) {
 
-      if (defined $versions[$latest_cds]) {
-	$CDS_name_isoform = $CDS_name_isoform . ":wp" . ($versions[$latest_cds] - 1);
-	print "$CDS_name_isoform is using history version $versions[$latest_cds]\n" if ($verbose);
+#      if (defined $versions[$latest_cds]) {
+#	$CDS_name_isoform = $CDS_name_isoform . ":wp" . ($versions[$latest_cds] - 1);
+#	print "$CDS_name_isoform is using history version $versions[$latest_cds]\n" if ($verbose);
+#      }
+
+      # now get the name of the CDS that made the protein $wormpep_id
+      $CDS_name_isoform = &get_protein_details($wormpep_id);
+      if (! defined $CDS_name_isoform) {
+	print "$CDS_name : the protein $wormpep_id has no Corresponding_CDS\n";
+	next;
       }
 
       my ($clone, $cds_start, $cds_end, $exons_start_ref, $exons_end_ref);
@@ -629,7 +660,7 @@ sub process_cds {
 	# only write this genome mapping stuff if we could find a CDS for the protein this peptide matched
 	if ($all_maps_to_genome_ok) {
 	  # get the details for mapping to the genome
-	  my (@homol_lines) = &get_genome_mapping($ms_peptide, $CDS_name_isoform, $clone, $cds_start, $cds_end, $exons_start_ref, $exons_end_ref, \%protein_positions); # get part of the MSPeptide_homol line like "clone_start clone_end 1 peptide_length AlignPepDNA"
+	  my (@homol_lines) = &get_genome_mapping($ms_peptide, $CDS_name_isoform, $cds_start, $cds_end, $exons_start_ref, $exons_end_ref, \%protein_positions); # get part of the MSPeptide_homol line like "clone_start clone_end 1 peptide_length AlignPepDNA"
 	  # write the Homol_data for the genome mapping
 	  print OUT "\n";
 	  print OUT "// Normal output for peptide $ms_peptide matching CDS: $CDS_name_isoform\n";
@@ -726,7 +757,9 @@ sub process_cds {
 }
 
 ##########################################
-# for when we have peptides to map to the ORFs of a clone
+# For when we have peptides to map to the ORFs of a clone
+# We can map to novel introns in the clone by specifying the positions
+# around the intron as 'clone:AC3<end_exon1,start_exon2>'
 
 sub process_clones {
 
@@ -742,8 +775,70 @@ sub process_clones {
 
   # try mapping the peptides to the clone ORFs
   my ($clone) = ($CDS_name =~ /^clone:(\S+)/);
-  my $clone_seq = &get_clone_sequence($clone); # get the clone sequence
-  #print "clone sequence=$clone_seq" if ($verbose);
+
+  my $clone_seq;
+  my $have_splices = 0;
+
+  # construct the (imaginary) exon sources
+  my @exons_start;
+  my @exons_end;
+  my $length_orig_clone_seq;
+  
+  # does this clone name have splice sites?
+  # if so, then make the spliced clone sequence
+  my $clone_desc = $clone;
+  if ($clone =~ /(\S+?)<([\d,]+)>/) {
+    $clone = $1;
+    my $splices = $2;
+    my @splices = split /,/, $splices;
+    $have_splices = 1;
+    $clone_seq = &get_clone_sequence($clone); # get the clone sequence
+    $length_orig_clone_seq = length $clone_seq;
+    # splice the clone sequence
+    my $spliced_clone_seq="";
+    my $next_end = length $clone_seq;
+
+    @exons_start = (1); # imaginary start of first exon, assume peptide matches frame 1 for now
+    while (@splices) {
+      # get the array values from the end of @splices two at a time
+      my ($one, $two) = splice(@splices, -2);
+      # check that the splice uses GT..AG splices or GC..AG splices
+      my $one_spliceseq = uc substr($clone_seq, $one, 2);
+      my $two_spliceseq = uc substr($clone_seq, $two-3, 2);
+      if (! ((($one_spliceseq eq 'GT' || $one_spliceseq eq 'GC') && $two_spliceseq eq 'AG') || 
+	     ($one_spliceseq eq 'CT' && ($two_spliceseq eq 'AC' || $two_spliceseq eq 'GC'))) ) {
+#      if (! (($one_spliceseq eq 'GT' && $two_spliceseq eq 'AG') || 
+#	     ($one_spliceseq eq 'CT' && $two_spliceseq eq 'AC')) ) {
+	$log->write_to("This doesn't look like a canonical splice site\n");
+	$log->write_to("$clone_desc ($one $one_spliceseq..$two_spliceseq $two)\n");
+      }
+      $spliced_clone_seq = substr($clone_seq, $two-1, $next_end-$two+1) . $spliced_clone_seq;
+      $next_end = $one;
+
+      # make the imaginary exon sources
+      push @exons_start, $two;
+      push @exons_end, $one;
+
+    }
+    if ($next_end > -1) {$spliced_clone_seq = substr($clone_seq, 0, $next_end) . $spliced_clone_seq;}
+    push @exons_end, length($clone_seq); # imaginary end of last exon
+    $clone_seq = $spliced_clone_seq;
+
+    # sort the imaginary exons numerically
+    @exons_start = sort {$a <=> $b} @exons_start;
+    @exons_end = sort {$a <=> $b} @exons_end;
+
+  } else {
+    # normal clone sequence with no splicing
+    $clone_seq = &get_clone_sequence($clone); # get the clone sequence
+    @exons_start = (1);
+    @exons_end = (length($clone_seq));
+  }
+
+
+
+  print "\n\nnext name name=$CDS_name" if ($verbose);
+
   my @wormpep_seq = &translate_clone($clone_seq); # translate the clone sequence in all six frames
   #print "clone translation = @wormpep_seq" if ($verbose);
 
@@ -764,6 +859,7 @@ sub process_clones {
       ($this_peptide_mapped_ok, %protein_positions) = &map_peptides_to_protein($wormpep_seq, ($ms_peptide));
       if ($this_peptide_mapped_ok) {
 	$mapped_in_frame = $frame;
+	$log->write_to("The peptide $ms_peptide matched in frame $frame OK in $clone_desc\n") if ($verbose);
 	last;
       }
     }
@@ -773,18 +869,44 @@ sub process_clones {
       
       # get the details for mapping to the genome
       # get part of the MSPeptide_homol line like "clone_start clone_end 1 peptide_length AlignPepDNA"
-      my @exons_start = (1);
-      my @exons_end = (length($clone_seq));
       my @homol_lines;
+
+      print "start exons @exons_start\n" if ($verbose);
+      print "end exons @exons_end\n" if ($verbose);
       if ($mapped_in_frame < 4) { # forward sense translation of the clone
-	@homol_lines = &get_genome_mapping($ms_peptide, $CDS_name, $clone, $mapped_in_frame, length($wormpep_seq[$mapped_in_frame]), \@exons_start, \@exons_end, \%protein_positions); 
+	# adjust the exon_starts and _ends
+	foreach my $exon_start (@exons_start) { $exon_start = $exon_start - $mapped_in_frame + 1 }
+	foreach my $exon_end (@exons_end) { $exon_end = $exon_end - $mapped_in_frame + 1 }
+	$exons_start[0] = 1;
+
+	@homol_lines = &get_genome_mapping($ms_peptide, $CDS_name, $mapped_in_frame, length($clone_seq), \@exons_start, \@exons_end, \%protein_positions); 
+
       } else { # reverse sense translation of the clone
-	my $cds_start = length($clone_seq) - ($mapped_in_frame - 3) + 1;
+
+	# adjust the exon_starts and _ends
+	my $cds_start = $length_orig_clone_seq - ($mapped_in_frame - 3) + 1;
 	my $cds_end = 1;
-	@homol_lines = &get_genome_mapping($ms_peptide, $CDS_name, $clone, $cds_start, $cds_end, \@exons_start, \@exons_end, \%protein_positions); 
+	# swap over the exon_start and exons_end arrays and use the offset from the end of the clone
+	my @exons_start_new;
+	my @exons_end_new;
+	while (@exons_start) {
+	  my $start = shift @exons_start;
+	  my $end = shift @exons_end;
+	  push @exons_start_new, $cds_start - $end + 1;
+	  push @exons_end_new,  $cds_start - $start + 1;
+	}
+	@exons_start = sort {$a <=> $b} @exons_start_new;
+	@exons_end = sort {$a <=> $b} @exons_end_new;
+	$exons_start[0] = 1; # just to be certain
+
+	print "after fixing to look like a CDS start exons @exons_start\n" if ($verbose);
+	print "after fixing to look like a CDS exon end exons @exons_end\n" if ($verbose);
+
+	@homol_lines = &get_genome_mapping($ms_peptide, $CDS_name, $cds_start, $cds_end, \@exons_start, \@exons_end, \%protein_positions); 
       }
       # write the Homol_data for the genome mapping
       print OUT "\n";
+      print OUT "// Clone-positioned output for peptide $ms_peptide matching Clone: $clone_desc\n";
       print OUT "Homol_data : \"$clone:Mass-spec\"\n";
       foreach my $homol_line (@homol_lines) {
 	print OUT "MSPeptide_homol \"MSP:$ms_peptide\" mass_spec_genome 100.0 $homol_line\n";
@@ -807,6 +929,8 @@ sub process_clones {
       
       # note that this peptide has been used so that we need to output it when only doing a small debugging output
       $peptides_used{$ms_peptide} = 1;
+    } else {
+      $log->write_to("The peptide $ms_peptide didn't match in $clone_desc\n");
     }
   }     # foreach my $ms_peptide 
 
@@ -855,7 +979,7 @@ sub get_wormpep_history {
     my @f = split /\s+/, $line;
     # $cds_id, $wormpep_id, $version1, $version2 <- ($version2 is undef if current version)
     my $cds_id = shift @f;
-    push @{$wormpep_history{$cds_id}}, [@f];
+    push @{$wormpep_history{$cds_id}}, [@f]; # I didn't mean to push the array of array, but we are stuck with this now, so leave it
   }
   close(HIST);
 
@@ -863,6 +987,29 @@ sub get_wormpep_history {
   return \%wormpep_history;
 
 }
+##########################################
+# get the hash of wormpep sequence names keyed by old wormpep protein IDs
+
+sub get_wormpep_history_proteins {
+  my ($wormpep_history) = @_;
+
+  my %wormpep_history_proteins;
+
+  foreach my $cds_id (keys %{$wormpep_history}) {
+    my @f = $wormpep_history->{$cds_id};
+    my @g = @{$f[0][0]};
+#    if (defined $g[2] && $g[2] ne "") { # if this is an old version of the CDS, give the 'history' sequence name
+#      $cds_id .= ":wp" . ($g[2] - 1); 
+#    }
+    $wormpep_history_proteins{$g[0]} = $cds_id; # key = wormpep protein ID, value = cds_id
+  }
+
+
+  return \%wormpep_history_proteins;
+
+}
+
+
 ##########################################
 # returns true if the CDS has a current history
 # returns false if the CDS has been made into an isoform (or pseudogene, etc.)
@@ -1006,12 +1153,40 @@ sub get_cds_details {
 
   # if the CDS is on the reverse sense, then $cds_start > $cds_end
   return ($clone, $cds_start, $cds_end, \@exons_start, \@exons_end);
+}
+
+##########################################
+# get the name of the CDS that made the protein we have found
+
+sub get_protein_details {
+
+  my ($protein_id) = @_;
+
+  print "Ace protein fetch->" if ($verbose);
+  print "$protein_id\n" if ($verbose);
+
+
+  if ($protein_id !~ /^WP:/) {$protein_id = "WP:" . $protein_id}
+  my $protein_obj = $db->fetch("Protein" => $protein_id);
+
+  if (! defined $protein_obj) {
+    print "Can't fetch Protein object for $protein_id\n";
+    return undef;
+  }
+
+  my $CDS = $protein_obj->Corresponding_CDS;
+
+  if (defined $CDS) {
+    return $CDS->name;
+  } else {
+    return undef;
+  }
 
 }
 
 
 ##########################################
-# my @homol_lines = &get_genome_mapping($ms_peptide, $CDS_name, $clone, $cds_start, $exons_start_ref, $exons_end_ref, \%protein_positions); 
+# my @homol_lines = &get_genome_mapping($ms_peptide, $CDS_name, $cds_start, $exons_start_ref, $exons_end_ref, \%protein_positions); 
 # get part of the MSPeptide_homol line like "clone_start clone_end 1 peptide_length AlignPepDNA"
 #
 # take the information describing the position of the CDS's exons in
@@ -1021,7 +1196,8 @@ sub get_cds_details {
 # Check that the peptide maps to the genome correctly by translating the mapped part
 
 sub get_genome_mapping {
-  my ($ms_peptide, $CDS_name, $clone, $cds_start, $cds_end, $exons_start_ref, $exons_end_ref, $protein_positions_href) = @_;
+  my ($ms_peptide, $CDS_name, $cds_start, $cds_end, $exons_start_ref, $exons_end_ref, $protein_positions_href) = @_;
+  print "In get_genome_mapping(): $ms_peptide, $CDS_name, $cds_start, $cds_end, @$exons_start_ref, @$exons_end_ref, ",%{$protein_positions_href},"\n" if ($verbose);
   my %protein_positions = %{$protein_positions_href};
 
   # the positions of the exons on the clone relative to the start of the CDS
@@ -1051,20 +1227,20 @@ sub get_genome_mapping {
   # find the positions in the CDS of the start and end of the exons (i.e. the splice sites on the CDS)
   my $exon_count = 0;
   my $prev_end = 0;
-  print "number of exons = $#exons_start and $#exons_end\n" if ($verbose);
+  print "number of exons = ",scalar @exons_start," and ",scalar @exons_end,"\n" if ($verbose);
   foreach my $exon_start (@exons_start) {
     print "exon_start $exon_start exon_end $exons_end[$exon_count]\n" if ($verbose);
     my $exon_length = $exons_end[$exon_count] - $exon_start + 1;
     print "exon_length $exon_length\n" if ($verbose);
     my $start = $prev_end + 1;
     my $end = $start + $exon_length - 1;
-    print "start $start end $end\n" if ($verbose);
+    print "exon internal positions on the CDS mRNA sequence :start $start end $end\n" if ($verbose);
     push @exons_internal_start, $start;
     push @exons_internal_end, $end;
     $prev_end = $end;
     $exon_count++;
   }
-  print "number of internal coords exons = $#exons_internal_start+1 and $#exons_internal_end+1\n" if ($verbose);
+  print "number of internal CDS mRNA coords exons = ",scalar @exons_internal_start," and ",scalar @exons_internal_end,"\n" if ($verbose);
 
 
   # @exons_start/end = positions of the exons start/end in the transcript, from 1 to length of transcript (i.e. length of CDS plus length of introns)
