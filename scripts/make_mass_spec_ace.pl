@@ -8,7 +8,7 @@
 # in ace
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2011-12-05 11:54:52 $      
+# Last updated on: $Date: 2011-12-05 12:15:16 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -831,6 +831,7 @@ sub process_clones {
   } else {
     # normal clone sequence with no splicing
     $clone_seq = &get_clone_sequence($clone); # get the clone sequence
+    $length_orig_clone_seq = length $clone_seq;
     @exons_start = (1);
     @exons_end = (length($clone_seq));
   }
