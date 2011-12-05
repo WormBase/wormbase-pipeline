@@ -215,7 +215,8 @@ sub report
     my $fh = shift;
     my $coords = shift;
     my $species = shift;
-    
+    my $gene_name = shift;
+
     my $real_start = $self->start;
     my $real_end = $self->end;
 
@@ -254,6 +255,7 @@ sub report
 	print $fh "Associated_feature $f\n";
       }
     }
+    print $fh "Gene \"$gene_name\"\n" if defined $gene_name;
     print $fh "Species \"$species\"\n";
     print $fh "Method Coding_transcript\n";  
 

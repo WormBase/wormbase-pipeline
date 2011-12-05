@@ -293,8 +293,8 @@ sub report
     my $self = shift;
     my $fh = shift;
     my $coords = shift;
-    my $transformer = shift;
     my $species = shift;
+    my $cds2gene = shift;
 
     #$fh = STDOUT unless defined $fh;
 
@@ -313,7 +313,10 @@ sub report
     }
 
     foreach ( $self->transcripts ) {
-      $_->report($fh, $coords, $species);
+      $_->report($fh, 
+                 $coords, 
+                 $species, 
+                 (defined $cds2gene and exists $cds2gene->{$self->name}) ? $cds2gene->{$self->name} : undef);
     }
   }
 

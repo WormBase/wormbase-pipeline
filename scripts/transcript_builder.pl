@@ -7,7 +7,7 @@
 # Script to make ?Transcript objects
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2011-08-09 15:20:06 $
+# Last updated on: $Date: 2011-12-05 12:05:35 $
 use strict;
 use lib $ENV{'CVS_DIR'};
 use Getopt::Long;
@@ -70,6 +70,7 @@ if (not defined $database or $database eq "autoace") {
   $db = $wormbase->autoace;
 }else{$db = $database}
 my $tace = $wormbase->tace;
+my %cds2gene = $wormbase->FetchData('cds2wbgene_id');
 
 # other variables and paths.
 @chromosomes = split(/,/,join(',',@chromosomes));
@@ -567,7 +568,7 @@ foreach my $chrom ( @chromosomes ) {
 
   foreach my $cds (@cds_objs ) {
     #$log->write_to("reporting : ".$cds->name."\n") if $wormbase->debug;
-    $cds->report($out_fh, $coords, $transformer, $wormbase->full_name);
+    $cds->report($out_fh, $coords, $wormbase->full_name, \%cds2gene);
   }
 
   $log->write_to("$count0 cDNAs rejected in round 0 (inconsistent attached features)\n");
