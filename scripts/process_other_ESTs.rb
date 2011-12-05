@@ -68,8 +68,8 @@ output_dir='/tmp/' #for debugging
 infile = '/dev/null'
 verbose=false
 
-washu_ests_file = "/nfs/disk100/wormpub/BUILD_DATA/cDNA/washu/washu_contig_est_gbacc.full_list"
-nembase_ests_file = "/nfs/disk100/wormpub/BUILD_DATA/cDNA/nembase/nembase_contig_est_gbacc.full_list" 
+washu_ests_file = '/nfs/users/nfs_w/wormpub/BUILD_DATA/cDNA/washu/washu_contig_est_gbacc.full_list'
+nembase_ests_file = '/nfs/users/nfs_w/wormpub/BUILD_DATA/cDNA/nembase/nembase_contig_est_gbacc.full_list'
 
 opt=OptionParser.new
 opt.on('-e','--embl INFILE'){|f|infile=File.new(f,'r')}
@@ -78,7 +78,7 @@ opt.on('-v','--verbose'){verbose=true}
 opt.parse(ARGV) #rescue RDoc::usage('Usage')
 
 $stderr.puts "using #{infile.path} , output to #{output_dir}" if verbose
-$stderr.puts "Fetching other nematode EST sequences" if verbose
+$stderr.puts 'Fetching other nematode EST sequences' if verbose
 
 # Read in data about which Genbank/EMBL ESTs are used to construct the
 # WashU NemaGene or Edinburgh NemBase nemotode EST contigs.
