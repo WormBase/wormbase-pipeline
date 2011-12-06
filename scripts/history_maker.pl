@@ -1652,7 +1652,15 @@ sub get_history_version
     chomp($WS_version);
     $WS_version =~ s/.*WS//;
     die "no version\n" unless $WS_version =~ /\d+/;
-    $WS_version++;
+
+    # check to see if the Build has start - if so then use the Build's version
+    my $build_file = $wormbase->autoace . "/wspec/database.wrm";
+    if (-e $build_file) {
+      my $Build_WS_version = `grep "NAME WS" $build_file`;
+      chomp($Build_WS_version);
+      $Build_WS_version =~ s/.*WS//;
+      if (defined $Build_WS_version ) {$WS_version = $Build_WS_version }
+    }
     return($WS_version); 
   }
 
