@@ -8,7 +8,7 @@
 # in ace
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2011-12-05 12:15:16 $      
+# Last updated on: $Date: 2011-12-07 14:26:17 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -112,8 +112,8 @@ if (! defined $output) {$output = $wormbase->acefiles."/mass-spec-data.ace";}
 
 my $database_version = $wormbase->get_wormbase_version;
 if ($database_version == 666) {
-  print "In test - setting database version to 228 not 666\n";
-  $database_version = 228;
+  print "In test - setting database version to 229 not 666\n";
+  $database_version = 229;
 }
 
 # open an ACE connection to parse details for mapping to genome
@@ -198,17 +198,18 @@ foreach my $CDS_name (keys %proteins) {
     # strip off any version number and we will search all versions
     $CDS_name =~ s/:wp\d+//;
 
-    # see if there is an isoform that we should investigate first
-    my $CDS_name_isoform = "${CDS_name}a";
-    if (&has_current_history($wormpep_history, $CDS_name_isoform)) {
-      $cds_processed_ok = &process_cds($CDS_name, $CDS_name_isoform, $wormpep_history, \%unique_clones, %proteins);
+
+    my $CDS_name_isoform = $CDS_name; # set the CDS_name to the original name
+    $cds_processed_ok = &process_cds($CDS_name, $CDS_name, $wormpep_history, \%unique_clones, %proteins);
+
+    # see if there is an isoform that we could investigate also
+    if (!$cds_processed_ok) {
+      $CDS_name_isoform = "${CDS_name}a";
+      if (&has_current_history($wormpep_history, $CDS_name_isoform)) {
+	$cds_processed_ok = &process_cds($CDS_name, $CDS_name_isoform, $wormpep_history, \%unique_clones, %proteins);
+      }
     }
     
-    # if the isoform didn't give the required peptide matches, look at the normal CDS_name
-    if (!$cds_processed_ok) {
-      $CDS_name_isoform = $CDS_name; # set the CDS_name back to the original name
-      $cds_processed_ok = &process_cds($CDS_name, $CDS_name, $wormpep_history, \%unique_clones, %proteins);
-    }
   }
 
   # do the clones and the peptides that map to their ORFs separately  
