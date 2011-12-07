@@ -2,7 +2,7 @@
 #
 # EMBLdump.pl :  makes modified EMBL dumps from camace.
 # 
-#  Last updated on: $Date: 2011-11-24 14:24:38 $
+#  Last updated on: $Date: 2011-12-07 14:17:28 $
 #  Last updated by: $Author: klh $
 
 use strict;
@@ -68,13 +68,14 @@ my ($test,
     $use_builddb_for_ref,
     $quicktest,
     $private,
+    $keep_redundant,
     %clone2type, %cds2cgc, %rnagenes, %clone2dbid, %pseudo2cgc, $multi_gene_loci,
     $cds2status_h, $cds2proteinid_h,  $cds2dbremark_h
     );
 
 GetOptions (
   "test"            => \$test,
-  "debug=s"         => \$debug,     # Only emails specified recipient and turns on extra printing.
+  "debug=s"         => \$debug,
   "store:s"         => \$store,
   "single=s@"       => \$single,
   "species:s"       => \$species,
@@ -87,6 +88,7 @@ GetOptions (
   "moddumpfile:s"   => \$mod_dump_file,
   "rawdumpfile:s"   => \$raw_dump_file,
   "quicktest"       => \$quicktest,
+  "keepredundant"   => \$keep_redundant,
 
     );
 
@@ -160,6 +162,7 @@ if ($dump_raw) {
   }
   close (READ);
 
+  $raw_dump_file .= ".embl";
   $log->write_to("RAW dumped to $raw_dump_file\n");
 } 
 
@@ -194,6 +197,8 @@ if ($dump_modified) {
   } else {
     $log->write_to("You are MODIFIED embl dumping to $mod_dump_file which will be retained\n");
   }
+
+  my $span_hash = &get_locs_for_multi_span_objects($raw_dump_file);
   
   open(my $out_fh, ">$mod_dump_file") or $log->log_and_die("Could not open $mod_dump_file for writing\n");
   open(my $raw_fh, $raw_dump_file) or $log->log_and_die("Could not open $raw_dump_file for reading\n");
@@ -367,7 +372,7 @@ if ($dump_modified) {
     }
     
     if (/^SQ/) {
-      &process_feature_table($out_fh, $clone, @features);
+      &process_feature_table($out_fh, $clone, $span_hash, @features);
       if ($species eq 'elegans') {
         print $out_fh $_;
       }
@@ -412,22 +417,9 @@ exit(0);
 
 ############################
 sub process_feature_table {
-  my ($out_fh, $clone, @feats) = @_;
+  my ($out_fh, $clone, $spans, @feats) = @_;
 
   foreach my $feat (@feats) {
-    if (&check_for_bad_location($feat->{location})) {
-      $log->write_to("Discarding non-local feature:\n");
-      $log->write_to(sprintf("FT   %-16s%s\n", $feat->{ftype}, $feat->{location}->[0]));
-      for(my $i=1; $i < @{$feat->{location}}; $i++) {
-        $log->write_to(sprintf("FT   %16s%s\n", " ", $feat->{location}->[$i]));
-      }
-      foreach my $qual (@{$feat->{quals}}) {
-        foreach my $ln (@$qual) {
-          $log->write_to(sprintf("FT   %16s%s\n", " ", $ln));
-        }
-      }
-      next;
-    }
 
     if ($feat->{ftype} eq 'source') {
       printf $out_fh "FT   %-16s%s\n", $feat->{ftype}, $feat->{location}->[0];
@@ -498,11 +490,6 @@ sub process_feature_table {
 
       $feat->{ftype} = $new_dv;
       push @{$feat->{quals}}, ["/pseudo"];
-    }
-
-    printf $out_fh "FT   %-16s%s\n", $feat->{ftype}, $feat->{location}->[0];
-    for(my $i=1; $i < @{$feat->{location}}; $i++) {
-      printf $out_fh "FT   %16s%s\n", " ", $feat->{location}->[$i];
     }
 
     #
@@ -690,6 +677,21 @@ sub process_feature_table {
     #
     # Finally, print them all out in a consistent sensible order
     #
+   #
+
+    if (exists $spans->{$wb_isoform_name} and 
+        not exists $spans->{$wb_isoform_name}->{$clone}) {
+      # this feature is annotated on multiple clones, 
+      # and this is not the clone we have chosen to 
+      # place it on
+      $log->write_to("Discarding duplicate feat: $wb_isoform_name will not be placed on $clone\n");
+      next;
+    }
+
+    printf $out_fh "FT   %-16s%s\n", $feat->{ftype}, $feat->{location}->[0];
+    for(my $i=1; $i < @{$feat->{location}}; $i++) {
+      printf $out_fh "FT   %16s%s\n", " ", $feat->{location}->[$i];
+    }
     
     foreach my $qual ($gene_qual, $locus_tag_qual, $standard_name_qual, $product_qual) {
       foreach my $line (@$qual) {
@@ -715,15 +717,133 @@ sub process_feature_table {
   print $out_fh "XX\n";
 }
 
-##########################
-sub check_for_bad_location {
-  my ($loc_a) = @_;
+###########################
+# this method obtains a list of multi-span objects, i.e. objects
+# that span multiple clones. Since ENA no longer accept these
+# annotations on multiple clones, we need to choose one clone
+# to attach them to, and do this by selecting the clone where
+# most of the object lies, using a series of rules
 
-  my $loc_string = "";
-  foreach my $loc (@{$loc_a}) {
-    chomp($loc);
-    $loc_string .= $loc;
+sub get_locs_for_multi_span_objects {
+  my $file = shift;
+
+  my ($clone, $acc, $type, $loc, $obj_name, %locs, %best_obj_locs, %refers_to);
+
+  open(my $fh, $file) or $log->log_and_die("Could not open $file for reading\n");
+  while(<$fh>) {
+    /^ID\s+CE(\S+)/ and do {
+      $clone = $1;
+      $acc = "";
+      next;
+    };
+
+    /^AC\s+(\S+);/ and do {
+      $acc = $1 if not $acc;
+    };
+
+    /^FT   (\S+)\s+(\S+)$/ and do {
+      ($type, $loc) = ($1, $2);
+      while(<$fh>) {
+        last if /^FT\s+\//;
+        /FT\s+(\S+)/ and $loc .= $1;
+      }
+    };
+      
+    /^FT\s+\/standard_name=\"(\S+)\"/ and do {
+      $obj_name = $1;
+      
+      push @{$locs{"$type:$obj_name"}}, {
+        clone => $clone,
+        acc   => $acc,
+        location => $loc,
+      };
+
+      next;
+    }
   }
+
+  foreach my $obj (keys %locs) {
+    my @locs = @{$locs{$obj}};
+    my ($obj_name) = $obj =~ /:(\S+)/;
+
+    next if scalar(@locs) == 1;
+    
+    foreach my $loc (@locs) {
+      my ($local_extent, $foreign_extents) = &parse_location($loc->{location});
+      $loc->{local_extent} = $local_extent;
+      $loc->{foreign_extents} = $foreign_extents;
+    }
+    
+    @locs = grep { $_->{local_extent} > 0 } @locs;
+    @locs = sort { $b->{local_extent} <=> $a->{local_extent} } @locs;
+
+    my $best_loc = 0;
+    for(my $i=0; $i < @locs; $i++) {
+      my $loc = $locs[$i];
+      my $clone = $loc->{clone};
+
+      if ($obj_name =~ /$clone/) {
+        # sequence name of object matches clone name, 
+        # so this is the best choice for this obj
+        $best_loc = $i;
+        last;
+      }
+    }
+
+
+    my @best_locs = ($keep_redundant) ? @locs : ($locs[$best_loc]);
+
+    foreach my $loc (@best_locs) {    
+      my $clone = $loc->{clone};
+      my $acc = $loc->{acc};
+
+      $best_obj_locs{$obj_name}->{$clone} = 1;
+      foreach my $oacc (keys %{$loc->{foreign_extents}}) {
+        $refers_to{$acc}->{$oacc} = 1;
+      }
+    }
+  }
+
+  # traverse refers_to structure looking for circular references
+  my %circular;
+  my @fringe = keys %refers_to;
+  foreach my $acc (@fringe) {
+    #print STDERR "Examining $acc for circular references...\n";
+    my %fringe = ($acc => 1);
+    my %seen;
+    LOOP: while(keys %fringe) {
+      my @acc_list = sort keys %fringe;
+      #print STDERR "  FRINGE = @acc_list\n";
+      my $this_acc = $acc_list[0];
+      delete $fringe{$this_acc};
+
+      if (not exists $seen{$this_acc} and exists $refers_to{$this_acc}) {
+        foreach my $oac (keys %{$refers_to{$this_acc}}) {
+          #print STDERR  "      Refers to $oac\n";
+          if ($oac eq $acc) {
+            # circular reference - bail
+            $circular{$acc} = 1;
+            last LOOP;
+          } else {
+            $fringe{$oac} = 1;
+          }
+        }
+      }
+      $seen{$this_acc} = 1;
+    }    
+  }
+
+  foreach my $acc (keys %circular) {
+    print STDERR "CIRCULAR REFERENCE: $acc\n";
+  }
+
+  return \%best_obj_locs;
+}
+  
+
+##########################
+sub parse_location {
+  my ($loc_string) = @_;
 
   while(1) {
     if ($loc_string =~ /^[^\(]*(complement|join)\(.+\)[^\)]*$/) {
@@ -736,11 +856,19 @@ sub check_for_bad_location {
   my @comps = split(/,/, $loc_string);
   my @local_components = grep { $_ =~ /^\d+\.\.\d+$/ } @comps;
 
-  if (not @local_components) {
-    return 1;
-  } else {
-    return 0;
+  my (%remote_len);
+  my $locallen = 0;
+  foreach (@comps) {
+    /^(\d+)\.\.(\d+)/ and do {
+      $locallen += ($2 - $1 + 1);
+      next;
+    };
+    /^(\S+):(\d+)\.\.(\d+)/ and do {
+      $remote_len{$1} += ($3 - $2 + 1);
+      next;
+    };
   }
+  return ($locallen, \%remote_len);
 }
 
 ##########################
