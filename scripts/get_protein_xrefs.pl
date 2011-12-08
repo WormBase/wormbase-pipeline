@@ -58,9 +58,9 @@ while(<$table_fh>) {
   chomp;
   my @data = split("\t",$_);
   
-  next unless scalar(@data) == 9;
-  my($cloneacc, $pid, $version, $cds, $uniprot_ac, $uniprot_id, $cds) 
-      = ($data[0],$data[2],$data[3],$data[6],$data[7],$data[8]);  
+  next unless scalar(@data) == 8;
+  my($cloneacc, $pid, $version, $cds, $uniprot_ac, $uniprot_id) 
+      = ($data[0],$data[2],$data[3],$data[5],$data[6],$data[7]);  
   
   next unless (defined $pid);
   $log->write_to("Potential New Protein: $_\n") if $uniprot_ac eq 'UNDEFINED';
@@ -129,7 +129,7 @@ sub lookup_from_ebi_production_dbs {
   my $cmd =  "source $ena_env &&"
       . " $ena_perl  $ENV{CVS_DIR}/get_protein_ids_ebiprod.pl"
       . "  -enadb ENAPRO" 
-      . "  -uniprotdb 'host=whisky.ebi.ac.uk;sid=SWPREAD;port=1531'", 
+      . "  -uniprotdb 'host=whisky.ebi.ac.uk;sid=SWPREAD;port=1531'"
       . "  -orgid $ncbi_tax_id";
   
   system("$cmd > $output_file") 
