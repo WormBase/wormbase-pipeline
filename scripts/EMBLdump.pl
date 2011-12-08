@@ -2,7 +2,7 @@
 #
 # EMBLdump.pl :  makes modified EMBL dumps from camace.
 # 
-#  Last updated on: $Date: 2011-12-08 11:24:09 $
+#  Last updated on: $Date: 2011-12-08 14:56:32 $
 #  Last updated by: $Author: klh $
 
 use strict;
@@ -65,11 +65,11 @@ my ($test,
     $wormbase,
     $single,
     $database,
-    $use_builddb_for_ref,
     $quicktest,
     $private,
     $keep_redundant,
     %clone2type, %cds2cgc, %rnagenes, %clone2dbid, %pseudo2cgc, $multi_gene_loci,
+    $cds2proteinid_db, $cds2status_db, $cds2dbremark_db,
     $cds2status_h, $cds2proteinid_h,  $cds2dbremark_h
     );
 
@@ -83,7 +83,9 @@ GetOptions (
   "dumpraw"         => \$dump_raw,
   "dumpmodified"    => \$dump_modified,
   "stagetorepo"     => \$stage_to_repository,
-  "modbuildref"     => \$use_builddb_for_ref,
+  "piddb=s"         => \$cds2proteinid_db,
+  "dbremarkdb=s"    => \$cds2dbremark_db,
+  "cdsstatusdb=s"   => \$cds2status_db,
   "modprivate"      => \$private,
   "moddumpfile:s"   => \$mod_dump_file,
   "rawdumpfile:s"   => \$raw_dump_file,
@@ -111,8 +113,6 @@ $species = $wormbase->species;
 $full_species_name = $wormbase->full_name;
 my $dbdir = ($database) ? $database : $wormbase->autoace;
 my $tace = $wormbase->tace;
-my $refdb = ($use_builddb_for_ref) ? $dbdir : $wormbase->database('current');
-
 
 ###############################
 # misc. variables             #
@@ -184,11 +184,14 @@ if ($dump_modified) {
 
   $multi_gene_loci = &get_multi_gene_loci(\%cds2cgc, \%rnagenes, \%pseudo2cgc);
 
-  #
+
   # Some information is not yet available in autoace (too early in the build)
-  # Therefore pull it across from previous build. 
-  #
-  ($cds2status_h, $cds2proteinid_h,  $cds2dbremark_h) = &fetch_database_info($refdb);
+  # By default, pull cds2status and cds2dbremark from current_DB, and protein_id
+  # from autoace (since they should have been loaded by now). However, allow
+  # command-line override when necessary
+  $cds2status_h = &fetch_cds2status( defined $cds2status_db ? $cds2status_db : $wormbase->database('current') );
+  $cds2dbremark_h = &fetch_cds2dbremark( defined $cds2dbremark_db ? $cds2dbremark_db : $wormbase->database('current') );
+  $cds2proteinid_h = &fetch_cds2proteinid( defined $cds2proteinid_db ? $cds2proteinid_db : $wormbase->autoace );
   
   if (not defined $mod_dump_file) {
     $mod_dump_file = "/tmp/EMBL_dump.$$.mod.embl";
@@ -950,24 +953,18 @@ sub get_references {
 }
 
 #######################
-sub fetch_database_info {
-  my ($ref_db) = @_;
+sub fetch_cds2status {
+  my ($ref_db)= @_;
 
-  my (%cds2status, %cds2dbremark, %cds2proteinid);
+  my %cds2status;
 
   if ($quicktest) {
-    return (\%cds2status, \%cds2proteinid, \%cds2dbremark);
+    return \%cds2status;
   }
 
-  $log->write_to("You are using $refdb to get protein_ids, CDS status and DB_Remarks\n\n");
-  my (@qfiles);
-
-  #
-  # CDS -> status
-  #
-
+  $log->write_to("You are using $ref_db to get CDS status\n\n");
+    
   my $query = &get_status_query();
-  push @qfiles, $query;
   my $command = "Table-maker -p $query\nquit\n";
   
   open (TACE, "echo '$command' | $tace $ref_db |");
@@ -980,12 +977,25 @@ sub fetch_database_info {
   }
   close TACE;
 
-  #
-  # CDS -> protein_ID
-  #
-  $query = &get_protein_id_query();
-  push @qfiles, $query;
-  $command = "Table-maker -p $query\nquit\n";
+  unlink $query;
+
+  return \%cds2status;
+}
+
+#######################
+sub fetch_cds2proteinid {
+  my ($ref_db) = @_;
+
+  my %cds2proteinid;
+
+  if ($quicktest) {
+    return \%cds2proteinid;
+  }
+
+  $log->write_to("You are using $ref_db to get CDS protein_id\n\n");
+
+  my $query = &get_protein_id_query();
+  my $command = "Table-maker -p $query\nquit\n";
   open(TACE, "echo '$command' | $tace $ref_db |");
   while(<TACE>) {
     chomp;
@@ -997,13 +1007,29 @@ sub fetch_database_info {
   }
   close(TACE);
 
-  #
-  # CDS/RNA -> DB_Remark
-  #
+  unlink $query;
+  
+  return \%cds2proteinid;
+
+}
+
+#######################
+sub fetch_cds2dbremark {
+  my ($ref_db) = @_;
+
+  my %cds2dbremark;
+
+  if ($quicktest) {
+    return \%cds2dbremark;
+  }
+
+  $log->write_to("You are using $ref_db to get CDS/RNA db_remarks\n\n");
+
+  my @qfiles;
   foreach my $class ("CDS", "RNA") {
-    $query = &get_db_remark_query($class);
+    my $query = &get_db_remark_query($class);
     push @qfiles, $query;
-    $command = "Table-maker -p $query\nquit\n";
+    my $command = "Table-maker -p $query\nquit\n";
     open(TACE, "echo '$command' | $tace $ref_db |");
     while(<TACE>) {
       chomp;
@@ -1015,10 +1041,10 @@ sub fetch_database_info {
       }
     }
   }
-
+  
   unlink @qfiles;
 
-  return (\%cds2status, \%cds2proteinid, \%cds2dbremark);
+  return \%cds2dbremark;
 
 }
 
