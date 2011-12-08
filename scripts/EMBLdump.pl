@@ -2,7 +2,7 @@
 #
 # EMBLdump.pl :  makes modified EMBL dumps from camace.
 # 
-#  Last updated on: $Date: 2011-12-07 14:17:28 $
+#  Last updated on: $Date: 2011-12-08 11:24:09 $
 #  Last updated by: $Author: klh $
 
 use strict;
@@ -677,14 +677,16 @@ sub process_feature_table {
     #
     # Finally, print them all out in a consistent sensible order
     #
-   #
+    #
 
     if (exists $spans->{$wb_isoform_name} and 
         not exists $spans->{$wb_isoform_name}->{$clone}) {
       # this feature is annotated on multiple clones, 
       # and this is not the clone we have chosen to 
       # place it on
-      $log->write_to("Discarding duplicate feat: $wb_isoform_name will not be placed on $clone\n");
+      if ($debug) {
+        $log->write_to("Discarding duplicate feat: $wb_isoform_name will not be placed on $clone\n");
+      }
       next;
     }
 
@@ -808,20 +810,17 @@ sub get_locs_for_multi_span_objects {
   my %circular;
   my @fringe = keys %refers_to;
   foreach my $acc (@fringe) {
-    #print STDERR "Examining $acc for circular references...\n";
     my %fringe = ($acc => 1);
     my %seen;
     LOOP: while(keys %fringe) {
       my @acc_list = sort keys %fringe;
-      #print STDERR "  FRINGE = @acc_list\n";
       my $this_acc = $acc_list[0];
       delete $fringe{$this_acc};
 
       if (not exists $seen{$this_acc} and exists $refers_to{$this_acc}) {
         foreach my $oac (keys %{$refers_to{$this_acc}}) {
-          #print STDERR  "      Refers to $oac\n";
           if ($oac eq $acc) {
-            # circular reference - bail
+            # circular reference 
             $circular{$acc} = 1;
             last LOOP;
           } else {
@@ -833,8 +832,11 @@ sub get_locs_for_multi_span_objects {
     }    
   }
 
+  
   foreach my $acc (keys %circular) {
-    print STDERR "CIRCULAR REFERENCE: $acc\n";
+    if ($debug) {
+      $log->write_to("Circular reference: $acc\n");
+    }
   }
 
   return \%best_obj_locs;
