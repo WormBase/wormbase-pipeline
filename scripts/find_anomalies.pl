@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2011-11-22 15:12:31 $      
+# Last updated on: $Date: 2011-12-09 11:07:37 $      
 
 # Changes required by Ant: 2008-02-19
 # 
@@ -246,7 +246,7 @@ while (my $run = <DATA>) {
 &delete_anomalies("UNMATCHED_RNASEQ_INTRONS");
 &delete_anomalies("SPURIOUS_INTRONS");
 &delete_anomalies("PREMATURE_STOP");
-
+&delete_anomalies("UNCONFIRMED_MASS_SPEC_INTRON");
 
 # if we want the anomalies GFF file
 if ($supplementary) {
@@ -403,7 +403,7 @@ foreach my $chromosome (@chromosomes) {
   my @waba_coding = $ovlp->get_waba_coding($chromosome)  if (exists $run{UNMATCHED_WABA});
   my @repeatmasked = $ovlp->get_repeatmasked($chromosome);
   my @repeatmasked_complex = $ovlp->get_repeatmasked_complex(@repeatmasked);
-  my @mass_spec_peptides = $ovlp->get_mass_spec_peptides($chromosome) if (exists $run{UNMATCHED_MASS_SPEC_PEPTIDE});
+  my @mass_spec_peptides = $ovlp->get_mass_spec_peptides($chromosome);
   my @SAGE_tags = $ovlp->get_SAGE_tags($chromosome) if (exists $run{UNMATCHED_SAGE});
 
   my @check_introns_EST  = (); #$ovlp->get_check_introns_EST($chromosome);
@@ -531,14 +531,18 @@ foreach my $chromosome (@chromosomes) {
   &filter_RNASeq_splice(\@RNASeq_splice, \@filtered_RNASeq_splice) if (exists $run{UNMATCHED_RNASEQ_INTRONS});
   &get_unconfirmed_RNASeq_introns(\@filtered_RNASeq_splice, \@CDS_introns, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, \@ignored_introns, $chromosome) if (exists $run{UNMATCHED_RNASEQ_INTRONS});
 
-  print "find introns that are missing RNASeq/EST/mRNA evidence";
-  &get_spurious_introns(\@RNASeq_splice, \@CDS_introns, $chromosome) if (exists $run{SPURIOUS_INTRONS});
+  print "find premature STOP codons\n";
+  &get_premature_stop(\@CDS, $chromosome) if (exists $run{PREMATURE_STOP});
+
+  print "find introns that are missing RNASeq/EST/mRNA/mass_spec evidence\n";
+  &get_spurious_introns(\@RNASeq_splice, \@CDS_introns, \@mass_spec_peptides, $chromosome) if (exists $run{SPURIOUS_INTRONS});
+
+  print "possible introns spanned by mass-spec peptide introns\n";
+  get_unconfirmed_mass_spec_introns(\@mass_spec_peptides, \@CDS_introns, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, \@ignored_introns, $chromosome) if (exists $run{UNCONFIRMED_MASS_SPEC_INTRON});
 
 ##########################
 #}
 ##########################
-
-  &get_premature_stop(\@CDS, $chromosome) if (exists $run{PREMATURE_STOP});
 
 #################################################
 # these don't work very well - don't use
@@ -631,7 +635,7 @@ foreach my $anomaly_type (keys %anomaly_count) {
   my $count = $anomaly_count{$anomaly_type};
   my $error_msg;
   if ($count == 0) {
-    $error_msg = "*** POSSIBLE ERROR";
+    $error_msg = "*** THAT'S GOOD, NOT AN ERROR!";
     $log->error;
   } else {
     $error_msg = "";
@@ -3288,7 +3292,8 @@ sub get_unmatched_mass_spec_peptides {
       my $anomaly_score = 10;	# huge score!
 
       #print "UNMATCHED_MASS_SPEC_PEPTIDE, $chromosome, $msp_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score, \n";
-      &output_to_database("UNMATCHED_MASS_SPEC_PEPTIDE", $chromosome, $msp_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score, "");
+      # set the strand to be '+' as we are not sure which strand it is on and we don't want the anomalies duplicated on each strand
+      &output_to_database("UNMATCHED_MASS_SPEC_PEPTIDE", $chromosome, $msp_id, $chrom_start, $chrom_end, '+', $anomaly_score, "");
     }
   }
 }
@@ -3643,11 +3648,11 @@ sub get_unconfirmed_introns {
     if ($mrna->[2] - $mrna->[1] > 30) {push @mrna2, $mrna} 
   }
 
-  # get the introns of the EST/mRNA HSPs
+  # get the introns of the EST/mRNA/mass_spec HSPs
   my @est_introns = &get_confirmed_introns(\@est2); # change the ESTs into confirmed introns
   my @mrna_introns = &get_confirmed_introns(\@mrna2);
 
-  # join the ESTs and mRNA hits and sort by start,end position 
+  # join the ESTs and mRNA and mass_spec hits and sort by start,end position 
   my @introns = sort {$a->[1] <=> $b->[1] or $a->[2] <=> $b->[2]} (@est_introns, @mrna_introns);
 
   # get the introns of the non_coding_transcripts
@@ -4170,16 +4175,109 @@ sub get_unconfirmed_RNASeq_introns {
   }
 
 }
+####################################################################################
+# find mass-spec introns that do not match CDS etc gene model introns
+
+sub get_unconfirmed_mass_spec_introns {
+
+  my ($mass_spec_peptides, $cds_introns_aref, $pseudogenes_aref, $transposons_aref, $transposon_exons_aref, $noncoding_transcript_exons_aref, $rRNA_aref, $ignored_introns_aref, $chromosome) = @_;
+
+  $anomaly_count{UNCONFIRMED_MASS_SPEC_INTRON} = 0 if (! exists $anomaly_count{UNCONFIRMED_MASS_SPEC_INTRON});
+
+  # get the introns of the mass_spec alignments
+  my @mass_spec_introns = $ovlp->get_intron_from_exons(@{$mass_spec_peptides});
+
+  # we want an exact match of the CDS intron to the EST confirmed intron
+  # we are not too sure of the orientation (hence sense) of the EST hit
+  my $cds_introns_match = $ovlp->compare($cds_introns_aref, exact_match => 1);
+  my $pseud_match = $ovlp->compare($pseudogenes_aref);
+  my $trans_match = $ovlp->compare($transposons_aref);
+  my $trane_match = $ovlp->compare($transposon_exons_aref);
+  my $rrna_match  = $ovlp->compare($rRNA_aref);
+  my $ignored_match  = $ovlp->compare($ignored_introns_aref, exact_match => 1); # introns marked as Confirmed_UTR/false/inconsistent
+  #my $noncoding_match  = $ovlp->compare(\@non_coding_introns, exact_match => 1); # want to ignore non-coding_transcript introns
+
+
+  foreach my $homology (@mass_spec_introns) { # $est_id, $chrom_start, $chrom_end, $chrom_strand
+
+    my $got_a_match = 0;	        # not yet seen a match to anything
+    
+    # flag for got a match to an intron marked as Confirmed_UTR/false/inconsistent
+    my $confirmed_ignored = 0;
+
+
+    if ($ignored_match->match($homology)) {
+      #$confirmed_ignored = 1;
+      #print "*************** ignored\n";
+      $got_a_match = 1; # don't want to see the Confirmed_UTR/false/inconsistent intron
+    }
+
+    # now check to see if the RNASeq intron matches a gene's intron
+    if ($cds_introns_match->match($homology)) {
+      $got_a_match = 1;
+    }
+
+    if ($pseud_match->match($homology)) { 
+      $got_a_match = 1;
+    }
+
+    if ($trans_match->match($homology)) {   
+      $got_a_match = 1;
+    }
+
+    if ($trane_match->match($homology)) {      
+      $got_a_match = 1;
+    }
+
+    if ($rrna_match->match($homology)) {       
+      $got_a_match = 1;
+    }
+
+    # output unmatched RNASeq to the database
+    if (! $got_a_match) {
+      my $est_id = $homology->[0];
+      my $chrom_start = $homology->[1];
+      my $chrom_end = $homology->[2];
+      my $chrom_strand = $homology->[3];
+      my $est_score = $homology->[5];
+      my $anomaly_score = 5;
+      #print "NOT got an RNASeq intron match ANOMALY: $est_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score\n";
+      &output_to_database("UNCONFIRMED_MASS_SPEC_INTRON", $chromosome, $est_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score, 'This is a possible intron spanned by a mass-spec peptide alignment to the genome.');
+    }
+
+  }
+
+}
 
 ####################################################################################
-# find introns that are missing RNASeq/EST/mRNA evidence
+# find introns that are missing RNASeq/EST/mRNA/mass-spec evidence
 
 sub get_spurious_introns {
 
-  my ($RNASeq_splice_aref, $cds_introns_aref, $chromosome) = @_;
+  my ($RNASeq_splice_aref, $cds_introns_aref, $mass_spec_aref, $chromosome) = @_;
 
   $anomaly_count{SPURIOUS_INTRONS} = 0 if (! exists $anomaly_count{SPURIOUS_INTRONS});
 
+
+  # get the set of CDS_introns that are not confirmed by a mass_spec peptide
+
+  # get the introns of the mass_spec alignments
+  my @mass_spec_introns = $ovlp->get_intron_from_exons(@{$mass_spec_aref});
+
+  # we want an exact match of the CDS intron to the mass_spec possible intron
+  # we are not too sure of the orientation (hence sense) of the mass_spec intron
+  my $mass_spec_introns_match = $ovlp->compare(\@mass_spec_introns, exact_match => 1);
+  
+  my @CDS_introns2; # list of CDS introns with no confirmation by mass-spec peptides
+  foreach my $cds_intron (@{$cds_introns_aref}) { # $cds_id, $chrom_start, $chrom_end, $chrom_strand
+    # now check to see if the RNASeq intron matches a gene's intron
+    if ($mass_spec_introns_match->match($cds_intron)) {
+      push @CDS_introns2, $cds_intron;
+    }
+  }
+
+
+  # now,
   # for each CDS, get its introns
   # get the counts of the RNASeqs spanning each intron
   # foreach CDS intron:
@@ -4190,7 +4288,7 @@ sub get_spurious_introns {
 
   # get the scores of the RNASeq introns that match the CDS introns and add then to the CDS introns
   my $rnaseq_introns_match = $ovlp->compare($RNASeq_splice_aref, exact_match => 1);
-  foreach my $CDS_intron (@{$cds_introns_aref}) { # $cds_id, $chrom_start, $chrom_end, $chrom_strand
+  foreach my $CDS_intron (@CDS_introns2) { # $cds_id, $chrom_start, $chrom_end, $chrom_strand
     
     if (my @results = $rnaseq_introns_match->match($CDS_intron)) { 
       foreach my $result (@results) {
@@ -4201,7 +4299,7 @@ sub get_spurious_introns {
   }
 
   # now get the CDS introns that have an anomalous lack of a matching RNASeq intron
-  my @CDS_introns = sort {$a->[0] cmp $b->[0]} @{$cds_introns_aref}; # sort by ID sequence name
+  my @CDS_introns = sort {$a->[0] cmp $b->[0]} @CDS_introns2; # sort by ID sequence name
   my $prev_name="";
   my @no_scores=();
   my $scores = 0;
@@ -4221,8 +4319,8 @@ sub get_spurious_introns {
 	    my $chrom_strand = $spurious_intron->[3];
 	    my $est_score = $spurious_intron->[5];
 	    my $anomaly_score = $average/10;
-	    print "\nNOT got an RNASeq intron match ANOMALY: $cds_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score\n";
-	    &output_to_database("SPURIOUS_INTRONS", $chromosome, $cds_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score, 'No RNASeq or EST evidence for this intron.');
+	    #print "\nNOT got an RNASeq intron match ANOMALY: $cds_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score\n";
+	    &output_to_database("SPURIOUS_INTRONS", $chromosome, $cds_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score, 'No RNASeq or EST or mass_spec evidence for this intron.');
 	  }
 	}
       }
@@ -4231,19 +4329,19 @@ sub get_spurious_introns {
       $count=0;
       $scores=0;
       @no_scores=();
-      print "\n$name\n";
+      #print "\n$name\n";
     }
 
     # store the details of this intron
     if (!defined $score) {
       if ($other !~ /Confirmed/) { #  see if there is confirmed EST evidence for this intron
 	push @no_scores, $CDS_intron;
-	print " <no intron> ";
+	#print " <no intron> ";
       }
     } else {
       $scores+=$score;
       $count++;
-      print " $score ";
+      #print " $score ";
     }
 
   }
@@ -4253,7 +4351,7 @@ sub get_spurious_introns {
 ####################################################################################
 # find premature STOP codons in a CDS model
 # This should never happen  - but some Tier II species have shoddy models
-sub premature_stop {
+sub get_premature_stop {
   my ($cds_aref, $chromosome) = @_;
 
   $anomaly_count{PREMATURE_STOP} = 0 if (! exists $anomaly_count{PREMATURE_STOP});
@@ -4801,6 +4899,7 @@ NOT_PREDICTED_BY_MGENE       elegans
 UNMATCHED_RNASEQ_INTRONS     elegans remanei briggsae japonica
 SPURIOUS_INTRONS             elegans remanei briggsae japonica
 PREMATURE_STOP               elegans remanei briggsae japonica brenneri brugia
+UNCONFIRMED_MASS_SPEC_INTRON elegans
 END_DATA
 
 =pod
