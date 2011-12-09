@@ -7,7 +7,7 @@
 # Do fast overlap matching of positions of two sets of things.
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2011-07-26 14:28:02 $      
+# Last updated on: $Date: 2011-12-09 11:03:36 $      
 
 =pod
 
@@ -624,8 +624,8 @@ sub get_intron_from_exons {
     if ($in->[0] eq $prev_id) {	# just gone past an intron
       if (@{$in} > 5) {
 	# store the hit positions if known
-	if (($hit_start < $hit_end && $prev_hit_end < $hit_start) || # 5' read
-	    ($hit_start > $hit_end && $prev_hit_end > $hit_start)) { # 3' read
+	if (($hit_start < $hit_end && $prev_hit_end <= $hit_start) || # 5' read
+	    ($hit_start > $hit_end && $prev_hit_end >= $hit_start)) { # 3' read
 	  push @out, [$id, $prev_end+1, $start-1, $sense, $prev_hit_end, $hit_start, $score];
 	}
       } else {
@@ -2360,7 +2360,7 @@ sub get_mass_spec_peptides {
      gff_source			=> "mass_spec_genome",
      gff_type			=> "translated_nucleotide_match",
      ID_after			=> 'Target\s+',
-
+     homology                   => 1,
    );
 
   return $self->read_GFF_file($chromosome, \%GFF_data);
