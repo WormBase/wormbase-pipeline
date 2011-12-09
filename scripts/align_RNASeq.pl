@@ -62,7 +62,7 @@
 # by Gary Williams
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2011-11-23 16:04:19 $
+# Last updated on: $Date: 2011-12-09 17:07:41 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -87,7 +87,7 @@ use GDBM_File; # for tied hash
 ##############################
 
 
-my ($test, $store, $debug, $species, $verbose, $expt, $noalign, $check, $solexa, $illumina, $database, $nogtf, $norawjuncs, $tsl);
+my ($test, $store, $debug, $species, $verbose, $expt, $noalign, $check, $solexa, $illumina, $database, $nogtf, $norawjuncs, $tsl, $paired);
 GetOptions (
 	    "test"               => \$test,
 	    "store:s"            => \$store,
@@ -103,6 +103,7 @@ GetOptions (
 	    "solexa"             => \$solexa,   # reads have solexa quality scores, not phred + 33 scores
 	    "expt:s"             => \$expt,     # do the alignment etc. for this experiment
 	    "illumina"           => \$illumina, # read have illumina GA-Pipeline 1.3 quality scores, not phred + 33 scores
+	    "paired"             => \$paired,   # the reads are paired-end - we may have to split the file
 	   );
 
 my $wormbase;
@@ -146,136 +147,136 @@ if ($species eq 'elegans') {
 
   %expts = ( # key= SRA 'SRX' experiment ID, values = [Analysis ID, quality score metric]
 
-	     SRX001872  => ["RNASeq_Hillier.L2_larva", 'phred'], # needs a lot of memory to run tophat
-	     SRX001873  => ["RNASeq_Hillier.Young_Adult", 'phred'],
-	     SRX001874  => ["RNASeq_Hillier.L4_larva", 'phred'],
-	     SRX001875  => ["RNASeq_Hillier.L3_larva", 'phred'],
+	     SRX001872  => ["RNASeq_Hillier.L2_larva", 'phred', 'single'], # needs a lot of memory to run tophat
+	     SRX001873  => ["RNASeq_Hillier.Young_Adult", 'phred', 'single'],
+	     SRX001874  => ["RNASeq_Hillier.L4_larva", 'phred', 'single'],
+	     SRX001875  => ["RNASeq_Hillier.L3_larva", 'phred', 'single'],
 
-	     SRX004863  => ["RNASeq_Hillier.early_embryo_Replicate3", 'phred'], 
-	     SRX004864  => ["RNASeq_Hillier.early_embryo", 'solexa'], # solexa
-	     SRX004865  => ["RNASeq_Hillier.late_embryo", 'phred'],
-	     SRX004866  => ["RNASeq_Hillier.late_embryo-Replicate1", 'solexa'], # SRR016678 is phred - the other three are solexa
-	     SRX004867  => ["RNASeq_Hillier.L1_larva", 'solexa'], # solexa - paired end reads
-	     SRX004868  => ["RNASeq_Hillier.L4_larva_Male", 'solexa'], # solexa
-	     SRX004869  => ["RNASeq_Hillier.L1_larva_lin-35", 'solexa'], # SRR016691 and SRR016690 are phred, the other two are solexa
+	     SRX004863  => ["RNASeq_Hillier.early_embryo_Replicate3", 'phred', 'single'], 
+	     SRX004864  => ["RNASeq_Hillier.early_embryo", 'solexa', 'single'], # solexa
+	     SRX004865  => ["RNASeq_Hillier.late_embryo", 'phred', 'single'],
+	     SRX004866  => ["RNASeq_Hillier.late_embryo-Replicate1", 'solexa', 'single'], # SRR016678 is phred - the other three are solexa
+	     SRX004867  => ["RNASeq_Hillier.L1_larva", 'solexa', 'paired-end'], # solexa - paired end reads
+	     SRX004868  => ["RNASeq_Hillier.L4_larva_Male", 'solexa', 'single'], # solexa
+	     SRX004869  => ["RNASeq_Hillier.L1_larva_lin-35", 'solexa', 'single'], # SRR016691 and SRR016690 are phred, the other two are solexa
 
- 	     SRX008136  => ["RNASeq_Hillier.Adult_spe-9", 'phred'], # phred, despite what the docs say
- 	     SRX008138  => ["RNASeq_Hillier.dauer_daf-2", 'phred'], # phred, despite what the docs say
- 	     SRX008139  => ["RNASeq_Hillier.dauer_entry_daf-2", 'phred'], # phred, despite what the docs say
- 	     SRX008140  => ["RNASeq_Hillier.dauer_exit_daf-2", 'phred'], # phred, despite what the docs say
- 	     SRX008144  => ["RNASeq_Hillier.L4_Larva_Replicate1", 'phred'], # phred, despite what the docs say
+ 	     SRX008136  => ["RNASeq_Hillier.Adult_spe-9", 'phred', 'single'], # phred, despite what the docs say
+ 	     SRX008138  => ["RNASeq_Hillier.dauer_daf-2", 'phred', 'single'], # phred, despite what the docs say
+ 	     SRX008139  => ["RNASeq_Hillier.dauer_entry_daf-2", 'phred', 'single'], # phred, despite what the docs say
+ 	     SRX008140  => ["RNASeq_Hillier.dauer_exit_daf-2", 'phred', 'single'], # phred, despite what the docs say
+ 	     SRX008144  => ["RNASeq_Hillier.L4_Larva_Replicate1", 'phred', 'single'], # phred, despite what the docs say
 
- 	     SRX011569  => ["RNASeq_Hillier.embryo_him-8", 'phred'], # phred, despite what the docs say
+ 	     SRX011569  => ["RNASeq_Hillier.embryo_him-8", 'phred', 'single'], # phred, despite what the docs say
 
- 	     SRX014006  => ["RNASeq_Hillier.young_adult_Harposporium", 'phred'], # phred, despite what the docs say
- 	     SRX014007  => ["RNASeq_Hillier.young_adult_Harposporium_control", 'phred'], # phred, despite what the docs say
- 	     SRX014008  => ["RNASeq_Hillier.young_adult_S_macescens", 'phred'], # phred, despite what the docs say
- 	     SRX014009  => ["RNASeq_Hillier.young_adult_S_macescens_control", 'phred'], # phred, despite what the docs say
- 	     SRX014010  => ["RNASeq_Hillier.L4_larva_JK1107", 'phred'], # phred, despite what the docs say
+ 	     SRX014006  => ["RNASeq_Hillier.young_adult_Harposporium", 'phred', 'single'], # phred, despite what the docs say
+ 	     SRX014007  => ["RNASeq_Hillier.young_adult_Harposporium_control", 'phred', 'single'], # phred, despite what the docs say
+ 	     SRX014008  => ["RNASeq_Hillier.young_adult_S_macescens", 'phred', 'single'], # phred, despite what the docs say
+ 	     SRX014009  => ["RNASeq_Hillier.young_adult_S_macescens_control", 'phred', 'single'], # phred, despite what the docs say
+ 	     SRX014010  => ["RNASeq_Hillier.L4_larva_JK1107", 'phred', 'single'], # phred, despite what the docs say
 
- 	     SRX035162  => ["RNASeq_Hillier.adult_D_coniospora_12hrs", 'phred'], # 76 bp reads
+ 	     SRX035162  => ["RNASeq_Hillier.adult_D_coniospora_12hrs", 'phred', 'single'], # 76 bp reads
 
- 	     SRX036967  => ["RNASeq_Hillier.adult_D_coniospora_control", 'phred'], # 76 bp reads
+ 	     SRX036967  => ["RNASeq_Hillier.adult_D_coniospora_control", 'phred', 'single'], # 76 bp reads
 
- 	     SRX036881  => ["RNASeq_Hillier.L3_larva_Replicate1", 'phred'], # 76 bp reads
- 	     SRX036882  => ["RNASeq_Hillier.adult_D_coniospora_5hrs", 'phred'], # 76 bp reads
+ 	     SRX036881  => ["RNASeq_Hillier.L3_larva_Replicate1", 'phred', 'single'], # 76 bp reads
+ 	     SRX036882  => ["RNASeq_Hillier.adult_D_coniospora_5hrs", 'phred', 'single'], # 76 bp reads
 
- 	     SRX036969  => ["RNASeq_Hillier.adult_E_faecalis", 'phred'], # 76 bp reads
- 	     SRX036970  => ["RNASeq_Hillier.adult_P_luminescens", 'phred'], # 76 bp reads
+ 	     SRX036969  => ["RNASeq_Hillier.adult_E_faecalis", 'phred', 'single'], # 76 bp reads
+ 	     SRX036970  => ["RNASeq_Hillier.adult_P_luminescens", 'phred', 'single'], # 76 bp reads
 
- 	     SRX037186  => ["RNASeq_Hillier.early_embryo_Replicate2", 'phred'], # 76 bp reads
- 	     SRX037197  => ["RNASeq_Hillier.early_embryo_Replicate1", 'phred'], # modENCODE_3526
- 	     SRX037198  => ["RNASeq_Hillier.embryo_Male_him-8-Replicate1", 'phred'], # 76 bp reads
- 	     SRX037199  => ["RNASeq_Hillier.dauer_exit_daf-2-Replicate1", 'phred'], # 76 bp reads
- 	     SRX037200  => ["RNASeq_Hillier.L4_larva_JK1107_Replicate1", 'phred'], # 76 bp reads
+ 	     SRX037186  => ["RNASeq_Hillier.early_embryo_Replicate2", 'phred', 'single'], # 76 bp reads
+ 	     SRX037197  => ["RNASeq_Hillier.early_embryo_Replicate1", 'phred', 'single'], # modENCODE_3526
+ 	     SRX037198  => ["RNASeq_Hillier.embryo_Male_him-8-Replicate1", 'phred', 'single'], # 76 bp reads
+ 	     SRX037199  => ["RNASeq_Hillier.dauer_exit_daf-2-Replicate1", 'phred', 'single'], # 76 bp reads
+ 	     SRX037200  => ["RNASeq_Hillier.L4_larva_JK1107_Replicate1", 'phred', 'single'], # 76 bp reads
 
- 	     SRX037288  => ["RNASeq_Hillier.L1_larva-Replicate1", 'phred'], # 76 bp reads
+ 	     SRX037288  => ["RNASeq_Hillier.L1_larva-Replicate1", 'phred', 'single'], # 76 bp reads
 
- 	     SRX047446  => ["RNASeq_Hillier.late_embryo_Replicate2", 'phred'], # 76 bp reads
- 	     SRX047469  => ["RNASeq_Hillier.L4_larva_Male_Replicate1", 'phred'], # 76 bp reads
- 	     SRX047470  => ["RNASeq_Hillier.dauer_entry_daf-2_Replicate1", 'phred'], # 76 bp reads
+ 	     SRX047446  => ["RNASeq_Hillier.late_embryo_Replicate2", 'phred', 'single'], # 76 bp reads
+ 	     SRX047469  => ["RNASeq_Hillier.L4_larva_Male_Replicate1", 'phred', 'single'], # 76 bp reads
+ 	     SRX047470  => ["RNASeq_Hillier.dauer_entry_daf-2_Replicate1", 'phred', 'single'], # 76 bp reads
 
- 	     SRX047653  => ["RNASeq_Hillier.L2_larva_Replicate1", 'phred'], # 76 bp reads
- 	     SRX047787  => ["RNASeq_Hillier.Young_Adult_Replicate1", 'phred'], # 76 bp reads
+ 	     SRX047653  => ["RNASeq_Hillier.L2_larva_Replicate1", 'phred', 'single'], # 76 bp reads
+ 	     SRX047787  => ["RNASeq_Hillier.Young_Adult_Replicate1", 'phred', 'single'], # 76 bp reads
 	     
 ## Andy Fraser's Lab 
 	     
-	     SRX007069   => ["RNASeq_Fraser.L4_larva", 'phred'], # N2, L4 larva
-	     SRX007170   => ["RNASeq_Fraser.adult", 'phred'], # N2, Young Adult
-	     SRX007171   => ["RNASeq_Fraser.smg-1_L4_larva", 'phred'], # smg-1, L4 larva
-	     SRX007172   => ["RNASeq_Fraser.smg-1_adult", 'phred'], # smg-1, Young Adult
-	     SRX007173   => ["RNASeq_Fraser.all_stages", 'phred'], # N2, all_stages, paired end reads
+	     SRX007069   => ["RNASeq_Fraser.L4_larva", 'phred', 'single'], # N2, L4 larva
+	     SRX007170   => ["RNASeq_Fraser.adult", 'phred', 'single'], # N2, Young Adult
+	     SRX007171   => ["RNASeq_Fraser.smg-1_L4_larva", 'phred', 'single'], # smg-1, L4 larva
+	     SRX007172   => ["RNASeq_Fraser.smg-1_adult", 'phred', 'single'], # smg-1, Young Adult
+	     SRX007173   => ["RNASeq_Fraser.all_stages", 'phred', 'paired-end'], # N2, all_stages, paired end reads
 	     
 ## Andy Fire's Lab
 	     
-	     SRX028190   => ["RNASeq_Fire.all_stages_dsDNALigSeq", 'phred'], # GSM577107: N2_mixed-stage_dsDNALigSeq
-	     SRX028191   => ["RNASeq_Fire.all_stages_ssRNALigSeq", 'phred'], # GSM577108: N2_mixed-stage_ssRNALigSeq
-	     SRX028192   => ["RNASeq_Fire.fem-3_dsDNALigSeq", 'phred'],      # GSM577110: fem-3_dsDNALigSeq
-	     SRX028193   => ["RNASeq_Fire.fem-1_dsDNALigSeq", 'phred'],      # GSM577111: fem-1_dsDNALigSeq
-	     SRX028194   => ["RNASeq_Fire.him-8_dsDNALigSeq", 'phred'],      # GSM577112: him-8_dsDNALigSeq
-	     SRX028195   => ["RNASeq_Fire.him-8_ssRNALigSeq", 'phred'],      # GSM577113: him-8_ssRNALigSeq
-	     SRX028196   => ["RNASeq_Fire.rrf-3_him-8_ssRNALigSeq", 'phred'], # GSM577114: rrf-3_him-8_ssRNALigSeq
-	     SRX028197   => ["RNASeq_Fire.L1_larva_ssRNALigSeq", 'phred'],   # GSM577115: N2_L1_ssRNALigSeq
-	     SRX028198   => ["RNASeq_Fire.L2_larva_ssRNALigSeq", 'phred'],   # GSM577116: N2_L2_ssRNALigSeq
-	     SRX028199   => ["RNASeq_Fire.L3_larva_ssRNALigSeq", 'phred'],   # GSM577117: N2_L3_ssRNALigSeq
-	     SRX028200   => ["RNASeq_Fire.L4_larva_ssRNALigSeq", 'phred'],   # GSM577118: N2_L4_ssRNALigSeq
-	     SRX028201   => ["RNASeq_Fire.L1_larva_CircLigSeq", 'phred'],    # GSM577119: N2_L1_CircLigSeq
-	     SRX028202   => ["RNASeq_Fire.L2_larva_CircLigSeq", 'phred'],    # GSM577120: N2_L2_CircLigSeq
-	     SRX028203   => ["RNASeq_Fire.L3_larva_CircLigSeq", 'phred'],    # GSM577121: N2_L3_CircLigSeq
-	     SRX028204   => ["RNASeq_Fire.all_stages_polysomes", 'phred'],   # GSM577122: N2_mixed-stage_polysomes
+	     SRX028190   => ["RNASeq_Fire.all_stages_dsDNALigSeq", 'phred', 'single'], # GSM577107: N2_mixed-stage_dsDNALigSeq
+	     SRX028191   => ["RNASeq_Fire.all_stages_ssRNALigSeq", 'phred', 'single'], # GSM577108: N2_mixed-stage_ssRNALigSeq
+	     SRX028192   => ["RNASeq_Fire.fem-3_dsDNALigSeq", 'phred', 'single'],      # GSM577110: fem-3_dsDNALigSeq
+	     SRX028193   => ["RNASeq_Fire.fem-1_dsDNALigSeq", 'phred', 'single'],      # GSM577111: fem-1_dsDNALigSeq
+	     SRX028194   => ["RNASeq_Fire.him-8_dsDNALigSeq", 'phred', 'single'],      # GSM577112: him-8_dsDNALigSeq
+	     SRX028195   => ["RNASeq_Fire.him-8_ssRNALigSeq", 'phred', 'single'],      # GSM577113: him-8_ssRNALigSeq
+	     SRX028196   => ["RNASeq_Fire.rrf-3_him-8_ssRNALigSeq", 'phred', 'single'], # GSM577114: rrf-3_him-8_ssRNALigSeq
+	     SRX028197   => ["RNASeq_Fire.L1_larva_ssRNALigSeq", 'phred', 'single'],   # GSM577115: N2_L1_ssRNALigSeq
+	     SRX028198   => ["RNASeq_Fire.L2_larva_ssRNALigSeq", 'phred', 'single'],   # GSM577116: N2_L2_ssRNALigSeq
+	     SRX028199   => ["RNASeq_Fire.L3_larva_ssRNALigSeq", 'phred', 'single'],   # GSM577117: N2_L3_ssRNALigSeq
+	     SRX028200   => ["RNASeq_Fire.L4_larva_ssRNALigSeq", 'phred', 'single'],   # GSM577118: N2_L4_ssRNALigSeq
+	     SRX028201   => ["RNASeq_Fire.L1_larva_CircLigSeq", 'phred', 'single'],    # GSM577119: N2_L1_CircLigSeq
+	     SRX028202   => ["RNASeq_Fire.L2_larva_CircLigSeq", 'phred', 'single'],    # GSM577120: N2_L2_CircLigSeq
+	     SRX028203   => ["RNASeq_Fire.L3_larva_CircLigSeq", 'phred', 'single'],    # GSM577121: N2_L3_CircLigSeq
+	     SRX028204   => ["RNASeq_Fire.all_stages_polysomes", 'phred', 'single'],   # GSM577122: N2_mixed-stage_polysomes
 
 ## new entries 7 Oct 2011
-	    SRX017684 => ["RNASeq.Shin.L1_larva", 'phred'], # 454 sequencing http://www.biomedcentral.com/1741-7007/6/30
+	    SRX017684 => ["RNASeq.Shin.L1_larva", 'phred', 'single'], # 454 sequencing http://www.biomedcentral.com/1741-7007/6/30
 
-	    SRX006984 => ["RNASeq.Gerstein.embryo_Replicate1", 'phred'], # 
-	    SRX006985 => ["RNASeq.Gerstein.embryo_Replicate2", 'phred'], # 
-	    SRX006986 => ["RNASeq.Gerstein.embryo_Replicate3", 'phred'], # 
-	    SRX006987 => ["RNASeq.Gerstein.L1_larva.starved_Replicate1", 'phred'], # 
-	    SRX006988 => ["RNASeq.Gerstein.L1_larva.starved_Replicate2", 'phred'], # 
-	    SRX006989 => ["RNASeq.Gerstein.L1_larva.starved_Replicate3", 'phred'], # 
+	    SRX006984 => ["RNASeq.Gerstein.embryo_Replicate1", 'phred', 'single'], # 
+	    SRX006985 => ["RNASeq.Gerstein.embryo_Replicate2", 'phred', 'single'], # 
+	    SRX006986 => ["RNASeq.Gerstein.embryo_Replicate3", 'phred', 'single'], # 
+	    SRX006987 => ["RNASeq.Gerstein.L1_larva.starved_Replicate1", 'phred', 'single'], # 
+	    SRX006988 => ["RNASeq.Gerstein.L1_larva.starved_Replicate2", 'phred', 'single'], # 
+	    SRX006989 => ["RNASeq.Gerstein.L1_larva.starved_Replicate3", 'phred', 'single'], # 
 
-	    SRX026728 => ["RNASeq.Martazavi.L3_larva", 'phred'], # paired-end http://genome.cshlp.org/content/20/12/1740.long
-	    SRX026729 => ["RNASeq.Martazavi.L1_larva", 'phred'], # paired-end http://genome.cshlp.org/content/20/12/1740.long
+	    SRX026728 => ["RNASeq.Martazavi.L3_larva", 'phred', 'paired-end'], # paired-end http://genome.cshlp.org/content/20/12/1740.long
+	    SRX026729 => ["RNASeq.Martazavi.L1_larva", 'phred', 'paired-end'], # paired-end http://genome.cshlp.org/content/20/12/1740.long
 
-	    SRX047635 => ["RNASeq_Hillier.adult_D_coniospora_12hrs_Replicate2", 'phred'], # 76 bp reads
+	    SRX047635 => ["RNASeq_Hillier.adult_D_coniospora_12hrs_Replicate2", 'phred', 'single'], # 76 bp reads
 
-	    SRX049268 => ["RNASeq_Hillier.L4_larva_cap4", 'phred'], # 76 bp reads. Array capture experiment to remove messages already detected in other RNAseq experiments on C. elegans N2 larval L4 library.
-	    SRX049269 => ["RNASeq_Hillier.L4_larva_RRcap3", 'phred'], # 76 bp reads. Ribominus kit was used on the C. elegans N2 larval L4 library and subjected to array capture to remove messages already detected in other RNAseq experiments. 
-	    SRX049270 => ["RNASeq_Hillier.late_embryo_cap6", 'phred'], # 76 bp reads. Array capture experiment on late embryo LE-2 library to remove messages already detected in other RNAseq experiments.
+	    SRX049268 => ["RNASeq_Hillier.L4_larva_cap4", 'phred', 'single'], # 76 bp reads. Array capture experiment to remove messages already detected in other RNAseq experiments on C. elegans N2 larval L4 library.
+	    SRX049269 => ["RNASeq_Hillier.L4_larva_RRcap3", 'phred', 'single'], # 76 bp reads. Ribominus kit was used on the C. elegans N2 larval L4 library and subjected to array capture to remove messages already detected in other RNAseq experiments. 
+	    SRX049270 => ["RNASeq_Hillier.late_embryo_cap6", 'phred', 'single'], # 76 bp reads. Array capture experiment on late embryo LE-2 library to remove messages already detected in other RNAseq experiments.
 
-	    SRX049744 => ["RNASeq_Hillier.L1_larva_lin-35_cap1", 'phred'], # 	modENCODE_3521 76 bp reads. Array capture experiment to remove messages already detected in other RNAseq experiments on C. elegans N2 larva L1 (lin-35) library.
-	    SRX049745 => ["RNASeq_Hillier.L4_larva_Male_cap2", 'phred'], #  modENCODE_3524 76 bp reads. Array capture experiment to remove messages already detected in other RNAseq experiments on C. elegans N2 larva L4 male library.
+	    SRX049744 => ["RNASeq_Hillier.L1_larva_lin-35_cap1", 'phred', 'single'], # 	modENCODE_3521 76 bp reads. Array capture experiment to remove messages already detected in other RNAseq experiments on C. elegans N2 larva L1 (lin-35) library.
+	    SRX049745 => ["RNASeq_Hillier.L4_larva_Male_cap2", 'phred', 'single'], #  modENCODE_3524 76 bp reads. Array capture experiment to remove messages already detected in other RNAseq experiments on C. elegans N2 larva L4 male library.
 
-	    SRX050610 => ["RNASeq_Hillier.L1_larva_lin-35-cap1", 'phred'], # 76 bp reads. Array capture experiment to remove messages already detected in other RNAseq experiments on C. elegans N2 larva L1 (lin-35) library. 
+	    SRX050610 => ["RNASeq_Hillier.L1_larva_lin-35-cap1", 'phred', 'single'], # 76 bp reads. Array capture experiment to remove messages already detected in other RNAseq experiments on C. elegans N2 larva L1 (lin-35) library. 
 
-	    SRX050630 => ["RNASeq_Hillier.L4_larva_Male_cap2_Replicate2", 'phred'], # NOT SURE IF THIS IS A REPLICATE - ASKED LADEANA. Array capture experiment to remove messages already detected in other RNAseq experiments on C. elegans N2 larva L4 male library.
+	    SRX050630 => ["RNASeq_Hillier.L4_larva_Male_cap2_Replicate2", 'phred', 'single'], # NOT SURE IF THIS IS A REPLICATE - ASKED LADEANA. Array capture experiment to remove messages already detected in other RNAseq experiments on C. elegans N2 larva L4 male library.
 
-	    SRX085111 => ["RNASeq_Hillier.blastula_embryo", 'phred'], # 100 bp reads. paired-end. EE_50-60
-	    SRX085112 => ["RNASeq_Hillier.blastula_embryo_Replicate2", 'phred'], # 100 bp reads. paired-end. EE_50-60 NOT SURE IF THIS IS A REPLICATE
+	    SRX085111 => ["RNASeq_Hillier.blastula_embryo", 'phred', 'paired-end'], # 100 bp reads. paired-end. EE_50-60
+	    SRX085112 => ["RNASeq_Hillier.blastula_embryo_Replicate2", 'phred', 'paired-end'], # 100 bp reads. paired-end. EE_50-60 NOT SURE IF THIS IS A REPLICATE
 
-	    SRX085217 => ["RNASeq_Hillier.gastrulating_embryo", 'phred'], # 76 bp reads. paired-end. EE_50-120
-	    SRX085218 => ["RNASeq_Hillier.gastrulating_embryo_Replicate2", 'phred'], # 100 bp reads. paired-end. EE_50-120
-	    SRX085219 => ["RNASeq_Hillier.4-cell_embryo", 'phred'], # Illumina sequencing of C. elegans N2 hand-picked 4 cell embryos DSN-Negative, total RNA.
-# get "terminate called after throwing an instance of 'std::bad_alloc'" in cufflinks with this one	    SRX085220 => ["RNASeq_Hillier.gastrulating_embryo_Replicate3", 'phred'], # 100 bp reads. paired-end. EE_50-120
+	    SRX085217 => ["RNASeq_Hillier.gastrulating_embryo", 'phred', 'paired-end'], # 76 bp reads. paired-end. EE_50-120
+	    SRX085218 => ["RNASeq_Hillier.gastrulating_embryo_Replicate2", 'phred', 'paired-end'], # 100 bp reads. paired-end. EE_50-120
+	    SRX085219 => ["RNASeq_Hillier.4-cell_embryo", 'phred', 'single'], # Illumina sequencing of C. elegans N2 hand-picked 4 cell embryos DSN-Negative, total RNA.
+# get "terminate called after throwing an instance of 'std::bad_alloc'" in cufflinks with this one	    SRX085220 => ["RNASeq_Hillier.gastrulating_embryo_Replicate3", 'phred', 'single'], # 100 bp reads. paired-end. EE_50-120
 
-	    SRX085286 => ["RNASeq_Hillier.Pharyngeal_muscle_late_embryo", 'phred'], # 100 bp reads. paired-end. Pharyngeal muscle total RNA, late embryo. 
-	    SRX085287 => ["RNASeq_Hillier.Pharyngeal_muscle_late_embryo_Replicate2", 'phred'], # 76 bp reads. paired-end. Pharyngeal muscle total RNA, late embryo.
+	    SRX085286 => ["RNASeq_Hillier.Pharyngeal_muscle_late_embryo", 'phred', 'paired-end'], # 100 bp reads. paired-end. Pharyngeal muscle total RNA, late embryo. 
+	    SRX085287 => ["RNASeq_Hillier.Pharyngeal_muscle_late_embryo_Replicate2", 'phred', 'paired-end'], # 76 bp reads. paired-end. Pharyngeal muscle total RNA, late embryo.
 
-	    SRX092371 => ["RNASeq_Hillier.2-cell_embryo", 'phred'], # 76 bp reads. paired-end. EE_50-30
-	    SRX092372 => ["RNASeq_Hillier.2-cell_embryo_Replicate2", 'phred'], # 100 bp reads. paired-end. EE_50-30
+	    SRX092371 => ["RNASeq_Hillier.2-cell_embryo", 'phred', 'paired-end'], # 76 bp reads. paired-end. EE_50-30
+	    SRX092372 => ["RNASeq_Hillier.2-cell_embryo_Replicate2", 'phred', 'paired-end'], # 100 bp reads. paired-end. EE_50-30
 
-	    SRX092477 => ["RNASeq_Hillier.1-cell_embryo", 'phred'], # 76 bp reads. paired-end. EE_50-0
-	    SRX092478 => ["RNASeq_Hillier.1-cell_embryo_Replicate2", 'phred'], # 100 bp reads. paired-end. EE_50-0
-	    SRX092479 => ["RNASeq_Hillier.28-cell_embryo", 'phred'], #  100 bp reads. paired-end. EE_50-90
-	    SRX092480 => ["RNASeq_Hillier.28-cell_embryo_Replicate2", 'phred'], # 76 bp reads. paired-end. EE_50-90
+	    SRX092477 => ["RNASeq_Hillier.1-cell_embryo", 'phred', 'paired-end'], # 76 bp reads. paired-end. EE_50-0
+	    SRX092478 => ["RNASeq_Hillier.1-cell_embryo_Replicate2", 'phred', 'paired-end'], # 100 bp reads. paired-end. EE_50-0
+	    SRX092479 => ["RNASeq_Hillier.28-cell_embryo", 'phred', 'paired-end'], #  100 bp reads. paired-end. EE_50-90
+	    SRX092480 => ["RNASeq_Hillier.28-cell_embryo_Replicate2", 'phred', 'paired-end'], # 76 bp reads. paired-end. EE_50-90
 
-	    SRX099901 => ["RNASeq_Hillier.1-cell_embryo_Replicate3", 'phred'], # 100 bp reads. EE_50-0
-	    SRX099902 => ["RNASeq_Hillier.1-cell_embryo_Replicate4", 'phred'], # 101 bp reads. EE_50-0
+	    SRX099901 => ["RNASeq_Hillier.1-cell_embryo_Replicate3", 'phred', 'single'], # 100 bp reads. EE_50-0
+	    SRX099902 => ["RNASeq_Hillier.1-cell_embryo_Replicate4", 'phred', 'single'], # 101 bp reads. EE_50-0
 
-	    SRX099907 => ["RNASeq_Hillier.2-cell_embryo_Replicate3", 'phred'], # 100 bp reads. EE_50-30
-	    SRX099908 => ["RNASeq_Hillier.2-cell_embryo_Replicate4", 'phred'], # 101 bp reads. EE_50-30
+	    SRX099907 => ["RNASeq_Hillier.2-cell_embryo_Replicate3", 'phred', 'single'], # 100 bp reads. EE_50-30
+	    SRX099908 => ["RNASeq_Hillier.2-cell_embryo_Replicate4", 'phred', 'single'], # 101 bp reads. EE_50-30
 
-	    SRX099915 => ["RNASeq_Hillier.28-cell_embryo_Replicate3", 'phred'], # 101 bp reads. paired-end. EE_50-90
+	    SRX099915 => ["RNASeq_Hillier.28-cell_embryo_Replicate3", 'phred', 'single'], # 101 bp reads. EE_50-90
 
 	    );
 } elsif ($species eq 'brugia') {
@@ -305,37 +306,37 @@ if ($species eq 'elegans') {
 
   %expts = ( # key= SRA 'SRX' experiment ID, values = [Analysis ID, quality score metric]
 
-	    Adult_female => ["RNASeq.Berriman.Adult_female", 'phred'],
-	    Adult_male => ["RNASeq.Berriman.Adult_male", 'phred'],
-	    BmL3_1361258 => ["RNASeq.Berriman.BmL3_1361258", 'phred'],
-	    eggs_embryos => ["RNASeq.Berriman.eggs_embryos", 'phred'],
-	    immature_female => ["RNASeq.Berriman.immature_female", 'phred'],
-	    L3_stage => ["RNASeq.Berriman.L3_stage", 'phred'],
-	    L4 => ["RNASeq.Berriman.L4", 'phred'],
-	    microfillariae => ["RNASeq.Berriman.microfillariae", 'phred'],
+	    Adult_female => ["RNASeq.Berriman.Adult_female", 'phred', 'single'],
+	    Adult_male => ["RNASeq.Berriman.Adult_male", 'phred', 'single'],
+	    BmL3_1361258 => ["RNASeq.Berriman.BmL3_1361258", 'phred', 'single'],
+	    eggs_embryos => ["RNASeq.Berriman.eggs_embryos", 'phred', 'single'],
+	    immature_female => ["RNASeq.Berriman.immature_female", 'phred', 'single'],
+	    L3_stage => ["RNASeq.Berriman.L3_stage", 'phred', 'single'],
+	    L4 => ["RNASeq.Berriman.L4", 'phred', 'single'],
+	    microfillariae => ["RNASeq.Berriman.microfillariae", 'phred', 'single'],
 	   );
 	    
 } elsif ($species eq 'remanei') {
 
-  %expts = ( SRX052082 => ["RNASeq.remanei.L2_larva", 'phred'],
-	     SRX052083 => ["RNASeq.remanei.L4_larva", 'phred']
+  %expts = ( SRX052082 => ["RNASeq.remanei.L2_larva", 'phred', 'paired-end'],
+	     SRX052083 => ["RNASeq.remanei.L4_larva", 'phred', 'single']
 	   );
 
 } elsif ($species eq 'briggsae') {
 
-  %expts = ( SRX052079 => ["RNASeq.briggsae.L2_larva", 'phred'],
-	     SRX052081 => ["RNASeq.briggsae.L4_larva", 'phred'],
-	     SRX053351 => ["RNASeq.briggsae.all_stages", 'phred']
+  %expts = ( SRX052079 => ["RNASeq.briggsae.L2_larva", 'phred', 'single'],
+	     SRX052081 => ["RNASeq.briggsae.L4_larva", 'phred', 'single'],
+	     SRX053351 => ["RNASeq.briggsae.all_stages", 'phred', 'single']
 	   );
 
 } elsif ($species eq 'japonica') {
 
-  %expts = ( SRX100095 => ["RNASeq_Hillier.japonica.early_embryo", 'phred'],
-	     SRX100094 => ["RNASeq_Hillier.japonica.adult_female", 'phred'],
-	     SRX100093 => ["RNASeq_Hillier.japonica.adult_male", 'phred'],
-	     SRX100092 => ["RNASeq_Hillier.japonica.L4_larva", 'phred'],
-	     SRX100091 => ["RNASeq_Hillier.japonica.L4_larva", 'phred'],
-	     SRX100090 => ["RNASeq_Hillier.japonica.L2_larva", 'phred'],
+  %expts = ( SRX100095 => ["RNASeq_Hillier.japonica.early_embryo", 'phred', 'paired-end'],
+	     SRX100094 => ["RNASeq_Hillier.japonica.adult_female", 'phred', 'paired-end'],
+	     SRX100093 => ["RNASeq_Hillier.japonica.adult_male", 'phred', 'paired-end'],
+	     SRX100092 => ["RNASeq_Hillier.japonica.L4_larva", 'phred', 'paired-end'],
+	     SRX100091 => ["RNASeq_Hillier.japonica.L4_larva", 'phred', 'paired-end'],
+	     SRX100090 => ["RNASeq_Hillier.japonica.L2_larva", 'phred', 'paired-end'],
 	   )
 
 } else {
@@ -679,7 +680,7 @@ if (!$expt) {
 
 } else { # we have a -expt parameter
   
-  &run_tophat($check, $noalign, $tsl, $expt, $solexa, $illumina);
+  &run_tophat($check, $noalign, $tsl, $expt, $solexa, $illumina, $paired);
 }
 
 
@@ -724,6 +725,7 @@ sub run_align {
     if ($norawjuncs) {$cmd .= " -norawjuncs";}
     if ($expts{$arg}[1] eq 'solexa') {$cmd .= " -solexa";}
     if ($expts{$arg}[1] eq 'illumina1.3') {$cmd .= " -illumina";}
+    if ($expts{$arg}[2] eq 'paired-end') {$cmd .= " -paired";}
     $log->write_to("$cmd\n");
     $cmd = $wormbase->build_cmd($cmd);
     $lsf->submit(@bsub_options, $cmd);
@@ -760,7 +762,7 @@ sub run_align {
 
 sub run_tophat {
   
-  my ($check, $noalign, $tsl, $arg, $solexa, $illumina) = @_;
+  my ($check, $noalign, $tsl, $arg, $solexa, $illumina, $paired) = @_;
   
   chdir "$RNASeqDir/$arg";
   my $G_species = $wormbase->full_name('-g_species' => 1);
@@ -777,7 +779,9 @@ sub run_tophat {
       chdir $dir;
       foreach my $srr (glob("*.lite.sra")) {
 	$log->write_to("Unpack $srr\n");
-	$status = $wormbase->run_command("/software/worm/sratoolkit/fastq-dump $srr", $log);
+	my $options = '';
+	if ($paired && $srr !~ /_1\./ && $srr !~ /_2\./) {$options='--split-files'} # specify that the file contains paired-end reads and should be split
+	$status = $wormbase->run_command("/software/worm/sratoolkit/fastq-dump $options $srr", $log);
 	if ($status) {$log->log_and_die("Didn't unpack the fastq file successfully\n")}
 	$status = $wormbase->run_command("rm -f $srr", $log);
       }
@@ -790,6 +794,7 @@ sub run_tophat {
     chdir "$RNASeqDir/$arg";
     my @files = glob("SRR/*/*.fastq");
     my $joined_file = join ",", @files;
+#    my $seq_length = get_read_length($files[0]);
     
     # do we have paired reads?
     my @files1 = sort glob("SRR/*/*_1.fastq"); # sort to ensure the two sets of files are in the same order
@@ -801,9 +806,9 @@ sub run_tophat {
       $joined_file = "$joined1 $joined2";
       print "Made paired-read joined files: $joined_file\n";
       # set the inner-distance -r parameter
-      # assume the read length is 36 and the insert size is 200 bp
-      # so the inner-distance is 200 - (2*36) = 128
-      $cmd_extra .= ' -r 128';
+      # assume the insert size is 200 bp - we often have no information about this
+      my $inner = 200;
+      $cmd_extra .= " -r $inner";
     }
 
     $log->write_to("run tophat $joined_file\n");
@@ -877,8 +882,18 @@ sub run_tophat {
 }
 
 #################################################################################################################
-# pull over the SRR files from the Short Read Archive
+# take a quick look in one of the read files to determine the length of the reads
+sub get_read_length {
+  my ($filename) = @_;
+  open (PEEK, "<$filename") || $log->log_and_die("get_read_length() : cant open $filename\n");
+  my $line = <PEEK>; # skip the title line
+  $line = <PEEK>; # this is the sequence line
+  close(PEEK);
+  return length $line;
+}
 
+#################################################################################################################
+# pull over the SRR files from the Short Read Archive
 
 sub get_SRA_files {
   my ($arg) = @_;
