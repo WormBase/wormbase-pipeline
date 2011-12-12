@@ -141,6 +141,7 @@ _VInteraction    -V
 
 // misc classes (may not be used), some acedb internal classes
 
+_VAce2SO           -V
 _VAlignment	   -V
 _VGrid             -V -D GRID
 _VJade		   -H
