@@ -38,27 +38,27 @@
 // ?Ace2SO objects
 ///////////////////////////////////////
 
-Ace2SO : "CDS_ace2so"
-SO_parent_obj_tag "Gene"
-SO_subpart_tags Source_exons "SO:0000147"   // exon
-SO_subpart_tags Source_introns "SO:0000188" // intron
-SO_subpart_tags Source_CDS "SO:0000316" // CDS
-SO_children
-
-Ace2SO : "primary_transcript_ace2so"
-SO_parent_obj_tag "Gene"
-SO_subpart_tags Source_exons "SO:0000147"
+Ace2SO : "curated_CDS_ace2so"
+Coding_region "SO:0000316" // CDS
+SO_parent_obj_tag Corresponding_transcript
+No_span
 
 Ace2SO : "coding_transcript_ace2so"
-SO_parent_obj_tag Corresponding_CDS
-SO_subpart_tags Source_exons "SO:0000147"
-SO_subpart_tags Source_introns "SO:0000188"
-
-Ace2SO : "transposable_element_ace2so"
-SO_subpart_tags Source_exons "SO:0000147"
+SO_parent_obj_tag Gene
+Exons "SO:0000147" // exon
+Introns "SO:0000188" // intron
+SO_children
 
 Ace2SO : "predicted_CDS_ace2so"
-SO_subpart_tags Source_CDS "SO:0000316"
+Coding_region "SO:0000316" // CDS
+No_span
+
+Ace2SO : "nc_transcript_ace2so"
+SO_parent_obj_tag "Gene"
+Exons "SO:0000147"
+
+Ace2SO : "transposable_element_ace2so"
+Exons "SO:0000147"
 
 Ace2SO : "gene_ace2so"
 SO_children
@@ -105,7 +105,7 @@ Bumpable
 Show_text	
 EMBL_feature	 "CDS"
 GFF_source	 "curated"
-GFF_SO "SO:0000120" "CDS_ace2so"
+GFF_SO "SO:0000120" "curated_CDS_ace2so"
 Remark "Predicted protein-coding genes are flagged with this method.  All of these genes have been looked at by a human curator at some point and have usually been modified with respect to the initial computer prediction."
 
 Method : "history" 
@@ -115,7 +115,7 @@ Show_up_strand	 GRAY
 Bumpable	
 Show_text
 GFF_source       "history"
-GFF_SO "SO:0000185" "primary_transcript_ace2so"	
+GFF_SO "SO:0000185" "nc_transcript_ace2so"	
 Remark "History objects represent old gene predictions which have since been removed, merged with other gene predictions or refined to make a better gene prediction according to the latest evidence"
 
 
@@ -126,7 +126,7 @@ Show_up_strand	 GRAY
 Bumpable	
 Show_text
 GFF_source       "history"
-GFF_SO "SO:0000516" "primary_transcript_ace2so"
+GFF_SO "SO:0000516" "nc_transcript_ace2so"
 Remark "History objects represent old gene predictions which have since been removed, merged with other gene predictions or refined to make a better gene prediction according to the latest evidence"
 
 Method : "history_transcript"
@@ -136,7 +136,7 @@ Show_up_strand	 GRAY
 Bumpable	
 Show_text
 GFF_source      "history"
-GFF_SO "SO:0000483" "primary_transcript_ace2so"	
+GFF_SO "SO:0000483" "nc_transcript_ace2so"	
 Remark "History objects represent old gene predictions which have since been removed, merged with other gene predictions or refined to make a better gene prediction according to the latest evidence"
 
 Method : "history_operon" 
@@ -166,7 +166,7 @@ Width	 1.500000
 Show_text
 EMBL_feature "Pseudogene"
 EMBL_qualifier	 "\/note=\"\%s\"" "note"
-GFF_SO "SO:0000516" "primary_transcript_ace2so"
+GFF_SO "SO:0000516" "nc_transcript_ace2so"
 
 Method : "Transposon_Pseudogene" 
 Colour	 DARKGRAY
@@ -186,7 +186,7 @@ Show_up_strand
 Width 1.5
 GFF_source "Coding_transcript"
 GFF_feature "protein_coding_primary_transcript"
-GFF_SO "SO:0000185" "coding_transcript_ace2so" 
+GFF_SO "SO:0000120" "coding_transcript_ace2so"
 
 // Use for isoforms of coding genes which don't translate
 Method : "Non_coding_transcript" 
@@ -196,7 +196,7 @@ Show_text
 EMBL_feature	 "misc_RNA"
 GFF_source "Non_coding_transcript"
 GFF_feature "nc_primary_transcript"
-GFF_SO "SO:0000483" "primary_transcript_ace2so"
+GFF_SO "SO:0000483" "nc_transcript_ace2so"
 
 Method : "Transposon" 
 Colour	 DARKGRAY
@@ -226,7 +226,7 @@ Show_text
 EMBL_feature	 "ncRNA"
 GFF_source "ncRNA"
 GFF_feature "ncRNA_primary_transcript"
-GFF_SO "SO:0000483" "primary_transcript_ace2so"
+GFF_SO "SO:0000483" "nc_transcript_ace2so"
 
 Method : "rRNA" 
 Colour   GREEN
@@ -237,7 +237,7 @@ Remark "SO:0000252"
 GFF_source "rRNA"
 GFF_feature "rRNA_primary_transcript"
 EMBL_feature "rRNA"
-GFF_SO "SO:0000209" "primary_transcript_ace2so"
+GFF_SO "SO:0000209" "nc_transcript_ace2so"
 
 Method : "tRNA" 
 Colour	 GREEN
@@ -247,7 +247,7 @@ Show_text
 Remark "SO:0000253"
 GFF_source	 "tRNA_mature_transcript"
 GFF_feature	 "tRNA"
-GFF_SO "SO:0000253" "primary_transcript_ace2so"
+GFF_SO "SO:0000253" "nc_transcript_ace2so"
 
 Method : "tRNAscan-SE-1.23" 
 Colour	 GREEN
@@ -257,7 +257,7 @@ Show_text
 EMBL_feature	 "tRNA"
 GFF_source "tRNAscan-SE-1.23"
 GFF_feature "tRNA"
-GFF_SO "SO:0000253" "primary_transcript_ace2so"
+GFF_SO "SO:0000253" "nc_transcript_ace2so"
 
 Method : "tRNAscan-SE-1.3" 
 Colour	 GREEN
@@ -267,7 +267,7 @@ Show_text
 EMBL_feature	 "tRNA"
 GFF_source "tRNAscan-SE-1.3"
 GFF_feature "tRNA"
-GFF_SO "SO:0000253" "primary_transcript_ace2so"
+GFF_SO "SO:0000253" "nc_transcript_ace2so"
 
 Method : "scRNA" 
 Colour   GREEN
@@ -278,7 +278,7 @@ EMBL_feature     "scRNA"
 Remark "SO:0000013"
 GFF_source "scRNA_mature_transcript"
 GFF_feature "scRNA"
-GFF_SO "SO:0000013" "primary_transcript_ace2so"
+GFF_SO "SO:0000013" "nc_transcript_ace2so"
 
 Method : "snRNA" 
 Colour   GREEN
@@ -289,7 +289,7 @@ EMBL_feature     "snRNA"
 Remark "SO:0000274"
 GFF_source "snRNA_mature_transcript"
 GFF_feature "snRNA"
-GFF_SO "SO:0000274" "primary_transcript_ace2so"
+GFF_SO "SO:0000274" "nc_transcript_ace2so"
 
 Method : "snlRNA" 
 Colour   GREEN
@@ -299,7 +299,7 @@ Show_text
 EMBL_feature     "snlRNA"
 GFF_source "snlRNA"
 GFF_feature "snlRNA"
-GFF_SO "SO:0000483" "primary_transcript_ace2so"
+GFF_SO "SO:0000483" "nc_transcript_ace2so"
 
 Method : "snoRNA" 
 Colour   GREEN
@@ -310,7 +310,7 @@ EMBL_feature     "snoRNA"
 Remark "SO:0000275"
 GFF_source "snoRNA_mature_transcript"
 GFF_feature "snoRNA"
-GFF_SO "SO:0000275" "primary_transcript_ace2so"
+GFF_SO "SO:0000275" "nc_transcript_ace2so"
 
 Method : "miRNA" 
 Colour   GREEN
@@ -321,7 +321,7 @@ EMBL_feature     "miRNA"
 Remark "SO:0000276"
 GFF_source "miRNA_mature_transcript" //expanded to be more descriptive
 GFF_feature "miRNA" //Changed inline with SO:0000276
-GFF_SO "SO:0000276" "primary_transcript_ace2so"
+GFF_SO "SO:0000276" "nc_transcript_ace2so"
 
 Method : "miRNA_primary_transcript"
 Colour   GREEN
@@ -332,7 +332,7 @@ EMBL_feature     "miRNA"
 Remark "SO:0000647
 GFF_source "curated_miRNA"
 GFF_feature "miRNA_primary_transcript" //Inline with SO:0000647
-GFF_SO "SO:0000647" "primary_transcript_ace2so"
+GFF_SO "SO:0000647" "nc_transcript_ace2so"
 
 Method : "stRNA" 
 Colour   GREEN
@@ -343,7 +343,7 @@ EMBL_feature     "misc_RNA"
 Remark "SO:0000649"
 GFF_source "stRNA_mature_transcript"
 GFF_feature "stRNA"
-GFF_SO "SO:0000649" "primary_transcript_ace2so"
+GFF_SO "SO:0000649" "nc_transcript_ace2so"
 
 ////////////////////////////
 // Allele related methods //
@@ -478,7 +478,7 @@ CDS_colour       DARKRED
 Show_up_strand   DARKRED
 Bumpable
 Show_text
-GFF_SO "SO:0000185" "predicted_CDS_ace2so"
+GFF_SO "SO:0000120" "predicted_CDS_ace2so"
 
 Method : "jigsaw" 
 Colour   ORANGE
@@ -486,6 +486,7 @@ CDS_colour       ORANGE
 Show_up_strand   ORANGE
 Bumpable
 Show_text
+GFF_SO "SO:0000120" "predicted_CDS_ace2so"
 
 Method : "genBlastG"    // homology-based predictions for Tier II species from Jack Chen's group
 Colour   GREEN
@@ -493,7 +494,7 @@ CDS_colour       GREEN
 Show_up_strand   GREEN
 Bumpable
 Show_text
-GFF_SO "SO:0000185" "predicted_CDS_ace2so"
+GFF_SO "SO:0000120" "predicted_CDS_ace2so"
 
 Method : "Genefinder" 
 Colour   DARKGRAY
@@ -501,7 +502,7 @@ CDS_colour       DARKGRAY
 Show_up_strand   DARKGRAY
 Bumpable
 Show_text
-GFF_SO "SO:0000185" "predicted_CDS_ace2so"
+GFF_SO "SO:0000120" "predicted_CDS_ace2so"
 
 Method : "ensembl"
 Colour   ORANGE
@@ -509,7 +510,7 @@ CDS_colour       PALEORANGE
 Show_up_strand   PALEORANGE
 Bumpable
 Show_text
-GFF_SO "SO:0000185" "predicted_CDS_ace2so"
+GFF_SO "SO:0000120" "predicted_CDS_ace2so"
 
 Method : "twinscan" 
 Colour   DARKGREEN
@@ -517,7 +518,7 @@ CDS_colour       DARKGREEN
 Show_up_strand   DARKGREEN
 Bumpable
 Show_text
-GFF_SO "SO:0000185" "predicted_CDS_ace2so"
+GFF_SO "SO:0000120" "predicted_CDS_ace2so"
 
 Method : "mGene"
 Colour	BROWN
@@ -525,7 +526,7 @@ CDS_colour	BROWN
 Show_up_strand	BROWN
 Bumpable
 Show_text
-GFF_SO "SO:0000185" "predicted_CDS_ace2so"
+GFF_SO "SO:0000120" "predicted_CDS_ace2so"
 
 Method : "RNASEQ.Adult_spe-9"
 Colour   RED
@@ -646,7 +647,7 @@ Show_up_strand RED
 Overlap_mode Bumpable
 Show_text
 Remark "Method for the Camace version of the Hillier RNASEQ CDS data which is all collapsed into one method."
-GFF_SO "SO:0000185" "predicted_CDS_ace2so"
+GFF_SO "SO:0000120" "predicted_CDS_ace2so"
 
 Method : "RNASEQ.Hillier.Aggregate"
 Colour BLACK
@@ -654,7 +655,7 @@ CDS_colour BLACK
 Overlap_mode Bumpable
 Show_text
 Remark "The CDS part of the aggregate transcripts predicted by LaDeana Hillier's anaysis of modENCODE data."
-GFF_SO "SO:0000185" "predicted_CDS_ace2so"
+GFF_SO "SO:0000120" "predicted_CDS_ace2so"
 
 ////////////////////////////////////////////////////
 // Homology related methods (BLAST, BLAT and Waba //
@@ -671,8 +672,9 @@ Score_bounds	 50.000000 100.000000
 Blixem_N	
 GFF_source	 "BLAT_TC1_BEST"
 GFF_feature	 "nucleotide_match"
+GFF_SO "SO:0000347" // nucleotide_match
 Remark "This method is used to map flanking sequences of Tc1 insertions in another strain of C. elegans against the N2 genome sequence."
-// Need new GFF_feature?
+
 
 Method : "BLAT_TC1_OTHER"  
 Colour	 BROWN
@@ -861,7 +863,6 @@ Join_blocks
 Blixem_N
 GFF_feature "expressed_sequence_match"
 GFF_SO "SO:0000181" // translated_nucleotide_match
-GFF_SO "SO:0000102" // expressed_sequence_match
 Remark "This method describes C. elegans RST sequences...."
 
 Method : "BLAT_RST_BEST" 
@@ -1512,6 +1513,7 @@ Show_up_strand
 Score_by_width
 Blixem_N
 GFF_feature "nucleotide_match"
+GFF_SO "SO:0000347" // nucleotide_match
 Remark   "TEC-RED tag similarities"
 
 Method : "mass_spec_genome" 
@@ -1519,6 +1521,7 @@ Colour BROWN
 Allow_misalign
 Width 1
 GFF_feature "translated_nucleotide_match"
+GFF_SO "SO:0000181" // translated_nucleotide_match
 Remark "Mass Spectrometry peptide matching a protein."
 
 /////////////////////////////////////////////////////////////////////
@@ -2130,7 +2133,7 @@ GFF_SO "SO:0001005" // low_complexity_region
 Method : "G4_DNA"
 GFF_source "pmid18538569"
 GFF_feature "G-quartet"
-GFF_SO : "SO:0000003" // G_quartet
+GFF_SO "SO:0000003" // G_quartet
 Colour LIGHTGRAY
 Bumpable
 Remark "Intrinsically mutagenic motif, probably because it can form secondary structures during DNA replication" Paper_evidence WBPaper00031945
