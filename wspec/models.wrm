@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: klh $
-// Last edited on: $Date: 2011-12-02 10:03:37 $
+// Last edited on: $Date: 2011-12-12 10:22:33 $
 
 
 ////////////////////////
@@ -898,12 +898,12 @@
 // SO_children        - this object has child objects which refer to it.
 
 ?Ace2SO Description UNIQUE Text
-        SO_subpart_tags Text UNIQUE ?SO_Term
+        SO_subparts Exons UNIQUE ?SO_Term
+                    Introns UNIQUE ?SO_term
+                    Coding_region UNIQUE ?SO_term
+        No_span
         SO_parent_obj_tag UNIQUE Text
         SO_children
-
-
-
 
 
 
