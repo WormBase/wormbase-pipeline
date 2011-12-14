@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: klh $
-// Last edited on: $Date: 2011-12-12 10:22:33 $
+// Last edited on: $Date: 2011-12-14 08:55:17 $
 
 
 ////////////////////////
@@ -1099,7 +1099,7 @@
 			      Contained_in_cluster ?Sequence XREF Contains_reads        // individual reads
 	  Map ?Map XREF Sequence #Map_position		// use in particular for Genomic_canonical
 	  Interpolated_map_position UNIQUE ?Map UNIQUE Float // For updated CDS-based interpolated map positions [krb 030502]
-          Oligo ?Oligo XREF In_sequence Int UNIQUE Int  // for OSP and human mapping mostly
+          Oligo ?Oligo XREF In_sequence Int UNIQUE Int ?Method 
 	  Defines_feature ?Feature XREF Defined_by_sequence #Evidence       // Feature data model [dl 030304]
 	  Assembly_tags	Text Int Int Text                                   // type, start, stop, comment
 	  Gene_regulation Cis_regulator    ?Gene_regulation XREF Cis_regulator_seq // Wen
