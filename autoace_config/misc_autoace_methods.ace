@@ -168,18 +168,6 @@ EMBL_feature "Pseudogene"
 EMBL_qualifier	 "\/note=\"\%s\"" "note"
 GFF_SO "SO:0000516" "nc_transcript_ace2so"
 
-Method : "Transposon_Pseudogene" 
-Colour	 DARKGRAY
-Show_up_strand	
-Width	 1.500000
-Show_text	
-EMBL_threshold	 0.000000
-EMBL_qualifier	 "\/note=\"\%s\"" "note"
-Remark "This object corresponds to a Pseudogene that has been classified as being part of a degraded transposon or has sequence similarity to a fragment of protein of Transposon origin."
-GFF_source	 "Transposon_Pseudogene"
-GFF_feature	 "transposable_element"
-GFF_SO "SO:0000101" "transposable_element_ace2so"
-
 Method : "Coding_transcript" 
 Colour DARKGREEN
 Show_up_strand
@@ -205,7 +193,7 @@ Show_text
 Show_up_strand	
 GFF_source	 "Transposon"
 GFF_feature	 "transposable_element"
-GFF_SO "SO:0000101" "transposable_element_ace2so"
+GFF_SO "SO:0000101"
 
 Method : "Transposon_CDS"
 Colour	 DARKGRAY
@@ -217,6 +205,17 @@ GFF_source	 "Transposon_CDS"
 GFF_feature	 "transposable_element"
 GFF_SO "SO:0000101" "transposable_element_ace2so"
 
+Method : "Transposon_Pseudogene" 
+Colour	 DARKGRAY
+Show_up_strand	
+Width	 1.500000
+Show_text	
+EMBL_threshold	 0.000000
+EMBL_qualifier	 "\/note=\"\%s\"" "note"
+Remark "This object corresponds to a Pseudogene that has been classified as being part of a degraded transposon or has sequence similarity to a fragment of protein of Transposon origin."
+GFF_source	 "Transposon_Pseudogene"
+GFF_feature	 "transposable_element"
+GFF_SO "SO:0000101" "transposable_element_ace2so"
 
 Method : "ncRNA" 
 Colour	 GREEN
@@ -1651,6 +1650,13 @@ GFF_source      "Oligo_set"
 GFF_feature     "reagent"
 GFF_SO "SO:0000695" // reagent
 Width    1.000000
+
+Method : "Oligo"
+Remark "A region matching an oligonucleotide probe"
+GFF_source   "oligo"
+GFF_feature  "oligo"
+GFF_SO "SO:0000696"
+
 
 Method : "SAGE_tag" 
 Remark  "A short diagnostic sequence tag, serial analysis of gene expression (SAGE), that allows the quantitative and simultaneous analysis of a large number of transcripts. A SAGE tag can be mapped to multiple transcripts and genomic locations."
