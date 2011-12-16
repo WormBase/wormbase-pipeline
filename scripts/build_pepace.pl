@@ -9,8 +9,8 @@
 # solely in the wormpep.history file.
 #
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2010-06-16 11:20:23 $
+# Last updated by: $Author: klh $
+# Last updated on: $Date: 2011-12-16 11:47:41 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -79,6 +79,7 @@ my %CE_live;
 # hash of arrays eg  CE00100 => (gene1.1   gene2.1)  - contains only genes of Live peptides
 my %CE_corr_CDS;
 my %CE_sequence;
+my %CDS_cgc;
 
 my $stem;
 my $isoform;
@@ -244,6 +245,7 @@ close HISTORY;
 
 # get the sequence from the common data written earlier
 %CE_sequence = $wormbase->FetchData('cds2aa');
+%CDS_cgc = $wormbase->FetchData('cds2cgc');
 # write ace file
 my $ii;
 my $acefile = "$ace_dir/acefiles/pepace.ace";
@@ -278,8 +280,20 @@ foreach my $key ( sort keys %CE_history ) {
 
     if ( $CE_live{$key} == 1 ) {
         print ACE "Live\n";
+        my %gnames;
         for $ii ( 0 .. $#{ $CE_corr_CDS{$key} } ) {
-            print ACE "Corresponding_CDS \"$CE_corr_CDS{$key}[$ii]\"\n";
+          my $cor_cds = $CE_corr_CDS{$key}[$ii];
+          print ACE "Corresponding_CDS \"$cor_cds\"\n";
+
+          my $re = $wormbase->seq_name_regex;
+          my ($stem, $iso) = ($cor_cds =~ /($re)(\w*)/);
+
+          my $gname = (exists $CDS_cgc{$cor_cds}) ? uc($CDS_cgc{$cor_cds}) : $stem;
+          $gname .= ", isoform $iso" if $iso;
+          $gnames{$gname} = 1;
+        }
+        foreach my $gname (keys %gnames) {
+          print ACE "Gene_name \"$gname\"\n";
         }
     }
     foreach my $pepid( @{$CE_corr_CDS{$key}}) {
@@ -314,10 +328,10 @@ if( $wormbase->species eq "elegans") {
 	}
 }
 #load files in to autoace.
-$wormbase->load_to_database( $wormbase->autoace, "$ace_dir/acefiles/pepace.ace", 'pepace', $log );
+$wormbase->load_to_database( $wormbase->autoace, "$ace_dir/acefiles/pepace.ace", 'pepace', $log ) if not $debug;
 
 # update common data
-$wormbase->run_script("update_Common_data.pl --cds2wormpep", $log);
+$wormbase->run_script("update_Common_data.pl --cds2wormpep", $log) if not $debug;
 
 $log->mail();
 exit(0);
