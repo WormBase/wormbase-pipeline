@@ -2397,6 +2397,12 @@ Right_priority  2.65
 Method : "history"
 Right_priority  2.7
 
+Method : "history_pseudogene"
+Right_priority  2.7
+
+Method : "history_transcript"
+Right_priority  2.7
+
 Method : "RNASeq_splice"
 Right_priority  2.73
 
