@@ -4,8 +4,8 @@
 #
 # written by Anthony Rogers
 #
-# Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2011-09-29 15:41:34 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2011-12-20 11:14:25 $
 #
 # it depends on:
 #    wormpep + history
@@ -181,6 +181,7 @@ if ($prep_dump && !$test) {
     } elsif(lc(ref $wormbase) ne 'elegans'){
 	    system("touch $wormpipe_dir/DUMP_PREP_RUN");
     } else { die( " cant find GFF files at " . $wormbase->gff_splits . "\n " ) }
+
 }
 
 ##################### -cleanup ##################################
@@ -723,6 +724,11 @@ sub update_analysis {
     my $db_options = sprintf('-user %s -password %s -host %s -port %i -dbname %s', 
        $config->{database}->{user}, $config->{database}->{password},$config->{database}->{host},$config->{database}->{port},$config->{database}->{dbname});
     $wormbase->run_script( "BLAST_scripts/ensembl_blat.pl $db_options -species $species", $log );    
+
+    # update genBlastG stuff - not done for elegans as it projects elegans proteins onto a non-elegans genome
+    if ($species ne 'elegans') {
+      $wormbase->run_script( "BLAST_scripts/ensembl_genblast.pl $db_options -species $species", $log );
+    }
 }
 
 =head1 extended Modules
