@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl -w
-# Last updated by: $Author: mt3 $     
-# Last updated on: $Date: 2011-11-11 10:57:26 $      
+# Last updated by: $Author: gw3 $     
+# Last updated on: $Date: 2011-12-20 11:13:25 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -53,7 +53,7 @@ if( $species eq 'elegans') {
     &parse_briggsae_data        if ($misc && $species eq 'briggsae');
     &parse_remanei_data        if ($misc && $species eq 'remanei');
     &parse_nematode_seqs        if $misc;
-    &parse_genBlastG            if $misc;
+    &parse_genBlastG            if $homol;
   }
 }
 $log->mail();
@@ -195,14 +195,11 @@ sub parse_briggsae_data {
 
 }
 
-# Jack Chen's predictions based on homology with WS204 elegans curated CDS
+# genBlastG projections of elegans proteins onto other species' genomes
 sub parse_genBlastG {
 
-  if ($species eq 'briggsae' ||
-      $species eq 'brenneri' ||
-      $species eq 'remanei' ||
-      $species eq 'japonica') {
-        $wormbase->load_to_database($wormbase->autoace, $wormbase->misc_dynamic."/genBlastG_${species}.ace", "genBlastG", $log);
+  if ($species ne 'elegans') {
+        $wormbase->load_to_database($wormbase->autoace, $wormbase->acefiles."/genblast.ace", "genBlastG", $log);
   }
 
 }
