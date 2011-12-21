@@ -2,7 +2,7 @@
 #
 
 # Last updated by: $Author: klh $                      
-# Last updated on: $Date: 2011-11-10 15:05:20 $        
+# Last updated on: $Date: 2011-12-21 11:30:42 $        
 
 use strict;
 use Getopt::Long;
@@ -22,7 +22,7 @@ my $ftp_host = "ftp-private.ebi.ac.uk";
 my $ftp_dir  = "/TXhExzF7KgVBMHtJXDct/to_ena";
 my ($ftp_login, $ftp_user, $ftp_pass);
 
-my ($help, $debug, $test, $verbose, $species, @clones);
+my ($help, $debug, $test, $verbose, $species, $comment, @clones);
 
 GetOptions (
   "debug=s"      => \$debug,
@@ -35,6 +35,7 @@ GetOptions (
   "ftpdir=s"     => \$ftp_dir,
   "ftppass=s"    => \$ftp_pass,
   "clones=s@"    => \@clones,
+  "comment=s"    => \$comment,
     );
 
 my $wormbase = Wormbase->new(
@@ -61,7 +62,7 @@ if (defined $ftp_login) {
     $log->log_and_die("Invalid login details specified with -ftplogin - should be username:password\n");
   }
 } else {
-  my $login_details_file = $wormbase->wormpub . "/EBIFTP.s";
+  my $login_details_file = $wormbase->wormpub . "/ebi_resources/EBIFTP.s";
   open(my $infh, $login_details_file)
       or $log->log_and_die("Can't open secure account details file $login_details_file\n");
   while (<$infh>){
@@ -177,18 +178,19 @@ $log->write_to("\nRefer to log file $submit_log_file for details on which entrie
 ##################################
 
 
-my $commit_cmd = sprintf("cd %s && git commit --all --message=\'ENA submission for %s, iteration %s, on %s\'", 
+my $commit_cmd = sprintf("cd %s && git commit --all --message=\'ENA submission for %s, iteration %s, on %s %s\'", 
                          $submit_repo, 
                          $ws_version,
                          $submit_version,
-                         $current_date);
+                         $current_date,
+                         defined($comment) ? "($comment)" : "");
 
-my $tag_cmd    = sprintf("cd %s && git tag -a %s.%s -m \'Submission %s.%s, submitted on %s\'", 
+my $tag_cmd    = sprintf("cd %s && git tag -a %s.%s -m \'Submission %s.%s, submitted on %s %s\'", 
                          $submit_repo, 
                          $ws_version, $submit_version, 
                          $ws_version, $submit_version,
-                         $current_date);
-
+                         $current_date, 
+                         defined($comment) ? "($comment)" : "");
     
 $log->write_to("GIT: $commit_cmd\n");
 system($commit_cmd) and do {
