@@ -2,7 +2,7 @@
 #
 # EMBLdump.pl :  makes modified EMBL dumps from camace.
 # 
-#  Last updated on: $Date: 2011-12-08 14:56:32 $
+#  Last updated on: $Date: 2011-12-21 11:30:15 $
 #  Last updated by: $Author: klh $
 
 use strict;
@@ -138,20 +138,12 @@ if ($dump_raw) {
   
   my $command;
   if ($single) {
-    $command  = "nosave\n"; # Don't really want to do this
-    $command .= "query find CDS where Method = \"Genefinder\"\nkill\ny\n";# remove Genefinder predictions
-    $command .= "query find CDS where Method = \"twinscan\"\nkill\ny\n";# remove twinscan predictions
-    $command .= "query find CDS where Method = \"jigsaw\"\nkill\ny\n";# remove jigsaw predictions
     $command .= "query find Sequence $single\ngif EMBL $raw_dump_file\n";# find sequence and dump
-    $command .= "quit\nn\n";# say you don't want to save and exit
+    $command .= "quit\n";# say you don't want to save and exit
   } else {
-    $command  = "nosave\n"; # Don't really want to do this
-    $command .= "query find CDS where Method = \"Genefinder\"\nkill\ny\n";# remove Genefinder predictions
-    $command .= "query find CDS where Method = \"twinscan\"\nkill\ny\n";# remove twinscan predictions
-    $command .= "query find CDS where Method = \"jigsaw\"\nkill\ny\n";# remove jigsaw predictions
     $command .= "query find Sequence Genomic_canonical AND (From_laboratory = \"HX\" OR From_Laboratory = \"RW\")\n";
     $command .= "gif EMBL $raw_dump_file\n";# find sequence and dump
-    $command .= "quit\nn\n";# say you don't want to save and exit
+    $command .= "quit\n";# say you don't want to save and exit
   }
   
   $log->write_to("$command\n");
@@ -186,12 +178,11 @@ if ($dump_modified) {
 
 
   # Some information is not yet available in autoace (too early in the build)
-  # By default, pull cds2status and cds2dbremark from current_DB, and protein_id
-  # from autoace (since they should have been loaded by now). However, allow
-  # command-line override when necessary
+  # By default, pull cds2status, cds2dbremark and protein_ids from current_DB,
+  # however, allow command-line override when necessary
   $cds2status_h = &fetch_cds2status( defined $cds2status_db ? $cds2status_db : $wormbase->database('current') );
   $cds2dbremark_h = &fetch_cds2dbremark( defined $cds2dbremark_db ? $cds2dbremark_db : $wormbase->database('current') );
-  $cds2proteinid_h = &fetch_cds2proteinid( defined $cds2proteinid_db ? $cds2proteinid_db : $wormbase->autoace );
+  $cds2proteinid_h = &fetch_cds2proteinid( defined $cds2proteinid_db ? $cds2proteinid_db : $wormbase->database('current') );
   
   if (not defined $mod_dump_file) {
     $mod_dump_file = "/tmp/EMBL_dump.$$.mod.embl";
