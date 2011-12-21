@@ -4,8 +4,8 @@
 # 
 # by Anthony Rogers                             
 #
-# Last updated by: $Author: klh $               
-# Last updated on: $Date: 2011-09-19 10:28:56 $
+# Last updated by: $Author: pad $               
+# Last updated on: $Date: 2011-12-21 10:40:57 $
 
 # Generates a release letter at the end of build.
 #
@@ -465,7 +465,7 @@ printf RL "\n\n\n";
   printf RL "Other Changes:\n--------------\n\n";
   printf RL "Proposed Changes / Forthcoming Data:\n-------------------------------------\n\n\n";
   printf RL "Model Changes:\n------------------------------------\n\n\n";
-  printf RL "For more info mail worm\@sanger.ac.uk\n";
+  printf RL "For more info mail help\@wormbase.org\n";
 
   # Installation guide
   printf RL "-===================================================================================-\n";
