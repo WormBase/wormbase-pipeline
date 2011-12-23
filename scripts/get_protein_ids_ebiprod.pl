@@ -37,8 +37,8 @@ my $ena_dbh = &get_ena_dbh();
 # standard name = 23
 # gene = 12
 # Get most info for each PID with a /locus_tag + featID was gene (#12)
-my $ena_sql =  "SELECT d.primaryacc#, d.version#, c.PROTEIN_ACC, c.version, c.chksum, fq.text, c.featid, d.project#, d.statusid"
-    . " FROM cdsfeature c, dbentry d, feature_qualifiers fq"
+my $ena_sql =  "SELECT d.primaryacc#, b.version, c.PROTEIN_ACC, c.version, c.chksum, fq.text, c.featid, d.project#, d.statusid"
+    . " FROM cdsfeature c, dbentry d, bioseq b, feature_qualifiers fq"
     . " WHERE d.primaryacc# IN ("
     . "   SELECT primaryacc#"
     . "   FROM dbentry" 
@@ -47,6 +47,7 @@ my $ena_sql =  "SELECT d.primaryacc#, d.version#, c.PROTEIN_ACC, c.version, c.ch
     . "   AND project# = 1"
     . "   AND statusid = 4)"
     . " AND c.bioseqid = d.bioseqid"
+    . " AND d.bioseqid = b.seqid"
     . " AND fq.featid  = c.featid"
     . " AND not exists (SELECT 1"
     . "   FROM feature_qualifiers a"
@@ -55,11 +56,11 @@ my $ena_sql =  "SELECT d.primaryacc#, d.version#, c.PROTEIN_ACC, c.version, c.ch
     . " AND fq.fqualid   = 23";
 
     
-my $ena_sth = $ena_dbh->prepare($ena_sql);
+my $ena_sth = $ena_dbh->prepare($ena_sql) or die "Can't prepare statement: $DBI::errstr";
 
 print STDERR "Doing primary lookup of CDS entries in ENA ORACLE database...\n" if $verbose;
 
-$ena_sth->execute || die "Can't execute statement: $DBI::errstr";
+$ena_sth->execute or die "Can't execute statement: $DBI::errstr";
 
 my (@resultsArr, %resultsHash);
 
