@@ -1,7 +1,7 @@
 #!/usr/local/ensembl/bin/perl -w
 #
-# Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2011-11-03 11:19:30 $
+# Last edited by: $Author: klh $
+# Last edited on: $Date: 2012-01-03 14:04:24 $
 
 use lib $ENV{'CVS_DIR'};
 
@@ -61,7 +61,7 @@ if($uniprot) {
   my $cver = determine_last_vers('slimswissprot');
   
   #find latest ver
-  open (WG,"wget -O - -q http://www.expasy.org/sprot |") or $log->log_and_die("cant get sprot page\n");
+  open (WG,"wget -O - -q ftp://ftp.ebi.ac.uk/pub/databases/uniprot/knowledgebase/reldate.txt |") or $log->log_and_die("cant get Uniprot page\n");
   my $lver;
   while(<WG>) { #to make processing easier we use the uniprot release no.rather than separate SwissProt and Trembl
     if (/UniProt\s+Knowledgebase\s+Release\s+(\d+)_(\d+)/){
