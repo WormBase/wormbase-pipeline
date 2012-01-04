@@ -174,7 +174,7 @@ Show_up_strand
 Width 1.5
 GFF_source "Coding_transcript"
 GFF_feature "protein_coding_primary_transcript"
-GFF_SO "SO:0000120" "coding_transcript_ace2so"
+GFF_SO "SO:0000234" "coding_transcript_ace2so"
 
 // Use for isoforms of coding genes which don't translate
 Method : "Non_coding_transcript" 
