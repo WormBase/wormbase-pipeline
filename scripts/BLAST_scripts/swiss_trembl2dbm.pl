@@ -87,8 +87,13 @@ else {
     die "$usage";
 }
 
-open(SW,"<$file") or die("cant open $file:$!\n");
-while (my $line = <SW>) {
+my $swfh;
+if ($file =~ /\.dat.gz$/) {
+  open($swfh, "gunzip -c $file |") or die("Could not open gzip stream to $file:$!\n");
+} else {
+  open($swfh,"<$file") or die("cant open $file:$!\n");
+}
+while (my $line = <$swfh>) {
     if ($line =~ /^AC\s+(\S+)\;/) {
         $id = $1;
         $switch = 1;
@@ -180,7 +185,7 @@ while (my $line = <SW>) {
         $switch = 0;
     }
 }
-close SW;
+close($swfh) or die "Could not close reading of $file cleanly\n";
 
 untie %ORG;
 untie %DES;
