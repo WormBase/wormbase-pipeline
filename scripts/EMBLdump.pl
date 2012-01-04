@@ -2,7 +2,7 @@
 #
 # EMBLdump.pl :  makes modified EMBL dumps from camace.
 # 
-#  Last updated on: $Date: 2011-12-21 11:30:15 $
+#  Last updated on: $Date: 2012-01-04 11:03:54 $
 #  Last updated by: $Author: klh $
 
 use strict;
@@ -906,7 +906,7 @@ sub get_references {
     elegans =>  [
       [ 
         "RX   PUBMED; 9851916.",
-        "RG   Caenorhabditis elegans Sequencing Consortium;",
+        "RG   Caenorhabditis elegans Sequencing Consortium",
         "RA   ;",
         "RT   \"Genome sequence of the nematode C. elegans: a platform for investigating",
         "RT   biology\";",
