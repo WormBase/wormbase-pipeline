@@ -1,7 +1,7 @@
 #!/usr/local/ensembl/bin/perl -w
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2012-01-03 14:04:24 $
+# Last edited on: $Date: 2012-01-05 11:08:24 $
 
 use lib $ENV{'CVS_DIR'};
 
@@ -355,12 +355,7 @@ sub process_uniprot {
     $ftp->binary(); 
     $ftp->get($filename,$target) or $log->log_and_die("failed getting $filename: ".$ftp->message."\n");
 
-    $wormbase->run_command("gunzip -f $target",$log);
-    $target =~ s/\.gz//; #no longer gzipped
-
     $wormbase->run_script("BLAST_scripts/swiss_trembl2dbm.pl -s -file $target", $log);
-    $wormbase->run_command("rm -f $target", $log);
-
     $wormbase->run_script("BLAST_scripts/swiss_trembl2slim.pl -s $ver",$log);
     $wormbase->run_script("BLAST_scripts/fasta2gsi.pl -f $swalldir/slimswissprot",$log);
     copy ("$swalldir/slimswissprot", "$blastdir/slimswissprot${ver}.pep");
@@ -372,11 +367,8 @@ sub process_uniprot {
     $ftp->get($filename,$target) or $log->log_and_die("failed getting $filename: ".$ftp->message."\n");
     $ftp->quit;
 
-    $wormbase->run_command("gunzip -f $target",$log);
-    $target =~ s/\.gz//; #no longer gzipped
     $wormbase->run_script("BLAST_scripts/swiss_trembl2dbm.pl -t -file $target", $log);
     $wormbase->run_command("rm -f $target", $log);
-
     $wormbase->run_script("BLAST_scripts/swiss_trembl2slim.pl -t $ver",$log);
 
     
