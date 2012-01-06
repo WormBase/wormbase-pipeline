@@ -3,7 +3,7 @@
 # prepare_primary_databases.pl
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2012-01-06 10:07:51 $
+# Last edited on: $Date: 2012-01-06 10:23:39 $
 
 use strict;
 my $scriptdir = $ENV{'CVS_DIR'};
@@ -159,22 +159,15 @@ sub FTP_versions {
 
     my @files = glob("$ftp/$dir/${prefix_pat}*.tar.gz");
 
-    if (@files) {
-      my $mr_date;
-      foreach my $file (@files) {
-        if ($file =~ /\/[^\/]+_(\d{4}\-\d{2}\-\d{2})\./) {
-          my $date = $1;
-          if (not defined $mr_date or $date > $mr_date) {
-            $mr_date = $date;
-          }
-        }
-        if (defined $mr_date) {
-          $databases{$db}->{new_date} = $mr_date;
-        } else {
-          $databases{$db}->{new_date} = 0;
-          $log->write_to("Could not find any version of $db in ftp_uploads\n");
-        }
-      } 
+    my @dates;
+    foreach my $file (@files) {
+      if ($file =~ /\/[^\/]+_(\d{4}\-\d{2}\-\d{2})\./) {
+        push @dates, $1;
+      }
+    }
+    if (@dates) {
+      @dates = sort { $b cmp $a } @dates;
+      $databases{$db}->{new_date} = $dates[0];
     } else {
       $databases{$db}->{new_date} = 0;
       $log->write_to("Could not find any version of $db in ftp_uploads\n");
