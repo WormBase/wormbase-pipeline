@@ -7,7 +7,7 @@
 # Builds a wormpep data set from the current autoace database
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2011-11-11 09:29:14 $
+# Last updated on: $Date: 2012-01-06 11:51:40 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -86,10 +86,12 @@ my $tace      = $wormbase->tace;
 
 # need to get previous build WORMPEP
 my ($stem, $old_release ) = $new_wpdir =~ /(.*pep)(\d+)/;
-my $wpdir;
+my ($wpdir, $old_wpdir_test_file);
 do {
-  $wpdir = "$stem" . --$old_release;
-} while (not -d $wpdir);
+  $old_release--;
+  $wpdir = "$stem${old_release}";
+  $old_wpdir_test_file = "$wpdir/${stem}.fasta${old_release}";
+} while (not -e $old_wpdir_test_file);
   
 my $PEP_FILE_STEM = $wormbase->pepdir_prefix . "pep";
 my $PEP_PREFIX    = $wormbase->pep_prefix;
