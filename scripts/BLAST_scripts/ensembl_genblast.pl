@@ -3,8 +3,10 @@
 # DESCRIPTION:
 #   setting up the GenBlast pipeline
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2011-12-20 11:15:22 $
+# Last edited by: $Author: klh $
+# Last edited on: $Date: 2012-01-09 22:53:43 $
+
+use lib $ENV{CVS_DIR};
 
 use constant USAGE => <<HERE;
 ensembl_genblast.pl options:

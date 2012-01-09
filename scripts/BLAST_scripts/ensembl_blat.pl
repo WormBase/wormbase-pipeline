@@ -3,8 +3,10 @@
 # DESCRIPTION:
 #   setting up the BLAT pipeline
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2011-08-26 14:17:13 $
+# Last edited by: $Author: klh $
+# Last edited on: $Date: 2012-01-09 22:51:51 $
+
+use lib $ENV{'CVS_DIR'};
 
 use constant USAGE => <<HERE;
 ensembl_blat.pl options:
@@ -29,7 +31,7 @@ verbose('OFF');
 use Wormbase;
 use strict;
 
-my($debug,$store,$database,$port,$user,$password,$species,$host,$dbname);
+my($debug,$store,$port,$user,$password,$species,$host,$dbname);
 GetOptions(
  'debug=s'    => \$debug,
  'store=s'    => \$store,
