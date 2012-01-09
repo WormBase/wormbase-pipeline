@@ -3,7 +3,7 @@
 # this variable name is required by Compara
 setenv ENSEMBL_CVS_ROOT_DIR "/software/worm/ensembl"
 
-setenv PERL5LIB ${ENSEMBL_CVS_ROOT_DIR}/bioperl-live:${PERL5LIB}
+setenv PERL5LIB ${ENSEMBL_CVS_ROOT_DIR}/bioperl-live
 setenv PERL5LIB ${ENSEMBL_CVS_ROOT_DIR}/ensembl-compara/modules:${PERL5LIB}
 setenv PERL5LIB ${ENSEMBL_CVS_ROOT_DIR}/ensembl-variation/modules:${PERL5LIB}
 setenv PERL5LIB ${ENSEMBL_CVS_ROOT_DIR}/ensembl-functgenomics/modules:${PERL5LIB}
