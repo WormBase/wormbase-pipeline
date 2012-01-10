@@ -4,7 +4,7 @@
 #   setting up the GenBlast pipeline
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2012-01-10 09:32:32 $
+# Last edited on: $Date: 2012-01-10 10:27:28 $
 
 use lib $ENV{CVS_DIR};
 
@@ -263,7 +263,13 @@ sub set_up_genome {
     }
 
   } elsif ($wormbase->assembly_type eq 'chromosome') {
-    $wormbase->run_command("cat $chromdir/*_masked.dna > $target_dna_file", $log);
+    my @test = glob("$chromdir/*_masked.dna.gz");
+    if (scalar @test > 0) {
+      $wormbase->run_command("gunzip -c $chromdir/*_masked.dna.gz > $target_dna_file", $log);      
+    } else {
+      $wormbase->run_command("cat $chromdir/*_masked.dna > $target_dna_file", $log);
+    }
+    # use non-masked files is masked are not available
     if (-z $target_dna_file) {
       $wormbase->run_command("rm -f $target_dna_file", $log);
       $wormbase->run_command("cat $chromdir/*.dna > $target_dna_file", $log);
