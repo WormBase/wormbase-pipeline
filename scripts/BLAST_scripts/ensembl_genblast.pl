@@ -3,8 +3,8 @@
 # DESCRIPTION:
 #   setting up the GenBlast pipeline
 #
-# Last edited by: $Author: klh $
-# Last edited on: $Date: 2012-01-09 22:53:43 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2012-01-10 09:32:32 $
 
 use lib $ENV{CVS_DIR};
 
@@ -264,6 +264,10 @@ sub set_up_genome {
 
   } elsif ($wormbase->assembly_type eq 'chromosome') {
     $wormbase->run_command("cat $chromdir/*_masked.dna > $target_dna_file", $log);
+    if (-z $target_dna_file) {
+      $wormbase->run_command("rm -f $target_dna_file", $log);
+      $wormbase->run_command("cat $chromdir/*.dna > $target_dna_file", $log);
+    }
   } else {
     $log->error("unknown assembly_type\n");
   }
