@@ -8,7 +8,7 @@
 # Page download and update upload to geneace has been automated [ck1]
 
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2011-08-31 15:34:28 $
+# Last updated on: $Date: 2012-01-11 14:25:13 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -233,7 +233,7 @@ while(<INPUT>){
 
 
   # find alleles attached to non-approved, or unusual gene names e.g. let-?(h661)
-  while($genotype =~ m/(\w+\S*)\(([a-z]{1,2}\d+)\)/){
+  while($genotype =~ m/([\w\.\-\?]+)\(([a-z]{1,2}\d+)\)/){
     my $gene = $1;
     my $allele = $2;
     print STDERR "allele attached to non-approved gene: $genotype\n" if $verbose;
