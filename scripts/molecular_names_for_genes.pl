@@ -6,8 +6,8 @@
 #
 # quick script to populate Molecular_name tag in ?Gene model during build
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2008-06-09 12:54:54 $
+# Last updated by: $Author: klh $
+# Last updated on: $Date: 2012-01-13 16:17:52 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -24,14 +24,16 @@ use Storable;
 ##############################
 # command-line options       #
 ##############################
-my ($help, $debug, $species, $test, $verbose, $store, $wormbase);
+my ($help, $debug, $species, $test, $verbose, $store, $wormbase, $outfile, $no_load);
 
 GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
 	    "test"       => \$test,
 	    "verbose"    => \$verbose,
 	    "store:s"      => \$store,
-	    "species:s"	=> \$species
+	    "species:s"	=> \$species,
+            "outfile:s"  => \$outfile,
+            "noload"    => \$no_load,
 	    );
 
 if ( $store ) {
@@ -67,9 +69,11 @@ my $tace = $wormbase->tace;
 # Set up top level base directory which is different if in test mode
 # Make all other directories relative to this
 my $basedir   = $wormbase->basedir;
+my $db_dir    = $wormbase->autoace;
 
-my $ace_dir         = $wormbase->autoace;     # AUTOACE DATABASE DIR
-
+if (not defined $outfile) {
+  $outfile = $wormbase->acefiles . "/molecular_names_for_genes.ace";
+}
 
 ##########################################################
 #
@@ -80,13 +84,15 @@ my $ace_dir         = $wormbase->autoace;     # AUTOACE DATABASE DIR
 my $counter = 0; 
 
 # output file
-open (OUT, ">$ace_dir/acefiles/molecular_names_for_genes.ace") or die "Can't write ace file";
+open (OUT, ">$outfile") or $log->log_and_die("Can't write ace file $outfile");
 
 # open tace pipe, and connect to AceDB using TableMaker
-my $command="Table-maker -p $basedir/autoace/wquery/molecular_names_for_genes.def\nquit\n";
+my $command="Table-maker -p $db_dir/wquery/molecular_names_for_genes.def\nquit\n";
 $log->write_to("Finding molecular names, using Table-maker...\n");
 
-open (TACE, "echo '$command' | $tace $ace_dir |");
+my %added_for_gene;
+
+open (TACE, "echo '$command' | $tace $db_dir |");
 while (<TACE>) {
   chomp;
   next if ($_ eq "");
@@ -97,36 +103,42 @@ while (<TACE>) {
   s/\"//g;
 
   # split the line into various fields
-  my ($gene,$cds,$transcript,$pseudogene,$protein, $coding_transcript) = split(/\t/, $_) ;
+  my ($gene,$cds,$transcript,$pseudogene,$protein) = split(/\t/, $_) ;
 
   # write output file
+  $added_for_gene{$gene} = {} if not exists $added_for_gene{$gene};
 
-
-  if($cds){
+  if($cds and not exists $added_for_gene{$gene}->{$cds}){
     print OUT "Gene : \"$gene\"\n";
     print OUT "Molecular_name \"$cds\"\n\n";
+    $added_for_gene{$gene}->{$cds} = 1;
     $counter++;
   }
-  if($transcript){
+  if($transcript and not exists $added_for_gene{$gene}->{$transcript}){
     print OUT "Gene : \"$gene\"\n";
     print OUT "Molecular_name \"$transcript\"\n\n";
+    $added_for_gene{$gene}->{$transcript} = 1;
     $counter++;
   }
-  if($pseudogene){
+  if($pseudogene and not exists $added_for_gene{$gene}->{$pseudogene}){
     print OUT "Gene : \"$gene\"\n";
     print OUT "Molecular_name \"$pseudogene\"\n\n";
+    $added_for_gene{$gene}->{$pseudogene} = 1;
     $counter++;
   }
-  if($protein){
+  if($protein and not exists $added_for_gene{$gene}->{$protein}){
     print OUT "Gene : \"$gene\"\n";
-    print OUT "Molecular_name \"$coding_transcript\n" if ($coding_transcript =~ /\w+/);
     print OUT "Molecular_name \"$protein\"\n";
-    $counter++; # coding_transcripts will make this wrong as they get outputted on the same line as the protein.  Ho hum- Im sure no-one will notice!
+    $added_for_gene{$gene}->{$protein} = 1;
+    $counter++;
 
     # also capture version without WP: prefix
     $protein =~ s/^WP\://;
-    print OUT "Molecular_name \"$protein\"\n\n";
-    $counter++;
+    if (not exists $added_for_gene{$gene}->{$protein}) {
+      print OUT "Molecular_name \"$protein\"\n\n";
+      $added_for_gene{$gene}->{$protein} = 1;
+      $counter++;
+    }
   }
 }
 close TACE; 
@@ -134,8 +146,10 @@ close OUT;
 
 $log->write_to("Found $counter molecular names for genes\n");
 
-# load file to autoace
-$wormbase->load_to_database($ace_dir, "$ace_dir/acefiles/molecular_names_for_genes.ace", "molecular_names", $log);
+if (not $no_load) {
+  # load file to autoace
+  $wormbase->load_to_database($db_dir, $outfile, "molecular_names", $log);
+}
 
 # tidy up and exit
 $log->mail();
