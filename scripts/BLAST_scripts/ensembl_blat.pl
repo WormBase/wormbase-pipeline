@@ -4,7 +4,7 @@
 #   setting up the BLAT pipeline
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2012-01-09 22:51:51 $
+# Last edited on: $Date: 2012-01-13 16:16:57 $
 
 use lib $ENV{'CVS_DIR'};
 
@@ -22,7 +22,7 @@ HERE
 use Getopt::Long;
 use Storable;
 
-use Bio::EnsEMBL::DBSQL::DBAdaptor;
+use Bio::EnsEMBL::Pipeline::DBSQL::DBAdaptor;
 
 # some magic to turn off the deprecation warnings
 use Bio::EnsEMBL::Utils::Exception;
@@ -30,6 +30,43 @@ verbose('OFF');
 
 use Wormbase;
 use strict;
+
+my $CONFIG = {
+  query_file_location => '/nfs/wormpub/BUILD/cDNA',
+  logic_names => {
+    'blat_brugia_ests'    => 'brugia/EST.masked*',
+    'blat_brugia_cdnas'   => 'brugia/mRNA.masked*',
+
+    'blat_elegans_ests'   => 'elegans/EST.masked*',
+    'blat_elegans_cdnas'  => 'elegans/mRNA.masked*',
+    'blat_elegans_osts'   => 'elegans/OST.masked*',
+    'blat_elegans_rsts'   => 'elegans/RST.masked*',
+    'blat_elegans_ncrnas' => 'elegans/ncRNA.masked*',
+    'blat_elegans_tc1s'   => 'elegans/tc1.masked*',
+    
+    'blat_briggsae_ests'  => 'briggsae/EST.masked*',
+    'blat_briggsae_cdnas' => 'briggsae/mRNA.masked*',
+    
+    'blat_brenneri_ests'  => 'brenneri/EST.masked*',
+    'blat_brenneri_cdnas' => 'brenneri/mRNA.masked*',
+    
+    'blat_remanei_ests'   => 'remanei/EST.masked*',
+    'blat_remanei_cdnas'  => 'remanei/mRNA.masked*',
+    
+    'blat_japonica_ests'  => 'japonica/EST.masked*',
+    'blat_japonica_cdnas' => 'japonica/mRNA.masked*',
+    
+    'blat_heterorhabditis_ests'  => 'heterorhabditis/EST.masked*',
+    'blat_heterorhabditis_cdnas' => 'heterorhabditis/mRNA.masked*',
+    
+    'blat_pristionchus_ests'  => 'pristionchus/EST.masked*',
+    'blat_pristionchus_cdnas' => 'pristionchus/mRNA.masked*',
+    
+    'blat_nembase_ests'   => 'nembase/EST.masked*',
+    'blat_washu_ests'     => 'washu/EST.masked*',
+    'blat_nematode_ests'  => 'nematode/EST.masked*',
+  },
+};
 
 my($debug,$store,$port,$user,$password,$species,$host,$dbname);
 GetOptions(
@@ -65,7 +102,7 @@ $host||='farmdb1';
 $port||=3306;
 
 # MYSQL setup
-my $db = Bio::EnsEMBL::DBSQL::DBAdaptor->new(
+my $db = Bio::EnsEMBL::Pipeline::DBSQL::DBAdaptor->new(
         -host     => $host,
         -user     => $user,
         -dbname   => $dbname || $database,
@@ -74,119 +111,98 @@ my $db = Bio::EnsEMBL::DBSQL::DBAdaptor->new(
     );
 $db->password($password);
 
-# a.) clean out all dna_align_features
-$db->dbc->do('DELETE FROM dna_align_feature');
+foreach my $ana (&get_all_blat_analyses()) {
+  my $logic_name = $ana->logic_name();
 
-# b.) clean out all input_ids for the blat analysis
-&clean_input_ids();
+  # a.) clean out all dna_align_features
+  &clean_dna_align_features($ana);
 
-# c.) make new input_ids
-&make_input_ids();
+  my $dependent_ana = &get_dependent_analysis($ana);
+  &clean_input_ids($ana, $dependent_ana);
+  &make_input_ids($ana, $dependent_ana);
+}
 
 $log->write_to("Finished.\n");
 $log->mail();
 
-# slight misnomer, first cleans the input_id_analysis table and puts new input_ids back in.
+###########################
+sub get_dependent_analysis {
+  my ($ana) = @_;
+
+  my $logic_name = $ana->logic_name;
+
+  my $rule = $db->get_RuleAdaptor->fetch_by_goal($ana);
+  die("No rule for $logic_name\n") if not defined $rule;
+
+  my $cond_list = $rule->list_conditions;
+  die("Expecting exactly one condition for $logic_name\n")
+      if not defined $cond_list or scalar(@$cond_list) != 1;
+  
+  my $dependent_ana = $db->get_AnalysisAdaptor->fetch_by_logic_name($cond_list->[0]);
+  die("Could not find dependent analysis for $logic_name\n")
+      if not defined $dependent_ana;
+  
+  die(sprintf("Input_id type for $logic_name (%s) and its dependent analysis (%s) do not agree\n", 
+              $ana->input_id_type, $dependent_ana->input_id_type))
+      if $ana->input_id_type ne $dependent_ana->input_id_type;
+
+  return $dependent_ana;
+
+}
+
+#######################
 sub make_input_ids {
-    # locations for each fasta_file
-    my %est_files = (
-        'blat_brugia_ests'    => '/nfs/wormpub/BUILD/cDNA/brugia/EST.masked*',
-        'blat_brugia_cdnas'   => '/nfs/wormpub/BUILD/cDNA/brugia/mRNA.masked*',
+  my ($ana, $dep_ana) = @_;
 
-        'blat_elegans_ests'   => '/nfs/wormpub/BUILD/cDNA/elegans/EST.masked*',
-        'blat_elegans_cdnas'  => '/nfs/wormpub/BUILD/cDNA/elegans/mRNA.masked*',
-        'blat_elegans_osts'   => '/nfs/wormpub/BUILD/cDNA/elegans/OST.masked*',
-        'blat_elegans_rsts'   => '/nfs/wormpub/BUILD/cDNA/elegans/RST.masked*',
-        'blat_elegans_ncrnas' => '/nfs/wormpub/BUILD/cDNA/elegans/ncRNA.masked*',
-        'blat_elegans_tc1s'   => '/nfs/wormpub/BUILD/cDNA/elegans/tc1.masked*',
+  my $sth=$db->prepare(
+    'INSERT INTO input_id_analysis (input_id,input_id_type,analysis_id,created,result) VALUES (?,?,?,NOW(),0)'
+      );
 
-        'blat_briggsae_ests'  => '/nfs/wormpub/BUILD/cDNA/briggsae/EST.masked*',
-        'blat_briggsae_cdnas' => '/nfs/wormpub/BUILD/cDNA/briggsae/mRNA.masked*',
-        
-        'blat_brenneri_ests'  => '/nfs/wormpub/BUILD/cDNA/brenneri/EST.masked*',
-        'blat_brenneri_cdnas' => '/nfs/wormpub/BUILD/cDNA/brenneri/mRNA.masked*',
+  my $file_base = $CONFIG->{query_file_location};
 
-        'blat_remanei_ests'   => '/nfs/wormpub/BUILD/cDNA/remanei/EST.masked*',
-        'blat_remanei_cdnas'  => '/nfs/wormpub/BUILD/cDNA/remanei/mRNA.masked*',
-        
-        'blat_japonica_ests'  => '/nfs/wormpub/BUILD/cDNA/japonica/EST.masked*',
-        'blat_japonica_cdnas' => '/nfs/wormpub/BUILD/cDNA/japonica/mRNA.masked*',
-        
-        'blat_heterorhabditis_ests'  => '/nfs/wormpub/BUILD/cDNA/heterorhabditis/EST.masked*',
-        'blat_heterorhabditis_cdnas' => '/nfs/wormpub/BUILD/cDNA/heterorhabditis/mRNA.masked*',
+  if (exists $CONFIG->{logic_names}->{$ana->logic_name}) {
+    my $file_pattern = sprintf("%s/%s", $file_base, $CONFIG->{logic_names}->{$ana->logic_name});
 
-        'blat_pristionchus_ests'  => '/nfs/wormpub/BUILD/cDNA/pristionchus/EST.masked*',
-        'blat_pristionchus_cdnas' => '/nfs/wormpub/BUILD/cDNA/pristionchus/mRNA.masked*',
-        
-        'blat_nembase_ests'   => '/nfs/wormpub/BUILD/cDNA/nembase/EST.masked*',
-        'blat_washu_ests'     => '/nfs/wormpub/BUILD/cDNA/washu/EST.masked*',
-        'blat_nematode_ests'  => '/nfs/wormpub/BUILD/cDNA/nematode/EST.masked*',
-        ); 
-
-    # SQL handles
-    my $sth=$db->prepare(
-        'INSERT INTO input_id_analysis (input_id,input_id_type,analysis_id,created,result) VALUES (?,?,?,NOW(),0)'
-        );
-    my $del_handle=$db->prepare('DELETE FROM input_id_analysis WHERE analysis_id=?');
-
-    # create_input_ids for each analysis
-    foreach my $analysis(&get_all_blat_analysis()) {
-        
-        $del_handle->execute($analysis->dbID);
-        $del_handle->execute($analysis->input_id_type_analysis->dbID); 
-
-        if ($est_files{$analysis->logic_name}) {
-            my @files = glob($est_files{$analysis->logic_name});
-            foreach my $file (@files){
-                $sth->execute($file,$analysis->input_id_type_analysis->logic_name,$analysis->input_id_type_analysis->dbID);
-            }
-        }else {
-            printf STDERR "ERROR: cannot find files for %s\n",$analysis->logic_name;
-        }
+    my @files = glob($file_pattern);
+    foreach my $file (@files){
+      $sth->execute($file,$dep_ana->input_id_type,$dep_ana->dbID);
     }
+  } else {
+    print STDERR "Nothing in config for logic_name " . $ana->logic_name .  ", so skipping\n";
+  }
 }
 
-# helper functions 
+##########################
+sub clean_dna_align_features {
+  my @ana = @_;
+
+  foreach my $ana (@ana) {
+    my $dbID=$ana->dbID;
+    $db->dbc->do("DELETE FROM dna_align_feature WHERE analysis_id = $dbID");
+  }
+}
+
+
+##########################
 sub clean_input_ids {
-    my @analysis_to_clean = &get_all_blat_analysis();
-    foreach my $analysis (@analysis_to_clean){
-        my $dbID=$analysis->dbID;
-        $db->dbc->do("DELETE FROM input_id_analysis WHERE analysis_id = $dbID");
-    }    
+  my @ana = @_;
+
+  foreach my $ana (@ana) {
+    my $dbID=$ana->dbID;
+    $db->dbc->do("DELETE FROM input_id_analysis WHERE analysis_id = $dbID");
+  }
 }
 
-# get all analysis objects for blat
-sub get_all_blat_analysis {
-    my $adb = $db->get_AnalysisAdaptor();
-    return $adb->fetch_by_program_name('/software/worm/bin/blat/blat');
+##########################
+sub get_all_blat_analyses {
+  my @blat_ana;
+  foreach my $ana (@{$db->get_AnalysisAdaptor->fetch_all}) {
+    if ($ana->program_file =~ /blat$/) {
+      push @blat_ana, $ana;
+    } 
+  }
+
+  return @blat_ana;
 }
 
-
-# extensions to EnsEMBL classes
-package Bio::EnsEMBL::Analysis;
-
-sub input_id_type_analysis {
-    my ($self)=@_;
-    my $sth = $self->adaptor->prepare('SELECT a.analysis_id FROM input_id_type_analysis i JOIN analysis a on(i.input_id_type=a.logic_name) WHERE i.analysis_id = ?');
-    $sth->execute($self->dbID);
-    my $id_type;
-    while (my ($tmp) = $sth->fetchrow_array){$id_type=$tmp}
-    
-    return $self->adaptor->fetch_by_dbID($id_type);
-}
-
-package Bio::EnsEMBL::DBSQL::AnalysisAdaptor;
-
-# to fetch all analysis with a certain program_file
-sub fetch_by_program_name {
-    my ($self,$program_name) = @_;
-    my @returned_analysis;
-    my $sth = $self->prepare('SELECT analysis_id FROM analysis WHERE program_file = ?');
-    $sth->execute($program_name);
-    my $ids = $sth->fetchall_arrayref()||[]; # array_ref->array_refs
-    foreach my $analysis(@$ids){
-        push @returned_analysis , $self->fetch_by_dbID($$analysis[0]);
-    }
-    return @returned_analysis;
-}
 
