@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl -w
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2011-12-20 11:13:25 $      
+# Last updated on: $Date: 2012-01-13 14:26:52 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -83,7 +83,7 @@ sub parse_misc_elegans_files {
 		       $wormbase->misc_dynamic.'/misc_21urna_homol.ace'         => '21uRNAs'               ,
 		       $wormbase->misc_dynamic.'/misc_Expression_pattern_homol.ace'  => 'Expression_patterns',
 		       $wormbase->misc_dynamic.'/misc_Tijsterman_G4.ace'        => 'Tijsterman_G4',
-		       $wormbase->misc_dynamic.'/RNASeq_splice_elegans.ace'     => 'RNASeq_splice',
+		       #$wormbase->misc_dynamic.'/RNASeq_splice_elegans.ace'     => 'RNASeq_splice',
                        $wormbase->misc_static.'/homology_groups.ace' 	        => 'homol_groups',
                        $wormbase->misc_static.'/eggNOG.ace' 	        => 'eggNOG_groups',
 		      );
@@ -155,7 +155,7 @@ sub parse_elegans_homol_data {
 sub parse_remanei_data {
 
   # RNASeq_splice data
-  $wormbase->load_to_database($wormbase->autoace, $wormbase->misc_dynamic.'/RNASeq_splice_remanei.ace', 'RNASeq_splice_remanei', $log);
+  #$wormbase->load_to_database($wormbase->autoace, $wormbase->misc_dynamic.'/RNASeq_splice_remanei.ace', 'RNASeq_splice_remanei', $log);
 }
 
 
@@ -191,7 +191,7 @@ sub parse_briggsae_data {
   }
 
   # RNASeq_splice data
-  $wormbase->load_to_database($wormbase->autoace, $wormbase->misc_dynamic.'/RNASeq_splice_briggsae.ace', 'RNASeq_splice_briggsae', $log);
+  #$wormbase->load_to_database($wormbase->autoace, $wormbase->misc_dynamic.'/RNASeq_splice_briggsae.ace', 'RNASeq_splice_briggsae', $log);
 
 }
 
