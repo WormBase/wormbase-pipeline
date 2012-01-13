@@ -58,16 +58,4 @@ Class Protein
 From 2 
 Tag Corresponding_protein  
  
-Colonne 6 
-Subtitle Coding_transcritp 
-Width 12 
-Optional 
-Visible 
-Class 
-Class Transcript 
-From 2 
-Tag Corresponding_transcript 
- 
- 
-
 // End of these definitions
