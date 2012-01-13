@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
 #
 # a script to batch request variation ids based on lists of public_names
-# Last change by $Author: klh $ on $Date: 2012-01-13 14:36:14 $
+# Last change by $Author: klh $ on $Date: 2012-01-13 16:59:03 $
 # usage: perl get_variation_ids.pl -species elegans -user me -pass me -in one_public_id_per_line -out varId_pubId_per_line
 
 
@@ -76,7 +76,7 @@ while (<>) {
   chomp;
 
   my @names = split(/\s+/, $_);
-  if (scalar(@names) == 2 or scalar(@entries) == 1) {
+  if (scalar(@names) == 2 or scalar(@names) == 1) {
     push @entries, \@names,
   } else {
     $log->log_and_die("Bad line:$_\n");
