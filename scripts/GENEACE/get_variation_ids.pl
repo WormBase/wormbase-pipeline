@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
 #
 # a script to batch request variation ids based on lists of public_names
-# Last change by $Author: klh $ on $Date: 2012-01-13 16:59:03 $
+# Last change by $Author: klh $ on $Date: 2012-01-16 17:22:00 $
 # usage: perl get_variation_ids.pl -species elegans -user me -pass me -in one_public_id_per_line -out varId_pubId_per_line
 
 
@@ -65,7 +65,7 @@ if (defined $ace_file_template and -e $ace_file_template) {
   open(my $atfh, $ace_file_template) 
       or $log->log_and_die("Could not open $ace_file_template for reading\n");
   while(<$atfh>) {
-    /^\S+$/ and $tmp_str .= $_;
+    /\S/ and $tmp_str .= $_;
   }
   
   $ace_file_template = $tmp_str;
