@@ -29,38 +29,58 @@ my $seq;
 my $blastdb;
 my %clones;
 while (<>) {
-
+  
 #Homol_data : "CHROMOSOME_I:wublastx_fly"
 #Pep_homol       "FLYBASE:CG16858" "wublastx_fly"  11.398 4571310 4571236 1492 1516
+  
+  if(/^Homol_data\s+:\s+\"(\w+):(wublastx_\w+)/) {
+    $seq = $1;
+    $blastdb = $2;
+    #print "\nHomol_data : \"$seq:$blastdb\"\n";
+    next;
+  }
+  elsif(/^Pep_homol/) {
+    my @data = split;
 
-	if(/^Homol_data.*_(\w+):(wublastx_\w+)/) {
-		$seq = $1;
-		$blastdb = $2;
-		#print "\nHomol_data : \"$seq:$blastdb\"\n";
-		next;
-	}
-	elsif(/^Pep_homol/) {
-		my @data = split;
-		my($clone,$x, $y) = $cc->LocateSpan($seq, $data[4], $data[5]);
-		die unless ($clone and $x and $y);
-		$data[4] = $x;
-		$data[5] = $y;
-		if($data[9]) {
-			@z = $cc->LocateSpan($seq, $data[9], $data[9]);
-			$data[9] = $z[1];
-		}
-		#print join("\t",@data)."\n";
-		push(@{$clones{$clone}}, \@data);
-	}
+    my ($orig_start, $orig_end) = ($data[4], $data[5]);
+
+    my($clone,$x, $y) = $cc->LocateSpan($seq, $orig_start, $orig_end);
+    die unless ($clone and $x and $y);
+
+    ($data[4], $data[5]) = ($x, $y);
+    $data[5] = $y;
+    if($data[9]) {
+      # for features that were reverse strand originally, 
+      # col 10 marks the *end* of the of ungapped block
+      if ($data[5] - $data[4] == $orig_end - $orig_start) {
+        # simple case; transformation has preserved orientation,
+        # so column9 is simple offset 
+        $data[9] = $data[4] + ($data[9] - $orig_start);
+      } else {
+        if ($orig_end > $orig_start) {
+          # feature was forward, is now reverse; col 9 aligned with start of block,
+          # should now align with end
+          my $offset = $data[9] - $orig_start;
+          $data[9] = $data[4] - $offset;
+        } else {
+          # feature was reverse, is now forward; col 9 aligned with end of block,
+          # should now align with start
+          my $offset = $orig_start - $data[9];
+          $data[9] = $data[4] + $offset;
+        }
+      }
+    }
+    push(@{$clones{$clone}}, \@data);
+  }
 }
 
 foreach my $clone (keys %clones) {
-	print "\nSequence : $clone\n";
-	my $size = $cc->Superlink_length($clone);
-	print "Homol_data \"$clone:$blastdb\" 1 $size\n";
-
-	print "\nHomol_data : \"$clone:$blastdb\"\n";	
-	foreach my $hit (@{$clones{$clone}}) {
-		print join("\t",@$hit)."\n";
-	}
+  print "\nSequence : $clone\n";
+  my $size = $cc->Superlink_length($clone);
+  print "Homol_data \"$clone:$blastdb\" 1 $size\n";
+  
+  print "\nHomol_data : \"$clone:$blastdb\"\n";	
+  foreach my $hit (@{$clones{$clone}}) {
+    print join("\t",@$hit)."\n";
+  }
 }
