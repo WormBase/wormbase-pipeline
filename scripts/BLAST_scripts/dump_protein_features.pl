@@ -1,13 +1,13 @@
 #!/software/bin/perl -w
 #
-# ABC.pl                           
+#
+# dump_protein_features.pl
 # 
-# by Gary Williams                       
+# Dumps protein features from an Ensembl database as Ace. 
+# Calls on a number of other scripts
 #
-# This is a script to automate the sections A, B and C of the BLAST Build
-#
-# Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2011-05-16 14:37:49 $      
+# Last updated by: $Author: klh $     
+# Last updated on: $Date: 2012-01-16 17:23:09 $      
 
 use strict;                                      
 
