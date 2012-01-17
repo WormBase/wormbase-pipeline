@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
 #
 # a script to batch request variation ids based on lists of public_names
-# Last change by $Author: klh $ on $Date: 2012-01-16 17:22:00 $
+# Last change by $Author: mt3 $ on $Date: 2012-01-17 11:19:13 $
 # usage: perl get_variation_ids.pl -species elegans -user me -pass me -in one_public_id_per_line -out varId_pubId_per_line
 
 
@@ -30,7 +30,7 @@ GetOptions (
   "user:s"	  => \$USER,    # mysql username
   "pass:s"	  => \$PASS,    # mysql password
   'maria'         => \$maria,   # try the more experimantal MariaDB for testing
-  'nocheck'       => \$nocheck, # don'tcheck public_names
+  'nocheck'       => \$nocheck, # don't check public_names
   'acetemplate=s' => \$ace_file_template,
     )||die(@!);
     
@@ -135,7 +135,7 @@ line may also contain an additional name, which is added to the NameDB as the pu
 defined, the generated WBVar identifier will be used as the public name
 
 By default, the script will refuse to create new WBVar identifiers for public names that already exist in the
-database; this behaviour can be switched off with the -noheck option. 
+database; this behaviour can be switched off with the -nocheck option. 
 
 -head1 OUTPUT
 
@@ -149,9 +149,9 @@ the submitter-supplied name is used to populate the Other_name tag.
 
 =head1 USAGE EXAMPLES
 
-make_autoace.pl -species briggsae input_id_file.txt > output_id_file.txt
+get_variation_ids.pl -species briggsae input_id_file.txt > output_id_file.txt
 
-make_autoace.pl -species elegans -acetemplate wild_template.ace input_id_file.txt > output_file.ace
+get_variation_ids.pl -species elegans -acetemplate wild_template.ace input_id_file.txt > output_file.ace
 
 =head1 OPTIONS
 
