@@ -62,7 +62,7 @@
 # by Gary Williams
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2011-12-09 17:07:41 $
+# Last updated on: $Date: 2012-01-18 17:14:14 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -794,7 +794,7 @@ sub run_tophat {
     chdir "$RNASeqDir/$arg";
     my @files = glob("SRR/*/*.fastq");
     my $joined_file = join ",", @files;
-#    my $seq_length = get_read_length($files[0]);
+    my $seq_length = get_read_length($files[0]);
     
     # do we have paired reads?
     my @files1 = sort glob("SRR/*/*_1.fastq"); # sort to ensure the two sets of files are in the same order
@@ -808,8 +808,19 @@ sub run_tophat {
       # set the inner-distance -r parameter
       # assume the insert size is 200 bp - we often have no information about this
       my $inner = 200;
-      $cmd_extra .= " -r $inner";
+      $cmd_extra .= " -r $inner ";
     }
+
+    # Is the read length less than 50?  
+    # If so then we should set --segment-length to be less than half the
+    # read length, otherwise the alignments are not done properly and we
+    # don't get a junctions.bed file output
+    my $segment_length = 25; # the default value
+    if ($seq_length < 50) {
+      $segment_length = int($seq_length / 2);
+      $cmd_extra .= " --segment-length $segment_length ";
+    }
+
 
     $log->write_to("run tophat $joined_file\n");
     my $raw_juncs = ''; # use the raw junctions hint file unless we specify otherwise
