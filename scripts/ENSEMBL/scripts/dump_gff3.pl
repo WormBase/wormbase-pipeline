@@ -22,15 +22,16 @@ use Getopt::Long;
 my $debug =1;
 
 # Vega database
-my $vega_dbname = '';
-my $vega_dbhost = 'farmdb1';
+my $vega_dbname = 'bmalayi2';
+my $vega_dbhost = 'eagle';
 my $vega_dbport =  3306;
-my $vega_dbuser = 'wormro'; 
-my $vega_dbpass = '';
+my $vega_dbuser = 'wormadmin'; 
+my $vega_dbpass = 'worms';
 my @dump_slice ;
 my $lsf;
 my $dumpdir;
 my $file;
+my $slim;
 
 GetOptions(
            'dbhost=s'     => \$vega_dbhost,
@@ -42,6 +43,7 @@ GetOptions(
     	   'submit=i'     => \$lsf,
     	   'dumpdir=s'    => \$dumpdir,
     	   'file:s'       => \$file,
+           'slim'         => \$slim,
           )or die ("Couldn't get options");
 
 
@@ -179,7 +181,8 @@ while( my $slice = shift @$slices) {
 	    }
 	    print $outf dump_gene(\%gene_to_dump);
 	}
-
+        
+        next if $slim;
 	# get all protein align features on the slice
         my %blastx_features;
 
@@ -367,9 +370,8 @@ sub dump_gene {
 			($transcript->{info}||undef),$transcript->{'public_name'},$parent);
 
 		# Store the parent of this transcript's exons
-		$parent = $transcript->{'stable_id'};
 		foreach my $exon (@{$transcript->{'exon'}}) {
-			${$exon_parent{$exon->{'stable_id'}}}{$parent} = 1;
+			${$exon_parent{$exon->{'stable_id'}}}{$transcript->{'stable_id'}} = 1;
 		}
 	}
 	
