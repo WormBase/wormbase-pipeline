@@ -10,12 +10,12 @@
 
 use strict;
 use IO::File;
-use lib '/software/worm/ensembl-62/ensembl/modules';
-use lib '/software/worm/ensembl-62/ensembl-compara/modules';
+use lib '/software/worm/ensembl-64/ensembl/modules';
+use lib '/software/worm/ensembl-64/ensembl-compara/modules';
 use lib '/software/worm/ensembl/bioperl-live';
 
 use Bio::EnsEMBL::Registry;
-Bio::EnsEMBL::Registry->load_registry_from_db(-host => 'ens-livemirror', -user => 'wormro',-port => 3306,-verbose => 0,-db_version => 58);
+Bio::EnsEMBL::Registry->load_registry_from_db(-host => 'ens-livemirror', -user => 'wormro',-port => 3306,-verbose => 0,-db_version => 64);
 
 use Bio::EnsEMBL::DBSQL::DBAdaptor;
 use Bio::EnsEMBL::Compara::DBSQL::DBAdaptor;
@@ -23,7 +23,7 @@ use Bio::EnsEMBL::Compara::DBSQL::DBAdaptor;
 
 my %cds2wbgene=%{&get_commondata('/nfs/wormpub/DATABASES/current_DB/COMMON_DATA/cds2wbgene_id.dat')};
 
-my $slice_adaptor = Bio::EnsEMBL::Registry->get_adaptor('c.elegans','core','Slice');
+my $slice_adaptor = Bio::EnsEMBL::Registry->get_adaptor('C.elegans','core','Slice');
 my $member_adaptor = Bio::EnsEMBL::Registry->get_adaptor('Multi','compara','Member');
 my $homology_adaptor = Bio::EnsEMBL::Registry->get_adaptor('Multi','compara','Homology');;
 
@@ -47,11 +47,9 @@ foreach my $slice(@slices){
 		foreach my $homology ( @{$homologies} ) {
 			foreach my $ma ( @{ $homology->get_all_Member_Attribute } ) {
 				my ( $me, $at ) = @{$ma};
-				foreach my $pepm ( @{ $me->get_all_peptide_Members() } ) { 
-					if ($pepm->taxon_id != 6239){
-						$homol_ids{ $pepm->stable_id } = $pepm; #$homology->description,$homology->subtype];
-					}
-
+				my $pepm = $me->get_canonical_peptide_Member(); 
+				if ($pepm->taxon_id != 6239){
+					$homol_ids{ $pepm->stable_id } = $pepm; #$homology->description,$homology->subtype];
 				}
 			}
 		}
