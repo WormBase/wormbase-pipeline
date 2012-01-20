@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl5.8.0 -w
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2012-01-20 16:41:43 $
+# Last edited on: $Date: 2012-01-20 21:59:46 $
 
 
 use lib $ENV{'CVS_DIR'};
@@ -21,23 +21,24 @@ my ($test, $database, $debug);
 my ($mask, $dump_dna, $run, $postprocess, $load, $process, $intron);
 my @types;
 my $store;
-my ($species, $qspecies, $nematode);
+my ($species, $qspecies, $nematode, $no_backup_on_load);
 
 GetOptions (
-	    'debug:s'     => \$debug,
-	    'test'        => \$test,
-	    'database:s'  => \$database,
-	    'store:s'     => \$store,
-	    'species:s'   => \$species,  #target species (ie genome seq)
-	    'mask'        => \$mask,
-	    'dump'        => \$dump_dna,
-	    'process'     => \$process,
-	    'run'         => \$run,
-	    'postprocess' => \$postprocess,
-	    'load'        => \$load,
-	    'types:s'     => \@types,
-	    'qspecies:s'  => \$qspecies,    #query species (ie cDNA seq)
-	    'intron'      => \$intron
+	    'debug:s'        => \$debug,
+	    'test'           => \$test,
+	    'database:s'     => \$database,
+	    'store:s'        => \$store,
+	    'species:s'      => \$species,  #target species (ie genome seq)
+	    'mask'           => \$mask,
+	    'dump'           => \$dump_dna,
+	    'process'        => \$process,
+	    'run'            => \$run,
+	    'postprocess'    => \$postprocess,
+	    'load'           => \$load,
+            'nobackuponload' => \$no_backup_on_load,
+	    'types:s'        => \@types,
+	    'qspecies:s'     => \$qspecies,    #query species (ie cDNA seq)
+	    'intron'         => \$intron
 	   );
 
 my $wormbase;
@@ -334,7 +335,11 @@ if( $load ) {
         
       # BLAT results
       $file = "$blat_dir/$species.blat.${qspecies}_$type.ace";
-      $wormbase->load_to_database($database, $file, "blat_${qspecies}_${type}_data", $log, $test ? 0 : 1);
+      $wormbase->load_to_database($database, 
+                                  $file, 
+                                  "blat_${qspecies}_${type}_data", 
+                                  $log, 
+                                  ($test or $no_backup_on_load) ? 0 : 1);
     }
   }
 }
