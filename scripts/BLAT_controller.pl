@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl5.8.0 -w
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2011-12-02 21:43:24 $
+# Last edited on: $Date: 2012-01-20 16:41:43 $
 
 
 use lib $ENV{'CVS_DIR'};
@@ -20,7 +20,6 @@ use LSF::JobManager;
 my ($test, $database, $debug);
 my ($mask, $dump_dna, $run, $postprocess, $load, $process, $intron);
 my @types;
-my $all;
 my $store;
 my ($species, $qspecies, $nematode);
 
@@ -37,7 +36,6 @@ GetOptions (
 	    'postprocess' => \$postprocess,
 	    'load'        => \$load,
 	    'types:s'     => \@types,
-	    'all'         => \$all,
 	    'qspecies:s'  => \$qspecies,    #query species (ie cDNA seq)
 	    'intron'      => \$intron
 	   );
@@ -80,7 +78,9 @@ my %mol_types = ( 'elegans'          => [qw( EST mRNA ncRNA OST tc1 RST )],
 
 				);
 
-my @nematodes = qw(nematode washu nembase);
+my @other_nematodes = ('nematode',
+                       'washu',
+                       'nembase');
 
 #remove other species if single one specified
 if( $qspecies ){
@@ -91,7 +91,6 @@ if( $qspecies ){
   } else {
     $log->log_and_die("we only deal in certain species!\n");
   }
-  @nematodes = ();
 }
 	
 #set specific mol_types if specified.
@@ -99,7 +98,6 @@ if(@types) {
   foreach (keys %mol_types){
     ($mol_types{$_}) = [(@types)];
   }
-  @nematodes = ();
 }
 
 
@@ -134,6 +132,30 @@ if( $mask ) {
 
   foreach my $moltype ( @{$mol_types{$species}} ) {
     &check_and_shatter( $wormbase->maskedcdna, "$moltype.masked" );
+  }
+
+  # finally, update the other_nematode collection, only for elegans
+  if ($species eq 'elegans') {
+    foreach my $on (@other_nematodes) {
+      my $source_path = $wormbase->build_data . "/cDNA/$on";
+      my $target_path = $wormbase->basedir .  "/cDNA/$on";
+      
+      foreach my $mt (@{$mol_types{$on}}) {
+        foreach my $file (glob("$target_path/$mt.masked*")) {
+          unlink $file;
+        }
+        
+        my $sfile = "$source_path/$mt";
+        my $tfile = "$source_path/${mt}.masked";
+        
+        if (not -e $sfile) {
+          $log->error("Could not find file $sfile in BLAT preparation\n");
+        }
+        $wormbase->run_command("cp $sfile $tfile", $log);
+        
+        &check_and_shatter( $target_path, "${mt}.masked" );
+      }
+    }
   }
 }
 
