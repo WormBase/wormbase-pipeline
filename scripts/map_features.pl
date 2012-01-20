@@ -8,8 +8,8 @@
 # Uses Ant's Feature_mapper.pm module
 #
 #
-# Last updated by: $Author: gw3 $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2011-11-04 15:50:09 $        # quickly see when script was last changed and by whom
+# Last updated by: $Author: pad $                      # These lines will get filled in by cvs and helps us
+# Last updated on: $Date: 2012-01-20 17:38:01 $        # quickly see when script was last changed and by whom
 
 
 $|=1;
@@ -192,7 +192,7 @@ Tag Sequence
 
 Colonne 3
 Width 12
-Optional
+Mandatory
 Visible
 Class
 Class Sequence
