@@ -95,7 +95,8 @@ while (my $RNAi_obj=$it->next) {
 
   my @genes_tmp=$RNAi_obj->Gene;
   foreach my $this_gene (@genes_tmp) {
-    if ($this_gene->right(2) eq 'RNAi_primary') {
+    if ($this_gene->right(2) eq 'RNAi_primary' or 
+        $this_gene->right(2) eq 'RNAi_secondary') {
       my @phen_array_tmp=$RNAi_obj->Phenotype;
       foreach my $phenotype (@phen_array_tmp) {
 	next if (grep {/Not/} $phenotype->tags());
