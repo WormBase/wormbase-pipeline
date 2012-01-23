@@ -6,8 +6,8 @@
 #
 # This is a example of a good script template
 #
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2008-08-21 15:09:08 $
+# Last updated by: $Author: klh $
+# Last updated on: $Date: 2012-01-23 11:44:08 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -118,6 +118,30 @@ while (<TACE>) {
     }
 }
 close TACE;
+
+# Not all EMBL Sequences will be in the database when this script
+# is run, because the objects for the other single-species sets
+# (briggase, remanei etc) do not make their way into autoace
+# until the merge. We therefore fill in the gaps by picking these
+# up directly. 
+my %accessors = $wormbase->all_species_accessors;
+foreach my $owb (values %accessors) {
+  my $cdnadir = $owb->maskedcdna;
+  my $full_sp = $owb->full_name;
+
+  foreach my $file (glob("$cdnadir/*.*")) {
+    open(my $fh, $file);
+    while(<$fh>) {
+      /^\>(\S+)/ and do {
+        if (not exists $species{BLAT_NEMATODE}->{$1}) {
+          $species{BLAT_NEMATODE}->{$1} = $full_sp;
+        }
+      }
+    }
+  }
+}
+
+
 
 ##########################
 # MAIN BODY OF SCRIPT
