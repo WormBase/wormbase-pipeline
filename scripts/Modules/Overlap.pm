@@ -6,8 +6,8 @@
 #
 # Do fast overlap matching of positions of two sets of things.
 #
-# Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2011-12-09 11:03:36 $      
+# Last updated by: $Author: klh $     
+# Last updated on: $Date: 2012-01-23 14:48:59 $      
 
 =pod
 
@@ -1540,7 +1540,7 @@ sub get_genblastg_exons {
   my %GFF_data = 
    (
      method			=> "genblastg",
-     gff_source			=> "genblastg",
+     gff_source			=> "genBlastG",
      gff_type			=> "coding_exon",
      ID_after			=> "CDS\\s+",
    );
