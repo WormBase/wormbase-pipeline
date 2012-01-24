@@ -6,7 +6,7 @@
 # builds wormbase & wormpep FTP sites
 # 
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2011-11-23 16:33:06 $
+# Last updated on: $Date: 2012-01-24 09:29:04 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -590,7 +590,7 @@ sub copy_compara {
   
   my $chromdir = $wormbase->autoace;
   my $clust_src = "$chromdir/wormpep_clw.sql.bz2";
-  my $compara_src = "$chromdir/compara.tar.bz2";
+  my $compara_src = "$chromdir/compara.tar.gz";
 
   if (-e $clust_src) {
     my $target = "$targetdir/COMPARATIVE_ANALYSIS/wormpep_clw.${WS_name}.sql.bz2";
