@@ -159,7 +159,7 @@ task :dump_gerp =>[:env_setup] do
 	  FileUtils.cd("#{tmp_place}/compara")
 	  sh "tar cvSf #{species}_gerp.tar #{species}"
 	  FileUtils.remove_dir(spec_dir,true)
-          sh "pbzip2 -9  #{species}_gerp.tar"
+          sh "gzip -9  #{species}_gerp.tar"
 	  FileUtils.cd(currentDir)
 	}
 end
@@ -202,9 +202,9 @@ task :dump_compara do
 	# # # # # # # # # # # # # # # #
 	
 	FileUtils.cd(tmp_place) do
-		File.unlink("compara.tar.bz2") if File.exists?("compara.tar.bz2")
+		File.unlink("compara.tar.gz") if File.exists?("compara.tar.gz")
 		sh "tar cvf compara.tar compara/*"
-		sh "bzip2 -9 compara.tar"
+		sh "gzip -9 compara.tar"
 		FileList['compara/*'].each{|f|File.unlink(f)}
 	end
 end
@@ -213,7 +213,7 @@ desc 'copy release files'
 task :copy_release do
 	target_dir='/nfs/wormpub/BUILD/autoace/'
 	cp "#{tmp_place}/compara.ace","#{target_dir}acefiles/"
-	cp "#{tmp_place}/compara.tar.bz2",target_dir
+	cp "#{tmp_place}/compara.tar.gz",target_dir
 end
 
 
