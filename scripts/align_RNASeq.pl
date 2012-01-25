@@ -62,7 +62,7 @@
 # by Gary Williams
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2012-01-18 17:14:14 $
+# Last updated on: $Date: 2012-01-25 10:46:00 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -87,7 +87,7 @@ use GDBM_File; # for tied hash
 ##############################
 
 
-my ($test, $store, $debug, $species, $verbose, $expt, $noalign, $check, $solexa, $illumina, $database, $nogtf, $norawjuncs, $tsl, $paired);
+my ($test, $store, $debug, $species, $verbose, $expt, $noalign, $check, $solexa, $illumina, $database, $nogtf, $norawjuncs, $tsl, $paired, $keepfastq);
 GetOptions (
 	    "test"               => \$test,
 	    "store:s"            => \$store,
@@ -104,6 +104,7 @@ GetOptions (
 	    "expt:s"             => \$expt,     # do the alignment etc. for this experiment
 	    "illumina"           => \$illumina, # read have illumina GA-Pipeline 1.3 quality scores, not phred + 33 scores
 	    "paired"             => \$paired,   # the reads are paired-end - we may have to split the file
+	    "keepfastq"          => \$keepfastq # don't delete the fastq files after use
 	   );
 
 my $wormbase;
@@ -741,9 +742,11 @@ sub run_align {
   $lsf->clear;
 
   # clear up the fastq files
-  foreach my $arg (@args) {
-    # if it is a SRA file, then we can safely  delete it and pull it over again next time
-    if ($arg =~ /SRX/) {my $status = $wormbase->run_command("rm -rf $RNASeqDir/$arg/SRR", $log);}
+  if (!$keepfastq) {
+    foreach my $arg (@args) {
+      # if it is a SRA file, then we can safely  delete it and pull it over again next time
+      if ($arg =~ /SRX/) {my $status = $wormbase->run_command("rm -rf $RNASeqDir/$arg/SRR", $log);}
+    }
   }
 
 
