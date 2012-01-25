@@ -4,8 +4,8 @@
 # 
 # A script to make multiple copies of camace for curation, and merge them back again
 #
-# Last edited by: $Author: klh $
-# Last edited on: $Date: 2011-09-27 16:04:12 $
+# Last edited by: $Author: pad $
+# Last edited on: $Date: 2012-01-25 14:38:15 $
 #
 # Persisting errors.
 #running csh -c "reformat_acediff file 1 file2"
@@ -518,7 +518,7 @@ sub load_curation_data {
   $log->write_to ("Removing remove bogus gene models from $database_path\n");
   my $command;
   #remove bogus gene models
-  $command  = "query find ALL_genes where !method\n";
+  $command  = "query find CDS where !method AND !Source_exons\n";
   $command  .= "kill\n";
   $command  .= "y\n";
   $command  .= "save\n";
@@ -561,12 +561,12 @@ sub remove_data {
     $command .= "Edit -D DB_remark\n";
     $command .= "clear\n";
     #remove CDSs with no method
-    $command .= "query find CDS where !method\n";
+    $command .= "query find CDS where !method AND !source_exons\n";
   }
   
   unless (defined $option) {
     #remove CDSs with no method
-    $command  = "query find CDS where !method\n";
+    $command  = "query find CDS where !method AND !source_exons\n";
   }
   $command .= "kill\n";
   $command .= "y\n";
