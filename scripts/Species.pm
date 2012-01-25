@@ -567,6 +567,38 @@ sub TSL {(
 
 ######################################################
 
+package Csp5;
+use Carp;
+our @ISA = qw(Wormbase Species);
+
+sub _new {	
+    my $class = shift;
+    my %param = %{ shift(@_) };
+
+    my $self = $class->initialize( $class->flatten_params( \%param ) );
+
+    # add stuff post object creation goes here
+
+    bless $self, $class;
+}
+sub full_name {
+	my $self = shift;
+	my %param = @_ ;
+	if($param{'-short'}){
+		return 'C. species5';
+	}	elsif($param{'-g_species'}){
+		return 'c_sp5';
+	}
+	else { return'Caenorhabditis species 5'
+	};
+}
+sub chromosome_prefix {'Csp5_scaffold'}
+sub pep_prefix {'S5'}
+sub pepdir_prefix{'csp5'};
+sub ncbi_tax_id {'497829'}; # this is the ID of the DRD-2008 strain
+sub assembly_type {'contig'};
+######################################################
+
 package Csp7;
 use Carp;
 our @ISA = qw(Wormbase Species);
