@@ -5,7 +5,7 @@
 # A script to generate C.elegans CDS/Protein to NCBI_GI number XREFs
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2012-01-20 15:25:13 $
+# Last edited on: $Date: 2012-01-25 17:24:08 $
 #
 #==================
 
@@ -119,10 +119,11 @@ unless ($usebins) { # skip all of the ftp and GI .dat file generation for debugg
     else {
       # Using wget as NET:FTP was causing the end of file to be missing??
       $wormbase->run_command("wget -q -O $GI_zip ${genbankftp}$newfile", $log) && die "Couldnt get $newfile $0\n";
-      $wormbase->run_command('touch $lock_file');
     }
   } #unless noftp
-
+  
+  #touch the lock file as you are starting to process data.
+  $wormbase->run_command("touch $lock_file");
   #Unzip the data file
   $wormbase->run_command("gunzip -f $GI_zip", $log) && die "unzip Failed for ${GI_zip}\n";
 
@@ -182,7 +183,7 @@ elsif ($usebins){
 #generate the .ace output file by parsing protein/CDS data and pulling IDs from the .dat files.
 $log->write_to("Generate the .ace output file\n\n");
 my %GI_number = ();
-my $ace = ${basedir}."GI_numbers_WS".${WS_version}.".ace_test"; #debugging code
+my $ace = ${basedir}."GI_numbers_WS".${WS_version}.".ace"; #debugging code
 
 my %cds_info;
 my $def = $wormbase->basedir."/wquery/SCRIPT:make_wormpep.def";
@@ -257,7 +258,7 @@ $log->write_to("Processed $datcheck files\n");
 # Remove the symbolic link and update to point to new file.
 unless ($noupdate) {
   $wormbase->run_command("rm -f GI_numbers.ace", $log);
-  $wormbase->run_command("ln -s GI_numbers_WS$WS_version.ace GI_numbers.ace", $log);
+  $wormbase->run_command("ln -s $ace GI_numbers.ace", $log);
 }
 
 # load the data into autoace
@@ -275,7 +276,7 @@ else {
   $log->write_to("Removing all .dat files from $basedir\n");
   $wormbase->run_command("gzip -f $GI_local", $log) && die "zip Failed for ${GI_local}\n";
   $wormbase->run_command("rm GI*.dat", $log);
-  $wormbase->run_command("rm $basedir.$GI_local", $log);
+  $wormbase->run_command("rm $GI_local", $log);
 }
 
 $wormbase->run_command("rm $lock_file", $log);
