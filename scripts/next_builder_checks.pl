@@ -6,8 +6,8 @@
 # A simple script to send a check list to the person who will be performing the next
 # build to check the current build
 #
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2011-08-05 16:11:11 $
+# Last updated by: $Author: klh $
+# Last updated on: $Date: 2012-01-25 09:27:41 $
 use strict;
 use warnings;
 use lib $ENV{'CVS_DIR'};
@@ -42,7 +42,7 @@ GetOptions(
 ############################
 my $wb;
 if ($store) { $wb = Storable::retrieve($store) or croak("cant restore wormbase from $store\n") }
-else { $wb = Wormbase->new( -debug => $debug, -test => $debug, -organism => $species ) }
+else { $wb = Wormbase->new( -debug => $debug, -test => $test, -organism => $species ) }
 
 ##########################################
 # Variables Part II (depending on $wb)    #
@@ -90,7 +90,8 @@ if($clones) {
   } elsif ($wb->species eq 'brenneri') {
     @clones = qw(Cbre_Contig1 Cbre_Contig10 Cbre_Contig20 Cbre_Contig50 Cbre_Contig100 Cbre_Contig200  Cbre_Contig400 Cbre_Contig600 Cbre_Contig800);
   } elsif ($wb->species eq 'briggsae') {
-    @clones = qw(chrI chrI_random chrII chrII_random chrIII chrIII_random chrIV chrIV_random);
+    # briggae contains a mixture of data on chromosomes and supercontigs, so include both
+    @clones = qw(cb25.fpc0002 cb25.fpc0011c cb25.fpc0081 cb25.fpc0143a chrI chrII);
   } elsif ($wb->species eq 'remanei') {
     @clones = qw(Crem_Contig0 Crem_Contig10 Crem_Contig15 Crem_Contig30 Crem_Contig100 Crem_Contig200 Crem_Contig300 Crem_Contig500 Crem_Contig800);
   } elsif ($wb->species eq 'japonica') {
