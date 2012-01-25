@@ -4,8 +4,8 @@
 # 
 # by Anthony Rogers et al
 #
-# Last updated by: $Author: klh $
-# Last updated on: $Date: 2011-11-09 12:13:24 $
+# Last updated by: $Author: pad $
+# Last updated on: $Date: 2012-01-25 17:12:34 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -41,6 +41,7 @@ my $cds2protein_id;    # Hash: %cds2protein_id      Key: CDS name               
                        # Hash: %protein_id2cds      Key: Protein_ID                        Value: CDS name
 my $cds2cgc;           # Hash: %cds2cgc             Key: CDS name                          Value: CGC name
 my $rna2cgc;           # Hash: %rna2cgc             Key: transcript name                   Value: CGC name
+my $rna2briefID;        # Hash: %rna2briefID         Key: transcript name                   Value: Brief_ID
 my $pseudo2cgc;        # Hash: %pseudo2cgc          Key: Pseudogene name                   Value: CGC name
 my $cds2status;        # Hash: %cds2status          Key: CDS name                          Value: Prediction status 
 my $clone2seq;         # Hash: %clone2seq           Key: Genomic_canonical                 Value: DNA sequence (lower case)
@@ -83,6 +84,7 @@ GetOptions (
             "clone2dbid"         => \$clone2dbid,
 	    "cds2cgc"            => \$cds2cgc,
 	    "rna2cgc"            => \$rna2cgc,
+	    "rna2briefID"        => \$rna2briefID,
 	    "pseudo2cgc"         => \$pseudo2cgc,
 	    "species:s"		 => \$species,
 	    "verbose"            => \$verbose,
@@ -114,6 +116,7 @@ my %Table_defs = (
 		  'cds2status'       => 'CommonData:CDS_Status.def',
                   'cds2cgc'          => 'CommonData:CDS_CGCname.def',
 		  'rna2cgc'          => 'CommonData:RNA_CGCname.def',
+		  'rna2BriefID'      => 'CommonData:RNA_BriefID.def',
 		  'pseudo2cgc'       => 'CommonData:Pseudogene_CGCname.def',
 		  'est2feature'      => 'CommonData:EST_Feature.def',
 		  'estdata'          => 'CommonData:EST_data.def',
@@ -150,7 +153,7 @@ if ($all) {
   my @all_args = qw( clone2acc clone2size cds2wormpep cds2pid
 	    cds2status clone2seq clone2sv clone2centre genes2lab
 	    worm_gene2cgc worm_gene2geneID worm_gene2class est
-	    est2feature gene_id clone2type cds2cgc rna2cgc pseudo2cgc clone2dbid);
+	    est2feature gene_id clone2type cds2cgc rna2cgc pseudo2cgc clone2dbid rna2briefID);
 
   $wormbase->checkLSF;
   my $lsf = LSF::JobManager->new();
@@ -209,6 +212,7 @@ if ($all) {
   &write_worm_gene2geneID if ($worm_gene2geneID);
   &write_worm_gene2cgc    if ($worm_gene2cgc);
   &write_clone2dbid       if ($clone2dbid);
+  &write_rna2BriefID      if ($rna2briefID);
 }
 
 $log->mail;
@@ -236,7 +240,7 @@ sub write_cds2protein_id {
   ####################################################################
 
   my $command = "Table-maker -p $wquery_dir/$Table_defs{'cds2protein'}\nquit\n";
-  
+  unless (-e $wquery_dir/$Table_defs{'cds2protein'}) {$log->write_to("Error:$wquery_dir/$Table_defs{'cds2protein'} does not exist, your common data will be incomplete\n");}
   open (TACE, "echo '$command' | $tace $ace_dir |");
   while (<TACE>) {
       chomp;
@@ -615,6 +619,37 @@ sub write_pseudo2cgc {
   
   close ps2cgc;
 }
+
+
+########################################################################################################
+
+sub write_rna2BriefID {
+  $log->write_to("Updating rna2Brief_ID\n");
+
+  # connect to AceDB using TableMaker,
+  my $command="Table-maker -p $wquery_dir/$Table_defs{'rna2BriefID'}\nquit\n";
+  
+  open (TACE, "echo '$command' | $tace $ace_dir |");
+  my %rna2BriefID;
+
+  while (<TACE>) {
+      chomp;
+      s/\"//g;
+      next if ($_ eq "");
+      next if (/acedb\>/);
+
+      if (/^(\S+)\s+(.+)/) {
+	  $rna2BriefID{$1} = $2;
+      }
+  }
+
+  # now dump data to file
+  open (rna2BriefID, ">$data_dir/rna2BriefID.dat") or die "$data_dir/rna2BriefID.dat";
+
+  print rna2BriefID Data::Dumper->Dump([\%rna2BriefID]);
+  
+  close rna2BriefID;
+  }
 
 
 ########################################################################################################
