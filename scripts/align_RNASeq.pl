@@ -62,7 +62,7 @@
 # by Gary Williams
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2012-01-25 10:46:00 $
+# Last updated on: $Date: 2012-01-26 09:33:44 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -444,7 +444,7 @@ if (!$expt) {
       my $out = "$scratch_dir/make_GTF_transcript.pl.lsf.out";
       my @bsub_options = (-e => "$err", -o => "$out");
       push @bsub_options, (-q =>  "long",
-			   -F =>  "100000000", # maybe increase this?
+			   #-F =>  "100000000", # there is no file size limit in Sanger LSF - don't impose one - keep this commented out
 			   -M =>  "14000000", 
 			   -R => "\"select[mem>14000] rusage[mem=14000]\"", 
 			   -J => $job_name);
@@ -712,7 +712,7 @@ sub run_align {
     my $out = "$scratch_dir/align_RNASeq.pl.lsf.${arg}.out";
     my @bsub_options = (-e => "$err", -o => "$out");
     push @bsub_options, (-q =>  "long",
-                         -F =>  "100000000", # maybe increase this?
+                         #-F =>  "100000000", # there is no file size limit in Sanger LSF - don't impose one - keep this commented out
 			 -M =>  "14000000", 
 			 -R => "\"select[mem>14000 && tmp>10000] rusage[mem=14000]\"", # want 10Gb free on /tmp for the hash tie file
 			 -J => $job_name);
