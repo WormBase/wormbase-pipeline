@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl5.8.0 -w
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2012-01-20 21:59:46 $
+# Last edited on: $Date: 2012-01-26 09:49:25 $
 
 
 use lib $ENV{'CVS_DIR'};
@@ -263,9 +263,8 @@ if ( $process ) {
       }
 
       my $job_name = "BLAT_blat2ace_${species}_${qspecies}_${type}";
-      # ask for a file size limit of 2 Gb and a memory limit of 4 Gb
-      my @bsub_options = (-F => "2000000", 
-			  -M => "4000000", 
+      # ask for a memory limit of 4 Gb
+      my @bsub_options = (-M => "4000000", 
 			  -R => "\"select[mem>4000] rusage[mem=4000]\"",
 			  -J => $job_name, 
                           -o => "$lsfdir/$job_name.lsfout");

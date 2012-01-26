@@ -94,8 +94,7 @@ CHROMLOOP: foreach my $chrom ( @chromosomes ) {
 			  -J => $job_name);
 
       if (scalar(@chromosomes) < 50) {
-        push @bsub_options, (-F => "2000000", 
-                             -M => "3500000", 
+        push @bsub_options, (-M => "3500000", 
                              -R => "\"select[mem>3500] rusage[mem=3500]\"");
       }
 
@@ -120,11 +119,9 @@ CHROMLOOP: foreach my $chrom ( @chromosomes ) {
     last CHROMLOOP if scalar(@chromosomes) > 50;
   }
   else {
-    # for large chromosomes, ask for a file size limit of 2 Gb and a memory limit of 3.5 Gb
-    # See: http://scratchy.internal.sanger.ac.uk/wiki/index.php/Submitting_large_memory_jobs
+    # for large chromosomes, ask for a memory limit of 3.5 Gb
     my $job_name = "worm_".$wormbase->species."_gffbatch";
-    my @bsub_options = scalar(@chromosomes) < 50 ? (-F => "2000000", 
-						    -M => "3500000", 
+    my @bsub_options = scalar(@chromosomes) < 50 ? (-M => "3500000", 
 						    -R => "\"select[mem>3500] rusage[mem=3500]\"",
 						   ) : ();
     my $out = scalar(@chromosomes) < 50 
@@ -171,8 +168,7 @@ $lsf->clear;
 ##################################################################
 # now try re-runnning any commands that failed
 $lsf = LSF::JobManager->new();
-my @bsub_options = scalar(@chromosomes) < 50 ? (-F => "2000000", 
-						-M => "3500000", 
+my @bsub_options = scalar(@chromosomes) < 50 ? (-M => "3500000", 
 						-R => "\"select[mem>3500] rusage[mem=3500]\""
 					       ) : ();
 

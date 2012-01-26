@@ -64,8 +64,7 @@ my $m      = LSF::JobManager->new();
 
 # ask for a file size limit of 2 Gb and a memory limit of 4 Gb
 my $job_name = "worm_".$wormbase->species."_manager";
-my @bsub_options = (-F => "2000000",
-		    -M => "4000000",
+my @bsub_options = (-M => "4000000",
 		    -R => "\"select[mem>4000] rusage[mem=4000]\"",
 		    -J => $job_name);
 
