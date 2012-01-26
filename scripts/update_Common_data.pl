@@ -5,7 +5,7 @@
 # by Anthony Rogers et al
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2012-01-26 09:31:25 $
+# Last updated on: $Date: 2012-01-26 10:28:38 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -166,10 +166,16 @@ if ($all) {
     my $err = "$scratch_dir/update_Common_data.pl.lsf.${arg}.err";
     my $out = "$scratch_dir/update_Common_data.pl.lsf.${arg}.out";
     my @bsub_options = (-e => "$err", -o => "$out");
-    if ($arg eq 'clone2seq') {push @bsub_options, (
-						   -M => "3500000", 
-						   -R => "\"select[mem>3500] rusage[mem=3500]\"",
-						   -J => $job_name);}
+    if ($arg eq 'clone2seq' or
+        $arg eq 'est2feature' or
+        $arg eq 'gene_id' or 
+        $arg eq 'est' or
+        $arg eq 'cds2wormpep') {
+      push @bsub_options, (
+        -M => "3500000", 
+        -R => "\"select[mem>3500] rusage[mem=3500]\"",
+        -J => $job_name);
+    }
     my $cmd = "update_Common_data.pl -${arg}";
     if ($arg eq 'clone2seq') {
       if ($species eq 'elegans') {$cmd .= ' all'} # write out sequence hash for all species in main build
