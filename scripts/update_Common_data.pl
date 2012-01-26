@@ -4,8 +4,8 @@
 # 
 # by Anthony Rogers et al
 #
-# Last updated by: $Author: pad $
-# Last updated on: $Date: 2012-01-25 17:12:34 $
+# Last updated by: $Author: klh $
+# Last updated on: $Date: 2012-01-26 09:31:25 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -166,7 +166,7 @@ if ($all) {
     my $err = "$scratch_dir/update_Common_data.pl.lsf.${arg}.err";
     my $out = "$scratch_dir/update_Common_data.pl.lsf.${arg}.out";
     my @bsub_options = (-e => "$err", -o => "$out");
-    if ($arg eq 'clone2seq') {push @bsub_options, (-F => "3000000", 
+    if ($arg eq 'clone2seq') {push @bsub_options, (
 						   -M => "3500000", 
 						   -R => "\"select[mem>3500] rusage[mem=3500]\"",
 						   -J => $job_name);}
@@ -769,7 +769,6 @@ sub write_clones2seq  {
       my $out = "$scratch_dir/update_Common_data.pl.lsf.clone2seq.$clone2seq.out";
       my @bsub_options = (-e => "$err", 
 			  -o => "$out", 
-			  -F => "3000000", 
 			  -M => "3500000", 
 			  -R => "\"select[mem>3500] rusage[mem=3500]\"",
 			  -J => $job_name);
