@@ -5,7 +5,7 @@
 # by Anthony Rogers et al
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2012-01-26 10:53:37 $
+# Last updated on: $Date: 2012-01-26 11:04:13 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -190,7 +190,7 @@ if ($all) {
   my @problem_cmds;
   for my $job ( $lsf->jobs ) {
     if ($job->history->exit_status != 0) {
-      $log->write_to("Job $job (" . $job->history->command . ") exited non zero\n");
+      $log->error("Job $job (" . $job->history->command . ") exited non zero\n");
       push @problem_cmds, $job->history->command;
     }
   }
