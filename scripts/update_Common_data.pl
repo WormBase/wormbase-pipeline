@@ -5,7 +5,7 @@
 # by Anthony Rogers et al
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2012-01-26 10:28:38 $
+# Last updated on: $Date: 2012-01-26 10:53:37 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -246,7 +246,7 @@ sub write_cds2protein_id {
   ####################################################################
 
   my $command = "Table-maker -p $wquery_dir/$Table_defs{'cds2protein'}\nquit\n";
-  unless (-e $wquery_dir/$Table_defs{'cds2protein'}) {$log->write_to("Error:$wquery_dir/$Table_defs{'cds2protein'} does not exist, your common data will be incomplete\n");}
+
   open (TACE, "echo '$command' | $tace $ace_dir |");
   while (<TACE>) {
       chomp;
