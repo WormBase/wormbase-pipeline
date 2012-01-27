@@ -1604,7 +1604,7 @@ Remark "GeneFinder method"
 Method : "worm_EMBL-dump"
 Display	
 EMBL_feature	
-EMBL_dump_info	 ID_template "CE\%s"
+EMBL_dump_info	 ID_template "\%s"
 EMBL_dump_info	 ID_division "INV"
 EMBL_dump_info	 DE_format "Caenorhabditis elegans cosmid \%s"
 EMBL_dump_info	 OS_line "Caenorhabditis elegans"
@@ -1622,17 +1622,18 @@ EMBL_dump_info	 gene_from_name
 Method : "briggsae_EMBL-dump"
 Display
 EMBL_feature    
-EMBL_dump_info	 ID_template "CE\%s"
+EMBL_dump_info	 ID_template "\%s"
 EMBL_dump_info	 ID_division "INV"
 EMBL_dump_info	 DE_format "Caenorhabditis briggsae supercontig \%s"
 EMBL_dump_info	 OS_line "Caenorhabditis briggsae AF16"
 EMBL_dump_info	 OC_line "Eukaryota\; Metazoa\; Nematoda\; Chromadorea\; Rhabditida\; Rhabditoidea\;"
 EMBL_dump_info	 OC_line "Rhabditidae; Peloderinae; Caenorhabditis."
 EMBL_dump_info	 RL_submission "Submitted (DD-MMM-YYYY) to the INSDC."
-EMBL_dump_info   CC_line "Details of C.briggsae assembly version CB4:
+EMBL_dump_info   CC_line "Details of C.briggsae assembly version CB4:"
 EMBL_dump_info   CC_line "To improve upon the C. briggsae nuclear genome assembly CB3, 167 AF16/HK104 advanced-intercross recombinant inbred lines were successfully genotyped at 1,032 single nucleotide polymorphism (SNP) markers. The resulting data were used to estimate high-density genetic maps. Sequences were assembled by combining the physical and genetic positions of the SNPs to inform the process of ordering and orienting the cb25 supercontigs into chromosome assemblies."
 EMBL_dump_info   CC_line "37 of the cb25 fingerprint contigs were split into 100 supercontigs to resolve discrepancies between the physical and genetic orders of SNPs. 638 sequence supercontigs comprise the CB4 assembly."
 EMBL_dump_info   CC_line "The total nuclear genome content decreased from cb25 to cb4 because of the removal of three supercontigs containing mitochondrial genome sequence (totaling 20.1 kbp)."
+EMBL_dump_info   CC_line "Assembly_name: CB4\nAssembly_program: Phusion\nSeq_technoloy: capillary (whole-genome-shotgun)\nSeq_coverage: 10x"
 EMBL_dump_info   CC_line "Annotation details:"
 EMBL_dump_info	 CC_line "Coding seqences below are the result of integration and manual review of the following data : computer analysis using the programs Genefinder (version 980506\; P. Green, unpublished data), FGENESH (Salamov and Solovyev 2000), TWINSCAN (Korf et al. 2001), and the Ensembl annotation pipeline (Clamp et al. 2003)\; similarity to other proteins from BlastX analyses (http:\/\/blast.wustl.edu)\; sequence conservation with C. elegans using Jim Kent's WABA alignment program (Genome Research 10:1115-1125, 2000)\; individual C. briggsae GenBank submissions\; and personal communications with C. briggsae researchers. tRNAs are predicted using the program tRNAscan-SE (Lowe, T.M. and Eddy, S.R., 1997, Nucl. Acids. Res., 25, 955-964).
 EMBL_dump_info	 CC_line "For a graphical representation of this sequence and its analysis see:- http:"
