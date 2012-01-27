@@ -2,7 +2,7 @@
 #
 # EMBLdump.pl :  makes modified EMBL dumps from camace.
 # 
-#  Last updated on: $Date: 2012-01-04 11:03:54 $
+#  Last updated on: $Date: 2012-01-27 17:01:20 $
 #  Last updated by: $Author: klh $
 
 use strict;
@@ -17,6 +17,7 @@ $Text::Wrap::unexpand = 0;
 use lib $ENV{'CVS_DIR'};
 use Bio::SeqIO;
 use Wormbase;
+use Coords_converter;
 
 my %species_info = (
   genome_project_id => {
@@ -68,7 +69,7 @@ my ($test,
     $quicktest,
     $private,
     $keep_redundant,
-    %clone2type, %cds2cgc, %rnagenes, %clone2dbid, %pseudo2cgc, $multi_gene_loci,
+    %clone2type, %clone2acc, %cds2cgc, %rnagenes, %clone2dbid, %pseudo2cgc, $multi_gene_loci,
     $cds2proteinid_db, $cds2status_db, $cds2dbremark_db,
     $cds2status_h, $cds2proteinid_h,  $cds2dbremark_h
     );
@@ -202,7 +203,7 @@ if ($dump_modified) {
   while (<$raw_fh>) {
     
     # Store the necessary default ID line elements ready for use in the new style EMBL ID lines.
-    if(/^ID\s+CE(\S+)\s+\S+\s+\S+\s+\S+\s+(\d+)\s+\S+/){
+    if(/^ID\s+(\S+)\s+\S+\s+\S+\s+\S+\s+(\d+)\s+\S+/){
       ($clone, $seqlen) = ($1, $2);
       $idline_suffix = "SV XXX; linear; genomic DNA; STD; INV; $seqlen BP."; 
       
@@ -299,28 +300,32 @@ if ($dump_modified) {
         }
       }
 
+      my $ref_count = 1;
+
       my @refs = @{&get_references()};
       for(my $i=0; $i < @refs; $i++) {
-        printf $out_fh "RN   [%d]\n", $i+1;
+        printf $out_fh "RN   [%d]\n", $ref_count++;
         print $out_fh "RP   1-$seqlen\n";
         map { print $out_fh "$_\n" } @{$refs[$i]};
         print $out_fh "XX\n";
       }
       
-      printf $out_fh "RN   [%d]\n", scalar(@refs) + 1;
-      printf $out_fh "RP   1-%d\n", $seqlen;
-      print $out_fh "RG   WormBase Consortium\n";
-      if (defined $primary_RA) {
-        print $out_fh $primary_RA;
-      } else {
-        print $out_fh "RA   ;\n";
+      if ($species eq 'elegans') {
+        printf $out_fh "RN   [%d]\n", $ref_count;
+        printf $out_fh "RP   1-%d\n", $seqlen;
+        print $out_fh "RG   WormBase Consortium\n";
+        if (defined $primary_RA) {
+          print $out_fh $primary_RA;
+        } else {
+          print $out_fh "RA   ;\n";
+        }
+        print $out_fh "RT   ;\n";
+        print $out_fh $primary_RL if defined $primary_RL;
+        print $out_fh "RL   Nematode Sequencing Project: Sanger Institute, Hinxton, Cambridge\n";
+        print $out_fh "RL   CB10 1SA, UK and The Genome Institute at Washington University,\n"; 
+        print $out_fh "RL   St. Louis, MO 63110, USA. E-mail: help\@wormbase.org\n";
+        print $out_fh "XX\n";
       }
-      print $out_fh "RT   ;\n";
-      print $out_fh $primary_RL if defined $primary_RL;
-      print $out_fh "RL   Nematode Sequencing Project: Sanger Institute, Hinxton, Cambridge\n";
-      print $out_fh "RL   CB10 1SA, UK and The Genome Institute at Washington University,\n"; 
-      print $out_fh "RL   St. Louis, MO 63110, USA. E-mail: help\@wormbase.org\n";
-      print $out_fh "XX\n";
       next;
     }
     
@@ -331,10 +336,12 @@ if ($dump_modified) {
       while(<$raw_fh>) {
         last if /^XX/;
         
-        print $out_fh "CC   For a graphical representation of this sequence and its analysis\n";
-        print $out_fh "CC   see:- http://www.wormbase.org/perl/ace/elegans/seq/sequence?\n";
-        print $out_fh "CC   name=$clone;class=Sequence\n";
-        print $out_fh "XX\n";
+        if ($species eq 'elegans') {
+          print $out_fh "CC   For a graphical representation of this sequence and its analysis\n";
+          print $out_fh "CC   see:- http://www.wormbase.org/perl/ace/elegans/seq/sequence?\n";
+          print $out_fh "CC   name=$clone;class=Sequence\n";
+          print $out_fh "XX\n";
+        }
       }
       next;
     }
@@ -425,6 +432,9 @@ sub process_feature_table {
           printf $out_fh "FT   %16s%s\n", " ", $ln;
         }
       }
+      if ($species eq 'briggsae') {
+        printf $out_fh "FT   %16s/note=\"%s\"\n", " ", $clone;
+      }
       next;
     } elsif ($feat->{ftype} =~ /RNA$/) {
       #
@@ -474,12 +484,16 @@ sub process_feature_table {
     } elsif ($feat->{ftype} =~ /Pseudogene/) {
       my $new_dv = "CDS";
 
-      # hack: all Pseudogenes with .t\d+ suffices are
-      # tRNA pseudogenes.
-      foreach my $tg (@{$feat->{quals}}) {
-        if ($tg->[0] =~ /\/gene=\"\S+\.t\d+\"/) {
-          $new_dv = "tRNA";
-        } 
+      # hacks: (1) in C.elegans, all Pseudogenes with .t\d+ suffices are
+      # tRNA pseudogenes; (2) in C. briggse, all Pseudogenes are tRNA pseudos
+      if ($species eq 'briggsae') {
+        $new_dv = "tRNA";
+      } elsif ($species eq 'elegans') {
+        foreach my $tg (@{$feat->{quals}}) {
+          if ($tg->[0] =~ /\/gene=\"\S+\.t\d+\"/) {
+            $new_dv = "tRNA";
+          } 
+        }
       }
 
       $feat->{ftype} = $new_dv;
@@ -723,11 +737,11 @@ sub process_feature_table {
 sub get_locs_for_multi_span_objects {
   my $file = shift;
 
-  my ($clone, $acc, $type, $loc, $obj_name, %locs, %best_obj_locs, %refers_to);
+  my ($clone, $acc, $type, $loc, $obj_name, %locs, %best_obj_locs);
 
   open(my $fh, $file) or $log->log_and_die("Could not open $file for reading\n");
   while(<$fh>) {
-    /^ID\s+CE(\S+)/ and do {
+    /^ID\s+(\S+)/ and do {
       $clone = $1;
       $acc = "";
       next;
@@ -791,51 +805,142 @@ sub get_locs_for_multi_span_objects {
 
     foreach my $loc (@best_locs) {    
       my $clone = $loc->{clone};
-      my $acc = $loc->{acc};
-
       $best_obj_locs{$obj_name}->{$clone} = 1;
-      foreach my $oacc (keys %{$loc->{foreign_extents}}) {
-        $refers_to{$acc}->{$oacc} = 1;
-      }
-    }
-  }
-
-  # traverse refers_to structure looking for circular references
-  my %circular;
-  my @fringe = keys %refers_to;
-  foreach my $acc (@fringe) {
-    my %fringe = ($acc => 1);
-    my %seen;
-    LOOP: while(keys %fringe) {
-      my @acc_list = sort keys %fringe;
-      my $this_acc = $acc_list[0];
-      delete $fringe{$this_acc};
-
-      if (not exists $seen{$this_acc} and exists $refers_to{$this_acc}) {
-        foreach my $oac (keys %{$refers_to{$this_acc}}) {
-          if ($oac eq $acc) {
-            # circular reference 
-            $circular{$acc} = 1;
-            last LOOP;
-          } else {
-            $fringe{$oac} = 1;
-          }
-        }
-      }
-      $seen{$this_acc} = 1;
-    }    
-  }
-
-  
-  foreach my $acc (keys %circular) {
-    if ($debug) {
-      $log->write_to("Circular reference: $acc\n");
     }
   }
 
   return \%best_obj_locs;
 }
   
+
+##################################
+# read_gff_annotation
+#
+# This method scans the GFF files for CDS features
+# spanning clones in different orientations. AceDB
+# will not include these in the dumps, so we need
+# to add them in by hand (which of course begs the
+# the question of why we need Acedb at all for the
+# EMBL dumping...)
+##################################
+sub read_gff_annotation {
+  my @types = ('curated');
+
+  my (%additional_feats_by_clone);
+
+  my $cc = Coords_converter->invoke($wormbase->autoace, 0, $wormbase);
+
+  foreach my $chr ($wormbase->get_chromosome_names(-prefix => 1)) {
+    my $gff_fh = $wormbase->open_GFF_file($chr, "curated", $log);
+      
+    my %trans;
+
+    while(<$gff_fh>) {
+      next if (/^\#/);
+      my @data = split(/\t+/, $_);
+      
+      if ($data[2] eq 'exon') {
+        my ($class, $obj_name) = ($data[8] =~ /(\S+)\s+\"(\S+)\"/);
+
+        push @{$trans{$obj_name}->{exons}}, [$data[3], $data[4]];
+        $trans{$obj_name}->{chr} = $chr;
+        $trans{$obj_name}->{strand} = $data[6];
+
+        $trans{$obj_name}->{start} = $data[3]
+            if not exists $trans{$obj_name}->{start} or $trans{$obj_name}->{start} > $data[3];
+        
+        $trans{$obj_name}->{end} = $data[4]
+            if not exists $trans{$obj_name}->{end} or $trans{$obj_name}->{end} < $data[4];
+        
+      }      
+    }
+
+    CDS: foreach my $cds (keys %trans) {
+      my ($seq) = $cc->LocateSpan($trans{$cds}->{chr},
+                                  $trans{$cds}->{start},
+                                  $trans{$cds}->{end});
+      
+      if (not $cc->isa_clone($seq)) {
+        # this CDS crosses boundaries, do break it down to constituent exons
+        my (@exons, @mapped_exons, %strands);
+
+        @exons = @{$trans{$cds}->{exons}};
+        if ($trans{$cds}->{strand} eq '+') {
+          @exons = sort { $a->[0] <=> $b->[0] } @exons;
+        } else {
+          @exons = sort { $b->[0] <=> $a->[0] } @exons;
+        }
+
+        foreach my $ex (@exons) {
+          my ($ex_seq, $ex_st, $ex_en) = $cc->LocateSpan($trans{$cds}->{chr},
+                                                         @$ex);
+          if ($ex_en > $ex_st) {
+            push @mapped_exons, {
+              clone => $ex_seq,
+              start => $ex_st,
+              end   => $ex_en,
+              strand => 1,
+            }; 
+          } else {
+            push @mapped_exons, {
+              clone => $ex_seq,
+              start => $ex_en,
+              end   => $ex_st,
+              strand => -1,
+            }; 
+          }
+          
+          if (not $cc->isa_clone($ex_seq)) {
+            # This gene has an exon crossing a supercontig boundary. Complicated. Messy. Ignore
+            $log->write_to("Gene $cds has an exon crossing a supercontig boundary; ignoring it\n");
+            next CDS;
+          }
+        }
+
+        map { $strands{$_->{strand}} = 1 } @mapped_exons;
+        
+        if (scalar(keys %strands) > 1) {
+          # this gene spans across neighbouring sctgs that are in different orientations. 
+          # Acedb does (not) currently include these in the raw dump, so we will have to
+          # insert them ourselves. 
+          my $parent_clone = $mapped_exons[0]->{clone};
+
+          my @join_els; 
+          foreach my $ex (@mapped_exons) {
+            if ($ex->{strand} < 0) {
+              if ($ex->{clone} eq $parent_clone) {
+                push @join_els, sprintf("complement(%d..%d)", $ex->{start}, $ex->{end});
+              } else {
+                push @join_els, sprintf("complement(%s:%d..%d)", $clone2acc{$ex->{clone}}, $ex->{start}, $ex->{end});
+              }
+            } else {
+              if ($ex->{clone} eq $parent_clone) {
+                push @join_els, sprintf("%d..%d", $ex->{start}, $ex->{end});
+              } else {
+                push @join_els, sprintf("%s:%d..%d", $ex->{clone}, $ex->{start}, $ex->{end});
+              }
+            }
+          }
+          my $join_str = sprintf("join(%s)", join(", ", @join_els));
+          my @loc_lines =split(/\n/, wrap('','',$join_str));
+          map { s/\s+//g } @loc_lines;
+
+          my $feat = {
+            location => \@loc_lines,
+            ftype    => 'CDS',
+            quals    => [["/standard_name=\"$cds\""]],
+            clone    => $parent_clone,            
+          };
+
+          push @{$additional_feats_by_clone{$parent_clone}}, $feat;
+        }
+      }
+    }
+  }
+
+  return \%additional_feats_by_clone;
+}
+
 
 ##########################
 sub parse_location {
@@ -915,6 +1020,13 @@ sub get_references {
     ],
     
     briggsae => [
+      ["RG   WormBase Consortium",
+       "RA   Howe K.L.;",
+       "RT   ;",
+       "RL   Submitted (03-OCT-2011) to the INSDC.",
+       "RL   WormBase group, European Bioinformatics Institute,",
+       "RL   Cambridge, CB10 1SA, UNITED KINGDOM.",
+       ],
       [
        "RX   PUBMED; 14624247.",
        "RA   Stein L.D., Bao Z., Blasiar D., Blumenthal T., Brent M.R., Chen N.,",
@@ -953,22 +1065,29 @@ sub fetch_cds2status {
     return \%cds2status;
   }
 
-  $log->write_to("You are using $ref_db to get CDS status\n\n");
-    
-  my $query = &get_status_query();
-  my $command = "Table-maker -p $query\nquit\n";
-  
-  open (TACE, "echo '$command' | $tace $ref_db |");
-  while (<TACE>) {
-    chomp;
-    s/\"//g;
-    next unless (/^([A-Z,0-9,.]+?\w)\s+(\w+)/) ;
-    my ($cds, $status) = ($1, $2);
-    $cds2status{$cds} = $status;
-  }
-  close TACE;
+  if (-d $ref_db) {
 
-  unlink $query;
+    $log->write_to("You are using $ref_db to get CDS status\n\n");
+    
+    my $query = &get_status_query();
+    my $command = "Table-maker -p $query\nquit\n";
+    
+    open (TACE, "echo '$command' | $tace $ref_db |");
+    while (<TACE>) {
+      chomp;
+      s/\"//g;
+      next unless (/^([A-Z,0-9,.]+?\w)\s+(\w+)/) ;
+      my ($cds, $status) = ($1, $2);
+      $cds2status{$cds} = $status;
+    }
+    close TACE;
+
+    unlink $query;
+  } elsif (lc($ref_db) eq 'none') {
+    $log->write_to("You have specifed 'none' for the cds2status db, so will not be added\n");
+  } else {
+    $log->log_and_die("Could not find cds2status database '$ref_db'");
+  }
 
   return \%cds2status;
 }
@@ -983,23 +1102,29 @@ sub fetch_cds2proteinid {
     return \%cds2proteinid;
   }
 
-  $log->write_to("You are using $ref_db to get CDS protein_id\n\n");
-
-  my $query = &get_protein_id_query();
-  my $command = "Table-maker -p $query\nquit\n";
-  open(TACE, "echo '$command' | $tace $ref_db |");
-  while(<TACE>) {
-    chomp;
+  if (-d $ref_db) {
+    $log->write_to("You are using $ref_db to get CDS protein_id\n\n");
+    
+    my $query = &get_protein_id_query();
+    my $command = "Table-maker -p $query\nquit\n";
+    open(TACE, "echo '$command' | $tace $ref_db |");
+    while(<TACE>) {
+      chomp;
     s/\"//g;
-    if (/^(\S+)\s+(\S+)\s+(\S+)\s+(\d+)$/) {
-      my ($cds, $clone, $protein_id, $version) = ($1, $2, $3, $4);
-      $cds2proteinid{$cds}->{$clone} = "${protein_id}.${version}";
-    }   
+      if (/^(\S+)\s+(\S+)\s+(\S+)\s+(\d+)$/) {
+        my ($cds, $clone, $protein_id, $version) = ($1, $2, $3, $4);
+        $cds2proteinid{$cds}->{$clone} = "${protein_id}.${version}";
+      }   
+    }
+    close(TACE);
+    
+    unlink $query;
+  } elsif (lc($ref_db) eq 'none') {
+    $log->write_to("You have specifed 'none' for the cds2protein_id db, so will not be added\n");
+  } else {
+    $log->log_and_die("Could not find cds2protein_id database '$ref_db'");
   }
-  close(TACE);
 
-  unlink $query;
-  
   return \%cds2proteinid;
 
 }
@@ -1014,26 +1139,32 @@ sub fetch_cds2dbremark {
     return \%cds2dbremark;
   }
 
-  $log->write_to("You are using $ref_db to get CDS/RNA db_remarks\n\n");
-
-  my @qfiles;
-  foreach my $class ("CDS", "RNA") {
-    my $query = &get_db_remark_query($class);
-    push @qfiles, $query;
-    my $command = "Table-maker -p $query\nquit\n";
-    open(TACE, "echo '$command' | $tace $ref_db |");
-    while(<TACE>) {
-      chomp;
-      if (/^\"(\S+)\"\s+\"(.+)\"$/) {
-        my ($obj, $dbremark) = ($1, $2);
-        $dbremark =~ s/\\//g;
-        
-        $cds2dbremark{$obj} = $dbremark;
+  if (-d $ref_db) {
+    $log->write_to("You are using $ref_db to get CDS/RNA db_remarks\n\n");
+    
+    my @qfiles;
+    foreach my $class ("CDS", "RNA") {
+      my $query = &get_db_remark_query($class);
+      push @qfiles, $query;
+      my $command = "Table-maker -p $query\nquit\n";
+      open(TACE, "echo '$command' | $tace $ref_db |");
+      while(<TACE>) {
+        chomp;
+        if (/^\"(\S+)\"\s+\"(.+)\"$/) {
+          my ($obj, $dbremark) = ($1, $2);
+          $dbremark =~ s/\\//g;
+          
+          $cds2dbremark{$obj} = $dbremark;
+        }
       }
     }
+    
+    unlink @qfiles;
+  } elsif (lc($ref_db) eq 'none') {
+    $log->write_to("You have specifed 'none' for the cds2dbremark db, so will not be added\n");
+  } else {
+    $log->log_and_die("Could not find cds2dbremark database '$ref_db'");
   }
-  
-  unlink @qfiles;
 
   return \%cds2dbremark;
 
