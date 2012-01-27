@@ -434,7 +434,7 @@ lines => ['^WB\tWBGene\d+\t\S+\t\tGO\:\d+'],
 
 $wormbase->check_file("$output.cjp", $log,
 minsize =>  1600000,
-maxsize =>  8000000,
+maxsize =>  12000000,
 lines => ['^WB\tWBGene\d+\t\S+\t\tGO\:\d+'],
 );
 
