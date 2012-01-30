@@ -6,7 +6,7 @@
 # builds wormbase & wormpep FTP sites
 # 
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2012-01-24 09:35:05 $
+# Last updated on: $Date: 2012-01-30 14:35:06 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -83,7 +83,7 @@ use Bio::SeqIO;
 
 my ($help, $debug, $test, $testout, $verbose, $store, $wormbase);
 
-my $release; # only copy across release files
+my $acedb;   # only copy across acedb files
 my $chroms;  # only copy across chromosome files
 my $ont;     # only copy across ontology files
 my $misc;    # only copy misc files
@@ -103,6 +103,7 @@ my $gbrowse_gff;
 my $blastx;
 my $dump_ko;
 my $md5;
+my $go_public;
 my $supplementary;
 my $compara;
 my (%skip_species, @skip_species, @only_species, %only_species);
@@ -113,8 +114,8 @@ GetOptions ("help"          => \$help,
             "testout=s"     => \$testout, # Copies real data to test location
 	    "verbose"       => \$verbose,
 	    "store:s"       => \$store,
-	    "release"       => \$release,
-            "blastx"         => \$blastx,
+	    "acedb"         => \$acedb,
+            "blastx"        => \$blastx,
 	    "compara"       => \$compara,
 	    "dna"           => \$dna,
 	    "rna"           => \$rna,
@@ -133,6 +134,7 @@ GetOptions ("help"          => \$help,
             "knockout"      => \$dump_ko,
 	    "manifest"      => \$manifest,
             "md5"            => \$md5,
+            "public"         => \$go_public,
             "skipspecies=s@" => \@skip_species,
             "onlyspecies=s@" => \@only_species,
 	    "all"            => \$all);
@@ -155,9 +157,7 @@ map { $skip_species{$_} = 1 } @skip_species;
 map { $only_species{$_} = 1 } @only_species;
 
 # using -all option?
-#($clustal=$release=$dump_ko=$dna=$gff=$supplementary=$rna=$misc=$wormpep=$genes=$cDNA=$geneIDs=$pcr=$homols=$manifest=$ont = 1 ) if ($all);
-# remove supplementary from above list, now off by default
-($compara=$release=$dna=$gff=$rna=$misc=$wormpep=$genes=$cDNA=$ests=$geneIDs=$pcr=$homols=$manifest=$ont=$blastx=$dump_ko=$gbrowse_gff=$md5=1 ) if ($all);
+($compara=$acedb=$dna=$gff=$rna=$misc=$wormpep=$genes=$cDNA=$ests=$geneIDs=$pcr=$homols=$manifest=$ont=$blastx=$dump_ko=$gbrowse_gff=$md5=$go_public=1 ) if ($all);
 
 my $WS              = $wormbase->get_wormbase_version();      # e.g.   132
 my $WS_name         = $wormbase->get_wormbase_version_name(); # e.g. WS132
@@ -165,7 +165,7 @@ my $maintainers     = "All";
 
 my $targetdir = ($testout) 
     ? "$testout/releases/$WS_name"
-    : $wormbase->ftp_site . "/releases/$WS_name";
+    : $wormbase->ftp_site . "/staging/releases/$WS_name";
 
 $log->write_to("WRITING TO $targetdir\n");
 
@@ -184,7 +184,7 @@ open (FTP_LOCK,">$lockfile") or $log->log_and_die("cant write lockfile $!\n");
 print FTP_LOCK "If this file exists something has failed in make_ftp_site.pl\n DO NOT continue until you know what happend and have fixed it\n\n";
 close FTP_LOCK;
 
-&copy_release_files if ($release);    # make a new directory for the WS release and copy across release files
+&copy_acedb_files if ($acedb);    # make a new directory for the WS release and copy across release files
 
 &copy_blastx if ($blastx);
 
@@ -224,7 +224,13 @@ close FTP_LOCK;
 
 &make_md5sums if ($md5);              # creates a file of md5sums for containing entries for all files in release
 
-&make_frozen_links;                   # creates a frozen symbolic link if it is a 5 or 0 release
+if ($go_public) {
+  if ($testout) {
+    $log->write_to("You cannot go public having written to a test location; you must do it manually\n");
+  } else {
+    &go_public();             # moves release folder from staging to final resting place
+  }
+}
 
 
 
@@ -251,11 +257,11 @@ exit (0);
 
 
 ##########################################################
-# copy the WS release files across and check on the size
+# copy the WS acedb files across and check on the size
 # The FTP disk tends to be unstable
 ##########################################################
 
-sub copy_release_files{
+sub copy_acedb_files{
   my $runtime = $wormbase->runtime;
   $log->write_to("$runtime: copying release files\n");
 
@@ -1256,10 +1262,16 @@ sub make_md5sums {
 }
 
 ##################################################################################
-sub make_frozen_links {
-  my $lnpath = $wormbase->ftp_site;
+sub go_public {
+  my $base_path = $wormbase->ftp_site;
+  my $staging_path = "$base_path/staging/releases/$WS_name";
+  my $final_path   = "$base_path/releases/$WS_name";
+  my $frozen_path = "$base_path/releases/FROZEN_RELEASES/$WS_name";
+
+  $wormbase->run_command("mv $staging_path $final_path", $log);
+
   if ($WS =~ /\d+5$/ || $WS =~ /\d+0$/) {
-    $wormbase->run_command("ln -sf $lnpath/releases/$WS_name $lnpath/releases/FROZEN_RELEASES/$WS_name", $log);
+    $wormbase->run_command("ln -sf $final_path $frozen_path", $log);
   }
 }
 
