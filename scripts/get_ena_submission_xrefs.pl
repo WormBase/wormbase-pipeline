@@ -43,7 +43,7 @@ my %accession2clone   = $wb->FetchData('accession2clone');
 my ($ggenus, $gspecies) = $wb->full_name =~ /^(\S+)\s+(\S+)/;
 
 $ncbi_tax_id = $wb->ncbi_tax_id;
-$acefile = $wb->acefiles . "/cds_embl_data.ace" if not defined $acefile;
+$acefile = $wb->acefiles . "/EBI_xrefs.ace" if not defined $acefile;
 
 if (not defined $table_file) {
   $table_file = $wb->acefiles . "/EBI_protein_ids.txt";
