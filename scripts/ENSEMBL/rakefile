@@ -69,7 +69,7 @@ task :build_homology  do
   # the -mlss_id value is the number of species we are comparing
 ##  sh "#{perl} /software/worm/ensembl/ensembl-hive/scripts/init_pipeline.pl Bio::EnsEMBL::Compara::PipeConfig::WormProteinTrees_conf -password #{db['password']} -mlss_id 11 -species_tree_input_file /software/worm/ensembl/compara-conf/pt_species_tree.txt"
 #  sh "#{perl} /software/worm/ensembl/ensembl-hive/scripts/init_pipeline.pl Bio::EnsEMBL::Compara::PipeConfig::WormProteinTrees_conf -password #{db['password']} -mlss_id 12 -species_tree_input_file /software/worm/ensembl/compara-conf/njtree.12.worm_compara_test_orthotree.nh"
-  sh "#{perl} /software/worm/ensembl/ensembl-hive/scripts/init_pipeline.pl Bio::EnsEMBL::Compara::PipeConfig::WormProteinTrees_conf -password #{db['password']} -mlss_id 175 -species_tree_input_file /software/worm/ensembl/compara-conf/njtree.12.worm_compara_test_orthotree.nh"
+  sh "#{perl} /software/worm/ensembl/ensembl-hive/scripts/init_pipeline.pl Bio::EnsEMBL::Compara::PipeConfig::WormProteinTrees_conf -password #{db['password']} -mlss_id 296 -species_tree_input_file /software/worm/ensembl/compara-conf/njtree.12.worm_compara_test_orthotree.nh"
 
 
 
@@ -135,7 +135,7 @@ task :dump_gerp =>[:env_setup] do
        db=yml['elegans']['database'] # that one is technically not cool
 
        sh "mysql -h #{db['host']} -P#{db['port']} -u #{db['user']} -p#{db['password']} worm_compara_pecan -e 'INSERT IGNORE INTO meta (meta_key,meta_value) VALUES (\"max_align_2\",(SELECT MAX(dnafrag_end-dnafrag_start) FROM genomic_align));'"
-	['elegans','briggsae','brenneri','remanei','japonica','pristionchus','brugia','Mhapla','Mincognita','Hcontortus','cangaria','tspiralis'].each{|species|
+	['elegans','briggsae','brenneri','remanei','japonica','pristionchus','brugia','mhapla','mincognita','hcontortus','cangaria','tspiralis'].each{|species|
 
 	  spec_dir= "#{tmp_place}/compara/#{species}"
 	  FileUtils.mkdir_p(spec_dir)
