@@ -4,8 +4,8 @@
 #
 # by Keith Bradnam
 #
-# Last updated on: $Date: 2011-12-21 16:11:01 $
-# Last updated by: $Author: pad $
+# Last updated on: $Date: 2012-01-30 10:29:40 $
+# Last updated by: $Author: gw3 $
 #
 # see pod documentation at end of file for more information about this script
 
@@ -124,7 +124,7 @@ sub main_gene_checks {
     my $i;
     my $j;
 
-    if (!defined($method_test)) {print "$gene_model\n";}
+    if (!defined($method_test)) {next;} # ignore the xref objects from WASHU's side of the genome;
   
     # check for duplicated sequence names
     if (exists $sequence_names{$gene_model->name}) {
@@ -316,26 +316,30 @@ sub main_gene_checks {
       # feed DNA sequence to function for checking
       &test_gene_sequence_for_errors($gene_model,$start_tag,$end_tag,$dna,$method_test);
     }
+  }
 
-    # now check that the isoform names are consistent
-    foreach my $sequence_name (keys %sequence_names) {
-      # don't want to look at history objects
-      if ($sequence_names{$sequence_name} =~ /history/) {next}
-
-      # does the isoform have multiple letters in
-      if ($sequence_name =~ /\w+\.\d+([a-z]{2,})$/) {
-	push(@error1, "ERROR: The sequence_name '$sequence_name' is invalid! Multiple letters in the isoform name.\n")
-      }
-      # if it is an isoform name, check for non-isoforms 
-      elsif ($sequence_name =~ /(\w+\.\d+)[a-z]$/) {
-	my $base = $1;
-	if (exists $sequence_names{$base}) {
-	  if ($sequence_names{$base} eq 'miRNA_primary_transcript' && $sequence_names{"${base}a"} eq 'miRNA') {
-	    next
-	  } 
-	  # ignore the primary and mature miRNA forms
-	  push(@error1, "ERROR: The $sequence_names{$base} sequence '$base' and the $sequence_names{$sequence_name} sequence '$sequence_name' both exist!\n")
-	}
+  # now check that the isoform names are consistent
+  foreach my $sequence_name (keys %sequence_names) {
+    if (! defined $sequence_names{$sequence_name}) {
+      #push(@error1, "ERROR: The $sequence_classes{$sequence_name} '$sequence_name' has no Method\n");
+      next;
+    }
+    # don't want to look at history objects
+    if ($sequence_names{$sequence_name} =~ /history/) {next}
+    
+    # does the isoform have multiple letters in
+    if ($sequence_name =~ /\w+\.\d+([a-z]{2,})$/) {
+      push(@error1, "ERROR: The sequence_name '$sequence_name' is invalid! Multiple letters in the isoform name.\n")
+    }
+    # if it is an isoform name, check for non-isoforms 
+    elsif ($sequence_name =~ /(\w+\.\d+)[a-z]$/) {
+      my $base = $1;
+      if (exists $sequence_names{$base}) {
+	if ($sequence_names{$base} eq 'miRNA_primary_transcript' && $sequence_names{"${base}a"} eq 'miRNA') {
+	  next
+	} 
+	# ignore the primary and mature miRNA forms
+	push(@error1, "ERROR: The $sequence_names{$base} sequence '$base' and the $sequence_names{$sequence_name} sequence '$sequence_name' both exist!\n")
       }
     }
   }
