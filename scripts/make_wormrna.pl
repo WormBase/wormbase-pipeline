@@ -7,7 +7,7 @@
 # Builds a wormrna data set from the current autoace database
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2012-01-18 11:51:40 $
+# Last updated on: $Date: 2012-01-30 11:04:39 $
 
 
 #################################################################################
@@ -78,7 +78,10 @@ $ENV{'ACEDB'} = $dbdir;
 my $db = Ace->connect (-path => $dbdir, -program => $tace) || $log->log_and_die("Couldn't connect to $dbdir\n");
 
 # Get RNA genes, but not other Transcript objects
-my $query = "FIND Transcript WHERE Method != Coding_transcript AND Method != history_transcript AND Species = \"".$wormbase->full_name."\"";
+my $query = "FIND Transcript WHERE Method != Coding_transcript"
+    . " AND Method != history_transcript"
+    . " AND Method != Pseudogene"
+    . " AND Species = \"".$wormbase->full_name."\"";
 $log->write_to("$query\n");
 my @transcripts = $db->fetch (-query => $query);
 
