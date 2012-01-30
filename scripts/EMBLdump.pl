@@ -2,7 +2,7 @@
 #
 # EMBLdump.pl :  makes modified EMBL dumps from camace.
 # 
-#  Last updated on: $Date: 2012-01-27 17:01:20 $
+#  Last updated on: $Date: 2012-01-30 10:32:04 $
 #  Last updated by: $Author: klh $
 
 use strict;
@@ -482,18 +482,19 @@ sub process_feature_table {
       }
       $feat->{ftype} = $mod_dir;
     } elsif ($feat->{ftype} =~ /Pseudogene/) {
+      # skip psudogenes for now; currently in briggsae, the only pseudogenes
+      # are tRNAs, but we cannot assume this; therefore no way of determining
+      # reliably what sort of psseudogene we are looking at
+      next if $species eq 'briggsae';
+        
       my $new_dv = "CDS";
 
-      # hacks: (1) in C.elegans, all Pseudogenes with .t\d+ suffices are
-      # tRNA pseudogenes; (2) in C. briggse, all Pseudogenes are tRNA pseudos
-      if ($species eq 'briggsae') {
-        $new_dv = "tRNA";
-      } elsif ($species eq 'elegans') {
-        foreach my $tg (@{$feat->{quals}}) {
-          if ($tg->[0] =~ /\/gene=\"\S+\.t\d+\"/) {
-            $new_dv = "tRNA";
-          } 
-        }
+      # hack: in C.elegans, all Pseudogenes with .t\d+ suffices are
+      # tRNA pseudogenes; 
+      foreach my $tg (@{$feat->{quals}}) {
+        if ($tg->[0] =~ /\/gene=\"\S+\.t\d+\"/) {
+          $new_dv = "tRNA";
+        } 
       }
 
       $feat->{ftype} = $new_dv;
