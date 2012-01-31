@@ -6,7 +6,7 @@
 # builds wormbase & wormpep FTP sites
 # 
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2012-01-30 14:35:06 $
+# Last updated on: $Date: 2012-01-31 09:45:03 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -365,7 +365,7 @@ sub copy_dna_files{
 	
         foreach my $f ($dna_file, $masked_file, $soft_file) {
           if (not -e $f or not -s $f) {
-            $log->error("Could not find DNA file for $gspecies ($f)\n");
+            $log->error("ERROR: Could not find DNA file for $gspecies ($f)\n");
           }
         }
 	
@@ -408,7 +408,7 @@ sub copy_dna_files{
 	      $wormbase->run_command("gunzip -c $source >> $dna_dir/${gspecies}.${WS_name}.${tgt_type}.fa", $log);
               $copied_files{$source} = 1;
 	    } else {
-              $log->error("$gspecies : missing file: $chrom_file${src_type}.dna\n");
+              $log->error("ERROR: $gspecies : missing file: $chrom_file${src_type}.dna\n");
             }
 	  }
           
@@ -417,7 +417,7 @@ sub copy_dna_files{
 	}
 	
       } else {
-        $log->error("$gspecies : unknown assembly_type\n");
+        $log->error("ERROR: $gspecies : unknown assembly_type\n");
       }
       
       # copy over outstanding dna files
@@ -447,7 +447,7 @@ sub copy_dna_files{
             if (-e "$chromdir/$chrom.agp") {
               $wormbase->run_command("cat $agp >> $target_agp_file", $log);
             } else {
-              $log->error("$gspecies : missing file: $chromdir/$chrom.agp\n");
+              $log->error("ERROR: $gspecies : missing file: $chromdir/$chrom.agp\n");
             }
           }
           $wormbase->run_command("gzip -9 -f $target_agp_file", $log);
@@ -490,7 +490,7 @@ sub copy_gff_files{
         if (-e "$chromdir/$species.gff") { # tierII does it this way
           $wormbase->run_command("cp -f -R $chromdir/$species.gff $gff_dir/$whole_filename", $log);
         } else { 
-          $log->error("$chromdir/$species.gff missing\n");
+          $log->error("ERROR: $chromdir/$species.gff missing\n");
         }
       } else {
         $wormbase->run_command("cat $chromdir/*.gff* > $gff_dir/$whole_filename", $log);
@@ -517,7 +517,7 @@ sub copy_gff_files{
           if(-e $file){
             $wb->run_command("zcat $file >> $gff_dir/$whole_filename", $log);
           } else { 
-            $log->error("$file missing\n");
+            $log->error("ERROR: $file missing\n");
           }
 	}
       } else { 
@@ -548,7 +548,7 @@ sub copy_gff_files{
       $wb->run_command("cp -f $source $target", $log);
       $wb->run_command("gzip -9 -f $target",$log);
     } else {
-      $log->error("No GFF3 data found for species $species\n");
+      $log->error("ERROR: No GFF3 data found for species $species\n");
     }
 
   }
@@ -817,7 +817,7 @@ sub copy_wormpep_files {
 
       $wb->run_command("gzip -9 -c $source_pepfile > $target_pepfile", $log);
     } else {
-      $log->error("Could not find peptide file for $gspecies ($source_pepfile)\n");
+      $log->error("ERROR: Could not find peptide file for $gspecies ($source_pepfile)\n");
     }
 
     if (-e $source_cdnafile) {
@@ -837,7 +837,7 @@ sub copy_wormpep_files {
       }
       close($target_cdna_fh) or $log->log_and_die("Could not successfully close $target_cdnafile\n");
     } else {
-      $log->error("Could not find transcript file for $gspecies ($source_cdnafile)\n");
+      $log->error("ERROR: Could not find transcript file for $gspecies ($source_cdnafile)\n");
     }
   }
 
@@ -1219,7 +1219,7 @@ sub make_gbrowse_gff {
     my $in_filename = "$tgt_dir/$gspecies.$WS_name.annotations.gff2.gz"; 
 
     if (not -e $in_filename) {
-      $log->error("Could not make GBrowse-ready GFF for $species; in file $in_filename not found\n");
+      $log->error("ERROR: Could not make GBrowse-ready GFF for $species; in file $in_filename not found\n");
       next;
     }
 
@@ -1282,7 +1282,7 @@ sub CheckSize {
   my $F_SIZE = (stat("$first"))[7];
   my $S_SIZE = (stat("$second"))[7];
   if ($F_SIZE != $S_SIZE) {
-    $log->error("\tERROR: $first SRC: $F_SIZE TGT: $S_SIZE - not same size, please check\n");
+    $log->error("ERROR: $first SRC: $F_SIZE TGT: $S_SIZE - not same size, please check\n");
   } 
 }
 
