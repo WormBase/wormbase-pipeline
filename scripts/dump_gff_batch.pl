@@ -7,7 +7,7 @@ use strict;
 use Log_files;
 use Storable;
 
-my ($debug, $test, $database,$species, $verbose);
+my ($debug, $test, $database,$species, $verbose, $giface, $gff3);
 
 my $dump_dir;
 my $dumpGFFscript = "GFF_method_dump.pl";
@@ -18,15 +18,17 @@ use LSF RaiseError => 0, PrintError => 1, PrintOutput => 0;
 use LSF::JobManager;
 
 GetOptions (
-	    "debug:s"       => \$debug,
-	    "test"          => \$test,
-	    "verbose"       => \$verbose,
-	    "database:s"    => \$database,
-	    "dump_dir:s"    => \$dump_dir,
-	    "methods:s"     => \$methods,
-	    "chromosomes:s" => \$chrom_choice,
-	    "store:s"       => \$store,
-	    "species:s"	    => \$species, # for debug purposes
+  "debug:s"       => \$debug,
+  "test"          => \$test,
+  "verbose"       => \$verbose,
+  "database:s"    => \$database,
+  "dump_dir:s"    => \$dump_dir,
+  "methods:s"     => \$methods,
+  "chromosomes:s" => \$chrom_choice,
+  "store:s"       => \$store,
+  "giface:s"      => \$giface,
+  "gff3"          => \$gff3,
+  "species:s"	    => \$species, # for debug purposes
 	   );
 my $wormbase;
 if( $store ) {
@@ -99,10 +101,12 @@ CHROMLOOP: foreach my $chrom ( @chromosomes ) {
       }
 
       my $cmd = "$dumpGFFscript -database $database -dump_dir $dump_dir -method $method -species $species";
-      $cmd.=" -host $host" if scalar(@chromosomes) > 50;
-      $cmd.=" -debug $debug" if $debug;
-      $cmd.=" -chromosome $chrom" if scalar(@chromosomes) < 50;
-      $cmd = $wormbase->build_cmd_line($cmd, $store_file);
+      $cmd .= " -host $host" if scalar(@chromosomes) > 50;
+      $cmd .= " -debug $debug" if $debug;
+      $cmd .= " -chromosome $chrom" if scalar(@chromosomes) < 50;
+      $cmd .= " -giface $giface"  if defined $giface;
+      $cmd .= " -gff3" if $gff3;
+      $cmd = $wormbase->build_cmd_line($cmd, $store_file);      
       $log->write_to("Command: $cmd\n") if ($verbose);
       print "Command: $cmd\n" if ($verbose);
 
@@ -131,9 +135,11 @@ CHROMLOOP: foreach my $chrom ( @chromosomes ) {
 			 -J => $job_name);
 
     my $cmd = "$dumpGFFscript -database $database -dump_dir $dump_dir -species $species";
-    $cmd.=" -chromosome $chrom" if scalar(@chromosomes) < 50;
-    $cmd.=" -host $host" if scalar(@chromosomes) > 50;
-    $cmd.=" -debug $debug" if $debug;
+    $cmd .=" -chromosome $chrom" if scalar(@chromosomes) < 50;
+    $cmd .=" -host $host" if scalar(@chromosomes) > 50;
+    $cmd .=" -debug $debug" if $debug;
+    $cmd .= " -giface $giface"  if defined $giface;
+    $cmd .= " -gff3" if $gff3;
     $cmd = $wormbase->build_cmd_line($cmd, $store_file);
     $log->write_to("Command: $cmd\n") if ($verbose);
     print "Command: $cmd\n" if ($verbose);

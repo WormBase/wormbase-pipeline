@@ -8,8 +8,8 @@
 #
 # dumps the method through sace / tace and concatenates them.
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2010-07-14 14:29:22 $
+# Last edited by: $Author: klh $
+# Last edited on: $Date: 2012-01-31 10:57:13 $
 
 
 use lib $ENV{CVS_DIR};
@@ -19,28 +19,30 @@ use strict;
 use Storable;
 use File::stat;
 
-my ($help, $debug, $test, $quicktest, $database, $species, @methods, @chromosomes, $dump_dir, @clones, $list,$host );
+my ($help, $debug, $test, $quicktest, $database, $species, @methods, @chromosomes, $dump_dir, @clones, $list,$host, $giface,$gff3 );
 my @sequences;
 my $store;
 GetOptions (
-	    "help"          => \$help,
-	    "debug=s"       => \$debug,
-	    "test"          => \$test,
-	    "store:s"       => \$store,
-	    "species:s"     => \$species,
-	    "quicktest"     => \$quicktest,
-	    "database:s"    => \$database,
-	    "dump_dir:s"    => \$dump_dir,
-	    'host:s'        => \$host,
+  "help"          => \$help,
+  "debug=s"       => \$debug,
+  "test"          => \$test,
+  "store:s"       => \$store,
+  "species:s"     => \$species,
+  "quicktest"     => \$quicktest,
+  "database:s"    => \$database,
+  "dump_dir:s"    => \$dump_dir,
+  'host:s'        => \$host,
+  'giface:s'      => \$giface,
+  'gff3'          => \$gff3,
 
-	    # ive added method and methods for convenience
-	    "method:s"      => \@methods,
-	    "methods:s"     => \@methods,
-	    "chromosomes:s" => \@chromosomes,
-	    "clone:s"       => \@clones,
-	    "clones:s"      => \@clones,
+  # ive added method and methods for convenience
+  "method:s"      => \@methods,
+  "methods:s"     => \@methods,
+  "chromosomes:s" => \@chromosomes,
+  "clone:s"       => \@clones,
+  "clones:s"      => \@clones,
 	    "list:s"        => \$list
-	   );
+    );
 
 
 my $wormbase;
@@ -60,9 +62,10 @@ my $log = Log_files->make_build_log($wormbase);
 @chromosomes = split(/,/,join(',',@chromosomes));
 @sequences = split(/,/,join(',',@clones)) if @clones;
 
-my $giface = $wormbase->giface;
+$giface = $wormbase->giface if not defined $giface;
 my $via_server; #set if dumping to single file via server cmds
 my $port = 23100;
+my $file_suffix = ($gff3) ? "gff3" : "gff";
 
 $database = $wormbase->autoace unless $database;
 $dump_dir = "/tmp/GFF_CLASS" unless $dump_dir;
@@ -97,8 +100,8 @@ $log->write_to("dumping sequences:".join(",",@sequences)."\n");
 
 # ensure that we do not append to an already existing GFF file and that the flock is deleted
 if ($via_server) {
-  unlink "$dump_dir/$species.gff";
-  unlink "$dump_dir/$species.gff.flock";
+  unlink "$dump_dir/$species.${file_suffix}";
+  unlink "$dump_dir/$species.${file_suffix}.flock";
 }
 
 my $count=0; # debug hack
@@ -107,7 +110,12 @@ foreach my $sequence ( @sequences ) {
     foreach my $method ( @methods ) {
       if($via_server) {
     	my $file = "$dump_dir/tmp/${sequence}_${method}.$$";
-	my $cmd = "gif seqget $sequence +method $method; seqfeatures -file $file";
+        my $cmd = sprintf("gif seqget %s +method %s; seqfeatures -version %s -file %s", 
+                          $sequence, 
+                          $method,
+                          ($gff3) ? "3" : "2",
+                          $file);
+
 	open (WRITEDB,"echo '$cmd' | /software/worm/bin/acedb/saceclient $host -port $port -userid wormpub -pass blablub |") or $log->log_and_die("$!\n");
 	while (my $line = <WRITEDB>) {
 	  if ($line =~ 'ERROR') {
@@ -118,22 +126,23 @@ foreach my $sequence ( @sequences ) {
 	}
 	close WRITEDB;
 			
-	#while(stat($file)->mtime + 5  > (time)){
-	#	sleep 1;
-	#}
-		
-	
 	my $sleeptime=0;
-	while (-e "$dump_dir/${method}.gff.flock" && $sleeptime++<11){sleep 15}
+	while (-e "$dump_dir/${method}.${file_suffix}.flock" && $sleeptime++<11){
+          sleep 15;
+        }
 	
-	$wormbase->run_command("touch $dump_dir/${method}.gff.flock", 'no_log');
-	#sleep 1;
-	$wormbase->run_command("cat $file >> $dump_dir/${method}.gff",'no_log');
-	$wormbase->run_command("rm $dump_dir/${method}.gff.flock", 'no_log');
+	$wormbase->run_command("touch $dump_dir/${method}.${file_suffix}.flock", 'no_log');
+	$wormbase->run_command("cat $file >> $dump_dir/${method}.${file_suffix}",'no_log');
+	$wormbase->run_command("rm $dump_dir/${method}.${file_suffix}.flock", 'no_log');
 	unlink $file;
       } else {
-    	my $file = "$dump_dir/${sequence}_${method}.gff";
-	my $command = "gif seqget $sequence +method $method; seqactions -hide_header; seqfeatures -version 2 -file $file\n";
+    	my $file = "$dump_dir/${sequence}_${method}.${file_suffix}";
+
+	my $command = sprintf("gif seqget %s +method %s; seqactions -hide_header; seqfeatures -version %s -file %s\n", 
+                              $sequence, 
+                              $method,
+                              ($gff3) ? "3" : "2",
+                              $file);
 	print WRITEDB $command;
       }
     }
@@ -141,7 +150,10 @@ foreach my $sequence ( @sequences ) {
     if($via_server) {
       print "In here\n";
       my $file = "$dump_dir/tmp/gff_dump$$"; 
-      my $cmd = "gif seqget $sequence; seqfeatures -file $file";
+      my $cmd = sprintf("gif seqget %s; seqfeatures -version %s -file %s", 
+                        $sequence, 
+                        ($gff3) ? "3" : "2",
+                        $file);
       open (WRITEDB,"echo '$cmd' | /software/worm/bin/acedb/saceclient $host -port $port -userid wormpub -pass blablub |") or $log->log_and_die("$!\n");
       while (my $line = <WRITEDB>) {
 	if ($line =~ 'ERROR') {
@@ -152,19 +164,19 @@ foreach my $sequence ( @sequences ) {
       }
       close WRITEDB;
 		
-      #while(stat($file)->mtime + 5  > (time)){
-      #	sleep 1;
-      #}
-      
       my $sleeptime=0;
-      while (-e "$dump_dir/${species}.gff.flock" && $sleeptime++<11){sleep 15}
-      $wormbase->run_command("touch $dump_dir/$species.gff.flock");
+      while (-e "$dump_dir/${species}.${file_suffix}.flock" && $sleeptime++<11){sleep 15}
+      $wormbase->run_command("touch $dump_dir/$species.${file_suffix}.flock");
       #sleep 1;
-      $wormbase->run_command("cat $file >> $dump_dir/$species.gff");
-      $wormbase->run_command("rm $dump_dir/$species.gff.flock");
+      $wormbase->run_command("cat $file >> $dump_dir/$species.${file_suffix}");
+      $wormbase->run_command("rm $dump_dir/$species.${file_suffix}.flock");
       #unlink $file;
     } else {
-      my $command = "gif seqget $sequence; seqactions -hide_header; seqfeatures -version 2 -file $dump_dir/$sequence.gff\n";
+      my $out_file = "$dump_dir/${sequence}.{$file_suffix}";
+      my $command = sprintf("gif seqget %s; seqactions -hide_header; seqfeatures -version %s -file %s\n",
+                            $sequence, 
+                            ($gff3) ? "3" : "2",
+                            $out_file);
       print "$command";
       print WRITEDB $command;
     }
@@ -185,7 +197,7 @@ if ($via_server) { # contig sequences are contenated
   if ( @methods ) {
     foreach my $method ( @methods ) {
 
-      my $file = "$dump_dir/${method}.gff";
+      my $file = "$dump_dir/${method}.${file_suffix}";
       $wormbase->check_file($file, $log,
 			    lines => ['^##', 
 				      "^\\S+\\s+\\S+\\s+\\S+\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+"],
@@ -195,7 +207,7 @@ if ($via_server) { # contig sequences are contenated
 
 
   } else { 
-    my $file = "$dump_dir/$species.gff";
+    my $file = "$dump_dir/${species}.${file_suffix}";
     $wormbase->check_file($file, $log,
 			  lines => ['^##', 
 				    "^\\S+\\s+\\S+\\s+\\S+\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+"],
@@ -209,7 +221,7 @@ if ($via_server) { # contig sequences are contenated
     foreach my $method ( @methods ) {
 
       foreach my $sequence ( @sequences ) {
-	my $file = "$dump_dir/${sequence}_${method}.gff";
+	my $file = "$dump_dir/${sequence}_${method}.${file_suffix}";
 	$wormbase->check_file($file, $log,
 			      lines => ['^##', 
 					"^${sequence}\\s+\\S+\\s+\\S+\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+"],
@@ -222,7 +234,7 @@ if ($via_server) { # contig sequences are contenated
 
   } else { 
     foreach my $sequence ( @sequences ) {
-      my $file = "$dump_dir/$sequence.gff";
+      my $file = "$dump_dir/${sequence}.${file_suffix}";
 
       if($wormbase->species eq 'elegans') {
       
