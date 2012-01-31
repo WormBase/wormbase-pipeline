@@ -9,7 +9,7 @@
 # dumps the method through sace / tace and concatenates them.
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2012-01-31 10:57:13 $
+# Last edited on: $Date: 2012-01-31 11:08:33 $
 
 
 use lib $ENV{CVS_DIR};
@@ -172,7 +172,7 @@ foreach my $sequence ( @sequences ) {
       $wormbase->run_command("rm $dump_dir/$species.${file_suffix}.flock");
       #unlink $file;
     } else {
-      my $out_file = "$dump_dir/${sequence}.{$file_suffix}";
+      my $out_file = "$dump_dir/${sequence}.${file_suffix}";
       my $command = sprintf("gif seqget %s; seqactions -hide_header; seqfeatures -version %s -file %s\n",
                             $sequence, 
                             ($gff3) ? "3" : "2",
