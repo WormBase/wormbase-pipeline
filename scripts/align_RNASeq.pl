@@ -62,7 +62,7 @@
 # by Gary Williams
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2012-01-26 09:33:44 $
+# Last updated on: $Date: 2012-02-01 10:36:39 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -148,7 +148,7 @@ if ($species eq 'elegans') {
 
   %expts = ( # key= SRA 'SRX' experiment ID, values = [Analysis ID, quality score metric]
 
-	     SRX001872  => ["RNASeq_Hillier.L2_larva", 'phred', 'single'], # needs a lot of memory to run tophat
+#	     SRX001872  => ["RNASeq_Hillier.L2_larva", 'phred', 'single'], # needs a lot of memory to run tophat
 	     SRX001873  => ["RNASeq_Hillier.Young_Adult", 'phred', 'single'],
 	     SRX001874  => ["RNASeq_Hillier.L4_larva", 'phred', 'single'],
 	     SRX001875  => ["RNASeq_Hillier.L3_larva", 'phred', 'single'],
@@ -435,7 +435,8 @@ if (!$expt) {
       if ($status != 0) {  $log->log_and_die("Didn't create the splice_juncs_file\n"); }
     }
     
-    # Make a GTF file of current transcripts. Used by cufflinks.
+
+    # Make a GTF file of current transcripts. Used by tophat and cufflinks.
     my $gtf_file = "/nfs/wormpub/RNASeq/$species/transcripts.gtf";
     unless ($nogtf) {
       unlink $gtf_file;
@@ -467,6 +468,107 @@ if (!$expt) {
 			     );
       }
     }
+
+
+
+    # now index this transcriptome GTF file with an initial run of tophat and a dummy small fastq read file
+    unless ($nogtf) {
+      # we don't want this initial run to do anything more than just index the GTF file
+      # so we we create a dummy fastq file with 60 reads in
+      # 60 reads is about the minimum that tophat will run successfully with
+      chdir "/nfs/wormpub/RNASeq/$species"; # make the dummy tophat output in this directory
+      unlink glob("transcriptome-gtf*");
+      $status = $wormbase->run_command("rm -rf tophat_out/", $log);
+      my $dummy_file = "/nfs/wormpub/RNASeq/$species/dummy.fastq";
+      open (DUMMY, "> $dummy_file") || die "";
+      print DUMMY '@IL21_2586:2:1:5:1516/1
+CTCATCAATNATACAATCAACATATAGTNNTNCAAANNTTNAATAANNNNNNNT
++
+EEEEFCDE7%6EDCDCD6@B7;DDE776%%6%7;D7%%73%77B77%%%%%%%6
+@IL21_2586:2:1:5:1477/1
+GATCGGAAGNGCGGTTCAGCAGGAATGCNNANATCGNNAGNGCGGTNNNNNNNG
++
+@>@<>>==1%5=>:=>;>:.>=06>=11%%7%5=/1%%5,%5(775%%%%%%%/
+@IL21_2586:2:1:5:979/1
+GATCGGAAGNGCGGTTCAGCAGGAATGCNNANATAGNNAGGGCGGTNNANNNNG
++
+@<>4>>521%50<=<>2/5,56..2<1*%%%%,-%.%%*((%*(/5%%%%%%%,
+@IL21_2586:2:1:5:1787/1
+CGGTTCAGCNGGAATGCCGAGATCGGAANNGNGGTTNNGCAGGAATNNCNNNNA
++
+>>>??=?=5%5==?>=<:9?=>><9=>5%%1%5)55%%11575/<5%%7%%%%,
+@IL21_2586:2:1:5:415/1
+ATCGCTGAANAAATACGTTTTGCTGTTGANTNATACANTGCCAGTANNCNNNCG
++
+DD>D9DCC6%6CCDC8;DDDA>9C5@D=%%7%6D?61%6)603)14%%-%%%.%
+@IL21_2586:2:1:5:1362/1
+GTTGTATATNATTGCAAATGCCTCAAGAANTNAAAAANAATACTGCNNANNNTA
++
+DDC@@DDD7%7>@@=BDDA=85?1><D6.%3%758:6%7:<78:3(%%7%%%6-
+@IL21_2586:2:1:5:1313/1
+GATCGGAAGNGCGGTTCAGCAGGAATGCCNANATCGGNAGAGCTGTNNANNNGT
++
+@>>=>><=5%5=>>=>===2=<+8;8,5*%5%52-(5%5**,,&*5%%5%%%,%
+@IL21_2586:2:1:5:712/1
+CCTCTGGCTNCCGTAACTTTCGTTTTCCANANTTTCANGCTTTGAANNANNNAG
++
+DDDDDCDC6%3>DCA>7ADA;<CDDB>A6%3%6DC66%)6ED@0<6%%7%%%17
+@IL21_2586:2:1:5:1564/1
+GATCGGAAGNGCGGTTCAGCAGGAATGCCNANATCGGAAGAGCGGTNNANNNGG
++
+>>@=>>=>/%/9>>=?=>><>=>=>==0*%1%5</50(5.:5*&55%%1%%%.,
+@IL21_2586:2:1:5:1136/1
+CCCATCTTCNACTTCCAGAGGTTCAGCAGNTNTGATCCGAGCAAACNNANNNGT
++
+>A@@A>AA6%6>?A><>>>=:>>>?>>>-%6%6==>;37>69>>>)%%6%%%67
+@IL21_2586:2:1:5:1023/1
+CCCGTGTTGNGTCAAATTAAGCCGCAGGCNCNACTCCTGGTGGTGCNNTNNNGT
++
+>>>??8>?5%,?>>>:@?>?6<=>=</51%5%5<?54575>(4575%%5%%%5>
+@IL21_2586:2:1:5:789/1
+CAGAAAAGCNATAGCAGCAAATGCAGCAANANTATTAAGTTAAACTNTCNNTTT
++
+DFEEFAD96%-D?B=>:7@>CA6666-66%4%6>C=;3=:@@99>6%67%%6@=
+@IL21_2586:2:1:5:496/1
+GATCGGAAGNGCGGTTCAGCAGGAATGCCNANATCGGAAGAGGGGTNCANNGGG
++
+A=>2>>515%5-,><</::1+6=,33;,%%%%%0,,6778731.0.%%%%%%*(
+@IL21_2586:2:1:5:1831/1
+CCCGTCCGTNCCTCTTAACCATTATCTCANANCAGAAAACCAACAAAATNNAAC
++
+DDDDDDA=6%6DDDDDDDBABDDDDDDB6%6%6@4@A=6-6?@=A?466%%67;
+@IL21_2586:2:1:5:243/1
+GACGTGGGCNGCATCAATCTGACGGATGANGNATGGCTCTTCAATCCCANNTGG
++
+?><><==;,%16=><<=>0>=82<=5=;&%.%5=75-?5=5%,;5**,+%%5*,
+';
+
+      close(DUMMY);
+      my $err = "$scratch_dir/align_RNASeq.pl.lsf.initial.err";
+      my $out = "$scratch_dir/align_RNASeq.pl.lsf.initial.out";
+      my @bsub_options = (-e => "$err", -o => "$out");
+      push @bsub_options, (-q =>  "normal",
+			   #-F =>  "100000000", # there is no file size limit in Sanger LSF - don't impose one - keep this commented out
+			   #-M =>  "14000000", 
+			   #-R => "\"select[mem>14000 && tmp>10000] rusage[mem=14000]\"", 
+			   -J => "tophat_dummy_$species");
+      my $gtf = "--GTF /nfs/wormpub/RNASeq/$species/transcripts.gtf";
+      my $gtf_index = "--transcriptome-index /nfs/wormpub/RNASeq/$species/transcriptome-gtf";
+      my $G_species = $wormbase->full_name('-g_species' => 1);
+      my $cmd = "/software/worm/tophat/tophat $gtf $gtf_index /nfs/wormpub/RNASeq/$species/reference-indexes/$G_species $dummy_file";
+      $log->write_to("$cmd\n");
+      $lsf->submit(@bsub_options, $cmd);
+      
+      
+      $lsf->wait_all_children( history => 1 );
+      $log->write_to("The initial tophat job to index the GTF file has completed!\n");
+      for my $job ( $lsf->jobs ) {
+	if ($job->history->exit_status ne '0') {
+	  $log->write_to("Job $job (" . $job->history->command . ") exited non zero: " . $job->history->exit_status . "\n");
+	}
+      }
+      $lsf->clear;
+    }
   }
 
   # run tophat against a few experiments at a time - we don't want to
@@ -478,6 +580,17 @@ if (!$expt) {
   foreach my $arg (@SRX) {
 
     if ($check) {
+
+      # we have had a problem with incomplete intron.ace files
+      if (-e "$arg/Introns/Intron.ace" && ! -z "$arg/Introns/Intron.ace") {
+	my $last_line = `tail -1 "$arg/Introns/Intron.ace"`;
+	my $last_char = chop $last_line;
+	if ($last_char ne "\n") {
+	  $wormbase->run_command("rm -rf $arg/Introns/Intron.ace", $log);
+	  $log->write_to("Incomplete $arg intron file removed\n");
+	}
+      }
+
       if (-e "$RNASeqDir/$arg/tophat_out/accepted_hits.bam" &&
 	  -e "$RNASeqDir/$arg/cufflinks/genes.fpkm_tracking" &&
 	  (-e "$RNASeqDir/$arg/TSL/TSL_evidence.ace" || !$tsl) &&
@@ -503,7 +616,13 @@ if (!$expt) {
   ####################################################################################
   # all analyses have now run - munge results and put them where they are expected
   ####################################################################################
-
+  
+  # now sleep for 5 minutes to give the lustre file-system a chance to
+  # sort out the files we have just written - was having intermittant
+  # problems with one or two of the intron.ace files as if it hadn't
+  # finished flushing the file buffers before the file was read in the
+  # next sections.
+  sleep 300;
 
   # now write out a table of what has worked
   # and make the expresssion tarball for Wen to put into SPELL
@@ -532,6 +651,17 @@ if (!$expt) {
     if (-e "$SRX/tophat_out/accepted_hits.bam") {$log->write_to("\ttophat OK");} else {{$log->write_to("\ttophat ERROR");}}
     if (-e "$SRX/cufflinks/genes.fpkm_tracking") {$log->write_to("\tcufflinks OK");} else {$log->write_to("\tcufflinks ERROR");}
     if ($tsl) {if (-e "$SRX/TSL/TSL_evidence.ace") {$log->write_to("\tTSL OK");} else {$log->write_to("\tTSL ERROR");}}
+
+    # we have had a problem with incomplete intron.ace files
+    if (-e "$SRX/Introns/Intron.ace" && ! -z "$SRX/Introns/Intron.ace") {
+      my $last_line = `tail -1 "$SRX/Introns/Intron.ace"`;
+      my $last_char = chop $last_line;
+      if ($last_char ne "\n") {
+	$wormbase->run_command("rm -rf $SRX/Introns/Intron.ace", $log);
+	$log->write_to("\tincomplete intron file removed");
+      }
+    }
+
     if (-e "$SRX/Introns/Intron.ace") {$log->write_to("\tIntrons OK");} else {$log->write_to("\tintron ERROR");}
     $log->write_to("\n");
 
@@ -631,7 +761,7 @@ if (!$expt) {
   $status = $wormbase->run_command("rm -f $splice_file", $log);
   $status = $wormbase->run_command("cat */Introns/virtual_objects.${species}.RNASeq.ace > $splice_file", $log);
   $status = $wormbase->run_script("acezip.pl -file $splice_file", $log);
-  $status = $wormbase->run_command("cat */Introns/Intron.ace >> ${splice_file}.tmp", $log);
+  $status = $wormbase->run_command("cat */Introns/Intron.ace > ${splice_file}.tmp", $log);
   $status = $wormbase->run_script("acezip.pl -file ${splice_file}.tmp", $log);
   # flatten the results of all libraries at a position into one entry
   open (FEAT, "< ${splice_file}.tmp") || $log->log_and_die("Can't open file ${splice_file}.tmp\n");
@@ -705,7 +835,9 @@ sub run_align {
 
     # pull over the SRA files and unpack them to make a fastq file
     # the aspera commmand to pull across the files only works on the farm2-login head node
-    if (!$noalign || $tsl) {get_SRA_files($arg);}
+    if ((!$check && !$noalign) || !-e "tophat_out/accepted_hits.bam") {
+      get_SRA_files($arg);
+    }
 
     # "the normal queue can deal with memory requests of up to 15 Gb, but 14 Gb is better" - Peter Clapham, ISG
     my $err = "$scratch_dir/align_RNASeq.pl.lsf.${arg}.err";
@@ -774,24 +906,26 @@ sub run_tophat {
   if ($solexa)   {$cmd_extra = "--solexa-quals"} 
   if ($illumina) {$cmd_extra = "--solexa1.3-quals"} 
 
-  if (!$noalign || $tsl) {
-    # unpack any .lite.sra file to make the .fastq files
-    # now unpack the sra.lite files
-    $log->write_to("Unpack the $arg .lite.sra file to fastq files\n");
-    foreach my $dir (glob("$RNASeqDir/$arg/SRR/SRR*")) {
-      chdir $dir;
-      foreach my $srr (glob("*.lite.sra")) {
-	$log->write_to("Unpack $srr\n");
-	my $options = '';
-	if ($paired && $srr !~ /_1\./ && $srr !~ /_2\./) {$options='--split-files'} # specify that the file contains paired-end reads and should be split
-	$status = $wormbase->run_command("/software/worm/sratoolkit/fastq-dump $options $srr", $log);
-	if ($status) {$log->log_and_die("Didn't unpack the fastq file successfully\n")}
-	$status = $wormbase->run_command("rm -f $srr", $log);
+  if ((!$check && !$noalign) || !-e "tophat_out/accepted_hits.bam") {
+    if (!$noalign || $tsl) {
+      # unpack any .lite.sra file to make the .fastq files
+      # now unpack the sra.lite files
+      $log->write_to("Unpack the $arg .lite.sra file to fastq files\n");
+      foreach my $dir (glob("$RNASeqDir/$arg/SRR/SRR*")) {
+	chdir $dir;
+	foreach my $srr (glob("*.lite.sra")) {
+	  $log->write_to("Unpack $srr\n");
+	  my $options = '';
+	  if ($paired && $srr !~ /_1\./ && $srr !~ /_2\./) {$options='--split-files'} # specify that the file contains paired-end reads and should be split
+	  $status = $wormbase->run_command("/software/worm/sratoolkit/fastq-dump $options $srr", $log);
+	  if ($status) {$log->log_and_die("Didn't unpack the fastq file successfully\n")}
+	  $status = $wormbase->run_command("rm -f $srr", $log);
+	}
       }
     }
-  }
 
-  if ((!$check && !$noalign) || !-e "tophat_out/accepted_hits.bam") {
+
+
     $wormbase->run_command("rm -rf tophat_out/", $log);
 
     chdir "$RNASeqDir/$arg";
@@ -808,10 +942,10 @@ sub run_tophat {
       my $joined2 = join ",", @files2;
       $joined_file = "$joined1 $joined2";
       print "Made paired-read joined files: $joined_file\n";
-      # set the inner-distance -r parameter
-      # assume the insert size is 200 bp - we often have no information about this
-      my $inner = 200;
-      $cmd_extra .= " -r $inner ";
+      # no longer need to set the inner-distance -r parameter
+      # It is now set to 50 by default.
+      #my $inner = 50;
+      #$cmd_extra .= " -r $inner ";
     }
 
     # Is the read length less than 50?  
@@ -821,14 +955,19 @@ sub run_tophat {
     my $segment_length = 25; # the default value
     if ($seq_length < 50) {
       $segment_length = int($seq_length / 2);
+      $segment_length--; # we want it to be less than half the length
       $cmd_extra .= " --segment-length $segment_length ";
+      # and the documentation now says to set the --segment-mismatches to 1 or 0
+      $cmd_extra .= " --segment-mismatches 0 ";
     }
 
 
     $log->write_to("run tophat $joined_file\n");
-    my $raw_juncs = ''; # use the raw junctions hint file unless we specify otherwise
+    my $gtf_index = ''; # use the GTF index unless we are not using the GTF file
+    $gtf_index = "--transcriptome-index /nfs/wormpub/RNASeq/$species/transcriptome-gtf" unless $nogtf;
+    my $raw_juncs = ''; # use the EST raw junctions hint file unless we specify otherwise
     $raw_juncs = "--raw-juncs /nfs/wormpub/RNASeq/$species/reference-indexes/splice_juncs_file" unless $norawjuncs;
-    $status = $wormbase->run_command("/software/worm/tophat/tophat $cmd_extra --min-intron-length 30 --max-intron-length 5000 $raw_juncs /nfs/wormpub/RNASeq/$species/reference-indexes/$G_species $joined_file", $log);
+    $status = $wormbase->run_command("/software/worm/tophat/tophat $cmd_extra --min-intron-length 30 --max-intron-length 5000 $gtf_index $raw_juncs /nfs/wormpub/RNASeq/$species/reference-indexes/$G_species $joined_file", $log);
     if ($status != 0) {  $log->log_and_die("Didn't run tophat to do the alignment successfully\n"); } # only exit on error after gzipping the files
 
   } else {
