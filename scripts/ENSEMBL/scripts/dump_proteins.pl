@@ -3,7 +3,7 @@
 #
 #         FILE:  check_genes.pl
 #
-#        USAGE:  ./check_genes.pl 
+#        USAGE:  ./check_genes.pl -database DATABASE_NAME -outputfile FILE_NAME [-dna|-transcripts_only]
 #
 #  DESCRIPTION:  
 #
@@ -21,9 +21,10 @@
 use strict;
 use Bio::EnsEMBL::DBSQL::DBAdaptor;
 use Getopt::Long;
+use IO::File;
 
-my ($database,$dna,$transcript_only);
-GetOptions( 'database=s'=>\$database,'dna'=>\$dna,'transcript_only'=>\$transcript_only);
+my ($database,$dna,$transcript_only,$outfile);
+GetOptions( 'database=s'=>\$database,'dna'=>\$dna,'transcript_only'=>\$transcript_only, 'outputfile=s' => \$outfile)||die(@!);
 
 my $db = new Bio::EnsEMBL::DBSQL::DBAdaptor(
         -host   => 'farmdb1',
@@ -34,6 +35,7 @@ my $db = new Bio::EnsEMBL::DBSQL::DBAdaptor(
     );
 
 
+my $fh = new IO::File "> $outfile" ||die("cannot open $outfile\n");
 
 my $gene_adaptor = $db->get_GeneAdaptor();
 my @genes = @{$gene_adaptor->fetch_all()};
@@ -52,7 +54,7 @@ foreach my $gene(@genes){
 		}else{
 			$seq=$protein->seq()
 		}
-		printf ">$proteinId\t$transcriptId\t$geneId\n%s\n",reformat($seq);
+		printf $fh ">$proteinId\t$transcriptId\t$geneId\n%s\n",reformat($seq);
 	}
 }
 
