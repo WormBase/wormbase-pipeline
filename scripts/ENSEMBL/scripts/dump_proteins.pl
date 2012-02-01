@@ -24,7 +24,7 @@ use Getopt::Long;
 use IO::File;
 
 my ($database,$dna,$transcript_only,$outfile);
-GetOptions( 'database=s'=>\$database,'dna'=>\$dna,'transcript_only'=>\$transcript_only, 'outputfile=s' => \$outfile)||die(@!);
+GetOptions( 'database=s'=>\$database,'dna'=>\$dna,'transcript_only'=>\$transcript_only, 'outfile=s' => \$outfile)||die(@!);
 
 my $db = new Bio::EnsEMBL::DBSQL::DBAdaptor(
         -host   => 'farmdb1',
