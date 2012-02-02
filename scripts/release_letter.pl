@@ -4,8 +4,8 @@
 # 
 # by Anthony Rogers                             
 #
-# Last updated by: $Author: pad $               
-# Last updated on: $Date: 2011-12-21 10:40:57 $
+# Last updated by: $Author: klh $               
+# Last updated on: $Date: 2012-02-02 21:56:00 $
 
 # Generates a release letter at the end of build.
 #
@@ -102,7 +102,7 @@ if( defined($opt_l)) {
   printf RL "     - G_SPECIES.WS$ver.intergenic_sequences.fa.gz   - DNA sequence between pairs of adjacent genes\n";
   printf RL "     - G_SPECIES.WS$ver.annotations.gff[2|3].gz      - Sequence features in either GFF2 or GFF3 format\n";
   printf RL "     - G_SPECIES.WS$ver.ests.fa.gz                   - ESTs and mRNA sequences extracted from the public databases\n";
-  printf RL "     - G_SPECIES.WS$ver.best_blastp_hits.txt.gz      - Best blastp matches to human, fly, yeast, and non-WormBase Uniprot proteains\n";
+  printf RL "     - G_SPECIES.WS$ver.best_blastp_hits.txt.gz      - Best blastp matches to human, fly, yeast, and non-WormBase Uniprot proteins\n";
   printf RL "     - G_SPECIES.WS$ver.*pep_package.tar.gz          - latest version of the [worm|brig|bren|rema|jap|ppa]pep package (if updated since last release)\n";
   printf RL "     - annotation/                    - contains additional annotations:\n";
   printf RL "        - G_SPECIES.WS$ver.confirmed_genes.txt.gz              - DNA sequences of all genes confirmed by EST &/or cDNA\n";
