@@ -1,3 +1,4 @@
+ls
 #!/usr/local/bin/perl5.8.0 -w
 #
 # make_FTP_sites.pl
@@ -6,7 +7,7 @@
 # builds wormbase & wormpep FTP sites
 # 
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2012-01-31 10:09:24 $
+# Last updated on: $Date: 2012-02-02 18:56:17 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -224,6 +225,9 @@ close FTP_LOCK;
 
 &make_md5sums if ($md5);              # creates a file of md5sums for containing entries for all files in release
 
+$wormbase->run_command("chgrp -R  worm $targetdir", $log);  
+$wormbase->run_command("chmod -R ug+w $targetdir", $log);  
+
 if ($go_public) {
   if ($testout) {
     $log->write_to("You cannot go public having written to a test location; you must do it manually\n");
@@ -232,15 +236,6 @@ if ($go_public) {
   }
 }
 
-
-
-################################
-#
-# Tidy up and exit
-#
-################################
-$wormbase->run_command("chgrp -R  worm $targetdir", $log);  
-$wormbase->run_command("chmod -R ug+w $targetdir", $log);  
 
 # warn about errors in subject line if there were any
 $wormbase->run_command("rm -f $lockfile",$log) if ($log->report_errors == 0);
@@ -1266,12 +1261,12 @@ sub go_public {
   my $base_path = $wormbase->ftp_site;
   my $staging_path = "$base_path/staging/releases/$WS_name";
   my $final_path   = "$base_path/releases/$WS_name";
-  my $frozen_path = "$base_path/releases/FROZEN_RELEASES/$WS_name";
+  my $frozen_path = "$base_path/releases/FROZEN_RELEASES";
 
   $wormbase->run_command("mv $staging_path $final_path", $log);
 
   if ($WS =~ /\d+5$/ || $WS =~ /\d+0$/) {
-    $wormbase->run_command("ln -sf $final_path $frozen_path", $log);
+    $wormbase->run_command("cd $frozen_path && ln -sf ../releases/$WS_name $WS_name", $log);
   }
 }
 
