@@ -62,7 +62,7 @@
 # by Gary Williams
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2012-02-01 10:36:39 $
+# Last updated on: $Date: 2012-02-16 13:54:26 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -87,7 +87,7 @@ use GDBM_File; # for tied hash
 ##############################
 
 
-my ($test, $store, $debug, $species, $verbose, $expt, $noalign, $check, $solexa, $illumina, $database, $nogtf, $norawjuncs, $tsl, $paired, $keepfastq);
+my ($test, $store, $debug, $species, $verbose, $expt, $noalign, $check, $solexa, $illumina, $database, $nogtf, $norawjuncs, $tsl, $paired, $keepfastq, $onestage);
 GetOptions (
 	    "test"               => \$test,
 	    "store:s"            => \$store,
@@ -104,7 +104,8 @@ GetOptions (
 	    "expt:s"             => \$expt,     # do the alignment etc. for this experiment
 	    "illumina"           => \$illumina, # read have illumina GA-Pipeline 1.3 quality scores, not phred + 33 scores
 	    "paired"             => \$paired,   # the reads are paired-end - we may have to split the file
-	    "keepfastq"          => \$keepfastq # don't delete the fastq files after use
+	    "keepfastq"          => \$keepfastq,# don't delete the fastq files after use
+	    "onestage"           => \$onestage, # for comparing the old one-stage alignment against the new (default) two-stage (transcriptome then genome) alignment
 	   );
 
 my $wormbase;
@@ -688,14 +689,14 @@ GACGTGGGCNGCATCAATCTGACGGATGANGNATGGCTCTTCAATCCCANNTGG
 	if ($f[0] eq 'tracking_id') {next;}
 	if ($f[0] =~ /CUFF/) {$log->log_and_die("Cufflinks for $SRX has failed to put the Gene IDs in the output file - problem with the GTF file?\n");}
 	my $gene_expr = $f[10];
-	if ($f[10] == 0) {$gene_expr = 0.0000000001}
-	if ($f[9] eq "OK" || $f[9] eq "LOWDATA") {
+	if ($f[9] == 0) {$gene_expr = 0.0000000001}
+	if ($f[12] eq "OK" || $f[12] eq "LOWDATA") {
 	  # print the file for Wen's SPELL data
 	  print EXPROUT "$f[0]\t$gene_expr\n";
 	  # and print to the Gene model ace file
 	  if (defined $life_stage) {
 	    print EXPRACE "\nGene : \"$f[0]\"\n";
-	    print EXPRACE "RNASeq_FPKM  \"$life_stage\"  \"$f[10]\"  From_analysis \"$analysis\"\n";
+	    print EXPRACE "RNASeq_FPKM  \"$life_stage\"  \"$f[9]\"  From_analysis \"$analysis\"\n";
 	  }
 	}
       }
@@ -709,19 +710,19 @@ GACGTGGGCNGCATCAATCTGACGGATGANGNATGGCTCTTCAATCCCANNTGG
       my @f = split /\s+/, $line;
       if ($f[0] eq 'tracking_id') {next;}
       if ($f[0] =~ /CUFF/) {$log->log_and_die("Cufflinks for $SRX has failed to put the Transcript IDs in the output file - problem with the GTF file?\n");}
-      if ($f[9] eq "OK" || $f[9] eq "LOWDATA") {
+      if ($f[12] eq "OK" || $f[12] eq "LOWDATA") {
 	if (defined $life_stage) {
 	  print EXPRACE "\nTranscript : \"$f[0]\"\n";
-	  print EXPRACE "RNASeq_FPKM  \"$life_stage\"  \"$f[10]\"  From_analysis \"$analysis\"\n";
+	  print EXPRACE "RNASeq_FPKM  \"$life_stage\"  \"$f[9]\"  From_analysis \"$analysis\"\n";
 	  my ($sequence_name) = ($f[0] =~ /(^\S+?\.\d+[a-z]?)/);
 	  if (!defined $sequence_name) {
 	    if ($f[0] !~ /(^\S+?\.t\d+)/) {print "Sequence name $f[0] is not in the normal format\n";} # complain if it is not even like 'T27B1.t1' - a tRNA gene
 	    $sequence_name = $f[0]; # use the name as given
 	  }
 	  if (exists $CDSs{$sequence_name}) {
-	    $CDS_SRX{$sequence_name} += $f[10]; # sum the FPKMs for this CDS
+	    $CDS_SRX{$sequence_name} += $f[9]; # sum the FPKMs for this CDS
 	  } elsif (exists $Pseudogenes{$sequence_name}) {
-	    $Pseudogene_SRX{$sequence_name} += $f[10]; # sum the FPKMs for this Pseudogene
+	    $Pseudogene_SRX{$sequence_name} += $f[9]; # sum the FPKMs for this Pseudogene
 	  }
 	}
       }
@@ -853,6 +854,7 @@ sub run_align {
     if ($noalign) {$cmd .= " -noalign";}
     if ($nogtf) {$cmd .= " -nogtf";}
     if ($tsl) {$cmd .= " -tsl";}
+    if ($onestage) {$cmd .= " -onestage";}
     if ($database) {$cmd .= " -database $database";}
     if ($species) {$cmd .= " -species $species";}
     if ($norawjuncs) {$cmd .= " -norawjuncs";}
@@ -964,7 +966,7 @@ sub run_tophat {
 
     $log->write_to("run tophat $joined_file\n");
     my $gtf_index = ''; # use the GTF index unless we are not using the GTF file
-    $gtf_index = "--transcriptome-index /nfs/wormpub/RNASeq/$species/transcriptome-gtf" unless $nogtf;
+    $gtf_index = "--transcriptome-index /nfs/wormpub/RNASeq/$species/transcriptome-gtf" unless ($nogtf || $onestage);
     my $raw_juncs = ''; # use the EST raw junctions hint file unless we specify otherwise
     $raw_juncs = "--raw-juncs /nfs/wormpub/RNASeq/$species/reference-indexes/splice_juncs_file" unless $norawjuncs;
     $status = $wormbase->run_command("/software/worm/tophat/tophat $cmd_extra --min-intron-length 30 --max-intron-length 5000 $gtf_index $raw_juncs /nfs/wormpub/RNASeq/$species/reference-indexes/$G_species $joined_file", $log);
