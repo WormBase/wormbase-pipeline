@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: pad $
-// Last edited on: $Date: 2012-02-16 15:27:06 $
+// Last edited on: $Date: 2012-02-17 16:43:15 $
 
 
 ////////////////////////
@@ -380,6 +380,8 @@
            Former_member_of   ?Gene_class XREF Old_member // track old members of a class
            Public_name_for    ?Gene XREF Public_name    // the main name for a gene
 
+
+
 //////////////////////////////////////////////////////////////////////////////////////
 //
 //   New Interaction class Proposal, 1-30-2012
@@ -389,114 +391,113 @@
 				   
 ?Interaction	Interaction_type Physical
 				 Predicted
-				 Regulatory	Change_of_localization
-						Change_of_expression_level
-				 Genetic	Genetic_interaction
-						Negative_genetic
-						Synthetic
-						Enhancement
-						Unilateral_enhancement
-						Mutual_enhancement
-						Suppression
-						Unilateral_suppression
-						Mutual_suppression
-						Asynthetic
-						Suppression_enhancement
-						Epistasis
-						Maximal_epistasis
-						Minimal_epistasis
-						Suppression_epistasis
-						Agonistic_epistasis
-						Antagonistic_epistasis
-						Oversuppression	
-						Unilateral_oversuppression
-						Mutual_oversuppression		
-						Complex_oversuppression		
-						Oversuppression_enhancement	
-						Phenotype_bias			
-						Biased_suppression		
-						Biased_enhancement		
-						Complex_phenotype_bias		
-						No_interaction			// Negative data; no interaction was observed after testing
-		Interactor	PCR_interactor UNIQUE ?PCR_product	#Interactor_info	// PCR_product of the interacting gene or protein, e.g. Yeast Two Hybrid experiments
-				Sequence_interactor UNIQUE ?Sequence 	#Interactor_info	// Sequence of the interacting gene or protein
-				Interactor_overlapping_CDS ?CDS		#Interactor_info	// CDS of the interacting gene or protein (or related sequence)
-				Interactor_overlapping_gene ?Gene XREF Interaction #Interactor_info	// Gene (or portion of gene) involved in the interaction
-				Interactor_overlapping_protein ?Protein XREF Interaction 	#Interactor_info	// Protein (or portion of protein) involved in the interaction
-				Molecule_regulator      ?Molecule  XREF    Interaction	#Interactor_info	// Molecule that regulates a gene or protein (ported from Gene_regulation class)
-				Other_regulator         ?Text	#Interactor_info	// Free text describing a regulator entity or condition that does not fall into a standard WormBase category
-				Other_regulated         ?Text	#Interactor_info	// Free text describing a regulated entity or condition that does not fall into a standard WormBase category
+				 Regulatory Change_of_localization
+					    Change_of_expression_level
+				 Genetic Genetic_interaction
+					 Negative_genetic
+					 Synthetic
+					 Enhancement
+					 Unilateral_enhancement
+					 Mutual_enhancement
+					 Suppression
+					 Unilateral_suppression
+					 Mutual_suppression
+					 Asynthetic
+					 Suppression_enhancement
+					 Epistasis
+					 Maximal_epistasis
+					 Minimal_epistasis
+					 Suppression_epistasis
+					 Agonistic_epistasis
+					 Antagonistic_epistasis
+					 Oversuppression	
+					 Unilateral_oversuppression
+					 Mutual_oversuppression		
+					 Complex_oversuppression		
+					 Oversuppression_enhancement	
+					 Phenotype_bias			
+					 Biased_suppression		
+					 Biased_enhancement		
+					 Complex_phenotype_bias		
+					 No_interaction				// Negative data; no interaction was observed after testing
+		Interactor PCR_interactor UNIQUE ?PCR_product #Interactor_info	// PCR_product of the interacting gene or protein, e.g. Yeast Two Hybrid experiments
+			   Sequence_interactor UNIQUE ?Sequence #Interactor_info	// Sequence of the interacting gene or protein
+			   Interactor_overlapping_CDS ?CDS	#Interactor_info	// CDS of the interacting gene or protein (or related sequence)
+			   Interactor_overlapping_gene ?Gene XREF Interaction #Interactor_info		// Gene (or portion of gene) involved in the interaction
+			   Interactor_overlapping_protein ?Protein XREF Interaction #Interactor_info	// Protein (or portion of protein) involved in the interaction
+			   Molecule_regulator ?Molecule XREF Interaction #Interactor_info			// Molecule that regulates a gene or protein (ported from Gene_regulation class)
+			   Other_regulator ?Text #Interactor_info	// Free text describing a regulator entity or condition that does not fall into a standard WormBase category
+			   Other_regulated ?Text #Interactor_info	// Free text describing a regulated entity or condition that does not fall into a standard WormBase category
 		Interaction_summary ?Text #Evidence
-		Detection_method		Affinity_capture_luminescence			// A physical interaction detection technique
-						Affinity_capture_MS				// A physical interaction detection technique
-						Affinity_capture_RNA				// A physical interaction detection technique
-						Affinity_capture_Western			// A physical interaction detection technique
-						Cofractionation					// A physical interaction detection technique
-						Colocalization					// A physical interaction detection technique
-						Copurification					// A physical interaction detection technique
-						Fluorescence_resonance_energy_transfer		// A physical interaction detection technique
-						Protein_fragment_complementation_assay		// A physical interaction detection technique
-						Yeast_two_hybrid				// A physical interaction detection technique (Protein-protein)
-						Biochemical_activity				// A physical interaction detection technique
-						Cocrystal_structure				// A physical interaction detection technique
-						Far_western					// A physical interaction detection technique
-						Protein_peptide 				// A physical interaction detection technique
-						Protein_RNA 					// A physical interaction detection technique
-						Reconstituted_complex				// A physical interaction detection technique
-						Yeast_one_hybrid  				// A physical interaction detection technique (Protein-DNA)
-						Directed_yeast_one_hybrid			// A physical interaction detection technique (Protein-DNA)
-						Antibody					// A regulatory interaction detection technique; Antibody name and details captured in Interactor_info hash
-						Reporter_gene  ?Text				// A regulatory interaction detection technique
-						Transgene					// A regulatory interaction detection technique; Trasnsgene name and details captured in Interactor_info hash
-						In_situ        Text				// A regulatory interaction detection technique
-						Northern       Text				// A regulatory interaction detection technique
-						Western        Text				// A regulatory interaction detection technique
-						RT_PCR         Text				// A regulatory interaction detection technique
-						Other_method   ?Text				// A regulatory interaction detection technique
-		Library_info 	Library_screened Text						// In the context of Y2H or YH screens, for example, the library may have been cDNA library or a pool of clones
-				Origin  From_laboratory UNIQUE ?Laboratory 	// A library generated at an academic laboratory
-					From_company UNIQUE ?Text		// A library generated at a company
-		Deviation_from_expectation	Text	// A text description of the way in which the phenotype deviated from expectation in genetic interactions
-			
-		Neutrality_function UNIQUE	Multiplicative		// The multiplicative neutrality function defines expectation as the product of two quantified phenotypes (relative to wild type) 
-						Additive		// The additive neutrality function defines expectation as the sum of two quantified phenotypes (relative to wild type) 
-						Minimal			// The minimal neutrality function defines expectation as the most severe of two quantified phenotypes (relative to wild type) 
-		Regulation_level	Transcriptional		// Regulation occurs at the transcriptional level
-					Post_transcriptional	// Regulation occurs at the post-transcriptional level
-					Post_translational	// Regulation occurs at the post-translational level
+		Detection_method Affinity_capture_luminescence		// A physical interaction detection technique
+				 Affinity_capture_MS			// A physical interaction detection technique
+				 Affinity_capture_RNA			// A physical interaction detection technique
+				 Affinity_capture_Western		// A physical interaction detection technique
+				 Cofractionation				// A physical interaction detection technique
+				 Colocalization				// A physical interaction detection technique
+				 Copurification				// A physical interaction detection technique
+				 Fluorescence_resonance_energy_transfer	// A physical interaction detection technique
+				 Protein_fragment_complementation_assay	// A physical interaction detection technique
+				 Yeast_two_hybrid			// A physical interaction detection technique (Protein-protein)
+				 Biochemical_activity			// A physical interaction detection technique
+				 Cocrystal_structure			// A physical interaction detection technique
+				 Far_western				// A physical interaction detection technique
+				 Protein_peptide 			// A physical interaction detection technique
+				 Protein_RNA 				// A physical interaction detection technique
+				 Reconstituted_complex			// A physical interaction detection technique
+				 Yeast_one_hybrid			// A physical interaction detection technique (Protein-DNA)
+				 Directed_yeast_one_hybrid		// A physical interaction detection technique (Protein-DNA)
+				 Antibody				// A regulatory interaction detection technique; Antibody name and details captured in Interactor_info hash
+				 Reporter_gene ?Text			// A regulatory interaction detection technique
+				 Transgene				// A regulatory interaction detection technique; Trasnsgene name and details captured in Interactor_info hash
+				 In_situ Text				// A regulatory interaction detection technique
+				 Northern Text				// A regulatory interaction detection technique
+				 Western Text				// A regulatory interaction detection technique
+				 RT_PCR Text				// A regulatory interaction detection technique
+				 Other_method ?Text			// A regulatory interaction detection technique
+		Library_info Library_screened Text			// In the context of Y2H or YH screens, for example, the library may have been cDNA library or a pool of clones
+			     Origin From_laboratory UNIQUE ?Laboratory 	// A library generated at an academic laboratory
+				    From_company UNIQUE ?Text		// A library generated at a company
+		Deviation_from_expectation Text				// A text description of the way in which the phenotype deviated from expectation in genetic interactions	
+		Neutrality_function UNIQUE Multiplicative		// The multiplicative neutrality function defines expectation as the product of two quantified phenotypes (relative to wild type) 
+					   Additive			// The additive neutrality function defines expectation as the sum of two quantified phenotypes (relative to wild type) 
+					   Minimal			// The minimal neutrality function defines expectation as the most severe of two quantified phenotypes (relative to wild type) 
+		Regulation_level Transcriptional			// Regulation occurs at the transcriptional level
+				 Post_transcriptional			// Regulation occurs at the post-transcriptional level
+				 Post_translational			// Regulation occurs at the post-translational level
 		Interaction_associated_feature ?Feature XREF Associated_with_Interaction #Evidence //Modified from proposal
-		Regulation_result	Positive_regulate #GR_condition
-					Negative_regulate #GR_condition
-					Does_not_regulate #GR_condition // added to capture negative data [040220 krb]
-		Confidence	Description	Text		// Free text description of the confidence, e.g. "Core" vs "Noncore" (Vidal Interactome terms)
-				P_value		  UNIQUE Float	// P-value confidence of interaction, if given
-				Log_likelihood_score    UNIQUE Float	// Only used for Predicted interactions
-		Throughput	UNIQUE	High_throughput //See BioGRID curation criteria for discussion:  http://www.yeastgenome.org/help/BiogridCuration.html
-					Low_throughput
-		Interaction_RNAi	?RNAi XREF Interaction		// RNAi experiment associated with the interaction
-		Interaction_phenotype	?Phenotype XREF Interaction	// Phenotype associated with a genetic interaction
-		WBProcess	?WBProcess	XREF	Interaction	// WormBase biological process associated with the interaction
-		DB_info 	Database 	?Database 	?Database_field 	?Accession_number	// Any database reference to the interaction outside of WormBase, e.g. BioGRID, Interactome
-		Paper 		?Paper		XREF	Interaction
-		Remark 		?Text 		#Evidence
+		Regulation_result Positive_regulate #GR_condition
+				  Negative_regulate #GR_condition
+				  Does_not_regulate #GR_condition // added to capture negative data [040220 krb]
+		Confidence Description Text			  // Free text description of the confidence, e.g. "Core" vs "Noncore" (Vidal Interactome terms)
+			   P_value UNIQUE Float			  // P-value confidence of interaction, if given
+			   Log_likelihood_score UNIQUE Float	  // Only used for Predicted interactions
+		Throughput UNIQUE High_throughput		  //See BioGRID curation criteria for discussion
+				  Low_throughput
+		Interaction_RNAi ?RNAi XREF Interaction			// RNAi experiment associated with the interaction
+		Interaction_phenotype ?Phenotype XREF Interaction	// Phenotype associated with a genetic interaction
+		WBProcess ?WBProcess XREF Interaction			// WormBase biological process associated with the interaction
+		DB_info Database ?Database ?Database_field ?Accession_number	// Any database reference to the interaction outside of WormBase, e.g. BioGRID, Interactome
+		Paper ?Paper XREF Interaction
+		Remark ?Text #Evidence
 
 
 
-#Interactor_info	Interactor_type	Non_directional		// An interactor that has no inherent directionality
-					Bait			// The interactor of interest or focus; the focus/starting point of an interaction screen
-					Target			// The discovered interactor; interactors found as a result of an interaction screen
-					Effector		// In a genetic interaction, the perturbation that affects the phenotype of the other perturbation
-					Affected		// In a genetic interaction, the perturbation whose phenotype is affected by the other perturbation
-					Trans_regulator		// A trans-acting regulator, e.g. a transcription factor
-					Cis_regulator		// A cis-acting regulator, e.g. an enhancer element
-					Trans_regulated		// A gene regulated in trans, e.g. by a transcription factor
-					Cis_regulated		// A gene regulated in cis, e.g. by an enhancer element
-			Expr_pattern	?Expr_pattern		// An expression pattern altered to indicate 
-			Variation	?Variation // Variation (allele, polymorphism, etc.) involved in the interaction //removed XREF from proposal
-			Transgene	?Transgene // Transgene that carries an interacting gene //removed XREF from proposal
-			Antibody	?Text	   // Antibody used to detect a regulation event
-			Antibody_info	?Antibody  // Free text description of the antibody used to detect a regulation event //removed XREF from proposal
-			Remark		?Text #Evidence  //info about the reagents that the model can't capture goes here (e.g. co_suppression, RNA_reagent, etc.)
+#Interactor_info       Interactor_type Non_directional		   // An interactor that has no inherent directionality
+				       Bait			   // The interactor of interest or focus; the focus/starting point of an interaction screen
+				       Target			   // The discovered interactor; interactors found as a result of an interaction screen
+				       Effector			   // In a genetic interaction, the perturbation that affects the phenotype of the other perturbation
+				       Affected			   // In a genetic interaction, the perturbation whose phenotype is affected by the other perturbation
+				       Trans_regulator		   // A trans-acting regulator, e.g. a transcription factor
+				       Cis_regulator		   // A cis-acting regulator, e.g. an enhancer element
+				       Trans_regulated		   // A gene regulated in trans, e.g. by a transcription factor
+				       Cis_regulated		   // A gene regulated in cis, e.g. by an enhancer element
+		       Expr_pattern ?Expr_pattern		   // An expression pattern altered to indicate 
+		       Variation ?Variation XREF Interactor	   // (allele, polymorphism, etc.) involved in the interaction //removed XREF from proposal
+		       Transgene ?Transgene XREF Interactor	   // Transgene XREF Interactor that carries an interacting gene //removed XREF from proposal
+		       Antibody ?Text				   // Antibody used to detect a regulation event
+		       Antibody_info ?Antibody XREF Interactor	   // Free text description of the antibody used to detect a regulation event //removed XREF from proposal
+		       Remark ?Text #Evidence			   // Info about reagents that the model can't capture (e.g. co_suppression, RNA_reagent, etc.)
 
 
 ///////////////////////////////////
@@ -506,6 +507,7 @@
           To_right_end
           Locus ?Locus
 	  Gene ?Gene
+
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -1992,7 +1994,7 @@
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Antibody model
+//  Antibody class model
 //
 // Summary records the whole description extracted from paper
 // Other_name holds the antibody's name appeared in the paper, such as MH27
@@ -2030,7 +2032,7 @@
 	  Possible_pseudonym_of ?Antibody XREF Possible_pseudonym
 	  Expr_pattern ?Expr_pattern XREF Antibody_info
 	  Gene_regulation ?Gene_regulation XREF Antibody_info
-	  Interaction ?Interaction
+	  Interactor ?Interaction
 	  Reference ?Paper XREF Antibody
 	  Remark ?Text #Evidence 
 
@@ -2444,10 +2446,10 @@
 					Treatment   ?Text	 #Evidence
 					Temperature ?Text	 #Evidence
 					Genotype    ?Text	 #Evidence
-			Ease_of_scoring UNIQUE ES0_Impossible_to_score
-					       ES1_Very_hard_to_score
-					       ES2_Difficult_to_score
-					       ES3_Easy_to_score
+			Ease_of_scoring UNIQUE ES0_Impossible_to_score #Evidence
+					       ES1_Very_hard_to_score #Evidence
+					       ES2_Difficult_to_score #Evidence
+					       ES3_Easy_to_score #Evidence
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -3164,14 +3166,14 @@
                      Derived_from ?Variation XREF Derivative
 		     Derivative	  ?Variation XREF Derived_from
            Genetics Gene_class ?Gene_class XREF Variation
-		    Mating_efficiency  Male UNIQUE ME0_Mating_not_successful
-						   ME1_Mating_rarely_successful
-						   ME2_Mating_usually_successful
-						   ME3_Mating_always_successful
-				       Hermaphrodite UNIQUE HE0_Mating_not_successful
-							    HE1_Mating_rarely_successful
-							    HE2_Mating_usually_successful
-							    HE3_Mating_always_successful
+		    Mating_efficiency  Male UNIQUE ME0_Mating_not_successful #Evidence
+						   ME1_Mating_rarely_successful #Evidence
+						   ME2_Mating_usually_successful #Evidence
+						   ME3_Mating_always_successful #Evidence
+				       Hermaphrodite UNIQUE HME0_Mating_not_successful #Evidence
+							    HME1_Mating_rarely_successful #Evidence
+							    HME2_Mating_usually_successful #Evidence
+							    HME3_Mating_always_successful #Evidence
 		    Map ?Map   XREF Variation #Map_position
 		    Interpolated_map_position UNIQUE ?Map UNIQUE Float
                     Mapping_data 2_point         ?2_point_data
