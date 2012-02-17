@@ -1,8 +1,8 @@
 #!/usr/local/bin/perl
 #
-# shatter fasta file into separate sequences
+# shatter fasta/ace (proper ace format files containing a : ) into n files containing bin number of entries
 #
-# Usage : shatter <filename> <No. of entries per output file> <name for output files>
+# Usage : shatter -file <filename> -format <ace/fasta/fastq> -bin <No. of entries per file> -output <name for output files>
 #
 
 use strict;
@@ -25,7 +25,7 @@ my $line;
 
 &fastq if ($format eq 'fastq');
 &fasta if ($format eq 'fasta');
-
+&ace if ($format eq 'ace');
 
 sub fastq {
     print "trying to shatter $file in to $bin_size called $output_name\n";
@@ -85,4 +85,41 @@ sub fasta {
     close FILE;
 
     close OUTPUT;
+}
+
+
+# Requires the use of a : in the object name line of the .ace file objects.
+
+sub ace {
+  my $flag;
+  print "trying to shatter $file in to $bin_size called $output_name\n";
+  open (OUTPUT, ">${output_name}_${output_count}") || die "can't open file ${output_name}_${output_count} :$! \n" ;
+  open (FILE, "<$file") or die "cant open $file :$!\n";
+  while (<FILE>) {
+    $line = $_;
+    #1st line of .ace object.
+    if (/^(\S+)\s+:/) {
+      $flag = "1";
+      $count++
+    }
+    elsif (/^\n$/) {
+      $flag = "0";
+    }
+
+    if (($count >= $bin_size) && ($flag eq "0")){
+      close OUTPUT;
+      $output_count++;
+      open (OUTPUT, ">${output_name}_${output_count}") || die "can't open file ${output_name}_${output_count} :$!\n";
+      $count = 0;
+    }
+
+    if ((/^(\S+)/) && ($flag eq "1")){
+      print OUTPUT;
+    }
+    else {
+      print OUTPUT;
+    }
+  }
+  close FILE;
+  close OUTPUT;
 }
