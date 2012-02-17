@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: pad $
-// Last edited on: $Date: 2012-02-17 16:43:15 $
+// Last edited on: $Date: 2012-02-17 17:26:06 $
 
 
 ////////////////////////
@@ -386,6 +386,9 @@
 //
 //   New Interaction class Proposal, 1-30-2012
 //   See: http://wiki.wormbase.org/index.php/WormBase_Model:Interaction for details
+//   This unifies Physical and genetic interactions into a single class.
+//   Chris Grove & Kimberly Van Auken
+//   
 //////////////////////////////////////////////////////////////////////////////////////
 
 				   
