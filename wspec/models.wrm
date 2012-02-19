@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: pad $
-// Last edited on: $Date: 2012-02-17 17:26:06 $
+// Last edited on: $Date: 2012-02-19 22:14:12 $
 
 
 ////////////////////////
@@ -458,7 +458,7 @@
 				 Western Text				// A regulatory interaction detection technique
 				 RT_PCR Text				// A regulatory interaction detection technique
 				 Other_method ?Text			// A regulatory interaction detection technique
-		Library_info Library_screened Text			// In the context of Y2H or YH screens, for example, the library may have been cDNA library or a pool of clones
+		Library_info Library_screened Text INT			// In the context of Y2H or YH screens, for example, the library may have been cDNA library or a pool of clones
 			     Origin From_laboratory UNIQUE ?Laboratory 	// A library generated at an academic laboratory
 				    From_company UNIQUE ?Text		// A library generated at a company
 		Deviation_from_expectation Text				// A text description of the way in which the phenotype deviated from expectation in genetic interactions	
