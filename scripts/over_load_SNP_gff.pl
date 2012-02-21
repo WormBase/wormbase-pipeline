@@ -3,7 +3,7 @@
 # This is to add Confirmed / Predicted Status and RFLP to SNP gff lines as requested by Todd
 #
 # Last updated by: $Author: mh6 $     
-# Last updated on: $Date: 2011-11-21 13:40:24 $      
+# Last updated on: $Date: 2012-02-21 14:05:22 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -113,7 +113,7 @@ foreach my $file (@gff_files) {
     #CHROMOSOME_V    Allele  SNP     155950  155951  .       +       .       Variation "uCE5-508"
     #I       Allele  SNP     126950  126950  .       +       .       Variation "pkP1003"  ;  Status "Confirmed_SNP" ; RFLP "Yes"
     if (/Public_name/){}
-    elsif( /SNP/ and /Allele/) {
+    elsif( /SNP/ and /Allele|Million_mutation/) {
       my ($allele) = /Variation \"(\S+)\"/;
       print NEW " ; Status \"",$SNP{$allele}->{'confirm'},"\"" if $SNP{$allele}->{'confirm'};
       print NEW " ; RFLP ", (defined $SNP{$allele}->{'RFLP'}? '"Yes"' : '"No"');
