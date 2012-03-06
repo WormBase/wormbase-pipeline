@@ -527,6 +527,16 @@ Bumpable
 Show_text
 GFF_SO "SO:0000120" "predicted_CDS_ace2so"
 
+// Polysome RNASeq tags aligned to the genome fromm the paper by Lamm, Fire et al. 2011
+Method : "Polysome" 
+Colour   LIGHTRED
+Score_by_width  
+Score_bounds     0.000000 100.000000
+Allow_misalign
+GFF_source       "Polysome"
+GFF_feature      "Polysome"
+GFF_SO "SO:0005844" // Polysome
+
 Method : "RNASEQ.Adult_spe-9"
 Colour   RED
 CDS_colour RED
@@ -2412,6 +2422,9 @@ Right_priority 2.75
 
 Method : "genBlastG"
 Right_priority 2.8
+
+Method : "Polysome"
+Right_priority   2.82
 
 Method : "jigsaw"
 Right_priority  2.85
