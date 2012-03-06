@@ -8,7 +8,7 @@
 #      COMPANY:
 #      VERSION:  1.0
 #      CREATED:  16/05/06 15:09:49 BST
-#     REVISION:  $Revision: 1.1 $
+#     REVISION:  $Revision: 1.2 $
 #===============================================================================
 
 package Blat;
@@ -52,9 +52,9 @@ sub _get_lines {
 	my $id=$col[9];
 	$id =~s/Protein:|Sequence://;
 	$id =~s/\"//g;
-	my $length=$col[4]-$col[3];
+	my $length=$col[4]-$col[3] + 1;
         my ( $hstart, $hstop ) = sort { $a <=> $b } ( $col[10], $col[11] );
-	if ($hstop-$hstart != $length){$hstop=$hstart+$length} #le fake
+	if ($hstop-$hstart + 1 != $length){$hstop=$hstart+$length - 1} #le fake
 	
 	my $score= $col[5] eq '.' ? 100 : $col[5];
 
@@ -74,7 +74,7 @@ sub _get_lines {
 	    -hseqname      => $id,
 	    -hstart        => $hstart,
 	    -hend          => $hstop, # sometimes faked to pass a insanity check
-	    -cigar_string  => "${length}MM"
+	    -cigar_string  => "${length}M"
           )
   	}
 	else {
@@ -92,7 +92,7 @@ sub _get_lines {
 	    -hstart        => $hstart,
 	    -hend          => $hstop, # sometimes faked to pass a insanity check
 	    -hstrand       => $strand,
-	    -cigar_string  => "${length}MM"
+	    -cigar_string  => "${length}M"
           )
 	}
     }
