@@ -7,8 +7,8 @@
 # This script interogates an ACEDB database and returns all pfam/Interpro/blastx 
 # data as appropriate and generates a suitable DB_remark
 #
-# Last updated on: $Date: 2011-12-02 10:33:44 $
-# Last updated by: $Author: klh $
+# Last updated on: $Date: 2012-03-07 16:57:01 $
+# Last updated by: $Author: mh6 $
 
 
 ### DB_remark is generated as follows:  ###
@@ -285,11 +285,7 @@ SUBSEQUENCE: while ( my $cds = $CDSs->next ) {
       PROTEIN: foreach my $protein (@peptide_homols) {
 
 	  # ignore other worm matches
-	  next PROTEIN if (
-		     ($protein =~ m/^BP\:CBP/) 
-		  || ($protein =~ m/^WP\:CE/)
-		  || ($protein =~ m/^RP\:RP/)
-	  );
+	  next PROTEIN if ($protein->Corresponding_CDS);
 
 	  my ($a,$b,$score,$d,$e,$f,$g) = $protein->row;
 
