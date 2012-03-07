@@ -1,7 +1,7 @@
 #!/usr/local/ensembl/bin/perl -w
 #
-# Last edited by: $Author: klh $
-# Last edited on: $Date: 2012-01-05 11:08:24 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2012-03-07 15:19:41 $
 
 use lib $ENV{'CVS_DIR'};
 
@@ -346,7 +346,7 @@ sub process_uniprot {
     
     my $login = "anonymous";
     my $passw = 'wormbase@sanger.ac.uk';
-    my $ftp = Net::FTP->new("ftp.ebi.ac.uk");
+    my $ftp = Net::FTP->new("ftp.ebi.ac.uk", Timeout => 6000);
     $ftp->login("anonymous",'wormbase@sanger.ac.uk');
     $ftp->cwd('pub/databases/uniprot/knowledgebase');
 
