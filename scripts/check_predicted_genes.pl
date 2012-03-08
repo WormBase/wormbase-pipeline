@@ -4,7 +4,7 @@
 #
 # by Keith Bradnam
 #
-# Last updated on: $Date: 2012-03-08 14:21:01 $
+# Last updated on: $Date: 2012-03-08 16:30:47 $
 # Last updated by: $Author: pad $
 #
 # see pod documentation at end of file for more information about this script
@@ -119,7 +119,7 @@ sub main_gene_checks {
   foreach my $gene_model ( @Predictions ) {
     #next unless ($gene_model eq "Y32B12C.2b"); #stop the script at a specified gene. debug line
     print STDOUT "$gene_model\n" if $verbose;
-    my $method_test = ($gene_model->Method);
+    my $method_test = $gene_model->Method->name;
     my @exon_coord1 = sort by_number ($gene_model->get('Source_exons',1));
     my @exon_coord2 = sort by_number ($gene_model->get('Source_exons',2));
     my $i;
@@ -141,8 +141,8 @@ sub main_gene_checks {
       my ($gene_name) = ($gene_model->name =~ /^(\w+\.\d+)[a-z]*$/ );
       # make a hash key out of the exon starts and ends
       my $hash_key = join(':', @exon_coord1) . ',' . join(':', @exon_coord2);
-      if (exists $sequence_names{$gene_name}{$hash_key}) {
-	my $other_isoform = $sequence_names{$gene_name}{$hash_key};
+      if (exists $sequence_structures{$gene_name}{$hash_key}) {
+	my $other_isoform = $sequence_structures{$gene_name}{$hash_key};
 	my $class = $gene_model->class;
 	push(@error1, "ERROR: $class $gene_model has the same structure as $other_isoform\n");
 	print "ERROR: $class $gene_model has the same structure as $other_isoform\n";
