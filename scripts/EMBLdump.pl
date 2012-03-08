@@ -2,7 +2,7 @@
 #
 # EMBLdump.pl :  makes modified EMBL dumps from camace.
 # 
-#  Last updated on: $Date: 2012-01-30 10:32:04 $
+#  Last updated on: $Date: 2012-03-08 09:21:34 $
 #  Last updated by: $Author: klh $
 
 use strict;
@@ -1389,18 +1389,6 @@ sub stage_dump_to_submissions_repository {
        $log->log_and_die("Could not find the EMBL file for $cosmid ($embl_file)");
      }
        
-     # for C. briggsae, we need to propagate the CO lines forward through submissions, 
-     # because these are not included in the AceDB dumps. Insert them into the line
-     # for the clone just before the terminating //
-     if ($species eq 'briggsae') {
-       open(my $emblfh, $embl_file);
-       while(<$emblfh>) {
-         /^CO\s+/ and do {
-           splice(@{$records{$cosmid}->{embl}}, -1, 0, $_);
-         };
-       }
-     }
-     
      open my $emblfh, ">$embl_file" or $log->log_and_die("Could not open $embl_file for writing\n");
      foreach my $ln (@{$records{$cosmid}->{embl}}) {
        print $emblfh $ln;
