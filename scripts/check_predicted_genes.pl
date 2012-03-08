@@ -4,7 +4,7 @@
 #
 # by Keith Bradnam
 #
-# Last updated on: $Date: 2012-01-30 10:29:40 $
+# Last updated on: $Date: 2012-03-08 10:59:35 $
 # Last updated by: $Author: gw3 $
 #
 # see pod documentation at end of file for more information about this script
@@ -69,6 +69,7 @@ if (!defined$tierII) {
 
 my %sequence_names;
 my %sequence_classes;
+my %sequence_structures;
 
 if ($build) {
   &extra_build_checks;
@@ -134,6 +135,20 @@ sub main_gene_checks {
     }
     $sequence_names{$gene_model->name} = $method_test; # save all the names and methods
     $sequence_classes{$gene_model->name} = $gene_model->class;
+
+    # check for duplicated sequence structures
+    if ($method_test eq 'curated') {
+      my ($gene_name) = ($gene_model->name =~ /^(\w+\.\d+)[a-z]*$/ );
+      # make a hash key out of the exon starts and ends
+      my $hash_key = join(':', @exon_coord1) . ',' . join(':', @exon_coord2);
+      if (exists $sequence_names{$gene_name}{$hash_key}) {
+	my $other_isoform = $sequence_names{$gene_name}{$hash_key};
+	my $class = $gene_model->class;
+	push(@error1, "ERROR: $class $gene_model has the same structure as $other_isoform\n");
+	print "ERROR: $class $gene_model has the same structure as $other_isoform\n";
+      }
+      $sequence_structures{$gene_name}{$hash_key} = $gene_model->name;
+    }
 
     if ($method_test ne 'Transposon') {
       if (!defined($exon_coord2[0])) {
