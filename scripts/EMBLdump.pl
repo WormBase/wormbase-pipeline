@@ -2,7 +2,7 @@
 #
 # EMBLdump.pl :  makes modified EMBL dumps from camace.
 # 
-#  Last updated on: $Date: 2012-03-08 09:21:34 $
+#  Last updated on: $Date: 2012-03-09 10:53:15 $
 #  Last updated by: $Author: klh $
 
 use strict;
@@ -87,7 +87,7 @@ GetOptions (
   "piddb=s"         => \$cds2proteinid_db,
   "dbremarkdb=s"    => \$cds2dbremark_db,
   "cdsstatusdb=s"   => \$cds2status_db,
-  "modprivate"      => \$private,
+  "modprivate=s"    => \$private,
   "moddumpfile:s"   => \$mod_dump_file,
   "rawdumpfile:s"   => \$raw_dump_file,
   "quicktest"       => \$quicktest,
@@ -231,7 +231,7 @@ if ($dump_modified) {
       # ST * private
       #
       if ($private) {
-        print $out_fh "ST * private $private\n";
+        print $out_fh "ST * $private\n";
         print $out_fh "XX\n";
       }
       
@@ -433,7 +433,7 @@ sub process_feature_table {
         }
       }
       if ($species eq 'briggsae') {
-        printf $out_fh "FT   %16s/note=\"%s\"\n", " ", $clone;
+        printf $out_fh "FT   %16s/note=\"supercontig %s\"\n", " ", $clone;
       }
       next;
     } elsif ($feat->{ftype} =~ /RNA$/) {
@@ -1335,9 +1335,15 @@ sub stage_dump_to_submissions_repository {
       $current_lines = [];
     };
 
-    /^DE\s+.+\s+(\S+)$/ and do {
-      $cosmid = $1;
-      
+    /^DE\s+/ and do {
+      if ($species eq 'elegans' and /^DE\s+.+\s+(\S+)$/) {
+        $cosmid = $1;
+      } elsif ($species eq 'briggsae' and /^DE\s+.+\s+supercontig\s+(\S+)/) {
+        $cosmid = $1;
+      } else {
+        $log->log_and_die("Could not parse contig name from DE line: $_\n");
+      }
+
       foreach my $line (@$current_lines) {
         push @{$records{$cosmid}->{embl}}, $line;
       }
