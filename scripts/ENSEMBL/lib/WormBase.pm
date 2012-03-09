@@ -47,8 +47,6 @@ use Bio::EnsEMBL::CoordSystem;
 use Bio::EnsEMBL::Slice;
 use Bio::EnsEMBL::Analysis::Tools::GeneBuildUtils::ExonUtils;
 
-my $species; # yes, I am not too prooud of class variables :-(
-
 =head2 get_seq_ids
 
   Arg [1]   : filehandle to an agp file
@@ -242,7 +240,7 @@ sub parse_gff {
     print "\nPARSE GFF has " . keys(%$genes) . " genes\n";
     foreach my $gene_id ( keys(%$genes) ) {
         my $transcripts = $genes->{$gene_id};
-        my $unpruned    = &create_gene( $transcripts, $gene_id );
+        my $unpruned    = &create_gene( $transcripts, $gene_id, 'protein_coding' );
 
         #print STDERR "gene ".$unpruned."\n";
         my $gene = &prune_Exons($unpruned);
@@ -782,7 +780,7 @@ sub generate_transcripts {
 =cut
 
 sub create_transcripts {
-    my ( $transcriptsRef, $five_start, $three_end, $trans_start_exon, $trans_end_exon ) = @_;
+    my ( $transcriptsRef, $five_start, $three_end, $trans_start_exon, $trans_end_exon, $species ) = @_;
 
     my @keys = keys(%$five_start);
     foreach my $key (@keys) {
@@ -801,8 +799,10 @@ sub create_transcripts {
         #print STDERR "\nWorking on $transcript.(".$exons[0]->strand.") ";
         #get the gene-name
 	$gene_name= ( $transcript =~ /(.*?\w+\.\d+)[a-z A-Z]*\.*\d*/ )?$1:$transcript; # elegans
-	unless ($WormBase::species=~/elegans/) {
-                $gene_name= ( $transcript =~ /([A-Z]{3,}\d+)[a-z]*(\.\d+)*$/ )?$1:$transcript if ($gene_name eq $transcript);
+        if (defined $species and $species !~ /elegans/) {
+          unless ($WormBase::species=~/elegans/) {
+            $gene_name= ( $transcript =~ /([A-Z]{3,}\d+)[a-z]*(\.\d+)*$/ )?$1:$transcript if ($gene_name eq $transcript);
+          }
         }
 
         $transcript_id = $transcript;
@@ -834,20 +834,16 @@ sub create_transcripts {
         }
         my $start_exon_ind;
         if ( exists( $trans_start_exon->{$transcript_id} ) ) {
-            print "\nadjusting coding exons to " . $trans_start_exon->{$transcript_id} . " - " . $trans_end_exon->{$transcript_id};
+            print "\n adjusting coding exons to " . $trans_start_exon->{$transcript_id} . " - " . $trans_end_exon->{$transcript_id};
             $translation->start_Exon( $sorted_exons[ $trans_start_exon->{$transcript_id} ] );
             $translation->end_Exon( $sorted_exons[ $trans_end_exon->{$transcript_id} ] );
             $start_exon_ind = $trans_start_exon->{$transcript_id};
         }
         else {
-            print "not defined\n";
+            print "\n no UTRs - setting translation to span whole transcript\n";
             $translation->start_Exon( $sorted_exons[0] );
             $translation->end_Exon( $sorted_exons[$#sorted_exons] );
             $start_exon_ind = 0;
-        }
-        print " creating translation for " . $transcript_id . "\n";
-        if ( !exists( $trans_start_exon->{$transcript_id} ) ) {
-            print "dne: no trans_start_exon for " . $transcript_id . "\n";
         }
 
         if ( exists( $five_start->{$transcript_id} ) ) {
@@ -857,19 +853,19 @@ sub create_transcripts {
             $translation->start( $five_start->{$transcript_id} );
         }
         elsif ( $sorted_exons[$start_exon_ind]->phase == 0 ) {
-            print "case 0\n";
+            print " start phase 0\n";
             $translation->start(1);
         }
         elsif ( $sorted_exons[$start_exon_ind]->phase == 1 ) {
-            print "case 1\n";
+            print " start phase 1\n";
             $translation->start(3);
         }
         elsif ( $sorted_exons[$start_exon_ind]->phase == 2 ) {
-            print "case 2\n";
+            print " start phase 2\n";
             $translation->start(2);
         }
         else {
-            print "dies here ";
+            print "dies here "; 
             die "Strange phase in $transcript_id " . $sorted_exons[0]->phase;
         }
 
@@ -906,6 +902,7 @@ sub create_transcripts {
         $transcript->translation($translation);
         $transcript->version(1);
         $transcript->stable_id($transcript_id);
+        $transcript->biotype('protein_coding');
         if ( !$genes{$gene_name} ) {
             $genes{$gene_name} = [];
             push( @{ $genes{$gene_name} }, $transcript );
@@ -933,18 +930,19 @@ sub create_transcripts {
 =cut
 
 sub create_gene {
-    my ( $transcripts, $name ) = @_;
+    my ( $transcripts, $name, $biotype ) = @_;
     my $time     = time;
     my $gene     = new Bio::EnsEMBL::Gene;
     my $exons    = $transcripts->[0]->get_all_Exons;
     my $analysis = $exons->[0]->analysis;
 
     $gene->analysis($analysis);
-    $gene->biotype( $analysis->logic_name );
+    $gene->biotype( $biotype ) if defined $biotype;
     $gene->version(1);
     $gene->stable_id($name);
     foreach my $transcript (@$transcripts) {
-        $gene->add_Transcript($transcript);
+      $transcript->analysis($analysis) if not $transcript->analysis;
+      $gene->add_Transcript($transcript);
     }
 
     return $gene;
@@ -1025,7 +1023,7 @@ sub write_genes {
     my $e = 0;
     my %stable_ids;
     if ($stable_id_check) {
-        my $sql = 'select stable_id from gene_stable_id';
+        my $sql = 'select stable_id from gene';
         my $sth = $db->dbc->prepare($sql);
         $sth->execute;
         while ( my ($stable_id) = $sth->fetchrow ) {
@@ -1665,7 +1663,7 @@ sub parse_pseudo_gff {
 =cut
 
 sub parse_pseudo_files {
-    my ( $file, $seq, $analysis, $types ) = @_;
+    my ( $file, $seq, $analysis, $types, $biotype ) = @_;
 
     open( FH, $file ) or die "couldn't open " . $file . " $!";
 
@@ -1680,12 +1678,14 @@ sub parse_pseudo_files {
     print "there are " . keys(%$processed_transcripts) . " processed special transcripts\n";
 
     my $genes = undef;
-    $genes = &create_pseudo_transcripts($processed_transcripts);
+    my $biotype = $types if not defined $biotype; 
+
+    $genes = &create_pseudo_transcripts($processed_transcripts, $biotype);
     print "PARSE GFF there are " . keys(%$genes) . " special genes\n";
 
     foreach my $gene_id ( keys(%$genes) ) {
         my $transcripts = $genes->{$gene_id};
-        my $gene = &create_gene( $transcripts, $gene_id );
+        my $gene = &create_gene( $transcripts, $gene_id, $biotype );
         push( @genes, $gene );
     }
     close(FH);
@@ -1798,12 +1798,13 @@ sub process_pseudo_transcripts {
 }
 
 sub create_pseudo_transcripts {
-    my ($transcripts) = @_;
+    my ($transcripts, $biotype) = @_;
 
     my %transcripts = %$transcripts;
     my %genes;
     my $gene_name;
     my $transcript_id;
+
     foreach my $transcript ( keys(%transcripts) ) {
         my $time  = time;
         my @exons = @{ $transcripts{$transcript} };
@@ -1833,6 +1834,8 @@ sub create_pseudo_transcripts {
         }
         $transcript->version(1);
         $transcript->stable_id($transcript_id);
+        $transcript->biotype($biotype) if defined $biotype;
+
         if ( !$genes{$gene_name} ) {
             $genes{$gene_name} = [];
             push( @{ $genes{$gene_name} }, $transcript );
