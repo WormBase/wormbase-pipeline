@@ -3,9 +3,19 @@
 # generate_dbxrefs_file.pl
 #
 # Generates a table of xrefs that should be generally useful for
-# Uniprot, ENA and Ensembl
+# Uniprot, ENA and Ensembl. Columns are:
+#
+# 1  Gene sequence name
+# 2  WBGene id
+# 3  CGC name
+# 4  Transcript name (not CDS name for coding transcripts, but the Coding_transcript name)
+# 5  Pep name
+# 6  ENA clone accession
+# 7  ENA protein_id
+# 8  Uniprot accession
+#
 # 
-#  Last updated on: $Date: 2012-03-09 16:14:44 $
+#  Last updated on: $Date: 2012-03-09 16:19:54 $
 #  Last updated by: $Author: klh $
 
 use strict;
