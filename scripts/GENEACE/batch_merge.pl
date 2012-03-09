@@ -194,7 +194,7 @@ sub merge_gene {
       }
       $ver++;
       $gene_versions{$deadgene} = $ver;
-      $output .= "\nGene : $deadgene\nVersion $ver\nHistory Version_change $ver now $user Event Merged_into $livegene\nMerged_into $livegene\nDead\n\nGene : $deadgene\n-D Sequence_name\n-D method\n\n";
+      $output .= "\nGene : $deadgene\nVersion $ver\nHistory Version_change $ver now $user Event Merged_into $livegene\nMerged_into $livegene\nDead\n\nGene : $deadgene\n-D Map_info\n-D Sequence_name\n-D method\n\n";
 
       # transfer the Other_names
       my $dead_Other_names_col = $deadgeneObj->at('Identity.Name.Other_name');
