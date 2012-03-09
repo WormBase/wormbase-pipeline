@@ -7,7 +7,7 @@
 # Usage : autoace_builder.pl [-options]
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2011-11-24 12:13:03 $
+# Last edited on: $Date: 2012-03-09 16:26:26 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -31,7 +31,7 @@ my ( $gff_dump,     $processGFF, $gff_split );
 my $gene_span;
 my ( $load, $tsuser, $map_features, $remap_misc_dynamic, $map, $transcripts, $intergenic, $misc_data_sets, $homol_data_sets, $nem_contigs);
 my ( $GO_term, $rna , $dbcomp, $confirm, $operon ,$repeats, $remarks, $names, $treefam, $cluster);
-my ( $utr, $agp, $gff_munge, $extras , $ontologies, $interpolate, $check);
+my ( $utr, $agp, $gff_munge, $extras , $ontologies, $interpolate, $check, $xrefs);
 my ( $data_check, $buildrelease, $public,$finish_build, $gffdb, $autoace, $release, $user, $kegg);
 
 
@@ -63,6 +63,7 @@ GetOptions(
 	   'nem_contig'     => \$nem_contigs,
 	   'misc_data_sets' => \$misc_data_sets,
 	   'homol_data_sets'=> \$homol_data_sets,
+           'xrefs'          => \$xrefs,
 	   'go_term'        => \$GO_term,
 	   'rna'            => \$rna,
 	   'dbcomp'         => \$dbcomp,
@@ -191,8 +192,15 @@ if ($gff_munge) {
     $wormbase->run_script( "chromosome_script_lsf_manager.pl -command '/software/bin/perl $ENV{'CVS_DIR'}/process_sage_gff.pl' -mito -prefix", $log);
   }
 }
+if ($xrefs) {
+  if ($wormbase->species eq 'elegans' or $wormbase->species eq 'briggsae') {
+    $wormbase->run_script( 'generate_dbxref_file.pl', $log);
+  } else {
+    $log->write_to("This should only be run for elegans and briggsae, so not doing anything\n");
+  }
+}
 
-&ontologies								if $ontologies;
+&ontologies								 if $ontologies;
 &make_extras                                                             if $extras;
 #run some checks
 $wormbase->run_script( "post_build_checks.pl -a"                 , $log) if $check;
