@@ -1,4 +1,3 @@
-ls
 #!/usr/local/bin/perl5.8.0 -w
 #
 # make_FTP_sites.pl
@@ -7,7 +6,7 @@ ls
 # builds wormbase & wormpep FTP sites
 # 
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2012-02-02 18:56:17 $
+# Last updated on: $Date: 2012-03-09 16:09:00 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -98,6 +97,7 @@ my $manifest;# check everything has been copied.
 my $all;     # copy everything across
 my $dna;
 my $rna;
+my $xrefs;
 my $gff;
 my $ests;
 my $gbrowse_gff;
@@ -126,6 +126,7 @@ GetOptions ("help"          => \$help,
 	    "misc"          => \$misc,
             "ests"          => \$ests,
 	    "homols"        => \$homols,
+            "xrefs"         => \$xrefs,
 	    "ont"           => \$ont,
 	    "genes"         => \$genes,
 	    "cDNAlist"      => \$cDNA,
@@ -158,7 +159,7 @@ map { $skip_species{$_} = 1 } @skip_species;
 map { $only_species{$_} = 1 } @only_species;
 
 # using -all option?
-($compara=$acedb=$dna=$gff=$rna=$misc=$wormpep=$genes=$cDNA=$ests=$geneIDs=$pcr=$homols=$manifest=$ont=$blastx=$dump_ko=$gbrowse_gff=$md5=$go_public=1 ) if ($all);
+($compara=$acedb=$dna=$gff=$rna=$misc=$wormpep=$genes=$cDNA=$ests=$geneIDs=$pcr=$homols=$manifest=$ont=$xrefs=$blastx=$dump_ko=$gbrowse_gff=$md5=$go_public=1 ) if ($all);
 
 my $WS              = $wormbase->get_wormbase_version();      # e.g.   132
 my $WS_name         = $wormbase->get_wormbase_version_name(); # e.g. WS132
@@ -208,6 +209,8 @@ close FTP_LOCK;
 &copy_ontology_files if ($ont);       # make a new /ontology directory and copy files across
 
 &copy_homol_data if ($homols);        # copies best blast hits files across
+
+&copy_xrefs if ($xrefs);              # copies xref file for elegans and briggsae
 
 &extract_confirmed_genes if ($genes); # make file of confirmed genes from autoace and copy across
 
@@ -324,6 +327,38 @@ sub copy_blastx {
   }
 
   $log->write_to("$runtime: Finished copying/zipping non-elegans blastx\n\n");
+}
+
+
+##################################################
+# copy the xref files 
+##################################################
+sub copy_xrefs {
+  my $runtime = $wormbase->runtime;
+  $log->write_to("$runtime: copying/zipping xref files\n");
+
+  my %accessors = ($wormbase->all_species_accessors);
+  $accessors{elegans} = $wormbase;
+
+  foreach my $sp ('elegans', 'briggsae') {
+    my $wb = $accessors{$sp};
+
+    next if exists $skip_species{$wb->species};
+    next if @only_species and not exists($only_species{$wb->species});
+
+    my $gspecies = $wb->full_name('-g_species'=>1);
+
+    my $xref_file = $wb->acefiles . "/DBXREFs.txt";
+    my $out_file = "$targetdir/species/$gspecies/$gspecies.${WS_name}.xrefs.txt.gz";
+
+    if (-e $xref_file) {
+      $wormbase->run_command("cat $xref_file | gzip -9 -c > $out_file", $log);
+    } else {
+      $log->error("Could not find xref file $xref_file");
+    }
+  }
+
+  $log->write_to("$runtime: Finished copying/zipping xrefs\n\n");
 }
 
 
@@ -1431,14 +1466,16 @@ c_elegans.WSREL.gsc_oligo_mapping.txt.gz
 c_elegans.WSREL.cdna2orf.txt.gz
 c_elegans.WSREL.confirmed_genes.fa.gz
 
-[elegans]species/c_elegans
-GSPECIES.WSREL.WORMpep_package.tar.gz
 
 [elegans]species/GSPECIES
 GSPECIES.WSREL.assembly.agp.gz
 
+[elegans,briggsae]species/GSPECIES
+GSPECIES.WSREL.xrefs.txt.gz
+
 # tierII specific stuff
 [TIER2]species/GSPECIES
+GSPECIES.WSREL.WORMpep_package.tar.gz
 GSPECIES.WSREL.best_blastp_hits.txt.gz
 GSPECIES.WSREL.intergenic_sequences.fa.gz
 GSPECIES.WSREL.GBrowse.gff2.gz
@@ -1454,7 +1491,7 @@ GSPECIES.WSREL.genomic.fa.gz
 GSPECIES.WSREL.genomic_masked.fa.gz
 GSPECIES.WSREL.genomic_softmasked.fa.gz
 
-[ALL:assum,mincognita,heterorhabditis]species/GSPECIES
+[ALL:mincognita,heterorhabditis]species/GSPECIES
 GSPECIES.WSREL.protein.fa.gz
 GSPECIES.WSREL.cds_transcripts.fa.gz
 
