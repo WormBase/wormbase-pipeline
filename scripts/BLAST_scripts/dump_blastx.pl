@@ -4,8 +4,8 @@
 #  script to submit blastx dumping scripts onto the farm
 #  and concatenate them at the end
 # 
-# Last edited by: $Author: klh $
-# Last edited on: $Date: 2012-01-16 13:38:18 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2012-03-12 14:43:45 $
 # 
 
 
@@ -121,7 +121,7 @@ my $outfile="$dumpdir/${organism}_blastx.ace";
 $log->write_to("Concatenating the ace files to create $outfile\n");
 
 # in case of Elegans do something else
-if ($wormbase->soecies eq 'elegans' or $wormbase->species eq 'briggsae'){
+if ($wormbase->species eq 'elegans' or $wormbase->species eq 'briggsae'){
   my @files = glob("$dumpdir/$organism*X.*.ace");
   unlink $outfile if -e $outfile;
   foreach my $file (@files ){
