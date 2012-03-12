@@ -7,7 +7,7 @@
 # Usage : autoace_builder.pl [-options]
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2012-03-09 16:26:26 $
+# Last edited on: $Date: 2012-03-12 12:09:15 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -31,7 +31,7 @@ my ( $gff_dump,     $processGFF, $gff_split );
 my $gene_span;
 my ( $load, $tsuser, $map_features, $remap_misc_dynamic, $map, $transcripts, $intergenic, $misc_data_sets, $homol_data_sets, $nem_contigs);
 my ( $GO_term, $rna , $dbcomp, $confirm, $operon ,$repeats, $remarks, $names, $treefam, $cluster);
-my ( $utr, $agp, $gff_munge, $extras , $ontologies, $interpolate, $check, $xrefs);
+my ( $utr, $agp, $gff_munge, $extras , $ontologies, $interpolate, $check, $enaseqxrefs, $enaprotxrefs, $xrefs);
 my ( $data_check, $buildrelease, $public,$finish_build, $gffdb, $autoace, $release, $user, $kegg);
 
 
@@ -63,6 +63,8 @@ GetOptions(
 	   'nem_contig'     => \$nem_contigs,
 	   'misc_data_sets' => \$misc_data_sets,
 	   'homol_data_sets'=> \$homol_data_sets,
+           'sequencexrefs'  => \$enaseqxrefs,
+           'proteinxrefs'   => \$enaprotxrefs,
            'xrefs'          => \$xrefs,
 	   'go_term'        => \$GO_term,
 	   'rna'            => \$rna,
@@ -114,6 +116,8 @@ $wormbase->run_script( "check_primary_database.pl -organism ${\$wormbase->specie
 
 #//--------------------------- batch job submission -------------------------//
 $wormbase->run_script( "build_dumpGFF.pl -stage $gff_dump", $log ) if $gff_dump;      #init
+
+$wormbase->run_script( "generate_ena_submission_xrefs.pl -sequencexrefs -load", $log) if $enaseqxrefs;
 $wormbase->run_script( "processGFF.pl -$processGFF",        $log ) if $processGFF;    #clone_acc
 &first_dumps                                                       if $first_dumps;   # dependant on clone_acc for agp
 $wormbase->run_script( 'make_wormpep.pl -initial -all',          $log ) if $make_wormpep;
@@ -155,6 +159,7 @@ $wormbase->run_script( 'load_data_sets.pl -homol', $log) if $homol_data_sets;
 $wormbase->run_script( 'make_wormrna.pl'                         , $log) if $rna;
 $wormbase->run_script( 'confirm_genes.pl -load'                  , $log) if $confirm;
 $wormbase->run_script( 'map_operons.pl'                          , $log) if $operon;
+$wormbase->run_script( "generate_ena_submission_xrefs.pl -proteinxrefs -load", $log) if $enaprotxrefs;
 $wormbase->run_script( 'make_wormpep.pl -all -final'                  , $log) if $finish_wormpep;
 $wormbase->run_script( 'write_DB_remark.pl'                      , $log) if $remarks;
 $wormbase->run_script( 'molecular_names_for_genes.pl'            , $log) if $names;
@@ -235,26 +240,26 @@ exit(0);
 
 sub first_dumps {
 
-	if ($wormbase->species eq 'elegans'){
-	    my $version = $wormbase->get_wormbase_version;
-    	$wormbase->run_script( "inspect-old-releases.pl -version $version -database1 ".$wormbase->database('current')." -database2 ".$wormbase->autoace, $log );
-
-    	$wormbase->run_script( "make_agp_file.pl",                       $log );
-    	$wormbase->run_script( "agp2dna.pl",                             $log ); #dependant on processGFF producing clone_acc files.
-
-    	my $agp_errors = 0;
-
-    	foreach my $chrom ($wormbase->get_chromosome_names) {
-    	    open( AGP, "<" . $wormbase->autoace . "/yellow_brick_road/CHROMOSOME_${chrom}.agp_seq.log" )
-    	      or die "Couldn't open agp file : $!";
-    	    while (<AGP>) {
-    	        $agp_errors++ if (/ERROR/);
-    	    }
-    	    close(AGP);
-    	}
+  if ($wormbase->species eq 'elegans'){
+    my $version = $wormbase->get_wormbase_version;
+    $wormbase->run_script( "inspect-old-releases.pl -version $version -database1 ".$wormbase->database('current')." -database2 ".$wormbase->autoace, $log );
     
-		$log->write_to("ERRORS ( $agp_errors ) in agp file\n");
-	}
+    $wormbase->run_script( "make_agp_file.pl",                       $log );
+    $wormbase->run_script( "agp2dna.pl",                             $log ); #dependant on processGFF producing clone_acc files.
+    
+    my $agp_errors = 0;
+    
+    foreach my $chrom ($wormbase->get_chromosome_names) {
+      open( AGP, "<" . $wormbase->autoace . "/yellow_brick_road/CHROMOSOME_${chrom}.agp_seq.log" )
+          or die "Couldn't open agp file : $!";
+      while (<AGP>) {
+        $agp_errors++ if (/ERROR/);
+      }
+      close(AGP);
+    }
+    
+    $log->write_to("ERRORS ( $agp_errors ) in agp file\n");
+  }
 }
 
 sub map_features {
