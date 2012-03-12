@@ -10,7 +10,7 @@ use Wormbase;
 use Log_files;
 
 my ($debug, $test, $store, $species, $wb, $acefile, $load, $ncbi_tax_id, $table_file,$sv_table_file,
-    %cds_xrefs, %pep_xrefs);
+    %cds_xrefs, %pep_xrefs, $generate_tables, $generate_xrefs);
 
 
 &GetOptions ("debug=s"    => \$debug,
@@ -21,6 +21,8 @@ my ($debug, $test, $store, $species, $wb, $acefile, $load, $ncbi_tax_id, $table_
              "table=s"    => \$table_file,
              "svtable=s"  => \$sv_table_file,
              'acefile=s'  => \$acefile,
+             'generatetables' => \$generate_tables,
+             'generatexrefs'  => \$generate_xrefs,
     );
 
 
@@ -37,106 +39,106 @@ else {
 
 my $log = Log_files->make_build_log($wb);
 
-my %cds2wormpep = $wb->FetchData('cds2wormpep');
-my %accession2clone   = $wb->FetchData('accession2clone');
-
 my ($ggenus, $gspecies) = $wb->full_name =~ /^(\S+)\s+(\S+)/;
 
 $ncbi_tax_id = $wb->ncbi_tax_id;
 $acefile = $wb->acefiles . "/EBI_xrefs.ace" if not defined $acefile;
+$table_file = $wb->acefiles . "/EBI_protein_ids.txt" if not defined $table_file;
+$sv_table_file = $wb->acefiles . "/EBI_sequence_versions.txt" if not defined $sv_table_file;
 
-if (not defined $table_file) {
-  $table_file = $wb->acefiles . "/EBI_protein_ids.txt";
+
+if ($generate_tables) {
   &lookup_from_ebi_production_dbs($table_file, 'proteinxrefs');
-}
-
-if (not defined $sv_table_file) {
-  $sv_table_file = $wb->acefiles . "/EBI_sequence_versions.txt";
   &lookup_from_ebi_production_dbs($sv_table_file, 'seqversions');
 }
 
-open(my $acefh, ">$acefile")
-    or $log->log_and_die("Could not open $acefile for writing\n");
-
-open(my $vtable_fh, $sv_table_file) 
-    or $log->log_and_die("Could not open $sv_table_file for reading\n");
-
-while(<$vtable_fh>) {
-  /^(\S+)\s+(\d+)/ and do {
-    my ($cloneacc, $ver) = ($1, $2);
-
-    my $clone =  $accession2clone{$cloneacc};
-    next if not $clone;
-
-    print $acefh "Sequence : \"$clone\"\n";
-    print $acefh "-D Database EMBL  NDB_SV\n";
-    print $acefh "\nSequence : \"$clone\"\n";
-    print $acefh "Database EMBL NDB_SV $cloneacc.$ver\n\n";
-  }
-}
-
-open(my $table_fh, $table_file)
-    or $log->log_and_die("Could not open $table_file for reading\n");
-
-while(<$table_fh>) {
-  chomp;
-  my @data = split("\t",$_);
+if ($generate_xrefs) {
+  my %cds2wormpep = $wb->FetchData('cds2wormpep');
+  my %accession2clone   = $wb->FetchData('accession2clone');
+    
+  open(my $vtable_fh, $sv_table_file) 
+      or $log->log_and_die("Could not open $sv_table_file for reading\n");
   
-  next unless scalar(@data) == 8;
-  my($cloneacc, $pid, $version, $cds, $uniprot_ac, $uniprot_id) 
-      = ($data[0],$data[2],$data[3],$data[5],$data[6],$data[7]);  
+  open(my $table_fh, $table_file)
+      or $log->log_and_die("Could not open $table_file for reading\n");
   
-  next unless (defined $pid);
-  $log->write_to("Potential New Protein: $_\n") if $uniprot_ac eq 'UNDEFINED';
+  open(my $acefh, ">$acefile")
+      or $log->log_and_die("Could not open $acefile for writing\n");
   
-  next unless $accession2clone{$cloneacc}; #data includes some mRNAs
-  
-  push @{$cds_xrefs{$cds}->{Protein_id}}, [$accession2clone{$cloneacc}, $pid, $version];
-
-  if($cds2wormpep{$cds}) {
-    if (defined $uniprot_ac and $uniprot_ac ne 'UNDEFINED') {
-      $cds_xrefs{$cds}->{UniProtAcc}->{$uniprot_ac} = 1;
-      $pep_xrefs{"WP:".$cds2wormpep{$cds}}->{UniProtAcc}->{$uniprot_ac} = 1;
-
-      if (defined $uniprot_id and $uniprot_id ne 'UNDEFINED') {
-        $cds_xrefs{$cds}->{UniProtId}->{$uniprot_id} = 1;
-        $pep_xrefs{"WP:".$cds2wormpep{$cds}}->{UniProtId}->{$uniprot_id} = 1;
-      }
+  while(<$vtable_fh>) {
+    /^(\S+)\s+(\d+)/ and do {
+      my ($cloneacc, $ver) = ($1, $2);
+      
+      my $clone =  $accession2clone{$cloneacc};
+      next if not $clone;
+      
+      print $acefh "Sequence : \"$clone\"\n";
+      print $acefh "-D Database EMBL  NDB_SV\n";
+      print $acefh "\nSequence : \"$clone\"\n";
+      print $acefh "Database EMBL NDB_SV $cloneacc.$ver\n\n";
     }
   }
-}
-close($table_fh) or $log->log_and_die("Could not close the protein_id command/file\n");
-
-foreach my $pair (["CDS",\%cds_xrefs], ["Protein", \%pep_xrefs]) {
-  my ($class, $hash) = @$pair;
-
-  foreach my $k (keys %$hash) {
-    print $acefh "$class : \"$k\"\n";
-    if (exists $hash->{$k}->{Protein_id}) {
-      foreach my $pidl (@{$hash->{$k}->{Protein_id}}) {
-        print $acefh "Protein_id\t@$pidl\n"; 
-      }
-    }
-
-    if (exists $hash->{$k}->{UniProtAcc}) {
-      foreach my $acc (keys %{$hash->{$k}->{UniProtAcc}}) {
-        print $acefh "Database UniProt UniProtAcc $acc\n";
+  
+  while(<$table_fh>) {
+    chomp;
+    my @data = split("\t",$_);
+    
+    next unless scalar(@data) == 8;
+    my($cloneacc, $pid, $version, $cds, $uniprot_ac, $uniprot_id) 
+        = ($data[0],$data[2],$data[3],$data[5],$data[6],$data[7]);  
+    
+    next unless (defined $pid);
+    $log->write_to("Potential New Protein: $_\n") if $uniprot_ac eq 'UNDEFINED';
+    
+    next unless $accession2clone{$cloneacc}; #data includes some mRNAs
+    
+    push @{$cds_xrefs{$cds}->{Protein_id}}, [$accession2clone{$cloneacc}, $pid, $version];
+    
+    if($cds2wormpep{$cds}) {
+      if (defined $uniprot_ac and $uniprot_ac ne 'UNDEFINED') {
+        $cds_xrefs{$cds}->{UniProtAcc}->{$uniprot_ac} = 1;
+        $pep_xrefs{"WP:".$cds2wormpep{$cds}}->{UniProtAcc}->{$uniprot_ac} = 1;
         
-        if (exists $hash->{$k}->{UniProtId}) {
-          foreach my $id (keys %{$hash->{$k}->{UniProtId}}) {
-            print $acefh "Database UniProt UniProtID $id\n";
-          }
+        if (defined $uniprot_id and $uniprot_id ne 'UNDEFINED') {
+          $cds_xrefs{$cds}->{UniProtId}->{$uniprot_id} = 1;
+          $pep_xrefs{"WP:".$cds2wormpep{$cds}}->{UniProtId}->{$uniprot_id} = 1;
         }
       }
     }
-    print $acefh "\n";
   }
-}
+  close($table_fh) or $log->log_and_die("Could not close the protein_id command/file\n");
+  
+  foreach my $pair (["CDS",\%cds_xrefs], ["Protein", \%pep_xrefs]) {
+    my ($class, $hash) = @$pair;
+    
+    foreach my $k (keys %$hash) {
+      print $acefh "$class : \"$k\"\n";
+      if (exists $hash->{$k}->{Protein_id}) {
+        foreach my $pidl (@{$hash->{$k}->{Protein_id}}) {
+          print $acefh "Protein_id\t@$pidl\n"; 
+        }
+      }
+      
+      if (exists $hash->{$k}->{UniProtAcc}) {
+        foreach my $acc (keys %{$hash->{$k}->{UniProtAcc}}) {
+          print $acefh "Database UniProt UniProtAcc $acc\n";
+          
+          if (exists $hash->{$k}->{UniProtId}) {
+            foreach my $id (keys %{$hash->{$k}->{UniProtId}}) {
+              print $acefh "Database UniProt UniProtID $id\n";
+            }
+          }
+        }
+      }
+      print $acefh "\n";
+    }
+  }
 
-close($acefh) or $log->log_and_die("Could not close $acefile properly\n");
-
-if ($load) {
-  $wb->load_to_database($wb->autoace, $acefile, 'ENA_xrefs', $log);
+  close($acefh) or $log->log_and_die("Could not close $acefile properly\n");
+  
+  if ($load) {
+    $wb->load_to_database($wb->autoace, $acefile, 'ENA_xrefs', $log);
+  }
 }
 
 $log->mail();
