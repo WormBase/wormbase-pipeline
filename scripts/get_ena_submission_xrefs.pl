@@ -9,8 +9,8 @@ use lib $ENV{CVS_DIR};
 use Wormbase;
 use Log_files;
 
-my ($debug, $test, $store, $species, $wb, $acefile, $load, $ncbi_tax_id, $table_file,$sv_table_file,
-    %cds_xrefs, %pep_xrefs, $generate_tables, $generate_xrefs);
+my ($debug, $test, $store, $species, $wb, $svacefile, $pidacefile, $load, $ncbi_tax_id, $table_file,$sv_table_file,
+    %cds_xrefs, %pep_xrefs, $generate_tables, $sequence_xrefs, $protein_xrefs);
 
 
 &GetOptions ("debug=s"    => \$debug,
@@ -20,9 +20,11 @@ my ($debug, $test, $store, $species, $wb, $acefile, $load, $ncbi_tax_id, $table_
              "load"       => \$load,
              "table=s"    => \$table_file,
              "svtable=s"  => \$sv_table_file,
-             'acefile=s'  => \$acefile,
+             'svacefile=s' => \$svacefile,
+             'pidacefile=s' => \$pidacefile,
              'generatetables' => \$generate_tables,
-             'generatexrefs'  => \$generate_xrefs,
+             'sequencexrefs'   => \$sequence_xrefs,
+             'proteinxrefs'   => \$protein_xrefs,
     );
 
 
@@ -42,7 +44,8 @@ my $log = Log_files->make_build_log($wb);
 my ($ggenus, $gspecies) = $wb->full_name =~ /^(\S+)\s+(\S+)/;
 
 $ncbi_tax_id = $wb->ncbi_tax_id;
-$acefile = $wb->acefiles . "/EBI_xrefs.ace" if not defined $acefile;
+$svacefile = $wb->acefiles . "/EBI_sequence_xrefs.ace" if not defined $svacefile;
+$pidacefile = $wb->acefiles . "/EBI_pid_xrefs.ace" if not defined $pidacefile;
 $table_file = $wb->acefiles . "/EBI_protein_ids.txt" if not defined $table_file;
 $sv_table_file = $wb->acefiles . "/EBI_sequence_versions.txt" if not defined $sv_table_file;
 
@@ -52,18 +55,16 @@ if ($generate_tables) {
   &lookup_from_ebi_production_dbs($sv_table_file, 'seqversions');
 }
 
-if ($generate_xrefs) {
-  my %cds2wormpep = $wb->FetchData('cds2wormpep');
+
+
+if ($sequence_xrefs) {
   my %accession2clone   = $wb->FetchData('accession2clone');
     
   open(my $vtable_fh, $sv_table_file) 
       or $log->log_and_die("Could not open $sv_table_file for reading\n");
   
-  open(my $table_fh, $table_file)
-      or $log->log_and_die("Could not open $table_file for reading\n");
-  
-  open(my $acefh, ">$acefile")
-      or $log->log_and_die("Could not open $acefile for writing\n");
+  open(my $acefh, ">$svacefile")
+      or $log->log_and_die("Could not open $svacefile for writing\n");
   
   while(<$vtable_fh>) {
     /^(\S+)\s+(\d+)/ and do {
@@ -79,6 +80,25 @@ if ($generate_xrefs) {
     }
   }
   
+  close($acefh) or $log->log_and_die("Could not close $svacefile properly\n");
+  
+  if ($load) {
+    $wb->load_to_database($wb->autoace, $svacefile, 'ENA_sequence_xrefs', $log);
+  }
+
+}
+
+
+if ($protein_xrefs) {
+  my %accession2clone   = $wb->FetchData('accession2clone');
+  my %cds2wormpep = $wb->FetchData('cds2wormpep');
+
+  open(my $table_fh, $table_file)
+      or $log->log_and_die("Could not open $table_file for reading\n");
+
+  open(my $acefh, ">$pidacefile")
+      or $log->log_and_die("Could not open $pidacefile for writing\n");
+
   while(<$table_fh>) {
     chomp;
     my @data = split("\t",$_);
@@ -134,11 +154,12 @@ if ($generate_xrefs) {
     }
   }
 
-  close($acefh) or $log->log_and_die("Could not close $acefile properly\n");
+  close($acefh) or $log->log_and_die("Could not close $pidacefile properly\n");
   
   if ($load) {
-    $wb->load_to_database($wb->autoace, $acefile, 'ENA_xrefs', $log);
+    $wb->load_to_database($wb->autoace, $pidacefile, 'ENA_protein_xrefs', $log);
   }
+
 }
 
 $log->mail();
