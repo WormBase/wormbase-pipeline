@@ -35,7 +35,7 @@ my $db = new Bio::EnsEMBL::DBSQL::DBAdaptor(
     );
 
 
-my $fh = new IO::File "> $outfile" ||die("cannot open $outfile\n");
+(my $fh = new IO::File "> $outfile") ||die("cannot open $outfile\n");
 
 my $gene_adaptor = $db->get_GeneAdaptor();
 my @genes = @{$gene_adaptor->fetch_all()};
