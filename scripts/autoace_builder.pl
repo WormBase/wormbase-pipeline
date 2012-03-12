@@ -7,7 +7,7 @@
 # Usage : autoace_builder.pl [-options]
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2012-03-12 12:09:15 $
+# Last edited on: $Date: 2012-03-12 12:11:42 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -117,7 +117,7 @@ $wormbase->run_script( "check_primary_database.pl -organism ${\$wormbase->specie
 #//--------------------------- batch job submission -------------------------//
 $wormbase->run_script( "build_dumpGFF.pl -stage $gff_dump", $log ) if $gff_dump;      #init
 
-$wormbase->run_script( "generate_ena_submission_xrefs.pl -sequencexrefs -load", $log) if $enaseqxrefs;
+$wormbase->run_script( "get_ena_submission_xrefs.pl -sequencexrefs -load", $log) if $enaseqxrefs;
 $wormbase->run_script( "processGFF.pl -$processGFF",        $log ) if $processGFF;    #clone_acc
 &first_dumps                                                       if $first_dumps;   # dependant on clone_acc for agp
 $wormbase->run_script( 'make_wormpep.pl -initial -all',          $log ) if $make_wormpep;
@@ -159,7 +159,7 @@ $wormbase->run_script( 'load_data_sets.pl -homol', $log) if $homol_data_sets;
 $wormbase->run_script( 'make_wormrna.pl'                         , $log) if $rna;
 $wormbase->run_script( 'confirm_genes.pl -load'                  , $log) if $confirm;
 $wormbase->run_script( 'map_operons.pl'                          , $log) if $operon;
-$wormbase->run_script( "generate_ena_submission_xrefs.pl -proteinxrefs -load", $log) if $enaprotxrefs;
+$wormbase->run_script( "get_ena_submission_xrefs.pl -proteinxrefs -load", $log) if $enaprotxrefs;
 $wormbase->run_script( 'make_wormpep.pl -all -final'                  , $log) if $finish_wormpep;
 $wormbase->run_script( 'write_DB_remark.pl'                      , $log) if $remarks;
 $wormbase->run_script( 'molecular_names_for_genes.pl'            , $log) if $names;
