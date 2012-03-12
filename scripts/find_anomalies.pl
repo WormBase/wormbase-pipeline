@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2011-12-09 11:07:37 $      
+# Last updated on: $Date: 2012-03-12 12:01:10 $      
 
 # Changes required by Ant: 2008-02-19
 # 
@@ -1885,7 +1885,7 @@ sub get_isolated_RST5 {
       if ($rst5->[3] eq '+') {
 	$rst5->[2] =  $rst5->[1] + 2; # make the thing to match a small area around the start
       } else {
-	$rst5->[1] =  $rst5->[2] + 2; # make the thing to match a small area around the start	
+	$rst5->[1] =  $rst5->[2] - 2; # make the thing to match a small area around the start	
       }
       if ($rst5->[3] eq '+' && !exists $seen_this_rst{$id}) {
 	$seen_this_rst{$id} = $rst5;
@@ -4752,6 +4752,9 @@ sub put_anomaly_record_in_database {
   #################################
   # output the data to the GFF file
   #################################
+
+  # sanity check - the start/end positions should always be in order in GFF files
+  if ($chrom_start > $chrom_end) {($chrom_end, $chrom_start) = ($chrom_start, $chrom_end)}
 
   if ($supplementary) {
     print OUTPUT_GFF "$chromosome\tcuration_anomaly\t$anomaly_type\t$chrom_start\t$chrom_end\t$anomaly_score\t$chrom_strand\t.\tEvidence \"$anomaly_id\"\n";
