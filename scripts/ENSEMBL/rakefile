@@ -69,7 +69,7 @@ task :build_homology  do
   # the -mlss_id value is the number of species we are comparing
 ##  sh "#{perl} /software/worm/ensembl/ensembl-hive/scripts/init_pipeline.pl Bio::EnsEMBL::Compara::PipeConfig::WormProteinTrees_conf -password #{db['password']} -mlss_id 11 -species_tree_input_file /software/worm/ensembl/compara-conf/pt_species_tree.txt"
 #  sh "#{perl} /software/worm/ensembl/ensembl-hive/scripts/init_pipeline.pl Bio::EnsEMBL::Compara::PipeConfig::WormProteinTrees_conf -password #{db['password']} -mlss_id 12 -species_tree_input_file /software/worm/ensembl/compara-conf/njtree.12.worm_compara_test_orthotree.nh"
-  sh "#{perl} /software/worm/ensembl/ensembl-hive/scripts/init_pipeline.pl Bio::EnsEMBL::Compara::PipeConfig::WormProteinTrees_conf -password #{db['password']} -mlss_id 296 -species_tree_input_file /software/worm/ensembl/compara-conf/njtree.12.worm_compara_test_orthotree.nh"
+  sh "#{perl} /software/worm/ensembl/ensembl-hive/scripts/init_pipeline.pl Bio::EnsEMBL::Compara::PipeConfig::WormProteinTrees_conf -password #{db['password']} -mlss_id 333 -species_tree_input_file /software/worm/ensembl/compara-conf/njtree.12.worm_compara_test_orthotree.nh"
 
 
 
