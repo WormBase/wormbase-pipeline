@@ -8,7 +8,7 @@
 #      COMPANY:
 #      VERSION:  1.0
 #      CREATED:  16/05/06 15:09:49 BST
-#     REVISION:  $Revision: 1.2 $
+#     REVISION:  $Revision: 1.3 $
 #===============================================================================
 
 package Blat;
@@ -20,7 +20,7 @@ use Bio::EnsEMBL::PepDnaAlignFeature;
 
 # store things here
 sub new {
-    my ( $class, $slice, $file, $analysis,$gff) = @_;
+    my ( $class, $slice, $file, $analysis,$gff, $ori_map) = @_;
     throw  Error::Simple("Bad_Number_of_Arguments") if ! ref($gff);
     my $self = {
         slice    => $slice,
@@ -28,7 +28,8 @@ sub new {
         file     => $file,
 	feature  => $gff->{-feature},
 	source   => $gff->{-source},
-	translated     => $gff->{-translated}
+	translated     => $gff->{-translated},
+        orimap   => $ori_map,
     };
     bless $self, $class;
     $self->_get_lines;
@@ -61,7 +62,7 @@ sub _get_lines {
 	# spot the difference between the Protein and DNA constructors ... ;-)
 	# needs maybe some cleanup love
 	if ($self->{translated}) {
-	push @{ $self->{hits} },
+          push @{ $self->{hits} },
           Bio::EnsEMBL::DnaPepAlignFeature->new(
             -start         => $col[3],
             -end           => $col[4],
@@ -75,14 +76,20 @@ sub _get_lines {
 	    -hstart        => $hstart,
 	    -hend          => $hstop, # sometimes faked to pass a insanity check
 	    -cigar_string  => "${length}M"
-          )
+              )
   	}
 	else {
-	push @{ $self->{hits} },
+          if ($self->{orimap} and 
+              exists $self->{orimap}->{$id} and
+              $self->{orimap}->{$id} eq '3') {
+            $strand *= -1;
+          }
+
+          push @{ $self->{hits} },
           Bio::EnsEMBL::DnaDnaAlignFeature->new(
             -start         => $col[3],
             -end           => $col[4],
-            -strand        => 1,
+            -strand        => $strand,
             -slice         => $self->{slice},
             -analysis      => $self->{analysis},
             -score         => $score,

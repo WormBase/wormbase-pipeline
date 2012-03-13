@@ -2,6 +2,8 @@
 
 use strict;
 use Switch;
+use Getopt::Long;
+
 use WormBase;
 use WormBaseConf;
 use WormFeature::Blat;
@@ -10,6 +12,14 @@ use WormFeature::WublastX;
 #use Bio::EnsEMBL::Pipeline::SeqFetcher::Pfetch;
 #use Bio::EnsEMBL::Pipeline::SeqFetcher::OBDAIndexSeqFetcher;
 use Bio::EnsEMBL::DBSQL::DBAdaptor;
+
+
+my ($estori);
+&GetOptions('estoritentiations=s' => \$estori);
+
+if (defined $estori and -e $estori) {
+  $estori = &read_est_orientations($estori);
+}
 
 my $db = new Bio::EnsEMBL::DBSQL::DBAdaptor(
     -host   => $WB_DBHOST,
@@ -90,63 +100,84 @@ foreach my $chromosome_info ( @{$WB_CHR_INFO} ) {
       }
       
       case 'celegans_mrna' {
-        my $blat = Blat->new( $chr, $gff_file, $analysis ,{-feature => 'BLAT_mRNA_BEST', -source => 'cDNA_match'});
+        my $blat = Blat->new( $chr, $gff_file, $analysis ,{-feature => 'BLAT_mRNA_BEST', -source => 'cDNA_match'}, $estori);
         my $hits=  scalar( @{ $blat->{hits} } );
         print "has $hits  BLAT hits\n" if $WB_DEBUG;
         $blat->save($db) if $hits >0;
       }
       case 'celegans_est' {
-        my $blat = Blat->new( $chr, $gff_file, $analysis ,{-feature => 'BLAT_EST_BEST', -source => 'EST_match'});
+        my $blat = Blat->new( $chr, $gff_file, $analysis ,{-feature => 'BLAT_EST_BEST', -source => 'EST_match'}, $estori);
         my $hits=  scalar( @{ $blat->{hits} } );
         print "has $hits  BLAT hits\n" if $WB_DEBUG;
         $blat->save($db) if $hits >0;
       }      
       case 'celegans_ost' {
-        my $blat = Blat->new( $chr, $gff_file, $analysis ,
-                              {-feature => 'BLAT_OST_BEST', -source => 'expressed_sequence_match',-translated=>0 });
+        my $blat = Blat->new( $chr, 
+                              $gff_file, 
+                              $analysis ,
+                              {-feature => 'BLAT_OST_BEST', -source => 'expressed_sequence_match'}, 
+                              $estori);
         my $hits=  scalar( @{ $blat->{hits} } );
         print "has $hits  BLAT hits\n" if $WB_DEBUG;
         $blat->save($db) if $hits >0;
       }
       case 'celegans_rst' {
-        my $blat = Blat->new( $chr, $gff_file, $analysis ,
-                              {-feature => 'BLAT_RST_BEST', -source => 'expressed_sequence_match',-translated=>0 });
+        my $blat = Blat->new( $chr, 
+                              $gff_file, 
+                              $analysis ,
+                              {-feature => 'BLAT_RST_BEST', -source => 'expressed_sequence_match' }, 
+                              $estori);
         my $hits=  scalar( @{ $blat->{hits} } );
         print "has $hits  BLAT hits\n" if $WB_DEBUG;
         $blat->save($db) if $hits >0;
       }
 
       case 'caenorhabditis_mrna' {
-        my $blat = Blat->new( $chr, $gff_file, $analysis ,
-                              {-feature => 'BLAT_Caen_mRNA_BEST', -source => 'expressed_sequence_match',-translated=>0 });
+        my $blat = Blat->new( $chr, 
+                              $gff_file, 
+                              $analysis ,
+                              {-feature => 'BLAT_Caen_mRNA_BEST', -source => 'expressed_sequence_match'},
+                              $estori);
         my $hits=  scalar( @{ $blat->{hits} } );
         print "has $hits  BLAT hits\n" if $WB_DEBUG;
         $blat->save($db) if $hits >0;
       }
       case 'caenorhabditis_est' {
-        my $blat = Blat->new( $chr, $gff_file, $analysis ,
-                              {-feature => 'BLAT_Caen_EST_BEST', -source => 'expressed_sequence_match',-translated=>0 });
+        my $blat = Blat->new( $chr, 
+                              $gff_file, 
+                              $analysis ,
+                              {-feature => 'BLAT_Caen_EST_BEST', -source => 'expressed_sequence_match' },
+                              $estori);
         my $hits=  scalar( @{ $blat->{hits} } );
         print "has $hits  BLAT hits\n" if $WB_DEBUG;
         $blat->save($db) if $hits >0;
       }
       case 'nembase_contig' {
-        my $blat = Blat->new( $chr, $gff_file, $analysis ,
-                              {-feature => 'BLAT_NEMBASE', -source => 'translated_nucleotide_match',-translated=>0 });
+        my $blat = Blat->new( $chr, 
+                              $gff_file, 
+                              $analysis ,
+                              {-feature => 'BLAT_NEMBASE', -source => 'translated_nucleotide_match' },
+                              $estori);
         my $hits=  scalar( @{ $blat->{hits} } );
         print "has $hits  BLAT hits\n" if $WB_DEBUG;
         $blat->save($db) if $hits >0;
       }
       case 'washu_contig' {
-        my $blat = Blat->new( $chr, $gff_file, $analysis ,
-                              {-feature => 'BLAT_WASHU', -source => 'translated_nucleotide_match',-translated=>0 });
+        my $blat = Blat->new( $chr, 
+                              $gff_file, 
+                              $analysis ,
+                              {-feature => 'BLAT_WASHU', -source => 'translated_nucleotide_match' },
+                              $estori);
         my $hits=  scalar( @{ $blat->{hits} } );
         print "has $hits  BLAT hits\n" if $WB_DEBUG;
         $blat->save($db) if $hits >0;
       }
       case 'other_est' {
-        my $blat = Blat->new( $chr, $gff_file, $analysis ,
-                              {-feature => 'BLAT_NEMATODE', -source => 'translated_nucleotide_match',-translated=>0 });
+        my $blat = Blat->new( $chr, 
+                              $gff_file, 
+                              $analysis ,
+                              {-feature => 'BLAT_NEMATODE', -source => 'translated_nucleotide_match' },
+                              $estori);
         my $hits=  scalar( @{ $blat->{hits} } );
         print "has $hits  BLAT hits\n" if $WB_DEBUG;
         $blat->save($db) if $hits >0;
@@ -163,24 +194,24 @@ foreach my $chromosome_info ( @{$WB_CHR_INFO} ) {
         &write_genes( $rRNAgenes, $db );
 
         ## generic ncRNA genes ##
-        my $rRNAgenes = parse_pseudo_files( $gff_file, $chr, $analysis,'ncRNA' );
-        print "have " . scalar @$rRNAgenes . " ncRNA genes.\n" if ($WB_DEBUG);
-        &write_genes( $rRNAgenes, $db );
+        my $ncRNAgenes = parse_pseudo_files( $gff_file, $chr, $analysis,'ncRNA' );
+        print "have " . scalar @$ncRNAgenes . " ncRNA genes.\n" if ($WB_DEBUG);
+        &write_genes( $ncRNAgenes, $db );
         
         ## snRNA-genes
-        my $rRNAgenes = parse_pseudo_files( $gff_file, $chr, $analysis,'snRNA_mature_transcript', 'snRNA' );
-        print "have " . scalar @$rRNAgenes . " snRNA genes.\n" if ($WB_DEBUG);        
-        &write_genes( $rRNAgenes, $db );
+        my $snRNAgenes = parse_pseudo_files( $gff_file, $chr, $analysis,'snRNA_mature_transcript', 'snRNA' );
+        print "have " . scalar @$snRNAgenes . " snRNA genes.\n" if ($WB_DEBUG);        
+        &write_genes( $snRNAgenes, $db );
 
         ## snoRNA-genes
-        my $rRNAgenes = parse_pseudo_files( $gff_file, $chr, $analysis,'snoRNA_mature_transcript', 'snoRNA' );
-        print "have " . scalar @$rRNAgenes . " snoRNA genes.\n" if ($WB_DEBUG);
-        &write_genes( $rRNAgenes, $db );
+        my $snoRNAgenes = parse_pseudo_files( $gff_file, $chr, $analysis,'snoRNA_mature_transcript', 'snoRNA' );
+        print "have " . scalar @$snoRNAgenes . " snoRNA genes.\n" if ($WB_DEBUG);
+        &write_genes( $snoRNAgenes, $db );
 
         ## snlRNA-genes
-        my $rRNAgenes = parse_pseudo_files( $gff_file, $chr, $analysis,'snlRNA' );
-        print "have " . scalar @$rRNAgenes . " ncRNA genes.\n" if ($WB_DEBUG);
-        &write_genes( $rRNAgenes, $db );
+        my $snlRNAgenes = parse_pseudo_files( $gff_file, $chr, $analysis,'snlRNA' );
+        print "have " . scalar @$snlRNAgenes . " snlRNA genes.\n" if ($WB_DEBUG);
+        &write_genes( $snlRNAgenes, $db );
 
         ## miRNA-genes
         my $miRNAgenes = parse_pseudo_files( $gff_file, $chr, $analysis,'curated_miRNA', 'miRNA' );
@@ -245,3 +276,20 @@ foreach my $chromosome_info ( @{$WB_CHR_INFO} ) {
 }
 
 exit 0;
+
+
+####################
+sub read_est_orientations {
+  my ($file) = @_;
+
+  my ($data, $VAR1);
+
+  open(my $fh, $file) or die "Could not open $file for reading\n";
+  while(<$fh>) {
+    chomp;
+    $data .= $_;
+  }
+
+  eval $data;
+  return $VAR1;
+}
