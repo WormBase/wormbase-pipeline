@@ -1677,10 +1677,9 @@ sub parse_pseudo_files {
     my ($processed_transcripts) = &process_pseudo_transcripts( $transcripts, $seq, $analysis );
     print "there are " . keys(%$processed_transcripts) . " processed special transcripts\n";
 
-    my $genes = undef;
-    my $biotype = $types if not defined $biotype; 
+    $biotype = $types if not defined $biotype; 
 
-    $genes = &create_pseudo_transcripts($processed_transcripts, $biotype);
+    my $genes = &create_pseudo_transcripts($processed_transcripts, $biotype);
     print "PARSE GFF there are " . keys(%$genes) . " special genes\n";
 
     foreach my $gene_id ( keys(%$genes) ) {
