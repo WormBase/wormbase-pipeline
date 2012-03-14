@@ -111,7 +111,7 @@ foreach my $chromosome_info ( @{$WB_CHR_INFO} ) {
         print "has $hits  BLAT hits\n" if $WB_DEBUG;
         $blat->save($db) if $hits >0;
       }      
-      case 'celegans_ost' {
+      case 'ost' {
         my $blat = Blat->new( $chr, 
                               $gff_file, 
                               $analysis ,
@@ -121,7 +121,7 @@ foreach my $chromosome_info ( @{$WB_CHR_INFO} ) {
         print "has $hits  BLAT hits\n" if $WB_DEBUG;
         $blat->save($db) if $hits >0;
       }
-      case 'celegans_rst' {
+      case 'rst' {
         my $blat = Blat->new( $chr, 
                               $gff_file, 
                               $analysis ,
