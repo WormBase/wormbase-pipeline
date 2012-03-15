@@ -62,7 +62,7 @@
 # by Gary Williams
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2012-02-16 13:54:26 $
+# Last updated on: $Date: 2012-03-15 11:49:13 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -87,7 +87,7 @@ use GDBM_File; # for tied hash
 ##############################
 
 
-my ($test, $store, $debug, $species, $verbose, $expt, $noalign, $check, $solexa, $illumina, $database, $nogtf, $norawjuncs, $tsl, $paired, $keepfastq, $onestage);
+my ($test, $store, $debug, $species, $verbose, $expt, $noalign, $check, $solexa, $illumina, $database, $nogtf, $norawjuncs, $tsl, $paired, $keepfastq, $onestage, $getsrx);
 GetOptions (
 	    "test"               => \$test,
 	    "store:s"            => \$store,
@@ -106,6 +106,7 @@ GetOptions (
 	    "paired"             => \$paired,   # the reads are paired-end - we may have to split the file
 	    "keepfastq"          => \$keepfastq,# don't delete the fastq files after use
 	    "onestage"           => \$onestage, # for comparing the old one-stage alignment against the new (default) two-stage (transcriptome then genome) alignment
+	    "getsrx:s"           => \$getsrx,   # if this is set to the name of a 'SRX' entry from the NCBI SRA, then this file will be retrieved and unpacked - no alignment is done - '-paired' will split the file into pairs
 	   );
 
 my $wormbase;
@@ -123,6 +124,34 @@ my $log = Log_files->make_build_log( $wormbase );
 $species = $wormbase->species;
 $log->write_to("Processing RNASeq data for $species\n");
 
+
+#################################################################
+# Quick utility for getting a file from the Short Read Archive.
+# If the -paired switch is also used, then the files will be split
+# into the paired reads
+#################################################################
+
+if ($getsrx) {
+
+  get_SRX_file($getsrx);
+
+  # unpack any .lite.sra file to make the .fastq files
+  # now unpack the sra.lite files
+  $log->write_to("Unpack the $getsrx .lite.sra file to fastq files\n");
+  foreach my $dir (glob("$getsrx/SRR/SRR*")) {
+    chdir $dir;
+    foreach my $srr (glob("*.lite.sra")) {
+      $log->write_to("Unpack $srr\n");
+      my $options = '';
+      if ($paired && $srr !~ /_1\./ && $srr !~ /_2\./) {$options='--split-files'} # specify that the file contains paired-end reads and should be split
+      my $status = $wormbase->run_command("/software/worm/sratoolkit/fastq-dump $options $srr", $log);
+      if ($status) {$log->log_and_die("Didn't unpack the fastq file successfully\n")}
+      $status = $wormbase->run_command("rm -f $srr", $log);
+    }
+  }
+
+  exit(0);
+}
 
 ##########################################
 # Data to be processed
@@ -225,7 +254,7 @@ if ($species eq 'elegans') {
 	     SRX028201   => ["RNASeq_Fire.L1_larva_CircLigSeq", 'phred', 'single'],    # GSM577119: N2_L1_CircLigSeq
 	     SRX028202   => ["RNASeq_Fire.L2_larva_CircLigSeq", 'phred', 'single'],    # GSM577120: N2_L2_CircLigSeq
 	     SRX028203   => ["RNASeq_Fire.L3_larva_CircLigSeq", 'phred', 'single'],    # GSM577121: N2_L3_CircLigSeq
-	     SRX028204   => ["RNASeq_Fire.all_stages_polysomes", 'phred', 'single'],   # GSM577122: N2_mixed-stage_polysomes
+	     SRX028204   => ["RNASeq_Fire.all_stages_polysomes", 'phred', 'single'],   # GSM577122: N2_mixed-stage_polysomes - these are spceial in that they show that this transcript is translated, not just transcribed
 
 ## new entries 7 Oct 2011
 	    SRX017684 => ["RNASeq.Shin.L1_larva", 'phred', 'single'], # 454 sequencing http://www.biomedcentral.com/1741-7007/6/30
@@ -542,6 +571,18 @@ DDDDDDA=6%6DDDDDDDBABDDDDDDB6%6%6@4@A=6-6?@=A?466%%67;
 GACGTGGGCNGCATCAATCTGACGGATGANGNATGGCTCTTCAATCCCANNTGG
 +
 ?><><==;,%16=><<=>0>=82<=5=;&%.%5=75-?5=5%,;5**,+%%5*,
+@SRR350954.945 BB0BG1A
+CCTTCATTCTCAATGATACGAGTCTTGATCTCTTCGTTAACTCGATCTTCCTCC
++SRR350954.945 BB0BG1A
+IIIIIIIIIIIIIIIIIIIIIIIIIIIFIIIIIIIIIIIIIIIIIIIIIIIIII
+@SRR350954.1072 BB0BG1
+AAATATCTTGGCGGTTTTGAAGACACCGGCGTCGCATCACTGCTACGTGGCTTT
++SRR350954.1072 BB0BG1
+IIIIIIIIIIIIIIIIIIIGIIHIFIIIIIIIIIHFHIIIGHIIIIIHHIIIII
+@SRR350954.1265 BB0BG1
+CTCTCCGCAAAGTTCCACAATACGACAAATTCATCACCGAGCGATTCGAGCGAT
++SRR350954.1265 BB0BG1
+IIIIIIIIHIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIGIGIDHIIIIIGIGI
 ';
 
       close(DUMMY);
@@ -550,8 +591,8 @@ GACGTGGGCNGCATCAATCTGACGGATGANGNATGGCTCTTCAATCCCANNTGG
       my @bsub_options = (-e => "$err", -o => "$out");
       push @bsub_options, (-q =>  "normal",
 			   #-F =>  "100000000", # there is no file size limit in Sanger LSF - don't impose one - keep this commented out
-			   #-M =>  "14000000", 
-			   #-R => "\"select[mem>14000 && tmp>10000] rusage[mem=14000]\"", 
+			   -M =>  "4000000", 
+			   -R => "\"select[mem>4000 && tmp>10000] rusage[mem=4000]\"", 
 			   -J => "tophat_dummy_$species");
       my $gtf = "--GTF /nfs/wormpub/RNASeq/$species/transcripts.gtf";
       my $gtf_index = "--transcriptome-index /nfs/wormpub/RNASeq/$species/transcriptome-gtf";
@@ -565,7 +606,7 @@ GACGTGGGCNGCATCAATCTGACGGATGANGNATGGCTCTTCAATCCCANNTGG
       $log->write_to("The initial tophat job to index the GTF file has completed!\n");
       for my $job ( $lsf->jobs ) {
 	if ($job->history->exit_status ne '0') {
-	  $log->write_to("Job $job (" . $job->history->command . ") exited non zero: " . $job->history->exit_status . "\n");
+	  $log->log_and_die("Job $job (" . $job->history->command . ") exited non zero: " . $job->history->exit_status . " Try making a larger dummy.fastq file?\n");
 	}
       }
       $lsf->clear;
@@ -909,7 +950,7 @@ sub run_tophat {
   if ($illumina) {$cmd_extra = "--solexa1.3-quals"} 
 
   if ((!$check && !$noalign) || !-e "tophat_out/accepted_hits.bam") {
-    if (!$noalign || $tsl) {
+    if (glob("SRR/SRR*/*.lite.sra") ) {
       # unpack any .lite.sra file to make the .fastq files
       # now unpack the sra.lite files
       $log->write_to("Unpack the $arg .lite.sra file to fastq files\n");
@@ -1043,6 +1084,7 @@ sub get_read_length {
   open (PEEK, "<$filename") || $log->log_and_die("get_read_length() : cant open $filename\n");
   my $line = <PEEK>; # skip the title line
   $line = <PEEK>; # this is the sequence line
+  chomp $line;
   close(PEEK);
   return length $line;
 }
@@ -1060,6 +1102,24 @@ sub get_SRA_files {
 
   chdir "$RNASeqDir";
 
+  get_SRX_file($arg);
+
+  chdir "$RNASeqDir/$arg";
+  mkdir "SRR", 0777;
+
+  foreach my $dir (glob("SRR*")) {
+    if ($dir eq "SRR") {next}
+    $status = $wormbase->run_command("mv -f $dir $RNASeqDir/$arg/SRR", $log);
+  }
+
+}
+
+#################################################################################################################
+# this does the work of pulling the NCBI SRA file across
+
+sub get_SRX_file {
+  my ($arg) = @_;
+
   # get the name of the subdirectory in the SRA
   my ($dirbit) = ($arg =~ /SRX(\d\d\d)/);
 
@@ -1070,15 +1130,6 @@ sub get_SRA_files {
     my $return_status = system("~gw3/.aspera/connect/bin/ascp -k 1 -l 300M -QTr -i /nfs/users/nfs_g/gw3/.aspera/connect/etc/asperaweb_id_dsa.putty anonftp\@ftp-private.ncbi.nlm.nih.gov:/sra/sra-instant/reads/ByExp/litesra/SRX/SRX${dirbit}/$arg ./");
     if ( ( $return_status >> 8 ) == 0 )  {$failed=0}
   }
-
-  chdir "$RNASeqDir/$arg";
-  mkdir "SRR", 0777;
-
-  foreach my $dir (glob("SRR*")) {
-    if ($dir eq "SRR") {next}
-    $status = $wormbase->run_command("mv -f $dir $RNASeqDir/$arg/SRR", $log);
-  }
-
 }
 
 
