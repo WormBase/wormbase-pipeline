@@ -2,7 +2,7 @@
 #
 # EMBLdump.pl :  makes modified EMBL dumps from camace.
 # 
-#  Last updated on: $Date: 2012-03-09 10:53:15 $
+#  Last updated on: $Date: 2012-03-19 11:57:37 $
 #  Last updated by: $Author: klh $
 
 use strict;
@@ -33,7 +33,11 @@ my %species_info = (
   strain => {
     elegans => 'Bristol N2',
     briggsae => 'AF16',
-  }
+  },
+
+  genome_project_accs => {
+    briggsae => ['CAAC00000000', 'CAAC03000000'],
+  },
 );    
 
 #
@@ -205,7 +209,8 @@ if ($dump_modified) {
     # Store the necessary default ID line elements ready for use in the new style EMBL ID lines.
     if(/^ID\s+(\S+)\s+\S+\s+\S+\s+\S+\s+(\d+)\s+\S+/){
       ($clone, $seqlen) = ($1, $2);
-      $idline_suffix = "SV XXX; linear; genomic DNA; STD; INV; $seqlen BP."; 
+      $idline_suffix = sprintf("SV XXX; linear; genomic DNA; %s; INV; $seqlen BP.", 
+                               ($species eq 'briggsae') ? "CON" : "STD");
       
       @accs = ();
       @features = ();
@@ -239,8 +244,14 @@ if ($dump_modified) {
       # AC
       #
       print $out_fh "AC   $accs[0];";
+          
       for(my $i=1; $i < @accs; $i++) {
         print $out_fh " $accs[$i];";
+      }
+      if (exists $species_info{genome_project_accs}->{$species}) {
+        foreach my $acc (@{$species_info{genome_project_accs}->{$species}}) {
+          print $out_fh " $acc;";
+        }
       }
       print $out_fh "\nXX\n";
       
