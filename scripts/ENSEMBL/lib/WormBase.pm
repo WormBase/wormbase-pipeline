@@ -47,6 +47,8 @@ use Bio::EnsEMBL::CoordSystem;
 use Bio::EnsEMBL::Slice;
 use Bio::EnsEMBL::Analysis::Tools::GeneBuildUtils::ExonUtils;
 
+$WormBase::Species = "";
+
 =head2 get_seq_ids
 
   Arg [1]   : filehandle to an agp file
@@ -780,7 +782,7 @@ sub generate_transcripts {
 =cut
 
 sub create_transcripts {
-    my ( $transcriptsRef, $five_start, $three_end, $trans_start_exon, $trans_end_exon, $species ) = @_;
+    my ( $transcriptsRef, $five_start, $three_end, $trans_start_exon, $trans_end_exon ) = @_;
 
     my @keys = keys(%$five_start);
     foreach my $key (@keys) {
@@ -799,10 +801,8 @@ sub create_transcripts {
         #print STDERR "\nWorking on $transcript.(".$exons[0]->strand.") ";
         #get the gene-name
 	$gene_name= ( $transcript =~ /(.*?\w+\.\d+)[a-z A-Z]*\.*\d*/ )?$1:$transcript; # elegans
-        if (defined $species and $species !~ /elegans/) {
-          unless ($WormBase::species=~/elegans/) {
-            $gene_name= ( $transcript =~ /([A-Z]{3,}\d+)[a-z]*(\.\d+)*$/ )?$1:$transcript if ($gene_name eq $transcript);
-          }
+        if ($WormBase::Species and $WormBase::Species !~ /elegans/) {
+            $gene_name= ( $transcript =~ /([A-Z]{3,}\d+)[a-z]*(\.\d+)*$/ )? $1 : $transcript;
         }
 
         $transcript_id = $transcript;
@@ -1221,6 +1221,10 @@ sub non_translate {
         #    print "transcript sequence :\n".$t->seq."\n";
         foreach my $e (@exons) {
             print "exon " . $e->stable_id . " " . $e->start . " " . $e->end . " " . $e->strand . "\n";
+            if ($e->end - $e->start + 1 < 5) {
+              print " Exon too short; not attempting to translate\n";
+              next;
+            }
             my $seq  = $e->seq;
             my $pep0 = $seq->translate( '*', 'X', 0 );
             my $pep1 = $seq->translate( '*', 'X', 1 );

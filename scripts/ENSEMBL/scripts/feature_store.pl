@@ -14,8 +14,12 @@ use WormFeature::WublastX;
 use Bio::EnsEMBL::DBSQL::DBAdaptor;
 
 
-my ($estori);
-&GetOptions('estoritentiations=s' => \$estori);
+my ($estori, $species);
+&GetOptions('estoritentations=s' => \$estori,
+            'species=s'          => \$species,
+    );
+
+defined $species and $WormBase::Species = $species;
 
 if (defined $estori and -e $estori) {
   $estori = &read_est_orientations($estori);
@@ -185,8 +189,12 @@ foreach my $chromosome_info ( @{$WB_CHR_INFO} ) {
       case 'wormbase_non_coding' {
         ## tRNA genes ##
         my $tRNA_scan_genes = parse_pseudo_files( $gff_file, $chr, $analysis,'tRNAscan-SE-1.23', 'tRNA' );
-        print "have " . scalar @$tRNA_scan_genes . " genomic tRNA genes.\n" if ($WB_DEBUG);
+        print "have " . scalar @$tRNA_scan_genes . " genomic tRNAscan-SE-1.23 genes.\n" if ($WB_DEBUG);
         &write_genes( $tRNA_scan_genes, $db );
+
+        my $tRNA_scan_genes2 = parse_pseudo_files( $gff_file, $chr, $analysis,'tRNAscan-SE-1.3', 'tRNA' );
+        print "have " . scalar @$tRNA_scan_genes2 . " genomic tRNAscan-SE-1.3 genes.\n" if ($WB_DEBUG);
+        &write_genes( $tRNA_scan_genes2, $db );
         
         ## rRNA-genes #
         my $rRNAgenes = parse_pseudo_files( $gff_file, $chr, $analysis, 'rRNA' );
@@ -234,7 +242,7 @@ foreach my $chromosome_info ( @{$WB_CHR_INFO} ) {
         &write_genes( $genes, $db );
         
         #check translations
-        my @genes = @{ $chr->get_all_Genes };
+        my @genes =   grep {$_->biotype eq 'protein_coding'} @{ $chr->get_all_Genes };
         open( TRANSLATE, "+>>" . $WB_NON_TRANSLATE ) or die "couldn't open " . $WB_NON_TRANSLATE . " $!";
         TRANSLATION: foreach my $gene (@genes) {
           my $translation = &translation_check($gene);
