@@ -32,6 +32,10 @@ my %species = (
     6334   => 'Trichinella spiralis',
     886184 => 'Caenorhabditis sp.11',
     6253   => 'Ascaris suum',
+    37862  => 'Heterorhabditis bacteriophora',
+    6326   => 'Bursephelenchus xylophilus',
+    497829 => 'Caenorhabditis sp.5',
+    34506  => 'Strongyloides ratti',
 );
 
 my %cds2wbgene=%{&get_commondata('cds2wbgene_id')};
@@ -52,13 +56,12 @@ my @members = @{$member_adaptor->fetch_all()};
 
 while( my $member = shift @members){
     
-    next if $member->taxon_id == 6279; # skip brugia, as it does not have ?Gene objects
-    next if $member->taxon_id == 6305; # skip M.hapla, as it does not have ?Gene objects
-    next if $member->taxon_id == 6289; # skip H.contortus, as it does not have ?Gene objects
-    next if $member->taxon_id == 96668;# skip C.angaria, because it does not have ?Gene objects
-    next if $member->taxon_id == 6334; # skip T.spiralis, as it does not have ?Gene objects
-    next if $member->taxon_id == 886184; # skip C.sp11, as it has no ?Gene objects
-    next if $member->taxon_id == 6253; # skip A.suum, as it has no ?Gene objects
+    next unless ($member->taxon_id == 6239 
+	      || $member->taxon_id == 6238
+	      || $member->taxon_id == 31234
+	      || $member->taxon_id == 135651
+	      || $member->taxon_id == 281687
+	      || $member->taxon_id == 54126);
 
     my @homologies = @{$homology_adaptor->fetch_all_by_Member( $member)};
 
@@ -74,30 +77,18 @@ while( my $member = shift @members){
             my ( $me, $at ) = @{$ma};
             foreach my $pepm ( @{ $me->get_all_peptide_Members() } ) {
                 
-                if ($pepm->taxon_id==6279){
-                    $t3{ $pepm->stable_id } = [$pepm->taxon_id,$homology->description] 
-                }
-		elsif ($pepm->taxon_id==6305){
-                    $t3{$pepm->stable_id} = [$pepm->taxon_id,$homology->description] 
-                }
-                elsif ($pepm->taxon_id==6289){
-		    $t3{$pepm->stable_id} = [$pepm->taxon_id,$homology->description]
-		}
-	    	elsif ($pepm->taxon_id==96668){
-		    $t3{$pepm->stable_id} = [$pepm->taxon_id,$homology->description]
-		}
-		elsif ($pepm->taxon_id==6334){
-		    $t3{$pepm->stable_id} = [$pepm->taxon_id,$homology->description]
-	        }
-		elsif ($pepm->taxon_id==886184){
-		    $t3{$pepm->stable_id} = [$pepm->taxon_id,$homology->description]
-	        }
-		elsif ($pepm->taxon_id==6253){
-		    $t3{$pepm->stable_id} = [$pepm->taxon_id,$homology->description]
-	        }
-                else {
+                if ($pepm->taxon_id == 6239 
+	         || $pepm->taxon_id == 6238
+	         || $pepm->taxon_id == 31234
+	         || $pepm->taxon_id == 135651
+	         || $pepm->taxon_id == 281687
+	         || $pepm->taxon_id == 54126) {
                     $t2{ $pepm->stable_id } = [$pepm->taxon_id,$homology->description]
                 }
+		else {
+		    $t3{$pepm->stable_id} = [$pepm->taxon_id,$homology->description]
+	        }
+
             }
 
         }
