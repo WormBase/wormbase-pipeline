@@ -106,7 +106,7 @@ Show_text
 EMBL_feature	 "CDS"
 GFF_source	 "curated"
 GFF_SO "SO:0000120" "curated_CDS_ace2so"
-Remark "Predicted protein-coding genes are flagged with this method.  All of these genes have been looked at by a human curator at some point and have usually been modified with respect to the initial computer prediction."
+Remark "Protein-coding genes are flagged with this method.  All of these genes have been looked at by a human curator at some point and have usually been modified with respect to the initial abinitio prediction."
 
 Method : "history" 
 Colour	 GRAY
@@ -2602,6 +2602,9 @@ Right_priority 5.4
 
 Method : "dust"
 Right_priority 5.5 
+
+Method : "G4_DNA"
+Right_priority 5.55
 
 Method : "tandem"
 Right_priority 5.6
