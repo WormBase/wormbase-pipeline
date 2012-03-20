@@ -203,9 +203,9 @@ task :dump_compara do
 	
 	FileUtils.cd(tmp_place) do
 		File.unlink("compara.tar.gz") if File.exists?("compara.tar.gz")
-		sh "tar cvf compara.tar compara/*"
+		sh "tar cvf compara.tar compara"
 		sh "gzip -9 compara.tar"
-		FileList['compara/*'].each{|f|File.unlink(f)}
+		# FileList['compara/*'].each{|f|File.unlink(f)}
 	end
 end
 
