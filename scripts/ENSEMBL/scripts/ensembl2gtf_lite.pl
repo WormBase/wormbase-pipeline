@@ -100,9 +100,9 @@ sub make_start_codon_features {
     return (());
   }
 
-  my @translateable = @{$trans->get_all_translateable_Exons};
+  my $cdna_start_pos = $trans->cdna_coding_start;
 
-  my @pepgencoords = $trans->pep2genomic(1,1);
+  my @pepgencoords = $trans->cdna2genomic($cdna_start_pos,$cdna_start_pos + 2);
 
   if(scalar(@pepgencoords) > 3) {
     croak "pep start does not map cleanly\n";
@@ -115,7 +115,7 @@ sub make_start_codon_features {
     croak "pep start (end of) maps to gap\n";
   }
 
-  @translateable = @{$trans->get_all_translateable_Exons};
+  my @translateable = @{$trans->get_all_translateable_Exons};
   my @startc_feat;
   my $phase = 0;
   foreach my $pepgencoord (@pepgencoords) {
@@ -142,8 +142,14 @@ sub write_transcript_gtf {
   my ($fh,$slice,$gene,$transcript,$include_codons,$seqname) = @_;
   my $sliceoffset = $slice->start-1;
 
-  my @startcs =  make_start_codon_features($transcript,$transcript->stable_id);
-  my @endcs   =  make_stop_codon_features($transcript,$transcript->stable_id);
+  my ($hasstart, $hasend, @startcs, @endcs);
+  
+  if ($include_codons) {
+    ($hasstart,$hasend) = check_start_and_stop($slice,$transcript);
+
+    @startcs =  make_start_codon_features($transcript,$transcript->stable_id) if $hasstart;
+    @endcs   =  make_stop_codon_features($transcript,$transcript->stable_id) if $hasend;
+  }
 
 
   my $chrname;
@@ -155,12 +161,6 @@ sub write_transcript_gtf {
     $idstr = $seqname;
   } else {
     $idstr = $chrname;
-  }
-
-  my ($hasstart,$hasend) = check_start_and_stop($slice,$transcript);
-
-  if (!$include_codons) {
-    $hasstart = $hasend = 0;
   }
 
   my @translateable_exons = @{$transcript->get_all_translateable_Exons} if $transcript->translation;
@@ -374,22 +374,30 @@ sub get_translation_id {
 sub check_start_and_stop {
   my ($slice,$trans) = @_;
 
-  return (0,0) if (!defined($trans->translation));
+  my ($has_start, $has_end);
 
   my $tln = $trans->translation;
+  return (0,0) if not defined $tln;
 
-  my $coding_start = $trans->cdna_coding_start;
-  my $coding_end   = $trans->cdna_coding_end;
   my $cdna_seq     = uc($trans->spliced_seq);
 
-  my $startseq     = substr($cdna_seq,$coding_start-1,3);
-  my $endseq       = substr($cdna_seq,$coding_end-3,3);
+  if ($trans->get_all_Exons->[0]->phase > 0) {
+    $has_start = 0;
+  } else {
+    my $coding_start = $trans->cdna_coding_start;
+    my $startseq     = uc(substr($cdna_seq,$coding_start-1,3));
 
-  my $has_start = 1;
-  my $has_end = 1;
+    $has_start = ($startseq eq 'ATG') ?  1 : 0;
+  }
 
-  $has_start = 0  if ($startseq ne "ATG");
-  $has_end = 0 if ($endseq ne "TAG" && $endseq ne "TGA" && $endseq ne "TAA");
+  if ($trans->get_all_Exons->[-1]->end_phase > 0) {
+    $has_end = 0;
+  } else {
+    my $coding_end   = $trans->cdna_coding_end;
+    my $endseq       = substr($cdna_seq,$coding_end-3,3);
+
+    $has_end = ($endseq eq "TAG" or $endseq eq "TGA" or $endseq eq "TAA") ? 1 : 0;
+  }
 
   return ($has_start, $has_end);
 }
