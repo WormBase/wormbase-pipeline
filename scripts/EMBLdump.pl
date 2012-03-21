@@ -2,7 +2,7 @@
 #
 # EMBLdump.pl :  makes modified EMBL dumps from camace.
 # 
-#  Last updated on: $Date: 2012-03-19 11:57:37 $
+#  Last updated on: $Date: 2012-03-21 19:48:03 $
 #  Last updated by: $Author: klh $
 
 use strict;
@@ -35,9 +35,7 @@ my %species_info = (
     briggsae => 'AF16',
   },
 
-  genome_project_accs => {
-    briggsae => ['CAAC00000000', 'CAAC03000000'],
-  },
+  genome_project_accs => { },
 );    
 
 #
@@ -286,7 +284,7 @@ if ($dump_modified) {
           $de_line = "$full_species_name $clone2type{$clone} $clone";
         }
       } elsif ($species eq 'briggsae') {
-        $de_line = "$full_species_name AF16 supercontig $clone from assembly CB4";
+        $de_line = "$full_species_name AF16 supercontig from assembly CB4, $clone";
       }
       
       print $out_fh "DE   $de_line\n";
