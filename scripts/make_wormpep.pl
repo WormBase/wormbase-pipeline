@@ -7,7 +7,7 @@
 # Builds a wormpep data set from the current autoace database
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2012-01-06 12:58:17 $
+# Last updated on: $Date: 2012-03-22 21:13:10 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -192,11 +192,7 @@ sub read_old_build {
 }
 
 sub assign_new_ids {
-  #load in if not assigned in this run
-  if(-e $wormbase->common_data."/cds2pepid.dat" or -e $wormbase->common_data."/aa2pepid.dat") {
-    $log->write_to("assignment already made - using common_data\n");
-    return;
-  }
+
   unless (%cds2aa) {
     %cds2aa = $wormbase->FetchData('cds2aa'); #cr01.sctg0.wum.3.1 => MKIFLAILTLVA....
   }
