@@ -103,13 +103,13 @@ foreach my $chromosome_info ( @{$WB_CHR_INFO} ) {
         $wublastx->save($db) if $hits >0;
       }
       
-      case 'celegans_mrna' {
+      case ['celegans_mrna', 'cbriggsae_mrna'] {
         my $blat = Blat->new( $chr, $gff_file, $analysis ,{-feature => 'BLAT_mRNA_BEST', -source => 'cDNA_match'}, $estori);
-        my $hits=  scalar( @{ $blat->{hits} } );
+        my $hits = scalar( @{ $blat->{hits} } );
         print "has $hits  BLAT hits\n" if $WB_DEBUG;
         $blat->save($db) if $hits >0;
       }
-      case 'celegans_est' {
+      case ['celegans_est', 'cbriggsae_est'] {
         my $blat = Blat->new( $chr, $gff_file, $analysis ,{-feature => 'BLAT_EST_BEST', -source => 'EST_match'}, $estori);
         my $hits=  scalar( @{ $blat->{hits} } );
         print "has $hits  BLAT hits\n" if $WB_DEBUG;
