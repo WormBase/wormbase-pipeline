@@ -196,6 +196,14 @@ sub merge_gene {
       $gene_versions{$deadgene} = $ver;
       $output .= "\nGene : $deadgene\nVersion $ver\nHistory Version_change $ver now $user Event Merged_into $livegene\nMerged_into $livegene\nDead\n\nGene : $deadgene\n-D Map_info\n-D Sequence_name\n-D method\n\n";
 
+      # transfer operon connections.
+      my $operon_connect = $deadgeneObj->at('Gene_info.Contained_in_operon');
+      if (defined $operon_connect) {
+	foreach my $operon_connect_list ($operon_connect->col) {
+	  $output .= "\nGene : $livegene\nContained_in_operon $operon_connect_list\n";
+	}
+      }
+
       # transfer the Other_names
       my $dead_Other_names_col = $deadgeneObj->at('Identity.Name.Other_name');
       if (defined $dead_Other_names_col) {
