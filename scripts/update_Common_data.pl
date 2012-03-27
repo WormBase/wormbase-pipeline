@@ -4,8 +4,8 @@
 # 
 # by Anthony Rogers et al
 #
-# Last updated by: $Author: klh $
-# Last updated on: $Date: 2012-01-26 11:04:13 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2012-03-27 10:12:34 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -172,8 +172,8 @@ if ($all) {
         $arg eq 'est' or
         $arg eq 'cds2wormpep') {
       push @bsub_options, (
-        -M => "3500000", 
-        -R => "\"select[mem>3500] rusage[mem=3500]\"",
+        -M => "6000000", 
+        -R => "\"select[mem>6000] rusage[mem=6000]\"",
         -J => $job_name);
     }
     my $cmd = "update_Common_data.pl -${arg}";
