@@ -6,7 +6,7 @@
 # builds wormbase & wormpep FTP sites
 # 
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2012-03-09 16:09:00 $
+# Last updated on: $Date: 2012-03-29 15:25:08 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -235,7 +235,10 @@ if ($go_public) {
   if ($testout) {
     $log->write_to("You cannot go public having written to a test location; you must do it manually\n");
   } else {
-    &go_public();             # moves release folder from staging to final resting place
+    if ($log->report_errors == 0) {
+      # moves release folder from staging to final resting place
+      &go_public();
+    }             
   }
 }
 
@@ -472,7 +475,7 @@ sub copy_dna_files{
           # assume per-chromosome
           unlink $target_agp_file;
           $wormbase->run_command("touch $target_agp_file", $log);
-          foreach my $chrom ($wb->get_chromosome_names(-mito => 1, -prefix => 1)) {
+          foreach my $chrom ($wb->get_chromosome_names(-mito => 0, -prefix => 1)) {
             my $agp = "$chromdir/$chrom.agp";
             if (-e "$chromdir/$chrom.agp") {
               $wormbase->run_command("cat $agp >> $target_agp_file", $log);
@@ -1466,16 +1469,16 @@ c_elegans.WSREL.gsc_oligo_mapping.txt.gz
 c_elegans.WSREL.cdna2orf.txt.gz
 c_elegans.WSREL.confirmed_genes.fa.gz
 
-
 [elegans]species/GSPECIES
 GSPECIES.WSREL.assembly.agp.gz
+GSPECIES.WSREL.wormpep_package.tar.gz
 
 [elegans,briggsae]species/GSPECIES
 GSPECIES.WSREL.xrefs.txt.gz
 
 # tierII specific stuff
 [TIER2]species/GSPECIES
-GSPECIES.WSREL.WORMpep_package.tar.gz
+
 GSPECIES.WSREL.best_blastp_hits.txt.gz
 GSPECIES.WSREL.intergenic_sequences.fa.gz
 GSPECIES.WSREL.GBrowse.gff2.gz
