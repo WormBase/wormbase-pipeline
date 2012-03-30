@@ -12,8 +12,8 @@
 # 3) Archives old GFF_SPLITS directory
 # 4) Makes current_DB (copy of latest release) in ~wormpub/DATABASES
 #
-# Last updated by: $Author: pad $
-# Last updated on: $Date: 2011-01-24 15:25:12 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2012-03-30 08:34:18 $
 
 
 use strict;
@@ -119,7 +119,7 @@ $log->write_to("Removing $old_dir/acefiles/\n");
 $wormbase->delete_files_from("$old_dir/acefiles","*","+") unless ($test);
 
 $log->write_to("Removing $old_dir/log/\n");
-$wormbase->delete_files_from("$old_dir/log","*","+") unless ($test);
+$wormbase->delete_files_from("$old_dir/logs","*","+") unless ($test);
 
 $log->write_to("Removing $old_dir/CHECKS/\n");
 $wormbase->delete_files_from("$old_dir/CHECKS/","*","+") unless ($test);
