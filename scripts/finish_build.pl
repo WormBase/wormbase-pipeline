@@ -13,7 +13,7 @@
 # 4) Makes current_DB (copy of latest release) in ~wormpub/DATABASES
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2012-03-30 08:34:18 $
+# Last updated on: $Date: 2012-03-30 08:46:42 $
 
 
 use strict;
@@ -118,14 +118,14 @@ my $old_dir = $wormbase->wormpub."/DATABASES/WS".$old_version;
 $log->write_to("Removing $old_dir/acefiles/\n");
 $wormbase->delete_files_from("$old_dir/acefiles","*","+") unless ($test);
 
-$log->write_to("Removing $old_dir/log/\n");
+$log->write_to("Removing $old_dir/logs/\n");
 $wormbase->delete_files_from("$old_dir/logs","*","+") unless ($test);
 
 $log->write_to("Removing $old_dir/CHECKS/\n");
 $wormbase->delete_files_from("$old_dir/CHECKS/","*","+") unless ($test);
 
-$log->write_to("Removing $old_dir/SUPPLEMENTARY_GFF/BACKUP/\n");
-$wormbase->delete_files_from("$old_dir/SUPPLEMENTARY_GFF/BACKUP/","*","+") unless ($test);
+$log->write_to("Removing $old_dir/CHROMOSOMES/SUPPLEMENTARY_GFF/BACKUP/\n");
+$wormbase->delete_files_from("$old_dir/CHROMOSOMES/SUPPLEMENTARY_GFF/BACKUP/","*","+") unless ($test);
 
 $log->write_to("Removing $old_dir/TRANSCRIPTS/\n");
 $wormbase->delete_files_from("$old_dir/TRANSCRIPTS/","*","+") unless ($test);
