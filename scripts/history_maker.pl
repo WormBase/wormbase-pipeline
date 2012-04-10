@@ -25,7 +25,7 @@ my $blast;
 my $user;
 my $mail;
 my $intron;
-my $twinscan;
+my $blesser;
 my $anomaly;
 my $lab;
 my $species;
@@ -44,7 +44,7 @@ GetOptions (
 	    "user:s"       => \$user,
 	    "mail"         => \$mail,
 	    "intron"       => \$intron,
-	    "twinscan"     => \$twinscan,
+	    "blesser"      => \$blesser,
 	    "anomaly"      => \$anomaly,
 	    "lab=s"        => \$lab, # RW or HX
 	    "display_by_clones"       => \$display_by_clones,
@@ -82,8 +82,26 @@ if (! defined $lab || $lab eq "") {
 # pass path to latest version of wormbase
 my $version = &get_history_version($wormbase->database('current'));
 
-# file where temp ace files written
-if (! defined $user) {$user = "wormpub"}
+#If user is supplied grab a WBPersonID
+if (! defined $user || $user eq "") { 
+  # file where temp ace files written
+  $user = "wormpub";
+  # give a user warning
+  print "No user was supplied so added WBPerson info cannot be included in any .ace output.\n";
+}
+
+my $person;
+if (defined $user){ 
+  my @IDs = ('1983','4025','4055');
+  if ($user eq "pad") {
+    $person = ("WBPerson".$IDs[0]);
+  } elsif ($user eq "gw3") {
+    $person = ("WBPerson".$IDs[1]);
+  } elsif ($user eq "mh6") {
+    $person = ("WBPerson".$IDs[2]);
+  }
+}
+
 my $tidy_dir = glob("~${user}/.history_maker");
 mkdir $tidy_dir, 0777;
 system("rm -f $tidy_dir/*"); # clean out old files
@@ -96,19 +114,20 @@ my $main_gui = MainWindow->new();
 
 my $form_cds;			# cds variable from form
 my $form_gene;			# gene variable from form
+my $form_gene2;                 # gene variable from form
 my $anomaly_clone;		# clone variable from anomaly form
 
 # Main window
 $main_gui->configure(-title => "Curation Tool for WS${version}",
-		     -background => 'beige' # was blue
+		     -background => 'darkgrey' # was beige
 		    );
 
 my $gui_width = 500;
-$gui_width += 300 if $anomaly;
-my $gui_height = 200;
+$gui_width += 300 if ($anomaly or $blesser);
+my $gui_height = 50; #modified 200
 $gui_height += 200 if $chromosome;
 $gui_height += 200 if $blast;
-$gui_height += 200 if $twinscan;
+$gui_height += 200 if $blesser;
 $gui_height += 300 if $anomaly;
 $main_gui->geometry("${gui_width}x$gui_height");
 
@@ -116,12 +135,14 @@ $main_gui->geometry("${gui_width}x$gui_height");
 my $WINDOW_SIZE = 10000;
 
 my $chromosome_list;
+if ($chromosome) {
 my @chroms = split /,/, $chromosome;
 foreach my $chrom (@chroms) {
   $chrom =~ s/CHROMOSOME_//;
   $chrom = "'".$chrom."'";
 }
 $chromosome_list = join(',', @chroms);
+}
 
 my $results; # the globally-accesible anomaly details that are summarised in the anomalies detail window
 my $check;			# state of the check button for the weights
@@ -130,31 +151,32 @@ my $check;			# state of the check button for the weights
 
 # history_maker
 
-my $his_maker = $main_gui->Frame( -background => "lightcyan", # was blue
+my $his_maker = $main_gui->Frame( -background => "black", # was lightcyan
 				  -height     => "400",
 				  -label      => "History Maker",
 				  -relief     => "raised",
+				  -foreground => 'whitesmoke', # new
 				  -borderwidth => 5,
-				)->pack( -pady => "20",
+				)->pack( -pady => "5", #modified
 					 -fill => "x"
 				       );
 
 # Reference database lable
-my $db_lbl = $his_maker->Label( -text => "$database",
-				-background => 'lightcyan', # was blue
-				-foreground => 'black' # was white
+my $db_lbl = $his_maker->Label( -text => "Data Source: $database",
+				-background => 'black', # was lightcyan
+				-foreground => 'whitesmoke' # was black
 			      )->pack( -pady => '3'
 				     );
 # CDS entry widgets
 my $cds_lbl = $his_maker->Label( -text => 'CDS',
-				 -background => 'lightcyan',	# was blue
-				 -foreground => 'black'	# was white
+				 -background => 'black',	# was lightcyan
+				 -foreground => 'whitesmoke'	# was black
 			       )->pack(-pady => '6',
 				       -padx => '6',
 				       -side => 'left',
 				      );
 my $cds_val = $his_maker->Entry( -width => '10',
-				 -background => 'white',
+				 -background => 'whitesmoke',
 				 -textvariable=> \$form_cds,
 			       )->pack(-side => 'left',
 				       -pady => '5',
@@ -184,27 +206,31 @@ my $clear = $his_maker->Button( -text => "Clear",
 
 
 ###########################################################
-##   genefinder / twinscan blesser
-if ($twinscan) {
-  my $gene_blesser = $main_gui->Frame( -background => "PaleTurquoise", # was green
+##   Prediction blesser
+## works with genefinder, twinscan and the new Aggregates.
+
+my $gene_val;
+my $proposed_name;
+if ($blesser) {
+  my $gene_blesser = $main_gui->Frame( -background => "LightSteelBlue2", # was PaleTurquoise green
 				       -height     => "400",
-				       -label      => "Genefinder / Twinscan blesser",
+				       -label      => "Prediction blesser",
 				       -relief     => "raised",
 				       -borderwidth => 5,
-				       )->pack( -pady => "20",
+				       )->pack( -pady => "5", #modified
 						-fill => "x"
 						);
   # CDS entry widgets
-  my $gene_lbl = $gene_blesser->Label( -text => 'prediction name',
-				       -background => 'PaleTurquoise', # was green
+  my $gene_lbl = $gene_blesser->Label( -text => 'Prediction name',
+				       -background => 'LightSteelBlue2', # was PaleTurquoise green
 				       -foreground => 'black'
 				       )->pack(-pady => '6',
 					       -padx => '6',
 					       -side => 'left',
 					       );
 
-  my $gene_val = $gene_blesser->Entry( -width => '10',
-				       -background => 'white',
+  $gene_val = $gene_blesser->Entry( -width => '10',
+				       -background => 'whitesmoke',
 				       -textvariable=> \$form_gene,
 				       )->pack(-side => 'left',
 					       -pady => '5',
@@ -215,6 +241,7 @@ if ($twinscan) {
   $gene_val->bind("<Return>",[ \&bless_prediction]);
   $gene_val->bind("<KP_Enter>",[ \&bless_prediction]);
   
+
   # Make history button
   my $bless = $gene_blesser->Button( -text => "Bless this gene",
 				     -command => [\&bless_prediction]
@@ -225,22 +252,60 @@ if ($twinscan) {
 					     );
   # Clear CDS entry button
   my $clear_gene = $gene_blesser->Button( -text => "Clear",
-					  -command => [\&clear_gene, \$gene_val]
+					  -command => [\&clear_gene]
 					  )->pack(-side => 'left',
 						  -pady => '2',
 						  -padx => '6',
 						  -anchor => "e"
 						  );
+
+
+
+# test code for supplying a chosen name for blessing Isoforms.
+###########################
+  my $gene_pro = $gene_blesser->Label( -text => 'Proposed Name(optional)',
+					-background => 'LightSteelBlue2',
+					-foreground => 'black'
+				      )->pack(-side => 'left',
+					      -pady => '2',
+					      -padx => '6',
+					      -anchor => "w"
+					     );
+
+  $proposed_name = $gene_blesser->Entry( -width => '10',
+					 -background => 'whitesmoke',
+					 -textvariable=> \$form_gene2,
+				       )->pack(-side => 'left',
+					       -pady => '2',
+					       -padx => '6',
+					       -anchor => "w"
+					      );
+  
+  # Clear CDS entry button
+  my $clear_proposed = $gene_blesser->Button( -text => "Clear",
+					      -command => [\&clear_proposed]
+					    )->pack(-side => 'left',
+						    -pady => '2',
+						    -padx => '6',
+						    -anchor => "w"
+						   );
+  
+##############################################
+
+
 }
+
+
+
 
 ###########################################################
 #blast hit locator frame
 if ( $blast ) {
-  my $blast_find = $main_gui->Frame( -background => "Plum", # was purple
+  my $blast_find = $main_gui->Frame( -background => "whitesmoke", # was purple plum
 				     -label      => "Blast hit locator",
 				     -relief     => "raised",
 				     -borderwidth => 5,
-				   )->pack( -pady => "20",
+				   )->pack( -pady => "5",
 					    -fill => "x"
 					  );
 
@@ -288,11 +353,11 @@ if ( $anomaly ) {
   my $coords = Coords_converter->invoke(undef, undef, $wormbase);
 
 
-  my $anomaly_find = $main_gui->Frame( -background => "wheat", # was cyan
-				       -label      => "Anomaly locator",
+  my $anomaly_find = $main_gui->Frame( -background => "whitesmoke", # was cyan wheat
+				       -label      => "Anomally Region",
 				       -relief     => "raised",
 				       -borderwidth => 5,
-				       )->pack( -pady => "20",
+				       )->pack( -pady => "5", #modified
 						-fill => "x"
 						);
 
@@ -305,7 +370,7 @@ if ( $anomaly ) {
 
 
   my $go_to_window = $anomaly_find->Button ( -text    => "Go to anomaly region (or clone)",
-					     -background => "aquamarine3",
+					     -background => "SlateGray2", #was aquamarine3
 					     -command => [\&goto_anomaly_window, \$anomaly_list, \$anomaly_detail_list, \$coords]
 					      )->pack ( -side => 'right',
 							-pady => '2',
@@ -316,7 +381,7 @@ if ( $anomaly ) {
 
 # clone entry widgets
   my $anomaly_clone_lbl = $anomaly_find->Label( -text => 'Clone',
-					     -background => 'wheat',
+					     -background => 'whitesmoke', #was wheat
 					     -foreground => 'black'
 					     )->pack(-pady => '6',
 						     -padx => '6',
@@ -324,7 +389,7 @@ if ( $anomaly ) {
 						     );
 
   my $clone_val = $anomaly_find->Entry( -width => '10',
-				   -background => 'white',
+				   -background => 'whitesmoke',
 				   -textvariable=> \$anomaly_clone,
 				   )->pack(-side => 'left',
 					   -pady => '5',
@@ -335,7 +400,7 @@ if ( $anomaly ) {
   my $zero_weight;		# variable set by pop-up menu selection
 
   my $check_button = $anomaly_find->Checkbutton( -text => '',
-						 -background => 'wheat',
+						 -background => 'whitesmoke', #was wheat
 						 -variable => \$check,
 						 -command =>  [\&toggle_weighting, \$zero_weight_label],
 						 )->pack(-pady => '6',
@@ -344,7 +409,7 @@ if ( $anomaly ) {
 							 );
 
   $zero_weight_label = $anomaly_find->Label( -text => 'Not this anomaly',
-					     -background => 'wheat',
+					     -background => 'whitesmoke', #was wheat
 					     -foreground => 'black'
 					     )->pack(-pady => '6',
 						     -padx => '0',
@@ -355,7 +420,7 @@ if ( $anomaly ) {
 # see: http://rcswww.urz.tu-dresden.de/CS/perl/modules/Tk/Tk-BrowseEntry.htm
   require Tk::BrowseEntry;
   my $zero_weight_list = $anomaly_find->BrowseEntry(-label => '',
-						    -background => 'wheat',
+						    -background => 'whitesmoke', #was wheat
 						    -listwidth => '350',
 						    -browsecmd => [\&reweight_anomalies, \$mysql, \$lab, \$chromosome_list, \$anomaly_list, \$anomaly_detail_list, \$zero_weight, \$check],
 						    -variable => \$zero_weight
@@ -367,7 +432,7 @@ if ( $anomaly ) {
   # create button to run Progress display
   my $display_graphs = 1;
   my $progress_button = $anomaly_find->Button ( -text    => "Progress",
-					     -background => "bisque",
+					     -background => "IndianRed4", #was bisque
 					     -command => [\&progress, \$display_graphs]
 					      )->pack ( -side => 'right',
 							-pady => '2',
@@ -391,11 +456,11 @@ if ( $anomaly ) {
 
 
 
-  my $anomaly_details = $main_gui->Frame( -background => "wheat", # was magenta
+  my $anomaly_details = $main_gui->Frame( -background => "whitesmoke", # was magenta wheat
 					  -label      => "Anomaly details in the selected region",
 					  -relief     => "raised",
 					  -borderwidth => 5,
-					  )->pack( -pady => "20",
+					  )->pack( -pady => "5", #modified
 						   -fill => "x"
 						   );
 
@@ -407,7 +472,7 @@ if ( $anomaly ) {
 
 
   my $ignore_this_anomaly = $anomaly_details->Button ( -text    => "Ignore the selected anomalies",
-						       -background => "orange",
+						       -background => "IndianRed4", #was orange
 						       -command => [\&ignore_anomaly, \$anomaly_detail_list]
 					   )->pack ( -side => 'left',
 						     -pady => '2',
@@ -419,7 +484,7 @@ if ( $anomaly ) {
 ## this by mistake and wipe out a whole window of anomalies before you
 ## have looked at them properly
 #  my $ignore_all_window = $anomaly_details->Button ( -text    => "Ignore ALL these anomalies!",
-#						     -background => "red",
+#						     -background => "IndianRed4", #was red
 #						     -command => [\&ignore_anomaly_window, \$anomaly_list, \$anomaly_detail_list]
 #					      )->pack ( -side => 'left',
 #							-pady => '2',
@@ -428,7 +493,7 @@ if ( $anomaly ) {
 #							);
 
   my $go_to_anomaly = $anomaly_details->Button ( -text    => "Go to this anomaly",
-						 -background => "aquamarine3",
+						 -background => "SlateGray2", #was aquamarine3
 						 -command => [\&goto_anomaly, \$anomaly_detail_list]
 					      )->pack ( -side => 'right',
 							-pady => '2',
@@ -478,28 +543,34 @@ sub bless_prediction
     my $gene = $form_gene;
     return unless $gene;
     #last if( $cds eq "end" );
-
     #$cds = &confirm_case($gene);
-    
+
     my $obj = $db->fetch(CDS => "$gene");
     return &error_warning("Invalid CDS","$gene is not a valid CDS name") unless $obj;
     my $method = $obj->Method->name;
     my $stem = $obj->Sequence->name;
     my $exceptions = $obj->Sequence->Method->name;
-    if (! ( ($method eq "Genefinder") || ($method eq "twinscan") ) ) {
+    if (! ( ($method eq "Genefinder") || ($method eq "twinscan") || ($method eq "RNASEQ.Hillier.Aggregate") ) ) {
       #if ($method ne "twinscan") {
-      &error_warning("Wrong method","I only bless Genefinder or Twinscan predictions, my child");
+      &error_warning("Wrong method","I only bless Selected predictions, my child");
       next;
     } elsif ($exceptions eq "Link") {
       &error_warning("Warning","This Prediction lies over clone boundaries, my child");
       next;
     }
 
-    my $new_gene = &suggest_name("$stem");
-    unless ( $new_gene ){
-      &error_warning("No name","Can't suggest name for gene based on $gene");
-      return;
+    my $new_gene;
+    if ($form_gene2) {
+      $new_gene = $form_gene2;
     }
+    else {
+      $new_gene = &suggest_name("$stem");
+      unless ( $new_gene ){
+	&error_warning("No name","Can't suggest name for gene based on $gene");
+	return;
+      }
+    }
+
 
     my $output = $session_file.$gene;
     open (BLS,">$output") or die "cant open $output\n";
@@ -519,6 +590,7 @@ sub bless_prediction
       $end = $CDS->right->right->name;
       last;
     }
+
     
     #print ace format
     #   - parent obj
@@ -542,27 +614,24 @@ sub bless_prediction
     #get date for remark
     my ($day, $mon, $yr)  = (localtime)[3,4,5];
     my $date = sprintf("%02d%02d%02d",$yr-100, $mon+1, $day);
-    print BLS "Remark \"[$date $user] Autoconversion from $gene\"\n";
-
+    print BLS "Remark \"[$date $user] Autoconversion from $gene\"";
+    if (defined $person){ print BLS "Curator_confirmed $person\n";
+			}
+    else {print BLS "\n";}
+    
     close BLS;
     my $return_status = system("xremote -remote 'parse $output'");
     if ( ( $return_status >> 8 ) != 0 ) {
       &error_warning("WARNING", "X11 connection appears to be lost");
     } else {
-      &confirm_message("Made new gene","Made new CDS $new_gene from $gene");
+      &confirm_message("Created", "Converted $gene into $new_gene");
 
       #pop-up window if a -mail option has not been set.
-      &error_warning("Info","The gene $new_gene has been created but you have not spread the word, my child") if (!($mail));
+      &error_warning("Info","Remember to include WBGene ID info for $new_gene") if (!($mail));
 
-      my @IDs = ('1983','1847','1846');
-      my $person = "";
-      if ($user eq "pad") {
-	$person = ($IDs[0]);
-      } elsif ($user eq "ar2") {
-	$person = ($IDs[1]);
-      } elsif ($user eq "dl1") {
-	$person = ($IDs[2]);
-      }
+      #clear the text boxes in the gui.
+      &clear_gene;
+      &clear_proposed;
 
       #&suggest_name("$stem");
 
@@ -572,9 +641,15 @@ sub bless_prediction
 
 ##############################################################
 sub clear_gene
-  {
-    my ($gene_val) = @_;
+
+{
     $gene_val->delete(0,'end');
+  }
+
+sub clear_proposed
+
+  {
+    $proposed_name->delete(0,'end');
   }
 
 
@@ -1442,15 +1517,15 @@ sub progress {
 
   # draw graphs of progress
   if ($$graphs_ref == 1) {
-    use Tk::Graph;
+    #use Tk::Graph;
 
     # set up the window to hold the graphs
     my $D = MainWindow->new;
     $D->optionAdd('*BorderWidth' => 1); # make the style better with a thinner border
 
-    my $frame1 = $D->Frame(-background =>'white')->pack();
+    my $frame1 = $D->Frame(-background =>'whitesmoke')->pack();
     my $close_button = $frame1->Button(-text => "Close progress window",
-				       -background => "bisque",
+				       -background => "IndianRed4", #was bisque
 				       -command => [$D => 'destroy'],
 				       )->pack ( -side => 'left',
 						 -pady => '2',
@@ -1563,7 +1638,6 @@ sub progress {
 
   } # end of graph stuff
 
-
 }
 ############################################################################
 # The progress values are stored in the database at irregular dates
@@ -1619,7 +1693,7 @@ sub confirm_message
 			      -default_button => 'ok',
 			      -buttons        => ['ok']
 			     );
-    $D->configure(-background => 'PaleGreen', # was cyan
+    $D->configure(-background => 'DarkSeaGreen', # was cyan PaleGreen
 		  -foreground => 'black');
 
     my $choice = $D->Show;
@@ -1637,7 +1711,7 @@ sub error_warning
 			      -default_button => 'ok',
 			      -buttons        => ['ok']
 			     );
-    $D->configure(-background => 'red',
+    $D->configure(-background => 'IndianRed4',
 		  -foreground => 'black');
 
     my $choice = $D->Show;
@@ -1729,7 +1803,7 @@ Uses the GFF check files in development_release to provide a list of introns.  S
 
 presents to the user a simple box with a space to enter a CDS name and a button to make a history object.  
 
-=item Genefinder / Twinscan Blesser
+=item Prediction Blesser
 
 Enter current CDS name eg AC8.gc3 and click "Bless this gene".  This will create a new CDS with the correct name based on the "worm_genes" class. If you have specified the -mail option a new gene ID will automatically be requested.
 
