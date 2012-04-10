@@ -550,12 +550,12 @@ sub bless_prediction
     my $method = $obj->Method->name;
     my $stem = $obj->Sequence->name;
     my $exceptions = $obj->Sequence->Method->name;
-    if (! ( ($method eq "Genefinder") || ($method eq "twinscan") || ($method eq "RNASEQ.Hillier.Aggregate") ) ) {
-      #if ($method ne "twinscan") {
-      &error_warning("Wrong method","I only bless Selected predictions, my child");
+    if (! ( ($method eq "Genefinder") || ($method eq "twinscan") || ($method eq "RNASEQ.Hillier.Aggregate") || ($method eq "jigsaw") || ($method eq "mGene") ) ) {
+
+      &error_warning("Wrong method","Only Selected Predictions can be blessed");
       next;
     } elsif ($exceptions eq "Link") {
-      &error_warning("Warning","This Prediction lies over clone boundaries, my child");
+      &error_warning("Warning","This Prediction lies over clone boundaries.");
       next;
     }
 
