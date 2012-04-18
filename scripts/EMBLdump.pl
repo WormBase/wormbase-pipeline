@@ -2,7 +2,7 @@
 #
 # EMBLdump.pl :  makes modified EMBL dumps from camace.
 # 
-#  Last updated on: $Date: 2012-03-21 19:48:03 $
+#  Last updated on: $Date: 2012-04-18 11:19:03 $
 #  Last updated by: $Author: klh $
 
 use strict;
@@ -557,7 +557,8 @@ sub process_feature_table {
       } elsif ($qual->[0] =~ /\/note=\"preliminary prediction\"/ or
                $qual->[0] =~ /\/note=\"cDNA EST/ or 
                $qual->[0] =~ /\/product=/ or
-               $qual->[0] =~ /\/gene=/) {
+               $qual->[0] =~ /\/gene=/ or
+               $qual->[0] =~ /\/protein_id=/) {
         next;
       } elsif ($qual->[0] =~ /\/([^=]+)=?/) {
         push @{$revised_quals{$1}}, $qual;
@@ -1345,9 +1346,7 @@ sub stage_dump_to_submissions_repository {
     };
 
     /^DE\s+/ and do {
-      if ($species eq 'elegans' and /^DE\s+.+\s+(\S+)$/) {
-        $cosmid = $1;
-      } elsif ($species eq 'briggsae' and /^DE\s+.+\s+supercontig\s+(\S+)/) {
+      if (/^DE\s+.+\s+(\S+)$/) {
         $cosmid = $1;
       } else {
         $log->log_and_die("Could not parse contig name from DE line: $_\n");
