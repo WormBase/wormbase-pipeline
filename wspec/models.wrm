@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: pad $
-// Last edited on: $Date: 2012-02-19 22:14:12 $
+// Last edited on: $Date: 2012-04-20 10:50:19 $
 
 
 ////////////////////////
@@ -482,6 +482,7 @@
 		WBProcess ?WBProcess XREF Interaction			// WormBase biological process associated with the interaction
 		DB_info Database ?Database ?Database_field ?Accession_number	// Any database reference to the interaction outside of WormBase, e.g. BioGRID, Interactome
 		Paper ?Paper XREF Interaction
+		Antibody_remark ?Text
 		Remark ?Text #Evidence
 
 
@@ -498,9 +499,7 @@
 		       Expr_pattern ?Expr_pattern		   // An expression pattern altered to indicate 
 		       Variation ?Variation XREF Interactor	   // (allele, polymorphism, etc.) involved in the interaction //removed XREF from proposal
 		       Transgene ?Transgene XREF Interactor	   // Transgene XREF Interactor that carries an interacting gene //removed XREF from proposal
-		       Antibody ?Text				   // Antibody used to detect a regulation event
-		       Antibody_info ?Antibody XREF Interactor	   // Free text description of the antibody used to detect a regulation event //removed XREF from proposal
-		       Remark ?Text #Evidence			   // Info about reagents that the model can't capture (e.g. co_suppression, RNA_reagent, etc.)
+		       Antibody ?Antibody XREF Interactor	   // Free text description of the antibody used to detect a regulation event //removed XREF from proposal
 
 
 ///////////////////////////////////
