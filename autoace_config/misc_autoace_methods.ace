@@ -1854,7 +1854,7 @@ GFF_feature	 "possible_base_call_error" // SO:0000701
 GFF_SO : "SO:0001526" // base_call_error_correction
 
 Method : "RNASeq_splice"
-Remark   "RNASeq splice region. These are the regions spanned by the SRA RNASeq short reads aligned to the genome by tophat/bowtie."
+Remark   "RNASeq splice region. These are the regions spanned by the SRA RNASeq short reads aligned to the genome by tophat/bowtie. The value storedof the splice is the sum of the number of reads observed spanning this region from all aligned RNASeq libraries."
 Colour   BLACK
 Score_by_width
 Score_bounds     1.0 100.0
@@ -1862,6 +1862,44 @@ GFF_source       "RNASeq_splice"
 GFF_feature      "intron"
 GFF_SO "SO:0000188" // intron
 Strand_sensitive Show_up_strand
+
+
+Method : "RNASeq" 
+Remark "The number of RNASeq hits from all aligned libraries were counted at each position on the genome and the average number of hits per library were calculated. The counts per position were smoothed slightly to decrease the amount of data to be stored by only storing the number of counts in a region when they increase or decrease by 30%."
+Colour   BLACK
+Score_by_width  
+Score_bounds     0.000000 100.000000
+Allow_misalign
+GFF_source       "RNASeq"
+GFF_feature      "RNASeq"
+GFF_SO "SO:0000039" // match_part
+
+
+// regions where there is more than 5 times the number of reads from
+// the forward sense of the RNA than the reverse sense
+Method : "RNASeq_F_asymmetry" 
+Remark "These are regions where there is more than 5 times the number of reads from the forward sense of the RNA than the reverse sense. These asymmetric read regions are characteristic of the start or end of a transcript. The value stored is the sum of the number of reads observed in this region from all aligned RNASeq libraries."
+Colour   GREEN
+Score_by_width  
+Score_bounds     0.000000 1000.000000
+Allow_misalign
+GFF_source       "RNASeq"
+GFF_feature      "RNASeq_F_asymmetry"
+GFF_SO "SO:0000039" // match_part
+
+
+// regions where there is more than 5 times the number of reads from
+// the reverse sense of the RNA than the formard sense
+Method : "RNASeq_R_asymmetry" 
+Remark "These are regions where there is more than 5 times the number of reads from the reverse sense of the RNA than the forward sense. These asymmetric read regions are characteristic of the start or end of a transcript. The value stored is the sum of the number of reads observed in this region from all aligned RNASeq libraries."
+Colour   RED
+Score_by_width  
+Score_bounds     0.000000 1000.000000
+Allow_misalign
+GFF_source       "RNASeq"
+GFF_feature      "RNASeq_R_asymmetry"
+GFF_SO "SO:0000039" // match_part
+
 
 
 Method : "DNAseI_hypersensitive_site"
@@ -2416,6 +2454,15 @@ Right_priority  2.7
 
 Method : "RNASeq_splice"
 Right_priority  2.73
+
+Method : "RNASeq"
+Right_priority   2.855
+
+Method : "RNASeq_F_asymmetry"
+Right_priority   2.855
+
+Method : "RNASeq_R_asymmetry"
+Right_priority   2.855
 
 Method : "RNASEQ.Hillier.Aggregate"
 Right_priority 2.75
