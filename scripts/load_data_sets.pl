@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl -w
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2012-04-25 13:07:32 $      
+# Last updated on: $Date: 2012-04-25 14:33:15 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -84,6 +84,7 @@ sub parse_misc_elegans_files {
 		       $wormbase->misc_dynamic.'/misc_Expression_pattern_homol.ace'  => 'Expression_patterns',
 		       $wormbase->misc_dynamic.'/misc_Tijsterman_G4.ace'        => 'Tijsterman_G4',
 		       $wormbase->misc_dynamic.'/misc_Lamm_polysomes.ace'       => 'Lamm_polysomes',
+		       $wormbase->misc_dynamic.'/misc_RNASeq_hits_elegans.ace'  => 'RNASeq_hits',
 		       #$wormbase->misc_dynamic.'/RNASeq_splice_elegans.ace'     => 'RNASeq_splice',
                        $wormbase->misc_static.'/homology_groups.ace' 	        => 'homol_groups',
                        $wormbase->misc_static.'/eggNOG.ace' 	        => 'eggNOG_groups',
