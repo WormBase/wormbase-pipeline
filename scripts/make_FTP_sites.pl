@@ -6,7 +6,7 @@
 # builds wormbase & wormpep FTP sites
 # 
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2012-03-29 15:25:08 $
+# Last updated on: $Date: 2012-04-25 17:14:32 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -428,7 +428,7 @@ sub copy_dna_files{
 	  unlink "$dna_dir/${gspecies}.${WS_name}.${tgt_type}.fa";         
           $wormbase->run_command("touch $dna_dir/${gspecies}.${WS_name}.${tgt_type}.fa",$log);
 	  
-	  foreach my $chrom ($wb->get_chromosome_names(-prefix => 1)) {
+	  foreach my $chrom ($wb->get_chromosome_names(-mito => 1, -prefix => 1)) {
 	    my $chrom_file = "$chromdir/$chrom"; # basic form of the dna file
             
 	    # is the data gzipped?
