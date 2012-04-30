@@ -8,7 +8,7 @@
 #      COMPANY:
 #      VERSION:  1.0
 #      CREATED:  16/05/06 15:09:49 BST
-#     REVISION:  $Revision: 1.1 $
+#     REVISION:  $Revision: 1.2 $
 #===============================================================================
 
 package WublastX;
@@ -18,12 +18,12 @@ use Bio::EnsEMBL::DnaPepAlignFeature;
 
 # store things here
 sub new {
-    my ( $class, $slice, $file, $analysis,$type ) = @_;
+    my ( $class, $slice_hash, $file, $analysis,$type ) = @_;
     my $self = {
-        slice    => $slice,
-        analysis => $analysis,
-        file     => $file,
-	type     => $type
+        slicehash => $slice_hash,
+        analysis  => $analysis,
+        file      => $file,
+	type      => $type
     };
     bless $self, $class;
     $self->_get_lines;
@@ -40,6 +40,7 @@ sub _get_lines {
         next if !( $line =~ /wublastx\sprotein_match/ ); # wublastx specific
         my @col = split /\s/, $line;
 
+        my $chr = $col[0];
         my $strand = $col[6] eq '+' ? 1 : -1;            # convert to ensembl style
 	my $id=$col[9];
 	$id =~s/Protein:(.+)://;
@@ -52,12 +53,14 @@ sub _get_lines {
         my ( $hstart, $hstop ) = sort { $a <=> $b } ( $col[10], $col[11] );
 	if ($hstop-$hstart != $length){$hstop=$hstart+$length} # le fake
 
+        die "Could not find slice for '$chr' in hash" if not exists $self->{slicehash}->{$chr};
+
 	push @{ $self->{hits} },
           Bio::EnsEMBL::DnaPepAlignFeature->new(
             -start         => $col[3],
             -end           => $col[4],
             -strand        => $strand,
-            -slice         => $self->{slice},
+            -slice         => $self->{slicehash}->{$chr},
             -analysis      => $self->{analysis},
             -score         => $col[5],
 	    -p_value       => 1, # fake value because someone bound a double to this

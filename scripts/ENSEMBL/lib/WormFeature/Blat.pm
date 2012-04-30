@@ -8,7 +8,7 @@
 #      COMPANY:
 #      VERSION:  1.0
 #      CREATED:  16/05/06 15:09:49 BST
-#     REVISION:  $Revision: 1.3 $
+#     REVISION:  $Revision: 1.4 $
 #===============================================================================
 
 package Blat;
@@ -20,10 +20,10 @@ use Bio::EnsEMBL::PepDnaAlignFeature;
 
 # store things here
 sub new {
-    my ( $class, $slice, $file, $analysis,$gff, $ori_map) = @_;
+    my ( $class, $slice_hash, $file, $analysis,$gff, $ori_map) = @_;
     throw  Error::Simple("Bad_Number_of_Arguments") if ! ref($gff);
     my $self = {
-        slice    => $slice,
+        slicehash => $slice_hash,
         analysis => $analysis,
         file     => $file,
 	feature  => $gff->{-feature},
@@ -49,6 +49,7 @@ sub _get_lines {
     	next if !( $line =~ /$feature\s$source/ );
         my @col = split /\s/, $line;
 
+        my $chr = $col[0];
         my $strand = $col[6] eq '+' ? 1 : -1;    #convert to ensembl style
 	my $id=$col[9];
 	$id =~s/Protein:|Sequence://;
@@ -59,6 +60,8 @@ sub _get_lines {
 	
 	my $score= $col[5] eq '.' ? 100 : $col[5];
 
+        die "Could not get slice for $chr\n" if not exists $self->{slicehash}->{$chr};
+
 	# spot the difference between the Protein and DNA constructors ... ;-)
 	# needs maybe some cleanup love
 	if ($self->{translated}) {
@@ -67,7 +70,7 @@ sub _get_lines {
             -start         => $col[3],
             -end           => $col[4],
             -strand        => $strand,
-            -slice         => $self->{slice},
+            -slice         => $self->{slicehash}->{$chr},
             -analysis      => $self->{analysis},
             -score         => $score,
 	    -p_value       => 1, # fake value because someone bound a double to this
@@ -90,7 +93,7 @@ sub _get_lines {
             -start         => $col[3],
             -end           => $col[4],
             -strand        => $strand,
-            -slice         => $self->{slice},
+            -slice         => $self->{slicehash}->{$chr},
             -analysis      => $self->{analysis},
             -score         => $score,
 	    -p_value       => 1, # fake value because someone bound a double to this
@@ -98,7 +101,7 @@ sub _get_lines {
 	    -hseqname      => $id,
 	    -hstart        => $hstart,
 	    -hend          => $hstop, # sometimes faked to pass a insanity check
-	    -hstrand       => $strand,
+	    -hstrand       => 1,
 	    -cigar_string  => "${length}M"
           )
 	}

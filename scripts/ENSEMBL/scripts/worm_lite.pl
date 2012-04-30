@@ -198,7 +198,7 @@ sub load_agp {
 	    #### need a slice of a chromosome to get the id :o
 	    $file=~/(\w+)\.agp/;
 	    print "processing chromosome $1\n";
-	    my $chromosome = $db->get_SliceAdaptor()->fetch_by_region('chromosome',$1); # stupid assumption about the name of the file being the chromosome name
+	    my $chromosome = $db->get_SliceAdaptor()->fetch_by_region('toplevel',$1); # stupid assumption about the name of the file being the chromosome name
             my %chr_hash = %{ &agp_parse( $fh, $chromosome->adaptor->get_seq_region_id($chromosome), $config->{version} ) };
 
             foreach my $id ( keys(%chr_hash) ) {
@@ -242,14 +242,29 @@ sub load_genes {
 	   open INF,"/tmp/compara/$species/all.gff" || die (@!);
 	
 	   # that is quite evil due to thousands of open/close filehandle operations
-	   while (<INF>){
-		  next if /\#/;
-		  my @a=split;
-		  open OUTF,">>/tmp/compara/$species/$a[0].gff" ||die (@!);
-		  print OUTF $_;
-		  close OUTF;
-	   }
-	   close INF;
+	   #while (<INF>){
+		#  next if /\#/;
+		 # my @a=split;
+		 # open OUTF,">>/tmp/compara/$species/$a[0].gff" ||die (@!);
+		 # print OUTF $_;
+		 # close OUTF;
+	   #}
+	   #close INF;
+    }
+
+    my %slice_hash;
+    foreach my $slice (@{$db->get_SliceAdaptor->fetch_all('toplevel')}) {
+      $slice_hash{$slice->seq_region_name} = $slice;
+      if ($species eq 'elegans') {
+        my $other_name;
+        if ($slice->seq_region_name !~ /^CHROMOSOME/) {
+          $other_name = "CHROMOSOME_" . $slice->seq_region_name; 
+        } else {
+          $other_name = $slice->seq_region_name;
+          $other_name =~ s/^CHROMOSOME_//;
+        }
+        $slice_hash{$other_name} = $slice;
+      }
     }
 
     foreach my $file ( glob $config->{gff} ) {
@@ -257,8 +272,8 @@ sub load_genes {
 	if ($species !~/briggsae/){next if $file=~/briggsae/}
         $file =~ /.*\/(.*)\.gff/;
         print "parsing $1 from $file\n";
-        my $slice = $db->get_SliceAdaptor->fetch_by_region( 'chromosome', $1 );
-        my $genes = &parse_gff( $file, $slice, $analysis );
+        my $slice = $db->get_SliceAdaptor->fetch_by_region( 'toplevel', $1 );
+        my $genes = &parse_gff( $file, $slice_hash, $analysis );
         &write_genes( $genes, $db );
     }
     $db->dbc->do('UPDATE gene SET biotype="protein_coding"');
@@ -273,7 +288,7 @@ package WormBase;
 # redefine subroutine to use different tags
 sub process_file {
     my ($fh) = @_;
-    my ( %genes, $transcript, %five_prime, %three_prime );
+    my ( %genes, $transcript, %five_prime, %three_prime, %parent_seqs );
 
   LOOP: while (<$fh>) {
         chomp;
@@ -303,11 +318,16 @@ sub process_file {
             next LOOP;
         }
         elsif ( $line ne $gff_types ) { next LOOP }    # <= here goes the change needs tp become $line eq "$bla $blub"
-        $genes{$gene} ||= [];
-        push( @{ $genes{$gene} }, $element );
+
+        if (not exists $genes{$gene}) {
+          $genes{$gene} = [];
+          $parent_seqs{$gene} = $chr;
+        } else {
+          push( @{ $genes{$gene} }, $element );
+        }
     }
     print STDERR "Have " . keys(%genes) . " genes (CDS), " . keys(%five_prime) . " have 5' UTR and " . keys(%three_prime) . " have 3' UTR information\n";
-    return \%genes, \%five_prime, \%three_prime;
+    return \%genes, \%five_prime, \%three_prime, \%parent_seqs;
 }
 
 1;
