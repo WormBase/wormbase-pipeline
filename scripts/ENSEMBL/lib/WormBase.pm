@@ -38,6 +38,8 @@ our @EXPORT =
   qw(get_seq_ids get_sequences_pfetch agp_parse parse_gff write_genes translation_check insert_agp_line display_exons non_translate process_file parse_operons write_simple_features parse_rnai parse_expr parse_SL1 parse_SL2 parse_pseudo_gff store_coord_system store_slice parse_tRNA parse_rRNA_genes parse_tRNA_genes parse_pseudo_files parse_simplefeature);
 
 use strict;
+use Storable qw(store retrieve freeze thaw dclone);
+
 use Bio::EnsEMBL::Exon;
 use Bio::EnsEMBL::Gene;
 use Bio::EnsEMBL::Transcript;
@@ -200,39 +202,48 @@ sub agp_parse {
 =cut
 
 sub parse_gff {
-    my ( $file, $slice_hash, $analysis ) = @_;
+  my ( $file, $slice_hash, $analysis ) = @_;
+  
+  my $fh; 
+  
+  print STDERR "opening ".$file."\n";
+  open( $fh, $file ) or die "couldn't open " . $file . " $!";
+  
+  my $genes = &parse_gff_fh($fh, $slice_hash, $analysis);
+  
+  return $genes;
+}
 
-    use Storable qw(store retrieve freeze thaw dclone);
 
-    print STDERR "opening ".$file."\n";
-    open( FH, $file ) or die "couldn't open " . $file . " $!";
-
-    my @genes;
-
-    my ( $transcripts, $five_prime, $three_prime, $parent_seqs ) = &process_file( \*FH );
-    print "there are " . keys(%$transcripts) . " distinct transcripts\n";
-    my $genes = undef;
-
-    my ( $processed_transcripts, $five_start, $three_end, $trans_start_exon, $trans_end_exon ) =
+sub parse_gff_fh {
+  my ( $fh, $slice_hash, $analysis ) = @_;
+  
+  my @genes;
+  
+  my ( $transcripts, $five_prime, $three_prime, $parent_seqs ) = &process_file( $fh );
+  print "there are " . keys(%$transcripts) . " distinct transcripts\n";
+  my $genes = undef;
+  
+  my ( $processed_transcripts, $five_start, $three_end, $trans_start_exon, $trans_end_exon ) =
       &generate_transcripts( $transcripts, $slice_hash, $analysis, $five_prime, $three_prime, $parent_seqs );
-
-    print "\nthere are " . keys(%$processed_transcripts) . " transcripts\n";
-
-    $genes = undef;
-    $genes = &create_transcripts( $processed_transcripts, $five_start, $three_end, $trans_start_exon, $trans_end_exon );
-
-    print "\nPARSE GFF has " . keys(%$genes) . " genes\n";
-    foreach my $gene_id ( keys(%$genes) ) {
-        my $transcripts = $genes->{$gene_id};
-        my $unpruned    = &create_gene( $transcripts, $gene_id, 'protein_coding' );
-
-        my $gene = &prune_Exons($unpruned);
-        push( @genes, $gene );
-    }
-
-    close(FH);
-    print "\nPARSE_GFF got " . @genes . " genes\n";
-    return \@genes;
+  
+  print "\nthere are " . keys(%$processed_transcripts) . " transcripts\n";
+  
+  $genes = undef;
+  $genes = &create_transcripts( $processed_transcripts, $five_start, $three_end, $trans_start_exon, $trans_end_exon );
+  
+  print "\nPARSE GFF has " . keys(%$genes) . " genes\n";
+  foreach my $gene_id ( keys(%$genes) ) {
+    my $transcripts = $genes->{$gene_id};
+    my $unpruned    = &create_gene( $transcripts, $gene_id, 'protein_coding' );
+    
+    my $gene = &prune_Exons($unpruned);
+    push( @genes, $gene );
+  }
+  
+  close(FH);
+  print "\nPARSE_GFF got " . @genes . " genes\n";
+  return \@genes;
 }
 
 =head2 process_file

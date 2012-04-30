@@ -68,8 +68,9 @@ our $gff_types = ($config->{gff_types} || "curated coding_exon");
 
 &setupdb( $config->{database}, $config->{version} ) if $setup;
 &load_dna($config)   if $dna;
-&load_genes($config) if $genes;
 &load_agp($config) if $agp;
+&load_genes($config) if $genes;
+
 
 ##################################
 # create database from schema
@@ -216,71 +217,45 @@ sub load_agp {
 }
 
 sub load_genes {
-    my $db = new Bio::EnsEMBL::DBSQL::DBAdaptor(
-        -host   => $config->{database}->{host},
-        -user   => $config->{database}->{user},
-        -dbname => $config->{database}->{dbname},
-        -pass   => $config->{database}->{password},
-        -port   => $config->{database}->{port},
-    );
-    my $analysis = $db->get_AnalysisAdaptor()->fetch_by_logic_name('wormbase');
+  my ($config) = @_;
 
-    # elegans hack for build
-    if ( $species eq 'elegans' || $species eq 'briggsae'||$species eq 'elegans_test' ) {
-        foreach my $chr ( glob $config->{fasta} ) {
-            my ( $path, $name ) = ( $chr =~ /(^.*)\/CHROMOSOMES\/(.*?)\.\w+/ );
-            `mkdir /tmp/compara` if !-e '/tmp/compara';
-            system("cat $path/GFF_SPLITS/${\$name}_gene.gff $path/GFF_SPLITS/${\$name}_curated.gff > /tmp/compara/${\$name}.gff");
-        }
-    # if it is remanei collect all needed GFFs and then split them based on their supercontig into a /tmp/ directory
-    } elsif ($species eq 'remanei' || $species eq 'pristionchus' || $species eq 'japonica' || $species eq 'brenneri'||
-    $species eq 'mincognita'){ #grumble ... seems to become the default nowadays
-	   my ($path)=glob($config->{fasta})=~/(^.*)\/CHROMOSOMES\//;
-	   `mkdir -p /tmp/compara/$species` if !-e "/tmp/compara/$species";
-	   unlink glob("/tmp/compara/$species/*.gff"); # clean old leftovers
-	   system("cat $path/GFF_SPLITS/gene.gff $path/GFF_SPLITS/curated.gff > /tmp/compara/$species/all.gff");
-	   open INF,"/tmp/compara/$species/all.gff" || die (@!);
-	
-	   # that is quite evil due to thousands of open/close filehandle operations
-	   #while (<INF>){
-		#  next if /\#/;
-		 # my @a=split;
-		 # open OUTF,">>/tmp/compara/$species/$a[0].gff" ||die (@!);
-		 # print OUTF $_;
-		 # close OUTF;
-	   #}
-	   #close INF;
-    }
+  my $db = new Bio::EnsEMBL::DBSQL::DBAdaptor(
+    -host   => $config->{database}->{host},
+    -user   => $config->{database}->{user},
+    -dbname => $config->{database}->{dbname},
+    -pass   => $config->{database}->{password},
+    -port   => $config->{database}->{port},
+      );
+  my $analysis = $db->get_AnalysisAdaptor()->fetch_by_logic_name('wormbase');
+    
+  my (%slice_hash, @path_globs, @gff_files, $genes); 
 
-    my %slice_hash;
-    foreach my $slice (@{$db->get_SliceAdaptor->fetch_all('toplevel')}) {
-      $slice_hash{$slice->seq_region_name} = $slice;
-      if ($species eq 'elegans') {
-        my $other_name;
-        if ($slice->seq_region_name !~ /^CHROMOSOME/) {
-          $other_name = "CHROMOSOME_" . $slice->seq_region_name; 
-        } else {
-          $other_name = $slice->seq_region_name;
-          $other_name =~ s/^CHROMOSOME_//;
-        }
-        $slice_hash{$other_name} = $slice;
+  foreach my $slice (@{$db->get_SliceAdaptor->fetch_all('toplevel')}) {
+    $slice_hash{$slice->seq_region_name} = $slice;
+    if ($species eq 'elegans') {
+      my $other_name;
+      if ($slice->seq_region_name !~ /^CHROMOSOME/) {
+        $other_name = "CHROMOSOME_" . $slice->seq_region_name; 
+      } else {
+        $other_name = $slice->seq_region_name;
+        $other_name =~ s/^CHROMOSOME_//;
       }
+      $slice_hash{$other_name} = $slice;
     }
+  }
+  
+  @path_globs = split(/,/, $config->{gff});
 
-    foreach my $file ( glob $config->{gff} ) {
-        next if $file =~ /masked|CSHL|BLAT_BAC_END/;
-	if ($species !~/briggsae/){next if $file=~/briggsae/}
-        $file =~ /.*\/(.*)\.gff/;
-        print "parsing $1 from $file\n";
-        my $slice = $db->get_SliceAdaptor->fetch_by_region( 'toplevel', $1 );
-        my $genes = &parse_gff( $file, $slice_hash, $analysis );
-        &write_genes( $genes, $db );
-    }
-    $db->dbc->do('UPDATE gene SET biotype="protein_coding"');
-    $db->dbc->do('INSERT INTO meta (meta_key,meta_value) VALUES ("genebuild.start_date",NOW())');
-
-    # elegans cleanup
-    ( system('rm -rf /tmp/compara') && die "could not clean up /tmp/compara" ) if ($species eq 'elegans' ||$species eq 'briggsae');
+  foreach my $fglob (@path_globs) {
+    push @gff_files, glob($fglob);
+  }
+  
+  open(my $gff_fh, "cat @gff_files |") or die "Could not create GFF stream\n";
+  $genes = &parse_gff_fh( $gff_fh, \%slice_hash, $analysis);
+  &write_genes( $genes, $db );
+  
+  $db->dbc->do('UPDATE gene SET biotype="protein_coding"');
+  $db->dbc->do('INSERT INTO meta (meta_key,meta_value) VALUES ("genebuild.start_date",NOW())');
 }
 
 package WormBase;
