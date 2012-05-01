@@ -4,8 +4,8 @@
 #
 # by Keith Bradnam
 #
-# Last updated on: $Date: 2012-05-01 10:00:52 $
-# Last updated by: $Author: pad $
+# Last updated on: $Date: 2012-05-01 10:04:30 $
+# Last updated by: $Author: gw3 $
 #
 # see pod documentation at end of file for more information about this script
 
@@ -100,6 +100,7 @@ else {
   foreach my $list (@error_list) {
     foreach my $error (@{$list}) {
       $count_errors++;
+      $log->error;
       $log->write_to("$count_errors $error");
       last if $count_errors > 190;
     }
