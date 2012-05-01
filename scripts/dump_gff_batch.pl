@@ -74,7 +74,7 @@ my $lsf = LSF::JobManager->new();
 my $host = qx('hostname');chomp $host;
 my $port = 23100;
 if (scalar(@chromosomes) > 50){
-	$wormbase->run_command("(sgifaceserver $database $port 600:6000000:1000:600000000>/dev/null)>&/dev/null &",$log);
+	$wormbase->run_command("(/nfs/users/nfs_w/wormpub/bin/sgifaceserver_phase_patch $database $port 600:6000000:1000:600000000>/dev/null)>&/dev/null &",$log);
 	sleep 20;
 }
 
