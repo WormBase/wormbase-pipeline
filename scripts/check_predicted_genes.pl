@@ -4,7 +4,7 @@
 #
 # by Keith Bradnam
 #
-# Last updated on: $Date: 2012-05-01 10:04:30 $
+# Last updated on: $Date: 2012-05-01 10:14:51 $
 # Last updated by: $Author: gw3 $
 #
 # see pod documentation at end of file for more information about this script
@@ -100,7 +100,7 @@ else {
   foreach my $list (@error_list) {
     foreach my $error (@{$list}) {
       $count_errors++;
-      $log->error;
+      if ($error =~ /ERROR/) {$log->error;}
       $log->write_to("$count_errors $error");
       last if $count_errors > 190;
     }
@@ -376,6 +376,7 @@ sub single_query_tests {
   my @Transcripts= $db->fetch(-query=>'find elegans_RNA_genes where method != "history_transcript" AND NOT Transcript');
   if(@Transcripts){
     foreach (@Transcripts){
+      $log->error;
       $log->write_to("ERROR: $_ has no Transcript tag, this will cause errors in the build\n");
     }
   }
