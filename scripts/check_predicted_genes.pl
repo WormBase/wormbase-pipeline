@@ -4,8 +4,8 @@
 #
 # by Keith Bradnam
 #
-# Last updated on: $Date: 2012-05-01 10:14:51 $
-# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2012-05-01 10:22:12 $
+# Last updated by: $Author: pad $
 #
 # see pod documentation at end of file for more information about this script
 
@@ -50,7 +50,8 @@ my $tace = $wormbase->tace;
 my $db = Ace->connect(-path=>$db_path) or  $log->log_and_die("Couldn't connect to $db_path\n". Ace->error);
 
 # create separate arrays for different classes of errors (1 = most severe, 4 = least severe)
-our (@error1, @error2, @error3, @error4, @error5,$errorcountCDS,);
+our (@error1, @error2, @error3, @error4, @error5,);
+my $errorcountCDS = "0";
 
 #Permitted exceptions where the error has been checked.
 #List of verified small genes or have confirmed small introns.
@@ -94,7 +95,7 @@ else {
   &single_query_tests;
 
   # print warnings to log file, log all category 1 errors, and then fill up.
-  $log->write_to("$errorcountCDS incomplete CDSs found, please check the database for CDS !method.\n\n");
+  $log->write_to("WARNING: $errorcountCDS incomplete CDSs found, please check the database for CDS !method.\n\n") unless $errorcountCDS eq '0';
   my $count_errors =0;
   my @error_list = ( \@error1, \@error2, \@error3,  \@error4, \@error5);
   foreach my $list (@error_list) {
