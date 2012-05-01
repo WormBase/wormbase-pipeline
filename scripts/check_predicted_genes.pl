@@ -4,7 +4,7 @@
 #
 # by Keith Bradnam
 #
-# Last updated on: $Date: 2012-03-08 16:30:47 $
+# Last updated on: $Date: 2012-05-01 10:00:52 $
 # Last updated by: $Author: pad $
 #
 # see pod documentation at end of file for more information about this script
@@ -50,7 +50,7 @@ my $tace = $wormbase->tace;
 my $db = Ace->connect(-path=>$db_path) or  $log->log_and_die("Couldn't connect to $db_path\n". Ace->error);
 
 # create separate arrays for different classes of errors (1 = most severe, 4 = least severe)
-our (@error1, @error2, @error3, @error4, @error5);
+our (@error1, @error2, @error3, @error4, @error5,$errorcountCDS,);
 
 #Permitted exceptions where the error has been checked.
 #List of verified small genes or have confirmed small introns.
@@ -94,6 +94,7 @@ else {
   &single_query_tests;
 
   # print warnings to log file, log all category 1 errors, and then fill up.
+  $log->write_to("$errorcountCDS incomplete CDSs found, please check the database for CDS !method.\n\n");
   my $count_errors =0;
   my @error_list = ( \@error1, \@error2, \@error3,  \@error4, \@error5);
   foreach my $list (@error_list) {
@@ -117,8 +118,12 @@ exit(0);
 sub main_gene_checks {
  CHECK_GENE:
   foreach my $gene_model ( @Predictions ) {
-    #next unless ($gene_model eq "Y32B12C.2b"); #stop the script at a specified gene. debug line
     print STDOUT "$gene_model\n" if $verbose;
+    unless (defined $gene_model->Method) {
+      $errorcountCDS ++;
+      print STDOUT "$gene_model appears to be incomplete\n" if $verbose;
+      next CHECK_GENE;
+    }
     my $method_test = $gene_model->Method->name;
     my @exon_coord1 = sort by_number ($gene_model->get('Source_exons',1));
     my @exon_coord2 = sort by_number ($gene_model->get('Source_exons',2));
@@ -329,6 +334,7 @@ sub main_gene_checks {
       }
 
       # feed DNA sequence to function for checking
+      unless ((defined $gene_model) && (defined$start_tag) && (defined$end_tag) && (defined$dna) && (defined$method_test)) {print "$_\n";}
       &test_gene_sequence_for_errors($gene_model,$start_tag,$end_tag,$dna,$method_test);
     }
   }
