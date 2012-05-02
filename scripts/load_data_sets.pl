@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl -w
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2012-04-25 14:33:15 $      
+# Last updated on: $Date: 2012-05-02 15:46:30 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -66,6 +66,7 @@ sub parse_misc_elegans_files {
 		       $wormbase->misc_dynamic."/misc_mgene.ace"                => "mgene_predictions"     ,
 		       $wormbase->misc_dynamic."/misc_RNASEQ_CDS.ace"           => "RNASEQ_CDS_predictions",
 		       $wormbase->misc_dynamic."/misc_modENCODE_aggregate_transcripts.ace" => "modENCODE_aggregate_transcripts",
+		       $wormbase->misc_dynamic."/misc_modENCODE_Tiling_array_TARs.ace" => "modENCODE_Tiling_array_TARs",
 		       $wormbase->misc_dynamic."/misc_jigsaw.ace"               => "jigsaw_predictions"    ,
 		       $wormbase->misc_dynamic."/misc_TEC_RED_homol_data.ace"   => "TEC_RED"               ,
 		       $wormbase->misc_dynamic."/misc_TEC_RED_homol.ace"        => "TEC_RED"               ,
@@ -87,7 +88,7 @@ sub parse_misc_elegans_files {
 		       $wormbase->misc_dynamic.'/misc_RNASeq_hits_elegans.ace'  => 'RNASeq_hits',
 		       #$wormbase->misc_dynamic.'/RNASeq_splice_elegans.ace'     => 'RNASeq_splice',
                        $wormbase->misc_static.'/homology_groups.ace' 	        => 'homol_groups',
-                       $wormbase->misc_static.'/eggNOG.ace' 	        => 'eggNOG_groups',
+                       $wormbase->misc_static.'/eggNOG.ace' 	                => 'eggNOG_groups',
 		      );
 
   $log->write_to("Loading files to ".$wormbase->autoace."\n==================================\n");
