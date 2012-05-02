@@ -5,8 +5,8 @@
 # Counts the number of objects in an ACEDB database for each Class stated in the config file
 # Compares this number to those from a second database.
 #
-# Last updated by: $Author: pad $
-# Last updated on: $Date: 2011-11-03 14:43:46 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2012-05-02 15:50:02 $
 
 
 use strict;
@@ -29,7 +29,7 @@ $|=1;
 my ($help, $debug, $test, $verbose, $store, $wormbase);
 my ($database, $database1, $database2, $classes, $species, $stage);
 my ($dbname_0, $dbname_1, $dbname_2);
-my ($stlace, $camace, $genace, $csh, $caltech, $misc_static, $brigace, $incomplete, $data_sets);
+my ($stlace, $camace, $genace, $csh, $caltech, $misc_static, $brigace, $incomplete, $data_sets, $pre_merge);
 
 GetOptions (
 	    "help"          => \$help,
@@ -48,6 +48,7 @@ GetOptions (
 	    "brigace"       => \$brigace,
 	    "incomplete"    => \$incomplete,
 	    "data_sets"     => \$data_sets,
+	    "pre_merge"     => \$pre_merge,
 	    "species:s"     => \$species,
 	    "stage:s"       => \$stage,
 	    );
@@ -113,6 +114,7 @@ $stage="unknown" if (!defined $stage);
  @classes = (@classes, &set_classes('brigace')) if ($brigace);
  @classes = (@classes, &set_classes('incomplete')) if ($incomplete);
  @classes = (@classes, &set_classes('data_sets')) if ($data_sets);
+ @classes = (@classes, &set_classes('pre_merge')) if ($pre_merge);
 
 $log->write_to("Checking $dbname_1 vs $dbname_2 for classes:\n@classes\n\n");
 
@@ -123,7 +125,7 @@ my %results_0; 			# results from the last but one release
 my %results_1;			# results from the last release
 my $got_prev_results=0;
 my $got_prev_prev_results=0;
-for (my $version_count = 10; $version_count; $version_count--) { # go back up to 5 releases
+for (my $version_count = 10; $version_count; $version_count--) { # go back up to 10 releases
   %results_0 = ();
   if (!$got_prev_results) {%results_1 = ()}
   foreach my $class (@classes) {
@@ -505,6 +507,105 @@ sub set_classes {
 		"Feature",
 		"Motif",
 		"Method",
+		);  
+# these classes are the ones available pre-merge of all species
+  } elsif ($mode eq "pre_merge") { 
+    @classes = (
+		"Sequence",
+		"CDS", 
+		"Transposon",
+		"Transcript",
+		"Pseudogene",
+		"PCR_product",
+		"Transposon_CDS",
+		"cDNA_sequence",
+		"elegans_CDS",
+		"elegans_pseudogenes",
+		"elegans_RNA_genes",
+		"Class",
+		"Model",
+		"Method",
+		"Clone",
+		"Coding_transcripts",
+		"Accession_number",
+		"Variation",
+		"Motif",
+		"Feature",
+		"Feature_data",
+		"Laboratory",
+		"Locus",
+		"Gene",
+		"Gene_class",
+		"Gene_name",
+		"Gene_regulation",
+		"Genome_Sequence",
+		"Map",
+		"Multi_pt_data",
+		"Picture",
+		"Pos_neg_data",
+		"Rearrangement",
+		"2_point_data",
+		"Strain",
+		"Operon",
+		"Analysis",
+		"Condition",
+		"GO_code",
+		"Peptide",
+		"Protein",
+		"Species",
+		"Transposon_family",
+		"Comment",
+		"Contig",
+		"Database",
+		"Display",
+		"DNA",
+		"Homol_data",
+		"NDB_Sequence",
+		"nematode_ESTs",
+		"SO_term",
+		"Table",
+		"Mass_spec_experiment",
+		"Mass_spec_peptide",
+		"Transgene",
+		"Expr_pattern",
+		"Expr_profile",
+		"Life_stage",
+		"Lineage",
+		"Cell",
+		"Cell_group",
+		"Paper",
+		"Author",
+		"Person",
+		"Person_name",
+		"LongText",
+		"Keyword",
+		"Oligo",
+		"Oligo_set",
+		"Phenotype",
+		"Phenotype_name",
+		"SK_map",
+		"Tree",
+		"TreeNode",
+		"Microarray",
+		"Microarray_results",
+		"Microarray_experiment",
+		"Expression_cluster",
+		"Anatomy_name",
+		"Anatomy_term",
+		"Anatomy_function",
+		"Homology_group",
+		"Antibody",
+		"RNAi",
+		"SAGE_tag",
+		"SAGE_experiment",
+		"Gene_regulation",
+		"GO_term",
+		"Interaction",
+		"YH",
+		"Position_matrix",
+		"LongText",
+		"Movie",
+		"Structure_data",
 		);  
   }
 
