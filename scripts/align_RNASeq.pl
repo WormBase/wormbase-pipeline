@@ -62,7 +62,7 @@
 # by Gary Williams
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2012-03-15 11:49:13 $
+# Last updated on: $Date: 2012-05-02 14:10:31 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -87,7 +87,7 @@ use GDBM_File; # for tied hash
 ##############################
 
 
-my ($test, $store, $debug, $species, $verbose, $expt, $noalign, $check, $solexa, $illumina, $database, $nogtf, $norawjuncs, $tsl, $paired, $keepfastq, $onestage, $getsrx);
+my ($test, $store, $debug, $species, $verbose, $expt, $noalign, $check, $solexa, $illumina, $database, $nogtf, $norawjuncs, $tsl, $paired, $keepfastq, $onestage, $getsrx, $ribosome_occupancy);
 GetOptions (
 	    "test"               => \$test,
 	    "store:s"            => \$store,
@@ -107,6 +107,7 @@ GetOptions (
 	    "keepfastq"          => \$keepfastq,# don't delete the fastq files after use
 	    "onestage"           => \$onestage, # for comparing the old one-stage alignment against the new (default) two-stage (transcriptome then genome) alignment
 	    "getsrx:s"           => \$getsrx,   # if this is set to the name of a 'SRX' entry from the NCBI SRA, then this file will be retrieved and unpacked - no alignment is done - '-paired' will split the file into pairs
+	    "ribosome_occupancy" => \$ribosome_occupancy # this is a project from the Andy Fire lab looking at which codons have how many ribosomes - used by me to find START codons
 	   );
 
 my $wormbase;
@@ -138,7 +139,7 @@ if ($getsrx) {
   # unpack any .lite.sra file to make the .fastq files
   # now unpack the sra.lite files
   $log->write_to("Unpack the $getsrx .lite.sra file to fastq files\n");
-  foreach my $dir (glob("$getsrx/SRR/SRR*")) {
+  foreach my $dir (glob("$getsrx/SRR*")) {
     chdir $dir;
     foreach my $srr (glob("*.lite.sra")) {
       $log->write_to("Unpack $srr\n");
@@ -177,6 +178,8 @@ my %expts;
 if ($species eq 'elegans') {
 
   %expts = ( # key= SRA 'SRX' experiment ID, values = [Analysis ID, quality score metric]
+
+# Add new analysis/condition objects to ~wormpub/DATABASES/geneace
 
 #	     SRX001872  => ["RNASeq_Hillier.L2_larva", 'phred', 'single'], # needs a lot of memory to run tophat
 	     SRX001873  => ["RNASeq_Hillier.Young_Adult", 'phred', 'single'],
@@ -310,6 +313,35 @@ if ($species eq 'elegans') {
 	    SRX099915 => ["RNASeq_Hillier.28-cell_embryo_Replicate3", 'phred', 'single'], # 101 bp reads. EE_50-90
 
 	    );
+
+  if ($ribosome_occupancy) {
+
+    # these are the C. elegans data-sets for the ribosome occupancy
+    # project "SRA049309.1" by Michael Stadler from Andy Fire's lab
+    # From the Ribosome occupancy paper:
+    # http://www.ncbi.nlm.nih.gov/pubmed/22045228
+    
+    %expts = ( # key= SRA 'SRX' experiment ID, values = [Analysis ID, quality score metric]
+	      
+	      SRX118140  => ["L4 ribosome footprints biological replicate 2", 'phred', 'single'], 
+	      SRX118139  => ["L3 ribosome footprints biological replicate 2", 'phred', 'single'], 
+	      SRX118118  => ["C. elegans L1 ribosome footprints", 'phred', 'single'], 
+	      SRX116363  => ["C. elegans L1 mRNAseq", 'phred', 'single'], 
+	      SRX116361  => ["C. elegans L1 stage mRNAseq", 'phred', 'single'], 
+	      SRX118144  => ["L3 ribosome footprints prepared without cycloheximide, technical replicate 2", 'phred', 'single'], 
+	      SRX118143  => ["L3 ribosome footprints prepared without cycloheximide, technical replicate 1", 'phred', 'single'], 
+	      SRX118128  => ["L3 ribosome footprints biological replicate 1", 'phred', 'single'], 
+	      SRX118127  => ["C. elegans L4 ribosome footprints biological replicate 1", 'phred', 'single'], 
+	      SRX118126  => ["C. elegans L4 mRNAseq biological replicate 1", 'phred', 'single'], 
+	      SRX118125  => ["C. elegans L3 mRNAseq biological replicate 1", 'phred', 'single'], 
+	      SRX118124  => ["C. elegans L3 mRNAseq biological replicate 2", 'phred', 'single'], 
+	      SRX118120  => ["C. elegans L2 mRNAseq biological replicate 2", 'phred', 'single'], 
+	      SRX118119  => ["C. elegans L2 mRNAseq biological replicate 1", 'phred', 'single'], 
+	      SRX118117  => ["C. elegans L1 ribosome footprints", 'phred', 'single'], 
+	      SRX118116  => ["C. elegans L1 mRNAseq", 'phred', 'single'], 
+	     );
+  }
+
 } elsif ($species eq 'brugia') {
 
 # data from Matt Berriman's group.
@@ -336,6 +368,7 @@ if ($species eq 'elegans') {
 # The dataset names are what the Berriman group called them - these data are not downloaded from the SRA
 
   %expts = ( # key= SRA 'SRX' experiment ID, values = [Analysis ID, quality score metric]
+# Add new analysis/condition objects to ~wormpub/DATABASES/brugia
 
 	    Adult_female => ["RNASeq.Berriman.Adult_female", 'phred', 'single'],
 	    Adult_male => ["RNASeq.Berriman.Adult_male", 'phred', 'single'],
@@ -348,19 +381,36 @@ if ($species eq 'elegans') {
 	   );
 	    
 } elsif ($species eq 'remanei') {
+# Add new analysis/condition  objects to ~wormpub/DATABASES/remanei
 
   %expts = ( SRX052082 => ["RNASeq.remanei.L2_larva", 'phred', 'paired-end'],
 	     SRX052083 => ["RNASeq.remanei.L4_larva", 'phred', 'single']
 	   );
 
 } elsif ($species eq 'briggsae') {
-
-  %expts = ( SRX052079 => ["RNASeq.briggsae.L2_larva", 'phred', 'single'],
-	     SRX052081 => ["RNASeq.briggsae.L4_larva", 'phred', 'single'],
-	     SRX053351 => ["RNASeq.briggsae.all_stages", 'phred', 'single']
+# Add new analysis/condition  objects to ~wormpub/DATABASES/briggsae
+  %expts = (
+	    SRX103668 => ["RNASeq.briggsae.Adult.Replicate1", 'phred', 'single'],
+	    SRX103667 => ["RNASeq.briggsae.Adult.Replicate2", 'phred', 'paired-end'],
+	    SRX103666 => ["RNASeq.briggsae.L2_larva.Replicate1", 'phred', 'single'],
+	    SRX103656 => ["RNASeq.briggsae.early_embryo.Replicate1", 'phred', 'single'],
+	    SRX103655 => ["RNASeq.briggsae.early_embryo.Replicate2", 'phred', 'paired-end'],
+	    SRX100089 => ["RNASeq.briggsae.L4_larva.Replicate1", 'phred', 'paired-end'],
+	    SRX100088 => ["RNASeq.briggsae.L2_larva.Replicate2", 'phred', 'paired-end'],
+	    SRX100087 => ["RNASeq.briggsae.early_embryo.Replicate3", 'phred', 'paired-end'],
+	    SRX100086 => ["RNASeq.briggsae.Adult.Replicate3", 'phred', 'paired-end'],
+	    SRX089120 => ["RNASeq.briggsae.Adult.Replicate4", 'phred', 'paired-end'],
+	    SRX089119 => ["RNASeq.briggsae.Adult.Replicate5", 'phred', 'paired-end'],
+	    SRX089070 => ["RNASeq.briggsae.early_embryo.Replicate4", 'phred', 'paired-end'],
+	    SRX089069 => ["RNASeq.briggsae.early_embryo.Replicate5", 'phred', 'paired-end'],
+	    SRX053351 => ["RNASeq.briggsae.all_stages", 'phred', 'single'],
+	    SRX052081 => ["RNASeq.briggsae.L4_larva", 'phred', 'single'],
+	    SRX052079 => ["RNASeq.briggsae.L2_larva", 'phred', 'single'],
 	   );
 
 } elsif ($species eq 'japonica') {
+
+  # NEED TO ADD THESE ANALYSIS OBJECTS TO ~wormpub/DATABASES/japonica WHEN IT HAS ITS models.wrm UPDATED
 
   %expts = ( SRX100095 => ["RNASeq_Hillier.japonica.early_embryo", 'phred', 'paired-end'],
 	     SRX100094 => ["RNASeq_Hillier.japonica.adult_female", 'phred', 'paired-end'],
@@ -368,7 +418,7 @@ if ($species eq 'elegans') {
 	     SRX100092 => ["RNASeq_Hillier.japonica.L4_larva", 'phred', 'paired-end'],
 	     SRX100091 => ["RNASeq_Hillier.japonica.L4_larva", 'phred', 'paired-end'],
 	     SRX100090 => ["RNASeq_Hillier.japonica.L2_larva", 'phred', 'paired-end'],
-	   )
+	   );
 
 } else {
   $log->log_and_die("Unkown species: $species\n");
@@ -949,8 +999,8 @@ sub run_tophat {
   if ($solexa)   {$cmd_extra = "--solexa-quals"} 
   if ($illumina) {$cmd_extra = "--solexa1.3-quals"} 
 
-  if ((!$check && !$noalign) || !-e "tophat_out/accepted_hits.bam") {
-    if (glob("SRR/SRR*/*.lite.sra") ) {
+  if ((!$check && !$noalign) || !-e "$RNASeqDir/$arg/tophat_out/accepted_hits.bam") {
+    if (glob("$RNASeqDir/$arg/SRR/SRR*/*.lite.sra") ) {
       # unpack any .lite.sra file to make the .fastq files
       # now unpack the sra.lite files
       $log->write_to("Unpack the $arg .lite.sra file to fastq files\n");
@@ -974,6 +1024,8 @@ sub run_tophat {
     chdir "$RNASeqDir/$arg";
     my @files = glob("SRR/*/*.fastq");
     my $joined_file = join ",", @files;
+    $log->write_to("Have fastq files: @files\n");
+    $log->write_to("Check read length in file: $files[0]\n");
     my $seq_length = get_read_length($files[0]);
     
     # do we have paired reads?
