@@ -2,8 +2,8 @@
 #
 # EMBLdump.pl :  makes modified EMBL dumps from camace.
 # 
-#  Last updated on: $Date: 2012-04-18 11:19:03 $
-#  Last updated by: $Author: klh $
+#  Last updated on: $Date: 2012-05-03 10:08:25 $
+#  Last updated by: $Author: mh6 $
 
 use strict;
 use Getopt::Long;
@@ -507,7 +507,7 @@ sub process_feature_table {
       }
 
       $feat->{ftype} = $new_dv;
-      push @{$feat->{quals}}, ["/pseudo"];
+      push @{$feat->{quals}}, ["/pseudogene"];
     }
 
     #
