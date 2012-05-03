@@ -528,7 +528,7 @@ Show_text
 GFF_SO "SO:0000120" "predicted_CDS_ace2so"
 
 // Polysome RNASeq tags aligned to the genome fromm the paper by Lamm, Fire et al. 2011
-Method : "Polysome" 
+Method : "Polysome"
 Colour   LIGHTRED
 Score_by_width  
 Score_bounds     0.000000 100.000000
@@ -1512,6 +1512,395 @@ Remark "This is the young adult exposed to S. macescens read set from the Hillie
 
 
  
+			//////////////////////////////////////////////////////////////////
+			// modENCODE TILING ARRAY TRANSCRIONALLY ACTIVE REGIONS (TARs)  //
+			//////////////////////////////////////////////////////////////////
+
+
+
+Method : "TAR_early_embryo_20dC_0_4hrs_post_fertilization_N2"
+Remark   "Transcriptionally Active Regions (TAR) found by the Miller lab from tiling-array projects run as part of the modENCODE project." From_analysis "TAR_early_embryo_20dC_0_4hrs_post_fertilization_N2"
+Colour   BLACK
+GFF_source       "TranscriptionallyActiveRegion"
+GFF_feature      "SO:0001418" // transcribed_fragment - An experimental region, defined by a tiling array experiment to be transcribed at some level.
+GFF_SO "SO:0001418" // transcribed_fragment
+
+Method : "TAR_EE_Z1_Z4_male"
+Remark   "Transcriptionally Active Regions (TAR) found by the Miller lab from tiling-array projects run as part of the modENCODE project." From_analysis "TAR_EE_Z1_Z4_male"
+Colour   BLACK
+GFF_source       "TranscriptionallyActiveRegion"
+GFF_feature      "SO:0001418" // transcribed_fragment - An experimental region, defined by a tiling array experiment to be transcribed at some level.
+GFF_SO "SO:0001418" // transcribed_fragment
+
+Method : "TAR_embryo_0hr_reference"
+Remark   "Transcriptionally Active Regions (TAR) found by the Miller lab from tiling-array projects run as part of the modENCODE project." From_analysis "TAR_embryo_0hr_reference"
+Colour   BLACK
+GFF_source       "TranscriptionallyActiveRegion"
+GFF_feature      "SO:0001418" // transcribed_fragment - An experimental region, defined by a tiling array experiment to be transcribed at some level.
+GFF_SO "SO:0001418" // transcribed_fragment
+
+Method : "TAR_embryo_A_class_motor_neurons"
+Remark   "Transcriptionally Active Regions (TAR) found by the Miller lab from tiling-array projects run as part of the modENCODE project." From_analysis "TAR_embryo_A_class_motor_neurons"
+Colour   BLACK
+GFF_source       "TranscriptionallyActiveRegion"
+GFF_feature      "SO:0001418" // transcribed_fragment - An experimental region, defined by a tiling array experiment to be transcribed at some level.
+GFF_SO "SO:0001418" // transcribed_fragment
+
+Method : "TAR_embryo_all_cells_reference"
+Remark   "Transcriptionally Active Regions (TAR) found by the Miller lab from tiling-array projects run as part of the modENCODE project." From_analysis "TAR_embryo_all_cells_reference"
+Colour   BLACK
+GFF_source       "TranscriptionallyActiveRegion"
+GFF_feature      "SO:0001418" // transcribed_fragment - An experimental region, defined by a tiling array experiment to be transcribed at some level.
+GFF_SO "SO:0001418" // transcribed_fragment
+
+Method : "TAR_embryo_AVA_neurons"
+Remark   "Transcriptionally Active Regions (TAR) found by the Miller lab from tiling-array projects run as part of the modENCODE project." From_analysis "TAR_embryo_AVA_neurons"
+Colour   BLACK
+GFF_source       "TranscriptionallyActiveRegion"
+GFF_feature      "SO:0001418" // transcribed_fragment - An experimental region, defined by a tiling array experiment to be transcribed at some level.
+GFF_SO "SO:0001418" // transcribed_fragment
+
+Method : "TAR_embryo_AVE_neurons"
+Remark   "Transcriptionally Active Regions (TAR) found by the Miller lab from tiling-array projects run as part of the modENCODE project." From_analysis "TAR_embryo_AVE_neurons"
+Colour   BLACK
+GFF_source       "TranscriptionallyActiveRegion"
+GFF_feature      "SO:0001418" // transcribed_fragment - An experimental region, defined by a tiling array experiment to be transcribed at some level.
+GFF_SO "SO:0001418" // transcribed_fragment
+
+Method : "TAR_embryo_BAG_neurons"
+Remark   "Transcriptionally Active Regions (TAR) found by the Miller lab from tiling-array projects run as part of the modENCODE project." From_analysis "TAR_embryo_BAG_neurons"
+Colour   BLACK
+GFF_source       "TranscriptionallyActiveRegion"
+GFF_feature      "SO:0001418" // transcribed_fragment - An experimental region, defined by a tiling array experiment to be transcribed at some level.
+GFF_SO "SO:0001418" // transcribed_fragment
+
+Method : "TAR_embryo_body_wall_muscle"
+Remark   "Transcriptionally Active Regions (TAR) found by the Miller lab from tiling-array projects run as part of the modENCODE project." From_analysis "TAR_embryo_body_wall_muscle"
+Colour   BLACK
+GFF_source       "TranscriptionallyActiveRegion"
+GFF_feature      "SO:0001418" // transcribed_fragment - An experimental region, defined by a tiling array experiment to be transcribed at some level.
+GFF_SO "SO:0001418" // transcribed_fragment
+
+Method : "TAR_embryo_coelomocytes"
+Remark   "Transcriptionally Active Regions (TAR) found by the Miller lab from tiling-array projects run as part of the modENCODE project." From_analysis "TAR_embryo_coelomocytes"
+Colour   BLACK
+GFF_source       "TranscriptionallyActiveRegion"
+GFF_feature      "SO:0001418" // transcribed_fragment - An experimental region, defined by a tiling array experiment to be transcribed at some level.
+GFF_SO "SO:0001418" // transcribed_fragment
+
+Method : "TAR_embryo_dopaminergic_neurons"
+Remark   "Transcriptionally Active Regions (TAR) found by the Miller lab from tiling-array projects run as part of the modENCODE project." From_analysis "TAR_embryo_dopaminergic_neurons"
+Colour   BLACK
+GFF_source       "TranscriptionallyActiveRegion"
+GFF_feature      "SO:0001418" // transcribed_fragment - An experimental region, defined by a tiling array experiment to be transcribed at some level.
+GFF_SO "SO:0001418" // transcribed_fragment
+
+Method : "TAR_embryo_GABA_motor_neurons"
+Remark   "Transcriptionally Active Regions (TAR) found by the Miller lab from tiling-array projects run as part of the modENCODE project." From_analysis "TAR_embryo_GABA_motor_neurons"
+Colour   BLACK
+GFF_source       "TranscriptionallyActiveRegion"
+GFF_feature      "SO:0001418" // transcribed_fragment - An experimental region, defined by a tiling array experiment to be transcribed at some level.
+GFF_SO "SO:0001418" // transcribed_fragment
+
+Method : "TAR_embryo_germline_precursor_cells"
+Remark   "Transcriptionally Active Regions (TAR) found by the Miller lab from tiling-array projects run as part of the modENCODE project." From_analysis "TAR_embryo_germline_precursor_cells"
+Colour   BLACK
+GFF_source       "TranscriptionallyActiveRegion"
+GFF_feature      "SO:0001418" // transcribed_fragment - An experimental region, defined by a tiling array experiment to be transcribed at some level.
+GFF_SO "SO:0001418" // transcribed_fragment
+
+Method : "TAR_embryo_hypodermal_cells"
+Remark   "Transcriptionally Active Regions (TAR) found by the Miller lab from tiling-array projects run as part of the modENCODE project." From_analysis "TAR_embryo_hypodermal_cells"
+Colour   BLACK
+GFF_source       "TranscriptionallyActiveRegion"
+GFF_feature      "SO:0001418" // transcribed_fragment - An experimental region, defined by a tiling array experiment to be transcribed at some level.
+GFF_SO "SO:0001418" // transcribed_fragment
+
+Method : "TAR_embryo_intestine"
+Remark   "Transcriptionally Active Regions (TAR) found by the Miller lab from tiling-array projects run as part of the modENCODE project." From_analysis "TAR_embryo_intestine"
+Colour   BLACK
+GFF_source       "TranscriptionallyActiveRegion"
+GFF_feature      "SO:0001418" // transcribed_fragment - An experimental region, defined by a tiling array experiment to be transcribed at some level.
+GFF_SO "SO:0001418" // transcribed_fragment
+
+Method : "TAR_embryo_panneural"
+Remark   "Transcriptionally Active Regions (TAR) found by the Miller lab from tiling-array projects run as part of the modENCODE project." From_analysis "TAR_embryo_panneural"
+Colour   BLACK
+GFF_source       "TranscriptionallyActiveRegion"
+GFF_feature      "SO:0001418" // transcribed_fragment - An experimental region, defined by a tiling array experiment to be transcribed at some level.
+GFF_SO "SO:0001418" // transcribed_fragment
+
+Method : "TAR_embryo_pharyngeal_muscle"
+Remark   "Transcriptionally Active Regions (TAR) found by the Miller lab from tiling-array projects run as part of the modENCODE project." From_analysis "TAR_embryo_pharyngeal_muscle"
+Colour   BLACK
+GFF_source       "TranscriptionallyActiveRegion"
+GFF_feature      "SO:0001418" // transcribed_fragment - An experimental region, defined by a tiling array experiment to be transcribed at some level.
+GFF_SO "SO:0001418" // transcribed_fragment
+
+Method : "TAR_embryo_PVC_neurons"
+Remark   "Transcriptionally Active Regions (TAR) found by the Miller lab from tiling-array projects run as part of the modENCODE project." From_analysis "TAR_embryo_PVC_neurons"
+Colour   BLACK
+GFF_source       "TranscriptionallyActiveRegion"
+GFF_feature      "SO:0001418" // transcribed_fragment - An experimental region, defined by a tiling array experiment to be transcribed at some level.
+GFF_SO "SO:0001418" // transcribed_fragment
+
+Method : "TAR_emb_Z1_Z4"
+Remark   "Transcriptionally Active Regions (TAR) found by the Miller lab from tiling-array projects run as part of the modENCODE project." From_analysis "TAR_emb_Z1_Z4"
+Colour   BLACK
+GFF_source       "TranscriptionallyActiveRegion"
+GFF_feature      "SO:0001418" // transcribed_fragment - An experimental region, defined by a tiling array experiment to be transcribed at some level.
+GFF_SO "SO:0001418" // transcribed_fragment
+
+Method : "TAR_gonad_from_young_adult_20dC_42hrs_post_L1_N2"
+Remark   "Transcriptionally Active Regions (TAR) found by the Miller lab from tiling-array projects run as part of the modENCODE project." From_analysis "TAR_gonad_from_young_adult_20dC_42hrs_post_L1_N2"
+Colour   BLACK
+GFF_source       "TranscriptionallyActiveRegion"
+GFF_feature      "SO:0001418" // transcribed_fragment - An experimental region, defined by a tiling array experiment to be transcribed at some level.
+GFF_SO "SO:0001418" // transcribed_fragment
+
+Method : "TAR_L1_20dC_0hrs_post_L1_N2"
+Remark   "Transcriptionally Active Regions (TAR) found by the Miller lab from tiling-array projects run as part of the modENCODE project." From_analysis "TAR_L1_20dC_0hrs_post_L1_N2"
+Colour   BLACK
+GFF_source       "TranscriptionallyActiveRegion"
+GFF_feature      "SO:0001418" // transcribed_fragment - An experimental region, defined by a tiling array experiment to be transcribed at some level.
+GFF_SO "SO:0001418" // transcribed_fragment
+
+Method : "TAR_L2_25dC_14hrs_post_L1_N2"
+Remark   "Transcriptionally Active Regions (TAR) found by the Miller lab from tiling-array projects run as part of the modENCODE project." From_analysis "TAR_L2_25dC_14hrs_post_L1_N2"
+Colour   BLACK
+GFF_source       "TranscriptionallyActiveRegion"
+GFF_feature      "SO:0001418" // transcribed_fragment - An experimental region, defined by a tiling array experiment to be transcribed at some level.
+GFF_SO "SO:0001418" // transcribed_fragment
+
+Method : "TAR_L2_A_class_neuron"
+Remark   "Transcriptionally Active Regions (TAR) found by the Miller lab from tiling-array projects run as part of the modENCODE project." From_analysis "TAR_L2_A_class_neuron"
+Colour   BLACK
+GFF_source       "TranscriptionallyActiveRegion"
+GFF_feature      "SO:0001418" // transcribed_fragment - An experimental region, defined by a tiling array experiment to be transcribed at some level.
+GFF_SO "SO:0001418" // transcribed_fragment
+
+Method : "TAR_L2_AFD"
+Remark   "Transcriptionally Active Regions (TAR) found by the Miller lab from tiling-array projects run as part of the modENCODE project." From_analysis "TAR_L2_AFD"
+Colour   BLACK
+GFF_source       "TranscriptionallyActiveRegion"
+GFF_feature      "SO:0001418" // transcribed_fragment - An experimental region, defined by a tiling array experiment to be transcribed at some level.
+GFF_SO "SO:0001418" // transcribed_fragment
+
+Method : "TAR_L2_body_wall_muscle"
+Remark   "Transcriptionally Active Regions (TAR) found by the Miller lab from tiling-array projects run as part of the modENCODE project." From_analysis "TAR_L2_body_wall_muscle"
+Colour   BLACK
+GFF_source       "TranscriptionallyActiveRegion"
+GFF_feature      "SO:0001418" // transcribed_fragment - An experimental region, defined by a tiling array experiment to be transcribed at some level.
+GFF_SO "SO:0001418" // transcribed_fragment
+
+Method : "TAR_L2_coelomocytes"
+Remark   "Transcriptionally Active Regions (TAR) found by the Miller lab from tiling-array projects run as part of the modENCODE project." From_analysis "TAR_L2_coelomocytes"
+Colour   BLACK
+GFF_source       "TranscriptionallyActiveRegion"
+GFF_feature      "SO:0001418" // transcribed_fragment - An experimental region, defined by a tiling array experiment to be transcribed at some level.
+GFF_SO "SO:0001418" // transcribed_fragment
+
+Method : "TAR_L2_excretory_cell"
+Remark   "Transcriptionally Active Regions (TAR) found by the Miller lab from tiling-array projects run as part of the modENCODE project." From_analysis "TAR_L2_excretory_cell"
+Colour   BLACK
+GFF_source       "TranscriptionallyActiveRegion"
+GFF_feature      "SO:0001418" // transcribed_fragment - An experimental region, defined by a tiling array experiment to be transcribed at some level.
+GFF_SO "SO:0001418" // transcribed_fragment
+
+Method : "TAR_L2_GABA_alr_1"
+Remark   "Transcriptionally Active Regions (TAR) found by the Miller lab from tiling-array projects run as part of the modENCODE project." From_analysis "TAR_L2_GABA_alr_1"
+Colour   BLACK
+GFF_source       "TranscriptionallyActiveRegion"
+GFF_feature      "SO:0001418" // transcribed_fragment - An experimental region, defined by a tiling array experiment to be transcribed at some level.
+GFF_SO "SO:0001418" // transcribed_fragment
+
+Method : "TAR_L2_GABA_neurons"
+Remark   "Transcriptionally Active Regions (TAR) found by the Miller lab from tiling-array projects run as part of the modENCODE project." From_analysis "TAR_L2_GABA_neurons"
+Colour   BLACK
+GFF_source       "TranscriptionallyActiveRegion"
+GFF_feature      "SO:0001418" // transcribed_fragment - An experimental region, defined by a tiling array experiment to be transcribed at some level.
+GFF_SO "SO:0001418" // transcribed_fragment
+
+Method : "TAR_L2_glutamate_receptor_expressing_neurons"
+Remark   "Transcriptionally Active Regions (TAR) found by the Miller lab from tiling-array projects run as part of the modENCODE project." From_analysis "TAR_L2_glutamate_receptor_expressing_neurons"
+Colour   BLACK
+GFF_source       "TranscriptionallyActiveRegion"
+GFF_feature      "SO:0001418" // transcribed_fragment - An experimental region, defined by a tiling array experiment to be transcribed at some level.
+GFF_SO "SO:0001418" // transcribed_fragment
+
+Method : "TAR_L2_intestine"
+Remark   "Transcriptionally Active Regions (TAR) found by the Miller lab from tiling-array projects run as part of the modENCODE project." From_analysis "TAR_L2_intestine"
+Colour   BLACK
+GFF_source       "TranscriptionallyActiveRegion"
+GFF_feature      "SO:0001418" // transcribed_fragment - An experimental region, defined by a tiling array experiment to be transcribed at some level.
+GFF_SO "SO:0001418" // transcribed_fragment
+
+Method : "TAR_L2_panneural"
+Remark   "Transcriptionally Active Regions (TAR) found by the Miller lab from tiling-array projects run as part of the modENCODE project." From_analysis "TAR_L2_panneural"
+Colour   BLACK
+GFF_source       "TranscriptionallyActiveRegion"
+GFF_feature      "SO:0001418" // transcribed_fragment - An experimental region, defined by a tiling array experiment to be transcribed at some level.
+GFF_SO "SO:0001418" // transcribed_fragment
+
+Method : "TAR_L2_polyA_enriched_20dC_14hrs_post_L1_N2"
+Remark   "Transcriptionally Active Regions (TAR) found by the Miller lab from tiling-array projects run as part of the modENCODE project." From_analysis "TAR_L2_polyA_enriched_20dC_14hrs_post_L1_N2"
+Colour   BLACK
+GFF_source       "TranscriptionallyActiveRegion"
+GFF_feature      "SO:0001418" // transcribed_fragment - An experimental region, defined by a tiling array experiment to be transcribed at some level.
+GFF_SO "SO:0001418" // transcribed_fragment
+
+Method : "TAR_L2_reference__mockIP"
+Remark   "Transcriptionally Active Regions (TAR) found by the Miller lab from tiling-array projects run as part of the modENCODE project." From_analysis "TAR_L2_reference__mockIP"
+Colour   BLACK
+GFF_source       "TranscriptionallyActiveRegion"
+GFF_feature      "SO:0001418" // transcribed_fragment - An experimental region, defined by a tiling array experiment to be transcribed at some level.
+GFF_SO "SO:0001418" // transcribed_fragment
+
+Method : "TAR_L3_25dC_25hrs_post_L1_N2"
+Remark   "Transcriptionally Active Regions (TAR) found by the Miller lab from tiling-array projects run as part of the modENCODE project." From_analysis "TAR_L3_25dC_25hrs_post_L1_N2"
+Colour   BLACK
+GFF_source       "TranscriptionallyActiveRegion"
+GFF_feature      "SO:0001418" // transcribed_fragment - An experimental region, defined by a tiling array experiment to be transcribed at some level.
+GFF_SO "SO:0001418" // transcribed_fragment
+
+Method : "TAR_L3_L4_dopaminergic_neuron"
+Remark   "Transcriptionally Active Regions (TAR) found by the Miller lab from tiling-array projects run as part of the modENCODE project." From_analysis "TAR_L3_L4_dopaminergic_neuron"
+Colour   BLACK
+GFF_source       "TranscriptionallyActiveRegion"
+GFF_feature      "SO:0001418" // transcribed_fragment - An experimental region, defined by a tiling array experiment to be transcribed at some level.
+GFF_SO "SO:0001418" // transcribed_fragment
+
+Method : "TAR_L3_L4_hypodermal_cells"
+Remark   "Transcriptionally Active Regions (TAR) found by the Miller lab from tiling-array projects run as part of the modENCODE project." From_analysis "TAR_L3_L4_hypodermal_cells"
+Colour   BLACK
+GFF_source       "TranscriptionallyActiveRegion"
+GFF_feature      "SO:0001418" // transcribed_fragment - An experimental region, defined by a tiling array experiment to be transcribed at some level.
+GFF_SO "SO:0001418" // transcribed_fragment
+
+Method : "TAR_L3_L4_PVD___OLL_neurons"
+Remark   "Transcriptionally Active Regions (TAR) found by the Miller lab from tiling-array projects run as part of the modENCODE project." From_analysis "TAR_L3_L4_PVD___OLL_neurons"
+Colour   BLACK
+GFF_source       "TranscriptionallyActiveRegion"
+GFF_feature      "SO:0001418" // transcribed_fragment - An experimental region, defined by a tiling array experiment to be transcribed at some level.
+GFF_SO "SO:0001418" // transcribed_fragment
+
+Method : "TAR_L3_L4_rectal_epithelial_cells"
+Remark   "Transcriptionally Active Regions (TAR) found by the Miller lab from tiling-array projects run as part of the modENCODE project." From_analysis "TAR_L3_L4_rectal_epithelial_cells"
+Colour   BLACK
+GFF_source       "TranscriptionallyActiveRegion"
+GFF_feature      "SO:0001418" // transcribed_fragment - An experimental region, defined by a tiling array experiment to be transcribed at some level.
+GFF_SO "SO:0001418" // transcribed_fragment
+
+Method : "TAR_L3_L4_reference__mockIP"
+Remark   "Transcriptionally Active Regions (TAR) found by the Miller lab from tiling-array projects run as part of the modENCODE project." From_analysis "TAR_L3_L4_reference__mockIP"
+Colour   BLACK
+GFF_source       "TranscriptionallyActiveRegion"
+GFF_feature      "SO:0001418" // transcribed_fragment - An experimental region, defined by a tiling array experiment to be transcribed at some level.
+GFF_SO "SO:0001418" // transcribed_fragment
+
+Method : "TAR_L4_25dC_36hrs_post_L1_N2"
+Remark   "Transcriptionally Active Regions (TAR) found by the Miller lab from tiling-array projects run as part of the modENCODE project." From_analysis "TAR_L4_25dC_36hrs_post_L1_N2"
+Colour   BLACK
+GFF_source       "TranscriptionallyActiveRegion"
+GFF_feature      "SO:0001418" // transcribed_fragment - An experimental region, defined by a tiling array experiment to be transcribed at some level.
+GFF_SO "SO:0001418" // transcribed_fragment
+
+Method : "TAR_late_embryo_20dC_6_12hrs_post_fertilization_N2"
+Remark   "Transcriptionally Active Regions (TAR) found by the Miller lab from tiling-array projects run as part of the modENCODE project." From_analysis "TAR_late_embryo_20dC_6_12hrs_post_fertilization_N2"
+Colour   BLACK
+GFF_source       "TranscriptionallyActiveRegion"
+GFF_feature      "SO:0001418" // transcribed_fragment - An experimental region, defined by a tiling array experiment to be transcribed at some level.
+GFF_SO "SO:0001418" // transcribed_fragment
+
+Method : "TAR_male_L4_25dC_36hrs_post_L1_CB4689"
+Remark   "Transcriptionally Active Regions (TAR) found by the Miller lab from tiling-array projects run as part of the modENCODE project." From_analysis "TAR_male_L4_25dC_36hrs_post_L1_CB4689"
+Colour   BLACK
+GFF_source       "TranscriptionallyActiveRegion"
+GFF_feature      "SO:0001418" // transcribed_fragment - An experimental region, defined by a tiling array experiment to be transcribed at some level.
+GFF_SO "SO:0001418" // transcribed_fragment
+
+Method : "TAR_soma_only_mid_L4_25dC_36hrs_post_L1_JK1107"
+Remark   "Transcriptionally Active Regions (TAR) found by the Miller lab from tiling-array projects run as part of the modENCODE project." From_analysis "TAR_soma_only_mid_L4_25dC_36hrs_post_L1_JK1107"
+Colour   BLACK
+GFF_source       "TranscriptionallyActiveRegion"
+GFF_feature      "SO:0001418" // transcribed_fragment - An experimental region, defined by a tiling array experiment to be transcribed at some level.
+GFF_SO "SO:0001418" // transcribed_fragment
+
+Method : "TAR_young_adult_25dC_42hrs_post_L1_N2"
+Remark   "Transcriptionally Active Regions (TAR) found by the Miller lab from tiling-array projects run as part of the modENCODE project." From_analysis "TAR_young_adult_25dC_42hrs_post_L1_N2"
+Colour   BLACK
+GFF_source       "TranscriptionallyActiveRegion"
+GFF_feature      "SO:0001418" // transcribed_fragment - An experimental region, defined by a tiling array experiment to be transcribed at some level.
+GFF_SO "SO:0001418" // transcribed_fragment
+
+Method : "TAR_Young_Adult_Cephalic_sheath__CEPsh"
+Remark   "Transcriptionally Active Regions (TAR) found by the Miller lab from tiling-array projects run as part of the modENCODE project." From_analysis "TAR_Young_Adult_Cephalic_sheath__CEPsh"
+Colour   BLACK
+GFF_source       "TranscriptionallyActiveRegion"
+GFF_feature      "SO:0001418" // transcribed_fragment - An experimental region, defined by a tiling array experiment to be transcribed at some level.
+GFF_SO "SO:0001418" // transcribed_fragment
+
+Method : "TAR_Young_Adult_Cephalic_sheath__CEPsh"
+Remark   "Transcriptionally Active Regions (TAR) found by the Miller lab from tiling-array projects run as part of the modENCODE project." From_analysis "TAR_Young_Adult_Cephalic_sheath__CEPsh"
+Colour   BLACK
+GFF_source       "TranscriptionallyActiveRegion"
+GFF_feature      "SO:0001418" // transcribed_fragment - An experimental region, defined by a tiling array experiment to be transcribed at some level.
+GFF_SO "SO:0001418" // transcribed_fragment
+
+Method : "TAR_Young_Adult_reference__mockIP"
+Remark   "Transcriptionally Active Regions (TAR) found by the Miller lab from tiling-array projects run as part of the modENCODE project." From_analysis "TAR_Young_Adult_reference__mockIP"
+Colour   BLACK
+GFF_source       "TranscriptionallyActiveRegion"
+GFF_feature      "SO:0001418" // transcribed_fragment - An experimental region, defined by a tiling array experiment to be transcribed at some level.
+GFF_SO "SO:0001418" // transcribed_fragment
+
+Method : "TAR_pathogen_control_OP50_25dC_24hr_exposure_post_adulthood_N2"
+Remark   "Transcriptionally Active Regions (TAR) found by the Waterston lab from tiling-array projects run as part of the modENCODE project." From_analysis "TAR_pathogen_control_OP50_25dC_24hr_exposure_post_adulthood_N2"
+Colour   BLACK
+GFF_source       "TranscriptionallyActiveRegion"
+GFF_feature      "SO:0001418" // transcribed_fragment - An experimental region, defined by a tiling array experiment to be transcribed at some level.
+GFF_SO "SO:0001418" // transcribed_fragment
+
+Method : "TAR_pathogen_control_OP50_25dC_48hr_exposure_post_adulthood_N2"
+Remark   "Transcriptionally Active Regions (TAR) found by the Waterston lab from tiling-array projects run as part of the modENCODE project." From_analysis "TAR_pathogen_control_OP50_25dC_48hr_exposure_post_adulthood_N2"
+Colour   BLACK
+GFF_source       "TranscriptionallyActiveRegion"
+GFF_feature      "SO:0001418" // transcribed_fragment - An experimental region, defined by a tiling array experiment to be transcribed at some level.
+GFF_SO "SO:0001418" // transcribed_fragment
+
+Method : "TAR_pathogen_Efaecalis_25dC_24hr_exposure_post_adulthood_N2"
+Remark   "Transcriptionally Active Regions (TAR) found by the Waterston lab from tiling-array projects run as part of the modENCODE project." From_analysis "TAR_pathogen_Efaecalis_25dC_24hr_exposure_post_adulthood_N2"
+Colour   BLACK
+GFF_source       "TranscriptionallyActiveRegion"
+GFF_feature      "SO:0001418" // transcribed_fragment - An experimental region, defined by a tiling array experiment to be transcribed at some level.
+GFF_SO "SO:0001418" // transcribed_fragment
+
+Method : "TAR_pathogen_Pluminscens_25dC_24hr_exposure_post_adulthood_N2"
+Remark   "Transcriptionally Active Regions (TAR) found by the Waterston lab from tiling-array projects run as part of the modENCODE project." From_analysis "TAR_pathogen_Pluminscens_25dC_24hr_exposure_post_adulthood_N2"
+Colour   BLACK
+GFF_source       "TranscriptionallyActiveRegion"
+GFF_feature      "SO:0001418" // transcribed_fragment - An experimental region, defined by a tiling array experiment to be transcribed at some level.
+GFF_SO "SO:0001418" // transcribed_fragment
+
+Method : "TAR_pathogen_Smarcescens_25dC_24hr_exposure_post_adulthood_N2"
+Remark   "Transcriptionally Active Regions (TAR) found by the Waterston lab from tiling-array projects run as part of the modENCODE project." From_analysis "TAR_pathogen_Smarcescens_25dC_24hr_exposure_post_adulthood_N2"
+Colour   BLACK
+GFF_source       "TranscriptionallyActiveRegion"
+GFF_feature      "SO:0001418" // transcribed_fragment - An experimental region, defined by a tiling array experiment to be transcribed at some level.
+GFF_SO "SO:0001418" // transcribed_fragment
+
+Method : "TAR_pathogen_Smarcescens_25dC_48hr_exposure_post_adulthood_N2"
+Remark   "Transcriptionally Active Regions (TAR) found by the Waterston lab from tiling-array projects run as part of the modENCODE project." From_analysis "TAR_pathogen_Smarcescens_25dC_48hr_exposure_post_adulthood_N2"
+Colour   BLACK
+GFF_source       "TranscriptionallyActiveRegion"
+GFF_feature      "SO:0001418" // transcribed_fragment - An experimental region, defined by a tiling array experiment to be transcribed at some level.
+GFF_SO "SO:0001418" // transcribed_fragment
+
+
+
+
+
+
 			///////////
 			// OTHER //
 			///////////
@@ -2479,6 +2868,51 @@ Right_priority  2.85
 Method : "twinscan"
 Right_priority  2.9
 
+Method : "RNASEQ.Adult_spe-9"
+Right_priority   2.93
+
+Method : "RNASEQ.L1"
+Right_priority   2.93
+
+Method : "RNASEQ.L2"
+Right_priority   2.93
+
+Method : "RNASEQ.L3"
+Right_priority   2.93
+
+Method : "RNASEQ.L4"
+Right_priority   2.93
+
+Method : "RNASEQ.Young_Adult"
+Right_priority   2.93
+
+Method : "RNASEQ.dauer_daf-2"
+Right_priority   2.93
+
+Method : "RNASEQ.dauer_entry_daf-2"
+Right_priority   2.93
+
+Method : "RNASEQ.dauer_exit_daf-2"
+Right_priority   2.93
+
+Method : "RNASEQ.early_embryo"
+Right_priority   2.93
+
+Method : "RNASEQ.embryo_him-8"
+Right_priority   2.93
+
+Method : "RNASEQ.late_embryo"
+Right_priority   2.93
+
+Method : "RNASEQ.lin-35_n745_mid-L1"
+Right_priority   2.93
+
+Method : "RNASEQ.male_mid-L4"
+Right_priority   2.93
+
+Method : "RNASEQ.Hillier"
+Right_priority   2.93
+
 Method : "mGene"
 Right_priority  2.95
 
@@ -2490,6 +2924,165 @@ Right_priority  3.1
 
 Method : "ensembl"
 Right_priority  3.1
+
+Method : "TAR_early_embryo_20dC_0_4hrs_post_fertilization_N2"
+Right_priority   3.2
+
+Method : "TAR_EE_Z1_Z4_male"
+Right_priority   3.2
+
+Method : "TAR_embryo_0hr_reference"
+Right_priority   3.2
+
+Method : "TAR_embryo_A_class_motor_neurons"
+Right_priority   3.2
+
+Method : "TAR_embryo_all_cells_reference"
+Right_priority   3.2
+
+Method : "TAR_embryo_AVA_neurons"
+Right_priority   3.2
+
+Method : "TAR_embryo_AVE_neurons"
+Right_priority   3.2
+
+Method : "TAR_embryo_BAG_neurons"
+Right_priority   3.2
+
+Method : "TAR_embryo_body_wall_muscle"
+Right_priority   3.2
+
+Method : "TAR_embryo_coelomocytes"
+Right_priority   3.2
+
+Method : "TAR_embryo_dopaminergic_neurons"
+Right_priority   3.2
+
+Method : "TAR_embryo_GABA_motor_neurons"
+Right_priority   3.2
+
+Method : "TAR_embryo_germline_precursor_cells"
+Right_priority   3.2
+
+Method : "TAR_embryo_hypodermal_cells"
+Right_priority   3.2
+
+Method : "TAR_embryo_intestine"
+Right_priority   3.2
+
+Method : "TAR_embryo_panneural"
+Right_priority   3.2
+
+Method : "TAR_embryo_pharyngeal_muscle"
+Right_priority   3.2
+
+Method : "TAR_embryo_PVC_neurons"
+Right_priority   3.2
+
+Method : "TAR_emb_Z1_Z4"
+Right_priority   3.2
+
+Method : "TAR_gonad_from_young_adult_20dC_42hrs_post_L1_N2"
+Right_priority   3.2
+
+Method : "TAR_L1_20dC_0hrs_post_L1_N2"
+Right_priority   3.2
+
+Method : "TAR_L2_25dC_14hrs_post_L1_N2"
+Right_priority   3.2
+
+Method : "TAR_L2_A_class_neuron"
+Right_priority   3.2
+
+Method : "TAR_L2_AFD"
+Right_priority   3.2
+
+Method : "TAR_L2_body_wall_muscle"
+Right_priority   3.2
+
+Method : "TAR_L2_coelomocytes"
+Right_priority   3.2
+
+Method : "TAR_L2_excretory_cell"
+Right_priority   3.2
+
+Method : "TAR_L2_GABA_alr_1"
+Right_priority   3.2
+
+Method : "TAR_L2_GABA_neurons"
+Right_priority   3.2
+
+Method : "TAR_L2_glutamate_receptor_expressing_neurons"
+Right_priority   3.2
+
+Method : "TAR_L2_intestine"
+Right_priority   3.2
+
+Method : "TAR_L2_panneural"
+Right_priority   3.2
+
+Method : "TAR_L2_polyA_enriched_20dC_14hrs_post_L1_N2"
+Right_priority   3.2
+
+Method : "TAR_L2_reference__mockIP"
+Right_priority   3.2
+
+Method : "TAR_L3_25dC_25hrs_post_L1_N2"
+Right_priority   3.2
+
+Method : "TAR_L3_L4_dopaminergic_neuron"
+Right_priority   3.2
+
+Method : "TAR_L3_L4_hypodermal_cells"
+Right_priority   3.2
+
+Method : "TAR_L3_L4_PVD___OLL_neurons"
+Right_priority   3.2
+
+Method : "TAR_L3_L4_rectal_epithelial_cells"
+Right_priority   3.2
+
+Method : "TAR_L3_L4_reference__mockIP"
+Right_priority   3.2
+
+Method : "TAR_L4_25dC_36hrs_post_L1_N2"
+Right_priority   3.2
+
+Method : "TAR_late_embryo_20dC_6_12hrs_post_fertilization_N2"
+Right_priority   3.2
+
+Method : "TAR_male_L4_25dC_36hrs_post_L1_CB4689"
+Right_priority   3.2
+
+Method : "TAR_soma_only_mid_L4_25dC_36hrs_post_L1_JK1107"
+Right_priority   3.2
+
+Method : "TAR_young_adult_25dC_42hrs_post_L1_N2"
+Right_priority   3.2
+
+Method : "TAR_Young_Adult_Cephalic_sheath__CEPsh"
+Right_priority   3.2
+
+Method : "TAR_Young_Adult_reference__mockIP"
+Right_priority   3.2
+
+Method : "TAR_pathogen_control_OP50_25dC_24hr_exposure_post_adulthood_N2"
+Right_priority   3.2
+
+Method : "TAR_pathogen_control_OP50_25dC_48hr_exposure_post_adulthood_N2"
+Right_priority   3.2
+
+Method : "TAR_pathogen_Efaecalis_25dC_24hr_exposure_post_adulthood_N2"
+Right_priority   3.2
+
+Method : "TAR_pathogen_Pluminscens_25dC_24hr_exposure_post_adulthood_N2"
+Right_priority   3.2
+
+Method : "TAR_pathogen_Smarcescens_25dC_24hr_exposure_post_adulthood_N2"
+Right_priority   3.2
+
+Method : "TAR_pathogen_Smarcescens_25dC_48hr_exposure_post_adulthood_N2"
+Right_priority   3.2
 
 Method : "BLAT_BAC_END"
 Right_priority      3.25
@@ -2505,6 +3098,48 @@ Right_priority    3.3
 
 Method : "BLAT_EST_BEST"
 Right_priority     3.35
+
+Method : "RNASeq_Hillier.Adult_spe-9"
+Right_priority   3.37
+
+Method : "RNASeq_Hillier.L1"
+Right_priority   3.37
+
+Method : "RNASeq_Hillier.L2"
+Right_priority   3.37
+
+Method : "RNASeq_Hillier.L3"
+Right_priority   3.37
+
+Method : "RNASeq_Hillier.L4"
+Right_priority   3.37
+
+Method : "RNASeq_Hillier.Young_Adult"
+Right_priority   3.37
+
+Method : "RNASeq_Hillier.dauer_daf-2"
+Right_priority   3.37
+
+Method : "RNASeq_Hillier.dauer_entry_daf-2"
+Right_priority   3.37
+
+Method : "RNASeq_Hillier.dauer_exit_daf-2"
+Right_priority   3.37
+
+Method : "RNASeq_Hillier.early_embryo"
+Right_priority   3.37
+
+Method : "RNASeq_Hillier.embryo_him-8"
+Right_priority   3.37
+
+Method : "RNASeq_Hillier.late_embryo"
+Right_priority   3.37
+
+Method : "RNASeq_Hillier.lin-35_n745_mid-L1"
+Right_priority   3.37
+
+Method : "RNASeq_Hillier.male_mid-L4"
+Right_priority   3.37
 
 Method : "BLAT_OST_BEST"
 Right_priority     3.4
@@ -2661,91 +3296,4 @@ Right_priority 5.7
 
 Method : "RepeatMasker"
 Right_priority	 5.8
-
-Method : "RNASEQ.Adult_spe-9"
-Right_priority   2.93
-
-Method : "RNASEQ.L1"
-Right_priority   2.93
-
-Method : "RNASEQ.L2"
-Right_priority   2.93
-
-Method : "RNASEQ.L3"
-Right_priority   2.93
-
-Method : "RNASEQ.L4"
-Right_priority   2.93
-
-Method : "RNASEQ.Young_Adult"
-Right_priority   2.93
-
-Method : "RNASEQ.dauer_daf-2"
-Right_priority   2.93
-
-Method : "RNASEQ.dauer_entry_daf-2"
-Right_priority   2.93
-
-Method : "RNASEQ.dauer_exit_daf-2"
-Right_priority   2.93
-
-Method : "RNASEQ.early_embryo"
-Right_priority   2.93
-
-Method : "RNASEQ.embryo_him-8"
-Right_priority   2.93
-
-Method : "RNASEQ.late_embryo"
-Right_priority   2.93
-
-Method : "RNASEQ.lin-35_n745_mid-L1"
-Right_priority   2.93
-
-Method : "RNASEQ.male_mid-L4"
-Right_priority   2.93
-
-Method : "RNASEQ.Hillier"
-Right_priority   2.93
-
-Method : "RNASeq_Hillier.Adult_spe-9"
-Right_priority   3.37
-
-Method : "RNASeq_Hillier.L1"
-Right_priority   3.37
-
-Method : "RNASeq_Hillier.L2"
-Right_priority   3.37
-
-Method : "RNASeq_Hillier.L3"
-Right_priority   3.37
-
-Method : "RNASeq_Hillier.L4"
-Right_priority   3.37
-
-Method : "RNASeq_Hillier.Young_Adult"
-Right_priority   3.37
-
-Method : "RNASeq_Hillier.dauer_daf-2"
-Right_priority   3.37
-
-Method : "RNASeq_Hillier.dauer_entry_daf-2"
-Right_priority   3.37
-
-Method : "RNASeq_Hillier.dauer_exit_daf-2"
-Right_priority   3.37
-
-Method : "RNASeq_Hillier.early_embryo"
-Right_priority   3.37
-
-Method : "RNASeq_Hillier.embryo_him-8"
-Right_priority   3.37
-
-Method : "RNASeq_Hillier.late_embryo"
-Right_priority   3.37
-
-Method : "RNASeq_Hillier.lin-35_n745_mid-L1"
-Right_priority   3.37
-
-Method : "RNASeq_Hillier.male_mid-L4"
-Right_priority   3.37
 
