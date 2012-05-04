@@ -5,8 +5,8 @@
 # This script has been written to automatically change the Public_name
 # of all NameServerIDs specified in a text file.
 #
-# Last edited by: $Author: pad $
-# Last edited on: $Date: 2010-08-23 12:07:50 $
+# Last edited by: $Author: mt3 $
+# Last edited on: $Date: 2012-05-04 12:22:07 $
 #
 
 use lib $ENV{'CVS_DIR'};
@@ -34,7 +34,7 @@ use Getopt::Long;
   -species   can be used to specify non elegans
   -test      use the test nameserver  <Optional 4 testing>
   -user      username                 <Mandatory>
-  -password  password                 <Mandatory>
+  -pass  password                 <Mandatory>
 
 e.g. perl pname_update.pl -user blah -pass blah -species elegans -test -file variation_name_data
 
