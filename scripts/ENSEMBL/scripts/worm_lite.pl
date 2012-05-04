@@ -297,9 +297,8 @@ sub process_file {
         if (not exists $genes{$gene}) {
           $genes{$gene} = [];
           $parent_seqs{$gene} = $chr;
-        } else {
-          push( @{ $genes{$gene} }, $element );
         }
+        push( @{ $genes{$gene} }, $element );
     }
     print STDERR "Have " . keys(%genes) . " genes (CDS), " . keys(%five_prime) . " have 5' UTR and " . keys(%three_prime) . " have 3' UTR information\n";
     return \%genes, \%five_prime, \%three_prime, \%parent_seqs;
