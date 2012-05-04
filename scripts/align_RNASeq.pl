@@ -62,7 +62,7 @@
 # by Gary Williams
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2012-05-02 14:10:31 $
+# Last updated on: $Date: 2012-05-04 13:51:36 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -383,8 +383,28 @@ if ($species eq 'elegans') {
 } elsif ($species eq 'remanei') {
 # Add new analysis/condition  objects to ~wormpub/DATABASES/remanei
 
-  %expts = ( SRX052082 => ["RNASeq.remanei.L2_larva", 'phred', 'paired-end'],
-	     SRX052083 => ["RNASeq.remanei.L4_larva", 'phred', 'single']
+  %expts = ( 
+	    # SRX076136 # 454 library - will have to deal with the 454 quality file?
+	    SRX101895 => ["RNASeq.remanei.Adult_male.Replicate1", 'phred', 'paired-end'],
+	    SRX101894 => ["RNASeq.remanei.Adult_male.Replicate2", 'phred', 'single'],
+	    SRX101893 => ["RNASeq.remanei.Adult_male.Replicate3", 'phred', 'paired-end'],
+	    SRX101892 => ["RNASeq.remanei.Adult_male.Replicate4", 'phred', 'single'],
+	    SRX101891 => ["RNASeq.remanei.Adult_male.Replicate5", 'phred', 'paired-end'],
+	    SRX101890 => ["RNASeq.remanei.Adult_female.Replicate1", 'phred', 'paired-end'],
+	    SRX101889 => ["RNASeq.remanei.Adult_female.Replicate2", 'phred', 'single'],
+	    SRX101888 => ["RNASeq.remanei.Adult_female.Replicate3", 'phred', 'paired-end'],
+	    SRX101887 => ["RNASeq.remanei.Adult_female.Replicate4", 'phred', 'single'],
+	    SRX101886 => ["RNASeq.remanei.Adult_female.Replicate5", 'phred', 'paired-end'],
+	    SRX101885 => ["RNASeq.remanei.L2_larva.Replicate1", 'phred', 'single'],
+	    SRX101884 => ["RNASeq.remanei.L2_larva.Replicate2", 'phred', 'paired-end'],
+	    SRX101883 => ["RNASeq.remanei.L2_larva.Replicate3", 'phred', 'paired-end'],
+	    SRX101882 => ["RNASeq.remanei.early_embryo.Replicate1", 'phred', 'paired-end'],
+	    SRX101881 => ["RNASeq.remanei.early_embryo.Replicate2", 'phred', 'paired-end'],
+	    SRX101880 => ["RNASeq.remanei.L4_larva.Replicate1", 'phred', 'paired-end'],
+	    SRX101879 => ["RNASeq.remanei.L4_larva.Replicate2", 'phred', 'paired-end'],
+	    SRX052083 => ["RNASeq.remanei.L4_larva", 'phred', 'single'],
+	    SRX052082 => ["RNASeq.remanei.L2_larva", 'phred', 'paired-end'],
+	     
 	   );
 
 } elsif ($species eq 'briggsae') {
@@ -407,6 +427,26 @@ if ($species eq 'elegans') {
 	    SRX052081 => ["RNASeq.briggsae.L4_larva", 'phred', 'single'],
 	    SRX052079 => ["RNASeq.briggsae.L2_larva", 'phred', 'single'],
 	   );
+
+} elsif ($species eq 'brenneri') {
+# Add new analysis/condition  objects to ~wormpub/DATABASES/brenneri
+  %expts = (
+	    SRX103657 => ["RNASeq.brenneri.Adult_male.Replicate1", 'phred', 'paired-end'],
+	    SRX103654 => ["RNASeq.brenneri.Adult_female.Replicate1", 'phred', 'paired-end'],
+	    SRX100780 => ["RNASeq.brenneri.Adult_male.Replicate2", 'phred', 'paired-end'],
+	    SRX100779 => ["RNASeq.brenneri.Adult_male.Replicate3", 'phred', 'single'],
+	    SRX100778 => ["RNASeq.brenneri.Adult_male.Replicate4", 'phred', 'single'],
+	    SRX100777 => ["RNASeq.brenneri.Adult_male.Replicate5", 'phred', 'paired-end'],
+	    SRX100776 => ["RNASeq.brenneri.Adult_female.Replicate2", 'phred', 'paired-end'],
+	    SRX100775 => ["RNASeq.brenneri.Adult_female.Replicate3", 'phred', 'single'],
+	    SRX100774 => ["RNASeq.brenneri.Adult_female.Replicate4", 'phred', 'single'],
+	    SRX100773 => ["RNASeq.brenneri.Adult_female.Replicate5", 'phred', 'paired-end'],
+	    SRX100772 => ["RNASeq.brenneri.L4_larva.Replicate1", 'phred', 'paired-end'],
+	    SRX100771 => ["RNASeq.brenneri.L4_larva.Replicate2", 'phred', 'paired-end'],
+	    SRX100770 => ["RNASeq.brenneri.early_embryo.Replicate1", 'phred', 'paired-end'],
+	    SRX100769 => ["RNASeq.brenneri.early_embryo.Replicate2", 'phred', 'paired-end'],
+	   );
+
 
 } elsif ($species eq 'japonica') {
 
