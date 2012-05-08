@@ -2,8 +2,8 @@
 #
 # EMBLdump.pl :  makes modified EMBL dumps from camace.
 # 
-#  Last updated on: $Date: 2012-05-03 10:08:25 $
-#  Last updated by: $Author: mh6 $
+#  Last updated on: $Date: 2012-05-08 15:47:06 $
+#  Last updated by: $Author: klh $
 
 use strict;
 use Getopt::Long;
@@ -651,11 +651,14 @@ sub process_feature_table {
     my $lt = $wb_isoform_name;
     if ($lt =~ /^(\S+\.\d+)[a-z]?/) {
       $lt = $1;
-    } elsif ($species eq 'briggsae' and $lt =~ /CBG(\d+)[a-z]?/) {
-      $lt = "CBG_$1";
     }
     $locus_tag_qual = [];
     if (not exists $multi_gene_loci->{$lt}) {
+      if ($species eq 'briggsae' and $lt =~ /CBG(\d+)/) {
+        $lt = "CBG_$1";
+      } elsif ($species eq 'elegans') {
+        $lt = "CELE_${lt}";
+      }
       push @{$locus_tag_qual}, sprintf("/locus_tag=\"%s\"", $lt);
     }
    
