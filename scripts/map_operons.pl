@@ -2,8 +2,8 @@
 #
 # map_operons.pl
 
-# Last edited by: $Author: pad $
-# Last edited on: $Date: 2011-10-17 11:47:40 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2012-05-08 14:03:07 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -65,6 +65,7 @@ foreach my $operon(@operons) {
       if ($operon->Method eq "Deprecated_operon") {
 	$log->write_to ("Warning:Operon $operon (method \"".$operon->Method."\") contains $gene which does not have a span defined meaning the Old operon doesn't appear as it once did\n\n"); }
       else {
+	$log->error;
 	$log->write_to ("ERROR:Operon $operon (method \"".$operon->Method."\") contains $gene which does not have a span defined!\nPlease refer this back to the Operon curation team\n\n"); }
     }
     next if (!exists $gene_span{$gene}); # some Deprecated_operons contain Transposon_CDSs which won't have a gene-span
