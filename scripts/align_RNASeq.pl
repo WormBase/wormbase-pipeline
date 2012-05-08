@@ -62,7 +62,7 @@
 # by Gary Williams
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2012-05-04 13:51:36 $
+# Last updated on: $Date: 2012-05-08 13:56:51 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -843,13 +843,19 @@ IIIIIIIIHIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIGIGIDHIIIIIGIGI
       if ($f[0] =~ /CUFF/) {$log->log_and_die("Cufflinks for $SRX has failed to put the Transcript IDs in the output file - problem with the GTF file?\n");}
       if ($f[12] eq "OK" || $f[12] eq "LOWDATA") {
 	if (defined $life_stage) {
-	  print EXPRACE "\nTranscript : \"$f[0]\"\n";
-	  print EXPRACE "RNASeq_FPKM  \"$life_stage\"  \"$f[9]\"  From_analysis \"$analysis\"\n";
 	  my ($sequence_name) = ($f[0] =~ /(^\S+?\.\d+[a-z]?)/);
 	  if (!defined $sequence_name) {
 	    if ($f[0] !~ /(^\S+?\.t\d+)/) {print "Sequence name $f[0] is not in the normal format\n";} # complain if it is not even like 'T27B1.t1' - a tRNA gene
 	    $sequence_name = $f[0]; # use the name as given
 	  }
+
+	  # Pseudogenes don't have Transcript objects in acedb, only do CDSs
+	  if (exists $CDSs{$sequence_name}) {
+	    print EXPRACE "\nTranscript : \"$f[0]\"\n";
+	    print EXPRACE "RNASeq_FPKM  \"$life_stage\"  \"$f[9]\"  From_analysis \"$analysis\"\n";
+	  }
+
+	  # sum the Pseudogene and CDS scores from their isoforms
 	  if (exists $CDSs{$sequence_name}) {
 	    $CDS_SRX{$sequence_name} += $f[9]; # sum the FPKMs for this CDS
 	  } elsif (exists $Pseudogenes{$sequence_name}) {
