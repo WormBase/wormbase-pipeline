@@ -62,7 +62,7 @@
 # by Gary Williams
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2012-05-08 13:56:51 $
+# Last updated on: $Date: 2012-05-11 15:08:26 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -533,7 +533,7 @@ if (!$expt) {
 	  $log->log_and_die("Can't locate the repeat-masked genome file: $source_file\n");
 	}
       }
-      my $bowtie_cmd = "bsub -I /software/worm/bowtie/bowtie-build " . (join ',', @chrom_files) . " $G_species";
+      my $bowtie_cmd = "bsub -I -M 4000000 -R \"select[mem>4000] rusage[mem=4000]\" /software/worm/bowtie/bowtie-build " . (join ',', @chrom_files) . " $G_species";
       $status = $wormbase->run_command($bowtie_cmd, $log);
       if ($status != 0) {  $log->log_and_die("Didn't create the bowtie indexes /nfs/wormpub/RNASeq/$species/reference-indexes/${G_species}.*\n"); }
     }
