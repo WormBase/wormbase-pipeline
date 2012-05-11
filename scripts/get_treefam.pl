@@ -148,7 +148,7 @@ foreach my $ID (keys %FAMILY) {
   
   my ($gene_obj,$cds_obj);
   
-  $gene = $gene =~ /(\w+\.\w+)\.\d+/ ? $1 : $gene;
+  $gene = $gene =~ /(\S+\.\w+)\.\d+$/ ? $1 : $gene;
   if( $gene =~ /WBGene/ ) { # if a WBGeneID was used
     $gene_obj = $db->fetch(Gene => "$gene");
   }
@@ -157,6 +157,7 @@ foreach my $ID (keys %FAMILY) {
     unless ($cds_obj){
       my $gene_name = $db->fetch(Gene_name => "$gene");
       $gene_obj=$gene_name->Molecular_name_for if $gene_name;
+      $gene_obj||=$gene_name->Other_name_for if $gene_name;
     }
   }
   $cds_obj  ||= ($gene_obj->Corresponding_CDS) if $gene_obj;
