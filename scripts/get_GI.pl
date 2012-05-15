@@ -4,8 +4,8 @@
 # 
 # A script to generate C.elegans CDS/Protein to NCBI_GI number XREFs
 #
-# Last edited by: $Author: pad $
-# Last edited on: $Date: 2012-01-25 17:24:08 $
+# Last edited by: $Author: mh6 $
+# Last edited on: $Date: 2012-05-15 12:12:01 $
 #
 #==================
 
@@ -274,9 +274,8 @@ else {
   #clean up .dat files and the large NCBI file
   
   $log->write_to("Removing all .dat files from $basedir\n");
-  $wormbase->run_command("gzip -f $GI_local", $log) && die "zip Failed for ${GI_local}\n";
-  $wormbase->run_command("rm GI*.dat", $log);
-  $wormbase->run_command("rm $GI_local", $log);
+  $wormbase->run_command("gzip -9 -f $GI_local", $log) && die "zip Failed for ${GI_local}\n";
+  $wormbase->run_command("rm $basedir/GI*.dat", $log);
 }
 
 $wormbase->run_command("rm $lock_file", $log);
