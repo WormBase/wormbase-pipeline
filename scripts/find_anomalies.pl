@@ -8,8 +8,8 @@
 # matching a CDS and stores the results in in a data file ready to be read into the SQL database
 # 'worm_anomaly'
 #
-# Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2012-03-12 12:01:10 $      
+# Last updated by: $Author: mh6 $     
+# Last updated on: $Date: 2012-05-15 12:51:46 $      
 
 # Changes required by Ant: 2008-02-19
 # 
@@ -376,16 +376,16 @@ foreach my $chromosome (@chromosomes) {
   my @Aggregated_CDS_introns = $ovlp->get_Aggregated_CDS_introns($chromosome);
 
 # until the genBlastG data is in the acedb data and has been dumped to GFF, use the GFF files from Jack Chen.
-  if (! @genblastg_exons && exists $run{GENBLASTG_DIFFERS_FROM_CDS}) {
-    my %GFF_data = 
-      (
-       file		=> "~wormpub/BUILD_DATA/MISC_DYNAMIC/genBlastG/${species}_v128.gff3", 
-       gff_source	=> "hybrid2",
-       gff_type		=> "coding_exon",
-       ID_after		=> "Parent=",
-      );
-    @genblastg_exons = $ovlp->read_GFF_file($chromosome, \%GFF_data);
-  }
+#  if (! @genblastg_exons && exists $run{GENBLASTG_DIFFERS_FROM_CDS}) {
+#    my %GFF_data = 
+#      (
+#       file		=> "~wormpub/BUILD_DATA/MISC_DYNAMIC/genBlastG/${species}_v128.gff3", 
+#       gff_source	=> "hybrid2",
+#       gff_type		=> "coding_exon",
+#       ID_after		=> "Parent=",
+#      );
+#    @genblastg_exons = $ovlp->read_GFF_file($chromosome, \%GFF_data);
+#  }
 
   my @UTRs_5 = $ovlp->get_5_UTRs($chromosome) if (exists $run{INTRONS_IN_UTR});
   my @UTRs_3 = $ovlp->get_3_UTRs($chromosome) if (exists $run{INTRONS_IN_UTR});
