@@ -7,7 +7,7 @@
 # This is a script to aid making changes to the sequence of a clone.
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2011-06-24 10:52:54 $      
+# Last updated on: $Date: 2012-05-15 16:11:03 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -166,6 +166,9 @@ while (my $input_line = <IN>) {
   if ($input_line =~ /^#/) {next;}    # skip comments
 
   my ($clone, $change_type, $change_sequence) = split /\s+/, $input_line; 
+
+  # check that we are not trying to make a change in the mitochondrion - we don't own this sequence
+  if ($clone =~ /MtDNA/) {next;}
 
   my $change = {};		# hash ref to hold details of the next change
   $change->{'clone'} = $clone;
