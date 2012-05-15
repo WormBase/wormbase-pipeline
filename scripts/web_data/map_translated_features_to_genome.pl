@@ -130,8 +130,9 @@ while (my $gene = &get_next_gene) {
     
     my %motifs_by_type = fetch_motifs($protein);
     my $transcript = $ens_tadap->fetch_by_stable_id($cds);
+    $log->log_and_die("cannot find EnsEMBL transcript for $cds\n") unless $transcript;
     my @exons = @{$transcript->get_all_Exons};
-    $log->log_and_die("No translation for $cds\n") if not $transcript->translation;
+    $log->log_and_die("No translation for $cds\n") unless $transcript->translation;
 
     # Now, for each motif, fetch the genomic coordinates of the span
     #print DEBUG "Fetching motif positions...\n";
