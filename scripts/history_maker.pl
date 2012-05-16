@@ -28,6 +28,7 @@ my $anomaly;
 my $lab;
 my $species;
 my $display_by_clones;
+my $addevidence;
 
 GetOptions (
             "debug=s"    => \$debug,
@@ -42,6 +43,7 @@ GetOptions (
 	    "mail"         => \$mail,
 	    "intron"       => \$intron,
 	    "blesser"      => \$blesser,
+	    "addevidence"  => \$addevidence,
 	    "anomaly"      => \$anomaly,
 	    "lab=s"        => \$lab, # RW or HX
 	    "display_by_clones"       => \$display_by_clones,
@@ -110,8 +112,9 @@ my $mysql;			# mysql database handle
 my $main_gui = MainWindow->new();
 
 my $form_cds;			# cds variable from form
-my $form_gene;			# gene variable from form
-my $form_gene2;                 # gene variable from form
+my $form_gene;			# gene variable from blesser form
+my $form_gene2;                 # gene variable from blesser form
+my $form_gene3;                 # gene variable from evidence form
 my $anomaly_clone;		# clone variable from anomaly form
 
 # Main window
@@ -125,6 +128,7 @@ my $gui_height = 50; #modified 200
 $gui_height += 200 if $chromosome;
 $gui_height += 200 if $blast;
 $gui_height += 200 if $blesser;
+$gui_height += 200 if $addevidence;
 $gui_height += 300 if $anomaly;
 $main_gui->geometry("${gui_width}x$gui_height");
 
@@ -239,7 +243,7 @@ if ($blesser) {
   $gene_val->bind("<KP_Enter>",[ \&bless_prediction]);
   
 
-  # Make history button
+  # Bless button
   my $bless = $gene_blesser->Button( -text => "Bless this gene",
 				     -command => [\&bless_prediction]
 				     )->pack(-side => 'right',
@@ -337,6 +341,62 @@ if ( $blast ) {
     $blast_list->insert('end',"$_");
   }
 }
+
+# addevidence to a CDS
+###########################################################
+
+my $cdswork;
+if ($addevidence) {
+  my $gene_evidence = $main_gui->Frame( -background => "LightGreen",
+				       -height     => "400",
+				       -label      => "Populate Top Evidence hash",
+				       -relief     => "raised",
+				       -borderwidth => 5,
+				       )->pack( -pady => "5", #modified
+						-fill => "x"
+						);
+  # CDS entry widgets
+  my $CDS_lbl = $gene_evidence->Label( -text => 'CDS name',
+				       -background => 'LightGreen',
+				       -foreground => 'black'
+				       )->pack(-pady => '6',
+					       -padx => '6',
+					       -side => 'left',
+					       );
+
+  $cdswork = $gene_evidence->Entry( -width => '10',
+				       -background => 'whitesmoke',
+				       -textvariable=> \$form_gene3,
+				       )->pack(-side => 'left',
+					       -pady => '5',
+					       -padx => '5'
+					       );
+
+  # make Return and Enter submit CDS 
+  $cdswork->bind("<Return>",[ \&add_evidence]);
+  $cdswork->bind("<KP_Enter>",[ \&bless_evidence]);
+  
+
+  # Add Evidence button
+  my $evi = $gene_evidence->Button( -text => "Tag this CDS",
+				     -command => [\&add_evidence]
+				     )->pack(-side => 'left',
+					     -pady => '2',
+					     -padx => '6',
+					     -anchor => "w"
+					     );
+  # Clear CDS entry button
+  my $clear_evi = $gene_evidence->Button( -text => "Clear",
+					  -command => [\&clear_evi]
+					  )->pack(-side => 'right',
+						  -pady => '2',
+						  -padx => '6',
+						  -anchor => "e"
+						  );
+}
+######### end add evidence
+
+
 
 ###########################################################
 # anomalies database locator frame
@@ -534,6 +594,39 @@ exit(0);
 #
 ##############################################################
 
+sub add_evidence
+  {
+    my $refgene = $form_gene3;
+    return unless $refgene;
+    my $obj = $db->fetch(CDS => "$refgene");
+    return &error_warning("Invalid CDS","$refgene is not a valid CDS name") unless $obj;
+    my $method = $obj->Method->name;
+    if (!($method eq "curated")) {
+      &error_warning("Only curated gene models can have top level evidence added in this way.");
+      next;
+    }
+    
+    my $output = $session_file.$refgene;
+    
+    open (EVI,">$output") or die "cant open $output\n";
+    # add the Evidence to the CDS
+    print EVI "\nCDS : \"$refgene\"\n";
+    if (defined $person){ print EVI "Evidence Curator_confirmed $person\n";}
+    else {print EVI "Evidence\nRemark \"[No Curator specified]";}
+    
+    close EVI;
+    my $return_status = system("xremote -remote 'parse $output'");
+    if ( ( $return_status >> 8 ) != 0 ) {
+      &error_warning("WARNING", "X11 connection appears to be lost");
+    } 
+    else {
+      &confirm_message("Success", "Added evidence to $form_gene3");
+      &clear_evi;
+    }
+  }
+
+###############################################################
+
 # prediction blesser 
 sub bless_prediction
   {
@@ -656,6 +749,10 @@ sub clear_proposed
     $proposed_name->delete(0,'end');
   }
 
+sub clear_evi
+  {
+    $cdswork->delete(0,'end');
+}
 
 ##############################################################
 sub suggest_name
