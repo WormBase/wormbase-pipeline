@@ -127,8 +127,8 @@ $gui_width += 300 if ($anomaly or $blesser);
 my $gui_height = 50; #modified 200
 $gui_height += 200 if $chromosome;
 $gui_height += 200 if $blast;
-$gui_height += 200 if $blesser;
-$gui_height += 200 if $addevidence;
+$gui_height += 100 if $blesser;
+$gui_height += 100 if $addevidence;
 $gui_height += 300 if $anomaly;
 $main_gui->geometry("${gui_width}x$gui_height");
 
@@ -148,6 +148,7 @@ $chromosome_list = join(',', @chroms);
 my $results; # the globally-accesible anomaly details that are summarised in the anomalies detail window
 my $check;			# state of the check button for the weights
 
+
 ################################################################
 
 # history_maker
@@ -162,7 +163,7 @@ my $his_maker = $main_gui->Frame( -background => "black", # was lightcyan
 					 -fill => "x"
 				       );
 
-# Reference database lable
+# Reference database label
 my $db_lbl = $his_maker->Label( -text => "Data Source: $database",
 				-background => 'black', # was lightcyan
 				-foreground => 'whitesmoke' # was black
@@ -188,14 +189,6 @@ my $cds_val = $his_maker->Entry( -width => '10',
 $cds_val->bind("<Return>",[ \&make_history]);
 $cds_val->bind("<KP_Enter>",[ \&make_history]);
 
-#Make history button
-my $make = $his_maker->Button( -text => "Make History",
-			       -command => [\&make_history]
-			     )->pack(-side => 'right',
-				     -pady => '2',
-				     -padx => '6',
-				     -anchor => "w"
-				    );
 # Clear CDS entry button
 my $clear = $his_maker->Button( -text => "Clear",
 				-command => [\&clear]
@@ -204,6 +197,16 @@ my $clear = $his_maker->Button( -text => "Clear",
 				      -padx => '6',
 				      -anchor => "e"
 				     );
+
+#Make history button
+my $make = $his_maker->Button( -text => "Make History",
+			       -command => [\&make_history]
+			     )->pack(-side => 'left',
+				     -pady => '2',
+				     -padx => '6',
+				     -anchor => "w"
+				    );
+
 
 
 ###########################################################
@@ -230,7 +233,7 @@ if ($blesser) {
 					       -side => 'left',
 					       );
 
-  $gene_val = $gene_blesser->Entry( -width => '10',
+  $gene_val = $gene_blesser->Entry( -width => '20',
 				       -background => 'whitesmoke',
 				       -textvariable=> \$form_gene,
 				       )->pack(-side => 'left',
@@ -347,8 +350,9 @@ if ( $blast ) {
 
 my $cdswork;
 if ($addevidence) {
-  my $gene_evidence = $main_gui->Frame( -background => "LightGreen",
+  my $gene_evidence = $main_gui->Frame( -background => "IndianRed4", #was LightGreen
 				       -height     => "400",
+				       -width      => "600",
 				       -label      => "Populate Top Evidence hash",
 				       -relief     => "raised",
 				       -borderwidth => 5,
@@ -357,7 +361,7 @@ if ($addevidence) {
 						);
   # CDS entry widgets
   my $CDS_lbl = $gene_evidence->Label( -text => 'CDS name',
-				       -background => 'LightGreen',
+				       -background => 'IndianRed4', #was LightGreen
 				       -foreground => 'black'
 				       )->pack(-pady => '6',
 					       -padx => '6',
@@ -401,6 +405,7 @@ if ($addevidence) {
 ###########################################################
 # anomalies database locator frame
 if ( $anomaly ) {
+
   if (! defined $chromosome || $chromosome eq "") {die "Must specify -chromosome with -anomaly\n";}
   if (! defined $user || $user eq "") {die "Must specify -user with -anomaly\n";}
 
@@ -417,7 +422,6 @@ if ( $anomaly ) {
 				       )->pack( -pady => "5", #modified
 						-fill => "x"
 						);
-
 
   my $anomaly_list = $anomaly_find->Scrolled("Listbox", -scrollbars => "osoe",
 					     -selectmode => "single",
