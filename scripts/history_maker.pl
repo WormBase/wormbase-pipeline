@@ -16,8 +16,6 @@ use Wormbase;
 ######################################
  
 my ($help, $debug, $test, $verbose, $store, $wormbase);
-
-
 my $source;
 my $design;
 my $chromosome;
@@ -36,7 +34,6 @@ GetOptions (
             "test"       => \$test,
             "verbose"    => \$verbose,
             "store:s"    => \$store,
-
 	    "source:s"     => \$source,
 	    "design"       => \$design,
 	    "chromosome:s" => \$chromosome,
@@ -593,6 +590,13 @@ sub bless_prediction
 
     
     #print ace format
+
+    #remove the exons of the target gene if it already exists.
+    if (defined$form_gene2) {
+      print BLS "\nCDS : \"$form_gene2\"\n";
+      print BLS "-D Source_exons\n\n";
+    }
+
     #   - parent obj
     print BLS "Sequence : $parent_seq\n";
     print BLS "CDS_child \"$new_gene\" $start $end\n";
