@@ -2,7 +2,7 @@
 #
 # EMBLdump.pl :  makes modified EMBL dumps from camace.
 # 
-#  Last updated on: $Date: 2012-05-08 15:47:06 $
+#  Last updated on: $Date: 2012-05-18 12:32:05 $
 #  Last updated by: $Author: klh $
 
 use strict;
@@ -507,7 +507,9 @@ sub process_feature_table {
       }
 
       $feat->{ftype} = $new_dv;
-      push @{$feat->{quals}}, ["/pseudogene"];
+      # we don't currently distinguish between the different
+      # ENA psedogene classes, so make them all "unknown" for now
+      push @{$feat->{quals}}, ["/pseudogene=\"unknown\""];
     }
 
     #
