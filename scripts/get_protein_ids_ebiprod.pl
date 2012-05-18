@@ -34,6 +34,7 @@ my $ena_dbh = &get_ena_dbh();
 
 # locus_tag = 84
 # pseudo = 28
+# pseudogene = 114
 # standard name = 23
 # gene = 12
 # Get most info for each PID with a /locus_tag + featID was gene (#12)
@@ -52,7 +53,7 @@ my $ena_sql =  "SELECT d.primaryacc#, b.version, c.PROTEIN_ACC, c.version, c.chk
     . " AND not exists (SELECT 1"
     . "   FROM feature_qualifiers a"
     . "   WHERE a.featid = c.featid"
-    . "   AND a.fqualid = 28)"
+    . "   AND a.fqualid = 114)"
     . " AND fq.fqualid   = 23";
 
     
