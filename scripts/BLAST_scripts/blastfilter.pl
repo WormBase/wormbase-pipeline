@@ -51,7 +51,7 @@ sub teardown_gdb{
 # generates database connections and prepared statements
 sub prepare_mysql{
     my %h;
-    my @species = ('brugia','pristionchus','japonica','briggsae','remanei','brenneri','elegans','cangaria','hcontortus','mhapla','mincognita');  
+    my @species = ('brugia','pristionchus','japonica','briggsae','remanei','brenneri','elegans','cangaria','hcontortus','mhapla','mincognita','bxylophilus','csp11','csp5','heterorhabditis','loaloa','sratti','tspiralis');  
     foreach my $key(@species){
         $h{$key}{dbi}=DBI->connect("dbi:mysql:dbname=worm_ensembl_${key};host=farmdb1",'wormro');
         $h{$key}{sth1}=$h{$key}{dbi}->prepare('SELECT COUNT(protein_align_feature_id) FROM protein_align_feature WHERE hit_name=?');
