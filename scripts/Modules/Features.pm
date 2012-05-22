@@ -3,8 +3,8 @@
 # to contain the filters for use before alignment to the genome
 # by Michael Han
 # 
-# Last updated by: $Author: pad $
-# Last updated on: $Date: 2009-04-15 15:04:38 $
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2012-05-22 11:29:21 $
 
 package Features;
 
@@ -28,6 +28,31 @@ struct Feature =>{
     description=> '$',
     type2      => '$'
 };
+
+my %SL    = (
+	       'SL1',  'GGTTTAATTACCCAAGTTTGAG',
+	       'SL2',  'GGTTTTAACCCAGTTACTCAAG',
+	       'SL2a', 'GGTTTATACCCAGTTAACCAAG',
+	       'SL2b', 'GGTTTTAACCCAGTTTAACCAAG',
+	       'SL2c', 'GGTTTTAACCCAGTTACCAAG',
+	       'SL2d', 'GGTTTTTACCCAGTTAACCAAG',
+	       'SL2e', 'GGTTTAAAACCCAGTTAACAAG',
+	       'SL2f', 'GGTTTTAACCCAGTTAACCAAG',
+	       'SL2g', 'GGTTTTAACCAGTTAACTAAG',
+	       'SL2h', 'GGTTTTAACCCATATAACCAAG',
+	       'SL2i', 'GGTTTTAACCCAAGTTAACCAAG',
+	       'SL2j', 'GGTTTAAAACCCAGTTACCAAG',
+	       'SL2k', 'GGTTTTAACCCAGTTAATTGAG',
+          );
+
+#############
+# set a different set of TSL sequences
+#
+
+sub set_tsl {
+     my ($sl) = @_;
+     %SL = %{$sl}
+}
 
 
 #############
@@ -158,21 +183,6 @@ sub trim_polyA{
 # at /nfs/WWWdev/INTWEB_docs/cgi-bin/Projects/C_elegans/tsl_search
 
 sub get_tls{
-  my %SL    = (
-	       'SL1',  'GGTTTAATTACCCAAGTTTGAG',
-	       'SL2',  'GGTTTTAACCCAGTTACTCAAG',
-	       'SL2a', 'GGTTTATACCCAGTTAACCAAG',
-	       'SL2b', 'GGTTTTAACCCAGTTTAACCAAG',
-	       'SL2c', 'GGTTTTAACCCAGTTACCAAG',
-	       'SL2d', 'GGTTTTTACCCAGTTAACCAAG',
-	       'SL2e', 'GGTTTAAAACCCAGTTAACAAG',
-	       'SL2f', 'GGTTTTAACCCAGTTAACCAAG',
-	       'SL2g', 'GGTTTTAACCAGTTAACTAAG',
-	       'SL2h', 'GGTTTTAACCCATATAACCAAG',
-	       'SL2i', 'GGTTTTAACCCAAGTTAACCAAG',
-	       'SL2j', 'GGTTTAAAACCCAGTTACCAAG',
-	       'SL2k', 'GGTTTTAACCCAGTTAATTGAG',
-          );
   my ($seq,$id)=@_;
   $seq=~tr/acgt/ACGT/; #upcase sequence
   my $psize=length $seq;
@@ -350,10 +360,10 @@ returns an ace string of polyA sites/tails and TSL
 
 =head1 AUTHOR
 
-$Author: pad $
+$Author: mh6 $
 
 =head1 VERSION
 
-$Date: 2009-04-15 15:04:38 $
+$Date: 2012-05-22 11:29:21 $
 
 =cut
