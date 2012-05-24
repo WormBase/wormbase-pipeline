@@ -2721,6 +2721,9 @@ Right_priority  1.9
 Method : "CGH_allele"
 Right_priority 1.9
 
+Method : Million_mutation
+Right_priority 1.9
+
 Method : "Coding_transcript"
 Right_priority  2
 
