@@ -9,7 +9,7 @@
 #
 #
 # Run as:
-# bsub -I -q long -M 4000000 -R "select[mem>4000] rusage[mem=4000]" perl $CVS_DIR/get_TSL_RNASeq_reads.pl -infile SRR/xyz.fq -outfile TSL/xyz.fq -species brugia
+# bsub -I -M 4000000 -R "select[mem>4000] rusage[mem=4000]" perl $CVS_DIR/get_TSL_RNASeq_reads.pl -infile SRR/xyz.fq -outfile TSL/xyz.fq -species brugia
 #
 #
 # by Gary Williams
@@ -42,7 +42,6 @@ GetOptions ("help"        => \$help,
 	    "species=s"   => \$species,
 	    );
 
-$debug = "gw3";
 
 if ( $store ) {
   $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
