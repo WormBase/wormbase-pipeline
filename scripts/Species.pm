@@ -920,7 +920,7 @@ sub full_name {
 sub chromosome_prefix {'Can_chr'}
 sub pep_prefix {'CA'}
 sub pepdir_prefix{'can'};
-sub ncbi_tax_id {'96668'};
+sub ncbi_tax_id {'860376'};
 sub assembly_type {'contig'};
 
 
