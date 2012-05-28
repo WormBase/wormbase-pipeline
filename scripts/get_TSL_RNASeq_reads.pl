@@ -162,6 +162,7 @@ while (my $id = <READ>) {
 	  #print "$seq has $tslname, len = $tsllen\n\n";
 	  # add the TSL type to the ID
 	  chomp $id;
+	  $id =~ s/\//_/g; # change / to _ because tophat removed anything after the slash when it writes uot the bam data
 	  $id  =~ s/$id/${id}\.\-\.${tslname}/;
 	  chomp $line3;
 	  $line3 =~ s/$id/${id}\.\-\.${tslname}/;	
