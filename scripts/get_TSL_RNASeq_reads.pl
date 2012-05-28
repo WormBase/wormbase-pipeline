@@ -4,7 +4,7 @@
 #
 #
 # Reads a fastq file looking for SL1/SL2 trans-splice sequences and
-# writes out files of reads with SL1 and SL2 subsequence removed ready
+# writes out a file of reads with SL1 and SL2 subsequence removed ready
 # for aligning to the genome.
 #
 #
@@ -38,7 +38,7 @@ GetOptions ("help"        => \$help,
 	    "verbose"     => \$verbose,
 	    "store:s"     => \$store,
 	    "infile=s"    => \$infile,
-	    "outfile=s"   => \$outfile, #  the base name of the two output files: $outfile_sl1.fq and $outfile_sl2.fq
+	    "outfile=s"   => \$outfile, 
 	    "species=s"   => \$species,
 	    );
 
@@ -91,8 +91,8 @@ foreach my $sl_name (keys %SL) {
 # read all of the hit read IDs
 print "Reading hits\n";
 
-open (OUT_SL1, ">${outfile}_sl1.fq") || $log->log_and_die("can't open ${outfile}_sl1.fq\n");
-open (OUT_SL2, ">${outfile}_sl2.fq") || $log->log_and_die("can't open ${outfile}_sl2.fq\n");
+open (OUT_SL, ">$outfile") || $log->log_and_die("can't open $outfile\n");
+
 my $id;
 my $seq;
 my $line3;
@@ -143,11 +143,10 @@ while (my $id = <READ>) {
       # stick the quality code 'II' on the front
       substr($line4, 0, $tsllen) = 'II';
       # print it out
+      print OUT_SL "${id}\n${seq}${line3}\n${line4}";
       if ($tslname =~ /SL1/) {
-	print OUT_SL1 "${id}\n${seq}${line3}\n${line4}";
 	$sl1_reads++;
       } else {
-	print OUT_SL2 "${id}\n${seq}${line3}\n${line4}";
 	$sl2_reads++;
       }
 # there are only 1% of negative reads with a TSL sequence and these
@@ -174,11 +173,10 @@ while (my $id = <READ>) {
 	  chomp $line4;
 	  substr($line4, - $tsllen) = 'II';
 	  # print it out
+	  print OUT_SL "${id}\n${seq}\n${line3}\n${line4}\n";
 	  if ($tslname =~ /SL1/) {
-	    print OUT_SL1 "${id}\n${seq}\n${line3}\n${line4}\n";
 	    $sl1_reads++;
 	  } else {
-	    print OUT_SL2 "${id}\n${seq}\n${line3}\n${line4}\n";
 	    $sl2_reads++;
 	  }
 	  $negative_reads++;
@@ -188,9 +186,7 @@ while (my $id = <READ>) {
 
 close(READ);
 print "\nFinished reading $infile\n";
-print "Results are in ${outfile}_sl1.fq and ${outfile}_sl2.fq ";
-close(OUT_SL1);
-close(OUT_SL2);
+close(OUT_SL);
 
 print "Total reads processed: $total_reads\n";
 my $percent = $sl1_reads*100/$total_reads;
