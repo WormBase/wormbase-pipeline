@@ -8,8 +8,8 @@
 #                          ~wormpub/BUILD/autoace/release/
 #                          /nfs/WWW/SANGER_docs/htdocs/Projects/C_elegans/WORMBASE/current/release_notes.txt/
 #
-# Last updated by: $Author: klh $
-# Last updated on: $Date: 2011-11-25 13:55:03 $
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2012-05-30 14:22:51 $
 
 
 use strict;                                      
@@ -89,7 +89,7 @@ $log->write_to("about to spread the word . . . \n");
 $log->write_to("copying to ftp site . . . . ");
 
 # ftp-site
-&_copy( "$repdir/letter.${release}", "$ftpdir/releases/${release}/letter.${release}" ) || $log->log_and_die("couldnt copy to $ftpdir\n");
+&_copy( "$repdir/letter.${release}", "$ftpdir/releases/${release}/letter.${release}" ) || $log->log_and_die("couldnt copy $repdir/letter.${release} to $ftpdir/releases/${release}/letter.${release}\n");
 $log->write_to("DONE.\n");
 
 # local
