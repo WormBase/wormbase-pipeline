@@ -62,7 +62,7 @@
 # by Gary Williams
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2012-05-11 15:08:26 $
+# Last updated on: $Date: 2012-06-01 14:25:52 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -78,7 +78,8 @@ use LSF RaiseError => 0, PrintError => 1, PrintOutput => 0;
 use LSF::JobManager;
 #use Ace;
 use Coords_converter;
-use GDBM_File; # for tied hash
+use Carp;
+use Feature_mapper;
 
 
 
@@ -166,6 +167,7 @@ $species = $wormbase->species;                          # set the species if it 
 
 # global variables
 my $coords;
+my $mapper;
 my $status;
 
 # SRP000401  Deep sequencing of the Caenorhabditis elegans transcriptome using RNA isolated from various developmental stages under various experimental conditions RW0001
@@ -370,14 +372,15 @@ if ($species eq 'elegans') {
   %expts = ( # key= SRA 'SRX' experiment ID, values = [Analysis ID, quality score metric]
 # Add new analysis/condition objects to ~wormpub/DATABASES/brugia
 
-	    Adult_female => ["RNASeq.Berriman.Adult_female", 'phred', 'single'],
-	    Adult_male => ["RNASeq.Berriman.Adult_male", 'phred', 'single'],
-	    BmL3_1361258 => ["RNASeq.Berriman.BmL3_1361258", 'phred', 'single'],
-	    eggs_embryos => ["RNASeq.Berriman.eggs_embryos", 'phred', 'single'],
-	    immature_female => ["RNASeq.Berriman.immature_female", 'phred', 'single'],
-	    L3_stage => ["RNASeq.Berriman.L3_stage", 'phred', 'single'],
-	    L4 => ["RNASeq.Berriman.L4", 'phred', 'single'],
-	    microfillariae => ["RNASeq.Berriman.microfillariae", 'phred', 'single'],
+	    Adult_female => ["RNASeq_brugia_Berriman.Adult_female", 'phred', 'paired-end'],
+	    Adult_male => ["RNASeq_brugia_Berriman.Adult_male", 'phred', 'paired-end'],
+	    BmL3_1361258 => ["RNASeq_brugia_Berriman.BmL3_1361258", 'phred', 'paired-end'],
+	    eggs_embryos => ["RNASeq_brugia_Berriman.eggs_embryos", 'phred', 'paired-end'],
+	    immature_female => ["RNASeq_brugia_Berriman.immature_female", 'phred', 'paired-end'],
+	    L3_stage => ["RNASeq_brugia_Berriman.L3_stage", 'phred', 'paired-end'],
+	    L4 => ["RNASeq_brugia_Berriman.L4", 'phred', 'paired-end'],
+	    microfillariae => ["RNASeq_brugia_Berriman.microfillariae", 'phred', 'paired-end'],
+	    mayhew => ["RNASeq_brugia_mayhew.mf.L2.L3", 'phred', 'single'],
 	   );
 	    
 } elsif ($species eq 'remanei') {
@@ -696,7 +699,7 @@ IIIIIIIIHIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIGIGIDHIIIIIGIGI
       $log->write_to("The initial tophat job to index the GTF file has completed!\n");
       for my $job ( $lsf->jobs ) {
 	if ($job->history->exit_status ne '0') {
-	  $log->log_and_die("Job $job (" . $job->history->command . ") exited non zero: " . $job->history->exit_status . " Try making a larger dummy.fastq file?\n");
+	  $log->write_to("Job $job (" . $job->history->command . ") exited non zero: " . $job->history->exit_status . " Try making a larger dummy.fastq file?\n");
 	}
       }
       $lsf->clear;
@@ -835,6 +838,7 @@ IIIIIIIIHIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIGIGIDHIIIIIGIGI
       close (EXPR);
     }
 
+    my $number_of_complaints = 5; #complain only 5 times about Sequences names not in the normal format, otherwise we are swamped by warnings in remanei
     # now get the isoform (coding transcript and CDS) expression values and write out to the ace file
     open (EXPR, "<$SRX/cufflinks/isoforms.fpkm_tracking") || $log->log_and_die("Can't open $SRX/cufflinks/isoforms.fpkm_tracking\n");
     while (my $line = <EXPR>) {
@@ -845,7 +849,8 @@ IIIIIIIIHIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIGIGIDHIIIIIGIGI
 	if (defined $life_stage) {
 	  my ($sequence_name) = ($f[0] =~ /(^\S+?\.\d+[a-z]?)/);
 	  if (!defined $sequence_name) {
-	    if ($f[0] !~ /(^\S+?\.t\d+)/) {print "Sequence name $f[0] is not in the normal format\n";} # complain if it is not even like 'T27B1.t1' - a tRNA gene
+	    # complain up to 5 times if it is not even like 'T27B1.t1' - a tRNA gene
+	    if ($f[0] !~ /(^\S+?\.t\d+)/ && $number_of_complaints-- > 0) {print "Sequence name $f[0] is not in the normal format\n";} 
 	    $sequence_name = $f[0]; # use the name as given
 	  }
 
@@ -984,7 +989,7 @@ sub run_align {
     push @bsub_options, (-q =>  "long",
                          #-F =>  "100000000", # there is no file size limit in Sanger LSF - don't impose one - keep this commented out
 			 -M =>  "14000000", 
-			 -R => "\"select[mem>14000 && tmp>10000] rusage[mem=14000]\"", # want 10Gb free on /tmp for the hash tie file
+			 -R => "\"select[mem>14000] rusage[mem=14000]\"",
 			 -J => $job_name);
     my $cmd = "$script -expt $arg";      # -expt is the parameter to make the script run an alignment and analysis on a dataset $arg
     if ($check) {$cmd .= " -check";}
@@ -1166,7 +1171,7 @@ sub run_tophat {
       chdir "$RNASeqDir/$arg";
       mkdir "TSL", 0777;
       my $analysis = $expts{$arg}[0];
-      $status = &TSL_stuff($cmd_extra, $analysis);
+      $status = &TSL_stuff($analysis);
       
       if ($status != 0) {  $log->log_and_die("Didn't run the TSL stuff successfully\n"); }
     } else {
@@ -1176,15 +1181,25 @@ sub run_tophat {
 }
 
 #################################################################################################################
-# take a quick look in one of the read files to determine the length of the reads
+# take a quick look in the read files to determine the length of the reads
+# read a hundred entries because the TSL stuff deals with reads of varying lengths, so we want a good sample
 sub get_read_length {
   my ($filename) = @_;
+
+  my $count = 100; # number to look at
+  my $min_length = 1000000;
+
   open (PEEK, "<$filename") || $log->log_and_die("get_read_length() : cant open $filename\n");
-  my $line = <PEEK>; # skip the title line
-  $line = <PEEK>; # this is the sequence line
-  chomp $line;
+  while (my $line = <PEEK>) {    # skip the title line
+    $line = <PEEK>; # this is the sequence line
+    chomp $line;
+    if (length $line < $min_length) {$min_length = length $line}
+    $line = <PEEK>; # second title line
+    $line = <PEEK>; # quality line
+    if (!$count--) {last}
+  }
   close(PEEK);
-  return length $line;
+  return $min_length;
 }
 
 #################################################################################################################
@@ -1225,7 +1240,9 @@ sub get_SRX_file {
   $log->write_to("Get the SRA files for $arg\n");
   my $failed = 1;
   while ($failed) {
-    my $return_status = system("~gw3/.aspera/connect/bin/ascp -k 1 -l 300M -QTr -i /nfs/users/nfs_g/gw3/.aspera/connect/etc/asperaweb_id_dsa.putty anonftp\@ftp-private.ncbi.nlm.nih.gov:/sra/sra-instant/reads/ByExp/litesra/SRX/SRX${dirbit}/$arg ./");
+    my $cmd = "~gw3/.aspera/connect/bin/ascp -k 1 -l 300M -QTr -i /nfs/users/nfs_g/gw3/.aspera/connect/etc/asperaweb_id_dsa.putty anonftp\@ftp-private.ncbi.nlm.nih.gov:/sra/sra-instant/reads/ByExp/litesra/SRX/SRX${dirbit}/$arg ./";
+    print "cmd = $cmd\n";
+    my $return_status = system($cmd);
     if ( ( $return_status >> 8 ) == 0 )  {$failed=0}
   }
 }
@@ -1249,209 +1266,61 @@ sub get_SRX_file {
 # http://www.plosgenetics.org/article/info%3Adoi%2F10.1371%2Fjournal.pgen.0020198
 # Figure 4
 
-# C. elegans
-#   Ce_SL1  GGTTTAATTACCCAAGTTTGAG
-# P. pacificus
-#   Pp_SL1a GGTTTTAATTACCCAAGTTTGAG
-# B. malayi
-#   Bm_SL1a GGTTTTAATTACCCAAGTTTGAG
-#   Bm_SL1b GGTTTAATCACCCAAGTTTGAG
-#   Bm_SL1c GGTTTAACTACCCAAGTTTGAG
-# A. suum
-#   As_SL1a GGTTTAACTACCCAAGTTTGAG
-#   As_SL1b GGTTTAATTGCCCAAGTTTGAG
-# N. brasiliensis
-#   Nb_SL1a GGTTTAATAACCCAAGTTTGAG
-# M. javanica
-#   Mj_SL1M GGTTTAATTACCCTAGTTTAAG
-# A. acenae
-#   Aa_SL1a GGTTTATATACCCAAGTTTGAG
-#   Aa_SL1b GGTTTTATTACCCAAGTTTGAG
-#   Aa_SL1c GGTTTAAATACCCAAATTTGAG
-#   Aa_SL1d GGTTTAAATACCCTAATTTGAG
-# S. ratti
-#   Sr_SL1a GGTTTATAAAACCCAGTTTGAG
-#   Sr_SL1b GGTTTAAAAAACCCAGTTTGAG
-#   Sr_SL1c GGTTTAAAAACCCAGTTTGAG
-#   Sr_SL1d GGTTTTAAAACCCAGTTTGAG
-#   Sr_SL1e GGTTTAAAAACCCAATTTGAG
-#   Sr_SL1f GGTTTAAATAACCCAGTTTGAG
-#   Sr_SL1g GGTTTAAATAACCCATATAGAG
-#   Sr_SL1h GTTTTTTAAATAACCAAGTTTGAG
-#   Sr_SL1i GGTTTAAGAAAACCCATTCAAG
-#   Sr_SL1j GGTTTTATAAAACCCAGTTTGAG
-#   Sr_SL1k GGTTTATAAAACCCAGTTTAAG
-#   Sr_SL1l GGTTTAAAAACCCGATTTTGAG
-#   Sr_SL1m GGTTTTAAATAACCCAGTTTGAG
-#   Sr_SL1n GGTTTATATAACCCAGTTTGAG
-#   Sr_SL1o GGTTTAAAAACCCAAATTAAA
-#   Sr_SL1p GGTTTTAAAAACCCAGTTTGAG
-#   Sr_SL1q GGTTTATACAACCCAGTTTGAG
-#   Sr_SL1r GGTTTAAGAAACCCTGTTTGAG
-#   Sr_SL1s GGTTTAAAAAACCCAGTTTAAG
-# C. elegans
-#   Ce_SL2 GGTTTTAACCCAGTTACTCAAG
-#   Ce_SL3 GGTTTTAACCCAGTTAACCAAG
-#   Ce_SL4 GGTTTTAACCCAGTTTAACCAAG
-#   Ce_SL5 GGTTTTAACCCAGTTACCAAG
-#   Ce_SL6 GGTTTAAAACCCAGTTACCAAG
-#   Ce_SL7 GGTTTTAACCCAGTTAATTGAG
-#   Ce_SL8 GGTTTTTACCCAGTTAACCAAG
-#   Ce_SL9 GGTTTATACCCAGTTAACCAAG
-#   Ce_SL10 GGTTTTAACCCAAGTTAACCAAG
-#   Ce_SL11 GGTTTTAACCAGTTAACTAAG
-#   Ce_SL12 GTTTTAACCCATATAACCAAG
-#   Ce_SL13 GGTTTTAACCCAGTTAACTAAG
-# C. briggsae
-#   Cb_SL2 GGTTTTAACCCAGTTACTCAAG
-#   Cb_SL3 GGTTTTAACCCAGTTAACCAAG
-#   Cb_SL4 GGTTTTAACCCAGTTTAACCAAG
-#   Cb_SL10 GGTTTTAACCCAAGTTAACCAAG
-#   Cb_SL13 GGATTTATCCCAGATAACCAAG
-#   Cb_SL14 GGTTTTTACCCTGATAACCAAG
-# N. brasiliensis
-#   Nb_SL2a GGTAATTAACCAAGTATCTCAAG
-#   Nb_SL2b GGTTAATACCCAGTATCTCAAG
-#   Nb_SL2c GGTAATTAACCCAGTATCTCAAG
-#   Nb_SL2d GGTAATTACCCAGTATCTCAAG
-#   Nb_SL2e GGTTTAAACCCAGTATCTCAAG
-#   Nb_SL2f GGTTTTTACCCGGTATCTTAAG
-# P. pacificus
-#   Pp_SL2a GGTTTTTACCCAGTATCTCAAG
-#   Pp_SL2b GGTTTTAACCCAGTATCTCAAG
-#   Pp_SL2c GGTTTATACCCAGTATCTCAAG
-#   Pp_SL2d GGTTTTTAACCCAGTATCTCAAG
-#   Pp_SL2e GGTTTTTACTCAGTATCTCAAG
-#   Pp_SL2f GGTCTTTACCCAGTATCTCAAG
-#   Pp_SL2g GGTTTTAACCCGGTATCTCAAG
-#   Pp_SL2h GGTTTTAACCCAGTATCTTAAG
-#   Pp_SL2i GGTTTTGACCCAGTATCTCAAG
-#   Pp_SL2j GTTTTATACCCAGTATCTCAAG
-#   Pp_SL2k GGTTTATACCCAGTATCTCAAG
-#   Pp_SL2l GGTTTAAACCCAGTATCTCAAG
-# H. contortus
-#   Hc_SL2a GGTTTTAACCCAGTATCTCAAG
-# O. tipilae
-#   Ot_SL2a GGTTTTTTACCCAGTATCTCAAG
-#   Ot_SL2b GGTTTTTACCCAGTATCTCAAG
 
 
 sub TSL_stuff {
 
-  my ($cmd_extra, $analysis) = @_;
-
-  my %SL = (
-	    'SL1',   'GGTTTAATTACCCAAGTTTGAG',
-	    'SL2',   'GGTTTTAACCCAGTTACTCAAG',
-	    'SL2a',  'GGTTTATACCCAGTTAACCAAG',
-	    'SL2b', 'GGTTTTAACCCAGTTTAACCAAG',
-	    'SL2c',   'GGTTTTAACCCAGTTACCAAG',
-	    'SL2d',  'GGTTTTTACCCAGTTAACCAAG',
-	    'SL2e',  'GGTTTAAAACCCAGTTAACAAG',
-	    'SL2f',  'GGTTTTAACCCAGTTAACCAAG',
-	    'SL2g',   'GGTTTTAACCAGTTAACTAAG',
-	    'SL2h',  'GGTTTTAACCCATATAACCAAG',
-	    'SL2i', 'GGTTTTAACCCAAGTTAACCAAG',
-	    'SL2j',  'GGTTTAAAACCCAGTTACCAAG',
-	    'SL2k',  'GGTTTTAACCCAGTTAATTGAG',
-	   );
+  my ($analysis) = @_;
 
   $coords = Coords_converter->invoke($database, 0, $wormbase);
+  $mapper = Feature_mapper->new($database, undef, $wormbase);
 
-  my $output = "TSL/TSL_reads.fastq";
+  mkdir "TSL", 0777;
+  mkdir "TSL-tmp", 0777;
 
-  # read the hits - this uses a lot of memory and so is done with a tied hash
-  $log->write_to("Reading hits\n");
-  my $samtools = "/software/worm/samtools/samtools view tophat_out/accepted_hits.bam";
-  my $hitsdb   = "/tmp/hitsdb$$.dbm"; # put -R "select [tmp>10000] rusage[mem=10000]" on the command line to have 10 Gb free on /tmp
-  tie my %hits, 'GDBM_File', "$hitsdb", &GDBM_WRCREAT, 0666 or $log->log_and_die("cannot open $hitsdb\n");
 
-  open (HITS, "$samtools |") || $log->log_and_die("can't run samtools\n");
-  while (my $line = <HITS>) {
-    $line =~ /^(\S+)/;
-    $hits{$1} = 1;
+  my $outfile="TSL1";
+  foreach my $file (glob "SRR/*/*.fastq") {
+    $log->write_to("Running get_TSL_RNASeq_reads.pl on $file\n");
+    $wormbase->run_script("get_TSL_RNASeq_reads.pl -infile $file -outfile TSL-tmp/$outfile",$log);
+    $outfile++;
   }
-  close(HITS);
-  $log->write_to("Finished reading hits\n");
-  $wormbase->run_command("ls -l $hitsdb", $log);
-    
-  $log->write_to("Finding non-hits\n");
-  open (OUT, ">$output") || $log->log_and_die("can't open $output\n");
-  # now go through the read files looking for reads that don't match
-  my @readfiles = glob("SRR/*/*.fastq");
-  my $id;
-  my $seq;
-  my $line3;
-  my $line4;
-  my $tslname;
-  my $tsllen;
-  foreach my $readfile (@readfiles) {
-    $log->write_to("\nStarting to read $readfile\n");
-    open (READ, "$readfile") || $log->log_and_die("can't open read file: $readfile\n");
-    while (my $line = <READ>) {
-      
-      #@SRR006514.1 length=36
-      #AAAGCTATGCGGATTATGTACTGAACTAGGATCTGG
-      #+SRR006514.1 length=36
-      #I?8:=9I).'&%&,/-+%+)#+#&&"%'#""""%%$
-      
-      # read the ID
-      ($id) = ($line =~ /^@(\S+)/);
-      #print "$id ";
-      # read the sequence
-      $seq = <READ>;
-      # and the other two lines
-      $line3 = <READ>;
-      $line4 = <READ>;
-      # is this read not aligned?
-      if (!exists $hits{$id}) {
-	#print "\n\t\t\t$id is not aligned: $seq";
-	# check for sequence in forward sense
-	($tslname, $tsllen) = match_tsl($seq, '+', \%SL);
-	if (defined $tslname) {
-	  #print "$seq has $tslname, len = $tsllen\n\n";
-	  # change the 'length=' in lines 1 and 3
-	  my ($orig_len) = ($line =~ /=(\d+)/);
-	  $orig_len -= $tsllen;
-	  $orig_len += 2; # add back two for the 'AG' we will append to the sequence
-	  $line  =~ s/=\d+/=$orig_len/;
-	  $line3 =~ s/=\d+/=$orig_len/;
-	  # add the TSL type to the ID
-	  $line  =~ s/$id/${id}\.\+\.${tslname}/;
-	  $line3 =~ s/$id/${id}\.\+\.${tslname}/;	
-	  # remove the TSL from the sequence
-	  # stick 'AG' on the front of the sequence
-	  substr($seq, 0, $tsllen) = 'AG';
-	  # remove the TSL quality
-	  if ($cmd_extra eq '') { # fake a phred quality score 'II' on the front
-	    substr($line4, 0, $tsllen) = 'II';
-	  } else { # fake a solexa good quality score 'hh'
-	    substr($line4, 0, $tsllen) = 'hh';	    
-	  }
-	  # print it out
-	  print OUT "${line}${seq}${line3}${line4}";
-	  
-	}
-      }
-    }
-    close(READ);
-    $log->write_to("\nFinished reading $readfile\n");
+
+  # now concatenate all the TSL files to make one
+  my $tsl_fastq = "TSL/sl.fq";
+  $wormbase->run_command("cat TSL-tmp/* > $tsl_fastq", $log);
+  $wormbase->run_command("rm -rf TSL-tmp", $log);
+
+
+  # Is the read length of the TSL-stripped reads less than 50?  
+  # If so then we should set --segment-length to be less than half the
+  # read length, otherwise the alignments are not done properly and we
+  # don't get a junctions.bed file output
+  my $segment_length = 25; # the default value
+  my $seq_length = get_read_length($tsl_fastq);
+  my $cmd_extra='';
+  if ($seq_length < 50) {
+    $segment_length = int($seq_length / 2);
+    $segment_length--; # we want it to be less than half the length
+    $cmd_extra .= " --segment-length $segment_length ";
+    # and the documentation now says to set the --segment-mismatches to 1 or 0
+    $cmd_extra .= " --segment-mismatches 0 ";
   }
-  close(OUT);
-  untie %hits;
-  unlink $hitsdb;
 
   # now run tophat on this set of TSL reads
   my $G_species = $wormbase->full_name('-g_species' => 1);
-  $log->write_to("run tophat $output\n");
-  $status = $wormbase->run_command("/software/worm/tophat/tophat $cmd_extra --output-dir TSL /nfs/wormpub/RNASeq/$species/reference-indexes/$G_species $output", $log);
-  $log->write_to("remove TSL fastq files\n");
-  $wormbase->run_command("rm -f $output", $log);
-  if ($status != 0) { return $status;  } # only exit on error after gzipping the files
+
+  $log->write_to("run tophat with $tsl_fastq\n");
+
+  $status = $wormbase->run_command("/software/worm/tophat/tophat $cmd_extra --output-dir TSL /nfs/wormpub/RNASeq/$species/reference-indexes/$G_species $tsl_fastq", $log);
+
+#  $log->write_to("remove TSL fastq files\n");
+#  $wormbase->run_command("rm -f $tsl_fastq", $log);
+  if ($status != 0) { return $status;  }
 
   # now parse the results looking for TSL sites
   my $TSLfile = "TSL/accepted_hits.bam";
-  $samtools = "/software/worm/samtools/samtools view $TSLfile";
+  my $samtools = "/software/worm/samtools/samtools view $TSLfile";
 
   my %results; # hash of TSL sites found by RNAseq alignment
   $log->write_to("get the TSL sites found by alignment\n");
@@ -1459,13 +1328,17 @@ sub TSL_stuff {
   while (my $line = <HITS>) {
     my $sense = '+';
     my ($id, $flags, $chrom, $pos, $seq) = ($line =~ /^(\S+)\s+(\d+)\s+(\S+)\s+(\d+)\s+\S+\s+\S+\s+\S+\s+\S+\s+\S+\s+(\S+)/);
-    my ($tsl) = ($id =~ /\.(SL\d+)/);
+    my ($tsl) = ($id =~ /(SL\d)/);
     if ($flags & 0x10) { # find and deal with reverse alignments
       $sense = '-';
       $pos = $pos + (length $seq) - 2; # go past the 'A' of the 'AG' we added on to ensure we hit a splice site
     } else {
       $pos = $pos + 1; # go past the 'A' of the 'AG' we added on to ensure we hit a splice site
     }
+    if (!defined $chrom) {print "undefined chrom in ID $id\n";}
+    if (!defined $pos) {print "undefined pos in ID $id\n";}
+    if (!defined $sense) {print "undefined sense in ID $id\n";}
+    if (!defined $tsl) {print "undefined tsl in ID $id\n";}
     $results{$chrom}{$pos}{$sense}{$tsl}++;
     #print "store: ${chrom} ${pos} ${sense} ${tsl} value: $results{$chrom}{$pos}{$sense}{$tsl} $seq\n";
   }
@@ -1476,6 +1349,7 @@ sub TSL_stuff {
   my %found; # hash of TSL Feature object IDs with evidence from RNASeq - holds no. of supporting reads
   my %not_found; # hash of TSL Feature object IDs with no evidence from this RNASeq experiment
 
+  print "Using database $database to look up Features\n";
   my $table_def = &write_feature_def;
   my $table_query = $wormbase->table_maker_query($database, $table_def);
   while(<$table_query>) {
@@ -1487,7 +1361,8 @@ sub TSL_stuff {
     if (!defined $feature) {next}
     if (!defined $clone) {$log->write_to("Feature $feature does not have a position mapped\n"); next}
     if (!defined $start) {$log->write_to("Feature $feature does not have a position mapped\n"); next}
-    my ($TSL_chrom, $TSL_coord) = $coords->Coords_2chrom_coords( $clone, $start );
+    my ($TSL_chrom, $TSL_coord);
+    ($TSL_chrom, $TSL_coord) = $coords->Coords_2chrom_coords( $clone, $start );
     if ($start < $end) { # forward sense
       print "looking for: ${TSL_chrom} ${TSL_coord} + ${method}\n";
 
@@ -1529,21 +1404,36 @@ sub TSL_stuff {
   foreach my $TSL_chrom (keys %results) {
     foreach my $TSL_coord (keys %{$results{$TSL_chrom}}) {
       foreach my $sense (keys %{$results{$TSL_chrom}{$TSL_coord}}) {
-	foreach my $method (keys %{$results{$TSL_chrom}{$TSL_coord}{$sense}}) {
-	  if (!defined $results{$TSL_chrom}{$TSL_coord}{$sense}{$method}) {next} # ignore the deleted entries
-	  my $ft_id = "WBsf#${TSL_chrom}#${TSL_coord}#${sense}#${method}"; # totally bogus Feature ID, needs to be changed before loading to acedb
-	  print NEWACE "\n\nFeature : \"$ft_id\"\n";
-#	  print NEWACE "Sequence \n";
-#	  print NEWACE "Flanking_sequences\n";
-	  print NEWACE "Species \"$full_species\"\n";
-	  print NEWACE "Description \"$method trans-splice leader acceptor site\"\n";
-	  print NEWACE "SO_term SO:0000706\n";
-	  print NEWACE "Method $method\n";
-	  print NEWACE "Defined_by_analysis $analysis\n";
-	  my $reads =  $results{$TSL_chrom}{$TSL_coord}{$sense}{$method}; # reads
-	  print NEWACE "Remark \"Defined by RNASeq data from $analysis with $reads reads\"\n";
 
-	  #$log->write_to("No Feature object for: chrom: $TSL_chrom pos: $TSL_coord sense: $sense type: $method, reads= $results{$TSL_chrom}{$TSL_coord}{$sense}{$method}\n");
+	# get the flanking sequences and write the Feature_object coords for this new Feature
+	my ($feat_clone, $clone_start, $clone_end, $left_flank, $right_flank) = get_feature_flanking_sequences($TSL_chrom, $TSL_coord, $TSL_coord+1, $sense);
+	if (defined $feat_clone) {
+	    
+	  foreach my $method (keys %{$results{$TSL_chrom}{$TSL_coord}{$sense}}) {
+	    if ($left_flank !~ /AGTTTGAG$/ || $method ne 'SL1') { # check the splice sequence isn't in the genome next to it
+	      if (!defined $results{$TSL_chrom}{$TSL_coord}{$sense}{$method}) {next} # ignore the deleted entries
+	      my $ft_id = "WBsf#${TSL_chrom}#${TSL_coord}#${sense}#${method}"; # totally bogus but unique Feature ID, needs to be changed before adding to Build
+	      print NEWACE "\n\nFeature : \"$ft_id\"\n";
+	      print NEWACE "Sequence \"$feat_clone\"\n";
+	      print NEWACE "Flanking_sequences \"$feat_clone\" \"$left_flank\" \"$right_flank\"\n";
+	      print NEWACE "Species \"$full_species\"\n";
+	      print NEWACE "Description \"$method trans-splice leader acceptor site\"\n";
+	      print NEWACE "SO_term SO:0000706\n";
+	      print NEWACE "Method $method\n";
+	      print NEWACE "Defined_by_analysis $analysis\n";
+	      my $reads =  $results{$TSL_chrom}{$TSL_coord}{$sense}{$method}; # reads
+	      print NEWACE "Remark \"Defined by RNASeq data from $analysis with $reads reads\"\n";
+	      print NEWACE "\n\n";
+	      print NEWACE "Sequence : \"$feat_clone\"\n";
+	      print NEWACE "Feature_object \"$ft_id\" $clone_start $clone_end\n\n";
+	      
+	      #$log->write_to("No existing Feature object for: chrom: $TSL_chrom pos: $TSL_coord sense: $sense type: $method, reads= $results{$TSL_chrom}{$TSL_coord}{$sense}{$method}\n");
+	    } else {
+	      $log->write_to("Ignoring site chromosome: $TSL_chrom, position: $TSL_coord sense: $sense because it is just downstream of the last 8 bases of the standard SL1 and so it probably a spurious hit and not trans-spliced\n");
+	    }
+	  }
+	} else {
+	  $log->write_to("Couldn't find flanking sequence for chromosome: $TSL_chrom, position: $TSL_coord sense: $sense\n");
 	}
       }
     }
@@ -1567,7 +1457,7 @@ sub TSL_stuff {
   }
   close(ACE);
 
-
+  $log->write_to("TSL stuff done\n");
 
 
 
@@ -1579,6 +1469,7 @@ sub TSL_stuff {
 ######################################
 
 # Returns name of type of TSL and length of TSL at start of sequence
+# this routine is not used - using the script get_TSL_RNASeq_reads.pl instead
 
 sub match_tsl {
 
@@ -1971,6 +1862,49 @@ END4
 }
 
 
+
+############################################################################
+# get the clone coords and the flanking sequences
+
+
+sub get_feature_flanking_sequences {
+  my ($chromosome, $start, $end, $sense) = @_;
+
+  # returned data
+  my ($left_flank, $right_flank);
+
+  my @clone_coords = $coords->LocateSpan($chromosome, $start, $end ); 
+  my ($clone, $clone_start, $clone_end) = @clone_coords;
+    
+  # use reverse sense coords
+  if ($sense eq '-') {
+    ($clone_end, $clone_start) = ($clone_start, $clone_end);
+    $clone_end--;
+    $clone_start--;
+  }
+
+  # now get the left and right flanking sequences for this position
+  ($left_flank, $right_flank) = $mapper->get_flanking_sequence_for_feature($clone, $clone_start, $clone_end, 1, 30); # fourth argument says this is a zero-length feature
+
+   
+  if (! defined $left_flank) {
+    # try again on a larger sequence
+    my @clone_coords = $coords->LocateSpan($chromosome, $start-5000, $end+5000 ); 
+    $clone_start = $clone_coords[1]+5000;       # the start position of feature in clone coordinates
+    $clone_end = $clone_coords[2]-5000;         # the end position of feature in clone coordinates
+    $clone = $clone_coords[0];
+
+    ($left_flank, $right_flank) = $mapper->get_flanking_sequence_for_feature($clone, $clone_start, $clone_end, 1, 30); # fourth argument says this is a zero-length feature
+
+    if (! defined $left_flank) {
+      # give up
+      $log->write_to( "OUT of sequence when trying to find flanking regions in $clone, $clone_start, $clone_end\n");
+      return (undef, undef, undef);
+    }
+  }
+  
+  return ($clone, $clone_start, $clone_end, $left_flank, $right_flank);
+}
 
 ############################################################################
 
