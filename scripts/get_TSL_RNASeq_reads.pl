@@ -133,6 +133,7 @@ while (my $id = <READ>) {
       #print "$seq has $tslname, len = $tsllen\n\n";
       # add the TSL type to the ID
       chomp $id;
+      $id =~ s/\//_/g; # change / to _ because tophat removed anything after the slash when it writes uot the bam data
       $id  =~ s/$id/${id}\.\+\.${tslname}/;
       chomp $line3;
       $line3 =~ s/$id/${id}\.\+\.${tslname}/;	
@@ -154,35 +155,35 @@ while (my $id = <READ>) {
 # sequencing the 3' end of the fragments of mRNA and so are not likely
 # to sequence the very 5' end.
 
-      } else {
-	# else check for sequence in reverse sense
-	chomp $seq;
-	($tslname, $tsllen) = match_tsl($seq, '-');
-	if (defined $tslname) {
-	  #print "$seq has $tslname, len = $tsllen\n\n";
-	  # add the TSL type to the ID
-	  chomp $id;
-	  $id =~ s/\//_/g; # change / to _ because tophat removed anything after the slash when it writes uot the bam data
-	  $id  =~ s/$id/${id}\.\-\.${tslname}/;
-	  chomp $line3;
-	  $line3 =~ s/$id/${id}\.\-\.${tslname}/;	
-	  # remove the TSL from the sequence
-	  # stick 'AG' on the end of the sequence
-	  substr($seq, - $tsllen) = 'CT';
-	  # remove the TSL quality
-	  # stick the quality code 'II' on the end
-	  chomp $line4;
-	  substr($line4, - $tsllen) = 'II';
-	  # print it out
-	  print OUT_SL "${id}\n${seq}\n${line3}\n${line4}\n";
-	  if ($tslname =~ /SL1/) {
-	    $sl1_reads++;
-	  } else {
-	    $sl2_reads++;
-	  }
-	  $negative_reads++;
+    } else {
+      # else check for sequence in reverse sense
+      chomp $seq;
+      ($tslname, $tsllen) = match_tsl($seq, '-');
+      if (defined $tslname) {
+	#print "$seq has $tslname, len = $tsllen\n\n";
+	# add the TSL type to the ID
+	chomp $id;
+	$id =~ s/\//_/g; # change / to _ because tophat removed anything after the slash when it writes uot the bam data
+	$id  =~ s/$id/${id}\.\-\.${tslname}/;
+	chomp $line3;
+	$line3 =~ s/$id/${id}\.\-\.${tslname}/;	
+	# remove the TSL from the sequence
+	# stick 'AG' on the end of the sequence
+	substr($seq, - $tsllen) = 'CT';
+	# remove the TSL quality
+	# stick the quality code 'II' on the end
+	chomp $line4;
+	substr($line4, - $tsllen) = 'II';
+	# print it out
+	print OUT_SL "${id}\n${seq}\n${line3}\n${line4}\n";
+	if ($tslname =~ /SL1/) {
+	  $sl1_reads++;
+	} else {
+	  $sl2_reads++;
 	}
+	$negative_reads++;
       }
+    }
   }
 
 close(READ);
