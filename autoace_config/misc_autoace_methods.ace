@@ -2234,16 +2234,25 @@ Right_priority	 2.200000
 Method : "split"
 // never populated with data?
 
-// Usage of this should decrease with time as these errors are fixed - GWW 23 Nov 2009
 Method : "Genome_sequence_error"
+Remark "A possible error in the reference sequence has been noted at this position."
 Colour	 BLUE
 Width    2.000000
-GFF_source	 "RNASeq" // LaDeana's work on her RNASeq with input from Gary Williams
+GFF_source	 "RNASeq" // Most sequence error corrections come from RNASeq data now.
 GFF_feature	 "possible_base_call_error" // SO:0000701
+GFF_SO : "SO:0000701" // possible_base_call_error
+
+Method : "Corrected_genome_sequence_error"
+Remark "A probable error in the reference sequence has been corrected at this position."
+Colour	 PALEBLUE
+Width    2.000000
+GFF_source	 "RNASeq" // Most sequence error corrections come from RNASeq data now.
+GFF_feature	 "base_call_error_correction" // SO:0001526
 GFF_SO : "SO:0001526" // base_call_error_correction
 
+
 Method : "RNASeq_splice"
-Remark   "RNASeq splice region. These are the regions spanned by the SRA RNASeq short reads aligned to the genome by tophat/bowtie. The value storedof the splice is the sum of the number of reads observed spanning this region from all aligned RNASeq libraries."
+Remark   "RNASeq splice region. These are the regions spanned by the SRA RNASeq short reads aligned to the genome by tophat/bowtie. The value stored of the splice is the sum of the number of reads observed spanning this region from all aligned RNASeq libraries."
 Colour   BLACK
 Score_by_width
 Score_bounds     1.0 100.0
@@ -2435,6 +2444,19 @@ Width "1.000000"
 Show_text
 Remark "Published micro-ORF"
 
+
+
+Method : "binding_site"  
+Colour	MAGENTA
+Strand_sensitive
+Width	 1.000000
+Show_up_strand
+Show_text
+GFF_source "binding_site"
+GFF_feature "binding_site" // SO:0000409
+GFF_SO : "SO:0000409" // binding_site	 
+Remark	 "Binding site. This is the site that a non-histone and non-transcription factor protein (or other molecule) binds to. The position is known precisely."
+
 Method : "binding_site_region" 	  
 Colour  MAGENTA 	 
 Strand_sensitive 	 
@@ -2442,9 +2464,57 @@ Width    1.000000
 Show_up_strand 	 
 Show_text 	 
 GFF_source "binding_site_region"
-GFF_feature "binding_site"
+GFF_feature "binding_site" // SO:0000409
 GFF_SO : "SO:0000409" // binding_site
-Remark   "manually curated binding site region" 	 
+Remark   "A region containing one or more binding sites. This ia a region defined by an experiment such as CHiP-Seq which contains one or more binding sites for a non-histone and non-transcription factor protein (or other molecule). The position of the binding site is not known accurately." 	 
+
+
+Method : "TF_binding_site"  
+Colour	BLUE
+Strand_sensitive
+Width	 1.000000
+Show_up_strand
+Show_text
+GFF_source "TF_binding_site"
+GFF_feature "TF_binding_site" // SO:0000235
+GFF_SO : "SO:0000235" // TF_binding_site	 
+Remark	 "Transcription factor binding site. The position is known precisely." 
+
+Method : "TF_binding_site_region" 	  
+Colour  PALEBLUE 	 
+Strand_sensitive 	 
+Width    1.000000 	 
+Show_up_strand 	 
+Show_text 	 
+GFF_source "TF_binding_site_region"
+GFF_feature "TF_binding_site" // SO:0000235
+GFF_SO : "SO:0000235" // TF_binding_site	 
+Remark   "A region containing one or more TF binding sites. This ia a region defined by an experiment such as CHiP-Seq which contains one or more binding sites for a transcription factor. The position of the binding site is not known accurately." 	 
+
+
+Method : "histone_binding_site"  
+Colour	GREEN
+Strand_sensitive
+Width	 1.000000
+Show_up_strand
+Show_text
+GFF_source "histone_binding_site"
+GFF_feature "histone_binding_site" // SO:0001383
+GFF_SO : "SO:0001383" // histone_binding_site	 
+Remark	 "Histone binding site. The position is known precisely."
+
+Method : "histone_binding_site_region" 	  
+Colour  PALEGREEN 	 
+Strand_sensitive 	 
+Width    1.000000 	 
+Show_up_strand 	 
+Show_text 	 
+GFF_source "histone_binding_site_region"
+GFF_feature "histone_binding_site" // SO:0001383
+GFF_SO : "SO:0001383" // histone_binding_site
+Remark   "A region containing one or more histone binding sites. This ia a region defined by an experiment such as CHiP-Seq which contains one or more binding sites for a histone. The position of the binding site is not known accurately." 	 
+
+
 
 
 Method : "CHiP_seq_region"
@@ -2503,16 +2573,7 @@ GFF_source "promoter"
 GFF_SO "SO:0000167" // promoter	 
 Remark   "manually curated promoter region"
 
-Method : "binding_site"  
-Colour	MAGENTA
-Strand_sensitive
-Width	 1.000000
-Show_up_strand
-Show_text
-GFF_source "binding_site"
-GFF_feature "binding_site"
-GFF_SO : "SO:0000409" // binding_site	 
-Remark	 "manually curated binding site feature"
+
 
 Method : "Oligo_cap" /not mapped
 Remark	 "Oligo-cap sequence used in EST library generation. This feature is marked up for removal from the transcript sequence prior to mapping to the genome."
@@ -2751,13 +2812,25 @@ Right_priority  2.1
 Method : "micro_ORF"
 Right_priority  2.1
 
+Method : "binding_site"
+Right_priority  2.1
+
 Method : "binding_site_region"
 Right_priority  2.1
 
-Method : "CHiP_seq_region"
+Method : "TF_binding_site"  
 Right_priority  2.1
 
-Method : "binding_site"
+Method : "TF_binding_site_region" 	  
+Right_priority  2.1
+
+Method : "histone_binding_site"  
+Right_priority  2.1
+
+Method : "histone_binding_site_region" 	  
+Right_priority  2.1
+
+Method : "CHiP_seq_region"
 Right_priority  2.1
 
 Method : "TSL"
@@ -2780,6 +2853,12 @@ Right_priority  2.4
 
 Method : "three_prime_UTR"
 Right_priority  2.4
+
+Method : "Genome_sequence_error"
+Right_priority  2.45
+
+Method : "Corrected_genome_sequence_error"
+Right_priority  2.45
 
 Method : "Transposon_CDS"
 Right_priority  2.5
