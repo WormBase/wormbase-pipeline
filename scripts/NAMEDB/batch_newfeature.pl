@@ -14,6 +14,9 @@ GetOptions (	"test"       => \$test,
 
 die "give me a number of features that you want\n"  unless ($request =~ /^\d+$/);
 
+my $first_id = undef;
+my $last_id;
+
 #connect to name server and set domain to 'Feature'
 my $DB    	= 'wbgene_id;shap;3303';
 $DB = 'test_'.$DB if $test;
@@ -25,10 +28,14 @@ my $c = 0;
 while( $c < $request ){
     my $id = $db->idCreate;
     print "$id\n";
+    if (!defined $first_id) {$first_id = $id}
+    $last_id = $id;
     $c++;
 }
 
-print "made $request new feature IDs\n";
+print "Made $request new feature IDs\n";
+print "First ID assigned:  $first_id\n";
+print "Last ID assigned:   $last_id\n";
 
 exit;
 
