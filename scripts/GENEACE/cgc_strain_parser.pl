@@ -7,8 +7,8 @@
 # Script to convert cgc strain file into ace file for geneace
 # Page download and update upload to geneace has been automated [ck1]
 
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2012-01-11 14:25:13 $
+# Last updated by: $Author: mt3 $
+# Last updated on: $Date: 2012-06-15 15:50:10 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -73,7 +73,7 @@ my $rundate     = $wormbase->rundate;
 ##########################
 
 my $input_file = "$path/cgc_strain_list_$rundate";
-system("wget -O $input_file http://www.cbs.umn.edu/CGC/strains/gophstrnt.txt") && die "Unable to download strain data file from CGC website\n\n";
+system("wget -O $input_file https://www.cbs.umn.edu/sites/default/files/public/downloads/celelist.txt") && die "Unable to download strain data file from CGC website\n\n";
 
 ############################################
 # get hash to convert CGC name to Gene ID
