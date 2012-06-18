@@ -7,8 +7,8 @@
 #
 #  DESCRIPTION:  adds additional information to Operon GFF lines
 #
-#       AUTHOR:  $Author: pad $
-#      VERSION:  $Revision: 1.1 $
+#       AUTHOR:  $Author: klh $
+#      VERSION:  $Revision: 1.2 $
 #      CREATED:  21/05/12 10:40:04 BST
 #===============================================================================
 
@@ -19,7 +19,7 @@ use IO::File;
 use Getopt::Long;
 use strict;
 
-my ($debug,$test,$species,$store,$file,$backup, $gff_dir);
+my ($debug,$test,$species,$store,$file,$gff_dir);
 
 GetOptions(
 	   'debug=s'       => \$debug,
@@ -28,7 +28,6 @@ GetOptions(
 	   'store:s'       => \$store,
 	   'file:s'        => \$file,
 	   'gffdir:s'      => \$gff_dir,
-	   'backup'        => \$backup,
 	  );
 
 
@@ -98,10 +97,6 @@ foreach my $fileprefix (@gff_files) {
   close($out_fh);
   close($in_fh);
   
-  if ($backup) {
-    $wormbase->run_command("cp -f $in_file ${in_file}_preoperon_bk", $log);
-    $wormbase->run_command("gzip ${in_file}_preoperon_bk", $log);
-  }
   $wormbase->run_command("mv -f $out_file $in_file", $log);
 }
 
