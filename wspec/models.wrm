@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: pad $
-// Last edited on: $Date: 2012-04-20 10:50:19 $
+// Last edited on: $Date: 2012-06-19 15:38:47 $
 
 
 ////////////////////////
@@ -423,14 +423,15 @@
 					 Biased_enhancement		
 					 Complex_phenotype_bias		
 					 No_interaction				// Negative data; no interaction was observed after testing
-		Interactor PCR_interactor UNIQUE ?PCR_product #Interactor_info	// PCR_product of the interacting gene or protein, e.g. Yeast Two Hybrid experiments
-			   Sequence_interactor UNIQUE ?Sequence #Interactor_info	// Sequence of the interacting gene or protein
+		Interactor PCR_interactor ?PCR_product #Interactor_info	// PCR_product of the interacting gene or protein, e.g. Yeast Two Hybrid experiments
+			   Sequence_interactor ?Sequence #Interactor_info	// Sequence of the interacting gene or protein
 			   Interactor_overlapping_CDS ?CDS	#Interactor_info	// CDS of the interacting gene or protein (or related sequence)
 			   Interactor_overlapping_gene ?Gene XREF Interaction #Interactor_info		// Gene (or portion of gene) involved in the interaction
 			   Interactor_overlapping_protein ?Protein XREF Interaction #Interactor_info	// Protein (or portion of protein) involved in the interaction
 			   Molecule_regulator ?Molecule XREF Interaction #Interactor_info			// Molecule that regulates a gene or protein (ported from Gene_regulation class)
 			   Other_regulator ?Text #Interactor_info	// Free text describing a regulator entity or condition that does not fall into a standard WormBase category
 			   Other_regulated ?Text #Interactor_info	// Free text describing a regulated entity or condition that does not fall into a standard WormBase category
+			   Rearrangement  ?Rearrangement XREF Interactor #Interactor_info
 		Interaction_summary ?Text #Evidence
 		Detection_method Affinity_capture_luminescence		// A physical interaction detection technique
 				 Affinity_capture_MS			// A physical interaction detection technique
@@ -479,6 +480,10 @@
 				  Low_throughput
 		Interaction_RNAi ?RNAi XREF Interaction			// RNAi experiment associated with the interaction
 		Interaction_phenotype ?Phenotype XREF Interaction	// Phenotype associated with a genetic interaction
+		Unaffiliated_variation   ?Variation
+		Unaffiliated_transgene   ?Transgene
+		Unaffiliated_antibody    ?Antibody
+		Unaffiliated_expr_pattern   ?Expr_pattern
 		WBProcess ?WBProcess XREF Interaction			// WormBase biological process associated with the interaction
 		DB_info Database ?Database ?Database_field ?Accession_number	// Any database reference to the interaction outside of WormBase, e.g. BioGRID, Interactome
 		Paper ?Paper XREF Interaction
@@ -496,6 +501,8 @@
 				       Cis_regulator		   // A cis-acting regulator, e.g. an enhancer element
 				       Trans_regulated		   // A gene regulated in trans, e.g. by a transcription factor
 				       Cis_regulated		   // A gene regulated in cis, e.g. by an enhancer element
+		       Intragenic_effector_variation   ?Variation   XREF   Interactor
+		       Intragenic_affected_variation   ?Variation   XREF   Interactor
 		       Expr_pattern ?Expr_pattern		   // An expression pattern altered to indicate 
 		       Variation ?Variation XREF Interactor	   // (allele, polymorphism, etc.) involved in the interaction //removed XREF from proposal
 		       Transgene ?Transgene XREF Interactor	   // Transgene XREF Interactor that carries an interacting gene //removed XREF from proposal
@@ -528,6 +535,7 @@
                 Phenotype ?Phenotype XREF Rearrangement #Phenotype_info
 		Phenotype_not_observed ?Phenotype XREF Not_in_Rearrangement #Phenotype_info  //added by Wen to separate Not phenotype from real phenotypes
 		Balances ?Map #Balancer
+		Interactor ?Interaction XREF Rearrangement
 		Marked By_variation ?Variation XREF Marked_rearrangement
 		       By_transgene ?Transgene XREF Marked_rearrangement
 		       By_other ?Text
@@ -614,7 +622,8 @@
 	 	   Log_size_of_population UNIQUE Float 
 	 	   Sampled_by Text // the person who found the worms
                    Isolated_by ?Person // the person who isolated the worms from the sample
-		   Date UNIQUE DateType 
+		   Date UNIQUE DateType
+		   Picture ?Picture
 
 ////////////////////////////////////////////////////////////////////////////////
 // ?Lab_Location class
@@ -2184,18 +2193,22 @@
                 Link_diagram Text
 		Database     ?Database	?Database_field	?Accession_number 
                 URL     Text // for storing static URLs, such as WormAtlas, WormBook
-                Child   PART_OF_c       ?Anatomy_term   XREF    PART_OF_p
-                        IS_A_c  ?Anatomy_term   XREF    IS_A_p
-                        DESCENDENT_OF_c ?Anatomy_term   XREF    DESCENDENT_OF_p
-                        DESC_IN_HERM_c  ?Anatomy_term   XREF    DESC_IN_HERM_p
-                        DESC_IN_MALE_c  ?Anatomy_term   XREF    DESC_IN_MALE_p
-                        DEVELOPS_FROM_c ?Anatomy_term   XREF    DEVELOPS_FROM_p
-                Parent  PART_OF_p       ?Anatomy_term   XREF    PART_OF_c
-                        IS_A_p  ?Anatomy_term   XREF    IS_A_c
-                        DESCENDENT_OF_p ?Anatomy_term   XREF    DESCENDENT_OF_c
-                        DESC_IN_HERM_p  ?Anatomy_term   XREF    DESC_IN_HERM_c
-                        DESC_IN_MALE_p  ?Anatomy_term   XREF    DESC_IN_MALE_c
-                        DEVELOPS_FROM_p ?Anatomy_term   XREF    DEVELOPS_FROM_c
+                Child   PART_OF_c	?Anatomy_term   XREF    PART_OF_p
+                        IS_A_c		?Anatomy_term   XREF    IS_A_p
+                        DESCENDENT_OF_c	?Anatomy_term   XREF	DESCENDENT_OF_p
+                        DESC_IN_HERM_c	?Anatomy_term   XREF	DESC_IN_HERM_p
+                        DESC_IN_MALE_c	?Anatomy_term   XREF	DESC_IN_MALE_p
+                        DEVELOPS_FROM_c	?Anatomy_term   XREF	DEVELOPS_FROM_p
+			CELL_c		?Anatomy_term	XREF	CELL_p
+			XUNION_OF_c	?Anatomy_term	XREF	XUNION_OF_p
+                Parent  PART_OF_p	?Anatomy_term   XREF	PART_OF_c
+                        IS_A_p		?Anatomy_term	XREF	IS_A_c
+                        DESCENDENT_OF_p	?Anatomy_term   XREF	DESCENDENT_OF_c
+                        DESC_IN_HERM_p	?Anatomy_term   XREF	DESC_IN_HERM_c
+                        DESC_IN_MALE_p	?Anatomy_term   XREF	DESC_IN_MALE_c
+                        DEVELOPS_FROM_p	?Anatomy_term   XREF	DEVELOPS_FROM_c
+			CELL_p		?Anatomy_term	XREF	CELL_c
+			XUNION_OF_p	?Anatomy_term	XREF	XUNION_OF_c
                 Attribute_of    Expr_pattern    ?Expr_pattern   XREF    Anatomy_term
 				Expression_cluster ?Expression_cluster XREF Anatomy_term #Evidence 
                                 GO_term ?GO_term XREF Anatomy_term ?AO_code #Evidence
@@ -2246,6 +2259,7 @@
 		WBProcess ?WBProcess XREF Life_stage
 		Remark	?Text #Evidence
 		Definition ?Text // Wen [020607 krb]
+		Name UNIQUE Text
 		Other_name ?Text // Wen [020607 krb]
                 Reference ?Paper XREF Life_stage
 		Curated_by UNIQUE Text // Sylvia [010928 krb]
@@ -2321,7 +2335,8 @@
                 Promoter  Driven_by_gene ?Gene XREF Drives_transgene				// eventually change this tag to promoter_gene
                           Driven_by_construct  ?Text						// eventually change this tag to promoter_artificial
                 Reporter  Reporter_product ?Text						// removed multiple tags for Reporter_product
-                          Gene ?Gene XREF Transgene_product Text 
+                          Gene ?Gene XREF Transgene_product Text
+			  3_UTR  ?Gene
                 Reporter_type  ?Text								// added for Transcriptional fusion or Translational fusion
                 Construction  Fragment ?Text							// new tag to collect the following as subtags, Fragment may be deleted later
 			      Coinjection_marker ?Text
@@ -2372,7 +2387,6 @@
         Uniquely_mapped  //boolean; if present, signifies that ?RNAi object has a unique sequence 
 			// which maps to a single place in the genome
         Experiment      Laboratory ?Laboratory
-                        Author ?Author
                         Date UNIQUE DateType
                         Strain UNIQUE ?Strain
                         Genotype UNIQUE ?Text   //used when no Strain object exists
@@ -2460,6 +2474,8 @@
 
 ?PCR_product SMap S_parent UNIQUE Canonical_parent UNIQUE ?Sequence XREF PCR_product
  		  S_child Expr_profile ?Expr_profile XREF PCR_product UNIQUE Int UNIQUE Int #SMap_info // added for Expr_profile class [010912 krb]
+	     Mapping_primers Left_mapping_primer UNIQUE Text
+			     Right_mapping_primer UNIQUE Text
 	     Species UNIQUE ?Species
  	     Overlaps_CDS ?CDS XREF Corresponding_PCR_product  // Dan PCR mappings [010419 dl]
  	     Overlaps_transcript ?Transcript XREF Corresponding_PCR_product  
