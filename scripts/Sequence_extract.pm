@@ -89,22 +89,22 @@ sub invoke {
       my $seqname = $self->{chromprefix} . "$chromosome";
       
       # dump the chromosome if it doesn't exist
-      unless( -e "$database/$chr_dir/$seqname.dna" ) {
+      unless( -e "$chr_dir/$seqname.dna" ) {
         open (ACE, "| $tace $database") or croak "cant connect to $database :$!\n";
         
         print "writing DNA seq for $seqname\n";
         print ACE <<EOF;
 clear
 find sequence $seqname
-dna -f $database/$chr_dir/$seqname.dna
+dna -f $chr_dir/$seqname.dna
 EOF
         close ACE;
-        $wormbase->remove_blank_lines("$database/$chr_dir/$seqname.dna");
+        $wormbase->remove_blank_lines("$chr_dir/$seqname.dna");
       }
       
       # read the file/sequence into $self
       $/ = "";
-      open (SEQ, "$database/$chr_dir/$seqname.dna") or croak "cant open the dna file for $seqname:$!\n";
+      open (SEQ, "$chr_dir/$seqname.dna") or croak "cant open the dna file for $seqname:$!\n";
       my $seq = <SEQ>;
       close SEQ;
       $/ = "\n";
