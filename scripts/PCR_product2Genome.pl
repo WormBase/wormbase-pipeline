@@ -2,7 +2,7 @@
 
 # Version: $Version: $
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2012-05-25 15:07:43 $
+# Last updated on: $Date: 2012-06-20 13:00:14 $
 
 use strict;
 use warnings;
@@ -75,14 +75,18 @@ $EPCR = "e-PCR" if not defined $EPCR;
 $MIN_PROD_SIZE = 50 if not defined $MIN_PROD_SIZE;
 $MAX_PROD_SIZE = 50000 if not defined $MAX_PROD_SIZE;
 $database = $wormbase->autoace if not $database;
+$acefile  = $wormbase->acefiles . "/PCR_products.mappings.ace" if not $acefile;
+
 $target   = $wormbase->genome_seq if not $target;
-$acefile  = $wormbase->acefiles . "/RNAi_homols.ace" if not $acefile;
+$log->log_and_die("Could not find $database\n") if not -d $database;
+$log->log_and_die("Could not find $target\n") if not -e $target;
 
 my $coords = Coords_converter->invoke($database, 0, $wormbase);
 
-my (%mapped, $missed_by_ipcress, $missed_by_epcr);
+my (%mapped, $missed_by_ipcress, $missed_by_epcr, $total_count, $fail_count);
 
 my $prods_to_map = &get_pcr_products();
+$total_count = scalar(keys %$prods_to_map);
 &map_with_ipcress($prods_to_map, \%mapped);
 
 foreach my $id (keys %$prods_to_map) {
@@ -106,6 +110,8 @@ foreach my $id (keys %$prods_to_map) {
 #
 # log the outstanding unmapped products
 #
+my $fail_count = scalar(keys %$prods_to_map);
+$log->write_to("Failed to map %d products (%d percent)\n", $fail_count, 100 * ($fail_count / $total_count));
 foreach my $id (keys %$prods_to_map) {
   $log->write_to(sprintf("Could not map %s %s %s\n", $id, @{$prods_to_map->{$id}}));
 }
