@@ -2,7 +2,7 @@
 
 # Version: $Version: $
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2012-06-20 13:00:14 $
+# Last updated on: $Date: 2012-06-20 14:42:14 $
 
 use strict;
 use warnings;
@@ -83,21 +83,26 @@ $log->log_and_die("Could not find $target\n") if not -e $target;
 
 my $coords = Coords_converter->invoke($database, 0, $wormbase);
 
-my (%mapped, $missed_by_ipcress, $missed_by_epcr, $total_count, $fail_count);
+my (%mapped, $missed_by_epcr, $total_count, $fail_count);
 
 my $prods_to_map = &get_pcr_products();
 $total_count = scalar(keys %$prods_to_map);
-&map_with_ipcress($prods_to_map, \%mapped);
+
+#
+# ipcress round 1
+#
+&map_with_ipcress($prods_to_map, \%mapped, 1);
 
 foreach my $id (keys %$prods_to_map) {
   if (exists $mapped{$id}) {
     delete $prods_to_map->{$id};
-  } else {
-    $missed_by_ipcress++;
   }
 }
 
-$log->write_to("$missed_by_ipcress products were not found be ipcress - Trying e-PCR\n");
+#
+# e-PCR
+#
+$log->write_to(sprintf("%d products were missed by ipcress round 1. Trying e-PCR\n", scalar(keys %$prods_to_map)));
 
 &map_with_epcr($prods_to_map, \%mapped);
 
@@ -107,11 +112,29 @@ foreach my $id (keys %$prods_to_map) {
   }
 }
 
+
+#
+# icress round 2 and 3
+#
+foreach my $mm (2, 3) {
+  $log->write_to(sprintf("%d products were missed by ePCR. Trying ipcress with %d mismatches\n", scalar(keys %$prods_to_map), $mm)); 
+
+ &map_with_ipcress($prods_to_map, \%mapped, $mm);
+
+  foreach my $id (keys %$prods_to_map) {
+    if (exists $mapped{$id}) {
+      delete $prods_to_map->{$id};
+    }
+  }
+}
+
+
 #
 # log the outstanding unmapped products
 #
-my $fail_count = scalar(keys %$prods_to_map);
-$log->write_to("Failed to map %d products (%d percent)\n", $fail_count, 100 * ($fail_count / $total_count));
+$fail_count = scalar(keys %$prods_to_map);
+$log->write_to(sprintf("\nFailed to map %d products (%.1f percent)\n\n", 
+                       $fail_count, 100 * ($fail_count / $total_count)));
 foreach my $id (keys %$prods_to_map) {
   $log->write_to(sprintf("Could not map %s %s %s\n", $id, @{$prods_to_map->{$id}}));
 }
@@ -173,7 +196,7 @@ exit;
 
 #############################
 sub map_with_ipcress {
-  my ($products, $mapped) = @_;
+  my ($products, $mapped, $mismatches) = @_;
 
   my $ipfile = "/tmp/PCR_products.WB.$$.ipcress.txt";
   open(my $ipfh, ">$ipfile") or $log->log_and_die("Could not open ipcress file for reading\n");
@@ -186,7 +209,7 @@ sub map_with_ipcress {
   }
   close($ipfh);
   
-  open(my $iprunfh, "$IPCRESS --memory 512 --mismatch 1 --pretty FALSE $ipfile $target |") 
+  open(my $iprunfh, "$IPCRESS --memory 512 --mismatch $mismatches --pretty FALSE $ipfile $target |") 
       or $log->log_and_die("Could not open ipcress command\n");
   while(<$iprunfh>) {
     /ipcress:\s+(\S+)\s+(\S+)\s+(\d+)\s+\S\s+(\d+)\s+(\d+)\s+\S\s+(\d+)\s+(\d+)\s+(\S+)/ and do {
