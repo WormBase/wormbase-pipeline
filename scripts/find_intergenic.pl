@@ -6,8 +6,8 @@
 #
 # by Gary Williams
 #
-# Last updated by: $Author: mh6 $                      
-# Last updated on: $Date: 2009-11-13 15:36:21 $        
+# Last updated by: $Author: klh $                      
+# Last updated on: $Date: 2012-06-20 08:43:54 $        
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -80,7 +80,7 @@ if ($operons ne "include" && $operons ne "only" && $operons ne "no") {
     die "Error: option -operons=$operons is invalid (requires 'include', 'only' or 'no')\n";
 }
 if (!defined($output)){
-  $output = $wormbase->chromosomes."/intergenic_sequences.dna" unless $output;
+  $output = $wormbase->sequences."/intergenic_sequences.dna" unless $output;
 }
 
 ##########################

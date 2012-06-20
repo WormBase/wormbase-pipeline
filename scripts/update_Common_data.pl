@@ -4,8 +4,8 @@
 # 
 # by Anthony Rogers et al
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2012-03-27 10:12:34 $
+# Last updated by: $Author: klh $
+# Last updated on: $Date: 2012-06-20 08:43:54 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -752,8 +752,8 @@ sub write_clones2seq  {
     my $species = $spDB->species;
     $full_names{$species} = $spDB->full_name();
     if ($spDB->assembly_type eq 'contig') {
-      my $chromdir = $spDB->chromosomes;
-      $supercontigs{$species} = "$chromdir/supercontigs.fa";
+      my $chromdir = $spDB->sequences;
+      $supercontigs{$species} = "$chromdir/genome.fa";
     }
   }
 

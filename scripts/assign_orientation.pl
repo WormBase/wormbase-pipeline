@@ -8,8 +8,8 @@
 # orientation yet.  It uses best splice site and overlap with
 # transcripts to find the most probable orientation.
 #
-# Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2009-05-21 12:44:45 $      
+# Last updated by: $Author: klh $     
+# Last updated on: $Date: 2012-06-20 08:43:54 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -460,7 +460,7 @@ sub read_chromosome {
   my $seq = &read_file($seq_file);
 
   if (! defined $seq) {
-    $seq = &read_entry($wormbase->chromosomes, $chromosome)
+    $seq = &read_entry($wormbase->genome_seq, $chromosome);
   }
 
   return $seq;
@@ -496,20 +496,14 @@ sub read_file {
 # read entry in a file if the file consists of lots of entries
 
 sub read_entry {
-  my ($dir, $chromosome) = @_;
+  my ($file, $chromosome) = @_;
 
   # if we have already read in the sequence entries, return the one for this chromosome
   if (exists $dna_entry{$chromosome}) {return $dna_entry{$chromosome};}
 
-  my $file = "$dir/supercontigs.fa"; # it might be called this
   print "Trying: $file\n" if ($verbose);
   if (! -e $file) {
-    print "Can't open the dna file for $file : $!\n" if ($verbose);
-    $file = "$dir/" . $wormbase->species . ".fa"; # or it might be called this - the nomenclature is not yet certain
-    print "Trying: $file\n" if ($verbose);
-
-  } elsif (! -e $file) {
-    die "Can't find chromosome sequence file for $dir, $chromosome\n";
+    die "Can't find chromosome sequence file for $file, $chromosome\n";
   }
 
   print "Reading DNA sequence entries\n";

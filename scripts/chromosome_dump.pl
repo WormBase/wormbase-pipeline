@@ -9,7 +9,7 @@
 # see pod for more details
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2011-11-07 12:29:15 $
+# Last updated on: $Date: 2012-06-20 08:43:54 $
 
 
 use strict;
@@ -25,7 +25,7 @@ use Storable;
 # Script variables and command-line options          #
 ######################################################
 
-our ($help, $debug, $dna, $gff, $zipdna, $zipgff, $composition, $database, $dump_dir, $test, $quicktest);
+our ($help, $debug, $dna, $gff, $zipdna, $zipgff, $composition, $database, $dump_dir, $genome_seq_file, $test, $quicktest);
 my $store;
 
 GetOptions ("help"        => \$help,
@@ -37,6 +37,7 @@ GetOptions ("help"        => \$help,
 	    "composition" => \$composition,
 	    "database=s"  => \$database,
 	    "dump_dir=s"  => \$dump_dir,
+            "genomeseq=s" => \$genome_seq_file,
 	    "test"        => \$test,
 	    "quicktest"   => \$quicktest,
 	    "store:s"     => \$store
@@ -77,7 +78,7 @@ if(!$dna && !$composition && !$zipdna){
 my $basedir   = $wormbase->basedir;
 $database = $wormbase->autoace     unless ($database);
 $dump_dir = $wormbase->chromosomes unless ($dump_dir);
-
+$genome_seq_file = $wormbase->genome_seq unless ($genome_seq_file);
 
 #####################################################
 # Main subroutines
@@ -128,12 +129,12 @@ sub dump_dna {
   foreach ($wormbase->get_chromosome_names(-mito => 1,-prefix=> 1)) {
     $wormbase->remove_blank_lines("$dump_dir/$_.dna", 'no_log');
   }
-  if ($wormbase->assembly_type eq 'contig') {
-    unlink "$dump_dir/supercontigs.fa" if -e "$dump_dir/supercontigs.fa";
-    foreach ($wormbase->get_chromosome_names(-mito => 1,-prefix=> 1)) {
-	    $wormbase->run_command("cat $dump_dir/$_.dna >> $dump_dir/supercontigs.fa",'no_log');
-    }
+
+  unlink $genome_seq_file if -e $genome_seq_file;
+  foreach ($wormbase->get_chromosome_names(-mito => 1,-prefix=> 1)) {
+    $wormbase->run_command("cat $dump_dir/$_.dna >> $genome_seq_file",'no_log');
   }
+
   $log->write_to("Finished dumping DNA\n\n");
 }
 

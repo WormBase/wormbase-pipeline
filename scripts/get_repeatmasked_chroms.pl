@@ -20,18 +20,14 @@ use Bio::SeqIO;
 # variables and command-line options # 
 ######################################
 
-my ($help, $debug, $test, $verbose, $store, $species, $wormbase,$database, $softmask);
-
-my $agp;
-my $out_dir;
-
+my ($help, $debug, $test, $verbose, $store, $species,$wormbase,$database, $softmask, $out_file);
 
 GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
 	    "test"       => \$test,
 	    "verbose"    => \$verbose,
 	    "store:s"    => \$store,
-	    "output:s"   => \$out_dir,
+	    "output:s"   => \$outfile,
 	    "database:s" => \$database,
 	    "species:s"  => \$species,
             "softmask"   => \$softmask,
@@ -60,9 +56,7 @@ unless ($database =~ /$species/) {
   $log->log_and_die("are you sure you have the right species / database combo\n Species :$species\nDatabase : $database\n");
 }
 
-
-$out_dir = $wormbase->chromosomes unless $out_dir;
-die "cant write to $out_dir\t$!\n" unless (-w $out_dir );
+my $chr_assembly = ($wormbase->assembly_type eq 'contig') ? 0 : 1;
 
 $log->write_to("Connecting to worm_dna\n");
 
@@ -76,40 +70,19 @@ my $dbobj = Bio::EnsEMBL::DBSQL::DBAdaptor->
 
 $log->write_to("Building chromosomes\n");
 
-my $file_suffix = $softmask ? "softmasked.dna" : "masked.dna";
-my $chr_assembly = ($wormbase->assembly_type eq 'contig') ? 0 : 1;
-
-my ($seqio, $filename);
-
-if (not $chr_assembly) {
-  $filename = "$out_dir/${species}_${file_suffix}";
-  $seqio = Bio::SeqIO->new(-format => 'fasta',
-                           -file => ">$filename");
+if (not defined $outfile) {
+  $out_file = ($softmask) ? $wormbase->softmasked_genome_seq : $wormbase->$wormbase->masked_genome_seq;
 }
 
+
+my $seqio = Bio::SeqIO->new(-format => 'fasta',
+                         -file => ">$out_file");
 
 foreach my $seq ( @{$dbobj->get_SliceAdaptor->fetch_all('toplevel')}) {
-  my $name = $seq->seq_region_name();
-
-  my ($outfile, $outfh);
-  if ($chr_assembly) {
-    $filename = "$out_dir/${name}_${file_suffix}";
-    $seqio = Bio::SeqIO->new(-format => 'fasta',
-                             -file => ">$filename");
-  }
-
   &print_seq($seqio, $seq);
-
-  if ($chr_assembly) {
-    $seqio->close();
-    $wormbase->run_command("gzip -9 $filename", $log);
-  }
 }
 
-if (not $chr_assembly){
-  $seqio->close();
-  $wormbase->run_command("gzip -9 $filename", $log);
-}
+$seqio->close();
 
 $log->write_to("Done\n");
 $log->mail();

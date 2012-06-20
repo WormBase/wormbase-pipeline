@@ -61,21 +61,25 @@ sub TSL {
 
 
 # methods to overwrite
-# pulls the names from a fasta file
+#
+# Default method, not usually used - pulls the names from a fasta file
+#
 sub chromosome_names {
-	my $self=shift;
-
-	unless ($self->{'chromosome_names'}) {
-		use IO::File;
-		my $species = lc(ref($self));
-		my $inf= new IO::File $self->wormpub."/DATABASES/$species/CHROMOSOMES/supercontigs.fa",'r' || croak(@$); #reference file
-		my $prefix=$self->chromosome_prefix;
-		my @ids;
-		while(<$inf>){ push @ids,"$1" if $_=~/^>$prefix(\S+)/}
-		$inf->close;
-		$self->{'chromosome_names'}=\@ids;
-	}
-	return @{$self->{'chromosome_names'}}
+  my $self=shift;
+  
+  unless ($self->{'chromosome_names'}) {
+    my $species = lc(ref($self));
+    my $prefix=$self->chromosome_prefix;
+    my @ids;
+    
+    open(my $genomefh, $self->genome_seq) or croak("Could not open genome sequence for reading\n"); 
+    while(<$genomefh>){ 
+      push @ids,"$1" if $_=~/^>$prefix(\S+)/;
+    }
+    close($genomefh);
+    $self->{'chromosome_names'} = \@ids;
+  };
+  return @{$self->{'chromosome_names'}};
 }
 
 sub mt_name {return undef}
@@ -1792,8 +1796,5 @@ does use the CB1 assembly names.
 =head1 Remanei
 
 inherits from Species and Wormbase
-
-uses '/nfs/disk100/wormpub/DATABASES/remanei/supercontigs.fa'
-to get the sequence names by stripping prefix='Contig' from them.
 
 =cut 

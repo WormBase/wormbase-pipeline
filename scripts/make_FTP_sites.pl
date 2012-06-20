@@ -6,7 +6,7 @@
 # builds wormbase & wormpep FTP sites
 # 
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2012-04-25 17:14:32 $
+# Last updated on: $Date: 2012-06-20 08:43:54 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -382,20 +382,21 @@ sub copy_dna_files{
     
     my $gspecies = $wb->full_name('-g_species'=>1);
     my $chromdir = $wb->chromosomes;
+    my $seqdir = $wb->sequences;
     
     my %copied_files;
     
-    if (-e "$chromdir") {
+    if (-e "$chromdir" and -e "$seqdir") {
       my $dna_dir = "$targetdir/species/$gspecies";
       mkpath($dna_dir,1,0775);
       #todd wants all species to have whole genome in one file
       if ($wb->assembly_type eq 'contig') {
 	my $species = $wb->species;
 	
-	my $dna_file = "$chromdir/supercontigs.fa";
-	my $masked_file = "$chromdir/".$species."_masked.dna.gz";
-	my $soft_file = "$chromdir/".$species."_softmasked.dna.gz";
-	
+        my $dna_file = $wb->genome_seq;
+        my $masked_file = $wb->masked_genome_seq;
+        my $soft_file = $wb->softmasked_genome_seq;
+
         foreach my $f ($dna_file, $masked_file, $soft_file) {
           if (not -e $f or not -s $f) {
             $log->error("ERROR: Could not find DNA file for $gspecies ($f)\n");
@@ -405,11 +406,19 @@ sub copy_dna_files{
         my $target_dna_file =  "$dna_dir/".$gspecies.".$WS_name.genomic.fa.gz";
         my $target_masked = "$dna_dir/".$gspecies.".$WS_name.genomic_masked.fa.gz";
         my $target_soft = "$dna_dir/".$gspecies.".$WS_name.genomic_softmasked.fa.gz";
-	
-	$wormbase->run_command("gzip -9 -c $dna_file > $target_dna_file",$log);
-	$wormbase->run_command("cp -f $soft_file $target_soft", $log);
-	$wormbase->run_command("cp -f $masked_file $target_masked", $log);
-	
+
+        foreach my $pair ([$dna_file, $target_dna_file],
+                          [$masked_file, $target_masked],
+                          [$soft_file, $target_soft]) {
+          my ($src, $tgt) = @$pair;
+
+          if ($src =~ /\.gz$/) {
+            $wormbase->run_command("cp -f $src $tgt", $log);    
+          } else {
+            $wormbase->run_command("gzip -9 -c $src > $target_dna_file",$log);
+          }
+        }
+
         map { $copied_files{$_} = 1 } ($dna_file, $masked_file, $soft_file);
 	
       } elsif ($wb->assembly_type eq 'chromosome') {
@@ -454,9 +463,9 @@ sub copy_dna_files{
       }
       
       # copy over outstanding dna files
-      foreach my $dna_file (glob("$chromdir/*.dna.gz")) {
+      foreach my $dna_file (glob("$seqdir/*.dna.gz")) {
         if (not exists $copied_files{$dna_file}) {
-          my ($prefix) = $dna_file =~ /$chromdir\/(\S+)\.dna.gz/;
+          my ($prefix) = $dna_file =~ /$seqdir\/(\S+)\.dna.gz/;
           my $target = "$dna_dir/${gspecies}.${WS_name}.$prefix.fa.gz";
           $wormbase->run_command("cp -f $dna_file $target", $log);
         }
@@ -509,7 +518,7 @@ sub copy_gff_files{
 
     my $species  = $wb->species;
     my $gspecies = $wb->full_name('-g_species' => 1);
-    my $chromdir = $wb->chromosomes;
+    my $chromdir = $wb->gff;
 
     if (-e "$chromdir") {
       my $gff_dir = "$targetdir/species/$gspecies";
@@ -526,7 +535,7 @@ sub copy_gff_files{
           $log->error("ERROR: $chromdir/$species.gff missing\n");
         }
       } else {
-        $wormbase->run_command("cat $chromdir/*.gff* > $gff_dir/$whole_filename", $log);
+        $wormbase->run_command("cat $chromdir/*.gff > $gff_dir/$whole_filename", $log);
         #$wormbase->run_command("cp -f $chromdir/*.gff* $gff_dir/", $log); #individual files too
       }
 
@@ -574,7 +583,7 @@ sub copy_gff_files{
     my $gff_dir = "$targetdir/species/$gspecies";
     mkpath($gff_dir,1,0775);
 
-    my $source = sprintf("%s/%s.gff3", $wb->chromosomes, $species);
+    my $source = sprintf("%s/%s.gff3", $wb->gff, $species);
     my $target = sprintf("%s/%s.%s.annotations.gff3", $gff_dir, $gspecies, $WS_name);
 
     if (-e $source) {

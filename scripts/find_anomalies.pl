@@ -8,8 +8,8 @@
 # matching a CDS and stores the results in in a data file ready to be read into the SQL database
 # 'worm_anomaly'
 #
-# Last updated by: $Author: mh6 $     
-# Last updated on: $Date: 2012-05-15 12:51:46 $      
+# Last updated by: $Author: klh $     
+# Last updated on: $Date: 2012-06-20 08:43:54 $      
 
 # Changes required by Ant: 2008-02-19
 # 
@@ -2831,7 +2831,7 @@ sub read_chromosome {
   my $seq = &read_file($seq_file);
 
   if (! defined $seq) {
-    $seq = &read_entry("$database/CHROMOSOMES", $chromosome)
+    $seq = &read_entry($wormbase->genome_seq, $chromosome);
   }
 
   return $seq;
@@ -2867,20 +2867,14 @@ sub read_file {
 # read entry in a file if the file consists of lots of entries
 
 sub read_entry {
-  my ($dir, $chromosome) = @_;
+  my ($file, $chromosome) = @_;
 
   # if we have already read in the sequence entries, return the one for this chromosome
   if (exists $dna_entry{$chromosome}) {return $dna_entry{$chromosome};}
 
-  my $file = "$dir/supercontigs.fa"; # it might be called this
   print "Trying: $file\n" if ($verbose);
   if (! -e $file) {
-    print "Can't open the dna file for $file : $!\n" if ($verbose);
-    $file = "$dir/" . $wormbase->species . ".fa"; # or it might be called this - the nomenclature is not yet certain
-    print "Trying: $file\n" if ($verbose);
-
-  } elsif (! -e $file) {
-    die "Can't find chromosome sequence file for $dir, $chromosome\n";
+    die "Can't find chromosome sequence file for $file, $chromosome\n";
   }
 
   print "Reading DNA sequence entries\n";

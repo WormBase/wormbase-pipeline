@@ -4,8 +4,8 @@
 # 
 # by Dan Lawson
 #
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2010-07-06 13:08:38 $
+# Last updated by: $Author: klh $
+# Last updated on: $Date: 2012-06-20 08:43:54 $
 
 #
 #    1. Brief_identification
@@ -69,7 +69,9 @@ my $release = $wormbase->get_wormbase_version;
 #################################
 
 
-$gffdir             = $wormbase->gff unless $gffdir;
+if (not defined $gffdir) {
+  $gffdir =  ($wormbase->assembly_type eq 'contig') ? $wormbase->sequences : $wormbase->chromosomes;
+}
 my $wormpep_dir     = $wormbase->wormpep;     # CURRENT WORMPEP
 
 # check that the supplied $release is numeric

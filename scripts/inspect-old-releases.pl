@@ -16,8 +16,8 @@
 # foreach? ./inspect-old-releases.pl -debug gw3 -version $r -database1 ~wormpub/gary/Archeology/WS{$q} -database2 ~wormpub/gary/Archeology/WS{$r}
 # foreach? end
 #
-# Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2011-04-04 09:48:16 $      
+# Last updated by: $Author: klh $     
+# Last updated on: $Date: 2012-06-20 08:43:54 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -431,10 +431,8 @@ sub get_chromosomes {
 sub read_chromosome() {
   my ($chromosome, $db) = @_;
   my $seq;
-                                                                                                                                                          
   my $file;
   my $title;
-
 
   $file = "$db/CHROMOSOMES/$chromosome.dna";
   if (-e $file) {
@@ -455,38 +453,37 @@ sub read_chromosome() {
     if (! length $seq) {$log->log_and_die("no sequence found in file $file");}
     return $seq;
 
-  } else {	# contig-based chromosomes in one file
+  } else {	
+    # probably a contig-based chromosomes in one file. Not supported for now
+    $log->log_and_die("Could not find the file '$file'\n");
 
-    $file = "$db/CHROMOSOMES/supercontig.fa";
-    
-    my $old_rs = $/;              # save the current value of the record separator
-    
-    if (! open (SEQ, "<$file")) {	# try to open the sequence file
-      open (SEQ, "/bin/gunzip -c $file.gz |") || die "Can't open file $file\n"; # ... or try to open the gzipped sequence file
-    }
-    while ($title = <SEQ>) {
-      if ($title =~ /^\>(\S+)/ && $1 eq $chromosome) {last} 
-    }
+    #$file = "$db/SEQUENCES/$species.genome.fa";
+    #
+    #my $old_rs = $/;              # save the current value of the record separator
+    #
+    #if (! open (SEQ, "<$file")) {	# try to open the sequence file
+    #  open (SEQ, "/bin/gunzip -c $file.gz |") || die "Can't open file $file\n"; # ... or try to open the gzipped sequence file
+    #}
+    #while ($title = <SEQ>) {
+    #  if ($title =~ /^\>(\S+)/ && $1 eq $chromosome) {last} 
+    #}
 
     # if we don't find the chromosome, then bomb out but handle it because we may have a contig that has been deprecated
-    if ($title !~ /^\>/) {
-      $log->write_to("NOT FOUND contig $chromosome\n");
-      return '';
-    }
-    while (my $line = <SEQ>) {
-      if ($line =~ /^\>/) {last}
-      chomp $line;
-      $seq .= $line;    
-    }
-    close (SEQ);
-
-    if (! length $seq) {$log->log_and_die("no sequence found in file $file");}
-    return $seq;
+    #if ($title !~ /^\>/) {
+    #  $log->write_to("NOT FOUND contig $chromosome\n");
+    #  return '';
+    #}
+    #while (my $line = <SEQ>) {
+    #  if ($line =~ /^\>/) {last}
+    #  chomp $line;
+    #  $seq .= $line;    
+    #}
+    #close (SEQ);
+    #
+    #if (! length $seq) {$log->log_and_die("no sequence found in file $file");}
+    #return $seq;
 
   }
-
-
-
 }
 
 

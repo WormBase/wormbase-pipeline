@@ -1151,7 +1151,6 @@ sub peproot      { my $self = shift; return $self->{'peproot'}; }
 sub rnaroot      { my $self = shift; return $self->{'rnaroot'}; }
 sub brigpep      { my $self = shift; return $self->{'brigpep'}; }
 sub wormrna      { my $self = shift; return $self->{'wormrna'}; }
-sub gff          { my $self = shift; return $self->{'gff'}; }
 sub gff_splits   { my $self = shift; return $self->{'gff_splits'}; }
 sub chromosomes  { my $self = shift; return $self->{'chromosomes'}; }
 sub sequences    { my $self = shift; return $self->{'sequences'}; }
@@ -1175,11 +1174,23 @@ sub orgdb        { my $self = shift; return $self->{'orgdb'}; }
 sub cdna_dir     { my $self = shift; return $self->{'cdna_dir'};}
 sub cdna_acedir  { my $self = shift; return $self->{'cdna_acedir'};}
 sub maskedcdna   { my $self = shift; return $self->{'maskedcdna'} ;}
-sub genome_seq   { my $self = shift; return $self->autoace."/genome_seq";}
 sub seq_db	 { my $self = shift; return $self->database($self->{'species'});}
 sub ebi          { my $self = shift; return $self->{'ebi'} ;}
 sub rnaseq       { my $self = shift; return $self->{'rnaseq'} ;}
 sub build_lsfout { my $self = shift; return $self->{'build_lsfout'} ;}
+sub genome_seq            { my $self = shift; return $self->{'genome_seq'}; }
+sub masked_genome_seq     { my $self = shift; return $self->{'masked_genome_seq'} };
+sub softmasked_genome_seq { my $self = shift; return $self->{'smasked_genome_seq'} };
+
+sub gff {
+  my $self = shift;
+
+  if ($self->assembly_type eq 'contig') {
+    return $self->sequences;
+  } else {
+    return $self->chromosomes;
+  }
+}
 
 # this can be modified by calling script
 ####################################
@@ -1301,7 +1312,6 @@ sub establish_paths {
     $self->{'transcripts'} = $self->orgdb . "/TRANSCRIPTS";
     $self->{'reports'}     = $self->orgdb . "/REPORTS";
     $self->{'acefiles'}    = $self->orgdb . "/acefiles";
-    $self->{'gff'}         = $self->chromosomes; #to maintain backwards compatibility 
     $self->{'gff_splits'}  = $self->orgdb . "/GFF_SPLITS";
     $self->{'primaries'}   = $self->basedir . "/PRIMARIES";
     $self->{'blat'}        = $self->orgdb . "/BLAT";
@@ -1340,6 +1350,10 @@ sub establish_paths {
     $self->{'build_lsfout'} = $self->scratch_area 
         . "/LSF_OUT/" . $self->{species} . '/' . $self->get_wormbase_version_name;
 
+    $self->{'genome_seq'} = $self->sequences . "/" . $self->{species} . ".genome.fa";
+    $self->{'masked_genome_seq'} = $self->sequences . "/" . $self->{species} . ".genome_masked.fa";
+    $self->{'smasked_genome_seq'} = $self->sequences . "/" . $self->{species} . ".genome_softmasked.fa";
+
     # create dirs if missing
     mkpath( $self->logs )        unless ( -e $self->logs );
     mkpath( $self->common_data ) unless ( -e $self->common_data );
@@ -1350,7 +1364,6 @@ sub establish_paths {
     mkpath( $self->transcripts ) unless ( -e $self->transcripts ); 
     mkpath( $self->reports )     unless ( -e $self->reports );
     mkpath( $self->ontology )    unless ( -e $self->ontology );
-    mkpath( $self->gff )         unless ( -e $self->gff );
     mkpath( $self->gff_splits )  unless ( -e $self->gff_splits );
     mkpath( $self->primaries )   unless ( -e $self->primaries );
     mkpath( $self->acefiles )    unless ( -e $self->acefiles );

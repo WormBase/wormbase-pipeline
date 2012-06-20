@@ -59,62 +59,62 @@ our @ISA;
 =cut
 
 
-sub invoke 
-  {
-    my ($class,$database,$refresh,$wormbase) = @_;
-
-    # inherit from Coords_converter to get all the coord info
-    my $self = Coords_converter->invoke($database, $refresh, $wormbase);
-    bless $self, $class;
-
-    $database = $wormbase->database('current') unless $database; #defaults to current_DB in CC if not set.
-    # get the chromosomal sequences
-    my $tace = $wormbase->tace; # <= hmpf
-    
-    my @chromosome = $wormbase->get_chromosome_names(-mito => 1);
-    $self->{chromprefix} = $wormbase->chromosome_prefix;
-    if ($wormbase->assembly_type eq 'contig'){
+sub invoke {
+  my ($class,$database,$refresh,$wormbase) = @_;
+  
+  # inherit from Coords_converter to get all the coord info
+  my $self = Coords_converter->invoke($database, $refresh, $wormbase);
+  bless $self, $class;
+  
+  $database = $wormbase->database('current') unless $database; #defaults to current_DB in CC if not set.
+  # get the chromosomal sequences
+  my $tace = $wormbase->tace; # <= hmpf
+  
+  my @chromosome = $wormbase->get_chromosome_names(-mito => 1);
+  $self->{chromprefix} = $wormbase->chromosome_prefix;
+  if ($wormbase->assembly_type eq 'contig'){
     #contig assemblies	
-    	my $supercontig_seq = $wormbase->chromosomes."/supercontigs.fa";
-    	my $seqs = Bio::SeqIO->new(-file => $supercontig_seq, -format => "fasta");
-    	while(my $seq = $seqs->next_seq) {
-    		$self->{'SEQUENCE'}->{$seq->id} = $seq->seq;
-    	}
+    my $genome_seq = $wormbase->genome_seq;
+    my $seqs = Bio::SeqIO->new(-file => $genome_seq, -format => "fasta");
+    while(my $seq = $seqs->next_seq) {
+      $self->{'SEQUENCE'}->{$seq->id} = $seq->seq;
     }
-    else {
-	 # iterate chromosomes
-	 foreach my $chromosome (@chromosome){
-         #chromosome based assemblies
-	  	  my $seqname = $self->{chromprefix} . "$chromosome";
+  }
+  else {
+    # iterate chromosomes
+    my $chr_dir = "$database/CHROMOSOMES";
 
-		  # dump the chromosome if it doesn't exist
-    	          unless( -e "$database/CHROMOSOMES/$seqname.dna" ) {
-      	            open (ACE, "| $tace $database") or croak "cant connect to $database :$!\n";
-
-	            print "writing DNA seq for $seqname\n";
-	            print ACE <<EOF;
+    foreach my $chromosome (@chromosome){
+      #chromosome based assemblies
+      my $seqname = $self->{chromprefix} . "$chromosome";
+      
+      # dump the chromosome if it doesn't exist
+      unless( -e "$database/$chr_dir/$seqname.dna" ) {
+        open (ACE, "| $tace $database") or croak "cant connect to $database :$!\n";
+        
+        print "writing DNA seq for $seqname\n";
+        print ACE <<EOF;
 clear
 find sequence $seqname
-dna -f $database/CHROMOSOMES/$seqname.dna
+dna -f $database/$chr_dir/$seqname.dna
 EOF
-	            close ACE;
-                    $wormbase->remove_blank_lines("$database/CHROMOSOMES/$seqname.dna");
-	          }
-
-		  # read the file/sequence into $self
-	          $/ = "";
-	          open (SEQ, "$database/CHROMOSOMES/$seqname.dna") or croak "cant open the dna file for $seqname:$!\n";
-	          my $seq = <SEQ>;
-	          close SEQ;
-	          $/ = "\n";
-	          $seq =~ s/>[\w\-_]+//;
-	          $seq =~ s/\n//g;
-	          $self->{'SEQUENCE'}->{$seqname} = $seq;
-	    }
-
-         }
-	 return $self;
+        close ACE;
+        $wormbase->remove_blank_lines("$database/$chr_dir/$seqname.dna");
+      }
+      
+      # read the file/sequence into $self
+      $/ = "";
+      open (SEQ, "$database/$chr_dir/$seqname.dna") or croak "cant open the dna file for $seqname:$!\n";
+      my $seq = <SEQ>;
+      close SEQ;
+      $/ = "\n";
+      $seq =~ s/>[\w\-_]+//;
+      $seq =~ s/\n//g;
+      $self->{'SEQUENCE'}->{$seqname} = $seq;
+    }
   }
+  return $self;
+}
 
 
 =head2 Sub_sequence
