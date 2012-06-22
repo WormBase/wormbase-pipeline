@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: pad $
-// Last edited on: $Date: 2012-06-19 15:38:47 $
+// Last edited on: $Date: 2012-06-22 13:46:38 $
 
 
 ////////////////////////
@@ -2259,7 +2259,7 @@
 		WBProcess ?WBProcess XREF Life_stage
 		Remark	?Text #Evidence
 		Definition ?Text // Wen [020607 krb]
-		Name UNIQUE Text
+		Public_name UNIQUE ?Text
 		Other_name ?Text // Wen [020607 krb]
                 Reference ?Paper XREF Life_stage
 		Curated_by UNIQUE Text // Sylvia [010928 krb]
@@ -2992,6 +2992,7 @@
                  Sequence ?Sequence XREF Reference #Evidence
                  CDS ?CDS XREF Reference #Evidence
                  Transcript ?Transcript XREF Reference #Evidence
+		 Species ?Species #Evidence
                  Strain ?Strain XREF Reference #Evidence
                  Clone ?Clone XREF Reference #Evidence
                  Expr_pattern ?Expr_pattern XREF Reference #Evidence
@@ -3426,9 +3427,9 @@
 //
 //////////////////////////////////////////////////	
 
-?WBProcess      Name  ?Text
-                Summary ?Text #Evidence
+?WBProcess      Summary ?Text #Evidence
                 Process_term ?Text
+		Public_name UNIQUE ?Text
                 Other_name ?Text
                 Related_process ?WBProcess XREF Related_process
                 Taxon   NCBITaxonomyID ?Text
@@ -3442,7 +3443,7 @@
                                         GO_term ?GO_term  #Evidence
                 Picture ?Picture #Evidence
                 Movie ?Movie  #Evidence
-                Pathway DB_info Database ?Database_field ?Accession_number //Can be used for any pathway db with unique accessionIDs
+                Pathway DB_info Database ?Database ?Database_field ?Accession_number //Can be used for any pathway db with unique accessionIDs
                 Remark ?Text #Evidence
                 Reference ?Paper XREF WBProcess
 
