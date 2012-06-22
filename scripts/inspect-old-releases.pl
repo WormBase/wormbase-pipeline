@@ -17,7 +17,7 @@
 # foreach? end
 #
 # Last updated by: $Author: klh $     
-# Last updated on: $Date: 2012-06-20 08:43:54 $      
+# Last updated on: $Date: 2012-06-22 08:57:58 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -57,6 +57,8 @@ if ( $store ) {
 			     );
 }
 
+$species = $wormbase->species;
+
 # Display help if required
 &usage("Help") if ($help);
 
@@ -74,12 +76,8 @@ my $log = Log_files->make_build_log($wormbase);
 # MAIN BODY OF SCRIPT
 ##########################
 
-my $outdir = "/nfs/wormpub/CHROMOSOME_DIFFERENCES";
-my $outfile = "$outdir/sequence_differences.WS$version";
-$species = $wormbase->species;
-if ($species ne 'elegans') {
-  $outfile = "$outdir/sequence_differences_$species.WS$version";
-}
+my $outdir = $wormbase->genome_diffs;
+my $outfile = "$outdir/$species/sequence_differences.WS$version";
 
 open (OUT, "> $outfile") || die "Can't open $outfile";
 
@@ -116,19 +114,17 @@ foreach my $chromosome (@chromosomes) {
 close (OUT);
 
 # copy the data files to the FTP site
-my $FTP = "/nfs/disk69/ftp/pub2/wormbase/software/Remap-between-versions";
-chdir $outdir;
-$wormbase->run_command("rm $outdir/remap.tar.bz2", $log);
-$wormbase->run_command("chmod -R u+w $outdir/Remap-for-other-groups/CHROMOSOME_DIFFERENCES/", $log);
-$wormbase->run_command("cp $outdir/sequence_differences.WS* $outdir/Remap-for-other-groups/CHROMOSOME_DIFFERENCES/", $log);
-$wormbase->run_command("cp $outdir/sequence_differences.WS* $FTP/Mapping-data", $log);
-$wormbase->run_command("tar cvf remap.tar Remap-for-other-groups", $log);
-$wormbase->run_command("/bin/bzip2 remap.tar", $log);
-$wormbase->run_command("cp $outdir/remap.tar.bz2 $FTP", $log);
-$wormbase->run_command("chmod oa+r $FTP/remap.tar.bz2", $log);
-$wormbase->run_command("chmod -R oa+r $FTP/Mapping-data", $log);
-$wormbase->run_command("chmod -R u+w $FTP/Mapping-data", $log);
+my $local_dist_folder = "Remap-for-other-groups";
+my $ftp = $wormbase->ftp_site . "/software/Remap-between-versions";
+my $dist_file = "remap.tar.bz2";
 
+$wormbase->run_command("cp $outfile $outdir/$local_dist_folder/CHROMOSOME_DIFFERENCES/", $log);
+$wormbase->run_command("cp $outfile $ftp/Mapping-data/", $log);
+
+$wormbase->run_command("rm $ftp/$dist_file", $log);
+$wormbase->run_command("tar -C $outdir -j -c -f $ftp/$dist_file $local_dist_folder", $log);
+$wormbase->run_command("chmod -R oa+r $ftp/Mapping-data $ftp/$dist_file", $log);
+$wormbase->run_command("chmod -R u+w $ftp/Mapping-data $ftp/$dist_file", $log);
 
 # Close log files and exit
 

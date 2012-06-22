@@ -1181,6 +1181,7 @@ sub build_lsfout { my $self = shift; return $self->{'build_lsfout'} ;}
 sub genome_seq            { my $self = shift; return $self->{'genome_seq'}; }
 sub masked_genome_seq     { my $self = shift; return $self->{'masked_genome_seq'} };
 sub softmasked_genome_seq { my $self = shift; return $self->{'smasked_genome_seq'} };
+sub genome_diffs { my $self = shift; return $self->{'genome_diff'} };
 
 sub gff {
   my $self = shift;
@@ -1292,10 +1293,12 @@ sub establish_paths {
       $self->{'ftp_upload'} = $self->wormpub . "/TEST/ftp_uploads/wormbase";
       $self->{'ftp_site'}   = $self->wormpub . "/TEST/FTP_site/pub/wormbase";
       $self->{'build_data'} = $self->wormpub . "/TEST/BUILD_DATA";
+      $self->{'genome_diff'} = $self->wormpub . "/TEST/CHROMOSOME_DIFFERENCES";
     } else {
       $self->{'ftp_upload'} = "/nfs/ftp_uploads/wormbase";
       $self->{'ftp_site'}   = "/nfs/disk69/ftp/pub2/wormbase";
       $self->{'build_data'} = $self->wormpub . "/BUILD_DATA";
+      $self->{'genome_diff'} = $self->wormpub . "/CHROMOSOME_DIFFERENCES";
     }
     
     $self->{'peproot'}    = $basedir . "/WORMPEP";

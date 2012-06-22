@@ -47,7 +47,6 @@ use strict;
 use Sequence_extract;
 use Carp;
 use String::Approx qw(aindex aslice adist);
-use Modules::Remap_Sequence_Change;
 
 our (@ISA);
 
@@ -511,7 +510,7 @@ sub get_flanking_sequence_for_feature {
 
 sub suggest_fix {
 
-  my ($self, $feature_id, $expected_length, $clone, $flank_L, $flank_R, $version, @mapping_data) = @_;
+  my ($self, $feature_id, $expected_length, $clone, $flank_L, $flank_R, $version, $mapper) = @_;
   my @result;
   my $FIXED = 1;
   my $NOT_FIXED = 0;
@@ -535,13 +534,10 @@ sub suggest_fix {
       if (!$f[8] || ($f[8] !~ /Feature \"$feature_id\"/)) {next;}
       my ($chromosome, $start, $end, $sense) = ($f[0], $f[3], $f[4], $f[6]);
       my ($indel, $change);
-      ($start, $end, $sense, $indel, $change) = Remap_Sequence_Change::remap_gff($chromosome, 
-                                                                                 $start, 
-                                                                                 $end, 
-                                                                                 $sense, 
-                                                                                 $version - 1, 
-                                                                                 $version, 
-                                                                                 @mapping_data);
+      ($start, $end, $sense, $indel, $change) = $mapper->remap_gff($chromosome, 
+                                                                   $start, 
+                                                                   $end, 
+                                                                   $sense); 
 
       # when getting new flanks, the returned flanks will include 1bp on each side of the 
       # extent that we supply. We therefore need to "extend" the feature by 1bp in each direction.
