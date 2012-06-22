@@ -9,23 +9,57 @@
 #        FILES:  ---
 #         BUGS:  ---
 #        NOTES: 
-#      $Author: gw3 $
+#      $Author: klh $
 #      COMPANY:
 #     $Version:  $
 #      CREATED: 2006-02-27
-#        $Date: 2010-07-14 14:54:37 $
+#        $Date: 2012-06-22 08:56:53 $
 #===============================================================================
 package Remap_Sequence_Change;
 
 use strict;
 use warnings;
-#use Modules::Coords_converter;
 use Coords_converter;
-use Wormbase;
+
+sub new {
+  my ($class, $rel1, $rel2, $species, $diff_dir) = @_;
+  
+  my $self = {};
+  bless ( $self, $class );
+
+  $species = "elegans" if not defined $species;
+  $diff_dir = "/nfs/wormpub/CHROMOSOME_DIFFERENCES" if not defined $diff_dir;
+
+  $diff_dir .= "/$species/";
+  
+  $self->_genome_differences_dir($diff_dir);
+  $self->_read_mapping_data($rel1, $rel2);
+
+  return $self;
+}
+
+sub _genome_differences_dir {
+  my ($self, $val) = @_;
+
+  if (defined $val) {
+    $self->{genome_diff_dir} = $val;
+  }
+  return $self->{genome_diff_dir};
+}
+
+
+sub _mapping_data {
+  my ($self, $val) = @_;
+
+  if (defined $val) {
+    $self->{_mapping_data} = $val;
+  }
+  return $self->{_mapping_data};
+}
 
 ##########################################################
 # 
-# Name:      read_mapping_data
+# Name:      _read_mapping_data
 # Usage:     @mapping_data = &read_mapping_data($release1, $release2);
 # Function:  reads the data used to remap across release
 # Args:      $release1, $release2, the first and last wormbase release
@@ -38,30 +72,25 @@ use Wormbase;
 # the mismatch_start value is the start of the mismatch, it is the first position which doesn't match
 # the mismatch_end value is the base past the end of the mismatch region, the first base which matches again
 # ($mismatch_start1, $mismatch_end1, $len1, $mismatch_start2, $mismatch_end2, $len2, $flipped)
-                                                                                                                                                            
+
 #
 # Input files look like:
 # Chromosome: I
 # 4765780 4765794 14      4765780 4765794 14      0
-                                                                                                                                                            
-                                                                                                                                                            
-sub read_mapping_data {
 
-  my ($release1, $release2, $species) = @_;
+sub _read_mapping_data {
+
+  my ($self, $release1, $release2) = @_;
 
   # array (one for each release) of hashes (keyed by chromosome number) of list (one for each difference) of list (one for each field)
   # access like: $fields_hashref = @{ $mapping_data[$release]{$chrom}[$next_difference] }
-  my @mapping_data;
-                                                                                                                                                            
+  my %mapping_data;
+
   foreach my $release (($release1+1) .. $release2) {
     my %chroms;
-    
-    my $infile = "/nfs/wormpub/CHROMOSOME_DIFFERENCES/sequence_differences.WS$release";
-    if ($species and $species ne 'elegans') {
-      $infile = "/nfs/wormpub/CHROMOSOME_DIFFERENCES/sequence_differences_$species.WS$release";
-    }
 
-    open (IN, "< $infile") || die "Can't open $infile\n";
+    my $infile = $self->_genome_differences_dir . "/sequence_differences.WS$release";
+    open (IN, "<$infile") or die "Can't open $infile\n";
     my $chrom;
     while (my $line = <IN>) {
       chomp $line;
@@ -70,9 +99,8 @@ sub read_mapping_data {
       } else {
         my @fields = split /\t/, $line;
         #print "fields=@fields\n";
-                                                                                                                                                            
-        push @{ $mapping_data[$release]{$chrom} }, [@fields];
-                                                                                                                                                            
+        push @{$mapping_data{$release}->{$chrom}}, [@fields];
+
         # debug
         #my $a = $mapping_data[$release]{$chrom} ;
         #foreach my $b (@$a) {
@@ -82,53 +110,29 @@ sub read_mapping_data {
     }
     close(IN);
   }
-                                                                                                                                                            
-  return @mapping_data;
+     
+  $self->_mapping_data(\%mapping_data);
 }
 
 
 ##########################################################
 # 
 # Name:      remap_test
-# Usage:     $changed = remap_test($release1, $release2, @mapping_data);
+# Usage:     $changed = $rsc->remap_test();
 # Function: test to see if there have been indel or reverse of
 #           orientation changes between the given versions.
 #           If so then we will need to run the remapping programs.
-# Args:      $release1, $release2, the first and last wormbase release
-#                  numbers to use e.g. 140, 150 to convert data made using wormbase
-#                  release WS140 to the coordinates of release WS150
-#            @mapping_data - data as returned by read_mapping_data
 # Returns:   1 if there have been changes, 0 if not
 
 
 sub remap_test {
-  my ($release1, $release2, @mapping_data) = @_;
+  my ($self) = @_;
 
-  my $changed = 0;
-
-  foreach my $release (($release1+1) .. $release2) {
-              
-    foreach my $chromosome (keys %{$mapping_data[$release]}) {
-      if (exists $mapping_data[$release]{$chromosome}) {
-	foreach  my $fields (@{$mapping_data[$release]{$chromosome}}) {
-
-# The mismatch_start value is the start of the mismatch, it is the first position which doesn't match.
-# The mismatch_end value is the base past the end of the mismatch region, the first base which matches again
-# ($mismatch_start1, $mismatch_end1, $len1, $mismatch_start2, $mismatch_end2, $len2, $flipped)
-	  my ($mismatch_start1, $mismatch_end1, $len1, $mismatch_start2, $mismatch_end2, $len2, $flipped) = @$fields;
-
-	  # if a region has been flipped in orientation then we will need to remap anythng in that region
-	  if ($flipped) {$changed = 1;}
-
-	  # if a region has had an indel then we will need to remap anything downstream of it
-	  if ($len1 != $len2)  {$changed = 1;}
-
-	}
-      }
-    }
+  if (keys %{$self->_mapping_data}) {
+    return 1;
+  } else {
+    return 0;
   }
-
-  return $changed;
 }
 
 
@@ -150,7 +154,7 @@ sub remap_test {
 #
 
 sub remap_ace {
-  my ($chromosome, $start, $end, $release1, $release2, @mapping_data) = @_;
+  my ($self, $chromosome, $start, $end) = @_;
                       
   my $sense = "+";
   my ($indel, $change);
@@ -162,7 +166,7 @@ sub remap_ace {
     $end = $tmp;
   }
 
-  ($start, $end, $sense, $indel, $change) = remap_gff($chromosome, $start, $end, $sense, $release1, $release2, @mapping_data);
+  ($start, $end, $sense, $indel, $change) = $self->remap_gff($chromosome, $start, $end, $sense);
 
   if ($sense eq '-') {
     my $tmp = $start;
@@ -193,33 +197,39 @@ sub remap_ace {
 #
 
 sub remap_gff {
-  my ($chromosome, $start, $end, $sense, $release1, $release2, @mapping_data) = @_;
+  my ($self, $chromosome, $start, $end, $sense) = @_;
+
+  print "Remapping $chromosome $start $end $sense\n";
 
   my $indel = 0;		# true if indels affect this location
   my $change = 0;		# true if non-indel base changes affect this location
-                                                                                                                                                            
-  if ($chromosome =~ /CHROMOSOME_(\S+)/) {$chromosome = $1;}
-                                                                                                                                                            
-  foreach my $release (($release1+1) .. $release2) {
-                                                                                                                                                            
-    if (exists $mapping_data[$release]{$chromosome}) {
-      foreach  my $fields (@{$mapping_data[$release]{$chromosome}}) {
-        #print "$release $chromosome fields= @$fields \n";
 
-# The mismatch_start value is the start of the mismatch, it is the first position which doesn't match.
-# The mismatch_end value is the base past the end of the mismatch region, the first base which matches again
-# ($mismatch_start1, $mismatch_end1, $len1, $mismatch_start2, $mismatch_end2, $len2, $flipped)
+  if ($chromosome =~ /CHROMOSOME_(\S+)/) {$chromosome = $1;}
+                
+  my %mapping_data = %{$self->_mapping_data};
+
+  my @releases = sort { $a <=> $b } keys %mapping_data;
+
+  foreach my $release (@releases) {
+
+    if (exists $mapping_data{$release}->{$chromosome}) {
+      foreach  my $fields (@{$mapping_data{$release}->{$chromosome}}) {
+        #print "    $release $chromosome fields= @$fields \n";
+
+        # The mismatch_start value is the start of the mismatch, it is the first position which doesn't match.
+        # The mismatch_end value is the base past the end of the mismatch region, the first base which matches again
+        # ($mismatch_start1, $mismatch_end1, $len1, $mismatch_start2, $mismatch_end2, $len2, $flipped)
         my ($mismatch_start1, $mismatch_end1, $len1, $mismatch_start2, $mismatch_end2, $len2, $flipped) = @$fields;
 
-# N.B. mismatch values are in the normal perl coordinate system starting at position 0.
-# Convert them to the GFF coordinates system starting at position 1.
+        # N.B. mismatch values are in the normal perl coordinate system starting at position 0.
+        # Convert them to the GFF coordinates system starting at position 1.
 	$mismatch_start1++;
 	$mismatch_end1++;
-                                                                                                                                                            
+
         if ($flipped) {    # is the feature inside a flipped region?
-                                                                                                                                                            
+
           if ($start >= $mismatch_start1 && $end < $mismatch_end1) {
-                                                                                                                                                            
+
             if ($sense eq '+') {$sense = '-';} else {$sense = '+';} # flip the sense
             $start = $mismatch_start1 + $mismatch_end1 - $start; # flip the start and end positions
             $end = $mismatch_start1 + $mismatch_end1 - $end;
@@ -235,7 +245,6 @@ sub remap_gff {
             # don't change the location, but note that we have changes
 	    $change = 1;                                        
 	  }
-                                                                                                                                                            
         } else {
 	  
 	  # if there is a change inside our location, note it
@@ -249,13 +258,16 @@ sub remap_gff {
           # if the start or end are beyond the start of the change region, apply any shift
           if ($start >= $mismatch_end1) { # if past the end of the change region, shift it
             $start += $len2 - $len1;
-          } elsif ($start >= $mismatch_start1 && $start - $mismatch_start1 > $len2 ) { # if was in the change region and now out, set it to the end
+          } elsif ($start >= $mismatch_start1 && $start - $mismatch_start1 > $len2 ) { 
+            # if was in the change region and now out, set it to the end
             $start = $mismatch_start1 + $len2;
           }
-                                                                                                                                                            
-          if ($end >= $mismatch_end1) { # if past the end of the change region, shift it
+
+          if ($end >= $mismatch_end1) { 
+            # if past the end of the change region, shift it
             $end += $len2 - $len1;
-          } elsif ($end >= $mismatch_start1 && $end - $mismatch_start1 > $len2) { # if was in the change region and now out, set it to the end
+          } elsif ($end >= $mismatch_start1 && $end - $mismatch_start1 > $len2) { 
+            # if was in the change region and now out, set it to the end
             $end = $mismatch_start1 + $len2;
           }
 
@@ -264,14 +276,14 @@ sub remap_gff {
 	    $indel = 1;
 	  }
         }
-                                                                                                                                                            
       }
     } else {
       #print "no change: doesn't exist: $release $chromosome\n";
     }
   }
-                                                                                                                                                            
-                                                                                                                                                            
+
+  print " Remapped to $start $end $sense $indel $change\n";
+
   return ($start, $end, $sense, $indel, $change);
 }
 ##########################################################
@@ -293,33 +305,37 @@ sub remap_gff {
 
 
 sub unmap_gff {
-  my ($chromosome, $start, $end, $sense, $release2, $release1, @mapping_data) = @_;
+  my ($self, $chromosome, $start, $end, $sense) = @_;
 
   my $indel = 0;		# true if indels affect this location
   my $change = 0;		# true if non-indel base changes affect this location
-                                                                                                                                                             
+
   if ($chromosome =~ /CHROMOSOME_(\S+)/) {$chromosome = $1;}
-                                                                                                                                                            
-  foreach my $release ($release2 .. ($release1+1)) {
-                                                                                                                                                            
-    if (exists $mapping_data[$release]{$chromosome}) {
-      foreach  my $fields (@{$mapping_data[$release]{$chromosome}}) {
+                                              
+  my %mapping_data = $self->_mapping_data;
+
+  my @releases = sort { $a <=> $b } keys %mapping_data;
+
+  foreach my $release (reverse @releases) {
+
+    if (exists $mapping_data{$release}->{$chromosome}) {
+      foreach  my $fields (@{$mapping_data{$release}->{$chromosome}}) {
         #print "$release $chromosome fields= @$fields \n";
 
-# The mismatch_start value is the start of the mismatch, it is the first position which doesn't match.
-# The mismatch_end value is the base past the end of the mismatch region, the first base which matches again
-# ($mismatch_start1, $mismatch_end1, $len1, $mismatch_start2, $mismatch_end2, $len2, $flipped)
+        # The mismatch_start value is the start of the mismatch, it is the first position which doesn't match.
+        # The mismatch_end value is the base past the end of the mismatch region, the first base which matches again
+        # ($mismatch_start1, $mismatch_end1, $len1, $mismatch_start2, $mismatch_end2, $len2, $flipped)
         my ($mismatch_start1, $mismatch_end1, $len1, $mismatch_start2, $mismatch_end2, $len2, $flipped) = @$fields;
 
-# N.B. mismatch values are in the normal perl coordinate system starting at position 0.
-# Convert them to the GFF coordinates system starting at position 1.
+        # N.B. mismatch values are in the normal perl coordinate system starting at position 0.
+        # Convert them to the GFF coordinates system starting at position 1.
 	$mismatch_start2++;
 	$mismatch_end2++;
-                                                                                                                                                            
+
         if ($flipped) {    # is the feature inside a flipped region?
-                                                                                                                                                            
+
           if ($start >= $mismatch_start2 && $end < $mismatch_end2) {
-                                                                                                                                                            
+
             if ($sense eq '+') {$sense = '-';} else {$sense = '+';} # flip the sense
             $start = $mismatch_start2 + $mismatch_end2 - $start; # flip the start and end positions
             $end = $mismatch_start2 + $mismatch_end2 - $end;
@@ -335,7 +351,7 @@ sub unmap_gff {
             # don't change the location, but note that we have changes
 	    $change = 1;                                        
 	  }
-                                                                                                                                                            
+
         } else {
 	  
 	  # if there is a change inside our location, note it
@@ -349,13 +365,15 @@ sub unmap_gff {
           # if the start or end are beyond the start of the change region, apply any shift
           if ($start >= $mismatch_end2) { # if past the end of the change region, shift it
             $start += $len1 - $len2;
-          } elsif ($start >= $mismatch_start2 && $start - $mismatch_start2 > $len1 ) { # if was in the change region and now out, set it to the end
+          } elsif ($start >= $mismatch_start2 && $start - $mismatch_start2 > $len1 ) { 
+            # if was in the change region and now out, set it to the end
             $start = $mismatch_start2 + $len1;
           }
-                                                                                                                                                            
+
           if ($end >= $mismatch_end2) { # if past the end of the change region, shift it
             $end += $len1 - $len2;
-          } elsif ($end >= $mismatch_start2 && $end - $mismatch_start2 > $len1) { # if was in the change region and now out, set it to the end
+          } elsif ($end >= $mismatch_start2 && $end - $mismatch_start2 > $len1) { 
+            # if was in the change region and now out, set it to the end
             $end = $mismatch_start2 + $len1;
           }
 
@@ -364,14 +382,13 @@ sub unmap_gff {
 	    $indel = 1;
 	  }
         }
-                                                                                                                                                            
+
       }
     } else {
       #print "no change: doesn't exist: $release $chromosome\n";
     }
   }
-                                                                                                                                                            
-                                                                                                                                                            
+
   return ($start, $end, $sense, $indel, $change);
 }
 
@@ -395,24 +412,22 @@ sub unmap_gff {
 #
 
 sub remap_clone {
-  my ($wormbase, $clone_id, $start, $end, $version, $current_converter, $autoace_converter, @mapping_data) = @_;
+  my ($self, $clone_id, $start, $end, $current_converter, $autoace_converter) = @_;
 
   my $indel = 0;		# true if indels affect this location
   my $change = 0;		# true if non-indel base changes affect this location
 
-  my $prev_version = $version - 1;
   my ($new_chrom_start, $new_chrom_end);
 
-# convert the clone location to the chromosomal location for version1
-  my ($chromosome, $chrom_start, $chrom_end) = clone_to_chromosome($wormbase, $clone_id, $start, $end, $current_converter);
+  # convert the clone location to the chromosomal location for version1
+  my ($chromosome, $chrom_start, $chrom_end) = $self->clone_to_chromosome($clone_id, $start, $end, $current_converter);
   #print "clone to chromosome: $chromosome, $chrom_start, $chrom_end\n";
 
-# remap the chromosomal location
-  ($new_chrom_start, $new_chrom_end, $indel, $change) = remap_ace($chromosome, $chrom_start, $chrom_end, $prev_version, $version, @mapping_data);
-  #print "remapped chromosome: $chrom_start, $chrom_end to $new_chrom_start, $new_chrom_end, $indel, $change\n";# if ($new_chrom_start != $chrom_start);
+  # remap the chromosomal location
+  ($new_chrom_start, $new_chrom_end, $indel, $change) = $self->remap_ace($chromosome, $chrom_start, $chrom_end);
 
-# convert the chromosomal location for version2 to the clone location
-  my ($new_clone, $new_start, $new_end) = chromosome_to_clone($wormbase, $chromosome, $new_chrom_start, $new_chrom_end, $autoace_converter);
+  # convert the chromosomal location for version2 to the clone location
+  my ($new_clone, $new_start, $new_end) = $self->chromosome_to_clone($chromosome, $new_chrom_start, $new_chrom_end, $autoace_converter);
   #print "chromosome to clone: $new_clone, $new_start, $new_end\n";# if ($new_chrom_start != $chrom_start);
 
   return ($new_clone, $new_start, $new_end, $indel, $change);
@@ -422,7 +437,7 @@ sub remap_clone {
 ##########################################################
 # 
 # Name:      clone_to_chromosome
-# Usage:     ($chrom, $chrom_start, $chrom_end) = clone_to_chromosome($wormbase, $clone_id, $start, $end, $current_converter);
+# Usage:     ($chrom, $chrom_start, $chrom_end) = clone_to_chromosome($clone_id, $start, $end, $current_converter);
 # Function:  converts clone coords to chromosomal coords
 # Args:      $clone_id, the name of the clone
 #            $start, the start value of the clone location coordinate
@@ -436,7 +451,7 @@ sub remap_clone {
 
 
 sub clone_to_chromosome {
-  my ($wormbase, $clone_id, $start, $end, $current_converter) = @_;
+  my ($self, $clone_id, $start, $end, $current_converter) = @_;
   my ($chrom, $chrom_start, $chrom_end);
 
 
@@ -449,7 +464,7 @@ sub clone_to_chromosome {
 ##########################################################
 # 
 # Name:      chromosome_to_clone
-# Usage:     ($clone, $start, $end, $sense) = chromosome_to_clone($wormbase, $chromosome, $chrom_start, $chrom_end, $autoace_converter);
+# Usage:     ($clone, $start, $end, $sense) = chromosome_to_clone($chromosome, $chrom_start, $chrom_end, $autoace_converter);
 # Function:  converts  chromosomal coords to clone coords
 # Args:      $chromosome, the chromosome number
 #            $start, the start value of the chromosome location coordinate
@@ -460,7 +475,7 @@ sub clone_to_chromosome {
 #
 
 sub chromosome_to_clone {
-  my ($wormbase, $chromosome, $start, $end, $autoace_converter) = @_;
+  my ($self, $chromosome, $start, $end, $autoace_converter) = @_;
   my ($clone_id, $clone_start, $clone_end);
 
   return $autoace_converter->LocateSpan($chromosome, $start, $end);
@@ -480,36 +495,39 @@ sub chromosome_to_clone {
 #
 
 sub write_changes {
-  my ($wormbase, $release, @mapping_data) = @_;
+  my ($self, $wormbase) = @_;
  
   my $text;
   my $title = "Chromosomal Changes:\n--------------------\n";
   my $no_changes = "There are no changes to the chromosome sequences in this release.\n";
   my $any_changes = 0;
+
   my @chromosomes = $wormbase->get_chromosome_names(-mito => 0, -prefix => 0);
+  my $version = $wormbase->get_wormbase_version;
            
+  my %mapping_data = %{$self->_mapping_data};
+
   foreach my $chromosome (@chromosomes) {
-                                                                                                                                                            
-    if (exists $mapping_data[$release]{$chromosome}) {
+    if (exists $mapping_data{$version}->{$chromosome}) {
 
       $any_changes = 1;
       $text .= "\nChromosome: $chromosome\n";
 
-      foreach  my $fields (@{$mapping_data[$release]{$chromosome}}) {
-# The mismatch_start value is the start of the mismatch, it is the first position which doesn't match.
-# The mismatch_end value is the base past the end of the mismatch region, the first base which matches again
-# ($mismatch_start1, $mismatch_end1, $len1, $mismatch_start2, $mismatch_end2, $len2, $flipped)
+      foreach  my $fields (@{$mapping_data{$version}->{$chromosome}}) {
+        # The mismatch_start value is the start of the mismatch, it is the first position which doesn't match.
+        # The mismatch_end value is the base past the end of the mismatch region, the first base which matches again
+        # ($mismatch_start1, $mismatch_end1, $len1, $mismatch_start2, $mismatch_end2, $len2, $flipped)
         my ($mismatch_start1, $mismatch_end1, $len1, $mismatch_start2, $mismatch_end2, $len2, $flipped) = @$fields;
 
-# N.B. mismatch values are in the normal perl coordinate system starting at position 0.
-# Convert them to the human-readable coordinates system starting at position 1.
+        # N.B. mismatch values are in the normal perl coordinate system starting at position 0.
+        # Convert them to the human-readable coordinates system starting at position 1.
 	$mismatch_start1++;
-#	$mismatch_end1++; # don't increment this so it becomes the end of the changed region
+        #	$mismatch_end1++; # don't increment this so it becomes the end of the changed region
 	$mismatch_start2++;
-#	$mismatch_end2++; # don't increment this so it becomes the end of the changed region
+        #	$mismatch_end2++; # don't increment this so it becomes the end of the changed region
              
 	$text .= "$mismatch_start1 $mismatch_end1 $len1   ->   $mismatch_start2 $mismatch_end2 $len2";
-                                                                                                                                               
+
         if ($flipped) {
 	  $text .= " REVERSED";
 	}
@@ -528,18 +546,19 @@ sub write_changes {
 }
 
 sub remap_wig {
-    my ($chrom, $coord, $release1, $release2,$map) = @_;
-    my @map_data = @{$map}; #deref as req array
-    my @stuff = remap_gff($chrom,$coord,$coord,'+',$release1,$release2,@map_data);
-    my $ret = $stuff[4] == 1 ? 'change' : $stuff[0];
-    return $ret;
+  my ($self, $chrom, $coord) = @_;
+  
+  my @stuff = $self->remap_gff($chrom,$coord,$coord,'+');
+  my $ret = $stuff[4] == 1 ? 'change' : $stuff[0];
+  return $ret;
 }
+
 sub remap_BED{
-    my ($chrom, $coord1, $coord2, $release1, $release2,$map) = @_;
-    my @map_data = @{$map}; #deref as req array
-    my @stuff = remap_gff($chrom,$coord1,$coord2,'+',$release1,$release2,@map_data);
-    my $ret = $stuff[4] == 1 ? 'change' : $stuff[0];
-    return $ret;
+  my ($self, $chrom, $coord1, $coord2) = @_;
+  
+  my @stuff = remap_gff($chrom,$coord1,$coord2,'+');
+  my $ret = $stuff[4] == 1 ? 'change' : $stuff[0];
+  return $ret;
 }
 
 
@@ -592,6 +611,6 @@ coordinates, with their sense ("+" or "-") to the new coordinates.
 =back
 
 =head3 AUTHOR
-$Author: gw3 $
+$Author: klh $
 
 =cut

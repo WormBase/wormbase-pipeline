@@ -8,8 +8,8 @@
 # Homol_data in ~50Kb virtual blocks and converts any coordinates that have changed between
 # releases
 #
-# Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2010-04-29 10:50:21 $      
+# Last updated by: $Author: klh $     
+# Last updated on: $Date: 2012-06-22 08:56:53 $      
 
 use strict;                                     
 use lib $ENV{'CVS_DIR'};
@@ -73,8 +73,8 @@ my $currentdb = $wormbase->database('current');
 
 my $version = $wormbase->get_wormbase_version;
 print "Getting mapping data for WS$version\n";
-my @mapping_data = Remap_Sequence_Change::read_mapping_data($version - 1, $version, $wormbase->species);
- 
+
+my $assembly_mapper = Remap_Sequence_Change->new($version -1, $version, $wormbase->species, $wormbase->genome_diffs);
 
 ##########################
 # MAIN BODY OF SCRIPT
@@ -121,7 +121,7 @@ while ($line = <IN>) {
 
     if (! exists $virtual_blocks{$blockname}) {
       ($chromosome) = ($blockname =~ /_([IVX]+)_\d+$/);
-      ($newstart, $newend, $indel, $change) = Remap_Sequence_Change::remap_ace($chromosome, $start, $end, $version - 1, $version, @mapping_data);
+      ($newstart, $newend, $indel, $change) = $assembly_mapper->remap_ace($chromosome, $start, $end);
       push @{$virtual_blocks{$blockname}}, ($tag, $start, $end, $chromosome, $newstart, $newend);
     }
   } elsif ($line =~ /Feature_data\s+(\S+)\s+(\d+)\s+(\d+)/) {
@@ -130,7 +130,7 @@ while ($line = <IN>) {
 
     if (! exists $virtual_blocks{$blockname}) {
       ($chromosome) = ($blockname =~ /_([IVX]+)_\d+$/);
-      ($newstart, $newend, $indel, $change) = Remap_Sequence_Change::remap_ace($chromosome, $start, $end, $version - 1, $version, @mapping_data);
+      ($newstart, $newend, $indel, $change) = $assembly_mapper->remap_ace($chromosome, $start, $end);
       push @{$virtual_blocks{$blockname}}, ($tag, $start, $end, $chromosome, $newstart, $newend);
     }
   }
@@ -165,7 +165,7 @@ while ($line = <IN>) {
     my ($tag, $vstart, $vend, $vchromosome, $newstart, $newend) = @{$virtual_blocks{$blockname}};
     my $oldstart = $vstart + $hstart-1;
     my $oldend = $vstart + $hend-1;
-    ($remapped_start, $remapped_end, $indel, $change) = Remap_Sequence_Change::remap_ace($vchromosome, $oldstart, $oldend, $version-1, $version, @mapping_data);
+    ($remapped_start, $remapped_end, $indel, $change) = $assembly_mapper->remap_ace($vchromosome, $oldstart, $oldend);
     $remapped_start -= $newstart-1;
     $remapped_end -= $newstart-1;
     # see if the length of this thing changed and if so change the cb_start/cb_end
@@ -200,7 +200,7 @@ while ($line = <IN>) {
   } elsif ($line =~ /Confirmed_intron\s+(\d+)\s+(\d+)\s+(.+)/) {
     my $rest;
     ($start, $end, $rest) = ($1, $2, $3);
-    ($remapped_start, $remapped_end, $indel, $change) = Remap_Sequence_Change::remap_ace($chromosome, $start, $end, $version-1, $version, @mapping_data);
+    ($remapped_start, $remapped_end, $indel, $change) = $assembly_mapper->remap_ace($chromosome, $start, $end);
     print OUT "Confirmed_intron $start $end $rest\n";
 
 

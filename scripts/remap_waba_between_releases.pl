@@ -6,8 +6,8 @@
 #
 # This takes the BUILD_DATA/MISC_DYNAMIC/waba.ace file and converts any coordinates that have changed between releases
 #
-# Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-11-10 11:16:03 $      
+# Last updated by: $Author: klh $     
+# Last updated on: $Date: 2012-06-22 08:56:53 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -74,8 +74,7 @@ my $ace_dir         = $wormbase->autoace;     # AUTOACE DATABASE DIR
 
 my $version = $wormbase->get_wormbase_version;
 print "Getting mapping data for WS$version\n";
-my @mapping_data = Remap_Sequence_Change::read_mapping_data($version - 1, $version, $wormbase->species);
- 
+ my $assembly_mapper = Remap_Sequence_Change->new($version - 1, $version, $wormbase->species, $wormbase->genome_diffs);
 
 ##########################
 # MAIN BODY OF SCRIPT
@@ -152,7 +151,7 @@ while (my $line = <IN>) {
 
       # if $start > $end, then sense is -ve (i.e. normal ace convention)
       ($start, $end, $indel, $change) = 
-	  Remap_Sequence_Change::remap_ace($chromosome, $start, $end, $version-1, $version, @mapping_data);
+	  $assembly_mapper->remap_ace($chromosome, $start, $end);
 
       if ($indel) {
 	$log->write_to("There is an indel in the sequence in WABA $waba_id, chromosome $chromosome, $start, $end\n");
@@ -165,7 +164,7 @@ while (my $line = <IN>) {
       my $elegans_chrom = $waba_id;
       $elegans_chrom =~ s/\"//g;
       ($cb_start, $cb_end, $indel, $change) = 
-	  Remap_Sequence_Change::remap_ace($elegans_chrom, $cb_start, $cb_end, $version-1, $version, @mapping_data);
+	  $assembly_mapper->remap_ace($elegans_chrom, $cb_start, $cb_end);
 
       if ($indel) {
 	$log->write_to("There is an indel in the sequence in WABA $waba_id, chromosome $chromosome, $start, $end\n");

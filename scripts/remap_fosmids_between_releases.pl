@@ -6,8 +6,8 @@
 #
 # This takes the BUILD_DATA/MISC_DYNAMIC/fosmids.ace file and converts any coordinates that have changed between releases
 #
-# Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-02-14 11:10:43 $      
+# Last updated by: $Author: klh $     
+# Last updated on: $Date: 2012-06-22 08:56:53 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -74,8 +74,7 @@ my $currentdb = $wormbase->database('current');
 
 my $version = $wormbase->get_wormbase_version;
 print "Getting mapping data for WS$version\n";
-my @mapping_data = Remap_Sequence_Change::read_mapping_data($version - 1, $version, $wormbase->species);
- 
+my $assembly_mapper = Remap_Sequence_Change->new($version - 1, $version, $wormbase->species, $wormbase->genome_diffs);
 
 ##########################
 # MAIN BODY OF SCRIPT
@@ -137,7 +136,7 @@ while (my $line = <IN>) {
 
     # if $start > $end, then sense is -ve (i.e. normal ace convention)
     ($clone_id, $start, $end, $indel, $change) = 
-	Remap_Sequence_Change::remap_clone($wormbase, $clone_id, $start, $end, $version, $current_converter, $autoace_converter, @mapping_data);
+	$assembly_mapper->remap_clone($clone_id, $start, $end, $current_converter, $autoace_converter);
 
     if ($indel) {
       $log->write_to("There is an indel in the sequence in FOSMID $fosmid_id, clone $clone_id, $start, $end\n");

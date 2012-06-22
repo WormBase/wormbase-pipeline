@@ -8,8 +8,8 @@
 # sequence positions of two releases.
 #
 #
-# Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-02-14 11:17:21 $      
+# Last updated by: $Author: klh $     
+# Last updated on: $Date: 2012-06-22 08:56:53 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -75,8 +75,7 @@ if (! defined $twinscan || ! defined $output) {
 # read in the mapping data
 ##########################
 
-my @mapping_data = Remap_Sequence_Change::read_mapping_data($release1, $release2, $wormbase->species);
-
+my $assembly_mapper = Remap_Sequence_Change->new($release1, $release2, $wormbase->species, $wormbase->genome_diffs);
 
 ##########################
 # MAIN BODY OF SCRIPT
@@ -112,7 +111,7 @@ while (my $line = <TWINSCAN>) {
 
     my ($start, $end) = ($f[2], $f[3]);
     print "chrom, start, end=$chromosome, $start, $end\n" if ($verbose);
-    ($f[2], $f[3], $indel, $change) = Remap_Sequence_Change::remap_ace($chromosome, $start, $end, $release1, $release2, @mapping_data);
+    ($f[2], $f[3], $indel, $change) = $assembly_mapper->remap_ace($chromosome, $start, $end );
 
     my $twinscan_id = $f[1];
 

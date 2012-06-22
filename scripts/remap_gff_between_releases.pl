@@ -8,8 +8,8 @@
 # sequence of two relreases
 #
 #
-# Last updated by: $Author: mh6 $     
-# Last updated on: $Date: 2011-05-05 09:32:33 $      
+# Last updated by: $Author: klh $     
+# Last updated on: $Date: 2012-06-22 08:56:53 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -76,8 +76,7 @@ if (! defined $gff || ! defined $output) {
 # read in the mapping data
 ##########################
 
-my @mapping_data = Remap_Sequence_Change::read_mapping_data($release1, $release2, $wormbase->species);
-
+my $assembly_mapper = Remap_Sequence_Change->new($release1, $release2, $wormbase->species, $wormbase->genome_diffs);
 
 ##########################
 # MAIN BODY OF SCRIPT
@@ -99,7 +98,7 @@ while (my $line = <GFF>) {
       if ($chromosome !~ /^CHROMOSOME_/ && $wormbase->species eq 'elegans') {$chromosome = "CHROMOSOME_$chromosome"};
 
       print "chrom, start, end=$chromosome, $start, $end\n" if ($verbose);
-      ($f[3], $f[4], $f[6], $indel, $change) = Remap_Sequence_Change::remap_gff($chromosome, $start, $end, $sense, $release1, $release2, @mapping_data);
+      ($f[3], $f[4], $f[6], $indel, $change) = $assembly_mapper->remap_gff($chromosome, $start, $end, $sense);
  
       if ($indel) {
 	      $log->write_to("There is an indel in the sequence in CHROMOSOME $chromosome, $start, $end\n");

@@ -5,7 +5,7 @@
 # by Anthony Rogers                             
 #
 # Last updated by: $Author: klh $               
-# Last updated on: $Date: 2012-02-02 21:56:00 $
+# Last updated on: $Date: 2012-06-22 08:56:53 $
 
 # Generates a release letter at the end of build.
 #
@@ -150,8 +150,8 @@ if( defined($opt_l)) {
   # make the chromosomal sequence changes file
   $log->write_to("\nGenerating C. elegans chromosomal sequence changes Data\n\n");
   open (CC, "> $reports_dir/chromosome_changes") || die "Can't open file $reports_dir/chromosome_changes\n";
-  my @mapping_data = Remap_Sequence_Change::read_mapping_data($ver-1, $ver, $wormbase->species);
-  my $text = Remap_Sequence_Change::write_changes($wormbase, $ver, @mapping_data);
+  my $assembly_mapper = Remap_Sequence_Change->new($ver-1, $ver, $wormbase->species, $wormbase->genome_diffs);
+  my $text = $assembly_mapper->write_changes( $wormbase );
   printf CC $text;
   close(CC);
 

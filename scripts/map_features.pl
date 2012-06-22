@@ -8,8 +8,8 @@
 # Uses Ant's Feature_mapper.pm module
 #
 #
-# Last updated by: $Author: pad $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2012-01-20 17:38:01 $        # quickly see when script was last changed and by whom
+# Last updated by: $Author: klh $                      # These lines will get filled in by cvs and helps us
+# Last updated on: $Date: 2012-06-22 08:56:53 $        # quickly see when script was last changed and by whom
 
 
 $|=1;
@@ -94,10 +94,7 @@ my $currentdb = $wb->database('current');
 my $version = $wb->get_wormbase_version;
 
 print "Getting mapping data for WS$version\n";
-my @mapping_data = Remap_Sequence_Change::read_mapping_data($version - 1, $version, $wb->species);
-
-
-
+my $assembly_mapper = Remap_Sequence_Change->new($version - 1, $version, $species, $wb->genome_diffs);
 
 #######################
 # ACEDB and databases #
@@ -261,7 +258,7 @@ EOF
                                                  $flanking_left, 
                                                  $flanking_right, 
                                                  $version, 
-                                                 @mapping_data);
+                                                 $assembly_mapper);
 	if ($suggested_fix[4]) { # FIXED :-)
 	  $log->write_to("// Suggested fix for $feature : $suggested_fix[3]\n");
 	  $log->write_to("\nFeature : $feature\n");

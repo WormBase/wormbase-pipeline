@@ -4,8 +4,8 @@
 # It remaps the genomic locations from WS160 to the current version
 # To not remap, set the release to be 0.
 #
-# Last updated by: $Author: mh6 $     
-# Last updated on: $Date: 2010-05-17 16:04:58 $      
+# Last updated by: $Author: klh $     
+# Last updated on: $Date: 2012-06-22 08:56:52 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -83,9 +83,9 @@ my %gene_info;
 my %sources;			# keep a note of the sources used
 
 # read in the mapping data
-my @mapping_data;
+my $assembly_mapper;
 if ($release != 0) {
-  @mapping_data = Remap_Sequence_Change::read_mapping_data($release, $wormbase->get_wormbase_version, $wormbase->species);
+  $assembly_mapper = Remap_Sequence_Change->new($release, $wormbase->get_wormbase_version, $wormbase->species, $wormbase->genome_diffs);
 }
 
 # suck the data in
@@ -130,7 +130,7 @@ while (my $line = <IN>) {
     if ($release != 0) {
       if ($fields[0] !~ /^CHROMOSOME_/) {$fields[0] = "CHROMOSOME_$fields[0]"};
       my ($indel, $change);	# not used
-      ($fields[3], $fields[4], $fields[6], $indel, $change) = Remap_Sequence_Change::remap_gff($fields[0], $fields[3], $fields[4], $fields[6], $release, $wormbase->get_wormbase_version, @mapping_data);
+      ($fields[3], $fields[4], $fields[6], $indel, $change) = $assembly_mapper->remap_gff($fields[0], $fields[3], $fields[4], $fields[6]);
     }
 
     # get the clone coords
@@ -169,7 +169,7 @@ while (my $line = <IN>) {
     if ($release != 0) {
       if ($fields[0] !~ /^CHROMOSOME_/) {$fields[0] = "CHROMOSOME_$fields[0]"};
       my ($indel, $change);	# not used
-      ($fields[3], $fields[4], $fields[6], $indel, $change) = Remap_Sequence_Change::remap_gff($fields[0], $fields[3], $fields[4], $fields[6], $release, $wormbase->get_wormbase_version, @mapping_data);
+      ($fields[3], $fields[4], $fields[6], $indel, $change) = $assembly_mapper->remap_gff($fields[0], $fields[3], $fields[4], $fields[6]);
     }
 
     # get start/end of exon relative to the start of the gene

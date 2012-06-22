@@ -8,8 +8,8 @@
 # sequence positions between two releases.
 #
 #
-# Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-02-14 11:19:27 $      
+# Last updated by: $Author: klh $     
+# Last updated on: $Date: 2012-06-22 08:56:53 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -27,7 +27,7 @@ use Modules::Remap_Sequence_Change;
 ######################################
 
 my ($help, $debug, $test, $verbose, $store, $wormbase);
-my ($release1, $release2, $version);
+my ($release1, $release2, $version, $flag);
 
 GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
@@ -36,6 +36,7 @@ GetOptions ("help"       => \$help,
 	    "store:s"    => \$store,
 	    "release1=i" => \$release1,
 	    "release2=i" => \$release2,
+            "flag=s"     => \$flag,
 	    );
 
 if ( $store ) {
@@ -68,27 +69,29 @@ if (! defined $release1 || ! defined $release2) {
 # read in the mapping data
 ##########################
 
-my @mapping_data = Remap_Sequence_Change::read_mapping_data($release1, $release2, $wormbase->species);
+my $assembly_mapper = Remap_Sequence_Change->new($release1, $release2, $wormbase->species, $wormbase->genome_diffs);
 
-my $flag = "/tmp/remap_elegans_data";
-
-if (Remap_Sequence_Change::remap_test($release1, $release2, @mapping_data)) {
+if ($assembly_mapper->remap_test()) { 
   # there are changes
   $log->write_to("WARNING: There have been genomic sequence changes.\nThe remapping programs will therefore be run.\nThis may take some time.\n");
 
-  # set a flag for the remapping scripts to be run
-  open(FLAG, "> $flag")|| die "Could not create the file $flag\n";
-  print FLAG "yes\n";
-  close(FLAG);
+  if (defined $flag) {
+    # set a flag for the remapping scripts to be run
+    open(FLAG, "> $flag")|| die "Could not create the file $flag\n";
+    print FLAG "yes\n";
+    close(FLAG);
+  }
 
 } else {
   # there are no changes
   $log->write_to("There are no genomic sequence changes.\nThe remapping programs will not be run.\n");
 
-  # set a flag for the remapping scripts to NOT be run
-  open(FLAG, "> $flag")|| die "Could not create the file $flag\n";
-  print FLAG "no\n";
-  close(FLAG);
+  if (defined $flag) {
+    # set a flag for the remapping scripts to NOT be run
+    open(FLAG, "> $flag")|| die "Could not create the file $flag\n";
+    print FLAG "no\n";
+    close(FLAG);
+  }
 }
 
 $log->mail();

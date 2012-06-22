@@ -6,8 +6,8 @@
 #
 # This is to remap wig plot files between genome release where coordinates have changed.
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2010-03-23 10:00:43 $
+# Last updated by: $Author: klh $
+# Last updated on: $Date: 2012-06-22 08:56:53 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -54,7 +54,8 @@ if ( $store ) {
 
 
 my $log = Log_files->make_build_log($wormbase);
-my @mapping_data = Remap_Sequence_Change::read_mapping_data($old, $new, $wormbase->species);
+
+my $assembly_mapper = Remap_Sequence_Change->new($old, $new, $wormbase->species, $wormbase->genome_diffs);
 
 if( $split ) { 
     my %chroms; # file handle for each sequence
@@ -115,12 +116,12 @@ sub remap_file {
 	    if( scalar @data > 2) {
 		#BED file
 		my ($chrom, $coord1, $coord2, $score) = @data;
-		print NEW join("\t",("$chrom",Remap_Sequence_Change::remap_BED($chrom,$coord1, $coord2 ,$old, $new, \@mapping_data),$score)),"\n"
+		print NEW join("\t",("$chrom",$assembly_mapper->remap_BED($chrom,$coord1, $coord2),$score)),"\n"
 		}
 	    else {
 		# wig file
 		my ($coord, $score) = @data;
-		print NEW Remap_Sequence_Change::remap_wig($chrom,$coord,$old, $new, \@mapping_data)."\t$score\n";
+		print NEW $assembly_mapper->remap_wig($chrom,$coord,$old)."\t$score\n";
 	    }
 	}
 	else {
