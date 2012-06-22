@@ -8,7 +8,7 @@
 # Page download and update upload to geneace has been automated [ck1]
 
 # Last updated by: $Author: mt3 $
-# Last updated on: $Date: 2012-06-15 15:50:10 $
+# Last updated on: $Date: 2012-06-22 10:21:46 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -73,7 +73,7 @@ my $rundate     = $wormbase->rundate;
 ##########################
 
 my $input_file = "$path/cgc_strain_list_$rundate";
-system("wget -O $input_file https://www.cbs.umn.edu/sites/default/files/public/downloads/celelist.txt") && die "Unable to download strain data file from CGC website\n\n";
+system("wget -O $input_file https://www.cbs.umn.edu/sites/default/files/public/downloads/celelist_2.txt") && die "Unable to download strain data file from CGC website\n\n";
 
 ############################################
 # get hash to convert CGC name to Gene ID
