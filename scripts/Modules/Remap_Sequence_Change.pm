@@ -9,11 +9,11 @@
 #        FILES:  ---
 #         BUGS:  ---
 #        NOTES: 
-#      $Author: klh $
+#      $Author: gw3 $
 #      COMPANY:
 #     $Version:  $
 #      CREATED: 2006-02-27
-#        $Date: 2012-06-22 08:56:53 $
+#        $Date: 2012-06-22 11:09:04 $
 #===============================================================================
 package Remap_Sequence_Change;
 
@@ -199,7 +199,7 @@ sub remap_ace {
 sub remap_gff {
   my ($self, $chromosome, $start, $end, $sense) = @_;
 
-  print "Remapping $chromosome $start $end $sense\n";
+#  print "Remapping $chromosome $start $end $sense\n";
 
   my $indel = 0;		# true if indels affect this location
   my $change = 0;		# true if non-indel base changes affect this location
@@ -282,7 +282,7 @@ sub remap_gff {
     }
   }
 
-  print " Remapped to $start $end $sense $indel $change\n";
+#  print " Remapped to $start $end $sense $indel $change\n";
 
   return ($start, $end, $sense, $indel, $change);
 }
@@ -611,6 +611,6 @@ coordinates, with their sense ("+" or "-") to the new coordinates.
 =back
 
 =head3 AUTHOR
-$Author: klh $
+$Author: gw3 $
 
 =cut
