@@ -2,7 +2,7 @@
 
 # Version: $Version: $
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2012-06-20 14:42:14 $
+# Last updated on: $Date: 2012-06-26 12:21:38 $
 
 use strict;
 use warnings;
@@ -24,12 +24,12 @@ my ($debug,
     $test,
     $store, 
     $species,
-    $previous_mapping_dir,
     $load,
     $database,
     $no_load,
     $target,
     $acefile,
+    $prior_mappings,
     $EPCR, 
     $IPCRESS,
     $MAX_PROD_SIZE,
@@ -37,19 +37,18 @@ my ($debug,
     );
 
 GetOptions(
-  "debug=s"        => \$debug,
-  "test"           => \$test,
-  "species:s"      => \$species,
-  "store=s"        => \$store,
-  "previousdir=s"  => \$previous_mapping_dir,
-  "database=s"     => \$database,
-  "noload"         => \$no_load,
-  "target=s"       => \$target,
-  "acefile=s"      => \$acefile,
-  "ipcress=s"      => \$IPCRESS,
-  "epcr=s"         => \$EPCR,
-  "minsize=s"      => \$MIN_PROD_SIZE,
-  "maxsize=s"      => \$MAX_PROD_SIZE,
+  "debug=s"         => \$debug,
+  "test"            => \$test,
+  "species:s"       => \$species,
+  "store=s"         => \$store,
+  "database=s"      => \$database,
+  "noload"          => \$no_load,
+  "target=s"        => \$target,
+  "acefile=s"       => \$acefile,
+  "ipcress=s"       => \$IPCRESS,
+  "epcr=s"          => \$EPCR,
+  "minsize=s"       => \$MIN_PROD_SIZE,
+  "maxsize=s"       => \$MAX_PROD_SIZE,
     );
 
 
@@ -87,6 +86,8 @@ my (%mapped, $missed_by_epcr, $total_count, $fail_count);
 
 my $prods_to_map = &get_pcr_products();
 $total_count = scalar(keys %$prods_to_map);
+
+$log->write_to(sprintf("%d unmapped products to map\n\n", scalar(keys %$prods_to_map)));
 
 #
 # ipcress round 1
@@ -190,6 +191,11 @@ foreach my $chr (sort keys %prods_by_loc) {
 }
 close($acefh);
 
+if (not $no_load) {
+  $wormbase->load_to_database($database, $acefile, "PCR_product_mapping", $log);
+}
+
+
 $log->mail;
 exit;
 
@@ -213,16 +219,16 @@ sub map_with_ipcress {
       or $log->log_and_die("Could not open ipcress command\n");
   while(<$iprunfh>) {
     /ipcress:\s+(\S+)\s+(\S+)\s+(\d+)\s+\S\s+(\d+)\s+(\d+)\s+\S\s+(\d+)\s+(\d+)\s+(\S+)/ and do {
-      my ($tseq, $prod_id, $prod_len, $start, $mm1, $end, $mm2, $ori) = ($1, $2, $3, $4, $5, $6, $7, $8);
+      my ($tseq, $prod_id, $prod_len, $start, $mm1, $start2, $mm2, $ori) = ($1, $2, $3, $4, $5, $6, $7, $8);
 
       next if $ori =~ /single/;
 
       $start++;
-      $end = $start + $prod_len + 1;
+      my $end = $start + $prod_len - 1;
 
-      if ($ori =~ /revcomp/) {
-        ($start, $end) = ($end, $start);
-      }
+      #if ($ori =~ /revcomp/) {
+      #  ($start, $end) = ($end, $start);
+      #}
 
       $tseq =~ s/:filter\S+//; 
       my $mm = $mm1 + $mm2;
@@ -269,8 +275,8 @@ sub map_with_epcr {
       my $obj = {
         product => $2,
         chr => $1,
-        start => ($3 eq '-') ? $5 : $4, 
-        end   => ($3 eq '-') ? $4 : $5, 
+        start => $4, 
+        end   => $5,
         len => $6, 
         edits => $7 + $8,
       };
@@ -278,6 +284,8 @@ sub map_with_epcr {
       push @{$mapped->{$2}}, $obj;
     }
   }
+
+  unlink $epcrfile;
 }
 
 #############################
@@ -296,13 +304,26 @@ sub get_pcr_products {
   #};
 
   my (%prods, %good_prods);
-
-  my $tb_def = &get_table_def();
   my $tace = $wormbase->tace;
 
-  my $tb_cmd = "Table-maker -p \"$tb_def\"\nquit\n";
-  open(my $tace_fh, "echo '$tb_cmd' | $tace $database |");
-  while(<$tace_fh>) {
+  my $tb_def1 = &get_initial_table_def();
+  my $tb_cmd1 = "Table-maker -p \"$tb_def1\"\nquit\n";
+  open(my $tace_fh1, "echo '$tb_cmd1' | $tace $database |");
+  while(<$tace_fh1>) {
+    if (/^\"(\S+)\"/) {
+      s/\"//g;
+      my @l = split;
+
+      $good_prods{$l[0]} = [uc($l[1]), uc($l[2])];
+    }
+  }
+  close($tace_fh1);
+
+
+  my $tb_def2 = &get_secondary_table_def();
+  my $tb_cmd2 = "Table-maker -p \"$tb_def2\"\nquit\n";
+  open(my $tace_fh2, "echo '$tb_cmd2' | $tace $database |");
+  while(<$tace_fh2>) {
     if (/^\"(\S+)\"/) {
       s/\"//g;
       my @l = split;
@@ -316,6 +337,7 @@ sub get_pcr_products {
       }
     }
   }
+  close($tace_fh2);
 
   foreach my $prod (sort keys %prods) {
     if (scalar(@{$prods{$prod}}) != 2) {
@@ -329,23 +351,21 @@ sub get_pcr_products {
     $good_prods{$prod} = [uc($prods{$prod}->[0]->[1]), uc($prods{$prod}->[1]->[1])];
   }
 
-  unlink $tb_def;
+  unlink $tb_def1, $tb_def2;
   return \%good_prods;
 }
 
 
 #############################
-sub get_table_def {
-  my ($only_unmapped) = @_;
+sub get_secondary_table_def {
 
   my $tmdef = "/tmp/pcr_prod.$$.def";
 
   open my $qfh, ">$tmdef" or 
       $log->log_and_die("Could not open $tmdef for writing\n");  
 
-  my $condition = ($only_unmapped) 
-      ? "Condition Method AND Method != \"Variation_PCR\" AND NOT Sequence" 
-      : "Condition Method AND Method != \"Variation_PCR\"";
+  my $condition = 
+      "NOT Mapping_primers AND NOT Canonical_parent AND Method AND Method != \"Variation_PCR\"";
 
   my $query = <<"EOF";
 
@@ -358,7 +378,7 @@ Visible
 Class 
 Class PCR_product 
 From 1
-$condition
+Condition $condition
  
 Colonne 2 
 Width 12 
@@ -385,3 +405,49 @@ EOF
   return $tmdef;
 }
 
+################################
+sub get_initial_table_def {
+
+  my $tmdef = "/tmp/pcr_prod.$$.def";
+
+  open my $qfh, ">$tmdef" or 
+      $log->log_and_die("Could not open $tmdef for writing\n");  
+
+  my $condition = "NOT Canonical_parent";
+
+  my $query = <<"EOF";
+
+Sortcolumn 1
+
+Colonne 1 
+Width 12 
+Optional 
+Visible 
+Class 
+Class PCR_product 
+From 1 
+Contition $condition
+ 
+Colonne 2 
+Width 12 
+Mandatory 
+Visible 
+Text 
+From 1 
+Tag Left_mapping_primer 
+ 
+Colonne 3 
+Width 12 
+Mandatory 
+Visible 
+Text 
+From 1 
+Tag Right_mapping_primer 
+
+EOF
+
+  print $qfh $query;
+  close($qfh);
+
+  return $tmdef;
+}
