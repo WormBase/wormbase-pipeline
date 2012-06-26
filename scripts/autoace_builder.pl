@@ -7,7 +7,7 @@
 # Usage : autoace_builder.pl [-options]
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2012-06-18 19:25:27 $
+# Last edited on: $Date: 2012-06-26 12:25:32 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -18,6 +18,7 @@ use Wormbase;
 use Getopt::Long;
 use File::Copy;
 use Coords_converter;
+use Modules::Remap_Sequence_Change;
 use Log_files;
 use Storable;
 use LSF RaiseError => 0, PrintError => 1, PrintOutput => 0;
@@ -121,8 +122,8 @@ $wormbase->run_script( "get_ena_submission_xrefs.pl -sequencexrefs -load", $log)
 $wormbase->run_script( "processGFF.pl -$processGFF",        $log ) if $processGFF;    #clone_acc
 &first_dumps                                                       if $first_dumps;   # dependant on clone_acc for agp
 $wormbase->run_script( 'make_wormpep.pl -initial -all',          $log ) if $make_wormpep;
-$wormbase->run_script( 'map_features.pl -all',              $log ) if $map_features;
 
+&map_features_to_genome() if $map_features;
 
 #########   BLAT  ############
 $wormbase->run_script( 'BLAT_controller.pl -dump', $log ) if $prep_blat;
@@ -263,6 +264,51 @@ sub first_dumps {
   }
 }
 
+sub map_features_to_genome {
+  #
+  # feature mapping, direct in perl using flanks
+  #
+  $wormbase->run_script( 'map_features.pl -all', $log );
+
+  my $release = $wormbase->get_wormbase_version;
+  my $previous_release = $release - 1;
+
+  my $assembly_mapper = Remap_Sequence_Change->new($previous_release, $release, $wormbase->species, $wormbase->genome_diffs);
+
+  #
+  # PCR_products
+  #
+  my $pcr_file = "misc_PCR_mappings_" . $wormbase->species . ".ace";
+  my $pcr_mappings = $wormbase->misc_dynamic . "/" . $pcr_file;
+
+  if (not $assembly_mapper->remap_test and -e $pcr_mappings) {
+    # genome has not changed. Load the current mappings, and supplement with new data
+    $wormbase->load_to_database( $wormbase->autoace, $pcr_mappings, "PCR_product_MISC_DYN", $log );
+    $wormbase->run_script( 'PCR_product2Genome.pl', $log );
+  } else {
+    # genome has changed. Need to remap everything
+    unlink $pcr_mappings if -e $pcr_mappings;
+    $wormbase->run_script( 'PCR_product2Genome.pl -acefile $pcr_mappings', $log );
+  }
+  
+  #
+  # RNAi
+  #
+  my $rnai_file = "misc_RNAi_homols_" . $wormbase->species . "ace";
+  my $rnai_mappings = $wormbase->misc_dynamic . "/" . $rnai_file;
+
+  if (not $assembly_mapper->remap_test and -e $rnai_mappings) {
+    # genome has not changed. Load the current mappings, and supplement with new data
+    $wormbase->load_to_database( $wormbase->autoace, $rnai_mappings, "RNAi_MISC_DYN", $log );
+    $wormbase->run_script( 'RNAi2Genome.pl', $log );
+  } else {
+    # genome has changed. Need to remap everything
+    unlink $rnai_mappings if -e $rnai_mappings;
+    $wormbase->run_script( 'RNAi2Genome.pl -acefile $rnai_mappings', $log );
+  }
+  
+}
+
 sub map_features {
 
     ## elegans only stuff
@@ -313,15 +359,8 @@ sub remap_misc_dynamic {
   my $release = $wormbase->get_wormbase_version;
   my $previous_release = $release - 1;
 
-  # test to see if we need to run the remapping programs
-  $wormbase->run_script( "test_remap_between_releases.pl -release1 $previous_release -release2 $release", $log );
-  my $flag = "/tmp/remap_elegans_data";
-  open(FLAG, "< $flag") || die "Could not open the file $flag\n";
-  my $answer = <FLAG>;
-  close(FLAG);
-  chomp $answer;
-
-  if ($answer eq "yes") {	# we do want to remap the data
+  my $assembly_mapper = Remap_Sequence_Change->new($previous_release, $release, $wormbase->species, $wormbase->genome_diffs);
+  if ($assembly_mapper->remap_test) {
 
     # remap ace files with homol_data mapped to clones
     my %clone_data = (
@@ -400,6 +439,8 @@ sub remap_misc_dynamic {
     }
     closedir DIR;
 
+  } else {
+    $log->write_to("Assembly has apparently not changed, so did not remap the MISC_DYNAMIC data\n");
   }
 
   # the SUPPLEMENTARY_GFF directory is copied over whether or not it has been remapped
