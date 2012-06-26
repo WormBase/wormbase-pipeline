@@ -2,7 +2,7 @@
 
 # Version: $Version: $
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2011-07-13 08:38:42 $
+# Last updated on: $Date: 2012-06-26 12:24:53 $
 
 use strict;
 use warnings;
@@ -17,6 +17,7 @@ use LSF RaiseError => 0, PrintError => 1, PrintOutput => 0;
 use LSF::JobManager;
 use Ace;
 use Coords_converter;
+use Sequence_extract;
 use Bio::Tools::Blat;
 use Bio::SeqIO;
 
@@ -41,13 +42,12 @@ my ($debug,
     $db,
     $query,
     $target, 
-    $submit,
     $acefile,
     $pslfile,
     $noload,
     $outdir,
     $species, 
-    $load,
+    $no_load,
     $keep_best,
     $verbose,
     );
@@ -58,12 +58,11 @@ GetOptions(
 	   "species:s"      => \$species,
 	   'store=s'        => \$store,
 	   "database:s"     => \$db,
-           "submit"         => \$submit,
 	   "target:s"       => \$target,
 	   "query:s"        => \$query,
            "acefile:s"      => \$acefile,
            "pslfile:s"      => \$pslfile,
-           "load"           => \$load,
+           "noload"         => \$no_load,
            "keepbest=s"     => \$keep_best,
            "verbose"        => \$verbose,
 	   );
@@ -98,39 +97,29 @@ my $coords = Coords_converter->invoke($db, 0, $wormbase);
 if (not $query) {
   ###### Fetch the queries (if not supplied)
   my (@rnai, @query, @rnai_chunks, @out_ace_files, @out_lsf_files, @out_psl_files, %best_hit_only, %seen);
-  
-  my $tace = $wormbase->tace;
-  my $tb_file = "$db/wquery/RNAi_dna.def";
-  if (not -e $tb_file) {
-    $log->log_and_die("Could not find Table-maker definition file $tb_file\n");
-  }
-  my $tb_cmd = "Table-maker -p \"$tb_file\"\nquit\n";
-  open(my $tace_fh, "echo '$tb_cmd' | $tace $db |");
-  while(<$tace_fh>) {
-    if (/^\"(\S+)\"\s+\"(\S+)\"\s+\"(\S+)\"/) {
-      my ($rnai_id, $dna_text, $clone_id) = ($1, $2, $3);
-      $seen{$rnai_id}++;
-      my $unique_rnai_id = sprintf("%s.DNA_text_%d", $rnai_id,  $seen{$rnai_id});
-      
-      if ($clone_id =~ /^mv_/ or
-          $clone_id =~ /^yk\d+/) {
-        $best_hit_only{$unique_rnai_id} = 1;
-      }
-      push @rnai, [$unique_rnai_id, $dna_text];
-    }
-  }
-  close($tace_fh);
+
+  @rnai = &get_rnai_sequences();
 
   my $chunk_size = 2000;      
   my $total_rnai = scalar(@rnai);
   my $chunk_count = int(scalar(@rnai) / $chunk_size);
   
+  if (not defined $keep_best) {
+    $keep_best =  $wormbase->blat . "/rnai.best_hit_only.txt";
+  }
+  open my $pcf, ">$keep_best" 
+      or $log->log_and_die("Could not open $keep_best for writing\n");
+
   # randomise order for better distribution
   while(my $rnai = shift @rnai) {
     my $chunk_id = int(rand($chunk_count));
     
     push @{$rnai_chunks[$chunk_id]}, $rnai;
+    if ($rnai->[1] =~ /^mv/ or $rnai->[1] =~ /^yk/) {
+      print $pcf $rnai->[0], "\n";
+    }
   }
+  close($pcf);
   
   $log->write_to(sprintf("Fetched %d RNAi objects in %d chunks\n", $total_rnai, scalar(@rnai_chunks)));
   
@@ -138,21 +127,11 @@ if (not $query) {
     my $file = $wormbase->blat . "/rnai_query.$i.fa";
     open my $fh, ">$file" or $log->log_and_die("Could not open $file for writing\n");
     foreach my $rnai (@{$rnai_chunks[$i]}) {
-      printf $fh ">%s\n%s\n", @$rnai;
+      printf $fh ">%s\n%s\n", $rnai->[0], $rnai->[2];
     }
     close($fh);
     push @query, $file;
   }
-  
-  if (not defined $keep_best) {
-    $keep_best =  $wormbase->blat . "/rnai.best_hit_only.txt";
-  }
-  open my $pcf, ">$keep_best" 
-      or $log->log_and_die("Could not open $keep_best for writing\n");
-  foreach my $pc (keys %best_hit_only) {
-    print $pcf "$pc\n";
-  }
-  close($pcf);
 
   my $lsf = LSF::JobManager->new();
   
@@ -210,7 +189,7 @@ if (not $query) {
     unlink @out_ace_files, @out_psl_files, @out_lsf_files, @query;
   }
 
-  if ($load) {
+  if (not $no_load) {
     $wormbase->load_to_database($db, $acefile, "RNAi_mapping", $log);
   }
 } else {
@@ -316,6 +295,7 @@ if (not $query) {
       my $parent = ($map_down) ? $m_tid : $tid;
       # strip off the suffix added earlier to make the ids unique
       $qid =~ s/\.DNA_text_\d+$//;
+      $qid =~ s/\.PCR_product_\d+$//;
 
       push @{$results_by_parent{$parent}->{$qid}->{$method}}, [$percent, \@blocks];
     }
@@ -352,9 +332,201 @@ exit;
 
 
 ################################################################
-#
-################################################################
+sub get_rnai_sequences {
 
+  my (@rnai, %seen);
+  
+  my $tace = $wormbase->tace;
+
+  #
+  # First fetch the objects with DNA_text attached (old Caltech pipeline)
+  #
+  my $tb_file = &query_with_dna_text();
+  if (not -e $tb_file) {
+    $log->log_and_die("Could not find Table-maker definition file $tb_file\n");
+  }
+  my $tb_cmd = "Table-maker -p \"$tb_file\"\nquit\n";
+  open(my $tace_fh, "echo '$tb_cmd' | $tace $db |");
+  while(<$tace_fh>) {
+    if (/^\"(\S+)\"\s+\"(\S+)\"\s+\"(\S+)\"/) {
+      my ($rnai_id, $dna_text, $clone_id) = ($1, $2, $3);
+      $seen{$rnai_id}++;
+      my $unique_rnai_id = sprintf("%s.DNA_text_%d", $rnai_id,  $seen{$rnai_id});
+      
+      push @rnai, [$unique_rnai_id, $clone_id, $dna_text];
+    }
+  }
+  close($tace_fh);
+  unlink $tb_file;
+
+  #
+  # Now get the objects the new Caltech pipeline, which have no DNA_text but a PCR_product instead
+  #
+  my (%rnai2pcr, %pcr, %pcr_seq);
+
+  my $sextract = Sequence_extract->invoke( $db, undef, $wormbase );
+
+  $tb_file = &query_without_dna_text();
+  $tb_cmd = "Table-maker -p \"$tb_file\"\nquit\n";
+
+  open($tace_fh, "echo '$tb_cmd' | $tace $db |");
+  while(<$tace_fh>) {
+    if (/^\"(\S+)\"\s+\"(\S+)\"\s+\"(\S+)\"\s+\"(\S+)\"\s+(\d+)\s+(\d+)/) {
+      print;
+      my ($rnai_id, $prod, $seq, $prod2, $start, $end) = ($1, $2, $3, $4, $5, $6);
+
+      next unless $prod eq $prod2;
+      if (not exists $pcr{$prod}) {
+        $pcr{$prod} = [$seq, $start, $end];
+      }
+      $rnai2pcr{$rnai_id}->{$prod} = 1;
+    }
+  }
+  close($tace_fh);
+  unlink $tb_file;
+  
+  # Fetch underlying sequences
+  foreach my $prod (keys %pcr) {
+    my ($seq, $start, $end) = @{$pcr{$prod}};
+    ($start, $end) = ($end, $start) if $end < $start;
+
+    my $seq_string = $sextract->Sub_sequence($seq, $start - 1, $end - $start + 1);
+
+    $pcr_seq{$prod} = $seq_string;
+  }
+
+  foreach my $rnai_id (keys %rnai2pcr) {
+    foreach my $pcr_prod (keys %{$rnai2pcr{$rnai_id}}) {
+      if (exists $pcr_seq{$pcr_prod}) {
+        $seen{$rnai_id}++;
+        my $unique_rnai_id = sprintf("%s.PCR_product_%d", $rnai_id,  $seen{$rnai_id});
+
+        push @rnai, [$unique_rnai_id, $pcr_prod, $pcr_seq{$pcr_prod}];
+      }
+    }
+  }
+
+  return @rnai;
+}
+
+#########################
+sub query_with_dna_text {
+
+  my $tmdef = "/tmp/rnai_with_dnatext.$$.def";
+
+  open my $qfh, ">$tmdef" or 
+      $log->log_and_die("Could not open $tmdef for writing\n");  
+
+  my $query = <<"EOF";
+
+Sortcolumn 1
+
+Colonne 1 
+Width 12 
+Optional 
+Visible 
+Class 
+Class RNAi 
+From 1
+Condition NOT Homol_homol
+ 
+Colonne 2 
+Width 12 
+Mandatory 
+Visible 
+Text 
+From 1 
+Tag DNA_text 
+ 
+Colonne 3 
+Width 12 
+Optional 
+Visible 
+Text 
+Right_of 2 
+Tag  HERE  
+
+EOF
+
+  print $qfh $query;
+  close($qfh);
+  return $tmdef;
+}
+
+#########################
+sub query_without_dna_text {
+
+  my $tmdef = "/tmp/rnai_without_dnatext.$$.def";
+
+  open my $qfh, ">$tmdef" or 
+      $log->log_and_die("Could not open $tmdef for writing\n");  
+
+  my $query = <<"EOF";
+
+Sortcolumn 1
+
+Colonne 1 
+Width 12 
+Optional 
+Visible 
+Class 
+Class RNAi 
+From 1 
+Condition NOT DNA_text AND NOT Homol_homol
+ 
+Colonne 2 
+Width 12 
+Mandatory 
+Visible 
+Class 
+Class PCR_product 
+From 1 
+Tag PCR_product 
+ 
+Colonne 3 
+Width 12 
+Mandatory 
+Visible 
+Class 
+Class Sequence 
+From 2 
+Tag Canonical_parent 
+ 
+Colonne 4 
+Width 12 
+Mandatory 
+Visible 
+Class 
+Class PCR_product 
+From 3 
+Tag PCR_product 
+ 
+Colonne 5 
+Width 12 
+Mandatory 
+Visible 
+Integer 
+Right_of 4 
+Tag  HERE  
+ 
+Colonne 6 
+Width 12 
+Mandatory 
+Visible 
+Integer 
+Right_of 5 
+Tag  HERE  
+ 
+ 
+EOF
+
+  print $qfh $query;
+  close($qfh);
+  return $tmdef;
+}
+
+
+##########################
 sub filter_hits {
   my ($res, $qlengths, $check_block_size) = @_;
 
@@ -402,7 +574,7 @@ sub filter_hits {
   return (\@all_primary, \@all_secondary);
 }
 
-
+#############################
 sub log_blat {
   my ($perc, $aligned, $max_bsize, $res) = @_;
 
