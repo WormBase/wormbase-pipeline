@@ -63,9 +63,12 @@ sub invoke {
   my ($class,$database,$refresh,$wormbase) = @_;
   
   # inherit from Coords_converter to get all the coord info
-  my $self = Coords_converter->invoke($database, $refresh, $wormbase);
+  my $self = {};
   bless $self, $class;
   
+  my $cc = Coords_converter->invoke($database, $refresh, $wormbase);
+  $self->_coords_converter($cc);
+
   $database = $wormbase->database('current') unless $database; #defaults to current_DB in CC if not set.
   # get the chromosomal sequences
   my $tace = $wormbase->tace; # <= hmpf
@@ -77,7 +80,7 @@ sub invoke {
     my $genome_seq = $wormbase->genome_seq;
     my $seqs = Bio::SeqIO->new(-file => $genome_seq, -format => "fasta");
     while(my $seq = $seqs->next_seq) {
-      $self->{'SEQUENCE'}->{$seq->id} = $seq->seq;
+      $self->_sequence_hash->{$seq->id} = $seq->seq;
     }
   }
   else {
@@ -110,20 +113,19 @@ EOF
       $/ = "\n";
       $seq =~ s/>[\w\-_]+//;
       $seq =~ s/\n//g;
-      $self->{'SEQUENCE'}->{$seqname} = $seq;
+      $self->_sequence_hash->{$seqname} = $seq;
     }
   }
   return $self;
 }
 
-
 =head2 Sub_sequence
 
   Title   :   Sub_sequence
   Usage   :   $seq_obj->Sub_sequence($seq)          - whole DNA sequence of that object
-              $seq_obj->Sub_sequence($seq,50,100)   - 100 bases of $seq starting at base 50
-              $seq_obj_>Sub_sequence($seq,50,+100)  - DNA sequence of that object from base 50 to 100 bases past the end
-              $seq_obj_>Sub_sequence($seq,-50)      - whole DNA sequence of that object with 50 bases at the start ie -50 to end
+              $seq_obj->Sub_sequence($seq,50,100)   - 100 bases of $seq starting at index 50 (base 51)
+              $seq_obj_>Sub_sequence($seq,50,+100)  - DNA sequence of that object from index 50 (base 51) to 100 bases past the end
+              $seq_obj_>Sub_sequence($seq,-50)      - whole DNA sequence of that object with additional 50 bases at the start
               $seq_obj_>Sub_sequence($seq,-50, 500) - 500 bases of $seq starting 50 bases before clone ie -50 to 450
 
   Function:   Extract a DNA subsequence
@@ -134,85 +136,36 @@ EOF
 
 =cut
 
-sub Sub_sequence
-  {
-    my $self = shift;
-    my $seq = shift;
-    my $start = shift;
-    my $length = shift;
-    my $subseq = "";
-    my $extend = 0;
-    my $chrom;
+sub Sub_sequence {
+  my ($self, $seq, $start, $length) = @_;
 
-#    # to extend past end of a seq obj use "+" and no of bases.
-    if( $length and $length =~ /\+/) {
-      $extend = substr($length,1);
-      undef $length;
-    }
+  my $subseq = "";
+  my $extend = 0;
 
-    #carp "no length given for sequence to extract - using full length of $seq\n" unless (defined $length);
-
-    $seq = $self->{'single_chrom'}->{"$seq"} if $self->{'single_chrom'}->{"$seq"};
-
-    my $prefix = $self->{chromprefix};
-    if( $seq =~ /$prefix/ ) {
-      $chrom = $seq;
-      if (!defined $start){$start=0}		# in case the start is not specified
-
-    } elsif( $seq =~ /SUPERLINK/ ) { #passed seq is a SUPERLINK, only elegans uses 'SUPERLINK'
-      my $sl = $seq;
-      $chrom = $self->_getChromFromSlink("$seq");
-      $seq = $chrom; # gets processed as chromosome below
-
-      # modify the starting coordinate
-      $start += $self->{"$chrom"}->{SUPERLINK}->{"$sl"}->[0];
-      $length = $self->{"$chrom"}->{SUPERLINK}->{"$sl"}->[1] - $self->{"$chrom"}->{SUPERLINK}->{"$sl"}->[0] unless $length;
-
-    } else {
-      # This is when the passed seq is a clone
-      unless ($self->{'CLONE2CHROM'}->{"$seq"} ) {
-	carp "$seq is not a valid sequence\n";
-	return;
-      }
-      SLINKS:
-	foreach my $slink (keys %{$self->{'SUPERLINK'}} ) {
-
-	  foreach my $clone (keys %{$self->{SUPERLINK}->{$slink}} ) {
-
-	    if ( "$clone" eq "$seq" ) {
-	      $chrom = $self->_getChromFromSlink("$slink");
-
-	      # modify the starting coordinate
-	      $start += $self->{"$chrom"}->{SUPERLINK}->{$slink}->[0] - 1; # superlink base coords 
-	      $start += $self->{SUPERLINK}->{"$slink"}->{"$clone"}->[0] - 1; # clone base coords
-
-	      # length is entire obj length unless specified
-	      $length = 1 + $self->{SUPERLINK}->{"$slink"}->{"$clone"}->[1] - $self->{SUPERLINK}->{"$slink"}->{"$clone"}->[0] unless $length;
-	      last SLINKS;
-	    } 
-	  }
-	}
-    }
-
-    if( $chrom ) {
-      my $seqlength = $self->{LENGTH}->{$chrom};
-      if ($start >= $seqlength) {
-	carp "subsequence invalid, past end of sequence : seq = $seq\tsequence length = $seqlength\tstart = $start\tlength = $length\textend = $extend\n";
-	return;
-      }
-      $length = $seqlength unless $length; #full sequence of object.
-      $subseq = substr( ($self->{SEQUENCE}->{"$chrom"} ),$start, $length+(2*$extend) ); #extend either end
-
-    } else {
-      carp "couldn't work out chromosome that sequence $seq derives from\n";
-    }
-
-    if ($subseq ) {
-      return $subseq;
-    } else {
-      carp "subsequence invalid : seq = $seq\tstart = $start\tlength = $length\textend = $extend\n";
-    }
+  my ($chrom_of_clone, $chrom_start_of_clone, $chrom_end_of_clone) = $self->_coords_converter->LocateSpanUp($seq);
+  
+  # to extend past end of a seq obj use "+" and no of bases.
+  if (defined $start) {
+    $chrom_start_of_clone += $start;
   }
+
+  if (defined $length) {
+    if ($length =~ /^\+(\d+)/) {
+      $length = ($chrom_end_of_clone - $chrom_start_of_clone + 1) + $1;
+    }
+  }    
+
+  my $end = $chrom_start_of_clone + $length - 1;
+  if ($end > length($self->_sequence_hash->{$chrom_of_clone})) {
+    $end = length($self->_sequence_hash->{$chrom_of_clone});
+
+    $length = $end - $chrom_start_of_clone + 1;
+  }
+  
+  my $subsequence = substr($self->_sequence_hash->{$chrom_of_clone}, $chrom_start_of_clone - 1, $length);
+
+  return $subsequence;
+}
 
 =head2
 
@@ -320,5 +273,32 @@ sub flanking_sequences {
 	
 	return \@flanks;
 }
+
+
+#####################
+sub _sequence_hash {
+  my ($self, $val) = @_;
+
+  if (not exists $self->{_sequence_hash}) {
+    $self->{_sequence_hash} = {};
+  }
+  if (defined $val) {
+    $self->{_sequence_hash} = $val;
+  }
+
+  return $self->{_sequence_hash};
+}
+
+######################
+sub _coords_converter {
+  my ($self, $val) = @_;
+
+  if (defined $val) {
+    $self->{_coords_converter} = $val;
+  }
+
+  return $self->{_coords_converter};
+}
+
 
 1;
