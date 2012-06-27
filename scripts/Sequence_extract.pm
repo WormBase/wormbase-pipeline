@@ -137,32 +137,36 @@ EOF
 =cut
 
 sub Sub_sequence {
-  my ($self, $seq, $start, $length) = @_;
+  my ($self, $seq, $offset, $length) = @_;
 
   my $subseq = "";
   my $extend = 0;
 
   my ($chrom_of_clone, $chrom_start_of_clone, $chrom_end_of_clone) = $self->_coords_converter->LocateSpanUp($seq);
   
+  my $seq_str = $self->_sequence_hash->{$chrom_of_clone};
+
   # to extend past end of a seq obj use "+" and no of bases.
-  if (defined $start) {
-    $chrom_start_of_clone += $start;
+  if (defined $offset) {
+    $chrom_start_of_clone += $offset;
   }
 
   if (defined $length) {
     if ($length =~ /^\+(\d+)/) {
       $length = ($chrom_end_of_clone - $chrom_start_of_clone + 1) + $1;
     }
-  }    
+  } else {
+    $length = $chrom_end_of_clone - $chrom_start_of_clone + 1;
+  }
 
   my $end = $chrom_start_of_clone + $length - 1;
-  if ($end > length($self->_sequence_hash->{$chrom_of_clone})) {
-    $end = length($self->_sequence_hash->{$chrom_of_clone});
+  if ($end > length($seq_str)) {
+    $end = length($seq_str);
 
     $length = $end - $chrom_start_of_clone + 1;
   }
   
-  my $subsequence = substr($self->_sequence_hash->{$chrom_of_clone}, $chrom_start_of_clone - 1, $length);
+  my $subsequence = substr($seq_str, $chrom_start_of_clone - 1, $length);
 
   return $subsequence;
 }
