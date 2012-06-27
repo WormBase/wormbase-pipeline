@@ -83,7 +83,7 @@ elsif (defined$load) { $log->write_to("2) Output has been scheduled for auto-loa
 
 if ($ns) {
 $log->write_to("Contacting NameServer.....\n");
-$db = NameDB_handler->new($DB,$USER,$PASS,'/nfs/WWWdev/SANGER_docs/htdocs');
+$db = NameDB_handler->new($DB,$USER,$PASS,'/nfs/WWWdev/SANGER_docs/data/');
 $db->setDomain($domain);
 }
 my $ace = Ace->connect('-path', $database) or $log->log_and_die("cant open $database: $!\n");
