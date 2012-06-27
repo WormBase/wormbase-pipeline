@@ -38,7 +38,7 @@ sub new
     bless ($db, $class);
 
     #read in clone list to validate CDS names with
-    my $clone_file = "$path/../cgi-bin/Projects/C_elegans/clonelist";
+    my $clone_file = "$path/Projects/C_elegans/clonelist";
 	
     #untaint file
     unless( $clone_file =~ m/^(.+)$/ ) {
