@@ -27,13 +27,18 @@ while(<>) {
   my @l = split(/\t+/, $_);
 
   my ($seq, $start, $end, $strand) = ($l[0], $l[3], $l[4], $l[6]);
+  $seq =~ s/^CHROMOSOME_//;
 
   die "Sequence '$seq' was not found in fasta file\n" 
       if not exists $genome_h->{$seq};
 
+  my $reference = substr($genome_h->{$seq}, $start - 1, $end - $start + 1);
+
   my $left_end = $start - 1;
   my $right_start = $end + 1;
   if ($between_bases) {
+    $reference = "";
+
     if ($gff3) {
       die "For between-base features in GFF3, start should be equal to end, but $seq/$start-$end are not\n"
           if $start != $end;
@@ -54,8 +59,6 @@ while(<>) {
   $left_start = 1 if $left_start < 0;
   $right_end = length($genome_h->{$seq}) if $right_end > length($genome_h->{$seq});
 
-  print "$left_start $left_end $right_start $right_end\n";
-
   my $left_flank = substr($genome_h->{$seq}, $left_start - 1, ($left_end - $left_start + 1));
   my $right_flank = substr($genome_h->{$seq}, $right_start - 1, ($right_end - $right_start + 1));
 
@@ -73,10 +76,10 @@ while(<>) {
 
   if ($gff3) {
     $l[8] .= ";" if $l[8];
-    $l[8] .= "Note=LeftFlank:$left_flank RightFlank:$right_flank\n";
+    $l[8] .= "LeftFlank=$left_flank;RightFlank=$right_flank=$reference\n";
   } else {
     $l[8] .= " ; " if $l[8];
-    $l[8] .= "Note \"LeftFlank:$left_flank RightFlank:$right_flank\n";
+    $l[8] .= "LeftFlank \"$left_flank\" ; RightFlank \"$right_flank\" ; Reference \"$reference\"\n";
   }
 
   print join("\t", @l);
@@ -101,6 +104,7 @@ sub read_genome_fasta {
   while(<$fah>) {
     /^>(\S+)/ and do {
       $current_id = $1;
+      $current_id =~ s/^CHROMOSOME_//;
       next;
     };
 
