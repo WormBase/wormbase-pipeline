@@ -6,8 +6,8 @@
 #
 # Usage : genestats.pl [-options]
 #
-# Last edited by: $Author: klh $
-# Last edited on: $Date: 2011-03-29 10:54:15 $
+# Last edited by: $Author: pad $
+# Last edited on: $Date: 2012-06-27 12:20:59 $
  
 
 use strict;                                      
@@ -75,6 +75,8 @@ $command  = "query find Gene where Species = \"*elegans\" AND Live\nspush\n"
           . "spop\nspush\n"
           . "query where Concise_description\n"
           . "spop\nspush\n"
+          . "query where Human_disease_relevance\n"
+          . "spop\nspush\n"
           . "query where Reference\n"
           . "spop\nspush\n"
           . "query where CGC_name\n"
@@ -104,14 +106,16 @@ close TACE;
 my $live_genes          = $values[0];
 my $molecular_info      = $values[1];
 my $concise_description = $values[2];
-my $reference           = $values[3];
-my $CGC_name            = $values[4];
-my $RNAi_result         = $values[5];
-my $microarray_result   = $values[6];
-my $SAGE_transcript     = $values[7];
+my $human_disease_rel   = $values[3];
+my $reference           = $values[4];
+my $CGC_name            = $values[5];
+my $RNAi_result         = $values[6];
+my $microarray_result   = $values[7];
+my $SAGE_transcript     = $values[8];
 
 my $percent_molecular_info      = (int ( ( ($molecular_info / $live_genes) * 1000) + 0.5) / 10); 
-my $percent_concise_description = (int ( ( ($concise_description / $live_genes) * 1000) + 0.5) / 10); 
+my $percent_concise_description = (int ( ( ($concise_description / $live_genes) * 1000) + 0.5) / 10);
+my $percent_human_disease_rel   = (int ( ( ($human_disease_rel / $live_genes) * 1000) + 0.5) / 10);
 my $percent_reference           = (int ( ( ($reference / $live_genes) * 1000) + 0.5) / 10); 
 my $percent_CGC_name            = (int ( ( ($CGC_name / $live_genes) * 1000) + 0.5) / 10); 
 my $percent_RNAi_result         = (int ( ( ($RNAi_result / $live_genes) * 1000) + 0.5) / 10); 
@@ -125,12 +129,13 @@ open (OUT, ">$reports_dir/genedata") || die "Failed to open output file\n";
 print OUT "Gene data set (Live C. elegans genes $values[0])\n";
 print OUT "------------------------------------------\n";
 print OUT "Molecular_info              " . $values[1] . " (" . $percent_molecular_info . "%)\n";
-print OUT "Concise_description         " . $values[2] . " (" . $percent_concise_description . "%)\n";
-print OUT "Reference                   " . $values[3] . " (" . $percent_reference . "%)\n";
-print OUT "WormBase_approved_Gene_name " . $values[4] . " (" . $percent_CGC_name . "%)\n";
-print OUT "RNAi_result                 " . $values[5] . " (" . $percent_RNAi_result . "%)\n";
-print OUT "Microarray_results          " . $values[6] . " (" . $percent_microarray_result . "%)\n";
-print OUT "SAGE_transcript             " . $values[7] . " (" . $percent_SAGE_transcript . "%)\n";
+print OUT "Concise_description         " . $values[2] . "  (" . $percent_concise_description . "%)\n";
+print OUT "Human_disease_relevance     " . $values[3] . "    (" . $percent_human_disease_rel . "%)\n";
+print OUT "Reference                   " . $values[4] . " (" . $percent_reference . "%)\n";
+print OUT "WormBase_approved_Gene_name " . $values[5] . " (" . $percent_CGC_name . "%)\n";
+print OUT "RNAi_result                 " . $values[6] . " (" . $percent_RNAi_result . "%)\n";
+print OUT "Microarray_results          " . $values[7] . " (" . $percent_microarray_result . "%)\n";
+print OUT "SAGE_transcript             " . $values[8] . " (" . $percent_SAGE_transcript . "%)\n";
 close OUT;
 
 ##################
@@ -138,8 +143,8 @@ close OUT;
 ##################
 
 $wormbase->check_file("$reports_dir/genedata", $log,
-minlines => 9,
-maxlines => 9,
+minlines => 10,
+maxlines => 10,
 line1 => '^Gene data set \(Live C. elegans genes \d+\)',
 line2 => '^\-+',
 lines => ['^\S+\s+\d+\s+\(\d+(\.\d)*\%\)', '^\S+\s+\S+\s+\S+\s+\d+\s+\(\d+(\.\d)*\%\)'],
