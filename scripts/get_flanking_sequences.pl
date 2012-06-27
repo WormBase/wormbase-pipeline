@@ -5,8 +5,8 @@
 # Script to grab two unique flanking sequences after specifying a sequence 
 # and two coordinates
 #
-# Last updated by: $Author: mt3 $     
-# Last updated on: $Date: 2011-09-27 10:21:05 $      
+# Last updated by: $Author: klh $     
+# Last updated on: $Date: 2012-06-27 11:23:27 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};                  
@@ -16,7 +16,7 @@ use Storable;
 use Getopt::Long;
 
 
-my ($store, $wormbase, $species, $min_length, $test, $is_zero, $infile, $id, $outfile);
+my ($store, $wormbase, $species, $min_length, $test, $is_zero, $infile, $id, $outfile, $no_unique_check);
 
 my ($seq,$x,$y,$db);
 
@@ -31,7 +31,8 @@ my ($seq,$x,$y,$db);
              "seq:s"     => \$seq,
              "infile:s"  => \$infile,
              "outfile:s" => \$outfile,
-             "length:s"  => \$min_length, 
+             "length:s"  => \$min_length,
+             "nocheck"   => \$no_unique_check,
 	    );
 
 $min_length = 30 if not defined $min_length;
@@ -86,7 +87,7 @@ $db ||= $wormbase->orgdb;
 my $mapper = Feature_mapper->new($db,0,$wormbase);
 
 foreach my $feat (@feats) {
-  my($l, $r) = $mapper->get_flanking_sequence_for_feature($feat->{seq}, $feat->{start}, $feat->{end}, $is_zero, $min_length);
+  my($l, $r) = $mapper->get_flanking_sequence_for_feature($feat->{seq}, $feat->{start}, $feat->{end}, $is_zero, $min_length, $no_unique_check);
 
   if($l and $r) {
     print $outfh "SNP: ", $feat->{id}, "\n";
@@ -139,6 +140,7 @@ This script finds the flanking sequences of a region on the genome.
 
 =item -db, the database you wisk to look in - the default is autoace
 
+=item -nocheck - do not check if the extracted flanks are unique (this speeds things up drastically, but use a big -length if doing this)
 =back
 
 =head1 REQUIREMENTS

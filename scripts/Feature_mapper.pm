@@ -400,8 +400,7 @@ sub check_overlapping_CDS
 =cut
 
 sub _get_flanking_sequence {
-  my ($self, $clone, $pos1, $pos2, $min_len) = @_;
-
+  my ($self, $clone, $pos1, $pos2, $min_len, $no_unique_check) = @_;
 
   # get sequence of clone
   my $seq = $self->Sub_sequence($clone);
@@ -437,6 +436,8 @@ sub _get_flanking_sequence {
     # get flanking sequences
     $flankseq1 = substr($seq, $pos1-$flank1+1, $flank1);
     $flankseq2 = substr($seq, $pos2, $flank2);
+
+    last if $no_unique_check;
 
     # find the number of matches
     $matches1 = $self->_matches($seq, $flankseq1);
@@ -478,14 +479,14 @@ sub _get_flanking_sequence {
 =cut
 
 sub get_flanking_sequence_for_feature {
-  my ($self, $clone, $start, $end, $is_zero_length, $min_flank_length) = @_;
+  my ($self, $clone, $start, $end, $is_zero_length, $min_flank_length, $no_unique_check) = @_;
 
   if (abs($end - $start) != 1 or not $is_zero_length) {
     $start--;
     $end++;
   }
 
-  return $self->_get_flanking_sequence($clone, $start, $end, $min_flank_length);
+  return $self->_get_flanking_sequence($clone, $start, $end, $min_flank_length, $no_unique_check);
   
 }
 
