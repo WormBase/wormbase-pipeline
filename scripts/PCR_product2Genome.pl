@@ -2,7 +2,7 @@
 
 # Version: $Version: $
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2012-06-26 12:21:38 $
+# Last updated on: $Date: 2012-06-27 09:48:18 $
 
 use strict;
 use warnings;
@@ -312,6 +312,7 @@ sub get_pcr_products {
   while(<$tace_fh1>) {
     if (/^\"(\S+)\"/) {
       s/\"//g;
+
       my @l = split;
 
       $good_prods{$l[0]} = [uc($l[1]), uc($l[2])];
@@ -326,6 +327,7 @@ sub get_pcr_products {
   while(<$tace_fh2>) {
     if (/^\"(\S+)\"/) {
       s/\"//g;
+
       my @l = split;
 
       if ($l[1] and $l[2]) {
@@ -359,9 +361,9 @@ sub get_pcr_products {
 #############################
 sub get_secondary_table_def {
 
-  my $tmdef = "/tmp/pcr_prod.$$.def";
+  my $tmdef = "/tmp/pcr_prod_2.$$.def";
 
-  open my $qfh, ">$tmdef" or 
+  open(my $qfh, ">$tmdef") or 
       $log->log_and_die("Could not open $tmdef for writing\n");  
 
   my $condition = 
@@ -408,9 +410,9 @@ EOF
 ################################
 sub get_initial_table_def {
 
-  my $tmdef = "/tmp/pcr_prod.$$.def";
+  my $tmdef = "/tmp/pcr_prod_1.$$.def";
 
-  open my $qfh, ">$tmdef" or 
+  open(my $qfh, ">$tmdef") or 
       $log->log_and_die("Could not open $tmdef for writing\n");  
 
   my $condition = "NOT Canonical_parent";
@@ -426,7 +428,7 @@ Visible
 Class 
 Class PCR_product 
 From 1 
-Contition $condition
+Condition $condition
  
 Colonne 2 
 Width 12 
