@@ -40,7 +40,10 @@ END
     my $row;
    #print "query executed<br>";
     while ($row = $sth->fetchrow_arrayref) {
-      print "$row->[0]\t$row->[1]\n";
+      print "$row->[0]\t$row->[1]\t";
+      if ($row->[2] eq "1") {print "Live\n";}
+      elsif ($row->[2] eq "0") {print "Dead\n";}
+      else {print "ERROR no status\n";}
     }
     $sth->finish;
 
