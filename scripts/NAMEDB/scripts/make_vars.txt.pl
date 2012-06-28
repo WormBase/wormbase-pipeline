@@ -29,7 +29,7 @@ croak ("no user or database") unless ($DB and $USER);
 
 my $db = get_db_connection($USER,$DB);
 my $query =<<END;
-SELECT primary_identifier.object_public_id, secondary_identifier.object_name
+SELECT primary_identifier.object_public_id, secondary_identifier.object_name, primary_identifier.object_live
     FROM primary_identifier,secondary_identifier 
     WHERE secondary_identifier.object_id = primary_identifier.object_id and primary_identifier.domain_id = 3
     ORDER by object_public_id
