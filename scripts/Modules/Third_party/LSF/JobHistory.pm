@@ -36,7 +36,7 @@ sub new{
         IPC::Run::run ['xargs','bhist','-l', @$extra ], \$in,\$output[0],\$output[1];
         $self->post_process($?,@output);
     }else{
-        my @output = $class->do_it('bhist','-n0','-l',@params);
+        @output = $class->do_it('bhist','-n0','-l',@params);
     }
     return unless @output;
     my @jobhistory;
