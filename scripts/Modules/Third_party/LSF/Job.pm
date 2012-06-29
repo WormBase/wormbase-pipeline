@@ -105,6 +105,10 @@ sub submit_pos{
     return $job;
 }
 
+sub status {
+    return 'RUN';
+}
+
 sub id         { "$_[0]" }
 
 sub bottom     { my $self = shift; $self->do_it('bbot',     @_, "$self") }
