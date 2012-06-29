@@ -2,7 +2,7 @@
 
 # Version: $Version: $
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2012-06-26 12:24:53 $
+# Last updated on: $Date: 2012-06-29 15:32:27 $
 
 use strict;
 use warnings;
@@ -13,7 +13,7 @@ use lib $ENV{'CVS_DIR'};
 use Wormbase;
 use Log_files;
 
-use LSF RaiseError => 0, PrintError => 1, PrintOutput => 0;
+use LSF RaiseError => 0, PrintError => 1, PrintOutput => 1;
 use LSF::JobManager;
 use Ace;
 use Coords_converter;
@@ -40,12 +40,12 @@ my ($debug,
     $test,
     $store, 
     $db,
+    $workdir,
     $query,
     $target, 
     $acefile,
     $pslfile,
     $noload,
-    $outdir,
     $species, 
     $no_load,
     $keep_best,
@@ -53,19 +53,20 @@ my ($debug,
     );
 
 GetOptions(
-	   "debug=s"        => \$debug,
-	   "test"           => \$test,
-	   "species:s"      => \$species,
-	   'store=s'        => \$store,
-	   "database:s"     => \$db,
-	   "target:s"       => \$target,
-	   "query:s"        => \$query,
-           "acefile:s"      => \$acefile,
-           "pslfile:s"      => \$pslfile,
-           "noload"         => \$no_load,
-           "keepbest=s"     => \$keep_best,
-           "verbose"        => \$verbose,
-	   );
+  "debug=s"        => \$debug,
+  "test"           => \$test,
+  "species:s"      => \$species,
+  'store=s'        => \$store,
+  "workdir=s"      => \$workdir,
+  "database:s"     => \$db,
+  "target:s"       => \$target,
+  "query:s"        => \$query,
+  "acefile:s"      => \$acefile,
+  "pslfile:s"      => \$pslfile,
+  "noload"         => \$no_load,
+  "keepbest=s"     => \$keep_best,
+  "verbose"        => \$verbose,
+    );
 
 
 ############################
@@ -89,8 +90,8 @@ my $log = Log_files->make_build_log($wormbase);
 $target = $wormbase->genome_seq if not $target;
 $db = $wormbase->autoace if not $db;
 $acefile = $wormbase->acefiles . "/RNAi_homols.ace" if not $acefile;
-$outdir = $wormbase->blat;
-$pslfile = "$outdir/RNAi_homols.psl" if not $pslfile;
+$workdir = $wormbase->blat if not defined $workdir;
+$pslfile = "$workdir/RNAi_homols.psl" if not $pslfile;
 
 my $coords = Coords_converter->invoke($db, 0, $wormbase);
 
@@ -105,7 +106,7 @@ if (not $query) {
   my $chunk_count = int(scalar(@rnai) / $chunk_size);
   
   if (not defined $keep_best) {
-    $keep_best =  $wormbase->blat . "/rnai.best_hit_only.txt";
+    $keep_best =  "$workdir/rnai.best_hit_only.txt";
   }
   open my $pcf, ">$keep_best" 
       or $log->log_and_die("Could not open $keep_best for writing\n");
@@ -124,7 +125,7 @@ if (not $query) {
   $log->write_to(sprintf("Fetched %d RNAi objects in %d chunks\n", $total_rnai, scalar(@rnai_chunks)));
   
   for(my $i=0; $i < @rnai_chunks; $i++) {
-    my $file = $wormbase->blat . "/rnai_query.$i.fa";
+    my $file = "$workdir/rnai_query.$i.fa";
     open my $fh, ">$file" or $log->log_and_die("Could not open $file for writing\n");
     foreach my $rnai (@{$rnai_chunks[$i]}) {
       printf $fh ">%s\n%s\n", $rnai->[0], $rnai->[2];
@@ -133,14 +134,15 @@ if (not $query) {
     push @query, $file;
   }
 
+
   my $lsf = LSF::JobManager->new();
   
   for(my $i=0; $i < @query; $i++) {
     my $query = $query[$i];
     my $jname = "worm_rna2genome.$i.$$";
-    my $out_file = $wormbase->blat . "/rnai_out.$i.ace";
-    my $psl = $wormbase->blat . "/rnai_out.$i.psl";
-    my $lsf_out = $wormbase->blat . "/rnai_out.$i.lsf_out";
+    my $out_file = "$workdir/rnai_out.$i.ace";
+    my $psl = "$workdir/rnai_out.$i.psl";
+    my $lsf_out = "$workdir/rnai_out.$i.lsf_out";
 
     my $command = ($store) 
         ? $wormbase->build_cmd_line("RNAi2Genome.pl -query $query -keepbest $keep_best -acefile $out_file -pslfile $psl", $store)
@@ -148,7 +150,7 @@ if (not $query) {
     
     my @bsub_options = (-J => $jname, 
                         -o => $lsf_out,
-                        -E => 'test -w ' . $wormbase->blat,
+                        -E => 'test -w ' . $workdir,
                         -M => 2600000,
                         -R => 'select[mem>=2600] rusage[mem=2600]'
                         );
@@ -158,16 +160,18 @@ if (not $query) {
     push @out_psl_files, $psl;
     push @out_lsf_files, $lsf_out;
   }     
-       
-  $lsf->wait_all_children( history => 1 );
-  
+    
+  $lsf->wait_all_children( history => (scalar(@query) == 1) ? 0 : 1 );
+  # wait a few seconds here; the LSF job manager sometimes lags a little in
+  # registering the job history
+  sleep(5);
   $log->write_to("All RNAi2Genome batch jobs have completed!\n");
   for my $job ( $lsf->jobs ) {    
     $log->error("$job exited non zero\n") if $job->history->exit_status != 0;
   }
   $lsf->clear;
   
-  my %parent_seqs;
+  my (%parent_seqs);
   open(my $out_fh, ">$acefile") or $log->log_and_die("Could not open $acefile for writing\n");
   foreach my $ace (@out_ace_files) {
     open my $this_fh, $ace or $log->log_and_die("Could not open $ace for reading\n"); 
@@ -194,7 +198,7 @@ if (not $query) {
   }
 } else {
 
-  my (%keep_best_clones, %qlengths, $primary, $secondary, %results, %results_by_parent);
+  my (%keep_best_clones, %qlengths, $primary, $secondary, %results, %results_by_parent, %has_hit);
   
   if ($keep_best) {
     open my $pf, $keep_best or $log->log_and_die("Could not open $keep_best\n");
@@ -270,6 +274,7 @@ if (not $query) {
                                                   $result->start, 
                                                   $result->end, 
                                                   $result->strand);
+      $has_hit{$method}->{$qid} = 1;
       
       my ($m_tid, $m_tstart, $m_tend) = $coords->LocateSpan($tid, $tstart, $tend);
       my $map_down = $coords->isa_clone($m_tid);
@@ -323,6 +328,17 @@ if (not $query) {
   }
   
   close($out_ace);
+
+  foreach my $qid (keys %qlengths) {
+    if (not exists $has_hit{RNAi_primary}->{$qid} and
+        not exists $has_hit{RNAi_secondary}->{$qid}) {
+      $log->write_to("Did not find any acceptable hits (primary or secondary) for $qid\n");
+    } elsif (not exists $has_hit{RNAi_primary}->{$qid} and
+             exists $has_hit{RNA_secondary}->{$qid}) {
+      $log->write_to("Only found secondary hits for $qid\n");
+    }
+  }
+
 }
 
 
@@ -348,13 +364,18 @@ sub get_rnai_sequences {
   my $tb_cmd = "Table-maker -p \"$tb_file\"\nquit\n";
   open(my $tace_fh, "echo '$tb_cmd' | $tace $db |");
   while(<$tace_fh>) {
-    if (/^\"(\S+)\"\s+\"(\S+)\"\s+\"(\S+)\"/) {
-      my ($rnai_id, $dna_text, $clone_id) = ($1, $2, $3);
-      $seen{$rnai_id}++;
-      my $unique_rnai_id = sprintf("%s.DNA_text_%d", $rnai_id,  $seen{$rnai_id});
+    /^\"(\S+)\"/ and do {
+      my ($rnai_id) = $1;
+      if (/^\"\S+\"\s+\"(\S+)\"\s+\"(\S+)\"/) {
+        my ($dna_text, $clone_id) = ($1, $2);
+        $seen{$rnai_id}++;
+        my $unique_rnai_id = sprintf("%s.DNA_text_%d", $rnai_id,  $seen{$rnai_id});
       
-      push @rnai, [$unique_rnai_id, $clone_id, $dna_text];
-    }
+        push @rnai, [$unique_rnai_id, $clone_id, $dna_text];
+      } else {
+        $log->write_to("Will not attempt to align $rnai_id - dodgy DNA_text\n");
+      }
+    };
   }
   close($tace_fh);
   unlink $tb_file;
@@ -371,15 +392,20 @@ sub get_rnai_sequences {
 
   open($tace_fh, "echo '$tb_cmd' | $tace $db |");
   while(<$tace_fh>) {
-    if (/^\"(\S+)\"\s+\"(\S+)\"\s+\"(\S+)\"\s+\"(\S+)\"\s+(\d+)\s+(\d+)/) {
-      print;
-      my ($rnai_id, $prod, $seq, $prod2, $start, $end) = ($1, $2, $3, $4, $5, $6);
+    /^\"(\S+)\"\s+\"(\S+)\"/ and do {
+      my ($rnai_id, $prod) = ($1, $2);
 
-      next unless $prod eq $prod2;
-      if (not exists $pcr{$prod}) {
-        $pcr{$prod} = [$seq, $start, $end];
+      if (/^\"\S+\"\s+\"\S+\"\s+\"(\S+)\"\s+\"(\S+)\"\s+(\d+)\s+(\d+)/) {
+        my ($seq, $prod2, $start, $end) = ($1, $2, $3, $4);
+
+        next unless $prod eq $prod2;
+        if (not exists $pcr{$prod}) {
+          $pcr{$prod} = [$seq, $start, $end];
+        }
+        $rnai2pcr{$rnai_id}->{$prod} = 1;
+      } else {
+        $log->write_to("Will not attempt to align $rnai_id - No DNA_text, and attached PCR_product $prod is not mapped\n");
       }
-      $rnai2pcr{$rnai_id}->{$prod} = 1;
     }
   }
   close($tace_fh);
@@ -485,7 +511,7 @@ Tag PCR_product
  
 Colonne 3 
 Width 12 
-Mandatory 
+Optional 
 Visible 
 Class 
 Class Sequence 
@@ -494,7 +520,7 @@ Tag Canonical_parent
  
 Colonne 4 
 Width 12 
-Mandatory 
+Optional 
 Visible 
 Class 
 Class PCR_product 
@@ -503,7 +529,7 @@ Tag PCR_product
  
 Colonne 5 
 Width 12 
-Mandatory 
+Optional 
 Visible 
 Integer 
 Right_of 4 
@@ -511,7 +537,7 @@ Tag  HERE
  
 Colonne 6 
 Width 12 
-Mandatory 
+Optional 
 Visible 
 Integer 
 Right_of 5 
