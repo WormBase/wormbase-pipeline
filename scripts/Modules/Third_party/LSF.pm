@@ -25,9 +25,11 @@ sub LSF { $__PACKAGE__::LSF }
 sub import {
     shift;
     my %p = @_;
-    $p{RaiseError}  ||= 1;
-    $p{PrintOutput} ||= 1;
-    $p{PrintError}  ||= 1;
+    $p{RaiseError}  = 1 if not exists $p{RaiseError};
+    $p{PrintOutput} = 1 if not exists $p{PrintOutput};
+    $p{PrintError}  = 1 if not exists $p{PrintError};
+
+    my @modules = qw(Job JobHistory JobGroup Queue JobManag
     my @modules = qw(Job JobHistory JobGroup Queue JobManager);
     my @code = map { "use LSF::$_ PrintOutput => $p{PrintOutput}, PrintError => $p{PrintError}, RaiseError => $p{RaiseError};\n"; 
                    } @modules;

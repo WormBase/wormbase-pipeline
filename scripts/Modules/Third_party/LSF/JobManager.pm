@@ -8,9 +8,9 @@ use LSF::Job;
 
 sub import{
     my ($self, %p) = @_;
-    $p{RaiseError}  ||= 1;
-    $p{PrintOutput} ||= 1;
-    $p{PrintError}  ||= 1;
+    #$p{RaiseError}  ||= 1;
+    #$p{PrintOutput} ||= 1;
+    #$p{PrintError}  ||= 1;
     $self->PrintOutput($p{PrintOutput}) if exists $p{PrintOutput};
     $self->PrintError ($p{PrintError} ) if exists $p{PrintError};
     $self->RaiseError ($p{RaiseError} ) if exists $p{RaiseError};
