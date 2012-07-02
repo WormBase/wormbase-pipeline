@@ -8,7 +8,7 @@
 # This makes the autoace database from its composite sources.
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2011-11-09 12:12:55 $
+# Last edited on: $Date: 2012-07-02 14:26:22 $
 
 use strict;
 use lib  $ENV{'CVS_DIR'};
@@ -27,7 +27,7 @@ use Storable;
 
 our ($help, $debug, $test, $species);
 my $store;
-my( $all, $parse, $init, $tmpgene, $pmap, $chromlink, $check, $allcmid, $reorder, $common, $noDNA );
+my( $all, $parse, $init, $tmpgene, $pmap, $chromlink, $check, $allcmid, $reorder );
 
 GetOptions ("help"         => \$help,
             "debug=s"      => \$debug,
@@ -41,12 +41,10 @@ GetOptions ("help"         => \$help,
 	    "check"        => \$check,
 	    "allcmid"      => \$allcmid,
 	    "reorder"      => \$reorder,
-	    "common"       => \$common,
 	    "species:s"	   => \$species,
-	    "nodna"        => \$noDNA,
 	   );
 
-$all = 1 unless( $init or $parse or $tmpgene or $pmap or $chromlink or $check or $allcmid or $reorder or $common ) ;
+$all = 1 unless( $init or $parse or $tmpgene or $pmap or $chromlink or $check or $allcmid or $reorder ) ;
 
 # Display help if required
 &usage("Help") if ($help);
@@ -130,12 +128,6 @@ if($wormbase->species eq 'elegans') {
 	#reorder exons
 	$wormbase->run_script("reorder_exons.pl", $log ) if( $all or $reorder );
 }
-
-#dump DNA sequences.
-$wormbase->run_script( "chromosome_dump.pl --dna --composition", $log ) unless $noDNA;
-
-#write COMMON_DATA files that can be done at start of build.
-$wormbase->run_script("update_Common_data.pl -clone2centre -clone2acc -clone2size -clone2dbid -clone2seq $species -genes2lab -worm_gene2cgc -worm_gene2geneID -worm_gene2class -est -est2feature -gene_id -clone2type -cds2cgc -rna2cgc -pseudo2cgc ", $log ) if( $all or $common );
 
 #finish
 $log->mail;
