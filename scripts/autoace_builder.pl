@@ -7,7 +7,7 @@
 # Usage : autoace_builder.pl [-options]
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2012-06-26 12:25:32 $
+# Last edited on: $Date: 2012-07-02 14:27:13 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -25,7 +25,7 @@ use LSF RaiseError => 0, PrintError => 1, PrintOutput => 0;
 use LSF::JobManager;
 
 my ( $debug, $test, $database, $species);
-my ( $initiate, $prepare_databases, $acefile, $build, $first_dumps );
+my ( $initiate, $prepare_databases, $acefile, $build, $assembly, $first_dumps );
 my ( $make_wormpep, $finish_wormpep );
 my ( $prep_blat, $run_blat,     $finish_blat );
 my ( $gff_dump,     $processGFF, $gff_split );
@@ -44,7 +44,8 @@ GetOptions(
 	   'prepare'        => \$prepare_databases,
 	   'acefiles'       => \$acefile,
 	   'build'          => \$build,
-	   'first_dumps'    => \$first_dumps,
+           'first_dumps'    => \$first_dumps,
+	   'assembly'       => \$assembly,
 	   'make_wormpep'   => \$make_wormpep,
 	   'finish_wormpep' => \$finish_wormpep,
 	   'gff_dump:s'     => \$gff_dump,
@@ -108,20 +109,24 @@ my $wormbase = Wormbase->new(
 my $log = Log_files->make_build_log($wormbase);
 
 $wormbase->run_script( "initiate_build.pl -version $initiate",$log ) if defined($initiate);
+
 $wormbase->run_script( 'prepare_primary_databases.pl',      $log ) if $prepare_databases;
+$wormbase->run_script( "check_primary_database.pl -organism ${\$wormbase->species}", $log ) if $prepare_databases;
+
 $wormbase->run_script( 'make_acefiles.pl',                  $log ) if $acefile;
 $wormbase->run_script( 'make_autoace.pl',                   $log ) if $build;
 
-# check the primary databases once all files have been loaded and you are ready for the 1st gff dumps.
-$wormbase->run_script( "check_primary_database.pl -organism ${\$wormbase->species}", $log ) if (defined $gff_dump && $gff_dump eq 'init');
+$wormbase->run_script( "chromosome_dump.pl --dna --composition", $log ) if $first_dumps;
+$wormbase->run_script("update_Common_data.pl -clone2centre -clone2acc -clone2size -clone2dbid -clone2seq $species -genes2lab -worm_gene2cgc -worm_gene2geneID -worm_gene2class -est -est2feature -gene_id -clone2type -cds2cgc -rna2cgc -pseudo2cgc ", $log ) if $first_dumps;
 
-#//--------------------------- batch job submission -------------------------//
-$wormbase->run_script( "build_dumpGFF.pl -stage $gff_dump", $log ) if $gff_dump;      #init
+$wormbase->run_script( "build_dumpGFF.pl -stage $gff_dump",                $log ) if $gff_dump;
 
-$wormbase->run_script( "get_ena_submission_xrefs.pl -sequencexrefs -load", $log) if $enaseqxrefs;
-$wormbase->run_script( "processGFF.pl -$processGFF",        $log ) if $processGFF;    #clone_acc
-&first_dumps                                                       if $first_dumps;   # dependant on clone_acc for agp
-$wormbase->run_script( 'make_wormpep.pl -initial -all',          $log ) if $make_wormpep;
+$wormbase->run_script( "get_ena_submission_xrefs.pl -sequencexrefs -load", $log)  if $enaseqxrefs;
+$wormbase->run_script( "processGFF.pl -$processGFF",                       $log ) if $processGFF;
+
+&do_assembly_stuff() if $first_dumps;   # dependant on clone_acc for agp
+
+$wormbase->run_script( 'make_wormpep.pl -initial -all',                    $log ) if $make_wormpep;
 
 &map_features_to_genome() if $map_features;
 
@@ -240,7 +245,7 @@ exit(0);
 #       SUBROUTINES        #
 ############################
 
-sub first_dumps {
+sub do_assembly_stuff {
 
   if ($wormbase->species eq 'elegans'){
     my $version = $wormbase->get_wormbase_version;
