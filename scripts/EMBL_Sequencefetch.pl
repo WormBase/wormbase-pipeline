@@ -5,7 +5,7 @@
 # Usage : EMBL_Sequencefetch.pl [-options]
 #
 # Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2012-05-22 11:41:02 $
+# Last edited on: $Date: 2012-07-02 11:53:27 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -59,7 +59,8 @@ my $tace = $wormbase->tace; # TACE PATH
 my   $output_dir = $wormbase->database('camace')."/EMBL_sequence_info";
 $wormbase->run_command ("mkdir $output_dir", $log) if (!-e $output_dir);
 
-Features::set_tsl($wormbase->TSL);
+my %TSLs = $wormbase->TSL;
+Features::set_tsl(\%TSLs);
 
 # main stuff goes here
 my (%acc_sv2sequence,%method2sequence,%feature2seq);
