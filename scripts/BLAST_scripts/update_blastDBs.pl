@@ -1,7 +1,7 @@
 #!/usr/local/ensembl/bin/perl -w
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2012-03-07 15:19:41 $
+# Last edited by: $Author: klh $
+# Last edited on: $Date: 2012-07-03 22:24:03 $
 
 use lib $ENV{'CVS_DIR'};
 
@@ -17,7 +17,7 @@ use Net::FTP;
 use Time::localtime;
 
 my ($test, $debug);
-my ($fly, $yeast, $human, $uniprot, $interpro, $cleanup, $all);
+my ($fly, $yeast, $human, $uniprot, $swissprot, $trembl, $interpro, $cleanup, $all);
 my $store;
 my ($species, $qspecies, $nematode);
 
@@ -30,6 +30,8 @@ GetOptions (
 	    'yeast' 	  => \$yeast,
 	    'human'	  => \$human,
 	    'uniprot'	  => \$uniprot,
+            'swissprot'   => \$swissprot,
+            'trembl'      => \$trembl,
 	    'interpro'    => \$interpro,
 	    'cleanup'     => \$cleanup,
 	    'all'         => \$all
@@ -56,9 +58,10 @@ $human=$fly=$yeast=$uniprot=$interpro=$cleanup=1 if $all;
 if( $human ) { &process_human; } 
 if ($interpro) { $wormbase->run_script("BLAST_scripts/make_interpro.pl",$log); }
 
-if($uniprot) {
+if($uniprot or $swissprot or $trembl) {
   #get current ver.
   my $cver = determine_last_vers('slimswissprot');
+  my $cver_tr = determine_last_vers('slimtrembl');
   
   #find latest ver
   open (WG,"wget -O - -q ftp://ftp.ebi.ac.uk/pub/databases/uniprot/knowledgebase/reldate.txt |") or $log->log_and_die("cant get Uniprot page\n");
@@ -66,11 +69,16 @@ if($uniprot) {
   while(<WG>) { #to make processing easier we use the uniprot release no.rather than separate SwissProt and Trembl
     if (/UniProt\s+Knowledgebase\s+Release\s+(\d+)_(\d+)/){
       my $newver = sprintf("%d%d", $1, $2);
-      if($newver != $cver){
-        &process_uniprot($newver);
-        last;
+      if($newver != $cver and ($uniprot or $swissprot)) {
+        &process_swissprot($newver);
+      } else {
+        $log->write_to("Not updating swissprot ($newver)");
       }
-      else { $log->write_to("\tdont need to update($newver)\n"); }
+      if ($newver != $cver_tr and ($uniprot or $trembl)) {
+        &process_trembl($newver);
+      } else { 
+        $log->write_to("\tNot updating trembl ($newver)\n"); 
+      }
     }
   }
   close WG;
@@ -338,7 +346,7 @@ sub process_human {
 }
 
 
-sub process_uniprot {
+sub process_swissprot {
 
     #swissprot
     my $ver = shift;
@@ -346,7 +354,7 @@ sub process_uniprot {
     
     my $login = "anonymous";
     my $passw = 'wormbase@sanger.ac.uk';
-    my $ftp = Net::FTP->new("ftp.ebi.ac.uk", Timeout => 6000);
+    my $ftp = Net::FTP->new("ftp.ebi.ac.uk", Timeout => 18000);
     $ftp->login("anonymous",'wormbase@sanger.ac.uk');
     $ftp->cwd('pub/databases/uniprot/knowledgebase');
 
@@ -360,15 +368,26 @@ sub process_uniprot {
     $wormbase->run_script("BLAST_scripts/fasta2gsi.pl -f $swalldir/slimswissprot",$log);
     copy ("$swalldir/slimswissprot", "$blastdir/slimswissprot${ver}.pep");
 
-#trembl
+}
 
-    $target = $swalldir."/uniprot_trembl.dat.gz";
-    $filename = 'uniprot_trembl.dat.gz';
-    $ftp->get($filename,$target) or $log->log_and_die("failed getting $filename: ".$ftp->message."\n");
+sub process_trembl {
+
+    my $ver = shift;
+    my $swalldir = '/lustre/scratch101/ensembl/wormpipe/swall_data';
+    
+    my $login = "anonymous";
+    my $passw = 'wormbase@sanger.ac.uk';
+    my $ftp = Net::FTP->new("ftp.ebi.ac.uk", Timeout => 18000);
+    $ftp->login("anonymous",'wormbase@sanger.ac.uk');
+    $ftp->cwd('pub/databases/uniprot/knowledgebase');
+
+    my $target = $swalldir."/uniprot_trembl.dat.gz";
+    my $filename = 'uniprot_trembl.dat.gz';
+    #$ftp->get($filename,$target) or $log->log_and_die("failed getting $filename: ".$ftp->message."\n");
     $ftp->quit;
 
     $wormbase->run_script("BLAST_scripts/swiss_trembl2dbm.pl -t -file $target", $log);
-    $wormbase->run_command("rm -f $target", $log);
+    #$wormbase->run_command("rm -f $target", $log);
     $wormbase->run_script("BLAST_scripts/swiss_trembl2slim.pl -t $ver",$log);
 
     
