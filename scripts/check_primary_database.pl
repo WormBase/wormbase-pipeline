@@ -7,8 +7,8 @@
 # This script checks all of the species primary sequence databases....and geneace 
 # so that gene discrepancies can be identified early in the build.
 #
-# Last updated by: $Author: pad $     
-# Last updated on: $Date: 2011-05-23 14:53:24 $      
+# Last updated by: $Author: klh $     
+# Last updated on: $Date: 2012-07-03 11:40:01 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -114,12 +114,6 @@ foreach $xaceinstances (@xaceinstances) {
 if ((-e $geneace) && ($species eq 'elegans'))  {
 $log->write_to("running geneace_nameDB_comm.pl\n");
   $wormbase->run_script("NAMEDB/geneace_nameDB_comm.pl", $log);
-}
-
-# Check for missing curation by checking for Live genes that have a Sequence name but aren't connected to a current gene model.
-if ($species eq 'elegans')  {
-$log->write_to("Checking for missing curation data in autoace\n\nrunning check_predicted_genes.pl -build\n");
-  $wormbase->run_script("check_predicted_genes.pl -database ".$wormbase->autoace." -build", $log);
 }
 
 # Close log files and exit
