@@ -7,7 +7,7 @@
 # Usage : autoace_builder.pl [-options]
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2012-07-02 14:27:13 $
+# Last edited on: $Date: 2012-07-03 11:40:38 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -25,7 +25,7 @@ use LSF RaiseError => 0, PrintError => 1, PrintOutput => 0;
 use LSF::JobManager;
 
 my ( $debug, $test, $database, $species);
-my ( $initiate, $prepare_databases, $acefile, $build, $assembly, $first_dumps );
+my ( $initiate, $prepare_databases, $acefile, $build, $build_check, $assembly, $first_dumps );
 my ( $make_wormpep, $finish_wormpep );
 my ( $prep_blat, $run_blat,     $finish_blat );
 my ( $gff_dump,     $processGFF, $gff_split );
@@ -44,6 +44,7 @@ GetOptions(
 	   'prepare'        => \$prepare_databases,
 	   'acefiles'       => \$acefile,
 	   'build'          => \$build,
+           'buildcheck'     => \$build_check,
            'first_dumps'    => \$first_dumps,
 	   'assembly'       => \$assembly,
 	   'make_wormpep'   => \$make_wormpep,
@@ -115,6 +116,16 @@ $wormbase->run_script( "check_primary_database.pl -organism ${\$wormbase->specie
 
 $wormbase->run_script( 'make_acefiles.pl',                  $log ) if $acefile;
 $wormbase->run_script( 'make_autoace.pl',                   $log ) if $build;
+
+if ($build_check) {
+  # Check for missing curation by checking for Live genes that have a Sequence name but aren't connected to a current gene model.
+  if ($species eq 'elegans')  {
+    $wormbase->run_script("check_predicted_genes.pl -database ".$wormbase->autoace." -build", $log);
+    $wormbase->run_script("check_class.pl -stlace -camace -genace -csh -caltech -misc_static -brigace -stage init", $log);
+    $wormbase->run_script("check_class.pl -incomplete -stage incomplete", $log);
+  }
+}
+
 
 $wormbase->run_script( "chromosome_dump.pl --dna --composition", $log ) if $first_dumps;
 $wormbase->run_script("update_Common_data.pl -clone2centre -clone2acc -clone2size -clone2dbid -clone2seq $species -genes2lab -worm_gene2cgc -worm_gene2geneID -worm_gene2class -est -est2feature -gene_id -clone2type -cds2cgc -rna2cgc -pseudo2cgc ", $log ) if $first_dumps;
