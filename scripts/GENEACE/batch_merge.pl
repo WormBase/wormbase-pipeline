@@ -194,7 +194,10 @@ sub merge_gene {
       }
       $ver++;
       $gene_versions{$deadgene} = $ver;
-      $output .= "\nGene : $deadgene\nVersion $ver\nHistory Version_change $ver now $user Event Merged_into $livegene\nMerged_into $livegene\nDead\n\nGene : $deadgene\n-D Map_info\n-D Sequence_name\n-D method\n\n";
+      $output .= "\nGene : $deadgene\nVersion $ver\nHistory Version_change $ver now $user Event Merged_into $livegene\nMerged_into $livegene\nDead\n\n";
+      
+      #Stuff to be removed from the dead gene.
+      $output .= "\nGene : $deadgene\n-D Map_info\n-D Sequence_name\n-D Allele\n-D Reference\n-D Ortholog\n-D Paralog\n-D Map_info\n-D method\n\n";
 
       # transfer operon connections.
       my $operon_connect = $deadgeneObj->at('Gene_info.Contained_in_operon');
@@ -211,7 +214,21 @@ sub merge_gene {
 	  $output .= "\nGene : $livegene\nOther_name $dead_Other_names\n";
 	}
       }	
-      
+
+
+      # transfer Alleles
+      foreach my $Alleles ($deadgeneObj->at('Gene_info.Allele')) {
+	if (defined $Alleles) {
+	  $output .= "\nGene : $livegene\nAllele $Alleles\n";
+	}
+      }
+
+      # transfer references
+      foreach my $references ($deadgeneObj->at('Reference')) {
+	if (defined $references) {
+	  $output .= "\nGene : $livegene\nReference $references\n";
+	}
+      }
       
       # transfer the Ortholog tags
       foreach my $dead_Orthologs ($deadgeneObj->at('Gene_info.Ortholog')) {
@@ -227,15 +244,6 @@ sub merge_gene {
 	  }
 	}
       }	
-      $output .= "\nGene : $deadgene\n-D Ortholog\n"; # remove orthologs from the dead gene
-
-      # remove the Paralog data
-      $output .= "\nGene : $deadgene\n-D Paralog\n"; # remove Paralogs from the dead gene
-
-      # remove the Map_info data
-      $output .= "\nGene : $deadgene\n-D Map_info\n"; # remove Map_info from the dead gene
-
-
       
     } else {
       $log->error("ERROR: no such gene $deadgene\n");
