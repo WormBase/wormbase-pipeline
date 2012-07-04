@@ -7,8 +7,8 @@
 # Generates the .acefiles from the primary databases as a prelim for building
 # autoace.
 #
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2010-12-01 11:57:32 $
+# Last updated by: $Author: klh $
+# Last updated on: $Date: 2012-07-04 12:36:01 $
 
 #################################################################################
 # Variables                                                                     #
@@ -71,22 +71,22 @@ unless (-e $config) {
   
   my $dbpath = '';
   while(<CFG>) {
-    next if /#/;
+    next if /^\#/;
     next unless /\w/;
     my %makefile;
     foreach my $pair (split(/\t+/,$_)) {
       my($tag,$value) = ($pair =~ /(\w+)=(.*)/);
       if( $tag and $value) {
         if ($tag eq 'format') {
-            $value =~ s/"//g;
-            my ($classname, $classregex) = split /\s/, $value;
-            push(@{$makefile{$tag}},[$classname, $classregex]);
+          $value =~ s/"//g;
+          my ($classname, $classregex) = split /\s/, $value;
+          push(@{$makefile{$tag}},[$classname, $classregex]);
         } elsif ($tag =~ /\ / || ($value =~ /\ / && $value !~ /\(/)) {
-            $log->log_and_die("Ill formed config line with space instead of TAB around $tag=$value:\n$_\n");
+          $log->log_and_die("Ill formed config line with space instead of TAB around $tag=$value:\n$_\n");
         } elsif ($tag eq 'delete') {
-            push(@{$makefile{$tag}},$value);
+          push(@{$makefile{$tag}},$value);
         } else {
-            $makefile{$tag} = $value;
+          $makefile{$tag} = $value;
         }   
       }
       else {
@@ -97,7 +97,7 @@ unless (-e $config) {
     my $query = "nosave\nquery ";
     if( $makefile{'class'} and  $makefile{'db'} and  $makefile{'file'} ) {
       if ($db) {
-          next unless ($makefile{'db'} eq $db);
+        next unless ($makefile{'db'} eq $db);
       }
       make_path("$path/".$makefile{'db'}) unless -e "$path/".$makefile{'db'};
       my $file = $path."/".$makefile{'db'}."/".$makefile{'file'};
@@ -114,7 +114,7 @@ unless (-e $config) {
       $query .= "\n";    
       if( $makefile{'delete'} ) {    
         foreach my $del (@{$makefile{'delete'}}) {   
-            $query .= "eedit -D $del\n";
+          $query .= "eedit -D $del\n";
         }
       }
       if($makefile{'class'} eq 'DNA') {
@@ -129,64 +129,70 @@ unless (-e $config) {
         $query .= ' -t '.$makefile{'tag'};
       }
       $query .= "\n";
-
+      
       # prepare the required tags
       my @required = split ',', $makefile{'required'};
       my %required;
-
+      
       # run the command
       my $acedb = $dbpath.'/'.$makefile{'db'};
       $log->write_to("dumping $makefile{'class'} from $acedb\n");
       my $object_name;
       open(TACE,"echo '$query' | $tace $acedb | ") or $log->log_and_die("cant do query : $!\n");
-    LINE: while(my $line = <TACE>) {
+      LINE: while(my $line = <TACE>) {
     	next if ($line =~ /acedb>/ or $line =~ /^\/\//);
+        
+        # The following two lines filter out annoying Acedb warnings
+        next if $line =~ /^The cache1 is full/;
+        $line =~ s/Do you want write access \? \(y or n\) //;
+
     	if( $makefile{'regex'} ) {  
-      		unless ($line =~ /[^\w]/ or $line =~ /$makefile{'class'}\s+\:\s+/ or $line =~ /$makefile{'follow'}\s+\:\s+/) {
-        		next LINE unless ($line =~ /$makefile{'regex'}/);
-      		}         
+          unless ($line =~ /[^\w]/ or $line =~ /$makefile{'class'}\s+\:\s+/ or $line =~ /$makefile{'follow'}\s+\:\s+/) {
+            next LINE unless ($line =~ /$makefile{'regex'}/);
+          }         
     	}
 
-    # check the integrity of the object names and tag values
-    if ($makefile{'format'} || $makefile{'required'}) {
-      if ($line =~ /$makefile{'class'}\s+\:\s+(\S+)/) { # checkfor the start of a new object
-        # check to see if the required tags are in the previous object
-        if (defined $object_name) { # ignore if we are at the first object
-          foreach my $req (@required) {
-            if (! exists $required{$req}) {$log->write_to("Missing required tag '$req' in object:\n$makefile{'class'} : $object_name\nFile: $file\n\n")}
-            delete $required{$req}; # reset the existence of the required tags in this object
-          }
-        }
-
-        $object_name=$1; # remember the name of this object so the error can be reported nicely
-      } else {
-        # check for the correct regex format in selected tags
-        foreach my $format (@{$makefile{'format'}}) {
-          if ($line =~ /$format->[0]\s+\-O\s+\S+\s+\"(\S+)\"/) {
-            my $regex = $format->[1];
-            if ($1 !~ /^${regex}$/) {
-                $log->write_to("Invalid object name format: $file\n$makefile{'class'} : $object_name\n$format->[0] $1\n\n")
+        # check the integrity of the object names and tag values
+        if ($makefile{'format'} || $makefile{'required'}) {
+          if ($line =~ /$makefile{'class'}\s+\:\s+(\S+)/) { # checkfor the start of a new object
+            # check to see if the required tags are in the previous object
+            if (defined $object_name) { # ignore if we are at the first object
+              foreach my $req (@required) {
+                if (! exists $required{$req}) {
+                  $log->write_to("Missing required tag '$req' in object:\n$makefile{'class'} : $object_name\nFile: $file\n\n");
+                }
+                delete $required{$req}; # reset the existence of the required tags in this object
+              }
+            }
+            
+            $object_name=$1; # remember the name of this object so the error can be reported nicely
+          } else {
+            # check for the correct regex format in selected tags
+            foreach my $format (@{$makefile{'format'}}) {
+              if ($line =~ /$format->[0]\s+\-O\s+\S+\s+\"(\S+)\"/) {
+                my $regex = $format->[1];
+                if ($1 !~ /^${regex}$/) {
+                  $log->write_to("Invalid object name format: $file\n$makefile{'class'} : $object_name\n$format->[0] $1\n\n")
+                }
+              }
+            }
+            
+            # check for required tags in this line
+            foreach my $req (@required) {
+              if ($line =~ /$req\s+\-O\s+\S+/) {
+                $required{$req} = 1; # note we have found this required tag
+              }
             }
           }
-        }
-        
-        # check for required tags in this line
-        foreach my $req (@required) {
-          if ($line =~ /$req\s+\-O\s+\S+/) {
-            $required{$req} = 1; # note we have found this required tag
-          }
-        }
+        }        
+        print ACE $line;
       }
-    }
-
-    print ACE $line;
-    }
-    close TACE;
-    close ACE;
-   } elsif ($makefile{'path'}) {
+      close TACE;
+      close ACE;
+    } elsif ($makefile{'path'}) {
       my $sub = $makefile{'path'};
       $dbpath = $wormbase->$sub;
-   }
+    }
   }
 }   
 
