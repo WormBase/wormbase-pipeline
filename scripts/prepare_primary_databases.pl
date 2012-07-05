@@ -3,7 +3,7 @@
 # prepare_primary_databases.pl
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2012-07-05 11:43:14 $
+# Last edited on: $Date: 2012-07-05 11:53:25 $
 
 use strict;
 my $scriptdir = $ENV{'CVS_DIR'};
@@ -30,7 +30,7 @@ my %search_places = (
 
                      remanei  => [['remace', 'stl', 'remace*']], 
 
-                     remanei  => [['japace', 'stl', 'japace*']], 
+                     japonica  => [['japace', 'stl', 'japace*']], 
 
 );
 
