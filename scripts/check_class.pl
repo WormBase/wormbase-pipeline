@@ -5,8 +5,8 @@
 # Counts the number of objects in an ACEDB database for each Class stated in the config file
 # Compares this number to those from a second database.
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2012-05-02 15:50:02 $
+# Last updated by: $Author: klh $
+# Last updated on: $Date: 2012-07-05 10:43:31 $
 
 
 use strict;
@@ -484,7 +484,7 @@ sub set_classes {
 		"Feature_data", 
 		"Peptide", 
 		"Protein", 
-		"Homol_data",
+#		"Homol_data",
 		"Transcript",
 		);
 
