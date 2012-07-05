@@ -7,7 +7,7 @@
 # Usage : autoace_builder.pl [-options]
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2012-07-03 11:40:38 $
+# Last edited on: $Date: 2012-07-05 10:37:47 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -119,7 +119,7 @@ $wormbase->run_script( 'make_autoace.pl',                   $log ) if $build;
 
 if ($build_check) {
   # Check for missing curation by checking for Live genes that have a Sequence name but aren't connected to a current gene model.
-  if ($species eq 'elegans')  {
+  if ($wormbase->species eq 'elegans')  {
     $wormbase->run_script("check_predicted_genes.pl -database ".$wormbase->autoace." -build", $log);
     $wormbase->run_script("check_class.pl -stlace -camace -genace -csh -caltech -misc_static -brigace -stage init", $log);
     $wormbase->run_script("check_class.pl -incomplete -stage incomplete", $log);
