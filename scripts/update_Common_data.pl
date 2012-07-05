@@ -5,7 +5,7 @@
 # by Anthony Rogers et al
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2012-06-20 08:43:54 $
+# Last updated on: $Date: 2012-07-05 12:47:23 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -753,7 +753,7 @@ sub write_clones2seq  {
     $full_names{$species} = $spDB->full_name();
     if ($spDB->assembly_type eq 'contig') {
       my $chromdir = $spDB->sequences;
-      $supercontigs{$species} = "$chromdir/genome.fa";
+      $supercontigs{$species} = $spDB->genome_seq;
     }
   }
 
