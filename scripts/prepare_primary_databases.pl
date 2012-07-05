@@ -3,7 +3,7 @@
 # prepare_primary_databases.pl
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2012-01-06 10:23:39 $
+# Last edited on: $Date: 2012-07-05 11:43:14 $
 
 use strict;
 my $scriptdir = $ENV{'CVS_DIR'};
@@ -28,7 +28,11 @@ my %search_places = (
 
                      brenneri => [['brenace', 'stl', 'brenace*']],
 
-                     remanei  => [['remace', 'stl', 'remace*']]);
+                     remanei  => [['remace', 'stl', 'remace*']], 
+
+                     remanei  => [['japace', 'stl', 'japace*']], 
+
+);
 
 my ($test,$debug,$database, $store, $wormbase, $species);
 
