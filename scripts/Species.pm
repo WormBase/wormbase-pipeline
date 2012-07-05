@@ -18,7 +18,12 @@ use strict;
 use Carp;
 
 use Wormbase;
-my ($BRENCONTIGS,$REMCONTIGS,$TESTCONTIGS);
+
+my ($BRENCONTIGS,
+    $REMCONTIGS,
+    $JAPCONTIGS,
+    $TESTCONTIGS);
+
 package Species;
 sub flatten_params {
     shift;    # get rid of the class name
