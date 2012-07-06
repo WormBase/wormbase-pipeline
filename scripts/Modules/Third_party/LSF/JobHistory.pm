@@ -28,6 +28,12 @@ sub new{
     my($self,@params) = @_;
     my $class = ref($self) || $self || __PACKAGE__;
     my @output;
+
+    # inserted a sleep here, because if bhist is called too soon after
+    # job completion, LSF sometimes (apparently) has not yet registered
+    # in in the history
+    sleep(3);
+
     if( ref $params[0] eq 'ARRAY' ){
         my $extra = shift @params;
         my $in;
@@ -35,7 +41,7 @@ sub new{
         my ($out,$err);
         IPC::Run::run ['xargs','bhist','-l', @$extra ], \$in,\$output[0],\$output[1];
         $self->post_process($?,@output);
-    }else{
+    } else{
         @output = $class->do_it('bhist','-n0','-l',@params);
     }
     return unless @output;
