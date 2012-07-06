@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: klh $     
-# Last updated on: $Date: 2012-06-20 08:43:54 $      
+# Last updated on: $Date: 2012-07-06 13:36:43 $      
 
 # Changes required by Ant: 2008-02-19
 # 
@@ -250,8 +250,8 @@ while (my $run = <DATA>) {
 
 # if we want the anomalies GFF file
 if ($supplementary) {
-  mkdir "$database/CHROMOSOMES/SUPPLEMENTARY_GFF", 0777;
-  my $gff_file = "$database/CHROMOSOMES/SUPPLEMENTARY_GFF/${species}_curation_anomalies.gff";
+  mkdir "$database/SEQUENCES/SUPPLEMENTARY_GFF", 0777;
+  my $gff_file = "$database/SEQUENCES/SUPPLEMENTARY_GFF/${species}_curation_anomalies.gff";
   open (OUTPUT_GFF, ">$gff_file") || die "Can't open $gff_file";      
 }
 
@@ -620,8 +620,8 @@ $ace->close;
 # Check the files
 ##################
 
-if ($database eq $wormbase->{'autoace'}) {
-  my $gff_file = $wormbase->{'chromosomes'} . "/SUPPLEMENTARY_GFF/${species}_curation_anomalies.gff";
+if ($database eq $wormbase->autoace) {
+  my $gff_file = $wormbase->sequences . "/SUPPLEMENTARY_GFF/${species}_curation_anomalies.gff";
   $wormbase->check_file($gff_file, $log,
 			minsize => 700000,
 			lines => ['^##',

@@ -6,7 +6,7 @@
 # builds wormbase & wormpep FTP sites
 # 
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2012-06-20 08:43:54 $
+# Last updated on: $Date: 2012-07-06 13:36:43 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -519,6 +519,7 @@ sub copy_gff_files{
     my $species  = $wb->species;
     my $gspecies = $wb->full_name('-g_species' => 1);
     my $chromdir = $wb->gff;
+    my $sequencesdir = $wb->sequences;
 
     if (-e "$chromdir") {
       my $gff_dir = "$targetdir/species/$gspecies";
@@ -542,7 +543,7 @@ sub copy_gff_files{
       # add supplementary and nGASP GFF
       my $ngaspdir;
       if($species eq 'elegans') {
-	my $supdir = "$chromdir/SUPPLEMENTARY_GFF";
+	my $supdir = "$sequencesdir/SUPPLEMENTARY_GFF";
 	my @gfffiles = glob("$supdir/*.gff");
 	foreach my $sup (@gfffiles){
           $wb->run_command("cat $sup >> $gff_dir/$whole_filename", $log);

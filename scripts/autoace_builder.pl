@@ -7,7 +7,7 @@
 # Usage : autoace_builder.pl [-options]
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2012-07-05 10:37:47 $
+# Last edited on: $Date: 2012-07-06 13:36:43 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -460,7 +460,7 @@ sub remap_misc_dynamic {
   }
 
   # the SUPPLEMENTARY_GFF directory is copied over whether or not it has been remapped
-  $wormbase->run_command("cp -R ".$wormbase->build_data."/SUPPLEMENTARY_GFF ".$wormbase->chromosomes."/", $log);
+  $wormbase->run_command("cp -R ".$wormbase->build_data."/SUPPLEMENTARY_GFF ".$wormbase->sequences."/", $log);
    
 }
 
