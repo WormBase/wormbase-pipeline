@@ -2,7 +2,7 @@
 
 # Version: $Version: $
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2012-07-09 12:15:57 $
+# Last updated on: $Date: 2012-07-09 16:21:56 $
 
 use strict;
 use warnings;
@@ -133,7 +133,6 @@ if (not $query) {
     close($fh);
     push @query, $file;
   }
-
 
   my $lsf = LSF::JobManager->new();
   
@@ -350,19 +349,19 @@ exit;
 ################################################################
 sub get_rnai_sequences {
 
-  my (@rnai, %seen);
+  my (@rnai, %seen, $tb_file, $tb_cmd, $tace_fh);
   
   my $tace = $wormbase->tace;
 
   #
   # First fetch the objects with DNA_text attached (old Caltech pipeline)
   #
-  my $tb_file = &query_with_dna_text();
+  $tb_file = &query_with_dna_text();
   if (not -e $tb_file) {
     $log->log_and_die("Could not find Table-maker definition file $tb_file\n");
   }
-  my $tb_cmd = "Table-maker -p \"$tb_file\"\nquit\n";
-  open(my $tace_fh, "echo '$tb_cmd' | $tace $db |");
+  $tb_cmd = "Table-maker -p \"$tb_file\"\nquit\n";
+  open($tace_fh, "echo '$tb_cmd' | $tace $db |");
   while(<$tace_fh>) {
     /^\"(\S+)\"/ and do {
       my ($rnai_id) = $1;
