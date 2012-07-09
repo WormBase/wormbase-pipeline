@@ -7,7 +7,7 @@
 # Usage : autoace_builder.pl [-options]
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2012-07-06 13:36:43 $
+# Last edited on: $Date: 2012-07-09 08:19:44 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -135,7 +135,7 @@ $wormbase->run_script( "build_dumpGFF.pl -stage $gff_dump",                $log 
 $wormbase->run_script( "get_ena_submission_xrefs.pl -sequencexrefs -load", $log)  if $enaseqxrefs;
 $wormbase->run_script( "processGFF.pl -$processGFF",                       $log ) if $processGFF;
 
-&do_assembly_stuff() if $first_dumps;   # dependant on clone_acc for agp
+&do_assembly_stuff() if $assembly;   # dependant on clone_acc for agp
 
 $wormbase->run_script( 'make_wormpep.pl -initial -all',                    $log ) if $make_wormpep;
 
