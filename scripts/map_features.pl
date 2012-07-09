@@ -9,7 +9,7 @@
 #
 #
 # Last updated by: $Author: klh $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2012-06-22 08:56:53 $        # quickly see when script was last changed and by whom
+# Last updated on: $Date: 2012-07-09 11:38:34 $        # quickly see when script was last changed and by whom
 
 
 $|=1;
@@ -94,7 +94,7 @@ my $currentdb = $wb->database('current');
 my $version = $wb->get_wormbase_version;
 
 print "Getting mapping data for WS$version\n";
-my $assembly_mapper = Remap_Sequence_Change->new($version - 1, $version, $species, $wb->genome_diffs);
+my $assembly_mapper = Remap_Sequence_Change->new($version - 1, $version, $wb->species, $wb->genome_diffs);
 
 #######################
 # ACEDB and databases #
