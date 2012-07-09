@@ -7,7 +7,7 @@
 # Usage : autoace_builder.pl [-options]
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2012-07-09 08:55:38 $
+# Last edited on: $Date: 2012-07-09 15:33:40 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -291,7 +291,7 @@ sub map_features_to_genome {
   } else {
     # genome has changed. Need to remap everything
     unlink $pcr_mappings if -e $pcr_mappings;
-    $wormbase->run_script( 'PCR_product2Genome.pl -acefile $pcr_mappings', $log );
+    $wormbase->run_script( "PCR_product2Genome.pl -acefile $pcr_mappings", $log );
   }
   
   #
@@ -307,7 +307,7 @@ sub map_features_to_genome {
   } else {
     # genome has changed. Need to remap everything
     unlink $rnai_mappings if -e $rnai_mappings;
-    $wormbase->run_script( 'RNAi2Genome.pl -acefile $rnai_mappings', $log );
+    $wormbase->run_script( "RNAi2Genome.pl -acefile $rnai_mappings", $log );
   }
   
 }
