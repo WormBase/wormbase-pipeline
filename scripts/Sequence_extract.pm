@@ -63,12 +63,9 @@ sub invoke {
   my ($class,$database,$refresh,$wormbase) = @_;
   
   # inherit from Coords_converter to get all the coord info
-  my $self = {};
+  my $self = Coords_converter->invoke($database, $refresh, $wormbase);
   bless $self, $class;
   
-  my $cc = Coords_converter->invoke($database, $refresh, $wormbase);
-  $self->_coords_converter($cc);
-
   $database = $wormbase->database('current') unless $database; #defaults to current_DB in CC if not set.
   # get the chromosomal sequences
   my $tace = $wormbase->tace; # <= hmpf
@@ -142,7 +139,7 @@ sub Sub_sequence {
   my $subseq = "";
   my $extend = 0;
 
-  my ($chrom_of_clone, $chrom_start_of_clone, $chrom_end_of_clone) = $self->_coords_converter->LocateSpanUp($seq);
+  my ($chrom_of_clone, $chrom_start_of_clone, $chrom_end_of_clone) = $self->LocateSpanUp($seq);
   
   my $seq_str = $self->_sequence_hash->{$chrom_of_clone};
 
@@ -262,20 +259,20 @@ sub DNA_comp
 =cut
 
 sub flanking_sequences {
-	my $self = shift;
-	my($seq, $start, $end, $length) = @_;
-	my @flanks;
-
-	$flanks[0] = $self->Sub_sequence($seq,($start-$length-1),$length);
-	$flanks[1] = $self->Sub_sequence($seq,$end,$length);
-	
-	if( $end < $start ){
-		my $tmp = $self->DNA_revcomp($flanks[0]);
-		$flanks[0] = $self->DNA_revcomp($flanks[1]);
-		$flanks[1] = $tmp;
-	}
-	
-	return \@flanks;
+  my $self = shift;
+  my($seq, $start, $end, $length) = @_;
+  my @flanks;
+  
+  $flanks[0] = $self->Sub_sequence($seq,($start-$length-1),$length);
+  $flanks[1] = $self->Sub_sequence($seq,$end,$length);
+  
+  if( $end < $start ){
+    my $tmp = $self->DNA_revcomp($flanks[0]);
+    $flanks[0] = $self->DNA_revcomp($flanks[1]);
+    $flanks[1] = $tmp;
+  }
+  
+  return \@flanks;
 }
 
 
@@ -293,16 +290,6 @@ sub _sequence_hash {
   return $self->{_sequence_hash};
 }
 
-######################
-sub _coords_converter {
-  my ($self, $val) = @_;
-
-  if (defined $val) {
-    $self->{_coords_converter} = $val;
-  }
-
-  return $self->{_coords_converter};
-}
 
 
 1;

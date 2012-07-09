@@ -2,7 +2,7 @@
 
 # Version: $Version: $
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2012-06-29 15:32:27 $
+# Last updated on: $Date: 2012-07-09 12:15:57 $
 
 use strict;
 use warnings;
@@ -93,7 +93,7 @@ $acefile = $wormbase->acefiles . "/RNAi_homols.ace" if not $acefile;
 $workdir = $wormbase->blat if not defined $workdir;
 $pslfile = "$workdir/RNAi_homols.psl" if not $pslfile;
 
-my $coords = Coords_converter->invoke($db, 0, $wormbase);
+my $coords = Sequence_extract->invoke($db, 0, $wormbase);
 
 if (not $query) {
   ###### Fetch the queries (if not supplied)
@@ -385,8 +385,6 @@ sub get_rnai_sequences {
   #
   my (%rnai2pcr, %pcr, %pcr_seq);
 
-  my $sextract = Sequence_extract->invoke( $db, undef, $wormbase );
-
   $tb_file = &query_without_dna_text();
   $tb_cmd = "Table-maker -p \"$tb_file\"\nquit\n";
 
@@ -416,7 +414,7 @@ sub get_rnai_sequences {
     my ($seq, $start, $end) = @{$pcr{$prod}};
     ($start, $end) = ($end, $start) if $end < $start;
 
-    my $seq_string = $sextract->Sub_sequence($seq, $start - 1, $end - $start + 1);
+    my $seq_string = $coords->Sub_sequence($seq, $start - 1, $end - $start + 1);
 
     $pcr_seq{$prod} = $seq_string;
   }
