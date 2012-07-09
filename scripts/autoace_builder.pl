@@ -7,7 +7,7 @@
 # Usage : autoace_builder.pl [-options]
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2012-07-09 08:19:44 $
+# Last edited on: $Date: 2012-07-09 08:55:38 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -264,19 +264,6 @@ sub do_assembly_stuff {
     
     $wormbase->run_script( "make_agp_file.pl",                       $log );
     $wormbase->run_script( "agp2dna.pl",                             $log ); #dependant on processGFF producing clone_acc files.
-    
-    my $agp_errors = 0;
-    
-    foreach my $chrom ($wormbase->get_chromosome_names) {
-      open( AGP, "<" . $wormbase->autoace . "/yellow_brick_road/CHROMOSOME_${chrom}.agp_seq.log" )
-          or die "Couldn't open agp file : $!";
-      while (<AGP>) {
-        $agp_errors++ if (/ERROR/);
-      }
-      close(AGP);
-    }
-    
-    $log->write_to("ERRORS ( $agp_errors ) in agp file\n");
   }
 }
 
