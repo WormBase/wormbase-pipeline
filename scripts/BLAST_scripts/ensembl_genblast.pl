@@ -3,8 +3,8 @@
 # DESCRIPTION:
 #   setting up the GenBlast pipeline
 #
-# Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2012-05-04 13:54:57 $
+# Last edited by: $Author: klh $
+# Last edited on: $Date: 2012-07-09 20:01:55 $
 
 use lib $ENV{CVS_DIR};
 
@@ -246,41 +246,16 @@ sub set_up_genome {
   $wormbase->run_command("rm -rf $genome_dir/*", $log);
   my $target_dna_file = "$genome_dir/genome.fa";
 
-  my $chromdir = $wormbase->chromosomes;
-
-  # copy the masked chromosome files over
-  if ($wormbase->assembly_type eq 'contig') {
-    my $species = $wormbase->species;
-    my $masked_file = "$chromdir/".$species."_masked.dna";
-    my $unmasked_file = "$chromdir/supercontigs.fa";
-
-    # the masked genome file may be gzipped
-    if (-e "${masked_file}.gz") {
-      $wormbase->run_command("gunzip -c ${masked_file}.gz > $target_dna_file", $log);
-    } elsif (-e $masked_file) {
-      $wormbase->run_command("cp $masked_file $target_dna_file", $log);
-    } elsif (-e $unmasked_file) { 
-      # as the masked one will not be available at that stage during the build, grab the unmasked one
-      $wormbase->run_command("cp $unmasked_file $target_dna_file",$log);
-    } else {
-      $log->log_and_die("Can't find masked genome file $masked_file or unmasked file $unmasked_file\n");
-    }
-
-  } elsif ($wormbase->assembly_type eq 'chromosome') {
-    my @test = glob("$chromdir/*_masked.dna.gz");
-    if (scalar @test > 0) {
-      $wormbase->run_command("gunzip -c $chromdir/*_masked.dna.gz > $target_dna_file", $log);      
-    } else {
-      $wormbase->run_command("cat $chromdir/*_masked.dna > $target_dna_file", $log);
-    }
-    # use non-masked files is masked are not available
-    if (-z $target_dna_file) {
-      $wormbase->run_command("rm -f $target_dna_file", $log);
-      $wormbase->run_command("cat $chromdir/*.dna > $target_dna_file", $log);
-    }
+  my $src_genome;
+  if (-e $wormbase->masked_genome_seq) {
+    $src_genome = $wormbase->masked_genome_seq;
+  } elsif (-e $wormbase->genome_seq) {
+    $src_genome = $wormbase->genome_seq;
   } else {
-    $log->error("unknown assembly_type\n");
+    $log->log_and_die("Could not find either masked or unmasked genome\n");
   }
+
+  $wormbase->run_command("cp $src_genome $target_dna_file",$log);
 
   # index them for blast
   chdir $genome_dir;
