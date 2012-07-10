@@ -34,17 +34,19 @@ use lib "$FindBin::Bin/../lib";
 use WormBase;
 use DBI qw(:sql_types);
 
-my ( $debug, $species, $setup, $dna, $genes, $test,$store,$agp );
+my ( $debug, $species, $setup, $dna, $genes, $test,$store, $yfile, $agp );
 
 GetOptions(
-    'species=s'  => \$species,
-    'setup'      => \$setup,
-    'load_dna'   => \$dna,
-    'load_genes' => \$genes,
-    'load_agp'   => \$agp,
-    'debug'      => \$debug,
-    'test'       => \$test,
-    'store=s'    => \$store,
+  'species=s'  => \$species,
+  'setup'      => \$setup,
+  'load_dna'   => \$dna,
+  'load_genes' => \$genes,
+  'load_agp'   => \$agp,
+  'debug'      => \$debug,
+  'test'       => \$test,
+  'store=s'    => \$store,
+  'yfile=s'    => \$yfile,
+
 ) || die("bad commandline parameter\n");
 
 if ($store){
@@ -53,7 +55,8 @@ if ($store){
 	$species=~tr/[A-Z]/[a-z]/;
 }
 
-my $yfile="$FindBin::Bin/../etc/ensembl_lite.conf";
+die "You must supply a valid YAML config file\n" if not defined $yfile or not -e $yfile;
+
 my $config = ( YAML::LoadFile($yfile) )->{$species};
 if ($test) {
   $config = ( YAML::LoadFile($yfile) )->{"${species}_test"};
@@ -62,7 +65,7 @@ my $cvsDIR = $test
   ? ( YAML::LoadFile($yfile) )->{test}->{cvsdir}
   : ( YAML::LoadFile($yfile) )->{generics}->{cvsdir};
 
-$WormBase::species=$species;
+$WormBase::Species = $species;
 our $gff_types = ($config->{gff_types} || "curated coding_exon");
 
 
@@ -93,6 +96,7 @@ sub setupdb {
     system("$mysql $db->{dbname} < " . $cvsDIR . "ensembl/sql/table.sql" ) && die;
     print "loading table.sql from ensembl-pipeline\n";
     system("$mysql $db->{dbname} < " . $cvsDIR . "ensembl-pipeline/sql/table.sql" ) && die;
+
     system("$mysql -e 'INSERT INTO coord_system VALUES (1,1,\"chromosome\",\"$version\",1,\"default_version,top_level\");' $db->{dbname}") && die;
     system("$mysql -e 'INSERT INTO coord_system VALUES (2,1,\"superlink\",\"$version\",2,\"default_version,sequence_level\");' $db->{dbname}") && die;
     system("$mysql -e 'INSERT INTO coord_system VALUES (3,1,\"clone\",\"$version\",3,\"default_version\");' $db->{dbname}") && die;
