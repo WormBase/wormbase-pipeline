@@ -9,7 +9,7 @@
 #
 #
 # Last updated by: $Author: klh $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2012-07-09 15:33:16 $        # quickly see when script was last changed and by whom
+# Last updated on: $Date: 2012-07-10 19:31:13 $        # quickly see when script was last changed and by whom
 
 
 $|=1;
@@ -40,6 +40,7 @@ my $histone_binding_site;
 my $histone_binding_site_reg;
 my $segmental_duplication;          #  segmental_duplication features
 my $genome_sequence_error;   # genome_sequence_error
+my $genome_sequence_correction;   # genome_sequence_correction
 my $transcription_start_site;# transcription_start_site
 my $transcription_end_site;  # transcription_end_site
 my $three_prime_UTR;         # three prime UTRs
@@ -66,6 +67,7 @@ GetOptions (
 	    "histone_binding_site_reg"   => \$histone_binding_site_reg,  
 	    "segmental_duplication"      => \$segmental_duplication,
 	    "Genome_sequence_error"      => \$genome_sequence_error,
+	    "Genome_sequence_correction" => \$genome_sequence_correction,
 	    "transcription_start_site"   => \$transcription_start_site,
 	    "transcription_end_site"     => \$transcription_end_site,
 	    "three_prime_UTR"            => \$three_prime_UTR,
@@ -129,6 +131,8 @@ my %sanity = (
 	      'transcription_end_site'   => [1,1],
 	      'transcription_start_site' => [1,1],
 	      'Genome_sequence_error'       => undef,
+	      'Genome_sequence_error'       => undef,
+              'Corrected_genome_sequence_error' => undef,
 	      'binding_site'                => undef,
 	      'binding_site_region'         => undef,
 	      'TF_binding_site'             => undef,
@@ -156,6 +160,7 @@ push (@features2map, "histone_binding_site")             if (($histone_binding_s
 push (@features2map, "histone_binding_site_region")      if (($histone_binding_site_reg) || ($all));
 push (@features2map, "segmental_duplication")            if (($segmental_duplication) || ($all));
 push (@features2map, "Genome_sequence_error")            if (($genome_sequence_error) || ($all));
+push (@features2map, "Corrected_genome_sequence_error") if (($genome_sequence_correction) || ($all));
 push (@features2map, "transcription_end_site")           if (($transcription_end_site) || ($all));
 push (@features2map, "transcription_start_site")         if (($transcription_start_site) || ($all));
 push (@features2map, "promoter")                         if (($promoter) || ($all));
