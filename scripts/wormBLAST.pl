@@ -4,8 +4,8 @@
 #
 # written by Anthony Rogers
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2011-12-20 11:14:25 $
+# Last edited by: $Author: klh $
+# Last edited on: $Date: 2012-07-10 12:03:05 $
 #
 # it depends on:
 #    wormpep + history
@@ -94,11 +94,10 @@ $species =~ tr/[A-Z]/[a-z]/;
 my $species_ = ref $wormbase;
 $species =~ s/^[A-Z]/[a-z]/;
 
-if (-e glob("~/wormbase/scripts/ENSEMBL/etc/ensembl_lite.conf")) {$yfile_name = "~/wormbase/scripts/ENSEMBL/etc/ensembl_lite.conf"} # use a personal yfile if there is one
-$yfile_name||='~wormpub/wormbase/scripts/ENSEMBL/etc/ensembl_lite.conf';
-my $yfile  = glob("$yfile_name"); # hardcoded path ... meh :-(
-print STDERR "using $yfile\n" if $debug;
-my $config = ( YAML::LoadFile($yfile) )->{$species};
+$yfile_name ='~wormpub/wormbase/scripts/ENSEMBL/etc/ensembl_lite.conf' if not defined $yfile_name;
+die ("Could not find conf file $yfile_name\n" if not -e $yfile_name;
+
+my $config = ( YAML::LoadFile($yfile_name) )->{$species};
 
 our $gff_types = ( $config->{gff_types} || "curated coding_exon" );
 
@@ -487,7 +486,7 @@ sub update_dna {
 
     # worm_lite.pl magic
     my $species = $wormbase->species;
-    $wormbase->run_script( "ENSEMBL/scripts/worm_lite.pl -setup -load_dna -load_genes -species $species", $log );
+    $wormbase->run_script( "ENSEMBL/scripts/worm_lite.pl -yfile $yfile_name -setup -load_dna -load_genes -species $species", $log );
 
     # create analys_tables and rules
     my $db_options = sprintf(
@@ -558,7 +557,7 @@ sub update_proteins {
     );
     my $pipeline_scripts = "/software/worm/ensembl/ensembl-pipeline/scripts";
 
-    $wormbase->run_script( "ENSEMBL/scripts/worm_lite.pl -load_genes -species $species", $log );
+    $wormbase->run_script( "ENSEMBL/scripts/worm_lite.pl -yfile $yfile_name -load_genes -species $species", $log );
     $wormbase->run_command( "perl $pipeline_scripts/make_input_ids $db_options -translation_id -logic SubmitTranslation", $log );
 }
 
