@@ -5,7 +5,7 @@
 # written by Anthony Rogers
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2012-07-10 12:14:16 $
+# Last edited on: $Date: 2012-07-10 12:18:53 $
 #
 # it depends on:
 #    wormpep + history
@@ -94,7 +94,9 @@ $species =~ tr/[A-Z]/[a-z]/;
 my $species_ = ref $wormbase;
 $species =~ s/^[A-Z]/[a-z]/;
 
-$yfile_name ='~wormpub/wormbase/scripts/ENSEMBL/etc/ensembl_lite.conf' if not defined $yfile_name;
+$yfile_name = "/nfs/wormpub/wormbase/scripts/ENSEMBL/etc/ensembl_lite.conf" if not defined $yfile_name;
+# the following expands any shell shortcut chars, e.g. ~
+($yfile_name) = glob("$yfile_name");
 die ("Could not find conf file $yfile_name\n") if not -e $yfile_name;
 
 my $config = ( YAML::LoadFile($yfile_name) )->{$species};
