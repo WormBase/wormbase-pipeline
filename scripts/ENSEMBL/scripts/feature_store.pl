@@ -15,7 +15,7 @@ use Bio::EnsEMBL::DBSQL::DBAdaptor;
 
 
 my ($estori, $species);
-&GetOptions('estoritentations=s' => \$estori,
+&GetOptions('estorientations=s' => \$estori,
             'species=s'          => \$species,
     );
 
