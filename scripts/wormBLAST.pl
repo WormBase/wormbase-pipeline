@@ -5,7 +5,7 @@
 # written by Anthony Rogers
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2012-07-10 12:03:05 $
+# Last edited on: $Date: 2012-07-10 12:14:16 $
 #
 # it depends on:
 #    wormpep + history
@@ -55,7 +55,7 @@ GetOptions(
     'species=s'       => \$species,
     'clean_blasts'    => \$clean_blasts,
     'copy'            => \$copy,
-    'yfile=s'         => \$yfile_name
+    'yfile=s'         => \$yfile_name,
   )
   || die('cant parse the command line parameter');
 
@@ -95,7 +95,7 @@ my $species_ = ref $wormbase;
 $species =~ s/^[A-Z]/[a-z]/;
 
 $yfile_name ='~wormpub/wormbase/scripts/ENSEMBL/etc/ensembl_lite.conf' if not defined $yfile_name;
-die ("Could not find conf file $yfile_name\n" if not -e $yfile_name;
+die ("Could not find conf file $yfile_name\n") if not -e $yfile_name;
 
 my $config = ( YAML::LoadFile($yfile_name) )->{$species};
 
