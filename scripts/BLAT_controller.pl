@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl5.8.0 -w
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2012-01-26 09:49:25 $
+# Last edited on: $Date: 2012-07-11 14:31:06 $
 
 
 use lib $ENV{'CVS_DIR'};
@@ -251,9 +251,9 @@ if ( $process ) {
       my $cmd;
       # only get data for confirmed introns from same-species alignmenrs
       if ($qspecies eq $species and $intron) {
-        $cmd = $wormbase->build_cmd("blat2ace.pl -groupaligns -virtual -intron -type $type -qspecies $qspecies");
+        $cmd = $wormbase->build_cmd("blat2ace.pl -groupaligns -intron -type $type -qspecies $qspecies");
       } else {
-        $cmd = $wormbase->build_cmd("blat2ace.pl -groupaligns -virtual -type $type -qspecies $qspecies");
+        $cmd = $wormbase->build_cmd("blat2ace.pl -groupaligns -type $type -qspecies $qspecies");
       }
       if ($test) {
         $cmd .= " -test";
