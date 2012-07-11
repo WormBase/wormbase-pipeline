@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl5.8.0 -w
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2012-07-11 14:31:06 $
+# Last edited on: $Date: 2012-07-11 14:40:48 $
 
 
 use lib $ENV{'CVS_DIR'};
@@ -131,6 +131,10 @@ if( $mask ) {
   }
   $lsf->clear;   
 
+  if ($log->report_errors) {
+    $log->log_and_die("Some transcriptmasker jobs failed; bailing out now\n");
+  }
+
   foreach my $moltype ( @{$mol_types{$species}} ) {
     &check_and_shatter( $wormbase->maskedcdna, "$moltype.masked" );
   }
@@ -226,7 +230,11 @@ if ( $run ) {
   for my $job ( $lsf->jobs ) {    # much quicker if history is pre-cached
     $log->error("$job exited non zero\n") if $job->history->exit_status != 0;
   }
-  $lsf->clear;  
+  $lsf->clear;
+
+  if ($log->report_errors) {
+    $log->log_and_die("Some BLAT run jobs failed - bailing\n");
+  }
 }
 
 if( $postprocess ) {
@@ -279,6 +287,10 @@ if ( $process ) {
   }
   $lsf1->clear;   
   
+  if ($log->report_errors) {
+    $log->log_and_die("Some blat2ace jobs died - bailing\n");
+  }
+
   if($intron) {
     $log->write_to("confirming introns . . \n");
     #only do for self species matches
@@ -303,7 +315,7 @@ if ( $process ) {
 }
 
 
-if( $load ) {
+if( $load and not $log->report_errors) {
   foreach my $qspecies (keys %mol_types){
     $log->write_to("Loading $qspecies BLAT data\n");
     foreach my $type (@{$mol_types{$qspecies}}){
