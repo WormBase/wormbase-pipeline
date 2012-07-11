@@ -50,6 +50,7 @@
 // Sequence, protein, domain related classes
 
 _VSequence         -V -D FMAP
+_VSequence_collection -V
 _VCDS		   -V -D FMAP
 _VTranscript	   -V -D FMAP
 _VPseudogene	   -V -D FMAP
