@@ -71,7 +71,7 @@ my $dbobj = Bio::EnsEMBL::DBSQL::DBAdaptor->
 $log->write_to("Building chromosomes\n");
 
 if (not defined $out_file) {
-  $out_file = ($softmask) ? $wormbase->softmasked_genome_seq : $wormbase->$wormbase->masked_genome_seq;
+  $out_file = ($softmask) ? $wormbase->softmasked_genome_seq : $wormbase->masked_genome_seq;
 }
 
 
