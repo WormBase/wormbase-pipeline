@@ -27,7 +27,7 @@ GetOptions ("help"       => \$help,
 	    "test"       => \$test,
 	    "verbose"    => \$verbose,
 	    "store:s"    => \$store,
-	    "output:s"   => \$outfile,
+	    "output:s"   => \$out_file,
 	    "database:s" => \$database,
 	    "species:s"  => \$species,
             "softmask"   => \$softmask,
@@ -70,7 +70,7 @@ my $dbobj = Bio::EnsEMBL::DBSQL::DBAdaptor->
 
 $log->write_to("Building chromosomes\n");
 
-if (not defined $outfile) {
+if (not defined $out_file) {
   $out_file = ($softmask) ? $wormbase->softmasked_genome_seq : $wormbase->$wormbase->masked_genome_seq;
 }
 
