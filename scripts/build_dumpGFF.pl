@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl -w
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2012-06-26 12:23:09 $
+# Last edited on: $Date: 2012-07-13 21:55:29 $
 
 use strict;
 use lib  $ENV{'CVS_DIR'};
@@ -87,7 +87,6 @@ init miRNA elegans
 init miRNA_primary_transcript elegans
 init Oligo_set elegans
 init SAGE_transcript elegans
-init Expr_profile elegans
 blat BLAT_EST_BEST elegans briggsae remanei pristionchus japonica brenneri
 blat BLAT_EST_OTHER elegans briggsae remanei pristionchus japonica brenneri
 blat BLAT_NEMATODE elegans pristionchus remanei briggsae japonica brenneri
@@ -111,6 +110,7 @@ blat GenePairs elegans
 blat Orfeome elegans
 blat RNAi_primary elegans
 blat RNAi_secondary elegans
+blat Expr_profile elegans
 homol waba_coding elegans
 homol waba_strong elegans
 homol waba_weak elegans
