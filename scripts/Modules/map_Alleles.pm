@@ -291,7 +291,7 @@ sub map {
       $errors++;
       next;
     }
-    elsif ($map[0] ne $x->Sequence->name){
+    elsif ($map[0] ne $x->Sequence->name and $x->Sequence->name !~ /^CHROMOSOME/ and $x->Sequence->name !~ /^chr/){
       $log->write_to("WARNING: moved $x (${\$x->Public_name}) from sequence ${\$x->Sequence->name} to $map[0]\n");
     }
 
