@@ -41,17 +41,18 @@ USAGE
 exit 1;	
 }
 
-my ( $debug, $store,$database,$help,$test,$species,$wb,$noload,$outdir);
+my ( $debug, $store,$database,$help,$test,$species,$wb,$noload,$outdir,$binsize);
 
 GetOptions(
-    'species=s'=> \$species,
-    'debug=s'  => \$debug,
-    'store=s'  => \$store,
-    'outdir=s' => \$outdir,
-    'database=s'  => \$database,
-    'help'        => \$help,
-    'test'        => \$test,
-    'noload'      => \$noload,
+  'species=s'=> \$species,
+  'debug=s'  => \$debug,
+  'store=s'  => \$store,
+  'outdir=s' => \$outdir,
+  'database=s'  => \$database,
+  'help'        => \$help,
+  'test'        => \$test,
+  'noload'      => \$noload,
+  'binsize=s'     => \$binsize,
 ) or &print_usage();
 
 &print_usage if $help;
@@ -83,8 +84,7 @@ MapAlleles::set_wb_log($log,$wb); # that is a bit crude, but makes $log availabl
 
 my $lsf = LSF::JobManager->new();
 my $variations = MapAlleles::get_all_allele_ids();
-my $binsize = int(@$variations / 10 );
-
+$binsize = 50000 if not defined $binsize;
 
 my (@bins, @id_files, @out_files);
 
@@ -144,8 +144,8 @@ sub mapAlleles {
   my $job_name = "worm_".$species."_splitalleles";
   my @bsub_options =(-e => '/dev/null', 
                      -o => '/dev/null',
-                     -M => "3500000", 
-                     -R => "\"select[mem>3500] rusage[mem=3500]\"",
+                     -M => "4000000", 
+                     -R => "\"select[mem>4000] rusage[mem=4000]\"",
                      -J => $job_name);
   $lsf->submit(@bsub_options, $submitstring);
 }
