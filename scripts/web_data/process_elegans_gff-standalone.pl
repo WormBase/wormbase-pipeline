@@ -17,6 +17,7 @@ my (
   $wormbase,
   $outfile,
   $outfh,
+  $database,
     );
 
 GetOptions('species:s' => \$species,
@@ -24,6 +25,7 @@ GetOptions('species:s' => \$species,
            'test'      => \$test,
            'store=s'   => \$store,
            'outfile=s' => \$outfile,
+           'database=s' => \$database,
            )||die(@!);
 
 
@@ -37,7 +39,11 @@ if ( $store ) {
                              -test    => $test,                             );
 }
 
+
 my $log = Log_files->make_build_log($wormbase);
+
+$database = $wormbase->autoace if not defined $database;
+$log->log_and_die("Database $database could not be found\n") if not -d $database;
 
 if (not defined $species) {
   $species = $wormbase->species;
@@ -55,7 +61,7 @@ if (not defined $species) {
   }
 }
 
-my $db = Ace->connect( $wormbase->autoace ) or $log->log_and_die("Can't open ace database:". Ace->error );
+my $db = Ace->connect( $database ) or $log->log_and_die("Can't open ace database:". Ace->error );
 
 my (
     %NOTES,          %LOCUS, %GENBANK,      %CONFIRMED,
