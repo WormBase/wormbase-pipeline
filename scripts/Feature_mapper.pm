@@ -250,12 +250,23 @@ sub _check_for_match_left {
 
   if ($rev) {
     my $revflank = $self->DNA_revcomp($flank);
-    while($dna =~/$revflank/ig) {
-      push @matches, length($`) + 1;
+    #while($dna =~/$revflank/ig) {
+    #  push @matches, length($`) + 1;
+    #}
+    for(my $i=0; $i <= length($dna) - length($revflank); $i++) {
+      if ($flank eq substr($dna, $i, length($revflank))) {
+        push @matches, $i + 1;
+      }
     }
+
   } else {
-    while($dna =~ /$flank/ig) {
-      push @matches, length($`) + length($flank);
+    #while($dna =~ /$flank/ig) {
+    #  push @matches, length($`) + length($flank);
+    #}
+    for(my $i=0; $i <= length($dna) - length($flank); $i++) {
+      if ($flank eq substr($dna, $i, length($flank))) {
+        push @matches, $i + length($flank);
+      }
     }
   }
 
@@ -270,12 +281,22 @@ sub _check_for_match_right {
   
   if ($rev) {
     my $revflank = $self->DNA_revcomp($flank);
-    while($dna =~ /$revflank/ig) {
-      push @matches, length($`) + length($flank);
+    #while($dna =~ /$revflank/ig) {
+    #  push @matches, length($`) + length($flank);
+    #}
+    for(my $i=0; $i <= length($dna) - length($revflank); $i++) {
+      if ($flank eq substr($dna, $i, length($revflank))) {
+        push @matches, $i + length($revflank);
+      }
     }
   } else {
-    while($dna =~ /$flank/ig) {
-      push @matches, length($`) + 1;
+    #while($dna =~ /$flank/ig) {
+    #  push @matches, length($`) + 1;
+    #}
+    for(my $i=0; $i <= length($dna) - length($flank); $i++) {
+      if ($flank eq substr($dna, $i, length($flank))) {
+        push @matches, $i + 1;
+      }
     }
   }
   
