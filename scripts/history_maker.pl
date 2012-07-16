@@ -103,7 +103,7 @@ if (! defined $user || $user eq "") {
 
 my $person;
 if (defined $user){ 
-  my @IDs = ('1983','4025','4055');
+  my @IDs = ('1983','4025','4055','615','1849','1867',);
   if ($user eq "pad") {
     $person = ("WBPerson".$IDs[0]);
   } elsif ($user eq "gw3") {
@@ -111,7 +111,26 @@ if (defined $user){
   } elsif ($user eq "mh6") {
     $person = ("WBPerson".$IDs[2]);
   }
+  elsif ($user eq "john") {
+    $person = ("WBPerson".$IDs[3]);
+  }
+  elsif ($user eq "tb") {
+    $person = ("WBPerson".$IDs[4]);
+  }
+  elsif ($user eq "po") {
+    $person = ("WBPerson".$IDs[5]);
+  }
 }
+
+#history nomenclature temp fix
+my $wormpep_prefix;
+if (defined $brugia){
+  $wormpep_prefix = "bm$version";
+}
+else {
+  $wormpep_prefix = "wp$version";
+}
+
 
 my $tidy_dir = glob("~${user}/.history_maker");
 mkdir $tidy_dir, 0777;
@@ -727,7 +746,7 @@ sub add_evidence
       
       foreach my $cds(@cdses){
 
-        print CLN "CDS : $cds\nMethod history\nGene_history $refgene\nRemark \"[$date $user] Removed automatically due to lack of evidence - based on lack of curation tags\" Curator_confirmed $person\n\nCDS : $cds\n-D Gene\n\n-R CDS $cds $cds:bm7\n\n"
+        print CLN "CDS : $cds\nMethod history\nGene_history $refgene\nRemark \"[$date $user] Removed automatically due to lack of evidence - based on lack of curation tags\" Curator_confirmed $person\n\nCDS : $cds\n-D Gene\n\n-R CDS $cds $cds:$wormpep_prefix\n\n"
       }
 
       close CLN;
@@ -977,13 +996,6 @@ sub make_history
       last;
     }
 
-    my $wormpep_prefix;
-    if (defined $brugia){
-      $wormpep_prefix = "bm$version";
-    }
-    else {
-      $wormpep_prefix = "wp$version";
-    }
     #print ace format
     print HIS "Sequence : $seq\n";
     print HIS "CDS_child \"$cds:$wormpep_prefix\" $start $end\n";
