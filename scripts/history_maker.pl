@@ -29,6 +29,8 @@ my $lab;
 my $species;
 my $display_by_clones;
 my $addevidence;
+my $brugia;
+my $cleangene;
 
 GetOptions (
             "debug=s"    => \$debug,
@@ -44,10 +46,12 @@ GetOptions (
 	    "intron"       => \$intron,
 	    "blesser"      => \$blesser,
 	    "addevidence"  => \$addevidence,
+            "cleangene"    => \$cleangene,
 	    "anomaly"      => \$anomaly,
 	    "lab=s"        => \$lab, # RW or HX
 	    "display_by_clones"       => \$display_by_clones,
 	    "species:s"    => \$species,
+            "brugia:s"     => \$brugia, # stores the version number of the brugia beta database and also hard defines useful options for brugia.
 	    "help|h"       => sub { system("perldoc $0"); exit(0);}
 	   );
 
@@ -77,9 +81,17 @@ my $database = $source ? $source : glob("/.automount/evs-users2/root/wormpub/cam
 if (! defined $lab || $lab eq "") {
   $lab = "HX";
 } 
+my $version;
 
-# pass path to latest version of wormbase
-my $version = &get_history_version($wormbase->database('current'));
+# pass path to latest version of wormbase and set up brugia specifics if selected
+if (defined $brugia) {
+  $version = $brugia;
+  $blesser = "1";
+  $addevidence = "1";
+}
+else {
+  $version = &get_history_version($wormbase->database('current'));
+}
 
 #If user is supplied grab a WBPersonID
 if (! defined $user || $user eq "") { 
@@ -115,10 +127,11 @@ my $form_cds;			# cds variable from form
 my $form_gene;			# gene variable from blesser form
 my $form_gene2;                 # gene variable from blesser form
 my $form_gene3;                 # gene variable from evidence form
+my $form_gene4;                 # gene variable from clean_gene form
 my $anomaly_clone;		# clone variable from anomaly form
 
 # Main window
-$main_gui->configure(-title => "Curation Tool for WS${version}",
+$main_gui->configure(-title => "Curation Tool for ${version}",
 		     -background => 'darkgrey' # was beige
 		    );
 
@@ -128,6 +141,7 @@ my $gui_height = 50; #modified 200
 $gui_height += 200 if $chromosome;
 $gui_height += 200 if $blast;
 $gui_height += 100 if $blesser;
+$gui_height += 100 if $cleangene;
 $gui_height += 100 if $addevidence;
 $gui_height += 300 if $anomaly;
 $main_gui->geometry("${gui_width}x$gui_height");
@@ -402,6 +416,67 @@ if ($addevidence) {
 
 
 
+###### clean gene
+###########################################################
+
+my $genework;
+if ($cleangene) {
+  my $gene_clean = $main_gui->Frame( -background => "LightGreen",
+				       -height     => "400",
+				       -width      => "600",
+				       -label      => "Clean genes from loci",
+				       -relief     => "raised",
+				       -borderwidth => 5,
+				       )->pack( -pady => "5", #modified
+						-fill => "x"
+						);
+  # CDS entry widgets
+  my $TAG_lbl = $gene_clean->Label( -text => 'Gene ID',
+				       -background => 'LightGreen',
+				       -foreground => 'black'
+				       )->pack(-pady => '6',
+					       -padx => '6',
+					       -side => 'left',
+					       );
+
+  $genework = $gene_clean->Entry( -width => '10',
+				       -background => 'whitesmoke',
+				       -textvariable=> \$form_gene4,
+				       )->pack(-side => 'left',
+					       -pady => '5',
+					       -padx => '5'
+					       );
+
+  # make Return and Enter submit CDS 
+  $genework->bind("<Return>",[ \&clean_gene]);
+#  $genework->bind("<KP_Enter>",[ \&bless_gene]);
+  
+
+  # Add Gene button
+  my $evi = $gene_clean->Button( -text => "Clean this Gene",
+				     -command => [\&clean_gene]
+				     )->pack(-side => 'left',
+					     -pady => '2',
+					     -padx => '6',
+					     -anchor => "w"
+					     );
+  # Clear CDS entry button
+  my $clear_gen = $gene_clean->Button( -text => "Clear",
+					  -command => [\&clear_gen]
+					  )->pack(-side => 'right',
+						  -pady => '2',
+						  -padx => '6',
+						  -anchor => "e"
+						  );
+}
+######### end clean gene
+
+
+
+
+
+
+
 ###########################################################
 # anomalies database locator frame
 if ( $anomaly ) {
@@ -629,6 +704,48 @@ sub add_evidence
     }
   }
 
+
+################
+  sub clean_gene
+    {
+
+      #get date for remark
+      my ($day, $mon, $yr)  = (localtime)[3,4,5];
+      my $date = sprintf("%02d%02d%02d",$yr-100, $mon+1, $day);
+      my $refgene=$form_gene4;
+      return unless $refgene;
+      &generate_message("CHECK", "Have you saved your database??\n !!Failure will result in all CDS loss!!");
+      $db->close();
+      $db = Ace->connect(-path => $database);
+
+      my @cdses = $db->fetch(-query=>"find gene $refgene ; follow Corresponding_CDS ; ! Evidence");
+      return &error_warning("Invalid Gene","$refgene is not a valid Gene name") unless @cdses;
+      
+      # ace output for loading
+      my $output = $session_file.$refgene;
+      open (CLN,">$output") or die "cant open $output\n";
+      
+      foreach my $cds(@cdses){
+
+        print CLN "CDS : $cds\nMethod history\nGene_history $refgene\nRemark \"[$date $user] Removed automatically due to lack of evidence - based on lack of curation tags\" Curator_confirmed $person\n\nCDS : $cds\n-D Gene\n\n-R CDS $cds $cds:bm7\n\n"
+      }
+
+      close CLN;
+      #load the data back to the database
+      my $return_status = system("xremote -remote 'parse $output'");
+      if ( ( $return_status >> 8 ) != 0 ) {
+        &error_warning("WARNING", "X11 connection appears to be lost");
+      } 
+      else {
+        &confirm_message("Success", "Cleaned CDSs from $form_gene4");
+        &clear_gen;
+      }
+    }
+
+##### end clear_gen
+
+
+
 ###############################################################
 
 # prediction blesser 
@@ -644,7 +761,7 @@ sub bless_prediction
     my $method = $obj->Method->name;
     my $stem = $obj->Sequence->name;
     my $exceptions = $obj->Sequence->Method->name;
-    if (! ( ($method eq "Genefinder") || ($method eq "twinscan") || ($method eq "RNASEQ.Hillier.Aggregate") || ($method eq "jigsaw") || ($method eq "mGene") ) ) {
+    if (! ( ($method eq "Genefinder") || ($method eq "twinscan") || ($method eq "RNASEQ.Hillier.Aggregate") || ($method eq "jigsaw") || ($method =~ /cufflinks/) || ($method =~ "curated") || ($method eq "mGene") ) ) {
 
       &error_warning("Wrong method","Only Selected Predictions can be blessed");
       next;
@@ -741,22 +858,28 @@ sub bless_prediction
   }
 
 ##############################################################
-sub clear_gene
+# clear various fields
+##############################################################
 
-{
-    $gene_val->delete(0,'end');
-  }
-
-sub clear_proposed
-
-  {
-    $proposed_name->delete(0,'end');
-  }
-
-sub clear_evi
-  {
-    $cdswork->delete(0,'end');
-}
+  sub clear_gene
+    {
+      $gene_val->delete(0,'end');
+    }
+    
+    sub clear_proposed
+      {
+        $proposed_name->delete(0,'end');
+      }
+      
+      sub clear_evi
+        {
+          $cdswork->delete(0,'end');
+        }
+        sub clear_gen
+          {
+            $genework->delete(0,'end');
+          }
+        
 
 ##############################################################
 sub suggest_name
@@ -812,7 +935,7 @@ sub make_history
     open (HIS,">$output") or die "cant open $output\n";
     last if( $cds eq "end" );
 
-    $cds = &confirm_case($cds);
+    #$cds = &confirm_case($cds);
 
     my $obj = $db->fetch(CDS => "$cds");
     return &error_warning("Invalid CDS","$cds is not a valid CDS name") unless $obj;
@@ -821,9 +944,17 @@ sub make_history
       next;
     }
 
-    if ($db->fetch(CDS => "$cds:wp$version") ) {
-      &error_warning("History exists","$cds:wp$version already exists");
-      return;
+    if (defined $brugia){
+      if ($db->fetch(CDS => "$cds:bm$version") ) {
+        &error_warning("History exists","$cds:bm$version already exists");
+        return;
+      }
+    }
+    else {
+      if ($db->fetch(CDS => "$cds:wp$version") ) {
+        &error_warning("History exists","$cds:wp$version already exists");
+        return;
+      }
     }
 
     my $species = $obj->Species->name;
@@ -846,10 +977,17 @@ sub make_history
       last;
     }
 
+    my $wormpep_prefix;
+    if (defined $brugia){
+      $wormpep_prefix = "bm$version";
+    }
+    else {
+      $wormpep_prefix = "wp$version";
+    }
     #print ace format
     print HIS "Sequence : $seq\n";
-    print HIS "CDS_child \"$cds:wp$version\" $start $end\n";
-    print HIS "\nCDS : $cds:wp$version\n";
+    print HIS "CDS_child \"$cds:$wormpep_prefix\" $start $end\n";
+    print HIS "\nCDS : $cds:$wormpep_prefix\n";
 
     foreach ($obj->Source_exons) {
       my ($start,$end) = $_->row(0);
@@ -868,7 +1006,7 @@ sub make_history
     if ( ( $return_status >> 8 ) != 0 ) {
       &error_warning("WARNING", "X11 connection appears to be lost");
     } else {
-      &confirm_message("Made history","History $cds:wp$version has been created");
+      &confirm_message("Made history","History $cds:$wormpep_prefix has been created");
       &clear;
     }
   }
@@ -1822,6 +1960,25 @@ sub error_warning
     my $choice = $D->Show;
   }
 
+
+############################################################################
+
+  sub generate_message
+    {
+      my $title = shift;
+      my $text = shift;
+      my $D = $main_gui->Dialog(
+                                -title => "$title",
+                                -text  => "$text",
+                                -default_button => 'ok',
+                                -buttons        => ['ok']
+                               );
+      $D->configure(-background => 'Red4',
+                    -foreground => 'black');
+      
+      my $choice = $D->Show;
+    }
+
 ############################################################################
 # gets the version of the currentDB database
 sub get_history_version
@@ -1890,15 +2047,23 @@ A perl Tk interface to aid manual gene curation.
 
 =item options
 
--chromosome : The chromosome to show "confirmed introns" for
+-chromosome  : The chromosome to show "confirmed introns" for
 
--source     : The database to use as source for history and ab initio predictions
+-source      : The database to use as source for history and ab initio predictions
 
--user       : If you are not yourself enter your user to use in autgenerated comments (when blessing genefinder etc)
+-user        : If you are not yourself enter your user to use in autgenerated comments (when blessing genefinder etc)
 
--design     : Does not make Aceperl connection - dev tool for quicker startup
+-design      : Does not make Aceperl connection - dev tool for quicker startup
 
--mail       : This option emails blessed predictions to mt3 requesting a new gene ID
+-mail        : This option emails blessed predictions to mt3 requesting a new gene ID
+
+-addevidence : This option allows the curator to automatically add the top level evidence to a CDS object
+
+-cleangene   : This option removes all unwanted Isoforms from a given loci. Isoforms are preserved by the presence of the Evidence tag.
+
+-brugi       : this automatically selects a few of the options that are useful for brugia curation.
+
+
 
 =item Intron finder
 
@@ -1907,6 +2072,14 @@ Uses the GFF check files in development_release to provide a list of introns.  S
 =item History Maker
 
 presents to the user a simple box with a space to enter a CDS name and a button to make a history object.  
+
+=item Add Evidence
+
+This option will populate the top evidence hash with the Curator_confirmed Evidence. This is perticularly imoprtant and useful for Tier II aut removal of Isoforms via the Clean Gene option.
+
+=item Clean Gene
+
+This option requires that the -database is the curation database that the user is working on. It takes a Gene ID and finds any CDS_child that does not have a top level Ecvidence hash populated. These are then auto converted to history objects. A popup window exists that reminds you to save your database so that not all Isoforms are lost from a loci.
 
 =item Prediction Blesser
 
@@ -1926,7 +2099,6 @@ A reference database is used to extract the relevant info needed to make a histo
 Some error checking is done so that;
 
 =over4
-
   history objects cant be created for non-existant CDSs.
   history objects with the same name as existing histories will not be made.
   input case is irrelevant - all histories will be converted to uppercase clone names.
