@@ -202,7 +202,7 @@ sub filter_alleles {
   foreach my $allele (@{$alleles}) {
     my $name = $allele->Public_name || "No_public_name";
     my $remark = ($allele->Remark||'none');
-    
+
     # has no sequence connection
     if ( ! defined $allele->Sequence ) {
       $log->write_to("ERROR: $allele ($name) has missing Sequence tag (Remark: $remark)\n");
@@ -217,6 +217,12 @@ sub filter_alleles {
     #            $log->write_to("ERROR: $name connects to ${\$allele->Sequence} which has no Source tag (Remark: $remark)\n");$errors++
     #        }
 
+    # no flanks at all
+    elsif (!defined $allele->Flanking_sequences) {
+      $log->write_to("ERROR: $allele ($name) has no/empty Flanking_sequence (Remark: $remark)\n");
+      $errors++;
+      next;
+    }
     # no left flanking sequence
     elsif (!defined $allele->Flanking_sequences->name ) {
       $log->write_to("ERROR: $allele ($name) has no left Flanking_sequence (Remark: $remark)\n");
