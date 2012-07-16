@@ -126,7 +126,7 @@ sub map_feature {
     my $reg_len = ($chr_en - $chr_st + 1);
 
     my $dna = $self->Sub_sequence($chr_id, $chr_st - 1, $reg_len);
-    my @start_ends = $self->_check_for_match($dna,$flank_L, $flank_R, $min_len, $max_len);
+    my @start_ends = $self->_check_for_match($dna, $flank_L, $flank_R, $min_len, $max_len);
 
     if (@start_ends) {
       my ($dna_left_coord, $dna_right_coord) = @{$start_ends[0]};
@@ -254,7 +254,7 @@ sub _check_for_match_left {
     #  push @matches, length($`) + 1;
     #}
     for(my $i=0; $i <= length($dna) - length($revflank); $i++) {
-      if ($flank eq substr($dna, $i, length($revflank))) {
+      if ($revflank eq substr($dna, $i, length($revflank))) {
         push @matches, $i + 1;
       }
     }
@@ -285,7 +285,7 @@ sub _check_for_match_right {
     #  push @matches, length($`) + length($flank);
     #}
     for(my $i=0; $i <= length($dna) - length($revflank); $i++) {
-      if ($flank eq substr($dna, $i, length($revflank))) {
+      if ($revflank eq substr($dna, $i, length($revflank))) {
         push @matches, $i + length($revflank);
       }
     }
