@@ -474,7 +474,7 @@ sub _get_flanking_sequence {
   }
 
   # report the unique flanking sequences
-  return (uc($flankseq1), uc($flankseq2));
+  return (lc($flankseq1), lc($flankseq2));
 
 }
 
@@ -597,9 +597,9 @@ sub suggest_fix {
 
   # If that didn't work, try to repair the existing flanking sequences
 
-  my $dna = uc $self->Sub_sequence($clone);
-  $flank_L = uc $flank_L;
-  $flank_R = uc $flank_R;
+  my $dna = lc($self->Sub_sequence($clone));
+  $flank_L = lc($flank_L);
+  $flank_R = lc($flank_R);
 
   # check for non-ACGT characters in the flanking sequences
   if ($flank_L =~ s/\s//g || $flank_R =~ s/\s//g) {
