@@ -77,7 +77,7 @@ sub invoke {
     my $genome_seq = $wormbase->genome_seq;
     my $seqs = Bio::SeqIO->new(-file => $genome_seq, -format => "fasta");
     while(my $seq = $seqs->next_seq) {
-      $self->_sequence_hash->{$seq->id} = $seq->seq;
+      $self->_sequence_hash->{$seq->id} = lc($seq->seq);
     }
   }
   else {
@@ -110,7 +110,7 @@ EOF
       $/ = "\n";
       $seq =~ s/>[\w\-_]+//;
       $seq =~ s/\n//g;
-      $self->_sequence_hash->{$seqname} = $seq;
+      $self->_sequence_hash->{$seqname} = lc($seq);
     }
   }
   return $self;
