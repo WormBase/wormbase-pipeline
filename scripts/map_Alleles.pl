@@ -108,8 +108,11 @@ if (not $acefile) {
 
 
 if ($debug) {
-    print STDERR "DEBUG \"$debug\"\n\n";
+  print STDERR "DEBUG \"$debug\"\n\n";
+  $log->{DEBUG} = $debug;
 }
+
+$log->write_to("Fetching alleles...\n") if $debug;
 
 my $alleles;
 if ($allele){
@@ -122,6 +125,7 @@ if ($allele){
 }
 
 if (not $nofilter) {
+  $log->write_to("Filtering alleles...\n") if $debug;
   $alleles = MapAlleles::filter_alleles( $alleles );
 }
 
@@ -129,11 +133,14 @@ if (not $nofilter) {
 my $mapped_alleles = MapAlleles::map($alleles);
 undef $alleles;# could theoretically undef the alleles here 
 
+$log->write_to("Removing insanely mapped alleles...\n") if $debug;
 MapAlleles::remove_insanely_mapped_alleles($mapped_alleles);
 
 # for other databases don't run through the GFF_SPLITs
 &finish() if $database;
 
+
+$log->write_to("Writing basic position information...\n") if $debug;
 my $fh = new IO::File ">$acefile" || die($!);
 # create mapping Ace file
 while( my($key,$allele)=each %$mapped_alleles){
@@ -144,38 +151,49 @@ while( my($key,$allele)=each %$mapped_alleles){
 # get overlaps with genes
 # gene_name->[allele_names,...]
 
+$log->write_to("Getting gene mappings...\n") if $debug;
 my $genes=MapAlleles::get_genes($mapped_alleles);
 
 # create the gene Ace file
 
+$log->write_to("Printing gene mappings...\n") if $debug;
 my $inversegenes=MapAlleles::print_genes($genes,$fh);
 
 # compare old<->new genes
+$log->write_to("Comparing old mappings to new...\n") if $debug;
 MapAlleles::compare($mapped_alleles,$inversegenes);
 
 # get overlaps with CDSs (intron,exon,coding_exon,cds)
 # cds_name->allele_name->type
+$log->write_to("Getting CDS mappings...\n") if $debug;
 my $cds=MapAlleles::get_cds($mapped_alleles);
+$log->write_to("Printing CDS mappings...\n") if $debug;
 MapAlleles::print_cds($cds,$fh);
 
 # get overlaps with Transcripts                        
 # transcript_name->allele_name->type
+$log->write_to("Getting UTR mappings...\n") if $debug;
 my $utrs=MapAlleles::load_utr;
 my $hit_utrs=MapAlleles::search_utr($mapped_alleles,$utrs);
+$log->write_to("Printing UTR mappings...\n") if $debug;
 MapAlleles::print_utr($hit_utrs,$fh);
 $utrs = $hit_utrs = undef; # cleanup memory
 
 # get overlaps with Pseudogenes                        
 # pseudogene_name->allele_name->1
+$log->write_to("Getting Pseudogene mappings...\n") if $debug;
 my $pgenes=MapAlleles::load_pseudogenes;
 my $hit_pgenes=MapAlleles::search_pseudogenes($mapped_alleles,$pgenes);
+$log->write_to("Printing Pseudogene mappings...\n") if $debug;
 MapAlleles::print_pseudogenes($hit_pgenes,$fh);
 $pgenes = $hit_pgenes = undef; # cleanup memory
 
 # get overlaps with non-coding transcripts                        
 # transcript_name->allele_name->1
+$log->write_to("Getting ncRNA mappings...\n") if $debug;
 my $nc_rnas=MapAlleles::load_ncrnas;
 my $hit_ncrnas=MapAlleles::search_ncrnas($mapped_alleles,$nc_rnas);
+$log->write_to("Printing ncRNA mappings...\n") if $debug;
 MapAlleles::print_ncrnas($hit_ncrnas,$fh);
 $hit_ncrnas = $hit_ncrnas = undef; # cleanup memory
  
