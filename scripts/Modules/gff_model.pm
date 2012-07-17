@@ -121,42 +121,90 @@ package Mem_index;
 
 # create a memory index of the coordinates of all genes by chromosome
 sub build{
-	my $self={};
-	                            
-	# genes
-	while(my ($k,$v)=each %Genes) {
-		$self->{genes}->{$v->{chromosome}}||=[];
-		push @{$self->{genes}->{$v->{chromosome}}}, {start => $v->{start},stop=>$v->{stop},name=>$k};
-	}
-	foreach my $k(keys %{$self->{genes}}){
-		my @tmp=  sort {$a->{start}<=>$b->{start}||$a->{stop}<=>$b->{stop}} @{$self->{genes}->{$k}};
-		$self->{genes}->{$k} = \@tmp;
-	}
-	# cds part
-	while(my ($k,$v)=each %cds) {
-		$self->{cds}->{$v->{chromosome}}||=[];
-		push @{$self->{cds}->{$v->{chromosome}}}, {start => $v->{start},stop=>$v->{stop},name=>$k};
-	}
-	foreach my $k(keys %{$self->{cds}}){
-		my @tmp=  sort {$a->{start}<=>$b->{start}||$a->{stop}<=>$b->{stop}} @{$self->{cds}->{$k}};
-		$self->{cds}->{$k} = \@tmp;
-	}
-	bless $self;
-	return $self;
+  my $self={};
+  
+  # genes
+  while(my ($k,$v)=each %Genes) {
+    $self->{genes}->{$v->{chromosome}}||=[];
+    push @{$self->{genes}->{$v->{chromosome}}}, {start => $v->{start},stop=>$v->{stop},name=>$k};
+  }
+  foreach my $k(keys %{$self->{genes}}){
+    my @tmp = sort {$a->{start}<=>$b->{start}||$a->{stop}<=>$b->{stop}} @{$self->{genes}->{$k}};
+    my $max_end = -1;
+    for(my $i=0; $i < scalar(@tmp); $i++) {
+      if ($tmp[$i]->{stop} > $max_end) {
+        $max_end = $tmp[$i]->{stop};
+      }
+      $tmp[$i]->{max_end_left} = $max_end;
+    }
+    $self->{genes}->{$k} = \@tmp;
+  }
+  # cds part
+  while(my ($k,$v)=each %cds) {
+    $self->{cds}->{$v->{chromosome}}||=[];
+    push @{$self->{cds}->{$v->{chromosome}}}, {start => $v->{start},stop=>$v->{stop},name=>$k};
+  }
+  foreach my $k(keys %{$self->{cds}}){
+    my @tmp = sort {$a->{start}<=>$b->{start}||$a->{stop}<=>$b->{stop}} @{$self->{cds}->{$k}};
+    my $max_end = -1;
+    for(my $i=0; $i < scalar(@tmp); $i++) {
+      if ($tmp[$i]->{stop} > $max_end) {
+        $max_end = $tmp[$i]->{stop};
+      }
+      $tmp[$i]->{max_end_left} = $max_end;
+    }
+    $self->{cds}->{$k} = \@tmp;
+  }
+  bless $self;
+  return $self;
 }
 
 # search for genes overlapping a span
 # the grep leaves quite a bit open for improvement
 sub search_genes{
-	my ($self,$chromosome,$start,$stop)=@_;
-	return map {Gene::get_by_id($_->{name})} grep {$start<=$_->{stop} && $stop >= $_->{start}} @{$self->{genes}->{$chromosome}};
+  my ($self,$chromosome,$start,$stop)=@_;
+
+  my @list = @{$self->{genes}->{$chromosome}};
+  my $hits = $self->_bin_search($chromosome, $start, $stop, \@list);
+
+  return map {Gene::get_by_id($_->{name})} @$hits;
 }
 
 # search for cdses overlapping a span
 ## probably not needed
 sub search_cds{
-	my ($self,$chromosome,$start,$stop)=@_;
-	return map {Cds::get_by_id($_->{name})} grep {$start<=$_->{stop} && $stop >= $_->{start}} @{$self->{cds}->{$chromosome}}; 
+  my ($self,$chromosome,$start,$stop)=@_;
+
+  my @list = @{$self->{cds}->{$chromosome}}; 
+  my $hits = $self->_bin_search($chromosome, $start, $stop, \@list);
+
+  return map {Cds::get_by_id($_->{name})} @$hits;
+}
+
+
+
+sub _bin_search {
+  my ($self, $chromosome, $start, $stop, $list) = @_;
+
+  my ($low, $high) = (0, scalar(@$list));
+  while($low < $high) {
+    my $mid = int(($low + $high) / 2);
+
+    if ($list->[$mid]->{start} <= $stop) {
+      $low = $mid + 1;
+    } else {
+      $high = $mid;
+    }
+  }
+
+  my @hits;
+  for(my $i=$low-1; $i >= 0 and $list->[$i]->{max_end_left} >= $start; $i--) {
+    if ($start <= $list->[$i]->{stop} and $stop >= $list->[$i]->{start}) {
+      push @hits, $list->[$i];
+    }
+  }
+
+  return \@hits;
 }
 
 1;
