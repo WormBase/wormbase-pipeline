@@ -6,8 +6,8 @@
 #
 # Usage : autoace_builder.pl [-options]
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2012-07-17 09:44:56 $
+# Last edited by: $Author: klh $
+# Last edited on: $Date: 2012-07-17 19:45:41 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -30,7 +30,8 @@ my ( $make_wormpep, $finish_wormpep );
 my ( $prep_blat, $run_blat,     $finish_blat );
 my ( $gff_dump,     $processGFF, $gff_split );
 my $gene_span;
-my ( $load, $tsuser, $map_features, $remap_misc_dynamic, $map, $transcripts, $intergenic, $misc_data_sets, $homol_data_sets, $nem_contigs);
+my ( $load, $big_load, $tsuser );
+my ($map_features, $remap_misc_dynamic, $map, $transcripts, $intergenic, $misc_data_sets, $homol_data_sets, $nem_contigs);
 my ( $GO_term, $rna , $dbcomp, $confirm, $operon ,$repeats, $remarks, $names, $treefam, $cluster);
 my ( $utr, $agp, $gff_munge, $extras , $ontologies, $interpolate, $check, $enaseqxrefs, $enaprotxrefs, $xrefs);
 my ( $data_check, $buildrelease, $public,$finish_build, $gffdb, $autoace, $release, $user, $kegg);
@@ -54,6 +55,7 @@ GetOptions(
 	   'gff_split'      => \$gff_split,
 	   'gene_span'      => \$gene_span,
 	   'load=s'         => \$load,
+           'bigload=s'      => \$big_load,
 	   'prep_blat'      => \$prep_blat,
 	   'run_blat'       => \$run_blat,
 	   'finish_blat'    => \$finish_blat,
@@ -242,10 +244,11 @@ if  ($gffdb && $autoace) {
 else {$wormbase->run_command("update_gffdb.csh"                  , $log) if $gffdb;
 }
 
-if ($load) {
+if ($load or $big_load) {
     $log->write_to("loading $load to ".$wormbase->autoace."\n");
     $log->write_to("\ttsuser = $tsuser\n\n");
-    $wormbase->load_to_database( $wormbase->autoace, $load, $tsuser ,$log); #appropriate checks are made in the Wormbase.pm
+    $wormbase->load_to_database( $wormbase->autoace, $load, $tsuser ,$log, $big_load); 
+    #appropriate checks are made in the Wormbase.pm
 }
 
 $log->mail;
