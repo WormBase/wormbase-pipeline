@@ -6,8 +6,8 @@
 #
 # Usage : autoace_builder.pl [-options]
 #
-# Last edited by: $Author: klh $
-# Last edited on: $Date: 2012-07-09 15:33:40 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2012-07-17 09:44:56 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -205,6 +205,7 @@ if ($gff_munge) {
   ###
 
   $wormbase->run_script( 'over_load_SNP_gff.pl' , $log);
+  $wormbase->run_script( 'over_load_TF_gff.pl' , $log);
   $wormbase->run_script( 'overload_rnai.pl'     , $log);
   $wormbase->run_script( 'overload_operon.pl' , $log);
   
