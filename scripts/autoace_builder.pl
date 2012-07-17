@@ -7,7 +7,7 @@
 # Usage : autoace_builder.pl [-options]
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2012-07-17 20:37:37 $
+# Last edited on: $Date: 2012-07-17 20:40:36 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -252,7 +252,7 @@ if ($load) {
 } elsif ($big_load) {
   $log->write_to("loading $big_load to ".$wormbase->autoace."\n");
   $log->write_to("\ttsuser = $tsuser\n\n");
-  $wormbase->load_to_database( $wormbase->autoace, $load, $tsuser ,$log, 1); 
+  $wormbase->load_to_database( $wormbase->autoace, $big_load, $tsuser ,$log, 1); 
 }
 
 $log->mail;
