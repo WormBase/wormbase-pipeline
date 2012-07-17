@@ -7,7 +7,7 @@
 # Usage : autoace_builder.pl [-options]
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2012-07-17 19:45:41 $
+# Last edited on: $Date: 2012-07-17 20:37:37 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -244,11 +244,15 @@ if  ($gffdb && $autoace) {
 else {$wormbase->run_command("update_gffdb.csh"                  , $log) if $gffdb;
 }
 
-if ($load or $big_load) {
-    $log->write_to("loading $load to ".$wormbase->autoace."\n");
-    $log->write_to("\ttsuser = $tsuser\n\n");
-    $wormbase->load_to_database( $wormbase->autoace, $load, $tsuser ,$log, $big_load); 
-    #appropriate checks are made in the Wormbase.pm
+if ($load) {
+  $log->write_to("loading $load to ".$wormbase->autoace."\n");
+  $log->write_to("\ttsuser = $tsuser\n\n");
+  $wormbase->load_to_database( $wormbase->autoace, $load, $tsuser ,$log ); 
+  #appropriate checks are made in the Wormbase.pm
+} elsif ($big_load) {
+  $log->write_to("loading $big_load to ".$wormbase->autoace."\n");
+  $log->write_to("\ttsuser = $tsuser\n\n");
+  $wormbase->load_to_database( $wormbase->autoace, $load, $tsuser ,$log, 1); 
 }
 
 $log->mail;
