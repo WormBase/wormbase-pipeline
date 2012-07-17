@@ -247,26 +247,21 @@ sub _check_for_match_left {
   my ($self, $dna, $flank, $rev) = @_;
 
   my @matches;
+  my $cur = 0;
 
   if ($rev) {
     my $revflank = $self->DNA_revcomp($flank);
-    #while($dna =~/$revflank/ig) {
-    #  push @matches, length($`) + 1;
-    #}
-    for(my $i=0; $i <= length($dna) - length($revflank); $i++) {
-      if ($revflank eq substr($dna, $i, length($revflank))) {
-        push @matches, $i + 1;
-      }
+
+    while ((my $loc = index($dna, $revflank, $cur)) >= 0) {
+      push @matches, $loc + 1;
+      $cur = $loc + 1;
     }
 
   } else {
-    #while($dna =~ /$flank/ig) {
-    #  push @matches, length($`) + length($flank);
-    #}
-    for(my $i=0; $i <= length($dna) - length($flank); $i++) {
-      if ($flank eq substr($dna, $i, length($flank))) {
-        push @matches, $i + length($flank);
-      }
+
+    while ((my $loc = index($dna, $flank, $cur)) >= 0) {
+      push @matches, $loc + length($flank);
+      $cur = $loc + 1;
     }
   }
 
@@ -278,25 +273,20 @@ sub _check_for_match_right {
   my ($self, $dna, $flank, $rev) = @_;
   
   my @matches;
-  
+  my $cur = 0;
+
   if ($rev) {
     my $revflank = $self->DNA_revcomp($flank);
-    #while($dna =~ /$revflank/ig) {
-    #  push @matches, length($`) + length($flank);
-    #}
-    for(my $i=0; $i <= length($dna) - length($revflank); $i++) {
-      if ($revflank eq substr($dna, $i, length($revflank))) {
-        push @matches, $i + length($revflank);
-      }
+
+    while ((my $loc = index($dna, $revflank, $cur)) >= 0) {
+      push @matches, $loc + length($revflank);
+      $cur = $loc + 1;
     }
   } else {
-    #while($dna =~ /$flank/ig) {
-    #  push @matches, length($`) + 1;
-    #}
-    for(my $i=0; $i <= length($dna) - length($flank); $i++) {
-      if ($flank eq substr($dna, $i, length($flank))) {
-        push @matches, $i + 1;
-      }
+
+    while ((my $loc = index($dna, $flank, $cur)) >= 0) {
+      push @matches, $loc + 1;
+      $cur = $loc + 1;
     }
   }
   
@@ -675,7 +665,7 @@ sub _approx_matches () {
   my ($pos, $size);
   while (($pos, $size) = aslice($flank, ["i"])) { # aslice() searches for $flank in $_
     $offset += $pos+$size;
-    print "match = pos: $pos to $offset, size: $size\n";
+    #print "match = pos: $pos to $offset, size: $size\n";
     push @matches, [$pos, $offset-1];
     $_ = substr($seq, $offset);
   }
