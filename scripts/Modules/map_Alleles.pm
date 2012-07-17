@@ -279,7 +279,14 @@ sub map {
   my $mapper = Feature_mapper->new( $wb->autoace, undef, $wb );
   my $coords = Coords_converter->invoke( $wb->autoace, 0, $wb );
   
+  my $count = scalar(@$alleles);
+  $log->write_to("INFO: Mapping $count alleles...\n");
   foreach my $x (@$alleles) {
+    $count--;
+    if ($count % 1000 == 0) {
+      $log->write_to("INFO:   ...$count to go...\n");
+    }
+
     # $chromosome_name,$start,$stop
     my ($min_len, $max_len);
 
