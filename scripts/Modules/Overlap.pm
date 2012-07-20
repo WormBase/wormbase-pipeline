@@ -7,7 +7,7 @@
 # Do fast overlap matching of positions of two sets of things.
 #
 # Last updated by: $Author: klh $     
-# Last updated on: $Date: 2012-01-23 14:48:59 $      
+# Last updated on: $Date: 2012-07-20 09:50:42 $      
 
 =pod
 
@@ -349,21 +349,25 @@ sub read_GFF_file {
 
   # else look for a GFF_SPLITS file
   } else {
-    my $dir = $self->{database} . "/GFF_SPLITS/";
-    @files = glob($dir . $chromosome . "_" . $GFF_data->{method} . ".gff"); # elegans holds some GFF data in method files for each chromosome
-    if (@files == 0 || ! -e $files[0]) {
-      @files = glob($dir . $GFF_data->{method} . ".gff"); # remanei holds some GFF data in method files
-      if (@files == 0 || ! -e $files[0]) {
-	# else look for a CHROMOSOMES file
-	my $dir = $self->{database} . "/CHROMOSOMES/";
-	@files = glob($dir . $chromosome . ".gff"); # elegans holds the GFF data in chromosome files
-	if (@files == 0 || ! -e $files[0]) {
-	  @files = glob($dir . $self->{wormbase}->species . ".gff"); # remanei holds all the supercontig GFF data in one file
-	  if (@files == 0 || ! -e $files[0]) {
-	    die "Can't find the file for $chromosome $GFF_data->{method}";
-	  }
-	}
-      }
+    my $gff_dir = $self->wormbase->gff;
+    my $splits_dir = $self->wormbase->gff_splits;
+    my $meth = $GFF_data->{method};
+
+    my $single_chr_single_meth_file = "$splits_dir/${chromosome}_${meth}.gff";
+    my $single_chr_collated_meth_file = "$gff_dir/${chromosome}.gff";
+    my $collated_chr_single_meth_file = "$splits_dir/${meth}.gff";
+    my $collated_chr_collated_meth_file = "$gff_dir/" . $self->wormbase->species . ".gff";
+
+    if (-e $single_chr_single_meth_file) {
+      @files = ($single_chr_single_meth_file);
+    } elsif (-e $single_chr_collated_meth_file) {
+      @files = ($single_chr_collated_meth_file);
+    } elsif (-e $collated_chr_single_meth_file) {
+      @files = ($collated_chr_single_meth_file);
+    } elsif (-e $collated_chr_collated_meth_file) {
+      @files = ($collated_chr_collated_meth_file);
+    } else {
+      die "Could not find suitable GFF file(s) for $chromosome $meth\n";
     }
   }
 
