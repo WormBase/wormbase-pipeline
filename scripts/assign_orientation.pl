@@ -9,7 +9,7 @@
 # transcripts to find the most probable orientation.
 #
 # Last updated by: $Author: klh $     
-# Last updated on: $Date: 2012-06-20 08:43:54 $      
+# Last updated on: $Date: 2012-07-20 09:50:09 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -96,7 +96,7 @@ my $pwm = PWM->new;
 
 # loop through the chromosomes
 foreach my $chromosome ($wormbase->get_chromosome_names(-mito => 1, -prefix => 1)) {
-
+  print STDERR "Doing $chromosome\n";
 
 # get the Overlap object
 my $ovlp = Overlap->new($database, $wormbase);
@@ -126,9 +126,9 @@ my $ovlp = Overlap->new($database, $wormbase);
     @est_hsp = $ovlp->read_GFF_file($chromosome, \%GFF_data);
   } else {
     @est_hsp = $ovlp->get_EST_BEST($chromosome); # get main list of EST entries to search with
-    push @est_hsp, $ovlp->get_OST_BEST($chromosome); # and add on the list of OSTs ..
     push @est_hsp, $ovlp->get_mRNA_BEST($chromosome); # and the list of mRNAs ...
-    push @est_hsp, $ovlp->get_RST_BEST($chromosome); # and the list of RSTs
+    push @est_hsp, $ovlp->get_OST_BEST($chromosome) if $species eq 'elegans'; # and add on the list of OSTs ..
+    push @est_hsp, $ovlp->get_RST_BEST($chromosome) if $species eq 'elegans'; # and the list of RSTs
   }
 
   # check we have some ESTs/mRNAs etc. 
