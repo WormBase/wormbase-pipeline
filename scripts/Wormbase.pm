@@ -1730,9 +1730,9 @@ sub GFF_file_name {
 
   my $file;
   if ($self->assembly_type ne 'contig') { 
-    $file = defined $method ? $self->gff_splits."/${chromosome}_$method.gff" : $self->chromosomes."/$chromosome.gff";
+    $file = defined $method ? $self->gff_splits."/${chromosome}_$method.gff" : $self->gff."/$chromosome.gff";
   } else {			# contig based assembly
-    $file = defined $method ? $self->gff_splits."/$method.gff" : $self->chromosomes."/".$self->species.".gff";
+    $file = defined $method ? $self->gff_splits."/$method.gff" : $self->gff."/".$self->species.".gff";
   }
 
   return $file;
