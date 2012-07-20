@@ -8,7 +8,7 @@
 #  DESCRIPTION:  adds additional information to Operon GFF lines
 #
 #       AUTHOR:  $Author: klh $
-#      VERSION:  $Revision: 1.2 $
+#      VERSION:  $Revision: 1.3 $
 #      CREATED:  21/05/12 10:40:04 BST
 #===============================================================================
 
@@ -48,7 +48,7 @@ my $log = Log_files->make_build_log($wormbase);
 my ($operon_genes) = &get_operon_data();
 
 my @gff_files;
-$gff_dir = $wormbase->chromosomes if not defined $gff_dir;
+$gff_dir = $wormbase->gff if not defined $gff_dir;
 
 if (defined($file)){
   push(@gff_files,$file);

@@ -2,8 +2,8 @@
 #
 # This is to add Confirmed / Predicted Status and RFLP to SNP gff lines as requested by Todd
 #
-# Last updated by: $Author: mh6 $     
-# Last updated on: $Date: 2012-02-21 14:05:22 $      
+# Last updated by: $Author: klh $     
+# Last updated on: $Date: 2012-07-20 20:06:33 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -80,7 +80,6 @@ while(<$table>) {
 
 my $db = Ace->connect(-path => $wormbase->autoace);
 
-my $dir = $wormbase->chromosomes;
 my $stat = 0;
 
 my @gff_files;
@@ -96,7 +95,7 @@ if ($gff_file) {
     @gff_files = $wormbase->get_chromosome_names('-prefix' => 1, '-mito' => 1);
   }
   for(my $i=0; $i < @gff_files; $i++) {
-    $gff_files[$i] = sprintf("%s/%s.gff", $dir, $gff_files[$i]);
+    $gff_files[$i] = sprintf("%s/%s.gff", $wormbase->gff, $gff_files[$i]);
     if (not -e $gff_files[$i] or -z $gff_files[$i]) {
       $log->log_and_die("Non-existent or zero-length GFF file $gff_files[$i]");
     }

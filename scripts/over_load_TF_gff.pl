@@ -3,8 +3,8 @@
 # This is to add information of the Transcription Factor name and ID to TF_binding_site Features
 # These GFF lines have a Type column of 'TF_binding_site'
 #
-# Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2012-07-17 09:10:09 $      
+# Last updated by: $Author: klh $     
+# Last updated on: $Date: 2012-07-20 20:08:01 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -76,7 +76,6 @@ while(<$table>) {
   }
 }
 
-my $dir = $wormbase->chromosomes;
 my $stat = 0;
 
 my @gff_files;
@@ -92,7 +91,7 @@ if ($gff_file) {
     @gff_files = $wormbase->get_chromosome_names('-prefix' => 1, '-mito' => 1);
   }
   for(my $i=0; $i < @gff_files; $i++) {
-    $gff_files[$i] = sprintf("%s/%s.gff", $dir, $gff_files[$i]);
+    $gff_files[$i] = sprintf("%s/%s.gff", $wormbase->gff, $gff_files[$i]);
     if (not -e $gff_files[$i] or -z $gff_files[$i]) {
       $log->log_and_die("Non-existent or zero-length GFF file $gff_files[$i]");
     }

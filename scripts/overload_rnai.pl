@@ -8,7 +8,7 @@
 #  DESCRIPTION:  adds additional information to RNAi GFF lines
 #
 #       AUTHOR:  $Author: klh $
-#      VERSION:  $Revision: 1.4 $
+#      VERSION:  $Revision: 1.5 $
 #      CREATED:  06/07/10 10:40:04 BST
 #===============================================================================
 
@@ -48,7 +48,7 @@ my $log = Log_files->make_build_log($wormbase);
 my ($r2lab,$r2hist) = &get_rnai2lab();
 
 my @gff_files;
-$gff_dir = $wormbase->chromosomes if not defined $gff_dir;
+$gff_dir = $wormbase->gff if not defined $gff_dir;
 
 if (defined($file)){
   push(@gff_files,$file);
