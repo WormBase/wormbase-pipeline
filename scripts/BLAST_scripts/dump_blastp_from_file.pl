@@ -168,6 +168,7 @@ foreach my $key(keys %species_accessor){
 
 my @results;
 
+unlink $output if -e $output; # remove leftover blastp acefile from the last build
 open (OUT,">$output") or $log->log_and_die("cant open $output\n");
 
 # reciprocals of matches ie if CE00000 matches XXXX_CAEEL the homology details need to be written for XXXX_CAEEL 

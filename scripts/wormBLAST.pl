@@ -4,8 +4,8 @@
 #
 # written by Anthony Rogers
 #
-# Last edited by: $Author: klh $
-# Last edited on: $Date: 2012-07-10 12:18:53 $
+# Last edited by: $Author: mh6 $
+# Last edited on: $Date: 2012-07-20 10:19:38 $
 #
 # it depends on:
 #    wormpep + history
@@ -207,18 +207,31 @@ if ($cleanup && !$test) {
     #      *.ace
     #      *.log
     my $clear_dump = "/lustre/scratch101/ensembl/wormpipe/dumps";
+
+    $log->write_to("moving blastp acefiles to last_build . . . \n");
+    system("mv -f $clear_dump/*blastp.ace $wormpipe_dir/last_build/") && warn "cant move blastp.ace to last_build";
+
     $log->write_to("Removing . . . \n\t$clear_dump/*.ace\n");
     system("rm -f $clear_dump/*.ace $clear_dump/*.log") && warn "cant remove ace and log files from $clear_dump";
+
+    $log->write_to("moving blastp acefiles back from last_build . . . \n");
+    system("mv -f $wormpipe_dir/last_build/*blastp.ace $clear_dump/") && warn "cant move blastp.ace to last_build";
+
     $log->write_to ("Removing files currently in $wormpipe_dir/last_build/n");
     system(" rm -f $wormpipe_dir/last_build/*.gff $wormpipe_dir/last_build/*.agp");
+
     $log->write_to ("\nmoving the following to ~wormpipe/last_build . . \n\t$clear_dump/*.txt\n");
     system("mv -f $clear_dump/*.txt $wormpipe_dir/last_build/") && warn "cant move $clear_dump/*.txt\n";
+
     $log->write_to ("\t$clear_dump/ipi*\n");
     system("mv -f $clear_dump/ipi* $wormpipe_dir/last_build/") && warn "cant move $clear_dump/ipi*\n";
+
     $log->write_to ("\t$clear_dump/*best_blastp\n");
     system("mv -f $clear_dump/*best_blastp* $wormpipe_dir/last_build/") && warn "cant move $clear_dump/*                                         best_blast*\n";
+
     $log->write_to ("\t$wormpipe_dir/Elegans/*\n");
     system("mv -f $wormpipe_dir/Elegans/* $wormpipe_dir/last_build/") && warn "cant move $wormpipe_dir/Elegans/*\n";
+
     $log->write_to ("\nRemoving the $wormpipe_dir/DUMP_PREP_RUN lock file\n");
     system("rm -f $wormpipe_dir/DUMP_PREP_RUN") && warn "cant remove $wormpipe_dir/DUMP_PREP_RUN\n";
 
