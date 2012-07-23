@@ -56,13 +56,16 @@ my $log = Log_files->make_build_log($wb);
 ####################################
 
 my $m      = LSF::JobManager->new();
-my $mother = $m->submit("perl $ENV{CVS_DIR}/interpolate_gff.pl -prep $flags");
+my @bsub_opts = (-M => 4000000,
+                 -R => 'select[mem>=4000] rusage[mem=4000]');
+my $mother = $m->submit(@bsub_opts, "perl $ENV{CVS_DIR}/interpolate_gff.pl -prep $flags");
 my $myid   = $mother->id;
 
+push @bsub_opts, (-w => "ended($myid)");
 foreach my $i ($wb->get_chromosome_names) {
-    $m->submit( -w => "ended($myid)", "perl $ENV{CVS_DIR}/interpolate_gff.pl -chrom $i $flags -allele" );
-    $m->submit( -w => "ended($myid)", "perl $ENV{CVS_DIR}/interpolate_gff.pl -chrom $i $flags -gene" );
-    $m->submit( -w => "ended($myid)", "perl $ENV{CVS_DIR}/interpolate_gff.pl -chrom $i $flags -clone" );
+    $m->submit( @bsub_opts, "perl $ENV{CVS_DIR}/interpolate_gff.pl -chrom $i $flags -allele" );
+    $m->submit( @bsub_opts, "perl $ENV{CVS_DIR}/interpolate_gff.pl -chrom $i $flags -gene" );
+    $m->submit( @bsub_opts, "perl $ENV{CVS_DIR}/interpolate_gff.pl -chrom $i $flags -clone" );
 }
 
 $m->wait_all_children( history => 1 );
