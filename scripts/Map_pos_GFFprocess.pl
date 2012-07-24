@@ -34,28 +34,32 @@ my $log = Log_files->make_build_log($wormbase);
 $dbpath = $wormbase->orgdb;
 my $db = Ace->connect('-path' => $dbpath) or $log->log_and_die("cant open Ace connection to $dbpath\n".Ace->error."\n");
 
-
-# get the interpolated physical mapping position of the Variations
-print "Reading interpolated Variation mapping data\n";
+print STDERR "Getting interpolated map position for variations\n";
 my %variation;
-my $query = "find Variation where Interpolated_map_position";
-my $vars = $db->fetch_many('-query' => $query);
-while (my $var = $vars->next){
-  $variation{$var->name} = $var->Interpolated_map_position(2);
+
+my $tmfh = $wormbase->table_maker_query($wormbase->autoace, &write_interpolated_map_position_query());
+while (<$tmfh>) {
+  chomp;
+  s/\"//g; 
+  next if (/acedb/ or /\/\//);
+  next if /^\s*$/;
+
+  my @data = split(/\t/, $_);
+  $variation{$data[0]} = $data[2];
 }
 
 
 # get the interpolated physical mapping position of the Genes
-print "Reading interpolated Gene mapping data\n";
+print STDERR "Reading interpolated Gene mapping data\n";
 my %gene;
-$query = "find Gene where Interpolated_map_position";
+my $query = "find Gene where Interpolated_map_position";
 my $genes = $db->fetch_many('-query' => $query);
 while (my $gene = $genes->next){
   $gene{$gene->name} = $gene->Interpolated_map_position(2);
 }
 
 # get the exact physical mapping position of the Genes
-print "Reading exact Gene mapping data\n";
+print STDERR "Reading exact Gene mapping data\n";
 my %gene_exact;
 $query = "find Gene where Map AND NEXT AND NEXT = Position";
 $genes = $db->fetch_many('-query' => $query);
@@ -64,7 +68,7 @@ while (my $gene = $genes->next){
 }
 
 # get the CGC/WGN name of the Genes
-print "Reading WGN names of genes\n";
+print STDERR "Reading WGN names of genes\n";
 my %locus;
 $query = "find Gene where CGC_name";
 $genes = $db->fetch_many('-query' => $query);
@@ -122,3 +126,46 @@ foreach my $chroms (@chroms) {
 
 $log->mail();
 exit(0);
+
+#######################
+sub write_interpolated_map_position_query {
+
+  my $tmp_file = "/tmp/interpolated_map.tmquery.txt";
+  open(my $qfh, ">$tmp_file") or $log->log_and_die("Could not open TM query file $tmp_file\n");
+
+  my $query = <<"EOF";
+
+Sortcolumn 1
+
+Colonne 1 
+Width 12 
+Optional 
+Visible 
+Class 
+Class Variation 
+From 1 
+ 
+Colonne 2 
+Width 12 
+Mandatory 
+Visible 
+Class 
+Class Map 
+From 1 
+Tag Interpolated_map_position 
+ 
+Colonne 3 
+Width 12 
+Mandatory 
+Visible 
+Float 
+Right_of 2 
+Tag  HERE  
+
+EOF
+
+  print $qfh $query;
+  close($qfh);
+
+  return $tmp_file;
+}
