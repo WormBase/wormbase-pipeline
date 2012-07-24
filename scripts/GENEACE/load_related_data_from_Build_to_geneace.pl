@@ -8,7 +8,7 @@
 # RUN this script anytime during the build or after the build when get_interpolated_map 
 # and update_inferred multi-pt data are done
 #
-# Last updated on: $Date: 2011-05-19 10:56:28 $
+# Last updated on: $Date: 2012-07-24 10:49:44 $
 # Last updated by: $Author: klh $
 
 
@@ -100,7 +100,7 @@ END
 
   open (Load_GA,"| $tace -tsuser \"person_update_from_autoace\" $geneace") || die "Failed to upload to Geneace\n";
   print Load_GA $command;
-  close Load_GA;
+  close(Load_GA) or $log->log_and_die("Could not successfully complete the removal of old person data\n");
 
   #
   # new Person data will have been dumped from citace
