@@ -5,7 +5,7 @@
 # by Anthony Rogers et al
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2012-07-05 12:47:23 $
+# Last updated on: $Date: 2012-07-26 09:49:18 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -174,6 +174,11 @@ if ($all) {
       push @bsub_options, (
         -M => "6000000", 
         -R => "\"select[mem>6000] rusage[mem=6000]\"",
+        -J => $job_name);
+    } else {
+      push @bsub_options, (
+        -M => "3000000", 
+        -R => "\"select[mem>3000] rusage[mem=3000]\"",
         -J => $job_name);
     }
     my $cmd = "update_Common_data.pl -${arg}";
