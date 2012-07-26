@@ -6,7 +6,7 @@
 # builds wormbase & wormpep FTP sites
 # 
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2012-07-06 13:36:43 $
+# Last updated on: $Date: 2012-07-26 15:26:03 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -376,7 +376,7 @@ sub copy_dna_files{
   my %accessors = ($wormbase->all_species_accessors);
   $accessors{elegans} = $wormbase;
   
-  foreach my $wb (values %accessors) {
+  ACC: foreach my $wb (values %accessors) {
     next if exists $skip_species{$wb->species};
     next if @only_species and not exists $only_species{$wb->species};
     
@@ -400,6 +400,7 @@ sub copy_dna_files{
         foreach my $f ($dna_file, $masked_file, $soft_file) {
           if (not -e $f or not -s $f) {
             $log->error("ERROR: Could not find DNA file for $gspecies ($f)\n");
+            next ACC;
           }
         }
 	
