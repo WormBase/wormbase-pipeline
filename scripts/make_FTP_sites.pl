@@ -6,7 +6,7 @@
 # builds wormbase & wormpep FTP sites
 # 
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2012-07-26 15:26:03 $
+# Last updated on: $Date: 2012-07-27 08:22:22 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -390,78 +390,37 @@ sub copy_dna_files{
       my $dna_dir = "$targetdir/species/$gspecies";
       mkpath($dna_dir,1,0775);
       #todd wants all species to have whole genome in one file
-      if ($wb->assembly_type eq 'contig') {
-	my $species = $wb->species;
-	
-        my $dna_file = $wb->genome_seq;
-        my $masked_file = $wb->masked_genome_seq;
-        my $soft_file = $wb->softmasked_genome_seq;
 
-        foreach my $f ($dna_file, $masked_file, $soft_file) {
-          if (not -e $f or not -s $f) {
-            $log->error("ERROR: Could not find DNA file for $gspecies ($f)\n");
-            next ACC;
-          }
+      my $species = $wb->species;
+	
+      my $dna_file = $wb->genome_seq;
+      my $masked_file = $wb->masked_genome_seq;
+      my $soft_file = $wb->softmasked_genome_seq;
+      
+      foreach my $f ($dna_file, $masked_file, $soft_file) {
+        if (not -e $f or not -s $f) {
+          $log->error("ERROR: Could not find DNA file for $gspecies ($f)\n");
+          next ACC;
         }
-	
-        my $target_dna_file =  "$dna_dir/".$gspecies.".$WS_name.genomic.fa.gz";
-        my $target_masked = "$dna_dir/".$gspecies.".$WS_name.genomic_masked.fa.gz";
-        my $target_soft = "$dna_dir/".$gspecies.".$WS_name.genomic_softmasked.fa.gz";
-
-        foreach my $pair ([$dna_file, $target_dna_file],
-                          [$masked_file, $target_masked],
-                          [$soft_file, $target_soft]) {
-          my ($src, $tgt) = @$pair;
-
-          if ($src =~ /\.gz$/) {
-            $wormbase->run_command("cp -f $src $tgt", $log);    
-          } else {
-            $wormbase->run_command("gzip -9 -c $src > $target_dna_file",$log);
-          }
-        }
-
-        map { $copied_files{$_} = 1 } ($dna_file, $masked_file, $soft_file);
-	
-      } elsif ($wb->assembly_type eq 'chromosome') {
-	# copy the chromosome files across
-	#$wormbase->run_command("cp -f -R $chromdir/*.dna* $dna_dir/", $log);
-	#$wormbase->run_command("gzip -f -9 $dna_dir/*.dna", $log);
-        
-	# do for each type of unmasked and masked sequence
-	foreach my $type_pair (["", "genomic"],  
-                               ["_masked", "genomic_masked"],
-                               ["_softmasked", "genomic_softmasked"]) {
-	  
-	  # delete any existing whole-genome files produced by running this script more than once
-          my ($src_type, $tgt_type) = @$type_pair;
-	  
-	  unlink "$dna_dir/${gspecies}.${WS_name}.${tgt_type}.fa";         
-          $wormbase->run_command("touch $dna_dir/${gspecies}.${WS_name}.${tgt_type}.fa",$log);
-	  
-	  foreach my $chrom ($wb->get_chromosome_names(-mito => 1, -prefix => 1)) {
-	    my $chrom_file = "$chromdir/$chrom"; # basic form of the dna file
-            
-	    # is the data gzipped?
-	    if (-e "$chrom_file${src_type}.dna") {
-              my $source = "${chrom_file}${src_type}.dna";
-	      $wormbase->run_command("cat $source >> $dna_dir/${gspecies}.${WS_name}.${tgt_type}.fa", $log);
-              $copied_files{$source} = 1;
-	    } elsif (-e "${chrom_file}${src_type}.dna.gz") {
-              my $source = "${chrom_file}${src_type}.dna.gz";
-	      $wormbase->run_command("gunzip -c $source >> $dna_dir/${gspecies}.${WS_name}.${tgt_type}.fa", $log);
-              $copied_files{$source} = 1;
-	    } else {
-              $log->error("ERROR: $gspecies : missing file: $chrom_file${src_type}.dna\n");
-            }
-	  }
-          
-	  # gzip the resulting file
-	  $wormbase->run_command("gzip -9 -f $dna_dir/${gspecies}.${WS_name}.${tgt_type}.fa", $log);	
-	}
-	
-      } else {
-        $log->error("ERROR: $gspecies : unknown assembly_type\n");
       }
+	
+      my $target_dna_file =  "$dna_dir/".$gspecies.".$WS_name.genomic.fa.gz";
+      my $target_masked = "$dna_dir/".$gspecies.".$WS_name.genomic_masked.fa.gz";
+      my $target_soft = "$dna_dir/".$gspecies.".$WS_name.genomic_softmasked.fa.gz";
+      
+      foreach my $pair ([$dna_file, $target_dna_file],
+                        [$masked_file, $target_masked],
+                        [$soft_file, $target_soft]) {
+        my ($src, $tgt) = @$pair;
+        
+        if ($src =~ /\.gz$/) {
+          $wormbase->run_command("cp -f $src $tgt", $log);    
+        } else {
+          $wormbase->run_command("gzip -9 -c $src > $tgt",$log);
+        }
+      }
+      
+      map { $copied_files{$_} = 1 } ($dna_file, $masked_file, $soft_file);
       
       # copy over outstanding dna files
       foreach my $dna_file (glob("$seqdir/*.dna.gz")) {
