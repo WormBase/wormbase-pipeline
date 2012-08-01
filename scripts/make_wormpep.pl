@@ -6,8 +6,8 @@
 #
 # Builds a wormpep data set from the current autoace database
 #
-# Last updated by: $Author: klh $
-# Last updated on: $Date: 2012-03-22 21:13:10 $
+# Last updated by: $Author: pad $
+# Last updated on: $Date: 2012-08-01 13:16:48 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -498,5 +498,10 @@ sub count_isoforms{
   
   # write the release letter (also does some checks)
   $wormbase->release_wormpep($no_isoform_count,$total_cds_count,$isoform_count);
+  
+  #make the directory more accessible
   chmod (0444 , "$new_wpdir/*") or $log->write_to("cannot chmod $new_wpdir/ files\n");
+
+  #create a pointer to the current wormpep for the species
+  system ("ln -sf $new_wpdir ${pepdir}/${PEP_FILE_STEM}_current");
 }
