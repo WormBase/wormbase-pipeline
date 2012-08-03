@@ -8,8 +8,8 @@
 # RUN this script anytime during the build or after the build when get_interpolated_map 
 # and update_inferred multi-pt data are done
 #
-# Last updated on: $Date: 2012-07-24 10:49:44 $
-# Last updated by: $Author: klh $
+# Last updated on: $Date: 2012-08-03 09:17:56 $
+# Last updated by: $Author: mh6 $
 
 
 use strict;
@@ -19,8 +19,10 @@ use lib $ENV{'CVS_DIR'};
 use Wormbase;
 use Ace;
 
-my $db;
-&GetOptions('db=s' => \$db);
+my ($db,$geneace);
+&GetOptions('db=s'      => \$db,
+            'geneace=s' => \$geneace,
+) || die('cant parse the command line parameter');
 
 ######################
 # ----- globals -----
@@ -35,7 +37,7 @@ my $wormbase = (defined $db)
 my $tace     = $wormbase->tace;          # tace executable path
 my $release  = $wormbase->get_wormbase_version_name(); # only the digits
 
-my $geneace     = $wormbase->database('geneace');
+$geneace   ||= $wormbase->database('geneace');
 
 my $log = Log_files->make_build_log($wormbase);
 
