@@ -5,7 +5,7 @@
 # by Anthony Rogers                             
 #
 # Last updated by: $Author: klh $               
-# Last updated on: $Date: 2012-06-22 08:56:53 $
+# Last updated on: $Date: 2012-08-07 13:00:04 $
 
 # Generates a release letter at the end of build.
 #
@@ -127,26 +127,6 @@ if( defined($opt_l)) {
   printf RL "Release notes on the web:\n-------------------------\n";
   printf RL "http://www.wormbase.org/wiki/index.php/Release_Schedule\n\n\n\n";
   
-
-  # Synchronisation with GenBank / EMBL
-  my @chromosomes = ("I","II","III","IV","V","X");
-  my $csome = shift @chromosomes;
-  printf RL "\nC. elegans Synchronisation with GenBank / EMBL:\n------------------------------------\n\n";
-  my $check = 0;
-  while ($csome) {
-    my $errors = `grep ERROR $ace_dir/yellow_brick_road/CHROMOSOME_$csome.agp_seq.log`;
-    while( $errors =~ m/for\s(\p{IsUpper}\w+)/g ) {
-      printf RL "CHROMOSOME_$csome\tsequence $1\n";
-      $check = 1;
-    }
-    $csome = shift @chromosomes;
-  }
-  if ($check == 0) {
-    printf RL "No synchronisation issues\n";
-  }
-  printf RL "\n\n";
-
-
   # make the chromosomal sequence changes file
   $log->write_to("\nGenerating C. elegans chromosomal sequence changes Data\n\n");
   open (CC, "> $reports_dir/chromosome_changes") || die "Can't open file $reports_dir/chromosome_changes\n";
@@ -175,7 +155,6 @@ if( defined($opt_l)) {
   ## For all curated/gemones with a gene set do the following ##
   my %accessors = ($wormbase->species_accessors);
   $accessors{$wormbase->species} = $wormbase;
-  delete $accessors{'heterorhabditis'};
   my $elegansAccessor= $accessors{elegans};
   delete $accessors{'elegans'}; #this aviods duplicating stats for elegans as we also pull in a preprepared report.
   my @wormpep_species = (keys%accessors);
