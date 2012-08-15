@@ -71,8 +71,8 @@ foreach my $slice(@slices){
 					print "DB_info Database EnsEMBL ENSEMBL_proteinID $k\n";
 					if ($v->taxon_id == 9606){ # meaning if human
 					        # uses an undocumented function of get_all_DBEntries, so lets hope it stays
-						map {printf "DB_info Database OMIM gene %s\n",$_->primary_id} @{$v->gene->get_all_DBLinks('MIM_MORBID')};
-						map {printf "DB_info Database OMIM disease %s\n",$_->primary_id} @{$v->gene->get_all_DBLinks('MIM_GENE')};
+						map {printf "DB_info Database OMIM disease %s\n",$_->primary_id} @{$v->gene->get_all_DBLinks('MIM_MORBID')};
+						map {printf "DB_info Database OMIM gene %s\n",$_->primary_id} @{$v->gene->get_all_DBLinks('MIM_GENE')};
 					}
 					print "\n";
 		}
