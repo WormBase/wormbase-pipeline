@@ -813,25 +813,12 @@ sub create_transcripts {
         }
 
         if ( exists( $five_start->{$transcript_id} ) ) {
-
             print "1 setting translation start on transcript " . $transcript_id . " to " . $five_start->{$transcript_id} . "\n";
             $translation->start( $five_start->{$transcript_id} );
         }
-        elsif ( $sorted_exons[$start_exon_ind]->phase == 0 ) {
-            print " start phase 0\n";
-            $translation->start(1);
-        }
-        elsif ( $sorted_exons[$start_exon_ind]->phase == 1 ) {
-            print " start phase 1\n";
-            $translation->start(3);
-        }
-        elsif ( $sorted_exons[$start_exon_ind]->phase == 2 ) {
-            print " start phase 2\n";
-            $translation->start(2);
-        }
         else {
-            print "dies here "; 
-            die "Strange phase in $transcript_id " . $sorted_exons[0]->phase;
+          print "1 setting translation start on transcript $transcript_id to 1\n";
+          $translation->start(1);
         }
 
         if ( ( !defined( $translation->start ) ) or ( $translation->start <= 0 ) ) {
