@@ -7,8 +7,8 @@
 # simple script for creating new (sequence based) Gene objects when splitting 
 # existing gene 
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2010-07-14 15:18:53 $
+# Last edited by: $Author: pad $
+# Last edited on: $Date: 2012-08-16 13:36:45 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -23,24 +23,33 @@ use Storable;
 
 my $old;         # sequence name for existing gene
 my $new;         # sequence name for new gene
-my $who;         # Person ID for new genes being created (defaults to mt3 = WBPerson2970)
+my $who;         # Person ID for new genes being created
 my $id;          # force creation of gene using set ID
 my $gene_id;     # stores highest gene ID
 my $email;       # email new Gene IDs back to users to person who requested it
 my $load;        # load results to geneace (default is to just write an ace file)
 my $verbose;     # toggle extra (helpful?) output to screen
 my $p_clone;     # positive clone name for new gene
-my $species;     
+my $species;
+my $debug;
+my $test;
 
 GetOptions ("old=s"     => \$old,
             "new=s"     => \$new,
 	    "who=i"     => \$who,
 	    "id=s"      => \$id,
+	    "test"      => \$test,
 	    "email"     => \$email,
 	    "load"      => \$load,
 	    "verbose"   => \$verbose,
-            "species=s" => \$species,);
+            "species=s" => \$species,
+	    "debug=s"   => \$debug,);
 
+
+my $wormbase = Wormbase->new( -debug   => $debug,
+			   );
+
+my $log = Log_files->make_build_log($wormbase);
 ######################################
 # set person ID for curator
 ######################################
@@ -49,16 +58,20 @@ my $person;
 if($who){
     $person = "WBPerson$who";
 }
-else{
-    # defaults to mt3
-    $person = "WBPerson2970";
+else {
+  print "\nERROR: please specify a user ID - e.g. 1983\n\n[INPUT]:";
+  my $tmp = <STDIN>;
+  chomp $tmp;
+  if (($tmp ne '1983') && ($tmp ne '2970') && ($tmp ne '4025') && ($tmp ne '4055') && ($tmp ne '3111')){
+    $log->log_and_die("UNKNOWN USER.....TERMINATE\n\n");
+    print "UNKNOWN USER.....TERMINATE\n\n";
+  }
+  $person = "WBPerson$tmp";
 }
-
 
 ############################################################
 # set database path, open connection and open output file
 ############################################################
-my $wormbase = Wormbase->new("-organism" =>$species);
 my $tace = $wormbase->tace;
 my $database = $wormbase->database('geneace');
 
@@ -82,7 +95,7 @@ elsif (defined$load) { print "Update will be loaded into $database\n";}
 # open connection and open output file
 ######################################
 my $db = Ace->connect(-path  => $database,
-		      -program =>$tace) || do { print "Connection failure: ",Ace->error; die();};
+		      -program =>$tace) || do { $log->write_to("ERROR:tace Connection failure\n");print "Connection failure: ",Ace->error; die();};
 
 my $outdir = $database."/NAMEDB_Files/";
 my $backupsdir = $outdir."BACKUPS/";
@@ -90,10 +103,11 @@ my $outname = "splitgene_".$id.".ace";
 my $outfile = "$outdir"."$outname";
 
 
-if (-e $outfile) {print "Warning this split has probably already been processed.\n";}
+if (-e $outfile) {$log->write_to("Warning this split has probably already been processed.\n");
+		  print "Warning this split has probably already been processed.\n";}
 
 open(OUT, ">$outfile") || die "Can't write to output file\n";
-print "Output file: $outfile\n";
+log->write_to("Output file: $outfile\n");
 
 # find out highest gene number in case new genes need to be created
 my $gene_max = $db->fetch(-query=>"Find Gene");
@@ -109,12 +123,15 @@ my $gene_max = $db->fetch(-query=>"Find Gene");
 
 $db->close;
 close(OUT);
-
+$log->write_to("Output file: $outfile\n");
 # load information to geneace if -load is specified
 $wormbase->load_to_database($database, "$outfile", 'split_gene') if $load;
 $wormbase->run_command("mv $outfile $backupsdir/$outname\n") if $load;
 print "Output file has been cleaned away like a good little fellow\n" if $load;
+$log->write_to("Output file has been cleaned away like a good little fellow\n") if $load;
 print "Finished!!!!\n";
+$log->write_to("Finished!!!!\n");
+$log->mail;
 exit(0);
 
 
@@ -165,7 +182,7 @@ sub process_gene{
 
     if(defined($split_gene_name) && $split_gene_name->Sequence_name_for){
 	$split_gene = $split_gene_name->Sequence_name_for;
-	print "ERROR: $new already exists as $split_gene\n";
+	$log->log_and_die("ERROR: $new already exists as $split_gene\n");
 	$new_exists = 1;
     }
     else{
@@ -217,8 +234,8 @@ sub process_gene{
 ######################################
 
     if($email){
-	# set default address to mt3 in case wrong user ID used
-	my $address = "mt3\@sanger.ac.uk";
+	# set default address to wormpub in case wrong user ID used
+	my $address = "wormpub\@sanger.ac.uk";
 	
 	$address = "ar2\@sanger.ac.uk"          if ($person eq "WBPerson1847");
 	$address = "gw3\@sanger.ac.uk"          if ($person eq "WBPerson4025");
@@ -243,10 +260,10 @@ sub process_gene{
 	    $text = "\n\nYou requested a new gene ID for $new (split from $old), this Gene ID is $gene_id\n\n";
 	    $subject = "WormBase Gene ID request for split gene $new:  SUCCESSFUL";
 	}
-	$text .= "This email was generated automatically, please reply to mt3\@sanger.ac.uk\n";
+	$text .= "This email was generated automatically, please reply to hinxton\@wormbase.org\n";
 	$text .= "if there are any problems\n";
 	
-	open (MAIL,  "|/bin/mailx -r \"mt3\@sanger.ac.uk\" -s \"$subject\" $address");
+	open (MAIL,  "|/bin/mailx -r \"wormpub\@sanger.ac.uk\" -s \"$subject\" $address");
 	print MAIL "$text";
 	close (MAIL);
 	
@@ -309,12 +326,12 @@ sub process_gene{
     =item -who <number>
 
     Where number should correspond to a person ID...if this number doesn't match anyone then 
-    the script will assume that it is mt3
+    the script will ask for one to be input to STDIN
     
     =item -email
 
     person corresponding to -who option will be emailed notification, email goes to
-    mt3@sanger.ac.uk if -who option doesn't correspond to a curator
+    wormpub@sanger.ac.uk if -who option doesn't correspond to a curator
 
     =item -verbose
 
