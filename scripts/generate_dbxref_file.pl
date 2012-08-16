@@ -15,7 +15,7 @@
 # 8  Uniprot accession
 #
 # 
-#  Last updated on: $Date: 2012-03-09 16:19:54 $
+#  Last updated on: $Date: 2012-08-16 16:32:29 $
 #  Last updated by: $Author: klh $
 
 use strict;
@@ -71,7 +71,7 @@ $wormbase->FetchData('clone2accession', \%clone2acc, "$dbdir/COMMON_DATA");
 
 $log->write_to("Generating protein-coding table\n");
 
-my $query = &generate_coding_query($species);
+my $query = &generate_coding_query($full_species_name);
 my $command = "Table-maker -p $query\nquit\n";
 
 open (TACE, "echo '$command' | $tace $dbdir |");
@@ -97,10 +97,10 @@ while (<TACE>) {
 close TACE;
 unlink $query;
 
-foreach my $class ('RNA_genes', 'pseudogenes') {
+foreach my $class ('Transcript', 'Pseudogene') {
   $log->write_to("Generating non-coding $class table\n");
 
-  $query = &generate_noncoding_query($species, $class);
+  $query = &generate_noncoding_query($full_species_name, $class);
   $command = "Table-maker -p $query\nquit\n";
   open (TACE, "echo '$command' | $tace $dbdir |");
   while (<TACE>) {
@@ -199,7 +199,7 @@ exit(0);
 
 ##########################################
 sub generate_coding_query {
-  my ($species) = @_;
+  my ($full_species) = @_;
 
   my $tmdef = "/tmp/cod_tmquery.$$.def";
   open my $qfh, ">$tmdef" or 
@@ -215,8 +215,9 @@ Width 12
 Optional 
 Visible 
 Class 
-Class ${species}_CDS 
+Class CDS 
 From 1 
+Condition Method = "curated" AND Species = "$full_species"
  
 Colonne 2 
 Width 12 
@@ -309,13 +310,20 @@ EOF
 
 
 sub generate_noncoding_query {
-  my ($species, $class) = @_;
+  my ($full_species, $class) = @_;
 
   my $tmdef = "/tmp/nc_tmquery.$$.def";
   open my $qfh, ">$tmdef" or 
       $log->log_and_die("Could not open $tmdef for writing\n");  
 
   my $condition = "";
+  if ($class eq 'Transcript') {
+    $condition = "NOT Method = \"Coding_transcript\" AND NOT Method = \"history_transcript\" AND Species = \"$full_species\"";
+  } elsif ($class eq 'Pseudogene') {
+    $condition = "Method = \"Pseudogene\" AND Species = \"$full_species\"";
+  } else {
+    $log->log_and_die("Unrecognised non-coding class: $class\n");
+  }
 
   my $tablemaker_template = <<"EOF";
 
@@ -326,8 +334,9 @@ Width 12
 Optional 
 Visible 
 Class 
-Class ${species}_${class}
+Class $class
 From 1 
+Condition $condition 
  
 Colonne 2 
 Width 12 
