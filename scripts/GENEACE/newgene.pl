@@ -6,16 +6,17 @@
 #
 # simple script for creating new (sequence based) Gene objects 
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2010-07-14 15:16:28 $
+# Last edited by: $Author: pad $
+# Last edited on: $Date: 2012-08-16 11:14:38 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
 use lib "/nfs/WWWdev/SANGER_docs/lib/Projects/C_elegans/";
-
+use Log_files;
 use Wormbase;
 use Getopt::Long;
 use NameDB_handler;
+use Storable;
 
 ###################################################
 # command line options                            # 
@@ -24,16 +25,20 @@ use NameDB_handler;
 my $input;       # when loading from input file
 my $seq;         # sequence name for new/existing gene
 my $cgc;         # cgc name for new/existing gene
-my $who;         # Person ID for new genes being created (defaults to mt3 = WBPerson2970)
+my $who;         # Person ID for new genes being created (should specify your ID eg. 1983 but will request one.)
 my $p_clone;     # positive clone name for new/existing gene
 my $id;          # force creation of gene using set ID
 my $gene_id;     # stores highest gene ID
 my $email;       # email new Gene IDs back to users to person who requested it
 my $load;        # load results to geneace (default is to just write an ace file)
 my $verbose;     # toggle extra (helpful?) output to screen
-my $test;
-my $update_nameDB;
+my $test;        # this switches between the live and test nameserver.
+my $update_nameDB; # allows for update od various IDs as well as new ID requests from commandline.
 my $species = 'elegans';  #default to elegans if not specified
+my $debug;
+my $store;
+my ($USER,$PASS,); # provide your mysql username and password to request new WBGeneIDs
+my $sneak;       # option to store the ID::Gene data in a pseudo .ace format.
 
 GetOptions ("input=s"   => \$input,
             "seq=s"     => \$seq,
@@ -45,10 +50,24 @@ GetOptions ("input=s"   => \$input,
 	    "verbose"   => \$verbose,
 	    "test"      => \$test,
 	    "namedb"    => \$update_nameDB,
-	    "species=s" => \$species
+	    "species=s" => \$species,
+	    "debug=s"   => \$debug,
+	    "store:s"   => \$store,   #
+	    "user:s"      => \$USER,
+	    "password:s"  => \$PASS,
+	    "pseudoace:s" => \$sneak,
 	    );
 
-my $wormbase = Wormbase->new('-organism' => $species);
+my $wormbase;
+if ( $store ) {
+  $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
+} else {
+  $wormbase = Wormbase->new( -debug   => $debug,
+                             -test    => $test,
+                           );
+}
+
+my $log = Log_files->make_build_log($wormbase);
 
 #####################################################
 # warn about incorrect usage of command line options
@@ -93,26 +112,40 @@ my $person;
 if($who){
   $person = "WBPerson$who";
 }
-else{
-  # defaults to mt3
-  $person = "WBPerson2970";
+else {
+  print "\nERROR: please specify a user ID - e.g. 1983\n\n[INPUT]:";
+  my $tmp = <STDIN>;
+  chomp $tmp;
+  if (($tmp ne '1983') && ($tmp ne'2970') && ($tmp ne '4025') && ($tmp ne '4055') && ($tmp ne '3111') && ($tmp ne '615')){
+    $log->log_and_die("UNKNOWN USER.....TERMINATE\n\n");
+    print "UNKNOWN USER.....TERMINATE\n\n";
+  }
+  $person = "WBPerson$tmp";
 }
 
 my $namedb;
 if( $update_nameDB ) {
-######################################
-# setup NameDB connection
-######################################
-
-  my $DB   = 'wbgene_id;shap;3303';
-  my $USER = "$person";
-  my $PASS = 'wormpub';
-
-#verify if valid name
-
+  ######################################
+  # setup NameDB connection
+  ######################################
+  my $DB;
+  # Live or Test
+  if ($test) {
+    $DB = 'test_wbgene_id;mcs4a:3307';
+    print "Using the TEST server $DB\n";
+  }
+  else {
+    $DB   = 'wbgene_id;shap;3303';
+    print "Using the LIVE server $DB\n";
+  }
+  unless (defined$USER && defined$PASS) {
+    die "You must specify both a username and password when using the nameDB option!\n\n";
+  }
+  #verify if valid name
   $namedb = NameDB_handler->new($DB,$USER,$PASS,'/nfs/WWWdev/SANGER_docs/htdocs');
   $namedb->setDomain('Gene');
 }
+
 ############################################################
 # set database path, open connection and open output file
 ############################################################
@@ -122,20 +155,36 @@ my $database = $wormbase->database('geneace');
 $database = glob("~wormpub/DATABASES/geneace") if $test;
 
 my $db = Ace->connect(-path  => $database,
-		      -program =>$tace) || do { print "Connection failure: ",Ace->error; die();};
+		      -program =>$tace) || do { $log->write_to("tace Connection failure\n");
+						print "Connection failure: ",Ace->error; die();};
 
 my $outdir = $database."/NAMEDB_Files/";
 my $backupsdir = $outdir."BACKUPS/";
-my $outname = "newgene_".$id.".ace";
+my $outname;
+if (defined$id){
+  $outname = "newgene_".$id.".ace";
+}
+else {
+  $outname = "newgene_".$seq.".ace";
+}
 my $outfile = "$outdir"."$outname";
+
+if (defined$sneak){
+  system ("/bin/touch $sneak");
+  print "Creating $sneak file\n";
+}
+
+print "Creating $outfile\n";
 if (-e $outfile) {print "Warning this split has probably already been processed.\n";}
 
-
 open(OUT, ">$outfile") || die "Can't write to output file\n";
+if ($sneak){
+  open(SN,  ">>$sneak") || die "Can't write to $sneak file\n";
+}
 
 # find out highest gene number in case new genes need to be created
 my $gene_max = $db->fetch(-query=>"Find Gene");
-
+my $override;
 
 
 
@@ -157,10 +206,10 @@ if ($input){
 
     # skip bad looking sequence names
     if ($seq !~ m/^\w+\.(\d{1,2}|\d{1,2}[a-z])$/){
-    print "ERROR: Bad sequence name, skipping\n";
+      print "ERROR: Bad sequence name, skipping\n";
+      $log->write_to("ERROR: Bad sequence name, skipping\n");
       next;
     }
-     
     &process_gene($seq,$cgc);
   }
   close(IN);
@@ -168,7 +217,6 @@ if ($input){
 else{
   &process_gene($seq,$cgc);
 }
-
 
 ###################
 # tidy up and exit
@@ -185,14 +233,11 @@ if ($load){
   close GENEACE;
   $wormbase->run_command("mv $outfile $backupsdir"."$outname\n");
   print "Output file has been cleaned away like a good little fellow\n";
+  $log->write_to("Output file has been cleaned away like a good little fellow\n");
+  $log->write_to("Finished!!!!\n");
 }
-
-
-
+$log->mail();
 exit(0);
-
-
-
 
 
 ###############################################
@@ -223,17 +268,20 @@ sub process_gene{
     my ($version) = $gene->Version;
     my $new_version = $version+1;
     print "Gene exists:  $gene (version $version)\n" if ($verbose);
+    $log->write_to("Gene exists:  $gene (version $version)\n");
     $exists = 1;
 
     # If gene exists but -cgc not specified, then we can't do anything else!
     if($cgc eq "NULL"){
       print "ERROR: $seq already exists as $gene\n";
+      $log->log_and_die("ERROR: $seq already exists as $gene\n");
     }
     
     # check that CGC name doesn't already exist if -cgc has been specified
     elsif($cgc && $gene->CGC_name){
       my $cgc_name = $gene->CGC_name;
       print "ERROR: $seq($gene) already has a CGC name ($cgc_name)\n";
+      $log->write_to("ERROR: $seq($gene) already has a CGC name ($cgc_name)\n");
     }
 
     # can now process CGC name
@@ -250,7 +298,8 @@ sub process_gene{
       my $gene_class;
       if($gene->Gene_class){
 	$gene_class = $gene->Gene_class;
-	print "WARNING: $gene already connects to $gene_class\n";	
+	print "WARNING: $gene already connects to $gene_class\n";
+	$log->write_to("WARNING: $gene already connects to $gene_class\n");
       }
       else{
 	($gene_class) = ($cgc =~ m/^(\w+)\-\.*/);
@@ -264,20 +313,22 @@ sub process_gene{
     }
   }
 
+
   # gene object doesn't exist need to make it!
   else{
-   
     # get new gene ID, unless specified by -id
     if($id){
       $gene_id = $id =~ /WBGene/ ? $id : "WBGene" . sprintf("%08d",$id);
     }
     else{
-      $gene_max++;
-      $gene_id = $id =~ /WBGene/ ? $id : "WBGene" . sprintf("%08d",$id);
+      $gene_id = $namedb->new_gene($seq, 'Sequence', $species);
+      $override = "1";
+      print SN "Object : $seq\nGene $gene_id\n\n" if ($sneak);
     }
 
     print "$seq does not exist, creating new Gene object $gene_id\n";
-    
+    $log->write_to("$seq does not exist, creating new Gene object $gene_id\n");
+
     print OUT "\nGene : $gene_id\n";
     print OUT "Live\n";
     print OUT "Version 1\n";
@@ -304,8 +355,8 @@ sub process_gene{
     ######################################
   
   if($email){
-    # set default address to mt3 in case wrong user ID used
-    my $address = "mt3\@sanger.ac.uk";
+    # set default address to wormpub in case wrong user ID used
+    my $address = "wormpub\@sanger.ac.uk";
     
     $address = "ar2\@sanger.ac.uk"          if ($person eq "WBPerson1847");
     $address = "gw3\@sanger.ac.uk"          if ($person eq "WBPerson4025");
@@ -321,7 +372,7 @@ sub process_gene{
     else{
       $email = "\n\nYou requested a new gene ID for $seq, this Gene ID is $gene_id\n\n";
     }
-    $email .= "This email was generated automatically, please reply to mt3\@sanger.ac.uk\n";
+    $email .= "This email was generated automatically, please reply to wormpub\@sanger.ac.uk\n";
     $email .= "if there are any problems\n";
 
     my $subject;
@@ -331,16 +382,17 @@ sub process_gene{
     else{
       $subject = "WormBase Gene ID request for $seq:  SUCCESSFUL";
     }
-    open (MAIL,  "|/bin/mailx -r \"mt3\@sanger.ac.uk\" -s \"$subject\" $address");
+    open (MAIL,  "|/bin/mailx -r \"wormpub\@sanger.ac.uk\" -s \"$subject\" $address");
     print MAIL "$email";
     close (MAIL);
 
     print "$address was emailed regarding gene ID for $seq\n";
+    $log->write_to("$address was emailed regarding gene ID for $seq\n");
   }
 
   # NameDB query / update
 
-  if ( $update_nameDB ) {
+  if ($update_nameDB && !defined$override)  {
     undef $gene_id;
     if ( $seq and $cgc ) {
       #make CGC name based gene
@@ -428,8 +480,15 @@ newgene.pl -seq AH6.4 -load
 
 This would achieve the same effect (assuming that 5027 in the previous example is the
 next available gene ID).  Here the script automatically looks up the highest gene ID
-and adds 1 to get the new gene ID and assumed mt3 to the be the default option for -who
+and adds 1 to get the new gene ID and requests a valid who option
 
+Example 3
+newgene.pl -seq Y116F11B.27 -who 1983 -species elegans -namedb -test -user <who> -password <pass> -pseudoace /tmp/data.txt
+
+This would request a new WBGeneID from the test nameserver for Y116F11B.27 and output the data as other example but would also create the additional file data.txt which would be pseudo.ace in the format
+
+object : "Y116F11B.27"
+Gene WBGene00000123
 
 
 =head2 MANDATORY arguments:
@@ -455,12 +514,12 @@ script will look to see what the next available gene ID is
 =item -who <number>
 
 Where number should correspond to a person ID...if this number doesn't match anyone then 
-the script will assume that it is mt3
+the script will ask for one to be input to STDIN
                                                                                            
-=item -email
+=item -email <string>
 
 person corresponding to -who option will be emailed notification, email goes to
-mt3@sanger.ac.uk if -who option doesn't correspond to a curator
+wormpub@sanger.ac.uk if -who option doesn't correspond to a curator
 
 =item -verbose
 
@@ -470,6 +529,23 @@ writes extra output to screen
 
 will also add CGC name details to gene as it is being created, you can also use this
 to add CGC names to existing genes (in which case it will increment the version number of the gene).
+
+=item -pseudoace <file>
+
+will create a pseudo .ace file that will contain the object::Gene connection, useful for easy manipulation
+prior to loading the data into a sequence database.
+
+=item -user <string>
+
+this is your mysql username
+
+=item -password <string>
+
+this is your mysql password
+
+=item -test
+
+This switches between the live nameserver and the test nameserver by switching the server info.
                                                                                            
 =item -input <file>
 
