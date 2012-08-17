@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: pad $
-// Last edited on: $Date: 2012-06-22 13:46:38 $
+// Last edited on: $Date: 2012-08-17 12:54:10 $
 
 
 ////////////////////////
@@ -2058,6 +2058,7 @@
 ?Picture Evidence #Evidence
 	 Description ?Text
          Name UNIQUE Text
+	 Species UNIQUE ?Species
          Crop Crop_picture ?Picture XREF Cropped_from
               Cropped_from ?Picture XREF Crop_picture
          Pick_me_to_call Text Text
@@ -2330,6 +2331,7 @@
 /////////////////////////////////////////////////////////////////////////////// 
 
 ?Transgene      Evidence #Evidence
+		Public_name UNIQUE ?Text
 		Summary UNIQUE ?Text								// concise genomic description of the transgene
                 Synonym ?Text									// for alternative names
                 Promoter  Driven_by_gene ?Gene XREF Drives_transgene				// eventually change this tag to promoter_gene
@@ -3042,7 +3044,7 @@
               CGC     Representative ?Person XREF CGC_representative_for
                       Strain_designation UNIQUE Text
                       Allele_designation UNIQUE Text
-                      Alleles ?Variation XREF Laboratory
+                      Alleles ?Variation
                       Gene_classes ?Gene_class XREF Designating_laboratory
 	      Staff   Registered_lab_members ?Person XREF Laboratory   // for people with WormBase Person IDs
         	      Past_lab_members ?Person XREF Old_laboratory     // for anyone who has left the field, or the circle of life
@@ -3155,9 +3157,10 @@
 			  Natural_variant
 	   Origin Species UNIQUE ?Species
 		  Strain	 ?Strain XREF Variation
-		  Laboratory ?Laboratory XREF Alleles
+		  Laboratory ?Laboratory
 		  Author  ?Author // use Person when known, else use Author
                   Person  ?Person //
+		  Analysis ?Analysis
 		  DB_info    Database ?Database ?Database_field UNIQUE ?Accession_number //to link out to KO pages ar2 02-DEC-05
                   KO_consortium_allele   // North American knockout consortium
                   NBP_allele  // Japanese knockout consortium
