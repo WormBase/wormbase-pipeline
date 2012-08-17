@@ -4,8 +4,8 @@
 #
 # by ag3 [991221]
 #
-# Last updated on: $Date: 2007-11-15 09:37:08 $
-# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2012-08-17 15:57:56 $
+# Last updated by: $Author: klh $
 
 # transferdb moves acedb database files across filesystems.
 # Creates a temporary database.BCK 
@@ -149,7 +149,7 @@ else {
 if (!-d $enddir){ 
   print "$enddir doesn't exist, will try to create it\n";
   $log->write_to( "$enddir doesn't exist, will try to create it\n");
-  mkdir($enddir,07777) or &usage("3");
+  mkdir($enddir,0777) or &usage("3");
 } 
 
 
@@ -343,7 +343,7 @@ sub process_file {
   $e_subdir =~ s/\/\//\//;
 
   if (!-d $e_subdir){
-    unless(mkdir($e_subdir,07777)){
+    unless(mkdir($e_subdir,0777)){
       $log->write_to( "ERROR: Could not mkdir subdir $e_subdir: $!\n");
       croak "ERROR: Could not mkdir subdir $e_subdir: $!\n";
     }
