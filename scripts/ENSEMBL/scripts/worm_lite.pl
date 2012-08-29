@@ -102,6 +102,7 @@ sub setupdb {
     system("$mysql -e 'INSERT INTO coord_system VALUES (3,1,\"clone\",\"$version\",3,\"default_version\");' $db->{dbname}") && die;
     system("$mysql -e 'INSERT INTO meta (meta_key,meta_value) VALUES (\"genebuild.version\",\"$version\");' $db->{dbname}") && die;
     system("$mysql -e 'INSERT INTO meta (meta_key,meta_value) VALUES (\"genebuild.start_date\",NOW());' $db->{dbname}") && die;
+    system("$mysql -e 'INSERT INTO meta (meta_key,meta_value) VALUES (\"species.production_name\",\"$db->species_production_name\");' $db->{dbname}") && die;
     system("$mysql -e 'INSERT INTO analysis (created,logic_name,module) VALUES ( NOW(),\"wormbase\",\"wormbase\");' $db->{dbname}")          && die;
     system("$mysql -e 'INSERT INTO analysis_description (analysis_id,description,display_label) VALUES (1,\"imported from WormBase\",\"WormGene\");' $db->{dbname}") && die;
     system("$mysql $db->{dbname} <$cvsDIR/ensembl-pipeline/scripts/DataConversion/wormbase/master_attrib_type.sql") && die;
