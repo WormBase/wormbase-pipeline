@@ -149,6 +149,16 @@ GFF_source       "history"
 GFF_SO "SO:0000178" // operon
 Remark "History objects represent old gene predictions which have since been removed, merged with other gene predictions or refined to make a better gene prediction according to the latest evidence"
 
+Method : "history_transposon"
+Colour	 GRAY
+Show_up_strand	 GRAY
+Bumpable	
+Show_text
+GFF_source      "history"
+GFF_feature	 "transposable_element"
+GFF_SO "SO:0000101"	
+Remark "History objects represent old Transposon annotations that have either been retired or merged into other Transposable element annotations."
+
 Method : "history_feature" 
 Colour	 GRAY
 CDS_colour	 MAGENTA
@@ -2849,6 +2859,9 @@ Method : "TEC_RED"
 Right_priority  2.3
 
 Method : "Transposon"
+Right_priority  2.4
+
+Method : "history_transposon"
 Right_priority  2.4
 
 Method : "three_prime_UTR"
