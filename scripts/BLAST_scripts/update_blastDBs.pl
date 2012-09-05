@@ -1,7 +1,7 @@
 #!/usr/local/ensembl/bin/perl -w
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2012-09-05 08:56:37 $
+# Last edited on: $Date: 2012-09-05 09:20:17 $
 
 use lib $ENV{'CVS_DIR'};
 
@@ -384,19 +384,20 @@ sub process_trembl {
   
   my $final_target = "$swalldir/$tfile";
   my $local_target = "/tmp/$tfile";
-  if ($ftp->get($tfile,$local_target)) {
-    $log->error("failed getting $tfile: ".$ftp->message."\n");
-    unlink $local_target if -e $local_target;
+
+  eval {
+    $ftp->get($tfile,$local_target) 
+        or die("failed getting $tfile: ".$ftp->message."\n");
     $ftp->quit;
+    $wormbase->run_command("mv $local_target $final_target", $log) 
+        and die("Could not mv $local_target to $final_target\n");
+    $ftp->quit;
+  };
+  if ($@) {
+    $log->error("process_trembl failed: $@");
     return;
   }
-  $ftp->quit;
 
-  if ($wormbase->run_command("mv $local_target $final_target", $log)) {
-    $log->error("Process trembl failed - could not mv $local_target to $final_target\n");
-    return;
-  } 
-  
   $wormbase->run_script("BLAST_scripts/swiss_trembl2dbm.pl -t -file $final_target", $log);
   $wormbase->run_command("rm -f $final_target", $log);
   $wormbase->run_script("BLAST_scripts/swiss_trembl2slim.pl -t $ver",$log);
