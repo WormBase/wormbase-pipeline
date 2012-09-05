@@ -1,7 +1,7 @@
 #!/usr/local/ensembl/bin/perl -w
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2012-09-05 09:20:17 $
+# Last edited on: $Date: 2012-09-05 09:47:06 $
 
 use lib $ENV{'CVS_DIR'};
 
@@ -383,16 +383,16 @@ sub process_trembl {
   $ftp->cwd('pub/databases/uniprot/knowledgebase');
   
   my $final_target = "$swalldir/$tfile";
-  my $local_target = "/tmp/$tfile";
+  my $local_target = $wormbase->scratch_area . "/$tfile";
 
   eval {
     $ftp->get($tfile,$local_target) 
-        or die("failed getting $tfile: ".$ftp->message."\n");
-    $ftp->quit;
+        or die("Failed getting $tfile: ".$ftp->message."\n");
     $wormbase->run_command("mv $local_target $final_target", $log) 
         and die("Could not mv $local_target to $final_target\n");
-    $ftp->quit;
+
   };
+  $ftp->quit;
   if ($@) {
     $log->error("process_trembl failed: $@");
     return;
