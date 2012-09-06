@@ -1,7 +1,7 @@
 #!/usr/local/ensembl/bin/perl -w
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2012-09-05 09:47:06 $
+# Last edited on: $Date: 2012-09-06 10:22:40 $
 
 use lib $ENV{'CVS_DIR'};
 
@@ -348,26 +348,27 @@ sub process_human {
 
 sub process_swissprot {
 
-    #swissprot
-    my $ver = shift;
-    my $swalldir = '/lustre/scratch101/ensembl/wormpipe/swall_data';
-    
-    my $login = "anonymous";
-    my $passw = 'wormbase@sanger.ac.uk';
-    my $ftp = Net::FTP->new("ftp.ebi.ac.uk", Timeout => 18000);
-    $ftp->login("anonymous",'wormbase@sanger.ac.uk');
-    $ftp->cwd('pub/databases/uniprot/knowledgebase');
-
-    my $target = $swalldir."/uniprot_sprot.dat.gz";
-    my $filename = 'uniprot_sprot.dat.gz';
-    $ftp->binary(); 
-    $ftp->get($filename,$target) or $log->log_and_die("failed getting $filename: ".$ftp->message."\n");
-
-    $wormbase->run_script("BLAST_scripts/swiss_trembl2dbm.pl -s -file $target", $log);
-    $wormbase->run_script("BLAST_scripts/swiss_trembl2slim.pl -s $ver",$log);
-    $wormbase->run_script("BLAST_scripts/fasta2gsi.pl -f $swalldir/slimswissprot",$log);
-    copy ("$swalldir/slimswissprot", "$blastdir/slimswissprot${ver}.pep");
-
+  #swissprot
+  my $ver = shift;
+  my $swalldir = '/lustre/scratch101/ensembl/wormpipe/swall_data';
+  
+  my $login = "anonymous";
+  my $passw = 'wormbase@sanger.ac.uk';
+  my $ftp = Net::FTP->new("ftp.ebi.ac.uk", Timeout => 18000);
+  $ftp->login("anonymous",'wormbase@sanger.ac.uk');
+  $ftp->cwd('pub/databases/uniprot/knowledgebase');
+  
+  my $target = $swalldir."/uniprot_sprot.dat.gz";
+  my $filename = 'uniprot_sprot.dat.gz';
+  $ftp->binary(); 
+  $ftp->get($filename,$target) or $log->error("failed getting $filename: ".$ftp->message."\n");
+  $ftp->quit;
+  
+  $wormbase->run_script("BLAST_scripts/swiss_trembl2dbm.pl -s -file $target", $log);
+  $wormbase->run_script("BLAST_scripts/swiss_trembl2slim.pl -s $ver",$log);
+  $wormbase->run_script("BLAST_scripts/fasta2gsi.pl -f $swalldir/slimswissprot",$log);
+  copy ("$swalldir/slimswissprot", "$blastdir/slimswissprot${ver}.pep");
+  
 }
 
 sub process_trembl {
@@ -375,37 +376,43 @@ sub process_trembl {
   my $ver = shift;
   my $swalldir = '/lustre/scratch101/ensembl/wormpipe/swall_data';
   my $tfile = 'uniprot_trembl.dat.gz';
+
+  my $final_target = "$swalldir/$tfile";
+  my $local_target = $wormbase->scratch_area . "/$tfile";
   
   my $login = "anonymous";
   my $passw = 'wormbase@sanger.ac.uk';
+
+  # fetch the file
+  my $okay = 1;
+
   my $ftp = Net::FTP->new("ftp.ebi.ac.uk", Timeout => 300);
   $ftp->login("anonymous",'wormbase@sanger.ac.uk');
   $ftp->cwd('pub/databases/uniprot/knowledgebase');
-  
-  my $final_target = "$swalldir/$tfile";
-  my $local_target = $wormbase->scratch_area . "/$tfile";
-
-  eval {
-    $ftp->get($tfile,$local_target) 
-        or die("Failed getting $tfile: ".$ftp->message."\n");
-    $wormbase->run_command("mv $local_target $final_target", $log) 
-        and die("Could not mv $local_target to $final_target\n");
-
+  $ftp->binary;
+  $ftp->get($tfile,$local_target) or do {
+    $log->error("process_trembl: Failed getting $tfile: ".$ftp->message."\n");
+    $okay = 0;
   };
   $ftp->quit;
-  if ($@) {
-    $log->error("process_trembl failed: $@");
-    return;
+
+  if ($okay) {
+    # move it to where it needs to be
+    $wormbase->run_command("mv $local_target $final_target", $log) and do {
+      $log->error("process_trembl: Could not mv $local_target to $final_target\n");
+      $okay = 0;
+    };
   }
 
-  $wormbase->run_script("BLAST_scripts/swiss_trembl2dbm.pl -t -file $final_target", $log);
-  $wormbase->run_command("rm -f $final_target", $log);
-  $wormbase->run_script("BLAST_scripts/swiss_trembl2slim.pl -t $ver",$log);
-  
-  
-  $wormbase->run_script("BLAST_scripts/blast_kill_list.pl -infile $swalldir/slimtrembl -outfile $blastdir/slimtrembl${ver}.pep -killfile $swalldir/kill_list.txt",$log);
-  copy("$blastdir/slimtrembl${ver}.pep","$swalldir/slimtrembl_f");
-  $wormbase->run_script("BLAST_scripts/fasta2gsi.pl -f $swalldir/slimtrembl_f",$log);
+  if ($okay) {
+    $wormbase->run_script("BLAST_scripts/swiss_trembl2dbm.pl -t -file $final_target", $log);
+    $wormbase->run_command("rm -f $final_target", $log);
+    $wormbase->run_script("BLAST_scripts/swiss_trembl2slim.pl -t $ver",$log);
+    
+    $wormbase->run_script("BLAST_scripts/blast_kill_list.pl -infile $swalldir/slimtrembl -outfile $blastdir/slimtrembl${ver}.pep -killfile $swalldir/kill_list.txt",$log);
+    copy("$blastdir/slimtrembl${ver}.pep","$swalldir/slimtrembl_f");
+    $wormbase->run_script("BLAST_scripts/fasta2gsi.pl -f $swalldir/slimtrembl_f",$log);
+  }
 }
 
 
