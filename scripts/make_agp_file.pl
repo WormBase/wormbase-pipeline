@@ -5,7 +5,7 @@
 # by Dan Lawson (dl1@sanger.ac.uk)
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2011-11-07 15:02:28 $
+# Last edited on: $Date: 2012-09-10 10:55:44 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -69,28 +69,6 @@ my @gff_files = ('I','II','III','IV','V','X');
 @gff_files = ('III') if ($quicktest);
 
 
-################################
-# mfetch query to build hashes #
-################################
-
-our %seqver = ();
-our %seqlen = ();
-
-open (SEQUENCES, "$mfetch -d embl -f id -i \"mol:genomic dna\&org:Caenorhabditis elegans\&div:std\" | ");
-#Returns ID   AC006607; SV 1; linear; genomic DNA; STD; INV; 40255 BP.
-while (<SEQUENCES>) {
-    s/\;//g;
-    my @info = split;
-    my $id  = $info[1];
-    my $sv  = $info[3];
-    my $len = $info[9];
-    
-    $seqlen{$id} = $len;
-    $seqver{$id} = $sv;
-}
-close(SEQUENCES);
-
-
 #################################################################################
 # Main Loop                                                                     #
 #################################################################################
@@ -104,7 +82,6 @@ foreach my $chromosome (@gff_files) {
   our %clone=();
   our %ver=();
   my @report="";
-  my @version_mismatches;
 
   my $i = 1;
   my ($start,$stop,$clone,$acc,$ver,$gap_span,$offset,$span,$gpseq,$gspan,$limit,$span2get,$unique_stop) = "";
@@ -158,26 +135,7 @@ foreach my $chromosome (@gff_files) {
     $stop{$i}  = $stop;
     $acc{$i}   = $acc;
     $span{$i}  = $stop - $start + 1;
-    
-    # fudge to try to get sequence version using mfetch via a different query if 1st mfetch fails
-    if(not exists $seqver{$acc} or $seqver{$acc} eq ""){
-      my $embl_acc = `$mfetch -d embl -i \"sv:$acc.\*\"`;
-      $embl_acc =~ s/.*\.(\d+)\s+.*/$1/;
-      $ver{$i} = $embl_acc;
-    }
-    else{
-      $ver{$i}    = $seqver{$acc};
-    }
-
-    if ($ver{$i} != $ver) {
-      push @version_mismatches, {
-        clone => $clone,
-        acc => $acc,
-        gffver => $ver,
-        mfetchver => $ver{$i},
-      };
-      $log->write_to("WARNING: sequence version for acc in Ace was $ver, but in current EMBL is $ver{$i}\n");
-    }
+    $ver{$i}   = $ver;
     
     $last_stop  = $stop;
     $last_start = $start;
@@ -215,14 +173,6 @@ foreach my $chromosome (@gff_files) {
     }
   }
   close OUT;
-
-  if (@version_mismatches) {
-    $log->write_to("WARNING: For the following clones, the sequence version differed between EMBL and Acedb\n");
-    $log->write_to("This is probably due to EMBL-lag, but should probably check it out to be safe\n");
-    foreach my $vmm (@version_mismatches) {
-      $log->write_to(sprintf("  %s - %s - Acedb=%d  EMBL=%d\n", $vmm->{clone}, $vmm->{acc}, $vmm->{gffver}, $vmm->{fetchver}));
-    }
-  }
 
   # copy agp file to correct directory
   # copy command returns 0 for failed
