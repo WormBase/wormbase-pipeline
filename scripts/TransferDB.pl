@@ -4,8 +4,8 @@
 #
 # by ag3 [991221]
 #
-# Last updated on: $Date: 2012-08-17 15:57:56 $
-# Last updated by: $Author: klh $
+# Last updated on: $Date: 2012-09-11 11:40:15 $
+# Last updated by: $Author: pad $
 
 # transferdb moves acedb database files across filesystems.
 # Creates a temporary database.BCK 
@@ -350,70 +350,92 @@ sub process_file {
     $log->write_to( "CREATED SUBDIR $e_subdir\n");
   }
   my $e_file="$e_subdir"."/"."$filename";
+  print "Processing $filename.........\n";
 
-  if ((-d $s_file) || ($filename =~ /^\./) || ($filename =~ /lock.wrm/)){ 
+  if ($filename =~ /lock.wrm/) {
+    $log->log_and_die(".. file \"$filename\" exists which suggests that you are attempting to transfer an active database.\n");
+  }
+  
+  if ((-d $s_file) || ($filename =~ /^\./)){ 
     $log->write_to( " .. SKIPPING file $filename \n");
-  } 
-
-# Want to keep the current database.wrm in each split database so that each has a unique name.
-  elsif( ($filename =~ m/database\.wrm$/) && ($split) ){
-    $log->write_to( " .. SKIPPING file $filename \n");
+    next;
+  }
+  
+  #don't want the old logs or touched data
+  if ($split) {
+    if (($filename =~ m/log-/) || ($filename =~ m/touched-/) || ($filename =~ m/new-/)){
+      $log->write_to( " .. SKIPPING file $filename \n");
+      next; 
+    }
+    #if ($filename =~ m/touched-/) {
+    #  $log->write_to( " .. SKIPPING file $filename \n");
+    #  next; 
+    #}
+    #if ($filename =~ m/new-/) {
+    #  $log->write_to( " .. SKIPPING file $filename \n");
+    #  next; 
+    #}
+    
+    # Want to keep the current database.wrm in each split database so that each has a unique name.
+    if (($filename =~ m/database\.wrm$/) && (-e "$e_subdir"."/"."database.wrm")) {
+      $log->write_to( " .. SKIPPING file $filename \n");
+      next;
+    }
+  }
+  
+  # if you are copying displays.wrm and -name was specified, you can update
+  # the contents of the file itself to add the new name
+  if (($filename =~ m/displays.wrm$/) && $dbname){
+    $log->write_to( "Updating displays.wrm ...\n");
+    open (INFILE,"cat $s_file|");
+    open (OUTFILE,">$e_file");
+    while (<INFILE>) {
+      if ($_ =~ /DDtMain/) {
+	my $rundate = `date +%y%m%d`; chomp $rundate;
+	my $string="_DDtMain -g TEXT_FIT -t \"$dbname $rundate\"  -w .46 -height .32 -help acedb";
+	print OUTFILE $string;
+      } 
+      else {
+	print OUTFILE $_;
+      }      
+    }
+    close INFILE;
+    close OUTFILE;
+  }
+  elsif ($filename !~ /^\./) {
+    #loop to retry copying on failure
+    my $success = 0;
+  ATTEMPT:
+    for(my $i = 1; $i <= $retry ; $i++) {
+      my $cp_chk = "0";
+      my $cp_val;
+      
+      if( ($filename =~ m/models\.wrm$/) && (!$split) ){
+	$log->write_to( "$filename uses a different cp method\n\n");
+	$cp_val = system("\/usr/bin/scp -r $s_file $e_file") 
+      }
+      
+      else{
+	$cp_val = system("\/usr/bin/scp $s_file $e_file");
+      }
+      $cp_chk = $cp_val >> 8;
+      
+      my $S_SIZE = (stat($s_file))[7];
+      my $E_SIZE = (stat($e_file))[7];
+      if (($cp_chk != 0)||($S_SIZE != $E_SIZE)){
+	$log->write_to( "ERROR: COPY of $s_file FAILED - attempt $i\n");
+      }
+      else {
+	$log->write_to( "COPIED - $filename\n");
+	$success = 1;
+	last ATTEMPT;
+      }     
+    } 
+    # end retry loop
+    push(@failed_files, $s_file) unless $success == 1;
   }
   else {
-    # if you are copying displays.wrm and -name was specified, you can update
-    # the contents of the file itself to add the new name
-    if (($filename =~ m/displays.wrm$/) && $dbname){
-      $log->write_to( "Updating displays.wrm ...\n");
-      open (INFILE,"cat $s_file|");
-      open (OUTFILE,">$e_file");
-      while (<INFILE>) {
-	if ($_ =~ /DDtMain/) {
-	  my $rundate = `date +%y%m%d`; chomp $rundate;
-	  my $string="_DDtMain -g TEXT_FIT -t \"$dbname $rundate\"  -w .46 -height .32 -help acedb";
-	  print OUTFILE $string;
-	} 
-	else {
-	  print OUTFILE $_;
-	}      
-      }
-      close INFILE;
-      close OUTFILE;
-    }
-    elsif ($filename !~ /^\./) {
-      #loop to retry copying on failure
-      my $success = 0;
-    ATTEMPT:
-      for(my $i = 1; $i <= $retry ; $i++) {
-	my $cp_chk = "0";
-	my $cp_val;
-
-	if( ($filename =~ m/models\.wrm$/) && (!$split) ){
-	  $log->write_to( "differs in cp method\n\n\n");
-	  $cp_val = system("\/usr/bin/scp -r $s_file $e_file") 
-	}
-	
-	else{
-	  $cp_val = system("\/usr/bin/scp $s_file $e_file");
-	}
-	$cp_chk = $cp_val >> 8;
-	
-	my $S_SIZE = (stat($s_file))[7];
-	my $E_SIZE = (stat($e_file))[7];
-	if (($cp_chk != 0)||($S_SIZE != $E_SIZE)){
-	  $log->write_to( "ERROR: COPY of $s_file FAILED - attempt $i\n");
-	}
-	else {
-	  $log->write_to( "COPIED - $e_file .. \n");
-	  $success = 1;
-	  last ATTEMPT;
-	}     
-      } 
-      # end retry loop
-      push(@failed_files, $s_file) unless $success == 1;
-    }
-    else {
-      $log->write_to( "SKIPPING COPY of $s_file .. \n");
-    };
+    $log->write_to( "SKIPPING COPY of $s_file .. \n");
   }
 }
 
