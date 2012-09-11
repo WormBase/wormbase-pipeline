@@ -8,8 +8,8 @@
 # Uses Ant's Feature_mapper.pm module
 #
 #
-# Last updated by: $Author: klh $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2012-07-10 19:31:13 $        # quickly see when script was last changed and by whom
+# Last updated by: $Author: pad $                      # These lines will get filled in by cvs and helps us
+# Last updated on: $Date: 2012-09-11 15:01:27 $        # quickly see when script was last changed and by whom
 
 
 $|=1;
@@ -52,6 +52,7 @@ my $start;
 my $stop;
 my $test;
 my $no_load;
+my $micro;
 
 GetOptions (
 	    "all"                        => \$all,
@@ -81,6 +82,7 @@ GetOptions (
     	    'store=s'                    => \$store,
 	    'test'                       => \$test,
             'noload'                     => \$no_load,
+	    'micro'                      => \$micro,
 		);
 
 # Help pod if needed
@@ -144,6 +146,7 @@ my %sanity = (
 	      'regulatory_region'           => undef,
 	      'three_prime_UTR'             => undef,
 	      'DNAseI_hypersensitive_site'  => undef,
+	      'micro_ORF'                   => undef,
 	      );
 
 # queue which Feature types you want to map
@@ -167,7 +170,7 @@ push (@features2map, "promoter")                         if (($promoter) || ($al
 push (@features2map, "regulatory_region")                if (($regulatory_region) || ($all));
 push (@features2map, "three_prime_UTR")                  if (($three_prime_UTR) || ($all));
 push (@features2map, "DNAseI_hypersensitive_site")       if (($DNAseI_hypersensitive_site) || ($all));
-
+push (@features2map, "micro_ORF")                        if (($micro) || ($all));
 
 #############
 # main loop #
