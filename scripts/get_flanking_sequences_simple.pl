@@ -81,7 +81,7 @@ while(<>) {
     $l[8] .= " ; " if $l[8];
     $l[8] .= "LeftFlank \"$left_flank\" ; RightFlank \"$right_flank\" ; Reference \"$reference\"\n";
   }
-
+  print STDERR "cannot get flanks for ($seq, $start, $end, $strand), will use empty strings instead\n" unless ($left_flank && $right_flank);
   print join("\t", @l);
 }
 
