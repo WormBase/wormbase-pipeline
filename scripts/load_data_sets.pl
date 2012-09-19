@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl -w
-# Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2012-09-04 14:08:41 $      
+# Last updated by: $Author: pad $     
+# Last updated on: $Date: 2012-09-19 08:46:57 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -76,7 +76,7 @@ sub parse_misc_elegans_files {
 		       $wormbase->misc_static."/other_nematode_ESTs.ace"        => "other_nematode_ace"    ,
 		       $wormbase->misc_static."/washu_nematode_contigs.ace"     => "washu_nem_ace"         ,
 		       #$wormbase->misc_dynamic."/misc_mass_spec_GenniferMerrihew.ace"  => "mass_spec"      ,
-		       $wormbase->wormpub."/analysis/GI_numbers/GI_numbers.ace" => "gi_number"             ,
+		       $wormbase->misc_static."/GINUMBERS/GI_numbers.ace"       => "gi_number"             ,
 		       $wormbase->misc_static.'/misc_mtce_protein_IDs.ace'      => 'mtce_protein_IDs'      ,
 		       $wormbase->misc_dynamic.'/Caenorhabditae_sequence_data_to_load.ace'     => 'Caenorhabditae_seq_data',
 		       #$wormbase->misc_dynamic.'/waba.ace' => 'el_brig_waba',
