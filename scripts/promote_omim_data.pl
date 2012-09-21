@@ -7,7 +7,7 @@
 # This script promoted the OMIM disease data to the level of the gene.
 #
 # Last updated by: $Author: pad $     
-# Last updated on: $Date: 2012-08-16 11:47:33 $      
+# Last updated on: $Date: 2012-09-21 08:13:07 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -91,9 +91,13 @@ if (-e "$basedir/autoace/wquery/SCRIPT:omim.def") {
       $type = $3;
       $id = $4;
       $ace_object = $1;
-      if ($3 =~ "disease") {
+      if ($type eq "gene") {
 	$objects{$ace_object}++;
-	push (@{$acedata{$ace_object}{Database}},$id);
+	push (@{$acedata{$ace_object}{gene}},$id);
+      }
+      elsif ($type eq "disease") {
+	$objects{$ace_object}++;
+	push (@{$acedata{$ace_object}{disease}},$id);
       }
     }
   }
@@ -101,7 +105,10 @@ if (-e "$basedir/autoace/wquery/SCRIPT:omim.def") {
     print OUT "\n// $obj\n\n";
     my $line;
     print OUT "Gene : \"$obj\"\n";
-    foreach $line (@{$acedata{$obj}{Database}}) {
+    foreach $line (@{$acedata{$obj}{gene}}) {
+      print OUT "Database OMIM gene $line\n";
+    }
+    foreach $line (@{$acedata{$obj}{disease}}) {
       print OUT "Database OMIM disease $line\n";
     }
   }
