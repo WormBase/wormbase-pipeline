@@ -46,7 +46,6 @@ Class
 Class Database_field 
 Right_of 3 
 Tag HERE   
-Condition "disease"
  
 Colonne 5 
 Width 12 
