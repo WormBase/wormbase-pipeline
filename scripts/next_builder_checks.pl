@@ -6,8 +6,8 @@
 # A simple script to send a check list to the person who will be performing the next
 # build to check the current build
 #
-# Last updated by: $Author: klh $
-# Last updated on: $Date: 2012-01-25 09:27:41 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2012-09-24 09:06:49 $
 use strict;
 use warnings;
 use lib $ENV{'CVS_DIR'};
@@ -162,7 +162,7 @@ if($clones) {
       $count++;
       # check the Feature_data line
       #$log->write_to("Testing line for ".$hd->name."\n");
-      if (scalar $hd->Feature(2)->row > 3 ) {
+      if (scalar $hd->Feature(2)->row >= 3 ) {
 	#$log->write_to($hd->name." OK\n");
       } else {
 	$log->error("\tERROR: ".$hd->name." missing clone-length data?\n");
