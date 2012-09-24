@@ -21,6 +21,13 @@ use Bio::EnsEMBL::DBSQL::DBAdaptor;
 use Bio::EnsEMBL::Compara::DBSQL::DBAdaptor;
 
 
+my %speciesOfInterest = ( 
+           4932 => 1, # yeast
+           7227 => 1, # fly
+           9606 => 1, # human
+           10090=> 1,# mouse
+);
+
 my %cds2wbgene=%{&get_commondata('/nfs/wormpub/DATABASES/current_DB/COMMON_DATA/cds2wbgene_id.dat')};
 
 my $slice_adaptor = Bio::EnsEMBL::Registry->get_adaptor('C.elegans','core','Slice');
@@ -48,7 +55,7 @@ foreach my $slice(@slices){
 			foreach my $ma ( @{ $homology->get_all_Member_Attribute } ) {
 				my ( $me, $at ) = @{$ma};
 				my $pepm = $me->get_canonical_peptide_Member(); 
-				if ($pepm->taxon_id != 6239){
+				if ($speciesOfInterest{$pepm->taxon_id}){
 					$homol_ids{ $pepm->stable_id } = $pepm; #$homology->description,$homology->subtype];
 				}
 			}
