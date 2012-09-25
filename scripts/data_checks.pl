@@ -6,8 +6,8 @@
 #
 # This is a example of a good script template
 #
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2011-07-27 10:06:50 $
+# Last updated by: $Author: pad $
+# Last updated on: $Date: 2012-09-25 09:35:21 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -134,14 +134,14 @@ sub read_acedb_queries {
 		   ["TRF repeat Feature_data without features", 'find Feature_data *TRF !Feature', 0],
 		   ["Oligo_sets with overlapping_CDS", 'find Oligo_Set Overlaps_CDS', 74615],
 		   ["operons without genes", 'find operon !contains Gene', 0],
-		   ["variation gene connection", 'find Variation Gene', 291405],
+		   ["variation gene connection", 'find Variation Gene', 890000],
 		   ["genes with structured description", 'find Gene Structured_description', 5546],
 		   ["genes with GO_term", 'find Gene GO_term', 15785],
 		   ["CDSs with no source_exons", 'find CDS !Source_exons, method', 0],
 		   ["Operons without parent ", 'find Operon !History AND !Canonical_parent',  0],
 		   ["GO_term without Term or Definition", 'find GO_term !(Term or Definition)',  100],
 		   ["Homol mapped Expression Patterns", 'find Expr_pattern where Homol_homol', 4506],
-		   ["Transposon Objects mapped in the database", 'find Transposon where Sequence', 591],
+		   ["Transposon Objects mapped in the database", 'find Transposon where Sequence', 737],
 		   );
     }
     elsif( $species eq 'japonica'){  
@@ -243,12 +243,12 @@ sub read_GFF_queries {
     $i++;
     $queries[$i]{'DESC'}   = "RNAi primary locations";
     $queries[$i]{'GFF'}    = "RNAi_primary";
-    $queries[$i]{'EXPECT'} = '228053';
+    $queries[$i]{'EXPECT'} = '285000';
 
     $i++;
     $queries[$i]{'DESC'}   = "RNAi secondary locations";
     $queries[$i]{'GFF'}    = "RNAi_secondary";
-    $queries[$i]{'EXPECT'} = 40803;
+    $queries[$i]{'EXPECT'} = 75000;
 
     $i++;
     $queries[$i]{'DESC'}  = "Alleles";
@@ -258,7 +258,7 @@ sub read_GFF_queries {
     $i++;
     $queries[$i]{'DESC'}  = "Vancouver fosmids";
     $queries[$i]{'GFF'}   = "Vancouver_fosmid";
-    $queries[$i]{'QUERY'} = 'find Sequence "WRM*"';    #bit of a cheat but much faster!
+    $queries[$i]{'QUERY'} = 'find Sequence "WRM*" AND S_parent';    #bit of a cheat but much faster!
 
     $i++;
     $queries[$i]{'DESC'}  = "Coding_transcripts";
