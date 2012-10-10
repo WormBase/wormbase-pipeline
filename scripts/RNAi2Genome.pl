@@ -2,7 +2,7 @@
 
 # Version: $Version: $
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2012-07-09 16:21:56 $
+# Last updated on: $Date: 2012-10-10 13:57:01 $
 
 use strict;
 use warnings;
@@ -50,6 +50,7 @@ my ($debug,
     $no_load,
     $keep_best,
     $verbose,
+    $only_unmapped,
     );
 
 GetOptions(
@@ -66,6 +67,7 @@ GetOptions(
   "noload"         => \$no_load,
   "keepbest=s"     => \$keep_best,
   "verbose"        => \$verbose,
+  "onlyunmapped"   => \$only_unmapped,
     );
 
 
@@ -440,6 +442,8 @@ sub query_with_dna_text {
   open my $qfh, ">$tmdef" or 
       $log->log_and_die("Could not open $tmdef for writing\n");  
 
+  my $condition = ($only_unmapped) ? "Condition NOT Homol_homol" ? "";
+
   my $query = <<"EOF";
 
 Sortcolumn 1
@@ -451,7 +455,7 @@ Visible
 Class 
 Class RNAi 
 From 1
-Condition NOT Homol_homol
+$condition
  
 Colonne 2 
 Width 12 
@@ -484,6 +488,11 @@ sub query_without_dna_text {
   open my $qfh, ">$tmdef" or 
       $log->log_and_die("Could not open $tmdef for writing\n");  
 
+  my $condition = "NOT DNA_text";
+  if ($only_unmapped) {
+    $condition .= " AND NOT Homol_homol";
+  }
+
   my $query = <<"EOF";
 
 Sortcolumn 1
@@ -495,7 +504,7 @@ Visible
 Class 
 Class RNAi 
 From 1 
-Condition NOT DNA_text AND NOT Homol_homol
+Condition $condition
  
 Colonne 2 
 Width 12 

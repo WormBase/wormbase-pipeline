@@ -2,7 +2,7 @@
 
 # Version: $Version: $
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2012-06-27 09:48:18 $
+# Last updated on: $Date: 2012-10-10 13:57:01 $
 
 use strict;
 use warnings;
@@ -34,6 +34,7 @@ my ($debug,
     $IPCRESS,
     $MAX_PROD_SIZE,
     $MIN_PROD_SIZE,
+    $only_unmapped,
     );
 
 GetOptions(
@@ -49,6 +50,7 @@ GetOptions(
   "epcr=s"          => \$EPCR,
   "minsize=s"       => \$MIN_PROD_SIZE,
   "maxsize=s"       => \$MAX_PROD_SIZE,
+  "onlyunmapped"    => \$only_unmapped,
     );
 
 
@@ -291,17 +293,10 @@ sub map_with_epcr {
 #############################
 sub get_pcr_products {
 
-  #return {
-  #  # found by ipcress
-  #  'sjj_AC8.3'    => ['CAATTGTGCGAAATAAGTGTCAA', 'CGCTTTCGAGAGTACGTCTATGT'],
-  #  'sjj_AC8.4'    => ['TATTACTGGCACTTTGGCTCATT', 'TGGTTATGGAGAAGAGCACGTAT'],
-  #  'sjj_B0041.5'  => ['CTGTCTCCAGTCTCAATCTCGTT', 'CGCTGTATTAATTTTCACTTCCG'],
-  #  'sjj_B0280.1'  => ['CTGCATCCGAGAAACTGTCA',    'TCAACGCGATGGATTTATCA'],
-    # missed by ipcress, found by epcr
-  #  'cenix:300-c5' => ['GATTTTCCTTACCCTTCATGTCC', 'AGACACCTGGTGGTAATAGGGAT'], 
-    # missed by both
-  #  'mv_B0284.4'   => ['AAGTGGTATTTCCTCCATTTCCATTG', 'TGGGCGCTAATGGAAGCACAGA'],
-  #};
+  # General strategy
+  # 1. Fetch products that have Left_mapping_primer and Right_mapping_primer set
+  #    (these are cases where we have added our own primer sequences to the object)
+  # 2. Fetch the rest
 
   my (%prods, %good_prods);
   my $tace = $wormbase->tace;
@@ -367,7 +362,10 @@ sub get_secondary_table_def {
       $log->log_and_die("Could not open $tmdef for writing\n");  
 
   my $condition = 
-      "NOT Mapping_primers AND NOT Canonical_parent AND Method AND Method != \"Variation_PCR\"";
+      "NOT Mapping_primers AND Method AND Method != \"Variation_PCR\"";
+  if ($only_unmapped) {
+    $condition .= " AND NOT Canonical_parent";
+  }
 
   my $query = <<"EOF";
 
@@ -415,7 +413,7 @@ sub get_initial_table_def {
   open(my $qfh, ">$tmdef") or 
       $log->log_and_die("Could not open $tmdef for writing\n");  
 
-  my $condition = "NOT Canonical_parent";
+  my $condition = ($only_unmapped) ? "Condition NOT Canonical_parent" : "";
 
   my $query = <<"EOF";
 
@@ -428,7 +426,7 @@ Visible
 Class 
 Class PCR_product 
 From 1 
-Condition $condition
+$condition
  
 Colonne 2 
 Width 12 
