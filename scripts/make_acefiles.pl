@@ -8,7 +8,7 @@
 # autoace.
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2012-07-04 12:36:01 $
+# Last updated on: $Date: 2012-10-10 13:57:51 $
 
 #################################################################################
 # Variables                                                                     #
@@ -31,15 +31,17 @@ my $test;        # If set, script will use TEST_BUILD directory under ~wormpub
 my $db;
 my $store;
 my $species;
+my $config;
 my ($syntax, $merge);
 
 GetOptions (    'debug=s'    => \$debug,
-        		'db:s'       => \$db,     # seems to be the primary database name, to dump subsets
-        		'test'       => \$test,
-        		'store:s'    => \$store,
-        		'species:s'  => \$species,
-        		'syntax'     => \$syntax, # checks the syntax of the config file without dumping the acefile
-        		'merge'      => \$merge   # create the ace file for mrging databases at the end of the Build
+                'db:s'       => \$db,     # seems to be the primary database name, to dump subsets
+                'test'       => \$test,
+                'store:s'    => \$store,
+                'species:s'  => \$species,
+                'syntax'     => \$syntax, # checks the syntax of the config file without dumping the acefile
+                'merge'      => \$merge,   # create the ace file for mrging databases at the end of the Build
+                'config=s'   => \$config,
 ) ||die($!);
 
 my $wormbase;
@@ -56,9 +58,11 @@ else {
 my $log = Log_files->make_build_log($wormbase);
 my $elegans = $wormbase->build_accessor;
 
-my $config = $wormbase->basedir.'/autoace_config/'.$wormbase->species;
-$config .= '.merge' if $merge;
-$config .='.config';
+if (not defined $config) {
+  $config = $wormbase->basedir.'/autoace_config/'.$wormbase->species;
+  $config .= '.merge' if $merge;
+  $config .='.config';
+}
 
 my $tace = $wormbase->tace;
 my $path = $wormbase->acefiles.($merge ? '/MERGE':'/primaries');
@@ -99,6 +103,11 @@ unless (-e $config) {
       if ($db) {
         next unless ($makefile{'db'} eq $db);
       }
+      #
+      # DEBUG
+      #
+      next unless $makefile{class} eq 'Sequence';
+      ##############
       make_path("$path/".$makefile{'db'}) unless -e "$path/".$makefile{'db'};
       my $file = $path."/".$makefile{'db'}."/".$makefile{'file'};
       open(ACE,">$file") or $log->log_and_die("cant open file $file : $!\n");
@@ -145,12 +154,6 @@ unless (-e $config) {
         # The following two lines filter out annoying Acedb warnings
         next if $line =~ /^The cache1 is full/;
         $line =~ s/Do you want write access \? \(y or n\) //;
-
-    	if( $makefile{'regex'} ) {  
-          unless ($line =~ /[^\w]/ or $line =~ /$makefile{'class'}\s+\:\s+/ or $line =~ /$makefile{'follow'}\s+\:\s+/) {
-            next LINE unless ($line =~ /$makefile{'regex'}/);
-          }         
-    	}
 
         # check the integrity of the object names and tag values
         if ($makefile{'format'} || $makefile{'required'}) {
