@@ -31,27 +31,29 @@ my $display_by_clones;
 my $addevidence;
 my $brugia;
 my $cleangene;
+my $clone;
 
 GetOptions (
-            "debug=s"    => \$debug,
-            "test"       => \$test,
-            "verbose"    => \$verbose,
-            "store:s"    => \$store,
-	    "source:s"     => \$source,
-	    "design"       => \$design,
-	    "chromosome:s" => \$chromosome,
-	    "blast=s"      => \$blast,
-	    "user:s"       => \$user,
-	    "mail"         => \$mail,
-	    "intron"       => \$intron,
-	    "blesser"      => \$blesser,
 	    "addevidence"  => \$addevidence,
-            "cleangene"    => \$cleangene,
 	    "anomaly"      => \$anomaly,
-	    "lab=s"        => \$lab, # RW or HX
-	    "display_by_clones"       => \$display_by_clones,
-	    "species:s"    => \$species,
+	    "blast=s"      => \$blast,
+	    "blesser"      => \$blesser,
             "brugia:s"     => \$brugia, # stores the version number of the brugia beta database and also hard defines useful options for brugia.
+	    "chromosome:s" => \$chromosome,
+            "cleangene"    => \$cleangene,
+	    "clone"        => \$clone,
+            "debug=s"      => \$debug,
+	    "design"       => \$design,
+	    "display_by_clones"       => \$display_by_clones,
+	    "intron"       => \$intron,
+	    "lab=s"        => \$lab, # RW or HX
+	    "mail"         => \$mail,
+	    "source:s"     => \$source,
+	    "species:s"    => \$species,
+            "store:s"      => \$store,
+            "test"         => \$test,
+	    "user:s"       => \$user,
+            "verbose"      => \$verbose,
 	    "help|h"       => sub { system("perldoc $0"); exit(0);}
 	   );
 
@@ -147,6 +149,8 @@ my $form_gene;			# gene variable from blesser form
 my $form_gene2;                 # gene variable from blesser form
 my $form_gene3;                 # gene variable from evidence form
 my $form_gene4;                 # gene variable from clean_gene form
+my $clone_form;                 # cds variable for clone form
+my $clone_form_sug;             # cds variable for clone form
 my $anomaly_clone;		# clone variable from anomaly form
 
 # Main window
@@ -161,6 +165,7 @@ $gui_height += 200 if $chromosome;
 $gui_height += 200 if $blast;
 $gui_height += 100 if $blesser;
 $gui_height += 100 if $cleangene;
+$gui_height += 100 if $clone;
 $gui_height += 100 if $addevidence;
 $gui_height += 300 if $anomaly;
 $main_gui->geometry("${gui_width}x$gui_height");
@@ -203,7 +208,7 @@ my $db_lbl = $his_maker->Label( -text => "Data Source: $database",
 			      )->pack( -pady => '3'
 				     );
 # CDS entry widgets
-my $cds_lbl = $his_maker->Label( -text => 'CDS',
+my $cds_lbl = $his_maker->Label( -text => ' CDS ID',
 				 -background => 'black',	# was lightcyan
 				 -foreground => 'whitesmoke'	# was black
 			       )->pack(-pady => '6',
@@ -225,7 +230,7 @@ $cds_val->bind("<KP_Enter>",[ \&make_history]);
 # Clear CDS entry button
 my $clear = $his_maker->Button( -text => "Clear",
 				-command => [\&clear]
-			      )->pack(-side => 'left',
+			      )->pack(-side => 'right',
 				      -pady => '2',
 				      -padx => '6',
 				      -anchor => "e"
@@ -258,7 +263,7 @@ if ($blesser) {
 						-fill => "x"
 						);
   # CDS entry widgets
-  my $gene_lbl = $gene_blesser->Label( -text => 'Prediction name',
+  my $gene_lbl = $gene_blesser->Label( -text => 'PRED ID',
 				       -background => 'LightSteelBlue2', # was PaleTurquoise green
 				       -foreground => 'black'
 				       )->pack(-pady => '6',
@@ -266,7 +271,7 @@ if ($blesser) {
 					       -side => 'left',
 					       );
 
-  $gene_val = $gene_blesser->Entry( -width => '20',
+  $gene_val = $gene_blesser->Entry( -width => '10',
 				       -background => 'whitesmoke',
 				       -textvariable=> \$form_gene,
 				       )->pack(-side => 'left',
@@ -280,12 +285,12 @@ if ($blesser) {
   
 
   # Bless button
-  my $bless = $gene_blesser->Button( -text => "Bless this gene",
+  my $bless = $gene_blesser->Button( -text => "Bless This gene",
 				     -command => [\&bless_prediction]
-				     )->pack(-side => 'right',
+				     )->pack(-side => 'left',
 					     -pady => '2',
 					     -padx => '6',
-					     -anchor => "w"
+					     -anchor => "e"
 					     );
   # Clear CDS entry button
   my $clear_gene = $gene_blesser->Button( -text => "Clear",
@@ -321,7 +326,7 @@ if ($blesser) {
   # Clear CDS entry button
   my $clear_proposed = $gene_blesser->Button( -text => "Clear",
 					      -command => [\&clear_proposed]
-					    )->pack(-side => 'left',
+					    )->pack(-side => 'right',
 						    -pady => '2',
 						    -padx => '6',
 						    -anchor => "w"
@@ -393,7 +398,7 @@ if ($addevidence) {
 						-fill => "x"
 						);
   # CDS entry widgets
-  my $CDS_lbl = $gene_evidence->Label( -text => 'CDS name',
+  my $CDS_lbl = $gene_evidence->Label( -text => ' CDS ID',
 				       -background => 'IndianRed4', #was LightGreen
 				       -foreground => 'black'
 				       )->pack(-pady => '6',
@@ -415,7 +420,7 @@ if ($addevidence) {
   
 
   # Add Evidence button
-  my $evi = $gene_evidence->Button( -text => "Tag this CDS",
+  my $evi = $gene_evidence->Button( -text => " Tag This CDS",
 				     -command => [\&add_evidence]
 				     )->pack(-side => 'left',
 					     -pady => '2',
@@ -443,7 +448,7 @@ if ($cleangene) {
   my $gene_clean = $main_gui->Frame( -background => "LightGreen",
 				       -height     => "400",
 				       -width      => "600",
-				       -label      => "Clean genes from loci",
+				       -label      => "Clean Unwanted CDSs from loci",
 				       -relief     => "raised",
 				       -borderwidth => 5,
 				       )->pack( -pady => "5", #modified
@@ -472,7 +477,7 @@ if ($cleangene) {
   
 
   # Add Gene button
-  my $evi = $gene_clean->Button( -text => "Clean this Gene",
+  my $evi = $gene_clean->Button( -text => "Clean This Gene",
 				     -command => [\&clean_gene]
 				     )->pack(-side => 'left',
 					     -pady => '2',
@@ -492,6 +497,89 @@ if ($cleangene) {
 
 
 
+###### clone gene
+###########################################################
+
+
+my ($clonework, $cloneprop);
+if ($clone) {
+  my $gene_clone = $main_gui->Frame( -background => "grey89",
+				     -height     => "400",
+				     -width      => "600",
+				     -label      => "Clone a CDS from the curation database",
+				     -relief     => "raised",
+				     -borderwidth => 5,
+				   )->pack( -pady => "5", #modified
+					    -fill => "x"
+					  );
+  # CDS entry widgets
+  my $TAG_lbl = $gene_clone->Label( -text => ' CDS ID',
+				    -background => 'grey89',
+				    -foreground => 'black'
+				  )->pack(-pady => '6',
+					  -padx => '6',
+					  -side => 'left',
+					 );
+  
+  $clonework = $gene_clone->Entry( -width => '10',
+				   -background => 'whitesmoke',
+				   -textvariable=> \$clone_form,
+				 )->pack(-side => 'left',
+					 -pady => '5',
+					 -padx => '5'
+					);
+
+
+
+
+  # make Return and Enter submit CDS 
+  $clonework->bind("<Return>",[ \&clone_gene]);
+  # Add Gene button
+  my $evi = $gene_clone->Button( -text => "Clone This CDS",
+				 -command => [\&clone_gene]
+			       )->pack(-side => 'left',
+				       -pady => '2',
+				       -padx => '6',
+				       -anchor => "w"
+				      );
+  # Clear CDS entry button
+  my $clone_gen = $gene_clone->Button( -text => "Clear",
+				       -command => [\&clear_cloned]
+				     )->pack(-side => 'left',
+					     -pady => '2',
+					     -padx => '6',
+					     -anchor => "e"
+					    );
+
+############## proposed Name optional
+
+  my $new_iso_lbl = $gene_clone->Label( -text => 'Proposed Name(optional)',
+					-background => 'grey89',
+					-foreground => 'black'
+				      )->pack(-side => 'left',
+					      -pady => '2',
+					      -padx => '6',
+					      -anchor => "w"
+					     );
+
+  $cloneprop = $gene_clone->Entry( -width => '10',
+				   -background => 'whitesmoke',
+				   -textvariable=> \$clone_form_sug,
+				 )->pack(-side => 'left',
+					 -pady => '2',
+					 -padx => '6'
+					);
+
+  # Clear proposed name button
+  my $clone_prop = $gene_clone->Button( -text => "Clear",
+				       -command => [\&clear_cloned_prop]
+				     )->pack(-side => 'right',
+					     -pady => '2',
+					     -padx => '6',
+					     -anchor => "w"
+					    );
+}
+######### end clone gene
 
 
 
@@ -746,9 +834,14 @@ sub add_evidence
       
       foreach my $cds(@cdses){
 
-        print CLN "CDS : $cds\nMethod history\nGene_history $refgene\nRemark \"[$date $user] Removed automatically due to lack of evidence - based on lack of curation tags\" Curator_confirmed $person\n\nCDS : $cds\n-D Gene\n\n-R CDS $cds $cds:$wormpep_prefix\n\n"
+	if (!defined $person){ 
+	  print CLN "CDS : $cds\nEvidence\nMethod history\nGene_history $refgene\nRemark \"[$date $user] Removed automatically due to lack of evidence - based on lack of curation tags\" Curator_confirmed $person\n\nCDS : $cds\n-D Gene\n\n-R CDS $cds $cds:$wormpep_prefix\n\n";
+	}
+	else {
+	  print CLN "CDS : $cds\nEvidence Curator_confirmed $person\nMethod history\nGene_history $refgene\nRemark \"[$date $user] Removed automatically due to lack of evidence - based on lack of curation tags\" Curator_confirmed $person\n\nCDS : $cds\n-D Gene\n\n-R CDS $cds $cds:$wormpep_prefix\n\n"
+	}
       }
-
+      
       close CLN;
       #load the data back to the database
       my $return_status = system("xremote -remote 'parse $output'");
@@ -762,6 +855,9 @@ sub add_evidence
     }
 
 ##### end clear_gen
+
+
+
 
 
 
@@ -780,7 +876,7 @@ sub bless_prediction
     my $method = $obj->Method->name;
     my $stem = $obj->Sequence->name;
     my $exceptions = $obj->Sequence->Method->name;
-    if (! ( ($method eq "Genefinder") || ($method eq "twinscan") || ($method eq "RNASEQ.Hillier.Aggregate") || ($method eq "jigsaw") || ($method =~ /cufflinks/) || ($method =~ "curated") || ($method eq "mGene") ) ) {
+    if (! ( ($method eq "Genefinder") || ($method eq "twinscan") || ($method eq "RNASEQ.Hillier.Aggregate") || ($method eq "jigsaw") || ($method =~ /cufflinks/) || ($method =~ "curated") || ($method eq "mGene")  || ($method eq "history") ) ) {
 
       &error_warning("Wrong method","Only Selected Predictions can be blessed");
       next;
@@ -852,9 +948,8 @@ sub bless_prediction
     my ($day, $mon, $yr)  = (localtime)[3,4,5];
     my $date = sprintf("%02d%02d%02d",$yr-100, $mon+1, $day);
     print BLS "Remark \"[$date $user] Autoconversion from $gene\"";
-    if (defined $person){ print BLS "Curator_confirmed $person\n";
-			}
-    else {print BLS "\n";}
+    if (defined $person){ print BLS "Curator_confirmed $person\nEvidence Curator_confirmed $person\n";}
+    else {print BLS "\nEvidence\n";}
     
     close BLS;
     my $return_status = system("xremote -remote 'parse $output'");
@@ -876,29 +971,115 @@ sub bless_prediction
     }
   }
 
+##########################################
+# Clone a gene from the curation database - majority of code borrowed from history sub.
+##########################################
+
+
+sub clone_gene {
+    my $cds_identifier;
+    my $cds = $clone_form;
+    my $suggested = $clone_form_sug;
+    return unless $cds;
+    my $output = $session_file."cloned".$cds;
+    open (CLO,">$output") or die "cant open $output\n";
+    last if( $cds eq "end" );
+    my $cloneobj = $db->fetch(CDS => "$cds");
+    return &error_warning("Invalid CDS","$cds is not a valid CDS name or does not exist in the linked database") unless $cloneobj;
+    my $species = $cloneobj->Species->name;
+    my $gene = $cloneobj->Gene->name;
+    my $lab = $cloneobj->From_laboratory->name;
+    my $seq = $cloneobj->Sequence->name;
+
+    # capture parent clone info
+    my $clone = $cloneobj->Sequence;
+    my @clone_CDSs = $clone->CDS_child;
+    my $start;
+    my $end;
+
+    foreach my $CDS ( @clone_CDSs ) {
+      next unless ($CDS->name eq "$cds");
+      $start = $CDS->right->name;
+      $end = $CDS->right->right->name;
+      last;
+    }
+
+    if (defined $suggested){
+      $cds_identifier = $suggested;
+    }
+    else {
+      $cds_identifier = $cds.":cloned";
+    }
+    
+
+    #Print Output file
+    print CLO "Sequence : $seq\n";
+    print CLO "CDS_child \"$cds_identifier\" $start $end\n";
+    print CLO "\nCDS : $cds_identifier\n";
+    foreach ($cloneobj->Source_exons) {
+      my ($start,$end) = $_->row(0);
+      print CLO "Source_exons ",$start->name," ",$end->name,"\n";
+    }
+    print CLO "Sequence $seq\n";
+    print CLO "CDS\n";
+    print CLO "From_laboratory $lab\n";
+    print CLO "Isoform Curator_confirmed $person\n" if $person;
+    print CLO "Gene $gene\n" if $gene;
+    print CLO "Species \"$species\"\n" if $species;
+    print CLO "Evidence Curator_confirmed $person\n" if $person;
+    print CLO "Evidence" if (!defined $person);
+    print CLO "Method curated\n";
+    close CLO;
+
+    my $return_status = system("xremote -remote 'parse $output'");
+    if ( ( $return_status >> 8 ) != 0 ) {
+      &error_warning("WARNING", "X11 connection appears to be lost");
+    } else {
+      &confirm_message("Cloned Gene","Cloned $cds_identifier has been created");
+      &clear_cloned;
+      &clear_cloned_prop;
+    }
+  }
+
+
+########## END Clone gene#################
+
 ##############################################################
 # clear various fields
 ##############################################################
 
-  sub clear_gene
-    {
-      $gene_val->delete(0,'end');
-    }
-    
-    sub clear_proposed
-      {
-        $proposed_name->delete(0,'end');
-      }
-      
-      sub clear_evi
-        {
-          $cdswork->delete(0,'end');
-        }
-        sub clear_gen
-          {
-            $genework->delete(0,'end');
-          }
-        
+sub clear
+  {
+    $cds_val->delete(0,'end');
+  }
+
+sub clear_gene
+  {
+    $gene_val->delete(0,'end');
+  }
+
+sub clear_proposed
+  {
+    $proposed_name->delete(0,'end');
+  }
+
+sub clear_evi
+  {
+    $cdswork->delete(0,'end');
+  }
+sub clear_gen
+  {
+    $genework->delete(0,'end');
+  }
+sub clear_cloned
+  {
+    $clonework->delete(0,'end');
+  }
+
+sub clear_cloned_prop
+  {
+    $cloneprop->delete(0,'end');
+  }
 
 ##############################################################
 sub suggest_name
@@ -1011,6 +1192,8 @@ sub make_history
     print HIS "From_laboratory $lab\n";
     print HIS "Gene_history $gene\n" if $gene;
     print HIS "Species \"$species\"\n" if $species;
+    print HIS "Evidence Curator_confirmed $person\n" if $person;
+    print HIS "Evidence" if (!defined $person);
     print HIS "Method history\n";
 
     close HIS;
@@ -1023,10 +1206,7 @@ sub make_history
     }
   }
 
-sub clear
-  {
-    $cds_val->delete(0,'end');
-  }
+
 
 
 #############################################################################
