@@ -2,7 +2,7 @@
 
 # Version: $Version: $
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2012-10-10 13:57:01 $
+# Last updated on: $Date: 2012-10-11 15:36:54 $
 
 use strict;
 use warnings;
@@ -120,7 +120,7 @@ foreach my $id (keys %$prods_to_map) {
 # icress round 2 and 3
 #
 foreach my $mm (2, 3) {
-  $log->write_to(sprintf("%d products were missed by ePCR. Trying ipcress with %d mismatches\n", scalar(keys %$prods_to_map), $mm)); 
+  $log->write_to(sprintf("%d products remain missed. Trying ipcress with %d mismatches\n", scalar(keys %$prods_to_map), $mm)); 
 
  &map_with_ipcress($prods_to_map, \%mapped, $mm);
 
