@@ -7,7 +7,7 @@
 # This is a script to aid making changes to the sequence of a clone.
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2012-05-15 16:11:03 $      
+# Last updated on: $Date: 2012-10-12 15:04:16 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -331,7 +331,7 @@ while (my $input_line = <IN>) {
   if ($input_line =~ /^#/) {next;}    # skip comments
   my ($clone, $change_type, $change_sequence) = split /\s+/, $input_line; 
   print "Writing sequence for clone $clone\n";
-  &write_clone_sequence($clone, $change_type, $change_sequence, $noload, $clonedates);
+#  &write_clone_sequence($clone, $change_type, $change_sequence, $noload, $clonedates);
 }
 close (IN);
 
