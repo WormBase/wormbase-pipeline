@@ -186,7 +186,7 @@
 # by Gary Williams
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2012-10-12 09:55:40 $
+# Last updated on: $Date: 2012-10-12 11:13:54 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -613,8 +613,8 @@ $job_name = "worm_".$wormbase->species."_RNASeq";
 
 #my $RNASeqDir   = $wormbase->rnaseq;
 my $RNASeqBase   = "/nfs/nobackup/ensembl_genomes/wormbase/BUILD/RNASeq/$species";
-my $RNASeqSRADir    = "RNASeqBase/SRA";
-my $RNASeqGenomeDir = "RNASeqBase/Genome";
+my $RNASeqSRADir    = "$RNASeqBase/SRA";
+my $RNASeqGenomeDir = "$RNASeqBase/Genome";
 chdir $RNASeqSRADir;
 
 
