@@ -58,11 +58,135 @@
 #
 # bsub -I -e /nfs/wormpub/BUILD/autoace/logs/align.err -o /nfs/wormpub/BUILD/autoace/logs/align.out -q basement  align_RNASeq.pl [-noalign] [-check] [-species $SPECIES]
 
+#------------------------------------------------------------------------------------
+# Notes on using GSNAP
+
+
+
+# to build a GMAP genome database
+# requires a machine with 4Gb of memory, so specify this in LSF
+# /software/worm/gmap/bin/gmap_build 
+# Usage: gmap_build [options...] -d <genomename> <fasta_files>
+#
+# Options:
+# --dir=STRING        Destination directory for installation (defaults to gmapdb directory specified at configure time)
+# --db=STRING         Genome name
+# -T STRING               Temporary build directory
+# --sort=STRING       Sort chromosomes using given method:
+#			      none - use chromosomes as found in FASTA file(s)
+#			      alpha - sort chromosomes alphabetically (chr10 before chr 1)
+#			      numeric-alpha - chr1, chr1U, chr2, chrM, chrU, chrX, chrY
+#			      chrom - chr1, chr2, chrM, chrX, chrY, chr1U, chrU
+# --gunzip            Files are gzipped, so need to gunzip each file first
+# if you made a database called <genome>, your directory structure should look like this
+#
+#    /path/to/gmapdb/<genome>/
+#    /path/to/gmapdb/<genome>/<genome>.chromosome
+#    /path/to/gmapdb/<genome>/<genome>.chromosome.iit
+#    ...
+#    /path/to/gmapdb/<genome>/<genome>.version
+#
+# e.g.
+# bsub6 -Is /software/worm/gmap/bin/gmap_build --dir /nfs/wormpub/RNASeq/elegans/GSNAP/ --db elegans -T /nfs/wormpub/RNASeq/elegans/GSNAP/ --sort none -k 15 elegans.genome.fa
+# (the above runs out of memory if you specify only 4 Gb of memory)
+
+
+# GSNAP options we probably require:
+# --dir=<directory containing the genome> - sets the /path/to/gmapdb/ directory containing the genome database
+# --db=STRING  - name of genome database
+# --novelsplicing=1  - Look for novel splicing
+# --use-splicing=STRING  - Look for splicing involving known sites or known introns
+#                                         (in <STRING>.iit), at short or long distances
+#                                         See README instructions for the distinction between known sites
+#                                         and known introns
+# --localsplicedist=1000  - Definition of local novel splicing event (default 200000)
+#                           Have a small penalty if the splice exceeds this length
+# --pairmax-rna=1000  - Max total genomic length for RNA-Seq paired reads, or other reads
+#                                   that could have a splice (default 200000).  Used if -N or -s is specified.
+#                                   Should probably match the value for --localsplicedist.
+# --quality-protocol=STRING  - Protocol for input quality scores.  Allowed values:
+#                                   illumina (ASCII 64-126) (equivalent to -J 64 -j -31)
+#                                   sanger   (ASCII 33-126) (equivalent to -J 33 -j 0)
+#                                 Default is sanger (no quality print shift)
+#
+#  --fails-as-input               Print completely failed alignments as input FASTA or FASTQ format
+#  --format=STRING            Another output format type, other than default.
+#                                   Currently implemented: sam
+#
+# e.g.
+# bsub4 -Is /software/worm/gmap/bin/gsnap --dir /nfs/wormpub/RNASeq/elegans/GSNAP/ --db elegans --novelsplicing=1 --localsplicedist=1000 --pairmax-rna=1000 --quality-protocol=sanger --fails-as-input --format=sam /lustre/scratch101/ensembl/wormpipe/RNASeq/elegans/SRA/SRX049745/SRX049745/SRR137926/SRR137926.fastq
+# requires at least 4 Gb of memory to run, otherwise it fails quietly with a truncated output file.
+# size of output when adding in various parameters
+# --novelsplicing=1       "User defined signal 2" after 3.1 Gb output when using bsub4
+# --localsplicedist=1000 
+# --pairmax-rna=1000      
+
+# known splice site file
+# I would recommend using known splice sites, rather
+# than known introns, unless you are certain that all alternative
+# splicing events are known are represented in your file.
+#
+# GSNAP can tell the difference between known site-level and known
+# intron-level splicing based on the format of the input file.  To
+# perform known site-level splicing, you will need to create a file with
+# the following format:
+
+# >NM_004448.ERBB2.exon1 17:35110090..35110091 donor 6678
+# >NM_004448.ERBB2.exon2 17:35116768..35116769 acceptor 6678
+# >NM_004448.ERBB2.exon2 17:35116920..35116921 donor 1179
+# >NM_004448.ERBB2.exon3 17:35118099..35118100 acceptor 1179
+# >NM_004449.ERG.exon1 21:38955452..38955451 donor 783
+# >NM_004449.ERG.exon2 21:38878740..38878739 acceptor 783
+# >NM_004449.ERG.exon2 21:38878638..38878637 donor 360
+# >NM_004449.ERG.exon3 21:38869542..38869541 acceptor 360
+
+# Each line must start with a ">" character, then be followed by an
+# identifier, which may have duplicates and can have any format, with
+# the gene name or exon number shown here only as a suggestion.  Then
+# there should be the chromosomal coordinates which straddle the
+# exon-intron boundary, so one coordinate is on the exon and one is on
+# the intron.  (Coordinates are all 1-based, so the first character of a
+# chromosome is number 1.)  Finally, there should be the splice type:
+# "donor" or "acceptor".  You may optionally store the intron distance
+# at the end.  GSNAP can use this intron distance, if it is longer than
+# its value for --localsplicedist, to look for long introns at that
+# splice site.  The same splice site may have different intron distances
+# in the database; GSNAP will use the longest intron distance reported
+# in searching for long introns.
+                                                                                                
+# Note that the chromosomal coordinates are in the sense direction.
+# Therefore, genes on the plus strand of the genome (like NM_004448) have
+# the coordinates in ascending order (e.g., 35110090..35110091).
+# Genes on the minus strand of the genome (like NM_004449) have the
+# coordinates in descending order (e.g., 38955452..38955451).
+
+# if you have a GTF file, you can use the included program
+# gtf_splicesites like this:
+
+#    cat <gtf file> | gtf_splicesites > foo.splicesites
+
+# Once you have built this splicesites or introns file, you process it
+# as a map file (see "Building map files" above), by doing
+
+#    cat foo.splicesites | iit_store -o <splicesitesfile>
+
+# you put it in the maps subdirectory by doing
+                                                                                                
+#    cp <splicesitesfile>.iit /path/to/gmapdb/<genome>/<genome>.maps
+                                                                                                
+# Then, you may use the file by doing this:
+                                                                                                
+#    gsnap -d <genome> -s <splicesitesfile> <shortreads>
+
+
+#------------------------------------------------------------------------------------
+
+
 
 # by Gary Williams
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2012-06-01 14:25:52 $
+# Last updated on: $Date: 2012-10-12 09:55:40 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -126,6 +250,7 @@ my $log = Log_files->make_build_log( $wormbase );
 $species = $wormbase->species;
 $log->write_to("Processing RNASeq data for $species\n");
 
+my $Software = "/nfs/panda/ensemblgenomes/wormbase/software/packages";
 
 #################################################################
 # Quick utility for getting a file from the Short Read Archive.
@@ -146,7 +271,8 @@ if ($getsrx) {
       $log->write_to("Unpack $srr\n");
       my $options = '';
       if ($paired && $srr !~ /_1\./ && $srr !~ /_2\./) {$options='--split-files'} # specify that the file contains paired-end reads and should be split
-      my $status = $wormbase->run_command("/software/worm/sratoolkit/fastq-dump $options $srr", $log);
+#      my $status = $wormbase->run_command("/software/worm/sratoolkit/fastq-dump $options $srr", $log);
+      my $status = $wormbase->run_command("$Software/sratoolkit/fastq-dump $options $srr", $log);
       if ($status) {$log->log_and_die("Didn't unpack the fastq file successfully\n")}
       $status = $wormbase->run_command("rm -f $srr", $log);
     }
@@ -485,8 +611,11 @@ $scratch_dir = $wormbase->logs;
 $job_name = "worm_".$wormbase->species."_RNASeq";
 
 
-my $RNASeqDir   = $wormbase->rnaseq;
-chdir $RNASeqDir;
+#my $RNASeqDir   = $wormbase->rnaseq;
+my $RNASeqBase   = "/nfs/nobackup/ensembl_genomes/wormbase/BUILD/RNASeq/$species";
+my $RNASeqSRADir    = "RNASeqBase/SRA";
+my $RNASeqGenomeDir = "RNASeqBase/Genome";
+chdir $RNASeqSRADir;
 
 
 my @SRX = keys %expts;
@@ -497,7 +626,7 @@ if (!$expt) {
 
     # delete results from the previous run
     foreach my $SRX (@SRX) {
-      chdir "$RNASeqDir/$SRX";
+      chdir "$RNASeqSRADir/$SRX";
       $wormbase->run_command("rm -rf tophat_out/", $log) unless ($noalign);
       $wormbase->run_command("rm -rf cufflinks/genes.fpkm_tracking", $log);
       $wormbase->run_command("rm -rf cufflinks/isoforms.fpkm_tracking", $log);
@@ -514,9 +643,9 @@ if (!$expt) {
 
     if (! $noalign) { # only create the genome sequence index if the assembly changed
       # Build the bowtie index for the reference sequences by:
-      mkdir "/nfs/wormpub/RNASeq/$species/", 0777;
-      mkdir "/nfs/wormpub/RNASeq/$species/reference-indexes/", 0777;
-      chdir "/nfs/wormpub/RNASeq/$species/reference-indexes/";
+      mkdir "$RNASeqGenomeDir", 0777;
+      mkdir "$RNASeqGenomeDir/reference-indexes/", 0777;
+      chdir "$RNASeqGenomeDir/reference-indexes/";
       my $G_species = $wormbase->full_name('-g_species' => 1);
       unlink glob("${G_species}*");
       
@@ -536,9 +665,10 @@ if (!$expt) {
 	  $log->log_and_die("Can't locate the repeat-masked genome file: $source_file\n");
 	}
       }
-      my $bowtie_cmd = "bsub -I -M 4000000 -R \"select[mem>4000] rusage[mem=4000]\" /software/worm/bowtie/bowtie-build " . (join ',', @chrom_files) . " $G_species";
+#      my $bowtie_cmd = "bsub -I -M 4000000 -R \"select[mem>4000] rusage[mem=4000]\" /software/worm/bowtie/bowtie-build " . (join ',', @chrom_files) . " $G_species";
+      my $bowtie_cmd = "bsub -I -M 4000000 -R \"select[mem>4000] rusage[mem=4000]\" $Software/bowtie/bowtie-build " . (join ',', @chrom_files) . " $G_species";
       $status = $wormbase->run_command($bowtie_cmd, $log);
-      if ($status != 0) {  $log->log_and_die("Didn't create the bowtie indexes /nfs/wormpub/RNASeq/$species/reference-indexes/${G_species}.*\n"); }
+      if ($status != 0) {  $log->log_and_die("Didn't create the bowtie indexes $RNASeqGenomeDir/reference-indexes/${G_species}.*\n"); }
     }
 
     # make the file of splice junctions:    
@@ -547,7 +677,7 @@ if (!$expt) {
     # Coding_transcript Transposon_CDS Pseudogene tRNAscan-SE-1.23 Non_coding_transcript ncRNA Confirmed_cDNA Confirmed_EST Confirmed_UTR
     # Note: the curated CDS model introns are also added to this file
     
-    my $splice_juncs_file = "/nfs/wormpub/RNASeq/$species/reference-indexes/splice_juncs_file";
+    my $splice_juncs_file = "$RNASeqGenomeDir/reference-indexes/splice_juncs_file";
     unless ($norawjuncs) {
       unlink $splice_juncs_file;
       unlink "${splice_juncs_file}.tmp";
@@ -560,7 +690,7 @@ if (!$expt) {
     
 
     # Make a GTF file of current transcripts. Used by tophat and cufflinks.
-    my $gtf_file = "/nfs/wormpub/RNASeq/$species/transcripts.gtf";
+    my $gtf_file = "$RNASeqGenomeDir/transcripts.gtf";
     unless ($nogtf) {
       unlink $gtf_file;
       my $scripts_dir = $ENV{'CVS_DIR'};
@@ -599,10 +729,10 @@ if (!$expt) {
       # we don't want this initial run to do anything more than just index the GTF file
       # so we we create a dummy fastq file with 60 reads in
       # 60 reads is about the minimum that tophat will run successfully with
-      chdir "/nfs/wormpub/RNASeq/$species"; # make the dummy tophat output in this directory
+      chdir "$RNASeqGenomeDir"; # make the dummy tophat output in this directory
       unlink glob("transcriptome-gtf*");
       $status = $wormbase->run_command("rm -rf tophat_out/", $log);
-      my $dummy_file = "/nfs/wormpub/RNASeq/$species/dummy.fastq";
+      my $dummy_file = "$RNASeqGenomeDir/dummy.fastq";
       open (DUMMY, "> $dummy_file") || die "";
       print DUMMY '@IL21_2586:2:1:5:1516/1
 CTCATCAATNATACAATCAACATATAGTNNTNCAAANNTTNAATAANNNNNNNT
@@ -687,10 +817,10 @@ IIIIIIIIHIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIGIGIDHIIIIIGIGI
 			   -M =>  "4000000", 
 			   -R => "\"select[mem>4000 && tmp>10000] rusage[mem=4000]\"", 
 			   -J => "tophat_dummy_$species");
-      my $gtf = "--GTF /nfs/wormpub/RNASeq/$species/transcripts.gtf";
-      my $gtf_index = "--transcriptome-index /nfs/wormpub/RNASeq/$species/transcriptome-gtf";
+      my $gtf = "--GTF $RNASeqGenomeDir/transcripts.gtf";
+      my $gtf_index = "--transcriptome-index $RNASeqGenomeDir/transcriptome-gtf";
       my $G_species = $wormbase->full_name('-g_species' => 1);
-      my $cmd = "/software/worm/tophat/tophat $gtf $gtf_index /nfs/wormpub/RNASeq/$species/reference-indexes/$G_species $dummy_file";
+      my $cmd = "$Software/tophat/tophat $gtf $gtf_index $RNASeqGenomeDir/reference-indexes/$G_species $dummy_file";
       $log->write_to("$cmd\n");
       $lsf->submit(@bsub_options, $cmd);
       
@@ -726,10 +856,10 @@ IIIIIIIIHIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIGIGIDHIIIIIGIGI
 	}
       }
 
-      if (-e "$RNASeqDir/$arg/tophat_out/accepted_hits.bam" &&
-	  -e "$RNASeqDir/$arg/cufflinks/genes.fpkm_tracking" &&
-	  (-e "$RNASeqDir/$arg/TSL/TSL_evidence.ace" || !$tsl) &&
-	  -e "$RNASeqDir/$arg/Introns/Intron.ace") {next}
+      if (-e "$RNASeqSRADir/$arg/tophat_out/accepted_hits.bam" &&
+	  -e "$RNASeqSRADir/$arg/cufflinks/genes.fpkm_tracking" &&
+	  (-e "$RNASeqSRADir/$arg/TSL/TSL_evidence.ace" || !$tsl) &&
+	  -e "$RNASeqSRADir/$arg/Introns/Intron.ace") {next}
     }
 
     push @args, $arg;
@@ -768,7 +898,7 @@ IIIIIIIIHIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIGIGIDHIIIIIGIGI
   $log->write_to("-------\n\n");
 
 
-  chdir $RNASeqDir;
+  chdir $RNASeqSRADir;
 
   # get the Life_stages of the Condition objects (same name as the Analysis objects)
   my %life_stages = get_life_stage_from_conditions();
@@ -895,12 +1025,9 @@ IIIIIIIIHIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIGIGIDHIIIIIGIGI
   $status = $wormbase->run_command("cp expr.tar.gz $autoace", $log); # this will probably be changed to the autoace/OUTPUT directory soon
 
   
-
-
-
   # make the ace file of RNASeq spanned introns to load into acedb
   my $splice_file = $wormbase->misc_dynamic."/RNASeq_splice_${species}.ace";
-  chdir $RNASeqDir;
+  chdir $RNASeqSRADir;
   $status = $wormbase->run_command("rm -f $splice_file", $log);
   $status = $wormbase->run_command("cat */Introns/virtual_objects.${species}.RNASeq.ace > $splice_file", $log);
   $status = $wormbase->run_script("acezip.pl -file $splice_file", $log);
@@ -1021,7 +1148,7 @@ sub run_align {
   if (!$keepfastq) {
     foreach my $arg (@args) {
       # if it is a SRA file, then we can safely  delete it and pull it over again next time
-      if ($arg =~ /SRX/) {my $status = $wormbase->run_command("rm -rf $RNASeqDir/$arg/SRR", $log);}
+      if ($arg =~ /SRX/) {my $status = $wormbase->run_command("rm -rf $RNASeqSRADir/$arg/SRR", $log);}
     }
   }
 
@@ -1043,25 +1170,26 @@ sub run_tophat {
   
   my ($check, $noalign, $tsl, $arg, $solexa, $illumina, $paired) = @_;
   
-  chdir "$RNASeqDir/$arg";
+  chdir "$RNASeqSRADir/$arg";
   my $G_species = $wormbase->full_name('-g_species' => 1);
 
   my $cmd_extra = "";
   if ($solexa)   {$cmd_extra = "--solexa-quals"} 
   if ($illumina) {$cmd_extra = "--solexa1.3-quals"} 
 
-  if ((!$check && !$noalign) || !-e "$RNASeqDir/$arg/tophat_out/accepted_hits.bam") {
-    if (glob("$RNASeqDir/$arg/SRR/SRR*/*.lite.sra") ) {
+  if ((!$check && !$noalign) || !-e "$RNASeqSRADir/$arg/tophat_out/accepted_hits.bam") {
+    if (glob("$RNASeqSRADir/$arg/SRR/SRR*/*.lite.sra") ) {
       # unpack any .lite.sra file to make the .fastq files
       # now unpack the sra.lite files
       $log->write_to("Unpack the $arg .lite.sra file to fastq files\n");
-      foreach my $dir (glob("$RNASeqDir/$arg/SRR/SRR*")) {
+      foreach my $dir (glob("$RNASeqSRADir/$arg/SRR/SRR*")) {
 	chdir $dir;
 	foreach my $srr (glob("*.lite.sra")) {
 	  $log->write_to("Unpack $srr\n");
 	  my $options = '';
 	  if ($paired && $srr !~ /_1\./ && $srr !~ /_2\./) {$options='--split-files'} # specify that the file contains paired-end reads and should be split
-	  $status = $wormbase->run_command("/software/worm/sratoolkit/fastq-dump $options $srr", $log);
+#	  $status = $wormbase->run_command("/software/worm/sratoolkit/fastq-dump $options $srr", $log);
+	  $status = $wormbase->run_command("$Software/sratoolkit/fastq-dump $options $srr", $log);
 	  if ($status) {$log->log_and_die("Didn't unpack the fastq file successfully\n")}
 	  $status = $wormbase->run_command("rm -f $srr", $log);
 	}
@@ -1072,7 +1200,7 @@ sub run_tophat {
 
     $wormbase->run_command("rm -rf tophat_out/", $log);
 
-    chdir "$RNASeqDir/$arg";
+    chdir "$RNASeqSRADir/$arg";
     my @files = glob("SRR/*/*.fastq");
     my $joined_file = join ",", @files;
     $log->write_to("Have fastq files: @files\n");
@@ -1110,10 +1238,11 @@ sub run_tophat {
 
     $log->write_to("run tophat $joined_file\n");
     my $gtf_index = ''; # use the GTF index unless we are not using the GTF file
-    $gtf_index = "--transcriptome-index /nfs/wormpub/RNASeq/$species/transcriptome-gtf" unless ($nogtf || $onestage);
+    $gtf_index = "--transcriptome-index $RNASeqGenomeDir/transcriptome-gtf" unless ($nogtf || $onestage);
     my $raw_juncs = ''; # use the EST raw junctions hint file unless we specify otherwise
-    $raw_juncs = "--raw-juncs /nfs/wormpub/RNASeq/$species/reference-indexes/splice_juncs_file" unless $norawjuncs;
-    $status = $wormbase->run_command("/software/worm/tophat/tophat $cmd_extra --min-intron-length 30 --max-intron-length 5000 $gtf_index $raw_juncs /nfs/wormpub/RNASeq/$species/reference-indexes/$G_species $joined_file", $log);
+    $raw_juncs = "--raw-juncs $RNASeqGenomeDir/reference-indexes/splice_juncs_file" unless $norawjuncs;
+#    $status = $wormbase->run_command("/software/worm/tophat/tophat $cmd_extra --min-intron-length 30 --max-intron-length 5000 $gtf_index $raw_juncs $RNASeqGenomeDir/reference-indexes/$G_species $joined_file", $log);
+    $status = $wormbase->run_command("$Software/tophat/tophat $cmd_extra --min-intron-length 30 --max-intron-length 5000 $gtf_index $raw_juncs $RNASeqGenomeDir/reference-indexes/$G_species $joined_file", $log);
     if ($status != 0) {  $log->log_and_die("Didn't run tophat to do the alignment successfully\n"); } # only exit on error after gzipping the files
 
   } else {
@@ -1132,12 +1261,12 @@ sub run_tophat {
 # now run cufflinks
   if (!$check || !-e "cufflinks/genes.fpkm_tracking") {
     $log->write_to("run cufflinks\n");
-    chdir "$RNASeqDir/$arg";
+    chdir "$RNASeqSRADir/$arg";
     mkdir "cufflinks", 0777;
     chdir "cufflinks";
     my $gtf = ''; # use the existing gene models unless we specify otherwise
-    $gtf = "--GTF /nfs/wormpub/RNASeq/$species/transcripts.gtf" unless $nogtf;
-    $status = $wormbase->run_command("/software/worm/cufflinks/cufflinks $gtf ../tophat_out/accepted_hits.bam", $log);
+    $gtf = "--GTF $RNASeqGenomeDir/transcripts.gtf" unless $nogtf;
+    $status = $wormbase->run_command("$Software/cufflinks/cufflinks $gtf ../tophat_out/accepted_hits.bam", $log);
     if ($status != 0) {  $log->log_and_die("Didn't run cufflinks to get the isoform/gene expression successfully\n"); }
   } else {
     $log->write_to("Check cufflinks/genes.fpkm_tracking: already done\n");
@@ -1150,7 +1279,7 @@ sub run_tophat {
 
   if (!$check || !-e "Introns/Intron.ace") {
     $log->write_to("run Introns\n");
-    chdir "$RNASeqDir/$arg";
+    chdir "$RNASeqSRADir/$arg";
     mkdir "Introns", 0777;
     my $analysis = $expts{$arg}[0];
     my $status = &Intron_stuff($cmd_extra, $analysis);
@@ -1168,7 +1297,7 @@ sub run_tophat {
   if ($tsl) {
     if (!$check || !-e "TSL/TSL_evidence.ace") {
       $log->write_to("run TSL\n");
-      chdir "$RNASeqDir/$arg";
+      chdir "$RNASeqSRADir/$arg";
       mkdir "TSL", 0777;
       my $analysis = $expts{$arg}[0];
       $status = &TSL_stuff($analysis);
@@ -1211,18 +1340,18 @@ sub get_SRA_files {
   # is this a SRA ID?
   if ($arg !~ /^SRX/) {return}
 
-  my $status = $wormbase->run_command("rm -rf $RNASeqDir/$arg/SRR", $log);
+  my $status = $wormbase->run_command("rm -rf $RNASeqSRADir/$arg/SRR", $log);
 
-  chdir "$RNASeqDir";
+  chdir "$RNASeqSRADir";
 
   get_SRX_file($arg);
 
-  chdir "$RNASeqDir/$arg";
+  chdir "$RNASeqSRADir/$arg";
   mkdir "SRR", 0777;
 
   foreach my $dir (glob("SRR*")) {
     if ($dir eq "SRR") {next}
-    $status = $wormbase->run_command("mv -f $dir $RNASeqDir/$arg/SRR", $log);
+    $status = $wormbase->run_command("mv -f $dir $RNASeqSRADir/$arg/SRR", $log);
   }
 
 }
@@ -1240,7 +1369,7 @@ sub get_SRX_file {
   $log->write_to("Get the SRA files for $arg\n");
   my $failed = 1;
   while ($failed) {
-    my $cmd = "~gw3/.aspera/connect/bin/ascp -k 1 -l 300M -QTr -i /nfs/users/nfs_g/gw3/.aspera/connect/etc/asperaweb_id_dsa.putty anonftp\@ftp-private.ncbi.nlm.nih.gov:/sra/sra-instant/reads/ByExp/litesra/SRX/SRX${dirbit}/$arg ./";
+    my $cmd = "~gw3/.aspera/connect/bin/ascp -k 1 -l 300M -QTr -i /net/nas17b/vol_homes/homes/gw3/.aspera/connect/etc/asperaweb_id_dsa.putty anonftp\@ftp-private.ncbi.nlm.nih.gov:/sra/sra-instant/reads/ByExp/litesra/SRX/SRX${dirbit}/$arg ./";
     print "cmd = $cmd\n";
     my $return_status = system($cmd);
     if ( ( $return_status >> 8 ) == 0 )  {$failed=0}
@@ -1255,7 +1384,7 @@ sub get_SRX_file {
 # writes evidence for the TSL Features.
 #
 # Assumes we have a TSL directory set up to get the results and that
-# the current working directory is "$RNASeqDir/$arg"
+# the current working directory is "$RNASeqSRADir/$arg"
 
 
 # TSL sequences from 
@@ -1312,7 +1441,7 @@ sub TSL_stuff {
 
   $log->write_to("run tophat with $tsl_fastq\n");
 
-  $status = $wormbase->run_command("/software/worm/tophat/tophat $cmd_extra --output-dir TSL /nfs/wormpub/RNASeq/$species/reference-indexes/$G_species $tsl_fastq", $log);
+  $status = $wormbase->run_command("$Software/tophat/tophat $cmd_extra --output-dir TSL $RNASeqGenomeDir/reference-indexes/$G_species $tsl_fastq", $log);
 
 #  $log->write_to("remove TSL fastq files\n");
 #  $wormbase->run_command("rm -f $tsl_fastq", $log);
@@ -1320,7 +1449,7 @@ sub TSL_stuff {
 
   # now parse the results looking for TSL sites
   my $TSLfile = "TSL/accepted_hits.bam";
-  my $samtools = "/software/worm/samtools/samtools view $TSLfile";
+  my $samtools = "$Software/samtools/samtools view $TSLfile";
 
   my %results; # hash of TSL sites found by RNAseq alignment
   $log->write_to("get the TSL sites found by alignment\n");
