@@ -8,7 +8,7 @@
 # existing gene 
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2012-08-16 13:36:45 $
+# Last edited on: $Date: 2012-10-15 16:32:38 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -74,6 +74,7 @@ else {
 ############################################################
 my $tace = $wormbase->tace;
 my $database = $wormbase->database('geneace');
+$database = glob("~wormpub/DATABASES/TEST_DATABASES/geneace") if $test;
 
 #####################################################
 # warn about incorrect usage of command line options
@@ -219,6 +220,14 @@ sub process_gene{
 	print OUT "Version 1\n";
 	print OUT "Sequence_name $new\n";
 	print OUT "Public_name $new\n";
+	if ($species eq "elegans"){
+	  print OUT "Other_name \"CELE_$new\"\n";
+	}
+	if ($species eq "briggsae"){
+	  $new =~ s/CBG//;
+	  print OUT "Other_name \"CELE_$new\"\n";
+	  $new =~ s/^/CBG/;
+	}
 	print OUT "Species \"".$wormbase->full_name."\"\n";
 	print OUT "Positive_clone $p_clone Inferred_automatically \"From sequence, transcript, pseudogene data\"\n";
 	print OUT "History Version_change 1 now $person Event Split_from $old_gene\n";

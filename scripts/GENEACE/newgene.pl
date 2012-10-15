@@ -7,7 +7,7 @@
 # simple script for creating new (sequence based) Gene objects 
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2012-08-16 11:14:38 $
+# Last edited on: $Date: 2012-10-15 16:32:38 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -152,7 +152,7 @@ if( $update_nameDB ) {
 
 my $tace = $wormbase->tace;
 my $database = $wormbase->database('geneace');
-$database = glob("~wormpub/DATABASES/geneace") if $test;
+$database = glob("~wormpub/DATABASES/TEST_DATABASES/geneace") if $test;
 
 my $db = Ace->connect(-path  => $database,
 		      -program =>$tace) || do { $log->write_to("tace Connection failure\n");
@@ -333,6 +333,14 @@ sub process_gene{
     print OUT "Live\n";
     print OUT "Version 1\n";
     print OUT "Sequence_name \"$seq\"\n";
+    if ($species eq "elegans"){
+      print OUT "Other_name \"CELE_${seq}\"\n";
+    }
+    if ($species eq "briggsae"){
+      $seq =~ s/CBG//;
+      print OUT "Other_name \"CELE_$seq\"\n";
+      $seq =~ s/^/CBG/;
+    }
     print OUT "Species \"Caenorhabditis $species\"\n";
     print OUT "History Version_change 1 now $person Event Created\n";
     print OUT "Method Gene\n";
@@ -344,7 +352,7 @@ sub process_gene{
       print OUT "Public_name \"$cgc\"\n\n";
     }
     else{
-      print OUT "Public_name \"$seq\"\n\n";      
+      print OUT "Public_name \"$seq\"\n\n";
     }
   }
 
