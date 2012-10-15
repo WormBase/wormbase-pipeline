@@ -6,7 +6,7 @@
 # dl
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2010-03-08 12:13:29 $
+# Last updated on: $Date: 2012-10-15 10:42:11 $
  
 $!=1;
 use strict;
@@ -37,6 +37,8 @@ GetOptions ("help"       => \$help,
             "store:s"    => \$store,
             "db=s"       => \$db,
 	    "acefile=s"  => \$acefile,
+	    "stlace"    => \$stlace,  # set if we are dealing with stlace
+	    "camace"    => \$camace,  # the default
             );
 
 if ( $store ) {
@@ -55,20 +57,42 @@ if ($test) {
 # establish log file.
 my $log = Log_files->make_build_log($wormbase);
 
+$camace = 1; # the default
+if ($stlace)  {
+  $camace = 0;
+  $stlace = 1;
+}
+
 
 ##############################
 # superlink data for camace  #
 ##################Structure.Subsequence############
 
-our %clone2super = ("H06O01"  => "I",
-		    "Y95D11A" => "IR",
-		    "T05A6"   => "II",
-		    "F45H7"   => "IIIL",
-		    "K01F9"   => "IIIR",
-		    "F21D5"   => "IV",
-		    "F07D3"   => "V",
-		    "B0272"   => "X",
-		    ) ;
+my %clone2super;
+
+if ($camace) { 
+  %clone2super = ("H06O01"  => "I",
+		  "Y95D11A" => "IR",
+		  "T05A6"   => "II",
+		  "F45H7"   => "IIIL",
+		  "K01F9"   => "IIIR",
+		  "F21D5"   => "IV",
+		  "F07D3"   => "V",
+		  "B0272"   => "X",
+		 ) ;
+} else {
+  %clone2super = ("cTel33B" => "1",
+		  "C43H8"   => "1R",
+		  "cTel52S" => "2",
+		  "Y1H11"   => "2R",
+		  "cTel54X" => "3A",
+		  "F26A1"   => "3B",
+		  "cTel4X"  => "4",
+		  "cTel3X"  => "5",
+		  "cTel7X"  => "XL",
+		  "W09B12"  => "XR",
+		 ) ;  
+}
 
 ##############################
 # open output file
@@ -239,12 +263,27 @@ foreach $seq (keys %isGenomeSequence) {
 
     # don't make link objects for these clones
     # these should be in St Louis SUPERLINKS
-    next if (($seq eq "6R55") || ($seq eq "F38A1") || ($seq eq "cTel52S") || ($seq eq "cTel7X"));
+    if ($camace && (($seq eq "6R55") || ($seq eq "F38A1") || ($seq eq "cTel52S") || ($seq eq "cTel7X"))) {
+      print "*****************************************************************************\n";
+      print "Hit the code for the St Louis clone exceptions - check the superlinks are OK!\n";
+      die "*****************************************************************************\n";
+      next;
+    }
+
+    # don't make link objects for these clones
+    # these should be in Hinxton SUPERLINKS
+    #next if ($stlace && (($seq eq "??? are there any ???");
 
     # print LINK header
-    $lk = "SUPERLINK_CB_$clone2super{$seq}";
-    print ACE "\nSequence $lk\n";
-    print ACE "From_laboratory HX\n";
+    if ($camace) {
+      $lk = "SUPERLINK_CB_$clone2super{$seq}";
+      print ACE "\nSequence $lk\n";
+      print ACE "From_laboratory HX\n";
+    } elsif ($stlace) {
+      $lk = "SUPERLINK_RW_$clone2super{$seq}";
+      print ACE "\nSequence $lk\n";
+      print ACE "From_laboratory RW\n";
+    }
 
     # loop over subsequences
     $startright = 1;
