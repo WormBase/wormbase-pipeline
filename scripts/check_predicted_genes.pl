@@ -4,7 +4,7 @@
 #
 # by Keith Bradnam
 #
-# Last updated on: $Date: 2012-05-01 10:22:12 $
+# Last updated on: $Date: 2012-10-15 15:23:44 $
 # Last updated by: $Author: pad $
 #
 # see pod documentation at end of file for more information about this script
@@ -157,7 +157,7 @@ sub main_gene_checks {
       $sequence_structures{$gene_name}{$hash_key} = $gene_model->name;
     }
 
-    if ($method_test ne 'Transposon') {
+    unless (($method_test eq 'Transposon') || ($method_test eq 'history_transposon')) {
       if (!defined($exon_coord2[0])) {
 	print "ERROR: $gene_model has a problem with it\'s exon co-ordinates\n";
 	push(@error1, "ERROR: $gene_model has a problem with it\'s exon co-ordinates\n");
@@ -245,7 +245,7 @@ sub main_gene_checks {
 
     if ($method_test =~ (/transcript/) or ($method_test =~ (/RNA/)) && $gene_model->name =~ (/\w+\d+\.\d+\Z/)) {
       my $prob_prediction = $gene_model->at('Visible.Brief_identification');
-      unless ($method_test =~ (/history/)) {push(@error3, "ERROR: The Transcript $gene_model does not have a Brief_identification and will throw an error in the build :(!\n") if (!defined($prob_prediction));
+      unless ($method_test =~ (/history_transcript/)) {push(@error3, "ERROR: The Transcript $gene_model does not have a Brief_identification and will throw an error in the build :(!\n") if (!defined($prob_prediction));
 					  }
     }
 
@@ -382,13 +382,13 @@ sub single_query_tests {
     }
   }
   else {
-    $log->write_to("\nTranscripts OK\n");
+    $log->write_to("\nTranscripts all have Transcript set\n");
   }
 
   # Transposon checks
   my @Transposons= $db->fetch(-query=>'find Transposon');
   my $Transposon_no = @Transposons;
-  unless ($Transposon_no eq "234"){print "\nChange in Transposon_numbers\n"}
+  unless ($Transposon_no eq "377"){print "\nChange in Transposon_numbers required 377 actual $Transposon_no - has additional Transposon annotation been done?\n"}
 
   # Check for non-standard methods in CDS class
   my @CDSfilter = $db->fetch (-query => 'FIND CDS; method != Transposon_CDS; method != Transposon_Pseudogene; method != curated; method !=history; method !=Genefinder; method !=twinscan; method !=jigsaw; method !=mGene; method !=RNASEQ.Hillier; method !=RNASEQ.Hillier.Aggregate');
