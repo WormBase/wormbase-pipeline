@@ -6,7 +6,7 @@
 # dl
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2012-10-15 10:42:11 $
+# Last updated on: $Date: 2012-10-15 10:44:10 $
  
 $!=1;
 use strict;
@@ -24,6 +24,7 @@ use Ace ;
 ##############################
 
 my ($help, $debug, $test, $verbose, $store, $wormbase);
+my ($stlace, $camace);
  
 # Database name for databases other than ~wormpub/DATABASES/camace
 my $db;         
