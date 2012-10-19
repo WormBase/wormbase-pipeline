@@ -145,10 +145,24 @@ while (<>) {
                   if ( !$loci_seen{$bestname}++ );
             }
         }
+        
+        if($source eq 'curated' && $method eq 'CDS' ){
+	 $group=~/(WBGene\d+)/;
+         my $gene_id = $1;
+         my $gene = $db->fetch(Gene => $gene_id);
+
+         if ($gene){
+            #grab all C.elegans orthologs
+            my @elegansOrthologs = grep {$_->Species eq 'Caenorhabditis elegans'} $gene->Ortholog;
+            foreach my $eGene(@elegansOrthologs){
+                    map {$group.=" ; Alias \"$_\"" if $_}($eGene->CGC_name,$eGene->Sequence_name,"$eGene")
+            }	
+         }
+        }
 
         # WS133 - NOTES ARE PART OF CDS FEATURES, BUT NOT TRANSCRIPTS
         # Append some notes to top-level feature entries.
-        unless ( $source eq 'curated' && $method eq 'CDS' ) {
+        else {
             my $notes = $NOTES{$lookup} || $NOTES{$match};
             push @notes, map { qq(Note "$_") } @{$notes} if $notes;
 
@@ -225,7 +239,7 @@ while (<>) {
 
     # Tier II id flunkification
     elsif ( $source eq 'gene' && $method eq 'gene'){
-		$group=~/(WBGene\d+)/;
+	$group=~/(WBGene\d+)/;
         my $gene_id = $1;
         my $gene = $db->fetch(Gene => $gene_id);
 
