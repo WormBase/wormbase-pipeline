@@ -31,8 +31,8 @@ my ($gff_source,
             'ensreg=s'    => \$ens_regconf,
             );
 
-$gff_type = "gene" if not defined $gff_type;
-$gff_source = "gene" if not defined $gff_source;
+$gff_type = 'CDS' if not defined $gff_type;
+$gff_source = 'curated' if not defined $gff_source;
 
 my $reg = "Bio::EnsEMBL::Registry";
 $reg->load_all($ens_regconf);
