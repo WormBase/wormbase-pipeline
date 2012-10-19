@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: pad $
-// Last edited on: $Date: 2012-08-17 12:54:10 $
+// Last edited on: $Date: 2012-10-19 15:52:30 $
 
 
 ////////////////////////
@@ -1702,11 +1702,12 @@
                   Background_model Text UNIQUE Float
                   Site_values      Text UNIQUE Float REPEAT
                   Threshold        Float
-                  Associated_feature ?Feature XREF Associated_with_Position_Matrix #Evidence
+                  Consensus	   Text	#Evidence
+		  Associated_feature ?Feature XREF Associated_with_Position_Matrix #Evidence
                   Sites_used UNIQUE Int
 		  Derived_from_matrix ?Position_Matrix                  
 		  Bound_by_gene_product ?Gene XREF Product_binds_matrix #Evidence
-		  Transcription_factor  UNIQUE ?Transcription_factor XREF Position_matrix #Evidence //gw3	  
+		  Transcription_factor  UNIQUE ?Transcription_factor XREF Position_matrix #Evidence //gw3
                   Remark ?Text  #Evidence
 
 ////////////////////////////////////////////////////////////////////////////////////////////
@@ -2565,6 +2566,7 @@
 /////////////////////////////////////////////////////////////////////
 
 ?Movie Description ?Text
+       Name UNIQUE Text
        Pick_me_to_call Text Text
        RNAi ?RNAi XREF Movie
        Variation ?Variation XREF Movie  //[2006-04-21 ar2] Carol
@@ -3016,6 +3018,7 @@
                  YH ?YH XREF Reference ?Text
                  Interaction ?Interaction XREF Paper
                  Mass_spec_experiment ?Mass_spec_experiment XREF Reference
+		 Molecule ?Molecule XREF Reference
 		 WBProcess ?WBProcess XREF Reference
 		 Picture ?Picture XREF Reference
        Curation_pipeline Phenotype2GO
@@ -3414,6 +3417,7 @@
 				    Rearrangement  ?Rearrangement  ?Phenotype  #Evidence  //KY [110602 pad]
 	   Interaction	?Interaction	XREF	Molecule_regulator
 	   Molecule_use  ?Text  #Evidence
+	   Reference ?Paper XREF Molecule
 	   Remark ?Text #Evidence
 
 
