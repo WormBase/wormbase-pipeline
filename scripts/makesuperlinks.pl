@@ -6,7 +6,7 @@
 # dl
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2012-10-22 10:43:14 $
+# Last updated on: $Date: 2012-10-22 12:25:45 $
  
 $!=1;
 use strict;
@@ -411,8 +411,17 @@ foreach $seq (keys %PseudoStart) {
 foreach $seq (keys %TransposonStart) {
     next if ($isGenomeSequence{$seq});
     
-    if ($seq =~ /(WBTransposon)\d+/) {
-	$parent = $1; 
+    my $tranobj = $camdb->fetch(Transposon => $seq);
+    my $parentseq = $tranobj->Corresponding_CDS;
+    if (! defined $parentseq) {
+      $parentseq = $tranobj->Old_name;
+      if (! defined $parentseq) {
+	$log->write_to("Can't get the parent clone via the corresponding_CDS or Old_name for Transposon $seq\n");
+	next;
+      }
+    }
+    if ($parentseq =~ /(\S+)\.\d+/) {
+      $parent = $1; 
     }
     else { 
 	$log->write_to("unexpected format of Transposon name $seq\n");
