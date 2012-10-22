@@ -6,7 +6,7 @@
 # dl
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2012-10-15 10:44:10 $
+# Last updated on: $Date: 2012-10-22 09:47:21 $
  
 $!=1;
 use strict;
@@ -24,7 +24,7 @@ use Ace ;
 ##############################
 
 my ($help, $debug, $test, $verbose, $store, $wormbase);
-my ($stlace, $camace);
+my ($stlace, $camace, $noremap);
  
 # Database name for databases other than ~wormpub/DATABASES/camace
 my $db;         
@@ -40,6 +40,7 @@ GetOptions ("help"       => \$help,
 	    "acefile=s"  => \$acefile,
 	    "stlace"    => \$stlace,  # set if we are dealing with stlace
 	    "camace"    => \$camace,  # the default
+	    "noremap"   => \$noremap, # don't attempt to remap the CDS, pseudogene, transposons etc. - (will have to do this elsewhere)
             );
 
 if ( $store ) {
@@ -175,76 +176,84 @@ while ($obj = $it->next) {
 
     }
 
-    foreach $a ($obj->at('SMap.S_child.CDS_child')) {
-      if (! defined $a) {
-	$log->write_to("superlink SMap.S_child.CDS_child not defined\n");
-	$error = 1;
+    if (!$noremap) {
+      foreach $a ($obj->at('SMap.S_child.CDS_child')) {
+	if (! defined $a) {
+	  $log->write_to("superlink SMap.S_child.CDS_child not defined\n");
+	  $error = 1;
+	}
+	($seq, $start, $end) = $a->row;
+	if (! defined $seq || ! defined $start || ! defined $end) {
+	  $log->write_to("SMap.S_child.CDS_child row not defined\n");
+	  $log->write_to("Sequence".$obj->name."has errors\n");
+	  if (defined$seq) {$log->write_to("This object is probably to blame $seq\n")}
+	  $error = 1;
+	}
+	$CDSSource{$seq}    = $obj;
+	$CDSStart{$seq}     = $start;
+	$CDSEnd{$seq}       = $end;
+	#	print "// push $seq to CDS hash\n";
+	
       }
-      ($seq, $start, $end) = $a->row;
-      if (! defined $seq || ! defined $start || ! defined $end) {
-	$log->write_to("SMap.S_child.CDS_child row not defined\n");
-	$log->write_to("Sequence".$obj->name."has errors\n");
-	if (defined$seq) {$log->write_to("This object is probably to blame $seq\n")}
-	$error = 1;
-      }
-      $CDSSource{$seq}    = $obj;
-      $CDSStart{$seq}     = $start;
-      $CDSEnd{$seq}       = $end;
-#	print "// push $seq to CDS hash\n";
-
     }
 
-    foreach $a ($obj->at('SMap.S_child.Pseudogene')) {
-      if (! defined $a) {
-	$log->write_to("superlink SMap.S_child.Pseudogene not defined\n");
-	$error = 1;
+    if (!$noremap) {
+      foreach $a ($obj->at('SMap.S_child.Pseudogene')) {
+	if (! defined $a) {
+	  $log->write_to("superlink SMap.S_child.Pseudogene not defined\n");
+	  $error = 1;
+	}
+	($seq, $start, $end) = $a->row;
+	if (! defined $seq || ! defined $start || ! defined $end) {
+	  $log->write_to("SMap.S_child.Pseudogene row not defined\n");
+	  $error = 1;
+	}
+	$PseudoSource{$seq}    = $obj;
+	$PseudoStart{$seq}     = $start;
+	$PseudoEnd{$seq}       = $end;
+	#	print "// push $seq to Pseudo hash\n";
+	
       }
-      ($seq, $start, $end) = $a->row;
-      if (! defined $seq || ! defined $start || ! defined $end) {
-	$log->write_to("SMap.S_child.Pseudogene row not defined\n");
-	$error = 1;
-      }
-      $PseudoSource{$seq}    = $obj;
-      $PseudoStart{$seq}     = $start;
-      $PseudoEnd{$seq}       = $end;
-#	print "// push $seq to Pseudo hash\n";
-
     }
 
-    foreach $a ($obj->at('SMap.S_child.Transcript')) {
-      if (! defined $a) {
-	$log->write_to("superlink SMap.S_child.Transcript not defined\n");
-	$error = 1;
+    if (!$noremap) {
+      foreach $a ($obj->at('SMap.S_child.Transcript')) {
+	if (! defined $a) {
+	  $log->write_to("superlink SMap.S_child.Transcript not defined\n");
+	  $error = 1;
+	}
+	($seq, $start, $end) = $a->row;
+	if (! defined $seq || ! defined $start || ! defined $end) {
+	  $log->write_to("SMap.S_child.Transcript row not defined\n");
+	  $error = 1;
+	}
+	$TranscriptSource{$seq}    = $obj;
+	$TranscriptStart{$seq}     = $start;
+	$TranscriptEnd{$seq}       = $end;
+	#	print "// push $seq to Transcript hash\n";
+	
       }
-      ($seq, $start, $end) = $a->row;
-      if (! defined $seq || ! defined $start || ! defined $end) {
-	$log->write_to("SMap.S_child.Transcript row not defined\n");
-	$error = 1;
-      }
-      $TranscriptSource{$seq}    = $obj;
-      $TranscriptStart{$seq}     = $start;
-      $TranscriptEnd{$seq}       = $end;
-#	print "// push $seq to Transcript hash\n";
-
     }
 
-    foreach $a ($obj->at('SMap.S_child.Transposon')) {
-      if (! defined $a) {
-	$log->write_to("superlink SMap.S_child.Transposon not defined\n");
-	$error = 1;
+    if (!$noremap) {
+      foreach $a ($obj->at('SMap.S_child.Transposon')) {
+	if (! defined $a) {
+	  $log->write_to("superlink SMap.S_child.Transposon not defined\n");
+	  $error = 1;
+	}
+	($seq, $start, $end) = $a->row;
+	if (! defined $seq || ! defined $start || ! defined $end) {
+	  $log->write_to("SMap.S_child.Transposon row not defined\n");
+	  $error = 1;
+	}
+	$TransposonSource{$seq}    = $obj;
+	$TransposonStart{$seq}     = $start;
+	$TransposonEnd{$seq}       = $end;
+	#	print "// push $seq to Transposon hash\n";
       }
-      ($seq, $start, $end) = $a->row;
-      if (! defined $seq || ! defined $start || ! defined $end) {
-	$log->write_to("SMap.S_child.Transposon row not defined\n");
-	$error = 1;
-      }
-      $TransposonSource{$seq}    = $obj;
-      $TransposonStart{$seq}     = $start;
-      $TransposonEnd{$seq}       = $end;
-#	print "// push $seq to Transposon hash\n";
     }
 
-}
+  }
 
 warn "Stored data to hash\n" if ($verbose);
 
@@ -305,6 +314,8 @@ foreach $seq (keys %isGenomeSequence) {
 ###########################################
 # Re-map subsequences back onto the new links 
 ###########################################
+
+if (!$noremap) {
 
 foreach $seq (keys %CDSStart) {
     next if ($isGenomeSequence{$seq});
@@ -480,6 +491,7 @@ foreach $seq (keys %TranscriptStart) {
     print ACE "Transcript $seq $start{$seq} $end{$seq}\n";
 }
 
+}
 
 
 ###########################################
