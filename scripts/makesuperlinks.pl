@@ -6,7 +6,7 @@
 # dl
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2012-10-22 09:47:21 $
+# Last updated on: $Date: 2012-10-22 10:43:14 $
  
 $!=1;
 use strict;
@@ -411,11 +411,11 @@ foreach $seq (keys %PseudoStart) {
 foreach $seq (keys %TransposonStart) {
     next if ($isGenomeSequence{$seq});
     
-    if ($seq =~ /(\S+)\.\d+/) {
+    if ($seq =~ /(WBTransposon)\d+/) {
 	$parent = $1; 
     }
     else { 
-	$log->write_to("no dot in subsequence name $seq\n");
+	$log->write_to("unexpected format of Transposon name $seq\n");
 	$error = 1;
 	next; 
     }
