@@ -7,7 +7,7 @@
 # Usage : autoace_builder.pl [-options]
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2012-07-17 20:40:36 $
+# Last edited on: $Date: 2012-10-23 09:17:27 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -295,7 +295,7 @@ sub map_features_to_genome {
   if (not $assembly_mapper->remap_test and -e $pcr_mappings) {
     # genome has not changed. Load the current mappings, and supplement with new data
     $wormbase->load_to_database( $wormbase->autoace, $pcr_mappings, "PCR_product_MISC_DYN", $log );
-    $wormbase->run_script( 'PCR_product2Genome.pl', $log );
+    $wormbase->run_script( 'PCR_product2Genome.pl -onlyunmapped', $log );
   } else {
     # genome has changed. Need to remap everything
     unlink $pcr_mappings if -e $pcr_mappings;
@@ -311,7 +311,7 @@ sub map_features_to_genome {
   if (not $assembly_mapper->remap_test and -e $rnai_mappings) {
     # genome has not changed. Load the current mappings, and supplement with new data
     $wormbase->load_to_database( $wormbase->autoace, $rnai_mappings, "RNAi_MISC_DYN", $log );
-    $wormbase->run_script( 'RNAi2Genome.pl', $log );
+    $wormbase->run_script( 'RNAi2Genome.pl -onlyunmapped', $log );
   } else {
     # genome has changed. Need to remap everything
     unlink $rnai_mappings if -e $rnai_mappings;
