@@ -5,8 +5,8 @@
 # A PERL wrapper to automate the process of building the FTP sites 
 # builds wormbase & wormpep FTP sites
 # 
-# Last updated by: $Author: klh $
-# Last updated on: $Date: 2012-07-27 08:22:22 $
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2012-10-23 10:50:45 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -1059,34 +1059,36 @@ EOF
 ################################################################################
 
 sub make_geneID_list {
+  # For each 'live' Gene object, extract 'CGC_name' and 'Sequence_name' fields (if present)
 
   my $runtime = $wormbase->runtime;
   $log->write_to("$runtime: making Gene ID list\n");
-  # For each 'live' Gene object, extract 'CGC_name' and 'Sequence_name' fields (if present)
+ 
+  my %accessors = ($wormbase->species_accessors);
+  foreach my $wb (values %accessors) {
+    next if exists $skip_species{$wb->species};
+    next if @only_species and not exists $only_species{$wb->species};
 
-  my $gspecies = $wormbase->full_name('-g_species' => 1);
-  my $annotation_dir = "$targetdir/species/$gspecies/annotation";
-  my $ace_dir = $wormbase->autoace;
+    my $gspecies = $wb->full_name('-g_species' => 1);
 
-  my $tace    = $wormbase->tace;
-  my $command = "Table-maker -p $ace_dir/wquery/gene2cgc_name_and_sequence_name.def\nquit\n";
-  my $dir     = "$ace_dir";
-  my $out     = "$annotation_dir/$gspecies.$WS_name.geneIDs.txt";
-  mkpath("$annotation_dir",1,0775);
+    my $annotation_dir = "$targetdir/species/$gspecies/annotation";
+    my $ace_dir = $wormbase->autoace;
 
-  open (OUT, ">$out") || croak "Couldn't open $out\n";
-  open (TACE, "echo '$command' | $tace $dir | ") or $log->write_to("cant access $dir\n");  
-  while (<TACE>){
-      if (m/^\"/){
-	  s/\"//g;
-	  tr/\t/,/;
-	  print OUT "$_";
-      }
-  }
-  close(TACE);
-  close(OUT);
+    my $dir     = "$ace_dir";
+    my $out     = "$annotation_dir/$gspecies.$WS_name.geneIDs.txt";
 
-  $wormbase->run_command("gzip -9 -f $out", $log);
+    mkpath("$annotation_dir",1,0775);
+    open GENEID,">$out" ||die($!);
+
+    my $db = Ace->connect(-path => "$ace_dir/") || die (Ace->error);
+    my $gene_it = $db->fetch_many(-query => "Find Gene; Species=\"${$wb->full_name}\"");
+    while(my $gene=$gene_it->next){
+      print GENEID "$gene,${\$gene->CGC_name},${\$gene->Sequence_name}\n";
+    }
+
+    close GENEID;
+    $wormbase->run_command("gzip -9 -f $out", $log);
+  } 
 
   $runtime = $wormbase->runtime;
   $log->write_to("$runtime: Finished making gene_id list\n\n");
@@ -1447,6 +1449,9 @@ GSPECIES.WSREL.wormpep_package.tar.gz
 GSPECIES.WSREL.xrefs.txt.gz
 
 # tierII specific stuff
+[TIER2]species/GSPECIES/annotation
+GSPECIES.WSREL.geneIDs.txt.gz
+
 [TIER2]species/GSPECIES
 
 GSPECIES.WSREL.best_blastp_hits.txt.gz
