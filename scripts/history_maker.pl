@@ -16,7 +16,8 @@ use Wormbase;
 ######################################
  
 my ($help, $debug, $test, $verbose, $store, $wormbase);
-my $source;
+my $reference;
+my $cdatabase;
 my $design;
 my $chromosome;
 my $blast;
@@ -34,27 +35,28 @@ my $cleangene;
 my $clone;
 
 GetOptions (
-	    "addevidence"  => \$addevidence,
-	    "anomaly"      => \$anomaly,
-	    "blast=s"      => \$blast,
-	    "blesser"      => \$blesser,
-            "brugia:s"     => \$brugia, # stores the version number of the brugia beta database and also hard defines useful options for brugia.
-	    "chromosome:s" => \$chromosome,
-            "cleangene"    => \$cleangene,
-	    "clone"        => \$clone,
-            "debug=s"      => \$debug,
-	    "design"       => \$design,
-	    "display_by_clones"       => \$display_by_clones,
-	    "intron"       => \$intron,
-	    "lab=s"        => \$lab, # RW or HX
-	    "mail"         => \$mail,
-	    "source:s"     => \$source,
-	    "species:s"    => \$species,
-            "store:s"      => \$store,
-            "test"         => \$test,
-	    "user:s"       => \$user,
-            "verbose"      => \$verbose,
-	    "help|h"       => sub { system("perldoc $0"); exit(0);}
+	    "addevidence"       => \$addevidence,
+	    "anomaly"           => \$anomaly,
+	    "blast=s"           => \$blast,
+	    "blesser"           => \$blesser,
+            "brugia:s"          => \$brugia, # stores version number of brugia beta database - hard defines useful options.
+	    "chromosome:s"      => \$chromosome,
+            "cleangene"         => \$cleangene,
+	    "clone"             => \$clone,
+            "debug=s"           => \$debug,
+	    "design"            => \$design,
+	    "display_by_clones" => \$display_by_clones,
+	    "intron"            => \$intron,
+	    "lab=s"             => \$lab, # RW or HX
+	    "mail"              => \$mail,
+	    "source:s"          => \$reference,
+	    "curationdb:s"      => \$cdatabase,
+	    "species:s"         => \$species,
+            "store:s"           => \$store,
+            "test"              => \$test,
+	    "user:s"            => \$user,
+            "verbose"           => \$verbose,
+	    "help|h"            => sub { system("perldoc $0"); exit(0);}
 	   );
 
  
@@ -73,11 +75,14 @@ $debug = $user if (! defined $debug);
 #################################
 
 
+# If using option -cleangene you need to specify a curationdb
+die "You need to specify a curation database with the -curationdb option\n" if ($cleangene and !(defined $cdatabase));
 
+# If using blast option you need the blast file to exist
 die "$blast doesnt exist !\n" if ($blast and !(-e $blast));
 
 # This is the database used a reference for generating histories NOT the one that will be changed
-my $database = $source ? $source : glob("/.automount/evs-users2/root/wormpub/camace_orig");
+my $rdatabase = $reference ? $reference : glob("/.automount/evs-users2/root/wormpub/camace_orig");
 
 # assume the lab is HX if not specified
 if (! defined $lab || $lab eq "") {
@@ -90,6 +95,8 @@ if (defined $brugia) {
   $version = $brugia;
   $blesser = "1";
   $addevidence = "1";
+  $clone = "1";
+  $cleangene = "1";
 }
 else {
   $version = &get_history_version($wormbase->database('current'));
@@ -159,14 +166,14 @@ $main_gui->configure(-title => "Curation Tool for ${version}",
 		    );
 
 my $gui_width = 500;
-$gui_width += 300 if ($anomaly or $blesser);
+$gui_width += 300 if ($anomaly or $blesser or $clone);
 my $gui_height = 50; #modified 200
 $gui_height += 200 if $chromosome;
 $gui_height += 200 if $blast;
-$gui_height += 100 if $blesser;
-$gui_height += 100 if $cleangene;
-$gui_height += 100 if $clone;
-$gui_height += 100 if $addevidence;
+$gui_height += 110 if $blesser;
+$gui_height += 110 if $cleangene;
+$gui_height += 110 if $clone;
+$gui_height += 110 if $addevidence;
 $gui_height += 300 if $anomaly;
 $main_gui->geometry("${gui_width}x$gui_height");
 
@@ -202,13 +209,13 @@ my $his_maker = $main_gui->Frame( -background => "black", # was lightcyan
 				       );
 
 # Reference database label
-my $db_lbl = $his_maker->Label( -text => "Data Source: $database",
+my $db_lbl = $his_maker->Label( -text => "Source: $rdatabase",
 				-background => 'black', # was lightcyan
-				-foreground => 'whitesmoke' # was black
+				-foreground => 'lightgrey' # was black
 			      )->pack( -pady => '3'
 				     );
 # CDS entry widgets
-my $cds_lbl = $his_maker->Label( -text => ' CDS ID',
+my $cds_lbl = $his_maker->Label( -text => ' CDS  ID',
 				 -background => 'black',	# was lightcyan
 				 -foreground => 'whitesmoke'	# was black
 			       )->pack(-pady => '6',
@@ -254,6 +261,7 @@ my $make = $his_maker->Button( -text => "Make History",
 my $gene_val;
 my $proposed_name;
 if ($blesser) {
+
   my $gene_blesser = $main_gui->Frame( -background => "LightSteelBlue2", # was PaleTurquoise green
 				       -height     => "400",
 				       -label      => "Prediction blesser",
@@ -262,6 +270,14 @@ if ($blesser) {
 				       )->pack( -pady => "5", #modified
 						-fill => "x"
 						);
+
+  # Reference database label
+  my $db_lbl = $gene_blesser->Label( -text => "Source: $rdatabase",
+				     -background => 'LightSteelBlue2',
+				     -foreground => 'black' # was black
+				   )->pack( -pady => '3'
+					  );
+
   # CDS entry widgets
   my $gene_lbl = $gene_blesser->Label( -text => 'PRED ID',
 				       -background => 'LightSteelBlue2', # was PaleTurquoise green
@@ -285,7 +301,7 @@ if ($blesser) {
   
 
   # Bless button
-  my $bless = $gene_blesser->Button( -text => "Bless This gene",
+  my $bless = $gene_blesser->Button( -text => "Bless This CDS",
 				     -command => [\&bless_prediction]
 				     )->pack(-side => 'left',
 					     -pady => '2',
@@ -350,6 +366,12 @@ if ( $blast ) {
 				   )->pack( -pady => "5",
 					    -fill => "x"
 					  );
+  # Reference database label
+  my $db_lbl = $blast_find->Label( -text => "Source: $blast",
+				     -background => 'whitesmoke',
+				     -foreground => 'black'
+				   )->pack( -pady => '3'
+					  );
 
   my $blast_list = $blast_find->Scrolled("Listbox", -scrollbars => "osoe",
 					 -selectmode => "single",
@@ -397,8 +419,15 @@ if ($addevidence) {
 				       )->pack( -pady => "5", #modified
 						-fill => "x"
 						);
+  # Reference database label
+  my $db_lbl = $gene_evidence->Label( -text => "Source: $rdatabase",
+				      -background => 'IndianRed4',
+				      -foreground => 'black'
+				    )->pack( -pady => '3'
+					   );
+
   # CDS entry widgets
-  my $CDS_lbl = $gene_evidence->Label( -text => ' CDS ID',
+  my $CDS_lbl = $gene_evidence->Label( -text => ' CDS  ID',
 				       -background => 'IndianRed4', #was LightGreen
 				       -foreground => 'black'
 				       )->pack(-pady => '6',
@@ -454,8 +483,16 @@ if ($cleangene) {
 				       )->pack( -pady => "5", #modified
 						-fill => "x"
 						);
+
+  # Reference database label
+  my $db_lbl = $gene_clean->Label( -text => "Source: $cdatabase",
+				      -background => 'LightGreen',
+				      -foreground => 'black'
+				    )->pack( -pady => '3'
+					   );
+
   # CDS entry widgets
-  my $TAG_lbl = $gene_clean->Label( -text => 'Gene ID',
+  my $TAG_lbl = $gene_clean->Label( -text => 'GENE ID',
 				       -background => 'LightGreen',
 				       -foreground => 'black'
 				       )->pack(-pady => '6',
@@ -506,14 +543,14 @@ if ($clone) {
   my $gene_clone = $main_gui->Frame( -background => "grey89",
 				     -height     => "400",
 				     -width      => "600",
-				     -label      => "Clone a CDS from the curation database",
+				     -label      => "Clone a CDS from the curation database\nSource - $rdatabase",
 				     -relief     => "raised",
 				     -borderwidth => 5,
 				   )->pack( -pady => "5", #modified
 					    -fill => "x"
 					  );
   # CDS entry widgets
-  my $TAG_lbl = $gene_clone->Label( -text => ' CDS ID',
+  my $TAG_lbl = $gene_clone->Label( -text => ' CDS  ID',
 				    -background => 'grey89',
 				    -foreground => 'black'
 				  )->pack(-pady => '6',
@@ -760,13 +797,16 @@ if ( $anomaly ) {
 
 $user = &check_user unless $user;
 
-# aceperl connection to reference database
-my $db = Ace->connect(-path => $database) unless $design;
+# initial aceperl connection to databases
+my $db = Ace->connect(-path => $rdatabase) unless $design;
+my $cdb;
+if ($cleangene){$cdb = Ace->connect(-path => $cdatabase) unless $design;}
 
 # create GUI
 MainLoop();
 
 $db->close unless $design;
+$cdb->close unless $design;
 
 if ($anomaly) {
   $mysql->disconnect || die "error disconnecting from database", $DBI::errstr;
@@ -822,10 +862,10 @@ sub add_evidence
       my $refgene=$form_gene4;
       return unless $refgene;
       &generate_message("CHECK", "Have you saved your database??\n !!Failure will result in all CDS loss!!");
-      $db->close();
-      $db = Ace->connect(-path => $database);
+      $cdb->close();
+      $cdb = Ace->connect(-path => $cdatabase);
 
-      my @cdses = $db->fetch(-query=>"find gene $refgene ; follow Corresponding_CDS ; ! Evidence");
+      my @cdses = $cdb->fetch(-query=>"find gene $refgene ; follow Corresponding_CDS ; ! Evidence");
       return &error_warning("Invalid Gene","$refgene is not a valid Gene name") unless @cdses;
       
       # ace output for loading
@@ -1026,8 +1066,14 @@ sub clone_gene {
     print CLO "Isoform Curator_confirmed $person\n" if $person;
     print CLO "Gene $gene\n" if $gene;
     print CLO "Species \"$species\"\n" if $species;
-    print CLO "Evidence Curator_confirmed $person\n" if $person;
-    print CLO "Evidence" if (!defined $person);
+    if (defined $person){ 
+      print CLO "Evidence Curator_confirmed $person\n" if $person;
+      print CLO "Remark \"[Cloned from the template CDS $clone_form]\"Curator_confirmed $person\n";
+    }
+    else {
+      print CLO "Evidence";
+      print CLO "Remark \"[Cloned from the template CDS $clone_form]\"\n";
+    }
     print CLO "Method curated\n";
     close CLO;
 
@@ -1086,7 +1132,7 @@ sub suggest_name
   {
     my $stem = shift;
     my $query = "find worm_genes $stem.*";
-    my @genes = $db->fetch( -query => "$query");
+    my @genes = $cdb->fetch( -query => "$query");
     my @names = map($_->name,@genes);
     my @numbers;
     foreach (@names) {
@@ -2175,8 +2221,8 @@ sub error_warning
 # gets the version of the currentDB database
 sub get_history_version
   {
-    my $database = shift;
-    my $WS_version = `grep "NAME WS" $database/wspec/database.wrm`;
+    my $rdatabase = shift;
+    my $WS_version = `grep "NAME WS" $rdatabase/wspec/database.wrm`;
     chomp($WS_version);
     $WS_version =~ s/.*WS//;
     die "no version\n" unless $WS_version =~ /\d+/;
@@ -2243,6 +2289,8 @@ A perl Tk interface to aid manual gene curation.
 
 -source      : The database to use as source for history and ab initio predictions
 
+-curationdb  : The active curation database that the curator will be adding Evidence to (cleangene option only at present).
+
 -user        : If you are not yourself enter your user to use in autgenerated comments (when blessing genefinder etc)
 
 -design      : Does not make Aceperl connection - dev tool for quicker startup
@@ -2251,11 +2299,11 @@ A perl Tk interface to aid manual gene curation.
 
 -addevidence : This option allows the curator to automatically add the top level evidence to a CDS object
 
--cleangene   : This option removes all unwanted Isoforms from a given loci. Isoforms are preserved by the presence of the Evidence tag.
+-cleangene   : This option removes all unwanted Isoforms from a given loci. Isoforms are preserved by the presence of the top level Evidence tag.
 
--brugi       : this automatically selects a few of the options that are useful for brugia curation.
+-brugi       : This automatically selects options that are useful for brugia curation and stores a version number. Version number hard sets the CDS history prefix to be :bm<var>.
 
-
+-clone       : This option loads a new widget that allows a CDS model to be cloned back into the current FMAP from the reference database.
 
 =item Intron finder
 
@@ -2272,6 +2320,10 @@ This option will populate the top evidence hash with the Curator_confirmed Evide
 =item Clean Gene
 
 This option requires that the -database is the curation database that the user is working on. It takes a Gene ID and finds any CDS_child that does not have a top level Ecvidence hash populated. These are then auto converted to history objects. A popup window exists that reminds you to save your database so that not all Isoforms are lost from a loci.
+
+=item Clone CDS
+
+This option/widget takes a CDS name as well as an optional target name. The function is to clone the reference state of the CDS and embed it alongside the current version. Useful if creating a new Isoform at a locus or attempting to roll back an annotation.
 
 =item Prediction Blesser
 
