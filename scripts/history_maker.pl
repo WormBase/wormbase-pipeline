@@ -2283,13 +2283,17 @@ __END__
 
 A perl Tk interface to aid manual gene curation.
 
-=item options
+=over 1
 
--chromosome  : The chromosome to show "confirmed introns" for
+=back
 
--source      : The database to use as source for history and ab initio predictions
+=head2 Options
 
--curationdb  : The active curation database that the curator will be adding Evidence to (cleangene option only at present).
+-chromosome  : The chromosome that the curator wants to work on in the anomalies database.
+
+-source      : The static database connection to use as source for history and ab initio predictions, clone widget etc.
+
+-curationdb  : The active curation database that the curator is working on (cleangene option only at present).
 
 -user        : If you are not yourself enter your user to use in autgenerated comments (when blessing genefinder etc)
 
@@ -2301,9 +2305,41 @@ A perl Tk interface to aid manual gene curation.
 
 -cleangene   : This option removes all unwanted Isoforms from a given loci. Isoforms are preserved by the presence of the top level Evidence tag.
 
--brugi       : This automatically selects options that are useful for brugia curation and stores a version number. Version number hard sets the CDS history prefix to be :bm<var>.
+-brugia       : This automatically selects options that are useful for brugia curation and stores a version number. Version number hard sets the CDS history prefix to be :bm<var>.
 
 -clone       : This option loads a new widget that allows a CDS model to be cloned back into the current FMAP from the reference database.
+
+-anomaly     : This option loads a widget that pulls anomalies from the mysql anomaly database for a given -chromosome(s)
+
+-blast       : This option takes a file of blast alignment data and allows the curator to navigate through the list easily.
+
+-blesser     : This option loads the blesser widget that allows a curator to convert a gene model into a curated gene structure with an optional name.
+
+-lab         : This option is used for correctly assigning the lab in C. elegans curation.
+
+=over 1
+
+
+=back
+
+=head2 Usage Examples
+
+  C. elegans curation
+
+      history_maker.pl -user pad -source /nfs/wormpub/camace_orig -curationdb /nfs/wormpub/camace_pad -blesser -clone -addevidence -anomaly -clean -chromosome I,II,III,X
+
+
+  Brugia curation
+
+      history_maker.pl -user pad -lab HX -curationdb brugia_curation_v9 -source brugia_refv9 -brugia 9 -cleangene -clone
+
+=over 1
+
+=back
+
+=head2 Widget Descriptions
+
+=over 1
 
 =item Intron finder
 
@@ -2342,7 +2378,7 @@ A reference database is used to extract the relevant info needed to make a histo
 
 Some error checking is done so that;
 
-=over4
+=over 4
   history objects cant be created for non-existant CDSs.
   history objects with the same name as existing histories will not be made.
   input case is irrelevant - all histories will be converted to uppercase clone names.
