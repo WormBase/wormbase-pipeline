@@ -1,7 +1,7 @@
 #!/usr/local/ensembl/bin/perl -w
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2012-09-06 10:22:40 $
+# Last edited on: $Date: 2012-11-05 17:15:21 $
 
 use lib $ENV{'CVS_DIR'};
 
@@ -50,8 +50,11 @@ else {
 
 $species = $wormbase->species;   #for load
 my $log = Log_files->make_build_log($wormbase);
-my $blastdir    = '/lustre/scratch101/ensembl/wormpipe/BlastDB';
-my $acedir      = '/lustre/scratch101/ensembl/wormpipe/ace_files';
+
+my $farm_loc = '/lustre/scratch109/ensembl/wormpipe';
+my $blastdir    = "$farm_loc/BlastDB";
+my $acedir      = "$farm_loc/ace_files";
+my $swalldir    = "$farm_loc/swall_data";
 
 $human=$fly=$yeast=$uniprot=$interpro=$cleanup=1 if $all;
 
@@ -252,8 +255,6 @@ if ($cleanup) {
 
   $log->write_to("  Removing old blast databases . . .\n");
   
-  my $blast_dir = "/lustre/scratch101/ensembl/wormpipe/BlastDB/";
-
   # root name regular expressions of the databases to check
   my @roots = (
 	       'brepep\d+.pep',
@@ -271,7 +272,7 @@ if ($cleanup) {
 	      );
 
   # get the list of files in the BLAST directory
-  opendir FH, $blast_dir;
+  opendir FH, $blastdir;
   my @list = readdir(FH);
   closedir FH;
 
@@ -279,7 +280,7 @@ if ($cleanup) {
     my @files = grep /$regex/, @list;
     if (scalar @files > 1) {
       # sort by creation time
-      my @sort = sort {-M "$blast_dir/$a" <=> -M "$blast_dir/$b"} @files;
+      my @sort = sort {-M "$blastdir/$a" <=> -M "$blastdir/$b"} @files;
       my $youngest = shift @sort; # get the youngest file's release number
       my ($youngest_release) = ($youngest =~ /^[a-zA-Z_]+(\d+)/);
       #print "DONT DELETE release $youngest_release\n";
@@ -290,8 +291,8 @@ if ($cleanup) {
 	  next;
 	}
 	$log->write_to("    Deleting $file*\n");
-	$wormbase->run_command("rm -f $blast_dir/${file}*", $log);
-	#print "rm -f $blast_dir/${file}*\n";
+	$wormbase->run_command("rm -f $blastdir/${file}*", $log);
+	#print "rm -f $blastdir/${file}*\n";
       }
     }
   }
@@ -350,7 +351,6 @@ sub process_swissprot {
 
   #swissprot
   my $ver = shift;
-  my $swalldir = '/lustre/scratch101/ensembl/wormpipe/swall_data';
   
   my $login = "anonymous";
   my $passw = 'wormbase@sanger.ac.uk';
@@ -374,7 +374,7 @@ sub process_swissprot {
 sub process_trembl {
 
   my $ver = shift;
-  my $swalldir = '/lustre/scratch101/ensembl/wormpipe/swall_data';
+
   my $tfile = 'uniprot_trembl.dat.gz';
 
   my $final_target = "$swalldir/$tfile";
