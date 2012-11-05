@@ -2,7 +2,7 @@
 #
 # EMBLdump.pl :  makes modified EMBL dumps from camace.
 # 
-#  Last updated on: $Date: 2012-05-18 12:32:05 $
+#  Last updated on: $Date: 2012-11-05 11:25:18 $
 #  Last updated by: $Author: klh $
 
 use strict;
@@ -346,10 +346,10 @@ if ($dump_modified) {
         last if /^XX/;
         
         if ($species eq 'elegans') {
-          print $out_fh "CC   For a graphical representation of this sequence and its analysis\n";
-          print $out_fh "CC   see:- http://www.wormbase.org/perl/ace/elegans/seq/sequence?\n";
-          print $out_fh "CC   name=$clone;class=Sequence\n";
-          print $out_fh "XX\n";
+          printf $out_fh "CC   Annotated features correspond to WormBase release %s\n", $wormbase->get_wormbase_version_name;
+          print $out_fh  "CC   For a graphical representation of this sequence and its analysis\n";
+          print $out_fh  "CC   see:- http://www.wormbase.org/species/c_elegans/clone/$clone\n";
+          print $out_fh  "XX\n";
         }
       }
       next;
