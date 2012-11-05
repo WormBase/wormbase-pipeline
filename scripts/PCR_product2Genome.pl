@@ -2,7 +2,7 @@
 
 # Version: $Version: $
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2012-10-11 15:36:54 $
+# Last updated on: $Date: 2012-11-05 13:32:46 $
 
 use strict;
 use warnings;
@@ -35,6 +35,8 @@ my ($debug,
     $MAX_PROD_SIZE,
     $MIN_PROD_SIZE,
     $only_unmapped,
+    @prod_test,
+    %prod_test,
     );
 
 GetOptions(
@@ -51,6 +53,7 @@ GetOptions(
   "minsize=s"       => \$MIN_PROD_SIZE,
   "maxsize=s"       => \$MAX_PROD_SIZE,
   "onlyunmapped"    => \$only_unmapped,
+  "prodtest=s@"     => \@prod_test,
     );
 
 
@@ -105,13 +108,17 @@ foreach my $id (keys %$prods_to_map) {
 #
 # e-PCR
 #
-$log->write_to(sprintf("%d products were missed by ipcress round 1. Trying e-PCR\n", scalar(keys %$prods_to_map)));
+my $missed = scalar(keys %$prods_to_map);
+$log->write_to("$missed products were missed by ipcress round 1.\n");
+if ($missed) {
+  $log->write_to("Trying e-PCR\n");
 
-&map_with_epcr($prods_to_map, \%mapped);
+  &map_with_epcr($prods_to_map, \%mapped);
 
-foreach my $id (keys %$prods_to_map) {
-  if (exists $mapped{$id}) {
-    delete $prods_to_map->{$id};
+  foreach my $id (keys %$prods_to_map) {
+    if (exists $mapped{$id}) {
+      delete $prods_to_map->{$id};
+    }
   }
 }
 
@@ -120,13 +127,17 @@ foreach my $id (keys %$prods_to_map) {
 # icress round 2 and 3
 #
 foreach my $mm (2, 3) {
-  $log->write_to(sprintf("%d products remain missed. Trying ipcress with %d mismatches\n", scalar(keys %$prods_to_map), $mm)); 
+  $missed =  scalar(keys %$prods_to_map);
+  $log->write_to("$missed  products remain missed.\n");
+  if ($missed) {
+    $log->write_to(sprintf("Trying ipcress with %d mismatches\n", $missed, $mm)); 
 
- &map_with_ipcress($prods_to_map, \%mapped, $mm);
+    &map_with_ipcress($prods_to_map, \%mapped, $mm);
 
-  foreach my $id (keys %$prods_to_map) {
-    if (exists $mapped{$id}) {
-      delete $prods_to_map->{$id};
+    foreach my $id (keys %$prods_to_map) {
+      if (exists $mapped{$id}) {
+        delete $prods_to_map->{$id};
+      }
     }
   }
 }
@@ -148,6 +159,9 @@ my %prods_by_loc;
 
 foreach my $mp (sort keys %mapped) {
 
+  # can only store a single location for each product, so need to 
+  # choose the "best"
+
   my (@best, @best2);
   foreach my $hit (sort { $a->{edits} <=> $b->{edits} } @{$mapped{$mp}}) {
     if (not @best or ($best[-1]->{edits} == $hit->{edits})) {
@@ -157,30 +171,35 @@ foreach my $mp (sort keys %mapped) {
     }
   }
 
-  foreach my $hit (sort { $a->{len} <=> $b->{len} } @best) {
-    my $overlap = 0;
-    foreach my $ohit (@best2) {
-      if ($ohit->{chr} eq $hit->{chr} and 
-          $hit->{start} <= $ohit->{end} and 
-          $hit->{end} >= $ohit->{start}) {
-        $overlap = 1;
-        last;
-      } 
+  # all @best now have same number of total mismatches. If one of the hits can 
+  # is on the "right" clone (as determined by the clone name being part of the
+  # product name), choose it; otherwise, choose the one with the shortest implied
+  # product length
+
+  if (scalar(@best) > 1) {
+    my @good_looking_seq;
+    foreach my $hit (@best) {
+      my ($seq, $st, $en) = $coords->LocateSpan($hit->{chr}, $hit->{start}, $hit->{end});
+
+      if ($mp =~ /$seq/) {
+        push @good_looking_seq, $hit;
+      }
     }
-    if (not $overlap) {
-      push @best2, $hit;
+    if (scalar(@good_looking_seq) == 1) {
+      @best = @good_looking_seq;
+    } else {
+      @best = sort { $a->{len} <=> $b->{len} } @best;    
     }
   }
+  
+  my $hit = $best[0];
+  my ($seq, $st, $en) = $coords->LocateSpan($hit->{chr}, $hit->{start}, $hit->{end});
 
-  foreach my $hit (@best2) {
-    my ($seq, $st, $en) = $coords->LocateSpan($hit->{chr}, $hit->{start}, $hit->{end});
-
-    $hit->{chr} = $seq;
-    $hit->{start} = $st;
-    $hit->{end} = $en;
-
-    push @{$prods_by_loc{$seq}}, $hit;
-  }
+  $hit->{chr} = $seq;
+  $hit->{start} = $st;
+  $hit->{end} = $en;
+  
+  push @{$prods_by_loc{$seq}}, $hit;
 }
 
 
@@ -220,6 +239,7 @@ sub map_with_ipcress {
   open(my $iprunfh, "$IPCRESS --memory 512 --mismatch $mismatches --pretty FALSE $ipfile $target |") 
       or $log->log_and_die("Could not open ipcress command\n");
   while(<$iprunfh>) {
+    print;
     /ipcress:\s+(\S+)\s+(\S+)\s+(\d+)\s+\S\s+(\d+)\s+(\d+)\s+\S\s+(\d+)\s+(\d+)\s+(\S+)/ and do {
       my ($tseq, $prod_id, $prod_len, $start, $mm1, $start2, $mm2, $ori) = ($1, $2, $3, $4, $5, $6, $7, $8);
 
@@ -235,14 +255,13 @@ sub map_with_ipcress {
       $tseq =~ s/:filter\S+//; 
       my $mm = $mm1 + $mm2;
 
-
       my $obj = {
         product => $prod_id,
         chr => $tseq,
         start => $start,
         end => $end, 
         len => $prod_len,
-        edits => $mm2,
+        edits => $mm,
       };
 
       push @{$mapped->{$prod_id}}, $obj;
@@ -298,6 +317,10 @@ sub get_pcr_products {
   #    (these are cases where we have added our own primer sequences to the object)
   # 2. Fetch the rest
 
+  if (@prod_test) {
+    map { $prod_test{$_} = 1 } @prod_test;
+  }
+
   my (%prods, %good_prods);
   my $tace = $wormbase->tace;
 
@@ -309,6 +332,8 @@ sub get_pcr_products {
       s/\"//g;
 
       my @l = split;
+
+      next if @prod_test and not exists $prod_test{$l[0]};
 
       $good_prods{$l[0]} = [uc($l[1]), uc($l[2])];
     }
@@ -324,6 +349,8 @@ sub get_pcr_products {
       s/\"//g;
 
       my @l = split;
+
+      next if @prod_test and not exists $prod_test{$l[0]};
 
       if ($l[1] and $l[2]) {
         push @{$prods{$l[0]}}, [$l[1], $l[2]];
