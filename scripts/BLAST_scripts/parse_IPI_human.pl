@@ -1,7 +1,7 @@
 #!/usr/local/ensembl/bin/perl -w                  
 #
 # Last updated by: $Author: klh $     
-# Last updated on: $Date: 2010-11-01 14:54:30 $      
+# Last updated on: $Date: 2012-11-05 17:20:20 $      
 
 use lib $ENV{'CVS_DIR'};
 use strict;
@@ -48,8 +48,11 @@ unless ( $host =~ /^farm2/ or $host =~ /^bc/ ) {
 $file =~ /ipi_human(_\d+_\d+)/;
 
 my $datestamp = $1;
-my $output_dir = "/lustre/scratch101/ensembl/wormpipe/dumps/";
-my $fasta = "/lustre/scratch101/ensembl/wormpipe/BlastDB/ipi_human$datestamp.pep";
+
+my $farm_loc = "/lustre/scratch109/ensembl/wormpipe";
+
+my $output_dir = "$farm_loc/dumps";
+my $fasta = "$farm_loc/BlastDB/ipi_human$datestamp.pep";
 
 $output_dir .= "_test" if( $debug );
 
@@ -189,11 +192,11 @@ $log->mail;
 exit(0);
 
 sub check {
-    tie my %DATA, 'GDBM_File',"/lustre/scratch101/ensembl/wormpipe/dumps/acc2db.dbm",&GDBM_WRCREAT,0777 or die "fail";
-    foreach (keys %DATA){
-	print "$_ $DATA{$_}\n";
-	}
-    untie %DATA;
+  tie my %DATA, 'GDBM_File',"$farm_loc/dumps/acc2db.dbm",&GDBM_WRCREAT,0777 or die "fail";
+  foreach (keys %DATA){
+    print "$_ $DATA{$_}\n";
+  }
+  untie %DATA;
 }
 
 

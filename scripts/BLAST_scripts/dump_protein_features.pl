@@ -7,7 +7,7 @@
 # Calls on a number of other scripts
 #
 # Last updated by: $Author: klh $     
-# Last updated on: $Date: 2012-01-16 17:23:09 $      
+# Last updated on: $Date: 2012-11-05 17:24:12 $      
 
 use strict;                                      
 
@@ -34,7 +34,7 @@ $ENV{SORT_OPTS} = "-k2,2 -k8,8n -k10,10nr";
 
 
 my $Blast_scripts = "BLAST_scripts";
-my $WORMPIPE_DIR = "/lustre/scratch101/ensembl/wormpipe";
+my $WORMPIPE_DIR = "/lustre/scratch109/ensembl/wormpipe";
 my $SORT_DUMP_DIR = "$WORMPIPE_DIR/sort_dump";
 
 croak("The target directory $WORMPIPE_DIR must exist") if not -d $WORMPIPE_DIR;

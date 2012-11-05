@@ -127,7 +127,7 @@ my $QUERY_SPECIES = $wormbase->full_name;
  
 #connect to GDBM_File databases for species determination and establish hashes
 
-my $wormpipe_dir  = "/lustre/scratch101/ensembl/wormpipe";
+my $wormpipe_dir  = "/lustre/scratch109/ensembl/wormpipe";
 my $db_files_dir  = "$wormpipe_dir/swall_data";
 my $dbm_files_dir = "$wormpipe_dir/dumps";
 
