@@ -5,7 +5,7 @@
 # written by Anthony Rogers
 #
 # Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2012-07-20 10:19:38 $
+# Last edited on: $Date: 2012-11-05 15:29:05 $
 #
 # it depends on:
 #    wormpep + history
@@ -59,7 +59,7 @@ GetOptions(
   )
   || die('cant parse the command line parameter');
 
-my $wormpipe_dir = '/lustre/scratch101/ensembl/wormpipe';
+my $wormpipe_dir = '/lustre/scratch109/ensembl/wormpipe';
 my $scripts_dir  = $ENV{'CVS_DIR'};
 
 # defaults
@@ -190,7 +190,7 @@ if ($cleanup && !$test) {
     $log->write_to("clearing up files generated in this build\n");
 
     # files to move to ~wormpub/last-build/
-    #   /lustre/scratch101/ensembl/wormpipe/dumps/
+    #   /lustre/scratch109/ensembl/wormpipe/dumps/
     #    ipi_hits_list
     #    trembllist.txt
     #    swisslist.txt
@@ -203,10 +203,10 @@ if ($cleanup && !$test) {
     #    ids.txt
 
     # to delete
-    #   /lustre/scratch101/ensembl/wormpipe/dumps/
+    #   /lustre/scratch109/ensembl/wormpipe/dumps/
     #      *.ace
     #      *.log
-    my $clear_dump = "/lustre/scratch101/ensembl/wormpipe/dumps";
+    my $clear_dump = "/lustre/scratch109/ensembl/wormpipe/dumps";
 
     $log->write_to("moving blastp acefiles to last_build . . . \n");
     system("mv -f $clear_dump/*blastp.ace $wormpipe_dir/last_build/") && warn "cant move blastp.ace to last_build";
@@ -235,7 +235,7 @@ if ($cleanup && !$test) {
     $log->write_to ("\nRemoving the $wormpipe_dir/DUMP_PREP_RUN lock file\n");
     system("rm -f $wormpipe_dir/DUMP_PREP_RUN") && warn "cant remove $wormpipe_dir/DUMP_PREP_RUN\n";
 
-    $log->write_to("\nRemoving farm output and error files from /lustre/scratch101/ensembl/wormpipe/*\n") if $debug;
+    $log->write_to("\nRemoving farm output and error files from /lustre/scratch109/ensembl/wormpipe/*\n") if $debug;
     my $scratch_dir = $wormpipe_dir;
     # Michael wants ensembl-brugia left as it is for now as he uses it for testing
     my @species_dir = qw( ensembl-pristionchus ensembl-japonica ensembl-brenneri ensembl-briggsae ensembl-elegans ensembl-remanei ); 
