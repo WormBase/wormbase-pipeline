@@ -7,7 +7,7 @@
 # Usage : autoace_builder.pl [-options]
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2012-11-06 15:01:10 $
+# Last edited on: $Date: 2012-11-06 15:48:12 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -389,7 +389,7 @@ sub remap_misc_dynamic {
     }
 
     # remap ace files with Feature_data mapped to clones
-    my @clone_feature_data = qq(
+    my @clone_feature_data = (
 		      'misc_modENCODE_Tiling_array_TARs.ace',
 		      'misc_Lamm_polysomes.ace',
 		      'misc_RNASeq_hits_elegans.ace',
