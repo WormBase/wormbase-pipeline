@@ -8,8 +8,8 @@
 # Homol_data and converts any coordinates that have changed between
 # releases
 #
-# Last updated by: $Author: klh $     
-# Last updated on: $Date: 2012-06-22 08:56:53 $      
+# Last updated by: $Author: gw3 $     
+# Last updated on: $Date: 2012-11-06 11:04:02 $      
 
 use strict;                                     
 use lib $ENV{'CVS_DIR'};
@@ -103,8 +103,9 @@ my $assembly_mapper = Remap_Sequence_Change->new($version - 1, $version, $wormba
 #DNA_homol       EF044582        BLAT_ncRNA_BEST 100     31396   31376   1 21
 
 
-my $method;
-my $homol_type;
+my $method; # as in: Homol_data : F56C11:<Expr>
+my $homol_type; # as in: <Expr_homol> Expr1389 "Expr_pattern" 100.000000 14018 19205 1 5188
+
 
 if ($data_type eq '21_urna') {
   $method = 'BLAT_ncRNA';
@@ -112,9 +113,9 @@ if ($data_type eq '21_urna') {
 } elsif ($data_type eq 'expression_pattern') {
   $method = 'Expr';
   $homol_type = 'Expr_homol';
-} elsif ($data_type eq 'mass_spec') {
-  $method = 'Mass-spec';
-  $homol_type = 'MSPeptide_homol';
+} elsif ($data_type eq 'Tijsterman_G4') {
+  $method = 'G4_DNA';
+  $homol_type = 'Motif_homol';
 
 } else {
   $log->log_and_die("Unknown data type: $data_type\n");
