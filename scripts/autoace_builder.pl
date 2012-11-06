@@ -6,8 +6,8 @@
 #
 # Usage : autoace_builder.pl [-options]
 #
-# Last edited by: $Author: klh $
-# Last edited on: $Date: 2012-10-23 09:17:27 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2012-11-06 15:01:10 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -377,7 +377,7 @@ sub remap_misc_dynamic {
     my %clone_data = (
 		      'misc_21urna_homol.ace'                 => '21_urna',
 		      'misc_Expression_pattern_homol.ace'     => 'expression_pattern',
-		      'misc_mass_spec_GenniferMerrihew.ace'   => 'mass_spec',
+		      'misc_Tijsterman_G4.ace'                => 'Tijsterman_G4'
 		      );
 
     foreach my $clone_data_file (keys %clone_data) {
@@ -386,6 +386,21 @@ sub remap_misc_dynamic {
       if (-e $backup_file) {$wormbase->run_command("mv -f $backup_file $data_file", $log);}
       $wormbase->run_command("mv -f $data_file $backup_file", $log);
       $wormbase->run_script( "remap_clone_homol_data.pl -input $backup_file -out $data_file -data_type $clone_data{$clone_data_file}", $log);
+    }
+
+    # remap ace files with Feature_data mapped to clones
+    my @clone_feature_data = qq(
+		      'misc_modENCODE_Tiling_array_TARs.ace',
+		      'misc_Lamm_polysomes.ace',
+		      'misc_RNASeq_hits_elegans.ace',
+		      );
+
+    foreach my $clone_feature_data_file (@clone_feature_data) {
+      my $data_file = $wormbase->misc_dynamic."/$clone_feature_data_file";
+      my $backup_file = $wormbase->misc_dynamic."/BACKUP/$clone_feature_data_file.$previous_release";
+      if (-e $backup_file) {$wormbase->run_command("mv -f $backup_file $data_file", $log);}
+      $wormbase->run_command("mv -f $data_file $backup_file", $log);
+      $wormbase->run_script( "remap_clone_feature_data.pl -input $backup_file -out $data_file", $log);
     }
 
 
@@ -423,6 +438,13 @@ sub remap_misc_dynamic {
     if (-e $backup_rnaseq_cds) {$wormbase->run_command("mv -f $backup_rnaseq_cds $rnaseq_cds", $log);}
     $wormbase->run_command("mv -f $rnaseq_cds $backup_rnaseq_cds", $log);
     $wormbase->run_script( "remap_genefinder_between_releases.pl -input $backup_rnaseq_cds -out $rnaseq_cds", $log);
+
+    # remap modENCODE misc_modENCODE_aggregate_transcripts.ace - uses the remap genefinder script
+    my $aggregate_cds = $wormbase->misc_dynamic."/misc_modENCODE_aggregate_transcripts.ace";
+    my $backup_aggregate_cds = $wormbase->misc_dynamic."/BACKUP/misc_modENCODE_aggregate_transcripts.ace.$previous_release";
+    if (-e $backup_aggregate_cds) {$wormbase->run_command("mv -f $backup_aggregate_cds $aggregate_cds", $log);}
+    $wormbase->run_command("mv -f $aggregate_cds $backup_aggregate_cds", $log);
+    $wormbase->run_script( "remap_genefinder_between_releases.pl -input $backup_aggregate_cds -out $aggregate_cds", $log);
 
     # remap fosmids
     my $fosmids = $wormbase->misc_dynamic."/fosmids.ace";
