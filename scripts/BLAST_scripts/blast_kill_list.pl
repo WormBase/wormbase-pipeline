@@ -3,10 +3,11 @@
 # blast_kill_list.pl
 #
 # Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2011-01-05 15:09:45 $
+# Last edited on: $Date: 2012-11-06 15:03:04 $
 
 use GDBM_File;
 use lib '/software/worm/ensembl/bioperl-live/';
+use Digest::CRC qw(crc64_hex);
 use Bio::SeqIO;
 use Getopt::Long;
 use strict;
@@ -27,7 +28,7 @@ my $seqio_object = Bio::SeqIO->new(-file => $infile);
 my $seqout = Bio::SeqIO->new(-file => ">$outfile",-format => 'Fasta');
 
 while(my $seq=$seqio_object->next_seq){
-    if ($id_hash{$seq->display_id} eq _crc64($seq->seq)){
+    if ($id_hash{$seq->display_id} eq uc(crc64_hex($seq->seq))){
         printf "killing %s %s\n", $seq->display_id, $id_hash{$seq->display_id} if $debug;
         next;
     }
