@@ -566,7 +566,7 @@ sub full_name {
 	}	elsif($param{'-g_species'}){
 		return 'a_suum';
 	}
-	else { return'Strongyloides ratti'
+	else { return'Ascaris suum'
 	};
 }
 sub chromosome_prefix {'Scaffold'}
@@ -578,6 +578,43 @@ sub TSL {(
 	  'SL1'  => "GGTTTAATTACCCAAGTTTGAG",
 	  'As_SL1a' => "GGTTTAACTACCCAAGTTTGAG",
 	  'As_SL1b' => "GGTTTAATTGCCCAAGTTTGAG",
+)};
+
+######################################################
+package Asuum_davis;
+use Carp;
+our @ISA = qw(Wormbase Species);
+
+sub _new {	
+    my $class = shift;
+    my %param = %{ shift(@_) };
+
+    my $self = $class->initialize( $class->flatten_params( \%param ) );
+
+    # add stuff post object creation goes here
+
+    bless $self, $class;
+}
+sub full_name {
+	my $self = shift;
+	my %param = @_ ;
+	if($param{'-short'}){
+		return 'A. suum_davis';
+	}	elsif($param{'-g_species'}){
+		return 'a_suum_davis';
+	}
+	else { return 'Ascaris suum_davis'
+	};
+}
+sub chromosome_prefix {''}
+sub pep_prefix {'ASD'}
+sub pepdir_prefix{'as'};
+sub ncbi_tax_id {'6253'};
+sub assembly_type {'contig'};
+sub TSL {(
+	  'SL1'  => "GGTTTAATTACCCAAGTTTGAG",
+	  'Asd_SL1a' => "GGTTTAACTACCCAAGTTTGAG",
+	  'Asd_SL1b' => "GGTTTAATTGCCCAAGTTTGAG",
 )};
 
 
@@ -742,7 +779,42 @@ sub pepdir_prefix{'bxylophilus'};
 sub ncbi_tax_id {'6326'};
 sub assembly_type {'contig'};
 
+
 ######################################################
+package Loaloa;
+use Carp;
+our @ISA = qw(Wormbase Species);
+
+sub _new {	
+    my $class = shift;
+    my %param = %{ shift(@_) };
+
+    my $self = $class->initialize( $class->flatten_params( \%param ) );
+
+    # add stuff post object creation goes here
+
+    bless $self, $class;
+}
+sub full_name {
+	my $self = shift;
+	my %param = @_ ;
+	if($param{'-short'}){
+		return 'Loa loa';
+	}	elsif($param{'-g_species'}){
+		return 'loa_loa';
+	}
+	else { return'Loa loa'
+	};
+}
+sub chromosome_prefix {'supercont'}
+sub pep_prefix {'LL'}
+sub pepdir_prefix{'loa'};
+sub ncbi_tax_id {'7209'};
+sub assembly_type {'contig'};
+
+
+
+###################################
 
 package Mhapla;
 use Carp;
