@@ -5,8 +5,8 @@
 # A PERL wrapper to automate the process of building the FTP sites 
 # builds wormbase & wormpep FTP sites
 # 
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2012-10-23 10:50:45 $
+# Last updated by: $Author: klh $
+# Last updated on: $Date: 2012-11-06 17:09:14 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -786,7 +786,7 @@ sub copy_wormpep_files {
 
     if ($rel_last_built == $WS) {
       # tar up the latest wormpep release and copy across (files added in next loop)
-      my $tgz_file = "$tgt/$gspecies.$WS_name.${peppre}pep_package.tar.gz";
+      my $tgz_file = "$tgt/$gspecies.$WS_name.wormpep_package.tar.gz";
       my $command = "tar -c -z -h -f $tgz_file -C $src";
       
       # for tierIIs, the *pep package often does not change between 
