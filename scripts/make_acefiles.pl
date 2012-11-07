@@ -8,7 +8,7 @@
 # autoace.
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2012-10-10 13:57:51 $
+# Last updated on: $Date: 2012-11-07 13:27:45 $
 
 #################################################################################
 # Variables                                                                     #
@@ -103,10 +103,7 @@ unless (-e $config) {
       if ($db) {
         next unless ($makefile{'db'} eq $db);
       }
-      #
-      # DEBUG
-      #
-      next unless $makefile{class} eq 'Sequence';
+
       ##############
       make_path("$path/".$makefile{'db'}) unless -e "$path/".$makefile{'db'};
       my $file = $path."/".$makefile{'db'}."/".$makefile{'file'};
