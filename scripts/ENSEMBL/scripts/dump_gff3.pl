@@ -198,7 +198,7 @@ while( my $slice = shift @slices) {
       p_value     => $feat->p_value,
       dbid        => $feat->dbID,
       logic_name  => $feat->analysis->logic_name,
-      gff_source  => $feat->analysis->logic_name,
+      gff_source  => ($feat->analysis->gff_source) ? $feat->analysis->gff_source : $feat->analysis->logic_name,
       cigar       => ($feat->strand > 0 ? $cigar_line : reverse_cigar($cigar_line)),
       feature_type=> 'protein_match',
     };
@@ -214,22 +214,22 @@ while( my $slice = shift @slices) {
   
   $features=$slice->get_all_DnaAlignFeatures();
 
-  while(my $feature = shift @$features) {
-    my $cigar_line = flipCigarReference($feature->cigar_string); # for Lincoln
+  while(my $feat = shift @$features) {
+    my $cigar_line = flipCigarReference($feat->cigar_string); # for Lincoln
     my $stripped_feature = {
-      hit_id      => $feature->hseqname,
-      target_id   => $feature->slice->seq_region_name,
-      target_start=> $feature->hstart,
-      target_stop => $feature->hend,
-      strand      => ($feature->strand > 0?'+':'-'),
-      hit_start   => $feature->start,
-      hit_stop    => $feature->end,
-      score       => $feature->score,
-      p_value     => $feature->p_value,
-      dbid        => $feature->dbID,
-      logic_name  => $feature->analysis->logic_name,
-      gff_source  => $feature->analysis->logic_name,
-      cigar       => ($feature->strand > 0 ? $cigar_line : reverse_cigar($cigar_line)),
+      hit_id      => $feat->hseqname,
+      target_id   => $feat->slice->seq_region_name,
+      target_start=> $feat->hstart,
+      target_stop => $feat->hend,
+      strand      => ($feat->strand > 0?'+':'-'),
+      hit_start   => $feat->start,
+      hit_stop    => $feat->end,
+      score       => $feat->score,
+      p_value     => $feat->p_value,
+      dbid        => $feat->dbID,
+      logic_name  => $feat->analysis->logic_name,
+      gff_source  => ($feat->analysis->gff_source) ? $feat->analysis->gff_source : $feat->analysis->logic_name,
+      cigar       => ($feat->strand > 0 ? $cigar_line : reverse_cigar($cigar_line)),
       feature_type=> 'nucleotide_match',
     };
     print $out_fh dump_feature($stripped_feature);
