@@ -186,7 +186,7 @@
 # by Gary Williams
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2012-10-12 11:13:54 $
+# Last updated on: $Date: 2012-11-07 12:11:53 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -634,12 +634,7 @@ if (!$expt) {
       $wormbase->run_command("rm -rf Introns/Intron.ace", $log);
     }
 
-    my @chrom_files;
-    if ($wormbase->assembly_type eq 'contig') {
-      @chrom_files = ("${species}_masked.dna");
-    } else {
-      @chrom_files = $wormbase->get_chromosome_names('-prefix' => 1, '-mito' => 1);
-    }
+    my $chrom_file = "${species}.genome_masked.fa";
 
     if (! $noalign) { # only create the genome sequence index if the assembly changed
       # Build the bowtie index for the reference sequences by:
@@ -649,24 +644,24 @@ if (!$expt) {
       my $G_species = $wormbase->full_name('-g_species' => 1);
       unlink glob("${G_species}*");
       
-      foreach my $chrom_file (@chrom_files) {
-	$wormbase->run_command("rm -f ./$chrom_file", $log);
-	if ($wormbase->assembly_type eq 'chromosome') {$chrom_file .= '_masked.dna'} # changes the contents of @chrom_files
-	my $source_file = "${database}/CHROMOSOMES/${chrom_file}";
-	if (-e $source_file) {
-	  my $copy_cmd = "cp $source_file .";
-	  $status = $wormbase->run_command($copy_cmd, $log);
 
-	} elsif (-e "${source_file}.gz") {
-	  my $copy_cmd = "gunzip -c ${source_file}.gz > ./$chrom_file";
-	  $status = $wormbase->run_command($copy_cmd, $log);
-
-	} else {
-	  $log->log_and_die("Can't locate the repeat-masked genome file: $source_file\n");
-	}
+      $wormbase->run_command("rm -f ./$chrom_file", $log);
+      my $source_file = "${database}/SEQUENCES/${chrom_file}";
+      if (-e $source_file) {
+	my $copy_cmd = "cp $source_file .";
+	$status = $wormbase->run_command($copy_cmd, $log);
+	
+      } elsif (-e "${source_file}.gz") {
+	my $copy_cmd = "gunzip -c ${source_file}.gz > ./$chrom_file";
+	$status = $wormbase->run_command($copy_cmd, $log);
+	
+      } else {
+	$log->log_and_die("Can't locate the repeat-masked genome file: $source_file\n");
       }
-#      my $bowtie_cmd = "bsub -I -M 4000000 -R \"select[mem>4000] rusage[mem=4000]\" /software/worm/bowtie/bowtie-build " . (join ',', @chrom_files) . " $G_species";
-      my $bowtie_cmd = "bsub -I -M 4000000 -R \"select[mem>4000] rusage[mem=4000]\" $Software/bowtie/bowtie-build " . (join ',', @chrom_files) . " $G_species";
+
+#      my $bowtie_cmd = "bsub -I -M 4000000 -R \"select[mem>4000] rusage[mem=4000]\" /software/worm/bowtie/bowtie2-build " . (join ',', @chrom_files) . " $G_species";
+#      my $bowtie_cmd = "bsub -M 4000000 -R \"select[mem>4000] rusage[mem=4000]\" $Software/bowtie/bowtie2-build $chrom_file $G_species";
+      my $bowtie_cmd = "bsub $Software/bowtie/bowtie2-build $chrom_file $G_species";
       $status = $wormbase->run_command($bowtie_cmd, $log);
       if ($status != 0) {  $log->log_and_die("Didn't create the bowtie indexes $RNASeqGenomeDir/reference-indexes/${G_species}.*\n"); }
     }
@@ -697,10 +692,10 @@ if (!$expt) {
       my $err = "$scratch_dir/make_GTF_transcript.pl.lsf.err";
       my $out = "$scratch_dir/make_GTF_transcript.pl.lsf.out";
       my @bsub_options = (-e => "$err", -o => "$out");
-      push @bsub_options, (-q =>  "long",
+      push @bsub_options, (#-q =>  "long",
 			   #-F =>  "100000000", # there is no file size limit in Sanger LSF - don't impose one - keep this commented out
-			   -M =>  "14000000", 
-			   -R => "\"select[mem>14000] rusage[mem=14000]\"", 
+			   #-M =>  "14000000", 
+			   #-R => "\"select[mem>14000] rusage[mem=14000]\"", 
 			   -J => $job_name);
       my $cmd = "make_GTF_transcript.pl -database $database -out $gtf_file -species $species";
       $log->write_to("$cmd\n");
@@ -812,10 +807,10 @@ IIIIIIIIHIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIGIGIDHIIIIIGIGI
       my $err = "$scratch_dir/align_RNASeq.pl.lsf.initial.err";
       my $out = "$scratch_dir/align_RNASeq.pl.lsf.initial.out";
       my @bsub_options = (-e => "$err", -o => "$out");
-      push @bsub_options, (-q =>  "normal",
+      push @bsub_options, (#-q =>  "normal",
 			   #-F =>  "100000000", # there is no file size limit in Sanger LSF - don't impose one - keep this commented out
-			   -M =>  "4000000", 
-			   -R => "\"select[mem>4000 && tmp>10000] rusage[mem=4000]\"", 
+			   #-M =>  "4000000", 
+			   #-R => "\"select[mem>4000 && tmp>10000] rusage[mem=4000]\"", 
 			   -J => "tophat_dummy_$species");
       my $gtf = "--GTF $RNASeqGenomeDir/transcripts.gtf";
       my $gtf_index = "--transcriptome-index $RNASeqGenomeDir/transcriptome-gtf";
@@ -1113,10 +1108,10 @@ sub run_align {
     my $err = "$scratch_dir/align_RNASeq.pl.lsf.${arg}.err";
     my $out = "$scratch_dir/align_RNASeq.pl.lsf.${arg}.out";
     my @bsub_options = (-e => "$err", -o => "$out");
-    push @bsub_options, (-q =>  "long",
+    push @bsub_options, (#-q =>  "long",
                          #-F =>  "100000000", # there is no file size limit in Sanger LSF - don't impose one - keep this commented out
-			 -M =>  "14000000", 
-			 -R => "\"select[mem>14000] rusage[mem=14000]\"",
+			 #-M =>  "14000000", 
+			 #-R => "\"select[mem>14000] rusage[mem=14000]\"",
 			 -J => $job_name);
     my $cmd = "$script -expt $arg";      # -expt is the parameter to make the script run an alignment and analysis on a dataset $arg
     if ($check) {$cmd .= " -check";}
