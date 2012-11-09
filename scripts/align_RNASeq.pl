@@ -186,7 +186,7 @@
 # by Gary Williams
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2012-11-07 12:11:53 $
+# Last updated on: $Date: 2012-11-09 13:23:59 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -262,21 +262,21 @@ if ($getsrx) {
 
   get_SRX_file($getsrx);
 
-  # unpack any .lite.sra file to make the .fastq files
-  # now unpack the sra.lite files
-  $log->write_to("Unpack the $getsrx .lite.sra file to fastq files\n");
-  foreach my $dir (glob("$getsrx/SRR*")) {
-    chdir $dir;
-    foreach my $srr (glob("*.lite.sra")) {
-      $log->write_to("Unpack $srr\n");
-      my $options = '';
-      if ($paired && $srr !~ /_1\./ && $srr !~ /_2\./) {$options='--split-files'} # specify that the file contains paired-end reads and should be split
-#      my $status = $wormbase->run_command("/software/worm/sratoolkit/fastq-dump $options $srr", $log);
-      my $status = $wormbase->run_command("$Software/sratoolkit/fastq-dump $options $srr", $log);
-      if ($status) {$log->log_and_die("Didn't unpack the fastq file successfully\n")}
-      $status = $wormbase->run_command("rm -f $srr", $log);
-    }
-  }
+#  # unpack any .lite.sra file to make the .fastq files
+#  # now unpack the sra.lite files
+#  $log->write_to("Unpack the $getsrx .lite.sra file to fastq files\n");
+#  foreach my $dir (glob("$getsrx/SRR*")) {
+#    chdir $dir;
+#    foreach my $srr (glob("*.lite.sra")) {
+#      $log->write_to("Unpack $srr\n");
+#      my $options = '';
+#      if ($paired && $srr !~ /_1\./ && $srr !~ /_2\./) {$options='--split-files'} # specify that the file contains paired-end reads and should be split
+##      my $status = $wormbase->run_command("/software/worm/sratoolkit/fastq-dump $options $srr", $log);
+#      my $status = $wormbase->run_command("$Software/sratoolkit/fastq-dump $options $srr", $log);
+#      if ($status) {$log->log_and_die("Didn't unpack the fastq file successfully\n")}
+#      $status = $wormbase->run_command("rm -f $srr", $log);
+#    }
+#  }
 
   exit(0);
 }
@@ -658,10 +658,12 @@ if (!$expt) {
       } else {
 	$log->log_and_die("Can't locate the repeat-masked genome file: $source_file\n");
       }
+      my $species_genome = "${G_species}.fa";
+      system("mv $chrom_file $species_genome");
 
 #      my $bowtie_cmd = "bsub -I -M 4000000 -R \"select[mem>4000] rusage[mem=4000]\" /software/worm/bowtie/bowtie2-build " . (join ',', @chrom_files) . " $G_species";
 #      my $bowtie_cmd = "bsub -M 4000000 -R \"select[mem>4000] rusage[mem=4000]\" $Software/bowtie/bowtie2-build $chrom_file $G_species";
-      my $bowtie_cmd = "bsub $Software/bowtie/bowtie2-build $chrom_file $G_species";
+      my $bowtie_cmd = "bsub $Software/bowtie/bowtie2-build $species_genome $G_species";
       $status = $wormbase->run_command($bowtie_cmd, $log);
       if ($status != 0) {  $log->log_and_die("Didn't create the bowtie indexes $RNASeqGenomeDir/reference-indexes/${G_species}.*\n"); }
     }
@@ -824,7 +826,7 @@ IIIIIIIIHIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIGIGIDHIIIIIGIGI
       $log->write_to("The initial tophat job to index the GTF file has completed!\n");
       for my $job ( $lsf->jobs ) {
 	if ($job->history->exit_status ne '0') {
-	  $log->write_to("Job $job (" . $job->history->command . ") exited non zero: " . $job->history->exit_status . " Try making a larger dummy.fastq file?\n");
+	  $log->write_to("Job $job (" . $job->history->command . ") exited non zero: " . $job->history->exit_status . " Try making the dummy fastq file larger?\n");
 	}
       }
       $lsf->clear;
@@ -834,6 +836,7 @@ IIIIIIIIHIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIGIGIDHIIIIIGIGI
   # run tophat against a few experiments at a time - we don't want to
   # have too many fastq files ungzipped at a time otherwise we may run
   # out of quota filespace.
+  my $NUMBER_TO_RUN_AT_ONCE = 30;
 
   my @args;
   my $count=0;
@@ -858,7 +861,7 @@ IIIIIIIIHIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIGIGIDHIIIIIGIGI
     }
 
     push @args, $arg;
-    if (($count % 15) == 14) {
+    if (($count % $NUMBER_TO_RUN_AT_ONCE) == $NUMBER_TO_RUN_AT_ONCE - 1) {
       $log->write_to("Running alignments on: @args\n");
       print "Running alignments on: @args\n";
       &run_align($check, $noalign, $tsl, @args);
@@ -1095,15 +1098,15 @@ exit(0);
 
 sub run_align {
   my ($check, $noalign, $tsl, @args) = @_;
-
+  
   foreach my $arg (@args) {
-
+    
     # pull over the SRA files and unpack them to make a fastq file
     # the aspera commmand to pull across the files only works on the farm2-login head node
-    if ((!$check && !$noalign) || !-e "tophat_out/accepted_hits.bam") {
+    if ((!$check && !$noalign) || !-e "$RNASeqSRADir/$arg/tophat_out/accepted_hits.bam") {
       get_SRA_files($arg);
     }
-
+    
     # "the normal queue can deal with memory requests of up to 15 Gb, but 14 Gb is better" - Peter Clapham, ISG
     my $err = "$scratch_dir/align_RNASeq.pl.lsf.${arg}.err";
     my $out = "$scratch_dir/align_RNASeq.pl.lsf.${arg}.out";
@@ -1138,7 +1141,7 @@ sub run_align {
     }
   }
   $lsf->clear;
-
+  
   # clear up the fastq files
   if (!$keepfastq) {
     foreach my $arg (@args) {
@@ -1146,8 +1149,8 @@ sub run_align {
       if ($arg =~ /SRX/) {my $status = $wormbase->run_command("rm -rf $RNASeqSRADir/$arg/SRR", $log);}
     }
   }
-
-
+  
+  
 }
 
 #####################################################################
@@ -1173,38 +1176,39 @@ sub run_tophat {
   if ($illumina) {$cmd_extra = "--solexa1.3-quals"} 
 
   if ((!$check && !$noalign) || !-e "$RNASeqSRADir/$arg/tophat_out/accepted_hits.bam") {
-    if (glob("$RNASeqSRADir/$arg/SRR/SRR*/*.lite.sra") ) {
-      # unpack any .lite.sra file to make the .fastq files
-      # now unpack the sra.lite files
-      $log->write_to("Unpack the $arg .lite.sra file to fastq files\n");
-      foreach my $dir (glob("$RNASeqSRADir/$arg/SRR/SRR*")) {
-	chdir $dir;
-	foreach my $srr (glob("*.lite.sra")) {
-	  $log->write_to("Unpack $srr\n");
-	  my $options = '';
-	  if ($paired && $srr !~ /_1\./ && $srr !~ /_2\./) {$options='--split-files'} # specify that the file contains paired-end reads and should be split
-#	  $status = $wormbase->run_command("/software/worm/sratoolkit/fastq-dump $options $srr", $log);
-	  $status = $wormbase->run_command("$Software/sratoolkit/fastq-dump $options $srr", $log);
-	  if ($status) {$log->log_and_die("Didn't unpack the fastq file successfully\n")}
-	  $status = $wormbase->run_command("rm -f $srr", $log);
-	}
-      }
-    }
+
+#    if (glob("$RNASeqSRADir/$arg/SRR/SRR*/*.lite.sra") ) {
+#      # unpack any .lite.sra file to make the .fastq files
+#      # now unpack the sra.lite files
+#      $log->write_to("Unpack the $arg .lite.sra file to fastq files\n");
+#      foreach my $dir (glob("$RNASeqSRADir/$arg/SRR/SRR*")) {
+#	chdir $dir;
+#	foreach my $srr (glob("*.lite.sra")) {
+#	  $log->write_to("Unpack $srr\n");
+#	  my $options = '';
+#	  if ($paired && $srr !~ /_1\./ && $srr !~ /_2\./) {$options='--split-files'} # specify that the file contains paired-end reads and should be split
+##	  $status = $wormbase->run_command("/software/worm/sratoolkit/fastq-dump $options $srr", $log);
+#	  $status = $wormbase->run_command("$Software/sratoolkit/fastq-dump $options $srr", $log);
+#	  if ($status) {$log->log_and_die("Didn't unpack the fastq file successfully\n")}
+#	  $status = $wormbase->run_command("rm -f $srr", $log);
+#	}
+#      }
+#    }
 
 
 
     $wormbase->run_command("rm -rf tophat_out/", $log);
 
     chdir "$RNASeqSRADir/$arg";
-    my @files = glob("SRR/*/*.fastq");
+    my @files = glob("SRR/*.fastq");
     my $joined_file = join ",", @files;
     $log->write_to("Have fastq files: @files\n");
     $log->write_to("Check read length in file: $files[0]\n");
     my $seq_length = get_read_length($files[0]);
     
     # do we have paired reads?
-    my @files1 = sort glob("SRR/*/*_1.fastq"); # sort to ensure the two sets of files are in the same order
-    my @files2 = sort glob("SRR/*/*_2.fastq");
+    my @files1 = sort glob("SRR/*_1.fastq"); # sort to ensure the two sets of files are in the same order
+    my @files2 = sort glob("SRR/*_2.fastq");
     if ((@files1 == @files2) && @files2 > 0) {
       $log->write_to("Have paired-end files.\n");
       my $joined1 = join ",", @files1;
@@ -1341,34 +1345,70 @@ sub get_SRA_files {
 
   get_SRX_file($arg);
 
-  chdir "$RNASeqSRADir/$arg";
-  mkdir "SRR", 0777;
+#  chdir "$RNASeqSRADir/$arg";
+#  mkdir "SRR", 0777;
 
-  foreach my $dir (glob("SRR*")) {
-    if ($dir eq "SRR") {next}
-    $status = $wormbase->run_command("mv -f $dir $RNASeqSRADir/$arg/SRR", $log);
-  }
+#  foreach my $dir (glob("SRR*")) {
+#    if ($dir eq "SRR") {next}
+#    $status = $wormbase->run_command("mv -f $dir $RNASeqSRADir/$arg/SRR", $log);
+#  }
 
 }
 
 #################################################################################################################
-# this does the work of pulling the NCBI SRA file across
+# this does the work of pulling the EBI SRA file across
 
 sub get_SRX_file {
   my ($arg) = @_;
 
-  # get the name of the subdirectory in the SRA
-  my ($dirbit) = ($arg =~ /SRX(\d\d\d)/);
+# in the EBI, the set of files available for download from an
+# experiment can be seen by parsing the page resulting from a FTP
+# query like:
+# http://www.ebi.ac.uk/ena/data/view/reports/sra/fastq_files/SRX001873
 
-  # the Aspera file transfer system is error prone and (in Sanger) only works when run on the farm2-login head node
-  $log->write_to("Get the SRA files for $arg\n");
-  my $failed = 1;
-  while ($failed) {
-    my $cmd = "~gw3/.aspera/connect/bin/ascp -k 1 -l 300M -QTr -i /net/nas17b/vol_homes/homes/gw3/.aspera/connect/etc/asperaweb_id_dsa.putty anonftp\@ftp-private.ncbi.nlm.nih.gov:/sra/sra-instant/reads/ByExp/litesra/SRX/SRX${dirbit}/$arg ./";
-    print "cmd = $cmd\n";
-    my $return_status = system($cmd);
-    if ( ( $return_status >> 8 ) == 0 )  {$failed=0}
+# get page like:
+#Study	Sample	Experiment	Run	Organism	Instrument Platform	Instrument Model	Library Name	Library Layout	Library Source	Library Selection	Run Read Count	Run Base Count	File Name	File Size	md5	Ftp
+#SRP000401	SRS001789	SRX001873	SRR006514	Caenorhabditis elegans	ILLUMINA	Illumina Genome Analyzer	YA_ce0122_rw004	SINGLE	TRANSCRIPTOMIC	cDNA	11223086	404031096	SRR006514.fastq.gz	486Mb	e17b1b5483891f25eff9b81930296539	ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR006/SRR006514/SRR006514.fastq.gz
+#SRP000401	SRS001789	SRX001873	SRR006515	Caenorhabditis elegans	ILLUMINA	Illumina Genome Analyzer	YA_ce0122_rw004	SINGLE	TRANSCRIPTOMIC	cDNA	27189415	978818940	SRR006515.fastq.gz	1003Mb	0f0527d7f4aed10dc93f11d3f6a53863	ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR006/SRR006515/SRR006515.fastq.gz
+#SRP000401	SRS001789	SRX001873	SRR006516	Caenorhabditis elegans	ILLUMINA	Illumina Genome Analyzer	YA_ce0122_rw004	SINGLE	TRANSCRIPTOMIC	cDNA	22491397	809690292	SRR006516.fastq.gz	557Mb	2985db1790df1e4ec39e77fadfd11957	ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR006/SRR006516/SRR006516.fastq.gz
+
+
+  my $failed = 0;
+
+  mkdir $arg, 0777;
+  chdir $arg;
+  mkdir "SRR", 0777;
+  chdir "SRR";
+
+  open(ENTRY, "/sw/arch/bin/wget -q -O - 'http://www.ebi.ac.uk/ena/data/view/reports/sra/fastq_files/$arg' |");
+  while (my $line = <ENTRY>) {
+    chomp $line;
+    if ($line =~ /^Study/) {next}
+    my @line = split /\s+/, $line;
+    my $address = $line[$#line];
+    my $result = system("/sw/arch/bin/wget $address");
+    if ( ( $result >> 8 ) != 0 )  {$failed=1} # this seems to always return an error code, perhaps because it is verbose?
+    
+    my $file = $line[$#line - 3];
+    system("gunzip $file");
   }
+  close(ENTRY);
+  return $failed;
+
+# the following is for downloading the files using Aspera from the NCBI
+#  # get the name of the subdirectory in the SRA
+#  my ($dirbit) = ($arg =~ /SRX(\d\d\d)/);
+#
+#
+#  # the Aspera file transfer system is error prone and (in Sanger) only works when run on the farm2-login head node
+#  $log->write_to("Get the SRA files for $arg\n");
+#  my $failed = 1;
+#  while ($failed) {
+#    my $cmd = "~gw3/.aspera/connect/bin/ascp -k 1 -l 300M -QTr -i /net/nas17b/vol_homes/homes/gw3/.aspera/connect/etc/asperaweb_id_dsa.putty anonftp\@ftp-private.ncbi.nlm.nih.gov:/sra/sra-instant/reads/ByExp/litesra/SRX/SRX${dirbit}/$arg ./";
+#    print "cmd = $cmd\n";
+#    my $return_status = system($cmd);
+#    if ( ( $return_status >> 8 ) == 0 )  {$failed=0}
+#  }
 }
 
 
@@ -1404,7 +1444,7 @@ sub TSL_stuff {
 
 
   my $outfile="TSL1";
-  foreach my $file (glob "SRR/*/*.fastq") {
+  foreach my $file (glob "SRR/*.fastq") {
     $log->write_to("Running get_TSL_RNASeq_reads.pl on $file\n");
     $wormbase->run_script("get_TSL_RNASeq_reads.pl -infile $file -outfile TSL-tmp/$outfile",$log);
     $outfile++;
