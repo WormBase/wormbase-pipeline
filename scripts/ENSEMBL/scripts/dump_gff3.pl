@@ -159,9 +159,13 @@ while( my $slice = shift @slices) {
       
       # get all exons and translatable_exons of the transcript
       my $all_exons=$transcript->get_all_Exons();
-      
+
+      my $exon_count = 1;
       while( my $exon = shift @{$all_exons}) {
-        my $exon_stable_id = 'exon:'.$exon->stable_id();
+        # dont use exon_stable_id because it may or may not be shared
+        # between exons shared between transcripts depending on how the database was
+        # built, and we want consistency in the dumps
+        my $exon_stable_id = sprintf("exon:%s.%d", $transcript->stable_id, $exon_count++);
         
         push @{$tr_obj->{'exon'}}, {
           stable_id => $exon_stable_id,
@@ -186,6 +190,11 @@ while( my $slice = shift @slices) {
   
   while(my $feat = shift @$features) {
     my $cigar_line = flipCigarReference($feat->cigar_string); # for Lincoln
+    if ($feat->strand < 0) {
+      $cigar_line = reverse_cigar($cigar_line);
+    }
+    $cigar_line = cigar_to_almost_cigar($cigar_line);
+
     my $stripped_feature = {
       hit_id      => $feat->hseqname, 
       target_id   => $slice->seq_region_name,
@@ -199,7 +208,7 @@ while( my $slice = shift @slices) {
       dbid        => $feat->dbID,
       logic_name  => $feat->analysis->logic_name,
       gff_source  => ($feat->analysis->gff_source) ? $feat->analysis->gff_source : $feat->analysis->logic_name,
-      cigar       => ($feat->strand > 0 ? $cigar_line : reverse_cigar($cigar_line)),
+      cigar       => $cigar_line,
       feature_type=> 'protein_match',
     };
     push @{$blastx_features{$stripped_feature->{logic_name}}}, $stripped_feature;
@@ -216,6 +225,11 @@ while( my $slice = shift @slices) {
 
   while(my $feat = shift @$features) {
     my $cigar_line = flipCigarReference($feat->cigar_string); # for Lincoln
+    if ($feat->strand < 0) {
+      $cigar_line = reverse_cigar($cigar_line);
+    }
+    $cigar_line = cigar_to_almost_cigar($cigar_line);
+    
     my $stripped_feature = {
       hit_id      => $feat->hseqname,
       target_id   => $feat->slice->seq_region_name,
@@ -229,7 +243,7 @@ while( my $slice = shift @slices) {
       dbid        => $feat->dbID,
       logic_name  => $feat->analysis->logic_name,
       gff_source  => ($feat->analysis->gff_source) ? $feat->analysis->gff_source : $feat->analysis->logic_name,
-      cigar       => ($feat->strand > 0 ? $cigar_line : reverse_cigar($cigar_line)),
+      cigar       => $cigar_line,
       feature_type=> 'nucleotide_match',
     };
     print $out_fh dump_feature($stripped_feature);
@@ -364,7 +378,7 @@ sub dump_feature {
     my $gff_line=
 	"$feature{target_id}\t$feature{gff_source}\t$feature{feature_type}\t$feature{hit_start}\t$feature{hit_stop}\t".
 	"$feature{score}\t$feature{strand}\t.".
-	"\tID=$feature{logic_name}.$feature{dbid}".
+	($feature{id} ? "\tID=$feature{id}"  : "\tID=$feature{logic_name}.$feature{dbid}").
 	($feature{cigar}?";Name=$feature{hit_id};Target=$feature{hit_id} $feature{target_start} $feature{target_stop};Gap=$feature{cigar}\n":"\n");
     return $gff_line;
 }
@@ -529,9 +543,37 @@ sub filter_features {
     map { $f_features{$_->{dbid}}=$_ if (&p_value($_->{p_value}) > $best*0.75 && $max_hsp++ <5)} @sorted_bin; 
   }
   
-  # flatten hash into an array
-  my @_filtered=values %f_features;
-  return @_filtered;
+  # attempt to group the hits by id so that we can "join them up"
+  my (%hits_by_name, @final_list);
+  foreach my $hit (values %f_features) {
+    push @{$hits_by_name{$hit->{hit_id}}->{$hit->{strand}}}, $hit;
+  }
+  foreach my $hid (keys %hits_by_name) {
+    foreach my $strand (keys %{$hits_by_name{$hid}}) {
+      my @hits = sort { $a->{hit_start} <=> $b->{hit_start} } @{$hits_by_name{$hid}->{$strand}};
+
+      my @grouped_hits;
+      while(my $hit = shift @hits) {
+        if (@grouped_hits and
+            $hit->{hit_start} > $grouped_hits[-1]->[-1]->{hit_stop} and
+            (($strand eq '+' and $hit->{target_start} > $grouped_hits[-1]->[-1]->{target_stop}) or
+             ($strand eq '-' and $hit->{target_stop} < $grouped_hits[-1]->[-1]->{target_start}))) {
+          push @{$grouped_hits[-1]}, $hit;
+        } else {
+          push @grouped_hits, [$hit];
+        }
+      }
+      foreach my $group (@grouped_hits) {
+        my $id = $logic . "." . $group->[0]->{dbid};
+        foreach my $hit (@$group) {
+          $hit->{id} = $id;
+          push @final_list, $hit;
+        }
+      }
+    }
+  }
+
+  return @final_list;
 }
 
 # p_value shorthand
