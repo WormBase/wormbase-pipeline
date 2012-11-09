@@ -2,7 +2,7 @@
 #
 # EMBLdump.pl :  makes modified EMBL dumps from camace.
 # 
-#  Last updated on: $Date: 2012-11-05 11:25:18 $
+#  Last updated on: $Date: 2012-11-09 16:03:58 $
 #  Last updated by: $Author: klh $
 
 use strict;
@@ -71,6 +71,7 @@ my ($test,
     $quicktest,
     $private,
     $keep_redundant,
+    $exclude_multis,
     %clone2type, %clone2acc, %cds2cgc, %rnagenes, %clone2dbid, %pseudo2cgc, $multi_gene_loci,
     $cds2proteinid_db, $cds2status_db, $cds2dbremark_db,
     $cds2status_h, $cds2proteinid_h,  $cds2dbremark_h
@@ -94,6 +95,7 @@ GetOptions (
   "rawdumpfile:s"   => \$raw_dump_file,
   "quicktest"       => \$quicktest,
   "keepredundant"   => \$keep_redundant,
+  "excludemultis"   => \$exclude_multis,
 
     );
 
@@ -178,7 +180,6 @@ if ($dump_modified) {
   %pseudo2cgc      = $wormbase->FetchData('pseudo2cgc');
 
   $multi_gene_loci = &get_multi_gene_loci(\%cds2cgc, \%rnagenes, \%pseudo2cgc);
-
 
   # Some information is not yet available in autoace (too early in the build)
   # By default, pull cds2status, cds2dbremark and protein_ids from current_DB,
@@ -346,7 +347,11 @@ if ($dump_modified) {
         last if /^XX/;
         
         if ($species eq 'elegans') {
-          printf $out_fh "CC   Annotated features correspond to WormBase release %s\n", $wormbase->get_wormbase_version_name;
+          printf $out_fh "CC   Annotated features correspond to WormBase release %s.\n", $wormbase->get_wormbase_version_name;
+          if ($exclude_multis) {
+            print $out_fh "CC   Features spanning 2 or more clones excluded in this round.\n";
+          }
+          print $out_fh "XX\n";
           print $out_fh  "CC   For a graphical representation of this sequence and its analysis\n";
           print $out_fh  "CC   see:- http://www.wormbase.org/species/c_elegans/clone/$clone\n";
           print $out_fh  "XX\n";
@@ -608,7 +613,9 @@ sub process_feature_table {
     #
     if ($feat->{ftype} eq 'CDS') {
       if (exists $cds2proteinid_h->{$wb_isoform_name} and
-          exists $cds2proteinid_h->{$wb_isoform_name}->{$clone}) {
+          exists $cds2proteinid_h->{$wb_isoform_name}->{$clone} and 
+          # dont include protein-ids for multi-clone objects; they cause trouble
+          not exists $spans->{$wb_isoform_name}) {
         my $pid = $cds2proteinid_h->{$wb_isoform_name}->{$clone};
         push @{$revised_quals{protein_id}}, ["/protein_id=\"$pid\""];
       }
@@ -749,6 +756,14 @@ sub process_feature_table {
 # annotations on multiple clones, we need to choose one clone
 # to attach them to, and do this by selecting the clone where
 # most of the object lies, using a series of rules
+#
+# Additionally, when sequence has ben updayted and there are mutual 
+# dependencies between clones (i.e. clone X refers to clone Y and vice 
+# versa), this can cause problems because clone X will be referring to 
+# the "new" version of clone Y which has not been loaded yet. We therefore 
+# provide the option of excluding all multi-clone features for one round
+# of submissions. A second submission round will therefore be required to
+# process the clones with foreign references
 
 sub get_locs_for_multi_span_objects {
   my $file = shift;
@@ -793,6 +808,10 @@ sub get_locs_for_multi_span_objects {
     my ($obj_name) = $obj =~ /:(\S+)/;
 
     next if scalar(@locs) == 1;
+
+    $best_obj_locs{$obj_name} = {};
+
+    next if $exclude_multis;
     
     foreach my $loc (@locs) {
       my ($local_extent, $foreign_extents) = &parse_location($loc->{location});
@@ -823,6 +842,7 @@ sub get_locs_for_multi_span_objects {
       my $clone = $loc->{clone};
       $best_obj_locs{$obj_name}->{$clone} = 1;
     }
+
   }
 
   return \%best_obj_locs;
