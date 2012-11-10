@@ -2,7 +2,7 @@
 
 # Version: $Version: $
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2012-10-10 13:57:01 $
+# Last updated on: $Date: 2012-11-10 14:54:09 $
 
 use strict;
 use warnings;
@@ -442,7 +442,7 @@ sub query_with_dna_text {
   open my $qfh, ">$tmdef" or 
       $log->log_and_die("Could not open $tmdef for writing\n");  
 
-  my $condition = ($only_unmapped) ? "Condition NOT Homol_homol" ? "";
+  my $condition = ($only_unmapped) ? "Condition NOT Homol_homol" : "";
 
   my $query = <<"EOF";
 
