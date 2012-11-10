@@ -2,7 +2,7 @@
 
 # Version: $Version: $
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2012-11-05 13:32:46 $
+# Last updated on: $Date: 2012-11-10 14:57:27 $
 
 use strict;
 use warnings;
@@ -239,7 +239,6 @@ sub map_with_ipcress {
   open(my $iprunfh, "$IPCRESS --memory 512 --mismatch $mismatches --pretty FALSE $ipfile $target |") 
       or $log->log_and_die("Could not open ipcress command\n");
   while(<$iprunfh>) {
-    print;
     /ipcress:\s+(\S+)\s+(\S+)\s+(\d+)\s+\S\s+(\d+)\s+(\d+)\s+\S\s+(\d+)\s+(\d+)\s+(\S+)/ and do {
       my ($tseq, $prod_id, $prod_len, $start, $mm1, $start2, $mm2, $ori) = ($1, $2, $3, $4, $5, $6, $7, $8);
 
