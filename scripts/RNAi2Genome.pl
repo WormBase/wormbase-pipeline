@@ -2,7 +2,7 @@
 
 # Version: $Version: $
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2012-11-10 14:54:09 $
+# Last updated on: $Date: 2012-11-12 20:10:16 $
 
 use strict;
 use warnings;
@@ -373,6 +373,16 @@ sub get_rnai_sequences {
         my $unique_rnai_id = sprintf("%s.DNA_text_%d", $rnai_id,  $seen{$rnai_id});
       
         push @rnai, [$unique_rnai_id, $clone_id, $dna_text];
+      } elsif (/^\"\S+\"\s+\"(\S+)\"/) {
+        my $dna_text = $1;
+        if ($dna_text !~ /^[ACGTNacgtn]+$/) {
+          $log->write_to("Will not attempt to align $rnai_id - dodgy chars in DNA_text\n");
+        } else {
+          $seen{$rnai_id}++;
+          my $unique_rnai_id = sprintf("%s.DNA_text_%d", $rnai_id,  $seen{$rnai_id});
+      
+          push @rnai, [$unique_rnai_id, "NO_CLONE_GIVEN", $dna_text];
+        }
       } else {
         $log->write_to("Will not attempt to align $rnai_id - dodgy DNA_text\n");
       }
