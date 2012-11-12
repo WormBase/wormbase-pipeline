@@ -1,7 +1,7 @@
-!/usr/local/bin/perl5.8.0 -w
+#!/usr/local/bin/perl5.8.0 -w
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2012-11-12 14:25:08 $
+# Last edited on: $Date: 2012-11-12 14:26:21 $
 
 
 use lib $ENV{'CVS_DIR'};
