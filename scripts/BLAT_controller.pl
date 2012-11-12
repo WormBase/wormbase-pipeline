@@ -1,7 +1,7 @@
-#!/usr/local/bin/perl5.8.0 -w
+!/usr/local/bin/perl5.8.0 -w
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2012-07-11 14:40:48 $
+# Last edited on: $Date: 2012-11-12 14:25:08 $
 
 
 use lib $ENV{'CVS_DIR'};
@@ -195,8 +195,10 @@ if ( $run ) {
         $cmd .= $wormbase->blat."/${qs}_${moltype}_${chunk_num}.psl";
 
         my @bsub_opts = (-J => "BLAT_run_${species}_${qs}_${moltype}_${chunk_num}",
+                         -M => 1000000,
+                         -R => 'select[mem>=1000] rusage[mem=1000]',
                          -o => "$lsfdir/BLAT_run_${species}_${qs}_${moltype}_${chunk_num}.lsfout");
-
+        
         $lsf->submit(@bsub_opts, $cmd);
       }
     }
@@ -218,6 +220,8 @@ if ( $run ) {
       $cmd .= $wormbase->blat."/${species}_${moltype}_${chunk_num}.psl";
 
       my @bsub_opts = (-J => "BLAT_run_${species}_${species}_${moltype}_${chunk_num}",
+                       -M => 1000000,
+                       -R => 'select[mem>=1000] rusage[mem=1000]',
                        -o => sprintf("BLAT_run_%s/%s_%s_%s_%d.lsfout", $lsfdir, $species, $species, $moltype, $chunk_num));
 
       $lsf->submit(@bsub_opts, $cmd);
