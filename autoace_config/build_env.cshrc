@@ -47,5 +47,8 @@ setenv ENSEMBL_REGISTRY $SCRIPTS/ENSEMBL/etc/E_registry.pl
 
 # To do:
 # PATH
+set worm_packages = "/net/isilon3/production/panda/ensemblgenomes/wormbase/software/packages"
+set path  = ($worm_packages/bamtools/bin $worm_packages/bowtie $worm_packages/cufflinks $worm_packages/samtools $worm_packages/tophat $path)
+
 # PERL5LIB
 # BLASTMAT etc
