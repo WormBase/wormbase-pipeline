@@ -186,7 +186,7 @@
 # by Gary Williams
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2012-11-09 13:23:59 $
+# Last updated on: $Date: 2012-11-12 13:41:54 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -656,14 +656,19 @@ if (!$expt) {
 	$status = $wormbase->run_command($copy_cmd, $log);
 	
       } else {
-	$log->log_and_die("Can't locate the repeat-masked genome file: $source_file\n");
+	$log->write_to("Can't locate the repeat-masked genome file: $source_file\n");
+	$chrom_file = "elegans.genome.fa"; # debug to get the test working
+	$source_file = "${database}/SEQUENCES/${chrom_file}";
+	my $copy_cmd = "cp $source_file .";
+	$status = $wormbase->run_command($copy_cmd, $log);
+
       }
       my $species_genome = "${G_species}.fa";
       system("mv $chrom_file $species_genome");
 
 #      my $bowtie_cmd = "bsub -I -M 4000000 -R \"select[mem>4000] rusage[mem=4000]\" /software/worm/bowtie/bowtie2-build " . (join ',', @chrom_files) . " $G_species";
 #      my $bowtie_cmd = "bsub -M 4000000 -R \"select[mem>4000] rusage[mem=4000]\" $Software/bowtie/bowtie2-build $chrom_file $G_species";
-      my $bowtie_cmd = "bsub $Software/bowtie/bowtie2-build $species_genome $G_species";
+      my $bowtie_cmd = "$Software/bowtie/bowtie2-build $species_genome $G_species";
       $status = $wormbase->run_command($bowtie_cmd, $log);
       if ($status != 0) {  $log->log_and_die("Didn't create the bowtie indexes $RNASeqGenomeDir/reference-indexes/${G_species}.*\n"); }
     }
@@ -706,8 +711,8 @@ if (!$expt) {
       $lsf->wait_all_children( history => 1 );
       $log->write_to("The GTF file is written.\n");
       for my $job ( $lsf->jobs ) {
-	if ($job->history->exit_status ne '0') {
-	  $log->write_to("Job $job (" . $job->history->command . ") exited non zero: " . $job->history->exit_status . "\n");
+	if ($job->history->exit_status) {
+	  $log->write_to("Job $job (" . $job->history->command . ") exited non zero\n");
 	}
       }
       $lsf->clear;
@@ -806,37 +811,59 @@ IIIIIIIIHIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIGIGIDHIIIIIGIGI
 ';
 
       close(DUMMY);
-      my $err = "$scratch_dir/align_RNASeq.pl.lsf.initial.err";
-      my $out = "$scratch_dir/align_RNASeq.pl.lsf.initial.out";
-      my @bsub_options = (-e => "$err", -o => "$out");
-      push @bsub_options, (#-q =>  "normal",
-			   #-F =>  "100000000", # there is no file size limit in Sanger LSF - don't impose one - keep this commented out
-			   #-M =>  "4000000", 
-			   #-R => "\"select[mem>4000 && tmp>10000] rusage[mem=4000]\"", 
-			   -J => "tophat_dummy_$species");
-      my $gtf = "--GTF $RNASeqGenomeDir/transcripts.gtf";
-      my $gtf_index = "--transcriptome-index $RNASeqGenomeDir/transcriptome-gtf";
+
+      chdir $RNASeqGenomeDir;
+      $wormbase->run_command("rm -rf transcriptome-gtf", $log); # remove old GTF index directory
+
+      # now sleep for 1 minute to give the file-system a chance to
+      # sort out the files we have just deleted - was having
+      # intermittant problems with the tophat command still finding the
+      # 'transcriptome-gtf' but exiting with an error because there
+      # were no index files in it.
+
+      # Probably no longer necessary as we were really waiting for the
+      # reference-indexes to be indexed and they are no longer done in
+      # a LSF job.
+
+      sleep 60;
+
+
+#      my $err = "$scratch_dir/align_RNASeq.pl.lsf.initial.err";
+#      my $out = "$scratch_dir/align_RNASeq.pl.lsf.initial.out";
+#      my @bsub_options = (-e => "$err", -o => "$out");
+#      push @bsub_options, (#-q =>  "normal",
+#			   #-F =>  "100000000", # there is no file size limit in Sanger LSF - don't impose one - keep this commented out
+#			   #-M =>  "4000000", 
+#			   #-R => "\"select[mem>4000 && tmp>10000] rusage[mem=4000]\"", 
+#			   -J => "tophat_dummy_$species");
+      my $gtf = "--GTF transcripts.gtf";
+      my $gtf_index = "--transcriptome-index transcriptome-gtf/transcripts";
       my $G_species = $wormbase->full_name('-g_species' => 1);
-      my $cmd = "$Software/tophat/tophat $gtf $gtf_index $RNASeqGenomeDir/reference-indexes/$G_species $dummy_file";
+      my $cmd = "$Software/tophat/tophat --no-coverage-search $gtf $gtf_index reference-indexes/$G_species $dummy_file";
       $log->write_to("$cmd\n");
-      $lsf->submit(@bsub_options, $cmd);
+#      $lsf->submit(@bsub_options, $cmd);
       
       
-      $lsf->wait_all_children( history => 1 );
-      $log->write_to("The initial tophat job to index the GTF file has completed!\n");
-      for my $job ( $lsf->jobs ) {
-	if ($job->history->exit_status ne '0') {
-	  $log->write_to("Job $job (" . $job->history->command . ") exited non zero: " . $job->history->exit_status . " Try making the dummy fastq file larger?\n");
-	}
-      }
-      $lsf->clear;
+#      $lsf->wait_all_children( history => 1 );
+#      $log->write_to("The initial tophat job to index the GTF file has completed!\n");
+#      for my $job ( $lsf->jobs ) {
+#	if ($job->history->exit_status ne '0') {
+#	  $log->write_to("Job $job (" . $job->history->command . ") exited non zero: " . $job->history->exit_status . " Try making the dummy fastq file larger?\n");
+#	}
+#      }
+#      $lsf->clear;
+
+## the command seems to be flakey when run under LSF - probably using more than the default 4 Gb of memory - have seen 6 Gb used - run locally instead
+      $wormbase->run_command("$cmd", $log);
+
+
     }
   }
 
   # run tophat against a few experiments at a time - we don't want to
   # have too many fastq files ungzipped at a time otherwise we may run
   # out of quota filespace.
-  my $NUMBER_TO_RUN_AT_ONCE = 30;
+  my $NUMBER_TO_RUN_AT_ONCE = 20;
 
   my @args;
   my $count=0;
@@ -1237,11 +1264,12 @@ sub run_tophat {
 
     $log->write_to("run tophat $joined_file\n");
     my $gtf_index = ''; # use the GTF index unless we are not using the GTF file
-    $gtf_index = "--transcriptome-index $RNASeqGenomeDir/transcriptome-gtf" unless ($nogtf || $onestage);
+    $gtf_index = "--transcriptome-index $RNASeqGenomeDir/transcriptome-gtf/transcripts" unless ($nogtf || $onestage);
     my $raw_juncs = ''; # use the EST raw junctions hint file unless we specify otherwise
     $raw_juncs = "--raw-juncs $RNASeqGenomeDir/reference-indexes/splice_juncs_file" unless $norawjuncs;
 #    $status = $wormbase->run_command("/software/worm/tophat/tophat $cmd_extra --min-intron-length 30 --max-intron-length 5000 $gtf_index $raw_juncs $RNASeqGenomeDir/reference-indexes/$G_species $joined_file", $log);
-    $status = $wormbase->run_command("$Software/tophat/tophat $cmd_extra --min-intron-length 30 --max-intron-length 5000 $gtf_index $raw_juncs $RNASeqGenomeDir/reference-indexes/$G_species $joined_file", $log);
+    # test with --no-coverage-search for speed
+    $status = $wormbase->run_command("$Software/tophat/tophat $cmd_extra --no-coverage-search --min-intron-length 30 --max-intron-length 5000 --min-segment-intron 30 --max-segment-intron 5000 --min-coverage-intron 30 --max-coverage-intron 5000 $gtf_index $raw_juncs $RNASeqGenomeDir/reference-indexes/$G_species $joined_file", $log);
     if ($status != 0) {  $log->log_and_die("Didn't run tophat to do the alignment successfully\n"); } # only exit on error after gzipping the files
 
   } else {
@@ -1366,6 +1394,13 @@ sub get_SRX_file {
 # query like:
 # http://www.ebi.ac.uk/ena/data/view/reports/sra/fastq_files/SRX001873
 
+
+# The EBI specify the preferred method of download:
+# "Aspera is a commercial file transfer protocol that provides better
+# transfer speeds than ftp over long distances. For short distance file
+# transfers we continue to recommend the use of ftp."
+# See: http://www.ebi.ac.uk/ena/about/sra_data_download
+
 # get page like:
 #Study	Sample	Experiment	Run	Organism	Instrument Platform	Instrument Model	Library Name	Library Layout	Library Source	Library Selection	Run Read Count	Run Base Count	File Name	File Size	md5	Ftp
 #SRP000401	SRS001789	SRX001873	SRR006514	Caenorhabditis elegans	ILLUMINA	Illumina Genome Analyzer	YA_ce0122_rw004	SINGLE	TRANSCRIPTOMIC	cDNA	11223086	404031096	SRR006514.fastq.gz	486Mb	e17b1b5483891f25eff9b81930296539	ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR006/SRR006514/SRR006514.fastq.gz
@@ -1375,12 +1410,20 @@ sub get_SRX_file {
 
   my $failed = 0;
 
-  mkdir $arg, 0777;
+  if (!-e $arg) {
+    unless(mkdir $arg, 0777) {
+      $log->log_and_die( "ERROR: Could not mkdir subdir $arg: $!\n");
+    }
+  }
   chdir $arg;
-  mkdir "SRR", 0777;
+  if (!-e "SRR") {
+    unless(mkdir "SRR", 0777) {
+      $log->log_and_die( "ERROR: Could not mkdir subdir SRR: $!\n");
+    }
+  }
   chdir "SRR";
 
-  open(ENTRY, "/sw/arch/bin/wget -q -O - 'http://www.ebi.ac.uk/ena/data/view/reports/sra/fastq_files/$arg' |");
+  open(ENTRY, "/sw/arch/bin/wget -q -O - 'http://www.ebi.ac.uk/ena/data/view/reports/sra/fastq_files/$arg' |") || $log->log_and_die("Can't get information on SRA entry $arg\n");
   while (my $line = <ENTRY>) {
     chomp $line;
     if ($line =~ /^Study/) {next}
@@ -1476,7 +1519,7 @@ sub TSL_stuff {
 
   $log->write_to("run tophat with $tsl_fastq\n");
 
-  $status = $wormbase->run_command("$Software/tophat/tophat $cmd_extra --output-dir TSL $RNASeqGenomeDir/reference-indexes/$G_species $tsl_fastq", $log);
+  $status = $wormbase->run_command("$Software/tophat/tophat $cmd_extra --no-coverage-search --output-dir TSL $RNASeqGenomeDir/reference-indexes/$G_species $tsl_fastq", $log);
 
 #  $log->write_to("remove TSL fastq files\n");
 #  $wormbase->run_command("rm -f $tsl_fastq", $log);
