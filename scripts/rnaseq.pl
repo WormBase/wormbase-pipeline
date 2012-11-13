@@ -159,7 +159,7 @@ if ($chromosome) {
   my $err = "$scratch_dir/rnaseq.pl.lsf.err";
   my $out = "$scratch_dir/rnaseq.pl.lsf.out";
   push @bsub_options, (-q =>  "normal",
-		       -M =>  "4000000", 
+		       -M =>  "4000", # in EBI both -M and -R are in Gb
 		       -R => "\"select[mem>4000] rusage[mem=4000]\"", 
 		       -J => $job_name,
 		       -e => $err,
