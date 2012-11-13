@@ -45,22 +45,11 @@ my $database_path = $wormbase->autoace;
 
 my $ace_server = ($ace_host||$database_path);
 
-print "Connecting to database...$ace_server\n";
-my $db;
-if ($sace){
-    $db = Ace->connect(-host => $ace_server,-port => 23100) || die "Connection failure: ", Ace->error;
-}
-else {
-    $db = Ace->connect( -path => $ace_server);
-}
-
 ( $affy = $agil = $gsc = $smd = 1 ) if $all;
 &write_table('affy') if $affy;
 &write_table('agil') if $agil;
 &write_table('gsc')  if $gsc;
 &write_table('smd')  if $smd;
-
-$db->close;
 
 $log->mail;
 
@@ -68,6 +57,17 @@ exit(0);
 
 sub write_table {
     my $type = shift;
+
+
+    print "Connecting to database...$ace_server\n";
+    my $db;
+    if ($sace){
+      $db = Ace->connect(-host => $ace_server,-port => 23100) || die "Connection failure: ", Ace->error;
+    }
+    else {
+      $db = Ace->connect( -path => $ace_server);
+    }
+
     $log->write_to("writing $type\n");
 
     my %type_remark = (
@@ -85,7 +85,10 @@ sub write_table {
 	    $reagent_type = 'PCR_product';
 	}
 	else {
-	    $query = "find Oligo_set where type=\"" . $type_remark{$type} . "\"";
+          $query = "find Oligo_set where type=\"" . $type_remark{$type} . "\" AND Canonical_parent";
+          if ($type eq 'agil') {
+            $query .= ' AND A_12_*';
+          }
 	}
     }
     else {
@@ -254,4 +257,6 @@ sub write_table {
     print "$tr_count overlap transcript\n";
     print "$pseudo_count overlap pseudogene\n";
     print "$no_count overlap nothing\n";
+
+    $db->close;
 }
