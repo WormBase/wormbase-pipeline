@@ -33,7 +33,7 @@ setenv ACEDB_NO_BANNER
 # perl 5 libraries
 ####################
 setenv PERL5LIB ${WORM_SW_ROOT}/lib/perl5/site_perl
-setenv PERL5LIB ${PERL5LIB}:${WORM_SW_ROOT}/lib/bioperl-live
+setenv PERL5LIB ${PERL5LIB}:${WORM_SW_ROOT}/packages/bioperl/bioperl-live
 
 # for worm ensembl
 setenv PERL5LIB ${PERL5LIB}:${WORM_SW_ROOT}/packages/ensembl/ensembl/modules
