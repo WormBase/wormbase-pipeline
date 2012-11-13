@@ -36,6 +36,7 @@ my %species = (
     6326   => 'Bursephelenchus xylophilus',
     497829 => 'Caenorhabditis sp.5',
     34506  => 'Strongyloides ratti',
+    7209   => 'Loa loa',
 );
 
 my %cds2wbgene=%{&get_commondata('cds2wbgene_id')};
@@ -56,7 +57,7 @@ my @members = @{$member_adaptor->fetch_all()};
 
 while( my $member = shift @members){
     
-    next unless ($member->taxon_id == 6239 
+    next unless ($member->taxon_id == 6239
 	      || $member->taxon_id == 6238
 	      || $member->taxon_id == 31234
 	      || $member->taxon_id == 135651
