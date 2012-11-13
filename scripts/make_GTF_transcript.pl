@@ -8,7 +8,7 @@
 # by Gary Williams
 #
 # Last updated by: $Author: gw3 $                      
-# Last updated on: $Date: 2012-11-07 16:16:17 $        
+# Last updated on: $Date: 2012-11-13 12:28:51 $        
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -115,8 +115,11 @@ foreach my $file (@files) {
 	$line[2] = 'transcript';
       }
       $line[1] = 'WormBase';
-      my $gene_id = $worm_gene2geneID_name{$transcript_id};
-      if (!defined $gene_id) {die "Can't find gene_id for: $line\n"}
+      my $cds_regex = $wormbase->cds_regex_noend;
+      my ($sequence_name) = ($transcript_id =~ /($cds_regex)/);
+      if (!defined $sequence_name) {$sequence_name = $transcript_id}# the tRNAs (e.g. C06G1.t2) are not changed correctly
+      my $gene_id = $worm_gene2geneID_name{$sequence_name};
+      if (!defined $gene_id) {$log->log_and_die ("Can't find gene_id $sequence_name for: $line\n")}
       $line[8] = "gene_id \"$gene_id\"; transcript_id \"$transcript_id\"";
       $line = join "\t", @line;
       print OUTDAT "$line\n";
