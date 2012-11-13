@@ -6,8 +6,8 @@
 #
 # Usage : autoace_builder.pl [-options]
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2012-11-06 15:48:12 $
+# Last edited by: $Author: klh $
+# Last edited on: $Date: 2012-11-13 12:23:53 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -31,7 +31,7 @@ my ( $prep_blat, $run_blat,     $finish_blat );
 my ( $gff_dump,     $processGFF, $gff_split );
 my $gene_span;
 my ( $load, $big_load, $tsuser );
-my ($map_features, $remap_misc_dynamic, $map, $transcripts, $intergenic, $misc_data_sets, $homol_data_sets, $nem_contigs);
+my ($map_features, $remap_misc_dynamic, $map, $map_alleles, $transcripts, $intergenic, $misc_data_sets, $homol_data_sets, $nem_contigs);
 my ( $GO_term, $rna , $dbcomp, $confirm, $operon ,$repeats, $remarks, $names, $treefam, $cluster);
 my ( $utr, $agp, $gff_munge, $extras , $ontologies, $interpolate, $check, $enaseqxrefs, $enaprotxrefs, $xrefs);
 my ( $data_check, $buildrelease, $public,$finish_build, $gffdb, $autoace, $release, $user, $kegg);
@@ -63,6 +63,7 @@ GetOptions(
 	   'map'            => \$map,
 	   'remap_misc_dynamic' => \$remap_misc_dynamic,
 	   'map_features'   => \$map_features,
+           'map_alleles'    => \$map_alleles,
 	   'transcripts'    => \$transcripts,
 	   'intergenic'     => \$intergenic,
 	   'nem_contig'     => \$nem_contigs,
@@ -167,6 +168,8 @@ $wormbase->run_script( 'find_intergenic.pl'               , $log ) if $intergeni
 
 ####### mapping part ##########
 &map_features                                                            if $map;
+
+&map_alleles                                                             if $map_alleles;
 
 &remap_misc_dynamic                                                      if $remap_misc_dynamic;
 
@@ -348,12 +351,6 @@ sub map_features {
 	$wormbase->run_script( 'map_RNAi.pl -load', $log );
     }
 
-    ## elegans or briggsae
-    if (($wormbase->species eq 'elegans') or ($wormbase->species eq 'briggsae')){
-	# alleles
-	$wormbase->run_script( 'split_alleles.pl', $log );
-    }
-
     ## all species
     # TSL features
     $wormbase->run_script( 'map_feature2gene.pl -load', $log );
@@ -361,6 +358,17 @@ sub map_features {
     # attach 'other nematode' ESTs to the genes they BLAT to best
     $wormbase->run_script( 'attach_other_nematode_ests.pl -load', $log );
     
+}
+
+
+sub map_alleles {
+
+  ## elegans or briggsae
+  if (($wormbase->species eq 'elegans') or ($wormbase->species eq 'briggsae')){
+    # alleles
+    $wormbase->run_script( 'split_alleles.pl', $log );
+  }
+  
 }
 
 #__ end map_features __#
