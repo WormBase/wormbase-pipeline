@@ -186,7 +186,7 @@
 # by Gary Williams
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2012-11-13 09:43:42 $
+# Last updated on: $Date: 2012-11-13 12:33:26 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -711,15 +711,15 @@ if (!$expt) {
       $lsf->wait_all_children( history => 1 );
       $log->write_to("The GTF file is written.\n");
       for my $job ( $lsf->jobs ) {
-	if ($job->history->exit_status) {
-	  $log->write_to("Job $job (" . $job->history->command . ") exited non zero\n");
+	if ($job->history->exit_status != 0) {
+	  $log->log_and_die("Job $job (" . $job->history->command . ") exited non zero\n");
 	}
       }
       $lsf->clear;
 
       if ($species eq 'elegans') {
 	$wormbase->check_file($gtf_file, $log,
-			      minsize => 29900000,
+			      minsize => 29000000,
 			     );
       }
     }
