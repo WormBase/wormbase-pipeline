@@ -186,7 +186,7 @@
 # by Gary Williams
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2012-11-12 13:41:54 $
+# Last updated on: $Date: 2012-11-13 09:43:42 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -656,11 +656,11 @@ if (!$expt) {
 	$status = $wormbase->run_command($copy_cmd, $log);
 	
       } else {
-	$log->write_to("Can't locate the repeat-masked genome file: $source_file\n");
-	$chrom_file = "elegans.genome.fa"; # debug to get the test working
-	$source_file = "${database}/SEQUENCES/${chrom_file}";
-	my $copy_cmd = "cp $source_file .";
-	$status = $wormbase->run_command($copy_cmd, $log);
+	$log->log_and_die("Can't locate the repeat-masked genome file: $source_file\n");
+#	$chrom_file = "elegans.genome.fa"; # debug to get the test working
+#	$source_file = "${database}/SEQUENCES/${chrom_file}";
+#	my $copy_cmd = "cp $source_file .";
+#	$status = $wormbase->run_command($copy_cmd, $log);
 
       }
       my $species_genome = "${G_species}.fa";
@@ -1156,6 +1156,7 @@ sub run_align {
     if ($expts{$arg}[1] eq 'illumina1.3') {$cmd .= " -illumina";}
     if ($expts{$arg}[2] eq 'paired-end') {$cmd .= " -paired";}
     $log->write_to("$cmd\n");
+    print "Running: $cmd\n";
     $cmd = $wormbase->build_cmd($cmd);
     $lsf->submit(@bsub_options, $cmd);
   }
