@@ -80,84 +80,161 @@ my $out;
 $output = $wormbase->ontology."/phenotype_association.".$wormbase->get_wormbase_version_name.".wb" unless $output;
 open($out, ">$output") or $log->log_and_die("cannot open $output : $!\n");
 
+
+# Phenotypes
+
 my $it=$db->fetch_many(-query=>'find Variation Phenotype');
 
 my $count=0;
 while (my $obj=$it->next) {
-    $count++;
-    if ($count % 1000 == 0) {
-	warn "$count variation objects processed\n";
-    }
-    my @lines=split("\n", $obj->asAce);
-    foreach (@lines) {
-	if (/^Variation\s+/) {
-	    $var=$_=~/\"(.+)\"/ ? $1 : '';
+  $count++;
+  if ($count % 1000 == 0) {
+    warn "$count variation objects processed\n";
+  }
+
+  my @lines=split("\n", $obj->asAce);
+  foreach (@lines) {
+    if (/^Variation\s+/) {
+      $var=$_=~/\"(.+)\"/ ? $1 : '';
+    } elsif (/Phenotype/) {
+      my $tmp=$_=~/\"(WBPhenotype:\d+)\"/ ? $1 : '';
+      next unless $tmp;
+      $pheno{$tmp}[0]++;
+      
+      if (/Paper_evidence/) {
+	my $paper=$_=~/\"(WBPaper\d+)\"/ ? $1 : '';
+	if ($paper) {
+	  $pheno{$tmp}[1]=$paper;
 	}
-	elsif (/Phenotype/) {
-	    my $tmp=$_=~/\"(WBPhenotype:\d+)\"/ ? $1 : '';
-	    next unless $tmp;
-	    $pheno{$tmp}[0]++;
-	    my @tmp1=split('\s+');
-	    if ($tmp1[3]) {
-		$tmp1[3]=~s/\s+//g;
-		if ($tmp1[3] eq 'Not') {
-		    $pheno{$tmp}[1]='NOT';
-		}
-	    }
-	    if (/Paper_evidence/) {
-		my $paper=$_=~/\"(WBPaper\d+)\"/ ? $1 : '';
-		if ($paper) {
-		    $pheno{$tmp}[2]=$paper;
-		}
-	    }
-	    
-	}
+      }
+      
     }
-    if ($var) {
-	foreach my $g (@{$variations{$var}}) {
-	    foreach my $p (keys %pheno) {
-		my $q=$pheno{$p}[1] ? 'NOT' : '';
-		my $paper=$pheno{$p}[2] ? $pheno{$p}[2] : '';
-		print $out "WB\t$g\t$names{$g}\t$q\t$p\t$paper\tVariation\t$var\t\t\t\t\t\t$date\tWB\n";
-	    }
-	}
+  }
+
+  if ($var) {
+    foreach my $g (@{$variations{$var}}) {
+      foreach my $p (keys %pheno) {
+	my $q = '';
+	my $paper=$pheno{$p}[1] ? $pheno{$p}[1] : '';
+	print $out "WB\t$g\t$names{$g}\t$q\t$p\t$paper\tVariation\t$var\t\t\t\t\t\t$date\tWB\n";
+      }
     }
-    
-    $var='';
-    %pheno=();
+  }
+  
+  $var='';
+  %pheno=();
 }
+
+# Phenotype_not_observed
+
+my $it=$db->fetch_many(-query=>'find Variation Phenotype_not_observed');
+
+my $count=0;
+while (my $obj=$it->next) {
+  $count++;
+  if ($count % 1000 == 0) {
+    warn "$count variation objects processed\n";
+  }
+
+  my @lines=split("\n", $obj->asAce);
+  foreach (@lines) {
+    if (/^Variation\s+/) {
+      $var=$_=~/\"(.+)\"/ ? $1 : '';
+    } elsif (/Phenotype_not_observed/) {
+      my $tmp=$_=~/\"(WBPhenotype:\d+)\"/ ? $1 : '';
+      next unless $tmp;
+      $pheno{$tmp}[0]++;
+      
+      if (/Paper_evidence/) {
+	my $paper=$_=~/\"(WBPaper\d+)\"/ ? $1 : '';
+	if ($paper) {
+	  $pheno{$tmp}[1]=$paper;
+	}
+      }
+      
+    }
+  }
+
+  if ($var) {
+    foreach my $g (@{$variations{$var}}) {
+      foreach my $p (keys %pheno) {
+	my $q= 'NOT';
+	my $paper=$pheno{$p}[1] ? $pheno{$p}[1] : '';
+	print $out "WB\t$g\t$names{$g}\t$q\t$p\t$paper\tVariation\t$var\t\t\t\t\t\t$date\tWB\n";
+      }
+    }
+  }
+  
+  $var='';
+  %pheno=();
+}
+
+# Phenotype
 
 $it=$db->fetch_many(-query=>'find RNAi Phenotype');
 $count=0;
 while (my $obj=$it->next) {
-    next unless $obj->isObject();
-    $count++;
-    if ($count % 1000 == 0) {
-	warn "$count RNAi objects processed\n";
+  next unless $obj->isObject();
+  $count++;
+  if ($count % 1000 == 0) {
+    warn "$count RNAi objects processed\n";
+  }
+  
+  my @genes_tmp=$obj->Gene;
+  my @genes=();
+  my %pheno=();
+  foreach (@genes_tmp) {
+    if ($_->right(2) eq 'RNAi_primary') {
+      push @genes, $_;
     }
-    
-    my @genes_tmp=$obj->Gene;
-    my @genes=();
-    my %pheno=();
-    foreach (@genes_tmp) {
-	if ($_->right(2) eq 'RNAi_primary') {
-	    push @genes, $_;
-	}
-    }
-    my $ref=$obj->Reference;
-    my @phen_array_tmp=$obj->Phenotype;
-    foreach (@phen_array_tmp) {
-	my $not=grep {/Not/} $_->tags();
+  }
+  my $ref=$obj->Reference;
 
-	$pheno{$_}[1]='NOT' if $not;
-	$pheno{$_}[0]++;
+  my @phen_array_tmp=$obj->Phenotype;
+  foreach (@phen_array_tmp) {
+    $pheno{$_}++;
+  }
+
+  foreach my $g (@genes) {
+    foreach my $p (keys %pheno) {
+      my $q='';
+      print $out "WB\t$g\t$names{$g}\t$q\t$p\t$ref\tRNAi\t$obj\t\t\t\t\t\t$date\tWB\n";
     }
-    foreach my $g (@genes) {
-	foreach my $p (keys %pheno) {
-	    my $q=$pheno{$p}[1] ? 'NOT' : '';
-	    print $out "WB\t$g\t$names{$g}\t$q\t$p\t$ref\tRNAi\t$obj\t\t\t\t\t\t$date\tWB\n";
-	}
+  }
+}
+
+# Phenotype_not_observed
+
+$it=$db->fetch_many(-query=>'find RNAi Phenotype_not_observed');
+$count=0;
+while (my $obj=$it->next) {
+  next unless $obj->isObject();
+  $count++;
+  if ($count % 1000 == 0) {
+    warn "$count RNAi objects processed\n";
+  }
+  
+  my @genes_tmp=$obj->Gene;
+  my @genes=();
+  my %pheno=();
+  foreach (@genes_tmp) {
+    if ($_->right(2) eq 'RNAi_primary') {
+      push @genes, $_;
     }
+  }
+  my $ref=$obj->Reference;
+
+  my @phen_array_tmp=$obj->Phenotype_not_observed;
+  foreach (@phen_array_tmp) {
+    $pheno{$_}++;
+  }
+
+  foreach my $g (@genes) {
+    foreach my $p (keys %pheno) {
+      my $q='NOT';
+      print $out "WB\t$g\t$names{$g}\t$q\t$p\t$ref\tRNAi\t$obj\t\t\t\t\t\t$date\tWB\n";
+    }
+  }
 }
 
 close($out);
