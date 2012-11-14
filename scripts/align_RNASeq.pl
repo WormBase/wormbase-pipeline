@@ -186,7 +186,7 @@
 # by Gary Williams
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2012-11-14 10:54:55 $
+# Last updated on: $Date: 2012-11-14 13:36:41 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -1303,7 +1303,7 @@ sub run_tophat {
     $gtf = "--GTF $RNASeqGenomeDir/transcripts.gtf" unless $nogtf;
     $status = $wormbase->run_command("$Software/cufflinks/cufflinks $gtf ../tophat_out/accepted_hits.bam", $log);
     if ($status != 0) {  $log->log_and_die("Didn't run cufflinks to get the isoform/gene expression successfully\n"); }
-    $wormbase->run_command("touch cufflinks/genes.fpkm_tracking.done" ,$log); # set flag to indicate we have finished this
+    $wormbase->run_command("touch genes.fpkm_tracking.done" ,$log); # set flag to indicate we have finished this
 
   } else {
     $log->write_to("Check cufflinks/genes.fpkm_tracking: already done\n");
