@@ -96,7 +96,7 @@ while (my $obj=$it->next) {
   foreach (@lines) {
     if (/^Variation\s+/) {
       $var=$_=~/\"(.+)\"/ ? $1 : '';
-    } elsif (/Phenotype/) {
+    } elsif (/^Description\sPhenotype\s/) {
       my $tmp=$_=~/\"(WBPhenotype:\d+)\"/ ? $1 : '';
       next unless $tmp;
       $pheno{$tmp}[0]++;
@@ -140,7 +140,7 @@ while (my $obj=$it->next) {
   foreach (@lines) {
     if (/^Variation\s+/) {
       $var=$_=~/\"(.+)\"/ ? $1 : '';
-    } elsif (/Phenotype_not_observed/) {
+    } elsif (/^Description\sPhenotype_not_observed\s/) {
       my $tmp=$_=~/\"(WBPhenotype:\d+)\"/ ? $1 : '';
       next unless $tmp;
       $pheno{$tmp}[0]++;
