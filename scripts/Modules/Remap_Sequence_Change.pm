@@ -9,11 +9,11 @@
 #        FILES:  ---
 #         BUGS:  ---
 #        NOTES: 
-#      $Author: gw3 $
+#      $Author: klh $
 #      COMPANY:
 #     $Version:  $
 #      CREATED: 2006-02-27
-#        $Date: 2012-06-22 11:09:04 $
+#        $Date: 2012-11-14 13:29:39 $
 #===============================================================================
 package Remap_Sequence_Change;
 
@@ -31,7 +31,7 @@ sub new {
   $diff_dir = "/nfs/wormpub/CHROMOSOME_DIFFERENCES" if not defined $diff_dir;
 
   $diff_dir .= "/$species/";
-  
+
   $self->_genome_differences_dir($diff_dir);
   $self->_read_mapping_data($rel1, $rel2);
 
@@ -199,22 +199,25 @@ sub remap_ace {
 sub remap_gff {
   my ($self, $chromosome, $start, $end, $sense) = @_;
 
-#  print "Remapping $chromosome $start $end $sense\n";
-
   my $indel = 0;		# true if indels affect this location
   my $change = 0;		# true if non-indel base changes affect this location
 
-  if ($chromosome =~ /CHROMOSOME_(\S+)/) {$chromosome = $1;}
+  #if ($chromosome =~ /CHROMOSOME_(\S+)/) {$chromosome = $1;}
+  #
+  # TEMPORARY HACK TO ENSURE BUILD 235 IS SOUND
+  #
+  if ($chromosome !~ /CHROMOSOME_/) {
+    $chromosome = "CHROMOSOME_${chromosome}";
+  }
                 
   my %mapping_data = %{$self->_mapping_data};
 
   my @releases = sort { $a <=> $b } keys %mapping_data;
 
   foreach my $release (@releases) {
-
     if (exists $mapping_data{$release}->{$chromosome}) {
       foreach  my $fields (@{$mapping_data{$release}->{$chromosome}}) {
-        #print "    $release $chromosome fields= @$fields \n";
+        # print "    $release $chromosome fields= @$fields \n";
 
         # The mismatch_start value is the start of the mismatch, it is the first position which doesn't match.
         # The mismatch_end value is the base past the end of the mismatch region, the first base which matches again
@@ -611,6 +614,6 @@ coordinates, with their sense ("+" or "-") to the new coordinates.
 =back
 
 =head3 AUTHOR
-$Author: gw3 $
+$Author: klh $
 
 =cut
