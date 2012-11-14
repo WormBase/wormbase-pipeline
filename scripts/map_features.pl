@@ -9,7 +9,7 @@
 #
 #
 # Last updated by: $Author: klh $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2012-11-12 13:36:29 $        # quickly see when script was last changed and by whom
+# Last updated on: $Date: 2012-11-14 13:52:06 $        # quickly see when script was last changed and by whom
 
 
 $|=1;
@@ -303,7 +303,6 @@ EOF
 
   foreach my $list (@features) {
     my ($feature,$method, $smap_parent,$clone,$flanking_left,$flanking_right) = @$list;
-    print STDERR "Attempting to MAP a feature\n";
     # note below that we pass through an expected mapping distance where possible. This
     # can help with the mapping
     
@@ -329,7 +328,6 @@ EOF
                                                $smap_parent, 
                                                $flanking_left, 
                                                $flanking_right, 
-                                               $version, 
                                                $assembly_mapper);
       if ($suggested_fix[4]) { # FIXED :-)
         $log->write_to("// Suggested fix for $feature : $suggested_fix[3]\n");
