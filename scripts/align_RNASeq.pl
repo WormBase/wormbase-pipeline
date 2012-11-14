@@ -186,7 +186,7 @@
 # by Gary Williams
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2012-11-13 14:40:49 $
+# Last updated on: $Date: 2012-11-14 10:54:55 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -629,9 +629,12 @@ if (!$expt) {
       chdir "$RNASeqSRADir/$SRX";
       $wormbase->run_command("rm -rf tophat_out/", $log) unless ($noalign);
       $wormbase->run_command("rm -rf cufflinks/genes.fpkm_tracking", $log);
+      $wormbase->run_command("rm -rf cufflinks/genes.fpkm_tracking.done", $log); # file indicating that genes.fpkm_tracking was written OK
       $wormbase->run_command("rm -rf cufflinks/isoforms.fpkm_tracking", $log);
       $wormbase->run_command("rm -rf TSL/TSL_evidence.ace", $log) if ($tsl);
+      $wormbase->run_command("rm -rf TSL/TSL_evidence.ace.done", $log) if ($tsl); # file indicating that TSL_evidence.ace was written OK
       $wormbase->run_command("rm -rf Introns/Intron.ace", $log);
+      $wormbase->run_command("rm -rf Introns/Intron.ace.done", $log); # file indicating that Intron.ace was written OK
     }
 
     my $chrom_file = "${species}.genome_masked.fa";
@@ -716,6 +719,8 @@ if (!$expt) {
 	}
       }
       $lsf->clear;
+
+      sleep 60; # wait a minute to let the NFS system catch up with all the LSF nodes
 
       if ($species eq 'elegans') {
 	$wormbase->check_file($gtf_file, $log,
@@ -872,19 +877,20 @@ IIIIIIIIHIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIGIGIDHIIIIIGIGI
     if ($check) {
 
       # we have had a problem with incomplete intron.ace files
-      if (-e "$arg/Introns/Intron.ace" && ! -z "$arg/Introns/Intron.ace") {
+      if (-e "$arg/Introns/Intron.ace.done" && ! -z "$arg/Introns/Intron.ace") {
 	my $last_line = `tail -1 "$arg/Introns/Intron.ace"`;
 	my $last_char = chop $last_line;
 	if ($last_char ne "\n") {
 	  $wormbase->run_command("rm -rf $arg/Introns/Intron.ace", $log);
+	  $wormbase->run_command("rm -rf $arg/Introns/Intron.ace.done", $log);
 	  $log->write_to("Incomplete $arg intron file removed\n");
 	}
       }
 
-      if (-e "$RNASeqSRADir/$arg/tophat_out/accepted_hits.bam" &&
-	  -e "$RNASeqSRADir/$arg/cufflinks/genes.fpkm_tracking" &&
-	  (-e "$RNASeqSRADir/$arg/TSL/TSL_evidence.ace" || !$tsl) &&
-	  -e "$RNASeqSRADir/$arg/Introns/Intron.ace") {next}
+      if (-e "$RNASeqSRADir/$arg/tophat_out/accepted_hits.bam.done" &&
+	  -e "$RNASeqSRADir/$arg/cufflinks/genes.fpkm_tracking.done" &&
+	  (-e "$RNASeqSRADir/$arg/TSL/TSL_evidence.ace.done" || !$tsl) &&
+	  -e "$RNASeqSRADir/$arg/Introns/Intron.ace.done") {next}
     }
 
     push @args, $arg;
@@ -938,21 +944,22 @@ IIIIIIIIHIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIGIGIDHIIIIIGIGI
 
   foreach my $SRX (@SRX) {
     $log->write_to("$SRX");
-    if (-e "$SRX/tophat_out/accepted_hits.bam") {$log->write_to("\ttophat OK");} else {{$log->write_to("\ttophat ERROR");}}
-    if (-e "$SRX/cufflinks/genes.fpkm_tracking") {$log->write_to("\tcufflinks OK");} else {$log->write_to("\tcufflinks ERROR");}
-    if ($tsl) {if (-e "$SRX/TSL/TSL_evidence.ace") {$log->write_to("\tTSL OK");} else {$log->write_to("\tTSL ERROR");}}
+    if (-e "$SRX/tophat_out/accepted_hits.bam.done") {$log->write_to("\ttophat OK");} else {{$log->write_to("\ttophat ERROR");}}
+    if (-e "$SRX/cufflinks/genes.fpkm_tracking.done") {$log->write_to("\tcufflinks OK");} else {$log->write_to("\tcufflinks ERROR");}
+    if ($tsl) {if (-e "$SRX/TSL/TSL_evidence.ace.done") {$log->write_to("\tTSL OK");} else {$log->write_to("\tTSL ERROR");}}
 
     # we have had a problem with incomplete intron.ace files
-    if (-e "$SRX/Introns/Intron.ace" && ! -z "$SRX/Introns/Intron.ace") {
+    if (-e "$SRX/Introns/Intron.ace..done" && ! -z "$SRX/Introns/Intron.ace") {
       my $last_line = `tail -1 "$SRX/Introns/Intron.ace"`;
       my $last_char = chop $last_line;
       if ($last_char ne "\n") {
 	$wormbase->run_command("rm -rf $SRX/Introns/Intron.ace", $log);
+	$wormbase->run_command("rm -rf $SRX/Introns/Intron.ace.done", $log);
 	$log->write_to("\tincomplete intron file removed");
       }
     }
 
-    if (-e "$SRX/Introns/Intron.ace") {$log->write_to("\tIntrons OK");} else {$log->write_to("\tintron ERROR");}
+    if (-e "$SRX/Introns/Intron.ace.done") {$log->write_to("\tIntrons OK");} else {$log->write_to("\tintron ERROR");}
     $log->write_to("\n");
 
     my $analysis = $expts{$SRX}->[0];
@@ -970,7 +977,7 @@ IIIIIIIIHIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIGIGIDHIIIIIGIGI
 # you tarzip them together and place them on a ftp site for me to
 # download."
     
-    if (-e "$SRX/cufflinks/genes.fpkm_tracking") {
+    if (-e "$SRX/cufflinks/genes.fpkm_tracking.done") {
       open (EXPR, "<$SRX/cufflinks/genes.fpkm_tracking") || $log->log_and_die("Can't open $SRX/cufflinks/genes.fpkm_tracking\n");
       open (EXPROUT, ">$SRX.out") || $log->log_and_die("Can't open $SRX.out\n");
       while (my $line = <EXPR>) {
@@ -1130,7 +1137,7 @@ sub run_align {
     
     # pull over the SRA files and unpack them to make a fastq file
     # the aspera commmand to pull across the files only works on the farm2-login head node
-    if ((!$check && !$noalign) || !-e "$RNASeqSRADir/$arg/tophat_out/accepted_hits.bam") {
+    if ((!$check && !$noalign) || !-e "$RNASeqSRADir/$arg/tophat_out/accepted_hits.bam.done") {
       get_SRA_files($arg);
     }
     
@@ -1203,7 +1210,7 @@ sub run_tophat {
   if ($solexa)   {$cmd_extra = "--solexa-quals"} 
   if ($illumina) {$cmd_extra = "--solexa1.3-quals"} 
 
-  if ((!$check && !$noalign) || !-e "$RNASeqSRADir/$arg/tophat_out/accepted_hits.bam") {
+  if ((!$check && !$noalign) || !-e "$RNASeqSRADir/$arg/tophat_out/accepted_hits.bam.done") {
 
 #    if (glob("$RNASeqSRADir/$arg/SRR/SRR*/*.lite.sra") ) {
 #      # unpack any .lite.sra file to make the .fastq files
@@ -1272,7 +1279,7 @@ sub run_tophat {
     # test with --no-coverage-search for speed
     $status = $wormbase->run_command("$Software/tophat/tophat $cmd_extra --no-coverage-search --min-intron-length 30 --max-intron-length 5000 --min-segment-intron 30 --max-segment-intron 5000 --min-coverage-intron 30 --max-coverage-intron 5000 $gtf_index $raw_juncs $RNASeqGenomeDir/reference-indexes/$G_species $joined_file", $log);
     if ($status != 0) {  $log->log_and_die("Didn't run tophat to do the alignment successfully\n"); } # only exit on error after gzipping the files
-
+    $wormbase->run_command("touch tophat_out/accepted_hits.bam.done" ,$log); # set flag to indicate we have finished this
   } else {
     $log->write_to("Check tophat_out/accepted_hits.bam: already done\n");
   }
@@ -1287,7 +1294,7 @@ sub run_tophat {
 
 
 # now run cufflinks
-  if (!$check || !-e "cufflinks/genes.fpkm_tracking") {
+  if (!$check || !-e "cufflinks/genes.fpkm_tracking.done") {
     $log->write_to("run cufflinks\n");
     chdir "$RNASeqSRADir/$arg";
     mkdir "cufflinks", 0777;
@@ -1296,6 +1303,8 @@ sub run_tophat {
     $gtf = "--GTF $RNASeqGenomeDir/transcripts.gtf" unless $nogtf;
     $status = $wormbase->run_command("$Software/cufflinks/cufflinks $gtf ../tophat_out/accepted_hits.bam", $log);
     if ($status != 0) {  $log->log_and_die("Didn't run cufflinks to get the isoform/gene expression successfully\n"); }
+    $wormbase->run_command("touch cufflinks/genes.fpkm_tracking.done" ,$log); # set flag to indicate we have finished this
+
   } else {
     $log->write_to("Check cufflinks/genes.fpkm_tracking: already done\n");
   }
@@ -1305,7 +1314,7 @@ sub run_tophat {
 # now get the intron spans
 #############################################################
 
-  if (!$check || !-e "Introns/Intron.ace") {
+  if (!$check || !-e "Introns/Intron.ace.done") {
     $log->write_to("run Introns\n");
     chdir "$RNASeqSRADir/$arg";
     mkdir "Introns", 0777;
@@ -1323,7 +1332,7 @@ sub run_tophat {
 
 # now run TSL stuff
   if ($tsl) {
-    if (!$check || !-e "TSL/TSL_evidence.ace") {
+    if (!$check || !-e "TSL/TSL_evidence.ace.done") {
       $log->write_to("run TSL\n");
       chdir "$RNASeqSRADir/$arg";
       mkdir "TSL", 0777;
@@ -1667,6 +1676,7 @@ sub TSL_stuff {
 
   $log->write_to("TSL stuff done\n");
 
+  $wormbase->run_command("touch ${aceout}.done" ,$log); # set flag to indicate we have finished this
 
 
   return $status;
@@ -1906,6 +1916,7 @@ sub Intron_stuff {
   }
   close($vfh);
 
+  $wormbase->run_command("touch ${output}.done" ,$log); # set flag to indicate we have finished this
 
   return $status;
 }
