@@ -6,8 +6,8 @@
 #
 # This takes the BUILD_DATA/MISC_DYNAMIC/misc_genefinder.ace or jigsaw files and converts any coordinates that have changed between releases
 #
-# Last updated by: $Author: klh $     
-# Last updated on: $Date: 2012-06-22 08:56:53 $      
+# Last updated by: $Author: gw3 $     
+# Last updated on: $Date: 2012-11-15 11:15:49 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -137,7 +137,7 @@ while (my $line = <IN>) {
 
     # if $start > $end, then sense is -ve (i.e. normal ace convention)
     ($clone_id, $start, $end, $indel, $change) = 
-	$assembly_maper->remap_clone($clone_id, $start, $end, $current_converter, $autoace_converter);
+	$assembly_mapper->remap_clone($clone_id, $start, $end, $current_converter, $autoace_converter);
 
     if ($indel) {
       $log->write_to("There is an indel in the sequence in GENEFINDER/Jigsaw $genefinder_id, clone $clone_id, $start, $end\n");
