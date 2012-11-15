@@ -614,7 +614,7 @@ sub change_name {
 		 <h3>Change the name of an existing Variation</h3>
 		 Enter Id of Variation<br>  
 		 <INPUT TYPE="text" NAME="varid" SIZE="14" MAXLENGTH="14" VALUE="">
-		 <INPUT TYPE="text" NAME="change_name" SIZE="10" MAXLENGTH="10" VALUE="">
+		 <INPUT TYPE="text" NAME="change_name" SIZE="14" MAXLENGTH="14" VALUE="">
 		 <INPUT TYPE="hidden" NAME="action" VALUE="change_name">
 		 <br><br>
 		 <INPUT TYPE="submit" VALUE="Search">
