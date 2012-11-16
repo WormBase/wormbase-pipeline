@@ -21,6 +21,8 @@ like for searching through GFF files and printing in Ace format
 =cut
 package MapAlleles;
 
+use strict;
+
 # standard library
 use IO::File;
 use Memoize; 
@@ -38,6 +40,7 @@ use Feature_mapper;
 use Sequence_extract;
 use Coords_converter;
 memoize('Sequence_extract::Sub_sequence') unless $ENV{DEBUG}; 
+use Modules::Remap_Sequence_Change;
 use gff_model;
 
 # needs to be attached in main code
@@ -274,13 +277,20 @@ sub filter_alleles {
 
 # get the chromosome coordinates
 sub map {
-  my ($alleles)=@_;
+  my ($alleles, $fix_unmapped) = @_;
   my %alleles;
   my $mapper = Feature_mapper->new( $wb->autoace, undef, $wb );
   my $coords = Coords_converter->invoke( $wb->autoace, 0, $wb );
-  
+  my $assembly_mapper = Remap_Sequence_Change->new($wb->get_wormbase_version - 1, 
+                                                   $wb->get_wormbase_version, 
+                                                   $wb->species, 
+                                                   $wb->genome_diffs);
+
   my $count = scalar(@$alleles);
   $log->write_to("INFO: Mapping $count alleles...\n");
+
+  my (%mapped_pos, @unmapped_inserts, @unmapped_others);
+
   foreach my $x (@$alleles) {
     $count--;
     if ($count % 1000 == 0) {
@@ -288,27 +298,114 @@ sub map {
     }
 
     # $chromosome_name,$start,$stop
-    my ($min_len, $max_len);
+    my ($min_len, $max_len, %mut_types, @mut_types);
 
-    if ($x->Type_of_mutation eq 'Substitution') {
-      my $from = $x->Type_of_mutation->right;
+    map { $mut_types{$_->name} = $_ } $x->at('Sequence_details.Type_of_mutation');
+
+    if ($mut_types{Substitution}) {
+      my $from = $mut_types{Substitution}->right;
       if ($from) {
         $min_len = $max_len = length($from);
       }
     }
-
-    my @map = $mapper->map_feature($x->Sequence->name,$x->Flanking_sequences->name,$x->Flanking_sequences->right->name, $min_len, $max_len);
-
+    
+    my @map = $mapper->map_feature($x->Sequence->name,
+                                   $x->Flanking_sequences->name,
+                                   $x->Flanking_sequences->right->name, 
+                                   $min_len, 
+                                   $max_len);
+    
     if ($map[0] eq '0'){
-      $log->write_to("ERROR: Couldn't map $x (${\$x->Public_name}) to sequence ${\$x->Sequence->name} with ${\$x->Flanking_sequences->name} and ${\$x->Flanking_sequences->right->name} (Remark: ${\$x->Remark})\n");
-      $errors++;
+      if ($mut_types{Insertion} and scalar(keys %mut_types) == 1) {
+        push @unmapped_inserts, $x;
+      } else {
+        push @unmapped_others, $x;
+      }
       next;
     }
-    elsif ($map[0] ne $x->Sequence->name and $x->Sequence->name !~ /^CHROMOSOME/ and $x->Sequence->name !~ /^chr/){
+
+    if ($map[0] ne $x->Sequence->name and 
+        $x->Sequence->name !~ /^CHROMOSOME/ and 
+        $x->Sequence->name !~ /^chr/){
       $log->write_to("WARNING: moved $x (${\$x->Public_name}) from sequence ${\$x->Sequence->name} to $map[0]\n");
     }
 
-    if( abs($map[1] - $map[2]) > 100000) {
+    my ($cl_st, $cl_en, $cl_ori) = ($map[1], $map[2], '+');
+
+    if ($cl_st > $cl_en) {
+      ($cl_st, $cl_en) = ($cl_en, $cl_st);
+      $cl_ori = '-';
+    }
+
+    $mapped_pos{$x->name} = {
+      parent => $map[0],
+      start  => $cl_st,
+      end    => $cl_en,
+      strand => $cl_ori,
+    };
+  }
+
+  # decide what to do about the unmapped ones
+  if (@unmapped_inserts or @unmapped_others) {
+
+    if (not $fix_unmapped) {
+      foreach my $x (@unmapped_inserts, @unmapped_others) {
+        $log->write_to("ERROR: Failed to map $x and will not attempt to remap (${\$x->Public_name}) " .
+                       "to sequence ${\$x->Sequence->name} " .
+                       "with ${\$x->Flanking_sequences->name} and ${\$x->Flanking_sequences->right->name} " .
+                       "(Remark: ${\$x->Remark})\n");
+        $errors++;
+      }
+    } else {
+      my %remapped;
+      foreach my $pair ([\@unmapped_inserts, 1], [\@unmapped_others,0]) {
+        my ($list, $zero_length) = @$pair;
+
+        my @ids = map { $_->name } @$list;
+        next if not @ids;
+
+        my $hash = $mapper->remap_and_generate_new_flanks_for_features($assembly_mapper, 
+                                                                       'Variation',
+                                                                       $zero_length,
+                                                                       50,
+                                                                       \@ids);
+        foreach my $k (keys %$hash) {
+          $remapped{$k} = $hash->{$k};
+        }
+      }
+
+      foreach my $x (@unmapped_inserts, @unmapped_others) {
+        if (exists $remapped{$x->name}) {
+          my ($chr, $left_flank, $right_flank) = ($remapped{$x->name}->{chr},
+                                                  $remapped{$x->name}->{left_flank},
+                                                  $remapped{$x->name}->{right_flank});
+
+          $log->write_to("ERROR: Failed to map $x but was able to generate new flanks using coord remapping (see below)\n\n");
+          $log->write_to("ACE : \n");
+          $log->write_to("ACE : Variation : \"$x\"\n");
+          $log->write_to("ACE : Sequence $chr\n");
+          $log->write_to("ACE : Flanking_sequences $left_flank $right_flank\n");
+          $log->write_to("ACE : \n");
+        } else {
+          $log->write_to("ERROR: Failed to remap $x after attempted fix (${\$x->Public_name}) " .
+                         "to sequence ${\$x->Sequence->name} " .
+                         "with ${\$x->Flanking_sequences->name} and ${\$x->Flanking_sequences->right->name} " .
+                         "(Remark: ${\$x->Remark})\n");
+          $errors++;
+        }
+      }
+    }
+  }
+  
+  foreach my $x (@$alleles) {
+    next if not exists $mapped_pos{$x->name};
+
+    my $clone_seq    = $mapped_pos{$x->name}->{parent};
+    my $clone_start  = $mapped_pos{$x->name}->{start};
+    my $clone_end    = $mapped_pos{$x->name}->{end};
+    my $clone_strand = $mapped_pos{$x->name}->{strand};
+
+    if( abs($clone_start - $clone_end) > 100000) {
       # Note from Mary Ann 20 june 2008:
       # I have heard back from Mark Edgley and he confirms
       # that the few Massive deletions which map_alleles
@@ -324,51 +421,41 @@ sub map {
       }
     } 
 
+    # get chromosome coords, just in case we're not already in them
+    my ($chromosome, $chr_start, $chr_end) = ($clone_strand eq '-') 
+        ? $mapper->LocateSpanUp($clone_seq, $clone_end, $clone_start)
+        : $mapper->LocateSpanUp($clone_seq, $clone_start, $clone_end);
+
+    my $chr_strand = '+';
+    if ($chr_start > $chr_end) {
+      ($chr_start, $chr_end) = ($chr_end, $chr_start);
+      $chr_strand = '-';
+    }
+
     # from flanks to variation. If the retured coords defined a 2bp span, then
     # the flanked feature is 0bp. In this case, we leave the coords as they are
     # (i.e. including 1bp from each flank), because this this the only way in 
     # which Acedb/GFF allows us to define 0-bp features
-    if (abs($map[2] - $map[1]) != 1) {
-      if ($map[2] > $map[1]){
-        $map[1]++;
-        $map[2]--;
-      }
-      else {
-        $map[1]--;
-        $map[2]++;
-      }
-    }
-    
-    #------------------------------------------------------------------------
-    my ($chromosome,$start) = $mapper->Coords_2chrom_coords($map[0],$map[1]);
-    my ($drop,$stop) = $mapper->Coords_2chrom_coords($map[0],$map[2]);
-    
-    # orientation
-    my $orientation = '+';
-    if ($stop < $start){
-      my $tmp;
-      $tmp         = $start;
-      $start       = $stop;
-      $stop        = $tmp;
-      $orientation = '-';
+    if ($clone_end - $clone_start != 1) {
+      $clone_start++;
+      $clone_end--;
+
+      $chr_start++;
+      $chr_end--;
     }
 
-    # in case that the parent is the chromosome
-    if ($chromosome eq $map[0]){
-      ($map[0],$map[1],$map[2]) = $coords->LocateSpan( $chromosome,$start,$stop);            
-    }
     $alleles{$x->name} = {
       allele      => $x, 
       chromosome  => $chromosome, 
-      start       => $start, 
-      stop        => $stop, 
-      clone       => $map[0],
-      clone_start => $map[1], 
-      clone_stop  => $map[2],
-      orientation => $orientation,
+      start       => $chr_start, 
+      stop        => $chr_end, 
+      orientation => $chr_strand,
+      clone       => $clone_seq,
+      clone_start => ($clone_strand eq '-') ? $clone_end : $clone_start, 
+      clone_stop  => ($clone_strand eq '-') ? $clone_start : $clone_end,
     };
     
-    print "${\$x->name} ($chromosome ($orientation): $start - $stop) clone: $map[0] $map[1]-$map[2]\n" if $wb->debug;
+    print "${\$x->name} ($chromosome ($chr_strand): $chr_start - $chr_end) clone: $clone_seq $clone_start-$clone_end ($clone_strand)\n" if $wb->debug;
     
   }
   return \%alleles;
@@ -645,8 +732,8 @@ sub get_cds {
                 
                 # 10 bp allele overlapping a splice site
                 if (abs($v->{'start'}-$v->{'stop'})<=10){
-                    my @types=(Acceptor,Donor);
-                    @types=(Donor,Acceptor) if $hit->{orientation} eq '+';
+                    my @types=('Acceptor','Donor');
+                    @types=('Donor','Acceptor') if $hit->{orientation} eq '+';
                     my @intron_starts= grep{$v->{start} <= $_->{start}+1 && $v->{stop}>=$_->{start} } @introns; # intron start 
                     my @intron_stops = grep{$v->{start} <= $_->{stop}    && $v->{stop}>=$_->{stop}-1 } @introns; # intron stop
                     
