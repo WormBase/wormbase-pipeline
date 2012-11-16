@@ -6,8 +6,8 @@
 #
 # Author: Chao-Kung CHen
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2010-04-29 14:31:15 $
+# Last updated by: $Author: klh $
+# Last updated on: $Date: 2012-11-16 16:20:24 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -39,9 +39,8 @@ if ( $store ) {
 
 $species = $wormbase->species;
 my $log = Log_files->make_build_log($wormbase);
-my $farm_base = '/lustre/scratch101/ensembl/wormpipe';
-my $farm_ace = "$farm_base/ace_files"; 
-my $source_dir    = "$farm_base/dumps";
+my $source_dir = $wormbase->farm_dump;
+my $farm_ace = "$source_dir/../ace_files"; 
 my $target_dir = $wormbase->acefiles;
 my $backup_dir = "$source_dir/BACKUP/";
 
