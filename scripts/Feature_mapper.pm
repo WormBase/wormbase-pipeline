@@ -416,7 +416,7 @@ sub _get_flanking_sequence {
   # get sequence of clone
   my $seq = $self->Sub_sequence($clone);
   my $len = length $seq;
-                                                                                                                                                      
+
   # convert to computer coords
   $pos1--;
   $pos2--;
@@ -522,7 +522,7 @@ sub get_flanking_sequence_for_feature {
 
 sub suggest_fix {
 
-  my ($self, $feature_id, $expected_length, $clone, $flank_L, $flank_R, $version, $mapper) = @_;
+  my ($self, $feature_id, $expected_length, $clone, $flank_L, $flank_R, $mapper, $cache) = @_;
   my @result;
   my $FIXED = 1;
   my $NOT_FIXED = 0;
@@ -534,56 +534,66 @@ sub suggest_fix {
   my $current_db = $self->wormbase->database('current');
   my $dir = "$current_db/CHROMOSOMES";
 
-  foreach my $chromosome ($self->wormbase->get_chromosome_names(-prefix => 1)) {
-    my $gff = "$dir/${chromosome}.gff";
-    open (GFF, "< $gff") || die "Can't open GFF file $gff\n";
-
-    while (my $line = <GFF>) {
-      chomp $line;
-      if ($line =~ /^\s*$/) {next;}
-      if ($line =~ /^#/) {next;}
-      my @f = split /\t/, $line;
-      if (!$f[8] || ($f[8] !~ /Feature \"$feature_id\"/)) {next;}
-      my ($chromosome, $start, $end, $sense) = ($f[0], $f[3], $f[4], $f[6]);
-      my ($indel, $change);
-      ($start, $end, $sense, $indel, $change) = $mapper->remap_gff($chromosome, 
-                                                                   $start, 
-                                                                   $end, 
-                                                                   $sense); 
-
-      # when getting new flanks, the returned flanks will include 1bp on each side of the 
-      # extent that we supply. We therefore need to "extend" the feature by 1bp in each direction.
-
-      # 0bp features appear in the GFF files as 2bp features. The GFF extent for these 
-      # already includes 1bp of sequence. These therefore do not need adjustment. But how can 
-      # we tell these from real 2bp features? The only option is to check the given min_len and
-      # max_len
-      if (abs($end - $start) != 1 or not defined $expected_length or $expected_length != 0) {
-        $start--;
-        $end++;
+  if (not exists $cache->{$feature_id} or $cache->{$feature_id} == 0) {
+    foreach my $chromosome ($self->wormbase->get_chromosome_names(-prefix => 1)) {
+      my $gff = "$dir/${chromosome}.gff";
+      open (GFF, "< $gff") || die "Can't open GFF file $gff\n";
+      
+      while (my $line = <GFF>) {
+        chomp $line;
+        if ($line =~ /^\s*$/) {next;}
+        if ($line =~ /^#/) {next;}
+        my @f = split /\t/, $line;
+        if (!$f[8] || ($f[8] !~ /Feature \"\S+\"/)) {next;}
+        
+        my ($fid) = ($f[8] =~ /^Feature \"(\S+)\"/);
+        if ($fid eq $feature_id or exists $cache->{$fid}) {
+          $cache->{$fid} = [$f[0], $f[3], $f[4], $f[6]];
+        }
       }
-
-      # get clone or superlink in the 4 Kb region around the feature
-      my $left_coord = $start - 2000;
-      my $right_coord = $end + 2000;
-      my $new_clone;
-
-      ($new_clone, $left_coord, $right_coord) = $self->LocateSpan($chromosome, $left_coord, $right_coord);
-      $left_coord += 2000;
-      $right_coord -= 2000;
-
-      if ($sense eq '+') {
-	($flank_L, $flank_R) = $self->_get_flanking_sequence($new_clone, $left_coord, $right_coord);
-      } else {
-	($flank_L, $flank_R) = $self->_get_flanking_sequence($new_clone, $right_coord, $left_coord);
-      }
-      if (defined $flank_L) {
-	return ($new_clone, $flank_L, $flank_R, "New flanking sequences remapped from position in previous WormBase release", $FIXED);
-      }
-      last;
     }
-    close (GFF);
   }
+  
+  if (ref($cache->{$feature_id})) {
+    my ($chromosome, $start, $end, $sense) = @{$cache->{$feature_id}};
+
+    my ($indel, $change);
+    ($start, $end, $sense, $indel, $change) = $mapper->remap_gff($chromosome, 
+                                                                 $start, 
+                                                                 $end, 
+                                                                 $sense); 
+    
+    # when getting new flanks, the returned flanks will include 1bp on each side of the 
+    # extent that we supply. We therefore need to "extend" the feature by 1bp in each direction.
+    
+    # 0bp features appear in the GFF files as 2bp features. The GFF extent for these 
+    # already includes 1bp of sequence. These therefore do not need adjustment. But how can 
+    # we tell these from real 2bp features? The only option is to check the given min_len and
+    # max_len
+    if (abs($end - $start) != 1 or not defined $expected_length or $expected_length != 0) {
+      $start--;
+      $end++;
+    }
+    
+    # get clone or superlink in the 4 Kb region around the feature
+    my $left_coord = $start - 2000;
+    my $right_coord = $end + 2000;
+    my $new_clone;
+    
+    ($new_clone, $left_coord, $right_coord) = $self->LocateSpan($chromosome, $left_coord, $right_coord);
+    $left_coord += 2000;
+    $right_coord -= 2000;
+    
+    if ($sense eq '+') {
+      ($flank_L, $flank_R) = $self->_get_flanking_sequence($new_clone, $left_coord, $right_coord);
+    } else {
+      ($flank_L, $flank_R) = $self->_get_flanking_sequence($new_clone, $right_coord, $left_coord);
+    }
+    if (defined $flank_L) {
+      return ($new_clone, $flank_L, $flank_R, "New flanking sequences remapped from position in previous WormBase release", $FIXED);
+    }
+  }
+
 
   # If that didn't work, try to repair the existing flanking sequences
 
@@ -638,6 +648,106 @@ sub suggest_fix {
   # can't do anything else
   return ($clone,  $flank_L, $flank_R, "Can't suggest a fix for this", $NOT_FIXED);
 
+}
+
+
+=head2 remap_and_generate_new_flanks_for_feature
+
+  Title   :   remap_and_generate_new_flanks_for_feature
+  Usage   :   my $hash_ref = $fmapper->remap_and_generate_new_flanks_for_features($assembly_mapper,
+                 'Variation',
+                 1,
+                 \@feature_list);
+  Returns :   Hash ref, indexed by feature/variation id, containing new flanks and remapped chromosomal
+              location of the feature
+  Args    :   1. Remap_Sequence_Change oject
+              2. Class of features ('Variation' or 'Feature')
+              3. whether or not given list contains 0-length features (which need coordinate adjustment)
+	      4. Feature arrayreg
+
+  NOTE: when abs(end - start) == 1, the code cannot tell whether the supplied extent is
+        a 2-bp feature or a 0-bp feature (lying in between the two basws). This information
+        should therefore be supplied as the third arg
+
+  NOTE 2: Since the Remap_Sequence_Change only works sensible for C.elegans, so does this method
+=cut
+
+sub remap_and_generate_new_flanks_for_features {  
+  my ($self, $assembly_mapper, $class, $zero_length, $min_flank_len, $feats) = @_;
+
+  my $current_db = $self->wormbase->database('current');
+  my $dir = "$current_db/CHROMOSOMES";
+
+  my %feats;
+  map { $feats{$_} = {} } @$feats;
+
+  foreach my $chromosome ($self->wormbase->get_chromosome_names(-prefix => 1)) {
+    my $gff = "$dir/${chromosome}.gff";
+    open (GFF, "< $gff") || die "Can't open GFF file $gff\n";
+
+    while (my $line = <GFF>) {
+      next if $line =~ /^\#/;
+
+      my @f = split /\t/, $line;
+      next if $f[8] !~ /$class \"\S+\"/;
+
+      my ($fid) = ($f[8] =~ /$class \"(\S+)\"/);
+      next if not exists $feats{$fid};
+
+      my ($chr, $start, $end, $sense) = ($f[0], $f[3], $f[4], $f[6]);
+
+      my ($indel, $change);
+      ($start, $end, $sense, $indel, $change) = $assembly_mapper->remap_gff($chr, 
+                                                                            $start, 
+                                                                            $end, 
+                                                                            $sense); 
+
+
+      if ($start > $end) {
+        ($start, $end) = ($end, $start);
+      }
+
+      # when getting new flanks, the returned flanks will include 1bp on each side of the 
+      # extent that we supply. We therefore need to "extend" the feature by 1bp in each direction.
+
+      # but 0bp features appear in the GFF files as 2bp features. The GFF extent for these 
+      # already includes 1bp of sequence. These therefore do not need adjustment. But how can 
+      # we tell these from real 2bp features? The only option is to check the given min_len and
+      # max_len
+      if ($end - $start != 1 or not $zero_length) {
+        $start--;
+        $end++;
+      }
+
+      # we want the flanks to be unique within the chromosome, so we get them from the chr
+      # and then map down
+      my ($new_flank_L, $new_flank_R);
+
+      if ($sense eq '+') {
+	($new_flank_L, $new_flank_R) = $self->_get_flanking_sequence($chr, $start, $end, $min_flank_len);
+      } else {
+	($new_flank_L, $new_flank_R) = $self->_get_flanking_sequence($chr, $end, $start, $min_flank_len);
+      }
+
+      if (defined $new_flank_L) {
+        $feats{$fid}->{left_flank} = uc($new_flank_L);
+        $feats{$fid}->{right_flank} = uc($new_flank_R);
+        $feats{$fid}->{chr}   = $chr;
+        $feats{$fid}->{start} = $start;
+        $feats{$fid}->{end}   = $end;
+        $feats{$fid}->{strand}   = $sense;
+      }
+    }
+    close (GFF);
+  }
+
+  foreach my $fid (@$feats) {
+    if (not exists $feats{$fid}->{left_flank}) {
+      delete $feats{$fid};
+    }
+  }
+
+  return \%feats;
 }
                           
 ##########################################
