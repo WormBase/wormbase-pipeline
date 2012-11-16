@@ -7,7 +7,7 @@
 # This takes the BUILD_DATA/MISC_DYNAMIC/fosmids.ace file and converts any coordinates that have changed between releases
 #
 # Last updated by: $Author: klh $     
-# Last updated on: $Date: 2012-06-22 08:56:53 $      
+# Last updated on: $Date: 2012-11-16 10:47:11 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -51,7 +51,7 @@ if ( $store ) {
 
 # in test mode?
 if ($test) {
-  print "In test mode\n" if ($verbose);
+  print STDERR "In test mode\n" if ($verbose);
 
 }
 
@@ -111,50 +111,43 @@ my $current_converter = Coords_converter->invoke($currentdb, 0, $wormbase);
 my $autoace_converter = Coords_converter->invoke($ace_dir, 0, $wormbase);
 
 # get the FOSMIDS details
-my $clone_id;
+my ($current_seq, %new_mappings);
 my ($indel, $change);
-my $sequence_flag=1;		# counts which sequence line we are looking at, Fosmid or Superlink
+
 
 open (IN, "< $input") || die "can't open input file $input\n";
-open (OUT, "> $output") || die "can't open output file $output\n";
+
 while (my $line = <IN>) {
-  chomp $line;
-
-  if ($line =~ /Sequence\s+:\s+\"(\S+)\"/) { # we want every other Sequence line
-    if ($sequence_flag) {
-      $clone_id = $1;
-      print "Got superlink/clone: $clone_id\n" if ($verbose);
-      $sequence_flag = 0;
-    } else {
-      print OUT "$line\n";
-      $sequence_flag = 1;	# next time we will have the Sequence line we want
-    }
-
+  
+  if ($line =~ /Sequence\s+:\s+\"(\S+)\"/) {
+    $current_seq = $1;
   } elsif ($line =~ /Genomic_non_canonical\s+(\S+)\s+(\d+)\s+(\d+)/) {
     my ($fosmid_id, $start, $end) = ($1, $2, $3);
-    print "$line\n" if ($verbose);
-
+    
     # if $start > $end, then sense is -ve (i.e. normal ace convention)
-    ($clone_id, $start, $end, $indel, $change) = 
-	$assembly_mapper->remap_clone($clone_id, $start, $end, $current_converter, $autoace_converter);
-
+    my ($new_seq, $new_start, $new_end, $indel, $change) = 
+	$assembly_mapper->remap_clone($current_seq, $start, $end, $current_converter, $autoace_converter);
+    
     if ($indel) {
-      $log->write_to("There is an indel in the sequence in FOSMID $fosmid_id, clone $clone_id, $start, $end\n");
+      $log->write_to("There is an indel in the sequence in FOSMID $fosmid_id, clone $new_seq, $new_start, $new_end\n");
     } elsif ($change) {
-      $log->write_to("There is a change in the sequence in FOSMID $fosmid_id, clone $clone_id, $start, $end\n");
+      $log->write_to("There is a change in the sequence in FOSMID $fosmid_id, clone $new_seq, $new_start, $new_end\n");
     }
-
-    print "Genomic_non_canonical $fosmid_id $start $end\n" if ($verbose);
-    print OUT "Sequence : \"$clone_id\"\n";
-    print OUT "Genomic_non_canonical $fosmid_id $start   $end\n";
-
-  } else {
-    print OUT "$line\n";
+    
+    push @{$new_mappings{$new_seq}}, [$fosmid_id, $new_start, $new_end]; 
   }
-
 }
 close (IN);
-close (OUT);
+
+open (OUT, "> $output") || die "can't open output file $output\n";
+
+foreach my $seq (sort keys %new_mappings) {
+  print OUT "\nSequence : \"$seq\"\n";
+  foreach my $line (@{$new_mappings{$seq}}) {
+    print OUT "Genomic_non_canonical @$line\n";
+  }
+}
+close(OUT);
 
 
 # Close log files and exit
