@@ -2177,6 +2177,14 @@ No_display
 Remark "Method for the Vancouver fosmid clones"
 
 
+Method : "Vancouver_fosmid_read"
+Remark   "Vancouver fosmid end sequencing read"
+No_display
+GFF_source       "Vancouver_fosmid_read"
+GFF_feature      "read"
+GFF_SO   "SO:0000150"
+
+
 Method : "Promoterome"  
 GFF_source      "Promoterome"
 GFF_feature     "PCR_product"
