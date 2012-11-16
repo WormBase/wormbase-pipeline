@@ -4,8 +4,8 @@
 # 
 # A script to generate C.elegans CDS/Protein to NCBI_GI number XREFs
 #
-# Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2012-05-15 12:12:01 $
+# Last edited by: $Author: klh $
+# Last edited on: $Date: 2012-11-16 10:46:12 $
 #
 #==================
 
@@ -60,7 +60,7 @@ else {
 
 # basic paths etc.
 #ebi my $basedir = "/net/isilon3/production/panda/ensemblgenomes/wormbase/analysis/GI_numbers/";
-my $basedir = $wormbase->wormpub."/analysis/GI_numbers/";
+my $basedir = $wormbase->misc_static . "/GINUMBERS/";
 my $ncbiftp = "ftp.ncbi.nih.gov";
 my $genbankftp = "ftp://ftp.ncbi.nih.gov/genbank/livelists/";
 my $path = "/genbank/livelists/";
