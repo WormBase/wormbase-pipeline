@@ -49,7 +49,7 @@ $log->write_to("writing gsi files for $opt_f\n");
 
 if ($opt_f) {
 
-    my $offset;
+    my $offset = 0;
     my $nfiles = 1;
     my $nfile = 1;
     my $nkeys = 0;
@@ -76,6 +76,7 @@ if ($opt_f) {
 	}
 	# gives the current byte offset
 	$offset = tell;
+
     }
     close F;
     undef %seen;
