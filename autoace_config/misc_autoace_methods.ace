@@ -1967,7 +1967,7 @@ No_display
 Method : "Genomic_canonical"
 GFF_feature "region"
 GFF_SO "SO:0000143" // assembly_component
-Remark	 "Method for sequences of genomic clones selected for use in the genome sequencing project of C. elegans"
+Remark	 "Genomic clones selected for use in the genome sequencing project of C. elegans"
 No_display	
 
 Method : "BLASTP"
@@ -2174,7 +2174,7 @@ GFF_source Vancouver_fosmid
 GFF_feature region
 GFF_SO "SO:0000347" // nucleotide_match
 No_display
-Remark "Method for the Vancouver fosmid clones"
+Remark "Vancouver fosmid clone"
 
 
 Method : "Vancouver_fosmid_read"
