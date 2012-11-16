@@ -1348,7 +1348,7 @@ sub establish_paths {
     $self->{'cdna_acedir'} = $self->{'build_data'} . "/cDNAace/".$self->{'species'};
     $self->{'maskedcdna'}  = $basedir . "/cDNA/".$self->{'species'};
 
-    $self->{'farm_dump'}    = '/lustre/scratch101/ensembl/wormpipe/dumps';
+    $self->{'farm_dump'}    = '/lustre/scratch109/ensembl/wormpipe/dumps';
     $self->{'rnaseq'}       = '/lustre/scratch103/ensembl/wormpipe/RNASeq/'.$self->{'species'}.'/SRA';
     $self->{'build_lsfout'} = $self->scratch_area 
         . "/LSF_OUT/" . $self->{species} . '/' . $self->get_wormbase_version_name;
