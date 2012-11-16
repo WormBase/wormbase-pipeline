@@ -13,7 +13,7 @@
 #      COMPANY:
 #     $Version:  $
 #      CREATED: 2006-02-27
-#        $Date: 2012-11-14 13:29:39 $
+#        $Date: 2012-11-16 10:51:36 $
 #===============================================================================
 package Remap_Sequence_Change;
 
@@ -202,14 +202,6 @@ sub remap_gff {
   my $indel = 0;		# true if indels affect this location
   my $change = 0;		# true if non-indel base changes affect this location
 
-  #if ($chromosome =~ /CHROMOSOME_(\S+)/) {$chromosome = $1;}
-  #
-  # TEMPORARY HACK TO ENSURE BUILD 235 IS SOUND
-  #
-  if ($chromosome !~ /CHROMOSOME_/) {
-    $chromosome = "CHROMOSOME_${chromosome}";
-  }
-                
   my %mapping_data = %{$self->_mapping_data};
 
   my @releases = sort { $a <=> $b } keys %mapping_data;
