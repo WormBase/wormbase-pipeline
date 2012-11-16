@@ -16,7 +16,7 @@ use strict;
 ################################################################
 
 # Size of the records to store the indexed information
-my $RECSIZE = 70; # A64 + n + N
+my $RECSIZE = 74; # A64 + n + N
 
 # fmt numbers (file format)
 my $fmt_genbank = 2;
@@ -38,7 +38,7 @@ sub  writeHeaderRecord
 {
     local *FH = shift;
     my ($nfiles, $nkeys) = @_;
-    print FH pack "a64nN", "GSI", $nfiles, $nkeys;
+    print FH pack "a64nQ", "GSI", $nfiles, $nkeys;
 }
 
 ###########################################################
@@ -47,7 +47,7 @@ sub  writeFileRecord
 {
     local *FH = shift;
     my ($file, $nfile, $fmt) = @_;
-    print FH pack "a64nN", $file, $nfile, $fmt;
+    print FH pack "a64nQ", $file, $nfile, $fmt;
 }
 
 ###########################################################
@@ -73,7 +73,7 @@ sub openGSI
         my $check;
 	open (GSI, "$file") || die "Failed to open GSI file $file";
 	read(GSI, $record, $RECSIZE);
-	($check, $nfiles, $nkeys) = unpack "A64nN", $record;
+	($check, $nfiles, $nkeys) = unpack "A64nQ", $record;
 	die "File $file is not in the GSI format" if ($check ne "GSI");
 }
 
@@ -99,7 +99,7 @@ sub getOffset
 	
 	while (read(GSI, $record, $RECSIZE))
 	{
-		($name, $file_number, $offset) = unpack "A64nN", $record;
+		($name, $file_number, $offset) = unpack "A64nQ", $record;
 #                print "\t:$key  :$name  :$left  :$right\n";
 		if    ($key  eq $name ) { last }
 		elsif ($left >= $right) { return (-1, -1, -1) }
@@ -112,7 +112,7 @@ sub getOffset
 
         seek(GSI, $file_number * $RECSIZE, 0);
 	read(GSI, $record, $RECSIZE);
-	($seqfile, $file_number, $fmt) = unpack "A64nN", $record;
+	($seqfile, $file_number, $fmt) = unpack "A64nQ", $record;
 	return ($seqfile, $fmt, $offset);
 }
 
