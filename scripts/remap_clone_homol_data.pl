@@ -8,8 +8,8 @@
 # Homol_data and converts any coordinates that have changed between
 # releases
 #
-# Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2012-11-06 11:04:02 $      
+# Last updated by: $Author: klh $     
+# Last updated on: $Date: 2012-11-16 10:47:40 $      
 
 use strict;                                     
 use lib $ENV{'CVS_DIR'};
@@ -143,15 +143,17 @@ while (my $line = <IN>) {
   chomp $line;
 
   # Homol_data : R02D3:BLAT_ncRNA
-  if ($line =~ /Homol_data\s+:\s+(\S+):/) { 
+  if ($line =~ /^Homol_data\s+:\s+(\S+):/) { 
+    print STDERR "$line\n" if ($verbose);
     $clone_id = $1;
     $clone_id =~ s/"//g; #"
 
   # DNA_homol       EF044580        BLAT_ncRNA_BEST 100     42213   42233   1 21
-  } elsif ($line =~ /${homol_type}\s+\S+\s+\S+\s+\S+\s+\d+\s+\d+\s+\d+\s+\d+/) {
+  } elsif ($line =~ /^${homol_type}\s+\S+\s+\S+\s+\S+\s+\d+\s+\d+\s+\d+\s+\d+/) {
     my ($homol, $id, $type, $score, $start, $end, $cb_start, $cb_end) = split(/\s+/, $line);
     $id =~ s/"//g; #"
-    print "$line\n" if ($verbose);
+    print STDERR "$line\n" if ($verbose);
+    print STDERR " Remapping $clone_id, $start, $end\n" if $verbose;
     # if $start > $end, then sense is -ve (i.e. normal ace convention)
     ($new_clone_id, $start, $end, $indel, $change) = 
 	$assembly_mapper->remap_clone($clone_id, $start, $end, $current_converter, $autoace_converter);
@@ -174,10 +176,10 @@ while (my $line = <IN>) {
     $blank_line = 0;
 
   # Homol_data R02D3:BLAT_ncRNA 1 32218
-  } elsif ($line =~ /Homol_data\s+\S+:${method}(\"|)\s+1/) {	# ignore these - write them out again later
+  } elsif ($line =~ /^Homol_data\s+\S+:${method}(\"|)\s+1/) {	# ignore these - write them out again later
     $prev_clone_id = "";
 
-  } elsif ($line =~ /Sequence\s+:\s+/) {	# ignore these - write them out again later
+  } elsif ($line =~ /^Sequence\s+:\s+/) {	# ignore these - write them out again later
     $prev_clone_id = "";
 
   } else {
