@@ -9,7 +9,7 @@
 #
 #
 # Last updated by: $Author: klh $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2012-11-14 13:52:06 $        # quickly see when script was last changed and by whom
+# Last updated on: $Date: 2012-11-16 16:32:02 $        # quickly see when script was last changed and by whom
 
 
 $|=1;
@@ -182,7 +182,7 @@ foreach my $query (@features2map) {
 
   $log->write_to("// Mapping $query features\n\n");
   
-  my @features;
+  my (@features, @unmapped_feats);
 
   # open output files
   open (OUTPUT, ">$outdir/feature_${query}.ace") or die "Failed to open output file\n";
@@ -312,32 +312,9 @@ EOF
                                       ($sanity{$method}) ? $sanity{$method}->[0] : undef,
                                       ($sanity{$method}) ? $sanity{$method}->[1] : undef,
         );
+
     if (!defined $coords[2]) {
-      $log->write_to(sprintf("// ERROR: Cannot map feature %s on clone %s (%s) flanking sequences: %s %s\n", 
-                             $feature,
-                             $clone,
-                             ($sanity{$method}) ? "defined range @{$sanity{$method}}" : "no defined range",
-                             $flanking_left, 
-                             $flanking_right));
-      $log->error;
-      
-      # if the max leng is defined, and it is 0, we assert that all features of this kind are 0-length.
-      # this info is passed through to suggest_fix, which uses it to work out the correct coords in 
-      my @suggested_fix = $mapper->suggest_fix($feature, 
-                                               ($sanity{$method} and $sanity{$method}->[0] == $sanity{$method}->[1]) ? $sanity{$method}->[0] : undef,
-                                               $smap_parent, 
-                                               $flanking_left, 
-                                               $flanking_right, 
-                                               $assembly_mapper);
-      if ($suggested_fix[4]) { # FIXED :-)
-        $log->write_to("// Suggested fix for $feature : $suggested_fix[3]\n");
-        $log->write_to("\nFeature : $feature\n");
-        $log->write_to("Flanking_sequences $suggested_fix[0] $suggested_fix[1] $suggested_fix[2]\n");
-        $log->write_to("Remark \"Flanking sequence automatically fixed: $suggested_fix[3]\"\n\n");
-      } else { # NOT_FIXED :-(
-        $log->write_to("// $feature : $suggested_fix[3]\n");
-      }
-      
+      push @unmapped_feats, $list;
       next;
     }
     
@@ -390,11 +367,48 @@ EOF
     
   }
 
+  if (@unmapped_feats) {
+    my %all_ids;
+    map { $all_ids{$_->[0]} =  0 } @unmapped_feats;
+
+    foreach my $list (@unmapped_feats) {
+      my ($feature,$method, $smap_parent,$clone,$flanking_left,$flanking_right) = @$list;
+      
+      $log->write_to(sprintf("// ERROR: Cannot map feature %s on clone %s (%s) flanking sequences: %s %s\n", 
+                             $feature,
+                             $clone,
+                             ($sanity{$method}) ? "defined range @{$sanity{$method}}" : "no defined range",
+                             $flanking_left, 
+                             $flanking_right));
+      $log->error;
+      
+      # if the max leng is defined, and it is 0, we assert that all features of this kind are 0-length.
+      # this info is passed through to suggest_fix, which uses it to work out the correct coords in 
+      my @suggested_fix = $mapper->suggest_fix($feature, 
+                                               ($sanity{$method} and $sanity{$method}->[0] == $sanity{$method}->[1]) ? $sanity{$method}->[0] : undef,
+                                               $smap_parent, 
+                                               $flanking_left, 
+                                               $flanking_right, 
+                                               $assembly_mapper,
+                                               \%all_ids
+          );
+      if ($suggested_fix[4]) { # FIXED :-)
+        $log->write_to("// Suggested fix for $feature : $suggested_fix[3]\n");
+        $log->write_to("\nFeature : $feature\n");
+        $log->write_to("Flanking_sequences $suggested_fix[0] $suggested_fix[1] $suggested_fix[2]\n");
+        $log->write_to("Remark \"Flanking sequence automatically fixed: $suggested_fix[3]\"\n\n");
+      } else { # NOT_FIXED :-(
+        $log->write_to("// $feature : $suggested_fix[3]\n");
+      }
+    }
+  }
+  close(OUTPUT);
+
   $wb->load_to_database($wb->autoace, "$outdir/feature_${query}.ace", "feature_mapping", $log) unless $no_load;
 }
 
 
-close(OUTPUT);
+
 
 
 ###############
