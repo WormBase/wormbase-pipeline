@@ -1264,7 +1264,7 @@ sub establish_paths {
     my $wormpipe= glob("~wormpipe");
     $self->{'autoace'}     = $wormpipe;
     $self->{'acefiles'}    = $self->autoace . "/acefiles";
-    $self->{'dump_dir'}    = '/lustre/scratch101/ensembl/wormpipe/dumps';
+    $self->{'dump_dir'}    = '/lustre/scratch109/ensembl/wormpipe/dumps';
     $self->{'orgdb'}       =  $wormpipe;
     $self->{'logs'}        = "$wormpipe/logs";
     $self->{'common_data'} = $self->orgdb . "/COMMON_DATA";
