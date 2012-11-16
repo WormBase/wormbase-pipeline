@@ -30,20 +30,19 @@ use LSF::JobManager;
 #use NameDB;
 
 
-print "This is my version\n";
-
 my ($help, $test, $verbose, $store, $wormbase, $species, $debug, $nomakehits, $outdir);
-my ($quick, $method, $chromosome);
+my ($quick, $method, $chromosome, $bamfile);
 
 GetOptions ("help"         => \$help,
             "test"         => \$test,
             "verbose"      => \$verbose,
-	    "debug:s"        => \$debug,
+	    "debug:s"      => \$debug,
 	    "store:s"      => \$store,
-	    "nomakehits"     => \$nomakehits,   # use to skip making the tophat_out/hits.tmp files - slow!
+	    "nomakehits"   => \$nomakehits,   # use to skip making the tophat_out/hits.tmp files - slow!
 	    "species:s"    => \$species,
-	    "outdir:s"     => \$outdir,     # the default is the BUILD/apecies/acefiles directory
-	    "chromosome:s" => \$chromosome, # set when running a sub-job of this script
+	    "outdir:s"     => \$outdir,     # the default is the BUILD/species/acefiles directory
+	    "chromosome:s" => \$chromosome, # set when running a sub-job of this script to find the hits in the hits file for a single chromosome
+	    "bamfile:s"    => \$bamfile,     # set when running a sub-job of this script to create the hitsfile for a single BAM file
             );
 
 
@@ -93,6 +92,10 @@ my $RNASeqSRADir    = "$RNASeqBase/SRA";
 my $RNASeqGenomeDir = "$RNASeqBase/Genome";
 chdir $RNASeqSRADir;
 
+$outdir = "$acefiles/rnaseq" if (!defined $outdir);
+if (!-e $outdir) {
+  mkdir $outdir, 0777;
+}
 
 $log->write_to("Initialising data\n");
 
@@ -108,6 +111,10 @@ if ($chromosome) {
 
   &do_chromosome($chromosome);
 
+} elsif ($bamfile) {
+
+  &do_make_hits($bamfile);
+
 } else {
 
   $log->write_to("Parsing reads\n");
@@ -119,28 +126,6 @@ if ($chromosome) {
   # create the hits files
   #######################
 
-  if (!$nomakehits) {
-    print "Making the hits files...\n";
-    opendir(my $dh, $RNASeqSRADir) || die "cant open directory $RNASeqSRADir";
-    while(my $dir = readdir $dh) {
-      if ((-d $dir || -l $dir) && $dir !~ /^\./) {
-	my $bamfile = "$dir/tophat_out/accepted_hits.bam";
-	my $hitsfile = "$dir/tophat_out/hits.tmp";
-	if (-e $bamfile) {
-	  # get the hits with a count
-	  print "writing $hitsfile\n";
-	  unlink "$hitsfile";
-	  system(qq#/$Software/BEDTools/bin/bamToBed -split -i $bamfile | awk '{OFS=\"\t\"; print \$1,\$2,\$3,\$6 }' | sort -k1,1 -k2,3n | uniq -c > $hitsfile#);
-	}
-      }  
-    }
-    closedir $dh;
-  }
-
-  ##########################################################
-  # now run the sub-job for each chromosome/contig under LSF
-  ##########################################################
-  
   my $script = "rnaseq.pl";
 
   my $lsf;
@@ -153,23 +138,57 @@ if ($chromosome) {
   $job_name = "worm_".$wormbase->species."_rnaseqhits";
   my $store_file = $wormbase->build_store; # get the store file to use in all commands
 
-
-  my @chromosomes = $wormbase->get_chromosome_names(-mito => 1, -prefix => 1);
- 
   my $err = "$scratch_dir/rnaseq.pl.lsf.err";
   my $out = "$scratch_dir/rnaseq.pl.lsf.out";
-  push @bsub_options, (-q =>  "normal",
-		       -M =>  "4000", # in EBI both -M and -R are in Gb
+  push @bsub_options, (-M =>  "4000", # in EBI both -M and -R are in Gb
 		       -R => "\"select[mem>4000] rusage[mem=4000]\"", 
 		       -J => $job_name,
 		       -e => $err,
 		       -o => $out,
 		      );
 
+  if (!$nomakehits) {
+    print "Making the hits files...\n";
+    opendir(my $dh, $RNASeqSRADir) || die "cant open directory $RNASeqSRADir";
+    while(my $dir = readdir $dh) {
+      if ((-d $dir || -l $dir) && $dir !~ /^\./) {
+	my $tophat = "$dir/tophat_out";
+	print "Reading BAM file in $dir\n";
+	
+	my $cmd = "$script -bamfile $tophat";
+	$cmd .= " -test" if $test;
+	$cmd .= " -debug $debug" if $debug;
+	$cmd = $wormbase->build_cmd_line($cmd, $store_file);
+	$log->write_to("$cmd\n");
+	print "bsub options: @bsub_options\n";
+	print "cmd to be executed: $cmd\n";
+	$lsf->submit(@bsub_options, $cmd);
+	
+      }  
+    }
+    closedir $dh;
+  }
+
+  $lsf->wait_all_children( history => 1 );
+  for my $job ( $lsf->jobs ) {
+    if ($job->history->exit_status != 0) {
+      $log->write_to("Job $job (" . $job->history->command . ") exited non zero: " . $job->history->exit_status . "\n");
+    }
+  }
+  $lsf->clear;
+
+
+  ##########################################################
+  # now run the sub-job for each chromosome/contig under LSF
+  ##########################################################
+  
+
+
+
+  my @chromosomes = $wormbase->get_chromosome_names(-mito => 1, -prefix => 1);
+ 
   foreach my $chromosome (@chromosomes) {
     chomp $chromosome;
-    #if ($chromosome eq 'Crem_Contig115') {$not_there = 0}
-    #if ($not_there) {next}
 
     print "Reading $chromosome\n";
 
@@ -187,17 +206,23 @@ if ($chromosome) {
 
   $lsf->wait_all_children( history => 1 );
   for my $job ( $lsf->jobs ) {
-    if ($job->history->exit_status ne '0') {
+    if ($job->history->exit_status != 0) {
       $log->write_to("Job $job (" . $job->history->command . ") exited non zero: " . $job->history->exit_status . "\n");
     }
   }
   $lsf->clear;
 
+
+
+
+  ##########################################################
   # concatenate the files to make misc_RNASeq_hits_${species}.ace
+  ##########################################################
+
+
   $log->write_to("Concatenating the resulting ace files to make misc_RNASeq_hits_${species}.ace");
   my $final_file = $wormbase->misc_dynamic."/misc_RNASeq_hits_${species}.ace";
   system("rm -f $final_file");
-  $outdir = "$acefiles/rnaseq" if (!defined $outdir);
   system("cat $outdir/RNASeq_*.ace > $final_file");
 
 }
@@ -206,6 +231,31 @@ if ($chromosome) {
 $log->write_to("Finished.\n");
 $log->mail();
 exit(0);
+
+##############################################################
+# SUBROUTINES
+##############################################################
+
+
+##############################################################
+# get the regions of hits from a BAM file to create a hits file
+# do_make_hits($bamfile);
+
+sub do_make_hits {
+  my ($tophat) = @_;
+
+	my $bamfile = "$tophat/accepted_hits.bam";
+	my $hitsfile = "$tophat/hits.tmp";
+	if (-e $bamfile) {
+	  # get the hits with a count
+	  print "writing $hitsfile\n";
+	  unlink "$hitsfile";
+	  system(qq#/$Software/BEDTools/bin/bamToBed -split -i $bamfile | awk '{OFS=\"\t\"; print \$1,\$2,\$3,\$6 }' | sort -k1,1 -k2,3n | uniq -c > $hitsfile#);
+	}
+
+
+}
+
 ##############################################################
 # routine to be executed in sub-job of this script in a LSF queue
 sub do_chromosome {
