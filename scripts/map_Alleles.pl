@@ -130,7 +130,7 @@ if (not $nofilter) {
 }
 
 # map them
-my $mapped_alleles = MapAlleles::map($alleles);
+my $mapped_alleles = MapAlleles::map($alleles, 1);
 undef $alleles;# could theoretically undef the alleles here 
 
 $log->write_to("Removing insanely mapped alleles...\n") if $debug;
@@ -144,8 +144,7 @@ $log->write_to("Writing basic position information...\n") if $debug;
 my $fh = new IO::File ">$acefile" || die($!);
 # create mapping Ace file
 while( my($key,$allele)=each %$mapped_alleles){
-	print $fh "Sequence : \"$allele->{clone}\"\nAllele $key $allele->{clone_start} $allele->{clone_stop}\n\n";
-	print $fh "Variation : \"$key\"\nSequence  $allele->{clone}\n\n";
+  print $fh "Sequence : \"$allele->{clone}\"\nAllele $key $allele->{clone_start} $allele->{clone_stop}\n\n";
 }
 
 # get overlaps with genes
