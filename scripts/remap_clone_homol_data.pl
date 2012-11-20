@@ -8,8 +8,8 @@
 # Homol_data and converts any coordinates that have changed between
 # releases
 #
-# Last updated by: $Author: klh $     
-# Last updated on: $Date: 2012-11-16 10:47:40 $      
+# Last updated by: $Author: gw3 $     
+# Last updated on: $Date: 2012-11-20 15:43:30 $      
 
 use strict;                                     
 use lib $ENV{'CVS_DIR'};
@@ -241,13 +241,13 @@ sub get_chrom_length {
 
   my $in = $wormbase->autoace . "/GFF_SPLITS/${chrom}_curated.gff";
 
-  open (IN, "< $in") || die "Can't open file $in\n";
-  while (my $line = <IN>) {
+  open (CHR, "< $in") || die "Can't open file $in\n";
+  while (my $line = <CHR>) {
     if ($line =~ /##sequence-region\s+\S+\s+\S+\s+(\d+)/) {
 	$len = $1;
     }
   }
-  close ($in);
+  close (CHR);
 
   return $len;
 }

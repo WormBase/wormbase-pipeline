@@ -6,8 +6,8 @@
 #
 # This takes a BUILD_DATA/MISC_DYNAMIC/*expression*.ace file and converts any coordinates that have changed between releases
 #
-# Last updated by: $Author: klh $     
-# Last updated on: $Date: 2012-06-22 08:56:53 $      
+# Last updated by: $Author: gw3 $     
+# Last updated on: $Date: 2012-11-20 15:41:49 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -227,13 +227,13 @@ sub get_chrom_length {
 
   my $in = $wormbase->autoace . "/GFF_SPLITS/${chrom}_curated.gff";
 
-  open (IN, "< $in") || die "Can't open file $in\n";
-  while (my $line = <IN>) {
+  open (CHR, "< $in") || die "Can't open file $in\n";
+  while (my $line = <CHR>) {
     if ($line =~ /##sequence-region\s+\S+\s+\S+\s+(\d+)/) {
 	$len = $1;
     }
   }
-  close ($in);
+  close (CHR);
 
   return $len;
 }
