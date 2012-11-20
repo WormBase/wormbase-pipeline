@@ -186,7 +186,7 @@
 # by Gary Williams
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2012-11-14 13:36:41 $
+# Last updated on: $Date: 2012-11-20 16:42:40 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -1135,12 +1135,6 @@ sub run_align {
   
   foreach my $arg (@args) {
     
-    # pull over the SRA files and unpack them to make a fastq file
-    # the aspera commmand to pull across the files only works on the farm2-login head node
-    if ((!$check && !$noalign) || !-e "$RNASeqSRADir/$arg/tophat_out/accepted_hits.bam.done") {
-      get_SRA_files($arg);
-    }
-    
     # "the normal queue can deal with memory requests of up to 15 Gb, but 14 Gb is better" - Peter Clapham, ISG
     my $err = "$scratch_dir/align_RNASeq.pl.lsf.${arg}.err";
     my $out = "$scratch_dir/align_RNASeq.pl.lsf.${arg}.out";
@@ -1202,6 +1196,12 @@ sub run_align {
 sub run_tophat {
   
   my ($check, $noalign, $tsl, $arg, $solexa, $illumina, $paired) = @_;
+  
+  # this does a chdir "$RNASeqSRADir" and makes the $arg/SRR directories, if necessary, then
+  # pulls over the SRA files from the EBI and unpacks them to make a fastq file
+  if ((!$check && !$noalign) || !-e "$RNASeqSRADir/$arg/tophat_out/accepted_hits.bam.done") {
+    get_SRA_files($arg);
+  }
   
   chdir "$RNASeqSRADir/$arg";
   my $G_species = $wormbase->full_name('-g_species' => 1);
@@ -1279,7 +1279,7 @@ sub run_tophat {
     # test with --no-coverage-search for speed
     $status = $wormbase->run_command("$Software/tophat/tophat $cmd_extra --no-coverage-search --min-intron-length 30 --max-intron-length 5000 --min-segment-intron 30 --max-segment-intron 5000 --min-coverage-intron 30 --max-coverage-intron 5000 $gtf_index $raw_juncs $RNASeqGenomeDir/reference-indexes/$G_species $joined_file", $log);
     if ($status != 0) {  $log->log_and_die("Didn't run tophat to do the alignment successfully\n"); } # only exit on error after gzipping the files
-    $wormbase->run_command("touch tophat_out/accepted_hits.bam.done" ,$log); # set flag to indicate we have finished this
+    $wormbase->run_command("touch tophat_out/accepted_hits.bam.done", $log); # set flag to indicate we have finished this
   } else {
     $log->write_to("Check tophat_out/accepted_hits.bam: already done\n");
   }
