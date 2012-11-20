@@ -8,7 +8,7 @@
 # Page download and update upload to geneace has been automated [ck1]
 
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2012-11-20 15:10:46 $
+# Last updated on: $Date: 2012-11-20 15:13:43 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -293,7 +293,7 @@ while(<INPUT>){
   if ($wperson eq 'Agent007'){
       print MISSINGPERSON "$made_by $strain\n";
       $wperson = '""';
-      print STRAIN "Remark \"cannot find a WBPersonID for $made_by submitted by the CGC\" CGC_data_submission\n";
+      print STRAIN "Remark \"Made_by: $made_by\" CGC_data_submission\n";
   }
   print STRAIN "Made_by $wperson\n" unless $wperson eq '""' ;
   print DELETE_STRAIN  "-D Made_by $wperson\n";
