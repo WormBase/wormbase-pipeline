@@ -9,7 +9,7 @@
 # releases
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2012-11-06 14:58:22 $      
+# Last updated on: $Date: 2012-11-20 16:08:24 $      
 
 use strict;                                     
 use lib $ENV{'CVS_DIR'};
@@ -152,10 +152,9 @@ open (IN, "< $input") || die "can't open input file $input\n";
 open (OUT, "> $output") || die "can't open output file $output\n";
 while (my $line = <IN>) {
   chomp $line;
-
-
+  
   # Sequence : "Y44F5A"
-  if ($line =~ /^Sequence\s+:\s+(\S+)/) {
+  if ($line =~ /^Sequence\s+\:\s+(\S+)/) {
     $clone = $1; # use this $clone in subsequent "S_Child Feature_data" lines
     $clone =~ s/\"//g; # remove quotes
     print OUT "$line\n";
@@ -177,8 +176,8 @@ while (my $line = <IN>) {
     
 
   # Feature_data : "Y44F5A:Polysome"
-  } elsif ($line =~ /^Feature_data\s+:\s+(\S+)/) {
-    ($clone, $feature_data_type) = (split /:/,$1); # use this $clone in subsequent "Feature" lines
+  } elsif ($line =~ /^Feature_data\s+\:\s+(\S+)/) {
+    ($clone, $feature_data_type) = (split /\:/,$1); # use this $clone in subsequent "Feature" lines
     $clone =~ s/\"//g; # remove quotes
     $feature_data_type =~ s/\"//g; # remove quotes
     print OUT "$line\n";
@@ -231,6 +230,7 @@ while (my $line = <IN>) {
   # die
   } else {
     $log->log_and_die("Unknown type of line found: $line\n");
+    print "Unknown type of line found: $line\n";
 
   }
 
@@ -269,14 +269,15 @@ sub get_chrom_length {
 
   my $in = $wormbase->autoace . "/GFF_SPLITS/${chrom}_curated.gff";
 
-  open (IN, "< $in") || die "Can't open file $in\n";
-  while (my $line = <IN>) {
+  open (CHR, "< $in") || $log->log_and_die( "Can't open file $in\n");
+  while (my $line = <CHR>) {
     if ($line =~ /##sequence-region\s+\S+\s+\S+\s+(\d+)/) {
 	$len = $1;
     }
   }
-  close ($in);
+  close (CHR);
 
+  #print "$chrom length = $len\n";
   return $len;
 }
 
