@@ -163,7 +163,6 @@ if ($chromosome) {
 	print "bsub options: @bsub_options\n";
 	print "cmd to be executed: $cmd\n";
 	$lsf->submit(@bsub_options, $cmd);
-	last; # debug
       }  
     }
     closedir $dh;
@@ -203,7 +202,6 @@ if ($chromosome) {
     print "bsub options: @bsub_options\n";
     print "cmd to be executed: $cmd\n";
     $lsf->submit(@bsub_options, $cmd);
-    last; # debug
   }
 
   print "Waiting for LSF jobs to finish.\n";
