@@ -140,8 +140,8 @@ if ($chromosome) {
 
   my $err = "$scratch_dir/rnaseq.pl.lsf.err";
   my $out = "$scratch_dir/rnaseq.pl.lsf.out";
-  push @bsub_options, (-M =>  "4000", # in EBI both -M and -R are in Gb
-		       -R => "\"select[mem>4000] rusage[mem=4000]\"", 
+  push @bsub_options, (-M =>  "8000", # in EBI both -M and -R are in Gb
+		       -R => "\"select[mem>8000] rusage[mem=8000]\"", 
 		       -J => $job_name,
 		       -e => $err,
 		       -o => $out,
@@ -163,12 +163,13 @@ if ($chromosome) {
 	print "bsub options: @bsub_options\n";
 	print "cmd to be executed: $cmd\n";
 	$lsf->submit(@bsub_options, $cmd);
-	
+	last; # debug
       }  
     }
     closedir $dh;
   }
 
+  print "Waiting for LSF jobs to finish.\n";
   $lsf->wait_all_children( history => 1 );
   for my $job ( $lsf->jobs ) {
     if ($job->history->exit_status != 0) {
@@ -202,8 +203,10 @@ if ($chromosome) {
     print "bsub options: @bsub_options\n";
     print "cmd to be executed: $cmd\n";
     $lsf->submit(@bsub_options, $cmd);
+    last; # debug
   }
 
+  print "Waiting for LSF jobs to finish.\n";
   $lsf->wait_all_children( history => 1 );
   for my $job ( $lsf->jobs ) {
     if ($job->history->exit_status != 0) {
@@ -223,7 +226,7 @@ if ($chromosome) {
   $log->write_to("Concatenating the resulting ace files to make misc_RNASeq_hits_${species}.ace");
   my $final_file = $wormbase->misc_dynamic."/misc_RNASeq_hits_${species}.ace";
   system("rm -f $final_file");
-  system("cat $outdir/RNASeq_*.ace > $final_file");
+  system("cat $outdir/RNASeq_*.ace virtual_objects_RNASeq_*.ace > $final_file");
 
 }
 
@@ -416,7 +419,7 @@ sub writeace {
 
       if ($counts > 1.5 * $level || $counts < 0.66 * $level) { # have a substantial change in the amount of reads
 	if ($clone_start != 0 && $level != 0) { # have an existing region that needs to be closed and written
-	  print ACE "Feature RNASeq $clone_start ",$pos-1," $level\n";
+	  print ACE "Feature RNASeq $clone_start ",$pos-1," $level \"Region of RNASeq reads\"\n";
 	}
 	$level = $counts; # set new level
 
@@ -444,7 +447,7 @@ sub writeace {
       if ($F_counts[$pos] > 1.5 * $F_level || $F_counts[$pos] < 0.66 * $F_level) { # have a substantial change in the amount of reads
 	if ($F_clone_start != 0 && $F_level != 0) { # have an existing region that needs to be closed and written
 	  print FACE "\nFeature_data : \"$fvirtual\"\n";
-	  print FACE "Feature RNASeq_F_asymmetry $F_clone_start ",$pos-1," $F_level\n";
+	  print FACE "Feature RNASeq_F_asymmetry $F_clone_start ",$pos-1," $F_level \"Region of forward RNASeq reads\"\n";
 	}
 	$F_level = $F_counts[$pos]; # set new level
 	
@@ -459,7 +462,7 @@ sub writeace {
       if ($R_counts[$pos] > 1.5 * $R_level || $R_counts[$pos] < 0.66 * $R_level) { # have a substantial change in the amount of reads
 	if ($R_clone_start != 0 && $R_level != 0) { # have an existing region that needs to be closed and written
 	  print RACE "\nFeature_data : \"$rvirtual\"\n";
-	  print RACE "Feature RNASeq_R_asymmetry $R_clone_start ",$pos-1," $R_level\n";
+	  print RACE "Feature RNASeq_R_asymmetry $R_clone_start ",$pos-1," $R_level \"Region of reverse RNASeq reads\"\n";
 	}
 	$R_level = $R_counts[$pos]; # set new level
 	
