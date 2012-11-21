@@ -9,7 +9,7 @@
 #
 #
 # Last updated by: $Author: klh $     
-# Last updated on: $Date: 2012-06-22 08:56:53 $      
+# Last updated on: $Date: 2012-11-21 15:54:34 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -102,7 +102,7 @@ while (my $line = <TWINSCAN>) {
   print $line if ($verbose);
   chomp $line;
 
-  if ($line =~ /^Sequence : \"CHROMOSOME_(\S+)\"/) {
+  if ($line =~ /^Sequence : \"(\S+)\"/) {
     $chromosome = $1;
   }
 
