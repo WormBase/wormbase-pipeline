@@ -7,7 +7,7 @@
 # Builds a wormrna data set from the current autoace database
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2012-01-30 11:04:39 $
+# Last updated on: $Date: 2012-11-21 10:47:09 $
 
 
 #################################################################################
@@ -80,7 +80,6 @@ my $db = Ace->connect (-path => $dbdir, -program => $tace) || $log->log_and_die(
 # Get RNA genes, but not other Transcript objects
 my $query = "FIND Transcript WHERE Method != Coding_transcript"
     . " AND Method != history_transcript"
-    . " AND Method != Pseudogene"
     . " AND Species = \"".$wormbase->full_name."\"";
 $log->write_to("$query\n");
 my @transcripts = $db->fetch (-query => $query);
@@ -169,16 +168,22 @@ exit(0);
 
 
 sub reformat {
-    my $in_string = shift;
-    my $out_string = "";
-
-    my $string_len = length ($in_string);
-    my $lines = int ($string_len / 60) ;
-
-    for (my $i = 0; $i <= $lines; $i++) {
-	$out_string = $out_string . substr($in_string,($i*60),60) . "\n";
+  my $in_string = shift;
+  my $out_string = "";
+  
+  for (my $idx = 0; $idx < length($in_string); ) {
+    my $next_idx = $idx + 60;
+    
+    if ($next_idx > length($in_string)) {
+      $next_idx = length($in_string);
     }
-    return ($out_string);
+
+    $out_string .= substr($in_string, $idx, $next_idx - $idx) . "\n"; 
+    
+    $idx = $next_idx;
+  }
+
+  return $out_string;
 }
 
 
