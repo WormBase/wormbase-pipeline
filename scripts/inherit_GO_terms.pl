@@ -4,8 +4,8 @@
 #
 # map GO_terms to ?Sequence objects from ?Motif and ?Phenotype
 #
-# Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2011-11-24 09:50:49 $      
+# Last updated by: $Author: klh $     
+# Last updated on: $Date: 2012-11-21 16:24:03 $      
 
 use strict;
 use warnings;
@@ -48,8 +48,13 @@ GetOptions ("help"      => \$help,
 
 # recreate configuration 
 my $wormbase;
-if ($store) { $wormbase = Storable::retrieve($store) or croak("cant restore wormbase from $store\n") }
-else { $wormbase = Wormbase->new( -debug => $debug, -test => $test, -organism => $species ) }
+if ($store) { 
+  $wormbase = Storable::retrieve($store) or croak("cant restore wormbase from $store\n"); 
+} else { 
+  $wormbase = Wormbase->new( -debug => $debug, 
+                             -test => $test, 
+                             -organism => $species );
+}
 
 # Variables Part II (depending on $wormbase) 
 $debug = $wormbase->debug if $wormbase->debug;    # Debug mode, output only goes to one user
@@ -76,14 +81,11 @@ open (OUT,">$out") or $log->log_and_die("cant open $out :$!\n");
 ########################################
 # Connect with acedb server            #
 ########################################
-my $db = Ace->connect(-path=>$dbpath,
-                      -program =>$tace) || do { print "Connection failure: ",Ace->error; die();};
 
 
-
-&motif($dbpath) if ($motif);
-&phenotype($db) if ($phenotype);
-&tmhmmGO 	if ($tmhmm);
+&motif($dbpath)     if ($motif);
+&phenotype($dbpath) if ($phenotype);
+&tmhmmGO($dbpath)   if ($tmhmm);
 
 close OUT;
 
@@ -102,7 +104,6 @@ $log->mail();
 # hasta luego                #
 ##############################
 
-$db->close;
 exit(0);
 
 ########################################################################################
@@ -114,47 +115,47 @@ exit(0);
 ########################################################################################
 
 sub motif {
-	my ($dbpath, $db) = @_;
-	my $def = "$dbpath/wquery/SCRIPT:inherit_GO_terms.def";
-	
-	# these GO terms should not be attached to the Gene or CDS
-	my @stopterms = (
-		     'sporulation',
-		     'forespore',
-		     'photosynthesis',
-		     'photosynthetic',
-		     'chlorophyll',
-		    );
-	my @stopGO = (
-		       'GO:0009772', # photosynthetic electron transport in photosystem II
-		       'GO:0045282', # plasma membrane succinate dehydrogenase complex (only_in_taxon Bacteria)
+  my ($dbpath) = @_;
+  my $def = "$dbpath/wquery/SCRIPT:inherit_GO_terms.def";
+  
+  # these GO terms should not be attached to the Gene or CDS
+  my @stopterms = (
+    'sporulation',
+    'forespore',
+    'photosynthesis',
+    'photosynthetic',
+    'chlorophyll',
+      );
+  my @stopGO = (
+    'GO:0009772', # photosynthetic electron transport in photosystem II
+    'GO:0045282', # plasma membrane succinate dehydrogenase complex (only_in_taxon Bacteria)
 		       'GO:0009288', # bacterial-type flagellum
-		       'GO:0007391', # dorsal closure (only_in_taxon	Insecta)
-		      );
-
-	# get the GO terms
-	my $term_def = &write_GO_def;
-	my $term_query = $wormbase->table_maker_query($dbpath,$term_def);
-	my %terms;
-	while(<$term_query>) {
-	  chomp;
-	  s/\"//g;  #remove "
-	  next if (/acedb/ or /\/\//);
-	  my @data = split("\t",$_);
-	  my ( $GO, $term) = @data;
-	  $terms{$GO} = $term;
-	}
-
-	my $query = $wormbase->	table_maker_query($dbpath, $def);
-	while(<$query>) {
-		s/\"//g;#"
-  		next if (/acedb/ or /\/\//);
-		my($motif,$GO,$protein,$cds,$gene) = split;
-		next if (! defined $gene || ! defined $cds || ! defined $GO || ! defined $motif);
-		next if (&matching(\@stopterms, \@stopGO, $terms{$GO}, $GO, $motif, $protein, $gene));
-		print OUT "\nGene : $gene\nGO_term \"$GO\" IEA inferred_automatically \"$motif\"\n";
-		print OUT "\nCDS  : \"$cds\"\nGO_term \"$GO\" IEA inferred_automatically \"$motif\"\n";
-	}
+    'GO:0007391', # dorsal closure (only_in_taxon	Insecta)
+      );
+  
+  # get the GO terms
+  my $term_def = &write_GO_def;
+  my $term_query = $wormbase->table_maker_query($dbpath,$term_def);
+  my %terms;
+  while(<$term_query>) {
+    chomp;
+    s/\"//g;  #remove "
+    next if (/acedb/ or /\/\//);
+    my @data = split("\t",$_);
+    my ( $GO, $term) = @data;
+    $terms{$GO} = $term;
+  }
+  
+  my $query = $wormbase->	table_maker_query($dbpath, $def);
+  while(<$query>) {
+    s/\"//g;#"
+    next if (/acedb/ or /\/\//);
+    my($motif,$GO,$protein,$cds,$gene) = split;
+    next if (! defined $gene || ! defined $cds || ! defined $GO || ! defined $motif);
+    next if (&matching(\@stopterms, \@stopGO, $terms{$GO}, $GO, $motif, $protein, $gene));
+    print OUT "\nGene : $gene\nGO_term \"$GO\" IEA inferred_automatically \"$motif\"\n";
+    print OUT "\nCDS  : \"$cds\"\nGO_term \"$GO\" IEA inferred_automatically \"$motif\"\n";
+  }
 }
 
 ########################################################################################
@@ -182,46 +183,71 @@ sub matching {
 
 
 sub tmhmmGO {
-	my $query = "find protein where species = \"".$wormbase->full_name."\" where Feature AND NEXT = \"Tmhmm\"; follow Corresponding_CDS; follow Gene";
-	my $genes = $db->fetch_many(-query => $query);
-	while(my $gene = $genes->next){
-	    print OUT "\nGene : ".$gene->name."\nGO_term \"GO:0016021\"\tIEA\tInferred_automatically\t\"CBS:TMHMM\"\n";
-	}
+  my ($dbpath) = @_;
+
+  my $mydb = Ace->connect(-path=>$dbpath,
+                          -program =>$tace) || do { print "Connection failure: ",Ace->error; die();};
+  
+
+  my $query = "find protein where species = \"".$wormbase->full_name."\" where Feature AND NEXT = \"Tmhmm\"; follow Corresponding_CDS; follow Gene";
+  my $genes = $mydb->fetch_many(-query => $query);
+  while(my $gene = $genes->next){
+    print OUT "\nGene : ".$gene->name."\nGO_term \"GO:0016021\"\tIEA\tInferred_automatically\t\"CBS:TMHMM\"\n";
+  }
+
+  $mydb->close;
 }
 
 sub phenotype {
-    my $db = shift;
-    
-    my $def = &write_phenotype_def;
-    my %include_list; #only papers in this list should be included.
+  my ($dbpath) = @_;
+   
+  my %phenotype_names;
+
+  my $mydb = Ace->connect(-path=>$dbpath,
+                          -program =>$tace) || do { print "Connection failure: ",Ace->error; die();};
+  
+  my $query = "find protein where species = \"".$wormbase->full_name."\" where Feature AND NEXT = \"Tmhmm\"; follow Corresponding_CDS; follow Gene";
+  my $phenos = $mydb->fetch_many(-class => 'Phenotype');
+  while(my $pheno = $phenos->next){
+    if ($pheno->Primary_name) {
+      $phenotype_names{$pheno->name} = $pheno->Primary_name;
+    }
+  }
+  $mydb->close;
+
+ 
+  my $def = &write_phenotype_def;
+  my %include_list; #only papers in this list should be included.
   READARRAY: while (<DATA>) {
-      chomp;
-      $include_list{$_} =1;
+    chomp;
+    $include_list{$_} =1;
   }
 
-    my $tm_query = $wormbase->table_maker_query($dbpath,$def);
-    while(<$tm_query>) {
-	s/\"//g;  #remove "
-	next if (/acedb/ or /\/\//);
-	my @data = split("\t",$_);
-	my ( $rnai, $paper, $cds, $gene, $phenotype_id,$go,$not) = @data;
-	chomp $not;
-	next if (($paper !~ /WBPaper/) or (! defined $phenotype_id) or ((defined $not)and ($not eq 'Not')));
-	next unless ($include_list{$paper});
-	my $phenotype; 
-	if($phenotype_id =~ /WBPheno/) {
-	    $phenotype = &get_phenotype_name($phenotype_id);
-	}
-	else {next;}
-	unless($gene and $phenotype and $go) {
-	    $log->write_to("bad data (causes a phenotype, but doesn't affect a gene - inform CalTech) $_");
-	    next;
-	}
-	print OUT "\nCDS : \"$cds\"\nGO_term \"$go\" IMP Inferred_automatically \"$phenotype ($phenotype_id|$rnai)\"\n" if $cds ;
-	print OUT "\nGene : \"$gene\"\nGO_term \"$go\" IMP Inferred_automatically \"$phenotype ($phenotype_id|$rnai)\"\n" if $gene;
+  my $tm_query = $wormbase->table_maker_query($dbpath,$def);
+  while(<$tm_query>) {
+    s/\"//g;  #remove "
+    next if (/acedb/ or /\/\//);
+    my @data = split("\t",$_);
+    my ( $rnai, $paper, $cds, $gene, $phenotype_id,$go,$not) = @data;
+    chomp $not;
+    next if (($paper !~ /WBPaper/) or (! defined $phenotype_id) or ((defined $not)and ($not eq 'Not')));
+    next unless ($include_list{$paper});
+    my $phenotype; 
+    if($phenotype_id =~ /WBPheno/) {
+      $phenotype = exists $phenotype_names{$phenotype_id} ? $phenotype_names{$phenotype_id} : $phenotype_id;
     }
-    #tidy up
-    $wormbase->run_command("rm -f $def", $log);
+    else {
+      next;
+    }
+    unless($gene and $phenotype and $go) {
+      $log->write_to("bad data (causes a phenotype, but doesn't affect a gene - inform CalTech) $_");
+      next;
+    }
+    print OUT "\nCDS : \"$cds\"\nGO_term \"$go\" IMP Inferred_automatically \"$phenotype ($phenotype_id|$rnai)\"\n" if $cds ;
+    print OUT "\nGene : \"$gene\"\nGO_term \"$go\" IMP Inferred_automatically \"$phenotype ($phenotype_id|$rnai)\"\n" if $gene;
+  }
+  #tidy up
+  $wormbase->run_command("rm -f $def", $log);
 }
 
 
@@ -238,12 +264,6 @@ sub usage {
   }
 }
 
-sub get_phenotype_name {
-	my $id = shift;
-	my $obj = $db->fetch('Phenotype' => $id);
-	my $name = $obj->Primary_name;
-	return $name or $id;
-}
 
 # this will write out an acedb tablemaker defn to a temp file
 sub write_phenotype_def {
