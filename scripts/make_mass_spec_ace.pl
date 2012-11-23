@@ -8,7 +8,7 @@
 # in ace
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2011-12-07 14:26:17 $      
+# Last updated on: $Date: 2012-11-23 12:11:13 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -65,7 +65,7 @@ my $log = Log_files->make_build_log($wormbase);
 
 # check parameters
 if (! defined $database) {$database = $wormbase->autoace}
-if (! defined $input && ! defined $directory) {$directory = $wormbase->misc_dynamic;}
+if (! defined $input && ! defined $directory) {$directory = $wormbase->misc_static . "/MASS-SPEC";}
 if (! defined $output) {$output = $wormbase->acefiles."/mass-spec-data.ace";}
 
 ##########################
