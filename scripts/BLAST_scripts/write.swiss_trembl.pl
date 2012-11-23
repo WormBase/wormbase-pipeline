@@ -14,7 +14,7 @@ use GSI;
 use Wormbase;
 use File::Copy;
 
-my ($swiss, $trembl, $debug, $database, $list, $old, $species);
+my ($swiss, $trembl, $debug, $database, $list, $old);
 my ($test, $store);
 # $old is for switch back to protein model
 GetOptions (
@@ -24,7 +24,6 @@ GetOptions (
 	    "list"       => \$list,
 	    "old"        => \$old,
 	    "debug:s"    => \$debug,
-	    "species=s"  => \$species,
 	    "test"       => \$test,
 	    "store:s"    => \$store
 	  );
@@ -44,8 +43,6 @@ my $acefiles  = $wormbase->acefiles;
 my $wormpipe_dump     = $wormbase->farm_dump;
 my $output_swiss      = "$wormpipe_dump/swissproteins.ace";
 my $output_trembl     = "$wormpipe_dump/tremblproteins.ace";
-my $blastx_file       = "$wormpipe_dump/blastx_ensembl.ace";
-my $blastp_file       = "$wormpipe_dump/blastp_ensembl.ace";
 my $swiss_list_txt    = "$wormpipe_dump/swisslist.txt";
 my $trembl_list_txt   = "$wormpipe_dump/trembllist.txt";
 
@@ -53,8 +50,26 @@ my $db_files        = "/lustre/scratch109/ensembl/wormpipe/swall_data";
 
 my $blast_files = "$wormpipe_dump/*blastp.ace $wormpipe_dump/*X*.ace ";
 
+# for species not being built, the blastp files will live in the build
+# directory
+my %acc = $wormbase->species_accessors;
+foreach my $sp (keys %acc) {
+  my $blastp_file = $acc{$sp}->acefiles . "/${sp}_blastp.ace";
+
+  if (-e $blastp_file) {
+    $blast_files .= " $blastp_file";
+  }
+  
+  my $blastx_file = $acc{$sp}->acefiles . "/${sp}_blastx.ace";
+  if (-e $blastx_file) {
+    $blast_files .= " $blastx_file";
+  }
+}
+
 # extract and write lists of which proteins have matches
 unless ( $list ){
+  print "Grabbing proteins from these files: $blast_files\n";
+
   open (DATA,"cat $blast_files |");
   my (%swisslist, %trembllist);
   while (<DATA>) {
