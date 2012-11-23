@@ -110,16 +110,16 @@ if ($chromosome) {
   ###########################
 
   &do_chromosome($chromosome);
-
+  
 } elsif ($bamfile) {
-
+  
   &do_make_hits($bamfile);
-
+  
 } else {
-
+  
   $log->write_to("Parsing reads\n");
-
-
+  
+  
   my $library_count = 0;
   
   #######################
@@ -245,14 +245,14 @@ exit(0);
 sub do_make_hits {
   my ($tophat) = @_;
 
-	my $bamfile = "$tophat/accepted_hits.bam";
-	my $hitsfile = "$tophat/hits.tmp";
-	if (-e $bamfile) {
-	  # get the hits with a count
-	  print "writing $hitsfile\n";
-	  unlink "$hitsfile";
-	  system(qq#/$Software/BEDTools/bin/bamToBed -split -i $bamfile | awk '{OFS=\"\t\"; print \$1,\$2,\$3,\$6 }' | sort -k1,1 -k2,3n | uniq -c > $hitsfile#);
-	}
+  my $bamfile = "$tophat/accepted_hits.bam";
+  my $hitsfile = "$tophat/hits.tmp";
+  if (-e $bamfile) {
+    # get the hits with a count
+    print "writing $hitsfile\n";
+    unlink "$hitsfile";
+    system(qq#/$Software/BEDTools/bin/bamToBed -split -i $bamfile | awk '{OFS=\"\t\"; print \$1,\$2,\$3,\$6 }' | sort -k1,1 -k2,3n | uniq -c > $hitsfile#);
+  }
 
 
 }
@@ -264,29 +264,33 @@ sub do_chromosome {
   my ($chromosome) = @_;
 
 
-  print "Making the ace files\n";
-
-  print "Reading $chromosome\n";
+  print "Making the ace files for chromsome $chromosome\n";
 
   %F_clones = ();
   %R_clones = ();
   my $library_count = 0;
   
+  my @dir_list;
+
   # read the aligned reads into the %clones hash
   opendir(my $dh, $RNASeqSRADir) || die "cant open directory $RNASeqSRADir\n";
   while(my $dir = readdir $dh) {
     if ((-d $dir || -l $dir) && $dir !~ /^\./) {
-      print "reading $dir\n";
-      if (readhits($dir, $chromosome)) {$library_count++} # count the libraries successfully read
+      push @dir_list, $dir;
     }
   }
   closedir $dh;
   
+  foreach my $dir (@dir_list) {
+    print "reading $dir\n";
+    if (readhits($dir, $chromosome)) {
+      $library_count++;
+    } # count the libraries successfully read
+  }
+  
   # write the results to an ace file 
   print "writing ace file\n";
   writeace($library_count, $chromosome);
-
-
 }
 
 ##############################################################
@@ -299,58 +303,54 @@ sub readhits {
   my $bamfile = "$dir/tophat_out/accepted_hits.bam";
   
   if (! -f $hitsfile) {return 0}
-
+  
   # read the hits
   print "\treading hits\n";
   open(BED, "< $hitsfile") || $log->log_and_die("Can't open the file $hitsfile\n");
-
+  
   my $sense;
   my ($clone, $clone_start, $clone_end);
   my ($indel, $change);
   my $clone_last = 0;
+  my $in_chromosome = 0;
   my $offset;
-
+  
+  my $line_count = 0;
+  
   while (my $line = <BED>) {
     if ($line =~ /^track/) {next}
     if ($line =~ /^\s*$/) {next}
-
+    
     my @cols = split /\s+/, $line;
-
+    
     my $chrom = $cols[2];
     my $start = $cols[3] + 1;
     my $end = $cols[4];
     my $reads = $cols[1];
     my $sense = $cols[5];
-
-    if ($chromosome ne $chrom) {next}; # do one chromosome at a time to save on memory
-  
-# something is screwed up in the logic here, so don't use this
-#    # if read is on clone get the offset from the start of the clone
-#    if ($end <= $clone_last) {
-#      $clone_start = $start - $offset; 
-#      $clone_end = $end - $offset;
-#    } else {
-#      # else if it is in a new clone, get the clone details
-#      if ($start > $clone_last) {
-#	($clone, $offset, $clone_last) = get_chrom_details($start, $chrom); 
-#	$clone_start = $start - $offset; 
-#	$clone_end = $end - $offset;
-#      } else {	# if this read spans two clones then use LocateSpan to get the Supercontig details                
-#	($clone, $clone_start, $clone_end) = $coords->LocateSpan($chrom, $start, $end)
-#      }
-#    }
-
-    # get the clone that this intron is on
-    ($clone, $clone_start, $clone_end) = $coords->LocateSpan($chrom, $start, $end);
-  
-  
-    if ($sense eq '+') {
-      map { @{$F_clones{$clone}}[$_] += $reads } ($clone_start..$clone_end); # efficient way of adding the reads value to a range of elements in an array
-    } else {
-      map { @{$R_clones{$clone}}[$_] += $reads } ($clone_start..$clone_end); # efficient way of adding the reads value to a range of elements in an array
+    
+    if ($chromosome ne $chrom) {
+      if ($in_chromosome) {
+        last;
+      } else {
+        next;
+      } 
     }
+      
+    $in_chromosome = 1;
+    
+    if ($sense eq '+') {
+      map { $F_clones{$chrom}->[$_] += $reads } ($start..$end); # efficient way of adding the reads value to a range of elements in an array
+    } else {
+      map { $R_clones{$chrom}->[$_] += $reads } ($start..$end); # efficient way of adding the reads value to a range of elements in an array
+    }
+    
+    $line_count++;
+    #if ($line_count % 100000 == 0) {
+    #  print "  Processed $line_count lines...\n";
+    #}
   }    
-
+  
   return 1;
 }
 
@@ -360,40 +360,31 @@ sub readhits {
 sub writeace {
   my ($library_count, $chromosome) = @_;
 
-  my %seqlength;
-  my %virtuals;
+  my (@tiles);
 
-  $outdir = "$acefiles/rnaseq" if (!defined $outdir);
-  mkdir $outdir, 0777;
-  my $output = "$outdir/RNASeq_${chromosome}.ace";
-  my $Foutput = "$outdir/RNASeq_F_${chromosome}.ace";
-  my $Routput = "$outdir/RNASeq_R_${chromosome}.ace";
+  my $chr_len = $coords->Superlink_length($chromosome);
+
+  for(my $i=0; $i < $chr_len; $i += 300000) {
+    my $chr_start = $i + 1;
+    my $chr_end = $chr_start + 300000 - 1;
+    $chr_end = $chr_len if $chr_end > $chr_len;
+    push @tiles, {
+      start => $chr_start, 
+      end   => $chr_end,
+      segs  => [],
+      F_segs => [],
+      R_segs => [],
+    };
+  }
+
+  my @F_counts;
+  my @R_counts;
   
-  my $old_virtual = "";
-  open (ACE, ">$output") || $log->log_and_die("Can't open the file $output\n");
-  open (FACE, ">$Foutput") || $log->log_and_die("Can't open the file $Foutput\n");
-  open (RACE, ">$Routput") || $log->log_and_die("Can't open the file $Routput\n");
-
-
-
-  # coalesce the overlapping regions within a clone
-  foreach my $clone (keys %F_clones) {
-
-    my @F_counts;
-    my @R_counts;
-  
-    @F_counts = (exists $F_clones{$clone}) ? @{$F_clones{$clone}} : (); # counts in each base in this clone
-    @R_counts = (exists $R_clones{$clone}) ? @{$R_clones{$clone}} : (); # counts in each base in this clone
-  
-    if (not exists $seqlength{$clone}) {
-      $seqlength{$clone} = $coords->Superlink_length($clone);
-    }
-
-  
-    my $virtual = "${clone}:RNASeq";
-    my $fvirtual = "${clone}:RNASeq_forward_reads";
-    my $rvirtual = "${clone}:RNASeq_reverse_reads";
-    print ACE "\nFeature_data : \"$virtual\"\n";
+  @F_counts = (exists $F_clones{$chromosome}) ? @{$F_clones{$chromosome}} : (); # counts in each base in this clone
+  @R_counts = (exists $R_clones{$chromosome}) ? @{$R_clones{$chromosome}} : (); # counts in each base in this clone
+    
+  for( my $tile_idx = 1; $tile_idx <= @tiles; $tile_idx++) {
+    my $tile = $tiles[$tile_idx-1];
   
     my $level=0;         # level of output block for average number of reads
     my $clone_start = 0; # start position of growing block - initialise to 0 to show we don't have a block yet
@@ -404,7 +395,7 @@ sub writeace {
     my $R_level=0;
     my $R_clone_start = 0; # start position of growing block - initialise to 0 to show we don't have a block yet
 
-    foreach my $pos (1..max(scalar @F_counts, scalar @R_counts)) {
+    for(my $pos = $tile->{start}; $pos <= $tile->{end}; $pos++) {
       my $counts;
       my $F_asymmetry;
       my $R_asymmetry;
@@ -417,7 +408,7 @@ sub writeace {
 
       if ($counts > 1.5 * $level || $counts < 0.66 * $level) { # have a substantial change in the amount of reads
 	if ($clone_start != 0 && $level != 0) { # have an existing region that needs to be closed and written
-	  print ACE "Feature RNASeq $clone_start ",$pos-1," $level \"Region of RNASeq reads\"\n";
+          push @{$tile->{segs}}, [$clone_start - $tile->{start} + 1, $pos - $tile->{start}, $level];                         
 	}
 	$level = $counts; # set new level
 
@@ -430,7 +421,8 @@ sub writeace {
 
       # now get the asymmetry where forward or reverse is more than $multiple times the other
       my $multiple = 3;
-      $F_counts[$pos]++ if !$F_counts[$pos]; # increment the counts when zero to stop small values (<$multiple) being displayed when the other sense has a value of zero
+      # increment the counts when zero to stop small values (<$multiple) being displayed when the other sense has a value of zero
+      $F_counts[$pos]++ if !$F_counts[$pos];
       $R_counts[$pos]++ if !$R_counts[$pos];
       if ($F_counts[$pos] > $R_counts[$pos] * $multiple) {
 	$R_counts[$pos] = 0;
@@ -444,8 +436,7 @@ sub writeace {
 
       if ($F_counts[$pos] > 1.5 * $F_level || $F_counts[$pos] < 0.66 * $F_level) { # have a substantial change in the amount of reads
 	if ($F_clone_start != 0 && $F_level != 0) { # have an existing region that needs to be closed and written
-	  print FACE "\nFeature_data : \"$fvirtual\"\n";
-	  print FACE "Feature RNASeq_F_asymmetry $F_clone_start ",$pos-1," $F_level \"Region of forward RNASeq reads\"\n";
+          push @{$tile->{F_segs}}, [$F_clone_start - $tile->{start} + 1, $pos - $tile->{start}, $F_level];
 	}
 	$F_level = $F_counts[$pos]; # set new level
 	
@@ -459,8 +450,7 @@ sub writeace {
 
       if ($R_counts[$pos] > 1.5 * $R_level || $R_counts[$pos] < 0.66 * $R_level) { # have a substantial change in the amount of reads
 	if ($R_clone_start != 0 && $R_level != 0) { # have an existing region that needs to be closed and written
-	  print RACE "\nFeature_data : \"$rvirtual\"\n";
-	  print RACE "Feature RNASeq_R_asymmetry $R_clone_start ",$pos-1," $R_level \"Region of reverse RNASeq reads\"\n";
+          push @{$tile->{R_segs}}, [$R_clone_start - $tile->{start} + 1, $pos - $tile->{start}, $R_level];
 	}
 	$R_level = $R_counts[$pos]; # set new level
 	
@@ -470,33 +460,81 @@ sub writeace {
 	  $R_clone_start = 0; # level is zero, so not growing a region
 	}
       }
+    }
+
+    if ($clone_start != 0 && $level != 0) { # have an final region that needs to be closed and written
+      push @{$tile->{segs}}, [$clone_start - $tile->{start} + 1, $tile->{end} - $tile->{start} + 1, $level];
+    }
+    if ($F_clone_start != 0 && $F_level != 0) { # have an final region that needs to be closed and written
+      push @{$tile->{F_segs}}, [$F_clone_start - $tile->{start} + 1, $tile->{end} - $tile->{start} + 1, $F_level];
+    }
+    if ($R_clone_start != 0 && $R_level != 0) { # have an final region that needs to be closed and written
+      push @{$tile->{R_segs}}, [$R_clone_start - $tile->{start} + 1, $tile->{end} - $tile->{start} + 1, $R_level];
+    }
+  }
 
 
+  $outdir = "$acefiles/rnaseq" if (!defined $outdir);
+  mkdir $outdir, 0777;
+  my $output = "$outdir/RNASeq_${chromosome}.ace";
+  my $Foutput = "$outdir/RNASeq_F_${chromosome}.ace";
+  my $Routput = "$outdir/RNASeq_R_${chromosome}.ace";
+  my $vfile = "$outdir/virtual_objects_RNASeq_${chromosome}.ace";
+  open(VIRT, ">$vfile") or $log->log_and_die("Could not open $vfile for writing\n");
+  print VIRT "\nSequence : \"$chromosome\"\n";
+  
+  open (ACE, ">$output") || $log->log_and_die("Can't open the file $output\n");
+  for(my $tile_idx = 1; $tile_idx <= @tiles; $tile_idx++) {
+    my $tile = $tiles[$tile_idx-1];
 
+    my $vseq = "$chromosome:RNASeq:$tile_idx";
+
+    printf VIRT "S_Child Feature_data %s %d %d\n", $vseq, $tile->{start}, $tile->{end};
+
+    print ACE "\nFeature_data : \"$vseq\"\n";
+    foreach my $seg (@{$tile->{segs}}) {
+      print ACE "Feature RNASeq @$seg \"Region of RNASeq reads\"\n";
     }
   }
   close(ACE);
-  close(FACE);
-  close(RACE);
 
 
-  # now add the Feature_data objects to the chromosome objects
-  my $vfile = "$outdir/virtual_objects_RNASeq_${chromosome}.ace";
-  open(VIRT, ">$vfile") or $log->log_and_die("Could not open $vfile for writing\n");
-  foreach my $clone (keys %seqlength) {
-    print VIRT "\nSequence : \"$clone\"\n";
-    my $virtual = "${clone}:RNASeq";
-    my $fvirtual = "${clone}:RNASeq_forward_reads";
-    my $rvirtual = "${clone}:RNASeq_reverse_reads";
-    printf VIRT "S_Child Feature_data $virtual 1 $seqlength{$clone}\n";
-    printf VIRT "S_Child Feature_data $fvirtual 1 $seqlength{$clone}\n";
-    printf VIRT "S_Child Feature_data $rvirtual 1 $seqlength{$clone}\n";
+  open (FACE, ">$Foutput") || $log->log_and_die("Can't open the file $Foutput\n");
+  for(my $tile_idx = 1; $tile_idx <= @tiles; $tile_idx++) {
+    my $tile = $tiles[$tile_idx-1];
+
+    my $vseq = "$chromosome:RNASeq_forward_reads:$tile_idx";
+
+    printf VIRT "S_Child Feature_data %s %d %d\n", $vseq, $tile->{start}, $tile->{end};
+
+    print FACE "\nFeature_data : \"$vseq\"\n";
+    foreach my $seg (@{$tile->{F_segs}}) {
+      print FACE "Feature RNASeq_F_asymmetry @$seg \"Region of forward RNASeq reads\"\n";
+    }
   }
+  close(FACE);
+
+  open (RACE, ">$Routput") || $log->log_and_die("Can't open the file $Routput\n");
+  for(my $tile_idx = 1; $tile_idx <= @tiles; $tile_idx++) {
+    my $tile = $tiles[$tile_idx-1];
+
+    my $vseq = "$chromosome:RNASeq_reverse_reads:$tile_idx";
+
+    printf VIRT "S_Child Feature_data %s %d %d\n", $vseq, $tile->{start}, $tile->{end};
+
+    print RACE "\nFeature_data : \"$vseq\"\n";
+    foreach my $seg (@{$tile->{R_segs}}) {
+      print RACE "Feature RNASeq_R_asymmetry @$seg \"Region of reverse RNASeq reads\"\n";
+    }
+  }
+  close(RACE);
   close(VIRT);
 }
 
 ##########################################
 # ($clone, $offset, $clone_last) = get_chrom_details($start, $chrom)
+
+
 
 sub get_chrom_details {
 
@@ -518,24 +556,13 @@ sub get_chrom_details {
 ##########################################
 sub usage {
   my $error = shift;
-
+  
   if ($error eq "Help") {
     # Normal help menu
     system ('perldoc',$0);
     exit (0);
   }
 }
-
-##########################################
-
-
-
-
-# Add perl documentation in POD format
-# This should expand on your brief description above and add details of any options
-# that can be used with the program.  Such documentation can be viewed using the perldoc
-# command.
-
 
 __END__
 
