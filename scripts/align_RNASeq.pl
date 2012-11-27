@@ -186,7 +186,7 @@
 # by Gary Williams
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2012-11-20 16:42:40 $
+# Last updated on: $Date: 2012-11-27 15:46:58 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -870,6 +870,8 @@ IIIIIIIIHIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIGIGIDHIIIIIGIGI
   # out of quota filespace.
   my $NUMBER_TO_RUN_AT_ONCE = 20;
 
+  chdir $RNASeqSRADir;
+
   my @args;
   my $count=0;
   foreach my $arg (@SRX) {
@@ -933,6 +935,7 @@ IIIIIIIIHIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIGIGIDHIIIIIGIGI
 
   # get the Life_stages of the Condition objects (same name as the Analysis objects)
   my %life_stages = get_life_stage_from_conditions();
+  my %papers = get_paper_from_analysis();
 
   # get the valid CDS and Pseudogenes IDs
   my %CDSs = get_CDSs();
@@ -941,6 +944,9 @@ IIIIIIIIHIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIGIGIDHIIIIIGIGI
   # open a .ace file to hold the FPKM expression levels of genes, transcripts and CDSs
   my $misc_dynamic = $wormbase->misc_dynamic;
   open (EXPRACE, "> $misc_dynamic/RNASeq_expression_levels_${species}.ace") || $log->log_and_die("Can't open $misc_dynamic/RNASeq_expression_levels_${species}.ace\n");
+
+  # write a manifest file for the SPELL data for Wen and Raymond
+  open (MANIFEST, "> SPELL_manifest.dat") || $log->log_and_die("Can't open SPELL_manifest.dat\n");
 
   foreach my $SRX (@SRX) {
     $log->write_to("$SRX");
@@ -965,6 +971,8 @@ IIIIIIIIHIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIGIGIDHIIIIIGIGI
     my $analysis = $expts{$SRX}->[0];
     my $life_stage = $life_stages{$analysis};
     if (!defined $life_stage) {$log->write_to("WARNING: no Condition object found for Analysis object $analysis\n");}
+    my $paper = $papers{$analysis};
+    if (!defined $paper) {$log->write_to("WARNING: no Reference tag set for Analysis object: $analysis\n");}
     my %CDS_SRX;
     my %Pseudogene_SRX;
 
@@ -978,6 +986,9 @@ IIIIIIIIHIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIGIGIDHIIIIIGIGI
 # download."
     
     if (-e "$SRX/cufflinks/genes.fpkm_tracking.done") {
+      if (!defined $life_stage) {$life_stage=""}
+      if (!defined $paper) {$paper=""}
+      print MANIFEST "$SRX\t$analysis\t$life_stage\t$paper\n";
       open (EXPR, "<$SRX/cufflinks/genes.fpkm_tracking") || $log->log_and_die("Can't open $SRX/cufflinks/genes.fpkm_tracking\n");
       open (EXPROUT, ">$SRX.out") || $log->log_and_die("Can't open $SRX.out\n");
       while (my $line = <EXPR>) {
@@ -1008,7 +1019,7 @@ IIIIIIIIHIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIGIGIDHIIIIIGIGI
       if ($f[0] eq 'tracking_id') {next;}
       if ($f[0] =~ /CUFF/) {$log->log_and_die("Cufflinks for $SRX has failed to put the Transcript IDs in the output file - problem with the GTF file?\n");}
       if ($f[12] eq "OK" || $f[12] eq "LOWDATA") {
-	if (defined $life_stage) {
+	if (defined $life_stage && $life_stage ne "") {
 	  my ($sequence_name) = ($f[0] =~ /(^\S+?\.\d+[a-z]?)/);
 	  if (!defined $sequence_name) {
 	    # complain up to 5 times if it is not even like 'T27B1.t1' - a tRNA gene
@@ -1035,22 +1046,27 @@ IIIIIIIIHIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIGIGIDHIIIIIGIGI
 
     # now get the CDSs and Pseudogenes that were seen and output their FPKMs to the ace file
     foreach my $CDS (keys %CDS_SRX) {
-      print EXPRACE "\nCDS : \"$CDS\"\n";
-      print EXPRACE "RNASeq_FPKM  \"$life_stage\"  \"$CDS_SRX{$CDS}\"  From_analysis \"$analysis\"\n";
+      if (defined $life_stage && $life_stage ne "") {
+	print EXPRACE "\nCDS : \"$CDS\"\n";
+	print EXPRACE "RNASeq_FPKM  \"$life_stage\"  \"$CDS_SRX{$CDS}\"  From_analysis \"$analysis\"\n";
+      }
     }
     foreach my $Pseudogene (keys %Pseudogene_SRX) {
-      print EXPRACE "\nPseudogene : \"$Pseudogene\"\n";
-      print EXPRACE "RNASeq_FPKM  \"$life_stage\"  \"$Pseudogene_SRX{$Pseudogene}\"  From_analysis \"$analysis\"\n";
+      if (defined $life_stage && $life_stage ne "") {
+	print EXPRACE "\nPseudogene : \"$Pseudogene\"\n";
+	print EXPRACE "RNASeq_FPKM  \"$life_stage\"  \"$Pseudogene_SRX{$Pseudogene}\"  From_analysis \"$analysis\"\n";
+      }
     }
 
 
   } # foreach SRX
   $log->write_to("\n");
 
+  close(MANIFEST);
   close(EXPRACE);
 
   # make a tarball
-  $status = $wormbase->run_command("tar cf expr.tar *.out", $log);
+  $status = $wormbase->run_command("tar cf expr.tar *.out SPELL_manifest.dat", $log);
   unlink "expr.tar.gz";
   $status = $wormbase->run_command("gzip -f expr.tar", $log);
   my $autoace = $wormbase->autoace;
@@ -1941,6 +1957,25 @@ sub get_life_stage_from_conditions {
   return %life_stages;
 }
 ############################################################################
+
+  sub get_paper_from_analysis {
+
+  my %papers;
+  my $table_def = &write_paper_def;
+  my $table_query = $wormbase->table_maker_query($database, $table_def);
+  while(<$table_query>) {
+    chomp;
+    s/\"//g;  #remove "
+    next if (/acedb/ or /\/\//);
+    my @data = split("\t",$_);
+    my ($analysis, $paper) = @data;
+    if (!defined $analysis || !defined $paper) {next}
+    $papers{$analysis} = $paper; # multiple papers get overwritten leaving just the last one
+  }
+
+  return %papers;
+}
+############################################################################
 # this will write out an acedb tablemaker defn to a temp file
 ############################################################################
 
@@ -1980,6 +2015,41 @@ Class
 Class Life_stage 
 From 2 
 Tag Life_stage
+
+END2
+
+  print TMP $txt;
+  close TMP;
+  return $def;
+}
+############################################################################
+# this will write out an acedb tablemaker defn to a temp file
+############################################################################
+
+sub write_paper_def {
+  my $def = "/tmp/Life_stages_$$.def";
+  open TMP,">$def" or $log->log_and_die("cant write $def: $!\n");
+  my $species = $wormbase->full_name;
+  my $txt = <<END2;
+
+Sortcolumn 1
+
+Colonne 1 
+Width 80 
+Optional 
+Visible 
+Class 
+Class Analysis 
+From 1 
+ 
+Colonne 2 
+Width 20 
+Optional 
+Visible 
+Class 
+Class Paper 
+From 1 
+Tag Reference 
 
 END2
 
