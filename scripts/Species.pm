@@ -796,15 +796,16 @@ sub _new {
     bless $self, $class;
 }
 sub full_name {
-	my $self = shift;
-	my %param = @_ ;
-	if($param{'-short'}){
-		return 'Loa loa';
-	}	elsif($param{'-g_species'}){
-		return 'loa_loa';
-	}
-	else { return'Loa loa'
-	};
+  my $self = shift;
+  my %param = @_ ;
+  if($param{'-short'}){
+    return 'L. loa';
+  } elsif($param{'-g_species'}){
+    return 'l_loa';
+  }
+  else { 
+    return'Loa loa'
+  };
 }
 sub chromosome_prefix {'supercont'}
 sub pep_prefix {'LL'}
