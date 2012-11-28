@@ -8,8 +8,8 @@
 # sequence of two relreases
 #
 #
-# Last updated by: $Author: klh $     
-# Last updated on: $Date: 2012-06-22 08:56:53 $      
+# Last updated by: $Author: gw3 $     
+# Last updated on: $Date: 2012-11-28 10:40:53 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -93,21 +93,27 @@ while (my $line = <GFF>) {
   if ($line =~ /^#/) {next;}
   my @f = split /\t/, $line;
 
-      my ($chromosome, $start, $end, $sense) = ($f[0], $f[3], $f[4], $f[6]);
-      $chromosome =~ s/^chr_//;
-      if ($chromosome !~ /^CHROMOSOME_/ && $wormbase->species eq 'elegans') {$chromosome = "CHROMOSOME_$chromosome"};
+  my ($chromosome, $start, $end, $sense) = ($f[0], $f[3], $f[4], $f[6]);
+  $chromosome =~ s/^chr_//;
+  if ($chromosome !~ /^CHROMOSOME_/ && $wormbase->species eq 'elegans') {$chromosome = "CHROMOSOME_$chromosome"};
+  # some checks for malformed GFF files
+  if (!defined $chromosome || ! defined $start || ! defined $end || ! defined $sense) {$log->log_and_die("Malformed line (missing values? spaces instead of TABs?): $line\n")}
+  if ($wormbase->species eq 'elegans' && $chromosome !~ /(^CHROMOSOME_[IVX]+$)|(^CHROMOSOME_MtDNA$)/) {$log->log_and_die("Malformed line (invalid chromosome name?): $line\n")}
+  if ($start !~ /^\d+$/) {$log->log_and_die("Malformed line (non-numeric start?): $line\n")}
+  if ($end !~ /^\d+$/) {$log->log_and_die("Malformed line (non-numeric end?): $line\n")}
+  if ($sense !~ /^[\+|\-]$/) {$log->log_and_die("Malformed line (invalid sense?): $line\n")}
 
-      print "chrom, start, end=$chromosome, $start, $end\n" if ($verbose);
-      ($f[3], $f[4], $f[6], $indel, $change) = $assembly_mapper->remap_gff($chromosome, $start, $end, $sense);
- 
-      if ($indel) {
-	      $log->write_to("There is an indel in the sequence in CHROMOSOME $chromosome, $start, $end\n");
-      } elsif ($change) {
-	      $log->write_to("There is a change in the sequence in CHROMOSOME $chromosome, $start, $end\n");
-      }
-
-      $line = join "\t", @f;
-      print OUT $line,"\n";
+  print "chrom, start, end=$chromosome, $start, $end\n" if ($verbose);
+  ($f[3], $f[4], $f[6], $indel, $change) = $assembly_mapper->remap_gff($chromosome, $start, $end, $sense);
+  
+  if ($indel) {
+    $log->write_to("There is an indel in the sequence in CHROMOSOME $chromosome, $start, $end\n");
+  } elsif ($change) {
+    $log->write_to("There is a change in the sequence in CHROMOSOME $chromosome, $start, $end\n");
+  }
+  
+  $line = join "\t", @f;
+  print OUT $line,"\n";
 }
 
 close (GFF);
