@@ -6,7 +6,7 @@
 # builds wormbase & wormpep FTP sites
 # 
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2012-11-27 16:07:56 $
+# Last updated on: $Date: 2012-11-28 09:43:33 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -1065,7 +1065,7 @@ sub make_geneID_list {
   $log->write_to("$runtime: making Gene ID list\n");
  
   my %accessors = ($wormbase->species_accessors);
-  foreach my $wb (values %accessors) {
+  foreach my $wb ($wormbase, values %accessors) {
     next if exists $skip_species{$wb->species};
     next if @only_species and not exists $only_species{$wb->species};
 
@@ -1082,7 +1082,7 @@ sub make_geneID_list {
     open GENEID,">$out" ||die($!);
 
     my $db = Ace->connect(-path => "$ace_dir/") || die (Ace->error);
-    my $gene_it = $db->fetch_many(-query => "Find Gene; Species=\"${full_name}\"");
+    my $gene_it = $db->fetch_many(-query => "Find Gene; Species=\"${full_name}\"; NOT Dead");
     while(my $gene=$gene_it->next){
       print GENEID "$gene,${\$gene->CGC_name},${\$gene->Sequence_name}\n";
     }
