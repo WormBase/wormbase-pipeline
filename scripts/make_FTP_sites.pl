@@ -6,7 +6,7 @@
 # builds wormbase & wormpep FTP sites
 # 
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2012-11-28 09:43:33 $
+# Last updated on: $Date: 2012-11-28 10:52:24 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -1272,7 +1272,7 @@ sub go_public {
   my $base_path = $wormbase->ftp_site;
   my $staging_path = "$base_path/staging/releases/$WS_name";
   my $final_path   = "$base_path/releases/$WS_name";
-  my $frozen_path = "$base_path/releases/FROZEN_RELEASES";
+  my $frozen_path = "$base_path/FROZEN_RELEASES";
 
   $wormbase->run_command("mv $staging_path $final_path", $log);
 
