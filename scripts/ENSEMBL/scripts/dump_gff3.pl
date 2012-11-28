@@ -154,7 +154,35 @@ while( my $slice = shift @slices) {
             strand    => $cds->strand(),
             phase     => (3-$cds->phase())%3, # phase/frame conversion to a sane system
           };
-        }      
+        }
+
+        my $cdna_coding_start = $transcript->cdna_coding_start();
+        if ($cdna_coding_start > 1) {
+          my @coords = $transcript->cdna2genomic(1, $cdna_coding_start - 1);
+          @coords = grep { $_->isa("Bio::EnsEMBL::Mapper::Coordinate") } @coords;
+          foreach my $coord (@coords) {
+            push @{$tr_obj->{'utr5'}}, {
+              name => $slice_name,
+              start => $coord->start, 
+              end   => $coord->end,
+              strand => $coord->strand,
+            };
+          }
+        }
+
+        my $cdna_coding_end = $transcript->cdna_coding_end();
+        if ($cdna_coding_end < $transcript->length) {
+          my @coords = $transcript->cdna2genomic($cdna_coding_end + 1, $transcript->length);
+          @coords = grep { $_->isa("Bio::EnsEMBL::Mapper::Coordinate") } @coords;
+          foreach my $coord (@coords) {
+            push @{$tr_obj->{'utr3'}}, {
+              name => $slice_name,
+              start => $coord->start, 
+              end   => $coord->end,
+              strand => $coord->strand,
+            };
+          }
+        }
       }
       
       # get all exons and translatable_exons of the transcript
@@ -470,12 +498,28 @@ sub dump_gene {
   # Dump coding_exons
   foreach my $transcript (@{$gene->{'transcript'}}) {
     my $parent = $transcript->{'stable_id'};
+    if (exists $transcript->{'utr5'}) {
+      foreach my $utr_seg (@{$transcript->{'utr5'}}) {
+        $output .= gff_line(
+          $utr_seg->{'name'}, $transcript->{'gff_source'}, 'five_prime_UTR', $utr_seg->{'start'}, 
+          $utr_seg->{'end'}, $utr_seg->{'strand'}, undef, undef, undef, 
+          undef, undef, undef, $transcript->{'stable_id'});
+      }
+    }
     if (exists $transcript->{'cds'}) {
       foreach my $cds (@{$transcript->{'cds'}}) {
         $output .= gff_line(
           $cds->{'name'}, $transcript->{'gff_source'}, 'CDS', $cds->{'start'}, $cds->{'end'},
           $cds->{'strand'}, $cds->{'stable_id'}, $cds->{'phase'},undef, 
           undef,undef ,undef, $transcript->{'stable_id'});
+      }
+    }
+    if (exists $transcript->{'utr3'}) {
+      foreach my $utr_seg (@{$transcript->{'utr3'}}) {
+        $output .= gff_line(
+          $utr_seg->{'name'}, $transcript->{'gff_source'}, 'three_prime_UTR', $utr_seg->{'start'}, 
+          $utr_seg->{'end'}, $utr_seg->{'strand'}, undef, undef, undef, 
+          undef, undef, undef, $transcript->{'stable_id'});
       }
     }
   }
