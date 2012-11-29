@@ -83,7 +83,7 @@ $species = $wb->species if not defined $species;
 MapAlleles::set_wb_log($log,$wb); # that is a bit crude, but makes $log available to the MapAlleles funtions
 
 my $lsf = LSF::JobManager->new();
-my $variations = MapAlleles::get_all_allele_ids();
+my $variations = MapAlleles::get_all_allele_ids_table_maker();
 $binsize = 50000 if not defined $binsize;
 
 my (@bins, @id_files, @out_files);
@@ -95,6 +95,7 @@ while (my $a = shift @$variations){
 
   push @{$bins[-1]}, $a;
 }
+
 
 for(my $bn=1; $bn <= @bins; $bn++) {
   my $list = $bins[$bn-1];
@@ -114,6 +115,7 @@ for(my $bn=1; $bn <= @bins; $bn++) {
   push @id_files, $id_file;
   push @out_files, $out_file;
 }
+
 
 $lsf->wait_all_children( history => 1 );
 
