@@ -9,7 +9,7 @@
 # transcripts to find the most probable orientation.
 #
 # Last updated by: $Author: klh $     
-# Last updated on: $Date: 2012-07-20 09:50:09 $      
+# Last updated on: $Date: 2012-11-29 14:38:05 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -144,7 +144,7 @@ my $ovlp = Overlap->new($database, $wormbase);
   my @pseud = $ovlp->get_pseudogene($chromosome); # secondary list we search against
   my @rrna = $ovlp->get_rRNA_exons($chromosome); # secondary list we search against
   my @ncrna = $ovlp->get_ncRNA($chromosome); # secondary list we search against
-  my @jigsaw = $ovlp->get_jigsaw_exons($chromosome); # secondary list we search against
+  #my @jigsaw = $ovlp->get_jigsaw_exons($chromosome); # secondary list we search against
   my @trans = $ovlp->get_Coding_transcript_exons($chromosome); # secondary list we search against
 
 
@@ -240,7 +240,7 @@ my $ovlp = Overlap->new($database, $wormbase);
     my $pseud_obj = $ovlp->compare(\@pseud);
     my $rrna_obj = $ovlp->compare(\@rrna);
     my $ncrna_obj = $ovlp->compare(\@ncrna);
-    my $jigsaw_obj = $ovlp->compare(\@jigsaw);
+    #my $jigsaw_obj = $ovlp->compare(\@jigsaw);
     my $trans_obj = $ovlp->compare(\@trans);
 
     print "Searching\n" if ($verbose);
@@ -310,19 +310,19 @@ my $ovlp = Overlap->new($database, $wormbase);
 	}
       }
 
-      my @jigsaw_matches = $jigsaw_obj->match($est);
-      print "Have ", scalar @jigsaw_matches, " overlaps to jigsaw\n" if ($verbose);
-      if (@jigsaw_matches) {
-	my @senses = $jigsaw_obj->matching_sense;
-	for (my $i=0; $i < @senses; $i++) {
-	  my ($p1,$p2) = $jigsaw_obj->matching_proportions($jigsaw_matches[$i]);
-	  if ($senses[$i] == 1) {
-	    if ($prop_same < $p1) {$prop_same = $p1;}
-	  } else {
-	    if ($prop_other < $p1) {$prop_other = $p1;}
-	  }
-	}
-      }
+      #my @jigsaw_matches = $jigsaw_obj->match($est);
+      #print "Have ", scalar @jigsaw_matches, " overlaps to jigsaw\n" if ($verbose);
+      #if (@jigsaw_matches) {
+	#my @senses = $jigsaw_obj->matching_sense;
+	#for (my $i=0; $i < @senses; $i++) {
+	#  my ($p1,$p2) = $jigsaw_obj->matching_proportions($jigsaw_matches[$i]);
+	#  if ($senses[$i] == 1) {
+	#    if ($prop_same < $p1) {$prop_same = $p1;}
+	#  } else {
+	#    if ($prop_other < $p1) {$prop_other = $p1;}
+	#  }
+	#}
+      #}
 
       # as a last resort, only if we have no other information, we
       # take note of the transcripts that the EST overlaps
