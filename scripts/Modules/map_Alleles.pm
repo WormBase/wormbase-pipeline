@@ -140,6 +140,54 @@ sub get_all_allele_ids {
   return \@all_names;
 }
 
+
+=head2 get_all_allele_ids_table_maker
+
+    Title   : get_all_allele_ids_table_maker
+    Usage   : MapAlleles::get_all_allele_ids_table_maker
+    Function: get a list of active alleles from acedb
+    Returns : array_ref of ids
+    Args    : none
+
+=cut
+
+sub get_all_allele_ids_table_maker {
+  
+  my $species = $wb->full_name;
+  my $query = <<"EOF";
+
+Sortcolumn 1
+
+Colonne 1 
+Width 12 
+Mandatory 
+Visible 
+Class 
+Class Variation 
+From 1 
+Condition Flanking_sequences AND Live AND Species = "$species"
+ 
+EOF
+
+  my $def_file = "/tmp/all_allele_ids.def";
+  open(my $tmdeffh, ">$def_file") or $log->log_and_die("Could not open $def_file for writing\n");
+  print $tmdeffh $query;
+  close($tmdeffh);
+
+  my @list;
+
+  my $tmfh = $wb->table_maker_query($wb->autoace, $def_file);
+  while(<$tmfh>) {
+    /^\"(\S+)\"$/ and do {
+      push @list, $1;
+    }
+  }
+  close($tmfh);
+
+  return \@list;
+}
+
+
 =head2 get_all_allele
 
     Title   : get_all_allele
