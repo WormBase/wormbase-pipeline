@@ -9,8 +9,8 @@
 # solely in the wormpep.history file.
 #
 #
-# Last updated by: $Author: klh $
-# Last updated on: $Date: 2011-12-16 11:47:41 $
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2012-11-29 12:37:07 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -274,8 +274,8 @@ foreach my $key ( sort keys %CE_history ) {
         }
     }
 
-    print ACE "Database \"WORMPEP\" WORMPEP_ID \"$WORMPEP_PREFIX:$key\"\n";
- 	print ACE "Species \"".$wormbase->full_name."\"\n";
+    #print ACE "Database \"WORMPEP\" WORMPEP_ID \"$WORMPEP_PREFIX:$key\"\n";
+    print ACE "Species \"".$wormbase->full_name."\"\n";
     print ACE "Wormpep\n" if ($wormbase->species eq 'elegans');
 
     if ( $CE_live{$key} == 1 ) {
