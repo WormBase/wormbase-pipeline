@@ -12,7 +12,7 @@ require 'fileutils'
 
 tmp_place = '/lustre/scratch109/ensembl/wormpipe/compara_build'
 perl='/software/bin/perl'
-basedir='/software/worm/ensembl'
+basedir='/software/worm/ensembl-63.1'
 
 # check to see if the old build was cleaned
 # will raise an error if not
@@ -27,9 +27,9 @@ end
 desc 'setup environment variables'
 task :env_setup do
         old_perl5=ENV['PERL5LIB']
-        additional='/software/worm/ensembl-63/ensembl-config/celegans/generic-elegans:/software/worm/ensembl-63/ensembl-pipeline/modules:/software/worm/ensembl-63/ensembl-analysis/modules:/software/worm/ensembl-63/bioperl-live:/software/worm/ensembl/bioperl-run:/software/worm/ensembl-63/ensembl/modules:/software/worm/ensembl-63/ensembl-hive/modules:/software/worm/ensembl-63/ensembl-compara/modules:/software/worm/lib:.:/software/worm/lib/perl5:'
+        additional='/software/worm/ensembl-63.1/ensembl-config/celegans/generic-elegans:/software/worm/ensembl-63.1/ensembl-pipeline/modules:/software/worm/ensembl-63.1/ensembl-analysis/modules:/software/worm/ensembl-63/bioperl-live:/software/worm/ensembl/bioperl-run:/software/worm/ensembl-63.1/ensembl/modules:/software/worm/ensembl-63/eHive/modules:/software/worm/ensembl-63.1/ensembl-compara/modules:/software/worm/lib:.:/software/worm/lib/perl5:'
 
-        ENV['ENSEMBL_CVS_ROOT_DIR'] = '/software/worm/ensembl/'
+        ENV['ENSEMBL_CVS_ROOT_DIR'] = '/software/worm/ensembl-63.1/'
         ENV['PERL5LIB']             = additional+old_perl5
 end
 
@@ -69,7 +69,7 @@ task :build_homology  do
   # the -mlss_id value is the number of species we are comparing
 ##  sh "#{perl} /software/worm/ensembl/ensembl-hive/scripts/init_pipeline.pl Bio::EnsEMBL::Compara::PipeConfig::WormProteinTrees_conf -password #{db['password']} -mlss_id 11 -species_tree_input_file /software/worm/ensembl/compara-conf/pt_species_tree.txt"
 #  sh "#{perl} /software/worm/ensembl/ensembl-hive/scripts/init_pipeline.pl Bio::EnsEMBL::Compara::PipeConfig::WormProteinTrees_conf -password #{db['password']} -mlss_id 12 -species_tree_input_file /software/worm/ensembl/compara-conf/njtree.12.worm_compara_test_orthotree.nh"
-  sh "#{perl} /software/worm/ensembl/ensembl-hive/scripts/init_pipeline.pl Bio::EnsEMBL::Compara::PipeConfig::WormProteinTrees_conf -password #{db['password']} -mlss_id 377 -species_tree_input_file /software/worm/ensembl/compara-conf/njtree.12.worm_compara_test_orthotree.nh"
+  sh "#{perl} /software/worm/ensembl-63/eHive/scripts/init_pipeline.pl Bio::EnsEMBL::Compara::PipeConfig::WormProteinTrees_conf -password #{db['password']} -mlss_id 377 -species_tree_input_file /software/worm/ensembl/compara-conf/njtree.12.worm_compara_test_orthotree.nh"
 
 
 
