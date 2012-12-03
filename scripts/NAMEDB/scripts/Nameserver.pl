@@ -18,7 +18,6 @@ $| = 1;
 $VALID_USERS = {
 		# these are the users WBPerson id
                 'klh'           => 3111,
-		'ar2' 		=> 1847,
 		'pad' 		=> 1983,
 		'mt3' 		=> 2970,
 		'gw3' 		=> 4025,
@@ -26,7 +25,6 @@ $VALID_USERS = {
 		'tbieri' 	=> 1849,
 		'jspieth' 	=> 615,
 		'pozersky' 	=> 1867,
-		'wnash'         => 10213,
 		'stlouis' 	=> 1,
 		'caltech' 	=> 1,
 		'cshl' 		=> 1,
@@ -336,6 +334,7 @@ Species :
 <option value="brenneri">brenneri</option>
 <option value="japonica">japonica</option>
 <option value="pristionchus">Pristionchus</option>
+<option value="brugia">B.malayi</option>
 </select><P>
 		<font color=gray>(Optional) Addition comment (eg instruction to nomenclature person)<br> <INPUT TYPE="text" NAME="remark" SIZE="100" MAXLENGTH="200"><BR></font>
 		<INPUT TYPE="hidden" NAME="action" VALUE="split_gene">

@@ -169,6 +169,11 @@ sub validate_name {
 				     "Sequence" => '^CJA\d{5}$',
 				     "Public_name" => '^Cjp-[a-z]{3,4}-[1-9]\d*(\.\d+)?$|^CJA\d{5}$',
 				    },
+		        'brugia'   =>{
+			             'CGC' => '^Bm-[a-z21]{3,4}-[1-9]\d*(\.\d+)?$',
+			             'Sequence' => '^Bm\d+$',
+			             'Public_name' => '^Bm-[a-z21]{3,4}-[1-9]\d*(\.\d+)?$|^Bm\d+$'	     
+			            },
 
 		      };
 
