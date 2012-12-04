@@ -3,7 +3,7 @@
 # This is to add Confirmed / Predicted Status and RFLP to SNP gff lines as requested by Todd
 #
 # Last updated by: $Author: klh $     
-# Last updated on: $Date: 2012-07-20 20:06:33 $      
+# Last updated on: $Date: 2012-12-04 08:56:36 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -18,13 +18,12 @@ use strict;
 # variables and command-line options # 
 ######################################
 
-my ($help, $debug, $test, $verbose, $store, $wormbase,$database);
-my ($species, $gff_file);
+my ( $debug, $test, $verbose, $store, $wormbase,$database);
+my ($species, $gff_file, %var);
 
-GetOptions ("help"       => \$help,
+GetOptions (
             "debug=s"    => \$debug,
 	    "test"       => \$test,
-	    "verbose"    => \$verbose,
 	    "store:s"    => \$store,
 	    "species:s"  => \$species,
 	    "database:s" => \$database,
@@ -42,15 +41,7 @@ if ( $store ) {
 
 $wormbase->{autoace} = $database if $database;
 $species = $wormbase->species;
-
-# Display help if required
-&usage("Help") if ($help);
-
-# in test mode?
-if ($test) {
-  print "In test mode\n" if ($verbose);
-
-}
+my $sp_full_name = $wormbase->full_name;
 
 # establish log file.
 my $log = Log_files->make_build_log($wormbase);
@@ -59,26 +50,80 @@ my $log = Log_files->make_build_log($wormbase);
 # MAIN BODY OF SCRIPT
 ##########################
 
-my %SNP;
 
-# need to add mol_change details to GFF lines
-&get_mol_changes;
-
-#load SNP details from table maker query
+#
+# Get types and public names for all vars
+# 
 my $table = $wormbase->table_maker_query($wormbase->autoace, &write_def_file);
 while(<$table>) {
   s/\"//g; #"
   next if (/acedb/ or /\/\//);
   chomp;
-  my ($snp, $conf, $pred, $rflp, $from_species,$public_name) = split(/\t/,$_);
-  next if (! defined $from_species);
-  next unless ($from_species =~ /$species/);
-  $SNP{$snp}->{'confirm'} = ($conf or $pred);
-  $SNP{$snp}->{'RFLP'} = 1 if ($rflp =~ /\w/);
-  $SNP{$snp}->{'Public_name'} = $public_name if $public_name;
-}
+  my ($varid, $public_name, $other_name, $type) = split(/\t/, $_);
 
-my $db = Ace->connect(-path => $wormbase->autoace);
+  if (not defined $public_name or not defined $varid) {
+    next;
+  }
+
+  $var{$varid}->{public_name}->{$public_name} = 1;
+
+  $var{$varid}->{other_name}->{$other_name} = 1 if $other_name;
+
+  if (defined $type) {
+    $var{$varid}->{types}->{$type} = 1;
+
+    if ($type =~ /confirmed/i) {
+      $var{$varid}->{confirmed} = 1;
+    }
+    if ($type =~ /predicted/i) {
+      $var{$varid}->{predicted} = 1;
+    }
+  }
+}
+close($table);
+
+#
+# Get molecular consequences for all vars
+#
+my %interested = ('Genomic_neighbourhood' => 1,
+                  'Regulatory_feature'    => 2,
+                  'Promoter'              => 3,
+                  'UTR_5'                 => 4,
+                  'UTR_3'                 => 5,
+                  'Intron'                => 6,
+                  'Coding_exon'           => 7,
+                  'Silent'                => 8,
+                  'Splice_site'           => 9,
+                  'Readthrough'           => 10,
+                  'Nonsense'              => 11,
+                  'Frameshift'            => 12,
+                  'Missense'              => 13,
+		      );
+
+$table = $wormbase->table_maker_query($wormbase->autoace, &write_mol_change_def_file);
+
+while(<$table>) {
+  chomp;
+  s/\"//g; #"
+  next if (! defined $_);
+  next if (/acedb/ or /\/\//);
+  my ($var_name, @mut_affects) = split(/\s+/,$_);
+  next if not defined $var_name;
+  next if not exists $var{$var_name};
+  
+  foreach my $mut_affects (@mut_affects) {
+
+    if($mut_affects and $interested{$mut_affects}){
+      if( not exists $var{$var_name}->{mol_change} or 
+          $interested{$mut_affects} > $interested{ $var{$var_name}->{mol_change} }) {
+        $var{$var_name}->{mol_change} = $mut_affects;
+      }
+    }
+  }
+}
+close($table);
+
+
 
 my $stat = 0;
 
@@ -103,7 +148,10 @@ if ($gff_file) {
 }
 
 foreach my $file (@gff_files) {
-  
+  # open and close db connection for each chrom, since AcePerl/giface seems to 
+  # hang on to memory...
+  my $db = Ace->connect(-path => $wormbase->autoace);  
+
   open(GFF,"<$file") or $log->log_and_die("cant open $file");
   open(NEW,">$file.tmp") or $log->log_and_die("cant open $file tmp file\n");
   while( <GFF> ) {
@@ -111,74 +159,74 @@ foreach my $file (@gff_files) {
     print NEW "$_";
     #CHROMOSOME_V    Allele  SNP     155950  155951  .       +       .       Variation "uCE5-508"
     #I       Allele  SNP     126950  126950  .       +       .       Variation "pkP1003"  ;  Status "Confirmed_SNP" ; RFLP "Yes"
-    if (/Public_name/){}
-    elsif( /SNP/ and /Allele|Million_mutation/) {
-      my ($allele) = /Variation \"(\S+)\"/;
-      print NEW " ; Status \"",$SNP{$allele}->{'confirm'},"\"" if $SNP{$allele}->{'confirm'};
-      print NEW " ; RFLP ", (defined $SNP{$allele}->{'RFLP'}? '"Yes"' : '"No"');
-      print NEW " ; Mutation_type \"".$SNP{$allele}->{'mol_change'}."\"" if $SNP{$allele}->{'mol_change'};
-      print NEW " ; Public_name \"${\$SNP{$allele}->{'Public_name'}}\"" if $SNP{$allele}->{'Public_name'};
-
-      ###########################
-      # from the Waterstone hack
-      my $variation = $db->fetch(Variation => $allele);
-      if ($SNP{$allele}->{mol_change} && ($SNP{$allele}->{'mol_change'} eq 'Substitution')){
-      	my @substitution = $variation->Substitution->row;
-      	print NEW " ; Substitution \"$substitution[0]/$substitution[1]\"";
+    if (/Public_name/){
+      # looks like htis one has already been decorated, so skip it. 
+    } elsif (/Variation \"(\S+)\"/) {
+      my $allele = $1;      
+      foreach my $pb (keys %{$var{$allele}->{public_name}}) {
+        print NEW " ; Public_name \"$pb\"";
       }
-      my @types = $variation->at('Affects.Predicted_CDS[2]');
+      foreach my $on (keys %{$var{$allele}->{other_name}}) {
+        print NEW " ; Other_name \"$on\"";
+      }
+      
+      print NEW " ; Status \"Confirmed\"" if $var{$allele}->{confirmed};
+      print NEW " ; Status \"Predicted\"" if $var{$allele}->{predicted};
+      print NEW " ; RFLP " if exists $var{$allele}->{types}->{RFLP};
+      
+      printf(NEW " ; Consequence \"%s\"", $var{$allele}->{mol_change}) if exists $var{$allele}->{mol_change};
 
-      if (grep {$_=/Missense|Nonsense/} @types){
-        # 2.) the missense
-        my @missense = $variation->at('Affects.Predicted_CDS[4]');
-        @missense = grep {/to/} @missense;
-        print NEW " ; AAChange \"$missense[0]\"";
+      my $variation = $db->fetch(Variation => $allele);
+      my @types = $variation->at('Sequence_details.Type_of_mutation');
+      foreach my $type (@types) {
+        if ($type eq 'Substitution' and defined $variation->Substitution) {
+          my @substitution = $variation->Substitution->row;
+          print NEW " ; Substitution \"$substitution[0]/$substitution[1]\"";
+        }
+      }
+
+      if ($var{$allele}->{mol_change}) {
+
+        my @consequences = $variation->at('Affects.Predicted_CDS[2]');
+        
+        if (grep { $_ =~ /Missense|Nonsense|Readthrough/ } @consequences){
+          # 2.) the missense
+          my @missense = $variation->at('Affects.Predicted_CDS[4]');
+          @missense = grep {/to/} @missense;
+          print NEW " ; AAChange \"$missense[0]\"";
+        }
       }
     
       # 3.) the strain
       print NEW " ; Strain \"${\$variation->Strain}\"" if $variation->Strain;
-      ############################
 
       $stat++;
-    }
-    # public_names for non-snp variations
-    elsif(/\"(WBVar\d+)\"/){
-	my $allele = $db->fetch(Variation => "$1");
-	my $pubid = $allele->Public_name;
-	print NEW " ; Public_name \"$pubid\"" if $pubid;
-        $stat++;	
-    }
-    # but the genes used as alleles might need also public names
-    elsif(/\.\s+Allele\s+\"(WBGene\d+)\"/){
-	my $allele = $db->fetch(Gene => "$1");
-	my $pubid = $allele->Public_name;
-	print NEW " ; Public_name \"$pubid\"" if $pubid; 
-	$stat++;
     }
 
     print NEW "\n";
   }
   $wormbase->run_command("mv -f $file.tmp $file", $log);
+
+  $db->close();
 }
 
 ##################
 # Check the files
 ##################
 
-if($gff_file){
-    $log->write_to("Not checking ad hoc file\n");
-}
-else { 
+if($gff_file) {
+  $log->write_to("Not checking ad hoc file\n");
+} else { 
   foreach my $file (@gff_files) {
     my $minsize = ($file=~/random|un/)?170000:1500000;
     $wormbase->check_file($file, $log,
-			      minsize => $minsize,
-			      lines => ['^##',
-					"^\\S+\\s+\\S+\\s+\\S+\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+"],
-			      );
-    }
+                          minsize => $minsize,
+                          lines => ['^##',
+                                    "^\\S+\\s+\\S+\\s+\\S+\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+"],
+        );
+  }
 }
-
+  
 
 # Close log files and exit
 $log->write_to("\n\nChanged $stat lines\n");
@@ -199,132 +247,69 @@ exit(0);
 #
 ##############################################################
 
-
-
-##########################################
-
-sub usage {
-  my $error = shift;
-
-  if ($error eq "Help") {
-    # Normal help menu
-    system ('perldoc',$0);
-    exit (0);
-  }
-}
-
-##########################################
-sub get_mol_changes{
-    $log->write_to("getting molecular change info\n");
-    my $table = $wormbase->table_maker_query($wormbase->autoace,&write_mol_change_def );
-
-    my %interested = ('Genomic_neighbourhood' => 1,
-	              'Regulatory_feature'    => 2,
-	              'Promoter'              => 3,
-	              'UTR_5'                 => 4,
-		      'UTR_3'                 => 5,
-	              'Intron'                => 6,
-	              'Coding_exon'           => 7,
-	              'Silent'                => 8,
-	              'Splice_site'           => 9,
-	              'Nonsense'              => 10,
-		      'Frameshift'            => 11,
-		      'Missense'              => 12,
-		      );
-
-    while(<$table>) {
-	chomp;
-	s/\"//g; #"
-	next if (! defined $_);
-	next if (/acedb/ or /\/\//);
-	my @data = split(/\s+/,$_);
-	if($data[1] && $interested{$data[1]}){
-	    if( !(defined $SNP{$data[0]}->{'mol_change'}) or ($interested{$data[1]} > $interested{ $SNP{$data[0]}->{'mol_change'} }) ){
-		$SNP{$data[0]}->{'mol_change'} = $data[1];
-	    }
-	}
-    }
-    close $table;
-}
-
 ##########################################
 
 sub write_def_file {
-	my $def = '/tmp/overload_SNP_GFF.def';
-	open TMP,">$def" or $log->log_and_die("cant write $def: $!\n");
-	my $txt = <<END;
+  my $def = '/tmp/overload_SNP_GFF.def';
+  open TMP,">$def" or $log->log_and_die("cant write $def: $!\n");
+  my $txt = <<END;
 Sortcolumn 1
 
-Colonne 1
-Width 12
-Optional
-Visible
-Class
-Class Variation
-From 1
-
-Colonne 2
-Width 12
-Mandatory
-Hidden
-Show_Tag
-From 1
-Tag SNP
-
-Colonne 3
-Width 12
-Optional
-Visible
-Show_Tag
-From 1
-Tag Confirmed_SNP
+Colonne 1 
+Width 12 
+Optional 
+Visible 
+Class 
+Class Variation 
+From 1 
+Condition Species = "$sp_full_name"
+ 
+Colonne 2 
+Width 12 
+Mandatory 
+Hidden 
+Show_Tag 
+From 1 
+Tag Sequence 
+ 
+Colonne 3 
+Width 12 
+Mandatory 
+Visible 
+Class 
+Class Variation_name 
+From 1 
+Tag Public_name 
 
 Colonne 4
 Width 12
-Optional
-Visible
-Show_Tag
-From 1
-Tag Predicted_SNP
-
-Colonne 5
-Width 12
-Optional
-Visible
-Show_Tag
-From 1
-Tag RFLP
-
-Colonne 6
-Width 12
-Optional
-Visible
-Class
-Class Species
-From 1
-Tag Species
-
-Colonne 7
-Width 12
-Optional
+Optional 
 Visible
 Class
 Class Variation_name
-From 1
-Tag Public_name
+Tag Other_name
+ 
+Colonne 5 
+Width 12 
+Optional 
+Visible 
+Next_Tag 
+From 1 
+Tag Variation_type 
+
 
 END
 
-	print TMP $txt;
-	close TMP;
-	return $def;
+  print TMP $txt;
+  close TMP;
+  return $def;
 }
 
 
-sub write_mol_change_def {
-	my $def = '/tmp/overload_SNP_GFF_mol_chng.def';
-	open TMP,">$def" or $log->log_and_die("cant write $def: $!\n");
-	my $txt = <<END;
+sub write_mol_change_def_file {
+  my $def = '/tmp/overload_SNP_GFF_mol_chng.def';
+  open TMP,">$def" or $log->log_and_die("cant write $def: $!\n");
+  my $txt = <<END;
 Sortcolumn 1
 
 Colonne 1 
@@ -341,7 +326,7 @@ Mandatory
 Hidden
 Show_Tag
 From 1
-Tag SNP
+Tag Sequence
 
 Colonne 3
 Width 12 
@@ -448,12 +433,19 @@ Show_Tag
 Right_of 3  
 Tag  HERE  # Silent 
 
+Colonne 16
+Width 12
+Optional
+Visible
+Show_Tag
+Right_of 3
+Tag  HERE  # Readthrough
 
 END
 
-	print TMP $txt;
-	close TMP;
-	return $def;
+  print TMP $txt;
+  close TMP;
+  return $def;
 }
 
 __END__
@@ -501,12 +493,6 @@ $0.pl  OPTIONAL arguments:
 =over 4
 
 =item -test, Test mode, run the script, but don't change anything.
-
-=back
-
-=over 4
-    
-=item -verbose, output lots of chatty test messages
 
 =back
 
