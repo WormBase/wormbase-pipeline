@@ -3,7 +3,7 @@
 # This is to add Confirmed / Predicted Status and RFLP to SNP gff lines as requested by Todd
 #
 # Last updated by: $Author: klh $     
-# Last updated on: $Date: 2012-12-04 08:56:36 $      
+# Last updated on: $Date: 2012-12-04 14:26:55 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -19,7 +19,7 @@ use strict;
 ######################################
 
 my ( $debug, $test, $verbose, $store, $wormbase,$database);
-my ($species, $gff_file, %var);
+my ($species, $gff_file, $gff_v3, %var);
 
 GetOptions (
             "debug=s"    => \$debug,
@@ -27,7 +27,8 @@ GetOptions (
 	    "store:s"    => \$store,
 	    "species:s"  => \$species,
 	    "database:s" => \$database,
-	    "file:s"     => \$gff_file
+	    "file:s"     => \$gff_file,
+            "gff3"       => \$gff_v3,
 	    );
 
 if ( $store ) {
@@ -161,27 +162,37 @@ foreach my $file (@gff_files) {
     #I       Allele  SNP     126950  126950  .       +       .       Variation "pkP1003"  ;  Status "Confirmed_SNP" ; RFLP "Yes"
     if (/Public_name/){
       # looks like htis one has already been decorated, so skip it. 
-    } elsif (/Variation \"(\S+)\"/) {
+    } elsif (/Variation \"(\S+)\"/ or /Variation:(\S+)/) {
+      my @new_els;
+
       my $allele = $1;      
       foreach my $pb (keys %{$var{$allele}->{public_name}}) {
-        print NEW " ; Public_name \"$pb\"";
+        #print NEW " ; Public_name \"$pb\"";
+        push @new_els, ['Public_name', $pb];
       }
       foreach my $on (keys %{$var{$allele}->{other_name}}) {
-        print NEW " ; Other_name \"$on\"";
+        #print NEW " ; Other_name \"$on\"";
+        push @new_els, ['Other_name', $on];
       }
       
-      print NEW " ; Status \"Confirmed\"" if $var{$allele}->{confirmed};
-      print NEW " ; Status \"Predicted\"" if $var{$allele}->{predicted};
-      print NEW " ; RFLP " if exists $var{$allele}->{types}->{RFLP};
-      
-      printf(NEW " ; Consequence \"%s\"", $var{$allele}->{mol_change}) if exists $var{$allele}->{mol_change};
+      #print NEW " ; Status \"Confirmed\"" if $var{$allele}->{confirmed};
+      #print NEW " ; Status \"Predicted\"" if $var{$allele}->{predicted};
+      #print NEW " ; RFLP " if exists $var{$allele}->{types}->{RFLP};
+      #printf(NEW " ; Consequence \"%s\"", $var{$allele}->{mol_change}) if exists $var{$allele}->{mol_change};
+
+      push @new_els, ['Status', 'Confirmed'] if $var{$allele}->{confirmed};
+      push @new_els, ['Status', 'Predicted'] if $var{$allele}->{predicted};
+      push @new_els, ['RFLP'] if exists $var{$allele}->{types}->{RFLP};
+      push @new_els, ['Consequence', $var{$allele}->{mol_change}] if exists $var{$allele}->{mol_change};
+
 
       my $variation = $db->fetch(Variation => $allele);
       my @types = $variation->at('Sequence_details.Type_of_mutation');
       foreach my $type (@types) {
         if ($type eq 'Substitution' and defined $variation->Substitution) {
           my @substitution = $variation->Substitution->row;
-          print NEW " ; Substitution \"$substitution[0]/$substitution[1]\"";
+          #print NEW " ; Substitution \"$substitution[0]/$substitution[1]\"";
+          push @new_els, ['Substitution', "$substitution[0]/$substitution[1]"];
         }
       }
 
@@ -193,12 +204,30 @@ foreach my $file (@gff_files) {
           # 2.) the missense
           my @missense = $variation->at('Affects.Predicted_CDS[4]');
           @missense = grep {/to/} @missense;
-          print NEW " ; AAChange \"$missense[0]\"";
+          #print NEW " ; AAChange \"$missense[0]\"";
+          push @new_els, ['AAChange', $missense[0]];
         }
       }
     
       # 3.) the strain
-      print NEW " ; Strain \"${\$variation->Strain}\"" if $variation->Strain;
+      #print NEW " ; Strain \"${\$variation->Strain}\"" if $variation->Strain;
+      push @new_els, ['Strain', $variation->Strain] if $variation->Strain;
+
+      my @new_el_strings;
+      foreach my $el (@new_els) {
+        if (scalar(@$el) == 1) {
+          push @new_el_strings, $el->[0];
+        } else {
+          if ($gff_v3) {
+            push @new_el_strings, join(":", @$el);
+          } else {
+            push @new_el_strings, sprintf("%s \"%s\"", @$el);
+          }
+        }
+      }
+
+      my $join_str = ($gff_v3) ? ";" : " ; ";
+      print NEW join($join_str, @new_el_strings);
 
       $stat++;
     }
