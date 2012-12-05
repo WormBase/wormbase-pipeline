@@ -47,7 +47,8 @@ map_Allele.pl options:
 	-allele ALLELE_NAME check only ALLELE_NAME instead of all
 	-noload             dont update AceDB
 	-noupdate           same as -noload
-	-database			DATABASE_DIRECTORY use a different AceDB
+	-database	    DATABASE_DIRECTORY use a different db for sanity checking Variations.
+        -force              option to force full run even if -database is used.
 	-weak_checks        relax sequence sanity checks
 	-help               print this message
 	-test               use the test database
@@ -58,24 +59,25 @@ USAGE
 exit 1;	
 }
 
-my ( $debug, $species, $store, $outdir,$acefile,$allele ,$noload,$database,$weak_checks,$help,$test,$idfile,$nofilter);
+my ( $debug, $species, $store, $outdir,$acefile,$allele ,$noload,$force,$database,$weak_checks,$help,$test,$idfile,$nofilter);
 
 GetOptions(
-  'species=s'=> \$species,
-  'debug=s'  => \$debug,
-  'store=s'  => \$store,
-  'outdir=s' => \$outdir,
-  'outfile=s' => \$acefile,
-  'allele=s' => \$allele,
-  'noload'   => \$noload,
-  'noupdate' => \$noload,
-  'database=s'  => \$database,
-  'weak_checks' => \$weak_checks,
-  'help'        => \$help,
-  'test'        => \$test,
-  'nofilter'    => \$nofilter,
-  'idfile=s'    => \$idfile,
-) or &print_usage();
+	   'species=s'   => \$species,
+	   'debug=s'     => \$debug,
+	   'store=s'     => \$store,
+	   'outdir=s'    => \$outdir,
+	   'outfile=s'   => \$acefile,
+	   'allele=s'    => \$allele,
+	   'noload'      => \$noload,
+	   'noupdate'    => \$noload,
+	   'database=s'  => \$database,
+	   'force'       => \$force,
+	   'weak_checks' => \$weak_checks,
+	   'help'        => \$help,
+	   'test'        => \$test,
+	   'nofilter'    => \$nofilter,
+	   'idfile=s'    => \$idfile,
+	  ) or &print_usage();
 
 &print_usage if $help;
 
@@ -95,6 +97,7 @@ else {
 
 my $log = Log_files->make_build_log($wb);
 MapAlleles::setup($log,$wb) unless $database;
+MapAlleles::setup($log,$wb) if ($force);
 MapAlleles::set_wb_log($log,$wb,$weak_checks) if $database;
 
 my $release=$wb->get_wormbase_version;
@@ -105,6 +108,7 @@ if (not $acefile) {
   $outdir = $wb->acefiles if not $outdir;
   $acefile = "$outdir/allele_mapping.WS${release}.$$.ace";
 }
+print "Creating $acefile\n" if ($debug);
 
 
 if ($debug) {
@@ -137,7 +141,9 @@ $log->write_to("Removing insanely mapped alleles...\n") if $debug;
 MapAlleles::remove_insanely_mapped_alleles($mapped_alleles);
 
 # for other databases don't run through the GFF_SPLITs
-&finish() if $database;
+unless ($force) {
+  &finish() if $database;
+}
 
 
 $log->write_to("Writing basic position information...\n") if $debug;
