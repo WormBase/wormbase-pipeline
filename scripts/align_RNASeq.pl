@@ -186,7 +186,7 @@
 # by Gary Williams
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2012-11-27 15:46:58 $
+# Last updated on: $Date: 2012-12-05 14:49:55 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -552,9 +552,11 @@ if ($species eq 'elegans') {
 	    SRX089119 => ["RNASeq.briggsae.Adult.Replicate5", 'phred', 'paired-end'],
 	    SRX089070 => ["RNASeq.briggsae.early_embryo.Replicate4", 'phred', 'paired-end'],
 	    SRX089069 => ["RNASeq.briggsae.early_embryo.Replicate5", 'phred', 'paired-end'],
-	    SRX053351 => ["RNASeq.briggsae.all_stages", 'phred', 'single'],
-	    SRX052081 => ["RNASeq.briggsae.L4_larva", 'phred', 'single'],
-	    SRX052079 => ["RNASeq.briggsae.L2_larva", 'phred', 'single'],
+	    SRX053351 => ["RNASeq.briggsae.all_stages", 'phred', 'single'],                   
+	    SRX052081 => ["RNASeq.briggsae.L4_larva", 'phred', 'single'],                     
+	    SRX052079 => ["RNASeq.briggsae.L2_larva", 'phred', 'single'],                     
+	    SRX127748 => ["RNASeq.briggsae.Jack_Chen.L1", 'phred', 'paired-end'],
+	    SRX127749 => ["RNASeq.briggsae.Jack_Chen.all_stages", 'phred', 'paired-end'],
 	   );
 
 } elsif ($species eq 'brenneri') {
