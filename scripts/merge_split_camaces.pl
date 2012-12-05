@@ -5,7 +5,7 @@
 # A script to make multiple copies of camace for curation, and merge them back again
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2012-08-16 13:38:17 $
+# Last edited on: $Date: 2012-12-05 15:34:25 $
 #
 # Persisting errors.
 #running csh -c "reformat_acediff file 1 file2"
@@ -353,11 +353,11 @@ sub update_camace {
 
   unless ($nochecks) {
     # Gene structures
-    $log->write_to ("\nRunning camcheck.pl\n");
-    print "\nRunning camcheck.pl\n" if ($debug);
-    $wormbase->run_script("camcheck.pl -database ". $wormbase->database('camace'), $log) && die "Failed to run camcheck.pl\n";
-    $log->write_to ("camcheck.pl Finished, check the build log email for errors.\n");
-    print "camcheck.pl Finished, check the build log email for errors.\n" if ($debug);
+    $log->write_to ("\nRunning check_predicted_genes.pl\n");
+    print "\nRunning check_predicted_genes.pl\n" if ($debug);
+    $wormbase->run_script("check_predicted_genes.pl -basic -database ". $wormbase->database('camace'), $log) && die "Failed to run camcheck.pl\n";
+    $log->write_to ("check_predicted_genes.pl Finished, check the build log email for errors.\n");
+    print "check_predicted_genes.pl Finished, check the build log email for errors.\n" if ($debug);
   }
 }
 
@@ -501,7 +501,6 @@ sub load_curation_data {
 	"$acefiles/feature_three_prime_UTR.ace",
 	"$wormpub/CURATION_DATA/PAD_DATA/elegans.public_names_ws${WS_version}.ace",
 	"$wormpub/CURATION_DATA/PAD_DATA/genomic_signals-no-splicing.ace", #needs remapping
-	"$wormpub/BUILD_DATA/MISC_DYNAMIC/misc_mass_spec_GenniferMerrihew.ace",
 	"$acefiles/mass-spec-data.ace",
        );
   }
