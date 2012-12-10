@@ -6,8 +6,8 @@
 #
 # simple script for creating new (sequence based) Gene objects 
 #
-# Last edited by: $Author: pad $
-# Last edited on: $Date: 2012-10-15 16:32:38 $
+# Last edited by: $Author: mh6 $
+# Last edited on: $Date: 2012-12-10 10:29:35 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -62,8 +62,9 @@ my $wormbase;
 if ( $store ) {
   $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
 } else {
-  $wormbase = Wormbase->new( -debug   => $debug,
-                             -test    => $test,
+  $wormbase = Wormbase->new( -debug    => $debug,
+                             -test     => $test,
+			     -organism => $species,
                            );
 }
 
@@ -79,6 +80,8 @@ $species_data{'briggsae'}->{'regex'} = '^CBG\d{5}$';
 $species_data{'remanei'} = '1';
 $species_data{'brenneri'} = '1';
 $species_data{'japonica'} = '1';
+$species_data{'brugia'} = '1';
+
 
 
 
@@ -169,7 +172,7 @@ else {
 }
 my $outfile = "$outdir"."$outname";
 
-if (defined$sneak){
+if (defined $sneak){
   system ("/bin/touch $sneak");
   print "Creating $sneak file\n";
 }
@@ -205,11 +208,11 @@ if ($input){
     print "\n\n$seq - $cgc\n" if ($verbose);
 
     # skip bad looking sequence names
-    if ($seq !~ m/^\w+\.(\d{1,2}|\d{1,2}[a-z])$/){
-      print "ERROR: Bad sequence name, skipping\n";
-      $log->write_to("ERROR: Bad sequence name, skipping\n");
-      next;
-    }
+#    if ($seq !~ m/^\w+\.(\d{1,2}|\d{1,2}[a-z])$/){
+#      print "ERROR: Bad sequence name, skipping\n";
+#      $log->write_to("ERROR: Bad sequence name, skipping\n");
+#      next;
+#    }
     &process_gene($seq,$cgc);
   }
   close(IN);
@@ -341,7 +344,7 @@ sub process_gene{
       print OUT "Other_name \"CELE_$seq\"\n";
       $seq =~ s/^/CBG/;
     }
-    print OUT "Species \"Caenorhabditis $species\"\n";
+    print OUT "Species \"${\$wormbase->full_name}\"\n";
     print OUT "History Version_change 1 now $person Event Created\n";
     print OUT "Method Gene\n";
     print OUT "Positive_clone $p_clone Inferred_automatically \"From sequence, transcript, pseudogene data\"\n" if ($species eq 'elegans');
