@@ -186,7 +186,7 @@
 # by Gary Williams
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2012-12-05 14:49:55 $
+# Last updated on: $Date: 2012-12-12 13:42:34 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -440,6 +440,13 @@ if ($species eq 'elegans') {
 
 	    SRX099915 => ["RNASeq_Hillier.28-cell_embryo_Replicate3", 'phred', 'single'], # 101 bp reads. EE_50-90
 
+	    SRX191947 => ["RNASeq.elegans.SRP016006.adult_female.Replicate1", 'phred', 'single'],
+	    SRX191948 => ["RNASeq.elegans.SRP016006.adult_female.Replicate2", 'phred', 'single'],
+	    SRX191949 => ["RNASeq.elegans.SRP016006.adult_female.Replicate3", 'phred', 'single'],
+	    SRX191950 => ["RNASeq.elegans.SRP016006.adult_male.Replicate1", 'phred', 'single'],
+	    SRX191951 => ["RNASeq.elegans.SRP016006.adult_male.Replicate2", 'phred', 'single'],
+	    SRX191952 => ["RNASeq.elegans.SRP016006.adult_male.Replicate3", 'phred', 'single'],
+
 	    );
 
   if ($ribosome_occupancy) {
@@ -498,15 +505,31 @@ if ($species eq 'elegans') {
   %expts = ( # key= SRA 'SRX' experiment ID, values = [Analysis ID, quality score metric]
 # Add new analysis/condition objects to ~wormpub/DATABASES/brugia
 
-	    Adult_female => ["RNASeq_brugia_Berriman.Adult_female", 'phred', 'paired-end'],
-	    Adult_male => ["RNASeq_brugia_Berriman.Adult_male", 'phred', 'paired-end'],
-	    BmL3_1361258 => ["RNASeq_brugia_Berriman.BmL3_1361258", 'phred', 'paired-end'],
-	    eggs_embryos => ["RNASeq_brugia_Berriman.eggs_embryos", 'phred', 'paired-end'],
-	    immature_female => ["RNASeq_brugia_Berriman.immature_female", 'phred', 'paired-end'],
-	    L3_stage => ["RNASeq_brugia_Berriman.L3_stage", 'phred', 'paired-end'],
-	    L4 => ["RNASeq_brugia_Berriman.L4", 'phred', 'paired-end'],
-	    microfillariae => ["RNASeq_brugia_Berriman.microfillariae", 'phred', 'paired-end'],
-	    mayhew => ["RNASeq_brugia_mayhew.mf.L2.L3", 'phred', 'single'],
+	    #Adult_female => ["RNASeq_brugia_Berriman.Adult_female", 'phred', 'paired-end'],
+	    #Adult_male => ["RNASeq_brugia_Berriman.Adult_male", 'phred', 'paired-end'],
+	    #BmL3_1361258 => ["RNASeq_brugia_Berriman.BmL3_1361258", 'phred', 'paired-end'],
+	    #eggs_embryos => ["RNASeq_brugia_Berriman.eggs_embryos", 'phred', 'paired-end'],
+	    #immature_female => ["RNASeq_brugia_Berriman.immature_female", 'phred', 'paired-end'],
+	    #L3_stage => ["RNASeq_brugia_Berriman.L3_stage", 'phred', 'paired-end'],
+	    #L4 => ["RNASeq_brugia_Berriman.L4", 'phred', 'paired-end'],
+	    #microfillariae => ["RNASeq_brugia_Berriman.microfillariae", 'phred', 'paired-end'],
+	    #mayhew => ["RNASeq_brugia_mayhew.mf.L2.L3", 'phred', 'single'],
+
+
+	    ERX026028 => ["RNASeq.brugia.ERP000948.L3.library_2586_7", 'phred', 'paired-end'],
+	    ERX026029 => ["RNASeq.brugia.ERP000948.adult_male", 'phred', 'paired-end'],
+	    ERX026030 => ["RNASeq.brugia.ERP000948.L3.library_5429_6", 'phred', 'paired-end'],
+	    ERX026031 => ["RNASeq.brugia.ERP000948.immature_microfillariae.library_2723_2", 'phred', 'paired-end'],  # In the SRA this is described as immature female but 'immature_microfillariae' is correct according to Michelle Michalski (says Michael Paulini)
+	    ERX026032 => ["RNASeq.brugia.ERP000948.adult_female", 'phred', 'paired-end'],
+	    ERX026033 => ["RNASeq.brugia.ERP000948.L4.library_4403_1", 'phred', 'paired-end'],
+	    ERX026034 => ["RNASeq.brugia.ERP000948.eggs_embryos.library_2870_6", 'phred', 'paired-end'],
+	    ERX026035 => ["RNASeq.brugia.ERP000948.eggs_embryos.library_2723_3", 'phred', 'paired-end'],
+	    ERX026036 => ["RNASeq.brugia.ERP000948.adult_female.library_4400_1", 'phred', 'paired-end'],
+	    ERX026037 => ["RNASeq.brugia.ERP000948.adult_female.library_4359_7", 'phred', 'paired-end'],
+	    ERX026038 => ["RNASeq.brugia.ERP000948.microfillariae", 'phred', 'paired-end'],
+	    ERX026039 => ["RNASeq.brugia.ERP000948.L4.library_2586_3", 'phred', 'paired-end'],
+	    ERX026040 => ["RNASeq.brugia.ERP000948.immature_microfillariae.library_2870_5", 'phred', 'paired-end'], # In the SRA this is described as immature female but 'immature_microfillariae' is correct according to Michelle Michalski (says Michael Paulini)
+	    ERX026041 => ["RNASeq.brugia.ERP000948.L4.4359_8", 'phred', 'paired-end'],
 	   );
 	    
 } elsif ($species eq 'remanei') {
@@ -533,11 +556,35 @@ if ($species eq 'elegans') {
 	    SRX101879 => ["RNASeq.remanei.L4_larva.Replicate2", 'phred', 'paired-end'],
 	    SRX052083 => ["RNASeq.remanei.L4_larva", 'phred', 'single'],
 	    SRX052082 => ["RNASeq.remanei.L2_larva", 'phred', 'paired-end'],
-	     
+	    SRX191971 => ["RNASeq.remanei.SRP016006.adult_female.Replicate1", 'phred', 'single'],
+	    SRX191972 => ["RNASeq.remanei.SRP016006.adult_female.Replicate2", 'phred', 'single'],
+	    SRX191973 => ["RNASeq.remanei.SRP016006.adult_female.Replicate3", 'phred', 'single'],
+	    SRX191974 => ["RNASeq.remanei.SRP016006.adult_male.Replicate1", 'phred', 'single'],
+	    SRX191975 => ["RNASeq.remanei.SRP016006.adult_male.Replicate2", 'phred', 'single'],
+	    SRX191976 => ["RNASeq.remanei.SRP016006.adult_male.Replicate3", 'phred', 'single'],
+	    
 	   );
+
+# SRP016006
+#This project defines the transcriptomes of XO (male) and XX (female or
+#mutant pseudo-female) Caenorhabditis nematodes. The data allow the
+#overall composition and sexual regulation of the transcriptome within
+#a single species to be determined. In addition, the five related
+#species studied allow meta-comparisons between them. Because two of
+#the five (C. elegans and C. briggsae) produce a self-fertile XX
+#hermaphrodite, while the XX sex in the remaining three (C. japonica,
+#C. remanei, and C. brenneri) are true females, the data are
+#particularly useful for inferring effects of sexual mode on
+#genome-wide gene expression. Overall Design: L4 larvae and adults were
+#pooled for each sex for five species (C. elegans, C. briggsae,
+#C. japonica, C. brenneri, and C. remanei). Each of these 10
+#species-sex combinations was replicated three times, for a total of 30
+#samples.
+
 
 } elsif ($species eq 'briggsae') {
 # Add new analysis/condition  objects to ~wormpub/DATABASES/briggsae
+# add Species "Caenorhabditis briggsae" tag to Condition when the models are updated
   %expts = (
 	    SRX103668 => ["RNASeq.briggsae.Adult.Replicate1", 'phred', 'single'],
 	    SRX103667 => ["RNASeq.briggsae.Adult.Replicate2", 'phred', 'paired-end'],
@@ -557,6 +604,13 @@ if ($species eq 'elegans') {
 	    SRX052079 => ["RNASeq.briggsae.L2_larva", 'phred', 'single'],                     
 	    SRX127748 => ["RNASeq.briggsae.Jack_Chen.L1", 'phred', 'paired-end'],
 	    SRX127749 => ["RNASeq.briggsae.Jack_Chen.all_stages", 'phred', 'paired-end'],
+	    SRX191953 => ["RNASeq.briggsae.SRP016006.adult_female.Replicate1", 'phred', 'single'],
+	    SRX191954 => ["RNASeq.briggsae.SRP016006.adult_female.Replicate2", 'phred', 'single'],
+	    SRX191955 => ["RNASeq.briggsae.SRP016006.adult_female.Replicate3", 'phred', 'single'],
+	    SRX191956 => ["RNASeq.briggsae.SRP016006.adult_male.Replicate1", 'phred', 'single'],
+	    SRX191957 => ["RNASeq.briggsae.SRP016006.adult_male.Replicate2", 'phred', 'single'],
+	    SRX191958 => ["RNASeq.briggsae.SRP016006.adult_male.Replicate3", 'phred', 'single'],
+
 	   );
 
 } elsif ($species eq 'brenneri') {
@@ -576,12 +630,19 @@ if ($species eq 'elegans') {
 	    SRX100771 => ["RNASeq.brenneri.L4_larva.Replicate2", 'phred', 'paired-end'],
 	    SRX100770 => ["RNASeq.brenneri.early_embryo.Replicate1", 'phred', 'paired-end'],
 	    SRX100769 => ["RNASeq.brenneri.early_embryo.Replicate2", 'phred', 'paired-end'],
+	    SRX191965 => ["RNASeq.brenneri.SRP016006.adult_female.Replicate1", 'phred', 'single'],
+	    SRX191966 => ["RNASeq.brenneri.SRP016006.adult_female.Replicate2", 'phred', 'single'],
+	    SRX191967 => ["RNASeq.brenneri.SRP016006.adult_female.Replicate3", 'phred', 'single'],
+	    SRX191968 => ["RNASeq.brenneri.SRP016006.adult_male.Replicate1", 'phred', 'single'],
+	    SRX191969 => ["RNASeq.brenneri.SRP016006.adult_male.Replicate2", 'phred', 'single'],
+	    SRX191970 => ["RNASeq.brenneri.SRP016006.adult_male.Replicate3", 'phred', 'single'],
+
 	   );
 
 
 } elsif ($species eq 'japonica') {
 
-  # NEED TO ADD THESE ANALYSIS OBJECTS TO ~wormpub/DATABASES/japonica WHEN IT HAS ITS models.wrm UPDATED
+  # NEED TO ADD THESE ANALYSIS OBJECTS TO ~wormpub/DATABASES/japonica
 
   %expts = ( SRX100095 => ["RNASeq_Hillier.japonica.early_embryo", 'phred', 'paired-end'],
 	     SRX100094 => ["RNASeq_Hillier.japonica.adult_female", 'phred', 'paired-end'],
@@ -589,6 +650,13 @@ if ($species eq 'elegans') {
 	     SRX100092 => ["RNASeq_Hillier.japonica.L4_larva", 'phred', 'paired-end'],
 	     SRX100091 => ["RNASeq_Hillier.japonica.L4_larva", 'phred', 'paired-end'],
 	     SRX100090 => ["RNASeq_Hillier.japonica.L2_larva", 'phred', 'paired-end'],
+	     SRX191959 => ["RNASeq.japonica.SRP016006.adult_female.Replicate1", 'phred', 'single'],
+	     SRX191960 => ["RNASeq.japonica.SRP016006.adult_female.Replicate2", 'phred', 'single'],
+	     SRX191961 => ["RNASeq.japonica.SRP016006.adult_female.Replicate3", 'phred', 'single'],
+	     SRX191962 => ["RNASeq.japonica.SRP016006.adult_male.Replicate1", 'phred', 'single'],
+	     SRX191963 => ["RNASeq.japonica.SRP016006.adult_male.Replicate2", 'phred', 'single'],
+	     SRX191964 => ["RNASeq.japonica.SRP016006.adult_male.Replicate3", 'phred', 'single'],
+	     
 	   );
 
 } else {
@@ -1392,8 +1460,8 @@ sub get_read_length {
 sub get_SRA_files {
   my ($arg) = @_;
 
-  # is this a SRA ID?
-  if ($arg !~ /^SRX/) {return}
+  # is this a SRA or ERX ID?
+  if ($arg !~ /^SRX/ && $arg !~ /^ERX/) {return}
 
   my $status = $wormbase->run_command("rm -rf $RNASeqSRADir/$arg/SRR", $log);
 
