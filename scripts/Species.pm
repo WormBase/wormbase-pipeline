@@ -92,7 +92,7 @@ sub chromosome_prefix {'PREFIX_'}
 sub pep_prefix {return undef}
 sub wormpep_prefix {return undef}
 
-########################################
+#########################################
 #
 # Core species
 #
@@ -412,6 +412,58 @@ sub TSL {(
 )};
 
 
+####################################################
+
+package Brugia;
+use Carp;
+our @ISA = qw(Wormbase Species);
+
+sub _new {	
+    my $class = shift;
+    my %param = %{ shift(@_) };
+
+    my $self = $class->initialize( $class->flatten_params( \%param ) );
+
+    # add stuff post object creation goes here
+
+    bless $self, $class;
+}
+sub full_name {
+	my $self = shift;
+	my %param = @_ ;
+	if($param{'-short'}){
+		return 'B. malayi';
+	}	elsif($param{'-g_species'}){
+		return 'b_malayi';
+	}
+	else { return'Brugia malayi'
+	};
+}
+sub chromosome_prefix {'Bmal_supercontig'}
+sub seq_name_regex{qr/^Bm\d+/};
+sub pep_prefix {'BM'}
+sub pepdir_prefix{'brug'};
+sub cds_regex_noend{qr/Bm\d+[a-z]*/}; # for getting the CDS part of a Transcript name
+sub cds_regex{qr/Bm\d+[a-z]*/};
+sub ncbi_tax_id {'6279'};
+sub assembly_type {'contig'};
+sub TSL {(
+	  'SL1'  => "GGTTTAATTACCCAAGTTTGAG",
+	  'Bm_SL1a' => "GGTTTTAATTACCCAAGTTTGAG",
+	  'Bm_SL1b' => "GGTTTAATCACCCAAGTTTGAG",
+	  'Bm_SL1c' => "GGTTTAACTACCCAAGTTTGAG",
+)};
+
+sub upload_db_name {'brugace'};
+
+
+######################################################
+#
+# Non-Core species
+#
+######################################################
+
+
 #######################################################
 
 package Heterorhabditis;
@@ -444,49 +496,6 @@ sub pep_prefix {'HB'}
 sub pepdir_prefix{'het'};
 sub assembly_type {'contig'};
 
-
-######################################################
-#
-# Tier3 species
-#
-######################################################
-
-package Brugia;
-use Carp;
-our @ISA = qw(Wormbase Species);
-
-sub _new {	
-    my $class = shift;
-    my %param = %{ shift(@_) };
-
-    my $self = $class->initialize( $class->flatten_params( \%param ) );
-
-    # add stuff post object creation goes here
-
-    bless $self, $class;
-}
-sub full_name {
-	my $self = shift;
-	my %param = @_ ;
-	if($param{'-short'}){
-		return 'B. malayi';
-	}	elsif($param{'-g_species'}){
-		return 'b_malayi';
-	}
-	else { return'Brugia malayi'
-	};
-}
-sub chromosome_prefix {'Bmal_supercontig'}
-sub pep_prefix {'BM'}
-sub pepdir_prefix{'brug'};
-sub ncbi_tax_id {'6279'};
-sub assembly_type {'contig'};
-sub TSL {(
-	  'SL1'  => "GGTTTAATTACCCAAGTTTGAG",
-	  'Bm_SL1a' => "GGTTTTAATTACCCAAGTTTGAG",
-	  'Bm_SL1b' => "GGTTTAATCACCCAAGTTTGAG",
-	  'Bm_SL1c' => "GGTTTAACTACCCAAGTTTGAG",
-)};
 
 ######################################################
 package Sratti;
