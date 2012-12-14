@@ -22,7 +22,6 @@ my (
   'dbport=s' => \$dbport,
   'dbpass=s' => \$dbpass,
   'codontable=s' => \$codon_table,
-  'seqregion=s@' => \@seq_region,
     );
 
 
@@ -36,25 +35,24 @@ my $db = Bio::EnsEMBL::DBSQL::DBAdaptor->new(
 
 
 $codon_table = 5 if not defined $codon_table;
-if (not @seq_region) {
+if (not @ARGV) {
   my $sl = $db->get_SliceAdaptor->fetch_by_region('toplevel',
                                                   'MtDNA');
   push @seq_region, $sl;
 } else {
-  my @sl;
-  foreach my $id (@seq_region) {
+
+  foreach my $id (@ARGV) {
     my $sl = $db->get_SliceAdaptor->fetch_by_name($id);
     if (not defined $sl) {
       die "Could not fetch slice $id from db\n";
     }
-    push @sl, $sl;
+    push @seq_region, $sl;
   }
-
-  @seq_region = @sl;
 }
 
 
 my $attrib_type_id = &fetch_attrib_type_id_by_code('codon_table');
+
 if (defined $attrib_type_id) {
   &store_on_slices($attrib_type_id, $codon_table, @seq_region);
 }
@@ -68,7 +66,7 @@ sub fetch_attrib_type_id_by_code {
   my $attrib_type_id;
 
   my $sth = $db->dbc->prepare("SELECT attrib_type_id from attrib_type where code = ?");
-  $sth->execute;
+  $sth->execute($code);
 
   if($sth->rows()) {
     ($attrib_type_id) = $sth->fetchrow_array();
