@@ -101,17 +101,21 @@ foreach my $chromosome_info ( @{$WB_CHR_INFO} ) {
         write_simple_features( $features, $db ) if $features;
       }
       # BLASTX from GFF
-      case ['Swissprot','TrEMBL','Human-IPR','WormPep','FlyBase','BrigPep','RemaneiPep','SGD'] {
+      case ['slimswissprotx','slimtremblx','ipi_humanx','wormpepx','brigpepx','remaneix','brepepx','jappepx','ppapepx', 'gadflyx','yeastx'
         my $tag;
         switch ($analysis_logic_name){
-          case 'Swissprot' {$tag='SW'}
-          case 'TrEMBL' {$tag='TR'}
-          case 'Human-IPR'{$tag='ENSEMBL'}
-          case 'WormPep'{$tag='WP'}
-          case 'FlyBase'{$tag='FLYBASE'}
-          case 'BrigPep'{$tag='BP'}
-          case 'RemaneiPep'{$tag='RP'}
-          case 'SGD'{$tag='SGD'}
+          case 'slimswissprotx' {$tag='SW'}
+          case 'slimtremblx'    {$tag='TR'}
+          case 'ipi_humanx'     {$tag='ENSEMBL'}
+          case 'gadflyx'        {$tag='FLYBASE'}
+          case 'yeastx'         {$tag='SGD'}
+          case 'wormpepx'       {$tag='WP'}
+          case 'brigpepx'       {$tag='BP'}
+          case 'remaneix'       {$tag='RP'}
+          case 'jappepx'        {$tag='JA'}
+          case 'brepepx'        {$tag='CN'}
+          case 'ppapepx'        {$tag='PP'}
+
         }
         
         my $wublastx = WublastX->new( $slice_hash, $gff_file, $analysis ,$tag);
@@ -132,7 +136,7 @@ foreach my $chromosome_info ( @{$WB_CHR_INFO} ) {
         print "has $hits  BLAT hits\n" if $WB_DEBUG;
         $blat->save($db) if $hits >0;
       }      
-      case 'ost' {
+      case 'celegans_ost' {
         my $blat = Blat->new( $slice_hash, 
                               $gff_file, 
                               $analysis ,
@@ -142,7 +146,7 @@ foreach my $chromosome_info ( @{$WB_CHR_INFO} ) {
         print "has $hits  BLAT hits\n" if $WB_DEBUG;
         $blat->save($db) if $hits >0;
       }
-      case 'rst' {
+      case 'celegans_rst' {
         my $blat = Blat->new( $slice_hash, 
                               $gff_file, 
                               $analysis ,
@@ -173,7 +177,7 @@ foreach my $chromosome_info ( @{$WB_CHR_INFO} ) {
         print "has $hits  BLAT hits\n" if $WB_DEBUG;
         $blat->save($db) if $hits >0;
       }
-      case 'nembase_contig' {
+      case 'nembase_est' {
         my $blat = Blat->new( $slice_hash, 
                               $gff_file, 
                               $analysis ,
@@ -183,7 +187,7 @@ foreach my $chromosome_info ( @{$WB_CHR_INFO} ) {
         print "has $hits  BLAT hits\n" if $WB_DEBUG;
         $blat->save($db) if $hits >0;
       }
-      case 'washu_contig' {
+      case 'washu_est' {
         my $blat = Blat->new( $slice_hash, 
                               $gff_file, 
                               $analysis ,
@@ -193,7 +197,7 @@ foreach my $chromosome_info ( @{$WB_CHR_INFO} ) {
         print "has $hits  BLAT hits\n" if $WB_DEBUG;
         $blat->save($db) if $hits >0;
       }
-      case 'other_est' {
+      case 'nematode_est' {
         my $blat = Blat->new( $slice_hash, 
                               $gff_file, 
                               $analysis ,
