@@ -7,7 +7,7 @@
 # Script to make ?Transcript objects
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2011-12-05 12:05:35 $
+# Last updated on: $Date: 2012-12-14 10:20:21 $
 use strict;
 use lib $ENV{'CVS_DIR'};
 use Getopt::Long;
@@ -22,7 +22,7 @@ use Modules::Overlap;
 use File::Path;
 use Storable;
 
-my ($debug, $store, $help, $verbose, $really_verbose, $est,
+my ($debug, $store, $help, $verbose, $really_verbose, @test_est,
     $database, $test, @chromosomes, $chunk_total, $chunk_id,
     $gff_dir, $transcript_dir, $ace_fname, $problem_fname,
     $test_cds, $wormbase, $species, $detailed_debug);
@@ -37,7 +37,7 @@ GetOptions ( "debug:s"      => \$debug,
 	     "help"             => \$help,
 	     "verbose"          => \$verbose,
 	     "really_verbose"   => \$really_verbose,
-	     "est:s"            => \$est, # only use the specified EST sequence - for debugging
+	     "est=s@"           => \@test_est, # only use the specified EST sequence - for debugging
 	     "gap:s"            => \$gap,
 	     "database:s"       => \$database,
 	     "test"             => \$test,
@@ -282,13 +282,12 @@ foreach my $chrom ( @chromosomes ) {
     $index++;
   }
 
-  $index = 0;
 
   my $count0 = 0;
   foreach my $cdna_id ( keys %cDNA ) {
 
     my $cdna = SequenceObj->new( $cdna_id, $cDNA{$cdna_id}, $cDNA_span{$cdna_id}->[2] );
-    $cdna->array_index($index);
+
     if ( $cDNA_span{$cdna_id}->[3] ) {
       foreach my $feat ( keys %{$cDNA_span{$cdna_id}->[3]} ) {
 	$cdna->$feat( $cDNA_span{$cdna_id}->[3]->{"$feat"} );
@@ -304,10 +303,6 @@ foreach my $chrom ( @chromosomes ) {
       $cdna->coverage( $cDNA_span{$cdna_id}->[5] );
     }
 
-    # index info
-    $cDNA_index{$cdna_id} = $index;
-    $index++;
-
     $cdna->transform_strand($transformer,"transform") if ( $cdna->strand eq "-" );
 
     #check for and remove ESTs with internal SL's 
@@ -318,12 +313,45 @@ foreach my $chrom ( @chromosomes ) {
     }
   }
 
+  ######
+  # sort the cDNAs such that the ones with features are dealt with first
+  # This is necessaery to ensure deterministic behaviour
+  ######
+  @cdna_objs = sort {
+    my $a_score = 0;
+    $a_score += 2 if defined $a->SL;
+    $a_score += 1 if defined $a->polyA_site;
+
+    my $b_score = 0;
+    $b_score += 2 if defined $b->SL;
+    $b_score += 1 if defined $b->polyA_site;
+
+    return $b_score - $a_score;
+    
+  } @cdna_objs;
+  
+
+  ######
+  # Index for later rapid retrieval
+  ######
+
+  for(my $i=0; $i < @cdna_objs; $i++) {
+    my $cdna_obj = $cdna_objs[$i];
+ 
+    my $cdna_id = $cdna_obj->name;
+
+    $cdna_obj->array_index($i);
+    $cDNA_index{$cdna_id} = $i;
+
+  }
+
 
   # these are no longer needed so free memory !
   %genes_exons = ();
   %genes_span= ();
   %cDNA = ();
   %cDNA_span = ();
+
 
   ##########################################################
   # DATA LOADED - START EXTENDING THE TRANSCRIPTS          #
@@ -346,7 +374,7 @@ foreach my $chrom ( @chromosomes ) {
   $log->write_to("\nTB : $round\n") if ($verbose);
 
   foreach my $cdna ( @cdna_objs) {
-    next if ( defined $est and $cdna->name ne "$est"); #debug line
+    next if ( @test_est and not grep { $cdna->name eq $_ } @test_est); #debug line
 
     foreach my $cds ( @cds_objs ) {
       if ($cdna->overlap($cds)) {
@@ -395,7 +423,7 @@ foreach my $chrom ( @chromosomes ) {
   # want to check if the cDNA has introns that match one and only one gene
   foreach my $cdna ( @cdna_objs) {
     next if ( defined($cdna->mapped) );
-    next if ( defined $est and $cdna->name ne "$est"); #debug line
+    next if ( @test_est and not grep { $cdna->name eq $_ } @test_est); #debug line
     
     # want to see which fresh set of CDSs this matches
     $cdna->reset_probably_matching_cds;
@@ -451,7 +479,7 @@ foreach my $chrom ( @chromosomes ) {
 
 
   foreach my $cdna ( @cdna_objs) {
-    next if ( defined $est and $cdna->name ne "$est"); #debug line
+    next if ( @test_est and not grep { $cdna->name eq $_ } @test_est); #debug line
     next if ( defined($cdna->mapped) );
 
     # want to see which fresh set of CDSs this matches
@@ -496,7 +524,7 @@ foreach my $chrom ( @chromosomes ) {
   $log->write_to("TB : $round\n") if ($verbose);
 
  PAIR: foreach my $cdna ( @cdna_objs) {
-    next if ( defined $est and $cdna->name ne "$est"); #debug line
+    next if ( @test_est and not grep { $cdna->name eq $_ } @test_est); #debug line
     next if $cdna->mapped;
 
     # get name of paired read
