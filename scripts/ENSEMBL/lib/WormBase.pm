@@ -35,7 +35,7 @@ require Exporter;
 
 our @ISA    = qw(Exporter);
 our @EXPORT =
-  qw(get_seq_ids get_sequences_pfetch agp_parse parse_gff write_genes translation_check insert_agp_line display_exons non_translate process_file parse_operons write_simple_features parse_rnai parse_expr parse_SL1 parse_SL2 parse_pseudo_gff store_coord_system store_slice parse_tRNA parse_rRNA_genes parse_tRNA_genes parse_pseudo_files parse_simplefeature parse_gff_fh);
+  qw(get_seq_ids get_sequences_pfetch agp_parse parse_gff write_genes translation_check insert_agp_line display_exons non_translate process_file parse_operons write_simple_features parse_rnai parse_expr parse_SL1 parse_SL2 parse_pseudo_gff store_coord_system store_slice parse_tRNA parse_rRNA_genes parse_tRNA_genes parse_pseudo_files parse_simplefeature parse_gff_fh parse_pcr_product);
 
 use strict;
 use Storable qw(store retrieve freeze thaw dclone);
@@ -259,93 +259,118 @@ sub parse_gff_fh {
 =cut
 
 sub process_file {
-    my ($fh) = @_;
-
-    my %genes;
-    my $transcript;
-    my %five_prime;
-    my %three_prime;
-    my %parent_seqs;
+  my ($fh) = @_;
+  
+  my %genes;
+  my $transcript;
+  my %five_prime;
+  my %three_prime;
+  my %parent_seqs;
   LOOP: while (<$fh>) {
 
-        #CHROMOSOME_I    curated three_prime_UTR 11696828        11697110        .       -       .       Transcript "T22H2.5a"
-        #CHROMOSOME_I    curated three_prime_UTR 11697157        11697230        .       -       .       Transcript "T22H2.5a"
-        #CHROMOSOME_I    curated five_prime_UTR  11698944        11698954        .       -       .       Transcript "T22H2.5a"
-
-        chomp;
-        my ( $chr, $status, $type, $start, $end, $score, $strand, $frame, $sequence, $gene ) = split;
-        my $element = $_;
-
-        if ( $chr =~ /sequence-region/ ) {
-            next LOOP;
-        }
-        if (/^##/) {
-            next LOOP;
-        }
-        if ( !$status && !$type ) {
-            next LOOP;
-        }
-        my $line = $status . " " . $type;
-
-
-        if ( ( $line eq 'Coding_transcript five_prime_UTR' ) or ( $line eq 'Coding_transcript three_prime_UTR' ) ) {
-            $gene =~ s/\"//g;
-            $transcript = $gene;
-
-            #remove transcript-specific part: Y105E8B.1a.2
-            if ($WormBase::Species and $WormBase::Species !~ /elegans/) {
-              $gene =~ s/^(\w+)\.\d+$/$1/;
-            } else {
-              $gene =~ s/(\.\w+)\.\d+$/$1/;
-            }
-
-            my ($position) = $type;
-            if ( $position =~ /^five/ ) {
-
-                if ( !$five_prime{$gene} ) {
-                    $five_prime{$gene} = {};
-                    if ( !$five_prime{$gene}{$transcript} ) {
-                        $five_prime{$gene}{$transcript} = [];
-                    }
-                    push( @{ $five_prime{$gene}{$transcript} }, $element );
-                }
-                else {
-                    if ( !$five_prime{$gene}{$transcript} ) {
-                        $five_prime{$gene}{$transcript} = [];
-                    }
-                    push( @{ $five_prime{$gene}{$transcript} }, $element );
-                }
-            }
-            elsif ( $position =~ /^three/ ) {
-
-                if ( !$three_prime{$gene} ) {
-                    $three_prime{$gene} = {};
-                    if ( !$three_prime{$gene}{$transcript} ) {
-                        $three_prime{$gene}{$transcript} = [];
-                    }
-                    push( @{ $three_prime{$gene}{$transcript} }, $element );
-                }
-                else {
-                    if ( !$three_prime{$gene}{$transcript} ) {
-                        $three_prime{$gene}{$transcript} = [];
-                    }
-                    push( @{ $three_prime{$gene}{$transcript} }, $element );
-                }
-            }
-            next LOOP;
-        }
-        elsif ( $line ne 'curated coding_exon' ) {
-            next LOOP;
-        }
-        $gene =~ s/\"//g;
-        if ( !$genes{$gene} ) {
-            $genes{$gene} = [];
-            $parent_seqs{$gene} = $chr;
-        }
-        push( @{ $genes{$gene} }, $element );
+    #CHROMOSOME_I    curated three_prime_UTR 11696828        11697110        .       -       .       Transcript "T22H2.5a"
+    #CHROMOSOME_I    curated three_prime_UTR 11697157        11697230        .       -       .       Transcript "T22H2.5a"
+    #CHROMOSOME_I    curated five_prime_UTR  11698944        11698954        .       -       .       Transcript "T22H2.5a"
+    
+    chomp;
+    my ( $chr, $status, $type, $start, $end, $score, $strand, $frame, $sequence, $gene ) = split;
+    my $element = $_;
+    
+    if ( $chr =~ /sequence-region/ ) {
+      next LOOP;
     }
-    print STDERR "Have " . keys(%genes) . " genes (CDS), " . keys(%five_prime) . " have 5' UTR and " . keys(%three_prime) . " have 3' UTR information\n";
-    return \%genes, \%five_prime, \%three_prime, \%parent_seqs;
+    if (/^##/) {
+      next LOOP;
+    }
+    if ( !$status && !$type ) {
+      next LOOP;
+    }
+    my $line = $status . " " . $type;
+    
+    if ( $line eq 'Coding_transcript protein_coding_primary_transcript') {
+      
+      $gene =~ s/\"//g;
+      $transcript = $gene;
+      
+      if ($WormBase::Species and $WormBase::Species !~ /elegans/) {
+        $gene =~ s/^(\w+)\.\d+$/$1/;
+      } else {
+        $gene =~ s/(\.\w+)\.\d+$/$1/;
+      }
+      
+      if (not $five_prime{$gene}) {
+        $five_prime{$gene} = {};
+      }
+      if (not $five_prime{$gene}{$transcript}) {
+        $five_prime{$gene}{$transcript} = [];
+      }
+      
+      if (not $three_prime{$gene}) {
+        $three_prime{$gene} = {};
+      }
+      if (not $three_prime{$gene}{$transcript}) {
+        $three_prime{$gene}{$transcript} = [];
+      }
+
+      next LOOP;
+    } elsif ( ( $line eq 'Coding_transcript five_prime_UTR' ) or ( $line eq 'Coding_transcript three_prime_UTR' ) ) {
+      $gene =~ s/\"//g;
+      $transcript = $gene;
+      
+      #remove transcript-specific part: Y105E8B.1a.2
+      if ($WormBase::Species and $WormBase::Species !~ /elegans/) {
+        $gene =~ s/^(\w+)\.\d+$/$1/;
+      } else {
+        $gene =~ s/(\.\w+)\.\d+$/$1/;
+      }
+      
+      my ($position) = $type;
+      if ( $position =~ /^five/ ) {
+        
+        if ( !$five_prime{$gene} ) {
+          $five_prime{$gene} = {};
+          if ( !$five_prime{$gene}{$transcript} ) {
+            $five_prime{$gene}{$transcript} = [];
+          }
+          push( @{ $five_prime{$gene}{$transcript} }, $element );
+        }
+        else {
+          if ( !$five_prime{$gene}{$transcript} ) {
+            $five_prime{$gene}{$transcript} = [];
+          }
+          push( @{ $five_prime{$gene}{$transcript} }, $element );
+        }
+      }
+      elsif ( $position =~ /^three/ ) {
+        
+        if ( !$three_prime{$gene} ) {
+          $three_prime{$gene} = {};
+          if ( !$three_prime{$gene}{$transcript} ) {
+            $three_prime{$gene}{$transcript} = [];
+          }
+          push( @{ $three_prime{$gene}{$transcript} }, $element );
+        }
+        else {
+          if ( !$three_prime{$gene}{$transcript} ) {
+            $three_prime{$gene}{$transcript} = [];
+          }
+          push( @{ $three_prime{$gene}{$transcript} }, $element );
+        }
+      }
+      next LOOP;
+    }
+    elsif ( $line ne 'curated coding_exon' ) {
+      next LOOP;
+    }
+    $gene =~ s/\"//g;
+    if ( !$genes{$gene} ) {
+      $genes{$gene} = [];
+      $parent_seqs{$gene} = $chr;
+    }
+    push( @{ $genes{$gene} }, $element );
+  }
+  print STDERR "Have " . keys(%genes) . " genes (CDS), " . keys(%five_prime) . " have 5' UTR and " . keys(%three_prime) . " have 3' UTR information\n";
+  return \%genes, \%five_prime, \%three_prime, \%parent_seqs;
 }
 
 =head2 generate_transcripts
@@ -406,17 +431,14 @@ sub generate_transcripts {
       my %five_prime_exons;
       
       foreach my $line (@lines) {
+        #print STDERR "$line\n";
         my ( $chr, $status, $type, $start, $end, $score, $strand, $frame, $sequence, $gene ) = split /\s+/, $line;
 
         # check that seq name agrees with slice name
-        if ($chr ne $slice->seq_region_name) {
-          die "Seq name in file ('$chr') does not agree with slice name\n";
-        }
+        #if ($chr ne $slice->seq_region_name) {
+        #  die "Seq name in file ('$chr') does not agree with slice name\n";
+        #}
 
-            # we re currently not using singe nucleotide exons
-#            if ( $start == $end ) {
-#                next;
-#            }
         my $exon  = new Bio::EnsEMBL::Exon;
         my $phase = ( 3 - $frame ) % 3;       
 
@@ -448,12 +470,12 @@ sub generate_transcripts {
       }
       
       #save information if there is not further UTR info
-      if ( !defined( $$five_prime{$gene_name} ) and !defined( $$three_prime{$gene_name} ) ) {
+      #if ( !defined( $$five_prime{$gene_name} ) and !defined( $$three_prime{$gene_name} ) ) {
         
-        $transcripts{$gene_name} = \@global_exons;
+      #  $transcripts{$gene_name} = \@global_exons;
         
-        next GENE;
-      }
+      #  next GENE;
+      #}
       
       ## check different transcripts using UTR information ##
       #collect 5' UTRs
@@ -494,7 +516,7 @@ sub generate_transcripts {
         }
         
         #sort exons for this transcript
-        if ( $five_prime_exons[0]->strand == -1 ) {
+        if ( @five_prime_exons and $five_prime_exons[0]->strand == -1 ) {
           @five_prime_exons = sort { $b->start <=> $a->start } @five_prime_exons;
         }
         else {
@@ -543,7 +565,7 @@ sub generate_transcripts {
         }
         
         #sort exons for this transcript
-        if ( $three_prime_exons[0]->strand == -1 ) {
+        if ( @three_prime_exons and $three_prime_exons[0]->strand == -1 ) {
           @three_prime_exons = sort { $b->start <=> $a->start } @three_prime_exons;
         }
         else {
@@ -570,7 +592,7 @@ sub generate_transcripts {
         print "\ntrans-exons: " . $trans_start_exon{$transcript_name} . " - " . $trans_end_exon{$transcript_name} . " (" . scalar @exons . ")";
         
         #check 5' exons
-        if ( defined( $five_prime_exons{$transcript_name} ) ) {
+        if ( @{$five_prime_exons{$transcript_name}} ) {
           my @five_prime_exons = @{ $five_prime_exons{$transcript_name} };
           print "\nworking on 5' of $transcript_name (" . scalar @five_prime_exons . ") ";
           
@@ -649,7 +671,7 @@ sub generate_transcripts {
         }
         
         #check 3' exons
-        if ( defined( $three_prime_exons{$transcript_name} ) ) {
+        if ( @{$three_prime_exons{$transcript_name}} ) {
           my @three_prime_exons = @{ $three_prime_exons{$transcript_name} };
           
           #is first 3' UTR exon part of last coding exon?
@@ -1035,7 +1057,6 @@ sub translation_check {
     my @transcripts = @{ $gene->get_all_Transcripts };
     foreach my $t (@transcripts) {
 	unless ($t->translate){
-	    $DB::single=1; # le hacque
             $t->adaptor()->db()->get_TranslationAdaptor()->fetch_by_Transcript($t);
         }
         my $pep = $t->translate->seq;
@@ -1277,6 +1298,16 @@ sub parse_operons {
   return \@operons;
 }
 
+
+=head2 parse_rnai
+
+  Arg [1]   : gff file path
+  Arg [2]   : Bio:Seq object
+  Arg [3]   : analysis object
+  Function  : parse rnai information
+
+=cut
+
 sub parse_rnai {
   my ( $file, $slice_hash, $analysis ) = @_;
   
@@ -1318,6 +1349,44 @@ sub parse_rnai {
   
   return \@rnai;
 }
+
+
+=head2 parse_pcr_product
+
+  Arg [1]   : gff file path
+  Arg [2]   : Bio:Seq object
+  Arg [3]   : analysis object
+  Function  : parse pcr_product information
+
+=cut
+
+sub parse_pcr_product {
+  my ($file, $slice_hash, $analysis) = @_;
+
+  my @f;
+
+  open(my $fh, $file) or die("Could not open $file for reading\n");
+
+  while(<$fh>) {
+    next if /^\#/;
+    my @l = split(/\t/, $_);
+
+    next if $l[2] ne 'PCR_product';
+    die("Could not fine slice for $l[0]") if not exists $slice_hash->{$l[0]};
+
+    my ($id) = $l[8] =~ /PCR_product\s+\"(\S+)\"/;
+    my $sf = &create_simple_feature( $l[3],
+                                     $l[4],
+                                     $l[6] eq '-' ? -1 : 1,
+                                     $id, 
+                                     $slice_hash->{$l[0]}, 
+                                     $analysis );
+    push @f, $sf;
+
+  }
+  return \@f;
+}
+
 
 =head2 parse_expr
 
@@ -1518,6 +1587,7 @@ sub write_simple_features {
     die "couldn't store simple features problems " . $@;
   }
 }
+
 
 #not used at this time...
 sub parse_tRNA_genes {
