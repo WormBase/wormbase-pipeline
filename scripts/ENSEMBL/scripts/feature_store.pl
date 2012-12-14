@@ -87,11 +87,12 @@ foreach my $chromosome_info ( @{$WB_CHR_INFO} ) {
     switch ($analysis_logic_name) {
       
       # simple features from GFF
-      case [ 'expression_profile', 'rnai', 'operon','fosmid'] {
+      case [ 'expression_profile', 'rnai', 'operon','fosmid', 'pcr_product'] {
         my $features;
         switch ($analysis_logic_name) {
           case 'expression_profile' { $features = parse_expr( $gff_file, $slice_hash, $analysis ) }
           case 'rnai'               { $features = parse_rnai( $gff_file, $slice_hash, $analysis ) }
+          case 'pcr_product'        { $features = parse_pcr_product( $gff_file, $slice_hash, $analysis ) }
           case 'operon'             { $features = parse_operons( $gff_file, $slice_hash, $analysis ) }
           case 'fosmid'	      { $features = parse_simplefeature($gff_file, $slice_hash, $analysis ,'Vancouver_fosmid')}
         }
@@ -101,7 +102,7 @@ foreach my $chromosome_info ( @{$WB_CHR_INFO} ) {
         write_simple_features( $features, $db ) if $features;
       }
       # BLASTX from GFF
-      case ['slimswissprotx','slimtremblx','ipi_humanx','wormpepx','brigpepx','remaneix','brepepx','jappepx','ppapepx', 'gadflyx','yeastx'
+      case ['slimswissprotx','slimtremblx','ipi_humanx','wormpepx','brigpepx','remaneix','brepepx','jappepx','ppapepx', 'gadflyx','yeastx'] {
         my $tag;
         switch ($analysis_logic_name){
           case 'slimswissprotx' {$tag='SW'}
@@ -209,13 +210,9 @@ foreach my $chromosome_info ( @{$WB_CHR_INFO} ) {
       }
       case 'wormbase_non_coding' {
         ## tRNA genes ##
-        my $tRNA_scan_genes = parse_pseudo_files( $gff_file, $slice_hash, $analysis,'tRNAscan-SE-1.23', 'tRNA' );
-        print "have " . scalar @$tRNA_scan_genes . " genomic tRNAscan-SE-1.23 genes.\n" if ($WB_DEBUG);
+        my $tRNA_scan_genes = parse_pseudo_files( $gff_file, $slice_hash, $analysis,'tRNA_mature_transcript', 'tRNA' );
+        print "have " . scalar @$tRNA_scan_genes . " genomic tRNA_mature_transcript  genes.\n" if ($WB_DEBUG);
         &write_genes( $tRNA_scan_genes, $db );
-
-        my $tRNA_scan_genes2 = parse_pseudo_files( $gff_file, $slice_hash, $analysis,'tRNAscan-SE-1.3', 'tRNA' );
-        print "have " . scalar @$tRNA_scan_genes2 . " genomic tRNAscan-SE-1.3 genes.\n" if ($WB_DEBUG);
-        &write_genes( $tRNA_scan_genes2, $db );
         
         ## rRNA-genes #
         my $rRNAgenes = parse_pseudo_files( $gff_file, $slice_hash, $analysis, 'rRNA' );
