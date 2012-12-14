@@ -1,11 +1,21 @@
 // %W%    %G%
 // models.wrm - main file defining tree class structures for the WormBase database
 // This file is read only when starting a new database or when you select 
-// "Read Models" or "Add Update File" from the main menu.
-
+// "Read Models" or "Add Update File" from the main menus.
+// 
+// Explination about class/objectcount limits
+// -----------------------------------------------------------------------------
+// Every single object specified in this file is represented in acedb by a key, 
+// this key is an unsigned int (32 bits), the top 8 bits are the class and the 
+// next 24 bits are the object.
+// In other words you can have 2^8 classes (= 256) and 2^24 objects in each of 
+// those classes (= 16,777,216)
+// -----------------------------------------------------------------------------
+//
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: pad $
-// Last edited on: $Date: 2012-10-19 15:52:30 $
+// Last edited on: $Date: 2012-12-14 16:11:29 $
+
 
 
 ////////////////////////
@@ -254,14 +264,14 @@
 			Molecular_name         ?Gene_name XREF Molecular_name_for  // for linking to full CDS names, wormpep etc.
                         Other_name             ?Gene_name XREF Other_name_for #Evidence // other unapproved CGC-style gene names
                         Public_name     UNIQUE ?Gene_name XREF Public_name_for // the one name that should be used
-		  DB_info Database ?Database ?Database_field ?Accession_number Text //For Darin genbank genpep ids
+		  DB_info Database ?Database ?Database_field Text
                   Species UNIQUE ?Species
                   History Version_change Int UNIQUE DateType UNIQUE ?Person #Gene_history_action
                           Merged_into UNIQUE ?Gene XREF Acquires_merge
                           Acquires_merge ?Gene XREF Merged_into
                           Split_from UNIQUE ?Gene XREF Split_into
                           Split_into ?Gene XREF Split_from
-			  Made_into_transposon
+			  Transposon_in_origin // for genes that are identified as having CDSs/Proteins that are Transposon in origin
 		  Status UNIQUE Live #Evidence
                                 Suppressed #Evidence
                                 Dead #Evidence   
@@ -292,12 +302,16 @@
                                          Molecular_function ?Text #Evidence              // Carol [050202 dl]
                                          Expression ?Text #Evidence                      // Carol [050202 dl]
 					 Human_disease_relevance ?Text #Evidence	 // Ranjana [110601 pad]
+	Disease_info 	Experimental_model ?DO_term XREF Gene_by_biology   ?Species   #Evidence	            
+			Potential_model	   ?DO_term XREF Gene_by_orthology ?Species #Evidence
+			Disease_relevance  ?Text ?Species #Evidence
         Molecular_info Corresponding_CDS ?CDS XREF Gene #Evidence             // to link to live CDSs
                        Corresponding_CDS_history ?CDS XREF Gene_history       // to link to history CDSs
                        Corresponding_transcript ?Transcript XREF Gene #Evidence
                        Corresponding_transcript_history ?Transcript XREF Gene_history
                        Corresponding_pseudogene ?Pseudogene XREF Gene #Evidence
                        Corresponding_pseudogene_history ?Pseudogene XREF Gene_history
+		       Corresponding_transposon ?Transposon XREF Gene #Evidence
                        Other_sequence ?Sequence XREF Gene #Evidence  // for linking to mRNAs etc. that correspond to a gene		   
 		       Associated_feature ?Feature XREF Associated_with_gene #Evidence
 		       Gene_product_binds ?Feature XREF Bound_by_product_of
@@ -352,6 +366,7 @@
 
 #Gene_history_action Event  Created
                             Killed
+			    Suppressed
                             Resurrected
                             Merged_into UNIQUE ?Gene
                             Acquires_merge UNIQUE ?Gene
@@ -359,7 +374,7 @@
                             Split_into UNIQUE ?Gene
                             Imported Text // for the first set of Gene IDs created
 			    Changed_class Text Text	// added to capture CDS->Pseudogene changes, two text fields should list old and new classes
-			    Made_into_transposon        // for CDSs that become Transposon CDSs - no longer count as Live Gene
+			    Transposon_in_origin        // for CDSs that become Transposon CDSs
                      Name_change CGC_name UNIQUE Text
                                  Sequence_name UNIQUE Text
                                  Other_name UNIQUE Text // Text field to store 'Other_name' of Gene
@@ -485,7 +500,7 @@
 		Unaffiliated_antibody    ?Antibody
 		Unaffiliated_expr_pattern   ?Expr_pattern
 		WBProcess ?WBProcess XREF Interaction			// WormBase biological process associated with the interaction
-		DB_info Database ?Database ?Database_field ?Accession_number	// Any database reference to the interaction outside of WormBase, e.g. BioGRID, Interactome
+		DB_info Database ?Database ?Database_field Text	// Any database reference to the interaction outside of WormBase, e.g. BioGRID, Interactome
 		Paper ?Paper XREF Interaction
 		Antibody_remark ?Text
 		Remark ?Text #Evidence
@@ -585,15 +600,13 @@
 		   Rearrangement	 ?Rearrangement XREF Strain
                    Clone ?Clone XREF In_strain		  
 		   Transgene ?Transgene XREF Strain
-	 Properties  Males Text
-		     Inbreeding_state UNIQUE Selfed Text
+	 Properties  Inbreeding_state UNIQUE Selfed Text
                                              Isofemale Text
                                              Multifemale Text
                                              Inbred Text 
-		     Reference_strain Text
 		     Outcrossed Text
 		     Mutagen Text
-		     Sample_history Text
+		     Strain_history Text
 		     Date_first_frozen UNIQUE DateType
 		     CGC_received DateType
 		     Phenotype ?Phenotype XREF Strain #Phenotype_info
@@ -605,7 +618,8 @@
          Reference ?Paper XREF Strain
 	 Species UNIQUE ?Species // added by krb [021021]
          Wild_isolate // to identify wild isolates - since genotype is free text
-         Isolation GPS UNIQUE Float UNIQUE Float // Latitude +/-DD.DDDDD Longitude +/-DD.DDDDD
+         Isolation GPS UNIQUE Float UNIQUE Float #Position_confidence // Latitude +/-DD.DDDDD Longitude +/-DD.DDDDD
+		   Elevation UNIQUE Unique Float #Position_confidence // Elevation above sea level.
 	 	   Place UNIQUE ?Text 
          	   Landscape UNIQUE Urban_garden
 				    Forest
@@ -624,6 +638,13 @@
                    Isolated_by ?Person // the person who isolated the worms from the sample
 		   Date UNIQUE DateType
 		   Picture ?Picture
+
+
+//Used to define a metric to the elevation and GPS positions in the Strain class
+
+#Position_confidence UNIQUE Exact
+			    Approximate UNIQUE Float
+			    Inferred_from_GPS
 
 ////////////////////////////////////////////////////////////////////////////////
 // ?Lab_Location class
@@ -762,7 +783,7 @@
 	 Other_name Text	  // sp. 7 etc.
 	 G_species UNIQUE Text    // e.g. 'c_elegans' - used internally for file generation
 	 NCBITaxonomyID UNIQUE Int 
-	 Assembly UNIQUE ?Sequence_collection //used for linking to the species assembly.
+	 Assembly ?Sequence_collection //used for linking to the species assemblies
 
 
 ///////////////////////////////
@@ -988,8 +1009,38 @@
         SO_parent_obj_tag UNIQUE Text
         SO_children
 
+///////////////////////////////////////////////////////////////
+//
+// ?DO_term - Ranjana WS236
+//
+////////////////////////////////////////////////////////////////
 
 
+?DO_term Name UNIQUE ?Text
+	 Status UNIQUE Valid
+		       Obsolete
+	 Alternate_id ?Text
+	 Definition UNIQUE ?Text
+	 Comment Text
+	 Synonymn Broad   ?Text
+                  Exact   ?Text
+                  Narrow  ?Text
+                  Related ?Text
+	 Parent Is_a ?DO_term XREF Is
+	 Child Is ?DO_term XREF Is_a 
+	 DB_info Database ?Database ?Database_field Text              
+	 Type GOLD
+	      gram_negative_bacterial_infectious_disease
+	      gram_positive_bacterial_infectious_disease
+	      sexually_transmitted_infectious_disease
+	      tick_borne_infectious_disease
+	      zoonotic_infectious_disease
+	 Attribute_of Gene_by_biology    ?Gene       XREF   Experimental_model
+		      Gene_by_orthology  ?Gene       XREF   Potential_model
+		      Phenotype  ?Phenotype  XREF   DO_term
+		      WBProcess  ?WBProcess  XREF   DO_term
+		      Reference  ?Paper      XREF   DO_term 
+	 Version UNIQUE Text
 
 //////////////////////////////////////////////////////////
 // AO_code class -  Raymond Lee 040203
@@ -1298,7 +1349,7 @@
 				Species UNIQUE ?Species
 				Strain UNIQUE ?Strain
 				Laboratory ?Laboratory
-				Database ?Database ?Database_field ?Accession_number
+				Database ?Database ?Database_field Text
 		     History    First_WS_release Int // first WormBase release this assembly was used
 				Latest_WS_release Int // latest release where it was used
 				Supercedes    UNIQUE ?Sequence_collection XREF Superceded_by
@@ -1492,6 +1543,7 @@
 				      Partial #Evidence
 	    Molecular_info Corresponding_CDS ?CDS XREF Corresponding_transposon #Evidence
 			   Corresponding_pseudogene ?Pseudogene XREF Corresponding_transposon #Evidence 
+			   Gene ?Gene XREF Corresponding_transposon #Evidence 
 	    Visible Remark ?Text #Evidence
             Associated_feature ?Feature XREF Associated_with_transposon #Evidence
             Method UNIQUE ?Method
@@ -1524,7 +1576,7 @@
 ///////////////////////////////////////////////////////////////////////////
 
 
-?Library DB_info Database ?Database ?Database_field UNIQUE ?Accession_number
+?Library DB_info Database ?Database ?Database_field UNIQUE Text
 	 Origin  Species UNIQUE ?Species
 		 Strain UNIQUE ?Strain
 		 Life_stage UNIQUE ?Life_stage
@@ -1545,7 +1597,7 @@
 
 ?Homology_group Evidence #Evidence
                 Title ?Text
-                DB_info Database ?Database ?Database_field ?Accession_number
+                DB_info Database ?Database ?Database_field Text
                 Group_type  UNIQUE COG	   COG_type #Homology_type
 					   COG_code #COG_codes
 				   eggNOG  eggNOG_type #Homology_type
@@ -1621,7 +1673,9 @@
 ?Feature SMap S_parent UNIQUE Sequence UNIQUE ?Sequence XREF Feature_object
 	 Name Public_name UNIQUE ?Text
 	      Other_name ?Text
-         Flanking_sequences UNIQUE ?Sequence UNIQUE Text UNIQUE Text
+         Sequence_details Flanking_sequences UNIQUE Text UNIQUE Text
+			  Mapping_target UNIQUE ?Sequence 
+			  Source_location UNIQUE Int UNIQUE ?Sequence UNIQUE Int UNIQUE Int UNIQUE Text #Evidence //source data, <WSversion> ?Sequence pos1 pos2 <text description> Evidence
 	 DNA_text UNIQUE ?Text       // for storing the sequence of the feature...can use IUPAC codes to be able
 				     // store consensus sequences, e.g. binding site consensus sequence
 	 Origin     Species UNIQUE ?Species  //added by pad, as we are moving towards multi species readyness.
@@ -1636,7 +1690,7 @@
 		    Defined_by_person   ?Person
 		    Defined_by_author   ?Author
 		    Defined_by_analysis ?Analysis Int
-	 Score Float           // this would be a log score as indicated by the analysis used in gff dump
+	 Score Float Text #Evidence // this would be a log score as indicated by the analysis used in gff dump
 	 Associations Associated_with_gene	 ?Gene	     XREF Associated_feature #Evidence // richard
                       Associated_with_CDS	 ?CDS	     XREF Associated_feature #Evidence  // richard
                       Associated_with_transcript ?Transcript XREF Associated_feature #Evidence  // richard
@@ -2069,7 +2123,7 @@
 	         Cellular_component ?GO_term XREF Picture
          Acknowledgment Template UNIQUE Text
                         Publication_year UNIQUE Text
-                        Article_URL UNIQUE ?Database UNIQUE ?Database_field UNIQUE ?Accession_number
+                        Article_URL UNIQUE ?Database UNIQUE ?Database_field UNIQUE Text
                         Journal_URL UNIQUE ?Database 
                         Publisher_URL UNIQUE ?Database 
                         Person_name UNIQUE Text
@@ -2193,7 +2247,7 @@
                 Reconstruction ?Reconstruction XREF Anatomy_term #ReconCellInfo
                 Neurodata ?Anatomy_term #Neurodata
                 Link_diagram Text
-		Database     ?Database	?Database_field	?Accession_number 
+		Database     ?Database	?Database_field	Text 
                 URL     Text // for storing static URLs, such as WormAtlas, WormBook
                 Child   PART_OF_c	?Anatomy_term   XREF    PART_OF_p
                         IS_A_c		?Anatomy_term   XREF    IS_A_p
@@ -2405,7 +2459,7 @@
                         Transcript ?Transcript XREF RNAi_result #Evidence // [021126 krb]
                         Pseudogene ?Pseudogene XREF RNAi_result #Evidence // [030801 krb]
         Supporting_data Movie ?Movie XREF RNAi    // Lincoln, krb [010807]
-	DB_info    Database ?Database ?Database_field ?Accession_number //to link out to Phenobank ar2 02-DEC-05 //removed UNIQUE as reqs multiple connections
+	DB_info    Database ?Database ?Database_field Text //to link out to Phenobank ar2 02-DEC-05 //removed UNIQUE as reqs multiple connections
 	Species UNIQUE ?Species
 	Gene_regulation ?Gene_regulation XREF RNAi  // this tag is used when an RNAi experiment describes gene regulation ar2 29-MAR-06 for igor
 	Interaction ?Interaction XREF Interaction_RNAi
@@ -2525,6 +2579,7 @@
 			      Not_in_Rearrangement ?Rearrangement XREF Phenotype_not_observed //added by Wen for Not observed phenotypes
 	   Associated_with    GO_term   ?GO_term   XREF Phenotype   ?GO_code  #Evidence	// Tag Associated_with changed by Carol
 			      WBProcess ?WBProcess XREF Phenotype
+			      DO_term ?DO_term #Evidence
 
 
 ?Phenotype_name	Primary_name_for UNIQUE	?Phenotype	XREF	Primary_name	#Evidence
@@ -2791,7 +2846,7 @@
 ///////////////////////////////////////////////////////////////////////////////////////
 
 ?3d_data Evidence              #Evidence
-         DB_info               Database ?Database ?Database_field ?Accession_number
+         DB_info               Database ?Database ?Database_field Text
          CDS      ?CDS XREF 3d_data
 	 Protein  ?Protein XREF 3d_data
 	 Gene	  ?Gene XREF 3d_data
@@ -2942,7 +2997,7 @@
 
 ?Paper Original_timestamp Datetype // temporary tag in transition period [krb 040223]
        Name ?Text     //used for storing legacy names, like cgc5654 or wm95p426
-       DB_info Database ?Database ?Database_field ?Accession_number     //used for storing PubMed or other database identifiers, for PubMed, Database_field would be PMID 
+       DB_info Database ?Database ?Database_field Text     //used for storing PubMed or other database identifiers, for PubMed, Database_field would be PMID 
        History Merged_into UNIQUE ?Paper XREF Acquires_merge
                Acquires_merge ?Paper XREF Merged_into
        Status  Valid
@@ -3021,6 +3076,7 @@
 		 Molecule ?Molecule XREF Reference
 		 WBProcess ?WBProcess XREF Reference
 		 Picture ?Picture XREF Reference
+		 DO_term ?DO_term #Evidence
        Curation_pipeline Phenotype2GO
        Keyword ?Keyword
        Remark  ?Text   #Evidence
@@ -3139,6 +3195,8 @@
                 Rearrangement	?Rearrangement  XREF Variation // some alleles are really rearrangements		
 	   Sequence_details SMap S_parent UNIQUE Sequence UNIQUE ?Sequence XREF Allele
 			    Flanking_sequences UNIQUE Text UNIQUE Text
+			    Mapping_target UNIQUE ?Sequence
+			    Source_location UNIQUE Int UNIQUE ?Sequence UNIQUE Int UNIQUE Int UNIQUE Text #Evidence //source data, <WSversion> ?Sequence pos1 pos2 <text description> Evidence
 			    CGH_deleted_probes UNIQUE Text UNIQUE Text
 			    CGH_flanking_probes UNIQUE text UNIQUE text
 			    Type_of_mutation Substitution UNIQUE Text Text #Evidence // wild type and mutant sequence
@@ -3164,7 +3222,7 @@
 		  Author  ?Author // use Person when known, else use Author
                   Person  ?Person //
 		  Analysis ?Analysis
-		  DB_info    Database ?Database ?Database_field UNIQUE ?Accession_number //to link out to KO pages ar2 02-DEC-05
+		  DB_info    Database ?Database ?Database_field UNIQUE Text //to link out to KO pages ar2 02-DEC-05
                   KO_consortium_allele   // North American knockout consortium
                   NBP_allele  // Japanese knockout consortium
 		  NemaGENETAG_consortium_allele //NemaGENETAG consortium allele - Nektarios et al
@@ -3352,7 +3410,7 @@
 //
 //////////////////////////////////////////////////
 
-?Analysis    DB_info Database ?Database ?Database_field ?Accession_number
+?Analysis    DB_info Database ?Database ?Database_field Text
 	     Title Text
              Based_on_WB_Release Int
              Based_on_DB_Release Text
@@ -3381,7 +3439,7 @@
 	   Species	   UNIQUE ?Species
 	   Strain	   ?Strain // added for Microarry_result [030127 krb]
 	   Preparation	   ?Text // added for Microarray_result [030127 krb]
-           Temperature     Int
+           Temperature     Float // Int -> Float WS236
            Genotype        ?Text
            Other           ?Text
            Relationship    Contains        ?Condition XREF Contained_in
@@ -3406,7 +3464,7 @@
 ?Molecule  Name ?Text
            Public_name ?Text
            Synonym ?Text
-           DB_info Database ?Database ?Database_field ?Accession_number
+           DB_info Database ?Database ?Database_field Text
            Gene_regulation Gene_regulator ?Gene_regulation XREF Molecule_regulator
 			   Regulate_expr_cluster ?Expression_cluster XREF Regulated_by_molecule //Wen WS228
 	   WBProcess ?WBProcess XREF Molecule
@@ -3447,10 +3505,11 @@
                                         Life_stage ?Life_stage XREF WBProcess #Evidence 
                                         Molecule ?Molecule XREF WBProcess #Evidence 
                 Associated_with         Phenotype ?Phenotype XREF WBProcess #Evidence
-                                        GO_term ?GO_term  #Evidence
+                                        GO_term ?GO_term #Evidence
+					DO_term ?DO_term #Evidence
                 Picture ?Picture #Evidence
                 Movie ?Movie  #Evidence
-                Pathway DB_info Database ?Database ?Database_field ?Accession_number //Can be used for any pathway db with unique accessionIDs
+                Pathway DB_info Database ?Database ?Database_field Text //Can be used for any pathway db with unique accessionIDs
                 Remark ?Text #Evidence
                 Reference ?Paper XREF WBProcess
 
