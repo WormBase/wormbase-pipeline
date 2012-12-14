@@ -1063,8 +1063,8 @@ sub coverage
 sub check_features {
   my $self = shift;
   my $cdna = shift;
-  my $SL;
-  if ( $SL = $cdna->SL ) {
+
+  if (my $SL = $cdna->SL ) {
     if ( $self->SL ) {
       unless( $SL->[0] == $self->SL->[0] ) { #same SL
         print "SequenceObj::check_features FAIL: ". $self->name . " " . $cdna->name . " : Conficting SLs\n" if $debug;
@@ -1077,9 +1077,14 @@ sub check_features {
       }
     }
   }
-  
-  # reject cdna's that start before transcript SL
-  if ( $self->SL and $cdna->start < $self->start ) {
+
+
+  # if the cDNA extends past the end of the SL-spliced transcript, it could be
+  # due to insufficient leader sequence clipping  at the 5' end. The result is that
+  # the EST extends a few bps past the TSL site. To address this, we allow
+  # the EST to match a transcript that has already been created using TSL data,
+  # but do not (later) extend using it
+  if ( $self->SL and $cdna->start < $self->start and $self->start - $cdna->start >= 10) {
     print "SequenceObj::check_features FAIL: ". $self->name . " " . $cdna->name . " : transcript has an SL, and cdna starts before it\n" if $debug;
     return 0;
   }
@@ -1118,7 +1123,12 @@ sub check_features {
   }	
   
   # transcript already has polyA and cDNA goes past this
-  if ( $self->polyA_site and $cdna->end > $self->end ) {
+  # if the cDNA extends past the end of the polyA-spliced transcript, it could be
+  # due to insufficient polyA sequence clipping  at the 3' end. The result is that
+  # the EST extends a few bps past the polyA site. To address this, we allow
+  # the EST to match a transcript that has already been created using polyA data,
+  # but do not (later) extend using it
+  if ( $self->polyA_site and $cdna->end > $self->end and $cdna->end - $self->end >= 10) {
     print "SequenceObj::check_features: ". $self->name . " " . $cdna->name . " : transcript has a polyA site and cdna goes past the end of it\n" if $debug;
     return 0;
   }

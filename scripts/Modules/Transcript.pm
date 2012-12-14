@@ -142,9 +142,12 @@ sub add_matching_cDNA
       #extend 3'
       if( $match_code == 2 or $match_code == 9 ) {
 	# cdna overlaps last exon so extend - need to take in to account it may still be spliced past the CDS end.
-
-	my $last_exon_start = $self->last_exon->[0];
-	$self->{'exons'}->{"$last_exon_start"} = $exon->[1];
+        if ($self->polyA_site and $exon->[1] > $self->polyA_site->[0]) {
+          # do not extend - this looks like a badly clipped cDNA
+        } else {
+          my $last_exon_start = $self->last_exon->[0];
+          $self->{'exons'}->{"$last_exon_start"} = $exon->[1];
+        }
       }
       #extend 5'
       elsif( $match_code == 4  or $match_code == 5 or $match_code == 8 ) {
@@ -155,8 +158,12 @@ sub add_matching_cDNA
 
 	my $exon_end = $self->sorted_exons->[0]->[1];
 
-	delete $self->exon_data->{$curr_start};
-	$self->{'exons'}->{"$exon->[0]"} = $exon_end;
+        if ($self->SL and $exon->[0] < $self->SL->[1]) {
+          # do not extend - this looks like a badly clipped cDNA
+        } else {
+          delete $self->exon_data->{$curr_start};
+          $self->{'exons'}->{"$exon->[0]"} = $exon_end;
+        }
       }
       elsif( $match_code == 10  or $match_code == 11 ) {
 	#add exon to UTR
@@ -183,12 +190,17 @@ sub add_matching_cDNA
 	my $curr_start = $self->start;
 	my $exon_end = $self->sorted_exons->[0]->[1];
 
-	delete $self->{'exons'}->{$curr_start};
-	$self->{'exons'}->{"$exon->[0]"} = $exon->[1];
+        if ($self->SL and $exon->[0] < $self->SL->[1] or
+            $self->polyA_site and $exon->[1] > $self->polyA_site->[0]) {
+          # do not extend - probably a badly cDNA
+        } else {
+          delete $self->{'exons'}->{$curr_start};
+          $self->{'exons'}->{"$exon->[0]"} = $exon->[1];
 	
-#	# 3' extension
-#	my $last_exon_start = $self->last_exon->[0];
-#	$self->{'exons'}->{"$last_exon_start"} = $exon->[1];
+          #	# 3' extension
+          #	my $last_exon_start = $self->last_exon->[0];
+          #	$self->{'exons'}->{"$last_exon_start"} = $exon->[1];
+        }
       }	
     }
     # reset start end etc . . 
