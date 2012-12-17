@@ -2,8 +2,8 @@
 #
 # EMBLdump.pl :  makes modified EMBL dumps from camace.
 # 
-#  Last updated on: $Date: 2012-12-17 10:31:43 $
-#  Last updated by: $Author: mh6 $
+#  Last updated on: $Date: 2012-12-17 10:34:16 $
+#  Last updated by: $Author: klh $
 
 use strict;
 use Getopt::Long;
@@ -55,16 +55,16 @@ my %additional_qualifiers = (
     transl_except => ["(pos:4060..4062,aa:Sec)"],
   },
   'Bm2025a' => {
-    transl_exept => ['(pos:823..825,aa:Sec)']
+    transl_except => ['(pos:823..825,aa:Sec)']
   },
   'Bm2025b' => {
-    transl_exept => ['(pos:1989..1991,aa:Sec)']
+    transl_except => ['(pos:1989..1991,aa:Sec)']
   },
   'Bm2025c' => {
-    transl_exept => ['(pos:2134..2136,aa:Sec)']
+    transl_except => ['(pos:2134..2136,aa:Sec)']
   },
   'Bm2025d' => {
-    transl_exept => ['(pos:1123..1125,aa:Sec)']
+    transl_except => ['(pos:1123..1125,aa:Sec)']
   },
 
 );
