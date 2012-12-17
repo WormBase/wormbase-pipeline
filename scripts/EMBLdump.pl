@@ -2,8 +2,8 @@
 #
 # EMBLdump.pl :  makes modified EMBL dumps from camace.
 # 
-#  Last updated on: $Date: 2012-12-17 10:37:34 $
-#  Last updated by: $Author: klh $
+#  Last updated on: $Date: 2012-12-17 11:01:45 $
+#  Last updated by: $Author: mh6 $
 
 use strict;
 use Getopt::Long;
@@ -1112,12 +1112,28 @@ sub get_references {
     ],
     brugia => [
       ["RG   WormBase Consortium",
-       "RA   Paulini M.;",
+       "RA   Ghedin E.; Paulini M.",
        "RT   ;",
        "RL   Submitted (12-Dec-2012) to the INSDC.",
        "RL   WormBase Group, European Bioinformatics Institute,",
        "RL   Cambridge, CB10 1SA, UNITED KINGDOM.",
        ],
+      ["RX   PUBMED; 17885136.",
+       "RA   Ghedin E., Wang S., Spiro D., Caler E., Zhao Q., Crabtree J., Allen J.E.,",
+       "RA   Delcher A.L., Guiliano D.B., Miranda-Saavedra D., Angiuoli S.V., Creasy T.,",
+       "RA   Amedeo P., Haas B., El-Sayed N.M., Wortman J.R., Feldblyum T., Tallon L.,",
+       "RA   Schatz M., Shumway M., Koo H., Salzberg S.L., Schobel S., Pertea M., Pop M.,",
+       "RA   White O., Barton G.J., Carlow C.K., Crawford M.J., Daub J., Dimmic M.W.,",
+       "RA   Estes C.F., Foster J.M., Ganatra M., Gregory W.F., Johnson N.M., Jin J.,",
+       "RA   Komuniecki R., Korf I., Kumar S., Laney S., Li B.W., Li W., Lindblom T.H.,",
+       "RA   Lustigman S., Ma D., Maina C.V., Martin D.M., McCarter J.P., McReynolds L.,",
+       "RA   Mitreva M., Nutman T.B., Parkinson J., Peregrín-Alvarez J.M., Poole C., Ren Q.,",
+       "RA   Saunders L., Sluder A.E., Smith K., Stanke M., Unnasch T.R., Ware J., Wei A.D.,",
+       "RA   Weil G., Williams D.J., Zhang Y., Williams S.A., Fraser-Liggett C., Slatko B.,",
+       "RA   Blaxter M.L., Scott A.L.;",
+       "RT   \"Draft genome of the filarial nematode parasite Brugia malayi.\";",
+       "RL   Science. 2007 Sep 21;317(5845):1756-60.",
+      ],
     ]
 
     );
