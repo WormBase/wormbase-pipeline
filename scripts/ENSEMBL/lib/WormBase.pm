@@ -1271,8 +1271,6 @@ sub parse_operons {
     chomp;
     my ( $chr, $type, $start, $end, $strand, $id ) = (split)[0, 1, 3, 4, 6, 9 ];
 
-    $id =~ s/\"//g;
-
     if ( $type ne 'operon' ) {
       next LINE;
     }
@@ -1282,6 +1280,8 @@ sub parse_operons {
     else {
       $strand = 1;
     }
+
+    $id =~ s/\"//g;
     
     die "Could not find slice for $chr\n" if not exists $slice_hash->{$chr};
     
