@@ -2,8 +2,8 @@
 #
 # EMBLdump.pl :  makes modified EMBL dumps from camace.
 # 
-#  Last updated on: $Date: 2012-11-09 16:03:58 $
-#  Last updated by: $Author: klh $
+#  Last updated on: $Date: 2012-12-17 10:31:43 $
+#  Last updated by: $Author: mh6 $
 
 use strict;
 use Getopt::Long;
@@ -23,16 +23,19 @@ my %species_info = (
   genome_project_id => {
     elegans  => 13758,
     briggsae => 10731,
+    brugia   => 10729,
   },
 
   taxon_id => {
     elegans  => 6239,
     briggsae => 473542,
+    brugia   => 6279,
   },
 
   strain => {
     elegans => 'Bristol N2',
     briggsae => 'AF16',
+    brugia   => 'FR3',
   },
 
   genome_project_accs => { },
@@ -51,6 +54,19 @@ my %additional_qualifiers = (
   "C06G3.7" => { 
     transl_except => ["(pos:4060..4062,aa:Sec)"],
   },
+  'Bm2025a' => {
+    transl_exept => ['(pos:823..825,aa:Sec)']
+  },
+  'Bm2025b' => {
+    transl_exept => ['(pos:1989..1991,aa:Sec)']
+  },
+  'Bm2025c' => {
+    transl_exept => ['(pos:2134..2136,aa:Sec)']
+  },
+  'Bm2025d' => {
+    transl_exept => ['(pos:1123..1125,aa:Sec)']
+  },
+
 );
 
 
@@ -286,6 +302,8 @@ if ($dump_modified) {
         }
       } elsif ($species eq 'briggsae') {
         $de_line = "$full_species_name AF16 supercontig from assembly CB4, $clone";
+      } elsif ($species eq 'brugia'){
+        $de_line = "$full_species_name FR3 supercontig from assembly B_malayi-3.0 $clone"
       }
       
       print $out_fh "DE   $de_line\n";
@@ -355,6 +373,11 @@ if ($dump_modified) {
           print $out_fh  "CC   For a graphical representation of this sequence and its analysis\n";
           print $out_fh  "CC   see:- http://www.wormbase.org/species/c_elegans/clone/$clone\n";
           print $out_fh  "XX\n";
+        }elsif($species eq 'brugia'){
+          print $out_fh "XX\n",
+                        "CC   For a graphical representation of this sequence and its analysis\n",
+                        "CC   see:- http://www.wormbase.org/species/c_elegans/clone/$clone\n",
+                        "XX\n";
         }
       }
       next;
@@ -446,7 +469,7 @@ sub process_feature_table {
           printf $out_fh "FT   %16s%s\n", " ", $ln;
         }
       }
-      if ($species eq 'briggsae') {
+      if ($species eq 'briggsae' ||$species eq 'brugia') {
         printf $out_fh "FT   %16s/note=\"supercontig %s\"\n", " ", $clone;
       }
       next;
@@ -647,7 +670,7 @@ sub process_feature_table {
     } else {
       if ($wb_isoform_name =~ /^(\S+\.\d+)[a-z]?/) {
         $gene_qual = ["/gene=\"$1\""];
-      } elsif ($species eq 'briggsae' and $wb_isoform_name =~ /^(\S+\d+)[a-z]$/) {
+      } elsif (($species eq 'briggsae' || $species eq 'brugia') and $wb_isoform_name =~ /^(\S+\d+)[a-z]$/) {
         $gene_qual = ["/gene=\"$1\""];
       } else {
         $gene_qual = ["/gene=\"$wb_isoform_name\""];
@@ -667,6 +690,8 @@ sub process_feature_table {
         $lt = "CBG_$1";
       } elsif ($species eq 'elegans') {
         $lt = "CELE_${lt}";
+      } elsif ($species eq 'brugia'){
+        $lt = "BM_${lt}";
       }
       push @{$locus_tag_qual}, sprintf("/locus_tag=\"%s\"", $lt);
     }
@@ -1085,8 +1110,17 @@ sub get_references {
         "RL   PLoS Gen. 7(7):E1002174-E1002174(2011).",
       ],
     ],
-  
-      );
+    brugia => [
+      ["RG   WormBase Consortium",
+       "RA   Paulini M;",
+       "RT   ;",
+       "RL   Submitted (12-Dec-2012) to the INSDC.",
+       "RL   WormBase Group, European Bioinformatics Institute,",
+       "RL   Cambridge, CB10 1SA, UNITED KINGDOM.",
+       ],
+    ]
+
+    );
 
   return $primary_references{$species};
 }
