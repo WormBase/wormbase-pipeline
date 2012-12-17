@@ -2,7 +2,7 @@
 #
 # EMBLdump.pl :  makes modified EMBL dumps from camace.
 # 
-#  Last updated on: $Date: 2012-12-17 10:34:16 $
+#  Last updated on: $Date: 2012-12-17 10:37:34 $
 #  Last updated by: $Author: klh $
 
 use strict;
@@ -1112,7 +1112,7 @@ sub get_references {
     ],
     brugia => [
       ["RG   WormBase Consortium",
-       "RA   Paulini M;",
+       "RA   Paulini M.;",
        "RT   ;",
        "RL   Submitted (12-Dec-2012) to the INSDC.",
        "RL   WormBase Group, European Bioinformatics Institute,",
