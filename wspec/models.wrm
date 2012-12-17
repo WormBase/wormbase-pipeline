@@ -14,7 +14,7 @@
 //
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: klh $
-// Last edited on: $Date: 2012-12-17 09:57:32 $
+// Last edited on: $Date: 2012-12-17 16:40:14 $
 
 
 
@@ -1030,8 +1030,8 @@
 	 Child Is ?DO_term XREF Is_a 
 	 DB_info Database ?Database ?Database_field Text              
 	 Type GOLD
-	      Gram-negative_bacterial_infectious_disease
-	      Gram-positive_bacterial_infectious_disease
+	      Gram_negative_bacterial_infectious_disease
+	      Gram_positive_bacterial_infectious_disease
 	      Sexually_transmitted_infectious_disease
 	      Tick_borne_infectious_disease
 	      Zoonotic_infectious_disease
