@@ -444,7 +444,6 @@ GFF_source "Allele"
 GFF_feature "substitution"
 GFF_SO "SO:1000002" // substitution
 
-
 Method : "Variation_PCR" 
 Remark	 "PCR product"
 Colour	 BLUE
@@ -454,17 +453,6 @@ GFF_source	 "Variation_PCR"
 GFF_feature	 "PCR_product"
 GFF_SO "SO:0000006" // PCR_product
 Remark "PCR products used in Variation objects"
-
-
-Method : "CGH_allele"
-Remark "Comparative Genomic Hybridization"
-Display Colour ORANGE
-        Strand_sensitive
-        Width 1.1
-        Show_text
-GFF_source "CGH_allele"
-GFF_feature "deletion"
-GFF_SO "SO:0000159" // deletion
 
 Method : Million_mutation
 Remark "A collaborative project between the Genome Sciences Department in Seattle (R.H. Waterston, L. Hillier and J. Shendure) and the Moerman Lab. Starting April 1, 2010, a collection of 1,500 to 2,000 mutagenized lines using various mutagens, including EMS, ENU and UV/TMP will be built"
@@ -476,6 +464,154 @@ GFF_source "Million_mutation"
 GFF_feature "SNP"
 GFF_SO "SO:0000694"
 
+Method : "CGH_allele"
+Remark   "Comparative Genomic Hybridization"
+Colour   ORANGE
+Strand_sensitive        
+Width    1.100000
+Show_text       
+GFF_source       "CGH_allele"
+GFF_feature      "sequence_alteration"
+GFF_SO   "SO:0001059"
+
+Method : "KO_consortium_allele"
+Remark	 "The C. elegans Gene Knockout Consortium facilitates genetic research of this important model system through the production of deletion alleles at specified gene targets."
+Colour	 ORANGE
+Strand_sensitive	
+Width	 1.100000
+Show_text	
+GFF_source	 "KO_consortium"
+GFF_feature	 "sequence_alteration"
+GFF_SO	 "SO:0001059"
+
+Method : "NBP_knockout_allele"
+Remark	 "The National BioResource Project (SNP) isolates, stores and distributes deletion mutations of genes of interest"
+Colour	 ORANGE
+Strand_sensitive	
+Width	 1.100000
+Show_text	
+GFF_source	 "NBP_knockout_allele"
+GFF_feature	 "sequence_alteration"
+GFF_SO	 "SO:0001059"
+
+Method : "NemaGENETAG_consortium_allele"
+Remark	 "The Nematode Gene-Tagging Tools and Resources (NemaGENETAG) project generated a comprehensive collection of ordered transposon tagged alleles."
+Colour	 ORANGE
+Strand_sensitive	
+Width	 1.100000
+Show_text	
+GFF_source	 "NemaGENETAG_consortium"
+GFF_feature	 "mobile_element_insertion"
+GFF_SO	 "SO:0001837"
+
+Method : "SNP_Swan"
+Remark	 "Swan KA et al. (2002) Genome Res 'High-throughput gene mapping in Caenorhabditis elegans."
+Colour	 ORANGE
+Strand_sensitive	
+Width	 1.100000
+Show_text	
+GFF_source	 "SNP_Swan"
+GFF_feature	 "sequence_alteration"
+
+Method : "SNP_Wicks"
+Remark	 "Wicks SR et al. (2001) Nat Genet 'Rapid gene mapping in Caenorhabditis elegans using a high density polymorphism map."
+Colour	 ORANGE
+Strand_sensitive	
+Width	 1.100000
+Show_text	
+GFF_source	 "SNP_Wicks"
+GFF_feature	 "sequence_alteration"
+GFF_SO	 "SO:0001059"
+
+Method : "WGS_Andersen"
+Remark	 "Whole Genome Sequencing. Andersen EC et al. (2012) Nat Genet 'Chromosome-scale selective sweeps shape Caenorhabditis elegans genomic diversity."
+Colour	 ORANGE
+Strand_sensitive	
+Width	 1.100000
+Show_text	
+GFF_source	 "WGS_Andersen"
+GFF_feature	 "sequence_alteration"
+GFF_SO	 "SO:0001059"
+
+Method : "WGS_De_Bono"
+Remark	 "Whole Genome Sequencing. Weber KP et al. (2010) PLoS One 'Whole genome sequencing highlights genetic changes associated with laboratory domestication of C. elegans."
+Colour	 ORANGE
+Strand_sensitive	
+Width	 1.100000
+Show_text	
+GFF_source	 "WGS_De_Bono"
+GFF_feature	 "sequence_alteration"
+GFF_SO	 "SO:0001059"
+
+Method : "WGS_Hawaiian_Waterston"
+Remark	 "Whole Genome Sequencing of CB4856 (Hawaii) by the Waterston Lab"
+Colour	 ORANGE
+Strand_sensitive	
+Width	 1.100000
+Show_text	
+GFF_source	 "WGS_Hawaiian_Waterston"
+GFF_feature	 "sequence_alteration"
+GFF_SO	 "SO:0001059"
+
+Method : "WGS_Hobert"
+Remark	 "Whole Genome Sequencing. Sarin S et al. (2010) Genetics 'Analysis of multiple ethyl methanesulfonate-mutagenized Caenorhabditis elegans strains by whole-genome sequencing."
+Colour	 ORANGE
+Strand_sensitive	
+Width	 1.100000
+Show_text	
+GFF_source	 "WGS_Hober"
+GFF_feature	 "sequence_alteration"
+GFF_SO	 "SO:0001059"
+
+Method : "WGS_Jarriault"
+Remark	 "Whole Genome Sequencing. Zuryn S et al. (2010) Genetics 'A strategy for direct mapping and identification of mutations by whole-genome sequencing."
+Colour	 ORANGE
+Strand_sensitive	
+Width	 1.100000
+Show_text	
+GFF_source	 "WGS_Jarriault"
+GFF_feature	 "sequence_alteration"
+GFF_SO	 "SO:0001059"
+
+Method : "WGS_McGrath"
+Remark	 "Whole Genome Sequencing. McGrath PT et al. (2011) Nature 'Parallel evolution of domesticated Caenorhabditis species targets pheromone receptor genes."
+Colour	 ORANGE
+Strand_sensitive	
+Width	 1.100000
+Show_text	
+GFF_source	 "WGS_McGrath"
+GFF_feature	 "sequence_alteration"
+GFF_SO	 "SO:0001059"
+
+Method : "WGS_Pasadena_Quinlan"
+Remark	 "Whole Genome Sequencing of CB4858 (Pasadena) by the Quinlan Lab"
+Colour	 ORANGE
+Strand_sensitive	
+Width	 1.100000
+Show_text	
+GFF_source	 "WGS_Pasadena_Quinlan"
+GFF_feature	 "sequence_alteration"
+GFF_SO	 "SO:0001059"
+
+Method : "WGS_Stein"
+Remark	 "Whole Genome Sequencing of four wild C. elegans strains."
+Colour	 ORANGE
+Strand_sensitive	
+Width	 1.100000
+Show_text	
+GFF_source	 "WGS_Stein"
+GFF_feature	 "sequence_alteration"
+GFF_SO	 "SO:0001059"
+
+Method : "WGS_Yanai"
+Remark	 "Whole Genome Sequencing. Hryshkevich U et al. (2011) Genome Res 'Core promoter T-blocks correlate with gene expression levels in C. elegans."
+Colour	 ORANGE
+Strand_sensitive	
+Width	 1.100000
+Show_text	
+GFF_source	 "WGS_Yanai"
+GFF_feature	 "sequence_alteration"
+GFF_SO	 "SO:0001059"
 
 ////////////////////////////
 // Gene predicter methods //
@@ -3420,4 +3556,46 @@ Right_priority 5.7
 
 Method : "RepeatMasker"
 Right_priority	 5.8
+
+Method : "KO_consortium_allele"
+Right_priority	 1.900000
+
+Method : "NBP_knockout_allele"
+Right_priority	 1.900000
+
+Method : "NemaGENETAG_consortium_allele"
+Right_priority	 1.900000
+
+Method : "SNP_Swan"
+Right_priority	 1.900000
+
+Method : "SNP_Wicks"
+Right_priority	 1.900000
+
+Method : "WGS_Andersen"
+Right_priority	 1.900000
+
+Method : "WGS_De_Bono"
+Right_priority	 1.900000
+
+Method : "WGS_Hawaiian_Waterston"
+Right_priority	 1.900000
+
+Method : "WGS_Hobert"
+Right_priority	 1.900000
+
+Method : "WGS_Jarriault"
+Right_priority	 1.900000
+
+Method : "WGS_McGrath"
+Right_priority	 1.900000
+
+Method : "WGS_Pasadena_Quinlan"
+Right_priority	 1.900000
+
+Method : "WGS_Stein"
+Right_priority	 1.900000
+
+Method : "WGS_Yanai"
+Right_priority	 1.900000
 
