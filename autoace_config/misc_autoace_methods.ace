@@ -461,8 +461,8 @@ Display Colour Orange
         Width 1.1
         Show_text
 GFF_source "Million_mutation"
-GFF_feature "SNP"
-GFF_SO "SO:0000694"
+GFF_feature "SNV"
+GFF_SO "SO:0001483"
 
 Method : "CGH_allele"
 Remark   "Comparative Genomic Hybridization"
@@ -485,7 +485,7 @@ GFF_feature	 "sequence_alteration"
 GFF_SO	 "SO:0001059"
 
 Method : "NBP_knockout_allele"
-Remark	 "The National BioResource Project (SNP) isolates, stores and distributes deletion mutations of genes of interest"
+Remark	 "The National BioResource Project (NBP) isolates, stores and distributes deletion mutations of genes of interest"
 Colour	 ORANGE
 Strand_sensitive	
 Width	 1.100000
