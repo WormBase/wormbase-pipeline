@@ -255,17 +255,17 @@ sub filter_alleles {
     my $remark = ($allele->Remark||'none');
 
     # has no sequence connection
-    if ( ! defined $allele->Sequence ) {
-      $log->write_to("ERROR: $allele ($name) has missing Sequence tag (Remark: $remark)\n");
+    if ( ! defined $allele->Mapping_target ) {
+      $log->write_to("ERROR: $allele ($name) has missing Mapping_target tag (Remark: $remark)\n");
       $errors++;
       next;
     }
     
-    # The bit below is commented out, as there are sadly some alleles connected to sequences without source that can't be moved :-(
+    # The bit below is commented out, as there are sadly some alleles connected to sequences without source that can't be moved :-( updated this commented out code to avoid iues in the future.
     
     #   # connected sequence has no source
-    #        elsif ( !defined $allele->Sequence->Source && !defined $weak_checks) { 
-    #            $log->write_to("ERROR: $name connects to ${\$allele->Sequence} which has no Source tag (Remark: $remark)\n");$errors++
+    #        elsif ( !defined $allele->Mapping_target->name && !defined $weak_checks) { 
+    #            $log->write_to("ERROR: $name connects to ${\$allele->Mapping_target} which has no Source tag (Remark: $remark)\n");$errors++
     #        }
 
     # no flanks at all
@@ -357,7 +357,7 @@ sub map {
       }
     }
     
-    my @map = $mapper->map_feature($x->Sequence->name,
+    my @map = $mapper->map_feature($x->Mapping_target->name,
                                    $x->Flanking_sequences->name,
                                    $x->Flanking_sequences->right->name, 
                                    $min_len, 
@@ -372,10 +372,10 @@ sub map {
       next;
     }
 
-    if ($map[0] ne $x->Sequence->name and 
-        $x->Sequence->name !~ /^CHROMOSOME/ and 
-        $x->Sequence->name !~ /^chr/){
-      $log->write_to("WARNING: moved $x (${\$x->Public_name}) from sequence ${\$x->Sequence->name} to $map[0]\n");
+    if ($map[0] ne $x->Mapping_target->name and 
+        $x->Mapping_target->name !~ /^CHROMOSOME/ and 
+        $x->Mapping_target->name !~ /^chr/){
+      $log->write_to("WARNING: moved $x (${\$x->Public_name}) from sequence ${\$x->Mapping_target->name} to $map[0]\n");
     }
 
     my ($cl_st, $cl_en, $cl_ori) = ($map[1], $map[2], '+');
@@ -399,7 +399,7 @@ sub map {
     if (not $fix_unmapped) {
       foreach my $x (@unmapped_inserts, @unmapped_others) {
         $log->write_to("ERROR: Failed to map $x and will not attempt to remap (${\$x->Public_name}) " .
-                       "to sequence ${\$x->Sequence->name} " .
+                       "to sequence ${\$x->Mapping_target->name} " .
                        "with ${\$x->Flanking_sequences->name} and ${\$x->Flanking_sequences->right->name} " .
                        "(Remark: ${\$x->Remark})\n");
         $errors++;
@@ -436,7 +436,7 @@ sub map {
           $log->write_to("ACE : \n");
         } else {
           $log->write_to("ERROR: Failed to remap $x after attempted fix (${\$x->Public_name}) " .
-                         "to sequence ${\$x->Sequence->name} " .
+                         "to sequence ${\$x->Mapping_target->name} " .
                          "with ${\$x->Flanking_sequences->name} and ${\$x->Flanking_sequences->right->name} " .
                          "(Remark: ${\$x->Remark})\n");
           $errors++;
@@ -528,7 +528,6 @@ sub remove_insanely_mapped_alleles {
       }
     }
   }
-
 }
 
 =head2 print_genes

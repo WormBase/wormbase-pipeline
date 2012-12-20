@@ -8,8 +8,8 @@
 # Uses Ant's Feature_mapper.pm module
 #
 #
-# Last updated by: $Author: klh $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2012-11-16 16:32:02 $        # quickly see when script was last changed and by whom
+# Last updated by: $Author: pad $                      # These lines will get filled in by cvs and helps us
+# Last updated on: $Date: 2012-12-20 11:04:29 $        # quickly see when script was last changed and by whom
 
 
 $|=1;
@@ -22,8 +22,10 @@ use Getopt::Long;
 use Modules::Remap_Sequence_Change;
 
 
-my ($feature, $smap_parent, $clone, $flanking_left, $flanking_right, $coords, $span,$store);
-
+my ($feature,$target,$flanking_left,$flanking_right,$coords,$span,$store);
+my $database;                # spcify a database to pull data from.....used when testing new models etc.
+my $noload;                  # don't load the data back to the database.
+my $outfile;                 # specify an output file for data.
 my $help;                    # Help menu
 my $debug;                   # Debug mode 
 my $verbose;                 # Verbose mode
@@ -47,14 +49,17 @@ my $three_prime_UTR;         # three prime UTRs
 my $DNAseI_hypersensitive_site; # DNAseI_hypersensitive_site
 my $promoter;                # promoter region
 my $regulatory_region;       # regulatory region
-my $id_file;
+my $id_file;                 # takes a list of objects from a file
 my $start;
 my $stop;
 my $test;
 my $no_load;
 my $micro;
+my $outdir;
+my $curout;
 
 GetOptions (
+	    "database:s"                 => \$database,
 	    "all"                        => \$all,
 	    "SL1"                        => \$SL1,
 	    "SL2"                        => \$SL2,
@@ -82,6 +87,8 @@ GetOptions (
     	    'store=s'                    => \$store,
 	    'test'                       => \$test,
             'noload'                     => \$no_load,
+	    'outdir:s'                   => \$outdir,
+	    'curout:s'                   => \$curout,
 	    'micro'                      => \$micro,
 		);
 
@@ -113,9 +120,16 @@ my $assembly_mapper = Remap_Sequence_Change->new($version - 1, $version, $wb->sp
 #######################
 
 my $tace   = $wb->tace;
-my $dbdir  = $wb->autoace;
-my $outdir = $wb->acefiles;
-$log->write_to("// writing to ".$wb->acefiles."\n\n");
+my $dbdir;
+if ($database) {
+  $dbdir = $database;
+}
+else {
+  $dbdir  = $wb->autoace;
+}
+unless ($outdir) {$outdir = $wb->acefiles;}
+$log->write_to("// writing to ".$outdir."\n\n");
+unless ($curout) {$curout = "/nfs/wormpub/DATABASES/camace/${version}_feature_parents.ace";}
 
 # WS version for output files
 our ($WS_version) = $wb->get_wormbase_version_name;
@@ -171,7 +185,6 @@ push (@features2map, "regulatory_region")                if (($regulatory_region
 push (@features2map, "three_prime_UTR")                  if (($three_prime_UTR) || ($all));
 push (@features2map, "DNAseI_hypersensitive_site")       if (($DNAseI_hypersensitive_site) || ($all));
 push (@features2map, "micro_ORF")                        if (($micro) || ($all));
-
 push (@features2map, "IDFILE") if $id_file;
 
 #############
@@ -179,13 +192,14 @@ push (@features2map, "IDFILE") if $id_file;
 #############
 
 foreach my $query (@features2map) {
-
+  my $count_features = "0";
   $log->write_to("// Mapping $query features\n\n");
   
   my (@features, @unmapped_feats);
 
   # open output files
   open (OUTPUT, ">$outdir/feature_${query}.ace") or die "Failed to open output file\n";
+  open (PRIMARYOUT, ">$curout") or die "Failed to open update file $curout\n";
   
   if ($query eq 'IDFILE') {
     open (my $idfh, "<$id_file") or $log->log_and_die("Failed to open input file: $id_file\n");
@@ -195,21 +209,17 @@ foreach my $query (@features2map) {
         my $feat =  $ace_db->fetch(-name => $1, -class => "Feature", -fill  => 1);
         my $fname = $feat->name;
         my $meth = $feat->Method;
-        my $sparent = $feat->Sequence->name;
-        my $clone = $feat->get('Flanking_sequences', 1)->name;
-        my $left = $feat->get('Flanking_sequences', 2);
-        my $right = $feat->get('Flanking_sequences', 3);
-        
-        if (not defined $clone or not defined $left or not defined $right) {
+        my $target = $feat->Mapping_target->name;
+        my $left = $feat->get('Flanking_sequences', 1);
+        my $right = $feat->get('Flanking_sequences', 2);
+        if (not defined $target or not defined $left or not defined $right) {
           $log->write_to("Feat $feat did not have complete flanks; skipping\n");
           next;
         }
-
         push @features, [
           $feat,
           $meth,
-          $sparent,
-          $clone,
+          $target,
           $left,
           $right,
         ];
@@ -223,56 +233,49 @@ foreach my $query (@features2map) {
     my $table = <<EOF;
 Sortcolumn 1
 
-Colonne 1
-Width 12
-Optional
-Visible
-Class
-Class Feature
-From 1
+Colonne 1 
+Width 12 
+Optional 
+Visible 
+Class 
+Class Feature 
+From 1 
 Condition Method = "$query" AND Species = "$species_name"
-
-Colonne 2
-Width 32
-Mandatory
-Visible
-Class
-Class Method
-From 1
-Tag Method
-
-Colonne 2
-Width 12
+ 
+Colonne 2 
+Width 32 
+Mandatory 
+Visible 
+Class 
+Class Method 
+From 1 
+Tag Method 
+ 
+Colonne 3 
+Width 12 
+Mandatory 
+Visible 
+Class 
+Class Sequence 
+From 1 
+Tag Mapping_target 
+ 
+Colonne 4 
+Width 32 
 Optional
-Visible
-Class Sequence
-From 1
-Tag Sequence
-
-Colonne 4
-Width 12
-Mandatory
-Visible
-Class
-Class Sequence
-From 1
-Tag Flanking_sequences
-
-Colonne 5
-Width 32
+Visible 
+Text 
+From 1 
+Tag Flanking_sequences 
+ 
+Colonne 5 
+Width 32 
 Optional
-Visible
-Text
-Right_of 4
+Visible 
+Text 
+Right_of 4 
 Tag  HERE
 
-Colonne 6
-Width 32
-Optional
-Visible
-Text
-Right_of 5
-Tag  HERE
 
 // End of these definitions
 EOF
@@ -284,34 +287,39 @@ EOF
 
     while (<TACE>) {    
       # when it finds a good line
-      if (/^\"(\S+)\"\s+\"(\S+)\"\s+\"(\S+)\"\s+\"(\S+)\"\s+\"(\S+)\"\s+\"(\S+)\"/) {
-        my ($feat,$meth, $smap_p,$cl,$flank_left,$flank_right) = ($1,$2,$3,$4,$5,$6);
-        #print "NEXT FEATURE: $feature,$clone,$flanking_left,$flanking_right\n" if ($debug);
-        
+      if (/^\"(\S+)\"\s+\"(\S+)\"\s+\"(\S+)\"\s+\"(\S+)\"\s+\"(\S+)\"\s+/) {
+        my ($feat,$meth,$target,$flank_left,$flank_right) = ($1,$2,$3,$4,$5);
+        #print "NEXT FEATURE: $feature,$target,$flanking_left,$flanking_right\n" if ($debug);
+	
+        $count_features ++;
         if ($flank_left eq "" && $flank_right eq "") {
           $log->write_to("// WARNING: Feature $feat has no flanking sequence - not mapped\n");
           next;
         }
-        push @features, [$feat,$meth, $smap_p,$cl,$flank_left,$flank_right];
+	if ($target eq "") {
+	  $log->write_to("// WARNING: Feature $feat has no target sequence - not mapped\n");
+          next;
+	}
+        push @features, [$feat,$meth,$target,$flank_left,$flank_right];
       } elsif (/^\"(\S+)\"/) {
         # lines that look like features but there is a problem eg. whitespace in flanks.
-        $log->write_to("// ERROR: $1 has a problem, please check flanking sequences!! (whitespace is one cause)\n");
+        $log->write_to("// ERROR: $1, please check data - parent:\"$3\" flanks:\"$4\" \"$5\"\n");
         $log->error;
       }
     }
   }	
 
   foreach my $list (@features) {
-    my ($feature,$method, $smap_parent,$clone,$flanking_left,$flanking_right) = @$list;
+    my ($feature,$method,$target,$flanking_left,$flanking_right) = @$list;
     # note below that we pass through an expected mapping distance where possible. This
     # can help with the mapping
-    
-    my @coords = $mapper->map_feature($smap_parent,
+    print "Feature:@$list[0] Method:@$list[1] Target_seq:@$list[2] Left_flank:@$list[3] Right_flank:@$list[4]\n" if ($debug);
+    my @coords = $mapper->map_feature($target,
                                       $flanking_left,
                                       $flanking_right, 
                                       ($sanity{$method}) ? $sanity{$method}->[0] : undef,
                                       ($sanity{$method}) ? $sanity{$method}->[1] : undef,
-        );
+				     );
 
     if (!defined $coords[2]) {
       push @unmapped_feats, $list;
@@ -355,16 +363,19 @@ EOF
       }
     }
     
-    print OUTPUT "//$feature maps to $new_clone $start -> $stop, feature span is $span bp\n";
+    print OUTPUT "//$feature maps to $new_clone $start -> $stop, feature span is $span bp\n" if ($debug);
     print OUTPUT "\nSequence : \"$new_clone\"\n";
     print OUTPUT "Feature_object $feature $start $stop\n\n";
     
-    if ($clone ne $new_clone) {
-      $log->write_to("// Feature $feature maps to different clone than suggested $clone -> $new_clone; changing parent\n");
+    if ($target ne $new_clone) {
+      $log->write_to("// Feature $feature maps to different clone than suggested $target -> $new_clone; changing parent\n");
       print OUTPUT "\nFeature : \"$feature\"\n";
-      print OUTPUT "Flanking_sequences $new_clone $flanking_left $flanking_right\n\n";
+      print OUTPUT "Flanking_sequences $flanking_left $flanking_right\n";
+      print OUTPUT "Mapping_target  $new_clone\n\n";
+      print PRIMARYOUT "\nFeature : \"$feature\"\n";
+      print PRIMARYOUT "Flanking_sequences $flanking_left $flanking_right\n";
+      print PRIMARYOUT "Mapping_target  $new_clone\n\n";
     }
-    
   }
 
   if (@unmapped_feats) {
@@ -372,11 +383,11 @@ EOF
     map { $all_ids{$_->[0]} =  0 } @unmapped_feats;
 
     foreach my $list (@unmapped_feats) {
-      my ($feature,$method, $smap_parent,$clone,$flanking_left,$flanking_right) = @$list;
+      my ($feature,$method,$target,$flanking_left,$flanking_right) = @$list;
       
       $log->write_to(sprintf("// ERROR: Cannot map feature %s on clone %s (%s) flanking sequences: %s %s\n", 
                              $feature,
-                             $clone,
+                             $target,
                              ($sanity{$method}) ? "defined range @{$sanity{$method}}" : "no defined range",
                              $flanking_left, 
                              $flanking_right));
@@ -386,7 +397,7 @@ EOF
       # this info is passed through to suggest_fix, which uses it to work out the correct coords in 
       my @suggested_fix = $mapper->suggest_fix($feature, 
                                                ($sanity{$method} and $sanity{$method}->[0] == $sanity{$method}->[1]) ? $sanity{$method}->[0] : undef,
-                                               $smap_parent, 
+                                               $target, 
                                                $flanking_left, 
                                                $flanking_right, 
                                                $assembly_mapper,
@@ -403,8 +414,8 @@ EOF
     }
   }
   close(OUTPUT);
-
-  $wb->load_to_database($wb->autoace, "$outdir/feature_${query}.ace", "feature_mapping", $log) unless $no_load;
+    $wb->load_to_database($wb->autoace, "$outdir/feature_${query}.ace", "feature_mapping", $log) unless $no_load;
+  $log->write_to("// Processed $count_features $query features\n\n");
 }
 
 
