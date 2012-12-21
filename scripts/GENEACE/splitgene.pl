@@ -8,7 +8,7 @@
 # existing gene 
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2012-10-15 16:32:38 $
+# Last edited on: $Date: 2012-12-21 17:27:23 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -108,7 +108,8 @@ if (-e $outfile) {$log->write_to("Warning this split has probably already been p
 		  print "Warning this split has probably already been processed.\n";}
 
 open(OUT, ">$outfile") || die "Can't write to output file\n";
-log->write_to("Output file: $outfile\n");
+$log->write_to("Output file: $outfile\n");
+
 
 # find out highest gene number in case new genes need to be created
 my $gene_max = $db->fetch(-query=>"Find Gene");
