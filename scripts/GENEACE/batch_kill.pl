@@ -43,7 +43,7 @@ e.g. perl batch_kill.pl -file deathrow.txt [simple example]
 
 =cut
 
-my ($USER,$PASS, $test, $file, $ns, $debug, $load);
+my ($USER,$PASS, $test, $file, $ns, $debug, $load, $transposon,);
 my $domain='Gene';
 my $species = 'elegans';
 GetOptions(
@@ -96,20 +96,23 @@ my $output = "$outdir"."$outname";
 #open file and read
 open (FILE,"<$file") or $log->log_and_die("can't open $file : $!\n");
 open (ACE,">$output") or $log->log_and_die("cant write output: $!\n");
-my($gene,$person,$remark);
+my($gene,$person,$remark,$tflag,);
 my $count;
 while(<FILE>){
     chomp;
     unless (/\w/) {
-	&kill_gene;
+      &kill_gene;
     }
     else { #gather info
-	if   (/^(WBGene\d{8}|WBVar\d{8})/) { $gene = $1; } 
-	elsif(/^(WBPerson\d+)/) { $person = $1; }
-	elsif(/^Remark\s+\"(.*)\"/){$remark = $1}
-	else { $log->error("malformed line : $_\n") }
+      if   (/^(WBGene\d{8}|WBVar\d{8})/) { $gene = $1; } 
+      elsif(/^(WBPerson\d+)/) { $person = $1; }
+      elsif(/^Remark\s+\"(.*)\"/){
+	$remark = $1;
+	if (/Transposon_CDS/) {$tflag = "1";}
+      }
+      else { $log->error("malformed line : $_\n") }
     }
-}
+  }
 &kill_gene; # remember the last one!
 $log->write_to("\n3) $count ${domain}s in file to be killed\n\n");
 $log->write_to("4) $count ${domain}s killed\n\n");
@@ -119,36 +122,42 @@ $log->mail();
 
 
 sub kill_gene {
-    if($gene and $person and $remark) {
-	$count++;
-	my $geneObj = $ace->fetch($domain, $gene);
-	if($gene) {
-
-	    if ($domain eq 'Gene'){
-	       my $ver = $geneObj->Version->name;
-	       $ver++;
-	       print ACE "\nGene : $gene\nVersion $ver\nHistory Version_change $ver now $person Event Killed\nDead\nRemark \"$remark\" Curator_confirmed $person\n-D Sequence_name\n-D Method\n-D Map_info\n-D Other_name\n-D Allele\n";
-            }
-	    elsif($domain eq 'Variation'){
-		    print ACE "\nVariation : $gene\nStatus Dead Curator_confirmed $person\nRemark \"$remark\"\n";
-	    }
-	    #nameserver kill
-	    $log->write_to("NS->kill $gene\n");
-	    $db->kill_gene($gene) if $ns;
+  if($gene and $person and $remark) {
+    $count++;
+    my $geneObj = $ace->fetch($domain, $gene);
+    if($gene) {
+      
+      if ($domain eq 'Gene'){
+	my $ver = $geneObj->Version->name;
+	$ver++;
+	# We no longer Kill Transposon_CDSs/Pseudogenes but suppress them.
+	if ($tflag) {
+	  print ACE "\nGene : $gene\nVersion $ver\nHistory Version_change $ver now $person Event Suppressed\nSuppressed\nRemark \"$remark\" Curator_confirmed $person\n-D Method\n-D Map_info\n-D Allele\n";
 	}
 	else {
-	    $log->error("no such $domain $gene\n");
+	  print ACE "\nGene : $gene\nVersion $ver\nHistory Version_change $ver now $person Event Killed\nDead\nRemark \"$remark\" Curator_confirmed $person\n-D Sequence_name\n-D Method\n-D Map_info\n-D Other_name\n-D Allele\n";
 	}
-    }
-    #    elsif (!defined($gene) && !defined($person)&& !defined($remark)) {
-    elsif (!defined($gene && $person && $remark)) {
-      $ecount++;
-      $log->error("Warning: additional blank ($ecount) line in input file has been ignored\n");
+      }
+      elsif($domain eq 'Variation'){
+	print ACE "\nVariation : $gene\nStatus Dead Curator_confirmed $person\nRemark \"$remark\"\n";
+      }
+      #nameserver kill
+      $log->write_to("NS->kill $gene\n");
+      $db->kill_gene($gene) if $ns;
     }
     else {
-	$log->error("missing info on $gene : $person : $remark\n");
+      $log->error("no such $domain $gene\n");
     }
-    undef $gene; undef $person ;undef $remark;
+  }
+  #    elsif (!defined($gene) && !defined($person)&& !defined($remark)) {
+  elsif (!defined($gene && $person && $remark)) {
+    $ecount++;
+    $log->error("Warning: additional blank ($ecount) line in input file has been ignored\n");
+  }
+  else {
+    $log->error("missing info on $gene : $person : $remark\n");
+  }
+  undef $gene; undef $person ;undef $remark;
 }
 
 sub load_data {
