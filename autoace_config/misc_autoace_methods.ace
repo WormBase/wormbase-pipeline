@@ -413,6 +413,16 @@ GFF_SO "SO:1000005" // complex_substitution
 Remark "Basically, these are deletion alleles where the deletion is replaced by (a usually smaller length) insertion sequence"
 
 
+Method : "Substitution_allele" 
+Remark "Simple allelic changes, i.e. mono or di-nucleotide substitutions"
+Colour "ORANGE"
+Strand_sensitive
+Width "1.1"
+Show_text
+GFF_source "Allele"
+GFF_feature "substitution"
+GFF_SO "SO:1000002" // substitution
+
 Method : "Transposon_insertion" 
 Width 1.1
 Colour ORANGE
@@ -433,16 +443,6 @@ Show_text
 GFF_source "Mos_insertion_allele"
 GFF_feature "transposable_element_insertion_site"
 GFF_SO "SO:0000368" // transposable_element_insertion_site
-
-Method : "Substitution_allele" 
-Remark "Simple allelic changes, i.e. mono or di-nucleotide substitutions"
-Colour "ORANGE"
-Strand_sensitive
-Width "1.1"
-Show_text
-GFF_source "Allele"
-GFF_feature "substitution"
-GFF_SO "SO:1000002" // substitution
 
 Method : "Variation_PCR" 
 Remark	 "PCR product"
@@ -490,7 +490,7 @@ Colour	 ORANGE
 Strand_sensitive	
 Width	 1.100000
 Show_text	
-GFF_source	 "NBP_knockout_allele"
+GFF_source	 "NBP_knockout"
 GFF_feature	 "sequence_alteration"
 GFF_SO	 "SO:0001059"
 
@@ -510,7 +510,7 @@ Colour	 ORANGE
 Strand_sensitive	
 Width	 1.100000
 Show_text	
-GFF_source	 "SNP_Swan"
+GFF_source	 "Wild_isolate_sequencing"
 GFF_feature	 "sequence_alteration"
 
 Method : "SNP_Wicks"
@@ -519,7 +519,7 @@ Colour	 ORANGE
 Strand_sensitive	
 Width	 1.100000
 Show_text	
-GFF_source	 "SNP_Wicks"
+GFF_source	 "Wild_isolate_sequencing"
 GFF_feature	 "sequence_alteration"
 GFF_SO	 "SO:0001059"
 
@@ -529,7 +529,7 @@ Colour	 ORANGE
 Strand_sensitive	
 Width	 1.100000
 Show_text	
-GFF_source	 "WGS_Andersen"
+GFF_source	 "Wild_isolate_sequencing"
 GFF_feature	 "sequence_alteration"
 GFF_SO	 "SO:0001059"
 
@@ -539,7 +539,7 @@ Colour	 ORANGE
 Strand_sensitive	
 Width	 1.100000
 Show_text	
-GFF_source	 "WGS_De_Bono"
+GFF_source	 "Wild_isolate_sequencing"
 GFF_feature	 "sequence_alteration"
 GFF_SO	 "SO:0001059"
 
@@ -549,7 +549,7 @@ Colour	 ORANGE
 Strand_sensitive	
 Width	 1.100000
 Show_text	
-GFF_source	 "WGS_Hawaiian_Waterston"
+GFF_source	 "Wild_isolate_sequencing"
 GFF_feature	 "sequence_alteration"
 GFF_SO	 "SO:0001059"
 
@@ -559,7 +559,7 @@ Colour	 ORANGE
 Strand_sensitive	
 Width	 1.100000
 Show_text	
-GFF_source	 "WGS_Hober"
+GFF_source	 "Wild_isolate_sequencing"
 GFF_feature	 "sequence_alteration"
 GFF_SO	 "SO:0001059"
 
@@ -569,7 +569,7 @@ Colour	 ORANGE
 Strand_sensitive	
 Width	 1.100000
 Show_text	
-GFF_source	 "WGS_Jarriault"
+GFF_source	 "Wild_isolate_sequencing"
 GFF_feature	 "sequence_alteration"
 GFF_SO	 "SO:0001059"
 
@@ -579,7 +579,7 @@ Colour	 ORANGE
 Strand_sensitive	
 Width	 1.100000
 Show_text	
-GFF_source	 "WGS_McGrath"
+GFF_source	 "Wild_isolate_sequencing"
 GFF_feature	 "sequence_alteration"
 GFF_SO	 "SO:0001059"
 
@@ -589,7 +589,7 @@ Colour	 ORANGE
 Strand_sensitive	
 Width	 1.100000
 Show_text	
-GFF_source	 "WGS_Pasadena_Quinlan"
+GFF_source	 "Wild_isolate_sequencing"
 GFF_feature	 "sequence_alteration"
 GFF_SO	 "SO:0001059"
 
@@ -599,7 +599,7 @@ Colour	 ORANGE
 Strand_sensitive	
 Width	 1.100000
 Show_text	
-GFF_source	 "WGS_Stein"
+GFF_source	 "Wild_isolate_sequencing"
 GFF_feature	 "sequence_alteration"
 GFF_SO	 "SO:0001059"
 
@@ -609,7 +609,7 @@ Colour	 ORANGE
 Strand_sensitive	
 Width	 1.100000
 Show_text	
-GFF_source	 "WGS_Yanai"
+GFF_source	 "Wild_isolate_sequencing"
 GFF_feature	 "sequence_alteration"
 GFF_SO	 "SO:0001059"
 
