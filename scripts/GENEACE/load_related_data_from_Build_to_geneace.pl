@@ -8,7 +8,7 @@
 # RUN this script anytime during the build or after the build when get_interpolated_map 
 # and update_inferred multi-pt data are done
 #
-# Last updated on: $Date: 2012-11-23 16:40:09 $
+# Last updated on: $Date: 2013-01-08 11:56:58 $
 # Last updated by: $Author: klh $
 
 
@@ -126,9 +126,62 @@ if (-e $paper) {
   $log->write_to("NOT updating Paper information - could not find file $paper\n");
 }
 
+#
+# Parent sequences for features and variations may have changed during the build
+#
+foreach my $ftype ("binding_site", "binding_site_region", "promoter", "regulatory_region") {
+  my $ffile = $wormbase->acefiles . "/feature_${ftype}.ace";
+  if (-e $ffile) {
+    my $tmp_file = &parse_out_parent_sequences($ffile);
+    $wormbase->load_to_database($geneace, $tmp_file, "feature_${ftype}_parents",$log);
+    unlink $tmp_file;
+  }
+}
+
+my $vfile = $wormbase->acefiles . "/map_alleles4geneace.ace";
+if (-e $vfile) {
+  my $tmp_file = &parse_out_parent_sequences($vfile);
+  $wormbase->load_to_database($geneace, $tmp_file, "variation_parents",$log);
+  unlink $tmp_file;
+}
 
 $log->mail();
 exit(0);
+
+
+sub parse_out_parent_sequences {
+  my ($infile) = @_;
+
+  my $tmp_file = "/tmp/gene_ace_load_file.$$.ace";
+  open my $tmpfh, ">$tmp_file" or die("Could not open $tmp_file for writing\n");
+  open my $infh, $infile or die("Could not open $infile for reading\n");
+
+  my ($class, $obj_id);
+
+  while(<$infh>) {
+    if (/^(\S+)\s*:\s*\"(\S+)\"/) {
+      ($class, $obj_id) = ($1, $2);
+      next;
+    } elsif (/^\s*$/) {
+      ($class, $obj_id) = (undef, undef);
+      next;
+    }
+
+    if (/^Feature_object\s+(\S+)/ and defined $obj_id and $class eq 'Sequence') {
+      print $tmpfh "\nFeature : \"$1\"\nSequence $obj_id\n";
+    }
+    if (/^Allele\s+(\S+)/ and defined $obj_id and $class eq 'Sequence') {
+      print $tmpfh "\nVariation : \"$1\"\nSequence $obj_id\n";
+    }
+    if (/^(Flanking_sequences\s+\S+\s+\S+\s+\S+)$/ and defined $obj_id and $class  eq 'Feature') {
+      print $tmpfh "\n$class : \"$obj_id\"\n$1\n";
+    }
+  }
+
+  close($tmpfh);
+  return $tmp_file;
+}
+
 
 
 __END__
