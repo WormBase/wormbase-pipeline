@@ -6,8 +6,8 @@
 #
 # wrapper script for running transcript_builder.pl
 #
-# Last edited by: $Author: klh $
-# Last edited on: $Date: 2012-01-26 09:49:26 $
+# Last edited by: $Author: pad $
+# Last edited on: $Date: 2013-01-08 11:15:53 $
 
 use lib $ENV{CVS_DIR};
 use Wormbase;
@@ -136,6 +136,11 @@ if (not $no_load) {
   
   $log->write_to("batch_dumping GFF files\n");
   $wormbase->run_script("dump_gff_batch.pl -method Coding_transcript");
+  
+
+  $log->write_to("Creating Coding_transcript fasta file\n");
+  $wormbase->run_script("fasta_dumper.pl -method Coding_transcript -class Transcript");
+  
 
   ##################
   # Check the files
@@ -200,7 +205,7 @@ if (not $no_load) {
                           gff => 1,
                           );   
   }
-} 
+}
 
 
 
