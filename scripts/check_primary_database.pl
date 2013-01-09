@@ -8,7 +8,7 @@
 # so that gene discrepancies can be identified early in the build.
 #
 # Last updated by: $Author: klh $     
-# Last updated on: $Date: 2012-07-03 11:40:01 $      
+# Last updated on: $Date: 2013-01-09 15:50:53 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -110,11 +110,6 @@ foreach $xaceinstances (@xaceinstances) {
   }
 }
 
-# Checking primary gene database
-if ((-e $geneace) && ($species eq 'elegans'))  {
-$log->write_to("running geneace_nameDB_comm.pl\n");
-  $wormbase->run_script("NAMEDB/geneace_nameDB_comm.pl", $log);
-}
 
 # Close log files and exit
 $log->write_to("\n\nFinished\n");
