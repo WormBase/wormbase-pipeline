@@ -12,12 +12,13 @@ use Carp;
 use Getopt::Long;
 use Storable;
 
-my ($help, $debug, $test, $store);
+my ($help, $debug, $test, $store, $database);
 
 GetOptions (	"help"       => \$help,
             	"debug=s"    => \$debug,
 			    	"test"       => \$test,
 	    			"store:s"    => \$store,
+                "database=s" => \$database,
            );
 
 my $wormbase;
@@ -34,7 +35,7 @@ if ( $store ) {
 my $log = Log_files->make_build_log($wormbase);
 
 #connect to Geneace and read in data
-my $acedb = $wormbase->database('geneace');
+my $acedb = ($database and -d $database) ? $database : $wormbase->database('geneace');
 my $def = "$acedb/wquery/SCRIPT:geneace_nameDB_comm.def";
 my $TABLE = $wormbase->table_maker_query($acedb, $def);
 
