@@ -8,20 +8,20 @@
 # RUN this script anytime during the build or after the build when get_interpolated_map 
 # and update_inferred multi-pt data are done
 #
-# Last updated on: $Date: 2013-01-08 11:56:58 $
-# Last updated by: $Author: klh $
+# Last updated on: $Date: 2013-01-09 10:45:06 $
+# Last updated by: $Author: pad $
 
 
 use strict;
 use Getopt::Long;
-
 use lib $ENV{'CVS_DIR'};
 use Wormbase;
 use Ace;
 
-my ($db,$geneace);
+my ($db,$geneace,$test);
 &GetOptions('db=s'      => \$db,
             'geneace=s' => \$geneace,
+	    'test'      => \$test,
 ) || die('cant parse the command line parameter');
 
 ######################
@@ -145,6 +145,9 @@ if (-e $vfile) {
   unlink $tmp_file;
 }
 
+
+&remove_bogus_features;
+
 $log->mail();
 exit(0);
 
@@ -168,13 +171,10 @@ sub parse_out_parent_sequences {
     }
 
     if (/^Feature_object\s+(\S+)/ and defined $obj_id and $class eq 'Sequence') {
-      print $tmpfh "\nFeature : \"$1\"\nSequence $obj_id\n";
+      print $tmpfh "\nFeature : \"$1\"\nMapping_target $obj_id\n";
     }
     if (/^Allele\s+(\S+)/ and defined $obj_id and $class eq 'Sequence') {
-      print $tmpfh "\nVariation : \"$1\"\nSequence $obj_id\n";
-    }
-    if (/^(Flanking_sequences\s+\S+\s+\S+\s+\S+)$/ and defined $obj_id and $class  eq 'Feature') {
-      print $tmpfh "\n$class : \"$obj_id\"\n$1\n";
+      print $tmpfh "\nVariation : \"$1\"\nMapping_target $obj_id\n";
     }
   }
 
@@ -182,6 +182,22 @@ sub parse_out_parent_sequences {
   return $tmp_file;
 }
 
+
+sub remove_bogus_features {
+$log->write_to("Removing bogus Features from geneace (No Flanks and No Method)\n");
+my $command;
+  $command  = "query find Feature where !method AND !Flanking_sequences\n";
+  $command  .= "kill\n";
+  $command  .= "y\n";
+  $command  .= "save\n";
+  $command  .= "quit\n";
+
+  my $tsuser = "bogus_genes";
+  open (TACE, "| $tace $geneace -tsuser $tsuser") || die "Couldn't open $geneace\n";
+  print TACE $command;
+  close TACE;
+  $log->write_to ("Removed bogus Features\n");
+}
 
 
 __END__
