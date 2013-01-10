@@ -21,9 +21,11 @@ if (not $job_id) {
   print STDERR "ERROR: Could not get job_id from job, so unable to determine exit status - investigate\n";
 } else {
   my $found = 0;
-  
+    
   while(not $found) {
-    open(my $blist, "bjobs -d |");
+    # pause; wait for LSF to register the job as complete
+    sleep(10);
+    open(my $blist, "bjobs -d $job_id |");
     while(<$blist>) {
       /^(\d+)/ and do {
         if ($1 eq $job_id) {
@@ -32,7 +34,6 @@ if (not $job_id) {
         }
       };
     }
-    sleep(1);
   }
   
   my $error_code;
