@@ -497,7 +497,7 @@ Colour ORANGE
 Show_text
 Strand_sensitive
 GFF_source "Natural_variation_project"
-GFF_feature "sequence_alteration""
+GFF_feature "sequence_alteration"
 GFF_SO	 "SO:0001059"
 Remark "Single Nucleotide Polymorphisms.  Most SNPs in WormBase determined from comparison with C. elegans strain CB4856"
 
