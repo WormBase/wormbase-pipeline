@@ -395,7 +395,7 @@ Colour ORANGE
 Show_text
 Strand_sensitive
 GFF_source "Allele"
-GFF_feature "complex_change_in_nucleotide_sequence"
+GFF_feature "complex_substitution"
 GFF_SO "SO:1000005" // complex_substitution
 Remark "Basically, these are deletion alleles where the deletion is replaced by (a usually smaller length) insertion sequence"
 
@@ -448,7 +448,7 @@ Strand_sensitive
 Width 1.1
 Show_text
 GFF_source "Million_mutation"
-GFF_feature "SNV"
+GFF_feature "point_mutation"
 GFF_SO "SO:0001483"
 
 Method : "CGH_allele"
@@ -496,9 +496,9 @@ Width 1.1
 Colour ORANGE
 Show_text
 Strand_sensitive
-GFF_source "Natural_variation"
-GFF_feature "SNP"
-GFF_SO "SO:0000694"
+GFF_source "Natural_variation_project"
+GFF_feature "sequence_alteration""
+GFF_SO	 "SO:0001059"
 Remark "Single Nucleotide Polymorphisms.  Most SNPs in WormBase determined from comparison with C. elegans strain CB4856"
 
 Method : "SNP_Swan"
@@ -507,8 +507,9 @@ Colour	 ORANGE
 Strand_sensitive	
 Width	 1.100000
 Show_text	
-GFF_source	 "Natural_variation"
+GFF_source	 "Natural_variation_project"
 GFF_feature	 "sequence_alteration"
+GFF_SO	 "SO:0001059"
 
 Method : "SNP_Wicks"
 Remark	 "Wicks SR et al. (2001) Nat Genet 'Rapid gene mapping in Caenorhabditis elegans using a high density polymorphism map."
@@ -516,7 +517,7 @@ Colour	 ORANGE
 Strand_sensitive	
 Width	 1.100000
 Show_text	
-GFF_source	 "Natural_variation"
+GFF_source	 "Natural_variation_project"
 GFF_feature	 "sequence_alteration"
 GFF_SO	 "SO:0001059"
 
@@ -526,7 +527,7 @@ Colour	 ORANGE
 Strand_sensitive	
 Width	 1.100000
 Show_text	
-GFF_source	 "Natural_variation"
+GFF_source	 "Natural_variation_project"
 GFF_feature	 "sequence_alteration"
 GFF_SO	 "SO:0001059"
 
@@ -536,7 +537,7 @@ Colour	 ORANGE
 Strand_sensitive	
 Width	 1.100000
 Show_text	
-GFF_source	 "Natural_variation"
+GFF_source	 "Natural_variation_project"
 GFF_feature	 "sequence_alteration"
 GFF_SO	 "SO:0001059"
 
@@ -546,7 +547,7 @@ Colour	 ORANGE
 Strand_sensitive	
 Width	 1.100000
 Show_text	
-GFF_source	 "Natural_variation"
+GFF_source	 "Natural_variation_project"
 GFF_feature	 "sequence_alteration"
 GFF_SO	 "SO:0001059"
 
@@ -556,7 +557,7 @@ Colour	 ORANGE
 Strand_sensitive	
 Width	 1.100000
 Show_text	
-GFF_source	 "Natural_variation"
+GFF_source	 "Natural_variation_project"
 GFF_feature	 "sequence_alteration"
 GFF_SO	 "SO:0001059"
 
@@ -566,7 +567,7 @@ Colour	 ORANGE
 Strand_sensitive	
 Width	 1.100000
 Show_text	
-GFF_source	 "Natural_variation"
+GFF_source	 "Natural_variation_project"
 GFF_feature	 "sequence_alteration"
 GFF_SO	 "SO:0001059"
 
@@ -576,7 +577,7 @@ Colour	 ORANGE
 Strand_sensitive	
 Width	 1.100000
 Show_text	
-GFF_source	 "Natural_variation"
+GFF_source	 "Natural_variation_project"
 GFF_feature	 "sequence_alteration"
 GFF_SO	 "SO:0001059"
 
@@ -586,7 +587,7 @@ Colour	 ORANGE
 Strand_sensitive	
 Width	 1.100000
 Show_text	
-GFF_source	 "Natural_variation"
+GFF_source	 "Natural_variation_project"
 GFF_feature	 "sequence_alteration"
 GFF_SO	 "SO:0001059"
 
@@ -596,7 +597,7 @@ Colour	 ORANGE
 Strand_sensitive	
 Width	 1.100000
 Show_text	
-GFF_source	 "Natural_variation"
+GFF_source	 "Natural_variation_project"
 GFF_feature	 "sequence_alteration"
 GFF_SO	 "SO:0001059"
 
@@ -606,7 +607,7 @@ Colour	 ORANGE
 Strand_sensitive	
 Width	 1.100000
 Show_text	
-GFF_source	 "Natural_variation"
+GFF_source	 "Natural_variation_project"
 GFF_feature	 "sequence_alteration"
 GFF_SO	 "SO:0001059"
 
