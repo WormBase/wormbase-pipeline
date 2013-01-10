@@ -4,8 +4,8 @@
 #
 # by Keith Bradnam
 #
-# Last updated on: $Date: 2013-01-09 14:51:44 $
-# Last updated by: $Author: klh $
+# Last updated on: $Date: 2013-01-10 12:12:40 $
+# Last updated by: $Author: pad $
 #
 # see pod documentation at end of file for more information about this script
 
@@ -296,7 +296,9 @@ sub main_gene_checks {
     }
 
     # check that history genes are renamed.
-    if ($method_test =~ /history/ && !($gene_model->name =~ /\:/)) {
+    if (($method_test =~ /history/ && !($gene_model->name =~ /\:/) && !($gene_model->name =~ /WBTransposon/))) {
+
+
       push(@error3, "ERROR: $gene_model needs to be renamed as it is part of history.\n");
     }
 
