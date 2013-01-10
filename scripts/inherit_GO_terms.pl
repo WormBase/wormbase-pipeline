@@ -4,8 +4,8 @@
 #
 # map GO_terms to ?Sequence objects from ?Motif and ?Phenotype
 #
-# Last updated by: $Author: klh $     
-# Last updated on: $Date: 2012-11-21 16:24:03 $      
+# Last updated by: $Author: gw3 $     
+# Last updated on: $Date: 2013-01-10 10:00:43 $      
 
 use strict;
 use warnings;
@@ -120,17 +120,18 @@ sub motif {
   
   # these GO terms should not be attached to the Gene or CDS
   my @stopterms = (
-    'sporulation',
-    'forespore',
-    'photosynthesis',
-    'photosynthetic',
-    'chlorophyll',
-      );
+		   'sporulation',
+		   'forespore',
+		   'photosynthesis',
+		   'photosynthetic',
+		   'chlorophyll',
+		  );
   my @stopGO = (
-    'GO:0009772', # photosynthetic electron transport in photosystem II
-    'GO:0045282', # plasma membrane succinate dehydrogenase complex (only_in_taxon Bacteria)
-		       'GO:0009288', # bacterial-type flagellum
-    'GO:0007391', # dorsal closure (only_in_taxon	Insecta)
+		'GO:0009772', # photosynthetic electron transport in photosystem II
+		'GO:0045282', # plasma membrane succinate dehydrogenase complex (only_in_taxon Bacteria)
+		'GO:0009288', # bacterial-type flagellum
+		'GO:0007391', # dorsal closure (only_in_taxon Insecta)
+		'GO:0009103', # lipopolysaccharide biosynthetic process (only in prokaryotes)
       );
   
   # get the GO terms
