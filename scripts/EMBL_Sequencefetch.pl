@@ -4,8 +4,8 @@
 #
 # Usage : EMBL_Sequencefetch.pl [-options]
 #
-# Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2012-07-02 11:53:27 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2013-01-11 14:26:52 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -38,6 +38,8 @@ GetOptions ("help"       => \$help, #
 	    "input=s"    => \$input, #EMBL flat file to be parse if doing manually.
 	    "Type=s"     => \$Type, #If you know the type of sequence ie. EST, mRNA state this here (Used in conjunction with -input).
 	   );
+
+$species = $organism;
 
 if ( $store ) {
   $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
