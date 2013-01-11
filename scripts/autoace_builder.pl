@@ -6,8 +6,8 @@
 #
 # Usage : autoace_builder.pl [-options]
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2012-11-14 14:56:12 $
+# Last edited by: $Author: klh $
+# Last edited on: $Date: 2013-01-11 12:51:56 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -131,7 +131,7 @@ if ($build_check) {
 
 
 $wormbase->run_script( "chromosome_dump.pl --dna --composition", $log ) if $first_dumps;
-$wormbase->run_script("update_Common_data.pl -clone2centre -clone2acc -clone2size -clone2dbid -clone2seq $species -genes2lab -worm_gene2cgc -worm_gene2geneID -worm_gene2class -est -est2feature -gene_id -clone2type -cds2cgc -rna2cgc -pseudo2cgc ", $log ) if $first_dumps;
+$wormbase->run_script("update_Common_data.pl -clone2centre -clone2acc -clone2size -clone2dbid -genes2lab -worm_gene2cgc -worm_gene2geneID -worm_gene2class -est -est2feature -gene_id -clone2type -cds2cgc -rna2cgc -pseudo2cgc ", $log ) if $first_dumps;
 
 $wormbase->run_script( "build_dumpGFF.pl -stage $gff_dump",                $log ) if $gff_dump;
 
