@@ -2,7 +2,7 @@
 
 # Version: $Version: $
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2012-11-10 14:57:27 $
+# Last updated on: $Date: 2013-01-13 23:05:48 $
 
 use strict;
 use warnings;
@@ -130,7 +130,7 @@ foreach my $mm (2, 3) {
   $missed =  scalar(keys %$prods_to_map);
   $log->write_to("$missed  products remain missed.\n");
   if ($missed) {
-    $log->write_to(sprintf("Trying ipcress with %d mismatches\n", $missed, $mm)); 
+    $log->write_to(sprintf("Trying ipcress with %d mismatches\n", $mm)); 
 
     &map_with_ipcress($prods_to_map, \%mapped, $mm);
 
