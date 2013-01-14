@@ -1,9 +1,9 @@
 #!/software/bin/perl -w                 
 #
-# This is to add Confirmed / Predicted Status and RFLP to SNP gff lines as requested by Todd
+# This scripts decorates the variations in the GFF with all sorts of extra useful info
 #
 # Last updated by: $Author: klh $     
-# Last updated on: $Date: 2012-12-04 14:26:55 $      
+# Last updated on: $Date: 2013-01-14 14:11:14 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -53,37 +53,6 @@ my $log = Log_files->make_build_log($wormbase);
 
 
 #
-# Get types and public names for all vars
-# 
-my $table = $wormbase->table_maker_query($wormbase->autoace, &write_def_file);
-while(<$table>) {
-  s/\"//g; #"
-  next if (/acedb/ or /\/\//);
-  chomp;
-  my ($varid, $public_name, $other_name, $type) = split(/\t/, $_);
-
-  if (not defined $public_name or not defined $varid) {
-    next;
-  }
-
-  $var{$varid}->{public_name}->{$public_name} = 1;
-
-  $var{$varid}->{other_name}->{$other_name} = 1 if $other_name;
-
-  if (defined $type) {
-    $var{$varid}->{types}->{$type} = 1;
-
-    if ($type =~ /confirmed/i) {
-      $var{$varid}->{confirmed} = 1;
-    }
-    if ($type =~ /predicted/i) {
-      $var{$varid}->{predicted} = 1;
-    }
-  }
-}
-close($table);
-
-#
 # Get molecular consequences for all vars
 #
 my %interested = ('Genomic_neighbourhood' => 1,
@@ -101,7 +70,7 @@ my %interested = ('Genomic_neighbourhood' => 1,
                   'Missense'              => 13,
 		      );
 
-$table = $wormbase->table_maker_query($wormbase->autoace, &write_mol_change_def_file);
+my $table = $wormbase->table_maker_query($wormbase->autoace, &write_mol_change_def_file);
 
 while(<$table>) {
   chomp;
@@ -110,7 +79,6 @@ while(<$table>) {
   next if (/acedb/ or /\/\//);
   my ($var_name, @mut_affects) = split(/\s+/,$_);
   next if not defined $var_name;
-  next if not exists $var{$var_name};
   
   foreach my $mut_affects (@mut_affects) {
 
@@ -123,7 +91,6 @@ while(<$table>) {
   }
 }
 close($table);
-
 
 
 my $stat = 0;
@@ -151,53 +118,85 @@ if ($gff_file) {
 foreach my $file (@gff_files) {
   # open and close db connection for each chrom, since AcePerl/giface seems to 
   # hang on to memory...
-  my $db = Ace->connect(-path => $wormbase->autoace);  
+  my $db = Ace->connect(-path => $wormbase->autoace);
 
   open(GFF,"<$file") or $log->log_and_die("cant open $file");
   open(NEW,">$file.tmp") or $log->log_and_die("cant open $file tmp file\n");
   while( <GFF> ) {
-    chomp;	
-    print NEW "$_";
-    #CHROMOSOME_V    Allele  SNP     155950  155951  .       +       .       Variation "uCE5-508"
-    #I       Allele  SNP     126950  126950  .       +       .       Variation "pkP1003"  ;  Status "Confirmed_SNP" ; RFLP "Yes"
-    if (/Public_name/){
-      # looks like htis one has already been decorated, so skip it. 
-    } elsif (/Variation \"(\S+)\"/ or /Variation:(\S+)/) {
+    if (/Variation \"(\S+)\"/ or /Variation:(\S+)/) {
+      my $allele = $1;
+      
       my @new_els;
+      my @current_els = split(/\t/, $_);
+      pop @current_els;
+      push @new_els, ['Variation', $allele];
 
-      my $allele = $1;      
-      foreach my $pb (keys %{$var{$allele}->{public_name}}) {
+      my $variation = $db->fetch(Variation => $allele);
+
+      my @var_types = $variation->at('Variation_type');
+      my @other_names = $variation->at('Name.Other_name');
+      my @public_names = $variation->at('Name.Public_name');
+      my $natural_variant = 0;
+
+      foreach my $tp (@var_types) {
+        push @new_els, ['Status', 'Confirmed'] if $tp =~ /confirmed/i;
+        push @new_els, ['Status', 'Predicted'] if $tp =~ /predicted/i;
+        push @new_els, ['RFLP'] if $tp =~ /RFLP/;
+        if ($tp eq 'Natural_variant') {
+          $natural_variant = 1;
+        }
+      }
+
+      foreach my $pb (@public_names) {
         #print NEW " ; Public_name \"$pb\"";
         push @new_els, ['Public_name', $pb];
       }
-      foreach my $on (keys %{$var{$allele}->{other_name}}) {
+      foreach my $on (@other_names) {
         #print NEW " ; Other_name \"$on\"";
         push @new_els, ['Other_name', $on];
       }
-      
-      #print NEW " ; Status \"Confirmed\"" if $var{$allele}->{confirmed};
-      #print NEW " ; Status \"Predicted\"" if $var{$allele}->{predicted};
-      #print NEW " ; RFLP " if exists $var{$allele}->{types}->{RFLP};
-      #printf(NEW " ; Consequence \"%s\"", $var{$allele}->{mol_change}) if exists $var{$allele}->{mol_change};
 
-      push @new_els, ['Status', 'Confirmed'] if $var{$allele}->{confirmed};
-      push @new_els, ['Status', 'Predicted'] if $var{$allele}->{predicted};
-      push @new_els, ['RFLP'] if exists $var{$allele}->{types}->{RFLP};
-      push @new_els, ['Consequence', $var{$allele}->{mol_change}] if exists $var{$allele}->{mol_change};
-
-
-      my $variation = $db->fetch(Variation => $allele);
       my @types = $variation->at('Sequence_details.Type_of_mutation');
       foreach my $type (@types) {
         if ($type eq 'Substitution' and defined $variation->Substitution) {
           my @substitution = $variation->Substitution->row;
           #print NEW " ; Substitution \"$substitution[0]/$substitution[1]\"";
-          push @new_els, ['Substitution', "$substitution[0]/$substitution[1]"];
+          push @new_els, ['Substitution', join("/", uc($substitution[0]), uc($substitution[1]))];
         }
       }
+      
+      if ($current_els[2] eq 'sequence_alteration') {
+        # general term used when set contains a mixture of substitutions and indels.
+        # Try to make it more specific here
+        my $new_term = "sequence_alteration";
+        if (scalar(@types) == 1) {
+          my ($tp) = @types;
+          
+          if ($tp eq 'Insertion' or $tp eq 'Deletion' or $tp eq 'Inversion') {
+            $new_term = lc($tp);
+          } elsif ($tp eq 'Substitution') {
+            if ($current_els[3] == $current_els[4]) {
+              # single nucleotide
+              if ($natural_variant) {
+                $new_term = 'SNP';
+              } else {
+                $new_term = 'point_mutation';
+              }
+            } else {
+              $new_term = 'substitution';
+            }
+          }
+        } elsif (scalar(@types) > 1) {
+          # more than one type, so just put complex_substitution
+          $new_term = "complex_substitution";
+        }
 
-      if ($var{$allele}->{mol_change}) {
-
+        $current_els[2] = $new_term;
+      }
+        
+      if (exists $var{$allele}->{mol_change}) {
+        push @new_els, ['Consequence', $var{$allele}->{mol_change}];
+        
         my @consequences = $variation->at('Affects.Predicted_CDS[2]');
         
         if (grep { $_ =~ /Missense|Nonsense|Readthrough/ } @consequences){
@@ -227,12 +226,18 @@ foreach my $file (@gff_files) {
       }
 
       my $join_str = ($gff_v3) ? ";" : " ; ";
-      print NEW join($join_str, @new_el_strings);
+      my $group = join($join_str, @new_el_strings); 
+      print NEW join("\t", @current_els, $group), "\n";
 
       $stat++;
-    }
 
-    print NEW "\n";
+      if ($stat % 50000 == 0) {
+        $db->close();
+        $db = Ace->connect(-path => $wormbase->autoace);
+      }
+    } else {
+      print NEW "$_";
+    }
   }
   $wormbase->run_command("mv -f $file.tmp $file", $log);
 
@@ -275,65 +280,6 @@ exit(0);
 # Subroutines
 #
 ##############################################################
-
-##########################################
-
-sub write_def_file {
-  my $def = '/tmp/overload_SNP_GFF.def';
-  open TMP,">$def" or $log->log_and_die("cant write $def: $!\n");
-  my $txt = <<END;
-Sortcolumn 1
-
-Colonne 1 
-Width 12 
-Optional 
-Visible 
-Class 
-Class Variation 
-From 1 
-Condition Species = "$sp_full_name"
- 
-Colonne 2 
-Width 12 
-Mandatory 
-Hidden 
-Show_Tag 
-From 1 
-Tag Sequence 
- 
-Colonne 3 
-Width 12 
-Mandatory 
-Visible 
-Class 
-Class Variation_name 
-From 1 
-Tag Public_name 
-
-Colonne 4
-Width 12
-Optional 
-Visible
-Class
-Class Variation_name
-Tag Other_name
- 
-Colonne 5 
-Width 12 
-Optional 
-Visible 
-Next_Tag 
-From 1 
-Tag Variation_type 
-
-
-END
-
-  print TMP $txt;
-  close TMP;
-  return $def;
-}
-
 
 sub write_mol_change_def_file {
   my $def = '/tmp/overload_SNP_GFF_mol_chng.def';
