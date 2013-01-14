@@ -7,7 +7,7 @@
 # This script promoted the OMIM disease data to the level of the gene.
 #
 # Last updated by: $Author: pad $     
-# Last updated on: $Date: 2012-09-21 08:13:07 $      
+# Last updated on: $Date: 2013-01-14 17:06:40 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -61,7 +61,7 @@ my $ace_dir         = $wormbase->autoace;     # AUTOACE DATABASE DIR
 my $logs_dir        = $wormbase->logs;        # AUTOACE LOGS
 my $tace            = $wormbase->tace;        # TACE PATH
 my $giface          = $wormbase->giface;      # GIFACE PATH
-
+my $WS_name = $wormbase->get_wormbase_version_name();
 
 
 ##########################
@@ -73,6 +73,12 @@ my $outfile = $ace_dir."/acefiles/omim_db_data.ace";
 my $count = "0";
 my $countgenes = "0";
 open (OUT, ">$outfile") or $log->log_and_die("Can't write ace file $outfile");
+
+# Additional information is now required to add the Disease Ontology terms to genes where an OMIM disease ID has 
+# been identified by human protein orthology.
+my %omim2do;
+&gatherDOdata;
+
 
 if (-e "$basedir/autoace/wquery/SCRIPT:omim.def") {
   my $def = "$basedir/autoace/wquery/SCRIPT:omim.def";
@@ -107,9 +113,25 @@ if (-e "$basedir/autoace/wquery/SCRIPT:omim.def") {
     print OUT "Gene : \"$obj\"\n";
     foreach $line (@{$acedata{$obj}{gene}}) {
       print OUT "Database OMIM gene $line\n";
+      # Now do a DOID lookup.
+      my $aceomimid = "OMIM:$line";
+      if (defined $omim2do{$aceomimid}) {
+	my $val;
+	foreach $val (@{$omim2do{$aceomimid}}){
+	  print OUT "Potential_model  $val \"Homo sapiens\" Inferred_automatically \"Inferred from Human protein orthology and OMIM::DO_term conversion ($aceomimid).\"\n";
+	}
+      }
     }
     foreach $line (@{$acedata{$obj}{disease}}) {
       print OUT "Database OMIM disease $line\n";
+      # Now do a DOID lookup.
+      my $aceomimid = "OMIM:$line";
+      if (defined $omim2do{$aceomimid}) {
+	my $val;
+	foreach $val (@{$omim2do{$aceomimid}}){
+	  print OUT "Potential_model  $val \"Homo sapiens\" Inferred_automatically \"Inferred from Human protein orthology and OMIM::DO_term conversion ($aceomimid).\"\n";
+	}
+      }
     }
   }
   $countgenes = (keys %objects);
@@ -140,6 +162,29 @@ exit(0);
 # Subroutines
 #
 ##############################################################
+
+sub gatherDOdata {
+  my $obo_file = $wormbase->primaries . "/citace/temp_unpack_dir/home/citace/Data_for_${WS_name}/Data_for_Ontology/disease_ontology.${WS_name}.obo";
+  open (OBO, "<$obo_file")  || die "Can't open OBO file: $obo_file\n\n";
+  my $doid;
+  my $omimid;
+  $log->write_to("Retrieving DO_term data, using the citace obo file...\n");
+  while (<OBO>) {
+    # id: DOID:0050631
+    if (/^id:\s+(DOID:\d+)/) {
+      $doid = $1;
+    }
+    #xref: OMIM:203100
+    if (/^xref:\s+(OMIM:\d+)/) {
+      $omimid = $1;
+      $omim2do{$omimid} ||= [];
+      push @{$omim2do{$omimid}},$doid;
+    }
+  }
+  my $countomim2do = (keys %omim2do);
+  $log->write_to("Collected $countomim2do  OMIM::DO_terms\nFinished getting DO data...");
+}
+
 
 sub usage {
   my $error = shift;
