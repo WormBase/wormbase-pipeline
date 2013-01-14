@@ -76,6 +76,16 @@ sub chromosome_names {
     my $species = lc(ref($self));
     my $prefix=$self->chromosome_prefix;
     my @ids;
+
+    # generate the FASTA file if needed
+    unless (-e $self->genome_seq){
+          my $giface = $self->giface;
+          my $command = "Find Sequence *;Genomic_canonical\ndna -f ${\$self->genome_seq}";
+          open (WRITEDB,"| $giface ${\$self->autoace} ") ||
+                 die("could not find $giface\n"); # throws only errors if it can't find the command
+          print WRITEDB $command;
+          close (WRITEDB) || die($!);
+    }
     
     open(my $genomefh, $self->genome_seq) or croak("Could not open genome sequence for reading\n"); 
     while(<$genomefh>){ 
