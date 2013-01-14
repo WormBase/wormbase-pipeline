@@ -63,12 +63,10 @@ sub TSL {
 }
 
 
-
-
 # methods to overwrite
-#
-# Default method, not usually used - pulls the names from a fasta file
-#
+
+# Default method, not usually used - pulls the names from a file
+# 
 sub chromosome_names {
   my $self=shift;
   
@@ -77,19 +75,25 @@ sub chromosome_names {
     my $prefix=$self->chromosome_prefix;
     my @ids;
 
-    # generate the FASTA file if needed
-    unless (-e $self->genome_seq){
-          my $giface = $self->giface;
-          my $command = "Find Sequence *;Genomic_canonical\ndna -f ${\$self->genome_seq}";
-          open (WRITEDB,"| $giface ${\$self->autoace} ") ||
-                 die("could not find $giface\n"); # throws only errors if it can't find the command
-          print WRITEDB $command;
-          close (WRITEDB) || die($!);
+    # generate the FASTA file if needed from the ACeDB database
+    unless (-e "${\$self->common_data}/toplevel_seqs.lst"){
+       my $db = Ace->connect(-path => $self->autoace) || die(Ace->error);
+
+       my $species = $db->fetch(Species => $self->full_name);
+       die("cannot find species ${\$self->full_name} in ${\$self->autoace}\n") unless $species;
+
+       my $assembly = $species->Assembly;
+       my @sequences = $assembly->Sequences;
+
+       open (my $outf,">${\$self->common_data}/toplevel_seqs.lst") || die($!);
+       map {print $outf "$_\n"} @sequences;
+       close $outf;
     }
     
-    open(my $genomefh, $self->genome_seq) or croak("Could not open genome sequence for reading\n"); 
+    open(my $genomefh, "${\$self->common_data}/toplevel_seqs.lst") or croak("Could not open genome sequence for reading\n"); 
     while(<$genomefh>){ 
-      push @ids,"$1" if $_=~/^>$prefix(\S+)/;
+      chomp;
+      push @ids,$_;
     }
     close($genomefh);
     $self->{'chromosome_names'} = \@ids;
@@ -97,6 +101,7 @@ sub chromosome_names {
   return @{$self->{'chromosome_names'}};
 }
 
+sub full_name { return undef}
 sub mt_name {return undef}
 sub chromosome_prefix {'PREFIX_'}
 sub pep_prefix {return undef}
@@ -177,6 +182,7 @@ sub _new {
 sub chromosome_prefix {'chr'}
 #sub chromosome_names {qw(I I_random II II_random III III_random IV IV_random V V_random X X_random Un)} # CB1
 #sub chromosome_names {qw(I I_random II II_random III III_random IV IV_random V V_random X Un)} # CB3
+
 sub chromosome_names {qw(I I_random II III III_random IV IV_random V V_random X X_random un)} # CB4
 
 sub pep_prefix {'CBP'}
@@ -2010,7 +2016,7 @@ if ( __FILE__ eq $0 ) {
 #	print "my chromosomes (custom prefix) are : ",join(' / ',$worm->get_chromosome_names('-prefix' => 'BLEEP_',-mito => 1)),"\n";
 #	print "my chromosomes (w/o Mt + default prefix) are : ",join(' / ',$worm->get_chromosome_names('-prefix' => 1,)),"\n";
 #	print "my chromosomes are : ",join(' / ',$worm->get_chromosome_names(-mito => 1)),"\n";
-	print "My TSL sequences are : ", $worm->TSL(), "\n";
+	print "My TSL sequences are : ", join(" ",$worm->TSL()), "\n";
    	print '-'x40,"\n";
     }
 
@@ -2020,6 +2026,7 @@ if ( __FILE__ eq $0 ) {
 
 
     foreach my $orgs (qw(Elegans Briggsae Remanei Brenneri Japonica Heterorhabditis Pristionchus Brugia)){
+
 	    eval{
 		    my $a = Wormbase->new( '-organism' => $orgs,-test => 1);
 		    &test($a);
