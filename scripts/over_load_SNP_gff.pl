@@ -3,7 +3,7 @@
 # This scripts decorates the variations in the GFF with all sorts of extra useful info
 #
 # Last updated by: $Author: klh $     
-# Last updated on: $Date: 2013-01-14 14:11:14 $      
+# Last updated on: $Date: 2013-01-14 14:54:41 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -138,15 +138,6 @@ foreach my $file (@gff_files) {
       my @public_names = $variation->at('Name.Public_name');
       my $natural_variant = 0;
 
-      foreach my $tp (@var_types) {
-        push @new_els, ['Status', 'Confirmed'] if $tp =~ /confirmed/i;
-        push @new_els, ['Status', 'Predicted'] if $tp =~ /predicted/i;
-        push @new_els, ['RFLP'] if $tp =~ /RFLP/;
-        if ($tp eq 'Natural_variant') {
-          $natural_variant = 1;
-        }
-      }
-
       foreach my $pb (@public_names) {
         #print NEW " ; Public_name \"$pb\"";
         push @new_els, ['Public_name', $pb];
@@ -154,6 +145,18 @@ foreach my $file (@gff_files) {
       foreach my $on (@other_names) {
         #print NEW " ; Other_name \"$on\"";
         push @new_els, ['Other_name', $on];
+      }
+
+      push @new_els, ['Strain', $variation->Strain] if $variation->Strain;
+
+      foreach my $tp (@var_types) {
+        push @new_els, ['Status', 'Confirmed'] if $tp =~ /confirmed/i;
+        push @new_els, ['Status', 'Predicted'] if $tp =~ /predicted/i;
+        push @new_els, ['RFLP'] if $tp =~ /RFLP/;
+        if ($tp eq 'Natural_variant') {
+          $natural_variant = 1;
+          push @new_els, ['Natural_variant'];
+        }
       }
 
       my @types = $variation->at('Sequence_details.Type_of_mutation');
@@ -208,9 +211,7 @@ foreach my $file (@gff_files) {
         }
       }
     
-      # 3.) the strain
-      #print NEW " ; Strain \"${\$variation->Strain}\"" if $variation->Strain;
-      push @new_els, ['Strain', $variation->Strain] if $variation->Strain;
+
 
       my @new_el_strings;
       foreach my $el (@new_els) {
