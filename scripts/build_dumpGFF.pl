@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl -w
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2012-07-13 21:55:29 $
+# Last edited on: $Date: 2013-01-14 14:12:12 $
 
 use strict;
 use lib  $ENV{'CVS_DIR'};
@@ -118,4 +118,29 @@ homol tandem elegans briggsae remanei pristionchus japonica brenneri
 homol RepeatMasker elegans briggsae remanei pristionchus japonica brenneri
 homol wublastx elegans briggsae remanei pristionchus japonica brenneri
 homol inverted elegans briggsae remanei pristionchus japonica brenneri
+variation Allele elegans
+variation CGH_allele elegans
+variation Deletion_allele elegans
+variation Deletion_and_insertion_allele elegans
+variation Insertion_allele elegans
+variation KO_consortium_allele elegans
+variation Million_mutation elegans
+variation Mos_insertion elegans
+variation NBP_knockout_allele elegans
+variation NemaGENETAG_consortium_allele elegans
+variation SNP elegans
+variation SNP_Swan elegans
+variation SNP_Wicks elegans
+variation Substitution_allele elegans
+variation Transposon_insertion elegans
+variation WGS_Andersen elegans
+variation WGS_De_Bono elegans
+variation WGS_Hawaiian_Waterston elegans
+variation WGS_Hobert elegans
+variation WGS_Jarriault elegans
+variation WGS_McGrath elegans
+variation WGS_Pasadena_Quinlan elegans
+variation WGS_Stein elegans
+variation WGS_Yanai elegans
+
 __END__
