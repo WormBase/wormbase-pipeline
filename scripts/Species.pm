@@ -464,6 +464,7 @@ sub TSL {(
 	  'Bm_SL1c' => "GGTTTAACTACCCAAGTTTGAG",
 )};
 
+sub wormpep_prefix {'BM'}
 sub upload_db_name {'brugace'};
 
 
