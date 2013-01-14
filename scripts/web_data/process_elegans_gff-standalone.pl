@@ -255,6 +255,24 @@ while (<>) {
         }
     }
     
+    elsif ( $group =~ /Variation\s+.+Consequence\s+\"(\S+)\"/) {
+      # copy variations with consequence with a new source, so that
+      # they can be displayed on their own track on the browser
+      my $cons = $1;
+      if ($cons eq 'Frameshift' or
+          $cons eq 'Missense' or
+          $cons eq 'Nonsense' or 
+          $cons eq 'Readthrough' or
+          $cons eq 'Coding_exon') {
+        my $new_source = "LOF_" . $source;
+
+        print $outfh join( "\t",
+                           $ref,   $new_source, $method, $start, $stop,
+                           $score, $strand, $phase,  $group ),
+        "\n";
+      }
+    }
+
     # fix variant fields: Variant "T" => Note "T"
     $group =~ s/(?:Variant|Insert) "(\w+)"/Note "$1"/;
 
