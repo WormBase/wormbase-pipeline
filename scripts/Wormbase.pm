@@ -1340,6 +1340,7 @@ sub establish_paths {
     $self->{'primary'}->{'remace'}  = $self->primaries .'/remace';
     $self->{'primary'}->{'japace'}  = $self->primaries .'/japace';
     $self->{'primary'}->{'brenace'} = $self->primaries .'/brenace';
+    $self->{'primary'}->{'brugace'} = $self->primaries .'/brugace';
 
     $self->{'misc_static'} = $self->{'build_data'} . "/MISC_STATIC";
     $self->{'misc_dynamic'} = $self->{'build_data'} . "/MISC_DYNAMIC";
