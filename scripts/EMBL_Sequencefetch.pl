@@ -5,7 +5,7 @@
 # Usage : EMBL_Sequencefetch.pl [-options]
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2013-01-11 14:26:52 $
+# Last edited on: $Date: 2013-01-14 17:14:10 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -36,7 +36,7 @@ GetOptions ("help"       => \$help, #
 	    "dump_only"  => \$dump_only, # only dumps the Transcript data from the primary databases, not EMBL connection is made.
 	    "nolongtext" => \$nolongtext, # don't dump longtext
 	    "input=s"    => \$input, #EMBL flat file to be parse if doing manually.
-	    "Type=s"     => \$Type, #If you know the type of sequence ie. EST, mRNA state this here (Used in conjunction with -input).
+	    "Type=s"     => \$Type, #If you know the type of sequence ie. EST, mRNA state this here (Used in conjunction with -input). If Type is '?' then the type is determined for each individual entry
 	   );
 
 $species = $organism;
@@ -199,7 +199,7 @@ elsif ($input) {
     print "ERROR: You need to specify a data Type (eg. EST mRNA) using the command line option -Type\n\nDo you want to assign one now and continue? (y or n)\n";
     my $answer=<STDIN>;
     if ($answer eq "y\n") {
-      print "Please input a data Type:";
+      print "Please input a data Type ('EST' or 'mRNA' or '?'):";
       $Type=<STDIN>;
     }
     if ($answer eq "n\n") {
@@ -539,7 +539,7 @@ sub generate_data_from_flat {
  
   #     $new_sequence = "DQ342049"; #get 1 entry DQ342049.1
   open (NEW_SEQUENCE, "<$inputfile");
-  
+ 
   while (<NEW_SEQUENCE>) {
       #my $idF2;
       #Extract ID and Sequence Version.
@@ -552,22 +552,32 @@ sub generate_data_from_flat {
        $sequencelength = "";
      }
       
-     if ((/^ID\s+(\S+)\;\s+\SV\s+(\d+)\;\s+.+mRNA.+(EST)/) or (/^ID\s+(\S+)\;\s+\SV\s+(\d+)\;\s+.+mRNA.+(STD)/)) { #mRNA or EST
-	#        if (/^ID\s+(\S+)\;\s+\SV\s+(\d+)\;\s+/) {
+# EST
+#ID   AA007700; SV 1; linear; mRNA; EST; INV; 115 BP.
+# mRNA
+#ID   AB016491; SV 1; linear; mRNA; STD; INV; 1020 BP.
+     if ((/^ID\s+(\S+)\;\s+\SV\s+(\d+)\;\s+linear\;\s+mRNA\;\s+(EST)/) or 
+	 (/^ID\s+(\S+)\;\s+\SV\s+(\d+)\;\s+linear\;\s+mRNA\;\s+(GSS)/) or 
+	 (/^ID\s+(\S+)\;\s+\SV\s+(\d+)\;\s+linear\;\s+mRNA\;\s+(STD)/) ) { # EST or mRNA
 	print OUT_LONG "\nLongText : \"$1\"\n" unless (defined $nolongtext);
 	$idF = $1;
 	$svF = $2;
 	$type = $3;
+	if ($type eq 'GSS') {$type = 'EST'}
       } elsif (/^ID\s+(\S+)\;\s+\SV\s+(\d+)\;\s+/) { #Non-EST/mRNA entries
 	print OUT_LONG "\nLongText : \"$1\"\n" unless (defined $nolongtext);
 	$idF = $1;
 	$svF = $2;
+	$type = '';
       }
       # grab species info
       if (/^OS\s+(.+)/) {
 	$subspecies = $1;
-	if (/^OS\s+Caenorhabditis\s+(\S+)/) {$species_name = $1;}
-	else {$species_name = "unknown";}
+	if (/^OS\s+Caenorhabditis\s+(\S+)/) {
+	  $species_name = $1;
+	} elsif ($subspecies eq 'Brugia malayi') {
+	  $species_name = 'brugia';
+	} else {$species_name = "unknown";}
       }
      my $DEline1;
      if (/^DE/) {
@@ -639,13 +649,27 @@ sub generate_data_from_flat {
 	# Properties depend on the molecule subdivision of embl that the sequence was fetched from.
 	
 	#ESTs
-	if (defined$Type) {
-	  if ($Type eq "EST") {
+	if (defined $Type) {
+	  if ($Type eq '?') { # determine type from ID line
+	    if (! defined $type) {die "can't determine the type from the ID line for $idF2\n";}
+	    if ($type eq 'EST') { # EST
+	      print OUT_ACE "Properties cDNA cDNA_EST\n";
+	      print OUT_ACE "Method \"EST_${species_name}\"\n";
+	    } elsif ($type eq 'STD') { # mRNA
+	      print OUT_ACE "Properties RNA mRNA\n";
+	      print OUT_ACE "Method \"NDB\"\n";
+
+	    } else {
+	      die "can't determine the type from the ID line for $idF2\n";
+	    }
+	  } elsif ($Type eq "EST") {
 	    print OUT_ACE "Properties cDNA cDNA_EST\n";
 	  }
 	  #mRNAs
-	  else {
+	  elsif ($Type eq 'mRNA') {
 	    print OUT_ACE "Properties RNA mRNA\n";
+	  } else {
+	    die "Unknown Type - should be EST or mRNA or ?\n";
 	  }
 	  # method depends on molecule type?? NDB or EST_elegans && will depend on organism.
 	  if ($Type eq "mRNA") {
