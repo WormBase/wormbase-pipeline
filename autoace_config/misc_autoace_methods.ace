@@ -677,9 +677,9 @@ Colour   LIGHTRED
 Score_by_width  
 Score_bounds     0.000000 100.000000
 Allow_misalign
-GFF_source       "Polysome"
-GFF_feature      "Polysome"
-GFF_SO "SO:0005844" // Polysome
+GFF_source       "Polysome_profiling"
+GFF_feature      "mRNA_region"
+GFF_SO "SO:0000836" // mRNA_region
 
 Method : "RNASEQ.Adult_spe-9"
 Colour   RED
