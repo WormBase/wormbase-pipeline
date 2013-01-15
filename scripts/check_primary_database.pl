@@ -7,8 +7,8 @@
 # This script checks all of the species primary sequence databases....and geneace 
 # so that gene discrepancies can be identified early in the build.
 #
-# Last updated by: $Author: klh $     
-# Last updated on: $Date: 2013-01-09 15:50:53 $      
+# Last updated by: $Author: gw3 $     
+# Last updated on: $Date: 2013-01-15 11:38:50 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -83,6 +83,8 @@ my $brenace   = $wormbase->primary('brenace');
 print "$brenace\n" if ($debug);
 my $japace    = $wormbase->primary('japace');
 print "$japace\n" if ($debug);
+my $brugace    = $wormbase->primary('brugace');
+print "$brugace\n" if ($debug);
 
 ##########################
 # MAIN BODY OF SCRIPT
@@ -97,7 +99,8 @@ if ((-e $brigace) && ($species eq 'briggsae')) {push(@xaceinstances,"$brigace");
 if ((-e $remace) && ($species eq 'remanei')) {push(@xaceinstances,"$remace");}
 if ((-e $brenace) && ($species eq 'brenneri')) {push(@xaceinstances,"$brenace");}
 if ((-e $japace) && ($species eq 'japonica')) {push(@xaceinstances,"$japace");}
-# example of running anther script
+if ((-e $brugace) && ($species eq 'brugia')) {push(@xaceinstances,"$brugace");}
+# example of running another script
 
 foreach $xaceinstances (@xaceinstances) {
   print "running camace_nameDB_comm.pl -database $xaceinstances\n";
