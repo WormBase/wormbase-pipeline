@@ -12,8 +12,8 @@
 # the Cold Spring Harbor Laboratory database (cshace)
 # the Caltech database (citace)
 #
-# Last updated by: $Author: klh $
-# Last updated on: $Date: 2011-04-18 08:34:23 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2013-01-15 11:09:09 $
 
 
 #################################################################################
@@ -35,7 +35,7 @@ use Storable;
 ##############################
 
 my $help;
-my ($brigace, $citace, $cshace, $stlace,$brenneri,$japonica,$remanei);
+my ($brigace, $citace, $cshace, $stlace,$brenneri,$japonica,$remanei,$brugia);
 my ($debug,$test,$database,$basedir);
 my $store;
 
@@ -52,6 +52,8 @@ GetOptions (
 	    'brenace=s'  => \$brenneri,
 	    'japonica=s' => \$japonica,
 	    'japace=s'   => \$japonica,
+	    'brugia=s'   => \$brugia,
+	    'brugace=s'  => \$brugia,
             "test"       => \$test,
 	    "debug:s"    => \$debug,
 	    "database|basedir:s"  => \$basedir,
@@ -87,6 +89,7 @@ my $log = Log_files->make_build_log($wormbase);
 &unpack_stuff('remace',$remanei)   if ($remanei);
 &unpack_stuff('brenace',$brenneri) if ($brenneri);
 &unpack_stuff("japace",$japonica)  if ($japonica);
+&unpack_stuff("brugace",$japonica) if ($brugia);
 
 
 sub unpack_stuff {
@@ -144,8 +147,14 @@ sub unpack_stuff {
   if ($database eq "japace"){
     $ftp     = "$ftp_dir/stl";
     $dbdir   = "$primaries/japace";
-    $logfile = "$logs/unpack_japgace.$rundate.$$";
+    $logfile = "$logs/unpack_japace.$rundate.$$";
     $dbname  = "japace";
+  }
+  if ($database eq "brugace"){
+    $ftp     = "$ftp_dir/stl";
+    $dbdir   = "$primaries/brugace";
+    $logfile = "$logs/unpack_brugace.$rundate.$$";
+    $dbname  = "brugace";
   }
 
   ##############################
