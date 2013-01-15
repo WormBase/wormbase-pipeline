@@ -455,7 +455,7 @@ sub full_name {
 	else { return'Brugia malayi'
 	};
 }
-sub chromosome_prefix {'Bmal_supercontig'}
+sub chromosome_prefix {''}
 sub seq_name_regex{qr/^Bm\d+/};
 sub pep_prefix {'BM'}
 sub pepdir_prefix{'brug'};
