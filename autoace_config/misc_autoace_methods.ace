@@ -385,7 +385,7 @@ Colour ORANGE
 Show_text
 Strand_sensitive
 GFF_source "Allele"
-GFF_feature "insertion"
+GFF_feature "insertion_site"
 GFF_SO "SO:0000366" // insertion_site
 Remark "Simple insertion alleles, which are not due to transposon insertions.  Allele object should (ideally) capture nature of inserted sequence"
 
@@ -488,8 +488,8 @@ Strand_sensitive
 Width	 1.100000
 Show_text	
 GFF_source	 "NemaGENETAG_consortium"
-GFF_feature	 "mobile_element_insertion"
-GFF_SO	 "SO:0001837"
+GFF_feature	 "transposable_element_insertion_site"
+GFF_SO	 "SO:0000368" // transposable_element_insertion_site
 
 Method : "SNP" 
 Width 1.1
