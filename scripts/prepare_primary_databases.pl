@@ -2,8 +2,8 @@
 #
 # prepare_primary_databases.pl
 #
-# Last edited by: $Author: klh $
-# Last edited on: $Date: 2012-07-05 11:53:25 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2013-01-15 10:53:32 $
 
 use strict;
 my $scriptdir = $ENV{'CVS_DIR'};
@@ -31,6 +31,8 @@ my %search_places = (
                      remanei  => [['remace', 'stl', 'remace*']], 
 
                      japonica  => [['japace', 'stl', 'japace*']], 
+
+		     brugia    => [['brugace', 'stl', 'brugace*']],
 
 );
 
