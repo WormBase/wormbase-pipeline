@@ -13,7 +13,7 @@
 # the Caltech database (citace)
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2013-01-15 11:09:09 $
+# Last updated on: $Date: 2013-01-15 11:18:10 $
 
 
 #################################################################################
@@ -89,7 +89,7 @@ my $log = Log_files->make_build_log($wormbase);
 &unpack_stuff('remace',$remanei)   if ($remanei);
 &unpack_stuff('brenace',$brenneri) if ($brenneri);
 &unpack_stuff("japace",$japonica)  if ($japonica);
-&unpack_stuff("brugace",$japonica) if ($brugia);
+&unpack_stuff("brugace",$brugia)   if ($brugia);
 
 
 sub unpack_stuff {
