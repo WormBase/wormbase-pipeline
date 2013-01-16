@@ -9,7 +9,7 @@ use Storable;
 use Ace;
 use File::Copy;
 
-my ($help, $debug, $test, $verbose, $store, $wormbase, $species);
+my ($help, $debug, $test, $verbose, $store, $wormbase, $species, $gff3);
 my( $dbpath);
 GetOptions (
             "help"      => \$help,
@@ -17,6 +17,7 @@ GetOptions (
 	    "test"	=> \$test,
 	    "store:s"	=> \$store,
 	    "species:s" => \$species,
+            "gff3"      => \$gff3,
 	    );
 
 if ( $store ) {
@@ -97,20 +98,34 @@ foreach my $chroms (@chroms) {
     my @f = split(/\t/, $line);
 
     if (defined $f[8] && $f[1] eq 'Allele') {
-      my ($allele) = $f[8] =~ /Variation\s+\"(\S+)\"/;
-      #if (!defined $allele) {die "no allele ID found Line: $line";}
-      $f[8] .= " ; Interpolated_map_position \"$variation{$allele}\"" if (exists $variation{$allele});
-	
+      if ($gff3) {
+        my ($first) = split(/;/, $f[8]);
+        my ($allele) = $first =~ /ID:Variation:(\S+)/;
+        $f[8] .= ";Interpolated_map_position=$variation{$allele}" if (exists $variation{$allele});
+      } else {
+        my ($allele) = $f[8] =~ /Variation\s+\"(\S+)\"/;
+        #if (!defined $allele) {die "no allele ID found Line: $line";}
+        $f[8] .= " ; Interpolated_map_position \"$variation{$allele}\"" if (exists $variation{$allele});
+      }	
+      
       print NEW join("\t",@f) . "\n";
       #print join("\t",@f) . "\n";
 
     } elsif ($f[1] eq 'gene' && $f[2] eq 'gene') {
-      my ($gene) = $f[8] =~ /Gene\s+\"(\S+)\"/;
-      #if (!defined $gene) {die "no gene ID found Line: $line";}
-      $f[8] .= " ; Interpolated_map_position \"$gene{$gene}\""if (exists $gene{$gene});
-      $f[8] .= " ; Position \"$gene_exact{$gene}\""if (exists $gene_exact{$gene});
-      $f[8] .= " ; Locus \"$locus{$gene}\""if (exists $locus{$gene});
-	
+      if ($gff3) {
+        my ($first) = split(/;/, $f[8]);
+        my ($gene) = $first =~ /ID:Gene:(\S+)/;
+        $f[8] .= ";Interpolated_map_position=$gene{$gene}"if (exists $gene{$gene});
+        $f[8] .= ";Position=$gene_exact{$gene}"if (exists $gene_exact{$gene});
+        $f[8] .= ";Locus=$locus{$gene}"if (exists $locus{$gene});
+      } else {
+        my ($gene) = $f[8] =~ /Gene\s+\"(\S+)\"/;
+        #if (!defined $gene) {die "no gene ID found Line: $line";}
+        $f[8] .= " ; Interpolated_map_position \"$gene{$gene}\""if (exists $gene{$gene});
+        $f[8] .= " ; Position \"$gene_exact{$gene}\""if (exists $gene_exact{$gene});
+        $f[8] .= " ; Locus \"$locus{$gene}\""if (exists $locus{$gene});
+      }	
+
       print NEW join("\t",@f) . "\n";
       #print join("\t",@f) . "\n";
 
