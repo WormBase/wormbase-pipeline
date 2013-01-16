@@ -15,7 +15,7 @@
 #      COMPANY:
 #      VERSION:  1.0
 #      CREATED:  13/02/06 09:37:00 GMT
-#     REVISION:  $Revision: 1.24 $
+#     REVISION:  $Revision: 1.25 $
 # includes code by: $Author: klh $
 #===============================================================================
 
@@ -131,12 +131,11 @@ foreach my $chrom (@chromosomes) {
             my ( $chr, $source, $feature) = ( $fields[0], $fields[1], $fields[2]);
 
             my ($id, $ctag);
-            if ($gff3) {
-              
-              ($ctag, $id) = $fields[8] =~ /^(\S+)\s+(\S+)/;
-            } else {
+            if ($gff3) {              
               my ($first) = split(/;/, $fields[8]);
-              ($ctag, $id) = split(/\=/, $first);
+              ($ctag, $id) = $first =~ /^ID:(\S+):(\S+)/;
+            } else {
+              ($ctag, $id) = $fields[8] =~ /^(\S+)\s+(\S+)/;
             }
 
             my $class;
