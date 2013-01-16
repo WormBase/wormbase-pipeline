@@ -3,7 +3,7 @@
 # This scripts decorates the variations in the GFF with all sorts of extra useful info
 #
 # Last updated by: $Author: klh $     
-# Last updated on: $Date: 2013-01-14 14:54:41 $      
+# Last updated on: $Date: 2013-01-16 09:49:57 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -177,6 +177,7 @@ foreach my $file (@gff_files) {
           
           if ($tp eq 'Insertion' or $tp eq 'Deletion' or $tp eq 'Inversion') {
             $new_term = lc($tp);
+            $new_term .= "_site" if $new_term eq 'insertion';
           } elsif ($tp eq 'Substitution') {
             if ($current_els[3] == $current_els[4]) {
               # single nucleotide
