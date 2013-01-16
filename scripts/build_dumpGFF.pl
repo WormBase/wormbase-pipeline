@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl -w
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2013-01-14 14:12:12 $
+# Last edited on: $Date: 2013-01-16 15:07:46 $
 
 use strict;
 use lib  $ENV{'CVS_DIR'};
@@ -9,7 +9,7 @@ use Storable;
 use Getopt::Long;
 use Log_files;
 
-our ($help, $debug, $test, $stage);
+our ($help, $debug, $test, $stage, $gff3, $giface, $cmd, $wormbase, $dump_dir);
 my $store;
 my @chromosomes;
 
@@ -19,9 +19,12 @@ GetOptions ("help"         => \$help,
 	    "store:s"      => \$store,
 	    "stage:s"      => \$stage,
 	    "chromosomes:s"=> \@chromosomes,
+            "gff3"         => \$gff3,
+            "dumpdir:s"    => \$dump_dir,
+            "giface:s"     => \$giface,
 	   );
 
-my $wormbase;
+
 if( $store ) {
   $wormbase = retrieve( $store ) or croak("cant restore wormbase from $store\n");
 }
@@ -31,12 +34,16 @@ else {
 			   );
 }
 
+$dump_dir = $wormbase->gff if not defined $dump_dir;
+
 my $log = Log_files->make_build_log($wormbase);
 $log->log_and_die("stage not specified\n") unless defined $stage;
 
-my $cmd;
+
 if ( $stage eq 'final' ){
-  $cmd = "dump_gff_batch.pl -database ".$wormbase->autoace." -dump_dir ".$wormbase->gff;
+  $cmd = "dump_gff_batch.pl -database ".$wormbase->autoace." -dump_dir $dump_dir";
+  $cmd .= " -gff3" if $gff3;
+  $cmd .= " -giface $giface" if $giface;
   $cmd .= " -chromosomes ". join(",",@chromosomes) if @chromosomes;
 }
 else {

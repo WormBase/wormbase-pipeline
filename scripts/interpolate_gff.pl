@@ -11,12 +11,12 @@
 # REQUIREMENTS:  ---
 #         BUGS:  ---
 #        NOTES:  ---
-#       AUTHOR:  $Author: mh6 $
+#       AUTHOR:  $Author: klh $
 #      COMPANY:
 #      VERSION:  1.0
 #      CREATED:  13/02/06 09:37:00 GMT
-#     REVISION:  $Revision: 1.23 $
-# includes code by: $Author: mh6 $
+#     REVISION:  $Revision: 1.24 $
+# includes code by: $Author: klh $
 #===============================================================================
 
 # BACS / SNPS / GENEs
@@ -34,7 +34,7 @@ my $errors = 0;    # store globally errors
 my $args = "@ARGV";    #to store the argv
 my (
     $store,  $test, $prep, $debug,    $alleles, $genes,
-    $clones, $all,  $help, $wormbase, $chromosome
+    $clones, $all,  $help, $wormbase, $chromosome, $gff3,
 );                     #options
 
 GetOptions(
@@ -47,7 +47,8 @@ GetOptions(
     'all'          => \$all,
     'store:s'      => \$store,
     'chromosome:s' => \$chromosome,
-    'prepare'      => \$prep
+    'prepare'      => \$prep,
+  'gff3'           => \$gff3,
 ) || die `perldoc $0`;
 
 die `perldoc $0` if $help;
@@ -125,10 +126,18 @@ foreach my $chrom (@chromosomes) {
         while (<$fh>) {
             next if /\#/;
             s/\"//g;
-            my @fields = split;
+            my @fields = split(/\t+/, $_);
 
-            # dumb assumption that f[9] is always the id
-            my ( $chr, $source, $feature, $id, $ctag ) = ( $fields[0], $fields[1], $fields[2], $fields[9], $fields[8] );
+            my ( $chr, $source, $feature) = ( $fields[0], $fields[1], $fields[2]);
+
+            my ($id, $ctag);
+            if ($gff3) {
+              
+              ($ctag, $id) = $fields[8] =~ /^(\S+)\s+(\S+)/;
+            } else {
+              my ($first) = split(/;/, $fields[8]);
+              ($ctag, $id) = split(/\=/, $first);
+            }
 
             my $class;
             if ( $source eq 'Genomic_canonical' && $feature eq 'region' ) {
