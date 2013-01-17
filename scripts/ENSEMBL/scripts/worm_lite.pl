@@ -265,47 +265,35 @@ sub load_genes {
 
 package WormBase;
 
-# redefine subroutine to use different tags
+# redefine subroutine to interpret data simply
+# - only consider CDS of each gene
+# - create distinct "gene" for each isoform
 sub process_file {
     my ($fh) = @_;
     my ( %genes, $transcript, %five_prime, %three_prime, %parent_seqs );
 
   LOOP: while (<$fh>) {
         chomp;
+        my $element = $_;
+        
+        next LOOP if /^\#/;
 
         my ( $chr, $status, $type, $start, $end, $score, $strand, $frame, $sequence, $gene ) = split;
-        my $element = $_;
 
-        next LOOP if ( /^#/ || $chr =~ /sequence-region/ || ( !$status && !$type ) );
         my $line = $status . " " . $type;
-        $gene =~ s/\"//g if $gene;
-        if ( ( $line eq 'Coding_transcript five_prime_UTR' ) or ( $line eq 'Coding_transcript three_prime_UTR' ) ) {
-            $transcript = $gene;
+        next LOOP if $line ne $gff_types;
 
-            #remove transcript-specific part: Y105E8B.1a.2
-            $gene =~ s/(\.\w+)\.\d+$/$1/ unless $species eq 'brugia'; # for that if i will go to hell :-(
-            my $position = $type;
-            if ( $position =~ /^five/ ) {
-                $five_prime{$gene} = {} if ( !$five_prime{$gene} );
-                $five_prime{$gene}{$transcript} = [] if ( !$five_prime{$gene}{$transcript} );
-                push( @{ $five_prime{$gene}{$transcript} }, $element );
-            }
-            elsif ( $position =~ /^three/ ) {
-                $three_prime{$gene} = {} if ( !$three_prime{$gene} );
-                $three_prime{$gene}{$transcript} = [] if ( !$three_prime{$gene}{$transcript} );
-                push( @{ $three_prime{$gene}{$transcript} }, $element );
-            }
-            next LOOP;
-        }
-        elsif ( $line ne $gff_types ) { next LOOP }    # <= here goes the change needs tp become $line eq "$bla $blub"
+        $gene =~ s/\"//g if $gene;
 
         if (not exists $genes{$gene}) {
           $genes{$gene} = [];
           $parent_seqs{$gene} = $chr;
+          $five_prime{$gene}{$gene} = [];
+          $three_prime{$gene}{$gene} = [];
         }
         push( @{ $genes{$gene} }, $element );
     }
-    print STDERR "Have " . keys(%genes) . " genes (CDS), " . keys(%five_prime) . " have 5' UTR and " . keys(%three_prime) . " have 3' UTR information\n";
+    print STDERR "Have " . keys(%genes) . " genes (CDS)\n";
     return \%genes, \%five_prime, \%three_prime, \%parent_seqs;
 }
 
