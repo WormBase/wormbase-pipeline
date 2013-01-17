@@ -44,14 +44,16 @@ foreach my $gene(@genes){
 	foreach my $trans (@{$gene->get_all_Transcripts()}) {
 		my $protein=$trans->translation();
 		my $transcriptId=$trans->stable_id();
-                my $proteinId=$protein->stable_id();
+                my $proteinId=$protein?$protein->stable_id():$transcriptId;
 		my $geneID=$gene->stable_id();
 		my $seq;
 		if($dna){
+                        next unless $trans->biotype eq 'protein_coding';
 			$seq=$trans->translateable_seq()
 		}elsif($transcript_only){
 			$seq=$trans->seq->seq()
 		}else{
+                        next unless $trans->biotype eq 'protein_coding';
 			$seq=$protein->seq()
 		}
 		printf $fh ">$proteinId\t$transcriptId\t$geneId\n%s\n",reformat($seq);
