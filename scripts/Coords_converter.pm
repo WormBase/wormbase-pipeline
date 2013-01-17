@@ -451,7 +451,7 @@ sub invoke {
     if ( $refresh ) {
       print "refreshing coordinates for $database\n";
       my $tace = $wormbase->tace;
-      my $command = "find Species Brugia malayi\nFollow Assembly\nFollow Sequences\nshow -a DNA -f ${$SL_coords_file}\n"; 
+      my $command = "find Species Brugia malayi\nFollow Assembly\nFollow Sequences\nshow -a DNA -f ${SL_coords_file}\n"; 
  
       open (ACE,"| $tace $database") or croak "cant open $database\n";
       print ACE $command ;
