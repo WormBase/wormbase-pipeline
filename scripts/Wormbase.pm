@@ -916,6 +916,15 @@ sub load_to_database {
     return 1;
   }
 
+  unless ( -r $file) {
+    if ( $log) {
+      $log->error;
+      $log->write_to("Couldn't read file: $file\n");
+    }
+    print STDERR "Couldn't read file: $file\n";
+    return 1;
+  }
+
   # get the base filename without the path
   my $basename = $file;
   $basename =~ s/.*\///;
