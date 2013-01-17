@@ -7,7 +7,7 @@
 # This is a example of a good script template
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2012-01-23 11:44:08 $
+# Last updated on: $Date: 2013-01-17 09:33:47 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -21,7 +21,7 @@ use Storable;
 # variables and command-line options #
 ######################################
 
-my ( $help, $debug, $test, $verbose, $store, $wormbase, $species );
+my ( $help, $debug, $test, $verbose, $store, $wormbase, $species, $gff3, $infile, $outfile );
 
 GetOptions(
     'help'      => \$help,
@@ -30,6 +30,9 @@ GetOptions(
     'verbose'   => \$verbose,
     'store:s'   => \$store,
     'species:s' => \$species,
+    'infile:s'  => \$infile,
+    'outfile:s' => \$outfile,
+    'gff3'      => \$gff3,
 );
 
 if ($store) {
@@ -51,6 +54,11 @@ print "In test mode\n" if ( $verbose && $test );
 
 # establish log file.
 my $log = Log_files->make_build_log($wormbase);
+
+if ($infile and not $outfile or
+    $outfile and not $infile) {
+  $log->log_and_die("When using -infile or -outfile, you must use both\n");
+}
 
 #################################
 # Set up some useful paths      #
@@ -146,121 +154,91 @@ foreach my $owb (values %accessors) {
 ##########################
 # MAIN BODY OF SCRIPT
 ##########################
-my $count;
+my (@gff_files, $count, $gffout_fh, $gffin_fh, $gff_tmp_file);
 
 # loop through the chromosomes
-my @chromosomes = $wormbase->get_chromosome_names( -mito => 1, -prefix => 1 );
-foreach my $chromosome (@chromosomes) {
-    print "Reading $chromosome\n" if ($verbose);
+if ($infile) {
+  @gff_files = ($infile);
+  open($gffout_fh, ">$outfile") or $log->log_and_die("Could not open $outfile for writing\n");
+} elsif ($wormbase->assembly_type eq 'contig') {
+  @gff_files = $wormbase->GFF_file_name;
+} else {
+  my @chromosomes = $wormbase->get_chromosome_names( -mito => 1, -prefix => 1 );
+  @gff_files = map { $wormbase->GFF_file_name($_) } @chromosomes;
+}
 
-    # loop through the GFF file
-    my @f;
+foreach my $GFF_file_name (@gff_files) {
+  print "Reading $GFF_file_name\n" if ($verbose);
+  
+  open($gffin_fh, "<$GFF_file_name") or $log->log_and_die("Can't open $GFF_file_name\n"); 
+  if (not $outfile) {
+    $gff_tmp_file = "${GFF_file_name}.new";
+    open($gffout_fh, ">$gff_tmp_file") or $log->log_and_die("Failed to open gff file $gff_tmp_file\n");
+  }  
 
-    # filename munging
-    my $GFF_file_name = $wormbase->GFF_file_name($chromosome, undef);
-    my $new_file = "${GFF_file_name}.new";
-
-    # We don't use the $wormbase->open_GFF_file method when dealing
-    # with species with genomes in many contigs because it is
-    # inefficient to read in the same file thousands of times when we
-    # can process all of the lines in one read-through as we don't
-    # care which chromosome the BLAT match is to.
-    # 
-    # my $gffinf = $wormbase->open_GFF_file($chromosome, undef, $log); 
-
-    open (GFFINF, "<$GFF_file_name") || die "Can't open $GFF_file_name\n"; 
-    open(OUT, ">$new_file") || die "Failed to open gff file $new_file\n";
-
-    while ( my $line = <GFFINF> ) {
-        chomp $line;
-        if ( $line =~ /^#/ || $line !~ /\S/ ) {
-            print OUT "$line\n";
-            next;
-        }
-        @f = split /\t/, $line;
-        my $id;
-
-	# It is possible that this script is being run on the same
-	# input file multiple times (e.g. when sorting out problems)
-	# in which case we do not want to add 'Species' multiple
-	# times to the same line.
-	if (defined $f[8] && $f[8] !~ /;\sSpecies/) {
-
-
-	  # is this a BLAT_WASHU or BLAT_NEMBASE or BLAT_NEMATODE or BLAT_Caen_EST_* line?
-	  if ( $f[1] eq 'BLAT_WASHU' ) {
-
-				# get the ID name
-            ($id) = ( $f[8] =~ /Target \"Sequence:(\S+)\"/ );
-
-            if ( exists $species{'BLAT_WASHU'}->{$id} ) {
-	      $line = $line . " ; Species \"" . $species{'BLAT_WASHU'}->{$id} . "\"";
-	      $count++;
-	      print "$line\n" if ($verbose);
-            }
-	  }
-	  elsif ( $f[1] eq 'BLAT_NEMBASE' ) {
-
-				# get the ID name
-            ($id) = ( $f[8] =~ /Target \"Sequence:(\S+)\"/ );
-
-            if ( exists $species{'BLAT_NEMBASE'}->{$id} ) { # 
-	      $line = $line . " ; Species \"" . $species{'BLAT_NEMBASE'}->{$id} . "\"";
-	      $count++;
-	      print "$line\n" if ($verbose);
-            }
-	  }
-	  elsif ( $f[1] eq 'BLAT_NEMATODE' ) {
-
-				# get the ID name
-            ($id) = ( $f[8] =~ /Target \"Sequence:(\S+)\"/ );
-
-            if ( exists $species{'BLAT_NEMATODE'}->{$id} ) {
-	      $line = $line . " ; Species \"" . $species{'BLAT_NEMATODE'}->{$id} . "\"";
-	      $count++;
-	      print "$line\n" if ($verbose);
-            }
-            else {
-	      #print "BLAT_NEMATODE species doesn't exist for $id\n";
-            }
-	  }
-	  elsif ( $f[1] =~ /BLAT_Caen_EST_/ ){    # BLAT_Caen_EST_BEST or BLAT_Caen_EST_OTHER
-				# get the ID name
-            ($id) = ( $f[8] =~ /Target \"Sequence:(\S+)\"/ );
-
-            if ( exists $species{'BLAT_NEMATODE'}->{$id} ) # 
-            { # the {'BLAT_NEMATODE'} hash holds the EMBL data which BLAT_Caen_EST_* uses as well
-	      $line = $line . " ; Species \"" . $species{'BLAT_NEMATODE'}->{$id} . "\"";
-	      $count++;
-	      print "$line\n" if ($verbose);
-            }
-            else {
-	      print "BLAT_Caen_EST species doesn't exist for $id\n";
-            }
-	  }
-	}
-
-        # write out the line
-        print OUT "$line\n";
-
-        # end of GFF loop
+  while ( my $line = <$gffin_fh> ) {
+    chomp $line;
+    if ( $line =~ /^#/ || $line !~ /\S/ ) {
+      print $gffout_fh "$line\n";
+      next;
     }
-
-    # close files
-    close(GFFINF);
-    close(OUT);
-
+    my @f = split /\t/, $line;
+    
+    # It is possible that this script is being run on the same
+    # input file multiple times (e.g. when sorting out problems)
+    # in which case we do not want to add 'Species' multiple
+    # times to the same line.
+    if (defined $f[1] && $f[8] !~ /;\sSpecies/ && $f[8] !~ /Species\=/) {
+      
+      if (grep { $f[1] =~ /^$_/ } ('BLAT_WASHU', 'BLAT_NEMBASE', 'BLAT_NEMATODE', 'BLAT_Caen_EST_')) {
+        my $id;
+        
+        if ($gff3) {
+          ($id) = $f[8] =~ /Target\=(\S+)/;
+        } else {
+          ($id) = ( $f[8] =~ /Target \"Sequence:(\S+)\"/ );
+        }
+        
+        my $hkey = $f[1];
+        # the {'BLAT_NEMATODE'} hash holds the EMBL data which BLAT_Caen_EST_* uses as well
+        if ($hkey =~ /BLAT_Caen_/) {
+          $hkey = "BLAT_NEMATODE";
+        }
+        
+        if ( exists $species{$hkey}->{$id} ) {
+          my $suffix;
+          if ($gff3) { 
+            $suffix = ";Species=" . $species{$hkey}->{$id};
+          } else {
+            $suffix = " ; Species \"" . $species{$hkey}->{$id} . "\"";
+          }           
+ 
+          $line = $line . $suffix;
+          $count++;
+          print "$line\n" if ($verbose);
+          
+        } else {
+          print "Cannot find species info for $id\n";
+        }
+      }
+    }
+    
+    # write out the line
+    print $gffout_fh "$line\n";
+    
+    # end of GFF loop
+  }
+  
+  if (not $outfile) {
+    close($gffout_fh);
     # copy new GFF files over
-    system("mv -f $new_file $GFF_file_name");
+    system("mv -f $gff_tmp_file $GFF_file_name"); 
+  }
+}
 
-    # If we are dealing with a species with genomes in many contigs
-    # and all the GFF data in one file, it is inefficient to read in
-    # the same file thousands of times when we have processed all of
-    # the lines in the first read-through as we don't care or test
-    # which chromosome the BLAT match is to.
-    #if (! $wormbase->separate_chromosomes) {last}
-    last if $wormbase->assembly_type eq 'contig';
-}    # chromosome loop
+if ($outfile and $gffout_fh) {
+  close($gffout_fh);
+}
 
 # Close log files and exit
 $log->write_to("\n\nStatistics\n");
@@ -270,7 +248,7 @@ $log->write_to("Changed $count lines\n");
 ##################
 # Check the files
 ##################
-$wormbase->check_files($log); 
+$wormbase->check_files($log) unless $infile; 
 
 $log->mail();
 print "Finished.\n" if ($verbose);
@@ -285,14 +263,14 @@ exit(0);
 ##########################################
 
 sub usage {
-    my $error = shift;
-
-    if ( $error eq "Help" ) {
-
-        # Normal help menu
-        system( 'perldoc', $0 );
-        exit(0);
-    }
+  my $error = shift;
+  
+  if ( $error eq "Help" ) {
+    
+    # Normal help menu
+    system( 'perldoc', $0 );
+    exit(0);
+  }
 }
 
 ##########################################
