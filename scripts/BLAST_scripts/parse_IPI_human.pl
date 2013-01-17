@@ -1,7 +1,7 @@
 #!/usr/local/ensembl/bin/perl -w                  
 #
 # Last updated by: $Author: klh $     
-# Last updated on: $Date: 2012-11-05 17:20:20 $      
+# Last updated on: $Date: 2013-01-17 14:15:33 $      
 
 use lib $ENV{'CVS_DIR'};
 use strict;
@@ -69,7 +69,7 @@ open (FASTA, ">$fasta") or die "cant write $fasta\n";
 # UniProt/Swiss-Prot:O95180-2|UniProt/TrEMBL:Q9NYY7;Q9NYY6
 
 # delete any lefovers 
-map {unlink "/tmp/$_"} qw(acc2db.dbm desc.dbm peptide.dbm detebase.dm);
+map {unlink "/tmp/$_"} qw(acc2db.dbm desc.dbm peptide.dbm databases.dm);
 
 # remove previous versions of the databases
 tie my %ACC2DB, 'GDBM_File',"/tmp/acc2db.dbm", &GDBM_WRCREAT,0777 or die "cannot open /tmp/acc2db.dbm\n";
