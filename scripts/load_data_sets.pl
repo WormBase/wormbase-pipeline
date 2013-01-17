@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl -w
-# Last updated by: $Author: mh6 $     
-# Last updated on: $Date: 2012-11-21 09:51:37 $      
+# Last updated by: $Author: gw3 $     
+# Last updated on: $Date: 2013-01-17 10:34:57 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -95,7 +95,7 @@ sub parse_misc_elegans_files {
 		      );
 
   $log->write_to("Loading files to ".$wormbase->autoace."\n==================================\n");
-  foreach my $file (keys %files_to_load) {
+  foreach my $file (sort keys %files_to_load) {
     $log->write_to("\tloading $file -tsuser $files_to_load{$file}\n");
     $wormbase->load_to_database($wormbase->autoace,$file, $files_to_load{$file},$log);
   }
@@ -108,7 +108,7 @@ sub parse_nematode_seqs {
 		    "washu_nematode_contigs.ace"     => "washu_nem_ace"         ,
 		   );
   $log->write_to("loading nematode sequences to $species database\n");
-  foreach my $file ( keys %files2load ) {
+  foreach my $file ( sort keys %files2load ) {
     my $tsuser = $files2load{"$file"};
     $log->write_to("\tloading $file -tsuser -$tsuser\n");
     $wormbase->load_to_database($wormbase->autoace,$wormbase->misc_static."/$file",$tsuser, $log);
