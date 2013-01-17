@@ -112,19 +112,15 @@ foreach my $slice(@slices){
       print "Ortholog_other ENSEMBL:$k  From_analysis EnsEMBL-Compara\n";
     }
     print "\n";
-    
+
     while (my ($k,$v)=each(%homol_ids)){
       # put the OMIM orthologs into another hash based on the MIM_GENE xref
       print "Protein : ENSEMBL:$k\n";
       print "Species \"${\$v->taxon->name}\"\n";
       print "DB_info Database EnsEMBL ENSEMBL_proteinID $k\n";
-      if ($v->taxon_id == 9606){ # meaning if human
-        # uses an undocumented function of get_all_DBEntries, so lets hope it stays
-        map {printf "DB_info Database OMIM disease %s\n",$_->primary_id} @{$v->get_Gene->get_all_DBLinks('MIM_MORBID')};
-        map {printf "DB_info Database OMIM gene %s\n",$_->primary_id} @{$v->get_Gene->get_all_DBLinks('MIM_GENE')};
-      }
       print "\n";
     }
+
   }	
 }
 
