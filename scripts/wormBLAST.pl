@@ -4,8 +4,8 @@
 #
 # written by Anthony Rogers
 #
-# Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2012-11-05 15:29:05 $
+# Last edited by: $Author: klh $
+# Last edited on: $Date: 2013-01-17 16:56:23 $
 #
 # it depends on:
 #    wormpep + history
@@ -187,68 +187,72 @@ if ($prep_dump && !$test) {
 
 ##################### -cleanup ##################################
 if ($cleanup && !$test) {
-    $log->write_to("clearing up files generated in this build\n");
-
-    # files to move to ~wormpub/last-build/
-    #   /lustre/scratch109/ensembl/wormpipe/dumps/
-    #    ipi_hits_list
-    #    trembllist.txt
-    #    swisslist.txt
-    #    *best_blastp_hits
-
-    #  ~wormpipe/Elegans
-    #    WS99.agp
-    #    cds99.gff
-    #    cos99.gff
-    #    ids.txt
-
-    # to delete
-    #   /lustre/scratch109/ensembl/wormpipe/dumps/
-    #      *.ace
-    #      *.log
-    my $clear_dump = "/lustre/scratch109/ensembl/wormpipe/dumps";
-
-    $log->write_to("moving blastp acefiles to last_build . . . \n");
-    system("mv -f $clear_dump/*blastp.ace $wormpipe_dir/last_build/") && warn "cant move blastp.ace to last_build";
-
-    $log->write_to("Removing . . . \n\t$clear_dump/*.ace\n");
-    system("rm -f $clear_dump/*.ace $clear_dump/*.log") && warn "cant remove ace and log files from $clear_dump";
-
-    $log->write_to("moving blastp acefiles back from last_build . . . \n");
-    system("mv -f $wormpipe_dir/last_build/*blastp.ace $clear_dump/") && warn "cant move blastp.ace to last_build";
-
-    $log->write_to ("Removing files currently in $wormpipe_dir/last_build/n");
-    system(" rm -f $wormpipe_dir/last_build/*.gff $wormpipe_dir/last_build/*.agp");
-
-    $log->write_to ("\nmoving the following to ~wormpipe/last_build . . \n\t$clear_dump/*.txt\n");
-    system("mv -f $clear_dump/*.txt $wormpipe_dir/last_build/") && warn "cant move $clear_dump/*.txt\n";
-
-    $log->write_to ("\t$clear_dump/ipi*\n");
-    system("mv -f $clear_dump/ipi* $wormpipe_dir/last_build/") && warn "cant move $clear_dump/ipi*\n";
-
-    $log->write_to ("\t$clear_dump/*best_blastp\n");
-    system("mv -f $clear_dump/*best_blastp* $wormpipe_dir/last_build/") && warn "cant move $clear_dump/*                                         best_blast*\n";
-
-    $log->write_to ("\t$wormpipe_dir/Elegans/*\n");
-    system("mv -f $wormpipe_dir/Elegans/* $wormpipe_dir/last_build/") && warn "cant move $wormpipe_dir/Elegans/*\n";
-
-    $log->write_to ("\nRemoving the $wormpipe_dir/DUMP_PREP_RUN lock file\n");
-    system("rm -f $wormpipe_dir/DUMP_PREP_RUN") && warn "cant remove $wormpipe_dir/DUMP_PREP_RUN\n";
-
-    $log->write_to("\nRemoving farm output and error files from /lustre/scratch109/ensembl/wormpipe/*\n") if $debug;
-    my $scratch_dir = $wormpipe_dir;
-    # Michael wants ensembl-brugia left as it is for now as he uses it for testing
-    my @species_dir = qw( ensembl-pristionchus ensembl-japonica ensembl-brenneri ensembl-briggsae ensembl-elegans ensembl-remanei ); 
-    my @directories = qw( 0 1 2 3 4 5 6 7 8 9 );
-    
-    foreach my $species_dir (@species_dir) {
-      foreach my $directory (@directories) {
-        rmtree( "$scratch_dir/$species_dir/$directory", 1, 1 );	# this will remove the directory as well
-        mkdir("$scratch_dir/$species_dir/$directory", 0775); # so remake it
-        system("chgrp worm $scratch_dir/$species_dir/$directory"); # and make it writable by 'worm'
-      }
-    }
-    $log->write_to ("\n\nCLEAN UP COMPLETED\n\n");
+  $log->write_to("clearing up files generated in this build\n");
+  
+  # files to move to ~wormpub/last-build/
+  #   /lustre/scratch109/ensembl/wormpipe/dumps/
+  #    ipi_hits_list
+  #    trembllist.txt
+  #    swisslist.txt
+  #    *best_blastp_hits
+  
+  #  ~wormpipe/Elegans
+  #    WS99.agp
+  #    cds99.gff
+  #    cos99.gff
+  #    ids.txt
+  
+  # to delete
+  #   /lustre/scratch109/ensembl/wormpipe/dumps/
+  #      *.ace
+  #      *.log
+  my $clear_dump = "/lustre/scratch109/ensembl/wormpipe/dumps";
+  
+  $log->write_to ("Removing files currently in $wormpipe_dir/last_build\n");
+  eval {
+    system("mv -f $wormpipe_dir/last_build/*.ace") and die;
+    system("rm -f $wormpipe_dir/last_build/*.gff") and die;
+    system("rm -f $wormpipe_dir/last_build/*.agp") and die;
+    system("rm -f $wormpipe_dir/last_build/*.txt") and die;
+    system("rm -f $wormpipe_dir/last_build/*best_blastp*") and die;
+    system("rm -f $wormpipe_dir/last_build/ipi*") and die;
+  };
+  $@ and warn("Could not cleanly clean out  $wormpipe_dir/last_build\n");
+  
+  $log->write_to("moving blastp acefiles to last_build . . . \n");
+  system("mv -f $clear_dump/*blastp.ace $wormpipe_dir/last_build") 
+      and warn("Could not move $clear_dump/*blastp.ace");
+  
+  $log->write_to ("\nmoving the following to ~wormpipe/last_build . . \n");
+  $log->write_to("\t$clear_dump/*.txt\n");
+  system("mv -f $clear_dump/*.txt $wormpipe_dir/last_build/") and warn "cant move $clear_dump/*.txt\n";
+  
+  $log->write_to ("\t$clear_dump/ipi*\n");
+  system("mv -f $clear_dump/ipi* $wormpipe_dir/last_build/") and warn "cant move $clear_dump/ipi*\n";
+  
+  $log->write_to ("\t$clear_dump/*best_blastp\n");
+  system("mv -f $clear_dump/*best_blastp* $wormpipe_dir/last_build/") and warn "cant move $clear_dump/* best_blast*\n";
+  
+  $log->write_to ("\t$wormpipe_dir/Elegans/*\n");
+  system("mv -f $wormpipe_dir/Elegans/* $wormpipe_dir/last_build/") and warn "cant move $wormpipe_dir/Elegans/*\n";
+  
+  $log->write_to("Removing . . . \n\t$clear_dump/*.ace\n");
+  system("rm -f $clear_dump/*.ace $clear_dump/*.log") and warn "cant remove ace and log files from $clear_dump";
+  
+  $log->write_to ("\nRemoving the $wormpipe_dir/DUMP_PREP_RUN lock file\n");
+  system("rm -f $wormpipe_dir/DUMP_PREP_RUN") && warn "cant remove $wormpipe_dir/DUMP_PREP_RUN\n";
+  
+  $log->write_to("\nRemoving farm output and error files from /lustre/scratch109/ensembl/wormpipe/*\n") if $debug;
+  my $scratch_dir = $wormpipe_dir;
+  # Michael wants ensembl-brugia left as it is for now as he uses it for testing
+  my @species_dir = qw( ensembl-pristionchus ensembl-japonica ensembl-brenneri ensembl-briggsae ensembl-elegans ensembl-remanei ); 
+  foreach my $species_dir (@species_dir) {
+    system( "rm -fr $scratch_dir/$species_dir");
+    mkdir("$scratch_dir/$species_dir", 0775); # so remake it
+    system("chgrp worm $scratch_dir/$species_dir"); # change group to worm
+    system("chmod g+ws $scratch_dir/$species_dir"); # group writable and inherit group
+  }
+  $log->write_to ("\n\nCLEAN UP COMPLETED\n\n");
 }
 
 $log->mail;
@@ -745,72 +749,7 @@ sub update_analysis {
     }
 }
 
-=head1 extended Modules
 
-WormBase
-
-=cut
-
-#####################################################
-# class from WormBase.pm
-#
-# * based on inherited code from the FlyBase EnsEMBL import
-
-package WormBase;
-
-=head2 shadowed Functions
-
-=head3 process_file
-
-overriden with custome parsing tags
-
-=cut
-
-##############################################
-# redefine subroutine to use different tags
-#
-# * based on Bronwen's adaption of the FlyBase parser
-# * basically overrides some parsing regexps and does some munging
-
-sub process_file {
-    my ($fh) = @_;
-    my ( %genes, $transcript, %five_prime, %three_prime );
-
-    while (<$fh>) {
-        chomp;
-
-        my ( $chr, $status, $type, $start, $end, $score, $strand, $frame, $sequence, $gene ) = split;
-        my $element = $_;
-
-        next if ( /^#/ || $chr =~ /sequence-region/ || ( !$status && !$type ) );
-        my $line = $status . " " . $type;
-        $gene =~ s/\"//g if $gene;
-        if ( ( $line eq 'Coding_transcript five_prime_UTR' ) or ( $line eq 'Coding_transcript three_prime_UTR' ) ) {
-            $transcript = $gene;
-
-            # remove transcript-specific part: Y105E8B.1a.2
-            $gene =~ s/(\.\w+)\.\d+$/$1/ unless $species eq 'brugia';    # for that if i will go to hell :-(
-            my $position = $type;
-            if ( $position =~ /^five/ ) {
-                $five_prime{$gene} = {} if ( !$five_prime{$gene} );
-                $five_prime{$gene}{$transcript} = [] if ( !$five_prime{$gene}{$transcript} );
-                push( @{ $five_prime{$gene}{$transcript} }, $element );
-            }
-            elsif ( $position =~ /^three/ ) {
-                $three_prime{$gene} = {} if ( !$three_prime{$gene} );
-                $three_prime{$gene}{$transcript} = [] if ( !$three_prime{$gene}{$transcript} );
-                push( @{ $three_prime{$gene}{$transcript} }, $element );
-            }
-            next;
-        }
-        elsif ( $line ne $gff_types ) { next }    # <= here goes the change needs tp become $line eq "$bla $blub"
-        $genes{$gene} ||= [];
-        push( @{ $genes{$gene} }, $element );
-    }
-    print STDERR "Have " . keys(%genes) . " genes (CDS), " . keys(%five_prime) . " have 5' UTR and " . keys(%three_prime) . " have 3' UTR information
-\n";
-    return \%genes, \%five_prime, \%three_prime;
-}
 
 __END__
 
