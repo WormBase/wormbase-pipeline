@@ -82,15 +82,12 @@ sub chromosome_names {
        my $species = $db->fetch(Species => $self->full_name);
        die("cannot find species ${\$self->full_name} in ${\$self->autoace}\n") unless $species;
 
-       my @assemblies = $species->Assembly; # In case there is more than one assembly
-       foreach my $assembly(@assemblies){
-	 next if $assembly->Superceded_by;
-         my @sequences = $assembly->Sequences;
+       my $assembly = $species->Assembly;
+       my @sequences = $assembly->Sequences;
 
-         open (my $outf,">${\$self->common_data}/toplevel_seqs.lst") || die($!);
-         map {print $outf "$_\n"} @sequences;
-         close $outf;
-       }
+       open (my $outf,">${\$self->common_data}/toplevel_seqs.lst") || die($!);
+       map {print $outf "$_\n"} @sequences;
+       close $outf;
     }
     
     open(my $genomefh, "${\$self->common_data}/toplevel_seqs.lst") or croak("Could not open genome sequence for reading\n"); 
