@@ -224,7 +224,7 @@ if ($chromosome) {
   $log->write_to("Concatenating the resulting ace files to make misc_RNASeq_hits_${species}.ace");
   my $final_file = $wormbase->misc_dynamic."/misc_RNASeq_hits_${species}.ace";
   system("rm -f $final_file");
-  system("cat $outdir/RNASeq_*.ace virtual_objects_RNASeq_*.ace > $final_file");
+  system("cat $outdir/RNASeq_*.ace $outdir/virtual_objects_RNASeq_*.ace > $final_file");
 
 }
 
