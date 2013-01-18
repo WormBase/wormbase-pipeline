@@ -6,8 +6,8 @@
 #
 # Usage : autoace_builder.pl [-options]
 #
-# Last edited by: $Author: klh $
-# Last edited on: $Date: 2013-01-11 12:51:56 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2013-01-18 15:18:55 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -283,6 +283,9 @@ sub map_features_to_genome {
   # feature mapping, direct in perl using flanks
   #
   $wormbase->run_script( 'map_features.pl -all', $log );
+
+  # all the rest is elegans-specific
+  if ($wormbase->species ne 'elegans') {return}
 
   my $release = $wormbase->get_wormbase_version;
   my $previous_release = $release - 1;
