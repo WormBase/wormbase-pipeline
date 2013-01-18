@@ -59,7 +59,7 @@ USAGE
 exit 1;	
 }
 
-my ( $debug, $species, $store, $outdir,$acefile,$allele ,$noload,$force,$database,$weak_checks,$help,$test,$idfile,$nofilter);
+my ( $debug, $species, $store, $outdir,$acefile,$allele ,$noload,$force,$database,$weak_checks,$help,$test,$idfile,$nofilter, $no_remap);
 
 GetOptions(
 	   'species=s'   => \$species,
@@ -77,6 +77,7 @@ GetOptions(
 	   'test'        => \$test,
 	   'nofilter'    => \$nofilter,
 	   'idfile=s'    => \$idfile,
+           'noremap'     => \$no_remap,
 	  ) or &print_usage();
 
 &print_usage if $help;
@@ -134,7 +135,7 @@ if (not $nofilter) {
 }
 
 # map them
-my $mapped_alleles = MapAlleles::map($alleles, 1);
+my $mapped_alleles = MapAlleles::map($alleles, ($no_remap) ? 0 : 1);
 undef $alleles;# could theoretically undef the alleles here 
 
 $log->write_to("Removing insanely mapped alleles...\n") if $debug;
