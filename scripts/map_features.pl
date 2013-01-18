@@ -8,8 +8,8 @@
 # Uses Ant's Feature_mapper.pm module
 #
 #
-# Last updated by: $Author: pad $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2012-12-20 11:04:29 $        # quickly see when script was last changed and by whom
+# Last updated by: $Author: gw3 $                      # These lines will get filled in by cvs and helps us
+# Last updated on: $Date: 2013-01-18 15:12:15 $        # quickly see when script was last changed and by whom
 
 
 $|=1;
@@ -57,6 +57,7 @@ my $no_load;
 my $micro;
 my $outdir;
 my $curout;
+my $species;
 
 GetOptions (
 	    "database:s"                 => \$database,
@@ -90,6 +91,7 @@ GetOptions (
 	    'outdir:s'                   => \$outdir,
 	    'curout:s'                   => \$curout,
 	    'micro'                      => \$micro,
+	    'species:s'                  => \$species,
 		);
 
 # Help pod if needed
@@ -99,17 +101,19 @@ exec ('perldoc',$0) if ($help);
 my $wb;
 if ($store) { $wb = Storable::retrieve($store) or croak("cant restore wormbase from $store\n") }
 else { $wb = Wormbase->new( -debug => $debug, 
-			    -test  => $test 
+			    -test  => $test,
+			    -organism => $species,
 			    ) }
 
 my $log = Log_files->make_build_log($wb);
+
+$species = $wb->species;
 
 #######################
 # Remapping stuff
 #######################
 
 # some database paths
-my $currentdb = $wb->database('current');
 my $version = $wb->get_wormbase_version;
 
 print "Getting mapping data for WS$version\n";
@@ -129,7 +133,7 @@ else {
 }
 unless ($outdir) {$outdir = $wb->acefiles;}
 $log->write_to("// writing to ".$outdir."\n\n");
-unless ($curout) {$curout = "/nfs/wormpub/DATABASES/camace/${version}_feature_parents.ace";}
+unless ($curout) {$curout = "/nfs/wormpub/DATABASES/camace/${version}_feature_parents_${species}.ace";}
 
 # WS version for output files
 our ($WS_version) = $wb->get_wormbase_version_name;
@@ -227,7 +231,7 @@ foreach my $query (@features2map) {
     }
   }
   else {
-    my $table_file = "/tmp/map_features_table_$query.def";
+    my $table_file = "/tmp/map_features_table_${query}_${species}.def";
 
     my $species_name = $wb->full_name;
     my $table = <<EOF;
