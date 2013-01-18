@@ -328,11 +328,6 @@ sub map {
   my ($alleles, $fix_unmapped) = @_;
   my %alleles;
   my $mapper = Feature_mapper->new( $wb->autoace, undef, $wb );
-  my $coords = Coords_converter->invoke( $wb->autoace, 0, $wb );
-  my $assembly_mapper = Remap_Sequence_Change->new($wb->get_wormbase_version - 1, 
-                                                   $wb->get_wormbase_version, 
-                                                   $wb->species, 
-                                                   $wb->genome_diffs);
 
   my $count = scalar(@$alleles);
   $log->write_to("INFO: Mapping $count alleles...\n");
@@ -357,11 +352,23 @@ sub map {
       }
     }
     
-    my @map = $mapper->map_feature($x->Mapping_target->name,
-                                   $x->Flanking_sequences->name,
-                                   $x->Flanking_sequences->right->name, 
-                                   $min_len, 
-                                   $max_len);
+
+    my $target_seq = $x->Mapping_target->name;
+    my $left_flank = $x->Flanking_sequences->name;
+    my $right_flank = $x->Flanking_sequences->right->name;
+
+    my @map;
+    if (length($left_flank) < 10 or
+        length($right_flank) < 10) {
+      $log->write_to("WARNING: $x has at least one flank < 10 residues, so will not attempt to map with flanks\n");
+      @map = (0);
+    } else {
+      @map = $mapper->map_feature($x->Mapping_target->name,
+                                  $x->Flanking_sequences->name,
+                                  $x->Flanking_sequences->right->name, 
+                                  $min_len, 
+                                  $max_len);
+    }
     
     if ($map[0] eq '0'){
       if ($mut_types{Insertion} and scalar(keys %mut_types) == 1) {
@@ -406,6 +413,12 @@ sub map {
       }
     } else {
       my %remapped;
+
+      my $assembly_mapper = Remap_Sequence_Change->new($wb->get_wormbase_version - 1, 
+                                                       $wb->get_wormbase_version, 
+                                                       $wb->species, 
+                                                       $wb->genome_diffs);
+
       foreach my $pair ([\@unmapped_inserts, 1], [\@unmapped_others,0]) {
         my ($list, $zero_length) = @$pair;
 
@@ -608,232 +621,249 @@ sub get_genes {
 
 # map the alleles to cdses 
 sub get_cds {
-    my ($alleles)=@_;
-    my %cds;
-    while(my($k,$v)=each(%{$alleles})){
-        my @hits;
+  my ($alleles)=@_;
+  my %cds;
+  while(my($k,$v)=each(%{$alleles})){
+    my $dont_calc_protein_effect = 0;
 
-        @hits=$index->search_cds($v->{'chromosome'},$v->{'start'},$v->{'stop'});
-        foreach my $hit(@hits){
-            print $hit->{name},"\n" if $wb->debug;
-            my @exons=grep {($v->{'stop'}>=$_->{start}) && ($v->{start}<=$_->{stop})} $hit->get_all_exons;
-            my @introns=grep {($v->{'stop'}>=$_->{start}) && ($v->{start}<=$_->{stop})} $hit->get_all_introns;
-            if (@exons){
-                $cds{$hit->{name}}{Coding_exon}{$k}=1;
-                
-                # coding_exon $start-$stop<3 -> space for frameshifts (deletion/insertion)
-                # FIX: no strange combinations and only insertions < 10 bp size as else they disrupt more than just the frame
-                unless ($v->{allele}->Method eq 'Deletion_and_insertion_allele'){
-                    my $dsize=$v->{stop}-$v->{start}+1;
-                    my $isize=length $v->{allele}->Insertion;
-                    $cds{$hit->{name}}{"Frameshift \" $dsize bp Deletion\""}{$k}=1 
-                        if ($v->{stop}-$v->{start}<3)&&($v->{allele}->Method eq 'Deletion_allele')&&($dsize < 10);
-                    $cds{$hit->{name}}{"Frameshift \"$isize bp Insertion\""}{$k}=1 
-                        if ($v->{allele}->Insertion)&&((length $v->{allele}->Insertion)%3!=0)&&(length $v->{allele}->Insertion < 10);
-                }                                                     
-                # coding_exon -> space for substitutions (silent mutations / stops / AA changes)
-                if ($v->{start}-$v->{stop} < 3 && $v->{allele}->Type_of_mutation eq 'Substitution'){
-                  
-                    # insanity check: insane tags are ignored and reported as warnings
-                    if (!$v->{allele}->Type_of_mutation->right) {
-                      $log->write_to("WARNING: ${\$v->{allele}->Public_name} is missing FROM (Remark: ${\$v->{allele}->Remark})\n");
-                      $errors++;
-                      next;
-                    } elsif (!$v->{allele}->Type_of_mutation->right->right) {
-                      $log->write_to("ERROR: ${\$v->{allele}->Public_name} is missing TO (Remark: ${\$v->{allele}->Remark})\n");
-                      $errors++;
-                      next;
-                    } elsif ($v->{allele}->Type_of_mutation->right =~ /\d|\s/ or $v->{allele}->Type_of_mutation->right->right =~ /\d|\s/) {
-                      $log->write_to("ERROR: ${\$v->{allele}->Public_name} has numbers an/or spaces in the FROM/TO tags (Remark: ${\$v->{allele}->Remark})\n");
-                      $errors++;
-                      next;
-                    }
-                    
-                    # get cds
-                    my @coding_exons;
-                    if ($hit->{orientation} eq '+'){ @coding_exons=sort {$a->{start}<=>$b->{start}} $hit->get_all_exons}
-                    else { @coding_exons=sort {$b->{start}<=>$a->{start}} $hit->get_all_exons}
-                    my $sequence;
-                    map{$sequence=join("",$sequence,&get_seq($_->{chromosome},$_->{start},$_->{stop},$_->{orientation}))} @coding_exons;
-                    
-                    # get position in cds
-                    my $cds_position=0;
-                    my $exon=1;
-                    foreach my $c_exon(@coding_exons){
-                        if ($v->{'start'}<=$c_exon->{'stop'} && $v->{'stop'}>=$c_exon->{'start'}){
-                            if ($c_exon->{'orientation'} eq '+'){$cds_position+=($v->{'start'}-$c_exon->{'start'}+1)}
-                            else{$cds_position+=($c_exon->{'stop'}-$v->{'stop'}+1)} # <= start->stop
-                            last;
-                        }      
-                        else{
-                            $cds_position+=($c_exon->{'stop'}-$c_exon->{'start'}+1);
-                        }
-                    }
-                    print "SNP $k at CDS position $cds_position (${\int(($cds_position-1)/3+1)})" if $wb->debug;
-                    
-                    # start of the codon part
-                    my $offset=$cds_position-(($cds_position-1) % 3); #start of frame 1based
+    if ($v->{allele}->Type_of_mutation eq 'Substitution' and
+        abs($v->{stop} - $v->{start}) < 3) {      
+      # insanity check: insane tags are reported once as warnings
+      if (!$v->{allele}->Type_of_mutation->right) {
+        $log->write_to(sprintf("ERROR: %s - small substitution (%d) is missing FROM, so will not calculate prot effect (Remark:%s)\n", 
+                               $v->{allele}->Public_name,
+                               $v->{stop} - $v->{start} + 1,
+                               $v->{allele}->Remark));
+        $errors++;
+        $dont_calc_protein_effect = 1;
+      } elsif (!$v->{allele}->Type_of_mutation->right->right) {
+        $log->write_to(sprintf("ERROR: %s - small substitution (%d) is missing TO, so will not calculate prot effect (Remark:%s)\n", 
+                               $v->{allele}->Public_name,
+                               $v->{stop} - $v->{start} + 1,
+                               $v->{allele}->Remark));
+        $errors++;
+        $dont_calc_protein_effect = 1;
+      } elsif ($v->{allele}->Type_of_mutation->right =~ /\d|\s/ or $v->{allele}->Type_of_mutation->right->right =~ /\d|\s/) {
+        $log->write_to(sprintf("ERROR: %s - small substitution (%d) has numbers/spaces in FROM/TO, so will not calculate prot effect (Remark:%s)\n", 
+                               $v->{allele}->Public_name,
+                               $v->{stop} - $v->{start} + 1,
+                               $v->{allele}->Remark));
+        $errors++;
+        $dont_calc_protein_effect = 1;
+      }
+    }
+    
+    my @hits;
+    @hits=$index->search_cds($v->{'chromosome'},$v->{'start'},$v->{'stop'});
+    foreach my $hit(@hits){
+      print $hit->{name},"\n" if $wb->debug;
+      my @exons=grep {($v->{'stop'}>=$_->{start}) && ($v->{start}<=$_->{stop})} $hit->get_all_exons;
+      my @introns=grep {($v->{'stop'}>=$_->{start}) && ($v->{start}<=$_->{stop})} $hit->get_all_introns;
+      if (@exons){
+        $cds{$hit->{name}}{Coding_exon}{$k}=1;
+        
+        # coding_exon $start-$stop<3 -> space for frameshifts (deletion/insertion)
+        # FIX: no strange combinations and only insertions < 10 bp size as else they disrupt more than just the frame
+        unless ($v->{allele}->Method eq 'Deletion_and_insertion_allele'){
+          my $dsize=$v->{stop}-$v->{start}+1;
+          my $isize=length $v->{allele}->Insertion;
+          $cds{$hit->{name}}{"Frameshift \" $dsize bp Deletion\""}{$k}=1 
+              if ($v->{stop}-$v->{start}<3)&&($v->{allele}->Method eq 'Deletion_allele')&&($dsize < 10);
+          $cds{$hit->{name}}{"Frameshift \"$isize bp Insertion\""}{$k}=1 
+              if ($v->{allele}->Insertion)&&((length $v->{allele}->Insertion)%3!=0)&&(length $v->{allele}->Insertion < 10);
+        }                                                     
+        # coding_exon -> space for substitutions (silent mutations / stops / AA changes)
+        next if $dont_calc_protein_effect;
 
-                    my $table=Bio::Tools::CodonTable->new(-id=>1);
-                    
-                    my $frame = ($cds_position-1) % 3 ; # ( 0 1 2 ) is in reality frame-1
-
-                    my $from_na="${\$v->{allele}->Type_of_mutation->right}";
-                    my $from_codon=substr($sequence,$offset-1,3);
-                    
-                    print "\nfrom_na/from_codon(original) $from_na/$from_codon\n" if $wb->debug;
-                    
-                    # enforce some assertion
-                    next unless ($frame + length($from_na) < 4); # has to fit in the codon
-                    unless ($frame <= 2 && $frame >= 0){ # has to be 0 1 2
-                        $log->write_to("BUG: $k (${\$v->{allele}->Public_name}) has a strange frame ($frame)\n");
-                        next;
-                    }
-                    unless(length($from_codon)==3){ # codons have to be 3bp long
-                        $log->write_to("BUG: $k (${\$v->{allele}->Public_name}) has a strange mutated codon ($from_codon)\n");
-                        next;
-                    }
-
-                    my $flipped;
-                    
-                    my $original_from=substr($from_codon,$frame,length($from_na));
-                    
-                    if (lc($original_from) ne lc($from_na)){
-                         $from_na=Bio::Seq->new(-seq => $from_na,-alphabet => 'dna')->revcom->seq;
-                         $flipped=1;
-                    }
-                    if (lc($original_from) ne lc($from_na)){ # don't touch it if neither forward nor reverse are inline with the reference sequence
-                         $log->write_to(
-		           "ERROR: $k FROM/TO tags seem to be messed up, as $original_from (reference) is not $from_na or ${\$v->{allele}->Type_of_mutation->right}\n"
-			 );
-			 $errors++;
-                         next;
-                    }
-                    $original_from=substr($from_codon,$frame,length($from_na),$from_na);
-                    
-                    my $from_aa=$table->translate($from_codon);
-                    
-                    my $to_na="${\$v->{allele}->Type_of_mutation->right->right}";
-                    my $to_codon=$from_codon;
-                    $to_na=Bio::Seq->new(-seq => $to_na,-alphabet => 'dna')->revcom->seq if $flipped==1;
-
-                    next unless ($frame +length($to_na) < 4);
-
-                    substr($to_codon,$frame,length($to_na),$to_na);
-                    my $to_aa=$table->translate($to_codon);
-                    
-                    
-                    # silent mutation
-                    if ($to_aa eq $from_aa){
-                        $cds{$hit->{name}}{"Silent \"$to_aa (${\int(($cds_position-1)/3+1)})\""}{$k}=1;
-                        print "silent mutation: " if $wb->debug;
-                    }
-                    # readthrough; 
-                    elsif ($table->is_ter_codon($from_codon) and not $table->is_ter_codon($to_codon)) {
-                      my $stop_codon = $from_codon;
-                      my $other_codon = $to_codon;
-                      my $other_aa=$table->translate($other_codon);
-
-                      #$cds{$hit->{name}}{"Missense ${\int(($cds_position-1)/3+1)} \"$from_aa to $to_aa (readthrough)\"" }{$k} = 1;
-                      $cds{$hit->{name}}{"Readthrough \"$from_aa to $to_aa\""}{$k} = 1;
-                    }
-                    # premature stop
-                    elsif ($table->is_ter_codon($to_codon) and not $table->is_ter_codon($from_codon)){
-                      my $stop_codon = $to_codon;
-                      my $other_codon = $from_codon;
-                      my $other_aa=$table->translate($other_codon);
-                      if (uc($stop_codon) =~ /[TWYKHDB]AG/ ){
-                        $cds{$hit->{name}}{"Nonsense Amber_UAG \"$other_aa to amber stop (${\int(($cds_position-1)/3+1)})\""}{$k}=1;
-                        print "Nonsense Amber_UAG: " if $wb->debug;     
-                      }
-                      elsif (uc($stop_codon) =~ /[TWYKHDB]AA/){
-                        $cds{$hit->{name}}{"Nonsense Ochre_UAA \"$other_aa to ochre stop (${\int(($cds_position-1)/3+1)})\""}{$k}=1;
-                        print "Nonsense Ochre_UAA: " if $wb->debug;
-                      }
-                      elsif (uc($stop_codon) =~ /[TWYKHDB]GA/){
-                        $cds{$hit->{name}}{"Nonsense Opal_UGA \"$other_aa to opal stop (${\int(($cds_position-1)/3+1)})\""}{$k}=1;
-                        print "Nonsense Opal_UAA: " if $wb->debug;
-                      }
-                      elsif (uc($stop_codon) eq 'TAR'){
-                        $cds{$hit->{name}}{"Nonsense Amber_UAG_or_Ochre_UAA \"$other_aa to amber or ochre stop (${\int(($cds_position-1)/3+1)})\""}{$k}=1;
-                      }
-                      elsif (uc($stop_codon) eq 'TRA') {
-                        $cds{$hit->{name}}{"Nonsense Ochre_UAA_or_Opal_UGA \"$other_aa to opal or ochre stop (${\int(($cds_position-1)/3+1)})\""}{$k}=1;
-                      }
-                      else {$log->write_to("ERROR: whatever stop $stop_codon is in $k (${\$v->{allele}->Public_name},) it is not Amber/Opal/Ochre (Remark: ${\$v->{allele}->Remark})\n");$errors++}
-                    }
-                    # missense
-                    else{
-                        $cds{$hit->{name}}{"Missense ${\int(($cds_position-1)/3+1)} \"$from_aa to $to_aa\""}{$k}=1;
-                        print "Missense: " if $wb->debug;
-                    }
-                    print "from $from_na/$from_codon($from_aa) to $to_na/$to_codon($to_aa)\n" if $wb->debug;
-                        
-                 
-                }
+        if (abs($v->{start}-$v->{stop}) < 3 and 
+            $v->{allele}->Type_of_mutation eq 'Substitution' and 
+            not $dont_calc_protein_effect) {          
+          
+          # get cds
+          my @coding_exons;
+          if ($hit->{orientation} eq '+'){ @coding_exons=sort {$a->{start}<=>$b->{start}} $hit->get_all_exons}
+          else { @coding_exons=sort {$b->{start}<=>$a->{start}} $hit->get_all_exons}
+          my $sequence;
+          map{$sequence=join("",$sequence,&get_seq($_->{chromosome},$_->{start},$_->{stop},$_->{orientation}))} @coding_exons;
+          
+          # get position in cds
+          my $cds_position=0;
+          my $exon=1;
+          foreach my $c_exon(@coding_exons){
+            if ($v->{'start'}<=$c_exon->{'stop'} && $v->{'stop'}>=$c_exon->{'start'}){
+              if ($c_exon->{'orientation'} eq '+'){$cds_position+=($v->{'start'}-$c_exon->{'start'}+1)}
+              else{$cds_position+=($c_exon->{'stop'}-$v->{'stop'}+1)} # <= start->stop
+              last;
+            }      
+            else{
+              $cds_position+=($c_exon->{'stop'}-$c_exon->{'start'}+1);
             }
+          }
+          print "SNP $k at CDS position $cds_position (${\int(($cds_position-1)/3+1)})" if $wb->debug;
+          
+          # start of the codon part
+          my $offset=$cds_position-(($cds_position-1) % 3); #start of frame 1based
+          
+          my $table=Bio::Tools::CodonTable->new(-id=>1);
+          
+          my $frame = ($cds_position-1) % 3 ; # ( 0 1 2 ) is in reality frame-1
+          
+          my $from_na="${\$v->{allele}->Type_of_mutation->right}";
+          my $from_codon=substr($sequence,$offset-1,3);
+          
+          print "\nfrom_na/from_codon(original) $from_na/$from_codon\n" if $wb->debug;
+          
+          # enforce some assertion
+          next unless ($frame + length($from_na) < 4); # has to fit in the codon
+          unless ($frame <= 2 && $frame >= 0){ # has to be 0 1 2
+            $log->write_to("BUG: $k (${\$v->{allele}->Public_name}) has a strange frame ($frame)\n");
+            next;
+          }
+          unless(length($from_codon)==3){ # codons have to be 3bp long
+            $log->write_to("BUG: $k (${\$v->{allele}->Public_name}) has a strange mutated codon ($from_codon)\n");
+            next;
+          }
+          
+          my $flipped;
+          
+          my $original_from=substr($from_codon,$frame,length($from_na));
+          
+          if (lc($original_from) ne lc($from_na)){
+            $from_na=Bio::Seq->new(-seq => $from_na,-alphabet => 'dna')->revcom->seq;
+            $flipped=1;
+          }
+          if (lc($original_from) ne lc($from_na)){ # don't touch it if neither forward nor reverse are inline with the reference sequence
+            $log->write_to(
+              "ERROR: $k FROM/TO tags seem to be messed up, as $original_from (reference) is not $from_na or ${\$v->{allele}->Type_of_mutation->right}\n"
+                );
+            $errors++;
+            next;
+          }
+          $original_from=substr($from_codon,$frame,length($from_na),$from_na);
+          
+          my $from_aa=$table->translate($from_codon);
+          
+          my $to_na="${\$v->{allele}->Type_of_mutation->right->right}";
+          my $to_codon=$from_codon;
+          $to_na=Bio::Seq->new(-seq => $to_na,-alphabet => 'dna')->revcom->seq if $flipped==1;
+          
+          next unless ($frame +length($to_na) < 4);
+          
+          substr($to_codon,$frame,length($to_na),$to_na);
+          my $to_aa=$table->translate($to_codon);
+          
+          
+          # silent mutation
+          if ($to_aa eq $from_aa){
+            $cds{$hit->{name}}{"Silent \"$to_aa (${\int(($cds_position-1)/3+1)})\""}{$k}=1;
+            print "silent mutation: " if $wb->debug;
+          }
+          # readthrough; 
+          elsif ($table->is_ter_codon($from_codon) and not $table->is_ter_codon($to_codon)) {
+            my $stop_codon = $from_codon;
+            my $other_codon = $to_codon;
+            my $other_aa=$table->translate($other_codon);
             
-            # intron part
-            if (@introns){
-                $cds{$hit->{name}}{Intron}{$k}=1;
-                
-                # 10 bp allele overlapping a splice site
-                if (abs($v->{'start'}-$v->{'stop'})<=10){
-                    my @types=('Acceptor','Donor');
-                    @types=('Donor','Acceptor') if $hit->{orientation} eq '+';
-                    my @intron_starts= grep{$v->{start} <= $_->{start}+1 && $v->{stop}>=$_->{start} } @introns; # intron start 
-                    my @intron_stops = grep{$v->{start} <= $_->{stop}    && $v->{stop}>=$_->{stop}-1 } @introns; # intron stop
-                    
-                    # add the from to stuff:
-                        foreach my $intron (@intron_starts){
-                        my $site=&get_seq($intron->{chromosome},$intron->{start},$intron->{start}+1,$intron->{orientation});
-                        if ($v->{start}-$v->{stop}==0 && $v->{allele}->Type_of_mutation eq 'Substitution'){
-                            my $from_na="${\$v->{allele}->Type_of_mutation->right}";
-                            my $to_na="${\$v->{allele}->Type_of_mutation->right->right}";
-                            my $offset=$intron->{start}-$v->{start};
-                            $offset=(1-$offset) if $intron->{orientation} eq '-';
-                            my $to_site=$site;
-                            my $from_site=$site;
-                            substr($to_site,$offset,1,lc($to_na));
-                            substr($from_site,$offset,1,lc($from_na));
-                            my ($a,$b)=($from_site eq $site)?($from_site,$to_site):($to_site,$from_site);
-                            $cds{$hit->{name}}{"$types[0] \"$a to $b\""}{$k}=1;
-                        }
-                        else {
-                            $cds{$hit->{name}}{"$types[0] \"${\$v->{allele}->Type_of_mutation} disrupts $site\""}{$k}=1; 
-                        }
-                    }
-                    foreach my $intron(@intron_stops){
-                        my $site=&get_seq($intron->{chromosome},$intron->{stop}-1,$intron->{stop},$intron->{orientation});
-                        if ($v->{start}-$v->{stop}==0 && $v->{allele}->Type_of_mutation eq 'Substitution'){
-                            my $from_na="${\$v->{allele}->Type_of_mutation->right}";
-                            my $to_na="${\$v->{allele}->Type_of_mutation->right->right}";
-                            my $offset=(1-($intron->{stop}-$v->{stop}));
-                            $offset=(1-$offset) if $intron->{orientation} eq '-';
-                            my $to_site=$site;
-                            my $from_site=$site;
-                            substr($to_site,$offset,1,lc($to_na));
-                            substr($site,$offset,1,lc($from_na));
-                            my ($a,$b)=($from_site eq $site)?($from_site,$to_site):($to_site,$from_site);          
-                            $cds{$hit->{name}}{"$types[1] \"$a to $b\""}{$k}=1;
-                        }
-                        else {            
-                            $cds{$hit->{name}}{"$types[1] \"${\$v->{allele}->Type_of_mutation} disrupts $site\""}{$k}=1;
-                        }
-                    }
-                }
+            #$cds{$hit->{name}}{"Missense ${\int(($cds_position-1)/3+1)} \"$from_aa to $to_aa (readthrough)\"" }{$k} = 1;
+            $cds{$hit->{name}}{"Readthrough \"$from_aa to $to_aa\""}{$k} = 1;
+          }
+          # premature stop
+          elsif ($table->is_ter_codon($to_codon) and not $table->is_ter_codon($from_codon)){
+            my $stop_codon = $to_codon;
+            my $other_codon = $from_codon;
+            my $other_aa=$table->translate($other_codon);
+            if (uc($stop_codon) =~ /[TWYKHDB]AG/ ){
+              $cds{$hit->{name}}{"Nonsense Amber_UAG \"$other_aa to amber stop (${\int(($cds_position-1)/3+1)})\""}{$k}=1;
+              print "Nonsense Amber_UAG: " if $wb->debug;     
             }
-        }
-    }
-
-    if ($wb->debug){
-        foreach my $cds_name (keys %cds) {
-            foreach my $type(keys %{$cds{$cds_name}}){
-                print "$cds_name -> ",join " ",keys %{$cds{$cds_name}{$type}}," ($type)\n"
+            elsif (uc($stop_codon) =~ /[TWYKHDB]AA/){
+              $cds{$hit->{name}}{"Nonsense Ochre_UAA \"$other_aa to ochre stop (${\int(($cds_position-1)/3+1)})\""}{$k}=1;
+              print "Nonsense Ochre_UAA: " if $wb->debug;
             }
+            elsif (uc($stop_codon) =~ /[TWYKHDB]GA/){
+              $cds{$hit->{name}}{"Nonsense Opal_UGA \"$other_aa to opal stop (${\int(($cds_position-1)/3+1)})\""}{$k}=1;
+              print "Nonsense Opal_UAA: " if $wb->debug;
+            }
+            elsif (uc($stop_codon) eq 'TAR'){
+              $cds{$hit->{name}}{"Nonsense Amber_UAG_or_Ochre_UAA \"$other_aa to amber or ochre stop (${\int(($cds_position-1)/3+1)})\""}{$k}=1;
+            }
+            elsif (uc($stop_codon) eq 'TRA') {
+              $cds{$hit->{name}}{"Nonsense Ochre_UAA_or_Opal_UGA \"$other_aa to opal or ochre stop (${\int(($cds_position-1)/3+1)})\""}{$k}=1;
+            }
+            else {$log->write_to("ERROR: whatever stop $stop_codon is in $k (${\$v->{allele}->Public_name},) it is not Amber/Opal/Ochre (Remark: ${\$v->{allele}->Remark})\n");$errors++}
+          }
+          # missense
+          else{
+            $cds{$hit->{name}}{"Missense ${\int(($cds_position-1)/3+1)} \"$from_aa to $to_aa\""}{$k}=1;
+            print "Missense: " if $wb->debug;
+          }
+          print "from $from_na/$from_codon($from_aa) to $to_na/$to_codon($to_aa)\n" if $wb->debug;
+          
+          
         }
+      }
+            
+      # intron part
+      if (@introns){
+        $cds{$hit->{name}}{Intron}{$k}=1;
+        
+        # 10 bp allele overlapping a splice site
+        if (abs($v->{'start'}-$v->{'stop'})<=10){
+          my @types=('Acceptor','Donor');
+          @types=('Donor','Acceptor') if $hit->{orientation} eq '+';
+          my @intron_starts= grep{$v->{start} <= $_->{start}+1 && $v->{stop}>=$_->{start} } @introns; # intron start 
+          my @intron_stops = grep{$v->{start} <= $_->{stop}    && $v->{stop}>=$_->{stop}-1 } @introns; # intron stop
+          
+          # add the from to stuff:
+          foreach my $intron (@intron_starts){
+            my $site=&get_seq($intron->{chromosome},$intron->{start},$intron->{start}+1,$intron->{orientation});
+            if ($v->{start}-$v->{stop}==0 && $v->{allele}->Type_of_mutation eq 'Substitution'){
+              my $from_na="${\$v->{allele}->Type_of_mutation->right}";
+              my $to_na="${\$v->{allele}->Type_of_mutation->right->right}";
+              my $offset=$intron->{start}-$v->{start};
+              $offset=(1-$offset) if $intron->{orientation} eq '-';
+              my $to_site=$site;
+              my $from_site=$site;
+              substr($to_site,$offset,1,lc($to_na));
+              substr($from_site,$offset,1,lc($from_na));
+              my ($a,$b)=($from_site eq $site)?($from_site,$to_site):($to_site,$from_site);
+              $cds{$hit->{name}}{"$types[0] \"$a to $b\""}{$k}=1;
+            }
+            else {
+              $cds{$hit->{name}}{"$types[0] \"${\$v->{allele}->Type_of_mutation} disrupts $site\""}{$k}=1; 
+            }
+          }
+          foreach my $intron(@intron_stops){
+            my $site=&get_seq($intron->{chromosome},$intron->{stop}-1,$intron->{stop},$intron->{orientation});
+            if ($v->{start}-$v->{stop}==0 && $v->{allele}->Type_of_mutation eq 'Substitution'){
+              my $from_na="${\$v->{allele}->Type_of_mutation->right}";
+              my $to_na="${\$v->{allele}->Type_of_mutation->right->right}";
+              my $offset=(1-($intron->{stop}-$v->{stop}));
+              $offset=(1-$offset) if $intron->{orientation} eq '-';
+              my $to_site=$site;
+              my $from_site=$site;
+              substr($to_site,$offset,1,lc($to_na));
+              substr($site,$offset,1,lc($from_na));
+              my ($a,$b)=($from_site eq $site)?($from_site,$to_site):($to_site,$from_site);          
+              $cds{$hit->{name}}{"$types[1] \"$a to $b\""}{$k}=1;
+            }
+            else {            
+              $cds{$hit->{name}}{"$types[1] \"${\$v->{allele}->Type_of_mutation} disrupts $site\""}{$k}=1;
+            }
+          }
+        }
+      }
     }
-    return \%cds;
+  }
+  
+  if ($wb->debug){
+    foreach my $cds_name (keys %cds) {
+      foreach my $type(keys %{$cds{$cds_name}}){
+        print "$cds_name -> ",join " ",keys %{$cds{$cds_name}{$type}}," ($type)\n"
+      }
+    }
+  }
+  return \%cds;
 }   
 
 =head2 print_cds
