@@ -9,7 +9,7 @@
 #
 #
 # Last updated by: $Author: gw3 $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2013-01-18 15:12:15 $        # quickly see when script was last changed and by whom
+# Last updated on: $Date: 2013-01-18 15:27:27 $        # quickly see when script was last changed and by whom
 
 
 $|=1;
@@ -116,8 +116,11 @@ $species = $wb->species;
 # some database paths
 my $version = $wb->get_wormbase_version;
 
-print "Getting mapping data for WS$version\n";
-my $assembly_mapper = Remap_Sequence_Change->new($version - 1, $version, $wb->species, $wb->genome_diffs);
+my $assembly_mapper;
+if ($species eq 'elegans') {
+  print "Getting mapping data for WS$version\n";
+  $assembly_mapper = Remap_Sequence_Change->new($version - 1, $version, $wb->species, $wb->genome_diffs);
+}
 
 #######################
 # ACEDB and databases #
@@ -397,23 +400,26 @@ EOF
                              $flanking_right));
       $log->error;
       
-      # if the max leng is defined, and it is 0, we assert that all features of this kind are 0-length.
-      # this info is passed through to suggest_fix, which uses it to work out the correct coords in 
-      my @suggested_fix = $mapper->suggest_fix($feature, 
-                                               ($sanity{$method} and $sanity{$method}->[0] == $sanity{$method}->[1]) ? $sanity{$method}->[0] : undef,
-                                               $target, 
-                                               $flanking_left, 
-                                               $flanking_right, 
-                                               $assembly_mapper,
-                                               \%all_ids
-          );
-      if ($suggested_fix[4]) { # FIXED :-)
-        $log->write_to("// Suggested fix for $feature : $suggested_fix[3]\n");
-        $log->write_to("\nFeature : $feature\n");
-        $log->write_to("Flanking_sequences $suggested_fix[0] $suggested_fix[1] $suggested_fix[2]\n");
-        $log->write_to("Remark \"Flanking sequence automatically fixed: $suggested_fix[3]\"\n\n");
-      } else { # NOT_FIXED :-(
-        $log->write_to("// $feature : $suggested_fix[3]\n");
+      # we don't have remapping data for non-elegans species
+      if ($species eq 'elegans') {
+	# if the max leng is defined, and it is 0, we assert that all features of this kind are 0-length.
+	# this info is passed through to suggest_fix, which uses it to work out the correct coords in 
+	my @suggested_fix = $mapper->suggest_fix($feature, 
+						 ($sanity{$method} and $sanity{$method}->[0] == $sanity{$method}->[1]) ? $sanity{$method}->[0] : undef,
+						 $target, 
+						 $flanking_left, 
+						 $flanking_right, 
+						 $assembly_mapper,
+						 \%all_ids
+						);
+	if ($suggested_fix[4]) { # FIXED :-)
+	  $log->write_to("// Suggested fix for $feature : $suggested_fix[3]\n");
+	  $log->write_to("\nFeature : $feature\n");
+	  $log->write_to("Flanking_sequences $suggested_fix[0] $suggested_fix[1] $suggested_fix[2]\n");
+	  $log->write_to("Remark \"Flanking sequence automatically fixed: $suggested_fix[3]\"\n\n");
+	} else { # NOT_FIXED :-(
+	  $log->write_to("// $feature : $suggested_fix[3]\n");
+	}
       }
     }
   }
