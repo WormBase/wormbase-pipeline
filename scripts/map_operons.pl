@@ -3,7 +3,7 @@
 # map_operons.pl
 
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2012-05-08 14:03:07 $
+# Last edited on: $Date: 2013-01-21 16:19:42 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -15,14 +15,15 @@ use File::Copy;
 use Ace;
 use Log_files;
 
-my ($quicktest, $debug, $store, $test, $noload);
+my ($debug, $store, $test, $noload, $species);
 
 GetOptions(
 	   'debug=s'   => \$debug,
 	   'store=s'   => \$store,
 	   'test'      => \$test,
 	   'noload'    => \$noload,
-	   'quicktest' => \$quicktest,
+	   'species:s' => \$species,
+
 );
 
 ############################
@@ -30,15 +31,34 @@ GetOptions(
 ############################
 my $wb;
 if ($store) { $wb = Storable::retrieve($store) or croak("cant restore wormbase from $store\n") }
-else { $wb = Wormbase->new( -debug => $debug, -test => $test, ) }
+else { $wb = Wormbase->new( -debug => $debug, 
+			    -test => $test, 
+                            -organism => $species,
+			  ) }
 
 my $log = Log_files->make_build_log($wb);
 my $acefile = $wb->acefiles."/operon_coords.ace";
 
-my @chromosomes = $quicktest ? qw(III) : qw(I II III IV V X);
+my @chromosomes = $wb->get_chromosome_names(-prefix => 1, mito => 0);
 my %gene_span;
-foreach (@chromosomes){
-  open (GS,"<".$wb->gff_splits."/CHROMOSOME_${_}_gene.gff") or $log->log_and_die("Cant open ".$wb->gff_splits."/CHROMOSOME_${_}_gene.gff :$!\n");
+if ($wb->assembly_type eq 'chromosome') {
+  foreach (@chromosomes){
+    open (GS,"<".$wb->gff_splits."/${_}_gene.gff") or $log->log_and_die("Cant open ".$wb->gff_splits."/${_}_gene.gff :$!\n");
+    while (<GS>) {
+      # CHROMOSOME_III  gene    gene    16180   17279   .       +       .       Gene "WBGene00019182"
+      next if /^\#/;
+      my @data = split;
+      next unless ($data[2] eq 'gene');
+      $data[9] =~ s/\"//g;#"
+      my $gene = $data[9];
+      $gene_span{$gene}->{'chrom'} = $data[0];
+      $gene_span{$gene}->{'start'} = $data[3];
+      $gene_span{$gene}->{'end'}   = $data[4];
+      $gene_span{$gene}->{'strand'}= $data[6];
+    }
+  }
+} else {
+  open (GS,"<".$wb->gff_splits."/gene.gff") or $log->log_and_die("Cant open ".$wb->gff_splits."/gene.gff :$!\n");
   while (<GS>) {
     # CHROMOSOME_III  gene    gene    16180   17279   .       +       .       Gene "WBGene00019182"
     next if /^\#/;
