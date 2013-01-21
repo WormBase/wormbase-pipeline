@@ -264,7 +264,7 @@ while (<>) {
           $cons eq 'Nonsense' or 
           $cons eq 'Readthrough' or
           $cons eq 'Coding_exon') {
-        my $new_source = "LOF_" . $source;
+        my $new_source = "PCOF_" . $source;
 
         print $outfh join( "\t",
                            $ref,   $new_source, $method, $start, $stop,
