@@ -255,21 +255,27 @@ while (<>) {
         }
     }
     
-    elsif ( $group =~ /Variation\s+.+Consequence\s+\"(\S+)\"/) {
-      # copy variations with consequence with a new source, so that
-      # they can be displayed on their own track on the browser
-      my $cons = $1;
-      if ($cons eq 'Frameshift' or
-          $cons eq 'Missense' or
-          $cons eq 'Nonsense' or 
-          $cons eq 'Readthrough' or
-          $cons eq 'Coding_exon') {
-        my $new_source = "PCOF_" . $source;
+    elsif ( $group =~ /Variation\s+/) {
+      if ($group =~ /\s+Polymorphism\s+/ and $method ne 'transposable_element_insertion_site') {
+        $source  .= "_Polymorphism"; 
+      }
 
-        print $outfh join( "\t",
-                           $ref,   $new_source, $method, $start, $stop,
-                           $score, $strand, $phase,  $group ),
-        "\n";
+      if ($group /Consequence\s+\"(\S+)\"/) {
+        # copy variations with consequence with a new source, so that
+        # they can be displayed on their own track on the browser
+        my $cons = $1;
+        if ($cons eq 'Frameshift' or
+            $cons eq 'Missense' or
+            $cons eq 'Nonsense' or 
+            $cons eq 'Readthrough' or
+            $cons eq 'Coding_exon') {
+          my $new_source = "PCoF_" . $source;
+          
+          print $outfh join( "\t",
+                             $ref,   $new_source, $method, $start, $stop,
+                             $score, $strand, $phase,  $group ),
+          "\n";
+        }
       }
     }
 
