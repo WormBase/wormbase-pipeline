@@ -3,7 +3,7 @@
 # This scripts decorates the variations in the GFF with all sorts of extra useful info
 #
 # Last updated by: $Author: klh $     
-# Last updated on: $Date: 2013-01-16 09:49:57 $      
+# Last updated on: $Date: 2013-01-21 13:14:56 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -155,7 +155,7 @@ foreach my $file (@gff_files) {
         push @new_els, ['RFLP'] if $tp =~ /RFLP/;
         if ($tp eq 'Natural_variant') {
           $natural_variant = 1;
-          push @new_els, ['Natural_variant'];
+          push @new_els, ['Polymorphism'];
         }
       }
 
