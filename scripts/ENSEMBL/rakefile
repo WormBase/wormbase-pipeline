@@ -27,7 +27,7 @@ end
 desc 'setup environment variables'
 task :env_setup do
         old_perl5=ENV['PERL5LIB']
-        additional='/software/worm/ensembl-63.1/ensembl-config/celegans/generic-elegans:/software/worm/ensembl-63.1/ensembl-pipeline/modules:/software/worm/ensembl-63.1/ensembl-analysis/modules:/software/worm/ensembl-63/bioperl-live:/software/worm/ensembl/bioperl-run:/software/worm/ensembl-63.1/ensembl/modules:/software/worm/ensembl-63/eHive/modules:/software/worm/ensembl-63.1/ensembl-compara/modules:/software/worm/lib:.:/software/worm/lib/perl5:'
+        additional='/software/worm/ensembl-63.1/ensembl-compara/modules/:/software/worm/ensembl-63.1/ensembl-config/celegans/generic-elegans:/software/worm/ensembl-63.1/ensembl-pipeline/modules:/software/worm/ensembl-63.1/ensembl-analysis/modules:/software/worm/ensembl-63/bioperl-live:/software/worm/ensembl/bioperl-run:/software/worm/ensembl-63.1/ensembl/modules:/software/worm/ensembl-63/eHive/modules:/software/worm/ensembl-63.1/ensembl-compara/modules:/software/worm/lib:.:/software/worm/lib/perl5:'
 
         ENV['ENSEMBL_CVS_ROOT_DIR'] = '/software/worm/ensembl-63.1/'
         ENV['PERL5LIB']             = additional+old_perl5
