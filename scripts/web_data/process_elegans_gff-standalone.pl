@@ -260,7 +260,7 @@ while (<>) {
         $source  .= "_Polymorphism"; 
       }
 
-      if ($group /Consequence\s+\"(\S+)\"/) {
+      if ($group =~ /Consequence\s+\"(\S+)\"/ and $method ne 'transposable_element_insertion_site') {
         # copy variations with consequence with a new source, so that
         # they can be displayed on their own track on the browser
         my $cons = $1;
