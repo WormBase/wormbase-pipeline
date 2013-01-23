@@ -31,6 +31,7 @@ task :env_setup do
 
         ENV['ENSEMBL_CVS_ROOT_DIR'] = '/software/worm/ensembl-63.1/'
         ENV['PERL5LIB']             = additional+old_perl5
+	ENV['PATH']                 = '/software/worm/ensembl-63/eHive/scripts:'+ENV['PATH']
 end
 
 # updates the C.elegans assembly version to the current build
@@ -60,7 +61,7 @@ end
 #
 
 desc 'build genetree database'
-task :build_homology  do
+task :build_homology => [:env_setup] do
   yml=YAML::load_file('etc/ensembl_lite.conf')
   db=yml['elegans']['database']
 
