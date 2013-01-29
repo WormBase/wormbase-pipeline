@@ -7,7 +7,7 @@
 # build to check the current build
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2012-12-14 15:45:43 $
+# Last updated on: $Date: 2013-01-29 18:56:07 $
 use strict;
 use warnings;
 use lib $ENV{'CVS_DIR'};
@@ -65,6 +65,7 @@ if (
     $wb->species eq 'remanei' ||
     $wb->species eq 'japonica' ||
     $wb->species eq 'briggsae' ||
+    $wb->species eq 'brugia' ||
     $wb->species eq 'pristionchus') {
   $pfam=$seq=0;
 } elsif ($wb->species ne 'elegans') {
@@ -101,6 +102,8 @@ if($clones) {
     @clones = qw(Crem_Contig0 Crem_Contig10 Crem_Contig15 Crem_Contig30 Crem_Contig100 Crem_Contig200 Crem_Contig300 Crem_Contig500 Crem_Contig800);
   } elsif ($wb->species eq 'japonica') {
     @clones = qw(Cjap.Contig0 Cjap.Contig10 Cjap.Contig15 Cjap.Contig30 Cjap.Contig100 Cjap.Contig200 Cjap.Contig300 Cjap.Contig500 Cjap.Contig800);
+  } elsif ($wb->species eq 'brugia') {
+    @clones = qw(1512607 1512612 1512619 1512644m 1512649 1512661 1512663m 1512684);
   } elsif ($wb->species eq 'pristionchus') {
     @clones = qw(Ppa_Contig0 Ppa_Contig10 Ppa_Contig15 Ppa_Contig30 Ppa_Contig100 Ppa_Contig200);
   }
@@ -111,9 +114,10 @@ if($clones) {
     my @hd    = $ace->fetch(-query => $query);
     my @hdold = $aceold->fetch(-query => $query);
 
-    # add in the BLAT Homol_data objects in brenneri and briggsae
+    # add in the BLAT Homol_data objects
     if ($wb->species eq 'brenneri' || 
 	$wb->species eq 'briggsae' || 
+	$wb->species eq 'brugia' || 
 	$wb->species eq 'remanei') {
       $query = "find Homol_data \"*:${clone}_*\"";
       push @hd, $ace->fetch(-query => $query);
