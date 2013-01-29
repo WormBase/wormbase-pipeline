@@ -7,7 +7,7 @@
 # build to check the current build
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2013-01-29 18:56:07 $
+# Last updated on: $Date: 2013-01-29 19:51:06 $
 use strict;
 use warnings;
 use lib $ENV{'CVS_DIR'};
@@ -557,21 +557,18 @@ sub classes_to_check {
 			       Gene_name => 'Ppa-abcf-1',
 				   },
 		 'brugia' => {
-			       Ace2SO => '',
-			       Analysis => '',
-			       CDS => '',
-			       Clone => '',
-			       Condition => '',
-			       Feature => '',
-			       Feature_data => '',
-			       Gene => '', # misses Ortholog Ortholog_other Other_name
-			       Gene_name => '',
-			       Homol_data => '',
-			       Method => '',
-			       Protein => '',
+			       Ace2SO => 'coding_transcript_ace2so',
+			       CDS => 'Bm4144c',
+			       Condition => 'RNASeq.brugia.ERP000948.adult_female',
+			       Feature => 'WBsf899556',
+			       Feature_data => '1512607:Dust',
+			       Gene => 'WBGene00220262', # misses Ortholog Ortholog_other Other_name
+			       Gene_name => 'Bm-aagr-4',
+			       Homol_data => '1512607:wublastx_brenneri',
+			       Method => 'BLAT_EST_BEST',
+			       Protein => 'BM:BM00001',
 			       #Pseudogene => '',
-			       Transcript => '',
-			       Variation => '',
+			       Transcript => 'Bm1',
 			     },
 
 		);
