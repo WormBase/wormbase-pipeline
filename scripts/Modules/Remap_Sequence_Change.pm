@@ -13,7 +13,7 @@
 #      COMPANY:
 #     $Version:  $
 #      CREATED: 2006-02-27
-#        $Date: 2012-11-16 10:51:36 $
+#        $Date: 2013-02-01 16:18:40 $
 #===============================================================================
 package Remap_Sequence_Change;
 
@@ -497,7 +497,7 @@ sub write_changes {
   my $no_changes = "There are no changes to the chromosome sequences in this release.\n";
   my $any_changes = 0;
 
-  my @chromosomes = $wormbase->get_chromosome_names(-mito => 0, -prefix => 0);
+  my @chromosomes = $wormbase->get_chromosome_names(-mito => 0, -prefix => 1);
   my $version = $wormbase->get_wormbase_version;
            
   my %mapping_data = %{$self->_mapping_data};
