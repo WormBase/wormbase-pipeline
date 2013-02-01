@@ -97,10 +97,6 @@ my $RNASeqGenomeDir = "$RNASeqBase/Genome";
 chdir $RNASeqSRADir;
 
 $outdir = "$acefiles/rnaseq" if (!defined $outdir);
-system("rm -rf $outdir");
-if (!-e $outdir) {
-  mkdir $outdir, 0777;
-}
 
 $log->write_to("Initialising data\n");
 
@@ -187,6 +183,10 @@ if ($chunk_id) { # getting the alignments for a set of chromosomes
   # now run the sub-job for each chromosome/contig under LSF
   ##########################################################
   
+  system("rm -rf $outdir");
+  if (!-e $outdir) {
+    mkdir $outdir, 0777;
+  }
 
   my @chromosomes = $wormbase->get_chromosome_names(-mito => 1, -prefix => 1);
 
