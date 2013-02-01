@@ -2,7 +2,7 @@
 #
 # EMBLdump.pl :  makes modified EMBL dumps from camace.
 # 
-#  Last updated on: $Date: 2012-12-17 11:01:45 $
+#  Last updated on: $Date: 2013-02-01 11:56:49 $
 #  Last updated by: $Author: mh6 $
 
 use strict;
@@ -162,7 +162,7 @@ if ($dump_raw) {
     $command .= "query find Sequence $single\ngif EMBL $raw_dump_file\n";# find sequence and dump
     $command .= "quit\n";# say you don't want to save and exit
   } else {
-    $command .= "query find Sequence Genomic_canonical AND (From_laboratory = \"HX\" OR From_Laboratory = \"RW\")\n";
+    $command .= "query find Sequence Genomic_canonical AND (From_laboratory = \"HX\" OR From_Laboratory = \"RW\" OR From_Laboratory = \"ELG\")\n";
     $command .= "gif EMBL $raw_dump_file\n";# find sequence and dump
     $command .= "quit\n";# say you don't want to save and exit
   }
@@ -225,7 +225,7 @@ if ($dump_modified) {
     if(/^ID\s+(\S+)\s+\S+\s+\S+\s+\S+\s+(\d+)\s+\S+/){
       ($clone, $seqlen) = ($1, $2);
       $idline_suffix = sprintf("SV XXX; linear; genomic DNA; %s; INV; $seqlen BP.", 
-                               ($species eq 'briggsae') ? "CON" : "STD");
+                               ($species ne 'elegans') ? "CON" : "STD");
       
       @accs = ();
       @features = ();
@@ -373,11 +373,6 @@ if ($dump_modified) {
           print $out_fh  "CC   For a graphical representation of this sequence and its analysis\n";
           print $out_fh  "CC   see:- http://www.wormbase.org/species/c_elegans/clone/$clone\n";
           print $out_fh  "XX\n";
-        }elsif($species eq 'brugia'){
-          print $out_fh "XX\n",
-                        "CC   For a graphical representation of this sequence and its analysis\n",
-                        "CC   see:- http://www.wormbase.org/species/c_elegans/clone/$clone\n",
-                        "XX\n";
         }
       }
       next;
@@ -1112,7 +1107,7 @@ sub get_references {
     ],
     brugia => [
       ["RG   WormBase Consortium",
-       "RA   Ghedin E.; Paulini M.",
+       "RA   Ghedin E., Paulini M.;",
        "RT   ;",
        "RL   Submitted (12-Dec-2012) to the INSDC.",
        "RL   WormBase Group, European Bioinformatics Institute,",
@@ -1127,7 +1122,7 @@ sub get_references {
        "RA   Estes C.F., Foster J.M., Ganatra M., Gregory W.F., Johnson N.M., Jin J.,",
        "RA   Komuniecki R., Korf I., Kumar S., Laney S., Li B.W., Li W., Lindblom T.H.,",
        "RA   Lustigman S., Ma D., Maina C.V., Martin D.M., McCarter J.P., McReynolds L.,",
-       "RA   Mitreva M., Nutman T.B., Parkinson J., Peregrín-Alvarez J.M., Poole C., Ren Q.,",
+       "RA   Mitreva M., Nutman T.B., Parkinson J., Peregrin-Alvarez J.M., Poole C., Ren Q.,",
        "RA   Saunders L., Sluder A.E., Smith K., Stanke M., Unnasch T.R., Ware J., Wei A.D.,",
        "RA   Weil G., Williams D.J., Zhang Y., Williams S.A., Fraser-Liggett C., Slatko B.,",
        "RA   Blaxter M.L., Scott A.L.;",
