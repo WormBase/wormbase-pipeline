@@ -31,7 +31,7 @@ use LSF::JobManager;
 
 
 my ($help, $test, $verbose, $store, $wormbase, $species, $debug, $nomakehits, $outdir);
-my ($quick, $method, $chromosome, $bamfile);
+my ($quick, $method, $bamfile, $chunk_id, $chunk_total, $outfname);
 
 GetOptions ("help"         => \$help,
             "test"         => \$test,
@@ -40,8 +40,12 @@ GetOptions ("help"         => \$help,
 	    "store:s"      => \$store,
 	    "nomakehits"   => \$nomakehits,   # use to skip making the tophat_out/hits.tmp files - slow!
 	    "species:s"    => \$species,
-	    "outdir:s"     => \$outdir,     # the default is the BUILD/species/acefiles directory
-	    "chromosome:s" => \$chromosome, # set when running a sub-job of this script to find the hits in the hits file for a single chromosome
+	    "outdir:s"     => \$outdir,      # the default is the BUILD/species/acefiles directory
+
+	    "chunkid:s"    => \$chunk_id,    # set when running a sub-job of this script to find the hits in the hits file for a set of chromosomes
+	    "chunktotal:s" => \$chunk_total, # set when running a sub-job of this script to find the hits in the hits file for a set of chromosomes
+	    "acefname:s"   => \$outfname,    # set when running a sub-job of this script to find the hits in the hits file for a set of chromosomes
+
 	    "bamfile:s"    => \$bamfile,     # set when running a sub-job of this script to create the hitsfile for a single BAM file
             );
 
@@ -93,6 +97,7 @@ my $RNASeqGenomeDir = "$RNASeqBase/Genome";
 chdir $RNASeqSRADir;
 
 $outdir = "$acefiles/rnaseq" if (!defined $outdir);
+system("rm -rf $outdir");
 if (!-e $outdir) {
   mkdir $outdir, 0777;
 }
@@ -104,12 +109,12 @@ my $seq_obj = Sequence_extract->invoke($database, 0, $wormbase);
 my $coords = Coords_converter->invoke($database, 0, $wormbase);
 
 
-if ($chromosome) {
+if ($chunk_id) { # getting the alignments for a set of chromosomes
   ###########################
   # run the sub-job under LSF
   ###########################
 
-  &do_chromosome($chromosome);
+  &do_chromosome($chunk_id, $chunk_total, $outfname);
   
 } elsif ($bamfile) {
   
@@ -166,43 +171,56 @@ if ($chromosome) {
       }  
     }
     closedir $dh;
-  }
 
-  print "Waiting for LSF jobs to finish.\n";
-  $lsf->wait_all_children( history => 1 );
-  for my $job ( $lsf->jobs ) {
-    if ($job->history->exit_status != 0) {
-      $log->write_to("Job $job (" . $job->history->command . ") exited non zero: " . $job->history->exit_status . "\n");
+
+    print "Waiting for LSF jobs to finish.\n";
+    $lsf->wait_all_children( history => 1 );
+    for my $job ( $lsf->jobs ) {
+      if ($job->history->exit_status != 0) {
+	$log->write_to("Job $job (" . $job->history->command . ") exited non zero: " . $job->history->exit_status . "\n");
+      }
     }
+    $lsf->clear;
   }
-  $lsf->clear;
-
 
   ##########################################################
   # now run the sub-job for each chromosome/contig under LSF
   ##########################################################
   
 
-
-
   my @chromosomes = $wormbase->get_chromosome_names(-mito => 1, -prefix => 1);
- 
-  foreach my $chromosome (@chromosomes) {
-    chomp $chromosome;
 
-    print "Reading $chromosome\n";
+  my $chunk_total = 200; # maximum number of chunked jobs to run
 
-    my $cmd = "$script -chromosome $chromosome";
+  $chunk_total = scalar(@chromosomes) if $chunk_total > scalar(@chromosomes);
+  $log->write_to("bsub commands . . . . \n\n");
+  $lsf = LSF::JobManager->new();
+  foreach my $chunk_id (1..$chunk_total) {
+    my $batchname = "batch_${chunk_id}";
+    my $outfname = "rnaseq_${batchname}.ace";
+    my $err = "$scratch_dir/rnaseq.$batchname.err.$$";
+    my $out = "$scratch_dir/rnaseq.$batchname.err.$$";
+
+    my $cmd = "$script";
+    $cmd .= " -chunkid $chunk_id -chunktotal $chunk_total -acefname $outfname";
     $cmd .= " -outdir $outdir" if ($outdir);
     $cmd .= " -species $species" if ($species);
     $cmd .= " -test" if $test;
     $cmd .= " -debug $debug" if $debug;
     $cmd = $wormbase->build_cmd_line($cmd, $store_file);
     $log->write_to("$cmd\n");
-    print "bsub options: @bsub_options\n";
+    $log->write_to("logs files:\n $err\n $out\n");
     print "cmd to be executed: $cmd\n";
+    @bsub_options = ();
+    push @bsub_options, (-M =>  "4000", # in EBI both -M and -R are in Gb
+			 -R => "\"select[mem>4000] rusage[mem=4000]\"", 
+			 -J => 'rnaseq_alignments',
+			 -e => $err,
+			 -o => $out,
+		      );
     $lsf->submit(@bsub_options, $cmd);
-  }
+  }  
+
 
   print "Waiting for LSF jobs to finish.\n";
   $lsf->wait_all_children( history => 1 );
@@ -261,36 +279,60 @@ sub do_make_hits {
 # routine to be executed in sub-job of this script in a LSF queue
 sub do_chromosome {
 
-  my ($chromosome) = @_;
+  my ($chunk_id, $chunk_total, $outfname) = @_;
+
+  $outdir = "$acefiles/rnaseq" if (!defined $outdir);
+  mkdir $outdir, 0777;
+  my $output = "$outdir/RNASeq_${outfname}";
+  my $Foutput = "$outdir/RNASeq_F_${outfname}";
+  my $Routput = "$outdir/RNASeq_R_${outfname}";
+  my $vfile = "$outdir/virtual_objects_RNASeq_${outfname}";
+  open(VIRT, ">$vfile") or $log->log_and_die("Could not open $vfile for writing\n");
+  open (ACE, ">$output") || $log->log_and_die("Can't open the file $output\n");
+  open (FACE, ">$Foutput") || $log->log_and_die("Can't open the file $Foutput\n");
+  open (RACE, ">$Routput") || $log->log_and_die("Can't open the file $Routput\n");
 
 
-  print "Making the ace files for chromsome $chromosome\n";
+  my @chromosomes = $wormbase->get_chunked_chroms(-prefix => 1, 
+						  -chunk_total => $chunk_total,
+						  -chunk_id    => $chunk_id);
 
-  %F_clones = ();
-  %R_clones = ();
-  my $library_count = 0;
-  
-  my @dir_list;
 
-  # read the aligned reads into the %clones hash
-  opendir(my $dh, $RNASeqSRADir) || die "cant open directory $RNASeqSRADir\n";
-  while(my $dir = readdir $dh) {
-    if ((-d $dir || -l $dir) && $dir !~ /^\./) {
-      push @dir_list, $dir;
+  foreach my $chromosome (@chromosomes) {
+    print "Making the ace files for chromsome $chromosome\n";
+
+    %F_clones = ();
+    %R_clones = ();
+    my $library_count = 0;
+    
+    my @dir_list;
+    
+    # read the aligned reads into the %clones hash
+    opendir(my $dh, $RNASeqSRADir) || die "cant open directory $RNASeqSRADir\n";
+    while(my $dir = readdir $dh) {
+      if ((-d $dir || -l $dir) && $dir !~ /^\./) {
+	push @dir_list, $dir;
+      }
     }
+    closedir $dh;
+    
+    foreach my $dir (@dir_list) {
+      print "reading $dir\n";
+      if (readhits($dir, $chromosome)) {
+	$library_count++;
+      } # count the libraries successfully read
+    }
+    
+    # write the results to an ace file 
+    print "writing ace file\n";
+    writeace($library_count, $chromosome, $outfname);
   }
-  closedir $dh;
-  
-  foreach my $dir (@dir_list) {
-    print "reading $dir\n";
-    if (readhits($dir, $chromosome)) {
-      $library_count++;
-    } # count the libraries successfully read
-  }
-  
-  # write the results to an ace file 
-  print "writing ace file\n";
-  writeace($library_count, $chromosome);
+
+  close(ACE);
+  close(FACE);
+  close(RACE);
+  close(VIRT);
+
 }
 
 ##############################################################
@@ -358,7 +400,7 @@ sub readhits {
 # write the results to ace files  
 
 sub writeace {
-  my ($library_count, $chromosome) = @_;
+  my ($library_count, $chromosome, $outfname) = @_;
 
   my (@tiles);
 
@@ -474,16 +516,8 @@ sub writeace {
   }
 
 
-  $outdir = "$acefiles/rnaseq" if (!defined $outdir);
-  mkdir $outdir, 0777;
-  my $output = "$outdir/RNASeq_${chromosome}.ace";
-  my $Foutput = "$outdir/RNASeq_F_${chromosome}.ace";
-  my $Routput = "$outdir/RNASeq_R_${chromosome}.ace";
-  my $vfile = "$outdir/virtual_objects_RNASeq_${chromosome}.ace";
-  open(VIRT, ">$vfile") or $log->log_and_die("Could not open $vfile for writing\n");
   print VIRT "\nSequence : \"$chromosome\"\n";
   
-  open (ACE, ">$output") || $log->log_and_die("Can't open the file $output\n");
   for(my $tile_idx = 1; $tile_idx <= @tiles; $tile_idx++) {
     my $tile = $tiles[$tile_idx-1];
 
@@ -496,10 +530,8 @@ sub writeace {
       print ACE "Feature RNASeq @$seg \"Region of RNASeq reads\"\n";
     }
   }
-  close(ACE);
 
 
-  open (FACE, ">$Foutput") || $log->log_and_die("Can't open the file $Foutput\n");
   for(my $tile_idx = 1; $tile_idx <= @tiles; $tile_idx++) {
     my $tile = $tiles[$tile_idx-1];
 
@@ -512,9 +544,7 @@ sub writeace {
       print FACE "Feature RNASeq_F_asymmetry @$seg \"Region of forward RNASeq reads\"\n";
     }
   }
-  close(FACE);
 
-  open (RACE, ">$Routput") || $log->log_and_die("Can't open the file $Routput\n");
   for(my $tile_idx = 1; $tile_idx <= @tiles; $tile_idx++) {
     my $tile = $tiles[$tile_idx-1];
 
@@ -527,8 +557,7 @@ sub writeace {
       print RACE "Feature RNASeq_R_asymmetry @$seg \"Region of reverse RNASeq reads\"\n";
     }
   }
-  close(RACE);
-  close(VIRT);
+
 }
 
 ##########################################
