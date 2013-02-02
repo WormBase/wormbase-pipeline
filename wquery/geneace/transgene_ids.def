@@ -1,6 +1,6 @@
 // Spread sheet definition for the ACeDB software 
-// User: wormpub
-// Date: 2003-07-21_14:23:49
+// User: klh
+// Date: 2013-02-02_09:52:29
 
 // %n (%%n in the graphic) are parameter to be given on the command line in tace
 // or by default by the Parameters given in this file
@@ -21,7 +21,8 @@ Colonne 2
 Width 12 
 Mandatory 
 Visible 
-Text 
+Class 
+Class Text 
 From 1 
 Tag Public_name 
  
