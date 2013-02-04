@@ -5,8 +5,8 @@
 # Counts the number of objects in an ACEDB database for each Class stated in the config file
 # Compares this number to those from a second database.
 #
-# Last updated by: $Author: klh $
-# Last updated on: $Date: 2011-04-01 13:08:58 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2013-02-04 14:03:28 $
 
 
 use strict;
@@ -133,8 +133,8 @@ get_curation_stats('brenneri');
 get_curation_stats('japonica');
 get_curation_stats('remanei');
 get_curation_stats('pristionchus');
+get_curation_stats('brugia');
 #get_curation_stats('heterorhabditis');
-#get_curation_stats('brugia');
 #get_curation_stats('mhapla');
 
 close (OUT);
