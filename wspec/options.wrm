@@ -74,16 +74,16 @@ _VSAGE_tag	   -V -D FMAP
 // literature 
 
 _VAuthor           -V 
-_VPerson	   -V -T Standard_name
+_VPerson	   -V
 _VPerson_name	   -V
 _VJournal          -V
-_VPaper            -V -T Brief_citation
+_VPaper            -V
 
 
 
 // genetics / CGC stuff
 
-_VGene             -V -T Public_name
+_VGene             -V
 _VGene_cluster     -V
 _VGene_class       -V
 _VGene_name	   -V
@@ -95,12 +95,12 @@ _VMultiMap	   -H -D DtMULTIMAP
 _VManyMap          -H -D GMAP
 _VContig           -H -D PMAP
 _VClone            -V -D PMAP
-_VStrain           -V -T Genotype 
+_VStrain           -V 
 _VLaboratory       -V
-_V2_point_data     -H -T Genotype 
-_VMulti_pt_data    -H -T Genotype
-_VPos_neg_data     -H -T Results 
-_VVariation        -V -T Public_name
+_V2_point_data     -H 
+_VMulti_pt_data    -H
+_VPos_neg_data     -H 
+_VVariation        -V
 
 // worm biology
 
@@ -123,7 +123,7 @@ _VLibrary	   -V
 _VExpr_pattern	   -V
 _VExpr_profile	   -V
 _VPCR_product      -V
-_VPhenotype	   -T Primary_name
+_VPhenotype	   -V
 _VRNAi             -V
 _VSK_map	   -V
 _VTransgene        -V
@@ -152,9 +152,9 @@ _VSpecies          -H
 _VTree             -V -D DtDendrogram
 _VTreeNode         -H -D DtDendrogram
 _VView		   -V
-_VAnatomy_term 	   -V -T Term
+_VAnatomy_term 	   -V
 _VAnatomy_function -V
-_VAnatomy_name 	   -V -T Term
+_VAnatomy_name 	   -V
 _VAntibody         -V
 _VExpression_cluster          -V
 _VCondition        -V
@@ -162,9 +162,10 @@ _VGene_regulation  -V
 _VGenetic_code     -V
 _VHomology_group   -V
 _VMovie            -H
-_VGO_term	   -V -T Term
+_VGO_term	   -V
 _VGO_code	   -V
 _VSO_term	   -V
+_VDO_term          -V
 _VPosition_Matrix  -V 
 
 // Mass Spec class
