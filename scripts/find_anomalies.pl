@@ -8,8 +8,8 @@
 # matching a CDS and stores the results in in a data file ready to be read into the SQL database
 # 'worm_anomaly'
 #
-# Last updated by: $Author: klh $     
-# Last updated on: $Date: 2012-07-06 13:36:43 $      
+# Last updated by: $Author: gw3 $     
+# Last updated on: $Date: 2013-02-04 10:42:56 $      
 
 # Changes required by Ant: 2008-02-19
 # 
@@ -270,7 +270,6 @@ print OUT "Remark \"This method is used by acedb to display curation anomaly reg
 print OUT "\n\n";
 close(OUT);
 
-my $brugia_count_contigs = 0;	# in brugia count the contigs that we test
 
 # loop through the chromosomes
 my @chromosomes = $wormbase->get_chromosome_names(-mito => 0, -prefix => 1);
@@ -279,56 +278,6 @@ foreach my $chromosome (@chromosomes) {
 
   # get the Overlap object
   $ovlp = Overlap->new($database, $wormbase);
-
-# for brugia, test to see if the jigsaw and tigr genes are the same -
-# it so then we don't need to get their anomalies for this test as
-# there is no difference between them
-  if ($species =~ /brugia/) {
-
-    # don't bother to test the degenerate contigs
-    if ($chromosome =~ /supercontigDegenerate/) {next;}
-
-# taken from get_Coding_transcript_exons
-    my %GFF_data = 
-	(
-	 file		=> "~wormpub/DATABASES/TEST_DATABASES/brugia/brugia/CHROMOSOMES/${chromosome}.gff", # jigsaw
-	 gff_source		=> "jigsaw", # jigsaw
-	 gff_type		=> "exon", # jigsaw
-	 ID_after		=> "CDS\\s+", # jigsaw
-	 );
-
-    my @jigsaw_exons = $ovlp->read_GFF_file($chromosome, \%GFF_data);
-
-    %GFF_data = 
-	(
-	 file		=> "~wormpub/DATABASES/TEST_DATABASES/brugia/brugia/CHROMOSOMES2/brugia/${chromosome}.gff3",
-	 gff_source		=> "WormBase",
-	 gff_type		=> "exon",
-	 ID_after		=> "Parent=transcript\:",
-	 );
-
-    my @tigr_exons = $ovlp->read_GFF_file($chromosome, \%GFF_data);
-
-    my $match = 1;
-    if (@jigsaw_exons == @tigr_exons) {
-      foreach my $jigsaw (@jigsaw_exons) {
-	my $tigr = shift @tigr_exons;
-	if ($jigsaw->[1] != $tigr->[1] || $jigsaw->[2] != $tigr->[2]) {
-	  $match = 0; # difference in lengths, so not a perfect match
-	  print "no match in $jigsaw->[1] .. $jigsaw->[2] vs $tigr->[1] .. $tigr->[2]\n";
-	}
-      }
-    } else {
-      print "different number of exons: ", scalar @jigsaw_exons, " ", scalar @tigr_exons, "\n";
-      $match = 0;		# different numbers of exons, so not a perfect match
-    }
-    if ($match) {
-      print "NOT testing $chromosome - both the same. Have done: $brugia_count_contigs contigs\n";
-      next;  # both sets of exons are the same, so don't test this supercontig
-    }		
-    $brugia_count_contigs++;
-    print "TESTING $chromosome. Have done: $brugia_count_contigs contigs\n";
-  }
 
 
   $log->write_to("Processing chromosome $chromosome\n");
@@ -4893,8 +4842,8 @@ UNMATCHED_454_CLUSTER        elegans
 UNMATCHED_MGENE              elegans
 NOVEL_MGENE_PREDICTION       elegans
 NOT_PREDICTED_BY_MGENE       elegans
-UNMATCHED_RNASEQ_INTRONS     elegans remanei briggsae japonica
-SPURIOUS_INTRONS             elegans remanei briggsae japonica
+UNMATCHED_RNASEQ_INTRONS     elegans remanei briggsae japonica brenneri brugia
+SPURIOUS_INTRONS             elegans remanei briggsae japonica brenneri brugia
 PREMATURE_STOP               elegans remanei briggsae japonica brenneri brugia
 UNCONFIRMED_MASS_SPEC_INTRON elegans
 END_DATA
