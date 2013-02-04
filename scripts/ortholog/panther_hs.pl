@@ -6,7 +6,7 @@
 
 use DBI;
 
-my $db = DBI->connect( "DBI:mysql:database=homo_sapiens_core_64_37;host=ensembldb.ensembl.org;port=5306",'wormro');
+my $db = DBI->connect( "DBI:mysql:database=homo_sapiens_core_64_37;host=ensembldb.ensembl.org;port=5306",'anonymous');
 
 my $sth=$db->prepare('SELECT stable_id FROM translation_stable_id JOIN object_xref ox ON(ensembl_id=translation_id AND ensembl_object_type="Translation") JOIN xref x ON (ensembl_object_type="Translation" AND ox.xref_id=x.xref_id) WHERE dbprimary_acc=? AND external_db_id=2200');
 
