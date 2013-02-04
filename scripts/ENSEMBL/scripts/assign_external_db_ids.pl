@@ -4,13 +4,6 @@
 # script to add external_db_ids to the hit_names
 # in protein- & dna-align_feature tables
 #
-# -example:
-#  perl assign_external_db_ids.pl -conf fugu_dafs.cfg -feature_type [dna, protein]
-#       -dumpdir /lustre/scratch1/ensembl/fsk/fugu_output
-# -use option -nodump if the table was successfully dumped before and should be re-used
-# -every analysis / regex must be defined in the config file
-# -use LSF to run!
-# -if successful, do a 'delete from table' & 'load data local infile "/absolutepath/table.fixed" into table dna_align_feature;'
 #
 
 
@@ -44,8 +37,8 @@ my %mapping = (
   cbrenneri_mrna  => 'wormbase_id',
   ppacificus_est   => 'wormbase_id',
   ppacificus_mrna  => 'wormbase_id',
-  ost            => 'wormbase_id',
-  rst            => 'wormbase_id',
+  celegans_ost     => 'wormbase_id',
+  clelgans_rst     => 'wormbase_id',
 
 );
 
