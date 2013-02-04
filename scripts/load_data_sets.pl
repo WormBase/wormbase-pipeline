@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl -w
-# Last updated by: $Author: klh $     
-# Last updated on: $Date: 2013-01-17 15:45:06 $      
+# Last updated by: $Author: mh6 $     
+# Last updated on: $Date: 2013-02-04 16:23:55 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -51,7 +51,8 @@ if( $species eq 'elegans') {
   if(grep(/$species/, map(lc $_,  @core_organisms))){  #other core (tierII) species)
     &parse_homol_data           if $homol;
     &parse_briggsae_data        if ($misc && $species eq 'briggsae');
-    &parse_remanei_data        if ($misc && $species eq 'remanei');
+    &parse_remanei_data         if ($misc && $species eq 'remanei');
+    &parse_brugia_data          if ($misc && $species eq 'brugia');
     &parse_nematode_seqs        if $misc;
     &parse_genBlastG            if $homol;
   }
@@ -100,6 +101,19 @@ sub parse_misc_elegans_files {
     $log->write_to("\tloading $file -tsuser $files_to_load{$file}\n");
     $wormbase->load_to_database($wormbase->autoace,$file, $files_to_load{$file},$log);
   }
+}
+
+# Brugia malayi specific files
+sub parse_brugia_data {
+  my %files_to_load = (
+                    $wormbase->misc_dynamic.'/misc_TIGR_brugia.ace'         => 'TIGR_gene_models',
+  );
+  $log->write_to("Loading files to ".$wormbase->autoace."\n==================================\n");
+  foreach my $file (sort keys %files_to_load) {
+    $log->write_to("\tloading $file -tsuser $files_to_load{$file}\n");
+    $wormbase->load_to_database($wormbase->autoace,$file, $files_to_load{$file},$log);
+  }
+
 }
 
 sub parse_nematode_seqs {
