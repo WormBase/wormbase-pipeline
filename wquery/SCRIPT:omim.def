@@ -55,7 +55,14 @@ Class
 Class Accession_number 
 Right_of 4 
 Tag HERE   
- 
- 
+
+Colonne 6 
+Width 30 
+Optional 
+Visible 
+Class 
+Class Species 
+From 1 
+Tag Species
 
 // End of these definitions
