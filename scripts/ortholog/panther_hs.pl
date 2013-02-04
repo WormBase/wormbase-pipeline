@@ -21,7 +21,7 @@ while(<>){
 
     next unless $proteins[0];
     print "Gene : $from\n";
-    map{print "Ortholog_other ENSEMBL:$_ Panther\n"}@proteins;
+    map{print "Ortholog_other ENSEMBL:$_ From_analysis Panther\n"}@proteins;
 
     foreach my $prot(@proteins){
     print <<HERE
