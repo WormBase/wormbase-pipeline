@@ -7,8 +7,8 @@
 #
 #  DESCRIPTION:  adds additional information to Operon GFF lines
 #
-#       AUTHOR:  $Author: klh $
-#      VERSION:  $Revision: 1.3 $
+#       AUTHOR:  $Author: gw3 $
+#      VERSION:  $Revision: 1.4 $
 #      CREATED:  21/05/12 10:40:04 BST
 #===============================================================================
 
@@ -61,6 +61,8 @@ else {
   }
 }
 
+my $prefix_name = $wormbase->pep_prefix; # 'CE' for elegans, 'BM' for brugia
+
 foreach my $fileprefix (@gff_files) {
   if ($debug) {print "$fileprefix\n";}
   my $in_file = "$gff_dir/${fileprefix}.gff";
@@ -83,10 +85,10 @@ foreach my $fileprefix (@gff_files) {
     }
     chomp;
     print $out_fh $_;
-    my ($operond) = /(CEOP\d+|CEOP\w+\d+)/;
+    my ($operond) = /(${prefix_name}OP\d+|${prefix_name}OP\w+\d+)/;
     if (/Gene/) {
       print "$_";
-      $log->log_and_die("\nIt appears that you have already overloaded the CEOP lines for $species\n\n");
+      $log->log_and_die("\nIt appears that you have already overloaded the ${prefix_name}OP lines for $species\n\n");
     }
     foreach my $genes (@{$$operon_genes{$operond}}) { 
       print $out_fh " ; Gene \"$genes\"" if (defined $$operon_genes{$operond});
