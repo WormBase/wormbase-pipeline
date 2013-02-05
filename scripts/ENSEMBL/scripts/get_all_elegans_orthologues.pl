@@ -62,7 +62,8 @@ while( my $member = shift @members){
 	      || $member->taxon_id == 31234
 	      || $member->taxon_id == 135651
 	      || $member->taxon_id == 281687
-	      || $member->taxon_id == 54126);
+	      || $member->taxon_id == 54126
+              || $member->taxon_id == 6279);
 
     my @homologies = @{$homology_adaptor->fetch_all_by_Member( $member)};
 
@@ -83,7 +84,8 @@ while( my $member = shift @members){
 	         || $pepm->taxon_id == 31234
 	         || $pepm->taxon_id == 135651
 	         || $pepm->taxon_id == 281687
-	         || $pepm->taxon_id == 54126) {
+	         || $pepm->taxon_id == 54126
+                 || $pepm->taxon_id == 6279) {
                     $t2{ $pepm->stable_id } = [$pepm->taxon_id,$homology->description]
                 }
 		else {
