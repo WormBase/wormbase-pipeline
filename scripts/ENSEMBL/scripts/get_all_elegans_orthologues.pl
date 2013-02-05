@@ -139,7 +139,7 @@ while( my $member = shift @members){
 sub get_commondata {
     my ($name)=@_;
     my %genehash;
-    my @locations=qw(autoace remanei briggsae pristionchus japonica brenneri);
+    my @locations=qw(autoace remanei briggsae pristionchus japonica brenneri brugia);
     my $dir=glob('~wormpub/BUILD/');
     foreach my $loc(@locations) {
         my $file_name="$dir/$loc/COMMON_DATA/$name.dat";
