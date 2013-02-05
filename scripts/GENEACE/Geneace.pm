@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl5.8.0 -w
-# Last updated by $Author: gw3 $
-# Last updated on: $Date: 2010-07-14 15:10:09 $
+# Last updated by $Author: klh $
+# Last updated on: $Date: 2013-02-05 14:27:39 $
 
 package Geneace;
 
@@ -38,9 +38,35 @@ sub geneace {return $geneace_dir}
 sub curr_db {return $curr_db}
 sub test_geneace {return  '/nfs/wormpub/DATABASES/TEST_DBs/CK1TEST'}
 
+sub transgene_ids {
+  my ($this) = @_;
+
+  print "----- Doing Transgene name <-> Transgene ID conversion based on current_db ... -----\n\n";
+
+  my %tgid_map;
+
+  my $wb = $this->{wormbase};
+  my $tg_name_def = "$def_dir/transgene_ids.def";
+  
+  my $fh = $wb->table_maker_query($wb->database('current'), $tg_name_def);
+  while(<$fh>) {
+    chomp;
+    next if /acedb|\/\/|^\s*\n{0,1}$/;
+
+    if (/\"(\S+)\"\s+\"(\S+)\"/) {    
+      my ($wbtid, $public_name) = ($1, $2);
+    
+      $tgid_map{$public_name} = $wbtid;
+    }
+  }
+
+  return \%tgid_map;
+}
+
+
 sub gene_info {
   my ($this, $db, $option) = @_;
-  shift;
+
   my $gi_file  = $this->{'wormbase'}->database('geneace')."/gene_info.dat";
 
   my (%gene_info);
@@ -52,7 +78,7 @@ sub gene_info {
     $db = "/nfs/wormpub/DATABASES/geneace" if !$db;
     print "----- Doing Gene id <-> Gene_name conversion based on $db ... -----\n\n";
 
-	 my $gene_info_def="$def_dir/geneace_gene_info.def";
+    my $gene_info_def="$def_dir/geneace_gene_info.def";
 
     my $fh = $this->{'wormbase'}->table_maker_query($db,$gene_info_def);
 
