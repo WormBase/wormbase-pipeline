@@ -876,6 +876,9 @@ Join_blocks
 Display_gaps
 Gapped
 Blixem Blixem_N
+GFF_source	 "TIGR_BEST"
+GFF_feature	 "nucleotide_match"
+GFF_SO "SO:0000347" // nucleotide_match
 
 Method : "BLAT_TC1_BEST" 
 Colour	 BROWN
