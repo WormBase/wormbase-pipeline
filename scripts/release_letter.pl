@@ -4,8 +4,8 @@
 # 
 # by Anthony Rogers                             
 #
-# Last updated by: $Author: klh $               
-# Last updated on: $Date: 2012-08-07 13:00:04 $
+# Last updated by: $Author: gw3 $               
+# Last updated on: $Date: 2013-02-06 14:10:44 $
 
 # Generates a release letter at the end of build.
 #
@@ -103,7 +103,7 @@ if( defined($opt_l)) {
   printf RL "     - G_SPECIES.WS$ver.annotations.gff[2|3].gz      - Sequence features in either GFF2 or GFF3 format\n";
   printf RL "     - G_SPECIES.WS$ver.ests.fa.gz                   - ESTs and mRNA sequences extracted from the public databases\n";
   printf RL "     - G_SPECIES.WS$ver.best_blastp_hits.txt.gz      - Best blastp matches to human, fly, yeast, and non-WormBase Uniprot proteins\n";
-  printf RL "     - G_SPECIES.WS$ver.*pep_package.tar.gz          - latest version of the [worm|brig|bren|rema|jap|ppa]pep package (if updated since last release)\n";
+  printf RL "     - G_SPECIES.WS$ver.*pep_package.tar.gz          - latest version of the [worm|brig|bren|rema|jap|ppa|brug]pep package (if updated since last release)\n";
   printf RL "     - annotation/                    - contains additional annotations:\n";
   printf RL "        - G_SPECIES.WS$ver.confirmed_genes.txt.gz              - DNA sequences of all genes confirmed by EST &/or cDNA\n";
   printf RL "        - G_SPECIES.WS$ver.cDNA2orf.txt.gz                     - Latest set of ORF connections to each cDNA (EST, OST, mRNA)\n";      
@@ -419,6 +419,7 @@ if( defined($opt_l)) {
   my $japonica_seq_cgc_q = "Find Gene WHERE (Corresponding_CDS OR Corresponding_transcript OR Corresponding_pseudogene) AND CGC_name AND Species = \"Caenorhabditis japonica\""; 
   my $brenneri_seq_cgc_q = "Find Gene WHERE (Corresponding_CDS OR Corresponding_transcript OR Corresponding_pseudogene) AND CGC_name AND Species = \"Caenorhabditis brenneri\""; 
   my $pristionchus_seq_cgc_q= "Find Gene WHERE (Corresponding_CDS OR Corresponding_transcript OR Corresponding_pseudogene) AND CGC_name AND Species = \"Pristionchus pacificus\""; 
+  my $brugia_seq_cgc_q= "Find Gene WHERE (Corresponding_CDS OR Corresponding_transcript OR Corresponding_pseudogene) AND CGC_name AND Species = \"Brugia malayi\""; 
   
   my $gene_seq_cgc = $db->fetch(-query=> "$gene_seq_cgc_q");
   my $ele = $db->fetch(-query=> "$ele_seq_cgc_q");
@@ -427,9 +428,10 @@ if( defined($opt_l)) {
   my $japonica_seq_cgc = $db->fetch(-query=> "$japonica_seq_cgc_q");
   my $brenneri_seq_cgc = $db->fetch(-query=> "$brenneri_seq_cgc_q");
   my $pristionchus_seq_cgc = $db->fetch(-query=> "$pristionchus_seq_cgc_q");
+  my $brugia_seq_cgc = $db->fetch(-query=> "$brugia_seq_cgc_q");
   
   printf RL "Genes with Sequence and WormBase-approved Gene names\n";
-  printf RL "WS$ver $gene_seq_cgc ($ele elegans / $briggsae_seq_cgc briggsae / $remanei_seq_cgc remanei / $japonica_seq_cgc japonica / $brenneri_seq_cgc brenneri / $pristionchus_seq_cgc pristionchus)\n\n\n";
+  printf RL "WS$ver $gene_seq_cgc ($ele elegans / $briggsae_seq_cgc briggsae / $remanei_seq_cgc remanei / $japonica_seq_cgc japonica / $brenneri_seq_cgc brenneri / $pristionchus_seq_cgc pristionchus / $brugia_seq_cgc brugia)\n\n\n";
   # Close the database connection now we have finished with it
   $db->close;
 
