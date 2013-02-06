@@ -5,8 +5,8 @@
 # A PERL wrapper to automate the process of building the FTP sites 
 # builds wormbase & wormpep FTP sites
 # 
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2013-02-01 14:33:18 $
+# Last updated by: $Author: klh $
+# Last updated on: $Date: 2013-02-06 14:10:40 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -1071,6 +1071,7 @@ sub make_geneID_list {
 
     my $gspecies = $wb->full_name('-g_species' => 1);
     my $full_name = $wb->full_name;
+    my $tax_id = $wb->ncbi_tax_id;
 
     my $annotation_dir = "$targetdir/species/$gspecies/annotation";
     my $ace_dir = $wormbase->autoace;
@@ -1082,9 +1083,14 @@ sub make_geneID_list {
     open GENEID,">$out" ||die($!);
 
     my $db = Ace->connect(-path => "$ace_dir/") || die (Ace->error);
-    my $gene_it = $db->fetch_many(-query => "Find Gene; Species=\"${full_name}\"; NOT Dead");
+    my $gene_it = $db->fetch_many(-query => "Find Gene; Species=\"${full_name}\"");
     while(my $gene=$gene_it->next){
-      print GENEID "$gene,${\$gene->CGC_name},${\$gene->Sequence_name}\n";
+      printf GENEID join(",", 
+                         $tax_id,
+                         $gene,
+                         $gene->CGC_name,
+                         $gene->Sequence_name,
+                         $gene->Status), "\n";
     }
 
     close GENEID;
