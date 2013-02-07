@@ -243,6 +243,12 @@ foreach my $chromosome_info ( @{$WB_CHR_INFO} ) {
         my $miRNAgenes = parse_pseudo_files( $gff_file, $slice_hash, $analysis,'curated_miRNA', 'miRNA' );
         print "have " . scalar @$miRNAgenes . " miRNA genes.\n" if ($WB_DEBUG);
         &write_genes( $miRNAgenes, $db );
+
+
+        ## scRNA-genes
+        my $scRNAgenes = parse_pseudo_files( $gff_file, $slice_hash, $analysis,'scRNA_mature_transcript', 'scRNA' );
+        print "have " . scalar @$scRNAgenes . " scRNA genes.\n" if ($WB_DEBUG);
+        &write_genes( $scRNAgenes, $db );
       }
       case 'wormbase_pseudogene' {
         ## pseudogenes
