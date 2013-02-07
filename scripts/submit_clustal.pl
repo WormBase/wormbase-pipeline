@@ -58,6 +58,9 @@ my $acedb = ($ace_database || glob('~wormpub/BUILD/autoace'));
 # get wormpep number of proteins
 my $count = `fgrep -c ">" $infile`;
 chomp $count;
+
+$log->write_to("Read $count proteins from $infile\n");
+
 my $job = 1; 
 
 $species ||= $wb->species;
