@@ -4,8 +4,8 @@
 #
 # by ag3 [991221]
 #
-# Last updated on: $Date: 2012-09-11 11:40:15 $
-# Last updated by: $Author: pad $
+# Last updated on: $Date: 2013-02-08 11:19:17 $
+# Last updated by: $Author: gw3 $
 
 # transferdb moves acedb database files across filesystems.
 # Creates a temporary database.BCK 
@@ -48,6 +48,7 @@ my $S_wtools;          # -wtools
 my $S_whelp;           # -whelp
 my $S_wdata;           # -wdata ??? what is this
 my $S_chromosomes;     # -chromosomes: copies CHROMOSOMES dir
+my $S_sequences;       # -sequences: copies SEQUENCES dir
 my $S_release;         # -release 
 my $S_common;          # -common : copies COMMON_DATA
 my $S_agp;             # -agp : copies AGP dir
@@ -75,6 +76,7 @@ GetOptions (
 	    "whelp"       => \$S_whelp,
 	    "wdata"       => \$S_wdata,
 	    "chromosomes" => \$S_chromosomes,
+	    "sequences"   => \$S_sequences,
 	    "release"     => \$S_release,
 	    "agp"         => \$S_agp,
 	    "common"      => \$S_common,
@@ -167,6 +169,7 @@ my $wtools      = "$srcdir"."/wtools";
 my $whelp       = "$srcdir"."/whelp";
 my $wdata       = "$srcdir"."/data";
 my $chromosomes = "$srcdir"."/CHROMOSOMES";
+my $sequences   = "$srcdir"."/SEQUENCES";
 my $release     = "$srcdir"."/release";
 my $acefiles    = "$srcdir"."/acefiles";
 my $common_data = "$srcdir"."/COMMON_DATA";
@@ -184,6 +187,7 @@ push (@TOBEMOVED,"$wtools")      if ($S_wtools      || $S_all);
 push (@TOBEMOVED,"$whelp")       if ($S_whelp       || $S_all);
 push (@TOBEMOVED,"$wdata")       if ($S_wdata       || $S_all);
 push (@TOBEMOVED,"$chromosomes") if ($S_chromosomes || $S_all);
+push (@TOBEMOVED,"$sequences")   if ($S_sequences   || $S_all);
 push (@TOBEMOVED,"$release")     if ($S_release     || $S_all);
 push (@TOBEMOVED,"$acefiles")    if ($S_acefiles    || $S_all);
 push (@TOBEMOVED,"$common_data") if ($S_common      || $S_all);
@@ -551,6 +555,8 @@ in alternative to the -all switch:
 =item -wdata     =>  wdata subdir 
 
 =item -chromosomes =>  CHROMOSOMES subdir
+
+=item -sequences =>  SEQUENCES subdir
 
 =item -agp       =>  AGP subdir
 
