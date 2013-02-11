@@ -295,10 +295,30 @@ while( my $slice = shift @slices) {
     print $out_fh dump_feature($stripped_feature);
   }
   
+
+  # get all simple features stored in the database (Operons etc. etc.)
+  my $simp_features = $slice->get_all_SimpleFeatures;
+  foreach my $simpfeature (@$simp_features){
+    my $stripped_simpfeature = {
+      target_id   => $simpfeature->slice->seq_region_name,
+      strand      => ($simpfeature->strand > 0?'+':'-'),
+      hit_start   => $simpfeature->seq_region_start,
+      hit_stop    => $simpfeature->seq_region_end,
+      score       => ($simpfeature->score||'.'),
+      dbid        => $simpfeature->dbID,
+      logic_name  => $simpfeature->analysis->logic_name,
+      gff_source  => (defined $simpfeature->analysis->gff_source) ? $simpfeature->analysis->gff_source : "WormBase",
+      feature_type=> $simpfeature->analysis->logic_name,
+    };
+    print $out_fh dump_feature($stripped_simpfeature);
+  }
+  
   print $out_fh '#'x80;
   print $out_fh "\n";
   close($out_fh) unless defined $out_file;
 }
+
+# close the file handle of the primary gff as you are done
 close($out_fh) if defined $out_file;
 
 
