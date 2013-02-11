@@ -8,7 +8,7 @@
 # existing gene 
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2012-12-21 17:27:23 $
+# Last edited on: $Date: 2013-02-11 10:45:21 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -47,6 +47,7 @@ GetOptions ("old=s"     => \$old,
 
 
 my $wormbase = Wormbase->new( -debug   => $debug,
+			      -organism => $species,
 			   );
 
 my $log = Log_files->make_build_log($wormbase);
