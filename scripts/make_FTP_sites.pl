@@ -5,8 +5,8 @@
 # A PERL wrapper to automate the process of building the FTP sites 
 # builds wormbase & wormpep FTP sites
 # 
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2013-02-11 09:46:07 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2013-02-11 12:11:18 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -1088,7 +1088,7 @@ sub make_geneID_list {
       print GENEID join(",", 
                          $tax_id,
                          $gene,
-                         $gene->CGC_name,
+                         ($gene->CGC_name||''),
                          $gene->Sequence_name,
                          $gene->Status), "\n";
     }
