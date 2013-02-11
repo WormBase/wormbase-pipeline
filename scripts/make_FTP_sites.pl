@@ -6,7 +6,7 @@
 # builds wormbase & wormpep FTP sites
 # 
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2013-02-11 12:11:18 $
+# Last updated on: $Date: 2013-02-11 15:05:42 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -1089,7 +1089,7 @@ sub make_geneID_list {
                          $tax_id,
                          $gene,
                          ($gene->CGC_name||''),
-                         $gene->Sequence_name,
+                         ($gene->Sequence_name||''),
                          $gene->Status), "\n";
     }
 
