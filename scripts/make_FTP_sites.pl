@@ -6,7 +6,7 @@
 # builds wormbase & wormpep FTP sites
 # 
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2013-02-11 15:05:42 $
+# Last updated on: $Date: 2013-02-12 10:21:01 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -741,15 +741,34 @@ sub copy_misc_files{
   }
   
   #
-  # RNASeq gene expression data
+  # RNASeq gene expression data for each TierII and elegans
   #
-  my $expr = "$srcdir/expr.tar.gz";
-  if (-e $expr) {
-    my $target = "$annotation_dir/$gspecies.$WS_name.SRA_gene_expression.tar.gz";
-    $wormbase->run_command("cp -f $expr $target", $log);
-  } else {
-    $log->write_to("Warning: gene expression file for $gspecies not found ($expr)\n");
+  my %accessors = ($wormbase->species_accessors);
+  $accessors{$wormbase->species} = $wormbase; 
+  
+  foreach my $species (keys %accessors){
+    next if exists $skip_species{$species};
+    next if @only_species and not exists $only_species{$species};
+
+    $log->write_to("copying $species expression data to FTP site\n");
+    my $wb = $accessors{$species};
+
+    my $g_species = $wb->full_name('-g_species' => 1);
+
+    my $src = $wb->autoace;
+    my $tgt = "$targetdir/species/$g_species/annotation";
+
+    mkpath($tgt,1,0775);
+    my $expr = "$src/expr.tar.gz";
+    if (-e $expr) {
+      my $target = "$tgt/$g_species.$WS_name.SRA_gene_expression.tar.gz";
+      $wormbase->run_command("cp -f $expr $target", $log);
+    } else {
+      $log->write_to("Warning: gene expression file for $g_species not found ($expr)\n");
+    }
   }
+
+
 
   $runtime = $wormbase->runtime;
   $log->write_to("$runtime: Finished copying misc files\n\n");
@@ -1447,6 +1466,7 @@ c_elegans.WSREL.geneIDs.txt.gz
 c_elegans.WSREL.gsc_oligo_mapping.txt.gz
 c_elegans.WSREL.cdna2orf.txt.gz
 c_elegans.WSREL.confirmed_genes.fa.gz
+c_elegans.WSREL.SRA_gene_expression.tar.gz
 
 [elegans]species/GSPECIES
 GSPECIES.WSREL.assembly.agp.gz
@@ -1458,6 +1478,7 @@ GSPECIES.WSREL.xrefs.txt.gz
 # tierII specific stuff
 [TIER2]species/GSPECIES/annotation
 GSPECIES.WSREL.geneIDs.txt.gz
+GSPECIES.WSREL.SRA_gene_expression.tar.gz
 
 [TIER2]species/GSPECIES
 
