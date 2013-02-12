@@ -66,7 +66,7 @@ my $DB;
 my $db;
 my $ecount;
 if ($test) {
-    $DB = 'test_wbgene_id;mcs4a;3307';
+    $DB = 'test_wbgene_id;mcs12a;3307';
   } else {
     $DB = 'wbgene_id;shap;3303';
 }

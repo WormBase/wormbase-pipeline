@@ -5,8 +5,8 @@
 # This script has been written to automatically change the Public_name
 # of all NameServerIDs specified in a text file.
 #
-# Last edited by: $Author: mt3 $
-# Last edited on: $Date: 2012-05-04 12:22:07 $
+# Last edited by: $Author: pad $
+# Last edited on: $Date: 2013-02-12 09:57:13 $
 #
 
 use lib $ENV{'CVS_DIR'};
@@ -86,7 +86,7 @@ die "-user option is mandatory\n" unless $USER;
 die "-pass option is mandatory\n" unless $PASS;
 die "-file option is mandatory\n" unless $file;
 
-my $DB = $wormbase->test ? 'test_wbgene_id;mcs4a:3307' : 'wbgene_id;shap:3303';
+my $DB = $wormbase->test ? 'test_wbgene_id;mcs12a:3307' : 'wbgene_id;shap:3303';
 my $db = NameDB_handler->new($DB,$USER,$PASS,'/nfs/WWWdev/SANGER_docs/data');
 $db->setDomain($DOMAIN);
 
