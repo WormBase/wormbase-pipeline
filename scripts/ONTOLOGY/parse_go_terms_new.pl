@@ -73,18 +73,6 @@ warn "connecting to database... $acedbpath";
 my $db = Ace->connect(-path => $acedbpath,  -program => $wormbase->tace) or $log->log_and_die("Connection failure: ". Ace->error);
 warn "... done\n";
 
-my %species_taxon_hash=("Caenorhabditis elegans"  => 6239,
-			"Caenorhabditis briggsae" => 6238,
-			"Caenorhabditis remanei"  => 31234,
-			"Caenorhabditis brenneri" => 135651,
-			"Caenorhabditis vulgaris" => 31233,
-			"Caenorhabditis trinidad" => "N/A",
-			"Brugia pahangi"          => 6280,
-			'Brugia malayi'           => 6279,
-			"Onchocerca volvulus"     => 6282,
-			"Pristionchus pacificus"  => 54126,
-			'Caenorhabditis japonica' => 281687,
-			);
 
 my %name_hash=();
 my @aql_results=$db->aql('select a, a->public_name from a in class gene');
@@ -153,13 +141,12 @@ if ($gene) {
 	    next;
 	}
 	my $public_name='';
-	my $species='';
+	my $species=$gene->Species;
+        my $ncbiId = $species->NCBITaxonomyID;
+
 	foreach (@lines) {
 	    if (/Public_name\s+\"(.+)\"/) {
 		$public_name=$1;
-	    }
-	    elsif (/Species\s+\"(.+)\"/) {
-		$species=$1;
 	    }
 	    elsif (/GO_term\s+\"(GO:\d+)\"/) {
 		my $term=$1;
@@ -195,8 +182,7 @@ if ($gene) {
 		if ($public_name ne $seq_name_hash{$obj}) {
 		    $syn=$seq_name_hash{$obj};
 		}
-		my $taxon="taxon:$species_taxon_hash{$species}";
-		if (!exists $species_taxon_hash{$species}) {print "ERROR: missing species = $species\n";}
+		my $taxon="taxon:$ncbiId";
 		my $a=$aspect{lc $go_type};
 		my $type="gene";
 
@@ -258,7 +244,7 @@ if ($rnai) {
 		if (! ($phen2go{$phen})) {
 		    next;
 		}
-		my $taxon="taxon:$species_taxon_hash{$species}";
+		my $taxon="taxon:${\$species->NCBITaxonomyID}";
 		my $type="gene";
 		my $public_name='';
 		if ($name_hash{$gene}) {
@@ -354,7 +340,7 @@ if ($variation) {
 	foreach my $gene (@genes) {
 	    my $species=$gene->Species;
 	    foreach my $phen (sort {$a cmp $b} keys %phen_hash) {
-		my $taxon="taxon:$species_taxon_hash{$species}";
+		my $taxon="taxon:${\$species->NCBITaxonomyID}";
 		my $type="gene";
 		my $public_name='';
 		if ($name_hash{$gene}) {
@@ -402,65 +388,14 @@ if ($variation) {
 close($out);
 
 #separate species for gene associations
-$wormbase->run_command("grep 'taxon:6239' $output > $output.ce", $log);
-$wormbase->run_command("grep 'taxon:6238' $output > $output.cb", $log);
-$wormbase->run_command("grep 'taxon:31234' $output > $output.rem", $log);
-$wormbase->run_command("grep 'taxon:54126' $output > $output.ppa", $log);
-$wormbase->run_command("grep 'taxon:281687' $output > $output.cjp", $log);
-$wormbase->run_command("grep 'taxon:135651' $output > $output.cbn", $log);
-
-
-##################
-# Check the files
-##################
-
-
-$wormbase->check_file($output, $log,
-minsize => 11000000,
-maxsize => 70000000,
-lines => ['^WB\tWBGene\d+\t\S+\t\tGO\:\d+'],
-);
-
-$wormbase->check_file("$output.ce", $log,
-minsize => 5000000,
-maxsize => 16000000,
-lines => ['^WB\tWBGene\d+\t\S+\t\tGO\:\d+'],
-);
-
-$wormbase->check_file("$output.cb", $log,
-minsize => 1500000,
-maxsize => 8000000,
-lines => ['^WB\tWBGene\d+\t\S+\t\tGO\:\d+'],
-);
-
-$wormbase->check_file("$output.cjp", $log,
-minsize =>  1600000,
-maxsize =>  12000000,
-lines => ['^WB\tWBGene\d+\t\S+\t\tGO\:\d+'],
-);
-
-$wormbase->check_file("$output.cbn", $log,
-minsize =>  7000000,
-maxsize =>  9000000,
-lines => ['^WB\tWBGene\d+\t\S+\t\tGO\:\d+'],
-);
-
-
-$wormbase->check_file("$output.ppa", $log,
-minsize =>  1700000,
-maxsize =>  8000000,
-lines => ['^WB\tWBGene\d+\t\S+\t\tGO\:\d+'],
-);
-
-$wormbase->check_file("$output.rem", $log,
-minsize =>  8000000,
-maxsize =>  9000000,
-lines => ['^WB\tWBGene\d+\t\S+\t\tGO\:\d+'],
-);
-
+my %coreSpecies = $wormbase->species_accessors;
+foreach my $species (values %coreSpecies){
+       my $grep = "'taxon:${\$species->ncbi_tax_id}'";
+       $wormbase->run_command("grep $grep $output > $output.${\$species->full_name(-g_species => 1)}");
+       $wormbase->check_file($output,$log,minsize => 1500000,maxsize => 16000000,lines =>  ['^WB\tWBGene\d+\t\S+\t\tGO\:\d+']);
+}
 
 $db->close;
-
 $log->mail;
 exit();
 
