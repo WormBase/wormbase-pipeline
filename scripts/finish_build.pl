@@ -13,7 +13,7 @@
 # 4) Makes current_DB (copy of latest release) in ~wormpub/DATABASES
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2012-03-30 08:46:42 $
+# Last updated on: $Date: 2013-02-12 16:24:52 $
 
 
 use strict;
@@ -198,9 +198,16 @@ sub archive_old_releases{
   my $tar = "${archive_dir}/${WS_old_name}.tar.gz";
   $wormbase->run_command("tar -C $WS_old_dir -cvzf $tar $WS_old_name", $log) && 
       $log->log_and_die("ERROR in tar -cvzf $tar\n");
-  $wormbase->run_command("rm -rf $WS_old_path", $log) && 
+  my $minsize = 7500000000; # 7 Gb
+  if ($wormbase->check_file($tar, $log,
+			    minsize => $minsize,
+			   )) {
+    $log->log_and_die("ERROR copying $WS_old_path to $tar - the result is less than $minsize\n");
+  } else {
+    $wormbase->run_command("rm -rf $WS_old_path", $log) && 
       $log->log_and_die("ERROR in rm -rf $WS_old_path\n");
-
+  }
+  
 }
 
 #################################################################################
