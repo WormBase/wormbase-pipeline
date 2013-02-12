@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
 #
 # a script to batch request variation ids based on lists of public_names
-# Last change by $Author: pad $ on $Date: 2013-02-12 09:57:13 $
+# Last change by $Author: pad $ on $Date: 2013-02-12 10:42:46 $
 # usage: perl get_variation_ids.pl -species elegans -user me -pass me -in one_public_id_per_line -out varId_pubId_per_line
 
 
@@ -24,7 +24,7 @@ my ($wormbase, $debug, $test, $store, $species, $maria,$infile,$outfile,$nocheck
 
 GetOptions (
   "debug=s"       => \$debug,   # send log emails only to one user
-  "test"          => \$test,    # run against the test database on mcs12a
+  "test"          => \$test,    # run against the test database on mcs12
   "store:s"       => \$store,   # if you want to pass a Storable instead of recreating it
   "species:s"     => \$species, # elegans/briggsae/whateva .. needed for logging
   "user:s"	  => \$USER,    # mysql username
@@ -48,7 +48,7 @@ if ( $store ) {
 # establish log file.
 my $log = Log_files->make_build_log($wormbase);
 
-$DB = $wormbase->test ? 'test_wbgene_id;mcs12a:3307' : 'wbgene_id;shap:3303';
+$DB = $wormbase->test ? 'test_wbgene_id;mcs12:3307' : 'wbgene_id;shap:3303';
 $DB ='namedb;wormbase2:3307' if $maria; # there exist only one namedb database on the mirror
 
 my $db = NameDB_handler->new($DB,$USER,$PASS,$wormbase->wormpub . '/DATABASES/NameDB');

@@ -6,7 +6,7 @@
 # of all NameServerIDs specified in a text file.
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2013-02-12 09:57:13 $
+# Last edited on: $Date: 2013-02-12 10:42:46 $
 #
 
 use lib $ENV{'CVS_DIR'};
@@ -86,7 +86,7 @@ die "-user option is mandatory\n" unless $USER;
 die "-pass option is mandatory\n" unless $PASS;
 die "-file option is mandatory\n" unless $file;
 
-my $DB = $wormbase->test ? 'test_wbgene_id;mcs12a:3307' : 'wbgene_id;shap:3303';
+my $DB = $wormbase->test ? 'test_wbgene_id;mcs12:3307' : 'wbgene_id;shap:3303';
 my $db = NameDB_handler->new($DB,$USER,$PASS,'/nfs/WWWdev/SANGER_docs/data');
 $db->setDomain($DOMAIN);
 
