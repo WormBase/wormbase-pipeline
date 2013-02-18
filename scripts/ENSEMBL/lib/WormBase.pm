@@ -1716,18 +1716,17 @@ sub process_pseudo_transcripts {
             die "Could not not find slice for '$chr' in hash\n" if not exists $slice_hash->{$chr};
 
             my $exon = new Bio::EnsEMBL::Exon;
-            if ( $frame eq '.' ) {
-                $frame = 0;
-            }
-            my $phase = ( 3 - $frame ) % 3;    # wormbase gff cotains frame which is effectively the opposite of phase
-                                               # for a good explaination of phase see the Bio::EnsEMBL::Exon documentation
+
+            # non-coding/pseudogene exons always have a phase -1/-1
+            
+            my $phase = -1; 
+            my $end_phase = -1;
+
             $exon->start($start);
             $exon->end($end);
             $exon->analysis($analysis);
             $exon->slice($slice_hash->{$chr});
             $exon->phase($phase);
-            my $end_phase = ( $phase + ( $exon->end - $exon->start ) + 1 ) % 3;
-
             $exon->end_phase($end_phase);
             if ( $strand eq '+' ) {
                 $exon->strand(1);
