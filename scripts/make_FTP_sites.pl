@@ -6,7 +6,7 @@
 # builds wormbase & wormpep FTP sites
 # 
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2013-02-12 10:21:01 $
+# Last updated on: $Date: 2013-02-18 15:02:35 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -740,6 +740,20 @@ sub copy_misc_files{
     $wormbase->run_command("cat $file | gzip -9 -c > $target", $log);
   }
   
+
+  #
+  # TAR expression data for elegans
+  #
+  my $TARget = "$annotation_dir/$gspecies.$WS_name.TAR_gene_expression.tar.gz";
+  my $TARexpr = "$srcdir/TARS/expr.tar.gz";
+  if (-e $TARexpr) {
+    $wormbase->run_command("cp -f $TARexpr $TARget", $log);
+  } else {
+    $log->write_to("Warning: gene expression file for $gspecies not found ($TARexpr)\n");
+  }
+
+
+
   #
   # RNASeq gene expression data for each TierII and elegans
   #
@@ -1467,6 +1481,7 @@ c_elegans.WSREL.gsc_oligo_mapping.txt.gz
 c_elegans.WSREL.cdna2orf.txt.gz
 c_elegans.WSREL.confirmed_genes.fa.gz
 c_elegans.WSREL.SRA_gene_expression.tar.gz
+c_elegans.WSREL.TAR_gene_expression.tar.gz
 
 [elegans]species/GSPECIES
 GSPECIES.WSREL.assembly.agp.gz
