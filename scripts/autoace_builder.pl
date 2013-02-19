@@ -6,8 +6,8 @@
 #
 # Usage : autoace_builder.pl [-options]
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2013-01-18 15:18:55 $
+# Last edited by: $Author: mh6 $
+# Last edited on: $Date: 2013-02-19 10:59:16 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -222,7 +222,7 @@ if ($gff_munge) {
   }
 }
 if ($xrefs) {
-  if ($wormbase->species eq 'elegans' or $wormbase->species eq 'briggsae') {
+  if ($wormbase->species eq 'elegans' or $wormbase->species eq 'briggsae' or $wormbase->species eq 'brugia') {
     $wormbase->run_script( 'generate_dbxref_file.pl', $log);
   } else {
     $log->write_to("This should only be run for elegans and briggsae, so not doing anything\n");
