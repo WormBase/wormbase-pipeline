@@ -5,8 +5,8 @@
 # A PERL wrapper to automate the process of building the FTP sites 
 # builds wormbase & wormpep FTP sites
 # 
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2013-02-18 15:02:35 $
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2013-02-19 10:43:42 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -343,7 +343,7 @@ sub copy_xrefs {
   my %accessors = ($wormbase->all_species_accessors);
   $accessors{elegans} = $wormbase;
 
-  foreach my $sp ('elegans', 'briggsae') {
+  foreach my $sp ('elegans', 'briggsae','brugia') {
     my $wb = $accessors{$sp};
 
     next if exists $skip_species{$wb->species};
