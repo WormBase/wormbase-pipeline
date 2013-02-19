@@ -186,7 +186,7 @@
 # by Gary Williams
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2012-12-12 13:42:34 $
+# Last updated on: $Date: 2013-02-19 17:05:23 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -759,7 +759,7 @@ if (!$expt) {
       my $splice_junk_cmd = "grep -h intron ${database}/GFF_SPLITS/*.gff | egrep 'curated|Coding_transcript|Transposon_CDS|Pseudogene|tRNAscan-SE-1.23|Non_coding_transcript|ncRNA Confirmed_cDNA|Confirmed_EST|Confirmed_UTR' | awk '{OFS=\"\t\"}{print \$1,\$4-2,\$5,\$7}' > ${splice_juncs_file}.tmp";
       $status = $wormbase->run_command($splice_junk_cmd, $log);
       
-      $status = $wormbase->run_command("sort -u ${splice_juncs_file}.tmp > $splice_juncs_file", $log);
+      $status = $wormbase->run_command("sort  -k1,1 -k2,3n -u ${splice_juncs_file}.tmp > $splice_juncs_file", $log); # sort by chromosome then numeric positions
       if ($status != 0) {  $log->log_and_die("Didn't create the splice_juncs_file\n"); }
     }
     
