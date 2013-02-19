@@ -617,6 +617,7 @@ sub generate_transcripts {
                 
                 $five_trans_start{$transcript_name} = $translation_start;
                 $exons[ $trans_start_exon{$transcript_name} ]->start($start);
+                $exons[ $trans_start_exon{$transcript_name} ]->phase(-1);
               }
               elsif ( $end < $exons[ $trans_start_exon{$transcript_name} ]->start - 1 ) {
                 
@@ -647,6 +648,7 @@ sub generate_transcripts {
                 
                 $five_trans_start{$transcript_name} = $translation_start;
                 $exons[ $trans_start_exon{$transcript_name} ]->end($end);
+                $exons[ $trans_start_exon{$transcript_name} ]->phase(-1);
               }
               elsif ( $start > ( $exons[ $trans_start_exon{$transcript_name} ]->end ) + 1 ) {
                 
@@ -697,6 +699,8 @@ sub generate_transcripts {
                 
                 $three_trans_end{$transcript_name} = $translation_end;
                 $exons[ $trans_end_exon{$transcript_name} ]->end($end);
+                $exons[ $trans_end_exon{$transcript_name} ]->end_phase(-1);
+                
               }
               elsif ( $start > ( ( $exons[ $trans_end_exon{$transcript_name} ]->end ) + 1 ) ) {
                 
@@ -726,6 +730,7 @@ sub generate_transcripts {
                 
                 $three_trans_end{$transcript_name} = $translation_end;
                 $exons[ $trans_end_exon{$transcript_name} ]->start($start);
+                $exons[ $trans_end_exon{$transcript_name} ]->end_phase(-1);
               }
               elsif ( $end < ( ( $exons[ $trans_end_exon{$transcript_name} ]->start ) - 1 ) ) {
                 
