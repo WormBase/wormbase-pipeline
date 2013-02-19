@@ -13,8 +13,8 @@
 // -----------------------------------------------------------------------------
 //
 // ALL WormBase groups should be in sync with this set of models
-// Last edited by: $Author: pad $
-// Last edited on: $Date: 2013-02-15 16:57:32 $
+// Last edited by: $Author: klh $
+// Last edited on: $Date: 2013-02-19 16:24:12 $
 
 
 
@@ -2695,13 +2695,13 @@
 ?Oligo_set      Species UNIQUE ?Species
 		SMap S_parent UNIQUE Canonical_parent UNIQUE ?Sequence XREF Oligo_set
 		Structure Target_exons Int UNIQUE Int
-		Homol Homol_homol ?Homol_data XREF Oligo_set_homol
-                Microarray_results ?Microarray_results XREF Oligo_set 
-                Oligo ?Oligo     //used in case oligos are specified
+		Homol Homol_homol ?Homol_data XREF Oligo_set_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
+		Microarray_results ?Microarray_results XREF Oligo_set 
+		Oligo ?Oligo     //used in case oligos are specified
 		Overlaps_CDS 	    ?CDS 	XREF Corresponding_oligo_set #Evidence
 		Overlaps_transcript ?Transcript XREF Corresponding_oligo_set #Evidence
 		Overlaps_pseudogene ?Pseudogene XREF Corresponding_oligo_set #Evidence
-                Remark Text    #Evidence
+		Remark Text    #Evidence
 		Type    Affymetrix_microarray_probe
 			WashU_GSC_microarray_probe
 			Agilent_microarray_probe
