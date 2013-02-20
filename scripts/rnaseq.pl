@@ -142,7 +142,7 @@ if ($chunk_id) { # getting the alignments for a set of chromosomes
   my $err = "$scratch_dir/rnaseq.pl.lsf.err";
   my $out = "$scratch_dir/rnaseq.pl.lsf.out";
   push @bsub_options, (-M =>  "8000", # in EBI both -M and -R are in Gb
-		       -R => "\"select[mem>8000] rusage[mem=8000]\"", 
+		       -R => 'select[mem>8000] rusage[mem=8000]', 
 		       -J => $job_name,
 		       -e => $err,
 		       -o => $out,
@@ -213,7 +213,7 @@ if ($chunk_id) { # getting the alignments for a set of chromosomes
     print "cmd to be executed: $cmd\n";
     @bsub_options = ();
     push @bsub_options, (-M =>  "4000", # in EBI both -M and -R are in Gb
-			 -R => "\"select[mem>4000] rusage[mem=4000]\"", 
+			 -R => 'select[mem>4000] rusage[mem=4000]', 
 			 -J => 'rnaseq_alignments',
 			 -e => $err,
 			 -o => $out,

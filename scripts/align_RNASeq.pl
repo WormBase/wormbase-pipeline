@@ -186,7 +186,7 @@
 # by Gary Williams
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2013-02-19 17:05:23 $
+# Last updated on: $Date: 2013-02-20 11:58:06 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -775,7 +775,7 @@ if (!$expt) {
       push @bsub_options, (#-q =>  "long",
 			   #-F =>  "100000000", # there is no file size limit in Sanger LSF - don't impose one - keep this commented out
 			   -M =>  "4000",  # in EBI the -M and -R both are in Mb
-			   -R => "\"select[mem>4000] rusage[mem=4000]\"", 
+			   -R => 'select[mem>4000] rusage[mem=4000]', 
 			   -J => $job_name);
       my $cmd = "make_GTF_transcript.pl -database $database -out $gtf_file -species $species";
       $log->write_to("$cmd\n");
@@ -909,7 +909,7 @@ IIIIIIIIHIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIGIGIDHIIIIIGIGI
 #      push @bsub_options, (#-q =>  "normal",
 #			   #-F =>  "100000000", # there is no file size limit in Sanger LSF - don't impose one - keep this commented out
 #			   #-M =>  "4000", 
-#			   #-R => "\"select[mem>4000 && tmp>10000] rusage[mem=4000]\"", 
+#			   #-R => 'select[mem>4000 && tmp>10000] rusage[mem=4000]', 
 #			   -J => "tophat_dummy_$species");
       my $gtf = "--GTF transcripts.gtf";
       my $gtf_index = "--transcriptome-index transcriptome-gtf/transcripts";
@@ -1228,7 +1228,7 @@ sub run_align {
     push @bsub_options, (#-q =>  "long",
                          #-F =>  "100000000", # there is no file size limit in Sanger LSF - don't impose one - keep this commented out
 			 -M =>  "4000", # in EBI both -M and -R are in Mb
-			 -R => "\"select[mem>4000] rusage[mem=4000]\"",
+			 -R => 'select[mem>4000] rusage[mem=4000]',
 			 -J => $job_name);
     my $cmd = "$script -expt $arg";      # -expt is the parameter to make the script run an alignment and analysis on a dataset $arg
     if ($check) {$cmd .= " -check";}
