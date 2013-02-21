@@ -14,7 +14,7 @@
 //
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: klh $
-// Last edited on: $Date: 2013-02-19 16:24:12 $
+// Last edited on: $Date: 2013-02-21 18:16:41 $
 
 
 
@@ -3411,7 +3411,6 @@
                 Pathway DB_info Database ?Database ?Database_field ?Text //Can be used for any pathway db with unique accessionIDs
                 Remark ?Text #Evidence
                 Reference ?Paper XREF WBProcess
-
 
 
 ////////////////////////
