@@ -13,7 +13,7 @@
 #      COMPANY:
 #     $Version:  $
 #      CREATED: 2006-02-27
-#        $Date: 2013-02-01 16:18:40 $
+#        $Date: 2013-02-25 14:12:22 $
 #===============================================================================
 package Remap_Sequence_Change;
 
@@ -490,7 +490,7 @@ sub chromosome_to_clone {
 #
 
 sub write_changes {
-  my ($self, $wormbase) = @_;
+  my ($self, $wormbase, $version) = @_;
  
   my $text;
   my $title = "Chromosomal Changes:\n--------------------\n";
@@ -498,15 +498,15 @@ sub write_changes {
   my $any_changes = 0;
 
   my @chromosomes = $wormbase->get_chromosome_names(-mito => 0, -prefix => 1);
-  my $version = $wormbase->get_wormbase_version;
-           
+  $version = $wormbase->get_wormbase_version if not defined $version;
+
   my %mapping_data = %{$self->_mapping_data};
 
   foreach my $chromosome (@chromosomes) {
     if (exists $mapping_data{$version}->{$chromosome}) {
 
       $any_changes = 1;
-      $text .= "\nChromosome: $chromosome\n";
+      $text .= "\n$chromosome\n";
 
       foreach  my $fields (@{$mapping_data{$version}->{$chromosome}}) {
         # The mismatch_start value is the start of the mismatch, it is the first position which doesn't match.
