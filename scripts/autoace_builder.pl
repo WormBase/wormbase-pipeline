@@ -6,8 +6,8 @@
 #
 # Usage : autoace_builder.pl [-options]
 #
-# Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2013-02-19 11:37:26 $
+# Last edited by: $Author: klh $
+# Last edited on: $Date: 2013-02-26 16:20:29 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -307,7 +307,7 @@ sub map_features_to_genome {
   #
   # RNAi
   #
-  my $rnai_file = "misc_RNAi_homols_" . $wormbase->species . "ace";
+  my $rnai_file = "misc_RNAi_homols_" . $wormbase->species . ".ace";
   my $rnai_mappings = $wormbase->misc_dynamic . "/" . $rnai_file;
 
   if (not $assembly_mapper->remap_test and -e $rnai_mappings) {
