@@ -263,7 +263,7 @@ Show_up_strand
 Bumpable	
 Show_text	
 EMBL_feature "tRNA"
-GFF_source "tRNAscan-SE-1.23"
+GFF_source "tRNA_mature_transcript"
 GFF_feature "tRNA"
 GFF_SO "SO:0000253" "nc_transcript_ace2so"
 
@@ -273,7 +273,7 @@ Show_up_strand
 Bumpable	
 Show_text	
 EMBL_feature "tRNA"
-GFF_source "tRNAscan-SE-1.3"
+GFF_source "tRNA_mature_transcript"
 GFF_feature "tRNA"
 GFF_SO "SO:0000253" "nc_transcript_ace2so"
 
