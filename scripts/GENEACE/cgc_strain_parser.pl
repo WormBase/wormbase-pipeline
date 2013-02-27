@@ -7,8 +7,8 @@
 # Script to convert cgc strain file into ace file for geneace
 # Page download and update upload to geneace has been automated [ck1]
 
-# Last updated by: $Author: pad $
-# Last updated on: $Date: 2013-02-12 10:42:46 $
+# Last updated by: $Author: klh $
+# Last updated on: $Date: 2013-02-27 09:35:07 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -30,15 +30,15 @@ use Getopt::Long;
 
 
 my ($help, $debug, $test, $verbose, $store, $load, $wormbase,$ndbUser,$ndbPass, $path);
-GetOptions ('help'       => \$help,
-            'debug=s'    => \$debug,
-            'test'       => \$test,
-            'verbose'    => \$verbose,
-            'store:s'    => \$store,
-            'load'       => \$load,
-            'ndbuser=s'  => \$ndbUser,
-            'ndbpass=s'  => \$ndbPass,
-            'path=s'     => \$path,
+GetOptions ('help'              => \$help,
+            'debug=s'           => \$debug,
+            'test'              => \$test,
+            'verbose'           => \$verbose,
+            'store:s'           => \$store,
+            'load'              => \$load,
+            'ndbuser=s'         => \$ndbUser,
+            'ndbpass=s'         => \$ndbPass,
+            'path=s'            => \$path,
        );
 
 
@@ -98,6 +98,7 @@ my $gene_allele_connections = "$path/gene_allele_connections.$rundate.ace";
 my $potential_new_genes     = "$path/potential_new_genes.$rundate.ace";
 my $backup_file             = "$path/strain_class_backup.$rundate.ace";
 my $allelefluff             = "$path/allele_public_name.$rundate.ace";
+my $transgene_report        = "$path/transgene_report.$rundate.ace";
 
 open(STRAIN,       ">$current_strain_ace") || die "cant create output file $current_strain_ace\n";
 open(DELETE_STRAIN,">$delete_strain_ace") || die "can't create $delete_strain_ace\n";
@@ -105,6 +106,7 @@ open(GENE2ALLELE,  ">$gene_allele_connections") || die "\nCan't open $gene_allel
 open(NEWGENES,     ">$potential_new_genes") || die "\nCan't open $potential_new_genes\n";
 open(ALLELEFLUFF,  ">$allelefluff") || die "\nCan't open $allelefluff\n";
 open(MISSINGPERSON,">$missingAuthors") || die "\nCan't open $missingAuthors\n";
+open(TRANSGENEREPORT, ">$transgene_report") or die "\nCould not open $transgene_report for writing\n";
 
 print NEWGENES "// This file should *ONLY* be loaded to geneace when it has been fully checked\n";
 print NEWGENES "// by hand.  If these Gene objects are ok, then they will need Gene IDs added.\n";
@@ -173,7 +175,16 @@ while(<INPUT>){
   print STRAIN "Genotype \"$genotype\"\n" unless ($genotype eq "");
   print DELETE_STRAIN  "-D Genotype \n" unless ($genotype eq "");
 
-  my $clone;
+  m/Description: (.*?)Mutagen:/;
+  my $description = $1;
+  $description =~ s/\s{2,}/ /g;
+  $description =~ s/\s+$//g;
+  # get rid of any quotation marks
+  $description =~ s/\"//g; #"
+  # change any URLs present else the double back slash will be treated as a comment
+  $description =~ s/http:\/\//URL: /g;
+  print STRAIN "Remark \"$description\" Inferred_automatically \"From CGC strain data\"\n" unless ($description eq "");
+  print DELETE_STRAIN  "-D Remark \n" unless ($description eq ""); 
 
   # find simple locus allele combinations e.g. spt-3(hc184)
   my $reg_exp=qr/^([Ca-z\-]{3,6}\-\d+\.{0,1}\d*)\(([a-z]{1,2}\d+)\)/;
@@ -198,10 +209,16 @@ while(<INPUT>){
   $reg_exp=qr/([a-z]{1,2}(Ex|Is)\d+)/;
   while($genotype =~ m/$reg_exp/){
     my $transgene = $1;
+
+    print TRANSGENEREPORT "\nTransgene : $transgene\n";
+    print TRANSGENEREPORT "Strain : $strain\n";
+    print TRANSGENEREPORT "Description : $description\n";
+
     if (exists $Transgene_ids{$transgene}) {
       print STRAIN "Transgene \"$Transgene_ids{$transgene}\"\n";
       # delete all transgene references next time round, for safety
       print DELETE_STRAIN  "-D Transgene\n";
+      print TRANSGENEREPORT "WBID : $Transgene_ids{$transgene}\n"; 
     }
     $genotype =~ s/$reg_exp//;
   }
@@ -257,19 +274,6 @@ while(<INPUT>){
     }
     $genotype =~ s/[Ca-z\-]{3,6}\-\d+//;
   }
-
-
-  m/Description: (.*?)Mutagen:/;
-  my $description = $1;
-  $description =~ s/\s{2,}/ /g;
-  $description =~ s/\s+$//g;
-  # get rid of any quotation marks
-  $description =~ s/\"//g; #"
-  # change any URLs present else the double back slash will be treated as a comment
-  $description =~ s/http:\/\//URL: /g;
-  print STRAIN "Remark \"$description\" Inferred_automatically \"From CGC strain data\"\n" unless ($description eq "");
-  print DELETE_STRAIN  "-D Remark \n" unless ($description eq ""); 
-
 
   m/Mutagen: (.*?)Outcrossed:/;
   my $mutagen = $1;
@@ -332,7 +336,7 @@ close(GENE2ALLELE);
 close(NEWGENES);
 close(ALLELEFLUFF);
 close(MISSINGPERSON);
-
+close(TRANSGENEREPORT);
 
 ##################################################
 # 1. backup strain class with timestamp
