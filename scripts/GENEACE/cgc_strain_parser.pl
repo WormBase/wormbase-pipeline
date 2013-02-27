@@ -8,7 +8,7 @@
 # Page download and update upload to geneace has been automated [ck1]
 
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-02-27 09:35:07 $
+# Last updated on: $Date: 2013-02-27 09:43:53 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -219,6 +219,8 @@ while(<INPUT>){
       # delete all transgene references next time round, for safety
       print DELETE_STRAIN  "-D Transgene\n";
       print TRANSGENEREPORT "WBID : $Transgene_ids{$transgene}\n"; 
+    } else {
+      print TRANSGENEREPORT "WBID : NONE\n"; 
     }
     $genotype =~ s/$reg_exp//;
   }
