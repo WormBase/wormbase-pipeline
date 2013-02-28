@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2013-02-04 10:42:56 $      
+# Last updated on: $Date: 2013-02-28 16:23:33 $      
 
 # Changes required by Ant: 2008-02-19
 # 
@@ -66,9 +66,7 @@
 # 
 # incomplete_pfam_motif - speak to Rob Finn (pfam project leader)
 # about the utility of these. (Mail sent: 2008-02-20)
-# 
-# Compare SignalP in known proteins to the number I predicted and send to Ant.
-# Have as anomaly. (not done yet)
+
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -235,10 +233,12 @@ while (my $run = <DATA>) {
 &delete_anomalies("MRNA_OVERLAPS_INTRON");
 &delete_anomalies("INCOMPLETE_PFAM_MOTIF");
 &delete_anomalies("UNMATCHED_EXPRESSION");
-&delete_anomalies("TWINSCAN_WITH_SIGNALP");
 &delete_anomalies("JIGSAW_WITH_SIGNALP");
+&delete_anomalies("MODENCODE_WITH_SIGNALP");
 &delete_anomalies("JIGSAW_DIFFERS_FROM_CDS");
+&delete_anomalies("MODENCODE_DIFFERS_FROM_CDS");
 &delete_anomalies("CDS_DIFFERS_FROM_JIGSAW");
+&delete_anomalies("CDS_DIFFERS_FROM_MODENCODE");
 &delete_anomalies("GENBLASTG_DIFFERS_FROM_CDS");
 &delete_anomalies("CDS_DIFFERS_FROM_GENBLASTG");
 &delete_anomalies("UNMATCHED_454_CLUSTER");
@@ -318,6 +318,8 @@ foreach my $chromosome (@chromosomes) {
 
   #my @jigsaw = $ovlp->get_jigsaw_CDS($chromosome);                     # jigsaw coding transcript (START to STOP)
   my @jigsaw_exons = $ovlp->get_jigsaw_exons($chromosome);             # jigsaw coding exons 
+
+  my @modencode_exons = $ovlp->get_jigsaw_exons($chromosome);             # jigsaw coding exons 
 
   my @genblastg_exons = $ovlp->get_genblastg_exons($chromosome) if (exists $run{GENBLASTG_DIFFERS_FROM_CDS});             # Jack Chen's genBlastG coding exons 
 
@@ -465,6 +467,9 @@ foreach my $chromosome (@chromosomes) {
   print "finding isolated RST5\n";
   &get_isolated_RST5(\@rst_hsp, \@CDS, \@coding_transcripts, \@pseudogenes, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, $chromosome) if (exists $run{UNMATCHED_RST5});
 
+  print "get modencode different to curated CDS\n";
+  my @unmatched_modencode = &get_modencode_different_to_curated_CDS(\@modencode_exons, \@cds_exons, \@pseudogenes, $chromosome) if (exists $run{MODENCODE_DIFFERS_FROM_CDS});
+
   print "get jigsaw different to curated CDS\n";
   my @unmatched_jigsaw = &get_jigsaw_different_to_curated_CDS(\@jigsaw_exons, \@cds_exons, \@pseudogenes, $chromosome) if (exists $run{JIGSAW_DIFFERS_FROM_CDS});
 
@@ -473,6 +478,9 @@ foreach my $chromosome (@chromosomes) {
 
   print "get jigsaw differing from curated CDS with SignalP where the CDS has no signalP\n";
   &get_jigsaw_with_signalp(\@unmatched_jigsaw, \@jigsaw_exons, \@CDS, $chromosome) if (exists $run{JIGSAW_WITH_SIGNALP});
+
+  print "get modencode differing from curated CDS with SignalP where the CDS has no signalP\n";
+  &get_modencode_with_signalp(\@unmatched_modencode, \@modencode_exons, \@CDS, $chromosome) if (exists $run{MODENCODE_WITH_SIGNALP});
 
   print "get RNASeq introns not matching CDS introns\n";
   # filter out the spurious RNASeq spliced introns
@@ -3695,6 +3703,115 @@ sub get_unconfirmed_introns {
 }
 
 ####################################################################################
+# get modencode different to curated CDS
+
+sub get_modencode_different_to_curated_CDS {
+
+  my ($modencode_exons_aref, $CDS_exons_aref, $pseudogenes_aref, $chromosome) = @_;
+
+  $anomaly_count{MODENCODE_DIFFERS_FROM_CDS} = 0 if (! exists $anomaly_count{MODENCODE_DIFFERS_FROM_CDS});
+
+  # find the modencode prediction exons that don't overlap with a pseudogene
+  my @modencode_not_pseudogene;
+  my $pseud_match = $ovlp->compare($pseudogenes_aref);
+  foreach my $modencode (@{$modencode_exons_aref}) { # $modencode_id, $chrom_start, $chrom_end, $chrom_strand
+    if (! $pseud_match->match($modencode)) {
+      push @modencode_not_pseudogene, $modencode;
+    }
+  }
+
+  # find CDS IDs that overlap modencode
+  my %cds_overlaps_modencode;
+  my $cds_match = $ovlp->compare($CDS_exons_aref);
+  foreach my $modencode (@{$modencode_exons_aref}) { # $modencode_id, $chrom_start, $chrom_end, $chrom_strand
+    if (my @results = $cds_match->match($modencode)) {
+      foreach my $cds_hit (@results) {
+	push @{$cds_overlaps_modencode{$modencode}}, $cds_hit->[0]; # store the CDS ID
+      }
+    }
+  }
+
+  # here we don't use the overlap module, we do it more efficiently using a hash
+  my %unmatched_modencode;		# list of modencode exons left when we remove matching CDS exons
+  my %all_modencode_exons;		# list of all modencode exons
+
+  # first load all the modencode exons into the hash
+  foreach my $modencode (@modencode_not_pseudogene) { # $modencode_id, $chrom_start, $chrom_end, $chrom_strand
+    my $key = $modencode->[3]."_".$modencode->[1]."_".$modencode->[2];  # the key is the chromosomal sense and position
+    $unmatched_modencode{$key} = $modencode;
+    $all_modencode_exons{$key} = 1;
+  }
+
+  # now remove any modencode hash entries that have a key that matches the position of any curated CDS exon 
+  my @unmatched_cds;		# list of CDS exons that don't match a modencode exon
+  my %matched_cds;		# hash of CDS IDs where there is at least one exon in the CDS that matches a modencode exon
+  foreach my $cds (@{$CDS_exons_aref}) { # $cds_id, $chrom_start, $chrom_end, $chrom_strand
+    my $key = $cds->[3]."_".$cds->[1]."_".$cds->[2];
+    my $cds_id = $cds->[0];
+    
+    if (exists $all_modencode_exons{$key}) { # check we have got a match
+      $matched_cds{$cds_id} = 1; # note that this CDS matched a modencode exon
+
+      if (exists $unmatched_modencode{$key}) {
+	delete $unmatched_modencode{$key};	# delete the modencode exon that matches a CDS exon
+      }
+      
+    } else {			# no match
+      push @unmatched_cds, $cds; # store the CDS exon that doesn't match a modencode exon
+
+    }
+  }
+
+  # now to cut down the numbers of CDS isoforms that differ slightly
+  # from modencode, only report those isoforms which have no exons
+  # that are the same as modencode.
+  my @completely_unmatched_cds;
+  foreach my $cds (@unmatched_cds) {
+    my $cds_id = $cds->[0];
+    if (! exists $matched_cds{$cds_id}) {
+      push @completely_unmatched_cds, $cds;
+    }
+  }
+
+  # now we output a hash of modencode details that don't match a CDS exon
+  foreach my $modencode (values %unmatched_modencode) {
+
+    # output unmatched modencode to the database
+      my $modencode_id = $modencode->[0];
+      my $chrom_start = $modencode->[1];
+      my $chrom_end = $modencode->[2];
+      my $chrom_strand = $modencode->[3];
+      my $est_score = $modencode->[6];
+      my $anomaly_score = 1;
+      #print "MODENCODE_DIFFERS_FROM_CDS ANOMALY: $modencode_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score\n";
+      # get the unique list of CDS IDs that overlap with this MODENCODE (see p124 in the Perl Cookbook)
+      my %seen;
+      my @cds_ids = grep {! $seen{$_} ++ } @{$cds_overlaps_modencode{$modencode_id}};
+      my $cds_ids="";
+      foreach my $cds (@cds_ids) {
+	$cds_ids .= "$cds ";
+      }
+      &output_to_database("MODENCODE_DIFFERS_FROM_CDS", $chromosome, $modencode_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score, "See: $cds_ids");
+  }
+
+  # now we output a list of CDS details where no exon of the CDS has a match to a modencode exon
+  foreach my $cds (@completely_unmatched_cds) {
+
+    # output unmatched cds to the database
+      my $cds_id = $cds->[0];
+      my $chrom_start = $cds->[1];
+      my $chrom_end = $cds->[2];
+      my $chrom_strand = $cds->[3];
+      my $est_score = $cds->[6];
+      my $anomaly_score = 1;
+      #print "CDS_DIFFERS_FROM_MODENCODE ANOMALY: $cds_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score\n";
+      &output_to_database("CDS_DIFFERS_FROM_MODENCODE", $chromosome, $cds_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score, '');
+  }
+
+  return (values %unmatched_modencode);
+}
+
+####################################################################################
 # get jigsaw different to curated CDS
 
 sub get_jigsaw_different_to_curated_CDS {
@@ -3874,6 +3991,107 @@ sub get_genblastg_different_to_curated_CDS {
   }
 
   return (values %unmatched_genblastg);
+}
+
+####################################################################################
+# get modencode differing from curated CDS with SignalP where the CDS has no signalP
+
+sub get_modencode_with_signalp {
+
+  my ($unmatched_modencode_aref, $modencode_exons_aref, $CDS_aref, $chromosome) = @_;
+
+  $anomaly_count{MODENCODE_WITH_SIGNALP} = 0 if (! exists $anomaly_count{MODENCODE_WITH_SIGNALP});
+
+  # read in the pre-computed hash of modencode predictions that have signalP sites
+  my %modencode_signalp;
+  if (! -e $wormbase->wormpub . "/CURATION_DATA/${species}_modencode_signalp.dat") {
+    print "WARNING: Can't find the file of modencode signalp predictions\n";
+    return;
+  }
+  $wormbase->FetchData("${species}_modencode_signalp", \%modencode_signalp, $wormbase->wormpub . "/CURATION_DATA/");
+  
+
+
+  # get a list of modencode IDs that differ from the curated CDS
+  my %modencode_differ_IDs;
+  foreach my $modencode (@{$unmatched_modencode_aref}) {
+    $modencode_differ_IDs{$modencode->[0]} = 1;
+  }
+
+  # for each differing modencode gene
+  my @modencode_diff;
+  # get the set of modencode exons that differ from the curated CDS
+  foreach my $modencode (@{$modencode_exons_aref}) {
+    if (exists $modencode_differ_IDs{$modencode->[0]}) { # this is a differing modencode gene
+      push @modencode_diff, $modencode; # so save this modencode exon
+    }
+  }
+
+  # get the curated CDS transcript (if any) that they overlap
+  my %matching_cds;
+  my $modencode_match   = $ovlp->compare(\@modencode_diff, same_sense => 1); 
+  foreach my $cds (@{$CDS_aref}) { # $cds_id, $chrom_start, $chrom_end, $chrom_strand
+    if (my @results = $modencode_match->match($cds)) { 
+      my $cds_id = $cds->[0];
+      foreach my $result (@results) {
+	$matching_cds{$result->[0]} = $cds->[0]; # store the pairs of overlapping gene IDs for modencode and CDS
+      }
+    }
+  }
+
+  # foreach modencode gene that differs
+  foreach my $modencode (@{$unmatched_modencode_aref}) {
+    my $modencode_id = $modencode->[0];
+
+    # get the protein sequence of the modencode gene
+    my $modencode_obj = $ace->fetch("CDS" => $modencode_id);
+    my $modencode_seq = $modencode_obj->asPeptide();
+    my $title;
+    ($title, $modencode_seq) = ($modencode_seq =~ /(.+)\n(.+)\n/); # get the first and second lines
+    if (length $modencode_seq < 50) {next;}
+
+    my $desc = "";
+
+    # retrieve the protein sequence of the CDS (if it exists) from acedb
+    if (exists $matching_cds{$modencode_id}) {
+
+      $desc = "$modencode_id has a SignalP but $matching_cds{$modencode_id} doesn't";
+
+      my $cds_obj = $ace->fetch("CDS" => $matching_cds{$modencode_id});
+      my $cds_seq = $cds_obj->asPeptide();
+      ($title, $cds_seq) = ($cds_seq =~ /(.+)\n(.+)\n/); # get the first and second lines
+
+      # get the first 50 residues of the modencode and curated CDS proteins
+      $modencode_seq = substr($modencode_seq, 0, 50);
+      $cds_seq =    substr($cds_seq, 0, 50);
+
+      # if the two sequences differ
+      if ($modencode_seq eq $cds_seq) {next;}
+
+      # if the curated CDS protein does not have a signalP site
+      my $cds_protein_obj = $cds_obj->Corresponding_protein;
+      if (! defined $cds_protein_obj) {
+	print "WARNING: $matching_cds{$modencode_id} doesn't have a corresponding protein\n";
+      } else {
+	if (defined $cds_protein_obj->at('Feature.Signalp')) {next;}
+      }
+    } else {
+      $desc = "$modencode_id has a SignalP - no corresponding curated CDS was found";
+    }
+
+    # if the modencode protein has a signalP site then output the anomaly
+    if (exists $modencode_signalp{$modencode_id}) {
+      my $modencode_id = $modencode->[0];
+      my $chrom_start = $modencode->[1];
+      my $chrom_end = $modencode->[2];
+      my $chrom_strand = $modencode->[3];
+      my $anomaly_score = 1;
+      #print "MODENCODE_WITH_SIGNALP ANOMALY: $modencode_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score\n";
+      &output_to_database("MODENCODE_WITH_SIGNALP", $chromosome, $modencode_id, $chrom_start, $chrom_end, $chrom_strand, $anomaly_score, $desc);
+    }
+
+  }
+
 }
 
 ####################################################################################
@@ -4819,6 +5037,8 @@ UNMATCHED_TWINSCAN           elegans
 UNMATCHED_GENEFINDER         elegans
 GENBLASTG_DIFFERS_FROM_CDS            remanei briggsae japonica brenneri brugia
 JIGSAW_DIFFERS_FROM_CDS      elegans
+MODENCODE_DIFFERS_FROM_CDS      elegans
+MODENCODE_WITH_SIGNALP       elegans
 JIGSAW_WITH_SIGNALP          elegans
 UNMATCHED_SAGE               elegans
 UNMATCHED_WABA               
