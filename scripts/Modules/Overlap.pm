@@ -6,8 +6,8 @@
 #
 # Do fast overlap matching of positions of two sets of things.
 #
-# Last updated by: $Author: klh $     
-# Last updated on: $Date: 2012-07-20 09:50:42 $      
+# Last updated by: $Author: gw3 $     
+# Last updated on: $Date: 2013-02-28 16:20:27 $      
 
 =pod
 
@@ -1519,6 +1519,59 @@ sub get_jigsaw_exons {
    (
      method			=> "jigsaw",
      gff_source			=> "jigsaw",
+     gff_type			=> "coding_exon",
+     ID_after			=> "CDS\\s+",
+   );
+
+  return $self->read_GFF_file($chromosome, \%GFF_data);
+
+}
+
+=head2
+
+    Title   :   get_modencode_CDS
+    Usage   :   my @gff = $ovlp->get_jigsaw_CDS($chromosome)
+    Function:   reads the GFF data for jigsaw coding transcripts (START to STOP)
+    Returns :   list of lists for GFF data
+    Args    :   chromosome number
+
+=cut
+
+sub get_modencode_CDS {
+  my $self = shift;
+  my ($chromosome) = @_;
+
+  my %GFF_data = 
+   (
+     method			=> "RNASEQ.Hillier.Aggregate",
+     gff_source			=> "RNASEQ.Hillier.Aggregate",
+     gff_type			=> "CDS",
+     ID_after			=> "CDS\\s+",
+   );
+
+  return $self->read_GFF_file($chromosome, \%GFF_data);
+
+}
+
+
+=head2
+
+    Title   :   get_modencode_exons
+    Usage   :   my @gff = $ovlp->get_jigsaw_exons($chromosome)
+    Function:   reads the GFF data for jigsaw exons
+    Returns :   list of lists for GFF data
+    Args    :   chromosome number
+
+=cut
+
+sub get_modencode_exons {
+  my $self = shift;
+  my ($chromosome) = @_;
+
+  my %GFF_data = 
+   (
+     method			=> "RNASEQ.Hillier.Aggregate",
+     gff_source			=> "RNASEQ.Hillier.Aggregate",
      gff_type			=> "coding_exon",
      ID_after			=> "CDS\\s+",
    );
