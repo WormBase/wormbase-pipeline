@@ -5,7 +5,7 @@
 # A script to make multiple copies of camace for curation, and merge them back again
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2012-12-05 15:34:25 $
+# Last edited on: $Date: 2013-02-28 14:37:28 $
 #
 # Persisting errors.
 #running csh -c "reformat_acediff file 1 file2"
@@ -484,7 +484,6 @@ sub load_curation_data {
 	"$acefiles/misc_DB_remark.ace",
 	"$acefiles/elegans_blastx.ace",
 	"$acefiles/elegans_blastp.ace",
-	"$wormpub/BUILD_DATA/MISC_DYNAMIC/waba.ace",
 	"$acefiles/inverted_repeats.ace",
 	"$acefiles/repeat_homologies.ace",
 	"$acefiles/operon_coords.ace",
@@ -500,7 +499,6 @@ sub load_curation_data {
 	"$acefiles/feature_Genome_sequence_error.ace",
 	"$acefiles/feature_three_prime_UTR.ace",
 	"$wormpub/CURATION_DATA/PAD_DATA/elegans.public_names_ws${WS_version}.ace",
-	"$wormpub/CURATION_DATA/PAD_DATA/genomic_signals-no-splicing.ace", #needs remapping
 	"$acefiles/mass-spec-data.ace",
        );
   }
@@ -585,19 +583,11 @@ sub remove_data {
   $command .= "kill\n";
   $command .= "y\n";
   $command .= "clear\n";
-  $command .= "query find Homol_data where *signal_peptide\n";
-  $command .= "kill\n";
-  $command .= "y\n";
-  $command .= "clear\n";
   $command .= "query find Homol_data where *inverted\n";
   $command .= "kill\n";
   $command .= "y\n";
   $command .= "clear\n";
   $command .= "query find Homol_data where *TEC_RED\n";
-  $command .= "kill\n";
-  $command .= "y\n";
-  $command .= "clear\n";
-  $command .= "query find Homol_data where *waba\n";
   $command .= "kill\n";
   $command .= "y\n";
   $command .= "clear\n";
