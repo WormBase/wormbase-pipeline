@@ -6,7 +6,7 @@
 #
 # Version: $Version: $
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2011-08-12 10:30:26 $
+# Last updated on: $Date: 2013-03-01 21:01:03 $
 
 use strict;
 use warnings;
@@ -123,7 +123,7 @@ foreach my $chromosome (@chromosomes) {
     # GFF database part
     $map->clean("CHROMOSOME_$chromosome");    # reset the chromosome table
 
-    foreach my $end ( 'Expr_profile', 'curated', 'Non_coding_transcript', 'Pseudogene', 'ncRNA' ) {
+    foreach my $end ( 'Expr_profile', 'curated', 'Non_coding_transcript', 'Pseudogene') {
         my $file = "$gffdir/CHROMOSOME_${chromosome}_${end}.gff";
         $map->generate_tags($file);
         $map->load_gff( $file, "CHROMOSOME_$chromosome" );
