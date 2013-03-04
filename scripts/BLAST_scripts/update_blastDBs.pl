@@ -1,7 +1,7 @@
 #!/usr/local/ensembl/bin/perl -w
 #
-# Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2012-11-07 09:14:53 $
+# Last edited by: $Author: klh $
+# Last edited on: $Date: 2013-03-04 13:44:00 $
 
 use lib $ENV{'CVS_DIR'};
 
@@ -17,7 +17,7 @@ use Net::FTP;
 use Time::localtime;
 
 my ($test, $debug);
-my ($fly, $yeast, $human, $uniprot, $swissprot, $trembl, $interpro, $cleanup, $all);
+my ($fly, $yeast, $human, $uniprot, $swissprot, $trembl, $interpro, $cleanup, $all, $default);
 my $store;
 my ($species, $qspecies, $nematode);
 
@@ -34,7 +34,8 @@ GetOptions (
             'trembl'      => \$trembl,
 	    'interpro'    => \$interpro,
 	    'cleanup'     => \$cleanup,
-	    'all'         => \$all
+	    'all'         => \$all,
+            'default'     => \$default,
 	    );
 
 my $wormbase;
@@ -56,7 +57,11 @@ my $blastdir    = "$farm_loc/BlastDB";
 my $acedir      = "$farm_loc/ace_files";
 my $swalldir    = "$farm_loc/swall_data";
 
-$human=$fly=$yeast=$uniprot=$interpro=$cleanup=1 if $all;
+if ($default) {
+  $human=$fly=$yeast=$swissprot=$interpro=$cleanup=1;
+} elsif ($all) {
+  $human=$fly=$yeast=$uniprot=$interpro=$cleanup=1;
+}
 
 if( $human ) { &process_human; } 
 if ($interpro) { $wormbase->run_script("BLAST_scripts/make_interpro.pl",$log); }
