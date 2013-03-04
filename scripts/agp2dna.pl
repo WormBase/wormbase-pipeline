@@ -11,7 +11,7 @@
 # Usage : agp2dna.pl [-options]
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2012-06-26 10:43:18 $
+# Last edited on: $Date: 2013-03-04 11:57:28 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -162,8 +162,8 @@ foreach my $chromosome (@chromosomes) {
       $EMBL_con_seq .= $EMBL_slice;
       
       # Sequence_version difference
-      if ($sv =! $EMBL_sv) {
-	$log->error("ERROR: Discrepent sequence version for $acc [ACEDB:$sv <=> EMBL:$EMBL_sv\n");
+      if ($sv != $EMBL_sv) {
+	$log->error("ERROR: Discrepent sequence version for $acc [ACEDB:$sv <=> EMBL:$EMBL_sv]\n");
       }
             
       # Sequence difference
