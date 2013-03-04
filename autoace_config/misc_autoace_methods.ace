@@ -2382,6 +2382,17 @@ GFF_feature "reagent"
 GFF_SO "SO:0000695" // reagent
 Width 1.000000
 
+
+Method : "Oligo_set_mapping" 
+Remark "Alignment of Oligo_sets to the genome"
+Colour "DARKGREEN"
+Show_up_strand
+GFF_source "Oligo_set"
+GFF_feature "reagent"
+GFF_SO "SO:0000695" // reagent
+Width 1.000000
+
+
 Method : "Oligo"
 Remark "A region matching an oligonucleotide probe"
 GFF_source "oligo"
@@ -3755,6 +3766,9 @@ Method : "RNAi_secondary"
 Right_priority 5.65
 
 Method : "Oligo_set"
+Right_priority 5.7
+
+Method : "Oligo_set_mapping"
 Right_priority 5.7
 
 Method : "GenePairs"
