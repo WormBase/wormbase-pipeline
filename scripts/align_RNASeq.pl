@@ -186,7 +186,7 @@
 # by Gary Williams
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2013-02-20 11:58:06 $
+# Last updated on: $Date: 2013-03-05 13:53:19 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -682,7 +682,7 @@ $job_name = "worm_".$wormbase->species."_RNASeq";
 
 
 #my $RNASeqDir   = $wormbase->rnaseq;
-my $RNASeqBase   = "/nfs/nobackup/ensembl_genomes/wormbase/BUILD/RNASeq/$species";
+my $RNASeqBase   = "/nfs/nobackup2/ensembl_genomes/wormbase/BUILD/RNASeq/$species";
 my $RNASeqSRADir    = "$RNASeqBase/SRA";
 my $RNASeqGenomeDir = "$RNASeqBase/Genome";
 chdir $RNASeqSRADir;
@@ -922,7 +922,7 @@ IIIIIIIIHIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIGIGIDHIIIIIGIGI
 #      $lsf->wait_all_children( history => 1 );
 #      $log->write_to("The initial tophat job to index the GTF file has completed!\n");
 #      for my $job ( $lsf->jobs ) {
-#	if ($job->history->exit_status ne '0') {
+#	if ($job->history->exit_status != 0) {
 #	  $log->write_to("Job $job (" . $job->history->command . ") exited non zero: " . $job->history->exit_status . " Try making the dummy fastq file larger?\n");
 #	}
 #      }
@@ -1251,7 +1251,7 @@ sub run_align {
   $lsf->wait_all_children( history => 1 );
   $log->write_to("This set of Tophat jobs have completed!\n");
   for my $job ( $lsf->jobs ) {
-    if ($job->history->exit_status ne '0') {
+    if ($job->history->exit_status != 0) {
       $log->write_to("Job $job (" . $job->history->command . ") exited non zero: " . $job->history->exit_status . "\n");
     }
   }

@@ -90,8 +90,7 @@ my $Software = "/nfs/panda/ensemblgenomes/wormbase/software/packages";
 
 my $FEATURE = "RNASeq";
 
-#my $RNASeqDir   = "/lustre/scratch103/ensembl/wormpipe/RNASeq/${species}/SRA";
-my $RNASeqBase   = "/nfs/nobackup/ensembl_genomes/wormbase/BUILD/RNASeq/$species";
+my $RNASeqBase   = "/nfs/nobackup2/ensembl_genomes/wormbase/BUILD/RNASeq/$species";
 my $RNASeqSRADir    = "$RNASeqBase/SRA";
 my $RNASeqGenomeDir = "$RNASeqBase/Genome";
 chdir $RNASeqSRADir;
