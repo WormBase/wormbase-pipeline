@@ -8,7 +8,7 @@
 # Page download and update upload to geneace has been automated [ck1]
 
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-02-27 09:43:53 $
+# Last updated on: $Date: 2013-03-05 10:57:18 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -197,7 +197,7 @@ while(<INPUT>){
   }
 
   # find chromosomal aberrations e.g. szT1
-  $reg_exp=qr/([a-z]{1,2}(Dp|Df|In|T|C)\d+)/;
+  $reg_exp=qr/\s+([a-z]{1,3}(Dp|Df|In|T|C)\d+)/;
   while($genotype =~ m/$reg_exp/){
     my $rearrangement = $1;
     print STRAIN "Rearrangement \"$rearrangement\"\n";
@@ -206,7 +206,7 @@ while(<INPUT>){
   }
 
   # find transgenes e.g. zhEx11
-  $reg_exp=qr/([a-z]{1,2}(Ex|Is)\d+)/;
+  $reg_exp=qr/\s+([a-z]{1,3}(Ex|Is)\d+)/;
   while($genotype =~ m/$reg_exp/){
     my $transgene = $1;
 
