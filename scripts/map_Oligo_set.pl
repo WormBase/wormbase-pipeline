@@ -19,9 +19,8 @@ my $config = {
   Transcript => [ ['Coding_transcript',     'Coding_transcript',     'exon'],
                   ['Non_coding_transcript', 'Non_coding_transcript', 'exon'],
                   ['ncRNA',                 'ncRNA',                 'exon'],
-                  ['Pseudogene',            'Pseudogene',            'exon'],
- ],
-
+                  ['Pseudogene',            'Pseudogene',            'exon'] ],
+  
   Pseudogene => [ ['Pseudogene', 'Pseudogene', 'exon'] ],
 };
 
@@ -29,8 +28,7 @@ my $config = {
 my $help;       # Help perldoc
 my $test;       # Test mode
 my $debug;      # Debug mode, output only goes to one user
-my $verbose;    # verbose mode, more command line outout
-my $acename;    # specify a custom acefile
+my $acefile;    # specify a custom acefile
 my $store;      # specify a frozen configuration file
 my $noload;   # don't parse the acefile
 my $species;
@@ -38,10 +36,9 @@ my $pre_ws237_model;
 
 GetOptions(
   'debug=s'   => \$debug,
-  'verbose'   => \$verbose,
   'test'      => \$test,
   'help'      => \$help,
-  'acefile=s' => \$acename,
+  'acefile=s' => \$acefile,
   'store=s'   => \$store,
   'noload'    => \$noload,
   'species=s' => \$species,
@@ -65,9 +62,12 @@ if ($store) {
 }
 
 my $gffdir  = $wb->gff_splits;
-my $acefile = $acename ? $acename : $wb->acefiles . "/Oligos_to_genes.ace";
+if (not defined $acefile) {
+  $acefile = $wb->acefiles . "/Oligo_sets_to_genes.ace";
+}
 
 my $log = Log_files->make_build_log($wb);
+open(my $acefh, ">$acefile") or $log->log_and_die("Could not open $acefile for writing\n");
 
 my @oligo_set_files;
 if ($wb->assembly_type eq 'contig') {
@@ -80,6 +80,8 @@ if ($wb->assembly_type eq 'contig') {
 }
 
 foreach my $class (keys %$config) {
+  $log->write_to("Mapping to $class...\n");
+  
   my $fm = Map_Helper->new();
 
   foreach my $stanza (@{$config->{$class}}) {
@@ -98,17 +100,21 @@ foreach my $class (keys %$config) {
 
     foreach my $file (@files) {
       if (not -e $file) {
-        $log->log_and_die("Could not find file $file\n");
+        warn("Could not find file $file - assuming this datatype does not exist for $species\n");
+        next;
       }
+      $log->write_to(" Reading $file...\n");
       $fm->populate_from_GFF($file, $method, $type, sprintf('%s \"(\S+)\"', $class));
     }
   }
 
+  $log->write_to(" Building index...\n");
   $fm->build_index;
 
   my %object_map;
   
   foreach my $file (@oligo_set_files) {
+    $log->write_to(" Mapping $file to $class...\n");
     open( my $fh, $file) or $log->log_and_die("Could not open $file for reading\n");
     while(<$fh>) {
       next if /^\#/;
@@ -122,18 +128,20 @@ foreach my $class (keys %$config) {
 
       next if not defined $name;
       
-      my @matches = @{$fm->search_feature_segments($l[0], $l[3], $l[4])};
+      my @matches = @{$fm->search_feature_segments($l[0], $l[3], $l[4], $l[6])};
       map { $object_map{$_}->{$name} = 1 } @matches;
     }
   }
   
   foreach my $obj_name (sort keys %object_map) {
-    print "\n$class : \"$obj_name\"\n";
+    print $acefh "\n$class : \"$obj_name\"\n";
     foreach my $os (sort keys %{$object_map{$obj_name}}) {
-      print "Corresponding_oligo_set $os\n";
+      print $acefh "Corresponding_oligo_set $os\n";
     }
   }
 }
+
+close($acefh) or $log->log_and_die("Did not cleanly close output file $acefile\n");
 
 if (not $noload) {
   $wb->load_to_database( $wb->autoace, $acefile, 'map_Oligo_set', $log );
