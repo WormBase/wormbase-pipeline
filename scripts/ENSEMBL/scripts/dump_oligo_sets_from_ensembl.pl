@@ -22,7 +22,7 @@ my ($species,
             'choosebest'      => \$choose_best,
             'verbose'         => \$verbose,
             'acefile=s'       => \$acefile,
-            'oldmodel'        => \$old_model,
+            'prews237'        => \$old_model,
     );
 
 if (defined $p2g_file) {
