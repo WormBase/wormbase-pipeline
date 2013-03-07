@@ -5,8 +5,8 @@
 # Counts the number of objects in an ACEDB database for each Class stated in the config file
 # Compares this number to those from a second database.
 #
-# Last updated by: $Author: klh $
-# Last updated on: $Date: 2012-07-05 10:43:31 $
+# Last updated by: $Author: pad $
+# Last updated on: $Date: 2013-03-07 12:03:26 $
 
 
 use strict;
@@ -436,7 +436,6 @@ sub set_classes {
 #	        "Homol_data",
 		"SAGE_tag",
 		"SAGE_experiment",
-		"Gene_regulation",
 		"Gene",
 		"GO_term",
 #		"Transcript",
@@ -444,7 +443,6 @@ sub set_classes {
 		"Interaction",
 		"Variation",
 		"Database",
-		"YH",
 		);
 
 
@@ -598,10 +596,8 @@ sub set_classes {
 		"RNAi",
 		"SAGE_tag",
 		"SAGE_experiment",
-		"Gene_regulation",
 		"GO_term",
 		"Interaction",
-		"YH",
 		"Position_matrix",
 		"LongText",
 		"Movie",
