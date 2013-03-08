@@ -3,7 +3,11 @@
 ###############
 
 # indicate that we are on the Sanger system, not the EBI
-setenv SANGER 1
+if (-e "/software/worm") then
+  setenv SANGER 1		 
+else 
+  setenv SANGER 0
+endif
 
 setenv WORMPUB ~wormpub
 setenv WORMBASE $WORMPUB # wormpub and wormbase are interchangeable terms
