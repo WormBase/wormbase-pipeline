@@ -16,7 +16,6 @@ setenv PERLBREW_ROOT ${WORMPUB}/software/packages/perlbrew
 setenv WORM_PACKAGES $WORM_SW_ROOT
 setenv WORM_BIN ${WORM_SW_ROOT}/bin
 setenv WORM_LIB ${WORM_SW_ROOT}/lib
-setenv CVS_DIR $WORMPUB/wormbase-pipeline/scripts 
 setenv SCRIPTS $CVS_DIR
 setenv BUILD_HOME $WORMPUB
 setenv PIPELINE /lustre/scratch109/ensembl/wormpipe
