@@ -13,7 +13,7 @@
 #      COMPANY:
 #     $Version:  $
 #      CREATED: 2006-02-27
-#        $Date: 2013-02-25 14:12:22 $
+#        $Date: 2013-03-11 16:51:39 $
 #===============================================================================
 package Remap_Sequence_Change;
 
@@ -305,9 +305,17 @@ sub unmap_gff {
   my $indel = 0;		# true if indels affect this location
   my $change = 0;		# true if non-indel base changes affect this location
 
-  if ($chromosome =~ /CHROMOSOME_(\S+)/) {$chromosome = $1;}
-                                              
-  my %mapping_data = $self->_mapping_data;
+
+
+
+
+
+
+
+
+
+
+  my %mapping_data = %{$self->_mapping_data};
 
   my @releases = sort { $a <=> $b } keys %mapping_data;
 
