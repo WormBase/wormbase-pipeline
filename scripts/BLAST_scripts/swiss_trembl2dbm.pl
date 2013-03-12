@@ -8,7 +8,11 @@ use lib $ENV{'CVS_DIR'};
 
 use strict;
 use Getopt::Long;
-use GDBM_File;
+if (defined $ENV{'SANGER'}) {
+  use GDBM_File;
+} else {
+  use DB_File;
+}
 use Wormbase;
 use Storable;
 use Log_files;
@@ -43,7 +47,7 @@ else {
 my $log = Log_files->make_build_log($wormbase);
 
 # store the database files in swall_data, but make them in /tmp as this goes MUCH faster
-my $output_dir = "/lustre/scratch109/ensembl/wormpipe/swall_data";
+my $output_dir = $ENV{'PIPELINE'} . "/swall_data";
 my $tmp_dir = "/tmp";
 
 my %ORG;
@@ -62,28 +66,37 @@ $usage .= "-t for trembl\n";
 
 if ($opt_s && $opt_t) {
    $log->log_and_die ("$usage");
-}
-elsif ($opt_s) {
+} elsif ($opt_s) {
   
   `rm $tmp_dir/swissprot2org` if (-e "$tmp_dir/swissprot2org" );
   `rm $tmp_dir/swissprot2des` if (-e "$tmp_dir/swissprot2des" );
   `rm $tmp_dir/swissprot2key` if (-e "$tmp_dir/swissprot2key" );
-  
-  tie %ORG,'GDBM_File',"$tmp_dir/swissprot2org",&GDBM_WRCREAT, 0666 or $log->log_and_die("cannot open DBM file");
-  tie %DES,'GDBM_File',"$tmp_dir/swissprot2des",&GDBM_WRCREAT, 0666 or $log->log_and_die("cannot open DBM file");
-  tie %KEY,'GDBM_File',"$tmp_dir/swissprot2key",&GDBM_WRCREAT, 0666 or $log->log_and_die("cannot open DBM file");
-}
-elsif ($opt_t) {
+
+  if (defined $ENV{'SANGER'}) {  
+    tie %ORG,'GDBM_File',"$tmp_dir/swissprot2org",&GDBM_WRCREAT, 0666 or $log->log_and_die("cannot open DBM file");
+    tie %DES,'GDBM_File',"$tmp_dir/swissprot2des",&GDBM_WRCREAT, 0666 or $log->log_and_die("cannot open DBM file");
+    tie %KEY,'GDBM_File',"$tmp_dir/swissprot2key",&GDBM_WRCREAT, 0666 or $log->log_and_die("cannot open DBM file");
+  } else {
+    tie (%ORG, 'DB_File', "$tmp_dir/swissprot2org", O_RDWR|O_CREAT, 0777, $DB_HASH) or $log->log_and_die("cannot open /tmp/swissprot2org DBM file\n");
+    tie (%DES, 'DB_File', "$tmp_dir/swissprot2des", O_RDWR|O_CREAT, 0777, $DB_HASH) or $log->log_and_die("cannot open /tmp/swissprot2des DBM file\n");
+    tie (%KEY, 'DB_File', "$tmp_dir/swissprot2key", O_RDWR|O_CREAT, 0777, $DB_HASH) or $log->log_and_die("cannot open /tmp/swissprot2key DBM file\n");
+  }
+} elsif ($opt_t) {
   
   `rm $tmp_dir/trembl2org` if (-e "$tmp_dir/trembl2org" );
   `rm $tmp_dir/trembl2des` if (-e "$tmp_dir/trembl2des" );
   `rm $tmp_dir/trembl2key` if (-e "$tmp_dir/trembl2key" );
   
-  tie %ORG,'GDBM_File', "$tmp_dir/trembl2org",&GDBM_WRCREAT, 0666 or $log->log_and_die("cannot open DBM file"); 
-  tie %DES,'GDBM_File', "$tmp_dir/trembl2des",&GDBM_WRCREAT, 0666 or  $log->log_and_die("cannot open DBM file");
-  tie %KEY,'GDBM_File', "$tmp_dir/trembl2key",&GDBM_WRCREAT, 0666 or  $log->log_and_die("cannot open DBM file");
-}
-else {
+  if (defined $ENV{'SANGER'}) {
+    tie %ORG,'GDBM_File', "$tmp_dir/trembl2org",&GDBM_WRCREAT, 0666 or $log->log_and_die("cannot open DBM file"); 
+    tie %DES,'GDBM_File', "$tmp_dir/trembl2des",&GDBM_WRCREAT, 0666 or  $log->log_and_die("cannot open DBM file");
+    tie %KEY,'GDBM_File', "$tmp_dir/trembl2key",&GDBM_WRCREAT, 0666 or  $log->log_and_die("cannot open DBM file");
+  } else {
+    tie (%ORG, 'DB_File', "$tmp_dir/trembl2org", O_RDWR|O_CREAT, 0777, $DB_HASH) or $log->log_and_die("cannot open /tmp/trembl2org DBM file\n");
+    tie (%DES, 'DB_File', "$tmp_dir/trembl2des", O_RDWR|O_CREAT, 0777, $DB_HASH) or $log->log_and_die("cannot open /tmp/trembl2des DBM file\n");
+    tie (%KEY, 'DB_File', "$tmp_dir/trembl2key", O_RDWR|O_CREAT, 0777, $DB_HASH) or $log->log_and_die("cannot open /tmp/trembl2key DBM file\n");
+  }
+} else {
     die "$usage";
 }
 
