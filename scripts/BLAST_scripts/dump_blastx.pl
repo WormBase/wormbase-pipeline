@@ -4,8 +4,8 @@
 #  script to submit blastx dumping scripts onto the farm
 #  and concatenate them at the end
 # 
-# Last edited by: $Author: klh $
-# Last edited on: $Date: 2012-11-05 17:24:12 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2013-03-12 13:31:28 $
 # 
 
 
@@ -22,7 +22,11 @@ USAGE
 
 use Getopt::Long;
 use lib $ENV{CVS_DIR};
-use lib '/software/worm/lib/site_perl';
+if (defined $ENV{'SANGER'}) {
+  use lib '/software/worm/lib/site_perl';
+} else {
+  use lib "$ENV{'WORM_SW_ROOT'}/lib/perl5/site_perl"; 
+}
 use LSF;
 use LSF::JobManager;
 use Wormbase;
@@ -69,10 +73,15 @@ my %logic2type = (
 	slimswissprotX => '1',
 );
 
-my $m=LSF::JobManager->new(-q => 'normal',-o => '/dev/null',-e=>'/dev/null',-R => '"select[mem>4000] rusage[mem=4000]"',-M => 4000000, -F => 400000);
+my $m;
+if (defined $ENV{'SANGER'}) {
+  $m=LSF::JobManager->new(-q => 'normal',-o => '/dev/null',-e=>'/dev/null',-R => '"select[mem>4000] rusage[mem=4000]"',-M => 4000000, -F => 400000);
+} else {
+  $m=LSF::JobManager->new(-q => $ENV{'LSB_DEFAULTQUEUE'},-o => '/dev/null',-e=>'/dev/null',-R => '"select[mem>4000] rusage[mem=4000]"',-M => 4000, -F => 400000);
+}
 
 my $storable =  $wormbase->autoace . '/'. ref($wormbase).'.store';
-$dumpdir ||= '/lustre/scratch109/ensembl/wormpipe/dumps';
+$dumpdir ||= "$ENV{'PIPELINE'}/dumps";
 my $organism = lc (ref($wormbase));
 
 $database ||= "worm_ensembl_$organism";
@@ -90,16 +99,16 @@ foreach my $db(keys %logic2type){
     push @outfiles,$outfile;
     my $options="-database $database -logicname $db -outfile $outfile -store $storable -sequence $chrom";
     $options.=' -self' if $logic2type{$db} eq ref $wormbase; # set selfhit removal for the self-blasts
-    my $cmd = "/software/bin/perl $ENV{CVS_DIR}/BLAST_scripts/blastx_dump.pl $options";
+    my $cmd = "perl $ENV{'CVS_DIR'}/BLAST_scripts/blastx_dump.pl $options";
     $m->submit($cmd);
   }
 }
-  $m->wait_all_children( history => 1 );
-  $log->write_to("All children have completed!\n");
-  for my $job ( $m->jobs ) {
-    $log->error("Job $job (" . $job->history->command . ") exited non zero\n") if $job->history->exit_status != 0;
-  }
-  $m->clear;   
+$m->wait_all_children( history => 1 );
+$log->write_to("All children have completed!\n");
+for my $job ( $m->jobs ) {
+  $log->error("Job $job (" . $job->history->command . ") exited non zero\n") if $job->history->exit_status != 0;
+}
+$m->clear;   
 
 # check that all files end with a blank line, 
 # otherwise the the job that created them was probably terminated prematurely by LSF
@@ -126,7 +135,7 @@ if ($wormbase->species eq 'elegans' or $wormbase->species eq 'briggsae'){
   unlink $outfile if -e $outfile;
   foreach my $file (@files ){
     $log->write_to("\tcat $file\n");
-    system ("cat $file |/software/bin/perl $ENV{CVS_DIR}/BLAST_scripts/convert_chromblast2clone.pl >> $outfile") 
+    system ("cat $file | perl $ENV{'CVS_DIR'}/BLAST_scripts/convert_chromblast2clone.pl >> $outfile") 
       && die("cannot concatenate $file to $outfile\n" );
   }
 } else {

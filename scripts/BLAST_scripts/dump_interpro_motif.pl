@@ -4,8 +4,8 @@
 #
 # Dumps InterPro protein motifs from ensembl mysql (protein) database to an ace file
 #
-# Last updated by: $Author: klh $
-# Last updated on: $Date: 2012-11-05 17:24:12 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2013-03-12 13:34:09 $
 
 
 use strict;
@@ -42,7 +42,7 @@ GetOptions("debug:s"       => \$debug,
 # Display help if required
 &usage("Help") if ($help);
 
-$interpro_xml = "/data/blastdb/Worms/interpro_scan/iprscan/data/interpro.xml"
+$interpro_xml = $ENV{'PIPELINE'} . "/blastdb/Worms/interpro_scan/iprscan/data/interpro.xml"
     if not defined $interpro_xml;
 
 my $wormbase;
@@ -111,8 +111,9 @@ if ($method ) {
 
 
 # mysql database parameters
-my $dbhost = "farmdb1";
+my $dbhost = $ENV{'WORM_DBHOST'};
 my $dbuser = "wormro";		# worm read-only access
+my $dbport = $ENV{'WORM_DBPORT'};
 my $dbname = "worm_ensembl_elegans";
 $dbname = $database if $database;
 print "Dumping motifs from $dbname\n";
@@ -145,7 +146,7 @@ print "----------------------------------------------------\n\n" if ($verbose);
 # connect to the mysql database
 $log->write_to("connect to the mysql database $dbname on $dbhost as $dbuser\n\n");
 print "connect to the mysql database $dbname on $dbhost as $dbuser\n\n" if ($verbose);
-my $dbh = DBI -> connect("DBI:mysql:$dbname:$dbhost", $dbuser, $dbpass, {RaiseError => 1})
+my $dbh = DBI -> connect("DBI:mysql:$dbname:$dbhost:$dbport", $dbuser, $dbpass, {RaiseError => 1})
     || $log->log_and_die("cannot connect to db, $DBI::errstr");
 
 # get the mapping of method 2 analysis id
@@ -402,9 +403,14 @@ sub get_interpro {
   if( $get_latest == 1)
   {				# 
 				#Get the latest version
-    print "Attempting to FTP the latest version of interpro.xml from ebi \n" if ($verbose);
-    `wget --cache=off -O $latest_version.gz ftp://ftp.ebi.ac.uk/pub/databases/interpro/interpro.xml.gz`;
-    `gunzip "${latest_version}.gz"`;
+    if (defined $ENV{'SANGER'}) {
+      print "Attempting to FTP the latest version of interpro.xml from ebi \n" if ($verbose);
+      `wget --cache=off -O $latest_version.gz ftp://ftp.ebi.ac.uk/pub/databases/interpro/interpro.xml.gz`;
+      `gunzip "${latest_version}.gz"`;
+    } else {
+      $wormbase->run_command("cp /ebi/ftp/pub/databases/interpro/interpro.xml.gz ${latest_version}.gz", $log);
+      $wormbase->run_command("gunzip ${latest_version}.gz", $log);
+    }
   }
   else {
     print "Using the existing version of interpro2go mapping file (ie not FTPing latest)\n" if ($verbose);
