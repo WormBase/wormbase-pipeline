@@ -37,7 +37,7 @@ if ( $store ) {
 			     );
 }
 
-my $dir = '/lustre/scratch109/ensembl/wormpipe/BlastDB';
+my $dir = $ENV{'PIPELINE'} . '/BlastDB';
 my $log = Log_files->make_build_log($wormbase);
 
 if ( $chroms ) {

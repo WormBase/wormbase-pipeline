@@ -4,7 +4,11 @@ use lib $ENV{'CVS_DIR'};
 
 use strict;
 use Getopt::Long;
-use GDBM_File;
+if (defined $ENV{'SANGER'}) {
+  use GDBM_File;
+} else {
+  use DB_File;
+}
 use Wormbase;
 use Storable;
 use Log_files;
@@ -73,11 +77,11 @@ open (IPI_HITS,">$ipi_file") or $log->log_and_die("cant open $ipi_file\n");
 &usage("Help") if ($help);
 
 # no debug name
-print "DEBUG = \"$debug\"\n\n" if $debug;
-&usage("Debug") if ((defined $debug) && ($debug eq ""));
-
+#print "DEBUG = \"$debug\"\n\n" if $debug;
+#&usage("Debug") if ((defined $debug) && ($debug eq ""));
+#
 # assign $maintainers if $debug set
-($maintainers = $debug . '\@sanger.ac.uk') if ($debug);
+#($maintainers = $debug . '\@sanger.ac.uk') if ($debug);
 
 #+-------------+----------------+
 #| analysis_id | logic_name     |
@@ -127,7 +131,7 @@ my $QUERY_SPECIES = $wormbase->full_name;
  
 #connect to GDBM_File databases for species determination and establish hashes
 
-my $wormpipe_dir  = "/lustre/scratch109/ensembl/wormpipe";
+my $wormpipe_dir  = $ENV{'PIPELINE'};
 my $db_files_dir  = "$wormpipe_dir/swall_data";
 my $dbm_files_dir = "$wormpipe_dir/dumps";
 
@@ -142,10 +146,18 @@ while (my($from,$to)=each %file_mapping ){
 }
 
 my (%SWISSORG, %TREMBLORG);
-tie %SWISSORG, 'GDBM_File',"/tmp/swissprot2org",&GDBM_WRCREAT,0666 or $log->log_and_die("cannot open swissprot2org DBM file /tmp/swissprot2org");
+if (defined $ENV{'SANGER'}) {
+  tie %SWISSORG, 'GDBM_File',"/tmp/swissprot2org",&GDBM_WRCREAT,0666 or $log->log_and_die("cannot open swissprot2org DBM file /tmp/swissprot2org");
+} else {
+  tie (%SWISSORG, 'DB_File', "/tmp/swissprot2org", O_RDWR|O_CREAT, 0777, $DB_HASH) or $log->log_and_die("cannot open swissprot2org DBM file /tmp/swissprot2org\n");
+}
 unless (-s "$db_files_dir/swissprot2des") { $log->log_and_die("swissprot2des not found or empty");}
 
-tie %TREMBLORG, 'GDBM_File',"/tmp/trembl2org",&GDBM_WRCREAT ,0666 or $log->log_and_die("cannot open /tmp/trembl2org DBM file");
+if (defined $ENV{'SANGER'}) {
+  tie %TREMBLORG, 'GDBM_File',"/tmp/trembl2org",&GDBM_WRCREAT ,0666 or $log->log_and_die("cannot open /tmp/trembl2org DBM file");
+} else {
+  tie (%TREMBLORG, 'DB_File', "/tmp/trembl2org", O_RDWR|O_CREAT, 0777, $DB_HASH) or $log->log_and_die("cannot open /tmp/trembl2org DBM file\n");
+}
 unless (-s "$db_files_dir/trembl2des") { $log->log_and_die("trembl2des not found or empty");}
 
 # gene CE info from COMMON_DATA files
@@ -177,7 +189,12 @@ open (OUT,">$output") or $log->log_and_die("cant open $output\n");
 print "opening $recip_file";
 open (RECIP,">$recip_file") or $log->log_and_die("cant open recip file $recip_file: $!\n");
 
-tie our %ACC2DB, 'GDBM_File',"/tmp/acc2db.dbm",&GDBM_WRCREAT ,0666 or warn "cannot open /tmp/acc2db.dbm \n";
+our %ACC2DB;
+if (defined $ENV{'SANGER'}) {
+  tie %ACC2DB, 'GDBM_File',"/tmp/acc2db.dbm",&GDBM_WRCREAT ,0666 or warn "cannot open /tmp/acc2db.dbm \n";
+} else {
+  tie (%ACC2DB, 'DB_File', "/tmp/acc2db.dbm", O_RDWR|O_CREAT, 0777, $DB_HASH) or warn "cannot open /tmp/acc2db.dbm \n";
+}
 
 my $count;
 my $count_limit = 10;
