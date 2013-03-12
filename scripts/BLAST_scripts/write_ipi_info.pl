@@ -4,9 +4,14 @@ use lib $ENV{'CVS_DIR'};
 
 use strict;
 use Getopt::Long;
-use GDBM_File;
+if (defined $ENV{'SANGER'}) {
+  use GDBM_File;
+} else {
+  use DB_File;
+}
 use Wormbase;
 use Log_files;
+use Modules::WBSRS;
 
 my $verbose;
 my $list_all;
@@ -55,10 +60,21 @@ unless (-s "$acc2db" and -s "$desc"  and -s "$peptide") {
 }
 
 # These databases are written by parse_SWTREns_proteins.pl whenever a new data set is used
-tie my %ACC2DB,'GDBM_File', "$acc2db",&GDBM_WRCREAT,     0666 or $log->log_and_die("cannot open $acc2db\n");
-tie my %DESC,'GDBM_File', "$desc",&GDBM_WRCREAT,         0666 or $log->log_and_die("cannot open DBM file $desc\n");
-tie my %PEPTIDE,'GDBM_File', "$peptide",&GDBM_WRCREAT,   0666 or $log->log_and_die("cant open DBM file $peptide\n");
-tie my %DATABASE,'GDBM_File', "$database",&GDBM_WRCREAT, 0666 or $log->log_and_die("cant open DBM file $database\n");
+my %ACC2DB;
+my %DESC;
+my %PEPTIDE;
+my %DATABASE;
+if (defined $ENV{'SANGER'}) {
+  tie %ACC2DB,'GDBM_File', "$acc2db",&GDBM_WRCREAT,     0666 or $log->log_and_die("cannot open $acc2db\n");
+  tie %DESC,'GDBM_File', "$desc",&GDBM_WRCREAT,         0666 or $log->log_and_die("cannot open DBM file $desc\n");
+  tie %PEPTIDE,'GDBM_File', "$peptide",&GDBM_WRCREAT,   0666 or $log->log_and_die("cant open DBM file $peptide\n");
+  tie %DATABASE,'GDBM_File', "$database",&GDBM_WRCREAT, 0666 or $log->log_and_die("cant open DBM file $database\n");
+} else {
+  tie (%ACC2DB,  'DB_File', $acc2db,   O_RDWR|O_CREAT, 0777, $DB_HASH) or $log->log_and_die("cannot open $acc2db DBM file\n");
+  tie (%DESC,    'DB_File', $desc,     O_RDWR|O_CREAT, 0777, $DB_HASH) or $log->log_and_die("cannot open $desc DBM file\n");
+  tie (%PEPTIDE, 'DB_File', $peptide,  O_RDWR|O_CREAT, 0777, $DB_HASH) or $log->log_and_die("cannot open $peptide DBM file\n");
+  tie (%DATABASE,'DB_File', $database, O_RDWR|O_CREAT, 0777, $DB_HASH) or $log->log_and_die("cannot open $database DBM file\n");
+}
 
 # These are a couple of helper data sets to add in swissprot ids and SWALL / ENSEMBL gene names
 
@@ -139,53 +155,78 @@ $log->mail();
 
 exit(0);
 
-sub getSwissGeneName
-  {
-    my $s2g = shift;
-    my $a2i = shift;    
+sub getSwissGeneName {
+  my $s2g = shift;
+  my $a2i = shift;    
+  
+  my %counts;
+
+  if (defined $ENV{'SANGER'}) {
     open (MF,"/software/pubseq/bin/mfetch -f \"id acc gen\" -i \"org:human\" |") or $log->log_and_die("cant mfetch $!\n");
     my ($id, $acn, $gene, $backup_gene);
-    my %counts;
     while (<MF>) {
       #print $_;
       chomp;
       if( /^ID\s+(\S+)/ ) {
 	# before we move on to next protein check if the previous one received a gene name
 	# if not use $backup_gene from the GN line rather than the Genew one
-		unless( $id and $$s2g{$id} ) {
-	  		if( $backup_gene ) {
-	    		$$s2g{$id} = $backup_gene;
-	  		}
-	  		else {
-	    		print "Can't find a gene (GN field) for $id\n" if ($verbose);
-	  		}
-		}
-		$id = $1;
-		undef $acn; undef $gene;undef $backup_gene;
-		
-		$counts{ids}++;
-     }
-    elsif( /^AC\s+(\S+);/) {
-    	next if $acn; # sometime mfetch return 2 lines of acc
-		$acn = $1;
-		$acn =~ s/;//g;
-		$$a2i{"$acn"} = $id; 
-		$counts{acn}++;
+	unless( $id and $$s2g{$id} ) {
+	  if( $backup_gene ) {
+	    $$s2g{$id} = $backup_gene;
+	  }
+	  else {
+	    print "Can't find a gene (GN field) for $id\n" if ($verbose);
+	  }
 	}
-    elsif( (/GN\s+Name=(\S+)[\s+\.];$/) || (/GN\s+Name=(\S+);/ )){
-		# DR   Genew; HGNC:989; BCL10
-		$gene = $1;
-		$$s2g{$id} = $gene;
-		$counts{genes}++;
-	}
-   }
-    foreach (keys %$s2g ) {
-      print "ERROR: \t\t$_\n" unless $$s2g{$_};
+	$id = $1;
+	undef $acn; undef $gene;undef $backup_gene;
+	
+	$counts{ids}++;
+      }
+      elsif( /^AC\s+(\S+);/) {
+	next if $acn; # sometime mfetch return 2 lines of acc
+	$acn = $1;
+	$acn =~ s/;//g;
+	$$a2i{"$acn"} = $id; 
+	$counts{acn}++;
+      }
+      elsif( (/GN\s+Name=(\S+)[\s+\.];$/) || (/GN\s+Name=(\S+);/ )){
+	# DR   Genew; HGNC:989; BCL10
+	$gene = $1;
+	$$s2g{$id} = $gene;
+	$counts{genes}++;
+      }
     }
-    foreach (keys %counts) {
-      print "$_ $counts{$_}\n";
+
+  } else {
+    my $full_name = 'Homo sapiens';
+    my $acc2id = WBSRS::uniprot($full_name);
+    foreach my $acn (keys %{$acc2id}) {
+      my $id = $acc2id->{$acn}{'id'};
+      my $gene = $acc2id->{$acn}{'gene'};
+      $counts{ids}++;
+      
+      $$a2i{$acn} = $id; 
+      $counts{acn}++;
+      
+      if (!defined $gene || $gene eq '') {
+        print "Can't find a gene name for $id\n" if ($verbose);
+      } else {
+	$$s2g{$id} = $gene;
+        $counts{genes}++;
+      }
     }
   }
+  
+  
+  # this looks a bit superfluous!
+  foreach (keys %$s2g ) {
+    print "ERROR: \t\t$_\n" unless $$s2g{$_};
+  }
+  foreach (keys %counts) {
+    print "$_ $counts{$_}\n";
+  }
+}
 
 sub makeENSgenes 
   {

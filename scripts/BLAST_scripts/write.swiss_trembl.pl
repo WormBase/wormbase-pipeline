@@ -9,7 +9,11 @@ use lib $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'}."/BLAST_scripts";
 use strict;
 use Getopt::Long;
-use GDBM_File;
+if (defined $ENV{'SANGER'}) {
+  use GDBM_File;
+} else {
+  use DB_File;
+}
 use GSI;
 use Wormbase;
 use File::Copy;
@@ -46,7 +50,7 @@ my $output_trembl     = "$wormpipe_dump/tremblproteins.ace";
 my $swiss_list_txt    = "$wormpipe_dump/swisslist.txt";
 my $trembl_list_txt   = "$wormpipe_dump/trembllist.txt";
 
-my $db_files        = "/lustre/scratch109/ensembl/wormpipe/swall_data";
+my $db_files        = "$ENV{'PIPELINE'}/swall_data";
 
 my $blast_files = "$wormpipe_dump/*blastp.ace $wormpipe_dump/*X*.ace ";
 
@@ -125,11 +129,19 @@ if ($swiss) {
   unless (-s "/tmp/swissprot2org") {
     die "swissprot2org not found or empty";
   }
-  tie %ORG,'GDBM_File', "/tmp/swissprot2org",&GDBM_WRCREAT, 0666 or die "cannot open swissprot2org DBM file $db_files/swissprot2org";
+  if (defined $ENV{'SANGER'}) {
+    tie %ORG,'GDBM_File', "/tmp/swissprot2org",&GDBM_WRCREAT, 0666 or die "cannot open swissprot2org DBM file $db_files/swissprot2org";
+  } else {
+    tie (%ORG, 'DB_File', "/tmp/swissprot2org", O_RDWR|O_CREAT, 0777, $DB_HASH) or $log->log_and_die("cannot open /tmp/swissprot2org DBM file\n");
+  }
   unless (-s "/tmp/swissprot2des") {
     die "swissprot2des not found or empty";
   }
-  tie %DES,'GDBM_File', "/tmp/swissprot2des",&GDBM_WRCREAT, 0666 or die "cannot open swissprot2des DBM file $db_files/swissprot2des";
+  if (defined $ENV{'SANGER'}) {
+    tie %DES,'GDBM_File', "/tmp/swissprot2des",&GDBM_WRCREAT, 0666 or die "cannot open swissprot2des DBM file $db_files/swissprot2des";
+  } else {
+    tie (%DES, 'DB_File', "/tmp/swissprot2des", O_RDWR|O_CREAT, 0777, $DB_HASH) or $log->log_and_die("cannot open /tmp/swissprot2des DBM file\n");
+  }
   &output_list($swiss_list_txt,$input2output{"$swiss_list_txt"});
   untie %ORG;
   untie %DES;
@@ -139,11 +151,19 @@ if ($trembl) {
   unless (-s "/tmp/trembl2org") {
     die "trembl2org not found or empty";
   }
-  tie %ORG,'GDBM_File', "/tmp/trembl2org",&GDBM_WRCREAT, 0666 or die "cannot open trembl2org DBM file";
+  if (defined $ENV{'SANGER'}) {
+    tie %ORG,'GDBM_File', "/tmp/trembl2org",&GDBM_WRCREAT, 0666 or die "cannot open trembl2org DBM file";
+  } else {
+    tie (%ORG, 'DB_File', "/tmp/trembl2org", O_RDWR|O_CREAT, 0777, $DB_HASH) or $log->log_and_die("cannot open /tmp/trembl2org DBM file\n");
+  }
   unless (-s "/tmp/trembl2des") {
     die "trembl2des not found or empty";
   }
-  tie %DES,'GDBM_File', "/tmp/trembl2des",&GDBM_WRCREAT, 0666 or die "cannot open trembl2des DBM file";
+  if (defined $ENV{'SANGER'}) {
+    tie %DES,'GDBM_File', "/tmp/trembl2des",&GDBM_WRCREAT, 0666 or die "cannot open trembl2des DBM file";
+  } else {
+    tie (%DES, 'DB_File', "/tmp/trembl2des", O_RDWR|O_CREAT, 0777, $DB_HASH) or $log->log_and_die("cannot open /tmp/trembl2des DBM file\n");
+  }
   push( @lists_to_dump,$trembl_list_txt);
   &output_list($trembl_list_txt,$input2output{"$trembl_list_txt"});
   untie %ORG;
