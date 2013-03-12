@@ -5,7 +5,7 @@
 # written by Anthony Rogers
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2013-03-12 14:36:47 $
+# Last edited on: $Date: 2013-03-12 16:54:24 $
 #
 # it depends on:
 #    wormpep + history
@@ -123,9 +123,13 @@ my $raw_dbh = $dba->db_handle;
 
 # build blast logic_name->analysis_id hashes.
 # one for blastx and one for blastp
+my %worm_dna_processIDs;
+my %wormprotprocessIDs;
 
-my %worm_dna_processIDs = %{ get_logic2analysis( $raw_dbh, '%blastx' ) };
-my %wormprotprocessIDs  = %{ get_logic2analysis( $raw_dbh, '%blastp' ) };
+if (! $cleanup) {
+  %worm_dna_processIDs = %{ get_logic2analysis( $raw_dbh, '%blastx' ) };
+  %wormprotprocessIDs  = %{ get_logic2analysis( $raw_dbh, '%blastp' ) };
+}
 
 ####################### copy files around ######################
 # for chromosome , brigpep , wormpep , remapep
