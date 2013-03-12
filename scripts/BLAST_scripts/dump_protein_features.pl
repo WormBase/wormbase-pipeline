@@ -6,8 +6,8 @@
 # Dumps protein features from an Ensembl database as Ace. 
 # Calls on a number of other scripts
 #
-# Last updated by: $Author: klh $     
-# Last updated on: $Date: 2012-11-05 17:24:12 $      
+# Last updated by: $Author: gw3 $     
+# Last updated on: $Date: 2013-03-12 13:42:06 $      
 
 use strict;                                      
 
@@ -34,7 +34,7 @@ $ENV{SORT_OPTS} = "-k2,2 -k8,8n -k10,10nr";
 
 
 my $Blast_scripts = "BLAST_scripts";
-my $WORMPIPE_DIR = "/lustre/scratch109/ensembl/wormpipe";
+my $WORMPIPE_DIR = $ENV{'PIPELINE'};
 my $SORT_DUMP_DIR = "$WORMPIPE_DIR/sort_dump";
 
 croak("The target directory $WORMPIPE_DIR must exist") if not -d $WORMPIPE_DIR;

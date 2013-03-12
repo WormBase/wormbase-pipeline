@@ -1,6 +1,10 @@
 #!/software/bin/perl -w
 
-use lib '/software/worm/lib/site_perl';
+if (defined $ENV{'SANGER'}) {
+  use lib '/software/worm/lib/site_perl';
+} else {
+  use lib $ENV{'WORM_SW_ROOT'} . '/lib/perl5/site_perl';
+}
 
 use strict;
 use Getopt::Long;
@@ -13,8 +17,8 @@ $| = 1;
 
 my $db = "worm_ensembl_elegans";
 my $user = 'wormro';
-my $host = 'farmdb1';
-my $port = 3306;
+my $host = $ENV{'WORM_DBHOST'};
+my $port = $ENV{'WORM_DBPORT'};
 my $segsize = 1000000;
 
 my ($dump_loc, $dump_one_script, $out_file_prefix);
@@ -50,11 +54,17 @@ my $nseg = int(($nrow/$segsize))+1;
 
 my $job_name = "worm_${db}_dump";
 
-my $lsf=LSF::JobManager->new(-q => 'normal', 
-                             -P => 'wormbase', 
-			     -R => '"select[mem>4000] rusage[mem=4000]"', 
-			     -M => 4000000, 
-			     -F => 2000000, 
+my $MEMORY_SIZE;
+if (defined $ENV{'SANGER'}) {
+  $MEMORY_SIZE = 4000000;
+} else {
+  $MEMORY_SIZE = 4000;
+}
+my $lsf=LSF::JobManager->new(-q => $ENV{'LSB_DEFAULTQUEUE'},
+#                             -P => 'wormbase', 
+			     -R => "select[mem>4000] rusage[mem=4000]", 
+			     -M => $MEMORY_SIZE, 
+#			     -F => 2000000, 
 			     -J => $job_name);
 
 for (my $i=0; $i<$nseg; $i++) {

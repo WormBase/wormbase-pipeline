@@ -4,8 +4,8 @@
 #
 # Dumps protein motifs from ensembl mysql (protein) database to an ace file
 #
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2011-07-19 08:54:03 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2013-03-12 13:36:05 $
 
 use lib $ENV{'CVS_DIR'};
 
@@ -47,8 +47,9 @@ $dump_dir ||= $wormbase->farm_dump;
 $log->write_to("Dumping methods".@methods."\n");
 
 # mysql database parameters
-my $dbhost = "farmdb1";
+my $dbhost = $ENV{'WORM_DBHOST'};;
 my $dbuser = "wormro";
+my $dbport = $ENV{'WORM_DBPORT'};
 $dbname ||= "worm_ensembl_elegans";
 print "Dumping motifs from $dbname\n";
 my $dbpass = "";
@@ -77,7 +78,7 @@ $log->write_to("DUMPing protein motif data from ".$dbname." to ace\n------------
 
 # connect to the mysql database
 print LOG "connect to the mysql database $dbname on $dbhost as $dbuser [".&now."]\n\n";
-my $dbh = DBI -> connect("DBI:mysql:$dbname:$dbhost", $dbuser, $dbpass, {RaiseError => 1})
+my $dbh = DBI -> connect("DBI:mysql:$dbname:$dbhost:$dbport", $dbuser, $dbpass, {RaiseError => 1})
     || $log->log_and_die("cannot connect to db, $DBI::errstr\n");
 
 # get the mapping of method 2 analysis id

@@ -9,8 +9,8 @@ use Log_files;
 use Storable;
 use POSIX qw(ceil);
 
-use lib '/software/worm/lib/bioperl-live';
-use lib '/software/worm/ensembl/ensembl/modules';
+use lib $ENV{'WORM_SW_ROOT'} . '/lib/bioperl-live';
+use lib $ENV{'WORM_PACKAGES'} . '/ensembl/ensembl/modules';
 use Bio::EnsEMBL::DBSQL::DBAdaptor;
 
 
@@ -40,8 +40,9 @@ if ( $store ) {
 my $log = Log_files->make_build_log($wormbase);
 
 my $dbobj = Bio::EnsEMBL::DBSQL::DBAdaptor->new(
-                                                '-host'   => 'farmdb1',
+                                                '-host'   => $ENV{'WORM_DBHOST'},
                                                 '-user'   => 'wormro',
+						'-port'   => $ENV{'WORM_DBPORT'},
                                                 '-dbname' => $database
                                                 ) or $log->log_and_die(@!);
 
