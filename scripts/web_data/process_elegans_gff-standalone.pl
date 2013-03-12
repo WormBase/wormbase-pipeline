@@ -112,7 +112,7 @@ while (<>) {
     
     next if $source eq 'assembly_tag';    # don't want 'em, don't need 'em
     next if $method eq 'HOMOL_GAP';       # don't want that neither
-    next if $method eq 'intron';
+    next if $method eq 'intron' and $source ne 'RNASeq_splice';
 
     $ref   =~ s/^CHROMOSOME_//;
     $group =~ s/CHROMOSOME_//;
