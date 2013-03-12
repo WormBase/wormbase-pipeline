@@ -4,7 +4,11 @@
 
 use strict;
 use Getopt::Std;
-use GDBM_File;
+if (defined $ENV{'SANGER'}) {
+  use GDBM_File;
+} else {
+  use DB_File;
+}
 use vars qw($opt_s $opt_t);
 
 getopts ("st");
@@ -30,8 +34,9 @@ my %exclude = (
 	) ;
 
 our $output; # file to write
-my $output_dir = "/lustre/scratch109/ensembl/wormpipe/swall_data";
-my $input_dir = "/lustre/scratch109/ensembl/wormpipe/swall_data";
+my $output_dir = $ENV{'PIPELINE'} . "/swall_data";
+my $input_dir = $ENV{'PIPELINE'} . "/swall_data";
+
 
 my %HASH;
 
@@ -42,21 +47,29 @@ elsif ($opt_s) {
     unless (-s "$input_dir/swissprot2org") {
         die "$input_dir/swiss2org not found or empty";
     }
-    tie %HASH,'GDBM_File', "$input_dir/swissprot2org",&GDBM_WRCREAT, 0666 or die "cannot open DBM file";
+    if (defined $ENV{'SANGER'}) {
+      tie %HASH,'GDBM_File', "$input_dir/swissprot2org",&GDBM_WRCREAT, 0666 or die "cannot open DBM file";
+    } else {
+      tie (%HASH, 'DB_File', "$input_dir/swissprot2org", O_RDWR|O_CREAT, 0777, $DB_HASH) or die "cannot open $input_dir/swissprot2org DBM file\n";
+    }
     $output = "$output_dir/slimswissprot";
 }
 elsif ($opt_t) {
     unless (-s "$input_dir/trembl2org") {
         die "$input_dir/trembl2org not found or empty";
     }
-    tie %HASH,'GDBM_File', "$input_dir/trembl2org",&GDBM_WRCREAT, 0666 or die "cannot open DBM file";
+    if (defined $ENV{'SANGER'}) {
+      tie %HASH,'GDBM_File', "$input_dir/trembl2org",&GDBM_WRCREAT, 0666 or die "cannot open DBM file";
+    } else {
+      tie (%HASH, 'DB_File', "$input_dir/trembl2org", O_RDWR|O_CREAT, 0777, $DB_HASH) or die "cannot open $input_dir/trembl2org DBM file\n";
+    }
     $output = "$output_dir/slimtrembl";
 }
 else {
     die "$usage";
 }
 
-read_fasta ('/data/blastdb/Supported/uniprot');
+read_fasta ($ENV{'PIPELINE'} . '/blastdb/Supported/uniprot'); # downloaded by update_blastDBs.pl
 untie %HASH;
 
 sub read_fasta {
@@ -64,9 +77,15 @@ sub read_fasta {
     my ($id, $acc, $seq);
     open (OUT,">$output") or die "cant write to $output\n";
     open (FILE,"<$uniprot") or die "cant read $uniprot\n";
+    my $regexp;
+    if (defined $ENV{'SANGER'}) {
+      $regexp = '^>(\S+)\.\d+\s+(\S+)';
+    } else {
+      $regexp = '^>\S+\|(\S+)\|(\S+)';
+    }
     while (<FILE>) {
         chomp;
-        if (/^>(\S+)\.\d+\s+(\S+)/) {
+        if (/${regexp}/) {
             my $new_acc = $1;
 	    my $new_id = $2;
             if ($acc) {
