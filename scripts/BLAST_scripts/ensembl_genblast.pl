@@ -3,8 +3,8 @@
 # DESCRIPTION:
 #   setting up the GenBlast pipeline
 #
-# Last edited by: $Author: klh $
-# Last edited on: $Date: 2012-07-09 20:01:55 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2013-03-12 13:51:24 $
 
 use lib $ENV{CVS_DIR};
 
@@ -69,8 +69,8 @@ if ($species eq 'elegans') {
   $log->log_and_die("There is no point in projecting elegans proteins onto the elegans genome - aborting...\n");
 }
 
-$host||='farmdb1';
-$port||=3306;
+$host||=$ENV{'WORM_DBHOST'};
+$port||=$ENV{'WORM_DBPORT'};
 
 # MYSQL setup
 my $db = Bio::EnsEMBL::DBSQL::DBAdaptor->new(
@@ -259,10 +259,7 @@ sub set_up_genome {
 
   # index them for blast
   chdir $genome_dir;
-# for EBI:
-#  my $index_cmd = "/nfs/panda/ensemblgenomes/wormbase/software/packages/genBlastG/formatdb -i $target_dna_file -p F"
-# for Sanger:
-  my $index_cmd = "/software/worm/genBlastG/formatdb -i $target_dna_file -p F";
+  my $index_cmd = "$ENV{'WORM_PACKAGES'}/genBlastG/formatdb -i $target_dna_file -p F";
   $wormbase->run_command($index_cmd, $log);
 
 
