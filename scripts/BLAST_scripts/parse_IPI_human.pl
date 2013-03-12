@@ -1,13 +1,17 @@
 #!/usr/local/ensembl/bin/perl -w                  
 #
-# Last updated by: $Author: klh $     
-# Last updated on: $Date: 2013-01-17 14:15:33 $      
+# Last updated by: $Author: gw3 $     
+# Last updated on: $Date: 2013-03-12 14:01:27 $      
 
 use lib $ENV{'CVS_DIR'};
 use strict;
 use Getopt::Long;
 use File::Copy;
-use GDBM_File;
+if (defined $ENV{'SANGER'}) {
+  use GDBM_File;
+} else {
+  use DB_File;
+}
 use Log_files;
 use Storable;
 use Wormbase;
@@ -37,19 +41,12 @@ my $log = Log_files->make_build_log($wormbase);
 $log->log_and_die("\nYou need to give me a fasta file of the ipi_human proteins with the date appended eg ipi_human_03_05 (5th March)\n
 Get this from ftp://ftp.ebi.ac.uk/pub/databases/IPI/current/ipi.HUMAN.fasta.gz\n\n") unless (defined $file);
 
-#make sure on farm2-login  -> otherwise GDBM_File fails.
-my $host = `hostname`;
-chomp $host;
-unless ( $host =~ /^farm2/ or $host =~ /^bc/ ) {
-    $log->log_and_die( "You must run this from an farm2-login machine, otherwise GDBM_File causes a segmentation fault\n\n");
-}
-
 #extract date from file name
 $file =~ /ipi_human(_\d+_\d+)/;
 
 my $datestamp = $1;
 
-my $farm_loc = "/lustre/scratch109/ensembl/wormpipe";
+my $farm_loc = $ENV{'PIPELINE'};
 
 my $output_dir = "$farm_loc/dumps";
 my $fasta = "$farm_loc/BlastDB/ipi_human$datestamp.pep";
@@ -72,10 +69,22 @@ open (FASTA, ">$fasta") or die "cant write $fasta\n";
 map {unlink "/tmp/$_"} qw(acc2db.dbm desc.dbm peptide.dbm databases.dm);
 
 # remove previous versions of the databases
-tie my %ACC2DB, 'GDBM_File',"/tmp/acc2db.dbm", &GDBM_WRCREAT,0777 or die "cannot open /tmp/acc2db.dbm\n";
-tie my %DESC, 'GDBM_File',"/tmp/desc.dbm",&GDBM_WRCREAT, 0777 or die "cannot open /tmp/desc.dbm \n";
-tie my %PEPTIDE,'GDBM_File', "/tmp/peptide.dbm",&GDBM_WRCREAT, 0777 or die "cannot open /tmp/peptide.dbm\n";
-tie my %DATABASES,'GDBM_File', "/tmp/databases.dbm",&GDBM_WRCREAT, 0777 or die "cannot open /tmp/databases.dbm\n";
+my %ACC2DB;
+my %DESC;
+my %PEPTIDE;
+my %DATABASES;
+
+if (defined $ENV{'SANGER'}) {
+  tie %ACC2DB, 'GDBM_File',"/tmp/acc2db.dbm", &GDBM_WRCREAT,0777 or die "cannot open /tmp/acc2db.dbm\n";
+  tie %DESC, 'GDBM_File',"/tmp/desc.dbm",&GDBM_WRCREAT, 0777 or die "cannot open /tmp/desc.dbm \n";
+  tie %PEPTIDE,'GDBM_File', "/tmp/peptide.dbm",&GDBM_WRCREAT, 0777 or die "cannot open /tmp/peptide.dbm\n";
+  tie %DATABASES,'GDBM_File', "/tmp/databases.dbm",&GDBM_WRCREAT, 0777 or die "cannot open /tmp/databases.dbm\n";
+} else {
+  tie (%ACC2DB, 'DB_File', "/tmp/acc2db.dbm", O_RDWR|O_CREAT, 0777, $DB_HASH) or die "cannot open /tmp/acc2db.dbm\n";
+  tie (%DESC, 'DB_File', "/tmp/desc.dbm", O_RDWR|O_CREAT, 0777, $DB_HASH) or die "cannot open /tmp/desc.dbm \n";
+  tie (%PEPTIDE,'DB_File', "/tmp/peptide.dbm", O_RDWR|O_CREAT, 0777, $DB_HASH) or die "cannot open /tmp/peptide.dbm\n";
+  tie (%DATABASES,'DB_File', "/tmp/databases.dbm", O_RDWR|O_CREAT, 0777, $DB_HASH) or die "cannot open /tmp/databases.dbm\n";
+}
 
 my %database_field = ( 	'VEGA' 		=> 'OtterID',
 			'ENSEMBL' 	=> 'ENSEMBL_PEP_ID',
@@ -192,7 +201,12 @@ $log->mail;
 exit(0);
 
 sub check {
-  tie my %DATA, 'GDBM_File',"$farm_loc/dumps/acc2db.dbm",&GDBM_WRCREAT,0777 or die "fail";
+  my %DATA;
+  if (defined $ENV{'SANGER'}) {
+    tie %DATA, 'GDBM_File',"$farm_loc/dumps/acc2db.dbm",&GDBM_WRCREAT,0777 or die "fail";
+  } else {
+    tie (%DATA, 'DB_File', "$farm_loc/dumps/acc2db.dbm", O_RDWR|O_CREAT, 0777, $DB_HASH) or $log->log_and_die("cannot open /tmp/trembl2org DBM file\n");
+  }
   foreach (keys %DATA){
     print "$_ $DATA{$_}\n";
   }

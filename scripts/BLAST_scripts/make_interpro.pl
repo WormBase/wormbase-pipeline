@@ -8,8 +8,8 @@
 # It copies over the latest file, nupacks it into place and runs the InterPro
 # indexing program on it.
 #
-# Last updated by: $Author: klh $     
-# Last updated on: $Date: 2011-03-16 10:10:52 $      
+# Last updated by: $Author: gw3 $     
+# Last updated on: $Date: 2013-03-12 13:58:26 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -114,7 +114,7 @@ if (!$nodownload) {
 if ($get_main || $get_panther) {
   if (!$nodownload) {
     $log->write_to("Indexing the databases for interproscan\n");
-    $wormbase->run_command("perl /software/worm/iprscan/bin/index_data.pl -p /data/blastdb/Worms/interpro_scan/iprscan/data/ -inx -bin -v", $log);
+    $wormbase->run_command("perl " . $ENV{'WORM_PACKAGES'} . "/iprscan/bin/index_data.pl -p " . $ENV{'PIPELINE'} . "/blastdb/interpro_scan/iprscan/data/ -inx -bin -v", $log);
   }
 
 # save the version number of the new database
@@ -196,7 +196,7 @@ sub get_file {
 
   my ($type, $version) = @_;
   my $filename;
-  my $dir = "/data/blastdb/Worms/interpro_scan"; 
+  my $dir = $ENV{'PIPELINE'} . "/blastdb/Worms/interpro_scan"; 
   if ($type eq 'panther') {
     $filename = "iprscan_PTHR_DATA_${version}.tar.gz";
 
@@ -247,14 +247,15 @@ sub delete_results {
 
 
   # mysql database parameters
-  my $dbhost = "farmdb1";
+  my $dbhost = $ENV{'WORM_DBHOST'};
   my $dbuser = "wormadmin";          
   my $dbname = "worm_ensembl_" . $species; # construct the database name for this species
+  my $dbport = $ENV{'WORM_DBPORT'};
 #  my $dbpass = "XXXXXX";
 
   # connect to the mysql database
   $log->write_to("connect to the mysql database $dbname on $dbhost as $dbuser\n\n");
-  my $dbh = DBI -> connect("DBI:mysql:$dbname:$dbhost", $dbuser, $dbpass, {RaiseError => 1})
+  my $dbh = DBI -> connect("DBI:mysql:$dbname:$dbhost:$dbport", $dbuser, $dbpass, {RaiseError => 1})
       || $log->log_and_die("cannot connect to db, $DBI::errstr");
 
   
