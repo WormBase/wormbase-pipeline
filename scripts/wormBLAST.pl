@@ -4,8 +4,8 @@
 #
 # written by Anthony Rogers
 #
-# Last edited by: $Author: pad $
-# Last edited on: $Date: 2013-03-04 13:35:12 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2013-03-12 14:36:47 $
 #
 # it depends on:
 #    wormpep + history
@@ -59,7 +59,7 @@ GetOptions(
   )
   || die('cant parse the command line parameter');
 
-my $wormpipe_dir = '/lustre/scratch109/ensembl/wormpipe';
+my $wormpipe_dir = $ENV{'PIPELINE'};
 my $scripts_dir  = $ENV{'CVS_DIR'};
 
 # defaults
@@ -94,7 +94,11 @@ $species =~ tr/[A-Z]/[a-z]/;
 my $species_ = ref $wormbase;
 $species =~ s/^[A-Z]/[a-z]/;
 
-$yfile_name = "/nfs/wormpub/wormbase/scripts/ENSEMBL/etc/ensembl_lite.conf" if not defined $yfile_name;
+if (defined $ENV{'SANGER'}) {
+  $yfile_name = "/nfs/wormpub/wormbase/scripts/ENSEMBL/etc/ensembl_lite.conf" if not defined $yfile_name;
+} else {
+  $yfile_name = $ENV{'CVS_DIR'} . "/ENSEMBL/etc/ensembl_lite.conf" if not defined $yfile_name;
+}
 # the following expands any shell shortcut chars, e.g. ~
 ($yfile_name) = glob("$yfile_name");
 die ("Could not find conf file $yfile_name\n") if not -e $yfile_name;
@@ -190,27 +194,27 @@ if ($cleanup && !$test) {
   $log->write_to("clearing up files generated in this build\n");
   
   # files to move to ~wormpub/last-build/
-  #   /lustre/scratch109/ensembl/wormpipe/dumps/
+  #   $ENV{'PIPELINE'}/dumps/
   #    ipi_hits_list
   #    trembllist.txt
   #    swisslist.txt
   #    *best_blastp_hits
   
-  #  ~wormpipe/Elegans
+  #  $ENV{'PIPELINE'}/Elegans
   #    WS99.agp
   #    cds99.gff
   #    cos99.gff
   #    ids.txt
   
   # to delete
-  #   /lustre/scratch109/ensembl/wormpipe/dumps/
+  #   $ENV{'PIPELINE'}/dumps/
   #      *.ace
   #      *.log
-  my $clear_dump = "/lustre/scratch109/ensembl/wormpipe/dumps";
+  my $clear_dump = "$wormpipe_dir/dumps";
   
   $log->write_to ("Removing files currently in $wormpipe_dir/last_build\n");
   eval {
-    system("mv -f $wormpipe_dir/last_build/*.ace") and die;
+    system("rm -f $wormpipe_dir/last_build/*.ace") and die;
     system("rm -f $wormpipe_dir/last_build/*.gff") and die;
     system("rm -f $wormpipe_dir/last_build/*.agp") and die;
     system("rm -f $wormpipe_dir/last_build/*.txt") and die;
@@ -242,14 +246,18 @@ if ($cleanup && !$test) {
   $log->write_to ("\nRemoving the $wormpipe_dir/DUMP_PREP_RUN lock file\n");
   system("rm -f $wormpipe_dir/DUMP_PREP_RUN") && warn "cant remove $wormpipe_dir/DUMP_PREP_RUN\n";
   
-  $log->write_to("\nRemoving farm output and error files from /lustre/scratch109/ensembl/wormpipe/*\n") if $debug;
+  $log->write_to("\nRemoving farm output and error files from $wormpipe_dir/*\n") if $debug;
   my $scratch_dir = $wormpipe_dir;
   # Michael wants ensembl-brugia left as it is for now as he uses it for testing
   my @species_dir = qw( ensembl-pristionchus ensembl-japonica ensembl-brenneri ensembl-briggsae ensembl-elegans ensembl-remanei ); 
   foreach my $species_dir (@species_dir) {
     system( "rm -fr $scratch_dir/$species_dir");
     mkdir("$scratch_dir/$species_dir", 0775); # so remake it
-    system("chgrp worm $scratch_dir/$species_dir"); # change group to worm
+    if (defined $ENV{'SANGER'}) {
+      system("chgrp worm $scratch_dir/$species_dir"); # change group to worm
+    } else {
+      system("chgrp nucleotide $scratch_dir/$species_dir"); # change group to nucleotide
+    }
     system("chmod g+ws $scratch_dir/$species_dir"); # group writable and inherit group
   }
   $log->write_to ("\n\nCLEAN UP COMPLETED\n\n");
@@ -428,15 +436,21 @@ sub update_blast_dbs {
 
                 # make blastable database
                 $log->write_to("\tmaking blastable database for $1\n");
-                $wormbase->run_command( "/usr/local/ensembl/bin/xdformat -p $wormpipe_dir/BlastDB/$whole_file", $log );
-                $wormbase->run_command( "/usr/local/ensembl/bin/formatdb -p -t $1 -i $wormpipe_dir/BlastDB/$whole_file", $log ) if ($1 eq 'wormpep');
+		if (defined $ENV{'SANGER'}) {
+		  $wormbase->run_command( "/usr/local/ensembl/bin/xdformat -p $wormpipe_dir/BlastDB/$whole_file", $log );
+		  $wormbase->run_command( "/usr/local/ensembl/bin/formatdb -p -t $1 -i $wormpipe_dir/BlastDB/$whole_file", $log ) if ($1 eq 'wormpep');
+		} else {
+		  my $WU_BLAST = $ENV{'WORM_PACKAGES'} . 'wublast';
+		  my $NCBI_BLAST = $ENV{'WORM_PACKAGES'} . 'ncbi-blast';
+		  $wormbase->run_command( "$WU_BLAST/xdformat -p $wormpipe_dir/BlastDB/$whole_file", $log );
+		  $wormbase->run_command( "$NCBI_BLAST/makeblastdb -dbtype prot -title $1 -in $wormpipe_dir/BlastDB/$whole_file", $log ) if ($1 eq 'wormpep');
+		}
                 push( @_updated_DBs, $1 );
 
                 #change hash entry ready to rewrite external_dbs
                 $_currentDBs{$1} = "$whole_file";
-            }
-            else {
-                $log->write_to ("\t$1 database unchanged $whole_file\n");
+            } else {
+	      $log->write_to ("\t$1 database unchanged $whole_file\n");
             }
         }
     }
@@ -449,10 +463,10 @@ sub update_blast_dbs {
     close NEW_DB;
 
     # copy the databases around
-    my $blastdbdir = "/data/blastdb/Worms";
+    my $blastdbdir = "$wormpipe_dir/blastdb/Worms";
     &get_updated_database_list();
 
-    # delete updated databases from /data/blastdb/Worms
+    # delete updated databases from $wormpipe_dir/blastdb/Worms
     foreach (@_updated_DBs) {
         $log->write_to("deleting blastdbdir/$_*\n");
         ( unlink glob "$blastdbdir/$_*" )
@@ -513,7 +527,7 @@ sub update_dna {
         $config->{database}->{host},   $config->{database}->{user}, $config->{database}->{password},
         $config->{database}->{dbname}, $config->{database}->{port}
     );
-    my $pipeline_scripts = "/software/worm/ensembl/ensembl-pipeline/scripts";
+    my $pipeline_scripts = "$ENV{'WORM_PACKAGES'}/ensembl/ensembl-pipeline/scripts";
     my $conf_dir         = ($config->{confdir}||die("please set a species specific confdir in $yfile_name\n"));
 
     $wormbase->run_command( "perl $pipeline_scripts/analysis_setup.pl $db_options -read -file $conf_dir/analysis.conf", $log );
@@ -574,7 +588,7 @@ sub update_proteins {
         $config->{database}->{host},   $config->{database}->{user}, $config->{database}->{password},
         $config->{database}->{dbname}, $config->{database}->{port}
     );
-    my $pipeline_scripts = "/software/worm/ensembl/ensembl-pipeline/scripts";
+    my $pipeline_scripts = "$ENV{'WORM_PACKAGES'}/ensembl/ensembl-pipeline/scripts";
 
     $wormbase->run_script( "ENSEMBL/scripts/worm_lite.pl -yfile $yfile_name -load_genes -species $species", $log );
     $wormbase->run_command( "perl $pipeline_scripts/make_input_ids $db_options -translation_id -logic SubmitTranslation", $log );
@@ -705,39 +719,42 @@ sub update_analysis {
     $log->write_to ("Updating BLAST analysis ... \n");
     foreach my $db ( get_updated_database_list() ) {
         $db =~ /([a-z_]+)?[\d_]*\.pep/;
-        $analysis_for_file->execute("/data/blastdb/Worms/$1%.pep") || die "$DBI::errstr";
+        $analysis_for_file->execute("$wormpipe_dir/blastdb/Worms/$1%.pep") || die "$DBI::errstr";
         my $analysis = $analysis_for_file->fetchall_arrayref || die "$DBI::errstr";
         foreach my $ana (@$analysis) {
-            $log->write_to ("updating analysis : ${\$ana->[0]} => /data/blastdb/Worms/$db\n");
-            $update_dbfile_handle->execute( "/data/blastdb/Worms/$db", $ana->[0] ) || die "$DBI::errstr";
+            $log->write_to ("updating analysis : ${\$ana->[0]} => $wormpipe_dir/blastdb/Worms/$db\n");
+            $update_dbfile_handle->execute( "$wormpipe_dir/blastdb/Worms/$db", $ana->[0] ) || die "$DBI::errstr";
             $clean_input_id_handle->execute( $ana->[0] )                                        || die "$DBI::errstr";
             $raw_dbh->do("DELETE FROM protein_feature WHERE analysis_id = ${\$ana->[0]}")       || die "$DBI::errstr";
             $raw_dbh->do("DELETE FROM protein_align_feature WHERE analysis_id = ${\$ana->[0]}") || die "$DBI::errstr";
         }
     }
 
-    # update the interpro analysis
-    my $interpro_dir    = "/data/blastdb/Worms/interpro_scan";
-    my $interpro_date   = 1000;
-    my $last_build_date = -M $last_build_DBs;
-    if ( -e $interpro_dir ) {
+    # the Interpro stuff has its own pipeline on the EBI, so only load it on the Sanger
+    if (defined $ENV{'SANGER'}) {
+      # update the interpro analysis
+      my $interpro_dir    = "$wormpipe_dir/blastdb/Worms/interpro_scan";
+      my $interpro_date   = 1000;
+      my $last_build_date = -M $last_build_DBs;
+      if ( -e $interpro_dir ) {
         $interpro_date = -M $interpro_dir;
-    }
-    else {
+      }
+      else {
         $log->write_to("ERROR: Can't find the InterPro database directory: $interpro_dir\n");
-    }
-
-    # see if the InterPro databases' directory has had stuff put in it since the last build
-    if ( $interpro_date < $last_build_date ) {
+      }
+      
+      # see if the InterPro databases' directory has had stuff put in it since the last build
+      if ( $interpro_date < $last_build_date ) {
         $log->write_to ("doing InterPro updates . . . \n");
-
+	
         # delete entries so they get rerun
         $raw_dbh->do('DELETE FROM protein_feature WHERE analysis_id IN (select analysis_id FROM analysis WHERE module LIKE "ProteinAnnotation%")')
           || die "$DBI::errstr";
         $raw_dbh->do('DELETE FROM input_id_analysis WHERE analysis_id IN (select analysis_id FROM analysis WHERE module LIKE "ProteinAnnotation%")')
           || die "$DBI::errstr";
+      }
     }
-    
+
     # update BLAT stuff
     my $db_options = sprintf('-user %s -password %s -host %s -port %i -dbname %s', 
        $config->{database}->{user}, $config->{database}->{password},$config->{database}->{host},$config->{database}->{port},$config->{database}->{dbname});
