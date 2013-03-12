@@ -1,7 +1,7 @@
 #!/usr/local/ensembl/bin/perl -w
 #
-# Last edited by: $Author: klh $
-# Last edited on: $Date: 2013-03-04 13:44:00 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2013-03-12 14:21:27 $
 
 use lib $ENV{'CVS_DIR'};
 
@@ -52,7 +52,7 @@ else {
 $species = $wormbase->species;   #for load
 my $log = Log_files->make_build_log($wormbase);
 
-my $farm_loc = '/lustre/scratch109/ensembl/wormpipe';
+my $farm_loc = $ENV{'PIPELINE'};
 my $blastdir    = "$farm_loc/BlastDB";
 my $acedir      = "$farm_loc/ace_files";
 my $swalldir    = "$farm_loc/swall_data";
@@ -72,11 +72,18 @@ if($uniprot or $swissprot or $trembl) {
   my $cver_tr = determine_last_vers('slimtrembl');
   
   #find latest ver
-  open (WG,"wget -O - -q ftp://ftp.ebi.ac.uk/pub/databases/uniprot/knowledgebase/reldate.txt |") or $log->log_and_die("cant get Uniprot page\n");
+  if (defined $ENV{'SANGER'}) {
+    open (WG,"wget -O - -q ftp://ftp.ebi.ac.uk/pub/databases/uniprot/knowledgebase/reldate.txt |") or $log->log_and_die("cant get Uniprot page\n");
+  } else {
+      open (WG, "</ebi/ftp/pub/databases/uniprot/knowledgebase/reldate.txt") or $log->log_and_die("cant get Uniprot page\n");
+  }
   my $lver;
   while(<WG>) { #to make processing easier we use the uniprot release no.rather than separate SwissProt and Trembl
     if (/UniProt\s+Knowledgebase\s+Release\s+(\d+)_(\d+)/){
       my $newver = sprintf("%d%d", $1, $2);
+      if (!defined $ENV{'SANGER'} && $newver != $cver) {
+        &process_uniprot($newver);
+      }
       if($newver != $cver and ($uniprot or $swissprot)) {
         &process_swissprot($newver);
       } else {
@@ -321,54 +328,102 @@ sub process_human {
     my $file = shift(@files);
     my ($m,$d) = $file =~ /ipi_human_(\d+)_(\d+)/;
 
+    my $remote_date;
+    my $src_file;
+    my $filename;
 
-    my $login = "anonymous";
-    my $passw = 'wormbase@sanger.ac.uk';
-    my $ftp = Net::FTP->new("ftp.ebi.ac.uk");
-    $ftp->login("anonymous",'wormbase@sanger.ac.uk');
-    $ftp->cwd('pub/databases/IPI/current');
-    my $filename = 'ipi.HUMAN.fasta.gz';
-    my $ls = $ftp->dir("$filename");
-    my @a = parse_dir($ls);
-    my $remote_date = strftime "%m_%d",gmtime($a[0]->[3]);
+    my $ftp;
+    if (defined $ENV{'SANGER'}) {
+      my $login = "anonymous";
+      my $passw = 'wormbase@sanger.ac.uk';
+      $ftp = Net::FTP->new("ftp.ebi.ac.uk");
+      $ftp->login("anonymous",'wormbase@sanger.ac.uk');
+      $ftp->cwd('pub/databases/IPI/current');
+      $filename = 'ipi.HUMAN.fasta.gz';
+      my $ls = $ftp->dir("$filename");
+      my @a = parse_dir($ls);
+      $remote_date = strftime "%m_%d",gmtime($a[0]->[3]);
+    } else {
+      $src_file = "/ebi/ftp/pub/databases/IPI/last_release/current/ipi.HUMAN.fasta.gz";
+      if (!-e $src_file) {$log->log_and_die("Can't find file $src_file\n");}
+      my @a = parse_dir(`ls -l $src_file`);
+      $remote_date = strftime "%m_%d",gmtime($a[0]->[3]);
+    }
 
-    if($remote_date ne "${m}_${d}") {
+    if ($remote_date ne "${m}_${d}") {
 	#download the file
 	$log->write_to("\tupdating human to $remote_date\n");
 	my $target = "/tmp/ipi_human_${remote_date}.gz";
-	$ftp->binary(); 
-	$ftp->get($filename,$target) or $log->log_and_die("failed getting $filename: ".$ftp->message."\n");
-	$ftp->quit;
+
+	if (defined $ENV{'SANGER'}) {
+	  $ftp->binary(); 
+	  $ftp->get($filename,$target) or $log->log_and_die("failed getting $filename: ".$ftp->message."\n");
+	  $ftp->quit;
+	} else {
+	  $wormbase->run_command("cp $src_file $target", $log);
+	}
 
 	$wormbase->run_command("gunzip $target",$log);
 	$target =~ s/\.gz//; #no longer gzipped
 	$wormbase->run_script("BLAST_scripts/parse_IPI_human.pl -file $target", $log);
 	$wormbase->run_command("rm $target", $log);
 	$log->write_to("\tIPI updated\n");
-    }
-    else {
+    } else {
 	$log->write_to("\tIPI_human is up to date $remote_date\n");
     }
 }
 
+sub process_uniprot {
+
+  # set up the combined swissprot and trembl fasta sequence data that is used by the script swiss_trembl2slim.pl  
+  # on Sanger, this is maintained by Sanger Systems, so we don't need to do anything
+
+  my $ver = shift;
+
+  my $target1 = $ENV{'PIPELINE'}."/blastdb/Supported/uniprot_sprot.fasta.gz";
+  my $filename = "/ebi/ftp/pub/databases/uniprot/knowledgebase/uniprot_sprot.fasta.gz";
+  if (!-e $filename) {$log->log_and_die("Can't find file $filename\n");}
+  $wormbase->run_command("cp $filename $target1",$log);
+
+
+  my $target2 = $ENV{'PIPELINE'}."/blastdb/Supported/uniprot_trembl.fasta.gz";
+  $filename = "/ebi/ftp/pub/databases/uniprot/knowledgebase/uniprot_trembl.fasta.gz";
+  if (!-e $filename) {$log->log_and_die("Can't find file $filename\n");}
+  $wormbase->run_command("cp $filename $target2",$log);
+
+
+  # uncompress and concatenate                                                                                                                                                                                                        
+  my $target3 = $ENV{'PIPELINE'}."/blastdb/Supported/uniprot";
+  $wormbase->run_command("rm -f $target3",$log);
+  $wormbase->run_command("gunzip -c $target1 > $target3",$log);
+  $wormbase->run_command("gunzip -c $target2 >> $target3",$log);
+  
+}
 
 sub process_swissprot {
 
   #swissprot
   my $ver = shift;
-  
-  my $login = "anonymous";
-  my $passw = 'wormbase@sanger.ac.uk';
-  my $ftp = Net::FTP->new("ftp.ebi.ac.uk", Timeout => 18000);
-  $ftp->login("anonymous",'wormbase@sanger.ac.uk');
-  $ftp->cwd('pub/databases/uniprot/knowledgebase');
-  
+
   my $target = $swalldir."/uniprot_sprot.dat.gz";
-  my $filename = 'uniprot_sprot.dat.gz';
-  $ftp->binary(); 
-  $ftp->get($filename,$target) or $log->error("failed getting $filename: ".$ftp->message."\n");
-  $ftp->quit;
+
+  if (defined $ENV{'SANGER'}) {
+    my $login = "anonymous";
+    my $passw = 'wormbase@sanger.ac.uk';
+    my $ftp = Net::FTP->new("ftp.ebi.ac.uk", Timeout => 18000);
+    $ftp->login("anonymous",'wormbase@sanger.ac.uk');
+    $ftp->cwd('pub/databases/uniprot/knowledgebase');
   
+    my $filename = 'uniprot_sprot.dat.gz';
+    $ftp->binary(); 
+    $ftp->get($filename,$target) or $log->error("failed getting $filename: ".$ftp->message."\n");
+    $ftp->quit;
+  } else {
+    my $filename = "/ebi/ftp/pub/databases/uniprot/knowledgebase/uniprot_sprot.dat.gz";
+    if (!-e $filename) {$log->log_and_die("Can't find file $filename\n");}
+    $wormbase->run_command("cp $filename $target",$log);
+  }
+
   $wormbase->run_script("BLAST_scripts/swiss_trembl2dbm.pl -s -file $target", $log);
   $wormbase->run_script("BLAST_scripts/swiss_trembl2slim.pl -s $ver",$log);
   $wormbase->run_script("BLAST_scripts/fasta2gsi.pl -f $swalldir/slimswissprot",$log);
@@ -383,31 +438,41 @@ sub process_trembl {
   my $tfile = 'uniprot_trembl.dat.gz';
 
   my $final_target = "$swalldir/$tfile";
+  my $okay;
   my $local_target = $wormbase->scratch_area . "/$tfile";
-  
-  my $login = "anonymous";
-  my $passw = 'wormbase@sanger.ac.uk';
 
-  # fetch the file
-  my $okay = 1;
+  if (defined $ENV{'SANGER'}) {
+    my $login = "anonymous";
+    my $passw = 'wormbase@sanger.ac.uk';
+    
+    # fetch the file
+    $okay = 1;
 
-  my $ftp = Net::FTP->new("ftp.ebi.ac.uk", Timeout => 300);
-  $ftp->login("anonymous",'wormbase@sanger.ac.uk');
-  $ftp->cwd('pub/databases/uniprot/knowledgebase');
-  $ftp->binary;
-  $ftp->get($tfile,$local_target) or do {
-    $log->error("process_trembl: Failed getting $tfile: ".$ftp->message."\n");
-    $okay = 0;
-  };
-  $ftp->quit;
-
-  if ($okay) {
-    # move it to where it needs to be
-    $wormbase->run_command("mv $local_target $final_target", $log) and do {
-      $log->error("process_trembl: Could not mv $local_target to $final_target\n");
+    my $ftp = Net::FTP->new("ftp.ebi.ac.uk", Timeout => 300);
+    $ftp->login("anonymous",'wormbase@sanger.ac.uk');
+    $ftp->cwd('pub/databases/uniprot/knowledgebase');
+    $ftp->binary;
+    $ftp->get($tfile,$local_target) or do {
+      $log->error("process_trembl: Failed getting $tfile: ".$ftp->message."\n");
       $okay = 0;
     };
+    $ftp->quit;
+
+    if ($okay) {
+      # move it to where it needs to be
+      $wormbase->run_command("mv $local_target $final_target", $log) and do {
+	$log->error("process_trembl: Could not mv $local_target to $final_target\n");
+	$okay = 0;
+      };
+    }
+
+  } else {
+    my $filename = "/ebi/ftp/pub/databases/uniprot/knowledgebase/uniprot_trembl.dat.gz";
+    if (!-e $filename) {$log->log_and_die("Can't find file $filename\n");}
+    $wormbase->run_command("cp $filename $final_target",$log);
+    $okay = 1;
   }
+
 
   if ($okay) {
     $wormbase->run_script("BLAST_scripts/swiss_trembl2dbm.pl -t -file $final_target", $log);
@@ -483,6 +548,7 @@ sub determine_last_vers {
     my $db = shift;
     my @files  = glob($blastdir."/$db*");
     my $file = shift(@files);
+    if (!defined $file || $file eq '') {$log->log_and_die("Can't find file $blastdir/$db*\n");}
     my ($ver) = $file =~ /$db(\d+)\.pep/;
     return $ver ? $ver : '666';
 }
