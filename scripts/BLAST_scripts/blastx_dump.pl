@@ -10,8 +10,8 @@
 #   reduce the memory footprint. If you change it, DON'T use foreach and a large
 #   array of EnsEMBL objects, it invites disaster as it makes a copy of the array.
 #
-# Last edited by: $Author: pad $
-# Last edited on: $Date: 2011-01-20 11:09:57 $ 
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2013-03-12 12:31:34 $ 
 
 my $usage = <<USAGE;
 blastx_dump.pl options:
@@ -29,8 +29,8 @@ USAGE
 
 
 ###################
-use lib '/software/worm/ensembl/ensembl/modules/';
-use lib '/software/worm/lib/bioperl-live/';
+use lib $ENV{'WORM_PACKAGES'} . '/ensembl/ensembl/modules/';
+use lib $ENV{'WORM_SW_ROOT'} . '/lib/bioperl-live/';
 ###################
 
 use Getopt::Long;
@@ -88,10 +88,10 @@ if ($dbname=~/elegans/){
 
 my $database_name = ($dbname ||'worm_ensembl_briggsae_test');
 my $db = new Bio::EnsEMBL::DBSQL::DBAdaptor(
-        -host   => 'farmdb1',
+        -host   => $ENV{'WORM_DBHOST'},
         -user   => 'wormro',
         -dbname => $database_name,
-        -port   => 3306,
+        -port   => $ENV{'WORM_DBPORT'},
     );
 
     # actually it should really get a $wormbase object to get db-names and so on ...
@@ -388,7 +388,7 @@ sub get_latest_pep {
    my @species =qw(wormpep remapep brigpep ppapep jappep brepep);
    my @history_files;
    SPECIES: foreach my $s (@species){
-       my @files = sort {$b cmp $a} glob("~wormpub/BUILD/WORMPEP/$s*/*history*");
+       my @files = sort {$b cmp $a} glob($ENV{'WORMPUB'}."/BUILD/WORMPEP/$s*/*history*");
            foreach my $file(@files){
                next if $file=~/666|665/;
                            push (@history_files,$file);
