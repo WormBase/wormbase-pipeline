@@ -4,11 +4,7 @@ use lib $ENV{'CVS_DIR'};
 
 use strict;
 use Getopt::Long;
-if (defined $ENV{'SANGER'}) {
-  use GDBM_File;
-} else {
-  use DB_File;
-}
+use DB_File;
 use Wormbase;
 use Log_files;
 use Modules::WBSRS;
@@ -64,17 +60,11 @@ my %ACC2DB;
 my %DESC;
 my %PEPTIDE;
 my %DATABASE;
-if (defined $ENV{'SANGER'}) {
-  tie %ACC2DB,'GDBM_File', "$acc2db",&GDBM_WRCREAT,     0666 or $log->log_and_die("cannot open $acc2db\n");
-  tie %DESC,'GDBM_File', "$desc",&GDBM_WRCREAT,         0666 or $log->log_and_die("cannot open DBM file $desc\n");
-  tie %PEPTIDE,'GDBM_File', "$peptide",&GDBM_WRCREAT,   0666 or $log->log_and_die("cant open DBM file $peptide\n");
-  tie %DATABASE,'GDBM_File', "$database",&GDBM_WRCREAT, 0666 or $log->log_and_die("cant open DBM file $database\n");
-} else {
-  tie (%ACC2DB,  'DB_File', $acc2db,   O_RDWR|O_CREAT, 0777, $DB_HASH) or $log->log_and_die("cannot open $acc2db DBM file\n");
-  tie (%DESC,    'DB_File', $desc,     O_RDWR|O_CREAT, 0777, $DB_HASH) or $log->log_and_die("cannot open $desc DBM file\n");
-  tie (%PEPTIDE, 'DB_File', $peptide,  O_RDWR|O_CREAT, 0777, $DB_HASH) or $log->log_and_die("cannot open $peptide DBM file\n");
-  tie (%DATABASE,'DB_File', $database, O_RDWR|O_CREAT, 0777, $DB_HASH) or $log->log_and_die("cannot open $database DBM file\n");
-}
+tie (%ACC2DB,  'DB_File', $acc2db,   O_RDWR|O_CREAT, 0666, $DB_HASH) or $log->log_and_die("cannot open $acc2db DBM file\n");
+tie (%DESC,    'DB_File', $desc,     O_RDWR|O_CREAT, 0666, $DB_HASH) or $log->log_and_die("cannot open $desc DBM file\n");
+tie (%PEPTIDE, 'DB_File', $peptide,  O_RDWR|O_CREAT, 0666, $DB_HASH) or $log->log_and_die("cannot open $peptide DBM file\n");
+tie (%DATABASE,'DB_File', $database, O_RDWR|O_CREAT, 0666, $DB_HASH) or $log->log_and_die("cannot open $database DBM file\n");
+
 
 # These are a couple of helper data sets to add in swissprot ids and SWALL / ENSEMBL gene names
 
