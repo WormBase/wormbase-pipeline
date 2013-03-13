@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl -w
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2013-03-04 13:24:00 $
+# Last edited on: $Date: 2013-03-13 14:14:33 $
 
 use strict;
 use lib  $ENV{'CVS_DIR'};
@@ -81,7 +81,6 @@ init history_transcript elegans briggsae pristionchus japonica brenneri brugia
 init tRNAscan-SE-1.23 elegans
 init tRNAscan-SE-1.3 briggsae pristionchus japonica brenneri remanei brugia
 init Non_coding_transcript elegans briggsae pristionchus japonica brenneri remanei brugia
-init SAGE_tag elegans
 init snlRNA elegans
 init snRNA elegans
 init rRNA elegans
@@ -92,7 +91,6 @@ init stRNA elegans
 init ncRNA elegans briggsae brugia
 init miRNA elegans
 init miRNA_primary_transcript elegans
-init SAGE_transcript elegans
 blat BLAT_EST_BEST elegans briggsae remanei pristionchus japonica brenneri brugia
 blat BLAT_EST_OTHER elegans briggsae remanei pristionchus japonica brenneri brugia
 blat BLAT_NEMATODE elegans pristionchus remanei briggsae japonica brenneri brugia
