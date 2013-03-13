@@ -3,13 +3,10 @@
 # blast_kill_list.pl
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2013-03-12 12:23:40 $
+# Last edited on: $Date: 2013-03-13 09:59:10 $
 
-if (defined $ENV{'SANGER'}) {
-use GDBM_File;
-} else {
+
 use DB_File;
-}
 use lib $ENV{'WORM_PACKAGES'} . '/ensembl/bioperl-live/';
 use Digest::CRC qw(crc64_hex);
 use Bio::SeqIO;
@@ -42,11 +39,7 @@ while(my $seq=$seqio_object->next_seq){
 # create flatfile database to speed up lookups
 sub prepare_db{
     my ($file)=@_;
-    if (defined $ENV{'SANGER'}) {
-      tie %id_hash,'GDBM_File', '/tmp/id_hash',&GDBM_WRCREAT, 0666 or die "cannot open /tmp/id_hash DBM file\n";
-    } else {
-      tie (%id_hash, 'DB_File', "/tmp/id_hash", O_RDWR|O_CREAT, 0777, $DB_HASH) or die "cannot open /tmp/id_hash DBM file\n";
-    }
+    tie (%id_hash, 'DB_File', "/tmp/id_hash", O_RDWR|O_CREAT, 0666, $DB_HASH) or die "cannot open /tmp/id_hash DBM file\n";
     open INF, "<$file" || die "cannot open $file\n";
     my $counter=0;
     while (<INF>){

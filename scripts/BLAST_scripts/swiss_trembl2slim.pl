@@ -4,11 +4,7 @@
 
 use strict;
 use Getopt::Std;
-if (defined $ENV{'SANGER'}) {
-  use GDBM_File;
-} else {
-  use DB_File;
-}
+use DB_File;
 use vars qw($opt_s $opt_t);
 
 getopts ("st");
@@ -47,22 +43,14 @@ elsif ($opt_s) {
     unless (-s "$input_dir/swissprot2org") {
         die "$input_dir/swiss2org not found or empty";
     }
-    if (defined $ENV{'SANGER'}) {
-      tie %HASH,'GDBM_File', "$input_dir/swissprot2org",&GDBM_WRCREAT, 0666 or die "cannot open DBM file";
-    } else {
-      tie (%HASH, 'DB_File', "$input_dir/swissprot2org", O_RDWR|O_CREAT, 0777, $DB_HASH) or die "cannot open $input_dir/swissprot2org DBM file\n";
-    }
+    tie (%HASH, 'DB_File', "$input_dir/swissprot2org", O_RDWR|O_CREAT, 0666, $DB_HASH) or die "cannot open $input_dir/swissprot2org DBM file\n";
     $output = "$output_dir/slimswissprot";
 }
 elsif ($opt_t) {
     unless (-s "$input_dir/trembl2org") {
         die "$input_dir/trembl2org not found or empty";
     }
-    if (defined $ENV{'SANGER'}) {
-      tie %HASH,'GDBM_File', "$input_dir/trembl2org",&GDBM_WRCREAT, 0666 or die "cannot open DBM file";
-    } else {
-      tie (%HASH, 'DB_File', "$input_dir/trembl2org", O_RDWR|O_CREAT, 0777, $DB_HASH) or die "cannot open $input_dir/trembl2org DBM file\n";
-    }
+    tie (%HASH, 'DB_File', "$input_dir/trembl2org", O_RDWR|O_CREAT, 0666, $DB_HASH) or die "cannot open $input_dir/trembl2org DBM file\n";
     $output = "$output_dir/slimtrembl";
 }
 else {

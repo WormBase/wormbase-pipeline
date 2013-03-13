@@ -4,11 +4,7 @@ use lib $ENV{'CVS_DIR'};
 
 use strict;
 use Getopt::Long;
-if (defined $ENV{'SANGER'}) {
-  use GDBM_File;
-} else {
-  use DB_File;
-}
+use DB_File;
 use Wormbase;
 use Storable;
 use Log_files;
@@ -129,7 +125,7 @@ our %org_prefix = (
 
 my $QUERY_SPECIES = $wormbase->full_name;
  
-#connect to GDBM_File databases for species determination and establish hashes
+#connect to DB_File databases for species determination and establish hashes
 
 my $wormpipe_dir  = $ENV{'PIPELINE'};
 my $db_files_dir  = "$wormpipe_dir/swall_data";
@@ -146,18 +142,10 @@ while (my($from,$to)=each %file_mapping ){
 }
 
 my (%SWISSORG, %TREMBLORG);
-if (defined $ENV{'SANGER'}) {
-  tie %SWISSORG, 'GDBM_File',"/tmp/swissprot2org",&GDBM_WRCREAT,0666 or $log->log_and_die("cannot open swissprot2org DBM file /tmp/swissprot2org");
-} else {
-  tie (%SWISSORG, 'DB_File', "/tmp/swissprot2org", O_RDWR|O_CREAT, 0777, $DB_HASH) or $log->log_and_die("cannot open swissprot2org DBM file /tmp/swissprot2org\n");
-}
+tie (%SWISSORG, 'DB_File', "/tmp/swissprot2org", O_RDWR|O_CREAT, 0666, $DB_HASH) or $log->log_and_die("cannot open swissprot2org DBM file /tmp/swissprot2org\n");
 unless (-s "$db_files_dir/swissprot2des") { $log->log_and_die("swissprot2des not found or empty");}
 
-if (defined $ENV{'SANGER'}) {
-  tie %TREMBLORG, 'GDBM_File',"/tmp/trembl2org",&GDBM_WRCREAT ,0666 or $log->log_and_die("cannot open /tmp/trembl2org DBM file");
-} else {
-  tie (%TREMBLORG, 'DB_File', "/tmp/trembl2org", O_RDWR|O_CREAT, 0777, $DB_HASH) or $log->log_and_die("cannot open /tmp/trembl2org DBM file\n");
-}
+tie (%TREMBLORG, 'DB_File', "/tmp/trembl2org", O_RDWR|O_CREAT, 0666, $DB_HASH) or $log->log_and_die("cannot open /tmp/trembl2org DBM file\n");
 unless (-s "$db_files_dir/trembl2des") { $log->log_and_die("trembl2des not found or empty");}
 
 # gene CE info from COMMON_DATA files
@@ -190,11 +178,8 @@ print "opening $recip_file";
 open (RECIP,">$recip_file") or $log->log_and_die("cant open recip file $recip_file: $!\n");
 
 our %ACC2DB;
-if (defined $ENV{'SANGER'}) {
-  tie %ACC2DB, 'GDBM_File',"/tmp/acc2db.dbm",&GDBM_WRCREAT ,0666 or warn "cannot open /tmp/acc2db.dbm \n";
-} else {
-  tie (%ACC2DB, 'DB_File', "/tmp/acc2db.dbm", O_RDWR|O_CREAT, 0777, $DB_HASH) or warn "cannot open /tmp/acc2db.dbm \n";
-}
+tie (%ACC2DB, 'DB_File', "/tmp/acc2db.dbm", O_RDWR|O_CREAT, 0666, $DB_HASH) or warn "cannot open /tmp/acc2db.dbm \n";
+
 
 my $count;
 my $count_limit = 10;

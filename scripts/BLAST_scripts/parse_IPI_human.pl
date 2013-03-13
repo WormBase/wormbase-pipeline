@@ -1,17 +1,13 @@
 #!/usr/local/ensembl/bin/perl -w                  
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2013-03-12 14:01:27 $      
+# Last updated on: $Date: 2013-03-13 10:03:02 $      
 
 use lib $ENV{'CVS_DIR'};
 use strict;
 use Getopt::Long;
 use File::Copy;
-if (defined $ENV{'SANGER'}) {
-  use GDBM_File;
-} else {
-  use DB_File;
-}
+use DB_File;
 use Log_files;
 use Storable;
 use Wormbase;
@@ -74,17 +70,11 @@ my %DESC;
 my %PEPTIDE;
 my %DATABASES;
 
-if (defined $ENV{'SANGER'}) {
-  tie %ACC2DB, 'GDBM_File',"/tmp/acc2db.dbm", &GDBM_WRCREAT,0777 or die "cannot open /tmp/acc2db.dbm\n";
-  tie %DESC, 'GDBM_File',"/tmp/desc.dbm",&GDBM_WRCREAT, 0777 or die "cannot open /tmp/desc.dbm \n";
-  tie %PEPTIDE,'GDBM_File', "/tmp/peptide.dbm",&GDBM_WRCREAT, 0777 or die "cannot open /tmp/peptide.dbm\n";
-  tie %DATABASES,'GDBM_File', "/tmp/databases.dbm",&GDBM_WRCREAT, 0777 or die "cannot open /tmp/databases.dbm\n";
-} else {
-  tie (%ACC2DB, 'DB_File', "/tmp/acc2db.dbm", O_RDWR|O_CREAT, 0777, $DB_HASH) or die "cannot open /tmp/acc2db.dbm\n";
-  tie (%DESC, 'DB_File', "/tmp/desc.dbm", O_RDWR|O_CREAT, 0777, $DB_HASH) or die "cannot open /tmp/desc.dbm \n";
-  tie (%PEPTIDE,'DB_File', "/tmp/peptide.dbm", O_RDWR|O_CREAT, 0777, $DB_HASH) or die "cannot open /tmp/peptide.dbm\n";
-  tie (%DATABASES,'DB_File', "/tmp/databases.dbm", O_RDWR|O_CREAT, 0777, $DB_HASH) or die "cannot open /tmp/databases.dbm\n";
-}
+tie (%ACC2DB, 'DB_File', "/tmp/acc2db.dbm", O_RDWR|O_CREAT, 0777, $DB_HASH) or die "cannot open /tmp/acc2db.dbm\n";
+tie (%DESC, 'DB_File', "/tmp/desc.dbm", O_RDWR|O_CREAT, 0777, $DB_HASH) or die "cannot open /tmp/desc.dbm \n";
+tie (%PEPTIDE,'DB_File', "/tmp/peptide.dbm", O_RDWR|O_CREAT, 0777, $DB_HASH) or die "cannot open /tmp/peptide.dbm\n";
+tie (%DATABASES,'DB_File', "/tmp/databases.dbm", O_RDWR|O_CREAT, 0777, $DB_HASH) or die "cannot open /tmp/databases.dbm\n";
+
 
 my %database_field = ( 	'VEGA' 		=> 'OtterID',
 			'ENSEMBL' 	=> 'ENSEMBL_PEP_ID',
@@ -202,11 +192,8 @@ exit(0);
 
 sub check {
   my %DATA;
-  if (defined $ENV{'SANGER'}) {
-    tie %DATA, 'GDBM_File',"$farm_loc/dumps/acc2db.dbm",&GDBM_WRCREAT,0777 or die "fail";
-  } else {
-    tie (%DATA, 'DB_File', "$farm_loc/dumps/acc2db.dbm", O_RDWR|O_CREAT, 0777, $DB_HASH) or $log->log_and_die("cannot open /tmp/trembl2org DBM file\n");
-  }
+  tie (%DATA, 'DB_File', "$farm_loc/dumps/acc2db.dbm", O_RDWR|O_CREAT, 0777, $DB_HASH) or $log->log_and_die("cannot open /tmp/trembl2org DBM file\n");
+
   foreach (keys %DATA){
     print "$_ $DATA{$_}\n";
   }
