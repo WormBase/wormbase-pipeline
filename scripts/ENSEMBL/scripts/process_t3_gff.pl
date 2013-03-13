@@ -66,6 +66,17 @@ sub grab_ids {
                 6289   => 'Haemonchus contortus',
 		96668  => 'Caenorhabditis angaria',
 		6334   => 'Trichinella spiralis',
+		886184 => 'Caenorhabditis sp.11',
+                870437 => 'Caenorhabditis sp.9',
+		870436 => 'Caenorhabditis sp.7',
+		6306   => 'Meloidogyne incognita',
+		34506  => 'Strongyloides ratti',
+		6326   => 'Bursephelenchus xylophilus',
+		6253   => 'Ascaris suum',
+		6334   => 'Trichinella spiralis',
+                497829 => 'Caenorhabditis sp.5',
+		7209   =>'Loa loa',
+		37862  => 'Heterorhabditis bacteriophora',
 	);
 
 
@@ -85,7 +96,7 @@ sub grab_ids {
    my $compara_db = new Bio::EnsEMBL::Compara::DBSQL::DBAdaptor(
     -host   => 'farmdb1',        # change that
     -user   => 'wormro',       # and that
-    -dbname => 'worm_compara'
+    -dbname => 'worm_compara_homology_63WS666'
    );
 
 
@@ -97,6 +108,10 @@ sub grab_ids {
    foreach my $slice(@slices){
 	foreach my $gene (@{$slice->get_all_Genes}){
 		my $member = $member_adaptor->fetch_by_source_stable_id( 'ENSEMBLGENE',$gene->stable_id());
+#		unless($member){
+#		 print STDERR "cannot find ${\$gene->stable_id()}\n";
+#		 next;
+#		}
 		my $homologies = $homology_adaptor->fetch_all_by_Member_method_link_type( $member, 'ENSEMBL_ORTHOLOGUES' );
 
 		my %ids;
