@@ -7,7 +7,7 @@
 # Usage : autoace_builder.pl [-options]
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2013-02-26 16:20:29 $
+# Last edited on: $Date: 2013-03-13 10:34:50 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -279,6 +279,21 @@ sub map_features_to_genome {
   # feature mapping, direct in perl using flanks
   #
   $wormbase->run_script( 'map_features.pl -all', $log );
+
+  
+  #
+  # Oligo_sets
+  #
+  my $oligo_set_mapping_file = sprintf("%s/oligo_set_mappings/oligo_set_mappings.%s.ace",
+                                       $wormbase->misc_dynamic,
+                                       $wormbase->species);
+  if (-e $oligo_set_mapping_file) {
+    $log->write_to("Loading existing mappings: $oligo_set_mapping_file\n");
+    $wormbase->load_to_database( $wormbase->autoace, $oligo_set_mapping_file, "OLIGO_SET_TO_GENOME", $log);
+  } else {
+    $log->log_and_die("Could not find Oligo_set mapping file ($oligo_set_mapping_file). Bad. Exiting\n");
+  }
+
 
   # all the rest is elegans-specific
   if ($wormbase->species ne 'elegans') {return}
