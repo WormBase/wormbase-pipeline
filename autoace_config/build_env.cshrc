@@ -27,6 +27,8 @@ setenv BUILD_HOME $WORMPUB
 setenv PIPELINE /nfs/nobackup2/ensemblgenomes/wormbase/BUILD/pipeline
 setenv WORM_PACKAGES ${WORM_SW_ROOT}/packages
 setenv WORM_BIN ${WORM_SW_ROOT}/bin
+setenv EG_PACKAGES /nfs/panda/ensemblgenomes/external
+setenv EG_BIN ${EG_PACKAGES}/bin
 setenv LSFPATHS $PIPELINE # Resources hint for LSF
 setenv ACEDB_NO_BANNER
 
