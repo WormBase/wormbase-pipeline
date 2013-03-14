@@ -8,10 +8,10 @@
 # needs: mysql databases on farmdb1 called worm_ensembl_$SPECIES
 # needs: /lustre/scratch101/ensembl/wormpipe/swall_data/trembl2org
 
-use GDBM_File;
+use DB_File;
 use File::Copy;
 use DBI;
-use lib '/software/worm/ensembl/bioperl-live/';
+use lib $ENV{'WORM_PACKAGES'} . '/ensembl/bioperl-live/';
 use Bio::SeqIO;
 use strict;
 
@@ -40,8 +40,8 @@ DESTROY{
 
 # GDBM fuffing around
 sub prepare_gdb{
-    copy '/lustre/scratch101/ensembl/wormpipe/swall_data/trembl2org','/tmp/trembl2org';
-    tie %ORG,'GDBM_File', "/tmp/trembl2org",&GDBM_WRCREAT, 0666 or die "cannot open trembl2des DBM file";
+    copy "$ENV{'PIPELINE'}/swall_data/trembl2org",'/tmp/trembl2org';
+    tie (%ORG, 'DB_File', "/tmp/trembl2org", O_RDWR|O_CREAT, 0666, $DB_HASH) or die "cannot open /tmp/trembl2org DBM file\n";
 }
 sub teardown_gdb{
     untie %ORG;
@@ -53,7 +53,7 @@ sub prepare_mysql{
     my %h;
     my @species = ('brugia','pristionchus','japonica','briggsae','remanei','brenneri','elegans','cangaria','hcontortus','mhapla','mincognita','bxylophilus','csp11','csp5','heterorhabditis','loaloa','sratti','trspiralis');  
     foreach my $key(@species){
-        $h{$key}{dbi}=DBI->connect("dbi:mysql:dbname=worm_ensembl_${key};host=farmdb1",'wormro');
+        $h{$key}{dbi}=DBI->connect("dbi:mysql:dbname=worm_ensembl_${key};host=$ENV{'WORM_DBHOST'};port=$ENV{'WORM_DBPORT'}",'wormro');
         $h{$key}{sth1}=$h{$key}{dbi}->prepare('SELECT COUNT(protein_align_feature_id) FROM protein_align_feature WHERE hit_name=?');
         $h{$key}{sth2}=$h{$key}{dbi}->prepare('SELECT COUNT(protein_feature_id) FROM protein_feature WHERE hit_name=?');
     }
