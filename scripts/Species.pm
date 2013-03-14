@@ -127,6 +127,7 @@ sub seq_name_regex{qr/^[A-Z0-9_cel]+\.[1-9]\d{0,3}/};  #to get just the Sequence
 sub cds_regex_noend{qr/^[A-Z0-9_cel]+\.[1-9]\d{0,3}[A-Za-z]?/};  # for getting the CDS part of a Transcript name
 
 sub ncbi_tax_id {'6239'};
+sub ncbi_bioproject {'PRJNA13758'};
 sub full_name {
 	my $self = shift;
 	my %param = @_ ;
@@ -191,6 +192,7 @@ sub cds_regex{qr/^CBG\d{5}[a-z]*$/};
 sub seq_name_regex{qr/^CBG\d{5}/};
 sub cds_regex_noend{qr/^CBG\d{5}[a-z]*/}; # for getting the CDS part of a Transcript name
 sub ncbi_tax_id {'6238'};
+sub ncbi_bioproject {'PRJNA10731'};
 sub assembly_type {'chromosome'};
 
 sub full_name {
@@ -262,6 +264,7 @@ sub wormpep_prefix {'RP'}
 sub pep_prefix {'RP'}
 sub pepdir_prefix{'rema'};
 sub ncbi_tax_id {'31234'};
+sub ncbi_bioproject {'PRJNA53967'};
 sub cds_regex{qr/CRE\d{5}[a-z]*/};
 sub seq_name_regex{qr/^CRE\d{5}/};
 sub cds_regex_noend{qr/CRE\d{5}[a-z]*/}; # for getting the CDS part of a Transcript name
@@ -298,6 +301,7 @@ sub chromosome_names {
 sub pep_prefix {'CN'}
 sub pepdir_prefix{'bre'};
 sub ncbi_tax_id {'135651'};
+sub ncbi_bioproject {'PRJNA20035'};
 sub full_name {
 	my $self = shift;
 	my %param = @_ ;
@@ -344,6 +348,7 @@ sub chromosome_names {
 sub pep_prefix {'JA'}
 sub pepdir_prefix{'jap'};
 sub ncbi_tax_id {'281687'};
+sub ncbi_bioproject {'PRJNA12591'};
 sub cds_regex{qr/CJA\d{5}[a-z]*/};
 sub seq_name_regex{qr/^CJA\d{5}/};
 sub cds_regex_noend{qr/CJA\d{5}[a-z]*/}; # for getting the CDS part of a Transcript name
@@ -408,6 +413,7 @@ sub cds_regex_noend{qr/PPA\d{5}[a-z]*/}; # for getting the CDS part of a Transcr
 sub pep_prefix {'PP'}
 sub pepdir_prefix{'ppa'};
 sub ncbi_tax_id {'54126'};
+sub ncbi_bioproject {'PRJNA12644'};
 sub assembly_type {'contig'};
 sub wormpep_prefix {'PP'}
 sub upload_db_name {''}; # we already hold the data in the primary database, it is not downloaded
@@ -462,6 +468,7 @@ sub pepdir_prefix{'brug'};
 sub cds_regex_noend{qr/Bm\d+[a-z]*/}; # for getting the CDS part of a Transcript name
 sub cds_regex{qr/Bm\d+[a-z]*/};
 sub ncbi_tax_id {'6279'};
+sub ncbi_bioproject {'PRJNA10729'};
 sub assembly_type {'contig'};
 sub TSL {(
 	  'SL1'  => "GGTTTAATTACCCAAGTTTGAG",
@@ -508,6 +515,7 @@ sub full_name {
 	};
 }
 sub ncbi_tax_id {'37862'};
+sub ncbi_bioproject {'PRJNA13977'};
 sub chromosome_prefix {''}
 sub pep_prefix {'HB'}
 sub pepdir_prefix{'het'};
@@ -544,6 +552,7 @@ sub chromosome_prefix {'RATTI_contig_'}
 sub pep_prefix {'SR'}
 sub pepdir_prefix{'rat'};
 sub ncbi_tax_id {'34506'};
+sub ncbi_bioproject {'PRJEA62033'};
 sub assembly_type {'contig'};
 sub TSL {(
 	  'SL1'  => "GGTTTAATTACCCAAGTTTGAG",
@@ -599,6 +608,7 @@ sub chromosome_prefix {'Scaffold'}
 sub pep_prefix {'AS'}
 sub pepdir_prefix{'as'};
 sub ncbi_tax_id {'6253'};
+sub ncbi_bioproject {'PRJNA80881'};
 sub assembly_type {'contig'};
 sub TSL {(
 	  'SL1'  => "GGTTTAATTACCCAAGTTTGAG",
@@ -622,20 +632,22 @@ sub _new {
     bless $self, $class;
 }
 sub full_name {
-	my $self = shift;
-	my %param = @_ ;
-	if($param{'-short'}){
-		return 'A. suum_davis';
-	}	elsif($param{'-g_species'}){
-		return 'a_suum_davis';
-	}
-	else { return 'Ascaris suum_davis'
-	};
+  my $self = shift;
+  my %param = @_ ;
+  if($param{'-short'}){
+    return 'A. suum';
+  }	elsif($param{'-g_species'}){
+    return 'a_suum';
+  }
+  else { 
+    return 'Ascaris suum'
+  };
 }
 sub chromosome_prefix {''}
 sub pep_prefix {'ASD'}
 sub pepdir_prefix{'as'};
 sub ncbi_tax_id {'6253'};
+sub ncbi_bioproject {'PRJNA62057'};
 sub assembly_type {'contig'};
 sub TSL {(
 	  'SL1'  => "GGTTTAATTACCCAAGTTTGAG",
@@ -675,6 +687,7 @@ sub chromosome_prefix {'Csp5_scaffold'}
 sub pep_prefix {'S5'}
 sub pepdir_prefix{'csp5'};
 sub ncbi_tax_id {'497829'}; # this is the ID of the DRD-2008 strain
+sub ncbi_bioproject {'Unregistered_bioproject'};
 sub assembly_type {'contig'};
 ######################################################
 
@@ -707,6 +720,7 @@ sub chromosome_prefix {'Contig'}
 sub pep_prefix {'S7'}
 sub pepdir_prefix{'csp7'};
 sub ncbi_tax_id {'870436'};
+sub ncbi_bioproject {'PRJNA51171'};
 sub assembly_type {'contig'};
 
 ######################################################
@@ -739,6 +753,7 @@ sub chromosome_prefix {'Scaffold'}
 sub pep_prefix {'S9'}
 sub pepdir_prefix{'csp9'};
 sub ncbi_tax_id {'870437'};
+sub ncbi_bioproject {'PRJNA51169'};
 sub assembly_type {'contig'};
 
 ######################################################
@@ -771,6 +786,7 @@ sub chromosome_prefix {'Scaffold'}
 sub pep_prefix {'S11'}
 sub pepdir_prefix{'csp11'};
 sub ncbi_tax_id {'886184'};
+sub ncbi_bioproject {'PRJNA53597'};
 sub assembly_type {'contig'};
 
 ######################################################
@@ -803,6 +819,7 @@ sub chromosome_prefix {'contig'}
 sub pep_prefix {'BXY'}
 sub pepdir_prefix{'bxylophilus'};
 sub ncbi_tax_id {'6326'};
+sub ncbi_bioproject {'PRJEA64437'};
 sub assembly_type {'contig'};
 
 
@@ -837,6 +854,7 @@ sub chromosome_prefix {'supercont'}
 sub pep_prefix {'LL'}
 sub pepdir_prefix{'loa'};
 sub ncbi_tax_id {'7209'};
+sub ncbi_bioproject {'PRJNA60051'};
 sub assembly_type {'contig'};
 
 
@@ -872,6 +890,7 @@ sub chromosome_prefix {'MhA1_Contig'}
 sub pep_prefix {'MH'}
 sub pepdir_prefix{'hap'};
 sub ncbi_tax_id {'6305'};
+sub ncbi_bioproject {'PRJNA29083'};
 sub assembly_type {'contig'};
 sub chromosome_names {
 	my @contigs;
@@ -914,6 +933,7 @@ sub chromosome_prefix {'Minc_Contig'}
 sub pep_prefix {'MI'}
 sub pepdir_prefix{'inc'};
 sub ncbi_tax_id {'6306'};
+sub ncbi_bioproject {'PRJEA28837'};
 sub assembly_type {'contig'};
 sub chromosome_names {
 	my @contigs;
@@ -955,6 +975,7 @@ sub chromosome_prefix {'Hcon_Contig'}
 sub pep_prefix {'HC'}
 sub pepdir_prefix{'hco'};
 sub ncbi_tax_id {'6289'};
+sub ncbi_bioproject {'Unregistered_bioproject'};
 sub assembly_type {'contig'};
 sub chromosome_names {
 	my @contigs;
@@ -965,6 +986,7 @@ sub chromosome_names {
 	}
 	return @contigs;
 }
+
 
 ######################
 package Tspiralis;
@@ -996,6 +1018,7 @@ sub chromosome_prefix {''}
 sub pep_prefix {'TP'}
 sub pepdir_prefix{'tri'};
 sub ncbi_tax_id {'6334'};
+sub ncbi_bioproject {'PRJNA12603'};
 sub assembly_type {'contig'};
 
 sub chromosome_names {
@@ -1036,6 +1059,7 @@ sub chromosome_prefix {'Can_chr'}
 sub pep_prefix {'CA'}
 sub pepdir_prefix{'can'};
 sub ncbi_tax_id {'860376'};
+sub ncbi_bioproject {'PRJNA51225'};
 sub assembly_type {'contig'};
 
 
