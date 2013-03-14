@@ -186,7 +186,7 @@
 # by Gary Williams
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2013-03-05 13:53:19 $
+# Last updated on: $Date: 2013-03-14 12:04:30 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -714,8 +714,8 @@ if (!$expt) {
       mkdir "$RNASeqGenomeDir", 0777;
       mkdir "$RNASeqGenomeDir/reference-indexes/", 0777;
       chdir "$RNASeqGenomeDir/reference-indexes/";
-      my $G_species = $wormbase->full_name('-g_species' => 1);
-      unlink glob("${G_species}*");
+#      my $G_species = $wormbase->full_name('-g_species' => 1);
+      unlink glob("${species}*");
       
 
       $wormbase->run_command("rm -f ./$chrom_file", $log);
@@ -736,14 +736,14 @@ if (!$expt) {
 #	$status = $wormbase->run_command($copy_cmd, $log);
 
       }
-      my $species_genome = "${G_species}.fa";
+      my $species_genome = "${species}.fa";
       system("mv $chrom_file $species_genome");
 
 #      my $bowtie_cmd = "bsub -I -M 4000000 -R \"select[mem>4000] rusage[mem=4000]\" /software/worm/bowtie/bowtie2-build " . (join ',', @chrom_files) . " $G_species";
 #      my $bowtie_cmd = "bsub -M 4000000 -R \"select[mem>4000] rusage[mem=4000]\" $Software/bowtie/bowtie2-build $chrom_file $G_species";
-      my $bowtie_cmd = "$Software/bowtie/bowtie2-build $species_genome $G_species";
+      my $bowtie_cmd = "$Software/bowtie/bowtie2-build $species_genome $species";
       $status = $wormbase->run_command($bowtie_cmd, $log);
-      if ($status != 0) {  $log->log_and_die("Didn't create the bowtie indexes $RNASeqGenomeDir/reference-indexes/${G_species}.*\n"); }
+      if ($status != 0) {  $log->log_and_die("Didn't create the bowtie indexes $RNASeqGenomeDir/reference-indexes/${species}.*\n"); }
     }
 
     # make the file of splice junctions:    
@@ -913,8 +913,8 @@ IIIIIIIIHIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIGIGIDHIIIIIGIGI
 #			   -J => "tophat_dummy_$species");
       my $gtf = "--GTF transcripts.gtf";
       my $gtf_index = "--transcriptome-index transcriptome-gtf/transcripts";
-      my $G_species = $wormbase->full_name('-g_species' => 1);
-      my $cmd = "$Software/tophat/tophat --no-coverage-search $gtf $gtf_index reference-indexes/$G_species $dummy_file";
+#      my $G_species = $wormbase->full_name('-g_species' => 1);
+      my $cmd = "$Software/tophat/tophat --no-coverage-search $gtf $gtf_index reference-indexes/$species $dummy_file";
       $log->write_to("$cmd\n");
 #      $lsf->submit(@bsub_options, $cmd);
       
@@ -1290,7 +1290,7 @@ sub run_tophat {
   }
   
   chdir "$RNASeqSRADir/$arg";
-  my $G_species = $wormbase->full_name('-g_species' => 1);
+#  my $G_species = $wormbase->full_name('-g_species' => 1);
 
   my $cmd_extra = "";
   if ($solexa)   {$cmd_extra = "--solexa-quals"} 
@@ -1361,9 +1361,9 @@ sub run_tophat {
     $gtf_index = "--transcriptome-index $RNASeqGenomeDir/transcriptome-gtf/transcripts" unless ($nogtf || $onestage);
     my $raw_juncs = ''; # use the EST raw junctions hint file unless we specify otherwise
     $raw_juncs = "--raw-juncs $RNASeqGenomeDir/reference-indexes/splice_juncs_file" unless $norawjuncs;
-#    $status = $wormbase->run_command("/software/worm/tophat/tophat $cmd_extra --min-intron-length 30 --max-intron-length 5000 $gtf_index $raw_juncs $RNASeqGenomeDir/reference-indexes/$G_species $joined_file", $log);
+#    $status = $wormbase->run_command("/software/worm/tophat/tophat $cmd_extra --min-intron-length 30 --max-intron-length 5000 $gtf_index $raw_juncs $RNASeqGenomeDir/reference-indexes/$species $joined_file", $log);
     # test with --no-coverage-search for speed
-    $status = $wormbase->run_command("$Software/tophat/tophat $cmd_extra --no-coverage-search --min-intron-length 30 --max-intron-length 5000 --min-segment-intron 30 --max-segment-intron 5000 --min-coverage-intron 30 --max-coverage-intron 5000 $gtf_index $raw_juncs $RNASeqGenomeDir/reference-indexes/$G_species $joined_file", $log);
+    $status = $wormbase->run_command("$Software/tophat/tophat $cmd_extra --no-coverage-search --min-intron-length 30 --max-intron-length 5000 --min-segment-intron 30 --max-segment-intron 5000 --min-coverage-intron 30 --max-coverage-intron 5000 $gtf_index $raw_juncs $RNASeqGenomeDir/reference-indexes/$species $joined_file", $log);
     if ($status != 0) {  $log->log_and_die("Didn't run tophat to do the alignment successfully\n"); } # only exit on error after gzipping the files
     $wormbase->run_command("touch tophat_out/accepted_hits.bam.done", $log); # set flag to indicate we have finished this
   } else {
@@ -1611,11 +1611,11 @@ sub TSL_stuff {
   }
 
   # now run tophat on this set of TSL reads
-  my $G_species = $wormbase->full_name('-g_species' => 1);
+#  my $G_species = $wormbase->full_name('-g_species' => 1);
 
   $log->write_to("run tophat with $tsl_fastq\n");
 
-  $status = $wormbase->run_command("$Software/tophat/tophat $cmd_extra --no-coverage-search --output-dir TSL $RNASeqGenomeDir/reference-indexes/$G_species $tsl_fastq", $log);
+  $status = $wormbase->run_command("$Software/tophat/tophat $cmd_extra --no-coverage-search --output-dir TSL $RNASeqGenomeDir/reference-indexes/$species $tsl_fastq", $log);
 
 #  $log->write_to("remove TSL fastq files\n");
 #  $wormbase->run_command("rm -f $tsl_fastq", $log);
