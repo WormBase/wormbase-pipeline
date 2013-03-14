@@ -57,10 +57,10 @@ setenv ENSEMBL_REGISTRY $SCRIPTS/ENSEMBL/etc/E_registry.pl
 
 
 # PATH
-set path  = ($WORM_PACKAGES/bamtools/bin $WORM_PACKAGES/bowtie $WORM_PACKAGES/cufflinks $WORM_PACKAGES/samtools $WORM_PACKAGES/tophat $path)
+set path  = (${EG_BIN} ${WORM_BIN} ${WORM_PACKAGES}/bamtools/bin ${WORM_PACKAGES}/bowtie ${WORM_PACKAGES}/cufflinks ${WORM_PACKAGES}/samtools ${WORM_PACKAGES}/tophat $path)
 
 # WU-BLAST
 setenv BLASTDB ${PIPELINE}/blastdb/Ensembl/
-setenv BLASTMAT ${WORM_PACKAGES}/wublast/blastmat/
-setenv BLASTFILTER ${WORM_PACKAGES}/wublast/filter
+setenv BLASTMAT ${EG_PACKAGES}/wublast/matrix
+setenv BLASTFILTER ${EG_PACKAGES}/wublast/filter
 
