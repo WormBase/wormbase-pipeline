@@ -2,8 +2,8 @@
 #
 # map_operons.pl
 
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2013-01-21 16:19:42 $
+# Last edited by: $Author: pad $
+# Last edited on: $Date: 2013-03-14 14:44:11 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -23,13 +23,13 @@ GetOptions(
 	   'test'      => \$test,
 	   'noload'    => \$noload,
 	   'species:s' => \$species,
-
 );
 
 ############################
 # recreate configuration   #
 ############################
 my $wb;
+my $opprefix;
 if ($store) { $wb = Storable::retrieve($store) or croak("cant restore wormbase from $store\n") }
 else { $wb = Wormbase->new( -debug => $debug, 
 			    -test => $test, 
@@ -38,6 +38,15 @@ else { $wb = Wormbase->new( -debug => $debug,
 
 my $log = Log_files->make_build_log($wb);
 my $acefile = $wb->acefiles."/operon_coords.ace";
+
+$species = $wb->species; 
+if ($species eq "elegans") {
+$opprefix = "CEOP";
+}
+elsif ($species eq "brugia"){
+$opprefix = "BMOP";
+}
+else {$log->log_and_die("Cant map operons for $species as I don't know about them\n");}
 
 my @chromosomes = $wb->get_chromosome_names(-prefix => 1, mito => 0);
 my %gene_span;
@@ -75,7 +84,7 @@ if ($wb->assembly_type eq 'chromosome') {
 
 open (OUT,">$acefile") or $log->log_and_die("cant open $acefile : $!\n");
 my $db = Ace->connect(-path => $wb->autoace) or $log->log_and_die("cant connect to ".$wb->autoace." :".Ace->error."\n");
-my @operons = $db->fetch('Operon' => '*');
+my @operons = $db->fetch('Operon' => $opprefix.'*');
 foreach my $operon(@operons) {
   next if ($operon->Method eq "history");
   my @genes = map($_->name, $operon->Contains_gene);
