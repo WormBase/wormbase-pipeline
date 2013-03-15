@@ -97,7 +97,7 @@ sub setupdb {
     print "loading table.sql from ensembl-pipeline\n";
     system("$mysql $db->{dbname} < " . $cvsDIR . "ensembl-pipeline/sql/table.sql" ) && die;
 
-    system("$mysql -e 'INSERT INTO coord_system VALUES (1,1,\"chromosome\",\"$version\",1,\"default_version,top_level\");' $db->{dbname}") && die;
+    system("$mysql -e 'INSERT INTO coord_system VALUES (1,1,\"chromosome\",\"$version\",1,\"default_version\");' $db->{dbname}") && die;
     system("$mysql -e 'INSERT INTO coord_system VALUES (2,1,\"superlink\",\"$version\",2,\"default_version,sequence_level\");' $db->{dbname}") && die;
     system("$mysql -e 'INSERT INTO coord_system VALUES (3,1,\"clone\",\"$version\",3,\"default_version\");' $db->{dbname}") && die;
     system("$mysql -e 'INSERT INTO meta (meta_key,meta_value) VALUES (\"genebuild.version\",\"$version\");' $db->{dbname}") && die;
