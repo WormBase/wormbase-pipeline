@@ -5,7 +5,7 @@
 # written by Anthony Rogers
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2013-03-14 17:02:12 $
+# Last edited on: $Date: 2013-03-15 09:20:21 $
 #
 # it depends on:
 #    wormpep + history
@@ -444,8 +444,8 @@ sub update_blast_dbs {
 		  $wormbase->run_command( "/usr/local/ensembl/bin/xdformat -p $wormpipe_dir/BlastDB/$whole_file", $log );
 		  $wormbase->run_command( "/usr/local/ensembl/bin/formatdb -p -t $1 -i $wormpipe_dir/BlastDB/$whole_file", $log ) if ($1 eq 'wormpep');
 		} else {
-		  my $WU_BLAST = $ENV{'WORM_PACKAGES'} . 'wublast';
-		  my $NCBI_BLAST = $ENV{'WORM_PACKAGES'} . 'ncbi-blast';
+		  my $WU_BLAST = $ENV{'WORM_PACKAGES'} . '/wublast';
+		  my $NCBI_BLAST = $ENV{'WORM_PACKAGES'} . '/ncbi-blast';
 		  $wormbase->run_command( "$WU_BLAST/xdformat -p $wormpipe_dir/BlastDB/$whole_file", $log );
 		  $wormbase->run_command( "$NCBI_BLAST/makeblastdb -dbtype prot -title $1 -in $wormpipe_dir/BlastDB/$whole_file", $log ) if ($1 eq 'wormpep');
 		}
