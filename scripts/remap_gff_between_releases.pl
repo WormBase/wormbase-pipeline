@@ -8,8 +8,8 @@
 # sequence of two relreases
 #
 #
-# Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2012-11-28 10:40:53 $      
+# Last updated by: $Author: klh $     
+# Last updated on: $Date: 2013-03-15 15:34:11 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -29,18 +29,19 @@ use Modules::Remap_Sequence_Change;
 ######################################
 
 my ($help, $debug, $test, $verbose, $store, $wormbase,$species);
-my ($release1, $release2, $version, $gff, $output);
+my ($release1, $release2, $version, $gff, $output, $genome_diffs_dir);
 
 GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
-	        "test"       => \$test,
-	        "verbose"    => \$verbose,
-	        "store:s"    => \$store,
-	        "gff=s"      => \$gff,
-	        "output=s"   => \$output,
-	        "release1=i" => \$release1,
-	        "release2=i" => \$release2,
-	        'species=s'  => \$species,
+            "test"       => \$test,
+            "verbose"    => \$verbose,
+            "store:s"    => \$store,
+            "gff=s"      => \$gff,
+            "output=s"   => \$output,
+            "release1=i" => \$release1,
+            "release2=i" => \$release2,
+            'species=s'  => \$species,
+            'genomediff=s' => \$genome_diffs_dir,
 	    );
 
 if ( $store ) {
@@ -51,6 +52,8 @@ if ( $store ) {
                              -organism => $species,
 			     );
 }
+
+$genome_diffs_dir = $wormbase->genome_diffs if not defined $genome_diffs_dir;
 
 # Display help if required
 &usage("Help") if ($help);
@@ -76,7 +79,7 @@ if (! defined $gff || ! defined $output) {
 # read in the mapping data
 ##########################
 
-my $assembly_mapper = Remap_Sequence_Change->new($release1, $release2, $wormbase->species, $wormbase->genome_diffs);
+my $assembly_mapper = Remap_Sequence_Change->new($release1, $release2, $wormbase->species, $genome_diffs_dir);
 
 ##########################
 # MAIN BODY OF SCRIPT
