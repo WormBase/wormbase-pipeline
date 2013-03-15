@@ -5,7 +5,7 @@
 # written by Anthony Rogers
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2013-03-15 09:20:21 $
+# Last edited on: $Date: 2013-03-15 13:23:57 $
 #
 # it depends on:
 #    wormpep + history
@@ -37,26 +37,25 @@ use YAML;
 
 
 my ( $species, $update_dna, $clean_blasts, $update_analysis, $update_genes);
-my ( $run_pipeline, $run_brig, $copy, $WS_version,$prep_dump, $cleanup);
+my ( $run_brig, $copy, $WS_version,$prep_dump, $cleanup);
 my ( $debug, $test, $store, $wormbase, $log, $WP_version,$yfile_name);
 my $errors = 0;    # for tracking global error - needs to be initialised to 0
 
 GetOptions(
-    'update_dna'      => \$update_dna,
-    'update_genes'    => \$update_genes,
-    'update_analysis' => \$update_analysis,
-    'run'             => \$run_pipeline,
-    'prep_dump'       => \$prep_dump,
-    'version=s'       => \$WS_version,
-    'cleanup'         => \$cleanup,
-    'debug=s'         => \$debug,
-    'test'            => \$test,
-    'store:s'         => \$store,
-    'species=s'       => \$species,
-    'clean_blasts'    => \$clean_blasts,
-    'copy'            => \$copy,
-    'yfile=s'         => \$yfile_name,
-  )
+	   'update_dna'      => \$update_dna,
+	   'update_genes'    => \$update_genes,
+	   'update_analysis' => \$update_analysis,
+	   'prep_dump'       => \$prep_dump,
+	   'version=s'       => \$WS_version,
+	   'cleanup'         => \$cleanup,
+	   'debug=s'         => \$debug,
+	   'test'            => \$test,
+	   'store:s'         => \$store,
+	   'species=s'       => \$species,
+	   'clean_blasts'    => \$clean_blasts,
+	   'copy'            => \$copy,
+	   'yfile=s'         => \$yfile_name,
+	  )
   || die('cant parse the command line parameter');
 
 my $wormpipe_dir = $ENV{'PIPELINE'};
@@ -66,16 +65,16 @@ my $scripts_dir  = $ENV{'CVS_DIR'};
 my $organism = ( $species || 'Elegans' );
 
 if ($store) {
-    $wormbase = retrieve($store)
-      or croak("Can't restore wormbase from $store\n");
+  $wormbase = retrieve($store)
+    or croak("Can't restore wormbase from $store\n");
 }
 else {
-    $wormbase = Wormbase->new(
-        -debug    => $debug,
-        -test     => $test,
-        -version  => $WS_version,
-        -organism => $organism,
-    );
+  $wormbase = Wormbase->new(
+			    -debug    => $debug,
+			    -test     => $test,
+			    -version  => $WS_version,
+			    -organism => $organism,
+			   );
 }
 
 # establish log file. Can't use make_build_log if the BUILD/autoace directory has been moved to DATABASES
@@ -109,12 +108,12 @@ our $gff_types = ( $config->{gff_types} || "curated coding_exon" );
 
 # mysql database parameters
 my $dba = Bio::EnsEMBL::DBSQL::DBConnection->new(
-    -user   => $config->{database}->{user},
-    -dbname => $config->{database}->{dbname},
-    -host   => $config->{database}->{host},
-    -port   => $config->{database}->{port}, 
-    -driver => 'mysql'
-  )
+						 -user   => $config->{database}->{user},
+						 -dbname => $config->{database}->{dbname},
+						 -host   => $config->{database}->{host},
+						 -port   => $config->{database}->{port}, 
+						 -driver => 'mysql'
+						)
   || die "cannot connect to db, $DBI::errstr";
 $dba->password( $config->{database}->{password} );    # hate that (_&^$  , why can't it go into the constructor?
 
@@ -126,7 +125,7 @@ my $raw_dbh = $dba->db_handle;
 my %worm_dna_processIDs;
 my %wormprotprocessIDs;
 
-if (! $cleanup && ! $copy) {
+if (! $cleanup ) {
   %worm_dna_processIDs = %{ get_logic2analysis( $raw_dbh, '%blastx' ) };
   %wormprotprocessIDs  = %{ get_logic2analysis( $raw_dbh, '%blastp' ) };
 }
@@ -155,42 +154,35 @@ if ($update_dna){
 
 $log->write_to("\nFinished setting up MySQL databases\n\n");
 
-###################### run blasts  -blastx -blastp ################################
-# run_rule_manager if run_pipeline
-
-if ($run_pipeline) {
-    # as can be seen is not yet implemented
-}
-
 ################ cleanup dodgy blast hits -clean_blasts ##################
 &clean_blasts( $raw_dbh, \%worm_dna_processIDs, \%wormprotprocessIDs ) if ($clean_blasts && !$test);  # if testing don't clean up
 
 ################## -prep_dump #####################################
 if ($prep_dump && !$test) {
-
-    # prepare helper files gff2cds and gff2cos
-    my $autoace = $wormbase->autoace;
-    my $wormpep = $wormbase->wormpep;
-    if ( lc(ref $wormbase) eq 'elegans' && -e $wormbase->gff_splits . "/CHROMOSOME_X_curated.gff" ) {
-        $wormbase->run_command(
-            "cat "
-              . $wormbase->gff_splits
-              . "/CHROMOSOME_*_curated.gff | $scripts_dir/BLAST_scripts/gff2cds.pl "
-              . "> $wormpipe_dir/Elegans/cds$WS_version.gff",
-            $log
-        );
-        $wormbase->run_command(
-            "cat "
-              . $wormbase->gff_splits
-              . "/CHROMOSOME_*_Genomic_canonical.gff | $scripts_dir/BLAST_scripts/gff2cos.pl "
-              . "> $wormpipe_dir/Elegans/cos$WS_version.gff",
-            $log
-        );
-        system("touch $wormpipe_dir/DUMP_PREP_RUN");
-    } elsif(lc(ref $wormbase) ne 'elegans'){
-	    system("touch $wormpipe_dir/DUMP_PREP_RUN");
-    } else { die( " cant find GFF files at " . $wormbase->gff_splits . "\n " ) }
-
+  
+  # prepare helper files gff2cds and gff2cos
+  my $autoace = $wormbase->autoace;
+  my $wormpep = $wormbase->wormpep;
+  if ( lc(ref $wormbase) eq 'elegans' && -e $wormbase->gff_splits . "/CHROMOSOME_X_curated.gff" ) {
+    $wormbase->run_command(
+			   "cat "
+			   . $wormbase->gff_splits
+			   . "/CHROMOSOME_*_curated.gff | $scripts_dir/BLAST_scripts/gff2cds.pl "
+			   . "> $wormpipe_dir/Elegans/cds$WS_version.gff",
+			   $log
+			  );
+    $wormbase->run_command(
+			   "cat "
+			   . $wormbase->gff_splits
+			   . "/CHROMOSOME_*_Genomic_canonical.gff | $scripts_dir/BLAST_scripts/gff2cos.pl "
+			   . "> $wormpipe_dir/Elegans/cos$WS_version.gff",
+			   $log
+			  );
+    system("touch $wormpipe_dir/DUMP_PREP_RUN");
+  } elsif(lc(ref $wormbase) ne 'elegans'){
+    system("touch $wormpipe_dir/DUMP_PREP_RUN");
+  } else { die( " cant find GFF files at " . $wormbase->gff_splits . "\n " ) }
+  
 }
 
 ##################### -cleanup ##################################
@@ -229,7 +221,7 @@ if ($cleanup && !$test) {
   
   $log->write_to("moving blastp acefiles to last_build . . . \n");
   system("mv -f $clear_dump/*blastp.ace $wormpipe_dir/last_build") 
-      and warn("Could not move $clear_dump/*blastp.ace");
+    and warn("Could not move $clear_dump/*blastp.ace");
   
   $log->write_to ("\nmoving the following to ~wormpipe/last_build . . \n");
   $log->write_to("\t$clear_dump/*.txt\n");
@@ -291,8 +283,8 @@ wrapper around BLAST_scripts/copy_files_to_acari.pl
 ##########################
 # copy files to the farm
 sub copy2acari {
-    my ($option) = shift;
-    $wormbase->run_script( "BLAST_scripts/copy_files_to_acari.pl -$option", $log );
+  my ($option) = shift;
+  $wormbase->run_script( "BLAST_scripts/copy_files_to_acari.pl -$option", $log );
 }
 
 =head2 get_logic2analysis
@@ -309,14 +301,14 @@ returns: hashref of logic-names -> analysis-ids
 # get logic_name -> analysis_id from the mysql database
 
 sub get_logic2analysis {
-    my ( $dbh_, $prog ) = @_;
-    my $sth = $dbh_->prepare('SELECT logic_name,analysis_id FROM analysis WHERE program like ?')
-      || die "cannot prepare statement, $DBI::errstr";
-    $sth->execute($prog) || die "cannot execute statement, $DBI::errstr";
-    my $blast = $sth->fetchall_arrayref() || die "cannot connect to db, $DBI::errstr";
-    my %logic2analysis;
-    map { $logic2analysis{ $_->[0] } = $_->[1] } @{$blast};
-    return \%logic2analysis;
+  my ( $dbh_, $prog ) = @_;
+  my $sth = $dbh_->prepare('SELECT logic_name,analysis_id FROM analysis WHERE program like ?')
+    || die "cannot prepare statement, $DBI::errstr";
+  $sth->execute($prog) || die "cannot execute statement, $DBI::errstr";
+  my $blast = $sth->fetchall_arrayref() || die "cannot connect to db, $DBI::errstr";
+  my %logic2analysis;
+  map { $logic2analysis{ $_->[0] } = $_->[1] } @{$blast};
+  return \%logic2analysis;
 }
 
 =head2 clean_blasts
@@ -333,16 +325,16 @@ hashref logic_name->analysis_id of blastx, evalue cutoff
 # * in case you want to remove hsps above a certain threshold from the database
 
 sub clean_blasts {
-    my ( $dbh_, $dnaids, $pepids, $cutoff ) = @_;
-    $cutoff ||= 0.001;
-    while ( my ( $k, $v ) = each %$pepids ) {
-        my $sth = $dbh_->do("delete FROM protein_feature WHERE evalue>=$cutoff AND analysis_id=$v")
-          || die($DBI::errstr);
-    }
-    while ( my ( $k, $v ) = each %$dnaids ) {
-        my $sth = $dbh_->do("delete FROM protein_align_feature WHERE evalue>$cutoff AND analysis_id=$v")
-          || die($DBI::errstr);
-    }
+  my ( $dbh_, $dnaids, $pepids, $cutoff ) = @_;
+  $cutoff ||= 0.001;
+  while ( my ( $k, $v ) = each %$pepids ) {
+    my $sth = $dbh_->do("delete FROM protein_feature WHERE evalue>=$cutoff AND analysis_id=$v")
+      || die($DBI::errstr);
+  }
+  while ( my ( $k, $v ) = each %$dnaids ) {
+    my $sth = $dbh_->do("delete FROM protein_align_feature WHERE evalue>$cutoff AND analysis_id=$v")
+      || die($DBI::errstr);
+  }
 }
 
 =head2 get_updated_database_list
@@ -359,44 +351,44 @@ gets a list of updated filenames
 #   %currentDB the same
 
 sub get_updated_database_list {
-    @updated_DBs = ();
-    my @updated_dbfiles;
-
-    # process old databases
-    open( OLD_DB, "<$last_build_DBs" ) or die "cant find $last_build_DBs";
-    my %prevDBs;
-
-    # get database file info from databases_used_WS(xx-1) (should have been updated by script if databases changed
-    #
-    # get logic_name,db_file from analysis_table where program_name like '%blastp'
-    my $analysis_table=$raw_dbh->prepare("SELECT logic_name,db_file FROM analysis WHERE program_file LIKE '%blastp'")
-       || die "cannot prepare statement, $DBI::errstr";
-    $analysis_table->execute();
-    while (my @row = $analysis_table->fetchrow_array()){
-        if ($row[1] =~ /((jappep|ppapep|remapep|ensembl|gadfly|yeast|slimswissprot|slimtrembl|wormpep|ipi_human|brigpep|brepep).*)/) {
-              $prevDBs{$2} = $1;  
-	}
+  @updated_DBs = ();
+  my @updated_dbfiles;
+  
+  # process old databases
+  open( OLD_DB, "<$last_build_DBs" ) or die "cant find $last_build_DBs";
+  my %prevDBs;
+  
+  # get database file info from databases_used_WS(xx-1) (should have been updated by script if databases changed
+  #
+  # get logic_name,db_file from analysis_table where program_name like '%blastp'
+  my $analysis_table=$raw_dbh->prepare("SELECT logic_name,db_file FROM analysis WHERE program_file LIKE '%blastp'")
+    || die "cannot prepare statement, $DBI::errstr";
+  $analysis_table->execute();
+  while (my @row = $analysis_table->fetchrow_array()){
+    if ($row[1] =~ /((jappep|ppapep|remapep|ensembl|gadfly|yeast|slimswissprot|slimtrembl|wormpep|ipi_human|brigpep|brepep).*)/) {
+      $prevDBs{$2} = $1;  
     }
-
-    # process current databases
-    open( CURR_DB, "<$database_to_use" ) or die "cant find $database_to_use";
-    while (<CURR_DB>) {
-        chomp;
-        if (/(jappep|ppapep|remapep|ensembl|gadfly|yeast|slimswissprot|slimtrembl|wormpep|ipi_human|brigpep|brepep)/) {
-            $currentDBs{$1} = $_;
-        }
+  }
+  
+  # process current databases
+  open( CURR_DB, "<$database_to_use" ) or die "cant find $database_to_use";
+  while (<CURR_DB>) {
+    chomp;
+    if (/(jappep|ppapep|remapep|ensembl|gadfly|yeast|slimswissprot|slimtrembl|wormpep|ipi_human|brigpep|brepep)/) {
+      $currentDBs{$1} = $_;
     }
-    close CURR_DB;
-
-    # compare old and new database list
-    foreach ( keys %currentDBs ) {
-      print "Updating $_\n";
-        if ( "$currentDBs{$_}" ne "$prevDBs{$_}" ) {
-            push( @updated_DBs,     "$_" );
-            push( @updated_dbfiles, $currentDBs{$_} );
-        }
+  }
+  close CURR_DB;
+  
+  # compare old and new database list
+  foreach ( keys %currentDBs ) {
+    print "Updating $_\n";
+    if ( "$currentDBs{$_}" ne "$prevDBs{$_}" ) {
+      push( @updated_DBs,     "$_" );
+      push( @updated_dbfiles, $currentDBs{$_} );
     }
-    return @updated_dbfiles;
+  }
+  return @updated_dbfiles;
 }
 
 
@@ -411,92 +403,92 @@ copies and xdformats the database files
 # -distribute and -update_databases
 
 sub update_blast_dbs {
-    my %_currentDBs;    # ALSO used in setup_mySQL
-    my @_updated_DBs;
-
-    # used by get_updated_database_list sub - when run this array is filled with databases
-    # that have been updated since the prev build
-    # load in databases used in previous build
-
-    open( OLD_DB, "<$last_build_DBs" ) or die "cant find $last_build_DBs";
-    while (<OLD_DB>) {
-        chomp;
-        if (/(jappep|ppapep|remapep|gadfly|yeast|slimswissprot|slimtrembl|wormpep|ipi_human|brigpep|brepep)/) {
-            $_currentDBs{$1} = $_;
-        }
+  my %_currentDBs;    # ALSO used in setup_mySQL
+  my @_updated_DBs;
+  
+  # used by get_updated_database_list sub - when run this array is filled with databases
+  # that have been updated since the prev build
+  # load in databases used in previous build
+  
+  open( OLD_DB, "<$last_build_DBs" ) or die "cant find $last_build_DBs";
+  while (<OLD_DB>) {
+    chomp;
+    if (/(jappep|ppapep|remapep|gadfly|yeast|slimswissprot|slimtrembl|wormpep|ipi_human|brigpep|brepep)/) {
+      $_currentDBs{$1} = $_;
     }
-    close OLD_DB;
-
-    # check for updated Databases
-    $log->write_to("Updating databases \n");
-    open( DIR, "ls -l $wormpipe_dir/BlastDB/*.pep |" ) or die "readir\n";
-    while (<DIR>) {
-        chomp;
-        if (/\/(jappep|ppapep|remapep|gadfly|yeast|slimswissprot|slimtrembl|wormpep|ipi_human|brigpep|brepep)/) {
-            my $whole_file = "$1" . "$'";    # match + stuff after match.
-
-	    $log->write_to("checking $_\n");
-            if ( "$whole_file" ne "$_currentDBs{$1}" ) {
-
-                # make blastable database
-                $log->write_to("\tmaking blastable database for $1\n");
-		if (defined $ENV{'SANGER'}) {
-		  $wormbase->run_command( "/usr/local/ensembl/bin/xdformat -p $wormpipe_dir/BlastDB/$whole_file", $log );
-		  $wormbase->run_command( "/usr/local/ensembl/bin/formatdb -p -t $1 -i $wormpipe_dir/BlastDB/$whole_file", $log ) if ($1 eq 'wormpep');
-		} else {
-		  my $WU_BLAST = $ENV{'WORM_PACKAGES'} . '/wublast';
-		  my $NCBI_BLAST = $ENV{'WORM_PACKAGES'} . '/ncbi-blast';
-		  $wormbase->run_command( "$WU_BLAST/xdformat -p $wormpipe_dir/BlastDB/$whole_file", $log );
-		  $wormbase->run_command( "$NCBI_BLAST/makeblastdb -dbtype prot -title $1 -in $wormpipe_dir/BlastDB/$whole_file", $log ) if ($1 eq 'wormpep');
-		}
-                push( @_updated_DBs, $1 );
-
-                #change hash entry ready to rewrite external_dbs
-                $_currentDBs{$1} = "$whole_file";
-            } else {
-	      $log->write_to ("\t$1 database unchanged $whole_file\n");
-            }
-        }
+  }
+  close OLD_DB;
+  
+  # check for updated Databases
+  $log->write_to("Updating databases \n");
+  open( DIR, "ls -l $wormpipe_dir/BlastDB/*.pep |" ) or die "readir\n";
+  while (<DIR>) {
+    chomp;
+    if (/\/(jappep|ppapep|remapep|gadfly|yeast|slimswissprot|slimtrembl|wormpep|ipi_human|brigpep|brepep)/) {
+      my $whole_file = "$1" . "$'";    # match + stuff after match.
+      
+      $log->write_to("checking $_\n");
+      if ( "$whole_file" ne "$_currentDBs{$1}" ) {
+	
+	# make blastable database
+	$log->write_to("\tmaking blastable database for $1\n");
+	if (defined $ENV{'SANGER'}) {
+	  $wormbase->run_command( "/usr/local/ensembl/bin/xdformat -p $wormpipe_dir/BlastDB/$whole_file", $log );
+	  $wormbase->run_command( "/usr/local/ensembl/bin/formatdb -p -t $1 -i $wormpipe_dir/BlastDB/$whole_file", $log ) if ($1 eq 'wormpep');
+	} else {
+	  my $WU_BLAST = $ENV{'WORM_PACKAGES'} . '/wublast';
+	  my $NCBI_BLAST = $ENV{'WORM_PACKAGES'} . '/ncbi-blast';
+	  $wormbase->run_command( "$WU_BLAST/xdformat -p $wormpipe_dir/BlastDB/$whole_file", $log );
+	  $wormbase->run_command( "$NCBI_BLAST/makeblastdb -dbtype prot -title $1 -in $wormpipe_dir/BlastDB/$whole_file", $log ) if ($1 eq 'wormpep');
+	}
+	push( @_updated_DBs, $1 );
+	
+	#change hash entry ready to rewrite external_dbs
+	$_currentDBs{$1} = "$whole_file";
+      } else {
+	$log->write_to ("\t$1 database unchanged $whole_file\n");
+      }
     }
-    close DIR;
-
-    open( NEW_DB, ">$database_to_use" ) or die "cant write updated $database_to_use";
-    foreach ( keys %_currentDBs ) {
-        print NEW_DB "$_currentDBs{$_}\n";
+  }
+  close DIR;
+  
+  open( NEW_DB, ">$database_to_use" ) or die "cant write updated $database_to_use";
+  foreach ( keys %_currentDBs ) {
+    print NEW_DB "$_currentDBs{$_}\n";
+  }
+  close NEW_DB;
+  
+  # copy the databases around
+  my $blastdbdir = "$wormpipe_dir/blastdb/Worms";
+  &get_updated_database_list();
+  
+  # delete updated databases from $wormpipe_dir/blastdb/Worms
+  foreach (@_updated_DBs) {
+    $log->write_to("deleting blastdbdir/$_*\n");
+    ( unlink glob "$blastdbdir/$_*" )
+      or $log->write_to("WARNING: cannot delete $blastdbdir/$_*\n");
+  }
+  $log->write_to("deleting $blastdbdir/CHROMOSOME_*.dna\n");
+  ( unlink glob "$blastdbdir/CHROMOSOME_*.dna" )
+    or $log->write_to("WARNING: cannot delete $blastdbdir/CHROMOSOME_*.dna\n");
+  
+  # copy blastdbs
+  foreach (@_updated_DBs) {
+    foreach my $file_name ( glob "$wormpipe_dir/BlastDB/$currentDBs{$_}*" ) {
+      $log->write_to("copying $file_name to $blastdbdir/\n");
+      copy( "$file_name", "$blastdbdir/" )
+	or $log->write_to("ERROR: cannot copy $file_name\n");
     }
-    close NEW_DB;
-
-    # copy the databases around
-    my $blastdbdir = "$wormpipe_dir/blastdb/Worms";
-    &get_updated_database_list();
-
-    # delete updated databases from $wormpipe_dir/blastdb/Worms
-    foreach (@_updated_DBs) {
-        $log->write_to("deleting blastdbdir/$_*\n");
-        ( unlink glob "$blastdbdir/$_*" )
-          or $log->write_to("WARNING: cannot delete $blastdbdir/$_*\n");
-    }
-    $log->write_to("deleting $blastdbdir/CHROMOSOME_*.dna\n");
-    ( unlink glob "$blastdbdir/CHROMOSOME_*.dna" )
-      or $log->write_to("WARNING: cannot delete $blastdbdir/CHROMOSOME_*.dna\n");
-
-    # copy blastdbs
-    foreach (@_updated_DBs) {
-        foreach my $file_name ( glob "$wormpipe_dir/BlastDB/$currentDBs{$_}*" ) {
-            $log->write_to("copying $file_name to $blastdbdir/\n");
-            copy( "$file_name", "$blastdbdir/" )
-              or $log->write_to("ERROR: cannot copy $file_name\n");
-        }
-    }
-
-    # copy chromosomes
-    foreach my $chr ( $wormbase->get_chromosome_names( '-prefix' => 1, ) ) {
-        my $file_name = "$wormpipe_dir/BlastDB/$chr.dna";
-        $log->write_to("copying $file_name to $blastdbdir/\n");
-        copy( $file_name, "$blastdbdir/" )
-          or $log->write_to("cannot copy $file_name\n");
-    }
-    return ( \@_updated_DBs, \%_currentDBs );
+  }
+  
+  # copy chromosomes
+  foreach my $chr ( $wormbase->get_chromosome_names( '-prefix' => 1, ) ) {
+    my $file_name = "$wormpipe_dir/BlastDB/$chr.dna";
+    $log->write_to("copying $file_name to $blastdbdir/\n");
+    copy( $file_name, "$blastdbdir/" )
+      or $log->write_to("cannot copy $file_name\n");
+  }
+  return ( \@_updated_DBs, \%_currentDBs );
 }
 
 =head2 update_dna
@@ -514,34 +506,34 @@ updates the whole database
 # or crude one: if different snowball a new database build
 
 sub update_dna {
-    my ($dbh) = @_;
-    $log->write_to ("Updating mysql databases with new clone and protein info\n");
-
-    # parse it and if different recreate the whole database, as we don't want to fiddle around with coordinates for the time being
-
-    $log->write_to("Updating DNA sequences in mysql database\n-=-=-=-=-=-=-=-=-=-=-\n");
-
-    # worm_lite.pl magic
-    my $species = $wormbase->species;
-    $wormbase->run_script( "ENSEMBL/scripts/worm_lite.pl -yfile $yfile_name -setup -load_dna -load_genes -species $species", $log );
-
-    # create analys_tables and rules
-    my $db_options = sprintf(
-        "-dbhost %s -dbuser %s -dbpass %s -dbname %s -dbport %s",
-        $config->{database}->{host},   $config->{database}->{user}, $config->{database}->{password},
-        $config->{database}->{dbname}, $config->{database}->{port}
-    );
-    my $pipeline_scripts = "$ENV{'WORM_PACKAGES'}/ensembl/ensembl-pipeline/scripts";
-    my $conf_dir         = ($config->{confdir}||die("please set a species specific confdir in $yfile_name\n"));
-
-    $wormbase->run_command( "perl $pipeline_scripts/analysis_setup.pl $db_options -read -file $conf_dir/analysis.conf", $log );
-    $wormbase->run_command( "perl $pipeline_scripts/rule_setup.pl $db_options -read -file $conf_dir/rule.conf", $log );
-    $wormbase->run_command( "perl $pipeline_scripts/make_input_ids $db_options -translation_id -logic SubmitTranslation", $log );
-    $wormbase->run_command(
-"perl $pipeline_scripts/make_input_ids $db_options -slice -slice_size 75000 -coord_system toplevel -logic_name SubmitSlice75k -input_id_type Slice75k",
-        $log
-    );
-    return 1;
+  my ($dbh) = @_;
+  $log->write_to ("Updating mysql databases with new clone and protein info\n");
+  
+  # parse it and if different recreate the whole database, as we don't want to fiddle around with coordinates for the time being
+  
+  $log->write_to("Updating DNA sequences in mysql database\n-=-=-=-=-=-=-=-=-=-=-\n");
+  
+  # worm_lite.pl magic
+  my $species = $wormbase->species;
+  $wormbase->run_script( "ENSEMBL/scripts/worm_lite.pl -yfile $yfile_name -setup -load_dna -load_genes -species $species", $log );
+  
+  # create analys_tables and rules
+  my $db_options = sprintf(
+			   "-dbhost %s -dbuser %s -dbpass %s -dbname %s -dbport %s",
+			   $config->{database}->{host},   $config->{database}->{user}, $config->{database}->{password},
+			   $config->{database}->{dbname}, $config->{database}->{port}
+			  );
+  my $pipeline_scripts = "$ENV{'WORM_PACKAGES'}/ensembl/ensembl-pipeline/scripts";
+  my $conf_dir         = ($config->{confdir}||die("please set a species specific confdir in $yfile_name\n"));
+  
+  $wormbase->run_command( "perl $pipeline_scripts/analysis_setup.pl $db_options -read -file $conf_dir/analysis.conf", $log );
+  $wormbase->run_command( "perl $pipeline_scripts/rule_setup.pl $db_options -read -file $conf_dir/rule.conf", $log );
+  $wormbase->run_command( "perl $pipeline_scripts/make_input_ids $db_options -translation_id -logic SubmitTranslation", $log );
+  $wormbase->run_command(
+			 "perl $pipeline_scripts/make_input_ids $db_options -slice -slice_size 75000 -coord_system toplevel -logic_name SubmitSlice75k -input_id_type Slice75k",
+			 $log
+			);
+  return 1;
 }
 
 =head2 update_proteins
@@ -557,45 +549,45 @@ updates the genes + protein features
 # 
 sub update_proteins {
 
-    # kill all genes/exons/etc. + associated features
-    
-    # kill genes;
-    $raw_dbh->do('DELETE FROM gene')  or die $raw_dbh->errstr;
-    $raw_dbh->do('DELETE FROM gene_stable_id')  or die $raw_dbh->errstr;
-    $raw_dbh->do('DELETE FROM gene_attrib')  or die $raw_dbh->errstr;
-
-    
-    # kill transcripts
-    $raw_dbh->do('DELETE FROM transcript') or die $raw_dbh->errstr;
-    $raw_dbh->do('DELETE FROM transcript_stable_id')  or die $raw_dbh->errstr;
-    $raw_dbh->do('DELETE FROM transcript_attrib')  or die $raw_dbh->errstr;
-    
-    # kill exons
-    $raw_dbh->do('DELETE FROM exon')  or die $raw_dbh->errstr;
-    $raw_dbh->do('DELETE FROM exon_stable_id')  or die $raw_dbh->errstr;
-    $raw_dbh->do('DELETE FROM exon_transcript') or die $raw_dbh->errstr;
-
-    # kill translations
-    $raw_dbh->do('DELETE FROM translation')  or die $raw_dbh->errstr;
-    $raw_dbh->do('DELETE FROM translation_stable_id')  or die $raw_dbh->errstr;
-    $raw_dbh->do('DELETE FROM translation_attrib') or die $raw_dbh->errstr;
-
-    
-    $raw_dbh->do('DELETE FROM protein_feature')  or die $raw_dbh->errstr;
-    $raw_dbh->do('DELETE FROM input_id_analysis WHERE input_id_type = "TRANSLATIONID"')  or die $raw_dbh->errstr;
-
-    $raw_dbh->do('DELETE FROM meta WHERE meta_key = "genebuild.start_date"')  or die $raw_dbh->errstr;
-
-    # load new ones
-
-    my $db_options = sprintf('-dbhost %s -dbuser %s -dbpass %s -dbname %s -dbport %i',
-        $config->{database}->{host},   $config->{database}->{user}, $config->{database}->{password},
+  # kill all genes/exons/etc. + associated features
+  
+  # kill genes;
+  $raw_dbh->do('DELETE FROM gene')  or die $raw_dbh->errstr;
+  $raw_dbh->do('DELETE FROM gene_stable_id')  or die $raw_dbh->errstr;
+  $raw_dbh->do('DELETE FROM gene_attrib')  or die $raw_dbh->errstr;
+  
+  
+  # kill transcripts
+  $raw_dbh->do('DELETE FROM transcript') or die $raw_dbh->errstr;
+  $raw_dbh->do('DELETE FROM transcript_stable_id')  or die $raw_dbh->errstr;
+  $raw_dbh->do('DELETE FROM transcript_attrib')  or die $raw_dbh->errstr;
+  
+  # kill exons
+  $raw_dbh->do('DELETE FROM exon')  or die $raw_dbh->errstr;
+  $raw_dbh->do('DELETE FROM exon_stable_id')  or die $raw_dbh->errstr;
+  $raw_dbh->do('DELETE FROM exon_transcript') or die $raw_dbh->errstr;
+  
+  # kill translations
+  $raw_dbh->do('DELETE FROM translation')  or die $raw_dbh->errstr;
+  $raw_dbh->do('DELETE FROM translation_stable_id')  or die $raw_dbh->errstr;
+  $raw_dbh->do('DELETE FROM translation_attrib') or die $raw_dbh->errstr;
+  
+  
+  $raw_dbh->do('DELETE FROM protein_feature')  or die $raw_dbh->errstr;
+  $raw_dbh->do('DELETE FROM input_id_analysis WHERE input_id_type = "TRANSLATIONID"')  or die $raw_dbh->errstr;
+  
+  $raw_dbh->do('DELETE FROM meta WHERE meta_key = "genebuild.start_date"')  or die $raw_dbh->errstr;
+  
+  # load new ones
+  
+  my $db_options = sprintf('-dbhost %s -dbuser %s -dbpass %s -dbname %s -dbport %i',
+			   $config->{database}->{host},   $config->{database}->{user}, $config->{database}->{password},
         $config->{database}->{dbname}, $config->{database}->{port}
-    );
-    my $pipeline_scripts = "$ENV{'WORM_PACKAGES'}/ensembl/ensembl-pipeline/scripts";
-
-    $wormbase->run_script( "ENSEMBL/scripts/worm_lite.pl -yfile $yfile_name -load_genes -species $species", $log );
-    $wormbase->run_command( "perl $pipeline_scripts/make_input_ids $db_options -translation_id -logic SubmitTranslation", $log );
+			  );
+  my $pipeline_scripts = "$ENV{'WORM_PACKAGES'}/ensembl/ensembl-pipeline/scripts";
+  
+  $wormbase->run_script( "ENSEMBL/scripts/worm_lite.pl -yfile $yfile_name -load_genes -species $species", $log );
+  $wormbase->run_command( "perl $pipeline_scripts/make_input_ids $db_options -translation_id -logic SubmitTranslation", $log );
 }
 
 =head2 delete_gene_by_translation [UNUSED]
@@ -608,7 +600,7 @@ unused utility function to cascade across affected tables after deleting a gene 
 # handy utility function
 #
 sub delete_gene_by_translation {
-    $dba->get_GeneAdaptor()->fetch_by_translation_stable_id(shift)->remove;
+  $dba->get_GeneAdaptor()->fetch_by_translation_stable_id(shift)->remove;
 }
 
 =head2 parse_genes
@@ -623,49 +615,49 @@ parses GFF files into genes, returns an list of all genes (which will break most
 #
 sub parse_genes {
 
-    my $analysis = $dba->get_AnalysisAdaptor()->fetch_by_logic_name('wormbase');
-
-    my @genes;
-
-    # elegans hack for build
-    if ( ref($wormbase) eq 'Elegans' ) {
-        foreach my $chr ( glob $config->{fasta} ) {
-            my ( $path, $name ) = ( $chr =~ /(^.*)\/CHROMOSOMES\/(.*?)\.\w+/ );
-            `mkdir /tmp/compara` if !-e '/tmp/compara';
-            system("cat $path/GFF_SPLITS/${\$name}_gene.gff $path/GFF_SPLITS/${\$name}_curated.gff > /tmp/compara/${\$name}.gff")
-              && die 'cannot concatenate GFFs';
-        }
+  my $analysis = $dba->get_AnalysisAdaptor()->fetch_by_logic_name('wormbase');
+  
+  my @genes;
+  
+  # elegans hack for build
+  if ( ref($wormbase) eq 'Elegans' ) {
+    foreach my $chr ( glob $config->{fasta} ) {
+      my ( $path, $name ) = ( $chr =~ /(^.*)\/CHROMOSOMES\/(.*?)\.\w+/ );
+      `mkdir /tmp/compara` if !-e '/tmp/compara';
+      system("cat $path/GFF_SPLITS/${\$name}_gene.gff $path/GFF_SPLITS/${\$name}_curated.gff > /tmp/compara/${\$name}.gff")
+	&& die 'cannot concatenate GFFs';
     }
-    # if it is remanei collect all needed GFFs and then split them based on their supercontig into a /tmp/ directory
-    elsif (ref($wormbase) eq 'Remanei'||ref($wormbase) eq 'Pristionchus'){
-	           my ($path)=glob($config->{fasta})=~/(^.*)\/CHROMOSOMES\//;
-	           my $tmpdir="/tmp/compara/$species";
-			   print STDERR "mkdir -p $tmpdir\n" if $debug;
-	           `mkdir -p $tmpdir` if !-e "/tmp/compara/$species";
-	           unlink glob("$tmpdir/*.gff"); # clean old leftovers
-	           system("cat $path/GFF_SPLITS/gene.gff $path/GFF_SPLITS/curated.gff > $tmpdir/all.gff");
-	           open INF,"$tmpdir/all.gff" || die (@!);
-
-	           # that is quite evil due to thousands of open/close filehandle operations
-	           while (<INF>){
-	                  next if /\#/;
-	                  my @a=split;
-	                  open OUTF,">>$tmpdir/$a[0].gff" ||die (@!);
-	                  print OUTF $_;
-	                  close OUTF;
-	           }
-	           close INF;
+  }
+  # if it is remanei collect all needed GFFs and then split them based on their supercontig into a /tmp/ directory
+  elsif (ref($wormbase) eq 'Remanei'||ref($wormbase) eq 'Pristionchus'){
+    my ($path)=glob($config->{fasta})=~/(^.*)\/CHROMOSOMES\//;
+    my $tmpdir="/tmp/compara/$species";
+    print STDERR "mkdir -p $tmpdir\n" if $debug;
+    `mkdir -p $tmpdir` if !-e "/tmp/compara/$species";
+    unlink glob("$tmpdir/*.gff"); # clean old leftovers
+    system("cat $path/GFF_SPLITS/gene.gff $path/GFF_SPLITS/curated.gff > $tmpdir/all.gff");
+    open INF,"$tmpdir/all.gff" || die (@!);
+    
+    # that is quite evil due to thousands of open/close filehandle operations
+    while (<INF>){
+      next if /\#/;
+      my @a=split;
+      open OUTF,">>$tmpdir/$a[0].gff" ||die (@!);
+      print OUTF $_;
+      close OUTF;
     }
-
-
-    foreach my $file ( glob $config->{gff} ) {
-        next if $file =~ /masked|CSHL|BLAT_BAC_END|briggsae|MtDNA/;
-        $file =~ /.*\/(.*)\.gff/;
-        $log->write_to ("parsing $1 from $file\n");
-        my $slice = $dba->get_SliceAdaptor->fetch_by_region( 'chromosome', $1 );
-        push @genes, @{ &parse_gff( $file, $slice, $analysis ) };
-    }
-    return \@genes;
+    close INF;
+  }
+  
+  
+  foreach my $file ( glob $config->{gff} ) {
+    next if $file =~ /masked|CSHL|BLAT_BAC_END|briggsae|MtDNA/;
+    $file =~ /.*\/(.*)\.gff/;
+    $log->write_to ("parsing $1 from $file\n");
+    my $slice = $dba->get_SliceAdaptor->fetch_by_region( 'chromosome', $1 );
+    push @genes, @{ &parse_gff( $file, $slice, $analysis ) };
+  }
+  return \@genes;
 }
 
 
@@ -679,26 +671,26 @@ utility function to determine what files got updated
 # return @new , @changed , @lost cdses based on wormpep.diff
 #
 sub parse_wormpep_history {
-    my ($wb) = @_;
-    my $wp_file = glob( $wb->wormpep . '*.diff' );
-    my @new;
-    my @changed;
-    my @lost;
-    open INF, "<$wp_file";
-    while (<INF>) {
-        my @a = split;
-        if ( $a[0] =~ /changed/ ) {
-            push @changed, $a[1];
-        }
-        elsif ( $a[0] =~ /new/ ) {
-            push @new, $a[1];
-        }
-        elsif ( $a[0] =~ /lost/ ) {
-            push @lost, $a[1];
-        }
+  my ($wb) = @_;
+  my $wp_file = glob( $wb->wormpep . '*.diff' );
+  my @new;
+  my @changed;
+  my @lost;
+  open INF, "<$wp_file";
+  while (<INF>) {
+    my @a = split;
+    if ( $a[0] =~ /changed/ ) {
+      push @changed, $a[1];
     }
-    close INF;
-    return ( \@new, \@changed, \@lost );
+    elsif ( $a[0] =~ /new/ ) {
+      push @new, $a[1];
+    }
+    elsif ( $a[0] =~ /lost/ ) {
+      push @lost, $a[1];
+    }
+  }
+  close INF;
+  return ( \@new, \@changed, \@lost );
 }
 
 =head2 update_analysis
@@ -716,58 +708,58 @@ updates the blat input_ids
 # * deletes features and input_ids for updated analysis
 
 sub update_analysis {
-    my $update_dbfile_handle  = $raw_dbh->prepare('UPDATE analysis SET db_file = ? , created = NOW() WHERE analysis_id = ?') || die "$DBI::errstr";
-    my $clean_input_id_handle = $raw_dbh->prepare('DELETE FROM input_id_analysis WHERE analysis_id = ?')   || die "$DBI::errstr";
-    my $analysis_for_file     = $raw_dbh->prepare('SELECT analysis_id FROM analysis WHERE db_file LIKE ?') || die "$DBI::errstr";
-
-    $log->write_to ("Updating BLAST analysis ... \n");
-    foreach my $db ( get_updated_database_list() ) {
-        $db =~ /([a-z_]+)?[\d_]*\.pep/;
-        $analysis_for_file->execute("$wormpipe_dir/blastdb/Worms/$1%.pep") || die "$DBI::errstr";
-        my $analysis = $analysis_for_file->fetchall_arrayref || die "$DBI::errstr";
-        foreach my $ana (@$analysis) {
-            $log->write_to ("updating analysis : ${\$ana->[0]} => $wormpipe_dir/blastdb/Worms/$db\n");
-            $update_dbfile_handle->execute( "$wormpipe_dir/blastdb/Worms/$db", $ana->[0] ) || die "$DBI::errstr";
-            $clean_input_id_handle->execute( $ana->[0] )                                        || die "$DBI::errstr";
-            $raw_dbh->do("DELETE FROM protein_feature WHERE analysis_id = ${\$ana->[0]}")       || die "$DBI::errstr";
-            $raw_dbh->do("DELETE FROM protein_align_feature WHERE analysis_id = ${\$ana->[0]}") || die "$DBI::errstr";
-        }
+  my $update_dbfile_handle  = $raw_dbh->prepare('UPDATE analysis SET db_file = ? , created = NOW() WHERE analysis_id = ?') || die "$DBI::errstr";
+  my $clean_input_id_handle = $raw_dbh->prepare('DELETE FROM input_id_analysis WHERE analysis_id = ?')   || die "$DBI::errstr";
+  my $analysis_for_file     = $raw_dbh->prepare('SELECT analysis_id FROM analysis WHERE db_file LIKE ?') || die "$DBI::errstr";
+  
+  $log->write_to ("Updating BLAST analysis ... \n");
+  foreach my $db ( get_updated_database_list() ) {
+    $db =~ /([a-z_]+)?[\d_]*\.pep/;
+    $analysis_for_file->execute("$wormpipe_dir/blastdb/Worms/$1%.pep") || die "$DBI::errstr";
+    my $analysis = $analysis_for_file->fetchall_arrayref || die "$DBI::errstr";
+    foreach my $ana (@$analysis) {
+      $log->write_to ("updating analysis : ${\$ana->[0]} => $wormpipe_dir/blastdb/Worms/$db\n");
+      $update_dbfile_handle->execute( "$wormpipe_dir/blastdb/Worms/$db", $ana->[0] ) || die "$DBI::errstr";
+      $clean_input_id_handle->execute( $ana->[0] )                                        || die "$DBI::errstr";
+      $raw_dbh->do("DELETE FROM protein_feature WHERE analysis_id = ${\$ana->[0]}")       || die "$DBI::errstr";
+      $raw_dbh->do("DELETE FROM protein_align_feature WHERE analysis_id = ${\$ana->[0]}") || die "$DBI::errstr";
     }
-
-    # the Interpro stuff has its own pipeline on the EBI, so only load it on the Sanger
-    if (defined $ENV{'SANGER'}) {
-      # update the interpro analysis
-      my $interpro_dir    = "$wormpipe_dir/blastdb/Worms/interpro_scan";
-      my $interpro_date   = 1000;
-      my $last_build_date = -M $last_build_DBs;
-      if ( -e $interpro_dir ) {
-        $interpro_date = -M $interpro_dir;
-      }
-      else {
-        $log->write_to("ERROR: Can't find the InterPro database directory: $interpro_dir\n");
-      }
+  }
+  
+  # the Interpro stuff has its own pipeline on the EBI, so only load it on the Sanger
+  if (defined $ENV{'SANGER'}) {
+    # update the interpro analysis
+    my $interpro_dir    = "$wormpipe_dir/blastdb/Worms/interpro_scan";
+    my $interpro_date   = 1000;
+    my $last_build_date = -M $last_build_DBs;
+    if ( -e $interpro_dir ) {
+      $interpro_date = -M $interpro_dir;
+    }
+    else {
+      $log->write_to("ERROR: Can't find the InterPro database directory: $interpro_dir\n");
+    }
+    
+    # see if the InterPro databases' directory has had stuff put in it since the last build
+    if ( $interpro_date < $last_build_date ) {
+      $log->write_to ("doing InterPro updates . . . \n");
       
-      # see if the InterPro databases' directory has had stuff put in it since the last build
-      if ( $interpro_date < $last_build_date ) {
-        $log->write_to ("doing InterPro updates . . . \n");
-	
-        # delete entries so they get rerun
-        $raw_dbh->do('DELETE FROM protein_feature WHERE analysis_id IN (select analysis_id FROM analysis WHERE module LIKE "ProteinAnnotation%")')
-          || die "$DBI::errstr";
-        $raw_dbh->do('DELETE FROM input_id_analysis WHERE analysis_id IN (select analysis_id FROM analysis WHERE module LIKE "ProteinAnnotation%")')
-          || die "$DBI::errstr";
-      }
+      # delete entries so they get rerun
+      $raw_dbh->do('DELETE FROM protein_feature WHERE analysis_id IN (select analysis_id FROM analysis WHERE module LIKE "ProteinAnnotation%")')
+	|| die "$DBI::errstr";
+      $raw_dbh->do('DELETE FROM input_id_analysis WHERE analysis_id IN (select analysis_id FROM analysis WHERE module LIKE "ProteinAnnotation%")')
+	|| die "$DBI::errstr";
     }
-
-    # update BLAT stuff
-    my $db_options = sprintf('-user %s -password %s -host %s -port %i -dbname %s', 
-       $config->{database}->{user}, $config->{database}->{password},$config->{database}->{host},$config->{database}->{port},$config->{database}->{dbname});
-    $wormbase->run_script( "BLAST_scripts/ensembl_blat.pl $db_options -species $species", $log );    
-
-    # update genBlastG stuff - not done for elegans as it projects elegans proteins onto a non-elegans genome
-    if ($species ne 'elegans') {
-      $wormbase->run_script( "BLAST_scripts/ensembl_genblast.pl $db_options -species $species", $log );
-    }
+  }
+  
+  # update BLAT stuff
+  my $db_options = sprintf('-user %s -password %s -host %s -port %i -dbname %s', 
+			   $config->{database}->{user}, $config->{database}->{password},$config->{database}->{host},$config->{database}->{port},$config->{database}->{dbname});
+  $wormbase->run_script( "BLAST_scripts/ensembl_blat.pl $db_options -species $species", $log );    
+  
+  # update genBlastG stuff - not done for elegans as it projects elegans proteins onto a non-elegans genome
+  if ($species ne 'elegans') {
+    $wormbase->run_script( "BLAST_scripts/ensembl_genblast.pl $db_options -species $species", $log );
+  }
 }
 
 
