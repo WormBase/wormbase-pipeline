@@ -1,7 +1,7 @@
 #!/usr/local/ensembl/bin/perl -w
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2013-03-12 14:21:27 $
+# Last edited on: $Date: 2013-03-15 11:11:00 $
 
 use lib $ENV{'CVS_DIR'};
 
@@ -395,9 +395,23 @@ sub process_uniprot {
   # uncompress and concatenate                                                                                                                                                                                                        
   my $target3 = $ENV{'PIPELINE'}."/blastdb/Supported/uniprot";
   $wormbase->run_command("rm -f $target3",$log);
-  $wormbase->run_command("gunzip -c $target1 > $target3",$log);
-  $wormbase->run_command("gunzip -c $target2 >> $target3",$log);
-  
+  $wormbase->run_command("gunzip -c $target1 > ${target3}.pre",$log);
+  $wormbase->run_command("gunzip -c $target2 >> ${target3}.pre",$log);
+
+  # change Pyrrolysine (O) to Lysin (K) as WU BLAST can't deal with 'O' residues
+  open (UNI, "<${target3}.pre") || $log->log_and_die("Can't open file ${target3}.pre\n");
+  open (UNIOUT, ">${target3}") || $log->log_and_die("Can't open file ${target3}\n");
+  while (<UNI>) {
+    if (/^>/) {
+      print UNIOUT $_;
+    } else {
+      s/O/K/; 
+      print UNIOUT $_;
+    }
+  }
+  close (UNIOUT);
+  close (UNI);
+  unlink "${target3}.pre";
 }
 
 sub process_swissprot {
