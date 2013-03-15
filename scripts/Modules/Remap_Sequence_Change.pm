@@ -13,7 +13,7 @@
 #      COMPANY:
 #     $Version:  $
 #      CREATED: 2006-02-27
-#        $Date: 2013-03-11 16:51:39 $
+#        $Date: 2013-03-15 15:39:15 $
 #===============================================================================
 package Remap_Sequence_Change;
 
@@ -98,7 +98,8 @@ sub _read_mapping_data {
         $chrom = $1;
       } else {
         my @fields = split /\t/, $line;
-        #print "fields=@fields\n";
+
+        # print "fields=@fields\n";
         push @{$mapping_data{$release}->{$chrom}}, [@fields];
 
         # debug
@@ -197,7 +198,7 @@ sub remap_ace {
 #
 
 sub remap_gff {
-  my ($self, $chromosome, $start, $end, $sense) = @_;
+  my ($self, $chromosome, $in_start, $in_end, $sense) = @_;
 
   my $indel = 0;		# true if indels affect this location
   my $change = 0;		# true if non-indel base changes affect this location
@@ -206,10 +207,15 @@ sub remap_gff {
 
   my @releases = sort { $a <=> $b } keys %mapping_data;
 
+  my $start = $in_start;
+  my $end = $in_end;
+
   foreach my $release (@releases) {
+    my $this_ver_start = $start;
+    my $this_ver_end  = $end;
     if (exists $mapping_data{$release}->{$chromosome}) {
       foreach  my $fields (@{$mapping_data{$release}->{$chromosome}}) {
-        # print "    $release $chromosome fields= @$fields \n";
+         #print "    $release $chromosome fields= @$fields \n";
 
         # The mismatch_start value is the start of the mismatch, it is the first position which doesn't match.
         # The mismatch_end value is the base past the end of the mismatch region, the first base which matches again
@@ -223,45 +229,48 @@ sub remap_gff {
 
         if ($flipped) {    # is the feature inside a flipped region?
 
-          if ($start >= $mismatch_start1 && $end < $mismatch_end1) {
+          if ($this_ver_start >= $mismatch_start1 && $this_ver_end < $mismatch_end1) {
+            # flip strand
+            $sense = ($sense eq '+') ? '-' : '+';
 
-            if ($sense eq '+') {$sense = '-';} else {$sense = '+';} # flip the sense
+            # $start = $mismatch_end - ($start - $mismatch_start), which simplifies to:
             $start = $mismatch_start1 + $mismatch_end1 - $start; # flip the start and end positions
+
+            # $end = $mismatch_end - ($end - $mismatch_start), which simplified to:
             $end = $mismatch_start1 + $mismatch_end1 - $end;
+
             if ($start > $end) {
-              my $tmp = $start;
-              $start = $end;
-              $end = $tmp;
+              ($start, $end) = ($end, $start);
             }
 
           # does the edge of the flipped region overlap our location?
-          } elsif ($start >= $mismatch_start1 && $start < $mismatch_end1 ||		
-		   $end >= $mismatch_start1 && $end < $mismatch_end1) {
+          } elsif ($this_ver_start >= $mismatch_start1 && $this_ver_start < $mismatch_end1 ||		
+		   $this_ver_end >= $mismatch_start1 && $this_ver_end < $mismatch_end1) {
             # don't change the location, but note that we have changes
 	    $change = 1;                                        
 	  }
         } else {
 	  
 	  # if there is a change inside our location, note it
-	  if ($start < $mismatch_end1 && $end >= $mismatch_start1) {
+	  if ($this_ver_start < $mismatch_end1 && $this_ver_end >= $mismatch_start1) {
 	    $change = 1;
 	  }
 
 	  # note the length of our location so we can see any indels occurring
-	  my $location_length = $end - $start;
+	  my $location_length = $this_ver_end - $this_ver_start;
 
           # if the start or end are beyond the start of the change region, apply any shift
-          if ($start >= $mismatch_end1) { # if past the end of the change region, shift it
+          if ($this_ver_start >= $mismatch_end1) { # if past the end of the change region, shift it
             $start += $len2 - $len1;
-          } elsif ($start >= $mismatch_start1 && $start - $mismatch_start1 > $len2 ) { 
+          } elsif ($this_ver_start >= $mismatch_start1 && $this_ver_start - $mismatch_start1 > $len2 ) { 
             # if was in the change region and now out, set it to the end
             $start = $mismatch_start1 + $len2;
           }
 
-          if ($end >= $mismatch_end1) { 
+          if ($this_ver_end >= $mismatch_end1) { 
             # if past the end of the change region, shift it
             $end += $len2 - $len1;
-          } elsif ($end >= $mismatch_start1 && $end - $mismatch_start1 > $len2) { 
+          } elsif ($this_ver_end >= $mismatch_start1 && $this_ver_end - $mismatch_start1 > $len2) { 
             # if was in the change region and now out, set it to the end
             $end = $mismatch_start1 + $len2;
           }
@@ -270,6 +279,7 @@ sub remap_gff {
 	  if ($location_length != $end - $start) {
 	    $indel = 1;
 	  }
+
         }
       }
     } else {
@@ -300,26 +310,21 @@ sub remap_gff {
 
 
 sub unmap_gff {
-  my ($self, $chromosome, $start, $end, $sense) = @_;
+  my ($self, $chromosome, $in_start, $in_end, $sense) = @_;
 
   my $indel = 0;		# true if indels affect this location
   my $change = 0;		# true if non-indel base changes affect this location
-
-
-
-
-
-
-
-
-
-
 
   my %mapping_data = %{$self->_mapping_data};
 
   my @releases = sort { $a <=> $b } keys %mapping_data;
 
+  my $start = $in_start;
+  my $end = $in_end;
+
   foreach my $release (reverse @releases) {
+    my $this_ver_start = $start;
+    my $this_ver_end  = $end;
 
     if (exists $mapping_data{$release}->{$chromosome}) {
       foreach  my $fields (@{$mapping_data{$release}->{$chromosome}}) {
@@ -337,7 +342,7 @@ sub unmap_gff {
 
         if ($flipped) {    # is the feature inside a flipped region?
 
-          if ($start >= $mismatch_start2 && $end < $mismatch_end2) {
+          if ($this_ver_start >= $mismatch_start2 && $this_ver_end < $mismatch_end2) {
 
             if ($sense eq '+') {$sense = '-';} else {$sense = '+';} # flip the sense
             $start = $mismatch_start2 + $mismatch_end2 - $start; # flip the start and end positions
@@ -349,8 +354,8 @@ sub unmap_gff {
             }
 
           # does the edge of the flipped region overlap our location?
-          } elsif ($start >= $mismatch_start2 && $start < $mismatch_end2 ||		
-		   $end >= $mismatch_start2 && $end < $mismatch_end2) {
+          } elsif ($this_ver_start >= $mismatch_start2 && $this_ver_start < $mismatch_end2 ||		
+		   $this_ver_end >= $mismatch_start2 && $this_ver_end < $mismatch_end2) {
             # don't change the location, but note that we have changes
 	    $change = 1;                                        
 	  }
@@ -358,24 +363,24 @@ sub unmap_gff {
         } else {
 	  
 	  # if there is a change inside our location, note it
-	  if ($start < $mismatch_end2 && $end >= $mismatch_start2) {
+	  if ($this_ver_start < $mismatch_end2 && $this_ver_end >= $mismatch_start2) {
 	    $change = 1;
 	  }
 
 	  # note the length of our location so we can see any indels occurring
-	  my $location_length = $end - $start;
+	  my $location_length = $this_ver_end - $this_ver_start;
 
           # if the start or end are beyond the start of the change region, apply any shift
-          if ($start >= $mismatch_end2) { # if past the end of the change region, shift it
+          if ($this_ver_start >= $mismatch_end2) { # if past the end of the change region, shift it
             $start += $len1 - $len2;
-          } elsif ($start >= $mismatch_start2 && $start - $mismatch_start2 > $len1 ) { 
+          } elsif ($this_ver_start >= $mismatch_start2 && $this_ver_start - $mismatch_start2 > $len1 ) { 
             # if was in the change region and now out, set it to the end
             $start = $mismatch_start2 + $len1;
           }
 
-          if ($end >= $mismatch_end2) { # if past the end of the change region, shift it
+          if ($this_ver_end >= $mismatch_end2) { # if past the end of the change region, shift it
             $end += $len1 - $len2;
-          } elsif ($end >= $mismatch_start2 && $end - $mismatch_start2 > $len1) { 
+          } elsif ($this_ver_end >= $mismatch_start2 && $this_ver_end - $mismatch_start2 > $len1) { 
             # if was in the change region and now out, set it to the end
             $end = $mismatch_start2 + $len1;
           }
