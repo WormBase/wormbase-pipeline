@@ -108,12 +108,13 @@ sub setupdb {
     system("$mysql $db->{dbname} <$cvsDIR/ensembl-pipeline/scripts/DataConversion/wormbase/master_attrib_type.sql") && die;
     system("$mysql $db->{dbname} <$cvsDIR/ensembl-pipeline/scripts/DataConversion/wormbase/attrib_type.sql") && die;
     if (defined $ENV{'SANGER'}) {
-      system("perl $cvsDIR/ensembl-pipeline/scripts/load_taxonomy.pl -name \"$config->{species}\" -taxondbhost ens-livemirror -taxondbport 3306 -taxondbname ncbi_taxonomy -lcdbhost $db->{host} -lcdbport $db->{port} -lcdbname $db->{dbname} -lcdbuser $db->{user} -lcdbpass $db->{password}"
-} else {
-      system("perl $cvsDIR/ensembl-pipeline/scripts/load_taxonomy.pl -name \"$config->{species}\" -taxondbhost mysql-eg-pan-1.ebi.ac.uk -taxondbport 4276 -taxondbname ncbi_taxonomy -lcdbhost $db->{host} -lcdbport $db->{port} -lcdbname $db->{dbname} -lcdbuser $db->{user} -lcdbpass $db->{password}"
-}
-      )
+      system("perl $cvsDIR/ensembl-pipeline/scripts/load_taxonomy.pl -name \"$config->{species}\" -taxondbhost ens-livemirror -taxondbport 3306 -taxondbname ncbi_taxonomy -lcdbhost $db->{host} -lcdbport $db->{port} -lcdbname $db->{dbname} -lcdbuser $db->{user} -lcdbpass $db->{password}")
       && die("cannot run taxondb update");
+} else {
+      system("perl $cvsDIR/ensembl-pipeline/scripts/load_taxonomy.pl -name \"$config->{species}\" -taxondbhost mysql-eg-pan-1.ebi.ac.uk -taxondbport 4276 -taxondbname ncbi_taxonomy -lcdbhost $db->{host} -lcdbport $db->{port} -lcdbname $db->{dbname} -lcdbuser $db->{user} -lcdbpass $db->{password}")
+      && die("cannot run taxondb update");
+}
+
 
     # in case the taxondb gives up uncomment below
     #    system("$mysql $db->{dbname} </nfs/acari/wormpipe/ensembl/ensembl-pipeline/scripts/DataConversion/wormbase/taxonomy.sql") && die;
