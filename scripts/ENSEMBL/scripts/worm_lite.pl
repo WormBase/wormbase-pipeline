@@ -107,7 +107,11 @@ sub setupdb {
     system("$mysql -e 'INSERT INTO analysis_description (analysis_id,description,display_label) VALUES (1,\"imported from WormBase\",\"WormGene\");' $db->{dbname}") && die;
     system("$mysql $db->{dbname} <$cvsDIR/ensembl-pipeline/scripts/DataConversion/wormbase/master_attrib_type.sql") && die;
     system("$mysql $db->{dbname} <$cvsDIR/ensembl-pipeline/scripts/DataConversion/wormbase/attrib_type.sql") && die;
-    system("perl $cvsDIR/ensembl-pipeline/scripts/load_taxonomy.pl -name \"$config->{species}\" -taxondbhost ens-livemirror -taxondbport 3306 -taxondbname ncbi_taxonomy -lcdbhost $db->{host} -lcdbport $db->{port} -lcdbname $db->{dbname} -lcdbuser $db->{user} -lcdbpass $db->{password}"
+    if (defined $ENV{'SANGER'}) {
+      system("perl $cvsDIR/ensembl-pipeline/scripts/load_taxonomy.pl -name \"$config->{species}\" -taxondbhost ens-livemirror -taxondbport 3306 -taxondbname ncbi_taxonomy -lcdbhost $db->{host} -lcdbport $db->{port} -lcdbname $db->{dbname} -lcdbuser $db->{user} -lcdbpass $db->{password}"
+} else {
+      system("perl $cvsDIR/ensembl-pipeline/scripts/load_taxonomy.pl -name \"$config->{species}\" -taxondbhost mysql-eg-pan-1.ebi.ac.uk -taxondbport 4276 -taxondbname ncbi_taxonomy -lcdbhost $db->{host} -lcdbport $db->{port} -lcdbname $db->{dbname} -lcdbuser $db->{user} -lcdbpass $db->{password}"
+}
       )
       && die("cannot run taxondb update");
 
