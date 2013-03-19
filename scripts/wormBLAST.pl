@@ -5,7 +5,7 @@
 # written by Anthony Rogers
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2013-03-15 16:53:47 $
+# Last edited on: $Date: 2013-03-19 12:36:48 $
 #
 # it depends on:
 #    wormpep + history
@@ -93,11 +93,8 @@ $species =~ tr/[A-Z]/[a-z]/;
 my $species_ = ref $wormbase;
 $species =~ s/^[A-Z]/[a-z]/;
 
-if (defined $ENV{'SANGER'}) {
-  $yfile_name = "/nfs/wormpub/wormbase/scripts/ENSEMBL/etc/ensembl_lite.conf" if not defined $yfile_name;
-} else {
-  $yfile_name = $ENV{'CVS_DIR'} . "/ENSEMBL/etc/ensembl_lite.conf" if not defined $yfile_name;
-}
+$yfile_name = $ENV{'CVS_DIR'} . "/ENSEMBL/etc/ensembl_lite.conf" if not defined $yfile_name;
+
 # the following expands any shell shortcut chars, e.g. ~
 ($yfile_name) = glob("$yfile_name");
 die ("Could not find conf file $yfile_name\n") if not -e $yfile_name;
@@ -249,11 +246,7 @@ if ($cleanup && !$test) {
   foreach my $species_dir (@species_dir) {
     system( "rm -fr $scratch_dir/$species_dir");
     mkdir("$scratch_dir/$species_dir", 0775); # so remake it
-    if (defined $ENV{'SANGER'}) {
-      system("chgrp worm $scratch_dir/$species_dir"); # change group to worm
-    } else {
-      system("chgrp nucleotide $scratch_dir/$species_dir"); # change group to nucleotide
-    }
+    system("chgrp $ENV{'WORM_GROUP_NAME'} $scratch_dir/$species_dir"); # change group to nucleotide
     system("chmod g+ws $scratch_dir/$species_dir"); # group writable and inherit group
   }
   $log->write_to ("\n\nCLEAN UP COMPLETED\n\n");
@@ -432,15 +425,9 @@ sub update_blast_dbs {
 	
 	# make blastable database
 	$log->write_to("\tmaking blastable database for $1\n");
-	if (defined $ENV{'SANGER'}) {
-	  $wormbase->run_command( "/usr/local/ensembl/bin/xdformat -p $wormpipe_dir/BlastDB/$whole_file", $log );
-	  $wormbase->run_command( "/usr/local/ensembl/bin/formatdb -p -t $1 -i $wormpipe_dir/BlastDB/$whole_file", $log ) if ($1 eq 'wormpep');
-	} else {
-	  my $WU_BLAST = $ENV{'WORM_PACKAGES'} . '/wublast';
-	  my $NCBI_BLAST = $ENV{'WORM_PACKAGES'} . '/ncbi-blast';
-	  $wormbase->run_command( "$WU_BLAST/xdformat -p $wormpipe_dir/BlastDB/$whole_file", $log );
-	  $wormbase->run_command( "$NCBI_BLAST/bin/makeblastdb -dbtype prot -title $1 -in $wormpipe_dir/BlastDB/$whole_file", $log ) if ($1 eq 'wormpep');
-	}
+	$wormbase->run_command( "$ENV{'WU_BLAST_PATH'}/xdformat -p $wormpipe_dir/BlastDB/$whole_file", $log );
+	$wormbase->run_command( "$ENV{'NCBI_BLAST_PATH'}/makeblastdb -dbtype prot -title $1 -in $wormpipe_dir/BlastDB/$whole_file", $log ) if ($1 eq 'wormpep');
+
 	push( @_updated_DBs, $1 );
 	
 	#change hash entry ready to rewrite external_dbs
