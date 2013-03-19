@@ -2,7 +2,7 @@
 
 if ($?prompt) then
     if ( $SHELL == "/bin/lstcsh" || $SHELL == "/bin/tcsh" ) then
-        set prompt='%m[Build]\!: '
+        set prompt='%m[Build %$SPECIES]\!: '
     else
         set prompt="`hostname -s`[Build]\!: "
     endif
