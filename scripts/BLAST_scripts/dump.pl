@@ -1,11 +1,5 @@
 #!/software/bin/perl -w
 
-if (defined $ENV{'SANGER'}) {
-  use lib '/software/worm/lib/site_perl';
-} else {
-  use lib $ENV{'WORM_SW_ROOT'} . '/lib/perl5/site_perl';
-}
-
 use strict;
 use Getopt::Long;
 use Carp;
@@ -54,12 +48,9 @@ my $nseg = int(($nrow/$segsize))+1;
 
 my $job_name = "worm_${db}_dump";
 
-my $MEMORY_SIZE;
-if (defined $ENV{'SANGER'}) {
-  $MEMORY_SIZE = 4000000;
-} else {
-  $MEMORY_SIZE = 4000;
-}
+my $multiple = $ENV{'LSF_SUBMIT_MULTIPLE'};
+my $MEMORY_SIZE = "4000${multiple}";
+
 my $lsf=LSF::JobManager->new(-q => $ENV{'LSB_DEFAULTQUEUE'},
 #                             -P => 'wormbase', 
 			     -R => "select[mem>4000] rusage[mem=4000]", 

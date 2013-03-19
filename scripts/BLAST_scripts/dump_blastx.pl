@@ -5,7 +5,7 @@
 #  and concatenate them at the end
 # 
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2013-03-12 13:31:28 $
+# Last edited on: $Date: 2013-03-19 12:44:24 $
 # 
 
 
@@ -22,11 +22,6 @@ USAGE
 
 use Getopt::Long;
 use lib $ENV{CVS_DIR};
-if (defined $ENV{'SANGER'}) {
-  use lib '/software/worm/lib/site_perl';
-} else {
-  use lib "$ENV{'WORM_SW_ROOT'}/lib/perl5/site_perl"; 
-}
 use LSF;
 use LSF::JobManager;
 use Wormbase;
@@ -74,11 +69,10 @@ my %logic2type = (
 );
 
 my $m;
-if (defined $ENV{'SANGER'}) {
-  $m=LSF::JobManager->new(-q => 'normal',-o => '/dev/null',-e=>'/dev/null',-R => '"select[mem>4000] rusage[mem=4000]"',-M => 4000000, -F => 400000);
-} else {
-  $m=LSF::JobManager->new(-q => $ENV{'LSB_DEFAULTQUEUE'},-o => '/dev/null',-e=>'/dev/null',-R => '"select[mem>4000] rusage[mem=4000]"',-M => 4000, -F => 400000);
-}
+my $multiple = $ENV{'LSF_SUBMIT_MULTIPLE'};
+my $M = "4000${multiple}";
+$m=LSF::JobManager->new(-q => $ENV{'LSB_DEFAULTQUEUE'},-o => '/dev/null',-e=>'/dev/null',-R => '"select[mem>4000] rusage[mem=4000]"',-M => $multiple, -F => 400000);
+
 
 my $storable =  $wormbase->autoace . '/'. ref($wormbase).'.store';
 $dumpdir ||= "$ENV{'PIPELINE'}/dumps";
