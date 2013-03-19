@@ -151,44 +151,44 @@ sub getSwissGeneName {
   
   my %counts;
 
-  if (defined $ENV{'SANGER'}) {
-    open (MF,"/software/pubseq/bin/mfetch -f \"id acc gen\" -i \"org:human\" |") or $log->log_and_die("cant mfetch $!\n");
-    my ($id, $acn, $gene, $backup_gene);
-    while (<MF>) {
-      #print $_;
-      chomp;
-      if( /^ID\s+(\S+)/ ) {
-	# before we move on to next protein check if the previous one received a gene name
-	# if not use $backup_gene from the GN line rather than the Genew one
-	unless( $id and $$s2g{$id} ) {
-	  if( $backup_gene ) {
-	    $$s2g{$id} = $backup_gene;
-	  }
-	  else {
-	    print "Can't find a gene (GN field) for $id\n" if ($verbose);
-	  }
-	}
-	$id = $1;
-	undef $acn; undef $gene;undef $backup_gene;
-	
-	$counts{ids}++;
-      }
-      elsif( /^AC\s+(\S+);/) {
-	next if $acn; # sometime mfetch return 2 lines of acc
-	$acn = $1;
-	$acn =~ s/;//g;
-	$$a2i{"$acn"} = $id; 
-	$counts{acn}++;
-      }
-      elsif( (/GN\s+Name=(\S+)[\s+\.];$/) || (/GN\s+Name=(\S+);/ )){
-	# DR   Genew; HGNC:989; BCL10
-	$gene = $1;
-	$$s2g{$id} = $gene;
-	$counts{genes}++;
-      }
-    }
-
-  } else {
+#  if (defined $ENV{'SANGER'}) {
+#    open (MF,"/software/pubseq/bin/mfetch -f \"id acc gen\" -i \"org:human\" |") or $log->log_and_die("cant mfetch $!\n");
+#    my ($id, $acn, $gene, $backup_gene);
+#    while (<MF>) {
+#      #print $_;
+#      chomp;
+#      if( /^ID\s+(\S+)/ ) {
+#	# before we move on to next protein check if the previous one received a gene name
+#	# if not use $backup_gene from the GN line rather than the Genew one
+#	unless( $id and $$s2g{$id} ) {
+#	  if( $backup_gene ) {
+#	    $$s2g{$id} = $backup_gene;
+#	  }
+#	  else {
+#	    print "Can't find a gene (GN field) for $id\n" if ($verbose);
+#	  }
+#	}
+#	$id = $1;
+#	undef $acn; undef $gene;undef $backup_gene;
+#	
+#	$counts{ids}++;
+#      }
+#      elsif( /^AC\s+(\S+);/) {
+#	next if $acn; # sometime mfetch return 2 lines of acc
+##	$acn = $1;
+#	$acn =~ s/;//g;
+#	$$a2i{"$acn"} = $id; 
+#	$counts{acn}++;
+#      }
+#      elsif( (/GN\s+Name=(\S+)[\s+\.];$/) || (/GN\s+Name=(\S+);/ )){
+#	# DR   Genew; HGNC:989; BCL10
+#	$gene = $1;
+#	$$s2g{$id} = $gene;
+#	$counts{genes}++;
+#      }
+#    }
+#
+#  } else {
     my $full_name = 'Homo sapiens';
     my $acc2id = WBSRS::uniprot($full_name);
     foreach my $acn (keys %{$acc2id}) {
@@ -206,7 +206,7 @@ sub getSwissGeneName {
         $counts{genes}++;
       }
     }
-  }
+#  }
   
   
   # this looks a bit superfluous!
