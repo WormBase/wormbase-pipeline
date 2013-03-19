@@ -1,7 +1,7 @@
 # set up Ensembl database environment
 
 if ($?prompt) then
-    if ( $SHELL == "/bin/lstcsh" || $SHELL == "/bin/tcsh" ) then
+    if ( $SHELL:t == "lstcsh" || $SHELL:t == "tcsh" ) then
         set prompt='%m[Build %$SPECIES]\!: '
     else
         set prompt="`hostname -s`[Build]\!: "
