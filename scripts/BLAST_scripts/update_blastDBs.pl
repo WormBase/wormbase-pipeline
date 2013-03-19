@@ -1,7 +1,7 @@
 #!/usr/local/ensembl/bin/perl -w
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2013-03-15 11:11:00 $
+# Last edited on: $Date: 2013-03-19 13:16:02 $
 
 use lib $ENV{'CVS_DIR'};
 
@@ -72,10 +72,11 @@ if($uniprot or $swissprot or $trembl) {
   my $cver_tr = determine_last_vers('slimtrembl');
   
   #find latest ver
-  if (defined $ENV{'SANGER'}) {
-    open (WG,"wget -O - -q ftp://ftp.ebi.ac.uk/pub/databases/uniprot/knowledgebase/reldate.txt |") or $log->log_and_die("cant get Uniprot page\n");
+  my $reldate_file = "/ebi/ftp/pub/databases/uniprot/knowledgebase/reldate.txt";
+  if (-e $reldate_file) { 
+    open (WG, "< $reldate_file") or $log->log_and_die("cant get Uniprot page\n");
   } else {
-      open (WG, "</ebi/ftp/pub/databases/uniprot/knowledgebase/reldate.txt") or $log->log_and_die("cant get Uniprot page\n");
+    open (WG,"wget -O - -q ftp://ftp.ebi.ac.uk/pub/databases/uniprot/knowledgebase/reldate.txt |") or $log->log_and_die("cant get Uniprot page\n");
   }
   my $lver;
   while(<WG>) { #to make processing easier we use the uniprot release no.rather than separate SwissProt and Trembl
@@ -329,11 +330,14 @@ sub process_human {
     my ($m,$d) = $file =~ /ipi_human_(\d+)_(\d+)/;
 
     my $remote_date;
-    my $src_file;
     my $filename;
 
     my $ftp;
-    if (defined $ENV{'SANGER'}) {
+    my $ipi_file = "/ebi/ftp/pub/databases/IPI/last_release/current/ipi.HUMAN.fasta.gz";
+    if (-e $ipi_file) {
+      my @a = parse_dir(`ls -l $ipi_file`);
+      $remote_date = strftime "%m_%d",gmtime($a[0]->[3]);
+    } else {
       my $login = "anonymous";
       my $passw = 'wormbase@sanger.ac.uk';
       $ftp = Net::FTP->new("ftp.ebi.ac.uk");
@@ -343,11 +347,6 @@ sub process_human {
       my $ls = $ftp->dir("$filename");
       my @a = parse_dir($ls);
       $remote_date = strftime "%m_%d",gmtime($a[0]->[3]);
-    } else {
-      $src_file = "/ebi/ftp/pub/databases/IPI/last_release/current/ipi.HUMAN.fasta.gz";
-      if (!-e $src_file) {$log->log_and_die("Can't find file $src_file\n");}
-      my @a = parse_dir(`ls -l $src_file`);
-      $remote_date = strftime "%m_%d",gmtime($a[0]->[3]);
     }
 
     if ($remote_date ne "${m}_${d}") {
@@ -355,12 +354,12 @@ sub process_human {
 	$log->write_to("\tupdating human to $remote_date\n");
 	my $target = "/tmp/ipi_human_${remote_date}.gz";
 
-	if (defined $ENV{'SANGER'}) {
+	if (-e $ipi_file) {
+	  $wormbase->run_command("cp $ipi_file $target", $log);
+	} else {
 	  $ftp->binary(); 
 	  $ftp->get($filename,$target) or $log->log_and_die("failed getting $filename: ".$ftp->message."\n");
 	  $ftp->quit;
-	} else {
-	  $wormbase->run_command("cp $src_file $target", $log);
 	}
 
 	$wormbase->run_command("gunzip $target",$log);
@@ -421,7 +420,11 @@ sub process_swissprot {
 
   my $target = $swalldir."/uniprot_sprot.dat.gz";
 
-  if (defined $ENV{'SANGER'}) {
+  my $filename = "/ebi/ftp/pub/databases/uniprot/knowledgebase/uniprot_sprot.dat.gz";
+
+  if (-e $filename) {
+    $wormbase->run_command("cp $filename $target",$log);
+  } else {
     my $login = "anonymous";
     my $passw = 'wormbase@sanger.ac.uk';
     my $ftp = Net::FTP->new("ftp.ebi.ac.uk", Timeout => 18000);
@@ -432,10 +435,6 @@ sub process_swissprot {
     $ftp->binary(); 
     $ftp->get($filename,$target) or $log->error("failed getting $filename: ".$ftp->message."\n");
     $ftp->quit;
-  } else {
-    my $filename = "/ebi/ftp/pub/databases/uniprot/knowledgebase/uniprot_sprot.dat.gz";
-    if (!-e $filename) {$log->log_and_die("Can't find file $filename\n");}
-    $wormbase->run_command("cp $filename $target",$log);
   }
 
   $wormbase->run_script("BLAST_scripts/swiss_trembl2dbm.pl -s -file $target", $log);
@@ -455,7 +454,11 @@ sub process_trembl {
   my $okay;
   my $local_target = $wormbase->scratch_area . "/$tfile";
 
-  if (defined $ENV{'SANGER'}) {
+  my $filename = "/ebi/ftp/pub/databases/uniprot/knowledgebase/uniprot_trembl.dat.gz";
+  if (-e $filename) {
+    $wormbase->run_command("cp $filename $final_target",$log);
+    $okay = 1;
+  } else {
     my $login = "anonymous";
     my $passw = 'wormbase@sanger.ac.uk';
     
@@ -479,12 +482,6 @@ sub process_trembl {
 	$okay = 0;
       };
     }
-
-  } else {
-    my $filename = "/ebi/ftp/pub/databases/uniprot/knowledgebase/uniprot_trembl.dat.gz";
-    if (!-e $filename) {$log->log_and_die("Can't find file $filename\n");}
-    $wormbase->run_command("cp $filename $final_target",$log);
-    $okay = 1;
   }
 
 
