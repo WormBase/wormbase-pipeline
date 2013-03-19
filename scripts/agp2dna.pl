@@ -11,7 +11,7 @@
 # Usage : agp2dna.pl [-options]
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2013-03-04 11:57:28 $
+# Last edited on: $Date: 2013-03-19 14:25:27 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -81,16 +81,20 @@ my $log = Log_files->make_build_log($wormbase);
 # Make all other directories relative to this
 my $basedir   = $wormbase->basedir;
 my $dnadir    = $wormbase->chromosomes;
+my $yellow    = $wormbase->autoace .  "/yellow_brick_road";
 
 my (%agp, @chromosomes);
 
 if ($genome_agp_file) {
   &read_agp_file($genome_agp_file, \%agp);
 } else {
-  my $agpdir    = $wormbase->autoace."/yellow_brick_road";
-  foreach my $file (glob("$agpdir/*.agp")) {
+  foreach my $file (glob("$yellow/*.agp")) {
     &read_agp_file($file, \%agp);
   }
+}
+
+if (not $output_seq_file) {
+  $output_seq_file = "$yellow/ENA_clones.fa";
 }
 
 if ($chrom) {
@@ -134,11 +138,17 @@ foreach my $chromosome (@chromosomes) {
       my $chrom_seg_len = $chrom_end - $chrom_start + 1;
       my $clone_seg_len = $clone_end - $clone_start + 1;
 
-      my ($EMBL_seq, $EMBL_sv) = &sequence_fetch($acc);
+      my ($EMBL_seq, $EMBL_sv, $EMBL_desc) = &sequence_fetch($acc);
 
       if (not $EMBL_seq or not $EMBL_sv) {
         $log->error("ERROR: Could not fetch the sequence for $acc [ACEDB:$sv <=> EMBL:$EMBL_sv\n");
       }
+
+      my $EMBL_seq_obj = Bio::PrimarySeq->new(-id => "${acc}.${EMBL_sv}", 
+                                              -seq => $EMBL_seq,
+                                              -desc => $EMBL_desc,
+          );
+      push @EMBL_seqs, $EMBL_seq_obj;
 
       if ($f[8] eq '-') {
         $EMBL_seq = &rev_comp($EMBL_seq);
@@ -187,9 +197,6 @@ foreach my $chromosome (@chromosomes) {
       $EMBL_con_seq .= 'N' x $f[5];
     }
   }
-  
-  push @EMBL_seqs, Bio::PrimarySeq->new(-id => "$chromosome", 
-                                        -seq => $EMBL_con_seq);
 }
 
 if ($output_seq_file) {
@@ -217,13 +224,14 @@ sub sequence_fetch {
   open(ENTRY, "wget -O - 'http://www.ebi.ac.uk/ena/data/view/$acc&display=fasta' |")
       or $log->log_and_die("Could not open EBI sequence fetch command for $acc\n");
 
-  my ($seq, $ver);
+  my ($seq, $ver, $desc);
 
   while (<ENTRY>) {
     chomp;
 
-    /^\>ENA\|\S+\|(\S+)\.(\d+)/ and do { 
-      $ver = $2;
+    /^\>ENA\|\S+\|\S+\.(\d+)\s+(.+)$/ and do { 
+      $ver  = $1;
+      $desc = $2;
       next;
     };
 
@@ -231,7 +239,7 @@ sub sequence_fetch {
   }
   close(ENTRY) or $log->log_and_die("Could not successfully close EBI sequence command for $acc\n");
 
-  return ($seq, $ver);
+  return ($seq, $ver, $desc);
 
 }
 
