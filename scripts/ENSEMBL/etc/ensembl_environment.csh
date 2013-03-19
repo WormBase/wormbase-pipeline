@@ -51,6 +51,7 @@ if (-e "/software/worm") then
     setenv WORM_BIN ${WORM_SW_ROOT}/bin
     set path  = (${EG_BIN} $path)
     # for the Compara analysis pipeline
+    setenv ENSEMBL_CVS_ROOT_DIR "${WORM_PACKAGES}/ensembl"
     set path = (${ENSEMBL_CVS_ROOT_DIR}/eHive/scripts ${WORM_BIN}/wublast/ ${WORM_BIN} /software/bin ${path})
 
 else
@@ -95,6 +96,7 @@ else
     setenv WORM_BIN ${WORM_SW_ROOT}/bin
     set path  = (${EG_BIN} ${WORM_BIN} $path)
     # for the Compara analysis pipeline
+    setenv ENSEMBL_CVS_ROOT_DIR "${WORM_PACKAGES}/ensembl"
     set path = (${ENSEMBL_CVS_ROOT_DIR}/ensembl-hive/scripts ${WORM_PACKAGES}/wublast/ ${WORM_BIN} ${path})
 
     
@@ -117,7 +119,6 @@ setenv PERL5LIB ${WORM_SW_ROOT}/lib/perl5/site_perl
 setenv PERL5LIB ${PERL5LIB}:${WORM_SW_ROOT}/packages/bioperl/bioperl-live
 
 # this variable name is required by Compara
-setenv ENSEMBL_CVS_ROOT_DIR "${WORM_PACKAGES}/ensembl"
 setenv COMPARA "${WORM_PACKAGES}/ensembl"
 
 setenv PERL5LIB ${COMPARA}/ensembl-compara/modules:${PERL5LIB}
