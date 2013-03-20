@@ -42,11 +42,17 @@ if (not @ARGV) {
 } else {
 
   foreach my $id (@ARGV) {
-    my $sl = $db->get_SliceAdaptor->fetch_by_name($id);
-    if (not defined $sl) {
+    my $slice;
+    if ($id =~ /:/) {
+      # assume Ensembl slice name
+      $slice = $db->get_SliceAdaptor->fetch_by_name($id);
+    } else {
+      $slice = $db->get_SliceAdaptor->fetch_by_region(undef, $id);
+    }
+    if (not defined $slice) {
       die "Could not fetch slice $id from db\n";
     }
-    push @seq_region, $sl;
+    push @seq_region, $slice;
   }
 }
 
