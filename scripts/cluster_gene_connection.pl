@@ -58,7 +58,7 @@ my $i=0;
 foreach my $cluster (@clusters) {
   print OUT "\nExpression_cluster : \"$cluster\"\n";
   print OUT "-D Gene\n";
-  print OUT "Expression_cluster : \"$cluster\"\n";
+  print OUT "\nExpression_cluster : \"$cluster\"\n";
 
   my @mrs=$cluster->Microarray_results(1);
   foreach my $mr (@mrs) {
@@ -92,7 +92,7 @@ foreach my $cluster (@clusters) {
   }
 
   print OUT "\nExpression_cluster : \"$cluster\"\n";
-  print OUT "-D Gene\n\n";
+  print OUT "-D Gene\n";
   print OUT "\nExpression_cluster : \"$cluster\"\n";
   foreach my $g (@keep_genes) {
     print OUT "Gene \"$g\"\n";
