@@ -65,15 +65,9 @@ sub read_fasta {
     my ($id, $acc, $seq);
     open (OUT,">$output") or die "cant write to $output\n";
     open (FILE,"<$uniprot") or die "cant read $uniprot\n";
-    my $regexp;
-    if (defined $ENV{'SANGER'}) {
-      $regexp = '^>(\S+)\.\d+\s+(\S+)';
-    } else {
-      $regexp = '^>\S+\|(\S+)\|(\S+)';
-    }
     while (<FILE>) {
         chomp;
-        if (/${regexp}/) {
+        if (/^>(\S+)\.\d+\s+(\S+)/) {
             my $new_acc = $1;
 	    my $new_id = $2;
             if ($acc) {
