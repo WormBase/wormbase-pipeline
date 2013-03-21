@@ -1,7 +1,7 @@
 #!/usr/local/ensembl/bin/perl -w
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2013-03-21 10:04:17 $
+# Last edited on: $Date: 2013-03-21 10:22:02 $
 
 use lib $ENV{'CVS_DIR'};
 
@@ -82,7 +82,7 @@ if($uniprot or $swissprot or $trembl) {
   while(<WG>) { #to make processing easier we use the uniprot release no.rather than separate SwissProt and Trembl
     if (/UniProt\s+Knowledgebase\s+Release\s+(\d+)_(\d+)/){
       my $newver = sprintf("%d%d", $1, $2);
-      if (!defined $ENV{'SANGER'} && $newver != $cver) {
+      if (!-e '/software/worm' && $newver != $cver) { # only run this is the EBI - Supported/uniprot is provided for us at the Sanger
         &process_uniprot($newver);
       }
       if($newver != $cver and ($uniprot or $swissprot)) {
