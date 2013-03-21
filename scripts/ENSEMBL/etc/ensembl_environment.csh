@@ -54,6 +54,7 @@ if (-e "/software/worm") then
     setenv ENSEMBL_CVS_ROOT_DIR "${WORM_PACKAGES}/ensembl"
     set path = (${ENSEMBL_CVS_ROOT_DIR}/eHive/scripts ${WORM_BIN}/wublast/ ${WORM_BIN} /software/bin ${path})
 
+    setenv PERL5LIB ${WORM_SW_ROOT}/lib/perl5/site_perl:${WORM_SW_ROOT}/packages/bioperl/bioperl-live
 else
 ##########################
 # we are on the EBI system
@@ -99,8 +100,7 @@ else
     setenv ENSEMBL_CVS_ROOT_DIR "${WORM_PACKAGES}/ensembl"
     set path = (${ENSEMBL_CVS_ROOT_DIR}/ensembl-hive/scripts ${WORM_PACKAGES}/wublast/ ${WORM_BIN} ${path})
 
-    
-
+    setenv PERL5LIB ${WORM_SW_ROOT}/packages/bioperl/bioperl-live
 endif
 
 ############################################
@@ -111,11 +111,9 @@ setenv WORMBASE $WORMPUB # wormpub and wormbase are interchangeable terms
 setenv WORM_BIN ${WORM_SW_ROOT}/bin
 setenv WORM_LIB ${WORM_SW_ROOT}/lib
 
-
 ####################
 # perl 5 libraries
 ####################
-setenv PERL5LIB ${WORM_SW_ROOT}/lib/perl5/site_perl
 setenv PERL5LIB ${PERL5LIB}:${WORM_SW_ROOT}/packages/bioperl/bioperl-live
 
 # this variable name is required by Compara
