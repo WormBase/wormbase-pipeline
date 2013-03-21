@@ -1,7 +1,7 @@
 #!/usr/local/ensembl/bin/perl -w
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2013-03-19 13:16:02 $
+# Last edited on: $Date: 2013-03-21 10:04:17 $
 
 use lib $ENV{'CVS_DIR'};
 
@@ -401,8 +401,8 @@ sub process_uniprot {
   open (UNI, "<${target3}.pre") || $log->log_and_die("Can't open file ${target3}.pre\n");
   open (UNIOUT, ">${target3}") || $log->log_and_die("Can't open file ${target3}\n");
   while (<UNI>) {
-    if (/^>/) {
-      print UNIOUT $_;
+    if (/^>\S+\|(\S+)\|(\S+)(.+?)SV=(\d+)$/) {
+      print UNIOUT ">$1.$4 $2 $3\n";
     } else {
       s/O/K/; 
       print UNIOUT $_;
