@@ -38,17 +38,24 @@ if (not $job_id) {
   
   my $error_code;
 
-  open(my $bjobs, "bjobs -l $job_id |");
-  while(<$bjobs>) {
-    /Exited with exit code (\d+)/ and do {
-      $error_code = $1;
-      last;
-    };
-    /Done successfully/ and do {
-      $error_code = 0;
-      last;
-    };
-  }
+  #
+  # bjobs -l sometimes takes a while to register the completion 
+  #
+  while(not defined $error_code) {
+    open(my $bjobs, "bjobs -l $job_id |");
+    while(<$bjobs>) {
+      /Exited with exit code (\d+)/ and do {
+        $error_code = $1;
+        last;
+      };
+      /Done successfully/ and do {
+        $error_code = 0;
+        last;
+      };
+    }
+
+    sleep(10);
+  } 
   
   if (not defined $error_code) {
     print STDERR "ERROR: Unable to determine exit code for submitted job - investigate\n";
