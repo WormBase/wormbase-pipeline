@@ -36,6 +36,7 @@ use map_Alleles;
 use Wormbase;
 use Getopt::Long;
 use IO::File;              
+use Ace;
 
 sub print_usage{
 print  <<USAGE;
@@ -48,7 +49,6 @@ map_Allele.pl options:
 	-noload             dont update AceDB
 	-noupdate           same as -noload
 	-database	    DATABASE_DIRECTORY use a different db for sanity checking Variations.
-        -force              option to force full run even if -database is used.
 	-weak_checks        relax sequence sanity checks
 	-help               print this message
 	-test               use the test database
@@ -59,7 +59,7 @@ USAGE
 exit 1;	
 }
 
-my ( $debug, $species, $store, $outdir,$acefile,$allele ,$noload,$force,$database,$weak_checks,$help,$test,$idfile,$nofilter, $no_remap);
+my ( $debug, $species, $store, $outdir,$acefile,$allele ,$noload,$database,$weak_checks,$help,$test,$idfile,$nofilter, $no_remap);
 
 GetOptions(
 	   'species=s'   => \$species,
@@ -71,7 +71,6 @@ GetOptions(
 	   'noload'      => \$noload,
 	   'noupdate'    => \$noload,
 	   'database=s'  => \$database,
-	   'force'       => \$force,
 	   'weak_checks' => \$weak_checks,
 	   'help'        => \$help,
 	   'test'        => \$test,
@@ -97,9 +96,10 @@ else {
 }
 
 my $log = Log_files->make_build_log($wb);
-MapAlleles::setup($log,$wb) unless $database;
-MapAlleles::setup($log,$wb) if ($force);
-MapAlleles::set_wb_log($log,$wb,$weak_checks) if $database;
+my $ace = Ace->connect( -path => $wb->autoace ) or 
+    $log->log_and_die("Could not create AcePerl connection\n");
+
+MapAlleles::setup($log,$wb,$ace);
 
 my $release=$wb->get_wormbase_version;
 if ($outdir and $acefile) {
@@ -142,10 +142,7 @@ $log->write_to("Removing insanely mapped alleles...\n") if $debug;
 MapAlleles::remove_insanely_mapped_alleles($mapped_alleles);
 
 # for other databases don't run through the GFF_SPLITs
-unless ($force) {
-  &finish() if $database;
-}
-
+&finish() if $database;
 
 $log->write_to("Writing basic position information...\n") if $debug;
 my $fh = new IO::File ">$acefile" || die($!);
@@ -156,6 +153,8 @@ while( my($key,$allele)=each %$mapped_alleles){
 
 # get overlaps with genes
 # gene_name->[allele_names,...]
+$log->write_to("Loading/indexing gene/CDS data...\n") if $debug;
+MapAlleles::load_genes_and_cds;
 
 $log->write_to("Getting gene mappings...\n") if $debug;
 my $genes=MapAlleles::get_genes($mapped_alleles);
@@ -201,7 +200,7 @@ my $nc_rnas=MapAlleles::load_ncrnas;
 my $hit_ncrnas=MapAlleles::search_ncrnas($mapped_alleles,$nc_rnas);
 $log->write_to("Printing ncRNA mappings...\n") if $debug;
 MapAlleles::print_ncrnas($hit_ncrnas,$fh);
-$hit_ncrnas = $hit_ncrnas = undef; # cleanup memory
+$nc_rnas = $hit_ncrnas = undef; # cleanup memory
  
 # load to ace and close filehandle
 MapAlleles::load_ace($fh,$acefile) unless $noload;
@@ -210,7 +209,13 @@ MapAlleles::load_ace($fh,$acefile) unless $noload;
 
 # send the report
 sub finish {
-	if (MapAlleles::get_errors()){$log->mail( $maintainer, "BUILD REPORT: map_Alleles.pl ${\MapAlleles::get_errors()} ERRORS" )}
-	else {$log->mail( $maintainer, 'BUILD REPORT: map_Alleles.pl')}
-	exit 0;
+  $ace->close();
+
+  if (MapAlleles::get_errors()){
+    $log->mail( $maintainer, "BUILD REPORT: map_Alleles.pl ${\MapAlleles::get_errors()} ERRORS" );
+  }
+  else {
+    $log->mail( $maintainer, 'BUILD REPORT: map_Alleles.pl');
+  }
+  exit 0;
 }

@@ -25,11 +25,8 @@ use strict;
 
 # standard library
 use IO::File;
-use Memoize; 
+#use Memoize; 
 
-# CPAN
-use Ace;
-use lib '/software/worm/lib/bioperl-live';
 use Bio::Tools::CodonTable;
 use Bio::Seq;
 
@@ -39,12 +36,12 @@ use lib "$ENV{CVS_DIR}/Modules";
 use Feature_mapper;
 use Sequence_extract;
 use Coords_converter;
-memoize('Sequence_extract::Sub_sequence') unless $ENV{DEBUG}; 
+#memoize('Sequence_extract::Sub_sequence') unless $ENV{DEBUG}; 
 use Modules::Remap_Sequence_Change;
 use gff_model;
 
 # needs to be attached in main code
-my ($log,$wb,$errors,$extractor,$weak_checks);
+my ($log,$wb,$errors,$extractor,$weak_checks, $db);
 
 my ($index); # mem_index test
 
@@ -71,27 +68,13 @@ sub get_errors{return $errors}
 
 # used instead of an custom importer to keep the use statements in one place
 sub setup{
-    ($log,$wb)=@_;
-    &_build_index;
-    $index=Mem_index::build;
-    $extractor=Sequence_extract->invoke($wb->autoace,undef,$wb);
-    return 1;
+  ($log,$wb,$db)=@_;
+
+  $extractor=Sequence_extract->invoke($wb->autoace,undef,$wb);
+
+  return 1;
 }
 
-=head2 setup
-
-    Title   : set_wb_log
-    Usage   : MapAlleles::set_wb_log($log,$wormbase)
-    Function: sets up package wide variables ONLY
-    Returns : 1 on success
-    Args    : logfiles object , wormbase object
-
-=cut
-
-sub set_wb_log {
-    ($log,$wb,$weak_checks)=@_;
-    return 1
-}
 
 =head2 get_all_alleles
 
@@ -105,11 +88,11 @@ sub set_wb_log {
 
 # gets all alles and filters them
 sub get_all_alleles {
-    my $db = Ace->connect( -path => $wb->autoace ) || do { print "cannot connect to ${$wb->autoace}:", Ace->error; die };
-    my $species=$wb->full_name;
-    my @alleles = $db->fetch( -query =>"Find Variation WHERE Flanking_sequences AND Live AND species = \"$species\"");
+  my $species=$wb->full_name;
 
-    return \@alleles;
+  my @alleles = $db->fetch( -query =>"Find Variation WHERE Flanking_sequences AND Live AND species = \"$species\"");
+  
+  return \@alleles;
 }        
 
 
@@ -125,7 +108,6 @@ sub get_all_alleles {
 =cut
 
 sub get_all_allele_ids {
-  my $db = Ace->connect( -path => $wb->autoace ) || do { print "cannot connect to ${$wb->autoace}:", Ace->error; die };
 
   my $species=$wb->full_name;
   my $iter = $db->fetch_many( -query =>"Find Variation WHERE Flanking_sequences AND Live AND species = \"$species\"");
@@ -200,12 +182,11 @@ EOF
 
 # get allele for testing
 sub get_allele {
-    my ($allele)=@_;
+  my ($allele)=@_;
+  
+  my @alleles = $db->fetch(Variation => "$allele");
 
-    my $db = Ace->connect( -path => $wb->autoace ) || do { print "cannot connect to ${$wb->autoace}:", Ace->error; die };
-    my @alleles = $db->fetch(Variation => "$allele");
-
-    return \@alleles;
+  return \@alleles;
 }
 
 =head2 get_all_alleles_fromFile
@@ -219,17 +200,16 @@ sub get_allele {
 =cut
 
 sub get_alleles_fromFile {
-    my ($filename)=@_;
-    my @alleles;
-
-    my $db = Ace->connect( -path => $wb->autoace ) || do { print "cannot connect to ${$wb->autoace}:", Ace->error; die };
-
-    my $fh = new IO::File $filename ,'r';
-    while (<$fh>){
-	chomp;
-    	push @alleles, $db->fetch(Variation => "$_");
-    }
-    return \@alleles;
+  my ($filename)=@_;
+  my @alleles;
+  
+  my $fh = new IO::File $filename ,'r';
+  while (<$fh>){
+    chomp;
+    push @alleles, $db->fetch(Variation => "$_");
+  }
+    
+  return \@alleles;
 }
 
 
@@ -972,7 +952,7 @@ sub get_seq {
     return $raw_seq;
 }
 
-=head2_build_index
+=head2 load_genes_and_cds
 
     Title   : _build_index
     Usage   : MapAlleles::build_index()
@@ -983,43 +963,38 @@ sub get_seq {
 =cut
 
 # iterates over the GFF_SPLIT and adds them to the index
-sub _build_index {
-    my ( $exon, $intron );
-    my $gdir=$wb->gff_splits;
-    foreach my $file (glob "$gdir/*_gene.gff $gdir/*curated.gff") {
-        #print "processing $file\n" if $wb->debug;
-        my $fh = new IO::File $file, 'r';
-        my @lines = <$fh>
-          ; # works with the relatively small GFF_splits, but stay away from the full GFF files
-        foreach $_ (@lines) {
-            chomp;
-            s/\"//g;
-            my @F = split;
-            Store::store( $F[0], $F[3], $F[4], $F[9], $F[6] )
-              if ( $F[1] eq 'gene' ) && ( $F[2] eq 'gene' );
-        }
+sub load_genes_and_cds {
 
-        foreach $_ (@lines) {
-            chomp;
-            s/\"//g;
-            my @F = split;
-            Store::store_cds( $F[0], $F[3], $F[4], $F[6], $F[9],undef )
-              if ( $F[1] eq 'curated' ) && ( $F[2] eq 'CDS' );
-        }
+  my $gdir = $wb->gff_splits;
 
-        foreach $_ (@lines) {
-            chomp;
-            s/\"//g;
-            my @F = split;
-            Store::store_exon( $F[0], $F[3], $F[4], $F[6], $exon++, $F[9], $F[7] )
-              if ( $F[1] eq 'curated' ) && ( $F[2] eq 'coding_exon' );
-            Store::store_intron( $F[0], $F[3], $F[4], $F[6], $intron++, $F[9],
-                $F[7] )
-              if ( $F[1] eq 'curated' ) && ( $F[2] eq 'intron' );
-        }
-        $fh->close;
-        undef @lines;
+  my ($exon, $intron);
+
+  foreach my $file (glob("$gdir/*_gene.gff"), glob("$gdir/*_curated.gff")) { 
+    my $fh = new IO::File $file, 'r';
+
+    while(<$fh>) {
+      chomp;
+      s/\"//g;
+      my @F = split;
+      
+      if ($F[1] eq 'gene' and $F[2] eq 'gene') {
+        Store::store_gene( $F[0], $F[3], $F[4], $F[9], $F[6] );
+      }
+      if ( $F[1] eq 'curated' and  $F[2] eq 'CDS' ) {
+        Store::store_cds( $F[0], $F[3], $F[4], $F[6], $F[9],undef );
+      }        
+      if ( $F[1] eq 'curated' and $F[2] eq 'coding_exon' ) {
+        Store::store_exon( $F[0], $F[3], $F[4], $F[6], $exon++, $F[9], $F[7] );
+      }
+      if( $F[1] eq 'curated' and $F[2] eq 'intron' ) { 
+        Store::store_intron( $F[0], $F[3], $F[4], $F[6], $intron++, $F[9], $F[7] );
+      }
     }
+
+    $fh->close;
+  }
+
+  $index=Mem_index::build;
 }
                           
 =head2 load_utr
@@ -1247,14 +1222,14 @@ sub search_ncrnas{
 
 # print non coding RNAs
 sub print_ncrnas{
-    my ($hits,$fh)=@_;
-    while( my($allele_name, $ncrnas) = each %$hits){
-        print $fh 'Variation : "',$allele_name,"\"\n";
-        foreach my $ncrna (keys %$ncrnas){
-                print $fh "Transcript $ncrna\n";
-        }
-        print $fh "\n";
+  my ($hits,$fh)=@_;
+  while( my($allele_name, $ncrnas) = each %$hits){
+    print $fh 'Variation : "',$allele_name,"\"\n";
+    foreach my $ncrna (keys %$ncrnas){
+      print $fh "Transcript $ncrna\n";
     }
+    print $fh "\n";
+  }
 }
 
 
@@ -1272,10 +1247,9 @@ sub print_ncrnas{
 =cut
     
 sub load_ace {
-    my ($fh,$filename)=@_; # grml no easy way to retrieve the name from a filehandle ...                                               
-    $fh->close;
-    $wb->load_to_database($wb->{'autoace'},$filename,'map_Allele',$log);
-    1;
+  my ($fh,$filename)=@_; # grml no easy way to retrieve the name from a filehandle ...                                               
+  $fh->close;
+  $wb->load_to_database($wb->{'autoace'},$filename,'map_Allele',$log);
 }
 
 

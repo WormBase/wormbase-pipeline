@@ -6,48 +6,102 @@ our (%Genes,%cds,%exons,%introns);
 
 
 # stores genes to a bdb
-sub store {
-	my ($chromosome,$start,$stop,$name,$orientation)=@_;
-	my (@cdses);
-	$Genes{$name}={start=>$start,stop=>$stop,orientation=>$orientation,chromosome=>$chromosome,cdses=>\@cdses,name=>$name};
+sub store_gene {
+  my ($chromosome,$start,$stop,$name,$orientation)=@_;
+
+  if (not exists $Genes{$name}) {
+    $Genes{$name} = {
+      cdses => [],
+      name  => $name,
+    };
+  }
+
+  my $g = $Genes{$name};
+  $g->{start} = $start;
+  $g->{stop}  = $stop;
+  $g->{orientation} = $orientation;
+  $g->{chromosome} = $chromosome;
 }
 
 # stores cds to a bdbd, needs genes done first, makes gene->cds connections
 sub store_cds {
-	my ($chromosome,$start,$stop,$orientation,$cds,$gene)=@_;
-	my (@introns,@exons);               
-#	push @{$Genes{$gene}->{cdses}},$cds;
-	$cds{$cds}={start=>$start,stop=>$stop,orientation=>$orientation,chromosome=>$chromosome,exons=>\@exons,introns=>\@introns,name=>$cds,gene=>$gene}
+  my ($chromosome,$start,$stop,$orientation,$cds,$gene)=@_;
+
+  if (not exists $cds{$cds}) {
+    $cds{$cds} = {
+      exons   => [],
+      introns => [],
+      name    => $cds,
+    };
+  }
+
+  my $c = $cds{$cds};
+  $c->{start}       = $start;
+  $c->{stop}        = $stop;
+  $c->{orientation} = $orientation;
+  $c->{chromosome}  = $chromosome;
+  $c->{gene}        = $gene;
 }
 
 # stores exons to a bdb, needs cds done first, makes cds->exon connections
 # object id is an unique int
 sub store_exon {
-	my ($chromosome,$start,$stop,$orientation,$exon,$cds_name,$frame)=@_;
-	push @{$cds{$cds_name}->{exons}},$exon;
-	$exons{$exon}={start=>$start,stop=>$stop,orientation=>$orientation,chromosome=>$chromosome,cds=>$cds_name}
+  my ($chromosome,$start,$stop,$orientation,$exon,$cds_name,$frame)=@_;
+
+  if (not exists $cds{$cds_name}) {
+    $cds{$cds_name} = {
+      name    => $cds_name,
+      exons   => [],
+      introns => [],
+    };
+  }
+  push @{$cds{$cds_name}->{exons}},$exon;
+
+  $exons{$exon} = {
+    start       => $start,
+    stop        => $stop,
+    orientation => $orientation,
+    chromosome  => $chromosome,
+    cds         => $cds_name
+  };
 }
 
 # stores introns to a bdbd, needs cds done first, makes cds->intron connections
 # object id is an uiques int
 sub store_intron {
-	my ($chromosome,$start,$stop,$orientation,$intron,$cds,$frame)=@_;
-	push @{$cds{$cds}->{introns}},$intron;
-	$introns{$intron}={start=>$start,stop=>$stop,orientation=>$orientation,chromosome=>$chromosome,cds=>$cds}
+  my ($chromosome,$start,$stop,$orientation,$intron,$cds,$frame)=@_;
+
+  if (not exists $cds{$cds_name}) {
+    $cds{$cds_name} = {
+      name    => $cds_name,
+      exons   => [],
+      introns => [],
+    };
+  }
+
+  push @{$cds{$cds}->{introns}},$intron;
+
+  $introns{$intron} = {
+    start=>$start,
+    stop=>$stop,
+    orientation=>$orientation,
+    chromosome=>$chromosome,
+    cds=>$cds,
+  }
 }
 
 sub freeze {
-	Storable::store \%Genes, 'Genes.ice';
-	Storable::store \%cds, 'cds.ice';
-	Storable::store \%exons, 'exons.ice';	
-	Storable::store \%introns, 'introns.ice';	
+  Storable::store \%Genes, 'Genes.ice';
+  Storable::store \%cds, 'cds.ice';
+  Storable::store \%exons, 'exons.ice';	
+  Storable::store \%introns, 'introns.ice';	
 }
 
 sub thaw {
-	 %Genes= %{Storable::retrieve('Genes.ice')};
-	 %cds= %{Storable::retrieve('cds.ice')};
-	 %exons= %{Storable::retrieve('exons.ice')};
-	 %introns= %{Storable::retrieve('introns.ice')};
+  %Genes   = %{Storable::retrieve('Genes.ice')};
+  %cds     = %{Storable::retrieve('cds.ice')};
+  %exons   = %{Storable::retrieve('exons.ice')};
+  %introns = %{Storable::retrieve('introns.ice')};
 }
 
 # minimalistic intron class as accessor
