@@ -234,7 +234,7 @@ Width 12
 Optional 
 Visible 
 Class 
-Class Accession_number 
+Class Text
 Right_of 3 
 Tag  HERE  
 
