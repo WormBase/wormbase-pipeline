@@ -5,7 +5,7 @@
 # written by Anthony Rogers
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2013-03-19 12:36:48 $
+# Last edited on: $Date: 2013-03-22 16:00:40 $
 #
 # it depends on:
 #    wormpep + history
@@ -502,7 +502,7 @@ sub update_dna {
   
   # worm_lite.pl magic
   my $species = $wormbase->species;
-  $wormbase->run_script( "ENSEMBL/scripts/worm_lite.pl -yfile $yfile_name -setup -load_dna -load_genes -species $species", $log );
+  $wormbase->run_command( "perl $ENV{'CVS_DIR'}/ENSEMBL/scripts/worm_lite.pl -yfile $yfile_name -setup -load_dna -load_genes -species $species", $log );
   
   # create analys_tables and rules
   my $db_options = sprintf(
@@ -573,8 +573,8 @@ sub update_proteins {
 			  );
   my $pipeline_scripts = "$ENV{'WORM_PACKAGES'}/ensembl/ensembl-pipeline/scripts";
   
-  $wormbase->run_script( "ENSEMBL/scripts/worm_lite.pl -yfile $yfile_name -load_genes -species $species", $log );
-  $wormbase->run_command( "perl $pipeline_scripts/make_input_ids $db_options -translation_id -logic SubmitTranslation", $log );
+  $wormbase->run_command("perl $ENV{'CVS_DIR'}/ENSEMBL/scripts/worm_lite.pl -yfile $yfile_name -load_genes -species $species", $log );
+  $wormbase->run_command("perl $pipeline_scripts/make_input_ids $db_options -translation_id -logic SubmitTranslation", $log );
 }
 
 =head2 delete_gene_by_translation [UNUSED]
