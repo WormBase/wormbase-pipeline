@@ -9,7 +9,7 @@
 # >2L52.1 gene=WBGene00007063
 #
 # Last updated by: $Author: pad $
-# Last updated on: $Date: 2013-03-20 12:09:48 $
+# Last updated on: $Date: 2013-03-22 15:11:05 $
 use strict;
 use lib $ENV{'CVS_DIR'};
 use Getopt::Long;
@@ -17,7 +17,7 @@ use Wormbase;
 use File::Path;
 use Storable;
 
-my ($debug, $store, $verbose, $database, $test, $wormbase, $species, $class, $method, $out_file, $target_dir, $geneid, $process);
+my ($debug, $store, $verbose, $database, $test, $wormbase, $species, $class, $method, $out_file, $target_dir, $geneid, $process, $version);
 
 GetOptions ( "debug:s"      => \$debug,      #email a specified user only, so you don't flood all your colleagues with test run spam.
 	     "verbose"      => \$verbose,    #verbose quces a little more info to screen
@@ -31,6 +31,7 @@ GetOptions ( "debug:s"      => \$debug,      #email a specified user only, so yo
 	     "species:s"    => \$species,    #needed to work out what species is being processed
 	     "gene"         => \$geneid,     #adds the WBGeneID to the header line (retrieved via a wormpep mapping)
 	     "processonly"  => \$process,    #process the specified output file without all the delay of dumping
+	     "version:s"    => \$version,    #adds flexibility 
 	   ) ;
 
 
@@ -63,7 +64,9 @@ unless (defined $method) {$log->write_to("!!!!Warning - No method specified so d
 
 unless (defined $target_dir) {$target_dir = $wormbase->sequences;}
 unless (defined $out_file){$out_file     = "coding_transcripts.dna";}
-
+if ($geneid) {
+  unless (defined $version) {$log->write_to("The current build wormpep will be used for WBGene data\n")}
+}
 my $out = "$target_dir/$out_file";
 my $target= "${out}.mod";
 my $gspecies = $wormbase->full_name('-g_species' => 1);
@@ -99,14 +102,16 @@ unless ($process) {
 
 if ($geneid){
   &fetch_gene_ids;
+  my $cds_regex = $wormbase->cds_regex_noend;
   if (-e $out) {
     open(out_fh, "<$out") || die "Failed to open $out\n" ;
     open(target_fh, ">$target") || die "Failed to open $target\n";
     while(<out_fh>) {
       chomp;
-      if (/^\>(\S+)(.*)/) {
+      s/>//;
+      if (/($cds_regex)/) {
 	if (exists $gene_ids{$1}) {
-	  print target_fh "\n$_ gene=$gene_ids{$1}\n";
+	  print target_fh "\n>$_ gene=$gene_ids{$1}\n";
 	} else {
 	  print target_fh "\n$_\n";
 	}
@@ -142,10 +147,16 @@ $log->mail();
 exit(0);
 
 sub fetch_gene_ids {
-  my $wsid = $wormbase->get_wormbase_version;
+  my $wsid;
+  unless ($version) {
+    $wsid = $wormbase->get_wormbase_version;
+  }
+  else {
+    $wsid = $version;
+  }
   my $peppre = $wormbase->pepdir_prefix;
-  my $source_dir = $wormbase->wormpep;
-  my $source_pepfile = "$source_dir/${peppre}pep${wsid}";
+  my $pep_dir = $wormbase->peproot;
+  my $source_pepfile = "$pep_dir/${peppre}pep${wsid}/${peppre}pep${wsid}";
   if (-e $source_pepfile) {
     open(my $source_pep_fh, $source_pepfile);
     while(<$source_pep_fh>) {
