@@ -105,10 +105,10 @@ sub setupdb {
     system("$mysql -e \"create database $db->{dbname};\"")         && die;
 
     print "loading table.sql from ensembl...\n";
-    system("$mysql $db->{dbname} < " . $cvsDIR . "ensembl/sql/table.sql" ) && die;
+    system("$mysql $db->{dbname} < " . $cvsDIR . "/ensembl/sql/table.sql" ) && die;
 
     print "loading table.sql from ensembl-pipeline...\n";
-    system("$mysql $db->{dbname} < " . $cvsDIR . "ensembl-pipeline/sql/table.sql" ) && die;
+    system("$mysql $db->{dbname} < " . $cvsDIR . "/ensembl-pipeline/sql/table.sql" ) && die;
     
     print "Populating meta table...\n";
     foreach my $key (keys %$config) {
