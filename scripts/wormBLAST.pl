@@ -5,7 +5,7 @@
 # written by Anthony Rogers
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2013-03-22 16:00:40 $
+# Last edited on: $Date: 2013-03-25 12:03:35 $
 #
 # it depends on:
 #    wormpep + history
@@ -358,7 +358,7 @@ sub get_updated_database_list {
     || die "cannot prepare statement, $DBI::errstr";
   $analysis_table->execute();
   while (my @row = $analysis_table->fetchrow_array()){
-    if ($row[1] =~ /((jappep|ppapep|remapep|ensembl|gadfly|yeast|slimswissprot|slimtrembl|wormpep|ipi_human|brigpep|brepep).*)/) {
+    if ($row[1] =~ /((jappep|ppapep|remapep|ensembl|gadfly|yeast|slimswissprot|slimtrembl|wormpep|ipi_human|brigpep|brepep|brugpep).*)/) {
       $prevDBs{$2} = $1;  
     }
   }
@@ -367,7 +367,7 @@ sub get_updated_database_list {
   open( CURR_DB, "<$database_to_use" ) or die "cant find $database_to_use";
   while (<CURR_DB>) {
     chomp;
-    if (/(jappep|ppapep|remapep|ensembl|gadfly|yeast|slimswissprot|slimtrembl|wormpep|ipi_human|brigpep|brepep)/) {
+    if (/(jappep|ppapep|remapep|ensembl|gadfly|yeast|slimswissprot|slimtrembl|wormpep|ipi_human|brigpep|brepep|brugpep)/) {
       $currentDBs{$1} = $_;
     }
   }
@@ -406,7 +406,7 @@ sub update_blast_dbs {
   open( OLD_DB, "<$last_build_DBs" ) or die "cant find $last_build_DBs";
   while (<OLD_DB>) {
     chomp;
-    if (/(jappep|ppapep|remapep|gadfly|yeast|slimswissprot|slimtrembl|wormpep|ipi_human|brigpep|brepep)/) {
+    if (/(jappep|ppapep|remapep|gadfly|yeast|slimswissprot|slimtrembl|wormpep|ipi_human|brigpep|brepep|brugpep)/) {
       $_currentDBs{$1} = $_;
     }
   }
@@ -417,7 +417,7 @@ sub update_blast_dbs {
   open( DIR, "ls -l $wormpipe_dir/BlastDB/*.pep |" ) or die "readir\n";
   while (<DIR>) {
     chomp;
-    if (/\/(jappep|ppapep|remapep|gadfly|yeast|slimswissprot|slimtrembl|wormpep|ipi_human|brigpep|brepep)/) {
+    if (/\/(jappep|ppapep|remapep|gadfly|yeast|slimswissprot|slimtrembl|wormpep|ipi_human|brigpep|brepep|brugpep)/) {
       my $whole_file = "$1" . "$'";    # match + stuff after match.
       
       $log->write_to("checking $_\n");
