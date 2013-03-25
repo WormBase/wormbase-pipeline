@@ -975,7 +975,7 @@ sub chromosome_prefix {'Hcon_Contig'}
 sub pep_prefix {'HC'}
 sub pepdir_prefix{'hco'};
 sub ncbi_tax_id {'6289'};
-sub ncbi_bioproject {'Unregistered_bioproject'};
+sub ncbi_bioproject {'PRJEB506'};
 sub assembly_type {'contig'};
 sub chromosome_names {
 	my @contigs;
