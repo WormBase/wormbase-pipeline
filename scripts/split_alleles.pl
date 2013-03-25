@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl 
 #===============================================================================
 #
 #         FILE:  split_alleles.pl
@@ -41,7 +41,7 @@ USAGE
 exit 1;	
 }
 
-my ( $debug, $store,$database,$help,$test,$species,$wb,$noload,$outdir,$binsize);
+my ( $debug, $store,$database,$help,$test,$species,$wb,$noload,$outdir,$binsize,$id_file);
 
 GetOptions(
   'species=s'=> \$species,
@@ -51,6 +51,7 @@ GetOptions(
   'database=s'  => \$database,
   'help'        => \$help,
   'test'        => \$test,
+  'idfile=s'    => \$id_file,
   'noload'      => \$noload,
   'binsize=s'     => \$binsize,
 ) or &print_usage();
@@ -80,10 +81,18 @@ mkdir $outdir if not -d $outdir;
 $database = $wb->autoace() if not defined $database;
 $species = $wb->species if not defined $species;
 
-MapAlleles::set_wb_log($log,$wb); # that is a bit crude, but makes $log available to the MapAlleles funtions
+my $variations;
+if ($id_file) {
+  $variations = [];
+  open(my $idfh, $id_file);
+  while(<$idfh>) {
+    /^\#/ and next;
+    /^(\S+)/ and push @$variations, $1;
+  }
+} else {
+  $variations = &get_all_allele_ids_table_maker();
+}
 
-my $lsf = LSF::JobManager->new();
-my $variations = MapAlleles::get_all_allele_ids_table_maker();
 $binsize = 50000 if not defined $binsize;
 
 my (@bins, @id_files, @out_files);
@@ -95,6 +104,8 @@ while (my $a = shift @$variations){
 
   push @{$bins[-1]}, $a;
 }
+
+my (@jobs, %lsf_jobs);
 
 
 for(my $bn=1; $bn <= @bins; $bn++) {
@@ -110,44 +121,134 @@ for(my $bn=1; $bn <= @bins; $bn++) {
   }
   close($fh);
 
-  &mapAlleles($id_file, $out_file);
+  push @jobs, {
+    bin => $bn,
+    idfile => $id_file,
+    outfile => $out_file,
+    success => 0,
+  };
 
-  push @id_files, $id_file;
-  push @out_files, $out_file;
 }
 
+foreach my $mem_gb (3, 6) {
+  my @outstanding_jobs = grep { not $_->{success} } @jobs;
 
-$lsf->wait_all_children( history => 1 );
+  if (@outstanding_jobs) {
+    my $lsf = LSF::JobManager->new();
 
-if (not $noload) {
-  foreach my $ace (@out_files) {
-    if (-e $ace) {
-      $wb->load_to_database($wb->autoace, $ace, 'map_alleles.pl',$log);
-    } else {
-      croak("Expected to find $ace, but its not there. Strange.\n");
+    foreach my $job (@outstanding_jobs) {
+      my $idfile = $job->{idfile};
+      my $outfile = $job->{outfile};
+      my $batch = $job->{bin};
+
+      my $cmd =  "perl $Bin/map_Alleles.pl -idfile $idfile -outfile $outfile -noload -species $species";
+      $cmd .= " -debug $debug" if $debug;
+      $cmd .= " -test"  if $test;
+       
+      my $job_name = "${species}_splitalleles_${batch}_${mem_gb}GB";
+      my $lsf_output = "${outdir}/${job_name}.lsf_out";
+      my @bsub_options =(-o => $lsf_output,
+                         -M => $mem_gb * 1000000, 
+                         -R => sprintf("select[mem>%d] rusage[mem=%d]", $mem_gb * 1000, $mem_gb * 1000),
+                         -J => $job_name);
+      $lsf->submit(@bsub_options, $cmd);
+      $job->{lsfout} = $lsf_output;
+    }
+    
+    $lsf->wait_all_children();
+    # Pause here to make sure that LSF has fully registered completion of the jobs
+    sleep(10);
+    $lsf->clear;
+
+    foreach my $job (@outstanding_jobs) {
+      my $status = &check_exit_status($job->{lsfout});
+      if ($status == 0) {
+        $job->{success} = 1;
+      }
     }
   }
-  my $outfile = $wb->acefiles . "/map_alleles4geneace.ace";
-  $wb->run_command("cat @out_files > $outfile", $log);
-
-  map { unlink $_ } (@out_files, @id_files);
 }
 
+my (@success_out, @success_id, @success_lsfout);
+
+foreach my $job (@jobs) {
+  if ($job->{success}) {
+    push @success_out, $job->{outfile};
+    push @success_id, $job->{idfile};
+    push @success_lsfout, $job->{lsfout};
+  } else {
+    $log->error("The following command failed, so retaining files for investigation: " . $job->{cmd} . "\n");
+  }
+}
+
+my $out_file = $wb->acefiles . "/map_alleles_output.ace";
+$wb->run_command("cat @success_out > $out_file", $log);
+
+if (not $noload) {
+  $wb->load_to_database($wb->autoace, $out_file, 'map_alleles.pl',$log);
+  unlink @success_out, @success_id, @success_lsfout;
+}
 
 $log->mail();
 
-sub mapAlleles {
-  my ($id_file, $out_file) = @_;
-  
-  my $submitstring="/software/bin/perl $Bin/map_Alleles.pl -idfile $id_file -outfile $out_file -noload -species $species";
-  $submitstring .= " -debug $debug" if $debug;
-  $submitstring .= " -test"  if $test;
 
-  my $job_name = "worm_".$species."_splitalleles";
-  my @bsub_options =(-e => '/dev/null', 
-                     -o => '/dev/null',
-                     -M => "4000000", 
-                     -R => "\"select[mem>4000] rusage[mem=4000]\"",
-                     -J => $job_name);
-  $lsf->submit(@bsub_options, $submitstring);
+#########################
+sub get_all_allele_ids_table_maker {
+  
+  my $species = $wb->full_name;
+  my $query = <<"EOF";
+
+Sortcolumn 1
+
+Colonne 1 
+Width 12 
+Mandatory 
+Visible 
+Class 
+Class Variation 
+From 1 
+Condition Flanking_sequences AND Live AND Species = "$species"
+ 
+EOF
+
+  my $def_file = "/tmp/all_allele_ids.def";
+  open(my $tmdeffh, ">$def_file") or $log->log_and_die("Could not open $def_file for writing\n");
+  print $tmdeffh $query;
+  close($tmdeffh);
+
+  my @list;
+
+  my $tmfh = $wb->table_maker_query($wb->autoace, $def_file);
+  while(<$tmfh>) {
+    /^\"(\S+)\"$/ and do {
+      push @list, $1;
+    }
+  }
+  close($tmfh);
+
+  return \@list;
 }
+
+#########################
+sub check_exit_status {
+  my ($file) = @_;
+
+  my $status = 999;
+
+  open(my $fh, $file) or $log->log_and_die("Could not open $file for reading\n");
+  while(<$fh>) {
+    if (/Exited with exit code (\d+)/) {
+      $status = $1;
+    } elsif (/^Exited/) {
+      $status = 999;
+    } elsif (/Successfully completed/) {
+      $status = 0;
+    }
+  }
+
+  return $status;
+}
+
+
+
+
