@@ -27,9 +27,6 @@ if (-e "/software/worm") then
     # Ensembl MySQL database details
     setenv WORM_DBHOST farmdb1
     setenv WORM_DBPORT 3306
-    # details for ncbi_taxonomy database
-    setenv TAXON_DBHOST ens-livemirror
-    setenv TAXON_DBPORT 3306
 
     # the filesystem's group name for WormBase
     setenv WORM_GROUP_NAME worm
@@ -76,9 +73,6 @@ else
     # Ensembl MySQL database details
     setenv WORM_DBHOST mysql-wormbase-pipelines
     setenv WORM_DBPORT 4331
-    # details for ncbi_taxonomy database
-    setenv TAXON_DBHOST mysql-eg-pan-1.ebi.ac.uk
-    setenv TAXON_DBPORT 4276
 
     # the filesystem's group name for WormBase
     setenv WORM_GROUP_NAME nucleotide
