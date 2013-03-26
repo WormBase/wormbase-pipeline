@@ -5,7 +5,7 @@
 # written by Anthony Rogers
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2013-03-26 13:54:47 $
+# Last edited on: $Date: 2013-03-26 13:55:56 $
 #
 # it depends on:
 #    wormpep + history
@@ -342,15 +342,19 @@ sub update_blast_dbs {
   # that have been updated since the prev build
   # load in databases used in previous build
   
+  # make list of database names 
+  my $regexp = '(gadfly|yeast|slimswissprot|slimtrembl|ipi_human';
   my %core_organisms = $wormbase->species_accessors;
   foreach my $wb (values %core_organisms) {
     my $pepname = $wb->pepdir_prefix . 'pep';
+    $regexp .= '|${pepname}'; 
   }
+  $regexp .= ')';
 
   open( OLD_DB, "<$last_build_DBs" ) or die "cant find $last_build_DBs";
   while (<OLD_DB>) {
     chomp;
-    if (/(jappep|ppapep|remapep|gadfly|yeast|slimswissprot|slimtrembl|wormpep|ipi_human|brigpep|brepep|brugpep)/) {
+    if (/$regexp/) {
       $_currentDBs{$1} = $_;
     }
   }
@@ -361,7 +365,7 @@ sub update_blast_dbs {
   open( DIR, "ls -l $wormpipe_dir/BlastDB/*.pep |" ) or die "readir\n";
   while (<DIR>) {
     chomp;
-    if (/\/(jappep|ppapep|remapep|gadfly|yeast|slimswissprot|slimtrembl|wormpep|ipi_human|brigpep|brepep|brugpep)/) {
+    if (/\/$regexp/) {
       my $whole_file = "$1" . "$'";    # match + stuff after match.
       
       $log->write_to("checking $_\n");
