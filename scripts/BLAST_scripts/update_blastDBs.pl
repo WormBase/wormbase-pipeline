@@ -1,7 +1,7 @@
 #!/usr/local/ensembl/bin/perl -w
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2013-03-21 10:22:02 $
+# Last edited on: $Date: 2013-03-26 10:10:33 $
 
 use lib $ENV{'CVS_DIR'};
 
@@ -270,17 +270,17 @@ if ($cleanup) {
   
   # root name regular expressions of the databases to check
   my @roots = (
+	       'wormpep\d+.pep',
+	       'brugpep\d+.pep',
 	       'brepep\d+.pep',
 	       'brigpep\d+.pep',
-               'gadfly\d+.pep',
-               'ipi_human_\d+_\d+.pep',
                'jappep\d+.pep',
                'ppapep\d+.pep',
 	       'remapep\d+.pep',
+               'gadfly\d+.pep',
+               'ipi_human_\d+_\d+.pep',
 	       'slimswissprot\d+.pep',
 	       'slimtrembl\d+.pep',
-	       'wormpep\d+_slim.pep',
-	       'wormpep\d+.pep',
 	       'yeast\d+.pep',
 	      );
 
