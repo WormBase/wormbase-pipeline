@@ -5,7 +5,7 @@
 # written by Anthony Rogers
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2013-03-26 13:55:56 $
+# Last edited on: $Date: 2013-03-26 14:28:46 $
 #
 # it depends on:
 #    wormpep + history
@@ -134,6 +134,7 @@ if ($copy && !$test) { # if testing use the Build protein and DNA files, but don
 
   # copy the elegans and TierII organism blast databases
   my %core_organisms = $wormbase->species_accessors;
+  $core_organisms{elegans} = $wormbase;
   foreach my $wb (values %core_organisms) {
     my $pepdir_prefix = $wb->pepdir_prefix;
     copy2acari($pepdir_prefix . 'pep');
@@ -234,6 +235,7 @@ if ($cleanup && !$test) {
   my $scratch_dir = $wormpipe_dir;
 
   my %core_organisms = $wormbase->species_accessors;
+  $core_organisms{elegans} = $wormbase;  
   foreach my $wb (values %core_organisms) {
     my $species_dir = 'ensembl-' . $wb->species;
     system( "rm -fr $scratch_dir/$species_dir");
@@ -345,6 +347,7 @@ sub update_blast_dbs {
   # make list of database names 
   my $regexp = '(gadfly|yeast|slimswissprot|slimtrembl|ipi_human';
   my %core_organisms = $wormbase->species_accessors;
+  $core_organisms{elegans} = $wormbase;
   foreach my $wb (values %core_organisms) {
     my $pepname = $wb->pepdir_prefix . 'pep';
     $regexp .= '|${pepname}'; 
