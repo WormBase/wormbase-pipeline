@@ -687,7 +687,7 @@ sub chromosome_prefix {'Csp5_scaffold'}
 sub pep_prefix {'S5'}
 sub pepdir_prefix{'csp5'};
 sub ncbi_tax_id {'497829'}; # this is the ID of the DRD-2008 strain
-sub ncbi_bioproject {'Unregistered_bioproject'};
+sub ncbi_bioproject {'Unregistered_bioproject_1'};
 sub assembly_type {'contig'};
 ######################################################
 
