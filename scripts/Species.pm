@@ -680,7 +680,7 @@ sub full_name {
 	}	elsif($param{'-g_species'}){
 		return 'c_sp5';
 	}
-	else { return'Caenorhabditis species 5'
+	else { return'Caenorhabditis sp. 5'
 	};
 }
 sub chromosome_prefix {'Csp5_scaffold'}
@@ -713,7 +713,7 @@ sub full_name {
 	}	elsif($param{'-g_species'}){
 		return 'c_sp7';
 	}
-	else { return'Caenorhabditis species 7'
+	else { return'Caenorhabditis sp. 7'
 	};
 }
 sub chromosome_prefix {'Contig'}
@@ -746,7 +746,7 @@ sub full_name {
 	}	elsif($param{'-g_species'}){
 		return 'c_sp9';
 	}
-	else { return'Caenorhabditis species 9'
+	else { return'Caenorhabditis sp. 9'
 	};
 }
 sub chromosome_prefix {'Scaffold'}
@@ -779,7 +779,7 @@ sub full_name {
 	}	elsif($param{'-g_species'}){
 		return 'c_sp11';
 	}
-	else { return'Caenorhabditis species 11'
+	else { return'Caenorhabditis sp. 11'
 	};
 }
 sub chromosome_prefix {'Scaffold'}
