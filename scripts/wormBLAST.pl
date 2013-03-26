@@ -5,7 +5,7 @@
 # written by Anthony Rogers
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2013-03-25 12:03:35 $
+# Last edited on: $Date: 2013-03-26 13:54:47 $
 #
 # it depends on:
 #    wormpep + history
@@ -131,13 +131,20 @@ if (! $cleanup ) {
 # for chromosome , brigpep , wormpep , remapep
 #
 if ($copy && !$test) { # if testing use the Build protein and DNA files, but don't overwrite them
-  foreach my $option (qw(brepep jappep ppapep wormpep remapep brigpep chrom)) { copy2acari($option) }    # don't need the chromosomes
+
+  # copy the elegans and TierII organism blast databases
+  my %core_organisms = $wormbase->species_accessors;
+  foreach my $wb (values %core_organisms) {
+    my $pepdir_prefix = $wb->pepdir_prefix;
+    copy2acari($pepdir_prefix . 'pep');
+  }
+  # and copy the individual chromosome files for elegans
+  copy2acari('chrom');
 }
 
 ########### updating databases ###############
 my ( $updated_dbs, $current_dbs ) = &update_blast_dbs() if ($copy && !$test); # if testing use the Build protein and DNA files, but don't overwrite them
 
-my @updated_DBs;# = @{$updated_dbs};
 my %currentDBs;#  = %{$current_dbs};se
 
 # update mySQL database
@@ -186,23 +193,7 @@ if ($prep_dump && !$test) {
 if ($cleanup && !$test) {
   $log->write_to("clearing up files generated in this build\n");
   
-  # files to move to ~wormpub/last-build/
-  #   $ENV{'PIPELINE'}/dumps/
-  #    ipi_hits_list
-  #    trembllist.txt
-  #    swisslist.txt
-  #    *best_blastp_hits
-  
-  #  $ENV{'PIPELINE'}/Elegans
-  #    WS99.agp
-  #    cds99.gff
-  #    cos99.gff
-  #    ids.txt
-  
-  # to delete
-  #   $ENV{'PIPELINE'}/dumps/
-  #      *.ace
-  #      *.log
+
   my $clear_dump = "$wormpipe_dir/dumps";
   
   $log->write_to ("Removing files currently in $wormpipe_dir/last_build\n");
@@ -241,14 +232,16 @@ if ($cleanup && !$test) {
   
   $log->write_to("\nRemoving farm output and error files from $wormpipe_dir/*\n") if $debug;
   my $scratch_dir = $wormpipe_dir;
-  # Michael wants ensembl-brugia left as it is for now as he uses it for testing
-  my @species_dir = qw( ensembl-pristionchus ensembl-japonica ensembl-brenneri ensembl-briggsae ensembl-elegans ensembl-remanei ); 
-  foreach my $species_dir (@species_dir) {
+
+  my %core_organisms = $wormbase->species_accessors;
+  foreach my $wb (values %core_organisms) {
+    my $species_dir = 'ensembl-' . $wb->species;
     system( "rm -fr $scratch_dir/$species_dir");
     mkdir("$scratch_dir/$species_dir", 0775); # so remake it
     system("chgrp $ENV{'WORM_GROUP_NAME'} $scratch_dir/$species_dir"); # change group to nucleotide
     system("chmod g+ws $scratch_dir/$species_dir"); # group writable and inherit group
   }
+
   $log->write_to ("\n\nCLEAN UP COMPLETED\n\n");
 }
 
@@ -330,60 +323,6 @@ sub clean_blasts {
   }
 }
 
-=head2 get_updated_database_list
-
-gets a list of updated filenames
-
-=cut
-
-#############################
-# parse the database files
-#
-# global variables:
-#   %prevDB is like {ensembl|gadfly|...} = /flunky/filename
-#   %currentDB the same
-
-sub get_updated_database_list {
-  @updated_DBs = ();
-  my @updated_dbfiles;
-  
-  # process old databases
-  open( OLD_DB, "<$last_build_DBs" ) or die "cant find $last_build_DBs";
-  my %prevDBs;
-  
-  # get database file info from databases_used_WS(xx-1) (should have been updated by script if databases changed
-  #
-  # get logic_name,db_file from analysis_table where program_name like '%blastp'
-  my $analysis_table=$raw_dbh->prepare("SELECT logic_name,db_file FROM analysis WHERE program_file LIKE '%blastp'")
-    || die "cannot prepare statement, $DBI::errstr";
-  $analysis_table->execute();
-  while (my @row = $analysis_table->fetchrow_array()){
-    if ($row[1] =~ /((jappep|ppapep|remapep|ensembl|gadfly|yeast|slimswissprot|slimtrembl|wormpep|ipi_human|brigpep|brepep|brugpep).*)/) {
-      $prevDBs{$2} = $1;  
-    }
-  }
-  
-  # process current databases
-  open( CURR_DB, "<$database_to_use" ) or die "cant find $database_to_use";
-  while (<CURR_DB>) {
-    chomp;
-    if (/(jappep|ppapep|remapep|ensembl|gadfly|yeast|slimswissprot|slimtrembl|wormpep|ipi_human|brigpep|brepep|brugpep)/) {
-      $currentDBs{$1} = $_;
-    }
-  }
-  close CURR_DB;
-  
-  # compare old and new database list
-  foreach ( keys %currentDBs ) {
-    print "Updating $_\n";
-    if ( "$currentDBs{$_}" ne "$prevDBs{$_}" ) {
-      push( @updated_DBs,     "$_" );
-      push( @updated_dbfiles, $currentDBs{$_} );
-    }
-  }
-  return @updated_dbfiles;
-}
-
 
 =head2 update_blast_dbs
 
@@ -403,6 +342,11 @@ sub update_blast_dbs {
   # that have been updated since the prev build
   # load in databases used in previous build
   
+  my %core_organisms = $wormbase->species_accessors;
+  foreach my $wb (values %core_organisms) {
+    my $pepname = $wb->pepdir_prefix . 'pep';
+  }
+
   open( OLD_DB, "<$last_build_DBs" ) or die "cant find $last_build_DBs";
   while (<OLD_DB>) {
     chomp;
@@ -695,24 +639,51 @@ updates the blat input_ids
 # * deletes features and input_ids for updated analysis
 
 sub update_analysis {
-  my $update_dbfile_handle  = $raw_dbh->prepare('UPDATE analysis SET db_file = ? , created = NOW() WHERE analysis_id = ?') || die "$DBI::errstr";
-  my $clean_input_id_handle = $raw_dbh->prepare('DELETE FROM input_id_analysis WHERE analysis_id = ?')   || die "$DBI::errstr";
-  my $analysis_for_file     = $raw_dbh->prepare('SELECT analysis_id FROM analysis WHERE db_file LIKE ?') || die "$DBI::errstr";
+
+
+  my $analysis_adaptor = $dba->get_AnalysisAdaptor();
+
+  my @analyses = @{$analysis_adaptor->fetch_all()};
+
+  foreach my $analysis (@analyses) {
+
+    my $program = $analysis->program;
   
-  $log->write_to ("Updating BLAST analysis ... \n");
-  foreach my $db ( get_updated_database_list() ) {
-    $db =~ /([a-z_]+)?[\d_]*\.pep/;
-    $analysis_for_file->execute("$wormpipe_dir/blastdb/Worms/$1%.pep") || die "$DBI::errstr";
-    my $analysis = $analysis_for_file->fetchall_arrayref || die "$DBI::errstr";
-    foreach my $ana (@$analysis) {
-      $log->write_to ("updating analysis : ${\$ana->[0]} => $wormpipe_dir/blastdb/Worms/$db\n");
-      $update_dbfile_handle->execute( "$wormpipe_dir/blastdb/Worms/$db", $ana->[0] ) || die "$DBI::errstr";
-      $clean_input_id_handle->execute( $ana->[0] )                                        || die "$DBI::errstr";
-      $raw_dbh->do("DELETE FROM protein_feature WHERE analysis_id = ${\$ana->[0]}")       || die "$DBI::errstr";
-      $raw_dbh->do("DELETE FROM protein_align_feature WHERE analysis_id = ${\$ana->[0]}") || die "$DBI::errstr";
+    # check to see if the logic_name or program name looks like a blast database to be updated
+    if (defined $program && ($program eq 'blastp' || $program eq 'blastx')) {
+    
+      # check to see if the blast db version is NULL or out of date compared to the latest version
+      my $old_db_version = $analysis->db_version();
+    
+      # get the latest database version for this blast database from the database versions file
+      my $db_name = $analysis->db;
+      my $latest_db_version = get_db_version($db_name);
+      
+      # do we want to update this blast database?
+      if (!$old_db_version || $old_db_version ne $latest_db_version) {
+      
+	my $latest_db_file_path = "$ENV{'PIPELINE'}/blastdb/Worms/$latest_db_version";
+
+	my $analysis_id = $analysis->dbID;
+
+	$log->write_to ("updating analysis : $analysis_id => $latest_db_file_path\n");
+      
+	# set the values we want to update:
+	$analysis->db_version($latest_db_version);
+	$analysis->db_file($latest_db_file_path);
+      
+	# call update on the $analysis object to write it to the database
+	$analysis_adaptor->update($analysis);
+	
+	# now delete features and input_ids for this updated analysis
+	$raw_dbh->do("DELETE FROM input_id_analysis WHERE analysis_id = ${analysis_id}")     || die "$DBI::errstr";
+	$raw_dbh->do("DELETE FROM protein_feature WHERE analysis_id = ${analysis_id}")       || die "$DBI::errstr";
+	$raw_dbh->do("DELETE FROM protein_align_feature WHERE analysis_id = ${analysis_id}") || die "$DBI::errstr";
+      }
     }
   }
-  
+
+
   # the Interpro stuff has its own pipeline on the EBI, so only load it on the Sanger
   if (defined $ENV{'SANGER'}) {
     # update the interpro analysis
@@ -750,6 +721,44 @@ sub update_analysis {
 }
 
 
+##########################################
+# get the version of the database file which matches the specified database_name
+# searches the file 'databases_used_WSxxx' for a match to the database_name
+
+# This only works if the Blast database 'db' name in the analysis
+# table matches the start of that blast database filename.
+
+# An error is thrown if the BLAST database file name cannot be found
+# in the databases_used_WSxxx file
+
+sub get_db_version {
+
+  my ($db_name) = @_;
+
+  $db_name = lc $db_name;
+
+  my $WS = $wormbase->get_wormbase_version;
+
+  my $version_file = "$ENV{'PIPELINE'}/BlastDB/databases_used_WS${WS}";
+
+  my $db_version;
+
+  open (VF, "< $version_file") || $log->log_and_die("Can't open file $version_file\n");
+  while (my $line = <VF>) {
+    chomp $line;
+    if ($line =~ /^$db_name/) {
+      $db_version = $line;
+      last;
+    }
+  }
+  close (VF);
+
+  if (!defined $db_version) {
+    $log->log_and_die ("Can't find the latest version of the BLAST database file for '$db_name' in the versions file: $version_file\n");
+  }
+
+  return $db_version;
+}
 
 __END__
 
