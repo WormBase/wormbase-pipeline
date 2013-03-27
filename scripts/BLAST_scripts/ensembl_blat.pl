@@ -3,8 +3,8 @@
 # DESCRIPTION:
 #   setting up the BLAT pipeline
 #
-# Last edited by: $Author: klh $
-# Last edited on: $Date: 2012-01-13 16:16:57 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2013-03-27 15:29:09 $
 
 use lib $ENV{'CVS_DIR'};
 
@@ -32,7 +32,6 @@ use Wormbase;
 use strict;
 
 my $CONFIG = {
-  query_file_location => '/nfs/wormpub/BUILD/cDNA',
   logic_names => {
     'blat_brugia_ests'    => 'brugia/EST.masked*',
     'blat_brugia_cdnas'   => 'brugia/mRNA.masked*',
@@ -98,8 +97,8 @@ my $database = sprintf('worm_ensembl_%s',lc(ref $wormbase));
 my $log = Log_files->make_build_log($wormbase);
 $log->write_to("Updating BLAT input files for $database\n");
 
-$host||='farmdb1';
-$port||=3306;
+$host||=$ENV{'WORM_DBHOST'};
+$port||=$ENV{'WORM_DBPORT'};
 
 # MYSQL setup
 my $db = Bio::EnsEMBL::Pipeline::DBSQL::DBAdaptor->new(
@@ -158,7 +157,7 @@ sub make_input_ids {
     'INSERT INTO input_id_analysis (input_id,input_id_type,analysis_id,created,result) VALUES (?,?,?,NOW(),0)'
       );
 
-  my $file_base = $CONFIG->{query_file_location};
+  my $file_base = $wormbase->basedir . "/cDNA/";
 
   if (exists $CONFIG->{logic_names}->{$ana->logic_name}) {
     my $file_pattern = sprintf("%s/%s", $file_base, $CONFIG->{logic_names}->{$ana->logic_name});
