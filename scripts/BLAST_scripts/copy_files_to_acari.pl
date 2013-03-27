@@ -78,6 +78,7 @@ sub copy_worm_proteins {
 
 	$log->write_to("Copying new version of $new_file . . .\n");
         $wormbase->run_command("cp $wp_file $dir/$new_file",$log);
+	chmod 0777, "$dir/$new_file";
 
 	if (-e "$dir/$old_file"){
 	        $log->write_to("Removing old version of $old_file . . .\n");
