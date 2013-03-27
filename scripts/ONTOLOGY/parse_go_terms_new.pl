@@ -141,7 +141,7 @@ if ($gene) {
 	    next;
 	}
 	my $public_name='';
-	my $species=$gene->Species;
+	my $species=$obj->Species;
         my $ncbiId = $species->NCBITaxonomyID;
 
 	foreach (@lines) {
