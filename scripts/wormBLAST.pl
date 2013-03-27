@@ -5,7 +5,7 @@
 # written by Anthony Rogers
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2013-03-27 12:04:45 $
+# Last edited on: $Date: 2013-03-27 12:18:01 $
 #
 # it depends on:
 #    wormpep + history
@@ -821,7 +821,7 @@ sub get_regexp_of_database_names {
   $core_organisms{elegans} = $wormbase;
   foreach my $wb (values %core_organisms) {
     my $pepname = $wb->pepdir_prefix . 'pep';
-    $regexp .= '|${pepname}'; 
+    $regexp .= "|${pepname}"; 
   }
   $regexp .= ')';
 
