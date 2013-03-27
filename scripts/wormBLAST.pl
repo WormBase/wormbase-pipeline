@@ -5,7 +5,7 @@
 # written by Anthony Rogers
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2013-03-27 12:18:01 $
+# Last edited on: $Date: 2013-03-27 14:46:58 $
 #
 # it depends on:
 #    wormpep + history
@@ -16,7 +16,7 @@
 #    /software/worm/ensembl/ensembl-conf/<species>
 
 
-
+use Bio::EnsEMBL::Pipeline::DBSQL::DBAdaptor;
 use Bio::EnsEMBL::DBSQL::DBConnection;
 use strict;
 
@@ -104,7 +104,8 @@ my $config = ( YAML::LoadFile($yfile_name) )->{$species};
 our $gff_types = ( $config->{gff_types} || "curated coding_exon" );
 
 # mysql database parameters
-my $dba = Bio::EnsEMBL::DBSQL::DBConnection->new(
+#my $dba = Bio::EnsEMBL::DBSQL::DBConnection->new(
+my $dba = Bio::EnsEMBL::Pipeline::DBSQL::DBAdaptor->new(
 						 -user   => $config->{database}->{user},
 						 -dbname => $config->{database}->{dbname},
 						 -host   => $config->{database}->{host},
