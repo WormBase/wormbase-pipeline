@@ -136,29 +136,19 @@ sub setupdb {
     
     print "Loading production table:\n";
     $cmd = "perl $cvsDIR/ensembl/misc-scripts/production_database/scripts/populate_production_db_tables.pl "
-        . "-host $db->{host} "
-        . "-user $db->{user} "
-        . "-pass $db->{password} "
-        . "-port $db->{port} "
-        . "-d $db->{dbname} "
-        . "-mhost $prod_db_host "
-        . "-mport $prod_db_port "
-        . "-md $prod_db_name";
+        . "--host $db->{host} "
+        . "--user $db->{user} "
+        . "--pass $db->{password} "
+        . "--port $db->{port} "
+        . "--database $db->{dbname} "
+        . "--mhost $prod_db_host "
+        . "--mport $prod_db_port "
+        . "--mdatabase $prod_db_name "
+	. "--dropbaks "
+	. "--dumppath $ENV{'PIPELINE'}/dumps/ ";
     print "$cmd\n";
     system($cmd) and die "Could not populate production tables\n";
 
-    print "Cleaning up after loading production table: ";
-    $cmd = "perl $cvsDIR/ensembl/misc-scripts/production_database/scripts/populate_production_db_tables.pl "
-           . "-host $db->{host} "
-           . "-user $db->{user} "
-           . "-pass $db->{password} "
-           . "-port $db->{port} "
-           . "-d $db->{dbname} "
-           . "-mhost $prod_db_host "
-           . "-mport $prod_db_port "
-           . "-md $prod_db_name "
-           . "-cleanup";
-    system($cmd) and die "Could not clean up after populating production tables\n";
   };
   $@ and die("Error while building the database.");
 }
