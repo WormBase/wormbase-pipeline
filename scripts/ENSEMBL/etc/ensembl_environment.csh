@@ -43,6 +43,9 @@ if (-e "/software/worm") then
     setenv COILSDIR /usr/local/ensembl/data/coils
     setenv LSB_DEFAULTPROJECT wormbase
 
+    # NCBI-BLAST
+    setenv NCBI_BLAST_PATH /software/bin/
+
     # PATH
     setenv EG_BIN /usr/local/ensembl/bin
     setenv WORM_BIN ${WORM_SW_ROOT}/bin
@@ -85,6 +88,9 @@ else
     setenv BLASTMAT ${EG_PACKAGES}/wublast/matrix
     setenv BLASTFILTER ${EG_PACKAGES}/wublast/filter
     setenv WU_BLAST_PATH ${EG_PACKAGES}/wublast/
+
+    # NCBI-BLAST
+    setenv NCBI_BLAST_PATH ${WORM_PACKAGES}/ncbi-blast/bin
 
     # PATH
     setenv EG_BIN ${EG_PACKAGES}/bin
