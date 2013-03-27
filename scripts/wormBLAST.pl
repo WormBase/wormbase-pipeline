@@ -5,7 +5,7 @@
 # written by Anthony Rogers
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2013-03-27 14:46:58 $
+# Last edited on: $Date: 2013-03-27 16:00:45 $
 #
 # it depends on:
 #    wormpep + history
@@ -113,10 +113,10 @@ my $dba = Bio::EnsEMBL::Pipeline::DBSQL::DBAdaptor->new(
 						 -driver => 'mysql'
 						)
   || die "cannot connect to db, $DBI::errstr";
-$dba->password( $config->{database}->{password} );    # hate that (_&^$  , why can't it go into the constructor?
+$dba->dbc->password( $config->{database}->{password} );
 
 # get a clean handle to the database to use later
-my $raw_dbh = $dba->db_handle;
+my $raw_dbh = $dba->dbc->db_handle;
 
 # build blast logic_name->analysis_id hashes.
 # one for blastx and one for blastp
@@ -444,7 +444,7 @@ sub update_blast_dbs {
   
   # copy the databases around
   my $blastdbdir = "$wormpipe_dir/blastdb/Worms";
-  &get_updated_database_list();
+  #&get_updated_database_list();
   
   # delete updated databases from $wormpipe_dir/blastdb/Worms
   foreach (@_updated_DBs) {
