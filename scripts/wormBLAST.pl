@@ -5,7 +5,7 @@
 # written by Anthony Rogers
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2013-03-26 14:28:46 $
+# Last edited on: $Date: 2013-03-27 12:04:45 $
 #
 # it depends on:
 #    wormpep + history
@@ -332,6 +332,58 @@ copies and xdformats the database files
 
 =cut
 
+#############################
+# parse the database files
+#
+# global variables:
+#   %prevDB is like {ensembl|gadfly|...} = /flunky/filename
+#   %currentDB the same
+
+sub get_updated_database_list {
+    my @updated_DBs = ();
+    my @updated_dbfiles;
+
+    # make list of database names 
+    my $regexp = &get_regexp_of_database_names();
+
+    # process old databases
+    open( OLD_DB, "<$last_build_DBs" ) or die "cant find $last_build_DBs";
+    my %prevDBs;
+
+    # get database file info from databases_used_WS(xx-1) (should have been updated by script if databases changed
+    #
+    # get logic_name,db_file from analysis_table where program_name like '%blastp'
+    my $analysis_table=$raw_dbh->prepare("SELECT logic_name,db_file FROM analysis WHERE program_file LIKE '%blastp'")
+       || die "cannot prepare statement, $DBI::errstr";
+    $analysis_table->execute();
+    # allow the regexp to match text after the database name
+    my $regexp2 = "(${regexp}.*)";
+    while (my @row = $analysis_table->fetchrow_array()){
+        if ($row[1] =~ /$regexp2/) {
+              $prevDBs{$2} = $1;  
+	}
+    }
+
+    # process current databases
+    open( CURR_DB, "<$database_to_use" ) or die "cant find $database_to_use";
+    while (<CURR_DB>) {
+        chomp;
+        if (/$regexp/) {
+            $currentDBs{$1} = $_;
+        }
+    }
+    close CURR_DB;
+
+    # compare old and new database list
+    foreach ( keys %currentDBs ) {
+      print "Updating $_\n";
+        if ( "$currentDBs{$_}" ne "$prevDBs{$_}" ) {
+            push( @updated_DBs,     "$_" );
+            push( @updated_dbfiles, $currentDBs{$_} );
+        }
+    }
+    return @updated_dbfiles;
+}
 ##################################
 # update and copy the blastdbs
 # -distribute and -update_databases
@@ -345,14 +397,7 @@ sub update_blast_dbs {
   # load in databases used in previous build
   
   # make list of database names 
-  my $regexp = '(gadfly|yeast|slimswissprot|slimtrembl|ipi_human';
-  my %core_organisms = $wormbase->species_accessors;
-  $core_organisms{elegans} = $wormbase;
-  foreach my $wb (values %core_organisms) {
-    my $pepname = $wb->pepdir_prefix . 'pep';
-    $regexp .= '|${pepname}'; 
-  }
-  $regexp .= ')';
+  my $regexp = &get_regexp_of_database_names();
 
   open( OLD_DB, "<$last_build_DBs" ) or die "cant find $last_build_DBs";
   while (<OLD_DB>) {
@@ -765,6 +810,22 @@ sub get_db_version {
   }
 
   return $db_version;
+}
+##########################################
+# get a list of the database names returned as a regexp
+
+sub get_regexp_of_database_names {
+
+  my $regexp = '(gadfly|yeast|slimswissprot|slimtrembl|ipi_human';
+  my %core_organisms = $wormbase->species_accessors;
+  $core_organisms{elegans} = $wormbase;
+  foreach my $wb (values %core_organisms) {
+    my $pepname = $wb->pepdir_prefix . 'pep';
+    $regexp .= '|${pepname}'; 
+  }
+  $regexp .= ')';
+
+  return $regexp;
 }
 
 __END__
