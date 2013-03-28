@@ -6,7 +6,7 @@
 # builds wormbase & wormpep FTP sites
 # 
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-03-14 13:51:57 $
+# Last updated on: $Date: 2013-03-28 14:28:10 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -75,7 +75,7 @@ use Ace;
 use IO::Handle;
 use File::Path;
 use Bio::SeqIO;
-
+use JSON;
 
 #################################################################################
 # Command-line options and variables                                            #
@@ -107,6 +107,7 @@ my $md5;
 my $go_public;
 my $supplementary;
 my $compara;
+my $assembly_manifest;
 my (%skip_species, @skip_species, @only_species, %only_species);
 
 GetOptions ("help"          => \$help,
@@ -134,6 +135,7 @@ GetOptions ("help"          => \$help,
 	    "pcr"           => \$pcr,
             "gbrowsegff"    => \$gbrowse_gff,
             "knockout"      => \$dump_ko,
+            "assmanifest"   => \$assembly_manifest,
 	    "manifest"      => \$manifest,
             "md5"            => \$md5,
             "public"         => \$go_public,
@@ -159,7 +161,7 @@ map { $skip_species{$_} = 1 } @skip_species;
 map { $only_species{$_} = 1 } @only_species;
 
 # using -all option?
-($compara=$acedb=$dna=$gff=$rna=$misc=$wormpep=$genes=$cDNA=$ests=$geneIDs=$pcr=$homols=$manifest=$ont=$xrefs=$blastx=$dump_ko=$gbrowse_gff=$md5=$go_public=1 ) if ($all);
+($compara=$acedb=$dna=$gff=$rna=$misc=$wormpep=$genes=$cDNA=$ests=$geneIDs=$pcr=$homols=$manifest=$ont=$xrefs=$blastx=$dump_ko=$gbrowse_gff=$md5=$go_public=$assembly_manifest=1 ) if ($all);
 
 my $WS              = $wormbase->get_wormbase_version();      # e.g.   132
 my $WS_name         = $wormbase->get_wormbase_version_name(); # e.g. WS132
@@ -211,6 +213,8 @@ close FTP_LOCK;
 &copy_homol_data if ($homols);        # copies best blast hits files across
 
 &copy_xrefs if ($xrefs);              # copies xref file for elegans and briggsae
+
+&make_assembly_manifest if $assembly_manifest;
 
 &extract_confirmed_genes if ($genes); # make file of confirmed genes from autoace and copy across
 
@@ -978,6 +982,97 @@ sub copy_est_files {
 
 }
 
+
+###################################
+# make_assembly_manifest
+###################################
+sub make_assembly_manifest {
+  
+  my $runtime = $wormbase->runtime;
+  $log->write_to("$runtime: making assembly manifest file\n");
+
+  my $ftp_acedb_dir = "$targetdir/species";
+  mkpath("$ftp_acedb_dir",1,0775);
+  my $manifile = "$ftp_acedb_dir/ASSEMBLIES.$WS_name.json";
+
+  open(my $fh, ">$manifile\n") or $log->log_and_die("Could not open $manifile for writing\n");
+  my $db = Ace->connect(-path => $wormbase->autoace );
+
+  my (%accessors, %accessors_by_species, %json);
+
+  %accessors = ($wormbase->all_species_accessors);
+  $accessors{$wormbase->species} = $wormbase;
+  
+  foreach my $acc (values %accessors) {
+    my $species_name = $acc->full_name;
+    push @{$accessors_by_species{$species_name}}, $acc;
+  }
+  
+  foreach my $species (sort keys %accessors_by_species) {
+    my (@accs) = @{$accessors_by_species{$species}};
+    
+    my $species_obj = $db->fetch(-class => 'Species', -name => "$species");
+    my @seq_col = $species_obj->at('Assembly');
+    
+    my $g_species = $accs[0]->full_name(-g_species => 1); 
+    
+    my $obj = {
+      full_name => $species,
+      assemblies => [],
+    };
+    
+    $json{$g_species} = $obj;
+    
+    foreach my $seq_col_name (@seq_col) {
+      my $seq_col = $seq_col_name->fetch;
+      
+      my $strain = $seq_col->Strain;
+      my $assembly_name = $seq_col->Name;
+      my $first_ws_rel = $seq_col->First_WS_release;
+      my @labs;
+      
+      if ($seq_col->at('Origin.Laboratory')) {      
+        my @laboratory = $seq_col->at('Origin.Laboratory');
+        foreach my $lab (@laboratory) {
+          push @labs, $lab->fetch->Mail->name;
+        }
+      }
+      
+      my ($bioproj, $gc_acc);
+      
+      my @db = $seq_col->at('Origin.DB_info.Database');
+      foreach my $db (@db) {
+        if ($db->name eq 'NCBI_BioProject') {
+          $bioproj = $db->right->right->name;
+        } elsif ($db->name eq 'NCBI_Genome_Assembly') {
+          $gc_acc  = $db->right->right->name;
+        }
+      }
+      
+      push @{$obj->{assemblies}}, {
+        bioproject => $bioproj,
+        assembly_accession => $gc_acc,
+        assembly_name => $assembly_name->name,
+        appeared_in => 'WS'.$first_ws_rel->name,
+        strain => $strain->name,
+        laboratory => \@labs,
+      };
+    }
+  }
+  
+  my $json_obj = JSON->new;
+  my $string = $json_obj->allow_nonref->canonical->pretty->encode(\%json);
+  
+  print $fh $string;
+  close($fh);
+  
+
+  $runtime = $wormbase->runtime;
+  $log->write_to("$runtime: written assembly manifest file\n");
+
+}
+
+
 ###################################
 # extract confirmed genes
 ###################################
@@ -1026,6 +1121,11 @@ sub extract_confirmed_genes{
 
   return(0);
 }
+
+
+################################################################################
+# dump KO data
+################################################################################
 
 sub extract_ko {
   my $runtime = $wormbase->runtime;
@@ -1516,7 +1616,6 @@ GSPECIES.WSREL.geneIDs.txt.gz
 GSPECIES.BIOPROJ.WSREL.SRA_gene_expression.tar.gz
 
 [TIER2]species/GSPECIES/BIOPROJ
-
 GSPECIES.BIOPROJ.WSREL.best_blastp_hits.txt.gz
 GSPECIES.BIOPROJ.WSREL.intergenic_sequences.fa.gz
 GSPECIES.BIOPROJ.WSREL.GBrowse.gff2.gz
@@ -1536,11 +1635,13 @@ GSPECIES.BIOPROJ.WSREL.genomic_softmasked.fa.gz
 GSPECIES.WSREL.protein.fa.gz
 GSPECIES.WSREL.cds_transcripts.fa.gz
 
-
 []acedb
 files_in_tar
 md5sum.WSREL
 models.wrm.WSREL
+
+[]species
+ASSEMBLIES.WSREL.json
 
 []ONTOLOGY
 anatomy_association.WSREL.wb
