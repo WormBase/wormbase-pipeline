@@ -3,17 +3,20 @@
 use Getopt::Long qw(:config pass_through);
 
 my $bsubmem = 2;
-my $queue = 'normal';
 
 &GetOptions('m=s'   => \$bsubmem, 
             'q=s'   => \$queue,
+            'E=s'   => \$pre_exec,
     );
 
 my $minus_M = $bsubmem * 1000 * 1000;
 my $minus_R = sprintf("'select[mem>%d] rusage[mem=%d]'", $bsubmem * 1000, $bsubmem * 1000);
 
 #unshift @ARGV, ("bsub", "-q $queue", "-I", "-M $minus_M", , "-R $minus_R");
-my $command = "bsub -q $queue -I -M $minus_M -R $minus_R @ARGV";
+my $command = "bsub ";
+$command .=  "-q $queue " if defined $queue;
+$command .= "-E '$pre_exec'" if defined $pre_exec;
+$command .= "-I -M $minus_M -R $minus_R @ARGV";
 
 my ($job_id) = open_command_line($command);
 
