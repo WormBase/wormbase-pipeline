@@ -59,7 +59,7 @@ sub write_table {
     my $type = shift;
 
 
-    print "Connecting to database...$ace_server\n";
+    print "Processing $type. Connecting to database...$ace_server\n";
     my $db;
     if ($sace){
       $db = Ace->connect(-host => $ace_server,-port => 23100) || die "Connection failure: ", Ace->error;
@@ -85,7 +85,7 @@ sub write_table {
 	    $reagent_type = 'PCR_product';
 	}
 	else {
-          $query = "find Oligo_set where type=\"" . $type_remark{$type} . "\" AND Canonical_parent";
+          $query = "find Oligo_set where type=\"" . $type_remark{$type} . "\" AND (Canonical_parent OR Homol_homol)";
           if ($type eq 'agil') {
             $query .= ' AND A_12_*';
           }
