@@ -1,7 +1,7 @@
 #/software/bin/perl -w
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2011-05-17 09:56:15 $
+# Last updated on: $Date: 2013-03-28 13:46:53 $
 
 #################################################################################
 # Variables                                                                     #
@@ -24,10 +24,12 @@ my $debug;      # Debug mode, verbose output to runner only
 my $test;        # If set, script will use TEST_BUILD directory under ~wormpub
 my $basedir;
 my $store;
+my $no_dump;
 
 GetOptions (	"debug=s"    => \$debug,
 		"test"       => \$test,
 		"store:s"    => \$store,
+                "nodump"     => \$no_dump,
 	   	);
 #this script is always run as elegans so no species option req.
 
@@ -46,32 +48,58 @@ my $log = Log_files->make_build_log($wormbase);
 my %accessors = $wormbase->species_accessors;
 my $WS_name         = $wormbase->get_wormbase_version_name();
 
-# move all the old MERGE files out of the way
-$log->write_to("\nRemove the old MERGE ace files . . .\n");
-foreach my $spDB (values %accessors) {
-  my $dir = $spDB->acefiles."/MERGE/".$spDB->species."/";
-  if (-e $dir) {
-    foreach my $file ( &read_dir($dir) ) {
-      $wormbase->run_command("mv $file $file.old", $log);
+if (not $no_dump) {
+
+  # move all the old MERGE files out of the way
+  $log->write_to("\nRemove the old MERGE ace files . . .\n");
+  foreach my $spDB (values %accessors) {
+    my $dir = $spDB->acefiles."/MERGE/".$spDB->species."/";
+    if (-e $dir) {
+      my @files = glob("$dir/*.*");
+      foreach my $file (@files) {
+        if ($file !~ /\.old$/) {
+          $wormbase->run_command("mv $file $file.old", $log);
+        }
+      }
     }
   }
+  
+  # dump out the files in parallel.
+  my $lsf =  LSF::JobManager->new();
+  $log->write_to("\nDumping acefile from . . .\n");
+  foreach my $spDB (values %accessors) {
+    $log->write_to("\t".$spDB->full_name('-short' => 1)."\n");
+    my @bsub_options = (
+      -o => '/dev/null',
+      -M => 2000000,
+      -R => sprintf("select[mem>%d] rusage[mem=%d]", 2000, 2000),
+      -J => $spDB->species . "_make_acefiles_merge");
+    my $cmd = $spDB->build_cmd("make_acefiles.pl -merge");
+    
+    $lsf->submit(@bsub_options, $cmd);
+  }
+  
+  $lsf->wait_all_children( history => 1 );
+  foreach my $job ($lsf->jobs) {
+    if ($job->history->exit_status != 0) {
+      $log->error(sprintf("make_acefiles job failed: %s\n", $job->history->command));
+    }
+  }
+  if ($log->report_errors) {
+    $log->log_and_die("At least one make_acefiles job died - exiting\n");
+  }
+
+  $log->write_to("\nFinished writing acefiles\n");
 }
 
-# dump out the files in parallel.
-my $lsf =  LSF::JobManager->new();
-$log->write_to("\nDumping acefile from . . .\n");
-foreach my $spDB (values %accessors) {
-  $log->write_to("\t".$spDB->full_name('-short' => 1));
-  $lsf->submit(-J => $spDB->species, $spDB->build_cmd("make_acefiles.pl -merge"));
-}
-
-$lsf->wait_all_children( history => 1 );
-$log->write_to("\nFinished writing acefiles\n");
 
 $log->write_to("\nDelete the homol_data files . . .\n");
 foreach my $spDB (values %accessors) {
-  my $dir = $spDB->acefiles."/MERGE/".$spDB->species."/";
-  unlink "$dir".$spDB->species."_Homol_data.ace";
+  my $file = sprintf("%s/MERGE/%s/%s_Homol_data.ace", $spDB->acefiles, $spDB->species, $spDB->species);
+  if (-e $file) {
+    $log->write_to("Removing file prior to loading: $file\n");
+    unlink $file;
+  }
 }
 
 $log->write_to("\nAbout to load . . .\n");
