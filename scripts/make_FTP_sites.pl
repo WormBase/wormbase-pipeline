@@ -6,7 +6,7 @@
 # builds wormbase & wormpep FTP sites
 # 
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-03-28 14:28:10 $
+# Last updated on: $Date: 2013-04-02 11:33:35 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -95,6 +95,7 @@ my $pcr;     # only copy file of PCR products
 my $homols;  # only copy best blast hits 
 my $manifest;# check everything has been copied.
 my $all;     # copy everything across
+my $all_nopublic;
 my $dna;
 my $rna;
 my $xrefs;
@@ -141,7 +142,9 @@ GetOptions ("help"          => \$help,
             "public"         => \$go_public,
             "skipspecies=s@" => \@skip_species,
             "onlyspecies=s@" => \@only_species,
-	    "all"            => \$all);
+	    "all"            => \$all,
+            "allnopublic"    => \$all_nopublic,
+    );
 
 
 if ( $store ) {
@@ -160,8 +163,11 @@ my $log = Log_files->make_build_log($wormbase);
 map { $skip_species{$_} = 1 } @skip_species;
 map { $only_species{$_} = 1 } @only_species;
 
-# using -all option?
-($compara=$acedb=$dna=$gff=$rna=$misc=$wormpep=$genes=$cDNA=$ests=$geneIDs=$pcr=$homols=$manifest=$ont=$xrefs=$blastx=$dump_ko=$gbrowse_gff=$md5=$go_public=$assembly_manifest=1 ) if ($all);
+if ($all) {
+  $compara=$acedb=$dna=$gff=$rna=$misc=$wormpep=$genes=$cDNA=$ests=$geneIDs=$pcr=$homols=$manifest=$ont=$xrefs=$blastx=$dump_ko=$gbrowse_gff=$md5=$assembly_manifest=$go_public=1;
+} elsif ($all_nopublic) {
+$compara=$acedb=$dna=$gff=$rna=$misc=$wormpep=$genes=$cDNA=$ests=$geneIDs=$pcr=$homols=$manifest=$ont=$xrefs=$blastx=$dump_ko=$gbrowse_gff=$md5=$assembly_manifest=1;
+}
 
 my $WS              = $wormbase->get_wormbase_version();      # e.g.   132
 my $WS_name         = $wormbase->get_wormbase_version_name(); # e.g. WS132
@@ -1060,6 +1066,8 @@ sub make_assembly_manifest {
     }
   }
   
+  $db->close;
+
   my $json_obj = JSON->new;
   my $string = $json_obj->allow_nonref->canonical->pretty->encode(\%json);
   
@@ -1219,7 +1227,7 @@ sub make_geneID_list {
     next if @only_species and not exists $only_species{$wb->species};
 
     my $gspecies = $wb->full_name('-g_species' => 1);
-    my $bioproj = $wormbase->ncbi_bioproject;
+    my $bioproj = $wb->ncbi_bioproject;
     my $full_name = $wb->full_name;
     my $tax_id = $wb->ncbi_tax_id;
 
@@ -1244,6 +1252,7 @@ sub make_geneID_list {
     }
 
     close GENEID;
+    $db->close();
     $wormbase->run_command("gzip -9 -f $out", $log);
   } 
 
@@ -1345,7 +1354,7 @@ sub copy_homol_data {
     my $blast_dir = $wb->acefiles;
     my $species = $wb->species;
     my $gspecies = $wb->full_name('-g_species' => 1);
-    my $bioproj = $wormbase->ncbi_bioproject;
+    my $bioproj = $wb->ncbi_bioproject;
 
     my $source_file = "$blast_dir/${species}_best_blastp_hits";
     # this script might be run more than once if there are problems
@@ -1378,7 +1387,7 @@ sub make_gbrowse_gff {
     next if @only_species and not exists $only_species{$species};
 
     my $gspecies = $wb->full_name('-g_species' => 1);
-    my $bioproj = $wormbase->ncbi_bioproject;
+    my $bioproj = $wb->ncbi_bioproject;
     my $tgt_dir = "$targetdir/species/$gspecies/$bioproj";
 
     my $in_filename = "$tgt_dir/$gspecies.$bioproj.$WS_name.annotations.gff2.gz"; 
@@ -1612,7 +1621,9 @@ GSPECIES.BIOPROJ.WSREL.xrefs.txt.gz
 
 # tierII specific stuff
 [TIER2]species/GSPECIES/BIOPROJ/annotation
-GSPECIES.WSREL.geneIDs.txt.gz
+GSPECIES.BIOPROJ.WSREL.geneIDs.txt.gz
+
+[TIER2:pristionchus]species/GSPECIES/BIOPROJ/annotation
 GSPECIES.BIOPROJ.WSREL.SRA_gene_expression.tar.gz
 
 [TIER2]species/GSPECIES/BIOPROJ
@@ -1632,8 +1643,8 @@ GSPECIES.BIOPROJ.WSREL.genomic_masked.fa.gz
 GSPECIES.BIOPROJ.WSREL.genomic_softmasked.fa.gz
 
 [ALL:mincognita]species/GSPECIES/BIOPROJ
-GSPECIES.WSREL.protein.fa.gz
-GSPECIES.WSREL.cds_transcripts.fa.gz
+GSPECIES.BIOPROJ.WSREL.protein.fa.gz
+GSPECIES.BIOPROJ.WSREL.cds_transcripts.fa.gz
 
 []acedb
 files_in_tar
@@ -1646,8 +1657,13 @@ ASSEMBLIES.WSREL.json
 []ONTOLOGY
 anatomy_association.WSREL.wb
 anatomy_ontology.WSREL.obo
-gene_association.WSREL.wb.cb
-gene_association.WSREL.wb.ce
+gene_association.WSREL.wb.c_briggsae
+gene_association.WSREL.wb.c_elegans
+gene_association.WSREL.wb.c_remanei
+gene_association.WSREL.wb.c_japonica
+gene_association.WSREL.wb.c_brenneri
+gene_association.WSREL.wb.b_malayi
+gene_association.WSREL.wb.p_pacificus
 gene_association.WSREL.wb
 gene_ontology.WSREL.obo
 phenotype_association.WSREL.wb
