@@ -141,8 +141,15 @@ if ($gene) {
 	    next;
 	}
 	my $public_name='';
-	my $species=$obj->Species;
-        my $ncbiId = $species->NCBITaxonomyID;
+        my ($species, $ncbiId);
+        eval {
+          $species=$obj->Species;
+          $ncbiId = $species->NCBITaxonomyID;
+        };
+        if ($@) {
+          $log->error("Could not process gene $obj - something weird\n");
+          next;
+        }
 
 	foreach (@lines) {
 	    if (/Public_name\s+\"(.+)\"/) {
@@ -389,10 +396,11 @@ close($out);
 
 #separate species for gene associations
 my %coreSpecies = $wormbase->species_accessors;
-foreach my $species (values %coreSpecies){
+foreach my $species ($wormbase, values %coreSpecies){
        my $grep = "'taxon:${\$species->ncbi_tax_id}'";
-       $wormbase->run_command("grep $grep $output > $output.${\$species->full_name(-g_species => 1)}");
-       $wormbase->check_file($output,$log,minsize => 1500000,maxsize => 16000000,lines =>  ['^WB\tWBGene\d+\t\S+\t\tGO\:\d+']);
+       my $out_file = $output.$species->full_name(-g_species => 1);
+       $wormbase->run_command("grep $grep $output > $out_file");
+       $wormbase->check_file($out_file,$log,minsize => 1500000,maxsize => 16000000,lines =>  ['^WB\tWBGene\d+\t\S+\t\tGO\:\d+']);
 }
 
 $db->close;
