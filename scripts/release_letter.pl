@@ -4,8 +4,8 @@
 # 
 # by Anthony Rogers                             
 #
-# Last updated by: $Author: gw3 $               
-# Last updated on: $Date: 2013-02-06 14:10:44 $
+# Last updated by: $Author: klh $               
+# Last updated on: $Date: 2013-04-02 11:32:38 $
 
 # Generates a release letter at the end of build.
 #
@@ -92,26 +92,27 @@ if( defined($opt_l)) {
   printf RL "WS$ver was built by [INSERT NAME HERE]\n";
   printf RL "-===================================================================================-\n";
   printf RL "The WS$ver build directory includes:\n";
-  printf RL "species/ DIR              -  contains a sub dir for each WormBase species (G_SPECIES) with the following files:\n";
-  printf RL "     - G_SPECIES.WS$ver.genomic.fa.gz                - Unmasked genomic DNA\n";
-  printf RL "     - G_SPECIES.WS$ver.genomic_masked.fa.gz         - Hard-masked (repeats replaced with Ns) genomic DNA\n";
-  printf RL "     - G_SPECIES.WS$ver.genomic_softmasked.fa.gz     - Soft-masked (repeats lower-cased) genomic DNA\n";
-  printf RL "     - G_SPECIES.WS$ver.protein.fa.gz                - Current live protein set\n";
-  printf RL "     - G_SPECIES.WS$ver.cds_transcripts.fa.gz        - Spliced cDNA sequence for the CDS portion of protein-coding transcripts\n";
-  printf RL "     - G_SPECIES.WS$ver.ncrna_transcripts.fa.gz      - Spliced cDNA sequence for non-coding RNA transcripts\n";
-  printf RL "     - G_SPECIES.WS$ver.intergenic_sequences.fa.gz   - DNA sequence between pairs of adjacent genes\n";
-  printf RL "     - G_SPECIES.WS$ver.annotations.gff[2|3].gz      - Sequence features in either GFF2 or GFF3 format\n";
-  printf RL "     - G_SPECIES.WS$ver.ests.fa.gz                   - ESTs and mRNA sequences extracted from the public databases\n";
-  printf RL "     - G_SPECIES.WS$ver.best_blastp_hits.txt.gz      - Best blastp matches to human, fly, yeast, and non-WormBase Uniprot proteins\n";
-  printf RL "     - G_SPECIES.WS$ver.*pep_package.tar.gz          - latest version of the [worm|brig|bren|rema|jap|ppa|brug]pep package (if updated since last release)\n";
+  printf RL "species/ DIR              -  contains a sub dir for each WormBase species (G_SPECIES)\n";
+  printf RL "species/G_SPECIES DIR     -  contains a sub dir for each NCBI genome sequencing BioProject (BIOPROJECT) for the species, with the following files:\n";
+  printf RL "     - G_SPECIES.BIOPROJECT.WS$ver.genomic.fa.gz                - Unmasked genomic DNA\n";
+  printf RL "     - G_SPECIES.BIOPROJECT.WS$ver.genomic_masked.fa.gz         - Hard-masked (repeats replaced with Ns) genomic DNA\n";
+  printf RL "     - G_SPECIES.BIOPROJECT.WS$ver.genomic_softmasked.fa.gz     - Soft-masked (repeats lower-cased) genomic DNA\n";
+  printf RL "     - G_SPECIES.BIOPROJECT.WS$ver.protein.fa.gz                - Current live protein set\n";
+  printf RL "     - G_SPECIES.BIOPROJECT.WS$ver.cds_transcripts.fa.gz        - Spliced cDNA sequence for the CDS portion of protein-coding transcripts\n";
+  printf RL "     - G_SPECIES.BIOPROJECT.WS$ver.ncrna_transcripts.fa.gz      - Spliced cDNA sequence for non-coding RNA transcripts\n";
+  printf RL "     - G_SPECIES.BIOPROJECT.WS$ver.intergenic_sequences.fa.gz   - DNA sequence between pairs of adjacent genes\n";
+  printf RL "     - G_SPECIES.BIOPROJECT.WS$ver.annotations.gff[2|3].gz      - Sequence features in either GFF2 or GFF3 format\n";
+  printf RL "     - G_SPECIES.BIOPROJECT.WS$ver.ests.fa.gz                   - ESTs and mRNA sequences extracted from the public databases\n";
+  printf RL "     - G_SPECIES.BIOPROJECT.WS$ver.best_blastp_hits.txt.gz      - Best blastp matches to human, fly, yeast, and non-WormBase Uniprot proteins\n";
+  printf RL "     - G_SPECIES.BIOPROJECT.WS$ver.*pep_package.tar.gz          - latest version of the [worm|brig|bren|rema|jap|ppa|brug]pep package (if updated since last release)\n";
   printf RL "     - annotation/                    - contains additional annotations:\n";
-  printf RL "        - G_SPECIES.WS$ver.confirmed_genes.txt.gz              - DNA sequences of all genes confirmed by EST &/or cDNA\n";
-  printf RL "        - G_SPECIES.WS$ver.cDNA2orf.txt.gz                     - Latest set of ORF connections to each cDNA (EST, OST, mRNA)\n";      
-  printf RL "        - G_SPECIES.WS$ver.geneIDs.txtgz                       - list of all current gene identifiers with CGC & molecular names (when known)\n";
-  printf RL "        - G_SPECIES.WS$ver.PCR_product2gene.txt.gz             - Mappings between PCR products and overlapping Genes\n";
-  printf RL "        - G_SPECIES.WS$ver.*oligo_mapping.txt.gz               - Oligo array mapping files\n";
-  printf RL "        - G_SPECIES.WS$ver.knockout_consortium_alleles.xml.gz  - Table of Knockout Consortium alleles\n";
-  printf RL "        - G_SPECIES.WS$ver.SRA_gene_expression.tar.gz          - Tables of gene expression values computed from SRA RNASeq data\n";
+  printf RL "        - G_SPECIES.BIOPROJECT.WS$ver.confirmed_genes.txt.gz              - DNA sequences of all genes confirmed by EST &/or cDNA\n";
+  printf RL "        - G_SPECIES.BIOPROJECT.WS$ver.cDNA2orf.txt.gz                     - Latest set of ORF connections to each cDNA (EST, OST, mRNA)\n";      
+  printf RL "        - G_SPECIES.BIOPROJECT.WS$ver.geneIDs.txtgz                       - list of all current gene identifiers with CGC & molecular names (when known)\n";
+  printf RL "        - G_SPECIES.BIOPROJECT.WS$ver.PCR_product2gene.txt.gz             - Mappings between PCR products and overlapping Genes\n";
+  printf RL "        - G_SPECIES.BIOPROJECT.WS$ver.*oligo_mapping.txt.gz               - Oligo array mapping files\n";
+  printf RL "        - G_SPECIES.BIOPROJECT.WS$ver.knockout_consortium_alleles.xml.gz  - Table of Knockout Consortium alleles\n";
+  printf RL "        - G_SPECIES.BIOPROJECT.WS$ver.SRA_gene_expression.tar.gz          - Tables of gene expression values computed from SRA RNASeq data\n";
 
   printf RL "acedb DIR                -  Everything needed to generate a local copy of the The Primary database\n";
   printf RL "     - database.WS$ver.*.tar.gz   - compressed acedb database for new release\n";
