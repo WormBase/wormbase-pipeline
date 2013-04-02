@@ -138,6 +138,7 @@ setenv PERL5LIB ${WORM_SW_ROOT}/lib:${PERL5LIB}
 
 # this is used in the Compara Build docs section on troubleshooting
 setenv ENSEMBL_VERSION 63
+setenv WORMBASE_RELEASE `grep "NAME WS" ${WORMPUB}/BUILD/autoace/wspec/database.wrm | perl -ne 's/NAME WS//;print $_'`
 setenv COMPARA_URL "mysql://wormadmin:worms@${WORM_DBHOST}:${WORM_DBPORT}/worm_compara_homology_${ENSEMBL_VERSION}WS${WORMBASE_RELEASE}"
 
 
