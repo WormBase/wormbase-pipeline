@@ -92,9 +92,6 @@ else
     # NCBI-BLAST
     setenv NCBI_BLAST_PATH ${WORM_PACKAGES}/ncbi-blast/bin
 
-    # tcdust (Tim Cutt's version of dust) requires the library file libcxa.so.3
-    setenv LD_LIBRARY_PATH /nfs/panda/ensemblgenomes/external/lib
-
     # PATH
     setenv EG_BIN ${EG_PACKAGES}/bin
     setenv WORM_BIN ${WORM_SW_ROOT}/bin
