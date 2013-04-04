@@ -14,7 +14,7 @@
 //
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: pad $
-// Last edited on: $Date: 2013-04-04 15:06:49 $
+// Last edited on: $Date: 2013-04-04 16:43:50 $
 
 
 
@@ -437,7 +437,6 @@
 			   Sequence_interactor ?Sequence  XREF Interaction #Interactor_info	// Sequence of the interacting gene or protein
 			   Interactor_overlapping_CDS ?CDS XREF Interaction #Interactor_info	// CDS of the interacting gene or protein (or related sequence)
 			   Interactor_overlapping_gene ?Gene XREF Interaction #Interactor_info		// Gene (or portion of gene) involved in the interaction
-			   Historical_gene   ?Gene #Evidence
 			   Interactor_overlapping_protein ?Protein XREF Interaction #Interactor_info	// Protein (or portion of protein) involved in the interaction
 			   Molecule_regulator ?Molecule XREF Interaction #Interactor_info			// Molecule that regulates a gene or protein (ported from Gene_regulation class)
 			   Other_regulator ?Text #Interactor_info	// Free text describing a regulator entity or condition that does not fall into a standard WormBase category
@@ -499,6 +498,7 @@
 		DB_info Database ?Database ?Database_field ?Text	// Any database reference to the interaction outside of WormBase, e.g. BioGRID, Interactome
 		Paper ?Paper XREF Interaction
 		Antibody_remark ?Text
+		Historical_gene   ?Gene #Evidence
 		Remark ?Text #Evidence
 
 
@@ -1968,8 +1968,7 @@
 		Description ?Text //For trait information
 
 
-?Expr_pattern	Expression_of	Historical_gene   ?Gene #Evidence 
-				Gene ?Gene XREF Expr_pattern #Evidence
+?Expr_pattern	Expression_of	Gene ?Gene XREF Expr_pattern #Evidence
 				CDS        ?CDS XREF Expr_pattern // for coding genes
 				Sequence   ?Sequence XREF Expr_pattern // for clones???
 				Pseudogene ?Pseudogene XREF Expr_pattern // [030801 krb]
@@ -2006,6 +2005,7 @@
 		Antibody_info ?Antibody XREF Expr_pattern // This applies to both Western & Antibody staining
                                                           // added [031120 krb]
 		Curated_by UNIQUE Text // Hinxton (HX) or Caltech (CIT) Sylvia [010927 krb]
+		Historical_gene   ?Gene #Evidence
 
 
 //Qualifer hash will be used for Expr_pattern curation to specify the reliability of data.
@@ -2058,7 +2058,6 @@
 
 ?Antibody Summary ?Text #Evidence
 	  Other_name Text
-	  Historical_gene   ?Gene #Evidence 
 	  Gene ?Gene XREF Antibody #Evidence
 	  Isolation Original_publication UNIQUE ?Paper
 		    No_original_reference    Text //proposed by Wen
@@ -2076,6 +2075,7 @@
 				  Chicken
 				  Goat
 				  Other_animal Text
+	  Historical_gene   ?Gene #Evidence 			
 	  Possible_pseudonym ?Antibody XREF Possible_pseudonym_of
 	  Possible_pseudonym_of ?Antibody XREF Possible_pseudonym
 	  Expr_pattern ?Expr_pattern XREF Antibody_info
@@ -2371,11 +2371,9 @@
 		Summary UNIQUE ?Text								// concise genomic description of the transgene
                 Synonym ?Text									// for alternative names
                 Promoter  Driven_by_gene ?Gene XREF Drives_transgene #Evidence			// eventually change this tag to promoter_gene
-			  Driven_by_Historical_gene   ?Gene #Evidence
                           Driven_by_construct  ?Text						// eventually change this tag to promoter_artificial
                 Reporter  Reporter_product ?Text						// removed multiple tags for Reporter_product
-                          Gene ?Gene XREF Transgene_product #Evidence
-			  Historical_gene   ?Gene #Evidence
+                          Gene ?Gene XREF Transgene_product ?Text
 			  3_UTR  ?Gene
                 Reporter_type  ?Text								// added for Transcriptional fusion or Translational fusion
                 Construction  Construction_summary Text
@@ -2400,7 +2398,8 @@
                           	  Clone ?Clone XREF Transgene Text 
                           	  Strain ?Strain XREF Transgene 
                 Reference ?Paper XREF Transgene  
-                Species UNIQUE ?Species       
+                Species UNIQUE ?Species
+                Historical_gene   ?Gene #Evidence
                 Remark ?Text #Evidence								//contains a lot of construction notes
 
 
@@ -3402,8 +3401,7 @@
                 Other_name ?Text
                 Related_process ?WBProcess XREF Related_process
                 Taxon   NCBITaxonomyID ?Text
-                Involved_entity Historical_gene   ?Gene #Evidence
-                                Gene ?Gene XREF WBProcess #Evidence  
+                Involved_entity Gene ?Gene XREF WBProcess #Evidence  
                                 Expression_cluster ?Expression_cluster XREF WBProcess  #Evidence
                                 Interaction ?Interaction XREF WBProcess #Evidence
                                 Anatomy_term ?Anatomy_term XREF WBProcess #Evidence
@@ -3416,6 +3414,7 @@
                 Movie ?Movie  #Evidence
                 Pathway DB_info Database ?Database ?Database_field ?Text //Can be used for any pathway db with unique accessionIDs
                 Remark ?Text #Evidence
+                Historical_gene   ?Gene #Evidence
                 Reference ?Paper XREF WBProcess
 
 
