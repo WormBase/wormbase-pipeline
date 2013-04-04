@@ -13,8 +13,8 @@
 // -----------------------------------------------------------------------------
 //
 // ALL WormBase groups should be in sync with this set of models
-// Last edited by: $Author: klh $
-// Last edited on: $Date: 2013-02-21 18:16:41 $
+// Last edited by: $Author: pad $
+// Last edited on: $Date: 2013-04-04 15:06:49 $
 
 
 
@@ -301,7 +301,6 @@
                                          Biological_process ?Text #Evidence              // Carol [050202 dl]
                                          Molecular_function ?Text #Evidence              // Carol [050202 dl]
                                          Expression ?Text #Evidence                      // Carol [050202 dl]
-					 Human_disease_relevance ?Text #Evidence	 // Ranjana [110601 pad]
 	Disease_info 	Experimental_model ?DO_term XREF Gene_by_biology   ?Species   #Evidence	            
 			Potential_model	   ?DO_term XREF Gene_by_orthology ?Species #Evidence
 			Disease_relevance  ?Text ?Species #Evidence
@@ -438,6 +437,7 @@
 			   Sequence_interactor ?Sequence  XREF Interaction #Interactor_info	// Sequence of the interacting gene or protein
 			   Interactor_overlapping_CDS ?CDS XREF Interaction #Interactor_info	// CDS of the interacting gene or protein (or related sequence)
 			   Interactor_overlapping_gene ?Gene XREF Interaction #Interactor_info		// Gene (or portion of gene) involved in the interaction
+			   Historical_gene   ?Gene #Evidence
 			   Interactor_overlapping_protein ?Protein XREF Interaction #Interactor_info	// Protein (or portion of protein) involved in the interaction
 			   Molecule_regulator ?Molecule XREF Interaction #Interactor_info			// Molecule that regulates a gene or protein (ported from Gene_regulation class)
 			   Other_regulator ?Text #Interactor_info	// Free text describing a regulator entity or condition that does not fall into a standard WormBase category
@@ -920,6 +920,7 @@
 	  Variation_evidence ?Variation				      // Explicitly record variation from which IMP manual GO annotations are made
 	  Mass_spec_evidence ?Mass_spec_peptide
 	  Sequence_evidence ?Sequence				      // for sequence data that hasn't been submitted to a public resource
+	  Remark ?Text
 
 ////////////////////////////////////////////////////////
 //
@@ -1006,7 +1007,7 @@
 
 ///////////////////////////////////////////////////////////////
 //
-// ?DO_term - Ranjana WS236
+// ?DO_term class - Ranjana WS236
 //
 ////////////////////////////////////////////////////////////////
 
@@ -1017,10 +1018,10 @@
 	 Alternate_id ?Text
 	 Definition UNIQUE ?Text
 	 Comment Text
-	 Synonymn Broad   ?Text
-                  Exact   ?Text
-                  Narrow  ?Text
-                  Related ?Text
+	 Synonym Broad   ?Text
+		 Exact   ?Text
+		 Narrow  ?Text
+		 Related ?Text
 	 Parent Is_a ?DO_term XREF Is
 	 Child Is ?DO_term XREF Is_a 
 	 DB_info Database ?Database ?Database_field ?Text              
@@ -1967,7 +1968,8 @@
 		Description ?Text //For trait information
 
 
-?Expr_pattern	Expression_of	Gene ?Gene XREF Expr_pattern
+?Expr_pattern	Expression_of	Historical_gene   ?Gene #Evidence 
+				Gene ?Gene XREF Expr_pattern #Evidence
 				CDS        ?CDS XREF Expr_pattern // for coding genes
 				Sequence   ?Sequence XREF Expr_pattern // for clones???
 				Pseudogene ?Pseudogene XREF Expr_pattern // [030801 krb]
@@ -2056,7 +2058,8 @@
 
 ?Antibody Summary ?Text #Evidence
 	  Other_name Text
-	  Gene ?Gene XREF Antibody
+	  Historical_gene   ?Gene #Evidence 
+	  Gene ?Gene XREF Antibody #Evidence
 	  Isolation Original_publication UNIQUE ?Paper
 		    No_original_reference    Text //proposed by Wen
 		    Person ?Person
@@ -2367,10 +2370,12 @@
 		Public_name UNIQUE ?Text
 		Summary UNIQUE ?Text								// concise genomic description of the transgene
                 Synonym ?Text									// for alternative names
-                Promoter  Driven_by_gene ?Gene XREF Drives_transgene				// eventually change this tag to promoter_gene
+                Promoter  Driven_by_gene ?Gene XREF Drives_transgene #Evidence			// eventually change this tag to promoter_gene
+			  Driven_by_Historical_gene   ?Gene #Evidence
                           Driven_by_construct  ?Text						// eventually change this tag to promoter_artificial
                 Reporter  Reporter_product ?Text						// removed multiple tags for Reporter_product
-                          Gene ?Gene XREF Transgene_product Text
+                          Gene ?Gene XREF Transgene_product #Evidence
+			  Historical_gene   ?Gene #Evidence
 			  3_UTR  ?Gene
                 Reporter_type  ?Text								// added for Transcriptional fusion or Translational fusion
                 Construction  Construction_summary Text
@@ -3118,7 +3123,7 @@
 			  Transposon_insertion ?Transposon_family XREF In_variation
 			  Natural_variant
 	   Origin Species UNIQUE ?Species
-		  Strain	 ?Strain XREF Variation
+		  Strain	 ?Strain XREF Variation #Evidence
 		  Laboratory ?Laboratory
 		  Author  ?Author // use Person when known, else use Author
                   Person  ?Person //
@@ -3397,15 +3402,16 @@
                 Other_name ?Text
                 Related_process ?WBProcess XREF Related_process
                 Taxon   NCBITaxonomyID ?Text
-                Involved_entity         Gene ?Gene XREF WBProcess #Evidence  
-                                        Expression_cluster ?Expression_cluster XREF WBProcess  #Evidence
-                                        Interaction ?Interaction XREF WBProcess #Evidence
-                                        Anatomy_term ?Anatomy_term XREF WBProcess #Evidence
-                                        Life_stage ?Life_stage XREF WBProcess #Evidence 
-                                        Molecule ?Molecule XREF WBProcess #Evidence 
-                Associated_with         Phenotype ?Phenotype XREF WBProcess #Evidence
-                                        GO_term ?GO_term #Evidence
-					DO_term ?DO_term #Evidence
+                Involved_entity Historical_gene   ?Gene #Evidence
+                                Gene ?Gene XREF WBProcess #Evidence  
+                                Expression_cluster ?Expression_cluster XREF WBProcess  #Evidence
+                                Interaction ?Interaction XREF WBProcess #Evidence
+                                Anatomy_term ?Anatomy_term XREF WBProcess #Evidence
+                                Life_stage ?Life_stage XREF WBProcess #Evidence 
+                                Molecule ?Molecule XREF WBProcess #Evidence 
+                Associated_with Phenotype ?Phenotype XREF WBProcess #Evidence
+                                GO_term ?GO_term #Evidence
+                                DO_term ?DO_term #Evidence
                 Picture ?Picture #Evidence
                 Movie ?Movie  #Evidence
                 Pathway DB_info Database ?Database ?Database_field ?Text //Can be used for any pathway db with unique accessionIDs
