@@ -14,7 +14,7 @@
 //
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: pad $
-// Last edited on: $Date: 2013-04-04 16:43:50 $
+// Last edited on: $Date: 2013-04-05 10:31:47 $
 
 
 
@@ -3101,7 +3101,7 @@
 	   Sequence_details SMap S_parent UNIQUE Sequence UNIQUE ?Sequence XREF Allele
 			    Flanking_sequences UNIQUE Text UNIQUE Text
 			    Mapping_target UNIQUE ?Sequence
-			    Source_location UNIQUE Int UNIQUE ?Sequence UNIQUE Int UNIQUE Int UNIQUE Text #Evidence //source data, <WSversion> ?Sequence pos1 pos2 <text description> Evidence
+			    Source_location UNIQUE Int UNIQUE ?Sequence UNIQUE Int UNIQUE Int UNIQUE #Evidence //source data, <WSversion> ?Sequence pos1 pos2 Evidence(Paper/person etc. remarks)
 			    CGH_deleted_probes UNIQUE Text UNIQUE Text
 			    CGH_flanking_probes UNIQUE text UNIQUE text
 			    Type_of_mutation Substitution UNIQUE Text Text #Evidence // wild type and mutant sequence
