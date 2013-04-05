@@ -5,7 +5,7 @@
 #  and concatenate them at the end
 # 
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2013-03-19 12:44:24 $
+# Last edited on: $Date: 2013-04-05 12:38:29 $
 # 
 
 
@@ -54,24 +54,42 @@ if ($store) {
 my $log = Log_files->make_build_log($wormbase);
 
 # that might work until we change logic_names
-my %logic2type = (
-	remaneiX => 'Remanei',
-	brigpepX => 'Briggsae',
-	wormpepX => 'Elegans',
-	ppapepX  => 'Pristionchus',
-	jappepX  => 'Japonica',
-	brepepX  => 'Brenneri',
-	GadflyX  => '1',
-	ipi_humanX => '1',
-	slimtremblX => '1',
-	yeastX  => '1',
-	slimswissprotX => '1',
-);
+my %logic2type;
+if (-e '/software/worm') { # running on Sanger?
+  %logic2type = (
+		 remaneiX => 'Remanei',
+		 brigpepX => 'Briggsae',
+		 wormpepX => 'Elegans',
+		 ppapepX  => 'Pristionchus',
+		 jappepX  => 'Japonica',
+		 brepepX  => 'Brenneri',
+		 GadflyX  => '1',
+		 ipi_humanX => '1',
+		 slimtremblX => '1',
+		 yeastX  => '1',
+		 slimswissprotX => '1',
+		);
+} else {
+  %logic2type = (
+		 wormpepx       => 'Elegans',
+		 ppapepx        => 'Pristionchus',
+		 jappepx        => 'Japonica',
+		 brugpepx       => 'Brugia',
+		 brigpepx       => 'Briggsae',
+		 remapepx       => 'Remanei',
+		 brepepx        => 'Brenneri',
+		 gadflyx        => '1',
+		 ipi_humanx     => '1',
+		 yeastx         => '1',
+		 slimswissprotx => '1',
+		 slimtremblx    => '1',
+		);
+}
 
 my $m;
 my $multiple = $ENV{'LSF_SUBMIT_MULTIPLE'};
 my $M = "4000${multiple}";
-$m=LSF::JobManager->new(-q => $ENV{'LSB_DEFAULTQUEUE'},-o => '/dev/null',-e=>'/dev/null',-R => '"select[mem>4000] rusage[mem=4000]"',-M => $multiple, -F => 400000);
+$m=LSF::JobManager->new(-q => $ENV{'LSB_DEFAULTQUEUE'},-o => '/dev/null',-e=>'/dev/null',-R => "select[mem>4000] rusage[mem=4000]",-M => $M, -F => 400000);
 
 
 my $storable =  $wormbase->autoace . '/'. ref($wormbase).'.store';
@@ -125,7 +143,7 @@ $log->write_to("Concatenating the ace files to create $outfile\n");
 
 # in case of Elegans do something else
 if ($wormbase->species eq 'elegans' or $wormbase->species eq 'briggsae'){
-  my @files = glob("$dumpdir/$organism*X.*.ace");
+  my @files = glob("$dumpdir/$organism*x.*.ace");
   unlink $outfile if -e $outfile;
   foreach my $file (@files ){
     $log->write_to("\tcat $file\n");

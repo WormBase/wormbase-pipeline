@@ -11,7 +11,7 @@
 #   array of EnsEMBL objects, it invites disaster as it makes a copy of the array.
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2013-03-12 12:31:34 $ 
+# Last edited on: $Date: 2013-04-05 12:38:51 $ 
 
 my $usage = <<USAGE;
 blastx_dump.pl options:
@@ -114,35 +114,72 @@ if ($sequences[0]){
 }
 
 # hardcoded bits
-my %logic2type = (
-    remaneiX       => 'wublastx_remanei',
-    brigpepX       => 'wublastx_briggsae',
-    wormpepX       => 'wublastx_worm',
-    GadflyX        => 'wublastx_fly',
-    ipi_humanX     => 'wublastx_human',
-    slimtremblX    => 'wublastx_slimTrEmbl',
-    yeastX         => 'wublastx_yeast',
-    slimswissprotX => 'wublastx_slimSwissProt',
-    ppapepX        => 'wublastx_pristionchus',
-    jappepX        => 'wublastx_japonica',
-    brepepX        => 'wublastx_brenneri',
-);
+my %logic2type;
+if (-e '/software/worm') { # running on Sanger?
+  %logic2type = (
+		 remaneiX       => 'wublastx_remanei',
+		 brigpepX       => 'wublastx_briggsae',
+		 wormpepX       => 'wublastx_worm',
+		 GadflyX        => 'wublastx_fly',
+		 ipi_humanX     => 'wublastx_human',
+		 slimtremblX    => 'wublastx_slimTrEmbl',
+		 yeastX         => 'wublastx_yeast',
+		 slimswissprotX => 'wublastx_slimSwissProt',
+		 ppapepX        => 'wublastx_pristionchus',
+		 jappepX        => 'wublastx_japonica',
+		 brepepX        => 'wublastx_brenneri',
+		);
+} else {
+  %logic2type = (
+		 wormpepx       => 'wublastx_worm',
+		 ppapepx        => 'wublastx_pristionchus',
+		 jappepx        => 'wublastx_japonica',
+		 brugpepx       => 'wublastx_brugia',
+		 brigpepx       => 'wublastx_briggsae',
+		 remapepx       => 'wublastx_remanei',
+		 brepepx        => 'wublastx_brenneri',
+		 gadflyx        => 'wublastx_fly',
+		 ipi_humanx     => 'wublastx_human',
+		 yeastx         => 'wublastx_yeast',
+		 slimswissprotx => 'wublastx_slimSwissProt',
+		 slimtremblx    => 'wublastx_slimTrEmbl',
+		);		 
 
-my %logic2prefix = (
-    remaneiX       => 'RP:',
-    brigpepX       => 'BP:',
-    GadflyX        => 'FLYBASE:',
-    ipi_humanX     => 'ENSEMBL:',
-    slimtremblX    => 'TR:',
-    yeastX         => 'SGD:',
-    slimswissprotX => 'SW:',
-    wormpepX       => 'WP:',
-    ppapepX        => 'PP:',
-    jappepX        => 'JA:',
-    brepepX        => 'CN:'
-);
+}
 
-$logicname='wormpepX' if $test;
+my %logic2prefix;
+if (-e '/software/worm') { # running on Sanger?
+  %logic2prefix = (
+		   remaneiX       => 'RP:',
+		   brigpepX       => 'BP:',
+		   GadflyX        => 'FLYBASE:',
+		   ipi_humanX     => 'ENSEMBL:',
+		   slimtremblX    => 'TR:',
+		   yeastX         => 'SGD:',
+		   slimswissprotX => 'SW:',
+		   wormpepX       => 'WP:',
+		   ppapepX        => 'PP:',
+		   jappepX        => 'JA:',
+		   brepepX        => 'CN:'
+		  );
+} else {
+  %logic2prefix = (
+		   wormpepx       => 'WP:',
+		   ppapepx        => 'PP:',
+		   jappepx        => 'JA:',
+		   brugpepx       => 'BM:',
+		   brigpepx       => 'BP:',
+		   remapepx       => 'RP:',
+		   brepepx        => 'CN:',
+		   gadflyx        => 'FLYBASE:',
+		   ipi_humanx     => 'ENSEMBL:',
+		   yeastx         => 'SGD:',
+		   slimswissprotx => 'SW:',
+		   slimtremblx    => 'TR:',
+		  );
+}
+
+$logicname='wormpepx' if $test;
 die "ERROR: bad logicname\n" unless $logic2type{$logicname};
 
 my %cds2wormpep=%{&read_table()};
@@ -385,7 +422,7 @@ sub filter_features {
 }
 
 sub get_latest_pep {
-   my @species =qw(wormpep remapep brigpep ppapep jappep brepep);
+   my @species =qw(wormpep remapep brigpep ppapep jappep brepep brugpep);
    my @history_files;
    SPECIES: foreach my $s (@species){
        my @files = sort {$b cmp $a} glob($ENV{'WORMPUB'}."/BUILD/WORMPEP/$s*/*history*");
