@@ -5,7 +5,7 @@
 #  and concatenate them at the end
 # 
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2013-04-05 12:38:29 $
+# Last edited on: $Date: 2013-04-05 16:04:22 $
 # 
 
 
@@ -151,7 +151,7 @@ if ($wormbase->species eq 'elegans' or $wormbase->species eq 'briggsae'){
       && die("cannot concatenate $file to $outfile\n" );
   }
 } else {
-  system ("cat $dumpdir/$organism*X*.ace > $outfile") && die("cannot concatenate dumpdir/$organism*X.ace to $outfile\n" );
+  system ("cat $dumpdir/$organism*x*.ace > $outfile") && die("cannot concatenate dumpdir/$organism*x.ace to $outfile\n" );
 }
 
 
