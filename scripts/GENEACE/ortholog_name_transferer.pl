@@ -51,6 +51,7 @@ my %CGC_species = ('briggsae' => 'Cbr',
 		   'japonica' => 'Cjp',
 		   'brenneri' => 'Cbn',
 		   'pacificus'=> 'Ppa',
+		   'brugia'   => 'Bm'
 		  );
 
 $database = $database or $wormbase->database('geneace');
@@ -64,7 +65,7 @@ open(GENES,"<$genelist")     or $log->log_and_die("cant read gene list - $geneli
 
 my %person = ('mt3' => 'WBPerson2970',
 	      'pad' => 'WBPerson1983',
-	      'ar2' => 'WBPerson1847',
+	      'klh' => 'WBPerson3111',
 	      'gw3' => 'WBPerson4025',
 	      'mh6' => 'WBPerson4055',
 	     );
