@@ -63,7 +63,7 @@ for (my $i=0; $i<$nseg; $i++) {
 
   my @bsub_options = (-o => "junk$i.log", -e => "junk$i.err");
 
-  my $cmd = "$dump_one_script -host $host -user $user -port $port -db $db -start $start -count $segsize -out $dump_loc/$out_file_prefix.$i.srt";
+  my $cmd = "perl $dump_one_script -host $host -user $user -port $port -db $db -start $start -count $segsize -out $dump_loc/$out_file_prefix.$i.srt";
   print "$cmd\n";
 
   $lsf->submit(@bsub_options, $cmd);
