@@ -67,6 +67,8 @@ else
     
     setenv WORM_PACKAGES ${WORM_SW_ROOT}/packages
     
+    setenv EG_PACKAGES /nfs/panda/ensemblgenomes/external/
+
     setenv CVS_DIR $WORMPUB/wormbase-pipeline/scripts 
 
     setenv PIPELINE /nfs/nobackup2/ensemblgenomes/wormbase/BUILD/pipeline
