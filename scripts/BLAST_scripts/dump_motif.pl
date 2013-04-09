@@ -5,7 +5,7 @@
 # Dumps protein motifs from ensembl mysql (protein) database to an ace file
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2013-03-12 13:36:05 $
+# Last updated on: $Date: 2013-04-09 10:56:36 $
 
 use lib $ENV{'CVS_DIR'};
 
@@ -96,11 +96,21 @@ foreach my $meth (@methods) {
     $log->write_to("method: $meth => analyis_id: $anal\n");
 }
 
-# prepare the sql querie
-my $sth_f = $dbh->prepare ( q{ SELECT stable_id, seq_start, seq_end, hit_name, hit_start, hit_end, score
+
+# prepare the sql query
+my $sth_f;
+if (-e "/software/worm") { # running on Sanger
+  $sth_f = $dbh->prepare ( q{ SELECT stable_id, seq_start, seq_end, hit_name, hit_start, hit_end, score
                                  FROM protein_feature,translation_stable_id
                                 WHERE analysis_id = ? AND translation_stable_id.translation_id = protein_feature.translation_id
                              } );
+} else {
+  $sth_f = $dbh->prepare ( q{ SELECT stable_id, p.seq_start, p.seq_end, hit_name, hit_start, hit_end, score
+                                 FROM protein_feature p, translation t
+                                WHERE analysis_id = ? AND t.translation_id = p.translation_id
+                             } );
+}  
+
 
 # get the motifs
 my %motifs;
