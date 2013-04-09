@@ -7,7 +7,7 @@
 # Calls on a number of other scripts
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2013-03-12 13:42:06 $      
+# Last updated on: $Date: 2013-04-09 09:21:04 $      
 
 use strict;                                      
 
@@ -40,20 +40,24 @@ my $SORT_DUMP_DIR = "$WORMPIPE_DIR/sort_dump";
 croak("The target directory $WORMPIPE_DIR must exist") if not -d $WORMPIPE_DIR;
 
 my ($help, $debug, $test, $verbose, $store, $wormbase);
-my ($checkonly,);
+my ($checkonly, $species);
 
 GetOptions("help"       => \$help,
            "debug=s"    => \$debug,
            "test"       => \$test,
            "store:s"    => \$store,
            "check_only" => \$checkonly, #allows you to run just the checking part of the script
+	   "species:s"  => \$species,
            );
 
 
 if ( $store ) {
   $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
 } else {
-  croak("You must run this script with a given store file\n");
+  $wormbase = Wormbase->new( -debug   => $debug,
+                             -test    => $test,
+			     -organism => $species,
+			   );
 }
 
 # establish log file.
@@ -64,9 +68,9 @@ my $log = Log_files->make_build_log($wormbase);
 ##########################
 
 my $version = $wormbase->get_wormbase_version;
-my $species = $wormbase->species;
 my $dumpdir = $wormbase->farm_dump;
 my $acedir  = $wormbase->acefiles;
+$species = $wormbase->species;
 
 if (!$checkonly) {
   $log->write_to("  Running dump.pl . . .\n");
