@@ -93,7 +93,10 @@ open (IPI_HITS,">$ipi_file") or $log->log_and_die("cant open $ipi_file\n");
 #+-------------+----------------+
 
 
-my %processIds2prot_analysis = ( 
+my %processIds2prot_analysis;
+
+if (-e "/software/worm") {
+ %processIds2prot_analysis = ( 
 	                         'wormpepP'       => 'wublastp_worm',
 				 'brigpepP'       => 'wublastp_briggsae',
 				 'ipi_humanP'     => 'wublastp_human',
@@ -106,7 +109,22 @@ my %processIds2prot_analysis = (
 				 'jappepP'        => 'wublastp_japonica',
 				 'brepepP'        => 'wublastp_brenneri',
 			       );
-##########
+} else {
+ %processIds2prot_analysis = ( 
+	                         'wormpepp'        => 'wublastp_worm',
+				 'brigpepp'        => 'wublastp_briggsae',
+				 'ipi_humanp'      => 'wublastp_human',
+				 'yeastp'          => 'wublastp_yeast',
+				 'gadflyp'         => 'wublastp_fly',
+				 'slimswissprotp'  => 'wublastp_slimswissprot',
+				 'slimtremblp'     => 'wublastp_slimtrembl',
+				 'remapepp'        => 'wublastp_remanei',
+				 'ppapepp'         => 'wublastp_pristionchus',
+				 'jappepp'         => 'wublastp_japonica',
+				 'brepepp'         => 'wublastp_brenneri',
+				 'brugpepp'        => 'wublastp_brugia',
+			       );
+}
 
 our %org_prefix = ( 
 	            'wublastp_worm'          => 'WP',
@@ -121,6 +139,7 @@ our %org_prefix = (
 		    'wublastp_pristionchus'  => 'PP',
 		    'wublastp_japonica'      => 'JA',
 		    'wublastp_brenneri'      => 'CN',
+		    'wublastp_brugia'        => 'BM',
 		  );
 
 my $QUERY_SPECIES = $wormbase->full_name;
@@ -199,6 +218,7 @@ my %rem_matches;
 my %ppa_matches;
 my %jap_matches;
 my %bre_matches;
+my %bru_matches;
 
 my %type_count;
 
@@ -226,8 +246,8 @@ while (<BLAST>) {
 
   # check if next protein
   if ( $current_pep and $current_pep ne $proteinId ) {  
-    &dumpData ($current_pep,\%worm_matches,\%human_matches,\%fly_matches,\%yeast_matches,\%swiss_matches,\%trembl_matches,\%brig_matches, \%rem_matches,\%jap_matches,\%bre_matches,\%ppa_matches) 
-            if (%worm_matches or %human_matches or %fly_matches or %yeast_matches or %swiss_matches or %trembl_matches or %brig_matches or %rem_matches or %jap_matches or %bre_matches or %ppa_matches);
+    &dumpData ($current_pep,\%worm_matches,\%human_matches,\%fly_matches,\%yeast_matches,\%swiss_matches,\%trembl_matches,\%brig_matches, \%rem_matches,\%jap_matches,\%bre_matches,\%ppa_matches,\%bru_matches) 
+            if (%worm_matches or %human_matches or %fly_matches or %yeast_matches or %swiss_matches or %trembl_matches or %brig_matches or %rem_matches or %jap_matches or %bre_matches or %ppa_matches or %bru_matches);
 
     #undef all hashes
     %worm_matches = ();
@@ -241,6 +261,7 @@ while (<BLAST>) {
     %ppa_matches = ();
     %jap_matches = ();
     %bre_matches = ();
+    %bru_matches = ();
     
     %type_count = ();
 
@@ -254,12 +275,14 @@ while (<BLAST>) {
   my @data = ($proteinId, $processIds2prot_analysis{$analysis},  $myHomolStart, $myHomolEnd, $homolID, $pepHomolStart, $pepHomolEnd, $e);
 
   my $added = 0;
-  if ( $analysis eq 'wormpepP' ){ # wormpep
+
+  if (-e "/software/worm") { # running on Sanger?
+    if ( $analysis eq 'wormpepP' ){ # wormpep
       $added = &addWormData ( \%worm_matches, \@data );
     } elsif ( $analysis eq 'GadflyP'  ) { # gadfly peptide set also has isoforms
       $added = &addFlyData ( \%fly_matches, \@data );
-
-    # others dont have isoforms so let adding routine deal with them
+      
+      # others dont have isoforms so let adding routine deal with them
     } elsif ( $analysis eq 'yeastP'  ) {
       $added = &addData ( \%yeast_matches, \@data );
     } elsif ( $analysis eq 'slimswissprotP'  ) {
@@ -279,6 +302,36 @@ while (<BLAST>) {
     } elsif ( $analysis eq 'brepepP') {
       $added = &addWormData ( \%bre_matches,\@data);
     }
+  } else {
+    if ( $analysis eq 'wormpepp' ){ # wormpep
+      $added = &addWormData ( \%worm_matches, \@data );
+    } elsif ( $analysis eq 'gadflyp'  ) { # gadfly peptide set also has isoforms
+      $added = &addFlyData ( \%fly_matches, \@data );
+      
+      # others dont have isoforms so let adding routine deal with them
+    } elsif ( $analysis eq 'yeastp'  ) {
+      $added = &addData ( \%yeast_matches, \@data );
+    } elsif ( $analysis eq 'slimswissprotp'  ) {
+      $added = &addData ( \%swiss_matches, \@data );
+    } elsif ( $analysis eq 'slimtremblp') {
+      $added = &addData ( \%trembl_matches, \@data );
+    } elsif ( $analysis eq 'ipi_humanp') {
+      $added = &addData ( \%human_matches, \@data );
+    } elsif ( $analysis eq 'brigpepp') {
+      $added = &addWormData ( \%brig_matches, \@data );
+    } elsif ( $analysis eq 'remapepp') {
+      $added = &addWormData ( \%rem_matches, \@data );
+    } elsif ( $analysis eq 'ppapepp') {
+      $added = &addWormData ( \%ppa_matches, \@data );
+    } elsif ( $analysis eq 'jappepp') {
+      $added = &addWormData ( \%jap_matches, \@data);
+    } elsif ( $analysis eq 'brepepp') {
+      $added = &addWormData ( \%bre_matches,\@data);
+    } elsif ( $analysis eq 'brugpepp') {
+      $added = &addWormData ( \%bru_matches,\@data);
+    }
+  }
+
 
   #this keeps track of how many hits are stored for each analysis.  Once we have 10 we can ignore the rest as the list is sorted.
   if ($added == 1) {
@@ -290,8 +343,8 @@ while (<BLAST>) {
   }
 }
 
-&dumpData ($current_pep,\%worm_matches,\%human_matches,\%fly_matches,\%yeast_matches,\%swiss_matches,\%trembl_matches,\%brig_matches, \%rem_matches,\%jap_matches,\%bre_matches,\%ppa_matches) 
-            if (%worm_matches or %human_matches or %fly_matches or %yeast_matches or %swiss_matches or %trembl_matches or %brig_matches or %rem_matches or %jap_matches or %bre_matches or %ppa_matches);
+&dumpData ($current_pep,\%worm_matches,\%human_matches,\%fly_matches,\%yeast_matches,\%swiss_matches,\%trembl_matches,\%brig_matches, \%rem_matches,\%jap_matches,\%bre_matches,\%ppa_matches,\%bru_matches) 
+            if (%worm_matches or %human_matches or %fly_matches or %yeast_matches or %swiss_matches or %trembl_matches or %brig_matches or %rem_matches or %jap_matches or %bre_matches or %ppa_matches or %bru_matches);
 
 
 close OUT;
@@ -604,6 +657,7 @@ sub species_lookup {
 
       my %species = ( 'wublastp_worm'          => 'Caenorhabditis elegans',
 		      'wublastp_briggsae'      => 'Caenorhabditis briggsae',
+		      'wublastp_brugia'        => 'Brugia malayi',
 		      'wublastp_remanei'       => 'Caenorhabditis remanei',
 		      'wublastp_japonica'      => 'Caenorhabditis japonica',
 		      'wublastp_brenneri'      => 'Caenorhabditis brenneri',
