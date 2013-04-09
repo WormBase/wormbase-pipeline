@@ -48,7 +48,13 @@ my $trembl_list_txt   = "$wormpipe_dump/trembllist.txt";
 
 my $db_files        = "$ENV{'PIPELINE'}/swall_data";
 
-my $blast_files = "$wormpipe_dump/*blastp.ace $wormpipe_dump/*X*.ace ";
+my $blast_files;
+if (-e "/software/worm") {
+  $blast_files = "$wormpipe_dump/*blastp.ace $wormpipe_dump/*X*.ace ";
+} else {
+  $blast_files = "$wormpipe_dump/*blastp.ace $wormpipe_dump/*x*.ace ";
+}
+
 
 # for species not being built, the blastp files will live in the build
 # directory
