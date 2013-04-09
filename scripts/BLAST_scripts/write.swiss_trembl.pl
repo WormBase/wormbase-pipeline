@@ -165,7 +165,8 @@ sub output_list
     my $list = shift;
     my $parameters = shift;
     my $db = $$parameters[1];
-    my $fetch_db = $$parameters[3].".gsi";
+    my $fasta_file = $$parameters[3];
+    my $fetch_db = "${fasta_file}.gsi";
     my $prefix = $$parameters[2];
     my $outfile = $$parameters[0];
     
@@ -188,7 +189,7 @@ sub output_list
       # access gsi database to get info about protein
       my ($file , $fmt , $offset) = GSI::getOffset ($id);
       unless( "$file" eq "-1" ) {
-	open (DB , "$file") || die "cannot open db $file\n";
+	open (DB , "$fasta_file") || die "cannot open db $fasta_file\n";
 	seek (DB , $offset , 0);
 	my $header = <DB>;
 	chomp $header;
