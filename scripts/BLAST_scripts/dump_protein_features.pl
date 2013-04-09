@@ -7,7 +7,7 @@
 # Calls on a number of other scripts
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2013-04-09 10:49:04 $      
+# Last updated on: $Date: 2013-04-09 13:25:51 $      
 
 use strict;                                      
 
@@ -116,7 +116,7 @@ if (!$checkonly) {
 #  my $repeat_cmd = $wormbase->build_cmd_line("${Blast_scripts}/dump_repeats.pl", $store) . " -database worm_ensembl_${species} -dumpdir $acedir ";
 #  $wormbase->run_command($repeat_cmd, $log)
 #      and $log->log_and_die("Failed to successfully run command - stopping ($repeat_cmd)\n");
-  $wormbase->run_script("${Blast_scripts}/${Blast_scripts}/dump_repeats.pl  -database worm_ensembl_${species} -dumpdir $acedir", $log);
+  $wormbase->run_script("${Blast_scripts}/dump_repeats.pl  -database worm_ensembl_${species} -dumpdir $acedir", $log);
 
 }
 
