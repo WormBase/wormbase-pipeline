@@ -14,7 +14,7 @@
 //
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: pad $
-// Last edited on: $Date: 2013-04-05 10:31:47 $
+// Last edited on: $Date: 2013-04-11 16:51:26 $
 
 
 
@@ -518,7 +518,7 @@
 		       Variation ?Variation XREF Interactor	   // (allele, polymorphism, etc.) involved in the interaction //removed XREF from proposal
 		       Transgene ?Transgene XREF Interactor	   // Transgene XREF Interactor that carries an interacting gene //removed XREF from proposal
 		       Antibody ?Antibody XREF Interactor	   // Free text description of the antibody used to detect a regulation event //removed XREF from proposal
-
+		       Inferred_automatically Text                 // a script has updated this connection
 
 ///////////////////////////////////
 
@@ -2373,8 +2373,8 @@
                 Promoter  Driven_by_gene ?Gene XREF Drives_transgene #Evidence			// eventually change this tag to promoter_gene
                           Driven_by_construct  ?Text						// eventually change this tag to promoter_artificial
                 Reporter  Reporter_product ?Text						// removed multiple tags for Reporter_product
-                          Gene ?Gene XREF Transgene_product ?Text
-			  3_UTR  ?Gene
+                          Gene ?Gene XREF Transgene_product ?Text #Evidence 
+			  3_UTR  ?Gene #Evidence
                 Reporter_type  ?Text								// added for Transcriptional fusion or Translational fusion
                 Construction  Construction_summary Text
 			      Fragment ?Text							// new tag to collect the following as subtags, Fragment may be deleted later
