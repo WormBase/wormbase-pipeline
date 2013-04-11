@@ -6,8 +6,8 @@
 #
 # Creates SMapped Gene spans for Gene objects
 #
-# Last edited by: $Author: klh $
-# Last edited on: $Date: 2012-01-31 11:36:44 $
+# Last edited by: $Author: pad $
+# Last edited on: $Date: 2013-04-11 15:34:44 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -19,7 +19,7 @@ use Storable;
 
 my (
     $database, $species,  $test,       $store,   $gff, $no_ace,
-    $debug,    $gff_file, $chromosome, $prepare, $no_gff
+    $debug,    $gff_file, $chromosome, $prepare, $no_gff, $no_load, $no_dump,
 );
 
 GetOptions(
@@ -34,6 +34,8 @@ GetOptions(
     'prepare'      => \$prepare,
     'no_gff'       => \$no_gff,
     'species:s'    => \$species,
+    'no_load'      => \$no_load,
+    'no_dump'      => \$no_dump,
 );
 
 my $wormbase;
@@ -80,7 +82,7 @@ else {
 
   my @methods;
   if ($wormbase->species eq "elegans") {
-    @methods = qw(Coding_transcript Non_coding_transcript tRNAscan-SE-1.23 miRNA_primary_transcript Pseudogene snRNA snoRNA rRNA scRNA stRNA ncRNA tRNA);
+    @methods = qw(Coding_transcript Non_coding_transcript tRNAscan-SE-1.23 miRNA_primary_transcript Pseudogene snRNA snoRNA rRNA scRNA stRNA ncRNA tRNA Transposon_CDS);
   } else {
     @methods = qw(Coding_transcript Non_coding_transcript tRNAscan-SE-1.3 ncRNA Pseudogene);
   }
@@ -89,7 +91,7 @@ else {
     my %gene_coords;
     my %gene_span;
     foreach my $method (@methods) {
-      print "checking $method \n" if $test;
+      print "checking $method \n" if $debug;
       my $GFF = $wormbase->open_GFF_file( $chrom,$method,$log );
       while (<$GFF>) {
 	my @data = split;
@@ -107,7 +109,8 @@ else {
 	       or ( $data[1] eq 'snoRNA_mature_transcript' )
 	       or ( $data[1] eq 'stRNA' )
 	       or ( $data[1] eq 'snRNA_mature_transcript' )
-	       or ( $data[1] eq 'ncRNA' ) ) {
+	       or ( $data[1] eq 'ncRNA' )
+	       or ( $data[1] eq 'Transposon_CDS' )) {
 	  next if ( $data[2] eq 'exon'
 		    or $data[2] eq 'coding_exon'
 		    or $data[2] eq 'intron' );
@@ -186,12 +189,14 @@ else {
   close ACE unless $no_ace;
   close OUTGFF if $gff;
   $wormbase->load_to_database( "$database", "$acefile", "WBGene_span", $log )
-    unless ($no_ace);
+    unless ($no_load || $no_ace);
 }
 
-$wormbase->run_script("dump_gff_batch.pl -database ". $wormbase->autoace
-		      . " -methods gene -dump_dir ". $wormbase->gff_splits,$log
-		     ) unless $no_gff;
+unless ($no_dump) {
+  $wormbase->run_script("dump_gff_batch.pl -database ". $wormbase->autoace
+			. " -methods gene -dump_dir ". $wormbase->gff_splits,$log
+		       ) unless $no_gff;
+}
 
 $log->mail;
 
