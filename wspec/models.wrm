@@ -14,7 +14,7 @@
 //
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: pad $
-// Last edited on: $Date: 2013-04-12 09:21:26 $
+// Last edited on: $Date: 2013-04-12 10:34:24 $
 
 
 
@@ -615,7 +615,7 @@
 	 Species UNIQUE ?Species // added by krb [021021]
          Wild_isolate // to identify wild isolates - since genotype is free text
          Isolation GPS UNIQUE Float UNIQUE Float #Position_confidence // Latitude +/-DD.DDDDD Longitude +/-DD.DDDDD
-		   Elevation UNIQUE Unique Float #Position_confidence // Elevation above sea level.
+		   Elevation UNIQUE Float #Position_confidence // Elevation above sea level.
 	 	   Place UNIQUE ?Text 
          	   Landscape UNIQUE Urban_garden
 				    Forest
@@ -1667,7 +1667,7 @@
 	      Other_name ?Text
          Sequence_details Flanking_sequences UNIQUE Text UNIQUE Text
 			  Mapping_target UNIQUE ?Sequence 
-			  Source_location UNIQUE Int UNIQUE ?Sequence UNIQUE Int UNIQUE Int UNIQUE Text #Evidence //source data, <WSversion> ?Sequence pos1 pos2 <text description> Evidence
+			  Source_location UNIQUE Int UNIQUE ?Sequence UNIQUE Int UNIQUE Int UNIQUE #Evidence //source data, <WSversion> ?Sequence pos1 pos2 Evidence(Paper/person etc. remarks)
 	 DNA_text UNIQUE ?Text       // for storing the sequence of the feature...can use IUPAC codes to be able
 				     // store consensus sequences, e.g. binding site consensus sequence
 	 Origin     Species UNIQUE ?Species  //added by pad, as we are moving towards multi species readyness.
