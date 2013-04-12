@@ -14,7 +14,7 @@
 //
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: pad $
-// Last edited on: $Date: 2013-04-11 16:51:26 $
+// Last edited on: $Date: 2013-04-12 09:21:26 $
 
 
 
@@ -2373,7 +2373,7 @@
                 Promoter  Driven_by_gene ?Gene XREF Drives_transgene #Evidence			// eventually change this tag to promoter_gene
                           Driven_by_construct  ?Text						// eventually change this tag to promoter_artificial
                 Reporter  Reporter_product ?Text						// removed multiple tags for Reporter_product
-                          Gene ?Gene XREF Transgene_product ?Text #Evidence 
+                          Gene ?Gene XREF Transgene_product #Evidence 
 			  3_UTR  ?Gene #Evidence
                 Reporter_type  ?Text								// added for Transcriptional fusion or Translational fusion
                 Construction  Construction_summary Text
