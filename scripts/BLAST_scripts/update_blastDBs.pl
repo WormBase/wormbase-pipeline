@@ -1,7 +1,7 @@
 #!/usr/local/ensembl/bin/perl -w
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2013-04-09 15:21:17 $
+# Last edited by: $Author: mh6 $
+# Last edited on: $Date: 2013-04-12 15:45:41 $
 
 use lib $ENV{'CVS_DIR'};
 
@@ -183,7 +183,10 @@ if ($fly) {
 	  
 	  my %fields = $seq->primary_seq->desc =~ /(\w+)=(\S+)/g;
 
-	  $FBname = $fields{'name'} if $fields{'name'} ;
+	  if ($fields{name}){
+             $FBname = $fields{name};
+	     $FBname =~ s/;//g;
+	  }
 	  ($FBgn) = $fields{'parent'} =~ /(FBgn\d+)/;
 	  foreach ( split(/,/,$fields{'dbxref'}) ) {
 	      my($key, $value) = split(/:/);
