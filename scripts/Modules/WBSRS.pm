@@ -25,38 +25,47 @@ sub uniprot {
   my $query    = "+[uniprot-org:$ggenus]&[uniprot-org:$gspecies]";
   
   my $cResult  = '+-page+cResult+-ascii';
-  my $fullview = '+-view+UniprotView+-ascii+-lv+';
+  my $fullview = '+-view+UniprotView+-ascii';
   
   # Doing query: ${base}${query}${cResult}
   # getting the number of entries in the set of results
   
   my $qa1 = $ua->get($base.$query.$cResult);
   die("SRS: Can't get URL -- " . $qa1->status_line) unless $qa1->is_success;
-  
+
   if($qa1->content =~/^(\d+)/) {
-    my $lv = $1;
-    #print "EBI SRS server Uniprot query returned $lv entries; fetching...\n";
+    my $total = $1;
+    # print "EBI SRS server Uniprot query returned $total entries; fetching...\n";
     
     my $tmp_file = "/tmp/srs_results.$$.txt";
-    my $qa2 = $ua->get($base.$query.$fullview.$lv, ':content_file' => $tmp_file);
-    die("SRS: Could not fetch Uniprot entries using EBI SRS server") 
-      if not $qa2->is_success;
     
-    open(my $f, $tmp_file);
-    while(<$f>) {
-      my @f = split /\t/;
-      $f[0] =~ s/UNIPROT:(\S+)/$1/;
-      $acc2ids{$f[1]}{'id'} = $f[0];
-      $acc2ids{$f[1]}{'des'} = $f[3];
-      $acc2ids{$f[1]}{'gene'} = $f[4];
-      $acc2ids{$f[1]}{'key'} = $f[6];
-      $acc2ids{$f[1]}{'len'} = $f[7];
+    my $chunksize = 10000;
+    my $chunkstart = 1; # start of next chunk
+    while ($chunkstart < $total) {
+      my $bv = "+-bv+${chunkstart}";
+      my $lv = "+-lv+${chunksize}";
+      # print "EBI SRS server Uniprot query returned $total entries; fetching no. $chunkstart...\n";
+      my $qa2 = $ua->get($base.$query.$fullview.$lv.$bv, ':content_file' => $tmp_file);
+      die("SRS: Could not fetch EMBL entries using EBI SRS server") 
+        if not $qa2->is_success;
+      
+      open(my $f, $tmp_file);
+      while(<$f>) {
+	my @f = split /\t/;
+	$f[0] =~ s/UNIPROT:(\S+)/$1/;
+	$acc2ids{$f[1]}{'id'} = $f[0];
+	$acc2ids{$f[1]}{'des'} = $f[3];
+	$acc2ids{$f[1]}{'gene'} = $f[4];
+	$acc2ids{$f[1]}{'key'} = $f[6];
+	$acc2ids{$f[1]}{'len'} = $f[7];
+      }
+      $chunkstart+=$chunksize;
     }
-
   } else {
     die("SRS: Unexpected content from SRS query\n");
   }
-   
+  
+
   return \%acc2ids;
 }
 ###########################
