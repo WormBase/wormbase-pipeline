@@ -388,10 +388,7 @@ sub get_wormpep {
 # This could probably be shifted to the ?Gene class.
 sub get_notes {
     my ( $db, $hash ) = @_ ; # hash keys are predicted gene names, values are one or more brief identifications
-    my @genes = $db->fetch(
-                           -query   => sprintf("find CDS Brief_identification AND Species = \"%s\"", $species_full),
-                           -filltag => 'Brief_identification',
-                           );
+    my @genes;
 
     # Should probably also look for notes attached to sequences, yes? As before...
     push(
