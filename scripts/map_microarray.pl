@@ -6,8 +6,8 @@
 #
 # by Dan
 #
-# Last updated by: $Author: mh6 $                      
-# Last updated on: $Date: 2011-04-20 09:41:42 $        
+# Last updated by: $Author: klh $                      
+# Last updated on: $Date: 2013-04-15 12:06:55 $        
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -24,64 +24,54 @@ my $test;       # Test mode
 my $debug;      # Debug mode, verbose output to user running script
 my $load;       # load file to autoace
 my $store;	# specify a frozen configuration file
-
+my $species;
 my $outfile;
 
 GetOptions ("debug=s"   => \$debug,
 	    "test"      => \$test,
 	    "load"      => \$load,
-        "help"      => \$help,
-	    "outace=s"	=> \$outfile,
+            "species=s" => \$species,
+	    "acefile=s"	=> \$outfile,
 	    'store=s'	=> \$store
     );
 
-# Display help if required
-&usage("Help") if ($help);
 
 ############################
 # recreate configuration   #
 ############################
 my $wb;
-if ($store){$wb = Storable::retrieve($store) or croak("cant restore wormbase from $store\n")}
-else {$wb = Wormbase->new(-debug => $debug,-test => $test,)}
+if ($store){
+  $wb = Storable::retrieve($store) or croak("cant restore wormbase from $store\n");
+} else {
+  $wb = Wormbase->new(-debug    => $debug,
+                      -test     => $test,
+                      -organism => $species,
+      );
+}
 
 ###########################################
 # Variables Part II (depending on $wb)    #
 ########################################### 
-$test  = $wb->test  if $wb->test;     # Test mode
-$debug = $wb->debug if $wb->debug;    # Debug mode, output only goes to one user
 
-
-#further variables
 my $dbdir= $wb->autoace;                    # Database path
 $outfile = $outfile ? $outfile : $wb->acefiles."/microarray_mappings.ace";
 my $tace = $wb->tace;                                  # tace executable path
 
-# create log
 my $log = Log_files->make_build_log($wb);
 
-# Use debug mode?
-if($debug){
-  print "DEBUG = \"$debug\"\n\n";
-  ($maintainers = $debug . '\@sanger.ac.uk');
-}
-
-# connect to database
-print  "Opening database ..\n" if ($debug);
 my $db = Ace->connect(-path=>$dbdir,
-                      -program =>$tace) || do { print "Connection failure: ",Ace->error; die();};
-
+                      -program =>$tace) || do { print "Connection failure: ",Ace->error; $log->log_and_die();};
 
 if ($debug) {
-    my $count = $db->fetch(-query=> 'find PCR_product where Microarray_results');
-    print "checking $count PCR_products\n\n";
+  my $count = $db->fetch(-query=> 'find PCR_product where Microarray_results');
+  $log->write_to("checking $count PCR_products...\n");
 
-    $count = $db->fetch(-query=> 'find Oligo_set where Microarray_results');
-    print "checking $count Oligo_sets\n\n";
+  $count = $db->fetch(-query=> 'find Oligo_set where Microarray_results');
+  $log->write_to("checking $count Oligo_sets\n");
 }
 
 
-open (OUTPUT, ">$outfile") or die "Can't open the output file $outfile\n";
+open (OUTPUT, ">$outfile") or $log->log_and_die("Can't open the output file $outfile\n");
 
 ###########################################
 # PCR_products and SMD_microarray results #
@@ -90,50 +80,9 @@ open (OUTPUT, ">$outfile") or die "Can't open the output file $outfile\n";
 $log->write_to("Making CDS/Pseudogene/Transcript connections to Microarray_results objects based on PCR_products\n");
 
 my $i = $db->fetch_many(-query=> 'find PCR_product WHERE Microarray_results AND (Overlaps_CDS || Overlaps_pseudogene || Overlaps_transcript)');  
-while (my $obj = $i->next) {
-    
-  print "$obj\t" if ($debug);
-
-  # Microarray_results
-  
-  my $microarray_results = $obj->Microarray_results;  
-  my @CDSs               = $obj->Overlaps_CDS;
-  my @pseudogenes        = $obj->Overlaps_pseudogene;
-  my @transcripts        = $obj->Overlaps_transcript;
-
-  
-  if (@CDSs) {
-    foreach my $cds (@CDSs) {
-      my $gene = $obj->Overlaps_CDS->Gene;
-      print OUTPUT "\nMicroarray_results : \"$microarray_results\"\n";
-      print OUTPUT "CDS \"$cds\"\n";
-      print OUTPUT "Gene $gene\n" if (defined $gene);
-    }    
-    print OUTPUT "\n";
-  }
-
-  if (@pseudogenes) {
-    foreach my $pseudogene (@pseudogenes) {
-      my $gene = $obj->Overlaps_pseudogene->Gene;
-      print OUTPUT "\nMicroarray_results : \"$microarray_results\"\n";
-      print OUTPUT "Pseudogene \"$pseudogene\"\n";
-      print OUTPUT "Gene $gene\n" if (defined $gene);
-    }    
-    print OUTPUT "\n";
-  }
-
-  if (@transcripts) {
-    foreach my $transcript (@transcripts) {
-      my $gene = $obj->Overlaps_transcript->Gene;
-      $gene =  $obj->Overlaps_transcript->Corresponding_CDS->Gene unless ($gene);
-      print OUTPUT "\nMicroarray_results : \"$microarray_results\"\n";
-      print OUTPUT "Transcript \"$transcript\"\n";
-      print OUTPUT "Gene $gene\n" if (defined $gene);
-    }    
-    print OUTPUT "\n";
-  }
-  
-  $obj->DESTROY();
+while (my $object = $i->next) {
+  &process_object($object);
+  $object->DESTROY();
 }
 
 ###########################################
@@ -144,48 +93,10 @@ $log->write_to("Making CDS/Pseudogene/Transcript connections to Microarray_resul
 
 $i = $db->fetch_many(-query=> 'find Oligo_set WHERE Microarray_results AND (Overlaps_CDS || Overlaps_transcript || Overlaps_pseudogene)');  
 
-while (my $obj = $i->next) {
+while (my $object = $i->next) {
   
-  print "$obj\t" if ($debug);
-
-  # Microarray_results
-    
-  my $microarray_results = $obj->Microarray_results;  
-  my @CDSs               = $obj->Overlaps_CDS;
-  my @pseudogenes        = $obj->Overlaps_pseudogene;
-  my @transcripts        = $obj->Overlaps_transcript;
-
-  if (@CDSs) {
-    foreach my $cds (@CDSs) {
-      my $gene = $cds->Gene;
-      print OUTPUT "\nMicroarray_results : \"$microarray_results\"\n";
-      print OUTPUT "CDS \"$cds\"\n";
-      print OUTPUT "Gene $gene\n" if (defined $gene);
-    }    
-    print OUTPUT "\n";
-  }
-
-  if (@pseudogenes) {
-    foreach my $pseudogene (@pseudogenes) {
-      my $gene = $pseudogene->Gene;
-      print OUTPUT "\nMicroarray_results : \"$microarray_results\"\n";
-      print OUTPUT "Pseudogene \"$pseudogene\"\n";
-      print OUTPUT "Gene $gene\n" if (defined $gene);
-    }    
-    print OUTPUT "\n";
-  }
-
-  if (@transcripts) {
-    foreach my $transcript (@transcripts) {
-      my $gene = ($transcript->Gene || $transcript->Corresponding_CDS->Gene);
-      print OUTPUT "\nMicroarray_results : \"$microarray_results\"\n";
-      print OUTPUT "Transcript \"$transcript\"\n";
-      print OUTPUT "Gene $gene\n" if (defined $gene);
-    }    
-    print OUTPUT "\n";
-  }  
-
-  $obj->DESTROY();
+  &process_object($object);
+  $object->DESTROY();
 }
 
 
@@ -199,19 +110,65 @@ if($load){
 
 
 
-$log->mail("$maintainers","BUILD REPORT: $0");
+$log->mail();
 
 exit(0);
-sub usage {
-    my $error = shift;
 
-    if ( $error eq "Help" ) {
+##################################
+sub process_object {
+  my ($obj) = @_;
+    
+  # Microarray_results
+  
+  my $microarray_results = $obj->Microarray_results;  
+  my @CDSs               = $obj->Overlaps_CDS;
+  my @pseudogenes        = $obj->Overlaps_pseudogene;
+  my @transcripts        = $obj->Overlaps_transcript;
 
-        # Normal help menu
-        system( 'perldoc', $0 );
-        exit(0);
-    }
+  my %genes;
+
+  print OUTPUT "\nMicroarray_results : \"$microarray_results\"\n";
+  
+  if (@CDSs) {
+    foreach my $cds (@CDSs) {
+      my $gene = $obj->Overlaps_CDS->Gene;
+
+      print OUTPUT "CDS $cds\n";
+      if (defined $gene and not exists $genes{$gene}) {
+        print OUTPUT "Gene $gene\n";
+        $genes{$gene} = 1;
+      }
+    }    
+  }
+
+  if (@pseudogenes) {
+    foreach my $pseudogene (@pseudogenes) {
+      my $gene = $obj->Overlaps_pseudogene->Gene;
+      print OUTPUT "Pseudogene $pseudogene\n";
+      if (defined $gene and not exists $genes{$gene}) {
+        print OUTPUT "Gene $gene\n";
+        $genes{$gene} = 1;
+      }
+    }    
+  }
+
+  if (@transcripts) {
+    foreach my $transcript (@transcripts) {
+      my $gene = $obj->Overlaps_transcript->Gene;
+      $gene =  $obj->Overlaps_transcript->Corresponding_CDS->Gene unless ($gene);
+      print OUTPUT "Transcript $transcript\n";
+      if (defined $gene and not exists $genes{$gene}) {
+        print OUTPUT "Gene $gene\n" if (defined $gene);
+        $genes{$gene} = 1;
+      }
+    }    
+  }
+  
+  print OUTPUT "\n";
+
 }
+
+
 ############################################
 
 __END__
