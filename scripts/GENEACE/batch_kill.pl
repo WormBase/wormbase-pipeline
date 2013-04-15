@@ -102,6 +102,7 @@ while(<FILE>){
     chomp;
     unless (/\w/) {
       &kill_gene;
+      undef $tflag;
     }
     else { #gather info
       if   (/^(WBGene\d{8}|WBVar\d{8})/) { $gene = $1; } 
