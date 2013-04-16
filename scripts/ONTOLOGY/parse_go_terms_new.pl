@@ -268,7 +268,7 @@ if ($rnai) {
 		  warn "No reference for $obj\n";
 		  next;
 		}
-		my $with="WB:$obj|WB:$phen";
+		my $with="WB:$obj|$phen";
 		my $syn="";
 		if ($public_name ne $seq_name_hash{$gene}) {
 		    $syn=$seq_name_hash{$gene};
@@ -368,7 +368,7 @@ if ($variation) {
 		elsif ($phen_hash{$phen}{Curator_confirmed}) {
 		    $ref_field="WB:$phen_hash{$phen}{Curator_confirmed}";
 		}
-		my $with="WB:$obj|WB:$phen";
+		my $with="WB:$obj|$phen";
 		my $syn="";
 		if ($public_name ne $seq_name_hash{$gene}) {
 		    $syn=$seq_name_hash{$gene};
