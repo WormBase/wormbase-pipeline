@@ -10,17 +10,74 @@ use LWP::UserAgent;
 ###########################
 # return hash-ref of the following information for each Accession in Uniprot
 # key is 'acc' value is hash of 'id', 'des', 'gene', 'key', 'len'
+# converted this to use the ENA RESTful interface
+# See: http://www.uniprot.org/faq/28
+# e.g. http://www.uniprot.org/uniprot/?query=organism:Homo%20sapiens&format=tab&columns=entry%20name,id,protein%20names,genes,organism,keywords,length&offset=10&limit=5
+
 sub uniprot {
   my ($species) = @_;
 
-  my ($ggenus, $gspecies) = $species =~ /^(\S+)\s+(\S+)/;
-  if (! defined $gspecies) {die("SRS: Full species name not given\n")};
+  if (! defined $species) {die("SRS: Full species name not given\n")};
+  $species =~ s/\s+/\%20/g;
 
   my %acc2ids;
 
 
   my $ua       = LWP::UserAgent->new;
   
+  my $base     = 'http://www.uniprot.org/uniprot/?';
+  my $query    = "query=organism:${species}&format=tab&columns=entry%20name,id,protein%20names,genes,organism,keywords,length";
+  
+  my $tmp_file = "/tmp/srs_results.$$.txt";
+    
+  my $chunksize = 10000;
+  my $chunkstart = 1; # start of next chunk
+  my $prev_id = "";
+  my $id;
+  do {
+    my $offset = "&offset=${chunkstart}";
+    my $limit = "&limit=${chunksize}";
+    # print "EBI SRS server Uniprot query returned $total entries; fetching no. $chunkstart...\n";
+    my $qa2 = $ua->get($base.$query.$offset.$limit, ':content_file' => $tmp_file);
+    die("WBSRS: Could not fetch EMBL entries using EBI Uniprot server") 
+      if not $qa2->is_success;
+    
+    open(my $f, $tmp_file);
+    my $count=0;
+    while(<$f>) {
+      if (++$count == 1) {next;} # skip the title line
+      
+      my @f = split /\t/;
+      # check if id of first data line is the same as in the previous chunk
+      $id = $f[0];
+      if ($count == 2) {
+	if ($id eq $prev_id) {last}
+	$prev_id = $id;
+      }
+      $acc2ids{$f[1]}{'id'} = $id;
+      $acc2ids{$f[1]}{'des'} = $f[2];
+      my @gene_names = split /\s/, $f[3];
+      $acc2ids{$f[1]}{'gene'} = $gene_names[0];
+      $acc2ids{$f[1]}{'key'} = $f[5];
+      $acc2ids{$f[1]}{'len'} = $f[6];
+    }
+    $chunkstart+=$chunksize;
+  } until ($id eq $prev_id);
+  
+  
+  return \%acc2ids;
+}
+
+sub old_uniprot {
+  my ($species) = @_;
+
+  my ($ggenus, $gspecies) = $species =~ /^(\S+)\s+(\S+)/;
+  if (! defined $gspecies) {die("WBSRS: Full species name not given\n")};
+
+  my %acc2ids;
+
+  my $ua       = LWP::UserAgent->new;
+
   my $base     = 'http://srs.ebi.ac.uk/srsbin/cgi-bin/wgetz?-noSession';
   my $query    = "+[uniprot-org:$ggenus]&[uniprot-org:$gspecies]";
   
@@ -46,7 +103,7 @@ sub uniprot {
       my $lv = "+-lv+${chunksize}";
       # print "EBI SRS server Uniprot query returned $total entries; fetching no. $chunkstart...\n";
       my $qa2 = $ua->get($base.$query.$fullview.$lv.$bv, ':content_file' => $tmp_file);
-      die("SRS: Could not fetch EMBL entries using EBI SRS server") 
+      die("WBSRS: Could not fetch EMBL entries using EBI SRS server") 
         if not $qa2->is_success;
       
       open(my $f, $tmp_file);
@@ -62,12 +119,14 @@ sub uniprot {
       $chunkstart+=$chunksize;
     }
   } else {
-    die("SRS: Unexpected content from SRS query\n");
+    die("WBSRS: Unexpected content from SRS query\n");
   }
   
 
   return \%acc2ids;
 }
+
+
 ###########################
 # return hash-ref of the following information for each Accession in EMBL
 # this will probably often fail if done in one go, so the returned result has been chunked
@@ -76,7 +135,7 @@ sub embl {
   my ($species) = @_;
 
   my ($ggenus, $gspecies) = $species =~ /^(\S+)\s+(\S+)/;
-  if (! defined $gspecies) {die("SRS: Full species name not given\n")};
+  if (! defined $gspecies) {die("WBSRS: Full species name not given\n")};
 
   my %acc2ids;
 
@@ -93,7 +152,7 @@ sub embl {
   # getting the number of entries in the set of results
 
   my $qa1 = $ua->get($base.$query.$cResult);
-  die("SRS: Can't get URL -- " . $qa1->status_line) unless $qa1->is_success;
+  die("WBSRS: Can't get URL -- " . $qa1->status_line) unless $qa1->is_success;
 
   if($qa1->content =~/^(\d+)/) {
     my $total = $1;
@@ -108,7 +167,7 @@ sub embl {
       my $lv = "+-lv+${chunksize}";
       # print "EBI SRS server Uniprot query returned $total entries; fetching no. $chunkstart...\n";
       my $qa2 = $ua->get($base.$query.$fullview.$lv.$bv, ':content_file' => $tmp_file);
-      die("SRS: Could not fetch EMBL entries using EBI SRS server") 
+      die("WBSRS: Could not fetch EMBL entries using EBI SRS server") 
         if not $qa2->is_success;
       
       open(my $f, $tmp_file);
@@ -122,7 +181,7 @@ sub embl {
       $chunkstart+=$chunksize;
     }
   } else {
-    die("SRS: Unexpected content from SRS query\n");
+    die("WBSRS: Unexpected content from SRS query\n");
   }
   
   return \%acc2ids;
@@ -150,7 +209,7 @@ sub entry {
   # Doing query: ${base}${query}${fullview}
 
   my $qa1 = $ua->get($base.$query.$fullview);
-  die("SRS: Can't get URL -- " . $qa1->status_line) unless $qa1->is_success;
+  die("WBSRS: Can't get URL -- " . $qa1->status_line) unless $qa1->is_success;
   $text = $qa1->content;
 
   return $text;
@@ -175,7 +234,7 @@ sub fasta {
   # Doing query: ${base}${query}${fullview}
 
   my $qa1 = $ua->get($base.$query.$fullview);
-  die("SRS: Can't get URL -- " . $qa1->status_line) unless $qa1->is_success;
+  die("WBSRS: Can't get URL -- " . $qa1->status_line) unless $qa1->is_success;
   $text = $qa1->content;
 
   return $text;
