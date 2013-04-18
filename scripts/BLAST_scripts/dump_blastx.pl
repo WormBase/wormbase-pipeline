@@ -5,7 +5,7 @@
 #  and concatenate them at the end
 # 
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2013-04-05 16:04:22 $
+# Last edited on: $Date: 2013-04-18 14:18:37 $
 # 
 
 
@@ -54,37 +54,21 @@ if ($store) {
 my $log = Log_files->make_build_log($wormbase);
 
 # that might work until we change logic_names
-my %logic2type;
-if (-e '/software/worm') { # running on Sanger?
-  %logic2type = (
-		 remaneiX => 'Remanei',
-		 brigpepX => 'Briggsae',
-		 wormpepX => 'Elegans',
-		 ppapepX  => 'Pristionchus',
-		 jappepX  => 'Japonica',
-		 brepepX  => 'Brenneri',
-		 GadflyX  => '1',
-		 ipi_humanX => '1',
-		 slimtremblX => '1',
-		 yeastX  => '1',
-		 slimswissprotX => '1',
-		);
-} else {
-  %logic2type = (
-		 wormpepx       => 'Elegans',
-		 ppapepx        => 'Pristionchus',
-		 jappepx        => 'Japonica',
-		 brugpepx       => 'Brugia',
-		 brigpepx       => 'Briggsae',
-		 remapepx       => 'Remanei',
-		 brepepx        => 'Brenneri',
-		 gadflyx        => '1',
-		 ipi_humanx     => '1',
-		 yeastx         => '1',
-		 slimswissprotx => '1',
-		 slimtremblx    => '1',
-		);
-}
+my %logic2type = (
+		  wormpepx       => 'Elegans',
+		  ppapepx        => 'Pristionchus',
+		  jappepx        => 'Japonica',
+		  brugpepx       => 'Brugia',
+		  brigpepx       => 'Briggsae',
+		  remapepx       => 'Remanei',
+		  brepepx        => 'Brenneri',
+		  gadflyx        => '1',
+		  ipi_humanx     => '1',
+		  yeastx         => '1',
+		  slimswissprotx => '1',
+		  slimtremblx    => '1',
+		 );
+
 
 my $m;
 my $multiple = $ENV{'LSF_SUBMIT_MULTIPLE'};

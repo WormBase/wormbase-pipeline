@@ -79,52 +79,22 @@ open (IPI_HITS,">$ipi_file") or $log->log_and_die("cant open $ipi_file\n");
 # assign $maintainers if $debug set
 #($maintainers = $debug . '\@sanger.ac.uk') if ($debug);
 
-#+-------------+----------------+
-#| analysis_id | logic_name     |
-#+-------------+----------------+
-#|          10 | GadflyP        |
-#|          12 | yeastP         |
-#|          14 | wormpepP       |
-#|          16 | slimswissprotP |
-#|          18 | slimtremblP    |
-#|          20 | brigpepP       |
-#|          22 | ipi_humanP     |
-#|          24 | remaneiP       |
-#+-------------+----------------+
 
-
-my %processIds2prot_analysis;
-
-if (-e "/software/worm") {
- %processIds2prot_analysis = ( 
-	                         'wormpepP'       => 'wublastp_worm',
-				 'brigpepP'       => 'wublastp_briggsae',
-				 'ipi_humanP'     => 'wublastp_human',
-				 'yeastP'         => 'wublastp_yeast',
-				 'GadflyP'        => 'wublastp_fly',
-				 'slimswissprotP' => 'wublastp_slimswissprot',
-				 'slimtremblP'    => 'wublastp_slimtrembl',
-				 'remaneiP'       => 'wublastp_remanei',
-				 'ppapepP'        => 'wublastp_pristionchus',
-				 'jappepP'        => 'wublastp_japonica',
-				 'brepepP'        => 'wublastp_brenneri',
+my %processIds2prot_analysis = ( 
+				'wormpepp'        => 'wublastp_worm',
+				'brigpepp'        => 'wublastp_briggsae',
+				'ipi_humanp'      => 'wublastp_human',
+				'yeastp'          => 'wublastp_yeast',
+				'gadflyp'         => 'wublastp_fly',
+				'slimswissprotp'  => 'wublastp_slimswissprot',
+				'slimtremblp'     => 'wublastp_slimtrembl',
+				'remapepp'        => 'wublastp_remanei',
+				'ppapepp'         => 'wublastp_pristionchus',
+				'jappepp'         => 'wublastp_japonica',
+				'brepepp'         => 'wublastp_brenneri',
+				'brugpepp'        => 'wublastp_brugia',
 			       );
-} else {
- %processIds2prot_analysis = ( 
-	                         'wormpepp'        => 'wublastp_worm',
-				 'brigpepp'        => 'wublastp_briggsae',
-				 'ipi_humanp'      => 'wublastp_human',
-				 'yeastp'          => 'wublastp_yeast',
-				 'gadflyp'         => 'wublastp_fly',
-				 'slimswissprotp'  => 'wublastp_slimswissprot',
-				 'slimtremblp'     => 'wublastp_slimtrembl',
-				 'remapepp'        => 'wublastp_remanei',
-				 'ppapepp'         => 'wublastp_pristionchus',
-				 'jappepp'         => 'wublastp_japonica',
-				 'brepepp'         => 'wublastp_brenneri',
-				 'brugpepp'        => 'wublastp_brugia',
-			       );
-}
+
 
 our %org_prefix = ( 
 	            'wublastp_worm'          => 'WP',
@@ -276,60 +246,32 @@ while (<BLAST>) {
 
   my $added = 0;
 
-  if (-e "/software/worm") { # running on Sanger?
-    if ( $analysis eq 'wormpepP' ){ # wormpep
-      $added = &addWormData ( \%worm_matches, \@data );
-    } elsif ( $analysis eq 'GadflyP'  ) { # gadfly peptide set also has isoforms
-      $added = &addFlyData ( \%fly_matches, \@data );
-      
-      # others dont have isoforms so let adding routine deal with them
-    } elsif ( $analysis eq 'yeastP'  ) {
-      $added = &addData ( \%yeast_matches, \@data );
-    } elsif ( $analysis eq 'slimswissprotP'  ) {
-      $added = &addData ( \%swiss_matches, \@data );
-    } elsif ( $analysis eq 'slimtremblP') {
-      $added = &addData ( \%trembl_matches, \@data );
-    } elsif ( $analysis eq 'ipi_humanP') {
-      $added = &addData ( \%human_matches, \@data );
-    } elsif ( $analysis eq 'brigpepP') {
-      $added = &addWormData ( \%brig_matches, \@data );
-    } elsif ( $analysis eq 'remaneiP') {
-      $added = &addWormData ( \%rem_matches, \@data );
-    } elsif ( $analysis eq 'ppapepP') {
-      $added = &addWormData ( \%ppa_matches, \@data );
-    } elsif ( $analysis eq 'jappepP') {
-      $added = &addWormData ( \%jap_matches, \@data);
-    } elsif ( $analysis eq 'brepepP') {
-      $added = &addWormData ( \%bre_matches,\@data);
-    }
-  } else {
-    if ( $analysis eq 'wormpepp' ){ # wormpep
-      $added = &addWormData ( \%worm_matches, \@data );
-    } elsif ( $analysis eq 'gadflyp'  ) { # gadfly peptide set also has isoforms
-      $added = &addFlyData ( \%fly_matches, \@data );
-      
-      # others dont have isoforms so let adding routine deal with them
-    } elsif ( $analysis eq 'yeastp'  ) {
-      $added = &addData ( \%yeast_matches, \@data );
-    } elsif ( $analysis eq 'slimswissprotp'  ) {
-      $added = &addData ( \%swiss_matches, \@data );
-    } elsif ( $analysis eq 'slimtremblp') {
-      $added = &addData ( \%trembl_matches, \@data );
-    } elsif ( $analysis eq 'ipi_humanp') {
-      $added = &addData ( \%human_matches, \@data );
-    } elsif ( $analysis eq 'brigpepp') {
-      $added = &addWormData ( \%brig_matches, \@data );
-    } elsif ( $analysis eq 'remapepp') {
-      $added = &addWormData ( \%rem_matches, \@data );
-    } elsif ( $analysis eq 'ppapepp') {
-      $added = &addWormData ( \%ppa_matches, \@data );
-    } elsif ( $analysis eq 'jappepp') {
-      $added = &addWormData ( \%jap_matches, \@data);
-    } elsif ( $analysis eq 'brepepp') {
-      $added = &addWormData ( \%bre_matches,\@data);
-    } elsif ( $analysis eq 'brugpepp') {
-      $added = &addWormData ( \%bru_matches,\@data);
-    }
+  if ( $analysis eq 'wormpepp' ){ # wormpep
+    $added = &addWormData ( \%worm_matches, \@data );
+  } elsif ( $analysis eq 'gadflyp'  ) { # gadfly peptide set also has isoforms
+    $added = &addFlyData ( \%fly_matches, \@data );
+    
+    # others dont have isoforms so let adding routine deal with them
+  } elsif ( $analysis eq 'yeastp'  ) {
+    $added = &addData ( \%yeast_matches, \@data );
+  } elsif ( $analysis eq 'slimswissprotp'  ) {
+    $added = &addData ( \%swiss_matches, \@data );
+  } elsif ( $analysis eq 'slimtremblp') {
+    $added = &addData ( \%trembl_matches, \@data );
+  } elsif ( $analysis eq 'ipi_humanp') {
+    $added = &addData ( \%human_matches, \@data );
+  } elsif ( $analysis eq 'brigpepp') {
+    $added = &addWormData ( \%brig_matches, \@data );
+  } elsif ( $analysis eq 'remapepp') {
+    $added = &addWormData ( \%rem_matches, \@data );
+  } elsif ( $analysis eq 'ppapepp') {
+    $added = &addWormData ( \%ppa_matches, \@data );
+  } elsif ( $analysis eq 'jappepp') {
+    $added = &addWormData ( \%jap_matches, \@data);
+  } elsif ( $analysis eq 'brepepp') {
+    $added = &addWormData ( \%bre_matches,\@data);
+  } elsif ( $analysis eq 'brugpepp') {
+    $added = &addWormData ( \%bru_matches,\@data);
   }
 
 
