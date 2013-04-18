@@ -103,6 +103,14 @@ else
     set path = (${ENSEMBL_CVS_ROOT_DIR}/ensembl-hive/scripts ${WORM_PACKAGES}/wublast/ ${WORM_BIN} ${path})
 
     setenv PERL5LIB ${WORM_SW_ROOT}/packages/bioperl/bioperl-live
+
+    # use java version 1.6
+    setenv JAVA_HOME /sw/arch/pkg/jdk1.6
+    setenv ANT_HOME /nfs/panda/ensemblgenomes/external/apache-ant
+    setenv PATH ${JAVA_HOME}/bin:${ANT_HOME}/bin:${PATH}
+
+
+
 endif
 
 ############################################
