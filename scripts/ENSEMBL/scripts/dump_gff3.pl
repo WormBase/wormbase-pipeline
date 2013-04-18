@@ -224,20 +224,20 @@ while( my $slice = shift @slices) {
     $cigar_line = cigar_to_almost_cigar($cigar_line);
 
     my $stripped_feature = {
-      hit_id      => $feat->hseqname, 
-      target_id   => $slice->seq_region_name,
-      target_start=> $feat->hstart,
-      target_stop => $feat->hend,
-      strand      => ($feat->strand > 0?'+':'-'),
-      hit_start   => $feat->start,
-      hit_stop    => $feat->end,
-      score       => $feat->score,
-      p_value     => $feat->p_value,
-      dbid        => $feat->dbID,
-      logic_name  => $feat->analysis->logic_name,
-      gff_source  => ($feat->analysis->gff_source) ? $feat->analysis->gff_source : $feat->analysis->logic_name,
-      cigar       => $cigar_line,
-      feature_type=> 'protein_match',
+      hit_id       => $feat->hseqname, 
+      target_id    => $slice->seq_region_name,
+      target_start => $feat->hstart,
+      target_stop  => $feat->hend,
+      strand       => ($feat->strand > 0?'+':'-'),
+      hit_start    => $feat->start,
+      hit_stop     => $feat->end,
+      score        => $feat->score,
+      p_value      => $feat->p_value,
+      dbid         => $feat->dbID,
+      logic_name   => $feat->analysis->logic_name,
+      cigar        => $cigar_line,
+      gff_source   => (defined $feat->analysis->gff_source) ? $feat->analysis->gff_source : $feat->analysis->logic_name,
+      feature_type => (defined $feat->analysis->gff_feature)? $feat->analysis->gff_feature : 'protein_match',
     };
     push @{$blastx_features{$stripped_feature->{logic_name}}}, $stripped_feature;
   }
@@ -259,20 +259,20 @@ while( my $slice = shift @slices) {
     $cigar_line = cigar_to_almost_cigar($cigar_line);
     
     my $stripped_feature = {
-      hit_id      => $feat->hseqname,
-      target_id   => $feat->slice->seq_region_name,
-      target_start=> $feat->hstart,
-      target_stop => $feat->hend,
-      strand      => ($feat->strand > 0?'+':'-'),
-      hit_start   => $feat->start,
-      hit_stop    => $feat->end,
-      score       => $feat->score,
-      p_value     => $feat->p_value,
-      dbid        => $feat->dbID,
-      logic_name  => $feat->analysis->logic_name,
-      gff_source  => ($feat->analysis->gff_source) ? $feat->analysis->gff_source : $feat->analysis->logic_name,
-      cigar       => $cigar_line,
-      feature_type=> 'nucleotide_match',
+      hit_id       => $feat->hseqname,
+      target_id    => $feat->slice->seq_region_name,
+      target_start => $feat->hstart,
+      target_stop  => $feat->hend,
+      strand       => ($feat->strand > 0?'+':'-'),
+      hit_start    => $feat->start,
+      hit_stop     => $feat->end,
+      score        => $feat->score,
+      p_value      => $feat->p_value,
+      dbid         => $feat->dbID,
+      logic_name   => $feat->analysis->logic_name,
+      cigar        => $cigar_line,
+      gff_source   => (defined $feat->analysis->gff_source) ? $feat->analysis->gff_source : $feat->analysis->logic_name,
+      feature_type => (defined $feat->analysis->gff_feature) ? $feat->analysis->gff_feature : 'nucleotide_match',
     };
     print $out_fh dump_feature($stripped_feature);
   }
@@ -290,7 +290,7 @@ while( my $slice = shift @slices) {
       dbid        => $feature->dbID,
       logic_name  => $feature->analysis->logic_name,
       gff_source  => (defined $feature->analysis->gff_source) ? $feature->analysis->gff_source : "WormBase",
-      feature_type=> 'repeat_region',
+      feature_type=> (defined $feature->analysis->gff_feature) ? $feature->analysis->gff_feature : 'repeat_region',
     };
     print $out_fh dump_feature($stripped_feature);
   }
@@ -300,15 +300,15 @@ while( my $slice = shift @slices) {
   my $simp_features = $slice->get_all_SimpleFeatures;
   foreach my $simpfeature (@$simp_features){
     my $stripped_simpfeature = {
-      target_id   => $simpfeature->slice->seq_region_name,
-      strand      => ($simpfeature->strand > 0?'+':'-'),
-      hit_start   => $simpfeature->seq_region_start,
-      hit_stop    => $simpfeature->seq_region_end,
-      score       => ($simpfeature->score||'.'),
-      dbid        => $simpfeature->dbID,
-      logic_name  => $simpfeature->analysis->logic_name,
-      gff_source  => (defined $simpfeature->analysis->gff_source) ? $simpfeature->analysis->gff_source : "WormBase",
-      feature_type=> $simpfeature->analysis->logic_name,
+      target_id    => $simpfeature->slice->seq_region_name,
+      strand       => ($simpfeature->strand > 0?'+':'-'),
+      hit_start    => $simpfeature->seq_region_start,
+      hit_stop     => $simpfeature->seq_region_end,
+      score        => ($simpfeature->score||'.'),
+      dbid         => $simpfeature->dbID,
+      logic_name   => $simpfeature->analysis->logic_name,
+      gff_source   => (defined $simpfeature->analysis->gff_source) ? $simpfeature->analysis->gff_source : "WormBase",
+      feature_type => (defined $simplefeature->analysis->gff_feature) ? $simplefeature->analysis->gff_feature : $simpfeature->analysis->logic_name,
     };
     print $out_fh dump_feature($stripped_simpfeature);
   }
