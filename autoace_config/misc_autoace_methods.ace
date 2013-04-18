@@ -941,8 +941,8 @@ Score_bounds 50.000000 100.000000
 Overlap
 Blixem_N
 Join_blocks
-GFF_feature "nucleotide_match"
-GFF_SO "SO:0000347" // nucleotide_match
+GFF_feature "expressed_sequence_match"
+GFF_SO "SO:0000102" // expressed_sequence_match
 Remark "This method is used to match C. elegans coding sequences (using the BLAT program) from EMBL entries that were sequenced/predicted outside of the genome project..."
 
 
@@ -953,8 +953,8 @@ Score_bounds 50.000000 100.000000
 Overlap
 Blixem_N
 Join_blocks
-GFF_feature "nucleotide_match"
-GFF_SO "SO:0000347" // nucleotide_match
+GFF_feature "expressed_sequence_match"
+GFF_SO "SO:0000102" // expressed_sequence_match
 Remark "This method is used to match C. elegans coding sequences (using the BLAT program) from EMBL entries that were sequenced/predicted outside of the genome project..."
 
 
@@ -966,8 +966,8 @@ Score_bounds 50.000000 100.000000
 Overlap
 Blixem_N
 Join_blocks
-GFF_feature "EST_match"
-GFF_SO "SO:0000668" // EST_match
+GFF_feature "expressed_sequence_match"
+GFF_SO "SO:0000102" // expressed_sequence_match
 Remark "This method describes C. elegans EST sequences..."
 
 
@@ -978,8 +978,8 @@ Score_bounds 50.000000 100.000000
 Overlap
 Blixem_N
 Join_blocks
-GFF_feature "EST_match"
-GFF_SO "SO:0000668" // EST_match
+GFF_feature "expressed_sequence_match"
+GFF_SO "SO:0000102" // expressed_sequence_match
 Remark "This method describes C. elegans EST sequences..."
 
 
@@ -991,8 +991,8 @@ Score_bounds 50.000000 100.000000
 Overlap
 Blixem_N
 Join_blocks
-GFF_feature "cDNA_match"
-GFF_SO "SO:0000689" // cDNA_match
+GFF_feature "expressed_sequence_match"
+GFF_SO "SO:0000102" // expressed_sequence_match
 Remark "This method describes C. elegans mRNA sequences..."
 
 
@@ -1003,8 +1003,8 @@ Score_bounds 50.000000 100.000000
 Overlap
 Blixem_N
 Join_blocks
-GFF_feature "cDNA_match"
-GFF_SO "SO:0000689" // cDNA_match
+GFF_feature "expressed_sequence_match"
+GFF_SO "SO:0000102" // expressed_sequence_match
 Remark "This method describes C. elegans mRNA sequences...."
 
 Method : "BLAT_ncRNA_BEST" 
@@ -1015,8 +1015,8 @@ Score_bounds 50.000000 100.000000
 Overlap
 Blixem_N
 Join_blocks
-GFF_feature "nucleotide_match"
-GFF_SO "SO:0000347" // nucleotide_match
+GFF_feature "expressed_sequence_match"
+GFF_SO "SO:0000102" // expressed_sequence_match
 Remark "This method describes C. elegans ncRNA sequences..."
 
 
@@ -1027,8 +1027,8 @@ Score_bounds 50.000000 100.000000
 Overlap
 Blixem_N
 Join_blocks
-GFF_feature "nucleotide_match"
-GFF_SO "SO:0000347" // nucleotide_match
+GFF_feature "expressed_sequence_match"
+GFF_SO "SO:0000102" // expressed_sequence_match
 Remark "This method describes C. elegans ncRNA sequences...."
 
 
@@ -1063,7 +1063,7 @@ Score_bounds 50.000000 100.000000
 Join_blocks
 Blixem_N
 GFF_feature "expressed_sequence_match"
-GFF_SO "SO:0000181" // translated_nucleotide_match
+GFF_SO "SO:0000102" // expressed_sequence_match
 Remark "This method describes C. elegans OST sequences...."
 
 Method : "BLAT_Caen_OST_OTHER" 
@@ -1075,7 +1075,7 @@ Overlap
 Join_blocks
 Blixem_N
 GFF_feature "expressed_sequence_match"
-GFF_SO "SO:0000181" // translated_nucleotide_match
+GFF_SO "SO:0000102" // expressed_sequence_match
 Remark "This method describes C. elegans RST sequences...."
 
 Method : "BLAT_RST_BEST" 
@@ -1109,7 +1109,7 @@ Score_bounds 50.000000 100.000000
 Join_blocks
 Blixem_N
 GFF_feature "expressed_sequence_match"
-GFF_SO "SO:0000181" // translated_nucleotide_match
+GFF_SO "SO:0000102" // expressed_sequence_match
 Remark "This method describes the best location of ESTs from other Caenorhabditae sp aligned to geneome"
 
 Method : "BLAT_Caen_EST_OTHER" 
@@ -1121,7 +1121,7 @@ Overlap
 Join_blocks
 Blixem_N
 GFF_feature "expressed_sequence_match"
-GFF_SO "SO:0000181" // translated_nucleotide_match
+GFF_SO "SO:0000102" // expressed_sequence_match
 Remark "This method describes the secondary location of ESTs from other Caenorhabditae sp aligned to geneome"
 
 Method : "BLAT_Caen_mRNA_BEST" 
@@ -1132,7 +1132,7 @@ Score_bounds 50.000000 100.000000
 Join_blocks
 Blixem_N
 GFF_feature "expressed_sequence_match"
-GFF_SO "SO:0000181" // translated_nucleotide_match
+GFF_SO "SO:0000102" // expressed_sequence_match
 Remark "This method describes the best location of mRNAs from other Caenorhabditae sp aligned to geneome"
 
 Method : "BLAT_Caen_mRNA_OTHER" 
@@ -1143,7 +1143,7 @@ Score_bounds 50.000000 100.000000
 Join_blocks
 Blixem_N
 GFF_feature "expressed_sequence_match"
-GFF_SO "SO:0000181" // translated_nucleotide_match
+GFF_SO "SO:0000102" // expressed_sequence_match
 Remark "This method describes the secondary locations of mRNA from other Caenorhabditae sp aligned to geneome"
 
 Method : "BLAT_NEMATODE" 
@@ -1154,8 +1154,8 @@ Show_up_strand
 Overlap
 Blixem_N
 Join_blocks
-GFF_feature "translated_nucleotide_match"
-GFF_SO "SO:0000181" // translated_nucleotide_match
+GFF_feature "expressed_sequence_match"
+GFF_SO "SO:0000102" // expressed_sequence_match
 Remark "This method describes cDNA sequences from other nematode species (i.e. non-C. elegans)..."
 
 Method : "BLAT_WASHU" 
@@ -1166,8 +1166,8 @@ Show_up_strand
 Overlap
 Blixem_N
 Join_blocks
-GFF_feature "translated_nucleotide_match"
-GFF_SO "SO:0000181" // translated_nucleotide_match
+GFF_feature "expressed_sequence_match"
+GFF_SO "SO:0000102" // expressed_sequence_match
 Remark "This method describes EST contigs of non-elegans nematode species from the WashU NemaGene project"
 
 Method : "BLAT_NEMBASE" 
@@ -1178,8 +1178,8 @@ Show_up_strand
 Overlap
 Blixem_N
 Join_blocks
-GFF_feature "translated_nucleotide_match"
-GFF_SO "SO:0000181" // translated_nucleotide_match
+GFF_feature "expressed_sequence_match"
+GFF_SO "SO:0000102" // expressed_sequence_match
 Remark "This method describes EST contigs of non-elegans nematode species from the Edinburgh NemBase project"
 
 
@@ -1291,7 +1291,7 @@ Score_by_width
 Score_bounds 10.000000 100.000000
 Allow_misalign
 Blixem_X
-GFF_source "wublastx" 
+GFF_source "celegans_proteins-BLASTX" 
 GFF_feature "protein_match"
 GFF_SO "SO:0000349" // protein_match
 Join_blocks
@@ -1307,7 +1307,7 @@ Score_by_width
 Score_bounds 10.000000 100.000000
 Allow_misalign
 Blixem_X
-GFF_source "wublastx" 
+GFF_source "cbriggsae_proteins-BLASTX" 
 GFF_feature "protein_match"
 GFF_SO "SO:0000349" // protein_match
 Join_blocks
@@ -1323,7 +1323,7 @@ Score_by_width
 Score_bounds 10.000000 100.000000
 Allow_misalign
 Blixem_X
-GFF_source "wublastx"
+GFF_source "cremanei_proteins-BLASTX"
 GFF_feature "protein_match"
 GFF_SO "SO:0000349" // protein_match
 Join_blocks
@@ -1339,7 +1339,7 @@ Score_by_width
 Score_bounds 10.000000 100.000000
 Allow_misalign
 Blixem_X
-GFF_source "wublastx" 
+GFF_source "cbrenneri_proteins-BLASTX" 
 GFF_feature "protein_match"
 GFF_SO "SO:0000349" // protein_match
 Join_blocks
@@ -1356,7 +1356,7 @@ Score_by_width
 Score_bounds 10.000000 100.000000
 Allow_misalign
 Blixem_X
-GFF_source "wublastx"
+GFF_source "ppacificus_proteins-BLASTX"
 GFF_feature "protein_match"
 GFF_SO "SO:0000349" // protein_match
 Join_blocks
@@ -1373,13 +1373,31 @@ Score_by_width
 Score_bounds 10.000000 100.000000
 Allow_misalign
 Blixem_X
-GFF_source "wublastx"
+GFF_source "cjaponica_proteins-BLASTX"
 GFF_feature "protein_match"
 GFF_SO "SO:0000349" // protein_match
 Join_blocks
 Remark "wublastx search vs C. japonica peptides"
 Display_gaps
 Gapped
+
+
+Method : "wublastx_brugia" 
+Colour LIGHTGREEN
+Frame_sensitive
+Show_up_strand
+Score_by_width
+Score_bounds 10.000000 100.000000
+Allow_misalign
+Blixem_X
+GFF_source "bmalayi_proteins-BLASTX"
+GFF_feature "protein_match"
+GFF_SO "SO:0000349" // protein_match
+Join_blocks
+Remark "wublastx search vs B. malayi peptides"
+Display_gaps
+Gapped
+
 
 
 Method : "wublastx_fly" 
@@ -1390,7 +1408,7 @@ Score_by_width
 Score_bounds 10.000000 100.000000
 Allow_misalign
 Blixem_X
-GFF_source "wublastx"
+GFF_source "dmelanogaster_proteins-BLASTX"
 GFF_feature "protein_match"
 GFF_SO "SO:0000349" // protein_match
 Join_blocks
@@ -1407,7 +1425,7 @@ Score_by_width
 Score_bounds 10.000000 100.000000
 Allow_misalign
 Blixem_X
-GFF_source "wublastx" 
+GFF_source "scerevisiae_proteins-BLASTX" 
 GFF_feature "protein_match"
 GFF_SO "SO:0000349" // protein_match
 Join_blocks
@@ -1424,7 +1442,7 @@ Score_by_width
 Score_bounds 10.000000 100.000000
 Allow_misalign
 Blixem_X
-GFF_source "wublastx" 
+GFF_source "hsapiens_proteins-BLASTX" 
 GFF_feature "protein_match"
 GFF_SO "SO:0000349" // protein_match
 Join_blocks
@@ -1441,7 +1459,7 @@ Score_by_width
 Score_bounds 10.000000 100.000000
 Allow_misalign
 Blixem_X
-GFF_source "wublastx" 
+GFF_source "UniProt-BLASTX" 
 GFF_feature "protein_match"
 GFF_SO "SO:0000349" // protein_match
 Join_blocks
@@ -1458,7 +1476,7 @@ Score_by_width
 Score_bounds 10.000000 100.000000
 Allow_misalign
 Blixem_X
-GFF_source "wublastx" 
+GFF_source "UniProt-BLASTX" 
 GFF_feature "protein_match"
 GFF_SO "SO:0000349" // protein_match
 Join_blocks
@@ -3717,6 +3735,9 @@ Right_priority 4.65
 
 Method : "wublastx_japonica"
 Right_priority 4.7
+
+Method : "wublastx_brugia"
+Right_priority 4.72
 
 Method : "wublastx_pristionchus"
 Right_priority 4.75
