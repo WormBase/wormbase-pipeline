@@ -5,7 +5,7 @@
 # Dumps InterPro protein motifs from ensembl mysql (protein) database to an ace file
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2013-03-12 13:34:09 $
+# Last updated on: $Date: 2013-04-19 11:05:08 $
 
 
 use strict;
@@ -22,7 +22,7 @@ my $WPver;
 my $database; 
 my $method; 
 my $verbose; 
-my ($ddir,$interpro_xml, $latest_xml,$help);
+my ($ddir, $help);
 my ($store, $test, $debug);
 
 
@@ -34,16 +34,11 @@ GetOptions("debug:s"       => \$debug,
 	   "test"          => \$test,
 	   "help"          => \$help,
 	   "store:s"       => \$store,
-           "interproxml=s" => \$interpro_xml,
-           "latestxml"     => \$latest_xml,
 	   'dumpdir=s'     => \$ddir,
 	  );
 
 # Display help if required
 &usage("Help") if ($help);
-
-$interpro_xml = $ENV{'PIPELINE'} . "/blastdb/Worms/interpro_scan/iprscan/data/interpro.xml"
-    if not defined $interpro_xml;
 
 my $wormbase;
 if ( $store ) {
@@ -65,36 +60,29 @@ if ($test) {
 # MAIN BODY OF SCRIPT
 ##########################
 
-# set up InterPro ID mapping
-my %ip_ids = get_ip_mappings();                # hash of Databases hash of IDs
- 
 # set up CDS -> wormpep mapping
 my $cds2wormpep;
 $wormbase->FetchData('cds2wormpep',$cds2wormpep);
 
 
-
-
-
-# define the Database names that InterPro uses in interpro.xml
-# and the logic names (as specified in @methods) that search those databases
-my %method_database = (
-		       'scanprosite' => 'PROSITE',
-		       'Prints'      => 'PRINTS',
-		       'pfscan'      => 'PROFILE',
-		       'blastprodom' => 'PRODOM',
-		       'Smart'       => 'SMART',
-		       'Pfam'        => 'PFAM',
-		       'Tigrfam'     => 'TIGRFAMs',
-		       'Ncoils'      => 'COIL',
-		       'Seg'         => 'SEG',
-		       'Tmhmm'       => 'TMHMM',
-		       'Signalp'     => 'SIGNALP',
-		       'PIRSF'       => 'PIRSF',
-		       'Superfamily' => 'SSF',
-		       'gene3d'      => 'GENE3D',
-		       'hmmpanther'  => 'PANTHER',
-		       'hamap'       => 'HAMAP',
+# define the logic names (as specified in @methods) that have an evalue and can be translated into InterPro IDs
+my @method_database = (
+#		       'scanprosite', # no score or evalue
+		       'prints',
+#		       'pfscan', # no evalue, but does have a score, should we use that?
+		       'blastprodom',
+		       'smart',
+		       'pfam',
+		       'tigrfam',
+#		       'ncoils', # no interpro_id
+#		       'seg', # no interpro_id
+#		       'tmhmm', # no score or evalue
+#		       'signalp', # no interpro_id
+		       'pirsf',
+		       'superfamily',
+		       'gene3d',
+		       'hmmpanther',
+		       'hamap', # there are hits to bacterial motifs in species with bacterial endosymbionts (from contamination and horizontal transfer), so this is useful
 	       );
 
 
@@ -106,7 +94,7 @@ if ($method ) {
 
 # add new methods (logic_names, as defined in the mysql database 'analysis' table, column 'logic_name') 
 # as they are added to the pipeline
-   @methods = keys %method_database;
+   @methods = @method_database;
 }
 
 
@@ -149,7 +137,7 @@ print "connect to the mysql database $dbname on $dbhost as $dbuser\n\n" if ($ver
 my $dbh = DBI -> connect("DBI:mysql:$dbname:$dbhost:$dbport", $dbuser, $dbpass, {RaiseError => 1})
     || $log->log_and_die("cannot connect to db, $DBI::errstr");
 
-# get the mapping of method 2 analysis id
+# get the mapping of method to analysis_id
 my %method2analysis;
 $log->write_to("get mapping of method to analysis id \n");
 print "get mapping of method to analysis id \n" if ($verbose);
@@ -166,13 +154,16 @@ foreach my $method (@methods) {
 #    print "$method  $anal\n" if ($verbose);
 }
 
-# prepare the sql query
-my $sth_f = $dbh->prepare ( q{ SELECT stable_id, seq_start, seq_end, hit_name, hit_start, hit_end, score, evalue
-				   FROM protein_feature,translation_stable_id
+# prepare the sql queries
+my $sth_f = $dbh->prepare ( q{ SELECT stable_id, p.seq_start, p.seq_end, hit_name, hit_start, hit_end, score, evalue
+				   FROM protein_feature p, translation t
 				   WHERE evalue <= "0.1"
 				   AND analysis_id = ?
-				   AND translation_stable_id.translation_id = protein_feature.translation_id
+				   AND t.translation_id = p.translation_id
                              } );
+
+# for converting hit_name to interpro_id
+my $id2interpro = $dbh->prepare ( q{ SELECT interpro_ac FROM interpro WHERE  id = ?} );
 
 # counts extracted for each method
 my %counts;
@@ -188,29 +179,17 @@ foreach my $method (@methods) {
   print "We found $counts{$method} results for $method\n";
 
   foreach my $aref (@$ref) {
-    my ($prot, $start, $end, $hid, $hstart, $hend, $score, $evalue) = @$aref;
+    my ($prot, $start, $end, $hit_name, $hstart, $hend, $score, $evalue) = @$aref;
 
-    # change the database IDs to the format used in the Interpro XML file
-    if ($method eq "Pfam") {
-      if( $hid =~ /(\w+)\.\d+/ ) {
-	$hid = $1;
-      }
-    } elsif ($method eq "Superfamily") {
-      $hid = "SSF$hid";
-    } elsif ($method eq "gene3d") {
-      $hid = "G3DSA:$hid";
-    }
+    # convert Database ID to InterPro ID 
+    $id2interpro->execute ($hit_name);
+    my $interpro_id_ref = $id2interpro->fetchall_arrayref;
+    if (scalar(@$interpro_id_ref)  == 0) {next} # if there is no InterPro ID then skip this one
+    if (scalar(@$interpro_id_ref)  > 1) {$log->log_and_die("Hit_name '$hit_name' has several interpro IDs:\n".@$interpro_id_ref."\n")}
+    my ($interpro_id) = @$interpro_id_ref;
 
-    # convert Database ID to InterPro ID (if it is in InterPro)
-    my $database = $method_database{$method};
-    if (exists $ip_ids{$database}{$hid}) {
-      my $ip_id = $ip_ids{$database}{$hid};
-      print "Convert IDs $method: $hid -> InterPro: $ip_id\n" if ($verbose);
-      my @hit = ( $ip_id, $start, $end, $hstart, $hend, $score, $evalue );
-      push @{$motifs{$prot}}, [ @hit ];
-    } else {
-      print "$database ID $hid is not in InterPro\n" if ($verbose);
-    }
+    my @hit = ( $interpro_id, $start, $end, $hstart, $hend, $score, $evalue );
+    push @{$motifs{$prot}}, [ @hit ];
   }
 }
 
@@ -251,12 +230,12 @@ foreach my $prot ( keys %motifs ) {
   my $hit;
   while( $hit = shift @{$motifs{$prot}}) {
 
-    my ( $ip_id, $start, $end, $hstart, $hend, $score, $evalue ) = @$hit;
+    my ( $interpro_id, $start, $end, $hstart, $hend, $score, $evalue ) = @$hit;
 
     # is this a new ID or the same ID at a different part of the protein?
-    # print "merged($prev_id)= $merged_start $merged_end : this($ip_id)= $start $end\n";
+    # print "merged($prev_id)= $merged_start $merged_end : this($interpro_id)= $start $end\n";
 
-    if ($prev_id ne $ip_id || $start > $merged_end) {
+    if ($prev_id ne $interpro_id || $start > $merged_end) {
 
       # save the merged hit
       if ($prev_id ne "") {
@@ -266,7 +245,7 @@ foreach my $prot ( keys %motifs ) {
       }
 
       # reset the values for the merged hit to be the values of the new ID
-      $prev_id = $ip_id;
+      $prev_id = $interpro_id;
       $merged_start = $start;
       $merged_end = $end;
       $merged_hstart = $hstart;
@@ -319,16 +298,16 @@ foreach my $p (sort {$a cmp $b} keys %merged) {
     }
 
     foreach my $hit (@{$merged{$p}}) {
-      my ($ip_id, $start, $end, $hstart, $hend, $score, $evalue) = @$hit;
-      my $line = "Motif_homol \"INTERPRO:$ip_id\" \"interpro\" $evalue $start $end $hstart $hend";
+      my ($interpro_id, $start, $end, $hstart, $hend, $score, $evalue) = @$hit;
+      my $line = "Motif_homol \"INTERPRO:$interpro_id\" \"interpro\" $evalue $start $end $hstart $hend";
       print "$line\n" if ($verbose);
       # skip known invalid interpro hits
       # IPR001412 (aminoacyl-tRNA ligase activity) is from the PROSITE domain PS00178 which is not a valid hit in ZK617.1a to .1e according to Moerman <moerman@zoology.ubc.ca>
-      if ($ip_id eq 'IPR001412' && $prot eq 'CE33017') {next} 
-      if ($ip_id eq 'IPR001412' && $prot eq 'CE33018') {next} 
-      if ($ip_id eq 'IPR001412' && $prot eq 'CE44671') {next} 
-      if ($ip_id eq 'IPR001412' && $prot eq 'CE40796') {next} 
-      if ($ip_id eq 'IPR001412' && $prot eq 'CE44668') {next} 
+      if ($interpro_id eq 'IPR001412' && $prot eq 'CE33017') {next} 
+      if ($interpro_id eq 'IPR001412' && $prot eq 'CE33018') {next} 
+      if ($interpro_id eq 'IPR001412' && $prot eq 'CE44671') {next} 
+      if ($interpro_id eq 'IPR001412' && $prot eq 'CE40796') {next} 
+      if ($interpro_id eq 'IPR001412' && $prot eq 'CE44668') {next} 
       print ACE "$line\n";
     }
 }
@@ -391,83 +370,6 @@ sub usage {
   }
 }
 
-#########################
-# get the interpro file #
-#########################
-
-sub get_interpro {
-
-  my $latest_version = $_[0];
- 
-  my $get_latest = 1;		# set to 0 to skip this FTP during debugging
-  if( $get_latest == 1)
-  {				# 
-				#Get the latest version
-    if (defined $ENV{'SANGER'}) {
-      print "Attempting to FTP the latest version of interpro.xml from ebi \n" if ($verbose);
-      `wget --cache=off -O $latest_version.gz ftp://ftp.ebi.ac.uk/pub/databases/interpro/interpro.xml.gz`;
-      `gunzip "${latest_version}.gz"`;
-    } else {
-      $wormbase->run_command("cp /ebi/ftp/pub/databases/interpro/interpro.xml.gz ${latest_version}.gz", $log);
-      $wormbase->run_command("gunzip ${latest_version}.gz", $log);
-    }
-  }
-  else {
-    print "Using the existing version of interpro2go mapping file (ie not FTPing latest)\n" if ($verbose);
-  }
-}
-
-#########################################################
-# reads in data for database ID to InterPro ID mapping  #
-#########################################################
-
-
-sub get_ip_mappings {
-
-  my $ip_ids = ();       # hash of Databases hash of IDs
- 
-  # the interpro.xml file can be obtained from:
-  # ftp.ebi.ac.uk/pub/databases/interpro/interpro.xml.gz
-
-  # get the interpro file from the EBI
-  if ($latest_xml) {
-    my $tmpfile = "/tmp/interpro.xml";
-    unlink $tmpfile if -e $tmpfile;
-    get_interpro($tmpfile);
-    
-    $interpro_xml = $tmpfile;
-  }
- 
-  open (XML, "< $interpro_xml")
-      or $log->log_and_die("Failed to open file $interpro_xml\n");
- 
-  my $in_member_list = 0;       # flag for in data ID section of XML file
-  my $IPid;
-  my $IPname;
-  my $this_db;
-  my $this_dbkey;
- 
-  while (my $line = <XML>) {
- 
-    if ($line =~ /<interpro id=\"(\S+)\"/) {
-      $IPid = $1;
-    } elsif ($line =~ /<member_list>/) { # start of database ID section
-      $in_member_list = 1;
-    } elsif ($line =~ m|</member_list>|) { # end of database ID section
-      $in_member_list = 0;
-    } elsif ($in_member_list && $line =~ /<db_xref/) {
-      ($this_db, $this_dbkey) = ($line =~ /db=\"(\S+)\" dbkey=\"(\S+)\" /);
-      #print "$IPid $this_db $this_dbkey\n";
-      $ip_ids{$this_db}{$this_dbkey} = $IPid;
-    }
-  }
-  close (XML);
-  if ($latest_xml) {
-    unlink $interpro_xml;
-  }
-
-  return %ip_ids;
-}
 
 ######################################## 
 # Add perl documentation in POD format #
