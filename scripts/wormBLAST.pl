@@ -4,8 +4,8 @@
 #
 # written by Anthony Rogers
 #
-# Last edited by: $Author: klh $
-# Last edited on: $Date: 2013-04-19 10:23:37 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2013-04-19 15:15:18 $
 #
 # it depends on:
 #    wormpep + history
@@ -736,7 +736,7 @@ sub update_analysis {
 
 
   # the Interpro stuff has its own pipeline on the EBI, so only load it on the Sanger
-  if (defined $ENV{'SANGER'}) {
+  if (-e '/software/worm') { # Running on Sanger
     # update the interpro analysis
     my $interpro_dir    = "$wormpipe_dir/blastdb/Worms/interpro_scan";
     my $interpro_date   = 1000;
@@ -756,6 +756,33 @@ sub update_analysis {
       $raw_dbh->do('DELETE FROM protein_feature WHERE analysis_id IN (select analysis_id FROM analysis WHERE module LIKE "ProteinAnnotation%")')
 	|| die "$DBI::errstr";
       $raw_dbh->do('DELETE FROM input_id_analysis WHERE analysis_id IN (select analysis_id FROM analysis WHERE module LIKE "ProteinAnnotation%")')
+	|| die "$DBI::errstr";
+    }
+  } else {
+    # clear out the interpro table and the protein_features for all interpro analysis_ids
+
+    $raw_dbh->do('DELETE FROM interpro') or die $raw_dbh->errstr;
+
+    # these are the current set of analysis logic_names for the InterPro hive system. Seg is currently not one of them.
+    my @interpro_logic_names = (
+			       'scanprosite', 
+			       'prints',
+			       'pfscan', 
+			       'blastprodom',
+			       'smart',
+			       'pfam',
+			       'tigrfam',
+			       'ncoils', 
+			       'tmhmm', 
+			       'signalp', 
+			       'pirsf',
+			       'superfamily',
+			       'gene3d',
+			       'hmmpanther',
+			       'hamap', 
+			      );
+    foreach my $logic_name (@interpro_logic_names ) {
+      $raw_dbh->do("DELETE FROM protein_feature WHERE analysis_id IN (select analysis_id FROM analysis WHERE logic_name = '${logic_name}')")
 	|| die "$DBI::errstr";
     }
   }
