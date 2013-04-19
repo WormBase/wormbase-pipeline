@@ -3,8 +3,8 @@
 # DESCRIPTION:
 #   setting up the BLAT pipeline
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2013-04-15 15:21:25 $
+# Last edited by: $Author: klh $
+# Last edited on: $Date: 2013-04-19 12:34:46 $
 
 use lib $ENV{'CVS_DIR'};
 
@@ -31,81 +31,41 @@ verbose('OFF');
 use Wormbase;
 use strict;
 
-my $CONFIG;
-
-if (-e '/software/worm') { # Runing on Sanger
-  $CONFIG = {
-	     logic_names => {
-			     'blat_brugia_ests'    => 'brugia/EST.masked*',
-			     'blat_brugia_cdnas'   => 'brugia/mRNA.masked*',
-			     
-			     'blat_elegans_ests'   => 'elegans/EST.masked*',
-			     'blat_elegans_cdnas'  => 'elegans/mRNA.masked*',
-			     'blat_elegans_osts'   => 'elegans/OST.masked*',
-			     'blat_elegans_rsts'   => 'elegans/RST.masked*',
-			     'blat_elegans_ncrnas' => 'elegans/ncRNA.masked*',
-			     'blat_elegans_tc1s'   => 'elegans/tc1.masked*',
-			     
-			     'blat_briggsae_ests'  => 'briggsae/EST.masked*',
-			     'blat_briggsae_cdnas' => 'briggsae/mRNA.masked*',
-			     
-			     'blat_brenneri_ests'  => 'brenneri/EST.masked*',
-			     'blat_brenneri_cdnas' => 'brenneri/mRNA.masked*',
-			     
-			     'blat_remanei_ests'   => 'remanei/EST.masked*',
-			     'blat_remanei_cdnas'  => 'remanei/mRNA.masked*',
-			     
-			     'blat_japonica_ests'  => 'japonica/EST.masked*',
-			     'blat_japonica_cdnas' => 'japonica/mRNA.masked*',
-			     
-			     'blat_heterorhabditis_ests'  => 'heterorhabditis/EST.masked*',
-			     'blat_heterorhabditis_cdnas' => 'heterorhabditis/mRNA.masked*',
-			     
-			     'blat_pristionchus_ests'  => 'pristionchus/EST.masked*',
-			     'blat_pristionchus_cdnas' => 'pristionchus/mRNA.masked*',
-			     
-			     'blat_nembase_ests'   => 'nembase/EST.masked*',
-			     'blat_washu_ests'     => 'washu/EST.masked*',
-			     'blat_nematode_ests'  => 'nematode/EST.masked*',
-			    },
-	    };
-} else {
-  $CONFIG = {
-	     logic_names => {
-			     'bmalayi_est'    => 'brugia/EST.masked*',
-			     'bmalayi_mrna'   => 'brugia/mRNA.masked*',
-			     
-			     'celegans_est'   => 'elegans/EST.masked*',
-			     'celegans_mrna'  => 'elegans/mRNA.masked*',
-			     'celegans_ost'   => 'elegans/OST.masked*',
-			     'celegans_rst'   => 'elegans/RST.masked*',
-			     'celegans_ncrna' => 'elegans/ncRNA.masked*',
-			     'celegans_tc1'   => 'elegans/tc1.masked*',
-			     
-			     'cbriggsae_est'  => 'briggsae/EST.masked*',
-			     'cbriggsae_mrna' => 'briggsae/mRNA.masked*',
-			     
-			     'cbrenneri_est'  => 'brenneri/EST.masked*',
-			     'cbriggsae_mrna' => 'brenneri/mRNA.masked*',
-			     
-			     'cremanei_est'   => 'remanei/EST.masked*',
-			     'cremanei_mrna'  => 'remanei/mRNA.masked*',
-			     
-			     'cjaponica_est'  => 'japonica/EST.masked*',
-			     'cjaponica_mrna' => 'japonica/mRNA.masked*',
-			     
-			     'hbacteriophora_est'  => 'heterorhabditis/EST.masked*',
-			     'hbacteriophora_mrna' => 'heterorhabditis/mRNA.masked*',
-			     
-			     'ppacificus_est'  => 'pristionchus/EST.masked*',
-			     'ppacificus_mrna' => 'pristionchus/mRNA.masked*',
-			     
-			     'nembase_est'   => 'nembase/EST.masked*',
-			     'washu_est'     => 'washu/EST.masked*',
-			     'nematode_est'  => 'nematode/EST.masked*',
-  },
+my $CONFIG = {
+  logic_names => {
+    'bmalayi_est'    => 'brugia/EST.masked*',
+    'bmalayi_mrna'   => 'brugia/mRNA.masked*',
+    
+    'celegans_est'   => 'elegans/EST.masked*',
+    'celegans_mrna'  => 'elegans/mRNA.masked*',
+    'celegans_ost'   => 'elegans/OST.masked*',
+    'celegans_rst'   => 'elegans/RST.masked*',
+    'celegans_ncrna' => 'elegans/ncRNA.masked*',
+    'celegans_tc1'   => 'elegans/tc1.masked*',
+    
+    'cbriggsae_est'  => 'briggsae/EST.masked*',
+    'cbriggsae_mrna' => 'briggsae/mRNA.masked*',
+    
+    'cbrenneri_est'  => 'brenneri/EST.masked*',
+    'cbriggsae_mrna' => 'brenneri/mRNA.masked*',
+    
+    'cremanei_est'   => 'remanei/EST.masked*',
+    'cremanei_mrna'  => 'remanei/mRNA.masked*',
+    
+    'cjaponica_est'  => 'japonica/EST.masked*',
+    'cjaponica_mrna' => 'japonica/mRNA.masked*',
+    
+    'hbacteriophora_est'  => 'heterorhabditis/EST.masked*',
+    'hbacteriophora_mrna' => 'heterorhabditis/mRNA.masked*',
+    
+    'ppacificus_est'  => 'pristionchus/EST.masked*',
+    'ppacificus_mrna' => 'pristionchus/mRNA.masked*',
+    
+    'nembase_est'   => 'nembase/EST.masked*',
+    'washu_est'     => 'washu/EST.masked*',
+    'nematode_est'  => 'nematode/EST.masked*',
+  }
 };
-}
 
 my($debug,$store,$port,$user,$password,$species,$host,$dbname);
 GetOptions(
@@ -235,8 +195,9 @@ sub clean_input_ids {
 ##########################
 sub get_all_blat_analyses {
   my @blat_ana;
-  foreach my $ana (@{$db->get_AnalysisAdaptor->fetch_all}) {
-    if ($ana->program_file =~ /blat$/) {
+  foreach my $logic_name (keys %{$CONFIG->{logic_names}}) {
+    my $ana = $db->get_AnalysisAdaptor->fetch_by_logic_name($logic_name);
+    if (defined $ana) {
       push @blat_ana, $ana;
     } 
   }
