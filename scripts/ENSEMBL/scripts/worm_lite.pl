@@ -52,6 +52,10 @@ die "You must supply a valid YAML config file\n" if not defined $yfile or not -e
 
 my $global_config = YAML::LoadFile($yfile);
 my $config = $global_config->{$species};
+if (not $config) {
+  die "Could not find config entry for species $species\n";
+}
+
 if ($test) {
   $config = $global_config->{"${species}_test"};
 }
@@ -72,8 +76,6 @@ my ($tax_db_host, $tax_db_port, $tax_db_name) =
 
 
 $WormBase::Species = $species;
-our $gff_types = ($config->{gff_types} || "curated coding_exon");
-
 
 &setupdb($config) if $setup;
 &load_assembly($config)   if $dna;
@@ -145,7 +147,7 @@ sub setupdb {
         . "--mport $prod_db_port "
         . "--mdatabase $prod_db_name "
 	. "--dropbaks "
-	. "--dumppath $ENV{'PIPELINE'}/dumps/ ";
+	. "--dumppath /tmp/ ";
     print "$cmd\n";
     system($cmd) and die "Could not populate production tables\n";
 
@@ -275,7 +277,9 @@ sub load_genes {
     -pass   => $config->{database}->{password},
     -port   => $config->{database}->{port},
       );
+
   my $analysis = $db->get_AnalysisAdaptor()->fetch_by_logic_name('wormbase');
+
   if (not defined $analysis) {
     $analysis = Bio::EnsEMBL::Analysis->new(-logic_name => "wormbase", 
                                             -gff_source => "WormBase",
@@ -284,7 +288,7 @@ sub load_genes {
     $db->get_AnalysisAdaptor->store($analysis);
   }
 
-  my (%slice_hash, @path_globs, @gff_files, $genes); 
+  my (%slice_hash, @path_globs, @gff2_files, @gff3_files, $genes); 
 
   foreach my $slice (@{$db->get_SliceAdaptor->fetch_all('toplevel')}) {
     $slice_hash{$slice->seq_region_name} = $slice;
@@ -309,52 +313,34 @@ sub load_genes {
     }
   }
   
-  @path_globs = split(/,/, $config->{gff});
-
-  foreach my $fglob (@path_globs) {
-    push @gff_files, glob($fglob);
+  if ($config->{gff}) {
+    @path_globs = split(/,/, $config->{gff});
+    foreach my $fglob (@path_globs) {
+      push @gff2_files, glob($fglob);
+    }
+  } elsif ($config->{gff3}) {
+    @path_globs = split(/,/, $config->{gff3});
+    foreach my $fglob (@path_globs) {
+      push @gff3_files, glob($fglob);
+    }
+  } else {
+    die "No gff or gff3 stanza in config - death\n";
   }
-  
-  open(my $gff_fh, "cat @gff_files |") or die "Could not create GFF stream\n";
-  $genes = &parse_gff_fh( $gff_fh, \%slice_hash, $analysis);
+
+  if (@gff2_files) {
+    open(my $gff_fh, "cat @gff2_files |") or die "Could not create GFF stream\n";
+    $genes = &parse_gff_fh( $gff_fh, \%slice_hash, $analysis);
+  } elsif (@gff3_files) {
+    open(my $gff_fh, "cat @gff3_files |") or die "Could not create GFF stream\n";
+    $genes = &parse_gff3_fh( $gff_fh, \%slice_hash, $analysis);
+  } else {
+    die "No gff or gff3 files found - death\n";
+  }
+
   &write_genes( $genes, $db );
   
-  $db->dbc->do('UPDATE gene SET biotype="protein_coding"');
   $db->dbc->do('INSERT INTO meta (meta_key,meta_value) VALUES ("genebuild.start_date",NOW())');
 }
 
-package WormBase;
-
-# redefine subroutine to interpret data simply
-# - only consider CDS of each gene
-# - create distinct "gene" for each isoform
-sub process_file {
-    my ($fh) = @_;
-    my ( %genes, $transcript, %five_prime, %three_prime, %parent_seqs );
-
-  LOOP: while (<$fh>) {
-        chomp;
-        my $element = $_;
-        
-        next LOOP if /^\#/;
-
-        my ( $chr, $status, $type, $start, $end, $score, $strand, $frame, $sequence, $gene ) = split;
-
-        my $line = $status . " " . $type;
-        next LOOP if $line ne $gff_types;
-
-        $gene =~ s/\"//g if $gene;
-
-        if (not exists $genes{$gene}) {
-          $genes{$gene} = [];
-          $parent_seqs{$gene} = $chr;
-          $five_prime{$gene}{$gene} = [];
-          $three_prime{$gene}{$gene} = [];
-        }
-        push( @{ $genes{$gene} }, $element );
-    }
-    print STDERR "Have " . keys(%genes) . " genes (CDS)\n";
-    return \%genes, \%five_prime, \%three_prime, \%parent_seqs;
-}
 
 1;
