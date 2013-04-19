@@ -3,8 +3,8 @@
 # DESCRIPTION:
 #   setting up the GenBlast pipeline
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2013-03-12 13:51:24 $
+# Last edited by: $Author: klh $
+# Last edited on: $Date: 2013-04-19 13:15:32 $
 
 use lib $ENV{CVS_DIR};
 
@@ -34,16 +34,16 @@ use strict;
 
 my($debug,$test,$store,$database,$port,$user,$password,$species,$host,$dbname, $dumpace);
 GetOptions(
-	   'debug=s'    => \$debug,
-	   'test'       => \$test,
-	   'store=s'    => \$store,
-	   'user=s'     => \$user,
-	   'password=s' => \$password,
-	   'species=s'  => \$species,
-	   'host=s'     => \$host,
-	   'port=s'     => \$port,
-	   'dbname=s'   => \$dbname,
-	   'dumpace'    => \$dumpace,
+  'debug=s'    => \$debug,
+  'test'       => \$test,
+  'store=s'    => \$store,
+  'user=s'     => \$user,
+  'password=s' => \$password,
+  'species=s'  => \$species,
+  'host=s'     => \$host,
+  'port=s'     => \$port,
+  'dbname=s'   => \$dbname,
+  'dumpace'    => \$dumpace,
 )||die(USAGE);
 
 # WormBase setup
@@ -73,14 +73,13 @@ $host||=$ENV{'WORM_DBHOST'};
 $port||=$ENV{'WORM_DBPORT'};
 
 # MYSQL setup
-my $db = Bio::EnsEMBL::DBSQL::DBAdaptor->new(
-        -host     => $host,
-        -user     => $user,
-        -dbname   => $dbname || $database,
-        -port     => $port,
-        -driver   => 'mysql', 
+my $db = Bio::EnsEMBL::Pipeline::DBSQL::DBAdaptor->new(
+  -host     => $host,
+  -user     => $user,
+  -dbname   => $dbname || $database,
+  -port     => $port,
+  -password => $password,
     );
-$db->password($password);
 
 
 # locations for the genome and split wormpep fasta_files
@@ -88,8 +87,9 @@ my $genblast_dir = $wormbase->autoace.'/genblast';
 mkdir $genblast_dir, 0777;
 my $split_wormpep_dir = "$genblast_dir/split_wormpep";
 my $split_wormpep_files = "${split_wormpep_dir}/*";
-my $logic_name = "GenBlast_proteins";
 my $genome_dir = "$genblast_dir/genome";
+
+my @genblast_analyses = &get_all_GenBlast_analyses();
 
 if ($dumpace) { # dump the resulting analysis out as an ace file
 
@@ -131,71 +131,103 @@ $log->write_to("Finished.\n");
 $log->mail();
 
 
-#####################################################################################################
-
-# puts new input_ids back in the input_id_analysis table 
-sub make_input_ids {
-  
-  my $sth=$db->prepare('INSERT INTO input_id_analysis (input_id,input_id_type,analysis_id,created,result) VALUES (?,?,?,NOW(),0)');
-  
-  # create_input_ids for each analysis
-  foreach my $analysis(&get_all_GenBlast_analysis()) {
-    my @files = glob($split_wormpep_files);
-    foreach my $file (@files){
-      $sth->execute($file,$analysis->input_id_type_analysis->logic_name,$analysis->input_id_type_analysis->dbID);
-    }
-  }
-}
-
-#####################################################################################################
-
-sub clean_old_results {
-
-
-  # for each old transcript, remove its exons
-
-  my $get_transcripts=$db->prepare('SELECT * FROM prediction_transcript WHERE analysis_id=?');
-  my $del_exons=$db->prepare('DELETE FROM prediction_exon WHERE prediction_transcript_id=?');
-
-  foreach my $analysis (&get_all_GenBlast_analysis()) {
-    $get_transcripts->execute($analysis->dbID);
-    my $transcripts = $get_transcripts->fetchall_arrayref()||[]; # array_ref->array_refs
-    foreach my $transcript (@{$transcripts}) {
-      my $prediction_transcript_id = $$transcript[0];
-      $del_exons->execute($prediction_transcript_id); 
-    }
-  }
-
-  # now clean out the old transcripts
-  my $del_transcripts=$db->prepare('DELETE FROM prediction_transcript WHERE analysis_id=?');
-  foreach my $analysis (&get_all_GenBlast_analysis()) {
-    $del_transcripts->execute($analysis->dbID);
-    $del_transcripts->execute($analysis->input_id_type_analysis->dbID); 
-  }
-      
-}
-  
-
-
 
 #####################################################################################################
 
 #  cleans the input_id_analysis table
 sub clean_input_ids {
-  my $del_handle=$db->prepare('DELETE FROM input_id_analysis WHERE analysis_id=?');
-  my @analysis_to_clean = &get_all_GenBlast_analysis();
-  foreach my $analysis (@analysis_to_clean){
-    $del_handle->execute($analysis->dbID);                             # delete the parent analysis rule input_id from table input_id_analysis
-    $del_handle->execute($analysis->input_id_type_analysis->dbID);     # delete the child  analysis rule input_id from table input_id_analysis
+
+  my $dependent_analysis = &get_dependent_analysis();
+
+  foreach my $analysis (@genblast_analyses, $dependent_analysis){
+    my $dbID = $analysis->dbID;
+    $db->dbc->do("DELETE FROM input_id_analysis WHERE analysis_id = $dbID");
   }    
 }
 
 #####################################################################################################
 
+# puts new input_ids back in the input_id_analysis table 
+sub make_input_ids {
+  
+  my $dep_ana = &get_dependent_analysis();
+  my $sth = $db->dbc->prepare('INSERT INTO input_id_analysis (input_id,input_id_type,analysis_id,created,result) VALUES (?,?,?,NOW(),0)');
+  
+  # create_input_ids for each analysis
+  my @files = glob($split_wormpep_files);
+  foreach my $file (@files){
+    $sth->execute($file,$dep_ana->input_id_type, $dep_ana->dbID)
+  }
+}
+
+#####################################################################################################
+sub get_dependent_analysis {
+
+  my %deps;
+  
+  foreach my $ana (@genblast_analyses) {
+    my $logic_name = $ana->logic_name;
+
+    my $rule = $db->get_RuleAdaptor->fetch_by_goal($ana);
+    die("No rule for $logic_name\n") if not defined $rule;
+    
+    my $cond_list = $rule->list_conditions;
+    die("Expecting exactly one condition for $logic_name\n")
+        if not defined $cond_list or scalar(@$cond_list) != 1;
+    
+    my $dependent_ana = $db->get_AnalysisAdaptor->fetch_by_logic_name($cond_list->[0]);
+    die("Could not find dependent analysis for $logic_name\n")
+        if not defined $dependent_ana;
+    
+    die(sprintf("Input_id type for $logic_name (%s) and its dependent analysis (%s) do not agree\n", 
+                $ana->input_id_type, $dependent_ana->input_id_type))
+        if $ana->input_id_type ne $dependent_ana->input_id_type;
+
+    $deps{$dependent_ana->{logic_name}} = $dependent_ana; 
+  }
+
+  if (scalar(values %deps) > 1) {
+    die "When running multiple GenBlasts, they must all have the same dependent/dummy analysis\n";
+  }
+
+  my ($dep) = values %deps;
+
+  return $dep;
+}
+
+#####################################################################################################
+sub clean_old_results {
+
+  # for each old transcript, remove its exons
+
+  my $get_transcripts = $db->prepare('SELECT * FROM prediction_transcript WHERE analysis_id=?');
+  my $del_exons       = $db->prepare('DELETE FROM prediction_exon WHERE prediction_transcript_id=?');
+  my $del_transcript  = $db->prepare('DELETE FROM prediction_transcript WHERE prediction_transcript_id=?');
+
+  foreach my $analysis (@genblast_analyses) {
+    $get_transcripts->execute($analysis->dbID);
+    my $transcripts = $get_transcripts->fetchall_arrayref()||[]; # array_ref->array_refs
+    foreach my $transcript (@{$transcripts}) {
+      my $prediction_transcript_id = $$transcript[0];
+      $del_exons->execute($prediction_transcript_id); 
+      $del_transcript->execute($prediction_transcript_id);
+    }
+  }
+
+  $get_transcripts->finish;
+  $del_exons->finish;
+  $del_transcript->finish;
+}
+  
+
+#####################################################################################################
+
 # get all analysis objects for GenBlast
-sub get_all_GenBlast_analysis {
-  my $adb = $db->get_AnalysisAdaptor();
-  return $adb->fetch_by_program_name('genblast');
+sub get_all_GenBlast_analyses {
+
+  my @list = grep { $_->program_name() eq 'genblast' } @{$db->get_AnalysisAdaptor->fetch_all()};
+  return @list;
+
 }
 
 #####################################################################################################
@@ -298,7 +330,7 @@ sub dumpace {
   my $get_transcripts=$db->prepare('SELECT * FROM prediction_transcript WHERE analysis_id=?');
   my $get_exons=$db->prepare('SELECT * FROM prediction_exon WHERE prediction_transcript_id=?');
   my $get_contig=$db->prepare('SELECT name FROM seq_region where seq_region_id=?');
-  foreach my $analysis (&get_all_GenBlast_analysis()) {
+  foreach my $analysis (@genblast_analyses) {
     $get_transcripts->execute($analysis->dbID);
     #$get_transcripts->execute($analysis->input_id_type_analysis->dbID); 
     my $transcripts = $get_transcripts->fetchall_arrayref()||[]; # array_ref->array_refs
@@ -324,7 +356,6 @@ sub dumpace {
       }
 
       print ACE "\nCDS : \"$unique_name\"\n";
-      print ACE "Sequence \"Cbre_Contig388\"\n";
       print ACE "Species \"",$wormbase->full_name(),"\"\n";
       print ACE "CDS\n";
       print ACE "Method \"genBlastG\"\n";
@@ -361,37 +392,3 @@ sub dumpace {
   close(ACE);
 
 }
-
-#####################################################################################################
-
-# extensions to EnsEMBL classes
-package Bio::EnsEMBL::Analysis;
-
-sub input_id_type_analysis {
-  my ($self)=@_;
-  my $sth = $self->adaptor->prepare('SELECT a.analysis_id FROM input_id_type_analysis i JOIN analysis a on(i.input_id_type=a.logic_name) WHERE i.analysis_id = ?');
-  $sth->execute($self->dbID);
-  my $id_type;
-  while (my ($tmp) = $sth->fetchrow_array){$id_type=$tmp}
-  
-  return $self->adaptor->fetch_by_dbID($id_type);
-}
-
-#####################################################################################################
-
-package Bio::EnsEMBL::DBSQL::AnalysisAdaptor;
-
-# to fetch all analysis with a certain program
-sub fetch_by_program_name {
-  my ($self,$program_name) = @_;
-  my @returned_analysis;
-  my $sth = $self->prepare('SELECT analysis_id FROM analysis WHERE program = ?');
-  $sth->execute($program_name);
-  my $ids = $sth->fetchall_arrayref()||[]; # array_ref->array_refs
-  foreach my $analysis (@$ids){
-    push @returned_analysis , $self->fetch_by_dbID($$analysis[0]);
-  }
-  return @returned_analysis;
-}
-
-
