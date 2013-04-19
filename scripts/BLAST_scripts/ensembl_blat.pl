@@ -3,8 +3,8 @@
 # DESCRIPTION:
 #   setting up the BLAT pipeline
 #
-# Last edited by: $Author: klh $
-# Last edited on: $Date: 2013-04-19 12:34:46 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2013-04-19 15:12:45 $
 
 use lib $ENV{'CVS_DIR'};
 
@@ -47,7 +47,7 @@ my $CONFIG = {
     'cbriggsae_mrna' => 'briggsae/mRNA.masked*',
     
     'cbrenneri_est'  => 'brenneri/EST.masked*',
-    'cbriggsae_mrna' => 'brenneri/mRNA.masked*',
+    'cbrenneri_mrna' => 'brenneri/mRNA.masked*',
     
     'cremanei_est'   => 'remanei/EST.masked*',
     'cremanei_mrna'  => 'remanei/mRNA.masked*',
