@@ -4,8 +4,8 @@
 #
 # written by Anthony Rogers
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2013-03-27 16:00:45 $
+# Last edited by: $Author: klh $
+# Last edited on: $Date: 2013-04-19 10:23:37 $
 #
 # it depends on:
 #    wormpep + history
@@ -537,23 +537,19 @@ sub update_proteins {
   
   # kill genes;
   $raw_dbh->do('DELETE FROM gene')  or die $raw_dbh->errstr;
-  $raw_dbh->do('DELETE FROM gene_stable_id')  or die $raw_dbh->errstr;
   $raw_dbh->do('DELETE FROM gene_attrib')  or die $raw_dbh->errstr;
   
   
   # kill transcripts
   $raw_dbh->do('DELETE FROM transcript') or die $raw_dbh->errstr;
-  $raw_dbh->do('DELETE FROM transcript_stable_id')  or die $raw_dbh->errstr;
   $raw_dbh->do('DELETE FROM transcript_attrib')  or die $raw_dbh->errstr;
   
   # kill exons
   $raw_dbh->do('DELETE FROM exon')  or die $raw_dbh->errstr;
-  $raw_dbh->do('DELETE FROM exon_stable_id')  or die $raw_dbh->errstr;
   $raw_dbh->do('DELETE FROM exon_transcript') or die $raw_dbh->errstr;
   
   # kill translations
   $raw_dbh->do('DELETE FROM translation')  or die $raw_dbh->errstr;
-  $raw_dbh->do('DELETE FROM translation_stable_id')  or die $raw_dbh->errstr;
   $raw_dbh->do('DELETE FROM translation_attrib') or die $raw_dbh->errstr;
   
   
@@ -562,6 +558,8 @@ sub update_proteins {
   
   $raw_dbh->do('DELETE FROM meta WHERE meta_key = "genebuild.start_date"')  or die $raw_dbh->errstr;
   
+  $raw_dbh->do('DELETE FROM xref')  or die $raw_dbh->errstr;
+
   # load new ones
   
   my $db_options = sprintf('-dbhost %s -dbuser %s -dbpass %s -dbname %s -dbport %i',
