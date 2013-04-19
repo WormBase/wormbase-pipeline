@@ -5,7 +5,7 @@
 # Dumps InterPro protein motifs from ensembl mysql (protein) database to an ace file
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2013-04-19 11:05:08 $
+# Last updated on: $Date: 2013-04-19 12:55:48 $
 
 
 use strict;
@@ -180,13 +180,14 @@ foreach my $method (@methods) {
 
   foreach my $aref (@$ref) {
     my ($prot, $start, $end, $hit_name, $hstart, $hend, $score, $evalue) = @$aref;
+    if (!defined $score) {$score = 0}
 
     # convert Database ID to InterPro ID 
     $id2interpro->execute ($hit_name);
-    my $interpro_id_ref = $id2interpro->fetchall_arrayref;
-    if (scalar(@$interpro_id_ref)  == 0) {next} # if there is no InterPro ID then skip this one
-    if (scalar(@$interpro_id_ref)  > 1) {$log->log_and_die("Hit_name '$hit_name' has several interpro IDs:\n".@$interpro_id_ref."\n")}
-    my ($interpro_id) = @$interpro_id_ref;
+    my $interpro_id_ref = $id2interpro->fetchrow_arrayref;
+    if (! defined $interpro_id_ref) {next} # if there is no InterPro ID then skip this one
+#    my $interpro_id = @{$$interpro_id_ref[0]};
+    my ($interpro_id) = @{$interpro_id_ref};
 
     my @hit = ( $interpro_id, $start, $end, $hstart, $hend, $score, $evalue );
     push @{$motifs{$prot}}, [ @hit ];
