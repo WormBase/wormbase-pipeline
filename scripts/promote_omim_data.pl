@@ -5,9 +5,10 @@
 # by Paul Davis                         
 #
 # This script promoted the OMIM disease data to the level of the gene.
+# Script extended to also populate the Potential_model_for Human disease data utilising the DO ontology.
 #
 # Last updated by: $Author: pad $     
-# Last updated on: $Date: 2013-01-14 17:06:40 $      
+# Last updated on: $Date: 2013-04-19 14:24:39 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -21,15 +22,18 @@ use Storable;
 # variables and command-line options # 
 ######################################
 
-my ($help, $debug, $test, $verbose, $store, $wormbase, $noload);
+my ($help, $debug, $test, $verbose, $store, $wormbase, $noload, $alternativedb, $file, $obo,);
 
 
 GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
 	    "test"       => \$test,
+	    "database:s" => \$alternativedb,
 	    "verbose"    => \$verbose,
 	    "store:s"    => \$store,
 	    "noload"     => \$noload,
+	    "file:s"     => \$file,
+	    "obo:s"      => \$obo,
 	   );
 
 if ( $store ) {
@@ -45,7 +49,8 @@ if ( $store ) {
 
 # in test mode?
 if ($test) {
-  print "In test mode\n" if ($verbose);
+  print "In test mode\n";
+  print "No FTP files will be created\n";
 }
 
 # establish log file.
@@ -54,24 +59,46 @@ my $log = Log_files->make_build_log($wormbase);
 #################################
 # Set up some useful paths      #
 #################################
+my $ace_dir;
+if ($alternativedb){
+  $ace_dir         = $alternativedb;     # DATABASE DIR
+}
+else {
+  # Set up top level base directories (these are different if in test mode)
+  $ace_dir         = $wormbase->autoace;     # AUTOACE DATABASE DIR
+}
 
-# Set up top level base directories (these are different if in test mode)
-my $basedir         = $wormbase->basedir;     # BASE DIR
-my $ace_dir         = $wormbase->autoace;     # AUTOACE DATABASE DIR
 my $logs_dir        = $wormbase->logs;        # AUTOACE LOGS
 my $tace            = $wormbase->tace;        # TACE PATH
 my $giface          = $wormbase->giface;      # GIFACE PATH
 my $WS_name = $wormbase->get_wormbase_version_name();
+my %species = ($wormbase->species_accessors);
+$species{$wormbase->species} = $wormbase;
 
 
 ##########################
 # MAIN BODY OF SCRIPT
 ##########################
-my ($ace_object,%objects,%acedata);
-my ($gene,$database,$id,$type);
-my $outfile = $ace_dir."/acefiles/omim_db_data.ace";
+my ($ace_object,%objects,%acedata,%gene2species);
+my ($qspecies,$gene,$database,$id,$type,$outfile);
+if ($file) {
+  $outfile = $file;
+}
+else {
+  $outfile = $ace_dir."/acefiles/omim_db_data.ace";
+}
+
+unless ($test) {
+  foreach my $organism(keys %species) {
+    
+    
+  }
+}
+
 my $count = "0";
 my $countgenes = "0";
+my $omdiscount = "0";
+my $dodiscount = "0";
 open (OUT, ">$outfile") or $log->log_and_die("Can't write ace file $outfile");
 
 # Additional information is now required to add the Disease Ontology terms to genes where an OMIM disease ID has 
@@ -79,64 +106,146 @@ open (OUT, ">$outfile") or $log->log_and_die("Can't write ace file $outfile");
 my %omim2do;
 &gatherDOdata;
 
+my $def = <<EOF;
+Sortcolumn 1
 
-if (-e "$basedir/autoace/wquery/SCRIPT:omim.def") {
-  my $def = "$basedir/autoace/wquery/SCRIPT:omim.def";
-  my $command = "Table-maker -p $def\nquit\n";
-  $log->write_to("\nRetrieving OMIM, using Table-maker...\n");
+Colonne 1 
+Width 16 
+Optional 
+Visible 
+Class 
+Class Gene
+From 1
+ 
+Colonne 2 
+Width 40 
+Optional 
+Hidden 
+Class 
+Class Protein 
+From 1 
+Tag Ortholog_other  
+Condition *ENSP*
+ 
+Colonne 3 
+Width 12 
+Mandatory 
+Visible 
+Class 
+Class Database 
+From 2 
+Tag Database  
+Condition "OMIM"
+ 
+Colonne 4 
+Width 12 
+Mandatory 
+Visible 
+Class 
+Class Database_field 
+Right_of 3 
+Tag HERE   
+ 
+Colonne 5 
+Width 12 
+Optional 
+Visible 
+Class 
+Class Accession_number 
+Right_of 4 
+Tag HERE   
+
+Colonne 6 
+Width 30 
+Optional 
+Visible 
+Class 
+Class Species 
+From 1 
+Tag Species
+
+// End of these definitions
+EOF
+
+my $command = "Table-maker -p $def\nquit\n";
+$log->write_to("\nRetrieving OMIM, using Table-maker and query ${def}...\n");
   
-  open (TACE, "echo '$command' | $tace $ace_dir | ") || die "Cannot query acedb. $command  $tace\n";
-  while (<TACE>) {
-    $count++;
-    chomp;
-    s/\"//g;
-    unless (/(WBGene\d+)\s+(OMIM)\s+(\S+)\s+(\d+)/) {next;}
-    if (/(WBGene\d+)\s+(OMIM)\s+(\S+)\s+(\d+)/){
-      $gene = $1;
-      $database = $2;
-      $type = $3;
-      $id = $4;
-      $ace_object = $1;
-      if ($type eq "gene") {
-	$objects{$ace_object}++;
-	push (@{$acedata{$ace_object}{gene}},$id);
-      }
-      elsif ($type eq "disease") {
-	$objects{$ace_object}++;
-	push (@{$acedata{$ace_object}{disease}},$id);
-      }
+open (TACE, "echo '$command' | $tace $ace_dir | ") || die "Cannot query acedb. $command  $tace\n";
+while (<TACE>) {
+  $count++;
+  chomp;
+  s/\"//g;
+  if ($debug) {print "$_\n";}
+  if (/(WBGene\d+)\s+(OMIM)\s+(\S+)\s+(\d+)\s+(\S+\s\S+)/){
+    $gene = $1;
+    $database = $2;
+    $type = $3;
+    $id = $4;
+    $ace_object = $1;
+    $qspecies = $5;
+    if ($type eq "gene") {
+      $objects{$ace_object}++;
+      push (@{$acedata{$ace_object}{gene}},$id);
+    }
+    elsif ($type eq "disease") {
+      $objects{$ace_object}++;
+      push (@{$acedata{$ace_object}{disease}},$id);
+    }
+    else {
+      print "WARNING $_ contains unexpected Type data \"$type\".......\n";
+      $log->write_to("WARNING $_ contains unexpected Type data \"$type\".......\n");
+    }
+    if ($qspecies eq "Caenorhabditis elegans") {
+      $gene2species{$gene} = $qspecies; # save all the names and methods
     }
   }
-  foreach my $obj (keys %objects) {
-    print OUT "\n// $obj\n\n";
-    my $line;
-    print OUT "Gene : \"$obj\"\n";
-    foreach $line (@{$acedata{$obj}{gene}}) {
-      print OUT "Database OMIM gene $line\n";
-      # Now do a DOID lookup.
-      my $aceomimid = "OMIM:$line";
-      if (defined $omim2do{$aceomimid}) {
-	my $val;
-	foreach $val (@{$omim2do{$aceomimid}}){
-	  print OUT "Potential_model  $val \"Homo sapiens\" Inferred_automatically \"Inferred from Human protein orthology and OMIM::DO_term conversion ($aceomimid).\"\n";
-	}
-      }
-    }
-    foreach $line (@{$acedata{$obj}{disease}}) {
-      print OUT "Database OMIM disease $line\n";
-      # Now do a DOID lookup.
-      my $aceomimid = "OMIM:$line";
-      if (defined $omim2do{$aceomimid}) {
-	my $val;
-	foreach $val (@{$omim2do{$aceomimid}}){
-	  print OUT "Potential_model  $val \"Homo sapiens\" Inferred_automatically \"Inferred from Human protein orthology and OMIM::DO_term conversion ($aceomimid).\"\n";
-	}
-      }
-    }
-  }
-  $countgenes = (keys %objects);
+  else {print "$_ line does not contain OMIM data.\n" if ($debug);}
 }
-else {die "Cannot query acedb. as $basedir/autoace/wquery/SCRIPT:omim.def does not exist\n";}
+foreach my $obj (keys %objects) {
+  if (defined $gene2species{$obj}) {
+    print OUT "\n// $obj $gene2species{$obj} \n\n";
+  }
+  else {
+    print OUT "\n// $obj \n\n";
+  }
+  my $line;
+  print OUT "Gene : \"$obj\"\n";
+  foreach $line (@{$acedata{$obj}{gene}}) {
+    print OUT "Database OMIM gene $line\n";
+    # Now do a DOID lookup.
+    my $aceomimid = "OMIM:$line";
+    if (defined $omim2do{$aceomimid}) {
+      my $val;
+      if ($gene2species{$obj} eq "Caenorhabditis elegans") {
+	foreach $val (@{$omim2do{$aceomimid}}){
+	  print OUT "Potential_model  $val \"Homo sapiens\" Inferred_automatically \"Inferred from Human protein orthology and OMIM::DO_term conversion ($aceomimid).\"\n";
+	}
+      }
+    }
+  }
+  # Now print out just the elegans disease data
+  foreach $line (@{$acedata{$obj}{disease}}) {
+    if ($gene2species{$obj} eq "Caenorhabditis elegans") {
+      my $aceomimid = "OMIM:$line";
+      # Now do a DOID lookup.
+      if (defined $omim2do{$aceomimid}) {
+	print OUT "Database OMIM disease $line\n";
+	$omdiscount ++;
+	# Now itterate throught the DOIDs connected to this OMIM.
+	my $val;
+	foreach $val (@{$omim2do{$aceomimid}}){
+	  $dodiscount++;
+	  print OUT "Potential_model  $val \"Homo sapiens\" Inferred_automatically \"Inferred from Human protein orthology and OMIM::DO_term conversion ($aceomimid).\"\n";
+	}
+      }
+      else {
+	# print OMIM disease data where the DOID mapping isn't present
+	print OUT "Database OMIM disease $line\n";
+      }
+    }
+  }
+}
+$countgenes = (keys %objects);
 close OUT;
 
 if ($noload){
@@ -152,6 +261,7 @@ unless ($noload) {
 $log->write_to("\nOutput can be found here $outfile\n");
 $log->write_to("----------\n");
 $log->write_to("Processed $count lines from Table-maker touching $countgenes genes\n");
+$log->write_to("$omdiscount OMIM diseases with $dodiscount DO_term connections\n");
 
 $log->mail();
 print "Finished.\n" if ($verbose);
@@ -164,7 +274,13 @@ exit(0);
 ##############################################################
 
 sub gatherDOdata {
-  my $obo_file = $wormbase->primaries . "/citace/temp_unpack_dir/home/citace/Data_for_${WS_name}/Data_for_Ontology/disease_ontology.${WS_name}.obo";
+  my $obo_file;
+  if (defined $obo){
+    $obo_file = $obo;
+  }
+  else {
+    $obo_file = $wormbase->primaries . "/citace/temp_unpack_dir/home/citace/Data_for_${WS_name}/Data_for_Ontology/disease_ontology.${WS_name}.obo";
+  }
   open (OBO, "<$obo_file")  || die "Can't open OBO file: $obo_file\n\n";
   my $doid;
   my $omimid;
@@ -188,7 +304,6 @@ sub gatherDOdata {
 
 sub usage {
   my $error = shift;
-
   if ($error eq "Help") {
     # Normal help menu
     system ('perldoc',$0);
