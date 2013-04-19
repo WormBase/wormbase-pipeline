@@ -50,7 +50,7 @@ while(<$TABLE>) {
     status => $status,
   };
 }
-close $TABLE;
+close($TABLE) or $log->log_and_die("Could not successfully complete TM query\n");
 
 #connect to name server and set domain to 'Gene'
 my $DB      = 'wbgene_id;shap;3303';
