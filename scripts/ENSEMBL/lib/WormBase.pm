@@ -35,7 +35,7 @@ require Exporter;
 
 our @ISA    = qw(Exporter);
 our @EXPORT =
-  qw(get_seq_ids get_sequences_pfetch agp_parse parse_gff write_genes translation_check insert_agp_line display_exons non_translate process_file parse_operons write_simple_features parse_rnai parse_expr parse_SL1 parse_SL2 parse_pseudo_gff store_coord_system store_slice parse_tRNA parse_rRNA_genes parse_tRNA_genes parse_pseudo_files parse_simplefeature parse_gff_fh parse_pcr_product);
+  qw(get_seq_ids get_sequences_pfetch agp_parse parse_gff parse_gff3_fh write_genes translation_check insert_agp_line display_exons non_translate process_file parse_operons write_simple_features parse_rnai parse_expr parse_SL1 parse_SL2 parse_pseudo_gff store_coord_system store_slice parse_tRNA parse_rRNA_genes parse_tRNA_genes parse_pseudo_files parse_simplefeature parse_gff_fh parse_pcr_product);
 
 use strict;
 use Storable qw(store retrieve freeze thaw dclone);
@@ -206,7 +206,6 @@ sub parse_gff {
   
   my $fh; 
   
-  print STDERR "opening ".$file."\n";
   open( $fh, $file ) or die "couldn't open " . $file . " $!";
   
   my $genes = &parse_gff_fh($fh, $slice_hash, $analysis);
@@ -245,6 +244,206 @@ sub parse_gff_fh {
   print "\nPARSE_GFF got " . @genes . " genes\n";
   return \@genes;
 }
+
+
+
+=head2 parse_gff3
+
+  Arg [1]   : filename of gff file
+  Arg [2]   : Bio::Seq object
+  Arg [3]   : Bio::EnsEMBL::Analysis object
+  Function  : parses gff file given into genes
+  Returntype: array ref of Bio::EnEMBL::Genes
+  Exceptions: dies if can't open file or seq isn't a Bio::Seq 
+  Caller    : 
+  Example   : 
+
+=cut
+
+sub parse_gff3_fh {
+  my ($fh, $slice_hash, $analysis) = @_;
+
+  #
+  # gene
+  # mRNA
+  # exon
+  # CDS
+  #
+  my (%genes, %transcripts);
+
+  while(<$fh>) {
+    chomp;
+    next if /^\#/;
+    my @l = split(/\t+/, $_);
+    
+    next if ($l[2] ne 'mRNA' and  $l[2] ne 'CDS' and $l[2] ne 'exon');
+    
+    my ($id, %parents);
+
+    foreach my $el (split(/;/, $l[8])) {
+      my ($k, $v) = $el =~ /(\S+)=(.+)/;
+      if ($k eq 'ID') {
+        $id = $v;
+      } elsif ($k eq 'Parent') {
+        my @p = split(/,/, $v);
+        map { $parents{$_} = 1 } @p;
+      }
+    }
+    
+    if ($l[2] eq 'exon') {
+      # parent is mRNA
+      foreach my $parent (keys %parents) {
+        push @{$transcripts{$parent}->{exons}}, {
+          seq       => $l[0],
+          start     => $l[3],
+          end       => $l[4],
+          strand    => $l[6],
+          phase     => -1,
+          end_phase => -1,
+        };
+      }
+    } elsif ($l[2] eq 'CDS') {
+      foreach my $parent (keys %parents) {
+        push @{$transcripts{$parent}->{cds}}, {
+          seq        => $l[0],
+          start      => $l[3],
+          end        => $l[4],
+          strand     => $l[6],
+          gff_phase  => $l[7],
+        };
+      }
+    } elsif ($l[2] eq 'mRNA') {
+      foreach my $parent (keys %parents) {
+        push @{$genes{$parent}}, $id;
+      }
+    }
+  }
+   
+  my @all_ens_genes;
+
+  foreach my $gid (keys %genes) {
+    my @tids = sort @{$genes{$gid}};
+
+    my $gene = Bio::EnsEMBL::Gene->new(
+      -stable_id => $gid,
+      -analysis  => $analysis);
+
+    foreach my $tid (@tids) {
+      my $tran = $transcripts{$tid};
+
+      my @exons = sort { $a->{start} <=> $b->{start} } @{$tran->{exons}};
+
+      my $strand = $exons[0]->{strand};
+      my $slice = $slice_hash->{$exons[0]->{seq}};
+      die "Could not find slice\n" if not defined $slice;
+
+      if (exists $tran->{cds}) {
+        #
+        # match up the CDS segments with exons
+        #
+        my @cds = sort { $a->{start} <=> $b->{start} } @{$tran->{cds}};
+
+        foreach my $exon (@exons) {
+          my ($matching_cds, @others) = grep { $_->{start} <= $exon->{end} and $_->{start} >= $exon->{start} } @cds;
+          
+          if (@others) {
+            die "Multiple matching CDSs for a single exon segment\n";
+          }
+          if (defined $matching_cds) {
+            $exon->{cds_seg} = $matching_cds;
+          }
+        }
+      }
+
+      #
+      # sort out phases
+      # 
+      @exons = reverse @exons if $strand eq '-';
+
+      foreach my $exon (@exons) {
+
+        if (exists $exon->{cds_seg}) {
+
+          if (($strand eq '+' and $exon->{start} == $exon->{cds_seg}->{start}) or
+              ($strand eq '-' and $exon->{end} == $exon->{cds_seg}->{end})) {
+            # convert the GFF phase to Ensembl phase
+            $exon->{phase} = (3 - $exon->{cds_seg}->{gff_phase}) % 3;
+          }
+          
+          if (($strand eq '+' and $exon->{end} == $exon->{cds_seg}->{end}) or
+              ($strand eq '-' and $exon->{start} == $exon->{cds_seg}->{start})) {
+            my $cds_seg_len = $exon->{cds_seg}->{end} - $exon->{cds_seg}->{start} + 1;
+            if ($exon->{phase} > 0) {
+              $cds_seg_len += $exon->{phase};
+            }
+            $exon->{end_phase} = $cds_seg_len % 3;
+          }
+
+          if ($strand eq '+') {
+            $exon->{cds_exon_start} = $exon->{cds_seg}->{start} - $exon->{start} + 1;
+            $exon->{cds_exon_end}   = $exon->{cds_seg}->{end} - $exon->{start} + 1; 
+          } else {
+            $exon->{cds_exon_start} = $exon->{end} - $exon->{cds_seg}->{end} + 1;
+            $exon->{cds_exon_end}   = $exon->{end} - $exon->{cds_seg}->{start} + 1;
+          }
+        }
+      }
+      
+      my $transcript = Bio::EnsEMBL::Transcript->new(
+        -stable_id => $tid,
+        -analysis  => $analysis);
+
+      my ($tr_st_ex, $tr_en_ex, $tr_st_off, $tr_en_off);
+
+      foreach my $ex (@exons) {
+        
+        my $ens_ex = Bio::EnsEMBL::Exon->new(
+          -slice     => $slice,
+          -start     => $ex->{start},
+          -end       => $ex->{end},
+          -strand    => ($ex->{strand} eq '+') ? 1 : -1,
+          -phase     => $ex->{phase},
+          -end_phase => $ex->{end_phase},
+          -analysis  => $analysis,
+            );
+
+        $transcript->add_Exon($ens_ex);
+
+        if ($ex->{cds_seg}) {
+          if (not defined $tr_st_ex) {
+            $tr_st_ex = $ens_ex;
+            $tr_st_off = $ex->{cds_exon_start};
+          }
+          $tr_en_ex = $ens_ex;
+          $tr_en_off = $ex->{cds_exon_end};
+        }
+      }
+  
+      if (defined $tr_st_ex and defined $tr_en_ex) {
+        my $tr = Bio::EnsEMBL::Translation->new();
+        $tr->start_Exon($tr_st_ex);
+        $tr->end_Exon($tr_en_ex);
+        $tr->start($tr_st_off);
+        $tr->end($tr_en_off);
+        $tr->stable_id($tid);
+
+        $transcript->translation($tr);
+        $transcript->biotype('protein_coding');
+        $gene->biotype('protein_coding');
+      }
+
+      $gene->add_Transcript($transcript);
+    }
+
+    push @all_ens_genes, $gene;
+  }
+
+  return \@all_ens_genes;
+  #
+  # should probably test that the genes translate etc here
+  # 
+}
+
 
 =head2 process_file
 
@@ -311,7 +510,7 @@ sub process_file {
       if (not $three_prime{$gene}{$transcript}) {
         $three_prime{$gene}{$transcript} = [];
       }
-
+    
       next LOOP;
     } elsif ( ( $line eq 'Coding_transcript five_prime_UTR' ) or ( $line eq 'Coding_transcript three_prime_UTR' ) ) {
       $gene =~ s/\"//g;
@@ -369,7 +568,22 @@ sub process_file {
     }
     push( @{ $genes{$gene} }, $element );
   }
-  print STDERR "Have " . keys(%genes) . " genes (CDS), " . keys(%five_prime) . " have 5' UTR and " . keys(%three_prime) . " have 3' UTR information\n";
+
+  #
+  # Add "empty" UTRs for all of the genes that did not have one; downstream code needs this
+  #
+  foreach my $gene (keys %genes) {
+    if (not $five_prime{$gene} ) {
+      $five_prime{$gene} = {};
+      $five_prime{$gene}{$gene} = [];
+    }
+    if (not $three_prime{$gene}) {
+      $three_prime{$gene} = {};
+      $three_prime{$gene}{$gene} = [];
+    }
+  }
+
+  print STDERR "Have " . keys(%genes) . " genes (CDS)\n";
   return \%genes, \%five_prime, \%three_prime, \%parent_seqs;
 }
 
@@ -431,7 +645,6 @@ sub generate_transcripts {
       my %five_prime_exons;
       
       foreach my $line (@lines) {
-        #print STDERR "$line\n";
         my ( $chr, $status, $type, $start, $end, $score, $strand, $frame, $sequence, $gene ) = split /\s+/, $line;
 
         # check that seq name agrees with slice name
@@ -817,7 +1030,6 @@ sub create_transcripts {
 
             #$exon->created($time);
             #$exon->modified($time);
-            $exon->version(1);
             $exon->stable_id( $transcript_id . "." . $exon_count );
             $exon_count++;
             eval {
@@ -876,9 +1088,7 @@ sub create_transcripts {
         }
 
         $translation->stable_id($transcript_id);
-        $translation->version(1);
         $transcript->translation($translation);
-        $transcript->version(1);
         $transcript->stable_id($transcript_id);
         $transcript->biotype('protein_coding');
         if ( !$genes{$gene_name} ) {
@@ -914,7 +1124,6 @@ sub create_gene {
 
     $gene->analysis($analysis);
     $gene->biotype( $biotype ) if defined $biotype;
-    $gene->version(1);
     $gene->stable_id($name);
     foreach my $transcript (@$transcripts) {
       $transcript->analysis($analysis) if not $transcript->analysis;
@@ -1788,12 +1997,10 @@ sub create_pseudo_transcripts {
         my $exon_count = 1;
         my $phase      = 0;
         foreach my $exon (@sorted_exons) {
-            $exon->version(1);
             $exon->stable_id( $transcript_id . "." . $exon_count );
             $exon_count++;
             $transcript->add_Exon($exon);
         }
-        $transcript->version(1);
         $transcript->stable_id($transcript_id);
         $transcript->biotype($biotype) if defined $biotype;
 
