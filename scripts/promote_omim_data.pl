@@ -8,7 +8,7 @@
 # Script extended to also populate the Potential_model_for Human disease data utilising the DO ontology.
 #
 # Last updated by: $Author: pad $     
-# Last updated on: $Date: 2013-04-19 14:24:39 $      
+# Last updated on: $Date: 2013-04-19 15:34:38 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -106,7 +106,11 @@ open (OUT, ">$outfile") or $log->log_and_die("Can't write ace file $outfile");
 my %omim2do;
 &gatherDOdata;
 
-my $def = <<EOF;
+my $def = '/tmp/omim.def';
+open TMP,">$def" or $log->log_and_die("cant write $def: $!\n");
+    my $txt = <<END;
+
+
 Sortcolumn 1
 
 Colonne 1 
@@ -165,7 +169,10 @@ From 1
 Tag Species
 
 // End of these definitions
-EOF
+END
+print TMP $txt;
+close TMP;
+
 
 my $command = "Table-maker -p $def\nquit\n";
 $log->write_to("\nRetrieving OMIM, using Table-maker and query ${def}...\n");
