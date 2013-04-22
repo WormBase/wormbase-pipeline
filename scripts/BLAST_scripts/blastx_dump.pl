@@ -11,7 +11,7 @@
 #   array of EnsEMBL objects, it invites disaster as it makes a copy of the array.
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2013-04-18 14:15:11 $ 
+# Last edited on: $Date: 2013-04-22 10:38:55 $ 
 
 my $usage = <<USAGE;
 blastx_dump.pl options:
@@ -104,13 +104,10 @@ my @superlinks;
 if ($sequences[0]){
   @sequences = split(/,/,join(',',@sequences));
   foreach my $sequence(@sequences) {
-    push @superlinks, $slice_adaptor->fetch_by_region('toplevel',$sequence);
+    push @superlinks, $slice_adaptor->fetch_by_region('seqlevel',$sequence);
   }
-}elsif ($toplevel){
-  @superlinks = @{$slice_adaptor->fetch_all('toplevel')} if $toplevel;
 }else {
-  @superlinks = @{$slice_adaptor->fetch_all('clone')};
-  @superlinks = @{$slice_adaptor->fetch_all('superlink')} if scalar(@superlinks)==0;
+  @superlinks = @{$slice_adaptor->fetch_all('seqlevel')};
 }
 
 # hardcoded bits
