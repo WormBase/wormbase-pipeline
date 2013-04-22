@@ -4,8 +4,8 @@
 #
 # Usage : EMBL_Sequencefetch.pl [-options]
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2013-01-14 17:14:10 $
+# Last edited by: $Author: pad $
+# Last edited on: $Date: 2013-04-22 13:01:42 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -379,19 +379,24 @@ sub get_new_data {
 
   foreach $new_sequence (@{$subentries}) {
     my ($seq,$status,$protid,$protver,@description,$idF,$svF,$idF2,$type,$def,$sequencelength);
-
+    #$seq=$status=$protid=$idF=$svF=$idF2=$type=$def=$sequencelength=0;
+    if ($debug) {
+      print "Fetching data for $new_sequence\n";
+    }
     #     $new_sequence = "DQ342049"; #get 1 entry DQ342049.1
     open (NEW_SEQUENCE, "$mfetch -d embl -v full $new_sequence |");
     while (<NEW_SEQUENCE>) {
       #my $idF2;
       #Extract ID and Sequence Version.
+      print "Arse\n";
       if ((/^ID\s+(\S+)\;\s+\SV\s+(\d+)\;\s+.+mRNA.+(EST)/) or (/^ID\s+(\S+)\;\s+\SV\s+(\d+)\;\s+.+mRNA.+(STD)/)) { #mRNA or EST
 	#        if (/^ID\s+(\S+)\;\s+\SV\s+(\d+)\;\s+/) {
 	print OUT_LONG "\nLongText : \"$1\"\n" unless (defined $nolongtext);
 	$idF = $1;
 	$svF = $2;
 	$type = $3;
-      } elsif (/^ID\s+(\S+)\;\s+\SV\s+(\d+)\;\s+/) { #Non-EST/mRNA entries
+      } 
+      elsif (/^ID\s+(\S+)\;\s+\SV\s+(\d+)\;\s+/) { #Non-EST/mRNA entries
 	print OUT_LONG "\nLongText : \"$1\"\n" unless (defined $nolongtext);
 	$idF = $1;
 	$svF = $2;
@@ -491,7 +496,10 @@ sub get_new_data {
 	}
       }				#end of record flag loop
    }                            #close returned entry loop and on to the next new sequence
-    
+    unless ($seq) {
+      $log->write_to("ERROR: mfetch failed to retrieve data for $new_sequence\n");
+      $log->log_and_die ("An ERROR of this type is terminal!!\n\n");
+    }
     # Check for features on the retrieved DNA.
     &feature_finder ($seq,$idF2);
   }
