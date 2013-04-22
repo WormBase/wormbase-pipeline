@@ -5,7 +5,7 @@
 # Dumps protein motifs from ensembl mysql (protein) database to an ace file
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2013-04-09 10:56:36 $
+# Last updated on: $Date: 2013-04-22 14:31:52 $
 
 use lib $ENV{'CVS_DIR'};
 
@@ -126,7 +126,7 @@ foreach my $meth (@methods) {
     my ($_prot, $start, $end, $hid, $hstart, $hend, $score) = @$aref;
     my $prot=($cds2wormpep{$_prot}||$_prot);
     my $line;
-    if ($meth eq "Pfam") {
+    if ($meth eq "pfam") {
       if( $hid =~ /(\w+)\.\d+/ ) {
 	$hid = $1;
       }
