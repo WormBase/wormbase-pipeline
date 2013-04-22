@@ -45,6 +45,11 @@ sub get_chromosome_names {
 	return @chromosomes
 }
 
+# denotes whether this is the canonical project for this species
+sub is_canonical {
+  return 1;
+}
+
 sub _new {
     my $class = shift;
     my %param = %{ shift(@_) };
@@ -57,6 +62,7 @@ sub _new {
 
     bless $self, $class;
 }
+
 
 sub TSL {  
   ('SL1'  => "GGTTTAATTACCCAAGTTTGAG");
@@ -648,6 +654,7 @@ sub pep_prefix {'ASD'}
 sub pepdir_prefix{'as'};
 sub ncbi_tax_id {'6253'};
 sub ncbi_bioproject {'PRJNA62057'};
+sub is_canonical{ 0 };
 sub assembly_type {'contig'};
 sub TSL {(
 	  'SL1'  => "GGTTTAATTACCCAAGTTTGAG",

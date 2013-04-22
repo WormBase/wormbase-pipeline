@@ -6,7 +6,7 @@
 # builds wormbase & wormpep FTP sites
 # 
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-04-02 11:33:35 $
+# Last updated on: $Date: 2013-04-22 16:13:23 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -1055,11 +1055,17 @@ sub make_assembly_manifest {
         }
       }
       
+      # need to find the corresponding accessor, because only that
+      # will tell us whether the bioproject is the canonical one
+      my ($rel_acc) = grep { $_->ncbi_bioproject eq $bioproj } @accs;
+      my $is_canonical = $rel_acc->is_canonical;
+
       push @{$obj->{assemblies}}, {
         bioproject => $bioproj,
         assembly_accession => $gc_acc,
         assembly_name => $assembly_name->name,
         appeared_in => 'WS'.$first_ws_rel->name,
+        is_canonical => ($is_canonical) ? JSON::true : JSON::false,
         strain => $strain->name,
         laboratory => \@labs,
       };
