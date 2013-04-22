@@ -14,6 +14,7 @@ use Bio::EnsEMBL::Registry;
 # GFF Constants
 use constant SOURCE       => 'translated_feature';
 use constant METHOD       => 'motif_segment';
+use constant GFF3_METHOD  => 'polypeptide_region'; # not a perfect fit, but is at least a SO term
 use constant SCORE        => '.';
 use constant PHASE        => '.';
 
@@ -230,6 +231,9 @@ sub generate_gff {
       
       my ($group, $full_group);
       if ($gff3) {
+        #
+        # For GFF3, represent as a single split feature
+        # 
         $group =  "ID=$motif_id";
         $full_group = "$group;CDS=$cds;Type=$type;Range=$aarange;Exons=$exons;Protein=$protein";
         if ($desc) {
@@ -238,6 +242,14 @@ sub generate_gff {
           $desc =~ s/[\,]/\%3D/g;
           $full_group .= qq{;Description=$desc};
         }
+        if ($format eq 'segmented') {        
+          foreach my $seg (sort { $a->start <=> $b->start } @segs) {
+            print_gff($this_out_fh, $refseq,SOURCE,GFF3_METHOD,$seg->start,$seg->end,$score,$strand,PHASE,$full_group);
+          }
+        } else {
+          print_gff($this_out_fh, $refseq,SOURCE,GFF3_METHOD,$start,$stop,$score,$strand,PHASE,$full_group);
+        }
+
       } else {
         $group = qq(Motif "$motif_name");
         $full_group = join(" ; ", 
@@ -250,29 +262,24 @@ sub generate_gff {
         if ($desc) {
           $full_group .= qq{ ; Note "Description=$desc"};
         }
-      }
-      
-      if ($format eq 'segmented') {
-        # Create a top-level entry to ensure aggregation
-        print_gff($this_out_fh, $refseq,TOP_SOURCE,TOP_METHOD,$start,$stop,$score,$strand,PHASE,$full_group);
-        my $seg_count = 1;
-        foreach my $seg (sort { $a->start <=> $b->start } @segs) {
-          my $child_group;
-          if ($gff3) {
-            my $seg_id = $motif_id . "." . $seg_count++;
-            $child_group = "ID=$seg_id;Parent=$motif_id";
-          } else {
-            $child_group = qq(Motif "$motif_name");
+        
+        if ($format eq 'segmented') {
+          # Create a top-level entry to ensure aggregation for GFF2; not necessary for GFF, as
+          # aggregation will be done via the ID
+          print_gff($this_out_fh, $refseq,TOP_SOURCE,TOP_METHOD,$start,$stop,$score,$strand,PHASE,$full_group);
+                    
+          foreach my $seg (sort { $a->start <=> $b->start } @segs) {
+            my $child_group = qq(Motif "$motif_name");
+            print_gff($this_out_fh, $refseq,SOURCE,METHOD,$seg->start,$seg->end,$score,$strand,PHASE,$child_group);
           }
-          print_gff($this_out_fh, $refseq,SOURCE,METHOD,$seg->start,$seg->end,$score,$strand,PHASE,$child_group);
+        } else {
+          print_gff($this_out_fh, $refseq,SOURCE,METHOD,$start,$stop,$score,$strand,PHASE,$full_group);
         }
-      } else {
-        print_gff($this_out_fh, $refseq,SOURCE,METHOD,$start,$stop,$score,$strand,PHASE,$full_group);
       }
     }
   }
 }
-  
+
 ################################
 sub get_next_gene {
   if ($iterator) {
