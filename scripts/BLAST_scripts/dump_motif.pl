@@ -5,7 +5,7 @@
 # Dumps protein motifs from ensembl mysql (protein) database to an ace file
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2013-04-22 14:31:52 $
+# Last updated on: $Date: 2013-04-22 14:36:28 $
 
 use lib $ENV{'CVS_DIR'};
 
@@ -42,7 +42,7 @@ my $log = Log_files->make_build_log($wormbase);
 $dump_dir ||= $wormbase->farm_dump;
 
 # define the names of the methods to be dumped
-@methods = qw(Ncoils Seg Signalp Tmhmm Pfam) unless @methods;
+@methods = qw(ncoils seg signalp tmhmm pfam) unless @methods;
 
 $log->write_to("Dumping methods".@methods."\n");
 
