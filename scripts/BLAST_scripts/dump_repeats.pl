@@ -59,7 +59,7 @@ open (OUT,">$output") or $log->log_and_die("cant open $output\n");
 my %acc2clone;
 $wormbase->FetchData("accession2clone",\%acc2clone) if (ref $wormbase eq 'Elegans');
 
-my $seq_level = ref $wormbase eq 'Elegans'? 'clone' : 'toplevel';
+my $seq_level = ref $wormbase eq 'Elegans'? 'seqlevel' : 'toplevel';
 
 my $sa=$dbobj->get_SliceAdaptor();
 foreach my $seq ( @{$sa->fetch_all($seq_level)}){
