@@ -1,7 +1,7 @@
 #!/usr/local/ensembl/bin/perl -w
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2013-04-23 09:34:21 $
+# Last edited on: $Date: 2013-04-23 10:54:45 $
 
 use lib $ENV{'CVS_DIR'};
 
@@ -440,8 +440,7 @@ sub process_swissprot {
 
   $wormbase->run_script("BLAST_scripts/swiss_trembl2dbm.pl -s -file $target", $log);
   $wormbase->run_script("BLAST_scripts/swiss_trembl2slim.pl -s $ver",$log);
-  chdir $swalldir;
-  $wormbase->run_script("BLAST_scripts/fasta2gsi.pl -f slimswissprot",$log);
+  $wormbase->run_script("BLAST_scripts/fasta2gsi.pl -directory $swalldir -f slimswissprot",$log);
   copy ("$swalldir/slimswissprot", "$blastdir/slimswissprot${ver}.pep");
   
 }
@@ -494,8 +493,7 @@ sub process_trembl {
     
     $wormbase->run_script("BLAST_scripts/blast_kill_list.pl -infile $swalldir/slimtrembl -outfile $blastdir/slimtrembl${ver}.pep -killfile $swalldir/kill_list.txt",$log);
     copy("$blastdir/slimtrembl${ver}.pep","$swalldir/slimtrembl_f");
-    chdir $swalldir;
-    $wormbase->run_script("BLAST_scripts/fasta2gsi.pl -f slimtrembl_f",$log);
+    $wormbase->run_script("BLAST_scripts/fasta2gsi.pl -directory $swalldir -f slimtrembl_f",$log);
   }
 }
 
