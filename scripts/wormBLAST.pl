@@ -5,7 +5,7 @@
 # written by Anthony Rogers
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2013-04-23 09:00:18 $
+# Last edited on: $Date: 2013-04-23 12:59:51 $
 #
 # it depends on:
 #    wormpep + history
@@ -458,7 +458,7 @@ sub update_blast_dbs {
   
   # copy blastdbs
   foreach (@_updated_DBs) {
-    foreach my $file_name ( glob "$wormpipe_dir/BlastDB/$currentDBs{$_}*" ) {
+    foreach my $file_name ( glob "$wormpipe_dir/BlastDB/$_currentDBs{$_}*" ) {
       $log->write_to("copying $file_name to $blastdbdir/\n");
       copy( "$file_name", "$blastdbdir/" )
 	or $log->write_to("ERROR: cannot copy $file_name\n");
