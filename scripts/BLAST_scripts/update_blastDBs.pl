@@ -1,7 +1,7 @@
 #!/usr/local/ensembl/bin/perl -w
 #
-# Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2013-04-12 15:45:41 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2013-04-23 09:34:21 $
 
 use lib $ENV{'CVS_DIR'};
 
@@ -17,7 +17,7 @@ use Net::FTP;
 use Time::localtime;
 
 my ($test, $debug);
-my ($fly, $yeast, $human, $uniprot, $swissprot, $trembl, $interpro, $cleanup, $all, $default);
+my ($fly, $yeast, $human, $uniprot, $swissprot, $trembl, $cleanup, $all, $default);
 my $store;
 my ($species, $qspecies, $nematode);
 
@@ -32,7 +32,6 @@ GetOptions (
 	    'uniprot'	  => \$uniprot,
             'swissprot'   => \$swissprot,
             'trembl'      => \$trembl,
-	    'interpro'    => \$interpro,
 	    'cleanup'     => \$cleanup,
 	    'all'         => \$all,
             'default'     => \$default,
@@ -58,13 +57,12 @@ my $acedir      = "$farm_loc/ace_files";
 my $swalldir    = "$farm_loc/swall_data";
 
 if ($default) {
-  $human=$fly=$yeast=$swissprot=$interpro=$cleanup=1;
+  $human=$fly=$yeast=$swissprot=$cleanup=1;
 } elsif ($all) {
-  $human=$fly=$yeast=$uniprot=$interpro=$cleanup=1;
+  $human=$fly=$yeast=$uniprot=$cleanup=1;
 }
 
 if( $human ) { &process_human; } 
-if ($interpro) { $wormbase->run_script("BLAST_scripts/make_interpro.pl",$log); }
 
 if($uniprot or $swissprot or $trembl) {
   #get current ver.
