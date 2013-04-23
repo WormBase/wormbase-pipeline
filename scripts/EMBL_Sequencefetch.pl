@@ -5,7 +5,7 @@
 # Usage : EMBL_Sequencefetch.pl [-options]
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2013-04-22 13:01:42 $
+# Last edited on: $Date: 2013-04-23 08:56:42 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -17,12 +17,14 @@ use Log_files;
 use Storable;
 use Modules::Features;
 use Species;
+BEGIN { $ENV{http_proxy}="http://wwwcache.sanger.ac.uk:3128";}
+use LWP::RobotUA;
 
 ######################################
 # variables and command-line options #
 ######################################
 
-my ($help, $debug, $test, $verbose, $store, $wormbase, $version, $organism, $output, $nolongtext, $dna, $database, $inc, $species, $dump_only, $input, $Type);
+my ($help, $debug, $test, $verbose, $store, $wormbase, $version, $organism, $output, $nolongtext, $dna, $database, $inc, $species, $dump_only, $input, $Type,$wget);
 
 GetOptions ("help"       => \$help, #
             "debug=s"    => \$debug, # debug option, turns on more printing and only email specified user.
@@ -37,6 +39,7 @@ GetOptions ("help"       => \$help, #
 	    "nolongtext" => \$nolongtext, # don't dump longtext
 	    "input=s"    => \$input, #EMBL flat file to be parse if doing manually.
 	    "Type=s"     => \$Type, #If you know the type of sequence ie. EST, mRNA state this here (Used in conjunction with -input). If Type is '?' then the type is determined for each individual entry
+	    "wget"       => \$wget,
 	   );
 
 $species = $organism;
@@ -61,6 +64,16 @@ my $tace = $wormbase->tace; # TACE PATH
 my   $output_dir = $wormbase->database('camace')."/EMBL_sequence_info";
 $wormbase->run_command ("mkdir $output_dir", $log) if (!-e $output_dir);
 
+
+# Set up the user agent and proxy data for the LWP sequence fetcher.
+# Using the RobotUA so that a 1 second delay can be implemented (nicer to the web server if there are 1000s of sequences to fetch.)
+my $ua = LWP::RobotUA->new( 'WORMbot/1.0',
+			    'hinxton@wormbase.org' # my address
+			  );
+$ua->delay(1/60); # 1 second delay between requests
+$ua->timeout(10);
+$ua->env_proxy;
+
 my %TSLs = $wormbase->TSL;
 Features::set_tsl(\%TSLs);
 
@@ -75,6 +88,8 @@ my $acefile;
 my $dnafile;
 my $Longtextfile;
 my $miscdir = glob('~wormpub/BUILD_DATA/MISC_DYNAMIC');
+
+
 
 #Molecules types
 #molecule type to Type tag data hash. key:molecule value:type
@@ -377,6 +392,10 @@ sub get_new_data {
   open (OUT_DNA,  ">$dnafile") if defined($dna);
   open (OUT_LONG, ">$Longtextfile") unless (defined $nolongtext);
 
+#  if ($wget && (scalar@$subentries > 100)) {
+#    $log->log_and_die ("There were too many entries for ${suborganism}_${submol_mod} to fetch via this method\n");
+#  }
+  
   foreach $new_sequence (@{$subentries}) {
     my ($seq,$status,$protid,$protver,@description,$idF,$svF,$idF2,$type,$def,$sequencelength);
     #$seq=$status=$protid=$idF=$svF=$idF2=$type=$def=$sequencelength=0;
@@ -384,11 +403,31 @@ sub get_new_data {
       print "Fetching data for $new_sequence\n";
     }
     #     $new_sequence = "DQ342049"; #get 1 entry DQ342049.1
-    open (NEW_SEQUENCE, "$mfetch -d embl -v full $new_sequence |");
+    unless ($wget){
+      open (NEW_SEQUENCE, "$mfetch -d embl -v full $new_sequence |");
+    }
+    
+    if ($wget){
+      my ($data,$tmp_file);
+      my $response = $ua->get("http://www.ebi.ac.uk/ena/data/view/${new_sequence}&display=text");
+      if ($response->is_success) {
+	print "Retrieved ".length($response->decoded_content)." bytes of data.";
+	$data =  $response->decoded_content;
+	$tmp_file = "/tmp/${new_sequence}.txt";
+	open(my $qfh, ">$tmp_file");
+	print $qfh $data;
+	close($qfh);
+	open (NEW_SEQUENCE, "<$tmp_file");
+      }
+      else {
+	print "Error: " . $response->status_line."\n\n";
+	$log->log_and_die ("Could not retrieve data from ENA via http\n");
+      }
+    }
+
     while (<NEW_SEQUENCE>) {
       #my $idF2;
       #Extract ID and Sequence Version.
-      print "Arse\n";
       if ((/^ID\s+(\S+)\;\s+\SV\s+(\d+)\;\s+.+mRNA.+(EST)/) or (/^ID\s+(\S+)\;\s+\SV\s+(\d+)\;\s+.+mRNA.+(STD)/)) { #mRNA or EST
 	#        if (/^ID\s+(\S+)\;\s+\SV\s+(\d+)\;\s+/) {
 	print OUT_LONG "\nLongText : \"$1\"\n" unless (defined $nolongtext);
