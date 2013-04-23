@@ -5,7 +5,7 @@
 # written by Anthony Rogers
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2013-04-19 15:15:18 $
+# Last edited on: $Date: 2013-04-23 09:00:18 $
 #
 # it depends on:
 #    wormpep + history
@@ -713,7 +713,7 @@ sub update_analysis {
       # do we want to update this blast database?
       if (!$old_db_version || $old_db_version ne $latest_db_version) {
       
-	my $latest_db_file_path = "$ENV{'PIPELINE'}/blastdb/Worms/$latest_db_version";
+	my $latest_db_file_path = "$ENV{'PIPELINE'}/BlastDB/$latest_db_version";
 
 	my $analysis_id = $analysis->dbID;
 
