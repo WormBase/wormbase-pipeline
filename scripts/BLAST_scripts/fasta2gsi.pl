@@ -11,7 +11,7 @@ use Wormbase;
 use Storable;
 use Log_files;
 
-my( $opt_l, $opt_o, $opt_f);
+my( $opt_l, $opt_o, $opt_f, $directory);
 my($species, $debug, $store, $test);
 
 my $usage .= "fasta2gsi.pl\n";
@@ -23,6 +23,7 @@ GetOptions (
 	    "l" => \$opt_l,
 	    "o" => \$opt_o,
 	    "file:s" => \$opt_f,
+	    "directory:s"  => \$directory,
 	    "test"   => \$test,
 	    "store:s"=> \$store,
 	    "debug:s"=> \$debug,
@@ -41,6 +42,14 @@ else {
 }
 my $log = Log_files->make_build_log($wormbase);
 $log->write_to("writing gsi files for $opt_f\n");
+
+
+############################
+# go to the directory that the fasta file lives in
+
+if ($directory) {
+  chdir $directory;
+}
 
 ############################
 # -f option:
