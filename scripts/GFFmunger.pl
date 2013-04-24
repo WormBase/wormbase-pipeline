@@ -5,7 +5,7 @@
 # by Dan Lawson
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2011-07-28 16:01:23 $
+# Last updated on: $Date: 2013-04-24 08:48:55 $
 #
 # Usage GFFmunger.pl [-options]
 
@@ -201,7 +201,7 @@ foreach my $filep (@file_prefices) {
     }
   }
 
-  unless ($filep =~ (/MtDNA/)) {
+  unless ($filep =~ /MtDNA/ or $filep =~ /_random/) {
     &check_its_worked($gffpath) if $all;
   }
 }
@@ -222,7 +222,7 @@ if ($wormbase->assembly_type eq 'contig') {
 
 } else {
   foreach  my $file (@file_prefices) {
-    my $minsize = ($file=~/random|un/)?350000:1500000;
+    my $minsize = ($file=~/random|un/)?200000:1500000;
     $wormbase->check_file("$gffdir/${file}.gff", $log,
 			  minsize => $minsize,
 			  lines => ['^##',
@@ -243,33 +243,33 @@ exit(0);
 ###############################
 
 sub check_its_worked {
-	my $file = shift;
-        my $fiveprime = qx{grep five_prime  $file | wc -l };
-	my $partially = qx{grep Partially  $file | wc -l };
-	
-	my $msg;
-
-        if (($landmark || $all) && ($file ne "CHROMOSOME_MtDNA") && ($wormbase->species eq 'elegans')) {
-           my $landmark_genes = qx{grep landmark $file | wc -l }; #qx{} captures system command output.
-
-	   if ($landmark_genes < 10) {
-		$msg .= "landmark genes are not present\n";
-	   }
-        }
-	if ( $fiveprime  < 10 ) {
-		$msg .= "UTRs are not present\n";
-	}
-	if ( $partially  < 10 ) {
-		$msg .= "CDS overloading not present\n";
-	}	
-	
-	if( defined ($msg) ) {
-		$log->write_to("GFFmunging failed : $msg");
-		$log->error;
-	}
-	else {
-		$log->write_to("GFFmunging appears to have worked\n");
-	}
+  my $file = shift;
+  my $fiveprime = qx{grep five_prime  $file | wc -l };
+  my $partially = qx{grep Partially  $file | wc -l };
+  
+  my $msg;
+  
+  if (($landmark || $all) && ($wormbase->species eq 'elegans')) {
+    my $landmark_genes = qx{grep landmark $file | wc -l }; #qx{} captures system command output.
+    
+    if ($landmark_genes < 10) {
+      $msg .= "landmark genes are not present\n";
+    }
+  }
+  if ( $fiveprime  < 10 ) {
+    $msg .= "UTRs are not present\n";
+  }
+  if ( $partially  < 10 ) {
+    $msg .= "CDS overloading not present\n";
+  }	
+  
+  if( defined ($msg) ) {
+    $log->write_to("GFFmunging failed : $msg");
+    $log->error;
+  }
+  else {
+    $log->write_to("GFFmunging appears to have worked\n");
+  }
 }
 
 sub addtoGFF {
