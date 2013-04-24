@@ -2,8 +2,10 @@
 
 use strict;
 use lib $ENV{'CVS_DIR'};
+use lib '/nfs/wormpub/tmp/Tk-DKW-0.03';
 use Ace;
 use Tk;
+use Tk::SplitFrame;
 use Getopt::Long;
 require Tk::Dialog;
 use Coords_converter;
@@ -30,12 +32,14 @@ my $lab;
 my $species;
 my $display_by_clones;
 my $addevidence;
+my $ncRNA;
 my $brugia;
 my $cleangene;
 my $clone;
 
 GetOptions (
 	    "addevidence"       => \$addevidence,
+	    "ncrna"             => \$ncRNA,
 	    "anomaly"           => \$anomaly,
 	    "blast=s"           => \$blast,
 	    "blesser"           => \$blesser,
@@ -141,6 +145,17 @@ else {
 }
 
 
+my $form_cds;			# cds variable from form
+my $form_gene;			# gene variable from blesser form
+my $form_gene2;                 # gene variable from blesser form
+my $form_gene3;                 # gene variable from evidence form
+my $form_gene4;                 # gene variable from clean_gene form
+my $form_rna;                   # gene variable from ncRNA work form
+my $clone_form;                 # cds variable for clone form
+my $clone_form_sug;             # cds variable for clone form
+my $anomaly_clone;		# clone variable from anomaly form
+
+
 my $tidy_dir = glob("~${user}/.history_maker");
 mkdir $tidy_dir, 0777;
 system("rm -f $tidy_dir/*"); # clean out old files
@@ -150,15 +165,31 @@ my $mysql;			# mysql database handle
 
 # set up Tk interface
 my $main_gui = MainWindow->new();
+    my $SplitFrame = $main_gui->SplitFrame ('-orientation' => 'vertical',
+        '-trimcolor'  => '#c7c7c7',
+        '-background'  => 'white',
+        '-sliderposition' => 250,
+        '-borderwidth' => 2,
+        '-sliderwidth' => 7,
+        '-relief'      => 'sunken',
+        '-height'      => 50,
+        '-width'       => 100,
+        '-padbefore'   => 0,
+        '-padafter'    => 0
+);
 
-my $form_cds;			# cds variable from form
-my $form_gene;			# gene variable from blesser form
-my $form_gene2;                 # gene variable from blesser form
-my $form_gene3;                 # gene variable from evidence form
-my $form_gene4;                 # gene variable from clean_gene form
-my $clone_form;                 # cds variable for clone form
-my $clone_form_sug;             # cds variable for clone form
-my $anomaly_clone;		# clone variable from anomaly form
+    # Values shown above are defaults.
+
+    my $LeftLabel = $SplitFrame->Label ('-text' => '');
+
+    my $RightLabel = $SplitFrame->Label ('-text' => '');
+
+    $SplitFrame->pack (-expand => 'true', -fill => 'both');
+
+    $SplitFrame->configure ('-sliderposition' => 400);
+
+
+
 
 # Main window
 $main_gui->configure(-title => "Curation Tool for ${version}",
@@ -171,9 +202,8 @@ my $gui_height = 50; #modified 200
 $gui_height += 200 if $chromosome;
 $gui_height += 200 if $blast;
 $gui_height += 110 if $blesser;
-$gui_height += 110 if $cleangene;
 $gui_height += 110 if $clone;
-$gui_height += 110 if $addevidence;
+$gui_height += 130 if $addevidence;
 $gui_height += 300 if $anomaly;
 $main_gui->geometry("${gui_width}x$gui_height");
 
@@ -196,9 +226,9 @@ my $check;			# state of the check button for the weights
 
 ################################################################
 
-# history_maker
+# history_maker my $LeftLabel = $SplitFrame->Label ('-text' => 'Left');
 
-my $his_maker = $main_gui->Frame( -background => "black", # was lightcyan
+my $his_maker = $LeftLabel->Frame( -background => "black", # was lightcyan
 				  -height     => "400",
 				  -label      => "History Maker",
 				  -relief     => "raised",
@@ -410,7 +440,7 @@ if ( $blast ) {
 
 my $cdswork;
 if ($addevidence) {
-  my $gene_evidence = $main_gui->Frame( -background => "IndianRed4", #was LightGreen
+  my $gene_evidence = $RightLabel->Frame( -background => "IndianRed4", #was LightGreen
 				       -height     => "400",
 				       -width      => "600",
 				       -label      => "Populate Top Evidence hash",
@@ -469,12 +499,79 @@ if ($addevidence) {
 
 
 
+################ start add ncRNA tags ##############
+
+my $rnawork;
+if ($ncRNA) {
+  my $ncrna_data = $RightLabel->Frame( -background => "black",
+				       -height     => "400",
+				       -width      => "600",
+				       -label      => "Populate standard ncRNA tags",
+				       -relief     => "raised",
+				       -borderwidth => 5,
+				       )->pack( -pady => "5",
+						-fill => "x"
+						);
+  # Reference database label
+  my $db_lbl = $ncrna_data->Label( -text => "Source: $cdatabase",
+				      -background => 'black',
+				      -foreground => 'whitesmoke'
+				    )->pack( -pady => '3'
+					   );
+
+  # CDS entry widgets
+  my $ncRNA_lbl = $ncrna_data->Label( -text => ' CDS  ID',
+				       -background => 'black', #was LightGreen
+				       -foreground => 'whitesmoke'
+				       )->pack(-pady => '6',
+					       -padx => '6',
+					       -side => 'left',
+					       );
+
+  $rnawork = $ncrna_data->Entry( -width => '10',
+				       -background => 'whitesmoke',
+				       -textvariable=> \$form_rna,
+				       )->pack(-side => 'left',
+					       -pady => '5',
+					       -padx => '5'
+					       );
+
+  # make Return and Enter submit CDS 
+  $rnawork->bind("<Return>",[ \&add_ncrna_data]);
+  $rnawork->bind("<KP_Enter>",[ \&add_ncrna_data]);
+  
+
+  # Add Evidence button
+  my $data = $ncrna_data->Button( -text => "Populate Tags",
+				     -command => [\&add_ncrna_data]
+				     )->pack(-side => 'left',
+					     -pady => '2',
+					     -padx => '6',
+					     -anchor => "w"
+					     );
+  # Clear CDS entry button
+  my $clear_data = $ncrna_data->Button( -text => "Clear",
+					  -command => [\&clear_data]
+					  )->pack(-side => 'right',
+						  -pady => '2',
+						  -padx => '6',
+						  -anchor => "e"
+						  );
+}
+
+######### end add ncRNA tags ##############
+
+
+
+
+
+
 ###### clean gene
 ###########################################################
 
 my $genework;
 if ($cleangene) {
-  my $gene_clean = $main_gui->Frame( -background => "LightGreen",
+  my $gene_clean = $LeftLabel->Frame( -background => "LightGreen",
 				       -height     => "400",
 				       -width      => "600",
 				       -label      => "Clean Unwanted CDSs from loci",
@@ -800,7 +897,7 @@ $user = &check_user unless $user;
 # initial aceperl connection to databases
 my $db = Ace->connect(-path => $rdatabase) unless $design;
 my $cdb;
-if ($cleangene){$cdb = Ace->connect(-path => $cdatabase) unless $design;}
+if ($cleangene || $ncRNA){$cdb = Ace->connect(-path => $cdatabase) unless $design;}
 
 # create GUI
 MainLoop();
@@ -848,6 +945,36 @@ sub add_evidence
     else {
       &confirm_message("Success", "Added evidence to $form_gene3");
       &clear_evi;
+    }
+  }
+
+###################
+sub add_ncrna_data
+  {
+    my ($day, $mon, $yr)  = (localtime)[3,4,5];
+    my $date = sprintf("%02d%02d%02d",$yr-100, $mon+1, $day);
+    my $refgene = $form_rna;
+    return unless $refgene;
+    &generate_message("CHECK", "Please save your database before clicking OK\n");
+    $cdb->close();
+    $cdb = Ace->connect(-path => $cdatabase);
+    my $obj = $cdb->fetch(Transcript => "$refgene");
+    return &error_warning("Invalid Transcript","$refgene is not a valid Transcript name") unless $obj;
+    my $method = $obj->Method->name;
+    
+    my $output = $session_file."ncRNA".$refgene;
+    
+    open (RNA,">$output") or die "cant open $output\n";
+    # add the Evidence to the CDS
+    print RNA "\nTranscript : \"$refgene\"\nTranscript ncRNA\nBrief_identification \"Possible non-coding RNA gene\"\nDB_remark \"C. elegans probable non-coding RNA\"\nMethod ncRNA\nRemark \"[$date $user] Created as this locus is potentially a ncRNA (with little evidence of translation) as it displays evidence of transcription and/or splicing\" Curator_confirmed $person\n\n";
+    close RNA;
+    my $return_status = system("xremote -remote 'parse $output'");
+    if ( ( $return_status >> 8 ) != 0 ) {
+      &error_warning("WARNING", "X11 connection appears to be lost");
+    } 
+    else {
+      &confirm_message("Success", "Added Tags to $form_rna");
+      &clear_ncrna_data;
     }
   }
 
@@ -1112,6 +1239,10 @@ sub clear_proposed
 sub clear_evi
   {
     $cdswork->delete(0,'end');
+  }
+sub clear_data
+  {
+    $rnawork->delete(0,'end');
   }
 sub clear_gen
   {
