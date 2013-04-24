@@ -70,7 +70,9 @@ while( <$TABLE> ){
   my $seq_name = ($cds or $transcript or $pseudo);
   $seq_name =~ s/[a-z]$//; #remove isoform indication
   if( $ace_genes{$gene}->{name} and ($ace_genes{$gene}->{name} ne $seq_name) ) {
-    $log->write_to("$gene has multiple sequence names ".$ace_genes{"$gene"}->{'name'}." and $seq_name\n");
+    unless ($ace_genes{"$gene"}->{'name'} eq 'C05G5.6') {
+      $log->write_to("$gene has multiple sequence names ".$ace_genes{"$gene"}->{'name'}." and $seq_name\n");
+    }
     next;
   }
   else {
