@@ -153,7 +153,7 @@ setenv COMPARA_URL "mysql://wormadmin:worms@${WORM_DBHOST}:${WORM_DBPORT}/worm_c
 
 
 # for the EFuncGen database
-source ${CVS_DIR}/ENSEMBL/etc/efg.config
+#source ${CVS_DIR}/ENSEMBL/etc/efg.config
 
 # stick this stuff at the end
 setenv PERL5LIB ${PERL5LIB}:.
