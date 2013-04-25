@@ -261,7 +261,7 @@ sub parse_gff_fh {
 =cut
 
 sub parse_gff3_fh {
-  my ($fh, $slice_hash, $analysis) = @_;
+  my ($fh, $slice_hash, $analysis_hash) = @_;
 
   #
   # gene
@@ -276,7 +276,11 @@ sub parse_gff3_fh {
     next if /^\#/;
     my @l = split(/\t+/, $_);
     
-    next if ($l[2] ne 'mRNA' and  $l[2] ne 'CDS' and $l[2] ne 'exon');
+    next if ($l[2] ne 'mRNA' and 
+             $l[2] ne 'primary_transcript' and 
+             $l[2] ne 'protein_coding_primary_transcript' and  
+             $l[2] ne 'CDS' and 
+             $l[2] ne 'exon');
     
     my ($id, %parents);
 
@@ -312,7 +316,10 @@ sub parse_gff3_fh {
           gff_phase  => $l[7],
         };
       }
-    } elsif ($l[2] eq 'mRNA') {
+    } elsif ($l[2] eq 'mRNA' or 
+             $l[2] eq 'primary_transcript' or 
+             $l[2] eq 'protein_coding_primary_transcript') {
+      $transcripts{$id}->{source} = $l[1];
       foreach my $parent (keys %parents) {
         push @{$genes{$parent}}, $id;
       }
@@ -325,11 +332,13 @@ sub parse_gff3_fh {
     my @tids = sort @{$genes{$gid}};
 
     my $gene = Bio::EnsEMBL::Gene->new(
-      -stable_id => $gid,
-      -analysis  => $analysis);
+      -stable_id => $gid);
+
+    my $gene_is_coding = 0;
 
     foreach my $tid (@tids) {
       my $tran = $transcripts{$tid};
+      my $gff_source = $tran->{source};
 
       my @exons = sort { $a->{start} <=> $b->{start} } @{$tran->{exons}};
 
@@ -391,7 +400,7 @@ sub parse_gff3_fh {
       
       my $transcript = Bio::EnsEMBL::Transcript->new(
         -stable_id => $tid,
-        -analysis  => $analysis);
+        -analysis  => (exists $analysis_hash->{$gff_source}) ? $analysis_hash->{$gff_source} : $analysis_hash->{WormBase});
 
       my ($tr_st_ex, $tr_en_ex, $tr_st_off, $tr_en_off);
 
@@ -404,7 +413,6 @@ sub parse_gff3_fh {
           -strand    => ($ex->{strand} eq '+') ? 1 : -1,
           -phase     => $ex->{phase},
           -end_phase => $ex->{end_phase},
-          -analysis  => $analysis,
             );
 
         $transcript->add_Exon($ens_ex);
@@ -429,11 +437,21 @@ sub parse_gff3_fh {
 
         $transcript->translation($tr);
         $transcript->biotype('protein_coding');
-        $gene->biotype('protein_coding');
+        $gene_is_coding = 1;
+      } else {
+        $transcript->biotype('ncRNA');
       }
 
       $gene->add_Transcript($transcript);
     }
+
+    if ($gene_is_coding) {
+      $gene->biotype('protein_coding');
+    } else {
+      $gene->biotype('ncRNA');
+    }
+    # propagate analysis for first transcript up to the gene
+    $gene->analysis( $gene->get_all_Transcripts->[0]->analysis );
 
     push @all_ens_genes, $gene;
   }

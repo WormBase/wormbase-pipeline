@@ -278,15 +278,19 @@ sub load_genes {
     -port   => $config->{database}->{port},
       );
 
-  my $analysis = $db->get_AnalysisAdaptor()->fetch_by_logic_name('wormbase');
+  my (%ana_hash, $analysis);
 
-  if (not defined $analysis) {
-    $analysis = Bio::EnsEMBL::Analysis->new(-logic_name => "wormbase", 
-                                            -gff_source => "WormBase",
-                                            -gff_feature => "gene",
-                                            -module => "WormBase");
-    $db->get_AnalysisAdaptor->store($analysis);
+  foreach my $ana (@{$db->get_AnalysisAdaptor->fetch_all}) {
+    $ana_hash{$ana->logic_name} = $ana;
   }
+  if (not exists $ana_hash{wormbase}) {
+    my $ana = Bio::EnsEMBL::Analysis->new(-logic_name => "wormbase", 
+                                          -gff_source => "WormBase",
+                                          -module => "WormBase");
+    $db->get_AnalysisAdaptor->store($analysis);
+    $ana_hash{wormbase} = $ana;
+  }
+  $analysis = $ana_hash{wormbase};
 
   my (%slice_hash, @path_globs, @gff2_files, @gff3_files, $genes); 
 
@@ -332,7 +336,7 @@ sub load_genes {
     $genes = &parse_gff_fh( $gff_fh, \%slice_hash, $analysis);
   } elsif (@gff3_files) {
     open(my $gff_fh, "cat @gff3_files |") or die "Could not create GFF stream\n";
-    $genes = &parse_gff3_fh( $gff_fh, \%slice_hash, $analysis);
+    $genes = &parse_gff3_fh( $gff_fh, \%slice_hash, \%ana_hash);
   } else {
     die "No gff or gff3 files found - death\n";
   }
