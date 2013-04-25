@@ -65,7 +65,7 @@ sub usage {
 }
 
 my ($dbhost, $dbuser, $dbpass, $dbport, $dbname);
-my ($read, $write, $file, $force_clear, $is_pipeline_db, $help);
+my ($read, $write, $file, $force_clear, $is_pipeline_db, $help, $do_not_write_new_analyses);
 
 if ( !GetOptions( 'host|dbhost|h:s'  => \$dbhost,
                   'dbname|db|D:s'    => \$dbname,
@@ -76,6 +76,7 @@ if ( !GetOptions( 'host|dbhost|h:s'  => \$dbhost,
                   'write!'           => \$write,
                   'forceclear!'      => \$force_clear,
                   'file=s'           => \$file,
+                  'nonew'            => \$do_not_write_new_analyses,
                   'help!'            => \$help, ) || $help) {
   usage();
 }
@@ -295,8 +296,12 @@ sub write_into_db {
       $a->created($current_time);
       $analysis_adaptor->update($a);
       next ANALYSIS;
-    }else{
-      $analysis_adaptor->store($a);
+    }else {
+      if (not $do_not_write_new_analyses) {
+        $analysis_adaptor->store($a);
+      } else {
+        warn("Analysis " . $a->logic_name . " not found in database - not writing\n");
+      }
     }
   }
 }
