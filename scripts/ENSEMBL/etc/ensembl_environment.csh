@@ -109,7 +109,9 @@ else
     setenv ANT_HOME /nfs/panda/ensemblgenomes/external/apache-ant
     setenv PATH ${JAVA_HOME}/bin:${ANT_HOME}/bin:${PATH}
 
-
+    # ruby and rake
+    set path = ( /net/isilon3/production/panda/ensemblgenomes/wormbase/software/packages/gem/bin/ $path )
+    setenv RUBYLIB /net/isilon3/production/panda/ensemblgenomes/wormbase/software/packages/gem/lib/
 
 endif
 
