@@ -138,10 +138,9 @@ setenv PERL5LIB ${ENSEMBL_CVS_ROOT_DIR}/ensembl-analysis/modules:${PERL5LIB}
 setenv PERL5LIB ${ENSEMBL_CVS_ROOT_DIR}/ensembl/modules:${PERL5LIB}
 
 # used when setting up a new Ensembl Genomes db
-setenv PERL5LIB ${ENSEMBL_CVS_ROOT_DIR}/ensembl-config/nematodes/celegans/generic-elegans:${PERL5LIB}
+setenv PERL5LIB ${ENSEMBL_CVS_ROOT_DIR}/ensembl-config/nematodes/generic_nematode:${PERL5LIB}
 
 
-setenv PERL5LIB ${ENSEMBL_CVS_ROOT_DIR}/ensembl-config/celegans/generic-elegans:${PERL5LIB}
 setenv PERL5LIB ${ENSEMBL_CVS_ROOT_DIR}/bioperl-run:${PERL5LIB}
 setenv PERL5LIB ${ENSEMBL_CVS_ROOT_DIR}/ensembl-hive/modules:${PERL5LIB}
 setenv PERL5LIB ${WORM_SW_ROOT}/lib:${PERL5LIB}
