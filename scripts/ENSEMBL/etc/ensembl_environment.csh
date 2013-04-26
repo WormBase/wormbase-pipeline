@@ -112,6 +112,8 @@ else
     # ruby and rake
     set path = ( /net/isilon3/production/panda/ensemblgenomes/wormbase/software/packages/gem/bin/ $path )
     setenv RUBYLIB /net/isilon3/production/panda/ensemblgenomes/wormbase/software/packages/gem/lib/
+    setenv GEM_HOME /net/isilon3/production/panda/ensemblgenomes/wormbase/software/packages/gem
+
 
 endif
 
