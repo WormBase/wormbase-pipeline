@@ -186,7 +186,7 @@
 # by Gary Williams
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2013-03-14 12:04:30 $
+# Last updated on: $Date: 2013-04-26 15:08:36 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -1365,6 +1365,9 @@ sub run_tophat {
     # test with --no-coverage-search for speed
     $status = $wormbase->run_command("$Software/tophat/tophat $cmd_extra --no-coverage-search --min-intron-length 30 --max-intron-length 5000 --min-segment-intron 30 --max-segment-intron 5000 --min-coverage-intron 30 --max-coverage-intron 5000 $gtf_index $raw_juncs $RNASeqGenomeDir/reference-indexes/$species $joined_file", $log);
     if ($status != 0) {  $log->log_and_die("Didn't run tophat to do the alignment successfully\n"); } # only exit on error after gzipping the files
+
+    &sort_bam_file('tophat_out/accepted_hits.bam');
+
     $wormbase->run_command("touch tophat_out/accepted_hits.bam.done", $log); # set flag to indicate we have finished this
   } else {
     $log->write_to("Check tophat_out/accepted_hits.bam: already done\n");
@@ -1431,6 +1434,19 @@ sub run_tophat {
     }
   }
 }
+
+#################################################################################################################
+# sort the BAM file
+sub sort_bam_file {
+  my ($file) = @_;
+
+  my $samtools = "$Software/samtools/samtools";
+
+  $wormbase->run_command("$samtools sort $file ${file}.sorted");
+  system("mv -f ${file}.sorted $file");
+
+}
+
 
 #################################################################################################################
 # take a quick look in the read files to determine the length of the reads
