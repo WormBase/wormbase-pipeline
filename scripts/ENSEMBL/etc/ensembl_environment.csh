@@ -54,7 +54,12 @@ if (-e "/software/worm") then
     setenv ENSEMBL_CVS_ROOT_DIR "${WORM_PACKAGES}/ensembl"
     set path = (${ENSEMBL_CVS_ROOT_DIR}/eHive/scripts ${WORM_BIN}/wublast/ ${WORM_BIN} /software/bin ${path})
 
-    setenv PERL5LIB ${WORM_SW_ROOT}/lib/perl5/site_perl:${WORM_SW_ROOT}/packages/bioperl/bioperl-live
+    # PERL5LIB
+    setenv PERL5LIB ${WORM_SW_ROOT}/lib/site_perl
+    setenv PERL5LIB ${ENSEMBL_CVS_ROOT_DIR}/bioperl-live:${PERL5LIB}
+    setenv PERL5LIB ${ENSEMBL_CVS_ROOT_DIR}/bioperl-run:${PERL5LIB}
+
+
 else
 ##########################
 # we are on the EBI system
@@ -102,8 +107,6 @@ else
     setenv ENSEMBL_CVS_ROOT_DIR "${WORM_PACKAGES}/ensembl"
     set path = (${ENSEMBL_CVS_ROOT_DIR}/ensembl-hive/scripts ${WORM_PACKAGES}/wublast/ ${WORM_BIN} ${path})
 
-    setenv PERL5LIB ${WORM_SW_ROOT}/packages/bioperl/bioperl-live
-
     # use java version 1.6
     setenv JAVA_HOME /sw/arch/pkg/jdk1.6
     setenv ANT_HOME /nfs/panda/ensemblgenomes/external/apache-ant
@@ -113,6 +116,10 @@ else
     set path = ( /net/isilon3/production/panda/ensemblgenomes/wormbase/software/packages/gem/bin/ $path )
     setenv RUBYLIB /net/isilon3/production/panda/ensemblgenomes/wormbase/software/packages/gem/lib/
     setenv GEM_HOME /net/isilon3/production/panda/ensemblgenomes/wormbase/software/packages/gem
+
+    # PERL5LIB
+    setenv PERL5LIB ${WORM_PACKAGES}/bioperl/bioperl-live
+    setenv PERL5LIB ${WORM_PACKAGES}/bioperl/bioperl-run:${PERL5LIB}
 
 
 endif
@@ -128,7 +135,6 @@ setenv WORM_LIB ${WORM_SW_ROOT}/lib
 ####################
 # perl 5 libraries
 ####################
-setenv PERL5LIB ${PERL5LIB}:${WORM_SW_ROOT}/packages/bioperl/bioperl-live
 
 # this variable name is required by Compara
 setenv COMPARA "${WORM_PACKAGES}/ensembl"
@@ -144,8 +150,6 @@ setenv PERL5LIB ${ENSEMBL_CVS_ROOT_DIR}/ensembl/modules:${PERL5LIB}
 # used when setting up a new Ensembl Genomes db
 setenv PERL5LIB ${ENSEMBL_CVS_ROOT_DIR}/ensembl-config/nematodes/generic_nematode:${PERL5LIB}
 
-
-setenv PERL5LIB ${ENSEMBL_CVS_ROOT_DIR}/bioperl-run:${PERL5LIB}
 setenv PERL5LIB ${ENSEMBL_CVS_ROOT_DIR}/ensembl-hive/modules:${PERL5LIB}
 setenv PERL5LIB ${WORM_SW_ROOT}/lib:${PERL5LIB}
 
@@ -160,7 +164,6 @@ setenv COMPARA_URL "mysql://wormadmin:worms@${WORM_DBHOST}:${WORM_DBPORT}/worm_c
 
 # stick this stuff at the end
 setenv PERL5LIB ${PERL5LIB}:.
-setenv PERL5LIB ${PERL5LIB}:${WORM_SW_ROOT}/lib/site_perl
 setenv PERL5LIB ${PERL5LIB}:${CVS_DIR}
 setenv PERL5LIB ${PERL5LIB}:${CVS_DIR}/ENSEMBL/lib
 
