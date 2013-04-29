@@ -186,7 +186,7 @@
 # by Gary Williams
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2013-04-26 15:08:36 $
+# Last updated on: $Date: 2013-04-29 13:12:34 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -1043,6 +1043,7 @@ IIIIIIIIHIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIGIGIDHIIIIIGIGI
     if (!defined $life_stage) {$log->write_to("WARNING: no Condition object found for Analysis object $analysis\n");}
     my $paper = $papers{$analysis};
     if (!defined $paper) {$log->write_to("WARNING: no Reference tag set for Analysis object: $analysis\n");}
+    my %Gene_SRX; # used to get the 'best' gene value when there are non-overlapping transcripts causing cufflinks to output two values for one gene
     my %CDS_SRX;
     my %Pseudogene_SRX;
 
@@ -1062,23 +1063,34 @@ IIIIIIIIHIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIGIGIDHIIIIIGIGI
       open (EXPR, "<$SRX/cufflinks/genes.fpkm_tracking") || $log->log_and_die("Can't open $SRX/cufflinks/genes.fpkm_tracking\n");
       open (EXPROUT, ">$SRX.out") || $log->log_and_die("Can't open $SRX.out\n");
       while (my $line = <EXPR>) {
+	# 0 tracking_id	1 class_code	2 nearest_ref_id	3 gene_id	4 gene_short_name	5 tss_id	6 locus	7 length	8 coverage	9 FPKM	10 FPKM_conf_lo	11 FPKM_conf_hi	12 FPKM_status
 	my @f = split /\s+/, $line;
 	if ($f[0] eq 'tracking_id') {next;}
 	if ($f[0] =~ /CUFF/) {$log->log_and_die("Cufflinks for $SRX has failed to put the Gene IDs in the output file - problem with the GTF file?\n");}
-	my $gene_expr = $f[10];
-	if ($f[9] == 0) {$gene_expr = 0.0000000001}
+	my $gene_expr = $f[9];
+	if ($gene_expr == 0) {$gene_expr = 0.0000000001}
 	if ($f[12] eq "OK" || $f[12] eq "LOWDATA") {
-	  # print the file for Wen's SPELL data
-	  print EXPROUT "$f[0]\t$gene_expr\n";
-	  # and print to the Gene model ace file
-	  if (defined $life_stage) {
-	    print EXPRACE "\nGene : \"$f[0]\"\n";
-	    print EXPRACE "RNASeq_FPKM  \"$life_stage\"  \"$f[9]\"  From_analysis \"$analysis\"\n";
+	  if (!exists $Gene_SRX{$f[0]} || $Gene_SRX{$f[0]} < $gene_expr) { # if the gene is repeated, store the highest expression value
+	    $Gene_SRX{$f[0]} = $gene_expr;
 	  }
+
 	}
       }
-      close(EXPROUT);
       close (EXPR);
+
+      # now dump the hash 
+      foreach my $gene_id (keys %Gene_SRX) {
+	my $gene_expr = $Gene_SRX{$gene_id};
+	# print the file for Wen's SPELL data
+	print EXPROUT "$gene_id\t$gene_expr\n";
+	# and print to the Gene model ace file
+	if (defined $life_stage) {
+	  print EXPRACE "\nGene : \"$gene_id\"\n";
+	  print EXPRACE "RNASeq_FPKM  \"$life_stage\"  \"$gene_expr\"  From_analysis \"$analysis\"\n";
+	}
+      }
+
+      close(EXPROUT);
     }
 
     my $number_of_complaints = 5; #complain only 5 times about Sequences names not in the normal format, otherwise we are swamped by warnings in remanei
