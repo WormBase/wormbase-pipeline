@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl -w
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2013-03-13 14:14:33 $
+# Last edited on: $Date: 2013-04-29 10:20:35 $
 
 use strict;
 use lib  $ENV{'CVS_DIR'};
@@ -147,5 +147,4 @@ variation WGS_McGrath elegans
 variation WGS_Pasadena_Quinlan elegans
 variation WGS_Stein elegans
 variation WGS_Yanai elegans
-
 __END__
