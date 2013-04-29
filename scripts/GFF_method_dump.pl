@@ -9,7 +9,7 @@
 # dumps the method through sace / tace and concatenates them.
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2013-04-17 12:29:34 $
+# Last edited on: $Date: 2013-04-29 10:21:31 $
 
 
 use lib $ENV{CVS_DIR};
@@ -82,20 +82,20 @@ $dump_dir =~ s#/$##g;
 `mkdir -p $dump_dir/tmp` unless -e "$dump_dir/tmp";
 
 #make sure dump_dir is writable
-system("touch $dump_dir/tmp_file") and $log->log_and_die ("cant write to $dump_dir\n");
-
+system("touch $dump_dir/tmp_file.$$") and $log->log_and_die ("cant write to $dump_dir\n");
+unlink "$dump_dir/tmp_file.$$";
 
 # open database connection once
 if ($wormbase->assembly_type eq 'contig'){
-    $via_server = 1;
-    unless ($host) {
-	print STDERR "you need to start a server first and tell me the host\neg /software/worm/bin/acedb/sgifaceserver /nfs/wormpub/BUILD/remanei 23100 600:6000000:1000:600000000>/dev/null)>&/dev/null\n";
-	$log->log_and_die("no host passed for contig assembly");
-    }
+  $via_server = 1;
+  unless ($host) {
+    print STDERR "you need to start a server first and tell me the host\neg /software/worm/bin/acedb/sgifaceserver /nfs/wormpub/BUILD/remanei 23100 600:6000000:1000:600000000>/dev/null)>&/dev/null\n";
+    $log->log_and_die("no host passed for contig assembly");
+  }
 }
 
 unless($via_server) {
-	open (WRITEDB,"| $giface $database") or $log->log_and_die ("failed to open giface connection to $database\n");
+  open (NONSERVERWRITE,"| $giface $database") or $log->log_and_die ("failed to open giface connection to $database\n");
 }
 
 $log->write_to("dumping methods:".join(",",@methods)."\n");
@@ -147,7 +147,7 @@ if ( @methods ) {
                               $method,
                               ($gff3) ? "3" : "2",
                               $file);
-        print WRITEDB $command;
+        print NONSERVERWRITE $command;
       }
     }
   }
@@ -193,14 +193,14 @@ if ( @methods ) {
                             ($gff3) ? "3" : "2",
                             $out_file);
       print "$command";
-      print WRITEDB $command;
+      print NONSERVERWRITE $command;
     }
   }
   $count++;
 }
 
 unless($via_server) {
-  close (WRITEDB) or $log->log_and_die ("failed to close giface connection to $database\n");
+  close(NONSERVERWRITE) or $log->log_and_die ("failed to close giface connection to $database\n");
 }
 
 $log->write_to("dumped $count sequences\n");
@@ -211,7 +211,7 @@ $log->write_to("dumped $count sequences\n");
 if ($via_server) { # contig sequences are contenated
   if ( @methods ) {
     foreach my $method ( @methods ) {
-
+      
       my $file = "$dump_dir/${method}.${file_suffix}";
       $wormbase->check_file($file, $log,
 			    lines => ['^##', 
@@ -304,10 +304,6 @@ if ($via_server) { # contig sequences are contenated
   }
 }
 
-
-
-# remove write test
-system("rm -f $dump_dir/dump");
 
 $log->mail();
 exit(0);
