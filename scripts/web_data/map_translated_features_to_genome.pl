@@ -98,7 +98,8 @@ if ($out_file) {
   }
 } else {
   if ($wormbase->assembly_type eq 'contig') {
-    $out_file = $wormbase->gff_splits . "/" . OUT_FILE_SUFFIX . ".gff";
+    $out_file = $wormbase->gff_splits . "/" . OUT_FILE_SUFFIX;
+    $out_file .= ($gff3) ? ".gff3" : ".gff";
     open $outfh, ">$out_file" or $log->log_and_die("Could not open $out_file for writing\n");
   }
 }

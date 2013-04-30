@@ -49,7 +49,9 @@ my $to_map  = fetch_genes_lacking_pmap_coords();
 
 foreach my $chrom (sort keys %$chr_lengths) {
 
-  open my $out_fh, ">" . $wormbase->gff_splits . "/${chr_prefix}${chrom}_gmap2pmap.gff";
+  my $fname = $wormbase->gff_splits . "/${chr_prefix}${chrom}_gmap2pmap";
+  $fname .= ($gff3) ? ".gff3" : ".gff";
+  open(my $out_fh, ">$fname") or $log->log_and_die("Could not open $fname for writing\n");
 
   if (exists $markers->{$chrom}) {
 
