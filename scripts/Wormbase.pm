@@ -1748,6 +1748,40 @@ sub GFF_file_name {
   return $file;
 }
 
+
+sub open_GFF3_file {
+  my $self = shift;
+  my $seq = shift;
+  my $method = shift;
+  my $log = shift;
+  my $handle;
+
+  my $file = $self->GFF3_file_name($seq, $method);
+  if ($self->assembly_type ne 'contig' ) { 
+    open ($handle,"<$file") or $log->log_and_die("cant open $file :$!\n");
+  } else {		# contig based assembly
+    open($handle,"grep \"^$seq\\W\" $file |") or $log->log_and_die("cant open $file :$!\n");
+  }
+  
+  return $handle;
+}
+
+sub GFF3_file_name {
+  my $self = shift;
+  my ($chromosome, $method) = @_;
+
+  my $file;
+  if ($self->assembly_type ne 'contig') { 
+    $file = defined $method ? $self->gff_splits."/${chromosome}_$method.gff3" : $self->gff."/$chromosome.gff3";
+  } else {			# contig based assembly
+    $file = defined $method ? $self->gff_splits."/$method.gff3" : $self->gff."/".$self->species.".gff3";
+  }
+
+  return $file;
+}
+
+
+
 sub worm_webpublish {
     my $self = shift;
     my %opts = @_;
