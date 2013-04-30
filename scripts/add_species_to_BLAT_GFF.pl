@@ -7,7 +7,7 @@
 # This is a example of a good script template
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-04-30 14:47:38 $
+# Last updated on: $Date: 2013-04-30 15:32:58 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -194,7 +194,8 @@ foreach my $GFF_file_name (@gff_files) {
     # times to the same line.
     if (defined $f[1] && $f[8] !~ /;\sSpecies/ && $f[8] !~ /Species\=/) {
       
-      if (grep { $f[1] =~ /^$_/ } ('BLAT_WASHU', 'BLAT_NEMBASE', 'BLAT_NEMATODE', 'BLAT_Caen_EST_')) {
+      if (grep { $f[1] =~ /^$_/ } ('BLAT_WASHU', 'BLAT_NEMBASE', 'BLAT_NEMATODE', 'BLAT_Caen_EST_') or 
+          grep { $f[1] eq $_ } ('EMBL_nematode_cDNAs-BLAT', 'NEMATODE.NET_cDNAs-BLAT', 'NEMBASE_cDNAs-BLAT')) {
         my $id;
         
         if ($gff3) {
@@ -205,8 +206,12 @@ foreach my $GFF_file_name (@gff_files) {
         
         my $hkey = $f[1];
         # the {'BLAT_NEMATODE'} hash holds the EMBL data which BLAT_Caen_EST_* uses as well
-        if ($hkey =~ /BLAT_Caen_/) {
+        if ($hkey =~ /BLAT_Caen_/ or $hkey =~ /^EMBL_nematode_cDNAs/) {
           $hkey = "BLAT_NEMATODE";
+        } elsif ($f[1] =~ /NEMATODE\.NET_cDNAs/) {
+          $hkey = "BLAT_WASHU";
+        } elsif ($f[1] =~ /^NEMBASE_cDNAs/) {
+          $hkey = "BLAT_NEMBASE";
         }
         
         if ( exists $species{$hkey}->{$id} ) {
