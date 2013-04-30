@@ -6,8 +6,8 @@
 #
 # script for creating extra GFF lines to indicate those genes that are landmark genes
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2008-10-21 12:15:13 $
+# Last edited by: $Author: klh $
+# Last edited on: $Date: 2013-04-30 15:24:49 $
 use strict;
 use lib $ENV{'CVS_DIR'};
 use Wormbase;
@@ -23,6 +23,7 @@ my $test;         # use test mode in ~wormpub
 my %landmarks;    # hash containing gene IDs as keys and public_name field as value
 my $store;                                       # to specify storable file
 my $verbose;
+my $gff3;
 
 GetOptions(
 	   "help"       => \$help,
@@ -30,7 +31,8 @@ GetOptions(
 	   "test"       => \$test,
 	   "verbose"    => \$verbose,
 	   "database=s" => \$database,
-	   'store=s'    => \$store
+	   'store=s'    => \$store,
+           'gff3'       => \$gff3,
 	   );
 
 ############################
@@ -73,37 +75,45 @@ $database = $wormbase->autoace if !$database;
 &get_landmark_genes;
 
 # now loop through GFF files to look for existing gene spans
-my @chromosomes = qw( I II III IV V X );
+my @chromosomes = $wormbase->get_chromosome_names(-mito => 0, -prefix => 1);
 
 foreach my $chromosome (@chromosomes) {
 
-    $log->write_to("Processing chromosome $chromosome\n");
+  $log->write_to("Processing chromosome $chromosome\n");
+  
+  my $infile = ($gff3) ? $wormbase->GFF3_file_name($chromosome) : $wormbase->GFF_file_name($chromosome);
+  my $outfile_base = $wormbase->gff_splits . "/${chromosome}_landmarks";
+  my $outfile = ($gff3) ? "${outfile_base}.gff3" : "${outfile_base}.gff";
 
-    # open input/output streams
-    open( OUT, ">".$wormbase->gff_splits."/CHROMOSOME_${chromosome}_landmarks.gff" ) || die "Cannot open output file\n";
-    open( GFF, "<".$wormbase->chromosomes."/CHROMOSOME_${chromosome}.gff" ) || die "Can't read CHROMOSOME_${_}.gff file\n";
+  # open input/output streams
+  open( my $out_fh, ">$outfile" ) or die "Could not open $outfile for writing\n";
+  open( my $in_fh. $infile) or die "Could not open $infile for reading\n";
+  
+  while (my $line = <$in_fh>) {
+    /^\#/ and next;
 
-    while (my $line = <GFF>) {
-
-        # only want to match the following lines
-        # CHROMOSOME_II   gene    gene    23347   24428   .       +       .       Gene "WBGene00005017"
-        next unless ( $line =~ /gene/ && $line =~ /WBGene/ );
-
-        # more exact check by splitting line and checking fields
-        my @data = split(/\t/, $line);
-        next unless ( $data[1] eq "gene" && $data[2] eq "gene" );
-
-        # modify 9th GFF column to look up in hash to get CGC name (or Public name)
-        my ($gene) = $data[8] =~ /Gene \"(WBGene\d+)\"/;
-
-        # check gene from GFF file with genes in hash to see if it is a landmark gene, write to output if so
-        if ( $landmarks{$gene} ) {
-            print OUT
-              "$data[0]\tlandmark\tgene\t$data[3]\t$data[4]\t$data[5]\t$data[6]\t$data[7]\tLocus $landmarks{$gene}\n";
-        }
+    my @data = split(/\t+/, $line);
+    next unless $data[2] eq 'gene';
+    
+    my $gene;
+    if ($gff3) {
+      ($gene) = $data[8] =~ /Name=Gene:(WBGene\d+)/;
+    } else {
+      ($gene) = $data[8] =~ /Gene \"(WBGene\d+)\"/;
     }
-    close GFF;
-    close(OUT) || die "Couldn't close output file\n";
+    
+    # check gene from GFF file with genes in hash to see if it is a landmark gene, write to output if so
+    if (defined $gene and  $landmarks{$gene} ) {
+      print $out_fh "$data[0]\tlandmark\tgene\t$data[3]\t$data[4]\t$data[5]\t$data[6]\t$data[7]\t";
+      if ($gff3) {
+        print "Locus=$landmarks{$gene}\n";
+      } else {
+        print "Locus $landmarks{$gene}\n";
+      }
+    }
+  }
+  close($in_fh);
+  close($out_fh) or die "Could not cleanly close output file\n";
 }
 
 ##################
@@ -112,11 +122,19 @@ foreach my $chromosome (@chromosomes) {
 
 my $gff_dir = $wormbase->gff_splits;
 foreach my $chromosome (@chromosomes) {
-  $wormbase->check_file("$gff_dir/CHROMOSOME_${chromosome}_landmarks.gff", $log,
-                        minsize => 900,
-			maxsize => 2000,
-                        lines => ["^CHROMOSOME_${chromosome}\\s+landmark\\s+gene\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+]\\s+\\S+\\s+Locus\\s+\\S+"],
-                        );
+  if ($gff3) {
+    $wormbase->check_file("$gff_dir/CHROMOSOME_${chromosome}_landmarks.gff3", $log,
+                          minsize => 900,
+                          maxsize => 2000,
+                          lines => ["^CHROMOSOME_${chromosome}\\s+landmark\\s+gene\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+]\\s+\\S+\\s+Locus=\\S+"],
+        );
+  } else {
+    $wormbase->check_file("$gff_dir/CHROMOSOME_${chromosome}_landmarks.gff", $log,
+                          minsize => 900,
+                          maxsize => 2000,
+                          lines => ["^CHROMOSOME_${chromosome}\\s+landmark\\s+gene\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+]\\s+\\S+\\s+Locus\\s+\\S+"],
+        );
+  }
 }
 
 
