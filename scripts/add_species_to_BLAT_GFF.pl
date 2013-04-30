@@ -7,7 +7,7 @@
 # This is a example of a good script template
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-01-17 09:33:47 $
+# Last updated on: $Date: 2013-04-30 14:47:38 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -161,10 +161,14 @@ if ($infile) {
   @gff_files = ($infile);
   open($gffout_fh, ">$outfile") or $log->log_and_die("Could not open $outfile for writing\n");
 } elsif ($wormbase->assembly_type eq 'contig') {
-  @gff_files = $wormbase->GFF_file_name;
+  @gff_files = ($gff3) ? $wormbase->GFF3_file_name : $wormbase->GFF_file_name;
 } else {
   my @chromosomes = $wormbase->get_chromosome_names( -mito => 1, -prefix => 1 );
-  @gff_files = map { $wormbase->GFF_file_name($_) } @chromosomes;
+  if ($gff3) {
+    @gff_files = map { $wormbase->GFF_file_name($_) } @chromosomes;
+  } else {
+    @gff_files = map { $wormbase->GFF3_file_name($_) } @chromosomes;
+  }
 }
 
 foreach my $GFF_file_name (@gff_files) {
