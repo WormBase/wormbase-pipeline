@@ -6,8 +6,8 @@
 #
 # This add some extraneous information to the MassSpec peptides lines in the GFF file
 #
-# Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2010-07-21 10:10:52 $      
+# Last updated by: $Author: klh $     
+# Last updated on: $Date: 2013-04-30 14:28:17 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -24,14 +24,15 @@ use Storable;
 # variables and command-line options # 
 ######################################
 
-my ($help, $debug, $test, $verbose, $store, $wormbase);
+my ($help, $debug, $test, $verbose, $store, $wormbase, $gff3);
 
 
 GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
 	    "test"       => \$test,
 	    "verbose"    => \$verbose,
-	    "store:s"      => \$store,
+	    "store:s"    => \$store,
+            "gff3"       => \$gff3,
 	    );
 
 if ( $store ) {
@@ -113,11 +114,10 @@ my $protein_history_aref = &get_protein_history;
   foreach my $chromosome (@chromosomes) {
     print "Reading chromosome $chromosome\n" if ($verbose);
 
-# loop through the GFF file
     my @f;
     open (GFF, "<$gff_dir/CHROMOSOME_${chromosome}.gff") || die "Failed to open gff file $gff_dir/CHROMOSOME_${chromosome}.gff\n";
     open (OUT, ">$gff_dir/CHROMOSOME_${chromosome}.gff.new") || die "Failed to open gff file $gff_dir/CHROMOSOME_${chromosome}.gff.new\n";
-###    open (OUT, ">./CHROMOSOME_${chromosome}.gff.new") || die "Failed to open gff file ./CHROMOSOME_${chromosome}.gff.new\n";
+
     while (my $line = <GFF>) {
       chomp $line;
       if ($line =~ /^#/ || $line !~ /\S/) {
@@ -127,10 +127,13 @@ my $protein_history_aref = &get_protein_history;
       @f = split /\t/, $line;
       my $id;
 
-# is this a MassSpec peptide line?
       if ($f[1] eq 'mass_spec_genome') {
 	# get the ID name
-	($id) = ($f[8] =~ /Target \"Mass_spec_peptide:(\S+)\"/);
+        if ($gff3) {
+          ($id) = ($f[8] =~ /Target=(\S+)/);
+        } else {
+          ($id) = ($f[8] =~ /Target \"Mass_spec_peptide:(\S+)\"/);
+        }
 
 	if (exists $matches{$id}) { # for this peptide id
 	  my %times_observed;
@@ -147,9 +150,7 @@ my $protein_history_aref = &get_protein_history;
 	      die "Can't fetch Protein object for $prot\n";
 	    }
 	    my $cds = $prot_obj->Corresponding_CDS;
-# if this is an old CDS not in autoace any more then we have to look in the historical records file
 	    if (! defined $cds) { 
-#	      print STDERR "can't find CDS for protein $prot\n";
 	      $cds = get_previous_wormpep_ids($prot, $protein_history_aref);
 	    }
 	    $prot_obj->DESTROY();
@@ -160,27 +161,31 @@ my $protein_history_aref = &get_protein_history;
 	      $times_observed{$experiment} = 1;	# count the number of unique experiments that this peptide has been seen in
 	    }
 	  }
-	  $line .= " ; Note \"$id\"";
-	  $line .= " ; Protein_matches \"$proteins\"";
-	  $line .= " ; CDS_matches \"$cdss\"";
-	  my $times_observed = (keys %times_observed); # count the unique experiments
-	  $line .= " ; Times_observed \"$times_observed\"";
-	  $count++;		# count the number of lines changed for statistics at the end
+
+          my $times_observed = (keys %times_observed); # count the unique experiments
+
+          if ($gff3) {
+            $line .= ";Note=$id";
+            $line .= ";Protein_matches=$proteins";
+            $line .= ";CDS_matches=$cdss";
+            $line .= ";Times_observed=$times_observed";
+          } else {
+            $line .= " ; Note \"$id\"";
+            $line .= " ; Protein_matches \"$proteins\"";
+            $line .= " ; CDS_matches \"$cdss\"";
+            $line .= " ; Times_observed \"$times_observed\"";
+          }
+          $count++;		# count the number of lines changed for statistics at the end
 	  print "$line\n" if ($verbose);
 	}
       }
 
-# write out the line
       print OUT "$line\n";
-
-# end of GFF loop
     }
 
-# close files
     close (GFF);
     close (OUT);
 
-# end of chromosome loop
   }
 
 # copy new GFF files over
