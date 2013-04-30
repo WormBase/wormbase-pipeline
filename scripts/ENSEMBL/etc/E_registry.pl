@@ -143,7 +143,7 @@ new Bio::EnsEMBL::DBSQL::DBAdaptor(-host    => 'farmdb1',
                                    -port    => 3306, 
                                    -species => 'Trichinella spiralis',
                                    -group   => 'core',
-                                   -dbname  => 'worm_ensembl_trspiralis');
+                                   -dbname  => 'worm_ensembl_tspiralis');
 
 ######################
 
