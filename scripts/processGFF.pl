@@ -6,8 +6,8 @@
 #
 # handles post processing of GFF files
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2008-01-08 14:38:50 $
+# Last edited by: $Author: klh $
+# Last edited on: $Date: 2013-04-30 15:08:41 $
 #
 
 use lib $ENV{CVS_DIR};
@@ -18,8 +18,8 @@ use Storable;
 use Log_files;
 
 my ($help, $debug, $test, $quicktest, $database, $store );
-my ($utr, $clone_acc, $gene_acc, $nematode, $mass_spec);
-my ($input, $output);
+my ($utr, $clone_acc, $gene_acc, $input, $output);
+
 GetOptions (
 	    "help"          => \$help,
 	    "debug=s"       => \$debug,
@@ -31,8 +31,6 @@ GetOptions (
 	    "utr"           => \$utr,
 	    "clone_acc"     => \$clone_acc,
 	    "gene_acc"      => \$gene_acc,
-	    "nematode"      => \$nematode,
-	    "mass_spec"     => \$mass_spec,
 
 	    "input:s"       => \$input,
 	    "output:s"      => \$output,
@@ -53,9 +51,6 @@ my $log = Log_files->make_build_log($wormbase);
 $database = $wormbase->autoace unless $database;
 my @chroms = $wormbase->get_chromosome_names(-mito => 1);
 @chroms = qw(III) if $quicktest;
-
-$wormbase->run_script('add_species_to_BLAT_GFF.pl', $log) if $nematode;
-$wormbase->run_script('add_info_to_MassSpec_GFF.pl', $log) if $mass_spec;
 
 if( $input and $output ){
   &GFF_with_UTR($input, $output)               if $utr;
