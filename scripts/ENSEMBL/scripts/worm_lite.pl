@@ -1,17 +1,10 @@
-#!/usr/local/ensembl/bin/perl -w
+#!/usr/bin/env perl
 #===============================================================================
 #
 #         FILE:  worm_lite.pl
 #
 #        USAGE:  ./worm_lite.pl
 #
-#  DESCRIPTION:
-#
-#       AUTHOR:   (Michael Han), <mh6@sanger.ac.uk>
-#      COMPANY:
-#      VERSION:  1.0
-#      CREATED:  07/07/06 15:37:31 BST
-#     REVISION:  ---
 #===============================================================================
 
 #####################################################################
@@ -19,6 +12,7 @@
 ####################################################################
 
 use strict;
+use POSIX;
 use YAML;
 use Getopt::Long;
 use Storable;
@@ -121,7 +115,6 @@ sub setupdb {
         system("$mysql -e 'INSERT INTO meta (meta_key,meta_value) VALUES (\"$db_key\",\"$val\");' $db->{dbname}") && die;
       }
     }
-    system("$mysql -e 'INSERT INTO meta (meta_key,meta_value) VALUES (\"genebuild.start_date\",NOW());' $db->{dbname}") && die;
 
     print "Loading taxonomy: ";
     my $cmd = "perl $cvsDIR/ensembl-pipeline/scripts/load_taxonomy.pl -name \"$config->{species}\" "
@@ -343,7 +336,21 @@ sub load_genes {
 
   &write_genes( $genes, $db );
   
-  $db->dbc->do('INSERT INTO meta (meta_key,meta_value) VALUES ("genebuild.start_date",NOW())');
+  my $set_canon_cmd = "perl $cvsDIR/ensembl/misc-scripts/canonical_transcripts/set_canonical_transcripts.pl "
+      . "-dbhost $db->{host} "
+      . "-dbuser $db->{user} "
+      . "-dbpass $db->{password} "
+      . "-dbname $db->{dbname} "
+      . "-dbport $db->{port} "
+      . "-coord toplevel "
+      . "-write";
+  print "Running: $set_canon_cmd\n";
+  system($set_canon_cmd) and die "Could not load seq_regions from agp file\n";
+
+  my $timestamp = strftime("%Y-%m", localtime(time));
+  
+  $db->dbc->do('DELETE FROM  meta WHERE meta_key = "genebuild.start_date"');
+  $db->dbc->do("INSERT INTO meta (meta_key,meta_value) VALUES (\"genebuild.start_date\",\"$timestamp\")");
 }
 
 
