@@ -74,18 +74,10 @@ $WormBase::Species = $species;
 &setupdb($config) if $setup;
 &load_assembly($config)   if $dna;
 &load_genes($config) if $genes;
+exit(0);
 
 
-##################################
-# create database from schema
-#
-# hardcoded paths:
-#      /nfs/acari/wormpipe/ensembl/ensembl-pipeline/scripts/DataConversion/wormbase/attrib_type.sql
-#      /nfs/acari/wormpipe/ensembl/ensembl-pipeline/scripts/load_taxonomy.pl
-#
-# taxondb: ia64f -taxondbport 3365 -taxondbname ncbi_taxonomy / ens-livemirror 
-#  if the taxondb goes down bully Abel
-
+#########################################
 sub setupdb {
   my ( $conf ) = @_;
   
@@ -282,7 +274,7 @@ sub load_genes {
     my $ana = Bio::EnsEMBL::Analysis->new(-logic_name => "wormbase", 
                                           -gff_source => "WormBase",
                                           -module => "WormBase");
-    $dba->get_AnalysisAdaptor->store($analysis);
+    $dba->get_AnalysisAdaptor->store($ana);
     $ana_hash{wormbase} = $ana;
   }
   $analysis = $ana_hash{wormbase};
@@ -355,5 +347,3 @@ sub load_genes {
   $dba->dbc->do("INSERT INTO meta (meta_key,meta_value) VALUES (\"genebuild.start_date\",\"$timestamp\")");
 }
 
-
-1;

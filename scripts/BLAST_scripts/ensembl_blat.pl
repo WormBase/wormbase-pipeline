@@ -3,8 +3,8 @@
 # DESCRIPTION:
 #   setting up the BLAT pipeline
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2013-04-19 15:12:45 $
+# Last edited by: $Author: klh $
+# Last edited on: $Date: 2013-05-01 15:02:39 $
 
 use lib $ENV{'CVS_DIR'};
 
@@ -61,9 +61,9 @@ my $CONFIG = {
     'ppacificus_est'  => 'pristionchus/EST.masked*',
     'ppacificus_mrna' => 'pristionchus/mRNA.masked*',
     
-    'nembase_est'   => 'nembase/EST.masked*',
-    'washu_est'     => 'washu/EST.masked*',
-    'nematode_est'  => 'nematode/EST.masked*',
+    'nembase_nematode_est'   => 'nembase/EST.masked*',
+    'washu_nematode_est'     => 'washu/EST.masked*',
+    'nematode_nematode_est'  => 'nematode/EST.masked*',
   }
 };
 

@@ -5,7 +5,7 @@
 # written by Anthony Rogers
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2013-05-01 11:52:57 $
+# Last edited on: $Date: 2013-05-01 15:03:25 $
 #
 # it depends on:
 #    wormpep + history
@@ -100,7 +100,10 @@ $yfile_name = $ENV{'CVS_DIR'} . "/ENSEMBL/etc/ensembl_lite.conf" if not defined 
 ($yfile_name) = glob("$yfile_name");
 die ("Could not find conf file $yfile_name\n") if not -e $yfile_name;
 
-my $config = ( YAML::LoadFile($yfile_name) )->{$species};
+
+my $whole_config = YAML::LoadFile($yfile_name);
+my $config = $whole_config->{$species};
+my $generic_config = $whole_config->{generics};
 
 our $gff_types = ( $config->{gff_types} || "curated coding_exon" );
 
@@ -509,19 +512,23 @@ sub update_dna {
 			   $config->{database}->{dbname}, $config->{database}->{port}
 			  );
   my $pipeline_scripts = "$ENV{'WORM_PACKAGES'}/ensembl/ensembl-pipeline/scripts";
-  my $conf_dir         = ($config->{confdir}||die("please set a species specific confdir in $yfile_name\n"));
+  my $generic_conf_dir         = ($generic_config->{confdir}||die("please set a generic confdir in $yfile_name\n"));
+  my $species_conf_dir         = ($config->{confdir}||die("please set a species specific confdir in $yfile_name\n"));
   
-  $wormbase->run_command( "perl $pipeline_scripts/analysis_setup.pl $db_options -read -file $conf_dir/analysis.conf", $log );
-  $wormbase->run_command( "perl $pipeline_scripts/rule_setup.pl $db_options -read -file $conf_dir/rule.conf", $log );
-  $wormbase->run_command( "perl $pipeline_scripts/make_input_ids $db_options -translation_id -logic SubmitTranslation", $log );
-  $wormbase->run_command(
-			 "perl $pipeline_scripts/make_input_ids $db_options -slice -slice_size 75000 -coord_system toplevel -logic_name SubmitSlice75k -input_id_type Slice75k",
-			 $log
-			);
+  $wormbase->run_command( "perl $pipeline_scripts/analysis_setup.pl $db_options -read -file $species_conf_dir/analysis.conf", $log );
 
+  $wormbase->run_command( "perl $pipeline_scripts/rule_setup.pl $db_options -read -file $generic_conf_dir/core_rule.conf", $log );
   if ($do_blats) {
-    $wormbase->run_command( "perl $pipeline_scripts/rule_setup.pl $db_options -read -file $conf_dir/blat_rule.conf", $log );
+    $wormbase->run_command( "perl $pipeline_scripts/rule_setup.pl $db_options -read -file $generic_conf_dir/blat_rule.conf", $log );
   }
+  if ($species ne 'elegans') {
+    $wormbase->run_command( "perl $pipeline_scripts/rule_setup.pl $db_options -read -file $generic_conf_dir/genblast_rule.conf", $log );
+  }
+
+  #$wormbase->run_command("perl $pipeline_scripts/make_input_ids $db_options -translation_id -logic SubmitTranslation", $log );
+  $wormbase->run_command("perl $pipeline_scripts/make_input_ids $db_options -slice -slice_size 75000 -coord_system toplevel -logic_name SubmitSlice75k -input_id_type Slice75k",$log);
+
+
   return 1;
 }
 
