@@ -4,7 +4,7 @@
 #   setting up the GenBlast pipeline
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2013-05-01 12:37:07 $
+# Last edited on: $Date: 2013-05-01 12:47:18 $
 
 use lib $ENV{CVS_DIR};
 
@@ -69,8 +69,6 @@ if ($species eq 'elegans') {
   $log->log_and_die("There is no point in projecting elegans proteins onto the elegans genome - aborting...\n");
 }
 
-$host||=$ENV{'WORM_DBHOST'};
-$port||=$ENV{'WORM_DBPORT'};
 
 # MYSQL setup
 my $db = Bio::EnsEMBL::Pipeline::DBSQL::DBAdaptor->new(
@@ -78,7 +76,7 @@ my $db = Bio::EnsEMBL::Pipeline::DBSQL::DBAdaptor->new(
   -user     => $user,
   -dbname   => $dbname || $database,
   -port     => $port,
-  -password => $password,
+  -pass     => $password,
     );
 
 
