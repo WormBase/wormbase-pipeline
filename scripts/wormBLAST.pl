@@ -4,8 +4,8 @@
 #
 # written by Anthony Rogers
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2013-04-23 12:59:51 $
+# Last edited by: $Author: klh $
+# Last edited on: $Date: 2013-05-01 11:52:57 $
 #
 # it depends on:
 #    wormpep + history
@@ -38,7 +38,7 @@ use YAML;
 
 my ( $species, $update_dna, $clean_blasts, $update_analysis, $update_genes);
 my ( $run_brig, $copy, $WS_version,$prep_dump, $cleanup);
-my ( $debug, $test, $store, $wormbase, $log, $WP_version,$yfile_name);
+my ( $debug, $test, $store, $wormbase, $log, $WP_version,$yfile_name, $do_blats);
 my $errors = 0;    # for tracking global error - needs to be initialised to 0
 
 GetOptions(
@@ -55,6 +55,7 @@ GetOptions(
 	   'clean_blasts'    => \$clean_blasts,
 	   'copy'            => \$copy,
 	   'yfile=s'         => \$yfile_name,
+           'doblat'          => \$do_blats,
 	  )
   || die('cant parse the command line parameter');
 
@@ -517,6 +518,10 @@ sub update_dna {
 			 "perl $pipeline_scripts/make_input_ids $db_options -slice -slice_size 75000 -coord_system toplevel -logic_name SubmitSlice75k -input_id_type Slice75k",
 			 $log
 			);
+
+  if ($do_blats) {
+    $wormbase->run_command( "perl $pipeline_scripts/rule_setup.pl $db_options -read -file $conf_dir/blat_rule.conf", $log );
+  }
   return 1;
 }
 
@@ -790,8 +795,10 @@ sub update_analysis {
   # update BLAT stuff
   my $db_options = sprintf('-user %s -password %s -host %s -port %i -dbname %s', 
 			   $config->{database}->{user}, $config->{database}->{password},$config->{database}->{host},$config->{database}->{port},$config->{database}->{dbname});
-  $wormbase->run_script( "BLAST_scripts/ensembl_blat.pl $db_options -species $species", $log );    
-  
+  if ($do_blats) {
+    $wormbase->run_script( "BLAST_scripts/ensembl_blat.pl $db_options -species $species", $log );    
+  }  
+
   # update genBlastG stuff - not done for elegans as it projects elegans proteins onto a non-elegans genome
   if ($species ne 'elegans') {
     $wormbase->run_script( "BLAST_scripts/ensembl_genblast.pl $db_options -species $species", $log );
