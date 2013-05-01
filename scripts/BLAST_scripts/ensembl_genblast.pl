@@ -4,7 +4,7 @@
 #   setting up the GenBlast pipeline
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2013-04-19 13:15:32 $
+# Last edited on: $Date: 2013-05-01 12:37:07 $
 
 use lib $ENV{CVS_DIR};
 
@@ -23,7 +23,7 @@ HERE
 use Getopt::Long;
 use Storable;
 
-use Bio::EnsEMBL::DBSQL::DBAdaptor;
+use Bio::EnsEMBL::Pipeline::DBSQL::DBAdaptor;
 
 # some magic to turn off the deprecation warnings
 use Bio::EnsEMBL::Utils::Exception;
