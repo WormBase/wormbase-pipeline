@@ -263,31 +263,33 @@ sub load_assembly {
 sub load_genes {
   my ($config) = @_;
 
-  my $db = new Bio::EnsEMBL::DBSQL::DBAdaptor(
-    -host   => $config->{database}->{host},
-    -user   => $config->{database}->{user},
-    -dbname => $config->{database}->{dbname},
-    -pass   => $config->{database}->{password},
-    -port   => $config->{database}->{port},
+  my $db = $config->{database};
+
+  my $dba = new Bio::EnsEMBL::DBSQL::DBAdaptor(
+    -host   => $db->{host},
+    -user   => $db->{user},
+    -dbname => $db->{dbname},
+    -pass   => $db->{password},
+    -port   => $db->{port},
       );
 
   my (%ana_hash, $analysis);
 
-  foreach my $ana (@{$db->get_AnalysisAdaptor->fetch_all}) {
+  foreach my $ana (@{$dba->get_AnalysisAdaptor->fetch_all}) {
     $ana_hash{$ana->logic_name} = $ana;
   }
   if (not exists $ana_hash{wormbase}) {
     my $ana = Bio::EnsEMBL::Analysis->new(-logic_name => "wormbase", 
                                           -gff_source => "WormBase",
                                           -module => "WormBase");
-    $db->get_AnalysisAdaptor->store($analysis);
+    $dba->get_AnalysisAdaptor->store($analysis);
     $ana_hash{wormbase} = $ana;
   }
   $analysis = $ana_hash{wormbase};
 
   my (%slice_hash, @path_globs, @gff2_files, @gff3_files, $genes); 
 
-  foreach my $slice (@{$db->get_SliceAdaptor->fetch_all('toplevel')}) {
+  foreach my $slice (@{$dba->get_SliceAdaptor->fetch_all('toplevel')}) {
     $slice_hash{$slice->seq_region_name} = $slice;
     if ($species eq 'elegans') {
       my $other_name;
@@ -334,7 +336,7 @@ sub load_genes {
     die "No gff or gff3 files found - death\n";
   }
 
-  &write_genes( $genes, $db );
+  &write_genes( $genes, $dba );
   
   my $set_canon_cmd = "perl $cvsDIR/ensembl/misc-scripts/canonical_transcripts/set_canonical_transcripts.pl "
       . "-dbhost $db->{host} "
@@ -349,8 +351,8 @@ sub load_genes {
 
   my $timestamp = strftime("%Y-%m", localtime(time));
   
-  $db->dbc->do('DELETE FROM  meta WHERE meta_key = "genebuild.start_date"');
-  $db->dbc->do("INSERT INTO meta (meta_key,meta_value) VALUES (\"genebuild.start_date\",\"$timestamp\")");
+  $dba->dbc->do('DELETE FROM  meta WHERE meta_key = "genebuild.start_date"');
+  $dba->dbc->do("INSERT INTO meta (meta_key,meta_value) VALUES (\"genebuild.start_date\",\"$timestamp\")");
 }
 
 
