@@ -9,7 +9,7 @@
 # >2L52.1 gene=WBGene00007063
 #
 # Last updated by: $Author: pad $
-# Last updated on: $Date: 2013-05-01 10:56:18 $
+# Last updated on: $Date: 2013-05-01 11:45:05 $
 use strict;
 use lib $ENV{'CVS_DIR'};
 use Getopt::Long;
@@ -148,19 +148,21 @@ exit(0);
 
 sub fetch_gene_ids {
   my $wsid;
-  unless ($version) {
-    $wsid = $wormbase->get_wormbase_version;
-  }
-  else {
-    $wsid = $version;
-  }
-  my $peppre = $wormbase->pepdir_prefix;
-  my $pep_dir = $wormbase->peproot;
-  my $source_pepfile = "$pep_dir/${peppre}pep${wsid}/${peppre}pep${wsid}";
+#  unless ($version) {
+#    $wsid = $wormbase->get_wormbase_version;
+#  }
+#  else {
+#    $wsid = $version;
+#  }
+#  my $peppre = $wormbase->pepdir_prefix;
+#  my $pep_dir = $wormbase->peproot;
+my $source_pepfile = $wormbase->common_data."/cds2wbgene_id.dat";
+#  my $source_pepfile = "$pep_dir/${peppre}pep${wsid}/${peppre}pep${wsid}";
   if (-e $source_pepfile) {
     open(my $source_pep_fh, $source_pepfile);
     while(<$source_pep_fh>) {
-      /^\>(\S+)\s+\S+\s+(\S+)/ and do {
+#      /^\>(\S+)\s+\S+\s+(\S+)/ and do {
+      /^\s+\'(\S+)\'\s+\S+\s+\'(\S+)\'\,/ and do {
 	$gene_ids{$1} = $2;
       };
     }
