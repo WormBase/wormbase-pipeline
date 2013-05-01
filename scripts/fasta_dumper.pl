@@ -9,7 +9,7 @@
 # >2L52.1 gene=WBGene00007063
 #
 # Last updated by: $Author: pad $
-# Last updated on: $Date: 2013-03-22 15:11:05 $
+# Last updated on: $Date: 2013-05-01 10:56:18 $
 use strict;
 use lib $ENV{'CVS_DIR'};
 use Getopt::Long;
@@ -113,7 +113,7 @@ if ($geneid){
 	if (exists $gene_ids{$1}) {
 	  print target_fh "\n>$_ gene=$gene_ids{$1}\n";
 	} else {
-	  print target_fh "\n$_\n";
+	  print target_fh "\n>$_\n";
 	}
       } elsif (/(\S+)/) {
 	print target_fh "$_\n";
