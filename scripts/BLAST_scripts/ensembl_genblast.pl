@@ -3,8 +3,8 @@
 # DESCRIPTION:
 #   setting up the GenBlast pipeline
 #
-# Last edited by: $Author: klh $
-# Last edited on: $Date: 2013-05-01 12:47:18 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2013-05-01 12:55:22 $
 
 use lib $ENV{CVS_DIR};
 
@@ -223,7 +223,7 @@ sub clean_old_results {
 # get all analysis objects for GenBlast
 sub get_all_GenBlast_analyses {
 
-  my @list = grep { $_->program_name() eq 'genblast' } @{$db->get_AnalysisAdaptor->fetch_all()};
+  my @list = grep { $_->program() eq 'genblast' } @{$db->get_AnalysisAdaptor->fetch_all()};
   return @list;
 
 }
