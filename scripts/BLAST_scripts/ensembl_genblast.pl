@@ -3,8 +3,8 @@
 # DESCRIPTION:
 #   setting up the GenBlast pipeline
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2013-05-01 12:55:22 $
+# Last edited by: $Author: klh $
+# Last edited on: $Date: 2013-05-01 14:48:46 $
 
 use lib $ENV{CVS_DIR};
 
@@ -181,7 +181,7 @@ sub get_dependent_analysis {
                 $ana->input_id_type, $dependent_ana->input_id_type))
         if $ana->input_id_type ne $dependent_ana->input_id_type;
 
-    $deps{$dependent_ana->{logic_name}} = $dependent_ana; 
+    $deps{$dependent_ana->logic_name} = $dependent_ana; 
   }
 
   if (scalar(values %deps) > 1) {
@@ -223,7 +223,7 @@ sub clean_old_results {
 # get all analysis objects for GenBlast
 sub get_all_GenBlast_analyses {
 
-  my @list = grep { $_->program() eq 'genblast' } @{$db->get_AnalysisAdaptor->fetch_all()};
+  my @list = grep { defined($_->program) and $_->program() eq 'genblast' } @{$db->get_AnalysisAdaptor->fetch_all()};
   return @list;
 
 }
