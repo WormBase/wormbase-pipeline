@@ -32,7 +32,6 @@ my $acefile;    # specify a custom acefile
 my $store;      # specify a frozen configuration file
 my $noload;   # don't parse the acefile
 my $species;
-my $pre_ws237_model;
 
 GetOptions(
   'debug=s'   => \$debug,
@@ -42,12 +41,9 @@ GetOptions(
   'store=s'   => \$store,
   'noload'    => \$noload,
   'species=s' => \$species,
-  'prews237'  => \$pre_ws237_model,
 );
 
-my $oligo_set_file_prefix = ($pre_ws237_model) 
-    ? "Oligo_set" 
-    : "Oligo_set_mapping";
+my @oligo_set_file_prefixes = ('Oligo_set', 'Oligo_set_mapping');
 
 ############################
 # recreate configuration   #
@@ -71,19 +67,23 @@ my $log = Log_files->make_build_log($wb);
 
 my @oligo_set_files;
 if ($wb->assembly_type eq 'contig') {
-  my $file = "$gffdir/${oligo_set_file_prefix}.gff";
-  if (not -e $file) {
-      $log->write_to("Could not find file $file - assuming not present for species\n");
-  } else {
-    push @oligo_set_files, $file;
-  }
-} else {
-  foreach my $chr_name ($wb->get_chromosome_names(-mito => 1, -prefix => 1)) {
-    my $file = "$gffdir/${chr_name}_${oligo_set_file_prefix}.gff";
+  foreach my $oligo_set_file_prefix (@oligo_set_file_prefixes) {
+    my $file = "$gffdir/${oligo_set_file_prefix}.gff";
     if (not -e $file) {
-      $log->write_to("Could not find file - assuming not present for species\n");
+      $log->write_to("Could not find file $file - assuming not present for species\n");
     } else {
       push @oligo_set_files, $file;
+    }
+  }
+} else {
+  foreach my $oligo_set_file_prefix (@oligo_set_file_prefixes) {
+    foreach my $chr_name ($wb->get_chromosome_names(-mito => 1, -prefix => 1)) {
+      my $file = "$gffdir/${chr_name}_${oligo_set_file_prefix}.gff";
+      if (not -e $file) {
+        $log->write_to("Could not find file $file - assuming not present for species\n");
+      } else {
+        push @oligo_set_files, $file;
+      }
     }
   }
 }
