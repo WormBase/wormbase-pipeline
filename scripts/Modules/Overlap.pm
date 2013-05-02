@@ -6,8 +6,8 @@
 #
 # Do fast overlap matching of positions of two sets of things.
 #
-# Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2013-02-28 16:20:27 $      
+# Last updated by: $Author: klh $     
+# Last updated on: $Date: 2013-05-02 19:48:30 $      
 
 =pod
 
@@ -694,8 +694,8 @@ sub get_EST_NEMATODE {
   my %GFF_data = 
    (
      method			=> "BLAT_NEMATODE",
-     gff_source			=> "BLAT_NEMATODE",
-     gff_type			=> "translated_nucleotide_match",
+     gff_source			=> "EMBL_nematode_cDNAs-BLAT",
+     gff_type			=> "expressed_sequence_match",
      ID_after			=> "Target\\s+\"Sequence:",
      reverse_orientation        => 1,
      homology                   => 1,
@@ -722,8 +722,8 @@ sub get_EST_NEMBASE {
   my %GFF_data = 
    (
      method			=> "BLAT_NEMBASE",
-     gff_source			=> "BLAT_NEMBASE",
-     gff_type			=> "translated_nucleotide_match",
+     gff_source			=> "NEMBASE_cDNAs-BLAT",
+     gff_type			=> "expressed_sequence_match",
      ID_after			=> "Target\\s+\"Sequence:",
      reverse_orientation        => 1,
      homology                   => 1,
@@ -750,8 +750,8 @@ sub get_EST_WASHU {
   my %GFF_data = 
    (
      method			=> "BLAT_WASHU",
-     gff_source			=> "BLAT_WASHU",
-     gff_type			=> "translated_nucleotide_match",
+     gff_source			=> "NEMATODE.NET_cDNAs-BLAT",
+     gff_type			=> "expressed_sequence_match",
      ID_after			=> "Target\\s+\"Sequence:",
      reverse_orientation        => 1,
      homology                   => 1,
