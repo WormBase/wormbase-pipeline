@@ -67,83 +67,98 @@ if (not defined $acefile) {
 }
 
 my $log = Log_files->make_build_log($wb);
-open(my $acefh, ">$acefile") or $log->log_and_die("Could not open $acefile for writing\n");
 
 my @pcr_prod_files;
 if ($wb->assembly_type eq 'contig') {
   foreach my $type (@to_search) { 
-    push @pcr_prod_files, "$gffdir/${type}.gff";
+    my $file = "$gffdir/${type}.gff";
+    if (not -e $file) {
+      $log->write_to("Could not find $file - assuming not present for species\n");
+    } else {
+      push @pcr_prod_files, $file;
+    }
   }
 } else {
   foreach my $chr_name ($wb->get_chromosome_names(-mito => 1, -prefix => 1)) {
     foreach my $type (@to_search) {
-      push @pcr_prod_files, "$gffdir/${chr_name}_${type}.gff";
-    }
-  }
-}
-
-foreach my $class (keys %$to_search_against) {
-  $log->write_to("Mapping to $class...\n");
-  
-  my $fm = Map_Helper->new();
-
-  foreach my $stanza (@{$to_search_against->{$class}}) {
-    my ($file_prefix, $method, $type) = @$stanza;
-
-    my @files;
-    if ($wb->assembly_type eq 'contig') {
-      my $file = $gffdir . "/${file_prefix}.gff";
-      push @files, $file;
-    } else {
-      foreach my $chr_name ($wb->get_chromosome_names(-mito => 1, -prefix => 1)) {
-        my $file = $gffdir . "/${chr_name}_${file_prefix}.gff";
-        push @files, $file;
-      }
-    }
-
-    foreach my $file (@files) {
+      my $file = "$gffdir/${chr_name}_${type}.gff";
       if (not -e $file) {
-        warn("Could not find file $file - assuming this datatype does not exist for $species\n");
-        next;
+        $log->write_to("Could not find $file - assuming not present for species\n");
+      } else {
+        push @pcr_prod_files, $file;
       }
-      $log->write_to(" Reading $file...\n");
-      $fm->populate_from_GFF($file, $method, $type, sprintf('%s \"(\S+)\"', $class));
-    }
-  }
-
-  $log->write_to(" Building index...\n");
-  $fm->build_index;
-
-  my %object_map;
-  
-  foreach my $file (@pcr_prod_files) {
-    $log->write_to(" Mapping $file to $class...\n");
-    open( my $fh, $file) or $log->log_and_die("Could not open $file for reading\n");
-    while(<$fh>) {
-      next if /^\#/;
-      my @l = split(/\t+/, $_);
-      
-      next if $l[2] ne 'PCR_product';
-      my ($name) = $l[8] =~ /PCR_product \"(\S+)\"/;
-      next if not defined $name;
-      
-      my @matches = @{$fm->search_feature_segments($l[0], $l[3], $l[4], $l[6])};
-      map { $object_map{$_}->{$name} = 1 } @matches;
-    }
-  }
-  
-  foreach my $obj_name (sort keys %object_map) {
-    print $acefh "\n$class : \"$obj_name\"\n";
-    foreach my $os (sort keys %{$object_map{$obj_name}}) {
-      print $acefh "Corresponding_PCR_product $os\n";
     }
   }
 }
 
-close($acefh) or $log->log_and_die("Did not cleanly close output file $acefile\n");
+if (@pcr_prod_files) {
+  open(my $acefh, ">$acefile") or $log->log_and_die("Could not open $acefile for writing\n");
 
-if (not $noload) {
-  $wb->load_to_database( $wb->autoace, $acefile, 'map_Oligo_set', $log );
+  foreach my $class (keys %$to_search_against) {
+    $log->write_to("Mapping to $class...\n");
+    
+    my $fm = Map_Helper->new();
+    
+    foreach my $stanza (@{$to_search_against->{$class}}) {
+      my ($file_prefix, $method, $type) = @$stanza;
+      
+      my @files;
+      if ($wb->assembly_type eq 'contig') {
+        my $file = $gffdir . "/${file_prefix}.gff";
+        push @files, $file;
+      } else {
+        foreach my $chr_name ($wb->get_chromosome_names(-mito => 1, -prefix => 1)) {
+          my $file = $gffdir . "/${chr_name}_${file_prefix}.gff";
+          push @files, $file;
+        }
+      }
+      
+      foreach my $file (@files) {
+        if (not -e $file) {
+          warn("Could not find file $file - assuming this datatype does not exist for $species\n");
+          next;
+        }
+        $log->write_to(" Reading $file...\n");
+        $fm->populate_from_GFF($file, $method, $type, sprintf('%s \"(\S+)\"', $class));
+      }
+    }
+    
+    $log->write_to(" Building index...\n");
+    $fm->build_index;
+    
+    my %object_map;
+    
+    foreach my $file (@pcr_prod_files) {
+      $log->write_to(" Mapping $file to $class...\n");
+      open( my $fh, $file) or $log->log_and_die("Could not open $file for reading\n");
+      while(<$fh>) {
+        next if /^\#/;
+        my @l = split(/\t+/, $_);
+        
+        next if $l[2] ne 'PCR_product';
+        my ($name) = $l[8] =~ /PCR_product \"(\S+)\"/;
+        next if not defined $name;
+        
+        my @matches = @{$fm->search_feature_segments($l[0], $l[3], $l[4], $l[6])};
+        map { $object_map{$_}->{$name} = 1 } @matches;
+      }
+    }
+    
+    foreach my $obj_name (sort keys %object_map) {
+      print $acefh "\n$class : \"$obj_name\"\n";
+      foreach my $os (sort keys %{$object_map{$obj_name}}) {
+        print $acefh "Corresponding_PCR_product $os\n";
+      }
+    }
+  }
+
+  close($acefh) or $log->log_and_die("Did not cleanly close output file $acefile\n");
+  
+  if (not $noload) {
+    $wb->load_to_database( $wb->autoace, $acefile, 'map_Oligo_set', $log );
+  }
+} else {
+  $log->write_to("There seem to be no PCR_product files to map for this species.\n");
 }
 
 ###############
