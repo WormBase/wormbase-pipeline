@@ -1,6 +1,6 @@
-#!/usr/local/bin/perl -w
+sa#!/usr/local/bin/perl -w
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2013-04-29 10:20:35 $
+# Last edited on: $Date: 2013-05-02 19:31:14 $
 
 use strict;
 use lib  $ENV{'CVS_DIR'};
@@ -116,6 +116,7 @@ blat RNAi_primary elegans
 blat RNAi_secondary elegans
 blat Expr_profile elegans
 blat Oligo_set_mapping elegans briggsae remanei brenneri japonica pristionchus
+blat Oligo_set elegans
 homol waba_coding elegans
 homol waba_strong elegans
 homol waba_weak elegans
