@@ -7,7 +7,7 @@
 # Usage : autoace_builder.pl [-options]
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2013-04-29 13:46:30 $
+# Last edited on: $Date: 2013-05-02 22:23:58 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -359,7 +359,7 @@ sub map_features {
     $wormbase->run_script( 'map_tags.pl -load', $log );
     
     # Y2H objects
-    $wormbase->run_script( 'map_Y2H.pl -load', $log );
+    $wormbase->run_script( 'map_Interaction.pl -load', $log );
     
     # RNAi experiments
     $wormbase->run_script( 'map_RNAi.pl -load', $log );
