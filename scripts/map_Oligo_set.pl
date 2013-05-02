@@ -67,84 +67,99 @@ if (not defined $acefile) {
 }
 
 my $log = Log_files->make_build_log($wb);
-open(my $acefh, ">$acefile") or $log->log_and_die("Could not open $acefile for writing\n");
+
 
 my @oligo_set_files;
 if ($wb->assembly_type eq 'contig') {
-  @oligo_set_files = ($gffdir . "/${oligo_set_file_prefix}.gff");
-} else {
-  foreach my $chr_name ($wb->get_chromosome_names(-mito => 1, -prefix => 1)) {
-    my $file = $gffdir . "/${chr_name}_${oligo_set_file_prefix}.gff";
+  my $file = "$gffdir/${oligo_set_file_prefix}.gff";
+  if (not -e $file) {
+      $log->write_to("Could not find file $file - assuming not present for species\n");
+  } else {
     push @oligo_set_files, $file;
   }
-}
-
-foreach my $class (keys %$config) {
-  $log->write_to("Mapping to $class...\n");
-  
-  my $fm = Map_Helper->new();
-
-  foreach my $stanza (@{$config->{$class}}) {
-    my ($file_prefix, $method, $type) = @$stanza;
-
-    my @files;
-    if ($wb->assembly_type eq 'contig') {
-      my $file = $gffdir . "/${file_prefix}.gff";
-      push @files, $file;
+} else {
+  foreach my $chr_name ($wb->get_chromosome_names(-mito => 1, -prefix => 1)) {
+    my $file = "$gffdir/${chr_name}_${oligo_set_file_prefix}.gff";
+    if (not -e $file) {
+      $log->write_to("Could not find file - assuming not present for species\n");
     } else {
-      foreach my $chr_name ($wb->get_chromosome_names(-mito => 1, -prefix => 1)) {
-        my $file = $gffdir . "/${chr_name}_${file_prefix}.gff";
-        push @files, $file;
-      }
-    }
-
-    foreach my $file (@files) {
-      if (not -e $file) {
-        warn("Could not find file $file - assuming this datatype does not exist for $species\n");
-        next;
-      }
-      $log->write_to(" Reading $file...\n");
-      $fm->populate_from_GFF($file, $method, $type, sprintf('%s \"(\S+)\"', $class));
-    }
-  }
-
-  $log->write_to(" Building index...\n");
-  $fm->build_index;
-
-  my %object_map;
-  
-  foreach my $file (@oligo_set_files) {
-    $log->write_to(" Mapping $file to $class...\n");
-    open( my $fh, $file) or $log->log_and_die("Could not open $file for reading\n");
-    while(<$fh>) {
-      next if /^\#/;
-      my @l = split(/\t+/, $_);
-      
-      next if $l[1] ne 'Oligo_set' or $l[2] ne 'reagent';
-      my ($name) = $l[8] =~ /Oligo_set \"(\S+)\"/;
-      if (not defined $name) {
-        ($name) = $l[8] =~ /Target \"Oligo_set:(\S+)\"/;
-      }
-
-      next if not defined $name;
-      
-      my @matches = @{$fm->search_feature_segments($l[0], $l[3], $l[4], $l[6])};
-      map { $object_map{$_}->{$name} = 1 } @matches;
-    }
-  }
-  
-  foreach my $obj_name (sort keys %object_map) {
-    print $acefh "\n$class : \"$obj_name\"\n";
-    foreach my $os (sort keys %{$object_map{$obj_name}}) {
-      print $acefh "Corresponding_oligo_set $os\n";
+      push @oligo_set_files, $file;
     }
   }
 }
 
-close($acefh) or $log->log_and_die("Did not cleanly close output file $acefile\n");
+if (@oligo_set_files) {
+  open(my $acefh, ">$acefile") or $log->log_and_die("Could not open $acefile for writing\n");
 
-if (not $noload) {
-  $wb->load_to_database( $wb->autoace, $acefile, 'map_Oligo_set', $log );
+  foreach my $class (keys %$config) {
+    $log->write_to("Mapping to $class...\n");
+    
+    my $fm = Map_Helper->new();
+    
+    foreach my $stanza (@{$config->{$class}}) {
+      my ($file_prefix, $method, $type) = @$stanza;
+      
+      my @files;
+      if ($wb->assembly_type eq 'contig') {
+        my $file = $gffdir . "/${file_prefix}.gff";
+        push @files, $file;
+      } else {
+        foreach my $chr_name ($wb->get_chromosome_names(-mito => 1, -prefix => 1)) {
+          my $file = $gffdir . "/${chr_name}_${file_prefix}.gff";
+          push @files, $file;
+        }
+      }
+      
+      foreach my $file (@files) {
+        if (not -e $file) {
+          warn("Could not find file $file - assuming this datatype does not exist for $species\n");
+          next;
+        }
+        $log->write_to(" Reading $file...\n");
+        $fm->populate_from_GFF($file, $method, $type, sprintf('%s \"(\S+)\"', $class));
+      }
+    }
+    
+    $log->write_to(" Building index...\n");
+    $fm->build_index;
+    
+    my %object_map;
+    
+    foreach my $file (@oligo_set_files) {
+      $log->write_to(" Mapping $file to $class...\n");
+      open( my $fh, $file) or $log->log_and_die("Could not open $file for reading\n");
+      while(<$fh>) {
+        next if /^\#/;
+        my @l = split(/\t+/, $_);
+        
+        next if $l[1] ne 'Oligo_set' or $l[2] ne 'reagent';
+        my ($name) = $l[8] =~ /Oligo_set \"(\S+)\"/;
+        if (not defined $name) {
+          ($name) = $l[8] =~ /Target \"Oligo_set:(\S+)\"/;
+        }
+        
+        next if not defined $name;
+        
+        my @matches = @{$fm->search_feature_segments($l[0], $l[3], $l[4], $l[6])};
+        map { $object_map{$_}->{$name} = 1 } @matches;
+      }
+    }
+    
+    foreach my $obj_name (sort keys %object_map) {
+      print $acefh "\n$class : \"$obj_name\"\n";
+      foreach my $os (sort keys %{$object_map{$obj_name}}) {
+        print $acefh "Corresponding_oligo_set $os\n";
+      }
+    }
+  }
+  
+  close($acefh) or $log->log_and_die("Did not cleanly close output file $acefile\n");
+  
+  if (not $noload) {
+    $wb->load_to_database( $wb->autoace, $acefile, 'map_Oligo_set', $log );
+  }
+} else {
+  $log->write_to("Could not find any oligo_set files to map - doing nothing\n");
 }
 
 ###############
