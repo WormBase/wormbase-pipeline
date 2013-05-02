@@ -1,274 +1,159 @@
-#!/usr/local/bin/perl
-# map_PCR_products
+#!/usr/bin/env perl
 #
-# Usage: map_PCR_products [-options]
+# map_Oligo_sets
 #
-# 010927 :  dl : modified output print line to include speech marks. this prevents any acefile
-#                parsing problems
-# 010717 :  kj : modified to (hopefully) run faster and produce the final output files in one go
-#
-# 051114 :  mh6: major rewrite to get ready for mapping module
-# 060331 :  mh6: moved to new mapping + small cleanup of the surrounding code
 #
 #############################################################################################
 
-use strict;
-use warnings;
 use lib $ENV{'CVS_DIR'};
+use strict;
 use Wormbase;
 use Getopt::Long;
-use Class::Struct;
-use Modules::GFF_sql;
+use warnings;
+use Modules::Map_Helper;
 
-##########################
-# Script variables (run)
 
-my $maintainers = "All";
-my %output      = ();
+my $to_search_against = {
+  CDS => [ ['curated', 'curated', 'exon'] ],
 
-########################
-# command-line options
+  Transcript => [ ['Coding_transcript',     'Coding_transcript',     'exon'],
+                  ['Non_coding_transcript', 'Non_coding_transcript', 'exon'],
+                  ['ncRNA',                 'ncRNA',                 'exon'],
+                  ['Pseudogene',            'Pseudogene',            'exon'] ],
+  
+  Pseudogene => [ ['Pseudogene', 'Pseudogene', 'exon'] ],
 
-my $help;       # Help perdoc
+};
+
+my @to_search = ('GenePairs', 'Orfeome');
+
+
+
+my $help;       # Help perldoc
 my $test;       # Test mode
 my $debug;      # Debug mode, output only goes to one user
-my $verbose;    # verbose mode, more command line outout
-my $acefile;    # output ace file
+my $acefile;    # specify a custom acefile
 my $store;      # specify a frozen configuration file
-my $gffdir;     # specify some GFF_Split dir
-my $no_parse;   # don't parse the acefile
-my $chrom;      # specify a chromosome to run on
+my $noload;   # don't parse the acefile
+my $species;
 
 GetOptions(
-    'chromosome=s'   => \$chrom,
-    "debug=s"   => \$debug,
-    "verbose"   => \$verbose,
-    "test"      => \$test,
-    "help"      => \$help,
-    "acefile=s" => \$acefile,
-    'store=s'   => \$store,
-    'gffdir=s'  => \$gffdir,
-    'no_parse'  => \$no_parse
+  'debug=s'   => \$debug,
+  'test'      => \$test,
+  'help'      => \$help,
+  'acefile=s' => \$acefile,
+  'store=s'   => \$store,
+  'noload'    => \$noload,
+  'species=s' => \$species,
+
 );
 
-# Display help if required
-&usage("Help") if ($help);
 
 ############################
-# recreate configuration
-
+# recreate configuration   #
+# ##########################
 my $wb;
-if ($store) { $wb = Storable::retrieve($store) or croak("cant restore wormbase from $store\n") }
-else { $wb = Wormbase->new( -debug => $debug, -test => $test, ) }
-
-###########################################
-# Variables Part II (depending on $wb)
-
-$test  = $wb->test  if $wb->test;     # Test mode
-$debug = $wb->debug if $wb->debug;    # Debug mode, output only goes to one user
-
-# Use debug mode?
-if ($debug) {
-    print "DEBUG = \"$debug\"\n\n";
-    $maintainers = $debug . '\@sanger.ac.uk';
+if ($store) { 
+  $wb = Storable::retrieve($store) or croak("cant restore wormbase from $store\n"); 
+} else { 
+  $wb = Wormbase->new( -debug    => $debug, 
+                       -test     => $test,
+                       -organism => $species);
 }
 
-#############
-# Paths etc
+my $gffdir  = $wb->gff_splits;
+if (not defined $acefile) {
+  $acefile = $wb->acefiles . "/PCR_products_to_genes.ace";
+}
 
-my $tace  = $wb->tace;                # tace executable path
-my $dbdir = $wb->autoace;             # Database path
-$gffdir = $gffdir ? $gffdir : $wb->gff_splits;    # GFF splits directory
-my @chromosomes = $test    ? qw ( CHROMOSOME_I ) : $wb->get_chromosome_names(-prefix => 1);                 # chromosomes to parse
-my $outace      = $acefile ? $acefile : $wb->acefiles . "/PCR_mappings.ace";
-@chromosomes = ( $chrom ) if $chrom;
-
-# Struct for historical reasons
-struct( Exon => [ start => '$', stop => '$', type => '$', id => '$' ] );
-
-# make a new log
 my $log = Log_files->make_build_log($wb);
+open(my $acefh, ">$acefile") or $log->log_and_die("Could not open $acefile for writing\n");
 
-###########################################
-# get exons and PCRs out of the gff files
-
-my $map = GFF_sql->new( { -build => 1 } );                                     # connect to build database
-
-foreach my $chromosome (@chromosomes) {
-    $log->write_to("Processing $chromosome\n");
-    print "\nProcessing $chromosome\n" if ($verbose);
-
-    ################
-    # GFF database part
-   $map->clean($chromosome);                                     # reset the chromosome table
-
-   foreach my $end ('curated', 'Non_coding_transcript', 'Pseudogene', 'ncRNA' ) {
-       my $file = "$gffdir/${chromosome}_${end}.gff";
-       $map->generate_tags($file);
-       $map->load_gff( $file, $chromosome );
-   }
-
-    # Get PCR_product info from split GFF file
-    &get_PCRs_from_GFF( $chromosome, 'Orfeome',   \%output, $map );
-    &get_PCRs_from_GFF( $chromosome, 'GenePairs', \%output, $map );
-
-}
-
-######################
-# %output magic to remove redundancy
-print "Remove duplicates \n" if ($verbose);
-
-foreach my $pcr ( keys %output ) {
-        # remove duplicate primary connections
-	my %genes2pcr;
-        @{ $output{$pcr} } = grep { ( ( !$genes2pcr{ $_->id . $_->type } ) && ( $genes2pcr{ $_->id . $_->type } = $pcr ) ) } @{ $output{$pcr} };
-}
-
-
-########################
-# produce output files
-
-open( OUTACE, ">$outace" ) || die "Couldn't write to PCR_mappings.ace\n";
-
-foreach my $mapped ( sort keys %output ) {
-    print "mapped $mapped\tto ", join ' ', ( map { $_->id } @{ $output{$mapped} } ), "\n" if ($verbose);
-
-    foreach my $exon ( @{ $output{$mapped} } ) {
-        if ( $exon->type eq "CDS" ) {
-            print OUTACE "CDS : \"", $exon->id, "\"\n";
-            print OUTACE "Corresponding_PCR_product \"$mapped\"\n\n";
-        }
-        elsif ( $exon->type eq "Pseudogene" ) {
-            print OUTACE "Pseudogene : \"", $exon->id, "\"\n";
-            print OUTACE "Corresponding_PCR_product \"$mapped\"\n\n";
-        }
-        elsif ( $exon->type eq "Transcript" ) {
-            print OUTACE "Transcript : \"", $exon->id, "\"\n";
-            print OUTACE "Corresponding_PCR_product \"$mapped\"\n\n";
-        }
+my @pcr_prod_files;
+if ($wb->assembly_type eq 'contig') {
+  foreach my $type (@to_search) { 
+    push @pcr_prod_files, "$gffdir/${type}.gff";
+  }
+} else {
+  foreach my $chr_name ($wb->get_chromosome_names(-mito => 1, -prefix => 1)) {
+    foreach my $type (@to_search) {
+      push @pcr_prod_files, "$gffdir/${chr_name}_${type}.gff";
     }
+  }
 }
-close(OUTACE);
 
-##############################
-# read acefiles into autoace
+foreach my $class (keys %$to_search_against) {
+  $log->write_to("Mapping to $class...\n");
+  
+  my $fm = Map_Helper->new();
 
-$wb->load_to_database( $wb->autoace, $outace, 'map_PCR_products', $log ) unless ($test||$no_parse);
+  foreach my $stanza (@{$to_search_against->{$class}}) {
+    my ($file_prefix, $method, $type) = @$stanza;
+
+    my @files;
+    if ($wb->assembly_type eq 'contig') {
+      my $file = $gffdir . "/${file_prefix}.gff";
+      push @files, $file;
+    } else {
+      foreach my $chr_name ($wb->get_chromosome_names(-mito => 1, -prefix => 1)) {
+        my $file = $gffdir . "/${chr_name}_${file_prefix}.gff";
+        push @files, $file;
+      }
+    }
+
+    foreach my $file (@files) {
+      if (not -e $file) {
+        warn("Could not find file $file - assuming this datatype does not exist for $species\n");
+        next;
+      }
+      $log->write_to(" Reading $file...\n");
+      $fm->populate_from_GFF($file, $method, $type, sprintf('%s \"(\S+)\"', $class));
+    }
+  }
+
+  $log->write_to(" Building index...\n");
+  $fm->build_index;
+
+  my %object_map;
+  
+  foreach my $file (@pcr_prod_files) {
+    $log->write_to(" Mapping $file to $class...\n");
+    open( my $fh, $file) or $log->log_and_die("Could not open $file for reading\n");
+    while(<$fh>) {
+      next if /^\#/;
+      my @l = split(/\t+/, $_);
+      
+      next if $l[2] ne 'PCR_product';
+      my ($name) = $l[8] =~ /PCR_product \"(\S+)\"/;
+      next if not defined $name;
+      
+      my @matches = @{$fm->search_feature_segments($l[0], $l[3], $l[4], $l[6])};
+      map { $object_map{$_}->{$name} = 1 } @matches;
+    }
+  }
+  
+  foreach my $obj_name (sort keys %object_map) {
+    print $acefh "\n$class : \"$obj_name\"\n";
+    foreach my $os (sort keys %{$object_map{$obj_name}}) {
+      print $acefh "Corresponding_PCR_product $os\n";
+    }
+  }
+}
+
+close($acefh) or $log->log_and_die("Did not cleanly close output file $acefile\n");
+
+if (not $noload) {
+  $wb->load_to_database( $wb->autoace, $acefile, 'map_Oligo_set', $log );
+}
+
+###############
+# hasta luego #
+###############
+
 $log->mail();
 
 exit(0);
 
-##############################################################
-# Subroutines
-
-sub usage {
-    my $error = shift;
-    if ( $error eq "Help" ) {
-
-        # Normal help menu
-        system( 'perldoc', $0 );
-        exit(0);
-    }
-}
-
-####################################
-# returns second word without "
-sub get_id {
-    my $fluff = shift;
-    $fluff =~ s/\"//g;
-    my @fields = split " ", $fluff;
-    return $fields[1];
-}
-
-################################
-# hit to exon converter
-# including: adding types based on source/features
-sub to_exon {
-    my $hit = shift;
-    my $type;
-
-    if    ( $hit->{feature} eq 'curated'               && $hit->{source} eq 'exon' ) { $type = 'CDS' }
-    elsif ( $hit->{feature} eq 'Pseudogene'            && $hit->{source} eq 'exon' ) { $type = 'Pseudogene' }
-    elsif ( $hit->{feature} eq 'Non_coding_transcript' && $hit->{source} eq 'exon' ) { $type = 'Transcript' }
-    elsif ( $hit->{feature} eq 'Coding_transcript'     && $hit->{source} eq 'exon' ) { $type = 'Transcript' }
-    elsif ( $hit->{feature} eq 'ncRNA'     && $hit->{source} eq 'exon' ) { $type = 'Transcript' }
-
-    else { $type = "feature:" . $hit->{feature} . " source:" . $hit->{source} }
-    my $exon = Exon->new( id => get_id( $hit->{fluff} ), start => $hit->{start}, stop => $hit->{stop}, type => $type );
-
-    return \$exon;
-}
-
-############################
-# unified function to iterate through the gff
-# $log and $gffdir are not passed along :-(
-sub get_PCRs_from_GFF {
-    my ( $chromosome, $method, $pcr2gene, $map ) = @_;
-
-    open GFF_in, "<$gffdir/${chromosome}_$method.gff" or $log->log_and_die("Failed to open PCR_product gff file\n\n");
-
-    while (<GFF_in>) {
-        chomp;
-        s/\#.*// if !(/\".+\#.+\"/);
-        next unless /PCR_product/;
-        my @f = split /\t/;
-
-        my ($name) = ( $f[8] =~ /PCR_product \"(.*)\"$/ );
-        unless ($name) {
-            $log->write_to("WARNING: Cant get name from $f[8] , line $. in ${chromosome}_$method.gff\n");
-            next;
-        }
-
-        my @hits = $map->get_chr( $chromosome, { start => $f[3], stop => $f[4] } );
-        foreach my $hit (@hits) {
-            my $exon = ${ &to_exon($hit) };
-            push @{ $$pcr2gene{$name} }, $exon;
-        }
-
-        print "PCR_product : '$name'\n" if ($verbose);
-    }
-    close GFF_in;
-}
 
 __END__
 
-=pod
-use Hum::EMBL;
-
-=head2 NAME - map_PCR_products.pl
-
-=head1 USAGE
-
-=over 4
-
-=item map_PCR_products.pl [-options]
-
-=back
-
-map_PCR_products.pl calculates the overlap between the mapped PCR_products
-and the CDS, transcript and pseudogene coordinates in the WS database release. 
-It will generate an acefile for this data and upload into /wormsrv2/autoace
-
-map_PCR_products mandatory arguments:
-
-=over 4
-
-=item none
-
-=back
-
-map_PCR_products optional arguments:
-
-=over 4
-
-=item -debug, Verbose/Debug mode
-
-=item -test, Test mode, generate the acefile but do not upload 
-
-=item -help, Help pages
-
-=item -store specify configuration file
-
-=back
-
-=cut
