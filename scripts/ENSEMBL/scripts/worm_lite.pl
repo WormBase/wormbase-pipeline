@@ -339,7 +339,7 @@ sub load_genes {
       . "-coord toplevel "
       . "-write";
   print "Running: $set_canon_cmd\n";
-  system($set_canon_cmd) and die "Could not load seq_regions from agp file\n";
+  system($set_canon_cmd) and die "Could not set canonical transcripts\n";
 
   my $timestamp = strftime("%Y-%m", localtime(time));
   
