@@ -1,5 +1,7 @@
 #!/usr/local/bin/perl5.8.0 -w
 #
+# script to dump the EnsEMBL toplevel sequences as
+# softmasked and hardmasked FASTA files
 
 
 use strict;                                      
@@ -10,8 +12,6 @@ use Carp;
 use Log_files;
 use Storable;
 
-use lib '/software/worm/lib/bioperl-live';
-use lib '/software/worm/ensembl/ensembl/modules';
 use Bio::EnsEMBL::DBSQL::DBAdaptor;
 use Bio::PrimarySeq;
 use Bio::SeqIO;
@@ -62,11 +62,11 @@ $log->write_to("Connecting to worm_dna\n");
 
 my $dbobj = Bio::EnsEMBL::DBSQL::DBAdaptor->
     new(
-        '-host'   => 'farmdb1',
+        '-host'   => $ENV{WORM_DBHOST},
+        '-port'   => $ENV{WORM_DBPORT},
         '-user'   => 'wormro',
         '-dbname' => $database
-        )
-    or die "Can't connect to Database $database";
+        ) or die "Can't connect to Database $database";
 
 $log->write_to("Building chromosomes\n");
 
@@ -127,14 +127,65 @@ sub usage {
 ##########################################
 
 
-
-
 # Add perl documentation in POD format
 # This should expand on your brief description above and 
 # add details of any options that can be used with the program.  
 # Such documentation can be viewed using the perldoc command.
 
-
 __END__
 
+=pod
 
+=head2 NAME - get_repeatmasked_chroms.pl
+
+=head3 EXAMPLE USAGE 
+
+get_repeatmasked_chrom -species brugia -soft
+
+=head2 DESCRIPTION
+
+This script "does exactly what it says on the tin". ie it dumps fasta sequences of the toplevel sequences in the EnsEMBL databases in a hardmasked/softmasked or raw FASTA format.
+
+=head2 OPTIONS:
+
+=over 4
+
+B<-help>
+
+print this perldoc
+
+B<-debug NAME>
+
+set a custom email target
+
+B<-test>
+
+use the test locations for the BUILD
+
+B<-verbose>
+
+be more verbose in the output
+
+B<-store FILENAME>
+
+pass a specific storable
+
+B<-output FILENAME>
+
+output filename
+
+B<-database MYSQL_DATABASE_NAME>
+
+specify a mysql database
+
+B<-species WORMBASE_SPECIES>
+
+specify the wormbase species
+
+B<-softmask>
+
+lowercase repetitive sequence in the FASTA instead of using Ns
+
+=back
+
+=cut
