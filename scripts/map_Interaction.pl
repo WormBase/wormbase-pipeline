@@ -7,7 +7,7 @@
 # by Dan Lawson
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-05-02 20:18:23 $
+# Last updated on: $Date: 2013-05-02 20:36:45 $
 
 use strict;
 use warnings;
@@ -139,7 +139,7 @@ close(OUTPUT);    # close the output filehandle
 ###############
 if ($load) {
   $log->write_to("Loading file to autoace\n");
-  $wb->load_to_database( $wb->autoace, $output, 'map_y2h_script', $log );
+  $wb->load_to_database( $wb->autoace, $output, 'map_interaction_script', $log );
 }
 
 $log->mail();
