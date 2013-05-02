@@ -186,7 +186,7 @@
 # by Gary Williams
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2013-04-29 13:12:34 $
+# Last updated on: $Date: 2013-05-02 11:19:23 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -794,7 +794,7 @@ if (!$expt) {
 
       if ($species eq 'elegans') {
 	$wormbase->check_file($gtf_file, $log,
-			      minsize => 29000000,
+			      minsize => 28000000,
 			     );
       }
     }
