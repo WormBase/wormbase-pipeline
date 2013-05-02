@@ -8,7 +8,7 @@
 # by Gary Williams
 #
 # Last updated by: $Author: gw3 $                      
-# Last updated on: $Date: 2012-11-13 12:28:51 $        
+# Last updated on: $Date: 2013-05-02 12:56:24 $        
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -96,7 +96,7 @@ open (OUTDAT, ">$output") || die "Can't open $output\n";
 #	tRNAscan-SE-1.23
 #);
 
-my @files = glob("$gffdir/*{Coding_transcript.gff,Non_coding_transcript.gff,Pseudogene.gff,miRNA_primary_transcript.gff,ncRNA.gff,rRNA.gff,scRNA.gff,snlRNA.gff,snoRNA.gff,snRNA.gff,stRNA.gff,tRNA.gff,tRNAscan-SE-1.23.gff}");
+my @files = glob("$gffdir/*{Coding_transcript.gff,Non_coding_transcript.gff,miRNA_primary_transcript.gff,ncRNA.gff,rRNA.gff,scRNA.gff,snlRNA.gff,snoRNA.gff,snRNA.gff,stRNA.gff,tRNA.gff,tRNAscan-SE-1.23.gff}");
 
 foreach my $file (@files) {
   open (IN, "<$file") || $log->log_and_die("Can't open $file\n");
@@ -125,11 +125,50 @@ foreach my $file (@files) {
       print OUTDAT "$line\n";
 
     }
-    
-
   }
   close (IN);
 }
+
+
+# now do the Pseudogenes - these don't have Transcripts
+    
+@files = glob("$gffdir/*Pseudogene.gff");
+
+foreach my $file (@files) {
+  open (IN, "<$file") || $log->log_and_die("Can't open $file\n");
+  while (my $line = <IN>) {
+    chomp $line;
+    next if ($line =~ /^#/);
+    next if ($line =~ /^\s*$/);
+
+    my @line = split /\t+/, $line;
+    if ($line[8] =~ /Pseudogene\s+(\S+)/) {
+      if ($line[2] eq 'intron') {next}
+      my $transcript_id = $1;
+      $transcript_id =~ s/"//g;
+
+      if ($line[2] ne 'exon') {
+	$line[2] = 'transcript';
+      }
+      $line[1] = 'WormBase';
+      my $cds_regex = $wormbase->cds_regex_noend;
+      my ($sequence_name) = ($transcript_id =~ /($cds_regex)/);
+      if (!defined $sequence_name) {$sequence_name = $transcript_id}# the tRNAs (e.g. C06G1.t2) are not changed correctly
+      my $gene_id = $worm_gene2geneID_name{$sequence_name};
+      if (!defined $gene_id) {$log->log_and_die ("Can't find gene_id $sequence_name for: $line\n")}
+      $line[8] = "gene_id \"$gene_id\"; transcript_id \"$transcript_id\"";
+      $line = join "\t", @line;
+      print OUTDAT "$line\n";
+
+    }
+  }
+  close (IN);
+}
+
+
+
+
+
 
 close(OUTDAT);
 
