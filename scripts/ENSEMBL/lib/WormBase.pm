@@ -332,7 +332,8 @@ sub parse_gff3_fh {
     my @tids = sort @{$genes{$gid}};
 
     my $gene = Bio::EnsEMBL::Gene->new(
-      -stable_id => $gid);
+      -stable_id => $gid,
+        );
 
     my $gene_is_coding = 0;
 
@@ -434,6 +435,7 @@ sub parse_gff3_fh {
         $tr->start($tr_st_off);
         $tr->end($tr_en_off);
         $tr->stable_id($tid);
+        $tr->version(1);
 
         $transcript->translation($tr);
         $transcript->biotype('protein_coding');
@@ -1106,6 +1108,7 @@ sub create_transcripts {
         }
 
         $translation->stable_id($transcript_id);
+        $translation->version(1);
         $transcript->translation($translation);
         $transcript->stable_id($transcript_id);
         $transcript->biotype('protein_coding');
@@ -1261,12 +1264,12 @@ sub write_genes {
         }
         my $gene_adaptor = $db->get_GeneAdaptor;
         eval {
-            $stored{ $gene->stable_id } = 1;
-            $gene_adaptor->store($gene);
-            $e++;
+          $stored{ $gene->stable_id } = 1;
+          $gene_adaptor->store($gene);
+          $e++;
         };
         if ($@) {
-            die "couldn't store " . $gene->stable_id . " problems " . $@;
+          die("couldn't store " . $gene->stable_id . " problems=:$@:\n");
         }
     }
     print "\nStored gene: " . $e . "\n";
