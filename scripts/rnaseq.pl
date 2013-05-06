@@ -292,7 +292,8 @@ sub do_chromosome {
   open (RACE, ">$Routput") || $log->log_and_die("Can't open the file $Routput\n");
 
 
-  my @chromosomes = $wormbase->get_chunked_chroms(-prefix => 1, 
+  my @chromosomes = $wormbase->get_chunked_chroms(-prefix => 1,
+                                                  -mito => 1,
 						  -chunk_total => $chunk_total,
 						  -chunk_id    => $chunk_id);
 
