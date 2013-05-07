@@ -7,7 +7,7 @@
 # Calls on a number of other scripts
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2013-04-09 13:25:51 $      
+# Last updated on: $Date: 2013-05-07 16:15:28 $      
 
 use strict;                                      
 
@@ -68,7 +68,7 @@ my $log = Log_files->make_build_log($wormbase);
 ##########################
 
 my $version = $wormbase->get_wormbase_version;
-my $dumpdir = $wormbase->farm_dump;
+my $dumpdir = "$WORMPIPE_DIR/dumps";
 my $acedir  = $wormbase->acefiles;
 $species = $wormbase->species;
 
