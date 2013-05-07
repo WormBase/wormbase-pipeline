@@ -10,8 +10,8 @@
 #   reduce the memory footprint. If you change it, DON'T use foreach and a large
 #   array of EnsEMBL objects, it invites disaster as it makes a copy of the array.
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2013-04-22 10:38:55 $ 
+# Last edited by: $Author: klh $
+# Last edited on: $Date: 2013-05-07 10:43:37 $ 
 
 my $usage = <<USAGE;
 blastx_dump.pl options:
@@ -104,9 +104,11 @@ my @superlinks;
 if ($sequences[0]){
   @sequences = split(/,/,join(',',@sequences));
   foreach my $sequence(@sequences) {
-    push @superlinks, $slice_adaptor->fetch_by_region('seqlevel',$sequence);
+    push @superlinks, $slice_adaptor->fetch_by_region('toplevel',$sequence);
   }
-}else {
+} elsif ($toplevel) {
+  @superlinks = @{$slice_adaptor->fetch_all('toplevel')};
+} else {
   @superlinks = @{$slice_adaptor->fetch_all('seqlevel')};
 }
 
@@ -155,11 +157,11 @@ while (my $link = shift @superlinks){
 
     # hack around the limitations of the clone slices
     # by projecting them onto the toplevel overlapping genes should be fetched
-    if (! $toplevel) {
-      my $seq_pairs = $link->project('toplevel');
-      my $parent=shift @$seq_pairs;
-      $link = $parent->to_Slice();
-    }
+    #if (! $toplevel) {
+    #  my $seq_pairs = $link->project('toplevel');
+    #  my $parent=shift @$seq_pairs;
+    #  $link = $parent->to_Slice();
+    #}
 
 
 #######
