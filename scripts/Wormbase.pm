@@ -1266,125 +1266,111 @@ sub establish_paths {
   # are we runing on an EBI machine?
   if ($ENV{'HOST'} =~ /ebi/) {$self->{'ebi'} = 1}
 
-  # Some farm code uses Wormbase.pm subs so to maintain this farm code needs to be OO Wormbase.pm compliant but we dont want 
-  # multiple paths of the build (main and farm) reading/writing the same wormbase.store file . Store the farm version in ~wormpipe
-  # and might as well use path retrieval routines as with main build.
-
-  if ( $self->{'farm'} ) {
-    my $wormpipe= glob("~wormpipe");
-    $self->{'autoace'}     = $wormpipe;
-    $self->{'acefiles'}    = $self->autoace . "/acefiles";
-    $self->{'dump_dir'}    = '/lustre/scratch109/ensembl/wormpipe/dumps';
-    $self->{'orgdb'}       =  $wormpipe;
-    $self->{'logs'}        = "$wormpipe/logs";
-    $self->{'common_data'} = $self->orgdb . "/COMMON_DATA";
+  my ($basedir,
+      $ftp_uploads,
+      $ftp_site);
+  
+  $self->{'wormpub'} = "/nfs/wormpub";
+  $self->{'scratch_area'} = '/nfs/wormpub/tmp/BUILD_scratch';
+  
+  # if a specified non-build database is being used
+  
+  if ( $self->autoace ) {
+    ($basedir) = $self->autoace =~ /(.*)\/\w+\/*$/;
+    $self->{'orgdb'} = $self->{'autoace'};
   } else {
-    my ($basedir,
-        $ftp_uploads,
-        $ftp_site);
-
-    $self->{'wormpub'} = "/nfs/wormpub";
-    $self->{'scratch_area'} = '/nfs/wormpub/tmp/BUILD_scratch';
-
-    # if a specified non-build database is being used
-
-    if ( $self->autoace ) {
-      ($basedir) = $self->autoace =~ /(.*)\/\w+\/*$/;
-      $self->{'orgdb'} = $self->{'autoace'};
-    } else {
-      $basedir = ($self->test) ? $self->wormpub . "/TEST/BUILD" : $self->wormpub . "/BUILD";
-      $self->{'autoace'}    = $self->species eq 'elegans' ? "$basedir/autoace" : "$basedir/".$self->species;
-      $self->{'orgdb'}      = $self->{'autoace'}; #."/".$self->{'organism'};
-    }
-
-    $self->{'basedir'}    = $basedir;
-
-    if ($self->test) {
-      $self->{'ftp_upload'} = $self->wormpub . "/TEST/ftp_uploads/wormbase";
-      $self->{'ftp_site'}   = $self->wormpub . "/TEST/FTP_site/pub/wormbase";
-      $self->{'build_data'} = $self->wormpub . "/TEST/BUILD_DATA";
-      $self->{'genome_diff'} = $self->wormpub . "/TEST/CHROMOSOME_DIFFERENCES";
-    } else {
-      $self->{'ftp_upload'} = "/nfs/ftp_uploads/wormbase";
-      $self->{'ftp_site'}   = "/nfs/disk69/ftp/pub2/wormbase";
-      $self->{'build_data'} = $self->wormpub . "/BUILD_DATA";
-      $self->{'genome_diff'} = $self->wormpub . "/CHROMOSOME_DIFFERENCES";
-    }
-    
-    $self->{'peproot'}    = $basedir . "/WORMPEP";
-    $self->{'rnaroot'}    = $basedir . "/WORMRNA/";
-    $self->{'wormrna'}    = $basedir . "/WORMRNA/".$self->pepdir_prefix."rna" . $self->get_wormbase_version;
-    $self->{'wormpep'}    = $basedir . "/WORMPEP/".$self->pepdir_prefix."pep" . $self->get_wormbase_version;
-    $self->{'submit_repos'}  = $basedir . "/analysis/submissions/" . $self->{'species'};
-
-    #species specific paths
-    $self->{'logs'}        = $self->orgdb . "/logs";
-    $self->{'common_data'} = $self->orgdb . "/COMMON_DATA";
-    $self->{'chromosomes'} = $self->orgdb . "/CHROMOSOMES";
-    $self->{'sequences'}   = $self->orgdb . "/SEQUENCES";
-    $self->{'transcripts'} = $self->orgdb . "/TRANSCRIPTS";
-    $self->{'reports'}     = $self->orgdb . "/REPORTS";
-    $self->{'acefiles'}    = $self->orgdb . "/acefiles";
-    $self->{'gff_splits'}  = $self->orgdb . "/GFF_SPLITS";
-    $self->{'primaries'}   = $self->basedir . "/PRIMARIES";
-    $self->{'blat'}        = $self->orgdb . "/BLAT";
-    $self->{'checks'}      = $self->autoace . "/CHECKS";
-    $self->{'ontology'}    = $self->autoace . "/ONTOLOGY";
-    $self->{'tace'}   = '/software/worm/bin/acedb/tace';
-    $self->{'giface'} = '/software/worm/bin/acedb/giface';
-
-    $self->{'databases'}->{'geneace'} = $self->wormpub . "/DATABASES/geneace";
-    $self->{'databases'}->{'camace'}  = $self->wormpub . "/DATABASES/camace";
-    $self->{'databases'}->{'current'} = $self->wormpub . "/DATABASES/current_DB";
-    $self->{'databases'}->{'autoace'} = $self->autoace;
-
-    $self->{'primary'}->{'camace'}  = $self->primaries .'/camace';
-    $self->{'primary'}->{'geneace'} = $self->primaries .'/geneace';
-    $self->{'primary'}->{'stlace'}  = $self->primaries .'/stlace';
-    $self->{'primary'}->{'citace'}  = $self->primaries .'/citace';
-    $self->{'primary'}->{'caltech'} = $self->primaries .'/citace'; # to handle the various names used
-    $self->{'primary'}->{'csh'}     = $self->primaries .'/cshace';
-    $self->{'primary'}->{'cshace'}  = $self->primaries .'/cshace';
-    $self->{'primary'}->{'brigace'} = $self->primaries .'/brigace';
-    $self->{'primary'}->{'briggsae'}= $self->primaries .'/brigace'; # to handle the various names used
-    $self->{'primary'}->{'remace'}  = $self->primaries .'/remace';
-    $self->{'primary'}->{'japace'}  = $self->primaries .'/japace';
-    $self->{'primary'}->{'brenace'} = $self->primaries .'/brenace';
-    $self->{'primary'}->{'brugace'} = $self->primaries .'/brugace';
-
-    $self->{'misc_static'} = $self->{'build_data'} . "/MISC_STATIC";
-    $self->{'misc_dynamic'} = $self->{'build_data'} . "/MISC_DYNAMIC";
-    $self->{'compare'}      = $self->{'build_data'} . "/COMPARE";
-    $self->{'cdna_dir'}    = $self->{'build_data'} . "/cDNA/".$self->{'species'};
-    $self->{'cdna_acedir'} = $self->{'build_data'} . "/cDNAace/".$self->{'species'};
-    $self->{'maskedcdna'}  = $basedir . "/cDNA/".$self->{'species'};
-
-    $self->{'farm_dump'}    = '/lustre/scratch109/ensembl/wormpipe/dumps';
-    $self->{'rnaseq'}       = '/lustre/scratch103/ensembl/wormpipe/RNASeq/'.$self->{'species'}.'/SRA';
-    $self->{'build_lsfout'} = $self->scratch_area 
-        . "/LSF_OUT/" . $self->{species} . '/' . $self->get_wormbase_version_name;
-
-    $self->{'genome_seq'} = $self->sequences . "/" . $self->{species} . ".genome.fa";
-    $self->{'masked_genome_seq'} = $self->sequences . "/" . $self->{species} . ".genome_masked.fa";
-    $self->{'smasked_genome_seq'} = $self->sequences . "/" . $self->{species} . ".genome_softmasked.fa";
-
-    # create dirs if missing
-    mkpath( $self->logs )        unless ( -e $self->logs );
-    mkpath( $self->common_data ) unless ( -e $self->common_data );
-    mkpath( $self->wormpep )     unless ( -e $self->wormpep );
-    mkpath( $self->wormrna )     unless ( -e $self->wormrna ); 
-    mkpath( $self->chromosomes ) unless ( -e $self->chromosomes );
-    mkpath( $self->sequences )   unless ( -e $self->sequences );
-    mkpath( $self->transcripts ) unless ( -e $self->transcripts ); 
-    mkpath( $self->reports )     unless ( -e $self->reports );
-    mkpath( $self->ontology )    unless ( -e $self->ontology );
-    mkpath( $self->gff_splits )  unless ( -e $self->gff_splits );
-    mkpath( $self->primaries )   unless ( -e $self->primaries );
-    mkpath( $self->acefiles )    unless ( -e $self->acefiles );
-    mkpath( $self->blat )        unless ( -e $self->blat );
-    mkpath( $self->checks )      unless ( -e $self->checks );
-    mkpath( $self->build_lsfout) unless ( -e $self->build_lsfout );
+    $basedir = ($self->test) ? $self->wormpub . "/TEST/BUILD" : $self->wormpub . "/BUILD";
+    $self->{'autoace'}    = $self->species eq 'elegans' ? "$basedir/autoace" : "$basedir/".$self->species;
+    $self->{'orgdb'}      = $self->{'autoace'}; #."/".$self->{'organism'};
   }
+  
+  $self->{'basedir'}    = $basedir;
+  
+  if ($self->test) {
+    $self->{'ftp_upload'} = $self->wormpub . "/TEST/ftp_uploads/wormbase";
+    $self->{'ftp_site'}   = $self->wormpub . "/TEST/FTP_site/pub/wormbase";
+    $self->{'build_data'} = $self->wormpub . "/TEST/BUILD_DATA";
+    $self->{'genome_diff'} = $self->wormpub . "/TEST/CHROMOSOME_DIFFERENCES";
+  } else {
+    $self->{'ftp_upload'} = "/nfs/ftp_uploads/wormbase";
+    $self->{'ftp_site'}   = "/nfs/disk69/ftp/pub2/wormbase";
+    $self->{'build_data'} = $self->wormpub . "/BUILD_DATA";
+    $self->{'genome_diff'} = $self->wormpub . "/CHROMOSOME_DIFFERENCES";
+  }
+  
+  $self->{'peproot'}    = $basedir . "/WORMPEP";
+  $self->{'rnaroot'}    = $basedir . "/WORMRNA/";
+  $self->{'wormrna'}    = $basedir . "/WORMRNA/".$self->pepdir_prefix."rna" . $self->get_wormbase_version;
+  $self->{'wormpep'}    = $basedir . "/WORMPEP/".$self->pepdir_prefix."pep" . $self->get_wormbase_version;
+  $self->{'submit_repos'}  = $basedir . "/analysis/submissions/" . $self->{'species'};
+  
+  #species specific paths
+  $self->{'logs'}        = $self->orgdb . "/logs";
+  $self->{'common_data'} = $self->orgdb . "/COMMON_DATA";
+  $self->{'chromosomes'} = $self->orgdb . "/CHROMOSOMES";
+  $self->{'sequences'}   = $self->orgdb . "/SEQUENCES";
+  $self->{'transcripts'} = $self->orgdb . "/TRANSCRIPTS";
+  $self->{'reports'}     = $self->orgdb . "/REPORTS";
+  $self->{'acefiles'}    = $self->orgdb . "/acefiles";
+  $self->{'gff_splits'}  = $self->orgdb . "/GFF_SPLITS";
+  $self->{'primaries'}   = $self->basedir . "/PRIMARIES";
+  $self->{'blat'}        = $self->orgdb . "/BLAT";
+  $self->{'checks'}      = $self->autoace . "/CHECKS";
+  $self->{'ontology'}    = $self->autoace . "/ONTOLOGY";
+  $self->{'tace'}   = '/software/worm/bin/acedb/tace';
+  $self->{'giface'} = '/software/worm/bin/acedb/giface';
+  
+  $self->{'databases'}->{'geneace'} = $self->wormpub . "/DATABASES/geneace";
+  $self->{'databases'}->{'camace'}  = $self->wormpub . "/DATABASES/camace";
+  $self->{'databases'}->{'current'} = $self->wormpub . "/DATABASES/current_DB";
+  $self->{'databases'}->{'autoace'} = $self->autoace;
+  
+  $self->{'primary'}->{'camace'}  = $self->primaries .'/camace';
+  $self->{'primary'}->{'geneace'} = $self->primaries .'/geneace';
+  $self->{'primary'}->{'stlace'}  = $self->primaries .'/stlace';
+  $self->{'primary'}->{'citace'}  = $self->primaries .'/citace';
+  $self->{'primary'}->{'caltech'} = $self->primaries .'/citace'; # to handle the various names used
+  $self->{'primary'}->{'csh'}     = $self->primaries .'/cshace';
+  $self->{'primary'}->{'cshace'}  = $self->primaries .'/cshace';
+  $self->{'primary'}->{'brigace'} = $self->primaries .'/brigace';
+  $self->{'primary'}->{'briggsae'}= $self->primaries .'/brigace'; # to handle the various names used
+  $self->{'primary'}->{'remace'}  = $self->primaries .'/remace';
+  $self->{'primary'}->{'japace'}  = $self->primaries .'/japace';
+  $self->{'primary'}->{'brenace'} = $self->primaries .'/brenace';
+  $self->{'primary'}->{'brugace'} = $self->primaries .'/brugace';
+  
+  $self->{'misc_static'} = $self->{'build_data'} . "/MISC_STATIC";
+  $self->{'misc_dynamic'} = $self->{'build_data'} . "/MISC_DYNAMIC";
+  $self->{'compare'}      = $self->{'build_data'} . "/COMPARE";
+  $self->{'cdna_dir'}    = $self->{'build_data'} . "/cDNA/".$self->{'species'};
+  $self->{'cdna_acedir'} = $self->{'build_data'} . "/cDNAace/".$self->{'species'};
+  $self->{'maskedcdna'}  = $basedir . "/cDNA/".$self->{'species'};
+  
+  $self->{'farm_dump'}    = '/lustre/scratch109/ensembl/wormpipe/dumps';
+  $self->{'rnaseq'}       = '/lustre/scratch103/ensembl/wormpipe/RNASeq/'.$self->{'species'}.'/SRA';
+  $self->{'build_lsfout'} = $self->scratch_area 
+      . "/LSF_OUT/" . $self->{species} . '/' . $self->get_wormbase_version_name;
+  
+  $self->{'genome_seq'} = $self->sequences . "/" . $self->{species} . ".genome.fa";
+  $self->{'masked_genome_seq'} = $self->sequences . "/" . $self->{species} . ".genome_masked.fa";
+  $self->{'smasked_genome_seq'} = $self->sequences . "/" . $self->{species} . ".genome_softmasked.fa";
+  
+  # create dirs if missing
+  mkpath( $self->logs )        unless ( -e $self->logs );
+  mkpath( $self->common_data ) unless ( -e $self->common_data );
+  mkpath( $self->wormpep )     unless ( -e $self->wormpep );
+  mkpath( $self->wormrna )     unless ( -e $self->wormrna ); 
+  mkpath( $self->chromosomes ) unless ( -e $self->chromosomes );
+  mkpath( $self->sequences )   unless ( -e $self->sequences );
+  mkpath( $self->transcripts ) unless ( -e $self->transcripts ); 
+  mkpath( $self->reports )     unless ( -e $self->reports );
+  mkpath( $self->ontology )    unless ( -e $self->ontology );
+  mkpath( $self->gff_splits )  unless ( -e $self->gff_splits );
+  mkpath( $self->primaries )   unless ( -e $self->primaries );
+  mkpath( $self->acefiles )    unless ( -e $self->acefiles );
+  mkpath( $self->blat )        unless ( -e $self->blat );
+  mkpath( $self->checks )      unless ( -e $self->checks );
+  mkpath( $self->build_lsfout) unless ( -e $self->build_lsfout );
 }
 
 ####################################
