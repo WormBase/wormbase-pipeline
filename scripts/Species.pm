@@ -82,7 +82,7 @@ sub chromosome_names {
     my @ids;
 
     # generate the FASTA file if needed from the ACeDB database
-    unless (-e "${\$self->common_data}/toplevel_seqs.lst"){
+    if (not -e "${\$self->common_data}/toplevel_seqs.lst"){
        my $db = Ace->connect(-path => $self->autoace) || die(Ace->error);
 
        my $species = $db->fetch(Species => $self->full_name);
@@ -992,6 +992,43 @@ sub chromosome_names {
 		$i++;
 	}
 	return @contigs;
+}
+
+
+#######################################################
+package Hcontortus_gasser;
+use Carp;
+our @ISA = qw(Wormbase Species);
+
+sub _new {	
+  my $class = shift;
+  my %param = %{ shift(@_) };
+  
+  my $self = $class->initialize( $class->flatten_params( \%param ) );
+  
+  # add stuff post object creation goes here
+  
+  bless $self, $class;
+}
+sub full_name {
+  my $self = shift;
+  my %param = @_ ;
+  if($param{'-short'}){
+    return 'H. contortus';
+  }	elsif($param{'-g_species'}){
+    return 'h_contortus';
+  }
+  else { return'Haemonchus contortus'
+  };
+}
+sub chromosome_prefix {'Hcon_PRJNA193158'}
+sub pep_prefix {''}
+sub pepdir_prefix{''};
+sub ncbi_tax_id {'6289'};
+sub ncbi_bioproject {'PRJNA193158'};
+sub assembly_type {'contig'};
+sub chromosome_names {
+  die "chromosome_names method not implemented for this species\n";
 }
 
 
