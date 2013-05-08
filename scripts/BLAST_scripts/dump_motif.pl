@@ -5,7 +5,7 @@
 # Dumps protein motifs from ensembl mysql (protein) database to an ace file
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2013-04-22 14:36:28 $
+# Last updated on: $Date: 2013-05-08 09:02:10 $
 
 use lib $ENV{'CVS_DIR'};
 
@@ -134,6 +134,7 @@ foreach my $meth (@methods) {
       push (@{$motifs{$prot}} , $line);
     }
     else {
+      if (!defined $score) {$score = 0} # for NULL scores in ncoils and tmhmm 
       $line = "Feature \"$meth\" $start $end $score";
       push (@{$motifs{$prot}} , $line);
     }
