@@ -7,7 +7,7 @@
 # Calls on a number of other scripts
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2013-05-07 16:15:28 $      
+# Last updated on: $Date: 2013-05-08 09:49:52 $      
 
 use strict;                                      
 
@@ -92,30 +92,16 @@ if (!$checkonly) {
       and $log->log_and_die("Failed to successfully run command - stopping ($sort_cmd)\n");;
   unlink @sort_input;
 
-  $log->write_to("  Running dump_blastp_from_file.pl . . .\n");
-#  my $dump_bp_cmd = $wormbase->build_cmd_line("${Blast_scripts}/dump_blastp_from_file.pl", $store) . " -file $SORT_DUMP_DIR/${sort_file_out} -matches -database worm_${species} -dumpdir $dumpdir ";
-#  $wormbase->run_command($dump_bp_cmd, $log)
-#      and $log->log_and_die("Failed to successfully run command - stopping ($dump_bp_cmd)\n");
+  $log->write_to("  Running dump_blastp_from_file.pl -file $SORT_DUMP_DIR/${sort_file_out} -matches -database worm_${species} -dumpdir $dumpdir\n");
   $wormbase->run_script("${Blast_scripts}/dump_blastp_from_file.pl -file $SORT_DUMP_DIR/${sort_file_out} -matches -database worm_${species} -dumpdir $dumpdir", $log);
 
-  $log->write_to("  Running Motif data . . .\n");
-#  my $motif_cmd = $wormbase->build_cmd_line("${Blast_scripts}/dump_motif.pl", $store) . " -database worm_ensembl_${species} -dumpdir $dumpdir ";
-#  $wormbase->run_command($motif_cmd, $log)
-#      and $log->log_and_die("Failed to successfully run command - stopping ($motif_cmd)\n");
+  $log->write_to("  Running dump_motif.pl -database worm_ensembl_${species} -dumpdir $dumpdir\n");
   $wormbase->run_script("${Blast_scripts}/dump_motif.pl -database worm_ensembl_${species} -dumpdir $dumpdir", $log);
 
-#  my $interpro_cmd = $wormbase->build_cmd_line("${Blast_scripts}/dump_interpro_motif.pl", $store) . " -database worm_ensembl_${species} ";
-#  $wormbase->run_command($interpro_cmd, $log)
-#      and $log->log_and_die("Failed to successfully run command - stopping ($interpro_cmd)\n");
-  if (-e "/software/worm") { # running on Sanger?
-    $wormbase->run_script("${Blast_scripts}/dump_interpro_motif.pl -database worm_ensembl_${species}", $log);
-  }
+  $log->write_to("  Running dump_interpro_motif.pl -database worm_ensembl_${species}\n");
+  $wormbase->run_script("${Blast_scripts}/dump_interpro_motif.pl -database worm_ensembl_${species}", $log);
 
-  $log->write_to("  Running Repeat data . . .\n");
-
-#  my $repeat_cmd = $wormbase->build_cmd_line("${Blast_scripts}/dump_repeats.pl", $store) . " -database worm_ensembl_${species} -dumpdir $acedir ";
-#  $wormbase->run_command($repeat_cmd, $log)
-#      and $log->log_and_die("Failed to successfully run command - stopping ($repeat_cmd)\n");
+  $log->write_to("  Running dump_repeats.pl  -database worm_ensembl_${species} -dumpdir $acedir\n");
   $wormbase->run_script("${Blast_scripts}/dump_repeats.pl  -database worm_ensembl_${species} -dumpdir $acedir", $log);
 
 }
