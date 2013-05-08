@@ -5,7 +5,7 @@
 # written by Anthony Rogers
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2013-05-01 15:03:25 $
+# Last edited on: $Date: 2013-05-08 14:30:15 $
 #
 # it depends on:
 #    wormpep + history
@@ -513,10 +513,7 @@ sub update_dna {
 			  );
   my $pipeline_scripts = "$ENV{'WORM_PACKAGES'}/ensembl/ensembl-pipeline/scripts";
   my $generic_conf_dir         = ($generic_config->{confdir}||die("please set a generic confdir in $yfile_name\n"));
-  my $species_conf_dir         = ($config->{confdir}||die("please set a species specific confdir in $yfile_name\n"));
   
-  $wormbase->run_command( "perl $pipeline_scripts/analysis_setup.pl $db_options -read -file $species_conf_dir/analysis.conf", $log );
-
   $wormbase->run_command( "perl $pipeline_scripts/rule_setup.pl $db_options -read -file $generic_conf_dir/core_rule.conf", $log );
   if ($do_blats) {
     $wormbase->run_command( "perl $pipeline_scripts/rule_setup.pl $db_options -read -file $generic_conf_dir/blat_rule.conf", $log );
