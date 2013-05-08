@@ -4,7 +4,7 @@
 #   setting up the BLAT pipeline
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2013-05-01 15:02:39 $
+# Last edited on: $Date: 2013-05-08 14:28:15 $
 
 use lib $ENV{'CVS_DIR'};
 
@@ -91,7 +91,8 @@ my $wormbase;
     );
 }
 
-my $database = sprintf('worm_ensembl_%s',lc(ref $wormbase));
+$species = $wormbase->species if not defined $species;
+my $database = "worm_ensembl_${species}";
 
 # more setup
 my $log = Log_files->make_build_log($wormbase);
@@ -106,14 +107,13 @@ my $db = Bio::EnsEMBL::Pipeline::DBSQL::DBAdaptor->new(
         -user     => $user,
         -dbname   => $dbname || $database,
         -port     => $port,
-        -driver   => 'mysql', 
     );
 $db->password($password);
 
 foreach my $ana (&get_all_blat_analyses()) {
   my $logic_name = $ana->logic_name();
 
-  # a.) clean out all dna_align_features
+  &update_analysis_entry($ana);
   &clean_dna_align_features($ana);
 
   my $dependent_ana = &get_dependent_analysis($ana);
@@ -148,6 +148,34 @@ sub get_dependent_analysis {
   return $dependent_ana;
 
 }
+
+#######################
+sub update_analysis_entry {
+  my ($ana) = @_;
+
+  # set species-specific genome fasta file to search against
+  # set parameters depending on self-hits or non-self hits
+
+  my $genome_fa = $wormbase->genome_seq;
+  if (not -e $genome_fa) {
+    die "Could not find genome fasta file $genome_fa\n";
+  }
+  $ana->db_file($genome_fa);
+
+  my $parameters = "";
+  if (lc($ana->db) eq $species) {
+    if ($ana->logic_name =~ /mrna$/) {
+      $parameters = "-fine";
+    }
+  } else {
+    $parameters = "-q=dnax -t=dnax";
+  }
+
+  $ana->parameters($parameters);
+
+  $ana->adaptor->update($ana);
+}
+
 
 #######################
 sub make_input_ids {
