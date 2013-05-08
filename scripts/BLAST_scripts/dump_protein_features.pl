@@ -7,7 +7,7 @@
 # Calls on a number of other scripts
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2013-05-08 09:49:52 $      
+# Last updated on: $Date: 2013-05-08 09:58:02 $      
 
 use strict;                                      
 
@@ -92,16 +92,16 @@ if (!$checkonly) {
       and $log->log_and_die("Failed to successfully run command - stopping ($sort_cmd)\n");;
   unlink @sort_input;
 
-  $log->write_to("  Running dump_blastp_from_file.pl -file $SORT_DUMP_DIR/${sort_file_out} -matches -database worm_${species} -dumpdir $dumpdir\n");
+  $log->write_to("  Running Blastp . . .\n");
   $wormbase->run_script("${Blast_scripts}/dump_blastp_from_file.pl -file $SORT_DUMP_DIR/${sort_file_out} -matches -database worm_${species} -dumpdir $dumpdir", $log);
 
-  $log->write_to("  Running dump_motif.pl -database worm_ensembl_${species} -dumpdir $dumpdir\n");
+  $log->write_to("  Running Motifs . . .\n");
   $wormbase->run_script("${Blast_scripts}/dump_motif.pl -database worm_ensembl_${species} -dumpdir $dumpdir", $log);
 
-  $log->write_to("  Running dump_interpro_motif.pl -database worm_ensembl_${species}\n");
+  $log->write_to("  Running Interpro . . .\n");
   $wormbase->run_script("${Blast_scripts}/dump_interpro_motif.pl -database worm_ensembl_${species}", $log);
 
-  $log->write_to("  Running dump_repeats.pl  -database worm_ensembl_${species} -dumpdir $acedir\n");
+  $log->write_to("  Running repeats . . .\n");
   $wormbase->run_script("${Blast_scripts}/dump_repeats.pl  -database worm_ensembl_${species} -dumpdir $acedir", $log);
 
 }
