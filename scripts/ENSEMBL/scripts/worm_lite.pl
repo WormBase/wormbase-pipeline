@@ -71,17 +71,16 @@ my ($tax_db_host, $tax_db_port, $tax_db_name) =
 
 $WormBase::Species = $species;
 
-&setupdb($config) if $setup;
-&load_assembly($config)   if $dna;
-&load_genes($config) if $genes;
+&setupdb() if $setup;
+&load_assembly()   if $dna;
+&load_genes() if $genes;
 exit(0);
 
 
 #########################################
 sub setupdb {
-  my ( $conf ) = @_;
   
-  my $db = $conf->{database};
+  my $db = $config->{database};
 
   print ">>creating new database $db->{dbname} on $db->{host}\n";
 
@@ -108,7 +107,7 @@ sub setupdb {
       }
     }
 
-    print "Loading taxonomy: ";
+    print "Loading taxonomy...N";
     my $cmd = "perl $cvsDIR/ensembl-pipeline/scripts/load_taxonomy.pl -name \"$config->{species}\" "
         . "-taxondbhost $tax_db_host " 
         . "-taxondbport $tax_db_port "
@@ -121,7 +120,7 @@ sub setupdb {
     print "$cmd\n";        
     system($cmd) and die "Could not load taxonomy\n";
     
-    print "Loading production table:\n";
+    print "Loading production table...\n";
     $cmd = "perl $cvsDIR/ensembl/misc-scripts/production_database/scripts/populate_production_db_tables.pl "
         . "--host $db->{host} "
         . "--user $db->{user} "
@@ -136,13 +135,40 @@ sub setupdb {
     print "$cmd\n";
     system($cmd) and die "Could not populate production tables\n";
 
+    my $db_opt_string = sprintf("-dbhost %s -dbport %s -dbuser %s -dbpass %s -dbname %s", 
+                                $db->{host},
+                                $db->{port},
+                                $db->{user},
+                                $db->{password},
+                                $db->{dbname});
+
+    my @ana_conf_files;
+
+    if ($global_config->{generics}->{confdir}) {
+      push @ana_conf_files, $global_config->{generics}->{confdir} . "/analysis.conf";
+    }
+    if ($config->{confdir}) {
+      push @ana_conf_files, $config->{confdir} . "/analysis.conf";
+    }
+    
+    foreach my $cfile (@ana_conf_files) {
+      if (-e $cfile) {
+        print "Loading analyses...\n";
+        $cmd = "perl $FindBin::Bin/analysis_setup.pl $db_opt_string -read -file $cfile";
+        print "Running: $cmd\n";
+        system($cmd) and die "Could not load analyses from $cfile\n";
+      } else {
+        die "Could not find analysis config file $cfile\n";
+      }
+    }
+
+
   };
-  $@ and die("Error while building the database.");
+  $@ and die("Error while building the database: $@");
 }
 
 # load genome sequences
 sub load_assembly {
-  my ($config) = @_;
   
   my $db = $config->{database};
   
@@ -253,7 +279,6 @@ sub load_assembly {
 
 
 sub load_genes {
-  my ($config) = @_;
 
   my $db = $config->{database};
 
