@@ -5,7 +5,7 @@
 # Dumps InterPro protein motifs from ensembl mysql (protein) database to an ace file
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2013-04-19 12:55:48 $
+# Last updated on: $Date: 2013-05-08 09:24:31 $
 
 
 use strict;
@@ -114,7 +114,7 @@ sub now {
 }
 
 # create output files
-my $dump_dir = ($ddir || $wormbase->farm_dump);
+my $dump_dir = ($ddir || $ENV{'PIPELINE'}.'/dumps');
 if ($test) {
   $dump_dir = ".";
 }
