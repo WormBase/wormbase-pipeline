@@ -5,7 +5,7 @@
 # Dumps protein motifs from ensembl mysql (protein) database to an ace file
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2013-05-08 09:02:10 $
+# Last updated on: $Date: 2013-05-08 16:07:41 $
 
 use lib $ENV{'CVS_DIR'};
 
@@ -29,6 +29,8 @@ GetOptions(
 	   "dbname=s"  => \$dbname,
 	  );
 
+$dump_dir ||= $ENV{'PIPELINE'}.'/dumps';
+
 my $wormbase;
 if ( $store ) {
   $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
@@ -39,7 +41,6 @@ if ( $store ) {
 }
 
 my $log = Log_files->make_build_log($wormbase);
-$dump_dir ||= $wormbase->farm_dump;
 
 # define the names of the methods to be dumped
 @methods = qw(ncoils seg signalp tmhmm pfam) unless @methods;
