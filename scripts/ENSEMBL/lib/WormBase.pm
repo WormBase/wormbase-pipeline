@@ -401,7 +401,7 @@ sub parse_gff3_fh {
       
       my $transcript = Bio::EnsEMBL::Transcript->new(
         -stable_id => $tid,
-        -analysis  => (exists $analysis_hash->{$gff_source}) ? $analysis_hash->{$gff_source} : $analysis_hash->{WormBase});
+        -analysis  => (exists $analysis_hash->{$gff_source}) ? $analysis_hash->{$gff_source} : $analysis_hash->{wormbase});
 
       my ($tr_st_ex, $tr_en_ex, $tr_st_off, $tr_en_off);
 
