@@ -58,6 +58,7 @@ use Getopt::Long qw(:config no_ignore_case);
 use Bio::EnsEMBL::Pipeline::DBSQL::DBAdaptor;
 use Bio::EnsEMBL::DBSQL::DBAdaptor;
 use Bio::EnsEMBL::Pipeline::Analysis;
+use Bio::EnsEMBL::Utils::Exception qw(throw warning);
 
 sub usage {
   exec( 'perldoc', $0 );
