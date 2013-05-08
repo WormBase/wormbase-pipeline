@@ -13,16 +13,20 @@ my $verbose;
 my $list_all;
 my $output;
 my $species;
+my $wormpipe_dump;
 my ($store, $test, $debug);
 
 GetOptions ( "verbose"   => \$verbose,
 	     "list=s"    => \$list_all,
 	     "output=s"  => \$output,
+	     "dumpdir:s" => \$wormpipe_dump,
 	     "species=s" => \$species,
 	     "store:s"   => \$store,
 	     "test"      => \$test,
 	     "debug:s"   => \$debug,
 	   );
+
+$wormpipe_dump ||= $ENV{'PIPELINE'}.'/dumps';
 
 my $wormbase;
 if ( $store ) {
@@ -35,7 +39,6 @@ if ( $store ) {
 
 my $log = Log_files->make_build_log($wormbase);
 
-my $wormpipe_dump = $wormbase->farm_dump;
 my $acc2db   = "$wormpipe_dump/acc2db.dbm";
 my $desc     = "$wormpipe_dump/desc.dbm";
 my $peptide  = "$wormpipe_dump/peptide.dbm";

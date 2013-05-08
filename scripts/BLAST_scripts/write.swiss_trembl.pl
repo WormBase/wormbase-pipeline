@@ -14,7 +14,7 @@ use GSI;
 use Wormbase;
 use File::Copy;
 
-my ($swiss, $trembl, $debug, $database, $list, $old);
+my ($swiss, $trembl, $debug, $database, $list, $old, $wormpipe_dump);
 my ($test, $store);
 # $old is for switch back to protein model
 GetOptions (
@@ -23,10 +23,13 @@ GetOptions (
 	    "database:s" => \$database,
 	    "list"       => \$list,
 	    "old"        => \$old,
+	    "dumpdir:s"  => \$wormpipe_dump,
 	    "debug:s"    => \$debug,
 	    "test"       => \$test,
-	    "store:s"    => \$store
+	    "store:s"    => \$store,
 	  );
+
+$wormpipe_dump ||= $ENV{'PIPELINE'}.'/dumps';
 
 my $wormbase;
 if ( $store ) {
@@ -40,7 +43,6 @@ if ( $store ) {
 my $log = Log_files->make_build_log($wormbase);
 
 my $acefiles  = $wormbase->acefiles;
-my $wormpipe_dump     = $wormbase->farm_dump;
 my $output_swiss      = "$wormpipe_dump/swissproteins.ace";
 my $output_trembl     = "$wormpipe_dump/tremblproteins.ace";
 my $swiss_list_txt    = "$wormpipe_dump/swisslist.txt";
