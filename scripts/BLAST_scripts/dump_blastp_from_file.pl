@@ -121,9 +121,9 @@ my $db_files_dir  = "$wormpipe_dir/swall_data";
 my $dbm_files_dir = "$wormpipe_dir/dumps";
 
 my %file_mapping = ( 
-	"$db_files_dir/swissprot2org" => '/tmp/swissprot2org',
-	"$db_files_dir/trembl2org"    => '/tmp/trembl2org',
-	"$dbm_files_dir/acc2db.dbm" => '/tmp/acc2db.dbm',
+	"$db_files_dir/swissprot2org" => '/tmp/${species}_swissprot2org',
+	"$db_files_dir/trembl2org"    => '/tmp/${species}_trembl2org',
+	"$dbm_files_dir/acc2db.dbm" => '/tmp/${species}_acc2db.dbm',
 );
 while (my($from,$to)=each %file_mapping ){
   unlink $to if -e $to;
@@ -131,10 +131,10 @@ while (my($from,$to)=each %file_mapping ){
 }
 
 my (%SWISSORG, %TREMBLORG);
-tie (%SWISSORG, 'DB_File', "/tmp/swissprot2org", O_RDWR|O_CREAT, 0666, $DB_HASH) or $log->log_and_die("cannot open swissprot2org DBM file /tmp/swissprot2org\n");
+tie (%SWISSORG, 'DB_File', "/tmp/${species}_swissprot2org", O_RDWR|O_CREAT, 0666, $DB_HASH) or $log->log_and_die("cannot open swissprot2org DBM file /tmp/${species}_swissprot2org\n");
 unless (-s "$db_files_dir/swissprot2des") { $log->log_and_die("swissprot2des not found or empty");}
 
-tie (%TREMBLORG, 'DB_File', "/tmp/trembl2org", O_RDWR|O_CREAT, 0666, $DB_HASH) or $log->log_and_die("cannot open /tmp/trembl2org DBM file\n");
+tie (%TREMBLORG, 'DB_File', "/tmp/${species}_trembl2org", O_RDWR|O_CREAT, 0666, $DB_HASH) or $log->log_and_die("cannot open /tmp/${species}_trembl2org DBM file\n");
 unless (-s "$db_files_dir/trembl2des") { $log->log_and_die("trembl2des not found or empty");}
 
 # gene CE info from COMMON_DATA files
@@ -167,7 +167,7 @@ print "opening $recip_file";
 open (RECIP,">$recip_file") or $log->log_and_die("cant open recip file $recip_file: $!\n");
 
 our %ACC2DB;
-tie (%ACC2DB, 'DB_File', "/tmp/acc2db.dbm", O_RDWR|O_CREAT, 0666, $DB_HASH) or warn "cannot open /tmp/acc2db.dbm \n";
+tie (%ACC2DB, 'DB_File', "/tmp/${species}_acc2db.dbm", O_RDWR|O_CREAT, 0666, $DB_HASH) or warn "cannot open /tmp/${species}_acc2db.dbm \n";
 
 
 my $count;
