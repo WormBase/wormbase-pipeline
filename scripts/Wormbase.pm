@@ -437,11 +437,8 @@ sub test_user_wormpub {
   my $self = shift;
   my $name = `whoami`;
   chomp $name;
-  if ( "$name" eq "wormpub" ) {
-    print "running scripts as user wormpub . . . \n\n";
-    return 1;
-  }
-  elsif ($name eq "wormpipe") {
+  if ( $name eq "wormpub" or $name eq "wormbase" or $name eq "wormpipe") {
+    print "running scripts as user $name . . . \n\n";
     return 1;
   }
   elsif ($self->test) {
