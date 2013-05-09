@@ -6,8 +6,8 @@
 # A simple script to send a check list to the person who will be performing the next
 # build to check the current build
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2013-01-29 19:51:06 $
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2013-05-09 14:38:08 $
 use strict;
 use warnings;
 use lib $ENV{'CVS_DIR'};
@@ -103,7 +103,7 @@ if($clones) {
   } elsif ($wb->species eq 'japonica') {
     @clones = qw(Cjap.Contig0 Cjap.Contig10 Cjap.Contig15 Cjap.Contig30 Cjap.Contig100 Cjap.Contig200 Cjap.Contig300 Cjap.Contig500 Cjap.Contig800);
   } elsif ($wb->species eq 'brugia') {
-    @clones = qw(1512607 1512612 1512619 1512644m 1512649 1512661 1512663m 1512684);
+    @clones = qw(Bmal_v3_scaffold968 Bmal_v3_scaffold481 Bmal_v3_scaffold56 Bmal_v3_scaffold921 Bmal_v3_scaffold1819 Bmal_v3_scaffold1229 Bmal_v3_scaffold1007 Bmal_v3_scaffold2080);
   } elsif ($wb->species eq 'pristionchus') {
     @clones = qw(Ppa_Contig0 Ppa_Contig10 Ppa_Contig15 Ppa_Contig30 Ppa_Contig100 Ppa_Contig200);
   }
