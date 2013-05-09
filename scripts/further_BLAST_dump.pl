@@ -6,8 +6,8 @@
 #
 # Author: Chao-Kung CHen
 #
-# Last updated by: $Author: klh $
-# Last updated on: $Date: 2012-11-16 16:20:24 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2013-05-09 09:43:49 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -18,15 +18,18 @@ use File::Path;
 use Storable;
 use Carp;
 
-my ($help, $debug, $test, $verbose, $store, $wormbase);
+my ($help, $debug, $test, $verbose, $store, $wormbase, $source_dir);
 my $species;
 GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
 	    "test"       => \$test,
 	    "verbose"    => \$verbose,
-	    "store:s"      => \$store,
-	    "species:s"  => \$species
+	    "store:s"    => \$store,
+	    "species:s"  => \$species,
+	    "sourcedir:s"=> \$source_dir,
 	  );
+
+$source_dir ||= $ENV{'PIPELINE'}.'/dumps';
 
 if ( $store ) {
   $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
@@ -39,7 +42,6 @@ if ( $store ) {
 
 $species = $wormbase->species;
 my $log = Log_files->make_build_log($wormbase);
-my $source_dir = $wormbase->farm_dump;
 my $farm_ace = "$source_dir/../ace_files"; 
 my $target_dir = $wormbase->acefiles;
 my $backup_dir = "$source_dir/BACKUP/";
