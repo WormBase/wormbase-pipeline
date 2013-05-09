@@ -1,4 +1,4 @@
-#!/usr/bin/env perl
+#/usr/bin/env perl
 #===============================================================================
 #
 #         FILE:  worm_lite.pl
@@ -28,16 +28,17 @@ use lib "$FindBin::Bin/../lib";
 use WormBase;
 use DBI qw(:sql_types);
 
-my ( $debug, $species, $setup, $dna, $genes, $test,$store, $yfile, $agp );
+my ( $debug, $species, $setup, $dna, $genes, $test, $yfile,$pipeline_setup);
 
 GetOptions(
-  'species=s'  => \$species,
-  'setup'      => \$setup,
-  'load_dna'   => \$dna,
-  'load_genes' => \$genes,
-  'debug'      => \$debug,
-  'test'       => \$test,
-  'yfile=s'    => \$yfile,
+  'species=s'     => \$species,
+  'setup'         => \$setup,
+  'load_dna'      => \$dna,
+  'load_genes'    => \$genes,
+  'load_pipeline' => \$pipeline_setup,
+  'debug'         => \$debug,
+  'test'          => \$test,
+  'yfile=s'       => \$yfile,
 
 ) || die("bad commandline parameter\n");
 
@@ -45,6 +46,7 @@ GetOptions(
 die "You must supply a valid YAML config file\n" if not defined $yfile or not -e $yfile;
 
 my $global_config = YAML::LoadFile($yfile);
+my $generic_config = $global_config->{generics};
 my $config = $global_config->{$species};
 if (not $config) {
   die "Could not find config entry for species $species\n";
@@ -55,18 +57,18 @@ if ($test) {
 }
 my $cvsDIR = $test
   ? $global_config->{test}->{cvsdir}
-  : $global_config->{generics}->{cvsdir};
+  : $generic_config->{cvsdir};
 
 
 my ($prod_db_host, $prod_db_port, $prod_db_name) = 
-    ($global_config->{generics}->{ensprod_host},
-     $global_config->{generics}->{ensprod_port},
-     $global_config->{generics}->{ensprod_dbname});
+    ($generic_config->{ensprod_host},
+     $generic_config->{ensprod_port},
+     $generic_config->{ensprod_dbname});
 
 my ($tax_db_host, $tax_db_port, $tax_db_name) = 
-    ($global_config->{generics}->{taxonomy_host},
-     $global_config->{generics}->{taxonomy_port},
-     $global_config->{generics}->{taxonomy_dbname});
+    ($generic_config->{taxonomy_host},
+     $generic_config->{taxonomy_port},
+     $generic_config->{taxonomy_dbname});
 
 
 $WormBase::Species = $species;
@@ -74,6 +76,8 @@ $WormBase::Species = $species;
 &setupdb() if $setup;
 &load_assembly()   if $dna;
 &load_genes() if $genes;
+&load_rules_and_input_ids() if $pipeline_setup;
+
 exit(0);
 
 
@@ -144,11 +148,11 @@ sub setupdb {
 
     my @ana_conf_files;
 
-    if ($global_config->{generics}->{confdir}) {
-      push @ana_conf_files, $global_config->{generics}->{confdir} . "/analysis.conf";
+    if ($generic_config->{analysisconf}) {
+      push @ana_conf_files, $generic_config->{analysisconf};
     }
-    if ($config->{confdir}) {
-      push @ana_conf_files, $config->{confdir} . "/analysis.conf";
+    if ($config->{analysisconf}) {
+      push @ana_conf_files, $config->{analysisconf};
     }
     
     foreach my $cfile (@ana_conf_files) {
@@ -167,7 +171,7 @@ sub setupdb {
   $@ and die("Error while building the database: $@");
 }
 
-# load genome sequences
+##############################################
 sub load_assembly {
   
   my $db = $config->{database};
@@ -277,7 +281,7 @@ sub load_assembly {
 
 }
 
-
+#############################################
 sub load_genes {
 
   my $db = $config->{database};
@@ -372,3 +376,57 @@ sub load_genes {
   $dba->dbc->do("INSERT INTO meta (meta_key,meta_value) VALUES (\"genebuild.start_date\",\"$timestamp\")");
 }
 
+
+#############################################
+sub load_rules_and_input_ids {
+  my $db = $config->{database};
+
+  my @conf_files;
+  foreach my $path ($generic_config->{ruleconf}, $config->{ruleconf}) {
+    if ($path) {
+      foreach my $file (split(/,/, $path)) {
+        if (-e $file) {
+          push @conf_files, $file;
+        } else {
+          die "Rule config file $file could not be found\n";
+        } 
+      }
+    }
+  }
+    
+  my $load_rule_base = "perl $cvsDIR/ensembl-pipeline/scripts/rule_setup.pl "
+      . "-dbhost $db->{host} "
+      . "-dbuser $db->{user} "
+      . "-dbpass $db->{password} "
+      . "-dbname $db->{dbname} "
+      . "-dbport $db->{port} "
+      . "-read "
+      . "-file ";
+    
+  foreach my $cfile (@conf_files) {
+    if (-e $cfile) {
+      print "Loading rules from $cfile...\n";
+      my $cmd = "$load_rule_base $cfile";
+      print "Running: $cmd\n";
+      system($cmd) and die "Could not load analyses from $cfile\n";
+    } else {
+      die "Could not find analysis config file $cfile\n";
+    }
+  }
+
+  my $load_input_ids_base =  "perl $cvsDIR/ensembl-pipeline/scripts/make_input_ids "
+      . "-dbhost $db->{host} "
+      . "-dbuser $db->{user} "
+      . "-dbpass $db->{password} "
+      . "-dbname $db->{dbname} "
+      . "-dbport $db->{port} ";
+
+  my $slice_cmd = "$load_input_ids_base -slice -slice_size 75000 -coord_system toplevel -logic_name submitslice75k -input_id_type SLICE75K";
+  my $trids_cmd = "$load_input_ids_base -translation_id -logic submittranslation";
+
+  foreach my $cmd ($slice_cmd, $trids_cmd) {
+    print "Running: $cmd\n";
+    system($cmd) and die "Could not successfully make input ids\n";
+  }
+
+}
