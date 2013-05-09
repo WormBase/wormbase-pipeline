@@ -5,7 +5,7 @@
 # written by Anthony Rogers
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2013-05-08 14:30:15 $
+# Last edited on: $Date: 2013-05-09 09:59:43 $
 #
 # it depends on:
 #    wormpep + history
@@ -37,15 +37,14 @@ use YAML;
 
 
 my ( $species, $update_dna, $clean_blasts, $update_analysis, $update_genes);
-my ( $run_brig, $copy, $WS_version,$prep_dump, $cleanup);
-my ( $debug, $test, $store, $wormbase, $log, $WP_version,$yfile_name, $do_blats);
+my ( $run_brig, $copy, $WS_version, $cleanup);
+my ( $debug, $test, $store, $wormbase, $log, $WP_version,$yfile_name, $wormpipe_dir, $do_blats);
 my $errors = 0;    # for tracking global error - needs to be initialised to 0
 
 GetOptions(
 	   'update_dna'      => \$update_dna,
 	   'update_genes'    => \$update_genes,
 	   'update_analysis' => \$update_analysis,
-	   'prep_dump'       => \$prep_dump,
 	   'version=s'       => \$WS_version,
 	   'cleanup'         => \$cleanup,
 	   'debug=s'         => \$debug,
@@ -56,11 +55,19 @@ GetOptions(
 	   'copy'            => \$copy,
 	   'yfile=s'         => \$yfile_name,
            'doblat'          => \$do_blats,
+           'wormpipedir=s'       => \$wormpipe_dir,
 	  )
   || die('cant parse the command line parameter');
 
-my $wormpipe_dir = $ENV{'PIPELINE'};
-my $scripts_dir  = $ENV{'CVS_DIR'};
+$wormpipe_dir = $ENV{PIPELINE} if not defined $wormpipe_dir and exists $ENV{PIPELINE};
+$yfile_name   = "$Bin/ENSEMBL/etc/ensembl_lite.conf" if not defined $yfile_name;
+
+if (not defined $wormpipe_dir or not -d $wormpipe_dir) {
+  die "You must supply a valid path wormpipedir\n";
+} 
+if (not defined $yfile_name or not -e $yfile_name) {
+  die "You must supply a valid yfile\n";
+}
 
 # defaults
 my $organism = ( $species || 'Elegans' );
@@ -93,13 +100,6 @@ $species =~ tr/[A-Z]/[a-z]/;
 # worm_ensembl configuration part
 my $species_ = ref $wormbase;
 $species =~ s/^[A-Z]/[a-z]/;
-
-$yfile_name = $ENV{'CVS_DIR'} . "/ENSEMBL/etc/ensembl_lite.conf" if not defined $yfile_name;
-
-# the following expands any shell shortcut chars, e.g. ~
-($yfile_name) = glob("$yfile_name");
-die ("Could not find conf file $yfile_name\n") if not -e $yfile_name;
-
 
 my $whole_config = YAML::LoadFile($yfile_name);
 my $config = $whole_config->{$species};
@@ -167,34 +167,6 @@ $log->write_to("\nFinished setting up MySQL databases\n\n");
 ################ cleanup dodgy blast hits -clean_blasts ##################
 &clean_blasts( $raw_dbh, \%worm_dna_processIDs, \%wormprotprocessIDs ) if ($clean_blasts && !$test);  # if testing don't clean up
 
-################## -prep_dump #####################################
-if ($prep_dump && !$test) {
-  
-  # prepare helper files gff2cds and gff2cos
-  my $autoace = $wormbase->autoace;
-  my $wormpep = $wormbase->wormpep;
-  if ( lc(ref $wormbase) eq 'elegans' && -e $wormbase->gff_splits . "/CHROMOSOME_X_curated.gff" ) {
-    $wormbase->run_command(
-			   "cat "
-			   . $wormbase->gff_splits
-			   . "/CHROMOSOME_*_curated.gff | $scripts_dir/BLAST_scripts/gff2cds.pl "
-			   . "> $wormpipe_dir/Elegans/cds$WS_version.gff",
-			   $log
-			  );
-    $wormbase->run_command(
-			   "cat "
-			   . $wormbase->gff_splits
-			   . "/CHROMOSOME_*_Genomic_canonical.gff | $scripts_dir/BLAST_scripts/gff2cos.pl "
-			   . "> $wormpipe_dir/Elegans/cos$WS_version.gff",
-			   $log
-			  );
-    system("touch $wormpipe_dir/DUMP_PREP_RUN");
-  } elsif(lc(ref $wormbase) ne 'elegans'){
-    system("touch $wormpipe_dir/DUMP_PREP_RUN");
-  } else { die( " cant find GFF files at " . $wormbase->gff_splits . "\n " ) }
-  
-}
-
 ##################### -cleanup ##################################
 if ($cleanup && !$test) {
   $log->write_to("clearing up files generated in this build\n");
@@ -232,10 +204,7 @@ if ($cleanup && !$test) {
   
   $log->write_to("Removing . . . \n\t$clear_dump/*.ace\n");
   system("rm -f $clear_dump/*.ace $clear_dump/*.log") and warn "cant remove ace and log files from $clear_dump";
-  
-  $log->write_to ("\nRemoving the $wormpipe_dir/DUMP_PREP_RUN lock file\n");
-  system("rm -f $wormpipe_dir/DUMP_PREP_RUN") && warn "cant remove $wormpipe_dir/DUMP_PREP_RUN\n";
-  
+    
   $log->write_to("\nRemoving farm output and error files from $wormpipe_dir/*\n") if $debug;
   my $scratch_dir = $wormpipe_dir;
 
@@ -879,7 +848,7 @@ __END__
 
 =head1 USAGE
 
-wormBLAST.pl -copy -prep_dump ...
+wormBLAST.pl -copy ...
 
 Options
 
@@ -894,10 +863,6 @@ updates the genes (removes old genes + protein features)
 =head2 -update_analysis
 
 updates the blast and blat databases to the last version
-
-=head2 -prep_dump
-
-prepares helper files for dumping (do we need this?)
 
 =head2 -version XYZ
 
