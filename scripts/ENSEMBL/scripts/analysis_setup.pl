@@ -217,6 +217,7 @@ sub parse_files {
     my $ext_ana = $db->get_AnalysisAdaptor->fetch_by_logic_name($h);
 
     foreach my $field ('db_file',
+                       'db',
                        'db_version',
                        'program',
                        'program_version',
