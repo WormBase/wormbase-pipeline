@@ -92,7 +92,7 @@ sub chromosome_names {
        my @sequences = $assembly->Sequences;
 
        open (my $outf,">${\$self->common_data}/toplevel_seqs.lst") || die($!);
-       map {print $outf "$_\n"} @sequences;
+       map {print $outf "$_\n"} sort {$a->at('DNA')->right(2) <=> $b->at('DNA')->right(2)} @sequences;
        close $outf;
     }
     
