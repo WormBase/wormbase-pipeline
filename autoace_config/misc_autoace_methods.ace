@@ -2636,9 +2636,9 @@ Colour BLACK
 Score_by_width 
 Score_bounds 0.000000 100.000000
 Allow_misalign
-GFF_source "RNASeq"
-GFF_feature "RNASeq"
-GFF_SO "SO:0000039" // match_part
+GFF_source "RNASeq_reads"
+GFF_feature "transcript_regions"
+GFF_SO "SO:0000833" // transcript_region
 
 
 // regions where there is more than 5 times the number of reads from
@@ -2649,9 +2649,9 @@ Colour GREEN
 Score_by_width 
 Score_bounds 0.000000 1000.000000
 Allow_misalign
-GFF_source "RNASeq"
-GFF_feature "RNASeq_F_asymmetry"
-GFF_SO "SO:0000039" // match_part
+GFF_source "RNASeq_F_asymmetry"
+GFF_feature "transcript_region"
+GFF_SO "SO:0000833" // transcript_region
 
 
 // regions where there is more than 5 times the number of reads from
@@ -2662,9 +2662,9 @@ Colour RED
 Score_by_width 
 Score_bounds 0.000000 1000.000000
 Allow_misalign
-GFF_source "RNASeq"
-GFF_feature "RNASeq_R_asymmetry"
-GFF_SO "SO:0000039" // match_part
+GFF_source "RNASeq_R_asymmetry"
+GFF_feature "transcript_region"
+GFF_SO "SO:0000833" // transcript_region
 
 
 
