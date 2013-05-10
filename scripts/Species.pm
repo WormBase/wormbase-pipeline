@@ -89,10 +89,11 @@ sub chromosome_names {
        die("cannot find species ${\$self->full_name} in ${\$self->autoace}\n") unless $species;
 
        my $assembly = $species->Assembly;
-       my @sequences = $assembly->Sequences;
+       my @sequences = $assembly->follow(-tag=>'Sequences',-filled=>'DNA');
 
        open (my $outf,">${\$self->common_data}/toplevel_seqs.lst") || die($!);
-       map {print $outf "$_\n"} sort {$a->at('DNA')->right(2) <=> $b->at('DNA')->right(2)} @sequences;
+       map {print "$_ is crap\n" unless $_->at('DNA')}@sequences;
+       map {print $outf "$_\n"} sort {$b->at('DNA')->right(2) <=> $a->at('DNA')->right(2)} @sequences;
        close $outf;
     }
     
