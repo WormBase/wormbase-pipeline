@@ -5,7 +5,7 @@
 # written by Anthony Rogers
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2013-05-09 09:59:43 $
+# Last edited on: $Date: 2013-05-10 14:06:15 $
 #
 # it depends on:
 #    wormpep + history
@@ -34,32 +34,33 @@ use File::Copy;
 use Storable;
 use YAML;
 
-
-
 my ( $species, $update_dna, $clean_blasts, $update_analysis, $update_genes);
 my ( $run_brig, $copy, $WS_version, $cleanup);
-my ( $debug, $test, $store, $wormbase, $log, $WP_version,$yfile_name, $wormpipe_dir, $do_blats);
+my ( $debug, $test, $store, $wormbase, $log, $WP_version,$yfile_name, $do_blats);
 my $errors = 0;    # for tracking global error - needs to be initialised to 0
 
 GetOptions(
-	   'update_dna'      => \$update_dna,
-	   'update_genes'    => \$update_genes,
-	   'update_analysis' => \$update_analysis,
-	   'version=s'       => \$WS_version,
-	   'cleanup'         => \$cleanup,
-	   'debug=s'         => \$debug,
-	   'test'            => \$test,
-	   'store:s'         => \$store,
-	   'species=s'       => \$species,
-	   'clean_blasts'    => \$clean_blasts,
-	   'copy'            => \$copy,
-	   'yfile=s'         => \$yfile_name,
-           'doblat'          => \$do_blats,
-           'wormpipedir=s'       => \$wormpipe_dir,
+  'update_dna'      => \$update_dna,
+  'update_genes'    => \$update_genes,
+  'update_analysis' => \$update_analysis,
+  'version=s'       => \$WS_version,
+  'cleanup'         => \$cleanup,
+  'debug=s'         => \$debug,
+  'test'            => \$test,
+  'store:s'         => \$store,
+  'species=s'       => \$species,
+  'clean_blasts'    => \$clean_blasts,
+  'copy'            => \$copy,
+  'yfile=s'         => \$yfile_name,
+  'doblat'          => \$do_blats,
 	  )
   || die('cant parse the command line parameter');
 
-$wormpipe_dir = $ENV{PIPELINE} if not defined $wormpipe_dir and exists $ENV{PIPELINE};
+my $wormpipe_dir    = $ENV{PIPELINE} || "/tmp";
+my $worm_group_name = $ENV{WORM_GROUP_NAME} || "worm";
+my $wu_blast_path   = $ENV{WU_BLAST_PATH} || "";
+my $ncbi_blast_path = $ENV{NCBI_BLAST_PATH} || "";
+
 $yfile_name   = "$Bin/ENSEMBL/etc/ensembl_lite.conf" if not defined $yfile_name;
 
 if (not defined $wormpipe_dir or not -d $wormpipe_dir) {
@@ -68,9 +69,6 @@ if (not defined $wormpipe_dir or not -d $wormpipe_dir) {
 if (not defined $yfile_name or not -e $yfile_name) {
   die "You must supply a valid yfile\n";
 }
-
-# defaults
-my $organism = ( $species || 'Elegans' );
 
 if ($store) {
   $wormbase = retrieve($store)
@@ -81,10 +79,11 @@ else {
 			    -debug    => $debug,
 			    -test     => $test,
 			    -version  => $WS_version,
-			    -organism => $organism,
+			    -organism => $species,
 			   );
 }
 
+$species ||= $wormbase->species;
 # establish log file. Can't use make_build_log if the BUILD/autoace directory has been moved to DATABASES
 $log = Log_files->make_log("/tmp/wormBLAST.$$",$wormbase->debug);
 
@@ -94,16 +93,10 @@ my $WS_old = $WS_version - 1;
 my $last_build_DBs  = "$wormpipe_dir/BlastDB/databases_used_WS$WS_old";
 my $database_to_use = "$wormpipe_dir/BlastDB/databases_used_WS$WS_version";
 
-$species ||= ref $wormbase;
-$species =~ tr/[A-Z]/[a-z]/;
-
-# worm_ensembl configuration part
-my $species_ = ref $wormbase;
-$species =~ s/^[A-Z]/[a-z]/;
-
 my $whole_config = YAML::LoadFile($yfile_name);
 my $config = $whole_config->{$species};
 my $generic_config = $whole_config->{generics};
+my $ensembl_code_dir = $generic_config->{cvsdir};
 
 our $gff_types = ( $config->{gff_types} || "curated coding_exon" );
 
@@ -214,7 +207,7 @@ if ($cleanup && !$test) {
     my $species_dir = 'ensembl-' . $wb->species;
     system( "rm -fr $scratch_dir/$species_dir");
     mkdir("$scratch_dir/$species_dir", 0775); # so remake it
-    system("chgrp $ENV{'WORM_GROUP_NAME'} $scratch_dir/$species_dir"); # change group to nucleotide
+    system("chgrp $worm_group_name $scratch_dir/$species_dir"); # change group to nucleotide
     system("chmod g+ws $scratch_dir/$species_dir"); # group writable and inherit group
   }
 
@@ -395,8 +388,8 @@ sub update_blast_dbs {
 	
 	# make blastable database
 	$log->write_to("\tmaking blastable database for $1\n");
-	$wormbase->run_command( "$ENV{'WU_BLAST_PATH'}/xdformat -p $wormpipe_dir/BlastDB/$whole_file", $log );
-	$wormbase->run_command( "$ENV{'NCBI_BLAST_PATH'}/makeblastdb -dbtype prot -title $1 -in $wormpipe_dir/BlastDB/$whole_file", $log ) if ($1 eq 'wormpep');
+	$wormbase->run_command( "$wu_blast_path/xdformat -p $wormpipe_dir/BlastDB/$whole_file", $log );
+	$wormbase->run_command( "$ncbi_blast_path/makeblastdb -dbtype prot -title $1 -in $wormpipe_dir/BlastDB/$whole_file", $log ) if ($1 eq 'wormpep');
 
 	push( @_updated_DBs, $1 );
 	
@@ -466,13 +459,11 @@ sub update_dna {
   my ($dbh) = @_;
   $log->write_to ("Updating mysql databases with new clone and protein info\n");
   
-  # parse it and if different recreate the whole database, as we don't want to fiddle around with coordinates for the time being
-  
   $log->write_to("Updating DNA sequences in mysql database\n-=-=-=-=-=-=-=-=-=-=-\n");
   
   # worm_lite.pl magic
   my $species = $wormbase->species;
-  $wormbase->run_command( "perl $ENV{'CVS_DIR'}/ENSEMBL/scripts/worm_lite.pl -yfile $yfile_name -setup -load_dna -load_genes -species $species", $log );
+  $wormbase->run_command( "perl $Bin/ENSEMBL/scripts/worm_lite.pl -yfile $yfile_name -setup -load_dna -load_genes -species $species", $log );
   
   # create analys_tables and rules
   my $db_options = sprintf(
@@ -480,7 +471,7 @@ sub update_dna {
 			   $config->{database}->{host},   $config->{database}->{user}, $config->{database}->{password},
 			   $config->{database}->{dbname}, $config->{database}->{port}
 			  );
-  my $pipeline_scripts = "$ENV{'WORM_PACKAGES'}/ensembl/ensembl-pipeline/scripts";
+  my $pipeline_scripts = "$ensembl_code_dir/ensembl-pipeline/scripts";
   my $generic_conf_dir         = ($generic_config->{confdir}||die("please set a generic confdir in $yfile_name\n"));
   
   $wormbase->run_command( "perl $pipeline_scripts/rule_setup.pl $db_options -read -file $generic_conf_dir/core_rule.conf", $log );
@@ -491,10 +482,7 @@ sub update_dna {
     $wormbase->run_command( "perl $pipeline_scripts/rule_setup.pl $db_options -read -file $generic_conf_dir/genblast_rule.conf", $log );
   }
 
-  #$wormbase->run_command("perl $pipeline_scripts/make_input_ids $db_options -translation_id -logic SubmitTranslation", $log );
-  $wormbase->run_command("perl $pipeline_scripts/make_input_ids $db_options -slice -slice_size 75000 -coord_system toplevel -logic_name SubmitSlice75k -input_id_type Slice75k",$log);
-
-
+  $wormbase->run_command("perl $pipeline_scripts/make_input_ids $db_options -slice -slice_size 75000 -coord_system toplevel -logic_name submitslice75k -input_id_type SLICE75K",$log);
   return 1;
 }
 
@@ -544,10 +532,9 @@ sub update_proteins {
 			   $config->{database}->{host},   $config->{database}->{user}, $config->{database}->{password},
         $config->{database}->{dbname}, $config->{database}->{port}
 			  );
-  my $pipeline_scripts = "$ENV{'WORM_PACKAGES'}/ensembl/ensembl-pipeline/scripts";
   
-  $wormbase->run_command("perl $ENV{'CVS_DIR'}/ENSEMBL/scripts/worm_lite.pl -yfile $yfile_name -load_genes -species $species", $log );
-  $wormbase->run_command("perl $pipeline_scripts/make_input_ids $db_options -translation_id -logic SubmitTranslation", $log );
+  $wormbase->run_command("perl $Bin/ENSEMBL/scripts/worm_lite.pl -yfile $yfile_name -load_genes -species $species", $log );
+  $wormbase->run_command("perl $ensembl_code_dir/ensembl-pipelines/scripts/make_input_ids $db_options -translation_id -logic submittranslation", $log );
 }
 
 =head2 delete_gene_by_translation [UNUSED]
@@ -691,7 +678,7 @@ sub update_analysis {
       # do we want to update this blast database?
       if (!$old_db_version || $old_db_version ne $latest_db_version) {
       
-	my $latest_db_file_path = "$ENV{'PIPELINE'}/BlastDB/$latest_db_version";
+	my $latest_db_file_path = "$wormpipe_dir/BlastDB/$latest_db_version";
 
 	my $analysis_id = $analysis->dbID;
 
@@ -797,7 +784,7 @@ sub get_db_version {
 
   my $WS = $wormbase->get_wormbase_version;
 
-  my $version_file = "$ENV{'PIPELINE'}/BlastDB/databases_used_WS${WS}";
+  my $version_file = "$wormpipe_dir/BlastDB/databases_used_WS${WS}";
 
   my $db_version;
 
