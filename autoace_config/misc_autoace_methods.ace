@@ -1286,6 +1286,11 @@ Colour "LIGHTGREEN"
 Remark "wublastp search of Wormpep vs Pristionchus pacificus peptides"
 
 
+Method : "wublastp_brugia"
+Colour "LIGHTGREEN"
+Remark "wublastp search of Wormpep vs Brugia malayi peptides"
+
+
 Method : "wublastx_worm" 
 Colour "DARKBLUE"
 Frame_sensitive
