@@ -308,7 +308,7 @@ while( my $slice = shift @slices) {
       dbid         => $simpfeature->dbID,
       logic_name   => $simpfeature->analysis->logic_name,
       gff_source   => (defined $simpfeature->analysis->gff_source) ? $simpfeature->analysis->gff_source : "WormBase",
-      feature_type => (defined $simplefeature->analysis->gff_feature) ? $simplefeature->analysis->gff_feature : $simpfeature->analysis->logic_name,
+      feature_type => (defined $simpfeature->analysis->gff_feature) ? $simpfeature->analysis->gff_feature : $simpfeature->analysis->logic_name,
     };
     print $out_fh dump_feature($stripped_simpfeature);
   }
