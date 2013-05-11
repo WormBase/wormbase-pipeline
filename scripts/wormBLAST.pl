@@ -5,7 +5,7 @@
 # written by Anthony Rogers
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2013-05-10 14:06:15 $
+# Last edited on: $Date: 2013-05-11 09:12:49 $
 #
 # it depends on:
 #    wormpep + history
@@ -36,7 +36,7 @@ use YAML;
 
 my ( $species, $update_dna, $clean_blasts, $update_analysis, $update_genes);
 my ( $run_brig, $copy, $WS_version, $cleanup);
-my ( $debug, $test, $store, $wormbase, $log, $WP_version,$yfile_name, $do_blats);
+my ( $debug, $test, $store, $wormbase, $log, $WP_version,$yfile_name, $do_blats, $do_genblast);
 my $errors = 0;    # for tracking global error - needs to be initialised to 0
 
 GetOptions(
@@ -53,6 +53,7 @@ GetOptions(
   'copy'            => \$copy,
   'yfile=s'         => \$yfile_name,
   'doblat'          => \$do_blats,
+  'dogenblast'      => \$do_genblast,
 	  )
   || die('cant parse the command line parameter');
 
@@ -478,7 +479,7 @@ sub update_dna {
   if ($do_blats) {
     $wormbase->run_command( "perl $pipeline_scripts/rule_setup.pl $db_options -read -file $generic_conf_dir/blat_rule.conf", $log );
   }
-  if ($species ne 'elegans') {
+  if ($do_genblast) {
     $wormbase->run_command( "perl $pipeline_scripts/rule_setup.pl $db_options -read -file $generic_conf_dir/genblast_rule.conf", $log );
   }
 
@@ -754,13 +755,17 @@ sub update_analysis {
   
   # update BLAT stuff
   my $db_options = sprintf('-user %s -password %s -host %s -port %i -dbname %s', 
-			   $config->{database}->{user}, $config->{database}->{password},$config->{database}->{host},$config->{database}->{port},$config->{database}->{dbname});
+			   $config->{database}->{user}, 
+                           $config->{database}->{password},
+                           $config->{database}->{host},
+                           $config->{database}->{port},
+                           $config->{database}->{dbname});
   if ($do_blats) {
     $wormbase->run_script( "BLAST_scripts/ensembl_blat.pl $db_options -species $species", $log );    
   }  
 
   # update genBlastG stuff - not done for elegans as it projects elegans proteins onto a non-elegans genome
-  if ($species ne 'elegans') {
+  if ($do_genblast) {
     $wormbase->run_script( "BLAST_scripts/ensembl_genblast.pl $db_options -species $species", $log );
   }
 }
@@ -784,11 +789,9 @@ sub get_db_version {
 
   my $WS = $wormbase->get_wormbase_version;
 
-  my $version_file = "$wormpipe_dir/BlastDB/databases_used_WS${WS}";
-
   my $db_version;
 
-  open (VF, "< $version_file") || $log->log_and_die("Can't open file $version_file\n");
+  open (VF,  $database_to_use) || $log->log_and_die("Can't open file $database_to_use\n");
   while (my $line = <VF>) {
     chomp $line;
     if ($line =~ /^$db_name/) {
@@ -799,7 +802,7 @@ sub get_db_version {
   close (VF);
 
   if (!defined $db_version) {
-    $log->log_and_die ("Can't find the latest version of the BLAST database file for '$db_name' in the versions file: $version_file\n");
+    $log->log_and_die ("Can't find the latest version of the BLAST database file for '$db_name' in the versions file: $database_to_use\n");
   }
 
   return $db_version;
