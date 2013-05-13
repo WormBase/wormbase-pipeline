@@ -7,7 +7,7 @@
 # This is a example of a good script template
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-04-30 15:32:58 $
+# Last updated on: $Date: 2013-05-13 18:23:42 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -165,9 +165,9 @@ if ($infile) {
 } else {
   my @chromosomes = $wormbase->get_chromosome_names( -mito => 1, -prefix => 1 );
   if ($gff3) {
-    @gff_files = map { $wormbase->GFF_file_name($_) } @chromosomes;
-  } else {
     @gff_files = map { $wormbase->GFF3_file_name($_) } @chromosomes;
+  } else {
+    @gff_files = map { $wormbase->GFF_file_name($_) } @chromosomes;
   }
 }
 
