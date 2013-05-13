@@ -7,7 +7,7 @@
 # script for creating extra GFF lines to indicate those genes that are landmark genes
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2013-05-13 20:46:47 $
+# Last edited on: $Date: 2013-05-13 20:52:38 $
 use strict;
 use lib $ENV{'CVS_DIR'};
 use Wormbase;
@@ -89,10 +89,10 @@ foreach my $chromosome (@chromosomes) {
   open( my $out_fh, ">$outfile" ) or die "Could not open $outfile for writing\n";
   open( my $in_fh, $infile) or die "Could not open $infile for reading\n";
   
-  while (my $line = <$in_fh>) {
+  while (<$in_fh>) {
     /^\#/ and next;
 
-    my @data = split(/\t+/, $line);
+    my @data = split(/\t+/, $_);
     next unless $data[2] eq 'gene';
     
     my $gene;
