@@ -4,7 +4,7 @@
 #   setting up the BLAT pipeline
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2013-05-08 14:28:15 $
+# Last edited on: $Date: 2013-05-13 19:29:38 $
 
 use lib $ENV{'CVS_DIR'};
 
@@ -54,9 +54,6 @@ my $CONFIG = {
     
     'cjaponica_est'  => 'japonica/EST.masked*',
     'cjaponica_mrna' => 'japonica/mRNA.masked*',
-    
-    'hbacteriophora_est'  => 'heterorhabditis/EST.masked*',
-    'hbacteriophora_mrna' => 'heterorhabditis/mRNA.masked*',
     
     'ppacificus_est'  => 'pristionchus/EST.masked*',
     'ppacificus_mrna' => 'pristionchus/mRNA.masked*',
