@@ -7,7 +7,7 @@
 # script for creating extra GFF lines to indicate those genes that are landmark genes
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2013-05-13 20:52:38 $
+# Last edited on: $Date: 2013-05-13 21:02:23 $
 use strict;
 use lib $ENV{'CVS_DIR'};
 use Wormbase;
@@ -106,9 +106,9 @@ foreach my $chromosome (@chromosomes) {
     if (defined $gene and  $landmarks{$gene} ) {
       print $out_fh "$data[0]\tlandmark\tgene\t$data[3]\t$data[4]\t$data[5]\t$data[6]\t$data[7]\t";
       if ($gff3) {
-        print "Locus=$landmarks{$gene}\n";
+        print $out_fh "Locus=$landmarks{$gene}\n";
       } else {
-        print "Locus $landmarks{$gene}\n";
+        print $out_fh "Locus $landmarks{$gene}\n";
       }
     }
   }
@@ -123,16 +123,16 @@ foreach my $chromosome (@chromosomes) {
 my $gff_dir = $wormbase->gff_splits;
 foreach my $chromosome (@chromosomes) {
   if ($gff3) {
-    $wormbase->check_file("$gff_dir/CHROMOSOME_${chromosome}_landmarks.gff3", $log,
+    $wormbase->check_file("$gff_dir/${chromosome}_landmarks.gff3", $log,
                           minsize => 900,
                           maxsize => 2000,
-                          lines => ["^CHROMOSOME_${chromosome}\\s+landmark\\s+gene\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+]\\s+\\S+\\s+Locus=\\S+"],
+                          lines => ["^${chromosome}\\s+landmark\\s+gene\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+]\\s+\\S+\\s+Locus=\\S+"],
         );
   } else {
-    $wormbase->check_file("$gff_dir/CHROMOSOME_${chromosome}_landmarks.gff", $log,
+    $wormbase->check_file("$gff_dir/${chromosome}_landmarks.gff", $log,
                           minsize => 900,
                           maxsize => 2000,
-                          lines => ["^CHROMOSOME_${chromosome}\\s+landmark\\s+gene\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+]\\s+\\S+\\s+Locus\\s+\\S+"],
+                          lines => ["^${chromosome}\\s+landmark\\s+gene\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+]\\s+\\S+\\s+Locus\\s+\\S+"],
         );
   }
 }
