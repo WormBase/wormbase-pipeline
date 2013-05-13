@@ -7,7 +7,7 @@
 # Do fast overlap matching of positions of two sets of things.
 #
 # Last updated by: $Author: klh $     
-# Last updated on: $Date: 2013-05-02 19:48:30 $      
+# Last updated on: $Date: 2013-05-13 14:28:20 $      
 
 =pod
 
@@ -667,7 +667,7 @@ sub get_EST_BEST {
    (
      method			=> "BLAT_EST_BEST",
      gff_source			=> "BLAT_EST_BEST",
-     gff_type			=> "EST_match",
+     gff_type			=> "expressed_sequence_match",
      ID_after			=> "Target\\s+\"Sequence:",
      reverse_orientation        => 1,
      homology                   => 1,
@@ -808,7 +808,7 @@ sub get_mRNA_BEST {
    (
      method			=> "BLAT_mRNA_BEST",
      gff_source			=> "BLAT_mRNA_BEST",
-     gff_type			=> "cDNA_match",
+     gff_type			=> "expressed_sequence_match",
      ID_after			=> "Target\\s+\"Sequence:",
      reverse_orientation        => 1,
      homology                   => 1,
@@ -866,7 +866,7 @@ sub get_ncRNA_BEST {
    (
      method			=> "BLAT_ncRNA_BEST",
      gff_source			=> "BLAT_ncRNA_BEST",
-     gff_type			=> "nucleotide_match",
+     gff_type			=> "expressed_sequence_match",
      ID_after			=> "Target\\s+\"Sequence:",
      reverse_orientation        => 1,
      homology                   => 1,
