@@ -3,8 +3,8 @@
 # DESCRIPTION:
 #   setting up the GenBlast pipeline
 #
-# Last edited by: $Author: klh $
-# Last edited on: $Date: 2013-05-01 14:48:46 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2013-05-13 08:28:19 $
 
 use lib $ENV{CVS_DIR};
 
@@ -127,7 +127,7 @@ if ($dumpace) { # dump the resulting analysis out as an ace file
 
 $log->write_to("Finished.\n");
 $log->mail();
-
+exit(0);
 
 
 #####################################################################################################
