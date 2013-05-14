@@ -11,7 +11,7 @@
 # people in SPELL.
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2013-02-18 14:51:41 $      
+# Last updated on: $Date: 2013-05-14 12:59:47 $      
 
 
 # new version:
@@ -166,15 +166,19 @@ foreach my $chrom (@chroms) {
   gene_expression($chrom);
 }
 
-chdir $outdir;
-unlink "expr.tar";
+$log->write_to("Making final expr.tar.gz file ...\n");
+chdir ($outdir) || $log->log_and_die("Couldn't chdir to $outdir\n");
+unlink ("expr.tar") || $log->log_and_die("ERROR: Cannot delete file expr.tar :\t$!\n");;
 my $status = $wormbase->run_command("tar cf expr.tar *.out", $log);
+$log->write_to("status of tar command: $status\n");
+
 unlink "expr.tar.gz";
 $status = $wormbase->run_command("gzip -f expr.tar", $log);
+$log->write_to("status of gzip command: $status\n");
 
 
-$log->write_to("\nFinished.\n");
 $log->mail();
+print "Finished.\n" if ($verbose);
 
 exit(0);
 
