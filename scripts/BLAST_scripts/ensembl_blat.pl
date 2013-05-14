@@ -4,7 +4,7 @@
 #   setting up the BLAT pipeline
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2013-05-13 19:29:38 $
+# Last edited on: $Date: 2013-05-14 09:10:56 $
 
 use lib $ENV{'CVS_DIR'};
 
@@ -60,7 +60,7 @@ my $CONFIG = {
     
     'nembase_nematode_est'   => 'nembase/EST.masked*',
     'washu_nematode_est'     => 'washu/EST.masked*',
-    'nematode_nematode_est'  => 'nematode/EST.masked*',
+    'embl_nematode_est'  => 'nematode/EST.masked*',
   }
 };
 
