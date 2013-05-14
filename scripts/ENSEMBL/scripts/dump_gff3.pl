@@ -447,7 +447,13 @@ sub get_info {
     map {
       if ($mapper->get_method2database($_->analysis->logic_name())) {
         push @{$plain_features{$_->analysis->logic_name()}},
-        [$_->display_id(),$_->start(), $_->end(),$_->hstart(),$_->hend(),$_->score(),$_->p_value()]
+        [$_->display_id(),
+         $_->start(), 
+         $_->end(),
+         (defined $_->hstart)  ? $_->hstart : 0,
+         (defined $_->hend)    ? $_->hend : 0,
+         (defined $_->score)   ? $_->score : 0,
+         (defined $_->p_value) ? $_->p_value : 0]
       }
       else {
         push @$rest_features,$_
@@ -459,8 +465,9 @@ sub get_info {
     
     while ( my $pfeature = shift @$rest_features ) {
       my $logic_name = $pfeature->analysis()->logic_name();
+      my $p_value = (defined $pfeature->p_value) ? $pfeature->p_value : 0;
       $info.=sprintf( "position:%d-%d %s method:%s accession:%s %%0A", $pfeature->start(), $pfeature->end(), 
-                      $pfeature->p_value(),$logic_name, $pfeature->display_id());
+                      $p_value,$logic_name, $pfeature->display_id());
     }
   }
   return $info;
