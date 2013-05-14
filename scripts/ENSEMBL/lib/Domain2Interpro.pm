@@ -4,8 +4,8 @@
 #
 # Dumps InterPro protein motifs from ensembl mysql (protein) database to an ace file
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2010-04-21 14:00:59 $
+# Last updated by: $Author: klh $
+# Last updated on: $Date: 2013-05-14 19:52:28 $
 =pod
 
 =head1 NAME
@@ -41,21 +41,21 @@ use strict;
 # and the logic names (as specified in @methods) that search those databases
 my %method_database = (
 		       'scanprosite' => 'PROSITE',
-		       'Prints'      => 'PRINTS',
+		       'prints'      => 'PRINTS',
 		       'pfscan'      => 'PROFILE',
 		       'blastprodom' => 'PRODOM',
-		       'Smart'       => 'SMART',
-		       'Pfam'        => 'PFAM',
-		       'Tigrfam'     => 'TIGRFAMs',
-		       'Ncoils'      => 'COIL',
-		       'Seg'         => 'SEG',
-		       'Tmhmm'       => 'TMHMM',
-		       'Signalp'     => 'SIGNALP', 
-		       'PIRSF'       => 'PIRSF',
-		       'Superfamily' => 'SSF',
+		       'smart'       => 'SMART',
+		       'pfam'        => 'PFAM',
+		       'tigrfam'     => 'TIGRFAMs',
+		       'ncoils'      => 'COIL',
+		       'seg'         => 'SEG',
+		       'tmhmm'       => 'TMHMM',
+		       'signalp'     => 'SIGNALP', 
+		       'pirsf'       => 'PIRSF',
+		       'superfamily' => 'SSF',
 		       'gene3d'      => 'GENE3D',
 		       'hmmpanther'  => 'PANTHER',
-		       'Hamap'       => 'HAMPA',
+		       'hamap'       => 'HAMPA',
 	       );
 
 =head2 new
@@ -91,7 +91,7 @@ sub new {
 # mapping of method to database
 sub get_method2database {
 	my ($self,$key)=@_;
-	return $method_database{$key}}
+	return $method_database{lc($key)}}
 
 =head2 get_mapping
 
@@ -128,11 +128,11 @@ sub get_motifs {
         while( my ($method,$arefs)=each %$motifs) {
          foreach my $aref (@$arefs) {
            my ($hid, $start, $end, $hstart, $hend, $score, $evalue) = @$aref;
-           if (($method eq "Pfam" ) && ( $hid =~ /(\w+)\.\d+/ )) { $hid = $1}
-	   elsif ($method eq "Superfamily") { $hid = "SSF$hid"}
-	   elsif ($method eq "gene3d") {$hid = "G3DSA:$hid"}
+           if ((lc($method) eq "pfam" ) && ( $hid =~ /(\w+)\.\d+/ )) { $hid = $1}
+	   elsif (lc($method) eq "superfamily") { $hid = "SSF$hid"}
+	   elsif (lc($method) eq "gene3d") {$hid = "G3DSA:$hid"}
            # convert Database ID to InterPro ID (if it is in InterPro)
-           my $database = $method_database{$method};
+           my $database = $method_database{lc($method)};
            if (exists $self->{ip_ids}{$database}{$hid}) {
              my $ip_id = $self->{ip_ids}{$database}{$hid};
              my @hit = ( $ip_id, $start, $end, $hstart, $hend, $score, $evalue );
