@@ -282,10 +282,13 @@ sub write_into_db {
 
       if($a->input_id_type){
         if ($is_pipeline_db) {
-          my $stored_sql = "REPLACE into input_id_type_analysis ".
+          my $clean_sql = "DELETE from input_id_type_analysis WHERE analysis_id = $analysis_id";
+          $db->dbc->do($clean_sql);
+          my $stored_sql = "INSERT into input_id_type_analysis ".
               "(analysis_id, input_id_type) values(?, ?)";
-          my $stored_sth = $db->prepare($stored_sql);
+          my $stored_sth = $db->dbc->prepare($stored_sql);
           $stored_sth->execute($analysis_id, $a->input_id_type);
+          $stored_sth->finish;
         }
       }
       $a->dbID($analysis_id);
