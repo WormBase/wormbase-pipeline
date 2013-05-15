@@ -6,7 +6,7 @@
 # builds wormbase & wormpep FTP sites
 # 
 # Last updated by: $Author: pad $
-# Last updated on: $Date: 2013-05-15 16:23:35 $
+# Last updated on: $Date: 2013-05-15 16:31:06 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -780,12 +780,12 @@ sub copy_misc_files{
 
   mkpath($ace_disease_dir,1,0775);
   mkpath($ftp_disease_dir,1,0775);
-  my $Disease_source = $wormbase->acefiles."omim_db_data.ace";
+  my $Disease_source = $wormbase->acefiles."/omim_db_data.ace";
   my $Disease_targ = "Human_disease_data";
   
   if (-e $Disease_source) {
-    $wormbase->run_command("cp -f $Disease_source $ace_disease_dir."/".$Disease_targ", $log);
-    $wormbase->run_command("cp -f $Disease_source $ftp_disease_dir."/".$Disease_targ", $log);
+    $wormbase->run_command("cp -f $Disease_source $ace_disease_dir/$Disease_targ", $log);
+    $wormbase->run_command("cp -f $Disease_source $ftp_disease_dir/$Disease_targ", $log);
   }
   else {
     $log->write_to("Warning: Disease data file for $gspecies not found ($Disease_source)\n");
