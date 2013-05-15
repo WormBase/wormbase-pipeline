@@ -5,8 +5,8 @@
 # A PERL wrapper to automate the process of building the FTP sites 
 # builds wormbase & wormpep FTP sites
 # 
-# Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-04-22 16:13:23 $
+# Last updated by: $Author: pad $
+# Last updated on: $Date: 2013-05-15 16:08:10 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -770,7 +770,7 @@ sub copy_misc_files{
     $log->write_to("Warning: gene expression file for $gspecies not found ($TARexpr)\n");
   }
 
-
+  
 
   #
   # RNASeq gene expression data for each TierII and elegans
@@ -895,7 +895,19 @@ sub copy_wormpep_files {
     } else {
       $log->error("ERROR: Could not find transcript file for $gspecies ($source_cdnafile)\n");
     }
+
+    # Copy over the file created by transcript_builder.pl that is the Transcript version of the above cds file
+    my $coding_transcripts_fa = $wb->sequences."/coding_transcripts.dna.gz";
+    my $target_transcript_fa = "$tgt/$gspecies.$bioproj.$WS_name.coding_transcripts.fa.gz";
+
+    if (-e $coding_transcripts_fa){
+      $wb->run_command("scp $coding_transcripts_fa $target_transcript_fa", $log);
+    } else {
+      $log->error("ERROR: Could not find transcript file for $gspecies $coding_transcripts_fa");
+    }
   }
+
+  #continue with Tier III processing.
 
   #tierIII's have no "pep" package, so lift protein and transcript files from build dir
   # Note: not all tierIIIs will have protein/cDNA sets
@@ -1638,6 +1650,7 @@ GSPECIES.BIOPROJ.WSREL.intergenic_sequences.fa.gz
 GSPECIES.BIOPROJ.WSREL.GBrowse.gff2.gz
 GSPECIES.BIOPROJ.WSREL.ncrna_transcripts.fa.gz
 GSPECIES.BIOPROJ.WSREL.annotations.gff2.gz
+GSPECIES.BIOPROJ.WSREL.coding_transcripts.fa.gz
 
 [TIER3]species/GSPECIES/BIOPROJ
 GSPECIES.BIOPROJ.WSREL.annotations.gff3.gz
