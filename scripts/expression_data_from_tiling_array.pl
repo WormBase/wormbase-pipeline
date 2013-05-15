@@ -11,7 +11,7 @@
 # people in SPELL.
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2013-05-14 12:59:47 $      
+# Last updated on: $Date: 2013-05-15 13:51:03 $      
 
 
 # new version:
@@ -84,7 +84,6 @@ my $log = Log_files->make_build_log($wormbase);
 
 if (!defined $database) {$database = $wormbase->database("autoace")}
 
-my $ovlp = Overlap->new($database, $wormbase);
 
 
 ##########################
@@ -166,9 +165,10 @@ foreach my $chrom (@chroms) {
   gene_expression($chrom);
 }
 
+print "Making final expr.tar.gz file ...\n";
 $log->write_to("Making final expr.tar.gz file ...\n");
 chdir ($outdir) || $log->log_and_die("Couldn't chdir to $outdir\n");
-unlink ("expr.tar") || $log->log_and_die("ERROR: Cannot delete file expr.tar :\t$!\n");;
+if (-e "expr.tar") {unlink ("expr.tar") || $log->log_and_die("Cannot delete file expr.tar :\t$!\n");}
 my $status = $wormbase->run_command("tar cf expr.tar *.out", $log);
 $log->write_to("status of tar command: $status\n");
 
@@ -202,8 +202,6 @@ sub gene_expression {
   my %dummy;
   my %worm_gene2geneID_name = $wormbase->FetchData('worm_gene2geneID_name', \%dummy, $common_dir);
 
-  my @exons = $ovlp->get_Coding_transcript_exons($chromosome);
-  
   # get the TARs
   my %GFF_data = 
     (
@@ -215,111 +213,107 @@ sub gene_expression {
    );
 #CHROMOSOME_III  TranscriptionallyActiveRegion   transcribed_fragment    21292   21449   8.95931 .       .       Note "modENCODE_3173"
 
-  my @TARs = $ovlp->read_GFF_file($chromosome, \%GFF_data);
-
-
-  #print @genes_list;
-  #print @tars_list;
 
   # OK - we have the genes and the TARs in lists
   # now look for overlaps
 
-  my $exons_overlap = $ovlp->compare(\@exons);
+  foreach my $next_tar (keys %analysis) {
+    print "next TAR to check = $next_tar\n";
+    my %transcript_score = ();
+    my %transcript_len = ();
+    my $ovlp = Overlap->new($database, $wormbase);
+    my @TARs = $ovlp->read_GFF_file($chromosome, \%GFF_data);
+    my @exons = $ovlp->get_Coding_transcript_exons($chromosome);
+    my $exons_overlap = $ovlp->compare(\@exons);
 
-  my %transcript_score;
-  my %transcript_len;
+  
 
-  foreach my $tar (@TARs) { 
-    my $tar_id = $tar->[0];
-    #print "next TAR to check = $tar_id\n";
-    my @exon_matches = $exons_overlap->match($tar);
-    #print "Have ", scalar @exon_matches, " overlaps to TAR\n";
-    my @exon_ids = $exons_overlap->matching_IDs;
-    #print "Matching exon IDs: @exon_ids\n";
-    foreach my $exon_match (@exon_matches) {
-
-      my ($proportion1, $proportion2) = $exons_overlap->matching_proportions($exon_match);
-
-      my $score = $tar->[5];
-
-      my $transcript_name = $exon_match->[0];
-
-      my $current_score = $transcript_score{$transcript_name}{$tar_id};
-
-      # get the proportion of the exon that is overlapped by the TAR
-      # if this is more than 50% then store the highest score for this transcript and TAR
-      if ($proportion2 > 0.5) {
-	if (!defined $current_score || $current_score <  $score) {
-	  $transcript_score{$transcript_name}{$tar_id} = $score;
+    foreach my $tar (@TARs) { 
+    
+      my $tar_id = $tar->[0];
+      if ($tar_id ne $next_tar) {next}
+      
+      
+      my @exon_matches = $exons_overlap->match($tar);
+      #print "Have ", scalar @exon_matches, " overlaps to TAR\n";
+      my @exon_ids = $exons_overlap->matching_IDs;
+      #print "Matching exon IDs: @exon_ids\n";
+      foreach my $exon_match (@exon_matches) {
+	
+	my ($proportion1, $proportion2) = $exons_overlap->matching_proportions($exon_match);
+	
+	my $score = $tar->[5];
+	
+	my $transcript_name = $exon_match->[0];
+	
+	my $current_score = $transcript_score{$transcript_name};
+	
+	# get the proportion of the exon that is overlapped by the TAR
+	# if this is more than 50% then store the highest score for this transcript and TAR
+	if ($proportion2 > 0.5) {
+	  if (!defined $current_score || $current_score <  $score) {
+	    $transcript_score{$transcript_name} = $score;
+	  }
 	}
       }
     }
-  }
-
-
-
-
-  # now write out the transcript expression values 
-  foreach my $transcript_name (keys %transcript_score) {
-    foreach my $tar_id (keys %{$transcript_score{$transcript_name}}) {
-
-      my $file = $analysis{$tar_id};
-      if (!defined $file) {$log->log_and_die("Can't find an analysis object name for the analysis from: $tar_id\n");}
-
-      my $transcript_score = $transcript_score{$transcript_name}{$tar_id};
+      
+      
+    # now write out the transcript expression values 
+    my $file = $analysis{$next_tar};
+    if (!defined $file) {$log->log_and_die("Can't find an analysis object name for the analysis from: $next_tar\n");}
+    open (TRANS_TAR, ">> $outdir/transcripts_${file}.out") || $log->log_and_die("Can't open file $outdir/transcripts_${file}.out\n");
+    foreach my $transcript_name (keys %transcript_score) {
+      
+      my $transcript_score = $transcript_score{$transcript_name};
       if (!defined $transcript_score || $transcript_score == 0) {$transcript_score = 0.0000000001} # Wen wants this small value used when the value is zero
-
-      open (TRANS_TAR, ">> $outdir/transcripts_${file}.out") || $log->log_and_die("Can't open file $outdir/transcripts_${file}.out\n");
+      
       print TRANS_TAR "$transcript_name\t$transcript_score\n";
-      close(TRANS_TAR);
     }
-  }
-
-
-
-
-  # now get the highest score for the genes for each TAR experiment
-
-  my %gene_score;
-  my $cds_regex = $wormbase->cds_regex_noend;
-
-  foreach my $transcript_name (keys %transcript_score) {
-    foreach my $tar_id (keys %{$transcript_score{$transcript_name}}) {
-      my $transcript_score = $transcript_score{$transcript_name}{$tar_id};
-
+    close(TRANS_TAR);
+      
+      
+    # now get the highest score for the genes for each TAR experiment
+    
+    my %gene_score = ();
+    my $cds_regex = $wormbase->cds_regex_noend;
+    
+    foreach my $transcript_name (keys %transcript_score) {
+      my $transcript_score = $transcript_score{$transcript_name};
+      
       my ($gene_name) = ($transcript_name =~ /($cds_regex)/);
       if (!defined $gene_name) {$gene_name = $transcript_name}# the tRNAs (e.g. C06G1.t2) are not changed correctly
-
-      my $gene_score = $gene_score{$gene_name}{$tar_id};
-
+      
+      my $gene_score = $gene_score{$gene_name};
+      
       if (!defined $gene_score || $gene_score <  $transcript_score) {
-	$gene_score{$gene_name}{$tar_id} = $transcript_score;
+	$gene_score{$gene_name} = $transcript_score;
       }
     }
-  }
+    
+      
+    # then output the best scores for each gene
+    
+    $file = $analysis{$next_tar};
+    if (!defined $file) {$log->log_and_die("Can't find an analysis object name for the analysis from: $next_tar\n");}
+    open (GENE_TAR, ">> $outdir/genes_${file}.out") || $log->log_and_die("Can't open file $outdir/genes_${file}.out\n");
 
-
-  # then output the best scores for each gene
-
-  foreach my $gene_name (keys %gene_score) {
-    my $gene_id = $worm_gene2geneID_name{$gene_name};
-    if (!defined $gene_id) {$log->log_and_die ("Can't find gene_id $gene_name\n")}
-
-    foreach my $tar_id (keys %{$gene_score{$gene_name}}) {
-      my $gene_score = $gene_score{$gene_name}{$tar_id};
+    foreach my $gene_name (keys %gene_score) {
+      my $gene_id = $worm_gene2geneID_name{$gene_name};
+      if (!defined $gene_id) {$log->log_and_die ("Can't find gene_id $gene_name\n")}
+      
+      my $gene_score = $gene_score{$gene_name};
       if ($gene_score == 0) {$gene_score = 0.0000000001} # Wen wants this small value used when the value is zero
-
+      
       # now for each TAR, output the gene scores and translating
       # the modENCODE DCC_ID number to an analysis name
-
-      my $file = $analysis{$tar_id};
-      if (!defined $file) {$log->log_and_die("Can't find an analysis object name for the analysis from: $tar_id\n");}
-
-      open (GENE_TAR, ">> $outdir/genes_${file}.out") || $log->log_and_die("Can't open file $outdir/genes_${file}.out\n");
+      
       print GENE_TAR "$gene_id\t$gene_score\n";
-      close(GENE_TAR);
     }
+    close(GENE_TAR);
+
   }
+  print "Finished Sequence: ", $chromosome, "\n";
 
 }
 
