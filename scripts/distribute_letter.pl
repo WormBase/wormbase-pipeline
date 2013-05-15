@@ -8,8 +8,8 @@
 #                          ~wormpub/BUILD/autoace/release/
 #                          /nfs/WWW/SANGER_docs/htdocs/Projects/C_elegans/WORMBASE/current/release_notes.txt/
 #
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2012-05-30 14:22:51 $
+# Last updated by: $Author: klh $
+# Last updated on: $Date: 2013-05-15 20:35:15 $
 
 
 use strict;                                      
@@ -28,16 +28,17 @@ use File::Copy;
 # variables and command-line options # 
 ######################################
 
-my ($help, $debug, $test, $verbose, $store, $wormbase);
+my ($help, $debug, $test, $verbose, $store, $wormbase, $mail_dev);
 my $maintainers = 'All';
 
 
 
 GetOptions ('help'       => \$help,
             'debug=s'    => \$debug,
-	        'test'       => \$test,
-	        'verbose'    => \$verbose,
-	        'store:s'      => \$store,
+            'test'       => \$test,
+            'verbose'    => \$verbose,
+            'store:s'    => \$store,
+            'maildev'    => \$mail_dev,
 	    );
 
 if ( $store ) {
@@ -108,14 +109,15 @@ $wormbase->check_file("$acedir/release/letter.${release}", $log,
 		      samesize => "$repdir/letter.${release}");
 
 
-
+if ($mail_dev) {
 # Send email
-print "\n\nMailing to wormbase-dev . .\n";
-
-my $to             = $debug?$maintainers:'dev@wormbase.org';
-my $name           = "Wormbase ${release} release";
-my $release_letter = "$repdir/letter.${release}";
-$wormbase->mail_maintainer( $name, $to, $release_letter);
+  print "\n\nMailing to wormbase-dev . .\n";
+  
+  my $to             = $debug?$maintainers:'dev@wormbase.org';
+  my $name           = "Wormbase ${release} release";
+  my $release_letter = "$repdir/letter.${release}";
+  $wormbase->mail_maintainer( $name, $to, $release_letter);
+}
 
 $log->mail();
 print "Finished.\n" if ($verbose);
