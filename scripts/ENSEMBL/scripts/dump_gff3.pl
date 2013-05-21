@@ -1,10 +1,4 @@
-#!/usr/bin/perl
-# based on the ZFish GFF3 VEGA dumper from Ian Sealy
-# the Blast Filter is lifted from the WormBlast processing pipeline
-#
-# To lower the memory footprint and converts the rather large
-# Ensembl objects into lighter hashes for later use
-
+#!/usr/bin/env perl
 
 use strict;
 use warnings;
@@ -22,17 +16,10 @@ use LSF RaiseError => 0, PrintError => 1, PrintOutput => 1;
 use LSF::JobManager;
 
 
-my $debug =1;
+my ($dbname, $dbuser, $dbpass, $dbport, $dbhost, $debug,
+    @dump_slice, $num_jobs, $out_file, $slim, $out_fh);
 
-# Vega database
-my $dbname = 'bmalayi2';
-my $dbhost = 'eagle';
-my $dbport =  3306;
-my $dbuser = 'wormro'; 
-my $dbpass = '';
 my $dumpdir = ".";
-
-my (@dump_slice, $num_jobs, $out_file, $slim, $out_fh);
 
 GetOptions(
   'dbhost=s'     => \$dbhost,
@@ -45,6 +32,7 @@ GetOptions(
   'dumpdir=s'    => \$dumpdir,
   'outfile:s'    => \$out_file,
   'slim'         => \$slim,
+  'debug'        => \$debug,
           )or die ("Couldn't get options");
 
 my $ensdb = new Bio::EnsEMBL::DBSQL::DBAdaptor(
@@ -98,6 +86,7 @@ while( my $slice = shift @slices) {
   print $out_fh "##sequence-region $slice_name 1 $slice_size\n";
   
   # Get all the genes on this slice
+  $debug and print STDERR " Fetching and processing genes...\n";
   my $genes = $slice->get_all_Genes();
   while( my $gene=shift @$genes) {
     my $gene_stable_id = 'gene:'.$gene->stable_id();
@@ -211,76 +200,90 @@ while( my $slice = shift @slices) {
   }
   
   next if $slim;
-  # get all protein align features on the slice
-  my %blastx_features;
-  
-  my $features = $slice->get_all_ProteinAlignFeatures;
-  
-  while(my $feat = shift @$features) {
-    my $cigar_line = flipCigarReference($feat->cigar_string); # for Lincoln
-    if ($feat->strand < 0) {
-      $cigar_line = reverse_cigar($cigar_line);
-    }
-    $cigar_line = cigar_to_almost_cigar($cigar_line);
 
-    my $stripped_feature = {
-      hit_id       => $feat->hseqname, 
-      target_id    => $slice->seq_region_name,
-      target_start => $feat->hstart,
-      target_stop  => $feat->hend,
-      strand       => ($feat->strand > 0?'+':'-'),
-      hit_start    => $feat->start,
-      hit_stop     => $feat->end,
-      score        => $feat->score,
-      p_value      => $feat->p_value,
-      dbid         => $feat->dbID,
-      logic_name   => $feat->analysis->logic_name,
-      cigar        => $cigar_line,
-      gff_source   => (defined $feat->analysis->gff_source) ? $feat->analysis->gff_source : $feat->analysis->logic_name,
-      feature_type => (defined $feat->analysis->gff_feature)? $feat->analysis->gff_feature : 'protein_match',
-    };
-    push @{$blastx_features{$stripped_feature->{logic_name}}}, $stripped_feature;
-  }
-  
-  while (my($k,$v)=each %blastx_features){
-    my @filtered_features=filter_features($v, $k);
-    map {print $out_fh dump_feature($_)} @filtered_features;
-  }
-  
-  # get all dna align features on the slice
-  
-  $features=$slice->get_all_DnaAlignFeatures();
+  {
+    $debug and print STDERR " Fetching and processing protein alignments...\n";
 
-  while(my $feat = shift @$features) {
-    my $cigar_line = flipCigarReference($feat->cigar_string); # for Lincoln
-    if ($feat->strand < 0) {
-      $cigar_line = reverse_cigar($cigar_line);
+    my @logics = &get_feature_logics($ensdb, "protein_align_feature", $slice);
+    print "LOGICS = @logics\n";
+
+    foreach my $logic (@logics) {
+      my @blastx_features;
+
+      $debug and print STDERR "  Fetching protein alignments for $logic...\n";
+      
+      my $features = $slice->get_all_ProteinAlignFeatures($logic);  
+      while(my $feat = shift @$features) {
+        my $cigar_line = flipCigarReference($feat->cigar_string); # for Lincoln
+        if ($feat->strand < 0) {
+          $cigar_line = reverse_cigar($cigar_line);
+        }
+        $cigar_line = cigar_to_almost_cigar($cigar_line);
+        
+        my $stripped_feature = {
+          hit_id       => $feat->hseqname, 
+          target_id    => $slice->seq_region_name,
+          target_start => $feat->hstart,
+          target_stop  => $feat->hend,
+          strand       => ($feat->strand > 0?'+':'-'),
+          hit_start    => $feat->start,
+          hit_stop     => $feat->end,
+          score        => $feat->score,
+          p_value      => $feat->p_value,
+          dbid         => $feat->dbID,
+          logic_name   => $feat->analysis->logic_name,
+          cigar        => $cigar_line,
+          gff_source   => (defined $feat->analysis->gff_source) ? $feat->analysis->gff_source : $feat->analysis->logic_name,
+          feature_type => (defined $feat->analysis->gff_feature)? $feat->analysis->gff_feature : 'protein_match',
+        };
+        push @blastx_features, $stripped_feature;
+      }
+
+      $debug and print STDERR "  Filtering protein alignments for $logic...\n";
+
+      my @filtered_features=filter_features(\@blastx_features, $logic);
+      map {print $out_fh dump_feature($_)} @filtered_features;
     }
-    $cigar_line = cigar_to_almost_cigar($cigar_line);
+  }   
+  
+  $debug and print STDERR " Fetching and processing DNA alignments...\n";
+  
+  my @logics = &get_feature_logics($ensdb, "dna_align_feature", $slice);
+  
+  foreach my $logic (@logics) {
+    my $features = $slice->get_all_DnaAlignFeatures($logic);
     
-    my $stripped_feature = {
-      hit_id       => $feat->hseqname,
-      target_id    => $feat->slice->seq_region_name,
-      target_start => $feat->hstart,
-      target_stop  => $feat->hend,
-      strand       => ($feat->strand > 0?'+':'-'),
-      hit_start    => $feat->start,
-      hit_stop     => $feat->end,
-      score        => $feat->score,
-      p_value      => $feat->p_value,
-      dbid         => $feat->dbID,
-      logic_name   => $feat->analysis->logic_name,
-      cigar        => $cigar_line,
-      gff_source   => (defined $feat->analysis->gff_source) ? $feat->analysis->gff_source : $feat->analysis->logic_name,
-      feature_type => (defined $feat->analysis->gff_feature) ? $feat->analysis->gff_feature : 'nucleotide_match',
-    };
-    print $out_fh dump_feature($stripped_feature);
+    while(my $feat = shift @$features) {
+      my $cigar_line = flipCigarReference($feat->cigar_string); # for Lincoln
+      if ($feat->strand < 0) {
+        $cigar_line = reverse_cigar($cigar_line);
+      }
+      $cigar_line = cigar_to_almost_cigar($cigar_line);
+      
+      my $stripped_feature = {
+        hit_id       => $feat->hseqname,
+        target_id    => $feat->slice->seq_region_name,
+        target_start => $feat->hstart,
+        target_stop  => $feat->hend,
+        strand       => ($feat->strand > 0?'+':'-'),
+        hit_start    => $feat->start,
+        hit_stop     => $feat->end,
+        score        => $feat->score,
+        p_value      => $feat->p_value,
+        dbid         => $feat->dbID,
+        logic_name   => $feat->analysis->logic_name,
+        cigar        => $cigar_line,
+        gff_source   => (defined $feat->analysis->gff_source) ? $feat->analysis->gff_source : $feat->analysis->logic_name,
+        feature_type => (defined $feat->analysis->gff_feature) ? $feat->analysis->gff_feature : 'nucleotide_match',
+      };
+      print $out_fh dump_feature($stripped_feature);
+    }
   }
+
+  $debug and print STDERR " Fetching and processing Repeat features...\n";
   
-  
-  # get all repeat features on the slice
-  my $repeats = $slice->get_all_RepeatFeatures;
-  foreach my $feature (@$repeats){
+  my $features = $slice->get_all_RepeatFeatures;
+  while(my $feature = shift @$features) {
     my $stripped_feature = {
       target_id   => $feature->slice->seq_region_name,
       strand      => ($feature->strand > 0?'+':'-'),
@@ -294,11 +297,12 @@ while( my $slice = shift @slices) {
     };
     print $out_fh dump_feature($stripped_feature);
   }
-  
+
+  $debug and print STDERR " Fetching and processing Simple features...\n";  
 
   # get all simple features stored in the database (Operons etc. etc.)
-  my $simp_features = $slice->get_all_SimpleFeatures;
-  foreach my $simpfeature (@$simp_features){
+  $features = $slice->get_all_SimpleFeatures;
+  while(my $simpfeature = shift @$features) {
     my $stripped_simpfeature = {
       target_id    => $simpfeature->slice->seq_region_name,
       strand       => ($simpfeature->strand > 0?'+':'-'),
@@ -331,7 +335,8 @@ sub submit_and_collate {
   }
   open(my $out_fh, ">$out_file") or die "Could not open $out_file for writing\n";
 
-  my (@batches, $idx);
+  my (@batches);
+  my $idx = 0;
   while(@slices) {
     push @{$batches[$idx]}, shift @slices;
 
@@ -346,8 +351,8 @@ sub submit_and_collate {
 
   my (@out_files, @err_files, @gff3_files);
 
-  my @base_bsub_opts = (-M => 1000000,
-                        -R => 'select[mem>=1000] rusage[mem=1000]');
+  my @base_bsub_opts = (-M => 3000000,
+                        -R => 'select[mem>=3000] rusage[mem=3000]');
                         
   for(my $batch_idx = 0; $batch_idx < @batches; $batch_idx++) {
     my @sl = map { $_->seq_region_name } @{$batches[$batch_idx]};
@@ -406,29 +411,29 @@ sub cigar_to_almost_cigar {
 
 #convert refernece strand for Lincoln
 sub flipCigarReference {
-   my $i=shift;
-   $i=~tr/ID/DI/;
-   return $i;
+  my $i=shift;
+  $i=~tr/ID/DI/;
+  return $i;
 }
 
 # reverse cigar string
 sub reverse_cigar {
-    my $i=shift;
-    my @pairs=$i=~/(\d*[MIDFR])/g;
-    my $reversed_cigar = join('',reverse @pairs);
-    return $i;
+  my $i=shift;
+  my @pairs=$i=~/(\d*[MIDFR])/g;
+  my $reversed_cigar = join('',reverse @pairs);
+  return $i;
 }
 
 # print the feature using some funky template
 sub dump_feature {
-    my $i=shift;
-    my %feature=%{$i};
-    my $gff_line=
-	"$feature{target_id}\t$feature{gff_source}\t$feature{feature_type}\t$feature{hit_start}\t$feature{hit_stop}\t".
-	"$feature{score}\t$feature{strand}\t.".
-	($feature{id} ? "\tID=$feature{id}"  : "\tID=$feature{logic_name}.$feature{dbid}").
-	($feature{cigar}?";Name=$feature{hit_id};Target=$feature{hit_id} $feature{target_start} $feature{target_stop};Gap=$feature{cigar}\n":"\n");
-    return $gff_line;
+  my $i=shift;
+  my %feature=%{$i};
+  my $gff_line=
+      "$feature{target_id}\t$feature{gff_source}\t$feature{feature_type}\t$feature{hit_start}\t$feature{hit_stop}\t".
+      "$feature{score}\t$feature{strand}\t.".
+      ($feature{id} ? "\tID=$feature{id}"  : "\tID=$feature{logic_name}.$feature{dbid}").
+      ($feature{cigar}?";Name=$feature{hit_id};Target=$feature{hit_id} $feature{target_start} $feature{target_stop};Gap=$feature{cigar}\n":"\n");
+  return $gff_line;
 }
 
 
@@ -436,7 +441,7 @@ sub dump_feature {
 sub get_info {
   my $transcript= shift;
   my $info='';
-
+  
   if (defined $transcript->translation) {
     # get all protein_features on the transcript
     my $features=$transcript->translation->get_all_ProteinFeatures();
@@ -654,5 +659,22 @@ sub p_value {
   return $log;
 }
 
+##
+sub get_feature_logics {
+  my ($db, $table, $slice) = @_;
 
+  my %logics;
 
+  my $sql = "SELECT distinct logic_name from $table,analysis WHERE $table.analysis_id = analysis.analysis_id";
+  if (defined $slice) {
+    my $sid = $slice->get_seq_region_id();
+    $sql .= " AND seq_region_id = $sid";
+  }
+  my $sth = $db->dbc->prepare($sql);
+  $sth->execute();
+  while(my ($row) = $sth->fetchrow_array) {
+    $logics{$row} = 1;
+  }
+
+  return sort keys %logics;
+}
