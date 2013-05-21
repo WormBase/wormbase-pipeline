@@ -2,7 +2,7 @@
 #
 # EMBLdump.pl :  makes modified EMBL dumps from camace.
 # 
-#  Last updated on: $Date: 2013-02-01 11:56:49 $
+#  Last updated on: $Date: 2013-05-21 14:30:01 $
 #  Last updated by: $Author: mh6 $
 
 use strict;
@@ -162,7 +162,7 @@ if ($dump_raw) {
     $command .= "query find Sequence $single\ngif EMBL $raw_dump_file\n";# find sequence and dump
     $command .= "quit\n";# say you don't want to save and exit
   } else {
-    $command .= "query find Sequence Genomic_canonical AND (From_laboratory = \"HX\" OR From_Laboratory = \"RW\" OR From_Laboratory = \"ELG\")\n";
+    $command .= "query find Sequence Genomic_canonical AND (From_laboratory = \"HX\" OR From_Laboratory = \"RW\" OR From_Laboratory = \"ELG\") AND Species=\"${\$wormbase->full_name}\"\n";
     $command .= "gif EMBL $raw_dump_file\n";# find sequence and dump
     $command .= "quit\n";# say you don't want to save and exit
   }
