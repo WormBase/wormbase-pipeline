@@ -188,7 +188,7 @@ while (<>) {
             # Fudge factor: append WBGeneIDS to each transcript entry
             my $genes = $GENES{$lookup} || $GENES{$match};
             if ($genes) {
-                push @notes, map {qq(Gene "$_")} @$genes;
+                push @notes, map {qq(Gene "$_")} keys %$genes;
             }
         }
 
@@ -310,8 +310,8 @@ for my $cds ( keys %GENES ) {
     next if $seenit{$base}++;
     next unless $GENE_EXTENTS{$base};
     my ( $seqid, $start, $stop, $strand ) = @{ $GENE_EXTENTS{$base} }{qw(seqid start stop strand)};
-    for my $gene ( @{ $GENES{$cds} } ) {    # there *should* be only one gene per cds
-        print $outfh join( "\t", $seqid, 'gene', 'processed_transcript', $start, $stop, '.', $strand, '.', qq(Gene "$gene") ), "\n";
+    for my $gene ( keys %{$GENES{$cds}} ) {    # there *should* be only one gene per cds
+      print $outfh join( "\t", $seqid, 'gene', 'processed_transcript', $start, $stop, '.', $strand, '.', qq(Gene "$gene") ), "\n";
     }
 }
 
@@ -345,7 +345,7 @@ sub get_genes {
     my @cds = ($obj->Corresponding_CDS,$obj->Corresponding_Transcript);
     next unless @cds;
     foreach (@cds) {
-      push @{$hash->{$_}},$obj;
+      $hash->{$_}->{$obj} = 1;
     }
   }
 }
