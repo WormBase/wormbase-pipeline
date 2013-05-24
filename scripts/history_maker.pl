@@ -2,7 +2,6 @@
 
 use strict;
 use lib $ENV{'CVS_DIR'};
-use lib '/nfs/wormpub/tmp/Tk-DKW-0.03';
 use Ace;
 use Tk;
 use Tk::SplitFrame;
@@ -33,6 +32,7 @@ my $species;
 my $display_by_clones;
 my $addevidence;
 my $ncRNA;
+my $cds_standard;
 my $brugia;
 my $cleangene;
 my $clone;
@@ -192,10 +192,10 @@ my $main_gui = MainWindow->new();
 
 
 # Main window
-$main_gui->configure(-title => "Curation Tool for ${version}",
+$main_gui->configure(
+		     -title => "Curation Tool for ${version}",
 		     -background => 'darkgrey' # was beige
 		    );
-
 my $gui_width = 500;
 $gui_width += 300 if ($anomaly or $blesser or $clone);
 my $gui_height = 50; #modified 200
@@ -226,7 +226,7 @@ my $check;			# state of the check button for the weights
 
 ################################################################
 
-# history_maker my $LeftLabel = $SplitFrame->Label ('-text' => 'Left');
+# history_maker
 
 my $his_maker = $LeftLabel->Frame( -background => "black", # was lightcyan
 				  -height     => "400",
@@ -503,7 +503,7 @@ if ($addevidence) {
 
 my $rnawork;
 if ($ncRNA) {
-  my $ncrna_data = $RightLabel->Frame( -background => "black",
+  my $ncrna_data = $RightLabel->Frame( -background => "#8470ff",
 				       -height     => "400",
 				       -width      => "600",
 				       -label      => "Populate standard ncRNA tags",
@@ -514,14 +514,14 @@ if ($ncRNA) {
 						);
   # Reference database label
   my $db_lbl = $ncrna_data->Label( -text => "Source: $cdatabase",
-				      -background => 'black',
+				      -background => '#8470ff',
 				      -foreground => 'whitesmoke'
 				    )->pack( -pady => '3'
 					   );
 
   # CDS entry widgets
   my $ncRNA_lbl = $ncrna_data->Label( -text => ' CDS  ID',
-				       -background => 'black', #was LightGreen
+				       -background => '#8470ff', #was LightGreen
 				       -foreground => 'whitesmoke'
 				       )->pack(-pady => '6',
 					       -padx => '6',
@@ -732,7 +732,7 @@ if ( $anomaly ) {
 
 
   my $anomaly_find = $main_gui->Frame( -background => "whitesmoke", # was cyan wheat
-				       -label      => "Anomally Region",
+				       -label      => "Anomaly Region",
 				       -relief     => "raised",
 				       -borderwidth => 5,
 				       )->pack( -pady => "5", #modified
@@ -959,11 +959,10 @@ sub add_ncrna_data
     $cdb->close();
     $cdb = Ace->connect(-path => $cdatabase);
     my $obj = $cdb->fetch(Transcript => "$refgene");
-    return &error_warning("Invalid Transcript","$refgene is not a valid Transcript name") unless $obj;
+    return &error_warning("Invalid Transcript","$refgene is not a valid Transcript name") unless ($obj);
     my $method = $obj->Method->name;
-    
     my $output = $session_file."ncRNA".$refgene;
-    
+
     open (RNA,">$output") or die "cant open $output\n";
     # add the Evidence to the CDS
     print RNA "\nTranscript : \"$refgene\"\nTranscript ncRNA\nBrief_identification \"Possible non-coding RNA gene\"\nDB_remark \"C. elegans probable non-coding RNA\"\nMethod ncRNA\nRemark \"[$date $user] Created as this locus is potentially a ncRNA (with little evidence of translation) as it displays evidence of transcription and/or splicing\" Curator_confirmed $person\n\n";
@@ -974,7 +973,7 @@ sub add_ncrna_data
     } 
     else {
       &confirm_message("Success", "Added Tags to $form_rna");
-      &clear_ncrna_data;
+      &clear_data;
     }
   }
 
@@ -1178,7 +1177,8 @@ sub clone_gene {
       $cds_identifier = $cds.":cloned";
     }
     
-
+    my ($day, $mon, $yr)  = (localtime)[3,4,5];
+    my $date = sprintf("%02d%02d%02d",$yr-100, $mon+1, $day);
     #Print Output file
     print CLO "Sequence : $seq\n";
     print CLO "CDS_child \"$cds_identifier\" $start $end\n";
@@ -1195,11 +1195,11 @@ sub clone_gene {
     print CLO "Species \"$species\"\n" if $species;
     if (defined $person){ 
       print CLO "Evidence Curator_confirmed $person\n" if $person;
-      print CLO "Remark \"[Cloned from the template CDS $clone_form]\"Curator_confirmed $person\n";
+      print CLO "Remark \"[$date $user] Cloned from the template CDS $clone_form\"Curator_confirmed $person\n";
     }
     else {
       print CLO "Evidence";
-      print CLO "Remark \"[Cloned from the template CDS $clone_form]\"\n";
+      print CLO "Remark \"[$date] Cloned from the template CDS $clone_form\"\n";
     }
     print CLO "Method curated\n";
     close CLO;
