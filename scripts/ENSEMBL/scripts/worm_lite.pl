@@ -28,7 +28,7 @@ use lib "$FindBin::Bin/../lib";
 use WormBase;
 use DBI qw(:sql_types);
 
-my ( $debug, $species, $setup, $dna, $genes, $test, $yfile,$pipeline_setup);
+my ( $debug, $species, $setup, $dna, $genes, $rules, $inputids, $pipeline_setup, $test, $yfile );
 
 GetOptions(
   'species=s'     => \$species,
@@ -36,6 +36,8 @@ GetOptions(
   'load_dna'      => \$dna,
   'load_genes'    => \$genes,
   'load_pipeline' => \$pipeline_setup,
+  'load_rules'    => \$rules,
+  'load_iids'     => \$inputids,
   'debug'         => \$debug,
   'test'          => \$test,
   'yfile=s'       => \$yfile,
@@ -73,10 +75,11 @@ my ($tax_db_host, $tax_db_port, $tax_db_name) =
 
 $WormBase::Species = $species;
 
-&setupdb() if $setup;
-&load_assembly()   if $dna;
-&load_genes() if $genes;
-&load_rules_and_input_ids() if $pipeline_setup;
+&setupdb()            if $setup;
+&load_assembly()      if $dna;
+&load_genes()         if $genes;
+&load_rules()         if $rules or $pipeline_setup;
+&load_and_input_ids() if $inputids or $pipeline_setup;
 
 exit(0);
 
@@ -378,7 +381,7 @@ sub load_genes {
 
 
 #############################################
-sub load_rules_and_input_ids {
+sub load_rules {
   my $db = $config->{database};
 
   my @conf_files;
@@ -413,6 +416,13 @@ sub load_rules_and_input_ids {
       die "Could not find analysis config file $cfile\n";
     }
   }
+}
+
+
+
+#############################################
+sub load_input_ids {
+  my $db = $config->{database};
 
   my $load_input_ids_base =  "perl $cvsDIR/ensembl-pipeline/scripts/make_input_ids "
       . "-dbhost $db->{host} "
