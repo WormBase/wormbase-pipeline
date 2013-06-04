@@ -76,5 +76,11 @@ sub slurp{
    $inf->close;
    eval $txt;
    $/="\n";
+
+   #cds2sequenceNameConversion
+   while(my($k,$v)=each %$VAR1){
+     $k=~s/[a-z]+$//;
+     $$VAR1{$k}||=$v;
+   }    
    return $VAR1;
 }
