@@ -5,7 +5,7 @@
 # written by Anthony Rogers
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2013-05-11 09:19:18 $
+# Last edited on: $Date: 2013-06-04 10:20:39 $
 #
 # it depends on:
 #    wormpep + history
@@ -761,12 +761,12 @@ sub update_analysis {
                            $config->{database}->{port},
                            $config->{database}->{dbname});
   if (not $no_blats) {
-    $wormbase->run_script( "BLAST_scripts/ensembl_blat.pl $db_options -species $species", $log );    
+    $wormbase->run_script( "BLAST_scripts/ensembl_blat.pl $db_options -species $species -version $WS_version", $log );    
   }  
 
   # update genBlastG stuff - not done for elegans as it projects elegans proteins onto a non-elegans genome
   if ($species ne 'elegans' and not $no_genblast) {
-    $wormbase->run_script( "BLAST_scripts/ensembl_genblast.pl $db_options -species $species", $log );
+    $wormbase->run_script( "BLAST_scripts/ensembl_genblast.pl $db_options -species $species -version $WS_version", $log );
   }
 }
 
