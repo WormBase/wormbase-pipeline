@@ -7,7 +7,7 @@
 # Usage : autoace_builder.pl [-options]
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2013-05-02 22:23:58 $
+# Last edited on: $Date: 2013-06-04 11:19:34 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -173,7 +173,8 @@ $wormbase->run_script( 'find_intergenic.pl'               , $log ) if $intergeni
 
 &remap_misc_dynamic                                                      if $remap_misc_dynamic;
 
-&get_repeats                                                             if $repeats; # loaded with homols
+$wormbase->run_script("run_inverted.pl -all" , $log)                     if $repeats;
+
 #must have farm complete by this point.
 $wormbase->run_script( 'load_data_sets.pl -misc', $log) if $misc_data_sets;
 $wormbase->run_script( 'load_data_sets.pl -homol', $log) if $homol_data_sets;
@@ -610,18 +611,6 @@ sub make_UTR {
 
   }
 }
-
-
-sub get_repeats {
-  #repeatmasked chromosomes
-  my $species= lc (ref $wormbase);
-  $wormbase->run_script("get_repeatmasked_chroms.pl -database worm_ensembl_$species", $log);
-  $wormbase->run_script("get_repeatmasked_chroms.pl -database worm_ensembl_$species -softmask", $log);
-
-  #inverted
-  $wormbase->run_script("run_inverted.pl -all" , $log);
-}
-
 
 sub ontologies {
 	$wormbase->run_script( "ONTOLOGY/parse_expr_pattern_new.pl", $log);
