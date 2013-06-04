@@ -4,7 +4,7 @@
 #   setting up the BLAT pipeline
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2013-05-14 09:10:56 $
+# Last edited on: $Date: 2013-06-04 10:13:09 $
 
 use lib $ENV{'CVS_DIR'};
 
@@ -64,16 +64,17 @@ my $CONFIG = {
   }
 };
 
-my($debug,$store,$port,$user,$password,$species,$host,$dbname);
+my($debug,$store,$port,$user,$password,$species,$host,$dbname,$WS_version);
 GetOptions(
- 'debug=s'    => \$debug,
- 'store=s'    => \$store,
- 'user=s'     => \$user,
- 'password=s' => \$password,
- 'species=s'  => \$species,
- 'host=s'     => \$host,
- 'port=s'     => \$port,
- 'dbname=s'   => \$dbname,
+  'debug=s'    => \$debug,
+  'store=s'    => \$store,
+  'user=s'     => \$user,
+  'password=s' => \$password,
+  'species=s'  => \$species,
+  'host=s'     => \$host,
+  'port=s'     => \$port,
+  'dbname=s'   => \$dbname,
+  'version=s'  => \$WS_version,
 )||die(USAGE);
 
 # WormBase setup
@@ -83,12 +84,13 @@ my $wormbase;
       or croak("Can't restore wormbase from $store\n");
 } else {
     $wormbase = Wormbase->new(
-        -debug    => $debug,
-        -organism  => $species,
+      -debug    => $debug,
+      -organism => $species,
+      -version  => $WS_version,
     );
 }
 
-$species = $wormbase->species if not defined $species;
+$WS_version = $wormbase->get_wormbase_version_name;
 my $database = "worm_ensembl_${species}";
 
 # more setup
@@ -158,6 +160,7 @@ sub update_analysis_entry {
     die "Could not find genome fasta file $genome_fa\n";
   }
   $ana->db_file($genome_fa);
+  $ana->db_version($WS_version);
 
   my $parameters = "";
   if (lc($ana->db) eq $species) {
@@ -169,7 +172,6 @@ sub update_analysis_entry {
   }
 
   $ana->parameters($parameters);
-
   $ana->adaptor->update($ana);
 }
 
