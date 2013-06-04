@@ -81,7 +81,7 @@ if (not defined $out_file) {
 my $seqio = Bio::SeqIO->new(-format => 'fasta',
                             -file => ">$out_file");
 
-foreach my $seq ( @{$dbobj->get_SliceAdaptor->fetch_all('toplevel')}) {
+foreach my $seq ( sort { $b->length <=> $a->length } @{$dbobj->get_SliceAdaptor->fetch_all('toplevel')}) {
   &print_seq($seqio, $seq);
 }
 
