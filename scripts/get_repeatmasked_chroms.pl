@@ -49,7 +49,7 @@ if ( $store ) {
 my $log = Log_files->make_build_log($wormbase);
 
 $species = $wormbase->species;
-if ($dbname !~ /$species/) {
+if (defined $dbname and $dbname !~ /$species/) {
   $log->write_to("WARNING: db $dbname does not look like it belongs to species $species. Proceeding anyway");
 }
 
