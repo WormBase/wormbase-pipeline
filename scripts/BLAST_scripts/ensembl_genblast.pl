@@ -3,8 +3,8 @@
 # DESCRIPTION:
 #   setting up the GenBlast pipeline
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2013-05-13 08:28:19 $
+# Last edited by: $Author: klh $
+# Last edited on: $Date: 2013-06-04 10:19:02 $
 
 use lib $ENV{CVS_DIR};
 
@@ -32,7 +32,7 @@ verbose('OFF');
 use Wormbase;
 use strict;
 
-my($debug,$test,$store,$database,$port,$user,$password,$species,$host,$dbname, $dumpace);
+my($debug,$test,$store,$database,$port,$user,$password,$species,$host,$dbname, $dumpace, $WS_version);
 GetOptions(
   'debug=s'    => \$debug,
   'test'       => \$test,
@@ -44,6 +44,7 @@ GetOptions(
   'port=s'     => \$port,
   'dbname=s'   => \$dbname,
   'dumpace'    => \$dumpace,
+  'version=s'  => \$WS_version,
 )||die(USAGE);
 
 # WormBase setup
@@ -53,13 +54,15 @@ my $wormbase;
       or croak("Can't restore wormbase from $store\n");
 } else {
     $wormbase = Wormbase->new(
-        -debug    => $debug,
-        -test     => $test,
-        -organism  => $species,
+      -debug    => $debug,
+      -test     => $test,
+      -organism  => $species,
+      -version => $WS_version,
     );
 }
 
 $database = sprintf('worm_ensembl_%s',lc(ref $wormbase));
+$WS_version = $wormbase->get_wormbase_version_name;
 
 # more setup
 my $log = Log_files->make_build_log($wormbase);
@@ -96,6 +99,11 @@ if ($dumpace) { # dump the resulting analysis out as an ace file
 
 } else { # run the analysis
 
+  $log->write_to("Updating db_version of GenBlast analyses\n");
+  
+  &update_analysis_db_version();
+
+
   $log->write_to("Updating genBlastG input files for $database\n");
   
   # 1) create the split wormpep files
@@ -128,6 +136,15 @@ if ($dumpace) { # dump the resulting analysis out as an ace file
 $log->write_to("Finished.\n");
 $log->mail();
 exit(0);
+
+
+#####################################################################################################
+sub update_analysis_db_version {
+  foreach my $ana (@genblast_analyses) {
+    $ana->db_version($WS_version);
+    $ana->adaptor->update($ana);
+  }
+}
 
 
 #####################################################################################################
