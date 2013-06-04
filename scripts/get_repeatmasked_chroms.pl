@@ -20,17 +20,20 @@ use Bio::SeqIO;
 # variables and command-line options # 
 ######################################
 
-my ($help, $debug, $test, $verbose, $store, $species,$wormbase,$database, $softmask, $out_file);
+my ($help, $debug, $test, $verbose, $store, $species,$wormbase,$dbname, $dbhost, $dbport, $softmask, $nomask, $out_file);
 
-GetOptions ("help"       => \$help,
+GetOptions (
             "debug=s"    => \$debug,
 	    "test"       => \$test,
 	    "verbose"    => \$verbose,
 	    "store:s"    => \$store,
 	    "output:s"   => \$out_file,
-	    "database:s" => \$database,
 	    "species:s"  => \$species,
             "softmask"   => \$softmask,
+            "nomask"     => \$nomask,
+	    "dbname:s"   => \$dbname,
+            "dbhost:s"   => \$dbhost,
+            "dbport:s"   => \$dbport,
 	    );
 
 if ( $store ) {
@@ -41,42 +44,42 @@ if ( $store ) {
                              -organism => $species,
 			     );
 }
-# Display help if required
-&usage("Help") if ($help);
 
-# in test mode?
-if ($test) {
-  print "In test mode\n" if ($verbose);
-}
 # establish log file.
 my $log = Log_files->make_build_log($wormbase);
 
 $species = $wormbase->species;
-unless ($database =~ /$species/) {
-  $log->log_and_die("are you sure you have the right species / database combo\n Species :$species\nDatabase : $database\n");
+if ($dbname !~ /$species/) {
+  $log->write_to("WARNING: db $dbname does not look like it belongs to species $species. Proceeding anyway");
 }
 
-my $chr_assembly = ($wormbase->assembly_type eq 'contig') ? 0 : 1;
-
-$log->write_to("Connecting to worm_dna\n");
+$dbhost = $ENV{WORM_DBHOST} if not defined $dbhost;
+$dbport = $ENV{WORM_DBPORT} if not defined $dbport;
+$dbname = "worm_ensembl_${species}" if not defined $dbname;
 
 my $dbobj = Bio::EnsEMBL::DBSQL::DBAdaptor->
     new(
-        '-host'   => $ENV{WORM_DBHOST},
-        '-port'   => $ENV{WORM_DBPORT},
-        '-user'   => 'wormro',
-        '-dbname' => $database
-        ) or die "Can't connect to Database $database";
+        '-user'   => "wormro", 
+        '-host'   => $dbhost,
+        '-port'   => $dbport,
+        '-dbname' => $dbname,
+        ) or die "Can't connect to Database $dbname";
 
 $log->write_to("Building chromosomes\n");
 
 if (not defined $out_file) {
-  $out_file = ($softmask) ? $wormbase->softmasked_genome_seq : $wormbase->masked_genome_seq;
+  if ($softmask) {
+    $out_file = $wormbase->softmasked_genome_seq;
+  } elsif ($nomask) {
+    $out_file = $wormbase->genome_seq;
+  } else {
+    $out_file = $wormbase->masked_genome_seq;
+  }
 }
 
 
 my $seqio = Bio::SeqIO->new(-format => 'fasta',
-                         -file => ">$out_file");
+                            -file => ">$out_file");
 
 foreach my $seq ( @{$dbobj->get_SliceAdaptor->fetch_all('toplevel')}) {
   &print_seq($seqio, $seq);
@@ -103,9 +106,11 @@ sub print_seq {
 
   $log->write_to("\twriting chromosome $seq_name\n");
 
-  $ens_slice = $softmask
-      ? $ens_slice->get_repeatmasked_seq(undef, 1) 
-      : $ens_slice->get_repeatmasked_seq;
+  if ($softmask) {
+    $ens_slice = $ens_slice->get_repeatmasked_seq(undef, 1) ;
+  } elsif (not $nomask) {
+    $ens_slice = $ens_slice->get_repeatmasked_seq;
+  }
 
   my $seqobj = Bio::PrimarySeq->new(-seq => $ens_slice->seq,
                                     -id => $seq_name,
@@ -114,15 +119,7 @@ sub print_seq {
   $seqio->write_seq($seqobj);
 }
 
-sub usage {
-  my $error = shift;
 
-  if ($error eq "Help") {
-    # Normal help menu
-    system ('perldoc',$0);
-    exit (0);
-  }
-}
 
 ##########################################
 
