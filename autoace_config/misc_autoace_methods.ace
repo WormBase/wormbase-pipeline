@@ -2295,7 +2295,7 @@ No_display
 Method : "Genomic_canonical"
 GFF_feature "region"
 GFF_SO "SO:0000143" // assembly_component
-Remark "Genomic clones selected for use in the genome sequencing project of C. elegans"
+Remark "Sequence that forms part of the reference genome"
 No_display	
 
 Method : "BLASTP"
