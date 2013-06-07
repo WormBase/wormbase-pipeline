@@ -1,11 +1,11 @@
-#!/usr/local/bin/perl5.8.0 -w
+#!/bin/env perl
 #
 # TransferDB.pl
 #
 # by ag3 [991221]
 #
-# Last updated on: $Date: 2013-02-08 11:19:17 $
-# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2013-06-07 12:55:52 $
+# Last updated by: $Author: mh6 $
 
 # transferdb moves acedb database files across filesystems.
 # Creates a temporary database.BCK 
@@ -13,7 +13,6 @@
 # Updates display.wrm
 
 use strict;
-#use lib "/nfs/disk100/wormpub/wormbase/scripts";
 use lib $ENV{'CVS_DIR'};
 use Wormbase;
 use Carp;
@@ -24,7 +23,7 @@ use Getopt::Long;
 use Cwd;
 use Log_files;
 use Storable;
-
+use warnings;
 
 ##############################
 # command-line options       #
@@ -88,7 +87,7 @@ GetOptions (
 	    "test"        => \$test,
             "split"       => \$split,
 	    "store:s"     => \$store
-);
+)||die(@!);
 
 if( $store ) {
   $wormbase = retrieve( $store ) or croak("cant restore wormbase from $store\n");
@@ -308,7 +307,7 @@ sub backup_db {
     $newfile=~s/$database/$bck_subdir/;
     if ($file !~ /^\./) {
       $bk_chk="0";
-      $bk_val=system("\/usr/bin/scp $file $newfile");
+      $bk_val=system("scp $file $newfile");
       $bk_chk=$bk_val >> 8;
       $O_SIZE = (stat($file))[7];
       $N_SIZE = (stat($newfile))[7];
@@ -416,11 +415,11 @@ sub process_file {
       
       if( ($filename =~ m/models\.wrm$/) && (!$split) ){
 	$log->write_to( "$filename uses a different cp method\n\n");
-	$cp_val = system("\/usr/bin/scp -r $s_file $e_file") 
+	$cp_val = system("scp -r $s_file $e_file") 
       }
       
       else{
-	$cp_val = system("\/usr/bin/scp $s_file $e_file");
+	$cp_val = system("scp $s_file $e_file");
       }
       $cp_chk = $cp_val >> 8;
       
