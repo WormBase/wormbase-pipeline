@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.8.0 -w
+#!/bin/env perl
 #
 # unpack_db.pl
 # 
@@ -12,8 +12,8 @@
 # the Cold Spring Harbor Laboratory database (cshace)
 # the Caltech database (citace)
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2013-01-15 11:18:10 $
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2013-06-07 12:51:04 $
 
 
 #################################################################################
@@ -29,6 +29,7 @@ use Wormbase;
 use File::Copy;
 use File::Path;
 use Storable;
+use warnings;
 
 ##############################
 # command-line options       #
@@ -208,7 +209,7 @@ sub unpack_stuff {
   $msg = "ERROR : Copy '".$dbname."_$today.tar.gz' to $unpack_dir FAILED\n"     if ($match == 0);
   $log->write_to("$msg");
 
-  $wormbase->run_command("/bin/tar zxvf ${dbname}_${today}.tar.gz", $log);
+  $wormbase->run_command("tar zxvf ${dbname}_${today}.tar.gz", $log);
   $log->write_to("unzip and untar file\n\n");
 
 
@@ -220,7 +221,7 @@ sub unpack_stuff {
     my $version = $wormbase->get_wormbase_version;
     my $chromace = "chrom.ace";
     open (CHROMACE, "> $chromace") || die "Can't open $chromace\n";
-    open (LIST, "/bin/ls briggff${version}/*.dna |") || die "Couldn't pipe\n";
+    open (LIST, "ls briggff${version}/*.dna |") || die "Couldn't pipe\n";
     while (my $fasta=<LIST>) {
       chomp $fasta;
       open (FASTA, "< $fasta") || die "Can't open brigace chromosomal fasta file\n";
@@ -243,7 +244,7 @@ sub unpack_stuff {
 
   # add list of ace files to be loaded into array
   $log->write_to("Database files to be loaded:\n");
-  open (LIST, "/bin/ls *.ace |") || die "Couldn't pipe\n";
+  open (LIST, "ls *.ace |") || die "Couldn't pipe\n";
   while (<LIST>) {
     chomp;
     push (@filenames,"$_");
@@ -334,7 +335,7 @@ sub unpack_stuff {
     # citace has URLs in the LongText class that breaks acedb when this data is written out again, so quote '//'
     if ($database eq "citace") {
       my $tmp = "$filename.tmp";
-      system("/bin/sed 's#http:\\/\\/#http:\\\\/\\\\/#g' < $filename > $tmp");
+      system("sed 's#http:\\/\\/#http:\\\\/\\\\/#g' < $filename > $tmp");
       $wormbase->run_command("mv -f $tmp $filename", $log)
     }
 
