@@ -1,4 +1,4 @@
-#!/software/bin/perl -w
+#!/usr/bin/env perl
 #
 # check_primary_database.pl
 # 
@@ -7,8 +7,8 @@
 # This script checks all of the species primary sequence databases....and geneace 
 # so that gene discrepancies can be identified early in the build.
 #
-# Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2013-01-15 11:38:50 $      
+# Last updated by: $Author: mh6 $     
+# Last updated on: $Date: 2013-06-07 13:03:43 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -17,16 +17,13 @@ use Getopt::Long;
 use Carp;
 use Log_files;
 use Storable;
-#use Ace;
-#use Sequence_extract;
-#use Coords_converter;
+use warnings;
 
 ######################################
 # variables and command-line options # 
 ######################################
 
 my ($help, $debug, $test, $verbose, $store, $wormbase, $species,);
-
 
 GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
@@ -51,7 +48,6 @@ if ( $store ) {
 # in test mode?
 if ($test) {
   print "In test mode\n" if ($verbose);
-
 }
 
 # establish log file.
@@ -64,27 +60,32 @@ my $log = Log_files->make_build_log($wormbase);
 my $logs_dir        = $wormbase->logs;        # AUTOACE LOGS
 my $xaceinstances;
 my @xaceinstances;
+
 # some database paths
 my $geneace   = $wormbase->primary('geneace');
-print "$geneace\n" if ($debug);
 my $camace    = $wormbase->primary('camace');
-print "$camace\n" if ($debug);
 my $stlace    = $wormbase->primary('stlace');
-print "$stlace\n" if ($debug);
 my $citace    = $wormbase->primary('citace');
-print "$citace\n" if ($debug);
 my $cshace    = $wormbase->primary('cshace');
-print "$cshace\n" if ($debug);
 my $brigace   = $wormbase->primary('brigace');
-print "$brigace\n" if ($debug);
 my $remace    = $wormbase->primary('remace');
-print "$remace\n" if ($debug);
 my $brenace   = $wormbase->primary('brenace');
-print "$brenace\n" if ($debug);
 my $japace    = $wormbase->primary('japace');
-print "$japace\n" if ($debug);
 my $brugace    = $wormbase->primary('brugace');
-print "$brugace\n" if ($debug);
+
+if ($debug){
+print<<HERE;
+$geneace
+$camace
+$stlace
+$citace
+$cshace
+$brigace
+$remace
+$japace
+$brugace
+HERE
+}
 
 ##########################
 # MAIN BODY OF SCRIPT
@@ -117,24 +118,16 @@ foreach $xaceinstances (@xaceinstances) {
 # Close log files and exit
 $log->write_to("\n\nFinished\n");
 $log->write_to("----------\n\n");
-#$log->write_to("Put some statistics here.\n");
 
 $log->mail();
 print "Finished.\n" if ($verbose);
 exit(0);
-
-
-
-
-
 
 ##############################################################
 #
 # Subroutines
 #
 ##############################################################
-
-
 
 ##########################################
 
@@ -149,10 +142,6 @@ sub usage {
 }
 
 ##########################################
-
-
-
-
 # Add perl documentation in POD format
 # This should expand on your brief description above and 
 # add details of any options that can be used with the program.  
