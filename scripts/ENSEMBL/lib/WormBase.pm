@@ -277,6 +277,8 @@ sub parse_gff3_fh {
     my @l = split(/\t+/, $_);
     
     next if ($l[2] ne 'mRNA' and 
+             $l[2] ne 'rRNA' and 
+             $l[2] ne 'tRNA' and 
              $l[2] ne 'primary_transcript' and 
              $l[2] ne 'protein_coding_primary_transcript' and  
              $l[2] ne 'CDS' and 
@@ -317,9 +319,12 @@ sub parse_gff3_fh {
         };
       }
     } elsif ($l[2] eq 'mRNA' or 
+             $l[2] eq 'tRNA' or
+             $l[2] eq 'rRNA' or
              $l[2] eq 'primary_transcript' or 
              $l[2] eq 'protein_coding_primary_transcript') {
       $transcripts{$id}->{source} = $l[1];
+      $transcripts{$id}->{type}   = $l[2];
       foreach my $parent (keys %parents) {
         push @{$genes{$parent}}, $id;
       }
@@ -340,6 +345,7 @@ sub parse_gff3_fh {
     foreach my $tid (@tids) {
       my $tran = $transcripts{$tid};
       my $gff_source = $tran->{source};
+      my $gff_type = $tran->{type};
 
       my @exons = sort { $a->{start} <=> $b->{start} } @{$tran->{exons}};
 
@@ -441,7 +447,11 @@ sub parse_gff3_fh {
         $transcript->biotype('protein_coding');
         $gene_is_coding = 1;
       } else {
-        $transcript->biotype('ncRNA');
+        if ($gff_type =~ /RNA/) {
+          $transcript->biotype($gff_type);
+        } else {
+          $transcript->biotype('ncRNA');
+        }
       }
 
       $gene->add_Transcript($transcript);
