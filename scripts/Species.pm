@@ -1022,11 +1022,11 @@ sub full_name {
   else { return'Haemonchus contortus'
   };
 }
-sub chromosome_prefix {'Hcon_PRJNA193158'}
+sub chromosome_prefix {''}
 sub pep_prefix {''}
 sub pepdir_prefix{''};
 sub ncbi_tax_id {'6289'};
-sub ncbi_bioproject {'PRJNA193158'};
+sub ncbi_bioproject {'PRJNA205202'};
 sub assembly_type {'contig'};
 sub chromosome_names {
   die "chromosome_names method not implemented for this species\n";
