@@ -79,7 +79,7 @@ $WormBase::Species = $species;
 &load_assembly()      if $dna;
 &load_genes()         if $genes;
 &load_rules()         if $rules or $pipeline_setup;
-&load_and_input_ids() if $inputids or $pipeline_setup;
+&load_input_ids()     if $inputids or $pipeline_setup;
 
 exit(0);
 
