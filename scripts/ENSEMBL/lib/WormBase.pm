@@ -284,12 +284,14 @@ sub parse_gff3_fh {
              $l[2] ne 'CDS' and 
              $l[2] ne 'exon');
     
-    my ($id, %parents);
+    my ($id, $name, %parents);
 
     foreach my $el (split(/;/, $l[8])) {
       my ($k, $v) = $el =~ /(\S+)=(.+)/;
       if ($k eq 'ID') {
         $id = $v;
+      } elsif ($k eq 'Name') {
+        $name = $v;
       } elsif ($k eq 'Parent') {
         my @p = split(/,/, $v);
         map { $parents{$_} = 1 } @p;
@@ -325,6 +327,12 @@ sub parse_gff3_fh {
              $l[2] eq 'protein_coding_primary_transcript') {
       $transcripts{$id}->{source} = $l[1];
       $transcripts{$id}->{type}   = $l[2];
+      $transcripts{$id}->{seq}    = $l[0];
+      $transcripts{$id}->{start}  = $l[3];
+      $transcripts{$id}->{end}    = $l[4];
+      $transcripts{$id}->{strand} = $l[6];
+      $transcripts{$id}->{name}   = $name;
+
       foreach my $parent (keys %parents) {
         push @{$genes{$parent}}, $id;
       }
@@ -333,7 +341,7 @@ sub parse_gff3_fh {
    
   my @all_ens_genes;
 
-  foreach my $gid (keys %genes) {
+  GENE: foreach my $gid (keys %genes) {
     my @tids = sort @{$genes{$gid}};
 
     my $gene = Bio::EnsEMBL::Gene->new(
@@ -342,28 +350,58 @@ sub parse_gff3_fh {
 
     my $gene_is_coding = 0;
 
-    foreach my $tid (@tids) {
+    TRAN: foreach my $tid (@tids) {
+
       my $tran = $transcripts{$tid};
       my $gff_source = $tran->{source};
       my $gff_type = $tran->{type};
 
+      if (not exists $tran->{exons}) {
+        # For some single-exon features, e.g. ncRNAs, exons are not compulsory in the GFF3. 
+        # Add that exon dynamically here then
+        push @{$tran->{exons}}, {
+          seq       => $tran->{seq},
+          start     => $tran->{start},
+          end       => $tran->{end},
+          strand    => $tran->{strand},
+          phase     => -1,
+          end_phase => -1,
+        };
+      }
+
       my @exons = sort { $a->{start} <=> $b->{start} } @{$tran->{exons}};
+
+      # sanity check: exons do not overlap
+      for(my $i=0; $i < scalar(@exons) - 1; $i++) {
+        if ($exons[$i]->{end} >= $exons[$i+1]->{start}) {
+          print STDERR "Skipping gene with  transcript $tid ($gff_source) - exons overlap\n";
+          next GENE;
+        }
+      }
 
       my $strand = $exons[0]->{strand};
       my $slice = $slice_hash->{$exons[0]->{seq}};
       die "Could not find slice\n" if not defined $slice;
 
       if (exists $tran->{cds}) {
+        my @cds = sort { $a->{start} <=> $b->{start} } @{$tran->{cds}};
+
+        # sanity check: CDS segments do not overlap
+        for(my $i=0; $i < scalar(@cds) - 1; $i++) {
+          if ($cds[$i]->{end} >= $cds[$i+1]->{start}) {
+            die "Bailing on transcript $tid - CDS segments overlap\n";
+          }
+        }
+
         #
         # match up the CDS segments with exons
         #
-        my @cds = sort { $a->{start} <=> $b->{start} } @{$tran->{cds}};
 
         foreach my $exon (@exons) {
           my ($matching_cds, @others) = grep { $_->{start} <= $exon->{end} and $_->{start} >= $exon->{start} } @cds;
           
           if (@others) {
-            die "Multiple matching CDSs for a single exon segment\n";
+            die "Bailing on transcript $tid: multiple matching CDSs for a single exon segment\n";
           }
           if (defined $matching_cds) {
             $exon->{cds_seg} = $matching_cds;
