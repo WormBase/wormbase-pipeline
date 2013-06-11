@@ -398,7 +398,7 @@ close($out);
 my %coreSpecies = $wormbase->species_accessors;
 foreach my $species ($wormbase, values %coreSpecies){
        my $grep = "'taxon:${\$species->ncbi_tax_id}'";
-       my $out_file = $output.$species->full_name(-g_species => 1);
+       my $out_file = $output.".".$species->full_name(-g_species => 1);
        $wormbase->run_command("grep $grep $output > $out_file");
        $wormbase->check_file($out_file,$log,minsize => 1500000,maxsize => 16000000,lines =>  ['^WB\tWBGene\d+\t\S+\t\tGO\:\d+']);
 }
