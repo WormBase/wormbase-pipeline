@@ -5,7 +5,7 @@
 # by Anthony Rogers                             
 #
 # Last updated by: $Author: klh $               
-# Last updated on: $Date: 2013-04-02 11:32:38 $
+# Last updated on: $Date: 2013-06-11 21:54:25 $
 
 # Generates a release letter at the end of build.
 #
@@ -126,7 +126,7 @@ if( defined($opt_l)) {
   printf RL "ONTOLOGY DIR             - gene_associations, obo files for (phenotype GO anatomy) and associated association files\n";
   printf RL "\n\n";
   printf RL "Release notes on the web:\n-------------------------\n";
-  printf RL "http://www.wormbase.org/wiki/index.php/Release_Schedule\n\n\n\n";
+  printf RL "http://www.wormbase.org/about/release_schedule\n\n\n\n";
   
   # make the chromosomal sequence changes file
   $log->write_to("\nGenerating C. elegans chromosomal sequence changes Data\n\n");
