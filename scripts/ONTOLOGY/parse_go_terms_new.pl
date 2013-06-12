@@ -122,7 +122,7 @@ my $count=0;
 my $line_count=0;
 
 if ($gene) {   
-    my $it=$db->fetch_many(-query=>'find gene go_term');
+    my $it=$db->fetch_many(-query=>'find gene go_term AND NOT Dead');
     
    
     while (my $obj=$it->next) {
@@ -179,6 +179,10 @@ if ($gene) {
 		if ($tmp[4] eq 'Curator_confirmed') {
 		    next;
 		}
+                # skip directly-added Phenotype-based associations
+                if ($tmp[4] eq 'Variation_evidence') {
+                  next;
+                }
 		if ($tmp[4] eq 'Inferred_automatically') {
 		    $with=$tmp[5];
 		}
@@ -246,6 +250,7 @@ if ($rnai) {
 	}
 	
 	foreach my $gene (@genes) {
+            next if not $gene->Live;
 	    my $species=$gene->Species;
 	    foreach my $phen (@phen_array) {
 		if (! ($phen2go{$phen})) {
