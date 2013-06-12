@@ -13,7 +13,7 @@
 #      COMPANY:
 #     $Version:  $
 #      CREATED: 2006-02-27
-#        $Date: 2013-03-15 15:39:15 $
+#        $Date: 2013-06-12 16:01:01 $
 #===============================================================================
 package Remap_Sequence_Change;
 
@@ -202,6 +202,8 @@ sub remap_gff {
 
   my $indel = 0;		# true if indels affect this location
   my $change = 0;		# true if non-indel base changes affect this location
+  my $start_deleted = 0;
+  my $end_deleted = 0;
 
   my %mapping_data = %{$self->_mapping_data};
 
@@ -252,7 +254,9 @@ sub remap_gff {
         } else {
 	  
 	  # if there is a change inside our location, note it
-	  if ($this_ver_start < $mismatch_end1 && $this_ver_end >= $mismatch_start1) {
+	  if ($this_ver_start < $mismatch_end1 and
+              (($len1 > 0 and $this_ver_end >= $mismatch_start1) or
+               ($len1 == 0 and $this_ver_end > $mismatch_start1))) {
 	    $change = 1;
 	  }
 
@@ -260,19 +264,31 @@ sub remap_gff {
 	  my $location_length = $this_ver_end - $this_ver_start;
 
           # if the start or end are beyond the start of the change region, apply any shift
-          if ($this_ver_start >= $mismatch_end1) { # if past the end of the change region, shift it
+          if ($len1 > 0 and $this_ver_start >= $mismatch_end1 or
+              $len1 == 0 and $this_ver_start > $mismatch_end1) { # if past the end of the change region, shift it
             $start += $len2 - $len1;
-          } elsif ($this_ver_start >= $mismatch_start1 && $this_ver_start - $mismatch_start1 > $len2 ) { 
-            # if was in the change region and now out, set it to the end
-            $start = $mismatch_start1 + $len2;
+          } elsif ($this_ver_start >= $mismatch_start1) {
+            # within a changed segment; if the position within the original segment
+            # maps to beyond the end of the replacement segment, then this position no
+            # longer exists, in wich case we barf
+            if ($this_ver_start - $mismatch_start1 + 1 > $len2 ) { 
+              $start_deleted = 1;
+              $start = $mismatch_start2 + $len2;
+            }
           }
 
-          if ($this_ver_end >= $mismatch_end1) { 
+          if ($len1 > 0 and $this_ver_end >= $mismatch_end1 or
+              $len1 == 0 and $this_ver_end > $mismatch_end1) { 
             # if past the end of the change region, shift it
             $end += $len2 - $len1;
-          } elsif ($this_ver_end >= $mismatch_start1 && $this_ver_end - $mismatch_start1 > $len2) { 
-            # if was in the change region and now out, set it to the end
-            $end = $mismatch_start1 + $len2;
+          } elsif ($this_ver_end >= $mismatch_start1) {
+            # within a changed segment; if the position within the original segment
+            # maps to beyond the end of the replacement segment, then this position no
+            # longer exists, in wich case we barf
+            if ($this_ver_end - $mismatch_start1 + 1 > $len2) { 
+              $end_deleted = 1;
+              $end = $mismatch_start2 + $len2;
+            }
           }
 
 	  # see if we have any indels in our location
@@ -289,7 +305,7 @@ sub remap_gff {
 
 #  print " Remapped to $start $end $sense $indel $change\n";
 
-  return ($start, $end, $sense, $indel, $change);
+  return ($start, $end, $sense, $indel, $change, $start_deleted, $end_deleted);
 }
 ##########################################################
 # 
