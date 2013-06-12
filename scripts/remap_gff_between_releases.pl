@@ -9,7 +9,7 @@
 #
 #
 # Last updated by: $Author: klh $     
-# Last updated on: $Date: 2013-03-15 15:34:11 $      
+# Last updated on: $Date: 2013-06-12 16:01:34 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -85,35 +85,56 @@ my $assembly_mapper = Remap_Sequence_Change->new($release1, $release2, $wormbase
 # MAIN BODY OF SCRIPT
 ##########################
 
-my ($indel, $change);
+my ($indel, $change, $start_del, $end_del);
 
 open (OUT, "> $output") || die "Can't open $output";
 open (GFF, "< $gff") || die "Can't open GFF file $gff\n";
 
 while (my $line = <GFF>) {
   chomp $line;
-  if ($line =~ /^\s*$/) {next;}
-  if ($line =~ /^#/) {next;}
-  my @f = split /\t/, $line;
+  
+  next if $line !~ /\S/;
+  next if $line =~ /^\#/;
+
+  my @f = split /\t+/, $line;
 
   my ($chromosome, $start, $end, $sense) = ($f[0], $f[3], $f[4], $f[6]);
+
   $chromosome =~ s/^chr_//;
-  if ($chromosome !~ /^CHROMOSOME_/ && $wormbase->species eq 'elegans') {$chromosome = "CHROMOSOME_$chromosome"};
+  $chromosome =~ s/^CHROMOSOME_//;
+  if ($wormbase->species eq 'elegans') {
+    $chromosome = "CHROMOSOME_${chromosome}";
+  } elsif ($wormbase->species eq 'briggsae') {
+    $chromosome = "chr${chromosome}";
+  }
+
+  my ($obj_name) = ($f[8] =~ /^\S+\s+\"(\S+)\"/);
+  
   # some checks for malformed GFF files
-  if (!defined $chromosome || ! defined $start || ! defined $end || ! defined $sense) {$log->log_and_die("Malformed line (missing values? spaces instead of TABs?): $line\n")}
-  if ($wormbase->species eq 'elegans' && $chromosome !~ /(^CHROMOSOME_[IVX]+$)|(^CHROMOSOME_MtDNA$)/) {$log->log_and_die("Malformed line (invalid chromosome name?): $line\n")}
-  if ($start !~ /^\d+$/) {$log->log_and_die("Malformed line (non-numeric start?): $line\n")}
-  if ($end !~ /^\d+$/) {$log->log_and_die("Malformed line (non-numeric end?): $line\n")}
-  if ($sense !~ /^[\+|\-]$/) {$log->log_and_die("Malformed line (invalid sense?): $line\n")}
+  if (not defined $chromosome or
+      not defined $start or 
+      not defined $end or
+      not defined $sense) {
+    $log->log_and_die("Malformed line (missing values? spaces instead of TABs?): $line\n");
+  }
+
+  if ($start !~ /^\d+$/) {
+    $log->log_and_die("Malformed line (non-numeric start?): $line\n");
+  }
+  if ($end !~ /^\d+$/) {
+    $log->log_and_die("Malformed line (non-numeric end?): $line\n");
+  }
+  if ($sense !~ /^[\+|\-]$/) {
+    $log->log_and_die("Malformed line (invalid sense?): $line\n");
+  }
 
   print "chrom, start, end=$chromosome, $start, $end\n" if ($verbose);
-  ($f[3], $f[4], $f[6], $indel, $change) = $assembly_mapper->remap_gff($chromosome, $start, $end, $sense);
+  ($f[3], $f[4], $f[6], $indel, $change, $start_del, $end_del) = $assembly_mapper->remap_gff($chromosome, $start, $end, $sense);
   
-  if ($indel) {
-    $log->write_to("There is an indel in the sequence in CHROMOSOME $chromosome, $start, $end\n");
-  } elsif ($change) {
-    $log->write_to("There is a change in the sequence in CHROMOSOME $chromosome, $start, $end\n");
-  }
+  if ($indel or $change or $start_del or $end_del) {
+    $log->write_to("There was a complication in mapping $obj_name (change=$change indel=$indel startdel=$start_del enddel=$end_del) " . 
+                   "($chromosome $start $end mapped to $chromosome $f[3] $f[4])\n");
+  } 
   
   $line = join "\t", @f;
   print OUT $line,"\n";
