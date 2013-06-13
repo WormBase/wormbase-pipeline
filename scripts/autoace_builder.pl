@@ -7,7 +7,7 @@
 # Usage : autoace_builder.pl [-options]
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2013-06-04 11:19:34 $
+# Last edited on: $Date: 2013-06-13 14:52:20 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -188,7 +188,7 @@ $wormbase->run_script( 'write_DB_remark.pl'                      , $log) if $rem
 $wormbase->run_script( 'molecular_names_for_genes.pl'            , $log) if $names;
 $wormbase->run_script( 'get_treefam.pl'                          , $log) if $treefam;
 $wormbase->run_script( 'cluster_gene_connection.pl'              , $log) if $cluster;
-$wormbase->run_script( 'inherit_GO_terms.pl -phenotype -motif -tmhmm', $log ) if $GO_term;
+$wormbase->run_script( 'inherit_GO_terms.pl -phenotype -motif ', $log ) if $GO_term;
 $wormbase->run_script( 'KEGG.pl', $log )                                 if $kegg;
 
 # $build_dumpGFF.pl; (final) is run chronologically here but previous call will operate
