@@ -14,7 +14,13 @@
 //
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: pad $
-// Last edited on: $Date: 2013-04-12 10:34:24 $
+// Last edited on: $Date: 2013-06-17 16:04:00 $
+//
+//
+// Additional things to consider. If classes are added or new data in the ?Gene class
+// Then we should consider the elegans_config (and possibly others) so the data makes
+// it into the build.
+//
 
 
 
@@ -931,6 +937,12 @@
 ?GO_term Name ?Text
 	 Definition ?Text
          Term ?Text
+	 Synonym Broad ?Text
+		 Exact ?Text
+		 Narrow ?Text
+		 Related ?Text
+	 Status UNIQUE Valid
+                       Obsolete
 	 Type UNIQUE Biological_process
                      Cellular_component
 		     Molecular_function
@@ -944,7 +956,6 @@
 		       CDS        ?CDS        XREF GO_term
 		       Sequence   ?Sequence   XREF GO_term // Erich, [011210 krb]
 		       Transcript ?Transcript XREF GO_term // [030411 krb]
-		       Pseudogene ?Pseudogene XREF GO_term // [030801 krb]
 		       Phenotype  ?Phenotype  XREF GO_term // Erich, [020128 dl]
 		       Index Ancestor   ?GO_term XREF Descendent // Lincoln [020709 [krb]
                	             Descendent ?GO_term XREF Ancestor
@@ -952,8 +963,7 @@
 		       Homology_group ?Homology_group XREF GO_term // added [031120 krb]
 		       Expr_pattern ?Expr_pattern XREF GO_term
 		       Picture ?Picture XREF Cellular_component
- 	 Version UNIQUE Text UNIQUE Text // Lincoln, to store version number of GO
-					 // only to be attached to three parent GO_terms [krb 031028]
+ 	 Version UNIQUE Text UNIQUE Text // Lincoln, to store version number of GO - only on 3 parent_terms [krb 031028]
 
 ///////////////////////////////////////////////////////////////
 //
