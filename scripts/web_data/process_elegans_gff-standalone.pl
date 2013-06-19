@@ -108,9 +108,10 @@ if ($species eq 'elegans') {
 while (<>) {
     
     # skip comments unless it is a seq-region definition
-    if (/^##sequence-region/){
-      print $outfh $_;
-    }elsif(/^#/){
+    if (/^\#/) {
+      if (/^##sequence-region/){
+        print $outfh $_;
+      }
       next;
     }
 
