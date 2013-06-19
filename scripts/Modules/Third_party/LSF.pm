@@ -10,11 +10,11 @@ sub BEGIN {
     my ($out,$err);
     eval{ 
         run ['lsid','-V'],\undef,\$out,\$err; 
-    };
+    };    
     if($@){
         die "Cannot find LSF executables. \$PATH is $ENV{PATH}\n";
     }else{
-        die "Cannot determine LSF version\n" unless $err =~ /^LSF ([^,]+)/m;
+        die "Cannot determine LSF version\n" unless $err =~ /Platform LSF\s+([^,]+)/m;
         $__PACKAGE__::LSF = $1;
     }
 }
@@ -28,8 +28,6 @@ sub import {
     $p{RaiseError}  = 1 if not exists $p{RaiseError};
     $p{PrintOutput} = 1 if not exists $p{PrintOutput};
     $p{PrintError}  = 1 if not exists $p{PrintError};
-
-    my @modules = qw(Job JobHistory JobGroup Queue JobManag
     my @modules = qw(Job JobHistory JobGroup Queue JobManager);
     my @code = map { "use LSF::$_ PrintOutput => $p{PrintOutput}, PrintError => $p{PrintError}, RaiseError => $p{RaiseError};\n"; 
                    } @modules;
