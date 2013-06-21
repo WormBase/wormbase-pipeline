@@ -2816,7 +2816,7 @@ Strand_sensitive
 Width "1.000000"
 Show_text
 Remark "Published micro-ORF"
-
+GFF_SO "SO:0000629" // five_prime_open_reading_frame
 
 
 Method : "binding_site" 
