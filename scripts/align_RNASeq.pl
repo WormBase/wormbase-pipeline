@@ -186,7 +186,7 @@
 # by Gary Williams
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2013-05-02 11:19:23 $
+# Last updated on: $Date: 2013-06-24 10:37:16 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -251,6 +251,7 @@ $species = $wormbase->species;
 $log->write_to("Processing RNASeq data for $species\n");
 
 my $Software = "/nfs/panda/ensemblgenomes/wormbase/software/packages";
+my $samtools = "$Software/samtools/samtools";
 
 #################################################################
 # Quick utility for getting a file from the Short Read Archive.
@@ -309,7 +310,7 @@ if ($species eq 'elegans') {
 
 # Add new analysis/condition objects to ~wormpub/DATABASES/geneace
 
-#	     SRX001872  => ["RNASeq_Hillier.L2_larva", 'phred', 'single'], # needs a lot of memory to run tophat
+	     SRX001872  => ["RNASeq_Hillier.L2_larva", 'phred', 'single'], # needs a lot of memory to run tophat
 	     SRX001873  => ["RNASeq_Hillier.Young_Adult", 'phred', 'single'],
 	     SRX001874  => ["RNASeq_Hillier.L4_larva", 'phred', 'single'],
 	     SRX001875  => ["RNASeq_Hillier.L3_larva", 'phred', 'single'],
@@ -447,6 +448,7 @@ if ($species eq 'elegans') {
 	    SRX191951 => ["RNASeq.elegans.SRP016006.adult_male.Replicate2", 'phred', 'single'],
 	    SRX191952 => ["RNASeq.elegans.SRP016006.adult_male.Replicate3", 'phred', 'single'],
 
+# new	    SRX185660 => ["RNASeq.elegans.SRP015688"],
 	    );
 
   if ($ribosome_occupancy) {
@@ -536,32 +538,34 @@ if ($species eq 'elegans') {
 # Add new analysis/condition  objects to ~wormpub/DATABASES/remanei
 
   %expts = ( 
-	    # SRX076136 # 454 library - will have to deal with the 454 quality file?
-	    SRX101895 => ["RNASeq.remanei.Adult_male.Replicate1", 'phred', 'paired-end'],
-	    SRX101894 => ["RNASeq.remanei.Adult_male.Replicate2", 'phred', 'single'],
-	    SRX101893 => ["RNASeq.remanei.Adult_male.Replicate3", 'phred', 'paired-end'],
-	    SRX101892 => ["RNASeq.remanei.Adult_male.Replicate4", 'phred', 'single'],
-	    SRX101891 => ["RNASeq.remanei.Adult_male.Replicate5", 'phred', 'paired-end'],
-	    SRX101890 => ["RNASeq.remanei.Adult_female.Replicate1", 'phred', 'paired-end'],
-	    SRX101889 => ["RNASeq.remanei.Adult_female.Replicate2", 'phred', 'single'],
-	    SRX101888 => ["RNASeq.remanei.Adult_female.Replicate3", 'phred', 'paired-end'],
-	    SRX101887 => ["RNASeq.remanei.Adult_female.Replicate4", 'phred', 'single'],
-	    SRX101886 => ["RNASeq.remanei.Adult_female.Replicate5", 'phred', 'paired-end'],
-	    SRX101885 => ["RNASeq.remanei.L2_larva.Replicate1", 'phred', 'single'],
-	    SRX101884 => ["RNASeq.remanei.L2_larva.Replicate2", 'phred', 'paired-end'],
-	    SRX101883 => ["RNASeq.remanei.L2_larva.Replicate3", 'phred', 'paired-end'],
-	    SRX101882 => ["RNASeq.remanei.early_embryo.Replicate1", 'phred', 'paired-end'],
-	    SRX101881 => ["RNASeq.remanei.early_embryo.Replicate2", 'phred', 'paired-end'],
-	    SRX101880 => ["RNASeq.remanei.L4_larva.Replicate1", 'phred', 'paired-end'],
-	    SRX101879 => ["RNASeq.remanei.L4_larva.Replicate2", 'phred', 'paired-end'],
-	    SRX052083 => ["RNASeq.remanei.L4_larva", 'phred', 'single'],
 	    SRX052082 => ["RNASeq.remanei.L2_larva", 'phred', 'paired-end'],
+	    SRX052083 => ["RNASeq.remanei.L4_larva", 'phred', 'single'],
+
 	    SRX191971 => ["RNASeq.remanei.SRP016006.adult_female.Replicate1", 'phred', 'single'],
 	    SRX191972 => ["RNASeq.remanei.SRP016006.adult_female.Replicate2", 'phred', 'single'],
 	    SRX191973 => ["RNASeq.remanei.SRP016006.adult_female.Replicate3", 'phred', 'single'],
 	    SRX191974 => ["RNASeq.remanei.SRP016006.adult_male.Replicate1", 'phred', 'single'],
 	    SRX191975 => ["RNASeq.remanei.SRP016006.adult_male.Replicate2", 'phred', 'single'],
 	    SRX191976 => ["RNASeq.remanei.SRP016006.adult_male.Replicate3", 'phred', 'single'],
+# new	    SRX193367 => ["RNASeq.remanei.SRP016056.adult", 'phred', 'single'],
+	    SRX101879 => ["RNASeq.remanei.L4_larva.Replicate2", 'phred', 'paired-end'],
+	    SRX101880 => ["RNASeq.remanei.L4_larva.Replicate1", 'phred', 'paired-end'],
+	    SRX101881 => ["RNASeq.remanei.early_embryo.Replicate2", 'phred', 'paired-end'],
+	    SRX101882 => ["RNASeq.remanei.early_embryo.Replicate1", 'phred', 'paired-end'],
+	    SRX101883 => ["RNASeq.remanei.L2_larva.Replicate3", 'phred', 'paired-end'],
+	    SRX101884 => ["RNASeq.remanei.L2_larva.Replicate2", 'phred', 'paired-end'],
+	    SRX101885 => ["RNASeq.remanei.L2_larva.Replicate1", 'phred', 'single'],
+	    SRX101886 => ["RNASeq.remanei.Adult_female.Replicate5", 'phred', 'paired-end'],
+	    SRX101887 => ["RNASeq.remanei.Adult_female.Replicate4", 'phred', 'single'],
+	    SRX101888 => ["RNASeq.remanei.Adult_female.Replicate3", 'phred', 'paired-end'],
+	    SRX101889 => ["RNASeq.remanei.Adult_female.Replicate2", 'phred', 'single'],
+	    SRX101890 => ["RNASeq.remanei.Adult_female.Replicate1", 'phred', 'paired-end'],
+	    SRX101891 => ["RNASeq.remanei.Adult_male.Replicate5", 'phred', 'paired-end'],
+	    SRX101892 => ["RNASeq.remanei.Adult_male.Replicate4", 'phred', 'single'],
+	    SRX101893 => ["RNASeq.remanei.Adult_male.Replicate3", 'phred', 'paired-end'],
+	    SRX101894 => ["RNASeq.remanei.Adult_male.Replicate2", 'phred', 'single'],
+	    SRX101895 => ["RNASeq.remanei.Adult_male.Replicate1", 'phred', 'paired-end'],
+
 	    
 	   );
 
@@ -586,24 +590,9 @@ if ($species eq 'elegans') {
 # Add new analysis/condition  objects to ~wormpub/DATABASES/briggsae
 # add Species "Caenorhabditis briggsae" tag to Condition when the models are updated
   %expts = (
-	    SRX103668 => ["RNASeq.briggsae.Adult.Replicate1", 'phred', 'single'],
-	    SRX103667 => ["RNASeq.briggsae.Adult.Replicate2", 'phred', 'paired-end'],
-	    SRX103666 => ["RNASeq.briggsae.L2_larva.Replicate1", 'phred', 'single'],
-	    SRX103656 => ["RNASeq.briggsae.early_embryo.Replicate1", 'phred', 'single'],
-	    SRX103655 => ["RNASeq.briggsae.early_embryo.Replicate2", 'phred', 'paired-end'],
-	    SRX100089 => ["RNASeq.briggsae.L4_larva.Replicate1", 'phred', 'paired-end'],
-	    SRX100088 => ["RNASeq.briggsae.L2_larva.Replicate2", 'phred', 'paired-end'],
-	    SRX100087 => ["RNASeq.briggsae.early_embryo.Replicate3", 'phred', 'paired-end'],
-	    SRX100086 => ["RNASeq.briggsae.Adult.Replicate3", 'phred', 'paired-end'],
-	    SRX089120 => ["RNASeq.briggsae.Adult.Replicate4", 'phred', 'paired-end'],
-	    SRX089119 => ["RNASeq.briggsae.Adult.Replicate5", 'phred', 'paired-end'],
-	    SRX089070 => ["RNASeq.briggsae.early_embryo.Replicate4", 'phred', 'paired-end'],
-	    SRX089069 => ["RNASeq.briggsae.early_embryo.Replicate5", 'phred', 'paired-end'],
-	    SRX053351 => ["RNASeq.briggsae.all_stages", 'phred', 'single'],                   
-	    SRX052081 => ["RNASeq.briggsae.L4_larva", 'phred', 'single'],                     
 	    SRX052079 => ["RNASeq.briggsae.L2_larva", 'phred', 'single'],                     
-	    SRX127748 => ["RNASeq.briggsae.Jack_Chen.L1", 'phred', 'paired-end'],
-	    SRX127749 => ["RNASeq.briggsae.Jack_Chen.all_stages", 'phred', 'paired-end'],
+	    SRX052081 => ["RNASeq.briggsae.L4_larva", 'phred', 'single'],                     
+	    SRX053351 => ["RNASeq.briggsae.all_stages", 'phred', 'single'],                   
 	    SRX191953 => ["RNASeq.briggsae.SRP016006.adult_female.Replicate1", 'phred', 'single'],
 	    SRX191954 => ["RNASeq.briggsae.SRP016006.adult_female.Replicate2", 'phred', 'single'],
 	    SRX191955 => ["RNASeq.briggsae.SRP016006.adult_female.Replicate3", 'phred', 'single'],
@@ -611,25 +600,38 @@ if ($species eq 'elegans') {
 	    SRX191957 => ["RNASeq.briggsae.SRP016006.adult_male.Replicate2", 'phred', 'single'],
 	    SRX191958 => ["RNASeq.briggsae.SRP016006.adult_male.Replicate3", 'phred', 'single'],
 
+# new	    SRX193364 => ["RNASeq.briggsae.SRP016056.adult_hermaphrodite", 'phred', 'single'],
+
+	    SRX089069 => ["RNASeq.briggsae.early_embryo.Replicate5", 'phred', 'paired-end'],
+	    SRX089070 => ["RNASeq.briggsae.early_embryo.Replicate4", 'phred', 'paired-end'],
+
+	    SRX089119 => ["RNASeq.briggsae.Adult.Replicate5", 'phred', 'paired-end'],
+	    SRX089120 => ["RNASeq.briggsae.Adult.Replicate4", 'phred', 'paired-end'],
+	    SRX100086 => ["RNASeq.briggsae.Adult.Replicate3", 'phred', 'paired-end'],
+	    SRX100087 => ["RNASeq.briggsae.early_embryo.Replicate3", 'phred', 'paired-end'],
+	    SRX100088 => ["RNASeq.briggsae.L2_larva.Replicate2", 'phred', 'paired-end'],
+	    SRX100089 => ["RNASeq.briggsae.L4_larva.Replicate1", 'phred', 'paired-end'],
+
+# new	    SRX193365 => ["RNASeq.briggsae.SRP016056.embryo", 'phred', 'single'],
+# new	    SRX193366 => ["RNASeq.briggsae.SRP016056.adult_male", 'phred', 'single'],
+
+	    SRX103655 => ["RNASeq.briggsae.early_embryo.Replicate2", 'phred', 'paired-end'],
+	    SRX103656 => ["RNASeq.briggsae.early_embryo.Replicate1", 'phred', 'single'],
+
+	    SRX103666 => ["RNASeq.briggsae.L2_larva.Replicate1", 'phred', 'single'],
+	    SRX103667 => ["RNASeq.briggsae.Adult.Replicate2", 'phred', 'paired-end'],
+	    SRX103668 => ["RNASeq.briggsae.Adult.Replicate1", 'phred', 'single'],
+
+	    SRX127748 => ["RNASeq.briggsae.Jack_Chen.L1", 'phred', 'paired-end'],
+	    SRX127749 => ["RNASeq.briggsae.Jack_Chen.all_stages", 'phred', 'paired-end'],
+
 	   );
 
 } elsif ($species eq 'brenneri') {
 # Add new analysis/condition  objects to ~wormpub/DATABASES/brenneri
   %expts = (
-	    SRX103657 => ["RNASeq.brenneri.Adult_male.Replicate1", 'phred', 'paired-end'],
-	    SRX103654 => ["RNASeq.brenneri.Adult_female.Replicate1", 'phred', 'paired-end'],
-	    SRX100780 => ["RNASeq.brenneri.Adult_male.Replicate2", 'phred', 'paired-end'],
-	    SRX100779 => ["RNASeq.brenneri.Adult_male.Replicate3", 'phred', 'single'],
-	    SRX100778 => ["RNASeq.brenneri.Adult_male.Replicate4", 'phred', 'single'],
-	    SRX100777 => ["RNASeq.brenneri.Adult_male.Replicate5", 'phred', 'paired-end'],
-	    SRX100776 => ["RNASeq.brenneri.Adult_female.Replicate2", 'phred', 'paired-end'],
-	    SRX100775 => ["RNASeq.brenneri.Adult_female.Replicate3", 'phred', 'single'],
-	    SRX100774 => ["RNASeq.brenneri.Adult_female.Replicate4", 'phred', 'single'],
-	    SRX100773 => ["RNASeq.brenneri.Adult_female.Replicate5", 'phred', 'paired-end'],
-	    SRX100772 => ["RNASeq.brenneri.L4_larva.Replicate1", 'phred', 'paired-end'],
-	    SRX100771 => ["RNASeq.brenneri.L4_larva.Replicate2", 'phred', 'paired-end'],
-	    SRX100770 => ["RNASeq.brenneri.early_embryo.Replicate1", 'phred', 'paired-end'],
 	    SRX100769 => ["RNASeq.brenneri.early_embryo.Replicate2", 'phred', 'paired-end'],
+
 	    SRX191965 => ["RNASeq.brenneri.SRP016006.adult_female.Replicate1", 'phred', 'single'],
 	    SRX191966 => ["RNASeq.brenneri.SRP016006.adult_female.Replicate2", 'phred', 'single'],
 	    SRX191967 => ["RNASeq.brenneri.SRP016006.adult_female.Replicate3", 'phred', 'single'],
@@ -637,6 +639,24 @@ if ($species eq 'elegans') {
 	    SRX191969 => ["RNASeq.brenneri.SRP016006.adult_male.Replicate2", 'phred', 'single'],
 	    SRX191970 => ["RNASeq.brenneri.SRP016006.adult_male.Replicate3", 'phred', 'single'],
 
+# new	    SRX193370 => ["RNASeq.brenneri.SRP016056.adult", 'phred', 'single'],
+# new	    SRX193371 => ["RNASeq.brenneri.SRP016056.embryo", 'phred', 'single'],
+# new	    SRX193372 => ["RNASeq.brenneri.SRP016056.embryo", 'phred', 'single'],
+
+	    SRX100770 => ["RNASeq.brenneri.early_embryo.Replicate1", 'phred', 'paired-end'],
+	    SRX100771 => ["RNASeq.brenneri.L4_larva.Replicate2", 'phred', 'paired-end'],
+	    SRX100772 => ["RNASeq.brenneri.L4_larva.Replicate1", 'phred', 'paired-end'],
+	    SRX100773 => ["RNASeq.brenneri.Adult_female.Replicate5", 'phred', 'paired-end'],
+	    SRX100774 => ["RNASeq.brenneri.Adult_female.Replicate4", 'phred', 'single'],
+	    SRX100775 => ["RNASeq.brenneri.Adult_female.Replicate3", 'phred', 'single'],
+	    SRX100776 => ["RNASeq.brenneri.Adult_female.Replicate2", 'phred', 'paired-end'],
+	    SRX100777 => ["RNASeq.brenneri.Adult_male.Replicate5", 'phred', 'paired-end'],
+	    SRX100778 => ["RNASeq.brenneri.Adult_male.Replicate4", 'phred', 'single'],
+	    SRX100779 => ["RNASeq.brenneri.Adult_male.Replicate3", 'phred', 'single'],
+	    SRX100780 => ["RNASeq.brenneri.Adult_male.Replicate2", 'phred', 'paired-end'],
+
+	    SRX103654 => ["RNASeq.brenneri.Adult_female.Replicate1", 'phred', 'paired-end'],
+	    SRX103657 => ["RNASeq.brenneri.Adult_male.Replicate1", 'phred', 'paired-end'],
 	   );
 
 
@@ -644,19 +664,20 @@ if ($species eq 'elegans') {
 
   # NEED TO ADD THESE ANALYSIS OBJECTS TO ~wormpub/DATABASES/japonica
 
-  %expts = ( SRX100095 => ["RNASeq_Hillier.japonica.early_embryo", 'phred', 'paired-end'],
-	     SRX100094 => ["RNASeq_Hillier.japonica.adult_female", 'phred', 'paired-end'],
-	     SRX100093 => ["RNASeq_Hillier.japonica.adult_male", 'phred', 'paired-end'],
-	     SRX100092 => ["RNASeq_Hillier.japonica.L4_larva", 'phred', 'paired-end'],
-	     SRX100091 => ["RNASeq_Hillier.japonica.L4_larva", 'phred', 'paired-end'],
-	     SRX100090 => ["RNASeq_Hillier.japonica.L2_larva", 'phred', 'paired-end'],
-	     SRX191959 => ["RNASeq.japonica.SRP016006.adult_female.Replicate1", 'phred', 'single'],
-	     SRX191960 => ["RNASeq.japonica.SRP016006.adult_female.Replicate2", 'phred', 'single'],
-	     SRX191961 => ["RNASeq.japonica.SRP016006.adult_female.Replicate3", 'phred', 'single'],
-	     SRX191962 => ["RNASeq.japonica.SRP016006.adult_male.Replicate1", 'phred', 'single'],
-	     SRX191963 => ["RNASeq.japonica.SRP016006.adult_male.Replicate2", 'phred', 'single'],
-	     SRX191964 => ["RNASeq.japonica.SRP016006.adult_male.Replicate3", 'phred', 'single'],
-	     
+  %expts = ( 
+	    SRX191959 => ["RNASeq.japonica.SRP016006.adult_female.Replicate1", 'phred', 'single'],
+	    SRX191960 => ["RNASeq.japonica.SRP016006.adult_female.Replicate2", 'phred', 'single'],
+	    SRX191961 => ["RNASeq.japonica.SRP016006.adult_female.Replicate3", 'phred', 'single'],
+	    SRX191962 => ["RNASeq.japonica.SRP016006.adult_male.Replicate1", 'phred', 'single'],
+	    SRX191963 => ["RNASeq.japonica.SRP016006.adult_male.Replicate2", 'phred', 'single'],
+	    SRX191964 => ["RNASeq.japonica.SRP016006.adult_male.Replicate3", 'phred', 'single'],
+	    
+	    SRX100090 => ["RNASeq_Hillier.japonica.L2_larva", 'phred', 'paired-end'],
+	    SRX100091 => ["RNASeq_Hillier.japonica.L4_larva", 'phred', 'paired-end'],
+	    SRX100092 => ["RNASeq_Hillier.japonica.L4_larva", 'phred', 'paired-end'],
+	    SRX100093 => ["RNASeq_Hillier.japonica.adult_male", 'phred', 'paired-end'],
+	    SRX100094 => ["RNASeq_Hillier.japonica.adult_female", 'phred', 'paired-end'],
+	    SRX100095 => ["RNASeq_Hillier.japonica.early_embryo", 'phred', 'paired-end'],
 	   );
 
 } else {
@@ -1237,8 +1258,7 @@ sub run_align {
     my $err = "$scratch_dir/align_RNASeq.pl.lsf.${arg}.err";
     my $out = "$scratch_dir/align_RNASeq.pl.lsf.${arg}.out";
     my @bsub_options = (-e => "$err", -o => "$out");
-    push @bsub_options, (#-q =>  "long",
-                         #-F =>  "100000000", # there is no file size limit in Sanger LSF - don't impose one - keep this commented out
+    push @bsub_options, (
 			 -M =>  "4000", # in EBI both -M and -R are in Mb
 			 -R => 'select[mem>4000] rusage[mem=4000]',
 			 -J => $job_name);
@@ -1253,7 +1273,7 @@ sub run_align {
     if ($norawjuncs) {$cmd .= " -norawjuncs";}
     if ($expts{$arg}[1] eq 'solexa') {$cmd .= " -solexa";}
     if ($expts{$arg}[1] eq 'illumina1.3') {$cmd .= " -illumina";}
-    if ($expts{$arg}[2] eq 'paired-end') {$cmd .= " -paired";}
+    if ($expts{$arg}[2] =~ /^paired-end/) {$cmd .= " -paired";}
     $log->write_to("$cmd\n");
     print "Running: $cmd\n";
     $cmd = $wormbase->build_cmd($cmd);
@@ -1282,8 +1302,6 @@ sub run_align {
 
 #####################################################################
 # run tophat on one experiment to create the accepted_hits.bam file
-# this can fail through lack of memory if that happens, try running it
-# again on the hugemem queue 
 
 # ARG: list of names of SRX* directories in the $wormbase->rnaseq
 # directory
@@ -1334,51 +1352,78 @@ sub run_tophat {
 
     chdir "$RNASeqSRADir/$arg";
     my @files = glob("SRR/*.fastq");
-    my $joined_file = join ",", @files;
     $log->write_to("Have fastq files: @files\n");
-    $log->write_to("Check read length in file: $files[0]\n");
-    my $seq_length = get_read_length($files[0]);
-    
+
     # do we have paired reads?
+    my $have_paired_reads = 0;
     my @files1 = sort glob("SRR/*_1.fastq"); # sort to ensure the two sets of files are in the same order
     my @files2 = sort glob("SRR/*_2.fastq");
     if ((@files1 == @files2) && @files2 > 0) {
       $log->write_to("Have paired-end files.\n");
-      my $joined1 = join ",", @files1;
-      my $joined2 = join ",", @files2;
-      $joined_file = "$joined1 $joined2";
-      print "Made paired-read joined files: $joined_file\n";
+      $have_paired_reads = 1;
+      @files = @files1;
       # no longer need to set the inner-distance -r parameter
       # It is now set to 50 by default.
       #my $inner = 50;
       #$cmd_extra .= " -r $inner ";
     }
 
-    # Is the read length less than 50?  
-    # If so then we should set --segment-length to be less than half the
-    # read length, otherwise the alignments are not done properly and we
-    # don't get a junctions.bed file output
-    my $segment_length = 25; # the default value
-    if ($seq_length < 50) {
-      $segment_length = int($seq_length / 2);
-      $segment_length--; # we want it to be less than half the length
-      $cmd_extra .= " --segment-length $segment_length ";
-      # and the documentation now says to set the --segment-mismatches to 1 or 0
-      $cmd_extra .= " --segment-mismatches 0 ";
+    my @SRR_ids; # the SRR IDs processed
+
+    # run tophat on each fastq file (or paired-read files) in turn
+    foreach my $fastq_file (@files) {
+
+      # get the SRR ID of the file
+      my $srr_name = $fastq_file;
+      $srr_name =~ s/^SRR\///;
+      $srr_name =~ s/.fastq$//;
+      $srr_name =~ s/_1$//;
+      push @SRR_ids, $srr_name;
+
+      $log->write_to("Check read length in file: $fastq_file\n");
+      my $seq_length = get_read_length($fastq_file);
+    
+      if ($have_paired_reads) {
+	my $next_paired_file = shift @files2;
+	$fastq_file .= " $next_paired_file"; # space character between the paired file names
+      }
+
+      # Is the read length less than 50?  
+      # If so then we should set --segment-length to be less than half the
+      # read length, otherwise the alignments are not done properly and we
+      # don't get a junctions.bed file output
+      my $segment_length = 25; # the default value
+      if ($seq_length < 50) {
+	$segment_length = int($seq_length / 2);
+	$segment_length--; # we want it to be less than half the length
+	$cmd_extra .= " --segment-length $segment_length ";
+	# and the documentation now says to set the --segment-mismatches to 1 or 0
+	$cmd_extra .= " --segment-mismatches 0 ";
+      }
+
+      $log->write_to("run tophat $fastq_file\n");
+      my $gtf_index = ''; # use the GTF index unless we are not using the GTF file
+      $gtf_index = "--transcriptome-index $RNASeqGenomeDir/transcriptome-gtf/transcripts" unless ($nogtf || $onestage);
+      my $raw_juncs = ''; # use the EST raw junctions hint file unless we specify otherwise
+      $raw_juncs = "--raw-juncs $RNASeqGenomeDir/reference-indexes/splice_juncs_file" unless $norawjuncs;
+      #    $status = $wormbase->run_command("/software/worm/tophat/tophat $cmd_extra --min-intron-length 30 --max-intron-length 5000 $gtf_index $raw_juncs $RNASeqGenomeDir/reference-indexes/$species $fastq_file", $log);
+      # test with --no-coverage-search for speed
+      $status = $wormbase->run_command("$Software/tophat/tophat $cmd_extra --no-coverage-search --min-intron-length 30 --max-intron-length 5000 --min-segment-intron 30 --max-segment-intron 5000 --min-coverage-intron 30 --max-coverage-intron 5000 $gtf_index $raw_juncs $RNASeqGenomeDir/reference-indexes/$species $fastq_file", $log);
+      if ($status != 0) {  $log->log_and_die("Didn't run tophat to do the alignment successfully\n"); } # only exit on error after gzipping the files
+      
+      &sort_bam_file('tophat_out/accepted_hits.bam');
+
+      $wormbase->run_command("mv -f tophat_out/accepted_hits.bam tophat_out/${srr_name}.bam", $log);
+      $wormbase->run_command("mv -f tophat_out/junctions.bed tophat_out/${srr_name}.junctions.bed", $log);
+      
     }
 
+    # now merge the individual BAM files and construct the merged splice junctions file
+    merge_bam_files('tophat_out', @SRR_ids);
+    merge_splice_junction_files(@SRR_ids);
 
-    $log->write_to("run tophat $joined_file\n");
-    my $gtf_index = ''; # use the GTF index unless we are not using the GTF file
-    $gtf_index = "--transcriptome-index $RNASeqGenomeDir/transcriptome-gtf/transcripts" unless ($nogtf || $onestage);
-    my $raw_juncs = ''; # use the EST raw junctions hint file unless we specify otherwise
-    $raw_juncs = "--raw-juncs $RNASeqGenomeDir/reference-indexes/splice_juncs_file" unless $norawjuncs;
-#    $status = $wormbase->run_command("/software/worm/tophat/tophat $cmd_extra --min-intron-length 30 --max-intron-length 5000 $gtf_index $raw_juncs $RNASeqGenomeDir/reference-indexes/$species $joined_file", $log);
-    # test with --no-coverage-search for speed
-    $status = $wormbase->run_command("$Software/tophat/tophat $cmd_extra --no-coverage-search --min-intron-length 30 --max-intron-length 5000 --min-segment-intron 30 --max-segment-intron 5000 --min-coverage-intron 30 --max-coverage-intron 5000 $gtf_index $raw_juncs $RNASeqGenomeDir/reference-indexes/$species $joined_file", $log);
-    if ($status != 0) {  $log->log_and_die("Didn't run tophat to do the alignment successfully\n"); } # only exit on error after gzipping the files
 
-    &sort_bam_file('tophat_out/accepted_hits.bam');
+
 
     $wormbase->run_command("touch tophat_out/accepted_hits.bam.done", $log); # set flag to indicate we have finished this
   } else {
@@ -1448,17 +1493,144 @@ sub run_tophat {
 }
 
 #################################################################################################################
-# sort the BAM file
+# sort the BAM files
 sub sort_bam_file {
   my ($file) = @_;
 
-  my $samtools = "$Software/samtools/samtools";
-
-  $wormbase->run_command("$samtools sort $file ${file}.sorted");
-  system("mv -f ${file}.sorted $file");
+  $wormbase->run_command("$samtools sort $file ${file}.sorted", $log);
+  system("mv -f ${file}.sorted.bam $file");
 
 }
 
+#################################################################################################################
+# merge a set of BAM files in the directory $dir
+
+sub merge_bam_files {
+  my ($dir, @SRR_ids) = @_;
+
+  if ($dir ne '' && $dir !~ /\/$/) {$dir .= '/'}
+
+  my $bam_files =  join ' ', map {$dir . $_ . ".bam"} @SRR_ids; # put '.bam' on the ends and join into one string
+  $wormbase->run_command("$samtools merge tophat_out/accepted_hits.bam $bam_files", $log);
+
+
+}
+
+#################################################################################################################
+# read in a set of splice junction BED files
+# and write them out as a gff file
+
+sub merge_splice_junction_files {
+  my (@SRR_ids) = @_;
+  my %gff; # gff hash holding junction sites and read numbers
+
+  foreach my $srr_name (@SRR_ids) {
+    read_junction_bed_file(\%gff, "tophat_out/${srr_name}.junctions.bed"); # add junkctions to %gff
+  }
+
+  write_junction_gff_file(\%gff, "tophat_out/junctions.gff");
+
+}
+
+#################################################################################################################
+# read a BED file as a GFF hash
+
+sub read_junction_bed_file {
+
+  my ($gff_href, $junction_file) = @_;
+
+# BED format provides a flexible way to define the data lines that are
+# displayed in an annotation track. BED lines have three required fields
+# and nine additional optional fields. The number of fields per line
+# must be consistent throughout any single set of data in an annotation
+# track. The order of the optional fields is binding: lower-numbered
+# fields must always be populated if higher-numbered fields are used.
+
+# The first three required BED fields are:
+
+#    1. chrom - The name of the chromosome (e.g. chr3, chrY,
+#       chr2_random) or scaffold (e.g. scaffold10671).
+#    2. chromStart - The starting position of the feature in the
+#       chromosome or scaffold. The first base in a chromosome is
+#       numbered 0.
+#    3. chromEnd - The ending position of the feature in the chromosome
+#       or scaffold. The chromEnd base is not included in the display of
+#       the feature. For example, the first 100 bases of a chromosome
+#       are defined as chromStart=0, chromEnd=100, and span the bases
+#       numbered 0-99.
+
+# The 9 additional optional BED fields are:
+
+#    4. name - Defines the name of the BED line. This label is displayed
+#       to the left of the BED line in the Genome Browser window when
+#       the track is open to full display mode or directly to the left
+#       of the item in pack mode.
+#    5. score - A score between 0 and 1000. If the track line useScore
+#       attribute is set to 1 for this annotation data set, the score
+#       value will determine the level of gray in which this feature is
+#       displayed (higher numbers = darker gray).
+#    6. strand - Defines the strand - either '+' or '-'.
+#    7. thickStart - The starting position at which the feature is drawn
+#       thickly (for example, the start codon in gene displays).
+#    8. thickEnd - The ending position at which the feature is drawn
+#       thickly (for example, the stop codon in gene displays).
+#    9. itemRgb - An RGB value of the form R,G,B (e.g. 255,0,0). If the
+#       track line itemRgb attribute is set to "On", this RBG value will
+#       determine the display color of the data contained in this BED
+#       line. NOTE: It is recommended that a simple color scheme (eight
+#       colors or less) be used with this attribute to avoid
+#       overwhelming the color resources of the Genome Browser and your
+#       Internet browser.
+#   10. blockCount - The number of blocks (exons) in the BED line.
+#   11. blockSizes - A comma-separated list of the block sizes. The
+#       number of items in this list should correspond to blockCount.
+#   12. blockStarts - A comma-separated list of block starts. All of the
+#       blockStart positions should be calculated relative to
+#       chromStart. The number of items in this list should correspond
+#       to blockCount.
+
+
+  open(BED, "<$junction_file") || $log->log_and_die("Can't open the file $junction_file\n");
+  while (my $line = <BED>) {
+    if ($line =~ /^track/) {next}
+    my @cols = split /\s+/, $line;
+    my $chrom = $cols[0];
+    my $start = $cols[1] + 1;
+    my $end = $cols[2];
+    my $reads = $cols[4];
+    my $sense = $cols[5];
+    my @blocksizes = split /,/, $cols[10];
+    my $splice_5 = $start + $blocksizes[0]; # first base of intron
+    my $splice_3 = $end - $blocksizes[1]; # last base of intron
+
+    $gff_href->{$chrom}{$splice_5}{$splice_3}{$sense} += $reads;
+
+  }
+  close(BED);
+
+}
+
+#################################################################################################################
+# write a gff hash as a gff file
+
+sub write_junction_gff_file {
+
+  my ($gff_href, $junction_file) = @_;
+
+  open (GFF, ">$junction_file") || $log->log_and_die("Can't open $junction_file\n");
+  foreach my $chrom (sort {$a cmp $b} keys %{$gff_href} ) {
+    foreach my $splice_5 (sort {$a <=> $b} keys %{$gff_href->{$chrom}}) {
+      foreach my $splice_3 (sort {$a <=> $b} keys %{$gff_href->{$chrom}{$splice_5}}) {
+	foreach my $sense (sort {$a cmp $b} keys %{$gff_href->{$chrom}{$splice_5}{$splice_3}}) {
+	  my $reads = $gff_href->{$chrom}{$splice_5}{$splice_3}{$sense};
+	  print GFF "$chrom\tintron\tintron\t$splice_5\t$splice_3\t.\t$sense\t$reads\n";
+	}
+      }
+    }
+  }
+  close (GFF);
+
+}
 
 #################################################################################################################
 # take a quick look in the read files to determine the length of the reads
@@ -1651,11 +1823,11 @@ sub TSL_stuff {
 
   # now parse the results looking for TSL sites
   my $TSLfile = "TSL/accepted_hits.bam";
-  my $samtools = "$Software/samtools/samtools view $TSLfile";
+  my $samtools_view = "$Software/samtools/samtools view $TSLfile";
 
   my %results; # hash of TSL sites found by RNAseq alignment
   $log->write_to("get the TSL sites found by alignment\n");
-  open (HITS, "$samtools |") || $log->log_and_die("can't run samtools\n");
+  open (HITS, "$samtools_view |") || $log->log_and_die("can't run samtools_view\n");
   while (my $line = <HITS>) {
     my $sense = '+';
     my ($id, $flags, $chrom, $pos, $seq) = ($line =~ /^(\S+)\s+(\d+)\s+(\S+)\s+(\d+)\s+\S+\s+\S+\s+\S+\s+\S+\s+\S+\s+(\S+)/);
@@ -1915,59 +2087,10 @@ sub Intron_stuff {
 
   my ($cmd_extra, $analysis) = @_;
 
-  $log->write_to("Reading splice junctions BED file\n");
+  $log->write_to("Reading splice junctions GFF file\n");
 
   my $status = 0;
 
-# BED format provides a flexible way to define the data lines that are
-# displayed in an annotation track. BED lines have three required fields
-# and nine additional optional fields. The number of fields per line
-# must be consistent throughout any single set of data in an annotation
-# track. The order of the optional fields is binding: lower-numbered
-# fields must always be populated if higher-numbered fields are used.
-
-# The first three required BED fields are:
-
-#    1. chrom - The name of the chromosome (e.g. chr3, chrY,
-#       chr2_random) or scaffold (e.g. scaffold10671).
-#    2. chromStart - The starting position of the feature in the
-#       chromosome or scaffold. The first base in a chromosome is
-#       numbered 0.
-#    3. chromEnd - The ending position of the feature in the chromosome
-#       or scaffold. The chromEnd base is not included in the display of
-#       the feature. For example, the first 100 bases of a chromosome
-#       are defined as chromStart=0, chromEnd=100, and span the bases
-#       numbered 0-99.
-
-# The 9 additional optional BED fields are:
-
-#    4. name - Defines the name of the BED line. This label is displayed
-#       to the left of the BED line in the Genome Browser window when
-#       the track is open to full display mode or directly to the left
-#       of the item in pack mode.
-#    5. score - A score between 0 and 1000. If the track line useScore
-#       attribute is set to 1 for this annotation data set, the score
-#       value will determine the level of gray in which this feature is
-#       displayed (higher numbers = darker gray).
-#    6. strand - Defines the strand - either '+' or '-'.
-#    7. thickStart - The starting position at which the feature is drawn
-#       thickly (for example, the start codon in gene displays).
-#    8. thickEnd - The ending position at which the feature is drawn
-#       thickly (for example, the stop codon in gene displays).
-#    9. itemRgb - An RGB value of the form R,G,B (e.g. 255,0,0). If the
-#       track line itemRgb attribute is set to "On", this RBG value will
-#       determine the display color of the data contained in this BED
-#       line. NOTE: It is recommended that a simple color scheme (eight
-#       colors or less) be used with this attribute to avoid
-#       overwhelming the color resources of the Genome Browser and your
-#       Internet browser.
-#   10. blockCount - The number of blocks (exons) in the BED line.
-#   11. blockSizes - A comma-separated list of the block sizes. The
-#       number of items in this list should correspond to blockCount.
-#   12. blockStarts - A comma-separated list of block starts. All of the
-#       blockStart positions should be calculated relative to
-#       chromStart. The number of items in this list should correspond
-#       to blockCount.
 
   my %seqlength;
   my %virtuals;
@@ -1975,24 +2098,21 @@ sub Intron_stuff {
   $coords = Coords_converter->invoke($database, 0, $wormbase);
 
   my $output = "Introns/Intron.ace";
-  my $junctions = "tophat_out/junctions.bed";
+  my $junctions = "tophat_out/junctions.gff";
   my $old_virtual = "";
   open (ACE, ">$output") || $log->log_and_die("Can't open the file $output\n");
-  open(BED, "<$junctions") || $log->log_and_die("Can't open the file $junctions\n");
-  while (my $line = <BED>) {
-    if ($line =~ /^track/) {next}
+  open(GFF, "<$junctions") || $log->log_and_die("Can't open the file $junctions\n");
+  while (my $line = <GFF>) {
+    if ($line =~ /^#/) {next}
     my @cols = split /\s+/, $line;
     my $chrom = $cols[0];
-    my $start = $cols[1] + 1;
-    my $end = $cols[2];
-    my $reads = $cols[4];
-    my $sense = $cols[5];
-    my @blocksizes = split /,/, $cols[10];
-    my $splice_5 = $start + $blocksizes[0]; # first base of intron
-    my $splice_3 = $end - $blocksizes[1]; # last base of intron
+    my $start = $cols[3];
+    my $end = $cols[4];
+    my $sense = $cols[6];
+    my $reads = $cols[7];
 
     # get the clone that this intron is on
-    my ($clone, $clone_start, $clone_end) = $coords->LocateSpan($chrom, $splice_5, $splice_3);
+    my ($clone, $clone_start, $clone_end) = $coords->LocateSpan($chrom, $start, $end);
 
     
     if (not exists $seqlength{$clone}) {
@@ -2016,7 +2136,7 @@ sub Intron_stuff {
     print ACE "Feature RNASeq_splice $clone_start $clone_end $reads $analysis\n";
 
   }
-  close(BED);
+  close(GFF);
   close(ACE);
 
   
