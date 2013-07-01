@@ -181,10 +181,10 @@ sub validate_name {
       $db->dienice("$name is incorrect format for $species $type match ".$name_checks->{$species}->{$type});
       return undef;
     }
-    if (($species eq 'elegans') and ($type eq 'Sequence') and !(defined $db->{'clones'}->{uc($1)}) ) {
-      $db->dienice("$name isnt on a valid clone $2");
-      return undef;
-    }
+#    if (($species eq 'elegans') and ($type eq 'Sequence') and !(defined $db->{'clones'}->{uc($2)}) ) {
+#      $db->dienice("$name isnt on a valid clone $2");
+#      return undef;
+#    }
   } else {
     $db->dienice("$type is a invalid typename: @types");
     return undef;
