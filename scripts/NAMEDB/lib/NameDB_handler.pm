@@ -182,7 +182,7 @@ sub validate_name {
       return undef;
     }
     if (($species eq 'elegans') and ($type eq 'Sequence') and !(defined $db->{'clones'}->{uc($1)}) ) {
-      $db->dienice("$name isnt on a valid clone $1");
+      $db->dienice("$name isnt on a valid clone $2");
       return undef;
     }
   } else {
