@@ -140,7 +140,7 @@ sub validate_name {
     my $name_checks = {
 		       'elegans' => { 
 				     "CGC" => '^[a-z21]{3,4}-[1-9]\d*(\.\d+)?$',	
-				     "Sequence" => '^([A-Z0-9_cel]+)\.\d+$',
+				     "Sequence" => ('^([A-Z0-9_cel]+)\.\d+$') || ('^([A-Z0-9_cel]+)\.t\d+$'),
 				     "Public_name" => '^[a-z]{3,4}-[1-9]\d*(\.\d+)?$|^([A-Z0-9_]+)\.\d+$',
 				    },
 		       'briggsae' => {
