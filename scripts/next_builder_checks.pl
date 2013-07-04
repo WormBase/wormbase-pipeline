@@ -7,7 +7,7 @@
 # build to check the current build
 #
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2013-05-09 14:38:08 $
+# Last updated on: $Date: 2013-07-04 15:13:43 $
 use strict;
 use warnings;
 use lib $ENV{'CVS_DIR'};
@@ -563,7 +563,7 @@ sub classes_to_check {
 			       Feature => 'WBsf899556',
 			       Feature_data => '1512607:Dust',
 			       Gene => 'WBGene00220262', # misses Ortholog Ortholog_other Other_name
-			       Gene_name => 'Bm-aagr-4',
+			       Gene_name => 'Bma-aagr-4',
 			       Homol_data => '1512607:wublastx_brenneri',
 			       Method => 'BLAT_EST_BEST',
 			       Protein => 'BM:BM00001',
