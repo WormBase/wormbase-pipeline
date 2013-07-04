@@ -50,6 +50,7 @@ $VALID_CGCNAME_USERS = {
 			'mt3'			=> 1,
 			'pad'                   => 1,
 			'gw3'                   => 1,
+		        'mh6'                   => 1,
 		       };
 
 $MAILS = {
