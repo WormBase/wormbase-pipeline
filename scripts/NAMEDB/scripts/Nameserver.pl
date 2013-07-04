@@ -35,14 +35,14 @@ $VALID_USERS = {
 $VALID_API_USERS = {
 		    'query'		=> [qw(pad gw3 mh6 mt3 klh tbieri jspieth pozersky stlouis caltech cshl sanger)],
 		    'load_file'		=> [qw(pad gw3 mh6 mt3 klh tbieri jspieth pozersky stlouis caltech cshl sanger)],
-		    'merge_genes'	=> [qw(pad gw3 mt3 tbieri jspieth pozersky)],
-		    'split_gene'	=> [qw(pad gw3 mt3 tbieri jspieth pozersky)],
-		    'new_gene'		=> [qw(pad gw3 mt3 tbieri jspieth pozersky)],
-		    'kill_gene'		=> [qw(pad gw3 mt3 tbieri jspieth pozersky)],
-		    'add_name'		=> [qw(pad gw3 mt3 tbieri jspieth pozersky)],
-		    'remove_name'	=> [qw(pad gw3 mt3 tbieri jspieth pozersky)],
-		    'change_class'	=> [qw(pad gw3 mt3 tbieri jspieth pozersky)],
-		    'dump_all'          => [qw(pad gw3 mt3 tbieri jspieth pozersky caltech)],
+		    'merge_genes'	=> [qw(pad gw3 mt3 tbieri jspieth pozersky mh6)],
+		    'split_gene'	=> [qw(pad gw3 mt3 tbieri jspieth pozersky mh6)],
+		    'new_gene'		=> [qw(pad gw3 mt3 tbieri jspieth pozersky mh6)],
+		    'kill_gene'		=> [qw(pad gw3 mt3 tbieri jspieth pozersky mh6)],
+		    'add_name'		=> [qw(pad gw3 mt3 tbieri jspieth pozersky mh6)],
+		    'remove_name'	=> [qw(pad gw3 mt3 tbieri jspieth pozersky mh6)],
+		    'change_class'	=> [qw(pad gw3 mt3 tbieri jspieth pozersky mh6)],
+		    'dump_all'          => [qw(pad gw3 mt3 tbieri jspieth pozersky caltech mh6)],
 		   };
 
 ## a list of valid SSO login names able to add GCG name
