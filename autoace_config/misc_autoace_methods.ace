@@ -2542,6 +2542,21 @@ GFF_source "Vancouver_fosmid_read"
 GFF_feature "read"
 GFF_SO "SO:0000150"
 
+Method : "Brugia_BAC"
+GFF_source Brugia_BAC
+GFF_feature region
+GFF_SO "SO:0000347" // nucleotide_match
+No_display
+Remark "predicted span of a B.malayi BAC"
+
+
+Method : "Brugia_BAC_end_read"
+Remark "B.malayi BAC end sequencing read"
+No_display
+GFF_source "Brugia_bac_end_read"
+GFF_feature "read"
+GFF_SO "SO:0000150"
+
 
 Method : "Promoterome" 
 GFF_source "Promoterome"
