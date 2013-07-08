@@ -234,9 +234,8 @@ sub parse_gff_fh {
   print "\nPARSE GFF has " . keys(%$genes) . " genes\n";
   foreach my $gene_id ( keys(%$genes) ) {
     my $transcripts = $genes->{$gene_id};
-    my $unpruned    = &create_gene( $transcripts, $gene_id, 'protein_coding' );
+    my $gene    = &create_gene( $transcripts, $gene_id, 'protein_coding' );
     
-    my $gene = &prune_Exons($unpruned);
     push( @genes, $gene );
   }
   
