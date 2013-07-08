@@ -172,7 +172,7 @@ my $main_gui = MainWindow->new();
         '-borderwidth' => 2,
         '-sliderwidth' => 7,
         '-relief'      => 'sunken',
-        '-height'      => 50,
+        '-height'      => 110,
         '-width'       => 100,
         '-padbefore'   => 0,
         '-padafter'    => 0
@@ -204,6 +204,7 @@ $gui_height += 200 if $blast;
 $gui_height += 110 if $blesser;
 $gui_height += 110 if $clone;
 $gui_height += 130 if $addevidence;
+$gui_height += 50 if ($cleangene or $ncRNA);
 $gui_height += 300 if $anomaly;
 $main_gui->geometry("${gui_width}x$gui_height");
 
@@ -520,7 +521,7 @@ if ($ncRNA) {
 					   );
 
   # CDS entry widgets
-  my $ncRNA_lbl = $ncrna_data->Label( -text => ' CDS  ID',
+  my $ncRNA_lbl = $ncrna_data->Label( -text => ' RNA ID',
 				       -background => '#8470ff', #was LightGreen
 				       -foreground => 'whitesmoke'
 				       )->pack(-pady => '6',
@@ -536,7 +537,7 @@ if ($ncRNA) {
 					       -padx => '5'
 					       );
 
-  # make Return and Enter submit CDS 
+  # make Return and Enter submit 
   $rnawork->bind("<Return>",[ \&add_ncrna_data]);
   $rnawork->bind("<KP_Enter>",[ \&add_ncrna_data]);
   
@@ -732,6 +733,7 @@ if ( $anomaly ) {
 
 
   my $anomaly_find = $main_gui->Frame( -background => "whitesmoke", # was cyan wheat
+
 				       -label      => "Anomaly Region",
 				       -relief     => "raised",
 				       -borderwidth => 5,
@@ -834,6 +836,7 @@ if ( $anomaly ) {
 
 
   my $anomaly_details = $main_gui->Frame( -background => "whitesmoke", # was magenta wheat
+
 					  -label      => "Anomaly details in the selected region",
 					  -relief     => "raised",
 					  -borderwidth => 5,
