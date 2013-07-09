@@ -7,8 +7,8 @@
 # Script to convert cgc strain file into ace file for geneace
 # Page download and update upload to geneace has been automated [ck1]
 
-# Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-03-05 14:22:27 $
+# Last updated by: $Author: pad $
+# Last updated on: $Date: 2013-07-09 15:36:26 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -299,15 +299,14 @@ while(<INPUT>){
   $made_by =~ s/\s+$//g;
   
   my $wperson = &find_author($made_by);
-  
-  if ($wperson eq 'Agent007'){
-      print MISSINGPERSON "$made_by $strain\n";
-      $wperson = '""';
-      print STRAIN "Remark \"Made_by: $made_by\" CGC_data_submission\n";
-  }
-  print STRAIN "Made_by $wperson\n" unless $wperson eq '""' ;
-  print DELETE_STRAIN  "-D Made_by $wperson\n";
 
+  if ($wperson =~ (/WBPerson\d{1,5}/)) {    
+    print STRAIN "Made_by $wperson\n";
+    print DELETE_STRAIN  "-D Made_by $wperson\n";
+  }
+  else {
+    $log->write_to("$wperson is not a valid WBPerson\n\n");
+  }
 
   if (m/Received: (\d+\/\d+\/\d+)/){
     my @dates = split(/\//,$1);
