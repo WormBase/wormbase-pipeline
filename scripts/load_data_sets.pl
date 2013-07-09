@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl -w
 # Last updated by: $Author: mh6 $     
-# Last updated on: $Date: 2013-02-04 16:23:55 $      
+# Last updated on: $Date: 2013-07-09 13:41:28 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -107,6 +107,7 @@ sub parse_misc_elegans_files {
 sub parse_brugia_data {
   my %files_to_load = (
                     $wormbase->misc_dynamic.'/misc_TIGR_brugia.ace'         => 'TIGR_gene_models',
+                    $wormbase->misc_static.'/brguia_bacs.ace.gz'             => 'Brugia BACS',
   );
   $log->write_to("Loading files to ".$wormbase->autoace."\n==================================\n");
   foreach my $file (sort keys %files_to_load) {
