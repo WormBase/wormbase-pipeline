@@ -14,7 +14,7 @@
 //
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: pad $
-// Last edited on: $Date: 2013-06-17 16:04:00 $
+// Last edited on: $Date: 2013-07-09 09:05:19 $
 //
 //
 // Additional things to consider. If classes are added or new data in the ?Gene class
@@ -444,7 +444,7 @@
 			   Interactor_overlapping_CDS ?CDS XREF Interaction #Interactor_info	// CDS of the interacting gene or protein (or related sequence)
 			   Interactor_overlapping_gene ?Gene XREF Interaction #Interactor_info		// Gene (or portion of gene) involved in the interaction
 			   Interactor_overlapping_protein ?Protein XREF Interaction #Interactor_info	// Protein (or portion of protein) involved in the interaction
-			   Molecule_regulator ?Molecule XREF Interaction #Interactor_info			// Molecule that regulates a gene or protein (ported from Gene_regulation class)
+			   Molecule_regulator ?Molecule XREF Interaction #Interactor_info			// Molecule that regulates a gene or protein (ported from Gene_regulation Class)
 			   Other_regulator ?Text #Interactor_info	// Free text describing a regulator entity or condition that does not fall into a standard WormBase category
 			   Other_regulated ?Text #Interactor_info	// Free text describing a regulated entity or condition that does not fall into a standard WormBase category
 			   Rearrangement  ?Rearrangement XREF Interactor #Interactor_info
@@ -642,7 +642,7 @@
 		   Picture ?Picture
 
 
-//Used to define a metric to the elevation and GPS positions in the Strain class
+//Used to define a metric to the elevation and GPS positions in the Strain Class
 
 #Position_confidence UNIQUE Exact
 			    Approximate UNIQUE Float
@@ -1050,7 +1050,7 @@
 
 //////////////////////////////////////////////////////////
 // AO_code class -  Raymond Lee 040203
-// Evidence codes only relevant to the Anatomy_term class
+// Evidence codes only relevant to the Anatomy_term Class
 //////////////////////////////////////////////////////////
 
 ?AO_code Description ?Text
@@ -1132,22 +1132,22 @@
 			       Genomic_parent   UNIQUE ?Sequence XREF Nongenomic
 			       AGP_parent       UNIQUE ?Sequence XREF AGP_fragment // added to hold briggsae data [krb 020726]
 	       S_child Gene_child ?Gene       XREF Sequence UNIQUE Int UNIQUE Int #SMap_info  // maximal extent of Gene objects
-		       CDS_child  ?CDS        XREF Sequence UNIQUE Int UNIQUE Int #SMap_info  // For ?CDS class [031104 krb]
-		       Transcript ?Transcript XREF Sequence UNIQUE Int UNIQUE Int #SMap_info  // for ?Transcript class [021126 krb]
-		       Pseudogene ?Pseudogene XREF Sequence UNIQUE Int UNIQUE Int #SMap_info  // For ?Pseudogene class [030801 krb]
+		       CDS_child  ?CDS        XREF Sequence UNIQUE Int UNIQUE Int #SMap_info  // For ?CDS [031104 krb]
+		       Transcript ?Transcript XREF Sequence UNIQUE Int UNIQUE Int #SMap_info  // for ?Transcript [021126 krb]
+		       Pseudogene ?Pseudogene XREF Sequence UNIQUE Int UNIQUE Int #SMap_info  // For ?Pseudogene [030801 krb]
 		       Transposon ?Transposon XREF Sequence UNIQUE Int UNIQUE Int #SMap_info  // for transposons   [020128 dl]
 		       Genomic_non_canonical ?Sequence XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info
 		       Nongenomic ?Sequence XREF Genomic_parent UNIQUE Int UNIQUE Int #SMap_info       // for Lincoln RNAi  [010226 dl]
 		       PCR_product ?PCR_product XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info // for Lincoln RNAi  [010226 dl]
 		       Operon ?Operon XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info           // for Operon data   [dl]
      		       AGP_fragment ?Sequence XREF AGP_parent Int UNIQUE Int #SMap_info		       // for Briggsae data [020726 krb]
-		       Allele ?Variation XREF Sequence UNIQUE Int UNIQUE Int #SMap_info		       // SMapped Allele class [021217 krb]
-		       Oligo_set ?Oligo_set XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info     //added for Oligo_set class
+		       Allele ?Variation XREF Sequence UNIQUE Int UNIQUE Int #SMap_info		       // SMapped Allele [021217 krb]
+		       Oligo_set ?Oligo_set XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info     //added for Oligo_set
                        Feature_object ?Feature XREF Sequence UNIQUE Int UNIQUE Int #SMap_info	       // dl feature play
 		       Feature_data ?Feature_data XREF Sequence UNIQUE Int UNIQUE Int #SMap_info
 		       Homol_data ?Homol_data XREF Sequence UNIQUE Int UNIQUE Int #SMap_info
 	  Structure From Source UNIQUE ?Sequence XREF Subsequence
-			 Source_exons Int UNIQUE Int // start at 1 // WARNING: is this still needed when ?CDS class is present???
+			 Source_exons Int UNIQUE Int // start at 1 // WARNING: is this still needed when ?CDS Class is present???
 		    Subsequence ?Sequence XREF Source UNIQUE Int UNIQUE Int
 		    Overlap_right UNIQUE ?Sequence XREF Overlap_left UNIQUE Int // potentially use Overlap_right integer for auto-linking
 		    Overlap_left UNIQUE ?Sequence XREF Overlap_right
@@ -1431,7 +1431,7 @@
 ?Transcript     Evidence #Evidence
 		SMap S_parent UNIQUE Sequence UNIQUE ?Sequence XREF Transcript
                 Structure Source_exons Int UNIQUE Int
-		DB_info DB_remark ?Text #Evidence // was missing from first draft of Transcript class krb
+		DB_info DB_remark ?Text #Evidence // was missing from first draft of Transcript Class krb
 			Database ?Database ?Database_field UNIQUE ?Text
                 Origin  From_laboratory UNIQUE ?Laboratory                         // [020306 kj]
                         Species UNIQUE ?Species                                    // [020306 kj]
@@ -1481,7 +1481,7 @@
 
 ///////////////////////////////////////////////////////////////////
 //
-// ?Pseudogene - krb 030801
+// ?Pseudogene class - krb 030801
 //
 ///////////////////////////////////////////////////////////////////
 
@@ -1494,9 +1494,9 @@
 			Database ?Database ?Database_field UNIQUE ?Text
                 Origin  From_laboratory UNIQUE ?Laboratory
                         Species UNIQUE ?Species
-                Type    UNIQUE Coding_pseudogene #Evidence
-                               RNA_pseudogene #Evidence
-                               Transposon_pseudogene #Evidence
+                Type    UNIQUE Coding_pseudogene #Evidence //Pseudogene of a once coding loci 
+                               RNA_pseudogene #Evidence    //Pseudogene of a ncRNA loci
+                               Transposon_pseudogene #Evidence //Pseudogene of Transposon origins
 	        Attributes   Transcribed #Evidence
 			     Fragment #Evidence 
 		Properties Isoform #Evidence
@@ -1513,7 +1513,6 @@
                         Provisional_description ?Text #Evidence
                         Detailed_description ?Text #Evidence
                         Concise_description ?Text #Evidence
-                        GO_term ?GO_term XREF Pseudogene ?GO_code #Evidence
 			SAGE_tag ?SAGE_tag XREF Pseudogene #SAGE_mapping_info
 			Microarray_results ?Microarray_results XREF Pseudogene  //added for Microarray_results
 			RNASeq_FPKM  ?Life_stage  Float  #Evidence
@@ -1729,7 +1728,7 @@
 
 //////////////////////////////////////////////////////////////////////////////////////////
 //
-// Transcription_factor  class This describes a type of transcription factor (and Pol II)
+// Transcription_factor class This describes a type of transcription factor (and Pol II)
 // Gary W. 14/10/2010
 //
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -2027,7 +2026,7 @@
                                                                                                  
 
 
-// NEW Expr_profile and SK_map classes added at request of Raymond [010912 krb]
+// NEW Expr_profile and SK_map Classes added at request of Raymond [010912 krb]
 // more tweaks added [010927 krb]
 
 ?Expr_profile SMap S_parent UNIQUE PCR_product UNIQUE ?PCR_product XREF Expr_profile
@@ -2055,7 +2054,7 @@
 //
 // Summary records the whole description extracted from paper
 // Other_name holds the antibody's name appeared in the paper, such as MH27
-// XREF from ?Antibody to ?CDS class will be added after ?CDS is integrated 
+// XREF from ?Antibody to ?CDS Class will be added after ?CDS is integrated 
 // into models.wrm and gets stable.
 //
 // added by krb 031120
@@ -2272,7 +2271,7 @@
 		Picture ?Picture XREF Anatomy
 		WBProcess ?WBProcess XREF Anatomy_term
 
-// Anatomy_function class for Raymond 
+// Anatomy_function Class for Raymond 
 // allow the connection between ?Anatomy_term, ?Phenotype (proxy of biological function), and
 // ?Gene and still give some information about the experiment itself.
 //name shall be "WBbtf0001"
@@ -2316,7 +2315,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 //
 //      The Tree Classes from Richard Bruskiewich with a few fields commented out
-//       species class not put in because we already have a different one in the worm database
+//       species Class not put in because we already have a different one in the worm database
 //
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -2521,7 +2520,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 ?PCR_product SMap S_parent UNIQUE Canonical_parent UNIQUE ?Sequence XREF PCR_product
- 		  S_child Expr_profile ?Expr_profile XREF PCR_product UNIQUE Int UNIQUE Int #SMap_info // added for Expr_profile class [010912 krb]
+ 		  S_child Expr_profile ?Expr_profile XREF PCR_product UNIQUE Int UNIQUE Int #SMap_info // added for Expr_profile Class [010912 krb]
 	     Mapping_primers Left_mapping_primer UNIQUE Text
 			     Right_mapping_primer UNIQUE Text
 	     Species UNIQUE ?Species
@@ -2534,7 +2533,7 @@
 	     Amplified Int
 	     SNP_locus ?Locus XREF SNP_assay	                    // Todd [171001 krb]
 	     Variation ?Variation XREF PCR_product // For KO allele data [krb 021217]// ar2 PCR_products used in RFLPs etc
-	     Microarray_results ?Microarray_results XREF PCR_product //added for Microarray_results class
+	     Microarray_results ?Microarray_results XREF PCR_product //added for Microarray_results Class
 	     Clone ?Clone XREF PCR_product  // added [krb 031126]
 	     Interaction  ?Interaction
 	     RNAi ?RNAi XREF PCR_product
@@ -2676,7 +2675,7 @@
                                         Presence UNIQUE PA                                   // present always
                                                         PS                                   // present sometimes - marginal call
                                                         NP                                   // never present
-			Expression_cluster ?Expression_cluster XREF Microarray_results       // one way XREF used to populate Cluster class (prev ?Cluster)
+			Expression_cluster ?Expression_cluster XREF Microarray_results       // one way XREF used to populate Cluster Class (prev ?Cluster)
                         Remark          Text #Evidence
 
 
@@ -2697,7 +2696,7 @@
                         Remark     Text        #Evidence
 
 
-//Will eventually replace Microarray_aff class. 
+//Will eventually replace Microarray_aff Class. 
 //Used for Affymetrix and other oligo-based arrays. 
 
 ////////////////////////////////
@@ -2908,7 +2907,7 @@
 ///////////////////////////////////////////////////////////////////////////////////////
 //
 // #Role hash - Juancarlos October 2003
-// works with the Person class for Person lineage only.
+// works with the Person Class for Person lineage only.
 // The two DateType fields allow you to specify a start year and optionally an 'end' year.
 // If the second field is not specified, it is taken to mean that they are currently active at that particular role
 //
@@ -2931,7 +2930,7 @@
 ///////////////////////
 //
 // Person_name class - krb 030210
-// Simple way of searching for peoples full name (using Standard_name field of ?Person class) or just surname.
+// Simple way of searching for peoples full name (using Standard_name field of ?Person Class) or just surname.
 //
 ///////////////////////
 
@@ -2965,7 +2964,7 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 // ?Paper class - krb 040223
-// ID-based system (WBPaperXXXXXXXX) to allow paper tracking and an associated ?Paper_name class
+// ID-based system (WBPaperXXXXXXXX) to allow paper tracking and an associated ?Paper_name Class
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
