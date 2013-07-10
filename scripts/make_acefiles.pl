@@ -7,8 +7,8 @@
 # Generates the .acefiles from the primary databases as a prelim for building
 # autoace.
 #
-# Last updated by: $Author: klh $
-# Last updated on: $Date: 2012-11-07 13:27:45 $
+# Last updated by: $Author: pad $
+# Last updated on: $Date: 2013-07-10 15:10:33 $
 
 #################################################################################
 # Variables                                                                     #
@@ -152,6 +152,43 @@ unless (-e $config) {
         next if $line =~ /^The cache1 is full/;
         $line =~ s/Do you want write access \? \(y or n\) //;
 
+	#############################
+	# Common curator error tags #
+	#############################
+
+	if ($line =~ (/Person_evidence/ or /Paper_evidence/ or /Curator_confirmed/ or /Version_change/ or /Made_by/)) {
+	  my $ts = "(-O \"\\d{4}\-\\d{2}\-\\d{2}_\\d{2}:\\d{2}:\\d{2}\.?\\d?_\\S+|original\")";
+	  my $linetest = $line;
+	  $linetest =~ s/$ts//g;
+
+	  # Person & Paper evidence checking
+	  if ($linetest =~ /Person_evidence\s+\"(.+)\"/) {
+	    unless ($1 =~ (/WBPerson\d{1,5}/)) {
+	      $log->write_to("$linetest contains invalid WBPerson_evidence\n\n");
+	      $line =~ s/Person_evidence/\/\/Person_evidence/;
+	    }
+	  }
+	  if ($linetest =~ /Paper_evidence\s+\"(.+)\"/) {
+	    unless ($1 =~ (/WBPaper\d{8}/)) {
+	      $log->write_to("$linetest contains invalid WBPaper_evidence\n\n");
+	      $line =~ s/Paper_evidence/\/\/Paper_evidence/;
+	    }
+	  }
+	  if ($linetest =~ /Curator_confirmed\s+\"(.+)\"/) {
+	    unless ($1 =~ (/WBPerson\d{1,5}/)) {
+	      $log->write_to("$linetest contains invalid WBPerson_evidence\n\n");
+	      $line =~ s/Curator_confirmed/\/\/Curator_confirmed/;
+	    }
+	  }
+	# Gene version_change
+	  if ($linetest =~ /Version_change\s+\d+\s+\S+\s+\"(.+)\"/) {
+	    unless ($1 =~ (/WBPerson\d{1,5}/)){
+	      $log->write_to("$line may contain invalid WBPerson_evidence\n\n");
+	    }
+	  }
+	}
+	
+
         # check the integrity of the object names and tag values
         if ($makefile{'format'} || $makefile{'required'}) {
           if ($line =~ /$makefile{'class'}\s+\:\s+(\S+)/) { # checkfor the start of a new object
@@ -176,8 +213,8 @@ unless (-e $config) {
                 }
               }
             }
-            
-            # check for required tags in this line
+	    
+	    # check for required tags in this line
             foreach my $req (@required) {
               if ($line =~ /$req\s+\-O\s+\S+/) {
                 $required{$req} = 1; # note we have found this required tag
