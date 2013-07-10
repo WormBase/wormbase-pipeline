@@ -8,7 +8,7 @@
 # Page download and update upload to geneace has been automated [ck1]
 
 # Last updated by: $Author: pad $
-# Last updated on: $Date: 2013-07-09 15:36:26 $
+# Last updated on: $Date: 2013-07-10 11:08:46 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -305,6 +305,7 @@ while(<INPUT>){
     print DELETE_STRAIN  "-D Made_by $wperson\n";
   }
   else {
+    print STRAIN "Remark \"Made_by: $made_by\" CGC_data_submission\n";
     $log->write_to("$wperson is not a valid WBPerson\n\n");
   }
 
