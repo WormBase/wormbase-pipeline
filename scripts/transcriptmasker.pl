@@ -1,4 +1,4 @@
-#!/software/bin/perl -w
+#!/usr/bin/env perl 
 #
 # transcriptmasker.pl
 #
@@ -8,7 +8,7 @@
 # 031023 dl1
 
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2011-04-18 08:31:45 $
+# Last edited on: $Date: 2013-07-11 09:09:47 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -16,8 +16,7 @@
 
 use strict;
 use lib $ENV{'CVS_DIR'};
-use lib '/software/worm/lib/site_perl/bioperl-live';
-use Bio::SeqIO;
+uuse Bio::SeqIO;
 use Wormbase;
 use IO::Handle;
 use Getopt::Long;
