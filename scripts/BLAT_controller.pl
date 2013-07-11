@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl5.8.0 -w
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2013-05-13 12:58:43 $
+# Last edited on: $Date: 2013-07-11 08:32:05 $
 
 
 use lib $ENV{'CVS_DIR'};
@@ -18,7 +18,7 @@ use LSF RaiseError => 0, PrintError => 1, PrintOutput => 0;
 use LSF::JobManager;
 
 my ($test, $database, $debug);
-my ($mask, $dump_dna, $run, $postprocess, $load, $process, $intron);
+my ($mask, $dump_dna, $run, $postprocess, $load, $process, $intron, $blat_exe);
 my @types;
 my $store;
 my ($species, $qspecies, $nematode, $no_backup_on_load);
@@ -38,7 +38,8 @@ GetOptions (
             'nobackuponload' => \$no_backup_on_load,
 	    'types:s'        => \@types,
 	    'qspecies:s'     => \$qspecies,    #query species (ie cDNA seq)
-	    'intron'         => \$intron
+	    'intron'         => \$intron,
+            'blatexe=s'      => \$blat_exe,
 	   );
 
 my $wormbase;
@@ -52,7 +53,7 @@ else {
 			   );
 }
 
-
+$blat_exe = 'blat' unless $blat_exe;
 $database    = $wormbase->autoace unless $database;
 $species  = $wormbase->species;
 
@@ -189,12 +190,12 @@ if ( $run ) {
           $chunk_num = $1;
         }
         
-        my $cmd = "/software/worm/bin/blat/blat -noHead -t=dnax -q=dnax ";
+        my $cmd = "$blat_exe -noHead -t=dnax -q=dnax ";
         $cmd .= $wormbase->genome_seq ." $seq_file ";
         $cmd .= $wormbase->blat."/${qs}_${moltype}_${chunk_num}.psl";
 
         my @bsub_opts = (-J => "BLAT_run_${species}_${qs}_${moltype}_${chunk_num}",
-                         -M => 1000000,
+                         -M => 1000,
                          -R => 'select[mem>=1000] rusage[mem=1000]',
                          -o => "$lsfdir/BLAT_run_${species}_${qs}_${moltype}_${chunk_num}.lsfout");
         
@@ -214,12 +215,12 @@ if ( $run ) {
         $chunk_num = $1;
       }
       # "bsub -E \"test -d /software/worm\" -o /dev/null -e /dev/null -J ". \"
-      my $cmd = "/software/worm/bin/blat/blat -noHead ";
+      my $cmd = "$blat_exe -noHead ";
       $cmd .= $wormbase->genome_seq ." $seq_file ";
       $cmd .= $wormbase->blat."/${species}_${moltype}_${chunk_num}.psl";
 
       my @bsub_opts = (-J => "BLAT_run_${species}_${species}_${moltype}_${chunk_num}",
-                       -M => 1000000,
+                       -M => 1000,
                        -R => 'select[mem>=1000] rusage[mem=1000]',
                        -o => sprintf("BLAT_run_%s/%s_%s_%s_%d.lsfout", $lsfdir, $species, $species, $moltype, $chunk_num));
 
@@ -275,7 +276,7 @@ if ( $process ) {
 
       my $job_name = "BLAT_blat2ace_${species}_${qspecies}_${type}";
       # ask for a memory limit of 4 Gb
-      my @bsub_options = (-M => "4000000", 
+      my @bsub_options = (-M => "4000", 
 			  -R => "\"select[mem>4000] rusage[mem=4000]\"",
 			  -J => $job_name, 
                           -o => "$lsfdir/$job_name.lsfout");
