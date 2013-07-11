@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl -w
+#!/usr/bin/env perl
 
 use lib $ENV{CVS_DIR};
 use Wormbase;
@@ -97,7 +97,7 @@ CHROMLOOP: foreach my $chrom ( @chromosomes ) {
 			  -J => $job_name);
 
       if (scalar(@chromosomes) <= 50) {
-        push @bsub_options, (-M => "3500000", 
+        push @bsub_options, (-M => "3500", 
                              -R => "\"select[mem>3500] rusage[mem=3500]\"");
       }
 
@@ -126,7 +126,7 @@ CHROMLOOP: foreach my $chrom ( @chromosomes ) {
   else {
     # for large chromosomes, ask for a memory limit of 3.5 Gb
     my $job_name = "worm_".$wormbase->species."_gffbatch";
-    my @bsub_options = scalar(@chromosomes) <= 50 ? (-M => "3500000", 
+    my @bsub_options = scalar(@chromosomes) <= 50 ? (-M => "3500", 
 						    -R => "\"select[mem>3500] rusage[mem=3500]\"",
 						   ) : ();
     my $out = scalar(@chromosomes) <= 50 
@@ -176,7 +176,7 @@ if ($rerun_if_failed) {
   ##################################################################
   # now try re-runnning any commands that failed
   $lsf = LSF::JobManager->new();
-  my @bsub_options = scalar(@chromosomes) <= 50 ? (-M => "3500000", 
+  my @bsub_options = scalar(@chromosomes) <= 50 ? (-M => "3500", 
                                                    -R => "\"select[mem>3500] rusage[mem=3500]\""
       ) : ();
   
