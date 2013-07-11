@@ -9,7 +9,7 @@ my $bsubmem = 2;
             'E=s'   => \$pre_exec,
     );
 
-my $minus_M = $bsubmem * 1000 * 1000;
+my $minus_M = $bsubmem * 1000;
 my $minus_R = sprintf("'select[mem>%d] rusage[mem=%d]'", $bsubmem * 1000, $bsubmem * 1000);
 
 #unshift @ARGV, ("bsub", "-q $queue", "-I", "-M $minus_M", , "-R $minus_R");
