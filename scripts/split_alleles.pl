@@ -148,7 +148,7 @@ foreach my $mem_gb (3, 6) {
       my $job_name = "${species}_splitalleles_${batch}_${mem_gb}GB";
       my $lsf_output = "${outdir}/${job_name}.lsf_out";
       my @bsub_options =(-o => $lsf_output,
-                         -M => $mem_gb * 1000000, 
+                         -M => $mem_gb * 1000, 
                          -R => sprintf("select[mem>%d] rusage[mem=%d]", $mem_gb * 1000, $mem_gb * 1000),
                          -J => $job_name);
       $lsf->submit(@bsub_options, $cmd);
