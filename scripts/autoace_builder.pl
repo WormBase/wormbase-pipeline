@@ -1,4 +1,4 @@
-#!/software/bin/perl -w
+#!/usr/bin/env perl
 
 # autoace_builder.pl
 #
@@ -7,11 +7,10 @@
 # Usage : autoace_builder.pl [-options]
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2013-06-13 14:52:20 $
+# Last edited on: $Date: 2013-07-11 08:26:41 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
-use lib '/software/worm/lib/site_perl';
 
 use strict;
 use Wormbase;
@@ -219,7 +218,7 @@ if ($gff_munge) {
     $wormbase->run_script( "Map_pos_GFFprocess.pl", $log);
   }
   if ($wormbase->species eq 'elegans') {
-    $wormbase->run_script( "chromosome_script_lsf_manager.pl -command '/software/bin/perl $ENV{'CVS_DIR'}/process_sage_gff.pl' -mito -prefix", $log);
+    $wormbase->run_script( "chromosome_script_lsf_manager.pl -command 'perl $ENV{'CVS_DIR'}/process_sage_gff.pl' -mito -prefix", $log);
   }
 }
 if ($xrefs) {
