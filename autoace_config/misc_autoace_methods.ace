@@ -2800,7 +2800,7 @@ Show_text
 GFF_source "RNASeq" // LaDeana's work on her RNASeq with input from Gary Williams
 GFF_feature "TSS" // SO:0000315
 GFF_SO "SO:0000315" // TSS
-Remark "transcription start site - N.B. this may only be the start of the mature transcript, rather than the original start site of transcription. This is determined from the Hillier RNASeq data."
+Remark "Experimentally determined transcription start site"
 
 Method : "transcription_end_site" 
 Colour DARKRED
@@ -2812,6 +2812,39 @@ GFF_source "RNASeq" // LaDeana's work on her RNASeq with input from Gary William
 GFF_feature "transcription_end_site" // SO:0000616
 GFF_SO "SO:0000616" // transcription_end_site
 Remark "transcription end site - N.B. this may only be the end of the mature transcript, rather than the original end site of transcription This is determined from the Hillier RNASeq data."
+
+Method : "TSS_region" // used for Julie Ahringer's 2013 TSS/enhancer paper
+Colour     DARKGREEN
+Strand_sensitive
+Width     2.000000
+Show_up_strand
+Show_text
+GFF_source  "TSS_region"
+GFF_feature "TSS_region" // SO:0001240
+GFF_SO "SO:0001240" // TSS_region
+Remark     "Experimentally determined transcription start site region - contains a cluster of TSS sites"
+
+Method : "enhancer"
+Colour     GREEN
+Strand_sensitive
+Width     2.000000
+Show_up_strand
+Show_text
+GFF_source  "enhancer"
+GFF_feature "enhancer" // SO:0000165
+GFF_SO "SO:0000165" // enhancer
+Remark     "Experimentally determined enhancer region"
+
+Method : "silencer"
+Colour     GREEN
+Strand_sensitive
+Width     2.000000
+Show_up_strand
+Show_text
+GFF_source  "silencer"
+GFF_feature "silencer" // SO:0000625
+GFF_SO "SO:0000625" // silencer
+Remark     "Experimentally determined silencer region"
 
 Method : "curation_remark" 
 Colour MAGENTA
@@ -3218,6 +3251,15 @@ Method : "transcription_start_site"
 Right_priority 1.9
 
 Method : "transcription_end_site"
+Right_priority 1.9
+
+Method : "TSS_region"
+Right_priority 1.9
+
+Method : "enhancer"
+Right_priority 1.9
+
+Method : "silencer"
 Right_priority 1.9
 
 Method : "micro_ORF"
