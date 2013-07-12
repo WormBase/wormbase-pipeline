@@ -14,12 +14,12 @@
 //
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: pad $
-// Last edited on: $Date: 2013-07-09 09:05:19 $
+// Last edited on: $Date: 2013-07-12 15:33:36 $
 //
 //
 // Additional things to consider. If classes are added or new data in the ?Gene class
 // Then we should consider the elegans_config (and possibly others) so the data makes
-// it into the build.
+// it into the build!
 //
 
 
