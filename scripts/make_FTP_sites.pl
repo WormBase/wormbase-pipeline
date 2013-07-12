@@ -5,8 +5,8 @@
 # A PERL wrapper to automate the process of building the FTP sites 
 # builds wormbase & wormpep FTP sites
 # 
-# Last updated by: $Author: pad $
-# Last updated on: $Date: 2013-05-15 16:31:06 $
+# Last updated by: $Author: klh $
+# Last updated on: $Date: 2013-07-12 14:40:17 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -1091,9 +1091,11 @@ sub make_assembly_manifest {
       # will tell us whether the bioproject is the canonical one
       my ($rel_acc) = grep { $_->ncbi_bioproject eq $bioproj } @accs;
       my $is_canonical = $rel_acc->is_canonical;
+      my $bioproj_desc = $rel_acc->bioproject_description;
 
       push @{$obj->{assemblies}}, {
         bioproject => $bioproj,
+        bioproject_description => $bioproj_desc,
         assembly_accession => $gc_acc,
         assembly_name => $assembly_name->name,
         appeared_in => 'WS'.$first_ws_rel->name,
