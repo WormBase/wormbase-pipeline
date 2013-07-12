@@ -135,6 +135,7 @@ sub cds_regex_noend{qr/^[A-Z0-9_cel]+\.[1-9]\d{0,3}[A-Za-z]?/};  # for getting t
 
 sub ncbi_tax_id {'6239'};
 sub ncbi_bioproject {'PRJNA13758'};
+sub bioproject_description {'C.elegans Sequencing Consortium genome project'};
 sub full_name {
 	my $self = shift;
 	my %param = @_ ;
@@ -200,6 +201,7 @@ sub seq_name_regex{qr/^CBG\d{5}/};
 sub cds_regex_noend{qr/^CBG\d{5}[a-z]*/}; # for getting the CDS part of a Transcript name
 sub ncbi_tax_id {'6238'};
 sub ncbi_bioproject {'PRJNA10731'};
+sub bioproject_description {'C. briggsae Sequencing Consortium genome project'};
 sub assembly_type {'chromosome'};
 
 sub full_name {
@@ -272,6 +274,7 @@ sub pep_prefix {'RP'}
 sub pepdir_prefix{'rema'};
 sub ncbi_tax_id {'31234'};
 sub ncbi_bioproject {'PRJNA53967'};
+sub bioproject_description {'C.remanei Sequencing Consortium genome project'};
 sub cds_regex{qr/CRE\d{5}[a-z]*/};
 sub seq_name_regex{qr/^CRE\d{5}/};
 sub cds_regex_noend{qr/CRE\d{5}[a-z]*/}; # for getting the CDS part of a Transcript name
@@ -309,6 +312,7 @@ sub pep_prefix {'CN'}
 sub pepdir_prefix{'bre'};
 sub ncbi_tax_id {'135651'};
 sub ncbi_bioproject {'PRJNA20035'};
+sub bioproject_description {'C.brenneri Sequencing Consortium genome project'};
 sub full_name {
 	my $self = shift;
 	my %param = @_ ;
@@ -356,6 +360,7 @@ sub pep_prefix {'JA'}
 sub pepdir_prefix{'jap'};
 sub ncbi_tax_id {'281687'};
 sub ncbi_bioproject {'PRJNA12591'};
+sub bioproject_description {'C.japonica Sequencing Consortium genome project'};
 sub cds_regex{qr/CJA\d{5}[a-z]*/};
 sub seq_name_regex{qr/^CJA\d{5}/};
 sub cds_regex_noend{qr/CJA\d{5}[a-z]*/}; # for getting the CDS part of a Transcript name
@@ -421,6 +426,7 @@ sub pep_prefix {'PP'}
 sub pepdir_prefix{'ppa'};
 sub ncbi_tax_id {'54126'};
 sub ncbi_bioproject {'PRJNA12644'};
+sub bioproject_description {  'Max Planck Institute for Developmental Biology P.pacificus genome project' }
 sub assembly_type {'contig'};
 sub wormpep_prefix {'PP'}
 sub upload_db_name {''}; # we already hold the data in the primary database, it is not downloaded
@@ -476,6 +482,7 @@ sub cds_regex_noend{qr/Bm\d+[a-z]*/}; # for getting the CDS part of a Transcript
 sub cds_regex{qr/Bm\d+[a-z]*/};
 sub ncbi_tax_id {'6279'};
 sub ncbi_bioproject {'PRJNA10729'};
+sub bioproject_description { 'University of Pittsburgh B.malayi genome project' }
 sub assembly_type {'contig'};
 sub TSL {(
 	  'SL1'  => "GGTTTAATTACCCAAGTTTGAG",
@@ -523,6 +530,7 @@ sub full_name {
 }
 sub ncbi_tax_id {'37862'};
 sub ncbi_bioproject {'PRJNA13977'};
+sub bioproject_description { 'Genome Institute at Washington University H.bacteriophora genome project' }
 sub chromosome_prefix {''}
 sub pep_prefix {'HB'}
 sub pepdir_prefix{'het'};
@@ -560,6 +568,7 @@ sub pep_prefix {'SR'}
 sub pepdir_prefix{'rat'};
 sub ncbi_tax_id {'34506'};
 sub ncbi_bioproject {'PRJEA62033'};
+sub bioproject_description { 'Wellcome Trust Sanger Institute S.ratti genome project' }
 sub assembly_type {'contig'};
 sub TSL {(
 	  'SL1'  => "GGTTTAATTACCCAAGTTTGAG",
@@ -616,6 +625,7 @@ sub pep_prefix {'AS'}
 sub pepdir_prefix{'as'};
 sub ncbi_tax_id {'6253'};
 sub ncbi_bioproject {'PRJNA80881'};
+sub bioproject_description {'University of Melbourne A.suum genome project'}
 sub assembly_type {'contig'};
 sub TSL {(
 	  'SL1'  => "GGTTTAATTACCCAAGTTTGAG",
@@ -655,6 +665,7 @@ sub pep_prefix {'ASD'}
 sub pepdir_prefix{'as'};
 sub ncbi_tax_id {'6253'};
 sub ncbi_bioproject {'PRJNA62057'};
+sub bioproject_description { 'University of Colorado A.suum genome project' }
 sub is_canonical{ 0 };
 sub assembly_type {'contig'};
 sub TSL {(
@@ -696,6 +707,7 @@ sub pep_prefix {'S5'}
 sub pepdir_prefix{'csp5'};
 sub ncbi_tax_id {'497829'}; # this is the ID of the DRD-2008 strain
 sub ncbi_bioproject {'PRJNA194557'};
+sub bioproject_description { 'University of Edinburgh Caenorhabditis sp. 5 genome project' }
 sub assembly_type {'contig'};
 ######################################################
 
@@ -729,6 +741,7 @@ sub pep_prefix {'S7'}
 sub pepdir_prefix{'csp7'};
 sub ncbi_tax_id {'870436'};
 sub ncbi_bioproject {'PRJNA51171'};
+sub bioproject_description { 'Genome Institute at Washington University Caenorhabditis sp. 7 genome project' }
 sub assembly_type {'contig'};
 
 ######################################################
@@ -762,6 +775,7 @@ sub pep_prefix {'S9'}
 sub pepdir_prefix{'csp9'};
 sub ncbi_tax_id {'870437'};
 sub ncbi_bioproject {'PRJNA51169'};
+sub bioproject_description { 'Genome Institute at Washington University Caenorhabditis sp. 9 genome project' }
 sub assembly_type {'contig'};
 
 ######################################################
@@ -795,6 +809,7 @@ sub pep_prefix {'S11'}
 sub pepdir_prefix{'csp11'};
 sub ncbi_tax_id {'886184'};
 sub ncbi_bioproject {'PRJNA53597'};
+sub bioproject_description { 'Genome Institute at Washington University Caenorhabditis sp. 11 genome project' }
 sub assembly_type {'contig'};
 
 ######################################################
@@ -828,6 +843,7 @@ sub pep_prefix {'BXY'}
 sub pepdir_prefix{'bxylophilus'};
 sub ncbi_tax_id {'6326'};
 sub ncbi_bioproject {'PRJEA64437'};
+sub bioproject_description { 'Wellcome Trust Sanger Institute B.xylophilus genome project' }
 sub assembly_type {'contig'};
 
 
@@ -863,6 +879,7 @@ sub pep_prefix {'LL'}
 sub pepdir_prefix{'loa'};
 sub ncbi_tax_id {'7209'};
 sub ncbi_bioproject {'PRJNA60051'};
+sub bioproject_description { 'Broad Institute L.loa genome project' }
 sub assembly_type {'contig'};
 
 
@@ -899,6 +916,7 @@ sub pep_prefix {'MH'}
 sub pepdir_prefix{'hap'};
 sub ncbi_tax_id {'6305'};
 sub ncbi_bioproject {'PRJNA29083'};
+sub bioproject_description { 'Center for the Biology of Nematode Parasitism (NCSU) M.hapla genome project' }
 sub assembly_type {'contig'};
 sub chromosome_names {
 	my @contigs;
@@ -942,6 +960,7 @@ sub pep_prefix {'MI'}
 sub pepdir_prefix{'inc'};
 sub ncbi_tax_id {'6306'};
 sub ncbi_bioproject {'PRJEA28837'};
+sub bioproject_description { 'INRA M.incognita genome project' }
 sub assembly_type {'contig'};
 sub chromosome_names {
 	my @contigs;
@@ -984,6 +1003,7 @@ sub pep_prefix {'HC'}
 sub pepdir_prefix{'hco'};
 sub ncbi_tax_id {'6289'};
 sub ncbi_bioproject {'PRJEB506'};
+sub bioproject_description { 'Wellcome Trust Sanger Institute H.contortus genome project' }
 sub assembly_type {'contig'};
 sub chromosome_names {
 	my @contigs;
@@ -1027,6 +1047,7 @@ sub pep_prefix {''}
 sub pepdir_prefix{''};
 sub ncbi_tax_id {'6289'};
 sub ncbi_bioproject {'PRJNA205202'};
+sub bioproject_description { 'University of Melbourne H.contortus genome project' }
 sub assembly_type {'contig'};
 sub chromosome_names {
   die "chromosome_names method not implemented for this species\n";
@@ -1064,6 +1085,7 @@ sub pep_prefix {'TP'}
 sub pepdir_prefix{'tri'};
 sub ncbi_tax_id {'6334'};
 sub ncbi_bioproject {'PRJNA12603'};
+sub bioproject_description { 'Genome Institute at Washington University T.spiralis genome project' }
 sub assembly_type {'contig'};
 
 sub chromosome_names {
@@ -1105,6 +1127,7 @@ sub pep_prefix {'CA'}
 sub pepdir_prefix{'can'};
 sub ncbi_tax_id {'860376'};
 sub ncbi_bioproject {'PRJNA51225'};
+sub bioproject_description { 'California Institute of Technology C.angaria genome project' }
 sub assembly_type {'contig'};
 
 
