@@ -7,7 +7,7 @@
 # This is a example of a good script template
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-05-13 18:23:42 $
+# Last updated on: $Date: 2013-07-15 15:30:27 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -187,15 +187,16 @@ foreach my $GFF_file_name (@gff_files) {
       next;
     }
     my @f = split /\t/, $line;
-    
-    # It is possible that this script is being run on the same
-    # input file multiple times (e.g. when sorting out problems)
-    # in which case we do not want to add 'Species' multiple
-    # times to the same line.
-    if (defined $f[1] && $f[8] !~ /;\sSpecies/ && $f[8] !~ /Species\=/) {
+    if (grep { $f[1] =~ /^$_/ } ('BLAT_WASHU', 'BLAT_NEMBASE', 'BLAT_NEMATODE', 'BLAT_Caen_EST_') or 
+        grep { $f[1] eq $_ } ('EMBL_nematode_cDNAs-BLAT', 'NEMATODE.NET_cDNAs-BLAT', 'NEMBASE_cDNAs-BLAT')) {
       
-      if (grep { $f[1] =~ /^$_/ } ('BLAT_WASHU', 'BLAT_NEMBASE', 'BLAT_NEMATODE', 'BLAT_Caen_EST_') or 
-          grep { $f[1] eq $_ } ('EMBL_nematode_cDNAs-BLAT', 'NEMATODE.NET_cDNAs-BLAT', 'NEMBASE_cDNAs-BLAT')) {
+      # It is possible that this script is being run on the same
+      # input file multiple times (e.g. when sorting out problems)
+      # in which case we do not want to add 'Species' multiple
+      # times to the same line.      
+      
+      if (defined $f[1] && $f[8] !~ /;\sSpecies/ && $f[8] !~ /Species\=/) {
+
         my $id;
         
         if ($gff3) {
