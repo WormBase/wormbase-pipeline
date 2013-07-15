@@ -2,7 +2,7 @@
 
 # Version: $Version: $
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-01-13 23:05:48 $
+# Last updated on: $Date: 2013-07-15 10:47:01 $
 
 use strict;
 use warnings;
@@ -150,19 +150,19 @@ $fail_count = scalar(keys %$prods_to_map);
 $log->write_to(sprintf("\nFailed to map %d products (%.1f percent)\n\n", 
                        $fail_count, 100 * ($fail_count / $total_count)));
 foreach my $id (keys %$prods_to_map) {
-  $log->write_to(sprintf("Could not map %s %s %s\n", $id, @{$prods_to_map->{$id}}));
+  $log->write_to(sprintf("Could not map %s %s %s\n", 
+                         $id, 
+                         $prods_to_map->{$id}->{left_primer}, 
+                         $prods_to_map->{$id}->{right_primer}));
 }
 
 # Write and load an ace file for the mapped products
 #
-my %prods_by_loc;
+my (%prods_by_loc, %non_primary_hits);
 
 foreach my $mp (sort keys %mapped) {
 
-  # can only store a single location for each product, so need to 
-  # choose the "best"
-
-  my (@best, @best2);
+  my (@best);
   foreach my $hit (sort { $a->{edits} <=> $b->{edits} } @{$mapped{$mp}}) {
     if (not @best or ($best[-1]->{edits} == $hit->{edits})) {
       push @best, $hit;
@@ -171,42 +171,80 @@ foreach my $mp (sort keys %mapped) {
     }
   }
 
-  # all @best now have same number of total mismatches. If one of the hits can 
-  # is on the "right" clone (as determined by the clone name being part of the
-  # product name), choose it; otherwise, choose the one with the shortest implied
-  # product length
-
   if (scalar(@best) > 1) {
-    my @good_looking_seq;
+
+    # all @best now have same number of total mismatches. If one of the hits can 
+    # is on the "right" clone (as determined by the clone name being part of the
+    # product name), choose it as the primary hit; otherwise, choose the one with 
+    # the shortest implied product length
+    
+    my (@good_looking_seq, @others);
     foreach my $hit (@best) {
       my ($seq, $st, $en) = $coords->LocateSpan($hit->{chr}, $hit->{start}, $hit->{end});
 
       if ($mp =~ /$seq/) {
         push @good_looking_seq, $hit;
+      } else {
+        push @others, $hit;
       }
     }
     if (scalar(@good_looking_seq) == 1) {
-      @best = @good_looking_seq;
+      @best = (@good_looking_seq, @others)
     } else {
       @best = sort { $a->{len} <=> $b->{len} } @best;    
     }
-  }
-  
-  my $hit = $best[0];
-  my ($seq, $st, $en) = $coords->LocateSpan($hit->{chr}, $hit->{start}, $hit->{end});
 
-  $hit->{chr} = $seq;
-  $hit->{start} = $st;
-  $hit->{end} = $en;
+
+    # keep all matches iff they are perfect; otherwise just take the primary one
+    if ($best[0]->{edits} > 0) {
+      @best = ($best[0]);
+    }
+
+    # keep all matches that have length within a sensible range of the primary
+    # (this weeds out absurd non-primary hits)
+    @best = grep { $_->{len} < ($best[0]->{len} * 2) } @best;
   
-  push @{$prods_by_loc{$seq}}, $hit;
+    # Finally, mark all but the first hit as non-primary
+    for(my $idx = 1; $idx < @best; $idx++) {
+      $best[$idx]->{product} .= "_${idx}";
+      
+      push @{$non_primary_hits{$mp}}, {
+        product => $best[$idx]->{product},
+        method  => $best[$idx]->{method},
+      };
+    }
+
+  }
+
+
+  foreach my $hit (@best) {
+    my ($seq, $st, $en) = $coords->LocateSpan($hit->{chr}, $hit->{start}, $hit->{end});
+    
+    $hit->{chr} = $seq;
+    $hit->{start} = $st;
+    $hit->{end} = $en;
+    
+    push @{$prods_by_loc{$seq}}, $hit;
+  }
 }
 
 
 open (my $acefh, ">$acefile") or $log->log_and_die("Could not open $acefile for writing\n");
+
+foreach my $prod (sort keys %non_primary_hits) {
+  foreach my $obj (@{$non_primary_hits{$prod}}) {
+    my $name = $obj->{product};
+    my $method = $obj->{method};
+    print $acefh "\nPCR_product : \"$name\"\n";
+    print $acefh "Remark \"Created to represent non-primary genome mapping of $prod\"\n";
+    print $acefh "Method \"$method\"\n";
+  }
+}
+
 foreach my $chr (sort keys %prods_by_loc) {
   print $acefh "\nSequence : \"$chr\"\n";
   foreach my $mp (sort { $a->{product} cmp $b->{product} } @{$prods_by_loc{$chr}}) {
+
     printf $acefh "PCR_product\t%s\t%d\t%d\n", $mp->{product}, $mp->{start}, $mp->{end};
   }
 }
@@ -230,7 +268,8 @@ sub map_with_ipcress {
   foreach my $prod_name (sort keys %$products) {
     printf($ipfh "%s\t%s\t%s\t%d\t%d\n", 
            $prod_name, 
-           @{$products->{$prod_name}}, 
+           $products->{$prod_name}->{left_primer},
+           $products->{$prod_name}->{right_primer},
            $MIN_PROD_SIZE, 
            $MAX_PROD_SIZE);
   }
@@ -256,6 +295,7 @@ sub map_with_ipcress {
 
       my $obj = {
         product => $prod_id,
+        method => $products->{$prod_id}->{method},
         chr => $tseq,
         start => $start,
         end => $end, 
@@ -281,7 +321,9 @@ sub map_with_epcr {
   open(my $epcrfh, ">$epcrfile") or $log->log_and_die("Could not open epcr file for reading\n");
   foreach my $prod_name (sort keys %$products) {
     printf($epcrfh "%s\t%s\t%s\t%d-%d\n", 
-           $prod_name, @{$products->{$prod_name}}, 
+           $prod_name, 
+           $products->{$prod_name}->{left_primer},
+           $products->{$prod_name}->{right_primer},
            $MIN_PROD_SIZE, 
            $MAX_PROD_SIZE);
   }
@@ -294,6 +336,7 @@ sub map_with_epcr {
 
       my $obj = {
         product => $2,
+        method => $products->{$2}->{method},
         chr => $1,
         start => $4, 
         end   => $5,
@@ -320,7 +363,7 @@ sub get_pcr_products {
     map { $prod_test{$_} = 1 } @prod_test;
   }
 
-  my (%prods, %good_prods);
+  my (%good_prods);
   my $tace = $wormbase->tace;
 
   my $tb_def1 = &get_initial_table_def();
@@ -334,12 +377,17 @@ sub get_pcr_products {
 
       next if @prod_test and not exists $prod_test{$l[0]};
 
-      $good_prods{$l[0]} = [uc($l[1]), uc($l[2])];
+      $good_prods{$l[0]} = {
+        method       => $l[1],
+        left_primer  => uc($l[2]),
+        right_primer => uc($l[3]),
+      };
     }
   }
   close($tace_fh1);
 
-
+  my (%prods, %meths);
+  
   my $tb_def2 = &get_secondary_table_def();
   my $tb_cmd2 = "Table-maker -p \"$tb_def2\"\nquit\n";
   open(my $tace_fh2, "echo '$tb_cmd2' | $tace $database |");
@@ -351,10 +399,12 @@ sub get_pcr_products {
 
       next if @prod_test and not exists $prod_test{$l[0]};
 
-      if ($l[1] and $l[2]) {
-        push @{$prods{$l[0]}}, [$l[1], $l[2]];
-      } elsif ($l[1]) {
-        push @{$prods{$l[0]}}, [$l[1], ""];
+      $meths{$l[0]} = $l[1];
+
+      if ($l[2] and $l[3]) {
+        push @{$prods{$l[0]}}, [$l[2], $l[3]];
+      } elsif ($l[2]) {
+        push @{$prods{$l[0]}}, [$l[2], ""];
       } else {
         $prods{$l[0]} = [];
       }
@@ -371,7 +421,11 @@ sub get_pcr_products {
       next;
     }
 
-    $good_prods{$prod} = [uc($prods{$prod}->[0]->[1]), uc($prods{$prod}->[1]->[1])];
+    $good_prods{$prod} = {
+      left_primer  => uc($prods{$prod}->[0]->[1]),
+      right_primer => uc($prods{$prod}->[1]->[1]),
+      method       => $meths{$prod},
+    };
   }
 
   unlink $tb_def1, $tb_def2;
@@ -411,17 +465,28 @@ Width 12
 Mandatory 
 Visible 
 Class 
-Class Oligo 
+Class Method 
 From 1 
-Tag Oligo 
- 
+Tag Method 
+
 Colonne 3 
 Width 12 
 Mandatory 
 Visible 
+Class 
+Class Oligo 
+From 1 
+Tag Oligo 
+ 
+Colonne 4 
+Width 12 
+Mandatory 
+Visible 
 Text 
-From 2 
+From 3 
 Tag Sequence 
+
+
 
 EOF
 
@@ -458,9 +523,10 @@ Colonne 2
 Width 12 
 Mandatory 
 Visible 
-Text 
+Class
+Class Method 
 From 1 
-Tag Left_mapping_primer 
+Tag Method
  
 Colonne 3 
 Width 12 
@@ -468,7 +534,16 @@ Mandatory
 Visible 
 Text 
 From 1 
+Tag Left_mapping_primer 
+ 
+Colonne 4 
+Width 12 
+Mandatory 
+Visible 
+Text 
+From 1 
 Tag Right_mapping_primer 
+
 
 EOF
 
