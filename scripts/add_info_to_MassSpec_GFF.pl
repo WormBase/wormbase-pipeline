@@ -7,7 +7,7 @@
 # This add some extraneous information to the MassSpec peptides lines in the GFF file
 #
 # Last updated by: $Author: klh $     
-# Last updated on: $Date: 2013-04-30 14:28:17 $      
+# Last updated on: $Date: 2013-07-15 12:31:59 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -62,10 +62,7 @@ my $log = Log_files->make_build_log($wormbase);
 
 # Set up top level base directories (these are different if in test mode)
 my $gff_dir         = $wormbase->gff;         # AUTOACE GFF
-###my $gff_dir = glob("~wormpub/DATABASES/current_DB/CHROMOSOMES/");
-
 my $ace_dir = $wormbase->autoace;
-###my $ace_dir = glob("~wormpub/DATABASES/current_DB/");
 
 # other paths
 my $tace            = $wormbase->tace;        # TACE PATH
@@ -236,8 +233,10 @@ sub get_protein_history {
   my @protein_history;
                             
   my $release = $wormbase->get_wormbase_version;
-                                                                                                              
-  my $data_file = "/nfs/wormpub/BUILD/WORMPEP/wormpep$release/wormpep.history$release";
+  my $pepdir_base = $wormbase->peproot;
+  my $pepdir = $wormbase->pepdir_prefix . "pep${release}";
+  my $pephistory =  $wormbase->pepdir_prefix . "pep.history${release}";
+  my $data_file = "$pepdir_base/$pepdir/$pephistory";
  
   open (HIST, "< $data_file") || die "Can't open $data_file\n";
   while (my $line = <HIST>) {
