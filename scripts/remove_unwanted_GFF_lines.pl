@@ -4,8 +4,8 @@
 # 
 # by Gary Williams
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2011-05-03 16:15:00 $
+# Last updated by: $Author: klh $
+# Last updated on: $Date: 2013-07-15 15:48:55 $
 
 # removes lines from GFF files that have no 'source' column and are of type 'intron' or 'ALLELE'
 # these come from the Confirmed_intron tags in the clone Sequence
@@ -87,24 +87,29 @@ foreach my $file (@gff_files) {
   
   open (GFF, "<$gffdir/${file}.gff")  || die "Cannot open $file.gff\n";
   while (<GFF>) {
+    if (/^\#/) {
+      print OUT $_;
+      next;
+    }
     chomp;
     
-    #skip header lines of file
-    
-      unless  (/^\S+\s+\.\s+intron\s+/ ||
-	       /^\S+\s+\.\s+ALLELE\s+/   
-	      ) {
-	print OUT "$_\n";
-	next;
-      }
-	
+    my @l = split(/\t+/, $_);
+    if (scalar(@l) == 8) {
+      # no group field, so explicit add an empty one
+      push @l, "";
+    } elsif (scalar(@l) != 9) {
+      $log->log_and_die(sprintf("Found line in GFF with bad number of columns:\n$_\n"));
     }
-    close GFF; #_ end of input GFF file
-    close OUT; #_ end of output GFF file
-
-    # copy new GFF files over
-    system("mv -f $gffdir/${file}.gff.new $gffdir/${file}.gff");
-
+    
+    next if $l[1] eq '.';
+    print OUT join("\t", @l), "\n";
+  }
+  
+  close GFF; #_ end of input GFF file
+  close OUT; #_ end of output GFF file
+  
+  # copy new GFF files over
+  system("mv -f $gffdir/${file}.gff.new $gffdir/${file}.gff"); 
 }
 
 
