@@ -180,6 +180,7 @@ sub end {
 # this will cause the log file to be mailed even if the calling script dies unexpectantly
 sub DESTROY {
     my $self = shift;
+    my $exit_code = $?;
     unless ( defined $self->{'MAILED'} ) {
       print STDERR "DESTROYing at ",Wormbase::runtime(),"\n====================\n";
       $self->error;
@@ -188,6 +189,7 @@ sub DESTROY {
 	"\nTHIS MAIL WAS NOT SENT BY THE SCRIPT THAT WAS RUN\nThe log file object was not \"mailed\", which may mean the script did not finish properly\n";
       $self->mail;
     }
+    $? = $exit_code;
 }
 
 # this sub is to allow an error to be reported to screen and log file prior to script death
