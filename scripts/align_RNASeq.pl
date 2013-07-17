@@ -186,7 +186,7 @@
 # by Gary Williams
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2013-06-24 10:37:16 $
+# Last updated on: $Date: 2013-07-17 13:28:37 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -311,7 +311,7 @@ if ($species eq 'elegans') {
 # Add new analysis/condition objects to ~wormpub/DATABASES/geneace
 
 	     SRX001872  => ["RNASeq_Hillier.L2_larva", 'phred', 'single'], # needs a lot of memory to run tophat
-	     SRX001873  => ["RNASeq_Hillier.Young_Adult", 'phred', 'single'],
+	     SRX001873  => ["RNASeq_Hillier.young_adult", 'phred', 'single'],
 	     SRX001874  => ["RNASeq_Hillier.L4_larva", 'phred', 'single'],
 	     SRX001875  => ["RNASeq_Hillier.L3_larva", 'phred', 'single'],
 
@@ -323,7 +323,7 @@ if ($species eq 'elegans') {
 	     SRX004868  => ["RNASeq_Hillier.L4_larva_Male", 'solexa', 'single'], # solexa
 	     SRX004869  => ["RNASeq_Hillier.L1_larva_lin-35", 'solexa', 'single'], # SRR016691 and SRR016690 are phred, the other two are solexa
 
- 	     SRX008136  => ["RNASeq_Hillier.Adult_spe-9", 'phred', 'single'], # phred, despite what the docs say
+ 	     SRX008136  => ["RNASeq_Hillier.adult_spe-9", 'phred', 'single'], # phred, despite what the docs say
  	     SRX008138  => ["RNASeq_Hillier.dauer_daf-2", 'phred', 'single'], # phred, despite what the docs say
  	     SRX008139  => ["RNASeq_Hillier.dauer_entry_daf-2", 'phred', 'single'], # phred, despite what the docs say
  	     SRX008140  => ["RNASeq_Hillier.dauer_exit_daf-2", 'phred', 'single'], # phred, despite what the docs say
