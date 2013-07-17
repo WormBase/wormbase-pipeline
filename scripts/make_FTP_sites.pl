@@ -6,7 +6,7 @@
 # builds wormbase & wormpep FTP sites
 # 
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-07-12 14:40:17 $
+# Last updated on: $Date: 2013-07-17 14:25:13 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -491,58 +491,35 @@ sub copy_gff_files{
     my $species  = $wb->species;
     my $gspecies = $wb->full_name('-g_species' => 1);
     my $bioproj  = $wb->ncbi_bioproject;
-    my $chromdir = $wb->gff;
     my $sequencesdir = $wb->sequences;
 
-    if (-e "$chromdir") {
-      my $gff_dir = "$targetdir/species/$gspecies/$bioproj";
-      mkpath($gff_dir,1,0775);
+    my $source_gff2_file = $wb->processed_GFF_file();
+    my $source_gff3_file = $wb->processed_GFF_file(1);
 
+    my $gff_dir = "$targetdir/species/$gspecies/$bioproj";
+    mkpath($gff_dir,1,0775);
+    my $fname_prefix = "$gspecies.$bioproj.$WS_name.annotations";
+    
+    if (-e $source_gff2_file) {
       #concatenated whole genome file require for all species
-      my $whole_filename = "$gspecies.$bioproj.$WS_name.annotations.gff2"; 
-      $wormbase->run_command("rm -f $gff_dir/$whole_filename", $log);
-
-      if($wb->assembly_type eq 'contig') {
-        if (-e "$chromdir/$species.gff") { # tierII does it this way
-          $wormbase->run_command("cp -f -R $chromdir/$species.gff $gff_dir/$whole_filename", $log);
-        } else { 
-          $log->error("ERROR: $chromdir/$species.gff missing\n");
-        }
-      } else {
-        $wormbase->run_command("cat $chromdir/*.gff > $gff_dir/$whole_filename", $log);
-        #$wormbase->run_command("cp -f $chromdir/*.gff* $gff_dir/", $log); #individual files too
-      }
-
-      # add supplementary and nGASP GFF
-      my $ngaspdir;
-      if($species eq 'elegans') {
-	my $supdir = "$sequencesdir/SUPPLEMENTARY_GFF";
-	my @gfffiles = glob("$supdir/*.gff");
-	foreach my $sup (@gfffiles){
-          $wb->run_command("cat $sup >> $gff_dir/$whole_filename", $log);
-	}
-	$ngaspdir = $supdir;
-      }
-      $ngaspdir = $wb->database("$species")."/nGASP" unless $ngaspdir;
-	
-      # nGASP - zcat files stored under primaries (or BUILD_DATA for C_ele) on to FTP full GFF file.
-      if(-e $ngaspdir){
-	my @ngasp_methods = qw(augustus fgenesh jigsaw mgene);
-	foreach my $method(@ngasp_methods){
-          my $file = "$ngaspdir/$species.$method.gff2.gz";
-          if(-e $file){
-            $wb->run_command("zcat $file >> $gff_dir/$whole_filename", $log);
-          } else { 
-            $log->error("ERROR: $file missing\n");
-          }
-	}
-      } else { 
-        $log->write_to("Warning: no ngasp for $gspecies\n");
-      }
-      
-      $wormbase->run_command("gzip -9 -f $gff_dir/$whole_filename",$log);
-
+      my $target = "$gff_dir/${fname_prefix}.gff2";
+      $wormbase->run_command("rm -f $target", $log);
+      $wormbase->run_command("cp -f -R $source_gff2_file $target", $log);
+      $wormbase->run_command("gzip -9 -f $target",$log);
+    } else {
+      $log->write_to("WARNING: No GFF2 file for $species ($source_gff2_file)\n");
     }
+    
+    if (-e $source_gff3_file) {
+      #concatenated whole genome file require for all species
+      my $target = "$gff_dir/${fname_prefix}.gff3";
+      $wormbase->run_command("rm -f $target", $log);
+      $wormbase->run_command("cp -f -R $source_gff3_file $target", $log);
+      $wormbase->run_command("gzip -9 -f $target",$log);
+    } else {
+      $log->write_to("WARNING: No GFF3 file for $species ($source_gff3_file)\n");
+    }
+
   }
 
   # copy tierIIIs from current build dir
@@ -569,7 +546,6 @@ sub copy_gff_files{
     }
 
   }
-
 
   $runtime = $wormbase->runtime;
   $log->write_to("$runtime: Finished copying GFF files\n\n");
