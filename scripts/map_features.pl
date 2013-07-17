@@ -9,7 +9,7 @@
 #
 #
 # Last updated by: $Author: gw3 $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2013-01-18 15:27:27 $        # quickly see when script was last changed and by whom
+# Last updated on: $Date: 2013-07-17 14:00:19 $        # quickly see when script was last changed and by whom
 
 
 $|=1;
@@ -49,6 +49,9 @@ my $three_prime_UTR;         # three prime UTRs
 my $DNAseI_hypersensitive_site; # DNAseI_hypersensitive_site
 my $promoter;                # promoter region
 my $regulatory_region;       # regulatory region
+my $TSS_region;              # cluster of TSS sites
+my $enhancer;                # enhancer region
+my $silencer;                # silencer region
 my $id_file;                 # takes a list of objects from a file
 my $start;
 my $stop;
@@ -81,6 +84,9 @@ GetOptions (
 	    "DNAseI_hypersensitive_site" => \$DNAseI_hypersensitive_site,
 	    "promoter"                   => \$promoter,
 	    "regulatory_region"          => \$regulatory_region,
+	    "TSS_region"                 => \$TSS_region,
+	    "enhancer"                   => \$enhancer,
+	    "silencer"                   => \$silencer,
             "idfile=s"                   => \$id_file,
             "debug=s"                    => \$debug,
             "verbose"                    => \$verbose,
@@ -165,6 +171,9 @@ my %sanity = (
 	      'segmental_duplication'       => undef,
 	      'promoter'                    => undef,
 	      'regulatory_region'           => undef,
+	      'TSS_region'                  => undef,
+	      'enhancer'                    => undef,
+	      'silencer'                    => undef,
 	      'three_prime_UTR'             => undef,
 	      'DNAseI_hypersensitive_site'  => undef,
 	      'micro_ORF'                   => undef,
@@ -184,11 +193,14 @@ push (@features2map, "histone_binding_site")             if (($histone_binding_s
 push (@features2map, "histone_binding_site_region")      if (($histone_binding_site_reg) || ($all));
 push (@features2map, "segmental_duplication")            if (($segmental_duplication) || ($all));
 push (@features2map, "Genome_sequence_error")            if (($genome_sequence_error) || ($all));
-push (@features2map, "Corrected_genome_sequence_error") if (($genome_sequence_correction) || ($all));
+push (@features2map, "Corrected_genome_sequence_error")  if (($genome_sequence_correction) || ($all));
 push (@features2map, "transcription_end_site")           if (($transcription_end_site) || ($all));
 push (@features2map, "transcription_start_site")         if (($transcription_start_site) || ($all));
 push (@features2map, "promoter")                         if (($promoter) || ($all));
 push (@features2map, "regulatory_region")                if (($regulatory_region) || ($all));
+push (@features2map, "TSS_region")                       if (($TSS_region) || ($all));
+push (@features2map, "enhancer")                         if (($enhancer) || ($all));
+push (@features2map, "silencer")                         if (($silencer) || ($all));
 push (@features2map, "three_prime_UTR")                  if (($three_prime_UTR) || ($all));
 push (@features2map, "DNAseI_hypersensitive_site")       if (($DNAseI_hypersensitive_site) || ($all));
 push (@features2map, "micro_ORF")                        if (($micro) || ($all));
