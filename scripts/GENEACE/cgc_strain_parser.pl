@@ -8,7 +8,7 @@
 # Page download and update upload to geneace has been automated [ck1]
 
 # Last updated by: $Author: pad $
-# Last updated on: $Date: 2013-07-10 11:08:46 $
+# Last updated on: $Date: 2013-07-18 10:34:57 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -380,7 +380,7 @@ if($load){
 }
 
 
-print "\nThe script is now going to end.  Goodnight\n\n";
+print "\nThe script has run to completeion and is now going to end.  Goodnight\n\n";
 
 $log->mail;
 exit(0);
@@ -418,7 +418,7 @@ sub find_author {
     my ($searchterm)=@_;
     my ($wbperson) = $geneAceDB->aql("select all class Person where ->Standard_name like \"$searchterm\"".
                     " or ->Full_name like \"$searchterm\" or ->Also_known_as like \"$searchterm\"");
-    $$wbperson[0]||='Agent007';
+    $$wbperson[0]||='$searchterm';
     return "$$wbperson[0]";
 }
 
