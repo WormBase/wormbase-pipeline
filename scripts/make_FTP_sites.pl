@@ -6,7 +6,7 @@
 # builds wormbase & wormpep FTP sites
 # 
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-07-17 14:25:13 $
+# Last updated on: $Date: 2013-07-18 14:32:10 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -506,7 +506,10 @@ sub copy_gff_files{
       $wormbase->run_command("rm -f $target", $log);
       $wormbase->run_command("cp -f -R $source_gff2_file $target", $log);
       $wormbase->run_command("gzip -9 -f $target",$log);
-    } else {
+    } elsif (-e "${source_gff2_file}.gz") {
+      my $target = "$gff_dir/${fname_prefix}.gff2.gz";
+      $wormbase->run_command("cp -f -R ${source_gff2_file}.gz $target", $log);
+    }else {
       $log->write_to("WARNING: No GFF2 file for $species ($source_gff2_file)\n");
     }
     
@@ -516,6 +519,9 @@ sub copy_gff_files{
       $wormbase->run_command("rm -f $target", $log);
       $wormbase->run_command("cp -f -R $source_gff3_file $target", $log);
       $wormbase->run_command("gzip -9 -f $target",$log);
+    } elsif (-e "${source_gff3_file}.gz") {
+      my $target = "$gff_dir/${fname_prefix}.gff3.gz";
+      $wormbase->run_command("cp -f -R ${source_gff3_file}.gz $target", $log);
     } else {
       $log->write_to("WARNING: No GFF3 file for $species ($source_gff3_file)\n");
     }
