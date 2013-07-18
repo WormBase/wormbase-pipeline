@@ -7,8 +7,8 @@
 # Script to convert cgc strain file into ace file for geneace
 # Page download and update upload to geneace has been automated [ck1]
 
-# Last updated by: $Author: pad $
-# Last updated on: $Date: 2013-07-18 13:10:06 $
+# Last updated by: $Author: mt3 $
+# Last updated on: $Date: 2013-07-18 13:49:36 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -27,7 +27,6 @@ use Getopt::Long;
 #######################
 # check user is wormpub
 #######################
-
 
 my ($help, $debug, $test, $verbose, $store, $load, $wormbase,$ndbUser,$ndbPass, $path);
 GetOptions ('help'              => \$help,
@@ -98,7 +97,7 @@ my $gene_allele_connections = "$path/gene_allele_connections.$rundate.ace";
 my $potential_new_genes     = "$path/potential_new_genes.$rundate.ace";
 my $backup_file             = "$path/strain_class_backup.$rundate.ace";
 my $allelefluff             = "$path/allele_public_name.$rundate.ace";
-my $transgene_report        = "$path/transgene_report.$rundate.ace";
+my $transgene_report        = "$path/transgene_report.$rundate.txt";
 
 open(STRAIN,       ">$current_strain_ace") || die "cant create output file $current_strain_ace\n";
 open(DELETE_STRAIN,">$delete_strain_ace") || die "can't create $delete_strain_ace\n";
