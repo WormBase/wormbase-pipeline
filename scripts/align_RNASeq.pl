@@ -186,7 +186,7 @@
 # by Gary Williams
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2013-07-17 13:28:37 $
+# Last updated on: $Date: 2013-07-19 15:59:37 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -212,7 +212,7 @@ use Feature_mapper;
 ##############################
 
 
-my ($test, $store, $debug, $species, $verbose, $expt, $noalign, $check, $solexa, $illumina, $database, $nogtf, $norawjuncs, $tsl, $paired, $keepfastq, $onestage, $getsrx, $ribosome_occupancy);
+my ($test, $store, $debug, $species, $verbose, $expt, $noalign, $check, $solexa, $illumina, $database, $nogtf, $norawjuncs, $tsl, $paired, $keepfastq, $onestage, $getsrx, $ribosome_occupancy, $analysis_check);
 GetOptions (
 	    "test"               => \$test,
 	    "store:s"            => \$store,
@@ -232,7 +232,8 @@ GetOptions (
 	    "keepfastq"          => \$keepfastq,# don't delete the fastq files after use
 	    "onestage"           => \$onestage, # for comparing the old one-stage alignment against the new (default) two-stage (transcriptome then genome) alignment
 	    "getsrx:s"           => \$getsrx,   # if this is set to the name of a 'SRX' entry from the NCBI SRA, then this file will be retrieved and unpacked - no alignment is done - '-paired' will split the file into pairs
-	    "ribosome_occupancy" => \$ribosome_occupancy # this is a project from the Andy Fire lab looking at which codons have how many ribosomes - used by me to find START codons
+	    "ribosome_occupancy" => \$ribosome_occupancy, # this is a project from the Andy Fire lab looking at which codons have how many ribosomes - used by me to find START codons
+	    "analysis_check"     => \$analysis_check, # run a simple check that the correctly named Analysis and Condition objects are in the geneace database
 	   );
 
 my $wormbase;
@@ -448,7 +449,15 @@ if ($species eq 'elegans') {
 	    SRX191951 => ["RNASeq.elegans.SRP016006.adult_male.Replicate2", 'phred', 'single'],
 	    SRX191952 => ["RNASeq.elegans.SRP016006.adult_male.Replicate3", 'phred', 'single'],
 
-# new	    SRX185660 => ["RNASeq.elegans.SRP015688"],
+	    SRX185637 => ["RNASeq.elegans.SRP015688.mixed-stage.pool1", 'phred', 'single'],
+	    SRX185638 => ["RNASeq.elegans.SRP015688.L4.linker-cells.nhr-67", 'phred', 'single'],
+	    SRX185639 => ["RNASeq.elegans.SRP015688.mixed-stage.pool2", 'phred', 'single'],
+	    SRX185660 => ["RNASeq.elegans.SRP015688.L3.linker-cells", 'phred', 'single'],
+	    SRX185661 => ["RNASeq.elegans.SRP015688.L4.linker-cells", 'phred', 'single'],
+	    SRX185662 => ["RNASeq.elegans.SRP015688.L4.linker-cells.nhr-67.1", 'phred', 'single'],
+	    SRX185663 => ["RNASeq.elegans.SRP015688.L4.linker-cells.nhr-67.2", 'phred', 'single'],
+	    SRX185664 => ["RNASeq.elegans.SRP015688.L4.linker-cells.nhr-67.3", 'phred', 'single'],
+	    SRX185665 => ["RNASeq.elegans.SRP015688.L4.linker-cells.nhr-67.4", 'phred', 'single'],
 	    );
 
   if ($ribosome_occupancy) {
@@ -547,7 +556,7 @@ if ($species eq 'elegans') {
 	    SRX191974 => ["RNASeq.remanei.SRP016006.adult_male.Replicate1", 'phred', 'single'],
 	    SRX191975 => ["RNASeq.remanei.SRP016006.adult_male.Replicate2", 'phred', 'single'],
 	    SRX191976 => ["RNASeq.remanei.SRP016006.adult_male.Replicate3", 'phred', 'single'],
-# new	    SRX193367 => ["RNASeq.remanei.SRP016056.adult", 'phred', 'single'],
+# small RNA study: 22G, piRNA, miRNA	    SRX193367 => ["RNASeq.remanei.SRP016056.adult", 'phred', 'single'],
 	    SRX101879 => ["RNASeq.remanei.L4_larva.Replicate2", 'phred', 'paired-end'],
 	    SRX101880 => ["RNASeq.remanei.L4_larva.Replicate1", 'phred', 'paired-end'],
 	    SRX101881 => ["RNASeq.remanei.early_embryo.Replicate2", 'phred', 'paired-end'],
@@ -600,7 +609,7 @@ if ($species eq 'elegans') {
 	    SRX191957 => ["RNASeq.briggsae.SRP016006.adult_male.Replicate2", 'phred', 'single'],
 	    SRX191958 => ["RNASeq.briggsae.SRP016006.adult_male.Replicate3", 'phred', 'single'],
 
-# new	    SRX193364 => ["RNASeq.briggsae.SRP016056.adult_hermaphrodite", 'phred', 'single'],
+# small RNA study: 22G, piRNA, miRNA	    SRX193364 => ["RNASeq.briggsae.SRP016056.adult_hermaphrodite", 'phred', 'single'],
 
 	    SRX089069 => ["RNASeq.briggsae.early_embryo.Replicate5", 'phred', 'paired-end'],
 	    SRX089070 => ["RNASeq.briggsae.early_embryo.Replicate4", 'phred', 'paired-end'],
@@ -612,8 +621,8 @@ if ($species eq 'elegans') {
 	    SRX100088 => ["RNASeq.briggsae.L2_larva.Replicate2", 'phred', 'paired-end'],
 	    SRX100089 => ["RNASeq.briggsae.L4_larva.Replicate1", 'phred', 'paired-end'],
 
-# new	    SRX193365 => ["RNASeq.briggsae.SRP016056.embryo", 'phred', 'single'],
-# new	    SRX193366 => ["RNASeq.briggsae.SRP016056.adult_male", 'phred', 'single'],
+# small RNA study: 22G, piRNA, miRNA	    SRX193365 => ["RNASeq.briggsae.SRP016056.embryo", 'phred', 'single'],
+# small RNA study: 22G, piRNA, miRNA	    SRX193366 => ["RNASeq.briggsae.SRP016056.adult_male", 'phred', 'single'],
 
 	    SRX103655 => ["RNASeq.briggsae.early_embryo.Replicate2", 'phred', 'paired-end'],
 	    SRX103656 => ["RNASeq.briggsae.early_embryo.Replicate1", 'phred', 'single'],
@@ -639,9 +648,9 @@ if ($species eq 'elegans') {
 	    SRX191969 => ["RNASeq.brenneri.SRP016006.adult_male.Replicate2", 'phred', 'single'],
 	    SRX191970 => ["RNASeq.brenneri.SRP016006.adult_male.Replicate3", 'phred', 'single'],
 
-# new	    SRX193370 => ["RNASeq.brenneri.SRP016056.adult", 'phred', 'single'],
-# new	    SRX193371 => ["RNASeq.brenneri.SRP016056.embryo", 'phred', 'single'],
-# new	    SRX193372 => ["RNASeq.brenneri.SRP016056.embryo", 'phred', 'single'],
+# small RNA study: 22G, piRNA, miRNA	    SRX193370 => ["RNASeq.brenneri.SRP016056.adult", 'phred', 'single'],
+# small RNA study: 22G, piRNA, miRNA	    SRX193371 => ["RNASeq.brenneri.SRP016056.embryo", 'phred', 'single'],
+# small RNA study: 22G, piRNA, miRNA	    SRX193372 => ["RNASeq.brenneri.SRP016056.embryo", 'phred', 'single'],
 
 	    SRX100770 => ["RNASeq.brenneri.early_embryo.Replicate1", 'phred', 'paired-end'],
 	    SRX100771 => ["RNASeq.brenneri.L4_larva.Replicate2", 'phred', 'paired-end'],
@@ -710,6 +719,9 @@ chdir $RNASeqSRADir;
 
 
 my @SRX = keys %expts;
+
+if ($analysis_check) {&do_analysis_check(); exit(0)}
+
   
 if (!$expt) {
 
@@ -2414,7 +2426,33 @@ sub get_feature_flanking_sequences {
 }
 
 ############################################################################
+# do a simple check that the required Analysis and Condition objects are in the geneace database
+# useful for checking before a Build that these objects are set up OK
+# check Analysis, Condition, Life_stage, Reference (Wen needs these to exist for SPELL)
 
+sub do_analysis_check {
+
+  my $database = $wormbase->database('geneace');
+  my %life_stages = get_life_stage_from_conditions();
+  my %papers = get_paper_from_analysis();
+
+  $log->write_to("\n");
+  $log->write_to("Checking Analysis and Condition objects for species: $species\n");
+  $log->write_to("\n");
+
+  foreach my $SRX (@SRX) {
+    my $analysis = $expts{$SRX}->[0];
+    my $life_stage = $life_stages{$analysis};
+    if (!defined $life_stage) {$log->write_to("WARNING: no Life_stage object found in Condition object $analysis\n");}
+    my $paper = $papers{$analysis};
+    if (!defined $paper) {$log->write_to("WARNING: no Reference tag set for Analysis object: $analysis\n");}
+
+ }
+
+
+}
+
+############################################################################
 
 __END__
 
