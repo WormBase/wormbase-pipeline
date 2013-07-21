@@ -1,295 +1,205 @@
-#!/software/bin/perl
-#===============================================================================
+#!/usr/bin/env perl
 #
-#         FILE:  make_UTR_GFF.pl
+# make_UTR_GFF.pl
 #
-#        USAGE:  ./make_UTR_GFF.pl
+# Creates three_prime_UTR, five_prime_UTR and coding_exon lines
+# from the Coding_transcript and curated GFF split files
 #
-#  DESCRIPTION:
-#
-#      OPTIONS:  [-help, -verbose, -store FILE, -debug USER, -test, -noload, -chromosome CHROMOSOME_NUMBER]
-# REQUIREMENTS:  Wormbase.pm, Modules::GFF_sql.pm
-#         BUGS:  ---
-#        NOTES:  ---
-#       AUTHOR:  $Author: klh $
-#      COMPANY:
-#      VERSION:  2 
-#      CREATED:  21/02/06 14:11:30 GMT
-#     REVISION:  $Revision: 1.25 $ 
-#===============================================================================
+# Last updated by: $Author: klh $
+# Last updated on: $Date: 2013-07-21 11:05:08 $
+
 
 use strict;
 use warnings;
-use lib $ENV{'CVS_DIR'};
-use Modules::GFF_sql;
+use lib $ENV{CVS_DIR};
 use Wormbase;
 use Getopt::Long;
-use IO::File;
 
-my ( $help, $debug, $test, $store, $wormbase, $chrom, $chunk_total, $chunk_id, $output_file, $noload , $verbose);
+my ( $debug, $test, $store, $wormbase, $species, $verbose, $gff3);
 
 GetOptions(
-  "help"         => \$help,
   "debug=s"      => \$debug,
   "test"         => \$test,
   "store:s"      => \$store,
-  "chromosome:s" => \$chrom,
-  "chunktotal:s" => \$chunk_total,
-  "chunkid:s"    => \$chunk_id,
-  "outfile:s"    => \$output_file,
-  "noload"       => \$noload,
-  'verbose'	 => \$verbose,
+  "species:s"    => \$species,
+  "verbose"      => \$verbose,
+  "gff3"         => \$gff3,
     );
 
-die `perldoc $0` if $help;
-if ($store) { $wormbase = Storable::retrieve($store) or croak("Can't restore wormbase from $store\n") }
-else { $wormbase = Wormbase->new( -debug => $debug, -test => $test ) }
 
-my $log = Log_files->make_build_log($wormbase);    # prewarning will be misused in a global way
-
-# do a single chromosome if prompted else do the lot......
-my @chromosomes;
-
-if ($chrom) {
-  @chromosomes = split(/,/,join(',',$chrom));
+if ($store) { 
+  $wormbase = Storable::retrieve($store) or croak("Can't restore wormbase from $store\n");
+} else { 
+  $wormbase = Wormbase->new( -debug => $debug, 
+                             -test => $test,
+                             -organism => $species);
 }
-elsif (defined $chunk_total and defined $chunk_id) {
-  @chromosomes = $wormbase->get_chunked_chroms(-mito => 1,
-                                               -prefix => 1,
-                                               -chunk_total => $chunk_total,
-                                               -chunk_id    => $chunk_id);
 
+my $log = Log_files->make_build_log($wormbase);
+
+my @bits_of_work;
+if ($wormbase->assembly_type eq 'contig') {
+  push @bits_of_work, {
+    curated => $wormbase->GFF_file_name(undef, 'curated'),
+    coding_transcript => $wormbase->GFF_file_name(undef, 'Coding_transcript'),
+    output => ($gff3) ? $wormbase->GFF3_file_name(undef, 'UTR') : $wormbase->GFF_file_name(undef, 'UTR'),
+  };
 } else {
-  @chromosomes = $wormbase->get_chromosome_names(-mito => 1, 
-                                                -prefix => 1);
-}
-
-# global setup setup
-
-my $gffdir = $wormbase->gff_splits;
-if (not defined $output_file) {
-  $output_file = "$gffdir/UTR.gff";
-}
-
-my $db     =  $test ? GFF_sql->new() : GFF_sql->new( { -build => 1 } );
-my %cds_cache;  # crude hack to speed up the cds lookup
-
-my $outfh = IO::File->new( $output_file, ">" ) or 
-    $log->log_and_die("cant open $output_file for writing");
-
-# main
-CHROM:foreach my $chr (@chromosomes) {
-  %cds_cache=(); # clean out old data
-  
-  my ($curated_gff, $cod_trans_gff, @tmp_files);
-  
-  if ($wormbase->assembly_type eq 'contig') {
-    ($curated_gff, $cod_trans_gff) = &write_tmp_contig_gff($chr);
-    push @tmp_files, $curated_gff, $cod_trans_gff;
-  } else {
-    $curated_gff = "$gffdir/${chr}_curated.gff";
-    $cod_trans_gff = "$gffdir/${chr}_Coding_transcript.gff";
-  }   	
-  
-  # load    
-  $db->load_gff( $curated_gff, $chr, 1 ) unless $noload;
-  $db->load_gff( $cod_trans_gff, $chr ) unless $noload;
-
-  
-  my $infile  = IO::File->new( $cod_trans_gff, "r" ) or $log->log_and_die("cant open $cod_trans_gff for reading\n");
-
-  my $n_exons=0;
-  
-  # iterate over exons GFF
-  while (<$infile>) {
-    next if /\#/;
-    s/\"//g;#"
-    my @f = split;
-    my ( $chrom, $start, $stop, $ori, $name ) = ( $f[0], $f[3], $f[4], $f[6], $f[9] );
-    next if ( $f[1] ne 'Coding_transcript' || $f[2] ne 'exon' );
-    print "processing transcript: $name \n" if $verbose;
-    #make the gff
-    print $outfh &make_gff( $db, $chrom, $start, $stop, $ori, $name );
-    $n_exons++;
+  foreach my $chr ($wormbase->get_chromosome_names(-prefix => 1, -mito => 1)) {
+    push @bits_of_work, {
+      curated => $wormbase->GFF_file_name($chr, 'curated'),
+      coding_transcript => $wormbase->GFF_file_name($chr, 'Coding_transcript'),
+      output => ($gff3) ? $wormbase->GFF3_file_name($chr, 'UTR') :$wormbase->GFF_file_name($chr, 'UTR'),
+    };
   }
-  
-  $log->write_to("processed $n_exons exons\n");
-  unlink @tmp_files;
 }
 
-close($outfh);
+foreach my $bit (@bits_of_work) {
+  my $curated = $bit->{curated};
+  my $coding_trans = $bit->{coding_transcript};
+  my $outfile = $bit->{output};
+
+  my ( %cds, %transcripts);
+
+  open(my $outfh, ">$outfile") 
+      or $log->log_and_die("Could not open $outfile for writing\n");
+
+  $log->write_to("Processing $curated\n") if $verbose;
+
+  open(my $cfh, $curated) or $log->log_and_die("Could not open $curated for reading\n");
+  while(<$cfh>) {
+    /^\#/ and next;
+    chomp;
+    my @l = split(/\t/, $_);
+    next if $l[1] ne 'curated';
+
+    my ($cds) = $l[8] =~ /CDS\s+\"(\S+)\"/;
+
+    if ($l[2] eq 'CDS') {
+      $cds{$cds} =  {
+        chr    => $l[0],
+        start  => $l[3],
+        end    => $l[4],
+        strand => $l[6],
+      };
+    } elsif ($l[2] eq 'coding_exon') {
+      push @{$cds{$cds}->{coding_exons}}, {
+        start  => $l[3],
+        end    => $l[4],
+        phase  => $l[7],
+      };
+    }
+  }
+
+  $log->write_to("Processing $coding_trans\n") if $verbose;
+
+  open(my $codfh, $coding_trans) or $log->log_and_die("Could not open $coding_trans for reading\n");
+  while(<$codfh>) {
+    /^\#/ and next;
+    chomp;
+    my @l = split(/\t/, $_);
+    next if $l[1] ne 'Coding_transcript' or $l[2] ne 'exon';
+
+    # each exon will end up as one of coding_exon, three_prime_utr, five_prime_utr, or a comination
+    my ($trans) = $l[8] =~ /Transcript\s+\"(\S+)\"/;
+    my $cds = &short_name($trans);
+
+    $transcripts{$cds}->{$trans} = 1;
+    
+    $log->and_die("Could not find correspondind CDS for $trans\n")
+        if not exists $cds{$cds};
+
+    my @utrs;
+    if ($l[3] < $cds{$cds}->{start}) {
+      # UTR left
+      my $utr_type = 
+      my $utr_start =
+      my $utr_end = ($l[4] < $cds{$cds}->{start}) ? $l[4] : $cds{$cds}->{start} - 1;
+      push @utrs, {
+        type => ($l[6] eq '+') ? 'five' : 'three',
+        start =>  $l[3],
+        end => ($l[4] < $cds{$cds}->{start}) ? $l[4] : $cds{$cds}->{start} - 1,
+      };
+    }
+    if ($l[4] > $cds{$cds}->{end}) {
+      push @utrs, {
+        type => ($l[6] eq '+') ? 'three' : 'five',
+        end => $l[4],
+        start => ($l[3] > $cds{$cds}->{end}) ? $l[3] : $cds{$cds}->{end} + 1,
+      };
+    }
+
+    foreach my $utr (@utrs) {
+      my $gff_source = "Coding_transcript";
+      my $gff_type = "$utr->{type}_prime_UTR";
+      my $strand = $cds{$cds}->{strand};
+      print $outfh join("\t", 
+                        $cds{$cds}->{chr}, 
+                        ($gff3) ? "WormBase" : "Coding_transcript",
+                        "$utr->{type}_prime_UTR",
+                        $utr->{start},
+                        $utr->{end},
+                        ".",
+                        $cds{$cds}->{strand},
+                        ".",
+                        ($gff3) ? "Parent=Transcript:$trans" : "Transcript \"$trans\""), "\n";
+    }
+  }
+
+  # Do not need the coding_exons for GFF3
+  if (not $gff3) {
+    foreach my $cds (sort keys %cds) {
+      foreach my $trans (sort keys $transcripts{$cds}) {
+        foreach my $cex (@{$cds{$cds}->{coding_exons}}) {
+          print $outfh join("\t", 
+                            $cds{$cds}->{chr},
+                            "Coding_transcript",
+                            "coding_exon", 
+                            $cex->{start},
+                            $cex->{end},
+                            ".",
+                            $cds{$cds}->{strand},
+                            #$cex->{phase},
+                            ".",
+                            "Transcript \"$trans\" ; CDS \"$cds\""), "\n";
+        }
+      }
+    }
+  }
+  close($outfh) or $log->log_and_die("Could not close $outfile after writing\n");
+
+  if ($gff3) {
+    $wormbase->check_file($outfile, 
+                          $log,
+                          lines => ['^##', 
+                                    "^\\S+\\s+WormBase\\s+(three_prime_UTR|five_prime_UTR)\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+\\s+\\S+"],
+                          gff => 1,
+        );  
+  } else {
+    $wormbase->check_file($outfile,
+                          $log,
+                          lines => ['^##', 
+                                    "^\\S+\\s+Coding_transcript\\s+(three_prime_UTR|coding_exon|five_prime_UTR)\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+\\s+Transcript\\s+\\S+"],
+                            gff => 1);
+  }
+}
+
+
 $log->mail();
+exit(0);
 
 ##########################
-
-#
-sub write_tmp_contig_gff {
-  my ($contig) = @_;
-
-  my $curated_tmp = "/tmp/${contig}_curated.gff";
-  my $transcript_tmp = "/tmp/${contig}_Coding_transcript.gff";
-
-  open(OUT,">$curated_tmp") or $log->log_and_die("cant make curated tmp GFF for $contig: $!\n");
-  my $handle = $wormbase->open_GFF_file($contig,'curated', $log);
-  while (<$handle>) {
-    print OUT;
-  }
-  close $handle;
-  close OUT;
-
-  open(OUT,">$transcript_tmp") or $log->log_and_die("cant make Coding tmp GFF for $contig: $!\n");
-  $handle = $wormbase->open_GFF_file($contig,'Coding_transcript', $log);
-  while (<$handle>) {
-    print OUT;
-  }
-  close $handle;
-  close OUT;
-
-  return ($curated_tmp, $transcript_tmp);
-}
 
 
 # get CDS name (lifted from original version)
 sub short_name {
-    my ($name) = @_;
-    my $cds_regex = $wormbase->cds_regex_noend;
-    my ($cdsname) = $name =~ /($cds_regex)/;
-    if (! defined $cdsname) {$wormbase->log_and_die("There is a problem with extracting the CDS name from the Transcript name: $name\n")}
-    return $cdsname;
+  my ($name) = @_;
+  my $cds_regex = $wormbase->cds_regex_noend;
+  my ($cdsname) = $name =~ /($cds_regex)/;
+  if (! defined $cdsname) {
+    $log->log_and_die("There is a problem with extracting the CDS name from the Transcript name: $name\n");
+  }
+  return $cdsname;
 }
 
-# UTR GFF line generator
-sub utr {
-    my ( $chrom, $name, $start, $stop, $type, $ori ) = @_;
-    return "$chrom\tCoding_transcript\t${type}_prime_UTR\t$start\t$stop\t.\t$ori\t.\tTranscript \"$name\"\n";
-}
-
-# CDS GFF line generator
-sub cds {
-    my ( $chrom, $start, $stop, $orientation, $frame, $name, $fluff ) = @_;
-    return "$chrom\tCoding_transcript\tcoding_exon\t$start\t$stop\t.\t$orientation\t$frame\tTranscript \"$name\" ; $fluff\n";
-}
-
-# get CDS start/stop coordinates
-sub get_cds {
-    my ( $db, $chrom, $id ) = @_;
-
-    if ( $cds_cache{ &short_name($id) } ) { return @{ $cds_cache{ &short_name($id) } } } # hmpf
-    else {
-        my @hits = $db->get_chr( $chrom, { feature => 'curated', source => 'exon', fluff => '"' . &short_name($id) . '"' } );
-        my @sorted_hits = sort { $a->{start} <=> $b->{start} || $a->{stop} <=> $b->{stop} } @hits;
-	$cds_cache{ &short_name($id)}=[$sorted_hits[0]->{start}, $sorted_hits[-1]->{stop}];
-        return $sorted_hits[0]->{start}, $sorted_hits[-1]->{stop};
-    }
-}
-
-# creates the gff-lines and returns them
-sub make_gff {
-    my ( $db, $chrom, $start, $stop, $orientation, $name ) = @_;
-    
-    # get_hits , get cds
-    my @hits = $db->get_chr($chrom,{start=>$start,stop=>$stop,feature=>'curated',source=>'exon','fluff' =>'"'.&short_name($name).'"'});
-    my @cds = get_cds( $db, $chrom, &short_name($name) );
-
-    if (@hits) {
-        if ( $start < $cds[0] || $stop > $cds[1] ) {    # need to create both utrs and cds exons
-            my ( $type, $utr, $cds );
-	    if ( $start < $cds[0] && $stop > $cds[1]){
-		my @types = ( $orientation eq '+' ) ? ('five','three') : ('three','five');
-		#utr1
-		my $utr1=&utr( $chrom, $name, $start, $cds[0] - 1, $types[0], $orientation );
-		#cds
-		$cds = &cds( $chrom, $cds[0], $cds[1], $orientation, $hits[0]->{'frame'}, $name, $hits[0]->{'fluff'} );
-		#utr2
-		my $utr2 = &utr( $chrom, $name, $cds[1] + 1, $stop, $types[1], $orientation );
-		return $utr1,$cds,$utr2;
-	    }
-            elsif ( $start < $cds[0] ) {
-                $type = ( $orientation eq '+' ) ? 'five' : 'three';
-                $utr = &utr( $chrom, $name, $start, $cds[0] - 1, $type, $orientation );
-                $cds = &cds( $chrom, $cds[0], $stop, $orientation, $hits[0]->{'frame'}, $name, $hits[0]->{'fluff'} );
-            }
-            else { # has to be stop > cds[1]
-                $type = ( $orientation eq '+' ) ? 'three' : 'five';
-                $utr = &utr( $chrom, $name, $cds[1] + 1, $stop, $type, $orientation );
-                $cds = &cds( $chrom, $start, $cds[1], $orientation, $hits[0]->{'frame'}, $name, $hits[0]->{'fluff'} );
-            }
-            return $utr, $cds;
-        }
-        else {    # is cds only => only cds exon
-            return &cds( $chrom, $start, $stop, $orientation, $hits[0]->{'frame'}, $name, $hits[0]->{'fluff'} );
-        }
-    }
-    else {        # is utr only => only utr exon
-        my $type;
-        if    ( $start < $cds[0] ) { $type = ( $orientation eq '+' ) ? 'five'  : 'three' }
-        elsif ( $stop > $cds[1] )  { $type = ( $orientation eq '+' ) ? 'three' : 'five' }
-        else { $log->write_to("urghs: $name start/stop CDS coordinates seem to be messed up\n") }
-        return &utr( $chrom, $name, $start, $stop, $type, $orientation );
-    }
-}
-
-__END__
-
-
-=head1 NAME 
-
-make_UTR_GFF.pl
-
-=head1 USAGE
-
-make_UTR_GFF.pl [-test -debug NAME -noload -chromosome CHROMOSOME_NUMBER -store STOREFILE]
-
-=head1 DESCRIPTION
-
-creates a GFF file per chromosome containing UTRs and coding exons (connected to CDS and Transcripts) from   _curated.gff and _Coding_transcript.gff (in GFF_split).
-It does that by creating an SQL table for the GFF files in the build mySQL database (can theoretically overwrite each other as there are no locks on the tables, but only if they run on the same chromosome).
-Mixed exons (partially coding) will be split into 2 exons for the GFF (one coding/one noncoding).
-
-=head1 Arguments
-
-=over 
-
-=item -store : loads from a stored configuration file
-
-=item -chromosome C_NAME: limits the processing to one chromosome (like I)
-
-=item -test : will use the TEST_BUILD directories
-
-=item -debug NAME : mail logs to NAME as email
-
-=item -noload : does not reload the GFF-database (faster startup)
-
-=item -verbose : prints out which transcript it is processing
-
-=back
-
-=head1 Output
-
-GFF_SPLITS/CHROMOSOME_nn_UTR.gff
-
-=head1 Database
-
-=over
-
-=item mySQL 4.x
-
-=item host mcs2a
-
-=item name mh6_build
-
-=item port 3316
-
-=back
-
-=head1 Dependencies
-
-=over
-
-=item Wormbase.pm
-
-=item Modules/GFF_sql.pm
-
-=back
-
-=cut
+1;
