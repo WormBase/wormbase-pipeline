@@ -1764,7 +1764,16 @@ sub GFF3_file_name {
   return $file;
 }
 
+sub processed_GFF_file {
+  my ($self, $gff3) = @_;
 
+  my $fname = sprintf("%s/%s.processed.%s", 
+                      $self->sequences,
+                      $self->species,
+                      ($gff3) ? ".gff3" : "gff2");
+  
+  return $fname;
+}
 
 sub worm_webpublish {
     my $self = shift;
