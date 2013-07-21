@@ -7,7 +7,7 @@
 # Usage : autoace_builder.pl [-options]
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2013-07-11 08:26:41 $
+# Last edited on: $Date: 2013-07-21 10:54:24 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -198,29 +198,24 @@ $wormbase->run_script( "make_agp_file.pl"                        , $log) if $agp
 
 #several GFF manipulation steps
 if ($gff_munge) {
-
+  # First generated some outstanding supplementary files that go into GFF_SPLITS
   if ($wormbase->species eq 'elegans') {
-    $wormbase->run_script( 'landmark_genes2gff.pl', $log); # this has to be run before GFFmunger.pl
+    $wormbase->run_script( 'landmark_genes2gff.pl', $log);
+    $wormbase->run_script( 'landmark_genes2gff.pl -gff3', $log);
     $wormbase->run_script( 'web_data/interpolate_gmap2pmap.pl', $log);
+    $wormbase->run_script( 'web_data/interpolate_gmap2pmap.pl -gff3', $log);
   }
   $wormbase->run_script( 'web_data/map_translated_features_to_genome.pl', $log);
+  $wormbase->run_script( 'web_data/map_translated_features_to_genome.pl -gff3', $log);
 
-  ###
-  $wormbase->run_script( 'GFFmunger.pl -all', $log); # GFFmunger uses the files created by the previous scripts
-  ###
-
-  $wormbase->run_script( 'over_load_SNP_gff.pl' , $log);
-  $wormbase->run_script( 'over_load_TF_gff.pl' , $log);
-  $wormbase->run_script( 'overload_rnai.pl'     , $log);
-  $wormbase->run_script( 'overload_operon.pl' , $log);
-  
-  if ($wormbase->assembly_type eq 'chromosome') {
-    $wormbase->run_script( "Map_pos_GFFprocess.pl", $log);
-  }
-  if ($wormbase->species eq 'elegans') {
-    $wormbase->run_script( "chromosome_script_lsf_manager.pl -command 'perl $ENV{'CVS_DIR'}/process_sage_gff.pl' -mito -prefix", $log);
-  }
+  #
+  # The run the wrapper that runs all of the munging scripts (and appends
+  # some files from GFF_splits too
+  #
+  $wormbase->run_script( 'GFF_post_process/GFF_post_process.pl -all', $log); 
+  $wormbase->run_script( 'GFF_post_process/GFF_post_process.pl -all -gff3', $log); 
 }
+
 if ($xrefs) {
     $wormbase->run_script( 'generate_dbxref_file.pl', $log);
 }
@@ -512,7 +507,7 @@ sub make_UTR {
   my $lsf = LSF::JobManager->new(-J => "make_UTRs", -o => "/dev/null");
 
   my $out_dir = $wormbase->gff_splits;
-  my (@commands, @out_files);
+  my (@commands, @out_files, @out3_files);
 
   if ($wormbase->assembly_type eq 'contig') {
     my @chrs = $wormbase->get_chromosome_names;
@@ -521,13 +516,18 @@ sub make_UTR {
 
     foreach my $chunk_id (1..$chunk_total) {
       my $outfile = "$out_dir/UTR.chunk_${chunk_id}.gff";
+      my $out3file = "$out_dir/UTR.chunk_${chunk_id}.gff3";
       push @commands, "make_UTR_GFF.pl -chunkid $chunk_id -chunktotal $chunk_total -outfile $outfile";
+      push @commands, "make_UTR_GFF.pl -chunkid $chunk_id -chunktotal $chunk_total -outfile $out3file -gff3";
       push @out_files, $outfile;
+      push @out3_files, $out3file;
     }
   } else {
     foreach my $chrom ($wormbase->get_chromosome_names(-mito => 1, -prefix => 1)) {
       my $outfile = "$out_dir/${chrom}_UTR.gff";
+      my $out3file = "$out_dir/${chrom}_UTR.gff3";
       push @commands, "make_UTR_GFF.pl -chrom $chrom -outfile $outfile";
+      push @commands, "make_UTR_GFF.pl -chrom $chrom -outfile $out3file -gff3";
     }
   }
 
@@ -543,14 +543,15 @@ sub make_UTR {
   }
   $lsf->clear;   
   
-  foreach my $outfile (@out_files) {
+  foreach my $outfile (@out_files, @out3_files) {
     $log->error("$outfile is missing or empty") if not -e $outfile or not -s $outfile;
   }
 
   #merge into single file.
   if($wormbase->assembly_type eq 'contig') {
     $wormbase->run_command("cat @out_files  > $out_dir/UTR.gff",$log);
-    $wormbase->run_command("rm -f @out_files",$log);
+    $wormbase->run_command("cat @out3_files  > $out_dir/UTR.gff3",$log);
+    $wormbase->run_command("rm -f @out_files @out3_files",$log);
 	
 # check the files      
 #Crem_Contig35   Coding_transcript       three_prime_UTR 74394   74463   .       -       .       Transcript "CRE24456"
@@ -562,52 +563,28 @@ sub make_UTR {
 				    "^\\S+\\s+Coding_transcript\\s+(three_prime_UTR|coding_exon|five_prime_UTR)\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+\\s+Transcript\\s+\\S+"],
 			  gff => 1,
 			 );   
+
+    $wormbase->check_file($wormbase->gff_splits."/UTR.gff3", $log,
+			  lines => ['^##', 
+				    "^\\S+\\sWormBase\\s+(three_prime_UTR|five_prime_UTR)\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+\\s+\\S+"],
+			  gff => 1,
+			 );   
+
   } else {
   
     # check the files      
     foreach my $sequence ( $wormbase->get_chromosome_names(-prefix => 1, -mito => 1) ) {
-      if($wormbase->species eq 'elegans') {
-
-	my %sizes = (
-		     'CHROMOSOME_I'       => 3400000,
-		     'CHROMOSOME_II'      => 3500000,
-		     'CHROMOSOME_III'     => 3000000,
-		     'CHROMOSOME_IV'      => 3500000,
-		     'CHROMOSOME_V'       => 4200000,
-		     'CHROMOSOME_X'       => 3400000,
-		     'CHROMOSOME_MtDNA'   =>    2000,
-		    );
-	$wormbase->check_file($wormbase->gff_splits."/${sequence}_UTR.gff", $log,
-			      minsize => $sizes{$sequence},
-			      lines => ['^##', 
-					"^\\S+\\s+Coding_transcript\\s+(three_prime_UTR|coding_exon|five_prime_UTR)\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+\\s+Transcript\\s+\\S+"],
-			      gff => 1,
-			     );   
-      } elsif ($wormbase->species eq 'briggsae') {
-       
-	my %sizes = (
-		     'chr_I'          => 1300000,
-		     'chr_I_random'   =>  300000,
-		     'chr_II'         => 1500000,
-		     'chr_II_random'  =>  200000,
-		     'chr_III'        => 1500000,
-		     'chr_III_random' =>   70000,
-		     'chr_IV'         => 1600000,
-		     'chr_IV_random'  =>   50000,
-		     'chr_V'          => 1900000,
-		     'chr_V_random'   =>  300000,
-		     'chr_X'          => 2100000,
-		     'chr_Un'         =>  600000,
-		    );
-	$wormbase->check_file($wormbase->gff_splits."/${sequence}_UTR.gff", $log,
-			      minsize => $sizes{$sequence},
-			      lines => ['^##', 
-					"^\\S+\\s+Coding_transcript\\s+(three_prime_UTR|coding_exon|five_prime_UTR)\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+\\s+Transcript\\s+\\S+"],
-			      gff => 1,
-			     );   
-      }
+      $wormbase->check_file($wormbase->gff_splits."/${sequence}_UTR.gff", $log,
+                            lines => ['^##', 
+                                      "^\\S+\\s+Coding_transcript\\s+(three_prime_UTR|coding_exon|five_prime_UTR)\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+\\s+Transcript\\s+\\S+"],
+                            gff => 1,
+          );
+      $wormbase->check_file($wormbase->gff_splits."/${sequence}_UTR.gff3", $log,
+                            lines => ['^##', 
+                                      "^\\S+\\s+WormBase\\s+(three_prime_UTR|five_prime_UTR)\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+\\s+\\S+"],
+                            gff => 1,
+          );  
     }
-
   }
 }
 
