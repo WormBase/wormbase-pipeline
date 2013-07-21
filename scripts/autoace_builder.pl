@@ -7,7 +7,7 @@
 # Usage : autoace_builder.pl [-options]
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2013-07-21 10:54:24 $
+# Last edited on: $Date: 2013-07-21 11:05:38 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -503,89 +503,8 @@ sub remap_misc_dynamic {
 sub make_UTR {
   my ($log)=@_;
   
-  $log->write_to("bsub commands . . . . \n\n");
-  my $lsf = LSF::JobManager->new(-J => "make_UTRs", -o => "/dev/null");
-
-  my $out_dir = $wormbase->gff_splits;
-  my (@commands, @out_files, @out3_files);
-
-  if ($wormbase->assembly_type eq 'contig') {
-    my @chrs = $wormbase->get_chromosome_names;
-    my $chunk_total = 24;
-    $chunk_total = scalar(@chrs) if $chunk_total > scalar(@chrs);
-
-    foreach my $chunk_id (1..$chunk_total) {
-      my $outfile = "$out_dir/UTR.chunk_${chunk_id}.gff";
-      my $out3file = "$out_dir/UTR.chunk_${chunk_id}.gff3";
-      push @commands, "make_UTR_GFF.pl -chunkid $chunk_id -chunktotal $chunk_total -outfile $outfile";
-      push @commands, "make_UTR_GFF.pl -chunkid $chunk_id -chunktotal $chunk_total -outfile $out3file -gff3";
-      push @out_files, $outfile;
-      push @out3_files, $out3file;
-    }
-  } else {
-    foreach my $chrom ($wormbase->get_chromosome_names(-mito => 1, -prefix => 1)) {
-      my $outfile = "$out_dir/${chrom}_UTR.gff";
-      my $out3file = "$out_dir/${chrom}_UTR.gff3";
-      push @commands, "make_UTR_GFF.pl -chrom $chrom -outfile $outfile";
-      push @commands, "make_UTR_GFF.pl -chrom $chrom -outfile $out3file -gff3";
-    }
-  }
-
-  foreach my $cmd (@commands) {
-    $log->write_to("$cmd\n");
-    $cmd = $wormbase->build_cmd($cmd);
-    $lsf->submit($cmd);
-  }
-  $lsf->wait_all_children( history => 1 );
-  $log->write_to("All UTR jobs have completed!\n");
-  for my $job ( $lsf->jobs ) {
-    $log->error("Job $job (" . $job->history->command . ") exited with LSF error code: ". $job->history->exit_status ."\n") if $job->history->exit_status != 0;
-  }
-  $lsf->clear;   
-  
-  foreach my $outfile (@out_files, @out3_files) {
-    $log->error("$outfile is missing or empty") if not -e $outfile or not -s $outfile;
-  }
-
-  #merge into single file.
-  if($wormbase->assembly_type eq 'contig') {
-    $wormbase->run_command("cat @out_files  > $out_dir/UTR.gff",$log);
-    $wormbase->run_command("cat @out3_files  > $out_dir/UTR.gff3",$log);
-    $wormbase->run_command("rm -f @out_files @out3_files",$log);
-	
-# check the files      
-#Crem_Contig35   Coding_transcript       three_prime_UTR 74394   74463   .       -       .       Transcript "CRE24456"
-#Crem_Contig35   Coding_transcript       coding_exon     74464   75307   .       -       1       Transcript "CRE24456" ; CDS "CRE24456"
-#Crem_Contig35   Coding_transcript       five_prime_UTR  75458   75463   .       -       .       Transcript "CRE24456"
-
-    $wormbase->check_file($wormbase->gff_splits."/UTR.gff", $log,
-			  lines => ['^##', 
-				    "^\\S+\\s+Coding_transcript\\s+(three_prime_UTR|coding_exon|five_prime_UTR)\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+\\s+Transcript\\s+\\S+"],
-			  gff => 1,
-			 );   
-
-    $wormbase->check_file($wormbase->gff_splits."/UTR.gff3", $log,
-			  lines => ['^##', 
-				    "^\\S+\\sWormBase\\s+(three_prime_UTR|five_prime_UTR)\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+\\s+\\S+"],
-			  gff => 1,
-			 );   
-
-  } else {
-  
-    # check the files      
-    foreach my $sequence ( $wormbase->get_chromosome_names(-prefix => 1, -mito => 1) ) {
-      $wormbase->check_file($wormbase->gff_splits."/${sequence}_UTR.gff", $log,
-                            lines => ['^##', 
-                                      "^\\S+\\s+Coding_transcript\\s+(three_prime_UTR|coding_exon|five_prime_UTR)\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+\\s+Transcript\\s+\\S+"],
-                            gff => 1,
-          );
-      $wormbase->check_file($wormbase->gff_splits."/${sequence}_UTR.gff3", $log,
-                            lines => ['^##', 
-                                      "^\\S+\\s+WormBase\\s+(three_prime_UTR|five_prime_UTR)\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+\\s+\\S+"],
-                            gff => 1,
-          );  
-    }
-  }
+  $wormbase->run_script("make_UTR_GFF.pl", $log);
+  $wormbase->run_script("make_UTR_GFF.pl -gff3", $log);
 }
 
 sub ontologies {
