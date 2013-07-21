@@ -4,7 +4,7 @@
 #
 # by Keith Bradnam
 #
-# Last updated on: $Date: 2013-01-10 12:12:40 $
+# Last updated on: $Date: 2013-07-21 23:42:05 $
 # Last updated by: $Author: pad $
 #
 # see pod documentation at end of file for more information about this script
@@ -18,7 +18,7 @@ use Getopt::Long;
 use Log_files;
 use Storable;
 
-my ($verbose, $db_path, $basic, $test1, $debug, $store, $test,$build,$tierII);
+my ($verbose, $db_path, $basic, $test1, $debug, $store, $test,$build,$species,$incomplete);
 
 GetOptions ("verbose"    => \$verbose, # prints screen output and checks the CDS class instead of All_genes.
 	    "database=s" => \$db_path, # Path to the database you want to check.
@@ -28,7 +28,8 @@ GetOptions ("verbose"    => \$verbose, # prints screen output and checks the CDS
 	    "store:s"    => \$store,   # 
 	    "test"       => \$test,    # Test build
 	    "build"      => \$build,   # Checks specific to a full database containing genes and models.
-	    "tierII:s"   => \$tierII,  # used to hold briggsae/brenneri/remanei for some checks.
+	    "species:s"   => \$species,  # used to hold briggsae/brenneri/remanei for some checks.
+	    "incomplete" => \$incomplete # used to avoid start/end not found warnings
 	   );
 
 my $wormbase;
@@ -37,8 +38,11 @@ if ( $store ) {
 } else {
   $wormbase = Wormbase->new( -debug   => $debug,
                              -test    => $test,
+			     -organism => $species
 			   );
 }
+
+unless (defined $species){$species = 'elegans';}
 
 #Establish Log
 my $log = Log_files->make_build_log($wormbase);
@@ -58,14 +62,13 @@ my $errorcountCDS = "0";
 my @checkedgenes = ('F56H11.3b','F13E9.8','Y45F10D.7','T21C12.8','F58G11.2','F54E4.3','F43D9.3a','F43D9.3b','F36H1.3','F02C12.1','C40H5.1', 'H12D21.1', 'H12D21.12','H12D21.13', 'H12D21.14',  'H12D21.15','W06A7.5','Y50E8A.17', 'ZC412.6', 'ZC412.7', 'R74.3a');
 
 
+my $cds_regex = $wormbase->cds_regex;
+my $cds_regex_noend = $wormbase->seq_name_regex;
+my $speciesfn = $wormbase->full_name;
 
 ################################
 #         Main Body            # 
 ################################
-
-if (!defined$tierII) {
-  $tierII = "elegans";
-}
 
 my %sequence_names;
 my %sequence_classes;
@@ -108,7 +111,7 @@ else {
       $count_errors++;
       if ($error =~ /ERROR/) {$log->error;}
       $log->write_to("$count_errors $error");
-      last if $count_errors > 190;
+      last if $count_errors > 1900;
     }
   }
 }
@@ -126,13 +129,23 @@ sub main_gene_checks {
   my ($pred_ref) = @_;
   
  CHECK_GENE:
+  
   while (my $gene_model = shift @$pred_ref) {
+    my $gene_model_name = $gene_model->name;
+    my $method_test = $gene_model->Method->name;
+    unless ($gene_model_name =~ /$cds_regex/) {
+      print "warning $gene_model_name invalid\n" if ($method_test eq 'curated');
+    }
+
+    if ($verbose) {
+      print "Checking $gene_model_name\n";
+    }
     unless (defined $gene_model->Method) {
       $errorcountCDS ++;
-      print STDERR "$gene_model appears to be incomplete\n" if $verbose;
+      print STDERR "$gene_model appears to be incompletehas no method and appears incomplete\n" if $verbose;
       next CHECK_GENE;
     }
-    my $method_test = $gene_model->Method->name;
+    
     my @exon_coord1 = sort by_number ($gene_model->get('Source_exons',1));
     my @exon_coord2 = sort by_number ($gene_model->get('Source_exons',2));
     my $i;
@@ -141,17 +154,17 @@ sub main_gene_checks {
     if (!defined($method_test)) {next;} # ignore the xref objects from WASHU's side of the genome;
   
     # check for duplicated sequence names
-    if (exists $sequence_names{$gene_model->name}) {
+    if (exists $sequence_names{$gene_model_name}) {
       my $class = $gene_model->class;
-      push(@error1, "ERROR: $class $gene_model is both a $method_test and a $sequence_classes{$gene_model->name} $sequence_names{$gene_model->name}\n");
-      print "ERROR: $class $gene_model is both a $method_test and a $sequence_classes{$gene_model->name} $sequence_names{$gene_model->name}\n";
+      push(@error1, "ERROR: $class $gene_model is both a $method_test and a $sequence_classes{$gene_model_name} $sequence_names{$gene_model->name}\n") unless ($method_test eq 'Coding_transcript');
+      print "ERROR: $class $gene_model is both a $method_test and a $sequence_classes{$gene_model->name} $sequence_names{$gene_model->name}\n" unless ($method_test eq 'Coding_transcript');
     }
     $sequence_names{$gene_model->name} = $method_test; # save all the names and methods
     $sequence_classes{$gene_model->name} = $gene_model->class;
 
     # check for duplicated sequence structures
     if ($method_test eq 'curated') {
-      my ($gene_name) = ($gene_model->name =~ /^(\w+\.\d+)[a-z]*$/ );
+      my ($gene_name) = ($gene_model_name =~ /($cds_regex)/);
       # make a hash key out of the exon starts and ends
       my $hash_key = join(':', @exon_coord1) . ',' . join(':', @exon_coord2);
       if (exists $sequence_structures{$gene_name}{$hash_key}) {
@@ -184,7 +197,7 @@ sub main_gene_checks {
 	if (($intron_size < 34) && ($method_test eq 'curated')) {
 	  push(@error4,"ERROR: $gene_model has a very small intron ($intron_size bp)\n");
 	}
-	push(@error5,"WARNING: $gene_model has a small intron ($intron_size bp)\n") if (($intron_size > 33) && ($intron_size < 39) && (!$basic) && ($method_test eq 'curated') && ($ck[0] ne $gene_model->name));
+	push(@error5,"WARNING: $gene_model has a small intron ($intron_size bp)\n") if (($intron_size > 33) && ($intron_size < 39) && (!$basic) && ($method_test eq 'curated') && ($ck[0] ne $gene_model_name));
       }
     }
 
@@ -203,44 +216,44 @@ sub main_gene_checks {
     my $start_tag = "";
     my $end_tag = "";
 
-    if ($tierII eq "elegans") {
-      if ($gene_model->get('Start_not_found')) {
-	$start_tag = "present";
-	push(@error2,"ERROR: $gene_model Start_not_found tag present\n");
-	print STDERR "ERROR: $gene_model Start_not_found tag present\n" if $verbose;
+    if ($gene_model->get('Start_not_found')) {
+      $start_tag = "present";
+      unless ($incomplete) {
+	push(@error2,"ERROR: $gene_model Start_not_found tag present\n") unless $incomplete; 
+	print STDERR "ERROR: $gene_model Start_not_found tag present\n" if (($verbose) && !(defined $incomplete));
       }
+    }
 
-      if ($gene_model->get('End_not_found')) {
-	$end_tag = "present";
+    if ($gene_model->get('End_not_found')) {
+      $end_tag = "present";
+      unless ($incomplete) {
 	push(@error2,"ERROR: $gene_model End_not_found tag present\n");
 	print STDERR "ERROR: $gene_model End_not_found tag present\n" if $verbose;
       }
     }
 
-    #All Isoforms should have the Isoform tag set.
-    if (($gene_model->name =~ (/\w+\.\d+[a-z]$/)) && ($method_test !~  /history/)) {
+    #All Isoforms should have the Isoform tag set. cds_regex
+
+    if (($gene_model_name =~  (/$cds_regex/)) && ($method_test !~  /history/)) {
       my $Isoform = $gene_model->at('Properties.Isoform');
-      push(@error3, "ERROR: $gene_model requires an Isoform\n") if !$Isoform;
+      
+      if ($gene_model_name =~  (/\S+[a-z]$/)) {
+	push(@error3, "ERROR: $gene_model [$gene_model_name] requires an Isoform\n") unless (defined $Isoform);
+      }
+      if ($gene_model_name =~  (/S+\d$/)) {
+	push(@error3, "ERROR: $gene_model [$gene_model_name] requires an Isoform\n") if (defined $Isoform);
+      }
     }
 
-    #All with an Isoform tag should be named correctly
-    if (($gene_model->name =~ (/\w+\.\d+$/)) && ($method_test !~ /history/)) {
-      my $Isoform = $gene_model->at('Properties.Isoform');
-      push(@error3, "ERROR: $gene_model requires an Isoform\n") if $Isoform;
-    }
+	
 
-    #Test for erroneous Isoform tags.??
-    if (($gene_model->name =~ (/\b\w+\.[0-9]{1,2,3}\b/)) && ($method_test !~ /history/)) {
-      my $Isoform = $gene_model->at('Properties.Isoform');
-      push(@error3, "ERROR: $gene_model contains an invalid Isoform tag\n") if $Isoform;
-    }
 
     #############################
     # Pseudogene Specific       #
     #############################
 
     # check that Pseudogenes have a type tag.
-    if ($method_test eq "Pseudogene" && $gene_model->name =~ (/\w+\d+\.\d+\Z/)) {
+    if ($method_test eq "Pseudogene" && $gene_model_name =~ (/$cds_regex/)) {
       my $prob_prediction = $gene_model->at('Type');
       push(@error3, "ERROR: The Pseudogene $gene_model does not have a Type Tag!\n") if (!defined($prob_prediction));
     }
@@ -249,7 +262,7 @@ sub main_gene_checks {
     # Transcript_specific      #
     ############################
 
-    if ($method_test =~ (/transcript/) or ($method_test =~ (/RNA/)) && $gene_model->name =~ (/\w+\d+\.\d+\Z/)) {
+    if ($method_test =~ (/transcript/) or ($method_test =~ (/RNA/)) && $gene_model_name =~ (/\w+\d+\.\d+\Z/)) {
       my $prob_prediction = $gene_model->at('Visible.Brief_identification');
       unless ($method_test =~ (/history_transcript/)) {push(@error3, "ERROR: The Transcript $gene_model does not have a Brief_identification and will throw an error in the build :(!\n") if (!defined($prob_prediction));
 					  }
@@ -276,8 +289,8 @@ sub main_gene_checks {
     # check species is correct
     my $species;
     ($species) = ($gene_model->get('Species'));
-    push(@error3,"ERROR: $gene_model species is $species\n") if ($species ne "Caenorhabditis $tierII");
-    print STDERR "ERROR: $gene_model species is $species\n" if ($species ne "Caenorhabditis $tierII" && $verbose);
+    push(@error3,"ERROR: $gene_model species is $species\n") if ($species ne "$speciesfn");
+    print STDERR "ERROR: $gene_model species is $species\n" if ($species ne "$speciesfn" && $verbose);
 
     # check Method isn't 'hand_built'
     push(@error3,"ERROR: $gene_model method is hand_built\n") if ($method_test eq 'hand_built');
@@ -291,12 +304,12 @@ sub main_gene_checks {
     }
 
     # check that history genes have a history method.
-    if ($method_test !~ /history/ && $gene_model->name =~ /\w+\.\w+\:\w+/) {
+    if ($method_test !~ /history/ && $gene_model_name =~ /$cds_regex\:\w+/) {
       push(@error3, "ERROR: $gene_model history object doesn't have a history method.\n");
     }
 
     # check that history genes are renamed.
-    if (($method_test =~ /history/ && !($gene_model->name =~ /\:/) && !($gene_model->name =~ /WBTransposon/))) {
+    if (($method_test =~ /history/ && !($gene_model_name =~ /\:/) && !($gene_model_name =~ /WBTransposon/))) {
 
 
       push(@error3, "ERROR: $gene_model needs to be renamed as it is part of history.\n");
@@ -312,7 +325,7 @@ sub main_gene_checks {
       my $Genehist_ID = $gene_model->at('Visible.Gene_history.[1]');
 
       #curated Gene modles eg. C14C10.3  C14C10.33 and C14C10.3a have to have an 8 digit gene id.
-      if ($gene_model->name =~ /\w+\.\d+\w?$/) {
+      if ($gene_model_name =~ /$cds_regex/) {
 	if (defined $Gene_ID) {
 	  push(@error2, "ERROR: The Gene ID '$Gene_ID' in $gene_model is invalid!\n") unless ($Gene_ID =~ /WBGene[0-9]{8}/);
 	} else {
@@ -320,7 +333,7 @@ sub main_gene_checks {
 	}
       }
       #History genes have to have a Gene_history ID of 8 digits.
-      elsif ($gene_model->name =~ (/\w+\.\w+\:\w+/)) {
+      elsif ($gene_model_name =~ (/$cds_regex\:\w+/)) {
 	if (defined $Genehist_ID) {
 	  push(@error2, "ERROR: The Gene ID '$Genehist_ID' in $gene_model is invalid!\n") unless ($Genehist_ID =~ /WBGene[0-9]{8}/);
 	} else {
@@ -398,13 +411,21 @@ sub single_query_tests {
   
   {
     # Transposon checks
-    my @Transposons= $db->fetch(-query=>'find Transposon');
-    my $Transposon_no = @Transposons;
-    unless ($Transposon_no eq "377"){print "\nChange in Transposon_numbers required 377 actual $Transposon_no - has additional Transposon annotation been done?\n"}
+    if ($species eq "elegans") {
+      my @Transposons= $db->fetch(-query=>'find Transposon');
+      my $Transposon_no = @Transposons;
+      unless ($Transposon_no eq "377"){print "\nChange in Transposon_numbers required 377 actual $Transposon_no - has additional Transposon annotation been done?\n"}
+    }
   }    
 
   # Check for non-standard methods in CDS class
-  my @CDSfilter = $db->fetch (-query => 'FIND CDS; method != Transposon_CDS; method != Transposon_Pseudogene; method != curated; method !=history; method !=Genefinder; method !=twinscan; method !=jigsaw; method !=mGene; method !=RNASEQ.Hillier; method !=RNASEQ.Hillier.Aggregate');
+  my @CDSfilter;
+  if ($species eq 'brugia') {
+    @CDSfilter = $db->fetch (-query => 'FIND CDS; method != Transposon_CDS; method != Transposon_Pseudogene; method != curated; method !=history; method !=Genefinder; method !=twinscan; method !=jigsaw; method !=mGene; method !=RNASEQ.Hillier; method !=RNASEQ.Hillier.Aggregate; method !=cufflinks*; method !=genBlastG');
+  }
+  else {
+    @CDSfilter = $db->fetch (-query => 'FIND CDS; method != Transposon_CDS; method != Transposon_Pseudogene; method != curated; method !=history; method !=Genefinder; method !=twinscan; method !=jigsaw; method !=mGene; method !=RNASEQ.Hillier; method !=RNASEQ.Hillier.Aggregate');
+  }
   foreach my $CDSfilter (@CDSfilter) {
     push(@error4, "ERROR! CDS:$CDSfilter contains an invalid method please check\n");
   }
@@ -416,7 +437,7 @@ sub single_query_tests {
 
 sub extra_build_checks {
   my $Gene_model;
-  my @Gene_models = $db->fetch (-query => 'Find Gene where Live AND Species = "Caenorhabditis elegans" AND Sequence_name AND NOT Corresponding_CDS AND NOT Corresponding_pseudogene AND NOT Corresponding_transcript');
+  my @Gene_models = $db->fetch (-query => 'Find Gene where Live AND Species = "$speciesfn" AND Sequence_name AND NOT Corresponding_CDS AND NOT Corresponding_pseudogene AND NOT Corresponding_transcript');
   my $count = scalar(@Gene_models);
   print "\nThere are $count genes that are Live but not attached to a current gene model\n\n";
   $log->write_to("\nThere are $count genes that are Live but not attached to a current gene model\n\n");
@@ -446,11 +467,24 @@ sub test_gene_sequence_for_errors{
   }
   # calculate other necessary values
   my $gene_model_length = length($dna);
-  my $remainder = $gene_model_length%3;
+  my $remainder;
+
+  if ($incomplete) {
+    if (($gene_model->Method eq 'curated') && ($gene_model->Start_not_found)) {
+      my $extra = $gene_model->Start_not_found->name;
+      my $length_calc = $gene_model_length + $extra;
+      $remainder = $length_calc%3;
+    }
+    else {
+      $remainder = $gene_model_length%3;
+    }
+  }
+  else {
+    $remainder = $gene_model_length%3;
+  }
   my $start_codon = substr($dna,0,3);
   my $stop_codon = substr($dna,-3,3);   
-  my $Lab = "";
-  ($Lab) = ($gene_model->get('From_laboratory'));
+  my $Lab = ($gene_model->get('From_laboratory'));
 
   # check for length errors(CDS specific)
   my @ck;
@@ -497,9 +531,9 @@ sub test_gene_sequence_for_errors{
     if (($end_tag ne "present") && ($start_tag ne "present")) {
       push(@error1,"ERROR: $gene_model length ($gene_model_length bp) not divisible by 3, Start_not_found & End_not_found tags MISSING\n");
       print STDERR "ERROR: $gene_model length ($gene_model_length bp) not divisible by 3, Start_not_found & End_not_found tags MISSING\n" if $verbose;
-    } 
+    }
     else {
-      push(@error2,"ERROR: $gene_model length ($gene_model_length bp) not divisible by 3, Start_not_found and/or End_not_found tag present\n");
+      push(@error2,"ERROR: $gene_model length ($gene_model_length bp) not divisible by 3, Start_not_found and/or End_not_found tag present\n") unless ($incomplete);
       print STDERR "ERROR: $gene_model length ($gene_model_length bp) not divisible by 3, Start_not_found and/or End_not_found tag present\n" if $verbose;
     }
   }
@@ -545,7 +579,7 @@ sub test_gene_sequence_for_errors{
       }
     }
   }
-  if ($tierII eq "elegans") {
+  if ($species eq "elegans") {
     # look for non-ACTG characters
     if ($dna =~ /[^acgt]/i) {
       $dna =~ s/[acgt]//g;
@@ -644,7 +678,7 @@ Non ATCG characters in the sequence
 
 =item 6.
 
-CDSs which dont have a 'Species = Caenorhabditis elegans' tag-value pair
+CDSs which dont have a 'Species = species_full_name' tag-value pair
 
 =item 7.
 
