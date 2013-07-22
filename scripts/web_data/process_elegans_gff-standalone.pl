@@ -65,7 +65,7 @@ my $db = Ace->connect( $database ) or $log->log_and_die("Can't open ace database
 
 my (
     %NOTES,          %LOCUS, %GENBANK,      %CONFIRMED,
-    %ORFEOME,        %GENES, %GENE_EXTENTS, %WORMPEP,
+    %GENES, %GENE_EXTENTS, %WORMPEP,
     %TRANSCRIPT2CDS, %genes_seen,         , %loci_seen
 );
 
@@ -98,11 +98,6 @@ get_genes( $db, \%GENES );
 
 $log->write_to("getting notes\n") if $debug;
 get_notes( $db, \%NOTES );
-
-if ($species eq 'elegans') {
-  $log->write_to("getting ORFEOME info\n") if $debug;
-  get_orfeome( $db, \%ORFEOME );
-}
 
 
 while (<>) {
@@ -240,11 +235,6 @@ while (<>) {
     }
 
     elsif ( $method eq 'intron' && $source =~ /^tRNAscan/ ){next} # messing up tRNA scanning
-
-    elsif ( $method eq 'PCR_product' && $source eq 'Orfeome' && $group =~ /PCR_product "([^\"]+)"/ ) {
-        my $amp = $ORFEOME{$1};
-        $group .= qq( ; Amplified $amp) if defined $amp;
-    }
 
     # Tier II id flunkification
     elsif ( $source eq 'gene' && $method eq 'gene'){
@@ -453,14 +443,6 @@ sub get_confirmed {
     }
 }
 
-sub get_orfeome {
-    my ( $db, $hash ) = @_;
-    my @mv_primers = $db->fetch( -query => 'find PCR_Product mv*', -filltag => 'Amplified' );
-    for my $obj (@mv_primers) {
-        my $amplified = $obj->Amplified;
-        $hash->{$obj} = $amplified;
-    }
-}
 
 # Translate WB gene IDs into more useful molecular or three-letter names
 sub bestname {
