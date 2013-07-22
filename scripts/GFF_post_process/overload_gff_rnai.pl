@@ -5,7 +5,7 @@
 # Overloads RNAi mapping lines with extra info (Lab of clone etc)
 #
 # Last updated by: $Author: klh $     
-# Last updated on: $Date: 2013-07-21 11:07:59 $      
+# Last updated on: $Date: 2013-07-22 15:06:42 $      
 
 use lib $ENV{CVS_DIR};
 use Wormbase;
@@ -60,8 +60,8 @@ while ( <$gff_in_fh> ) {
   my ($rnaid) = /(WBRNAi\d+)/;
   my $old_attr = $l[8];
   if ($gff3) {
-    $l[8] .= ";Laboratory=$$r2lab{$rnaid}" if $$r2lab{$rnaid};
-    $l[8] .= ";History_name=$$r2hist{$rnaid}" if $$r2hist{$rnaid};
+    $l[8] .= ";laboratory=$$r2lab{$rnaid}" if $$r2lab{$rnaid};
+    $l[8] .= ";history_name=$$r2hist{$rnaid}" if $$r2hist{$rnaid};
   } else {
     $l[8] .= " ; Laboratory \"$$r2lab{$rnaid}\"" if $$r2lab{$rnaid};
     $l[8] .= " ; History_name \"$$r2hist{$rnaid}\"" if $$r2hist{$rnaid};
