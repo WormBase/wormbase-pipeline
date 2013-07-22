@@ -6,7 +6,7 @@
 # and supplementing the "raw" GFF dumped from Ace with additional attributes
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-07-22 11:37:35 $
+# Last updated on: $Date: 2013-07-22 12:06:22 $
 #
 # Usage GFFmunger.pl [-options]
 
@@ -38,6 +38,7 @@ my ($all,
     $add_gmap2pmap,
     $add_utr,
     $add_supplementary,
+    $overload_genomic,
     $overload_species,
     $overload_mass_spec,
     $overload_cds,
@@ -65,6 +66,7 @@ GetOptions (
   "overload_marker"    => \$overload_marker,
   "overload_sage"      => \$overload_sage,
   "overload_pcr"       => \$overload_pcr,
+  "overload_genomic"   => \$overload_genomic,
   "add_landmark"       => \$add_landmark,
   "add_motifs"         => \$add_motifs,
   "add_gmap2pmap"      => \$add_gmap2pmap,
@@ -115,6 +117,15 @@ if ($prepare or $all) {
 
 if ($cleanse_gff or $all) {
   &run_munging_script("GFF_post_process/cleanse_gff.pl");
+}
+
+
+############################################################
+# Add accessions to the Genomic_canonical  lines
+############################################################
+
+if ($cleanse_gff or $all) {
+  &run_munging_script("GFF_post_process/overload_gff_genomic.pl");
 }
 
 
