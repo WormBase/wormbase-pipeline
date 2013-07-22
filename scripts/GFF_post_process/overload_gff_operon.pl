@@ -5,7 +5,7 @@
 # Overloads operon lines with Gene info
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-07-21 11:07:59 $
+# Last updated on: $Date: 2013-07-22 15:14:07 $
 
 use lib $ENV{CVS_DIR};
 use Wormbase;
@@ -57,17 +57,22 @@ while (<$gff_in_fh>){
     next;
   }
   chomp;
+
   print $gff_out_fh $_;
   my ($operond) = /(${prefix_name}OP\d+|${prefix_name}OP\w+\d+)/;
-  if (/Gene/) {
-    $log->write_to("Error:$_\n");
-    $log->log_and_die("\nIt appears that you have already overloaded the ${prefix_name}OP lines for $species\n\n");
-  }
-  foreach my $genes (@{$$operon_genes{$operond}}) { 
-    if (defined $$operon_genes{$operond}) {
-      print $gff_out_fh " ; Gene \"$genes\"";
-      $changed_lines++;
+
+  if (exists $operon_genes->{$operond}) {
+    my @g = sort map { defined $_ } @{$operon_genes->{$operond}};
+
+    if ($gff3) {
+      my $g_str = join(",", @g);
+      print $gff_out_fh "genes=$g_str";
+    } else {
+      foreach my $genes (@g) {
+        print $gff_out_fh " ; Gene \"$genes\"";
+      }
     }
+    $changed_lines++;
   }
   print $gff_out_fh "\n";
 }
