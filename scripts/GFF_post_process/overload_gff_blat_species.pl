@@ -5,7 +5,7 @@
 # Adds species to each non-native BLAT match
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-07-21 11:07:59 $
+# Last updated on: $Date: 2013-07-22 14:49:24 $
 
 use strict;
 use lib $ENV{CVS_DIR};
@@ -70,7 +70,7 @@ while (<$gff_in_fh> ) {
     # in which case we do not want to add 'Species' multiple
     # times to the same line.      
     
-    if (defined $f[1] && $f[8] !~ /;\sSpecies/ && $f[8] !~ /Species\=/) {
+    if (defined $f[1] && $f[8] !~ /;\sSpecies/i && $f[8] !~ /Species\=/i) {
       my $id;
       
       if ($gff3) {
@@ -92,7 +92,7 @@ while (<$gff_in_fh> ) {
       if ( exists $speciesh->{$hkey}->{$id} ) {
         my $suffix;
         if ($gff3) { 
-          $f[8] .= ";Species=" . $speciesh->{$hkey}->{$id};
+          $f[8] .= ";species=" . $speciesh->{$hkey}->{$id};
         } else {
           $f[8] .= " ; Species \"" . $speciesh->{$hkey}->{$id} . "\"";
         }
