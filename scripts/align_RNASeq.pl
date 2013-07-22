@@ -186,7 +186,7 @@
 # by Gary Williams
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2013-07-19 15:59:37 $
+# Last updated on: $Date: 2013-07-22 09:40:45 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -1037,8 +1037,8 @@ IIIIIIIIHIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIGIGIDHIIIIIGIGI
   chdir $RNASeqSRADir;
 
   # get the Life_stages of the Condition objects (same name as the Analysis objects)
-  my %life_stages = get_life_stage_from_conditions();
-  my %papers = get_paper_from_analysis();
+  my %life_stages = get_life_stage_from_conditions($database);
+  my %papers = get_paper_from_analysis($database);
 
   # get the valid CDS and Pseudogenes IDs
   my %CDSs = get_CDSs();
@@ -2171,6 +2171,8 @@ sub Intron_stuff {
 
 sub get_life_stage_from_conditions {
 
+  my ($database) = @_;
+
   my %life_stages;
   my $table_def = &write_life_stage_def;
   my $table_query = $wormbase->table_maker_query($database, $table_def);
@@ -2189,6 +2191,8 @@ sub get_life_stage_from_conditions {
 ############################################################################
 
   sub get_paper_from_analysis {
+
+  my ($database) = @_;
 
   my %papers;
   my $table_def = &write_paper_def;
@@ -2433,8 +2437,8 @@ sub get_feature_flanking_sequences {
 sub do_analysis_check {
 
   my $database = $wormbase->database('geneace');
-  my %life_stages = get_life_stage_from_conditions();
-  my %papers = get_paper_from_analysis();
+  my %life_stages = get_life_stage_from_conditions($database);
+  my %papers = get_paper_from_analysis($database);
 
   $log->write_to("\n");
   $log->write_to("Checking Analysis and Condition objects for species: $species\n");
