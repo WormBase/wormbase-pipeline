@@ -5,7 +5,7 @@
 # Overloads the CDS and Transcript lines with extra info (mostly wormpep)
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-07-21 11:07:59 $
+# Last updated on: $Date: 2013-07-22 14:51:59 $
 
 #
 #    1. Brief_identification
@@ -88,10 +88,10 @@ while (<$gff_in_fh>) {
       # decorate all of the segments, so only do the first
       if (not exists $already_done_cds{$cds}) {
         $attr .=  ";Note=$briefID{$cds}"                              if ($briefID{$cds} ne "");
-        $attr .=  ";WormPep=".$wormbase->pep_prefix.":$wormpep{$cds}" if ($wormpep{$cds} ne "");
-        $attr .=  ";Locus=$locus{$cds}"                               if ($locus{$cds} ne "");
-        $attr .=  ";Status=$status{$cds}"                             if ($status{$cds} ne "");
-        $attr .=  ";Gene=$geneID{$cds}"                               if ($geneID{$cds} ne "");
+        $attr .=  ";wormpep=".$wormbase->pep_prefix.":$wormpep{$cds}" if ($wormpep{$cds} ne "");
+        $attr .=  ";locus=$locus{$cds}"                               if ($locus{$cds} ne "");
+        $attr .=  ";status=$status{$cds}"                             if ($status{$cds} ne "");
+        $attr .=  ";gene=$geneID{$cds}"                               if ($geneID{$cds} ne "");
         
         $already_done_cds{$cds} = 1;
         $changed_lines++;
@@ -102,8 +102,8 @@ while (<$gff_in_fh>) {
         $log->log_and_die("Could not find Transcript id in attribute field: $attr\n");
       } 
       $attr .= ";Note=".$RNAgenes{$transcript}->{remark} if $RNAgenes{$transcript}->{remark} ;
-      $attr .= ";Locus=".$RNAgenes{$transcript}->{locus} if $RNAgenes{$transcript}->{locus} ;;
-      $attr .= ";Gene=".$seqname2geneid{$transcript}     if $seqname2geneid{$transcript} ;
+      $attr .= ";locus=".$RNAgenes{$transcript}->{locus} if $RNAgenes{$transcript}->{locus} ;;
+      $attr .= ";gene=".$seqname2geneid{$transcript}     if $seqname2geneid{$transcript} ;
       $changed_lines++;
     }
   } else {
