@@ -6,7 +6,7 @@
 # and supplementing the "raw" GFF dumped from Ace with additional attributes
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-07-22 12:06:22 $
+# Last updated on: $Date: 2013-07-22 15:38:39 $
 #
 # Usage GFFmunger.pl [-options]
 
@@ -100,7 +100,8 @@ $working_dir = $wormbase->sequences . "/GFF_MUNGE" if not defined $working_dir;
 mkdir $working_dir if not -d $working_dir;
 
 my $processed_gff_file = $wormbase->processed_GFF_file( $gff3 );
-my $final_gff_file = "$working_dir/final_post_munge.gff";
+my $version_string = ($gff3) ? "gff3" : "gff2";
+my $pragma_file = "$working_dir/pragmas.$version_string.txt";
 
 
 ############################################################
@@ -114,7 +115,6 @@ if ($prepare or $all) {
 ############################################################
 # remove unwanted lines from the GFF files
 ############################################################
-
 if ($cleanse_gff or $all) {
   &run_munging_script("GFF_post_process/cleanse_gff.pl");
 }
@@ -123,7 +123,6 @@ if ($cleanse_gff or $all) {
 ############################################################
 # Add accessions to the Genomic_canonical  lines
 ############################################################
-
 if ($cleanse_gff or $all) {
   &run_munging_script("GFF_post_process/overload_gff_genomic.pl");
 }
@@ -277,7 +276,7 @@ sub register_complete {
 sub prepare {
   my (@gff_files, %pragmas, $count);
 
-  return if &check_complete('PROGRESS.prepare') and not $force;
+  return if &check_complete("PROGRESS.${version_string}.prepare") and not $force;
 
   $log->write_to("GFFmunge - prepare\n");
 
@@ -308,13 +307,13 @@ sub prepare {
   }
   close($out_fh) or $log->log_and_die("Could not close $processed_gff_file after writing\n");
 
-  open(my $p_fh, ">$final_gff_file") or $log->log_and_die("Could not open $final_gff_file for writing\n");
+  open(my $p_fh, ">$pragma_file") or $log->log_and_die("Could not open $pragma_file for writing\n");
   foreach my $pragma (sort { $pragmas{$a} <=> $pragmas{$b} } keys %pragmas) {
     print $p_fh $pragma;
   }
-  close($p_fh) or $log->log_and_die("Could not close $final_gff_file after writing\n");
+  close($p_fh) or $log->log_and_die("Could not close $pragma_file after writing\n");
 
-  &register_complete('PROGRESS.prepare');
+  &register_complete("PROGRESS.${version_string}.prepare");
 }
 
 
@@ -326,9 +325,9 @@ sub run_munging_script {
   $descriptor =~ s/\.pl//; 
   $descriptor =~ s/^\S+\///;
 
-  return if &check_complete("PROGRESS.$descriptor") and not $force;
+  return if &check_complete("PROGRESS.${version_string}.$descriptor") and not $force;
 
-  my $outfile = "$working_dir/$descriptor.gff";
+  my $outfile = "$working_dir/$descriptor.${version_string}";
 
   my $cmd = "$script -infile $processed_gff_file -outfile $outfile";
   $cmd .= " -gff3" if $gff3;
@@ -355,7 +354,7 @@ sub run_munging_script {
     $wormbase->run_command("mv -f $outfile $processed_gff_file", $log);
   }
 
-  &register_complete("PROGRESS.$descriptor");
+  &register_complete("PROGRESS.${version_string}.$descriptor");
 }
 
 
@@ -363,7 +362,7 @@ sub run_munging_script {
 sub append_splits_files {
   my ($suffix, $skip_pattern) = @_;
 
-  return if &check_complete("PROGRESS.append_${suffix}") and not $force;
+  return if &check_complete("PROGRESS.${version_string}.append_${suffix}") and not $force;
 
   my %files;
 
@@ -386,12 +385,12 @@ sub append_splits_files {
     }
   }
 
-  &register_complete("PROGRESS.append_${suffix}");
+  &register_complete("PROGRESS.${version_string}.append_${suffix}");
 }
 
 ##################################
 sub append_supplementary_files {
-  return if &check_complete('PROGRESS.append_supplementary') and not $force;
+  return if &check_complete("PROGRESS.${version_string}.append_supplementary") and not $force;
 
   my (@files_to_append);
   
@@ -410,27 +409,33 @@ sub append_supplementary_files {
     }
   }
 
-  &register_complete('PROGRESS.append_supplementary');
+  &register_complete("PROGRESS.${version_string}.append_supplementary");
 }
 
 ############################
 sub collate_and_sort {
-  return if &check_complete("PROGRESS.collate_and_sort") and not $force;
+  return if &check_complete("PROGRESS.${version_string}.collate_and_sort") and not $force;
 
-  open(my $out_fh, ">>$final_gff_file") or $log->log_and_die("Could not open $final_gff_file for appending\n");
+  my $outfile = "$working_dir/collate_and_sort.${version_string}";
+  open(my $out_fh, ">$outfile") or $log->log_and_die("Could not open $outfile for writing\n");
 
-  open(my $gff_in, "sort -k 1,1 -k4,4n -k 5,5n $processed_gff_file |") 
+  open(my $gff_in, $pragma_file) or $log->log_and_die("Could not open $pragma_file for reading\n");
+  while(<$gff_in>) {
+    print $out_fh $_;
+  }
+  
+  open($gff_in, "sort -k 1,1 -k4,4n -k 5,5n $processed_gff_file |") 
       or $log->log_and_die("Could not open sort cmd for $processed_gff_file\n");
   while(<$gff_in>) {
     print $out_fh $_;
   }
-  close($out_fh) or $log->log_and_die("Could not close $final_gff_file after appending\n");
+  close($out_fh) or $log->log_and_die("Could not close $outfile after appending\n");
 
-  $wormbase->run_command("mv -f $final_gff_file $processed_gff_file", $log) 
+  $wormbase->run_command("mv -f $outfile $processed_gff_file", $log) 
       and $log->log_and_die("Failed to move the final processed GFF file into place\n");
   $wormbase->run_command("gzip -9 $processed_gff_file", $log)
       and $log->log_and_die("Failed to gzip the final processed GFF file\n");
 
-  &register_complete('PROGRESS.collate_and_sort');
+  &register_complete("PROGRESS.${version_string}.collate_and_sort");
 }
 
