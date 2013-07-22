@@ -6,7 +6,7 @@
 # and supplementing the "raw" GFF dumped from Ace with additional attributes
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-07-22 15:38:39 $
+# Last updated on: $Date: 2013-07-22 16:02:35 $
 #
 # Usage GFFmunger.pl [-options]
 
@@ -415,6 +415,22 @@ sub append_supplementary_files {
 ############################
 sub collate_and_sort {
   return if &check_complete("PROGRESS.${version_string}.collate_and_sort") and not $force;
+
+  #
+  # Run the GFF3 post-processing script; do it here rather than earlier because this is a
+  # compulsory last step
+  #
+  if ($gff3) {
+    my $outfile = "$working_dir/post_process_gff3.gff3";
+    $wormbase->run_script("GFF_post_process/post_process_gff3.pl -infile $processed_gff_file -outfile $outfile")
+        and $log->log_and_die("Unsuccessful post-processing of GFF3 prior to collation\n");
+    
+    if ($debug) {
+      $wormbase->run_command("cp -f $outfile $processed_gff_file", $log);
+    } else {
+      $wormbase->run_command("mv -f $outfile $processed_gff_file", $log);
+    }
+  }
 
   my $outfile = "$working_dir/collate_and_sort.${version_string}";
   open(my $out_fh, ">$outfile") or $log->log_and_die("Could not open $outfile for writing\n");
