@@ -64,9 +64,15 @@ if (not defined $species) {
 my $db = Ace->connect( $database ) or $log->log_and_die("Can't open ace database:". Ace->error );
 
 my (
-    %NOTES,          %LOCUS, %GENBANK,      %CONFIRMED,
-    %GENES, %GENE_EXTENTS, %WORMPEP,
-    %TRANSCRIPT2CDS, %genes_seen,         , %loci_seen
+  %NOTES,
+  %LOCUS,
+  %CONFIRMED,
+  %GENES,
+  %GENE_EXTENTS,
+  %WORMPEP,
+  %TRANSCRIPT2CDS,
+  %genes_seen,
+  %loci_seen,
 );
 
 # setting up things
@@ -78,11 +84,6 @@ if (defined $outfile) {
 
 $log->write_to("getting confirmed genes\n") if $debug;
 get_confirmed( $db, \%CONFIRMED );
-
-if ($species eq 'elegans') {
-  $log->write_to("getting genebank ids\n") if $debug;
-  get_genbank( $db, \%GENBANK );
-}
 
 $log->write_to("getting transcript2cds\n") if $debug;
 get_transcripts( $db, \%TRANSCRIPT2CDS );
@@ -226,13 +227,6 @@ while (<>) {
 
     # Skip Ant's fix for WBGenes
     elsif ($source eq 'Gene' && $method eq 'processed_transcript'){next}
-
-    elsif ( $method eq 'region' && $source eq 'Genomic_canonical' && $group=~ /Sequence "(\w+)"/ ){
-        if ( my $accession = $GENBANK{$1}) {
-            $group .= qq( ; Note "Clone $1; Genbank $accession");
-            print $outfh join( "\t",$ref, 'Genbank', $method, $start, $stop, $score, $strand,$phase, "Genbank \"$accession\"" ),"\n";
-        }
-    }
 
     elsif ( $method eq 'intron' && $source =~ /^tRNAscan/ ){next} # messing up tRNA scanning
 
@@ -410,25 +404,6 @@ sub get_notes {
 
         next if ( $hash->{$obj} );
         $hash->{$obj} = \@notes;
-    }
-}
-
-sub get_genbank {
-    my ( $db, $hash ) = @_; # hash keys are cosmid names, values are genbank accessions (1 to 1)
-
-    my @cosmids = $db->fetch(
-        -query   => 'find Genome_Sequence Database',
-        -filltag => 'Database'
-    );
-
-    for my $cosmid (@cosmids) {
-        my @dbs = $cosmid->Database;
-        foreach (@dbs) {
-            foreach my $col ( $_->col ) {
-                next unless $col eq 'NDB_AC';
-                $hash->{$cosmid} = $col->right;
-            }
-        }
     }
 }
 
