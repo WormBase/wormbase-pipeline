@@ -7,8 +7,8 @@
 
 # 031023 dl1
 
-# Last edited by: $Author: klh $
-# Last edited on: $Date: 2013-07-11 09:09:47 $
+# Last edited by: $Author: mh6 $
+# Last edited on: $Date: 2013-07-22 09:26:26 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -16,7 +16,7 @@
 
 use strict;
 use lib $ENV{'CVS_DIR'};
-uuse Bio::SeqIO;
+use Bio::SeqIO;
 use Wormbase;
 use IO::Handle;
 use Getopt::Long;
