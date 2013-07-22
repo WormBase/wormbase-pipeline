@@ -6,7 +6,7 @@
 # and supplementing the "raw" GFF dumped from Ace with additional attributes
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-07-21 11:07:59 $
+# Last updated on: $Date: 2013-07-22 11:37:35 $
 #
 # Usage GFFmunger.pl [-options]
 
@@ -47,6 +47,7 @@ my ($all,
     $overload_operon,
     $overload_marker,
     $overload_sage,
+    $overload_pcr,
     $final,
     );
 
@@ -63,6 +64,7 @@ GetOptions (
   "overload_operon"    => \$overload_operon,
   "overload_marker"    => \$overload_marker,
   "overload_sage"      => \$overload_sage,
+  "overload_pcr"       => \$overload_pcr,
   "add_landmark"       => \$add_landmark,
   "add_motifs"         => \$add_motifs,
   "add_gmap2pmap"      => \$add_gmap2pmap,
@@ -187,6 +189,15 @@ if ($overload_mass_spec or $all) {
 if ($overload_sage or $all) {
   if ($wormbase->species eq 'elegans') {
     &run_munging_script("GFF_post_process/overload_gff_sage.pl");
+  }
+}
+
+############################################################
+# Adds decorations (Amplified etc) to the PCR_product lines
+############################################################
+if ($overload_sage or $all) {
+  if ($wormbase->species eq 'elegans') {
+    &run_munging_script("GFF_post_process/overload_gff_pcr_product.pl");
   }
 }
 
