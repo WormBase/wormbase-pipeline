@@ -5,7 +5,7 @@
 # Adds interpolated map positions and other information to gene and allele lines
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-07-22 11:37:00 $
+# Last updated on: $Date: 2013-07-22 15:18:08 $
 
 
 use strict;                                      
@@ -65,8 +65,8 @@ while (<$gff_in_fh>) {
   if (defined $f[8] && $f[1] eq 'Allele') {
     if ($gff3) {
       my ($first) = split(/;/, $f[8]);
-      my ($allele) = $first =~ /ID:Variation:(\S+)/;
-      $f[8] .= ";Interpolated_map_position=$variation{$allele}"
+      my ($allele) = $first =~ /Variation:(\S+)/;
+      $f[8] .= ";interpolated_map_position=$variation{$allele}"
           if exists $variation{$allele} and $f[8] !~ /Interpolated_map_position/;
     } else {
       my ($allele) = $f[8] =~ /Variation\s+\"(\S+)\"/;
@@ -78,12 +78,12 @@ while (<$gff_in_fh>) {
     if ($gff3) {
       my ($first) = split(/;/, $f[8]);
       my ($gene) = $first =~ /ID:Gene:(\S+)/;
-      $f[8] .= ";Interpolated_map_position=$gene{$gene}"
-          if exists $gene{$gene} and $f[8] !~ /Interpolated_map_position/;
-      $f[8] .= ";Position=$gene_exact{$gene}" 
-          if exists $gene_exact{$gene} and $f[8] !~ /Position/;
-      $f[8] .= ";Locus=$locus{$gene}" 
-          if exists $locus{$gene} and $f[8] !~ /Locus/;
+      $f[8] .= ";interpolated_map_position=$gene{$gene}"
+          if exists $gene{$gene} and $f[8] !~ /interpolated_map_position/;
+      $f[8] .= ";position=$gene_exact{$gene}" 
+          if exists $gene_exact{$gene} and $f[8] !~ /position/;
+      $f[8] .= ";locus=$locus{$gene}" 
+          if exists $locus{$gene} and $f[8] !~ /locus/;
     } else {
       my ($gene) = $f[8] =~ /Gene\s+\"(\S+)\"/;
       $f[8] .= " ; Interpolated_map_position \"$gene{$gene}\"" 

@@ -5,7 +5,7 @@
 # Overloads mass_spec_genome lines with extra info (peptide match etc)
 #
 # Last updated by: $Author: klh $     
-# Last updated on: $Date: 2013-07-21 11:07:59 $      
+# Last updated on: $Date: 2013-07-22 15:15:15 $      
 
 use strict;                                      
 use lib $ENV{CVS_DIR};
@@ -101,9 +101,9 @@ while (<$gff_in_fh>) {
       
       if ($gff3) {
         $f[8] .= ";Note=$id";
-        $f[8] .= ";Protein_matches=$proteins";
-        $f[8] .= ";CDS_matches=$cdss";
-        $f[8] .= ";Times_observed=$times_observed";
+        $f[8] .= ";protein_matches=$proteins";
+        $f[8] .= ";cds_matches=$cdss";
+        $f[8] .= ";times_observed=$times_observed";
       } else {
         $f[8] .= " ; Note \"$id\"";
         $f[8] .= " ; Protein_matches \"$proteins\"";

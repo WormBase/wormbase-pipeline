@@ -5,7 +5,7 @@
 # overloads GFF TF_binding_site lines with info about the TF itself
 #
 # Last updated by: $Author: klh $     
-# Last updated on: $Date: 2013-07-22 11:49:54 $      
+# Last updated on: $Date: 2013-07-22 15:19:07 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -86,7 +86,7 @@ while( <$gff_in_fh> ) {
     my $id = $TF{$fid}{id};
     my $name = $TF{$fid}{name};
     if ($gff3) {
-      $f[8] .= ";TF_ID=$id;TF_name=$name";
+      $f[8] .= ";tf_id=$id;tf_name=$name";
     } else {
       $f[8] .= " ; TF_ID \"$id\" ; TF_name \"$name\"";
     }
