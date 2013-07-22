@@ -5,7 +5,7 @@
 # Overloads Variation lines with extra info (consequence etc)
 #
 # Last updated by: $Author: klh $     
-# Last updated on: $Date: 2013-07-21 11:07:59 $      
+# Last updated on: $Date: 2013-07-22 15:38:05 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -153,10 +153,14 @@ while (<$gff_in_fh>) {
     my @new_el_strings;
     foreach my $el (@new_els) {
       if (scalar(@$el) == 1) {
-        push @new_el_strings, $el->[0];
+        if ($gff3) {
+          push @new_el_strings, sprintf("%s=1", lc($el->[0]));
+        } else {
+          push @new_el_strings, $el->[0];
+        }
       } else {
         if ($gff3) {
-          push @new_el_strings, join(":", @$el);
+          push @new_el_strings, join("=", lc($el->[0]), $el->[1]);
         } else {
           push @new_el_strings, sprintf("%s \"%s\"", @$el);
         }

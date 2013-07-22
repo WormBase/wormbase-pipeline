@@ -5,7 +5,7 @@
 # Overloads the SAGE_tag GFF lines with additional info
 #
 # Last updated by: $Author: klh $     
-# Last updated on: $Date: 2013-07-21 11:07:59 $      
+# Last updated on: $Date: 2013-07-22 15:37:33 $      
 #
 
 use lib $ENV{CVS_DIR};
@@ -82,15 +82,19 @@ while(<$gff_in_fh>) {
   }
   $strand =~ tr/\./+/;
   
-  my @atts = (["Sequence", $sequence]);
+  my @atts = (["sequence", $sequence]);
   
   if (ref($sage_info{$sequence})) {
-    push @atts, @{$sage_info{$sequence}};
+    push @atts, ['count', $sage_info{$sequence}->{count}] if exists $sage_info{$sequence}->{count};
+    foreach my $k (keys %{$sage_info{$sequence}}) {
+      next if $k eq 'count';
+      push @atts, [lc($k), $sage_info{$sequence}->{$k}];
+    }
   }
   
   my $old_att = $att;
   if ($gff3) {
-    $att = join(";", map { join("=", @$_) } @atts);
+    $att = join(";", map { join("=", $_->[0], $_->[1]) } @atts);
   } else {
     $att = join(" ; ", map { "$_->[0] \"$_->[1]\"" } @atts);
   }    
@@ -109,11 +113,11 @@ sub markup {
   my ($hashr) = @_;
 
   my $db = Ace->connect( -path => $wormbase->autoace );
-
+  
   foreach my $tag (keys %$hashr) {
     my $r = $db->fetch(SAGE_tag => $tag);
     next if not defined $r;
-
+    
     my @genes    = ($r->Gene,$r->Transcript,$r->Pseudogene,$r->Predicted_CDS);
     my @unambig  = grep { scalar $_->get('Unambiguously_mapped')} @genes;
     my @three_p  = grep { scalar $_->get('Most_three_prime') } @genes;
@@ -129,12 +133,17 @@ sub markup {
       $count += $cnt;
     }
     for (@unambig, @three_p) {
-      my $name = eval{ $_->CGC_name} || eval{$_->Sequence_name} || $_->name;
+      my $name = eval{$_->CGC_name} || eval{$_->Sequence_name} || $_->name;
       $_ = [$_->class,$name];
     }
 
-    $hashr->{$tag} = [ ["count", $count], @unambig, @three_p ];
+    $hashr->{$tag} = {
+      count => $count,
+    };
+    foreach my $el (@unambig, @three_p) {
+      $hashr->{$tag}->{$el->[0]} = $el->[1];
+    }
   }                       
-
+  
   $db->close();
 }
