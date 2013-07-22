@@ -12,15 +12,20 @@ use Log_files;
 use Bio::EnsEMBL::Registry;
 
 # GFF Constants
-use constant SOURCE       => 'translated_feature';
-use constant METHOD       => 'motif_segment';
-use constant GFF3_METHOD  => 'polypeptide_region'; # not a perfect fit, but is at least a SO term
 use constant SCORE        => '.';
 use constant PHASE        => '.';
+
+# GFF2
+use constant SOURCE       => 'translated_feature';
+use constant METHOD       => 'motif_segment';
 
 # Top-level feature for aggregation
 use constant TOP_SOURCE   => 'translated_feature';
 use constant TOP_METHOD   => 'Motif';
+
+# for GFF3, we will not have a span and parts, but single split feature
+use constant GFF3_SOURCE  => 'translated_feature';
+use constant GFF3_METHOD  => 'sequence_motif'; # not ideal, but a SO term
 
 use constant OUT_FILE_SUFFIX => 'proteinmotifs';
 
@@ -98,8 +103,10 @@ if ($out_file) {
   }
 } else {
   if ($wormbase->assembly_type eq 'contig') {
-    $out_file = $wormbase->gff_splits . "/" . OUT_FILE_SUFFIX;
-    $out_file .= ($gff3) ? ".gff3" : ".gff";
+    $out_file = ($gff3) 
+        ? $wormbase->GF3_file_name(undef, OUT_FILE_SUFFIX)
+        : $wormbase->GFF_file_name(undef, OUT_FILE_SUFFIX);
+
     open $outfh, ">$out_file" or $log->log_and_die("Could not open $out_file for writing\n");
   }
 }
@@ -209,7 +216,10 @@ sub generate_gff {
   if (defined $outfh) {
     $this_out_fh = $outfh;
   } else {
-    my $outf = $wormbase->gff_splits . "/${chr}_" . OUT_FILE_SUFFIX . ".gff";
+    my $outf = ($gff3) 
+        ? $wormbase->GFF3_file_name($chr, OUT_FILE_SUFFIX)
+        : $wormbase->GFF_file_name($chr, OUT_FILE_SUFFIX);
+
     open($this_out_fh, ">$outf") or $log->log_and_die("Could not open $outf for writing\n");
   }
     
@@ -243,14 +253,11 @@ sub generate_gff {
           $desc =~ s/[\,]/\%3D/g;
           $full_group .= qq{;Description=$desc};
         }
-        if ($format eq 'segmented') {        
-          foreach my $seg (sort { $a->start <=> $b->start } @segs) {
-            print_gff($this_out_fh, $refseq,SOURCE,GFF3_METHOD,$seg->start,$seg->end,$score,$strand,PHASE,$full_group);
-          }
-        } else {
-          print_gff($this_out_fh, $refseq,SOURCE,GFF3_METHOD,$start,$stop,$score,$strand,PHASE,$full_group);
+        my ($first, @rest) = sort { $a->start <=> $b->start } @segs; 
+        print_gff($this_out_fh, $refseq,GFF3_SOURCE,GFF3_METHOD,$first->start,$first->end,$score,$strand,PHASE,$full_group);
+        foreach my $seg (@rest) {
+          print_gff($this_out_fh, $refseq,GFF3_SOURCE,GFF3_METHOD,$first->start,$first->end,$score,$strand,PHASE,$group);
         }
-
       } else {
         $group = qq(Motif "$motif_name");
         $full_group = join(" ; ", 
