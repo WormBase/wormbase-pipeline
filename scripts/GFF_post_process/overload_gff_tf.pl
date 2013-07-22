@@ -5,7 +5,7 @@
 # overloads GFF TF_binding_site lines with info about the TF itself
 #
 # Last updated by: $Author: klh $     
-# Last updated on: $Date: 2013-07-21 11:07:59 $      
+# Last updated on: $Date: 2013-07-22 11:49:54 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -68,7 +68,7 @@ open(my $gff_out_fh, ">$outfile") or $log->log_and_die("Could not open $outfile 
 
 while( <$gff_in_fh> ) {
   /^\#/ and do {
-    print;
+    print $gff_out_fh $_;
     next;
   };
   chomp;
