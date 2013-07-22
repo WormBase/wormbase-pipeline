@@ -6,7 +6,7 @@
 # from the Coding_transcript and curated GFF split files
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-07-21 11:05:08 $
+# Last updated on: $Date: 2013-07-22 10:18:41 $
 
 
 use strict;
@@ -130,12 +130,9 @@ foreach my $bit (@bits_of_work) {
     }
 
     foreach my $utr (@utrs) {
-      my $gff_source = "Coding_transcript";
-      my $gff_type = "$utr->{type}_prime_UTR";
-      my $strand = $cds{$cds}->{strand};
       print $outfh join("\t", 
                         $cds{$cds}->{chr}, 
-                        ($gff3) ? "WormBase" : "Coding_transcript",
+                        "Coding_transcript",
                         "$utr->{type}_prime_UTR",
                         $utr->{start},
                         $utr->{end},
@@ -168,20 +165,12 @@ foreach my $bit (@bits_of_work) {
   }
   close($outfh) or $log->log_and_die("Could not close $outfile after writing\n");
 
-  if ($gff3) {
-    $wormbase->check_file($outfile, 
-                          $log,
-                          lines => ['^##', 
-                                    "^\\S+\\s+WormBase\\s+(three_prime_UTR|five_prime_UTR)\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+\\s+\\S+"],
-                          gff => 1,
-        );  
-  } else {
-    $wormbase->check_file($outfile,
-                          $log,
-                          lines => ['^##', 
-                                    "^\\S+\\s+Coding_transcript\\s+(three_prime_UTR|coding_exon|five_prime_UTR)\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+\\s+Transcript\\s+\\S+"],
-                            gff => 1);
-  }
+  $wormbase->check_file($outfile, 
+                        $log,
+                        lines => ['^##', 
+                                  "^\\S+\\s+Coding_transcript\\s+(three_prime_UTR|coding_exon|five_prime_UTR)\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+\\s+\\S+"],
+                        gff => 1,
+      );  
 }
 
 
