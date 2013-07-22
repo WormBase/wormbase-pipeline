@@ -5,7 +5,7 @@
 # Overloads PCR_product mapping lines with extra info (Lab of clone etc)
 #
 # Last updated by: $Author: klh $     
-# Last updated on: $Date: 2013-07-22 11:37:35 $      
+# Last updated on: $Date: 2013-07-22 15:20:23 $      
 
 use lib $ENV{CVS_DIR};
 use Wormbase;
@@ -61,7 +61,7 @@ while ( <$gff_in_fh> ) {
   my ($name);
   if ($l[8] =~ /PCR_product \"(\S+)\"/) {
     $name = $1;
-  } elsif ($l[8] =~ /Name=PCR_product:(\S+)/) {
+  } elsif ($l[8] =~ /PCR_product:(\S+)/) {
     $name = $1;
   } else {
     $log->log_and_die("Could not extract product name from line @l\n");
@@ -69,8 +69,8 @@ while ( <$gff_in_fh> ) {
 
   my $old_attr = $l[8];
   if ($gff3) {
-    $l[8] .=
-    $l[8] .= ";VendorID=$clone_info->{$name}" if exists $clone_info->{$name};
+    $l[8] .= ";amplified=$amplified->{$name}" if exists $amplified->{$name};
+    $l[8] .= ";vendorID=$clone_info->{$name}" if exists $clone_info->{$name};
   } else {
     $l[8] .= " ; Amplified \"$amplified->{$name}\"" if exists $amplified->{$name};
     $l[8] .= " ; VendorID \"$clone_info->{$name}\"" if exists $clone_info->{$name};
