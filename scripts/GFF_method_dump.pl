@@ -9,7 +9,7 @@
 # dumps the method through sace / tace and concatenates them.
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2013-07-23 10:03:48 $
+# Last edited on: $Date: 2013-07-23 15:26:25 $
 
 
 use lib $ENV{CVS_DIR};
@@ -65,14 +65,20 @@ my $log = Log_files->make_build_log($wormbase);
 @chromosomes = split(/,/,join(',',@chromosomes));
 @sequences = split(/,/,join(',',@clones)) if @clones;
 
-$log->log_and_die("You must supply a valid giface binary to be used\n")
-    if not defined $giface or not -x $giface;
+if ($host) {
+  $log->log_and_die("You must supply a valid saceclient binary to be used\n")
+      if not defined $giface_client or not -x $giface_client;
+  $log->log_and_die("You must supply port when dumping using server\n") 
+      if not $port;
+} else {
+  $log->log_and_die("You must supply a valid giface binary to be used\n")
+      if not defined $giface or not -x $giface;
+}
 
-$log->log_and_die("You must supply a valid saceclient binary to be used\n")
-    if not defined $giface_client or not -x $giface_client;
+if ($wormbase->assembly_type eq 'contig' and not $host) {
+  $log->log_and_die("no host passed for contig assembly");
+}
 
-my $via_server; #set if dumping to single file via server cmds
-$port = 23100 if not defined $port;
 $fprefix = "" if not defined $fprefix;
 my $file_suffix = ($gff3) ? "gff3" : "gff";
 
@@ -91,27 +97,17 @@ $dump_dir =~ s#/$##g;
 system("touch $dump_dir/tmp_file.$$") and $log->log_and_die ("cant write to $dump_dir\n");
 unlink "$dump_dir/tmp_file.$$";
 
-# open database connection once
-if ($wormbase->assembly_type eq 'contig'){
-  $via_server = 1;
-  unless ($host) {
-    print STDERR "you need to start a server first and tell me the host\neg sgifaceserver /nfs/wormpub/BUILD/remanei 23100 600:6000000:1000:600000000>/dev/null)>&/dev/null\n";
-    $log->log_and_die("no host passed for contig assembly");
-  }
-}
-
-unless($via_server) {
+unless($host) {
   open (NONSERVERWRITE,"| $giface $database") or $log->log_and_die ("failed to open giface connection to $database\n");
 }
 
 $log->write_to("dumping methods:".join(",",@methods)."\n");
-#$log->write_to("dumping sequences:".join(",",@sequences)."\n");
 
 my $count=0; # debug hack
 
 if ( @methods ) {
   foreach my $method ( @methods ) {
-    if($via_server) {
+    if($host) {
       my $out_file = "$dump_dir/${fprefix}${method}.${file_suffix}";
       if (-e $out_file) {
         unlink $out_file;
@@ -158,7 +154,7 @@ if ( @methods ) {
     }
   }
 } else {
-  if($via_server) {
+  if($host) {
     my $out_file = "$dump_dir/${fprefix}${species}.${file_suffix}";
 
     if (-e $out_file) {
@@ -205,7 +201,7 @@ if ( @methods ) {
   $count++;
 }
 
-unless($via_server) {
+unless($host) {
   close(NONSERVERWRITE) or $log->log_and_die ("failed to close giface connection to $database\n");
 }
 
@@ -214,7 +210,7 @@ $log->write_to("dumped $count sequences\n");
 ##################
 # Check the files
 ##################
-if ($via_server) { # contig sequences are contenated
+if ($host) { # contig sequences are contenated
   if ( @methods ) {
     foreach my $method ( @methods ) {
       
