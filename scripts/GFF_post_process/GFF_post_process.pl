@@ -6,7 +6,7 @@
 # and supplementing the "raw" GFF dumped from Ace with additional attributes
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-07-22 16:02:35 $
+# Last updated on: $Date: 2013-07-23 09:06:23 $
 #
 # Usage GFFmunger.pl [-options]
 
@@ -219,7 +219,7 @@ my $splits_dir = $wormbase->gff_splits;
 
 if ($add_landmark or $all) {
   if ($wormbase->species eq 'elegans') {
-    &append_splits_files('landmarks');
+    &append_splits_files('landmarks', 'MtDNA');
   }
 }
 
