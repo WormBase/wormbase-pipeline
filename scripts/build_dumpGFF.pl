@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl -w
-# Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2013-05-09 16:02:04 $
+# Last edited by: $Author: klh $
+# Last edited on: $Date: 2013-07-23 10:40:47 $
 
 use strict;
 use lib  $ENV{'CVS_DIR'};
@@ -9,19 +9,20 @@ use Storable;
 use Getopt::Long;
 use Log_files;
 
-our ($help, $debug, $test, $stage, $gff3, $giface, $cmd, $wormbase, $dump_dir);
+our ($help, $debug, $test, $stage, $gff3, $giface, $giface_server, $giface_client, $cmd, $wormbase);
 my $store;
 my @chromosomes;
 
-GetOptions ("help"         => \$help,
-            "debug=s"      => \$debug,
-	    "test"         => \$test,
-	    "store:s"      => \$store,
-	    "stage:s"      => \$stage,
-	    "chromosomes:s"=> \@chromosomes,
-            "gff3"         => \$gff3,
-            "dumpdir:s"    => \$dump_dir,
-            "giface:s"     => \$giface,
+GetOptions ("help"           => \$help,
+            "debug=s"        => \$debug,
+	    "test"           => \$test,
+	    "store:s"        => \$store,
+	    "stage:s"        => \$stage,
+	    "chromosomes:s"  => \@chromosomes,
+            "gff3"           => \$gff3,
+            "giface:s"       => \$giface,
+            "gifaceserver:s" => \$giface_server,
+            "gifaceclient:s" => \$giface_client,
 	   );
 
 
@@ -34,33 +35,25 @@ else {
 			   );
 }
 
-$dump_dir = $wormbase->gff if not defined $dump_dir;
-
 my $log = Log_files->make_build_log($wormbase);
 $log->log_and_die("stage not specified\n") unless defined $stage;
 
-
-if ( $stage eq 'final' ){
-  $cmd = "dump_gff_batch.pl -database ".$wormbase->autoace." -dump_dir $dump_dir";
-  $cmd .= " -gff3" if $gff3;
-  $cmd .= " -giface $giface" if $giface;
-  $cmd .= " -chromosomes ". join(",",@chromosomes) if @chromosomes;
+my $methods;
+my @methods;
+READARRAY: while (<DATA>) {
+  chomp;
+  my ($type,$method,@speciestodo) = split;
+  push(@methods,"$method") if ( $type eq $stage and (grep($wormbase->species eq $_,@speciestodo)) ) ;
 }
-else {
-  my $methods;
-  my @methods;
- READARRAY: while (<DATA>) {
-    chomp;
-    my ($type,$method,@speciestodo) = split;
-    push(@methods,"$method") if ( $type eq $stage and (grep($wormbase->species eq $_,@speciestodo)) ) ;
-  }
-  $methods = join(',',@methods);
+$methods = join(',',@methods);
 
-  $log->write_to("Dumping methods $methods from ".$wormbase->autoace."\n");
+$log->write_to("Dumping methods $methods from ".$wormbase->autoace."\n");
 
-  $cmd = "dump_gff_batch.pl -database ".$wormbase->autoace." -methods $methods -dump_dir ".$wormbase->gff_splits;
-  $cmd .= " -chromosomes ". join(",",@chromosomes) if @chromosomes;
-}
+$cmd = "dump_gff_batch.pl -database ".$wormbase->autoace." -methods $methods -dump_dir ".$wormbase->gff_splits;
+$cmd .= " -chromosomes ". join(",",@chromosomes) if @chromosomes;
+$cmd .= " -giface $giface" if defined $giface;
+$cmd .= " -gifaceserver $giface_server" if defined $giface_server;
+$cmd .= " -gifaceclient $giface_client" if defined $giface_client;
 
 $wormbase->run_script($cmd,$log);
 
