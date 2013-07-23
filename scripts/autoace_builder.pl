@@ -7,7 +7,7 @@
 # Usage : autoace_builder.pl [-options]
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2013-07-21 11:05:38 $
+# Last edited on: $Date: 2013-07-23 09:01:58 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -32,7 +32,7 @@ my $gene_span;
 my ( $load, $big_load, $tsuser );
 my ($map_features, $remap_misc_dynamic, $map, $map_alleles, $transcripts, $intergenic, $misc_data_sets, $homol_data_sets, $nem_contigs);
 my ( $GO_term, $rna , $dbcomp, $confirm, $operon ,$repeats, $remarks, $names, $treefam, $cluster);
-my ( $utr, $agp, $gff_munge, $extras , $ontologies, $interpolate, $check, $enaseqxrefs, $enaprotxrefs, $xrefs);
+my ( $utr, $agp, $gff_munge, $gff3_munge, $extras , $ontologies, $interpolate, $check, $enaseqxrefs, $enaprotxrefs, $xrefs);
 my ( $data_check, $buildrelease, $public,$finish_build, $gffdb, $autoace, $release, $user, $kegg);
 
 
@@ -85,6 +85,7 @@ GetOptions(
 	   'interpolation'  => \$interpolate,
 	   'agp'            => \$agp,
 	   'gff_munge'      => \$gff_munge,
+	   'gff3_munge'     => \$gff3_munge,
 	   'extras'         => \$extras,
 	   'ontologies'     => \$ontologies,
 	   'buildrelease'   => \$buildrelease,
@@ -198,21 +199,19 @@ $wormbase->run_script( "make_agp_file.pl"                        , $log) if $agp
 
 #several GFF manipulation steps
 if ($gff_munge) {
-  # First generated some outstanding supplementary files that go into GFF_SPLITS
   if ($wormbase->species eq 'elegans') {
     $wormbase->run_script( 'landmark_genes2gff.pl', $log);
-    $wormbase->run_script( 'landmark_genes2gff.pl -gff3', $log);
     $wormbase->run_script( 'web_data/interpolate_gmap2pmap.pl', $log);
-    $wormbase->run_script( 'web_data/interpolate_gmap2pmap.pl -gff3', $log);
   }
   $wormbase->run_script( 'web_data/map_translated_features_to_genome.pl', $log);
-  $wormbase->run_script( 'web_data/map_translated_features_to_genome.pl -gff3', $log);
-
-  #
-  # The run the wrapper that runs all of the munging scripts (and appends
-  # some files from GFF_splits too
-  #
   $wormbase->run_script( 'GFF_post_process/GFF_post_process.pl -all', $log); 
+}
+if ($gff3_munge) {
+  if ($wormbase->species eq 'elegans') {
+    $wormbase->run_script( 'landmark_genes2gff.pl -gff3', $log);
+    $wormbase->run_script( 'web_data/interpolate_gmap2pmap.pl -gff3', $log);
+  }
+  $wormbase->run_script( 'web_data/map_translated_features_to_genome.pl -gff3', $log);
   $wormbase->run_script( 'GFF_post_process/GFF_post_process.pl -all -gff3', $log); 
 }
 
