@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl -w
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2013-07-23 10:40:47 $
+# Last edited on: $Date: 2013-07-23 10:48:38 $
 
 use strict;
 use lib  $ENV{'CVS_DIR'};
@@ -9,7 +9,7 @@ use Storable;
 use Getopt::Long;
 use Log_files;
 
-our ($help, $debug, $test, $stage, $gff3, $giface, $giface_server, $giface_client, $cmd, $wormbase);
+our ($help, $debug, $test, $stage, $gff3, $giface, $giface_server, $giface_client, $cmd, $wormbase, $dump_dir);
 my $store;
 my @chromosomes;
 
@@ -23,6 +23,7 @@ GetOptions ("help"           => \$help,
             "giface:s"       => \$giface,
             "gifaceserver:s" => \$giface_server,
             "gifaceclient:s" => \$giface_client,
+            "dumpdir:s"      => \$dump_dir,
 	   );
 
 
@@ -38,18 +39,20 @@ else {
 my $log = Log_files->make_build_log($wormbase);
 $log->log_and_die("stage not specified\n") unless defined $stage;
 
-my $methods;
-my @methods;
+$dump_dir = $wormbase->gff_splits if not defined $dump_dir;
+
+my (@methods);
+
 READARRAY: while (<DATA>) {
   chomp;
   my ($type,$method,@speciestodo) = split;
   push(@methods,"$method") if ( $type eq $stage and (grep($wormbase->species eq $_,@speciestodo)) ) ;
 }
-$methods = join(',',@methods);
+my $methods = join(',',@methods);
 
 $log->write_to("Dumping methods $methods from ".$wormbase->autoace."\n");
 
-$cmd = "dump_gff_batch.pl -database ".$wormbase->autoace." -methods $methods -dump_dir ".$wormbase->gff_splits;
+$cmd = "dump_gff_batch.pl -database ".$wormbase->autoace." -methods $methods -dump_dir $dump_dir";
 $cmd .= " -chromosomes ". join(",",@chromosomes) if @chromosomes;
 $cmd .= " -giface $giface" if defined $giface;
 $cmd .= " -gifaceserver $giface_server" if defined $giface_server;
