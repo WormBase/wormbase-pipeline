@@ -9,7 +9,7 @@
 # dumps the method through sace / tace and concatenates them.
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2013-04-29 10:21:31 $
+# Last edited on: $Date: 2013-07-23 10:03:48 $
 
 
 use lib $ENV{CVS_DIR};
@@ -19,22 +19,23 @@ use strict;
 use Storable;
 use File::stat;
 
-my ($help, $debug, $test, $quicktest, $database, $species, @methods, @chromosomes, $dump_dir, @clones, $list,$host, $giface,$gff3,$port,$fprefix );
+my ($help, $debug, $test, $quicktest, $database, $species, @methods, @chromosomes, $dump_dir, @clones, $list,$host, $giface, $giface_client, $gff3,$port,$fprefix );
 my @sequences;
 my $store;
 GetOptions (
-  "help"          => \$help,
-  "debug=s"       => \$debug,
-  "test"          => \$test,
-  "store:s"       => \$store,
-  "species:s"     => \$species,
-  "quicktest"     => \$quicktest,
-  "database:s"    => \$database,
-  "dump_dir:s"    => \$dump_dir,
-  'host:s'        => \$host,
-  'port:s'        => \$port,
-  'giface:s'      => \$giface,
-  'gff3'          => \$gff3,
+  "help"           => \$help,
+  "debug=s"        => \$debug,
+  "test"           => \$test,
+  "store:s"        => \$store,
+  "species:s"      => \$species,
+  "quicktest"      => \$quicktest,
+  "database:s"     => \$database,
+  "dump_dir:s"     => \$dump_dir,
+  'host:s'         => \$host,
+  'port:s'         => \$port,
+  'giface:s'       => \$giface,
+  'gifaceclient:s' => \$giface_client,
+  'gff3'           => \$gff3,
 
   # ive added method and methods for convenience
   "method:s"      => \@methods,
@@ -64,7 +65,12 @@ my $log = Log_files->make_build_log($wormbase);
 @chromosomes = split(/,/,join(',',@chromosomes));
 @sequences = split(/,/,join(',',@clones)) if @clones;
 
-$giface = $wormbase->giface if not defined $giface;
+$log->log_and_die("You must supply a valid giface binary to be used\n")
+    if not defined $giface or not -x $giface;
+
+$log->log_and_die("You must supply a valid saceclient binary to be used\n")
+    if not defined $giface_client or not -x $giface_client;
+
 my $via_server; #set if dumping to single file via server cmds
 $port = 23100 if not defined $port;
 $fprefix = "" if not defined $fprefix;
@@ -89,7 +95,7 @@ unlink "$dump_dir/tmp_file.$$";
 if ($wormbase->assembly_type eq 'contig'){
   $via_server = 1;
   unless ($host) {
-    print STDERR "you need to start a server first and tell me the host\neg /software/worm/bin/acedb/sgifaceserver /nfs/wormpub/BUILD/remanei 23100 600:6000000:1000:600000000>/dev/null)>&/dev/null\n";
+    print STDERR "you need to start a server first and tell me the host\neg sgifaceserver /nfs/wormpub/BUILD/remanei 23100 600:6000000:1000:600000000>/dev/null)>&/dev/null\n";
     $log->log_and_die("no host passed for contig assembly");
   }
 }
@@ -120,7 +126,7 @@ if ( @methods ) {
                           ($gff3) ? "3" : "2",
                           $file);
         
-        open (WRITEDB,"echo '$cmd' | /software/worm/bin/acedb/saceclient $host -port $port -userid wormpub -pass blablub |") or $log->log_and_die("$!\n");
+        open (WRITEDB,"echo '$cmd' | $giface_client $host -port $port -userid wormpub -pass blablub |") or $log->log_and_die("$!\n");
         while (my $line = <WRITEDB>) {
           if ($line =~ 'ERROR') {
             $log->error;
@@ -167,7 +173,7 @@ if ( @methods ) {
                         ($gff3) ? "3" : "2",
                         $file);
       $log->write_to("Running '$cmd'\n");
-      open (WRITEDB,"echo '$cmd' | /software/worm/bin/acedb/saceclient $host -port $port -userid wormpub -pass blablub |") or $log->log_and_die("$!\n");
+      open (WRITEDB,"echo '$cmd' | $giface_client $host -port $port -userid wormpub -pass blablub |") or $log->log_and_die("$!\n");
       while (my $line = <WRITEDB>) {
 	if ($line =~ 'ERROR') {
 	  $log->error;
