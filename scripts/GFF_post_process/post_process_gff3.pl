@@ -8,7 +8,7 @@
 # - Strip the class name prefix from all of the Name attrbutes 
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-07-22 16:02:35 $
+# Last updated on: $Date: 2013-07-23 08:58:09 $
 
 use strict;
 use lib $ENV{CVS_DIR};
@@ -106,9 +106,10 @@ while(<$gff_in_fh>) {
   }
 
   #
-  # Remove class name prefix from Name attribute
+  # Clean up attributes
   # 
   my @attr = split(/;/, $l[8]);
+  @attr = grep { $_ !~ /Name=Method/ } @attr;
 
   @attr = map { 
     s/Name=\S+:(\S+)/Name=\1/;  
