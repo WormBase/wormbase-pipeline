@@ -7,29 +7,30 @@ use strict;
 use Log_files;
 use Storable;
 
-my ($debug, $test, $database,$species, $verbose, $giface, $gff3, $rerun_if_failed);
+my ($debug, $test, $database,$species, $verbose, $store );
+my ($giface, $giface_server, $giface_client );
+my ($gff3, $dump_dir, $rerun_if_failed, $methods, $chrom_choice);
 
-my $dump_dir;
 my $dumpGFFscript = "GFF_method_dump.pl";
-my $methods;
-my $chrom_choice;
-my $store;
+
 use LSF RaiseError => 0, PrintError => 1, PrintOutput => 0;
 use LSF::JobManager;
 
 GetOptions (
-  "debug:s"       => \$debug,
-  "test"          => \$test,
-  "verbose"       => \$verbose,
-  "database:s"    => \$database,
-  "dump_dir:s"    => \$dump_dir,
-  "methods:s"     => \$methods,
-  "chromosomes:s" => \$chrom_choice,
-  "store:s"       => \$store,
-  "giface:s"      => \$giface,
-  "gff3"          => \$gff3,
-  "rerunfail"     => \$rerun_if_failed,
-  "species:s"	    => \$species, # for debug purposes
+  "debug:s"        => \$debug,
+  "test"           => \$test,
+  "verbose"        => \$verbose,
+  "database:s"     => \$database,
+  "dump_dir:s"     => \$dump_dir,
+  "methods:s"      => \$methods,
+  "chromosomes:s"  => \$chrom_choice,
+  "store:s"        => \$store,
+  "giface:s"       => \$giface,
+  "gifaceserver:s" => \$giface_server, 
+  "gifaceclient:s" => \$giface_client, 
+  "gff3"           => \$gff3,
+  "rerunfail"      => \$rerun_if_failed,
+  "species:s"	   => \$species, # for debug purposes
 	   );
 my $wormbase;
 if( $store ) {
@@ -56,7 +57,13 @@ my @methods     = split(/,/,join(',',$methods)) if $methods;
 my @chromosomes = $chrom_choice ? split(/,/,join(',',$chrom_choice)):@chroms;
 
 $database = $wormbase->autoace    unless $database;
-$dump_dir = $wormbase->gff_splits unless $dump_dir;
+if (not defined $dump_dir) {
+  $dump_dir = (@methods) ? $wormbase->gff_splits : $wormbase->gff;
+}
+
+$giface = $wormbase->giface if not defined $giface;
+$giface_server = $wormbase->giface_server if not defined $giface_server;
+$giface_client = $wormbase->giface_client if not defined $giface_client;
 
 $log->write_to("Dumping from DATABASE : $database\n\tto $dump_dir\n\n");
 	      
@@ -75,7 +82,7 @@ my $lsf = LSF::JobManager->new();
 my $host = qx('hostname');chomp $host;
 my $port = 23100;
 if (scalar(@chromosomes) > 50){
-  $wormbase->run_command("(/nfs/users/nfs_w/wormpub/bin/sgifaceserver_phase_patch $database $port 600:6000000:1000:600000000>/dev/null)>&/dev/null &",$log);
+  $wormbase->run_command("($giface_server $database $port 600:6000000:1000:600000000>/dev/null)>&/dev/null &",$log);
   sleep 20;
 }
 
@@ -102,10 +109,15 @@ CHROMLOOP: foreach my $chrom ( @chromosomes ) {
       }
 
       my $cmd = "$dumpGFFscript -database $database -dump_dir $dump_dir -method $method -species $species";
-      $cmd .= " -host $host" if scalar(@chromosomes) > 50;
-      $cmd .= " -chromosome $chrom" if scalar(@chromosomes) <= 50;
+      if (scalar(@chromosomes) > 50) {
+        $cmd .= " -host $host";
+        $cmd .= " -port $port";
+        $cmd .= " -gifaceclient $giface_client";
+      } else {
+        $cmd .= " -giface $giface";
+        $cmd .= " -chromosome $chrom";
+      }
       $cmd .= " -debug $debug" if $debug;
-      $cmd .= " -giface $giface"  if defined $giface;
       $cmd .= " -gff3" if $gff3;
       $cmd = $wormbase->build_cmd_line($cmd, $store_file);      
       $log->write_to("Command: $cmd\n") if ($verbose);
@@ -136,10 +148,16 @@ CHROMLOOP: foreach my $chrom ( @chromosomes ) {
 			 -J => $job_name);
 
     my $cmd = "$dumpGFFscript -database $database -dump_dir $dump_dir -species $species";
-    $cmd .=" -chromosome $chrom" if scalar(@chromosomes) <= 50;
-    $cmd .=" -host $host" if scalar(@chromosomes) > 50;
+    if (scalar(@chromosomes) > 50) {
+      $cmd .= " -host $host";
+      $cmd .= " -port $port";
+      $cmd .= " -gifaceclient $giface_client";
+    } else {
+      $cmd .= " -chromosome $chrom";
+      $cmd .= " -giface $giface";
+    }
+
     $cmd .=" -debug $debug" if $debug;
-    $cmd .= " -giface $giface"  if defined $giface;
     $cmd .= " -gff3" if $gff3;
     $cmd = $wormbase->build_cmd_line($cmd, $store_file);
     $log->write_to("Command: $cmd\n") if ($verbose);
@@ -214,7 +232,7 @@ if ($rerun_if_failed) {
 
 
 if (scalar(@chromosomes) > 50){
-  open (WRITEDB,"| saceclient $host -port $port -userid wormpub -pass blablub");
+  open (WRITEDB,"| $giface_client $host -port $port -userid wormpub -pass blablub");
   print WRITEDB "shutdown now\n";
   close WRITEDB;
   sleep 180;
