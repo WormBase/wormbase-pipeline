@@ -186,7 +186,7 @@
 # by Gary Williams
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2013-07-22 09:40:45 $
+# Last updated on: $Date: 2013-07-23 16:17:08 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -2113,42 +2113,87 @@ sub Intron_stuff {
   my $junctions = "tophat_out/junctions.gff";
   my $old_virtual = "";
   open (ACE, ">$output") || $log->log_and_die("Can't open the file $output\n");
-  open(GFF, "<$junctions") || $log->log_and_die("Can't open the file $junctions\n");
-  while (my $line = <GFF>) {
-    if ($line =~ /^#/) {next}
-    my @cols = split /\s+/, $line;
-    my $chrom = $cols[0];
-    my $start = $cols[3];
-    my $end = $cols[4];
-    my $sense = $cols[6];
-    my $reads = $cols[7];
 
-    # get the clone that this intron is on
-    my ($clone, $clone_start, $clone_end) = $coords->LocateSpan($chrom, $start, $end);
+  # is there still an old junctions.bad file lying around from an old run? Use that.
+  if (-e "tophat_out/junctions.bed") {
+    $junctions = "tophat_out/junctions.bed";
+    open(BED, "<$junctions") || $log->log_and_die("Can't open the file $junctions\n");
+    while (my $line = <BED>) {
+      if ($line =~ /^track/) {next}
+      my @cols = split /\s+/, $line;
+      my $chrom = $cols[0];
+      my $start = $cols[1] + 1;
+      my $end = $cols[2];
+      my $reads = $cols[4];
+      my $sense = $cols[5];
+      my @blocksizes = split /,/, $cols[10];
+      my $splice_5 = $start + $blocksizes[0]; # first base of intron
+      my $splice_3 = $end - $blocksizes[1]; # last base of intron
+      
+      # get the clone that this intron is on
+      my ($clone, $clone_start, $clone_end) = $coords->LocateSpan($chrom, $splice_5, $splice_3);
+    
+      if (not exists $seqlength{$clone}) {
+	$seqlength{$clone} = $coords->Superlink_length($clone);
+      }
+      
+      my $virtual = "${clone}:Confirmed_intron_RNASeq";
+      
+      if ($old_virtual ne $virtual) {
+	print ACE "\nFeature_data : \"$virtual\"\n";
+	$old_virtual = $virtual
+      }
+      
+      if ($sense eq '-') {
+	($clone_end, $clone_start) = ($clone_start, $clone_end)
+      }
+
+      print ACE "Feature RNASeq_splice $clone_start $clone_end $reads $analysis\n";
+
+    }
+    close(BED);
 
     
-    if (not exists $seqlength{$clone}) {
-      $seqlength{$clone} = $coords->Superlink_length($clone);
-    }
+  } else { # use the junction.gff file
 
-    my $virtual = "${clone}:Confirmed_intron_RNASeq";
+
+    open(GFF, "<$junctions") || $log->log_and_die("Can't open the file $junctions\n");
+    while (my $line = <GFF>) {
+      if ($line =~ /^#/) {next}
+      my @cols = split /\s+/, $line;
+      my $chrom = $cols[0];
+      my $start = $cols[3];
+      my $end = $cols[4];
+      my $sense = $cols[6];
+      my $reads = $cols[7];
       
-    if ($old_virtual ne $virtual) {
-      print ACE "\nFeature_data : \"$virtual\"\n";
-      $old_virtual = $virtual
-    }
-
-    if ($sense eq '-') {
-      ($clone_end, $clone_start) = ($clone_start, $clone_end)
-    }
+      # get the clone that this intron is on
+      my ($clone, $clone_start, $clone_end) = $coords->LocateSpan($chrom, $start, $end);
+      
+      
+      if (not exists $seqlength{$clone}) {
+	$seqlength{$clone} = $coords->Superlink_length($clone);
+      }
+      
+      my $virtual = "${clone}:Confirmed_intron_RNASeq";
+      
+      if ($old_virtual ne $virtual) {
+	print ACE "\nFeature_data : \"$virtual\"\n";
+	$old_virtual = $virtual
+      }
+      
+      if ($sense eq '-') {
+	($clone_end, $clone_start) = ($clone_start, $clone_end)
+      }
 
 # when we have changes to acedb that can deal with a Feature_data Confirmed_intron from RNASeq, then do this:
 #    print ACE "Confirmed_intron $clone_start $clone_end RNASeq $analysis $reads\n";
 # until then we store it as a Feature_data Feature, which works quite well:
-    print ACE "Feature RNASeq_splice $clone_start $clone_end $reads $analysis\n";
+      print ACE "Feature RNASeq_splice $clone_start $clone_end $reads $analysis\n";
 
+    }
+    close(GFF);
   }
-  close(GFF);
   close(ACE);
 
   
