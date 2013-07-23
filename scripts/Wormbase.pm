@@ -478,6 +478,17 @@ sub giface {
   return $self->{'giface'};
 }
 
+sub giface_server {
+  my $self = shift;
+  return $self->{'giface_server'};
+}
+
+sub giface_client {
+  my $self = shift;
+  return $self->{'giface_client'};
+}
+
+
 ####################################
 # Check for database write access
 ####################################
@@ -1316,6 +1327,8 @@ sub establish_paths {
   $self->{'ontology'}    = $self->autoace . "/ONTOLOGY";
   $self->{'tace'}   = '/software/worm/bin/acedb/tace';
   $self->{'giface'} = '/software/worm/bin/acedb/giface';
+  $self->{'giface_server'} = '/software/acedb/bin/sgifaceserver';
+  $self->{'giface_client'} = '/software/acedb/bin/saceclient';
   
   $self->{'databases'}->{'geneace'} = $self->wormpub . "/DATABASES/geneace";
   $self->{'databases'}->{'camace'}  = $self->wormpub . "/DATABASES/camace";
@@ -1770,7 +1783,7 @@ sub processed_GFF_file {
   my $fname = sprintf("%s/%s.processed.%s", 
                       $self->sequences,
                       $self->species,
-                      ($gff3) ? ".gff3" : "gff2");
+                      ($gff3) ? "gff3" : "gff2");
   
   return $fname;
 }
