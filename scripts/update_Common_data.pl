@@ -5,7 +5,7 @@
 # by Anthony Rogers et al
 #
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2013-07-24 09:20:24 $
+# Last updated on: $Date: 2013-07-24 09:27:00 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -18,8 +18,8 @@ use Data::Dumper;
 use Getopt::Long;
 use Storable;
 use Log_files;
-#use LSF RaiseError => 0, PrintError => 1, PrintOutput => 0;
-#use LSF::JobManager;
+use LSF RaiseError => 0, PrintError => 1, PrintOutput => 0;
+use LSF::JobManager;
 
 ##############################
 # command-line options       #
