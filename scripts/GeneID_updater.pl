@@ -7,7 +7,7 @@
 # Script to refresh various information including WBGene ID's, protein_ids, clone SV's in a chosen database from a chosen reference database.
 #
 # Last updated by: $Author: pad $
-# Last updated on: $Date: 2008-02-28 14:53:58 $
+# Last updated on: $Date: 2013-07-24 15:11:19 $
 
 use strict;
 my $scriptdir =  $ENV{'CVS_DIR'};
@@ -253,7 +253,7 @@ sub protein_ID {
   $log->write_to("Opening database connection.....\n/3/ Gathering Protein_IDs from $sourceDB2\n\n");
 
   # connect to AceDB using TableMaker
-  my $command = "query find curated_CDS where From_laboratory = HX\nshow -t Protein_id -a -f $output_file2\nquit\n";
+  my $command = "query find curated_CDS\nshow -t Protein_id -a -f $output_file2\nquit\n";
   system ("echo \"$command\" | $tace $sourceDB2");
 
   ##Hard Coded exceptions to add on the end of the ace file
