@@ -5,7 +5,7 @@
 # by Anthony Rogers et al
 #
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2013-07-24 09:27:00 $
+# Last updated on: $Date: 2013-07-24 09:31:40 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -145,7 +145,7 @@ $log->write_to("Updating COMMON_DATA in $data_dir\n");
 # ACEDB executables          #
 ##############################
 
-our $tace='tace' ;#= $wormbase->tace;
+our $tace= $wormbase->tace;
 
 # run '-all' Common_data dumps under LSF
 if ($all) { 
