@@ -2417,6 +2417,7 @@ GFF_source "Oligo_set"
 GFF_feature "reagent"
 GFF_SO "SO:0000695" // reagent
 Width 1.000000
+Allow_clipping
 
 
 Method : "Oligo"
