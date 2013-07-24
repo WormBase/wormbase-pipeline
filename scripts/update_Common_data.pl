@@ -4,8 +4,8 @@
 # 
 # by Anthony Rogers et al
 #
-# Last updated by: $Author: klh $
-# Last updated on: $Date: 2012-07-26 09:49:18 $
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2013-07-24 09:20:24 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -18,8 +18,8 @@ use Data::Dumper;
 use Getopt::Long;
 use Storable;
 use Log_files;
-use LSF RaiseError => 0, PrintError => 1, PrintOutput => 0;
-use LSF::JobManager;
+#use LSF RaiseError => 0, PrintError => 1, PrintOutput => 0;
+#use LSF::JobManager;
 
 ##############################
 # command-line options       #
@@ -145,7 +145,7 @@ $log->write_to("Updating COMMON_DATA in $data_dir\n");
 # ACEDB executables          #
 ##############################
 
-our $tace = $wormbase->tace;
+our $tace='tace' ;#= $wormbase->tace;
 
 # run '-all' Common_data dumps under LSF
 if ($all) { 
@@ -172,12 +172,12 @@ if ($all) {
         $arg eq 'est' or
         $arg eq 'cds2wormpep') {
       push @bsub_options, (
-        -M => "6000000", 
+        -M => "6000", 
         -R => "\"select[mem>6000] rusage[mem=6000]\"",
         -J => $job_name);
     } else {
       push @bsub_options, (
-        -M => "3000000", 
+        -M => "3000", 
         -R => "\"select[mem>3000] rusage[mem=3000]\"",
         -J => $job_name);
     }
