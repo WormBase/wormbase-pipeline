@@ -58,12 +58,14 @@ system("ln -s $dir $originalDir/last") && die(@!);
 
 sub diff{
    my ($file)=@_;
+
+   # will run a 4k column wide side by side comparison skipping identical lines
    system("diff --side-by-side --suppress-common-lines --width 4000 $originalDir/last/$file.txt $dir/$file.txt > $dir/$file.diff");
    my $inf  = IO::File->new("<$dir/$file.diff")||die(@!);
    my $outf = IO::File->new(">$dir/$file.diff_")||die(@!);
    while (<$inf>){
      s/^\s+//;         # new
-     s/.*\s\|\s/\|\s/; # changed <- will barf on internal pipes
+     s/.*\s\|\s/\| /; # changed <- will barf on internal pipes
      print $outf $_;
    }
    $inf->close;
