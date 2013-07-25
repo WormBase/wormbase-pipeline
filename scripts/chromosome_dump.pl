@@ -9,7 +9,7 @@
 # see pod for more details
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2012-06-20 08:43:54 $
+# Last updated on: $Date: 2013-07-25 21:53:22 $
 
 
 use strict;
@@ -25,7 +25,7 @@ use Storable;
 # Script variables and command-line options          #
 ######################################################
 
-our ($help, $debug, $dna, $gff, $zipdna, $zipgff, $composition, $database, $dump_dir, $genome_seq_file, $test, $quicktest);
+our ($help, $debug, $dna, $gff, $zipdna, $zipgff, $composition, $database, $dump_dir, $genome_seq_file, $test);
 my $store;
 
 GetOptions ("help"        => \$help,
@@ -39,12 +39,10 @@ GetOptions ("help"        => \$help,
 	    "dump_dir=s"  => \$dump_dir,
             "genomeseq=s" => \$genome_seq_file,
 	    "test"        => \$test,
-	    "quicktest"   => \$quicktest,
 	    "store:s"     => \$store
 	   );
 
 my $wormbase;
-$test = 1 if $quicktest;
 if( $store ) {
   $wormbase = retrieve( $store ) or croak("cant restore wormbase from $store\n");
 }
@@ -63,9 +61,6 @@ our $giface = $wormbase->giface;
 &usage("Help") if ($help);
 
 # Sanity checks
-#if($database && !$dump_dir){
-#  die "You have specified a database (-database flag) but not a destination directory\nto dump to (-dump_dir flag).\n";
-#}
 if(!$database && $dump_dir){
   die "You have specified a destination directory to dump to (-dump_dir flag) but not\na source database (-database flag).\n";
 }
@@ -113,13 +108,8 @@ sub dump_dna {
   my $command;
 
   # command generation
-  if($quicktest) {
-   $command = "find sequence CHROMOSOME_III\ndna -f $dump_dir/CHROMOSOME_III.dna\n";
-  }
-  else {
-    foreach my $c ($wormbase->get_chromosome_names(-mito => 1,-prefix=> 1)) {
-      $command.="find sequence $c\ndna -f $dump_dir/$c.dna\n";
-    }
+  foreach my $c ($wormbase->get_chromosome_names(-mito => 1,-prefix=> 1)) {
+    $command.="find sequence $c\ndna -f $dump_dir/$c.dna\n";
   }
   $command.='quit';
 
@@ -146,11 +136,8 @@ sub dump_dna {
 sub composition {
 
   $log->write_to("Generating composition.all\n");	
-
-  chdir $dump_dir;
   
-  my @chroms = $quicktest? qw(III) : $wormbase->get_chromosome_names();
-  my $prefix= $wormbase->chromosome_prefix();
+  my @chroms = $wormbase->get_chromosome_names(-prefix => 1, -mito => 1);
 
   my $total;
   my $ns;
@@ -164,7 +151,7 @@ sub composition {
 
   foreach my $chr (@chroms) {
 
-    my $file = "$dump_dir/$prefix"."$chr.dna";
+    my $file = "$dump_dir/${chr}.dna";
 
     #print "read $file\n";
     my $seq = &read_chromosome($file);
@@ -226,18 +213,15 @@ sub get_composition {
 #  my $chrom_seq = &read_chromosome($chromosome);
 
 sub read_chromosome {
-  my ($chromosome) = @_;
+  my ($chr_file) = @_;
 
-  #print "read chromosome $chromosome\n";
-
-  $/ = "";
-  open (SEQ, $chromosome) or $log->log_and_die("Can't open the dna file for $chromosome : $!\n");
-  my $seq = <SEQ>;
-  close SEQ;
-  $/ = "\n";
-
-  $seq =~ s/>CHROMOSOME_\w+//;
-  $seq =~ s/\n//g;
+  my $seq = "";
+  open (my $fh, $chr_file) 
+      or $log->log_and_die("Can't open the dna file $chr_file : $!\n");
+  while(<$fh>) {
+    /^\>/ and next;
+    /^(\S+)$/ and $seq .= $1;
+  }
 
   return $seq
 }
@@ -247,11 +231,10 @@ sub read_chromosome {
 ###########################
 
 sub zip_files {
-  my @chromosomes = $quicktest ? qw(III):$wormbase->get_chromosome_names(-mito => 1);
-  my $prefix= $wormbase->chromosome_prefix();
+  my @chromosomes = $wormbase->get_chromosome_names(-mito => 1, -prefix => 1);
 
   foreach my $chr (@chromosomes){
-    my $dna_file = "$dump_dir"."/$prefix".$chr.".dna";
+    my $dna_file = "$dump_dir/${chr}.dna";
 
     if ($zipdna){
       if (-e $dna_file.".gz" ) {
