@@ -1,8 +1,8 @@
 #!/software/bin/perl -w
 
 # Version: $Version: $
-# Last updated by: $Author: klh $
-# Last updated on: $Date: 2012-11-12 20:10:16 $
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2013-07-25 10:43:42 $
 
 use strict;
 use warnings;
@@ -152,7 +152,7 @@ if (not $query) {
     my @bsub_options = (-J => $jname, 
                         -o => $lsf_out,
                         -E => 'test -w ' . $workdir,
-                        -M => 2600000,
+                        -M => 2600,
                         -R => 'select[mem>=2600] rusage[mem=2600]'
                         );
     $lsf->submit(@bsub_options, $command);
