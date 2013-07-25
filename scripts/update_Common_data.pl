@@ -5,7 +5,7 @@
 # by Anthony Rogers et al
 #
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2013-07-24 09:31:40 $
+# Last updated on: $Date: 2013-07-25 15:32:54 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -780,7 +780,7 @@ sub write_clones2seq  {
       my $out = "$scratch_dir/update_Common_data.pl.lsf.clone2seq.$clone2seq.out";
       my @bsub_options = (-e => "$err", 
 			  -o => "$out", 
-			  -M => "3500000", 
+			  -M => "3500", 
 			  -R => "\"select[mem>3500] rusage[mem=3500]\"",
 			  -J => $job_name);
       my $cmd = "update_Common_data.pl -clone2seq $this_species";
