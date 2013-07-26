@@ -186,7 +186,7 @@
 # by Gary Williams
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2013-07-23 16:17:08 $
+# Last updated on: $Date: 2013-07-26 08:44:41 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -1522,9 +1522,18 @@ sub merge_bam_files {
 
   if ($dir ne '' && $dir !~ /\/$/) {$dir .= '/'}
 
-  my $bam_files =  join ' ', map {$dir . $_ . ".bam"} @SRR_ids; # put '.bam' on the ends and join into one string
-  $wormbase->run_command("$samtools merge tophat_out/accepted_hits.bam $bam_files", $log);
+  if (scalar @SRR_ids > 1) {
 
+    my $bam_files =  join ' ', map {$dir . $_ . ".bam"} @SRR_ids; # put '.bam' on the ends and join into one string
+    $wormbase->run_command("$samtools merge tophat_out/accepted_hits.bam $bam_files", $log);
+
+  } else {
+
+    # have just the one bam file, so simply rename it
+    my $file = $dir.$SRR_ids[0].".bam";
+    $wormbase->run_command("mv $file tophat_out/accepted_hits.bam");
+
+  }
 
 }
 
@@ -1537,7 +1546,7 @@ sub merge_splice_junction_files {
   my %gff; # gff hash holding junction sites and read numbers
 
   foreach my $srr_name (@SRR_ids) {
-    read_junction_bed_file(\%gff, "tophat_out/${srr_name}.junctions.bed"); # add junkctions to %gff
+    read_junction_bed_file(\%gff, "tophat_out/${srr_name}.junctions.bed"); # add junctions to %gff
   }
 
   write_junction_gff_file(\%gff, "tophat_out/junctions.gff");
