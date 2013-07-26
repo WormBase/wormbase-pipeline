@@ -54,7 +54,7 @@ Filter "((Method = curated) OR (Method = provisional)) AND (Species = C*briggsae
 Class curated_CDS
 Visible
 Is_a_subclass_of CDS
-Filter "(Method = curated)"
+Filter "(Method = curated) OR (Method = history) OR (!Method))"
 
 Class Transposon_CDS
 Visible
