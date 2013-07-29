@@ -8,8 +8,8 @@
 #
 # Usage : map_feature2gene.pl [-options]
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2009-10-06 13:02:32 $
+# Last edited by: $Author: mh6 $
+# Last edited on: $Date: 2013-07-29 16:16:13 $
 #################################################
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -116,7 +116,7 @@ foreach my $feature (@TSL) {
     }
 
     # write output and error tracking
-    unless ( defined %match ) {
+    unless ( %match ) {
         print "\n// No connection to a CDS found for Feature : $feature\n";
     }
     else {
@@ -127,8 +127,8 @@ foreach my $feature (@TSL) {
     }
     print OUTPUT "\n";
 
-    $sequence->DESTROY();
-    $feature->DESTROY();
+    $sequence->DESTROY() if $sequence;
+    $feature->DESTROY()  if $feature;
 }
 
 close OUTPUT;
