@@ -5,7 +5,7 @@
 # Overloads Variation lines with extra info (consequence etc)
 #
 # Last updated by: $Author: klh $     
-# Last updated on: $Date: 2013-07-22 15:38:05 $      
+# Last updated on: $Date: 2013-07-29 09:37:19 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -85,7 +85,11 @@ while (<$gff_in_fh>) {
       push @new_els, ['Other_name', $on];
     }
     
-    push @new_els, ['Strain', $variation->Strain] if $variation->Strain;
+    if ($variation->Strain) {
+      my @strains = $variation->Strain;
+      my $strain_str = join(",", @strains);
+      push @new_els, ['Strain', $strain_str];
+    }
     
     foreach my $tp (@var_types) {
       push @new_els, ['Status', 'Confirmed'] if $tp =~ /confirmed/i;
