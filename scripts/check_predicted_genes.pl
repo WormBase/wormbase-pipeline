@@ -4,7 +4,7 @@
 #
 # by Keith Bradnam
 #
-# Last updated on: $Date: 2013-07-21 23:42:05 $
+# Last updated on: $Date: 2013-07-29 10:43:22 $
 # Last updated by: $Author: pad $
 #
 # see pod documentation at end of file for more information about this script
@@ -539,7 +539,7 @@ sub test_gene_sequence_for_errors{
   }
 
   # look for incorrect stop codons (CDS specific)
-  if (($stop_codon ne 'taa') && ($stop_codon ne 'tga') && ($stop_codon ne 'tag') && ($method_test eq 'curated') && ($Lab eq "HX")) {
+  if (($stop_codon ne 'taa') && ($stop_codon ne 'tga') && ($stop_codon ne 'tag') && ($method_test eq 'curated')) {
     if ($end_tag ne "present") {
       push(@error1, "ERROR: $gene_model '$stop_codon' is not a valid stop codon. End_not_found tag MISSING\n");
       print STDERR "ERROR: $gene_model '$stop_codon' is not a valid stop codon. End_not_found tag MISSING\n" if $verbose;
@@ -551,7 +551,7 @@ sub test_gene_sequence_for_errors{
   }
 
   # look for incorrect start codons(CDS specific)
-  if (($start_codon ne 'atg') && ($method_test eq 'curated') && ($Lab eq "HX")) {
+  if (($start_codon ne 'atg') && ($method_test eq 'curated')) {
     if (($start_tag ne "present")) {
       push(@error1,"ERROR: $gene_model '$start_codon' is not a valid start codon. Start_not_found tag MISSING\n");
       print STDERR "ERROR: $gene_model '$start_codon' is not a valid start codon. Start_not_found tag MISSING\n" if $verbose;
@@ -573,7 +573,7 @@ sub test_gene_sequence_for_errors{
       my $previous_sequence = substr($dna, $j-11,10);
       my $following_sequence = substr($dna, $j+2, 10);
       my $offending_codon = substr($dna, $j-1, 3);
-      if (($method_test eq 'curated') && ($Lab eq "HX")) {
+      if (($method_test eq 'curated')) {
 	push(@error1, "ERROR: $gene_model internal stop codon at position $j ...$previous_sequence $offending_codon $following_sequence...\n");      
 	print STDERR "ERROR: $gene_model internal stop codon at position $j ...$previous_sequence $offending_codon $following_sequence...\n" if $verbose;
       }
