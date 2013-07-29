@@ -7,8 +7,8 @@
 # checks whether TSL acceptor sites overlap with exons.
 # Will discard matches to isoforms (Warning).
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2006-02-17 11:32:47 $
+# Last updated by: $Author: pad $
+# Last updated on: $Date: 2013-07-29 10:51:33 $
 
 
 use strict;                                      
@@ -75,10 +75,6 @@ if ($database) {
 # output options
 my $outdir      = $ace_dir . "/CHECKS";
 
-
-# get clone2 centre data
-my %clone2centre = $wormbase->FetchData('clone2centre');       # Clone => (HX|RW) centre designation
-
 # vars
 my @chromosomes  = qw(I II III IV V X);
 my %overlap;                                         # No of overlaps per chromosome       
@@ -97,7 +93,6 @@ foreach $chromosome (@chromosomes) {
  
     # open output files
     open (CAM, ">$outdir/CHROMOSOME_${chromosome}.overlapping_TSL_cam");
-    open (STL, ">$outdir/CHROMOSOME_${chromosome}.overlapping_TSL_stl");
     
     # input lines are processed GFF (see below)
     # CHROMOSOME_X    curated exon    2089999 2090139 .       +       .       CDS "F49H12.1" intersect(CHROMOSOME_X.TSL_site.gff)=(21)
@@ -124,23 +119,14 @@ foreach $chromosome (@chromosomes) {
 	    $log->write_to("WARNING: Isoform match $line") if ($verbose);
 	    next;
 	}
-
-	print "// processing $cds [$clone2centre{$cds}]\n" if ($verbose);
 	$active{$chromosome}++;                                           # increment active count
-	
-	if ($clone2centre{$cds} eq "HX") {
-	    print CAM $line;
-	}
-	elsif ($clone2centre{$cds} eq "RW") {
-	    print STL $line;
-	}
+	print CAM $line;
 	
     }
     close IN;
     
     # close output filehandles
     close CAM;
-    close STL;
     
     # write output summary to mail
     $log->write_to("CHROMOSOME $chromosome\t: $overlap{$chromosome} overlaps of which $isoform{$chromosome} are to isoforms  \t($active{$chromosome})\n");
