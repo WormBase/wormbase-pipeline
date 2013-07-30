@@ -5,7 +5,7 @@
 # Overloads Variation lines with extra info (consequence etc)
 #
 # Last updated by: $Author: klh $     
-# Last updated on: $Date: 2013-07-29 09:37:19 $      
+# Last updated on: $Date: 2013-07-30 08:24:49 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -73,22 +73,19 @@ while (<$gff_in_fh>) {
     
     my @var_types = $variation->at('Variation_type');
     my @other_names = $variation->at('Name.Other_name');
-    my @public_names = $variation->at('Name.Public_name');
+    my $public_name = $variation->at('Name.Public_name');
     my $natural_variant = 0;
-    
-    foreach my $pb (@public_names) {
-      #print NEW " ; Public_name \"$pb\"";
-      push @new_els, ['Public_name', $pb];
+
+    if ($public_name) {
+      push @new_els, ['Public_name', $public_name];
     }
-    foreach my $on (@other_names) {
-      #print NEW " ; Other_name \"$on\"";
-      push @new_els, ['Other_name', $on];
+    if (@other_names) {
+      push @new_els, ['Other_name', \@other_names];
     }
     
     if ($variation->Strain) {
       my @strains = $variation->Strain;
-      my $strain_str = join(",", @strains);
-      push @new_els, ['Strain', $strain_str];
+      push @new_els, ['Strain', \@strains];
     }
     
     foreach my $tp (@var_types) {
@@ -163,10 +160,20 @@ while (<$gff_in_fh>) {
           push @new_el_strings, $el->[0];
         }
       } else {
+        my ($k, $v) = @$el;
         if ($gff3) {
-          push @new_el_strings, join("=", lc($el->[0]), $el->[1]);
+          if (ref($v) eq 'ARRAY') {
+            $v = join(",", @$v);
+          } 
+          push @new_el_strings, join("=", lc($k), $v);
         } else {
-          push @new_el_strings, sprintf("%s \"%s\"", @$el);
+          if (ref($v) eq 'ARRAY') {
+            foreach my $vv (@$v) {
+              push @new_el_strings, sprintf("%s \"%s\"", $k, $vv);
+            }
+          } else {
+            push @new_el_strings, sprintf("%s \"%s\"", $k, $v);
+          }
         }
       }
     }
