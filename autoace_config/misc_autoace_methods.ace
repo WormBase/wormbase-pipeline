@@ -397,7 +397,6 @@ GFF_feature "complex_substitution"
 GFF_SO "SO:1000005" // complex_substitution
 Remark "Basically, these are deletion alleles where the deletion is replaced by (a usually smaller length) insertion sequence"
 
-
 Method : "Substitution_allele" 
 Remark "Simple allelic changes, i.e. mono or di-nucleotide substitutions"
 Colour "ORANGE"
@@ -408,6 +407,56 @@ GFF_source "Allele"
 GFF_feature "substitution"
 GFF_SO "SO:1000002" // substitution
 
+Method : "Polymorhism"
+Width 1.1
+Colour ORANGE
+Show_text
+Strand_sensitive
+GFF_source "Polymorphism"
+GFF_feature "sequence_alteration"
+GFF_SO "SO:0001059" // sequence_alteration
+Remark "Alleles in WormBase represent small sequence polymorphisms (substitutions or indels) with respect to the sequenced (N2) strain of C. elegans and some other strain."
+
+Method : "Deletion_polymorphism" 
+Width 1.1
+Colour ORANGE
+Show_text
+Strand_sensitive
+GFF_source "Polymorphism"
+GFF_feature "deletion"
+GFF_SO "SO:0000159" // deletion
+Remark "Deletion polymorphisms in WormBase represent where other wild-isolate C. elegans strains have a tract of genomic sequence deleted (with respect to the sequenced N2 strain)."
+
+Method : "Insertion_polymorhism"
+Width 1.1
+Colour ORANGE
+Show_text
+Strand_sensitive
+GFF_source "Polymorphism"
+GFF_feature "insertion_site"
+GFF_SO "SO:0000366" // insertion_site
+Remark "Simple insertion polymorphisms that are not due to transposon insertions."
+
+Method : "Deletion_and_insertion_polymorphism" 
+Width 1.1
+Colour ORANGE
+Show_text
+Strand_sensitive
+GFF_source "Polymorphism"
+GFF_feature "complex_substitution"
+GFF_SO "SO:1000005" // complex_substitution
+Remark "These are deletion polymorphisms where the deletion is replaced by (a usually smaller length) insertion sequence"
+
+Method : "Substitution_polymorphism" 
+Colour "ORANGE"
+Strand_sensitive
+Width "1.1"
+Show_text
+GFF_source "Polymorphism"
+GFF_feature "substitution"
+GFF_SO "SO:1000002" // substitution
+Remark "Simple polymorphic differences, i.e. mono or di-nucleotide substitutions"
+
 Method : "Transposon_insertion" 
 Width 1.1
 Colour ORANGE
@@ -417,7 +466,6 @@ GFF_source "Allele"
 GFF_feature "transposable_element_insertion_site"
 GFF_SO "SO:0000368" // transposable_element_insertion_site
 Remark "Most of the annotated transposon-mediated insertion sites in WormBase were engineered by Laurent Segalat and others [Alvarez et al., Towards a genome-wide collection of transposon insertions, International C. elegans Meeting 1999 #757]."
-
 
 Method : "Mos_insertion" 
 Remark "Derived from the Drosophila mariner element Mos1, Mos insertions can be mobilized to generate deletion and frameshift mutations. See Bessereau et al., Mobilization of a Drosophila transposon in the Caenorhabditis elegans germ line, Nature, 2001. 413:70-4."
