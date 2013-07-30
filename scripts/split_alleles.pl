@@ -142,6 +142,7 @@ foreach my $mem_gb (3, 6) {
       my $batch = $job->{bin};
 
       my $cmd =  "perl $Bin/map_Alleles.pl -idfile $idfile -outfile $outfile -noload -species $species";
+      $cmd .= ' -noremap' unless lc($wormbase->organism) eq 'elegans'; # bit crude, but it works
       $cmd .= " -debug $debug" if $debug;
       $cmd .= " -test"  if $test;
        
