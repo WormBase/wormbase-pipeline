@@ -7,22 +7,23 @@ use Wormbase;
 use Coords_converter;
 use Storable;
 
-my ($store,$wb,$debug,$test);
+my ($store,$wb,$debug,$test,$species);
 GetOptions(
-	'store=s' => \$store,
-	'debug=s' => \$debug,
-	'test'    => \$test,
+	'store=s'  => \$store,
+	'debug=s'  => \$debug,
+	'test'     => \$test,
+        'species=s'=> \$species,
 ) || die("bas commandline parameter\n");
 
 if ($store) { 
 	$wb = retrieve($store) or croak("Can't restore wormbase from $store\n")
 } else {
 	$wb = Wormbase->new( -debug    => $debug, 
-		             -test     => $test, 
+		             -test     => $test,
+                             -organism => $species,
 		     )
 }
 
-#my $wb = retrieve('/nfs/disk100/wormpub/BUILD/autoace/Elegans.store');
 my $cc = Coords_converter->invoke($wb->orgdb,undef,$wb);
 
 my $seq;

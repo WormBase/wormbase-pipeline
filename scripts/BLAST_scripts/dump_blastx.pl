@@ -4,8 +4,8 @@
 #  script to submit blastx dumping scripts onto the farm
 #  and concatenate them at the end
 # 
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2013-04-18 14:18:37 $
+# Last edited by: $Author: mh6 $
+# Last edited on: $Date: 2013-08-01 15:00:08 $
 # 
 
 
@@ -131,7 +131,7 @@ if ($wormbase->species eq 'elegans' or $wormbase->species eq 'briggsae'){
   unlink $outfile if -e $outfile;
   foreach my $file (@files ){
     $log->write_to("\tcat $file\n");
-    system ("cat $file | perl $ENV{'CVS_DIR'}/BLAST_scripts/convert_chromblast2clone.pl >> $outfile") 
+    system ("cat $file | perl $ENV{'CVS_DIR'}/BLAST_scripts/convert_chromblast2clone.pl -species $organism>> $outfile") 
       && die("cannot concatenate $file to $outfile\n" );
   }
 } else {
