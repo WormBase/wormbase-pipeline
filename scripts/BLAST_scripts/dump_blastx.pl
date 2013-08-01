@@ -5,7 +5,7 @@
 #  and concatenate them at the end
 # 
 # Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2013-08-01 15:00:08 $
+# Last edited on: $Date: 2013-08-01 15:19:09 $
 # 
 
 
@@ -86,7 +86,7 @@ my $name = 1;
 my @outfiles;
 # here goes the main bit:
 foreach my $db(keys %logic2type){
-  my @chroms = @{$wormbase->get_binned_chroms('5')}; # mo MtDNA
+  my @chroms = @{$wormbase->get_binned_chroms(7)};
   $log->write_to("bsub commands . . . . \n\n");
   foreach my $chrom ( @chroms ) {
     $name ++;
