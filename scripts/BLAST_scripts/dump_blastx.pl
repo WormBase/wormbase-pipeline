@@ -5,7 +5,7 @@
 #  and concatenate them at the end
 # 
 # Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2013-08-01 15:23:30 $
+# Last edited on: $Date: 2013-08-02 11:13:40 $
 # 
 
 
@@ -66,7 +66,6 @@ my %logic2type = (
 		  ipi_humanx     => '1',
 		  yeastx         => '1',
 		  slimswissprotx => '1',
-		  slimtremblx    => '1',
 		 );
 
 
