@@ -1642,7 +1642,7 @@ sub get_binned_chroms {
   my %par = @_;
   my $bin_size;
   $bin_size = $par{'-bin_size'} if (defined $par{'-bin_size'});
-  $bin_size = 55 unless (defined $par{'-bin_size'});
+  $bin_size = 55 unless (defined $par{'-bin_size'}); # that is actually the number of the bins and not the size of each
   my %opt;
   $opt{-prefix} = 1;
   $opt{-mito} = 1 if $par{'-mito'};
