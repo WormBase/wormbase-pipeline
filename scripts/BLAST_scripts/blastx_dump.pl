@@ -10,8 +10,8 @@
 #   reduce the memory footprint. If you change it, DON'T use foreach and a large
 #   array of EnsEMBL objects, it invites disaster as it makes a copy of the array.
 #
-# Last edited by: $Author: klh $
-# Last edited on: $Date: 2013-05-07 10:43:37 $ 
+# Last edited by: $Author: mh6 $
+# Last edited on: $Date: 2013-08-02 12:36:57 $ 
 
 my $usage = <<USAGE;
 blastx_dump.pl options:
@@ -125,7 +125,6 @@ my %logic2type = (
 		  ipi_humanx     => 'wublastx_human',
 		  yeastx         => 'wublastx_yeast',
 		  slimswissprotx => 'wublastx_slimSwissProt',
-		  slimtremblx    => 'wublastx_slimTrEmbl',
 		 );		 
 
 
@@ -142,7 +141,6 @@ my %logic2prefix = (
 		    ipi_humanx     => 'ENSEMBL:',
 		    yeastx         => 'SGD:',
 		    slimswissprotx => 'SW:',
-		    slimtremblx    => 'TR:',
 		   );
 
 

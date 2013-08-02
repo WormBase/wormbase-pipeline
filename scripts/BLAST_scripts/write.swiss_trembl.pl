@@ -14,12 +14,11 @@ use GSI;
 use Wormbase;
 use File::Copy;
 
-my ($swiss, $trembl, $debug, $database, $list, $old, $wormpipe_dump);
+my ($swiss, $debug, $database, $list, $old, $wormpipe_dump);
 my ($test, $store);
 # $old is for switch back to protein model
 GetOptions (
 	    "swiss"      => \$swiss,
-	    "trembl"     => \$trembl,
 	    "database:s" => \$database,
 	    "list"       => \$list,
 	    "old"        => \$old,
@@ -46,7 +45,6 @@ my $acefiles  = $wormbase->acefiles;
 my $output_swiss      = "$wormpipe_dump/swissproteins.ace";
 my $output_trembl     = "$wormpipe_dump/tremblproteins.ace";
 my $swiss_list_txt    = "$wormpipe_dump/swisslist.txt";
-my $trembl_list_txt   = "$wormpipe_dump/trembllist.txt";
 
 my $db_files        = "$ENV{'PIPELINE'}/swall_data";
 
@@ -79,26 +77,20 @@ unless ( $list ){
   print "Grabbing proteins from these files: $blast_files\n";
 
   open (DATA,"cat $blast_files |");
-  my (%swisslist, %trembllist);
+  my %swisslist;
   while (<DATA>) {
     if (/Pep_homol\s+\"/) {
       if( /SW:(\S+)\"/ ) {
 	$swisslist{$1} = 1;
-      }
-      elsif( /Pep_homol\s+\"TR:(\S+)\"/ ) {
-	$trembllist{$1} = 1;
       }
     }
   }
   close DATA;
   
   open (SWISS,">$swiss_list_txt");
-  open (TREMBL,">$trembl_list_txt");
   foreach (keys %swisslist) { print SWISS "$_\n"; }
-  foreach (keys %trembllist) { print TREMBL "$_\n"; }
   
   close SWISS;
-  close TREMBL;
 }
 # now extract info from dbm files and write ace files
 
@@ -106,7 +98,6 @@ $db_files = "$database" if defined $database;  # can use other database files if
 
 my %input2output;
 $input2output{"$swiss_list_txt"}  = [ ("$output_swiss", "SwissProt", "SW", "$db_files/slimswissprot" ) ];
-$input2output{"$trembl_list_txt"} = [ ("$output_trembl", "TrEMBL", "TR", "$db_files/slimtrembl_f" ) ];
 
 my @lists_to_dump;
 $db_files = "$database" if defined $database;  # can use other database files if desired
@@ -114,15 +105,13 @@ $db_files = "$database" if defined $database;  # can use other database files if
 my %ORG;
 my %DES;
 
-unless ($swiss || $trembl) {
-    die "usage -swiss for swissprot, -trembl for trembl, -database directory where .gsi database file is\n";
+unless ($swiss ) {
+    die "usage -swiss for swissprot, -database directory where .gsi database file is\n";
 }
 
 my %file_mapping = ( 
 	"$db_files/swissprot2org" => '/tmp/swissprot2org',
-	"$db_files/trembl2org"    => '/tmp/trembl2org',
 	"$db_files/swissprot2des" => '/tmp/swissprot2des',
-	"$db_files/trembl2des"    => '/tmp/trembl2des',
 );
 while (my($from,$to)=each %file_mapping ){
 	unlink $to if -e $to;
@@ -143,24 +132,8 @@ if ($swiss) {
   untie %DES;
 }
 
-if ($trembl) {
-  unless (-s "/tmp/trembl2org") {
-    die "trembl2org not found or empty";
-  }
-  tie (%ORG, 'DB_File', "/tmp/trembl2org", O_RDWR|O_CREAT, 0666, $DB_HASH) or $log->log_and_die("cannot open /tmp/trembl2org DBM file\n");
-  unless (-s "/tmp/trembl2des") {
-    die "trembl2des not found or empty";
-  }
-  tie (%DES, 'DB_File', "/tmp/trembl2des", O_RDWR|O_CREAT, 0666, $DB_HASH) or $log->log_and_die("cannot open /tmp/trembl2des DBM file\n");
-  push( @lists_to_dump,$trembl_list_txt);
-  &output_list($trembl_list_txt,$input2output{"$trembl_list_txt"});
-  untie %ORG;
-  untie %DES;
-}
-
 $log->mail;
 exit(0);
-    
 
 sub output_list
   {
@@ -242,8 +215,6 @@ __END__
 
 -swiss  get SwissProt entries
 
--trembl get TrEMBL  entries
-
 -debug  read/write to different directory
 
 -database specify a non-default .gsi directory to use
@@ -254,4 +225,4 @@ This script creates ace files containing the details of any proteins that have b
 
 The input list are simply a list of ID's of matching proteins.
 
-The .gsi databases are written by fasta2gsi.pl -f /scratch/ensembl/wormpipe/swall_data/slimswissprot whenever the swissprot/trembl are updated.
+The .gsi databases are written by fasta2gsi.pl -f /scratch/ensembl/wormpipe/swall_data/slimswissprot whenever the swissprot are updated.
