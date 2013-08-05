@@ -25,7 +25,7 @@ GetOptions(
   '-dir=s'       => \$originalDir,
 )||die(@!);
 
-my $db = Ace->connect(-path => $db)||die(@!);
+my $db = Ace->connect(-path => $db,-program => '/software/acedb/bin/giface')||die(@!);
 
 # current directory
 $dir = "$originalDir/$stamp";
@@ -66,6 +66,7 @@ sub diff{
    while (<$inf>){
      s/^\s+//;         # new
      s/.*\s\|\s/\| /; # changed <- will barf on internal pipes
+     s/^>\s+/> /;
      print $outf $_;
    }
    $inf->close;
