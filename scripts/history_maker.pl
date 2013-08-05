@@ -451,14 +451,14 @@ if ($addevidence) {
 						-fill => "x"
 						);
   # Reference database label
-  my $db_lbl = $gene_evidence->Label( -text => "Source: $rdatabase",
+  my $db_lbl = $gene_evidence->Label( -text => "Source: $cdatabase",
 				      -background => 'IndianRed4',
 				      -foreground => 'black'
 				    )->pack( -pady => '3'
 					   );
 
   # CDS entry widgets
-  my $CDS_lbl = $gene_evidence->Label( -text => ' CDS  ID',
+  my $CDS_lbl = $gene_evidence->Label( -text => ' MOD  ID',
 				       -background => 'IndianRed4', #was LightGreen
 				       -foreground => 'black'
 				       )->pack(-pady => '6',
@@ -480,7 +480,7 @@ if ($addevidence) {
   
 
   # Add Evidence button
-  my $evi = $gene_evidence->Button( -text => " Tag This CDS",
+  my $evi = $gene_evidence->Button( -text => " Tag This Model",
 				     -command => [\&add_evidence]
 				     )->pack(-side => 'left',
 					     -pady => '2',
@@ -641,14 +641,14 @@ if ($clone) {
   my $gene_clone = $main_gui->Frame( -background => "grey89",
 				     -height     => "400",
 				     -width      => "600",
-				     -label      => "Clone a CDS from the curation database\nSource - $rdatabase",
+				     -label      => "Clone a CDS/Transcript/Pseudogene from the curation database\nSource - $rdatabase",
 				     -relief     => "raised",
 				     -borderwidth => 5,
 				   )->pack( -pady => "5", #modified
 					    -fill => "x"
 					  );
   # CDS entry widgets
-  my $TAG_lbl = $gene_clone->Label( -text => ' CDS  ID',
+  my $TAG_lbl = $gene_clone->Label( -text => '     ID     ',
 				    -background => 'grey89',
 				    -foreground => 'black'
 				  )->pack(-pady => '6',
@@ -670,7 +670,7 @@ if ($clone) {
   # make Return and Enter submit CDS 
   $clonework->bind("<Return>",[ \&clone_gene]);
   # Add Gene button
-  my $evi = $gene_clone->Button( -text => "Clone This CDS",
+  my $evi = $gene_clone->Button( -text => "Clone This Model",
 				 -command => [\&clone_gene]
 			       )->pack(-side => 'left',
 				       -pady => '2',
@@ -920,23 +920,30 @@ exit(0);
 #
 ##############################################################
 
-sub add_evidence
+sub add_evidence 
   {
+    my $CLASS;
     my $refgene = $form_gene3;
     return unless $refgene;
-    my $obj = $db->fetch(CDS => "$refgene");
-    return &error_warning("Invalid CDS","$refgene is not a valid CDS name") unless $obj;
+    my $obj = $cdb->fetch(CDS       => "$refgene");
+    $obj ||= $cdb->fetch(Transcript => "$refgene");
+    $obj ||= $cdb->fetch(Pseudogene => "$refgene");
+    return &error_warning("Invalid ID","$refgene is not a valid model name") unless $obj;
+    if (defined $obj) {$CLASS = "${\$obj->class}"}
     my $method = $obj->Method->name;
-    if (!($method eq "curated")) {
-      &error_warning("Only curated gene models can have top level evidence added in this way.");
-      next;
-    }
+
+    #if (!($method eq "curated")) {
+    #  &error_warning("Only curated gene models can have top level evidence added in this way.");
+    #  next;
+    #}
     
     my $output = $session_file.$refgene;
     
     open (EVI,">$output") or die "cant open $output\n";
     # add the Evidence to the CDS
-    print EVI "\nCDS : \"$refgene\"\n";
+
+
+    print EVI "\n$CLASS : \"$refgene\"\n";
     if (defined $person){ print EVI "Evidence Curator_confirmed $person\n";}
     else {print EVI "Evidence\nRemark \"[No Curator specified]";}
     
@@ -1153,8 +1160,14 @@ sub clone_gene {
     my $output = $session_file."cloned".$cds;
     open (CLO,">$output") or die "cant open $output\n";
     last if( $cds eq "end" );
-    my $cloneobj = $db->fetch(CDS => "$cds");
-    return &error_warning("Invalid CDS","$cds is not a valid CDS name or does not exist in the linked database") unless $cloneobj;
+    my $TYPE;
+
+    my $cloneobj = $db->fetch(CDS      => $cds);
+    $cloneobj ||= $db->fetch(Transcript=> $cds);
+    $cloneobj ||= $db->fetch(Pseudogene=> $cds);
+
+    if (defined $cloneobj) {$TYPE = "${\$cloneobj->class}"}
+    return &error_warning("Invalid Identifier","$cds is not a valid CDS/Transcript/Pseudogene name or does not exist in the linked database") unless $cloneobj;
     my $species = $cloneobj->Species->name;
     my $gene = $cloneobj->Gene->name;
     my $lab = $cloneobj->From_laboratory->name;
@@ -1162,10 +1175,15 @@ sub clone_gene {
 
     # capture parent clone info
     my $clone = $cloneobj->Sequence;
-    my @clone_CDSs = $clone->CDS_child;
+    my @clone_CDSs;
+    if ($TYPE eq "CDS") {
+      @clone_CDSs = $clone->CDS_child;
+    }
+    else {
+      @clone_CDSs = $clone->$TYPE;
+    }
     my $start;
     my $end;
-
     foreach my $CDS ( @clone_CDSs ) {
       next unless ($CDS->name eq "$cds");
       $start = $CDS->right->name;
@@ -1179,34 +1197,51 @@ sub clone_gene {
     else {
       $cds_identifier = $cds.":cloned";
     }
-    
+    # cloning a Transcript_object - Y73B6BL.269b
+ 
     my ($day, $mon, $yr)  = (localtime)[3,4,5];
     my $date = sprintf("%02d%02d%02d",$yr-100, $mon+1, $day);
+      
     #Print Output file
     print CLO "Sequence : $seq\n";
-    print CLO "CDS_child \"$cds_identifier\" $start $end\n";
-    print CLO "\nCDS : $cds_identifier\n";
+    if ($TYPE eq 'CDS') {
+      print CLO "CDS_child \"$cds_identifier\" $start $end\n";
+    }
+    else {
+      print CLO "$TYPE \"$cds_identifier\" $start $end\n";
+    }
+    print CLO "\n$TYPE : $cds_identifier\n";
+    if ($TYPE eq "Transcript"){
+      print CLO "Brief_identification \"$species ncRNA gene\"\n";
+    }
     foreach ($cloneobj->Source_exons) {
       my ($start,$end) = $_->row(0);
       print CLO "Source_exons ",$start->name," ",$end->name,"\n";
     }
     print CLO "Sequence $seq\n";
-    print CLO "CDS\n";
     print CLO "From_laboratory $lab\n";
     print CLO "Isoform Curator_confirmed $person\n" if $person;
     print CLO "Gene $gene\n" if $gene;
     print CLO "Species \"$species\"\n" if $species;
     if (defined $person){ 
       print CLO "Evidence Curator_confirmed $person\n" if $person;
-      print CLO "Remark \"[$date $user] Cloned from the template CDS $clone_form\"Curator_confirmed $person\n";
+      print CLO "Remark \"[$date $user] Cloned from the template $TYPE $clone_form\"Curator_confirmed $person\n";
     }
     else {
       print CLO "Evidence";
-      print CLO "Remark \"[$date] Cloned from the template CDS $clone_form\"\n";
+      print CLO "Remark \"[$date] Cloned from the template $TYPE $clone_form\"\n";
     }
-    print CLO "Method curated\n";
+    if ($TYPE eq "CDS") {
+      print CLO "Method curated\n";
+    }
+    elsif ($TYPE eq "Transcript") {
+      print CLO "Method ncRNA\n";
+    }
+    else {
+      print CLO "Method $TYPE\n";
+    }
     close CLO;
-
+    
     my $return_status = system("xremote -remote 'parse $output'");
     if ( ( $return_status >> 8 ) != 0 ) {
       &error_warning("WARNING", "X11 connection appears to be lost");
