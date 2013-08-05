@@ -2773,7 +2773,7 @@ Remark "Predicted polyadenylation signal sequences. Derived from an analysis by 
 Method : "SL1" 
 Remark "SL1 trans-splice acceptor site"
 Colour RED
-Strand_sensitive	
+Strand_sensitive Show_up_strand	
 Width 2.200000
 Show_text	
 GFF_source "SL1"
@@ -2783,7 +2783,7 @@ GFF_SO "SO:0000708" // SL1_acceptor_site
 Method : "SL2" 
 Remark "SL2 trans-splice acceptor site"
 Colour YELLOW
-Strand_sensitive	
+Strand_sensitive Show_up_strand	
 Width 2.500000
 Show_text	
 GFF_source "SL2"
@@ -2793,7 +2793,8 @@ GFF_SO "SO:0000709" // SL2_acceptor_site
 Method : "TSL"
 Remark "Indeterminate trans-splice acceptor site."
 Colour ORANGE
-Width 2.0
+Strand_sensitive Show_up_strand	
+Width 2.5
 Show_text
 
 Method : "vector"
