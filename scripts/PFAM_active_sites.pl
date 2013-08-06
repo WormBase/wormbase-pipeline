@@ -1,7 +1,7 @@
 #!/software/bin/perl -w
 
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2013-08-06 15:18:48 $
+# Last updated on: $Date: 2013-08-06 16:00:58 $
 
 use strict;
 use Net::FTP;
@@ -112,18 +112,19 @@ exit;
 sub update_database {
 	$log->write_to("\n\nUpdating database from PFAM ftp site\n");
 	
-        my $ftp = Net::FTP->new('ftp.sanger.ac.uk',Debug => 0)
-                  ||$log->log_and_die("Cannot connect to some.host.name: $@\n");
-        $ftp->login("anonymous",'-anonymous@')
-                  ||$log->log_and_die("Cannot login ${\$ftp->message}\n");
-	$ftp->cwd ('pub/databases/Pfam/current_release/database_files/')
-                  ||$log->log_and_die("Cannot change working directory ${\$ftp->message}\n");
-        $ftp->binary()||$log->log_and_die("cannot change mode to binary ${\$ftp->message}\n");
 
 	my @tables = qw(pfamseq ncbi_taxonomy markup_key pfamseq_markup);
 	foreach my $table (@tables){
 		$log->write_to("\tfetching $table.txt\n");
-		
+	
+                my $ftp = Net::FTP->new('ftp.sanger.ac.uk',Debug => 0)
+                  ||$log->log_and_die("Cannot connect to some.host.name: $@\n");
+                $ftp->login("anonymous",'-anonymous@')
+                  ||$log->log_and_die("Cannot login ${\$ftp->message}\n");
+
+                $ftp->cwd('/pub/databases/Pfam/current_release/database_files')
+                  ||$log->log_and_die("Cannot change working directory ${\$ftp->message}\n");
+                $ftp->binary()||$log->log_and_die("cannot change mode to binary ${\$ftp->message}\n");
 		
 		# pfamseq table is subject to unannounced column re-ordering, so update the schema.
 		if ($ftp->get("${table}.sql.gz","$tmpDir/${table}.sql.gz")){
@@ -145,6 +146,7 @@ sub update_database {
 		  $log->log_and_die("Couldn't find $table file to download :(\n");
 		}
 
+                $ftp->quit;
 
 		# flush the table
 		$log->write_to("\tclearing table $table\n");
