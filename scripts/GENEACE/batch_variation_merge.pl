@@ -46,24 +46,54 @@ if ($server){
 $log->write_to("Contacting NameServer $DB.....\n");
 $db = VariationDB_handler->new($DB,$user,$pass);
 
+my (@merges, %all_ids);
+
 my $inf = IO::File->new($file,'r')||die(@!);
 while (<$inf>){
   chomp;
-  my @variations = split;
+  my ($target, @to_merge) = split;
 
-  # minimalistic sanity check
-  unless(scalar(@variations) == scalar(grep{/WBVar\d+/}@variations)){
-      $log->write_to("ERROR: $_ contains a non WBVarID ... skipping the line\n");
-      next;
+  #
+  # check that none of the ids have been seen previously in the file
+  #
+  if (grep { exists $all_ids{$_} } ($target, @to_merge)) {
+    $db->dienice("VALIDATION FAILED: Duplicate ids in list");
+  }
+  map { $all_ids{$_} = 1 } ($target, @to_merge);
+  
+  #
+  # Check that to-merge list does not include target!
+  #
+  if (grep { $_ eq $target } @to_merge) {
+    $db->dienice("VALIDATION FAILED: merge list (@to_merge) includes target variation ($target)");
   }
 
-  my $variation = shift @variations;
-  foreach my $v(@variations){
-   if (my $ids = $db->merge_variations($variation, $v)){
-       $log->write_to("Merge complete, $v is DEAD and has been merged into variation $variation\n");
-   }else {
-       $log->write_to("ERROR: Sorry, the variation merge of $v into $variation failed\n");
-   }
+  #
+  # Check that we are dealing exclusively with WBVar ids
+  #
+  foreach my $var ($target, @to_merge) {
+    if ($var !~ /^WBVar/) {
+      $db->dienice("VALIDATION FAILED: You have a non-WBVar id in your list ($var)");
+    }
+    $db->validate_id($var);
+  }
+
+  push @merges, [$target, @to_merge];
+
+}
+
+#
+# Validation complete. Can now do actual merges with (semi) confidence
+#
+foreach my $merge_arr (@merges) {
+  my ($target, @to_merge) = @$merge_arr;
+  
+  foreach my $v(@to_merge){
+    if (my $ids = $db->merge_variations($target, $v)){
+      $log->write_to("Merge complete, $v is DEAD and has been merged into variation $target\n");
+    } else {
+      $log->write_to("ERROR: Sorry, the variation merge of $v into $target failed\n");
+    }
   }
 }
 
@@ -87,27 +117,14 @@ sub new{
     return $db;
 }
 
-# the merge method
-# my $var_id = $db->merge_variations($id_to_keep, $id_to_kill);
+
 sub merge_variations {
   my ($db, $variation, $merge_variation) = @_;
   
-  my $variation_id  = ($db->idGetByAnyName($variation)->[0]  || $variation); #allow use of any name or variatiom_id
-  my $merge_id = ($db->idGetByAnyName($merge_variation)->[0] || $merge_variation); #allow use of any name or variation_id
-  $db->validate_id($variation_id) or return undef;
-  $db->validate_id($merge_id) or return undef;
-  
-  if ( $variation_id eq $merge_id) {
-    $db->dienice("FAILED : $variation and $merge_variation are the same!");
-    return undef;
-  }
-  
-  #always remove names from merged id
-  $db->remove_all_names($merge_id);
+  $db->remove_all_names($merge_variation);
 
-  #do the merge
-  if ($db->idMerge($merge_id,$variation_id)) {
-    return ([$variation_id,$merge_id]);
+  if ($db->idMerge($merge_variation,$variation)) {
+    return ([$variation,$merge_variation]);
   } else {
     $db->dienice("FAILED : merge failed");
     return undef;
