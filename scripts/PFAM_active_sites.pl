@@ -1,9 +1,10 @@
 #!/software/bin/perl -w
 
-# Last updated by: $Author: pad $
-# Last updated on: $Date: 2011-01-20 11:06:11 $
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2013-08-06 14:10:43 $
 
-use strict;                                      
+use strict;
+use Net::FTP;
 use lib $ENV{'CVS_DIR'};
 use Wormbase;
 use Getopt::Long;
@@ -20,19 +21,21 @@ my ($help, $debug, $test, $verbose, $store, $wormbase);
 my $species = 'elegans';
 my $port= 3306;
 my $server='farmdb1';
+my $tmpDir='/tmp';
 my ($user, $pass, $update);
 
-GetOptions ("help"       => \$help,
-            "debug=s"    => \$debug,
-	    	"test"       => \$test,
-	    	"verbose"    => \$verbose,
-	    	"store:s"    => \$store,
-	    	"species:s"  => \$species,
-	    	"user:s"     => \$user,
-	    	"pass:s"     => \$pass,
-	    	"update"     => \$update,
-		"port=s"     => \$port,
-		'server=s'   => \$server,
+GetOptions ('help'       => \$help,
+            'debug=s'    => \$debug,
+            'test'       => \$test,
+	    'verbose'    => \$verbose,
+	    'store:s'    => \$store,
+	    'species:s'  => \$species,
+	    'user:s'     => \$user,
+	    'pass:s'     => \$pass,
+	    'update'     => \$update,
+            'port=s'     => \$port,
+            'server=s'   => \$server,
+            'tmpdir=s'   => \$tmpDir
            );
 
 if ( $store ) {
@@ -109,45 +112,47 @@ exit;
 sub update_database {
 	$log->write_to("\n\nUpdating database from PFAM ftp site\n");
 	
-	my $ftp = glob("~ftp/pub/databases/Pfam/current_release/database_files");
-	chdir ($ftp);
+        my $ftp = Net::FTP->new('ftp.sanger.ac.uk',Debug => 0)
+                  ||$log->log_and_die("Cannot connect to some.host.name: $@\n");
+        $ftp->login("anonymous",'-anonymous@')
+                  ||$log->log_and_die("Cannot login ${\$ftp->message}\n");
+	$ftp->cwd ('pub/databases/Pfam/current_release/database_files/')
+                  ||$log->log_and_die("Cannot change working directory ${\$ftp->message}\n");
+        $ftp->binary()||$log->log_and_die("cannot change mode to binary ${\$ftp->message}\n");
+
 	my @tables = qw(pfamseq ncbi_taxonomy markup_key pfamseq_markup);
 	foreach my $table (@tables){
 		$log->write_to("\tfetching $table.txt\n");
 		
-		if (-e $table.".txt.gz"){
-		  $wormbase->run_command("cp -f $table.txt.gz /tmp/$table.txt.gz", $log);
-		  $log->write_to("\tunzippping /tmp/$table.txt\n");
-		  $wormbase->run_command("gunzip -f /tmp/$table.txt.gz", $log);
-		}
-		
-		elsif (-e $table.".txt"){
-		  $log->write_to("\tgzip archive abscent....using $table.txt.\n");
-		  $wormbase->run_command("cp -f $table.txt /tmp/$table.txt", $log);
-		}
-
-		else {
-		  $log->log_and_die("Couldn't find $table file to copy :(\n");
-		}
 		
 		# pfamseq table is subject to unannounced column re-ordering, so update the schema.
-#		if ($table eq 'pfamseq') {
-		  if (-e "$table.sql.gz"){
+		if ($ftp->get("${table}.sql.gz","$tmpDir/${table}.sql.gz")){
 		    $log->write_to("\tupdating the $table table schema\n");
-                    $wormbase->run_command("echo \"SET FOREIGN_KEY_CHECKS=0;\">/tmp/$table.sql",$log);
-		    $wormbase->run_command("zcat $table.sql.gz >> /tmp/$table.sql", $log);
-                    $wormbase->run_command("echo \"SET FOREIGN_KEY_CHECKS=1;\">>/tmp/$table.sql",$log);
-		    $wormbase->run_command("mysql -h $server -P$port -u$user -p$pass worm_pfam < /tmp/$table.sql", $log);
-		  }
-		  else {$log->write_to("\tcouldn't update the $table table schema\n");}
-#		}
+                    $wormbase->run_command("echo \"SET FOREIGN_KEY_CHECKS=0;\"> $tmpDir/${table}.sql",$log);
+		    $wormbase->run_command("zcat $tmpDir/$table.sql.gz >> $tmpDir/${table}.sql", $log);
+                    $wormbase->run_command("echo \"SET FOREIGN_KEY_CHECKS=1;\">> $tmpDir/${table}.sql",$log);
+		    $wormbase->run_command("mysql -h $server -P$port -u$user -p$pass worm_pfam < $tmpDir/${table}.sql", $log);
+		    $wormbase->run_command("rm -f $tmpDir/${table}.sql.gz", $log);
+		    $wormbase->run_command("rm -f $tmpDir/${table}.sql", $log);
+		} else {$log->write_to("\tcouldn't update the $table table schema\n");}
+
+		if ($ftp->get("${table}.txt.gz","$tmpDir/${table}.txt.gz")){
+		  $log->write_to("\tunzippping $tmpDir/$table.txt\n");
+		  $wormbase->run_command("gunzip -f $tmpDir/$table.txt.gz", $log);
+		} elsif ($ftp->get("${table}.txt","$tmpDir/${table}.txt")){
+		  $log->write_to("\tgzip archive abscent....using $table.txt.\n");
+		} else {
+		  $log->log_and_die("Couldn't find $table file to download :(\n");
+		}
+
+
 		# flush the table
 		$log->write_to("\tclearing table $table\n");
 		$DB->do("TRUNCATE TABLE $table") or $log->log_and_die($DB->errstr."\n");
 		# load in the new data.
 		$log->write_to("\tloading data in to $table\n");
                 $DB->do("SET FOREIGN_KEY_CHECKS=0");		
-		$DB->do("LOAD DATA LOCAL INFILE \"/tmp/$table.txt\" INTO TABLE $table".' FIELDS ENCLOSED BY \'\\\'\'') or $log->log_and_die($DB->errstr."\n");
+		$DB->do("LOAD DATA LOCAL INFILE \"$tmpDir/$table.txt\" INTO TABLE $table".' FIELDS ENCLOSED BY \'\\\'\'') or $log->log_and_die($DB->errstr."\n");
                 $DB->do("SET FOREIGN_KEY_CHECKS=1");
 
 		# this will fall to pieces as soon as Rob changes the name of the column again
@@ -158,8 +163,8 @@ sub update_database {
 	        }
 		# clean up files
 		
-		$wormbase->run_command("rm -f /tmp/pfamseq.sql",$log) if (-e "/tmp/pfamseq.sql");
-		$wormbase->run_command("rm -f /tmp/$table.txt", $log);
+		$wormbase->run_command("rm -f $tmpDir/$table.txt", $log);
+
 	      }
 	$log->write_to("Database update complete\n\n");
 }
