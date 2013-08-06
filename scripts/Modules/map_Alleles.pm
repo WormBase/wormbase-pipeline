@@ -198,6 +198,17 @@ sub filter_alleles {
     my $name = $allele->Public_name || "No_public_name";
     my $remark = ($allele->Remark||'none');
 
+    my ($status1, $status2, $live1, $live2);
+    $status1 = $allele->Status;
+    ($status2) = $allele->Status;
+    $live1 = $allele->Live;
+    ($live2) = $allele->Live;
+
+    if (not defined $allele->Status or $allele->Status ne 'Live') {
+      $log->write_to("WARNING: $allele ($name) is not Live, so skipping\n");
+      next;
+    }
+
     # has no sequence connection
     if ( ! defined $allele->Mapping_target ) {
       $log->write_to("ERROR: $allele ($name) has missing Mapping_target tag (Remark: $remark)\n");
