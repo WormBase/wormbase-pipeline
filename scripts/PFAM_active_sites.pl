@@ -1,7 +1,7 @@
 #!/software/bin/perl -w
 
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2013-08-06 14:10:43 $
+# Last updated on: $Date: 2013-08-06 15:18:48 $
 
 use strict;
 use Net::FTP;
@@ -59,7 +59,7 @@ $log->write_to("Getting PFAM active sites for $species\n");
 
 
 $log->write_to("\tconnecting to worm_pfam:$server as $user\n");
-my $DB = DBI -> connect("DBI:mysql:worm_pfam:$server;port=$port", $user, $pass, {RaiseError => 1})
+my $DB = DBI -> connect("DBI:mysql:worm_pfam:$server;port=$port;mysql_local_infile=1", $user, $pass, {RaiseError => 1})
     or  $log->log_and_die("cannot connect to db, $DBI::errstr");
 
 &update_database if $update;
