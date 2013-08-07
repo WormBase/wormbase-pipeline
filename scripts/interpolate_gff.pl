@@ -11,12 +11,12 @@
 # REQUIREMENTS:  ---
 #         BUGS:  ---
 #        NOTES:  ---
-#       AUTHOR:  $Author: klh $
+#       AUTHOR:  $Author: mh6 $
 #      COMPANY:
 #      VERSION:  1.0
 #      CREATED:  13/02/06 09:37:00 GMT
-#     REVISION:  $Revision: 1.25 $
-# includes code by: $Author: klh $
+#     REVISION:  $Revision: 1.26 $
+# includes code by: $Author: mh6 $
 #===============================================================================
 
 # BACS / SNPS / GENEs
@@ -169,12 +169,15 @@ $log->mail();
 exit 0;
 
 ###############################
+# only takes Genes
+# if it is supposed to take Variation alleles too, uncomment the 2 lines
 sub dump_alleles {
     my ( $wormbase, $chromosome ) = @_;
 
-#	my $cmd = "GFF_method_dump.pl -database ".$wormbase->autoace." -method Allele -dump_dir ".$wormbase->autoace."/GFF_SPLITS -chromosome $chromosome";
+    #my $cmd = "GFF_method_dump.pl -database ".$wormbase->autoace." -method Allele -dump_dir ".$wormbase->autoace."/GFF_SPLITS -chromosome $chromosome";
+    #$wormbase->run_script($cmd);
     my $cmd = "grep Allele "
-      . $wormbase->chromosomes . "/${cprefix}${chromosome}.gff >"
+      . "$chromdir/${cprefix}${chromosome}_gene.gff >>"
       . "$chromdir/${cprefix}${chromosome}_allele.gff";
     print `$cmd`;
 }
