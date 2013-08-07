@@ -15,7 +15,7 @@
 #      COMPANY:
 #      VERSION:  1.0
 #      CREATED:  13/02/06 09:37:00 GMT
-#     REVISION:  $Revision: 1.29 $
+#     REVISION:  $Revision: 1.30 $
 # includes code by: $Author: mh6 $
 #===============================================================================
 
@@ -174,12 +174,18 @@ exit 0;
 sub dump_alleles {
     my ( $wormbase, $chromosome ) = @_;
 
-    my $cmd = "GFF_method_dump.pl -database ".$wormbase->autoace." -method Allele -dump_dir ".$wormbase->autoace."/GFF_SPLITS -chromosome ${cprefix}${chromosome} -giface ${\$wormbase->giface}";
+    my @methods = ('Allele','Deletion_allele','Insertion_allele','Deletion_and_Insertion_allele','Substitution_allele','Transposon_insertion');
+    my $meth=join(',',@methods);
+
+    my $cmd = "GFF_method_dump.pl -database ".$wormbase->autoace." -method $meth -dump_dir ".$wormbase->autoace."/GFF_SPLITS -chromosome ${cprefix}${chromosome} -giface ${\$wormbase->giface}";
     $wormbase->run_script($cmd);
-    $cmd = "grep Allele "
-      . "$chromdir/${cprefix}${chromosome}_gene.gff >>"
-      . "$chromdir/${cprefix}${chromosome}_allele.gff";
-    print `$cmd`;
+
+    my $targetfile =  "${cprefix}${chromosome}_allele.gff";
+    unlink  $targetfile if -e $targetfile;
+
+    foreach my $i(@methods){
+       "cat ${\$wormbase->gff_split}/${cprefix}${chromosome}_$i.gff >> $targetfile";
+    }
 }
 
 package Log_files;
