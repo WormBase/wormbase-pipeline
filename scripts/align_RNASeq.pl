@@ -186,7 +186,7 @@
 # by Gary Williams
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2013-07-26 08:44:41 $
+# Last updated on: $Date: 2013-08-07 09:24:36 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -1750,6 +1750,7 @@ sub get_SRX_file {
     if ( ( $result >> 8 ) != 0 )  {$failed=1} # this seems to always return an error code, perhaps because it is verbose?
     
     my $file = $line[$#line - 3];
+    if (! -e $file) {$log->log_and_die("Didn't get file $file from the SRA in sample: $arg.\nFrom EBI report line $line\n");}
     system("gunzip $file");
   }
   close(ENTRY);
