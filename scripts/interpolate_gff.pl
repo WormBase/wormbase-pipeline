@@ -15,7 +15,7 @@
 #      COMPANY:
 #      VERSION:  1.0
 #      CREATED:  13/02/06 09:37:00 GMT
-#     REVISION:  $Revision: 1.27 $
+#     REVISION:  $Revision: 1.28 $
 # includes code by: $Author: mh6 $
 #===============================================================================
 
@@ -174,7 +174,7 @@ exit 0;
 sub dump_alleles {
     my ( $wormbase, $chromosome ) = @_;
 
-    my $cmd = "GFF_method_dump.pl -database ".$wormbase->autoace." -method Allele -dump_dir ".$wormbase->autoace."/GFF_SPLITS -chromosome $chromosome";
+    my $cmd = "GFF_method_dump.pl -database ".$wormbase->autoace." -method Allele -dump_dir ".$wormbase->autoace."/GFF_SPLITS -chromosome $chromosome -giface ${\$wormbase->giface}";
     $wormbase->run_script($cmd);
     $cmd = "grep Allele "
       . "$chromdir/${cprefix}${chromosome}_gene.gff >>"
