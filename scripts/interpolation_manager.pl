@@ -56,7 +56,7 @@ my $log = Log_files->make_build_log($wb);
 ####################################
 
 my $m      = LSF::JobManager->new();
-my @bsub_opts = (-M => 4000000,
+my @bsub_opts = (-M => 4000,
                  -R => 'select[mem>=4000] rusage[mem=4000]');
 my $mother = $m->submit(@bsub_opts, "perl $ENV{CVS_DIR}/interpolate_gff.pl -prep $flags");
 my $myid   = $mother->id;
