@@ -15,7 +15,7 @@
 #      COMPANY:
 #      VERSION:  1.0
 #      CREATED:  13/02/06 09:37:00 GMT
-#     REVISION:  $Revision: 1.30 $
+#     REVISION:  $Revision: 1.31 $
 # includes code by: $Author: mh6 $
 #===============================================================================
 
@@ -98,6 +98,9 @@ my $cprefix=$wormbase->chromosome_prefix();
 my @chromosomes = $wormbase->get_chromosome_names(-prefix => 1);
 @chromosomes = ( "${cprefix}${chromosome}", ) if $chromosome;
 
+# specifies the Allele Methods, that should get parsed/dumped/interpolated
+my @alleMethods = ('Allele','Deletion_allele','Insertion_allele','Deletion_and_Insertion_allele','Substitution_allele','Transposon_insertion');
+
 foreach my $chrom (@chromosomes) {
 ###################################################################################
     # $chrom,$chromdir,$snps,$genes,$clones,$rev_genes
@@ -109,10 +112,11 @@ foreach my $chrom (@chromosomes) {
 
     # Input files
     my @data;
-    push( @data, "$chromdir/${chrom}_allele.gff" ) if ( $alleles || $all );    # GFF_method_dump.pl -method Allele
-    push( @data, "$chromdir/${chrom}_gene.gff" )      if ( $genes  || $all );
-    push( @data, "$chromdir/${chrom}_clone_acc.gff" ) if ( $clones || $all );
+    @data = @alleMethods if ( $alleles || $all );
+    push( @data, 'gene' )      if ( $genes  || $all );
+    push( @data, 'clone_acc' ) if ( $clones || $all );
     foreach my $file (@data) {
+        $file = "$chromdir/${chrom}_$file.gff";
         $chrom =~ /$cprefix(.*)$/;
 
         &dump_alleles( $wormbase, $1 ) if ( $alleles && ( !-e $file ) );
@@ -174,18 +178,9 @@ exit 0;
 sub dump_alleles {
     my ( $wormbase, $chromosome ) = @_;
 
-    my @methods = ('Allele','Deletion_allele','Insertion_allele','Deletion_and_Insertion_allele','Substitution_allele','Transposon_insertion');
-    my $meth=join(',',@methods);
-
+    my $meth=join(',',@alleMethods);
     my $cmd = "GFF_method_dump.pl -database ".$wormbase->autoace." -method $meth -dump_dir ".$wormbase->autoace."/GFF_SPLITS -chromosome ${cprefix}${chromosome} -giface ${\$wormbase->giface}";
     $wormbase->run_script($cmd);
-
-    my $targetfile =  "${cprefix}${chromosome}_allele.gff";
-    unlink  $targetfile if -e $targetfile;
-
-    foreach my $i(@methods){
-       "cat ${\$wormbase->gff_split}/${cprefix}${chromosome}_$i.gff >> $targetfile";
-    }
 }
 
 package Log_files;
