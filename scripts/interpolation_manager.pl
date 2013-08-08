@@ -63,9 +63,7 @@ my $myid   = $mother->id;
 
 push @bsub_opts, (-w => "ended($myid)");
 foreach my $i ($wb->get_chromosome_names) {
-    $m->submit( @bsub_opts, "perl $ENV{CVS_DIR}/interpolate_gff.pl -chrom $i $flags -allele" );
-    $m->submit( @bsub_opts, "perl $ENV{CVS_DIR}/interpolate_gff.pl -chrom $i $flags -gene" );
-    $m->submit( @bsub_opts, "perl $ENV{CVS_DIR}/interpolate_gff.pl -chrom $i $flags -clone" );
+    $m->submit( @bsub_opts, "perl $ENV{CVS_DIR}/interpolate_gff.pl -chrom $i $flags -all" );
 }
 
 $m->wait_all_children( history => 1 );
