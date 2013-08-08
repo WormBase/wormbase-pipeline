@@ -80,18 +80,12 @@ $m->clear;                    # clear out the job manager to reuse.
 #################
 if ( !$noload ) {
     my $acedir = $wb->autoace . "/acefiles";
-    foreach my $file ( glob("$acedir/interpolated_allele_*.ace") ) {
-      $wb->load_to_database( $wb->autoace, $file, "interpolate_alleles", $log );
-    }
-    foreach my $file ( glob("$acedir/interpolated_gene_*.ace") ) {
-      $wb->load_to_database( $wb->autoace, $file, "interpolate_genes", $log );
-    }
-    foreach my $file ( glob("$acedir/interpolated_clone_*.ace") ) {
-      $wb->load_to_database( $wb->autoace, $file, "interpolate_clones", $log );
+    foreach my $file ( glob("$acedir/interpolated_*_*.ace") ) {
+      $wb->load_to_database( $wb->autoace, $file, "interpolated_positions", $log );
     }
     if (-e "$acedir/genetic_map_fixes.ace"){
       my $backup = 0; # we don't need to backup the database
-      my $accept_large_differences = 1; # but we do want to accept variations in the number pf map fixes loaded in compared to the previous Build
+      my $accept_large_differences = 1; # but we do want to accept variations in the number of map fixes loaded in compared to the previous Build
       $wb->load_to_database($wb->autoace,"$acedir/genetic_map_fixes.ace","genetic_map_corrections",$log, $backup, $accept_large_differences);
     }
 }

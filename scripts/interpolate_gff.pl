@@ -15,7 +15,7 @@
 #      COMPANY:
 #      VERSION:  1.0
 #      CREATED:  13/02/06 09:37:00 GMT
-#     REVISION:  $Revision: 1.31 $
+#     REVISION:  $Revision: 1.32 $
 # includes code by: $Author: mh6 $
 #===============================================================================
 
@@ -115,17 +115,16 @@ foreach my $chrom (@chromosomes) {
     @data = @alleMethods if ( $alleles || $all );
     push( @data, 'gene' )      if ( $genes  || $all );
     push( @data, 'clone_acc' ) if ( $clones || $all );
-    foreach my $file (@data) {
-        $file = "$chromdir/${chrom}_$file.gff";
+    foreach my $f (@data) {
+        $file = "$chromdir/${chrom}_$f.gff";
         $chrom =~ /$cprefix(.*)$/;
 
         &dump_alleles( $wormbase, $1 ) if ( $alleles && ( !-e $file ) );
 
         my $fh = IO::File->new( $file, "r" ) || ( $log->write_to("cannot find: $file\n") && next );
-        $file =~ /${chrom}_(allele|gene|clone)/;    # hmpf
-        my $of = IO::File->new("> $outdir/interpolated_$1_$chrom.ace");
 
-        $log->write_to("writing to: interpolated_$1_$chrom.ace\n");
+        my $of = IO::File->new("> $outdir/interpolated_$f_$chrom.ace");
+        $log->write_to("writing to: interpolated_$f_$chrom.ace\n");
 
         while (<$fh>) {
             next if /\#/;
