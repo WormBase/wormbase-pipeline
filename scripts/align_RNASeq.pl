@@ -186,7 +186,7 @@
 # by Gary Williams
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2013-08-07 09:24:36 $
+# Last updated on: $Date: 2013-08-08 11:30:56 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -458,6 +458,11 @@ if ($species eq 'elegans') {
 	    SRX185663 => ["RNASeq.elegans.SRP015688.L4.linker-cells.nhr-67.2", 'phred', 'single'],
 	    SRX185664 => ["RNASeq.elegans.SRP015688.L4.linker-cells.nhr-67.3", 'phred', 'single'],
 	    SRX185665 => ["RNASeq.elegans.SRP015688.L4.linker-cells.nhr-67.4", 'phred', 'single'],
+
+# To be added
+# SRP015332 WBPaper00041119 - multiple insert size paired-end reads
+# ERP000509 GSE30612 - RGASP project
+
 	    );
 
   if ($ribosome_occupancy) {
@@ -971,7 +976,7 @@ IIIIIIIIHIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIGIGIDHIIIIIGIGI
   # run tophat against a few experiments at a time - we don't want to
   # have too many fastq files ungzipped at a time otherwise we may run
   # out of quota filespace.
-  my $NUMBER_TO_RUN_AT_ONCE = 20;
+  my $NUMBER_TO_RUN_AT_ONCE = 50;
 
   chdir $RNASeqSRADir;
 
