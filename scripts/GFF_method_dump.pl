@@ -8,8 +8,8 @@
 #
 # dumps the method through sace / tace and concatenates them.
 #
-# Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2013-08-08 12:50:06 $
+# Last edited by: $Author: klh $
+# Last edited on: $Date: 2013-08-08 14:42:08 $
 
 
 use lib $ENV{CVS_DIR};
@@ -116,6 +116,7 @@ if ( @methods ) {
       
       foreach my $sequence ( @sequences ) {
         my $file = "$dump_dir/tmp/${sequence}_${method}.$$";
+        $file .= ($gff3) ? ".gff3" : ".gff2";
         my $cmd = sprintf("gif seqget %s +method %s; seqfeatures -version %s -file %s", 
                           $sequence, 
                           $method,
@@ -164,6 +165,7 @@ if ( @methods ) {
 
     foreach my $sequence (@sequences) {
       my $file = "$dump_dir/tmp/${sequence}.gff_dump.$$"; 
+      $file .= ($gff3) ? ".gff3" : ".gff2";
       my $cmd = sprintf("gif seqget %s; seqfeatures -version %s -file %s", 
                         $sequence, 
                         ($gff3) ? "3" : "2",
