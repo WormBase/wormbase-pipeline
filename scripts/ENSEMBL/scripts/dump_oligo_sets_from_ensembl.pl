@@ -84,7 +84,8 @@ foreach my $vendor (sort { $b cmp $a } keys %arrays_by_vendor) {
       if (scalar(keys %wb_names) == 0) {
         die "Could not determine any WormBase names for probe id ", $probe->dbID, "\n";
       } elsif (scalar(keys %wb_names) > 1) {
-        warn "Multiple WormBase names for probe id ", $probe->dbID, "\n";
+        my @nm = sort keys %wb_names;
+        warn "Multiple WormBase names for probe id ", $probe->dbID, " : (@nm) ";
       }
 
       my @pf = @{$probe->get_all_ProbeFeatures};
@@ -273,12 +274,32 @@ sub write_ace {
         foreach my $strand (keys %{$res_hash->{$pid}}) {
           foreach my $seggroup (@{$res_hash->{$pid}->{$strand}}) {
             foreach my $seg (@$seggroup) {
+              my ($gst, $gend) = ($seg->{g_st}, $seg->{g_en});
+              my ($pst, $pend) = ($seg->{p_st}, $seg->{p_en});
+              if ($gend > $chr_len) {
+                my $overhang = $gend - $chr_len;
+                $gend -= $overhang;
+                if ($strand < 0) {
+                  $pst += $overhang;
+                } else {
+                  $pend -= $overhang;
+                }
+              }
+              if ($gst < 1) {
+                my $overhang = abs($gst) + 1;
+                $gst += $overhang;
+                if ($strand < 0) {
+                  $pend -= $overhang;
+                } else {
+                  $pst += $overhang;
+                }
+              }
               printf("Oligo_set_homol %s Oligo_set_mapping 100.0 %d %d %d %d\n", 
                      $pid, 
-                     $strand < 0 ? $seg->{g_en} : $seg->{g_st}, 
-                     $strand < 0 ? $seg->{g_st} : $seg->{g_en},
-                     $seg->{p_st}, 
-                     $seg->{p_en});
+                     $strand < 0 ? $gend : $gst, 
+                     $strand < 0 ? $gst : $gend,
+                     $pst, 
+                     $pend);
             }
           }
         }
