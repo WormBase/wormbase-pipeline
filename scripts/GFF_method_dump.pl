@@ -8,8 +8,8 @@
 #
 # dumps the method through sace / tace and concatenates them.
 #
-# Last edited by: $Author: klh $
-# Last edited on: $Date: 2013-07-23 15:26:25 $
+# Last edited by: $Author: mh6 $
+# Last edited on: $Date: 2013-08-08 12:50:06 $
 
 
 use lib $ENV{CVS_DIR};
@@ -229,7 +229,7 @@ if ($host) { # contig sequences are contenated
 			  lines => ['^##', 
 				    "^\\S+\\s+\\S+\\s+\\S+\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+"],
 			  gff => 1,
-                          maxsize => 120000,
+                          maxsize => 3635169248,
 			 );   
 
   }
