@@ -8,7 +8,7 @@ use Log_files;
 use Storable;
 
 my ($debug, $test, $database,$species, $verbose, $store );
-my ($giface, $giface_server, $giface_client );
+my ($giface, $giface_server, $giface_client, $port);
 my ($gff3, $dump_dir, $rerun_if_failed, $methods, $chrom_choice);
 
 my $dumpGFFscript = "GFF_method_dump.pl";
@@ -30,7 +30,8 @@ GetOptions (
   "gifaceclient:s" => \$giface_client, 
   "gff3"           => \$gff3,
   "rerunfail"      => \$rerun_if_failed,
-  "species:s"	   => \$species, # for debug purposes
+  "species:s"	   => \$species,
+  "port:s"         => \$port,
 	   );
 my $wormbase;
 if( $store ) {
@@ -80,7 +81,7 @@ my $submitchunk=0;
 my $lsf = LSF::JobManager->new();
 
 my $host = qx('hostname');chomp $host;
-my $port = 23100;
+$port = 23100 if not $port;
 if (scalar(@chromosomes) > 50){
   $wormbase->run_command("($giface_server $database $port 600:6000000:1000:600000000>/dev/null)>&/dev/null &",$log);
   sleep 20;
