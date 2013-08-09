@@ -6,7 +6,7 @@
 # and supplementing the "raw" GFF dumped from Ace with additional attributes
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-07-23 09:06:23 $
+# Last updated on: $Date: 2013-08-09 14:31:52 $
 #
 # Usage GFFmunger.pl [-options]
 
@@ -286,7 +286,7 @@ sub prepare {
       push @gff_files, $gff;
     }
   } else {
-    @gff_files = ($wormbase->GFF_file_name());
+    @gff_files = ($gff3) ? ($wormbase->GFF3_file_name())  : ($wormbase->GFF_file_name());
   }
 
   $log->write_to(" Collating files: @gff_files\n");
