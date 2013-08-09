@@ -933,6 +933,17 @@ GFF_source "TIGR_BEST"
 GFF_feature "nucleotide_match"
 GFF_SO "SO:0000347" // nucleotide_match
 
+Method : "TIGR_OTHER"
+Colour ORANGE
+Strand_sensitive Show_up_strand
+Join_blocks
+Display_gaps
+Gapped
+Blixem Blixem_N
+GFF_source "TIGR_OTHER"
+GFF_feature "nucleotide_match"
+GFF_SO "SO:0000347" // nucleotide_match
+
 Method : "BLAT_TC1_BEST" 
 Colour BROWN
 Score_by_width	
@@ -3912,6 +3923,9 @@ Right_priority 4.45
 
 Method : "ATG"
 Right_priority 4.45
+
+Method : "TIGR_OTHER"
+Right_priority 4.46
 
 Method : "wublastx_worm"
 Right_priority 4.5
