@@ -5,7 +5,7 @@
 # Overloads Variation lines with extra info (consequence etc)
 #
 # Last updated by: $Author: klh $     
-# Last updated on: $Date: 2013-07-30 08:24:49 $      
+# Last updated on: $Date: 2013-08-09 13:57:19 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -90,7 +90,7 @@ while (<$gff_in_fh>) {
     
     foreach my $tp (@var_types) {
       push @new_els, ['Status', 'Confirmed'] if $tp =~ /confirmed/i;
-      push @new_els, ['Status', 'Predicted'] if $tp =~ /predicted/i;
+
       push @new_els, ['RFLP'] if $tp =~ /RFLP/;
       if ($tp eq 'Natural_variant') {
         $natural_variant = 1;
