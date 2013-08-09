@@ -199,6 +199,7 @@ while (my $gene = &get_next_gene) {
     }
   }
 }
+$dbh->close();
 
 foreach my $chr ($wormbase->get_chromosome_names(-prefix=>1, -mito=>1)) {
   &generate_gff($chr);
