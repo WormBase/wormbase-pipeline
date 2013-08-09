@@ -104,7 +104,7 @@ if ($out_file) {
 } else {
   if ($wormbase->assembly_type eq 'contig') {
     $out_file = ($gff3) 
-        ? $wormbase->GF3_file_name(undef, OUT_FILE_SUFFIX)
+        ? $wormbase->GFF3_file_name(undef, OUT_FILE_SUFFIX)
         : $wormbase->GFF_file_name(undef, OUT_FILE_SUFFIX);
 
     open $outfh, ">$out_file" or $log->log_and_die("Could not open $out_file for writing\n");
