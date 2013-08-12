@@ -415,6 +415,7 @@ sub _get_flanking_sequence {
 
   # get sequence of clone
   my $seq = $self->Sub_sequence($clone);
+  my $revseq = $self->DNA_revcomp($seq);
   my $len = length $seq;
 
   # convert to computer coords
@@ -423,7 +424,7 @@ sub _get_flanking_sequence {
 
   # are we in reverse sense? (i.e. reversed order of positions)
   if ($pos1 > $pos2) {
-    $seq = $self->DNA_revcomp($seq);
+    ($seq, $revseq) = ($revseq, $seq);
     # get reverse coords
     $pos1 = $len-$pos1-1;
     $pos2 = $len-$pos2-1;
@@ -439,7 +440,7 @@ sub _get_flanking_sequence {
   my $matches2 = 2;
   my $flankseq1;
   my $flankseq2;
-  while ($matches1 > 1 || $matches2 > 1) {
+  while ($matches1 > 1 or $matches2 > 1) {
     # Can't get unique first flank in sequence object $clone ending at $pos1
     if ($pos1-$flank1+1 < 0) {return undef;}
     # Can't get unique second flank in sequence object $clone starting at $pos2
@@ -450,9 +451,16 @@ sub _get_flanking_sequence {
 
     last if $no_unique_check;
 
-    # find the number of matches
+    # find the number of matches. If we find a single match, good; but then also
+    # need to check reverse strand because it may map there also
     $matches1 = $self->_matches($seq, $flankseq1);
+    if ($matches1 == 1) {
+      $matches1 += $self->_matches($revseq, $flankseq1);
+    }
     $matches2 = $self->_matches($seq, $flankseq2);
+    if ($matches2 == 1) {
+      $matches2 += $self->_matches($revseq, $flankseq2);
+    }
 
     # if there are more than one match, extend the length of the flank
     if ($matches1 > 1) {
@@ -493,8 +501,13 @@ sub get_flanking_sequence_for_feature {
   my ($self, $clone, $start, $end, $is_zero_length, $min_flank_length, $no_unique_check) = @_;
 
   if (abs($end - $start) != 1 or not $is_zero_length) {
-    $start--;
-    $end++;
+    if ($start <= $end) {
+      $start--;
+      $end++;
+    } else {
+      $start++;
+      $end--;
+    }
   }
 
   return $self->_get_flanking_sequence($clone, $start, $end, $min_flank_length, $no_unique_check);
@@ -775,7 +788,6 @@ sub _approx_matches () {
   my ($pos, $size);
   while (($pos, $size) = aslice($flank, ["i"])) { # aslice() searches for $flank in $_
     $offset += $pos+$size;
-    #print "match = pos: $pos to $offset, size: $size\n";
     push @matches, [$pos, $offset-1];
     $_ = substr($seq, $offset);
   }
@@ -807,7 +819,6 @@ sub _matches () {
     push @matches, $pos;
     $pos++;
   }
-                                                                                                                                                      
   return @matches;
 }
 
