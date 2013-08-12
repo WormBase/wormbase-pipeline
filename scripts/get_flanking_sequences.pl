@@ -6,7 +6,7 @@
 # and two coordinates
 #
 # Last updated by: $Author: klh $     
-# Last updated on: $Date: 2012-06-27 11:23:27 $      
+# Last updated on: $Date: 2013-08-12 14:56:09 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};                  
@@ -16,12 +16,13 @@ use Storable;
 use Getopt::Long;
 
 
-my ($store, $wormbase, $species, $min_length, $test, $is_zero, $infile, $id, $outfile, $no_unique_check);
+my ($store, $wormbase, $species, $min_length, $test, $debug, $is_zero, $infile, $id, $outfile, $no_unique_check);
 
 my ($seq,$x,$y,$db);
 
 &GetOptions ("store:s"   => \$store,
              "test"      => \$test,
+             "debug=s"   => \$debug,
              "species:s" => \$species,
              "start:i"   => \$x,
              "end:i"     => \$y,
@@ -42,7 +43,9 @@ if ( $store ) {
 } else {
   $wormbase = Wormbase->new(
     -organism => $species,
-    -test => $test);
+    -test => $test,
+    -debug => $debug,
+      );
 }
 
 my ($outfh, @feats);
