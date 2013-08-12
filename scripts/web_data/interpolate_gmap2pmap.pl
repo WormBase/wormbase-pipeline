@@ -172,7 +172,7 @@ foreach my $chrom (sort keys %$chr_lengths) {
         
         # Simple error checking. The calculated pmap should be between the two markers
         unless ($fpmap_center >= $lpmap && $fpmap_center <= $rpmap) {
-          $log->log_and_die("Calculated gmap not in range: $lname $fname $rname - $lgmap $fgmap $rgmap\n");
+          $log->log_and_die("Calculated gmap not in range: $lname $fname $rname - $lgmap ($lpmap) $fgmap ($fmap_center) $rgmap ($rpmap)\n");
         }
         $position = 'INNER';
       }
