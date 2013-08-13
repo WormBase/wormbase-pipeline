@@ -1,7 +1,7 @@
 #/software/bin/perl -w
 #
-# Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-03-28 13:46:53 $
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2013-08-13 12:45:19 $
 
 #################################################################################
 # Variables                                                                     #
@@ -71,7 +71,7 @@ if (not $no_dump) {
     $log->write_to("\t".$spDB->full_name('-short' => 1)."\n");
     my @bsub_options = (
       -o => '/dev/null',
-      -M => 2000000,
+      -M => 2000,
       -R => sprintf("select[mem>%d] rusage[mem=%d]", 2000, 2000),
       -J => $spDB->species . "_make_acefiles_merge");
     my $cmd = $spDB->build_cmd("make_acefiles.pl -merge");
