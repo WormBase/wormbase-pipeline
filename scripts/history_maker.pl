@@ -350,8 +350,7 @@ if ($blesser) {
 
 
 
-# test code for supplying a chosen name for blessing Isoforms.
-###########################
+  # Supplying a chosen name for blessing Isoforms.
   my $gene_pro = $gene_blesser->Label( -text => 'Proposed Name(optional)',
 					-background => 'LightSteelBlue2',
 					-foreground => 'black'
@@ -1098,7 +1097,7 @@ sub bless_prediction
 
     #remove the exons of the target gene if it already exists.
     if (defined$form_gene2) {
-      print BLS "\nCDS : \"$form_gene2\"\n";
+      print BLS "\nCDS : \"$new_gene\"\n";
       print BLS "-D Source_exons\n\n";
     }
 
@@ -1124,7 +1123,7 @@ sub bless_prediction
     my ($day, $mon, $yr)  = (localtime)[3,4,5];
     my $date = sprintf("%02d%02d%02d",$yr-100, $mon+1, $day);
     print BLS "Remark \"[$date $user] Autoconversion from $gene\"";
-    if (defined $person){ print BLS "Curator_confirmed $person\nEvidence Curator_confirmed $person\n";}
+    if (defined $person){ print BLS " Curator_confirmed $person\nEvidence Curator_confirmed $person\n";}
     else {print BLS "\nEvidence\n";}
     
     close BLS;
