@@ -12,9 +12,6 @@ my ($ep, $ref, %genes, %at, %auth, $date);
 my ($help, $debug, $test, $store, $wormbase,$tace);
 my ($output, $acedbpath, $rnai, $gene, $variation, $skiplist, $noload);
 
-$|=9;
-
-
 my %opts=();
 GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
@@ -28,13 +25,10 @@ GetOptions ("help"       => \$help,
 	    "skiplist:s" => \$skiplist,
             "noload"     => \$noload,
             'tace:s'     => \$tace,
-	    );
-
-my $program_name=$0=~/([^\/]+)$/ ? $1 : '';
-
+	    )||die(@!);
 
 if ($help) {
-    print "usage: $program_name [options] -output output -database database\n";
+    print "usage: $0 [options] -output output -database database\n";
     print "       -help            help - print this message\n";
     print "       -output <output>   output file\n";
     print "       -database <database> path to database\n";
@@ -65,32 +59,26 @@ my $month = (1 + (localtime)[4]);
 my $day   = (localtime)[3];
 $date=sprintf("%04d%02d%02d", $year, $month, $day);
 
-$acedbpath = $wormbase->autoace unless $acedbpath;
+$acedbpath ||= $wormbase->autoace;
 
 # check that the GO_term objects all have a Type tag set
 &check_go_term();
 
 $tace||=$wormbase->tace;
-warn "connecting with $tace to database... $acedbpath";
 
 my $db = Ace->connect(-path => $acedbpath,  -program => $tace) or $log->log_and_die("Connection failure: ". Ace->error);
-warn "... done\n";
 
 my %name_hash=();
 my @aql_results=$db->aql('select a, a->public_name from a in class gene');
 foreach (@aql_results) {
     $name_hash{$_->[0]}=$_->[1];
 }
-warn scalar keys %name_hash , " gene public names read\n";
-
 
 my %seq_name_hash=();
 @aql_results=$db->aql('select a, a->sequence_name from a in class gene');
 foreach (@aql_results) {
     $seq_name_hash{$_->[0]}=$_->[1];
 }
-warn scalar keys %seq_name_hash , " gene sequence names read\n";
-
 
 my %paper_fields=();
 my %paper_accno=();
@@ -99,7 +87,6 @@ foreach (@aql_results) {
   $paper_fields{$_->[0]} = $_->[1]; # database field e.g. 'PMID'
   $paper_accno{$_->[0]}  = $_->[2];  # database accession number e.g. '12393910'
 }
-warn scalar keys %paper_fields , " papers read\n";
 
 my %papers_to_skip=();
 if ($skiplist) {
@@ -114,14 +101,8 @@ if ($skiplist) {
     warn scalar keys %papers_to_skip, " papers will be skipped\n";
 }
 
-my %names=();
-
-my $out;
 $output = $wormbase->ontology."/gene_association.".$wormbase->get_wormbase_version_name.".wb" unless $output;
-open($out, ">$output") or $log->log_and_die("cannot open $output : $!\n");
-
-my $count=0;
-my $line_count=0;
+open(my $out, ">$output") or $log->log_and_die("cannot open $output : $!\n");
 
 if ($gene) {   
     my $it=$db->fetch_many(-query=>'find gene go_term AND NOT Dead');
@@ -129,93 +110,68 @@ if ($gene) {
    
     while (my $obj=$it->next) {
 	next unless $obj->isObject();
-	$count++;
-	if ($count % 1000 == 0) {
-	    warn "$count gene objects processed\n";
-	}
 	
-	my @lines=();
-	eval {
-	    @lines=split("\n", $obj->asAce);
-	};
-	if ($@) {
-	    warn "$@\n";
-	    next;
-	}
-	my $public_name='';
-        my ($species, $ncbiId);
-        eval {
-          $species=$obj->Species;
-          $ncbiId = $species->NCBITaxonomyID;
-        };
-        if ($@) {
+	my $public_name=$obj->Public_name;
+        my $species=$obj->Species;
+        my $ncbiId = $species->NCBITaxonomyID;
+        
+        unless ($species && $ncbiId) {
           $log->error("Could not process gene $obj - something weird\n");
           next;
         }
 
-	foreach (@lines) {
-	    if (/Public_name\s+\"(.+)\"/) {
-		$public_name=$1;
-	    }
-	    elsif (/GO_term\s+\"(GO:\d+)\"/) {
-		my $term=$1;
-		my $go_type=$db->fetch('GO_term', $term)->Type;
-		s/\"//g;#"
-		my @tmp=split("\t");
-		
-		my $ref='';
-		if ($tmp[5]=~/WBPaper/) {
+        foreach my $term ($obj->GO_term){
+		my $go_type=$term->Type;
+                my @tmp = $term->row;
+    	
+		my $ref='';		
+		my $with='';
+
+                if ($tmp[5]){
+                 if ($tmp[5]=~/WBPaper/){
 		    $ref="WB_REF:$tmp[5]";
 		    if ($paper_fields{$tmp[5]}) {
 			$ref.="|$paper_fields{$tmp[5]}:$paper_accno{$tmp[5]}"; # type of database field and the accession_number e.g. 'PMID:12393910'
 		    }
-		}
-		if (!$ref and $tmp[3] eq "IEA") {
+		 }
+         
+		 if ($tmp[5]=~/WBPerson/ && $tmp[4] eq 'Person_evidence') {
+		    $with="WB:$tmp[5]";
+		 } elsif($tmp[5]=~/WBPhenotype/) {
+                 # do not parse phenotype-based GO terms via genes - it's done separately via phenotypes
+		    next;
+		 }
+                }
+                if ($tmp[4]){
+		 if ($tmp[4] eq 'Curator_confirmed' || $tmp[4] eq 'Variation_evidence') {
+		    next;
+		 } elsif ($tmp[4] eq 'Inferred_automatically') {
+		    $with=$tmp[5];
+		 }
+                }
+
+                my $t = $tmp[3] || '';
+		if (!$ref && $t eq "IEA") {
 		    $ref='PMID:12520011|PMID:12654719';
 		}
-		
-		my $with='';
-		if ($tmp[5]=~/WBPerson/ && $tmp[4] eq 'Person_evidence') {
-		    $with="WB:$tmp[5]";
-		}
-		if ($tmp[4] eq 'Curator_confirmed') {
-		    next;
-		}
-                # skip directly-added Phenotype-based associations
-                if ($tmp[4] eq 'Variation_evidence') {
-                  next;
-                }
-		if ($tmp[4] eq 'Inferred_automatically') {
-		    $with=$tmp[5];
-		}
-		if ($tmp[5]=~/WBPhenotype/) {     # do not parse phenotype-based GO terms via genes - it's done separately via phenotypes
-		    next;
-		}
-		my $syn="";
+
+		my $syn='';
 		if ($public_name ne $seq_name_hash{$obj}) {
 		    $syn=$seq_name_hash{$obj};
 		}
 		my $taxon="taxon:$ncbiId";
 		my $a=$aspect{lc $go_type};
-		my $type="gene";
 
                 if ($public_name) {
-                  print $out "WB\t$obj\t$public_name\t\t$term\t$ref\t$tmp[3]\t$with\t$a\t\t$syn\t$type\t$taxon\t$date\tWB\t\t\n";
-                  $line_count++;
+                  print $out "WB\t$obj\t$public_name\t\t$term\t$ref\t$t\t$with\t$a\t\t$syn\tgene\t$taxon\t$date\tWB\t\t\n";
                 }
-	    }
-	}
-	
+       }
     }
     
-    warn "$count genes processed\n";
-    warn "$line_count lines generated\n";
 }
 
 
 if ($rnai) {
-
-    $count=0;
 
     my %phen2go=();
     @aql_results = $db->aql("select p, p->GO_term from p in class Phenotype where exists p->GO_term");
@@ -224,16 +180,11 @@ if ($rnai) {
 	    $phen2go{$_->[0]}{$_->[1]}=1;
 	}
     }
-    warn scalar keys %phen2go, " phenotypes read\n";
     
     my $it=$db->fetch_many(-query=>'find phenotype go_term; follow rnai');
     
     while (my $obj=$it->next) {
 	next unless $obj->isObject();
-	$count++;
-	if ($count % 1000 == 0) {
-	    warn "$count RNAi objects processed\n";
-	}
 	
 	my @genes_tmp=$obj->Gene;
 	my @genes=();
@@ -286,21 +237,14 @@ if ($rnai) {
 		    my $a=$aspect{lc $go_type};
                     if ($public_name) {
                       print $out "WB\t$gene\t$public_name\t\t$term\t$ref_field\tIMP\t$with\t$a\t\t$syn\t$type\t$taxon\t$date\tWB\t\t\n";
-                      $line_count++;
                     }
 		}
 	    }
 	}
     }
-    
-    
-    warn "$count RNAi objects processed\n";
-    warn "$line_count lines generated\n";
 }
 
 if ($variation) {
-
-    $count=0;
 
     my %phen2go=();
     @aql_results = $db->aql("select p, p->GO_term from p in class Phenotype where exists p->GO_term");
@@ -315,10 +259,6 @@ if ($variation) {
     
     while (my $obj=$it->next) {
 	next unless $obj->isObject();
-	$count++;
-	if ($count % 1000 == 0) {
-	    warn "$count variation objects processed\n";
-	}
 
 	if ($obj->Gain_of_function) { # skip gain-of-function alleles
 	    next;
@@ -346,9 +286,7 @@ if ($variation) {
 	    if ($_->at("Curator_confirmed")) {
 		$phen_hash{$_}{Curator_confirmed}=$_->at("Curator_confirmed[1]")=~/(WBPerson\d+)/ ? $1 : '';
 	    }
-
 	}
-
 	    
 	
 	foreach my $gene (@genes) {
@@ -386,18 +324,12 @@ if ($variation) {
 		    my $a=$aspect{lc $go_type};
                     if ($public_name) {
                       print $out "WB\t$gene\t$public_name\t\t$term\t$ref_field\tIMP\t$with\t$a\t\t$syn\t$type\t$taxon\t$date\tWB\t\t\n";
-                      $line_count++;
                     }
 		}
 	    }
 	}
     }
-    
-    
-    warn "$count variation objects processed\n";
-    warn "$line_count lines generated\n";
 }
-
 
 close($out);
 
@@ -412,14 +344,9 @@ foreach my $species ($wormbase, values %coreSpecies){
 
 $db->close;
 $log->mail;
-exit();
-
 
 
 #####################################################################################
-
-
-
 
 # Even though the GO term definitions are imported to autoace from
 # citace, there may be some GO terms that are referenced by InterPro
@@ -548,8 +475,3 @@ sub check_go_term {
     $wormbase->run_command("rm $go_obo_file",$log);
   }
 }
-
-
-
-
-
