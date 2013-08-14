@@ -7,8 +7,8 @@
 # This finds information about the protein coded for by the specified gene/CDS
 # and finds information about the homologous wormpep proteins
 #
-# Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-09-08 10:47:15 $      
+# Last updated by: $Author: pad $     
+# Last updated on: $Date: 2013-08-14 16:12:51 $      
 
 # To do:
 # accept wormpep ID as input
