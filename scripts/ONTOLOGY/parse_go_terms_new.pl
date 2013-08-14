@@ -9,7 +9,7 @@ use Log_files;
 use Storable;	
 
 my ($ep, $ref, %genes, %at, %auth, $date);
-my ($help, $debug, $test, $store, $wormbase);
+my ($help, $debug, $test, $store, $wormbase,$tace);
 my ($output, $acedbpath, $rnai, $gene, $variation, $skiplist, $noload);
 
 $|=9;
@@ -27,6 +27,7 @@ GetOptions ("help"       => \$help,
 	    "output:s"   => \$output,
 	    "skiplist:s" => \$skiplist,
             "noload"     => \$noload,
+            'tace:s'     => \$tace,
 	    );
 
 my $program_name=$0=~/([^\/]+)$/ ? $1 : '';
@@ -69,10 +70,11 @@ $acedbpath = $wormbase->autoace unless $acedbpath;
 # check that the GO_term objects all have a Type tag set
 &check_go_term();
 
-warn "connecting to database... $acedbpath";
-my $db = Ace->connect(-path => $acedbpath,  -program => $wormbase->tace) or $log->log_and_die("Connection failure: ". Ace->error);
-warn "... done\n";
+$tace||=$wormbase->tace;
+warn "connecting with $tace to database... $acedbpath";
 
+my $db = Ace->connect(-path => $acedbpath,  -program => $tace) or $log->log_and_die("Connection failure: ". Ace->error);
+warn "... done\n";
 
 my %name_hash=();
 my @aql_results=$db->aql('select a, a->public_name from a in class gene');
@@ -95,7 +97,7 @@ my %paper_accno=();
 @aql_results=$db->aql('select a, a->Database[2], a->Database[3]  from a in class paper');
 foreach (@aql_results) {
   $paper_fields{$_->[0]} = $_->[1]; # database field e.g. 'PMID'
-  $paper_accno{$_->[0]} = $_->[2];  # database accession number e.g. '12393910'
+  $paper_accno{$_->[0]}  = $_->[2];  # database accession number e.g. '12393910'
 }
 warn scalar keys %paper_fields , " papers read\n";
 
