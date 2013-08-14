@@ -127,30 +127,30 @@ if ($gene) {
 		my $ref='';		
 		my $with='';
 
-                if ($tmp[5]){
-                 if ($tmp[5]=~/WBPaper/){
-		    $ref="WB_REF:$tmp[5]";
-		    if ($paper_fields{$tmp[5]}) {
-			$ref.="|$paper_fields{$tmp[5]}:$paper_accno{$tmp[5]}"; # type of database field and the accession_number e.g. 'PMID:12393910'
+                if ($tmp[3]){
+                 if ($tmp[3]=~/WBPaper/){
+		    $ref="WB_REF:$tmp[3]";
+		    if ($paper_fields{$tmp[3]}) {
+			$ref.="|$paper_fields{$tmp[3]}:$paper_accno{$tmp[3]}"; # type of database field and the accession_number e.g. 'PMID:12393910'
 		    }
 		 }
          
-		 if ($tmp[5]=~/WBPerson/ && $tmp[4] eq 'Person_evidence') {
-		    $with="WB:$tmp[5]";
-		 } elsif($tmp[5]=~/WBPhenotype/) {
+		 if ($tmp[3]=~/WBPerson/ && $tmp[2] eq 'Person_evidence') {
+		    $with="WB:$tmp[3]";
+		 } elsif($tmp[3]=~/WBPhenotype/) {
                  # do not parse phenotype-based GO terms via genes - it's done separately via phenotypes
 		    next;
 		 }
                 }
-                if ($tmp[4]){
-		 if ($tmp[4] eq 'Curator_confirmed' || $tmp[4] eq 'Variation_evidence') {
+                if ($tmp[2]){
+		 if ($tmp[2] eq 'Curator_confirmed' || $tmp[2] eq 'Variation_evidence') {
 		    next;
-		 } elsif ($tmp[4] eq 'Inferred_automatically') {
-		    $with=$tmp[5];
+		 } elsif ($tmp[2] eq 'Inferred_automatically') {
+		    $with=$tmp[3];
 		 }
                 }
 
-                my $t = $tmp[3] || '';
+                my $t = $tmp[1] || '';
 		if (!$ref && $t eq "IEA") {
 		    $ref='PMID:12520011|PMID:12654719';
 		}
@@ -193,7 +193,7 @@ if ($rnai) {
 		push @genes, $_;
 	    }
 	}
-	my $ref=$obj->Reference;
+	my $ref=$obj->Reference||'';
 	next if $papers_to_skip{$ref};
 	my @phen_array_tmp=$obj->Phenotype;
 	my @phen_array=();
