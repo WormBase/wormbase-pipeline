@@ -1,8 +1,8 @@
 #!/software/bin/perl -w
 
 # Version: $Version: $
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2013-07-25 10:43:42 $
+# Last updated by: $Author: klh $
+# Last updated on: $Date: 2013-08-14 14:33:14 $
 
 use strict;
 use warnings;
@@ -277,33 +277,37 @@ if (not $query) {
                                                   $result->strand);
       $has_hit{$method}->{$qid} = 1;
       
-      my ($m_tid, $m_tstart, $m_tend) = $coords->LocateSpan($tid, $tstart, $tend);
-      my $map_down = $coords->isa_clone($m_tid);
       my ($percent) = $result->get_tag_values('percent_id');
       
-      my @blocks;
+      my (@blocks, @projected_blocks, %proj_parents);
+
       foreach my $block (@b) {
-        my $tstart = $block->feature1->start;
-        my $tend   = $block->feature1->end;
-        my $qstart = $block->feature2->start;
-        my $qend   = $block->feature2->end;
+        my $seg_tstart = $block->feature1->start;
+        my $seg_tend   = $block->feature1->end;
+        my $seg_qstart = $block->feature2->start;
+        my $seg_qend   = $block->feature2->end;
         
-        if ($map_down) {
-          ($m_tid, $tstart, $tend) = $coords->LocateSpan($tid,$tstart,$tend);
-        }
-        
+        my ($seg_m_tid, $seg_m_tstart, $seg_m_tend) = $coords->LocateSpan($tid,$seg_tstart,$seg_tend);
+
         if ($strand < 0) {
-          ($tstart, $tend) = ($tend, $tstart);
+          ($seg_tstart, $seg_tend) = ($seg_tend, $seg_tstart);
+          ($seg_m_tstart, $seg_m_tend) = ($seg_m_tend, $seg_m_tstart);
         }
-        push @blocks, [$tstart, $tend, $qstart, $qend];
+        push @blocks, [$seg_tstart, $seg_tend, $seg_qstart, $seg_qend];
+        push @projected_blocks, [$seg_m_tstart, $seg_m_tend, $seg_qstart, $seg_qend];
+        $proj_parents{$seg_m_tid} = 1;
       }
-      
-      my $parent = ($map_down) ? $m_tid : $tid;
-      # strip off the suffix added earlier to make the ids unique
+
       $qid =~ s/\.DNA_text_\d+$//;
       $qid =~ s/\.PCR_product_\d+$//;
-
-      push @{$results_by_parent{$parent}->{$qid}->{$method}}, [$percent, \@blocks];
+      
+      # only use projected mapping if all segments map down to same parent
+      if (scalar(keys %proj_parents) == 1) {
+        my ($parent) = keys %proj_parents;
+        push @{$results_by_parent{$parent}->{$qid}->{$method}}, [$percent, \@projected_blocks];
+      } else {
+        push @{$results_by_parent{$tid}->{$qid}->{$method}}, [$percent, \@blocks];
+      }
     }
   }
   
