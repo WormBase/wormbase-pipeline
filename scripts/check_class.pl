@@ -6,7 +6,7 @@
 # Compares this number to those from a second database.
 #
 # Last updated by: $Author: pad $
-# Last updated on: $Date: 2013-03-07 12:03:26 $
+# Last updated on: $Date: 2013-08-14 12:19:59 $
 
 
 use strict;
@@ -29,7 +29,7 @@ $|=1;
 my ($help, $debug, $test, $verbose, $store, $wormbase);
 my ($database, $database1, $database2, $classes, $species, $stage);
 my ($dbname_0, $dbname_1, $dbname_2);
-my ($stlace, $camace, $genace, $csh, $caltech, $misc_static, $brigace, $incomplete, $data_sets, $pre_merge);
+my ($camace, $genace, $csh, $caltech, $misc_static, $briggsae, $incomplete, $data_sets, $pre_merge);
 
 GetOptions (
 	    "help"          => \$help,
@@ -39,13 +39,12 @@ GetOptions (
 	    "store:s"       => \$store,
 	    "database=s"    => \$database,
 	    "classes=s"     => \$classes,
-	    "stlace"        => \$stlace,
 	    "camace"        => \$camace,
 	    "genace"        => \$genace,
 	    "csh"           => \$csh,
 	    "caltech"       => \$caltech,
 	    "misc_static"   => \$misc_static,
-	    "brigace"       => \$brigace,
+	    "briggsae"      => \$briggsae,
 	    "incomplete"    => \$incomplete,
 	    "data_sets"     => \$data_sets,
 	    "pre_merge"     => \$pre_merge,
@@ -105,13 +104,12 @@ my @classes = ();
 $stage="unknown" if (!defined $stage);
 
 # get the collected sets of classes
- @classes = (@classes, &set_classes('stlace')) if ($stlace);
  @classes = (@classes, &set_classes('camace')) if ($camace);
  @classes = (@classes, &set_classes('genace')) if ($genace);
  @classes = (@classes, &set_classes('csh')) if ($csh);
  @classes = (@classes, &set_classes('caltech')) if ($caltech);
  @classes = (@classes, &set_classes('misc_static')) if ($misc_static);
- @classes = (@classes, &set_classes('brigace')) if ($brigace);
+ @classes = (@classes, &set_classes('briggsae')) if ($briggsae);
  @classes = (@classes, &set_classes('incomplete')) if ($incomplete);
  @classes = (@classes, &set_classes('data_sets')) if ($data_sets);
  @classes = (@classes, &set_classes('pre_merge')) if ($pre_merge);
@@ -333,34 +331,21 @@ sub set_classes {
 # Builder.
 #
 
-  if ($mode eq "stlace") {
+  if ($mode eq "camace") {
     @classes = (
-#		  "CDS", 
-#		  "DNA",
-		  "Transposon",
-#		  "Transcript", 
-		  "Genetic_code", 
-		  "Pseudogene", 
-		  "Variation", 
-		  "Oligo", 
-		  "PCR_product"
-		  );
-    
-  } elsif ($mode eq "camace") {
-    @classes = (
-#		  "Sequence", 
-#		  "CDS", 
-#		  "DNA", 
-#		  "Motif", 
-		  "Transposon", 
-#		  "Transcript", 
-#		  "Feature_data", 
-#		  "Sequence", 
-		  "Genetic_code", 
-		  "Pseudogene", 
-		  "Feature", 
-		  "LongText"
-		  );
+		#		  "Sequence", 
+		#		  "CDS", 
+		#		  "DNA", 
+		#		  "Motif", 
+		"Transposon", 
+		#		  "Transcript", 
+		#		  "Feature_data", 
+		#		  "Sequence", 
+		"Genetic_code", 
+		"Pseudogene", 
+		"Feature", 
+		"LongText"
+	       );
 
 
   } elsif ($mode eq "genace") {
@@ -455,7 +440,7 @@ sub set_classes {
 		  );
 
 
-  } elsif ($mode eq "brigace") {
+  } elsif ($mode eq "briggsae") {
     @classes = (
 #		  "Sequence",
 #		  "DNA",
@@ -651,7 +636,7 @@ as necessary when classes are added/removed to the database.
 -csh
 -caltech
 -misc_static
--brigace test the set of classes that are loaded from the primary
+-briggsae test the set of classes that are loaded from the primary
 databases. (Some classes from the primary databases are omitted
 because further objects of those classes are loaded later on and a
 test of the numbers immediately after loading the primary databases

@@ -7,13 +7,11 @@
 # Usage : unpack_db.pl [-options]
 #
 # A PERL wrapper to automate the extraction and building of:
-# the C. briggsae database (brigace)
-# the St. Louis database (stlace)
 # the Cold Spring Harbor Laboratory database (cshace)
 # the Caltech database (citace)
 #
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2013-06-07 12:51:04 $
+# Last updated by: $Author: pad $
+# Last updated on: $Date: 2013-08-14 12:19:59 $
 
 
 #################################################################################
@@ -36,7 +34,7 @@ use warnings;
 ##############################
 
 my $help;
-my ($brigace, $citace, $cshace, $stlace,$brenneri,$japonica,$remanei,$brugia);
+my ($citace, $cshace);
 my ($debug,$test,$database,$basedir);
 my $store;
 
@@ -44,17 +42,6 @@ GetOptions (
             "help"       => \$help,
             "citace=s"   => \$citace,
             "cshace=s"   => \$cshace,
-            "stlace=s"   => \$stlace,
-            "brigace=s"  => \$brigace,
-            "briggsae=s" => \$brigace,
-	    'remanei=s'  => \$remanei,
-	    'remace=s'   => \$remanei,
-	    'brenneri=s' => \$brenneri,
-	    'brenace=s'  => \$brenneri,
-	    'japonica=s' => \$japonica,
-	    'japace=s'   => \$japonica,
-	    'brugia=s'   => \$brugia,
-	    'brugace=s'  => \$brugia,
             "test"       => \$test,
 	    "debug:s"    => \$debug,
 	    "database|basedir:s"  => \$basedir,
@@ -74,7 +61,6 @@ else {
 my $rundate = $wormbase->rundate;
 
 &usage if ($help);
-#&usage if (!defined($brigace) && !defined($citace) && !defined($stlace) && !defined($cshace));
 
 # establish log file.
 my $log = Log_files->make_build_log($wormbase);
@@ -85,12 +71,6 @@ my $log = Log_files->make_build_log($wormbase);
 
 &unpack_stuff("citace",$citace)    if ($citace);
 &unpack_stuff("cshace",$cshace)    if ($cshace);
-&unpack_stuff("stlace",$stlace)    if ($stlace);
-&unpack_stuff("brigace",$brigace)  if ($brigace);
-&unpack_stuff('remace',$remanei)   if ($remanei);
-&unpack_stuff('brenace',$brenneri) if ($brenneri);
-&unpack_stuff("japace",$japonica)  if ($japonica);
-&unpack_stuff("brugace",$brugia)   if ($brugia);
 
 
 sub unpack_stuff {
@@ -112,14 +92,6 @@ sub unpack_stuff {
     $dbname  = "cshl_dump";
   }
 
-  if ($database eq "stlace"){
-    $ftp     = "$ftp_dir/stl";
-    $dbdir   = "$primaries/stlace";
-    $logfile = "$logs/unpack_stlace.$rundate.$$";
-    $dbname  = "stlace";
-  }
-
-
   if ($database eq "citace"){
     $ftp     = "$ftp_dir/caltech";
     $dbdir   = "$primaries/citace";
@@ -127,36 +99,6 @@ sub unpack_stuff {
     $dbname  = "citace_dump";
   }
 
-  if ($database eq "brigace"){
-    $ftp     = "$ftp_dir/stl";
-    $dbdir   = "$primaries/brigace";
-    $logfile = "$logs/unpack_brigace.$rundate.$$";
-    $dbname  = "brigace";
-  }
-  if ($database eq 'remace'){
-    $ftp     = "$ftp_dir/stl";
-    $dbdir   = "$primaries/remace";
-    $logfile = "$logs/unpack_remace.$rundate.$$";
-    $dbname  = "remace";
-  }
-  if ($database eq 'brenace'){
-    $ftp     = "$ftp_dir/stl";
-    $dbdir   = "$primaries/brenace";
-    $logfile = "$logs/unpack_brenace.$rundate.$$";
-    $dbname  = "brenace";
-  }
-  if ($database eq "japace"){
-    $ftp     = "$ftp_dir/stl";
-    $dbdir   = "$primaries/japace";
-    $logfile = "$logs/unpack_japace.$rundate.$$";
-    $dbname  = "japace";
-  }
-  if ($database eq "brugace"){
-    $ftp     = "$ftp_dir/stl";
-    $dbdir   = "$primaries/brugace";
-    $logfile = "$logs/unpack_brugace.$rundate.$$";
-    $dbname  = "brugace";
-  }
 
   ##############################
   # open logfile               #
@@ -211,35 +153,6 @@ sub unpack_stuff {
 
   $wormbase->run_command("tar zxvf ${dbname}_${today}.tar.gz", $log);
   $log->write_to("unzip and untar file\n\n");
-
-
-  # brigace doesn't have chromosomal DNA ace files, but it does have
-  # the chromosomal sequences held in fasta files, so make the ace
-  # files from the fasta files
-  if ($database eq "brigace") {
-    $log->write_to("Converting brigace fasta chromosome files to ace file\n");
-    my $version = $wormbase->get_wormbase_version;
-    my $chromace = "chrom.ace";
-    open (CHROMACE, "> $chromace") || die "Can't open $chromace\n";
-    open (LIST, "ls briggff${version}/*.dna |") || die "Couldn't pipe\n";
-    while (my $fasta=<LIST>) {
-      chomp $fasta;
-      open (FASTA, "< $fasta") || die "Can't open brigace chromosomal fasta file\n";
-      my $title = <FASTA>;
-      chomp $title;
-      $title =~ s/\>//;
-      print CHROMACE "\nDNA : \"$title\"\n";
-      while (my $line = <FASTA>) {
-	print CHROMACE "$line";
-      }
-      close FASTA;
-      $log->write_to("\tconverted $fasta\n");
-    }
-    close LIST;
-    close CHROMACE;
-    push @filenames, $chromace;
-  }
-
 
 
   # add list of ace files to be loaded into array
@@ -427,23 +340,7 @@ unpack_db.pl arguments:
 
 =item *
 
--brigace <date> unpack St. Louis C. briggsae data and read into brigace
-
-=back
-
-=over 4
-
-=item *
-
 -cshace <date> unpack CSHL data and read into cshace
-
-=back
-
-=over 4
-
-=item *
-
--stlace <date> unpack St. Louis C. elegans data and read into stlace
 
 =back
 
@@ -473,10 +370,8 @@ unpack_db.pl arguments:
 
 Example usage:
 
-unpack_db.pl -stlace 2001-07-19 -brigace 2001-07-25
+unpack_db.pl -citace 2001-07-19 -csh 2001-07-25
 
-This will unpack the St. Louis C. elegans data and the St. Louis C. briggsae data and 
-read them into their respective databases (stlace and brigace).  In this example it will 
-try to unpack files which contain the corresponding dates as part of their filename.
+In this example it will try to unpack files which contain the corresponding dates as part of their filename.
 
 =cut

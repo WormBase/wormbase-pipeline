@@ -6,8 +6,8 @@
 #
 # handles post processing of GFF files
 #
-# Last edited by: $Author: klh $
-# Last edited on: $Date: 2013-04-30 15:08:41 $
+# Last edited by: $Author: pad $
+# Last edited on: $Date: 2013-08-14 12:19:59 $
 #
 
 use lib $ENV{CVS_DIR};
@@ -27,11 +27,9 @@ GetOptions (
 	    "store:s"       => \$store,
 	    "quicktest"     => \$quicktest,
 	    "database:s"    => \$database,
-
 	    "utr"           => \$utr,
 	    "clone_acc"     => \$clone_acc,
 	    "gene_acc"      => \$gene_acc,
-
 	    "input:s"       => \$input,
 	    "output:s"      => \$output,
 	   );
@@ -216,11 +214,3 @@ sub GFF_genes_with_accessions{
 
 __END__
 
-=pod
-
-=head1 Briggsae Warning
-
-The brigace DB_info is not populated, so no accessions and versions are printed.
-
-
-=cut

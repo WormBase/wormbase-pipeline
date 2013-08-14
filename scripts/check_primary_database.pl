@@ -7,8 +7,8 @@
 # This script checks all of the species primary sequence databases....and geneace 
 # so that gene discrepancies can be identified early in the build.
 #
-# Last updated by: $Author: mh6 $     
-# Last updated on: $Date: 2013-06-07 13:03:43 $      
+# Last updated by: $Author: pad $     
+# Last updated on: $Date: 2013-08-14 12:19:59 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -64,26 +64,24 @@ my @xaceinstances;
 # some database paths
 my $geneace   = $wormbase->primary('geneace');
 my $camace    = $wormbase->primary('camace');
-my $stlace    = $wormbase->primary('stlace');
 my $citace    = $wormbase->primary('citace');
 my $cshace    = $wormbase->primary('cshace');
-my $brigace   = $wormbase->primary('brigace');
-my $remace    = $wormbase->primary('remace');
-my $brenace   = $wormbase->primary('brenace');
-my $japace    = $wormbase->primary('japace');
-my $brugace    = $wormbase->primary('brugace');
+my $briggsae  = $wormbase->primary('briggsae');
+my $remanei   = $wormbase->primary('remanei');
+my $brenneri  = $wormbase->primary('brenneri');
+my $japonica  = $wormbase->primary('japonica');
+my $brugia    = $wormbase->primary('brugia');
 
 if ($debug){
 print<<HERE;
 $geneace
 $camace
-$stlace
 $citace
 $cshace
-$brigace
-$remace
-$japace
-$brugace
+$briggsae
+$remanei
+$japonica
+$brugia
 HERE
 }
 
@@ -93,22 +91,21 @@ HERE
 
 # Load the array with databases to check based on the species.
 if ((-e $camace) && ($species eq 'elegans'))  {push(@xaceinstances,"$camace");}
-if ((-e $stlace) && ($species eq 'elegans')) {push(@xaceinstances,"$stlace");}
 if ((-e $citace) && ($species eq 'elegans')) {push(@xaceinstances,"$citace");}
 if ((-e $cshace) && ($species eq 'elegans')) {push(@xaceinstances,"$cshace");}
-if ((-e $brigace) && ($species eq 'briggsae')) {push(@xaceinstances,"$brigace");}
-if ((-e $remace) && ($species eq 'remanei')) {push(@xaceinstances,"$remace");}
-if ((-e $brenace) && ($species eq 'brenneri')) {push(@xaceinstances,"$brenace");}
-if ((-e $japace) && ($species eq 'japonica')) {push(@xaceinstances,"$japace");}
-if ((-e $brugace) && ($species eq 'brugia')) {push(@xaceinstances,"$brugace");}
+if ((-e $briggsae) && ($species eq 'briggsae')) {push(@xaceinstances,"$briggsae");}
+if ((-e $remanei) && ($species eq 'remanei')) {push(@xaceinstances,"$remanei");}
+if ((-e $brenneri) && ($species eq 'brenneri')) {push(@xaceinstances,"$brenneri");}
+if ((-e $japonica) && ($species eq 'japonica')) {push(@xaceinstances,"$japonica");}
+if ((-e $brugia) && ($species eq 'brugia')) {push(@xaceinstances,"$brugia");}
 # example of running another script
 
 foreach $xaceinstances (@xaceinstances) {
   print "running camace_nameDB_comm.pl -database $xaceinstances\n";
   $wormbase->run_script("NAMEDB/camace_nameDB_comm.pl -database $xaceinstances", $log);
   
-  # Run additional checks for camace and stlace
-  if (($xaceinstances eq "/nfs/wormpub/BUILD/PRIMARIES/camace") || ($xaceinstances eq "/nfs/wormpub/BUILD/PRIMARIES/stlace")){
+  # Run additional checks for camace
+  if ($xaceinstances eq "/nfs/wormpub/BUILD/PRIMARIES/camace"){
     print "Checking $xaceinstances for gene curation errors\n\nrunning check_predicted_genes.pl -database $xaceinstances\n";
     $wormbase->run_script("check_predicted_genes.pl -database $xaceinstances -basic", $log);
   }

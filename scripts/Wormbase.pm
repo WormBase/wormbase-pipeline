@@ -1337,17 +1337,16 @@ sub establish_paths {
   
   $self->{'primary'}->{'camace'}  = $self->primaries .'/camace';
   $self->{'primary'}->{'geneace'} = $self->primaries .'/geneace';
-  $self->{'primary'}->{'stlace'}  = $self->primaries .'/stlace';
   $self->{'primary'}->{'citace'}  = $self->primaries .'/citace';
   $self->{'primary'}->{'caltech'} = $self->primaries .'/citace'; # to handle the various names used
   $self->{'primary'}->{'csh'}     = $self->primaries .'/cshace';
   $self->{'primary'}->{'cshace'}  = $self->primaries .'/cshace';
-  $self->{'primary'}->{'brigace'} = $self->primaries .'/brigace';
-  $self->{'primary'}->{'briggsae'}= $self->primaries .'/brigace'; # to handle the various names used
-  $self->{'primary'}->{'remace'}  = $self->primaries .'/remace';
-  $self->{'primary'}->{'japace'}  = $self->primaries .'/japace';
-  $self->{'primary'}->{'brenace'} = $self->primaries .'/brenace';
-  $self->{'primary'}->{'brugace'} = $self->primaries .'/brugace';
+  $self->{'primary'}->{'briggsae'}= $self->primaries .'/briggsae';
+  $self->{'primary'}->{'remanei'}  = $self->primaries .'/remanei';
+  $self->{'primary'}->{'japonica'}  = $self->primaries .'/japonica';
+  $self->{'primary'}->{'brenneri'} = $self->primaries .'/brenneri';
+  $self->{'primary'}->{'brugia'} = $self->primaries .'/brugia';
+
   
   $self->{'misc_static'} = $self->{'build_data'} . "/MISC_STATIC";
   $self->{'misc_dynamic'} = $self->{'build_data'} . "/MISC_DYNAMIC";

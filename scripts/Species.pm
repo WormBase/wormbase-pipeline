@@ -151,7 +151,7 @@ sub full_name {
 sub wormpep_prefix{'WP'}
 sub assembly_type {'chromosome'};
 sub seq_db {my $self = shift;return $self->database('camace');}
-sub upload_db_name {return ('stlace','citace')};
+sub upload_db_name {return ('citace')};
 sub TSL {
   (
     'SL1' => 'GGTTTAATTACCCAAGTTTGAG',
@@ -222,7 +222,7 @@ sub wormpep_files {
   return ( "brigpep", "brigpep.accession", "brigpep.dna", "brigpep.history", "brigpep.fasta", "brigpep.table",
 	   "brigpep.diff" );
 }
-sub upload_db_name {'brigace'};
+sub upload_db_name {'briggsae'};
 sub TSL {(
 	  'SL1'  => "GGTTTAATTACCCAAGTTTGAG",
 	  'Cb_SL2' => "GGTTTTAACCCAGTTACTCAAG",
@@ -279,7 +279,7 @@ sub cds_regex{qr/CRE\d{5}[a-z]*/};
 sub seq_name_regex{qr/^CRE\d{5}/};
 sub cds_regex_noend{qr/CRE\d{5}[a-z]*/}; # for getting the CDS part of a Transcript name
 sub assembly_type {'contig'};
-sub upload_db_name {'remace'};
+sub upload_db_name {'remanei'};
 
 #######################################################
 package Brenneri;
@@ -329,7 +329,7 @@ sub wormpep_prefix {'CN'}
 sub cds_regex{qr/CBN\d{5}[a-z]*/};
 sub seq_name_regex{qr/^CBN\d{5}/};
 sub cds_regex_noend{qr/CBN\d{5}[a-z]*/}; # for getting the CDS part of a Transcript name
-sub upload_db_name {'brenace'};
+sub upload_db_name {'brenneri'};
 
 #######################################################
 
@@ -379,7 +379,7 @@ sub full_name {
 	};
 }
 
-sub upload_db_name {'japace'};
+sub upload_db_name {'japonica'};
 
 #######################################################
 
@@ -492,7 +492,7 @@ sub TSL {(
 )};
 
 sub wormpep_prefix {'BM'}
-sub upload_db_name {'brugace'};
+sub upload_db_name {'brugia'};
 
 
 ######################################################

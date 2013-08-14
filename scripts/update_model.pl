@@ -5,8 +5,8 @@
 #
 # Script to update models.wrm in various directories for the build
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2005-12-16 11:18:55 $
+# Last updated by: $Author: pad $
+# Last updated on: $Date: 2013-08-14 12:19:59 $
 
 
 use strict;
@@ -26,7 +26,7 @@ $log->write_to("\n* YOU SHOULD UPDATE PRIMARY DATABASE MODELS TOO *\n\n");
 
 if ($new){
   $log->write_to("Updating in . . \n");
-  my @db = qw ("autoace" "geneace" "citace" "cshace" "camace" "stlace" "brigace");
+  my @db = qw ("autoace" "geneace" "citace" "cshace" "camace" "briggsae");
   foreach(@db){
     $log->write_to("\t$_\n");
     system("cd /wormsrv2/$_/wspec/; cvs update");

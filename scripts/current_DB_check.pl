@@ -7,9 +7,9 @@
 # Script to run consistency checks on the current_DB database
 # to look for bogus sequence entries
 #
-# Last updated by: $Author: ar2 $
+# Last updated by: $Author: pad $
 
-# Last updated on: $Date: 2006-02-17 11:32:47 $
+# Last updated on: $Date: 2013-08-14 12:19:59 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -123,14 +123,13 @@ foreach (@gene_id_error){
   if ($_ =~ /^csh/ )         { $cshl_counter++;    $cshl_log->write_to( $_ )}
   if ($_ =~ /^camace|^misc/ ){ $sanger_counter++;  $sanger_log->writeto( $_ )}
   if ($_ =~ /^caltech/ )     { $caltech_counter++; $caltech_log->write_to( $_ )}
-  if ($_ =~ /^stlace/ )      { $stlouis_counter++; $stlouis_log->write_to( $_ )}
 }
 
 
 foreach my $j (keys(%problems)){
   foreach my $k (keys(%{$problems{$j}})){
     $all_log->write_to("ERROR: $j $k @{${$problems{$j}}{$k}}\n");
-    if ($j ne "caltech" && $j ne "csh" && $j ne "stlace" && $j ne "brigace"){
+    if ($j ne "caltech" && $j ne "csh" && $j ne "briggsae"){
       $sanger_log->writeto( "ERROR: $j $k @{${$problems{$j}}{$k}}\n");
       $sanger_counter++;
       $all_counter++;
@@ -145,7 +144,7 @@ foreach my $j (keys(%problems)){
       $caltech_counter++;
       $all_counter++;
     }
-    if ($j eq "stlace" && $j eq "brigace"){
+    if ($j eq "briggsae"){
       $stlouis_log->write_to( "ERROR: $j $k @{${$problems{$j}}{$k}}\n");
       $stlouis_counter++;
       $all_counter++;
@@ -493,7 +492,7 @@ sub find_out_of_date_gene_id {
   }
   $db->close;
 
-  foreach my $group ("stlace", "camace", "csh", "caltech", "misc") {
+  foreach my $group ("camace", "csh", "caltech", "misc") {
     print "\n\nProcessing $group data\n\n" if ($verbose);
     my @config = `cat /wormsrv2/autoace_config/autoace.config`;
     my $error =();
@@ -596,7 +595,6 @@ sub create_log_files{
 
   $stlouis_log->write_to( "$0 started at ",`date`,"\n");
   $stlouis_log->write_to( "This file contains information on possible errors in the latest $WS_version release\n");
-  $stlouis_log->write_to( "which have been traced to the stlace or brigace databases. This list is generated\n");
   $stlouis_log->write_to( "automatically at the end of the $WS_version build process. Most items on this list will be\n");
   $stlouis_log->write_to( "sequences created by your database which should now be replaced by splice variants\n");
   $stlouis_log->write_to( "or removed altogether. Email wormbase\@sanger.ac.uk if you have any questions.\n");

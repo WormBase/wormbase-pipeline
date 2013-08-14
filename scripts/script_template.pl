@@ -6,8 +6,8 @@
 #
 # This is a example of a good script template
 #
-# Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2008-01-16 15:08:42 $      
+# Last updated by: $Author: pad $     
+# Last updated on: $Date: 2013-08-14 12:19:59 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -74,10 +74,9 @@ my $logs_dir        = $wormbase->logs;        # AUTOACE LOGS
 my $geneace   = $wormbase->database('geneace');
 my $camace    = $wormbase->database('camace');
 my $currentdb = $wormbase->database('current');
-my $stlace    = $wormbase->database('stlace');
 my $citace    = $wormbase->database('citace');
 my $cshace    = $wormbase->database('cshace');
-my $brigace   = $wormbase->database('brigace');
+my $briggsae  = $wormbase->database('briggsae');
 
 # other paths
 my $ftp_upload_dir  = $wormbase->ftp_upload;  # "/nfs/ftp_uploads/wormbase"
