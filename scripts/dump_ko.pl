@@ -10,14 +10,10 @@
 
 use Getopt::Long;
 use lib $ENV{CVS_DIR};
-use lib '/software/worm/lib/site_perl';
 use Wormbase;
 use IO::File;
 
 use Storable;
-# use YAML::Syck;
-# $YAML::Syck::ImplicitTyping = 1;
-# use CGI qw/:standard/;
 use strict;
 	
 my ($store,$test,$debug,$database,$file,$wormbase);
@@ -65,7 +61,7 @@ sub new {
 	my $class = shift;
 	my $db    = shift;
 	my $wormbase = shift;
-	$wormbase->{'tace'}='/software/worm/bin/acedb/tace';
+	$wormbase->{'tace'}='/software/acedb/bin/tace';
 	my $self = {
 		dbh => Ace->connect(-path=>$db),
 		conv => Coords_converter->invoke(glob($db),0, $wormbase),
@@ -197,7 +193,6 @@ sub print_one {
 
 	@{$output{affects}{gene}}= map {"$_"} @genes;
 	@{$output{strain}} = @strains;
-#	print $file YAML::Syck::Dump(\%output); # should be one day replaced with an XML emitter (maybe TT or XML::Writer)
 
 	print $file xml('variation',\%output);
 }
@@ -254,15 +249,10 @@ sub xml {
 		my $line;
 		while (my($k,$v)=each %$content){
 			$line.=&xml($k,$v);
-			# die(
-			#	"$k $v\n".
-			#	YAML::Syck::Dump($content)
-			# ) unless( defined($v) && defined($k) && defined(&xml($k,$v)));
 		}
 		return &xml($tag_name,$line);
 	}
 	else {  
-		#chomp $content;
 		$content="" unless $content;
 		$content = &right_shift($content);
 
