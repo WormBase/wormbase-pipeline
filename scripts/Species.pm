@@ -203,6 +203,8 @@ sub ncbi_tax_id {'6238'};
 sub ncbi_bioproject {'PRJNA10731'};
 sub bioproject_description {'C. briggsae Sequencing Consortium genome project'};
 sub assembly_type {'chromosome'};
+sub seq_db {my $self = shift;return $self->database('briggsae');}
+
 
 sub full_name {
 	my $self = shift;
@@ -279,6 +281,7 @@ sub cds_regex{qr/CRE\d{5}[a-z]*/};
 sub seq_name_regex{qr/^CRE\d{5}/};
 sub cds_regex_noend{qr/CRE\d{5}[a-z]*/}; # for getting the CDS part of a Transcript name
 sub assembly_type {'contig'};
+sub seq_db {my $self = shift;return $self->database('remanei');}
 sub upload_db_name {'remanei'};
 
 #######################################################
@@ -325,6 +328,7 @@ sub full_name {
 	};
 }
 sub assembly_type {'contig'};
+sub seq_db {my $self = shift;return $self->database('brenneri');}
 sub wormpep_prefix {'CN'}
 sub cds_regex{qr/CBN\d{5}[a-z]*/};
 sub seq_name_regex{qr/^CBN\d{5}/};
@@ -365,6 +369,7 @@ sub cds_regex{qr/CJA\d{5}[a-z]*/};
 sub seq_name_regex{qr/^CJA\d{5}/};
 sub cds_regex_noend{qr/CJA\d{5}[a-z]*/}; # for getting the CDS part of a Transcript name
 sub assembly_type {'contig'};
+sub seq_db {my $self = shift;return $self->database('japonica');}
 sub wormpep_prefix {'JA'}
 
 sub full_name {
@@ -484,6 +489,8 @@ sub ncbi_tax_id {'6279'};
 sub ncbi_bioproject {'PRJNA10729'};
 sub bioproject_description { 'University of Pittsburgh B.malayi genome project' }
 sub assembly_type {'contig'};
+sub seq_db {my $self = shift;return $self->database('brugia');}
+
 sub TSL {(
 	  'SL1'  => "GGTTTAATTACCCAAGTTTGAG",
 	  'Bm_SL1a' => "GGTTTTAATTACCCAAGTTTGAG",
