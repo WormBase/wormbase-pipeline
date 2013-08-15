@@ -101,7 +101,7 @@ sub conv {
 
 sub set_alleles {
 	my $self = shift;
-	$self->{allele}=\@_ if (length @_ > 0);
+	$self->{allele}=\@_ if (scalar @_ > 0);
 	return @{$self->{allele}};
 }
 
