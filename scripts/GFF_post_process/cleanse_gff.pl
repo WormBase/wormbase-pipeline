@@ -3,7 +3,7 @@
 # cleanse_gff.pl
 # 
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-07-21 11:07:59 $
+# Last updated on: $Date: 2013-08-15 09:04:49 $
 
 # 'Cleanes' GFF by:
 # (a) removing lines with source = '.'
@@ -69,8 +69,13 @@ while (<$gff_in_fh>) {
   }
   
   if ($l[1] eq '.') {
-    $lines_removed++;
-    next;
+    if ($l[2] =~ 'Clone_left_end' or $l[2] =~ 'Clone_right_end') {
+      # do this just so that everything has a non '.' source
+      $l[1] = 'Clone';
+    } else {
+      $lines_removed++;
+      next;
+    }
   }
 
   print $gff_out_fh join("\t", @l), "\n";
