@@ -6,7 +6,7 @@
 # 19.02.02 Kerstin Jekosch
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2009-08-03 15:15:36 $
+# Last edited on: $Date: 2013-08-15 15:16:26 $
 
 use strict;
 use Getopt::Long;
@@ -16,7 +16,7 @@ use Carp;
 use Log_files;
 use Storable;
 
-my ($load,$delete,$dbdir,$help,$all,$wormbase,$test,$debug,$store);
+my ($load,$delete,$dbdir,$help,$all,$wormbase,$test,$debug,$store,$species);
 GetOptions (
 	    "load"    => \$load,
 	    "delete"  => \$delete,
@@ -26,14 +26,16 @@ GetOptions (
 	    "debug=s" => \$debug,
 	    "test"    => \$test,
 	    "store:s" => \$store,
+	    "species:s" => \$species,
 	    );
 
 
 if ( $store ) {
-  $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
+  $wormbase = retrieve($store) or croak("Can't restore wormbase from $store\n");
 } else {
   $wormbase = Wormbase->new( -debug   => $debug,
                              -test    => $test,
+			     -organism => $species,
                              );
 }
 
@@ -66,7 +68,7 @@ die "You do not have write access for $dbdir\n" if ($access eq "no");
 
 
 my $dbname;
-if ($dbdir =~ /\/(\w+ace)/) {
+if ($dbdir =~ /\/(\w+)\/$/) {
     $dbname = $1;
 }
 else {
@@ -138,7 +140,7 @@ quit
 END
 }
 
-elsif ($dbname =~ /camace/) {
+else {
 $command=<<END;
 pparse $acefiles/chromlinks.ace
 pparse $blat_dir/virtual_objects.$species.blat.EST.$species.ace
@@ -152,11 +154,11 @@ pparse $blat_dir/virtual_objects.$species.ci.RST.$species.ace
 pparse $blat_dir/virtual_objects.$species.ci.mRNA.$species.ace
 pparse $blat_dir/virtual_objects.$species.ci.ncRNA.$species.ace
 save
-pparse $blat_dir/$species.blat.elegans_EST.ace
-pparse $blat_dir/$species.blat.elegans_OST.ace
-pparse $blat_dir/$species.blat.elegans_RST.ace
-pparse $blat_dir/$species.blat.elegans_mRNA.ace
-pparse $blat_dir/$species.blat.elegans_ncRNA.ace
+pparse $blat_dir/$species.blat.${species}_EST.ace
+pparse $blat_dir/$species.blat.${species}_OST.ace
+pparse $blat_dir/$species.blat.${species}_RST.ace
+pparse $blat_dir/$species.blat.${species}_mRNA.ace
+pparse $blat_dir/$species.blat.${species}_ncRNA.ace
 pparse $blat_dir/$species.good_introns.EST.ace 
 pparse $blat_dir/$species.good_introns.OST.ace
 pparse $blat_dir/$species.good_introns.RST.ace
