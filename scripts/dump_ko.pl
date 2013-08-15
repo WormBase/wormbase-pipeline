@@ -61,7 +61,6 @@ sub new {
 	my $class = shift;
 	my $db    = shift;
 	my $wormbase = shift;
-	$wormbase->{'tace'}='/software/acedb/bin/tace';
 	my $self = {
 		dbh => Ace->connect(-path=>$db),
 		conv => Coords_converter->invoke(glob($db),0, $wormbase),
