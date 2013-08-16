@@ -6,7 +6,7 @@
 # Compares this number to those from a second database.
 #
 # Last updated by: $Author: pad $
-# Last updated on: $Date: 2013-08-14 12:19:59 $
+# Last updated on: $Date: 2013-08-16 16:19:10 $
 
 
 use strict;
@@ -631,7 +631,6 @@ as necessary when classes are added/removed to the database.
 -debug and -help are standard Wormbase script options.
 
 -camace
--stlace
 -genace
 -csh
 -caltech
