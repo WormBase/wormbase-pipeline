@@ -4,8 +4,8 @@
 #
 # by Keith Bradnam
 #
-# Last updated on: $Date: 2013-07-29 10:43:22 $
-# Last updated by: $Author: pad $
+# Last updated on: $Date: 2013-08-16 10:14:14 $
+# Last updated by: $Author: gw3 $
 #
 # see pod documentation at end of file for more information about this script
 
@@ -132,20 +132,21 @@ sub main_gene_checks {
   
   while (my $gene_model = shift @$pred_ref) {
     my $gene_model_name = $gene_model->name;
+    if ($verbose) {
+      print "Checking $gene_model_name\n";
+    }
+
+    unless (defined $gene_model->Method) {
+      $errorcountCDS ++;
+      print STDERR "$gene_model appears to be incomplete: it has no method.\n" if $verbose;
+      next CHECK_GENE;
+    }
+    
     my $method_test = $gene_model->Method->name;
     unless ($gene_model_name =~ /$cds_regex/) {
       print "warning $gene_model_name invalid\n" if ($method_test eq 'curated');
     }
 
-    if ($verbose) {
-      print "Checking $gene_model_name\n";
-    }
-    unless (defined $gene_model->Method) {
-      $errorcountCDS ++;
-      print STDERR "$gene_model appears to be incompletehas no method and appears incomplete\n" if $verbose;
-      next CHECK_GENE;
-    }
-    
     my @exon_coord1 = sort by_number ($gene_model->get('Source_exons',1));
     my @exon_coord2 = sort by_number ($gene_model->get('Source_exons',2));
     my $i;
