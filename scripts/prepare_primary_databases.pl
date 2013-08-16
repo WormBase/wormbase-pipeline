@@ -2,8 +2,8 @@
 #
 # prepare_primary_databases.pl
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2013-01-15 10:53:32 $
+# Last edited by: $Author: pad $
+# Last edited on: $Date: 2013-08-16 11:28:47 $
 
 use strict;
 my $scriptdir = $ENV{'CVS_DIR'};
@@ -20,20 +20,9 @@ use File::Path;
 #################################################################################
 my %search_places = (
                      elegans => [['citace', 'caltech', 'citace*'],
-                                 ['stlace', 'stl',     'stlace*'],
-                                 ['cshace', 'csh',     'cshl*'],
+                                 #['stlace', 'stl',     'stlace*'],
+                                 #['cshace', 'csh',     'cshl*'],
                                  ],
-
-                     briggsae => [['brigace', 'stl', 'brigace*']],
-
-                     brenneri => [['brenace', 'stl', 'brenace*']],
-
-                     remanei  => [['remace', 'stl', 'remace*']], 
-
-                     japonica  => [['japace', 'stl', 'japace*']], 
-
-		     brugia    => [['brugace', 'stl', 'brugace*']],
-
 );
 
 my ($test,$debug,$database, $store, $wormbase, $species);
@@ -62,14 +51,17 @@ $species = $wormbase->species;
 
 my (%databases);
 
-&FTP_versions();
-&last_versions();
+if ($species eq 'elegans') {
+  &FTP_versions();
+  &last_versions();
+}
 
 my (@errors, @options, @delete_from);
 
 foreach my $primary (keys %databases){
+  if (defined $database) {
   next if (defined $database and ($database ne $primary));
-
+  
   if( not $databases{$primary}->{new_date}) {
     push @errors, "Could not find latest data for $primary in FTP uploads\n";
   } elsif ($databases{$primary}->{new_date} le $databases{$primary}->{last_date}) {
@@ -97,36 +89,28 @@ foreach my $prim (@delete_from) {
 
 $log->write_to(" running unpack_db.pl @options\n\n");
 $wormbase->run_script("unpack_db.pl @options", $log);
-
-#only do geneace and camace if doing elegans.  Assume genace ready if other species.
-if( $species eq 'elegans') {
-  # transfer camace to correct PRIMARIES dir; 
-  # geneace should have already been staged by the geneace curator
-  $log->write_to("Transfering camace\n");
-  
-  foreach ( qw(camace) ){
-    next if (defined $database and ($database ne $_));
-    
-    my $primary_path = $wormbase->primary($_);
-    
-    my $test_file = "$primary_path/database/block1.wrm";
-    
-    ($databases{$_}->{last_date}) = $wormbase->find_file_last_modified($test_file);
-    
-    $wormbase->delete_files_from($wormbase->primary($_),'*','+');
-    $wormbase->run_script("TransferDB.pl -start ".$wormbase->database("camace"). " -end $primary_path -database -wspec", $log);
-    
-    ($databases{$_}->{new_date}) = $wormbase->find_file_last_modified($test_file);
-  }
-  foreach ( qw(camace geneace ) ){
-    next if (defined $database and ($database ne $_));
-    
-    $wormbase->run_command("ln -sf ".$wormbase->autoace."/wspec/models.wrm ".$wormbase->primary("$_")."/wspec/models.wrm", $log);
-    
-    my $test_file = $wormbase->primary($_) . "/database/block1.wrm";
-    ($databases{$_}->{new_date}) = $wormbase->find_file_last_modified($test_file);
-  }
 }
+
+# New non FTP code for staging the species canonical databases
+my $ref;
+if($species eq 'elegans') {
+  $ref = 'camace';
+}
+else {
+  $ref = $species;
+}
+
+$log->write_to("Transfering /nfs/wormpub/DATABASES/$ref to PRIMARIES\n");
+my $primary_path = $wormbase->primary($ref);
+my $test_file = "$primary_path/database/block1.wrm";
+($databases{$ref}->{last_date}) = $wormbase->find_file_last_modified($test_file);
+$wormbase->delete_files_from($wormbase->primary($ref),'*','+');
+$wormbase->run_script("TransferDB.pl -start ".$wormbase->database($ref). " -end $primary_path -database -wspec", $log);
+    
+($databases{$ref}->{new_date}) = $wormbase->find_file_last_modified($test_file);
+$wormbase->run_command("ln -sf ".$wormbase->autoace."/wspec/models.wrm ".$wormbase->primary($ref)."/wspec/models.wrm", $log);
+my $test_file2 = $wormbase->primary($ref) . "/database/block1.wrm";
+($databases{$ref}->{new_date}) = $wormbase->find_file_last_modified($test_file2);
 
 my $log_msg = "\nDatabase versions used in the build (Previous => New):\n";
 
@@ -137,7 +121,6 @@ foreach my $db (keys %databases) {
                       exists($databases{$db}->{new_date}) ? $databases{$db}->{new_date} : "-");
 }
 $log->write_to("$log_msg\n\n");
-
 my $record = join("/", $wormbase->reports, "Databases_used_in_build");
 open my $rfh, ">$record";
 foreach my $db (keys %databases) {
