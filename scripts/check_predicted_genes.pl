@@ -4,8 +4,8 @@
 #
 # by Keith Bradnam
 #
-# Last updated on: $Date: 2013-08-16 10:14:14 $
-# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2013-08-16 15:09:15 $
+# Last updated by: $Author: pad $
 #
 # see pod documentation at end of file for more information about this script
 
@@ -81,19 +81,42 @@ else {
   # Fetch Gene Models to be tested (All_genes) #
 
   my @Predictions;
-
+  my @bad_genes;
+  my $bad_genes;
+  my $Bcount;
   if ($test1) {
     $log->write_to("Only checking genes on ${test1}.......\n");
     #  @Predictions = $db->fetch('All_genes','Y32B12C*');
-    @Predictions = $db->fetch('All_genes',"${test1}*");
+    @Predictions = $db->fetch (-query => "FIND All_genes ${test1}* AND method");
     foreach my $Predictions(@Predictions) {
       print $Predictions->name."\n";
+    }
+    $log->write_to("Checking for Gene models with no method");
+    @bad_genes = $db->fetch (-query => 'FIND All_genes ${test1}* AND !method');
+    $Bcount = @bad_genes;
+    if ($Bcount ne '0') {
+      $log->write_to("\nError: $Bcount models have no method, please check\n");
+      foreach $bad_genes(@bad_genes) {
+	$log->write_to("Error: $bad_genes has no method\n") if ($verbose);
+      }
+    }
+    else {
+      $log->write_to("\nThat's ok, $Bcount models have no method :)\n\n");
     }
   }
   else {
     print STDERR "Fetching all genes...\n" if $verbose;
-    @Predictions = $db->fetch (-query => 'FIND All_genes');
+    @Predictions = $db->fetch (-query => 'FIND All_genes where method');
+
+    $log->write_to("Gene models with no method");
+    @bad_genes = $db->fetch (-query => 'FIND All_genes where !method');
+    $Bcount = @bad_genes;
+    $log->write_to("Error: $Bcount models have no method, please check\n");
+      foreach $bad_genes(@bad_genes) {
+	$log->write_to("Error: $bad_genes has no method\n");
+      }
   }
+
   my $gene_model_count=@Predictions;
   $log->write_to("Checking $gene_model_count Predictions in $db_path\n\n");
   print STDERR "\nChecking $gene_model_count Predictions...\n\n" if $verbose;
@@ -538,7 +561,7 @@ sub test_gene_sequence_for_errors{
       print STDERR "ERROR: $gene_model length ($gene_model_length bp) not divisible by 3, Start_not_found and/or End_not_found tag present\n" if $verbose;
     }
   }
-
+unless ($gene_model->name =~ /MTCE/) {
   # look for incorrect stop codons (CDS specific)
   if (($stop_codon ne 'taa') && ($stop_codon ne 'tga') && ($stop_codon ne 'tag') && ($method_test eq 'curated')) {
     if ($end_tag ne "present") {
@@ -563,33 +586,33 @@ sub test_gene_sequence_for_errors{
     } 
   }
 
-  # check for internal stop codons (CDS specific)
-  my $i;
-  my $j;
-  for ($i=0; $i<$gene_model_length-3;$i+=3) {
-    # hold position of codon in $j
-    $j=$i+1;
-    my $codon =substr($dna,$i,3);
-    if (($codon eq "taa") || ($codon eq "tag") || ($codon eq "tga")) {      
-      my $previous_sequence = substr($dna, $j-11,10);
-      my $following_sequence = substr($dna, $j+2, 10);
-      my $offending_codon = substr($dna, $j-1, 3);
-      if (($method_test eq 'curated')) {
-	push(@error1, "ERROR: $gene_model internal stop codon at position $j ...$previous_sequence $offending_codon $following_sequence...\n");      
-	print STDERR "ERROR: $gene_model internal stop codon at position $j ...$previous_sequence $offending_codon $following_sequence...\n" if $verbose;
+    # check for internal stop codons (CDS specific)
+    my $i;
+    my $j;
+    for ($i=0; $i<$gene_model_length-3;$i+=3) {
+      # hold position of codon in $j
+      $j=$i+1;
+      my $codon =substr($dna,$i,3);
+      if (($codon eq "taa") || ($codon eq "tag") || ($codon eq "tga")) {      
+	my $previous_sequence = substr($dna, $j-11,10);
+	my $following_sequence = substr($dna, $j+2, 10);
+	my $offending_codon = substr($dna, $j-1, 3);
+	if (($method_test eq 'curated')) {
+	  push(@error1, "ERROR: $gene_model internal stop codon at position $j ...$previous_sequence $offending_codon $following_sequence...\n") unless ($gene_model eq 'C06G3.7');      
+	  print STDERR "ERROR: $gene_model internal stop codon at position $j ...$previous_sequence $offending_codon $following_sequence...\n" if (($verbose) && ($gene_model ne 'C06G3.7'));
+	}
+      }
+    }
+    if ($species eq "elegans") {
+      # look for non-ACTG characters
+      if ($dna =~ /[^acgt]/i) {
+	$dna =~ s/[acgt]//g;
+	push(@error2, "ERROR: $gene_model DNA sequence contains the following non-ATCG characters: $dna\n"); 
+	print STDERR "ERROR: $gene_model DNA sequence contains the following non-ATCG characters: $dna\n" if $verbose;
       }
     }
   }
-  if ($species eq "elegans") {
-    # look for non-ACTG characters
-    if ($dna =~ /[^acgt]/i) {
-      $dna =~ s/[acgt]//g;
-      push(@error2, "ERROR: $gene_model DNA sequence contains the following non-ATCG characters: $dna\n"); 
-      print STDERR "ERROR: $gene_model DNA sequence contains the following non-ATCG characters: $dna\n" if $verbose;
-    }
-  }
 }
-
 
 sub by_number{ $a <=> $b;}
 
@@ -650,7 +673,7 @@ check_predicted_genes.pl performs a wide range of checks on ?CDS objects to ensu
 that they are valid objects and will behave properly within the database.  The script was
 written to be called from within the I<camcheck> script which performs a wider range of error
 checking on the camace database, but the script can also be run as a standalone program to check
-the status of other wormbase databases such as autoace, stlace etc.
+the status of other wormbase databases such as autoace, etc.
 
 The script checks predicted genes for the following:
 
