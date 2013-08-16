@@ -2,14 +2,10 @@
 #
 # merge_split_camaces.pl
 # 
-# A script to make multiple copies of camace for curation, and merge them back again
+# A script to make multiple copies of core species database for curation, and merge them back again
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2013-02-28 14:37:28 $
-#
-# Persisting errors.
-#running csh -c "reformat_acediff file 1 file2"
-#Use of uninitialized value in concatenation (.) or string at /reformat_acediff line 121.
+# Last edited on: $Date: 2013-08-16 16:17:54 $
 #====================
 
 use strict;
@@ -26,6 +22,8 @@ use Storable;
 my $all;                   # All
 my $pad;                   # Use Paul's split
 my $gw3;                   # Use Gary's split
+my $mh6;                   # Use MH6 split
+my $curation;              # create a single curation database.
 my $merge;                 # Merging databases
 my $split;                 # Splitting databases
 my $update;                # Update current database
@@ -33,6 +31,7 @@ my $debug;                 # Debug option
 my $help;                  # Help menu
 my $WS_version;            # Removes final wormsrv2 dependancy.
 my $store;                 # Storable not needed as this is not a build script!
+my $species;
 my $test;
 my $wormbase;
 my $email;                 # Option for child scripts that can tace a user email option.
@@ -48,6 +47,8 @@ my $nochecks;              # dont run camcheck as this can take ages.
 	      "all"        => \$all,
 	      "pad"        => \$pad,
 	      "gw3"        => \$gw3,
+	      "mh6"        => \$mh6,
+	      "curation"   => \$curation,
 	      "merge"      => \$merge,
 	      "split"      => \$split,
 	      "update"     => \$update,
@@ -55,6 +56,7 @@ my $nochecks;              # dont run camcheck as this can take ages.
 	      "debug:s"    => \$debug,
 	      "version:s"  => \$WS_version,
 	      "store"      => \$store,
+	      "species:s"    => \$species,
 	      "test"       => \$test,
 	      "email:s"    => \$email,
 	      "nodump"     => \$nodump,
@@ -77,6 +79,7 @@ if ($store) {
 else {
   $wormbase = Wormbase->new( -debug => $debug,
 			     -test => $test,
+			     -organism => $species
 			   );
 }
 
@@ -96,11 +99,24 @@ my @databases; #array to store what splits are to be merged.
 push(@databases,"orig");
 push(@databases,"pad") if ($pad || $all);
 push(@databases,"gw3") if ($gw3 || $all);
+push(@databases,"mh6") if ($mh6 || $all);
+push(@databases,"curation") if ($curation || $all);
 
 # directory paths
 my $wormpub = $wormbase->wormpub;
-our $canonical = $wormbase->database('camace');
-our $orig = $wormpub."/camace_orig";
+our $canonical;
+our $orig;
+our $root;
+if ($species eq 'elegans') {
+  $canonical = $wormbase->database('camace');
+  $orig = $wormpub."/camace_orig";
+  $root = 'camace';
+}
+else {
+  $canonical = $wormbase->database($species);
+  $orig = $wormpub."/${species}_orig";
+  $root = $species;
+}
 our $directory   = $orig."/WS${WS_version}-WS${next_build}";
 $log->write_to ("OUTPUT_DIR: ".$orig."/WS${WS_version}-WS${next_build}\n\n");
 
@@ -124,7 +140,7 @@ if ($merge) {
   $log->write_to ("You are merging Data from " . (join '-',@databases) ."\n\n");
 
   # dumps the Pseudogene, Transcript, Feature and Sequence classes from the database
-  &dump_camace unless ($nodump);
+  &dump_sdb unless ($nodump);
   &create_public_name_data;
   shift (@databases); #remove 1st element of array as there aren't going to be any camace_orig updates
   # run acediff on the files tidy up and reformat the diff files ready to be loaded
@@ -175,7 +191,7 @@ if ($merge) {
 
 if ($update) {
   shift (@databases); 
-  &update_camace;
+  &update_canonical;
   $log->write_to ("Phase 2 finished $canonical is now updated\n");
 }
 
@@ -184,11 +200,11 @@ if ($update) {
 ############################################################################
 
 if ($split) {
-  $log->write_to ("Removing old split databases and Copying $canonical database to the split camaces\n");
+  $log->write_to ("Removing old split databases and Copying $canonical database to the split database locations\n");
   &split_databases unless ($nosplit);
   
-  $log->write_to ("\nPhase 3 finished. All ~wormpub split camaces can now be used\n\nCheck all TransferDB log files for \"ended SUCCESSFULLY\"\n");
-  print "Phase 3 finished. All ~wormpub split camaces can now be used\n\nCheck all TransferDB log files for \"ended SUCCESSFULLY\"\n" if ($debug);
+  $log->write_to ("\nPhase 3 finished. All ~wormpub split curation databases for $species can now be used\n\nCheck all TransferDB log files for \"ended SUCCESSFULLY\"\n");
+  print "Phase 3 finished. All ~wormpub split curation databases for $species can now be used\n\nCheck all TransferDB log files for \"ended SUCCESSFULLY\"\n" if ($debug);
 }
 
 
@@ -231,26 +247,26 @@ exit(0);
                                                                 #################
 ##################################################################################################################################################
 
-#####################################
-#(1a) Dump files from camace splits #
-#####################################
-sub dump_camace {
-  #dumps out subset of classes from camace splits and processes the files to be loaded back to Canonical Database
+#######################################
+#(1a) Dump files from split databases #
+#######################################
+sub dump_sdb {
+  #dumps out subset of classes from curation splits and processes the files to be loaded back to Canonical Database
   #array of classes to be dumped
-  my $camace_path;
+  my $database_path;
   my $path;
 
   foreach my $database (@databases) {
 
-    $camace_path = $wormpub."/camace_${database}";
-    #$ENV{'ACEDB'} = $camace_path;
+    $database_path = $wormpub."/${root}_${database}";
+    #$ENV{'ACEDB'} = $database_path;
     
     foreach my $class (@classes) {
-      $log->write_to ("dumping $class class from camace_${database}\n");
+      $log->write_to ("dumping $class class from ${root}_${database}\n");
       $path = "$directory/" . "${class}_${database}.ace";
-      &dumpace("$class",$path,$camace_path);
-      print "dumped $class class from camace_${database}\n\n" if $debug;
-      $log->write_to ("dumped $class class from camace_${database}\n\n");
+      &dumpace("$class",$path,$database_path);
+      print "dumped $class class from ${root}_${database}\n\n" if $debug;
+      $log->write_to ("dumped $class class from ${root}_${database}\n\n");
     }
   }
 }
@@ -313,12 +329,12 @@ sub testuser {
 ########################################
 #(2b) upload data to Canonical Database#
 ########################################
-sub update_camace {
+sub update_canonical {
   # upload processed diff files into Canonical Database.
   $log->write_to ("Upload diff files to $canonical");
 #  $ENV{'ACEDB'} = $canonical;
   
-  ##  Upload the split camace update files you have just created  ##
+  ##  Upload the split update files you have just created  ##
   foreach my $database (@databases) {
     foreach my $class (@classes) {
       &loadace("$directory/update_${class}_${database}.ace", "${database}_${class}", "$canonical");
@@ -329,33 +345,29 @@ sub update_camace {
   # Remove data we don't want in the build that may have got into the canonical erroneously.
   $log->write_to ("Removing any curation data that may have erroneously been loaded into the canonical db.\n");
   print "Removing any curation data that may have erroneously been loaded into the canonical db.\n" if ($debug);
-  &remove_data("camace","1");
+  &remove_data("$root","1");
 
-  # Load DB_remarks into camace as these are required for EMBL dumping
-  $log->write_to ("loading DB_remarks into camace\n");
-  print "loading Data requited for EMBL submission into camace\n" if ($debug);
-  &load_curation_data("camace");
-
-  ## Check if camace is in sync with the name server. ##
-  $log->write_to ("\n\nRunning camace_nameDB_comm.pl.\n\n");
-  $wormbase->run_script("NAMEDB/camace_nameDB_comm.pl", $log) && die "Failed to run camace_nameDB_comm.pl\n";
-  $log->write_to ("camace_nameDB_comm.pl Finished, check the build log email for errors.\n");
+  # Load DB_remarks into canonical as these are required for EMBL dumping
+  $log->write_to ("loading DB_remarks into $root\n");
+  print "loading Data required for EMBL submission into $root\n" if ($debug);
+  &load_curation_data("$root");
 
 
   ## Check Canonical Database for errors one last time. ##
-  $log->write_to ("\nChecking camace for inconsistencies\n-----------------------------------\n\n");
+  $log->write_to ("\nChecking $canonical for inconsistencies\n-----------------------------------\n\n");
   # WBGene IDs
-  $log->write_to ("Running camace_nameDB_comm.pl.....\n");
-  print "Running camace_nameDB_comm.pl.....\n" if ($debug);
-  $wormbase->run_script("NAMEDB/camace_nameDB_comm.pl", $log) && die "Failed to run camace_nameDB_comm.pl\n";
+  $log->write_to ("Running camace_nameDB_comm.pl on $canonical.....\n");
+  print "Running camace_nameDB_comm.pl on $canonical.....\n" if ($debug);
+  $wormbase->run_script("NAMEDB/camace_nameDB_comm.pl -database $canonical", $log) && die "Failed to run camace_nameDB_comm.pl\n";
   $log->write_to ("camace_nameDB_comm.pl Finished, check the build log email for errors.\n\n");
-  print "camace_nameDB_comm.pl Finished, check the build log email for errors.\n\n" if ($debug);
+  print "camace_nameDB_comm.pl Finished for $canonical, check the build log email for errors.\n\n" if ($debug);
 
   unless ($nochecks) {
     # Gene structures
     $log->write_to ("\nRunning check_predicted_genes.pl\n");
     print "\nRunning check_predicted_genes.pl\n" if ($debug);
-    $wormbase->run_script("check_predicted_genes.pl -basic -database ". $wormbase->database('camace'), $log) && die "Failed to run camcheck.pl\n";
+
+    $wormbase->run_script("check_predicted_genes.pl -basic -species $species -database $canonical", $log) && die "Failed to run camcheck.pl\n";
     $log->write_to ("check_predicted_genes.pl Finished, check the build log email for errors.\n");
     print "check_predicted_genes.pl Finished, check the build log email for errors.\n" if ($debug);
   }
@@ -368,56 +380,69 @@ sub update_camace {
 
 sub split_databases {
 
-#reinitialise the camace_splits
+#reinitialise the $species_splits
   foreach my $database (@databases) {
-    $log->write_to ("Destroying $database\n");
-    print "Destroying $database\n" if ($debug);
-    my $split_db = $wormpub."/camace_${database}";
+    my $split_db = $wormpub."/${root}_${database}";
     my $tsuser = "Initialise";
-    $wormbase->run_command("rm -rf $split_db/database/ACEDB.wrm", $log) && die "Failed to remove $split_db/database/ACEDB.wrm\n";
-    
+    if (-e $split_db."/database/ACEDB.wrm") {
+      $log->write_to ("Destroying $database\n");
+      print "Destroying $database\n" if ($debug);
+      $wormbase->run_command("rm -rf $split_db/database/ACEDB.wrm", $log) && die "Failed to remove $split_db/database/ACEDB.wrm\n";
+    }
+    else {
+      $log->write_to ("Databases doesn't exist so creating $database\n");
+      print "Databases doesn't exist so creating $database\n";
+      $wormbase->run_command("mkdir $split_db", $log) && die "Failed to create $split_db dir\n" unless (-e $split_db);
+      $wormbase->run_command("mkdir $split_db/database", $log) && die "Failed to create a database dir\n" unless (-e $split_db."/database");
+      $wormbase->run_command("cp -r $wormpub/wormbase/wspec $split_db/", $log) && die "Failed to copy the wspec dir\n" unless (-e $split_db."/wspec");
+      $wormbase->run_command("chmod g+w $split_db/wspec/*", $log) && die "Failed to chmod the files\n";
+      $wormbase->run_command("cp -r $wormpub/wormbase/wgf $split_db/", $log) && die "Failed to copy the wgf dir\n" unless (-e $split_db."/wgf");
+    }
     my $command = "y\nquit\n";
     open (TACE, "| $tace $split_db -tsuser $tsuser") || die "Couldn't open $split_db\n";
     print TACE $command;
     close TACE;
-    $log->write_to ("Destroyed $database\n");
-    print "Destroyed $database\n" if ($debug);
+    $log->write_to ("(Re)generated $database\n");
+    print "(Re)generated $database\n" if ($debug);
   }
+  
 
-  # Transfer camace -> camace_orig
+  # Transfer canonical -> database_orig
   $log->write_to ("Transfering $canonical to $orig\n");
   print "Transfering $canonical to $orig\n" if ($debug);
-  $wormbase->run_script("TransferDB.pl -start $canonical -end $orig -split -database -wspec", $log) && die "Failed to run TransferDB.pl for camace_orig\n";
+  $wormbase->run_script("TransferDB.pl -start $canonical -end $orig -split -database", $log) && die "Failed to run TransferDB.pl for $orig\n";
 
-  # work on camace_orig to get it populated with curation data
-  $log->write_to ("Refreshing curation data in $orig\n-------------------------------------\nRemoving old curation data from camace_orig\n");
-  print "Refreshing curation data in $orig\n-------------------------------------\nRemoving old curation data from camace_orig\n" if ($debug);
+  # work on database_orig to get it populated with curation data
+  $log->write_to ("Refreshing curation data in $orig\n-------------------------------------\nRemoving old curation data from $orig\n");
+  print "Refreshing curation data in $orig\n-------------------------------------\nRemoving old curation data from $orig\n" if ($debug);
   &remove_data($orig); #remove any stale data. 
-  $log->write_to ("loading curation data into camace_orig\n");
-  print "loading curation data into camace_orig\n" if ($debug);
-  &load_curation_data($orig); #this loads all curation data into camace_orig (also removes bogus gene predictions)
+  $log->write_to ("loading curation data into $orig\n");
+  print "loading curation data into $orig\n" if ($debug);
+  &load_curation_data($orig); #this loads all curation data into $orig (also removes bogus gene predictions)
  
   # Create the rest of the curation databases.
   shift @databases; #remove orig from database array
   $log->write_to ("@databases\n") if ($debug);
   foreach my $database (@databases) {
-    $log->write_to ("Transfering $orig to $wormpub/camace_${database}\n");
-    print "Transfering $orig to $wormpub/camace_${database}\n" if ($debug);
-    $wormbase->run_script("TransferDB.pl -start  $orig -end $wormpub/camace_${database} -split -database -wspec", $log) && $log->write_to ("Failed to run TransferDB.pl for camace_${database}\n");
+    $log->write_to ("Transfering $orig to $wormpub/${root}_${database}\n");
+    print "Transfering $orig to $wormpub/${root}_${database}\n" if ($debug);
+    $wormbase->run_script("TransferDB.pl -start  $orig -end $wormpub/${root}_${database} -split -database -wspec", $log) && $log->write_to ("Failed to run TransferDB.pl for ${root}_${database}\n");
   }
-  $log->write_to ("CAMACE SPLITS UPDATED\n");
-  print "CAMACE SPLITS UPDATED\n" if ($debug);
+  $log->write_to ("@databases SPLIT(S) UPDATED\n");
+  print "@databases SPLIT(S) UPDATED\n" if ($debug);
+  #protect the reference copy of the database now it has been updated and copied over to the curation splits.
+  $wormbase->run_command ("touch $orig/database/lock.wrm", $log)
 }
 
 ######################################################################
 #(3b) Load data into split database that is required to aid curation,#
-#     and updates some critical data in camace that is needed 4 EMBL #
+#     and updates some critical data in the canonical                #
 ######################################################################
 sub load_curation_data {
   my $sub_database = shift;
   my $database_path;
-  if ($sub_database eq "camace") {
-    $database_path = $wormbase->database('camace');
+  if ($sub_database eq "$species") {
+    $database_path = $wormbase->database('$species');
   }
   else {
     $database_path = $sub_database;
@@ -427,7 +452,7 @@ sub load_curation_data {
   my $file;
   my @files;
   my $acefiles;
-  if (-e $wormbase->acefiles."/sorted_exons.ace") {
+  if (-e $wormbase->acefiles."/WBgene_spans.ace") {
     $acefiles = $wormbase->acefiles;
     $log->write_to ("The BUILD is still in place, using autoace/acefiles\n");
   }
@@ -437,9 +462,11 @@ sub load_curation_data {
   }
   
   # updates core data that is usually stored in primary database.
-  if ($sub_database eq "camace"){
+  if ($sub_database eq "$species"){
+    if ($sub_database eq "camace") {
+      push (@files, "$wormpub/CURATION_DATA/assign_orientation.WS${WS_version}.ace",);
+    }
     push (@files,
-	  "$wormpub/CURATION_DATA/assign_orientation.WS${WS_version}.ace",
 	  "$acefiles/sorted_exons.ace",
 	  "$wormpub/wormbase/autoace_config/misc_autoace_methods.ace",
 	  "$acefiles/feature_SL1.ace",
@@ -455,52 +482,62 @@ sub load_curation_data {
   }
 
   #loads in all mapping data and curation aids.
-  unless ($sub_database eq "camace") {
+  unless (($sub_database eq "$species") or ($sub_database eq "camace")) {
 
     #curation data sometimes doesn't get loaded as the name changes....WS version or not?
-    if (-e "$wormpub/CURATION_DATA/anomalies_elegans.ace.WS${WS_version}") {
-      push (@files,"$wormpub/CURATION_DATA/anomalies_elegans.ace.WS${WS_version}");
+    if (-e "$wormpub/CURATION_DATA/anomalies_$species.ace.WS${WS_version}") {
+      push (@files,"$wormpub/CURATION_DATA/anomalies_$species.ace.WS${WS_version}");
     }
-    elsif (-e "$wormpub/CURATION_DATA/anomalies_elegans.ace") {
-      push (@files,"$wormpub/CURATION_DATA/anomalies_elegans.ace");
+    elsif (-e "$wormpub/CURATION_DATA/anomalies_$species.ace") {
+      push (@files,"$wormpub/CURATION_DATA/anomalies_$species.ace");
     }
 
-    push (@files,"$wormpub/CURATION_DATA/Tiling_array_data/tiling_array.ace",
-	"$wormpub/CURATION_DATA/assign_orientation.WS${WS_version}.ace",
-	"$wormpub/BUILD_DATA/MISC_DYNAMIC/misc_TEC_RED_homol.ace",
-	"$wormpub/BUILD_DATA/MISC_DYNAMIC/misc_21urna_homol.ace",
-	"$wormpub/BUILD_DATA/MISC_DYNAMIC/misc_twinscan.ace",
-	"$wormpub/BUILD_DATA/MISC_DYNAMIC/misc_mgene.ace",
-	"$wormpub/BUILD_DATA/MISC_DYNAMIC/misc_jigsaw.ace",
-	"$wormpub/BUILD_DATA/MISC_DYNAMIC/misc_mgene.ace",
-	"$wormpub/BUILD_DATA/MISC_DYNAMIC/misc_RNASEQ_CDS.ace", #all RNASEQ methods reduced to one Fmap method.
-	"$wormpub/BUILD_DATA/MISC_DYNAMIC/misc_genefinder.ace",
-	"$wormpub/BUILD_DATA/MISC_DYNAMIC/misc_modENCODE_aggregate_transcripts.ace",
-	"$wormpub/BUILD_DATA/MISC_DYNAMIC/RNASeq_splice_elegans.ace",
-	"$wormpub/BUILD_DATA/MISC_DYNAMIC/misc_RNASeq_hits_elegans.ace",
-	"$wormpub/BUILD_DATA/MISC_DYNAMIC/misc_Lamm_polysomes.ace",
-	"$wormpub/BUILD_DATA/MISC_DYNAMIC/RNASeq_expression_levels_elegans.ace",
-	"$wormpub/wormbase/autoace_config/misc_autoace_methods.ace",
-	"$acefiles/misc_DB_remark.ace",
-	"$acefiles/elegans_blastx.ace",
-	"$acefiles/elegans_blastp.ace",
-	"$acefiles/inverted_repeats.ace",
-	"$acefiles/repeat_homologies.ace",
-	"$acefiles/operon_coords.ace",
-	"$acefiles/feature_SL1.ace",
-	"$acefiles/feature_SL2.ace",
-	"$acefiles/feature_polyA_signal_sequence.ace",
-	"$acefiles/feature_polyA_site.ace",
-	"$acefiles/feature_binding_site.ace",
-	"$acefiles/feature_binding_site_region.ace",
-	"$acefiles/feature_segmental_duplication.ace",
-	"$acefiles/feature_transcription_end_site.ace",
-	"$acefiles/feature_transcription_start_site.ace",
-	"$acefiles/feature_Genome_sequence_error.ace",
-	"$acefiles/feature_three_prime_UTR.ace",
-	"$wormpub/CURATION_DATA/PAD_DATA/elegans.public_names_ws${WS_version}.ace",
-	"$acefiles/mass-spec-data.ace",
-       );
+    if ($species eq "elegans") {
+          push (@files,
+		"$wormpub/CURATION_DATA/Tiling_array_data/tiling_array.ace",
+		"$wormpub/CURATION_DATA/assign_orientation.WS${WS_version}.ace",
+		"$wormpub/BUILD_DATA/MISC_DYNAMIC/misc_TEC_RED_homol.ace",
+		"$wormpub/BUILD_DATA/MISC_DYNAMIC/misc_21urna_homol.ace",
+		"$wormpub/BUILD_DATA/MISC_DYNAMIC/misc_twinscan.ace",
+		"$wormpub/BUILD_DATA/MISC_DYNAMIC/misc_mgene.ace",
+		"$wormpub/BUILD_DATA/MISC_DYNAMIC/misc_jigsaw.ace",
+		"$wormpub/BUILD_DATA/MISC_DYNAMIC/misc_RNASEQ_CDS.ace", #all RNASEQ methods reduced to one Fmap method.
+		"$wormpub/BUILD_DATA/MISC_DYNAMIC/misc_genefinder.ace",
+		"$wormpub/BUILD_DATA/MISC_DYNAMIC/misc_modENCODE_aggregate_transcripts.ace",
+		"$wormpub/BUILD_DATA/MISC_DYNAMIC/misc_Lamm_polysomes.ace",
+		"$acefiles/feature_Genome_sequence_error.ace",
+	       );
+	}
+    if ($species eq "brugia") {
+      push (@files,
+	    "$wormpub/CURATION_DATA/misc_brugia_cufflinks.ace",
+	    "$wormpub/CURATION_DATA/misc_tigr_homol.ace",
+	   );
+    }
+    push (@files,
+	  "$wormpub/BUILD_DATA/MISC_DYNAMIC/RNASeq_splice_${species}.ace",
+	  "$wormpub/BUILD_DATA/MISC_DYNAMIC/misc_RNASeq_hits_${species}.ace",
+	  "$wormpub/BUILD_DATA/MISC_DYNAMIC/RNASeq_expression_levels_${species}.ace",
+	  "$wormpub/wormbase/autoace_config/misc_autoace_methods.ace",
+	  "$acefiles/misc_DB_remark.ace",
+	  "$acefiles/${species}_blastx.ace",
+	  "$acefiles/${species}_blastp.ace",
+	  "$acefiles/inverted_repeats.ace",
+	  "$acefiles/repeat_homologies.ace",
+	  "$acefiles/operon_coords.ace",
+	  "$acefiles/feature_SL1.ace",
+	  "$acefiles/feature_SL2.ace",
+	  "$acefiles/feature_polyA_signal_sequence.ace",
+	  "$acefiles/feature_polyA_site.ace",
+	  "$acefiles/feature_binding_site.ace",
+	  "$acefiles/feature_binding_site_region.ace",
+	  "$acefiles/feature_segmental_duplication.ace",
+	  "$acefiles/feature_transcription_end_site.ace",
+	  "$acefiles/feature_transcription_start_site.ace",
+	  "$acefiles/feature_three_prime_UTR.ace",
+	  "$wormpub/CURATION_DATA/PAD_DATA/elegans.public_names_ws${WS_version}.ace",
+	  "$acefiles/mass-spec-data.ace",
+	 );
   }
 
   foreach $file (@files) {
@@ -531,9 +568,9 @@ sub load_curation_data {
   $log->write_to ("Removed bogus gene models\n");
   
   # upload BLAT results to database #
-  unless (($sub_database eq "camace") or ($load_only)) {
+  unless (($sub_database eq "camace") or ($load_only) or ($sub_database eq "$species")) {
     $log->write_to ("\n\nUpdate BLAT results in $database_path\n");
-    $wormbase->run_script("load_blat2db.pl -all -dbdir $database_path", $log) && die "Failed to run load_blat2db.pl\n";
+    $wormbase->run_script("load_blat2db.pl -all -dbdir $database_path -species $species", $log) && die "Failed to run load_blat2db.pl\n";
   }
 }
 
@@ -545,8 +582,8 @@ sub remove_data {
   my $sub_database = shift;
   my $option = shift;
   my $database_path;
-  if ($sub_database eq "camace") {
-    $database_path = $wormbase->database('camace');
+  if (($sub_database eq "camace") or ($sub_database eq "$species")) {
+    $database_path = $wormbase->database('$sub_database');
   }
   else {
     $database_path = $sub_database;
@@ -670,7 +707,7 @@ sub remove_data {
   #Save the database.
   $command .= "save\n";
   $command .= "quit\n";
-  $log->write_to ("Removing curation data data.\n");
+  $log->write_to ("Removing curation data.\n");
   $log->write_to (".....bogus CDSs only\n") if (defined $option);
 
   my $tsuser = "remove_data";
@@ -716,22 +753,22 @@ __END__
 
 =pod
 
-=head2 NAME - merge_split_camaces
+=head2 NAME - merge_split_camaces.pl
 
 =head1 USAGE:
 
 =over 4
 
-=item merge_split_camaces [-options]
+=item merge_split_camaces.pl [-options]
 
 =back
 
-merge_split_camaces is a wrapper with options to automate the merging of the
-working split copies of camace, load the updates into the current version
-of camace (with some additional housekeeping), and finally running the
-TransferDB.pl jobs to (re)generate the working split copies of camace.
+merge_split_camaces.pl is a wrapper with options to automate the merging of the
+working split copies of any given core species, load the updates into the canonical version
+of species database (with some additional housekeeping), and finally running the
+TransferDB.pl jobs to (re)generate the working split copies.
 
-merge_split_camaces mandatory arguments:
+merge_split_camaces.pl mandatory arguments:
 
 =over 4
 
@@ -739,15 +776,15 @@ merge_split_camaces mandatory arguments:
 
 =back
 
-merge_split_camaces optional arguments:
+merge_split_camaces.pl optional arguments:
 
 =over 4
 
-=item -merge, Generate diff files from split camace databases
+=item -merge, Generate diff files from split databases
  
-=item -update, Upload diff files to ~wormpub/DATABASES/camace and add BLAT, Locus data
+=item -update, Upload diff files to ~wormpub/DATABASES/(species/camace) and add BLAT, Locus data
 
-=item -split, Transfer ~wormpub/DATABASES/camace into split camace databases
+=item -split, Transfer ~wormpub/DATABASES/canonicals into split databases
 
 =item -help, Help page
 
@@ -759,7 +796,7 @@ merge_split_camaces optional arguments:
 
 =back
 
-merge_split_camaces has been divorced from the /wormsrv2 disk
+merge_split_camaces.pl has been divorced from the /wormsrv2 disk
 
 =head1 RUN OUTPUT:
 
@@ -769,11 +806,11 @@ merge_split_camaces has been divorced from the /wormsrv2 disk
 
 =over 4
 
-=item merge_split_camaces -merge -all 
+=item merge_split_camaces.pl -merge -all 
 
 =back
 
-Dumps the relevant classes from camace_orig and the split databases, runs an
+Dumps the relevant classes from species_orig and the split databases, runs an
 acediff to calculate the changes. This acediff file is then reformated to take
 account of the acediff bug.
 
