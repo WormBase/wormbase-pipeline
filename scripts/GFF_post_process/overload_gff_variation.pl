@@ -5,7 +5,7 @@
 # Overloads Variation lines with extra info (consequence etc)
 #
 # Last updated by: $Author: klh $     
-# Last updated on: $Date: 2013-08-16 16:32:24 $      
+# Last updated on: $Date: 2013-08-16 16:33:54 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -53,7 +53,7 @@ if (not defined $infile or not defined $outfile) {
   $log->log_and_die("You must define -infile and -outfile\n");
 }
 
-#&get_molecular_consequences();
+&get_molecular_consequences();
 
 my $db = Ace->connect(-path => $database);
 
