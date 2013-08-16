@@ -5,7 +5,7 @@
 # Overloads Variation lines with extra info (consequence etc)
 #
 # Last updated by: $Author: klh $     
-# Last updated on: $Date: 2013-08-09 13:57:19 $      
+# Last updated on: $Date: 2013-08-16 11:19:30 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -68,7 +68,7 @@ while (<$gff_in_fh>) {
     my @current_els = split(/\t/, $_);
     pop @current_els;
     push @new_els, ['Variation', $allele];
-    
+
     my $variation = $db->fetch(Variation => $allele);
     
     my @var_types = $variation->at('Variation_type');
@@ -104,6 +104,9 @@ while (<$gff_in_fh>) {
         my @substitution = $variation->Substitution->row;
         #print NEW " ; Substitution \"$substitution[0]/$substitution[1]\"";
         push @new_els, ['Substitution', join("/", uc($substitution[0]), uc($substitution[1]))];
+      } elsif ($type eq 'Insertion' and defined $variation->Insertion) {
+        my ($insert) = $variation->Insertion->row;
+        push @new_els, ['Insertion', $insert];
       }
     }
     
