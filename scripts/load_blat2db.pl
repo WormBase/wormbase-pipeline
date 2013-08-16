@@ -6,7 +6,7 @@
 # 19.02.02 Kerstin Jekosch
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2013-08-15 15:16:26 $
+# Last edited on: $Date: 2013-08-16 15:11:12 $
 
 use strict;
 use Getopt::Long;
@@ -68,7 +68,7 @@ die "You do not have write access for $dbdir\n" if ($access eq "no");
 
 
 my $dbname;
-if ($dbdir =~ /\/(\w+)\/$/) {
+if ($dbdir =~ /\/(\w+)$/) {
     $dbname = $1;
 }
 else {
