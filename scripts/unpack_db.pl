@@ -1,3 +1,4 @@
+
 #!/bin/env perl
 #
 # unpack_db.pl
@@ -11,7 +12,7 @@
 # the Caltech database (citace)
 #
 # Last updated by: $Author: pad $
-# Last updated on: $Date: 2013-08-14 12:19:59 $
+# Last updated on: $Date: 2013-08-16 15:12:10 $
 
 
 #################################################################################
@@ -322,12 +323,7 @@ __END__
 
 =head2 USAGE
 
-unpack_db.pl is an all-in-one replacement for what was previously
-performed by three separate scripts (unpack_briggsae, unpack_cshace,
-and unpack stlace). It also unpacks the new citace dump.
-
-This script can be used to replace any or all of the aforementioned
-scripts.  For each of the databases that the user specifies it will
+unpack_db.pl - For each of the databases that the user specifies it will
 move the database dump files from the appropriate incoming FTP site 
 to the appropriate subdirectory of /wormsrv2 (or ~wormpub/TEST_BUILD/
 if in test mode).  It then unpacks the tar.gz file and re-initialises 
