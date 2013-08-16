@@ -64,16 +64,30 @@ GetOptions (
 	   );
 
  
+
 if ( $store ) {
   $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
 } else {
   $wormbase = Wormbase->new( -debug   => $debug,
                              -test    => $test,
-                             );
+                             -organism => $species,
+			   );
 }
        
 # keep things quiet
 $debug = $user if (! defined $debug);
+
+# Species is important now, please specify a species with -species
+
+if (!defined $species) {
+  print "Warning: Defaulting to species elegans do you want to continue? (y or n)\n";
+  my $answer=<STDIN>;
+  if ($answer eq "y\n") {
+  }
+  if ($answer eq "n\n") {
+    die "Failed to launch as you need a species, please use -species <species> next time!\n";
+  }
+}
 
 
 #################################
@@ -93,6 +107,7 @@ if (! defined $lab || $lab eq "") {
   $lab = "HX";
 } 
 my $version;
+
 
 # pass path to latest version of wormbase and set up brugia specifics if selected
 if (defined $brugia) {
@@ -135,14 +150,11 @@ if (defined $user){
   }
 }
 
+
+
 #history nomenclature temp fix
-my $wormpep_prefix;
-if (defined $brugia){
-  $wormpep_prefix = "bm$version";
-}
-else {
-  $wormpep_prefix = "wp$version";
-}
+my $wormpep_prefix  = $wormbase->wormpep_prefix;
+$wormpep_prefix= lc($wormpep_prefix);
 
 
 my $form_cds;			# cds variable from form
@@ -231,7 +243,7 @@ my $check;			# state of the check button for the weights
 
 my $his_maker = $LeftLabel->Frame( -background => "black", # was lightcyan
 				  -height     => "400",
-				  -label      => "History Maker",
+				  -label      => "History Maker ($wormpep_prefix)",
 				  -relief     => "raised",
 				  -foreground => 'whitesmoke', # new
 				  -borderwidth => 5,
@@ -1010,10 +1022,10 @@ sub add_ncrna_data
       foreach my $cds(@cdses){
 
 	if (!defined $person){ 
-	  print CLN "CDS : $cds\nEvidence\nMethod history\nGene_history $refgene\nRemark \"[$date $user] Removed automatically due to lack of evidence - based on lack of curation tags\" Curator_confirmed $person\n\nCDS : $cds\n-D Gene\n\n-R CDS $cds $cds:$wormpep_prefix\n\n";
+	  print CLN "CDS : $cds\nEvidence\nMethod history\nGene_history $refgene\nRemark \"[$date $user] Removed automatically due to lack of evidence - based on lack of curation tags\" Curator_confirmed $person\n\nCDS : $cds\n-D Gene\n\n-R CDS $cds $cds:${wormpep_prefix}$version\n\n";
 	}
 	else {
-	  print CLN "CDS : $cds\nEvidence Curator_confirmed $person\nMethod history\nGene_history $refgene\nRemark \"[$date $user] Removed automatically due to lack of evidence - based on lack of curation tags\" Curator_confirmed $person\n\nCDS : $cds\n-D Gene\n\n-R CDS $cds $cds:$wormpep_prefix\n\n"
+	  print CLN "CDS : $cds\nEvidence Curator_confirmed $person\nMethod history\nGene_history $refgene\nRemark \"[$date $user] Removed automatically due to lack of evidence - based on lack of curation tags\" Curator_confirmed $person\n\nCDS : $cds\n-D Gene\n\n-R CDS $cds $cds:${wormpep_prefix}$version\n\n"
 	}
       }
       
@@ -1358,17 +1370,9 @@ sub make_history
       next;
     }
 
-    if (defined $brugia){
-      if ($db->fetch(CDS => "$cds:bm$version") ) {
-        &error_warning("History exists","$cds:bm$version already exists");
+      if ($db->fetch(CDS => "$cds:${wormpep_prefix}$version") ) {
+        &error_warning("History exists","$cds:${wormpep_prefix}$version already exists");
         return;
-      }
-    }
-    else {
-      if ($db->fetch(CDS => "$cds:wp$version") ) {
-        &error_warning("History exists","$cds:wp$version already exists");
-        return;
-      }
     }
 
     my $species = $obj->Species->name;
@@ -1393,8 +1397,8 @@ sub make_history
 
     #print ace format
     print HIS "Sequence : $seq\n";
-    print HIS "CDS_child \"$cds:$wormpep_prefix\" $start $end\n";
-    print HIS "\nCDS : $cds:$wormpep_prefix\n";
+    print HIS "CDS_child \"$cds:${wormpep_prefix}$version\" $start $end\n";
+    print HIS "\nCDS : $cds:${wormpep_prefix}$version\n";
 
     foreach ($obj->Source_exons) {
       my ($start,$end) = $_->row(0);
@@ -1415,7 +1419,7 @@ sub make_history
     if ( ( $return_status >> 8 ) != 0 ) {
       &error_warning("WARNING", "X11 connection appears to be lost");
     } else {
-      &confirm_message("Made history","History $cds:$wormpep_prefix has been created");
+      &confirm_message("Made history","History $cds:${wormpep_prefix}$version has been created");
       &clear;
     }
   }
