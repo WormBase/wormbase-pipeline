@@ -4,7 +4,7 @@
 #
 # by Keith Bradnam
 #
-# Last updated on: $Date: 2013-08-16 15:09:15 $
+# Last updated on: $Date: 2013-08-16 15:43:46 $
 # Last updated by: $Author: pad $
 #
 # see pod documentation at end of file for more information about this script
@@ -113,7 +113,7 @@ else {
     $Bcount = @bad_genes;
     $log->write_to("Error: $Bcount models have no method, please check\n");
       foreach $bad_genes(@bad_genes) {
-	$log->write_to("Error: $bad_genes has no method\n");
+	$log->write_to("Error: $bad_genes has no method\n") if ($verbose);
       }
   }
 
