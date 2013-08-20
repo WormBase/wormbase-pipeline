@@ -853,6 +853,39 @@ sub ncbi_bioproject {'PRJEA64437'};
 sub bioproject_description { 'Wellcome Trust Sanger Institute B.xylophilus genome project' }
 sub assembly_type {'contig'};
 
+######################################################
+package Pangrellus;
+use Carp;
+our @ISA = qw(Wormbase Species);
+
+sub _new {	
+    my $class = shift;
+    my %param = %{ shift(@_) };
+
+    my $self = $class->initialize( $class->flatten_params( \%param ) );
+
+    # add stuff post object creation goes here
+
+    bless $self, $class;
+}
+sub full_name {
+	my $self = shift;
+	my %param = @_ ;
+	if($param{'-short'}){
+		return 'P. redivivus';
+	}	elsif($param{'-g_species'}){
+		return 'p_redivivus';
+	}
+	else { return'Pangrellus redivivus'
+	};
+}
+sub chromosome_prefix {'PRED3_'}
+sub pep_prefix {'PR'}
+sub pepdir_prefix{'pangrellus'};
+sub ncbi_tax_id {'6233'};
+sub ncbi_bioproject {'PRJNA186477'};
+sub bioproject_description { 'California Institut of Technology'};
+sub assembly_type {'contig'};
 
 ######################################################
 package Loaloa;
