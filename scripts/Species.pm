@@ -854,7 +854,7 @@ sub bioproject_description { 'Wellcome Trust Sanger Institute B.xylophilus genom
 sub assembly_type {'contig'};
 
 ######################################################
-package Pangrellus;
+package Panagrellus;
 use Carp;
 our @ISA = qw(Wormbase Species);
 
@@ -876,12 +876,12 @@ sub full_name {
 	}	elsif($param{'-g_species'}){
 		return 'p_redivivus';
 	}
-	else { return'Pangrellus redivivus'
+	else { return'Panagrellus redivivus'
 	};
 }
 sub chromosome_prefix {'PRED3_'}
 sub pep_prefix {'PR'}
-sub pepdir_prefix{'pangrellus'};
+sub pepdir_prefix{'panagrellus'};
 sub ncbi_tax_id {'6233'};
 sub ncbi_bioproject {'PRJNA186477'};
 sub bioproject_description { 'California Institut of Technology'};
