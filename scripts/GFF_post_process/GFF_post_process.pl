@@ -6,7 +6,7 @@
 # and supplementing the "raw" GFF dumped from Ace with additional attributes
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-08-09 14:31:52 $
+# Last updated on: $Date: 2013-08-29 12:59:58 $
 #
 # Usage GFFmunger.pl [-options]
 
@@ -16,13 +16,14 @@
 ###############################################################################
 
 use strict;                                      
-use lib $ENV{CVS_DIR};
-use Wormbase;
-use Getopt::Long;
 use Carp;
-use Log_files;
 use Storable;
 use Ace;
+use Getopt::Long;
+
+use lib $ENV{CVS_DIR};
+use Wormbase;
+use Log_files;
 
 ##################################################
 # Script variables and command-line options      #
@@ -440,8 +441,13 @@ sub collate_and_sort {
     print $out_fh $_;
   }
   
-  open($gff_in, "sort -k 1,1 -k4,4n -k 5,5n $processed_gff_file |") 
-      or $log->log_and_die("Could not open sort cmd for $processed_gff_file\n");
+  if ($gff3) {
+    open($gff_in, "perl $ENV{CVS_DIR}/GFF_post_process/sort_gff3.pl $processed_gff_file |")
+        or $log->log_and_die("Could not open sort_gff3.pl command for $processed_gff_file\n");
+  } else {
+    open($gff_in, "sort -k 1,1 -k4,4n -k 5,5n $processed_gff_file |") 
+        or $log->log_and_die("Could not open sort cmd for $processed_gff_file\n");
+  }
   while(<$gff_in>) {
     print $out_fh $_;
   }
