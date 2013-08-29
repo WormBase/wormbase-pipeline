@@ -15,7 +15,7 @@
 #      COMPANY:
 #      VERSION:  1.0
 #      CREATED:  23/11/05 11:52:00 GMT
-#     REVISION:  $Revision: 1.11 $
+#     REVISION:  $Revision: 1.12 $
 #===============================================================================
 
 package Main;
@@ -170,8 +170,8 @@ sub get_phys {
     my $db = Ace->connect( -path => $database );
     push @genes, $db->find('find Gene * where Map & SMap');
     foreach my $gene (@genes) {
-        if ( !defined $gene->Map(3) ) {
-            print STDERR "cannot find gene $gene ...\n";
+        if ( !defined $gene->Map(2) ) {
+            print STDERR "cannot find genetic map position for $gene ...\n";
             next;
         }
         my $name = "$gene";
