@@ -8,7 +8,7 @@
 # - Strip the class name prefix from all of the Name attrbutes 
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-07-23 08:58:09 $
+# Last updated on: $Date: 2013-08-29 13:34:16 $
 
 use strict;
 use lib $ENV{CVS_DIR};
@@ -69,6 +69,7 @@ else {
     );
 }
 
+$species = $wormbase->species;
 my $log = Log_files->make_build_log($wormbase);
 
 if (not defined $infile or not defined $outfile) { 
@@ -86,6 +87,15 @@ while(<$gff_in_fh>) {
   chomp;
   my $line = $_;
   my @l  = split(/\t+/, $line);
+
+  #
+  # Strip prefix
+  #
+  if ($species eq 'elegans') {
+    $l[0] =~ s/^CHROMOSOME_//;
+  } elsif ($species eq 'briggsae') {
+    $l[0] =~ s/^chr//;
+  }
 
   #
   # Change source
@@ -112,7 +122,7 @@ while(<$gff_in_fh>) {
   @attr = grep { $_ !~ /Name=Method/ } @attr;
 
   @attr = map { 
-    s/Name=\S+:(\S+)/Name=\1/;  
+    s/Name=\S+:(\S+)/Name=$1/;  
     s/^note=/Note=/;
     $_
   } @attr;
