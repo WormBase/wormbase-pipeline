@@ -1063,7 +1063,7 @@ sub bless_prediction
     my $method = $obj->Method->name;
     my $stem = $obj->Sequence->name;
     my $exceptions = $obj->Sequence->Method->name;
-    if (! ( ($method eq "Genefinder") || ($method eq "twinscan") || ($method eq "RNASEQ.Hillier.Aggregate") || ($method eq "jigsaw") || ($method =~ /cufflinks/) || ($method =~ "curated") || ($method eq "mGene")  || ($method eq "history") ) ) {
+    if (! ( ($method eq "Genefinder") || ($method eq "twinscan") || ($method eq "RNASEQ.Hillier") || ($method eq "RNASEQ.Hillier.Aggregate") || ($method eq "jigsaw") || ($method =~ /cufflinks/) || ($method =~ "curated") || ($method eq "mGene")  || ($method eq "history") ) ) {
 
       &error_warning("Wrong method","Only Selected Predictions can be blessed");
       next;
