@@ -105,6 +105,12 @@ sub new {
 sub map_feature {
   my ($self, $seq, $flank_L, $flank_R, $min_len, $max_len) = @_;
   
+  if (not $flank_L and not $flank_R) {
+    die "Cannot call map_feature with both flanks empty\n";
+  } elsif (not $flank_L or not $flank_R) {
+    return $self->map_feature_single_flank($seq, $flank_L, $flank_R);
+  }
+  
   my ($left_coord, $right_coord);
   
   # convert to chromosome coords
@@ -124,6 +130,8 @@ sub map_feature {
     $chr_en = $self->Superlink_length($chr_id) if $chr_en > $self->Superlink_length($chr_id);
 
     my $reg_len = ($chr_en - $chr_st + 1);
+
+    #print STDERR "Mapping to region of $chr_id, starting at $chr_st and extending for $reg_len bases\n";
 
     my $dna = $self->Sub_sequence($chr_id, $chr_st - 1, $reg_len);
     my @start_ends = $self->_check_for_match($dna, $flank_L, $flank_R, $min_len, $max_len);
@@ -172,6 +180,74 @@ sub map_feature {
   return 0;
 }
 
+
+=head2 map_feature_single_flank
+
+  Title   :   map_feature
+  Usage   :   my @map_info = $mapper->map_feature_to_end("AH6","actgtacgtagcgagcaccgatcaggacgag",undef)
+              my @map_info = $mapper->map_feature_to_end("AH6",undef, "actgtacgtagcgagcaccgatcaggacgag")
+
+  Description: this method is used to map features that are defined by a single flank only, where the
+               location extend from that flank from the start (or end) of the given sequence
+
+  Returns :   smallest sequence object that contains the given flanking seq and the extent of 
+              the feature. The end coordinate will be given as 1-past the end, or 1 before the beginning
+              as approprate. 
+
+              The caller will need to so some +1/-1 adjustment to the coords
+              to make them define the extent of the feature itself.
+=cut
+
+sub map_feature_single_flank {
+  my ($self, $seq, $flank_L, $flank_R) = @_;
+ 
+  # convert to chromosome coords
+  my ($chr_id, $chr_st, $chr_en) = $self->LocateSpanUp($seq);
+
+  # for reverse-oriented assembly components, coords come back in reverse order
+  if ($chr_en < $chr_st) {
+    ($chr_st, $chr_en) = ($chr_en, $chr_st);
+  }
+
+  my $reg_len = ($chr_en - $chr_st + 1);
+  my $dna = lc($self->Sub_sequence($chr_id, $chr_st - 1, $reg_len));
+  $flank_L = lc($flank_L);
+  $flank_R = lc($flank_R);
+  
+  if ($flank_L and not $flank_R) {
+    # feature extends from left flank to end of region (on forward strand) or start of region (on reverse strand)
+    my ($left_coord) = $self->_check_for_match_left($dna, $flank_L, 1);
+    if (defined $left_coord) {
+      # extends from match position to end of region, on forward strand
+      return ($seq, $left_coord, $chr_en + 1);
+    } else {
+      my $flank_R_rev = $self->DNA_revcomp($flank_L);
+      # flank now behaves like a right flank
+      ($left_coord) = $self->_check_for_match_right($dna, $flank_R_rev, -1);
+      if (defined $left_coord) {
+        # extends from match position to start of region, on reverse strand
+        return ($seq, $left_coord, $chr_st - 1);
+      }
+    }
+  } elsif ($flank_R and not $flank_L) {
+    my ($right_coord) = $self->_check_for_match_right($dna, $flank_R, -1);
+    if (defined $right_coord) {
+      # extends from start of region to match position, on forward strand
+      return ($seq, $chr_st - 1, $right_coord);
+    } else {
+      my $flank_L_rev = $self->DNA_revcomp($flank_R);
+      ($right_coord) = $self->_check_for_match_left($dna, $flank_R, 1);
+      if (defined $right_coord) {
+        # extends from match position to end of region, on reverse strand
+        return ($seq, $right_coord, $chr_en + 1, $right_coord);
+      }
+    }
+  }
+
+  return 0;
+}
+
+
 ##########################################
 
 =head2 _check_for_match
@@ -199,41 +275,72 @@ sub map_feature {
 sub _check_for_match {
   my ($self, $dna, $flank_L, $flank_R, $min_len, $max_len) = @_;
 
-  my (@left_matches, @right_matches, @revleft_matches, @revright_matches, @good_pairs);
+  my (@good_pairs);
   
   # make sure all in same case !
   $dna = lc($dna);
   $flank_L = lc($flank_L);
   $flank_R = lc($flank_R);
   
-  # check forward strand
-  
-  @left_matches = $self->_check_for_match_left($dna, $flank_L, 0);
-  @right_matches = $self->_check_for_match_right($dna, $flank_R, 0);
-
-  foreach my $left_c (@left_matches) {
-    foreach my $right_c (@right_matches) {
-      my $flen = $right_c - $left_c - 1;
-
-      if ((not defined $min_len or $flen >= $min_len) and
-          (not defined $max_len or $flen <= $max_len)) {
-        push @good_pairs, [$left_c, $right_c];
+  # map longest flank first, to narrow search space
+  if (length($flank_L) >= length($flank_R)) {
+    foreach my $left_c ($self->_check_for_match_left($dna, $flank_L, 1)) {
+      #print STDERR "  found lmatch at coordinate $left_c\n";
+      foreach my $right_c ($self->_check_for_match_right($dna, $flank_R, 1, $left_c)) {
+        #print STDERR "  found rmatch at coordinate $right_c\n";
+        my $flen = $right_c - $left_c - 1;
+        
+        if ($flen >= 0 and 
+            (not defined $min_len or $flen >= $min_len) and
+            (not defined $max_len or $flen <= $max_len)) {
+          push @good_pairs, [$left_c, $right_c];
+        }
+      }
+    }
+  } else {
+    foreach my $right_c ($self->_check_for_match_right($dna, $flank_R, -1)) {
+      foreach my $left_c ($self->_check_for_match_left($dna, $flank_L, -1, $right_c - length($flank_L))) {
+        my $flen = $right_c - $left_c - 1;
+        
+        if ($flen >= 0 and 
+            (not defined $min_len or $flen >= $min_len) and
+            (not defined $max_len or $flen <= $max_len)) {
+          push @good_pairs, [$left_c, $right_c];
+        }
       }
     }
   }
 
   if (not @good_pairs) {
-    # check reverse strand
-    
-    @revleft_matches = $self->_check_for_match_left($dna, $flank_L, 1);
-    @revright_matches = $self->_check_for_match_right($dna, $flank_R, 1);
-    
-    foreach my $left_c (@revleft_matches) {
-      foreach my $right_c (@revright_matches) {
-        my $flen = $left_c - $right_c - 1;
-        if ((not defined $min_len or $flen >= $min_len) and
-            (not defined $max_len or $flen <= $max_len)) {
-          push @good_pairs, [$left_c, $right_c];
+    # try again on the reverse strand
+    #print STDERR "Trying on reverse strand\n";
+    my ($flank_L_rev, $flank_R_rev) = ($self->DNA_revcomp($flank_R), $self->DNA_revcomp($flank_L));
+
+    if (length($flank_L_rev) >= length($flank_R_rev)) {
+      foreach my $left_c ($self->_check_for_match_left($dna, $flank_L_rev, 1)) {
+        #print STDERR "  found lmatch at coordinate $left_c\n";
+        foreach my $right_c ($self->_check_for_match_right($dna, $flank_R_rev, 1, $left_c)) {
+          #print STDERR "    found rmatch at coordinate $right_c\n";
+
+          my $flen = $right_c - $left_c - 1;
+          
+          if ($flen >= 0 and 
+              (not defined $min_len or $flen >= $min_len) and
+              (not defined $max_len or $flen <= $max_len)) {
+            push @good_pairs, [$right_c, $left_c];
+          }
+        }
+      }
+    } else {
+      foreach my $right_c ($self->_check_for_match_right($dna, $flank_R_rev, -1)) {
+        foreach my $left_c ($self->_check_for_match_left($dna, $flank_L_rev, -1, $right_c - length($flank_L_rev))) {
+          my $flen = $right_c - $left_c - 1;
+          
+          if ($flen >= 0 and 
+              (not defined $min_len or $flen >= $min_len) and
+              (not defined $max_len or $flen <= $max_len)) {
+            push @good_pairs, [$right_c, $left_c];
+          }
         }
       }
     }
@@ -244,53 +351,50 @@ sub _check_for_match {
 
 
 sub _check_for_match_left {
-  my ($self, $dna, $flank, $rev) = @_;
+  my ($self, $dna, $flank, $direction, $start_looking) = @_;
 
   my @matches;
-  my $cur = 0;
+  if ($direction < 0) {
+    $start_looking = length($dna) if not defined $start_looking;
 
-  if ($rev) {
-    my $revflank = $self->DNA_revcomp($flank);
-
-    while ((my $loc = index($dna, $revflank, $cur)) >= 0) {
-      push @matches, $loc + 1;
-      $cur = $loc + 1;
-    }
-
-  } else {
-
-    while ((my $loc = index($dna, $flank, $cur)) >= 0) {
+    while ((my $loc = rindex($dna, $flank, $start_looking)) >= 0) {
       push @matches, $loc + length($flank);
-      $cur = $loc + 1;
+      $start_looking = $loc - 1;
+    }
+  } else {
+    $start_looking = 0 if not defined $start_looking;
+
+    while ((my $loc = index($dna, $flank, $start_looking)) >= 0) {
+      push @matches, $loc + length($flank);
+      $start_looking = $loc + 1;
     }
   }
 
-  return @matches;
+  return sort { $a <=> $b } @matches;
 }
 
 
 sub _check_for_match_right {
-  my ($self, $dna, $flank, $rev) = @_;
-  
+  my ($self, $dna, $flank, $direction, $start_looking) = @_;
+
   my @matches;
-  my $cur = 0;
+  if ($direction < 0) {
+    $start_looking = length($dna) if not defined $start_looking;
 
-  if ($rev) {
-    my $revflank = $self->DNA_revcomp($flank);
-
-    while ((my $loc = index($dna, $revflank, $cur)) >= 0) {
-      push @matches, $loc + length($revflank);
-      $cur = $loc + 1;
+    while ((my $loc = rindex($dna, $flank, $start_looking)) >= 0) {
+      push @matches, $loc + 1;
+      $start_looking = $loc - 1;
     }
   } else {
+    $start_looking = 0 if not defined $start_looking;
 
-    while ((my $loc = index($dna, $flank, $cur)) >= 0) {
+    while ((my $loc = index($dna, $flank, $start_looking)) >= 0) {
       push @matches, $loc + 1;
-      $cur = $loc + 1;
+      $start_looking = $loc + 1;
     }
   }
   
-  return @matches;
+  return sort { $a <=> $b } @matches;
 }
 
 
@@ -626,11 +730,16 @@ sub suggest_fix {
   if (defined $expected_length) {
     my $total_hits = 0;
 
-    my @left_hits_for = $self->_check_for_match_left($dna, $flank_L, 0); $total_hits += scalar(@left_hits_for);
-    my @left_hits_rev = $self->_check_for_match_right($dna, $flank_R, 0); $total_hits += scalar(@left_hits_rev);
+    my ($flank_L_rev) = $self->DNA_revcomp($flank_L);
+    my ($flank_R_rev) = $self->DNA_revcomp($flank_R);
 
-    my @right_hits_for = $self->_check_for_match_left($dna, $flank_L, 1); $total_hits += scalar(@right_hits_for);
-    my @right_hits_rev = $self->_check_for_match_left($dna, $flank_R, 1); $total_hits += scalar(@right_hits_rev);
+    my @left_hits_for = $self->_check_for_match_left($dna, $flank_L, 1);
+    my @left_hits_rev = $self->_check_for_match_right($dna, $flank_L_rev, -1);
+
+    my @right_hits_for = $self->_check_for_match_right($dna, $flank_R, -1);
+    my @right_hits_rev = $self->_check_for_match_left($dna, $flank_R_rev, 1);
+
+    my $total_hits += scalar(@left_hits_for) + scalar(@left_hits_rev) + scalar(@right_hits_for) + scalar(@right_hits_rev);
 
     if ($total_hits == 1) {
       my ($left_c, $right_c);
