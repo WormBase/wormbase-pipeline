@@ -313,14 +313,20 @@ sub map {
     my $right_flank = $x->Flanking_sequences->right->name;
 
     my @map;
-    if (length($left_flank) < 10 or
+    if ($left_flank eq '<') {
+      $left_flank = "";
+    }
+    if ($right_flank eq '>') {
+      $right_flank = "";
+    }
+    if (length($left_flank) < 10 and
         length($right_flank) < 10) {
-      $log->write_to("WARNING: $x has at least one flank < 10 residues, so will not attempt to map with flanks\n");
+      $log->write_to("WARNING: $x has at least both flanks < 10 residues, so will not attempt to map with flanks\n");
       @map = (0);
     } else {
-      @map = $mapper->map_feature($x->Mapping_target->name,
-                                  $x->Flanking_sequences->name,
-                                  $x->Flanking_sequences->right->name, 
+      @map = $mapper->map_feature($target_seq,
+                                  $left_flank,
+                                  $right_flank,
                                   $min_len, 
                                   $max_len);
     }
@@ -430,8 +436,10 @@ sub map {
       # Since this dataset is pretty much complete I think
       # it would be OK to exclude niDf* alleles from the "is it massive"
       # check.
+      my $len = abs($clone_end - $clone_start) + 1;
+
       if ($x->Public_name !~ /^niDf/) {
-        $log->write_to("ERROR: $x (${\$x->Public_name}) is massive\n");
+        $log->write_to("ERROR: $x (${\$x->Public_name}) is massive ($len)\n");
         $errors++;
         next;
       }
@@ -1207,25 +1215,6 @@ sub print_ncrnas{
   }
 }
 
-
-
-
-
-=head2 load_ace
-
-        Title   : load_ace
-        Usage   : MapAlleles::load_ace(fh)
-        Function: load the acefile into the database
-        Returns : 1 on success
-        Args    : IO::File $fh
-
-=cut
-    
-sub load_ace {
-  my ($fh,$filename)=@_; # grml no easy way to retrieve the name from a filehandle ...                                               
-  $fh->close;
-  $wb->load_to_database($wb->{'autoace'},$filename,'map_Allele',$log);
-}
 
 
 1;

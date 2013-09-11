@@ -8,8 +8,8 @@
 # Uses Ant's Feature_mapper.pm module
 #
 #
-# Last updated by: $Author: gw3 $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2013-07-17 14:00:19 $        # quickly see when script was last changed and by whom
+# Last updated by: $Author: klh $                      # These lines will get filled in by cvs and helps us
+# Last updated on: $Date: 2013-09-11 11:19:19 $        # quickly see when script was last changed and by whom
 
 
 $|=1;
@@ -333,12 +333,20 @@ EOF
     # note below that we pass through an expected mapping distance where possible. This
     # can help with the mapping
     print "Feature:@$list[0] Method:@$list[1] Target_seq:@$list[2] Left_flank:@$list[3] Right_flank:@$list[4]\n" if ($debug);
+
+    if (defined $flanking_left and $flanking_left eq "<") {
+      $flanking_left = "";
+    } 
+    if (defined $flanking_right and $flanking_right eq ">") {
+      $flanking_right = "";
+    }
+ 
     my @coords = $mapper->map_feature($target,
                                       $flanking_left,
                                       $flanking_right, 
                                       ($sanity{$method}) ? $sanity{$method}->[0] : undef,
                                       ($sanity{$method}) ? $sanity{$method}->[1] : undef,
-				     );
+        );
 
     if (!defined $coords[2]) {
       push @unmapped_feats, $list;
