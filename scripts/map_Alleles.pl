@@ -50,6 +50,8 @@ map_Allele.pl options:
 	-noupdate           same as -noload
 	-database	    DATABASE_DIRECTORY use a different db for sanity checking Variations.
 	-weak_checks        relax sequence sanity checks
+        -maponly            Only generate coords - do not generate gene associations and consequence info
+        -noremap            If a var fails to map using flanks, do not attempt to remap it using Remap_Sequence
 	-help               print this message
 	-test               use the test database
 	-idfile             use ids from an input file (one id per line)
@@ -59,7 +61,7 @@ USAGE
 exit 1;	
 }
 
-my ( $debug, $species, $store, $outdir,$acefile,$allele ,$noload,$database,$weak_checks,$help,$test,$idfile,$nofilter, $no_remap);
+my ( $debug, $species, $store, $outdir,$acefile,$allele ,$noload,$database,$weak_checks,$help,$test,$idfile,$nofilter,$map_only,$no_remap);
 
 GetOptions(
 	   'species=s'   => \$species,
@@ -72,6 +74,7 @@ GetOptions(
 	   'noupdate'    => \$noload,
 	   'database=s'  => \$database,
 	   'weak_checks' => \$weak_checks,
+           'maponly'     => \$map_only,
 	   'help'        => \$help,
 	   'test'        => \$test,
 	   'nofilter'    => \$nofilter,
@@ -117,15 +120,17 @@ if ($debug) {
   $log->{DEBUG} = $debug;
 }
 
-$log->write_to("Fetching alleles...\n") if $debug;
 
 my $alleles;
 if ($allele){
+  $log->write_to("Fetching single allele $allele...\n") if $debug;
   $alleles= MapAlleles::get_allele($allele);
 }elsif ($idfile){
   $log->log_and_die("Idfile $idfile does not exist\n") if not -e $idfile;
+  $log->write_to("Fetching alleles listed in $idfile...\n") if $debug;
   $alleles= MapAlleles::get_alleles_fromFile($idfile);
 }else{
+  $log->write_to("Fetching ALL alleles...\n") if $debug;
   $alleles= MapAlleles::get_all_alleles();
 }
 
@@ -141,15 +146,24 @@ undef $alleles;# could theoretically undef the alleles here
 $log->write_to("Removing insanely mapped alleles...\n") if $debug;
 MapAlleles::remove_insanely_mapped_alleles($mapped_alleles);
 
-# for other databases don't run through the GFF_SPLITs
-&finish() if $database;
-
 $log->write_to("Writing basic position information...\n") if $debug;
 my $fh = new IO::File ">$acefile" || die($!);
 # create mapping Ace file
 while( my($key,$allele)=each %$mapped_alleles){
+  if ($debug) {
+    print $fh "\n// Mapped position of $key : $allele->{chromosome} $allele->{start} $allele->{stop}\n\n";
+  }
   print $fh "Sequence : \"$allele->{clone}\"\nAllele $key $allele->{clone_start} $allele->{clone_stop}\n\n";
 }
+
+if ($map_only or $database) {
+  close($fh) or $log->log_and_die("Could not close $acefile after writing\n");
+  &finish();
+}
+
+#
+# Now calculate feature associations and consequences
+#
 
 # get overlaps with genes
 # gene_name->[allele_names,...]
@@ -203,7 +217,13 @@ MapAlleles::print_ncrnas($hit_ncrnas,$fh);
 $nc_rnas = $hit_ncrnas = undef; # cleanup memory
  
 # load to ace and close filehandle
-MapAlleles::load_ace($fh,$acefile) unless $noload;
+close($fh) or $log->log_and_die("Could not successfully close $acefile after writing\n");
+if (not $noload) {
+  $wb->load_to_database($wb->autoace,
+                        $acefile,
+                        'map_Alleles',
+                        $log);
+}
 
 &finish();
 
