@@ -14,9 +14,6 @@ my ($flank_len,
 
 $flank_len = 30 if not defined $flank_len;
 
-my $left_flank_len = $flank_len;
-my $right_flank_len = $flank_len;
-
 my $genome_fasta = shift;
 my $genome_h = &read_genome_fasta($genome_fasta);
 print STDERR "Read fasta\n";
@@ -64,6 +61,9 @@ while(<>) {
   if ($left_end < 1) {
     $left_flank = "<";
   }
+
+  my $left_flank_len = $flank_len;
+  my $right_flank_len = $flank_len;
   
   while(not defined $left_flank or not defined $right_flank) {
     my ($lcoord, $rcoord);
