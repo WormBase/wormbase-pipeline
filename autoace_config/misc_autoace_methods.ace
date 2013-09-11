@@ -477,8 +477,8 @@ Strand_sensitive
 Width 1.1
 Show_text
 GFF_source "Million_mutation"
-GFF_feature "point_mutation"
-GFF_SO "SO:0001483" // point_mutation
+GFF_feature "sequence_alteration"
+GFF_SO "SO:0001059"
 
 Method : "CGH_allele"
 Remark "Comparative Genomic Hybridization"
@@ -638,6 +638,16 @@ Show_text
 GFF_source "Variation_project"
 GFF_feature "sequence_alteration"
 GFF_SO "SO:0001059" // sequence_alteration
+
+Method : "WGS_Flibotte"
+Remark "Whole Genome Sequencing of 40 wild isolate strains, done as side-project of the Million mutation project"
+Colour ORANGE
+Strand_sensitive 
+Width 1.100000
+Show_text
+GFF_source "Variation_project"
+GFF_feature "sequence_alteration"
+GFF_SO "SO:0001059"
 
 
 ////////////////////////////
