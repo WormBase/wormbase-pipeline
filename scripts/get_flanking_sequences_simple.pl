@@ -12,12 +12,14 @@ my ($flank_len,
             'gff3'          => \$gff3,
     );
 
-$flank_len = 50 if not defined $flank_len;
+$flank_len = 30 if not defined $flank_len;
+
+my $left_flank_len = $flank_len;
+my $right_flank_len = $flank_len;
 
 my $genome_fasta = shift;
-
 my $genome_h = &read_genome_fasta($genome_fasta);
-
+print STDERR "Read fasta\n";
 while(<>) {
   /^#/ and do {
     print;
@@ -52,31 +54,66 @@ while(<>) {
       $right_start = $end;
     }
   }
-
-  my $left_start = $left_end - $flank_len + 1;
-  my $right_end = $right_start + $flank_len - 1;
   
-  $left_start = 1 if $left_start < 0;
-  $right_end = length($genome_h->{$seq}) if $right_end > length($genome_h->{$seq});
+  my ($left_flank, $right_flank); 
 
-  my $left_flank = substr($genome_h->{$seq}, $left_start - 1, ($left_end - $left_start + 1));
-  my $right_flank = substr($genome_h->{$seq}, $right_start - 1, ($right_end - $right_start + 1));
+  if ($right_start > length($genome_h->{$seq})) {
+    $right_flank = ">";
+  }
+  
+  if ($left_end < 1) {
+    $left_flank = "<";
+  }
+  
+  while(not defined $left_flank or not defined $right_flank) {
+    my ($lcoord, $rcoord);
 
+    $lcoord =  $left_end - $left_flank_len;
+    if ($lcoord < 1) {
+      $lcoord = 1;
+      $left_flank_len = $left_end;
+    }
+    $rcoord =  $right_start - 1;
+    if ($rcoord + $right_flank_len > length($genome_h->{$seq})) {
+      $right_flank_len = length($genome_h->{$seq}) - $right_start + 1;
+    }
+    
+    if (not defined $left_flank) {
+      my $left = substr($genome_h->{$seq}, $lcoord, $left_flank_len);
+      my $lidx = index($genome_h->{$seq}, $left);
+      
+      if ($lidx == $lcoord) {
+        $left_flank = $left;
+      } else {
+        $left_flank_len += 10;
+      }
+    }
+    
+    if (not defined $right_flank) {
+      my $right = substr($genome_h->{$seq}, $rcoord, $right_flank_len);
+      my $ridx = rindex($genome_h->{$seq}, $right);
+      
+      if ($ridx == $rcoord) {
+        $right_flank = $right;
+      } else {
+        $right_flank_len += 10;
+      }
+    }  
+  }
+  
   if ($strand eq '-') {
     ($left_flank, $right_flank) = ($right_flank, $left_flank);
-
+    
     $left_flank =~ tr/ACGTN/TGCAN/;
     $right_flank =~ tr/ACGTN/TGCAN/;
-
+    
     $left_flank = join("", reverse(split(//,$left_flank)));
     $right_flank = join("", reverse(split(//,$right_flank)));
-  }
-
-
-
+  } 
+  
   if ($gff3) {
     $l[8] .= ";" if $l[8];
-    $l[8] .= "LeftFlank=$left_flank;RightFlank=$right_flank=$reference\n";
+    $l[8] .= "leftflank=$left_flank;rightflank=$right_flank;reference=$reference\n";
   } else {
     $l[8] .= " ; " if $l[8];
     $l[8] .= "LeftFlank \"$left_flank\" ; RightFlank \"$right_flank\" ; Reference \"$reference\"\n";
@@ -84,7 +121,6 @@ while(<>) {
   print STDERR "cannot get flanks for ($seq, $start, $end, $strand), will use empty strings instead\n" unless ($left_flank && $right_flank);
   print join("\t", @l);
 }
-
 
 
 
