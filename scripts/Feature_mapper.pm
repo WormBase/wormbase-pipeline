@@ -434,15 +434,15 @@ sub check_overlapping_CDS
 	    next unless (/CDS/ or /primary_transcript/);
 	    my @data = split;
 	    if (($data[1] eq "curated"                  && $data[2] eq "CDS") ||
-		($data[1] eq "miRNA_mature_transcript"  && $data[2] eq "miRNA") ||
-		($data[1] eq "curated"                  && $data[2] eq "miRNA_primary_transcript") ||
-		($data[1] eq "snoRNA_mature_transcript" && $data[2] eq "snoRNA") ||
-		($data[1] eq "tRNAscan-SE-1.23"         && $data[2] eq "tRNA") ||
-		($data[1] eq "snRNA_mature_transcript"  && $data[2] eq "snRNA") ||
-		($data[1] eq "rRNA"                     && $data[2] eq "rRNA_primary_transcript") ||
 		($data[1] eq "Non_coding_transcript"    && $data[2] eq "nc_primary_transcript") ||
-		($data[1] eq "ncRNA"                    && $data[2] eq "ncRNA_primary_transcript") ||
-		($data[1] eq "scRNA_mature_transcript"  && $data[2] eq "scRNA")) {
+		($data[1] eq "miRNA_mature"             && $data[2] eq "miRNA") ||
+		($data[1] eq "miRNA_precursor"          && $data[2] eq "pre_miRNA") ||
+		($data[1] eq "snoRNA"                   && $data[2] eq "snoRNA") ||
+		($data[1] eq "tRNA"                     && $data[2] eq "tRNA") ||
+		($data[1] eq "snRNA"                    && $data[2] eq "snRNA") ||
+		($data[1] eq "rRNA"                     && $data[2] eq "rRNA") ||
+		($data[1] eq "ncRNA"                    && $data[2] eq "ncRNA") ||
+		($data[1] eq "scRNA"                    && $data[2] eq "scRNA")) {
 	      $data[9] =~ s/\"//g;
 	      my $gene = $data[9];
 	      my $end5 = $data[3];
@@ -728,8 +728,6 @@ sub suggest_fix {
   # finally, if one of the flanking sequences maps uniquely, and a given feature length
   # is given, suggest another flank
   if (defined $expected_length) {
-    my $total_hits = 0;
-
     my ($flank_L_rev) = $self->DNA_revcomp($flank_L);
     my ($flank_R_rev) = $self->DNA_revcomp($flank_R);
 
