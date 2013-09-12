@@ -6,8 +6,8 @@
 #
 # This is a example of a good script template
 #
-# Last updated by: $Author: pad $
-# Last updated on: $Date: 2012-09-25 09:35:21 $
+# Last updated by: $Author: klh $
+# Last updated on: $Date: 2013-09-12 15:00:54 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -187,47 +187,47 @@ sub read_GFF_queries {
 
     $i++;
     $queries[$i]{'DESC'}  = "tRNAs";
-    $queries[$i]{'GFF'}   = "tRNAscan-SE-1.23\ttRNA";
+    $queries[$i]{'GFF'}   = "tRNA\ttRNA";
     $queries[$i]{'QUERY'} = 'find elegans_RNA_genes tRNA';
     
     $i++;
     $queries[$i]{'DESC'}  = "miRNAs";
-    $queries[$i]{'GFF'}   = "miRNA_mature_transcript\tmiRNA";
+    $queries[$i]{'GFF'}   = "miRNA_mature\tmiRNA";
     $queries[$i]{'QUERY'} = 'find elegans_RNA_genes; method = miRNA';
 
     $i++;
     $queries[$i]{'DESC'}  = "miRNAs - primary";
-    $queries[$i]{'GFF'}   = "curated_miRNA\tmiRNA_primary_transcript";
+    $queries[$i]{'GFF'}   = "miRNA_precursor\tpre_miRNA";
     $queries[$i]{'QUERY'} = 'find elegans_RNA_genes; method = miRNA_primary_transcript';
 
     $i++;
     $queries[$i]{'DESC'}  = "snoRNAs";
-    $queries[$i]{'GFF'}   = "snoRNA_mature_transcript\tsnoRNA";
+    $queries[$i]{'GFF'}   = "snoRNA\tsnoRNA";
     $queries[$i]{'QUERY'} = 'find elegans_RNA_genes snoRNA';
 
     $i++;
     $queries[$i]{'DESC'}  = "snRNAs";
-    $queries[$i]{'GFF'}   = "snRNA_mature_transcript\tsnRNA";
+    $queries[$i]{'GFF'}   = "snRNA\tsnRNA";
     $queries[$i]{'QUERY'} = 'find elegans_RNA_genes snRNA';
 
     $i++;
     $queries[$i]{'DESC'}  = "rRNAs";
-    $queries[$i]{'GFF'}   = "rRNA_primary_transcript";
+    $queries[$i]{'GFF'}   = "rRNA\trRNA";
     $queries[$i]{'QUERY'} = 'find elegans_RNA_genes rRNA';
 
     $i++;
     $queries[$i]{'DESC'}  = "scRNAs";
-    $queries[$i]{'GFF'}   = "scRNA_mature_transcript\tscRNA";
+    $queries[$i]{'GFF'}   = "scRNA\tscRNA";
     $queries[$i]{'QUERY'} = 'find elegans_RNA_genes scRNA';
 
     $i++;
     $queries[$i]{'DESC'}  = "stRNAs";
-    $queries[$i]{'GFF'}   = "stRNA_mature_transcript\tstRNA";
+    $queries[$i]{'GFF'}   = "stRNA\tstRNA";
     $queries[$i]{'QUERY'} = 'find elegans_RNA_genes stRNA';
 
     $i++;
     $queries[$i]{'DESC'}  = "Deletion and insertion alleles";
-    $queries[$i]{'GFF'}   = "complex_change_in_nucleotide_sequence";
+    $queries[$i]{'GFF'}   = "complex_substitution";
     $queries[$i]{'QUERY'} = 'find Variation flanking_sequences AND method = "Deletion_and_insertion_allele"';
 
     $i++;
@@ -252,7 +252,7 @@ sub read_GFF_queries {
 
     $i++;
     $queries[$i]{'DESC'}  = "Alleles";
-    $queries[$i]{'GFF'}   = "sequence_variant";
+    $queries[$i]{'GFF'}   = "sequence_alteration";
     $queries[$i]{'QUERY'} = 'find Variation flanking_sequences AND method = "Allele"';
 
     $i++;
