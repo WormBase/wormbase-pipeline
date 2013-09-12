@@ -48,6 +48,7 @@ my %species = (
     497829 => 'Caenorhabditis sp.5',
     34506  => 'Strongyloides ratti',
     7209   => 'Loa loa',
+    6223   => 'Panagrellus redivivus',
 );
 
 my %cds2wbgene=%{&get_commondata('cds2wbgene_id')};
