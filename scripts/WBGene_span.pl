@@ -6,8 +6,8 @@
 #
 # Creates SMapped Gene spans for Gene objects
 #
-# Last edited by: $Author: pad $
-# Last edited on: $Date: 2013-04-11 15:34:44 $
+# Last edited by: $Author: klh $
+# Last edited on: $Date: 2013-09-12 15:35:38 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -82,9 +82,9 @@ else {
 
   my @methods;
   if ($wormbase->species eq "elegans") {
-    @methods = qw(Coding_transcript Non_coding_transcript tRNAscan-SE-1.23 miRNA_primary_transcript Pseudogene snRNA snoRNA rRNA scRNA stRNA ncRNA tRNA Transposon_CDS);
+    @methods = qw(Coding_transcript Non_coding_transcript Pseudogene ncRNA tRNA miRNA_primary_transcript snRNA snoRNA rRNA scRNA stRNA Transposon_CDS);
   } else {
-    @methods = qw(Coding_transcript Non_coding_transcript tRNAscan-SE-1.3 ncRNA Pseudogene);
+    @methods = qw(Coding_transcript Non_coding_transcript Pseudogene ncRNA tRNA);
   }
   
   foreach my $chrom (@chromosomes) {
@@ -99,16 +99,14 @@ else {
 	       or ( $data[1] eq 'Non_coding_transcript' )
 	       or ( $data[1] eq 'Pseudogene' )
 	       or ( $data[1] eq 'curated' )
-	       or ( $data[1] eq 'tRNAscan-SE-1.23' )
-	       or ( $data[1] eq 'tRNAscan-SE-1.3' )
-	       or ( $data[1] eq 'tRNA_mature_transcript' )
-	       or ( $data[1] eq 'snRNA_mature_transcript' )
-	       or ( $data[1] eq 'curated_miRNA' )
+	       or ( $data[1] eq 'tRNA' )
+	       or ( $data[1] eq 'snRNA' )
+	       or ( $data[1] eq 'miRNA_precursor' )
 	       or ( $data[1] eq 'rRNA' )
-	       or ( $data[1] eq 'scRNA_mature_transcript' )
-	       or ( $data[1] eq 'snoRNA_mature_transcript' )
+	       or ( $data[1] eq 'scRNA' )
+	       or ( $data[1] eq 'snoRNA' )
 	       or ( $data[1] eq 'stRNA' )
-	       or ( $data[1] eq 'snRNA_mature_transcript' )
+	       or ( $data[1] eq 'snRNA' )
 	       or ( $data[1] eq 'ncRNA' )
 	       or ( $data[1] eq 'Transposon_CDS' )) {
 	  next if ( $data[2] eq 'exon'
