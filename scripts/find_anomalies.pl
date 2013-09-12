@@ -8,8 +8,8 @@
 # matching a CDS and stores the results in in a data file ready to be read into the SQL database
 # 'worm_anomaly'
 #
-# Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2013-02-28 16:23:33 $      
+# Last updated by: $Author: klh $     
+# Last updated on: $Date: 2013-09-12 15:43:07 $      
 
 # Changes required by Ant: 2008-02-19
 # 
@@ -349,7 +349,6 @@ foreach my $chromosome (@chromosomes) {
   my @snoRNA = $ovlp->get_snoRNA($chromosome) if (exists $run{UNMATCHED_EXPRESSION});
   my @stRNA = $ovlp->get_stRNA($chromosome) if (exists $run{UNMATCHED_EXPRESSION});
   my @tRNA = $ovlp->get_tRNA($chromosome) if (exists $run{UNMATCHED_EXPRESSION});
-  my @tRNAscan_SE_1_23 = $ovlp->get_tRNAscan_SE_1_23RNA($chromosome) if (exists $run{UNMATCHED_EXPRESSION});
 
   my @waba_coding = $ovlp->get_waba_coding($chromosome)  if (exists $run{UNMATCHED_WABA});
   my @repeatmasked = $ovlp->get_repeatmasked($chromosome);
@@ -458,7 +457,6 @@ foreach my $chromosome (@chromosomes) {
 				      \@snoRNA, 
 				      \@stRNA, 
 				      \@tRNA, 
-				      \@tRNAscan_SE_1_23, 
 				      $chromosome) if (exists $run{UNMATCHED_EXPRESSION});
 
   print "finding confirmed introns not matching CDS introns\n"; 
@@ -525,7 +523,7 @@ foreach my $chromosome (@chromosomes) {
 
 #  # get SAGE tags that don't match a gene with score based on frequency
 #  print "finding non-overlapping SAGE_tags\n";
-#  &get_unmatched_SAGE(\@coding_transcripts, \@pseudogenes, \@SAGE_tags, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, \@miRNA, \@ncRNA, \@scRNA, \@snRNA, \@snoRNA, \@stRNA, \@tRNA, \@tRNAscan_SE_1_23, $chromosome) if (exists $run{UNMATCHED_SAGE});
+#  &get_unmatched_SAGE(\@coding_transcripts, \@pseudogenes, \@SAGE_tags, \@transposons, \@transposon_exons, \@noncoding_transcript_exons, \@rRNA, \@miRNA, \@ncRNA, \@scRNA, \@snRNA, \@snoRNA, \@stRNA, \@tRNA, $chromosome) if (exists $run{UNMATCHED_SAGE});
 
 
 #################################################
@@ -2242,7 +2240,7 @@ sub get_unmatched_genefinder_exons {
 
 sub get_unmatched_SAGE {
 
-  my ($coding_transcripts_aref, $pseudogenes_aref, $SAGE_tags_aref, $transposons_aref, $transposon_exons_aref, $noncoding_transcript_exons_aref, $rRNA_aref, $miRNA_aref, $ncRNA_aref, $scRNA_aref, $snRNA_aref, $snoRNA_aref, $stRNA_aref, $tRNA_aref, $tRNAscan_SE_1_23RNA_aref, $chromosome) = @_;
+  my ($coding_transcripts_aref, $pseudogenes_aref, $SAGE_tags_aref, $transposons_aref, $transposon_exons_aref, $noncoding_transcript_exons_aref, $rRNA_aref, $miRNA_aref, $ncRNA_aref, $scRNA_aref, $snRNA_aref, $snoRNA_aref, $stRNA_aref, $tRNA_aref, $chromosome) = @_;
  
   $anomaly_count{UNMATCHED_SAGE} = 0 if (! exists $anomaly_count{UNMATCHED_SAGE});
 
@@ -2265,7 +2263,6 @@ sub get_unmatched_SAGE {
   my $snorna_match = $ovlp->compare($snoRNA_aref, near => $NEAR);
   my $strna_match = $ovlp->compare($stRNA_aref, near => $NEAR);
   my $trna_match = $ovlp->compare($tRNA_aref, near => $NEAR);
-  my $tRNAscan_SE_1_23rna_match = $ovlp->compare($tRNAscan_SE_1_23RNA_aref, near => $NEAR);
 
   foreach my $sage (@SAGE_tags) { # $SAGE_id, $chrom_start, $chrom_end, $chrom_strand
 
@@ -2320,10 +2317,6 @@ sub get_unmatched_SAGE {
     }
 
     if ($trna_match->match($sage)) { #&match($sage, $tRNA_aref, \%trna_match)) {
-      $got_a_match = 1;
-    }
-
-    if ($tRNAscan_SE_1_23rna_match->match($sage)) { #&match($sage, $tRNAscan_SE_1_23RNA_aref, \%tRNAscan_SE_1_23rna_match)) {
       $got_a_match = 1;
     }
 
@@ -3426,7 +3419,6 @@ sub get_expression_outside_transcripts {
       $snoRNA_aref, 
       $stRNA_aref, 
       $tRNA_aref, 
-      $tRNAscan_SE_1_23_aref, 
       $chromosome) = @_;
 
   $anomaly_count{UNMATCHED_EXPRESSION} = 0 if (! exists $anomaly_count{UNMATCHED_EXPRESSION});
@@ -3451,7 +3443,6 @@ sub get_expression_outside_transcripts {
   my $snorna_match  = $ovlp->compare($snoRNA_aref, same_sense => 0);
   my $strna_match  = $ovlp->compare($stRNA_aref, same_sense => 0);
   my $trna_match  = $ovlp->compare($tRNA_aref, same_sense => 0);
-  my $trnascan_match  = $ovlp->compare($tRNAscan_SE_1_23_aref, same_sense => 0);
 
   foreach my $expression (@expression) { # $expression_id, $chrom_start, $chrom_end, $chrom_strand
 
@@ -3516,10 +3507,6 @@ sub get_expression_outside_transcripts {
     }
 
     if ($trna_match->match($expression)) {                #&match($expression, $rRNA_aref, \%rrna_match)) {
-      $got_a_match = 1;
-    }
-
-    if ($trnascan_match->match($expression)) {                #&match($expression, $rRNA_aref, \%rrna_match)) {
       $got_a_match = 1;
     }
 
