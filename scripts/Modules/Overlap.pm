@@ -7,7 +7,7 @@
 # Do fast overlap matching of positions of two sets of things.
 #
 # Last updated by: $Author: klh $     
-# Last updated on: $Date: 2013-05-13 14:28:20 $      
+# Last updated on: $Date: 2013-09-12 15:21:37 $      
 
 =pod
 
@@ -1175,7 +1175,7 @@ sub get_rRNA_transcripts {
    (
      method			=> "rRNA",
      gff_source			=> "rRNA",
-     gff_type			=> "rRNA_primary_transcript",
+     gff_type			=> "rRNA",
      ID_after			=> "Transcript\\s+",
 
    );
@@ -2000,7 +2000,7 @@ sub get_miRNA_mature {
   my %GFF_data = 
    (
      method			=> "miRNA",
-     gff_source			=> "miRNA_mature_transcript",
+     gff_source			=> "miRNA_mature",
      gff_type			=> "miRNA",
      ID_after			=> 'Transcript\s+',
 
@@ -2027,8 +2027,8 @@ sub get_miRNA_primary {
   my %GFF_data = 
    (
      method			=> "miRNA_primary_transcript",
-     gff_source			=> "curated",
-     gff_type			=> "miRNA_primary_transcript",
+     gff_source			=> "miRNA_precursor",
+     gff_type			=> "pre_miRNA",
      ID_after			=> 'Transcript\s+',
 
    );
@@ -2056,7 +2056,7 @@ sub get_ncRNA {
    (
      method			=> "ncRNA",
      gff_source			=> "ncRNA",
-     gff_type			=> "ncRNA_primary_transcript",
+     gff_type			=> "ncRNA",
      ID_after			=> 'Transcript\s+',
 
    );
@@ -2083,7 +2083,7 @@ sub get_scRNA {
   my %GFF_data = 
    (
      method			=> "scRNA",
-     gff_source			=> "scRNA_mature_transcript",
+     gff_source			=> "scRNA",
      gff_type			=> "scRNA",
      ID_after			=> 'Transcript\s+',
 
@@ -2111,7 +2111,7 @@ sub get_snRNA {
   my %GFF_data = 
    (
      method			=> "snRNA",
-     gff_source			=> "snRNA_mature_transcript",
+     gff_source			=> "snRNA",
      gff_type			=> "snRNA",
      ID_after			=> 'Transcript\s+',
 
@@ -2139,7 +2139,7 @@ sub get_snoRNA {
   my %GFF_data = 
    (
      method			=> "snoRNA",
-     gff_source			=> "snoRNA_mature_transcript",
+     gff_source			=> "snoRNA",
      gff_type			=> "snoRNA",
      ID_after			=> 'Transcript\s+',
 
@@ -2167,7 +2167,7 @@ sub get_stRNA {
   my %GFF_data = 
    (
      method			=> "stRNA",
-     gff_source			=> "stRNA_mature_transcript",
+     gff_source			=> "stRNA",
      gff_type			=> "stRNA",
      ID_after			=> 'Transcript\s+',
 
@@ -2195,7 +2195,7 @@ sub get_tRNA {
   my %GFF_data = 
    (
      method			=> "tRNA",
-     gff_source			=> "tRNA_mature_transcript",
+     gff_source			=> "tRNA",
      gff_type			=> "tRNA",
      ID_after			=> 'Transcript\s+',
 
