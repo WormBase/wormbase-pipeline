@@ -114,7 +114,7 @@ Show_up_strand GRAY
 Bumpable	
 Show_text
 GFF_source "history"
-GFF_SO "SO:0000185" "nc_transcript_ace2so" // primary_transcript
+GFF_SO "SO:0000120" "nc_transcript_ace2so" //  protein_coding_primary_transcript
 
 Method : "history_pseudogene"
 Colour GRAY
@@ -227,8 +227,8 @@ Width 2.000000
 Show_text	
 EMBL_feature "ncRNA"
 GFF_source "ncRNA"
-GFF_feature "ncRNA_primary_transcript"
-GFF_SO "SO:0000483" "nc_transcript_ace2so" // nc_primary_transcript
+GFF_feature "ncRNA"
+GFF_SO "SO:0000655" "nc_transcript_ace2so" // ncRNA
 
 Method : "rRNA" 
 Colour GREEN
@@ -237,9 +237,9 @@ Width 2.000000
 Show_text
 Remark "SO:0000252" 
 GFF_source "rRNA"
-GFF_feature "rRNA_primary_transcript"
+GFF_feature "rRNA"
 EMBL_feature "rRNA"
-GFF_SO "SO:0000209" "nc_transcript_ace2so" // rRNA_primary_transcript
+GFF_SO "SO:0000252" "nc_transcript_ace2so" // rRNA
 
 Method : "tRNA" 
 Colour GREEN
@@ -247,7 +247,7 @@ Show_up_strand
 Bumpable	
 Show_text
 Remark "SO:0000253"
-GFF_source "tRNA_mature_transcript"
+GFF_source "tRNA"
 GFF_feature "tRNA"
 GFF_SO "SO:0000253" "nc_transcript_ace2so" // tRNA
 
@@ -257,7 +257,7 @@ Show_up_strand
 Bumpable	
 Show_text	
 EMBL_feature "tRNA"
-GFF_source "tRNA_mature_transcript"
+GFF_source "tRNA"
 GFF_feature "tRNA"
 GFF_SO "SO:0000253" "nc_transcript_ace2so" // tRNA
 
@@ -267,7 +267,7 @@ Show_up_strand
 Bumpable	
 Show_text	
 EMBL_feature "tRNA"
-GFF_source "tRNA_mature_transcript"
+GFF_source "tRNA"
 GFF_feature "tRNA"
 GFF_SO "SO:0000253" "nc_transcript_ace2so" // tRNA
 
@@ -278,7 +278,7 @@ Width 2.000000
 Show_text 
 EMBL_feature "scRNA"
 Remark "SO:0000013"
-GFF_source "scRNA_mature_transcript"
+GFF_source "scRNA"
 GFF_feature "scRNA"
 GFF_SO "SO:0000013" "nc_transcript_ace2so" // scRNA
 
@@ -289,7 +289,7 @@ Width 2.000000
 Show_text 
 EMBL_feature "snRNA"
 Remark "SO:0000274"
-GFF_source "snRNA_mature_transcript"
+GFF_source "snRNA"
 GFF_feature "snRNA"
 GFF_SO "SO:0000274" "nc_transcript_ace2so" // snRNA
 
@@ -310,7 +310,7 @@ Width 2.000000
 Show_text 
 EMBL_feature "snoRNA"
 Remark "SO:0000275"
-GFF_source "snoRNA_mature_transcript"
+GFF_source "snoRNA"
 GFF_feature "snoRNA"
 GFF_SO "SO:0000275" "nc_transcript_ace2so" // snoRNA
 
@@ -321,7 +321,7 @@ Width 2.000000
 Show_text 
 EMBL_feature "miRNA"
 Remark "SO:0000276"
-GFF_source "miRNA_mature_transcript" //expanded to be more descriptive
+GFF_source "miRNA_mature" //expanded to be more descriptive
 GFF_feature "miRNA" //Changed inline with SO:0000276
 GFF_SO "SO:0000276" "nc_transcript_ace2so" // miRNA
 
@@ -332,9 +332,9 @@ Width 2.000000
 Show_text 
 EMBL_feature "miRNA"
 Remark "SO:0000647
-GFF_source "curated_miRNA"
-GFF_feature "miRNA_primary_transcript" //Inline with SO:0000647
-GFF_SO "SO:0000647" "nc_transcript_ace2so" // miRNA_primary_transcript
+GFF_source "miRNA_precursor"
+GFF_feature "pre_miRNA"
+GFF_SO "SO:0001244" "nc_transcript_ace2so" // pre_miRNA
 
 Method : "stRNA" 
 Colour GREEN
@@ -343,7 +343,7 @@ Width 2.000000
 Show_text 
 EMBL_feature "misc_RNA"
 Remark "SO:0000649"
-GFF_source "stRNA_mature_transcript"
+GFF_source "stRNA"
 GFF_feature "stRNA"
 GFF_SO "SO:0000649" "nc_transcript_ace2so" // stRNA
 
