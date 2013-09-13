@@ -2,7 +2,7 @@
 #
 # EMBLdump.pl :  makes modified EMBL dumps from camace.
 # 
-#  Last updated on: $Date: 2013-05-21 14:30:01 $
+#  Last updated on: $Date: 2013-09-13 13:52:59 $
 #  Last updated by: $Author: mh6 $
 
 use strict;
@@ -66,7 +66,12 @@ my %additional_qualifiers = (
   'Bm2025d' => {
     transl_except => ['(pos:1123..1125,aa:Sec)']
   },
-
+  'CBG05747a' => {
+    transl_except => ['(pos:2002..2004,aa:Sec)']
+  },
+  'CBG05747b' => {
+    transl_except => ['(pos:1903..1905,aa:Sec)']
+  },
 );
 
 
