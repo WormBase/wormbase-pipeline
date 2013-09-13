@@ -5,7 +5,7 @@
 # Adds interpolated map positions and other information to gene and allele lines
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-07-22 15:18:08 $
+# Last updated on: $Date: 2013-09-13 12:18:29 $
 
 
 use strict;                                      
@@ -45,6 +45,7 @@ my $log = Log_files->make_build_log($wormbase);
 if (not defined $infile or not defined $outfile) { 
   $log->log_and_die("You must define -infile and -outfile\n");
 }
+my $species_full = $wormbase->full_name;
 
 open(my $gff_in_fh, $infile) or $log->log_and_die("Could not open $infile for reading\n");
 open(my $gff_out_fh, ">$outfile") or $log->log_and_die("Could not open $outfile for writing\n");  
@@ -77,7 +78,7 @@ while (<$gff_in_fh>) {
     my $changed = 0;
     if ($gff3) {
       my ($first) = split(/;/, $f[8]);
-      my ($gene) = $first =~ /ID:Gene:(\S+)/;
+      my ($gene) = $first =~ /ID=Gene:(\S+)/;
       $f[8] .= ";interpolated_map_position=$gene{$gene}"
           if exists $gene{$gene} and $f[8] !~ /interpolated_map_position/;
       $f[8] .= ";position=$gene_exact{$gene}" 
@@ -133,7 +134,7 @@ sub get_map_data {
 # get the exact physical mapping position of the Genes
   $log->write_to("Reading exact Gene mapping data\n");
   
-  $query = "find Gene where Map AND NEXT AND NEXT = Position";
+  $query = "find Gene where Species = \"'$species_full\"' AND Map AND NEXT AND NEXT = Position";
   $genes = $db->fetch_many('-query' => $query);
   while (my $gene = $genes->next){
     $gene_exact{$gene->name} = $gene->Map(3);
@@ -142,10 +143,14 @@ sub get_map_data {
   # get the CGC/WGN name of the Genes
   $log->write_to("Reading WGN names of genes\n");
   
-  $query = "find Gene where CGC_name";
+  $query = "find Gene where Species = \"$species_full\"";
   $genes = $db->fetch_many('-query' => $query);
   while (my $gene = $genes->next){
-    $locus{$gene->name} = $gene->CGC_name;
+    if ($gene->CGC_name) {
+      $locus{$gene->name} = $gene->CGC_name;
+    } elsif ($gene->Sequence_name) {
+      $locus{$gene->name} = $gene->Sequence_name;
+    }
   }
   
   $db->close();
