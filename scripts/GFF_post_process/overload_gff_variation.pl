@@ -5,7 +5,7 @@
 # Overloads Variation lines with extra info (consequence etc)
 #
 # Last updated by: $Author: klh $     
-# Last updated on: $Date: 2013-08-16 16:33:54 $      
+# Last updated on: $Date: 2013-09-13 13:09:05 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -21,7 +21,7 @@ use strict;
 ######################################
 
 my ( $debug, $test, $store, $wormbase,$database);
-my ($datavase, $species, $gff3, $infile, $outfile, %var, $changed_lines);
+my ($datavase, $species, $gff3, $infile, $outfile, %var, $changed_lines, $added_lines);
 
 GetOptions (
   "debug=s"    => \$debug,
@@ -64,6 +64,8 @@ while (<$gff_in_fh>) {
   if (/Variation \"(\S+)\"/ or /Variation:(\S+)/) {
     my $allele = $1;
     
+    my $is_putative_change_of_function_allele = 0;
+
     my @new_els;
     my @current_els = split(/\t/, $_);
     pop @current_els;
@@ -94,6 +96,9 @@ while (<$gff_in_fh>) {
       push @new_els, ['RFLP'] if $tp =~ /RFLP/;
       if ($tp eq 'Natural_variant') {
         $natural_variant = 1;
+        if ($current_els[3] ne 'transposable_element_insertion_site') {
+          $current_els[2] .= "_Polymorhpism";
+        }
         push @new_els, ['Polymorphism'];
       }
     }
@@ -141,7 +146,17 @@ while (<$gff_in_fh>) {
     }
     
     if (exists $var{$allele}->{mol_change}) {
-      push @new_els, ['Consequence', $var{$allele}->{mol_change}];
+      my $cons = $var{$allele}->{mol_change};
+
+      if ($cons eq 'Frameshift' or
+          $cons eq 'Missense' or
+          $cons eq 'Nonsense' or
+          $cons eq 'Readthrough' or
+          $cons eq 'Coding_exon') {
+        $is_putative_change_of_function_allele = 1;
+      }
+
+      push @new_els, ['Consequence', $cons];
       
       my @consequences = $variation->at('Affects.Predicted_CDS[2]');
       
@@ -184,8 +199,16 @@ while (<$gff_in_fh>) {
     my $join_str = ($gff3) ? ";" : " ; ";
     my $group = join($join_str, @new_el_strings); 
     print $gff_out_fh join("\t", @current_els, $group), "\n";
-    
+
     $changed_lines++;
+        
+    # duplicate putative change-of-function alleles, with a different source, so that they
+    # can be drawn in a separate track
+    if ($is_putative_change_of_function_allele) {
+      $current_els[1] = "PCoF_" . $current_els[1];
+      print $gff_out_fh join("\t", @current_els, $group), "\n";
+      $added_lines++;
+    }
     
     if ($changed_lines % 50000 == 0) {
       $db->close();
@@ -198,7 +221,7 @@ while (<$gff_in_fh>) {
 close($gff_out_fh) or $log->log_and_die("Could not close $outfile after writing\n");
 $db->close();
 
-$log->write_to("Finished processing : $changed_lines lines modified\n");
+$log->write_to("Finished processing : $changed_lines lines modified, $added_lines added\n");
 $log->mail();
 exit(0);
 
