@@ -5,7 +5,7 @@
 # Overloads the CDS and Transcript lines with extra info (mostly wormpep)
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-07-22 14:51:59 $
+# Last updated on: $Date: 2013-09-13 12:54:18 $
 
 #
 #    1. Brief_identification
@@ -65,17 +65,19 @@ open(my $gff_out_fh, ">$outfile") or $log->log_and_die("Could not open $outfile 
 
 while (<$gff_in_fh>) {
   chomp;
-  
-  unless  (/^\S+\s+(WormBase|curated|ncRNA|snlRNA|tRNAscan\S+)\s+(\w+primary_transcript|CDS|tRNA)/ or
-           /^\S+\s+(rRNA)\s+(\w+_primary_transcript)/ or
-           /^\S+\s+(curated_miRNA)\s+(miRNA_primary_transcript)/ or
-           /^\S+\s+(\w+_mature_transcript)\s+(snRNA|snoRNA|tRNA|scRNA|miRNA|stRNA)/) {
+
+  my ($chromosome,$source,$feature,$start,$stop,$score,$strand,$other,$attr) = split /\t/;
+
+  unless ($source eq 'curated' and $feature eq 'CDS' or
+          $source eq 'Coding_transcript' and ($feature eq 'mRNA' or $feature eq 'protein_coding_primary_transcript') or
+          $source eq 'Non_coding_transcript' and $feature eq 'nc_primary_transcript' or
+          $source eq 'miRNA_precursor' and $feature eq 'pre_miRNA' or
+          $source eq 'miRNA_mature' and $feature eq 'miRNA' or
+          $source =~ /RNA$/ and $source eq $feature) {
     print $gff_out_fh "$_\n";
     next;
   }
-  
-  my ($chromosome,$source,$feature,$start,$stop,$score,$strand,$other,$attr) = split /\t/;
-  
+    
   print $gff_out_fh "$chromosome\t$source\t$feature\t$start\t$stop\t$score\t$strand\t$other\t";
   
   if ($gff3) {
@@ -87,6 +89,7 @@ while (<$gff_in_fh>) {
       # Note: in GFF3, CDS features are split across several lines. It is wasteful and unnecessary to 
       # decorate all of the segments, so only do the first
       if (not exists $already_done_cds{$cds}) {
+        $attr .=  ";Name=CDS:$cds";
         $attr .=  ";Note=$briefID{$cds}"                              if ($briefID{$cds} ne "");
         $attr .=  ";wormpep=".$wormbase->pep_prefix.":$wormpep{$cds}" if ($wormpep{$cds} ne "");
         $attr .=  ";locus=$locus{$cds}"                               if ($locus{$cds} ne "");
@@ -102,7 +105,7 @@ while (<$gff_in_fh>) {
         $log->log_and_die("Could not find Transcript id in attribute field: $attr\n");
       } 
       $attr .= ";Note=".$RNAgenes{$transcript}->{remark} if $RNAgenes{$transcript}->{remark} ;
-      $attr .= ";locus=".$RNAgenes{$transcript}->{locus} if $RNAgenes{$transcript}->{locus} ;;
+      $attr .= ";locus=".$RNAgenes{$transcript}->{locus} if $RNAgenes{$transcript}->{locus} ;
       $attr .= ";gene=".$seqname2geneid{$transcript}     if $seqname2geneid{$transcript} ;
       $changed_lines++;
     }
