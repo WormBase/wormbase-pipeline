@@ -248,33 +248,6 @@ while (<>) {
         }
     }
     
-    elsif ( $group =~ /Variation\s+/) {
-      if ($group =~ /\s+Polymorphism\s+/ and $method ne 'transposable_element_insertion_site') {
-        $source  .= "_Polymorphism"; 
-      }
-
-      if ($group =~ /Consequence\s+\"(\S+)\"/ and $method ne 'transposable_element_insertion_site') {
-        # copy variations with consequence with a new source, so that
-        # they can be displayed on their own track on the browser
-        my $cons = $1;
-        if ($cons eq 'Frameshift' or
-            $cons eq 'Missense' or
-            $cons eq 'Nonsense' or 
-            $cons eq 'Readthrough' or
-            $cons eq 'Coding_exon') {
-          my $new_source = "PCoF_" . $source;
-          
-          print $outfh join( "\t",
-                             $ref,   $new_source, $method, $start, $stop,
-                             $score, $strand, $phase,  $group ),
-          "\n";
-        }
-      }
-    }
-
-    # fix variant fields: Variant "T" => Note "T"
-    $group =~ s/(?:Variant|Insert) "(\w+)"/Note "$1"/;
-
     # fix reversed targets
     if ( $group =~ /Target \S+ (\d+) (\d+)/ ) {
         if ( $2 < $1 ) {
