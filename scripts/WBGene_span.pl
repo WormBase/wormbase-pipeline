@@ -7,7 +7,7 @@
 # Creates SMapped Gene spans for Gene objects
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2013-09-12 15:35:38 $
+# Last edited on: $Date: 2013-09-16 10:28:44 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -82,7 +82,7 @@ else {
 
   my @methods;
   if ($wormbase->species eq "elegans") {
-    @methods = qw(Coding_transcript Non_coding_transcript Pseudogene ncRNA tRNA miRNA_primary_transcript snRNA snoRNA rRNA scRNA stRNA Transposon_CDS);
+    @methods = qw(Coding_transcript Non_coding_transcript Pseudogene ncRNA tRNA miRNA_primary_transcript snRNA snlRNA snoRNA rRNA scRNA stRNA Transposon_CDS);
   } else {
     @methods = qw(Coding_transcript Non_coding_transcript Pseudogene ncRNA tRNA);
   }
@@ -104,10 +104,11 @@ else {
 	       or ( $data[1] eq 'miRNA_precursor' )
 	       or ( $data[1] eq 'rRNA' )
 	       or ( $data[1] eq 'scRNA' )
-	       or ( $data[1] eq 'snoRNA' )
 	       or ( $data[1] eq 'stRNA' )
 	       or ( $data[1] eq 'snRNA' )
 	       or ( $data[1] eq 'ncRNA' )
+	       or ( $data[1] eq 'snoRNA' )
+	       or ( $data[1] eq 'snlRNA' )
 	       or ( $data[1] eq 'Transposon_CDS' )) {
 	  next if ( $data[2] eq 'exon'
 		    or $data[2] eq 'coding_exon'
