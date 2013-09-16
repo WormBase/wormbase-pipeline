@@ -6,8 +6,8 @@
 #
 # Usage : autoace_builder.pl [-options]
 #
-# Last edited by: $Author: pad $
-# Last edited on: $Date: 2013-08-14 12:19:59 $
+# Last edited by: $Author: klh $
+# Last edited on: $Date: 2013-09-16 15:38:17 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -238,14 +238,18 @@ else {$wormbase->run_command("update_gffdb.csh"                  , $log) if $gff
 }
 
 if ($load) {
-  $log->write_to("loading $load to ".$wormbase->autoace."\n");
+  my $db_to_load = ($database) ? $database : $wormbase->autoace;
+
+  $log->write_to("loading $load to $db_to_load\n");
   $log->write_to("\ttsuser = $tsuser\n\n");
-  $wormbase->load_to_database( $wormbase->autoace, $load, $tsuser ,$log ); 
+  $wormbase->load_to_database( $db_to_load, $load, $tsuser ,$log ); 
   #appropriate checks are made in the Wormbase.pm
 } elsif ($big_load) {
-  $log->write_to("loading $big_load to ".$wormbase->autoace."\n");
+  my $db_to_load = ($database) ? $database : $wormbase->autoace;
+
+  $log->write_to("Big-loading $big_load to $db_to_load\n");
   $log->write_to("\ttsuser = $tsuser\n\n");
-  $wormbase->load_to_database( $wormbase->autoace, $big_load, $tsuser ,$log, 1); 
+  $wormbase->load_to_database( $db_to_load, $big_load, $tsuser ,$log, 1); 
 }
 
 $log->mail;
