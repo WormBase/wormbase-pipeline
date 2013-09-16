@@ -8,7 +8,7 @@
 # - Strip the class name prefix from all of the Name attrbutes 
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-08-29 13:34:16 $
+# Last updated on: $Date: 2013-09-16 15:38:42 $
 
 use strict;
 use lib $ENV{CVS_DIR};
@@ -19,18 +19,18 @@ use Log_files;
 use Storable;
 
 my %source_map = (
-  Coding_transcript        => 'WormBase',
-  curated                  => 'WormBase',
   gene                     => 'WormBase',
-  Pseudogene               => 'WormBase',
-  miRNA_mature_transcript  => 'WormBase',
-  curated_miRNA            => 'WormBase',
-  rRNA                     => 'WormBase',
-  snoRNA_mature_transcript => 'WormBase',
-  snRNA_mature_transcript  => 'WormBase',
-  ncRNA                    => 'WormBase',
-  snlRNA                   => 'WormBase',
-  scRNA                    => 'WormBase',
+  Coding_transcript        => 'WormBase_coding_transcript',
+  curated                  => 'WormBase_curated_cds',
+  Pseudogene               => 'WormBase_pseudogene',
+  miRNA_mature             => 'WormBase_miRNA',
+  miRNA_precursor          => 'WormBase_miRNA',
+  rRNA                     => 'WormBase_rRNA',
+  snoRNA                   => 'WormBase_snoRNA',
+  snRNA                    => 'WormBase_snRNA',
+  ncRNA                    => 'WormBase_ncRNA',
+  snlRNA                   => 'WormBase_snlRNA',
+  scRNA                    => 'WormBase_scRNA',
     );
 
 my %between_base_feature_types = (
@@ -81,6 +81,13 @@ open(my $gff_out_fh, ">$outfile") or $log->log_and_die("Could not open $outfile 
 
 while(<$gff_in_fh>) {
   /^\#/ and do {
+    if (/sequence-region/) {
+      if ($species eq 'elegans') {
+        s/^CHROMOSOME_//;
+      } elsif ($species eq 'briggsae') {
+        s/^chr//;
+      }      
+    }
     print $gff_out_fh $_;
     next;
   };

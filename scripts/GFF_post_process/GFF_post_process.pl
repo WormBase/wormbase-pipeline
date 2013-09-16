@@ -6,7 +6,7 @@
 # and supplementing the "raw" GFF dumped from Ace with additional attributes
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-08-29 12:59:58 $
+# Last updated on: $Date: 2013-09-16 15:38:42 $
 #
 # Usage GFFmunger.pl [-options]
 
@@ -350,9 +350,11 @@ sub run_munging_script {
   }
 
   if ($debug) {
-    $wormbase->run_command("cp -f $outfile $processed_gff_file", $log);
+    $wormbase->run_command("cp -f $outfile $processed_gff_file", $log) and
+        $log->log_and_die("Failed to copy $outfile into place\n");
   } else {
-    $wormbase->run_command("mv -f $outfile $processed_gff_file", $log);
+    $wormbase->run_command("mv -f $outfile $processed_gff_file", $log) and 
+        $log->log_and_die("Failed to move $outfile into place\n");
   }
 
   &register_complete("PROGRESS.${version_string}.$descriptor");
@@ -364,6 +366,8 @@ sub append_splits_files {
   my ($suffix, $skip_pattern) = @_;
 
   return if &check_complete("PROGRESS.${version_string}.append_${suffix}") and not $force;
+
+  my $outfile = "$working_dir/append_${suffix}.${version_string}";
 
   my %files;
 
@@ -380,10 +384,19 @@ sub append_splits_files {
     $files{$gff_file} = 1;
   }
 
-  foreach my $file (sort keys %files) {
-    if ($wormbase->run_command("cat $file >> $processed_gff_file", $log)) {
-      $log->log_and_die("Failed to appened $file to $processed_gff_file\n");
-    }
+  my @files = sort keys %files;
+
+  if ($wormbase->run_command("cat $processed_gff_file @files > $outfile", $log)) {
+    $log->log_and_die("Failed to append to $processed_gff_file: @files\n");
+  }
+
+
+  if ($debug) { 
+    $wormbase->run_command("cp -f $outfile $processed_gff_file", $log) 
+        and $log->log_and_die("Failed to copy the GFF_SPLITS-appended GFF file into place\n");
+  } else {
+    $wormbase->run_command("mv -f $outfile $processed_gff_file", $log) 
+        and $log->log_and_die("Failed to move the GFF_SPLITS-appended GFF file into place\n");
   }
 
   &register_complete("PROGRESS.${version_string}.append_${suffix}");
@@ -391,23 +404,32 @@ sub append_splits_files {
 
 ##################################
 sub append_supplementary_files {
+
   return if &check_complete("PROGRESS.${version_string}.append_supplementary") and not $force;
 
-  my (@files_to_append);
+  my $outfile = "$working_dir/append_supplementary.${version_string}";
+
+  my (@gfffiles);
   
   my $supdir = $wormbase->sequences . "/SUPPLEMENTARY_GFF";
 
-  my @gfffiles;
   if ($gff3) {
     @gfffiles = glob("$supdir/*.gff3");
   } else {
     @gfffiles = glob("$supdir/*.gff");
   }
 
-  foreach my $file (@gfffiles){
-    if ($wormbase->run_command("cat $file >> $processed_gff_file", $log)) {
-      $log->log_and_die("Failed to appened $file to $processed_gff_file\n");
-    }
+  if ($wormbase->run_command("cat $processed_gff_file @gfffiles > $outfile", $log)) {
+    $log->log_and_die("Failed to appened supplementary GFF files to $processed_gff_file : @gfffiles\n");
+  }
+
+
+  if ($debug) { 
+    $wormbase->run_command("cp -f $outfile $processed_gff_file", $log) 
+        and $log->log_and_die("Failed to copy the SUPPLEMENTARY-appended GFF file into place\n");
+  } else {
+    $wormbase->run_command("mv -f $outfile $processed_gff_file", $log) 
+        and $log->log_and_die("Failed to move the SUPPLEMENTARY-appended GFF file into place\n");
   }
 
   &register_complete("PROGRESS.${version_string}.append_supplementary");
@@ -416,22 +438,6 @@ sub append_supplementary_files {
 ############################
 sub collate_and_sort {
   return if &check_complete("PROGRESS.${version_string}.collate_and_sort") and not $force;
-
-  #
-  # Run the GFF3 post-processing script; do it here rather than earlier because this is a
-  # compulsory last step
-  #
-  if ($gff3) {
-    my $outfile = "$working_dir/post_process_gff3.gff3";
-    $wormbase->run_script("GFF_post_process/post_process_gff3.pl -infile $processed_gff_file -outfile $outfile")
-        and $log->log_and_die("Unsuccessful post-processing of GFF3 prior to collation\n");
-    
-    if ($debug) {
-      $wormbase->run_command("cp -f $outfile $processed_gff_file", $log);
-    } else {
-      $wormbase->run_command("mv -f $outfile $processed_gff_file", $log);
-    }
-  }
 
   my $outfile = "$working_dir/collate_and_sort.${version_string}";
   open(my $out_fh, ">$outfile") or $log->log_and_die("Could not open $outfile for writing\n");
@@ -442,7 +448,7 @@ sub collate_and_sort {
   }
   
   if ($gff3) {
-    open($gff_in, "perl $ENV{CVS_DIR}/GFF_post_process/sort_gff3.pl $processed_gff_file |")
+    open($gff_in, "sort -k 1,1 -k4,4n -k 5,5n $processed_gff_file | perl $ENV{CVS_DIR}/GFF_post_process/sort_gff3.pl - |")
         or $log->log_and_die("Could not open sort_gff3.pl command for $processed_gff_file\n");
   } else {
     open($gff_in, "sort -k 1,1 -k4,4n -k 5,5n $processed_gff_file |") 
@@ -453,8 +459,33 @@ sub collate_and_sort {
   }
   close($out_fh) or $log->log_and_die("Could not close $outfile after appending\n");
 
-  $wormbase->run_command("mv -f $outfile $processed_gff_file", $log) 
-      and $log->log_and_die("Failed to move the final processed GFF file into place\n");
+  if ($debug) { 
+    $wormbase->run_command("cp -f $outfile $processed_gff_file", $log) 
+        and $log->log_and_die("Failed to copy the sorted/collated GFF file into place\n");
+  } else {
+    $wormbase->run_command("mv -f $outfile $processed_gff_file", $log) 
+        and $log->log_and_die("Failed to move the sorted/collated GFF file into place\n");
+  }
+
+
+  #
+  # Run the GFF3 post-processing script; do it here rather than earlier because this is a
+  # compulsory last step
+  #
+  if ($gff3) {
+    my $outfile = "$working_dir/post_process_gff3.gff3";
+    $wormbase->run_script("GFF_post_process/post_process_gff3.pl -infile $processed_gff_file -outfile $outfile")
+        and $log->log_and_die("Unsuccessful post-processing of GFF3 prior to collation\n");
+
+    if ($debug) {
+      $wormbase->run_command("cp -f $outfile $processed_gff_file", $log)
+          and $log->log_and_die("Failed to copy the GFF3-post-processed file into place");
+    } else {
+      $wormbase->run_command("mv -f $outfile $processed_gff_file", $log)
+          and $log->log_and_die("Failed to move the GFF3-post-processed file into place");
+    }
+  }
+
   $wormbase->run_command("gzip -9 $processed_gff_file", $log)
       and $log->log_and_die("Failed to gzip the final processed GFF file\n");
 
