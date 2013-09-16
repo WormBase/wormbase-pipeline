@@ -298,10 +298,10 @@ Colour GREEN
 Show_up_strand 
 Width 2.000000
 Show_text 
-EMBL_feature "snlRNA"
-GFF_source "snlRNA"
-GFF_feature "snlRNA"
-GFF_SO "SO:0000483" "nc_transcript_ace2so" // snlRNA
+EMBL_feature "snRNA"
+GFF_source "snRNA"
+GFF_feature "snRNA"
+GFF_SO "SO:0000274" "nc_transcript_ace2so" // snRNA ; we do not distingush between snRNA and snlRNA in GFF
 
 Method : "snoRNA" 
 Colour GREEN
