@@ -377,6 +377,10 @@ sub load_genes {
   
   $dba->dbc->do('DELETE FROM  meta WHERE meta_key = "genebuild.start_date"');
   $dba->dbc->do("INSERT INTO meta (meta_key,meta_value) VALUES (\"genebuild.start_date\",\"$timestamp\")");
+  
+  $dba->dbc->do('DELETE FROM  meta WHERE meta_key = "genebuild.version"');
+  $dba->dbc->do("INSERT INTO meta (meta_key,meta_value) VALUES (\"genebuild.version\",\"$timestamp\")");
+
 }
 
 
