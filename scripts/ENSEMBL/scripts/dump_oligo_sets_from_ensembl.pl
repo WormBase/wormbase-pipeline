@@ -70,9 +70,9 @@ foreach my $vendor (sort { $b cmp $a } keys %arrays_by_vendor) {
 
       my %wb_names;
 
-      foreach my $probe (@$probe_group_ref) {
-        my ($array) = @{$probe->get_all_Arrays};
-        foreach my $pname (@{$probe->get_all_probenames($array->name)}) {
+      foreach my $pb (@$probe_group_ref) {
+        my ($array) = @{$pb->get_all_Arrays};
+        foreach my $pname (@{$pb->get_all_probenames($array->name)}) {
           if (exists $wb_oset_names{$pname}) {
             $wb_names{$pname} = 1;
           } elsif( exists($wb_oset_names{sprintf("%s_%s", $array->name, $pname)})) {
