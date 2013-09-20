@@ -5,7 +5,7 @@
 # by Gary Williams
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2013-09-20 09:00:36 $      
+# Last updated on: $Date: 2013-09-20 10:26:53 $      
 
 # Submission guides:
 # http://www.ncbi.nlm.nih.gov/books/NBK49167/
@@ -127,8 +127,7 @@ if (!$justsubmit) {
   # check to see if there is an analysis_accession file already in this directory
   # if there is then there will have been a previous submission of a BAM file for this experiment and we can MODIFY instead of SUBMIT
   if (-e $accession_file && ! $validate) {
-    $log->write_to("File '$accession_file' exists, so changing the submission from ADD to MODIFY\n");
-    $modify = 1;
+    $log->log_and_die("File '$accession_file' exists, so it looks like you should be using '-modify'\n");
   }
 
   $log->write_to("Get SRA $srx details.\n");
@@ -301,31 +300,6 @@ sub make_analysis_xml {
   my $CHECKSUM = (split /\s+/, $md5)[0];
   
   
-
-# Originally this was set up for SAMPLE data
-#  print OUT qq[<?xml version="1.0" encoding="UTF-8"?>
-#<ANALYSIS_SET>
-#    <ANALYSIS alias="$UNIQUE_NAME_FOR_ANALYSIS" 
-#        center_name="$center_name_abbreviation"
-#        broker_name="$center_name_abbreviation"
-#        analysis_center="$center_name_abbreviation" analysis_date="$date">
-#        <TITLE>$a_descriptive_title_for_the_analysis_shown_in_search_results</TITLE>
-#        <DESCRIPTION>$a_detailed_description_of_the_analysis</DESCRIPTION>
-#        <STUDY_REF accession="$Study" refname="$study_alias" refcenter="$study_center">
-#          <IDENTIFIERS>
-#               <PRIMARY_ID>$Study</PRIMARY_ID>
-#               <SUBMITTER_ID namespace="$study_center">$study_alias</SUBMITTER_ID>
-#          </IDENTIFIERS>
-#        </STUDY_REF>
-#        <SAMPLE_REF accession="$Sample"/>
-#        <ANALYSIS_TYPE>
-#            <REFERENCE_ALIGNMENT>
-#                <ASSEMBLY>
-#                    <STANDARD accession="$INSDC_assembly_accession"/>
-#                </ASSEMBLY>
-#];
-
-# Try this to see if we can simply specify an EXPERIMENT (i.e. SRX ID)
   print OUT qq[<?xml version="1.0" encoding="UTF-8"?>
 <ANALYSIS_SET>
     <ANALYSIS alias="$UNIQUE_NAME_FOR_ANALYSIS" 
@@ -339,7 +313,7 @@ sub make_analysis_xml {
 ];
 
   foreach my $run (@{$Run}) {
-    print OUT qq[<RUN_REF accession="${run}"/>
+    print OUT qq[        <RUN_REF accession="${run}"/>
 ];
   }
 
