@@ -5,7 +5,7 @@
 # by Gary Williams
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2013-09-19 15:17:04 $      
+# Last updated on: $Date: 2013-09-20 09:00:36 $      
 
 # Submission guides:
 # http://www.ncbi.nlm.nih.gov/books/NBK49167/
@@ -289,8 +289,8 @@ sub make_analysis_xml {
   
   my $UNIQUE_NAME_FOR_ANALYSIS = 'WormBase_'. $g_species . '_' . $srx;
   my $center_name_abbreviation = "EBI";
-  my $a_descriptive_title_for_the_analysis_shown_in_search_results = "RNASeq reads mapped using Tophat to the $g_species reference genome";
-  my $a_detailed_description_of_the_analysis = "RNASeq reads from the SRA experiment ID $srx mapped to the $g_species reference genome as part of the WormBase database Build process using TopHat version tophat-2.0.5.Linux_x86_64";
+  my $a_descriptive_title_for_the_analysis_shown_in_search_results = "RNASeq reads mapped using Tophat to the $g_species reference genome $version_name";
+  my $a_detailed_description_of_the_analysis = "RNASeq reads from the SRA experiment ID $srx mapped to the $g_species reference genome $version_name as part of the WormBase database Build process using TopHat version tophat-2.0.5.Linux_x86_64";
   my $STUDY_ALIAS_OF_RELEVANT_STUDY_OBJECT = $Study;
   my $INSDC_assembly_accession = $assembly_accessions{$species};
   my $FILENAME = "$RG_bamfile";
