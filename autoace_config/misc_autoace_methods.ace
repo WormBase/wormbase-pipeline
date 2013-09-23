@@ -2990,10 +2990,10 @@ Strand_sensitive
 Width 1.000000
 Show_up_strand
 Show_text
-Remark "Binding site. This is the site that a non-histone and non-transcription factor protein (or other molecule) binds to. The position is known precisely.GFF_source "binding_site"
+Remark "Binding site. This is the site that a non-histone and non-transcription factor protein (or other molecule) binds to. The position is known precisely."
+GFF_source "binding_site"
 GFF_feature "binding_site" // SO:0000409
-GFF_SO : "SO:0000409" // binding_site 
-"
+GFF_SO : "SO:0000409" // binding_site
 
 Method : "binding_site_region"  
 Colour MAGENTA  
