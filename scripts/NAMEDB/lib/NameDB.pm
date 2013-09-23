@@ -1398,6 +1398,37 @@ sub idSplit {
   _scalar_result($new_id);
 }
 
+
+=item $new_id = $db->idUnmerge()
+
+Split the identifier given by $source_id into $target_id, where
+$target_id had previously been merged into $source_id. This
+has the effect of undoing a previous erroneous merge, resurrecting
+the split target
+
+=cut
+
+sub idUnmerge {
+  my $self = shift;
+  my ($source_name,$target_name, $domain) = @_;
+  $domain  = $self->getDomain  unless defined $domain;
+  $domain  or $self->throw(BADDOM);
+
+  my $dbh  = $self->dbh;
+
+  local $dbh->{RaiseError} = 1;
+  $dbh->begin_work;
+  eval {
+    $self->_idUnmerge($source_name,$target_name, $domain);
+    $dbh->commit;
+  };
+  if ($@) {
+    $dbh->rollback;
+    die $@;
+  }
+  _scalar_result(1);
+}
+
 =back
 
 =head2 Utility Methods
@@ -1576,6 +1607,37 @@ END
 
   $self->_add_history('mergedFrom',$eater_name,undef,undef,$eaten_name,$domain);
 }
+
+########
+
+sub _idUnmerge {
+  my $self = shift;
+  my ($source_id, $target_id, $domain) = @_;
+
+  $domain = $self->getDomain unless defined $domain;
+
+  my $internal_id_source = $self->_internal_id($source_id,$domain)
+    or $self->throw(BADID);
+
+  my $internal_id_target = $self->_internal_id($target_id,$domain)
+    or $self->throw(BADID);
+
+  # resurrect the old id
+  my $query = <<END;
+update primary_identifier
+  set object_live = 1
+    where object_id = ?
+END
+;
+  $self->dbh->do($query,undef,$internal_id_target)
+    or $self->throw(DBERR);
+
+  # and record it in the history
+  $self->_add_history('splitFrom',$target_id,undef,undef,$source_id,$domain);
+  $self->_add_history('splitTo',$source_id,undef,undef,$target_id,$domain);
+}
+#######
+
 
 # return new object
 sub _idSplit {
