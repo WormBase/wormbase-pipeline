@@ -8,7 +8,7 @@
 # - Strip the class name prefix from all of the Name attrbutes 
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-09-24 10:17:21 $
+# Last updated on: $Date: 2013-09-24 11:58:37 $
 
 use strict;
 use lib $ENV{CVS_DIR};
@@ -84,9 +84,9 @@ while(<$gff_in_fh>) {
   /^\#/ and do {
     if (/sequence-region/) {
       if ($species eq 'elegans') {
-        s/^CHROMOSOME_//;
+        s/CHROMOSOME_//;
       } elsif ($species eq 'briggsae') {
-        s/^chr//;
+        s/chr//;
       }      
     }
     print $gff_out_fh $_;
