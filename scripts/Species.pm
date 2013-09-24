@@ -922,10 +922,43 @@ sub ncbi_bioproject {'PRJNA60051'};
 sub bioproject_description { 'Broad Institute L.loa genome project' }
 sub assembly_type {'contig'};
 
+###################################
+
+use Carp;
+our @ISA = qw(Wormbase Species);
+
+sub _new {      
+    my $class = shift;
+    my %param = %{ shift(@_) };
+
+    my $self = $class->initialize( $class->flatten_params( \%param ) );
+
+    # add stuff post object creation goes here
+
+    bless $self, $class;
+}
+sub full_name {
+        my $self = shift;
+        my %param = @_ ;
+        if($param{'-short'}){
+                return 'D. immitis';
+        }       elsif($param{'-g_species'}){
+                return 'd_immitis';
+        }
+        else { return'Dirofilaria immitis'
+        };
+}
+sub chromosome_prefix {''}
+sub pep_prefix {'DIM'}
+sub pepdir_prefix{'dimmitis'};
+sub ncbi_tax_id {'6287'};
+sub ncbi_bioproject {'PRJEB593'};
+sub bioproject_description { 'GenePool Edinburgh D.immitis genome project'};
+sub assembly_type {'contig'};
+
 
 
 ###################################
-
 package Mhapla;
 use Carp;
 our @ISA = qw(Wormbase Species);
