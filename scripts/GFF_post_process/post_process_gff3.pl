@@ -8,7 +8,7 @@
 # - Strip the class name prefix from all of the Name attrbutes 
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-09-16 15:38:42 $
+# Last updated on: $Date: 2013-09-24 10:17:21 $
 
 use strict;
 use lib $ENV{CVS_DIR};
@@ -20,8 +20,9 @@ use Storable;
 
 my %source_map = (
   gene                     => 'WormBase',
-  Coding_transcript        => 'WormBase_coding_transcript',
-  curated                  => 'WormBase_curated_cds',
+  Coding_transcript        => 'WormBase_coding',
+  curated                  => 'WormBase_coding',
+  Non_coding_transcript    => 'WormBase_non_coding',
   Pseudogene               => 'WormBase_pseudogene',
   miRNA_mature             => 'WormBase_miRNA',
   miRNA_precursor          => 'WormBase_miRNA',
