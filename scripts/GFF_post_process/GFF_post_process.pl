@@ -6,7 +6,7 @@
 # and supplementing the "raw" GFF dumped from Ace with additional attributes
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-09-16 15:38:42 $
+# Last updated on: $Date: 2013-09-24 22:13:38 $
 #
 # Usage GFFmunger.pl [-options]
 
@@ -474,7 +474,7 @@ sub collate_and_sort {
   #
   if ($gff3) {
     my $outfile = "$working_dir/post_process_gff3.gff3";
-    $wormbase->run_script("GFF_post_process/post_process_gff3.pl -infile $processed_gff_file -outfile $outfile")
+    $wormbase->run_script("GFF_post_process/post_process_gff3.pl -infile $processed_gff_file -outfile $outfile", $log)
         and $log->log_and_die("Unsuccessful post-processing of GFF3 prior to collation\n");
 
     if ($debug) {
