@@ -11,18 +11,16 @@ my ($species,
     %p2g_map, $p2g_file, 
     $pname_file, %wb_oset_names,
     $choose_best,
-    $old_model,
-    $acefile,
+    $acefile, $ace_fh,
     $verbose);
 
-&GetOptions('regconf=s' => \$reg_conf,
-            'species=s' => \$species,
+&GetOptions('regconf=s'       => \$reg_conf,
+            'species=s'       => \$species,
             'probe2genemap=s' => \$p2g_file,
             'wbprobenames=s'  => \$pname_file,
             'choosebest'      => \$choose_best,
             'verbose'         => \$verbose,
             'acefile=s'       => \$acefile,
-            'prews237'        => \$old_model,
     );
 
 if (defined $p2g_file) {
@@ -39,6 +37,7 @@ $reg->load_all($reg_conf);
 my $a_adap = $reg->get_adaptor($species,
                                'funcgen',
                                'Array');
+
 my $p_adap = $reg->get_adaptor($species,
                                'funcgen',
                                'Probe');
@@ -50,6 +49,13 @@ my $sl_adap = $reg->get_adaptor($species,
 my %arrays_by_vendor;
 
 map { push @{$arrays_by_vendor{$_->vendor}}, $_ } @{$a_adap->fetch_all};
+
+if ($acefile) {
+  open($ace_fh, ">$acefile") or die "Could not open $acefile for writing\n";
+} else {
+  $ace_fh = \*STDOUT;
+}
+
 
 foreach my $vendor (sort { $b cmp $a } keys %arrays_by_vendor) {
   my (%results);
@@ -70,9 +76,9 @@ foreach my $vendor (sort { $b cmp $a } keys %arrays_by_vendor) {
 
       my %wb_names;
 
-      foreach my $pb (@$probe_group_ref) {
-        my ($array) = @{$pb->get_all_Arrays};
-        foreach my $pname (@{$pb->get_all_probenames($array->name)}) {
+      foreach my $probe (@$probe_group_ref) {
+        my ($array) = @{$probe->get_all_Arrays};
+        foreach my $pname (@{$probe->get_all_probenames($array->name)}) {
           if (exists $wb_oset_names{$pname}) {
             $wb_names{$pname} = 1;
           } elsif( exists($wb_oset_names{sprintf("%s_%s", $array->name, $pname)})) {
@@ -84,16 +90,11 @@ foreach my $vendor (sort { $b cmp $a } keys %arrays_by_vendor) {
       if (scalar(keys %wb_names) == 0) {
         die "Could not determine any WormBase names for probe id ", $probe->dbID, "\n";
       } elsif (scalar(keys %wb_names) > 1) {
-        my @nm = sort keys %wb_names;
-        warn "Multiple WormBase names for probe id ", $probe->dbID, " : (@nm) ";
+        warn "Multiple WormBase names for probe id ", $probe->dbID, "\n";
       }
 
       my @pf = @{$probe->get_all_ProbeFeatures};
-      
-      # discard features with soft-clipping in the cigar, because
-      # they seem to have buggy coodinates
-      @pf = grep { $_->cigar_string !~ /S/ } @pf;
-      
+
       next if not @pf;
       
       if ($choose_best) {
@@ -102,7 +103,7 @@ foreach my $vendor (sort { $b cmp $a } keys %arrays_by_vendor) {
         my $best_clust =  &choose_best_cluster($example_wb_pname, \@clust);
         @pf = ($best_clust->[0]);
       }
-      
+
       foreach my $pf (@pf) {
         my @blocks = &get_feature_blocks($pf);
         
@@ -205,113 +206,80 @@ foreach my $vendor (sort { $b cmp $a } keys %arrays_by_vendor) {
 sub write_ace {
   my ($platform, $chr, $chr_len, $res_hash) = @_;
 
-  if ($species eq 'elegans') {
+  if ($species eq 'elegans' and $chr !~ /^CHROMOSOME/) {
     $chr = "CHROMOSOME_${chr}";
+  } elsif ($species eq 'briggsae' and $chr !~ /^chr/) {
+    $chr = "chr${chr}";
   }
 
-  if ($old_model) {    
-    my @out_segs;
-
-    foreach my $pid (sort keys %$res_hash) {
-      my ($strand) = (keys %{$res_hash->{$pid}});
-      my ($seggroup) =  @{$res_hash->{$pid}->{$strand}};
-
-      my @segs = sort { $a->{g_st} <=> $b->{g_st} } @$seggroup;
-      my $g_st = $segs[0]->{g_st};
-      my $g_en = $segs[-1]->{g_en};
-
-      if ($strand < 0) {
-        @segs =  sort { $a->{g_st} <=> $b->{g_st} } @segs;
-        ($g_st, $g_en) = ($g_en, $g_st);
-      }
-
-      print "\nOligo_set : \"$pid\"\n";
-
-      foreach my $seg (@$seggroup) {
-        my ($tg_ex_st, $tg_ex_en);
-
-        if ($strand < 0) {
-          $tg_ex_st = $g_st - $seg->{g_en} + 1;
-          $tg_ex_en = $g_st - $seg->{g_st} + 1;
-        } else {
-          $tg_ex_st = $seg->{g_st} - $g_st + 1;
-          $tg_ex_en = $seg->{g_en} - $g_st + 1;
-        } 
-        
-        print "Target_exons $tg_ex_st $tg_ex_en\n";
-      }
-
-      push @out_segs, [$pid, $g_st, $g_en];
+  my (@batches, @homol_data);
+  
+  foreach my $id (sort keys %$res_hash) {
+    if (not @batches or scalar(@{$batches[-1]}) >= 5000) {
+      push @batches, [];
     }
-
-    print "\nSequence : \"$chr\"\n";
-    foreach my $seg (@out_segs) {
-      print "Oligo_set @$seg\n";
-    }
-  } else {
-
-    my (@batches, @homol_data);
+    push @{$batches[-1]}, $id;
+  }
+  
+  for(my $idx = 0; $idx < @batches; $idx++) {
+    my $tile = "";
     
-    foreach my $id (sort keys %$res_hash) {
-      if (not @batches or scalar(@{$batches[-1]}) >= 5000) {
-        push @batches, [];
-      }
-      push @{$batches[-1]}, $id;
+    if (@batches > 1) {
+      $tile .= "_";
+      $tile .= $idx + 1;
     }
     
-    for(my $idx = 0; $idx < @batches; $idx++) {
-      my $tile = "";
-      
-      if (@batches > 1) {
-        $tile .= "_";
-        $tile .= $idx + 1;
-      }
-      
-      my $homol_data_name = "Oligo_set:$chr:${platform}${tile}";
-      
-      print "\nHomol_data : \"$homol_data_name\"\n";
-      foreach my $pid (@{$batches[$idx]}) {
-        foreach my $strand (keys %{$res_hash->{$pid}}) {
-          foreach my $seggroup (@{$res_hash->{$pid}->{$strand}}) {
-            foreach my $seg (@$seggroup) {
-              my ($gst, $gend) = ($seg->{g_st}, $seg->{g_en});
-              my ($pst, $pend) = ($seg->{p_st}, $seg->{p_en});
-              if ($gend > $chr_len) {
-                my $overhang = $gend - $chr_len;
-                $gend -= $overhang;
-                if ($strand < 0) {
-                  $pst += $overhang;
-                } else {
-                  $pend -= $overhang;
-                }
+    my $homol_data_name = "Oligo_set:$chr:${platform}${tile}";
+    
+    print $ace_fh "\nHomol_data : \"$homol_data_name\"\n";
+    foreach my $pid (@{$batches[$idx]}) {
+      foreach my $strand (keys %{$res_hash->{$pid}}) {
+        foreach my $seggroup (@{$res_hash->{$pid}->{$strand}}) {
+          foreach my $seg (@$seggroup) {
+            
+            my ($gst, $gend) = ($seg->{g_st}, $seg->{g_en});
+            my ($pst, $pend) = ($seg->{p_st}, $seg->{p_en});
+            if ($gend > $chr_len) {
+              warn sprintf("Segment extends beyond end of %s : %d %d (%s %d %d), so clipping\n", 
+                           $chr, $seg->{g_st}, $seg->{g_en}, $pid, $seg->{p_st}, $seg->{p_en}); 
+              
+              my $overhang = $gend - $chr_len;
+              $gend -= $overhang;
+              if ($strand < 0) {
+                $pst += $overhang;
+              } else {
+                $pend -= $overhang;
               }
-              if ($gst < 1) {
-                my $overhang = abs($gst) + 1;
-                $gst += $overhang;
-                if ($strand < 0) {
-                  $pend -= $overhang;
-                } else {
-                  $pst += $overhang;
-                }
-              }
-              printf("Oligo_set_homol %s Oligo_set_mapping 100.0 %d %d %d %d\n", 
-                     $pid, 
-                     $strand < 0 ? $gend : $gst, 
-                     $strand < 0 ? $gst : $gend,
-                     $pst, 
-                     $pend);
             }
+            if ($gst < 1) {
+              warn sprintf("Segment extends beyond start of %s : %d %d (%s %d %d), so clipping\n", 
+                           $chr, $seg->{g_st}, $seg->{g_en}, $pid, $seg->{p_st}, $seg->{p_en}); 
+              my $overhang = abs($gst) + 1;
+              $gst += $overhang;
+              if ($strand < 0) {
+                $pend -= $overhang;
+              } else {
+                $pst += $overhang;
+              }
+            }
+            printf($ace_fh "Oligo_set_homol %s Oligo_set_mapping 100.0 %d %d %d %d\n", 
+                   $pid, 
+                   $strand < 0 ? $gend : $gst, 
+                   $strand < 0 ? $gst : $gend,
+                   $pst, 
+                   $pend);
+            
           }
         }
       }
-      
-      push @homol_data, $homol_data_name;
     }
     
-    print "\nSequence : \"$chr\"\n";
-    foreach my $hd (@homol_data) {
-      print "Homol_data $hd 1 $chr_len\n";
-    }
+    push @homol_data, $homol_data_name;
+  }
+  
+  print $ace_fh "\nSequence : \"$chr\"\n";
+  foreach my $hd (@homol_data) {
+    print $ace_fh "Homol_data $hd 1 $chr_len\n";
   }
 }
 
@@ -421,12 +389,12 @@ sub get_feature_blocks {
   my $g_st = $fstart;
   my $p_st = 1;
   
-  my @blocks = ($cigar =~ /(\d+[=DIX])/g);
+  my @blocks = ($cigar =~ /(\d+[=DIXS])/g);
     
   foreach my $block (@blocks) {
     my ($num, $sym) = $block =~ /^(\d+)(\S)$/;
     
-    if ($sym eq '=' or $sym eq 'X') {
+    if ($sym eq '=' or $sym eq 'X' or $sym eq 'S') {
       my $g_en = $g_st + $num - 1;
       my $p_en = $p_st + $num - 1;
       push @new_blocks, {
@@ -435,7 +403,7 @@ sub get_feature_blocks {
         p_st => $p_st,
         p_en => $p_en,
         p_cov => ($p_en - $p_st + 1),
-        mm => ($sym eq '=') ? 0 : $num,
+        mm => ($sym eq '=' or $sym eq 'S') ? 0 : $num,
       };
 
       $g_st = $g_en + 1;
