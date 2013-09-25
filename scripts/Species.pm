@@ -917,7 +917,7 @@ sub chromosome_prefix {''}
 sub pep_prefix {'DI'}
 sub pepdir_prefix{'dimmitis'};
 sub ncbi_tax_id {'6287'};
-sub ncbi_bioproject {'PRJEB593'};
+sub ncbi_bioproject {'unknown'};
 sub bioproject_description { 'Edinburgh University'};
 sub assembly_type {'contig'};
 
