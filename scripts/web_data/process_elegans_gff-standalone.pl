@@ -64,7 +64,6 @@ if (not defined $species) {
 my $db = Ace->connect( $database ) or $log->log_and_die("Can't open ace database:". Ace->error );
 
 my (
-  %NOTES,
   %LOCUS,
   %CONFIRMED,
   %GENES,
@@ -96,9 +95,6 @@ get_loci( $db, \%LOCUS );
 
 $log->write_to("getting genes\n") if $debug;
 get_genes( $db, \%GENES );
-
-$log->write_to("getting notes\n") if $debug;
-get_notes( $db, \%NOTES );
 
 
 while (<>) {
@@ -163,30 +159,6 @@ while (<>) {
                     map {$group.=" ; Alias \"$_\"" if $_}($eGene->CGC_name,$eGene->Sequence_name,"$eGene")
             }	
          }
-        }
-
-        # WS133 - NOTES ARE PART OF CDS FEATURES, BUT NOT TRANSCRIPTS
-        # Append some notes to top-level feature entries.
-        else {
-            my $notes = $NOTES{$lookup} || $NOTES{$match};
-            push @notes, map { qq(Note "$_") } @{$notes} if $notes;
-
-            my $wormpep = $WORMPEP{$lookup} || $WORMPEP{$match};
-#           push @notes, map { qq(WormPep "$_") } @{$wormpep} if $wormpep; # hmmm ....
-            push @notes, qq(WormPep "$wormpep") if $wormpep;
-
-            # This should be a translated WBGene ID
-            my $locus_notes = $LOCUS{$lookup} || $LOCUS{$match};
-            push @notes, map { qq(Note "${\&bestname($_)}") } @{$locus_notes} if $locus_notes;
-
-            my $confirmed = $CONFIRMED{$lookup} || $CONFIRMED{$match};
-            push @notes, qq(Prediction_status "$confirmed") if $confirmed;
-
-            # Fudge factor: append WBGeneIDS to each transcript entry
-            my $genes = $GENES{$lookup} || $GENES{$match};
-            if ($genes) {
-                push @notes, map {qq(Gene "$_")} keys %$genes;
-            }
         }
 
         if ( $method =~ /.*primary_transcript/ ) {
@@ -351,34 +323,6 @@ sub get_wormpep {
     }
 }
 
-# This could probably be shifted to the ?Gene class.
-sub get_notes {
-    my ( $db, $hash ) = @_ ; # hash keys are predicted gene names, values are one or more brief identifications
-    my @genes;
-
-    # Should probably also look for notes attached to sequences, yes? As before...
-    push(
-        @genes,
-        $db->fetch(
-            -query   => sprintf("find Sequence Brief_identification AND Species = \"%s\"", $species_full),
-            -filltag => 'Brief_identification'
-        )
-    );
-    
-    push(
-        @genes,
-        $db->fetch(
-            -query   => sprintf("find Transcript Brief_identification AND Species = \"%s\"", $species_full),
-            -filltag => 'Brief_identification'
-        )
-    );
-    foreach my $obj (@genes) {
-        my @notes = $obj->Brief_identification or next;
-
-        next if ( $hash->{$obj} );
-        $hash->{$obj} = \@notes;
-    }
-}
 
 # What is the confirmed status for CDSes?
 # This has changed with WS133
