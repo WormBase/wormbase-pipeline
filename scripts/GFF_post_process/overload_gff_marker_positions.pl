@@ -5,7 +5,7 @@
 # Adds interpolated map positions and other information to gene and allele lines
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-09-13 12:18:29 $
+# Last updated on: $Date: 2013-09-25 14:08:36 $
 
 
 use strict;                                      
@@ -50,7 +50,7 @@ my $species_full = $wormbase->full_name;
 open(my $gff_in_fh, $infile) or $log->log_and_die("Could not open $infile for reading\n");
 open(my $gff_out_fh, ">$outfile") or $log->log_and_die("Could not open $outfile for writing\n");  
 
-my (%variation, %gene, %gene_exact, %locus);
+my (%variation, %gene, %gene_exact);
 &get_map_data();
 
 while (<$gff_in_fh>) {
@@ -83,16 +83,12 @@ while (<$gff_in_fh>) {
           if exists $gene{$gene} and $f[8] !~ /interpolated_map_position/;
       $f[8] .= ";position=$gene_exact{$gene}" 
           if exists $gene_exact{$gene} and $f[8] !~ /position/;
-      $f[8] .= ";locus=$locus{$gene}" 
-          if exists $locus{$gene} and $f[8] !~ /locus/;
     } else {
       my ($gene) = $f[8] =~ /Gene\s+\"(\S+)\"/;
       $f[8] .= " ; Interpolated_map_position \"$gene{$gene}\"" 
           if exists $gene{$gene} and $f[8] !~ /Interpolated_map_position/;
       $f[8] .= " ; Position \"$gene_exact{$gene}\"" 
           if exists $gene_exact{$gene} and $f[8] !~ /Position/;
-      $f[8] .= " ; Locus \"$locus{$gene}\"" 
-          if exists $locus{$gene} and $f[8] !~ /Locus/;
     }	
   }
 
@@ -139,20 +135,7 @@ sub get_map_data {
   while (my $gene = $genes->next){
     $gene_exact{$gene->name} = $gene->Map(3);
   }
-  
-  # get the CGC/WGN name of the Genes
-  $log->write_to("Reading WGN names of genes\n");
-  
-  $query = "find Gene where Species = \"$species_full\"";
-  $genes = $db->fetch_many('-query' => $query);
-  while (my $gene = $genes->next){
-    if ($gene->CGC_name) {
-      $locus{$gene->name} = $gene->CGC_name;
-    } elsif ($gene->Sequence_name) {
-      $locus{$gene->name} = $gene->Sequence_name;
-    }
-  }
-  
+
   $db->close();
   $log->write_to("Closed connection to DB\n");
 }
