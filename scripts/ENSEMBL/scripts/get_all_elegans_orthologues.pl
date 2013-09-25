@@ -29,6 +29,7 @@ $dbhost    ||= $ENV{'WORM_DBHOST'};
 $dbuser    ||= 'wormro';
 $dbport    ||= $ENV{'WORM_DBPORT'};
 
+# let's be fair, that can be probably build from the WormBase.pm
 my %species = ( 
     6239   => 'Caenorhabditis elegans',
     6238   => 'Caenorhabditis briggsae', 
@@ -48,7 +49,8 @@ my %species = (
     497829 => 'Caenorhabditis sp.5',
     34506  => 'Strongyloides ratti',
     7209   => 'Loa loa',
-    6223   => 'Panagrellus redivivus',
+    6233   => 'Panagrellus redivivus',
+    6287   => 'Dirofilaria immitis',
 );
 
 my %cds2wbgene=%{&get_commondata('cds2wbgene_id')};
@@ -101,7 +103,7 @@ while( my $member = shift @members){
                     $t2{ $pepm->stable_id } = [$pepm->taxon_id,$homology->description]
                 }
 		else {
-		    $t3{$pepm->stable_id} = [$pepm->taxon_id,$homology->description]
+		    $t3{$pepm->stable_id} = [$pepm->taxon_id,$homology->description,$pepm->sequence]
 	        }
 
             }
@@ -137,7 +139,8 @@ while( my $member = shift @members){
     
 
     while (my ($k,$v)=each(%t3)){
-	    print "Protein : $k\nSpecies \"$species{$$v[0]}\"\n\n";
+	    print "Protein : $k\nSpecies \"$species{$$v[0]}\"\nPeptide \"$k\"\n\n";
+            print "Peptide : \"$k\"\n$$v[2]\n\n"
     }
 
 }   
