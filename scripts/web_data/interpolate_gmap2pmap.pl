@@ -217,7 +217,7 @@ foreach my $chrom (sort keys %$chr_lengths) {
       if (not $gff3) {
         print $out_fh "\tGMap $public ; Note \"$fgmap cM (+/- $ferror cM)\"; Note \"$status\"\n";
       } else {
-        print $out_fh "\tID=gmap:$public;GMap=$public;Status=$status;Note=$fgmap cM (+/- $ferror cM)\n";
+        print $out_fh "\tID=gmap:$public;gmap=$public;status=$status;Note=$fgmap cM (+/- $ferror cM)\n";
       }
     }
   } else {
