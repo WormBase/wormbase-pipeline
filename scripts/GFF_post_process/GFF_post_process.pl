@@ -6,7 +6,7 @@
 # and supplementing the "raw" GFF dumped from Ace with additional attributes
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-09-24 22:13:38 $
+# Last updated on: $Date: 2013-09-25 14:09:47 $
 #
 # Usage GFFmunger.pl [-options]
 
@@ -43,6 +43,7 @@ my ($all,
     $overload_species,
     $overload_mass_spec,
     $overload_cds,
+    $overload_gene,
     $overload_snp,
     $overload_tf,
     $overload_rnai,
@@ -60,6 +61,7 @@ GetOptions (
   "overload_blat"      => \$overload_species,
   "overload_massspec"  => \$overload_mass_spec,
   "overload_cds"       => \$overload_cds,
+  "overload_gene"       => \$overload_gene,
   "overload_variation" => \$overload_snp,
   "overload_tf"        => \$overload_tf,
   "overload_rnai"      => \$overload_rnai,
@@ -146,6 +148,24 @@ if ($overload_cds or $all) {
 
 
 ############################################################
+# Add data source tags to the Mass Spec lines
+############################################################
+if ($overload_gene or $all) {
+  &run_munging_script("GFF_post_process/overload_gff_gene.pl");
+}
+
+
+
+############################################################
+# Adds Interpolated map positions to Alleles
+############################################################
+if ($overload_marker or $all) {
+  &run_munging_script("GFF_post_process/overload_gff_marker_positions.pl");
+}
+
+
+
+############################################################
 # Overload the Variation lines with consequence etc
 ############################################################
 if ($overload_snp or $all) {
@@ -173,14 +193,6 @@ if ($overload_rnai or $all) {
 ############################################################
 if ($overload_operon or $all) {
   &run_munging_script("GFF_post_process/overload_gff_operon.pl");
-}
-
-
-############################################################
-# Adds Interpolated map positions to Alleles
-############################################################
-if ($overload_marker or $all) {
-  &run_munging_script("GFF_post_process/overload_gff_marker_positions.pl");
 }
 
 
