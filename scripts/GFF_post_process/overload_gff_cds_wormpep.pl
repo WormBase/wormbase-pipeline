@@ -5,7 +5,7 @@
 # Overloads the CDS and Transcript lines with extra info (mostly wormpep)
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-09-13 12:54:18 $
+# Last updated on: $Date: 2013-09-25 16:28:39 $
 
 #
 #    1. Brief_identification
@@ -54,11 +54,8 @@ if (not defined $infile or not defined $outfile) {
   $log->log_and_die("You must define -infile and -outfile\n");
 }
 
-# get data from wormpep release
-my ($CDS, %wormpep, %geneID, %status, %locus, %briefID, %RNAgenes, %seqname2geneid);
 
-$wormbase->FetchData("worm_gene2geneID_name",\%seqname2geneid);
-&get_wormpep_info();
+my ($tran_status, $tran_wormpep, $tran_locus) = &get_data();
 
 open(my $gff_in_fh, $infile) or $log->log_and_die("Could not open $infile for reading\n");
 open(my $gff_out_fh, ">$outfile") or $log->log_and_die("Could not open $outfile for writing\n");  
@@ -73,6 +70,7 @@ while (<$gff_in_fh>) {
           $source eq 'Non_coding_transcript' and $feature eq 'nc_primary_transcript' or
           $source eq 'miRNA_precursor' and $feature eq 'pre_miRNA' or
           $source eq 'miRNA_mature' and $feature eq 'miRNA' or
+          $source eq 'Pseudogene' and $feature eq 'pseudogenic_transcript' or
           $source =~ /RNA$/ and $source eq $feature) {
     print $gff_out_fh "$_\n";
     next;
@@ -90,40 +88,50 @@ while (<$gff_in_fh>) {
       # decorate all of the segments, so only do the first
       if (not exists $already_done_cds{$cds}) {
         $attr .=  ";Name=CDS:$cds";
-        $attr .=  ";Note=$briefID{$cds}"                              if ($briefID{$cds} ne "");
-        $attr .=  ";wormpep=".$wormbase->pep_prefix.":$wormpep{$cds}" if ($wormpep{$cds} ne "");
-        $attr .=  ";locus=$locus{$cds}"                               if ($locus{$cds} ne "");
-        $attr .=  ";status=$status{$cds}"                             if ($status{$cds} ne "");
-        $attr .=  ";gene=$geneID{$cds}"                               if ($geneID{$cds} ne "");
+        $attr .=  ";prediction_status=$tran_status->{$cds}" if exists $tran_status->{$cds} and $tran_status->{$cds};
+        $attr .=  ";wormpep=$tran_wormpep->{$cds}"           if exists $tran_wormpep->{$cds} and $tran_wormpep->{$cds};
+        $attr .=  ";locus=$tran_locus->{$cds}"              if exists $tran_locus->{$cds} and $tran_locus->{$cds};
+        #$attr .=  ";Note=$briefID{$cds}"                              if ($briefID{$cds} ne "");
+        #$attr .=  ";gene=$geneID{$cds}"                               if ($geneID{$cds} ne "");
         
         $already_done_cds{$cds} = 1;
         $changed_lines++;
       }
     } else {
-      my ($transcript) = $attr =~ /ID=Transcript:([^;]+);/;
-      if (not defined $transcript) {
+      my $tr;
+      if (/ID=Transcript:([^;]+);/) {
+        $tr = $1; 
+      } elsif (/ID=Pseudogene:([^;]+);/) {
+        $tr = $1;
+      } else {
         $log->log_and_die("Could not find Transcript id in attribute field: $attr\n");
       } 
-      $attr .= ";Note=".$RNAgenes{$transcript}->{remark} if $RNAgenes{$transcript}->{remark} ;
-      $attr .= ";locus=".$RNAgenes{$transcript}->{locus} if $RNAgenes{$transcript}->{locus} ;
-      $attr .= ";gene=".$seqname2geneid{$transcript}     if $seqname2geneid{$transcript} ;
+      $attr .=  ";wormpep=$tran_wormpep->{$tr}"      if exists $tran_wormpep->{$tr} and $tran_wormpep->{$tr};
+      $attr .=  ";locus=$tran_locus->{$tr}"          if exists $tran_locus->{$tr} and $tran_locus->{$tr};
+
       $changed_lines++;
     }
   } else {
     if( $feature eq 'CDS') {
-      my ($i) = $attr =~ (/CDS \"(\S+)\"/);
-      $attr .=  " ; Note \"$briefID{$i}\""                              if ($briefID{$i} ne "");
-      $attr .=  " ; WormPep \"".$wormbase->pep_prefix.":$wormpep{$i}\"" if ($wormpep{$i} ne "");
-      $attr .=  " ; Locus \"$locus{$i}\""                               if ($locus{$i} ne "");
-      $attr .=  " ; Status \"$status{$i}\""                             if ($status{$i} ne "");
-      $attr .=  " ; Gene \"$geneID{$i}\""                               if ($geneID{$i} ne "");
+      my ($cds) = $attr =~ (/CDS \"(\S+)\"/);
+
+      $attr .=  " ; Prediction_status \"$tran_status->{$cds}\""  if exists $tran_status->{$cds} and $tran_status->{$cds};
+      $attr .=  " ; WormPep \"$tran_wormpep->{$cds}\""           if exists $tran_wormpep->{$cds} and $tran_wormpep->{$cds};
+      $attr .=  " ; Locus \"$tran_locus->{$cds}\""               if exists $tran_locus->{$cds} and $tran_locus->{$cds};
+
+      #$attr .=  " ; Note \"$briefID{$i}\""                              if ($briefID{$i} ne "");
+      #$attr .=  " ; Gene \"$geneID{$i}\""                               if ($geneID{$i} ne "");
       $changed_lines++;
     } else {
       #non-coding genes
-      my ($transcript) = $attr =~ (/Transcript \"(\S+)\"/);
-      $attr .= " ; Note \"".$RNAgenes{$transcript}->{remark}."\"" if $RNAgenes{$transcript}->{remark};
-      $attr .= " ; Locus \"".$RNAgenes{$transcript}->{locus}."\"" if $RNAgenes{$transcript}->{locus};
-      $attr .= " ; Gene \"".$seqname2geneid{$transcript}."\""     if $seqname2geneid{$transcript} ;
+      my ($tr) = $attr =~ (/Transcript \"(\S+)\"/);
+      if (not $tr) {
+        ($tr) = $attr =~ (/Pseudogene \"(\S+)\"/);
+      }
+      $log->log_and_die("Could not find transcript name in attr field : $attr\n") if not $tr;
+
+      $attr .= " ; WormPep \"$tran_wormpep->{$tr}\"" if exists $tran_wormpep->{$tr} and $tran_wormpep->{$tr};
+      $attr .= " ; Locus \"$tran_locus->{$tr}\""     if exists $tran_locus->{$tr} and $tran_locus->{$tr};
       $changed_lines++;
     }
   }
@@ -141,46 +149,64 @@ exit(0);
 #
 ##############################################################
 
-sub get_RNA_info {
-  my $rna_file = $wormbase->wormrna."/wormrna".$wormbase->get_wormbase_version.".rna";
-  open (RNA,"<$rna_file") or $log->log_and_die("cant open $rna_file\t$!\n");
-  while(<RNA>) {
-    #I couldnt think of a way to do this in one regex!
-    my ($locus, $remark, $cds);
-    if(/locus:(\S+)/){
-      $locus = $1;
-      />(\S+)\s+(.*)\s+locus/;
-      $cds = $1;
-      $remark = $2;
-    }
-    elsif(/>(\S+)\s+(.*)$/) {
-      $cds = $1;
-      $remark = $2;
-    }
-    $RNAgenes{$cds}->{remark} = $remark if $remark;
-    $RNAgenes{$cds}->{locus} = $locus if $locus;
-  }
-  close RNA;
-}
+sub get_data {
+  my $db = Ace->connect('-path' => $wormbase->autoace) 
+      or $log->log_and_die("cant open Ace connection to db\n".Ace->error."\n");
+
+  my %cds2cgc = $wormbase->FetchData('cds2cgc');
+  my %cds2wormpep = $wormbase->FetchData('cds2wormpep');
+  my %cds2status = $wormbase->FetchData('cds2status');
+
+  my %rna2cgc = $wormbase->FetchData('rna2cgc');
+  my %pseudo2cgc = $wormbase->FetchData('pseudo2cgc');
 
 
-sub get_wormpep_info {
-  my $file = $wormbase->wormpep."/".$wormbase->pepdir_prefix."pep".$wormbase->get_wormbase_version;
-  open (my $wpfh, "<$file") or $log->log_and_die("cant open $file $!\n");
-  while (<$wpfh>) {
-    #>4R79.2 CE19650 WBGene00007067  Ras family      status:Partially_confirmed      UniProt:Q9XXA4_CAEEL    protein_id:CAA20282.1
-    #>4R79.1b        CE39659 WBGene00003525  locus:nas-6     status:Partially_confirmed      UniProt:Q2HQL9_CAEEL    protein_id:CAJ76926.1
-    if (/^>(\S+)\s+(\S+)\s+(WBGene\d+)(\s+locus:(\S+))*\s+([^\t]*?)\s*status:(\S+)/) {
-      $CDS           = $1;
-      $wormpep{$CDS} = $2;
-      $geneID{$CDS}  = $3;
-      $locus{$CDS}   = $5;
-      $briefID{$CDS} = $6;
-      $status{$CDS}  = $7;
-      
+  $log->write_to("Fetching CDS info\n");
+
+  my $query = "find CDS where Corresponding_protein AND Method = \"curated\"";
+  my $cds = $db->fetch_many('-query' => $query);
+  while(my $cds = $cds->next) {
+    my @coding_transcripts = $cds->Corresponding_transcript;
+
+    foreach my $ct (@coding_transcripts) {
+      if ($ct->name ne $cds->name) {
+        my $wormpep = $cds2wormpep{$cds};
+        $cds2wormpep{$ct->name} = $wormpep;
+      }
     }
   }
-  close($wpfh);
+
+  $db->close();
+  $log->write_to("Closed connection to DB\n");
+
+
+  my (%tran_status, %tran_wormpep, %tran_locus);
+
+  # locus
+  foreach my $cds (keys %cds2cgc) {
+    $tran_locus{$cds} = $cds2cgc{$cds};
+  }
+  foreach my $tran (keys %rna2cgc) {
+    $tran_locus{$tran} = $rna2cgc{$tran};
+  }
+  foreach my $pse (keys %pseudo2cgc) {
+    $tran_locus{$pse} = $pseudo2cgc{$pse};
+  }
+
+  # status
+  foreach my $cds (keys %cds2status) {
+    $tran_status{$cds} = $cds2status{$cds};
+  }
+
+  # wormpep
+  foreach my $cds (keys %cds2wormpep) {
+    $tran_wormpep{$cds} = $wormbase->wormpep_prefix . ":" . $cds2wormpep{$cds};
+  }
+  
+  # finally, need to get wormpep info for coding 
+
+  return (\%tran_status, \%tran_wormpep, \%tran_locus);
 }
+
 
 1;
