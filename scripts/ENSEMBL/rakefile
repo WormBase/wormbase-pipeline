@@ -10,15 +10,21 @@
 require 'yaml'
 require 'fileutils'
 
-tmp_place = '/lustre/scratch109/ensembl/wormpipe/compara_build'
-perl='/software/bin/perl'
-basedir='/software/worm/ensembl-63.1'
+ensembl_release = '71'
+tmp_place = ENV['PIPELINE']+'/compara_build'
+perl= ENV['WORM_BIN']+'/perl'
+basedir= ENV['WORM_PACKAGES']+'/ensembl'
+packages = ENV['WORM_PACKAGES']
+libdir = ENV['WORM_SW_ROOT']+'/lib'
+pipeline = ENV['PIPELINE']
+wormbase = ENV['WORMBASE']
+email = ENV['USER']+'@ebi.ac.uk'
 
 # check to see if the old build was cleaned
 # will raise an error if not
 desc 'check if the directories are cleaned up'
 task :check_clean do
-	files=Dir.glob('/lustre/scratch109/ensembl/wormpipe/compara/*.fasta*')
+	files=Dir.glob('#{pipeline}/compara/*.fasta*')
 	raise("the last run was not cleaned up! delete:\n#{files.join("\n")}") unless files.size == 0
 end
 
@@ -27,11 +33,10 @@ end
 desc 'setup environment variables'
 task :env_setup do
         old_perl5=ENV['PERL5LIB']
-        additional='/software/worm/ensembl-63.1/ensembl-compara/modules/:/software/worm/ensembl-63.1/ensembl-config/celegans/generic-elegans:/software/worm/ensembl-63.1/ensembl-pipeline/modules:/software/worm/ensembl-63.1/ensembl-analysis/modules:/software/worm/ensembl-63/bioperl-live:/software/worm/ensembl/bioperl-run:/software/worm/ensembl-63.1/ensembl/modules:/software/worm/ensembl-63/eHive/modules:/software/worm/ensembl-63.1/ensembl-compara/modules:/software/worm/lib:.:/software/worm/lib/perl5:'
+        additional='#{basedir}/ensembl-config/celegans/generic-elegans:#{basedir}/ensembl-pipeline/modules:#{basedir}/ensembl-analysis/modules:#{basedir}/bioperl-live:#{basedir}/bioperl-run:#{basedir}/ensembl/modules:#{basedir}/ensembl-hive/modules:#{basedir}/ensembl-compara/modules:#{libdir}:.:#{libdir}/perl5:'
 
-        ENV['ENSEMBL_CVS_ROOT_DIR'] = '/software/worm/ensembl-63.1/'
+        ENV['ENSEMBL_CVS_ROOT_DIR'] = basedir
         ENV['PERL5LIB']             = additional+old_perl5
-	ENV['PATH']                 = '/software/worm/ensembl-63/eHive/scripts:'+ENV['PATH']
 end
 
 # updates the C.elegans assembly version to the current build
@@ -39,7 +44,7 @@ desc 'update the configuration file'
 task :update_conf do
   yml_file='etc/ensembl_lite.conf'
 	yml=YAML::load_file(yml_file)
-	yml['elegans']['version']="WS#{Dir.glob("/nfs/wormpub/DATABASES/WS*").sort[-2].scan(/\d+/)[-1].to_i+1}"
+	yml['elegans']['version']="WS#{Dir.glob("#{wormbase}/DATABASES/WS*").sort[-2].scan(/\d+/)[-1].to_i+1}"
 	File.open(yml_file,'w') do |out|
 		YAML.dump(yml,out)
 	end
@@ -51,7 +56,7 @@ end
 
 # small shorthand
 def build_db(db_name)
-	sh "/software/bin/perl scripts/worm_lite.pl -species #{db_name} -setup -load_dna -load_gene"
+	sh "#{perl} scripts/worm_lite.pl -species #{db_name} -setup -load_dna -load_gene"
 end
 
 
@@ -61,16 +66,14 @@ end
 #
 
 desc 'build genetree database'
-task :build_homology => [:env_setup] do
+task :build_homology  do
   yml=YAML::load_file('etc/ensembl_lite.conf')
   db=yml['elegans']['database']
 
   # set up the pipeline and output database
   # +++ need to update the pt_species_tree.txt to add all required species
-  # the -mlss_id value is the number of species we are comparing
-##  sh "#{perl} /software/worm/ensembl/ensembl-hive/scripts/init_pipeline.pl Bio::EnsEMBL::Compara::PipeConfig::WormProteinTrees_conf -password #{db['password']} -mlss_id 11 -species_tree_input_file /software/worm/ensembl/compara-conf/pt_species_tree.txt"
-#  sh "#{perl} /software/worm/ensembl/ensembl-hive/scripts/init_pipeline.pl Bio::EnsEMBL::Compara::PipeConfig::WormProteinTrees_conf -password #{db['password']} -mlss_id 12 -species_tree_input_file /software/worm/ensembl/compara-conf/njtree.12.worm_compara_test_orthotree.nh"
-  sh "#{perl} /software/worm/ensembl-63/eHive/scripts/init_pipeline.pl Bio::EnsEMBL::Compara::PipeConfig::WormProteinTrees_conf -password #{db['password']} -mlss_id 377 -species_tree_input_file /software/worm/ensembl/compara-conf/njtree.12.worm_compara_test_orthotree.nh"
+  # the -mlss_id value is the number of species we are comparing -- was 366
+  sh "#{perl} #{basedir}/ensembl-hive/scripts/init_pipeline.pl Bio::EnsEMBL::Compara::PipeConfig::WormProteinTrees_conf -password #{db['password']} -mlss_id 406 -species_tree_input_file #{basedir}/compara-conf/njtree.12.worm_compara_test_orthotree.nh -email #{email}"
 
 
 
@@ -101,15 +104,15 @@ def run_beehive(db_name,perl,basedir)
 	yml=YAML::load_file('etc/ensembl_lite.conf')
         db=yml['elegans']['database'] # lets default to elegans for dbconnection details
 	FileUtils.cd("/tmp") # now go to a directory where mcoffee can write its temporary files
-	sh "#{perl} #{basedir}/ensembl-hive/scripts/beekeeper.pl -url mysql://wormadmin:#{db['password']}@farmdb1:3306/#{db_name} -sync"
-	sh "#{perl} #{basedir}/ensembl-hive/scripts/beekeeper.pl -url mysql://wormadmin:#{db['password']}@farmdb1:3306/#{db_name} -loop"
+	sh "#{perl} #{basedir}/ensembl-hive/scripts/beekeeper.pl -url mysql://wormadmin:#{db['password']}@#{ENV['WORM_DBHOST']}:#{ENV['WORM_DBPORT']}/#{db_name} -sync"
+	sh "#{perl} #{basedir}/ensembl-hive/scripts/beekeeper.pl -url mysql://wormadmin:#{db['password']}@#{ENV['WORM_DBHOST']}:#{ENV['WORM_DBPORT']}/#{db_name} -loop"
 
 end
 
 
 desc 'run homology beehive'
 task :run_homology => [:env_setup] do
-	run_beehive("worm_compara_homology_63WS#{ENV['WORMBASE_RELEASE']}",perl,basedir)
+	run_beehive("worm_compara_homology_WS#{ENV['WORMBASE_RELEASE']}",perl,basedir)
 end
 
 desc 'run pecan beehive'
@@ -126,7 +129,7 @@ desc 'dump homology ace file'
 task :dump_homology => [:env_setup] do
 	puts "making #{tmp_place}/compara"
 	FileUtils.mkdir_p("#{tmp_place}/compara")
-	sh "/software/bin/perl scripts/get_all_elegans_orthologues.pl -database worm_compara_homology_63WS#{ENV['WORMBASE_RELEASE']} > #{tmp_place}/compara.ace"
+	sh "#{perl} scripts/get_all_elegans_orthologues.pl -database worm_compara_homology_WS#{ENV['WORMBASE_RELEASE']} > #{tmp_place}/compara.ace"
 end
 
 desc 'dump conservation wiggle files'
@@ -165,7 +168,7 @@ task :dump_gerp =>[:env_setup] do
 	}
 end
 
-### this may still need attention - it has not been tested under ensembl release 63
+### this may still need attention - it has not been tested under ensembl release 63 onwards
 desc 'dump pecan files'
 task :dump_pecan => [:env_setup] do
 	FileUtils.mkdir_p("#{tmp_place}/compara")
@@ -204,7 +207,7 @@ task :dump_compara do
 	
 	FileUtils.cd(tmp_place) do
 		File.unlink("compara.tar.gz") if File.exists?("compara.tar.gz")
-		sh "tar cvf compara.tar compara"
+		sh "tar cvf compara.tar compara.ace"
 		sh "gzip -9 compara.tar"
 		# FileList['compara/*'].each{|f|File.unlink(f)}
 	end
@@ -212,8 +215,8 @@ end
 
 desc 'copy release files'
 task :copy_release do
-	target_dir='/nfs/wormpub/BUILD/autoace/'
-	cp "#{tmp_place}/compara.ace","#{target_dir}acefiles/"
+	target_dir="#{wormbase}/BUILD/autoace"
+	cp "#{tmp_place}/compara.ace","#{target_dir}/acefiles/"
 	cp "#{tmp_place}/compara.tar.gz",target_dir
 end
 
@@ -225,8 +228,8 @@ end
 
 desc 'cleanup the compara work directories'
 task :cleanup do
-	sh 'rm -rf /lustre/scratch109/ensembl/wormpipe/compara/logs/*'      # remove the logs
-	sh 'rm -f /lustre/scratch109/ensembl/wormpipe/compara/*.fasta*' # remove the blast databases
+	sh 'rm -rf #{pipeline}/compara/logs/*'      # remove the logs
+	sh 'rm -f #{pipeline}/compara/*.fasta*' # remove the blast databases
 	sh "rm -f #{tmp_place}/compara.ace" # remove the compara ace file
 	sh "rm -rf #{tmp_place}/compara"    # remove the compara dump directory
 end
