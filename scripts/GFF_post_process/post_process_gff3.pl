@@ -8,7 +8,7 @@
 # - Strip the class name prefix from all of the Name attrbutes 
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-09-24 12:08:02 $
+# Last updated on: $Date: 2013-09-25 10:02:39 $
 
 use strict;
 use lib $ENV{CVS_DIR};
@@ -20,19 +20,19 @@ use Storable;
 
 my %source_map = (
   gene                     => 'WormBase',
-  Coding_transcript        => 'WormBase_coding',
-  curated                  => 'WormBase_coding',
-  Non_coding_transcript    => 'WormBase_non_coding',
-  Pseudogene               => 'WormBase_pseudogene',
-  miRNA_mature             => 'WormBase_miRNA',
-  miRNA_precursor          => 'WormBase_miRNA',
-  tRNA                     => 'WormBase_tRNA',
-  rRNA                     => 'WormBase_rRNA',
-  ncRNA                    => 'WormBase_ncRNA',
-  snRNA                    => 'WormBase_snRNA',
-  scRNA                    => 'WormBase_scRNA',
-  stRNA                    => 'WormBase_stRNA',
-  snoRNA                   => 'WormBase_snoRNA',
+  Coding_transcript        => 'WormBase',
+  curated                  => 'WormBase',
+  Non_coding_transcript    => 'WormBase',
+  Pseudogene               => 'WormBase',
+  miRNA_mature             => 'WormBase',
+  miRNA_precursor          => 'WormBase',
+  tRNA                     => 'WormBase',
+  rRNA                     => 'WormBase',
+  ncRNA                    => 'WormBase',
+  snRNA                    => 'WormBase',
+  scRNA                    => 'WormBase',
+  stRNA                    => 'WormBase',
+  snoRNA                   => 'WormBase',
     );
 
 my %between_base_feature_types = (
