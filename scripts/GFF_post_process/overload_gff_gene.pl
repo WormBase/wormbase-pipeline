@@ -5,7 +5,7 @@
 # Adds interpolated map positions and other information to gene and allele lines
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-09-25 14:09:20 $
+# Last updated on: $Date: 2013-09-26 11:49:18 $
 
 
 use strict;                                      
@@ -62,11 +62,14 @@ while (<$gff_in_fh>) {
 
   my $orig_attr = $f[8];
 
+  my ($gene, $changed_source);
+
   if ($f[2] eq 'gene' and ($f[1] eq 'gene' or $f[1] eq 'WormBase')) {
-    my $changed = 0;
+
+
     if ($gff3) {
       my ($first) = split(/;/, $f[8]);
-      my ($gene) = $first =~ /ID=Gene:(\S+)/;
+      ($gene) = $first =~ /ID=Gene:(\S+)/;
 
       $f[8] .= ";locus=$locus_h->{$gene}" 
           if exists $locus_h->{$gene} and $f[8] !~ /locus/;
@@ -77,7 +80,7 @@ while (<$gff_in_fh>) {
       $f[8] .= ";biotype=$biotype_h->{$gene}" 
           if exists $biotype_h->{$gene} and $f[8] !~ /biotype/;
     } else {
-      my ($gene) = $f[8] =~ /Gene\s+\"(\S+)\"/;
+      ($gene) = $f[8] =~ /Gene\s+\"(\S+)\"/;
 
       $f[8] .= " ; Locus \"$locus_h->{$gene}\"" 
           if exists $locus_h->{$gene} and $f[8] !~ /Locus/;
@@ -87,10 +90,15 @@ while (<$gff_in_fh>) {
 
       $f[8] .= " ; Biotype\"$biotype_h->{$gene}\"" 
           if exists $biotype_h->{$gene} and $f[8] !~ /Biotype/;
-    }	
+    }
+    
+    if ($biotype_h->{$gene} eq 'transposon') {
+      $f[2] = 'transposon_gene';
+      $changed_source = 1;
+    }
   }
 
-  $changed_lines++ if $orig_attr ne $f[8];
+  $changed_lines++ if $orig_attr ne $f[8] or $changed_source;
   print $gff_out_fh join("\t", @f), "\n";
 }
 close($gff_out_fh) or $log->log_and_die("Could not close $outfile after writing\n");
@@ -106,73 +114,39 @@ sub get_data {
   my (%locus, %sequence_name, %biotype);
   
   # get the CGC/WGN name of the Genes
-  $log->write_to("Reading WGN names of genes\n");
+  $log->write_to("Reading Gene info\n");
   
   my $query = "find Gene where Species = \"$species_full\"";
   my $genes = $db->fetch_many('-query' => $query);
   while (my $gene = $genes->next){
-    if ($gene->CGC_name) {
+    if ($gene->CGC_name) {        
       $locus{$gene->name} = $gene->CGC_name;
     }
     if ($gene->Sequence_name) {
       $sequence_name{$gene->name} = $gene->Sequence_name;
     }
-  }
-
-  my (%gene_biotypes);
-
-  $log->write_to("Fetching transcript info\n");
-
-  my $query = "find Transcript where Gene";
-  my $trans = $db->fetch_many('-query' => $query);
-  while(my $tran = $trans->next) {
-    my $gene = $tran->Gene;
-    next if not $gene;
-    if ($tran->Corresponding_CDS) {
-      $gene_biotypes{$gene}->{protein_coding}++;
-    } elsif ($tran->Transcript) {
-      $gene_biotypes{$gene}->{$tran->Transcript}++;
-    }
-  }
-  
-  $query = "find Pseudogene where Gene";
-  my $pseudos = $db->fetch_many('-query' => $query);
-  while(my $pseudo = $pseudos->next) {
-    my $gene = $pseudo->Gene;
-    $gene_biotypes{$gene}->{pseudogene}++;
-  }
-
-  $db->close();
-  $log->write_to("Closed connection to DB\n");
-
-  # a gene may have more than one kind of biotype, so rule as follows:
-  # at least one protein-coding => protein_coding
-  # at least one kind of RNA => 
-  #   different kinds => ncRNA
-  # only pseudogene => pseudogene
-  foreach my $g (keys %gene_biotypes) {
-    if(exists $gene_biotypes{$g}->{protein_coding}) {
-      $biotype{$g} = 'protein_coding';
-    } else {
-      my @types = sort keys %{$gene_biotypes{$g}};
-      my @rna_types = grep { /RNA/ } @types;
-
-      if (@rna_types) {
-        if (scalar(@rna_types) == 1) {
-          $biotype{$g} = $rna_types[0];
-        } else {
-          $biotype{$g} = 'ncRNA';
-        }
+    if ($gene->Corresponding_CDS) {
+      if ($gene->Corresponding_Transposon) {
+        $biotype{$gene} = 'transposon';
       } else {
-        # has to be a pseudogene, right? 
-        if (not exists $gene_biotypes{$g}->{pseudogene}) {
-          $log->log_and_die("Gene $g could not be assigned a biotype (@types); exiting\n");
-        } else {
-          $biotype{$g} = 'pseudogene';
+        $biotype{$gene}= 'protein_coding';     
+      }
+    } elsif ($gene->Corresponding_pseudogene) {
+      $biotype{$gene} = "pseudogene";
+    } elsif ($gene->Corresponding_transcript) {
+      my %ttypes;
+      foreach my $tr ($gene->Corresponding_transcript) {
+        if ($tr->Transcript) {
+          $ttypes{$tr->Transcript} = 1;
         }
       }
+      if (not scalar(keys %ttypes)) {
+        $log->log_and_die("Could not obtain biotype for gene $gene\n");
+      } 
+      my @types = sort keys %ttypes;
+      $biotype{$gene} = join(",", @types);
     }
   }
-  
+
   return (\%locus, \%sequence_name, \%biotype);
 }
