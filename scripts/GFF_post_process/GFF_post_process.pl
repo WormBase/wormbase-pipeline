@@ -1,14 +1,14 @@
 #!/usr/bin/env perl
 #
-# GFFmunger.pl
+# GFF_post_process.pl
 # 
 # Coordinates the running of the suite of scripts responisble for decorating 
 # and supplementing the "raw" GFF dumped from Ace with additional attributes
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-09-25 14:09:47 $
+# Last updated on: $Date: 2013-09-26 08:29:17 $
 #
-# Usage GFFmunger.pl [-options]
+# Usage GFF_post_process [-options]
 
 
 ###############################################################################
@@ -155,21 +155,19 @@ if ($overload_gene or $all) {
 }
 
 
-
-############################################################
-# Adds Interpolated map positions to Alleles
-############################################################
-if ($overload_marker or $all) {
-  &run_munging_script("GFF_post_process/overload_gff_marker_positions.pl");
-}
-
-
-
 ############################################################
 # Overload the Variation lines with consequence etc
 ############################################################
 if ($overload_snp or $all) {
   &run_munging_script("GFF_post_process/overload_gff_variation.pl");
+}
+
+
+############################################################
+# Adds Interpolated map positions to Genes and Alleles
+############################################################
+if ($overload_marker or $all) {
+  &run_munging_script("GFF_post_process/overload_gff_marker_positions.pl");
 }
 
 

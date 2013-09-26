@@ -5,7 +5,7 @@
 # Overloads Variation lines with extra info (consequence etc)
 #
 # Last updated by: $Author: klh $     
-# Last updated on: $Date: 2013-09-13 15:49:25 $      
+# Last updated on: $Date: 2013-09-26 08:29:17 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -61,8 +61,10 @@ open(my $gff_in_fh, $infile) or $log->log_and_die("Could not open $infile for re
 open(my $gff_out_fh, ">$outfile") or $log->log_and_die("Could not open $outfile for writing\n");  
 
 while (<$gff_in_fh>) {
-  if (/Variation \"(\S+)\"/ or /Variation:(\S+)/) {
-    my $allele = $1;
+  if (/Variation \"(WBVar\d+)\"/ or 
+      /Variation:(WBVar\d+)/ or 
+      /variation=(WBVar\d+)/) {
+    my $allele = $1; 
     
     my $is_putative_change_of_function_allele = 0;
 
