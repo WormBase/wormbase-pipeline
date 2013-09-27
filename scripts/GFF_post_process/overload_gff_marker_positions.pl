@@ -5,7 +5,7 @@
 # Adds interpolated map positions and other information to gene and allele lines
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-09-26 08:29:17 $
+# Last updated on: $Date: 2013-09-27 10:09:17 $
 
 
 use strict;                                      
@@ -63,7 +63,7 @@ while (<$gff_in_fh>) {
 
   my $orig_attr = $f[8];
 
-  if (defined $f[8] && $f[1] eq 'Allele') {
+  if ($f[8] && $f[1] eq 'Allele') {
     if ($gff3) {
       my ($allele) = $f[8] =~ /(WBVar\d+)/;
       $f[8] .= ";interpolated_map_position=$variation{$allele}"
@@ -73,7 +73,7 @@ while (<$gff_in_fh>) {
       $f[8] .= " ; Interpolated_map_position \"$variation{$allele}\""
           if exists $variation{$allele} and $f[8] !~ /Interpolated_map_position/;
     }	    
-  } elsif ($f[2] eq 'gene' and ($f[1] eq 'gene' or $f[1] eq 'WormBase')) {
+  } elsif ($f[2] eq 'gene') {
     my $changed = 0;
     if ($gff3) {
       my ($first) = split(/;/, $f[8]);
