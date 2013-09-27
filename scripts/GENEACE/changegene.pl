@@ -7,7 +7,7 @@
 # simple script for changing class of gene objects (e.g. CDS->Pseudogene)
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2010-01-20 17:44:33 $
+# Last edited on: $Date: 2013-09-27 10:51:30 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -193,13 +193,10 @@ sub process_gene{
 
   # need to handle transposons differently
   if ($new eq "Transposon"){
-    print OUT "History Version_change $new_version now $person Event Made_into_transposon\n\n";
-
-    print OUT "Gene $gene\n";
-    print OUT "-D Sequence_name\n";
-    print OUT "-D Map_info\n";
-    print OUT "-D Method\n";
-    print OUT "-D Live\n\n";
+    print OUT "History Version_change $new_version now $person Event Transposon_in_origin\nTransposon_in_origin\nSuppressed\nRemark \"This gene was determined to be of Transposon in origin so has been supressed from the C. elegans protein set. Detailed information about the origin of this gene can be found in the corresponding Transposon object associated with this gene.\"\n\n";
+    
+    print OUT "Gene $gene\n-D Gene_info\n\n";
+    
   }
   else{
     print OUT "History Version_change $new_version now $person Event Changed_class $old $new\n\n";
