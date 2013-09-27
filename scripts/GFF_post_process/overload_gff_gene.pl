@@ -5,7 +5,7 @@
 # Adds interpolated map positions and other information to gene and allele lines
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-09-26 11:49:18 $
+# Last updated on: $Date: 2013-09-27 14:44:38 $
 
 
 use strict;                                      
@@ -64,8 +64,7 @@ while (<$gff_in_fh>) {
 
   my ($gene, $changed_source);
 
-  if ($f[2] eq 'gene' and ($f[1] eq 'gene' or $f[1] eq 'WormBase')) {
-
+  if ($f[2] eq 'gene' and ($f[1] eq 'gene' or $f[1] eq 'transposon_gene')) {
 
     if ($gff3) {
       my ($first) = split(/;/, $f[8]);
@@ -92,8 +91,9 @@ while (<$gff_in_fh>) {
           if exists $biotype_h->{$gene} and $f[8] !~ /Biotype/;
     }
     
-    if ($biotype_h->{$gene} eq 'transposon') {
-      $f[2] = 'transposon_gene';
+    my $new_source = ($biotype_h->{$gene} =~ /^transposon/) ? 'transposon_gene' : 'gene';
+    if ($f[1] ne $new_source) {
+      $f[1] = $new_source;
       $changed_source = 1;
     }
   }
@@ -125,12 +125,16 @@ sub get_data {
     if ($gene->Sequence_name) {
       $sequence_name{$gene->name} = $gene->Sequence_name;
     }
-    if ($gene->Corresponding_CDS) {
-      if ($gene->Corresponding_Transposon) {
-        $biotype{$gene} = 'transposon';
+    if ($gene->Corresponding_Transposon) {    
+      if ($gene->Corresponding_CDS) {
+        $biotype{$gene} = 'transposon_protein_coding';
+      } elsif ($gene->Corresponding_pseudogene) {
+        $biotype{$gene} = 'transposon_pseudogene';
       } else {
-        $biotype{$gene}= 'protein_coding';     
+        $biotype{$gene} = 'transposon';
       }
+    } elsif ($gene->Corresponding_CDS) {
+      $biotype{$gene} = "protein_coding";
     } elsif ($gene->Corresponding_pseudogene) {
       $biotype{$gene} = "pseudogene";
     } elsif ($gene->Corresponding_transcript) {
@@ -147,6 +151,8 @@ sub get_data {
       $biotype{$gene} = join(",", @types);
     }
   }
-
+  $db->close();
+  $log->write_to("Closed connection to DB\n");
+  
   return (\%locus, \%sequence_name, \%biotype);
 }
