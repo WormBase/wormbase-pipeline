@@ -1301,7 +1301,7 @@ sub establish_paths {
     $self->{'build_data'} = $self->wormpub . "/TEST/BUILD_DATA";
     $self->{'genome_diff'} = $self->wormpub . "/TEST/CHROMOSOME_DIFFERENCES";
   } else {
-    $self->{'ftp_upload'} = $self->wormpub . "ftp_uploads";
+    $self->{'ftp_upload'} = $self->wormpub . "/ftp_uploads";
     $self->{'ftp_site'}   = "/nfs/disk69/ftp/pub2/wormbase";
     $self->{'build_data'} = $self->wormpub . "/BUILD_DATA";
     $self->{'genome_diff'} = $self->wormpub . "/CHROMOSOME_DIFFERENCES";
