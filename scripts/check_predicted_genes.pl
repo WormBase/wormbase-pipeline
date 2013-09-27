@@ -4,7 +4,7 @@
 #
 # by Keith Bradnam
 #
-# Last updated on: $Date: 2013-08-16 15:43:46 $
+# Last updated on: $Date: 2013-09-27 10:50:51 $
 # Last updated by: $Author: pad $
 #
 # see pod documentation at end of file for more information about this script
@@ -87,7 +87,7 @@ else {
   if ($test1) {
     $log->write_to("Only checking genes on ${test1}.......\n");
     #  @Predictions = $db->fetch('All_genes','Y32B12C*');
-    @Predictions = $db->fetch (-query => "FIND All_genes ${test1}* AND method");
+    @Predictions = $db->fetch (-query => "FIND All_genes WHERE Sequence = ${test1} AND method");
     foreach my $Predictions(@Predictions) {
       print $Predictions->name."\n";
     }
@@ -155,9 +155,7 @@ sub main_gene_checks {
   
   while (my $gene_model = shift @$pred_ref) {
     my $gene_model_name = $gene_model->name;
-    if ($verbose) {
-      print "Checking $gene_model_name\n";
-    }
+     # print "Checking $gene_model_name\n" if ($verbose);
 
     unless (defined $gene_model->Method) {
       $errorcountCDS ++;
@@ -167,9 +165,9 @@ sub main_gene_checks {
     
     my $method_test = $gene_model->Method->name;
     unless ($gene_model_name =~ /$cds_regex/) {
-      print "warning $gene_model_name invalid\n" if ($method_test eq 'curated');
+      print "warning $gene_model_name invalid\n" if ($method_test !~ /history/);
     }
-
+    print "$gene_model_name\n" if $verbose;
     my @exon_coord1 = sort by_number ($gene_model->get('Source_exons',1));
     my @exon_coord2 = sort by_number ($gene_model->get('Source_exons',2));
     my $i;
@@ -403,8 +401,8 @@ sub main_gene_checks {
     elsif ($sequence_name =~ /(\w+\.\d+)[a-z]$/) {
       my $base = $1;
       if (exists $sequence_names{$base}) {
-	if ($sequence_names{$base} eq 'miRNA_primary_transcript' && $sequence_names{"${base}a"} eq 'miRNA') {
-	  next
+	if ($sequence_names{$base} eq 'miRNA_primary_transcript' && (($sequence_names{"${base}a"} && $sequence_names{"${base}a"} eq 'miRNA') || ($sequence_names{"${base}b"} && $sequence_names{"${base}b"} eq 'miRNA'))) {
+	  next;
 	} 
 	# ignore the primary and mature miRNA forms
 	push(@error1, "ERROR: The $sequence_names{$base} sequence '$base' and the $sequence_names{$sequence_name} sequence '$sequence_name' both exist!\n")
@@ -438,7 +436,7 @@ sub single_query_tests {
     if ($species eq "elegans") {
       my @Transposons= $db->fetch(-query=>'find Transposon');
       my $Transposon_no = @Transposons;
-      unless ($Transposon_no eq "377"){print "\nChange in Transposon_numbers required 377 actual $Transposon_no - has additional Transposon annotation been done?\n"}
+      unless ($Transposon_no eq "740"){print "\nChange in Transposon_numbers required 740 actual $Transposon_no - has additional Transposon annotation been done?\n"}
     }
   }    
 
