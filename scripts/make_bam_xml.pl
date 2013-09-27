@@ -5,7 +5,7 @@
 # by Gary Williams
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2013-09-20 10:26:53 $      
+# Last updated on: $Date: 2013-09-27 10:08:55 $      
 
 # Submission guides:
 # http://www.ncbi.nlm.nih.gov/books/NBK49167/
@@ -244,7 +244,7 @@ sub add_RG_header_to_BAM_file {
   my $Software = "/nfs/panda/ensemblgenomes/wormbase/software/packages";
   my $samtools = "$Software/samtools/samtools";
   my $status;
-  my $outfile = "RG_${bamfile}";
+  my $outfile = "RG_$srx.bam";
 
 
 ## want to write:
