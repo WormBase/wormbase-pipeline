@@ -6,7 +6,7 @@
 # and supplementing the "raw" GFF dumped from Ace with additional attributes
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-09-26 08:29:17 $
+# Last updated on: $Date: 2013-09-27 14:44:25 $
 #
 # Usage GFF_post_process [-options]
 
@@ -122,38 +122,12 @@ if ($cleanse_gff or $all) {
   &run_munging_script("GFF_post_process/cleanse_gff.pl");
 }
 
-
-############################################################
-# Add accessions to the Genomic_canonical  lines
-############################################################
-if ($cleanse_gff or $all) {
-  &run_munging_script("GFF_post_process/overload_gff_genomic.pl");
-}
-
-
 ############################################################
 # add Species tags to the BLAT lines
 ############################################################
 if ($overload_species or $all) {
   &run_munging_script("GFF_post_process/overload_gff_blat_species.pl");
 }
-
-
-############################################################
-# Add data source tags to the Mass Spec lines
-############################################################
-if ($overload_cds or $all) {
-  &run_munging_script("GFF_post_process/overload_gff_cds_wormpep.pl");
-}
-
-
-############################################################
-# Add data source tags to the Mass Spec lines
-############################################################
-if ($overload_gene or $all) {
-  &run_munging_script("GFF_post_process/overload_gff_gene.pl");
-}
-
 
 ############################################################
 # Overload the Variation lines with consequence etc
@@ -164,12 +138,33 @@ if ($overload_snp or $all) {
 
 
 ############################################################
+# Add accessions to the Genomic_canonical  lines
+############################################################
+if ($cleanse_gff or $all) {
+  &run_munging_script("GFF_post_process/overload_gff_genomic.pl");
+}
+
+############################################################
+# Add data source tags to the Mass Spec lines
+############################################################
+if ($overload_cds or $all) {
+  &run_munging_script("GFF_post_process/overload_gff_cds_wormpep.pl");
+}
+
+############################################################
+# Add data source tags to the Mass Spec lines
+############################################################
+if ($overload_gene or $all) {
+  &run_munging_script("GFF_post_process/overload_gff_gene.pl");
+}
+
+
+############################################################
 # Adds Interpolated map positions to Genes and Alleles
 ############################################################
 if ($overload_marker or $all) {
   &run_munging_script("GFF_post_process/overload_gff_marker_positions.pl");
 }
-
 
 ############################################################
 # Overload the TF-binding sites with TF namer
@@ -202,7 +197,6 @@ if ($overload_mass_spec or $all) {
     &run_munging_script("GFF_post_process/overload_gff_mass_spec.pl");
   }
 }
-
 
 ############################################################
 # Adds decorations (counts etc) to the SAGE_tag lines
