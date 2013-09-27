@@ -2,8 +2,8 @@
 #
 # prepare_primary_databases.pl
 #
-# Last edited by: $Author: pad $
-# Last edited on: $Date: 2013-08-16 11:28:47 $
+# Last edited by: $Author: klh $
+# Last edited on: $Date: 2013-09-27 15:20:32 $
 
 use strict;
 my $scriptdir = $ENV{'CVS_DIR'};
@@ -59,7 +59,7 @@ if ($species eq 'elegans') {
 my (@errors, @options, @delete_from);
 
 foreach my $primary (keys %databases){
-  if (defined $database) {
+
   next if (defined $database and ($database ne $primary));
   
   if( not $databases{$primary}->{new_date}) {
@@ -71,25 +71,24 @@ foreach my $primary (keys %databases){
     push @delete_from, $primary;
     
     $log->write_to("For $primary, version on FTP site is newer than current - will delete and unpack\n");
-  } 
+  }
 }
-
+  
 if (@errors) {
   foreach my $error (@errors) {
     $log->write_to("$error\n");
   }
   #$log->log_and_die("Did not find expected set of new data files; bailing\n");
 }
-
+  
 # confirm unpack_db details and execute
 foreach my $prim (@delete_from) {
   $log->write_to("Deleting old files from $prim\n");
   $wormbase->delete_files_from($wormbase->primary($prim),'*','+');
 }
-
+  
 $log->write_to(" running unpack_db.pl @options\n\n");
 $wormbase->run_script("unpack_db.pl @options", $log);
-}
 
 # New non FTP code for staging the species canonical databases
 my $ref;
