@@ -8,7 +8,7 @@
 # - Strip the class name prefix from all of the Name attrbutes 
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-09-25 10:02:39 $
+# Last updated on: $Date: 2013-09-27 10:08:46 $
 
 use strict;
 use lib $ENV{CVS_DIR};
@@ -33,6 +33,9 @@ my %source_map = (
   scRNA                    => 'WormBase',
   stRNA                    => 'WormBase',
   snoRNA                   => 'WormBase',
+  transposon_gene          => 'WormBase_transposon',
+  Transposon_CDS           => 'WormBase_transposon',
+  Transposon_Pseudogene    => 'WormBase_transposon',
     );
 
 my %between_base_feature_types = (
