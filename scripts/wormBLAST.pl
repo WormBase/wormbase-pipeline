@@ -5,7 +5,7 @@
 # written by Anthony Rogers
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2013-06-04 13:42:27 $
+# Last edited on: $Date: 2013-09-29 21:10:46 $
 #
 # it depends on:
 #    wormpep + history
@@ -154,7 +154,7 @@ if ($update_dna){
   &update_proteins();    # axe transcripts
 }
 
-&update_analysis() if ($update_analysis||$update_genes||$update_genes);
+&update_analysis() if ($update_analysis||$update_genes||$update_dna);
 
 $log->write_to("\nFinished setting up MySQL databases\n\n");
 
@@ -488,6 +488,8 @@ sub update_dna {
   }
 
   $wormbase->run_command("perl $pipeline_scripts/make_input_ids $db_options -slice -slice_size 75000 -coord_system toplevel -logic_name submitslice75k -input_id_type SLICE75K",$log);
+  $wormbase->run_command("perl $pipeline_scripts/make_input_ids $db_options -translation_id -logic submittranslation", $log );
+
   return 1;
 }
 
