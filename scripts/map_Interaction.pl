@@ -7,7 +7,7 @@
 # by Dan Lawson
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-05-02 20:36:45 $
+# Last updated on: $Date: 2013-09-29 16:50:17 $
 
 use strict;
 use warnings;
@@ -56,12 +56,6 @@ $test  = $wb->test  if $wb->test;     # Test mode
 $debug = $wb->debug if $wb->debug;    # Debug mode, output only goes to one user
 my $tace  = $wb->tace;                # tace executable path
 my $dbdir = $wb->autoace;             # Database path
-
-# Use debug mode?
-if ($debug) {
-    print "DEBUG = \"$debug\"\n\n";
-    ( $maintainers = $debug . '\@sanger.ac.uk' );
-}
 
 $output = $output ? $output : "$dbdir/acefiles/Interaction_connections.ace";    # output file path
 print "// Test mode:\n// searching against $dbdir\n// output written to $output\n\n" if $test;
