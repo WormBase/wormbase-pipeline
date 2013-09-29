@@ -9,8 +9,8 @@
 # solely in the wormpep.history file.
 #
 #
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2012-11-29 12:37:07 $
+# Last updated by: $Author: klh $
+# Last updated on: $Date: 2013-09-29 16:42:04 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -310,22 +310,21 @@ $log->write_to("written $acefile - to be loaded in to autoace\n");
 
 #while we have crap predictions this can be skipped.
 if( $wormbase->species eq "elegans") {
-	my $live_peps  = `grep -c Live $acefile`;
-	my $table_peps = `/software/worm/bin/wublast/nrdb $wormpepdir/${PEPDIR}pep$ver.pep |grep -c '>'`;
-	chomp $live_peps;
-	chomp $table_peps;
-
-	$log->write_to("This file has $live_peps live peptides\n");
-	$log->write_to("$wormpepdir/${PEPDIR}pep$ver suggests there should be $table_peps\n");
-
-	if ( ($live_peps) == $table_peps ) {
-   		$log->write_to("\nso thats OK!\ntaking in to account 2 known problem - CE25872 & CE24071 -hard coded as live in the script\n");
-	}
-	else {
-    	$log->write_to("\n\n! ! ! ! THIS NEEDS ATTENTION ! ! ! !\n\n\n");
-    	$log->write_to("\n1 known problem - CE25872 is hard coded as LIVE in $0\n Check this is still valid sequence F36D3.1\n\n");
-    	$log->write_to("\n1 known problem - CE24071 is hard coded as LIVE in $0\n Check this is still valid sequence Y105C5B.21c\n\n");
-	}
+  my $live_peps  = `grep -c Live $acefile`;
+  chomp $live_peps;
+  my $table_peps = &countUniquePeptides("$wormpepdir/${PEPDIR}pep$ver.pep");
+  
+  $log->write_to("This file has $live_peps live peptides\n");
+  $log->write_to("$wormpepdir/${PEPDIR}pep$ver suggests there should be $table_peps\n");
+  
+  if ( ($live_peps) == $table_peps ) {
+    $log->write_to("\nso thats OK!\ntaking in to account 2 known problem - CE25872 & CE24071 -hard coded as live in the script\n");
+  }
+  else {
+    $log->write_to("\n\n! ! ! ! THIS NEEDS ATTENTION ! ! ! !\n\n\n");
+    $log->write_to("\n1 known problem - CE25872 is hard coded as LIVE in $0\n Check this is still valid sequence F36D3.1\n\n");
+    $log->write_to("\n1 known problem - CE24071 is hard coded as LIVE in $0\n Check this is still valid sequence Y105C5B.21c\n\n");
+  }
 }
 #load files in to autoace.
 $wormbase->load_to_database( $wormbase->autoace, "$ace_dir/acefiles/pepace.ace", 'pepace', $log ) if not $debug;
@@ -405,6 +404,30 @@ sub get_mol_weight {
           ( $U * $mw{U} ) ) / 1000;
     my $result = sprintf "%.1f", $sum;
     return $result;
+}
+
+sub countUniquePeptides {
+  my ($fa) = @_;
+
+  my (%peps, %unique_peps, $name);
+
+  open(my $fah, $fa) or die "Could not open $fa for reading\n";
+  while(<$fa>) {
+    /^\>(\S+)/ and do {
+      $name = $1;
+      next
+    };
+
+    /^(\S+)/ and do {
+      $peps{$name} .= $1;
+    }
+  }
+
+  foreach my $pep (values %peps) {
+    $unique_peps{$pep}++;
+  }
+
+  return scalar(keys %unique_peps);
 }
 
 sub byRelease {
