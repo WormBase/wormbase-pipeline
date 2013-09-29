@@ -10,7 +10,7 @@
 #
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-09-29 16:42:04 $
+# Last updated on: $Date: 2013-09-29 16:57:22 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -412,7 +412,7 @@ sub countUniquePeptides {
   my (%peps, %unique_peps, $name);
 
   open(my $fah, $fa) or die "Could not open $fa for reading\n";
-  while(<$fa>) {
+  while(<$fah>) {
     /^\>(\S+)/ and do {
       $name = $1;
       next
