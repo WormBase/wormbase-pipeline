@@ -9,7 +9,7 @@
 #
 #
 # Last updated by: $Author: klh $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2013-09-11 11:19:19 $        # quickly see when script was last changed and by whom
+# Last updated on: $Date: 2013-09-30 09:47:21 $        # quickly see when script was last changed and by whom
 
 
 $|=1;
@@ -435,7 +435,8 @@ EOF
 	if ($suggested_fix[4]) { # FIXED :-)
 	  $log->write_to("// Suggested fix for $feature : $suggested_fix[3]\n");
 	  $log->write_to("\nFeature : $feature\n");
-	  $log->write_to("Flanking_sequences $suggested_fix[0] $suggested_fix[1] $suggested_fix[2]\n");
+	  $log->write_to("Flanking_sequences $suggested_fix[1] $suggested_fix[2]\n");
+          $log->write_to("Mapping_target $suggested_fix[0]\n");
 	  $log->write_to("Remark \"Flanking sequence automatically fixed: $suggested_fix[3]\"\n\n");
 	} else { # NOT_FIXED :-(
 	  $log->write_to("// $feature : $suggested_fix[3]\n");
