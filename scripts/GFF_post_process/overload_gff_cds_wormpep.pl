@@ -5,7 +5,7 @@
 # Overloads the CDS and Transcript lines with extra info (mostly wormpep)
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-09-25 16:28:39 $
+# Last updated on: $Date: 2013-09-30 11:00:21 $
 
 #
 #    1. Brief_identification
@@ -172,6 +172,10 @@ sub get_data {
       if ($ct->name ne $cds->name) {
         my $wormpep = $cds2wormpep{$cds};
         $cds2wormpep{$ct->name} = $wormpep;
+
+        if (exists $cds2cgc{$cds->name}) {
+          $rna2cgc{$ct->name} = $cds2cgc{$cds->name};
+        }
       }
     }
   }
