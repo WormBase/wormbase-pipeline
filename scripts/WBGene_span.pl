@@ -7,7 +7,7 @@
 # Creates SMapped Gene spans for Gene objects
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2013-09-26 13:52:49 $
+# Last edited on: $Date: 2013-09-30 14:45:18 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -19,7 +19,7 @@ use Storable;
 
 my (
     $database, $species,  $test,       $store,   $gff, $no_ace,
-    $debug,    $gff_file, $chromosome, $prepare, $no_gff, $no_load, $no_dump,
+    $debug,  $chromosome, $prepare, $no_gff, $no_load, $no_dump,
 );
 
 GetOptions(
@@ -29,7 +29,6 @@ GetOptions(
     'gff'          => \$gff,
     'no_ace'       => \$no_ace,
     'debug=s'      => \$debug,
-    'gff_file=s'   => \$gff_file,
     'chromosome=s' => \$chromosome,
     'prepare'      => \$prepare,
     'no_gff'       => \$no_gff,
@@ -110,7 +109,7 @@ else {
 	       or ( $data[1] eq 'snoRNA' )
 	       or ( $data[1] eq 'snlRNA' )
 	       or ( $data[1] eq 'Transposon_CDS' ) 
-               or ( $data[1] eq 'Transposon_Pseudogene') {
+               or ( $data[1] eq 'Transposon_Pseudogene') ) {
 	  next if ( $data[2] eq 'exon'
 		    or $data[2] eq 'coding_exon'
 		    or $data[2] eq 'intron' );
@@ -150,12 +149,11 @@ else {
       }
     }
     if ($gff) {
-      open( OUTGFF, ">>".$wormbase->GFF_file_name($chrom,'WBgene'))
-	or do {
-	  $log->write_to("cant open output\n");
-	  die "cant open output\n";
-	}
-      }
+      open( OUTGFF, ">>".$wormbase->GFF_file_name($chrom,'WBgene')) or do {
+        $log->write_to("cant open output\n");
+        die "cant open output\n";
+      };
+    }
     
     foreach my $gene ( keys %gene_span ) {
       if ($gff) {
