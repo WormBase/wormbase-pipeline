@@ -2,13 +2,13 @@
 
 # Version: $Version: $
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-08-14 14:33:14 $
+# Last updated on: $Date: 2013-09-30 10:39:19 $
 
 use strict;
 use warnings;
 use Getopt::Long;
 
-use lib $ENV{'CVS_DIR'};
+use lib $ENV{CVS_DIR};
 
 use Wormbase;
 use Log_files;
@@ -21,8 +21,7 @@ use Sequence_extract;
 use Bio::Tools::Blat;
 use Bio::SeqIO;
 
-my $BLAT = "/software/worm/bin/blat/blat";
-#my $BLAT = "/nfs/users/nfs_k/klh/bin/x86_64/blat";
+my $BLAT = "blat";
 my $BLAT_OPTIONS = "-minIdentity=80 -maxIntron=10000 -noHead";
 
 my $PRIMARY_LEN = 100;
@@ -68,6 +67,7 @@ GetOptions(
   "keepbest=s"     => \$keep_best,
   "verbose"        => \$verbose,
   "onlyunmapped"   => \$only_unmapped,
+  "blatexe"        => \$BLAT,
     );
 
 
