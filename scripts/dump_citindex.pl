@@ -30,7 +30,7 @@ if ($store){
                             -test  => $test );
 }
 
-my $log=Log_file->make_build_log($wormbase);
+my $log=Log_files->make_build_log($wormbase);
 
 $outfile||= "${\$wormbase->autoace}/ReutersCitationIndex.xml.gz";
 my $file = new IO::File "| gzip -9 -c > $outfile";
