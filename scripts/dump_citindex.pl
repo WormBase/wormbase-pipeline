@@ -41,7 +41,7 @@ my $db = Ace->connect(-path => $database)||die(Ace->error);
 
 my @timelist=localtime();
 my $year = $timelist[5]+1900;
-my $time=sprintf('%02u/%02u/%u',$timelist[3],$timelist[4],$year);
+my $time=sprintf('%02u/%02u/%u',$timelist[3],$timelist[4]+1,$year);
 
 $log->write_to("dumping XML file for WS${\$wormbase->version} $time\n");
 
