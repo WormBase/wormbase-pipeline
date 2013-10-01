@@ -22,8 +22,6 @@ GetOptions(
                 'test'       => \$test,
 )||die(@!);
 
-die("ERROR: you need to specify a database\n") unless $database;
-
 my $wormbase;
 if ($store){
    $wormbase= retrieve($store) or die("Can't restore wormbase from $store\n");
@@ -36,6 +34,8 @@ my $log=Log_file->make_build_log($wormbase);
 
 $outfile||= "${\$wormbase->autoace}/ReutersCitationIndex.xml.gz";
 my $file = new IO::File "| gzip -9 -c > $outfile";
+
+$database||=$wormbase->autoace;
 
 my $db = Ace->connect(-path => $database)||die(Ace->error);
 
