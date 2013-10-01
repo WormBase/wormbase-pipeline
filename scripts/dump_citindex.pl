@@ -6,35 +6,61 @@
 #
 use Getopt::Long;
 use Ace;
+use Wormbase;
+use Log_files;
+use Storable;
 use Digest::MD5 qw(md5_hex);
 use IO::File;
 use strict;
 	
-my ($database,$outfile);
+my ($database,$outfile,$store,$debug,$test);
 GetOptions(
-		"database=s" => \$database,
-		"file=s"     => \$outfile,
+		'database=s' => \$database,
+		'file=s'     => \$outfile,
+                'store=s'    => \$store,
+                'debug=s'    => \$debug,
+                'test'       => \$test,
 )||die(@!);
 
 die("ERROR: you need to specify a database\n") unless $database;
-	
-my $file = $outfile ? new IO::File "| gzip -9 -c > $outfile" : \*STDOUT;
+
+my $wormbase;
+if ($store){
+   $wormbase= retrieve($store) or die("Can't restore wormbase from $store\n");
+}else{
+   $wormbase= Wormbase->new(-debug => $debug,
+                            -test  => $test );
+}
+
+my $log=Log_file->make_build_log($wormbase);
+
+$outfile||= "${\$wormbase->autoace}/ReutersCitationIndex.xml.gz";
+my $file = new IO::File "| gzip -9 -c > $outfile";
+
 my $db = Ace->connect(-path => $database)||die(Ace->error);
 
 my @timelist=localtime();
 my $year = $timelist[5]+1900;
 my $time=sprintf('%02u/%02u/%u',$timelist[3],$timelist[4],$year);
 
+$log->write_to("dumping XML file for WS${$wormbase->version} $time\n");
+
+# header
 print $file "<report name=\"CI-Report\" date_generated=\"$time\">\n";
 
-my $gIt = $db->fetch_many(-query => 'Find Gene CGC_name AND Corresponding_CDS')||die(Ace->error);
+my $gIt = $db->fetch_many(-query => 'Find Gene CGC_name AND Corresponding_CDS')||$log->log_and_die(Ace->error);
 
 while (my $gene =$gIt->next){
   print_gene($file,$gene);
 }
+
+# footer
 print $file "</report>\n";
 
+# cleanup
 $file->close;
+$db->close;
+$log->mail;
 
 sub print_gene{
   my ($f,$g)=@_;
@@ -42,7 +68,7 @@ sub print_gene{
   my @c = split(/\s+/,"${\$g->History->right(2)}");
   my $creation_date = $c[2];
  
-  print STDERR "processing $g\n" if $ENV{DEBUG};
+  print STDERR "processing $g\n" if $debug;
   my $data =
   "  <date_provided>$year</date_provided>\n".
   "  <date_created>$creation_date</date_created>\n".
