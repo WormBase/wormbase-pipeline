@@ -43,7 +43,7 @@ my @timelist=localtime();
 my $year = $timelist[5]+1900;
 my $time=sprintf('%02u/%02u/%u',$timelist[3],$timelist[4],$year);
 
-$log->write_to("dumping XML file for WS${$wormbase->version} $time\n");
+$log->write_to("dumping XML file for WS${\$wormbase->version} $time\n");
 
 # header
 print $file "<report name=\"CI-Report\" date_generated=\"$time\">\n";
