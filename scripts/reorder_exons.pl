@@ -6,8 +6,8 @@
 #
 # This script checks the exon order and corrects them if needed
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2005-12-16 11:18:55 $
+# Last updated by: $Author: pad $
+# Last updated on: $Date: 2013-10-01 13:35:57 $
 
 
 
@@ -29,17 +29,21 @@ use Storable;
 #################################
 
 my $database; # which database to test
-my $debug;
+my $debug;    # Log messages will only go to the specified user.
 my $test;     # use test environment?
-my $quicktest;# use test environment but gets less clones?
-my $store;
+my $quicktest;# use test environment but gets the defined clone.
+my $store;    # Provide the Wormbase store object to the script
+my $out;      # allows an output file to be specified to avoid writing to BUILD
+my $verbose;  # gives additional output if interested
+my $load;     # allows the data to be loaded into the specified database
 
-
-GetOptions ("database=s"   => \$database,
-	    "debug:s"      => \$debug,
-            "test"         => \$test,
-	    "quicktest"    => \$quicktest,
-	    "store:s"      => \$store
+GetOptions ("database=s"     => \$database,
+	    "debug:s"        => \$debug,
+            "test"           => \$test,
+	    "quicktest:s"    => \$quicktest,
+	    "store:s"        => \$store,
+	    "out:s"          => \$out,
+	    "load"           => \$load,
 	   );
 
 $test = 1 if $quicktest;
@@ -85,7 +89,16 @@ else {
 
 
 # open output file
-open (ACE, ">$dbpath/acefiles/sorted_exons.ace") || die $!;
+my $acefile;
+if (defined $out) {
+$acefile = $out
+}
+else {
+$acefile = $dbpath."/acefiles/sorted_exons.ace";
+}
+
+print "output will be written to $acefile\n";
+open (ACE, ">$acefile") || die $!;
 
 
 #########################
@@ -104,13 +117,16 @@ $db->auto_save(0);
 ####################################
 # get genomic_canonical sequences  #
 ####################################
-my @sequences;
+my (@sequences,$query);
 if( $quicktest ) {
-  @sequences = $db->fetch(-query => 'Find Sequence AH6');
+  $query = "Find Sequence $quicktest";
+  print "only fetching data from $quicktest\n\n" if ($verbose);
 }
 else {
-  @sequences = $db->fetch(-query => 'Find Sequence Properties == Genomic_canonical & Species="Caenorhabditis elegans"');
+  $query = "Find Sequence Properties == Genomic_canonical & Species=\"Caenorhabditis elegans\"";
 }
+
+@sequences = $db->fetch(-query => $query);
 
 unless($sequences[0]) {
     die print "database contained no genomic_canonical sequences\n";
@@ -147,7 +163,7 @@ foreach (@sequences) {
       my ($a, $b) = $_->row;
       my @ends = ($a, $b);
       if($a < $oldleft) {
-#		print "exons out of order in $cds\n";
+		print "exons out of order in $cds\n" if ($verbose);
 	push(@seqoutoforder, $cds);
       }
       $oldleft = $a;
@@ -171,7 +187,7 @@ foreach (@sequences) {
       my ($a, $b) = $_->row;
       my @ends = ($a, $b);
       if($a < $oldleft) {
-	#	print "exons out of order for $transcript\n";
+		print "exons out of order for $transcript\n" if ($verbose);
 	push(@tranoutoforder, $transcript);
       }
       $oldleft = $a;
@@ -211,13 +227,15 @@ close(ACE);
 
 # Only upload if working with autoace
 if($dbpath =~ m/autoace$/){
-  my $command = "pparse $dbpath/acefiles/sorted_exons.ace";
+  $load = "1";
+}
+if ($load) {
+  my $command = "pparse $acefile";
   $command .= "\nsave\nquit\n";
-  print "\nUploading sorted exon info to autoace\n";
-  open (WRITEDB, "| $tace -tsuser reorder_exons $dbpath") || die "Couldn't open pipe to autoace\n";
+  print "\nUploading sorted exon info to $database\n";
+  open (WRITEDB, "| $tace -tsuser reorder_exons $dbpath") || die "Couldn't open pipe to $database\n";
   print WRITEDB $command;
   close WRITEDB;
-
 }
 
 print "\nFinished\n";
@@ -233,7 +251,7 @@ sub seq_fix_order {
 	print ACE "\nCDS : \"$_\"\n";
 	print ACE "-D Source_exons\n\n";
 	print ACE "CDS : \"$_\"\n";
-#	print ACE "$$sub_ref{$_}->[0] $$sub_ref{$_}->[1] $$sub_ref{$_}->[2] $$sub_ref{$_}->[3] \n";
+	print "$$sub_ref{$_}->[0] $$sub_ref{$_}->[1] $$sub_ref{$_}->[2] $$sub_ref{$_}->[3] \n" if ($verbose);
 	my @thisarray = @{$$sub_ref{$_}}; 
 	my @sorted = sort {$a <=> $b} (@thisarray);
 	foreach(my $ii = 0; $ii <= $#sorted; $ii+=2) {
@@ -288,7 +306,6 @@ of the list of exons.
 Usually run as part of the build but can be run against any valid acedb database that has
 'Source_exons'
 
-=back
 
 =head1 MANDATORY arguments:
 
@@ -298,11 +315,11 @@ Usually run as part of the build but can be run against any valid acedb database
 
 =back
 
-=head1 OPTIONAL arguments: -database, -test
+=head1 OPTIONAL arguments: -database, -test, -out, -debug, -verbose, -load, -quicktest
 
 =over 4
 
-=item -database <path to database>
+=item -database <Database path>
 
 Specifies location of target database, will default to using autoace if not specified
 
@@ -310,12 +327,40 @@ Specifies location of target database, will default to using autoace if not spec
 
 Uses test environment in ~wormpub/TEST_BUILD/
 
+=item -quicktest <Clone>
+
+This option allows you to specify a clone that you know has an inconsistent CDS/Transcript
+
+=item -out <File destination>
+
+If you specify a file, the data will be output into this file instead of touching the build env.
+
+=item -debug <User id>
+
+Log messages will only go to the specified user.
+
+=item -verbose
+
+gives additional output if interested
+
+=item -load
+
+allows the data to be loaded into the specified database, this option gets set by default for autoace
+
 =back
 
+=head1 USAGE Example:
+
+=over 4
+
+=item reorder_exons.pl -database ~/DATABASES/camace -out ~/DATABASES/camace/reordered_exons.ace -debug pad -test -load
+
+This will check the database camace for inconsistent exon order and output a patch file to "~/DATABASES/camace/reordered_exons.ace". 
+As -load was used on command line, this patch will also be applied to the specified database.
+
+=back
 
 =head1 AUTHOR Darin Blasiar (dblasiar@watson.wustl.edu) 
-
-=back
 
 =cut
 
