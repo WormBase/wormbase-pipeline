@@ -6,8 +6,8 @@
 #
 # Author: Chao-Kung CHen
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2013-05-09 09:43:49 $
+# Last updated by: $Author: klh $
+# Last updated on: $Date: 2013-10-02 12:16:21 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -65,7 +65,7 @@ if ($species eq 'elegans'){
 	# copy the non-species-specific files
 	unlink("$source_dir/ensembl_protein_info.ace");
 
-	$wormbase->run_command("cat $farm_ace/flybase.ace $farm_ace/yeast.ace $source_dir/ipi_hits.ace $source_dir/swissproteins.ace $source_dir/tremblproteins.ace > $source_dir/ensembl_protein_info.ace", $log);
+	$wormbase->run_command("cat $farm_ace/flybase.ace $farm_ace/yeast.ace $source_dir/ipi_hits.ace $source_dir/swissproteins.ace  > $source_dir/ensembl_protein_info.ace", $log);
 
 
 	if (-e "$farm_ace/waba.ace") {
