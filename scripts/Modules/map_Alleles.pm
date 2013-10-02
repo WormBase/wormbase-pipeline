@@ -436,9 +436,15 @@ sub map {
       # Since this dataset is pretty much complete I think
       # it would be OK to exclude niDf* alleles from the "is it massive"
       # check.
+      # 
+      # Note from klh 2013-09:
+      # Edgely data set are natural variants, so now have a WBVar public name;
+      # will now instead check for "CGH_allele" method. Also, some new variants from
+      # the MM project are also massive, so also exclude them
       my $len = abs($clone_end - $clone_start) + 1;
 
-      if ($x->Public_name !~ /^niDf/) {
+      if ($x->Method ne 'CGH_allele' and
+          $x->Method ne 'Million_mutation') {
         $log->write_to("ERROR: $x (${\$x->Public_name}) is massive ($len)\n");
         $errors++;
         next;
