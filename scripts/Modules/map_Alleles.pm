@@ -444,7 +444,7 @@ sub map {
       my $len = abs($clone_end - $clone_start) + 1;
 
       if ($x->Method ne 'CGH_allele' and
-          $x->Method ne 'Million_mutation') {
+          (not $x->Analysis or $x->Analysis ne 'Million_mutation_project_reanalysis')) {
         $log->write_to("ERROR: $x (${\$x->Public_name}) is massive ($len)\n");
         $errors++;
         next;
