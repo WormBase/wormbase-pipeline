@@ -22,7 +22,6 @@ sub uniprot {
 
   my %acc2ids;
 
-
   my $ua       = LWP::UserAgent->new;
   
   my $base     = 'http://www.uniprot.org/uniprot/?';
@@ -30,41 +29,26 @@ sub uniprot {
   
   my $tmp_file = "/tmp/srs_results.$$.txt";
     
-  my $chunksize = 10000;
-  my $chunkstart = 1; # start of next chunk
-  my $prev_id = "";
-  my $id;
-  do {
-    my $offset = "&offset=${chunkstart}";
-    my $limit = "&limit=${chunksize}";
-    # print "EBI SRS server Uniprot query returned $total entries; fetching no. $chunkstart...\n";
-    my $qa2 = $ua->get($base.$query.$offset.$limit, ':content_file' => $tmp_file);
-    die("WBSRS: Could not fetch EMBL entries using EBI Uniprot server") 
+  my $qa2 = $ua->get($base.$query, ':content_file' => $tmp_file);
+  die("WBSRS: Could not fetch EMBL entries using EBI Uniprot server") 
       if not $qa2->is_success;
+  
+  open(my $f, $tmp_file);
+  my $count=0;
+  while(<$f>) {
+    if (++$count == 1) {next;} # skip the title line
     
-    open(my $f, $tmp_file);
-    my $count=0;
-    while(<$f>) {
-      if (++$count == 1) {next;} # skip the title line
-      
-      my @f = split /\t/;
-      # check if id of first data line is the same as in the previous chunk
-      $id = $f[0];
-      if ($count == 2) {
-	if ($id eq $prev_id) {last}
-	$prev_id = $id;
-      }
-      $acc2ids{$f[1]}{'id'} = $id;
-      $acc2ids{$f[1]}{'des'} = $f[2];
-      my @gene_names = split /\s/, $f[3];
-      $acc2ids{$f[1]}{'gene'} = $gene_names[0];
-      $acc2ids{$f[1]}{'key'} = $f[5];
-      $acc2ids{$f[1]}{'len'} = $f[6];
-    }
-    $chunkstart+=$chunksize;
-  } until ($id eq $prev_id);
-  
-  
+    my @f = split /\t/;
+    
+    $acc2ids{$f[1]}{'id'} = $f[0];
+    $acc2ids{$f[1]}{'des'} = $f[2];
+    my @gene_names = split /\s/, $f[3];
+    $acc2ids{$f[1]}{'gene'} = $gene_names[0];
+    $acc2ids{$f[1]}{'key'} = $f[5];
+    $acc2ids{$f[1]}{'len'} = $f[6];
+  }
+  unlink $tmp_file;
+
   return \%acc2ids;
 }
 
