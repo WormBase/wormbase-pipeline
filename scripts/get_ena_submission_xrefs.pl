@@ -9,21 +9,21 @@ use lib $ENV{CVS_DIR};
 use Wormbase;
 use Log_files;
 
-my ($debug, $test, $store, $species, $wb, $svacefile, $pidacefile, $load, $ncbi_tax_id, $table_file,$sv_table_file,
+my ($debug, $test, $store, $species, $wb, $svacefile, $pidacefile, $noload, $ncbi_tax_id, $pid_table_file,$sv_table_file,
     %cds_xrefs, %pep_xrefs, $generate_tables, $sequence_xrefs, $protein_xrefs);
 
 
-&GetOptions ("debug=s"    => \$debug,
-             "test"       => \$test,
-             "store:s"    => \$store,
-             "species:s"  => \$species,
-             "load"       => \$load,
-             "table=s"    => \$table_file,
-             "svtable=s"  => \$sv_table_file,
-             'svacefile=s' => \$svacefile,
-             'pidacefile=s' => \$pidacefile,
+&GetOptions ("debug=s"        => \$debug,
+             "test"           => \$test,
+             "store:s"        => \$store,
+             "species:s"      => \$species,
+             "noload"         => \$noload,
+             "svtable=s"      => \$sv_table_file,
+             'svacefile=s'    => \$svacefile,
+             "pidtable=s"     => \$pid_table_file,
+             'pidacefile=s'   => \$pidacefile,
              'generatetables' => \$generate_tables,
-             'sequencexrefs'   => \$sequence_xrefs,
+             'sequencexrefs'  => \$sequence_xrefs,
              'proteinxrefs'   => \$protein_xrefs,
     );
 
@@ -46,12 +46,12 @@ my ($ggenus, $gspecies) = $wb->full_name =~ /^(\S+)\s+(\S+)/;
 $ncbi_tax_id = $wb->ncbi_tax_id;
 $svacefile = $wb->acefiles . "/EBI_sequence_xrefs.ace" if not defined $svacefile;
 $pidacefile = $wb->acefiles . "/EBI_pid_xrefs.ace" if not defined $pidacefile;
-$table_file = $wb->acefiles . "/EBI_protein_ids.txt" if not defined $table_file;
+$pid_table_file = $wb->acefiles . "/EBI_protein_ids.txt" if not defined $pid_table_file;
 $sv_table_file = $wb->acefiles . "/EBI_sequence_versions.txt" if not defined $sv_table_file;
 
 
 if ($generate_tables) {
-  &lookup_from_ebi_production_dbs($table_file, 'proteinxrefs');
+  &lookup_from_ebi_production_dbs($pid_table_file, 'proteinxrefs');
   &lookup_from_ebi_production_dbs($sv_table_file, 'seqversions');
 }
 
@@ -82,7 +82,7 @@ if ($sequence_xrefs) {
   
   close($acefh) or $log->log_and_die("Could not close $svacefile properly\n");
   
-  if ($load) {
+  unless ($noload) {
     $wb->load_to_database($wb->autoace, $svacefile, 'ENA_sequence_xrefs', $log);
   }
 
@@ -93,8 +93,8 @@ if ($protein_xrefs) {
   my %accession2clone   = $wb->FetchData('accession2clone');
   my %cds2wormpep = $wb->FetchData('cds2wormpep');
 
-  open(my $table_fh, $table_file)
-      or $log->log_and_die("Could not open $table_file for reading\n");
+  open(my $table_fh, $pid_table_file)
+      or $log->log_and_die("Could not open $pid_table_file for reading\n");
 
   open(my $acefh, ">$pidacefile")
       or $log->log_and_die("Could not open $pidacefile for writing\n");
@@ -103,9 +103,9 @@ if ($protein_xrefs) {
     chomp;
     my @data = split("\t",$_);
     
-    next unless scalar(@data) == 8;
-    my($cloneacc, $pid, $version, $cds, $uniprot_ac, $uniprot_id) 
-        = ($data[0],$data[2],$data[3],$data[5],$data[6],$data[7]);  
+    next unless scalar(@data) == 10;
+    my($cloneacc, $pid, $version, $cds, $uniprot_ac, $uniprot_id, $uniprot_iso_acc, $ec_num) 
+        = ($data[0],$data[2],$data[3],$data[5],$data[6],$data[7],$data[8],$data[9]);  
     
     next unless (defined $pid);
     $log->write_to("Potential New Protein: $_\n") if $uniprot_ac eq 'UNDEFINED';
@@ -116,13 +116,20 @@ if ($protein_xrefs) {
     
     if($cds2wormpep{$cds}) {
       if (defined $uniprot_ac and $uniprot_ac ne 'UNDEFINED') {
-        $cds_xrefs{$cds}->{UniProtAcc}->{$uniprot_ac} = 1;
-        $pep_xrefs{"WP:".$cds2wormpep{$cds}}->{UniProtAcc}->{$uniprot_ac} = 1;
-        
-        if (defined $uniprot_id and $uniprot_id ne 'UNDEFINED') {
-          $cds_xrefs{$cds}->{UniProtId}->{$uniprot_id} = 1;
-          $pep_xrefs{"WP:".$cds2wormpep{$cds}}->{UniProtId}->{$uniprot_id} = 1;
-        }
+        $cds_xrefs{$cds}->{dblinks}->{UniProt}->{UniProtAcc}->{$uniprot_ac} = 1;
+        $pep_xrefs{"WP:".$cds2wormpep{$cds}}->{UniProt}->{UniProtAcc}->{$uniprot_ac} = 1;
+      }
+      if (defined $uniprot_id and $uniprot_id ne 'UNDEFINED') {
+        $cds_xrefs{$cds}->{dblinks}->{UniProt}->{UniProtId}->{$uniprot_id} = 1;
+        $pep_xrefs{"WP:".$cds2wormpep{$cds}}->{UniProt}->{UniProtId}->{$uniprot_id} = 1;
+      }
+      if (defined $uniprot_iso_acc and $uniprot_iso_acc ne 'UNDEFINED') {
+        $cds_xrefs{$cds}->{dblinks}->{UniProt}->{UniProtIsoformAcc}->{$uniprot_iso_acc} = 1;
+        $pep_xrefs{"WP:".$cds2wormpep{$cds}}->{UniProt}->{UniProtIsoformAcc}->{$uniprot_iso_acc} = 1;
+      }
+      if (defined $ec_num and $ec_num ne 'UNDEFINED') {
+        $cds_xrefs{$cds}->{dblinks}->{KEGG}->{KEGG_id}->{$ec_num} = 1;
+        $pep_xrefs{"WP:".$cds2wormpep{$cds}}->{KEGG}->{KEGG_id}->{$ec_num} = 1;
       }
     }
   }
@@ -133,19 +140,19 @@ if ($protein_xrefs) {
     
     foreach my $k (keys %$hash) {
       print $acefh "$class : \"$k\"\n";
+
       if (exists $hash->{$k}->{Protein_id}) {
         foreach my $pidl (@{$hash->{$k}->{Protein_id}}) {
           print $acefh "Protein_id\t@$pidl\n"; 
         }
       }
       
-      if (exists $hash->{$k}->{UniProtAcc}) {
-        foreach my $acc (keys %{$hash->{$k}->{UniProtAcc}}) {
-          print $acefh "Database UniProt UniProtAcc $acc\n";
-          
-          if (exists $hash->{$k}->{UniProtId}) {
-            foreach my $id (keys %{$hash->{$k}->{UniProtId}}) {
-              print $acefh "Database UniProt UniProtID $id\n";
+      if (exists $hash->{$k}->{dblinks}) {
+        my $h = $hash->{$k}->{dblinks};
+        foreach my $db (sort keys %$h) {
+          foreach my $attr_k (sort keys %{$h->{$db}}) {
+            foreach my $attr_v (sort keys %{$h->{$db}->{$attr_k}}) {
+              print $acefh "Database $db $attr_k $attr_v\n";         
             }
           }
         }
@@ -156,7 +163,7 @@ if ($protein_xrefs) {
 
   close($acefh) or $log->log_and_die("Could not close $pidacefile properly\n");
   
-  if ($load) {
+  unless ($noload) {
     $wb->load_to_database($wb->autoace, $pidacefile, 'ENA_protein_xrefs', $log);
   }
 
