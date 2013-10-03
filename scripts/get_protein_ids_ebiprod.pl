@@ -17,7 +17,7 @@ my ($org_id, $ena_db, $uniprot_db, $verbose);
 if (not defined $uniprot_db or
     not defined $org_id or
     not defined $ena_db) {
-  die "Incorrect invocation\n";
+  die "Incorrect invocation: you must supply -enadb -uniprotdb and -orgid\n";
 }
 
 
@@ -63,7 +63,7 @@ print STDERR "Doing primary lookup of CDS entries in ENA ORACLE database...\n" i
 
 $ena_sth->execute or die "Can't execute statement: $DBI::errstr";
 
-my (@resultsArr, %resultsHash);
+my (@resultsArr, %resultsHash, %uniparc_mapping);
 
 while ( ( my @results ) = $ena_sth->fetchrow_array ) {
   push @{$resultsHash{$results[2]}}, {  
@@ -81,7 +81,7 @@ $ena_sth->finish;
 $ena_dbh->disconnect;
 
 #################
-# query uniprot
+# query uniprot 1 - get basic protein_id info
 #################
 
 my $uniprot_dbh = &get_uniprot_dbh();
@@ -113,13 +113,89 @@ $uniprot_sth->finish;
 $uniprot_dbh->disconnect;
 
 ##################
+# query uniprot 2 - use UniParc to get Uniprot isoform identifiers
+###################
+
+$uniprot_dbh = &get_uniprot_dbh();
+
+# dbid = 1 => ENA protein_id
+# dbid = 24 => Uniprot isoform id
+$uniprot_sql = 'SELECT e.UPI, e.AC, e.DBID '
+    . 'FROM uniparc.xref@uapro e '
+    . "WHERE taxid = $org_id "
+    . "AND  deleted = 'N' "
+    . 'AND  dbid in (1,24)';
+
+$uniprot_sth = $uniprot_dbh->prepare($uniprot_sql);
+print STDERR "Reading UniParc for mapping of ENA protein ids to UP isoform ids\n" if $verbose;
+$uniprot_sth->execute;
+while (my @results = $uniprot_sth->fetchrow_array) {
+  my ($upi, $acc, $db_id) = @results;
+  if ($db_id == 1) {
+    # ena protein id; ignore if it's not one of ours
+    if (exists $resultsHash{$acc}) {
+      $uniparc_mapping{$upi}->{protein_id} = $acc;
+    }
+  } else {
+    $uniparc_mapping{$upi}->{isoform_id} = $acc;
+  }
+}
+die $uniprot_sth->errstr if $uniprot_sth->err;
+$uniprot_sth->finish;
+$uniprot_dbh->disconnect;
+
+foreach my $upi (keys %uniparc_mapping) {
+  if (exists $uniparc_mapping{$upi}->{protein_id} and 
+      exists $uniparc_mapping{$upi}->{isoform_id}) {
+    my ($pid) = $uniparc_mapping{$upi}->{protein_id};
+    my ($iid) = $uniparc_mapping{$upi}->{isoform_id};
+    foreach my $el (@{$resultsHash{$pid}}) {
+      $el->{SWALL_ISOFORM} = $iid;
+    }
+  }
+}
+
+##################
+# query uniprot 2 - get EC numbers
+###################
+
+$uniprot_dbh = &get_uniprot_dbh();
+#
+# subcategory_type_id = 3 => EC number
+#
+$uniprot_sql = "SELECT accession, text "
+    . "FROM dbentry dbe, dbentry_2_description dbe2desc, description_category dc, description_subcategory dsc "
+    . "WHERE dbe.dbentry_id = dbe2desc.dbentry_id " 
+    . "AND dbe2desc.dbentry_2_description_id = dc.dbentry_2_description_id "
+    . "AND dc.category_id = dsc.category_id "
+    . "AND subcategory_type_id = 3 "
+    . "AND dbe.accession = ?";
+
+$uniprot_sth = $uniprot_dbh->prepare($uniprot_sql);
+print STDERR "Reading UniParc for mapping of ENA protein ids to UP isoform ids\n" if $verbose;
+foreach my $entry_a (values %resultsHash) {
+  foreach my $entry (@$entry_a) {
+    if (exists $entry->{SWALL_AC}) {
+      $uniprot_sth->execute($entry->{SWALL_AC});
+      my ($acc, $ec_num) = $uniprot_sth->fetchrow_array;
+      if (defined $acc and defined $ec_num) {
+        $entry->{EC} = $ec_num;
+      }
+    }
+  }
+}
+die $uniprot_sth->errstr if $uniprot_sth->err;
+$uniprot_sth->finish;
+$uniprot_dbh->disconnect;
+
+##################
 # output results
 ##################
 
 @resultsArr = sort { $a->{NT_AC} cmp $b->{NT_AC} or $a->{AA_PID} cmp $b->{AA_PID} } map { @$_ } values(%resultsHash);
 foreach my $entry (@resultsArr) {
   
-  printf("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n", 
+  printf("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n", 
          $entry->{NT_AC},
          $entry->{NT_version},
          $entry->{AA_PID},
@@ -127,7 +203,10 @@ foreach my $entry (@resultsArr) {
          $entry->{AA_checksum},
          $entry->{AA_text},
          exists($entry->{SWALL_AC}) ? $entry->{SWALL_AC} : "UNDEFINED",
-         exists($entry->{SWALL_ID}) ? $entry->{SWALL_ID} : "UNDEFINED");
+         exists($entry->{SWALL_ID}) ? $entry->{SWALL_ID} : "UNDEFINED",
+         exists($entry->{SWALL_ISOFORM}) ? $entry->{SWALL_ISOFORM} : "UNDEFINED",
+         exists($entry->{EC}) ? $entry->{EC} : "UNDEFINED",
+      );
 
 }
 
