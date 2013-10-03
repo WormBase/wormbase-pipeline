@@ -1,14 +1,16 @@
-#!/software/bin/perl -w
+#!/usr/bin/env perl 
 
 use strict;
-use lib $ENV{'CVS_DIR'};
-use Wormbase;
+use lib $ENV{CVS_DIR};
+
 use Getopt::Long;
 use Storable; 
-use Log_files;
-use DBI;
 
-my ($help, $debug, $test, $verbose, $store, $wormbase, $species, $no_load);
+use Wormbase;
+use Log_files;
+use Modules::EBI_datafetch;
+
+my ($help, $debug, $test, $verbose, $store, $wormbase, $species, $noload, $acefile);
 
 GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
@@ -16,7 +18,8 @@ GetOptions ("help"       => \$help,
 	    "verbose"    => \$verbose,
 	    "store:s"    => \$store,
 	    "species:s"  => \$species,
-	    "no_load"    => \$no_load
+	    "noload"     => \$noload,
+            "acefile:s"  => \$acefile,
 	    );
 
 if ( $store ) {
@@ -27,76 +30,54 @@ if ( $store ) {
 			     -organism => $species
 			     );
 }
+my %tran2gene = $wormbase->FetchData('worm_gene2geneID_name');
 
-# establish log file.
+$acefile = $wormbase->acefiles . "/KEGG.ace" if not defined $acefile;
 my $log = Log_files->make_build_log($wormbase);
+my $species_full = $wormbase->full_name;
+my $fetcher = EBI_datafetch->new();
 
-# MYSQL CONFIG VARIABLES
-my $dbhost = "cbi5d";
-my $dbuser = "genero";
-my $dbname = &get_latest_uniprot;
+$log->write_to("\tquerying EBI web service . . \n");
+my $data;
+eval { 
+  $data = $fetcher->get_uniprot_info_for_species($species_full);
+};
+$@ and $log->log_and_die("Could not successfully fetch data from EBI web-service: $@\n");
+  
+open(my $out_fh,">$acefile") or 
+    $log->log_and_die("cant write $acefile : $!\n");
+foreach my $entry_acc (keys %$data) {
+  my $entry = $data->{$entry_acc};
 
-$log->write_to("connecting to $dbhost:$dbname as $dbuser . . \n");
-my $dbh = DBI -> connect("DBI:mysql:$dbname:$dbhost", $dbuser, "",{RaiseError => 1});
-my $tax_id = $wormbase->ncbi_tax_id;
+  next if not $entry->{ec_number};
+  my @wb_names = @{$entry->{wormbase_names}};
+  next if not @wb_names;
 
-my $query =  "select dbxref.entry_id, dbxref.database_id, dbxref.primary_id, dbxref.tertiary_id from taxonomy,dbxref where taxonomy.ncbi_tax_id = \"".$tax_id."\" and taxonomy.entry_id = dbxref.entry_id and (database_id = \"Enzyme\" or database_id = \"WormBase\");";
-
-$log->write_to("\tquerying . . \n");
-my $sth = $dbh->prepare($query);
-$sth->execute;
-my %enzyme;
-
-while (my ($entry, $db, $enzid, $geneid) = $sth->fetchrow()) {
-    $enzyme{$entry}->{'gene'} = $geneid if($db eq 'WormBase');
-    $enzyme{$entry}->{'kegg'} = $enzid if($db eq 'Enzyme');
-}
-$sth->finish;
-
-my $out = $wormbase->acefiles."/KEGG.ace";
-open (KEGG,">$out") or $log->log_and_die("cant write $out : $!\n");
-$log->write_to("writing to $out\n");
-foreach my $entry (keys %enzyme) {
-    if( $enzyme{$entry}->{'gene'} and $enzyme{$entry}->{'kegg'}) {
-	print KEGG "\nGene : ",$enzyme{$entry}->{'gene'},"\n","Database NemaPath KEGG_id \"",$enzyme{$entry}->{'kegg'}."\"\nDatabase KEGG KEGG_id \"",$enzyme{$entry}->{'kegg'},"\"\n";
+  print "GOT HERE for $entry_acc\n";
+  # if there are multiple names, we are assuming they are all attached to the same gene!
+  my $gene;
+  foreach my $cds (@wb_names) {
+    if (exists $tran2gene{$cds}) {
+      $gene = $tran2gene{$cds};
+      last;
     }
-}
-close KEGG;
-$log->write_to("finished writing acefile\n");
+  }
+  if (not defined $gene) {
+    $log->write_to("WARNING: for entry $entry_acc, could not find WB gene id for @wb_names\n");
+    next;
+  }
 
-unless ($no_load) {
-    $log->write_to("\tloading to ".$wormbase->orgdb."\n");
-    $wormbase->load_to_database($wormbase->orgdb, $out, 'KEGG', $log);
+  printf $out_fh "\nGene : %s\n", $gene;
+  printf $out_fh "Database NemaPath KEGG_id \"%s\"\n", $entry->{ec_number};
+  printf $out_fh "Database KEGG KEGG_id \"%s\"\n", $entry->{ec_number};
+}
+close($out_fh) or $log->log_and_die("Could not successfully close output file $acefile\n");
+
+unless ($noload) {
+  $log->write_to("\tloading to ".$wormbase->orgdb."\n");
+  $wormbase->load_to_database($wormbase->orgdb, $acefile, 'KEGG', $log);
 }
 
-$log->write_to("DONE\n");
 
 $log->mail;
-exit;
-
-
-sub get_latest_uniprot {
-    $log->write_to("Getting latest uniprot table from M&M database . .\n");
-    my $dbh = DBI -> connect("DBI:mysql:information_schema:$dbhost", $dbuser, "",{RaiseError => 1});
-    my $query = "show databases";
-    my $sth = $dbh->prepare($query);
-    $sth->execute;
-    my $up;
-    my $year=0;
-    my $month=0;
-    while (my $db = $sth->fetchrow()) {
-      if ($db =~ /uniprot_(\d+)_(\d+)/) {
-	if ($1 > $year) {
-	  $year = $1;
-	  $month = $2;
-	  $up = $db;
-	} elsif ($1 == $year && $2 > $month) {
-	  $month = $2;
-	  $up = $db;
-	}
-
-      }
-    }
-    $log->write_to("\tusing UniProt version $up\n");
-    return $up;
-}
+exit(0);
