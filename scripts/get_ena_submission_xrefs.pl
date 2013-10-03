@@ -117,19 +117,19 @@ if ($protein_xrefs) {
     if($cds2wormpep{$cds}) {
       if (defined $uniprot_ac and $uniprot_ac ne 'UNDEFINED') {
         $cds_xrefs{$cds}->{dblinks}->{UniProt}->{UniProtAcc}->{$uniprot_ac} = 1;
-        $pep_xrefs{"WP:".$cds2wormpep{$cds}}->{UniProt}->{UniProtAcc}->{$uniprot_ac} = 1;
+        $pep_xrefs{"WP:".$cds2wormpep{$cds}}->{dblinks}->{UniProt}->{UniProtAcc}->{$uniprot_ac} = 1;
       }
       if (defined $uniprot_id and $uniprot_id ne 'UNDEFINED') {
         $cds_xrefs{$cds}->{dblinks}->{UniProt}->{UniProtId}->{$uniprot_id} = 1;
-        $pep_xrefs{"WP:".$cds2wormpep{$cds}}->{UniProt}->{UniProtId}->{$uniprot_id} = 1;
+        $pep_xrefs{"WP:".$cds2wormpep{$cds}}->{dblinks}->{UniProt}->{UniProtId}->{$uniprot_id} = 1;
       }
       if (defined $uniprot_iso_acc and $uniprot_iso_acc ne 'UNDEFINED') {
         $cds_xrefs{$cds}->{dblinks}->{UniProt}->{UniProtIsoformAcc}->{$uniprot_iso_acc} = 1;
-        $pep_xrefs{"WP:".$cds2wormpep{$cds}}->{UniProt}->{UniProtIsoformAcc}->{$uniprot_iso_acc} = 1;
+        $pep_xrefs{"WP:".$cds2wormpep{$cds}}->{dblinks}->{UniProt}->{UniProtIsoformAcc}->{$uniprot_iso_acc} = 1;
       }
       if (defined $ec_num and $ec_num ne 'UNDEFINED') {
         $cds_xrefs{$cds}->{dblinks}->{KEGG}->{KEGG_id}->{$ec_num} = 1;
-        $pep_xrefs{"WP:".$cds2wormpep{$cds}}->{KEGG}->{KEGG_id}->{$ec_num} = 1;
+        $pep_xrefs{"WP:".$cds2wormpep{$cds}}->{dblinks}->{KEGG}->{KEGG_id}->{$ec_num} = 1;
       }
     }
   }
