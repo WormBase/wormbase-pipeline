@@ -6,425 +6,282 @@
 #
 # Version: $Version: $
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-03-01 21:01:03 $
+# Last updated on: $Date: 2013-10-03 08:25:16 $
 
 use strict;
 use warnings;
-use lib $ENV{'CVS_DIR'};
-use Modules::GFF_sql;
+use lib $ENV{CVS_DIR};
 use Wormbase;
 use Getopt::Long;
+use Modules::Map_Helper;
 use Ace;
 
 ###############
 # variables   #
 ###############
 
-my $maintainers = "All";
-my %rnai2genes;    # for RNAi
-my %rnai2exp;      # for Expression profiles
-
-################################
-# command-line options         #
-################################
-
-my $help;          # Help perldoc
-my $test;          # Test mode
-my $debug;         # Debug mode, verbose output to user running script
-my $verbose;
-my $load;          # use to automatically load file to autoace
-my $ace;           # specify where to put the output ace file
-my $store;         # specify a frozen configuration file
-my @chromosomes;   # specify a chromosome
-
-my $gffdir;        # use a specific GFF_SPLIT directory
-my $dbdir;         # connect to a different acedb
-my $noparse;	   # don't parse the ace file
+my (
+  $store,
+  $test,
+  $debug,
+  $species,
+  $noload,
+  $acefile,
+  $ace_fh,
+  $gffdir,
+  $wormbase,
+  $database,
+  @chromosomes,
+  %results,
+    );
 
 GetOptions(
-	   "debug=s"       => \$debug,
-	   "verbose"       => \$verbose,
-	   "test"          => \$test,
-	   "help"          => \$help,
-	   "load"          => \$load,
-	   "acefile=s"     => \$ace,
-	   'store=s'       => \$store,
-	   'chrom=s@'      => \@chromosomes,
-	   'gffdir=s'      => \$gffdir,
-	   'dbdir=s'       => \$dbdir,
-	   'noparse'	   => \$noparse,
-	   );
+  "debug=s"       => \$debug,
+  'store=s'       => \$store,
+  'species=s'     => \$species,
+  "test"          => \$test,
+  "noload"        => \$noload,
+  "acefile=s"     => \$acefile,
+  'chrom=s@'      => \@chromosomes,
+  'gffdir=s'      => \$gffdir,
+  'database=s'    => \$database,
+    );
 
-# Display help if required
-&usage("Help") if ($help);
+#################################################
+# config - what are we going to compare against?
+#################################################
+my $to_search_against = {
+  
+  Predicted_gene => [ ['curated', 'curated', 'exon', 'CDS'] ],
+
+  Transcript => [ ['Coding_transcript',     'Coding_transcript',     'exon'],
+                  ['Non_coding_transcript', 'Non_coding_transcript', 'exon'],
+                  ['ncRNA',                 'ncRNA',                 'exon'],
+                  ['Pseudogene',            'Pseudogene',            'exon'] ],
+  
+  Pseudogene => [ ['Pseudogene', 'Pseudogene', 'exon'] ],
+
+  Expr_profile => [ ['Expr_profile', 'Expr_profile', 'experimental_result_region'] ],
+
+};
+
+
 
 ############################
 # recreate configuration   #
 ############################
-my $wb;
 if ($store) { 
-  $wb = Storable::retrieve($store) or croak("cant restore wormbase from $store\n"); 
+  $wormbase = Storable::retrieve($store) or croak("cant restore wormbase from $store\n"); 
 }
 else { 
-  $wb = Wormbase->new(-debug => $debug, 
-                      -test => $test);
+  $wormbase = Wormbase->new(-debug => $debug, 
+                            -test => $test,
+                            -organism => $species,
+      );
 }
 
-###########################################
-# Variables Part II (depending on $wb)    #
-###########################################
-
-$test  = $wb->test  if $wb->test;     # Test mode
-$debug = $wb->debug if $wb->debug;    # Debug mode, output only goes to one user
-
-# Use debug mode?
-if ($debug) {
-    print "DEBUG = \"$debug\"\n\n";
-    ( $maintainers = $debug . '\@sanger.ac.uk' );
-}
-
-my $log = Log_files->make_build_log($wb);
+my $log = Log_files->make_build_log($wormbase);
 
 ##############
 # Paths etc. #
 ##############
 
-my $tace = $wb->tace;    # tace executable path
-$dbdir  = $wb->autoace    if ( !$dbdir );     # Database path
-$gffdir = $wb->gff_splits if ( !$gffdir );    # GFF_SPLITS directory
+$database  = $wormbase->autoace    if not $database;
+$gffdir    = $wormbase->gff_splits if not $gffdir;
+$acefile = $wormbase->acefiles . "/RNAi_mappings.ace" if not defined $acefile;
 
 if (not @chromosomes) {
-  @chromosomes = $wb->get_chromosome_names();
+  @chromosomes = $wormbase->get_chromosome_names(-mito => 1, -prefix => 1);
 }
 
-my $acefile = $ace ? $ace : $wb->acefiles . "/RNAi_mappings.ace";
-################
-# Structs      #
-################
-use Class::Struct;
-struct( Exon => [ start => '$', stop => '$', type => '$', id => '$' ] );
 
-##########################
-# MAIN BODY OF SCRIPT
-##########################
+foreach my $class (keys %$to_search_against) {
+  $log->write_to("Mapping to $class\n");
 
-###########################################################
-# get exons, RNAis and Expr_profiles out of the gff files #
-###########################################################
+  my $fm = Map_Helper->new();
 
-my $map = GFF_sql->new( { -build => 1 } );    # connect to build database
+  foreach my $stanza (@{$to_search_against->{$class}}) {
+    my ($file_prefix, $gff_source, $gff_type, $name_tag) = @$stanza;
+    $name_tag = $class if not defined $name_tag;
 
-foreach my $chromosome (@chromosomes) {
-
-    print "Processing chromosome $chromosome\n" if $verbose;
-    $log->write_to("Processing chromosome $chromosome\n");
-
-    ################
-    # GFF database part
-    $map->clean("CHROMOSOME_$chromosome");    # reset the chromosome table
-
-    foreach my $end ( 'Expr_profile', 'curated', 'Non_coding_transcript', 'Pseudogene') {
-        my $file = "$gffdir/CHROMOSOME_${chromosome}_${end}.gff";
-        $map->generate_tags($file);
-        $map->load_gff( $file, "CHROMOSOME_$chromosome" );
+    my @files;
+    if ($wormbase->assembly_type eq 'contig') {
+      push @files, "${gffdir}/${file_prefix}.gff";
+    } else {
+      foreach my $chr (@chromosomes) {
+        push @files, "${gffdir}/${chr}_${file_prefix}.gff";
+      }
     }
 
-    my %genes;
-    my %exon;
-    my %expression;
+    foreach my $file (@files) {
+      if (not -e $file) {
+        warn("Could not find $file - skipping\n");
+        next;
+      }
+      $log->write_to(" Reading $file\n");
+      $fm->populate_from_GFF($file, $gff_source, $gff_type, sprintf('%s \"(\S+)\"', $name_tag));
+    }
 
-    # loop through the split GFF RNAi file
-    # New RNAi lines : CHROMOSOME_I    RNAi_primary    RNAi_reagent    1681680 1683527 .       .       .       Target "RNAi:WBRNAi00004820" 1 1848
+    $log->write_to(" Building index...\n");
+    $fm->build_index();
 
-    print "Loop through primary RNAi GFF file CHROMOSOME_${chromosome}\n" if ($verbose);
-    &get_RNAi_from_gff( $chromosome, 'primary', $map, \%rnai2genes, \%rnai2exp );
+    $log->write_to(" Searching features...\n");
 
-    # note which is secondary by adding "_s" to the RNAi
-    print "Loop through secondary RNAi GFF file CHROMOSOME_${chromosome}\n" if ($verbose);
-    &get_RNAi_from_gff( $chromosome, 'secondary', $map, \%rnai2genes, \%rnai2exp );
+    foreach my $rnai_type ('primary', 'secondary') {
+      &get_RNAi_from_gff( \%results, $fm, $class, $rnai_type);
+    }
+  }
 }
 
-# store some statistics
-# count number of primary RNAis (after removing duplicate mapping to same gene)
-my $no_of_rnais_primary = 0;
-
-# count number of secondary RNAis (after removing duplicate mappings to same gene)
-my $no_of_rnais_secondary = 0;
-
-############################
-# sort the output for RNAi #
-############################
-
-print "Remove duplicates for RNAi->Gene\n" if ($verbose);
-
-foreach my $RNAiID ( keys %rnai2genes ) {
-    if ( $RNAiID =~ /(.*)_p$/ ) {
-        my %genes2rnaip;
-        my %genes2rnais;
-
-        # basic idea is assign a id+type to a hash to use for reassigning the rnai2gene connections
-
-        # remove duplicate primary connections
-        @{ $rnai2genes{$RNAiID} } =
-	    grep { ( ( !$genes2rnaip{ $_->id . $_->type } ) && ( $genes2rnaip{ $_->id . $_->type } = $RNAiID ) ) } @{ $rnai2genes{$RNAiID} };
-        next if ( !defined ${ $rnai2genes{"$1_s"} }[0] );
-
-        # for secondary connections remove duplicate secondaries as well as a secondary to an existing primary
-        @{ $rnai2genes{"$1_s"} } =
-	    grep { ( ( !$genes2rnais{ $_->id . $_->type } ) && ( $genes2rnais{ $_->id . $_->type } = $RNAiID ) ) } @{ $rnai2genes{"$1_s"} };
-
-        foreach my $index ( 0 .. scalar( @{ $rnai2genes{"$1_s"} } ) - 1 ) {
-            delete ${ $rnai2genes{"$1_s"} }[$index]
-		if $genes2rnaip{ ${ $rnai2genes{"$1_s"} }[$index]->id . ${ $rnai2genes{"$1_s"} }[$index]->type };    # eek ... slightly iffy
+#
+# remove secondary associations that are already covered by primary
+#
+foreach my $rnai (keys %results) {
+  if (exists $results{$rnai}->{primary} and exists $results{$rnai}->{secondary}) {
+    my $phash = $results{$rnai}->{primary};
+    my $shash = $results{$rnai}->{secondary};
+    
+    foreach my $class (keys %$to_search_against) {
+      if (exists $phash->{$class} and exists $shash->{$class}) {
+        foreach my $obj (keys %{$phash->{$class}}) {
+          if (exists $shash->{$class}->{$obj}) {
+            delete $shash->{$class}->{$obj};
+          }
         }
+      }
     }
+  }
 }
+
 
 ########################
 # produce output files #
 ########################
-
-print "Produce output file\n" if ($verbose);
-
-open( DELACE, ">${acefile}_del" );
-
-# Produce connections for RNAi->Genes
-# remove existing connections
-foreach my $mapped ( keys %rnai2genes ) {
-    $mapped =~ s/_[ps]$//;
-    print DELACE "RNAi : $mapped\n";
-    print DELACE "-D Inhibits\n\n";
-}
-close DELACE;
-
-open( OUTACE, ">$acefile" ) || die "Failed to open $acefile file\n";
-
-# open autoace connection with aceperl
-my $db = Ace->connect( -path => $dbdir, -program => $tace ) || die "Couldn't connect to $dbdir\n", Ace->error;
-my %inverse;
-foreach my $mapped ( keys %rnai2genes ) {
-
-    $mapped =~ /(.*)_([ps])$/;
-    my $id = $1;
-    my $type = $2 eq 'p' ? 'primary' : 'secondary';    # $type holds whether the RNAi mapping to this gene is primary or secondary
-    my $seq;
-    my $worm_gene;    # CDS, Transcript, or Pseudogene name
-
-    foreach my $exon ( @{ $rnai2genes{$mapped} } ) {
-        next if !( defined $exon );
-
-        print OUTACE "// $type RNAi '$mapped' is mapped to ", $exon->id, " (", $exon->type, ")\n" if ($verbose);
-        next if !( $exon->type eq 'CDS' || $exon->type eq 'Pseudogene' || $exon->type eq 'Transcript' );
-
-        if ( $type eq "primary" ) {
-            $no_of_rnais_primary++;
-        }
-        else {
-            $no_of_rnais_secondary++;
-        }
-
-        print OUTACE "RNAi : \"$id\"\n";
-
-        # Does this CDS have a Gene object?
-        if ( $exon->type eq "CDS" ) {
-            $seq = $db->fetch( -class => 'CDS', -name => $exon->id );
-            if ( defined $seq ) {
-                print OUTACE "Predicted_gene \"", $exon->id, "\" Inferred_automatically \"RNAi_$type\"\n";
-                if ( defined( $seq->at('Visible.Gene') ) ) {
-                    my ($gene) = ( $seq->get('Gene') );
-                    print OUTACE "Gene \"$gene\" Inferred_automatically \"RNAi_$type\"\n";
-                    push @{ $inverse{$gene} }, [ $id, $type ];
-                }
-            }
-            else {
-                print '*** WARNING - skipping missing gene ', $exon->id, "\n";
-            }
-        }
-
-        # Does this Pseudogene have a Gene object?
-        elsif ( $exon->type eq "Pseudogene" ) {
-            $seq = $db->fetch( -class => 'Pseudogene', -name => $exon->id );
-            if ( defined $seq ) {
-                print OUTACE "Pseudogene \"", $exon->id, "\" Inferred_automatically \"RNAi_$type\"\n";
-                if ( defined( $seq->at('Visible.Gene') ) ) {
-                    my ($gene) = ( $seq->get('Gene') );
-                    print OUTACE "Gene \"$gene\" Inferred_automatically \"RNAi_$type\"\n";
-                    push @{ $inverse{$gene} }, [ $id, $type ];
-                }
-            }
-            else {
-                print '*** WARNING - skipping missing gene ', $exon->id, "\n";
-            }
-        }
-
-        # Does this transcript have a Gene object?
-        elsif ( $exon->type eq "Transcript" ) {
-            $seq = $db->fetch( -class => 'Transcript', -name => $exon->id );
-            if ( defined $seq ) {
-                print OUTACE "Transcript \"", $exon->id, "\" Inferred_automatically \"RNAi_$type\"\n";
-                if ( defined( $seq->at('Visible.Gene') ) ) {
-                    my ($gene) = ( $seq->get('Gene') );
-                    print OUTACE "Gene \"$gene\" Inferred_automatically \"RNAi_$type\"\n";
-                    push @{ $inverse{$gene} }, [ $id, $type ];
-                }
-            }
-            else {
-                print "*** WARNING - skipping missing gene ", $exon->id, "\n";
-            }
-        }
-        print OUTACE "\n";
-    }
-}
-
-$db->close;
-
-print OUTACE "\n\n//Expression profiles\n";
-
-# Produce connections for RNAi->Expr_profile
-my %printedexp;
-foreach my $mapped ( keys %rnai2exp ) {
-    $mapped =~ /(.*)_[ps]$/;
-    my $name = $1;
-    foreach my $exon ( @{ $rnai2exp{$mapped} } ) {
-        if ( !$printedexp{ $exon->id } ) {
-            print OUTACE "\nRNAi : \"$name\"\n";
-            print OUTACE "Expr_profile ", $exon->id, "\n";
-            $printedexp{ $name . $exon->id } = 1;
-        }
-    }
-}
-
-my %rnai_go;
+my %tran2gene = $wormbase->FetchData('worm_gene2geneID_name');
 &getGO_term_info;
-# Write primary/secondary type evidence for RNAi tag in ?Gene model
-# (This is done explicitly because you can't (easily) make a XREF between #Evidence tags in the models)
-foreach my $gene ( keys %inverse ) {
-    for ( my $n = 0 ; $n < ( scalar @{ $inverse{$gene} } ) ; $n++ ) {
-        my $RNAi = $inverse{$gene}->[$n][0];
-        my $type = $inverse{$gene}->[$n][1];
-        print "Gene: $gene RNAi: $RNAi type: $type\n" if ($verbose);
-        print OUTACE "\nGene : \"$gene\"\n";
-        print OUTACE "Experimental_info RNAi_result  \"$RNAi\" Inferred_automatically \"RNAi_$type\"\n";
+open($ace_fh, ">$acefile") or $log->log_and_die("Could not open $acefile for reading\n");
 
-	# add GO_terms for RNAi_primaries that have phenotypes (replaces inherit_GO_terms.pl -phenotype)
-	if($type eq 'primary'){
-	    if($rnai_go{$RNAi}) {
-		foreach my $phen (keys %{$rnai_go{$RNAi}}) {
-		    foreach (@{$rnai_go{$RNAi}->{$phen}}) {
-			print OUTACE "GO_term $_ IMP Inferred_automatically \"($phen|$RNAi)\"\n";
-		    }
-		}
-	    }
-	}
+my (%rnai_go, %gene2rnai, %assoc_counts);
+
+foreach my $rnai ( keys %results ) {
+  my %genes;
+
+  print $ace_fh "\nRNA : $rnai\n";
+  foreach my $rnai_type (keys %{$results{$rnai}}) {
+    foreach my $class (keys %{$results{$rnai}->{$rnai_type}}) {
+      foreach my $obj (keys %{$results{$rnai}->{$rnai_type}->{$class}}) {
+        if ($class eq 'Expr_profile') {
+          print $ace_fh "$class \"$obj\"\n";
+        } else {
+          print $ace_fh "$class \"$obj\" Inferred_automatically \"RNAi_${rnai_type}\"\n";
+          if (not exists $tran2gene{$obj}) {
+            $log->log_and_die("Could not find parent gene for $obj\n");
+          }
+          my $gene = $tran2gene{$obj};
+          $genes{$gene}->{$rnai_type} = 1;
+          $gene2rnai{$gene}->{$rnai}->{$rnai_type} = 1;
+        }
+      }
     }
+  }
+  foreach my $gene (keys %genes) {
+    foreach my $tp (keys %{$genes{$gene}}) {
+      print $ace_fh "Gene \"$gene\" Inferred_automatically \"RNAi_${tp}\"\n"; 
+    }
+  }
 }
 
-close(OUTACE);
 
-#########################################################
-# read acefiles into autoace (unless running test mode) #
-#########################################################
-$wb->load_to_database( $dbdir, $acefile, "RNAi_mappings", $log ) if ($load && ! $noparse);
+
+foreach my $gene ( keys %gene2rnai) {
+  print $ace_fh "\nGene : $gene\n";
+  foreach my $rnai (sort keys %{$gene2rnai{$gene}}) {
+    my @types = keys %{$gene2rnai{$gene}->{$rnai}};
+    foreach my $type (@types) {
+      $assoc_counts{$type}++;
+
+      print $ace_fh "Experimental_info RNAi_result \"$rnai\" Inferred_automatically \"RNAi_${type}\"\n";
+      
+      if ($type eq 'primary' and exists $rnai_go{$rnai}){
+        foreach my $phen (keys %{$rnai_go{$rnai}}) {
+          foreach (@{$rnai_go{$rnai}->{$phen}}) {
+            print $ace_fh "GO_term $_ IMP Inferred_automatically \"($phen|$rnai)\"\n";
+          }
+        }
+      }
+    }
+  }
+}
+
+$wormbase->load_to_database( $database, $acefile, "RNAi_mappings", $log )
+    unless $noload;
+    
 
 ####################################
 # print some statistics to the log #
 ####################################
 
-# count secondary RNAis which map to a gene which is already mapped by that RNAi as a primary
 $log->write_to("\n\nStatistics\n");
 $log->write_to("----------\n\n");
-$log->write_to("No. of primary   RNAi links to genes written to database: $no_of_rnais_primary\n");
-$log->write_to("No. of secondary RNAi links to genes written to database: $no_of_rnais_secondary\n\n");
+foreach my $type (sort keys %assoc_counts) {
+  my $count = $assoc_counts{$type};
+  $log->write_to("No. of $type RNAi links to genes written to database: $count\n");
+}
 
-$log->mail( "$maintainers", "BUILD REPORT: $0" );
+$log->mail();
+exit(0);
 
 ##############################################################
 # Subroutines
 ##############################################################
 
-sub usage {
-    my $error = shift;
 
-    if ( $error eq "Help" ) {
-
-        # Normal help menu
-        system( 'perldoc', $0 );
-        exit(0);
-    }
-}
-
-####################################
-# returns second word without "
-sub get_id {
-    my $fluff = shift;
-    $fluff =~ s/\"//g;
-    my @fields = split " ", $fluff;
-    return $fields[1];
-}
-
-################################
-# hit to exon converter
-# including: adding types based on source/features
-sub to_exon {
-    my $hit = shift;
-    my $type;
-
-    if    ( $hit->{feature} eq 'curated'               && $hit->{source} eq 'exon' ) { $type = 'CDS' }
-    elsif ( $hit->{feature} eq 'Pseudogene'            && $hit->{source} eq 'exon' ) { $type = 'Pseudogene' }
-    elsif ( $hit->{feature} eq 'Non_coding_transcript' && $hit->{source} eq 'exon' ) { $type = 'Transcript' }
-    elsif ( $hit->{feature} eq 'ncRNA'                 && $hit->{source} eq 'exon' ) { $type = 'Transcript' }
-    elsif ( $hit->{feature} eq 'Expr_profile' ) { $type = 'Expr_profile' }
-    else { $type = "feature:" . $hit->{feature} . " source:" . $hit->{source} }
-    my $exon = Exon->new( id => get_id( $hit->{fluff} ), start => $hit->{start}, stop => $hit->{stop}, type => $type );
-
-    return \$exon;
-}
-
-################################
-# iterate through the gffs as function
-# type is either primary or secondary
+#######################################
 sub get_RNAi_from_gff {
-    my ( $chromosome, $type, $map, $rnai2genes, $rnai2exp ) = @_;
+  my ($results, $map, $class, $rnai_type) = @_;
 
-    my $stype = ( $type eq 'primary' ) ? 'p' : 's';
+  #my $stype = ( $type eq 'primary' ) ? 'p' : 's';
 
-    open GFF, "<$gffdir/CHROMOSOME_${chromosome}_RNAi_$type.gff" || die "Failed to open RNAi gff file CHROMOSOME_${chromosome}_RNAi_primary.gff :$!\n\n";
-    while (<GFF>) {
-        chomp;
-        s/^\#.*//;
-        next unless /RNAi_$type\s+RNAi_reagent/;
-        my @line = split /\t/;
+  foreach my $chr ($wormbase->get_chromosome_names(-prefix => 1, -mito => 1)) {
+    my $gff_file = "${gffdir}/${chr}_RNAi_${rnai_type}.gff";
 
-        my ($name) = ( $line[8] =~ /\"RNAi:(\S+.+)\"\s+\d+\s+\d+$/ );
+    open(my $rnaifh, $gff_file) or $log->log_and_die("Could not open $gff_file for reading\n");
 
-        my @hits = $map->get_chr( "CHROMOSOME_$chromosome", { start => $line[3], stop => $line[4] } );
-        foreach my $hit (@hits) {
-            my $exon = ${ &to_exon($hit) };
-            if ( $exon->type eq 'Expr_profile' ) { push @{ $$rnai2exp{"${name}_$stype"} }, $exon }
-            elsif ( $exon->type ) { push @{ $$rnai2genes{"${name}_$stype"} }, $exon }
-        }
+    while (<$rnaifh>) {
+      /^\#/ and next;
+      chomp;
+      my @l = split(/\t+/, $_);
 
+      next unless $l[1] eq "RNAi_${rnai_type}" and $l[2] eq 'RNAi_reagent';
+
+      my ($name) = $l[8] =~ /\"RNAi:(\S+.+)\"\s+\d+\s+\d+$/;
+
+      my @hits = @{$map->search_feature_segments($l[0], $l[3], $l[4])};
+      map { $results->{$name}->{$rnai_type}->{$class}->{$_} = 1 } @hits;
+    
     }
-    close(GFF);
+  }
 }
 
+#########################################
 sub getGO_term_info {
-    &write_TM_def;
-    my $tm_query = $wb->table_maker_query($dbdir,'/tmp/inheritGO.def');
-    while(<$tm_query>) {
-	s/\"//g;  #remove "
-	next if (/acedb/ or /\/\// or /^\s*$/);
-	my ($rnai, $phen, $go) = split("\t",$_);
-	push(@{$rnai_go{$rnai}->{$phen}},$go);
-    }	
+  my $tmpdef = &write_TM_def;
+  my $tm_query = $wormbase->table_maker_query($database,$tmpdef);
+  while(<$tm_query>) {
+    s/\"//g;  #remove "
+    next if (/acedb/ or /\/\// or /^\s*$/);
+    my ($rnai, $phen, $go) = split("\t",$_);
+    push(@{$rnai_go{$rnai}->{$phen}},$go);
+  }
+  unlink $tmpdef;
 }
 
 
-# this will write out an acedb tablemaker defn to a temp file
+###############################################
 sub write_TM_def {
-    my $def = '/tmp/inheritGO.def';
-    open TMP,">$def" or $log->log_and_die("cant write $def: $!\n");
-    my $txt = <<END;
+  my $def = '/tmp/inheritGO.def';
+  open my $tmpdefh,">$def" or $log->log_and_die("cant write $def: $!\n");
+  my $txt = <<END;
 
 Sortcolumn 1
 
@@ -464,60 +321,10 @@ Tag  HERE  # Not
 
 END
 
-	print TMP $txt;
-    close TMP;
-    return $def;
+  print $tmpdefh $txt;
+  close($tmpdefh);
+  return $def;
 }
 ############################################
 
 __END__
-
-    =pod
-
-    =head2 NAME - map_RNAi.pl
-
-    =head1 USAGE
-
-    =over 4
-
-    =item map_RNAi.pl [-options]
-
-    =back
-
-    map_RNAi.pl calculates the overlap between the genomic regions used in RNAi
-    experiments and the CDS, transcript and pseudogene coordinates in the WS
-    database release. It will generate an acefile which will remove any existing
-    connections and make new ones. It will check the current database and make Gene
-    connections where valid and attach expression_profiles as needed. This acefile
-    is then loaded into autoace if -load is specified.
-
-    map_RNAi mandatory arguments:
-
-
-    =over 4
-
-    =item none
-
-    =back
-
-    map_RNAi optional arguments:
-
-    =over 4
-
-    =item -debug, debug mode
-
-    =item -verbose, additional debugging stuff
-
-    =item -test, Test mode, generate the acefile but do not upload them, use only one chromosome 
-
-    =item -help, Help pages
-
-    =item -acefile, write to a specific acefile
-
-    =item -load, loads file to autoace
-
-    =item -store specifiy configuration file
-
-    =back
-
-    =cut
