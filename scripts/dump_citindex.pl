@@ -13,13 +13,14 @@ use Digest::MD5 qw(md5_hex);
 use IO::File;
 use strict;
 	
-my ($database,$outfile,$store,$debug,$test);
+my ($database,$outfile,$store,$debug,$test,$species);
 GetOptions(
 		'database=s' => \$database,
 		'file=s'     => \$outfile,
                 'store=s'    => \$store,
                 'debug=s'    => \$debug,
                 'test'       => \$test,
+                'species=s'  => \$species,
 )||die(@!);
 
 my $wormbase;
@@ -27,7 +28,8 @@ if ($store){
    $wormbase= retrieve($store) or die("Can't restore wormbase from $store\n");
 }else{
    $wormbase= Wormbase->new(-debug => $debug,
-                            -test  => $test );
+                            -test  => $test,
+                            -organism => $species,);
 }
 
 my $log=Log_files->make_build_log($wormbase);
@@ -48,7 +50,7 @@ $log->write_to("dumping XML file for WS${\$wormbase->version} $time\n");
 # header
 print $file "<report name=\"CI-Report\" date_generated=\"$time\">\n";
 
-my $gIt = $db->fetch_many(-query => 'Find Gene CGC_name AND Corresponding_CDS')||$log->log_and_die(Ace->error);
+my $gIt = $db->fetch_many(-query => "Find Gene CGC_name AND Corresponding_CDS AND species=\"${\$wormbase->full_name}\"")||$log->log_and_die(Ace->error);
 
 while (my $gene =$gIt->next){
   print_gene($file,$gene);
