@@ -7,7 +7,7 @@
 # Builds a wormrna data set from the current autoace database
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2012-11-21 10:47:09 $
+# Last updated on: $Date: 2013-10-04 08:23:53 $
 
 
 #################################################################################
@@ -15,7 +15,7 @@
 #################################################################################
 
 use strict;
-use lib $ENV{'CVS_DIR'};
+use lib $ENV{CVS_DIR};
 use Wormbase;
 use Getopt::Long;
 use IO::Handle;
@@ -101,11 +101,11 @@ while( my $obj = shift @transcripts) {
 
 
   # Grab Brief_identification
-  my $brief_id = $obj->Brief_identification;
+  my $brief_id = $obj->Transcript;
   if ((!defined ($brief_id)) || ($brief_id eq "")) {
-    $log->write_to("ERROR: No Brief_id for $obj\n");
+    $log->write_to("ERROR: No type set for $obj - setting to ncRNA, but this should be fixed\n");
     $log->error;
-    undef ($brief_id);
+    $brief_id = "ncRNA";
   }
   print "$obj -> brief_id is \"$brief_id\"\n" if $debug;
 
