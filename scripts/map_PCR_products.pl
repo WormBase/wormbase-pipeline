@@ -138,8 +138,8 @@ if (@pcr_prod_files) {
         next if $l[2] ne 'PCR_product';
         my ($name) = $l[8] =~ /PCR_product \"(\S+)\"/;
         next if not defined $name;
-        
-        my @matches = @{$fm->search_feature_segments($l[0], $l[3], $l[4], $l[6])};
+
+        my @matches = @{$fm->search_feature_segments($l[0], $l[3], $l[4])};
         map { $object_map{$_}->{$name} = 1 } @matches;
       }
     }
