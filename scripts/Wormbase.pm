@@ -818,7 +818,7 @@ sub check_file {
 
       if ($line =~ /^\#/) {next;}
 
-      if (my ($gff_source, $gff_start, $gff_end) = ($line =~ /^\S+\s+(\S+)\s+\S+\s+(\d+)\s+(\d+)\s+\S+\s+[-+\.]\s+[012\.]/)) {
+      if (my ($gff_source, $gff_meth, $gff_start, $gff_end) = ($line =~ /^\S+\s+(\S+)\s+(\S+)\s+(\d+)\s+(\d+)\s+\S+\s+[-+\.]\s+[012\.]/)) {
 	if ($gff_end < $gff_start) {
 	  push @problems, "line $line_count:\n$line\nGFF feature end is before the feature start";
 	  last;
@@ -834,9 +834,11 @@ sub check_file {
 	# WBGene00008901 is 102695 bases
 	my $feature_length = $gff_end - $gff_start;
 	if ($feature_length > $MAX_FEATURE_LENGTH && 
+	    $gff_source ne 'Link' &&
 	    $gff_source ne 'Genomic_canonical' &&
 	    $gff_source ne 'BLAT_NEMATODE' &&
 	    $gff_source ne 'Vancouver_fosmid' &&
+            $gff_meth ne 'sequence_alteration' &&
 	    !($line =~ /F47F6.1c.1/) &&
 	    !($line =~ /WBGene00018572/) &&
 	    !($line =~ /Locus\s+lin-42/) &&
