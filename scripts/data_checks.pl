@@ -7,7 +7,7 @@
 # This is a example of a good script template
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-09-12 15:00:54 $
+# Last updated on: $Date: 2013-10-07 10:14:09 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -182,7 +182,7 @@ sub read_GFF_queries {
     my $i = 0;
 
     $queries[$i]{'DESC'}  = "ncRNA genes";
-    $queries[$i]{'GFF'}   = "ncRNA\tncRNA_primary_transcript"; # ncRNA genes including 21uRNA
+    $queries[$i]{'GFF'}   = "ncRNA\tncRNA"; # ncRNA genes including 21uRNA
     $queries[$i]{'QUERY'} = 'find elegans_RNA_genes; method = ncRNA'; # this finds ncRNA genes including 21uRNA
 
     $i++;
