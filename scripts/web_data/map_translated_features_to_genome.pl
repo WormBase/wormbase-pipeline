@@ -114,6 +114,7 @@ if ($out_file) {
 
 while (my $gene = &get_next_gene) {
   my (%seen, $id);
+  $log->write_to("Doing gene $gene\n") if $debug;
   my @cds = $gene->Corresponding_CDS;
 
   foreach my $cds (@cds) {
@@ -331,7 +332,7 @@ sub fetch_motifs {
   foreach my $feature (@motif_homol) {
     my $title = eval {$feature->Title};
     my $type  = $feature->right or next;
-    next if $type =~ /INTERPRO/;
+    next if $type =~ /INTERPRO/i;
     my @coord = $feature->right->col;
     my $name  = $title ? "$title ($feature)" : $feature;
     my ($start,$stop);
