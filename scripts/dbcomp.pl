@@ -5,8 +5,8 @@
 # Counts the number of objects in an ACEDB database for each Class stated in the config file
 # Compares this number to those from a second database.
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2013-02-04 14:03:28 $
+# Last updated by: $Author: klh $
+# Last updated on: $Date: 2013-10-07 15:13:50 $
 
 
 use strict;
@@ -127,15 +127,11 @@ print OUT  " +------------------------+---------+---------+---------+---------+-
 #########################################################################
 my %clonelab;
 
-get_curation_stats('elegans');
-get_curation_stats('briggsae');
-get_curation_stats('brenneri');
-get_curation_stats('japonica');
-get_curation_stats('remanei');
-get_curation_stats('pristionchus');
-get_curation_stats('brugia');
-#get_curation_stats('heterorhabditis');
-#get_curation_stats('mhapla');
+get_curation_stats('elegans', $wormbase);
+my %accs = $wormbase->species_accessors;
+foreach my $spec (sort keys %accs) {
+  get_curation_stats($spec, $accs{$spec});
+}
 
 close (OUT);
 close (ERR);
@@ -453,33 +449,15 @@ sub csh {
 
 sub get_curation_stats {
 
-  my ($species) = @_;
-
-  my %species_prefix = (
-			elegans => 'wormpep',
-			briggsae => 'brigpep',
-			brenneri => 'brepep',
-			japonica => 'jappep',
-			remanei => 'remapep',
-			pristionchus => 'ppapep',
-			heterorhabditis => 'hetpep',
-			brugia => 'brugpep',
-			mhapla => 'happep',
-			mincognita => 'incpep',
-			hcontortus => 'hcopep',
-
-		       );
+  my ($species, $wb) = @_;
 
   # get the centre that sequenced the clones
   %clonelab = $wormbase->FetchData("clone2centre", undef, "$db_2/COMMON_DATA");
 
-  my $prefix = $species_prefix{$species};
-
+  my $prefix = $wb->pepdir_prefix;
   my $release = $WS_current;
 
-  my $file;
-
-  $file = "/nfs/wormpub/BUILD/WORMPEP/${prefix}${release}/${prefix}.diff${release}";
+  my $file = $wb->wormpep . "/${prefix}.diff${release}";
 
   if (!open (IN, "<$file")) {
     print OUT "\n\nNo curation data available for $species.\n\n";
