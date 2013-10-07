@@ -6,8 +6,8 @@
 #
 # Script to identify genes which can have their Interpolated_map_position tag promoted to a Map position
 #
-# Last updated by: $Author: pad $
-# Last updated on: $Date: 2008-09-23 09:45:22 $
+# Last updated by: $Author: klh $
+# Last updated on: $Date: 2013-10-07 14:47:50 $
 
 use strict;
 use warnings;
@@ -22,16 +22,18 @@ use Getopt::Long;
 ###################################################
 
 my $maintainers = "All";
-my ($help, $database, $verbose, $test, $load,$store,$debug);
+my ($help, $database, $verbose, $test, $noload,$store,$debug,$acefile);
 
-GetOptions (	"help"        => \$help,
-	  			   "database=s"  => \$database,
-	    			"test"        => \$test,
-	    			"verbose"     => \$verbose,
-	    			"load"        => \$load,
-    	   		'store=s'     => \$store,
-					'debug=s'	  => \$debug
-    	);
+GetOptions (	
+  "help"        => \$help,
+  "database=s"  => \$database,
+  "test"        => \$test,
+  "verbose"     => \$verbose,
+  "noload"      => \$noload,
+  'store=s'     => \$store,
+  'debug=s'     => \$debug,
+  'acefile=s'   => \$acefile,
+    );
 
 # Display help if required
 &usage("Help") if $help;
@@ -60,7 +62,7 @@ my $log = Log_files->make_build_log($wb);
 
 my $tace = $wb->tace;                               # tace executable path
 $database = $wb->autoace if (!$database);           # specify autoace as the default database
-my $out = $wb->acefiles."/pseudo_map_positions.ace";
+$acefile = $wb->acefiles."/pseudo_map_positions.ace" if not defined $acefile;
 
 
 ###############################################################################################
@@ -74,7 +76,7 @@ my $out = $wb->acefiles."/pseudo_map_positions.ace";
 my $count = 0;
 
 # open main output file to be loaded into autoace (and subsequently geneace)
-open(OUT, ">$out") || die $!;
+open(OUT, ">$acefile") || die $!;
 print OUT "// this file contains details of Genes with interpolated map positions\n";
 print OUT "// that can be 'upgraded' to a (pseudo) Map position.  We do this only\n";
 print OUT "// for C. elegans genes that have a CGC-name, allele connection (but not a\n";
@@ -133,24 +135,19 @@ foreach my $gene (@candidate_genes){
     print OUT "Remark \"Map position created from combination of previous interpolated map position (based on known location of sequence) and allele information.  Therefore this is not a genetic map position based on recombination frequencies or genetic experiments.  This was done on advice of the CGC.\" CGC_data_submission\n\n\n";
   }
 }
+close(OUT);
+$db->close;
 
 $log->write_to("Total: $count to become inferred genetic marker(s)\n\n");
-
-
-#load to database if -load specified
 
 # we do not wish to throw an error if there are large differences in
 # the number of objects loaded from this file between on Build and the
 # next
-my $accept_large_differences = 1; 
-$wb->load_to_database($wb->autoace, $out, 'pseudo_map_postn', $log, 0, $accept_large_differences) if $load;
 
-#######################################
-# Tidy up and mail relevant log files #
-#######################################
-
-$db->close;
-close(OUT);
+unless ($noload) {
+  my $accept_large_differences = 1; 
+  $wb->load_to_database($wb->autoace, $acefile, 'pseudo_map_postn', $log, 0, $accept_large_differences);
+}
 
 $log->mail();
 $log->mail("genenames\@wormbase.org", "list of promoted map positions") unless $wb->test;
