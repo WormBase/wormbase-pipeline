@@ -8,7 +8,7 @@
 # This makes the autoace database from its composite sources.
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2012-07-02 14:26:22 $
+# Last edited on: $Date: 2013-10-08 12:57:54 $
 
 use strict;
 use lib  $ENV{'CVS_DIR'};
@@ -123,7 +123,7 @@ if($wormbase->species eq 'elegans') {
 	&check_make_autoace if ( $all or $check );
 
 	#write cosmid seq file
-	&allcmid if ( $all or $allcmid );
+	&allcmid if ( $allcmid );
 
 	#reorder exons
 	$wormbase->run_script("reorder_exons.pl", $log ) if( $all or $reorder );
