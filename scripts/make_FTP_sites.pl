@@ -6,7 +6,7 @@
 # builds wormbase & wormpep FTP sites
 # 
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-10-08 10:37:39 $
+# Last updated on: $Date: 2013-10-08 13:06:45 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -594,7 +594,7 @@ sub copy_compara {
 
   mkpath("$targetdir/COMPARATIVE_ANALYSIS",1,0775);
   
-  my $chromdir = $wormbase->autoace;
+  my $chromdir = $wormbase->misc_output;
   my $clust_src = "$chromdir/wormpep_clw.sql.gz";
   my $compara_src = "$chromdir/compara.tar.gz";
 
@@ -725,7 +725,7 @@ sub copy_misc_files{
 
   my $gspecies = $wormbase->full_name('-g_species' => 1);
   my $bioproj = $wormbase->ncbi_bioproject;
-  my $srcdir = $wormbase->autoace;
+  my $srcdir = $wormbase->misc_output;
   my $annotation_dir = "$targetdir/species/$gspecies/$bioproj/annotation";
 
   mkpath($annotation_dir,1,0775);
