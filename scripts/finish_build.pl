@@ -1,23 +1,20 @@
-#!/usr/local/bin/perl5.8.0 -w
+#!/usr/bin/env perl
 #
 # finish_build.pl
-# 
-# by Keith Bradnam
 #
 # Usage : finish_build.pl [-options]
 #
-# 1) checks to see if there are three existing (and unpacked) WS releases in ~wormpub/DATABASES/
-#    If there are, then it archives the oldest release away into $archive_dir
-# 2) Does a similar thing with Wormpep releases in /wormsrv2/WORMPEP
-# 3) Archives old GFF_SPLITS directory
-# 4) Makes current_DB (copy of latest release) in ~wormpub/DATABASES
+# 1) Archives release CURRENT - 3
+# 2) Moves selected sub-folders from autoace to elegans folder
+# 3) Moves remainder of autoace to DATABASES
+# 4) Cleans out old(er) dbs in DATABASES, to keep the bare minimum
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2013-02-12 16:24:52 $
+# Last updated by: $Author: klh $
+# Last updated on: $Date: 2013-10-08 14:45:07 $
 
 
 use strict;
-use lib $ENV{'CVS_DIR'};
+use lib $ENV{CVS_DIR};
 use Wormbase;
 use IO::Handle;
 use Getopt::Long;
@@ -27,6 +24,23 @@ use File::Path;
 use Carp;
 use Log_files;
 use Storable;
+
+my $ARCHIVE_DIR = '/warehouse/wormbase01/wormarchive';
+
+my @SPECIES_SPECIFIC_FOLDERS = qw(
+ blat
+ gff_splits
+ spell
+ misc_output
+ acefiles
+ transcripts
+    );
+
+my @DO_NOT_KEEP_LONG_TERM = qw(
+  TMP
+  CHECKS
+  logs
+);
 
 ##############################
 # command-line options       #
@@ -86,68 +100,35 @@ my $WS_current;
 $WS_current = $wormbase->get_wormbase_version;
 $WS_name    = $wormbase->get_wormbase_version_name;
 
-
-my $WS_new      = $WS_current + 1;
-my $WS_new_name = "WS".$WS_new;
+#############################################################################
+# Step 0: archive and delete the oldest release
+#############################################################################
 my $WS_oldest   = $WS_current - 3; # the version that *should* be the oldest
 my $WS_old_name = "WS".$WS_oldest;
 my $WS_old_path = $wormbase->database("$WS_old_name");
-my $old_wormpep = "$basedir/WORMPEP/wormpep".($WS_current-3);
-&archive_old_releases ($WS_old_name) unless (defined $noarchive);
-#####################################################################################
+&archive_old_release ($WS_old_name) unless (defined $noarchive);
 
+#############################################################################
+# Step 1: move elegans-specific working folders into the "elegans" build dir
+#############################################################################
+my $elegans_dir = $wormbase->basedir . "/elegans";
+
+foreach my $meth (@SPECIES_SPECIFIC_FOLDERS) {
+  my $source = $wormbase->$meth;
+  my $target = "$elegans_dir/";
+  $wormbase->run_command("mv -f $source $target", $log);
+}
+
+#############################################################################
+# Step 2: move the remaining build dir to the DATABASES directory
+#############################################################################
 my $new_dir = $wormbase->wormpub."/DATABASES/".$wormbase->get_wormbase_version_name;
-
-# move autoace to DATABASES/WSXXX
 warn "mv ".$wormbase->autoace." $new_dir";
 $wormbase->run_command("mv ".$wormbase->autoace." $new_dir", $log);
 
-# update symlink current_DB to new build
-# It looks like on linux the 'ln -sf' command silently fails if the link
-# is already there - we have to explicitly delete the existing link first.
-# This is stupid :-(
-$wormbase->run_command("rm ".$wormbase->database('current'), $log);
-$wormbase->run_command("ln -sf ".$new_dir." ".$wormbase->database('current'),$log);
-
-
-# Transfer autoace to ~wormpub/DATABASES/current_DB - first remove primaries acefiles and old data
-my $old_version = $WS_current -1;
-my $old_dir = $wormbase->wormpub."/DATABASES/WS".$old_version;
-
-#remove a load of stuff that we don't want to long term archive.
-$log->write_to("Removing $old_dir/acefiles/\n");
-$wormbase->delete_files_from("$old_dir/acefiles","*","+") unless ($test);
-
-$log->write_to("Removing $old_dir/logs/\n");
-$wormbase->delete_files_from("$old_dir/logs","*","+") unless ($test);
-
-$log->write_to("Removing $old_dir/CHECKS/\n");
-$wormbase->delete_files_from("$old_dir/CHECKS/","*","+") unless ($test);
-
-$log->write_to("Removing $old_dir/CHROMOSOMES/SUPPLEMENTARY_GFF/BACKUP/\n");
-$wormbase->delete_files_from("$old_dir/CHROMOSOMES/SUPPLEMENTARY_GFF/BACKUP/","*","+") unless ($test);
-
-$log->write_to("Removing $old_dir/TRANSCRIPTS/\n");
-$wormbase->delete_files_from("$old_dir/TRANSCRIPTS/","*","+") unless ($test);
-
-$log->write_to("Removing $old_dir/GFF_SPLITS/\n");
-$wormbase->delete_files_from("$old_dir/GFF_SPLITS/","*","+") unless ($test);
-
-$log->write_to("Removing $old_dir/BLAT/\n");
-$wormbase->delete_files_from("$old_dir/BLAT/","*","+") unless ($test);
-
-$log->write_to("Removing primaries acefiles/\n");
-$wormbase->delete_files_from("$new_dir/acefiles/primaries","*","+") unless ($test);
-
-$log->write_to("Unzipping any gzipped chromosome files\n");
-if (!$test) {
-  $wormbase->run_command("/bin/gunzip $new_dir/CHROMOSOMES/*.gz", $log);
-}
-
-# Remove redundant files and directories in $ace_dir
-$log->write_to("Removing old files in $ace_dir/release/\n");
-$wormbase->delete_files_from("$new_dir/release","*","-") if (-e "$new_dir/release");
-
+#############################################################################
+# Step 3: remove redundant files that we do not need any more
+#############################################################################
 $log->write_to("Removing files in $new_dir/database/new/\n");
 $wormbase->delete_files_from("$new_dir/database/new","*","+") if (-e "$new_dir/database/new");
 
@@ -158,6 +139,30 @@ $wormbase->delete_files_from("$new_dir/database/touched","*","+") if (-e "$new_d
 $log->write_to("Removing files in $new_dir/database/backup*\n");
 $wormbase->delete_files_from("$new_dir/database/","backup","-");
 
+#############################################################################
+# Step 4: update the current_db symlink
+#############################################################################
+$wormbase->run_command("rm ".$wormbase->database('current'), $log);
+$wormbase->run_command("ln -sf ".$new_dir." ".$wormbase->database('current'),$log);
+
+#############################################################################
+# Step 5: clean up stuff from older directories
+#############################################################################
+my $old_version = $WS_current -1;
+my $old_dir = $wormbase->wormpub."/DATABASES/WS".$old_version;
+
+foreach my $folder (@DO_NOT_KEEP_LONG_TERM) {
+  $log->write_to("Removing $old_dir/$folder\n");
+  $wormbase->delete_files_from("$old_dir/$folder","*","+") unless ($test);
+}
+
+$log->write_to("Zipping files in CHROMOSOMES and SEQUENCES folders\n");
+foreach my $file (glob("$old_dir/SEQUENCES/*.*"), glob("$old_dir/CHROMOSOMES/*.*")) {
+  next if $file =~ /\.gz$/;
+  $wormbase->run_command("gzip $file", $log);
+}
+
+
 ##################
 # End
 ##################
@@ -167,37 +172,26 @@ $log->mail();
 print "Finished.\n" if ($verbose);
 exit(0);
 
-
-
-
-#################################################################################
-# remove non-essential files from old database directory                        #
-#################################################################################
-
-
-
-sub archive_old_releases{
+########################################################
+sub archive_old_release {
   my $WS_old_name = shift;
   my $WS_old_path = $wormbase->database("$WS_old_name");
 
-  my $archive_dir = '/warehouse/wormbase01/wormarchive';
 
   unless ($WS_old_path) {
     $log->write_to("cant find database for $WS_old_path - not archiving\n");
     $log->error;
     return 1;
   }
-  $log->write_to("backing up $WS_old_path to $archive_dir/$WS_old_name.tar.gz\n");
+  my $tar = "${ARCHIVE_DIR}/${WS_old_name}.tar.gz";
+  $log->write_to("backing up $WS_old_path to $tar\n");
 
   # turn the old release into a tarball, move into $archive_dir and remove old directory
-  $log->write_to("\nCreating $WS_old_name.tar.gz\n");
+  $log->write_to("\nCreating $tar\n");
 
-  my $WS_old_dir = $WS_old_path;
-  $WS_old_dir =~ s/\/${WS_old_name}\/?//;
-
-  my $tar = "${archive_dir}/${WS_old_name}.tar.gz";
-  $wormbase->run_command("tar -C $WS_old_dir -cvzf $tar $WS_old_name", $log) && 
-      $log->log_and_die("ERROR in tar -cvzf $tar\n");
+  my $tar_cmd = "tar -C $WS_old_path/.. -cvzf $tar $WS_old_path";
+  $wormbase->run_command($tar_cmd, $log) and 
+      $log->log_and_die("ERROR in tar cmd: $tar_cmd\n");
   my $minsize = 7500000000; # 7 Gb
   if ($wormbase->check_file($tar, $log,
 			    minsize => $minsize,
@@ -205,9 +199,8 @@ sub archive_old_releases{
     $log->log_and_die("ERROR copying $WS_old_path to $tar - the result is less than $minsize\n");
   } else {
     $wormbase->run_command("rm -rf $WS_old_path", $log) && 
-      $log->log_and_die("ERROR in rm -rf $WS_old_path\n");
+        $log->log_and_die("ERROR in rm -rf $WS_old_path\n");
   }
-  
 }
 
 #################################################################################
