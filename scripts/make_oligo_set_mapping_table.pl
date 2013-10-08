@@ -100,7 +100,7 @@ sub write_table {
     my ( @cds,       @transcript, @pseudogene );
     my ( $cds_count, $tr_count,   $pseudo_count, $no_count, $coding_count, $non_coding_count ) = ( 0, 0, 0, 0, 0, 0 );
 
-    my $output_dir=($output||$wormbase->autoace);
+    my $output_dir=($output||$wormbase->misc_output);
     open( OUT, ">$output_dir/${type}_oligo_mapping" ) or $log->log_and_die("cant open ${type}_oligo_mapping :$!\n");
     print OUT "$reagent_type\tWBGeneID\tGene_sequence_name\tGene_type\tMicroarray_type\tTargeted_isoforms\tRemark\n";
     while ( my $obj = $it->next ) {
