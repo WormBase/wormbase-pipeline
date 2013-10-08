@@ -34,10 +34,12 @@ if ($store){
 
 my $log=Log_files->make_build_log($wormbase);
 
-$outfile||= "${\$wormbase->autoace}/ReutersCitationIndex.xml.gz";
+my $outdir = $wormbase->misc_output;
+
+$outfile = "$outdir/ReutersCitationIndex.xml.gz" if not defined $outfile;
 my $file = new IO::File "| gzip -9 -c > $outfile";
 
-$database||=$wormbase->autoace;
+$database =$wormbase->autoace if not defined $database;
 
 my $db = Ace->connect(-path => $database)||die(Ace->error);
 
