@@ -10,8 +10,8 @@
 # expression values is intended to be used by the Caltech expression
 # people in SPELL.
 #
-# Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2013-05-15 13:51:03 $      
+# Last updated by: $Author: klh $     
+# Last updated on: $Date: 2013-10-08 11:08:29 $      
 
 
 # new version:
@@ -22,15 +22,6 @@
 # find the proportion of the TAR that overlaps with the exon and multiply the TAR score by that proportion
 # sum the scores for each transcript
 # for each gene: divide the sum of the transcript scores by the number of transcripts from that gene
-
-
-
-
-
-
-
-
-
 
 
 use strict;                                      
@@ -152,7 +143,7 @@ my %analysis = (
 
 
 # output directory
-my $outdir = $wormbase->autoace."/TARS";
+my $outdir = $wormbase->spell."/TARS";
 mkdir $outdir, 0777;
 if (-e glob("$outdir/*.out")) {
   $wormbase->run_command("rm $outdir/*.out", $log);
@@ -165,17 +156,16 @@ foreach my $chrom (@chroms) {
   gene_expression($chrom);
 }
 
-print "Making final expr.tar.gz file ...\n";
-$log->write_to("Making final expr.tar.gz file ...\n");
+my $out_filen = "expr.tiling_arrays.tar.gz";
+my $tar_out_dir = $wormbase->spell;
+my $out_f = "$tar_out_dir/$out_filen";
+unlink $out_f if -e $out_f;
+
+$log->write_to("Making $out_f file ...\n");
 chdir ($outdir) || $log->log_and_die("Couldn't chdir to $outdir\n");
-if (-e "expr.tar") {unlink ("expr.tar") || $log->log_and_die("Cannot delete file expr.tar :\t$!\n");}
-my $status = $wormbase->run_command("tar cf expr.tar *.out", $log);
+
+my $status = $wormbase->run_command("cd $outdir && tar zcf $out_f *.out", $log);
 $log->write_to("status of tar command: $status\n");
-
-unlink "expr.tar.gz";
-$status = $wormbase->run_command("gzip -f expr.tar", $log);
-$log->write_to("status of gzip command: $status\n");
-
 
 $log->mail();
 print "Finished.\n" if ($verbose);

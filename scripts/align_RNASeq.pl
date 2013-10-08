@@ -186,7 +186,7 @@
 # by Gary Williams
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-10-08 10:48:42 $
+# Last updated on: $Date: 2013-10-08 11:08:28 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -1186,11 +1186,11 @@ IIIIIIIIHIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIGIGIDHIIIIIGIGI
   close(EXPRACE);
 
   # make a tarball
-  $status = $wormbase->run_command("tar cf expr.rnaseq.tar *.out SPELL_manifest.dat", $log);
-  unlink "expr.tar.gz";
-  $status = $wormbase->run_command("gzip -f expr.rnaseq.tar", $log);
+  my $out_file = "expr.rnaseq.tar.gz";
+  unlink $out_file if -e $out_file;
+  $status = $wormbase->run_command("tar zcf $out_file *.out SPELL_manifest.dat", $log);
   my $outdir = $wormbase->spell;
-  $status = $wormbase->run_command("cp expr.rnaseq.tar.gz $outdir", $log); # this will probably be changed to the autoace/OUTPUT directory soon
+  $status = $wormbase->run_command("cp $out_file $outdir", $log); # this will probably be changed to the autoace/OUTPUT directory soon
 
   
   # make the ace file of RNASeq spanned introns to load into acedb
