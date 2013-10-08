@@ -1176,6 +1176,7 @@ sub gff_splits   { my $self = shift; return $self->{'gff_splits'}; }
 sub chromosomes  { my $self = shift; return $self->{'chromosomes'}; }
 sub sequences    { my $self = shift; return $self->{'sequences'}; }
 sub spell        { my $self = shift; return $self->{'spell_dir'}; }
+sub misc_output  { my $self = shift; return $self->{'misc_output'}; }
 sub logs         { my $self = shift; return $self->{'logs'}; }
 sub ftp_upload   { my $self = shift; return $self->{'ftp_upload'}; }
 sub ftp_site     { my $self = shift; return $self->{'ftp_site'}; }
@@ -1323,6 +1324,7 @@ sub establish_paths {
   $self->{'sequences'}   = $self->orgdb . "/SEQUENCES";
   $self->{'transcripts'} = $self->orgdb . "/TRANSCRIPTS";
   $self->{'spell_dir'}   = $self->orgdb . "/SPELL";
+  $self->{'misc_output'} = $self->orgdb . "/MISC_OUTPUT";
   $self->{'reports'}     = $self->orgdb . "/REPORTS";
   $self->{'acefiles'}    = $self->orgdb . "/acefiles";
   $self->{'gff_splits'}  = $self->orgdb . "/GFF_SPLITS";
@@ -1378,6 +1380,7 @@ sub establish_paths {
   mkpath( $self->sequences )   unless ( -e $self->sequences );
   mkpath( $self->transcripts ) unless ( -e $self->transcripts ); 
   mkpath( $self->spell )       unless ( -e $self->spell ); 
+  mkpath( $self->misc_output ) unless ( -e $self->misc_output ); 
   mkpath( $self->reports )     unless ( -e $self->reports );
   mkpath( $self->ontology )    unless ( -e $self->ontology );
   mkpath( $self->gff_splits )  unless ( -e $self->gff_splits );
