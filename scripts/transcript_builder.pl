@@ -7,7 +7,7 @@
 # Script to make ?Transcript objects
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2012-12-14 10:20:21 $
+# Last updated on: $Date: 2013-10-08 12:47:19 $
 use strict;
 use lib $ENV{'CVS_DIR'};
 use Getopt::Long;
@@ -711,7 +711,7 @@ sub load_EST_data {
 
   # load paired read info
   $log->write_to("Loading EST paired read info\n") if ($verbose);
-  my $pairs = $wormbase->autoace."/EST_pairs.txt";
+  my $pairs = $wormbase->common_data."/EST_pairs.txt";
   
   if ( -e $pairs ) {
     open ( PAIRS, "<$pairs") or $log->log_and_die("cant open $pairs :\t$!\n");

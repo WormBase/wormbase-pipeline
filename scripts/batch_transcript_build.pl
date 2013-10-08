@@ -6,8 +6,8 @@
 #
 # wrapper script for running transcript_builder.pl
 #
-# Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2013-07-24 15:10:25 $
+# Last edited by: $Author: klh $
+# Last edited on: $Date: 2013-10-08 12:47:19 $
 
 use lib $ENV{CVS_DIR};
 use Wormbase;
@@ -72,7 +72,7 @@ if (@no_run) {
   # this extract paired read info from the database and writes it to EST_pairs file
   my $cmd = "select cdna, pair from cdna in class cDNA_sequence where exists_tag cdna->paired_read, pair in cdna->paired_read";
   my $tace = $wormbase->tace;
-  my $pairs = "$database/EST_pairs.txt";
+  my $pairs = "$database/COMMON_DATA/EST_pairs.txt";
 
   open (TACE, "echo '$cmd' | $tace $database |") or die "cant open tace to $database using $tace\n";
   open ( PAIRS, ">$pairs") or die "cant open $pairs :\t$!\n";
