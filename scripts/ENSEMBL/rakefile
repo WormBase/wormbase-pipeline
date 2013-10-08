@@ -217,7 +217,7 @@ desc 'copy release files'
 task :copy_release do
 	target_dir="#{wormbase}/BUILD/autoace"
 	cp "#{tmp_place}/compara.ace","#{target_dir}/acefiles/"
-	cp "#{tmp_place}/compara.tar.gz",target_dir
+	cp "#{tmp_place}/compara.tar.gz","#{target_dir}/MISC_OUTPUT/"
 end
 
 
