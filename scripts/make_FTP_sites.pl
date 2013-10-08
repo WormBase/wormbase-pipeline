@@ -6,7 +6,7 @@
 # builds wormbase & wormpep FTP sites
 # 
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-10-08 08:49:11 $
+# Last updated on: $Date: 2013-10-08 10:37:39 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -759,7 +759,7 @@ sub copy_misc_files{
   # TAR expression data for elegans
   #
   my $TARget = "$annotation_dir/$gspecies.$bioproj.$WS_name.TAR_gene_expression.tar.gz";
-  my $TARexpr = "$srcdir/TARS/expr.tar.gz";
+  my $TARexpr = $wormbase->spell . "/expr.tiling_arrays.tar.gz";
   if (-e $TARexpr) {
     $wormbase->run_command("cp -f $TARexpr $TARget", $log);
   } else {
@@ -803,16 +803,15 @@ sub copy_misc_files{
     my $g_species = $wb->full_name('-g_species' => 1);
     my $bioproj = $wb->ncbi_bioproject;
 
-    my $src = $wb->autoace;
-    my $tgt = "$targetdir/species/$g_species/$bioproj/annotation";
+    my $src = $wb->spell . "/expr.rnaseq.tar.gz";
+    my $tgt_dir = "$targetdir/species/$g_species/$bioproj/annotation/";
 
-    mkpath($tgt,1,0775);
-    my $expr = "$src/expr.tar.gz";
-    if (-e $expr) {
-      my $target = "$tgt/$g_species.$bioproj.$WS_name.SRA_gene_expression.tar.gz";
-      $wormbase->run_command("cp -f $expr $target", $log);
+    if (-e $src) {
+      mkpath($tgt_dir,1,0775);
+      my $target = "$tgt_dir/$g_species.$bioproj.$WS_name.SRA_gene_expression.tar.gz";
+      $wormbase->run_command("cp -f $src $target", $log);
     } else {
-      $log->write_to("Warning: gene expression file for $g_species not found ($expr)\n");
+      $log->write_to("Warning: gene expression file for $g_species not found ($src)\n");
     }
   }
 
