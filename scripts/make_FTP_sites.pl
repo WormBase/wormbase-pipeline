@@ -6,7 +6,7 @@
 # builds wormbase & wormpep FTP sites
 # 
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-07-18 14:32:10 $
+# Last updated on: $Date: 2013-10-08 08:49:11 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -731,6 +731,21 @@ sub copy_misc_files{
   mkpath($annotation_dir,1,0775);
 
   #
+  # Reuters citation index - elegans only
+  #
+  if ($wormbase->species eq 'elegans') {
+    my $source = "$srcdir/ReutersCitationIndex.xml.gz";
+    my $target = "$annotation_dir/${gspecies}.${bioproj}.${WS_name}.reuters_citation_index.xml.gz";
+
+    if (-e $source) {
+      $wormbase->run_command("cp -f $source $target", $log);
+    } else {
+      $log->write_to("Warning: Reuters citation index not found\n");
+    }
+  }
+
+
+  #
   # Oligo mapping
   #
   foreach my $file (glob("$srcdir/*oligo_mapping")) {
@@ -739,7 +754,6 @@ sub copy_misc_files{
     
     $wormbase->run_command("cat $file | gzip -9 -c > $target", $log);
   }
-  
 
   #
   # TAR expression data for elegans
@@ -773,7 +787,6 @@ sub copy_misc_files{
     $log->write_to("Warning: Disease data file for $gspecies not found ($Disease_source)\n");
   }
 
-
   #
   # RNASeq gene expression data for each TierII and elegans
   #
@@ -802,8 +815,6 @@ sub copy_misc_files{
       $log->write_to("Warning: gene expression file for $g_species not found ($expr)\n");
     }
   }
-
-
 
   $runtime = $wormbase->runtime;
   $log->write_to("$runtime: Finished copying misc files\n\n");
@@ -1633,6 +1644,7 @@ GSPECIES.BIOPROJ.WSREL.cdna2orf.txt.gz
 GSPECIES.BIOPROJ.WSREL.confirmed_genes.fa.gz
 GSPECIES.BIOPROJ.WSREL.SRA_gene_expression.tar.gz
 GSPECIES.BIOPROJ.WSREL.TAR_gene_expression.tar.gz
+GSPEICES.BIOPROJ.WSREL.reuters_citation_index.xml.gz
 
 [elegans]species/GSPECIES/BIOPROJ
 GSPECIES.BIOPROJ.WSREL.assembly.agp.gz
