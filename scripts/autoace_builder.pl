@@ -7,7 +7,7 @@
 # Usage : autoace_builder.pl [-options]
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2013-10-09 14:31:14 $
+# Last edited on: $Date: 2013-10-09 15:16:46 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -557,7 +557,7 @@ sub make_extras {
 
 sub public_sites {
   # gets everything on the to FTP and websites and prepares release letter ready for final edit and sending.
-  $wormbase->run_script( "make_FTP_sites.pl -all", $log);
+  $wormbase->run_script( "make_FTP_sites.pl -public", $log);
   $wormbase->run_script( "release_letter.pl -l"  , $log);
 }
 
