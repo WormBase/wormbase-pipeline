@@ -7,7 +7,7 @@
 # Usage : autoace_builder.pl [-options]
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2013-10-07 14:48:43 $
+# Last edited on: $Date: 2013-10-09 14:31:14 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -210,11 +210,40 @@ if ($prepare_gff_munge) {
 }
 
 #several GFF manipulation steps
-if ($gff_munge) {
-  $wormbase->run_script( 'GFF_post_process/GFF_post_process.pl -all', $log); 
-}
-if ($gff3_munge) {
-  $wormbase->run_script( 'GFF_post_process/GFF_post_process.pl -all -gff3', $log); 
+if ($gff_munge or $gff3_munge) {
+  my $prev_gff_prefix = 
+      join("/", 
+           $wormbase->ftp_site, 
+           "releases", 
+           "WS" . $wormbase->version - 1, 
+           $wormbase->full_name(-g_species => 1),
+           $wormbase->ncbi_bioproject,
+           join(".", 
+                $wormbase->full_name(-g_species => 1),
+                $wormbase->ncbi_bioproject, 
+                "WS" . $wormbase->version - 1,
+                "annotations")
+      );
+
+  if ($gff_munge) {
+    $wormbase->run_script( 'GFF_post_process/GFF_post_process.pl -all', $log); 
+    my $new_gff = $wormbase->processed_GFF_file;
+    if (not -e $new_gff) {
+      $new_gff .= ".gz";
+    }
+    my $prev_gff =  $prev_gff_prefix . ".gff2.gz";
+    $wormbase->run_script("generate_gff_report.pl -currentgff $new_gff -previousgff $prev_gff", $log);
+  }
+
+  if ($gff3_munge) {
+    $wormbase->run_script( 'GFF_post_process/GFF_post_process.pl -all -gff3', $log); 
+    my $new_gff = $wormbase->processed_GFF3_file;
+    if (not -e $new_gff) {
+      $new_gff .= ".gz";
+    }
+    my $prev_gff =  $prev_gff_prefix . ".gff3.gz";
+    $wormbase->run_script("generate_gff_report.pl -currentgff $new_gff -previousgff $prev_gff", $log);
+  }
 }
 
 if ($xrefs) {
