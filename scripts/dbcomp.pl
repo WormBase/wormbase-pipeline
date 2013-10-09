@@ -6,7 +6,7 @@
 # Compares this number to those from a second database.
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-10-07 15:13:50 $
+# Last updated on: $Date: 2013-10-09 15:31:49 $
 
 
 use strict;
@@ -457,7 +457,7 @@ sub get_curation_stats {
   my $prefix = $wb->pepdir_prefix;
   my $release = $WS_current;
 
-  my $file = $wb->wormpep . "/${prefix}.diff${release}";
+  my $file = $wb->wormpep . "/${prefix}pep.diff${release}";
 
   if (!open (IN, "<$file")) {
     print OUT "\n\nNo curation data available for $species.\n\n";
