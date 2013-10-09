@@ -36,7 +36,7 @@ my $jeff = new Jeff $database,$wormbase || die 'cannot create connections to $da
 $jeff->get_all_alleles;
 $log->write_to("dumping ".(scalar $jeff->get_alleles)." knockout consortium alleles\n");
 
-my $outfile= new IO::File "|/software/worm/bin/tidy -xml | gzip -9 -c > $file" if $file;
+my $outfile= new IO::File "| tidy -xml | gzip -9 -c > $file" if $file;
 
 $jeff->print_alleles($outfile);
 $outfile->close;
@@ -44,8 +44,7 @@ $jeff->DESTROY;
 
 $log->write_to("finished dumping to $file\n");
 
-my $mailto=$debug?"$debug\@sanger.ac.uk":"All";
-$log->mail($mailto,"BUILD REPORT: dump_ko.pl");
+$log->mail();
 
 # class definitions
 
