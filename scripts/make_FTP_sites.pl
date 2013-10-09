@@ -6,7 +6,7 @@
 # builds wormbase & wormpep FTP sites
 # 
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-10-08 13:06:45 $
+# Last updated on: $Date: 2013-10-09 15:04:33 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -238,7 +238,6 @@ close FTP_LOCK;
 
 &make_md5sums if ($md5);              # creates a file of md5sums for containing entries for all files in release
 
-$wormbase->run_command("chgrp -R  worm $targetdir", $log);  
 $wormbase->run_command("chmod -R ug+w $targetdir", $log);  
 
 if ($go_public) {
@@ -706,9 +705,6 @@ sub copy_ontology_files {
   foreach my $file (glob("$ace_ontology_dir/*.*")) {
     $wormbase->run_command("cp -f $file $ftp_ontology_dir/", $log);
   }
-
-  # change group ownership
-  $wormbase->run_command("chgrp -R  worm $ftp_ontology_dir", $log);  
 
   $runtime = $wormbase->runtime;
   $log->write_to("$runtime: Finished copying ontology files\n\n");
@@ -1180,7 +1176,6 @@ sub extract_ko {
   my $outfile = "$annotation_dir/${gspecies}.${bioproj}.${WS_name}.knockout_consortium_alleles.xml.gz";
 
   $wormbase->run_script("dump_ko.pl -file $outfile",$log);
-  $wormbase->run_command("chgrp -R  worm $annotation_dir", $log);  
   
   $runtime = $wormbase->runtime;
   $log->write_to("$runtime: Finished dumping KO data\n\n");
