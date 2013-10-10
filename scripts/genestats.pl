@@ -6,8 +6,8 @@
 #
 # Usage : genestats.pl [-options]
 #
-# Last edited by: $Author: pad $
-# Last edited on: $Date: 2012-06-27 12:20:59 $
+# Last edited by: $Author: klh $
+# Last edited on: $Date: 2013-10-10 09:56:39 $
  
 
 use strict;                                      
@@ -75,7 +75,9 @@ $command  = "query find Gene where Species = \"*elegans\" AND Live\nspush\n"
           . "spop\nspush\n"
           . "query where Concise_description\n"
           . "spop\nspush\n"
-          . "query where Human_disease_relevance\n"
+          . "query where GO_term\n"
+          . "spop\nspush\n"
+          . "query where Disease_info\n"
           . "spop\nspush\n"
           . "query where Reference\n"
           . "spop\nspush\n"
@@ -83,9 +85,13 @@ $command  = "query find Gene where Species = \"*elegans\" AND Live\nspush\n"
           . "spop\nspush\n"
           . "query where RNAi_result\n"
           . "spop\nspush\n"
+          . "query where Expr_pattern\n"
+          . "spop\nspush\n"
+          . "query where Interaction\n"
+          . "spop\nspush\n"
           . "query where Microarray_results\n"
           . "spop\nspush\n"
-          . "query where SAGE_tag\n"
+          . "query where Allele\n"
           . "quit\n";
 
 # database connection
@@ -105,22 +111,28 @@ close TACE;
 
 my $live_genes          = $values[0];
 my $molecular_info      = $values[1];
-my $concise_description = $values[2];
-my $human_disease_rel   = $values[3];
-my $reference           = $values[4];
-my $CGC_name            = $values[5];
-my $RNAi_result         = $values[6];
-my $microarray_result   = $values[7];
-my $SAGE_transcript     = $values[8];
+my $concise_desc        = $values[2];
+my $go_term             = $values[3];
+my $disease_assoc       = $values[4];
+my $reference           = $values[5];
+my $CGC_name            = $values[6];
+my $RNAi_result         = $values[7];
+my $expr_pat            = $values[8];
+my $interactions        = $values[9];
+my $microarray_result   = $values[10];
+my $variations          = $values[11];
 
-my $percent_molecular_info      = (int ( ( ($molecular_info / $live_genes) * 1000) + 0.5) / 10); 
-my $percent_concise_description = (int ( ( ($concise_description / $live_genes) * 1000) + 0.5) / 10);
-my $percent_human_disease_rel   = (int ( ( ($human_disease_rel / $live_genes) * 1000) + 0.5) / 10);
-my $percent_reference           = (int ( ( ($reference / $live_genes) * 1000) + 0.5) / 10); 
-my $percent_CGC_name            = (int ( ( ($CGC_name / $live_genes) * 1000) + 0.5) / 10); 
-my $percent_RNAi_result         = (int ( ( ($RNAi_result / $live_genes) * 1000) + 0.5) / 10); 
-my $percent_microarray_result   = (int ( ( ($microarray_result / $live_genes) * 1000) + 0.5) / 10); 
-my $percent_SAGE_transcript     = (int ( ( ($SAGE_transcript / $live_genes) * 1000) + 0.5) / 10); 
+my $percent_molecular_info      = ($molecular_info / $live_genes) * 100;
+my $percent_concise_desc        = ($concise_desc / $live_genes) * 100;
+my $percent_go_term             = ($go_term / $live_genes) * 100;
+my $percent_disease_assoc       = ($disease_assoc / $live_genes) * 100;
+my $percent_reference           = ($reference / $live_genes) * 100;
+my $percent_CGC_name            = ($CGC_name / $live_genes) * 100;
+my $percent_RNAi_result         = ($RNAi_result / $live_genes) * 100;
+my $percent_expr_pat            = ($expr_pat / $live_genes) * 100;
+my $percent_interaction         = ($interactions / $live_genes) * 100;
+my $percent_microarray_result   = ($microarray_result / $live_genes) * 100;
+my $percent_variation           = ($variations / $live_genes) * 100;
 
 ##################
 # report to file #
@@ -128,14 +140,16 @@ my $percent_SAGE_transcript     = (int ( ( ($SAGE_transcript / $live_genes) * 10
 open (OUT, ">$reports_dir/genedata") || die "Failed to open output file\n";
 print OUT "Gene data set (Live C. elegans genes $values[0])\n";
 print OUT "------------------------------------------\n";
-print OUT "Molecular_info              " . $values[1] . " (" . $percent_molecular_info . "%)\n";
-print OUT "Concise_description         " . $values[2] . "  (" . $percent_concise_description . "%)\n";
-print OUT "Human_disease_relevance     " . $values[3] . "    (" . $percent_human_disease_rel . "%)\n";
-print OUT "Reference                   " . $values[4] . " (" . $percent_reference . "%)\n";
-print OUT "WormBase_approved_Gene_name " . $values[5] . " (" . $percent_CGC_name . "%)\n";
-print OUT "RNAi_result                 " . $values[6] . " (" . $percent_RNAi_result . "%)\n";
-print OUT "Microarray_results          " . $values[7] . " (" . $percent_microarray_result . "%)\n";
-print OUT "SAGE_transcript             " . $values[8] . " (" . $percent_SAGE_transcript . "%)\n";
+printf OUT "Molecular info             %5d   (%2.1f%%)\n",  $molecular_info, $percent_molecular_info;
+printf OUT "Concise description        %5d   (%2.1f%%)\n",  $concise_desc, $percent_concise_desc;
+printf OUT "Human disease association  %5d   (%2.1f%%)\n",  $disease_assoc, $percent_disease_assoc;
+printf OUT "Approved Gene name         %5d   (%2.1f%%)\n",  $CGC_name, $percent_CGC_name;
+printf OUT "Reference                  %5d   (%2.1f%%)\n",  $reference, $percent_reference;
+printf OUT "RNAi results               %5d   (%2.1f%%)\n",  $RNAi_result, $percent_RNAi_result;
+printf OUT "Microarray results         %5d   (%2.1f%%)\n",  $microarray_result, $percent_microarray_result;
+printf OUT "Expression patterns        %5d   (%2.1f%%)\n",  $expr_pat,  $percent_expr_pat;
+printf OUT "Variations                 %5d   (%2.1f%%)\n",  $variations, $percent_variation;
+printf OUT "Interaction data           %5d   (%2.1f%%)\n",  $interactions,  $percent_interaction;
 close OUT;
 
 ##################
@@ -143,11 +157,11 @@ close OUT;
 ##################
 
 $wormbase->check_file("$reports_dir/genedata", $log,
-minlines => 10,
-maxlines => 10,
+minlines => 12,
+maxlines => 12,
 line1 => '^Gene data set \(Live C. elegans genes \d+\)',
 line2 => '^\-+',
-lines => ['^\S+\s+\d+\s+\(\d+(\.\d)*\%\)', '^\S+\s+\S+\s+\S+\s+\d+\s+\(\d+(\.\d)*\%\)'],
+lines => ['^\S+.+\s+\d+\s+\(\d+(\.\d)*\%\)', '^\S+\s+\S+\s+\S+\s+\d+\s+\(\d+(\.\d)*\%\)'],
 );
 
 
