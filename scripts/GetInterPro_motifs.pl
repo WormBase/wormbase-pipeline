@@ -6,8 +6,8 @@
 #
 # Gets latest Interpro:GO mappings from XXXX and puts info in to ace file
 #
-# Last updated by: $Author: klh $                      
-# Last updated on: $Date: 2011-10-05 08:41:03 $         
+# Last updated by: $Author: mh6 $                      
+# Last updated on: $Date: 2013-10-10 16:09:06 $         
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -71,6 +71,7 @@ my $GOterm;
 #Motif : "INTERPRO:IPR001624"
 #Title  "Peptidase aspartic, active site"
 #Database "INTERPRO" "INTERPRO_ID" "IPR001624"
+#Database "INTERPRO" "short_name" "fluffinase 3"
 #GO_term "GO:0003774"
 #GO_term "GO:0005198"
 #GO_term "GO:0001539"
@@ -81,9 +82,8 @@ my $GOterm;
       $IPid = $1;
 
       print IPDESC "\nMotif : \"INTERPRO:$IPid\"\n";
-      print IPDESC "Database  \"INTERPRO\" \"INTERPRO_ID\" \"$IPid\"\n";
-
-
+      print IPDESC "Database \"INTERPRO\" \"INTERPRO_ID\" \"$IPid\"\n";
+      print IPDESC "Database \"INYERPRO\" \"short_name\" \"$1\"\n" if $line=~/short_name=\"(\S+)\"/;
 
     } elsif ($line =~ /\<name\>(.+)\<\/name\>/) {
       $IPdesc = $1;
