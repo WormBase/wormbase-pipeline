@@ -6,7 +6,7 @@
 # builds wormbase & wormpep FTP sites
 # 
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-10-10 08:25:04 $
+# Last updated on: $Date: 2013-10-10 15:28:24 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -166,7 +166,7 @@ map { $only_species{$_} = 1 } @only_species;
 if ($all) {
   $compara=$acedb=$dna=$gff=$rna=$misc=$wormpep=$genes=$cDNA=$ests=$geneIDs=$pcr=$homols=$manifest=$ont=$xrefs=$blastx=$dump_ko=$gbrowse_gff=$md5=$assembly_manifest=$go_public=1;
 } elsif ($all_nopublic) {
-$compara=$acedb=$dna=$gff=$rna=$misc=$wormpep=$genes=$cDNA=$ests=$geneIDs=$pcr=$homols=$manifest=$ont=$xrefs=$blastx=$dump_ko=$gbrowse_gff=$md5=$assembly_manifest=1;
+  $compara=$acedb=$dna=$gff=$rna=$misc=$wormpep=$genes=$cDNA=$ests=$geneIDs=$pcr=$homols=$manifest=$ont=$xrefs=$blastx=$dump_ko=$gbrowse_gff=$md5=$assembly_manifest=1;
 }
 
 my $WS              = $wormbase->get_wormbase_version();      # e.g.   132
@@ -594,8 +594,8 @@ sub copy_compara {
   mkpath("$targetdir/COMPARATIVE_ANALYSIS",1,0775);
   
   my $chromdir = $wormbase->misc_output;
+
   my $clust_src = "$chromdir/wormpep_clw.sql.gz";
-  my $compara_src = "$chromdir/compara.tar.gz";
 
   if (-e $clust_src) {
     my $target = "$targetdir/COMPARATIVE_ANALYSIS/wormpep_clw.${WS_name}.sql.gz";
@@ -604,16 +604,33 @@ sub copy_compara {
   } else {
     $log->write_to("Warning: no clustal results found ($clust_src)\n");
   }
-  
-  if (-e $compara_src) {
-    my $target = "$targetdir/COMPARATIVE_ANALYSIS/compara.$WS_name.tar.gz";
-    $wormbase->run_command("cp -f -R $compara_src $target", $log);
+
+  my @compara_tar_args;
+
+  my $acedir = $wormbase->acefiles;
+  my $compara_source = "$acedir/compara.ace";
+  if (not -e $compara_source) {
+    $log->error("ERROR: could not find compara.ace file\n");
   } else {
-    $log->write_to("Warning: no clustal results found ($compara_src)\n");
+    push @compara_tar_args, " -C $acedir compara.ace";
+  }
+  
+  my $genomic_align_dir = $wormbase->misc_dynamic . "/genomic_alignments";
+  my @files = glob("$genomic_align_dir/*.gff3");
+  @files = map { $_ =~ /genomic_alignments\/(\S+)$/ and $1 } @files;
+  if (@files) {
+    push @compara_tar_args, " -C $genomic_align_dir @files";
+  }
+
+  if (@compara_tar_args) {
+    my $target = "$targetdir/COMPARATIVE_ANALYSIS/compara.$WS_name.tar.gz";
+    $wormbase->run_command("tar zcvf $target @compara_tar_args", $log);
+  } else {
+    $log->write_to("Warning: no compara results moved to FTP site\n");
   }
     
   $runtime = $wormbase->runtime;
-  $log->write_to("$runtime: Finished copying clustalw\n\n");
+  $log->write_to("$runtime: Finished copying comparative results\n\n");
 }
 
 
