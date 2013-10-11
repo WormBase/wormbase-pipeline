@@ -7,7 +7,7 @@
 # Gets latest Interpro:GO mappings from XXXX and puts info in to ace file
 #
 # Last updated by: $Author: mh6 $                      
-# Last updated on: $Date: 2013-10-10 16:09:06 $         
+# Last updated on: $Date: 2013-10-11 10:53:12 $         
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -83,7 +83,7 @@ my $GOterm;
 
       print IPDESC "\nMotif : \"INTERPRO:$IPid\"\n";
       print IPDESC "Database \"INTERPRO\" \"INTERPRO_ID\" \"$IPid\"\n";
-      print IPDESC "Database \"INYERPRO\" \"short_name\" \"$1\"\n" if $line=~/short_name=\"(\S+)\"/;
+      print IPDESC "Database \"INTERPRO\" \"short_name\" \"$1\"\n" if $line=~/short_name=\"(\S+)\"/;
 
     } elsif ($line =~ /\<name\>(.+)\<\/name\>/) {
       $IPdesc = $1;

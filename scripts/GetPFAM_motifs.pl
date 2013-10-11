@@ -6,8 +6,8 @@
 #
 # Gets latest PFAM motifs from sanger/pub and puts info in to ace file
 #
-# Last updated by: $Author: ar2 $                      
-# Last updated on: $Date: 2009-09-30 10:05:48 $         
+# Last updated by: $Author: mh6 $                      
+# Last updated on: $Date: 2013-10-11 10:53:12 $         
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -72,7 +72,6 @@ my $runtime         = $wormbase->runtime;
 #Get the latest version
 my $pfam_motifs_gz = "/tmp/Pfam_motifs.".$wormbase->species.".gz";
 $log->write_to("Attempting to wget the latest version\n");
-print "Attempting to wget the latest version\n";
 `wget -q -O $pfam_motifs_gz ftp://ftp.sanger.ac.uk/pub/databases/Pfam/current_release/Pfam-A.full.gz` and die "$0 Couldnt get Pfam-A.full.gz \n";
 
 `gunzip -f $pfam_motifs_gz` and die "gunzip failed\n";
@@ -87,8 +86,7 @@ my $acefile = "$ace_dir/acefiles/pfam_motifs.ace";
 
 open (PFAMOUT,">$acefile") or die "cant write to $ace_dir/acefiles/pfam_motifs.ace\n";
 
-my $text;
-my $pfam;
+my ($text,$pfam,$id);
 
 print "\treading data . . . \n";
 my $pfcount = 0;
@@ -100,6 +98,7 @@ while (<PFAM>){
       print PFAMOUT "Motif : \"PFAM:$pfam\"\n";
       print PFAMOUT "Title \"$text\"\n";
       print PFAMOUT "Database \"Pfam\" \"Pfam_ID\" \"$pfam\"\n";
+      print PFAMOUT "Database \"Pfam\" \"short_name\" \"$id\"\n";
       print PFAMOUT "\n";
       undef $pfam;
       $text = "";
@@ -109,15 +108,22 @@ while (<PFAM>){
     }
   }
   #get the id
-  if($_ =~ m/^\#=GF AC\s+(PF\d{5})/  ){ 
+  elsif($_ =~ m/^\#=GF AC\s+(PF\d{5})/  ){ 
     $pfam = $1;
   }
   
   #get the description
-  if($_ =~ m/^\#=GF DE\s+(.*$)/  ) {
+  elsif($_ =~ m/^\#=GF DE\s+(.*$)/  ) {
     $text = $1;
     $text =~ s/\"//g;
+  }
+
+  #get the ID
+  elsif($_ =~ m/^\#=GF ID\s+(.*$)/  ) {
+    $id = $1;
+    $id =~ s/\"//g;
   }         
+        
  }
   
 $log->write_to("added $pfcount PFAM motifs\n");
