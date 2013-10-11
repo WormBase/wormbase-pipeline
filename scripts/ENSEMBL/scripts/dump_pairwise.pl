@@ -22,7 +22,7 @@ my $genome_db_adaptor = $comparaDB->get_GenomeDBAdaptor();
 my $mlss_adaptor      = $comparaDB->get_MethodLinkSpeciesSetAdaptor();
 my $block_adaptor     = $comparaDB->get_GenomicAlignBlockAdaptor();
 
-my @species = ('caenorhabditis_japonica','caenorhabditis_briggsae','caenorhabditis_brenneri','caenorhabditis_remanei','brugia_malayi');
+my @species = ('caenorhabditis_japonica','caenorhabditis_briggsae','caenorhabditis_brenneri','caenorhabditis_remanei');
 
 my $outf = IO::File->new('>c_elegans.genomic_alignment.gff3')||die(@!);
 map {dump_me('caenorhabditis_elegans',$_,$outf)} @species;
