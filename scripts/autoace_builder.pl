@@ -7,7 +7,7 @@
 # Usage : autoace_builder.pl [-options]
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2013-10-09 15:16:46 $
+# Last edited on: $Date: 2013-10-11 13:17:44 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -508,28 +508,20 @@ sub remap_misc_dynamic {
     $wormbase->run_script( "map_tec-reds.pl", $log);
 
     # remap and copy over the SUPPLEMENTARY_GFF dir from BUILD_DATA
-    my $sup_dir = $wormbase->build_data."/SUPPLEMENTARY_GFF";
-    my $backup_dir = "$sup_dir/BACKUP";
+    my $sup_dir = $wormbase->misc_dynamic."/SUPPLEMENTARY_GFF";
     my $release = $wormbase->version;
     my $old_release = $release - 1;
-    opendir(DIR,$sup_dir) or $log->log_and_die("cant open $sup_dir: $!\n");
-    while ( my $file = readdir( DIR ) ) {
-      next unless( $file =~ /gff$/ );
-      my $gff = "$sup_dir/$file";
-      my $backup_gff = "$backup_dir/$file.$old_release";
-      if (-e $backup_gff) {$wormbase->run_command("mv -f $backup_gff $gff", $log);}
-      $wormbase->run_command("mv -f $gff $backup_gff", $log);
-      $wormbase->run_script("remap_gff_between_releases.pl -gff $backup_gff -output $gff -release1 $old_release -release2 $release", $log);
-    }
-    closedir DIR;
+    my $backup_dir = "$sup_dir/BACKUP_${old_release}";
 
+    foreach my $file (glob("$sup_dir/elegans.*.gff2"), glob("$sup_dir/elegans.*.gff3")) {
+      my ($fname) = $file =~ /$sup_dir\/(\S+)$/;
+      my $backup_file = "$sup_dir/$fname";
+      $wormbase->run_command("mv -f $file $backup_file", $log);
+      $wormbase->run_script("remap_gff_between_releases.pl -gff $backup_file -output $file -release1 $old_release -release2 $release", $log);
+    }
   } else {
     $log->write_to("Assembly has apparently not changed, so did not remap the MISC_DYNAMIC data\n");
-  }
-
-  # the SUPPLEMENTARY_GFF directory is copied over whether or not it has been remapped
-  $wormbase->run_command("cp -R ".$wormbase->build_data."/SUPPLEMENTARY_GFF ".$wormbase->sequences."/", $log);
-   
+  }   
 }
 
 #__ end remap_misc_dynamic __#

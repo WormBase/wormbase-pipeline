@@ -6,7 +6,7 @@
 # and supplementing the "raw" GFF dumped from Ace with additional attributes
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-09-27 14:44:25 $
+# Last updated on: $Date: 2013-10-11 13:15:47 $
 #
 # Usage GFF_post_process [-options]
 
@@ -415,12 +415,13 @@ sub append_supplementary_files {
 
   my (@gfffiles);
   
-  my $supdir = $wormbase->sequences . "/SUPPLEMENTARY_GFF";
+  my $supdir1 = $wormbase->misc_dynamic . "/SUPPLEMENTARY_GFF";
+  my $spec = $wormbase->species;
 
   if ($gff3) {
-    @gfffiles = glob("$supdir/*.gff3");
+    @gfffiles = glob("$supdir1/${spec}.*.gff3");
   } else {
-    @gfffiles = glob("$supdir/*.gff");
+    @gfffiles = glob("$supdir1/${spec}.*.gff2");
   }
 
   if ($wormbase->run_command("cat $processed_gff_file @gfffiles > $outfile", $log)) {
