@@ -6,7 +6,7 @@
 # builds wormbase & wormpep FTP sites
 # 
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-10-10 15:28:24 $
+# Last updated on: $Date: 2013-10-11 10:25:43 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -106,7 +106,6 @@ my $blastx;
 my $dump_ko;
 my $md5;
 my $go_public;
-my $supplementary;
 my $compara;
 my $assembly_manifest;
 my (%skip_species, @skip_species, @only_species, %only_species);
@@ -124,7 +123,6 @@ GetOptions ("help"          => \$help,
 	    "rna"           => \$rna,
 	    "wormpep"       => \$wormpep,
 	    "gff"           => \$gff,
-	    "supplementary" => \$supplementary,
 	    "misc"          => \$misc,
             "ests"          => \$ests,
 	    "homols"        => \$homols,
@@ -208,8 +206,6 @@ close FTP_LOCK;
 
 &copy_gff_files if ($gff);
   		  
-&copy_supplementary_gff_files if ($supplementary);  		  
-
 &copy_est_files if ($ests);
 
 &copy_misc_files if ($misc);
@@ -555,32 +551,6 @@ sub copy_gff_files{
   $runtime = $wormbase->runtime;
   $log->write_to("$runtime: Finished copying GFF files\n\n");
 }
-
-
-############################################
-# copy across supplementary GFF files
-############################################
-
-sub copy_supplementary_gff_files{
-  my $runtime = $wormbase->runtime;
-  $log->write_to("$runtime: copying supplementary gff files\n");
-
-  if($wormbase->species eq'elegans') {
-    my $chromdir = $wormbase->chromosomes;
-    my $bioproj = $wormbase->ncbi_bioproject;
-    if (-e "$chromdir/SUPPLEMENTARY_GFF") {
-      my $sgff_dir = "$targetdir/species/c_elegans/$bioproj/SUPPLEMENTARY_GFF";
-      mkpath($sgff_dir,1,0775);
-      foreach my $gff_file (glob("$chromdir/SUPPLEMENTARY_GFF/*.gff")) {
-        my ($fname) = $gff_file =~ /SUPPLEMENTARY_GFF\/(\S+)\.gff/;
-        $wormbase->run_command("cat $gff_file | gzip -9 -c > $sgff_dir/c_elegans.$bioproj.$WS_name.$fname.gff2.gz", $log);
-      }
-    }
-  }
-  $runtime = $wormbase->runtime;
-  $log->write_to("$runtime: Finished copying supplementary GFF\n\n");
-}
-
 
 ############################################
 # copy across comparative analysis
