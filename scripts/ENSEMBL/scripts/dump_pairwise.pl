@@ -29,7 +29,6 @@ map {dump_me('caenorhabditis_elegans',$_,$outf)} @species;
 
 foreach my $s(@species){
    my $sname = "$1" if  $s=~/^\w+_(\w+)/; # convert to build names
-   $sname    ='brugia' if $s eq 'brugia_malayi'; # build hack
    my $of = IO::File->new(">$sname.genomic_alignment.gff3") ||die(@!);
    dump_me($s,'caenorhabditis_elegans',$of);
 }
