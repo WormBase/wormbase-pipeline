@@ -7,7 +7,7 @@
 # Usage : autoace_builder.pl [-options]
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2013-10-11 13:17:44 $
+# Last edited on: $Date: 2013-10-11 13:19:22 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -556,7 +556,7 @@ sub public_sites {
 
 sub release {
   # copy and send the release letter around
-  $wormbase->run_script( "distribute_letter.pl", $log);
+  $wormbase->run_script( "distribute_letter.pl -maildev", $log);
   
   # Make data on FTP site available
   $log->write_to("Updating symlink on FTP site\n");
