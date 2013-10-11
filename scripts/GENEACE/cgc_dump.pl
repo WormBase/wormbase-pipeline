@@ -54,7 +54,7 @@ if ($labs){
 
 # update last link
 system("rm $originalDir/last") && die(@!);
-system("ln -s $dir $originalDir/last") && die(@!);
+system("cd $originalDir && ln -s $stamp ./last") && die(@!);
 
 sub diff{
    my ($file)=@_;
