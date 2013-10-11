@@ -6,7 +6,6 @@ use strict;
 use Bio::EnsEMBL::Registry; # the registry is release dependent and overriden to 73 below
 use Bio::EnsEMBL::Utils::Exception qw(throw);
 
-my $i;
 my $method = 'LASTZ_NET';
 Bio::EnsEMBL::Registry->load_registry_from_db(
     -host => 'mysql.ebi.ac.uk', -user => 'anonymous',-port => 4157,-db_version => 73);
@@ -25,11 +24,12 @@ my $block_adaptor     = $comparaDB->get_GenomicAlignBlockAdaptor();
 
 my @species = ('caenorhabditis_japonica','caenorhabditis_briggsae','caenorhabditis_brenneri','caenorhabditis_remanei','brugia_malayi');
 
-my $outf = IO::File->new('>c_elegans.gff3')||die(@!);
+my $outf = IO::File->new('>c_elegans.genomic_alignment.gff3')||die(@!);
 map {dump_me('caenorhabditis_elegans',$_,$outf)} @species;
 
 foreach my $s(@species){
-   my $of = IO::File->new(">$s.gff3") ||die(@!);
+   my $sname = "$1_$2" if  $s=~/^(\w)\w+(_\w+)/;
+   my $of = IO::File->new(">$sname.genomic_alignment.gff3") ||die(@!);
    dump_me($s,'caenorhabditis_elegans',$of);
 }
 
@@ -49,17 +49,15 @@ sub dump_me {
           while (my $block = shift @$blocks){
              my $aligns = $block->get_all_non_reference_genomic_aligns();
              while (my $frag = shift @$aligns){
-               $i++;
-               printf $file "%s\t%s\t%s\t%s\t%s\t%s\t%s\t\%s\tID=SYN%s\;Target=\"%s %s %s %s\"\n",
+               printf $file "%s\t%s\t%s\t%s\t%s\t%s\t%s\t\%s\tTarget=%s %s %s %s\n",
                        $block->reference_slice->seq_region_name,
-                       $method,
-                       'syntenic_region',
+                       $short_name.'_'.$method,
+                       'conserved_region',
                        $block->reference_slice_start,
                        $block->reference_slice_end,
                        '.', #score
                        ($block->reference_slice_strand > 0 ? '+':'-'),
                        '.', # phase
-                       $i,  # ID
                        $short_name.':'.$frag->dnafrag->name,
                        $frag->dnafrag_start,
                        $frag->dnafrag_end,
