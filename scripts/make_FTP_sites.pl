@@ -6,7 +6,7 @@
 # builds wormbase & wormpep FTP sites
 # 
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-10-11 10:25:43 $
+# Last updated on: $Date: 2013-10-11 13:16:43 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -585,9 +585,9 @@ sub copy_compara {
     push @compara_tar_args, " -C $acedir compara.ace";
   }
   
-  my $genomic_align_dir = $wormbase->misc_dynamic . "/genomic_alignments";
-  my @files = glob("$genomic_align_dir/*.gff3");
-  @files = map { $_ =~ /genomic_alignments\/(\S+)$/ and $1 } @files;
+  my $genomic_align_dir = $wormbase->misc_dynamic . "/SUPPLEMENTARY_GFF";
+  my @files = glob("$genomic_align_dir/*.genomic_alignment.gff3");
+  @files = map { $_ =~ /$genomic_align_dir\/(\S+)$/ and $1 } @files;
   if (@files) {
     push @compara_tar_args, " -C $genomic_align_dir @files";
   }
