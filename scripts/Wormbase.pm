@@ -1796,29 +1796,6 @@ sub processed_GFF_file {
   return $fname;
 }
 
-sub worm_webpublish {
-    my $self = shift;
-    my %opts = @_;
-    unless( $opts{'-file'}) {
-	print "file name missing\n";
-	return 1;
-    }
-    $opts{'-file'} =~ /(.*)\/(.*)$/;
-    my ($path, $file) = ($1,$2);
-    unless ($path and $file) {
-	print "cant determine path and file name\n";
-	return ;
-    }
-    chdir($path);
-    open(WP,"webpublish -r $file |") or die ("cant webpublish $file\n");
-    while(<WP>){
-	if(/fail/){
-	     warn ("webpublish $file has failures :$_\n");
-	     return ;
-	 }
-    }
-    return 1;
-}
 
 sub submit_repos_hash_from_sequence_name {
   my ($self, $seqname) = @_;
