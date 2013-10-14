@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.8.0 -w
+#!/usr/bin/env perl
 #
 # GetPFAM_motifs.pl 
 # 
@@ -6,8 +6,8 @@
 #
 # Gets latest PFAM motifs from sanger/pub and puts info in to ace file
 #
-# Last updated by: $Author: mh6 $                      
-# Last updated on: $Date: 2013-10-11 10:53:12 $         
+# Last updated by: $Author: klh $                      
+# Last updated on: $Date: 2013-10-14 10:16:23 $         
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -22,16 +22,14 @@ use Storable;
 # variables and command-line options # 
 ######################################
 
-my ($help, $debug, $test, $verbose, $store, $wormbase);
-
-my $load;      # option for loading resulting acefile to autoace
+my ($help, $debug, $test, $verbose, $store, $wormbase,$noload);
 
 GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
 	    "test"       => \$test,
 	    "verbose"    => \$verbose,
-	    "store:s"      => \$store,
-	    "load"       => \$load,
+	    "store:s"    => \$store,
+	    "noload"     => \$noload,
             );
 
 
@@ -132,8 +130,9 @@ print "finished at ",`date`,"\n";
 close PFAM;
 close PFAMOUT;
 
-# load file to autoace if -load specified
-  $wormbase->load_to_database($wormbase->autoace, "$ace_dir/acefiles/pfam_motifs.ace", 'pfam_motifs', $log) if($load);
+unless ($noload) {
+  $wormbase->load_to_database($wormbase->autoace, "$ace_dir/acefiles/pfam_motifs.ace", 'pfam_motifs', $log);
+}
 
 # tidy up and exit
   $wormbase->run_command("rm $pfam_motifs",$log);
@@ -194,10 +193,6 @@ writes to ~wormpub/BUILD_DATA/MISC_DYNAMIC/misc_pfam_motifs.ace
 
 =over 4
   
-=item -load
- 
-if specified will load resulting acefile to autoace
- 
 =back
  
 

@@ -7,7 +7,7 @@
 # by Dan Lawson
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-10-14 09:37:31 $
+# Last updated on: $Date: 2013-10-14 10:16:24 $
 
 use strict;
 use warnings;
@@ -198,8 +198,6 @@ map_Y2H.pl optional arguments:
 =item -verbose, Verbose mode
 
 =item -test, Test mode, generate the acefile but do not upload them 
-
-=item -load, loads file to autoace
 
 =item -help, Help pages
 

@@ -6,8 +6,8 @@
 #
 # Gets latest Interpro:GO mappings from XXXX and puts info in to ace file
 #
-# Last updated by: $Author: mh6 $                      
-# Last updated on: $Date: 2013-10-11 10:53:12 $         
+# Last updated by: $Author: klh $                      
+# Last updated on: $Date: 2013-10-14 10:16:23 $         
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -17,11 +17,11 @@ use Log_files;
 use Storable;
 
 my $help;
-my $load;   # option for loading resulting acefile into autoace
+my $noload;
 my ( $debug, $test, $store );
 
 GetOptions ("help"      => \$help,
-            "load"      => \$load,
+            "noload"    => \$noload,
 	    "test"      => \$test,
 	    "debug:s"   => \$debug,
 	    "store:s"   => \$store
@@ -103,10 +103,10 @@ my $GOterm;
 
 close IPDESC;
 
-# load file if -load was specified
-
-$wormbase->load_to_database( $wormbase->autoace, "$ip_ace_file",
-			     'interpo_motifs', $log) if($load);
+unless ($noload) {
+    $wormbase->load_to_database( $wormbase->autoace, "$ip_ace_file",
+                                 'interpo_motifs', $log);
+}
 
 # mail Log file
 $log->mail;
@@ -175,10 +175,6 @@ Database "INTERPRO" "INTERPRO_ID" "IPR000018"
 =head1 OPTIONAL arguments:
 
 =over 4
-
-=item -load
-
-if specified will load resulting acefile to autoace
 
 =back
 

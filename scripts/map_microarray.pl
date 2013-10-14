@@ -7,7 +7,7 @@
 # by Dan
 #
 # Last updated by: $Author: klh $                      
-# Last updated on: $Date: 2013-10-14 09:42:43 $        
+# Last updated on: $Date: 2013-10-14 10:16:24 $        
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -203,8 +203,6 @@ optional arguments:
 =item -debug username, Debug mode
 
 =item -test, Test mode, generate the acefile but do not upload them 
-
-=item -load, loads file to autoace
 
 =item -help, Help pages
 

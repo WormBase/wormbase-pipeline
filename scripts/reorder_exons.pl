@@ -6,8 +6,8 @@
 #
 # This script checks the exon order and corrects them if needed
 #
-# Last updated by: $Author: pad $
-# Last updated on: $Date: 2013-10-01 13:35:57 $
+# Last updated by: $Author: klh $
+# Last updated on: $Date: 2013-10-14 10:16:24 $
 
 
 
@@ -35,7 +35,7 @@ my $quicktest;# use test environment but gets the defined clone.
 my $store;    # Provide the Wormbase store object to the script
 my $out;      # allows an output file to be specified to avoid writing to BUILD
 my $verbose;  # gives additional output if interested
-my $load;     # allows the data to be loaded into the specified database
+my $noload;
 
 GetOptions ("database=s"     => \$database,
 	    "debug:s"        => \$debug,
@@ -43,7 +43,7 @@ GetOptions ("database=s"     => \$database,
 	    "quicktest:s"    => \$quicktest,
 	    "store:s"        => \$store,
 	    "out:s"          => \$out,
-	    "load"           => \$load,
+	    "noload"         => \$noload,
 	   );
 
 $test = 1 if $quicktest;
@@ -91,10 +91,9 @@ else {
 # open output file
 my $acefile;
 if (defined $out) {
-$acefile = $out
-}
-else {
-$acefile = $dbpath."/acefiles/sorted_exons.ace";
+  $acefile = $out;
+} else {
+  $acefile = $dbpath."/acefiles/sorted_exons.ace";
 }
 
 print "output will be written to $acefile\n";
@@ -225,11 +224,7 @@ if($tranoutoforder[0]) {
 $db->close;
 close(ACE);
 
-# Only upload if working with autoace
-if($dbpath =~ m/autoace$/){
-  $load = "1";
-}
-if ($load) {
+unless ($noload) {
   my $command = "pparse $acefile";
   $command .= "\nsave\nquit\n";
   print "\nUploading sorted exon info to $database\n";
@@ -315,7 +310,7 @@ Usually run as part of the build but can be run against any valid acedb database
 
 =back
 
-=head1 OPTIONAL arguments: -database, -test, -out, -debug, -verbose, -load, -quicktest
+=head1 OPTIONAL arguments: -database, -test, -out, -debug, -verbose, -quicktest
 
 =over 4
 
@@ -343,20 +338,15 @@ Log messages will only go to the specified user.
 
 gives additional output if interested
 
-=item -load
-
-allows the data to be loaded into the specified database, this option gets set by default for autoace
-
 =back
 
 =head1 USAGE Example:
 
 =over 4
 
-=item reorder_exons.pl -database ~/DATABASES/camace -out ~/DATABASES/camace/reordered_exons.ace -debug pad -test -load
+=item reorder_exons.pl -database ~/DATABASES/camace -out ~/DATABASES/camace/reordered_exons.ace -debug pad -test 
 
 This will check the database camace for inconsistent exon order and output a patch file to "~/DATABASES/camace/reordered_exons.ace". 
-As -load was used on command line, this patch will also be applied to the specified database.
 
 =back
 

@@ -1,4 +1,4 @@
-#!/software/bin/perl -w
+#!/usr/bin/env perl
 #
 # assign_orientation.pl                       
 # 
@@ -9,7 +9,7 @@
 # transcripts to find the most probable orientation.
 #
 # Last updated by: $Author: klh $     
-# Last updated on: $Date: 2012-11-29 14:38:05 $      
+# Last updated on: $Date: 2013-10-14 10:16:24 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -18,9 +18,6 @@ use Getopt::Long;
 use Carp;
 use Log_files;
 use Storable;
-#use Ace;
-#use Sequence_extract;
-#use Coords_converter;
 use Modules::Overlap;
 use Modules::PWM;
 
@@ -30,7 +27,7 @@ use Modules::PWM;
 # variables and command-line options # 
 ######################################
 
-my ($help, $debug, $test, $verbose, $store, $wormbase);
+my ($help, $debug, $test, $verbose, $store, $wormbase,$noload);
 my ($all, $species, $gff_directory, $gff_file, $gff_source, $gff_type, $ID_after);
 
 GetOptions ("help"       => \$help,
@@ -38,6 +35,7 @@ GetOptions ("help"       => \$help,
 	    "test"       => \$test,
 	    "verbose"    => \$verbose,
 	    "store:s"    => \$store,
+            "noload"     => \$noload,
 	    "all"        => \$all, # do all EST sequences, not just the ones with no orientation
 	    "species:s"  => \$species, # the default is elegans
 	    "gff_directory:s" => \$gff_directory,	# stuff to specify a specific GFF file to search
@@ -424,7 +422,7 @@ my $ovlp = Overlap->new($database, $wormbase);
 # next Build procedure. We do NOT want these orientations loaded into
 # the current BUILD database because we have already done teh GFF
 # dumps and the orientations would be inconsistent.
-if ($wormbase->species ne 'elegans') {
+if ($wormbase->species ne 'elegans' and not $noload) {
   my $database = $wormbase->database($wormbase->species);
   $wormbase->load_to_database($database, $output, 'assign_orientation.pl', $log, undef, 1);
 }
@@ -658,9 +656,6 @@ file are examined and if there is no evidence of the orientation from
 the splice site scores, the overlap with exons will be used to assign
 the orientation.
 
-In the Build, the normal usage will be:
-assign_orientation.pl -load
-
 assign_orientation.pl MANDATORY arguments:
 
 =over 4
@@ -670,10 +665,6 @@ assign_orientation.pl MANDATORY arguments:
 =back
 
 script_template.pl  OPTIONAL arguments:
-
-=over 4
-
-=item -load, load the /tmp/assign_orientation_chromosome_*.ace files into ~/DATABASES/camace
 
 =back
 

@@ -7,7 +7,7 @@
 # Script to identify genes which can have their Interpolated_map_position tag promoted to a Map position
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-10-07 14:47:50 $
+# Last updated on: $Date: 2013-10-14 10:16:24 $
 
 use strict;
 use warnings;
@@ -203,7 +203,7 @@ Interpolated_map_position tags for some genes and transfer the map value and pos
 instead.  We also flag these genes with the 'Pseudo_map_position' tag and leave a suitable remark.
 
 The script will make an acefile at $wb->autoace/acefiles/pseudo_map_positions.ace
-This acefile will be loaded to autoace if -load option is used but it also needs to be loaded back 
+This acefile will be loaded to autoace by default,  but it also needs to be loaded back 
 into geneace.  Jonathan receives a separate email listing the genes which have been changed.
 
 
@@ -213,7 +213,7 @@ into geneace.  Jonathan receives a separate email listing the genes which have b
 
 =back
 
-=head1 OPTIONAL arguments: -help, -database, -verbose, -test, -load, -store
+=head1 OPTIONAL arguments: -help, -database, -verbose, -test, -store
 
 
 =over 4
@@ -233,10 +233,6 @@ Display names of promoted genes as the script finds them
 =item -test
 
 Use the test build environment
-
-=item -load
-
-Load the resulting acefile to autoace (or database specified by -database)
 
 =item -store
 

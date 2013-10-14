@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.8.0 -w
+#!/usr/bin/env perl
 #
 # molecular_names_for_genes.pl
 # 
@@ -6,8 +6,8 @@
 #
 # quick script to populate Molecular_name tag in ?Gene model during build
 #
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2012-05-11 15:29:59 $
+# Last updated by: $Author: klh $
+# Last updated on: $Date: 2013-10-14 10:16:24 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -24,7 +24,7 @@ use Storable;
 ##############################
 # command-line options       #
 ##############################
-my ($help, $debug, $species, $test, $verbose, $store, $wormbase, $outfile, $no_load);
+my ($help, $debug, $species, $test, $verbose, $store, $wormbase, $outfile, $noload);
 
 GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
@@ -33,7 +33,7 @@ GetOptions ("help"       => \$help,
 	    "store:s"      => \$store,
 	    "species:s"	=> \$species,
             "outfile:s"  => \$outfile,
-            "noload"    => \$no_load,
+            "noload"    => \$noload,
 	    );
 
 if ( $store ) {
@@ -147,7 +147,7 @@ close OUT;
 
 $log->write_to("Found $counter molecular names for genes\n");
 
-if (not $no_load) {
+if (not $noload) {
   # load file to autoace
   $wormbase->load_to_database($db_dir, $outfile, "molecular_names", $log);
 }
@@ -196,9 +196,6 @@ __END__
 Simple file that uses a table-maker definition file to find all CDS, Transcript, and Pseudogene names
 for a given ?Gene object and adds these to the Molecular_name tag in the ?Gene model.  It also adds
 WormPep object names, and the raw wormpep accession (i.e. it strips off the WP: part).
-
-This data is then loaded to autoace using autoace_minder.pl -load
-
 
 Mandatory arguments:
                                                                                                               

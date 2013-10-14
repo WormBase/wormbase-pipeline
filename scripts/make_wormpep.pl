@@ -6,8 +6,8 @@
 #
 # Builds a wormpep data set from the current autoace database
 #
-# Last updated by: $Author: pad $
-# Last updated on: $Date: 2012-08-07 08:28:32 $
+# Last updated by: $Author: klh $
+# Last updated on: $Date: 2013-10-14 10:16:24 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -424,11 +424,11 @@ sub write_accession {
 sub get_additional_data {
   # get Pfam domains (this step loads resulting ace file)
   $log->write_to("getting PFAM\n");
-  $wormbase->run_script("GetPFAM_motifs.pl -load", $log);#
+  $wormbase->run_script("GetPFAM_motifs.pl", $log);#
   
   # get interpro domains (this step loads resulting ace file )
   $log->write_to("getting InterPro\n");
-  $wormbase->run_script("GetInterPro_motifs.pl -load", $log);
+  $wormbase->run_script("GetInterPro_motifs.pl", $log);
 
   # make interpro2go connections (to be used by getProteinID)
   #$log->write_to("getting InterPro2Go mapping\n");
