@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl -w
 # Last updated by: $Author: mh6 $     
-# Last updated on: $Date: 2013-07-30 12:43:40 $      
+# Last updated on: $Date: 2013-10-14 10:38:19 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -84,7 +84,6 @@ sub parse_misc_elegans_files {
 		       $wormbase->misc_static."/GINUMBERS/GI_numbers.ace"       => "gi_number"             ,
 		       $wormbase->misc_static.'/misc_mtce_protein_IDs.ace'      => 'mtce_protein_IDs'      ,
 		       $wormbase->misc_dynamic.'/Caenorhabditae_sequence_data_to_load.ace'     => 'Caenorhabditae_seq_data',
-		       #$wormbase->misc_dynamic.'/waba.ace' => 'el_brig_waba',
 		       $wormbase->misc_dynamic.'/fosmids.ace'                   => 'vancouver_fosmids'     ,
 		       $wormbase->misc_dynamic.'/misc_21urna_homol.ace'         => '21uRNAs'               ,
 		       $wormbase->misc_dynamic.'/misc_Expression_pattern_homol.ace'  => 'Expression_patterns',
