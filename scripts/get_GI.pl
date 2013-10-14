@@ -5,7 +5,7 @@
 # A script to generate C.elegans CDS/Protein to NCBI_GI number XREFs
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2012-11-16 10:46:12 $
+# Last edited on: $Date: 2013-10-14 09:54:27 $
 #
 #==================
 
@@ -21,7 +21,7 @@ use Net::FTP;
 # command-line options       #
 ##############################
 
-my ($test,$debug,$wormbase,$store,$noftp,$inputfile,$noclean,$database,$usebins,$load,$noupdate);
+my ($test,$debug,$wormbase,$store,$noftp,$inputfile,$noclean,$database,$usebins,$noupdate);
 
 GetOptions (
 	    "debug:s"     => \$debug,     # debug emails only the specified user
@@ -32,7 +32,6 @@ GetOptions (
 	    "noclean"     => \$noclean,   # don't remove the .dat files, useful for debugging.
 	    "usebins:s"   => \$usebins,   # debugging option to use bins that are already in place, specify the number of bins.
 	    "database:s"  => \$database,  # a way of specifying the database to use whenm testing or not using the build.
-	    "load"        => \$load,      # Load the data into autoace.
 	    "noupdate"    => \$noupdate,  # don't update the file links at the end.
 	   );
 
@@ -183,7 +182,7 @@ elsif ($usebins){
 #generate the .ace output file by parsing protein/CDS data and pulling IDs from the .dat files.
 $log->write_to("Generate the .ace output file\n\n");
 my %GI_number = ();
-my $ace = ${basedir}."GI_numbers_WS".${WS_version}.".ace"; #debugging code
+my $ace = "${basedir}/GI_numbers_WS${WS_version}.ace";
 
 my %cds_info;
 my $def = $wormbase->basedir."/wquery/SCRIPT:make_wormpep.def";
@@ -257,13 +256,10 @@ $log->write_to("Processed $datcheck files\n");
 
 # Remove the symbolic link and update to point to new file.
 unless ($noupdate) {
-  $wormbase->run_command("rm -f GI_numbers.ace", $log);
-  $wormbase->run_command("ln -s $ace GI_numbers.ace", $log);
-}
+  my $sym_link = "${basedir}/GI_numbers.ace";
 
-# load the data into autoace
-if ($load) {
-$wormbase->run_script('autoace_builder.pl -load $ace -tsuser "gi_number"', $log);
+  $wormbase->run_command("rm -f $sym_link", $log);
+  $wormbase->run_command("ln -s $ace $sym_link", $log);
 }
 
 # debugging code to leave .dat files on disk
