@@ -7,7 +7,7 @@
 # Usage : autoace_builder.pl [-options]
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2013-10-11 13:19:22 $
+# Last edited on: $Date: 2013-10-14 10:17:22 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -162,11 +162,6 @@ $wormbase->run_script( 'WBGene_span.pl'                   , $log ) if $gene_span
 
 $wormbase->run_script( 'find_intergenic.pl'               , $log ) if $intergenic;
 
-##  Horrid Geneace related stuff  ##########
-#make_pseudo_map_positions.pl -load
-#get_interpolated_gmap.pl
-#update_inferred_multi_pt.pl -load
-
 ####### mapping part ##########
 &map_features                                                            if $map;
 
@@ -181,7 +176,7 @@ $wormbase->run_script( 'load_data_sets.pl -misc', $log) if $misc_data_sets;
 $wormbase->run_script( 'load_data_sets.pl -homol', $log) if $homol_data_sets;
 # $build_dumpGFF.pl; (homol) is run chronologically here but previous call will operate
 $wormbase->run_script( 'make_wormrna.pl'                         , $log) if $rna;
-$wormbase->run_script( 'confirm_genes.pl -load'                  , $log) if $confirm;
+$wormbase->run_script( 'confirm_genes.pl'                        , $log) if $confirm;
 $wormbase->run_script( 'map_operons.pl'                          , $log) if $operon;
 $wormbase->run_script( "get_ena_submission_xrefs.pl -proteinxrefs", $log) if $enaprotxrefs;
 $wormbase->run_script( 'make_wormpep.pl -all -final'                  , $log) if $finish_wormpep;
@@ -375,7 +370,7 @@ sub map_features {
   $wormbase->run_script( 'map_Oligo_set.pl', $log );
   
   # microarray connections
-  $wormbase->run_script( 'map_microarray.pl -load', $log );
+  $wormbase->run_script( 'map_microarray.pl', $log );
   
   
   ## elegans only stuff
@@ -385,21 +380,21 @@ sub map_features {
     $wormbase->run_script( 'make_oligo_set_mapping_table.pl -all', $log );
     
     # maps SAGE tags to the genes and to the genome
-    $wormbase->run_script( 'map_tags.pl -load', $log );
+    $wormbase->run_script( 'map_tags.pl', $log );
     
     # Y2H objects
-    $wormbase->run_script( 'map_Interaction.pl -load', $log );
+    $wormbase->run_script( 'map_Interaction.pl', $log );
     
     # RNAi experiments
-    $wormbase->run_script( 'map_RNAi.pl -load', $log );
+    $wormbase->run_script( 'map_RNAi.pl', $log );
   }
   
   ## all species
   # TSL features
-  $wormbase->run_script( 'map_feature2gene.pl -load', $log );
+  $wormbase->run_script( 'map_feature2gene.pl', $log );
   
   # attach 'other nematode' ESTs to the genes they BLAT to best
-  $wormbase->run_script( 'attach_other_nematode_ests.pl -load', $log );
+  $wormbase->run_script( 'attach_other_nematode_ests.pl', $log );
   
 }
 
