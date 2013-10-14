@@ -7,7 +7,7 @@
 # by Dan
 #
 # Last updated by: $Author: klh $                      
-# Last updated on: $Date: 2013-04-15 12:06:55 $        
+# Last updated on: $Date: 2013-10-14 09:42:43 $        
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -22,14 +22,14 @@ my $maintainers = "All";
 my $help;       # Help perldoc
 my $test;       # Test mode
 my $debug;      # Debug mode, verbose output to user running script
-my $load;       # load file to autoace
+my $noload;     
 my $store;	# specify a frozen configuration file
 my $species;
 my $outfile;
 
 GetOptions ("debug=s"   => \$debug,
 	    "test"      => \$test,
-	    "load"      => \$load,
+	    "noload"    => \$noload,
             "species=s" => \$species,
 	    "acefile=s"	=> \$outfile,
 	    'store=s'	=> \$store
@@ -103,7 +103,7 @@ while (my $object = $i->next) {
 close OUTPUT;
 $db->close;
 
-if($load){
+unless ($noload) {
   $log->write_to("Loading file to autoace\n");
   $wb->load_to_database($wb->autoace, $outfile, 'microarray_mappings', $log);
 }

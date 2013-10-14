@@ -6,8 +6,8 @@
 #
 # 
 #
-# Last updated by: $Author: mh6 $     
-# Last updated on: $Date: 2008-07-09 12:29:15 $      
+# Last updated by: $Author: klh $     
+# Last updated on: $Date: 2013-10-14 09:40:15 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -24,7 +24,7 @@ use Modules::Overlap;
 ######################################
 
 my ($help, $debug, $test, $verbose, $store, $wormbase);
-my ($species, $output, $database, $load);
+my ($species, $output, $database, $noload);
 
 GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
@@ -34,7 +34,7 @@ GetOptions ("help"       => \$help,
 	    "species:s"  => \$species,
 	    "output:s"   => \$output,
 	    "database:s" => \$database,
-	    "load"       => \$load,
+	    "noload"     => \$noload,
 	    );
 
 
@@ -110,7 +110,7 @@ print "writing output\n";
 close(ACE);
 
 
-if ($load) {
+unless ($noload) {
   $wormbase->load_to_database($database, $output, 'attach_other_nematode_ests', $log);
 }
 

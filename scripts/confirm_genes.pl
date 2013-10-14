@@ -6,8 +6,8 @@
 #
 # Makes CDS status information by looking at transcript to exon mappings
 #
-# Last updated by: $Author: ar2 $     
-# Last updated on: $Date: 2008-08-08 13:43:29 $      
+# Last updated by: $Author: klh $     
+# Last updated on: $Date: 2013-10-14 09:41:36 $      
 
 
 use strict;
@@ -23,18 +23,18 @@ use Storable;
 ##############################
 
 my ($help, $verbose, $test, $quicktest, $store, $debug, $species); # the main options
-my $load; # whether to load to autoace or not
+my $noload; 
 
 GetOptions (
-	    "help"         => \$help,
-        "verbose"      => \$verbose,
-	    "test"         => \$test,
-	    "load"         => \$load,
-	    "quicktest"    => \$quicktest,
-	    "store:s"      => \$store,
-	    "debug:s"      => \$debug,
-	    "species:s"	   => \$species,
-            );
+  "help"         => \$help,
+  "verbose"      => \$verbose,
+  "test"         => \$test,
+  "noload"       => \$noload,
+  "quicktest"    => \$quicktest,
+  "store:s"      => \$store,
+  "debug:s"      => \$debug,
+  "species:s"	   => \$species,
+    );
 
 ##############################
 # Other script variables     #
@@ -194,7 +194,9 @@ foreach my $chromosome (@chromosomes) {
 close(ACE);
 
 # load file to autoace?
-$wormbase->load_to_database($wormbase->autoace, $output, "confirm_genes", $log) if($load);
+unless ($noload) {
+  $wormbase->load_to_database($wormbase->autoace, $output, "confirm_genes", $log);
+}
 
 $log->mail();
 exit(0);

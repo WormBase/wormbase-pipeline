@@ -30,7 +30,7 @@ use Getopt::Long;
 
 my ( $help, $debug, $test, $store );
 my $verbose;    # for toggling extra output
-my $load;
+my $noload;
 
 ##############################
 # command-line options       #
@@ -41,7 +41,7 @@ GetOptions(
     "debug=s"   => \$debug,
     "test"      => \$test,
     "store:s"   => \$store,
-    "load"      => \$load,
+    "noload"    => \$noload,
 );
 
 # Display help if required
@@ -535,7 +535,7 @@ $log->write_to("$final_total tags mapped total\n");
 
 
 # Upload file to autoace
-if ($load) {
+unless ($noload) {
   $wormbase->load_to_database($database_path, $output, "map_tags.pl", $log);
 }
 

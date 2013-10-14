@@ -8,8 +8,8 @@
 #
 # Usage : map_feature2gene.pl [-options]
 #
-# Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2013-07-29 16:16:13 $
+# Last edited by: $Author: klh $
+# Last edited on: $Date: 2013-10-14 09:39:32 $
 #################################################
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -25,14 +25,14 @@ my $maintainers = 'All';
 my $test;       # In test build mode
 my $help;       # Help/Usage page
 my $verbose;    # Verbose mode
-my $load;       # upload acefile after run
+my $noload;     # do not upload results to autoace
 my $debug;      # Debug mode
 my $store;      # configuration file
 my $species;
 
 GetOptions(
     'help'    => \$help,
-    'load'    => \$load,
+    'noload'  => \$noload,
     'verbose' => \$verbose,
     'test'    => \$test,
     'debug=s' => \$debug,
@@ -135,8 +135,7 @@ close OUTPUT;
 $db->close;
 
 # Upload file to autoace (if you have been asked to)
-if ($load) {
-
+unless ($noload) {
   $log->write_to("Loading file to autoace\n");
   $wb->load_to_database( $wb->autoace, $output, 'TSL_CDS_connect', $log );
 }
@@ -190,8 +189,6 @@ mmap_feature2gene.pl optional arguments:
 =item -verbose, Verbose mode
 
 =item -test, Test mode, generate the acefile but do not upload them 
-
-=item -load, loads file to autoace
 
 =item -help, Help pages
 

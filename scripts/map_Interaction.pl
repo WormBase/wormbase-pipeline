@@ -7,7 +7,7 @@
 # by Dan Lawson
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-09-29 16:50:17 $
+# Last updated on: $Date: 2013-10-14 09:37:31 $
 
 use strict;
 use warnings;
@@ -26,7 +26,7 @@ my $help;       # Help perldoc
 my $test;       # Test mode
 my $debug;      # Debug mode, verbose output to user running script
 my $verbose;    # Verbose mode
-my $load;       # for loading into autoace
+my $noload;     # do not load to autoace
 my $store;      # specify a frozen configuration file
 
 GetOptions(
@@ -34,7 +34,7 @@ GetOptions(
     'verbose'   => \$verbose,
     'test'      => \$test,
     'help'      => \$help,
-    'load'      => \$load,
+    'noload'    => \$noload,
     'acefile=s' => \$output,
     'store=s'   => \$store
 );
@@ -131,7 +131,7 @@ close(OUTPUT);    # close the output filehandle
 ###############
 # hasta luego #
 ###############
-if ($load) {
+unless ($noload) {
   $log->write_to("Loading file to autoace\n");
   $wb->load_to_database( $wb->autoace, $output, 'map_interaction_script', $log );
 }
