@@ -10,10 +10,9 @@ unless ($gene) {
 $gene =~ /(\w+)\.\w+/;
 my $clone = $1;
 
-my $wormpipe = glob("~wormpipe");
-my $acc = `grep $clone $wormpipe/dumps/accession2clone.list`;
+my $acc = `grep $clone /nfs/users/nfs_w/wormpub/DATABASES/current_DB/COMMON_DATA/accession2clone.dat`;
 my @data = split(/\s+/,$acc);
-print `pfetch -F $data[0] | less`;
+print `pfetch -F $data[1] | less`;
 
 
 __END__
