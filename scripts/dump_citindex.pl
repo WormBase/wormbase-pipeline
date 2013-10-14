@@ -85,6 +85,8 @@ sub print_gene{
   my @people = $g->at('Identity.Name.CGC_name')->col(3);
   push (@people, $g->at('Identity.Name.Other_name')->col(3))
               if ($g->Other_name && $g->at('Identity.Name.Other_name')->col(3));
+  push (@people, $g->at('Evidence.Person_evidence')->col(1)) 
+              if $g->at('Evidence.Person_evidence');
   push (@people, $g->at('Gene_Info.Structured_description.Concise_description')->col(3)) 
               if $g->at('Gene_Info.Structured_description.Concise_description');
   push (@people, $g->at('Gene_Info.Structured_description.Provisional_description')->col(3))
@@ -92,14 +94,21 @@ sub print_gene{
 
   # and then print them
   # if we get our hands on ORCID ids, they should go in there too
+  my %beenThere;
   foreach my $p (@people){
     if ($p && $p->class eq 'Person'){
+     if ($beenThere{"$p"}){
+        next;
+     } else{
+        $beenThere{"$p"}=1;
+     }
      $data.="  <author>\n";
      $data.='   <full_name>'.$p->Full_Name."</full_name>\n";
      $data.='   <affiliation>'.get_address($p)."</affiliation>\n" if (get_address($p));
      $data.="  </author>\n";
     }
   }
+  return '' unless @people;
   #######################################
 
   $data.="  <abstract><![CDATA[".$g->Concise_description."]]></abstract>\n" if $g->Concise_description;
