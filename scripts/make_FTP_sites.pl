@@ -6,7 +6,7 @@
 # builds wormbase & wormpep FTP sites
 # 
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-10-11 13:16:43 $
+# Last updated on: $Date: 2013-10-15 13:35:15 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -108,7 +108,7 @@ my $md5;
 my $go_public;
 my $compara;
 my $assembly_manifest;
-my (%skip_species, @skip_species, @only_species, %only_species);
+my (%skip_species, @skip_species, @only_species, %only_species, $WS_version, $WS_version_name);
 
 GetOptions ("help"          => \$help,
 	    "debug=s"       => \$debug,
@@ -142,6 +142,7 @@ GetOptions ("help"          => \$help,
             "onlyspecies=s@" => \@only_species,
 	    "all"            => \$all,
             "allnopublic"    => \$all_nopublic,
+            "wbversion=s"    => \$WS_version,
     );
 
 
@@ -167,13 +168,16 @@ if ($all) {
   $compara=$acedb=$dna=$gff=$rna=$misc=$wormpep=$genes=$cDNA=$ests=$geneIDs=$pcr=$homols=$manifest=$ont=$xrefs=$blastx=$dump_ko=$gbrowse_gff=$md5=$assembly_manifest=1;
 }
 
-my $WS              = $wormbase->get_wormbase_version();      # e.g.   132
-my $WS_name         = $wormbase->get_wormbase_version_name(); # e.g. WS132
+if (not $WS_version) {
+  $WS_version = $wormbase->get_wormbase_version();
+}
+$WS_version_name = "WS${WS_version}";
+
 my $maintainers     = "All";
 
 my $targetdir = ($testout) 
-    ? "$testout/releases/$WS_name"
-    : $wormbase->ftp_site . "/staging/releases/$WS_name";
+    ? "$testout/releases/$WS_version_name"
+    : $wormbase->ftp_site . "/staging/releases/$WS_version_name";
 
 $log->write_to("WRITING TO $targetdir\n");
 
@@ -295,11 +299,11 @@ sub copy_acedb_files{
   closedir RELEASE;
   
   # Copy across the models.wrm file
-  $wormbase->run_command("cp $ace_dir/wspec/models.wrm $ftp_acedb_dir/models.wrm.$WS_name", $log);
+  $wormbase->run_command("cp $ace_dir/wspec/models.wrm $ftp_acedb_dir/models.wrm.$WS_version_name", $log);
 
   # copy some miscellaneous files across
-  my $old_release = $WS -1;
-  $wormbase->run_command("cp ".	$wormbase->compare."/WS$old_release-$WS_name.dbcomp $ftp_acedb_dir", $log);
+  my $old_release = $WS_version -1;
+  $wormbase->run_command("cp ".	$wormbase->compare."/WS$old_release-$WS_version_name.dbcomp $ftp_acedb_dir", $log);
   $wormbase->run_command("cp $base_dir/autoace_config/INSTALL $ftp_acedb_dir", $log);  
   
   $runtime = $wormbase->runtime;
@@ -328,7 +332,7 @@ sub copy_blastx {
     my $in_file = $wb->acefiles . "/" . $wb->species . "_blastx.ace";
 
     if (-e $in_file) {
-      my $out_file = "$blastx_dir/$gspecies.$WS_name.blastx.ace.gz";
+      my $out_file = "$blastx_dir/$gspecies.$WS_version_name.blastx.ace.gz";
 
       $wormbase->run_command("cat $in_file | gzip -9 -c > $out_file", $log);
     }
@@ -358,7 +362,7 @@ sub copy_xrefs {
     my $bioproj = $wb->ncbi_bioproject;
 
     my $xref_file = $wb->acefiles . "/DBXREFs.txt";
-    my $out_file = "$targetdir/species/$gspecies/$bioproj/$gspecies.${bioproj}.${WS_name}.xrefs.txt.gz";
+    my $out_file = "$targetdir/species/$gspecies/$bioproj/$gspecies.${bioproj}.${WS_version_name}.xrefs.txt.gz";
 
     if (-e $xref_file) {
       $wormbase->run_command("cat $xref_file | gzip -9 -c > $out_file", $log);
@@ -411,9 +415,9 @@ sub copy_dna_files{
         }
       }
 	
-      my $target_dna_file =  "$dna_dir/${gspecies}.${bioproj}.${WS_name}.genomic.fa.gz";
-      my $target_masked = "$dna_dir/${gspecies}.${bioproj}.${WS_name}.genomic_masked.fa.gz";
-      my $target_soft = "$dna_dir/${gspecies}.${bioproj}.${WS_name}.genomic_softmasked.fa.gz";
+      my $target_dna_file =  "$dna_dir/${gspecies}.${bioproj}.${WS_version_name}.genomic.fa.gz";
+      my $target_masked = "$dna_dir/${gspecies}.${bioproj}.${WS_version_name}.genomic_masked.fa.gz";
+      my $target_soft = "$dna_dir/${gspecies}.${bioproj}.${WS_version_name}.genomic_softmasked.fa.gz";
       
       foreach my $pair ([$dna_file, $target_dna_file],
                         [$masked_file, $target_masked],
@@ -433,7 +437,7 @@ sub copy_dna_files{
       foreach my $dna_file (glob("$seqdir/*.dna.gz")) {
         if (not exists $copied_files{$dna_file}) {
           my ($prefix) = $dna_file =~ /$seqdir\/(\S+)\.dna.gz/;
-          my $target = "$dna_dir/${gspecies}.${bioproj}.${WS_name}.$prefix.fa.gz";
+          my $target = "$dna_dir/${gspecies}.${bioproj}.${WS_version_name}.$prefix.fa.gz";
           $wormbase->run_command("cp -f $dna_file $target", $log);
         }
       }
@@ -441,7 +445,7 @@ sub copy_dna_files{
       my @agp_files = glob("$chromdir/*.agp");
       
       if (@agp_files) {
-        my $target_agp_file =  "$dna_dir/${gspecies}.${bioproj}.${WS_name}.assembly.agp"; 
+        my $target_agp_file =  "$dna_dir/${gspecies}.${bioproj}.${WS_version_name}.assembly.agp"; 
         
         if (scalar(@agp_files) == 1) {
           # just the one - assume its for whole genome and copy it across
@@ -493,7 +497,7 @@ sub copy_gff_files{
 
     my $gff_dir = "$targetdir/species/$gspecies/$bioproj";
     mkpath($gff_dir,1,0775);
-    my $fname_prefix = "$gspecies.$bioproj.$WS_name.annotations";
+    my $fname_prefix = "$gspecies.$bioproj.$WS_version_name.annotations";
     
     if (-e $source_gff2_file) {
       #concatenated whole genome file require for all species
@@ -537,7 +541,7 @@ sub copy_gff_files{
     mkpath($gff_dir,1,0775);
 
     my $source = sprintf("%s/%s.gff3", $wb->gff, $species);
-    my $target = sprintf("%s/%s.%s.%s.annotations.gff3", $gff_dir, $gspecies, $bioproj, $WS_name);
+    my $target = sprintf("%s/%s.%s.%s.annotations.gff3", $gff_dir, $gspecies, $bioproj, $WS_version_name);
 
     if (-e $source) {
       $wb->run_command("cp -f $source $target", $log);
@@ -568,7 +572,7 @@ sub copy_compara {
   my $clust_src = "$chromdir/wormpep_clw.sql.gz";
 
   if (-e $clust_src) {
-    my $target = "$targetdir/COMPARATIVE_ANALYSIS/wormpep_clw.${WS_name}.sql.gz";
+    my $target = "$targetdir/COMPARATIVE_ANALYSIS/wormpep_clw.${WS_version_name}.sql.gz";
     $wormbase->run_command("cp -f -R $clust_src $target", $log);
 
   } else {
@@ -593,7 +597,7 @@ sub copy_compara {
   }
 
   if (@compara_tar_args) {
-    my $target = "$targetdir/COMPARATIVE_ANALYSIS/compara.$WS_name.tar.gz";
+    my $target = "$targetdir/COMPARATIVE_ANALYSIS/compara.$WS_version_name.tar.gz";
     $wormbase->run_command("tar zcvf $target @compara_tar_args", $log);
   } else {
     $log->write_to("Warning: no compara results moved to FTP site\n");
@@ -631,7 +635,7 @@ sub copy_rna_files{
 	
     # Note that the following points to the most recent version of the file; 
     my $src_file = "$rnadir/${prefix}rna".$wb->get_wormbase_version.".rna"; 
-    my $tgt_file = "$ftprna_dir/$gspecies.$bioproj.$WS_name.ncrna_transcripts.fa"; #target FTP file
+    my $tgt_file = "$ftprna_dir/$gspecies.$bioproj.$WS_version_name.ncrna_transcripts.fa"; #target FTP file
     
     if (-e $src_file and -s $src_file) {
       $wormbase->run_command("gzip -9 -c $src_file > ${tgt_file}.gz",$log);
@@ -655,7 +659,7 @@ sub copy_rna_files{
     my $gff_dir = "$targetdir/species/$gspecies/$bioproj";
     mkpath($gff_dir,1,0775);
 
-    my $target = sprintf("%s/%s.%s.%s.ncrna_transcripts.fa.gz", $gff_dir, $gspecies, $bioproj, $WS_name);
+    my $target = sprintf("%s/%s.%s.%s.ncrna_transcripts.fa.gz", $gff_dir, $gspecies, $bioproj, $WS_version_name);
     my $unzipped_source = sprintf("%s/%s.ncrna.fa", $wb->sequences, $species);
 
     if (-e $unzipped_source) {
@@ -681,7 +685,7 @@ sub copy_ontology_files {
 
   my $ace_dir = $wormbase->autoace;
 
-  my $obo_dir = $wormbase->primaries . "/citace/temp_unpack_dir/home/citace/Data_for_${WS_name}/Data_for_Ontology/";
+  my $obo_dir = $wormbase->primaries . "/citace/temp_unpack_dir/home/citace/Data_for_${WS_version_name}/Data_for_Ontology/";
   my $ace_ontology_dir = "$ace_dir/ONTOLOGY";
   my $ftp_ontology_dir = "$targetdir/ONTOLOGY";
 
@@ -718,7 +722,7 @@ sub copy_misc_files{
   #
   if ($wormbase->species eq 'elegans') {
     my $source = "$srcdir/ReutersCitationIndex.xml.gz";
-    my $target = "$annotation_dir/${gspecies}.${bioproj}.${WS_name}.reuters_citation_index.xml.gz";
+    my $target = "$annotation_dir/${gspecies}.${bioproj}.${WS_version_name}.reuters_citation_index.xml.gz";
 
     if (-e $source) {
       $wormbase->run_command("cp -f $source $target", $log);
@@ -733,7 +737,7 @@ sub copy_misc_files{
   #
   foreach my $file (glob("$srcdir/*oligo_mapping")) {
     my ($pre) = $file =~ /$srcdir\/(\S+_oligo_mapping)/;
-    my $target = "$annotation_dir/$gspecies.$bioproj.$WS_name.${pre}.txt.gz";
+    my $target = "$annotation_dir/$gspecies.$bioproj.$WS_version_name.${pre}.txt.gz";
     
     $wormbase->run_command("cat $file | gzip -9 -c > $target", $log);
   }
@@ -741,7 +745,7 @@ sub copy_misc_files{
   #
   # TAR expression data for elegans
   #
-  my $TARget = "$annotation_dir/$gspecies.$bioproj.$WS_name.TAR_gene_expression.tar.gz";
+  my $TARget = "$annotation_dir/$gspecies.$bioproj.$WS_version_name.TAR_gene_expression.tar.gz";
   my $TARexpr = $wormbase->spell . "/expr.tiling_arrays.tar.gz";
   if (-e $TARexpr) {
     $wormbase->run_command("cp -f $TARexpr $TARget", $log);
@@ -791,7 +795,7 @@ sub copy_misc_files{
 
     if (-e $src) {
       mkpath($tgt_dir,1,0775);
-      my $target = "$tgt_dir/$g_species.$bioproj.$WS_name.SRA_gene_expression.tar.gz";
+      my $target = "$tgt_dir/$g_species.$bioproj.$WS_version_name.SRA_gene_expression.tar.gz";
       $wormbase->run_command("cp -f $src $target", $log);
     } else {
       $log->write_to("Warning: gene expression file for $g_species not found ($src)\n");
@@ -832,9 +836,9 @@ sub copy_wormpep_files {
     my $tgt = "$targetdir/species/$gspecies/$bioproj";
     mkpath($tgt,1,0775);
 
-    if ($rel_last_built == $WS) {
+    if ($rel_last_built == $WS_version) {
       # tar up the latest wormpep release and copy across (files added in next loop)
-      my $tgz_file = "$tgt/$gspecies.$bioproj.$WS_name.wormpep_package.tar.gz";
+      my $tgz_file = "$tgt/$gspecies.$bioproj.$WS_version_name.wormpep_package.tar.gz";
       my $command = "tar -c -z -h -f $tgz_file -C $src";
       
       # for tierIIs, the *pep package often does not change between 
@@ -857,7 +861,7 @@ sub copy_wormpep_files {
 
     my (%gene_ids);
     if (-e $source_pepfile) {
-      my $target_pepfile = "$tgt/$gspecies.$bioproj.$WS_name.protein.fa.gz";
+      my $target_pepfile = "$tgt/$gspecies.$bioproj.$WS_version_name.protein.fa.gz";
       open(my $source_pep_fh, $source_pepfile);
       while(<$source_pep_fh>) {
         /^\>(\S+)\s+\S+\s+(\S+)/ and do {
@@ -872,7 +876,7 @@ sub copy_wormpep_files {
     }
 
     if (-e $source_cdnafile) {
-      my $target_cdnafile = "$tgt/$gspecies.$bioproj.${WS_name}.cds_transcripts.fa.gz";
+      my $target_cdnafile = "$tgt/$gspecies.$bioproj.${WS_version_name}.cds_transcripts.fa.gz";
       open(my $source_cdna_fh, $source_cdnafile);
       open(my $target_cdna_fh, "| gzip -9 -c > $target_cdnafile");
       while(<$source_cdna_fh>) {
@@ -893,7 +897,7 @@ sub copy_wormpep_files {
 
     # Copy over the file created by transcript_builder.pl that is the Transcript version of the above cds file
     my $coding_transcripts_fa = $wb->sequences."/coding_transcripts.dna.gz";
-    my $target_transcript_fa = "$tgt/$gspecies.$bioproj.$WS_name.coding_transcripts.fa.gz";
+    my $target_transcript_fa = "$tgt/$gspecies.$bioproj.$WS_version_name.coding_transcripts.fa.gz";
 
     if (-e $coding_transcripts_fa){
       $wb->run_command("scp $coding_transcripts_fa $target_transcript_fa", $log);
@@ -921,8 +925,8 @@ sub copy_wormpep_files {
     my $src_pep_file = $wb->sequences . "/$t3.prot.fas";
     my $src_cdna_file = $wb->sequences . "/$t3.cdna.fas";
 
-    my $tgt_pep_file = "$tgt/$gspecies.$bioproj.$WS_name.protein.fa.gz";
-    my $tgt_cdna_file = "$tgt/$gspecies.$bioproj.$WS_name.cds_transcripts.fa.gz";
+    my $tgt_pep_file = "$tgt/$gspecies.$bioproj.$WS_version_name.protein.fa.gz";
+    my $tgt_cdna_file = "$tgt/$gspecies.$bioproj.$WS_version_name.cds_transcripts.fa.gz";
 
     if (-e $src_pep_file) {
       $wb->run_command("gzip -9 -c $src_pep_file > $tgt_pep_file", $log);
@@ -964,7 +968,7 @@ sub copy_est_files {
     my $tdir = "$targetdir/species/$gspecies/$bioproj";
     mkpath("$tdir",1,0775);
 
-    my $target = "$targetdir/species/$gspecies/$bioproj/$gspecies.$bioproj.$WS_name.ests.fa.gz";
+    my $target = "$targetdir/species/$gspecies/$bioproj/$gspecies.$bioproj.$WS_version_name.ests.fa.gz";
     my $est_dir = $wb->build_data . "/cDNA/$species";
 
     open(my $outfh, "| gzip -c -9 > $target") 
@@ -1006,7 +1010,7 @@ sub make_assembly_manifest {
 
   my $ftp_acedb_dir = "$targetdir/species";
   mkpath("$ftp_acedb_dir",1,0775);
-  my $manifile = "$ftp_acedb_dir/ASSEMBLIES.$WS_name.json";
+  my $manifile = "$ftp_acedb_dir/ASSEMBLIES.$WS_version_name.json";
 
   open(my $fh, ">$manifile\n") or $log->log_and_die("Could not open $manifile for writing\n");
   my $db = Ace->connect(-path => $wormbase->autoace );
@@ -1075,7 +1079,7 @@ sub make_assembly_manifest {
         assembly_name => $assembly_name->name,
         appeared_in => 'WS'.$first_ws_rel->name,
         is_canonical => ($is_canonical) ? JSON::true : JSON::false,
-        strain => $strain->name,
+        strain => (defined $strain) ? $strain->name : "Unknown strain",
         laboratory => \@labs,
       };
     }
@@ -1110,7 +1114,7 @@ sub extract_confirmed_genes{
 
   my $ace_dir = $wormbase->autoace;
   my $annotation_dir = "$targetdir/species/$gspecies/$bioproj/annotation";
-  my $wormdna = $wormbase->wormpep."/".$wormbase->pepdir_prefix."pep.dna".$wormbase->get_wormbase_version;
+  my $wormdna = $wormbase->wormpep."/".$wormbase->pepdir_prefix."pep.dna${WS_version}";
   my $seqio  = Bio::SeqIO->new('-file' => "$wormdna", '-format' => 'fasta');
 
   my $db = Ace->connect(-path => "$ace_dir/") || die print "ACE connection failure: ", Ace->error;
@@ -1122,7 +1126,7 @@ sub extract_confirmed_genes{
 
   mkpath("$annotation_dir",1,0775);
 
-  my $out_file = "$annotation_dir/$gspecies.$bioproj.$WS_name.confirmed_genes.fa";
+  my $out_file = "$annotation_dir/$gspecies.$bioproj.$WS_version_name.confirmed_genes.fa";
 
   open(OUT,">$out_file") or 
       $log->write_to("Couldn't write to $out_file\n");
@@ -1160,7 +1164,7 @@ sub extract_ko {
   my $annotation_dir = "$targetdir/species/$gspecies/$bioproj/annotation";
   mkpath("$annotation_dir",1,0775);
 
-  my $outfile = "$annotation_dir/${gspecies}.${bioproj}.${WS_name}.knockout_consortium_alleles.xml.gz";
+  my $outfile = "$annotation_dir/${gspecies}.${bioproj}.${WS_version_name}.knockout_consortium_alleles.xml.gz";
 
   $wormbase->run_script("dump_ko.pl -file $outfile",$log);
   
@@ -1210,7 +1214,7 @@ EOF
   # output to ftp site
 
   
-  my $out = "$annotation_dir/$gspecies.$bioproj.$WS_name.cdna2orf.txt";
+  my $out = "$annotation_dir/$gspecies.$bioproj.$WS_version_name.cdna2orf.txt";
   open(OUT, ">$out") or $log->write_to("Couldn't open $out\n");
 
   foreach my $key (keys %cDNA2orf){
@@ -1249,7 +1253,7 @@ sub make_geneID_list {
     my $ace_dir = $wormbase->autoace;
 
     my $dir     = "$ace_dir";
-    my $out     = "$annotation_dir/$gspecies.$bioproj.$WS_name.geneIDs.txt";
+    my $out     = "$annotation_dir/$gspecies.$bioproj.$WS_version_name.geneIDs.txt";
 
     mkpath("$annotation_dir",1,0775);
     open GENEID,">$out" ||die($!);
@@ -1292,7 +1296,7 @@ sub make_pcr_list {
   my $tace    = $wormbase->tace;
   my $command = "Table-maker -p $ace_dir/wquery/pcr_product2gene.def\nquit\n";
   my $dir     = "$ace_dir";
-  my $out     = "$annotation_dir/$gspecies.$bioproj.$WS_name.pcr_product2gene.txt";
+  my $out     = "$annotation_dir/$gspecies.$bioproj.$WS_version_name.pcr_product2gene.txt";
   mkpath("$annotation_dir",1,0775);
 
   # hashes needed because one pcr product may hit two or more genes
@@ -1376,7 +1380,7 @@ sub copy_homol_data {
       my $protein_dir = "$targetdir/species/$gspecies/$bioproj";
       mkpath($protein_dir,1,0775);
 
-      my $target_file = "$protein_dir/$gspecies.$bioproj.$WS_name.best_blastp_hits.txt.gz";
+      my $target_file = "$protein_dir/$gspecies.$bioproj.$WS_version_name.best_blastp_hits.txt.gz";
       # this script might be run more than once if there are problems
       $wormbase->run_command("gzip -9 -f $source_file",$log) if (! -e "$source_file.gz"); 
       $wormbase->run_command("scp $source_file.gz $target_file", $log);
@@ -1404,14 +1408,14 @@ sub make_gbrowse_gff {
     my $bioproj = $wb->ncbi_bioproject;
     my $tgt_dir = "$targetdir/species/$gspecies/$bioproj";
 
-    my $in_filename = "$tgt_dir/$gspecies.$bioproj.$WS_name.annotations.gff2.gz"; 
+    my $in_filename = "$tgt_dir/$gspecies.$bioproj.$WS_version_name.annotations.gff2.gz"; 
 
     if (not -e $in_filename) {
       $log->error("ERROR: Could not make GBrowse-ready GFF for $species; in file $in_filename not found\n");
       next;
     }
 
-    my $out_filename = "$tgt_dir/$gspecies.$bioproj.$WS_name.GBrowse.gff2";
+    my $out_filename = "$tgt_dir/$gspecies.$bioproj.$WS_version_name.GBrowse.gff2";
     my $command = "perl $ENV{CVS_DIR}/web_data/process_elegans_gff-standalone.pl -species $species -outfile $out_filename";
     if ($debug) {
       $command .= " -debug $debug ";
@@ -1452,14 +1456,14 @@ sub make_md5sums {
 ##################################################################################
 sub go_public {
   my $base_path = $wormbase->ftp_site;
-  my $staging_path = "$base_path/staging/releases/$WS_name";
-  my $final_path   = "$base_path/releases/$WS_name";
+  my $staging_path = "$base_path/staging/releases/$WS_version_name";
+  my $final_path   = "$base_path/releases/$WS_version_name";
   my $frozen_path = "$base_path/FROZEN_RELEASES";
 
   $wormbase->run_command("mv $staging_path $final_path", $log);
 
-  if ($WS =~ /\d+5$/ || $WS =~ /\d+0$/) {
-    $wormbase->run_command("cd $frozen_path && ln -sf ../releases/$WS_name $WS_name", $log);
+  if ($WS_version =~ /\d+5$/ || $WS_version =~ /\d+0$/) {
+    $wormbase->run_command("cd $frozen_path && ln -sf ../releases/$WS_version_name $WS_version_name", $log);
   }
 }
 
@@ -1560,7 +1564,7 @@ sub check_manifest {
       $parent = "$targetdir/$parent";
       foreach my $ofile (@{$block->{files}}) {
         my $file = $ofile;
-        $file =~ s/WSREL/$WS_name/g;
+        $file =~ s/WSREL/$WS_version_name/g;
         $file = "$parent/$file";
         $count += &checkfile($file);
       }
@@ -1579,7 +1583,7 @@ sub check_manifest {
         my $parent = $block->{parent};
         $parent =~ s/GSPECIES/$gspecies/g;
         $parent =~ s/BIOPROJ/$bioproj/g;
-        $parent =~ s/WSREL/$WS_name/g;
+        $parent =~ s/WSREL/$WS_version_name/g;
         $parent = "$targetdir/$parent";
         
         foreach my $ofile (@{$block->{files}}) {
@@ -1587,7 +1591,7 @@ sub check_manifest {
           
           $file =~ s/GSPECIES/$gspecies/g;
           $file =~ s/BIOPROJ/$bioproj/g;
-          $file =~ s/WSREL/$WS_name/g;
+          $file =~ s/WSREL/$WS_version_name/g;
           $file =~ s/WORM/$gWORM/g;
           $file = "$parent/$file";
           $count += &checkfile($file);
