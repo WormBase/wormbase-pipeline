@@ -673,7 +673,9 @@ sub pepdir_prefix{'as'};
 sub ncbi_tax_id {'6253'};
 sub ncbi_bioproject {'PRJNA62057'};
 sub bioproject_description { 'University of Colorado A.suum genome project' }
-sub is_canonical{ 0 };
+sub is_canonical{ 
+  return 0; 
+}
 sub assembly_type {'contig'};
 sub TSL {(
 	  'SL1'  => "GGTTTAATTACCCAAGTTTGAG",
@@ -1126,7 +1128,9 @@ sub assembly_type {'contig'};
 sub chromosome_names {
   die "chromosome_names method not implemented for this species\n";
 }
-
+sub is_canonical {
+  return 0;
+}
 
 ######################
 package Tspiralis;
