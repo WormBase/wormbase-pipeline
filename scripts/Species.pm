@@ -884,7 +884,7 @@ sub pep_prefix {'PR'}
 sub pepdir_prefix{'panagrellus'};
 sub ncbi_tax_id {'6233'};
 sub ncbi_bioproject {'PRJNA186477'};
-sub bioproject_description { 'California Institut of Technology'};
+sub bioproject_description { 'California Institute of Technology P.redivivus genome project'};
 sub assembly_type {'contig'};
 
 ######################################################
@@ -903,22 +903,23 @@ sub _new {
     bless $self, $class;
 }
 sub full_name {
-	my $self = shift;
-	my %param = @_ ;
-	if($param{'-short'}){
-		return 'D. immitis';
-	}	elsif($param{'-g_species'}){
-		return 'd_immitis';
-	}
-	else { return'Dirofilaria immitis'
-	};
+  my $self = shift;
+  my %param = @_ ;
+  if($param{'-short'}){
+    return 'D. immitis';
+  } elsif($param{'-g_species'}){
+    return 'd_immitis';
+  }
+  else { 
+    return'Dirofilaria immitis';
+  }
 }
 sub chromosome_prefix {''}
 sub pep_prefix {'DI'}
 sub pepdir_prefix{'dimmitis'};
 sub ncbi_tax_id {'6287'};
-sub ncbi_bioproject {'unknown'};
-sub bioproject_description { 'Edinburgh University'};
+sub ncbi_bioproject {'PRJEB1797'};
+sub bioproject_description { 'Edinburgh University D.immitis genome project'};
 sub assembly_type {'contig'};
 
 
