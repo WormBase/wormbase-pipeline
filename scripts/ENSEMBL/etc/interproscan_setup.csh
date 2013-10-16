@@ -4,7 +4,6 @@ setenv IPR_PIPELINE_NAME $1
 setenv HIVEDB $IPR_PIPELINE_NAME
 setenv PATH ${PATH}:$WORM_PACKAGES/ensembl/ensembl-hive/scripts
 setenv EG_ENSEMBL_ROOT $WORM_PACKAGES/ensembl_genomes
-setenv E_REGISTRY $CVS_DIR/ENSEMBL/etc/Registry.pm
 
 setenv PIPELINE_DIR $PIPELINE/interpro_scratch
 
@@ -22,7 +21,7 @@ mysql --host=${WORM_DBHOST} --port=${WORM_DBPORT} --user=wormadmin --password=wo
 
 # setup the new pipelines
 
-init_pipeline.pl Bio::EnsEMBL::Hive::PipeConfig::InterProScan_conf -registry ${E_REGISTRY} -species $SPECIES -hive_host ${WORM_DBHOST} -hive_port ${WORM_DBPORT} -hive_user wormadmin -hive_password worms -hive_dbname ${HIVEDB} -pipeline_dir ${PIPELINE_DIR} -ensembl_cvs_root_dir ${EG_ENSEMBL_ROOT}
+init_pipeline.pl Bio::EnsEMBL::Hive::PipeConfig::InterProScan_conf -registry ${ENSEMBL_REGISTRY} -species $SPECIES -hive_host ${WORM_DBHOST} -hive_port ${WORM_DBPORT} -hive_user wormadmin -hive_password worms -hive_dbname ${HIVEDB} -pipeline_dir ${PIPELINE_DIR} -ensembl_cvs_root_dir ${EG_ENSEMBL_ROOT}
 
 
 
