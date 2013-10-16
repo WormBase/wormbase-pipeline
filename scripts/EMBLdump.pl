@@ -2,8 +2,8 @@
 #
 # EMBLdump.pl :  makes modified EMBL dumps from camace.
 # 
-#  Last updated on: $Date: 2013-09-13 13:52:59 $
-#  Last updated by: $Author: mh6 $
+#  Last updated on: $Date: 2013-10-16 15:02:53 $
+#  Last updated by: $Author: gw3 $
 
 use strict;
 use Getopt::Long;
@@ -51,7 +51,10 @@ my %species_info = (
 
 my %additional_qualifiers = (
 
-  "C06G3.7" => { 
+  "C06G3.7a" => { 
+    transl_except => ["(pos:4060..4062,aa:Sec)"],
+  },
+  "C06G3.7b" => { 
     transl_except => ["(pos:4060..4062,aa:Sec)"],
   },
   'Bm2025a' => {

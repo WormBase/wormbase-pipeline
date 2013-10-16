@@ -4,8 +4,8 @@
 #
 # by Keith Bradnam
 #
-# Last updated on: $Date: 2013-09-27 10:50:51 $
-# Last updated by: $Author: pad $
+# Last updated on: $Date: 2013-10-16 15:02:40 $
+# Last updated by: $Author: gw3 $
 #
 # see pod documentation at end of file for more information about this script
 
@@ -596,8 +596,8 @@ unless ($gene_model->name =~ /MTCE/) {
 	my $following_sequence = substr($dna, $j+2, 10);
 	my $offending_codon = substr($dna, $j-1, 3);
 	if (($method_test eq 'curated')) {
-	  push(@error1, "ERROR: $gene_model internal stop codon at position $j ...$previous_sequence $offending_codon $following_sequence...\n") unless ($gene_model eq 'C06G3.7');      
-	  print STDERR "ERROR: $gene_model internal stop codon at position $j ...$previous_sequence $offending_codon $following_sequence...\n" if (($verbose) && ($gene_model ne 'C06G3.7'));
+	  push(@error1, "ERROR: $gene_model internal stop codon at position $j ...$previous_sequence $offending_codon $following_sequence...\n") unless ($gene_model eq 'C06G3.7a' || $gene_model eq 'C06G3.7b');      
+	  print STDERR "ERROR: $gene_model internal stop codon at position $j ...$previous_sequence $offending_codon $following_sequence...\n" if (($verbose) && ($gene_model ne 'C06G3.7a' && $gene_model ne 'C06G3.7b'));
 	}
       }
     }
