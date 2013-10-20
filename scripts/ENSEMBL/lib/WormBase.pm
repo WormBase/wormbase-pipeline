@@ -35,7 +35,7 @@ require Exporter;
 
 our @ISA    = qw(Exporter);
 our @EXPORT =
-  qw(get_seq_ids get_sequences_pfetch agp_parse parse_gff parse_gff3_fh write_genes translation_check insert_agp_line display_exons non_translate process_file parse_operons write_simple_features parse_rnai parse_expr parse_SL1 parse_SL2 parse_pseudo_gff store_coord_system store_slice parse_tRNA parse_rRNA_genes parse_tRNA_genes parse_pseudo_files parse_simplefeature parse_gff_fh parse_pcr_product);
+  qw( parse_gff parse_gff3_fh write_genes translation_check display_exons non_translate process_file parse_operons write_simple_features parse_rnai parse_expr parse_SL1 parse_SL2 parse_pseudo_files parse_simplefeature parse_gff_fh parse_pcr_product);
 
 use strict;
 use Storable qw(store retrieve freeze thaw dclone);
@@ -50,143 +50,7 @@ use Bio::EnsEMBL::Slice;
 use Bio::EnsEMBL::Analysis::Tools::GeneBuildUtils::ExonUtils;
 
 $WormBase::Species = "";
-
-=head2 get_seq_ids
-
-  Arg [1]   : filehandle to an agp file
-  Function  : retrives sequence ids from an agp file
-  Returntype: array ref of seq ids and array ref of ides which don't fit the format'
-  Exceptions: non
-  Caller    : 
-  Example   : &get_seq_ids($fh);
-
-=cut
-
-sub get_seq_ids {
-    my ($fh) = @_;
-
-    my @seq_ids;
-    my @non_ids;
-    while (<$fh>) {
-        chomp;
-
-        #I	47490	107680	3	F	AC024796.1	1	60191	+
-
-        my ( $status, $contig ) = (split)[ 4, 5 ];
-        if ( !$contig =~ /\S+\.\d+/ ) {
-            push( @non_ids, $contig );
-            next;
-        }
-        if ( $contig =~ /\S+\.$/ ) {
-            push( @non_ids, $contig );
-            next;
-        }
-
-        push( @seq_ids, $contig );
-    }
-    return \@seq_ids, \@non_ids;
-}
-
-=head2 get_sequences_pfetch
-
-  Arg [1]   : array ref of sequence ids which will be recognised by pfetch
-  Arg [2]   : a Bio::EnsEMBL::Pipeline::Seqfetcher::Pfetch object
-  Function  : gets sequences for the ids passed to it using pfetch
-  Returntype: hash keyed on seq id containing Bio::Seq object
-  Exceptions: throws if seqfetcher passed to it isn't pfetch'
-  Caller    : 
-  Example   : %get_sequences_pfetch($seq_ids, $seqfetcher);
-
-=cut
-
-sub get_sequences_pfetch {
-    my ( $seq_ids, $seqfetcher ) = @_;
-    unless ( $seqfetcher->isa("Bio::EnsEMBL::Pipeline::SeqFetcher::Pfetch") ) {
-        die( "seqfetcher " . $seqfetcher . " needs to be a pfetch for this too work" );
-    }
-    my %seqs;
-    foreach my $id (@$seq_ids) {
-        my $seq;
-        eval { $seq = $seqfetcher->get_Seq_by_acc($id); };
-        if ($@) {
-            warn "$id isn't most recent sequence trying archive\n";
-            $seqfetcher->options('-a');
-            $seq = $seqfetcher->get_Seq_by_acc($id);
-        }
-        if ($seq) {
-            $seqs{$id} = $seq;
-        }
-        else {
-            warn "sequence " . $id . " wasn't found\n";
-        }
-    }
-    return ( \%seqs );
-}
-
-=head2 agp_parse
-
-  Arg [1]   : filehandle to an agp file
-  Arg [2]   : chromosome id from chromsome table
-  Arg [3]   : agp type for assembly table
-  Function  : parses an agp file into a suitable format for inserting into the assembly table
-  Returntype: hash ref, keyed on contig id, each hash element is itself a hash which contains all the info needed for the assembly table
-  Exceptions: dies if the same contig id is found twice
-  Caller    : 
-  Example   : 
-
-=cut
-
-sub agp_parse {
-    my ( $fh, $chr_id, $agp_type ) = @_;
-    my $chr_hash = {};
-
-    while (<$fh>) {
-        chomp;
-
-        #I	47490	107680	3	F	AC024796.1	1	60191	+
-
-        my ( $chr, $chr_start, $chr_end, $ordinate,$type, $contig, $raw_start, $raw_end, $raw_ori ) = split;
-
-	next if (! $type) || ($type eq 'N');
-
-        if ( !$contig =~ /\S+\.\d+/ ) {
-            next;
-        }
-        if ( $contig =~ /\S+\.$/ ) {
-            next;
-        }
-        if ( $raw_ori eq '+' ) {
-            $raw_ori = 1;
-        }
-        elsif ( $raw_ori eq '-' ) {
-            $raw_ori = -1;
-        }
-        else {
-            $raw_ori = 1;
-        }
-
-        if ( $chr_hash->{$contig} ) {
-            die "contig " . $contig . " has been found twice something odd is going on\n";
-        }
-        else {
-            $chr_hash->{$contig} = {
-                'chromosome_id'  => $chr_id,
-                'chr_start'      => $chr_start,
-                'chr_end'        => $chr_end,
-                'superctg_name'  => $chr,
-                'superctg_start' => $chr_start,
-                'superctg_end'   => $chr_end,
-                'superctg_ori'   => 1,
-                'contig_start'   => $raw_start,
-                'contig_end'     => $raw_end,
-                'contig_ori'     => $raw_ori,
-                'type'           => $agp_type,
-              }
-
-        }
-    }
-    return $chr_hash;
-}
+$WormBase::DEBUG = 0;
 
 =head2 parse_gff
 
@@ -216,31 +80,26 @@ sub parse_gff {
 
 sub parse_gff_fh {
   my ( $fh, $slice_hash, $analysis ) = @_;
-  
-  my @genes;
-  
+    
   my ( $transcripts, $five_prime, $three_prime, $parent_seqs ) = &process_file( $fh );
-  print "there are " . keys(%$transcripts) . " distinct transcripts\n";
-  my $genes = undef;
+  print STDERR "there are " . keys(%$transcripts) . " distinct transcripts\n";
   
   my ( $processed_transcripts, $five_start, $three_end, $trans_start_exon, $trans_end_exon ) =
       &generate_transcripts( $transcripts, $slice_hash, $analysis, $five_prime, $three_prime, $parent_seqs );
   
-  print "\nthere are " . keys(%$processed_transcripts) . " transcripts\n";
+  print STDERR "\nthere are " . keys(%$processed_transcripts) . " transcripts\n";
   
-  $genes = undef;
-  $genes = &create_transcripts( $processed_transcripts, $five_start, $three_end, $trans_start_exon, $trans_end_exon );
+  my $genes = &create_transcripts( $processed_transcripts, $five_start, $three_end, $trans_start_exon, $trans_end_exon );
   
-  print "\nPARSE GFF has " . keys(%$genes) . " genes\n";
+  print STDERR "\nPARSE GFF has " . keys(%$genes) . " genes\n";
+  my @genes;
   foreach my $gene_id ( keys(%$genes) ) {
     my $transcripts = $genes->{$gene_id};
     my $gene    = &create_gene( $transcripts, $gene_id, 'protein_coding' );
-    
     push( @genes, $gene );
   }
   
-  close(FH);
-  print "\nPARSE_GFF got " . @genes . " genes\n";
+  print STDERR "\nPARSE_GFF got " . @genes . " genes\n";
   return \@genes;
 }
 
@@ -373,7 +232,7 @@ sub parse_gff3_fh {
       # sanity check: exons do not overlap
       for(my $i=0; $i < scalar(@exons) - 1; $i++) {
         if ($exons[$i]->{end} >= $exons[$i+1]->{start}) {
-          print STDERR "Skipping gene with  transcript $tid ($gff_source) - exons overlap\n";
+          $WormBase::DEBUG and print STDERR "Skipping gene with  transcript $tid ($gff_source) - exons overlap\n";
           next GENE;
         }
       }
@@ -650,7 +509,6 @@ sub process_file {
     }
   }
 
-  print STDERR "Have " . keys(%genes) . " genes (CDS)\n";
   return \%genes, \%five_prime, \%three_prime, \%parent_seqs;
 }
 
@@ -714,11 +572,6 @@ sub generate_transcripts {
       foreach my $line (@lines) {
         my ( $chr, $status, $type, $start, $end, $score, $strand, $frame, $sequence, $gene ) = split /\s+/, $line;
 
-        # check that seq name agrees with slice name
-        #if ($chr ne $slice->seq_region_name) {
-        #  die "Seq name in file ('$chr') does not agree with slice name\n";
-        #}
-
         my $exon  = new Bio::EnsEMBL::Exon;
         my $phase = ( 3 - $frame ) % 3;       
 
@@ -749,15 +602,6 @@ sub generate_transcripts {
         @global_exons = sort { $a->start <=> $b->start } @global_exons;
       }
       
-      #save information if there is not further UTR info
-      #if ( !defined( $$five_prime{$gene_name} ) and !defined( $$three_prime{$gene_name} ) ) {
-        
-      #  $transcripts{$gene_name} = \@global_exons;
-        
-      #  next GENE;
-      #}
-      
-      ## check different transcripts using UTR information ##
       #collect 5' UTRs
       foreach my $transcript_name ( keys( %{ $$five_prime{$gene_name} } ) ) {
         
@@ -869,12 +713,12 @@ sub generate_transcripts {
         #set default translation range
         $trans_start_exon{$transcript_name} = 0;
         $trans_end_exon{$transcript_name}   = $#exons;
-        print "\ntrans-exons: " . $trans_start_exon{$transcript_name} . " - " . $trans_end_exon{$transcript_name} . " (" . scalar @exons . ")";
+        #print "\ntrans-exons: " . $trans_start_exon{$transcript_name} . " - " . $trans_end_exon{$transcript_name} . " (" . scalar @exons . ")";
         
         #check 5' exons
         if ( @{$five_prime_exons{$transcript_name}} ) {
           my @five_prime_exons = @{ $five_prime_exons{$transcript_name} };
-          print "\nworking on 5' of $transcript_name (" . scalar @five_prime_exons . ") ";
+          $WormBase::DEBUG and print STDERR "\nworking on 5' of $transcript_name (" . scalar @five_prime_exons . ") ";
           
           #is last 5' UTR exon part of first coding exon?
           
@@ -906,10 +750,10 @@ sub generate_transcripts {
                 $trans_start_exon{$transcript_name}++;
                 $trans_end_exon{$transcript_name}++;
                 unshift( @exons, $five_prime_exon );
-                print "\nadditional non-coding exon (+) " . $start . " - " . $end;
+                $WormBase::DEBUG and print "\nadditional non-coding exon (+) " . $start . " - " . $end;
               }
               else {
-                print STDERR "\n>>$transcript_name strange 5' UTR exon (+): $start - $end with 1.exons at "
+                $WormBase::DEBUG and print STDERR "\n>>$transcript_name strange 5' UTR exon (+): $start - $end with 1.exons at "
                     . $exons[ $trans_start_exon{$transcript_name} ]->start . " - "
                     . $exons[ $trans_start_exon{$transcript_name} ]->end;
                 next FIVEUTR;
@@ -940,14 +784,14 @@ sub generate_transcripts {
                 
               }
               else {
-                print "\n>>$transcript_name strange 5' UTR exon (-): $start - $end with 1.exons at "
+                $WormBase::DEBUG and print STDERR "\n>>$transcript_name strange 5' UTR exon (-): $start - $end with 1.exons at "
                     . $exons[ $trans_start_exon{$transcript_name} ]->start . " - "
                     . $exons[ $trans_start_exon{$transcript_name} ]->end;
                 next FIVEUTR;
               }
             }
             else {
-              print STDERR "\n>>strand switch in UTR / coding!";
+              $WormBase::DEBUG and rint STDERR "\n>>strand switch in UTR / coding!";
             }
           }
         }
@@ -968,7 +812,7 @@ sub generate_transcripts {
               
               #forward strand
               if ( $start > $end ) {
-                print STDERR "\n>>$transcript_name strange 3' UTR (+) exon: " . $start . " - " . $end;
+                $WormBase::DEBUG and print STDERR "\n>>$transcript_name strange 3' UTR (+) exon: " . $start . " - " . $end;
                 next THREEUTR;
               }
               if ( $start == ( ( $exons[ $trans_end_exon{$transcript_name} ]->end ) + 1 ) ) {
@@ -990,7 +834,7 @@ sub generate_transcripts {
                 
               }
               else {
-                print STDERR "\n$transcript_name strange 3' UTR exon (+): $start - $end with 1.exons at "
+                $WormBase::DEBUG and print STDERR "\n$transcript_name strange 3' UTR exon (+): $start - $end with 1.exons at "
                     . $exons[ $trans_end_exon{$transcript_name} ]->start;
                 next THREEUTR;
               }
@@ -999,7 +843,7 @@ sub generate_transcripts {
               
               #reverse strand
               if ( $start > $end ) {
-                print STDERR "\n>>$transcript_name strange 3' UTR (-) exon: " . $start . " - " . $end;
+                $WormBase::DEBUG and print STDERR "\n>>$transcript_name strange 3' UTR (-) exon: " . $start . " - " . $end;
                 next THREEUTR;
               }
               if ( $end == ( ( $exons[ $trans_end_exon{$transcript_name} ]->start ) - 1 ) ) {
@@ -1020,7 +864,7 @@ sub generate_transcripts {
                 
               }
               else {
-                print STDERR "\n$transcript_name strange 3' UTR exon (-): $start - $end with 1.exons at "
+                $WormBase::DEBUG and print STDERR "\n$transcript_name strange 3' UTR exon (-): $start - $end with 1.exons at "
                     . $exons[ $trans_end_exon{$transcript_name} ]->start;
                 next THREEUTR;
               }
@@ -1034,14 +878,6 @@ sub generate_transcripts {
         
       }
     }
-    
-    #  my $c=0;
-    #  foreach my $tt (keys %transcripts){
-    #    print "\ntranscript $tt: ";
-    #    foreach my $ex (@{$transcripts{$tt}}){
-    #      print "..".$ex->start." -> ".$ex->end." (".$ex->strand."), ";
-    #    }
-    #  }
 
     return ( \%transcripts, \%five_trans_start, \%three_trans_end, \%trans_start_exon, \%trans_end_exon );
 }
@@ -1058,117 +894,118 @@ sub generate_transcripts {
 =cut
 
 sub create_transcripts {
-    my ( $transcriptsRef, $five_start, $three_end, $trans_start_exon, $trans_end_exon ) = @_;
+  my ( $transcriptsRef, $five_start, $three_end, $trans_start_exon, $trans_end_exon ) = @_;
+  
+  my %transcripts = %$transcriptsRef;
+  my @non_translate;
+  my %genes;
+  my $gene_name;
+  my $transcript_id;
+  foreach my $transcript ( keys(%transcripts) ) {
+    my $time  = time;
+    my @exons = @{ $transcripts{$transcript} };
+    
+    #get the gene-name
 
-    my @keys = keys(%$five_start);
-    foreach my $key (@keys) {
-        print STDERR "have start of translation for " . $key . " " . $five_start->{$key} . "\n";
+    if ($WormBase::Species and $WormBase::Species !~ /elegans/) {
+      $gene_name= ( $transcript =~ /([a-zA-Z]{2,3}\d+)[a-z]*(\.\d+)*$/ ) ? $1 : $transcript;
+    } else {
+      $gene_name= ( $transcript =~ /(.*?\w+\.\d+)[a-z A-Z]*\.*\d*/ ) ? $1 : $transcript; 
     }
+    
+    $transcript_id = $transcript;
 
-    my %transcripts = %$transcriptsRef;
-    my @non_translate;
-    my %genes;
-    my $gene_name;
-    my $transcript_id;
-    foreach my $transcript ( keys(%transcripts) ) {
-        my $time  = time;
-        my @exons = @{ $transcripts{$transcript} };
-
-        #get the gene-name
-	$gene_name= ( $transcript =~ /(.*?\w+\.\d+)[a-z A-Z]*\.*\d*/ )?$1:$transcript; # elegans
-        if ($WormBase::Species and $WormBase::Species !~ /elegans/) {
-            $gene_name= ( $transcript =~ /([A-Z]{3,}\d+)[a-z]*(\.\d+)*$/ )? $1 : $transcript;
-        }
-
-        $transcript_id = $transcript;
-        print STDERR "\nNote: Gene name= " . $gene_name . " Transcript_id= " . $transcript_id . " (for transcript " . $transcript . ")";
-        my $transcript  = new Bio::EnsEMBL::Transcript;
-        my $translation = new Bio::EnsEMBL::Translation;
-        my @sorted_exons;
-        if ( $exons[0]->strand == 1 ) {
-            @sorted_exons = sort { $a->start <=> $b->start } @exons;
-        }
-        else {
-            @sorted_exons = sort { $b->start <=> $a->start } @exons;
-        }
-        my $exon_count = 1;
-        my $phase      = 0;
-        foreach my $exon (@sorted_exons) {
-
-            #$exon->created($time);
-            #$exon->modified($time);
-            $exon->stable_id( $transcript_id . "." . $exon_count );
-            $exon_count++;
-            eval {
-                $transcript->add_Exon($exon);
-           };
-            if ($@) { print STDERR "\n>>$transcript_id EXON ERROR: " . $@ . "\n";}
-        }
-        my $start_exon_ind;
-        if ( exists( $trans_start_exon->{$transcript_id} ) ) {
-            print "\n adjusting coding exons to " . $trans_start_exon->{$transcript_id} . " - " . $trans_end_exon->{$transcript_id};
-            $translation->start_Exon( $sorted_exons[ $trans_start_exon->{$transcript_id} ] );
-            $translation->end_Exon( $sorted_exons[ $trans_end_exon->{$transcript_id} ] );
-            $start_exon_ind = $trans_start_exon->{$transcript_id};
-        }
-        else {
-            print "\n no UTRs - setting translation to span whole transcript\n";
-            $translation->start_Exon( $sorted_exons[0] );
-            $translation->end_Exon( $sorted_exons[$#sorted_exons] );
-            $start_exon_ind = 0;
-        }
-
-        if ( exists( $five_start->{$transcript_id} ) ) {
-            print "1 setting translation start on transcript " . $transcript_id . " to " . $five_start->{$transcript_id} . "\n";
-            $translation->start( $five_start->{$transcript_id} );
-        }
-        else {
-          print "1 setting translation start on transcript $transcript_id to 1\n";
-          $translation->start(1);
-        }
-
-        if ( ( !defined( $translation->start ) ) or ( $translation->start <= 0 ) ) {
-            print STDERR ">> no translation start info for " . $transcript_id;
-            print STDERR ".." . $five_start->{$transcript_id} . "\n";
-            die();
-        }
-
-        if ( exists( $three_end->{$transcript_id} ) ) {
-            print "2 setting translation end on transcript " . $transcript_id . " to " . $three_end->{$transcript_id} . " (1)\n";
-            $translation->end( $three_end->{$transcript_id} );
-        }
-        else {
-            if ( defined( $trans_end_exon->{$transcript_id} ) ) {
-                $translation->end( $sorted_exons[ $trans_end_exon->{$transcript_id} ]->end - $sorted_exons[ $trans_end_exon->{$transcript_id} ]->start + 1 );
-                print "3 setting translation end on transcript "
-                  . $transcript_id . " to "
-                  . ( $exons[ $trans_end_exon->{$transcript_id} ]->end - $exons[ $trans_end_exon->{$transcript_id} ]->start + 1 )
-                  . " (2)\n";
-            }
-            else {
-                $translation->end( $sorted_exons[$#sorted_exons]->end - $sorted_exons[$#sorted_exons]->start + 1 );
-                print "4 setting translation end on transcript "
-                  . $transcript_id . " to "
-                  . ( $sorted_exons[$#sorted_exons]->end - $sorted_exons[$#sorted_exons]->start + 1 )
-                  . " (2)\n";
-            }
-        }
-
-        $translation->stable_id($transcript_id);
-        $translation->version(1);
-        $transcript->translation($translation);
-        $transcript->stable_id($transcript_id);
-        $transcript->biotype('protein_coding');
-        if ( !$genes{$gene_name} ) {
-            $genes{$gene_name} = [];
-            push( @{ $genes{$gene_name} }, $transcript );
-        }
-        else {
-            push( @{ $genes{$gene_name} }, $transcript );
-        }
+    my $transcript  = new Bio::EnsEMBL::Transcript;
+    my $translation = new Bio::EnsEMBL::Translation;
+    my @sorted_exons;
+    if ( $exons[0]->strand == 1 ) {
+      @sorted_exons = sort { $a->start <=> $b->start } @exons;
     }
-    return \%genes;
-
+    else {
+      @sorted_exons = sort { $b->start <=> $a->start } @exons;
+    }
+    my $exon_count = 1;
+    my $phase      = 0;
+    foreach my $exon (@sorted_exons) {
+      
+      #$exon->created($time);
+      #$exon->modified($time);
+      $exon->stable_id( $transcript_id . "." . $exon_count );
+      $exon_count++;
+      eval {
+        $transcript->add_Exon($exon);
+      };
+      if ($@) { 
+        print STDERR "\n>>$transcript_id EXON ERROR: " . $@ . "\n";
+      }
+    }
+    my $start_exon_ind;
+    if ( exists( $trans_start_exon->{$transcript_id} ) ) {
+      $WormBase::DEBUG and 
+          print STDERR "\n adjusting coding exons to " . $trans_start_exon->{$transcript_id} . " - " . $trans_end_exon->{$transcript_id};
+      $translation->start_Exon( $sorted_exons[ $trans_start_exon->{$transcript_id} ] );
+      $translation->end_Exon( $sorted_exons[ $trans_end_exon->{$transcript_id} ] );
+      $start_exon_ind = $trans_start_exon->{$transcript_id};
+    }
+    else {
+      $WormBase::DEBUG and print STDERR  "\n no UTRs - setting translation to span whole transcript\n";
+      $translation->start_Exon( $sorted_exons[0] );
+      $translation->end_Exon( $sorted_exons[$#sorted_exons] );
+      $start_exon_ind = 0;
+    }
+    
+    if ( exists( $five_start->{$transcript_id} ) ) {
+      $WormBase::DEBUG and print STDERR "1 setting translation start on transcript " . $transcript_id . " to " . $five_start->{$transcript_id} . "\n";
+      $translation->start( $five_start->{$transcript_id} );
+    }
+    else {
+      $WormBase::DEBUG and print STDERR "1 setting translation start on transcript $transcript_id to 1\n";
+      $translation->start(1);
+    }
+    
+    if ( ( !defined( $translation->start ) ) or ( $translation->start <= 0 ) ) {
+      $WormBase::DEBUG and do {
+        print STDERR ">> no translation start info for " . $transcript_id;
+        print STDERR ".." . $five_start->{$transcript_id} . "\n";
+      };
+      die();
+    }
+    
+    if ( exists( $three_end->{$transcript_id} ) ) {
+      $WormBase::DEBUG and print STDERR "2 setting translation end on transcript " . $transcript_id . " to " . $three_end->{$transcript_id} . " (1)\n";
+      $translation->end( $three_end->{$transcript_id} );
+    }
+    else {
+      if ( defined( $trans_end_exon->{$transcript_id} ) ) {
+        $translation->end( $sorted_exons[ $trans_end_exon->{$transcript_id} ]->end - $sorted_exons[ $trans_end_exon->{$transcript_id} ]->start + 1 );
+        $WormBase::DEBUG and print STDERR "3 setting translation end on transcript "
+            . $transcript_id . " to "
+            . ( $exons[ $trans_end_exon->{$transcript_id} ]->end - $exons[ $trans_end_exon->{$transcript_id} ]->start + 1 )
+            . " (2)\n";
+      }
+      else {
+        $translation->end( $sorted_exons[$#sorted_exons]->end - $sorted_exons[$#sorted_exons]->start + 1 );
+        $WormBase::DEBUG and print STDERR "4 setting translation end on transcript "
+            . $transcript_id . " to "
+            . ( $sorted_exons[$#sorted_exons]->end - $sorted_exons[$#sorted_exons]->start + 1 )
+            . " (2)\n";
+      }
+    }
+    
+    $translation->stable_id($transcript_id);
+    $translation->version(1);
+    $transcript->translation($translation);
+    $transcript->stable_id($transcript_id);
+    $transcript->biotype('protein_coding');
+    if ( !$genes{$gene_name} ) {
+      $genes{$gene_name} = [];
+      push( @{ $genes{$gene_name} }, $transcript );
+    }
+    else {
+      push( @{ $genes{$gene_name} }, $transcript );
+    }
+  }
+  return \%genes;
 }
 
 =head2 create_gene
@@ -1272,54 +1109,51 @@ sub prune_Exons {
 =cut
 
 sub write_genes {
-    my ( $genes, $db, $stable_id_check ) = @_;
-    my $e = 0;
-    my %stable_ids;
-    if ($stable_id_check) {
-        my $sql = 'select stable_id from gene';
-        my $sth = $db->dbc->prepare($sql);
-        $sth->execute;
-        while ( my ($stable_id) = $sth->fetchrow ) {
-            $stable_ids{$stable_id} = 1;
-        }
+  my ( $genes, $db, $stable_id_check ) = @_;
+  my $e = 0;
+  my %stable_ids;
+  if ($stable_id_check) {
+    my $sql = 'select stable_id from gene';
+    my $sth = $db->dbc->prepare($sql);
+    $sth->execute;
+    while ( my ($stable_id) = $sth->fetchrow ) {
+      $stable_ids{$stable_id} = 1;
     }
-    my %stored;
-
+  }
+  my %stored;
+  
   GENE: foreach my $gene (@$genes) {
 
-        if ($stable_id_check) {
-            if ( $stable_ids{ $gene->stable_id } ) {
-                print STDERR $gene->stable_id . " already exists\n";
-                my $id = $gene->stable_id;
-                $id .= '.pseudo';
-                $gene->stable_id($id);
-                foreach my $transcript ( @{ $gene->get_all_Transcripts } ) {
-                    my $trans_id = $transcript->stable_id;
-                    $trans_id .= '.pseudo';
-                    $transcript->stable_id($trans_id);
-                    foreach my $e ( @{ $transcript->get_all_Exons } ) {
-                        my $id = $e->stable_id;
-                        $id .= '.pseudo';
-                        $e->stable_id($id);
-                    }
-                }
-            }
+    if ($stable_id_check) {
+      if ( $stable_ids{ $gene->stable_id } ) {
+        $WormBase::DEBUG and print STDERR $gene->stable_id . " already exists\n";
+        my $id = $gene->stable_id . ".pseudo";
+        $gene->stable_id($id);
+        foreach my $transcript ( @{ $gene->get_all_Transcripts } ) {
+          my $trans_id = $transcript->stable_id . ".pseudo";
+          $transcript->stable_id($trans_id);
+          foreach my $e ( @{ $transcript->get_all_Exons } ) {
+            my $id = $e->stable_id . ".pseudo";
+            $e->stable_id($id);
+          }
         }
-        if ( $stored{ $gene->stable_id } ) {
-            print STDERR "we have stored " . $gene->stable_id . " already\n";
-            next GENE;
-        }
-        my $gene_adaptor = $db->get_GeneAdaptor;
-        eval {
-          $stored{ $gene->stable_id } = 1;
-          $gene_adaptor->store($gene);
-          $e++;
-        };
-        if ($@) {
-          die("couldn't store " . $gene->stable_id . " problems=:$@:\n");
-        }
+      }
     }
-    print "\nStored gene: " . $e . "\n";
+    if ( $stored{ $gene->stable_id } ) {
+      print STDERR "we have stored " . $gene->stable_id . " already\n";
+      next GENE;
+    }
+    my $gene_adaptor = $db->get_GeneAdaptor;
+    eval {
+      $stored{ $gene->stable_id } = 1;
+      $gene_adaptor->store($gene);
+      $e++;
+    };
+    if ($@) {
+      die("couldn't store " . $gene->stable_id . " problems=:$@:\n");
+    }
+  }
+  print "\nStored gene: " . $e . "\n";
 }
 
 =head2 translation_check
@@ -1334,39 +1168,39 @@ sub write_genes {
 =cut
 
 sub translation_check {
-    my ( $gene, $db ) = @_;
-
-    my @transcripts = @{ $gene->get_all_Transcripts };
-    foreach my $t (@transcripts) {
-	unless ($t->translate){
-            $t->adaptor()->db()->get_TranslationAdaptor()->fetch_by_Transcript($t);
-        }
-        my $pep = $t->translate->seq;
-        if ( $pep =~ /\*/g ) {
-            if ( $gene->stable_id eq 'C06G3.7' and $db ) {
-
-                #add Selenocysteine to translation. There seems to be only on Selenoc. in our worm...
-                my $pos = pos($pep);
-                print STDERR "transcript "
-                  . $t->stable_id
-                  . " doesn't translate. Adding Selenocystein at position $pos.\n"
-                  . "Please beware of problems during further analysis steps because of this.";
-                selenocysteine( $t, $pos, $db );
-            }
-            else {
-                print STDERR "transcript " . $t->stable_id . " doesn't translate\n";
-                print STDERR "translation start " . $t->translation->start . " end " . $t->translation->end . "\n";
-                print STDERR "start exon coords " . $t->translation->start_Exon->start . " " . $t->translation->start_Exon->end . "\n";
-                print STDERR "end exon coords " . $t->translation->end_Exon->start . " " . $t->translation->end_Exon->end . "\n";
-                print STDERR "peptide " . $pep . "\n";
-
-                &display_exons( @{ $t->get_all_Exons } );
-                &non_translate($t);
-                return undef;
-            }
-        }
+  my ( $gene, $db ) = @_;
+  
+  my @transcripts = @{ $gene->get_all_Transcripts };
+  foreach my $t (@transcripts) {
+    unless ($t->translate){
+      $t->adaptor()->db()->get_TranslationAdaptor()->fetch_by_Transcript($t);
     }
-    return $gene;
+    my $pep = $t->translate->seq;
+    if ( $pep =~ /\*/g ) {
+      if ( $gene->stable_id eq 'C06G3.7' and $db ) {
+        
+        #add Selenocysteine to translation. There seems to be only on Selenoc. in our worm...
+        my $pos = pos($pep);
+        print STDERR "transcript "
+            . $t->stable_id
+            . " doesn't translate. Adding Selenocystein at position $pos.\n"
+            . "Please beware of problems during further analysis steps because of this.";
+        selenocysteine( $t, $pos, $db );
+      }
+      else {
+        print STDERR "transcript " . $t->stable_id . " doesn't translate\n";
+        print STDERR "translation start " . $t->translation->start . " end " . $t->translation->end . "\n";
+        print STDERR "start exon coords " . $t->translation->start_Exon->start . " " . $t->translation->start_Exon->end . "\n";
+        print STDERR "end exon coords " . $t->translation->end_Exon->start . " " . $t->translation->end_Exon->end . "\n";
+        print STDERR "peptide " . $pep . "\n";
+        
+        &display_exons( @{ $t->get_all_Exons } );
+        &non_translate($t);
+        return undef;
+      }
+    }
+  }
+  return $gene;
 }
 
 =head2 selenocysteine
@@ -1383,47 +1217,21 @@ sub translation_check {
 =cut
 
 sub selenocysteine {
-    my ( $transcript, $pos, $db ) = @_;
-    print "\nmodifying " . $transcript->stable_id;
-
-    my $seq_edit = Bio::EnsEMBL::SeqEdit->new(
-        -CODE    => '_selenocysteine',
-        -NAME    => 'Selenocysteine',
-        -DESC    => 'Selenocysteine',
-        -START   => $pos,
-        -END     => $pos,
-        -ALT_SEQ => 'U'                  #the one-letter symbol for selenocysteine
-    );
-    my $attribute         = $seq_edit->get_Attribute();
-    my $translation       = $transcript->translation();
-    my $attribute_adaptor = $db->get_AttributeAdaptor();
-    $attribute_adaptor->store_on_Translation( $translation, [$attribute] );
-}
-
-=head2 insert_agp_line
-
-  Arg [1]   : the first 12 args are info for the assembly table
-  Arg [2]   : Bio::EnsEMBL::DBSQL::DBAdaptor pointing to db where you want the assembly loaded
-  Function  : load the provided info into the assembly table
-  Returntype: 
-  Exceptions: 
-  Caller    : 
-  Example   : 
-
-=cut
-
-sub insert_agp_line {
-    my ( $chr_id, $chr_start, $chr_end, $contig, $contig_start, $contig_end, $contig_ori, $db ) = @_;
-
-    if ( !$contig ) {
-
-        #print STDERR "trying to insert into ".$chr_id." ".$chr_start." ".$chr_end."\n";
-        die "contig id must be defined for this to work\n";
-    }
-    my $sql = "insert into assembly(asm_seq_region_id, asm_start, asm_end, cmp_seq_region_id, cmp_start, cmp_end, ori) values(?, ?, ?, ?, ?, ?, ?)";
-
-    my $sth = $db->dbc->prepare($sql);
-    $sth->execute( $chr_id, $chr_start, $chr_end, $contig, $contig_start, $contig_end, $contig_ori );
+  my ( $transcript, $pos, $db ) = @_;
+  print "\nmodifying " . $transcript->stable_id;
+  
+  my $seq_edit = Bio::EnsEMBL::SeqEdit->new(
+    -CODE    => '_selenocysteine',
+    -NAME    => 'Selenocysteine',
+    -DESC    => 'Selenocysteine',
+    -START   => $pos,
+    -END     => $pos,
+    -ALT_SEQ => 'U'                  #the one-letter symbol for selenocysteine
+      );
+  my $attribute         = $seq_edit->get_Attribute();
+  my $translation       = $transcript->translation();
+  my $attribute_adaptor = $db->get_AttributeAdaptor();
+  $attribute_adaptor->store_on_Translation( $translation, [$attribute] );
 }
 
 =head2 display_exons
@@ -1438,16 +1246,15 @@ sub insert_agp_line {
 =cut
 
 sub display_exons {
-    my (@exons) = @_;
-
-    @exons = sort { $a->start <=> $b->start || $a->end <=> $b->end } @exons if ( $exons[0]->strand == 1 );
-
-    @exons = sort { $b->start <=> $a->start || $b->end <=> $a->end } @exons if ( $exons[0]->strand == -1 );
-
-    foreach my $e (@exons) {
-        print STDERR $e->stable_id . "\t " . $e->start . "\t " . $e->end . "\t " . $e->strand . "\t " . $e->phase . "\t " . $e->end_phase . "\n";
-    }
-
+  my (@exons) = @_;
+  
+  @exons = sort { $a->start <=> $b->start || $a->end <=> $b->end } @exons if ( $exons[0]->strand == 1 );
+  
+  @exons = sort { $b->start <=> $a->start || $b->end <=> $a->end } @exons if ( $exons[0]->strand == -1 );
+  
+  foreach my $e (@exons) {
+    print STDERR $e->stable_id . "\t " . $e->start . "\t " . $e->end . "\t " . $e->strand . "\t " . $e->phase . "\t " . $e->end_phase . "\n";
+  } 
 }
 
 =head2 non_translate
@@ -1462,30 +1269,30 @@ sub display_exons {
 =cut
 
 sub non_translate {
-    my (@transcripts) = @_;
-
-    foreach my $t (@transcripts) {
-
-        my @exons = @{ $t->get_all_Exons };
-
-        foreach my $e (@exons) {
-            print "exon " . $e->stable_id . " " . $e->start . " " . $e->end . " " . $e->strand . "\n";
-            if ($e->end - $e->start + 1 < 5) {
-              print " Exon too short; not attempting to translate\n";
-              next;
-            }
-            my $seq  = $e->seq;
-            my $pep0 = $seq->translate( '*', 'X', 0 );
-            my $pep1 = $seq->translate( '*', 'X', 1 );
-            my $pep2 = $seq->translate( '*', 'X', 2 );
-            print "exon sequence :\n" . $e->seq->seq . "\n\n";
-            print $e->seqname . " " . $e->start . " : " . $e->end . " translation in 0 frame\n " . $pep0->seq . "\n\n";
-            print $e->seqname . " " . $e->start . " : " . $e->end . " translation in 1 phase\n " . $pep2->seq . "\n\n";
-            print $e->seqname . " " . $e->start . " : " . $e->end . " translation in 2 phase\n " . $pep1->seq . "\n\n";
-            print "\n\n";
-
-        }
+  my (@transcripts) = @_;
+  
+  foreach my $t (@transcripts) {
+    
+    my @exons = @{ $t->get_all_Exons };
+    
+    foreach my $e (@exons) {
+      print "exon " . $e->stable_id . " " . $e->start . " " . $e->end . " " . $e->strand . "\n";
+      if ($e->end - $e->start + 1 < 5) {
+        print " Exon too short; not attempting to translate\n";
+        next;
+      }
+      my $seq  = $e->seq;
+      my $pep0 = $seq->translate( '*', 'X', 0 );
+      my $pep1 = $seq->translate( '*', 'X', 1 );
+      my $pep2 = $seq->translate( '*', 'X', 2 );
+      print "exon sequence :\n" . $e->seq->seq . "\n\n";
+      print $e->seqname . " " . $e->start . " : " . $e->end . " translation in 0 frame\n " . $pep0->seq . "\n\n";
+      print $e->seqname . " " . $e->start . " : " . $e->end . " translation in 1 phase\n " . $pep2->seq . "\n\n";
+      print $e->seqname . " " . $e->start . " : " . $e->end . " translation in 2 phase\n " . $pep1->seq . "\n\n";
+      print "\n\n";
+      
     }
+  }
 }
 
 =head2 parse_simplefeature
@@ -1502,34 +1309,34 @@ sub non_translate {
 =cut
 
 sub parse_simplefeature {
-    my ( $file, $slice_hash, $analysis, $source ) = @_;
-
-    use IO::File;
-    my $fh = new IO::File $file, 'r' or die "couldn't open " . $file . " $!";
-
-    #CHROMOSOME_I	operon	transcription	13758388	13764178	.	-	.	Operon "CEOP1716"
-
-    my @features;
+  my ( $file, $slice_hash, $analysis, $source ) = @_;
+  
+  use IO::File;
+  my $fh = new IO::File $file, 'r' or die "couldn't open " . $file . " $!";
+  
+  #CHROMOSOME_I	operon	transcription	13758388	13764178	.	-	.	Operon "CEOP1716"
+  
+  my @features;
   LINE: while (<$fh>) {
-        chomp;
-        my ( $chr, $type, $start, $end, $gff_strand, $id ) = (split)[0, 1, 3, 4, 6, 9 ];
-        next LINE if ( $type ne $source );
-        my $strand = $gff_strand eq '+' ? 1 : -1;
-        $id =~ s/\"//g;
-        
-        die "Could not find slice for $chr\n" if not exists $slice_hash->{$chr};
-
-        push @features, Bio::EnsEMBL::SimpleFeature->new(
-            -start         => $start,
-            -end           => $end,
-            -strand        => $strand,
-            -slice         => $slice_hash->{$chr},
-            -analysis      => $analysis,
-            -display_label => $id,
-          )
-    }
-    undef $fh;
-    return \@features;
+    chomp;
+    my ( $chr, $type, $start, $end, $gff_strand, $id ) = (split)[0, 1, 3, 4, 6, 9 ];
+    next LINE if ( $type ne $source );
+    my $strand = $gff_strand eq '+' ? 1 : -1;
+    $id =~ s/\"//g;
+    
+    die "Could not find slice for $chr\n" if not exists $slice_hash->{$chr};
+    
+    push @features, Bio::EnsEMBL::SimpleFeature->new(
+      -start         => $start,
+      -end           => $end,
+      -strand        => $strand,
+      -slice         => $slice_hash->{$chr},
+      -analysis      => $analysis,
+      -display_label => $id,
+        )
+  }
+  undef $fh;
+  return \@features;
 }
 
 =head2 parse_operons
@@ -1544,37 +1351,37 @@ sub parse_simplefeature {
 sub parse_operons {
   my ( $file, $slice_hash, $analysis ) = @_;
   
-  open( FH, $file ) or die "couldn't open " . $file . " $!";
+  open(my $fh, $file ) or die "couldn't open " . $file . " $!";
   
   #CHROMOSOME_I	operon	transcription	13758388	13764178	.	-	.	Operon "CEOP1716"
-
+  
   my @operons;
-  LINE: while (<FH>) {
-    chomp;
-    my ( $chr, $type, $start, $end, $strand, $id ) = (split)[0, 1, 3, 4, 6, 9 ];
-
-    if ( $type ne 'operon' ) {
-      next LINE;
-    }
-    if ( $strand eq '-' ) {
-      $strand = -1;
-    }
-    else {
-      $strand = 1;
-    }
-
-    $id =~ s/\"//g;
-    
-    die "Could not find slice for $chr\n" if not exists $slice_hash->{$chr};
-    
-    my $simple_feature = Bio::EnsEMBL::SimpleFeature->new();
-    $simple_feature->start($start);
-    $simple_feature->strand($strand);
-    $simple_feature->end($end);
-    $simple_feature->display_label($id);
-    $simple_feature->slice($slice_hash->{$chr});
-    $simple_feature->analysis($analysis);
-    push( @operons, $simple_feature );
+  LINE: while (<$fh>) {
+   chomp;
+   my ( $chr, $type, $start, $end, $strand, $id ) = (split)[0, 1, 3, 4, 6, 9 ];
+   
+   if ( $type ne 'operon' ) {
+     next LINE;
+   }
+   if ( $strand eq '-' ) {
+     $strand = -1;
+   }
+   else {
+     $strand = 1;
+   }
+   
+   $id =~ s/\"//g;
+   
+   die "Could not find slice for $chr\n" if not exists $slice_hash->{$chr};
+   
+   my $simple_feature = Bio::EnsEMBL::SimpleFeature->new();
+   $simple_feature->start($start);
+   $simple_feature->strand($strand);
+   $simple_feature->end($end);
+   $simple_feature->display_label($id);
+   $simple_feature->slice($slice_hash->{$chr});
+   $simple_feature->analysis($analysis);
+   push( @operons, $simple_feature );
   }
   
   return \@operons;
@@ -1593,10 +1400,10 @@ sub parse_operons {
 sub parse_rnai {
   my ( $file, $slice_hash, $analysis ) = @_;
   
-  open( FH, $file ) or die "couldn't open " . $file . " $!";
+  open(my $fh, $file ) or die "couldn't open " . $file . " $!";
   
   my @rnai;
-  LINE: while (<FH>) {
+  LINE: while (<$fh>) {
 
     #CHROMOSOME_IV	RNAi	experimental	3195031	3196094	.	+	.	RNAi "JA:Y67D8A_375.b"
     #CHROMOSOME_I    RNAi_primary    RNAi_reagent    15040052        15041000        .       .       .       Target "RNAi:WBRNAi00027818" 1371 423
@@ -1621,7 +1428,6 @@ sub parse_rnai {
     else {
       $strand = -1;
     }
-
 
     die "Could nor find slice for $chr\n" if not exists $slice_hash->{$chr};
     
@@ -1682,10 +1488,10 @@ sub parse_pcr_product {
 sub parse_expr {
   my ( $file, $slice_hash, $analysis ) = @_;
   
-  open( FH, $file ) or die "couldn't open " . $file . " $!";
+  open( my $fh, $file ) or die "couldn't open " . $file . " $!";
   
   my @expr;
-  LINE: while (<FH>) {
+  LINE: while (<$fh>) {
 
     #CHROMOSOME_IV	RNAi	experimental	3195031	3196094	.	+	.	RNAi "JA:Y67D8A_375.b"
     chomp;
@@ -1722,10 +1528,10 @@ sub parse_expr {
 sub parse_SL1 {
   my ( $file, $slice_hash, $analysis ) = @_;
 
-  open( FH, $file ) or die "couldn't open " . $file . " $!";
+  open( my $fh, $file ) or die "couldn't open " . $file . " $!";
   
   my @sl1;
-  LINE: while (<FH>) {
+  LINE: while (<$fh>) {
     
     #CHROMOSOME_I	SL1	trans-splice_acceptor	6473786	6473787	.	-	.	Note "SL1 trans-splice site; see yk719h1.5"
     chomp;
@@ -1781,10 +1587,10 @@ sub parse_SL1 {
 sub parse_SL2 {
   my ( $file, $slice_hash, $analysis ) = @_;
   
-  open( FH, $file ) or die "couldn't open " . $file . " $!";
+  open( my $fh, $file ) or die "couldn't open " . $file . " $!";
   
   my @sl2;
-  LINE: while (<FH>) {
+  LINE: while (<$fh>) {
     
     #CHROMOSOME_I	SL2	trans-splice_acceptor	6473786	6473787	.	-	.	Note "SL2 trans-splice site; see yk729h2.5"
     chomp;
@@ -1870,20 +1676,6 @@ sub write_simple_features {
   }
 }
 
-
-#not used at this time...
-sub parse_tRNA_genes {
-    my $type = "tRNA";
-    my ( $file, $slice_hash, $analysis ) = @_;
-    &parse_pseudo_files( $file, $slice_hash, $analysis, $type );
-}
-
-sub parse_rRNA_genes {
-    my $type = "rRNA";
-    my ( $file, $slice_hash, $analysis ) = @_;
-    &parse_pseudo_files( $file, $slice_hash, $analysis, $type );
-}
-
 =head2 parse_pseudo_gff
 
   Arg [1]   : gff file path
@@ -1916,10 +1708,10 @@ sub parse_pseudo_gff {
 sub parse_pseudo_files {
   my ( $file, $slice_hash, $analysis, $types, $biotype ) = @_;
   
-  open( FH, $file ) or die "couldn't open " . $file . " $!";
+  open( my $fh, $file ) or die "couldn't open " . $file . " $!";
   
   my @genes;
-  my ($transcripts, $tran2seq) = &process_pseudo_files( \*FH, $types );
+  my ($transcripts, $tran2seq) = &process_pseudo_files( $fh, $types );
   print "there are " . keys(%$transcripts) . " distinct special transcripts\n";
   
   my ($processed_transcripts) = &process_pseudo_transcripts( $transcripts, $slice_hash, $analysis );
@@ -1935,7 +1727,6 @@ sub parse_pseudo_files {
     my $gene = &create_gene( $transcripts, $gene_id, $biotype );
     push( @genes, $gene );
   }
-  close(FH);
   return \@genes;
 }
 
@@ -1977,153 +1768,114 @@ sub process_pseudo_files {
 }
 
 sub process_pseudo_transcripts {
-    my ( $transcripts, $slice_hash, $analysis ) = @_;
-
-    my %genes;
-    my %transcripts = %$transcripts;
-    my @names       = keys(%transcripts);
-
-    foreach my $name (@names) {
-        my @lines = @{ $transcripts{$name} };
-        $transcripts{$name} = [];
-        my @exons;
-        foreach my $line (@lines) {
-
-            my ( $chr, $status, $type, $start, $end, $score, $strand, $frame, $sequence, $gene ) = split /\s+/, $line;
-
-            if ( $start == $end ) {
-                next;
-            }
-
-            die "Could not not find slice for '$chr' in hash\n" if not exists $slice_hash->{$chr};
-
-            my $exon = new Bio::EnsEMBL::Exon;
-
-            # non-coding/pseudogene exons always have a phase -1/-1
-            
-            my $phase = -1; 
-            my $end_phase = -1;
-
-            $exon->start($start);
-            $exon->end($end);
-            $exon->analysis($analysis);
-            $exon->slice($slice_hash->{$chr});
-            $exon->phase($phase);
-            $exon->end_phase($end_phase);
-            if ( $strand eq '+' ) {
-                $exon->strand(1);
-            }
-            else {
-                $exon->strand(-1);
-            }
-
-            #$exon->score(100);
-            push( @exons, $exon );
-        }
-        if ( $exons[0]->strand == -1 ) {
-            @exons = sort { $b->start <=> $a->start } @exons;
-        }
-        else {
-            @exons = sort { $a->start <=> $b->start } @exons;
-        }
-        my $phase = 0;
-        foreach my $e (@exons) {
-            push( @{ $transcripts{$name} }, $e );
-        }
+  my ( $transcripts, $slice_hash, $analysis ) = @_;
+  
+  my %genes;
+  my %transcripts = %$transcripts;
+  my @names       = keys(%transcripts);
+  
+  foreach my $name (@names) {
+    my @lines = @{ $transcripts{$name} };
+    $transcripts{$name} = [];
+    my @exons;
+    foreach my $line (@lines) {
+      
+      my ( $chr, $status, $type, $start, $end, $score, $strand, $frame, $sequence, $gene ) = split /\s+/, $line;
+      
+      if ( $start == $end ) {
+        next;
+      }
+      
+      die "Could not not find slice for '$chr' in hash\n" if not exists $slice_hash->{$chr};
+      
+      my $exon = new Bio::EnsEMBL::Exon;
+      
+      # non-coding/pseudogene exons always have a phase -1/-1
+      
+      my $phase = -1; 
+      my $end_phase = -1;
+      
+      $exon->start($start);
+      $exon->end($end);
+      $exon->analysis($analysis);
+      $exon->slice($slice_hash->{$chr});
+      $exon->phase($phase);
+      $exon->end_phase($end_phase);
+      if ( $strand eq '+' ) {
+        $exon->strand(1);
+      }
+      else {
+        $exon->strand(-1);
+      }
+      
+      #$exon->score(100);
+      push( @exons, $exon );
     }
+    if ( $exons[0]->strand == -1 ) {
+      @exons = sort { $b->start <=> $a->start } @exons;
+    }
+    else {
+      @exons = sort { $a->start <=> $b->start } @exons;
+    }
+    my $phase = 0;
+    foreach my $e (@exons) {
+      push( @{ $transcripts{$name} }, $e );
 
-    return ( \%transcripts );
+    }
+  }
+  
+  return ( \%transcripts );
 }
 
 sub create_pseudo_transcripts {
-    my ($transcripts, $biotype) = @_;
+  my ($transcripts, $biotype) = @_;
+  
+  my %transcripts = %$transcripts;
+  my %genes;
+  my $gene_name;
+  my $transcript_id;
 
-    my %transcripts = %$transcripts;
-    my %genes;
-    my $gene_name;
-    my $transcript_id;
+  foreach my $transcript ( keys(%transcripts) ) {
+    my $time  = time;
+    my @exons = @{ $transcripts{$transcript} };
 
-    foreach my $transcript ( keys(%transcripts) ) {
-        my $time  = time;
-        my @exons = @{ $transcripts{$transcript} };
-        if ( $transcript =~ /\w+\.\d+[a-z A-Z]/ ) {
-            ($gene_name) = $transcript =~ /(\w+\.\d+)[a-z A-Z]/;
-            $transcript_id = $transcript;
-        }
-        else {
-            $gene_name     = $transcript;
-            $transcript_id = $transcript;
-        }
-        my $transcript = new Bio::EnsEMBL::Transcript;
-        my @sorted_exons;
-        if ( $exons[0]->strand == 1 ) {
-            @sorted_exons = sort { $a->start <=> $b->start } @exons;
-        }
-        else {
-            @sorted_exons = sort { $b->start <=> $a->start } @exons;
-        }
-        my $exon_count = 1;
-        my $phase      = 0;
-        foreach my $exon (@sorted_exons) {
-            $exon->stable_id( $transcript_id . "." . $exon_count );
-            $exon_count++;
-            $transcript->add_Exon($exon);
-        }
-        $transcript->stable_id($transcript_id);
-        $transcript->biotype($biotype) if defined $biotype;
 
-        if ( !$genes{$gene_name} ) {
-            $genes{$gene_name} = [];
-            push( @{ $genes{$gene_name} }, $transcript );
-        }
-        else {
-            push( @{ $genes{$gene_name} }, $transcript );
-        }
+    if ($WormBase::Species and $WormBase::Species !~ /elegans/) {
+      $gene_name= ( $transcript =~ /([a-zA-Z]{2,3}\d+)[a-z]$/ ) ? $1 : $transcript;
+    } else {
+      $gene_name= ( $transcript =~ /(\w+\.\d+)[a-z]/ ) ? $1 : $transcript; 
     }
-    return \%genes;
 
-}
+    $transcript_id = $transcript;
 
-sub store_coord_system {
-    my ( $db, $name, $version, $sequence_level, $default, $rank ) = @_;
-
-    my $csa = $db->get_CoordSystemAdaptor();
-
-    my $cs = Bio::EnsEMBL::CoordSystem->new(
-        -NAME           => $name,
-        -VERSION        => $version,
-        -DEFAULT        => $default,
-        -SEQUENCE_LEVEL => $sequence_level,
-
-        #-TOP_LEVEL       => $top_level,
-        -RANK => $rank
-    );
-
-    $csa->store($cs);
-
-    return $cs;
-}
-
-sub store_slice {
-    my ( $db, $name, $start, $end, $strand, $coord_system, $sequence ) = @_;
-
-    my $sa = $db->get_SliceAdaptor();
-
-    my $slice = Bio::EnsEMBL::Slice->new(
-        -seq_region_name => $name,
-        -start           => $start,
-        -end             => $end,
-        -strand          => $strand,
-        -coord_system    => $coord_system
-    );
-
-    my $seq_ref;
-    if ($sequence) {
-        $seq_ref = \$sequence;
+    my $transcript = new Bio::EnsEMBL::Transcript;
+    my @sorted_exons;
+    if ( $exons[0]->strand == 1 ) {
+      @sorted_exons = sort { $a->start <=> $b->start } @exons;
     }
-    $sa->store( $slice, $seq_ref );
-    $slice->adaptor($sa);
-    return $slice;
+    else {
+      @sorted_exons = sort { $b->start <=> $a->start } @exons;
+    }
+    my $exon_count = 1;
+    my $phase      = 0;
+    foreach my $exon (@sorted_exons) {
+      $exon->stable_id( $transcript_id . "." . $exon_count );
+      $exon_count++;
+      $transcript->add_Exon($exon);
+    }
+    $transcript->stable_id($transcript_id);
+    $transcript->biotype($biotype) if defined $biotype;
+    
+    if ( !$genes{$gene_name} ) {
+      $genes{$gene_name} = [];
+      push( @{ $genes{$gene_name} }, $transcript );
+    }
+    else {
+      push( @{ $genes{$gene_name} }, $transcript );
+    }
+  }
+  return \%genes;
+  
 }
 
 1;
