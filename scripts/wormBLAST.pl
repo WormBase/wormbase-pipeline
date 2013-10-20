@@ -5,7 +5,7 @@
 # written by Anthony Rogers
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2013-09-29 21:10:46 $
+# Last edited on: $Date: 2013-10-20 21:37:12 $
 #
 # it depends on:
 #    wormpep + history
@@ -536,12 +536,15 @@ sub update_proteins {
   # load new ones
   
   my $db_options = sprintf('-dbhost %s -dbuser %s -dbpass %s -dbname %s -dbport %i',
-			   $config->{database}->{host},   $config->{database}->{user}, $config->{database}->{password},
-        $config->{database}->{dbname}, $config->{database}->{port}
+			   $config->{database}->{host},   
+                           $config->{database}->{user}, 
+                           $config->{database}->{password},
+                           $config->{database}->{dbname}, 
+                           $config->{database}->{port}
 			  );
   
   $wormbase->run_command("perl $Bin/ENSEMBL/scripts/worm_lite.pl -yfile $yfile_name -load_genes -species $species", $log );
-  $wormbase->run_command("perl $ensembl_code_dir/ensembl-pipelines/scripts/make_input_ids $db_options -translation_id -logic submittranslation", $log );
+  $wormbase->run_command("perl $ensembl_code_dir/ensembl-pipeline/scripts/make_input_ids $db_options -translation_id -logic submittranslation", $log );
 }
 
 =head2 delete_gene_by_translation [UNUSED]
