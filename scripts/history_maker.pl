@@ -156,6 +156,8 @@ if (defined $user){
 my $wormpep_prefix  = $wormbase->wormpep_prefix;
 $wormpep_prefix= lc($wormpep_prefix);
 
+# japonica uses 'jp' not 'ja' to name the history objects - blame Phil for this!
+if ($wormpep_prefix eq 'ja') {$wormpep_prefix = 'jp'}
 
 my $form_cds;			# cds variable from form
 my $form_gene;			# gene variable from blesser form
