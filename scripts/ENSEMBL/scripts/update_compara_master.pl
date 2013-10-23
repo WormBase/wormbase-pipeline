@@ -45,11 +45,14 @@ $collection_name = "worms" if not defined $collection_name;
 #
 # 0. Get species data
 #
-
-if (not @species) { 
-  while(<DATA>) {
-    chomp;
-    push @species, $_;
+if (@species) {
+  @species = map { split(/,/, $_) } @species;
+} else {
+  if (not @species) { 
+    while(<DATA>) {
+      chomp;
+      push @species, $_;
+    }
   }
 }
 
