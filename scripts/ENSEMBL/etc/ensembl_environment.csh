@@ -136,9 +136,6 @@ setenv WORM_LIB ${WORM_SW_ROOT}/lib
 # perl 5 libraries
 ####################
 
-# this variable name is required by Compara
-setenv COMPARA "${WORM_PACKAGES}/ensembl"
-
 setenv PERL5LIB ${COMPARA}/ensembl-compara/modules:${PERL5LIB}
 setenv PERL5LIB ${ENSEMBL_CVS_ROOT_DIR}/ensembl-variation/modules:${PERL5LIB}
 setenv PERL5LIB ${ENSEMBL_CVS_ROOT_DIR}/ensembl-functgenomics/modules:${PERL5LIB}
