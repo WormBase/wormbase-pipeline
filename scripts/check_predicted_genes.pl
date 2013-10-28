@@ -4,8 +4,8 @@
 #
 # by Keith Bradnam
 #
-# Last updated on: $Date: 2013-10-16 15:02:40 $
-# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2013-10-28 15:12:51 $
+# Last updated by: $Author: pad $
 #
 # see pod documentation at end of file for more information about this script
 
@@ -24,7 +24,7 @@ GetOptions ("verbose"    => \$verbose, # prints screen output and checks the CDS
 	    "database=s" => \$db_path, # Path to the database you want to check.
 	    "basic"      => \$basic,   # Ignores some of the checks.
 	    "debug:s"    => \$debug,   # turns on more printing and errorlogging
-	    "test1:s"    => \$test1,   # only checks the CDSs from 1 clone in the database.
+	    "test1:s"    => \$test1,   # only checks the CDSs from 1 clone (elegans) or 1 CDS in other TierII databases.
 	    "store:s"    => \$store,   # 
 	    "test"       => \$test,    # Test build
 	    "build"      => \$build,   # Checks specific to a full database containing genes and models.
@@ -86,7 +86,6 @@ else {
   my $Bcount;
   if ($test1) {
     $log->write_to("Only checking genes on ${test1}.......\n");
-    #  @Predictions = $db->fetch('All_genes','Y32B12C*');
     @Predictions = $db->fetch (-query => "FIND All_genes WHERE Sequence = ${test1} AND method");
     foreach my $Predictions(@Predictions) {
       print $Predictions->name."\n";
@@ -119,10 +118,10 @@ else {
 
   my $gene_model_count=@Predictions;
   $log->write_to("Checking $gene_model_count Predictions in $db_path\n\n");
-  print STDERR "\nChecking $gene_model_count Predictions...\n\n" if $verbose;
+  print "\nChecking $gene_model_count Predictions...\n\n" if $verbose;
   &main_gene_checks(\@Predictions);
 
-  print STDERR "\nDoing single query tests\n" if $verbose;
+  print "\nDoing single query tests\n" if $verbose;
   &single_query_tests;
 
   # print warnings to log file, log all category 1 errors, and then fill up.
@@ -155,19 +154,22 @@ sub main_gene_checks {
   
   while (my $gene_model = shift @$pred_ref) {
     my $gene_model_name = $gene_model->name;
-     # print "Checking $gene_model_name\n" if ($verbose);
+     print "Checking $gene_model_name\n" if ($verbose);
 
     unless (defined $gene_model->Method) {
       $errorcountCDS ++;
-      print STDERR "$gene_model appears to be incomplete: it has no method.\n" if $verbose;
+      print "$gene_model appears to be incomplete: it has no method.\n" if $verbose;
+      next CHECK_GENE;
+    }
+    unless (defined $gene_model->Source_exons) {
+      print "$gene_model appears to be incomplete: it has no Source_exons.\n" if $verbose;
       next CHECK_GENE;
     }
     
     my $method_test = $gene_model->Method->name;
     unless ($gene_model_name =~ /$cds_regex/) {
-      print "warning $gene_model_name invalid\n" if ($method_test !~ /history/);
+      print "warning $gene_model_name invalid\n" if (($method_test !~ /history|tRNA|Transposon/) && ($gene_model_name !~ /\S+.t\d+/));
     }
-    print "$gene_model_name\n" if $verbose;
     my @exon_coord1 = sort by_number ($gene_model->get('Source_exons',1));
     my @exon_coord2 = sort by_number ($gene_model->get('Source_exons',2));
     my $i;
@@ -228,7 +230,7 @@ sub main_gene_checks {
       my $end = $exon_coord2[$i];
       for ($j=$i+1;$j<@exon_coord1;$j++) {
 	if (($end > $exon_coord1[$j]) && ($start < $exon_coord2[$j])) {
-	  print STDERR "ERROR: $gene_model exon inconsistency, exons overlap\n" if $verbose;
+	  print "ERROR: $gene_model exon inconsistency, exons overlap\n" if $verbose;
 	  push(@error1,"ERROR: $gene_model exon inconsistency, exons overlap\n") if ($method_test !~ /history/);
 	}
       }
@@ -237,12 +239,13 @@ sub main_gene_checks {
     # check that 'Start_not_found' and 'End_not_found' tags present? (CDS specific.....extended to all genes :) )
     my $start_tag = "";
     my $end_tag = "";
+    my $genetic_code = "";
 
     if ($gene_model->get('Start_not_found')) {
       $start_tag = "present";
       unless ($incomplete) {
-	push(@error2,"ERROR: $gene_model Start_not_found tag present\n") unless $incomplete; 
-	print STDERR "ERROR: $gene_model Start_not_found tag present\n" if (($verbose) && !(defined $incomplete));
+	push(@error2,"ERROR: $gene_model Start_not_found tag present\n"); 
+	print "ERROR: $gene_model Start_not_found tag present\n" if ($verbose);
       }
     }
 
@@ -250,8 +253,12 @@ sub main_gene_checks {
       $end_tag = "present";
       unless ($incomplete) {
 	push(@error2,"ERROR: $gene_model End_not_found tag present\n");
-	print STDERR "ERROR: $gene_model End_not_found tag present\n" if $verbose;
+	print "ERROR: $gene_model End_not_found tag present\n" if $verbose;
       }
+    }
+
+    if ($gene_model->get('Genetic_code')) {
+      $genetic_code = $gene_model->get('Genetic_code')->right->name;
     }
 
     #All Isoforms should have the Isoform tag set. cds_regex
@@ -304,7 +311,7 @@ sub main_gene_checks {
     }
     else {
       push(@error1,"ERROR: $gene_model has no Parent, cannot check DNA\n");
-      print STDERR "ERROR: $gene_model has no Sequence tag, cannot check DNA\n" if $verbose;
+      print "ERROR: $gene_model has no Sequence tag, cannot check DNA\n" if $verbose;
       next CHECK_GENE;
     }
 
@@ -312,17 +319,17 @@ sub main_gene_checks {
     my $species;
     ($species) = ($gene_model->get('Species'));
     push(@error3,"ERROR: $gene_model species is $species\n") if ($species ne "$speciesfn");
-    print STDERR "ERROR: $gene_model species is $species\n" if ($species ne "$speciesfn" && $verbose);
+    print "ERROR: $gene_model species is $species\n" if ($species ne "$speciesfn" && $verbose);
 
     # check Method isn't 'hand_built'
     push(@error3,"ERROR: $gene_model method is hand_built\n") if ($method_test eq 'hand_built');
-    print STDERR "ERROR: $gene_model method is hand_built\n" if ($method_test eq 'hand_built' && $verbose);
+    print "ERROR: $gene_model method is hand_built\n" if ($method_test eq 'hand_built' && $verbose);
 
     # check From_laboratory tag is present.
     if (($method_test ne 'Genefinder') && ($method_test ne 'twinscan') && ($method_test ne 'jigsaw') && ($method_test ne 'RNASEQ.Hillier.Aggregate')) {
       my $laboratory = ($gene_model->From_laboratory);
       push(@error3, "ERROR: $gene_model does not have From_laboratory tag\n") if (!defined($laboratory));
-      print STDERR "ERROR: $gene_model does not have From_laboratory tag\n" if (!defined($laboratory) && $verbose);
+      print "ERROR: $gene_model does not have From_laboratory tag\n" if (!defined($laboratory) && $verbose);
     }
 
     # check that history genes have a history method.
@@ -347,11 +354,11 @@ sub main_gene_checks {
       my $Genehist_ID = $gene_model->at('Visible.Gene_history.[1]');
 
       #curated Gene modles eg. C14C10.3  C14C10.33 and C14C10.3a have to have an 8 digit gene id.
-      if ($gene_model_name =~ /$cds_regex/) {
+      if (($gene_model_name =~ /$cds_regex/) && ($method_test ne '*history')){
 	if (defined $Gene_ID) {
 	  push(@error2, "ERROR: The Gene ID '$Gene_ID' in $gene_model is invalid!\n") unless ($Gene_ID =~ /WBGene[0-9]{8}/);
 	} else {
-	  push(@error2, "ERROR: $gene_model does not have a Gene ID!\n") unless (($method_test eq 'Transposon_Pseudogene') && (defined $Genehist_ID));
+	  push(@error2, "ERROR: $gene_model does not have a Gene ID!\n") unless (($method_test eq 'Transposon_Pseudogene') || (defined $Genehist_ID));
 	}
       }
       #History genes have to have a Gene_history ID of 8 digits.
@@ -374,13 +381,13 @@ sub main_gene_checks {
       my $dna = $gene_model->asDNA();
       if (!$dna) {
 	push(@error1,"ERROR: $gene_model can't find any DNA to analyse\n");
-	print STDERR "ERROR: $gene_model can't find any DNA to analyse\n" if $verbose;
+	print "ERROR: $gene_model can't find any DNA to analyse\n" if $verbose;
 	next CHECK_GENE;
       }
 
       # feed DNA sequence to function for checking
       unless ((defined $gene_model) && (defined$start_tag) && (defined$end_tag) && (defined$dna) && (defined$method_test)) {print "$_\n";}
-      &test_gene_sequence_for_errors($gene_model,$start_tag,$end_tag,$dna,$method_test);
+      &test_gene_sequence_for_errors($gene_model,$start_tag,$end_tag,$dna,$method_test,$genetic_code);
     }
   }
 
@@ -478,135 +485,140 @@ sub test_gene_sequence_for_errors{
   my $end_tag = shift;
   my $dna = shift;
   my $method_test =shift;
+  my $genetic_code=shift;
 
-  # trim DNA sequence to just A,T,C,G etc.
-  $dna =~ s/\n//g;
-  my $length_gene_name = length($gene_model)+1;
-  $dna = substr($dna, $length_gene_name);
-  if (!$dna){
-    push(@error1, "$gene_model has a problem with it's DNA connection.\n");
-    next CHECK_GENE;
+  if ($method_test eq '*history'){
+    print "Not checking the codon or dna usage of $gene_model as it is a history model\n" if ($verbose);
   }
-  # calculate other necessary values
-  my $gene_model_length = length($dna);
-  my $remainder;
+  if ($method_test ne 'history'){
+    # trim DNA sequence to just A,T,C,G etc.
+    $dna =~ s/\n//g;
+    my $length_gene_name = length($gene_model)+1;
+    $dna = substr($dna, $length_gene_name);
+    if (!$dna){
+      push(@error1, "$gene_model has a problem with it's DNA connection.\n");
+      next CHECK_GENE;
+    }
+    # calculate other necessary values
+    my $gene_model_length = length($dna);
+    my $remainder;
 
-  if ($incomplete) {
-    if (($gene_model->Method eq 'curated') && ($gene_model->Start_not_found)) {
-      my $extra = $gene_model->Start_not_found->name;
-      my $length_calc = $gene_model_length + $extra;
-      $remainder = $length_calc%3;
+    if ($incomplete) {
+      if (($gene_model->Method eq 'curated') && ($gene_model->Start_not_found)) {
+	my $extra = $gene_model->Start_not_found->name;
+	my $length_calc = $gene_model_length + $extra;
+	$remainder = $length_calc%3;
+      }
+      else {
+	$remainder = $gene_model_length%3;
+      }
     }
     else {
       $remainder = $gene_model_length%3;
     }
-  }
-  else {
-    $remainder = $gene_model_length%3;
-  }
-  my $start_codon = substr($dna,0,3);
-  my $stop_codon = substr($dna,-3,3);   
-  my $Lab = ($gene_model->get('From_laboratory'));
-
-  # check for length errors(CDS specific)
-  my @ck;
-  if (!$basic) {
-    my $warning;
-    @ck = grep(/^$gene_model/, @checkedgenes);
-    push (@ck,"0");
-    if (($gene_model_length < 75) && ($method_test eq 'curated') && ($ck[0] ne $gene_model->name)) {
-      $warning = "WARNING: $gene_model is very short ($gene_model_length bp),";
-      print STDERR "WARNING: $gene_model is very short ($gene_model_length bp), " if $verbose;
-      if (defined($gene_model->at('Properties.Coding.Confirmed_by'))) {
-	$warning .= "gene is Confirmed\n";
-	print STDERR "gene is Confirmed\n" if $verbose;
+    my $start_codon = substr($dna,0,3);
+    my $stop_codon = substr($dna,-3,3);   
+    my $Lab = ($gene_model->get('From_laboratory'));
+    
+    # check for length errors(CDS specific)
+    my @ck;
+    if (!$basic) {
+      my $warning;
+      @ck = grep(/^$gene_model/, @checkedgenes);
+      push (@ck,"0");
+      if (($gene_model_length < 75) && ($method_test eq 'curated') && ($ck[0] ne $gene_model->name)) {
+	$warning = "WARNING: $gene_model is very short ($gene_model_length bp),";
+	print "WARNING: $gene_model is very short ($gene_model_length bp), " if $verbose;
+	if (defined($gene_model->at('Properties.Coding.Confirmed_by'))) {
+	  $warning .= "gene is Confirmed\n";
+	  print "gene is Confirmed\n" if $verbose;
+	}
+	elsif (defined($gene_model->at('Visible.Matching_cDNA'))) {
+	  $warning .= "gene is Partially_confirmed\n";
+	  print "gene is Partially_confirmed\n" if $verbose;
+	}
+	else {
+	  $warning .= "gene is Predicted\n";
+	  print "gene is predicted\n" if $verbose;
+	}
+	push(@error3, $warning) unless ($basic);
       }
-      elsif (defined($gene_model->at('Visible.Matching_cDNA'))) {
-	$warning .= "gene is Partially_confirmed\n";
-	print STDERR "gene is Partially_confirmed\n" if $verbose;
-      }
-      else {
-	$warning .= "gene is Predicted\n";
-	print STDERR "gene is predicted\n" if $verbose;
-      }
-      push(@error3, $warning) unless ($basic);
-    }
-    elsif (($gene_model_length < 100) && ($method_test eq 'curated')) {
-      if (defined($gene_model->at('Properties.Coding.Confirmed_by'))) {
-	$warning = "WARNING: $gene_model is short ($gene_model_length bp) and is Confirmed\n";
-	print STDERR "WARNING: $gene_model is short ($gene_model_length bp) and is Confirmed\n" if $verbose;
-      }
-      elsif (defined($gene_model->at('Visible.Matching_cDNA'))) {
-	$warning .= "WARNING: $gene_model is short ($gene_model_length bp) and is Partially_confirmed\n";
-	print STDERR "WARNING: $gene_model is short ($gene_model_length bp) and is Partially_confirmed\n" if $verbose;
-      }
+      elsif (($gene_model_length < 100) && ($method_test eq 'curated')) {
+	if (defined($gene_model->at('Properties.Coding.Confirmed_by'))) {
+	  $warning = "WARNING: $gene_model is short ($gene_model_length bp) and is Confirmed\n";
+	  print "WARNING: $gene_model is short ($gene_model_length bp) and is Confirmed\n" if $verbose;
+	}
+	elsif (defined($gene_model->at('Visible.Matching_cDNA'))) {
+	  $warning .= "WARNING: $gene_model is short ($gene_model_length bp) and is Partially_confirmed\n";
+	  print "WARNING: $gene_model is short ($gene_model_length bp) and is Partially_confirmed\n" if $verbose;
+	}
       else {
 	$warning .= "WARNING: $gene_model is short ($gene_model_length bp) and is Predicted\n";
-	print STDERR "WARNING: $gene_model is short ($gene_model_length bp) and is Predicted\n" if $verbose;
+	print "WARNING: $gene_model is short ($gene_model_length bp) and is Predicted\n" if $verbose;
       }
-      push(@error5, $warning);
+	push(@error5, $warning);
+      }
     }
-  }
-
-  # Is the gene prediction complete?
-  if (($remainder != 0) && ($method_test eq 'curated')) {
-    if (($end_tag ne "present") && ($start_tag ne "present")) {
-      push(@error1,"ERROR: $gene_model length ($gene_model_length bp) not divisible by 3, Start_not_found & End_not_found tags MISSING\n");
-      print STDERR "ERROR: $gene_model length ($gene_model_length bp) not divisible by 3, Start_not_found & End_not_found tags MISSING\n" if $verbose;
+    # Is the gene prediction complete?
+    if (($remainder != 0) && ($method_test eq 'curated')) {
+      if (($end_tag ne "present") && ($start_tag ne "present")) {
+	push(@error1,"ERROR: $gene_model length ($gene_model_length bp) not divisible by 3, Start_not_found & End_not_found tags MISSING\n");
+	print "ERROR: $gene_model length ($gene_model_length bp) not divisible by 3, Start_not_found & End_not_found tags MISSING\n" if $verbose;
+      }
+      else {
+	push(@error2,"ERROR: $gene_model length ($gene_model_length bp) not divisible by 3, Start_not_found and/or End_not_found tag present\n") unless ($incomplete);
+	print "ERROR: $gene_model length ($gene_model_length bp) not divisible by 3, Start_not_found and/or End_not_found tag present\n" if $verbose;
+      }
     }
-    else {
-      push(@error2,"ERROR: $gene_model length ($gene_model_length bp) not divisible by 3, Start_not_found and/or End_not_found tag present\n") unless ($incomplete);
-      print STDERR "ERROR: $gene_model length ($gene_model_length bp) not divisible by 3, Start_not_found and/or End_not_found tag present\n" if $verbose;
-    }
-  }
-unless ($gene_model->name =~ /MTCE/) {
-  # look for incorrect stop codons (CDS specific)
-  if (($stop_codon ne 'taa') && ($stop_codon ne 'tga') && ($stop_codon ne 'tag') && ($method_test eq 'curated')) {
-    if ($end_tag ne "present") {
-      push(@error1, "ERROR: $gene_model '$stop_codon' is not a valid stop codon. End_not_found tag MISSING\n");
-      print STDERR "ERROR: $gene_model '$stop_codon' is not a valid stop codon. End_not_found tag MISSING\n" if $verbose;
-    } 
-    else {
-      push(@error2,"ERROR: $gene_model '$stop_codon' is not a valid stop codon. End_not_found tag present\n");
-      print STDERR "ERROR: $gene_model '$stop_codon' is not a valid stop codon. End_not_found tag present\n" if $verbose;
-    }
-  }
-
-  # look for incorrect start codons(CDS specific)
-  if (($start_codon ne 'atg') && ($method_test eq 'curated')) {
-    if (($start_tag ne "present")) {
-      push(@error1,"ERROR: $gene_model '$start_codon' is not a valid start codon. Start_not_found tag MISSING\n");
-      print STDERR "ERROR: $gene_model '$start_codon' is not a valid start codon. Start_not_found tag MISSING\n" if $verbose;
-    }  
-    else {
-      push(@error2, "ERROR: $gene_model '$start_codon' is not a valid start codon. Start_not_found tag present\n");
-      print STDERR "ERROR: $gene_model '$start_codon' is not a valid start codon. Start_not_found tag present\n" if $verbose;
-    } 
-  }
-
-    # check for internal stop codons (CDS specific)
-    my $i;
-    my $j;
-    for ($i=0; $i<$gene_model_length-3;$i+=3) {
-      # hold position of codon in $j
-      $j=$i+1;
-      my $codon =substr($dna,$i,3);
-      if (($codon eq "taa") || ($codon eq "tag") || ($codon eq "tga")) {      
-	my $previous_sequence = substr($dna, $j-11,10);
-	my $following_sequence = substr($dna, $j+2, 10);
-	my $offending_codon = substr($dna, $j-1, 3);
-	if (($method_test eq 'curated')) {
-	  push(@error1, "ERROR: $gene_model internal stop codon at position $j ...$previous_sequence $offending_codon $following_sequence...\n") unless ($gene_model eq 'C06G3.7a' || $gene_model eq 'C06G3.7b');      
-	  print STDERR "ERROR: $gene_model internal stop codon at position $j ...$previous_sequence $offending_codon $following_sequence...\n" if (($verbose) && ($gene_model ne 'C06G3.7a' && $gene_model ne 'C06G3.7b'));
+    unless ($gene_model->name =~ /MTCE/) {
+      # look for incorrect stop codons (CDS specific)
+      if (($stop_codon ne 'taa') && ($stop_codon ne 'tga') && ($stop_codon ne 'tag') && ($method_test eq 'curated')) {
+	if ($end_tag ne "present") {
+	  push(@error1, "ERROR: $gene_model '$stop_codon' is not a valid stop codon. End_not_found tag MISSING\n");
+	  print "ERROR: $gene_model '$stop_codon' is not a valid stop codon. End_not_found tag MISSING\n" if $verbose;
+	} 
+	else {
+	  push(@error2,"ERROR: $gene_model '$stop_codon' is not a valid stop codon. End_not_found tag present\n") unless ($incomplete);
+	  print "ERROR: $gene_model '$stop_codon' is not a valid stop codon. End_not_found tag present\n" if $verbose;
 	}
       }
-    }
-    if ($species eq "elegans") {
-      # look for non-ACTG characters
-      if ($dna =~ /[^acgt]/i) {
-	$dna =~ s/[acgt]//g;
-	push(@error2, "ERROR: $gene_model DNA sequence contains the following non-ATCG characters: $dna\n"); 
-	print STDERR "ERROR: $gene_model DNA sequence contains the following non-ATCG characters: $dna\n" if $verbose;
+      
+      # look for incorrect start codons(CDS specific)
+      if (($start_codon ne 'atg') && ($method_test eq 'curated') && ($start_tag ne "present")) {
+	if (($start_tag ne "present")) {
+	  push(@error1,"ERROR: $gene_model '$start_codon' is not a valid start codon. Start_not_found tag MISSING\n");
+	  print "ERROR: $gene_model '$start_codon' is not a valid start codon. Start_not_found tag MISSING\n" if $verbose;
+	}  
+	else {
+	  push(@error2, "ERROR: $gene_model '$start_codon' is not a valid start codon. Start_not_found tag present\n") unless ($incomplete);
+	  print "ERROR: $gene_model '$start_codon' is not a valid start codon. Start_not_found tag present\n" if $verbose;
+	} 
+      }
+      
+      # check for internal stop codons (CDS specific)
+      my $i;
+      my $j;
+      for ($i=0; $i<$gene_model_length-3;$i+=3) {
+	# hold position of codon in $j
+	$j=$i+1;
+	my $codon =substr($dna,$i,3);
+	if (($codon eq "taa") || ($codon eq "tag") || ($codon eq "tga")) {      
+	  my $previous_sequence = substr($dna, $j-11,10);
+	  my $following_sequence = substr($dna, $j+2, 10);
+	  my $offending_codon = substr($dna, $j-1, 3);
+	  if (($method_test eq 'curated')) {
+	    push(@error1, "ERROR: $gene_model internal stop codon at position $j ...$previous_sequence $offending_codon $following_sequence...\n") unless ($genetic_code eq 'Selenocysteine');      
+	    print "ERROR: $gene_model internal stop codon at position $j ...$previous_sequence $offending_codon $following_sequence...\n" if (($verbose) && ($genetic_code ne 'Selenocysteine'));
+	  }
+	}
+      }
+      if ($species eq "elegans") {
+	# look for non-ACTG characters
+	if ($dna =~ /[^acgt]/i) {
+	  $dna =~ s/[acgt]//g;
+	  push(@error2, "ERROR: $gene_model DNA sequence contains the following non-ATCG characters: $dna\n"); 
+	  print "ERROR: $gene_model DNA sequence contains the following non-ATCG characters: $dna\n" if $verbose;
+	}
       }
     }
   }
