@@ -435,8 +435,10 @@ sub check_go_term {
       if ($_ =~ /^alt_id:\s+(\S+)/) {
         push @id, $1;
       }
-      if ($_ =~ /name:\s+(\S+)/) {
-        $name = $1;
+      if ($_ =~ /name:\s+(.+)$/;
+        my $raw_name = $1;
+        $raw_name =~ /\s*$//;
+        $name = $raw_name;
       }
       if ($_ =~ /namespace:\s+(\S+)/) {
         $namespace = $1;
