@@ -4,7 +4,7 @@
 #
 # by Keith Bradnam
 #
-# Last updated on: $Date: 2013-10-28 15:12:51 $
+# Last updated on: $Date: 2013-11-05 16:57:36 $
 # Last updated by: $Author: pad $
 #
 # see pod documentation at end of file for more information about this script
@@ -106,14 +106,17 @@ else {
   else {
     print STDERR "Fetching all genes...\n" if $verbose;
     @Predictions = $db->fetch (-query => 'FIND All_genes where method');
-
-    $log->write_to("Gene models with no method");
     @bad_genes = $db->fetch (-query => 'FIND All_genes where !method');
     $Bcount = @bad_genes;
-    $log->write_to("Error: $Bcount models have no method, please check\n");
+    if ($Bcount ne '0') {
+      $log->write_to("Error: $Bcount models have no method, please check\n");
       foreach $bad_genes(@bad_genes) {
-	$log->write_to("Error: $bad_genes has no method\n") if ($verbose);
+	$log->write_to("\nError: $bad_genes has no method\n") if ($verbose);
       }
+    }
+    else {
+      $log->write_to("\nThat's ok, $Bcount models have no method :)\n\n");
+    }
   }
 
   my $gene_model_count=@Predictions;
@@ -238,11 +241,20 @@ sub main_gene_checks {
 
     # check that 'Start_not_found' and 'End_not_found' tags present? (CDS specific.....extended to all genes :) )
     my $start_tag = "";
+    my $start_tag_val = "";
     my $end_tag = "";
     my $genetic_code = "";
 
     if ($gene_model->get('Start_not_found')) {
       $start_tag = "present";
+      if ($gene_model->get('Start_not_found')->right) {
+        $start_tag_val = $gene_model->get('Start_not_found')->right->name;
+      }
+      else {
+	print "Warning: $gene_model Start_not_found tag present but does not contain a value assuming should be 1\n";
+	#print "CDS : \"$gene_model\"\nStart_not_found 1\n\n" if $debug;
+	$start_tag_val = 1;
+      }
       unless ($incomplete) {
 	push(@error2,"ERROR: $gene_model Start_not_found tag present\n"); 
 	print "ERROR: $gene_model Start_not_found tag present\n" if ($verbose);
@@ -387,7 +399,7 @@ sub main_gene_checks {
 
       # feed DNA sequence to function for checking
       unless ((defined $gene_model) && (defined$start_tag) && (defined$end_tag) && (defined$dna) && (defined$method_test)) {print "$_\n";}
-      &test_gene_sequence_for_errors($gene_model,$start_tag,$end_tag,$dna,$method_test,$genetic_code);
+      &test_gene_sequence_for_errors($gene_model,$start_tag,$start_tag_val,$end_tag,$dna,$method_test,$genetic_code);
     }
   }
 
@@ -482,11 +494,23 @@ sub extra_build_checks {
 sub test_gene_sequence_for_errors{
   my $gene_model = shift;
   my $start_tag = shift;
+  my $start_tag_val = shift;
   my $end_tag = shift;
   my $dna = shift;
   my $method_test =shift;
   my $genetic_code=shift;
 
+  if ($start_tag eq "present") {
+    unless (defined $start_tag_val) {
+      $start_tag_val = '1';
+    }
+    print "start tag $start_tag value = $start_tag_val\n" if ($verbose);
+    if ($start_tag_val eq 0) {
+      $start_tag_val = '1';
+      print "start tag $start_tag value modified = $start_tag_val\n" if ($verbose);
+    }
+  }
+  
   if ($method_test eq '*history'){
     print "Not checking the codon or dna usage of $gene_model as it is a history model\n" if ($verbose);
   }
@@ -576,6 +600,7 @@ sub test_gene_sequence_for_errors{
 	if ($end_tag ne "present") {
 	  push(@error1, "ERROR: $gene_model '$stop_codon' is not a valid stop codon. End_not_found tag MISSING\n");
 	  print "ERROR: $gene_model '$stop_codon' is not a valid stop codon. End_not_found tag MISSING\n" if $verbose;
+	  #print "CDS : \"$gene_model\"\nEnd_not_found\n\n" if ($debug);
 	} 
 	else {
 	  push(@error2,"ERROR: $gene_model '$stop_codon' is not a valid stop codon. End_not_found tag present\n") unless ($incomplete);
@@ -598,7 +623,23 @@ sub test_gene_sequence_for_errors{
       # check for internal stop codons (CDS specific)
       my $i;
       my $j;
-      for ($i=0; $i<$gene_model_length-3;$i+=3) {
+      if ($start_tag_val) {
+	print "start_tag_val final = $start_tag_val\n" if ($verbose);
+	if ($start_tag_val eq 3) {#if 3 +2
+	  $i = '2';
+	}
+	elsif ($start_tag_val eq 2) {#if 2 +1
+	  $i = '1';
+	}
+	else {
+	  $i = '0';
+	}
+      }
+      else {
+	$i = '0';
+      }
+
+      for (;$i<$gene_model_length-3;$i+=3) {
 	# hold position of codon in $j
 	$j=$i+1;
 	my $codon =substr($dna,$i,3);
