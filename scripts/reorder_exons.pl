@@ -6,8 +6,8 @@
 #
 # This script checks the exon order and corrects them if needed
 #
-# Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-10-14 10:16:24 $
+# Last updated by: $Author: pad $
+# Last updated on: $Date: 2013-11-05 16:44:48 $
 
 
 
@@ -35,7 +35,8 @@ my $quicktest;# use test environment but gets the defined clone.
 my $store;    # Provide the Wormbase store object to the script
 my $out;      # allows an output file to be specified to avoid writing to BUILD
 my $verbose;  # gives additional output if interested
-my $noload;
+my $noload;   # prevents the auto loading of data into the specified database
+my $species;  # define the species for pulling the species full name
 
 GetOptions ("database=s"     => \$database,
 	    "debug:s"        => \$debug,
@@ -44,6 +45,7 @@ GetOptions ("database=s"     => \$database,
 	    "store:s"        => \$store,
 	    "out:s"          => \$out,
 	    "noload"         => \$noload,
+	    "species:s"      => \$species,
 	   );
 
 $test = 1 if $quicktest;
@@ -54,11 +56,17 @@ if( $store ) {
 else {
   $wormbase = Wormbase->new( -debug   => $debug,
 			     -test    => $test,
+			     -organism => $species
 			   );
 }
 #################################
 # Set paths                     #
 #################################
+
+unless (defined $species) {
+  print "defaulting to elegans as you didn't specify a species on command line!!";
+  $species = "elegans";
+}
 
 # set root level
 my $basedir     = $wormbase->basedir;
@@ -91,9 +99,10 @@ else {
 # open output file
 my $acefile;
 if (defined $out) {
-  $acefile = $out;
-} else {
-  $acefile = $dbpath."/acefiles/sorted_exons.ace";
+$acefile = $out;
+}
+else {
+$acefile = $dbpath."/acefiles/sorted_exons.ace";
 }
 
 print "output will be written to $acefile\n";
@@ -122,7 +131,8 @@ if( $quicktest ) {
   print "only fetching data from $quicktest\n\n" if ($verbose);
 }
 else {
-  $query = "Find Sequence Properties == Genomic_canonical & Species=\"Caenorhabditis elegans\"";
+  my $spfullname = $wormbase->full_name;
+  $query = "Find Sequence Properties == Genomic_canonical & Species=\"$spfullname\"";
 }
 
 @sequences = $db->fetch(-query => $query);
@@ -306,11 +316,14 @@ Usually run as part of the build but can be run against any valid acedb database
 
 =over 4
 
-=item none
+=item -species
+
+This is "required" as the species full name is retrieved from the WB object and used in the query.
+Defaults to elegans if not specified on command line
 
 =back
 
-=head1 OPTIONAL arguments: -database, -test, -out, -debug, -verbose, -quicktest
+=head1 OPTIONAL arguments: -database, -test, -out, -debug, -verbose, -quicktest, -species, -noload
 
 =over 4
 
@@ -337,6 +350,10 @@ Log messages will only go to the specified user.
 =item -verbose
 
 gives additional output if interested
+
+=item -noload
+
+prevents the data being loaded into the specified database.
 
 =back
 
