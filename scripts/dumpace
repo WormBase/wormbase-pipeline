@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl 
 
-# Dumps out ace files for either camace or stlace.
+# Dumps out ace files for camace.
 # Utilises the "write" option of textace to write
 # the acefiles, for sequence, DNA, protein and motif objects
 # The "write" function is probably the most robust way
@@ -15,17 +15,16 @@
 #Steven Jones, Sanger Centre, 1995. 
 
 if ($#ARGV != 0 
-    || ($ARGV[0] ne "cam" && $ARGV[0] ne "stl" && $ARGV[0] ne "seq" && $ARGV[0] ne "mini" && $ARGV[0] ne "nano")
+    || ($ARGV[0] ne "cam" && $ARGV[0] ne "seq" && $ARGV[0] ne "mini" && $ARGV[0] ne "nano")
    ) 
 
-{ die "Usage: $0 database (cam or stl or seq or mini or nano)\n";}
+{ die "Usage: $0 database (cam or seq or mini or nano)\n";}
 
 #Get the correct executable to use
 require glob('~sjj/scripts/sanger.pl');
 $exec=&tace;
 
 if ($ARGV[0] eq "cam") {$ENV{'ACEDB'}="/nfs/disk100/wormpub/acedb/ace4/cam";}
-if ($ARGV[0] eq "stl") {$ENV{'ACEDB'}="/nfs/disk100/wormpub/acedb/ace4/stl";}
 if ($ARGV[0] eq "seq") {$ENV{'ACEDB'}="/nfs/disk67/sylvia/seqace98";}
 if ($ARGV[0] eq "mini") {$ENV{'ACEDB'}="/nfs/disk67/sylvia/miniace";}
 if ($ARGV[0] eq "nano") {$ENV{'ACEDB'}="/nfs//disk67/sylvia/nanoace";}

@@ -4,8 +4,8 @@
 #
 # by Dan Lawson
 #
-# Last updated on: $Date: 2005-12-16 11:18:54 $
-# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2013-11-05 17:10:18 $
+# Last updated by: $Author: pad $
 #
 # Ace dumps a subsequence from a given target database
 # And retrieves the coordinates from parent object
@@ -13,7 +13,7 @@
 #####################################################################################################
 
 use strict;
-use lib "/wormsrv2/scripts/";
+use lib $ENV{'CVS_DIR'};
 use Wormbase;
 use IPC::Open2;
 use Getopt::Std;
@@ -37,9 +37,8 @@ if ((!$opt_d)||(!$opt_s)) {
 $0 =~ m/\/*([^\/]+)$/; system ("touch /wormsrv2/logs/history/$1.`date +%y%m%d`");
 
 my $dbpath=$opt_d;
-$opt_d =~ /camace/  && do {$dbpath = "/wormsrv2/camace";};
+$opt_d =~ /camace/  && do {$dbpath = $wormbase->database('camace');};
 $opt_d =~ /autoace/ && do {$dbpath = "/wormsrv2/autoace";};
-$opt_d =~ /stlace/  && do {$dbpath = "/wormsrv2/stlace";};
 my $cwd = `/bin/pwd`;
 chomp $cwd;
 print "DBPATH: $dbpath\n";
@@ -148,7 +147,7 @@ Dump_Subseq.pl mandatory arguments [n excludes d and s]
 
 =over 4
 
-=item -d Database: one of autoace, camace, stlace
+=item -d Database: one of autoace, or camace
 
 =item -s Subsequence_object_name: requested subsequence
 
