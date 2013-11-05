@@ -2,7 +2,7 @@
 #
 # find_match.pl
 # checks whether a chosen feature overlaps gene introns/exons                                   
-# sorts output for stl and cam clones
+# sorts output for cam clones
 #
 # by Kerstin Jekosch
 # 10/08/01
@@ -15,7 +15,7 @@ use Getopt::Long;
 $|=1;
 
 my @chrom = qw(I II III IV V X);
-my (%structure, %feature, %genes, %camace, %stlace);
+my (%structure, %feature, %genes, %camace);
 
 my $structure="";
 my $feature="";
@@ -48,12 +48,6 @@ foreach my $camclone (@camclones) {
 	else {$camace{$camclone} = 1;}
 }
 
-my $stldb     = Ace->connect(-path => '/wormsrv2/stlace/') || die "Couldn't connect to stlace\n", Ace->error;
-my @stlclones = $stldb->fetch(-query => 'FIND Elegans_genomic');
-foreach my $stlclone (@stlclones) {
-    $stlace{$stlclone} = 1;
-}
-
 
 
 # get data for one chromosome at a time 
@@ -62,8 +56,6 @@ foreach my $chrom (@chrom) {
     open (GFF, "/wormsrv2/autoace/CHROMOSOMES/CHROMOSOME_$chrom.gff"); 
     open (CAMOUT, ">$dir/CHROMOSOME_$chrom.$feature_cam") 
 	|| die "Cannot open output file CAMOUT $chrom $!\n"; 
-    open (STLOUT, ">$dir/CHROMOSOME_$chrom.$feature_stl") 
-	|| die "Cannot open output file STLOUT $chrom $!\n"; 
 		
     %exon = %intron = %feature = %genes = (); 
     my (%exoncount, %introncunt, %featurecount, $name);
@@ -175,15 +167,7 @@ foreach my $chrom (@chrom) {
         my @single = split (/:/, $pair); 
         print CAMOUT "$single[1]\tmatches gene $single[0]\n";
     }
-
-    my @stlfeature         = &find_database(\@featureoutput,\%stlace);
-    my %finalfeaturestlace = &sort_by_gene(\@stlfeature);
-    
-    foreach my $pair (sort keys %finalfeaturestlace) {
-        my @single = split (/:/, $pair); 
-        print STLOUT "$single[1]\tmatches gene $single[0]\n";
-    }
-}
+  }
 
 
 

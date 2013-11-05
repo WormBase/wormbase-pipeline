@@ -5,10 +5,10 @@
 # by Kerstin Jekosch
 #
 # checks whether genes overlap, ESTs match introns and repeats match exons                                   
-# sorts output for stl and cam clones
+# sorts output for cam clones
 #
 # Last updated by: $Author: pad $
-# Last updated on: $Date: 2011-07-14 11:00:07 $
+# Last updated on: $Date: 2013-11-05 17:23:29 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -62,7 +62,7 @@ my $log = Log_files->make_build_log($wormbase);
 
 
 my @chrom = qw(I II III IV V X);
-my (%exon, %est, %genes, %repeat, %intron, %camace, %stlace);
+my (%exon, %est, %genes, %repeat, %intron, %camace);
 
 my %estorientation = $wormbase->FetchData('estorientation');     # EST accession => orientation [5|3]
 
@@ -82,7 +82,7 @@ my $repolend   = '10';
 #################################
     
 # added check to extract this information out of database('camace') or database('currentdb')
-# instead of the primary('camace') and primary('stlace'), because someone might be changing the
+# instead of the primary('camace'), because someone might be changing the
 # primary databases at the end of the build.
 
 my $camace = $wormbase->primary('camace');
@@ -99,21 +99,6 @@ foreach my $camclone (@camclones) {
   }
   else {$camace{$camclone} = 1;}
 }
-
-my $stlace = $wormbase->primary('stlace');
-if (! -f "$stlace/database/ACEDB.wrm") {
-  $stlace = $wormbase->database('current');  
-}
-my $stldb    = Ace->connect(-path => $stlace) || die "Couldn't connect to stlace\n", Ace->error;
-my @stlclones = $stldb->fetch(-query => 'FIND Elegans_genomic');
-foreach my $stlclone (@stlclones) {
-  my $string = $stlclone->Source(1);
-  if ((defined $string) && ($string =~ /_CB/)) {
-    next;
-  }
-  $stlace{$stlclone} = 1;
-}
-
 
 
 #############################################
@@ -132,13 +117,7 @@ foreach my $chrom (@chrom) {
     open (CAMEST, ">$ace_dir/CHECKS/CHROMOSOME_$chrom.EST_in_intron_cam")    
 	|| die "Cannot open output file $chrom $!\n"; 
     open (CAMREP, ">$ace_dir/CHECKS/CHROMOSOME_$chrom.repeat_in_exon_cam")  
-	|| die "Cannot open output file $chrom $!\n"; 
-    open (STLOL, ">$ace_dir/CHECKS/CHROMOSOME_$chrom.overlapping_genes_stl") 
-	|| die "Cannot open output file $chrom $!\n"; 
-    open (STLEST, ">$ace_dir/CHECKS/CHROMOSOME_$chrom.EST_in_intron_stl")    
-	|| die "Cannot open output file $chrom $!\n"; 
-    open (STLREP, ">$ace_dir/CHECKS/CHROMOSOME_$chrom.repeat_in_exon_stl")   
-	|| die "Cannot open output file $chrom $!\n"; 
+	|| die "Cannot open output file $chrom $!\n";  
     
   %exon  = %est = %genes = %intron = %repeat = (); 
   my (%exoncount, %introncount, %estcount, %repeatcount, $name);
@@ -288,17 +267,6 @@ foreach my $chrom (@chrom) {
         print CAMOL "Gene $single[1]\toverlaps with gene $single[0]\n" if ($single[0] ne $single[1]);
     } 
 	
-    # output for stlace    
-    my @stlgenes         = find_database(\@geneoutput,\%stlace);
-    my %finalgenesstlace = sort_by_gene(\@stlgenes);
-    warn "problem with genematch  reference\n" if ref(\@stlgenes) ne 'ARRAY';
-    foreach my $pair (sort keys %finalgenesstlace) {
-	my @single = split (/:/, $pair); 
-	print STLOL "Gene $single[1]\toverlaps with gene $single[0]\n" if ($single[0] ne $single[1]);;
-    } 
-
-
-
 	  
 ##################################
 # IV. find ESTs matching introns #
@@ -368,23 +336,6 @@ foreach my $chrom (@chrom) {
         @{$camout{$x}} = sort @{$camout{$x}};
         print CAMEST "Introns of gene $x match ESTs @{$camout{$x}}\n"; 
     }           
-
-    # output for stlace
-    my @stlintrons        = find_database(\@intronoutput,\%stlace);
-    my %finalintronstlace = sort_by_gene(\@stlintrons); 
-    my %stlest = ();
-    foreach my $pair (sort keys %finalintronstlace) {
-        my @single = split (/:/, $pair);
-        push @{$stlest{$single[1]}}, "$single[0] $single[2] - $single[3]";
-    }   
-    my %stlout = erase_isoforms(\%stlest,\%iso);
-    foreach my $x (sort keys %stlout) {
-        @{$stlout{$x}} = sort @{$stlout{$x}};
-        print STLEST "Introns of gene $x match ESTs @{$stlout{$x}}\n"; 
-    }           
-
-
-
 	
 ##################################
 # V. find repeats matching exons #
@@ -438,30 +389,17 @@ foreach my $chrom (@chrom) {
     my %finalrepcamace  = sort_by_gene(\@camrepeats);
     my %camrepout       = ();
     foreach my $pair (sort keys %finalrepcamace) {
-        my @single = split (/:/, $pair); 
-        push @{$camrepout{$single[0]}}, $single[1];
+      my @single = split (/:/, $pair); 
+      push @{$camrepout{$single[0]}}, $single[1];
     }
     foreach my $gene (sort keys %camrepout) {
-        print CAMREP "$gene matches @{$camrepout{$gene}}\n";
+      print CAMREP "$gene matches @{$camrepout{$gene}}\n";
     }
-    
-    # output for stlace
-    my @stlrepeats      = find_database(\@repeatoutput,\%stlace);
-    my %finalrepstlace  = sort_by_gene(\@stlrepeats);
-    my %stlrepout          = ();
-    foreach my $pair (sort keys %finalrepstlace) {
-        my @single = split (/:/, $pair); 
-        push @{$stlrepout{$single[0]}}, $single[1];
-    }
-    foreach my $gene (sort keys %stlrepout) {
-        print STLREP "$gene matches @{$stlrepout{$gene}}\n";
-    }
-}
+  }
 
 
 # Tidy up
 $camdb->close;
-$stldb->close;
 
 $log->mail();
 print "Finished.\n" if ($verbose);
@@ -524,7 +462,7 @@ sub erase_isoforms {
                     }     
                 }
                 if ($isocount == @{$iso{$testgene}}) {
-                    my $number = length @{$iso{$testgene}};
+                    my $number = length@{$iso{$testgene}};
                     push @{$dbout{$testgene}}, $testest; 
                 }
             }
