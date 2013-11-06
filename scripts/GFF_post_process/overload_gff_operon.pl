@@ -5,7 +5,7 @@
 # Overloads operon lines with Gene info
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-11-06 14:28:55 $
+# Last updated on: $Date: 2013-11-06 15:40:06 $
 
 use lib $ENV{CVS_DIR};
 use Wormbase;
@@ -87,12 +87,11 @@ sub get_operon_data {
   
   my %operon_genes;
   my $db = Ace->connect(-path => $wormbase->autoace);
-  my $cursor = $db->fetch_many(Operon => '*');
+  my $cursor = $db->fetch_many(-query => 'Find Operon where Canonical_parent AND Contains_gene');
   while (my $operon = $cursor->next){
-    my @tmp_genes = $operon->Contains_gene;
-    my @tmp_genes2 = map{"$_"} @tmp_genes;
-    if ($debug) {print "$operon\n" unless (defined $operon->Contains_gene->name);}
-    push @{$operon_genes{"$operon"}}, @tmp_genes2 if (defined $operon->Contains_gene);
+    foreach my $gene ($operon->Contains_gene) {
+      push @{$operon_genes{"$operon"}}, $gene->name;
+    }
   }
   $db->close;
   return \%operon_genes;
