@@ -6,7 +6,7 @@
 # from the Coding_transcript and curated GFF split files
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-07-22 10:18:41 $
+# Last updated on: $Date: 2013-11-06 14:05:28 $
 
 
 use strict;
@@ -82,6 +82,7 @@ foreach my $bit (@bits_of_work) {
         end    => $l[4],
         strand => $l[6],
       };
+      print "ADDED CDS ", $cds{$cds}->{start}," ", $cds{$cds}->{end}, "\n";
     } elsif ($l[2] eq 'coding_exon') {
       push @{$cds{$cds}->{coding_exons}}, {
         start  => $l[3],
@@ -112,14 +113,12 @@ foreach my $bit (@bits_of_work) {
     my @utrs;
     if ($l[3] < $cds{$cds}->{start}) {
       # UTR left
-      my $utr_type = 
-      my $utr_start =
-      my $utr_end = ($l[4] < $cds{$cds}->{start}) ? $l[4] : $cds{$cds}->{start} - 1;
       push @utrs, {
         type => ($l[6] eq '+') ? 'five' : 'three',
         start =>  $l[3],
         end => ($l[4] < $cds{$cds}->{start}) ? $l[4] : $cds{$cds}->{start} - 1,
       };
+      printf "Added UTR %d %d (cod region was %d %d)\n", $utrs[-1]->{start}, $utrs[-1]->{end}, $cds{$cds}->{start}, $cds{$cds}->{end};
     }
     if ($l[4] > $cds{$cds}->{end}) {
       push @utrs, {
