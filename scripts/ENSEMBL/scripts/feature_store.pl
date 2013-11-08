@@ -1,336 +1,211 @@
-#!/usr/local/ensembl/bin/perl  -w
+#!/usr/bin/env perl
 
 use strict;
 use Switch;
 use Getopt::Long;
 
-use WormBase;
-use WormBaseConf;
-use WormFeature::Blat;
-use WormFeature::WublastX;
+use FindBin qw($Bin);
+use lib "$Bin/../lib";
+
+use WormBase2Ensembl;
+#use WormFeature::Blat;
+#use WormFeature::WublastX;
 #use Clone2Acc;
 #use Bio::EnsEMBL::Pipeline::SeqFetcher::Pfetch;
 #use Bio::EnsEMBL::Pipeline::SeqFetcher::OBDAIndexSeqFetcher;
 use Bio::EnsEMBL::DBSQL::DBAdaptor;
 
 
-my ($estori, $species);
-&GetOptions('estorientations=s' => \$estori,
-            'species=s'          => \$species,
+my ($estori, $species, $debug, $verbose,
+    $dbhost, $dbname, $dbuser, $dbpass, $dbport,
+    $gff_file, $seleno,
     );
 
-defined $species and $WormBase::Species = $species;
+&GetOptions('estorientations=s' => \$estori,
+            'species=s'         => \$species,
+            'host=s'            => \$dbhost,
+            'user=s'            => \$dbuser, 
+            'pass=s'            => \$dbpass,
+            'port=s'            => \$dbport,
+            'gff=s'             => \$gff_file,
+            'dbname=s'          => \$dbname,
+            'debug'             => \$debug,
+            'verbose'           => \$verbose,
+            'seleno'            => \$seleno,
+    );
+
+
 
 if (defined $estori and -e $estori) {
   $estori = &read_est_orientations($estori);
 }
 
 my $db = new Bio::EnsEMBL::DBSQL::DBAdaptor(
-    -host   => $WB_DBHOST,
-    -user   => $WB_DBUSER,
-    -dbname => $WB_DBNAME,
-    -pass   => $WB_DBPASS,
-    -port   => $WB_DBPORT,
+    -host   => $dbhost,
+    -user   => $dbuser,
+    -dbname => $dbname,
+    -pass   => $dbpass,
+    -port   => $dbport,
 );
 
-my $analysis_logic_name = shift;
+my @analysis_logic_names = @ARGV;
+
 my $analysis_adaptor    = $db->get_AnalysisAdaptor();
-my $analysis            = $analysis_adaptor->fetch_by_logic_name($analysis_logic_name);
 
-if ( !$analysis && !($analysis_logic_name eq 'selenocystein')){
+
+my $wb2ens = WormBase2Ensembl->new(
+  -species => $species,
+  -debug   => $debug,
+  -verbose => $verbose,
+  -dbh     => $db);
+
+
+foreach my $analysis_logic_name (@analysis_logic_names) {
+  my $analysis = $analysis_adaptor->fetch_by_logic_name($analysis_logic_name);
+
+  if (not $analysis and $analysis_logic_name ne 'wormbase_genes_gff3') {
     die "COULD NOT GET ANALYSIS ADAPTOR FOR $analysis_logic_name";
-}
+  }
 
-my $slice_hash = {};
-
-foreach my $chromosome_info ( @{$WB_CHR_INFO} ) {
-
-  if ( $chromosome_info->{'chr_name'} && 
-       $chromosome_info->{'gff_file'} ) {
+  switch ($analysis_logic_name) {
     
-    my $gff_file = $chromosome_info->{gff_file};
-    my $chr_name = $chromosome_info->{chr_name};
-
-    if (not -e $gff_file) {
-      $gff_file = join("/", $WB_workDIR, $chromosome_info->{gff_file});
-      die "Could not find $gff_file" if not -e $gff_file;
+    # simple features from GFF
+    case [ 'operon','fosmid', 'rnai_pcr_product'] {
+      my $features;
+      switch ($analysis_logic_name) {
+        case 'rnai_pcr_product'   { $features = $wb2ens->parse_pcr_products_gff( $gff_file, $analysis, undef, 'PCR_product' ) }
+        case 'operon'             { $features = $wb2ens->parse_operons_gff( $gff_file, $analysis, 'operon' ) }
+        case 'fosmid'	          { $features = $wb2ens->parse_simplefeatures_gff($gff_file, $analysis ,'Vancouver_fosmid')}
+      }
+      $wb2ens->write_simple_features( $features  ) if $features;
+    }
+    # BLASTX from GFF
+    case ['slimswissprotx','slimtremblx','ipi_humanx','wormpepx','brigpepx','remaneix','brepepx','jappepx','ppapepx', 'gadflyx','yeastx'] {
+      my $tag;
+      switch ($analysis_logic_name){
+        case 'slimswissprotx' {$tag='SW'}
+        case 'slimtremblx'    {$tag='TR'}
+        case 'ipi_humanx'     {$tag='ENSEMBL'}
+        case 'gadflyx'        {$tag='FLYBASE'}
+        case 'yeastx'         {$tag='SGD'}
+        case 'wormpepx'       {$tag='WP'}
+        case 'brigpepx'       {$tag='BP'}
+        case 'remaneix'       {$tag='RP'}
+        case 'jappepx'        {$tag='JA'}
+        case 'brepepx'        {$tag='CN'}
+        case 'ppapepx'        {$tag='PP'}
+        case 'bmapepx'        {$tag='BM'}
+        
+      }
+      
+      my $hits = $wb2ens->parse_protein_align_features_gff($gff_file, $analysis, $tag);
+      $wb2ens->write_protein_align_features($hits);
     }
     
-    print "Handling $chr_name with file  $gff_file\n" if ($WB_DEBUG);
-    
-    if ($chr_name eq 'ALL') {
-      foreach my $slice (@{$db->get_SliceAdaptor->fetch_all('toplevel')}) {
-        $slice_hash->{$slice->seq_region_name} = $slice;
-      }
-    } else {
-      $slice_hash->{$chr_name} = $db->get_SliceAdaptor->fetch_by_region('toplevel', $chr_name);
-      if ($species eq 'elegans') {
-        my $other_name;
-        if ($chr_name =~ /^CHROMOSOME_/) {
-          $other_name = $chr_name;
-          $other_name =~ s/^CHROMOSOME_//;
-        } else {
-          $other_name = "CHROMOSOME_" . $chr_name;
-        }
-        $slice_hash->{$other_name} = $slice_hash->{$chr_name};
-      }
+    case ['celegans_mrna', 'cbriggsae_mrna', 'cremanei_mrna', 'cbrenneri_mrna', 'cremanei_mrna', 'cjaponica_mrna','ppacificus_mrna', 'bmalayi_mrna'] {
+      my $hits = $wb2ens->parse_dna_align_features_gff($gff_file, $analysis, 'BLAT_mRNA_BEST', 'expressed_sequence_match', $estori);
+      $wb2ens->write_dna_align_features($hits);
+    }
+    case ['celegans_est', 'cbriggsae_est', 'cremanei_est', 'cbrenneri_est', 'cremanei_est', 'cjaponica_est','ppacificus_est', 'bmalayi_est'] {
+      my $hits = $wb2ens->parse_dna_align_features_gff($gff_file, $analysis, 'BLAT_EST_BEST', 'expressed_sequence_match', $estori);
+      $wb2ens->write_dna_align_features($hits);
+    }      
+    case 'celegans_ost' {
+      my $hits = $wb2ens->parse_dna_align_features_gff($gff_file, $analysis, 'BLAT_OST_BEST', 'expressed_sequence_match', $estori);
+      $wb2ens->write_dna_align_features($hits);
+    }
+    case 'celegans_rst' {
+      my $hits = $wb2ens->parse_dna_align_features_gff($gff_file, $analysis, 'BLAT_RST_BEST', 'expressed_sequence_match', $estori);
+      $wb2ens->write_dna_align_features($hits);
     }
     
-    #MtDNA does not have Expr_profile, RNAi or Operon so may cause hassles for these
-    next if ( $chr_name =~ /MtDNA$/ and
-              ( $analysis_logic_name eq 'expression_profile' or 
-                $analysis_logic_name eq 'rnai' or 
-                $analysis_logic_name eq 'operon' or 
-                $analysis_logic_name eq 'fosmid'));
-    
-    #read the features from gff file
-    switch ($analysis_logic_name) {
+    case 'caenorhabditis_mrna' {
+      my $hits = $wb2ens->parse_dna_align_features_gff($gff_file, $analysis, 'BLAT_Caen_mRNA_BEST', 'expressed_sequence_match', $estori);
+      $wb2ens->write_dna_align_features($hits);
+    }
+    case 'caenorhabditis_est' {
+      my $hits = $wb2ens->parse_dna_align_features_gff($gff_file, $analysis, 'BLAT_Caen_EST_BEST', 'expressed_sequence_match', $estori);
+      $wb2ens->write_dna_align_features($hits);
+    }
+    case 'nembase_est' {
+      my $hits = $wb2ens->parse_dna_align_features_gff($gff_file, $analysis, 'NEMBASE_cDNAs-BLAT', 'expressed_sequence_match', $estori);
+      $wb2ens->write_dna_align_features($hits);
+    }
+    case 'washu_est' {
+      my $hits = $wb2ens->parse_dna_align_features_gff($gff_file, $analysis, 'NEMATODE.NET_cDNAs-BLAT', 'expressed_sequence_match', $estori);
+      $wb2ens->write_dna_align_features($hits);
+    }
+    case 'nematode_est' {
+      my $hits = $wb2ens->parse_dna_align_features_gff($gff_file, $analysis, 'EMBL_nematode_cDNAs-BLAT', 'expressed_sequence_match', $estori);
+      $wb2ens->write_dna_align_features($hits);
+    }
+    case 'wormbase_non_coding' {
+      ## tRNA genes ##
+      my $tRNA_scan_genes = $wb2ens->parse_non_coding_genes_gff2( $gff_file, $analysis,'tRNA');
+      $wb2ens->write_genes( $tRNA_scan_genes);
       
-      # simple features from GFF
-      case [ 'expression_profile', 'rnai', 'operon','fosmid', 'pcr_product'] {
-        my $features;
-        switch ($analysis_logic_name) {
-          case 'expression_profile' { $features = parse_expr( $gff_file, $slice_hash, $analysis ) }
-          case 'rnai'               { $features = parse_rnai( $gff_file, $slice_hash, $analysis ) }
-          case 'pcr_product'        { $features = parse_pcr_product( $gff_file, $slice_hash, $analysis ) }
-          case 'operon'             { $features = parse_operons( $gff_file, $slice_hash, $analysis ) }
-          case 'fosmid'	      { $features = parse_simplefeature($gff_file, $slice_hash, $analysis ,'Vancouver_fosmid')}
-        }
-        print "have " . scalar @$features . " features ($analysis_logic_name).\n" if ($WB_DEBUG);
-        
-        #save the features to db
-        write_simple_features( $features, $db ) if $features;
-      }
-      # BLASTX from GFF
-      case ['slimswissprotx','slimtremblx','ipi_humanx','wormpepx','brigpepx','remaneix','brepepx','jappepx','ppapepx', 'gadflyx','yeastx'] {
-        my $tag;
-        switch ($analysis_logic_name){
-          case 'slimswissprotx' {$tag='SW'}
-          case 'slimtremblx'    {$tag='TR'}
-          case 'ipi_humanx'     {$tag='ENSEMBL'}
-          case 'gadflyx'        {$tag='FLYBASE'}
-          case 'yeastx'         {$tag='SGD'}
-          case 'wormpepx'       {$tag='WP'}
-          case 'brigpepx'       {$tag='BP'}
-          case 'remaneix'       {$tag='RP'}
-          case 'jappepx'        {$tag='JA'}
-          case 'brepepx'        {$tag='CN'}
-          case 'ppapepx'        {$tag='PP'}
-
-        }
-        
-        my $wublastx = WublastX->new( $slice_hash, $gff_file, $analysis ,$tag);
-        my $hits=  scalar( @{ $wublastx->{hits} } );
-        print "has $hits $analysis_logic_name hits\n" if $WB_DEBUG;
-        $wublastx->save($db) if $hits >0;
-      }
+      ## rRNA-genes #
+      my $rRNAgenes = $wb2ens->parse_non_coding_genes_gff2( $gff_file, $analysis, 'rRNA' );
+      $wb2ens->write_genes( $rRNAgenes );
       
-      case ['celegans_mrna', 'cbriggsae_mrna', 'cremanei_mrna', 'cbrenneri_mrna', 'cremanei_mrna', 'cjaponica_mrna','ppacificus_mrna'] {
-        my $blat = Blat->new( $slice_hash, $gff_file, $analysis ,{-feature => 'BLAT_mRNA_BEST', -source => 'cDNA_match'}, $estori);
-        my $hits = scalar( @{ $blat->{hits} } );
-        print "has $hits  BLAT hits\n" if $WB_DEBUG;
-        $blat->save($db) if $hits >0;
-      }
-      case ['celegans_est', 'cbriggsae_est', 'cremanei_est', 'cbrenneri_est', 'cremanei_est', 'cjaponica_est','ppacificus_est'] {
-        my $blat = Blat->new( $slice_hash, $gff_file, $analysis ,{-feature => 'BLAT_EST_BEST', -source => 'EST_match'}, $estori);
-        my $hits=  scalar( @{ $blat->{hits} } );
-        print "has $hits  BLAT hits\n" if $WB_DEBUG;
-        $blat->save($db) if $hits >0;
-      }      
-      case 'celegans_ost' {
-        my $blat = Blat->new( $slice_hash, 
-                              $gff_file, 
-                              $analysis ,
-                              {-feature => 'BLAT_OST_BEST', -source => 'expressed_sequence_match'}, 
-                              $estori);
-        my $hits=  scalar( @{ $blat->{hits} } );
-        print "has $hits  BLAT hits\n" if $WB_DEBUG;
-        $blat->save($db) if $hits >0;
-      }
-      case 'celegans_rst' {
-        my $blat = Blat->new( $slice_hash, 
-                              $gff_file, 
-                              $analysis ,
-                              {-feature => 'BLAT_RST_BEST', -source => 'expressed_sequence_match' }, 
-                              $estori);
-        my $hits=  scalar( @{ $blat->{hits} } );
-        print "has $hits  BLAT hits\n" if $WB_DEBUG;
-        $blat->save($db) if $hits >0;
-      }
-
-      case 'caenorhabditis_mrna' {
-        my $blat = Blat->new( $slice_hash, 
-                              $gff_file, 
-                              $analysis ,
-                              {-feature => 'BLAT_Caen_mRNA_BEST', -source => 'expressed_sequence_match'},
-                              $estori);
-        my $hits=  scalar( @{ $blat->{hits} } );
-        print "has $hits  BLAT hits\n" if $WB_DEBUG;
-        $blat->save($db) if $hits >0;
-      }
-      case 'caenorhabditis_est' {
-        my $blat = Blat->new( $slice_hash, 
-                              $gff_file, 
-                              $analysis ,
-                              {-feature => 'BLAT_Caen_EST_BEST', -source => 'expressed_sequence_match' },
-                              $estori);
-        my $hits=  scalar( @{ $blat->{hits} } );
-        print "has $hits  BLAT hits\n" if $WB_DEBUG;
-        $blat->save($db) if $hits >0;
-      }
-      case 'nembase_est' {
-        my $blat = Blat->new( $slice_hash, 
-                              $gff_file, 
-                              $analysis ,
-                              {-feature => 'BLAT_NEMBASE', -source => 'translated_nucleotide_match' },
-                              $estori);
-        my $hits=  scalar( @{ $blat->{hits} } );
-        print "has $hits  BLAT hits\n" if $WB_DEBUG;
-        $blat->save($db) if $hits >0;
-      }
-      case 'washu_est' {
-        my $blat = Blat->new( $slice_hash, 
-                              $gff_file, 
-                              $analysis ,
-                              {-feature => 'BLAT_WASHU', -source => 'translated_nucleotide_match' },
-                              $estori);
-        my $hits=  scalar( @{ $blat->{hits} } );
-        print "has $hits  BLAT hits\n" if $WB_DEBUG;
-        $blat->save($db) if $hits >0;
-      }
-      case 'nematode_est' {
-        my $blat = Blat->new( $slice_hash, 
-                              $gff_file, 
-                              $analysis ,
-                              {-feature => 'BLAT_NEMATODE', -source => 'translated_nucleotide_match' },
-                              $estori);
-        my $hits=  scalar( @{ $blat->{hits} } );
-        print "has $hits  BLAT hits\n" if $WB_DEBUG;
-        $blat->save($db) if $hits >0;
-      }
-      case 'wormbase_non_coding' {
-        ## tRNA genes ##
-        my $tRNA_scan_genes = parse_pseudo_files( $gff_file, $slice_hash, $analysis,'tRNA_mature_transcript', 'tRNA' );
-        print "have " . scalar @$tRNA_scan_genes . " genomic tRNA_mature_transcript  genes.\n" if ($WB_DEBUG);
-        &write_genes( $tRNA_scan_genes, $db );
-        
-        ## rRNA-genes #
-        my $rRNAgenes = parse_pseudo_files( $gff_file, $slice_hash, $analysis, 'rRNA' );
-        print "have " . scalar @$rRNAgenes . " rRNA genes.\n" if ($WB_DEBUG);        
-        &write_genes( $rRNAgenes, $db );
-
-        ## generic ncRNA genes ##
-        my $ncRNAgenes = parse_pseudo_files( $gff_file, $slice_hash, $analysis,'ncRNA' );
-        print "have " . scalar @$ncRNAgenes . " ncRNA genes.\n" if ($WB_DEBUG);
-        &write_genes( $ncRNAgenes, $db );
-        
-        ## snRNA-genes
-        my $snRNAgenes = parse_pseudo_files( $gff_file, $slice_hash, $analysis,'snRNA_mature_transcript', 'snRNA' );
-        print "have " . scalar @$snRNAgenes . " snRNA genes.\n" if ($WB_DEBUG);        
-        &write_genes( $snRNAgenes, $db );
-
-        ## snoRNA-genes
-        my $snoRNAgenes = parse_pseudo_files( $gff_file, $slice_hash, $analysis,'snoRNA_mature_transcript', 'snoRNA' );
-        print "have " . scalar @$snoRNAgenes . " snoRNA genes.\n" if ($WB_DEBUG);
-        &write_genes( $snoRNAgenes, $db );
-
-        ## snlRNA-genes
-        my $snlRNAgenes = parse_pseudo_files( $gff_file, $slice_hash, $analysis,'snlRNA' );
-        print "have " . scalar @$snlRNAgenes . " snlRNA genes.\n" if ($WB_DEBUG);
-        &write_genes( $snlRNAgenes, $db );
-
-        ## miRNA-genes
-        my $miRNAgenes = parse_pseudo_files( $gff_file, $slice_hash, $analysis,'curated_miRNA', 'miRNA' );
-        print "have " . scalar @$miRNAgenes . " miRNA genes.\n" if ($WB_DEBUG);
-        &write_genes( $miRNAgenes, $db );
-
-
-        ## scRNA-genes
-        my $scRNAgenes = parse_pseudo_files( $gff_file, $slice_hash, $analysis,'scRNA_mature_transcript', 'scRNA' );
-        print "have " . scalar @$scRNAgenes . " scRNA genes.\n" if ($WB_DEBUG);
-        &write_genes( $scRNAgenes, $db );
-      }
-      case 'wormbase_pseudogene' {
-        ## pseudogenes
-        my $pseudogenes = parse_pseudo_files( $gff_file, $slice_hash, $analysis, 'Pseudogene', 'pseudogene');
-        print "have " . scalar @$pseudogenes . " pseudogenes / tRNA genes.\n" if ($WB_DEBUG);
-        write_genes( $pseudogenes, $db, 1 );
-      }
-      case 'wormbase' {
-        
-        #parse out real worm genes
-        my $genes = parse_gff( $gff_file, $slice_hash, $analysis );
-        print "have " . scalar @$genes . " genes.\n" if ($WB_DEBUG);
-        
-        #store genes
-        &write_genes( $genes, $db );
-        
-        #check translations
-        my @genes;
-        if ($chr_name eq 'ALL') {
-          my %done;
-          foreach my $slice (values %$slice_hash) {
-            if (not exists $done{$slice->seq_region_name}) {
-              push @genes, grep {$_->biotype eq 'protein_coding'} @{ $slice->get_all_Genes };
-              $done{$slice->seq_region_name} = 1;
-            }
-          }
-        } else {
-          my $chr = $slice_hash->{$chr_name};
-          @genes =  grep {$_->biotype eq 'protein_coding'} @{ $chr->get_all_Genes };
-        }
-
-        open( TRANSLATE, "+>>" . $WB_NON_TRANSLATE ) or die "couldn't open " . $WB_NON_TRANSLATE . " $!";
-        TRANSLATION: foreach my $gene (@genes) {
-          my $translation = &translation_check($gene);
-          if ($translation) {
-            next TRANSLATION;
-          }
-          else {
-            print TRANSLATE $gene->stable_id . " from $chr_name does not translate\n";
-            next TRANSLATION;
-          }
-        }
-        close(TRANSLATE);
-      }
-      case 'selenocystein' {
-        #check translations
-
-        my @genes;
-        if ($chr_name eq 'ALL') {
-          my %done;
-          foreach my $slice (values %$slice_hash) {
-            if (not exists $done{$slice->seq_region_name}) {
-              push @genes, grep {$_->biotype eq 'protein_coding'} @{ $slice->get_all_Genes };
-              $done{$slice->seq_region_name} = 1;
-            }
-          }
-        } else {
-          my $chr = $slice_hash->{$chr_name};
-          @genes =  grep {$_->biotype eq 'protein_coding'} @{ $chr->get_all_Genes };
-        }
-
-        print "GENES = ". scalar(@genes), "\n";
-        open( TRANSLATE, "+>>" . $WB_NON_TRANSLATE ) or die "couldn't open " . $WB_NON_TRANSLATE . " $!";
-        foreach my $gene (@genes) {
-          my $translation = &translation_check($gene,$db);
-          next if ($translation);
-          print TRANSLATE $gene->stable_id . " from $chr_name does not translate\n";
-        }
-        close(TRANSLATE);
-        
-      }
+      ## generic ncRNA genes ##
+      my $ncRNAgenes = $wb2ens->parse_non_coding_genes_gff2( $gff_file, $analysis,'ncRNA' );
+      $wb2ens->write_genes( $ncRNAgenes );
       
-      else {
-        print "\n ANALYSIS NOT DEFINED ($analysis_logic_name)!\n";
-        exit 1;
+      ## snRNA-genes
+      my $snRNAgenes = $wb2ens->parse_non_coding_genes_gff2( $gff_file, $analysis,'snRNA' );
+      $wb2ens->write_genes( $snRNAgenes );
+      
+      ## snoRNA-genes
+      my $snoRNAgenes = $wb2ens->parse_non_coding_genes_gff2( $gff_file, $analysis, 'snoRNA' );
+      $wb2ens->write_genes( $snoRNAgenes );
+      
+      ## scRNA-genes
+      my $scRNAgenes = $wb2ens->parse_non_coding_genes_gff2( $gff_file, $analysis,'scRNA' );
+      $wb2ens->write_genes( $scRNAgenes );
+      
+      ## miRNA-genes
+      my $miRNAgenes = $wb2ens->parse_non_coding_genes_gff2( $gff_file, $analysis, 'miRNA_mature', 'miRNA');
+      $wb2ens->write_genes( $miRNAgenes );
+    }
+    case 'wormbase_pseudogene' {
+      ## pseudogenes
+      my $pseudogenes = $wb2ens->parse_non_coding_genes_gff2( $gff_file, $analysis, 'Pseudogene', 'pseudogene');
+      $wb2ens->write_genes( $pseudogenes );
+    }
+    case 'wormbase' {
+      
+      #parse out real worm genes
+      my $genes = $wb2ens->parse_protein_coding_gff2( $gff_file, $analysis );
+      $wb2ens->write_genes( $genes );
+      
+      #check translations
+      my @genes = @{$db->get_GeneAdaptor->fetch_all_by_biotype('protein_coding')};
+      &check_translations(\@genes);
+    }
+    case 'wormbase_genes_gff3' {
+      my $cod_ana    = $db->get_AnalysisAdaptor->fetch_by_logic_name('wormbase');
+      my $nc_ana     = $db->get_AnalysisAdaptor->fetch_by_logic_name('wormbase_non_coding');
+      my $pseudo_ana = $db->get_AnalysisAdaptor->fetch_by_logic_name('wormbase_pseudogene');
+
+      if (not $cod_ana or not $nc_ana or not $pseudo_ana) {
+        die "Analyses 'wormbase', 'wormbase_non_coding' and 'wormbase_pseudogene' must be in the database to use this option\n";
       }
+      my $genes = $wb2ens->parse_genes_gff3( $gff_file, $cod_ana, $nc_ana, $pseudo_ana, { WormBase => 1 });
+      $verbose and print STDERR "Writing genes to database...\n";
+      $wb2ens->write_genes( $genes );
+
+      $verbose and print STDERR "Checking translations...\n";
+      my @genes = @{$db->get_GeneAdaptor->fetch_all_by_biotype('protein_coding')};
+      &check_translations(\@genes);
+    }
+    else {
+      print "\n ANALYSIS NOT DEFINED ($analysis_logic_name)!\n";
+      exit 1;
     }
   }
-  else { 
-    print "skipping chromosome.\n" if ($WB_DEBUG); 
-  }
 }
+
 
 exit 0;
 
@@ -349,4 +224,29 @@ sub read_est_orientations {
 
   eval $data;
   return $VAR1;
+}
+
+
+
+sub check_translations {
+  my ($genes) = @_;
+
+  foreach my $gene (@$genes) {
+    my @non_translate;
+    foreach my $tran (@{$gene->get_all_Transcripts}) {
+      if ($tran->biotype eq 'protein_coding' and not $wb2ens->translation_check($tran)) {
+        push @non_translate, $tran;
+      }
+    }
+    
+    if (@non_translate) {
+      print "Transcripts from " . $gene->stable_id . " do not translate\n";
+      if ($seleno) {
+        print "-seleno option given, so will replace stops with selenocystein\n";
+        foreach my $tran (@non_translate) {
+          $wb2ens->translation_fix($tran);
+        }
+      }
+    }
+  }
 }
