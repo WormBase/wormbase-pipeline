@@ -13,12 +13,9 @@ use Bio::Seq;
 use Bio::SeqIO;
 use Bio::EnsEMBL::CoordSystem;
 use Bio::EnsEMBL::DBSQL::DBAdaptor;
-use Bio::EnsEMBL::Utils::Exception qw(verbose warning);
-verbose('OFF');
 use FindBin;
 use lib "$FindBin::Bin/../lib";
-use WormBase;
-use DBI qw(:sql_types);
+use WormBase2Ensembl;
 
 my ( $debug, $species, $setup, $dna, $genes, $rules, $inputids, $pipeline_setup, $test, $yfile );
 
@@ -289,45 +286,26 @@ sub load_genes {
     -port   => $db->{port},
       );
 
-  my (%ana_hash, $analysis);
+  my (%ana_hash);
 
   foreach my $ana (@{$dba->get_AnalysisAdaptor->fetch_all}) {
     $ana_hash{$ana->logic_name} = $ana;
   }
-  if (not exists $ana_hash{wormbase}) {
-    my $ana = Bio::EnsEMBL::Analysis->new(-logic_name => "wormbase", 
-                                          -gff_source => "WormBase",
-                                          -module => "WormBase");
-    $dba->get_AnalysisAdaptor->store($ana);
-    $ana_hash{wormbase} = $ana;
-  }
-  $analysis = $ana_hash{wormbase};
-
-  my (%slice_hash, @path_globs, @gff2_files, @gff3_files, $genes); 
-
-  foreach my $slice (@{$dba->get_SliceAdaptor->fetch_all('toplevel')}) {
-    $slice_hash{$slice->seq_region_name} = $slice;
-    if ($species eq 'elegans') {
-      my $other_name;
-      if ($slice->seq_region_name !~ /^CHROMOSOME/) {
-        $other_name = "CHROMOSOME_" . $slice->seq_region_name; 
-      } else {
-        $other_name = $slice->seq_region_name;
-        $other_name =~ s/^CHROMOSOME_//;
-      }
-      $slice_hash{$other_name} = $slice;
-    } elsif ($species eq 'briggsae') {
-      my $other_name;
-      if ($slice->seq_region_name !~ /^chr/) {
-        $other_name = "chr" . $slice->seq_region_name; 
-      } else {
-        $other_name = $slice->seq_region_name;
-        $other_name =~ s/^chr//;
-      }
-      $slice_hash{$other_name} = $slice;
+  foreach my $logic ("wormbase", "wormbase_non_coding", "wormbase_pseudogene") {
+    if (not exists $ana_hash{$logic}) {
+      my $ana = Bio::EnsEMBL::Analysis->new(-logic_name => $logic,
+                                            -gff_source => "WormBase",
+                                            -module     => "WormBase");
+      $dba->get_AnalysisAdaptor->store($ana);
+      $ana_hash{logic} = $ana;
     }
   }
-  
+  my $cod_analysis    = $ana_hash{wormbase};
+  my $nc_analysis     = $ana_hash{wormbase_non_coding};
+  my $pseudo_analysis = $ana_hash{wormbase_pseudogene};
+
+  my (@path_globs, @gff2_files, @gff3_files, $genes); 
+
   if ($config->{gff}) {
     @path_globs = split(/,/, $config->{gff});
     foreach my $fglob (@path_globs) {
@@ -342,17 +320,47 @@ sub load_genes {
     die "No gff or gff3 stanza in config - death\n";
   }
 
+  my $wb2ens = WormBase2Ensembl->new(-species => $species,
+                                     -dbh     => $dba);
+
+  my @genes;
   if (@gff2_files) {
-    open(my $gff_fh, "cat @gff2_files |") or die "Could not create GFF stream\n";
-    $genes = &parse_gff_fh( $gff_fh, \%slice_hash, $analysis);
+    my $gff_fh;
+    #
+    # coding genes
+    #
+    open($gff_fh, "cat @gff2_files |") or die "Could not create GFF stream\n";
+    push @genes, @{ $wb2ens->parse_protein_coding_gff_fh( $gff_fh, $analysis)};
+
+    #
+    # non-coding genes
+    #
+    foreach my $source_biotype_pair (['rRNA', 'rRNA'],
+                                     ['ncRNA', 'ncRNA'],
+                                     ['snRNA', 'snRNA'],
+                                     ['snoRNA', 'snoRNA'],
+                                     ['scRNA', 'scRNA'],
+                                     ['miRNA_mature', 'miRNA']) {
+      my ($source, $biotype) = @$source_biotype_pair;
+
+      open($gff_fh, "cat @gff2_files |") or die "Could not create GFF stream\n";
+      push @genes, @{ $wb2ens->parse_non_coding_genes_gff_fh( $gff_fh, $nc_analysis, $source, $biotype ) };
+    }
+
+    #
+    # pseudogenes
+    #
+    open($gff_fh, "cat @gff2_files |") or die "Could not create GFF stream\n";
+    push @genes, @{ $wb2ens->parse_non_coding_genes_gff_fh( $gff_fh, $pseudo_analysis, 'Pseudogene', 'pseudogene')};
+
   } elsif (@gff3_files) {
     open(my $gff_fh, "cat @gff3_files |") or die "Could not create GFF stream\n";
-    $genes = &parse_gff3_fh( $gff_fh, \%slice_hash, \%ana_hash);
+    $genes = $wb2ens->parse_genes_gff3_fh( $gff_fh, $cod_analysis, $nc_analysis, $pseudo_analysis, { "WormBase" => 1 });
   } else {
     die "No gff or gff3 files found - death\n";
   }
 
-  &write_genes( $genes, $dba );
+  $wb2ens->write_genes( $genes );
   
   my $set_canon_cmd = "perl $cvsDIR/ensembl/misc-scripts/canonical_transcripts/set_canonical_transcripts.pl "
       . "-dbhost $db->{host} "
@@ -367,10 +375,10 @@ sub load_genes {
 
   my $timestamp = strftime("%Y-%m", localtime(time));
   
-  $dba->dbc->do('DELETE FROM  meta WHERE meta_key = "genebuild.start_date"');
+  $dba->dbc->do('DELETE FROM meta WHERE meta_key = "genebuild.start_date"');
   $dba->dbc->do("INSERT INTO meta (meta_key,meta_value) VALUES (\"genebuild.start_date\",\"$timestamp\")");
   
-  $dba->dbc->do('DELETE FROM  meta WHERE meta_key = "genebuild.version"');
+  $dba->dbc->do('DELETE FROM meta WHERE meta_key = "genebuild.version"');
   $dba->dbc->do("INSERT INTO meta (meta_key,meta_value) VALUES (\"genebuild.version\",\"$timestamp\")");
 
 }
