@@ -22,6 +22,9 @@ my (
   $recreatedb,
   $reg_conf,
   $create_tree_mlss,
+  $tax_host,
+  $tax_port,
+  $tax_user,
     ); 
     
 
@@ -37,6 +40,9 @@ GetOptions(
   "recreate"        => \$recreatedb,
   "reg_conf=s"      => \$reg_conf,
   "treemlss"        => \$create_tree_mlss,
+  "taxhost=s"       => \$tax_host,
+  "taxuser=s"       => \$tax_user,
+  "taxport=s"       => \$tax_port,
     );
 
 
@@ -85,6 +91,7 @@ foreach my $species (sort @species) {
     production_name => $prod_name,
     genebuild => $genebuild,
     assembly => $cs->version,
+    locator => "Bio::EnsEMBL::DBSQL::DBAdaptor/host=$host;port=$port;user=wormro;pass=;dbname=$db_name;disconnect_when_inactive=1",
   };
 }
 
@@ -118,6 +125,21 @@ if ($recreatedb) {
   foreach my $ml (@ml_list) {
     $ml_adp->store($ml);
   }
+
+  #
+  # Populate ncbi taxonomy tables
+  #
+
+  open(my $tgt_fh, "| mysql -u $user -p$pass -h $host -P $port -D $master_dbname")
+      or die "Could not open pipe to target db $master_dbname\n";
+  foreach my $table ('ncbi_taxa_node', 'ncbi_taxa_name') {
+    open(my $src_fh, "mysqldump -u $tax_user -h $tax_host -P $tax_port ncbi_taxonomy $table |")
+        or die "Could not open mysqldump stream from ncbi_taxonomy\n";
+    while(<$src_fh>) {
+      print $tgt_fh $_;
+    }
+  }
+  close($tgt_fh) or die "Could not successfully close pipe to target db $master_dbname\n";
 }
 
 
@@ -139,6 +161,7 @@ foreach my $species (sort { $species_data{$a}->{taxon_id} <=> $species_data{$b}-
   my $assembly = $sdata->{assembly};
   my $genebuild = $sdata->{genebuild};
   my $taxid = $sdata->{taxon_id};
+  my $locator = $sdata->{locator};
 
   my $gdb;
   eval {
@@ -153,6 +176,7 @@ foreach my $species (sort { $species_data{$a}->{taxon_id} <=> $species_data{$b}-
       -taxon_id  => $taxid,
       -genebuild => $genebuild,
         );
+    $gdb->locator($locator);
 
     $compara_dbh->get_GenomeDBAdaptor->store($gdb);
   } else {
