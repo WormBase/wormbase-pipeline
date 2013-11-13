@@ -459,6 +459,9 @@ sub parse_simplefeature_gff_fh {
     my @l = split(/\t/, $_);
     my ($chr, $source, $type, $start, $end, $strand, $attr) = 
         @l[0,1,2,3,4,6,8];
+    
+    next if defined $given_source and $source ne $given_source;
+    next if defined $given_type and $type ne $given_type;
 
     my $id;
     if ($attr =~ /^\S+\s+\"(\S+)\"/) {
@@ -477,10 +480,6 @@ sub parse_simplefeature_gff_fh {
 
     die "Could not identify feature name/id from line ($_)\n" if not $id; 
     die "Could not find slice for $chr\n" if not exists $self->slices->{$chr};
-    
-    next if defined $given_source and $source ne $given_source;
-    next if defined $given_type and $type ne $given_type;
-
     push @features, $self->_create_simple_feature( $start, 
                                                    $end, 
                                                    ($strand eq '-') ? -1 : 1,
@@ -592,17 +591,17 @@ sub parse_protein_align_features_gff_fh {
 
 
 sub parse_dna_align_features_gff {
-  my ($self, $gff_file, $analysis, $source, $feature, $orimap) = @_;
+  my ($self, $gff_file, $analysis, $source, $feature, $orimap, $group) = @_;
 
   my $fh = $self->_open_file($gff_file);
-  my $hits = $self->parse_dna_align_features_gff_fh($fh, $analysis, $source, $feature, $orimap);
+  my $hits = $self->parse_dna_align_features_gff_fh($fh, $analysis, $source, $feature, $orimap, $group);
 
   return $hits;
 }
 
 
 sub parse_dna_align_features_gff_fh {
-  my ($self, $fh, $analysis, $source, $feature, $orimap) = @_;
+  my ($self, $fh, $analysis, $source, $feature, $orimap, $group) = @_;
 
   my (@hits, %hits_by_align_id, $align_count);
   while (<$fh>) {
@@ -676,7 +675,13 @@ sub parse_dna_align_features_gff_fh {
       map { $_->strand($cons_strand) } @feats;
     }
 
-    push @hits, Bio::EnsEMBL::DnaDnaAlignFeature->new(-features => \@feats);
+    if ($group) {
+      push @hits, Bio::EnsEMBL::DnaDnaAlignFeature->new(-features => \@feats);
+    } else {
+      foreach my $f (@feats) {
+        push @hits, Bio::EnsEMBL::DnaDnaAlignFeature->new(-features => [$f]);
+      }
+    }
     delete $hits_by_align_id{$align_id};
   }
 
