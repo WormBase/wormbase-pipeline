@@ -73,9 +73,9 @@ foreach my $analysis_logic_name (@analysis_logic_names) {
     case [ 'operon','fosmid', 'rnai_pcr_product'] {
       my $features;
       switch ($analysis_logic_name) {
-        case 'rnai_pcr_product'   { $features = $wb2ens->parse_pcr_products_gff( $gff_file, $analysis, undef, 'PCR_product' ) }
-        case 'operon'             { $features = $wb2ens->parse_operons_gff( $gff_file, $analysis, 'operon' ) }
-        case 'fosmid'	          { $features = $wb2ens->parse_simplefeatures_gff($gff_file, $analysis ,'Vancouver_fosmid')}
+        case 'rnai_pcr_product'   { $features = $wb2ens->parse_simplefeature_gff( $gff_file, $analysis, undef, 'PCR_product' ) }
+        case 'operon'             { $features = $wb2ens->parse_simplefeature_gff( $gff_file, $analysis, 'operon' ) }
+        case 'fosmid'	          { $features = $wb2ens->parse_simplefeature_gff( $gff_file, $analysis ,'Vancouver_fosmid')}
       }
       $wb2ens->write_simple_features( $features  ) if $features;
     }
