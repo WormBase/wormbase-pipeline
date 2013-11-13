@@ -225,6 +225,7 @@ sub parse_genes_gff3_fh {
       my $tran = $transcripts{$tid};
       my $gff_source = $tran->{source};
       my $gff_type = $tran->{type};
+      my $tsid = (exists $tran->{name}) ? $tran->{name} : $tid;
 
       if (not exists $tran->{exons}) {
         # For some single-exon features, e.g. ncRNAs, exons are not compulsory in the GFF3. 
@@ -314,7 +315,8 @@ sub parse_genes_gff3_fh {
       }
       
       my $transcript = Bio::EnsEMBL::Transcript->new(
-        -stable_id => $tid);
+        -stable_id => $tsid,
+          );
 
 
       my ($tr_st_ex, $tr_en_ex, $tr_st_off, $tr_en_off);
@@ -348,7 +350,7 @@ sub parse_genes_gff3_fh {
         $tr->end_Exon($tr_en_ex);
         $tr->start($tr_st_off);
         $tr->end($tr_en_off);
-        $tr->stable_id($tid);
+        $tr->stable_id($tsid);
         $tr->version(1);
 
         $transcript->translation($tr);
