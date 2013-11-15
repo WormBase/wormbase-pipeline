@@ -117,7 +117,7 @@ sub setupdb {
     system($cmd) and die "Could not load taxonomy\n";
     
     print "Loading production table...\n";
-    $cmd = "perl $cvsDIR/ensembl/misc-scripts/production_database/scripts/populate_production_db_tables.pl "
+    $cmd = "perl $cvsDIR/ensembl-production/scripts/production_database/populate_production_db_tables.pl "
         . "--host $db->{host} "
         . "--user $db->{user} "
         . "--pass $db->{password} "
