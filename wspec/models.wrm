@@ -14,7 +14,7 @@
 //
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: pad $
-// Last edited on: $Date: 2013-09-20 08:30:45 $
+// Last edited on: $Date: 2013-11-19 17:32:22 $
 //
 //
 // Additional things to consider. If classes are added or new data in the ?Gene class
@@ -355,9 +355,17 @@
         Remark ?Text #Evidence
 	Method UNIQUE ?Method
 
+
+////////////////////////////
+//
+// Gene_cluster class
+//
+////////////////////////////
+
 ?Gene_cluster Title UNIQUE ?Text                                        // Information on the Gene cluster 
               Description ?Text
               Contains_gene ?Gene XREF In_cluster
+
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -454,6 +462,7 @@
 			   Other_regulator ?Text #Interactor_info	// Free text describing a regulator entity or condition that does not fall into a standard WormBase category
 			   Other_regulated ?Text #Interactor_info	// Free text describing a regulated entity or condition that does not fall into a standard WormBase category
 			   Rearrangement  ?Rearrangement XREF Interactor #Interactor_info
+			   Feature_interactor ?Feature XREF Associated_with_Interaction #Interactor_info
 		Interaction_summary ?Text #Evidence
 		Detection_method Affinity_capture_luminescence		      // A physical interaction detection technique
 				 Affinity_capture_MS			      // A physical interaction detection technique
@@ -492,7 +501,6 @@
 		Regulation_level Transcriptional		          // Regulation occurs at the transcriptional level
 				 Post_transcriptional		          // Regulation occurs at the post-transcriptional level
 				 Post_translational		          // Regulation occurs at the post-translational level
-		Interaction_associated_feature ?Feature XREF Associated_with_Interaction #Evidence //Modified from proposal
 		Regulation_result Positive_regulate #GR_condition
 				  Negative_regulate #GR_condition
 				  Does_not_regulate #GR_condition // added to capture negative data [040220 krb]
@@ -1034,6 +1042,7 @@
 		       Obsolete
 	 Alternate_id ?Text
 	 Definition UNIQUE ?Text
+	 Worm_disease_model ?Text ?Species #Evidence  // Textual description of the worm disease model
 	 Comment Text
 	 Synonym Broad   ?Text
 		 Exact   ?Text
@@ -1707,7 +1716,7 @@
 		      Associated_with_variation  ?Variation  XREF Feature #Evidence  
 		      Associated_with_Position_Matrix	      ?Position_Matrix XREF Associated_feature #Evidence
 		      Associated_with_operon      ?Operon XREF Associated_feature #Evidence
-		      Associated_with_Interaction ?Interaction XREF Interaction_associated_feature //modified from proposal 
+		      Associated_with_Interaction ?Interaction XREF Feature_interactor
 		      Associated_with_expression_pattern	 ?Expr_pattern XREF Associated_feature #Evidence 
 		      Associated_with_Feature ?Feature XREF Associated_with_Feature #Evidence 
 	 Bound_by_product_of ?Gene XREF Gene_product_binds #Evidence //pad added this to show what gene it binds
@@ -1818,7 +1827,7 @@
 ?Protein  Peptide UNIQUE ?Peptide UNIQUE Int UNIQUE Int // Length + checksum
           Display View ?View
                   Default_view UNIQUE ?View
-          DB_info Database ?Database ?Database_field UNIQUE ?Text
+          DB_info Database ?Database ?Database_field ?Text
                   Gene_name  ?Text
                   Description   UNIQUE ?Text
 		  Molecular_weight Float #Evidence
@@ -1984,6 +1993,14 @@
 		Description ?Text //For trait information
 
 
+
+///////////////////////////////////
+//
+//  Expr_pattern class
+//
+///////////////////////////////////
+
+
 ?Expr_pattern	Expression_of	Gene ?Gene XREF Expr_pattern #Evidence
 				CDS        ?CDS XREF Expr_pattern // for coding genes
 				Sequence   ?Sequence XREF Expr_pattern // for clones???
@@ -2005,12 +2022,15 @@
                         Western Text  // Wen 
                         RT_PCR Text   // Wen
 			Localizome ?Text //added by Wen
+			Microarray ?Microarray_experiment
+			Tiling_array ?Analysis
 		Expression_cluster ?Expression_cluster XREF Expr_pattern //added by Wen.for localizome
 		Pattern ?Text
 		Picture ?Picture XREF Expr_pattern
 		MovieURL Text //Added by wen for link to movie URLs. 
 		Movie    ?Movie    XREF Expr_pattern  //Added by Wen to curate Expr_pattern video
                 Remark ?Text #Evidence
+		DB_info ?Database ?Database_field Text
                 Experiment	Laboratory ?Laboratory
 				Author ?Author 
 				Date UNIQUE DateType
@@ -2618,6 +2638,8 @@
 
 ?Movie Description ?Text
        Name UNIQUE Text
+       Reference ?Paper XREF Movie
+       DB_info ?Database ?Database_field Text
        Pick_me_to_call Text Text
        RNAi ?RNAi XREF Movie
        Variation ?Variation XREF Movie  //[2006-04-21 ar2] Carol
@@ -2745,7 +2767,8 @@
 		     SAGE_tag ?SAGE_tag Text #Evidence
 		     Gene ?Gene XREF Expression_cluster Text #Evidence       //Igor: populated during build based on Microarray_results mapping
 		     Attribute_of Microarray_experiment ?Microarray_experiment  XREF Expression_cluster //Wen
-				  Analysis ?Analysis XREF Expression_cluster //Wen, for cluster obtained from RNAseq or Tiling array
+				  RNAseq ?Analysis XREF Expression_cluster_RNAseq
+                                  Tiling_array ?Analysis XREF Expression_cluster_tiling_array
 				  Expr_pattern ?Expr_pattern XREF Expression_cluster #Evidence          //Wen originally for Localizome
                      Regulation   Regulated_by_gene ?Gene		     //Wen WS228
                                   Regulated_by_treatment Text                //Wen WS228
@@ -2864,8 +2887,8 @@
 // ?Person class //
 ///////////////////
 
-?Person PostgreSQL_id UNIQUE Text       // for linking to internal RDB
-                                        // Text instead of Int so it says WBperson####
+?Person PostgreSQL_id UNIQUE Text     // for linking to internal RDB // Text instead of Int so it says WBperson####
+        DB_info Database ?Database ?Database_field ?Text     //used for storing ORCID IDs etc.
         Name    First_name    UNIQUE  Text    // prefered first name
                 Middle_name   Text            // middle name(s)
                 Last_name     UNIQUE  ?Person_name XREF Last_name_of    // prefered last name
@@ -3054,6 +3077,7 @@
 		 Molecule ?Molecule XREF Reference
 		 WBProcess ?WBProcess XREF Reference
 		 Picture ?Picture XREF Reference
+		 Movie ?Movie XREF Reference
 		 DO_term ?DO_term #Evidence
        Curation_pipeline Phenotype2GO
        Keyword ?Keyword
@@ -3344,7 +3368,8 @@
 		   Subproject	  ?Analysis XREF Project
              Description ?Text
 	     Sample ?Condition XREF Analysis
-	     Expression_cluster ?Expression_cluster XREF Analysis //Wen WS228
+	     Expression_cluster_RNAseq ?Expression_cluster XREF RNAseq
+	     Expression_cluster_tiling_array ?Expression_cluster XREF Tiling_array
              Reference ?Paper XREF Describes_analysis
              Conducted_by ?Person XREF Conducted		// not always the same as the author of the paper - eg Erich running OrthoMCL
              URL Text					// eg www.treefam.org  (or would this be covered by Source_database?)
