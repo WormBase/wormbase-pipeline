@@ -1136,8 +1136,13 @@ sub bless_prediction
     #get date for remark
     my ($day, $mon, $yr)  = (localtime)[3,4,5];
     my $date = sprintf("%02d%02d%02d",$yr-100, $mon+1, $day);
-    print BLS "Remark \"[$date $user] Autoconversion from $gene\"";
-    if (defined $person){ print BLS " Curator_confirmed $person\nEvidence Curator_confirmed $person\n";}
+    if ($species =~ "elegans") {
+      print BLS "Remark \"[$date $user] Autoconversion from $gene\" From_analysis RNASeq_Hillier_elegans\n";
+    }
+    else {
+      print BLS "Remark \"[$date $user] Autoconversion from $gene\"";
+    }
+    if (defined $person){ print BLS " Remark \"[$date $user] Autoconversion from $gene\" Curator_confirmed $person\nEvidence Curator_confirmed $person\n";}
     else {print BLS "\nEvidence\n";}
     
     close BLS;
