@@ -1703,6 +1703,7 @@ sub get_chunked_chroms {
   return @chroms;
 }
 
+
 ##################################################################################
 # Wrapper for handling the opening of GFF files for both chromosome or contig
 # based assemblies.
@@ -1717,20 +1718,32 @@ sub get_chunked_chroms {
 ###################################################################################
 
 sub open_GFF_file {
-  my $self = shift;
-  my $seq = shift;
-  my $method = shift;
-  my $log = shift;
-  my $handle;
+  my ($self, $seq, $method, $log) = @_;
 
-  my $file = $self->GFF_file_name($seq, $method);
-  if ($self->assembly_type ne 'contig' ) { 
-    open ($handle,"<$file") or $log->log_and_die("cant open $file :$!\n");
-  } else {		# contig based assembly
-    open($handle,"grep \"^$seq\\W\" $file |") or $log->log_and_die("cant open $file :$!\n");
+  my $fh;
+
+  if ($self->assembly_type eq 'contig') {      
+    # single file for all seqs for contig-based assemblies
+    my $file = $self->GFF_file_name($seq, $method);
+    if (not defined $seq) {
+      open($fh, $file) or $log->log_and_die("Could not open $file for reading\n");
+    } else {
+      open($fh, "cat $file | grep \"^$seq\\W\" |") or $log->log_and_die("Could not open seq-restricted stream to $file\n");
+    }    
+  } else {
+    if (defined $seq) {
+      my $file = $self->GFF_file_name($seq, $method);
+      open($fh, $file) or $log->log_and_die("Could not open $file for reading\n");
+    } else {
+      my @files;
+      foreach my $chr ($self->get_chromosome_names(-mito => 1, -prefix => 1)) {
+        push @files, $self->GFF_file_name($chr, $method);
+      }
+      open($fh, "cat @files |") or $log->log_and_die("Could not open cat stream for files: @files\n");
+    }
   }
-  
-  return $handle;
+
+  return $fh;
 }
 
 
