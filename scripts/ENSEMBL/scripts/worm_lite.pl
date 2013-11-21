@@ -328,7 +328,7 @@ sub load_genes {
     # coding genes
     #
     open($gff_fh, "cat @gff2_files |") or die "Could not create GFF stream\n";
-    push @genes, @{ $wb2ens->parse_protein_coding_gff_fh( $gff_fh, $cod_analysis)};
+    push @genes, @{ $wb2ens->parse_protein_coding_gff2_fh( $gff_fh, $cod_analysis)};
 
     #
     # non-coding genes
@@ -342,14 +342,14 @@ sub load_genes {
       my ($source, $biotype) = @$source_biotype_pair;
 
       open($gff_fh, "cat @gff2_files |") or die "Could not create GFF stream\n";
-      push @genes, @{ $wb2ens->parse_non_coding_genes_gff_fh( $gff_fh, $nc_analysis, $source, $biotype ) };
+      push @genes, @{ $wb2ens->parse_non_coding_genes_gff2_fh( $gff_fh, $nc_analysis, $source, $biotype ) };
     }
 
     #
     # pseudogenes
     #
     open($gff_fh, "cat @gff2_files |") or die "Could not create GFF stream\n";
-    push @genes, @{ $wb2ens->parse_non_coding_genes_gff_fh( $gff_fh, $pseudo_analysis, 'Pseudogene', 'pseudogene')};
+    push @genes, @{ $wb2ens->parse_non_coding_genes_gff2_fh( $gff_fh, $pseudo_analysis, 'Pseudogene', 'pseudogene')};
 
   } elsif (@gff3_files) {
     open(my $gff_fh, "cat @gff3_files |") or die "Could not create GFF stream\n";
