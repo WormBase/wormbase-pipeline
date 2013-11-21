@@ -1729,7 +1729,7 @@ sub _display_non_translate {
   }
 }
 
-sub clone_Exon {
+sub _clone_Exon {
   my ($self, $exon) = @_;
 
   my $newexon = Bio::EnsEMBL::Exon->new();
