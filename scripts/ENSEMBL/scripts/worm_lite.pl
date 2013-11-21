@@ -302,7 +302,7 @@ sub load_genes {
   my $nc_analysis     = $ana_hash{wormbase_non_coding};
   my $pseudo_analysis = $ana_hash{wormbase_pseudogene};
 
-  my (@path_globs, @gff2_files, @gff3_files, $genes); 
+  my (@path_globs, @gff2_files, @gff3_files); 
 
   if ($config->{gff}) {
     @path_globs = split(/,/, $config->{gff});
@@ -319,7 +319,9 @@ sub load_genes {
   }
 
   my $wb2ens = WormBase2Ensembl->new(-species => $species,
-                                     -dbh     => $dba);
+                                     -dbh     => $dba,
+                                     -debug   => ($debug) ? 1 : 0,
+      );
 
   my @genes;
   if (@gff2_files) {
@@ -353,12 +355,12 @@ sub load_genes {
 
   } elsif (@gff3_files) {
     open(my $gff_fh, "cat @gff3_files |") or die "Could not create GFF stream\n";
-    $genes = $wb2ens->parse_genes_gff3_fh( $gff_fh, $cod_analysis, $nc_analysis, $pseudo_analysis, { "WormBase" => 1 });
+    @genes = @{$wb2ens->parse_genes_gff3_fh( $gff_fh, $cod_analysis, $nc_analysis, $pseudo_analysis, { "WormBase" => 1 })};
   } else {
     die "No gff or gff3 files found - death\n";
   }
 
-  $wb2ens->write_genes( $genes );
+  $wb2ens->write_genes( \@genes );
   
   my $set_canon_cmd = "perl $cvsDIR/ensembl/misc-scripts/canonical_transcripts/set_canonical_transcripts.pl "
       . "-dbhost $db->{host} "
