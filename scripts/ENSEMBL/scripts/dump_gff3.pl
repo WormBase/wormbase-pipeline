@@ -208,12 +208,23 @@ while( my $slice = shift @slices) {
     print "LOGICS = @logics\n";
 
     foreach my $logic (@logics) {
+      my $ana = $ensdb->get_AnalysisAdaptor->fetch_by_logic_name($logic);
+      if (not defined $ana) {
+        print "Skipping $logic because not found in the analysis table\n";
+        next;
+      }      
+      if (not $ana->gff_source or not $ana->gff_feature) {
+        print "Skipping $logic because it does not have a defined gff_source and/or gff_feature\n";
+        next;
+      }
+
       my @blastx_features;
 
       $debug and print STDERR "  Fetching protein alignments for $logic...\n";
       
       my $features = $slice->get_all_ProteinAlignFeatures($logic);  
       while(my $feat = shift @$features) {
+
         my $cigar_line = flipCigarReference($feat->cigar_string); # for Lincoln
         if ($feat->strand < 0) {
           $cigar_line = reverse_cigar($cigar_line);
@@ -468,12 +479,12 @@ sub get_info {
     map {$info.=sprintf( "position:%d-%d method:%s accession:%s description:%s %%0A", $_->[1], $_->[2],
                          'InterPro', $_->[0] , $_->[7]) if $_->[1]} @interpros;
     
-    while ( my $pfeature = shift @$rest_features ) {
-      my $logic_name = $pfeature->analysis()->logic_name();
-      my $p_value = (defined $pfeature->p_value) ? $pfeature->p_value : 0;
-      $info.=sprintf( "position:%d-%d %s method:%s accession:%s %%0A", $pfeature->start(), $pfeature->end(), 
-                      $p_value,$logic_name, $pfeature->display_id());
-    }
+    #while ( my $pfeature = shift @$rest_features ) {
+    #  my $logic_name = $pfeature->analysis()->logic_name();
+    #  my $p_value = (defined $pfeature->p_value) ? $pfeature->p_value : 0;
+    #  $info.=sprintf( "position:%d-%d %s method:%s accession:%s %%0A", $pfeature->start(), $pfeature->end(), 
+    #                  $p_value,$logic_name, $pfeature->display_id());
+    #}
   }
   return $info;
 }
