@@ -16,7 +16,6 @@ my %mapping = (
   brepepx        => 'wormbase_id',
   brigpepx       => 'wormbase_id',
   ppapepx        => 'wormbase_id',  
-  remaneix       => 'wormbase_id',
   wormpepx       => 'wormbase_id', 
   jappepx        => 'wormbase_id',  
   remapepx       => 'wormbase_id',  
