@@ -46,6 +46,10 @@ setenv PERL5LIB ${PERL5LIB}:${WORM_SW_ROOT}/packages/ensembl/ensembl/modules
 setenv PERL5LIB ${PERL5LIB}:${WORM_SW_ROOT}/packages/ensembl/ensembl-compara/modules
 setenv PERL5LIB ${PERL5LIB}:${SCRIPTS}
 
+setenv WORM_SW_ROOT ${WORMPUB}/software
+setenv WORM_BIN ${WORM_SW_ROOT}/bin
+setenv EG_PACKAGES /nfs/panda/ensemblgenomes/external
+setenv EG_BIN ${EG_PACKAGES}/bin
 
 # PATH
 set path  = (${EG_BIN} ${WORM_BIN} ${WORM_PACKAGES}/bamtools/bin ${WORM_PACKAGES}/bowtie ${WORM_PACKAGES}/cufflinks ${WORM_PACKAGES}/samtools ${WORM_PACKAGES}/tophat $path)
