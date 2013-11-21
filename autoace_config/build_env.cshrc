@@ -36,6 +36,7 @@ setenv LSB_DEFAULTQUEUE production-rh6
 ####################
 # perl 5 libraries
 ####################
+setenv PERL5LIB
 setenv PERL5LIB ${PERL5LIB}:${WORM_SW_ROOT}/packages/bioperl/bioperl-live
 setenv PERL5LIB ${PERL5LIB}:${WORM_SW_ROOT}/packages/bioperl/bioperl-run
 
