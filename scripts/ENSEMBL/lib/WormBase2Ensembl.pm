@@ -1206,7 +1206,7 @@ sub _generate_protein_coding_transcripts {
         $transcriptcount++;
         my @exons = ();
         foreach my $temp_exon (@global_exons) {
-          push( @exons, &clone_Exon($temp_exon) );
+          push @exons, $self->_clone_Exon($temp_exon);
         }
         my $translation_start = 1;
         my $first             = 1;
@@ -1727,6 +1727,24 @@ sub _display_non_translate {
       
     }
   }
+}
+
+sub clone_Exon {
+  my ($self, $exon) = @_;
+
+  my $newexon = Bio::EnsEMBL::Exon->new();
+  $newexon->start      ($exon->start);
+  $newexon->end        ($exon->end);
+  $newexon->phase      ($exon->phase);
+  $newexon->end_phase  ($exon->end_phase);
+  $newexon->strand     ($exon->strand);
+  $newexon->analysis   ($exon->analysis);
+  $newexon->dbID       ($exon->dbID);
+  $newexon->slice      ($exon->slice);
+  $newexon->stable_id  ($exon->stable_id);
+  $newexon->version    ($exon->version);
+
+  return $newexon;
 }
 
 
