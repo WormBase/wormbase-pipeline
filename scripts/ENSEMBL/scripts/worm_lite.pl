@@ -62,8 +62,6 @@ my ($tax_db_host, $tax_db_port, $tax_db_name) =
      $generic_config->{taxonomy_dbname});
 
 
-$WormBase::Species = $species;
-
 &setupdb()            if $setup;
 &load_assembly()      if $dna;
 &load_genes()         if $genes;
@@ -330,7 +328,7 @@ sub load_genes {
     # coding genes
     #
     open($gff_fh, "cat @gff2_files |") or die "Could not create GFF stream\n";
-    push @genes, @{ $wb2ens->parse_protein_coding_gff_fh( $gff_fh, $analysis)};
+    push @genes, @{ $wb2ens->parse_protein_coding_gff_fh( $gff_fh, $cod_analysis)};
 
     #
     # non-coding genes
