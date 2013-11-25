@@ -147,7 +147,7 @@
 # by Gary Williams
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2013-11-19 17:33:45 $
+# Last updated on: $Date: 2013-11-25 11:01:25 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -731,6 +731,17 @@ if ($species eq 'elegans') {
 	    SRX100095 => ["RNASeq.japonica.DF5081.WBls:0000005.Unknown.WBbt:0007833.PRJNA75295.SRX100095", 'phred', 'paired-end'], # (RNASeq_Hillier.japonica.early_embryo)
 	   );
 
+} elsif ($species eq 'oncov') {
+  # NEED TO ADD THESE ANALYSIS OBJECTS TO ~wormpub/DATABASES/geneace
+
+  %expts = ( 
+	    ERX200397 => ["RNASeq.oncov.Cameroon_rain_forest.microfilariae.Unknown.WBbt:0007833.PRJEB2965.ERX200391", 'phred', 'paired-end'], # 
+	    ERX200396 => ["RNASeq.oncov.Cameroon_rain_forest.microfilariae.Unknown.WBbt:0007833.PRJEB2965.ERX200396", 'phred', 'paired-end'], # 
+	    ERX200395 => ["RNASeq.oncov.Cameroon_rain_forest.microfilariae.Unknown.WBls:0000027.PRJEB2965.ERX200395", 'phred', 'paired-end'], #
+	    ERX200394 => ["RNASeq.oncov.Cameroon_rain_forest.microfilariae.Unknown.WBls:0000027.PRJEB2965.ERX200394", 'phred', 'paired-end'], #
+	   );
+
+
 } else {
   $log->log_and_die("Unkown species: $species\n");
 }
@@ -1079,8 +1090,10 @@ IIIIIIIIHIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIGIGIDHIIIIIGIGI
   chdir $RNASeqSRADir;
 
   # get the Life_stages of the Condition objects (same name as the Analysis objects)
-  my %life_stages = get_life_stage_from_conditions($database);
-  my %papers = get_paper_from_analysis($database);
+  my ($life_stage, $condition_species, $sex, $strain, $condition_reference, $tissue) = get_condition_details($database);
+  my %life_stages = %{$life_stage};
+  my ($sra_study, $sra_experiment, $condition, $analysis_reference) = get_analysis_details($database);
+  my %papers = %{$analysis_reference};
 
   # get the valid CDS and Pseudogenes IDs
   my %CDSs = get_CDSs();
