@@ -147,7 +147,7 @@
 # by Gary Williams
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2013-11-25 11:01:25 $
+# Last updated on: $Date: 2013-11-25 15:18:26 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -735,10 +735,15 @@ if ($species eq 'elegans') {
   # NEED TO ADD THESE ANALYSIS OBJECTS TO ~wormpub/DATABASES/geneace
 
   %expts = ( 
-	    ERX200397 => ["RNASeq.oncov.Cameroon_rain_forest.microfilariae.Unknown.WBbt:0007833.PRJEB2965.ERX200391", 'phred', 'paired-end'], # 
-	    ERX200396 => ["RNASeq.oncov.Cameroon_rain_forest.microfilariae.Unknown.WBbt:0007833.PRJEB2965.ERX200396", 'phred', 'paired-end'], # 
-	    ERX200395 => ["RNASeq.oncov.Cameroon_rain_forest.microfilariae.Unknown.WBls:0000027.PRJEB2965.ERX200395", 'phred', 'paired-end'], #
-	    ERX200394 => ["RNASeq.oncov.Cameroon_rain_forest.microfilariae.Unknown.WBls:0000027.PRJEB2965.ERX200394", 'phred', 'paired-end'], #
+	    ERX200391 => ["RNASeq.oncov.O_volvulus_Cameroon_isolate.WBls:0000108.Unknown.WBbt:0007833.PRJEB2965.ERX200391", 'phred', 'paired-end'], # L3, whole animal
+	    ERX200392 => ["RNASeq.oncov.O_volvulus_Cameroon_isolate.WBls:0000108.Unknown.WBbt:0007833.PRJEB2965.ERX200391", 'phred', 'paired-end'], # L3, whole animal
+	    ERX200393 => ["RNASeq.oncov.O_volvulus_Cameroon_isolate.WBls:0000108.Unknown.WBbt:0007833.PRJEB2965.ERX200391", 'phred', 'paired-end'], # L3, whole animal
+	    ERX200394 => ["RNASeq.oncov.O_volvulus_Cameroon_isolate.WBls:0000104.Male.WBbt:0007833.PRJEB2965.ERX200394", 'phred', 'paired-end'], # adult, male, whole animal
+	    ERX200395 => ["RNASeq.oncov.O_volvulus_Cameroon_isolate.WBls:0000107.Unknown.WBbt:0007833.PRJEB2965.ERX200395", 'phred', 'paired-end'], # L2, mixed sex, whole animal
+	    ERX200396 => ["RNASeq.oncov.O_volvulus_Cameroon_isolate.WBls:0000110.Unknown.WBbt:0007833.PRJEB2965.ERX200396", 'phred', 'paired-end'], # microfilariae, mixed sex, whole animal
+	    ERX200397 => ["RNASeq.oncov.O_volvulus_Cameroon_isolate.WBls:0000110.Unknown.WBbt:0007833.PRJEB2965.ERX200391", 'phred', 'paired-end'], # microfilariae, mixed sex, whole animal
+
+
 	   );
 
 
@@ -1093,6 +1098,7 @@ IIIIIIIIHIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIGIGIDHIIIIIGIGI
   my ($life_stage, $condition_species, $sex, $strain, $condition_reference, $tissue) = get_condition_details($database);
   my %life_stages = %{$life_stage};
   my ($sra_study, $sra_experiment, $condition, $analysis_reference) = get_analysis_details($database);
+  my %condition_of_analysis = %{$condition};
   my %papers = %{$analysis_reference};
 
   # get the valid CDS and Pseudogenes IDs
@@ -1127,7 +1133,8 @@ IIIIIIIIHIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIGIGIDHIIIIIGIGI
     $log->write_to("\n");
 
     my $analysis = $expts{$SRX}->[0];
-    my $life_stage = $life_stages{$analysis};
+    my $condition_of_analysis = $condition_of_analysis{$analysis};
+    my $life_stage = $life_stages{$condition_of_analysis};
     if (!defined $life_stage) {$log->write_to("WARNING: no Condition object found for Analysis object $analysis\n");}
     my $paper = $papers{$analysis};
     if (!defined $paper) {$log->write_to("WARNING: no Reference tag set for Analysis object: $analysis\n");}
@@ -2674,6 +2681,7 @@ sub do_analysis_check {
 	    'brenneri'    => 'Caenorhabditis brenneri',
 	    'remanei'     => 'Caenorhabditis remanei',
 	    'brugia'      => 'Brugia malayi',
+	    'oncov'       => 'Onchocerca volvulus',
 	   );
 
   $log->write_to("\n");
