@@ -501,7 +501,7 @@ sub TSL {(
 sub wormpep_prefix {'BM'}
 sub upload_db_name {'brugia'};
 
-package Oncov;
+package Ovolvulus;
 use Carp;
 our @ISA = qw(Wormbase Species);
 
@@ -543,7 +543,7 @@ sub TSL {(
 )};
 
 sub wormpep_prefix {'OV'}
-sub upload_db_name {'oncov'};
+sub upload_db_name {'ovolvulus'};
 
 ######################################################
 #
