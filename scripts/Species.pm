@@ -529,14 +529,14 @@ sub full_name {
 sub chromosome_prefix {''}
 sub seq_name_regex{qr/^Ov\d+/};
 sub pep_prefix {'OV'}
-sub pepdir_prefix{'brug'};
+sub pepdir_prefix{'oncov'};
 sub cds_regex_noend{qr/Ov\d+[a-z]*/}; # for getting the CDS part of a Transcript name
 sub cds_regex{qr/Ov\d+[a-z]*/};
 sub ncbi_tax_id {6282};
 sub ncbi_bioproject {'PRJEB513'};
 sub bioproject_description { 'Wellcome Trust Sanger Institute, O.volvulus project' }
 sub assembly_type {'contig'};
-sub seq_db {my $self = shift;return $self->database('brugia');}
+sub seq_db {my $self = shift;return $self->database('oncov');}
 
 sub TSL {(
 	  'SL1'  => "GGTTTAATTACCCAAGTTTGAG",
@@ -2238,7 +2238,7 @@ if ( __FILE__ eq $0 ) {
     print "$@\n" if ($@);
 
 
-    foreach my $orgs (qw(Elegans Briggsae Remanei Brenneri Japonica Heterorhabditis Pristionchus Brugia)){
+    foreach my $orgs (qw(Elegans Briggsae Remanei Brenneri Japonica Heterorhabditis Pristionchus Brugia Oncov)){
 
 	    eval{
 		    my $a = Wormbase->new( '-organism' => $orgs,-test => 1);
