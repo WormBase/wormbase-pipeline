@@ -128,6 +128,8 @@ endif
 # these are now system-independent locations
 ############################################
 
+setenv LSFPATHS $PIPELINE # Resources hint for LSF
+
 setenv WORMBASE $WORMPUB # wormpub and wormbase are interchangeable terms
 setenv WORM_BIN ${WORM_SW_ROOT}/bin
 setenv WORM_LIB ${WORM_SW_ROOT}/lib
@@ -136,7 +138,7 @@ setenv WORM_LIB ${WORM_SW_ROOT}/lib
 # perl 5 libraries
 ####################
 
-setenv PERL5LIB ${COMPARA}/ensembl-compara/modules:${PERL5LIB}
+setenv PERL5LIB ${ENSEMBL_CVS_ROOT_DIR}/ensembl-compara/modules:${PERL5LIB}
 setenv PERL5LIB ${ENSEMBL_CVS_ROOT_DIR}/ensembl-variation/modules:${PERL5LIB}
 setenv PERL5LIB ${ENSEMBL_CVS_ROOT_DIR}/ensembl-functgenomics/modules:${PERL5LIB}
 setenv PERL5LIB ${ENSEMBL_CVS_ROOT_DIR}/ensembl-pipeline/modules:${PERL5LIB}
@@ -155,6 +157,7 @@ setenv ENSEMBL_VERSION 71
 setenv WORMBASE_RELEASE `grep "NAME WS" ${WORMPUB}/BUILD/autoace/wspec/database.wrm | perl -ne 's/NAME WS//;print $_'`
 setenv COMPARA_URL "mysql://wormadmin:worms@${WORM_DBHOST}:${WORM_DBPORT}/worm_compara_homology_WS${WORMBASE_RELEASE}"
 
+setenv ENSEMBL_REGISTRY $CVS_DIR/ENSEMBL/etc/Registry.pm
 
 # for the EFuncGen database
 #source ${CVS_DIR}/ENSEMBL/etc/efg.config
