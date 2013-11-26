@@ -6,7 +6,7 @@
 # builds wormbase & wormpep FTP sites
 # 
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-10-15 13:35:15 $
+# Last updated on: $Date: 2013-11-26 15:00:24 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -419,17 +419,38 @@ sub copy_dna_files{
       my $target_masked = "$dna_dir/${gspecies}.${bioproj}.${WS_version_name}.genomic_masked.fa.gz";
       my $target_soft = "$dna_dir/${gspecies}.${bioproj}.${WS_version_name}.genomic_softmasked.fa.gz";
       
-      foreach my $pair ([$dna_file, $target_dna_file],
-                        [$masked_file, $target_masked],
-                        [$soft_file, $target_soft]) {
-        my ($src, $tgt) = @$pair;
-        
-        if ($src =~ /\.gz$/) {
-          $wormbase->run_command("cp -f $src $tgt", $log);    
-        } else {
-          $wormbase->run_command("gzip -9 -c $src > $tgt",$log);
-        }
-      }
+      eval {
+        foreach my $pair ([$dna_file, $target_dna_file],
+                          [$masked_file, $target_masked],
+                          [$soft_file, $target_soft]) {
+          my ($src, $tgt) = @$pair;
+          
+          my ($read_fh, $write_fh);
+          
+          open($write_fh, ">$tgt") or die "Could not open $tgt for writing\n";
+          
+          if ($src =~ /\.gz$/) {
+            open($read_fh, "gunzip -c $src |") or die "Could not open gunzip stream to $src\n";
+          } else {
+            open($read_fh, $src) or die "Could not open $src for reading\n";
+          }
+
+          while(<$read_fh>) {
+            if ($species eq 'elegans') {
+              s/^\>CHROMOSOME_(\S+)/>$1/; 
+            } elsif ($species eq 'briggsae') {
+              s/^\>chr(\S+)/>$1/;
+            }
+            print $write_fh $_;
+          }
+
+          close($write_fh) or die "Could not close $tgt after writing\n";
+        }          
+      };
+      $@ and do {
+        $log->error("Could not copy DNA file for $species; skipping\n");
+        next ACC;
+      };
       
       map { $copied_files{$_} = 1 } ($dna_file, $masked_file, $soft_file);
       
