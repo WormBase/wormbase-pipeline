@@ -147,7 +147,7 @@
 # by Gary Williams
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2013-11-25 15:18:26 $
+# Last updated on: $Date: 2013-11-27 14:31:28 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -426,6 +426,13 @@ if ($species eq 'elegans') {
 	      
 	      # 'Control' experiments are good.
 	      # modENCODE experiments are good.
+
+	      # 'Small RNA' experiments are not good because they will
+	      # be adapter ligated and when the adapter is removed
+	      # there will be too little sequence to align easily and
+	      # they align in multiple places because the small ncRNA
+	      # genes occur in multiple copies and we won't known
+	      # which are realy being expressed.
 	    
 	    SRX059215 => ["RNASeq.elegans.N2.WBls:0000002.Hermaphrodite.WBbt:0007833.SRP006489.SRX059215", 'phred', 'single'], # control, mixed-stage, whole-animal
 	    SRX059216 => ["RNASeq.elegans.N2.WBls:0000002.Hermaphrodite.WBbt:0007833.SRP006489.SRX059216", 'phred', 'single'], # control, mixed-stage, whole-animal
@@ -435,26 +442,8 @@ if ($species eq 'elegans') {
 	    SRX006987 => ["RNASeq.elegans.N2.WBls:0000024.Hermaphrodite.WBbt:0007833.PRJNA168961.SRX006987", 'phred', 'single'], # GSE16552 (Non-coding RNA profiling by high throughput sequencing), L1 larva, whole-animal
 	    SRX006988 => ["RNASeq.elegans.N2.WBls:0000024.Hermaphrodite.WBbt:0007833.PRJNA168961.SRX006988", 'phred', 'single'], # GSE16552 (Non-coding RNA profiling by high throughput sequencing), L1 larva, whole-animal
 	    SRX006989 => ["RNASeq.elegans.N2.WBls:0000024.Hermaphrodite.WBbt:0007833.PRJNA168961.SRX006989", 'phred', 'single'], # GSE16552 (Non-coding RNA profiling by high throughput sequencing), L1 larva, whole-animal
-	    SRX033023 => ["RNASeq.elegans.N2.WBls:0000063.Hermaphrodite.WBbt:0007833.PRJNA168961.SRX033023", 'phred', 'single'], # GSE25739 (Changes in expression of small non-coding RNAs, including microRNAs, in response to stress in C. elegans), control, young adult, whole-animal
-	    SRX003793 => ["RNASeq.elegans.BA671.WBls:0000063.Hermaphrodite.WBbt:0007833.PRJNA168961.SRX003793", 'phred', 'single'],  # GSM336572 (RNAs enriched for small RNA species (less than 200nt)), young adult spe-9 hermaphrodites, whole-animal
-	    SRX003792 => [], # GSM336086 (RNAs enriched for small RNA species (less than 200nt)), young adult males
-	    SRX003791 => [], # GSM336060 (RNAs enriched for small RNA species (less than 200nt)), young adult hermaphrodites
-	    SRX003790 => [], # GSM336059 (RNAs enriched for small RNA species (less than 200nt)), mid-L4 hermaphrodites
-	    SRX003789 => [], # GSM336058 (RNAs enriched for small RNA species (less than 200nt)), mid-L3 hermaphrodites
-	    SRX003788 => [], # GSM336056 (RNAs enriched for small RNA species (less than 200nt)), mid-L2 hermaphrodites
-	    SRX003787 => [], # GSM336055 (RNAs enriched for small RNA species (less than 200nt)), mid-L1 hermaphrodites
-	    SRX003786 => [], # GSM336052 (RNAs enriched for small RNA species (less than 200nt)), embryo hermaphrodites
-	    
+
 	    SRX085219 => ["RNASeq.elegans.N2.WBls:0000008.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX085219", 'phred', 'single'], # Illumina sequencing of C. elegans N2 hand-picked 4 cell embryos DSN-Negative, total RNA. (RNASeq_Hillier.4-cell_embryo)
-	    
-	    # PubMed 19734907
-	    SRX012402 => [], # PRJNA119753 (Illumina sequencing of small RNAs from C. elegans embryos), 2 to 4 cell embryos
-	    SRX012403 => [], # PRJNA119753 (Illumina sequencing of small RNAs from C. elegans embryos), 1 cell embryos
-	    SRX012404 => [], # PRJNA119753 (Illumina sequencing of small RNAs from C. elegans embryos), post-gastrulation embryos
-	    SRX012405 => [], # PRJNA119753 (Illumina sequencing of small RNAs from C. elegans embryos), older embryos (late stage?)
-	    SRX012406 => [], # PRJNA119753 (Illumina sequencing of small RNAs from C. elegans embryos), 1 cell embryos
-	    SRX012407 => [], # PRJNA119753 GSM427346 (Illumina sequencing of small RNAs from C. elegans embryos), mixed stage embryos
-	    
 	    
 	    # modENOCDE paper for the '7K' set
 	    # Genome Res. 2011 Feb;21(2):276-85. doi: 10.1101/gr.110189.110. Epub 2010 Dec 22.
@@ -462,53 +451,82 @@ if ($species eq 'elegans') {
 	    # Lu ZJ, Yip KY, Wang G, Shou C, Hillier LW, Khurana E, Agarwal A, Auerbach R, Rozowsky J, Cheng C, Kato M, Miller DM, Slack F, Snyder M, Waterston RH, Reinke V, Gerstein MB.
 	    # PubMed 21177971
 	    
-	    SRX103986 => [], # Illumina sequencing of C. elegans N2 young adult processed through single pass of Ribozero kit from Epicentre RNAseq random fragment library 100bp PE 
-	    SRX103987 => [], # Illumina sequencing of C. elegans N2 young adult processed through single pass of Ribozero kit from Epicentre RNAseq random fragment library 100bp SE 
-	    SRX103988 => [], # Illumina sequencing of C. elegans N2 young adult processed through single pass of Ribozero kit from Epicentre RNAseq random fragment library 101bp PE 
-	    SRX103989 => [], # Illumina sequencing of C. elegans N2 young adult processed through single pass of Ribozero kit from Epicentre RNAseq random fragment library 101bp SE 
-	    SRX103990 => [], # Illumina sequencing of C. elegans N2 young adult sample -- Yad-1 ribominus sample 36bp SE
-	    SRX103991 => [], # Illumina sequencing of C. elegans N2 young adult sample -- Yad-1 ribominus sample 76bp SE
-	    SRX139602 => [], # Illumina sequencing of C. elegans LX837 larval L1 NSML and NSMR neurons 100bp PE (? possibly polyA+ ?)
-	    SRX139566 => [], # Illumina sequencing of C. elegans N2 larval L1 all cell library FGSR402 - DSN treated - RNAseq random fragment library 100bp PE (? possibly polyA+ ?)
-	    SRX139567 => [], # Illumina sequencing of C. elegans larval L2 A motor neuron library FGSR408 - DSN treated - RNAseq random fragment library 100bp PE (? possibly polyA+ ?)
-	    SRX139591 => [], # Illumina sequencing of C. elegans N2 larval L1 all cell library FGSR401 - DSN treated - RNAseq random fragment library 100bp PE (? possibly polyA+ ?)
-	    SRX139592 => [], # Illumina sequencing of C. elegans larval L2 A motor neuron library FGSR414 - DSN treated - RNAseq random fragment library 100bp PE (? possibly polyA+ ?)
-	    SRX139603 => [], # Illumina sequencing of C. elegans larval L2 A motor neuron library FGSR414 - DSN treated - RNAseq random fragment library 100bp PE
-	    SRX145443 => [], # Illumina sequencing of C. elegans larval L1 all neurons library FGSR383 - total RNA - RNAseq random fragment library 77bp PE
-	    SRX145444 => [], # Illumina sequencing of C. elegans N2 larval L1 all cell library FGSR401 - total RNA - RNAseq random fragment library 77bp PE
-	    SRX145445 => [], # Illumina sequencing of C. elegans LX837 larval L1 NSML and NSMR neurons library FGSR387 - total RNA - RNAseq random fragment library 76bp PE
-	    SRX145446 => [], # Illumina sequencing of C. elegans larval L1 all neurons library FGSR391 - total RNA - RNAseq random fragment library 77bp PE
-	    SRX145447 => [], # Illumina sequencing of C. elegans N2 larval L1 all cell library FGSR402 - total RNA - RNAseq random fragment library 77bp PE
-	    SRX145480 => [], # Illumina sequencing of C. elegans N2 embryos hand picked at the 4 cell stage processed with Ribo-zero RNAseq random fragment library 100bp PE
-	    SRX145486 => [], # Illumina sequencing of C. elegans N2 early embryos treated with DSN - RNAseq random fragment library 100bp PE
-	    SRX145660 => [], # Illumina sequencing of C. elegans N2 early embryos treated with Ribo-zero - RNAseq random fragment library 100bp PE
-	    SRX145661 => [], # Illumina sequencing of C. elegans N2 larval L2 treated with Ribo-zero - RNAseq random fragment library 100bp PE
-	    SRX151597 => [], # Illumina sequencing of C. elegans N2 early embryo reference cells library FGSR260 - total RNA - DSN treated - RNAseq random fragment library 100bp PE 
-	    SRX151598 => [], # Illumina sequencing of C. elegans DZ685 embryonic Z1/Z4 cells library FGSR239 - total RNA - DSN treated - RNAseq random fragment library 100bp PE
-	    SRX151599 => [], # Illumina sequencing of C. elegans NW1229 larval L1 all neuron library FGSR383 - total RNA - DSN treated - RNAseq random fragment library 100bp PE 
-	    SRX151602 => [], # Illumina sequencing of C. elegans NW1229 larval L1 all neuron library FGSR381 - total RNA - DSN treated – RNAseq random fragment library 100bp PE
-	    SRX151607 => [], # Illumina sequencing of C. elegans N2 larval L2 library N2_L2 DSN treated - total RNA - RNAseq random fragment library 100bp PE
-	    SRX151617 => [], # Illumina sequencing of C. elegans LX837 larval L1 NSM neuron library FGSR389 - total RNA - DSN treated - RNAseq random fragment library 100bp PE 
-	    SRX151618 => [], # Illumina sequencing of C. elegans N2 adult gonad Ad_gonad-1 ribozero low input treated - total RNA - RNAseq random fragment library 100bp PE
-	    SRX190363 => [], # Illumina sequencing of C. elegans DZ685 embryonic Z1/Z4 cells library FGSR239 - total RNA - DSN treated - RNAseq random fragment library 50bp SE
-	    SRX190364 => [], # Illumina sequencing of C. elegans N2 early embryo reference cells library FGSR260 - total RNA - DSN treated - RNAseq random fragment library 50bp SE
-	    SRX190365 => [], # Illumina sequencing of C. elegans NW1229 larval L1 all neuron library FGSR381 - total RNA - DSN treated – RNAseq random fragment library 50bp SE
-	    SRX190366 => [], # Illumina sequencing of C. elegans NW1229 larval L1 all neuron library FGSR383 - total RNA - DSN treated - RNAseq random fragment library 50bp SE
-	    SRX190367 => [], # Illumina sequencing of C. elegans N2 adult gonad Ad_gonad-1 ribozero low input treated - total RNA - RNAseq random fragment library 50bp SE
-	    SRX190368 => [], # Illumina sequencing of C. elegans LX837 larval L1 NSM neuron library FGSR389 - total RNA - DSN treated - RNAseq random fragment library 50bp SE
-	    SRX190369 => [], # Illumina sequencing of C. elegans N2 early embryos treated with Ribo-zero - RNAseq random fragment library 50bp SE
-	    SRX190370 => [], # Illumina sequencing of C. elegans N2 larval L2 treated with Ribo-zero - RNAseq random fragment library 50bp SE
+	    SRX103986 => ["RNASeq.elegans.N2", 'phred', 'paired-end'], # Illumina sequencing of C. elegans N2 young adult processed through single pass of Ribozero kit from Epicentre RNAseq random fragment library 100bp PE 
+	    SRX103987 => ["RNASeq.elegans.N2", 'phred', 'single'], # Illumina sequencing of C. elegans N2 young adult processed through single pass of Ribozero kit from Epicentre RNAseq random fragment library 100bp SE 
+	    SRX103988 => ["RNASeq.elegans.N2", 'phred', 'paired-end'], # Illumina sequencing of C. elegans N2 young adult processed through single pass of Ribozero kit from Epicentre RNAseq random fragment library 101bp PE 
+	    SRX103989 => ["RNASeq.elegans.N2", 'phred', 'single'], # Illumina sequencing of C. elegans N2 young adult processed through single pass of Ribozero kit from Epicentre RNAseq random fragment library 101bp SE 
+	    SRX103990 => ["RNASeq.elegans.N2", 'phred', 'single'], # Illumina sequencing of C. elegans N2 young adult sample -- Yad-1 ribominus sample 36bp SE
+	    SRX103991 => ["RNASeq.elegans.N2", 'phred', 'single'], # Illumina sequencing of C. elegans N2 young adult sample -- Yad-1 ribominus sample 76bp SE
+	    SRX139602 => ["RNASeq.elegans.N2", 'phred', 'paired-end'], # Illumina sequencing of C. elegans LX837 larval L1 NSML and NSMR neurons 100bp PE (? possibly polyA+ ?)
+	    SRX139566 => ["RNASeq.elegans.N2", 'phred', 'paired-end'], # Illumina sequencing of C. elegans N2 larval L1 all cell library FGSR402 - DSN treated - RNAseq random fragment library 100bp PE (? possibly polyA+ ?)
+	    SRX139567 => ["RNASeq.elegans.N2", 'phred', 'paired-end'], # Illumina sequencing of C. elegans larval L2 A motor neuron library FGSR408 - DSN treated - RNAseq random fragment library 100bp PE (? possibly polyA+ ?)
+	    SRX139591 => ["RNASeq.elegans.N2", 'phred', 'paired-end'], # Illumina sequencing of C. elegans N2 larval L1 all cell library FGSR401 - DSN treated - RNAseq random fragment library 100bp PE (? possibly polyA+ ?)
+	    SRX139592 => ["RNASeq.elegans.N2", 'phred', 'paired-end'], # Illumina sequencing of C. elegans larval L2 A motor neuron library FGSR414 - DSN treated - RNAseq random fragment library 100bp PE (? possibly polyA+ ?)
+	    SRX139603 => ["RNASeq.elegans.N2", 'phred', 'paired-end'], # Illumina sequencing of C. elegans larval L2 A motor neuron library FGSR414 - DSN treated - RNAseq random fragment library 100bp PE
+	    SRX145443 => ["RNASeq.elegans.N2", 'phred', 'paired-end'], # Illumina sequencing of C. elegans larval L1 all neurons library FGSR383 - total RNA - RNAseq random fragment library 77bp PE
+	    SRX145444 => ["RNASeq.elegans.N2", 'phred', 'paired-end'], # Illumina sequencing of C. elegans N2 larval L1 all cell library FGSR401 - total RNA - RNAseq random fragment library 77bp PE
+	    SRX145445 => ["RNASeq.elegans.N2", 'phred', 'paired-end'], # Illumina sequencing of C. elegans LX837 larval L1 NSML and NSMR neurons library FGSR387 - total RNA - RNAseq random fragment library 76bp PE
+	    SRX145446 => ["RNASeq.elegans.N2", 'phred', 'paired-end'], # Illumina sequencing of C. elegans larval L1 all neurons library FGSR391 - total RNA - RNAseq random fragment library 77bp PE
+	    SRX145447 => ["RNASeq.elegans.N2", 'phred', 'paired-end'], # Illumina sequencing of C. elegans N2 larval L1 all cell library FGSR402 - total RNA - RNAseq random fragment library 77bp PE
+	    SRX145480 => ["RNASeq.elegans.N2", 'phred', 'paired-end'], # Illumina sequencing of C. elegans N2 embryos hand picked at the 4 cell stage processed with Ribo-zero RNAseq random fragment library 100bp PE
+	    SRX145486 => ["RNASeq.elegans.N2", 'phred', 'paired-end'], # Illumina sequencing of C. elegans N2 early embryos treated with DSN - RNAseq random fragment library 100bp PE
+	    SRX145660 => ["RNASeq.elegans.N2", 'phred', 'paired-end'], # Illumina sequencing of C. elegans N2 early embryos treated with Ribo-zero - RNAseq random fragment library 100bp PE
+	    SRX145661 => ["RNASeq.elegans.N2", 'phred', 'paired-end'], # Illumina sequencing of C. elegans N2 larval L2 treated with Ribo-zero - RNAseq random fragment library 100bp PE
+	    SRX151597 => ["RNASeq.elegans.N2", 'phred', 'paired-end'], # Illumina sequencing of C. elegans N2 early embryo reference cells library FGSR260 - total RNA - DSN treated - RNAseq random fragment library 100bp PE 
+	    SRX151598 => ["RNASeq.elegans.N2", 'phred', 'paired-end'], # Illumina sequencing of C. elegans DZ685 embryonic Z1/Z4 cells library FGSR239 - total RNA - DSN treated - RNAseq random fragment library 100bp PE
+	    SRX151599 => ["RNASeq.elegans.N2", 'phred', 'paired-end'], # Illumina sequencing of C. elegans NW1229 larval L1 all neuron library FGSR383 - total RNA - DSN treated - RNAseq random fragment library 100bp PE 
+	    SRX151602 => ["RNASeq.elegans.N2", 'phred', 'paired-end'], # Illumina sequencing of C. elegans NW1229 larval L1 all neuron library FGSR381 - total RNA - DSN treated – RNAseq random fragment library 100bp PE
+	    SRX151607 => ["RNASeq.elegans.N2", 'phred', 'paired-end'], # Illumina sequencing of C. elegans N2 larval L2 library N2_L2 DSN treated - total RNA - RNAseq random fragment library 100bp PE
+	    SRX151617 => ["RNASeq.elegans.N2", 'phred', 'paired-end'], # Illumina sequencing of C. elegans LX837 larval L1 NSM neuron library FGSR389 - total RNA - DSN treated - RNAseq random fragment library 100bp PE 
+	    SRX151618 => ["RNASeq.elegans.N2", 'phred', 'paired-end'], # Illumina sequencing of C. elegans N2 adult gonad Ad_gonad-1 ribozero low input treated - total RNA - RNAseq random fragment library 100bp PE
+
+	    SRX190363 => ["RNASeq.elegans.N2", 'phred', 'single'], # Illumina sequencing of C. elegans DZ685 embryonic Z1/Z4 cells library FGSR239 - total RNA - DSN treated - RNAseq random fragment library 50bp SE
+	    SRX190364 => ["RNASeq.elegans.N2", 'phred', 'single'], # Illumina sequencing of C. elegans N2 early embryo reference cells library FGSR260 - total RNA - DSN treated - RNAseq random fragment library 50bp SE
+	    SRX190365 => ["RNASeq.elegans.N2", 'phred', 'single'], # Illumina sequencing of C. elegans NW1229 larval L1 all neuron library FGSR381 - total RNA - DSN treated – RNAseq random fragment library 50bp SE
+	    SRX190366 => ["RNASeq.elegans.N2", 'phred', 'single'], # Illumina sequencing of C. elegans NW1229 larval L1 all neuron library FGSR383 - total RNA - DSN treated - RNAseq random fragment library 50bp SE
+	    SRX190367 => ["RNASeq.elegans.N2", 'phred', 'single'], # Illumina sequencing of C. elegans N2 adult gonad Ad_gonad-1 ribozero low input treated - total RNA - RNAseq random fragment library 50bp SE
+	    SRX190368 => ["RNASeq.elegans.N2", 'phred', 'single'], # Illumina sequencing of C. elegans LX837 larval L1 NSM neuron library FGSR389 - total RNA - DSN treated - RNAseq random fragment library 50bp SE
+	    SRX190369 => ["RNASeq.elegans.N2", 'phred', 'single'], # Illumina sequencing of C. elegans N2 early embryos treated with Ribo-zero - RNAseq random fragment library 50bp SE
+	    SRX190370 => ["RNASeq.elegans.N2", 'phred', 'single'], # Illumina sequencing of C. elegans N2 larval L2 treated with Ribo-zero - RNAseq random fragment library 50bp SE
 	    
-	    
+
+
 	    # the following are definitely strand-specific data
 	    #--------------------------------------------------
 	    
 	    #Long noncoding RNAs in C. elegans Jin-Wu Nam and David P. Bartel
 	    #Genome Res. 2012 22: 2529-2540
 	    
-	    SRX142905 => [], # PRJNA159607  (GEO GSE36394)
-	    SRX142904 => [], # PRJNA159607  (GEO GSE36394)
-		       );
+	    SRX142905 => ["RNASeq.elegans.N2", 'phred', 'single'], # PRJNA159607  (GEO GSE36394)
+	    SRX142904 => ["RNASeq.elegans.N2", 'phred', 'single'], # PRJNA159607  (GEO GSE36394)
+
+
+	    # these are small RNA experiments - PROBABLY NOT GOOD TO USE!.
+	    # -----------------------------------------------------------
+
+	      SRX033023 => ["RNASeq.elegans.N2.WBls:0000063.Hermaphrodite.WBbt:0007833.PRJNA168961.SRX033023", 'phred', 'single'], # GSE25739 (Changes in expression of small non-coding RNAs, including microRNAs, in response to stress in C. elegans), control, young adult, whole-animal
+	      
+	      # PubMed 19734907
+	      SRX012402 => [], # PRJNA119753 (Illumina sequencing of small RNAs from C. elegans embryos), 2 to 4 cell embryos
+	      SRX012403 => [], # PRJNA119753 (Illumina sequencing of small RNAs from C. elegans embryos), 1 cell embryos
+	      SRX012404 => [], # PRJNA119753 (Illumina sequencing of small RNAs from C. elegans embryos), post-gastrulation embryos
+	      SRX012405 => [], # PRJNA119753 (Illumina sequencing of small RNAs from C. elegans embryos), older embryos (late stage?)
+	      SRX012406 => [], # PRJNA119753 (Illumina sequencing of small RNAs from C. elegans embryos), 1 cell embryos
+	      SRX012407 => [], # PRJNA119753 GSM427346 (Illumina sequencing of small RNAs from C. elegans embryos), mixed stage embryos
+	      
+	      SRX003793 => ["RNASeq.elegans.BA671.WBls:0000063.Hermaphrodite.WBbt:0007833.PRJNA168961.SRX003793", 'phred', 'single'],  # GSM336572 (RNAs enriched for small RNA species (less than 200nt)), young adult spe-9 hermaphrodites, whole-animal
+	      
+	      SRX003792 => [], # GSM336086 (RNAs enriched for small RNA species (less than 200nt)), young adult males
+	      SRX003791 => [], # GSM336060 (RNAs enriched for small RNA species (less than 200nt)), young adult hermaphrodites
+	      SRX003790 => [], # GSM336059 (RNAs enriched for small RNA species (less than 200nt)), mid-L4 hermaphrodites
+	      SRX003789 => [], # GSM336058 (RNAs enriched for small RNA species (less than 200nt)), mid-L3 hermaphrodites
+	      SRX003788 => [], # GSM336056 (RNAs enriched for small RNA species (less than 200nt)), mid-L2 hermaphrodites
+	      SRX003787 => [], # GSM336055 (RNAs enriched for small RNA species (less than 200nt)), mid-L1 hermaphrodites
+	      SRX003786 => [], # GSM336052 (RNAs enriched for small RNA species (less than 200nt)), embryo hermaphrodites
+	      
+	      
+	      
+	     );
   }
 ################################################################################################################################################
 
@@ -731,17 +749,17 @@ if ($species eq 'elegans') {
 	    SRX100095 => ["RNASeq.japonica.DF5081.WBls:0000005.Unknown.WBbt:0007833.PRJNA75295.SRX100095", 'phred', 'paired-end'], # (RNASeq_Hillier.japonica.early_embryo)
 	   );
 
-} elsif ($species eq 'oncov') {
+} elsif ($species eq 'ovolvulus') {
   # NEED TO ADD THESE ANALYSIS OBJECTS TO ~wormpub/DATABASES/geneace
 
   %expts = ( 
-	    ERX200391 => ["RNASeq.oncov.O_volvulus_Cameroon_isolate.WBls:0000108.Unknown.WBbt:0007833.PRJEB2965.ERX200391", 'phred', 'paired-end'], # L3, whole animal
-	    ERX200392 => ["RNASeq.oncov.O_volvulus_Cameroon_isolate.WBls:0000108.Unknown.WBbt:0007833.PRJEB2965.ERX200391", 'phred', 'paired-end'], # L3, whole animal
-	    ERX200393 => ["RNASeq.oncov.O_volvulus_Cameroon_isolate.WBls:0000108.Unknown.WBbt:0007833.PRJEB2965.ERX200391", 'phred', 'paired-end'], # L3, whole animal
-	    ERX200394 => ["RNASeq.oncov.O_volvulus_Cameroon_isolate.WBls:0000104.Male.WBbt:0007833.PRJEB2965.ERX200394", 'phred', 'paired-end'], # adult, male, whole animal
-	    ERX200395 => ["RNASeq.oncov.O_volvulus_Cameroon_isolate.WBls:0000107.Unknown.WBbt:0007833.PRJEB2965.ERX200395", 'phred', 'paired-end'], # L2, mixed sex, whole animal
-	    ERX200396 => ["RNASeq.oncov.O_volvulus_Cameroon_isolate.WBls:0000110.Unknown.WBbt:0007833.PRJEB2965.ERX200396", 'phred', 'paired-end'], # microfilariae, mixed sex, whole animal
-	    ERX200397 => ["RNASeq.oncov.O_volvulus_Cameroon_isolate.WBls:0000110.Unknown.WBbt:0007833.PRJEB2965.ERX200391", 'phred', 'paired-end'], # microfilariae, mixed sex, whole animal
+	    ERX200391 => ["RNASeq.ovolvulus.O_volvulus_Cameroon_isolate.WBls:0000108.Unknown.WBbt:0007833.PRJEB2965.ERX200391", 'phred', 'paired-end'], # L3, whole animal
+	    ERX200392 => ["RNASeq.ovolvulus.O_volvulus_Cameroon_isolate.WBls:0000108.Unknown.WBbt:0007833.PRJEB2965.ERX200392", 'phred', 'paired-end'], # L3, whole animal
+	    ERX200393 => ["RNASeq.ovolvulus.O_volvulus_Cameroon_isolate.WBls:0000108.Unknown.WBbt:0007833.PRJEB2965.ERX200393", 'phred', 'paired-end'], # L3, whole animal
+	    ERX200394 => ["RNASeq.ovolvulus.O_volvulus_Cameroon_isolate.WBls:0000104.Male.WBbt:0007833.PRJEB2965.ERX200394", 'phred', 'paired-end'], # adult, male, whole animal
+	    ERX200395 => ["RNASeq.ovolvulus.O_volvulus_Cameroon_isolate.WBls:0000107.Unknown.WBbt:0007833.PRJEB2965.ERX200395", 'phred', 'paired-end'], # L2, mixed sex, whole animal
+	    ERX200396 => ["RNASeq.ovolvulus.O_volvulus_Cameroon_isolate.WBls:0000110.Unknown.WBbt:0007833.PRJEB2965.ERX200396", 'phred', 'paired-end'], # microfilariae, mixed sex, whole animal
+	    ERX200397 => ["RNASeq.ovolvulus.O_volvulus_Cameroon_isolate.WBls:0000110.Unknown.WBbt:0007833.PRJEB2965.ERX200397", 'phred', 'paired-end'], # microfilariae, mixed sex, whole animal
 
 
 	   );
@@ -2348,6 +2366,7 @@ sub get_condition_details {
     $sex{$condition} = $sex;
     $strain{$condition} = $strain; if (defined $strain{$condition} && $strain{$condition} eq '') {$strain{$condition} = undef}
     $condition_reference{$condition} = $condition_reference;
+    $tissue{$condition} = $tissue;
   }
 
   return (\%life_stage, \%condition_species, \%sex, \%strain, \%condition_reference, \%tissue);
@@ -2681,11 +2700,11 @@ sub do_analysis_check {
 	    'brenneri'    => 'Caenorhabditis brenneri',
 	    'remanei'     => 'Caenorhabditis remanei',
 	    'brugia'      => 'Brugia malayi',
-	    'oncov'       => 'Onchocerca volvulus',
+	    'ovolvulus'   => 'Onchocerca volvulus',
 	   );
 
   $log->write_to("\n");
-  $log->write_to("Checking Analysis and Condition objects for species: $species\n");
+  $log->write_to("// Checking Analysis and Condition objects for species: $species\n");
   $log->write_to("\n");
 
   foreach my $SRX (@SRX) {
@@ -2712,15 +2731,17 @@ sub do_analysis_check {
       $condition->{$analysis} = $analysis;  # make a new Condition object
     }
     my $condition = $condition->{$analysis};
-    if (!defined $life_stage->{$condition}) {$log->write_to("\n//Missing life_stage in Condition $condition\n\nCondition : $condition\nLife_stage \"life_stage_name\"\n"); }
+    if (!defined $life_stage->{$condition}) {$log->write_to("\n//Missing life_stage in Condition $condition\n\nCondition : $condition\nLife_stage \"$life_stage_name\"\n"); }
+    if (defined $life_stage->{$condition} && $life_stage->{$condition} !~ /WBls:\d{7}/) {$log->write_to("\n//ERROR: Invalid life_stage in Condition $condition\n// $life_stage->{$condition}\n\n"); }
+    if (defined $life_stage->{$condition} && $life_stage->{$condition} ne $life_stage_name) {$log->write_to("\n//ERROR: mismatch between Life_stage id '$life_stage_name' in table in script and in the Condition $condition\n// $life_stage->{$condition}\n\n"); }
     if (!defined $condition_species->{$condition}) {$log->write_to("\n//Missing species in Condition $condition\n\nCondition : $condition\nSpecies \"$sp{$species_name}\"\n"); }
     if (!defined $sex->{$condition}) {$log->write_to("\n//Missing sex in Condition $condition\n\nCondition : $condition\nSex \"$sex_name\"\n"); }
     if (!defined $tissue->{$condition}) {$log->write_to("\n//Missing tissue in Condition $condition\n\nCondition : $condition\nTissue \"$tissue_name\"\n"); }
     if (!defined $strain->{$condition}) {$log->write_to("\n//Missing strain in Condition $condition\n\nCondition : $condition\nStrain \"$strain_name\"\n"); }
-    if (!defined $condition_reference->{$condition}) {$log->write_to("\n//Missing Reference in Condition $condition\n\nCondition : $condition\nReference \"$analysis_reference->{$analysis}\"\n"); }
+    if (!defined $condition_reference->{$condition} && defined $analysis_reference->{$analysis}) {$log->write_to("\n//Missing Reference in Condition $condition\n\nCondition : $condition\nReference \"$analysis_reference->{$analysis}\"\n"); }
 
     if (defined $life_stage->{$condition} && ($life_stage->{$condition} ne $life_stage_name)) {$log->write_to("\n//WARNING: $life_stage_name doesn't match Life_stage name '$life_stage->{$condition}' in Condition $condition\n");}
-    if (defined $condition_species->{$condition} && ($condition_species->{$condition} !~ /$species_name/i)) {$log->write_to("\n//WARNING: $species_name doesn't match Species name '$condition_species->{$condition}' in Condition $condition\n");}
+    if (defined $condition_species->{$condition} && ($condition_species->{$condition} ne $sp{$species_name})) {$log->write_to("\n//WARNING: $sp{$species_name} doesn't match Species name '$condition_species->{$condition}' in Condition $condition\n");}
     if (defined $sex->{$condition} && ($sex->{$condition} ne $sex_name)) {$log->write_to("\n//WARNING: $sex_name doesn't match Sex name '$sex->{$condition}' in Condition $condition\n");}
     if (defined $tissue->{$condition} && ($tissue->{$condition} ne $tissue_name)) {$log->write_to("\n//WARNING: $tissue_name doesn't match Tissue name '$tissue->{$condition}' in Condition $condition\n");}
     if (defined $strain->{$condition} && ($strain->{$condition} ne $strain_name)) {$log->write_to("\n//WARNING: $strain_name doesn't match Strain name '$strain->{$condition}' in Condition $condition\n");}
@@ -2728,9 +2749,9 @@ sub do_analysis_check {
 	
  }
 
-#//WARNING: N2 doesn't match Strain name in Condition RNASeq.elegans.SRP016006.adult_female.Replicate2
-#//WARNING: N2 doesn't match Strain name in Condition RNASeq.elegans.SRP016006.adult_female.Replicate3
-
+  $log->write_to("\n");
+  $log->write_to("// Finished Checking Analysis and Condition objects for species: $species\n");
+  $log->write_to("\n");
 
 }
 
