@@ -536,7 +536,7 @@ sub ncbi_tax_id {6282};
 sub ncbi_bioproject {'PRJEB513'};
 sub bioproject_description { 'Wellcome Trust Sanger Institute, O.volvulus project' }
 sub assembly_type {'contig'};
-sub seq_db {my $self = shift;return $self->database('oncov');}
+sub seq_db {my $self = shift;return $self->database('ovolvulus');}
 
 sub TSL {(
 	  'SL1'  => "GGTTTAATTACCCAAGTTTGAG",
@@ -2238,7 +2238,7 @@ if ( __FILE__ eq $0 ) {
     print "$@\n" if ($@);
 
 
-    foreach my $orgs (qw(Elegans Briggsae Remanei Brenneri Japonica Heterorhabditis Pristionchus Brugia Oncov)){
+    foreach my $orgs (qw(Elegans Briggsae Remanei Brenneri Japonica Pristionchus Brugia Ovolvulus)){
 
 	    eval{
 		    my $a = Wormbase->new( '-organism' => $orgs,-test => 1);
