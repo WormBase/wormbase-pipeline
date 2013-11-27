@@ -5,7 +5,7 @@
 #  and concatenate them at the end
 # 
 # Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2013-08-02 11:13:40 $
+# Last edited on: $Date: 2013-11-27 13:46:17 $
 # 
 
 
@@ -85,7 +85,7 @@ my $name = 1;
 my @outfiles;
 # here goes the main bit:
 foreach my $db(keys %logic2type){
-  my @chroms = @{$wormbase->get_binned_chroms(-bin_size => 60)};
+  my @chroms = @{$wormbase->get_binned_chroms(-bin_size => 20)};
   $log->write_to("bsub commands . . . . \n\n");
   foreach my $chrom ( @chroms ) {
     $name ++;
