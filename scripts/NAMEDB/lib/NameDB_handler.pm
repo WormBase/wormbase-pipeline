@@ -174,6 +174,12 @@ sub validate_name {
 			             'Sequence' => '^Bm\d+$',
 			             'Public_name' => '^Bma-[a-z21]{3,4}-[1-9]\d*(\.\d+)?$|^Bm\d+$'	     
 			            },
+                        'ovolvulus' => {
+                                     'CGC' => '^Ovo-[a-z21]{3,4}-[1-9]\d*(\.\d+)?$',
+                                     'Sequence' => 'OVOC\d+$',
+                                     'Public_name' => '^Ovo-[a-z21]{3,4}-[1-9]\d*(\.\d+)?$|^OVOC\d+$'
+                        },
+                                           
 
 		      };
 
