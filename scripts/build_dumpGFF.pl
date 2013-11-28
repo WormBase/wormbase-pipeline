@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl -w
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2013-09-12 15:38:16 $
+# Last edited on: $Date: 2013-11-28 12:58:03 $
 
 use strict;
 use lib  $ENV{'CVS_DIR'};
@@ -64,46 +64,46 @@ $log->mail();
 exit(0);
 
 __DATA__
-init Genomic_canonical elegans briggsae remanei pristionchus japonica brenneri brugia
-init Link elegans briggsae remanei pristionchus japonica brenneri brugia
-init Pseudogene elegans briggsae remanei pristionchus japonica brenneri brugia
-init Transposon elegans pristionchus japonica brenneri briggsae remanei brugia
-init Transposon_CDS elegans pristionchus japonica brenneri briggsae remanei brugia
-init Transposon_Pseudogene elegans pristionchus japonica brenneri briggsae remanei brugia
-init curated  elegans briggsae remanei pristionchus japonica brenneri brugia
-init history elegans briggsae pristionchus japonica brenneri brugia
-init history_pseudogene elegans briggsae pristionchus japonica brenneri brugia
-init history_transcript elegans briggsae pristionchus japonica brenneri brugia
-init Non_coding_transcript elegans briggsae pristionchus japonica brenneri remanei brugia
+init Genomic_canonical elegans briggsae remanei pristionchus japonica brenneri brugia ovolvulus
+init Link elegans briggsae remanei pristionchus japonica brenneri brugia ovolvulus
+init Pseudogene elegans briggsae remanei pristionchus japonica brenneri brugia ovolvulus
+init Transposon elegans pristionchus japonica brenneri briggsae remanei brugia ovolvulus
+init Transposon_CDS elegans pristionchus japonica brenneri briggsae remanei brugia ovolvulus
+init Transposon_Pseudogene elegans pristionchus japonica brenneri briggsae remanei brugia ovolvulus
+init curated  elegans briggsae remanei pristionchus japonica brenneri brugia ovolvulus
+init history elegans briggsae pristionchus japonica brenneri brugia ovolvulus
+init history_pseudogene elegans briggsae pristionchus japonica brenneri brugia ovolvulus
+init history_transcript elegans briggsae pristionchus japonica brenneri brugia ovolvulus
+init Non_coding_transcript elegans briggsae pristionchus japonica brenneri remanei brugia ovolvulus
 init snlRNA elegans
 init snRNA elegans
 init rRNA elegans
 init scRNA elegans
 init snoRNA elegans
-init tRNA elegans briggsae pristionchus japonica brenneri remanei brugia
+init tRNA elegans briggsae pristionchus japonica brenneri remanei brugia ovolvulus
 init stRNA elegans
 init ncRNA elegans briggsae brugia
 init miRNA elegans
 init miRNA_primary_transcript elegans
-blat BLAT_EST_BEST elegans briggsae remanei pristionchus japonica brenneri brugia
-blat BLAT_EST_OTHER elegans briggsae remanei pristionchus japonica brenneri brugia
-blat BLAT_NEMATODE elegans pristionchus remanei briggsae japonica brenneri brugia
+blat BLAT_EST_BEST elegans briggsae remanei pristionchus japonica brenneri brugia ovolvulus
+blat BLAT_EST_OTHER elegans briggsae remanei pristionchus japonica brenneri brugia ovolvulus
+blat BLAT_NEMATODE elegans pristionchus remanei briggsae japonica brenneri brugia ovolvulus
 blat BLAT_OST_BEST elegans
 blat BLAT_OST_OTHER elegans
 blat BLAT_RST_BEST elegans
 blat BLAT_RST_OTHER elegans
 blat BLAT_TC1_BEST elegans
 blat BLAT_TC1_OTHER elegans
-blat BLAT_mRNA_BEST elegans briggsae remanei pristionchus japonica brenneri brugia
-blat BLAT_mRNA_OTHER elegans briggsae remanei pristionchus japonica brenneri brugia
+blat BLAT_mRNA_BEST elegans briggsae remanei pristionchus japonica brenneri brugia ovolvulus
+blat BLAT_mRNA_OTHER elegans briggsae remanei pristionchus japonica brenneri brugia ovolvulus
 blat BLAT_ncRNA_BEST elegans
 blat BLAT_ncRNA_OTHER elegans
-blat BLAT_WASHU elegans briggsae remanei pristionchus japonica brenneri brugia
-blat BLAT_NEMBASE elegans briggsae remanei pristionchus japonica brenneri brugia
-blat SL1 elegans briggsae remanei pristionchus japonica brenneri brugia
-blat SL2 elegans briggsae remanei pristionchus japonica brenneri brugia
-blat polyA_signal_sequence elegans briggsae remanei pristionchus japonica brenneri brugia
-blat polyA_site elegans briggsae remanei pristionchus japonica brenneri brugia
+blat BLAT_WASHU elegans briggsae remanei pristionchus japonica brenneri brugia ovolvulus
+blat BLAT_NEMBASE elegans briggsae remanei pristionchus japonica brenneri brugia ovolvulus
+blat SL1 elegans briggsae remanei pristionchus japonica brenneri brugia ovolvulus
+blat SL2 elegans briggsae remanei pristionchus japonica brenneri brugia ovolvulus
+blat polyA_signal_sequence elegans briggsae remanei pristionchus japonica brenneri brugia ovolvulus
+blat polyA_site elegans briggsae remanei pristionchus japonica brenneri brugia ovolvulus
 blat GenePairs elegans
 blat Orfeome elegans
 blat RNAi_primary elegans
@@ -114,10 +114,10 @@ blat Oligo_set elegans
 homol waba_coding elegans
 homol waba_strong elegans
 homol waba_weak elegans
-homol tandem elegans briggsae remanei pristionchus japonica brenneri brugia
-homol RepeatMasker elegans briggsae remanei pristionchus japonica brenneri brugia
-homol wublastx elegans briggsae remanei pristionchus japonica brenneri brugia
-homol inverted elegans briggsae remanei pristionchus japonica brenneri brugia
+homol tandem elegans briggsae remanei pristionchus japonica brenneri brugia ovolvulus
+homol RepeatMasker elegans briggsae remanei pristionchus japonica brenneri brugia ovolvulus
+homol wublastx elegans briggsae remanei pristionchus japonica brenneri brugia ovolvulus
+homol inverted elegans briggsae remanei pristionchus japonica brenneri brugia ovolvulus
 variation Allele elegans
 variation CGH_allele elegans
 variation Deletion_allele elegans
