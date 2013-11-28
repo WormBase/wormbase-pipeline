@@ -147,7 +147,7 @@
 # by Gary Williams
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2013-11-27 14:31:28 $
+# Last updated on: $Date: 2013-11-28 13:23:15 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -263,106 +263,106 @@ my $status;
 my %expts;
 
 if ($species eq 'elegans') {
-
+  
   %expts = ( # key= SRA 'SRX' experiment ID, values = [Analysis ID, quality score metric]
-
-# Add new analysis/condition objects to ~wormpub/DATABASES/geneace
-
-	     SRX001872  => ["RNASeq.elegans.N2.WBls:0000027.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX001872", 'phred', 'single'], # needs a lot of memory to run tophat (RNASeq_Hillier.L2_larva)
-	     SRX001873  => ["RNASeq.elegans.N2.WBls:0000063.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX001873", 'phred', 'single'], # (RNASeq_Hillier.young_adult)
-	     SRX001874  => ["RNASeq.elegans.N2.WBls:0000038.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX001874", 'phred', 'single'], # (RNASeq_Hillier.L4_larva)
-	     SRX001875  => ["RNASeq.elegans.N2.WBls:0000035.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX001875", 'phred', 'single'], # (RNASeq_Hillier.L3_larva)
-
-	     SRX004863  => ["RNASeq.elegans.N2.WBls:0000004.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX004863", 'phred', 'single'], # (RNASeq_Hillier.early_embryo_Replicate3)
-	     SRX004864  => ["RNASeq.elegans.N2.WBls:0000004.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX004864", 'solexa', 'single'], # solexa (RNASeq_Hillier.early_embryo)
-	     SRX004865  => ["RNASeq.elegans.N2.WBls:0000021.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX004865", 'phred', 'single'], # (RNASeq_Hillier.late_embryo)
-	     SRX004866  => ["RNASeq.elegans.N2.WBls:0000021.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX004866", 'solexa', 'single'], # SRR016678 is phred - the other three are solexa (RNASeq_Hillier.late_embryo-Replicate1)
-	     SRX004867  => ["RNASeq.elegans.N2.WBls:0000024.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX004867", 'solexa', 'paired-end'], # solexa - paired end reads (RNASeq_Hillier.L1_larva)
-	     SRX004868  => ["RNASeq.elegans.CB4689.WBls:0000038.Male.WBbt:0007833.PRJNA33023.SRX004868", 'solexa', 'single'], # solexa (RNASeq_Hillier.L4_larva_Male)
-	     SRX004869  => ["RNASeq.elegans.MT10430.WBls:0000024.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX004869", 'solexa', 'single'], # SRR016691 and SRR016690 are phred, the other two are solexa (RNASeq_Hillier.L1_larva_lin-35)
-
- 	     SRX008136  => ["RNASeq.elegans.BA671.WBls:0000041.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX008136", 'phred', 'single'], # phred, despite what the docs say (RNASeq_Hillier.adult_spe-9)
- 	     SRX008138  => ["RNASeq.elegans.CB1370.WBls:0000032.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX008138", 'phred', 'single'], # phred, despite what the docs say (RNASeq_Hillier.dauer_daf-2)
- 	     SRX008139  => ["RNASeq.elegans.CB1370.WBls:0000031.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX008139", 'phred', 'single'], # phred, despite what the docs say (RNASeq_Hillier.dauer_entry_daf-2)
- 	     SRX008140  => ["RNASeq.elegans.CB1370.WBls:0000052.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX008140", 'phred', 'single'], # phred, despite what the docs say (RNASeq_Hillier.dauer_exit_daf-2)
- 	     SRX008144  => ["RNASeq.elegans.N2.WBls:0000038.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX008144", 'phred', 'single'], # phred, despite what the docs say (RNASeq_Hillier.L4_Larva_Replicate1)
-
- 	     SRX011569  => ["RNASeq.elegans.CB1489.WBls:0000003.Male.WBbt:0007833.PRJNA33023.SRX011569", 'phred', 'single'], # phred, despite what the docs say (RNASeq_Hillier.embryo_him-8)
-
- 	     SRX014006  => ["RNASeq.elegans.N2.WBls:0000063.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX014006", 'phred', 'single'], # phred, despite what the docs say (RNASeq_Hillier.young_adult_Harposporium)
- 	     SRX014007  => ["RNASeq.elegans.N2.WBls:0000063.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX014007", 'phred', 'single'], # phred, despite what the docs say (RNASeq_Hillier.young_adult_Harposporium_control)
- 	     SRX014008  => ["RNASeq.elegans.N2.WBls:0000063.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX014008", 'phred', 'single'], # phred, despite what the docs say (RNASeq_Hillier.young_adult_S_macescens)
- 	     SRX014009  => ["RNASeq.elegans.N2.WBls:0000063.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX014009", 'phred', 'single'], # phred, despite what the docs say (RNASeq_Hillier.young_adult_S_macescens_control)
- 	     SRX014010  => ["RNASeq.elegans.JK1107.WBls:0000038.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX014010", 'phred', 'single'], # phred, despite what the docs say (RNASeq_Hillier.L4_larva_JK1107)
-
- 	     SRX035162  => ["RNASeq.elegans.N2.WBls:0000041.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX035162", 'phred', 'single'], # 76 bp reads (RNASeq_Hillier.adult_D_coniospora_12hrs)
-
- 	     SRX036967  => ["RNASeq.elegans.N2.WBls:0000041.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX036967", 'phred', 'single'], # 76 bp reads (RNASeq_Hillier.adult_D_coniospora_control)
-
- 	     SRX036881  => ["RNASeq.elegans.N2.WBls:0000035.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX036881", 'phred', 'single'], # 76 bp reads (RNASeq_Hillier.L3_larva_Replicate1)
- 	     SRX036882  => ["RNASeq.elegans.N2.WBls:0000041.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX036882", 'phred', 'single'], # 76 bp reads (RNASeq_Hillier.adult_D_coniospora_5hrs)
-
- 	     SRX036969  => ["RNASeq.elegans.N2.WBls:0000041.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX036969", 'phred', 'single'], # 76 bp reads (RNASeq_Hillier.adult_E_faecalis)
- 	     SRX036970  => ["RNASeq.elegans.N2.WBls:0000041.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX036970", 'phred', 'single'], # 76 bp reads (RNASeq_Hillier.adult_P_luminescens)
-
- 	     SRX037186  => ["RNASeq.elegans.N2.WBls:0000004.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX037186", 'phred', 'single'], # 76 bp reads (RNASeq_Hillier.early_embryo_Replicate2)
- 	     SRX037197  => ["RNASeq.elegans.N2.WBls:0000004.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX037197", 'phred', 'single'], # modENCODE_3526 (RNASeq_Hillier.early_embryo_Replicate1)
- 	     SRX037198  => ["RNASeq.elegans.CB1489.WBls:0000003.Male.WBbt:0007833.PRJNA33023.SRX037198", 'phred', 'single'], # 76 bp reads (RNASeq_Hillier.embryo_Male_him-8-Replicate1)
- 	     SRX037199  => ["RNASeq.elegans.CB1370.WBls:0000052.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX037199", 'phred', 'single'], # 76 bp reads (RNASeq_Hillier.dauer_exit_daf-2-Replicate1)
- 	     SRX037200  => ["RNASeq.elegans.JK1107.WBls:0000038.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX037200", 'phred', 'single'], # 76 bp reads (RNASeq_Hillier.L4_larva_JK1107_Replicate1)
-
- 	     SRX037288  => ["RNASeq.elegans.N2.WBls:0000024.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX037288", 'phred', 'single'], # 76 bp reads (RNASeq_Hillier.L1_larva-Replicate1)
-
- 	     SRX047446  => ["RNASeq.elegans.N2.WBls:0000021.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX047446", 'phred', 'single'], # 76 bp reads (RNASeq_Hillier.late_embryo_Replicate2)
- 	     SRX047469  => ["RNASeq.elegans.CB4689.WBls:0000038.Male.WBbt:0007833.PRJNA33023.SRX047469", 'phred', 'single'], # 76 bp reads (RNASeq_Hillier.L4_larva_Male_Replicate1)
- 	     SRX047470  => ["RNASeq.elegans.CB1370.WBls:0000031.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX047470", 'phred', 'single'], # 76 bp reads (RNASeq_Hillier.dauer_entry_daf-2_Replicate1)
-
- 	     SRX047653  => ["RNASeq.elegans.N2.WBls:0000027.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX047653", 'phred', 'single'], # 76 bp reads (RNASeq_Hillier.L2_larva_Replicate1)
- 	     SRX047787  => ["RNASeq.elegans.N2.WBls:0000063.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX047787", 'phred', 'single'], # 76 bp reads (RNASeq_Hillier.Young_Adult_Replicate1)
-	     
-## Andy Fraser's Lab 
-	     
-	     SRX007069   => ["RNASeq.elegans.N2.WBls:0000038.Hermaphrodite.WBbt:0007833.PRJNA79457.SRX007069", 'phred', 'single'], # N2, L4 larva (RNASeq_Fraser.L4_larva)
-	     SRX007170   => ["RNASeq.elegans.N2.WBls:0000041.Hermaphrodite.WBbt:0007833.PRJNA79457.SRX007170", 'phred', 'single'], # N2, Young Adult (RNASeq_Fraser.adult)
-	     SRX007171   => ["RNASeq.elegans.TR1331.WBls:0000038.Hermaphrodite.WBbt:0007833.PRJNA79457.SRX007171", 'phred', 'single'], # smg-1, L4 larva (RNASeq_Fraser.smg-1_L4_larva)
-	     SRX007172   => ["RNASeq.elegans.TR1331.WBls:0000041.Hermaphrodite.WBbt:0007833.PRJNA79457.SRX007172", 'phred', 'single'], # smg-1, Young Adult (RNASeq_Fraser.smg-1_adult)
-	     SRX007173   => ["RNASeq.elegans.N2.WBls:0000002.Hermaphrodite.WBbt:0007833.PRJNA79457.SRX007173", 'phred', 'paired-end'], # N2, all_stages, paired end reads (RNASeq_Fraser.all_stages)
-	     
-## Andy Fire's Lab
-	     
-	     SRX028190   => ["RNASeq.elegans.N2.WBls:0000002.Hermaphrodite.WBbt:0007833.PRJNA128465.SRX028190", 'phred', 'single'], # GSM577107: N2_mixed-stage_dsDNALigSeq (RNASeq_Fire.all_stages_dsDNALigSeq)
-	     SRX028191   => ["RNASeq.elegans.N2.WBls:0000002.Hermaphrodite.WBbt:0007833.PRJNA128465.SRX028191", 'phred', 'single'], # GSM577108: N2_mixed-stage_ssRNALigSeq Strand-specific (RNASeq_Fire.all_stages_ssRNALigSeq)
-	     SRX028192   => ["RNASeq.elegans.JK816.WBls:0000041.Hermaphrodite.WBbt:0007833.PRJNA128465.SRX028192", 'phred', 'single'],      # GSM577110: fem-3_dsDNALigSeq (RNASeq_Fire.fem-3_dsDNALigSeq)
-	     SRX028193   => ["RNASeq.elegans.BA17.WBls:0000041.Hermaphrodite.WBbt:0007833.PRJNA128465.SRX028193", 'phred', 'single'],      # GSM577111: fem-1_dsDNALigSeq (RNASeq_Fire.fem-1_dsDNALigSeq)
-	     SRX028194   => ["RNASeq.elegans.PD3331.WBls:0000041.Hermaphrodite.WBbt:0007833.PRJNA128465.SRX028194", 'phred', 'single'],      # GSM577112: him-8_dsDNALigSeq (RNASeq_Fire.him-8_dsDNALigSeq)
-	     SRX028195   => ["RNASeq.elegans.PD3331.WBls:0000041.Hermaphrodite.WBbt:0007833.PRJNA128465.SRX028195", 'phred', 'single'],      # GSM577113: him-8_ssRNALigSeq Strand-specific (RNASeq_Fire.him-8_ssRNALigSeq)
-	     SRX028196   => ["RNASeq.elegans.PD3330.WBls:0000041.Hermaphrodite.WBbt:0007833.PRJNA128465.SRX028196", 'phred', 'single'], # GSM577114: rrf-3_him-8_ssRNALigSeq Strand-specific (RNASeq_Fire.rrf-3_him-8_ssRNALigSeq)
-	     SRX028197   => ["RNASeq.elegans.N2.WBls:0000024.Hermaphrodite.WBbt:0007833.PRJNA128465.SRX028197", 'phred', 'single'],   # GSM577115: N2_L1_ssRNALigSeq Strand-specific (RNASeq_Fire.L1_larva_ssRNALigSeq)
-	     SRX028198   => ["RNASeq.elegans.N2.WBls:0000027.Hermaphrodite.WBbt:0007833.PRJNA128465.SRX028198", 'phred', 'single'],   # GSM577116: N2_L2_ssRNALigSeq Strand-specific (RNASeq_Fire.L2_larva_ssRNALigSeq)
-	     SRX028199   => ["RNASeq.elegans.N2.WBls:0000035.Hermaphrodite.WBbt:0007833.PRJNA128465.SRX028199", 'phred', 'single'],   # GSM577117: N2_L3_ssRNALigSeq Strand-specific (RNASeq_Fire.L3_larva_ssRNALigSeq)
-	     SRX028200   => ["RNASeq.elegans.N2.WBls:0000038.Hermaphrodite.WBbt:0007833.PRJNA128465.SRX028200", 'phred', 'single'],   # GSM577118: N2_L4_ssRNALigSeq Strand-specific (RNASeq_Fire.L4_larva_ssRNALigSeq)
-	     SRX028201   => ["RNASeq.elegans.N2.WBls:0000024.Hermaphrodite.WBbt:0007833.PRJNA128465.SRX028201", 'phred', 'single'],    # GSM577119: N2_L1_CircLigSeq Strand-specific (RNASeq_Fire.L1_larva_CircLigSeq)
-	     SRX028202   => ["RNASeq.elegans.N2.WBls:0000027.Hermaphrodite.WBbt:0007833.PRJNA128465.SRX028202", 'phred', 'single'],   # GSM577120: N2_L2_CircLigSeq Strand-specific (RNASeq_Fire.L2_larva_CircLigSeq)
-	     SRX028203   => ["RNASeq.elegans.N2.WBls:0000035.Hermaphrodite.WBbt:0007833.PRJNA128465.SRX028203", 'phred', 'single'],   # GSM577121: N2_L3_CircLigSeq Strand-specific (RNASeq_Fire.L3_larva_CircLigSeq)
-	     SRX028204   => ["RNASeq.elegans.N2.WBls:0000002.Hermaphrodite.WBbt:0007833.PRJNA128465.SRX028204", 'phred', 'single'],   # GSM577122: N2_mixed-stage_polysomes - these are special in that they show that this transcript is translated, not just transcribed (RNASeq_Fire.all_stages_polysomes)
-
-## new entries 7 Oct 2011
+	    
+	    # Add new analysis/condition objects to ~wormpub/DATABASES/geneace
+	    
+	    SRX001872  => ["RNASeq.elegans.N2.WBls:0000027.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX001872", 'phred', 'single'], # needs a lot of memory to run tophat (RNASeq_Hillier.L2_larva)
+	    SRX001873  => ["RNASeq.elegans.N2.WBls:0000063.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX001873", 'phred', 'single'], # (RNASeq_Hillier.young_adult)
+	    SRX001874  => ["RNASeq.elegans.N2.WBls:0000038.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX001874", 'phred', 'single'], # (RNASeq_Hillier.L4_larva)
+	    SRX001875  => ["RNASeq.elegans.N2.WBls:0000035.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX001875", 'phred', 'single'], # (RNASeq_Hillier.L3_larva)
+	    
+	    SRX004863  => ["RNASeq.elegans.N2.WBls:0000004.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX004863", 'phred', 'single'], # (RNASeq_Hillier.early_embryo_Replicate3)
+	    SRX004864  => ["RNASeq.elegans.N2.WBls:0000004.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX004864", 'solexa', 'single'], # solexa (RNASeq_Hillier.early_embryo)
+	    SRX004865  => ["RNASeq.elegans.N2.WBls:0000021.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX004865", 'phred', 'single'], # (RNASeq_Hillier.late_embryo)
+	    SRX004866  => ["RNASeq.elegans.N2.WBls:0000021.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX004866", 'solexa', 'single'], # SRR016678 is phred - the other three are solexa (RNASeq_Hillier.late_embryo-Replicate1)
+	    SRX004867  => ["RNASeq.elegans.N2.WBls:0000024.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX004867", 'solexa', 'paired-end'], # solexa - paired end reads (RNASeq_Hillier.L1_larva)
+	    SRX004868  => ["RNASeq.elegans.CB4689.WBls:0000038.Male.WBbt:0007833.PRJNA33023.SRX004868", 'solexa', 'single'], # solexa (RNASeq_Hillier.L4_larva_Male)
+	    SRX004869  => ["RNASeq.elegans.MT10430.WBls:0000024.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX004869", 'solexa', 'single'], # SRR016691 and SRR016690 are phred, the other two are solexa (RNASeq_Hillier.L1_larva_lin-35)
+	    
+	    SRX008136  => ["RNASeq.elegans.BA671.WBls:0000041.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX008136", 'phred', 'single'], # phred, despite what the docs say (RNASeq_Hillier.adult_spe-9)
+	    SRX008138  => ["RNASeq.elegans.CB1370.WBls:0000032.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX008138", 'phred', 'single'], # phred, despite what the docs say (RNASeq_Hillier.dauer_daf-2)
+	    SRX008139  => ["RNASeq.elegans.CB1370.WBls:0000031.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX008139", 'phred', 'single'], # phred, despite what the docs say (RNASeq_Hillier.dauer_entry_daf-2)
+	    SRX008140  => ["RNASeq.elegans.CB1370.WBls:0000052.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX008140", 'phred', 'single'], # phred, despite what the docs say (RNASeq_Hillier.dauer_exit_daf-2)
+	    SRX008144  => ["RNASeq.elegans.N2.WBls:0000038.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX008144", 'phred', 'single'], # phred, despite what the docs say (RNASeq_Hillier.L4_Larva_Replicate1)
+	    
+	    SRX011569  => ["RNASeq.elegans.CB1489.WBls:0000003.Male.WBbt:0007833.PRJNA33023.SRX011569", 'phred', 'single'], # phred, despite what the docs say (RNASeq_Hillier.embryo_him-8)
+	    
+	    SRX014006  => ["RNASeq.elegans.N2.WBls:0000063.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX014006", 'phred', 'single'], # phred, despite what the docs say (RNASeq_Hillier.young_adult_Harposporium)
+	    SRX014007  => ["RNASeq.elegans.N2.WBls:0000063.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX014007", 'phred', 'single'], # phred, despite what the docs say (RNASeq_Hillier.young_adult_Harposporium_control)
+	    SRX014008  => ["RNASeq.elegans.N2.WBls:0000063.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX014008", 'phred', 'single'], # phred, despite what the docs say (RNASeq_Hillier.young_adult_S_macescens)
+	    SRX014009  => ["RNASeq.elegans.N2.WBls:0000063.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX014009", 'phred', 'single'], # phred, despite what the docs say (RNASeq_Hillier.young_adult_S_macescens_control)
+	    SRX014010  => ["RNASeq.elegans.JK1107.WBls:0000038.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX014010", 'phred', 'single'], # phred, despite what the docs say (RNASeq_Hillier.L4_larva_JK1107)
+	    
+	    SRX035162  => ["RNASeq.elegans.N2.WBls:0000041.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX035162", 'phred', 'single'], # 76 bp reads (RNASeq_Hillier.adult_D_coniospora_12hrs)
+	    
+	    SRX036967  => ["RNASeq.elegans.N2.WBls:0000041.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX036967", 'phred', 'single'], # 76 bp reads (RNASeq_Hillier.adult_D_coniospora_control)
+	    
+	    SRX036881  => ["RNASeq.elegans.N2.WBls:0000035.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX036881", 'phred', 'single'], # 76 bp reads (RNASeq_Hillier.L3_larva_Replicate1)
+	    SRX036882  => ["RNASeq.elegans.N2.WBls:0000041.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX036882", 'phred', 'single'], # 76 bp reads (RNASeq_Hillier.adult_D_coniospora_5hrs)
+	    
+	    SRX036969  => ["RNASeq.elegans.N2.WBls:0000041.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX036969", 'phred', 'single'], # 76 bp reads (RNASeq_Hillier.adult_E_faecalis)
+	    SRX036970  => ["RNASeq.elegans.N2.WBls:0000041.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX036970", 'phred', 'single'], # 76 bp reads (RNASeq_Hillier.adult_P_luminescens)
+	    
+	    SRX037186  => ["RNASeq.elegans.N2.WBls:0000004.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX037186", 'phred', 'single'], # 76 bp reads (RNASeq_Hillier.early_embryo_Replicate2)
+	    SRX037197  => ["RNASeq.elegans.N2.WBls:0000004.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX037197", 'phred', 'single'], # modENCODE_3526 (RNASeq_Hillier.early_embryo_Replicate1)
+	    SRX037198  => ["RNASeq.elegans.CB1489.WBls:0000003.Male.WBbt:0007833.PRJNA33023.SRX037198", 'phred', 'single'], # 76 bp reads (RNASeq_Hillier.embryo_Male_him-8-Replicate1)
+	    SRX037199  => ["RNASeq.elegans.CB1370.WBls:0000052.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX037199", 'phred', 'single'], # 76 bp reads (RNASeq_Hillier.dauer_exit_daf-2-Replicate1)
+	    SRX037200  => ["RNASeq.elegans.JK1107.WBls:0000038.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX037200", 'phred', 'single'], # 76 bp reads (RNASeq_Hillier.L4_larva_JK1107_Replicate1)
+	    
+	    SRX037288  => ["RNASeq.elegans.N2.WBls:0000024.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX037288", 'phred', 'single'], # 76 bp reads (RNASeq_Hillier.L1_larva-Replicate1)
+	    
+	    SRX047446  => ["RNASeq.elegans.N2.WBls:0000021.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX047446", 'phred', 'single'], # 76 bp reads (RNASeq_Hillier.late_embryo_Replicate2)
+	    SRX047469  => ["RNASeq.elegans.CB4689.WBls:0000038.Male.WBbt:0007833.PRJNA33023.SRX047469", 'phred', 'single'], # 76 bp reads (RNASeq_Hillier.L4_larva_Male_Replicate1)
+	    SRX047470  => ["RNASeq.elegans.CB1370.WBls:0000031.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX047470", 'phred', 'single'], # 76 bp reads (RNASeq_Hillier.dauer_entry_daf-2_Replicate1)
+	    
+	    SRX047653  => ["RNASeq.elegans.N2.WBls:0000027.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX047653", 'phred', 'single'], # 76 bp reads (RNASeq_Hillier.L2_larva_Replicate1)
+	    SRX047787  => ["RNASeq.elegans.N2.WBls:0000063.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX047787", 'phred', 'single'], # 76 bp reads (RNASeq_Hillier.Young_Adult_Replicate1)
+	    
+	    ## Andy Fraser's Lab 
+	    
+	    SRX007069   => ["RNASeq.elegans.N2.WBls:0000038.Hermaphrodite.WBbt:0007833.PRJNA79457.SRX007069", 'phred', 'single'], # N2, L4 larva (RNASeq_Fraser.L4_larva)
+	    SRX007170   => ["RNASeq.elegans.N2.WBls:0000041.Hermaphrodite.WBbt:0007833.PRJNA79457.SRX007170", 'phred', 'single'], # N2, Young Adult (RNASeq_Fraser.adult)
+	    SRX007171   => ["RNASeq.elegans.TR1331.WBls:0000038.Hermaphrodite.WBbt:0007833.PRJNA79457.SRX007171", 'phred', 'single'], # smg-1, L4 larva (RNASeq_Fraser.smg-1_L4_larva)
+	    SRX007172   => ["RNASeq.elegans.TR1331.WBls:0000041.Hermaphrodite.WBbt:0007833.PRJNA79457.SRX007172", 'phred', 'single'], # smg-1, Young Adult (RNASeq_Fraser.smg-1_adult)
+	    SRX007173   => ["RNASeq.elegans.N2.WBls:0000002.Hermaphrodite.WBbt:0007833.PRJNA79457.SRX007173", 'phred', 'paired-end'], # N2, all_stages, paired end reads (RNASeq_Fraser.all_stages)
+	    
+	    ## Andy Fire's Lab
+	    
+	    SRX028190   => ["RNASeq.elegans.N2.WBls:0000002.Hermaphrodite.WBbt:0007833.PRJNA128465.SRX028190", 'phred', 'single'], # GSM577107: N2_mixed-stage_dsDNALigSeq (RNASeq_Fire.all_stages_dsDNALigSeq)
+	    SRX028191   => ["RNASeq.elegans.N2.WBls:0000002.Hermaphrodite.WBbt:0007833.PRJNA128465.SRX028191", 'phred', 'single'], # GSM577108: N2_mixed-stage_ssRNALigSeq Strand-specific (RNASeq_Fire.all_stages_ssRNALigSeq)
+	    SRX028192   => ["RNASeq.elegans.JK816.WBls:0000041.Hermaphrodite.WBbt:0007833.PRJNA128465.SRX028192", 'phred', 'single'],      # GSM577110: fem-3_dsDNALigSeq (RNASeq_Fire.fem-3_dsDNALigSeq)
+	    SRX028193   => ["RNASeq.elegans.BA17.WBls:0000041.Hermaphrodite.WBbt:0007833.PRJNA128465.SRX028193", 'phred', 'single'],      # GSM577111: fem-1_dsDNALigSeq (RNASeq_Fire.fem-1_dsDNALigSeq)
+	    SRX028194   => ["RNASeq.elegans.PD3331.WBls:0000041.Hermaphrodite.WBbt:0007833.PRJNA128465.SRX028194", 'phred', 'single'],      # GSM577112: him-8_dsDNALigSeq (RNASeq_Fire.him-8_dsDNALigSeq)
+	    SRX028195   => ["RNASeq.elegans.PD3331.WBls:0000041.Hermaphrodite.WBbt:0007833.PRJNA128465.SRX028195", 'phred', 'single'],      # GSM577113: him-8_ssRNALigSeq Strand-specific (RNASeq_Fire.him-8_ssRNALigSeq)
+	    SRX028196   => ["RNASeq.elegans.PD3330.WBls:0000041.Hermaphrodite.WBbt:0007833.PRJNA128465.SRX028196", 'phred', 'single'], # GSM577114: rrf-3_him-8_ssRNALigSeq Strand-specific (RNASeq_Fire.rrf-3_him-8_ssRNALigSeq)
+	    SRX028197   => ["RNASeq.elegans.N2.WBls:0000024.Hermaphrodite.WBbt:0007833.PRJNA128465.SRX028197", 'phred', 'single'],   # GSM577115: N2_L1_ssRNALigSeq Strand-specific (RNASeq_Fire.L1_larva_ssRNALigSeq)
+	    SRX028198   => ["RNASeq.elegans.N2.WBls:0000027.Hermaphrodite.WBbt:0007833.PRJNA128465.SRX028198", 'phred', 'single'],   # GSM577116: N2_L2_ssRNALigSeq Strand-specific (RNASeq_Fire.L2_larva_ssRNALigSeq)
+	    SRX028199   => ["RNASeq.elegans.N2.WBls:0000035.Hermaphrodite.WBbt:0007833.PRJNA128465.SRX028199", 'phred', 'single'],   # GSM577117: N2_L3_ssRNALigSeq Strand-specific (RNASeq_Fire.L3_larva_ssRNALigSeq)
+	    SRX028200   => ["RNASeq.elegans.N2.WBls:0000038.Hermaphrodite.WBbt:0007833.PRJNA128465.SRX028200", 'phred', 'single'],   # GSM577118: N2_L4_ssRNALigSeq Strand-specific (RNASeq_Fire.L4_larva_ssRNALigSeq)
+	    SRX028201   => ["RNASeq.elegans.N2.WBls:0000024.Hermaphrodite.WBbt:0007833.PRJNA128465.SRX028201", 'phred', 'single'],    # GSM577119: N2_L1_CircLigSeq Strand-specific (RNASeq_Fire.L1_larva_CircLigSeq)
+	    SRX028202   => ["RNASeq.elegans.N2.WBls:0000027.Hermaphrodite.WBbt:0007833.PRJNA128465.SRX028202", 'phred', 'single'],   # GSM577120: N2_L2_CircLigSeq Strand-specific (RNASeq_Fire.L2_larva_CircLigSeq)
+	    SRX028203   => ["RNASeq.elegans.N2.WBls:0000035.Hermaphrodite.WBbt:0007833.PRJNA128465.SRX028203", 'phred', 'single'],   # GSM577121: N2_L3_CircLigSeq Strand-specific (RNASeq_Fire.L3_larva_CircLigSeq)
+	    SRX028204   => ["RNASeq.elegans.N2.WBls:0000002.Hermaphrodite.WBbt:0007833.PRJNA128465.SRX028204", 'phred', 'single'],   # GSM577122: N2_mixed-stage_polysomes - these are special in that they show that this transcript is translated, not just transcribed (RNASeq_Fire.all_stages_polysomes)
+	    
+	    ## new entries 7 Oct 2011
  	    SRX017684 => ["RNASeq.elegans.N2.WBls:0000024.Hermaphrodite.WBbt:0007833.PRJNA79387.SRX017684", 'phred', 'single'], # 454 sequencing http://www.biomedcentral.com/1741-7007/6/30 (RNASeq.Shin.L1_larva)
-
+	    
 	    SRX026728 => ["RNASeq.elegans.N2.WBls:0000035.Hermaphrodite.WBbt:0007833.PRJNA51225.SRX026728", 'phred', 'paired-end'], # paired-end http://genome.cshlp.org/content/20/12/1740.long (RNASeq.Martazavi.L3_larva)
 	    SRX026729 => ["RNASeq.elegans.N2.WBls:0000024.Hermaphrodite.WBbt:0007833.PRJNA51225.SRX026729", 'phred', 'paired-end'], # paired-end http://genome.cshlp.org/content/20/12/1740.long (RNASeq.Martazavi.L1_larva)
-
+	    
 	    SRX047635 => ["RNASeq.elegans.N2.WBls:0000041.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX047635", 'phred', 'single'], # 76 bp reads (RNASeq_Hillier.adult_D_coniospora_12hrs_Replicate2)
 
 	    SRX049268 => ["RNASeq.elegans.N2.WBls:0000038.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX049268", 'phred', 'single'], # 76 bp reads. Array capture experiment to remove messages already detected in other RNAseq experiments on C. elegans N2 larval L4 library. (RNASeq_Hillier.L4_larva_cap4)
 	    SRX049269 => ["RNASeq.elegans.N2.WBls:0000038.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX049269", 'phred', 'single'], # 76 bp reads. Ribominus kit was used on the C. elegans N2 larval L4 library and subjected to array capture to remove messages already detected in other RNAseq experiments.  (RNASeq_Hillier.L4_larva_RRcap3)
 	    SRX049270 => ["RNASeq.elegans.N2.WBls:0000021.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX049270", 'phred', 'single'], # 76 bp reads. Array capture experiment on late embryo LE-2 library to remove messages already detected in other RNAseq experiments. (RNASeq_Hillier.late_embryo_cap6)
-
+	    
 	    SRX049744 => ["RNASeq.elegans.MT10430.WBls:0000024.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX049744", 'phred', 'single'], # 	modENCODE_3521 76 bp reads. Array capture experiment to remove messages already detected in other RNAseq experiments on C. elegans N2 larva L1 (lin-35) library. (RNASeq_Hillier.L1_larva_lin-35_cap1)
 	    SRX049745 => ["RNASeq.elegans.N2.WBls:0000038.Male.WBbt:0007833.PRJNA33023.SRX049745", 'phred', 'single'], #  modENCODE_3524 76 bp reads. Array capture experiment to remove messages already detected in other RNAseq experiments on C. elegans N2 larva L4 male library. (RNASeq_Hillier.L4_larva_Male_cap2)
-
+	    
 	    SRX050610 => ["RNASeq.elegans.MT10430.WBls:0000024.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX050610", 'phred', 'single'], # 76 bp reads. Array capture experiment to remove messages already detected in other RNAseq experiments on C. elegans N2 larva L1 (lin-35) library.  (RNASeq_Hillier.L1_larva_lin-35-cap1)
-
+	    
 	    SRX050630 => ["RNASeq.elegans.N2.WBls:0000038.Male.WBbt:0007833.PRJNA33023.SRX050630", 'phred', 'single'], # Array capture experiment to remove messages already detected in other RNAseq experiments on C. elegans N2 larva L4 male library. (RNASeq_Hillier.L4_larva_Male_cap2_Replicate2)
 
 	    SRX085111 => ["RNASeq.elegans.N2.WBls:0000005.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX085111", 'phred', 'paired-end'], # 100 bp reads. paired-end. EE_50-60 (RNASeq_Hillier.blastula_embryo)
@@ -371,7 +371,7 @@ if ($species eq 'elegans') {
 	    SRX085217 => ["RNASeq.elegans.N2.WBls:0000010.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX085217", 'phred', 'paired-end'], # 76 bp reads. paired-end. EE_50-120 (RNASeq_Hillier.gastrulating_embryo)
 	    SRX085218 => ["RNASeq.elegans.N2.WBls:0000010.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX085218", 'phred', 'paired-end'], # 100 bp reads. paired-end. EE_50-120 (RNASeq_Hillier.gastrulating_embryo_Replicate2)
 
-# get "terminate called after throwing an instance of 'std::bad_alloc'" in cufflinks with this one	    SRX085220 => ["RNASeq.elegans.N2.WBls:0000010.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX085220", 'phred', 'single'], # 100 bp reads. paired-end. EE_50-120 (RNASeq_Hillier.gastrulating_embryo_Replicate3)
+	    # get "terminate called after throwing an instance of 'std::bad_alloc'" in cufflinks with this one	    SRX085220 => ["RNASeq.elegans.N2.WBls:0000010.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX085220", 'phred', 'single'], # 100 bp reads. paired-end. EE_50-120 (RNASeq_Hillier.gastrulating_embryo_Replicate3)
 
 	    SRX085286 => ["RNASeq.elegans.N2.WBls:0000021.Hermaphrodite.WBbt:0005451.PRJNA33023.SRX085286", 'phred', 'paired-end'], # 100 bp reads. paired-end. Pharyngeal muscle total RNA, late embryo. (RNASeq_Hillier.Pharyngeal_muscle_late_embryo)
 	    SRX085287 => ["RNASeq.elegans.N2.WBls:0000021.Hermaphrodite.WBbt:0005451.PRJNA33023.SRX085287", 'phred', 'paired-end'], # 76 bp reads. paired-end. Pharyngeal muscle total RNA, late embryo. (RNASeq_Hillier.Pharyngeal_muscle_late_embryo_Replicate2)
@@ -400,7 +400,7 @@ if ($species eq 'elegans') {
 	    SRX191952 => ["RNASeq.elegans.N2.WBls:0000041.Male.WBbt:0007833.SRP016006.SRX191952", 'phred', 'single'], # (RNASeq.elegans.SRP016006.adult_male.Replicate3)
 
 	    SRX185637 => ["RNASeq.elegans.N2.WBls:0000023.Hermaphrodite.WBbt:0007833.PRJNA174814.SRX185637", 'phred', 'single'], # (RNASeq.elegans.SRP015688.mixed-stage.pool1)
-# commented out because this is a knockout experiment so will upset general expression levels	    SRX185638 => ["RNASeq.elegans.SRP015688.L4.linker-cells.nhr-67", 'phred', 'single'],
+	    # commented out because this is a knockout experiment so will upset general expression levels	    SRX185638 => ["RNASeq.elegans.SRP015688.L4.linker-cells.nhr-67", 'phred', 'single'],
 	    SRX185639 => ["RNASeq.elegans.N2.WBls:0000023.Hermaphrodite.WBbt:0007833.PRJNA174814.SRX185639", 'phred', 'single'], # (RNASeq.elegans.SRP015688.mixed-stage.pool2)
 	    SRX185660 => ["RNASeq.elegans.N2.WBls:0000035.Male.WBbt:0005062.PRJNA174814.SRX185660", 'phred', 'single'], # (RNASeq.elegans.SRP015688.L3.linker-cells)
 	    SRX185661 => ["RNASeq.elegans.N2.WBls:0000038.Male.WBbt:0005062.PRJNA174814.SRX185661", 'phred', 'single'], # (RNASeq.elegans.SRP015688.L4.linker-cells)
@@ -412,37 +412,48 @@ if ($species eq 'elegans') {
 	    # To be added
 	    # SRP015332 WBPaper00041119 - multiple insert size paired-end reads
 	    # ERP000509 GSE30612 - RGASP project
-	   );
-  
-  ################################################################################################################################################
-  if (0) {
-    %expts = (
-	      # These are the C. elegans data-sets selected for determining ncRNA expression levels.
-	      #-------------------------------------------------------------------------------------
-	      
-	      # I have tried to find experiments where the RNA was not selected
-	      # for poly+ and where there is no knockout or RNAi to affect the
-	      # expression levels.
-	      
-	      # 'Control' experiments are good.
-	      # modENCODE experiments are good.
-
-	      # 'Small RNA' experiments are not good because they will
-	      # be adapter ligated and when the adapter is removed
-	      # there will be too little sequence to align easily and
-	      # they align in multiple places because the small ncRNA
-	      # genes occur in multiple copies and we won't known
-	      # which are realy being expressed.
 	    
+	    ################################################################################################################################################
+	    # These are the C. elegans data-sets selected for determining ncRNA expression levels.
+	    #-------------------------------------------------------------------------------------
+	    
+	    # See: http://www.encodedcc.org/modencode/comparative_RNA.html
+	    
+	    # They are added to the PolyA+ enriched jobs and treated as normal for now.
+	    
+	    # I have tried to find experiments where the RNA was not selected
+	    # for poly+ and where there is no knockout or RNAi to affect the
+	    # expression levels.
+	    
+	    # 'Control' experiments are good.
+	    # modENCODE experiments are good.
+	    
+	    # 'Small RNA' experiments are not good because they will
+	    # be adapter ligated and when the adapter is removed
+	    # there will be too little sequence to align easily and
+	    # they align in multiple places because the small ncRNA
+	    # genes occur in multiple copies and we won't known
+	    # which are realy being expressed.
+
+	    # PubMed    22673872
+	    # WBPaper00041168
+	    # Genome Res. 2012 Aug;22(8):1488-98. doi: 10.1101/gr.134841.111. Epub 2012 Jun 6.
+	    # Effects of ADARs on small RNA processing pathways in C. elegans.
+	    # Warf MB, Shepherd BA, Johnson WE, Bass BL.
+
 	    SRX059215 => ["RNASeq.elegans.N2.WBls:0000002.Hermaphrodite.WBbt:0007833.SRP006489.SRX059215", 'phred', 'single'], # control, mixed-stage, whole-animal
 	    SRX059216 => ["RNASeq.elegans.N2.WBls:0000002.Hermaphrodite.WBbt:0007833.SRP006489.SRX059216", 'phred', 'single'], # control, mixed-stage, whole-animal
+
+	    # Hillier LW et al. (2009) Genome Res "Massively parallel sequencing of the polyadenylated transcriptome of C. ...."
+	    # WBPaper00032529
+
 	    SRX006984 => ["RNASeq.elegans.N2.WBls:0000003.Hermaphrodite.WBbt:0007833.PRJNA168961.SRX006984", 'phred', 'single'], # GSE16552 (Non-coding RNA profiling by high throughput sequencing), embryo, whole-animal
 	    SRX006985 => ["RNASeq.elegans.N2.WBls:0000003.Hermaphrodite.WBbt:0007833.PRJNA168961.SRX006985", 'phred', 'single'], # GSE16552 (Non-coding RNA profiling by high throughput sequencing), embryo, whole-animal
 	    SRX006986 => ["RNASeq.elegans.N2.WBls:0000003.Hermaphrodite.WBbt:0007833.PRJNA168961.SRX006986", 'phred', 'single'], # GSE16552 (Non-coding RNA profiling by high throughput sequencing), embryo, whole-animal
 	    SRX006987 => ["RNASeq.elegans.N2.WBls:0000024.Hermaphrodite.WBbt:0007833.PRJNA168961.SRX006987", 'phred', 'single'], # GSE16552 (Non-coding RNA profiling by high throughput sequencing), L1 larva, whole-animal
 	    SRX006988 => ["RNASeq.elegans.N2.WBls:0000024.Hermaphrodite.WBbt:0007833.PRJNA168961.SRX006988", 'phred', 'single'], # GSE16552 (Non-coding RNA profiling by high throughput sequencing), L1 larva, whole-animal
 	    SRX006989 => ["RNASeq.elegans.N2.WBls:0000024.Hermaphrodite.WBbt:0007833.PRJNA168961.SRX006989", 'phred', 'single'], # GSE16552 (Non-coding RNA profiling by high throughput sequencing), L1 larva, whole-animal
-
+	    
 	    SRX085219 => ["RNASeq.elegans.N2.WBls:0000008.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX085219", 'phred', 'single'], # Illumina sequencing of C. elegans N2 hand-picked 4 cell embryos DSN-Negative, total RNA. (RNASeq_Hillier.4-cell_embryo)
 	    
 	    # modENOCDE paper for the '7K' set
@@ -450,44 +461,44 @@ if ($species eq 'elegans') {
 	    # Prediction and characterization of noncoding RNAs in C. elegans by integrating conservation, secondary structure, and high-throughput sequencing and array data.
 	    # Lu ZJ, Yip KY, Wang G, Shou C, Hillier LW, Khurana E, Agarwal A, Auerbach R, Rozowsky J, Cheng C, Kato M, Miller DM, Slack F, Snyder M, Waterston RH, Reinke V, Gerstein MB.
 	    # PubMed 21177971
+	    ## Study PRJNA33023
 	    
-	    SRX103986 => ["RNASeq.elegans.N2", 'phred', 'paired-end'], # Illumina sequencing of C. elegans N2 young adult processed through single pass of Ribozero kit from Epicentre RNAseq random fragment library 100bp PE 
-	    SRX103987 => ["RNASeq.elegans.N2", 'phred', 'single'], # Illumina sequencing of C. elegans N2 young adult processed through single pass of Ribozero kit from Epicentre RNAseq random fragment library 100bp SE 
-	    SRX103988 => ["RNASeq.elegans.N2", 'phred', 'paired-end'], # Illumina sequencing of C. elegans N2 young adult processed through single pass of Ribozero kit from Epicentre RNAseq random fragment library 101bp PE 
-	    SRX103989 => ["RNASeq.elegans.N2", 'phred', 'single'], # Illumina sequencing of C. elegans N2 young adult processed through single pass of Ribozero kit from Epicentre RNAseq random fragment library 101bp SE 
-	    SRX103990 => ["RNASeq.elegans.N2", 'phred', 'single'], # Illumina sequencing of C. elegans N2 young adult sample -- Yad-1 ribominus sample 36bp SE
-	    SRX103991 => ["RNASeq.elegans.N2", 'phred', 'single'], # Illumina sequencing of C. elegans N2 young adult sample -- Yad-1 ribominus sample 76bp SE
-	    SRX139602 => ["RNASeq.elegans.N2", 'phred', 'paired-end'], # Illumina sequencing of C. elegans LX837 larval L1 NSML and NSMR neurons 100bp PE (? possibly polyA+ ?)
-	    SRX139566 => ["RNASeq.elegans.N2", 'phred', 'paired-end'], # Illumina sequencing of C. elegans N2 larval L1 all cell library FGSR402 - DSN treated - RNAseq random fragment library 100bp PE (? possibly polyA+ ?)
-	    SRX139567 => ["RNASeq.elegans.N2", 'phred', 'paired-end'], # Illumina sequencing of C. elegans larval L2 A motor neuron library FGSR408 - DSN treated - RNAseq random fragment library 100bp PE (? possibly polyA+ ?)
-	    SRX139591 => ["RNASeq.elegans.N2", 'phred', 'paired-end'], # Illumina sequencing of C. elegans N2 larval L1 all cell library FGSR401 - DSN treated - RNAseq random fragment library 100bp PE (? possibly polyA+ ?)
-	    SRX139592 => ["RNASeq.elegans.N2", 'phred', 'paired-end'], # Illumina sequencing of C. elegans larval L2 A motor neuron library FGSR414 - DSN treated - RNAseq random fragment library 100bp PE (? possibly polyA+ ?)
-	    SRX139603 => ["RNASeq.elegans.N2", 'phred', 'paired-end'], # Illumina sequencing of C. elegans larval L2 A motor neuron library FGSR414 - DSN treated - RNAseq random fragment library 100bp PE
-	    SRX145443 => ["RNASeq.elegans.N2", 'phred', 'paired-end'], # Illumina sequencing of C. elegans larval L1 all neurons library FGSR383 - total RNA - RNAseq random fragment library 77bp PE
-	    SRX145444 => ["RNASeq.elegans.N2", 'phred', 'paired-end'], # Illumina sequencing of C. elegans N2 larval L1 all cell library FGSR401 - total RNA - RNAseq random fragment library 77bp PE
-	    SRX145445 => ["RNASeq.elegans.N2", 'phred', 'paired-end'], # Illumina sequencing of C. elegans LX837 larval L1 NSML and NSMR neurons library FGSR387 - total RNA - RNAseq random fragment library 76bp PE
-	    SRX145446 => ["RNASeq.elegans.N2", 'phred', 'paired-end'], # Illumina sequencing of C. elegans larval L1 all neurons library FGSR391 - total RNA - RNAseq random fragment library 77bp PE
-	    SRX145447 => ["RNASeq.elegans.N2", 'phred', 'paired-end'], # Illumina sequencing of C. elegans N2 larval L1 all cell library FGSR402 - total RNA - RNAseq random fragment library 77bp PE
-	    SRX145480 => ["RNASeq.elegans.N2", 'phred', 'paired-end'], # Illumina sequencing of C. elegans N2 embryos hand picked at the 4 cell stage processed with Ribo-zero RNAseq random fragment library 100bp PE
-	    SRX145486 => ["RNASeq.elegans.N2", 'phred', 'paired-end'], # Illumina sequencing of C. elegans N2 early embryos treated with DSN - RNAseq random fragment library 100bp PE
-	    SRX145660 => ["RNASeq.elegans.N2", 'phred', 'paired-end'], # Illumina sequencing of C. elegans N2 early embryos treated with Ribo-zero - RNAseq random fragment library 100bp PE
-	    SRX145661 => ["RNASeq.elegans.N2", 'phred', 'paired-end'], # Illumina sequencing of C. elegans N2 larval L2 treated with Ribo-zero - RNAseq random fragment library 100bp PE
-	    SRX151597 => ["RNASeq.elegans.N2", 'phred', 'paired-end'], # Illumina sequencing of C. elegans N2 early embryo reference cells library FGSR260 - total RNA - DSN treated - RNAseq random fragment library 100bp PE 
-	    SRX151598 => ["RNASeq.elegans.N2", 'phred', 'paired-end'], # Illumina sequencing of C. elegans DZ685 embryonic Z1/Z4 cells library FGSR239 - total RNA - DSN treated - RNAseq random fragment library 100bp PE
-	    SRX151599 => ["RNASeq.elegans.N2", 'phred', 'paired-end'], # Illumina sequencing of C. elegans NW1229 larval L1 all neuron library FGSR383 - total RNA - DSN treated - RNAseq random fragment library 100bp PE 
-	    SRX151602 => ["RNASeq.elegans.N2", 'phred', 'paired-end'], # Illumina sequencing of C. elegans NW1229 larval L1 all neuron library FGSR381 - total RNA - DSN treated – RNAseq random fragment library 100bp PE
-	    SRX151607 => ["RNASeq.elegans.N2", 'phred', 'paired-end'], # Illumina sequencing of C. elegans N2 larval L2 library N2_L2 DSN treated - total RNA - RNAseq random fragment library 100bp PE
-	    SRX151617 => ["RNASeq.elegans.N2", 'phred', 'paired-end'], # Illumina sequencing of C. elegans LX837 larval L1 NSM neuron library FGSR389 - total RNA - DSN treated - RNAseq random fragment library 100bp PE 
-	    SRX151618 => ["RNASeq.elegans.N2", 'phred', 'paired-end'], # Illumina sequencing of C. elegans N2 adult gonad Ad_gonad-1 ribozero low input treated - total RNA - RNAseq random fragment library 100bp PE
-
-	    SRX190363 => ["RNASeq.elegans.N2", 'phred', 'single'], # Illumina sequencing of C. elegans DZ685 embryonic Z1/Z4 cells library FGSR239 - total RNA - DSN treated - RNAseq random fragment library 50bp SE
-	    SRX190364 => ["RNASeq.elegans.N2", 'phred', 'single'], # Illumina sequencing of C. elegans N2 early embryo reference cells library FGSR260 - total RNA - DSN treated - RNAseq random fragment library 50bp SE
-	    SRX190365 => ["RNASeq.elegans.N2", 'phred', 'single'], # Illumina sequencing of C. elegans NW1229 larval L1 all neuron library FGSR381 - total RNA - DSN treated – RNAseq random fragment library 50bp SE
-	    SRX190366 => ["RNASeq.elegans.N2", 'phred', 'single'], # Illumina sequencing of C. elegans NW1229 larval L1 all neuron library FGSR383 - total RNA - DSN treated - RNAseq random fragment library 50bp SE
-	    SRX190367 => ["RNASeq.elegans.N2", 'phred', 'single'], # Illumina sequencing of C. elegans N2 adult gonad Ad_gonad-1 ribozero low input treated - total RNA - RNAseq random fragment library 50bp SE
-	    SRX190368 => ["RNASeq.elegans.N2", 'phred', 'single'], # Illumina sequencing of C. elegans LX837 larval L1 NSM neuron library FGSR389 - total RNA - DSN treated - RNAseq random fragment library 50bp SE
-	    SRX190369 => ["RNASeq.elegans.N2", 'phred', 'single'], # Illumina sequencing of C. elegans N2 early embryos treated with Ribo-zero - RNAseq random fragment library 50bp SE
-	    SRX190370 => ["RNASeq.elegans.N2", 'phred', 'single'], # Illumina sequencing of C. elegans N2 larval L2 treated with Ribo-zero - RNAseq random fragment library 50bp SE
+	    SRX103986 => ["RNASeq.elegans.N2.WBls:0000063.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX103986", 'phred', 'paired-end'], # Illumina sequencing of C. elegans N2 young adult processed through single pass of Ribozero kit from Epicentre RNAseq random fragment library 100bp PE 
+	    SRX103987 => ["RNASeq.elegans.N2.WBls:0000063.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX103987", 'phred', 'single'], # Illumina sequencing of C. elegans N2 young adult processed through single pass of Ribozero kit from Epicentre RNAseq random fragment library 100bp SE 
+	    SRX103988 => ["RNASeq.elegans.N2.WBls:0000063.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX103988", 'phred', 'paired-end'], # Illumina sequencing of C. elegans N2 young adult processed through single pass of Ribozero kit from Epicentre RNAseq random fragment library 101bp PE 
+	    SRX103989 => ["RNASeq.elegans.N2.WBls:0000063.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX103989", 'phred', 'single'], # Illumina sequencing of C. elegans N2 young adult processed through single pass of Ribozero kit from Epicentre RNAseq random fragment library 101bp SE 
+	    SRX103990 => ["RNASeq.elegans.N2.WBls:0000063.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX103990", 'phred', 'single'], # Illumina sequencing of C. elegans N2 young adult sample -- Yad-1 ribominus sample 36bp SE
+	    SRX103991 => ["RNASeq.elegans.N2.WBls:0000063.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX103991", 'phred', 'single'], # Illumina sequencing of C. elegans N2 young adult sample -- Yad-1 ribominus sample 76bp SE
+	    SRX139602 => ["RNASeq.elegans.N2.WBls:0000024.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX139602", 'phred', 'paired-end'], # Illumina sequencing of C. elegans LX837 larval L1 NSML and NSMR neurons 100bp PE (? possibly polyA+ ?)
+	    SRX139566 => ["RNASeq.elegans.N2.WBls:0000024.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX139566", 'phred', 'paired-end'], # Illumina sequencing of C. elegans N2 larval L1 all cell library FGSR402 - DSN treated - RNAseq random fragment library 100bp PE (? possibly polyA+ ?)
+	    SRX139567 => ["RNASeq.elegans.N2.WBls:0000027.Hermaphrodite.WBbt:0005409.PRJNA33023.SRX139567", 'phred', 'paired-end'], # Illumina sequencing of C. elegans larval L2 A motor neuron library FGSR408 - DSN treated - RNAseq random fragment library 100bp PE (? possibly polyA+ ?)
+	    SRX139591 => ["RNASeq.elegans.N2.WBls:0000024.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX139591", 'phred', 'paired-end'], # Illumina sequencing of C. elegans N2 larval L1 all cell library FGSR401 - DSN treated - RNAseq random fragment library 100bp PE (? possibly polyA+ ?)
+	    SRX139592 => ["RNASeq.elegans.N2.WBls:0000027.Hermaphrodite.WBbt:0005409.PRJNA33023.SRX139592", 'phred', 'paired-end'], # Illumina sequencing of C. elegans larval L2 A motor neuron library FGSR414 - DSN treated - RNAseq random fragment library 100bp PE (? possibly polyA+ ?)
+	    SRX139603 => ["RNASeq.elegans.N2.WBls:0000027.Hermaphrodite.WBbt:0005409.PRJNA33023.SRX139603", 'phred', 'paired-end'], # Illumina sequencing of C. elegans larval L2 A motor neuron library FGSR414 - DSN treated - RNAseq random fragment library 100bp PE
+	    SRX145443 => ["RNASeq.elegans.N2.WBls:0000024.Hermaphrodite.WBbt:0003679.PRJNA33023.SRX145443", 'phred', 'paired-end'], # Illumina sequencing of C. elegans larval L1 all neurons library FGSR383 - total RNA - RNAseq random fragment library 77bp PE
+	    SRX145444 => ["RNASeq.elegans.N2.WBls:0000024.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX145444", 'phred', 'paired-end'], # Illumina sequencing of C. elegans N2 larval L1 all cell library FGSR401 - total RNA - RNAseq random fragment library 77bp PE
+	    SRX145445 => ["RNASeq.elegans.LX837.WBls:0000024.Hermaphrodite.WBbt:0003666.PRJNA33023.SRX145445", 'phred', 'paired-end'], # Illumina sequencing of C. elegans LX837 larval L1 NSML and NSMR neurons library FGSR387 - total RNA - RNAseq random fragment library 76bp PE
+	    SRX145446 => ["RNASeq.elegans.N2.WBls:0000024.Hermaphrodite.WBbt:0003679.PRJNA33023.SRX145446", 'phred', 'paired-end'], # Illumina sequencing of C. elegans larval L1 all neurons library FGSR391 - total RNA - RNAseq random fragment library 77bp PE
+	    SRX145447 => ["RNASeq.elegans.N2.WBls:0000024.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX145447", 'phred', 'paired-end'], # Illumina sequencing of C. elegans N2 larval L1 all cell library FGSR402 - total RNA - RNAseq random fragment library 77bp PE
+	    SRX145480 => ["RNASeq.elegans.N2.WBls:0000008.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX145480", 'phred', 'paired-end'], # Illumina sequencing of C. elegans N2 embryos hand picked at the 4 cell stage processed with Ribo-zero RNAseq random fragment library 100bp PE
+	    SRX145486 => ["RNASeq.elegans.N2.WBls:0000004.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX145486", 'phred', 'paired-end'], # Illumina sequencing of C. elegans N2 early embryos treated with DSN - RNAseq random fragment library 100bp PE
+	    SRX145660 => ["RNASeq.elegans.N2.WBls:0000004.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX145660", 'phred', 'paired-end'], # Illumina sequencing of C. elegans N2 early embryos treated with Ribo-zero - RNAseq random fragment library 100bp PE
+	    SRX145661 => ["RNASeq.elegans.N2.WBls:0000027.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX145661", 'phred', 'paired-end'], # Illumina sequencing of C. elegans N2 larval L2 treated with Ribo-zero - RNAseq random fragment library 100bp PE
+	    SRX151597 => ["RNASeq.elegans.N2.WBls:0000004.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX151597", 'phred', 'paired-end'], # Illumina sequencing of C. elegans N2 early embryo reference cells library FGSR260 - total RNA - DSN treated - RNAseq random fragment library 100bp PE 
+	    SRX151598 => ["RNASeq.elegans.DZ685.WBls:0000003.Hermaphrodite.WBbt:0008378.PRJNA33023.SRX151598", 'phred', 'paired-end'], # Illumina sequencing of C. elegans DZ685 embryonic Z1/Z4 cells library FGSR239 - total RNA - DSN treated - RNAseq random fragment library 100bp PE
+	    SRX151599 => ["RNASeq.elegans.NW1229.WBls:0000024.Hermaphrodite.WBbt:0003679.PRJNA33023.SRX151599", 'phred', 'paired-end'], # Illumina sequencing of C. elegans NW1229 larval L1 all neuron library FGSR383 - total RNA - DSN treated - RNAseq random fragment library 100bp PE 
+	    SRX151602 => ["RNASeq.elegans.NW1229.WBls:0000024.Hermaphrodite.WBbt:0003679.PRJNA33023.SRX151602", 'phred', 'paired-end'], # Illumina sequencing of C. elegans NW1229 larval L1 all neuron library FGSR381 - total RNA - DSN treated – RNAseq random fragment library 100bp PE
+	    SRX151607 => ["RNASeq.elegans.N2.WBls:0000027.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX151607", 'phred', 'paired-end'], # Illumina sequencing of C. elegans N2 larval L2 library N2_L2 DSN treated - total RNA - RNAseq random fragment library 100bp PE
+	    SRX151617 => ["RNASeq.elegans.LX837.WBls:0000024.Hermaphrodite.WBbt:0003666.PRJNA33023.SRX151617", 'phred', 'paired-end'], # Illumina sequencing of C. elegans LX837 larval L1 NSM neuron library FGSR389 - total RNA - DSN treated - RNAseq random fragment library 100bp PE 
+	    SRX151618 => ["RNASeq.elegans.N2.WBls:0000041.Hermaphrodite.WBbt:0005175.PRJNA33023.SRX151618", 'phred', 'paired-end'], # Illumina sequencing of C. elegans N2 adult gonad Ad_gonad-1 ribozero low input treated - total RNA - RNAseq random fragment library 100bp PE
+	    SRX190363 => ["RNASeq.elegans.DZ685.WBls:0000003.Hermaphrodite.WBbt:0008378.PRJNA33023.SRX190363", 'phred', 'single'], # Illumina sequencing of C. elegans DZ685 embryonic Z1/Z4 cells library FGSR239 - total RNA - DSN treated - RNAseq random fragment library 50bp SE
+	    SRX190364 => ["RNASeq.elegans.N2.WBls:0000004.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX190364", 'phred', 'single'], # Illumina sequencing of C. elegans N2 early embryo reference cells library FGSR260 - total RNA - DSN treated - RNAseq random fragment library 50bp SE
+	    SRX190365 => ["RNASeq.elegans.NW1229.WBls:0000024.Hermaphrodite.WBbt:0003679.PRJNA33023.SRX190365", 'phred', 'single'], # Illumina sequencing of C. elegans NW1229 larval L1 all neuron library FGSR381 - total RNA - DSN treated – RNAseq random fragment library 50bp SE
+	    SRX190366 => ["RNASeq.elegans.NW1229.WBls:0000024.Hermaphrodite.WBbt:0003679.PRJNA33023.SRX190366", 'phred', 'single'], # Illumina sequencing of C. elegans NW1229 larval L1 all neuron library FGSR383 - total RNA - DSN treated - RNAseq random fragment library 50bp SE
+	    SRX190367 => ["RNASeq.elegans.N2.WBls:0000041.Hermaphrodite.WBbt:0005175.PRJNA33023.SRX190367", 'phred', 'single'], # Illumina sequencing of C. elegans N2 adult gonad Ad_gonad-1 ribozero low input treated - total RNA - RNAseq random fragment library 50bp SE
+	    SRX190368 => ["RNASeq.elegans.LX837.WBls:0000024.Hermaphrodite.WBbt:0003666.PRJNA33023.SRX190368", 'phred', 'single'], # Illumina sequencing of C. elegans LX837 larval L1 NSM neuron library FGSR389 - total RNA - DSN treated - RNAseq random fragment library 50bp SE
+	    SRX190369 => ["RNASeq.elegans.N2.WBls:0000004.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX190369", 'phred', 'single'], # Illumina sequencing of C. elegans N2 early embryos treated with Ribo-zero - RNAseq random fragment library 50bp SE
+	    SRX190370 => ["RNASeq.elegans.N2.WBls:0000027.Hermaphrodite.WBbt:0007833.PRJNA33023.SRX190370", 'phred', 'single'], # Illumina sequencing of C. elegans N2 larval L2 treated with Ribo-zero - RNAseq random fragment library 50bp SE
 	    
 
 
@@ -496,43 +507,44 @@ if ($species eq 'elegans') {
 	    
 	    #Long noncoding RNAs in C. elegans Jin-Wu Nam and David P. Bartel
 	    #Genome Res. 2012 22: 2529-2540
+	    # WBPaper00041194
 	    
-	    SRX142905 => ["RNASeq.elegans.N2", 'phred', 'single'], # PRJNA159607  (GEO GSE36394)
-	    SRX142904 => ["RNASeq.elegans.N2", 'phred', 'single'], # PRJNA159607  (GEO GSE36394)
-
-
+	    SRX142905 => ["RNASeq.elegans.N2.WBls:0000041.Hermaphrodite.WBbt:0007833.PRJNA159607.SRX142905", 'phred', 'single'], # PRJNA159607  (GEO GSE36394) Illumina Genome Analyzer sequencing; GSM916520: sRNA_adult; Caenorhabditis elegans; RNA-Seq
+	    SRX142904 => ["RNASeq.elegans.N2.WBls:0000038.Hermaphrodite.WBbt:0007833.PRJNA159607.SRX142904", 'phred', 'single'], # PRJNA159607  (GEO GSE36394) Illumina Genome Analyzer sequencing; GSM916519: sRNA_L4; Caenorhabditis elegans; RNA-Seq
+	    
+	    
 	    # these are small RNA experiments - PROBABLY NOT GOOD TO USE!.
 	    # -----------------------------------------------------------
-
-	      SRX033023 => ["RNASeq.elegans.N2.WBls:0000063.Hermaphrodite.WBbt:0007833.PRJNA168961.SRX033023", 'phred', 'single'], # GSE25739 (Changes in expression of small non-coding RNAs, including microRNAs, in response to stress in C. elegans), control, young adult, whole-animal
-	      
-	      # PubMed 19734907
-	      SRX012402 => [], # PRJNA119753 (Illumina sequencing of small RNAs from C. elegans embryos), 2 to 4 cell embryos
-	      SRX012403 => [], # PRJNA119753 (Illumina sequencing of small RNAs from C. elegans embryos), 1 cell embryos
-	      SRX012404 => [], # PRJNA119753 (Illumina sequencing of small RNAs from C. elegans embryos), post-gastrulation embryos
-	      SRX012405 => [], # PRJNA119753 (Illumina sequencing of small RNAs from C. elegans embryos), older embryos (late stage?)
-	      SRX012406 => [], # PRJNA119753 (Illumina sequencing of small RNAs from C. elegans embryos), 1 cell embryos
-	      SRX012407 => [], # PRJNA119753 GSM427346 (Illumina sequencing of small RNAs from C. elegans embryos), mixed stage embryos
-	      
-	      SRX003793 => ["RNASeq.elegans.BA671.WBls:0000063.Hermaphrodite.WBbt:0007833.PRJNA168961.SRX003793", 'phred', 'single'],  # GSM336572 (RNAs enriched for small RNA species (less than 200nt)), young adult spe-9 hermaphrodites, whole-animal
-	      
-	      SRX003792 => [], # GSM336086 (RNAs enriched for small RNA species (less than 200nt)), young adult males
-	      SRX003791 => [], # GSM336060 (RNAs enriched for small RNA species (less than 200nt)), young adult hermaphrodites
-	      SRX003790 => [], # GSM336059 (RNAs enriched for small RNA species (less than 200nt)), mid-L4 hermaphrodites
-	      SRX003789 => [], # GSM336058 (RNAs enriched for small RNA species (less than 200nt)), mid-L3 hermaphrodites
-	      SRX003788 => [], # GSM336056 (RNAs enriched for small RNA species (less than 200nt)), mid-L2 hermaphrodites
-	      SRX003787 => [], # GSM336055 (RNAs enriched for small RNA species (less than 200nt)), mid-L1 hermaphrodites
-	      SRX003786 => [], # GSM336052 (RNAs enriched for small RNA species (less than 200nt)), embryo hermaphrodites
-	      
-	      
-	      
-	     );
-  }
-################################################################################################################################################
-
-
+	    
+	    ##  SRX033023 => ["RNASeq.elegans.N2.WBls:0000063.Hermaphrodite.WBbt:0007833.PRJNA168961.SRX033023", 'phred', 'single'], # GSE25739 (Changes in expression of small non-coding RNAs, including microRNAs, in response to stress in C. elegans), control, young adult, whole-animal
+	    
+	    # PubMed 19734907
+	    ##  SRX012402 => [], # PRJNA119753 (Illumina sequencing of small RNAs from C. elegans embryos), 2 to 4 cell embryos
+	    ##  SRX012403 => [], # PRJNA119753 (Illumina sequencing of small RNAs from C. elegans embryos), 1 cell embryos
+	    ##  SRX012404 => [], # PRJNA119753 (Illumina sequencing of small RNAs from C. elegans embryos), post-gastrulation embryos
+	    ##  SRX012405 => [], # PRJNA119753 (Illumina sequencing of small RNAs from C. elegans embryos), older embryos (late stage?)
+	    ##  SRX012406 => [], # PRJNA119753 (Illumina sequencing of small RNAs from C. elegans embryos), 1 cell embryos
+	    ##  SRX012407 => [], # PRJNA119753 GSM427346 (Illumina sequencing of small RNAs from C. elegans embryos), mixed stage embryos
+	    
+	    ##  SRX003793 => ["RNASeq.elegans.BA671.WBls:0000063.Hermaphrodite.WBbt:0007833.PRJNA168961.SRX003793", 'phred', 'single'],  # GSM336572 (RNAs enriched for small RNA species (less than 200nt)), young adult spe-9 hermaphrodites, whole-animal
+	    
+	    ##  SRX003792 => [], # GSM336086 (RNAs enriched for small RNA species (less than 200nt)), young adult males
+	    ##  SRX003791 => [], # GSM336060 (RNAs enriched for small RNA species (less than 200nt)), young adult hermaphrodites
+	    ##  SRX003790 => [], # GSM336059 (RNAs enriched for small RNA species (less than 200nt)), mid-L4 hermaphrodites
+	    ##  SRX003789 => [], # GSM336058 (RNAs enriched for small RNA species (less than 200nt)), mid-L3 hermaphrodites
+	    ##  SRX003788 => [], # GSM336056 (RNAs enriched for small RNA species (less than 200nt)), mid-L2 hermaphrodites
+	    ##  SRX003787 => [], # GSM336055 (RNAs enriched for small RNA species (less than 200nt)), mid-L1 hermaphrodites
+	    ##  SRX003786 => [], # GSM336052 (RNAs enriched for small RNA species (less than 200nt)), embryo hermaphrodites
+	    
+	    
+	    
+	   );
+  
+  ################################################################################################################################################
+  
+  
   if ($ribosome_occupancy) {
-
+    
     # these are the C. elegans data-sets for the ribosome occupancy
     # project "SRA049309.1" by Michael Stadler from Andy Fire's lab
     # From the Ribosome occupancy paper:
@@ -558,35 +570,35 @@ if ($species eq 'elegans') {
 	      SRX118116  => ["C. elegans L1 mRNAseq", 'phred', 'single'], 
 	     );
   }
-
+  
 } elsif ($species eq 'brugia') {
-
-# data from Matt Berriman's group.
-# /nfs/disk69/ftp/pub4/pathogens/Brugia/malayi
-#
-# Seven libraries have thus far been sequenced :-
-#
-# Adult male
-# Adult female
-# mature microfillariae
-# immature microfillariae
-# L3 stage
-# L4 stage
-# eggs embryos
-#
-# The directory is structured as follows
-#
-# DATA : contains the raw sequence data in fastq files and is
-# organised as follows
-#
-# - DATA/SLX/library_name/lane/lane_1.fastq - first of the pair
-# - DATA/SLX/library_name/lane/lane_2.fastq - second of the pair
-
-# The dataset names are what the Berriman group called them - these data are not downloaded from the SRA
-
+  
+  # data from Matt Berriman's group.
+  # /nfs/disk69/ftp/pub4/pathogens/Brugia/malayi
+  #
+  # Seven libraries have thus far been sequenced :-
+  #
+  # Adult male
+  # Adult female
+  # mature microfillariae
+  # immature microfillariae
+  # L3 stage
+  # L4 stage
+  # eggs embryos
+  #
+  # The directory is structured as follows
+  #
+  # DATA : contains the raw sequence data in fastq files and is
+  # organised as follows
+  #
+  # - DATA/SLX/library_name/lane/lane_1.fastq - first of the pair
+  # - DATA/SLX/library_name/lane/lane_2.fastq - second of the pair
+  
+  # The dataset names are what the Berriman group called them - these data are not downloaded from the SRA
+  
   %expts = ( # key= SRA 'SRX' experiment ID, values = [Analysis ID, quality score metric]
 # Add new analysis/condition objects to ~wormpub/DATABASES/geneace
-
+	    
 	    ERX026028 => ["RNASeq.brugia.FR3.WBls:0000081.Unknown.WBbt:0007833.PRJEB2709.ERX026028", 'phred', 'paired-end'], # (RNASeq.brugia.ERP000948.L3.library_2586_7)
 	    ERX026029 => ["RNASeq.brugia.FR3.WBls:0000083.Male.WBbt:0007833.PRJEB2709.ERX026029", 'phred', 'paired-end'], # (RNASeq.brugia.ERP000948.adult_male)
 	    ERX026030 => ["RNASeq.brugia.FR3.WBls:0000081.Unknown.WBbt:0007833.PRJEB2709.ERX026030", 'phred', 'paired-end'], # (RNASeq.brugia.ERP000948.L3.library_5429_6)
@@ -602,7 +614,7 @@ if ($species eq 'elegans') {
 	    ERX026040 => ["RNASeq.brugia.FR3.WBls:0000077.Unknown.WBbt:0007833.PRJEB2709.ERX026040", 'phred', 'paired-end'], # In the SRA this is described as immature female but 'immature_microfillariae' is correct according to Michelle Michalski (says Michael Paulini) (RNASeq.brugia.ERP000948.immature_microfillariae.library_2870_5)
 	    ERX026041 => ["RNASeq.brugia.FR3.WBls:0000082.Unknown.WBbt:0007833.PRJEB2709.ERX026041", 'phred', 'paired-end'], # (RNASeq.brugia.ERP000948.L4.4359_8)
 	   );
-	    
+  
 } elsif ($species eq 'remanei') {
 # Add new analysis/condition  objects to ~wormpub/DATABASES/geneace
 
@@ -715,17 +727,17 @@ if ($species eq 'elegans') {
 	    SRX100770 => ["RNASeq.brenneri.DF5081.WBls:0000004.Unknown.WBbt:0007833.PRJNA75295.SRX100770", 'phred', 'paired-end'], # (RNASeq.brenneri.early_embryo.Replicate1)
 	    SRX100771 => ["RNASeq.brenneri.DF5081.WBls:0000038.Unknown.WBbt:0007833.PRJNA75295.SRX100771", 'phred', 'paired-end'], # (RNASeq.brenneri.L4_larva.Replicate2)
 	    SRX100772 => ["RNASeq.brenneri.DF5081.WBls:0000038.Unknown.WBbt:0007833.PRJNA75295.SRX100772", 'phred', 'paired-end'], # (RNASeq.brenneri.L4_larva.Replicate1)
-	    SRX100773 => ["RNASeq.brenneri.DF5081.WBls:0000063.Female.WBbt:0007833.PRJNA75295.SRX100773", 'phred', 'paired-end'], # (RNASeq.brenneri.Adult_female.Replicate5)
-	    SRX100774 => ["RNASeq.brenneri.DF5081.WBls:0000063.Female.WBbt:0007833.PRJNA75295.SRX100774", 'phred', 'single'], # (RNASeq.brenneri.Adult_female.Replicate4)
-	    SRX100775 => ["RNASeq.brenneri.DF5081.WBls:0000063.Female.WBbt:0007833.PRJNA75295.SRX100775", 'phred', 'single'], # (RNASeq.brenneri.Adult_female.Replicate3)
-	    SRX100776 => ["RNASeq.brenneri.DF5081.WBls:0000063.Female.WBbt:0007833.PRJNA75295.SRX100776", 'phred', 'paired-end'], # (RNASeq.brenneri.Adult_female.Replicate2)
-	    SRX100777 => ["RNASeq.brenneri.DF5081.WBls:0000063.Male.WBbt:0007833.PRJNA75295.SRX100777", 'phred', 'paired-end'], # (RNASeq.brenneri.Adult_male.Replicate5)
-	    SRX100778 => ["RNASeq.brenneri.DF5081.WBls:0000063.Male.WBbt:0007833.PRJNA75295.SRX100778", 'phred', 'single'], # (RNASeq.brenneri.Adult_male.Replicate4)
-	    SRX100779 => ["RNASeq.brenneri.DF5081.WBls:0000063.Male.WBbt:0007833.PRJNA75295.SRX100779", 'phred', 'single'], # (RNASeq.brenneri.Adult_male.Replicate3)
-	    SRX100780 => ["RNASeq.brenneri.DF5081.WBls:0000063.Male.WBbt:0007833.PRJNA75295.SRX100780", 'phred', 'paired-end'], # (RNASeq.brenneri.Adult_male.Replicate2)
+	    SRX100773 => ["RNASeq.brenneri.DF5081.WBls:0000041.Female.WBbt:0007833.PRJNA75295.SRX100773", 'phred', 'paired-end'], # (RNASeq.brenneri.Adult_female.Replicate5)
+	    SRX100774 => ["RNASeq.brenneri.DF5081.WBls:0000041.Female.WBbt:0007833.PRJNA75295.SRX100774", 'phred', 'single'], # (RNASeq.brenneri.Adult_female.Replicate4)
+	    SRX100775 => ["RNASeq.brenneri.DF5081.WBls:0000041.Female.WBbt:0007833.PRJNA75295.SRX100775", 'phred', 'single'], # (RNASeq.brenneri.Adult_female.Replicate3)
+	    SRX100776 => ["RNASeq.brenneri.DF5081.WBls:0000041.Female.WBbt:0007833.PRJNA75295.SRX100776", 'phred', 'paired-end'], # (RNASeq.brenneri.Adult_female.Replicate2)
+	    SRX100777 => ["RNASeq.brenneri.DF5081.WBls:0000041.Male.WBbt:0007833.PRJNA75295.SRX100777", 'phred', 'paired-end'], # (RNASeq.brenneri.Adult_male.Replicate5)
+	    SRX100778 => ["RNASeq.brenneri.DF5081.WBls:0000041.Male.WBbt:0007833.PRJNA75295.SRX100778", 'phred', 'single'], # (RNASeq.brenneri.Adult_male.Replicate4)
+	    SRX100779 => ["RNASeq.brenneri.DF5081.WBls:0000041.Male.WBbt:0007833.PRJNA75295.SRX100779", 'phred', 'single'], # (RNASeq.brenneri.Adult_male.Replicate3)
+	    SRX100780 => ["RNASeq.brenneri.DF5081.WBls:0000041.Male.WBbt:0007833.PRJNA75295.SRX100780", 'phred', 'paired-end'], # (RNASeq.brenneri.Adult_male.Replicate2)
 
-	    SRX103654 => ["RNASeq.brenneri.DF5081.WBls:0000063.Female.WBbt:0007833.PRJNA75295.SRX103654", 'phred', 'paired-end'], # (RNASeq.brenneri.Adult_female.Replicate1)
-	    SRX103657 => ["RNASeq.brenneri.DF5081.WBls:0000063.Male.WBbt:0007833.PRJNA75295.SRX103657", 'phred', 'paired-end'], # (RNASeq.brenneri.Adult_male.Replicate1)
+	    SRX103654 => ["RNASeq.brenneri.DF5081.WBls:0000041.Female.WBbt:0007833.PRJNA75295.SRX103654", 'phred', 'paired-end'], # (RNASeq.brenneri.Adult_female.Replicate1)
+	    SRX103657 => ["RNASeq.brenneri.DF5081.WBls:0000041.Male.WBbt:0007833.PRJNA75295.SRX103657", 'phred', 'paired-end'], # (RNASeq.brenneri.Adult_male.Replicate1)
 	   );
 
 
@@ -763,8 +775,8 @@ if ($species eq 'elegans') {
 
 
 	   );
-
-
+  
+  
 } else {
   $log->log_and_die("Unkown species: $species\n");
 }
@@ -2690,7 +2702,7 @@ sub get_feature_flanking_sequences {
 sub do_analysis_check {
 
   my $database = $wormbase->database('geneace');
-  my ($sra_study, $sra_experiment, $condition, $analysis_reference) = get_analysis_details($database);
+  my ($sra_study, $sra_experiment, $analysis_condition, $analysis_reference) = get_analysis_details($database);
   my ($life_stage, $condition_species, $sex, $strain, $condition_reference, $tissue) = get_condition_details($database);
   
   my %sp = (
@@ -2720,17 +2732,17 @@ sub do_analysis_check {
     # Analysis object details
     if (!defined $sra_study->{$analysis}) {$log->write_to("\n//Missing SRA Study name in Analysis $analysis\n\nAnalysis : $analysis\nDatabase SRA Study $sra_study_name\n"); }
     if (!defined $sra_experiment->{$analysis}) {$log->write_to("\n//Missing SRA Experiment name in Analysis $analysis\n\nAnalysis : $analysis\nDatabase SRA SRA $sra_experiment_name\n"); }
-    if (!defined $analysis_reference->{$analysis}) {$log->write_to("\n//Missing Reference in Analysis $analysis\n"); }
+    if (!defined $analysis_reference->{$analysis} || $analysis_reference->{$analysis} eq '') {$log->write_to("\n//Missing Reference in Analysis $analysis\n"); }
     
     if (defined $sra_study->{$analysis} && ($sra_study->{$analysis} ne $sra_study_name)) {$log->write_to("\n//WARNING: $sra_study_name doesn't match SRA Study name '$sra_study->{$analysis}' in Analysis $analysis\n"); }
     if (defined $sra_experiment->{$analysis} && ($sra_experiment->{$analysis} ne $sra_experiment_name)) {$log->write_to("\n//WARNING: $sra_experiment_name doesn't match SRA SRA name '$sra_experiment->{$analysis}' in Analysis $analysis\n"); }
 
     # Condition object details
-    if (!defined $condition->{$analysis}) {
+    if (!defined $analysis_condition->{$analysis}) {
       $log->write_to("\n//Missing Sample Condition in Analysis $analysis\n\nAnalysis : $analysis\nSample $analysis\n"); 
-      $condition->{$analysis} = $analysis;  # make a new Condition object
+      $analysis_condition->{$analysis} = $analysis;  # make a new Condition object
     }
-    my $condition = $condition->{$analysis};
+    my $condition = $analysis_condition->{$analysis};
     if (!defined $life_stage->{$condition}) {$log->write_to("\n//Missing life_stage in Condition $condition\n\nCondition : $condition\nLife_stage \"$life_stage_name\"\n"); }
     if (defined $life_stage->{$condition} && $life_stage->{$condition} !~ /WBls:\d{7}/) {$log->write_to("\n//ERROR: Invalid life_stage in Condition $condition\n// $life_stage->{$condition}\n\n"); }
     if (defined $life_stage->{$condition} && $life_stage->{$condition} ne $life_stage_name) {$log->write_to("\n//ERROR: mismatch between Life_stage id '$life_stage_name' in table in script and in the Condition $condition\n// $life_stage->{$condition}\n\n"); }
