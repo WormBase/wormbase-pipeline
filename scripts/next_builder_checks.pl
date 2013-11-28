@@ -6,8 +6,8 @@
 # A simple script to send a check list to the person who will be performing the next
 # build to check the current build
 #
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2013-07-04 15:13:43 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2013-11-28 16:25:01 $
 use strict;
 use warnings;
 use lib $ENV{'CVS_DIR'};
@@ -499,7 +499,7 @@ sub classes_to_check {
 			      },
 		 'briggsae' => {
 			       Ace2SO => 'transposable_element_ace2so',
-			       Analysis => 'RNASeq.briggsae.L4_larva',
+			       Analysis => 'RNASeq.briggsae.AF16.WBls:0000038.Hermaphrodite.WBbt:0007833.PRJNA75295.SRX052081',
 			       CDS => 'CBG00033',
 			       Clone => 'CBG29121',
 			       Condition => 'RNASeq.briggsae.L4_larva',
@@ -517,7 +517,7 @@ sub classes_to_check {
 			       },
 		 'brenneri' => {
 			       Ace2SO => 'transposable_element_ace2so',
-			       Analysis => 'RNASeq.brenneri.L4_larva.Replicate2',
+			       Analysis => 'RNASeq.brenneri.DF5081.WBls:0000038.Unknown.WBbt:0007833.PRJNA75295.SRX100771',
 			       CDS => 'CBN00033',
 			       Clone => 'CBN32995',
 			       Condition => 'RNASeq.brenneri.L4_larva.Replicate2',
@@ -531,7 +531,7 @@ sub classes_to_check {
 			       },
 		 'remanei' => {
 			       Ace2SO => 'transposable_element_ace2so',
-			       Analysis => 'RNASeq.remanei.L2_larva.Replicate1',
+			       Analysis => 'RNASeq.remanei.SB146.WBls:0000027.Unknown.WBbt:0007833.PRJNA75295.SRX101885',
 			       CDS => 'CRE00076',
 			       Clone => 'CRE32638',
 			       Condition => 'RNASeq.remanei.L4_larva.Replicate2',
@@ -541,7 +541,7 @@ sub classes_to_check {
 			      },
 		 'japonica' => {
 			       Ace2SO => 'transposable_element_ace2so',
-			       Analysis => 'RNASeq_Hillier.japonica.L4_larva_Replicate',
+			       Analysis => 'RNASeq.japonica.DF5081.WBls:0000038.Unknown.WBbt:0007833.PRJNA75295.SRX100091',
 			       CDS => 'CJA00088',
 			       Clone => 'CJA46583',
 			       Condition => 'RNASeq_Hillier.japonica.L4_larva_Replicate',
