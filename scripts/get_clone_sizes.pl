@@ -48,13 +48,14 @@ my @chromosomes=$wormbase->get_chromosome_names(-prefix => 1);
 # builds a table:
 # cb25.NA_364     2750
 foreach my $chromosome(@chromosomes){
-	 my $chr=$db->fetch(Sequence => $chromosome);
-	 if($wormbase->assembly_type eq ('contig')){
-		printf("$chr\t%s\n",$chr->at("DNA")->right(2)->name);
-	}
-	else {
-		map {printf("$_\t%s\n",$_->right->right - $_->right+1)}
-		$chr->at("Structure.Subsequence");
-	}
+  my $chr = $db->fetch(Sequence => $chromosome);
+  
+  if ($chr->DNA) {
+    printf("$chr\t%s\n",$chr->at("DNA")->right(2)->name);
+  } else {
+    foreach my $subseq ($chr->at("Structure.Subsequence")) {
+      printf("%s\t%s\n",$subseq->name, $subseq->right->right - $subseq->right+1);
+    }
+  }
 }
 $db->close;
