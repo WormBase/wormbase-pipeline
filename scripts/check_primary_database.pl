@@ -7,8 +7,8 @@
 # This script checks all of the species primary sequence databases....and geneace 
 # so that gene discrepancies can be identified early in the build.
 #
-# Last updated by: $Author: klh $     
-# Last updated on: $Date: 2013-11-28 12:39:38 $      
+# Last updated by: $Author: gw3 $     
+# Last updated on: $Date: 2013-11-28 17:14:38 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -70,6 +70,7 @@ my $remanei   = $wormbase->primary('remanei');
 my $brenneri  = $wormbase->primary('brenneri');
 my $japonica  = $wormbase->primary('japonica');
 my $brugia    = $wormbase->primary('brugia');
+my $ovolvulus = $wormbase->primary('ovolvulus');
 
 if ($debug){
 print<<HERE;
@@ -80,6 +81,7 @@ $briggsae
 $remanei
 $japonica
 $brugia
+$ovolvulus
 HERE
 }
 
@@ -95,6 +97,7 @@ if ((-e $remanei) && ($species eq 'remanei')) {push(@xaceinstances,"$remanei");}
 if ((-e $brenneri) && ($species eq 'brenneri')) {push(@xaceinstances,"$brenneri");}
 if ((-e $japonica) && ($species eq 'japonica')) {push(@xaceinstances,"$japonica");}
 if ((-e $brugia) && ($species eq 'brugia')) {push(@xaceinstances,"$brugia");}
+if ((-e $ovolvulus) && ($species eq 'ovolvulus')) {push(@xaceinstances,"$ovolvulus");}
 # example of running another script
 
 foreach $xaceinstances (@xaceinstances) {
