@@ -28,6 +28,7 @@ my $help;               # Help/Usage page
 my $sequence;           # Sequence file handle
 my $all;                # Compute for all clones
 my $species;
+my $einverted = '/software/pubseq/bin/EMBOSS-6.6.0/bin/einverted';
 
 
 GetOptions (
@@ -38,6 +39,7 @@ GetOptions (
 	    "test"        => \$test,
 	    "store:s"     => \$store,
 	    "species:s"   => \$species,
+            "einverted:s" => \$einverted,
 	    );
 
 
@@ -124,7 +126,7 @@ foreach my $clone (@clones2process) {
     #
     # Feature Inverted        3810    3831    90      "loop 353"
 
-    open (INV, "/software/pubseq/bin/EMBOSS-5.0.0/bin/einverted /tmp/inverted_temp.$$ -outfile stdout -gap 12 -threshold 50 -match 3 -mismatch -4 -outseq /dev/null -auto| ");
+    open (INV, "$einverted /tmp/inverted_temp.$$ -outfile stdout -gap 12 -threshold 50 -match 3 -mismatch -4 -outseq /dev/null -auto| ")||die(@!);
     while (<INV>) {
 	
 	chomp;
