@@ -7,8 +7,8 @@
 # This script checks all of the species primary sequence databases....and geneace 
 # so that gene discrepancies can be identified early in the build.
 #
-# Last updated by: $Author: pad $     
-# Last updated on: $Date: 2013-08-14 12:19:59 $      
+# Last updated by: $Author: klh $     
+# Last updated on: $Date: 2013-11-28 12:39:38 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -65,7 +65,6 @@ my @xaceinstances;
 my $geneace   = $wormbase->primary('geneace');
 my $camace    = $wormbase->primary('camace');
 my $citace    = $wormbase->primary('citace');
-my $cshace    = $wormbase->primary('cshace');
 my $briggsae  = $wormbase->primary('briggsae');
 my $remanei   = $wormbase->primary('remanei');
 my $brenneri  = $wormbase->primary('brenneri');
@@ -77,7 +76,6 @@ print<<HERE;
 $geneace
 $camace
 $citace
-$cshace
 $briggsae
 $remanei
 $japonica
@@ -92,7 +90,6 @@ HERE
 # Load the array with databases to check based on the species.
 if ((-e $camace) && ($species eq 'elegans'))  {push(@xaceinstances,"$camace");}
 if ((-e $citace) && ($species eq 'elegans')) {push(@xaceinstances,"$citace");}
-if ((-e $cshace) && ($species eq 'elegans')) {push(@xaceinstances,"$cshace");}
 if ((-e $briggsae) && ($species eq 'briggsae')) {push(@xaceinstances,"$briggsae");}
 if ((-e $remanei) && ($species eq 'remanei')) {push(@xaceinstances,"$remanei");}
 if ((-e $brenneri) && ($species eq 'brenneri')) {push(@xaceinstances,"$brenneri");}
