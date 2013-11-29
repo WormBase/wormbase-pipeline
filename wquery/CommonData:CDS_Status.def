@@ -17,7 +17,7 @@ Width 20
 Optional 
 Visible 
 Class 
-Class elegans_CDS 
+Class CDS 
 From 1 
 Condition Gene
  
