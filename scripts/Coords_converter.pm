@@ -489,13 +489,39 @@ sub invoke {
     # now read and load the data
     &_read_data_file($database, $species, $self);
 
+  } elsif ($species eq 'ovolvulus') {
+      
+    ##########################
+    #
+    # ovolvulus
+    #
+    ##########################
+
+    # the acedb database
+    
+    if ( $refresh ) {
+      print "refreshing coordinates for $database\n";
+      my $tace = $wormbase->tace;
+      my $command = "find Species Onchocerca volvulus\nFollow Assembly\nFollow Sequences\nshow -a Subsequence -f ${SL_coords_file}\n";
+        
+      open (ACE,"| $tace $database") or croak "cant open $database\n";
+      print ACE $command ;
+      close(ACE);
+
+      system("cp $SL_coords_file $clone_coords_file") and croak "cant cp $SL_coords_file\n" ;
+    }
+    
+    # now read and load the data
+    &_read_data_file($database, $species, $self);
+
+  } else {
   
     ##########################
     #
     # unknown species
     #
     ##########################
-  } else {
+
     if ( $refresh ) {
       print "refreshing coordinates for $database\n";
       my $tace = $wormbase->tace;
