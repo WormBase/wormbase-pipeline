@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl -w
-# Last edited by: $Author: klh $
-# Last edited on: $Date: 2013-11-28 12:58:03 $
+# Last edited by: $Author: mh6 $
+# Last edited on: $Date: 2013-11-29 15:39:18 $
 
 use strict;
 use lib  $ENV{'CVS_DIR'};
@@ -75,16 +75,16 @@ init history elegans briggsae pristionchus japonica brenneri brugia ovolvulus
 init history_pseudogene elegans briggsae pristionchus japonica brenneri brugia ovolvulus
 init history_transcript elegans briggsae pristionchus japonica brenneri brugia ovolvulus
 init Non_coding_transcript elegans briggsae pristionchus japonica brenneri remanei brugia ovolvulus
-init snlRNA elegans
-init snRNA elegans
-init rRNA elegans
-init scRNA elegans
-init snoRNA elegans
+init snlRNA elegans briggsae pristionchus japonica brenneri remanei brugia ovolvulus
+init snRNA elegans briggsae pristionchus japonica brenneri remanei brugia ovolvulus
+init rRNA elegans briggsae pristionchus japonica brenneri remanei brugia ovolvulus
+init scRNA elegans briggsae pristionchus japonica brenneri remanei brugia ovolvulus
+init snoRNA elegans briggsae pristionchus japonica brenneri remanei brugia ovolvulus
 init tRNA elegans briggsae pristionchus japonica brenneri remanei brugia ovolvulus
-init stRNA elegans
+init stRNA elegans briggsae pristionchus japonica brenneri remanei brugia ovolvulus
 init ncRNA elegans briggsae brugia
-init miRNA elegans
-init miRNA_primary_transcript elegans
+init miRNA elegans briggsae pristionchus japonica brenneri remanei brugia ovolvulus
+init miRNA_primary_transcript elegans briggsae pristionchus japonica brenneri remanei brugia ovolvulus
 blat BLAT_EST_BEST elegans briggsae remanei pristionchus japonica brenneri brugia ovolvulus
 blat BLAT_EST_OTHER elegans briggsae remanei pristionchus japonica brenneri brugia ovolvulus
 blat BLAT_NEMATODE elegans pristionchus remanei briggsae japonica brenneri brugia ovolvulus
