@@ -56,7 +56,7 @@ if (-e "/software/worm") then
 
     # PERL5LIB
     setenv PERL5LIB ${WORM_SW_ROOT}/lib/site_perl
-    setenv PERL5LIB ${ENSEMBL_CVS_ROOT_DIR}/bioperl-live:${PERL5LIB}
+    setenv PERL5LIB ${ENSEMBL_CVS_ROOT_DIR}/bioperl-1.2.3:${PERL5LIB}
     setenv PERL5LIB ${ENSEMBL_CVS_ROOT_DIR}/bioperl-run:${PERL5LIB}
 
 
