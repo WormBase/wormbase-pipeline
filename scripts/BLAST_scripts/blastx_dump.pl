@@ -10,8 +10,8 @@
 #   reduce the memory footprint. If you change it, DON'T use foreach and a large
 #   array of EnsEMBL objects, it invites disaster as it makes a copy of the array.
 #
-# Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2013-08-02 12:36:57 $ 
+# Last edited by: $Author: klh $
+# Last edited on: $Date: 2013-11-29 15:02:27 $ 
 
 my $usage = <<USAGE;
 blastx_dump.pl options:
@@ -121,6 +121,7 @@ my %logic2type = (
 		  brigpepx       => 'wublastx_briggsae',
 		  remapepx       => 'wublastx_remanei',
 		  brepepx        => 'wublastx_brenneri',
+		  ovolpepx       => 'wublastx_ovolvulus',
 		  gadflyx        => 'wublastx_fly',
 		  ipi_humanx     => 'wublastx_human',
 		  yeastx         => 'wublastx_yeast',
@@ -134,6 +135,7 @@ my %logic2prefix = (
 		    ppapepx        => 'PP:',
 		    jappepx        => 'JA:',
 		    brugpepx       => 'BM:',
+		    ovolpepx       => 'OV:',
 		    brigpepx       => 'BP:',
 		    remapepx       => 'RP:',
 		    brepepx        => 'CN:',
@@ -387,7 +389,7 @@ sub filter_features {
 }
 
 sub get_latest_pep {
-   my @species =qw(wormpep remapep brigpep ppapep jappep brepep brugpep);
+   my @species =qw(wormpep remapep brigpep ppapep jappep brepep brugpep ovolpep);
    my @history_files;
    SPECIES: foreach my $s (@species){
        my @files = sort {$b cmp $a} glob($ENV{'WORMPUB'}."/BUILD/WORMPEP/$s*/*history*");

@@ -93,6 +93,7 @@ my %processIds2prot_analysis = (
 				'jappepp'         => 'wublastp_japonica',
 				'brepepp'         => 'wublastp_brenneri',
 				'brugpepp'        => 'wublastp_brugia',
+				'ovolpepp'        => 'wublastp_ovolvulus',
 			       );
 
 
@@ -110,6 +111,7 @@ our %org_prefix = (
 		    'wublastp_japonica'      => 'JA',
 		    'wublastp_brenneri'      => 'CN',
 		    'wublastp_brugia'        => 'BM',
+		    'wublastp_ovolvulus'     => 'OV',
 		  );
 
 my $QUERY_SPECIES = $wormbase->full_name;
@@ -189,6 +191,7 @@ my %ppa_matches;
 my %jap_matches;
 my %bre_matches;
 my %bru_matches;
+my %ovo_matches;
 
 my %type_count;
 
@@ -216,8 +219,34 @@ while (<BLAST>) {
 
   # check if next protein
   if ( $current_pep and $current_pep ne $proteinId ) {  
-    &dumpData ($current_pep,\%worm_matches,\%human_matches,\%fly_matches,\%yeast_matches,\%swiss_matches,\%trembl_matches,\%brig_matches, \%rem_matches,\%jap_matches,\%bre_matches,\%ppa_matches,\%bru_matches) 
-            if (%worm_matches or %human_matches or %fly_matches or %yeast_matches or %swiss_matches or %trembl_matches or %brig_matches or %rem_matches or %jap_matches or %bre_matches or %ppa_matches or %bru_matches);
+    &dumpData ($current_pep,
+               \%worm_matches,
+               \%human_matches,
+               \%fly_matches,
+               \%yeast_matches,
+               \%swiss_matches,
+               \%trembl_matches,
+               \%brig_matches, 
+               \%rem_matches,
+               \%jap_matches,
+               \%bre_matches,
+               \%ppa_matches,
+               \%bru_matches,
+               \%ovo_matches) 
+        if (%worm_matches or 
+            %human_matches or 
+            %fly_matches or 
+            %yeast_matches or 
+            %swiss_matches or 
+            %trembl_matches or 
+            %brig_matches or 
+            %rem_matches or 
+            %jap_matches or 
+            %bre_matches or 
+            %ppa_matches or 
+            %bru_matches or
+            %ovo_matches
+        );
 
     #undef all hashes
     %worm_matches = ();
@@ -232,6 +261,7 @@ while (<BLAST>) {
     %jap_matches = ();
     %bre_matches = ();
     %bru_matches = ();
+    %ovo_matches = ();
     
     %type_count = ();
 
@@ -272,6 +302,8 @@ while (<BLAST>) {
     $added = &addWormData ( \%bre_matches,\@data);
   } elsif ( $analysis eq 'brugpepp') {
     $added = &addWormData ( \%bru_matches,\@data);
+  } elsif ( $analysis eq 'ovolpepp') {
+    $added = &addWormData ( \%ovo_matches,\@data);
   }
 
 
@@ -285,8 +317,33 @@ while (<BLAST>) {
   }
 }
 
-&dumpData ($current_pep,\%worm_matches,\%human_matches,\%fly_matches,\%yeast_matches,\%swiss_matches,\%trembl_matches,\%brig_matches, \%rem_matches,\%jap_matches,\%bre_matches,\%ppa_matches,\%bru_matches) 
-            if (%worm_matches or %human_matches or %fly_matches or %yeast_matches or %swiss_matches or %trembl_matches or %brig_matches or %rem_matches or %jap_matches or %bre_matches or %ppa_matches or %bru_matches);
+&dumpData ($current_pep,
+           \%worm_matches,
+           \%human_matches,
+           \%fly_matches,
+           \%yeast_matches,
+           \%swiss_matches,
+           \%trembl_matches,
+           \%brig_matches, 
+           \%rem_matches,
+           \%jap_matches,
+           \%bre_matches,
+           \%ppa_matches,
+           \%bru_matches,
+           \%ovo_matches) 
+    if (%worm_matches or 
+        %human_matches or 
+        %fly_matches or 
+        %yeast_matches or 
+        %swiss_matches or 
+        %trembl_matches or 
+        %brig_matches or 
+        %rem_matches or 
+        %jap_matches or 
+        %bre_matches or 
+        %ppa_matches or 
+        %bru_matches or 
+        %ovo_matches);
 
 
 close OUT;
@@ -600,6 +657,7 @@ sub species_lookup {
       my %species = ( 'wublastp_worm'          => 'Caenorhabditis elegans',
 		      'wublastp_briggsae'      => 'Caenorhabditis briggsae',
 		      'wublastp_brugia'        => 'Brugia malayi',
+		      'wublastp_ovolvulus'     => 'Onchocerca volvulus',
 		      'wublastp_remanei'       => 'Caenorhabditis remanei',
 		      'wublastp_japonica'      => 'Caenorhabditis japonica',
 		      'wublastp_brenneri'      => 'Caenorhabditis brenneri',

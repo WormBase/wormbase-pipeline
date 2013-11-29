@@ -14,7 +14,7 @@ use Wormbase;
 use Getopt::Long;
 use Log_files;
 
-my ($wormpep, $brigpep, $remapep, $brepep, $chroms, $test, $debug, $store, $ppapep, $jap, $brugpep);
+my ($wormpep, $brigpep, $remapep, $brepep, $chroms, $test, $debug, $store, $ppapep, $jap, $brugpep, $ovolpep);
 GetOptions (
             'wormpep' => \$wormpep,
             'brigpep'   => \$brigpep,
@@ -27,6 +27,7 @@ GetOptions (
             "store:s"   => \$store,
             'jappep'    => \$jap,
             'brugpep'   => \$brugpep,
+            'ovolpep'   => \$ovolpep,
 	   );
 
 my $wormbase;
@@ -57,12 +58,13 @@ if ( $chroms ) {
   }
 
 &copy_worm_proteins($wormbase) if $wormpep ;
-&copy_worm_proteins(Wormbase->new(-debug => $debug,-test => $test, -organism => 'Briggsae')) if $brigpep ;
-&copy_worm_proteins(Wormbase->new(-debug => $debug,-test => $test, -organism => 'Remanei')) if $remapep ;
-&copy_worm_proteins(Wormbase->new(-debug => $debug,-test => $test, -organism => 'Pristionchus')) if $ppapep ;
-&copy_worm_proteins(Wormbase->new(-debug => $debug,-test => $test, -organism => 'Japonica')) if $jap ;
-&copy_worm_proteins(Wormbase->new(-debug => $debug,-test => $test, -organism => 'Brenneri')) if $brepep ;
-&copy_worm_proteins(Wormbase->new(-debug => $debug,-test => $test, -organism => 'Brugia')) if $brugpep ;
+&copy_worm_proteins(Wormbase->new(-debug => $debug,-test => $test, -organism => 'briggsae')) if $brigpep ;
+&copy_worm_proteins(Wormbase->new(-debug => $debug,-test => $test, -organism => 'remanei')) if $remapep ;
+&copy_worm_proteins(Wormbase->new(-debug => $debug,-test => $test, -organism => 'pristionchus')) if $ppapep ;
+&copy_worm_proteins(Wormbase->new(-debug => $debug,-test => $test, -organism => 'japonica')) if $jap ;
+&copy_worm_proteins(Wormbase->new(-debug => $debug,-test => $test, -organism => 'brenneri')) if $brepep ;
+&copy_worm_proteins(Wormbase->new(-debug => $debug,-test => $test, -organism => 'brugia')) if $brugpep ;
+&copy_worm_proteins(Wormbase->new(-debug => $debug,-test => $test, -organism => 'ovolvulus')) if $ovolpep ;
 
 $log->mail;
 exit(0);

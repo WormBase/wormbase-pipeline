@@ -1,7 +1,7 @@
 #!/usr/local/ensembl/bin/perl -w
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2013-04-23 10:54:45 $
+# Last edited by: $Author: klh $
+# Last edited on: $Date: 2013-11-29 15:02:27 $
 
 use lib $ENV{'CVS_DIR'};
 
@@ -278,6 +278,7 @@ if ($cleanup) {
                'jappep\d+.pep',
                'ppapep\d+.pep',
 	       'remapep\d+.pep',
+	       'ovolpep\d+.pep',
                'gadfly\d+.pep',
                'ipi_human_\d+_\d+.pep',
 	       'slimswissprot\d+.pep',
