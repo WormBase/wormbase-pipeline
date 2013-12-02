@@ -8,8 +8,8 @@
 # Option to add WBGeneIDs to the header of the file.
 # >2L52.1 gene=WBGene00007063
 #
-# Last updated by: $Author: pad $
-# Last updated on: $Date: 2013-05-01 11:45:05 $
+# Last updated by: $Author: klh $
+# Last updated on: $Date: 2013-12-02 15:51:12 $
 use strict;
 use lib $ENV{'CVS_DIR'};
 use Getopt::Long;
@@ -72,6 +72,9 @@ my $target= "${out}.mod";
 my $gspecies = $wormbase->full_name('-g_species' => 1);
 my $full_name = $wormbase->full_name;
 
+&fetch_gene_ids if $geneid;
+my $cds_regex = $wormbase->cds_regex_noend;
+
 ############
 # Main body
 ############
@@ -93,16 +96,16 @@ unless ($process) {
   my $connection = Ace->connect(-path => "$db") || die (Ace->error);
   my $object_it = $connection->fetch_many(-query => "Find $class; Species=\"${full_name}\"; Method=\"$method\";");
   while(my $object=$object_it->next){
-    if ($verbose){print $object->name."\n";}
     my $dna =$object->asDNA();
-    print FAOUT "$dna";
+    my @lines = split(/\n/, "$dna");
+    @lines = grep { /\S/ } @lines;
+    map { print FAOUT "$_\n" } @lines;
   }
   close FAOUT;
 }
 
 if ($geneid){
-  &fetch_gene_ids;
-  my $cds_regex = $wormbase->cds_regex_noend;
+
   if (-e $out) {
     open(out_fh, "<$out") || die "Failed to open $out\n" ;
     open(target_fh, ">$target") || die "Failed to open $target\n";
@@ -111,9 +114,9 @@ if ($geneid){
       s/>//;
       if (/($cds_regex)/) {
 	if (exists $gene_ids{$1}) {
-	  print target_fh "\n>$_ gene=$gene_ids{$1}\n";
+	  print target_fh ">$_ gene=$gene_ids{$1}\n";
 	} else {
-	  print target_fh "\n>$_\n";
+	  print target_fh ">$_\n";
 	}
       } elsif (/(\S+)/) {
 	print target_fh "$_\n";
@@ -147,22 +150,11 @@ $log->mail();
 exit(0);
 
 sub fetch_gene_ids {
-  my $wsid;
-#  unless ($version) {
-#    $wsid = $wormbase->get_wormbase_version;
-#  }
-#  else {
-#    $wsid = $version;
-#  }
-#  my $peppre = $wormbase->pepdir_prefix;
-#  my $pep_dir = $wormbase->peproot;
-my $source_pepfile = $wormbase->common_data."/cds2wbgene_id.dat";
-#  my $source_pepfile = "$pep_dir/${peppre}pep${wsid}/${peppre}pep${wsid}";
+  my $source_pepfile = $wormbase->common_data."/cds2wbgene_id.dat";
   if (-e $source_pepfile) {
     open(my $source_pep_fh, $source_pepfile);
     while(<$source_pep_fh>) {
-#      /^\>(\S+)\s+\S+\s+(\S+)/ and do {
-      /^\s+\'(\S+)\'\s+\S+\s+\'(\S+)\'\,/ and do {
+      /^\s+\'(\S+)\'\s+\S+\s+\'(\S+)\'\,?/ and do {        
 	$gene_ids{$1} = $2;
       };
     }
