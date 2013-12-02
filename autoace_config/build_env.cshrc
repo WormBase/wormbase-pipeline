@@ -52,5 +52,5 @@ setenv EG_PACKAGES /nfs/panda/ensemblgenomes/external
 setenv EG_BIN ${EG_PACKAGES}/bin
 
 # PATH
-set path  = (${EG_BIN} ${EG_BIN}/blat ${EG_BIN}/exonerate-2/bin ${WORM_BIN} ${WORM_PACKAGES}/bamtools/bin ${WORM_PACKAGES}/bowtie ${WORM_PACKAGES}/cufflinks ${WORM_PACKAGES}/samtools ${WORM_PACKAGES}/tophat $path)
+set path  = (${EG_BIN} ${EG_BIN}/blat ${EG_BIN}/exonerate-2/bin ${WORM_BIN} ${WORM_PACKAGES}/bamtools/bin ${WORM_PACKAGES}/bowtie ${WORM_PACKAGES}/cufflinks ${WORM_PACKAGES}/samtools ${WORM_PACKAGES}/tophat ${EG_BIN}/EMBOSS/bin $path)
 
