@@ -7,7 +7,7 @@
 # Usage : autoace_builder.pl [-options]
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2013-10-14 10:17:22 $
+# Last edited on: $Date: 2013-12-02 11:38:36 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -232,7 +232,7 @@ if ($gff_munge or $gff3_munge) {
 
   if ($gff3_munge) {
     $wormbase->run_script( 'GFF_post_process/GFF_post_process.pl -all -gff3', $log); 
-    my $new_gff = $wormbase->processed_GFF3_file;
+    my $new_gff = $wormbase->processed_GFF_file(1);
     if (not -e $new_gff) {
       $new_gff .= ".gz";
     }
