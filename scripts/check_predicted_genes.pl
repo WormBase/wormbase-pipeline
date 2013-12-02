@@ -4,7 +4,7 @@
 #
 # by Keith Bradnam
 #
-# Last updated on: $Date: 2013-11-05 16:57:36 $
+# Last updated on: $Date: 2013-12-02 13:43:00 $
 # Last updated by: $Author: pad $
 #
 # see pod documentation at end of file for more information about this script
@@ -164,12 +164,13 @@ sub main_gene_checks {
       print "$gene_model appears to be incomplete: it has no method.\n" if $verbose;
       next CHECK_GENE;
     }
-    unless (defined $gene_model->Source_exons) {
-      print "$gene_model appears to be incomplete: it has no Source_exons.\n" if $verbose;
-      next CHECK_GENE;
-    }
-    
     my $method_test = $gene_model->Method->name;
+    unless ($method_test =~ /ransposon/) {
+      unless (defined $gene_model->Source_exons) {
+	print "$gene_model appears to be incomplete: it has no Source_exons.\n" if $verbose;
+	next CHECK_GENE;
+      }
+    }
     unless ($gene_model_name =~ /$cds_regex/) {
       print "warning $gene_model_name invalid\n" if (($method_test !~ /history|tRNA|Transposon/) && ($gene_model_name !~ /\S+.t\d+/));
     }
