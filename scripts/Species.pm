@@ -528,7 +528,7 @@ sub chromosome_prefix {''}
 sub seq_name_regex{qr/^OVOC\d+/};
 sub pep_prefix {'OVP'}
 sub pepdir_prefix{'ovol'};
-sub cds_regex_noend{qr/Ov\d+[a-z]*/}; # for getting the CDS part of a Transcript name
+sub cds_regex_noend{qr/OVOC\d+[a-z]*/}; # for getting the CDS part of a Transcript name
 sub cds_regex{qr/OVOC\d+[a-z]*/};
 sub ncbi_tax_id {6282};
 sub ncbi_bioproject {'PRJEB513'};
