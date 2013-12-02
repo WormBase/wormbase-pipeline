@@ -28,6 +28,7 @@ my $help;               # Help/Usage page
 my $sequence;           # Sequence file handle
 my $all;                # Compute for all clones
 my $species;
+my $einverted;
 
 GetOptions (
 	    "all"         => \$all,
