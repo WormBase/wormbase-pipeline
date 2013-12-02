@@ -7,7 +7,7 @@
 # build to check the current build
 #
 # Last updated by: $Author: pad $
-# Last updated on: $Date: 2013-12-02 14:44:28 $
+# Last updated on: $Date: 2013-12-02 15:37:18 $
 use strict;
 use warnings;
 use lib $ENV{'CVS_DIR'};
@@ -149,8 +149,8 @@ if($clones) {
     
     # check for 11 wublastx Homol_data objects (fly, brenenri, briggsae,
     # human, japonica, pristionchus, remanei, slimSwissProt,
-    # slimTrEmbl, worm, yeast)
-    my @expected = qw(fly brenneri briggsae human japonica pristionchus remanei slimSwissProt slimTrEmbl worm yeast);
+    # worm, yeast)
+    my @expected = qw(fly brenneri briggsae human japonica pristionchus remanei slimSwissProt worm yeast);
     &check_for_missing_data2(\@hd, \@expected, 'Feature_data', 'what is expected');
 
 #    if($count < 11) {
@@ -445,7 +445,6 @@ sub classes_to_check {
 			       Homol_data => 'AC3:wublastx_pristionchus',
 			       Homol_data => 'AC3:wublastx_remanei',
 			       Homol_data => 'AC3:wublastx_slimSwissProt',
-			       Homol_data => 'AC3:wublastx_slimTrEmbl',
 			       Homol_data => 'AC3:wublastx_worm',
 			       Homol_data => 'AC3:wublastx_yeast',
 			       Interaction => 'WBInteraction000000162',
