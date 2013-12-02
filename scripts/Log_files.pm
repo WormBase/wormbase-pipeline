@@ -114,6 +114,8 @@ sub make_build_log {
     $self->{"FH"}       = $log;
     $self->{"DEBUG"}    = $wormbase->debug;
     $self->{'wormbase'} = $wormbase;
+    $self->{'SPECIES'}  = $species;
+    $self->{'RUNLOG'}   = $wormbase->autoace."/runlog";
 
     bless( $self, $class );
 
@@ -146,24 +148,25 @@ sub mail {
     	$subject = "REPORT: $script ";
     }
     
+    if ($self->{'SPECIES'}){
+       $subject.=$self->{'SPECIES'};
+    }
+
     #write out status of script to runlog for dependancy checks
     if($self->{'wormbase'}) {
-    	$subject .= $self->{'wormbase'}->species;
-    	if($self->{'wormbase'}->autoace) {
-    	    my $runlog = $self->{'wormbase'}->autoace."/runlog";
-    	    open(RL,">>$runlog") or $self->error("cant write runlog\t$!\n"); #warning of failure?
-        	if ( $self->report_errors != 0 ) {
-        	    $subject = "ERROR: $subject";
-        	    $script = "ERROR : $script";
-        	    print RL "$script\tFAIL\n";
-        	}
-    	    else {
-        		print RL "$script:run\n";
-    	    }
-    	    close RL;
-    	}
-    }    
-    
+       my $runlog = $self->{'RUNLOG'};
+       open(RL,">>$runlog") or $self->error("cant write runlog\t$!\n"); #warning of failure?
+       if ( $self->report_errors != 0 ) {
+       	    print RL "ERROR : $script\tFAIL\n";
+       } else {
+            print RL "$script:run\n";
+       }
+       close RL;
+    }
+
+    if ( $self->report_errors != 0 ) {
+       $subject = "ERROR: $subject";
+    }
     
     #send the mail;
     Wormbase::mail_maintainer(undef, $subject, $recipient, $file ); #pass undef as not using in object based way.  method expects self.
