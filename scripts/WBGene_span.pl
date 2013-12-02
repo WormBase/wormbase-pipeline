@@ -6,8 +6,8 @@
 #
 # Creates SMapped Gene spans for Gene objects
 #
-# Last edited by: $Author: klh $
-# Last edited on: $Date: 2013-11-21 10:42:43 $
+# Last edited by: $Author: mh6 $
+# Last edited on: $Date: 2013-12-02 16:10:46 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -50,13 +50,9 @@ $log->write_to("Generating WBGene spans from database $database\n");
 my $coords = Coords_converter->invoke( $database, undef, $wormbase );
 my %worm_gene2geneID_name = $wormbase->FetchData('worm_gene2geneID_name');
 
-my (@methods, %gene_coords, %gene_span);
+my (%gene_coords, %gene_span);
 
-if ($wormbase->species eq "elegans") {
-  @methods = qw(Coding_transcript Non_coding_transcript Pseudogene ncRNA tRNA miRNA_primary_transcript snRNA snlRNA snoRNA rRNA scRNA stRNA Transposon_CDS Transposon_Pseudogene);
-} else {
-  @methods = qw(Coding_transcript Non_coding_transcript Pseudogene ncRNA tRNA);
-}
+my  @methods = qw(Coding_transcript Non_coding_transcript Pseudogene ncRNA tRNA miRNA_primary_transcript snRNA snlRNA snoRNA rRNA scRNA stRNA Transposon_CDS Transposon_Pseudogene);
   
 foreach my $method (@methods) {
   print "checking $method \n" if $debug;
