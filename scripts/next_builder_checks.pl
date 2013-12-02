@@ -6,8 +6,8 @@
 # A simple script to send a check list to the person who will be performing the next
 # build to check the current build
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2013-11-28 16:25:01 $
+# Last updated by: $Author: pad $
+# Last updated on: $Date: 2013-12-02 14:44:28 $
 use strict;
 use warnings;
 use lib $ENV{'CVS_DIR'};
@@ -558,7 +558,7 @@ sub classes_to_check {
 				   },
 		 'brugia' => {
 			       Ace2SO => 'coding_transcript_ace2so',
-			       CDS => 'Bm4144c',
+			       CDS => 'Bm9558e',
 			       Condition => 'RNASeq.brugia.ERP000948.adult_female',
 			       Feature => 'WBsf899556',
 			       Feature_data => '1512607:Dust',
