@@ -6,7 +6,7 @@
 # from the Coding_transcript and curated GFF split files
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-12-02 16:09:34 $
+# Last updated on: $Date: 2013-12-02 16:14:54 $
 
 
 use strict;
@@ -143,7 +143,7 @@ foreach my $bit (@bits_of_work) {
   # Do not need the coding_exons for GFF3
   if (not $gff3) {
     foreach my $cds (sort keys %cds) {
-      foreach my $trans (sort keys $transcripts{$cds}) {
+      foreach my $trans (sort keys %{$transcripts{$cds}}) {
         foreach my $cex (@{$cds{$cds}->{coding_exons}}) {
           print $outfh join("\t", 
                             $cds{$cds}->{chr},
