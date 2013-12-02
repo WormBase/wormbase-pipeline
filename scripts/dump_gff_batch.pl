@@ -141,7 +141,8 @@ CHROMLOOP: foreach my $chrom ( @chromosomes ) {
     my $job_name = "worm_".$wormbase->species."_gffbatch";
     my @bsub_options = scalar(@chromosomes) <= 50 ? (-M => "3500", 
 						    -R => "\"select[mem>3500] rusage[mem=3500]\"",
-						   ) : ();
+						   ) : (-M => "500", 
+                                                       -R => "\"select[mem>=500] rusage[mem=500]\"");
     my $out = scalar(@chromosomes) <= 50 
         ? "$scratch_dir/wormpubGFFdump.$chrom.lsfout" 
         : "$scratch_dir/wormpubGFFdump.$submitchunk.lsfout";
