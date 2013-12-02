@@ -28,8 +28,6 @@ my $help;               # Help/Usage page
 my $sequence;           # Sequence file handle
 my $all;                # Compute for all clones
 my $species;
-my $einverted = '/software/pubseq/bin/EMBOSS-6.6.0/bin/einverted';
-
 
 GetOptions (
 	    "all"         => \$all,
@@ -42,7 +40,7 @@ GetOptions (
             "einverted:s" => \$einverted,
 	    );
 
-
+$einverted = "einverted" if not defined $einverted;
 # Help menu
 
 if ($help) {
