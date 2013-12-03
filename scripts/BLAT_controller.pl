@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl5.8.0 -w
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2013-11-28 11:34:41 $
+# Last edited on: $Date: 2013-12-03 15:34:05 $
 
 
 use lib $ENV{'CVS_DIR'};
@@ -21,25 +21,26 @@ my ($test, $database, $debug);
 my ($mask, $dump_dna, $run, $postprocess, $load, $process, $intron, $blat_exe);
 my @types;
 my $store;
-my ($species, $qspecies, $nematode, $no_backup_on_load);
+my ($species, $qspecies, $nematode, $no_backup_on_load, $min_coverage);
 
 GetOptions (
-	    'debug:s'        => \$debug,
-	    'test'           => \$test,
-	    'database:s'     => \$database,
-	    'store:s'        => \$store,
-	    'species:s'      => \$species,  #target species (ie genome seq)
-	    'mask'           => \$mask,
-	    'dump'           => \$dump_dna,
-	    'process'        => \$process,
-	    'run'            => \$run,
-	    'postprocess'    => \$postprocess,
-	    'load'           => \$load,
-            'nobackuponload' => \$no_backup_on_load,
-	    'types:s'        => \@types,
-	    'qspecies:s'     => \$qspecies,    #query species (ie cDNA seq)
-	    'intron'         => \$intron,
-            'blatexe=s'      => \$blat_exe,
+  'debug:s'        => \$debug,
+  'test'           => \$test,
+  'database:s'     => \$database,
+  'store:s'        => \$store,
+  'species:s'      => \$species,  #target species (ie genome seq)
+  'mask'           => \$mask,
+  'dump'           => \$dump_dna,
+  'process'        => \$process,
+  'run'            => \$run,
+  'postprocess'    => \$postprocess,
+  'load'           => \$load,
+  'nobackuponload' => \$no_backup_on_load,
+  'types:s'        => \@types,
+  'qspecies:s'     => \$qspecies,    #query species (ie cDNA seq)
+  'intron'         => \$intron,
+  'blatexe=s'      => \$blat_exe,
+  'mincoverage=s'  => \$min_coverage,
 	   );
 
 my $wormbase;
@@ -261,13 +262,18 @@ if ( $process ) {
       #create virtual objects
       $log->write_to("Submitting $qspecies $type for virtual procesing\n");
       
-      my $cmd;
-      # only get data for confirmed introns from same-species alignmenrs
-      if ($qspecies eq $species and $intron) {
-        $cmd = $wormbase->build_cmd("blat2ace.pl -groupaligns -intron -type $type -qspecies $qspecies");
+      my $cmd = "blat2ace.pl -groupaligns -type $type -qspecies $qspecies";
+      if ($qspecies eq $species) {
+        if ($intron) {
+          $cmd .= " -intron";
+        } 
       } else {
-        $cmd = $wormbase->build_cmd("blat2ace.pl -groupaligns -type $type -qspecies $qspecies");
+        if ($min_coverage) {
+          $cmd .= " -mincoverage $min_coverage";
+        }
       }
+      $cmd = $wormbase->build_cmd($cmd);
+
       if ($test) {
         $cmd .= " -test";
       }

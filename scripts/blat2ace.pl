@@ -7,7 +7,7 @@
 # Exporter to map blat data to genome and to find the best match for each EST, mRNA, OST, etc.
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2011-12-02 21:40:34 $
+# Last edited on: $Date: 2013-12-03 15:34:05 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -25,25 +25,26 @@ use Coords_converter;
 
 my ($help, $debug, $test, $verbose, $store, $wormbase, $species);
 my ($database, $confirmed_introns, $qtype, $qspecies, $map_to_clone);
-my ($acefile, $pslfile, $virtualobjsfile, $confirmedfile, $bestm, $otherm, $group_align_segs, %query_seen);
+my ($acefile, $pslfile, $virtualobjsfile, $confirmedfile, $bestm, $otherm, $group_align_segs, $min_coverage, %query_seen);
 
 GetOptions (
-  "help"        => \$help,
-  "debug=s"     => \$debug,
-  "test"        => \$test,
-  "verbose"     => \$verbose,
-  "store:s"     => \$store,
-  "species:s"   => \$species,
-  "database:s"  => \$database,
-  "intron"      => \$confirmed_introns,
-  "cifile:s"    => \$confirmedfile,
-  "clone"       => \$map_to_clone,
-  "vfile:s"     => \$virtualobjsfile,
-  "type:s"      => \$qtype,
-  "qspecies:s"  => \$qspecies, #query species
-  "ace:s"       => \$acefile,
-  "psl:s"       => \$pslfile,
-  "groupaligns" => \$group_align_segs,
+  "help"          => \$help,
+  "debug=s"       => \$debug,
+  "test"          => \$test,
+  "verbose"       => \$verbose,
+  "store:s"       => \$store,
+  "species:s"     => \$species,
+  "database:s"    => \$database,
+  "intron"        => \$confirmed_introns,
+  "cifile:s"      => \$confirmedfile,
+  "clone"         => \$map_to_clone,
+  "vfile:s"       => \$virtualobjsfile,
+  "type:s"        => \$qtype,
+  "qspecies:s"    => \$qspecies, #query species
+  "ace:s"         => \$acefile,
+  "psl:s"         => \$pslfile,
+  "groupaligns"   => \$group_align_segs,
+  "mincoverage=s" => \$min_coverage,
     );
 
 
@@ -128,7 +129,7 @@ if (grep(/$qspecies/, @nematodes)) {
 # 2. Break the target the sequence into batches, and process each batch independently,
 #    re-reading the source file each time
 
-my (%best_scores, %target_feature_counts, @all_virt_hashes, $out_fh, $confirmed_fh);
+my (%best_coverage, %target_feature_counts, @all_virt_hashes, $out_fh, $confirmed_fh);
 
 open(BLAT, "<$pslfile") or $log->log_and_die("Could open $pslfile $!\n");
 while(<BLAT>) {
@@ -137,15 +138,18 @@ while(<BLAT>) {
 
   my ($match, $qsize, $qname, $tname) = ($f[0], $f[10], $f[9], $f[13]);
 
-  my $score = sprintf("%.1f", ($match/$qsize)*100);
+  my $coverage = ($match/$qsize)*100; 
 
-  if (not exists $best_scores{$qname} or $score > $best_scores{$qname}->{score}) {
-    $best_scores{$qname} = {
-      score => $score,
+  next if defined $min_coverage and $coverage < $min_coverage;
+  print STDERR "COVERAGE = $coverage, MIN_COVERAGE = $min_coverage\n";
+  
+  if (not exists $best_coverage{$qname} or $coverage > $best_coverage{$qname}->{coverage}) {
+    $best_coverage{$qname} = {
+      coverage => $coverage,
       count => 1,
     };
-  } elsif ($score == $best_scores{$qname}->{score}) {
-    $best_scores{$qname}->{count}++;
+  } elsif ($coverage == $best_coverage{$qname}->{coverage}) {
+    $best_coverage{$qname}->{count}++;
   }
 
   $target_feature_counts{$tname}++;
@@ -215,8 +219,10 @@ foreach my $seq_group (@sequence_groups) {
     
     # calculate (acedb) score for each blat match
     # new way of calculating score, divide by query size rather than sum of matching blocks, 
-    my $score = sprintf("%.1f", ($match/$qsize) * 100);
-    
+    my $coverage = ($match/$qsize) * 100;
+
+    next if defined $min_coverage and $coverage < $min_coverage;
+
     if ($strand =~ /^\S$/) {
       # single strand reported; BLAT always reports forward on the target in this case, 
       # flipping the query if necessary. 
@@ -271,7 +277,7 @@ foreach my $seq_group (@sequence_groups) {
       qstart   => $qstart,
       qend     => $qend,
       qstrand  => $qstrand,
-      score    => $score,
+      coverage => $coverage,
       #match    => $match,
       segments => \@segs,
       isbest   => 0,
@@ -288,7 +294,7 @@ foreach my $seq_group (@sequence_groups) {
     # Check for these here and filter them out
     
     my @nr_hits;
-    foreach my $hit (sort { $b->{score} <=> $a->{score} } @{$hits{$qname}}) {
+    foreach my $hit (sort { $b->{coverage} <=> $a->{coverage} } @{$hits{$qname}}) {
       my $overlaps = 0;
       
       KEPT: foreach my $kept (@nr_hits) {
@@ -316,17 +322,17 @@ foreach my $seq_group (@sequence_groups) {
         push @nr_hits, $hit;
       } else {
         # disregarding this hit
-        if ($hit->{score} == $best_scores{$qname}) {
-          $best_scores{$qname}->{count}--;
+        if (sprintf("%.1f", $hit->{coverage}) eq sprintf("%.1f",  $best_coverage{$qname})) {
+          $best_coverage{$qname}->{count}--;
         }
       }
     }
     
     # finally, mark the best-scoring hit as best iff it is the single best-scoring alignment
     
-    if ($best_scores{$qname}->{count} == 1) {
+    if ($best_coverage{$qname}->{count} == 1) {
       foreach my $hit (@nr_hits) {
-        if ($hit->{score} >= $best_scores{$qname}->{score}) {
+        if ($hit->{coverage} >= $best_coverage{$qname}->{coverage}) {
           $hit->{isbest} = 1;
         }
       }
@@ -528,7 +534,7 @@ sub write_ace {
         printf($outfh "DNA_homol\t\"%s\"\t%s\t%.1f\t%d\t%d\t%d\t%d%s\n", 
                $hit->{qname},
                ($hit->{isbest}) ? $best_m : $other_m,
-               $hit->{score},
+               $hit->{coverage},
                $hit->{tstrand} eq "+" ? $seg->{tstart} : $seg->{tend},
                $hit->{tstrand} eq "+" ? $seg->{tend}   : $seg->{tstart},
                $seg->{qstart},
