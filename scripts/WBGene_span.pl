@@ -7,7 +7,7 @@
 # Creates SMapped Gene spans for Gene objects
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2013-12-03 17:32:51 $
+# Last edited on: $Date: 2013-12-03 17:38:20 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -65,6 +65,7 @@ foreach my $method (@methods) {
            or ( $data[1] eq 'curated' )
            or ( $data[1] eq 'tRNA' )
            or ( $data[1] eq 'snRNA' )
+	   or ( $data[1] eq 'miRNA_mature' )
            or ( $data[1] eq 'miRNA_precursor' )
            or ( $data[1] eq 'rRNA' )
            or ( $data[1] eq 'scRNA' )
