@@ -7,7 +7,7 @@
 # quick script to populate Molecular_name tag in ?Gene model during build
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-10-14 10:16:24 $
+# Last updated on: $Date: 2013-12-03 10:09:43 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -133,7 +133,7 @@ while (<TACE>) {
     $counter++;
 
     # also capture version without WP: prefix
-    $protein =~ s/^WP\://;
+    $protein =~ s/^\S+\://;
     if (not exists $added_for_gene{$gene}->{$protein}) {
       print OUT "Molecular_name \"$protein\"\n";
       $added_for_gene{$gene}->{$protein} = 1;
