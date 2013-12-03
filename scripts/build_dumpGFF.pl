@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl -w
-# Last edited by: $Author: klh $
-# Last edited on: $Date: 2013-12-02 15:54:46 $
+# Last edited by: $Author: pad $
+# Last edited on: $Date: 2013-12-03 14:53:54 $
 
 use strict;
 use lib  $ENV{'CVS_DIR'};
@@ -9,7 +9,7 @@ use Storable;
 use Getopt::Long;
 use Log_files;
 
-our ($help, $debug, $test, $stage, $gff3, $giface, $giface_server, $giface_client, $cmd, $wormbase, $dump_dir);
+our ($help, $debug, $test, $stage, $gff3, $giface, $giface_server, $giface_client, $cmd, $wormbase, $dump_dir, $species);
 my $store;
 my @chromosomes;
 
@@ -24,6 +24,7 @@ GetOptions ("help"           => \$help,
             "gifaceserver:s" => \$giface_server,
             "gifaceclient:s" => \$giface_client,
             "dumpdir:s"      => \$dump_dir,
+	    "species:s"      => \$species,
 	   );
 
 
@@ -33,6 +34,7 @@ if( $store ) {
 else {
   $wormbase = Wormbase->new( -debug   => $debug,
 			     -test    => $test,
+			     -organism => $species,
 			   );
 }
 
