@@ -8,8 +8,8 @@
 # Uses Ant's Feature_mapper.pm module
 #
 #
-# Last updated by: $Author: klh $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2013-09-30 09:47:21 $        # quickly see when script was last changed and by whom
+# Last updated by: $Author: gw3 $                      # These lines will get filled in by cvs and helps us
+# Last updated on: $Date: 2013-12-04 14:58:50 $        # quickly see when script was last changed and by whom
 
 
 $|=1;
@@ -24,7 +24,6 @@ use Modules::Remap_Sequence_Change;
 
 my ($feature,$target,$flanking_left,$flanking_right,$coords,$span,$store);
 my $database;                # spcify a database to pull data from.....used when testing new models etc.
-my $noload;                  # don't load the data back to the database.
 my $outfile;                 # specify an output file for data.
 my $help;                    # Help menu
 my $debug;                   # Debug mode 
@@ -210,6 +209,8 @@ push (@features2map, "IDFILE") if $id_file;
 # main loop #
 #############
 
+open (PRIMARYOUT, ">$curout") or die "Failed to open update file $curout\n";
+
 foreach my $query (@features2map) {
   my $count_features = "0";
   $log->write_to("// Mapping $query features\n\n");
@@ -218,7 +219,6 @@ foreach my $query (@features2map) {
 
   # open output files
   open (OUTPUT, ">$outdir/feature_${query}.ace") or die "Failed to open output file\n";
-  open (PRIMARYOUT, ">$curout") or die "Failed to open update file $curout\n";
   
   if ($query eq 'IDFILE') {
     open (my $idfh, "<$id_file") or $log->log_and_die("Failed to open input file: $id_file\n");
@@ -445,9 +445,11 @@ EOF
     }
   }
   close(OUTPUT);
-    $wb->load_to_database($wb->autoace, "$outdir/feature_${query}.ace", "feature_mapping", $log) unless $no_load;
+  $wb->load_to_database($wb->autoace, "$outdir/feature_${query}.ace", "feature_mapping", $log) unless $no_load;
   $log->write_to("// Processed $count_features $query features\n\n");
 }
+
+close(PRIMARYOUT);
 
 
 
