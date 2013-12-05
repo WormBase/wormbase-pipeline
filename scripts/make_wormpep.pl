@@ -6,8 +6,8 @@
 #
 # Builds a wormpep data set from the current autoace database
 #
-# Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-10-14 10:16:24 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2013-12-05 11:00:41 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -497,6 +497,6 @@ sub count_isoforms{
   $log->write_to("\n\nThis release of Wormpep derives from $total_cds_count CDSs (from $no_isoform_count protein-coding genes)\n");
   
   # write the release letter (also does some checks)
-  $wormbase->release_wormpep($no_isoform_count,$total_cds_count,$isoform_count);
+  $wormbase->release_wormpep($no_isoform_count,$total_cds_count,$isoform_count, $log);
   chmod (0444 , "$new_wpdir/*") or $log->write_to("cannot chmod $new_wpdir/ files\n");
 }
