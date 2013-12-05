@@ -692,52 +692,34 @@ sub parse_dna_align_features_gff_fh {
 
 
 sub write_genes {
-  my ($self, $genes, $stable_id_check ) = @_;
+  my ($self, $genes, $exon_stable_ids ) = @_;
 
-  my $e = 0;
-  my %stable_ids;
-  if ($stable_id_check) {
-    my $sql = 'select stable_id from gene';
-    my $sth = $self->database_handle->dbc->prepare($sql);
-    $sth->execute;
-    while ( my ($stable_id) = $sth->fetchrow ) {
-      $stable_ids{$stable_id} = 1;
-    }
-  }
-  my %stored;
-  
-  GENE: foreach my $gene (@$genes) {
-
-    if ($stable_id_check) {
-      if ( $stable_ids{ $gene->stable_id } ) {
-        $self->verbose and print STDERR $gene->stable_id . " already exists\n";
-        my $id = $gene->stable_id . ".pseudo";
-        $gene->stable_id($id);
-        foreach my $transcript ( @{ $gene->get_all_Transcripts } ) {
-          my $trans_id = $transcript->stable_id . ".pseudo";
-          $transcript->stable_id($trans_id);
-          foreach my $e ( @{ $transcript->get_all_Exons } ) {
-            my $id = $e->stable_id . ".pseudo";
-            $e->stable_id($id);
-          }
-        }
-      }
-    }
-    if ( $stored{ $gene->stable_id } ) {
-      print STDERR "we have stored " . $gene->stable_id . " already\n";
-      next GENE;
-    }
-    my $gene_adaptor = $self->database_handle->get_GeneAdaptor;
+  my $gene_adaptor = $self->database_handle->get_GeneAdaptor;
+  foreach my $g (@$genes) {
     eval {
-      $stored{ $gene->stable_id } = 1;
-      $gene_adaptor->store($gene);
-      $e++;
+      $gene_adaptor->store($g);
     };
     if ($@) {
-      die("couldn't store " . $gene->stable_id . " problems=:$@:\n");
+      die("couldn't store " . $g->stable_id . " problems=:$@:\n");
     }
   }
-  print STDERR "\nStored gene: " . $e . "\n";
+  
+  if ($exon_stable_ids) {
+    my $sth = $self->database_handle->dbc->prepare("UPDATE exon set stable_id = ? WHERE exon_id = ?");
+
+    foreach my $g (@$genes) {
+      my @exons = sort { $a->start <=> $b->start } @{$g->get_all_Exons};
+      if ($g->strand < 0) {
+        @exons = reverse @exons;
+      }
+      for (my $edx=0; $edx < @exons; $edx++) {
+        my $ex = $exons[$edx];
+        my $db_id = $ex->dbID;
+        my $e_stable_id = sprintf("%s.e%d", $g->stable_id, $edx+1);
+        $sth->execute($e_stable_id, $db_id);
+      }
+    }
+  }
 }
 
 
