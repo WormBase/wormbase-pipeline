@@ -7,7 +7,7 @@
 # Usage : autoace_builder.pl [-options]
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2013-12-05 13:24:24 $
+# Last edited on: $Date: 2013-12-05 13:26:49 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -210,7 +210,8 @@ if ($gff_munge or $gff3_munge) {
       join("/", 
            $wormbase->ftp_site, 
            "releases", 
-           "WS" . ($wormbase->version - 1), 
+           "WS" . ($wormbase->version - 1),
+           "species",
            $wormbase->full_name(-g_species => 1),
            $wormbase->ncbi_bioproject,
            join(".", 
