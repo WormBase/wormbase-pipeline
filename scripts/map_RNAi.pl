@@ -6,7 +6,7 @@
 #
 # Version: $Version: $
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-10-03 08:25:16 $
+# Last updated on: $Date: 2013-12-05 16:56:07 $
 
 use strict;
 use warnings;
@@ -166,7 +166,7 @@ my (%rnai_go, %gene2rnai, %assoc_counts);
 foreach my $rnai ( keys %results ) {
   my %genes;
 
-  print $ace_fh "\nRNA : $rnai\n";
+  print $ace_fh "\nRNAi : $rnai\n";
   foreach my $rnai_type (keys %{$results{$rnai}}) {
     foreach my $class (keys %{$results{$rnai}->{$rnai_type}}) {
       foreach my $obj (keys %{$results{$rnai}->{$rnai_type}->{$class}}) {
