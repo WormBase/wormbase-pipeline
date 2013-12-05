@@ -157,7 +157,7 @@ while( my $member = shift @members){
 sub get_commondata {
     my ($name)=@_;
     my %genehash;
-    my @locations=qw(autoace remanei briggsae pristionchus japonica brenneri brugia);
+    my @locations=qw(autoace remanei briggsae pristionchus japonica brenneri brugia ovolvulus);
     my $dir='/nfs/panda/ensemblgenomes/wormbase/BUILD/';
       
     foreach my $loc(@locations) {
