@@ -7,7 +7,7 @@
 # Usage : autoace_builder.pl [-options]
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2013-12-04 15:05:43 $
+# Last edited on: $Date: 2013-12-05 13:24:24 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -216,7 +216,7 @@ if ($gff_munge or $gff3_munge) {
            join(".", 
                 $wormbase->full_name(-g_species => 1),
                 $wormbase->ncbi_bioproject, 
-                "WS" . $wormbase->version - 1,
+                "WS" . ($wormbase->version - 1),
                 "annotations")
       );
 
