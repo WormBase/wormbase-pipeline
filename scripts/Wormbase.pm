@@ -366,7 +366,7 @@ sub release_composition
 sub release_wormpep {		
   #($number_cds $number_total $number_alternate )
   my $self = shift;
-  my ($number_cds, $number_total, $number_alternate) = @_;
+  my ($number_cds, $number_total, $number_alternate, $log) = @_;
   my $ver = $self->get_wormbase_version;
   my $old_ver = $ver -1;
   
@@ -414,13 +414,19 @@ sub release_wormpep {
   
   #check
   my $mail;
-  if ( $lost + $new + $changed + $appeared != $entries ) {
+  if ( $lost + $new + $changed + $appeared != $entries ) { # this is not very informative - it says that the sum of types of lines in the diff file equals the total number of lines in the diff file - it doesn't say that we have a correct set of history data.
     print LETTER "cat of wormpep.diff$ver does not add up to the changes (from $0)";
   }
-  if ( $oldCDS + $net != $number_total ) {
+  if ( $oldCDS + $net != $number_total ) { # this is comparing the previous release number of proteins + net change of proteins (new + reappeared - lost) to the total number of proteins in this release. This is screwed by the double counting of reappeared proteins in the diff file because these proteins are in the diff file also as lost or changed.
     my $thediff = $number_total - $oldCDS;
-    print LETTER
-	"\nThe difference ($thediff) between the total CDS's of this ($number_total) and the last build ($oldCDS) does not equal the net change $net\nPlease investigate! ! \n";
+    $log->write_to(
+	"\nThe difference ($thediff) between the total CDS's of this ($number_total) and the last build ($oldCDS) does not equal the net change $net\nPlease investigate! ! \n");
+    $thediff = $number_total + $appeared - $oldCDS;
+    $log->write_to("However there is double counting of the $appeared reappeared proteins. Taking this into account the difference is ($thediff).\n");
+    if (!$thediff) {
+      $log->write_to("So that's probably OK.");
+    }
+    $log->write_to("We have noticed that there are also some instances of corruption of the history files.\n");
   }
   close LETTER;
   
