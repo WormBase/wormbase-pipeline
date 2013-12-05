@@ -51,6 +51,7 @@ my %species = (
     7209   => 'Loa loa',
     6233   => 'Panagrellus redivivus',
     6287   => 'Dirofilaria immitis',
+    6282   => 'Onchocerca volvulus',
 );
 
 my %cds2wbgene=%{&get_commondata('cds2wbgene_id')};
@@ -71,13 +72,15 @@ my @members = @{$member_adaptor->fetch_all()};
 
 while( my $member = shift @members){
     
+  # curated core species with Gene objects are added here
     next unless ($member->taxon_id == 6239
 	      || $member->taxon_id == 6238
 	      || $member->taxon_id == 31234
 	      || $member->taxon_id == 135651
 	      || $member->taxon_id == 281687
 	      || $member->taxon_id == 54126
-              || $member->taxon_id == 6279);
+              || $member->taxon_id == 6279
+	      || $member->taxon_id == 6282);
 
     my @homologies = @{$homology_adaptor->fetch_all_by_Member( $member)};
 
@@ -92,14 +95,16 @@ while( my $member = shift @members){
             
 #            my ( $me, $at ) = @{$ma};
             foreach my $pepm ( @{ $ma->gene_member()->get_all_SeqMembers() } ) { # was $me->get_all_peptide_Members()
-                
+
+  # curated core species with Gene objects are added here                
                 if ($pepm->taxon_id == 6239 
 	         || $pepm->taxon_id == 6238
 	         || $pepm->taxon_id == 31234
 	         || $pepm->taxon_id == 135651
 	         || $pepm->taxon_id == 281687
 	         || $pepm->taxon_id == 54126
-                 || $pepm->taxon_id == 6279) {
+                 || $pepm->taxon_id == 6279
+		 || $pepm->taxon_id == 6282) {
                     $t2{ $pepm->stable_id } = [$pepm->taxon_id,$homology->description]
                 }
 		else {
