@@ -7,8 +7,8 @@
 #
 # by Gary Williams
 #
-# Last updated by: $Author: klh $                      
-# Last updated on: $Date: 2013-09-12 15:37:08 $        
+# Last updated by: $Author: gw3 $                      
+# Last updated on: $Date: 2013-12-06 11:15:18 $        
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -143,6 +143,7 @@ foreach my $file (@files) {
     my @line = split /\t+/, $line;
     if ($line[8] =~ /Pseudogene\s+(\S+)/) {
       if ($line[2] eq 'intron') {next}
+      if ($line[1] eq 'Transposon_Pseudogene') {next} # these don't have gene_ids
       my $transcript_id = $1;
       $transcript_id =~ s/"//g;
 
@@ -154,7 +155,7 @@ foreach my $file (@files) {
       my ($sequence_name) = ($transcript_id =~ /($cds_regex)/);
       if (!defined $sequence_name) {$sequence_name = $transcript_id}# the tRNAs (e.g. C06G1.t2) are not changed correctly
       my $gene_id = $worm_gene2geneID_name{$sequence_name};
-      if (!defined $gene_id) {$log->log_and_die ("Can't find gene_id $sequence_name for: $line\n")}
+      if (!defined $gene_id) {$log->log_and_die ("Can't find Pseudogene gene_id $sequence_name for: $line\n")}
       $line[8] = "gene_id \"$gene_id\"; transcript_id \"$transcript_id\"";
       $line = join "\t", @line;
       print OUTDAT "$line\n";
