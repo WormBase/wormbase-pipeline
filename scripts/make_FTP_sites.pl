@@ -6,7 +6,7 @@
 # builds wormbase & wormpep FTP sites
 # 
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-11-26 15:00:24 $
+# Last updated on: $Date: 2013-12-06 13:45:05 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -562,11 +562,13 @@ sub copy_gff_files{
     mkpath($gff_dir,1,0775);
 
     my $source = sprintf("%s/%s.gff3", $wb->gff, $species);
-    my $target = sprintf("%s/%s.%s.%s.annotations.gff3", $gff_dir, $gspecies, $bioproj, $WS_version_name);
+    my $zipped_source = $source . ".gz";
+    my $target = sprintf("%s/%s.%s.%s.annotations.gff3.gz", $gff_dir, $gspecies, $bioproj, $WS_version_name);
 
     if (-e $source) {
-      $wb->run_command("cp -f $source $target", $log);
-      $wb->run_command("gzip -9 -f $target",$log);
+      $wb->run_command("cat $source | gzip -9 > $target", $log);
+    } elsif (-e $zipped_source) {
+      $wb->run_command("cp -f $zipped_source $target", $log);
     } else {
       $log->error("ERROR: No GFF3 data found for species $species\n");
     }
