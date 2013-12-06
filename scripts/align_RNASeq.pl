@@ -147,7 +147,7 @@
 # by Gary Williams
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2013-11-28 13:23:15 $
+# Last updated on: $Date: 2013-12-06 11:35:29 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -435,14 +435,8 @@ if ($species eq 'elegans') {
 	    # genes occur in multiple copies and we won't known
 	    # which are realy being expressed.
 
-	    # PubMed    22673872
-	    # WBPaper00041168
-	    # Genome Res. 2012 Aug;22(8):1488-98. doi: 10.1101/gr.134841.111. Epub 2012 Jun 6.
-	    # Effects of ADARs on small RNA processing pathways in C. elegans.
-	    # Warf MB, Shepherd BA, Johnson WE, Bass BL.
 
-	    SRX059215 => ["RNASeq.elegans.N2.WBls:0000002.Hermaphrodite.WBbt:0007833.SRP006489.SRX059215", 'phred', 'single'], # control, mixed-stage, whole-animal
-	    SRX059216 => ["RNASeq.elegans.N2.WBls:0000002.Hermaphrodite.WBbt:0007833.SRP006489.SRX059216", 'phred', 'single'], # control, mixed-stage, whole-animal
+
 
 	    # Hillier LW et al. (2009) Genome Res "Massively parallel sequencing of the polyadenylated transcriptome of C. ...."
 	    # WBPaper00032529
@@ -536,6 +530,14 @@ if ($species eq 'elegans') {
 	    ##  SRX003787 => [], # GSM336055 (RNAs enriched for small RNA species (less than 200nt)), mid-L1 hermaphrodites
 	    ##  SRX003786 => [], # GSM336052 (RNAs enriched for small RNA species (less than 200nt)), embryo hermaphrodites
 	    
+	    # PubMed    22673872
+	    # WBPaper00041168
+	    # Genome Res. 2012 Aug;22(8):1488-98. doi: 10.1101/gr.134841.111. Epub 2012 Jun 6.
+	    # Effects of ADARs on small RNA processing pathways in C. elegans.
+	    # Warf MB, Shepherd BA, Johnson WE, Bass BL.
+
+	    ## SRX059215 => ["RNASeq.elegans.N2.WBls:0000002.Hermaphrodite.WBbt:0007833.SRP006489.SRX059215", 'phred', 'single'], # control, mixed-stage, whole-animal, small RNA
+	    ## SRX059216 => ["RNASeq.elegans.N2.WBls:0000002.Hermaphrodite.WBbt:0007833.SRP006489.SRX059216", 'phred', 'single'], # control, mixed-stage, whole-animal, small RNA
 	    
 	    
 	   );
