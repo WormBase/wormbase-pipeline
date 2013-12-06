@@ -210,11 +210,12 @@ if ($map) {
       $errors++;
     }
   }
-  unlink @success_out, @success_id, @success_lsfout;
+  unlink @success_lsfout;
 
   if (not $errors) {
     # Finally, generated collated file
     $wb->run_command("cat @success_out > $collated_out_file", $log);
+    unlink @success_out;
   }
 }  
 
