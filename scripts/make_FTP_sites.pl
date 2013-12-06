@@ -6,7 +6,7 @@
 # builds wormbase & wormpep FTP sites
 # 
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-12-06 13:45:05 $
+# Last updated on: $Date: 2013-12-06 14:10:02 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -334,7 +334,7 @@ sub copy_blastx {
     if (-e $in_file) {
       my $out_file = "$blastx_dir/$gspecies.$WS_version_name.blastx.ace.gz";
 
-      $wormbase->run_command("cat $in_file | gzip -9 -c > $out_file", $log);
+      $wormbase->run_command("cat $in_file | gzip -n -9 -c > $out_file", $log);
     }
   }
 
@@ -365,7 +365,7 @@ sub copy_xrefs {
     my $out_file = "$targetdir/species/$gspecies/$bioproj/$gspecies.${bioproj}.${WS_version_name}.xrefs.txt.gz";
 
     if (-e $xref_file) {
-      $wormbase->run_command("cat $xref_file | gzip -9 -c > $out_file", $log);
+      $wormbase->run_command("cat $xref_file | gzip -n -9 -c > $out_file", $log);
     } else {
       $log->error("Could not find xref file $xref_file");
     }
@@ -471,7 +471,7 @@ sub copy_dna_files{
         if (scalar(@agp_files) == 1) {
           # just the one - assume its for whole genome and copy it across
           my ($single_file) = @agp_files;
-          $wormbase->run_command("cat $single_file | gzip -9 -c > ${target_agp_file}.gz", $log); 
+          $wormbase->run_command("cat $single_file | gzip -n -9 -c > ${target_agp_file}.gz", $log); 
         } else {
           # assume per-chromosome
           unlink $target_agp_file;
@@ -484,7 +484,7 @@ sub copy_dna_files{
               $log->error("ERROR: $gspecies : missing file: $chromdir/$chrom.agp\n");
             }
           }
-          $wormbase->run_command("gzip -9 -f $target_agp_file", $log);
+          $wormbase->run_command("gzip -n -9 -f $target_agp_file", $log);
         }
       }
     }
@@ -525,7 +525,7 @@ sub copy_gff_files{
       my $target = "$gff_dir/${fname_prefix}.gff2";
       $wormbase->run_command("rm -f $target", $log);
       $wormbase->run_command("cp -f -R $source_gff2_file $target", $log);
-      $wormbase->run_command("gzip -9 -f $target",$log);
+      $wormbase->run_command("gzip -n -9 -f $target",$log);
     } elsif (-e "${source_gff2_file}.gz") {
       my $target = "$gff_dir/${fname_prefix}.gff2.gz";
       $wormbase->run_command("cp -f -R ${source_gff2_file}.gz $target", $log);
@@ -538,7 +538,7 @@ sub copy_gff_files{
       my $target = "$gff_dir/${fname_prefix}.gff3";
       $wormbase->run_command("rm -f $target", $log);
       $wormbase->run_command("cp -f -R $source_gff3_file $target", $log);
-      $wormbase->run_command("gzip -9 -f $target",$log);
+      $wormbase->run_command("gzip -n -9 -f $target",$log);
     } elsif (-e "${source_gff3_file}.gz") {
       my $target = "$gff_dir/${fname_prefix}.gff3.gz";
       $wormbase->run_command("cp -f -R ${source_gff3_file}.gz $target", $log);
@@ -566,7 +566,7 @@ sub copy_gff_files{
     my $target = sprintf("%s/%s.%s.%s.annotations.gff3.gz", $gff_dir, $gspecies, $bioproj, $WS_version_name);
 
     if (-e $source) {
-      $wb->run_command("cat $source | gzip -9 > $target", $log);
+      $wb->run_command("cat $source | gzip -n -9 > $target", $log);
     } elsif (-e $zipped_source) {
       $wb->run_command("cp -f $zipped_source $target", $log);
     } else {
@@ -661,11 +661,11 @@ sub copy_rna_files{
     my $tgt_file = "$ftprna_dir/$gspecies.$bioproj.$WS_version_name.ncrna_transcripts.fa"; #target FTP file
     
     if (-e $src_file and -s $src_file) {
-      $wormbase->run_command("gzip -9 -c $src_file > ${tgt_file}.gz",$log);
+      $wormbase->run_command("gzip -n -9 -c $src_file > ${tgt_file}.gz",$log);
     } else {
       # this is a core file, needs to be present for all species; however,
       # not all species have ncRNA data. Therefore, create an empty placeholder
-      $wormbase->run_command("touch $tgt_file && gzip $tgt_file", $log);
+      $wormbase->run_command("touch $tgt_file && gzip -n $tgt_file", $log);
     }   
   }
 
@@ -686,7 +686,7 @@ sub copy_rna_files{
     my $unzipped_source = sprintf("%s/%s.ncrna.fa", $wb->sequences, $species);
 
     if (-e $unzipped_source) {
-      $wb->run_command("gzip -9 -c $unzipped_source > $target", $log);
+      $wb->run_command("gzip -n -9 -c $unzipped_source > $target", $log);
     } else {
       $log->write_to("Warning: no ncrna data found for species $species\n");
     }
@@ -762,7 +762,7 @@ sub copy_misc_files{
     my ($pre) = $file =~ /$srcdir\/(\S+_oligo_mapping)/;
     my $target = "$annotation_dir/$gspecies.$bioproj.$WS_version_name.${pre}.txt.gz";
     
-    $wormbase->run_command("cat $file | gzip -9 -c > $target", $log);
+    $wormbase->run_command("cat $file | gzip -n -9 -c > $target", $log);
   }
 
   #
@@ -893,7 +893,7 @@ sub copy_wormpep_files {
       }
       close($source_pep_fh);
 
-      $wb->run_command("gzip -9 -c $source_pepfile > $target_pepfile", $log);
+      $wb->run_command("gzip -n -9 -c $source_pepfile > $target_pepfile", $log);
     } else {
       $log->error("ERROR: Could not find peptide file for $gspecies ($source_pepfile)\n");
     }
@@ -901,7 +901,7 @@ sub copy_wormpep_files {
     if (-e $source_cdnafile) {
       my $target_cdnafile = "$tgt/$gspecies.$bioproj.${WS_version_name}.cds_transcripts.fa.gz";
       open(my $source_cdna_fh, $source_cdnafile);
-      open(my $target_cdna_fh, "| gzip -9 -c > $target_cdnafile");
+      open(my $target_cdna_fh, "| gzip -n -9 -c > $target_cdnafile");
       while(<$source_cdna_fh>) {
         if (/^\>(\S+)(.*)/) {
           if (exists $gene_ids{$1}) {
@@ -952,13 +952,13 @@ sub copy_wormpep_files {
     my $tgt_cdna_file = "$tgt/$gspecies.$bioproj.$WS_version_name.cds_transcripts.fa.gz";
 
     if (-e $src_pep_file) {
-      $wb->run_command("gzip -9 -c $src_pep_file > $tgt_pep_file", $log);
+      $wb->run_command("gzip -n -9 -c $src_pep_file > $tgt_pep_file", $log);
     } else {
       $log->write_to("Did not find $src_pep_file for $t3 - proceeding\n");
     }
 
     if (-e $src_cdna_file) {
-      $wb->run_command("gzip -9 -c $src_cdna_file > $tgt_cdna_file", $log);
+      $wb->run_command("gzip -n -9 -c $src_cdna_file > $tgt_cdna_file", $log);
     } else {
       $log->write_to("Did not find $src_cdna_file for $t3 - proceeding\n");
     }
@@ -994,7 +994,7 @@ sub copy_est_files {
     my $target = "$targetdir/species/$gspecies/$bioproj/$gspecies.$bioproj.$WS_version_name.ests.fa.gz";
     my $est_dir = $wb->build_data . "/cDNA/$species";
 
-    open(my $outfh, "| gzip -c -9 > $target") 
+    open(my $outfh, "| gzip -n -c -9 > $target") 
         or croak("Could not open $target for writing\n");
 
     foreach my $type (qw(EST mRNA ncRNA OST RST)) {
@@ -1162,7 +1162,7 @@ sub extract_confirmed_genes{
   }
   close(OUT);
 
-  $wormbase->run_command("gzip -9 -f $out_file", $log);
+  $wormbase->run_command("gzip -n -9 -f $out_file", $log);
 
   $db->close;
 
@@ -1245,7 +1245,7 @@ EOF
   }
   close(OUT);
 
-  $wormbase->run_command("gzip -9 -f $out", $log);
+  $wormbase->run_command("gzip -n -9 -f $out", $log);
 
   $runtime = $wormbase->runtime;
   $log->write_to("$runtime: Finished making cdna2orf list\n\n");  
@@ -1294,7 +1294,7 @@ sub make_geneID_list {
 
     close GENEID;
     $db->close();
-    $wormbase->run_command("gzip -9 -f $out", $log);
+    $wormbase->run_command("gzip -n -9 -f $out", $log);
   } 
 
   $runtime = $wormbase->runtime;
@@ -1370,7 +1370,7 @@ sub make_pcr_list {
 
   close(OUT);
 
-  $wormbase->run_command("gzip -9 -f $out", $log);
+  $wormbase->run_command("gzip -n -9 -f $out", $log);
 
   $runtime = $wormbase->runtime;
   $log->write_to("$runtime: Finished making list\n\n");
@@ -1405,7 +1405,7 @@ sub copy_homol_data {
 
       my $target_file = "$protein_dir/$gspecies.$bioproj.$WS_version_name.best_blastp_hits.txt.gz";
       # this script might be run more than once if there are problems
-      $wormbase->run_command("gzip -9 -f $source_file",$log) if (! -e "$source_file.gz"); 
+      $wormbase->run_command("gzip -n -9 -f $source_file",$log) if (! -e "$source_file.gz"); 
       $wormbase->run_command("scp $source_file.gz $target_file", $log);
     }
     $runtime = $wormbase->runtime;
@@ -1445,7 +1445,7 @@ sub make_gbrowse_gff {
     }
 
     $wb->run_command("gunzip -c $in_filename | $command", $log);
-    $wb->run_command("gzip -9 $out_filename", $log);
+    $wb->run_command("gzip -n -9 $out_filename", $log);
   }
 
   $runtime = $wormbase->runtime;
