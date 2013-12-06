@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.8.0 -w
+#!/usr/bin/env perl
 #
 # make_FTP_sites.pl
 #
@@ -6,7 +6,7 @@
 # builds wormbase & wormpep FTP sites
 # 
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-12-06 14:10:02 $
+# Last updated on: $Date: 2013-12-06 16:48:57 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -572,8 +572,58 @@ sub copy_gff_files{
     } else {
       $log->error("ERROR: No GFF3 data found for species $species\n");
     }
-
   }
+
+  # Finally, check the GFF3 only to generate a comparison report
+  my $report_file_name = sprintf("GFF3_comparison.WS%d-WS%d.txt", $WS_version - 1, $WS_version);
+  my $collated_report_file = sprintf("%s/%s", $wormbase->reports, $report_file_name);
+  my @all_report_files;
+
+  my %all_accessors = $wormbase->all_species_accessors();
+  foreach my $wb ($wormbase, sort { $a->species cmp $b->species } values %all_accessors) {
+    my $g_species = $wb->full_name('-g_species' => 1);
+    my $species = $wb->species;
+    my $bioproj = $wb->ncbi_bioproject;
+
+    my $cur_ver_gff3_file = sprintf("%s/species/%s/%s/%s.%s.WS%s.annotations.gff3.gz", 
+                                    $targetdir, 
+                                    $g_species,
+                                    $bioproj,
+                                    $g_species,
+                                    $bioproj,
+                                    $WS_version);
+    my $cur_ver_label = sprintf("%s.%s.WS%d", $g_species, $bioproj, $WS_version);
+
+    my $prev_ver_gff3_file = sprintf("%s/releases/WS%d/species/%s/%s/%s.%s.WS%s.annotations.gff3.gz", 
+                                     $wormbase->ftp_site,
+                                     $WS_version - 1,
+                                     $g_species,
+                                     $bioproj,
+                                     $g_species,
+                                     $bioproj,
+                                     $WS_version - 1);
+    my $prev_ver_label = sprintf("%s.%s.WS%d", $g_species, $bioproj, $WS_version - 1);
+
+    my $report_file = sprintf("%s/%s.%s", $wb->reports, $g_species, $report_file_name);
+
+    if (-e $prev_ver_gff3_file and -e $cur_ver_gff3_file) {
+      $wormbase->run_script("generate_gff_report.pl -final "
+                            . "-currentgff $cur_ver_gff3_file -currentlabel $cur_ver_label "
+                            . "-previousgff $prev_ver_gff3_file -previouslabel $prev_ver_label "
+                            . "-report $report_file", $log);
+      push @all_report_files, $report_file;
+    } else {
+      $log->write_to("Skipping GFF report for $species because could not find all necessary GFF files\n");
+    }                  
+  }
+  if (@all_report_files) {
+    $wormbase->run_command("cat @all_report_files > $collated_report_file", $log);
+  }
+
+  my $target_report_dir = "$targetdir/REPORTS";
+  mkpath($target_report_dir, 1, 0775);
+  $wormbase->run_command("cp $collated_report_file $target_report_dir/", $log);
+
 
   $runtime = $wormbase->runtime;
   $log->write_to("$runtime: Finished copying GFF files\n\n");
