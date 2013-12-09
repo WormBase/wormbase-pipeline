@@ -204,7 +204,7 @@ foreach my $analysis_logic_name (@analysis_logic_names) {
       die "Analyses 'wormbase', 'wormbase_non_coding' and 'wormbase_pseudogene' must be in the database to use this option\n";
     }
     my $genes = $wb2ens->parse_genes_gff3( $gff_file, $cod_ana, $nc_ana, $pseudo_ana, { WormBase => 1 });
-    $verbose and print STDERR "Parsed %d genes from GFF3. Writing genes to database...\n", scalar(@$genes);      
+    $verbose and printf STDERR "Parsed %d genes from GFF3. Writing genes to database...\n", scalar(@$genes);      
     $wb2ens->write_genes( $genes, 1 );
     
     $verbose and print STDERR "Checking translations...\n";
