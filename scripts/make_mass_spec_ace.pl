@@ -7,8 +7,8 @@
 # This parses a file of mass spec peptide data and creates an ace file
 # in ace
 #
-# Last updated by: $Author: klh $     
-# Last updated on: $Date: 2013-10-02 15:02:39 $      
+# Last updated by: $Author: gw3 $     
+# Last updated on: $Date: 2013-12-09 11:31:14 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -971,7 +971,7 @@ sub map_peptides_to_protein {
 
 sub get_wormpep_history {
   # get database version file
-  my $data_file = $self->basedir . "/WORMPEP/wormpep${database_version}/wormpep.history$database_version";
+  my $data_file = $wormbase->basedir . "/WORMPEP/wormpep${database_version}/wormpep.history$database_version";
 
   my %wormpep_history;
 
@@ -1077,7 +1077,7 @@ sub get_previous_wormpep_ids {
 
 sub get_wormpep_by_wp_id {
 
-  my $data_file = $self->basedir . "/WORMPEP/wormpep${database_version}/wormpep.fasta${database_version}";
+  my $data_file = $wormbase->basedir . "/WORMPEP/wormpep${database_version}/wormpep.fasta${database_version}";
   my $seq="";
   my $id="";
   my %wormpep;
