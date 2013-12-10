@@ -5,8 +5,9 @@
 # A script to make multiple copies of core species database for curation, and merge them back again
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2013-08-16 16:17:54 $
+# Last edited on: $Date: 2013-12-10 11:43:19 $
 #====================
+#perl ~/wormbase/scripts/merge_split_camaces.pl -update -gw3 -pad -species elegans -test -version $MVERSION > /nfs/wormpub/camace_orig/WSXXX -WSXXY/load_data.txt
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -36,12 +37,13 @@ my $test;
 my $wormbase;
 my $email;                 # Option for child scripts that can tace a user email option.
 my $nodump;                # don't dump from split camaces.
-my $nosplit;               # use this option with the split if you only remove the mass_spec and tiling array data.
+my $nosplit;               # use this option with the split if you only remove the mass_spec and tiling array dataata.
 my $remove_only;           # just removes curation data from $database specified.
 my $sdatabase;
 my $load_only;
 my $oldskool;              # script uses Garys new acediff.pl but you can select old acediff.
 my $nochecks;              # dont run camcheck as this can take ages.
+my $verbose;               # Additional printout
 
   GetOptions (
 	      "all"        => \$all,
@@ -66,6 +68,7 @@ my $nochecks;              # dont run camcheck as this can take ages.
 	      "load_only" => \$load_only,
 	      "oldskool" => \$oldskool,
 	      "nochecksl" => \$nochecks,
+	      "verbose" => \$verbose
 	     );
 
 
@@ -99,8 +102,8 @@ my @databases; #array to store what splits are to be merged.
 push(@databases,"orig");
 push(@databases,"pad") if ($pad || $all);
 push(@databases,"gw3") if ($gw3 || $all);
-push(@databases,"mh6") if ($mh6 || $all);
-push(@databases,"curation") if ($curation || $all);
+push(@databases,"mh6") if ($mh6);
+push(@databases,"curation") if ($curation);
 
 # directory paths
 my $wormpub = $wormbase->wormpub;
@@ -173,12 +176,21 @@ if ($merge) {
 	print "running.... acediff $path_ref $path_new > $directory/${class}_diff_${database}.ace\n";
 	$wormbase->run_command("csh -c \"/nfs/users/nfs_a/acedb/RELEASE.2011_01_13.BUILD/bin.LINUX_64/acediff $path_ref $path_new >! $directory/${class}_diff_${database}.ace\"", $log) && die "acediff Failed for ${path_new}\n";
 	print "running.... reformat_acediff -file $directory/${class}_diff_${database}.ace -fileout $directory/update_${class}_${database}.ace\n";
-	$wormbase->run_script("reformat_acediff -file $directory/${class}_diff_${database}.ace -fileout $directory/update_${class}_${database}.ace", $log) && die "reformat Failed for ${class}_diff_${database}.ace\n";
+	if ($debug) {
+	  $wormbase->run_script("reformat_acediff -debug $debug -test -file $directory/${class}_diff_${database}.ace -fileout $directory/update_${class}_${database}.ace", $log) && die "reformat Failed for ${class}_diff_${database}.ace\n";
+	}
+	else {
+	  $wormbase->run_script("reformat_acediff -file $directory/${class}_diff_${database}.ace -fileout $directory/update_${class}_${database}.ace", $log) && die "reformat Failed for ${class}_diff_${database}.ace\n";
+	}
       }
-      
       else {
-	print "running.... new code base!!\n\n";
-	$wormbase->run_script("acediff.pl -reference $path_ref -new $path_new -output $directory/update_${class}_${database}.ace", $log) && die "acediff.pl Failed for ${path_new}\n";
+	if ($debug) {
+	  print "running.... new code base!!\n\n";	
+	  $wormbase->run_script("acediff.pl -debug $debug -test -reference $path_ref -new $path_new -output $directory/update_${class}_${database}.ace", $log) && die "acediff.pl Failed for ${path_new}\n";
+	}
+	else {
+	  $wormbase->run_script("acediff.pl -reference $path_ref -new $path_new -output $directory/update_${class}_${database}.ace", $log) && die "acediff.pl Failed for ${path_new}\n";
+	}
       }
     }
   }
@@ -264,6 +276,7 @@ sub dump_sdb {
     foreach my $class (@classes) {
       $log->write_to ("dumping $class class from ${root}_${database}\n");
       $path = "$directory/" . "${class}_${database}.ace";
+      system("touch $path");#needed as tace doesn't produce empty files.
       &dumpace("$class",$path,$database_path);
       print "dumped $class class from ${root}_${database}\n\n" if $debug;
       $log->write_to ("dumped $class class from ${root}_${database}\n\n");
@@ -280,6 +293,7 @@ sub dumpace {
   my $ddb = shift;
   my $command = "nosave\nquery find $class\nshow -a -f $filepath\nquit\n";
   $log->write_to ("\nFilename: $filepath -> ${ddb}\n");
+  print "Opening $ddb for edits\n" if ($verbose);
   open (TACE, "echo '$command' | $tace $ddb |" ) || die "Failed to open database connection to $ddb\n" ;
   while (<TACE>) {
     #keeps pipe open until command quit executes.
@@ -304,7 +318,7 @@ sub loadace {
   
   # dump out from ACEDB
   $log->write_to ("\nFilename: $filepath -> ${ldb}\n");
-
+print "Opening $ldb for edits\n" if ($verbose);
   open (TACE, "| $tace $ldb -tsuser $tsuser") || die "Couldn't open $ldb\n";
   print TACE $command;
   close TACE;
@@ -352,24 +366,39 @@ sub update_canonical {
   print "loading Data required for EMBL submission into $root\n" if ($debug);
   &load_curation_data("$root");
 
+  
+  # The order of exons can become messy when gene models are updated in a curation cycle, not bad for acedb, but can cause complications for AcePerl and other tools.
+
+    $log->write_to ("Checking and updating exon order in $canonical\n");
+    print "Checking and updating exon order in $canonical";
+    $wormbase->run_script("reorder_exons.pl -database $canonical -species $species -out ${canonical}/${WS_version}_reordered_exons.ace", $log) && die "Failed to run reorder_exons.pl\n";
 
   ## Check Canonical Database for errors one last time. ##
   $log->write_to ("\nChecking $canonical for inconsistencies\n-----------------------------------\n\n");
   # WBGene IDs
   $log->write_to ("Running camace_nameDB_comm.pl on $canonical.....\n");
-  print "Running camace_nameDB_comm.pl on $canonical.....\n" if ($debug);
-  $wormbase->run_script("NAMEDB/camace_nameDB_comm.pl -database $canonical", $log) && die "Failed to run camace_nameDB_comm.pl\n";
-  $log->write_to ("camace_nameDB_comm.pl Finished, check the build log email for errors.\n\n");
-  print "camace_nameDB_comm.pl Finished for $canonical, check the build log email for errors.\n\n" if ($debug);
+
+  if ($debug) {
+    print "Running camace_nameDB_comm.pl on $canonical.....\n";
+    $wormbase->run_script("NAMEDB/camace_nameDB_comm.pl -database $canonical -debug $debug -test", $log) && die "Failed to run camace_nameDB_comm.pl\n";
+    print "camace_nameDB_comm.pl Finished for $canonical, check the build log email for errors.\n\n";
+  }
+  else {
+    $wormbase->run_script("NAMEDB/camace_nameDB_comm.pl -database $canonical", $log) && die "Failed to run camace_nameDB_comm.pl\n";
+  }
+    $log->write_to ("camace_nameDB_comm.pl Finished, check the build log email for errors.\n\n");
 
   unless ($nochecks) {
     # Gene structures
     $log->write_to ("\nRunning check_predicted_genes.pl\n");
     print "\nRunning check_predicted_genes.pl\n" if ($debug);
-
-    $wormbase->run_script("check_predicted_genes.pl -basic -species $species -database $canonical", $log) && die "Failed to run camcheck.pl\n";
+    if ($species eq 'elegans') {
+      $wormbase->run_script("check_predicted_genes.pl -basic -species $species -database $canonical -test", $log) && die "Failed to run camcheck.pl\n";
+    }
+    else {
+      $wormbase->run_script("check_predicted_genes.pl -basic -incomplete -species $species -database $canonical -test", $log) && die "Failed to run camcheck.pl\n";
+    }
     $log->write_to ("check_predicted_genes.pl Finished, check the build log email for errors.\n");
-    print "check_predicted_genes.pl Finished, check the build log email for errors.\n" if ($debug);
   }
 }
 
@@ -385,33 +414,38 @@ sub split_databases {
     my $split_db = $wormpub."/${root}_${database}";
     my $tsuser = "Initialise";
     if (-e $split_db."/database/ACEDB.wrm") {
-      $log->write_to ("Destroying $database\n");
-      print "Destroying $database\n" if ($debug);
+      $log->write_to ("Destroying $split_db\n");
+      print "Destroying $split_db\n" if ($debug);
       $wormbase->run_command("rm -rf $split_db/database/ACEDB.wrm", $log) && die "Failed to remove $split_db/database/ACEDB.wrm\n";
     }
     else {
-      $log->write_to ("Databases doesn't exist so creating $database\n");
-      print "Databases doesn't exist so creating $database\n";
+      $log->write_to ("Databases doesn't exist so creating $split_db\n");
+      print "Databases doesn't exist so creating $split_db\n";
       $wormbase->run_command("mkdir $split_db", $log) && die "Failed to create $split_db dir\n" unless (-e $split_db);
       $wormbase->run_command("mkdir $split_db/database", $log) && die "Failed to create a database dir\n" unless (-e $split_db."/database");
       $wormbase->run_command("cp -r $wormpub/wormbase/wspec $split_db/", $log) && die "Failed to copy the wspec dir\n" unless (-e $split_db."/wspec");
-      $wormbase->run_command("chmod g+w $split_db/wspec/*", $log) && die "Failed to chmod the files\n";
+      $wormbase->run_command("chmod g+w $split_db/wspec/*", $log);
       $wormbase->run_command("cp -r $wormpub/wormbase/wgf $split_db/", $log) && die "Failed to copy the wgf dir\n" unless (-e $split_db."/wgf");
     }
     my $command = "y\nquit\n";
+    print "Opening $split_db for edits\n" if ($verbose);
     open (TACE, "| $tace $split_db -tsuser $tsuser") || die "Couldn't open $split_db\n";
     print TACE $command;
     close TACE;
-    $log->write_to ("(Re)generated $database\n");
+    $log->write_to ("(Re)generated $split_db\n");
     print "(Re)generated $database\n" if ($debug);
   }
   
 
   # Transfer canonical -> database_orig
   $log->write_to ("Transfering $canonical to $orig\n");
-  print "Transfering $canonical to $orig\n" if ($debug);
-  $wormbase->run_script("TransferDB.pl -start $canonical -end $orig -split -database", $log) && die "Failed to run TransferDB.pl for $orig\n";
-
+  if ($debug) {
+    print "Transfering $canonical to $orig\n" if ($debug);
+    $wormbase->run_script("TransferDB.pl -start $canonical -end $orig -split -database -debug $debug -test", $log) && die "Failed to run TransferDB.pl for $orig\n";
+  }
+  else {
+    $wormbase->run_script("TransferDB.pl -start $canonical -end $orig -split -database", $log) && die "Failed to run TransferDB.pl for $orig\n";
+  }
   # work on database_orig to get it populated with curation data
   $log->write_to ("Refreshing curation data in $orig\n-------------------------------------\nRemoving old curation data from $orig\n");
   print "Refreshing curation data in $orig\n-------------------------------------\nRemoving old curation data from $orig\n" if ($debug);
@@ -425,8 +459,13 @@ sub split_databases {
   $log->write_to ("@databases\n") if ($debug);
   foreach my $database (@databases) {
     $log->write_to ("Transfering $orig to $wormpub/${root}_${database}\n");
-    print "Transfering $orig to $wormpub/${root}_${database}\n" if ($debug);
-    $wormbase->run_script("TransferDB.pl -start  $orig -end $wormpub/${root}_${database} -split -database -wspec", $log) && $log->write_to ("Failed to run TransferDB.pl for ${root}_${database}\n");
+    if ($debug) {
+      print "Transfering $orig to $wormpub/${root}_${database}\n";
+      $wormbase->run_script("TransferDB.pl -debug $debug -test -start  $orig -end $wormpub/${root}_${database} -split -database -wspec", $log) && $log->write_to ("Failed to run TransferDB.pl for ${root}_${database}\n");
+    }
+    else {
+      $wormbase->run_script("TransferDB.pl -start  $orig -end $wormpub/${root}_${database} -split -database -wspec", $log) && $log->write_to ("Failed to run TransferDB.pl for ${root}_${database}\n");
+    }
   }
   $log->write_to ("@databases SPLIT(S) UPDATED\n");
   print "@databases SPLIT(S) UPDATED\n" if ($debug);
@@ -441,14 +480,14 @@ sub split_databases {
 sub load_curation_data {
   my $sub_database = shift;
   my $database_path;
-  if ($sub_database eq "$species") {
-    $database_path = $wormbase->database('$species');
+  if (($sub_database eq "camace") or ($sub_database eq "$species")) {
+    $database_path = $wormbase->database($sub_database);
   }
   else {
     $database_path = $sub_database;
   }
+  
   $log->write_to ("Loading curation data from $database_path\n");
-#  $ENV{'ACEDB'} = $database_path;
   my $file;
   my @files;
   my $acefiles;
@@ -456,14 +495,21 @@ sub load_curation_data {
     $acefiles = $wormbase->acefiles;
     $log->write_to ("The BUILD is still in place, using autoace/acefiles\n");
   }
+  # BUILD/elegans now contains a backup of the acefiles, which aren't copied over to currentDB.
+  elsif ($species eq "elegans") {
+    $acefiles = $wormbase->base('elegans')."/acefiles";
+    $log->write_to ("The BUILD has finished...using elegans/acefiles\n");
+  }
+  # If the species build database isn't present then you can't currently access old non-elegans ace files.
   else {
-    $acefiles = $wormbase->database('current')."/acefiles";
-    $log->write_to ("The BUILD has finished...using currentDB/acefiles\n");
+    print "ERROR the $species build appears to be missing!!!\n"; 
+    $log->log_and_die("ERROR the $species build appears to be missing!!!\n");
   }
   
   # updates core data that is usually stored in primary database.
-  if ($sub_database eq "$species"){
-    if ($sub_database eq "camace") {
+  if (($sub_database eq "$species") || ($sub_database eq "camace")){
+    if ($sub_database =~ /camace/){
+      #if ($sub_database eq "camace") {
       push (@files, "$wormpub/CURATION_DATA/assign_orientation.WS${WS_version}.ace",);
     }
     push (@files,
@@ -543,7 +589,7 @@ sub load_curation_data {
   foreach $file (@files) {
     $log->write_to ("Looking for $file......................\n");
     if (-e $file) {
-      &loadace("$file", "${WS_version}_curation_data_update", "$database_path") or die "Failed to load $file\n";
+      &loadace("$file", "${WS_version}_curation_data_update", $database_path) or die "Failed to load $file\n";
     }
     else {
       $log->write_to ("!!WARNING!! File: $file does not exist\n\n");
@@ -558,10 +604,19 @@ sub load_curation_data {
   $command  = "query find CDS where !method AND !Source_exons\n";
   $command  .= "kill\n";
   $command  .= "y\n";
+  $command  .= "clear\n";
+  $command  .= "query find Transcript where !method AND !Source_exons\n";
+  $command  .= "kill\n";
+  $command  .= "y\n";
+  $command  .= "clear\n";
+  $command  .= "query find Pseudogene where !method AND !Source_exons\n";
+  $command  .= "kill\n";
+  $command  .= "y\n";
   $command  .= "save\n";
   $command  .= "quit\n";
 
   my $tsuser = "bogus_genes";
+  print "Opening $database_path for edits\n" if ($verbose);
   open (TACE, "| $tace $database_path -tsuser $tsuser") || die "Couldn't open $database_path\n";
   print TACE $command;
   close TACE;
@@ -570,7 +625,7 @@ sub load_curation_data {
   # upload BLAT results to database #
   unless (($sub_database eq "camace") or ($load_only) or ($sub_database eq "$species")) {
     $log->write_to ("\n\nUpdate BLAT results in $database_path\n");
-    $wormbase->run_script("load_blat2db.pl -all -dbdir $database_path -species $species", $log) && die "Failed to run load_blat2db.pl\n";
+      $wormbase->run_script("load_blat2db.pl -all -dbdir $database_path -species $species", $log) && die "Failed to run load_blat2db.pl\n";
   }
 }
 
@@ -583,7 +638,7 @@ sub remove_data {
   my $option = shift;
   my $database_path;
   if (($sub_database eq "camace") or ($sub_database eq "$species")) {
-    $database_path = $wormbase->database('$sub_database');
+    $database_path = $wormbase->database($sub_database);
   }
   else {
     $database_path = $sub_database;
@@ -711,6 +766,7 @@ sub remove_data {
   $log->write_to (".....bogus CDSs only\n") if (defined $option);
 
   my $tsuser = "remove_data";
+  print "Opening $database_path for edits\n" if ($verbose);
   open (TACE, "| $tace $database_path -tsuser $tsuser") || die "Couldn't open $database_path\n";
   print TACE $command;
   close TACE;
@@ -732,6 +788,7 @@ sub create_public_name_data {
     my $command = "\nnosave\nquery find Genes_elegans where Live\nfollow Public_name\nshow -a -f $Public_names\nquit\n";
     # dump out from ACEDB
     $log->write_to ("\nCreating $Public_names as source of Public_names\n");
+ print "Opening $refdb for edits\n" if ($verbose);
     open (TACE, "| $tace $refdb -tsuser test") || die "Couldn't open $refdb\n";
     print TACE $command;
     close TACE;
