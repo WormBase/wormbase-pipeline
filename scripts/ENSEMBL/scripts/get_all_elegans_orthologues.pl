@@ -12,10 +12,7 @@ use Bio::EnsEMBL::Compara::DBSQL::DBAdaptor;
 
 use Getopt::Long;
 
-my $comparadb;
-my $dbhost;
-my $dbuser;
-my $dbport;
+my ($comparadb,$dbhost,$dbuser,$dbport);
 
 GetOptions(
 	   'database=s' => \$comparadb,
@@ -54,9 +51,18 @@ my %species = (
     6282   => 'Onchocerca volvulus',
 );
 
-my %cds2wbgene=%{&get_commondata('cds2wbgene_id')};
-my %cds2swiss=%{&get_cds2swiss('brugia')};
+my %coreSpecies = (
+   6239   => 1,
+   6238   => 1,
+   31234  => 1,
+   135651 => 1,
+   281687 => 1,
+   54126  => 1,
+   6279   => 1,
+   6282   => 1,
+);
 
+my %cds2wbgene=%{&get_commondata('cds2wbgene_id')};
 
 my $compara_db = new Bio::EnsEMBL::Compara::DBSQL::DBAdaptor(
     -host   => $dbhost,
@@ -65,60 +71,37 @@ my $compara_db = new Bio::EnsEMBL::Compara::DBSQL::DBAdaptor(
     -dbname => $comparadb
 ) or die(@!);
 
-
 my $member_adaptor = $compara_db->get_GeneMemberAdaptor();
 my $homology_adaptor = $compara_db->get_HomologyAdaptor();
 my @members = @{$member_adaptor->fetch_all()};
 
 while( my $member = shift @members){
     
-  # curated core species with Gene objects are added here
-    next unless ($member->taxon_id == 6239
-	      || $member->taxon_id == 6238
-	      || $member->taxon_id == 31234
-	      || $member->taxon_id == 135651
-	      || $member->taxon_id == 281687
-	      || $member->taxon_id == 54126
-              || $member->taxon_id == 6279
-	      || $member->taxon_id == 6282);
+    next unless $coreSpecies{$member->taxon_id};
 
     my @homologies = @{$homology_adaptor->fetch_all_by_Member( $member)};
 
-    # needs some better way
     my (%t3,%t2);
-
 
     foreach my $homology ( @homologies) {
         
         next if $homology->description eq 'between_species_paralog';
         foreach my $ma ( @{ $homology->get_all_Members } ) { # was $homology->get_all_Member_Attribute but this is not in the API any more
             
-#            my ( $me, $at ) = @{$ma};
             foreach my $pepm ( @{ $ma->gene_member()->get_all_SeqMembers() } ) { # was $me->get_all_peptide_Members()
 
-  # curated core species with Gene objects are added here                
-                if ($pepm->taxon_id == 6239 
-	         || $pepm->taxon_id == 6238
-	         || $pepm->taxon_id == 31234
-	         || $pepm->taxon_id == 135651
-	         || $pepm->taxon_id == 281687
-	         || $pepm->taxon_id == 54126
-                 || $pepm->taxon_id == 6279
-		 || $pepm->taxon_id == 6282) {
-                    $t2{ $pepm->stable_id } = [$pepm->taxon_id,$homology->description]
-                }
-		else {
+                if ($coreSpecies{$pepm->taxon_id}){ 
+                    $t2{$pepm->stable_id} = [$pepm->taxon_id,$homology->description]
+                } else {
 		    $t3{$pepm->stable_id} = [$pepm->taxon_id,$homology->description,$pepm->sequence]
 	        }
-
             }
-
         }
     }
 
     my $gid=$cds2wbgene{$member->stable_id}?$cds2wbgene{$member->stable_id}:$member->stable_id;
 
-    next unless (scalar keys %t2 > 1);
+    next unless (scalar(keys %t2) + scalar(keys %t3) > 1); # the self-hit should always exist
 
     print "Gene : \"$gid\"\n";
     
@@ -136,24 +119,19 @@ while( my $member = shift @members){
             print "\n";
     }
 
-    while (my ($k,$v)=each(%t3)){ # brugia exception
-            my $bid=$cds2swiss{$k}?$cds2swiss{$k}:$k;
-            print "Ortholog_other $bid From_analysis WormBase-Compara\n";
+    while (my ($k,$v)=each(%t3)){
+            print "Ortholog_other $k From_analysis WormBase-Compara\n";
     }
     print "\n";
     
-
     while (my ($k,$v)=each(%t3)){
 	    print "Protein : $k\nSpecies \"$species{$$v[0]}\"\nPeptide \"$k\"\n\n";
             print "Peptide : \"$k\"\n$$v[2]\n\n"
     }
-
 }   
 
 #################
-
-
-# needs a merging step
+# also adds the sequence name of the parent gene
 sub get_commondata {
     my ($name)=@_;
     my %genehash;
@@ -177,18 +155,4 @@ sub get_commondata {
         }
     }
     return \%genehash;
-}
-
-sub get_cds2swiss {
-    my ($name)=@_;
-    my %cds2swiss;
-    my $dir="/nfs/panda/ensemblgenomes/wormbase/DATABASES/$name/swiss2cds.dat";
-
-    my $file = new IO::File "<$dir" ||die ("@! cannot open $dir");
-    while (<$file>){
-        chomp;
-            my ($swiss,$cds)=split;
-        $cds2swiss{"${cds}A"}=$swiss;
-    }
-    return \%cds2swiss;
 }
