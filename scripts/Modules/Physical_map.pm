@@ -229,12 +229,7 @@ sub fix_gmap {
         if (not $is_landmark) {
           # get the difference between the previous and next positions
           my $diff = $next_pos - $prev_pos;
-          if ( $diff > 0.0005 ) {
-            $$genes[$i]->[2] = $prev_pos + ( $diff / 2 );
-          }
-          else {
-            $$genes[$i]->[2] = $prev_pos + 0.0005;
-          }
+	  $$genes[$i]->[2] = $prev_pos + ( $diff / 2 );
           $changed_in_this_iteration = 1;
         }
         $pos = $$genes[$i]->[2];
@@ -246,12 +241,7 @@ sub fix_gmap {
         # get the difference between the previous and next positions
         if (not $is_landmark) {
           my $diff = $next_pos - $prev_pos;
-          if ( $diff > 0.0005 ) {
-            $$genes[$i]->[2] = $prev_pos + ( $diff / 2 );
-          }
-          else {
-            $$genes[$i]->[2] = $prev_pos + 0.0005;
-          }
+	  $$genes[$i]->[2] = $prev_pos + ( $diff / 2 );
           $changed_in_this_iteration = 1;
         }
         $pos = $$genes[$i]->[2];
