@@ -1381,9 +1381,9 @@ sub _create_protein_coding_transcripts {
     #get the gene-name
 
     if ($self->species and $self->species !~ /elegans/) {
-      $gene_name= ( $transcript =~ /([a-zA-Z]{2,3}\d+)[a-z]*(\.\d+)*$/ ) ? $1 : $transcript;
+      $gene_name= ( $transcript =~ /^([A-Za-z]+\d+)/ ) ? $1 : $transcript;
     } else {
-      $gene_name= ( $transcript =~ /(.*?\w+\.\d+)[a-z A-Z]*\.*\d*/ ) ? $1 : $transcript; 
+      $gene_name= ( $transcript =~ /^([A-Za-z0-9_]+\.\d+)/ ) ? $1 : $transcript; 
     }
     
     $transcript_id = $transcript;
@@ -1615,9 +1615,9 @@ sub _create_pseudo_transcripts {
 
 
     if ($self->species and $self->species !~ /elegans/) {
-      $gene_name= ( $transcript =~ /([a-zA-Z]{2,3}\d+)[a-z]$/ ) ? $1 : $transcript;
+      $gene_name= ( $transcript =~ /^([A-Za-z]+\d+)/ ) ? $1 : $transcript;
     } else {
-      $gene_name= ( $transcript =~ /(\w+\.\d+)[a-z]/ ) ? $1 : $transcript; 
+      $gene_name= ( $transcript =~ /^([A-Za-z0-9_]+\.\d+)/ ) ? $1 : $transcript; 
     }
 
     $transcript_id = $transcript;
