@@ -6,8 +6,8 @@
 # A simple script to send a check list to the person who will be performing the next
 # build to check the current build
 #
-# Last updated by: $Author: pad $
-# Last updated on: $Date: 2013-12-02 15:37:18 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2013-12-11 14:54:23 $
 use strict;
 use warnings;
 use lib $ENV{'CVS_DIR'};
@@ -420,7 +420,7 @@ sub classes_to_check {
 			       Expression_pattern => 'Chronogram273',
 			       Expr_profile => 'B0213.14',
 			       Feature => 'WBsf000351',
-			       Feature_data => 'AA193915:polyA',
+			       Feature_data => 'yk1244g06.5:polyA',
 			       Gene => 'WBGene00000273',
 			       Genetic_code => 'Selenocysteine',
 			       Gene_class => 'eva',
