@@ -65,7 +65,7 @@ sub _new {
 
 
 sub TSL {  
-  ('SL1'  => "GGTTTAATTACCCAAGTTTGAG");
+  ('SL1'  => "GGTTTAATTACCCAAGTTTGAG"); # the SL1 sequence is conserved across the majority of nematodes
 }
 
 
