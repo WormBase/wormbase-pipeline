@@ -9,7 +9,7 @@ use IO::File;
 use File::Basename;
 
 my (
-  $store,  $test, $prep, $debug, $genes,
+  $store,  $test, $prep_fix, $debug, $genes, $prep_nofix, $fix_acefile,
   $clones, $alleles, $all, $wormbase, $chromosome, $gff3,
     );
 
@@ -22,7 +22,9 @@ GetOptions(
   'all'          => \$all,
   'store:s'      => \$store,
   'chromosome:s' => \$chromosome,
-  'prepare'      => \$prep,
+  'preparefix'   => \$prep_fix,
+  'preparenofix' => \$prep_nofix,
+  'fixacefile=s' => \$fix_acefile,
   'gff3'           => \$gff3,
 ) || die `perldoc $0`;
 
@@ -44,25 +46,33 @@ my $outdir     = $wormbase->acefiles;
 
 my $mapping_store_file = "$acedb/logs/rev_physicals.yml";
 my $mapping_log_file = "$acedb/logs/rev_physicals.log";
-my $fixes_file = "$outdir/genetic_map_fixes.ace";
 my $chr_prefix = $wormbase->chromosome_prefix;
+$fix_acefile = "$outdir/genetic_map_fixes.ace" if not defined $fix_acefile;
 
 # check the mappings
-if ($prep) {
+if ($prep_fix or $prep_nofix) {
   unlink $mapping_store_file if -e $mapping_store_file;
 
   my $mapper = Physical_mapper->new( 
     undef,
     $acedb, 
     glob("$chromdir/${chr_prefix}*_gene.gff") );
-  
-  $mapper->check_mapping( $acedb, $fixes_file, $mapping_log_file, $log );
+
+  my $errors = $mapper->check_and_fix_mapping( 
+    $acedb, 
+    $fix_acefile, 
+    $mapping_log_file, 
+    $prep_fix,
+    $log );
+
   $mapper->freeze($mapping_store_file);
-
-  if (not -s $fixes_file) {
-    $log->write_to("There were no fixes, so probably no need to look!\n");
+  
+  if ($prep_fix) {
+    $log->write_to("There were $errors errors after attempting to fix. Check out $mapping_log_file if this is > 0!.\n");
+  } else {
+    $log->write_to("There were $errors errors, did not attempt to fix. If >0, check out $mapping_log_file to resolve manually.\n");
   }
-
+  
   $log->mail();
   exit(0);
 }
@@ -89,6 +99,7 @@ my @allele_methods = ('Allele',
 my @gene_methods = ('gene');
 my @clone_methods = ('clone_acc');
 
+my %check_results;
 foreach my $chrom (@chromosomes) {
   my @data;
   if ($alleles or $all) {
@@ -97,13 +108,13 @@ foreach my $chrom (@chromosomes) {
   }
   push @data, @gene_methods   if $genes or $all;
   push @data, @clone_methods  if $clones or $all;
-
+  
   foreach my $f (@data) {
     my $file = "$chromdir/${chrom}_$f.gff";
     my $outfile = "$outdir/interpolated_${f}_$chrom.ace";
-
+    
     my $fh = IO::File->new( $file, "r" ) || ( $log->write_to("cannot find: $file\n") && next );
-
+    
     my $of = IO::File->new("> $outfile");
     $log->write_to("writing to: $outfile\n");
     
@@ -114,7 +125,7 @@ foreach my $chrom (@chromosomes) {
       
       my ( $chr, $source, $feature) = ( $fields[0], $fields[1], $fields[2]);
       $chr =~ s/$chr_prefix//;
-
+      
       my ($id, $ctag);
       if ($gff3) {              
         my ($first) = split(/;/, $fields[8]);
@@ -133,22 +144,64 @@ foreach my $chrom (@chromosomes) {
       elsif ( $source eq 'gene' && $feature eq 'gene' ) {
         $class = 'Gene';
         # do not interpolate genes that already have a defined genetic position
-        next if exists $rev_genes->{$id};
+        if (exists $rev_genes->{$id}) {
+          $check_results{$id} = {
+            obj => $id,
+            chr => $chr,
+            pos => ($fields[3] + $fields[4]) / 2,
+            gpos => $rev_genes->{$id}->[0],
+            interpolated => 0,
+          };
+          next;
+        }
       }
-      else { next }
+      else { 
+        next; 
+      }
       
       my $pos = ( $fields[3] + $fields[4] ) / 2;    # average map position
-      my $aceline = $mapper->x_to_ace( $id, $pos, $chr, $class );
-      
-      print $of $aceline if $aceline ; # mapper returns undef if it cannot be mapped (like on the telomers)
-      $log->write_to( "cannot map $class : $id (might be on a telomer) - phys.pos $chr : $pos\n"
-          ) if ( !$aceline );    #--
+      my $map_pos = $mapper->map($pos, $chr);
+      if (defined $map_pos) {
+        my $aceline = sprintf("$class : \"$id\"\nInterpolated_map_position \"$chr\" $map_pos\n\n");
+        print $of $aceline if $aceline ; 
+        $check_results{$id} = {
+          obj => $id,
+          chr => $chr,
+          ppos => $pos,
+          gpos => $map_pos,
+          interpolated => 1,
+        };
+      } else {
+        $log->write_to( "cannot map $class : $id (might be on a telomer) - phys.pos $chr : $pos\n" );
+      }
     }
     
     close $of;
     close $fh;
   }
 }
+
+# check results; the interpolated genes should all have consistent genetic and physical positions
+foreach my $chr ($wormbase->get_chromosome_names(-prefix => 0, -mito => 0)) {
+  $log->write_to("Checking interpolations for $chr\n");
+  my @entries = grep { $_->{chr} eq $chr } values %check_results;
+  @entries = sort { $a->{ppos} <=> $b->{ppos} } @entries;
+  for(my $i=1; $i < @entries; $i++) {
+    if ($entries[$i]->{gpos} < $entries[$i-1]->{gpos}) {
+      $log->write_to(sprintf("Inconsistent: %s %s (%s %s %d) %s (%s %s %d)\n", 
+                             $chr, 
+                             $entries[$i-1]->{obj}, 
+                             $entries[$i-1]->{ppos}, 
+                             $entries[$i-1]->{gpos}, 
+                             $entries[$i-1]->{interpolated}, 
+                             $entries[$i]->{obj}, 
+                             $entries[$i]->{ppos}, 
+                             $entries[$i]->{gpos}, 
+                             $entries[$i]->{interpolated}));
+    }
+  }
+} 
+
 ###########################################################################################
 $log->mail();
 exit 0;
