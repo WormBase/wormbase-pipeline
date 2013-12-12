@@ -15,19 +15,20 @@ use LSF::JobManager;
 # Script variables (run)     #
 ##############################
 
-my ( $help, $debug, $test, $store, $wb, $flags, $noload, $nopseudo );
+my ( $help, $debug, $test, $store, $wb, $flags, $noload, $pseudo, $fix );
 
 ##############################
 # command-line options       #
 ##############################
 
 GetOptions(
-    "help"    => \$help,
-    "debug=s" => \$debug,
-    "test"    => \$test,
-    "noload"  => \$noload,
-    "store:s" => \$store,
-    "nopseudo"=> \$nopseudo
+  "help"    => \$help,
+  "debug=s" => \$debug,
+  "test"    => \$test,
+  "noload"  => \$noload,
+  "store:s" => \$store,
+  "pseudo"  => \$pseudo,
+  "fix"     => \$fix,
 );
 
 
@@ -46,43 +47,57 @@ else {
 my $log = Log_files->make_build_log($wb);
 
 ####################################
-
-my $m      = LSF::JobManager->new();
 my @bsub_opts = (-M => 4000,
                  -R => 'select[mem>=4000] rusage[mem=4000]',
-                 -o => '/dev/null',
-    );
-my $cmd = $wb->build_cmd_line("interpolate_gff.pl -prep $flags");
-my $mother = $m->submit(@bsub_opts, $cmd);
+                 -o => '/dev/null');
+my $lsf = LSF::JobManager->new();
+
+my $acedir = $wb->acefiles;
+my $fix_acefile    = "$acedir/genetic_map_fixes.ace";
+my $pseudo_acefile = "$acedir/pseudo_map_positions.ace";
+
+my $prep_flags = ($fix) ? "$flags -preparefix -fixacefile $fix_acefile" : "$flags -preparenofix";
+my $cmd = $wb->build_cmd_line("interpolate_gff.pl $prep_flags");
+
+my $mother = $lsf->submit(@bsub_opts, $cmd);
 my $myid   = $mother->id;
 
 push @bsub_opts, (-w => "ended($myid)");
 foreach my $i ($wb->get_chromosome_names(-prefix => 1)) {
   my $cmd2 = $wb->build_cmd_line("interpolate_gff.pl -chrom $i -all $flags");
-  $m->submit( @bsub_opts, $cmd2);
+  $lsf->submit( @bsub_opts, $cmd2);
 }
 
-$m->wait_all_children( history => 1 );
-print "All children have completed!\n";
+$lsf->wait_all_children( history => 1 );
 
-############################
-for my $job ( $m->jobs ) {    # much quicker if history is pre-cached
+for my $job ( $lsf->jobs ) {
   $log->write_to("$job exited non zero\n") if $job->history->exit_status != 0;
 }
-$m->clear;                    # clear out the job manager to reuse.
+$lsf->clear;                    # clear out the job manager to reuse.
+
+if ($pseudo) {
+  $wb->run_script("make_pseudo_map_positions.pl -acefile $pseudo_acefile -noload", $log);
+}
 
 #################
 unless ( $noload ) {
-  my $acedir = $wb->acefiles;
   foreach my $file ( glob("$acedir/interpolated_*_*.ace") ) {
     $wb->load_to_database( $wb->autoace, $file, "interpolated_positions", $log );
   }
 
-  my $gmap_fixes =  "$acedir/genetic_map_fixes.ace";
-  if (-e $gmap_fixes and -s $gmap_fixes) {
+  if ($fix and -e $fix_acefile) {
     $wb->load_to_database($wb->autoace,
-                          "$acedir/genetic_map_fixes.ace",
+                          $fix_acefile,
                           "genetic_map_corrections",
+                          $log, 
+                          0, # no backup
+                          1 #accept large differences
+        );
+  }
+  if ($pseudo and -e $pseudo_acefile) {
+    $wb->load_to_database($wb->autoace,
+                          $fix_acefile,
+                          "pseudo_map_posn",
                           $log, 
                           0, # no backup
                           1 #accept large differences
@@ -90,7 +105,6 @@ unless ( $noload ) {
   }
 }
 
-$wb->run_script("make_pseudo_map_positions.pl", $log) unless $nopseudo;
 $log->mail();
 
 exit(0);
