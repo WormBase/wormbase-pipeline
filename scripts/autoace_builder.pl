@@ -7,7 +7,7 @@
 # Usage : autoace_builder.pl [-options]
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2013-12-05 13:26:49 $
+# Last edited on: $Date: 2013-12-12 19:10:25 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -190,7 +190,7 @@ $wormbase->run_script( 'KEGG.pl', $log )                                 if $keg
 # $build_dumpGFF.pl; (final) is run chronologically here but previous call will operate
 # $wormbase->run_script( "processGFF.pl -$processGFF",        $log ) if $processGFF;    #nematode - to add species to nematode BLATs
 
-$wormbase->run_script( "interpolation_manager.pl"                , $log) if $interpolate;
+$wormbase->run_script( "interpolation_manager.pl -fix -pseudo", $log) if $interpolate;
 $wormbase->run_script( "make_agp_file.pl"                        , $log) if $agp;
 
 if ($prepare_gff_munge) {
