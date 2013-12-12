@@ -9,7 +9,7 @@
 #
 #
 # Last updated by: $Author: gw3 $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2013-12-04 14:58:50 $        # quickly see when script was last changed and by whom
+# Last updated on: $Date: 2013-12-12 15:14:03 $        # quickly see when script was last changed and by whom
 
 
 $|=1;
@@ -235,6 +235,7 @@ foreach my $query (@features2map) {
           $log->write_to("Feat $feat did not have complete flanks; skipping\n");
           next;
         }
+	$count_features ++;
         push @features, [
           $feat,
           $meth,
