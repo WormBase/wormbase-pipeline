@@ -20,6 +20,7 @@ my %mapping = (
   jappepx        => 'wormbase_id',  
   remapepx       => 'wormbase_id',  
   brugpepx       => 'wormbase_id',  
+  ovolpepx       => 'wormbase_id',  
   ipi_humanx     => 'IPI',
   gadflyx        => 'gadfly_translation_cgid',
   yeastx         => 'SGD',  
@@ -38,6 +39,8 @@ my %mapping = (
   cbrenneri_mrna  => 'wormbase_id',
   ppacificus_est   => 'wormbase_id',
   ppacificus_mrna  => 'wormbase_id',
+  ovolvulus_est   => 'wormbase_id',
+  ovolvulus_mrna  => 'wormbase_id',
   celegans_ost     => 'wormbase_id',
   celegans_rst     => 'wormbase_id',
 
