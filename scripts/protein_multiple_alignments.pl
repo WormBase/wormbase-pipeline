@@ -85,8 +85,6 @@ if ($run_clustal) {
   my %accessors = $wb->species_accessors;
   $accessors{elegans} = $wb;
   
-  # clean out database
-  my $prefix = $wb->wormpep_prefix;
   my $dbconn = DBI->connect("DBI:mysql:dbname=${rdb_name};host=${rdb_host};port=${rdb_port}" ,$rdb_user,$rdb_pass);
   
   my $lsf = LSF::JobManager->new();
@@ -96,11 +94,18 @@ if ($run_clustal) {
   
   foreach my $species (sort keys %species) {
     $log->write_to("Processing proteins for $species..\n");
+    if ($accessors{$species}->version != $wb->version) {
+      $log->write_to("Looks like $species was not (re)built. Will not re-run alignments\n");
+      next;
+    }
 
-    my $prefix = $accessors{$species}->wormpep_prefix;
-    
-    my $infile = $wb->wormpep . "/" . $wb->pepdir_prefix . "pep" . $wb->version;
-    $log->log_and_die("Could not find $infile - you probably did not rebuild $species?") if not -e $infile;
+    my $prefix = $accessors{$species}->wormpep_prefix;    
+    my $infile = sprintf("%s/%spep%s", 
+                         $accessors{$species}->wormpep,
+                         $prefix,
+                         $accessors{$species}->version);
+
+    $log->log_and_die("Could not find $infile\n") if not -e $infile;
     $log->write_to("Will repopulate for $species using $infile\n");
     
     $dbconn->do("DELETE FROM clustal WHERE peptide_id LIKE \'$prefix\%\'") unless $dontclean;
