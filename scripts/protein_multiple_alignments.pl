@@ -99,7 +99,7 @@ if ($run_clustal) {
       next;
     }
 
-    my $prefix = $accessors{$species}->wormpep_prefix;    
+    my $prefix = $accessors{$species}->pepdir_prefix;    
     my $infile = sprintf("%s/%spep%s", 
                          $accessors{$species}->wormpep,
                          $prefix,
