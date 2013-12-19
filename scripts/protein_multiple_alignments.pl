@@ -99,15 +99,15 @@ if ($run_clustal) {
       next;
     }
 
-    my $prefix = $accessors{$species}->pepdir_prefix;    
     my $infile = sprintf("%s/%spep%s", 
                          $accessors{$species}->wormpep,
-                         $prefix,
+                         $accessors{$species}->pepdir_prefix,
                          $accessors{$species}->version);
 
     $log->log_and_die("Could not find $infile\n") if not -e $infile;
     $log->write_to("Will repopulate for $species using $infile\n");
-    
+
+    my $prefix = $accessors{$species}->wormpep_prefix;        
     $dbconn->do("DELETE FROM clustal WHERE peptide_id LIKE \'$prefix\%\'") unless $dontclean;
     
     my $cmd_prefix = "$scratch_dir/clustal.$species.$$.";
