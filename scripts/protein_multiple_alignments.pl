@@ -134,11 +134,8 @@ if ($run_clustal) {
           . " -pepfile $infile"
           . " -database $ace_database"
           . " -alignerdir $aligner_dir";
-      if ($store) {
-        $cmd = $wb->build_cmd_line($cmd, $store);
-      } else {
-        $cmd = $wb->build_cmd($cmd);
-      }
+      $cmd = $accessors{$species}->build_cmd($cmd);
+
       open(my $cmd_fh, ">$cmd_file") or $log->log_and_die("Could not open $cmd_file for writing\n");
       print $cmd_fh "#!/bin/csh\n";
       print $cmd_fh "$cmd\n";
