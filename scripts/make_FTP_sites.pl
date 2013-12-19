@@ -5,8 +5,8 @@
 # A PERL wrapper to automate the process of building the FTP sites 
 # builds wormbase & wormpep FTP sites
 # 
-# Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-12-06 16:50:27 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2013-12-19 13:10:20 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -789,6 +789,21 @@ sub copy_misc_files{
   my $annotation_dir = "$targetdir/species/$gspecies/$bioproj/annotation";
 
   mkpath($annotation_dir,1,0775);
+
+  #
+  # Transcription Start Site wiggle files from the Julie Ahringer, Barbara Meyer and Tom Blumenthal papers 
+  #
+  if ($wormbase->species eq 'elegans') {
+    my $source = $wormbase->misc_dynamic . "c_elegans.PRJNA13758.WS240.TSS.wig.tar.gz";
+    my $target = "$annotation_dir/${gspecies}.${bioproj}.${WS_version_name}.TSS.wig.tar.gz";
+
+    if (-e $source) {
+      $wormbase->run_command("cp -f $source $target", $log);
+    } else {
+      $log->write_to("Warning: TSS site wiggle plot tar file not found\n");
+    }
+  }
+
 
   #
   # Reuters citation index - elegans only
@@ -1703,6 +1718,7 @@ GSPECIES.BIOPROJ.WSREL.confirmed_genes.fa.gz
 GSPECIES.BIOPROJ.WSREL.SRA_gene_expression.tar.gz
 GSPECIES.BIOPROJ.WSREL.TAR_gene_expression.tar.gz
 GSPECIES.BIOPROJ.WSREL.reuters_citation_index.xml.gz
+GSPECIES.BIOPROJ.WSREL.TSS.wig.tar.gz
 
 [elegans]species/GSPECIES/BIOPROJ
 GSPECIES.BIOPROJ.WSREL.assembly.agp.gz
