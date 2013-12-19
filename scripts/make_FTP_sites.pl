@@ -6,7 +6,7 @@
 # builds wormbase & wormpep FTP sites
 # 
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2013-12-19 13:10:20 $
+# Last updated on: $Date: 2013-12-19 13:13:14 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -794,7 +794,7 @@ sub copy_misc_files{
   # Transcription Start Site wiggle files from the Julie Ahringer, Barbara Meyer and Tom Blumenthal papers 
   #
   if ($wormbase->species eq 'elegans') {
-    my $source = $wormbase->misc_dynamic . "c_elegans.PRJNA13758.WS240.TSS.wig.tar.gz";
+    my $source = $wormbase->misc_dynamic . "/c_elegans.PRJNA13758.WS240.TSS.wig.tar.gz";
     my $target = "$annotation_dir/${gspecies}.${bioproj}.${WS_version_name}.TSS.wig.tar.gz";
 
     if (-e $source) {
