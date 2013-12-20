@@ -2,8 +2,8 @@
 #
 # release_letter.pl                            
 # 
-# Last updated by: $Author: klh $               
-# Last updated on: $Date: 2013-12-20 13:29:53 $
+# Last updated by: $Author: gw3 $               
+# Last updated on: $Date: 2013-12-20 14:27:02 $
 
 # Generates a release letter at the end of build.
 #
@@ -179,6 +179,7 @@ if( $opt_l) {
   printf $rlfh "        - G_SPECIES.BIOPROJECT.WS$ver.*oligo_mapping.txt.gz               - Oligo array mapping files\n";
   printf $rlfh "        - G_SPECIES.BIOPROJECT.WS$ver.knockout_consortium_alleles.xml.gz  - Table of Knockout Consortium alleles\n";
   printf $rlfh "        - G_SPECIES.BIOPROJECT.WS$ver.SRA_gene_expression.tar.gz          - Tables of gene expression values computed from SRA RNASeq data\n";
+  printf $rlfh "        - G_SPECIES.BIOPROJECT.WS$ver.TSS.wig.tar.gz                      - Wiggle plot files of Transcription Start Sites from the papers WBPaper00042246, WBPaper00042529, WBPaper00042354\n";
 
   printf $rlfh "acedb DIR                -  Everything needed to generate a local copy of the The Primary database\n";
   printf $rlfh "     - database.WS$ver.*.tar.gz   - compressed acedb database for new release\n";
