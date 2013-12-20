@@ -3,7 +3,7 @@
 # release_letter.pl                            
 # 
 # Last updated by: $Author: klh $               
-# Last updated on: $Date: 2013-10-18 12:03:44 $
+# Last updated on: $Date: 2013-12-20 13:01:46 $
 
 # Generates a release letter at the end of build.
 #
@@ -112,7 +112,7 @@ if( $opt_l) {
   ######################################
   $log->write_to("Retrieving Operon Data...\n");
   my $operon_query = "Find Operon WHERE method = \"Operon\" AND Species = \"*elegans\"";
-  my $gene_query = "Find Gene where Contained_in_operon AND Specues = \"*elegans\"";
+  my $gene_query = "Find Gene where Contained_in_operon AND Species = \"*elegans\"";
   $operon_data{operons}          = $db->fetch(-query=> "$operon_query");
   $operon_data{genes_in_operons} = $db->fetch(-query=> "$gene_query");
   
