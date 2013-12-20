@@ -3,7 +3,7 @@
 # release_letter.pl                            
 # 
 # Last updated by: $Author: klh $               
-# Last updated on: $Date: 2013-12-20 13:01:46 $
+# Last updated on: $Date: 2013-12-20 13:29:53 $
 
 # Generates a release letter at the end of build.
 #
@@ -32,7 +32,7 @@ use Species;
 # variables and command-line options # 
 ######################################
 
-my ($help, $debug, $test, $verbose, $store, $wormbase);
+my ($help, $debug, $test, $verbose, $store, $wormbase, $database);
 my ($opt_c, $opt_l);
 
 GetOptions ("help"       => \$help,
@@ -42,6 +42,7 @@ GetOptions ("help"       => \$help,
 	    "store:s"      => \$store,
 	    "c"          => \$opt_c,
 	    "l"          => \$opt_l,
+            "database=s" => \$database,
 	    );
 
 if ( $store ) {
@@ -63,6 +64,7 @@ my $reports_dir     = $wormbase->reports;     # AUTOACE REPORTS
 my $tace = $wormbase->tace;
 my $ver     = $wormbase->get_wormbase_version;
 my $old_ver = $ver -1;
+$database = $wormbase->autoace if not defined $database;
 
 if ($opt_c) {
   $wormbase->release_composition($log);
@@ -86,7 +88,7 @@ if( $opt_l) {
   
   #######################################################
   
-  my $db = Ace->connect(-path    => $wormbase->autoace,
+  my $db = Ace->connect(-path    => $database,
                         -program => $tace) || $log->log_and_die("Connection failure: ",Ace->error);
   
   my (%cds_status, 
@@ -122,10 +124,11 @@ if( $opt_l) {
   ######################################
   foreach my $spec (sort { $accessors{$a}->full_name cmp $accessors{$b}->full_name } keys %accessors) {
     $log->write_to("Retrieving basic coding/non-coding gene stats for $spec...\n");
-    my $gene_count_query = "Find Gene where Species = \"*${spec}*\" AND Live";
+    my $sp_name = $accessors{$spec}->full_name();
+    my $gene_count_query = "Find Gene where Species = \"$sp_name\" AND Live";
     my $gene_count = $db->fetch(-query=> "$gene_count_query");
     # now count coding genes, rather than coding isoforms
-    my $Coding_count_query = "Find Gene where Species = \"*${spec}*\" AND Corresponding_CDS";
+    my $Coding_count_query = "Find Gene where Species = \"$sp_name\" AND Corresponding_CDS";
     my $Coding_count = $db->fetch(-query=> "$Coding_count_query");
     $gene_counts{$spec}->{genes} = $gene_count;
     $gene_counts{$spec}->{coding_genes} = $Coding_count;
@@ -222,7 +225,7 @@ if( $opt_l) {
   foreach my $spec (sort { $accessors{$a}->full_name cmp $accessors{$b}->full_name } keys %cgc_counts) {
     next if $spec eq 'elegans';
     my $count = $cgc_counts{$spec};
-    printf $rlfh "%28s %5d\n", $accessors{$spec}->full_name, $count;
+    printf $rlfh "%-28s %5d\n", $accessors{$spec}->full_name, $count;
   }
   
   print $rlfh "\nGene counts\n";
@@ -231,7 +234,7 @@ if( $opt_l) {
     next if $spec eq 'elegans';
     my $gcount = $gene_counts{$spec}->{genes};
     my $cod_count = $gene_counts{$spec}->{coding_genes};
-    printf $rlfh "%20s %5d (%d coding)\n", $accessors{$spec}->full_name, $gcount, $cod_count;
+    printf $rlfh "%-28s %5d (%d coding)\n", $accessors{$spec}->full_name, $gcount, $cod_count;
   }
   
   foreach my $spec (sort { $accessors{$a}->full_name cmp $accessors{$b}->full_name } keys %cds_status) {
