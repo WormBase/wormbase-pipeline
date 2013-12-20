@@ -5,8 +5,8 @@
 # A PERL wrapper to automate the process of building the FTP sites 
 # builds wormbase & wormpep FTP sites
 # 
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2013-12-19 13:13:14 $
+# Last updated by: $Author: klh $
+# Last updated on: $Date: 2013-12-20 10:19:47 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -1715,7 +1715,6 @@ GSPECIES.BIOPROJ.WSREL.geneIDs.txt.gz
 GSPECIES.BIOPROJ.WSREL.gsc_oligo_mapping.txt.gz
 GSPECIES.BIOPROJ.WSREL.cdna2orf.txt.gz
 GSPECIES.BIOPROJ.WSREL.confirmed_genes.fa.gz
-GSPECIES.BIOPROJ.WSREL.SRA_gene_expression.tar.gz
 GSPECIES.BIOPROJ.WSREL.TAR_gene_expression.tar.gz
 GSPECIES.BIOPROJ.WSREL.reuters_citation_index.xml.gz
 GSPECIES.BIOPROJ.WSREL.TSS.wig.tar.gz
@@ -1731,15 +1730,15 @@ GSPECIES.BIOPROJ.WSREL.xrefs.txt.gz
 [TIER2]species/GSPECIES/BIOPROJ/annotation
 GSPECIES.BIOPROJ.WSREL.geneIDs.txt.gz
 
-[TIER2:pristionchus]species/GSPECIES/BIOPROJ/annotation
+[TIER2:pristionchus,ovolvulus]species/GSPECIES/BIOPROJ/annotation
 GSPECIES.BIOPROJ.WSREL.SRA_gene_expression.tar.gz
 
 [TIER2]species/GSPECIES/BIOPROJ
 GSPECIES.BIOPROJ.WSREL.best_blastp_hits.txt.gz
 GSPECIES.BIOPROJ.WSREL.intergenic_sequences.fa.gz
-GSPECIES.BIOPROJ.WSREL.GBrowse.gff2.gz
-GSPECIES.BIOPROJ.WSREL.ncrna_transcripts.fa.gz
+GSPECIES.BIOPROJ.WSREL.annotations.gff3.gz
 GSPECIES.BIOPROJ.WSREL.annotations.gff2.gz
+GSPECIES.BIOPROJ.WSREL.ncrna_transcripts.fa.gz
 GSPECIES.BIOPROJ.WSREL.coding_transcripts.fa.gz
 
 [TIER3]species/GSPECIES/BIOPROJ
