@@ -6,7 +6,7 @@
 # and supplementing the "raw" GFF dumped from Ace with additional attributes
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-10-11 13:15:47 $
+# Last updated on: $Date: 2013-12-23 12:14:01 $
 #
 # Usage GFF_post_process [-options]
 
@@ -130,12 +130,18 @@ if ($overload_species or $all) {
 }
 
 ############################################################
+# Adds Interpolated map positions to Genes and Alleles
+############################################################
+if ($overload_marker or $all) {
+  &run_munging_script("GFF_post_process/overload_gff_marker_positions.pl");
+}
+
+############################################################
 # Overload the Variation lines with consequence etc
 ############################################################
 if ($overload_snp or $all) {
   &run_munging_script("GFF_post_process/overload_gff_variation.pl");
 }
-
 
 ############################################################
 # Add accessions to the Genomic_canonical  lines
@@ -145,25 +151,17 @@ if ($cleanse_gff or $all) {
 }
 
 ############################################################
-# Add data source tags to the Mass Spec lines
+# Add gene, transcript and wormpep info to CDS lines
 ############################################################
 if ($overload_cds or $all) {
   &run_munging_script("GFF_post_process/overload_gff_cds_wormpep.pl");
 }
 
 ############################################################
-# Add data source tags to the Mass Spec lines
+# Add Locus, Biotype etc to gene lines
 ############################################################
 if ($overload_gene or $all) {
   &run_munging_script("GFF_post_process/overload_gff_gene.pl");
-}
-
-
-############################################################
-# Adds Interpolated map positions to Genes and Alleles
-############################################################
-if ($overload_marker or $all) {
-  &run_munging_script("GFF_post_process/overload_gff_marker_positions.pl");
 }
 
 ############################################################
