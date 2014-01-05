@@ -6,7 +6,7 @@
 # builds wormbase & wormpep FTP sites
 # 
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-12-20 10:19:47 $
+# Last updated on: $Date: 2014-01-05 20:21:28 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -415,16 +415,16 @@ sub copy_dna_files{
         }
       }
 	
-      my $target_dna_file =  "$dna_dir/${gspecies}.${bioproj}.${WS_version_name}.genomic.fa.gz";
-      my $target_masked = "$dna_dir/${gspecies}.${bioproj}.${WS_version_name}.genomic_masked.fa.gz";
-      my $target_soft = "$dna_dir/${gspecies}.${bioproj}.${WS_version_name}.genomic_softmasked.fa.gz";
+      my $target_dna_file =  "$dna_dir/${gspecies}.${bioproj}.${WS_version_name}.genomic.fa";
+      my $target_masked = "$dna_dir/${gspecies}.${bioproj}.${WS_version_name}.genomic_masked.fa";
+      my $target_soft = "$dna_dir/${gspecies}.${bioproj}.${WS_version_name}.genomic_softmasked.fa";
       
-      eval {
-        foreach my $pair ([$dna_file, $target_dna_file],
-                          [$masked_file, $target_masked],
-                          [$soft_file, $target_soft]) {
-          my ($src, $tgt) = @$pair;
-          
+      foreach my $pair ([$dna_file, $target_dna_file],
+                        [$masked_file, $target_masked],
+                        [$soft_file, $target_soft]) {
+        my ($src, $tgt) = @$pair;
+        
+        eval {
           my ($read_fh, $write_fh);
           
           open($write_fh, ">$tgt") or die "Could not open $tgt for writing\n";
@@ -434,7 +434,7 @@ sub copy_dna_files{
           } else {
             open($read_fh, $src) or die "Could not open $src for reading\n";
           }
-
+          
           while(<$read_fh>) {
             if ($species eq 'elegans') {
               s/^\>CHROMOSOME_(\S+)/>$1/; 
@@ -443,14 +443,17 @@ sub copy_dna_files{
             }
             print $write_fh $_;
           }
-
+          
           close($write_fh) or die "Could not close $tgt after writing\n";
-        }          
-      };
-      $@ and do {
-        $log->error("Could not copy DNA file for $species; skipping\n");
-        next ACC;
-      };
+          
+          $wormbase->run_command("gzip -n -9 $tgt", $log)
+              and die "Could not gzip $tgt after copying\n";
+        };          
+        $@ and do {
+          $log->error("Could not copy DNA file $src for $species; skipping\n");
+          next ACC;
+        };
+      }
       
       map { $copied_files{$_} = 1 } ($dna_file, $masked_file, $soft_file);
       
