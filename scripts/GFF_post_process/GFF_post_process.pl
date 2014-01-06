@@ -6,7 +6,7 @@
 # and supplementing the "raw" GFF dumped from Ace with additional attributes
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-12-23 12:14:01 $
+# Last updated on: $Date: 2014-01-06 16:06:11 $
 #
 # Usage GFF_post_process [-options]
 
@@ -489,7 +489,7 @@ sub collate_and_sort {
     }
   }
 
-  $wormbase->run_command("gzip -9 $processed_gff_file", $log)
+  $wormbase->run_command("gzip -n -9 $processed_gff_file", $log)
       and $log->log_and_die("Failed to gzip the final processed GFF file\n");
 
   &register_complete("PROGRESS.${version_string}.collate_and_sort");
