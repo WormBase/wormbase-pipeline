@@ -14,43 +14,57 @@ use Wormbase;
 
 =item Options:
 
+  -old       Used the output format from the old nameserver
+
   -file	     file containing genes to merge <Mandatory>
 
     FORMAT:
+
+optional  EMAIL : mh6@sanger.ac.uk
+optional   NAME : Michael Paulini
+           DEAD : killed geneid for Bm9556 - WBGene00229817
+           LIVE : retained geneid for Bm4144 - WBGene00224405
+           USER : mh6 - WBPerson4055
+optional   WARNING : Merged gene WBGene00229817 was dead
+
+optional  EMAIL : pad@sanger.ac.uk
+optional   NAME : Paul Davis
+           DEAD : killed geneid for CBG11218 - WBGene00032378
+           LIVE : retained geneid for CBG11131 - WBGene00032305
+           USER : pad - WBPerson1983
+
+optional  EMAIL : gw3@sanger.ac.uk
+optional   NAME : Gareth Williams
+           DEAD : killed geneid for F32E10.7 - WBGene00017994
+           LIVE : retained geneid for F45E4.3 - WBGene00018468
+           USER : gw3 - WBPerson4025
+
+OLD:
 
 GENE MERGE
 USER : jspieth - WBPerson615
 LIVE:retained geneID for CBN18483 - WBGene00157208
 DEAD: killed geneID CBN20805 - WBGene00159530
 
-GENE MERGE
-USER : jspieth - WBPerson615
-LIVE:retained geneID for CBN32459 - WBGene00194424
-DEAD: killed geneID CBN30008 - WBGene00191973
-
-GENE MERGE
-USER : jspieth - WBPerson615
-LIVE:retained geneID for CBN32459 - WBGene00194424
-DEAD: killed geneID CBN24501 - WBGene00163226
 
     The blank line between entries is ESSENTIAL
 
   -debug     limits to specified user <Optional>
   -load      loads the resulting .ace file into geneace.
 
-
 e.g. perl batch_merge.pl -file merger.txt
 
 
 =cut
 
-my ($USER, $test, $file, $debug, $load);
+my ($USER, $test, $file, $debug, $load, $old);
 GetOptions(
 	   'user:s'     => \$USER,
 	   'test'       => \$test,
 	   'file:s'     => \$file,
 	   'debug:s'    => \$debug,
 	   'load'       => \$load,
+	   'old'        => \$old,
 	  ) or die;
 
 
@@ -94,11 +108,32 @@ while (<FILE>) {
     &merge_gene;
   }
   else { #gather info
-    if   (/^LIVE:retained\s+geneID\s+for\s+\S+\s+-\s+(WBGene\d{8})/) { $livegene = $1; } 
-    elsif(/^DEAD:\s+killed\s+geneID\s+\S+\s+-\s+(WBGene\d{8})/) { $deadgene = $1; } 
-    elsif(/^USER\s+:\s+\S+\s+-\s+(WBPerson\d+)/) { $user = $1; }
-    elsif(/^GENE MERGE/){} # ignore this line
-    else { $log->error("malformed line : $_\n") }
+    if (defined $old){
+      if   (/^LIVE:retained\s+geneID\s+for\s+\S+\s+-\s+(WBGene\d{8})/) { $livegene = $1; } 
+      elsif(/^DEAD:\s+killed\s+geneID\s+\S+\s+-\s+(WBGene\d{8})/) { $deadgene = $1; } 
+      elsif(/^USER\s+:\s+\S+\s+-\s+(WBPerson\d+)/) { $user = $1; }
+      elsif(/^GENE MERGE/){} # ignore this line
+      else { $log->error("malformed line : $_\n") }
+    }
+    else {
+      if   (/\s+LIVE\s+:\s+retained\s+geneid\s+for\s+\S+\s+-\s+(WBGene\d{8})/) {
+	$livegene = $1;
+      } 
+      elsif(/\s+DEAD\s+:\s+killed\s+geneid\s+for\s+\S+\s+-\s+(WBGene\d{8})/) { 
+	$deadgene = $1; 
+      } 
+      elsif(/\s+USER\s+:\s+\S+\s+-\s+(WBPerson\d+)/) {
+	$user = $1;
+      }
+      elsif(/\s+EMAIL/){} # ignore this line
+      elsif(/\s+NAME/){} # ignore this line
+      elsif(/\s+WARNING/){
+	print "Warning present for merger between $livegene :: $deadgene \n"
+      }
+      else { 
+	$log->error("malformed line : $_\n")
+      }
+    }
   }
 }
 
