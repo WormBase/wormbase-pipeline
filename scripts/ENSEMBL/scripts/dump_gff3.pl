@@ -3,9 +3,8 @@
 use strict;
 use warnings;
 
-use lib '../lib';
-use lib '/software/worm/ensembl/ensembl/modules';
-use lib $ENV{'CVS_DIR'}."/ENSEMBL/lib";
+use FindBin qw($Bin);
+use lib "$Bin/../lib";
 
 use Bio::EnsEMBL::DBSQL::DBAdaptor;
 use IO::File;
