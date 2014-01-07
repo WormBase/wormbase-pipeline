@@ -5,7 +5,7 @@
 # Dumps InterPro protein motifs from ensembl mysql (protein) database to an ace file
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-05-14 19:52:28 $
+# Last updated on: $Date: 2014-01-07 17:11:48 $
 =pod
 
 =head1 NAME
@@ -238,7 +238,7 @@ sub get_ip_mappings {
   # the interpro.xml file can be obtained from:
   # ftp.ebi.ac.uk/pub/databases/interpro/interpro.xml.gz
 
-  my $file = "/tmp/interpro.xml.gz";
+  my $file = "/tmp/interpro.$$.xml.gz";
 
   # get the interpro file from the EBI
   unlink "$file" if -e "$file";
@@ -282,7 +282,7 @@ sub get_ip_mappings {
 
 
 sub DESTROY {
-  my $file ='/tmp/interpro.xml.gz';
+  my $file ='/tmp/interpro.$$.xml.gz';
   unlink  $file if -e $file;
 }
 
