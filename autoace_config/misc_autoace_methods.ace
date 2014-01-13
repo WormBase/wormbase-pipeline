@@ -57,12 +57,15 @@ Ace2SO : "nc_transcript_ace2so"
 SO_parent_obj_tag "Gene"
 Exons "SO:0000147" // exon
 
+Ace2SO : "transposon_gene_ace2so"
+SO_parent_obj_tag "Corresponding_transposon"
+SO_children
+
 Ace2SO : "transposable_element_ace2so"
-Exons "SO:0000147" // exon
+SO_children
 
 Ace2SO : "gene_ace2so"
 SO_children
-
 
 
 ///////////////////////////////////////
@@ -96,6 +99,14 @@ GFF_source "gene"
 GFF_feature "gene"
 GFF_SO "SO:0000704" "gene_ace2so" // gene
 
+Method : "Transposon_gene" 
+Colour LIGHTRED
+Show_up_strand	
+Width 1.000000
+Show_text	
+GFF_source "gene"
+GFF_feature "gene"
+GFF_SO "SO:0000111" "transposon_gene_ace2so" // transposable_element_gene
 
 Method : "curated" 
 Colour DARKBLUE
@@ -196,7 +207,7 @@ Show_text
 Show_up_strand	
 GFF_source "Transposon"
 GFF_feature "transposable_element"
-GFF_SO "SO:0000101" // transposable_element
+GFF_SO "SO:0000101" "transposable_element_ace2so" // transposable_element
 
 Method : "Transposon_CDS"
 Colour DARKGRAY
@@ -206,7 +217,7 @@ Width 2.000000
 Show_text	
 GFF_source "Transposon_CDS"
 GFF_feature "transposable_element_CDS"
-GFF_SO "SO:0001896" "transposable_element_ace2so" // transposable_element_CDS
+GFF_SO "SO:0000234" "nc_transcript_ace2so" // mRNA
 
 Method : "Transposon_Pseudogene" 
 Colour DARKGRAY
@@ -218,7 +229,7 @@ EMBL_qualifier "\/note=\"\%s\"" "note"
 Remark "This object corresponds to a Pseudogene that has been classified as being part of a degraded transposon or has sequence similarity to a fragment of protein of Transposon origin."
 GFF_source "Transposon_Pseudogene"
 GFF_feature "transposable_element_pseudogene"
-GFF_SO "SO:0001897" "transposable_element_ace2so" // transposable_element_pseudogene
+GFF_SO "SO:0000516" "nc_transcript_ace2so" // pseudogenic_transcript
 
 Method : "ncRNA" 
 Colour GREEN
