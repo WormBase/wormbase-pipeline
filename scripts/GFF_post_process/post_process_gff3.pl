@@ -8,7 +8,7 @@
 # - Strip the class name prefix from all of the Name attrbutes 
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-11-12 16:57:42 $
+# Last updated on: $Date: 2014-01-13 13:29:54 $
 
 use strict;
 use lib $ENV{CVS_DIR};
@@ -19,23 +19,24 @@ use Log_files;
 use Storable;
 
 my %source_map = (
-  gene                     => 'WormBase',
-  Coding_transcript        => 'WormBase',
-  curated                  => 'WormBase',
-  Non_coding_transcript    => 'WormBase',
-  Pseudogene               => 'WormBase',
-  miRNA_mature             => 'WormBase',
-  miRNA_precursor          => 'WormBase',
-  tRNA                     => 'WormBase',
-  rRNA                     => 'WormBase',
-  ncRNA                    => 'WormBase',
-  snRNA                    => 'WormBase',
-  scRNA                    => 'WormBase',
-  stRNA                    => 'WormBase',
-  snoRNA                   => 'WormBase',
-  transposon_gene          => 'WormBase_transposon',
-  Transposon_CDS           => 'WormBase_transposon',
-  Transposon_Pseudogene    => 'WormBase_transposon',
+  gene                      => 'WormBase',
+  Coding_transcript         => 'WormBase',
+  curated                   => 'WormBase',
+  Non_coding_transcript     => 'WormBase',
+  Pseudogene                => 'WormBase',
+  miRNA_mature              => 'WormBase',
+  miRNA_precursor           => 'WormBase',
+  tRNA                      => 'WormBase',
+  rRNA                      => 'WormBase',
+  ncRNA                     => 'WormBase',
+  snRNA                     => 'WormBase',
+  scRNA                     => 'WormBase',
+  stRNA                     => 'WormBase',
+  snoRNA                    => 'WormBase',
+  transposable_element_gene => 'WormBase_transposon',
+  Transposon_CDS            => 'WormBase_transposon',
+  Transposon_Pseudogene     => 'WormBase_transposon',
+  Transposon                => 'WormBase_transposon',
     );
 
 my %between_base_feature_types = (

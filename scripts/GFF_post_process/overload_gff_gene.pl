@@ -5,7 +5,7 @@
 # Adds interpolated map positions and other information to gene and allele lines
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-09-27 14:44:38 $
+# Last updated on: $Date: 2014-01-13 13:29:54 $
 
 
 use strict;                                      
@@ -64,7 +64,8 @@ while (<$gff_in_fh>) {
 
   my ($gene, $changed_source);
 
-  if ($f[2] eq 'gene' and ($f[1] eq 'gene' or $f[1] eq 'transposon_gene')) {
+  if (($f[2] eq 'gene' or $f[2] eq 'transposable_element_gene') and 
+      ($f[1] eq 'gene' or $f[1] eq 'transposable_element_gene')) {
 
     if ($gff3) {
       my ($first) = split(/;/, $f[8]);
@@ -91,7 +92,7 @@ while (<$gff_in_fh>) {
           if exists $biotype_h->{$gene} and $f[8] !~ /Biotype/;
     }
     
-    my $new_source = ($biotype_h->{$gene} =~ /^transposon/) ? 'transposon_gene' : 'gene';
+    my $new_source = ($biotype_h->{$gene} =~ /^transposon/) ? 'transposable_element_gene' : 'gene';
     if ($f[1] ne $new_source) {
       $f[1] = $new_source;
       $changed_source = 1;
