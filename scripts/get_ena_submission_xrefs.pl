@@ -9,8 +9,8 @@ use lib $ENV{CVS_DIR};
 use Wormbase;
 use Log_files;
 
-my ($debug, $test, $store, $species, $wb, $svacefile, $pidacefile, $noload, $ncbi_tax_id, $pid_table_file,$sv_table_file,
-    %cds_xrefs, %pep_xrefs, $generate_tables, $sequence_xrefs, $protein_xrefs);
+my ($debug, $test, $store, $species, $wb, $svacefile, $pidacefile, $noload, $ncbi_tax_id, $pid_table_file,$sv_table_file, $gid_table_file, $gidacefile,
+    %cds_xrefs, %pep_xrefs, $generate_tables, $sequence_xrefs, $protein_xrefs, $gene_xrefs);
 
 
 &GetOptions ("debug=s"        => \$debug,
@@ -22,9 +22,12 @@ my ($debug, $test, $store, $species, $wb, $svacefile, $pidacefile, $noload, $ncb
              'svacefile=s'    => \$svacefile,
              "pidtable=s"     => \$pid_table_file,
              'pidacefile=s'   => \$pidacefile,
+             'gidtable=s'     => \$gid_table_file,
+             'gidacefile=s'   => \$gidacefile,
              'generatetables' => \$generate_tables,
              'sequencexrefs'  => \$sequence_xrefs,
              'proteinxrefs'   => \$protein_xrefs,
+             'genexrefs'      => \$gene_xrefs,
     );
 
 
@@ -48,11 +51,13 @@ $svacefile = $wb->acefiles . "/EBI_sequence_xrefs.ace" if not defined $svacefile
 $pidacefile = $wb->acefiles . "/EBI_pid_xrefs.ace" if not defined $pidacefile;
 $pid_table_file = $wb->acefiles . "/EBI_protein_ids.txt" if not defined $pid_table_file;
 $sv_table_file = $wb->acefiles . "/EBI_sequence_versions.txt" if not defined $sv_table_file;
+$gid_table_file = $wb->acefiles . "/EBI_gene_ids.txt" if not defined $gid_table_file;
 
 
 if ($generate_tables) {
   &lookup_from_ebi_production_dbs($pid_table_file, 'proteinxrefs');
   &lookup_from_ebi_production_dbs($sv_table_file, 'seqversions');
+  &lookup_from_ebi_production_dbs($gid_table_file, 'genexrefs');
 }
 
 
@@ -87,6 +92,33 @@ if ($sequence_xrefs) {
   }
 
 }
+
+if ($gene_xrefs) {
+
+  open(my $gtable_fh, $gid_table_file) 
+      or $log->log_and_die("Could not open $gid_table_file for reading\n");
+  
+  open(my $acefh, ">$gidacefile")
+      or $log->log_and_die("Could not open $gidacefile for writing\n");
+
+  my %tran2gene   = $wb->FetchData('worm_gene2geneID_name');
+  
+  while(<$gtable_fh>) {
+    my ($tran_name, $clone_acc, $locus_name, $locus_tag) = /^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)/;
+
+    if (exists $tran2gene{$tran_name} and $locus_tag ne '.' and $clone_acc ne '.') {
+      my $gene = $tran2gene{$tran_name}; 
+      print $acefh "\nGene : \"$gene\"\n";
+      print $acefh "Other_name \"$locus_tag\" Accession_evidence \"NDB\" \"$clone_acc\"\n";
+    }
+  }
+  close($acefh) or $log->log_and_die("Could not close $gidacefile after writing (probably disk full)\n");
+
+  unless ($noload) {
+    $wb->load_to_database($wb->autoace, $gidacefile, 'ENA_gene_xrefs', $log);
+  }
+}
+
 
 
 if ($protein_xrefs) {
@@ -199,6 +231,16 @@ sub lookup_from_ebi_production_dbs {
     
     system("$cmd > $output_file") 
         and $log->log_and_die("Could not successfully run '$cmd'\n");
+  } elsif ($type eq 'genexrefs') {
+
+    my $cmd =  "source $ena_env &&"
+        . " $ena_perl  $ENV{CVS_DIR}/get_gene_ids_ebiprod.pl"
+        . "  -enadb ENAPRO" 
+        . "  -orgid $ncbi_tax_id";
+    
+    system("$cmd > $output_file") 
+        and $log->log_and_die("Could not successfully run '$cmd'\n");
+
   }
 
 }
