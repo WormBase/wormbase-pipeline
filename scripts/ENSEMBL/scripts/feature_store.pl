@@ -174,6 +174,11 @@ foreach my $analysis_logic_name (@analysis_logic_names) {
     my $miRNAgenes = $wb2ens->parse_non_coding_genes_gff2( $gff_file, $analysis, 'miRNA_mature', 'miRNA');
     $verbose and printf STDERR "Read %d miRNA genes from GFF\n", scalar(@$miRNAgenes);
       push @nc_genes, @$miRNAgenes;
+        
+    ## lincRNA-genes
+    my $lincRNAgenes = $wb2ens->parse_non_coding_genes_gff2( $gff_file, $analysis, 'lincRNA');
+    $verbose and printf STDERR "Read %d lincRNA genes from GFF\n", scalar(@$lincRNAgenes);
+      push @nc_genes, @$lincRNAgenes;
     
     $verbose and printf STDERR "Read %d ncRNA genes in all. Writing...\n", scalar(@nc_genes); 
     $wb2ens->write_genes( \@nc_genes, 1 );
