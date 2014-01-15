@@ -358,6 +358,18 @@ GFF_source "stRNA"
 GFF_feature "stRNA"
 GFF_SO "SO:0000649" "nc_transcript_ace2so" // stRNA
 
+
+Method : "lincRNA" 
+Colour GREEN
+Show_up_strand 
+Width 2.000000
+Show_text 
+EMBL_feature "misc_RNA"
+Remark "large intervening non-coding RNA (SO:0001463)"
+GFF_source "lincRNA"
+GFF_feature "lincRNA"
+GFF_SO "SO:0001463" "nc_transcript_ace2so" // lincRNA
+
 ////////////////////////////
 // Allele related methods //
 ////////////////////////////
@@ -3771,7 +3783,7 @@ Method : "EXONERATE_BAC_END_OTHER"
 Right_priority 3.45
 
 Method : "BLAT_mRNA_BEST"
-Right_priority 3.5
+Right_priority 3.48
 
 Method : "BLAT_EST_BEST"
 Right_priority 3.53
