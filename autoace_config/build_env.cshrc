@@ -28,7 +28,6 @@ setenv BUILD_HOME $WORMPUB
 setenv WORM_PACKAGES ${WORM_SW_ROOT}/packages
 setenv WORM_BIN ${WORM_SW_ROOT}/bin
 setenv PIPELINE /nfs/nobackup2/ensemblgenomes/wormbase/BUILD/pipeline
-setenv LSFPATHS $PIPELINE # Resources hint for LSF
 setenv ACEDB_NO_BANNER
 
 setenv LSB_DEFAULTQUEUE production-rh6
