@@ -965,6 +965,41 @@ sub ncbi_bioproject {'PRJEB1797'};
 sub bioproject_description { 'Edinburgh University D.immitis genome project'};
 sub assembly_type {'contig'};
 
+######################################################
+package Namericanus;
+use Carp;
+our @ISA = qw(Wormbase Species);
+
+sub _new {	
+    my $class = shift;
+    my %param = %{ shift(@_) };
+
+    my $self = $class->initialize( $class->flatten_params( \%param ) );
+
+    # add stuff post object creation goes here
+
+    bless $self, $class;
+}
+sub full_name {
+  my $self = shift;
+  my %param = @_ ;
+  if($param{'-short'}){
+    return 'N. americanus';
+  } elsif($param{'-g_species'}){
+    return 'n_americanus';
+  }
+  else { 
+    return'Necator americanus';
+  }
+}
+sub chromosome_prefix {''}
+sub pep_prefix {'NA'}
+sub pepdir_prefix{'namericanus'};
+sub ncbi_tax_id {'51031'};
+sub ncbi_bioproject {'PRJNA72135'};
+sub bioproject_description { 'Genome Institute of Washington University N. americanus genome project'};
+sub assembly_type {'contig'};
+
 
 ######################################################
 package Loaloa;
