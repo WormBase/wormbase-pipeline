@@ -10,14 +10,18 @@ require 'hpricot'
 @@gene2species = Hash.new
 @@gene2id      = Hash.new
 
-def read_common_data(file)
-  eval File.new("/homes/mh6/project/BUILD/autoace/COMMON_DATA/#{file}",'r').read
+def read_common_data(file,species="autoace")
+  eval File.new("/homes/mh6/project/BUILD/#{species}/COMMON_DATA/#{file}",'r').read
   return $VAR1
 end
 
 @@seq2gene = read_common_data('cgc_name2gene.dat')
 @@seq2gene.merge!(read_common_data('worm_gene2geneID_name.dat'))
- 
+@@seq2gene.merge!(read_common_data('worm_gene2geneID_name.dat','remanei'))
+@@seq2gene.merge!(read_common_data('worm_gene2geneID_name.dat','briggsae'))
+@@seq2gene.merge!(read_common_data('worm_gene2geneID_name.dat','brenneri'))
+@@seq2gene.merge!(read_common_data('worm_gene2geneID_name.dat','japonica'))
+
 @@gen2seq  = @@seq2gene.invert
 
 def fix_name(name)
@@ -28,10 +32,12 @@ def fix_name(name)
     return @@seq2gene[name]
   elsif (@@seq2gene[name+'.1'])
 	  return @@seq2gene[name+'.1']
+  elsif (@@seq2gene[name+'a'])
+	  return @@seq2gene[name+'a']
   elsif name=~/WBGene\d+/
     return name
   else
-    puts "//barfed on #{name}"
+#    puts "//barfed on #{name}"
     return nil
   end
 end
@@ -66,7 +72,17 @@ species.each{|s|
      genes = s.search('//gene')
      genes.each{|g|
       @@gene2species[g.attributes['id']]=spec
-      @@gene2id[g.attributes['id']]=g.attributes['geneId'].sub('CELE_','')
+      geneId=g.attributes['geneId']
+      if spec.eql?('Caenorhabditis briggsae')
+           unless geneId=~/Cbr-/
+            geneId="Cbr-#{geneId}" if geneId=~/-/
+           end
+      end
+      geneId.sub!('CELE_','')
+      geneId.sub!('CRE_','CRE')
+      geneId.sub!('CAEBREN_','CBN')
+      geneId.sub!(/\/\S+/,'')
+      @@gene2id[g.attributes['id']]=geneId
      }
 }
 
