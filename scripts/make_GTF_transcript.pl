@@ -8,7 +8,7 @@
 # by Gary Williams
 #
 # Last updated by: $Author: gw3 $                      
-# Last updated on: $Date: 2013-12-06 11:15:18 $        
+# Last updated on: $Date: 2014-01-21 14:40:11 $        
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -28,7 +28,7 @@ use Coords_converter;
 # variables and command-line options #
 ######################################
 
-my ($help, $debug, $test, $verbose, $store, $wormbase, $species);
+my ($help, $debug, $test, $verbose, $store, $wormbase, $species, $noprefix);
 my ($output, $dbdir);
 
 GetOptions ("help"        => \$help,
@@ -39,6 +39,7 @@ GetOptions ("help"        => \$help,
 	    "output=s"    => \$output,
 	    "database=s"  => \$dbdir,
 	    "species=s"   => \$species,
+	    "noprefix"    => \$noprefix # remove the CHROMSOME_ prefix from the chromosome name
 	    );
 
 #$test = 0;
@@ -61,6 +62,7 @@ if ( $store ) {
 $dbdir          = $wormbase->test ? $wormbase->database("current") : $wormbase->autoace unless $dbdir; # Database path
 my $common_dir      = "$dbdir/COMMON_DATA";       # GFF directory
 my $gffdir          = "$dbdir/GFF_SPLITS";
+my $prefix          = $wormbase->chromosome_prefix;
 
 # in test mode?
 if ($test) {
@@ -110,6 +112,10 @@ foreach my $file (@files) {
       my $transcript_id = $1;
       $transcript_id =~ s/"//g;
 
+      if ($noprefix) {
+	$line[0] =~ s/${prefix}(.+)/$1/;
+      }
+
       if ($line[2] ne 'exon') {
 	$line[2] = 'transcript';
       }
@@ -146,6 +152,10 @@ foreach my $file (@files) {
       if ($line[1] eq 'Transposon_Pseudogene') {next} # these don't have gene_ids
       my $transcript_id = $1;
       $transcript_id =~ s/"//g;
+
+      if ($noprefix) {
+	$line[0] =~ s/${prefix}(.+)/$1/;
+      }
 
       if ($line[2] ne 'exon') {
 	$line[2] = 'transcript';
