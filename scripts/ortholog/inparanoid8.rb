@@ -77,7 +77,24 @@ species.each{|s|
            unless geneId=~/Cbr-/
             geneId="Cbr-#{geneId}" if geneId=~/-/
            end
+      elsif spec.eql?('Caenorhabditis remanei')
+           unless geneId=~/Cre-/
+            geneId="Cre-#{geneId}" if geneId=~/-/
+           end
+      elsif spec.eql?('Caenorhabditis brenneri')
+           unless geneId=~/Cbn-/
+            geneId="Cbn-#{geneId}" if geneId=~/-/
+           end
+      elsif spec.eql?('Caenorhabditis japonica')
+           unless geneId=~/Cjp-/
+            geneId="Cjp-#{geneId}" if geneId=~/-/
+           end
+      elsif spec.eql?('Pristionchus pacificus')
+           unless geneId=~/Ppa-/
+            geneId="Ppa-#{geneId}" if geneId=~/-/
+           end
       end
+
       geneId.sub!('CELE_','')
       geneId.sub!('CRE_','CRE')
       geneId.sub!('CAEBREN_','CBN')
