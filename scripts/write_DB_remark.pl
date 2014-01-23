@@ -7,7 +7,7 @@
 # This script interogates an ACEDB database and returns all pfam/Interpro/blastx 
 # data as appropriate and generates a suitable DB_remark
 #
-# Last updated on: $Date: 2014-01-23 11:17:58 $
+# Last updated on: $Date: 2014-01-23 13:38:37 $
 # Last updated by: $Author: pad $
 
 
@@ -76,7 +76,9 @@
 # asRNA genes
 #	w/locus { "C. elegans antisense RNA $locus"; }
 #	w/o locus { "C. elegans predicted antisense RNA"; }
-
+# piRNA genes
+#	w/locus { "C. elegans piwi-associated RNA $locus"; }
+#	w/o locus { "C. elegans predicted piwi-associated RNA"; }
 
 
     
@@ -546,6 +548,13 @@ TRANSCRIPT: while ( my $transcript = $transcripts->next ) {
       $full_string .= $wormbase->full_name('-short' => 1)." antisense RNA $cgc_name ";
     } else {
       $full_string .= $wormbase->full_name('-short' => 1)." predicted antisense RNA ";
+    }
+  }
+    elsif ($type eq 'piRNA') { # piRNA genes
+    if ($cgc_name) {
+      $full_string .= $wormbase->full_name('-short' => 1)." piwi-associated RNA $cgc_name ";
+    } else {
+      $full_string .= $wormbase->full_name('-short' => 1)." predicted piwi-associated RNA ";
     }
   }
 
