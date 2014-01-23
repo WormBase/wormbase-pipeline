@@ -7,8 +7,8 @@
 # This script interogates an ACEDB database and returns all pfam/Interpro/blastx 
 # data as appropriate and generates a suitable DB_remark
 #
-# Last updated on: $Date: 2012-03-07 16:57:01 $
-# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2014-01-23 11:17:58 $
+# Last updated by: $Author: pad $
 
 
 ### DB_remark is generated as follows:  ###
@@ -68,6 +68,17 @@
 # scRNA genes
 #	w/locus { "C. elegans small cytoplasmic RNA $locus"; }
 #	w/o locus { "C. elegans predicted small cytoplasmic RNA"; }
+#    
+# lincRNA genes
+#	w/locus { "C. elegans large intervening non-coding RNA RNA $locus"; }
+#	w/o locus { "C. elegans predicted large intervening non-coding RNA"; }
+#    
+# asRNA genes
+#	w/locus { "C. elegans antisense RNA $locus"; }
+#	w/o locus { "C. elegans predicted antisense RNA"; }
+
+
+
     
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -523,6 +534,21 @@ TRANSCRIPT: while ( my $transcript = $transcripts->next ) {
       $full_string .= $wormbase->full_name('-short' => 1)." predicted small cytoplasmic RNA ";
     }
   }
+  elsif ($type eq 'lincRNA') { # lincRNA genes
+    if ($cgc_name) {
+      $full_string .= $wormbase->full_name('-short' => 1)." large intervening non-coding RNA $cgc_name ";
+    } else {
+      $full_string .= $wormbase->full_name('-short' => 1)." predicted large intervening non-coding RNA ";
+    }
+  }
+  elsif ($type eq 'asRNA') { # asRNA genes
+    if ($cgc_name) {
+      $full_string .= $wormbase->full_name('-short' => 1)." antisense RNA $cgc_name ";
+    } else {
+      $full_string .= $wormbase->full_name('-short' => 1)." predicted antisense RNA ";
+    }
+  }
+
 
   $object_count++;
   next TRANSCRIPT if ($full_string eq "");
