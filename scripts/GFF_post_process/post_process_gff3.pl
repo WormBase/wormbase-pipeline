@@ -7,8 +7,8 @@
 # - Correcting coordinates of between-base features for GFF3 conventions
 # - Strip the class name prefix from all of the Name attrbutes 
 #
-# Last updated by: $Author: klh $
-# Last updated on: $Date: 2014-01-13 13:29:54 $
+# Last updated by: $Author: pad $
+# Last updated on: $Date: 2014-01-23 15:45:59 $
 
 use strict;
 use lib $ENV{CVS_DIR};
@@ -33,6 +33,9 @@ my %source_map = (
   scRNA                     => 'WormBase',
   stRNA                     => 'WormBase',
   snoRNA                    => 'WormBase',
+  lincRNA                   => 'WormBase',
+  asRNA                     => 'WormBase',
+  piRNA                     => 'WormBase',
   transposable_element_gene => 'WormBase_transposon',
   Transposon_CDS            => 'WormBase_transposon',
   Transposon_Pseudogene     => 'WormBase_transposon',
