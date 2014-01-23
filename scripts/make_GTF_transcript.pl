@@ -7,8 +7,8 @@
 #
 # by Gary Williams
 #
-# Last updated by: $Author: gw3 $                      
-# Last updated on: $Date: 2014-01-21 14:40:11 $        
+# Last updated by: $Author: pad $                      
+# Last updated on: $Date: 2014-01-23 11:57:19 $        
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -90,6 +90,8 @@ open (OUTDAT, ">$output") || die "Can't open $output\n";
 #	ncRNA
 #	rRNA
 #	scRNA
+#       asRNA
+#       lincRNA
 #	snlRNA
 #	snoRNA
 #	snRNA
@@ -97,7 +99,7 @@ open (OUTDAT, ">$output") || die "Can't open $output\n";
 #	tRNA
 #);
 
-my @files = glob("$gffdir/*{Coding_transcript.gff,Non_coding_transcript.gff,miRNA_primary_transcript.gff,ncRNA.gff,rRNA.gff,scRNA.gff,snlRNA.gff,snoRNA.gff,snRNA.gff,stRNA.gff,tRNA.gff}");
+my @files = glob("$gffdir/*{Coding_transcript.gff,Non_coding_transcript.gff,miRNA_primary_transcript.gff,ncRNA.gff,rRNA.gff,asRNA,lincRNA,scRNA.gff,snlRNA.gff,snoRNA.gff,snRNA.gff,stRNA.gff,tRNA.gff}");
 
 foreach my $file (@files) {
   open (IN, "<$file") || $log->log_and_die("Can't open $file\n");

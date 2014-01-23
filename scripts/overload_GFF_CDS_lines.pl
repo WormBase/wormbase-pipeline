@@ -4,8 +4,8 @@
 # 
 # by Dan Lawson
 #
-# Last updated by: $Author: klh $
-# Last updated on: $Date: 2012-06-20 08:43:54 $
+# Last updated by: $Author: pad $
+# Last updated on: $Date: 2014-01-23 11:57:20 $
 
 #
 #    1. Brief_identification
@@ -134,7 +134,7 @@ foreach my $file (@gff_files) {
       unless  (/^\S+\s+(curated|ncRNA|snlRNA|tRNAscan-SE-1\.\d+)\s+(\w+primary_transcript|CDS|tRNA)/ ||
                /^\S+\s+(rRNA)\s+(\w+_primary_transcript)/ ||
                /^\S+\s+(curated_miRNA)\s+(miRNA_primary_transcript)/ ||
-               /^\S+\s+(\w+_mature_transcript)\s+(snRNA|snoRNA|tRNA|scRNA|miRNA|stRNA)/) {
+               /^\S+\s+(\w+_mature_transcript)\s+(snRNA|snoRNA|tRNA|scRNA|miRNA|stRNA|lincRNA|asRNA)/) {
 		   print OUT "$_\n";
 		   next;
       }
