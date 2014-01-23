@@ -340,6 +340,9 @@ sub load_genes {
                                      ['snRNA', 'snRNA'],
                                      ['snoRNA', 'snoRNA'],
                                      ['scRNA', 'scRNA'],
+                                     ['piRNA', 'piRNA'],
+                                     ['lincRNA', 'lincRNA'],
+                                     ['asRNA', 'asRNA'],
                                      ['miRNA_mature', 'miRNA']) {
       my ($source, $biotype) = @$source_biotype_pair;
 
