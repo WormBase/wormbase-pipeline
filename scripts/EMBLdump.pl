@@ -2,8 +2,8 @@
 #
 # EMBLdump.pl :  makes modified EMBL dumps from camace.
 # 
-#  Last updated on: $Date: 2013-10-16 15:02:53 $
-#  Last updated by: $Author: gw3 $
+#  Last updated on: $Date: 2014-01-23 15:27:53 $
+#  Last updated by: $Author: pad $
 
 use strict;
 use Getopt::Long;
@@ -105,7 +105,7 @@ GetOptions (
   "test"            => \$test,
   "debug=s"         => \$debug,
   "store:s"         => \$store,
-  "single=s@"       => \$single,
+  "single=s"       => \$single,
   "species:s"       => \$species,
   "database:s"      => \$database,
   "dumpraw"         => \$dump_raw,
@@ -498,6 +498,8 @@ sub process_feature_table {
           $mod_dir eq 'miRNA' or
           $mod_dir eq 'siRNA' or 
           $mod_dir eq 'scRNA' or
+          $mod_dir eq 'antisense_RNA' or
+          $mod_dir eq 'piRNA' or
           $mod_dir eq 'snRNA') {
         $rna_class = $mod_dir;
         $mod_dir = 'ncRNA';
