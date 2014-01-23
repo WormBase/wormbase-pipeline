@@ -358,6 +358,16 @@ GFF_source "stRNA"
 GFF_feature "stRNA"
 GFF_SO "SO:0000649" "nc_transcript_ace2so" // stRNA
 
+Method : "asRNA" 
+Colour GREEN
+Show_up_strand 
+Width 2.000000
+Show_text 
+EMBL_feature "misc_RNA"
+Remark "Antisense RNA is RNA that is transcribed from the coding, rather than the template, strand of DNA. It is therefore complementary to mRNA. (SO:0000644)"
+GFF_source "asRNA"
+GFF_feature "asRNA"
+GFF_SO "SO:0000644" "nc_transcript_ace2so" // asRNA
 
 Method : "lincRNA" 
 Colour GREEN
@@ -3483,6 +3493,12 @@ Method : "snlRNA"
 Right_priority 2.6
 
 Method : "stRNA"
+Right_priority 2.6
+
+Method : "lincRNA"
+Right_priority 2.6
+
+Method : "ssRNA"
 Right_priority 2.6
 
 Method : "miRNA"
