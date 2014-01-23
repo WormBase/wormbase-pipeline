@@ -380,6 +380,17 @@ GFF_source "lincRNA"
 GFF_feature "lincRNA"
 GFF_SO "SO:0001463" "nc_transcript_ace2so" // lincRNA
 
+Method : "piRNA"
+Colour GREEN
+Show_up_strand 
+Width 2.000000
+Show_text 
+EMBL_feature "misc_RNA"
+Remark "A small non coding RNA, part of a silencing system that prevents the spreading of selfish genetic elements. (SO:0001035)"
+GFF_source "piRNA"
+GFF_feature "piRNA"
+GFF_SO "SO:0001035" "nc_transcript_ace2so" // piRNA
+
 ////////////////////////////
 // Allele related methods //
 ////////////////////////////
@@ -3498,7 +3509,10 @@ Right_priority 2.6
 Method : "lincRNA"
 Right_priority 2.6
 
-Method : "ssRNA"
+Method : "asRNA"
+Right_priority 2.6
+
+Method : "piRNA"
 Right_priority 2.6
 
 Method : "miRNA"
