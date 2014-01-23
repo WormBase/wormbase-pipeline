@@ -14,7 +14,7 @@
 //
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: pad $
-// Last edited on: $Date: 2013-11-19 17:32:22 $
+// Last edited on: $Date: 2014-01-23 10:23:06 $
 //
 //
 // Additional things to consider. If classes are added or new data in the ?Gene class
@@ -365,6 +365,11 @@
 ?Gene_cluster Title UNIQUE ?Text                                        // Information on the Gene cluster 
               Description ?Text
               Contains_gene ?Gene XREF In_cluster
+	      Contains_non_WB_gene   DB_info Database ?Database ?Database_field ?Text  //for genes from non WB species
+              Attribute_of Analysis ?Analysis XREF Gene_cluster
+              Associated_with WBProcess ?WBProcess XREF Gene_cluster 
+              Species UNIQUE ?Species
+              Reference ?Paper XREF Gene_cluster
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -800,6 +805,7 @@
 	 Other_name Text	  // sp. 7 etc.
 	 G_species UNIQUE Text    // e.g. 'c_elegans' - used internally for file generation
 	 NCBITaxonomyID UNIQUE Int 
+	 In_analysis ?Analysis XREF Species_in_analysis
 	 Assembly ?Sequence_collection //used for linking to the species assemblies
 
 
@@ -3066,6 +3072,7 @@
                  Transgene ?Transgene XREF Reference #Evidence
                  Operon ?Operon XREF Reference #Evidence
                  Expression_cluster ?Expression_cluster XREF Reference #Evidence
+		 Gene_cluster ?Gene_cluster XREF Reference #Evidence
                  Feature ?Feature XREF Defined_by_paper                 // added [030424 dl]
                  Microarray_experiment ?Microarray_experiment XREF Reference //added for Microarray_experiment model
                  Anatomy_term ?Anatomy_term XREF Reference #Evidence
@@ -3370,6 +3377,8 @@
 	     Sample ?Condition XREF Analysis
 	     Expression_cluster_RNAseq ?Expression_cluster XREF RNAseq
 	     Expression_cluster_tiling_array ?Expression_cluster XREF Tiling_array
+             Gene_cluster ?Gene_cluster XREF Analysis 
+             Species_in_analysis ?Species XREF In_analysis
              Reference ?Paper XREF Describes_analysis
              Conducted_by ?Person XREF Conducted		// not always the same as the author of the paper - eg Erich running OrthoMCL
              URL Text					// eg www.treefam.org  (or would this be covered by Source_database?)
@@ -3441,7 +3450,8 @@
 //
 //////////////////////////////////////////////////	
 
-?WBProcess      Summary ?Text #Evidence
+?WBProcess      Name  ?Text
+                Summary ?Text #Evidence
                 Process_term ?Text
 		Public_name UNIQUE ?Text
                 Other_name ?Text
@@ -3452,7 +3462,8 @@
                                 Interaction ?Interaction XREF WBProcess #Evidence
                                 Anatomy_term ?Anatomy_term XREF WBProcess #Evidence
                                 Life_stage ?Life_stage XREF WBProcess #Evidence 
-                                Molecule ?Molecule XREF WBProcess #Evidence 
+                                Molecule ?Molecule XREF WBProcess #Evidence
+                                Gene_cluster ?Gene_cluster XREF WBProcess #Evidence
                 Associated_with Phenotype ?Phenotype XREF WBProcess #Evidence
                                 GO_term ?GO_term #Evidence
                                 DO_term ?DO_term #Evidence
