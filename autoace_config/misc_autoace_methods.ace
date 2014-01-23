@@ -363,7 +363,7 @@ Colour GREEN
 Show_up_strand 
 Width 2.000000
 Show_text 
-EMBL_feature "misc_RNA"
+EMBL_feature "antisense_RNA"
 Remark "Antisense RNA is RNA that is transcribed from the coding, rather than the template, strand of DNA. It is therefore complementary to mRNA. (SO:0000644)"
 GFF_source "asRNA"
 GFF_feature "asRNA"
@@ -385,7 +385,7 @@ Colour GREEN
 Show_up_strand 
 Width 2.000000
 Show_text 
-EMBL_feature "misc_RNA"
+EMBL_feature "piRNA"
 Remark "A small non coding RNA, part of a silencing system that prevents the spreading of selfish genetic elements. (SO:0001035)"
 GFF_source "piRNA"
 GFF_feature "piRNA"
