@@ -6,8 +6,8 @@
 #
 # Do fast overlap matching of positions of two sets of things.
 #
-# Last updated by: $Author: klh $     
-# Last updated on: $Date: 2013-09-12 15:21:37 $      
+# Last updated by: $Author: pad $     
+# Last updated on: $Date: 2014-01-23 13:36:07 $      
 
 =pod
 
@@ -107,6 +107,9 @@ Routines to read GFF files from the database defined in $wormbase
 @list = $ovlp->get_miRNA_primary($chromosome);
 @list = $ovlp->get_ncRNA($chromosome);
 @list = $ovlp->get_scRNA($chromosome);
+@list = $ovlp->get_piRNA($chromosome);
+@list = $ovlp->get_asRNA($chromosome);
+@list = $ovlp->get_lincRNA($chromosome);
 @list = $ovlp->get_snRNA($chromosome);
 @list = $ovlp->get_snoRNA($chromosome);
 @list = $ovlp->get_stRNA($chromosome);
@@ -2093,6 +2096,87 @@ sub get_scRNA {
 
 }
 
+
+=head2
+
+    Title   :   get_asRNA
+    Usage   :   my @gff = $ovlp->get_asRNA($chromosome)
+    Function:   reads the GFF data for the asRNA transcripts
+    Returns :   list of lists for GFF data
+    Args    :   chromosome number
+
+=cut
+
+sub get_asRNA {
+  my $self = shift;
+  my ($chromosome) = @_;
+
+  my %GFF_data = 
+   (
+     method			=> "asRNA",
+     gff_source			=> "asRNA",
+     gff_type			=> "asRNA",
+     ID_after			=> 'Transcript\s+',
+
+   );
+
+  return $self->read_GFF_file($chromosome, \%GFF_data);
+
+}
+
+=head2
+
+    Title   :   get_lincRNA
+    Usage   :   my @gff = $ovlp->get_lincRNA($chromosome)
+    Function:   reads the GFF data for the lincRNA transcripts
+    Returns :   list of lists for GFF data
+    Args    :   chromosome number
+
+=cut
+
+sub get_lincRNA {
+  my $self = shift;
+  my ($chromosome) = @_;
+
+  my %GFF_data = 
+   (
+     method			=> "lincRNA",
+     gff_source			=> "lincRNA",
+     gff_type			=> "lincRNA",
+     ID_after			=> 'Transcript\s+',
+
+   );
+
+  return $self->read_GFF_file($chromosome, \%GFF_data);
+
+}
+
+=head2
+
+    Title   :   get_piRNA
+    Usage   :   my @gff = $ovlp->get_piRNA($chromosome)
+    Function:   reads the GFF data for the piRNA transcripts
+    Returns :   list of lists for GFF data
+    Args    :   chromosome number
+
+=cut
+
+sub get_piRNA {
+  my $self = shift;
+  my ($chromosome) = @_;
+
+  my %GFF_data = 
+   (
+     method			=> "piRNA",
+     gff_source			=> "piRNA",
+     gff_type			=> "piRNA",
+     ID_after			=> 'Transcript\s+',
+
+   );
+
+  return $self->read_GFF_file($chromosome, \%GFF_data);
+
+}
 
 =head2
 
