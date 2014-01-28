@@ -105,9 +105,9 @@ while(<FILE>){
       undef $tflag;
     }
     else { #gather info
-      if   (/^(WBGene\d{8}|WBVar\d{8})/) { $gene = $1; } 
-      elsif(/^(WBPerson\d+)/) { $person = $1; }
-      elsif(/^Remark\s+\"(.*)\"/){
+      if   (/(WBGene\d{8}|WBVar\d{8})/) { $gene = $1; } 
+      elsif(/(WBPerson\d+)/) { $person = $1; }
+      elsif(/Remark\s+\:\s+\"(.*)\"/){
 	$remark = $1;
 	if (/Transposon_CDS/) {$tflag = "1";}
       }
