@@ -7,7 +7,7 @@
 # simple script for creating new (sequence based) Gene objects 
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2013-02-12 10:42:46 $
+# Last edited on: $Date: 2014-01-28 14:51:29 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -81,6 +81,7 @@ $species_data{'remanei'} = '1';
 $species_data{'brenneri'} = '1';
 $species_data{'japonica'} = '1';
 $species_data{'brugia'} = '1';
+$species_data{'ovolvulus'} = '1';
 
 
 
@@ -328,10 +329,10 @@ sub process_gene{
       $override = "1";
       print SN "Object : $seq\nGene $gene_id\n\n" if ($sneak);
     }
-
+    
     print "$seq does not exist, creating new Gene object $gene_id\n";
     $log->write_to("$seq does not exist, creating new Gene object $gene_id\n");
-
+    
     print OUT "\nGene : $gene_id\n";
     print OUT "Live\n";
     print OUT "Version 1\n";
@@ -348,7 +349,6 @@ sub process_gene{
     print OUT "History Version_change 1 now $person Event Created\n";
     print OUT "Method Gene\n";
     print OUT "Positive_clone $p_clone Inferred_automatically \"From sequence, transcript, pseudogene data\"\n" if ($species eq 'elegans');
-
     # set CGC name if it exists and set public name based on CGC name or sequence name
     if($cgc && ($cgc ne "NULL")){
       print OUT "CGC_name \"$cgc\"\n";
