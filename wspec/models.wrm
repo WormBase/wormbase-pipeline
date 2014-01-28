@@ -14,7 +14,7 @@
 //
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: pad $
-// Last edited on: $Date: 2014-01-24 09:44:03 $
+// Last edited on: $Date: 2014-01-28 11:20:32 $
 //
 //
 // Additional things to consider. If classes are added or new data in the ?Gene class
@@ -641,9 +641,6 @@
 	 NCBITaxonomyID UNIQUE Int // Allows for finer grade attachment of NCBItaxon IDs
 	 In_analysis ?Analysis XREF Species_in_analysis
 	 Assembly ?Sequence_collection //used for linking to the species assemblies for reference strains.
-
-
-
          Wild_isolate // to identify wild isolates - since genotype is free text
          Isolation GPS UNIQUE Float UNIQUE Float #Position_confidence // Latitude +/-DD.DDDDD Longitude +/-DD.DDDDD
 		   Elevation UNIQUE Float #Position_confidence // Elevation above sea level.
