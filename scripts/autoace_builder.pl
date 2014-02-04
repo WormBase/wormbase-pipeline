@@ -6,8 +6,8 @@
 #
 # Usage : autoace_builder.pl [-options]
 #
-# Last edited by: $Author: klh $
-# Last edited on: $Date: 2013-12-12 19:10:25 $
+# Last edited by: $Author: mh6 $
+# Last edited on: $Date: 2014-02-04 14:26:42 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -315,8 +315,10 @@ sub map_features_to_genome {
   if (-e $oligo_set_mapping_file) {
     $log->write_to("Loading existing mappings: $oligo_set_mapping_file\n");
     $wormbase->load_to_database( $wormbase->autoace, $oligo_set_mapping_file, "OLIGO_SET_TO_GENOME", $log);
-  } elsif ($wormbase->species ne 'brugia') {
-    $log->log_and_die("Could not find Oligo_set mapping file ($oligo_set_mapping_file). Bad. Exiting\n");
+  } else{
+    unless ($wormbase->species eq 'brugia' || $wormbase->species eq 'ovolvulus') {
+     $log->log_and_die("Could not find Oligo_set mapping file ($oligo_set_mapping_file). Bad. Exiting\n");
+    }
   }
 
 
