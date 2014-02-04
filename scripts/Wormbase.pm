@@ -1338,10 +1338,10 @@ sub establish_paths {
   $self->{'blat'}        = $self->orgdb . "/BLAT";
   $self->{'checks'}      = $self->autoace . "/CHECKS";
   $self->{'ontology'}    = $self->autoace . "/ONTOLOGY";
-  $self->{'tace'}   = '/software/worm/bin/acedb/tace';
-  $self->{'giface'} = '/software/worm/bin/acedb/giface';
-  $self->{'giface_server'} = '/software/acedb/bin/sgifaceserver';
-  $self->{'giface_client'} = '/software/acedb/bin/saceclient';
+  $self->{'tace'}   = '/software/worm/acedb/4.9.60/bin/tace';
+  $self->{'giface'} = '/software/worm/acedb/4.9.60/bin/giface';
+  $self->{'giface_server'} = '/software/worm/acedb/4.9.60/bin/sgifaceserver';
+  $self->{'giface_client'} = '/software/worm/acedb/4.9.60/bin/saceclient';
   
   $self->{'databases'}->{'geneace'} = $self->wormpub . "/DATABASES/geneace";
   $self->{'databases'}->{'camace'}  = $self->wormpub . "/DATABASES/camace";
