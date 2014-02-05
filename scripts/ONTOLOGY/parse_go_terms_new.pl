@@ -185,7 +185,7 @@ if ($rnai) {
     
     while (my $obj=$it->next) {
 	next unless $obj->isObject();
-	
+
 	my @genes_tmp=$obj->Gene;
 	my @genes=();
 	foreach (@genes_tmp) {
@@ -193,6 +193,7 @@ if ($rnai) {
 		push @genes, $_;
 	    }
 	}
+
 	my $ref=$obj->Reference||'';
 	next if $papers_to_skip{$ref};
 	my @phen_array_tmp=$obj->Phenotype;
@@ -203,7 +204,10 @@ if ($rnai) {
 	}
 	
 	foreach my $gene (@genes) {
-            next if not $gene->Live;
+          if ($gene->Status ne 'Live') {
+            print STDERR "Skipping Dead/Supporessed gene $gene\n";
+            next;
+          }
 	    my $species=$gene->Species;
 	    foreach my $phen (@phen_array) {
 		if (! ($phen2go{$phen})) {
