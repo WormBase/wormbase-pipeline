@@ -2,7 +2,7 @@
 #
 
 # Last updated by: $Author: klh $                      
-# Last updated on: $Date: 2011-12-21 11:30:42 $        
+# Last updated on: $Date: 2014-02-05 15:57:41 $        
 
 use strict;
 use Getopt::Long;
@@ -18,11 +18,13 @@ use Log_files;
 # command-line options                            #
 ###################################################
 
-my $ftp_host = "ftp-private.ebi.ac.uk";
-my $ftp_dir  = "/TXhExzF7KgVBMHtJXDct/to_ena";
-my ($ftp_login, $ftp_user, $ftp_pass);
+my ($ftp_user, $ftp_pass, $ftp_host, 
+    $cl_ftp_user, $cl_ftp_pass, $cl_ftp_host, $cl_ftp_dir,
+    );
 
 my ($help, $debug, $test, $verbose, $species, $comment, @clones);
+
+my $ftp_dir = "clone";
 
 GetOptions (
   "debug=s"      => \$debug,
@@ -30,10 +32,10 @@ GetOptions (
   "help"         => \$help,
   "species=s"    => \$species,
   "verbose"      => \$verbose,
-  "ftphost=s"    => \$ftp_host,
-  "ftplogin=s"   => \$ftp_login,
-  "ftpdir=s"     => \$ftp_dir,
-  "ftppass=s"    => \$ftp_pass,
+  "ftphost=s"    => \$cl_ftp_host,
+  "ftpuser=s"    => \$cl_ftp_user,
+  "ftpdir=s"     => \$cl_ftp_dir,
+  "ftppass=s"    => \$cl_ftp_pass,
   "clones=s@"    => \@clones,
   "comment=s"    => \$comment,
     );
@@ -54,27 +56,22 @@ my $submit_repo = $wormbase->submit_repos;
 my $ws_version = $wormbase->get_wormbase_version_name;
 my $submit_log_prefix = sprintf("%s/submit_logs/submitted_to_ENA", $submit_repo);
 
-
-
-if (defined $ftp_login) {
-  ($ftp_user, $ftp_pass) = $ftp_login =~ /^(\S+):(\S+)$/;
-  if (not defined $ftp_pass) {
-    $log->log_and_die("Invalid login details specified with -ftplogin - should be username:password\n");
-  }
-} else {
-  my $login_details_file = $wormbase->wormpub . "/ebi_resources/EBIFTP.s";
-  open(my $infh, $login_details_file)
-      or $log->log_and_die("Can't open secure account details file $login_details_file\n");
-  while (<$infh>){
-    /^USER_ID:(\S+)$/ and $ftp_user = $1;
-    /^PASSWD:(\S+)$/ and $ftp_pass = $1;
-  }
-  close($infh);
-
-  $log->log_and_die("Could not find both user name and password in login details file\n")
-      if not defined $ftp_user or not defined $ftp_pass;
-  
+my $login_details_file = $wormbase->wormpub . "/ebi_resources/EBIFTP.s";
+open(my $infh, $login_details_file)
+    or $log->log_and_die("Can't open secure account details file $login_details_file\n");
+while (<$infh>){
+  /^HOST:(\S+)$/ and $ftp_host = $1;
+  /^USER:(\S+)$/ and $ftp_user = $1;
+  /^PASS:(\S+)$/ and $ftp_pass = $1;
+  /^DIR:(\S+)$/  and $ftp_dir  = $1;
 }
+close($infh);
+
+# command-line takes precedence over details in file
+$ftp_host = $cl_ftp_host if defined $cl_ftp_host;
+$ftp_user = $cl_ftp_user if defined $cl_ftp_user;
+$ftp_pass = $cl_ftp_pass if defined $cl_ftp_pass;
+$ftp_dir  = $cl_ftp_dir  if defined $cl_ftp_dir;
 
 ###################################################
 # Establish ftp connection                        #
