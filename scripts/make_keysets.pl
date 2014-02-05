@@ -6,8 +6,8 @@
 #
 # Usage : make_keysets.pl [-options]
 #
-# Last edited by: $Author: pad $
-# Last edited on: $Date: 2010-08-16 16:24:35 $
+# Last edited by: $Author: klh $
+# Last edited on: $Date: 2014-02-05 16:36:46 $
 
 #################################################################################
 # variables                                                                     #
@@ -141,7 +141,8 @@ if (($touched) || ($all)) {
 if (($history) || ($all)) {
   print "Generating wormpep_mods release files\n" if ($debug);
   my @releases;
-  my @rdirs = `ls /nfs/disk69/ftp/pub2/wormbase/FROZEN_RELEASES/ | grep WS`;
+  my $fr_dir = $wormbase->ftp_site . '/FROZEN_RELEASES/';
+  my @rdirs = glob("$fr_dir/WS*");
   my $rdirs;
   foreach $rdirs(@rdirs){
     if ($rdirs =~ /WS(\d+)$/){
