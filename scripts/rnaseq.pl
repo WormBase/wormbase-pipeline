@@ -19,6 +19,7 @@ use Coords_converter;
 use Wormbase;
 use Log_files;
 use Storable;
+use Modules::RNASeq;
 
 use List::Util qw(max);
 
@@ -30,15 +31,14 @@ use LSF::JobManager;
 #use NameDB;
 
 
-my ($help, $test, $verbose, $store, $wormbase, $species, $debug, $nomakehits, $outdir);
-my ($quick, $method, $bamfile, $chunk_id, $chunk_total, $outfname);
+my ($help, $test, $verbose, $store, $wormbase, $species, $debug, $outdir);
+my ($quick, $method, $chunk_id, $chunk_total, $outfname);
 
 GetOptions ("help"         => \$help,
             "test"         => \$test,
             "verbose"      => \$verbose,
 	    "debug:s"      => \$debug,
 	    "store:s"      => \$store,
-	    "nomakehits"   => \$nomakehits,   # use to skip making the tophat_out/hits.tmp files - slow!
 	    "species:s"    => \$species,
 	    "outdir:s"     => \$outdir,      # the default is the BUILD/species/acefiles directory
 
@@ -46,7 +46,6 @@ GetOptions ("help"         => \$help,
 	    "chunktotal:s" => \$chunk_total, # set when running a sub-job of this script to find the hits in the hits file for a set of chromosomes
 	    "acefname:s"   => \$outfname,    # set when running a sub-job of this script to find the hits in the hits file for a set of chromosomes
 
-	    "bamfile:s"    => \$bamfile,     # set when running a sub-job of this script to create the hitsfile for a single BAM file
             );
 
 
@@ -69,16 +68,14 @@ if (!defined $species) {$species = $wormbase->species}
 my $log = Log_files->make_build_log($wormbase);
 
 my $acefiles = $wormbase->acefiles;
-
-#my ($database) = glob("~wormpub/DATABASES/current_DB");
-#my ($database) = glob("~wormpub/BUILD/autoace");
-#my $database = "/nfs/panda/ensemblgenomes/wormbase/DATABASES/current_DB";
 my $database = $wormbase->autoace;
 
 print "Using database $database\n";
 
 my %F_clones; # forward reads
 my %R_clones; # reverse reads
+my %F_stranded_clones; # forward stranded reads
+my %R_stranded_clones; # reverse stranded reads
   
 
 
@@ -86,13 +83,14 @@ my %R_clones; # reverse reads
 # read in the data
 ##########################
 
+my $RNASeq = RNASeq->new($wormbase, $log, 0, 0);
+
 my $Software = "/nfs/panda/ensemblgenomes/wormbase/software/packages";
 
 my $FEATURE = "RNASeq";
 
-my $RNASeqBase   = "/nfs/nobackup2/ensembl_genomes/wormbase/BUILD/RNASeq/$species";
-my $RNASeqSRADir    = "$RNASeqBase/SRA";
-my $RNASeqGenomeDir = "$RNASeqBase/Genome";
+my $RNASeqSRADir    = $RNASeq->{RNASeqSRADir};
+my $RNASeqGenomeDir = $RNASeq->{RNASeqGenomeDir};
 chdir $RNASeqSRADir;
 
 $outdir = "$acefiles/rnaseq" if (!defined $outdir);
@@ -104,16 +102,13 @@ my $seq_obj = Sequence_extract->invoke($database, 0, $wormbase);
 my $coords = Coords_converter->invoke($database, 0, $wormbase);
 
 
+
 if ($chunk_id) { # getting the alignments for a set of chromosomes
   ###########################
   # run the sub-job under LSF
   ###########################
 
   &do_chromosome($chunk_id, $chunk_total, $outfname);
-  
-} elsif ($bamfile) {
-  
-  &do_make_hits($bamfile);
   
 } else {
   
@@ -129,54 +124,10 @@ if ($chunk_id) { # getting the alignments for a set of chromosomes
   my $script = "rnaseq.pl";
 
   my $lsf;
-  my $scratch_dir;
+  my $scratch_dir = $wormbase->logs;
   my $job_name;
   my @bsub_options;
-  $wormbase->checkLSF;
-  $lsf = LSF::JobManager->new();
-  $scratch_dir = $wormbase->logs;
-  $job_name = "worm_".$wormbase->species."_rnaseqhits";
   my $store_file = $wormbase->build_store; # get the store file to use in all commands
-
-  my $err = "$scratch_dir/rnaseq.pl.lsf.err";
-  my $out = "$scratch_dir/rnaseq.pl.lsf.out";
-  push @bsub_options, (-M =>  "8000", # in EBI both -M and -R are in Gb
-		       -R => 'select[mem>8000] rusage[mem=8000]', 
-		       -J => $job_name,
-		       -e => $err,
-		       -o => $out,
-		      );
-
-  if (!$nomakehits) {
-    print "Making the hits files...\n";
-    opendir(my $dh, $RNASeqSRADir) || die "cant open directory $RNASeqSRADir";
-    while(my $dir = readdir $dh) {
-      if ((-d $dir || -l $dir) && $dir !~ /^\./) {
-	my $tophat = "$dir/tophat_out";
-	print "Reading BAM file in $dir\n";
-	
-	my $cmd = "$script -bamfile $tophat";
-	$cmd .= " -test" if $test;
-	$cmd .= " -debug $debug" if $debug;
-	$cmd = $wormbase->build_cmd_line($cmd, $store_file);
-	$log->write_to("$cmd\n");
-	print "bsub options: @bsub_options\n";
-	print "cmd to be executed: $cmd\n";
-	$lsf->submit(@bsub_options, $cmd);
-      }  
-    }
-    closedir $dh;
-
-
-    print "Waiting for LSF jobs to finish.\n";
-    $lsf->wait_all_children( history => 1 );
-    for my $job ( $lsf->jobs ) {
-      if ($job->history->exit_status != 0) {
-	$log->write_to("Job $job (" . $job->history->command . ") exited non zero: " . $job->history->exit_status . "\n");
-      }
-    }
-    $lsf->clear;
-  }
 
   ##########################################################
   # now run the sub-job for each chromosome/contig under LSF
@@ -186,6 +137,9 @@ if ($chunk_id) { # getting the alignments for a set of chromosomes
   if (!-e $outdir) {
     mkdir $outdir, 0777;
   }
+
+  # create the LSF Group "/RNASeq/$species" which is now limited to running 15 jobs at a time
+  my $status = $wormbase->run_command("bgadd -L 15 /RNASeq/$species", $log); 
 
   my @chromosomes = $wormbase->get_chromosome_names(-mito => 1, -prefix => 1);
 
@@ -216,6 +170,7 @@ if ($chunk_id) { # getting the alignments for a set of chromosomes
 			 -J => 'rnaseq_alignments',
 			 -e => $err,
 			 -o => $out,
+			 -g => "/RNASeq/$species", # add this job to the LSF group '/RNASeq/$species'
 		      );
     $lsf->submit(@bsub_options, $cmd);
   }  
@@ -238,7 +193,7 @@ if ($chunk_id) { # getting the alignments for a set of chromosomes
   ##########################################################
 
 
-  $log->write_to("Concatenating the resulting ace files to make misc_RNASeq_hits_${species}.ace");
+  $log->write_to("Concatenating the resulting ace files to make misc_RNASeq_hits_${species}.ace\n");
   my $final_file = $wormbase->misc_dynamic."/misc_RNASeq_hits_${species}.ace";
   system("rm -f $final_file");
   system("cat $outdir/RNASeq_*.ace $outdir/virtual_objects_RNASeq_*.ace > $final_file");
@@ -254,42 +209,28 @@ exit(0);
 # SUBROUTINES
 ##############################################################
 
-
-##############################################################
-# get the regions of hits from a BAM file to create a hits file
-# do_make_hits($bamfile);
-
-sub do_make_hits {
-  my ($tophat) = @_;
-
-  my $bamfile = "$tophat/accepted_hits.bam";
-  my $hitsfile = "$tophat/hits.tmp";
-  if (-e $bamfile) {
-    # get the hits with a count
-    print "writing $hitsfile\n";
-    unlink "$hitsfile";
-    system(qq#/$Software/BEDTools/bin/bamToBed -split -i $bamfile | awk '{OFS=\"\t\"; print \$1,\$2,\$3,\$6 }' | sort -k1,1 -k2,3n | uniq -c > $hitsfile#);
-  }
-
-
-}
-
-##############################################################
 # routine to be executed in sub-job of this script in a LSF queue
 sub do_chromosome {
 
   my ($chunk_id, $chunk_total, $outfname) = @_;
+
+  $log->write_to("Get experiments from config\n");
+  my $experiments = $RNASeq->get_transcribed_long_experiments();
 
   $outdir = "$acefiles/rnaseq" if (!defined $outdir);
   mkdir $outdir, 0777;
   my $output = "$outdir/RNASeq_${outfname}";
   my $Foutput = "$outdir/RNASeq_F_${outfname}";
   my $Routput = "$outdir/RNASeq_R_${outfname}";
+  my $Plusoutput = "$outdir/RNASeq_P_${outfname}";
+  my $Minusoutput = "$outdir/RNASeq_M_${outfname}";
   my $vfile = "$outdir/virtual_objects_RNASeq_${outfname}";
   open(VIRT, ">$vfile") or $log->log_and_die("Could not open $vfile for writing\n");
   open (ACE, ">$output") || $log->log_and_die("Can't open the file $output\n");
   open (FACE, ">$Foutput") || $log->log_and_die("Can't open the file $Foutput\n");
   open (RACE, ">$Routput") || $log->log_and_die("Can't open the file $Routput\n");
+  open (PACE, ">$Plusoutput") || $log->log_and_die("Can't open the file $Plusoutput\n");
+  open (MACE, ">$Minusoutput") || $log->log_and_die("Can't open the file $Minusoutput\n");
 
 
   my @chromosomes = $wormbase->get_chunked_chroms(-prefix => 1,
@@ -303,34 +244,37 @@ sub do_chromosome {
 
     %F_clones = ();
     %R_clones = ();
+    %F_stranded_clones = ();
+    %R_stranded_clones = ();
     my $library_count = 0;
-    
-    my @dir_list;
-    
-    # read the aligned reads into the %clones hash
-    opendir(my $dh, $RNASeqSRADir) || die "cant open directory $RNASeqSRADir\n";
-    while(my $dir = readdir $dh) {
-      if ((-d $dir || -l $dir) && $dir !~ /^\./) {
-	push @dir_list, $dir;
-      }
-    }
-    closedir $dh;
-    
-    foreach my $dir (@dir_list) {
-      print "reading $dir\n";
-      if (readhits($dir, $chromosome)) {
+    my $library_stranded_count = 0;
+
+    my $stranded_experiments1 = $RNASeq->exclude_experiments($experiments, 'strandedness', 'unknown');
+    my $stranded_experiments = $RNASeq->exclude_experiments($stranded_experiments1, 'strandedness', 'unstranded');
+    $library_stranded_count = keys %{$stranded_experiments};
+
+    foreach my $experiment_accession (keys %{$experiments}) {
+      if (readhits($experiment_accession, $chromosome)) {
 	$library_count++;
       } # count the libraries successfully read
+      if (exists $stranded_experiments->{$experiment_accession} ) {
+	if (read_stranded_hits($experiment_accession, $chromosome)) {
+	  $library_count++;
+	} # count the libraries successfully read
+      }
     }
     
+
     # write the results to an ace file 
     print "writing ace file\n";
-    writeace($library_count, $chromosome, $outfname);
+    writeace($library_count, $library_stranded_count, $chromosome, $outfname);
   }
 
   close(ACE);
   close(FACE);
   close(RACE);
+  close(PACE);
+  close(MACE);
   close(VIRT);
 
 }
@@ -339,10 +283,9 @@ sub do_chromosome {
 # read the aligned reads of the bam file into the clone sequence arrays
 # returns '1' if it succeeded in reading the data
 sub readhits {
-  my ($dir, $chromosome) = @_;
+  my ($experiment_accession, $chromosome) = @_;
 
-  my $hitsfile = "$dir/tophat_out/hits.tmp";
-  my $bamfile = "$dir/tophat_out/accepted_hits.bam";
+  my $hitsfile = "$experiment_accession/".$RNASeq->{'alignmentDir'}."/hits.tmp";
   
   if (! -f $hitsfile) {return 0}
   
@@ -388,9 +331,62 @@ sub readhits {
     }
     
     $line_count++;
-    #if ($line_count % 100000 == 0) {
-    #  print "  Processed $line_count lines...\n";
-    #}
+  }    
+  
+  return 1;
+}
+#############################################################
+# read the aligned stranded reads of the bam file into the clone sequence arrays
+# returns '1' if it succeeded in reading the data
+sub read_stranded_hits {
+  my ($experiment_accession, $chromosome) = @_;
+
+  my $hitsfile = "$experiment_accession/".$RNASeq->{'alignmentDir'}."/hits.stranded";
+  
+  if (! -f $hitsfile) {return 0}
+  
+  # read the hits
+  print "\treading stranded hits\n";
+  open(BED, "< $hitsfile") || $log->log_and_die("Can't open the file $hitsfile\n");
+  
+  my $sense;
+  my ($clone, $clone_start, $clone_end);
+  my ($indel, $change);
+  my $clone_last = 0;
+  my $in_chromosome = 0;
+  my $offset;
+  
+  my $line_count = 0;
+  
+  while (my $line = <BED>) {
+    if ($line =~ /^track/) {next}
+    if ($line =~ /^\s*$/) {next}
+    
+    my @cols = split /\s+/, $line;
+    
+    my $chrom = $cols[2];
+    my $start = $cols[3] + 1;
+    my $end = $cols[4];
+    my $reads = $cols[1];
+    my $sense = $cols[5];
+    
+    if ($chromosome ne $chrom) {
+      if ($in_chromosome) {
+        last;
+      } else {
+        next;
+      } 
+    }
+      
+    $in_chromosome = 1;
+    
+    if ($sense eq '+') {
+      map { $F_stranded_clones{$chrom}->[$_] += $reads } ($start..$end); # efficient way of adding the reads value to a range of elements in an array
+    } else {
+      map { $R_stranded_clones{$chrom}->[$_] += $reads } ($start..$end); # efficient way of adding the reads value to a range of elements in an array
+    }
+    
+    $line_count++;
   }    
   
   return 1;
@@ -400,7 +396,7 @@ sub readhits {
 # write the results to ace files  
 
 sub writeace {
-  my ($library_count, $chromosome, $outfname) = @_;
+  my ($library_count, $library_stranded_count, $chromosome, $outfname) = @_;
 
   my (@tiles);
 
@@ -411,19 +407,25 @@ sub writeace {
     my $chr_end = $chr_start + 300000 - 1;
     $chr_end = $chr_len if $chr_end > $chr_len;
     push @tiles, {
-      start => $chr_start, 
-      end   => $chr_end,
-      segs  => [],
-      F_segs => [],
-      R_segs => [],
+		  start => $chr_start, 
+		  end   => $chr_end,
+		  segs  => [],
+		  F_segs => [],
+		  R_segs => [],
+		  P_segs => [], # stranded on plus-strand
+		  M_segs => [], # stranded on minus-strand
     };
   }
 
   my @F_counts;
   my @R_counts;
+  my @F_stranded_counts;
+  my @R_stranded_counts;
   
   @F_counts = (exists $F_clones{$chromosome}) ? @{$F_clones{$chromosome}} : (); # counts in each base in this clone
   @R_counts = (exists $R_clones{$chromosome}) ? @{$R_clones{$chromosome}} : (); # counts in each base in this clone
+  @F_stranded_counts = (exists $F_stranded_clones{$chromosome}) ? @{$F_stranded_clones{$chromosome}} : (); # counts in each base in this clone
+  @R_stranded_counts = (exists $R_stranded_clones{$chromosome}) ? @{$R_stranded_clones{$chromosome}} : (); # counts in each base in this clone
     
   for( my $tile_idx = 1; $tile_idx <= @tiles; $tile_idx++) {
     my $tile = $tiles[$tile_idx-1];
@@ -437,27 +439,76 @@ sub writeace {
     my $R_level=0;
     my $R_clone_start = 0; # start position of growing block - initialise to 0 to show we don't have a block yet
 
+    # and the same variables for the plus and minus strand output
+    my $P_level=0;
+    my $P_clone_start = 0; # start position of growing block - initialise to 0 to show we don't have a block yet
+    my $M_level=0;
+    my $M_clone_start = 0; # start position of growing block - initialise to 0 to show we don't have a block yet
+
     for(my $pos = $tile->{start}; $pos <= $tile->{end}; $pos++) {
       my $counts;
       my $F_asymmetry;
       my $R_asymmetry;
+      my $P_counts;
+      my $M_counts;
 
       # first do the sum of the forward and reverse counts (averaged over all libraries)
       if (!defined  $F_counts[$pos]) {$F_counts[$pos] = 0}
       if (!defined  $R_counts[$pos]) {$R_counts[$pos] = 0}
-      $counts = ($F_counts[$pos] + $R_counts[$pos]) / $library_count; # get the average read hits over all libraries
-      $counts = int ($counts + 0.5); # this removes regions with < half an average hit
+      if (!defined  $F_stranded_counts[$pos]) {$F_stranded_counts[$pos] = 0}
+      if (!defined  $R_stranded_counts[$pos]) {$R_stranded_counts[$pos] = 0}
 
-      if ($counts > 1.5 * $level || $counts < 0.66 * $level) { # have a substantial change in the amount of reads
-	if ($clone_start != 0 && $level != 0) { # have an existing region that needs to be closed and written
-          push @{$tile->{segs}}, [$clone_start - $tile->{start} + 1, $pos - $tile->{start}, $level];                         
+      if ($library_count) {
+	$counts = ($F_counts[$pos] + $R_counts[$pos]) / $library_count; # get the average read hits over all libraries
+	$counts = int ($counts + 0.5); # this removes regions with < half an average hit
+	
+	if ($counts > 1.5 * $level || $counts < 0.66 * $level) { # have a substantial change in the amount of reads
+	  if ($clone_start != 0 && $level != 0) { # have an existing region that needs to be closed and written
+	    push @{$tile->{segs}}, [$clone_start - $tile->{start} + 1, $pos - $tile->{start}, $level];                         
+	  }
+	  $level = $counts; # set new level
+	  
+	  if ($level) {
+	    $clone_start = $pos;
+	  } else {
+	    $clone_start = 0; # level is zero, so not growing a region
+	  }
 	}
-	$level = $counts; # set new level
+      }
 
-	if ($level) {
-	  $clone_start = $pos;
-	} else {
-	  $clone_start = 0; # level is zero, so not growing a region
+      if ($library_stranded_count) {
+	$P_counts = $F_stranded_counts[$pos] / $library_stranded_count; # get the average read hits over all libraries
+	$P_counts = int ($P_counts + 0.5); # this removes regions with < half an average hit
+	
+	if ($P_counts > 1.5 * $P_level || $P_counts < 0.66 * $P_level) { # have a substantial change in the amount of reads
+	  if ($P_clone_start != 0 && $P_level != 0) { # have an existing region that needs to be closed and written
+	    push @{$tile->{P_segs}}, [$P_clone_start - $tile->{start} + 1, $pos - $tile->{start}, $P_level];                         
+	  }
+	  $P_level = $P_counts; # set new level
+	  
+	  if ($P_level) {
+	    $P_clone_start = $pos;
+	  } else {
+	    $P_clone_start = 0; # level is zero, so not growing a region
+	  }
+	}
+      }
+
+      if ($library_stranded_count) {
+	$M_counts = $R_stranded_counts[$pos] / $library_stranded_count; # get the average read hits over all libraries
+	$M_counts = int ($M_counts + 0.5); # this removes regions with < half an average hit
+	
+	if ($M_counts > 1.5 * $M_level || $M_counts < 0.66 * $M_level) { # have a substantial change in the amount of reads
+	  if ($M_clone_start != 0 && $M_level != 0) { # have an existing region that needs to be closed and written
+	    push @{$tile->{M_segs}}, [$M_clone_start - $tile->{start} + 1, $pos - $tile->{start}, $M_level];                         
+	  }
+	  $M_level = $M_counts; # set new level
+	  
+	  if ($M_level) {
+	    $M_clone_start = $pos;
+	  } else {
+	    $M_clone_start = 0; # level is zero, so not growing a region
+	  }
 	}
       }
 
@@ -507,6 +558,12 @@ sub writeace {
     if ($clone_start != 0 && $level != 0) { # have an final region that needs to be closed and written
       push @{$tile->{segs}}, [$clone_start - $tile->{start} + 1, $tile->{end} - $tile->{start} + 1, $level];
     }
+    if ($P_clone_start != 0 && $P_level != 0) { # have an final region that needs to be closed and written
+      push @{$tile->{P_segs}}, [$P_clone_start - $tile->{start} + 1, $tile->{end} - $tile->{start} + 1, $P_level];
+    }
+    if ($M_clone_start != 0 && $M_level != 0) { # have an final region that needs to be closed and written
+      push @{$tile->{M_segs}}, [$M_clone_start - $tile->{start} + 1, $tile->{end} - $tile->{start} + 1, $M_level];
+    }
     if ($F_clone_start != 0 && $F_level != 0) { # have an final region that needs to be closed and written
       push @{$tile->{F_segs}}, [$F_clone_start - $tile->{start} + 1, $tile->{end} - $tile->{start} + 1, $F_level];
     }
@@ -535,13 +592,39 @@ sub writeace {
   for(my $tile_idx = 1; $tile_idx <= @tiles; $tile_idx++) {
     my $tile = $tiles[$tile_idx-1];
 
+    my $vseq = "$chromosome:RNASeq_plus_strand_reads:$tile_idx";
+
+    printf VIRT "S_Child Feature_data %s %d %d\n", $vseq, $tile->{start}, $tile->{end};
+
+    print PACE "\nFeature_data : \"$vseq\"\n";
+    foreach my $seg (@{$tile->{P_segs}}) {
+      print PACE "Feature RNASeq_Plus_strand @$seg \"Region of forward sense RNASeq reads\"\n";
+    }
+  }
+
+  for(my $tile_idx = 1; $tile_idx <= @tiles; $tile_idx++) {
+    my $tile = $tiles[$tile_idx-1];
+
+    my $vseq = "$chromosome:RNASeq_minus_strand_reads:$tile_idx";
+
+    printf VIRT "S_Child Feature_data %s %d %d\n", $vseq, $tile->{start}, $tile->{end};
+
+    print MACE "\nFeature_data : \"$vseq\"\n";
+    foreach my $seg (@{$tile->{M_segs}}) {
+      print MACE "Feature RNASeq_Minus_strand @$seg \"Region of reverse sense RNASeq reads\"\n";
+    }
+  }
+
+  for(my $tile_idx = 1; $tile_idx <= @tiles; $tile_idx++) {
+    my $tile = $tiles[$tile_idx-1];
+
     my $vseq = "$chromosome:RNASeq_forward_reads:$tile_idx";
 
     printf VIRT "S_Child Feature_data %s %d %d\n", $vseq, $tile->{start}, $tile->{end};
 
     print FACE "\nFeature_data : \"$vseq\"\n";
     foreach my $seg (@{$tile->{F_segs}}) {
-      print FACE "Feature RNASeq_F_asymmetry @$seg \"Region of forward RNASeq reads\"\n";
+      print FACE "Feature RNASeq_F_asymmetry @$seg \"Region of forward asymmetric RNASeq reads\"\n";
     }
   }
 
@@ -554,7 +637,7 @@ sub writeace {
 
     print RACE "\nFeature_data : \"$vseq\"\n";
     foreach my $seg (@{$tile->{R_segs}}) {
-      print RACE "Feature RNASeq_R_asymmetry @$seg \"Region of reverse RNASeq reads\"\n";
+      print RACE "Feature RNASeq_R_asymmetry @$seg \"Region of reverse asymmetric RNASeq reads\"\n";
     }
   }
 
