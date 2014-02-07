@@ -7,8 +7,8 @@
 # Script to convert cgc strain file into ace file for geneace
 # Page download and update upload to geneace has been automated [ck1]
 
-# Last updated by: $Author: mt3 $
-# Last updated on: $Date: 2013-07-18 13:49:36 $
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2014-02-07 11:59:21 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -474,7 +474,7 @@ sub check_details {
     print NEWGENES "Allele \"$variationId\" Inferred_automatically \"From strain object: $strain\"\n\n";
 
   }
-  print ALLELEFLUFF "Variation : $variationId\nPublic_name \"$_allele\"\nStatus Live\n\n"; 
+  print ALLELEFLUFF "Variation : $variationId\nPublic_name \"$_allele\"\nStatus Live\n\n" unless $geneAceDB->fetch(Variation => $variationId); 
 }
 
 ##################################################################################################
