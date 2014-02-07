@@ -77,7 +77,7 @@ my %R_clones; # reverse reads
 my %F_stranded_clones; # forward stranded reads
 my %R_stranded_clones; # reverse stranded reads
   
-
+my $chromosome_prefix = $wormbase->chromosome_prefix;
 
 ##########################
 # read in the data
@@ -236,7 +236,7 @@ sub do_chromosome {
   open (MACE, ">$Minusoutput") || $log->log_and_die("Can't open the file $Minusoutput\n");
 
 
-  my @chromosomes = $wormbase->get_chunked_chroms(-prefix => 1,
+  my @chromosomes = $wormbase->get_chunked_chroms(-prefix => 0,
                                                   -mito => 1,
 						  -chunk_total => $chunk_total,
 						  -chunk_id    => $chunk_id);
@@ -254,7 +254,6 @@ sub do_chromosome {
 
     my $stranded_experiments1 = $RNASeq->exclude_experiments($experiments, 'strandedness', 'unknown');
     my $stranded_experiments = $RNASeq->exclude_experiments($stranded_experiments1, 'strandedness', 'unstranded');
-    $library_stranded_count = keys %{$stranded_experiments};
 
     foreach my $experiment_accession (keys %{$experiments}) {
       if (readhits($experiment_accession, $chromosome)) {
@@ -262,7 +261,7 @@ sub do_chromosome {
       } # count the libraries successfully read
       if (exists $stranded_experiments->{$experiment_accession} ) {
 	if (read_stranded_hits($experiment_accession, $chromosome)) {
-	  $library_count++;
+	  $library_stranded_count++;
 	} # count the libraries successfully read
       }
     }
@@ -392,7 +391,7 @@ sub read_stranded_hits {
     $line_count++;
   }    
   
-  return 1;
+  return $line_count; # hits.stranded files that are empty count as not existing
 }
 
 ##############################################################
@@ -403,7 +402,7 @@ sub writeace {
 
   my (@tiles);
 
-  my $chr_len = $coords->Superlink_length($chromosome);
+  my $chr_len = $coords->Superlink_length($chromosome_prefix . $chromosome);
 
   for(my $i=0; $i < $chr_len; $i += 300000) {
     my $chr_start = $i + 1;
@@ -576,12 +575,12 @@ sub writeace {
   }
 
 
-  print VIRT "\nSequence : \"$chromosome\"\n";
+  print VIRT "\nSequence : \"${chromosome_prefix}${chromosome}\"\n";
   
   for(my $tile_idx = 1; $tile_idx <= @tiles; $tile_idx++) {
     my $tile = $tiles[$tile_idx-1];
 
-    my $vseq = "$chromosome:RNASeq:$tile_idx";
+    my $vseq = "${chromosome_prefix}${chromosome}:RNASeq:$tile_idx";
 
     printf VIRT "S_Child Feature_data %s %d %d\n", $vseq, $tile->{start}, $tile->{end};
 
@@ -595,7 +594,7 @@ sub writeace {
   for(my $tile_idx = 1; $tile_idx <= @tiles; $tile_idx++) {
     my $tile = $tiles[$tile_idx-1];
 
-    my $vseq = "$chromosome:RNASeq_plus_strand_reads:$tile_idx";
+    my $vseq = "${chromosome_prefix}${chromosome}:RNASeq_stranded_reads:$tile_idx";
 
     printf VIRT "S_Child Feature_data %s %d %d\n", $vseq, $tile->{start}, $tile->{end};
 
@@ -608,7 +607,7 @@ sub writeace {
   for(my $tile_idx = 1; $tile_idx <= @tiles; $tile_idx++) {
     my $tile = $tiles[$tile_idx-1];
 
-    my $vseq = "$chromosome:RNASeq_minus_strand_reads:$tile_idx";
+    my $vseq = "${chromosome_prefix}${chromosome}:RNASeq_stranded_reads:$tile_idx";
 
     printf VIRT "S_Child Feature_data %s %d %d\n", $vseq, $tile->{start}, $tile->{end};
 
@@ -622,7 +621,7 @@ sub writeace {
   for(my $tile_idx = 1; $tile_idx <= @tiles; $tile_idx++) {
     my $tile = $tiles[$tile_idx-1];
 
-    my $vseq = "$chromosome:RNASeq_forward_reads:$tile_idx";
+    my $vseq = "${chromosome_prefix}${chromosome}:RNASeq_forward_reads:$tile_idx";
 
     printf VIRT "S_Child Feature_data %s %d %d\n", $vseq, $tile->{start}, $tile->{end};
 
@@ -635,7 +634,7 @@ sub writeace {
   for(my $tile_idx = 1; $tile_idx <= @tiles; $tile_idx++) {
     my $tile = $tiles[$tile_idx-1];
 
-    my $vseq = "$chromosome:RNASeq_reverse_reads:$tile_idx";
+    my $vseq = "${chromosome_prefix}${chromosome}:RNASeq_reverse_reads:$tile_idx";
 
     printf VIRT "S_Child Feature_data %s %d %d\n", $vseq, $tile->{start}, $tile->{end};
 
