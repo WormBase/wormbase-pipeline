@@ -601,7 +601,7 @@ sub writeace {
 
     print PACE "\nFeature_data : \"$vseq\"\n";
     foreach my $seg (@{$tile->{P_segs}}) {
-      print PACE "Feature RNASeq_Plus_strand @$seg \"Region of forward sense RNASeq reads\"\n";
+      print PACE "Feature RNASeq_stranded @$seg \"Region of forward sense RNASeq reads\"\n";
     }
   }
 
@@ -614,7 +614,8 @@ sub writeace {
 
     print MACE "\nFeature_data : \"$vseq\"\n";
     foreach my $seg (@{$tile->{M_segs}}) {
-      print MACE "Feature RNASeq_Minus_strand @$seg \"Region of reverse sense RNASeq reads\"\n";
+      my ($st, $en, $sc) = @$seg;
+      print MACE "Feature RNASeq_stranded $en $st $sc \"Region of reverse sense RNASeq reads\"\n"; # reverse the start and end positions for reverse strand
     }
   }
 
