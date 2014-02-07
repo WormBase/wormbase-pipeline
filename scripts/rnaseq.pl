@@ -145,6 +145,9 @@ if ($chunk_id) { # getting the alignments for a set of chromosomes
 
   my $chunk_total = 200; # maximum number of chunked jobs to run
 
+  my $memory = 6000;
+  if ($species eq 'elegans') {$memory = 10000}
+
   $chunk_total = scalar(@chromosomes) if $chunk_total > scalar(@chromosomes);
   $log->write_to("bsub commands . . . . \n\n");
   $lsf = LSF::JobManager->new();
@@ -165,8 +168,8 @@ if ($chunk_id) { # getting the alignments for a set of chromosomes
     $log->write_to("logs files:\n $err\n $out\n");
     print "cmd to be executed: $cmd\n";
     @bsub_options = ();
-    push @bsub_options, (-M =>  "4000", # in EBI both -M and -R are in Gb
-			 -R => 'select[mem>4000] rusage[mem=4000]', 
+    push @bsub_options, (-M => "$memory", # in EBI both -M and -R are in Gb
+			 -R => "select[mem>$memory] rusage[mem=$memory]", 
 			 -J => 'rnaseq_alignments',
 			 -e => $err,
 			 -o => $out,
