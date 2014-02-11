@@ -6,8 +6,8 @@
 # A simple script to send a check list to the person who will be performing the next
 # build to check the current build
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2013-12-11 14:54:23 $
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2014-02-11 17:02:26 $
 use strict;
 use warnings;
 use lib $ENV{'CVS_DIR'};
@@ -569,6 +569,18 @@ sub classes_to_check {
 			       #Pseudogene => '',
 			       Transcript => 'Bm1',
 			     },
+		 'ovovlulus' => {
+			       Ace2SO => 'coding_transcript_ace2so',
+			       CDS => 'OVOC9637',
+			       Feature_data => 'OVOC_OO_000024:TRF',
+			       Gene => 'WBGene00246446',
+			       Gene_name => 'Ovo-eat-4',
+			       Homol_data => 'OVOC_OO_000024:wublastx_brenneri',
+			       Method => 'BLAT_EST_BEST',
+			       Protein => 'OV:OVP01471',
+			       Transcript => 'OVOC8637',
+			     },
+
 
 		);
 
