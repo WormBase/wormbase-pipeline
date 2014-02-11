@@ -111,15 +111,16 @@ sub freeze {
 sub check_and_fix_mapping {
   my ( $self, $database, $fixes_file, $fixes_log, $attempt_fix, $log ) = @_;
   
-  my $revh = IO::File->new( $fixes_log, "w" );
+  open(my $revh, ">$fixes_log") or $log->log_and_die("Could not open $fixes_log for writing\n");
+  
   my $pmap = $self->pmap;
   my $smap = $self->sorted_pmap;
-
+  
   my $errors = 0;
-  foreach my $key ( sort keys %{$pmap} ) {
-    if ($attempt_fix) {        
-      my $acefile = IO::File->new($fixes_file,'w');
+  if ($attempt_fix) {        
+    open(my $aceout, ">$fixes_file") or $log->log_and_die("Could not open $fixes_file for writing\n");
 
+    foreach my $key ( sort keys %{$pmap} ) {
       my @genes;
       
       foreach my $i ( @{ $smap->{$key} } ) {
@@ -138,23 +139,31 @@ sub check_and_fix_mapping {
       $log->write_to("-----------------------------------\n");
       
       &fix_gmap( \@genes );       
-      
+
       foreach my $col (@genes) {
         next if $col->{gpos} == $col->{orig_gpos};
+        
         $pmap->{$key}->{ $col->{ppos} }->[0] = $col->{gpos}; # change gmap
         my $_chrom = $key;
         my $_pos   = $col->{gpos};
         my $_gene  = $col->{gene};
         
         # create acefile
-        print $acefile "\n";
-        print $acefile "Gene : $_gene\n";
-        print $acefile "Map $_chrom Position $_pos\n";
+        print $aceout "\n";
+        print $aceout "Gene : $_gene\n";
+        print $aceout "Map $_chrom Position $_pos\n";
       }
-    } 
-    
-    $errors += $self->report_inconsistencies($key, $log, $revh);
-  }
+
+      $errors += $self->report_inconsistencies($key, $log, $revh);
+    }
+    close($aceout);
+  } else {
+    foreach my $key ( sort keys %{$pmap} ) {
+      $errors += $self->report_inconsistencies($key, $log, $revh);
+    }
+  }    
+  
+  close($revh);
 
   return $errors;
 }
