@@ -7,7 +7,7 @@
 # build to check the current build
 #
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2014-02-11 17:02:26 $
+# Last updated on: $Date: 2014-02-11 17:04:03 $
 use strict;
 use warnings;
 use lib $ENV{'CVS_DIR'};
@@ -66,6 +66,7 @@ if (
     $wb->species eq 'japonica' ||
     $wb->species eq 'briggsae' ||
     $wb->species eq 'brugia' ||
+    $wb->species eq 'ovolvulus' ||
     $wb->species eq 'pristionchus') {
   $pfam=$seq=0;
 } elsif ($wb->species ne 'elegans') {
