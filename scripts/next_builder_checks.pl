@@ -7,7 +7,7 @@
 # build to check the current build
 #
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2014-02-11 17:04:03 $
+# Last updated on: $Date: 2014-02-11 17:07:42 $
 use strict;
 use warnings;
 use lib $ENV{'CVS_DIR'};
@@ -107,7 +107,10 @@ if($clones) {
     @clones = qw(Bmal_v3_scaffold968 Bmal_v3_scaffold481 Bmal_v3_scaffold56 Bmal_v3_scaffold921 Bmal_v3_scaffold1819 Bmal_v3_scaffold1229 Bmal_v3_scaffold1007 Bmal_v3_scaffold2080);
   } elsif ($wb->species eq 'pristionchus') {
     @clones = qw(Ppa_Contig0 Ppa_Contig10 Ppa_Contig15 Ppa_Contig30 Ppa_Contig100 Ppa_Contig200);
+  } elsif ($wb->species eq 'ovolvulus') {
+    @clones = qw(OVOC_OO_000001 OVOC_OO_000008 OVOC_OO_000054 OVOC_OO_000132 OVOC_OO_000629 OVOC_OO_000690);
   }
+
 
   foreach my $clone (@clones) {
     $log->write_to("\n##################################\nchecking clone $clone\n");	
