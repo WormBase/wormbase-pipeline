@@ -49,6 +49,7 @@ my %species = (
     6233   => 'Panagrellus redivivus',
     6287   => 'Dirofilaria immitis',
     6282   => 'Onchocerca volvulus',
+    51031  => 'Necator americanus',
 );
 
 my %coreSpecies = (
