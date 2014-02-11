@@ -2846,6 +2846,16 @@ GFF_feature "transcript_region"
 GFF_SO "SO:0000833" // transcript_region
 
 
+Method : "RNASeq_stranded"
+Remark "RNASeq stranded hits region. These are the regions matched by alignments of the SRA RNASeq stranded short reads. The value stored of the region is the sum of the number of reads observed divided by the number of RNASeq libraries."
+Colour ORANGE
+Score_by_width
+Score_bounds 1.0 100.0
+Strand_sensitive Show_up_strand
+Allow_misalign
+GFF_source "RNASeq_stranded"
+GFF_feature "transcript_region"
+GFF_SO "SO:0000833" // transcript_region
 
 Method : "DNAseI_hypersensitive_site"
 Remark "A hypersensitive site is a short region of chromatin and is detected by its super sensitivity to cleavage by DNase I. In a hypersensitive site, the nucleosomal structure is not organized in the usual fashion, which results in a 100 fold increase in sensitivity to enzyme attack than in bulk chromatin."
@@ -3547,6 +3557,9 @@ Right_priority 2.85
 
 Method : "RNASeq"
 Right_priority 2.9
+
+Method : "RNASeq_stranded"
+Right_priority 2.92
 
 Method : "RNASEQ.Hillier.Aggregate"
 Right_priority 2.95
