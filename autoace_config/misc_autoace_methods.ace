@@ -1570,6 +1570,21 @@ GFF_source "bmalayi_proteins-BLASTX"
 GFF_feature "protein_match"
 GFF_SO "SO:0000349" // protein_match
 
+Method : "wublastx_ovolvulus" 
+Colour GREEN
+Frame_sensitive
+Show_up_strand
+Score_by_width
+Score_bounds 10.000000 100.000000
+Allow_misalign
+Blixem_X
+Join_blocks
+Remark "wublastx search vs O. volvulus peptides"
+Display_gaps
+Gapped
+GFF_source "ovolvulus_proteins-BLASTX"
+GFF_feature "protein_match"
+GFF_SO "SO:0000349" // protein_match
 
 Method : "wublastx_fly" 
 Colour "BLUE"
