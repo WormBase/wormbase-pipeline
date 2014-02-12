@@ -131,7 +131,7 @@ if (! defined $user || $user eq "") {
 
 my $person;
 if (defined $user){ 
-  my @IDs = ('1983','4025','4055','615','1849','1867',);
+  my @IDs = ('1983','4025','4055','615','1849','2062',);
   if ($user eq "pad") {
     $person = ("WBPerson".$IDs[0]);
   } elsif ($user eq "gw3") {
@@ -145,7 +145,7 @@ if (defined $user){
   elsif ($user eq "tb") {
     $person = ("WBPerson".$IDs[4]);
   }
-  elsif ($user eq "po") {
+  elsif ($user eq "es9") {
     $person = ("WBPerson".$IDs[5]);
   }
 }
