@@ -7,7 +7,7 @@
 # This is a example of a good script template
 #
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2014-02-12 16:10:42 $
+# Last updated on: $Date: 2014-02-12 16:41:01 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -222,17 +222,17 @@ sub read_GFF_queries {
 
     $i++;
     $queries[$i]{'DESC'}  = "piRNAs";
-    $queries[$i]{'GFF'}   = "piRNA piRNA";
+    $queries[$i]{'GFF'}   = "piRNA\tpiRNA";
     $queries[$i]{'QUERY'} = 'find elegans_RNA_genes piRNA';
 
     $i++;
     $queries[$i]{'DESC'}  = "asRNAs";
-    $queries[$i]{'GFF'}   = "asRNA asRNA";
+    $queries[$i]{'GFF'}   = "asRNA\tasRNA";
     $queries[$i]{'QUERY'} = 'find elegans_RNA_genes asRNA';
 
     $i++;
     $queries[$i]{'DESC'}  = "lincRNAs";
-    $queries[$i]{'GFF'}   = "lincRNA lincRNA";
+    $queries[$i]{'GFF'}   = "lincRNA\tlincRNA";
     $queries[$i]{'QUERY'} = 'find elegans_RNA_genes lincRNA';
 
     $i++;
@@ -247,7 +247,7 @@ sub read_GFF_queries {
 
     $i++;
     $queries[$i]{'DESC'}  = "Deletion alleles";
-    $queries[$i]{'GFF'}   = "deletion";
+    $queries[$i]{'GFF'}   = "Allele\tdeletion";
     $queries[$i]{'QUERY'} = 'find Variation flanking_sequences AND method = "Deletion_allele"';
 
     $i++;
@@ -295,10 +295,11 @@ sub read_GFF_queries {
     $queries[$i]{'GFF'}   = "cDNA_for_RNAi";
     $queries[$i]{'QUERY'} = 'find RNAi Method; Homol_homol; follow Sequence';
 
-    $i++;
-    $queries[$i]{'DESC'}  = "mapped Oligo_set";
-    $queries[$i]{'GFF'}   = "Oligo_set";
-    $queries[$i]{'QUERY'} = 'find Oligo_set SMap';
+# doesn't work as Oligo_sets don't map uniquely
+#    $i++;
+#    $queries[$i]{'DESC'}  = "mapped Oligo_set";
+#    $queries[$i]{'GFF'}   = "Oligo_set";
+#    $queries[$i]{'QUERY'} = 'find Oligo_set SMap';
 
     $i++;
     $queries[$i]{'DESC'}  = "mapped Operons";
