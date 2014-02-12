@@ -6,8 +6,8 @@
 #
 # This is a example of a good script template
 #
-# Last updated by: $Author: pad $
-# Last updated on: $Date: 2014-01-23 11:57:16 $
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2014-02-12 16:10:42 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -122,24 +122,24 @@ sub read_acedb_queries {
     my $species = $wormbase->species;
     if($species eq 'elegans'){    
 	@queries = (
-	           ["The number of RNAi experiments with more than one associated Gene", 'find rnai COUNT gene > 1 AND uniquely_mapped', 5450],
-		   ["The number of RNAi results with connections to genes", 'find RNAi Gene', 81625],
-		   ["The number of microarray results with connections to genes", 'find microarray_results gene', 95545],
+	           ["The number of RNAi experiments with more than one associated Gene", 'find rnai COUNT gene > 1 AND uniquely_mapped', 6460],
+		   ["The number of RNAi results with connections to genes", 'find RNAi Gene', 91038],
+		   ["The number of microarray results with connections to genes", 'find microarray_results gene', 236700],
 		   ["PCR products overlapping CDS", "find PCR_product Overlaps_CDS", 62852],
-		   ["The number of wormpep without pep_homol", 'find wormpep !pep_homol', 752],
+		   ["The number of wormpep without pep_homol", 'find wormpep !pep_homol', 839],
 		   ["tRNAs not attached to parent properly", 'Transcript AND NEXT AND NOT NEXT', 0],
 		   ["Homol_data without waba", 'find Homol_data *waba !DNA_homol', 0],
 		   ["Homol_data without Pep_homol", 'find Homol_data *wublastx* !Pep_homol', 0],
 		   ["Inverted repeat Feature_data without features", 'find Feature_data *inverted !feature', 188],
 		   ["TRF repeat Feature_data without features", 'find Feature_data *TRF !Feature', 0],
-		   ["Oligo_sets with overlapping_CDS", 'find Oligo_Set Overlaps_CDS', 74615],
+		   ["Oligo_sets with overlapping_CDS", 'find Oligo_Set Overlaps_CDS', 197260],
 		   ["operons without genes", 'find operon !contains Gene', 0],
-		   ["variation gene connection", 'find Variation Gene', 890000],
-		   ["genes with structured description", 'find Gene Structured_description', 5546],
-		   ["genes with GO_term", 'find Gene GO_term', 15785],
+		   ["variation gene connection", 'find Variation Gene', 1205821],
+		   ["genes with structured description", 'find Gene Structured_description', 6117],
+		   ["genes with GO_term", 'find Gene GO_term', 12753],
 		   ["CDSs with no source_exons", 'find CDS !Source_exons, method', 0],
-		   ["Operons without parent ", 'find Operon !History AND !Canonical_parent',  0],
-		   ["GO_term without Term or Definition", 'find GO_term !(Term or Definition)',  100],
+		   ["Operons without parent ", 'find Operon CEO* !History AND !Canonical_parent',  0],
+		   ["GO_term without Term or Definition", 'find GO_term !(Term or Definition)',  4],
 		   ["Homol mapped Expression Patterns", 'find Expr_pattern where Homol_homol', 4506],
 		   ["Transposon Objects mapped in the database", 'find Transposon where Sequence', 737],
 		   );
@@ -222,17 +222,17 @@ sub read_GFF_queries {
 
     $i++;
     $queries[$i]{'DESC'}  = "piRNAs";
-    $queries[$i]{'GFF'}   = "piRNA";
+    $queries[$i]{'GFF'}   = "piRNA piRNA";
     $queries[$i]{'QUERY'} = 'find elegans_RNA_genes piRNA';
 
     $i++;
     $queries[$i]{'DESC'}  = "asRNAs";
-    $queries[$i]{'GFF'}   = "asRNA";
+    $queries[$i]{'GFF'}   = "asRNA asRNA";
     $queries[$i]{'QUERY'} = 'find elegans_RNA_genes asRNA';
 
     $i++;
     $queries[$i]{'DESC'}  = "lincRNAs";
-    $queries[$i]{'GFF'}   = "lincRNA";
+    $queries[$i]{'GFF'}   = "lincRNA lincRNA";
     $queries[$i]{'QUERY'} = 'find elegans_RNA_genes lincRNA';
 
     $i++;
@@ -252,7 +252,7 @@ sub read_GFF_queries {
 
     $i++;
     $queries[$i]{'DESC'}  = "Substitution alleles";
-    $queries[$i]{'GFF'}   = "substitution";
+    $queries[$i]{'GFF'}   = "\tsubstitution\t";
     $queries[$i]{'QUERY'} = 'find Variation flanking_sequences AND method = "Substitution_allele"';
 
     $i++;
@@ -267,7 +267,7 @@ sub read_GFF_queries {
 
     $i++;
     $queries[$i]{'DESC'}  = "Alleles";
-    $queries[$i]{'GFF'}   = "sequence_alteration";
+    $queries[$i]{'GFF'}   = "Allele";
     $queries[$i]{'QUERY'} = 'find Variation flanking_sequences AND method = "Allele"';
 
     $i++;
@@ -303,7 +303,7 @@ sub read_GFF_queries {
     $i++;
     $queries[$i]{'DESC'}  = "mapped Operons";
     $queries[$i]{'GFF'}   = "operon";
-    $queries[$i]{'QUERY'} = 'find Operon';
+    $queries[$i]{'QUERY'} = 'find Operon CEO*'; # small cheat
 
     $i++;
     $queries[$i]{'DESC'}  = "SL1 features";
