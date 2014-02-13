@@ -5,8 +5,8 @@
 # Counts the number of objects in an ACEDB database for each Class stated in the config file
 # Compares this number to those from a second database.
 #
-# Last updated by: $Author: pad $
-# Last updated on: $Date: 2013-08-16 16:19:10 $
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2014-02-13 17:10:13 $
 
 
 use strict;
@@ -520,7 +520,6 @@ sub set_classes {
 		"Gene",
 		"Gene_class",
 		"Gene_name",
-		"Gene_regulation",
 		"Genome_Sequence",
 		"Map",
 		"Multi_pt_data",
