@@ -6,8 +6,8 @@
 #
 # Builds a wormrna data set from the current autoace database
 #
-# Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-10-04 08:23:53 $
+# Last updated by: $Author: pad $
+# Last updated on: $Date: 2014-02-13 16:39:05 $
 
 
 #################################################################################
@@ -115,7 +115,8 @@ while( my $obj = shift @transcripts) {
     # can't include in WormRNA if there is no DNA!
     next; 
   }
-  $dna =~ s/\n//;
+  $dna =~ s/\n/ /;
+  $dna =~ s/\n//g;
   $dna =~ /^>(\S+)\s+(\w.*)/s; 
   my $dseq = $2; 
   $dseq =~ tr/a-z/A-Z/; 
