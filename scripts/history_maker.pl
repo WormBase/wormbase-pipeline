@@ -1412,6 +1412,15 @@ sub make_history
       print HIS "Source_exons ",$start->name," ",$end->name,"\n";
     }
 
+    foreach ($obj->Remark) {
+      my ($remark, $evidence, $evidence_value1, $evidence_value2) = $_->row(0);
+      print HIS "Remark \"", $remark->name ,"\"";
+      print HIS " ", $evidence->name if ($evidence);
+      print HIS " ", $evidence_value1->name if ($evidence_value1);
+      print HIS " ", $evidence_value2->name if ($evidence_value2);
+      print HIS "\n";
+    }
+
     print HIS "Sequence $seq\n";
     print HIS "CDS\n";
     print HIS "From_laboratory $lab\n";
