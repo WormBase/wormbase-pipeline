@@ -1361,6 +1361,15 @@ sub mail_geneace {
 # History maker
 sub make_history 
   {
+
+    my $biotype;
+    my $clone_tag; # where it lives under the Sequence object tags
+    my $new_method; # the new method to give it
+    my $transcript_type;
+    my $transcript_type_value1;
+    my $transcript_type_value2;
+    my $pseudogene_type;
+
     #print "enter CDS to make history object \n";
     my $cds = $form_cds;
     return unless $cds;
@@ -1371,31 +1380,60 @@ sub make_history
     #$cds = &confirm_case($cds);
 
     my $obj = $db->fetch(CDS => "$cds");
-    return &error_warning("Invalid CDS","$cds is not a valid CDS name") unless $obj;
-    if ( $obj->Method->name ne "curated" ) {
-      print STDERR "I only do curated histories!\n";
-      next;
-    }
-
-      if ($db->fetch(CDS => "$cds:${wormpep_prefix}$version") ) {
-        &error_warning("History exists","$cds:${wormpep_prefix}$version already exists");
+    if ($obj) {
+      $biotype = 'CDS';
+      $clone_tag = 'CDS_child';
+      $new_method = 'history';
+      if ($obj->Method->name ne "curated" ) {
+        &error_warning("NOT CURATED", "I only do curated CDS histories!\n");
         return;
+      }
+    } elsif ($obj = $db->fetch(Pseudogene => "$cds")) {
+      $biotype = 'Pseudogene';
+      $clone_tag = 'Pseudogene';
+      $new_method = 'history_pseudogene';
+      $pseudogene_type = $obj->Type->name;
+    } elsif ($obj = $db->fetch(Transcript => "$cds")) {
+      $biotype = 'Transcript';
+      $clone_tag = 'Transcript';
+      $new_method = 'history_transcript';
+      if ($obj->Method->name eq "Coding_transcript" ) {
+        &error_warning("WARNING", "I don't do Coding_transcript Transcript histories!\n");
+        return;
+      }
+      ($transcript_type, $transcript_type_value1, $transcript_type_value2) = $obj->Transcript->row(0);
     }
 
+    if (!defined $obj) {
+      &error_warning("Invalid CDS", "$cds is not a valid CDS/Pseudogene/Transcript name");
+      return;
+    }
+
+    if ($db->fetch($biotype => "$cds:${wormpep_prefix}$version") ) {
+      &error_warning("WARNING", "This history object already exists\n");
+      return;	
+    }
+    
     my $species = $obj->Species->name;
     my $gene = $obj->Gene->name;
     my $lab = $obj->From_laboratory->name;
     my $seq = $obj->Sequence->name;
-
-    my $protein = $obj->Corresponding_protein;
-    $protein = $protein->name if $protein;
+    my $brief = $obj->Brief_identification;
+    my $brief_identification = $brief->name if ($brief);
 
     # parent clone coords
     my $clone = $obj->Sequence;
-    my @clone_CDSs = $clone->CDS_child;
+    my @clone_entry;
+    if ($biotype eq 'CDS') {
+      @clone_entry = $clone->CDS_child;
+    } elsif ($biotype eq 'Pseudogene') {
+      @clone_entry = $clone->Pseudogene;
+    } elsif ($biotype eq 'Transcript') {
+      @clone_entry = $clone->Transcript;
+    }
     my $start;
     my $end;
-    foreach my $CDS ( @clone_CDSs ) {
+    foreach my $CDS ( @clone_entry ) {
       next unless ($CDS->name eq "$cds");
       $start = $CDS->right->name;
       $end = $CDS->right->right->name;
@@ -1404,8 +1442,9 @@ sub make_history
 
     #print ace format
     print HIS "Sequence : $seq\n";
-    print HIS "CDS_child \"$cds:${wormpep_prefix}$version\" $start $end\n";
-    print HIS "\nCDS : $cds:${wormpep_prefix}$version\n";
+    print HIS "$clone_tag \"$cds:${wormpep_prefix}$version\" $start $end\n";
+
+    print HIS "\n$biotype : $cds:${wormpep_prefix}$version\n";
 
     foreach ($obj->Source_exons) {
       my ($start,$end) = $_->row(0);
@@ -1415,20 +1454,30 @@ sub make_history
     foreach ($obj->Remark) {
       my ($remark, $evidence, $evidence_value1, $evidence_value2) = $_->row(0);
       print HIS "Remark \"", $remark->name ,"\"";
-      print HIS " ", $evidence->name if ($evidence);
-      print HIS " ", $evidence_value1->name if ($evidence_value1);
-      print HIS " ", $evidence_value2->name if ($evidence_value2);
+      print HIS " \"", $evidence->name,"\"" if ($evidence);
+      print HIS " \"", $evidence_value1->name,"\"" if ($evidence_value1);
+      print HIS " \"", $evidence_value2->name,"\"" if ($evidence_value2);
       print HIS "\n";
     }
 
     print HIS "Sequence $seq\n";
-    print HIS "CDS\n";
     print HIS "From_laboratory $lab\n";
     print HIS "Gene_history $gene\n" if $gene;
     print HIS "Species \"$species\"\n" if $species;
     print HIS "Evidence Curator_confirmed $person\n" if $person;
-    print HIS "Evidence" if (!defined $person);
-    print HIS "Method history\n";
+    print HIS "Evidence\n" if (!defined $person);
+    print HIS "Method $new_method\n";
+    print HIS "Brief_identification \"$brief_identification\"\n" if ($brief_identification);
+
+    print HIS "CDS\n" if ($biotype eq 'CDS');
+    
+    print HIS "$pseudogene_type" if ($pseudogene_type);
+
+    print HIS "$transcript_type" if ($transcript_type);
+    print HIS " \"",$transcript_type_value1->name,"\"" if ($transcript_type_value1);
+    print HIS " \"",$transcript_type_value2->name,"\"" if ($transcript_type_value2);
+    print HIS "\n" if ($transcript_type);
+
 
     close HIS;
     my $return_status = system("xremote -remote 'parse $output'");
