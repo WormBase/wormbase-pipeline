@@ -8,8 +8,8 @@
 # matching a CDS and stores the results in in a data file ready to be read into the SQL database
 # 'worm_anomaly'
 #
-# Last updated by: $Author: pad $     
-# Last updated on: $Date: 2014-01-23 11:57:18 $      
+# Last updated by: $Author: mh6 $     
+# Last updated on: $Date: 2014-02-17 09:50:10 $      
 
 # Changes required by Ant: 2008-02-19
 # 
@@ -4583,7 +4583,7 @@ sub find_incomplete_pfam_motifs {
 #  print "get lengths of Pfam motifs\n";
   my %pfam_length;
   my $pfam_file = "/tmp/Pfam";
-  $wormbase->run_command("scp -q farm2-login:/data/blastdb/Worms/interpro_scan/iprscan/data/Pfam-A.hmm $pfam_file", $log);
+  $wormbase->run_command("scp -q farm3-login:/data/blastdb/Worms/interpro_scan/iprscan/data/Pfam-A.hmm $pfam_file", $log);
   open (PFAM, "< $pfam_file") || die "can't open $pfam_file\n";
   while (my $line = <PFAM>) {
     if ($line =~ /^ACC\s+(PF\d+)/) {
