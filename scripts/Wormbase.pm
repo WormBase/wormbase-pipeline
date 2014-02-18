@@ -1338,7 +1338,7 @@ sub establish_paths {
   $self->{'blat'}        = $self->orgdb . "/BLAT";
   $self->{'checks'}      = $self->autoace . "/CHECKS";
   $self->{'ontology'}    = $self->autoace . "/ONTOLOGY";
-  $self->{'tace'}   = '/software/worm/acedb/4.9.60/bin/tace';
+  $self->{'tace'}   = '/software/worm/acedb/old_versions/tace.latest';
   $self->{'giface'} = '/software/worm/acedb/4.9.60/bin/giface';
   $self->{'giface_server'} = '/software/worm/acedb/4.9.60/bin/sgifaceserver';
   $self->{'giface_client'} = '/software/worm/acedb/4.9.60/bin/saceclient';
