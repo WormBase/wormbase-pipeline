@@ -9,8 +9,7 @@ use lib $ENV{CVS_DIR};
 use Wormbase;
 use Log_files;
 
-use FindBin qw($Bin);
-use lib "$Bin/../lib";
+use lib "$ENV{CVS_FIR}/ONTOLOGY";
 use GAF;
 
 

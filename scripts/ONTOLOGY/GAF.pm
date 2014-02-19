@@ -3,7 +3,6 @@ package GAF;
 
 use strict;
 use Exporter;
-use FindBin qw($Bin);
 
 our @ISA = qw(Exporter);
 our @EXPORT = qw(print_wormbase_GAF_line get_GAF_date get_gene_info);

@@ -5,14 +5,13 @@ use Storable;
 use Getopt::Long;
 use Ace;
 
-use FindBin qw($Bin);
-use lib "$Bin/../lib";
-use GAF;
 
 use lib $ENV{CVS_DIR};
 use Wormbase;
 use Log_files;
 
+use lib "$ENV{CVS_DIR}/ONTOLOGY";
+use GAF;
 
 my ($help, $debug, $test, $verbose, $store, $wormbase);
 my ($outfile, $acedbpath);
