@@ -15,7 +15,8 @@ use Ace;
 use strict;
 
 # hardcoded settings
-my $db=Ace->connect(-host => 'wormsrv2',-port => 23100);
+#my $db=Ace->connect(-host => 'wormsrv2',-port => 23100);
+my $db=Ace->connect(-path => shift);
 
 while (<>){
         if (/\>/){

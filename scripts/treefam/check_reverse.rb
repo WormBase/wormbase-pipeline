@@ -20,7 +20,7 @@ require 'rubygems'
 require 'rdoc/ri/ri_paths'
 require 'rdoc/usage'
 # require_gem 'ensembl-api' # Jan Aert's EnsEMBL API
-gem 'ensembl-api'
+# gem 'ensembl-api'
 require 'ensembl'
 include Ensembl::Core
 
