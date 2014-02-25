@@ -112,7 +112,9 @@ if ($infile =~ /z$/) {
   open (READ, "<$infile") || $log->log_and_die("can't open read file: $infile\n");
 }
 
-while (my $id = <READ>) {
+while (my $id_line = <READ>) {
+
+  my ($id) = ($id_line =~ /(\S+)/);
 
 #@SRR006514.1 length=36
 #AAAGCTATGCGGATTATGTACTGAACTAGGATCTGG
@@ -133,7 +135,7 @@ while (my $id = <READ>) {
       #print "$seq has $tslname, len = $tsllen\n\n";
       # add the TSL type to the ID
       chomp $id;
-      $id =~ s/\//_/g; # change / to _ because tophat removed anything after the slash when it writes uot the bam data
+      $id =~ s/\//_/g; # change / to _ because tophat removed anything after the slash when it writes out the bam data
       $id  =~ s/$id/${id}\.\+\.${tslname}/;
       chomp $line3;
       $line3 =~ s/$id/${id}\.\+\.${tslname}/;	
@@ -187,19 +189,19 @@ while (my $id = <READ>) {
   }
 
 close(READ);
-print "\nFinished reading $infile\n";
+$log->write_to("\nFinished reading $infile\n");
 close(OUT_SL);
 
-print "Total reads processed: $total_reads\n";
+$log->write_to("Total reads processed: $total_reads\n");
 my $percent = $sl1_reads*100/$total_reads;
-print "SL1 reads: $sl1_reads, ($percent% of all reads)\n";
+$log->write_to("SL1 reads: $sl1_reads, ($percent% of all reads)\n");
 $percent = $sl2_reads*100/$total_reads;
-print "SL2 reads: $sl2_reads, ($percent% of all reads)\n";
+$log->write_to("SL2 reads: $sl2_reads, ($percent% of all reads)\n");
 $percent = $negative_reads*100/($sl1_reads+$sl2_reads+$negative_reads);
-print "Reverse sense reads: $negative_reads, ($percent% of TSL)\n";
+$log->write_to("Reverse sense reads: $negative_reads, ($percent% of TSL)\n");
 
 
-print "\nFinished all\n";
+$log->write_to("\nFinished all\n");
 
 $log->mail();
 exit(0);
