@@ -7,7 +7,7 @@
 # Methods for running the RNAseq pipeline and other useful things like searching the ENA warehouse
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2014-02-06 13:59:52 $      
+# Last updated on: $Date: 2014-02-25 15:09:06 $      
 
 =pod
 
@@ -74,7 +74,7 @@ use Carp;
 use Data::Dumper;
 use Config::IniFiles;
 use Coords_converter;
-
+use File::Basename;
 
 =head2 
 
@@ -899,7 +899,7 @@ sub get_SRX_file {
   # in the EBI, the set of files available for download from an
   # experiment can be seen by parsing the page resulting from a FTP
   # query like:
-  # http://www.ebi.ac.uk/ena/data/view/reports/sra/fastq_files/SRX001873
+  # http://www.ebi.ac.uk/ena/data/warehouse/filereport?accession=ERX200392&result=read_run&fields=experiment_accession,run_accession,fastq_ftp
   
   
   # The EBI specify the preferred method of download:
@@ -907,14 +907,12 @@ sub get_SRX_file {
   # transfer speeds than ftp over long distances. For short distance file
   # transfers we continue to recommend the use of ftp."
   # See: http://www.ebi.ac.uk/ena/about/sra_data_download
+  # See: https://www.ebi.ac.uk/ena/about/browser
 
 # get page like:
-#Study	Sample	Experiment	Run	Organism	Instrument Platform	Instrument Model	Library Name	Library Layout	Library Source	Library Selection	Run Read Count	Run Base Count	File Name	File Size	md5	Ftp
-#SRP000401	SRS001789	SRX001873	SRR006514	Caenorhabditis elegans	ILLUMINA	Illumina Genome Analyzer	YA_ce0122_rw004	SINGLE	TRANSCRIPTOMIC	cDNA	11223086	404031096	SRR006514.fastq.gz	486Mb	e17b1b5483891f25eff9b81930296539	ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR006/SRR006514/SRR006514.fastq.gz
-#SRP000401	SRS001789	SRX001873	SRR006515	Caenorhabditis elegans	ILLUMINA	Illumina Genome Analyzer	YA_ce0122_rw004	SINGLE	TRANSCRIPTOMIC	cDNA	27189415	978818940	SRR006515.fastq.gz	1003Mb	0f0527d7f4aed10dc93f11d3f6a53863	ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR006/SRR006515/SRR006515.fastq.gz
-#SRP000401	SRS001789	SRX001873	SRR006516	Caenorhabditis elegans	ILLUMINA	Illumina Genome Analyzer	YA_ce0122_rw004	SINGLE	TRANSCRIPTOMIC	cDNA	22491397	809690292	SRR006516.fastq.gz	557Mb	2985db1790df1e4ec39e77fadfd11957	ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR006/SRR006516/SRR006516.fastq.gz
+#experiment_accession	run_accession	fastq_ftp
+#ERX200392	ERR225732	ftp.sra.ebi.ac.uk/vol1/fastq/ERR225/ERR225732/ERR225732_1.fastq.gz;ftp.sra.ebi.ac.uk/vol1/fastq/ERR225/ERR225732/ERR225732_2.fastq.gz
 
-  
   my $failed = 0;
   
   if (!-e $experiment_accession) {
@@ -931,14 +929,13 @@ sub get_SRX_file {
   chdir "SRR";
 
   my $count;
-  open(ENTRY, "/sw/arch/bin/wget -q -O - 'http://www.ebi.ac.uk/ena/data/view/reports/sra/fastq_files/$experiment_accession' |") || $log->log_and_die("Can't get information on SRA entry $experiment_accession\n");
+  open(ENTRY, "/sw/arch/bin/wget -q -O - 'http://www.ebi.ac.uk/ena/data/warehouse/filereport?accession=$experiment_accession&result=read_run&fields=experiment_accession,run_accession,fastq_ftp' |") || $log->log_and_die("Can't get information on SRA entry $experiment_accession\n");
   while (my $line = <ENTRY>) {
     chomp $line;
-    if ($line =~ /^Study/) {next}
+    if ($line =~ /^experiment_accession/) {next}
     my @line = split /\s+/, $line;
-    my $run_accession = $line[3];
-    my $address = $line[$#line];
-    my $file = $line[$#line - 3];
+    my $run_accession = $line[1];
+    my $ftp = $line[$#line];
 
     # use Aspera to fetch the file - this doesn't work on the LSF cluster
     # command like: ~gw3/.aspera/connect/bin/ascp -QT -l 300m -i /net/nas17b/vol_homes/homes/gw3/.aspera/connect/etc/asperaweb_id_dsa.putty era-fasp@fasp.sra.ebi.ac.uk:/vol1/fastq/SRR941/SRR941702/SRR941702.fastq.gz .
@@ -946,17 +943,23 @@ sub get_SRX_file {
     #$status = $self->{wormbase}->run_command("~gw3/.aspera/connect/bin/ascp -QT -l 300m -i /net/nas17b/vol_homes/homes/gw3/.aspera/connect/etc/asperaweb_id_dsa.putty $address .", $log);
     #if ($status != 0) {$log->log_and_die("Aspera fetch of fastq file $file failed for $experiment_accession\n");}
 
-# use FTP to fetch the file
-    $status = $self->{wormbase}->run_command("/sw/arch/bin/wget -q $address", $log);
-    if ($status != 0) {$log->log_and_die("FTP fetch of fastq file $file failed for $experiment_accession\n");}
+    # split up the FTP address
+    my @addresses = split /;/, $ftp;
+    foreach my $address (@addresses) {
+      my $file = basename($address);
 
-    if (-s $file) {
-      $count++;
-    } else {
-      $log->log_and_die("Didn't get file $file from the SRA in sample: $experiment_accession.\nFrom EBI report line $line\n");
+      # use FTP to fetch the file
+      $status = $self->{wormbase}->run_command("/sw/arch/bin/wget -q $address", $log);
+      if ($status != 0) {$log->log_and_die("FTP fetch of fastq file $file failed for $experiment_accession\n");}
+      
+      if (-s $file) {
+	$count++;
+      } else {
+	$log->log_and_die("Didn't get file $file from the SRA in sample: $experiment_accession.\nFrom EBI report line $line\n");
+      }
+      $status = $self->{wormbase}->run_command("gunzip $file", $log);
+      if ($status != 0) {$log->log_and_die("gunzip of fastq file $file failed for $experiment_accession\n");}
     }
-    $status = $self->{wormbase}->run_command("gunzip $file", $log);
-    if ($status != 0) {$log->log_and_die("gunzip of fastq file $file failed for $experiment_accession\n");}
   }
   close(ENTRY);
 
