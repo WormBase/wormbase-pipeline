@@ -4,7 +4,7 @@
 #
 # by Keith Bradnam
 #
-# Last updated on: $Date: 2013-12-02 13:43:00 $
+# Last updated on: $Date: 2014-02-25 16:25:10 $
 # Last updated by: $Author: pad $
 #
 # see pod documentation at end of file for more information about this script
@@ -18,7 +18,7 @@ use Getopt::Long;
 use Log_files;
 use Storable;
 
-my ($verbose, $db_path, $basic, $test1, $debug, $store, $test,$build,$species,$incomplete);
+my ($verbose, $db_path, $basic, $test1, $debug, $store, $test,$build,$species,$incomplete,$nogenome);
 
 GetOptions ("verbose"    => \$verbose, # prints screen output and checks the CDS class instead of All_genes.
 	    "database=s" => \$db_path, # Path to the database you want to check.
@@ -29,7 +29,8 @@ GetOptions ("verbose"    => \$verbose, # prints screen output and checks the CDS
 	    "test"       => \$test,    # Test build
 	    "build"      => \$build,   # Checks specific to a full database containing genes and models.
 	    "species:s"   => \$species,  # used to hold briggsae/brenneri/remanei for some checks.
-	    "incomplete" => \$incomplete # used to avoid start/end not found warnings
+	    "incomplete" => \$incomplete, # used to avoid start/end not found warnings
+	    "nogenome"  => \$nogenome, # for testing annotations when you don't have the genome loaded.
 	   );
 
 my $wormbase;
@@ -105,7 +106,8 @@ else {
   }
   else {
     print STDERR "Fetching all genes...\n" if $verbose;
-    @Predictions = $db->fetch (-query => 'FIND All_genes where method');
+    #@Predictions = $db->fetch (-query => 'FIND All_genes where method AND Species = "$speciesfn"');
+    @Predictions = $db->fetch (-query => 'Find All_genes where (Species = "'.$wormbase->full_name.'")');
     @bad_genes = $db->fetch (-query => 'FIND All_genes where !method');
     $Bcount = @bad_genes;
     if ($Bcount ne '0') {
@@ -121,10 +123,10 @@ else {
 
   my $gene_model_count=@Predictions;
   $log->write_to("Checking $gene_model_count Predictions in $db_path\n\n");
-  print "\nChecking $gene_model_count Predictions...\n\n" if $verbose;
+  print "\nChecking $gene_model_count Predictions...\n\n";
   &main_gene_checks(\@Predictions);
 
-  print "\nDoing single query tests\n" if $verbose;
+  print "\nDoing single query tests\n";
   &single_query_tests;
 
   # print warnings to log file, log all category 1 errors, and then fill up.
@@ -162,17 +164,19 @@ sub main_gene_checks {
     unless (defined $gene_model->Method) {
       $errorcountCDS ++;
       print "$gene_model appears to be incomplete: it has no method.\n" if $verbose;
+      push(@error1,"ERROR: $gene_model appears to be incomplete\n");
       next CHECK_GENE;
     }
     my $method_test = $gene_model->Method->name;
     unless ($method_test =~ /ransposon/) {
       unless (defined $gene_model->Source_exons) {
 	print "$gene_model appears to be incomplete: it has no Source_exons.\n" if $verbose;
+	push(@error1,"ERROR: $gene_model appears to be incomplete: it has no Source_exons.\n");
 	next CHECK_GENE;
       }
     }
     unless ($gene_model_name =~ /$cds_regex/) {
-      print "warning $gene_model_name invalid\n" if (($method_test !~ /history|tRNA|Transposon/) && ($gene_model_name !~ /\S+.t\d+/));
+      push(@error1,"warning $gene_model_name invalid\n") if (($method_test !~ /history|tRNA|Transposon/) && ($gene_model_name !~ /\S+.t\d+/));
     }
     my @exon_coord1 = sort by_number ($gene_model->get('Source_exons',1));
     my @exon_coord2 = sort by_number ($gene_model->get('Source_exons',2));
@@ -366,44 +370,56 @@ sub main_gene_checks {
       my $Gene_ID     = $gene_model->at('Visible.Gene.[1]');
       my $Genehist_ID = $gene_model->at('Visible.Gene_history.[1]');
 
-      #curated Gene modles eg. C14C10.3  C14C10.33 and C14C10.3a have to have an 8 digit gene id.
-      if (($gene_model_name =~ /$cds_regex/) && ($method_test ne '*history')){
-	if (defined $Gene_ID) {
-	  push(@error2, "ERROR: The Gene ID '$Gene_ID' in $gene_model is invalid!\n") unless ($Gene_ID =~ /WBGene[0-9]{8}/);
-	} else {
-	  push(@error2, "ERROR: $gene_model does not have a Gene ID!\n") unless (($method_test eq 'Transposon_Pseudogene') || (defined $Genehist_ID));
+      unless ($nogenome) {
+	# Can't have both Gene and Gene_history.
+	if ((defined $Genehist_ID) && (defined $Gene_ID)) {
+	  push(@error2, "ERROR: Gene Model $gene_model contains both a Gene and a Gene_history tag, Please fix.\n");
 	}
-      }
-      #History genes have to have a Gene_history ID of 8 digits.
-      elsif ($gene_model_name =~ (/$cds_regex\:\w+/)) {
-	if (defined $Genehist_ID) {
-	  push(@error2, "ERROR: The Gene ID '$Genehist_ID' in $gene_model is invalid!\n") unless ($Genehist_ID =~ /WBGene[0-9]{8}/);
-	} else {
-	  push(@error2, "ERROR: $gene_model does not have the Gene_history populated\n");
+	
+	#History genes have to have a Gene_history ID of 8 digits.
+	if ($gene_model_name =~ (/$cds_regex\:\w+/)) {
+	  if (defined $Genehist_ID) {
+	    push(@error2, "ERROR: The Gene ID '$Genehist_ID' in $gene_model is invalid!\n") unless ($Genehist_ID =~ /WBGene[0-9]{8}/);
+	  } 
+	  else {
+	    push(@error2, "ERROR: $gene_model does not have the Gene_history populated\n");
+	  }
+	  if (defined $$Gene_ID) {
+	    push(@error2, "ERROR: $gene_model should not contain a Gene ID under Gene\n");
+	  }
+	}
+	
+	#non history
+	elsif ($gene_model_name =~ (/$cds_regex/)) {
+	  if (defined $Gene_ID) {
+	    push(@error2, "ERROR: The Gene ID '$Gene_ID' in $gene_model is invalid!\n") unless ($Gene_ID =~ /WBGene[0-9]{8}/);
+	  } 
+	  else {
+	    push(@error2, "ERROR: $gene_model does not have a Gene ID!\n") unless ($method_test eq 'Transposon_Pseudogene');
+	  }
+	  if (defined $Genehist_ID) {
+	    push(@error2, "ERROR: $gene_model should not contain a Gene ID under Gene_history\n");
+	  }
 	}
       }
 
-      # Can't have both Gene and Gene_history.
-      if ((defined $Genehist_ID) && (defined $Gene_ID)) {
-	push(@error2, "ERROR: Gene Model $gene_model contains both a Gene and a Gene_history tag, Please fix.\n");
-      }
- 
       #####################################################################################################
 
       # then run misc. sequence integrity checks
-      my $dna = $gene_model->asDNA();
-      if (!$dna) {
-	push(@error1,"ERROR: $gene_model can't find any DNA to analyse\n");
-	print "ERROR: $gene_model can't find any DNA to analyse\n" if $verbose;
-	next CHECK_GENE;
+      unless ($nogenome) {
+	my $dna = $gene_model->asDNA();
+	if (!$dna) {
+	  push(@error1,"ERROR: $gene_model can't find any DNA to analyse\n");
+	  print "ERROR: $gene_model can't find any DNA to analyse\n" if $verbose;
+	  next CHECK_GENE;
+	}
+	
+	# feed DNA sequence to function for checking
+	unless ((defined $gene_model) && (defined$start_tag) && (defined$end_tag) && (defined$dna) && (defined$method_test)) {print "$_\n";}
+	&test_gene_sequence_for_errors($gene_model,$start_tag,$start_tag_val,$end_tag,$dna,$method_test,$genetic_code);
       }
-
-      # feed DNA sequence to function for checking
-      unless ((defined $gene_model) && (defined$start_tag) && (defined$end_tag) && (defined$dna) && (defined$method_test)) {print "$_\n";}
-      &test_gene_sequence_for_errors($gene_model,$start_tag,$start_tag_val,$end_tag,$dna,$method_test,$genetic_code);
     }
   }
-
   # now check that the isoform names are consistent
   foreach my $sequence_name (keys %sequence_names) {
     if (! defined $sequence_names{$sequence_name}) {
@@ -456,7 +472,7 @@ sub single_query_tests {
     if ($species eq "elegans") {
       my @Transposons= $db->fetch(-query=>'find Transposon');
       my $Transposon_no = @Transposons;
-      unless ($Transposon_no eq "740"){print "\nChange in Transposon_numbers required 740 actual $Transposon_no - has additional Transposon annotation been done?\n"}
+      unless ($Transposon_no eq "758"){print "\nChange in Transposon_numbers required 758 actual $Transposon_no - has additional Transposon annotation been done?\n"}
     }
   }    
 
@@ -595,7 +611,7 @@ sub test_gene_sequence_for_errors{
 	print "ERROR: $gene_model length ($gene_model_length bp) not divisible by 3, Start_not_found and/or End_not_found tag present\n" if $verbose;
       }
     }
-    unless ($gene_model->name =~ /MTCE/) {
+    unless (($gene_model->name =~ /MTCE/) || ($gene_model->Sequence->name =~ /MITO/)) {
       # look for incorrect stop codons (CDS specific)
       if (($stop_codon ne 'taa') && ($stop_codon ne 'tga') && ($stop_codon ne 'tag') && ($method_test eq 'curated')) {
 	if ($end_tag ne "present") {
@@ -660,9 +676,10 @@ sub test_gene_sequence_for_errors{
 	  $dna =~ s/[acgt]//g;
 	  push(@error2, "ERROR: $gene_model DNA sequence contains the following non-ATCG characters: $dna\n"); 
 	  print "ERROR: $gene_model DNA sequence contains the following non-ATCG characters: $dna\n" if $verbose;
+	
 	}
       }
-    }
+    } ##MTCE exclusion loop
   }
 }
 
