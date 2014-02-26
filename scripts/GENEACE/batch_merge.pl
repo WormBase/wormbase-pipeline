@@ -128,7 +128,7 @@ while (<FILE>) {
       elsif(/\s+EMAIL/){} # ignore this line
       elsif(/\s+NAME/){} # ignore this line
       elsif(/\s+WARNING/){
-	print "Warning present for merger between $livegene :: $deadgene \n"
+	print "$_ before merging into $livegene \n"
       }
       else { 
 	$log->error("malformed line : $_\n")
