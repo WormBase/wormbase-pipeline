@@ -6,8 +6,8 @@
 #
 # Gets latest Interpro:GO mappings from XXXX and puts info in to ace file
 #
-# Last updated by: $Author: klh $                      
-# Last updated on: $Date: 2013-10-14 10:16:23 $         
+# Last updated by: $Author: mh6 $                      
+# Last updated on: $Date: 2014-02-27 10:28:18 $         
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -16,17 +16,14 @@ use Getopt::Long;
 use Log_files;
 use Storable;
 
-my $help;
-my $noload;
-my ( $debug, $test, $store );
+my ( $debug, $test, $store,$help,$noload );
 
 GetOptions ("help"      => \$help,
             "noload"    => \$noload,
 	    "test"      => \$test,
 	    "debug:s"   => \$debug,
 	    "store:s"   => \$store
-);
-
+)||die($@);
 
 # Display help if required
 &usage("Help") if ($help);
@@ -40,22 +37,18 @@ if ( $store ) {
 			     );
 }
 
-my $rundate     = $wormbase->rundate;
-my $runtime     = $wormbase->runtime;
-
 my $log = Log_files->make_build_log($wormbase);
 
-  # the interpro.xml file can be obtained from:
-  # ftp.ebi.ac.uk/pub/databases/interpro/interpro.xml.gz
+# the interpro.xml file can be obtained from:
+# ftp.ebi.ac.uk/pub/databases/interpro/interpro.xml.gz
 
-  # store it here
-  my $dir = "/tmp";
-  my $file = "$dir/interpro.xml_".$wormbase->species;
+# store it here
+my $dir = "/tmp";
+my $file = "$dir/interpro.xml_".$wormbase->species;
 
-  # get the interpro file from the EBI
-  unlink $file;
-  get_interpro($file);
-
+# get the interpro file from the EBI
+unlink $file if -e $file;
+get_interpro($file);
  
 my $ip_ace_file = $wormbase->acefiles."/interpro_motifs.ace";
 open (IPDESC,">$ip_ace_file") or $log->log_and_die("cant write $ip_ace_file\n");
@@ -64,10 +57,6 @@ open (IPDESC,">$ip_ace_file") or $log->log_and_die("cant write $ip_ace_file\n");
 $log->write_to(": Writing acefile to $ip_ace_file\n");
 open (XML, "< $file") || die "Failed to open file $file\n";
  
-my $IPid;
-my $IPdesc;
-my $GOterm;
-
 #Motif : "INTERPRO:IPR001624"
 #Title  "Peptidase aspartic, active site"
 #Database "INTERPRO" "INTERPRO_ID" "IPR001624"
@@ -77,31 +66,30 @@ my $GOterm;
 #GO_term "GO:0001539"
 #GO_term "GO:0009288"
 
-  while (my $line = <XML>) {
-    if ($line =~ /<interpro id=\"(\S+)\"/) {
-      $IPid = $1;
+while (my $line = <XML>) {
+    if ($line =~ /<interpro id=\"(\S+)\"/) { # IPid - InterPro identifier
+      my $IPid = $1;
 
       print IPDESC "\nMotif : \"INTERPRO:$IPid\"\n";
       print IPDESC "Database \"INTERPRO\" \"INTERPRO_ID\" \"$IPid\"\n";
       print IPDESC "Database \"INTERPRO\" \"short_name\" \"$1\"\n" if $line=~/short_name=\"(\S+)\"/;
 
-    } elsif ($line =~ /\<name\>(.+)\<\/name\>/) {
-      $IPdesc = $1;
+    } elsif ($line =~ /\<name\>(.+)\<\/name\>/) { # IPdesc - short description
+      my $IPdesc = $1;
       $IPdesc =~ s/\t/ /g;
 
       print IPDESC "Title  \"$IPdesc\"\n";
 
-    } elsif ($line =~ /\<classification id=\"(\S+)\" class_type=\"GO\"\>/) {
-      $GOterm = $1;
+    } elsif ($line =~ /\<classification id=\"(\S+)\" class_type=\"GO\"\>/) { # GOterm
+      my $GOterm = $1;
 
       print IPDESC "GO_term \"$GOterm\"\n";
 
     }
-  }
-  close (XML);
-  unlink $file;
-
+}
+close XML;
 close IPDESC;
+unlink $file;
 
 unless ($noload) {
     $wormbase->load_to_database( $wormbase->autoace, "$ip_ace_file",
@@ -113,6 +101,7 @@ $log->mail;
 exit(0);
 
 ###############################
+# show the perldoc
 
 sub usage {
   my $error = shift;
@@ -124,22 +113,14 @@ sub usage {
   }
 }
 
-
-#########################################################
-# reads in data for database ID to InterPro ID mapping  #
-#########################################################
-
-
-
 #########################
 # get the interpro file #
-#########################
 
 sub get_interpro {
 
   my $latest_version = $_[0];
  
-				#Get the latest version
+  #Get the latest version
   print "Attempting to FTP the latest version of interpro.xml from ebi \n";
   `wget -q -O $latest_version.gz ftp://ftp.ebi.ac.uk/pub/databases/interpro/interpro.xml.gz`;
   `gunzip "${latest_version}.gz"`;
@@ -166,9 +147,7 @@ then parses it to produce an ace file of format
 
 
 Motif : "INTERPRO:IPR000018"
-
 Title    "P2Y4 purinoceptor"
-
 Database "INTERPRO" "INTERPRO_ID" "IPR000018"
 
 
