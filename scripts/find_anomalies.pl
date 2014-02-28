@@ -8,8 +8,8 @@
 # matching a CDS and stores the results in in a data file ready to be read into the SQL database
 # 'worm_anomaly'
 #
-# Last updated by: $Author: mh6 $     
-# Last updated on: $Date: 2014-02-17 09:50:10 $      
+# Last updated by: $Author: gw3 $     
+# Last updated on: $Date: 2014-02-28 11:46:48 $      
 
 # Changes required by Ant: 2008-02-19
 # 
@@ -4870,31 +4870,7 @@ sub output_to_database {
   # get the clone and lab for this location
   my ($clone, $clone_start, $clone_end) = $coords->LocateSpan("$chromosome", $chrom_start, $chrom_end);
   my $lab;
-  if ($wormbase->species eq 'elegans') {
-    $lab =  $clonelab{$clone};          # get the lab that sequenced this clone  
-    if (! defined $lab) {
-      if ($clone =~ /SUPERLINK_CB_/) {
-	$lab = 'HX';
-      } else {
-	$lab = 'RW';
-      }
-    }
-  } elsif ($wormbase->species eq 'briggsae') {
-    $lab = 'RW';
-  } elsif ($wormbase->species eq 'brugia') {
-    $lab = 'RW';
-  } elsif ($wormbase->species eq 'remanei') {
-    $lab = 'RW';
-  } elsif ($wormbase->species eq 'brenneri') {
-    $lab = 'RW';
-  } elsif ($wormbase->species eq 'japonica') {
-    $lab = 'RW';
-  } elsif ($wormbase->species eq 'pristionchus') {
-    $lab = 'RW';
-  } else {
-    print "*** ERROR - WE DON'T KNOW WHICH LAB IS CURATING SPECIES: $wormbase->species\n";
-  }
-  #print "clone $clone is in lab $lab\n";
+  $lab = 'HX'; # hinxton does all the curation for all species now
 
   # calculate the window value as blocks of 10 kb
   my $window =  int($chrom_start/10000);
@@ -5039,48 +5015,48 @@ __END__
 
 
 START_DATA
-UNMATCHED_PROTEIN            elegans remanei briggsae japonica brenneri brugia
+UNMATCHED_PROTEIN            elegans remanei briggsae japonica brenneri brugia ovolvulus
 UNMATCHED_EST                
-FRAMESHIFTED_PROTEIN         elegans remanei briggsae japonica brenneri brugia
-MERGE_GENES_BY_PROTEIN               remanei briggsae japonica brenneri brugia
-SPLIT_GENE_BY_PROTEIN_GROUPS         remanei briggsae japonica brenneri brugia
+FRAMESHIFTED_PROTEIN         elegans remanei briggsae japonica brenneri brugia ovolvulus
+MERGE_GENES_BY_PROTEIN               remanei briggsae japonica brenneri brugia ovolvulus
+SPLIT_GENE_BY_PROTEIN_GROUPS         remanei briggsae japonica brenneri brugia ovolvulus
 MERGE_GENES_BY_EST
 UNATTACHED_EST
 UNATTACHED_TSL
-UNMATCHED_TSL                elegans
+UNMATCHED_TSL                elegans ovolvulus
 UNMATCHED_RST5               elegans
 UNMATCHED_TWINSCAN           elegans
 UNMATCHED_GENEFINDER         elegans
-GENBLASTG_DIFFERS_FROM_CDS            remanei briggsae japonica brenneri brugia
+GENBLASTG_DIFFERS_FROM_CDS            remanei briggsae japonica brenneri brugia ovolvulus
 JIGSAW_DIFFERS_FROM_CDS      elegans
 MODENCODE_DIFFERS_FROM_CDS      elegans
 MODENCODE_WITH_SIGNALP       elegans
 JIGSAW_WITH_SIGNALP          elegans
 UNMATCHED_SAGE               elegans
 UNMATCHED_WABA               
-OVERLAPPING_EXONS            elegans remanei briggsae japonica brenneri brugia
-MISMATCHED_EST               elegans remanei briggsae japonica brenneri brugia
-WEAK_INTRON_SPLICE_SITE      elegans remanei briggsae japonica brenneri brugia
-SHORT_EXON                   elegans remanei briggsae japonica brenneri brugia
-SHORT_INTRON                 elegans remanei briggsae japonica brenneri brugia
-REPEAT_OVERLAPS_EXON         elegans remanei briggsae japonica brenneri brugia
-INTRONS_IN_UTR               elegans remanei briggsae japonica brenneri brugia
+OVERLAPPING_EXONS            elegans remanei briggsae japonica brenneri brugia ovolvulus
+MISMATCHED_EST               elegans remanei briggsae japonica brenneri brugia ovolvulus
+WEAK_INTRON_SPLICE_SITE      elegans remanei briggsae japonica brenneri brugia ovolvulus
+SHORT_EXON                   elegans remanei briggsae japonica brenneri brugia ovolvulus
+SHORT_INTRON                 elegans remanei briggsae japonica brenneri brugia ovolvulus
+REPEAT_OVERLAPS_EXON         elegans remanei briggsae japonica brenneri brugia ovolvulus
+INTRONS_IN_UTR               elegans remanei briggsae japonica brenneri brugia ovolvulus
 SPLIT_GENE_BY_TWINSCAN       
 MERGE_GENES_BY_TWINSCAN      
 MERGE_GENES_BY_RNASEQ        elegans
 CONFIRMED_INTRON             
-UNCONFIRMED_INTRON           elegans remanei briggsae japonica brenneri brugia
+UNCONFIRMED_INTRON           elegans remanei briggsae japonica brenneri brugia ovolvulus
 UNMATCHED_MASS_SPEC_PEPTIDE  elegans
-EST_OVERLAPS_INTRON          elegans remanei briggsae japonica brenneri brugia
+EST_OVERLAPS_INTRON          elegans remanei briggsae japonica brenneri brugia ovolvulus
 UNMATCHED_EXPRESSION         elegans
-INCOMPLETE_PFAM_MOTIF        elegans remanei briggsae japonica brenneri
+INCOMPLETE_PFAM_MOTIF        elegans remanei briggsae japonica brenneri ovolvulus
 UNMATCHED_454_CLUSTER        elegans
 UNMATCHED_MGENE              elegans
 NOVEL_MGENE_PREDICTION       elegans
 NOT_PREDICTED_BY_MGENE       elegans
-UNMATCHED_RNASEQ_INTRONS     elegans remanei briggsae japonica brenneri brugia
-SPURIOUS_INTRONS             elegans remanei briggsae japonica brenneri brugia
-PREMATURE_STOP               elegans remanei briggsae japonica brenneri brugia
+UNMATCHED_RNASEQ_INTRONS     elegans remanei briggsae japonica brenneri brugia ovolvulus
+SPURIOUS_INTRONS             elegans remanei briggsae japonica brenneri brugia ovolvulus
+PREMATURE_STOP               elegans remanei briggsae japonica brenneri brugia ovolvulus
 UNCONFIRMED_MASS_SPEC_INTRON elegans
 END_DATA
 
