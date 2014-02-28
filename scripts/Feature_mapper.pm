@@ -490,7 +490,6 @@ sub check_overlapping_CDS
     return @gene_hits;
   }
 
-
 ##########################################
 
 =head2 _get_flanking_sequence
@@ -504,21 +503,29 @@ sub check_overlapping_CDS
               (superlink or chromosome) needs to be used, then 'undef' 
               is returned.
     	      This routine is the inverse of map_feature().
-  Args    :   any seq obj as string, 
-              start/end coordinates of the region relative to that seq obj
-	      (optional) the minimum length you want the flanking sequences to be, defaults to 30
+  Args    :   Sequence_object - any seq obj as string, 
+              int, int - start/end coordinates of the region relative to that seq obj
+	      int - (optional) the minimum length you want the flanking sequences to be, defaults to 30
+              int - flag to not do a check for uniqueness
+              int - flag to allow non-unique flanking sequences shorter than the minimum length at the ends of the sequence 
 
-  IMPORTANT NOTE: The returned left flank will end at coord $pos1, and the returned right-flank will
+              (this last flag is intended for use in species with
+              contig assemblies where Features are likely to be near
+              the end of contigs and the contig sequence object
+              supplied will be the top-level sequence object)
+
+ IMPORTANT NOTE: The returned left flank will end at coord $pos1, and the returned right-flank will
                   start at $pos2 - in other words, the returned flanks will overlap the given extent
                   by 1bp on each side. Therefore, in order to get the flanking sequence for a feature with 
                   extent defined by $x - $y, this method should be called with $pos1 = $x-1 and $pos2 - $x+1. 
                   The reason for this hoopla is to be able to deal with 0-bp features (which can only be
                   defined with a 2bp extent)
- 
 =cut
 
+
+
 sub _get_flanking_sequence {
-  my ($self, $clone, $pos1, $pos2, $min_len, $no_unique_check) = @_;
+  my ($self, $clone, $pos1, $pos2, $min_len, $no_unique_check, $short_end_flanks_allowed) = @_;
 
   # get sequence of clone
   my $seq = $self->Sub_sequence($clone);
@@ -548,10 +555,29 @@ sub _get_flanking_sequence {
   my $flankseq1;
   my $flankseq2;
   while ($matches1 > 1 or $matches2 > 1) {
-    # Can't get unique first flank in sequence object $clone ending at $pos1
-    if ($pos1-$flank1+1 < 0) {return undef;}
-    # Can't get unique second flank in sequence object $clone starting at $pos2
-    if ($pos2+$flank2 > $len) {return undef;}
+
+    # Check if the flanks are going off the ends of the sequence
+    if ($pos1-$flank1 < 0) {
+      if ($short_end_flanks_allowed) {
+        $matches1=1; # declare that we have a unique match to allow exit from the while loop
+        $flank1 = $pos1+1; # set the flank length to cover the sequence to the begining
+	# the feature mapper finds the position of the longest flank first, so ensure that the other (unique) flank is longer than this one
+	if ($flank2 < $flank1) {$flank2 = $flank1+1} 
+      } else {
+        return undef;
+      }
+    }
+    if ($pos2+$flank2 >= $len) {
+      if ($short_end_flanks_allowed) {
+        $matches2=1; # declare that we have a unique match to allow exit from the while loop
+        $flank2 = $len-$pos2; # set the flank length to cover the sequence to the end
+	# the feature mapper finds the position of the longest flank first, so ensure that the other (unique) flank is longer than this one
+	if ($flank1 < $flank2) {$flank1 = $flank2+1} 
+      } else {
+	return undef;
+      }
+    }
+
     # get flanking sequences
     $flankseq1 = substr($seq, $pos1-$flank1+1, $flank1);
     $flankseq2 = substr($seq, $pos2, $flank2);
@@ -560,13 +586,17 @@ sub _get_flanking_sequence {
 
     # find the number of matches. If we find a single match, good; but then also
     # need to check reverse strand because it may map there also
-    $matches1 = $self->_matches($seq, $flankseq1);
-    if ($matches1 == 1) {
-      $matches1 += $self->_matches($revseq, $flankseq1);
+    if ($matches1 > 1) {
+      $matches1 = $self->_matches($seq, $flankseq1);
+      if ($matches1 == 1) {
+	$matches1 += $self->_matches($revseq, $flankseq1);
+      }
     }
-    $matches2 = $self->_matches($seq, $flankseq2);
-    if ($matches2 == 1) {
-      $matches2 += $self->_matches($revseq, $flankseq2);
+    if ($matches2 > 1) {
+      $matches2 = $self->_matches($seq, $flankseq2);
+      if ($matches2 == 1) {
+	$matches2 += $self->_matches($revseq, $flankseq2);
+      }
     }
 
     # if there are more than one match, extend the length of the flank
@@ -583,7 +613,6 @@ sub _get_flanking_sequence {
 
 }
 
-
 =head2 get_flanking_sequence_for_feature
 
   Title   :   get_flanking_sequence_for_feature
@@ -595,9 +624,12 @@ sub _get_flanking_sequence {
               (superlink or chromosome) needs to be used, then 'undef' 
               is returned.
   Args    :   1. any seq obj as string, 
-              2. start/end coordinates of the feature you wish to generate flanks for, relative to that seq obj
-              3. whether or not given feature is 0-length
-	      4. (optional) the minimum length you want the flanking sequences to be, defaults to 30
+              2,3. start/end coordinates of the feature you wish to generate flanks for, relative to that seq obj
+              4. whether or not given feature is 0-length
+	      5. (optional) the minimum length you want the flanking sequences to be, defaults to 30
+              6. (optional) flag to not do a check for uniqueness
+              7. (optional) flag to allow non-unique flanking sequences shorter than the minimum length at the ends of the sequence 
+
 
   NOTE: when abs(end - start) == 1, the code cannot tell whether the supplied extent is
         a 2-bp feature or a 0-bp feature (lying in between the two basws). This information
@@ -605,7 +637,7 @@ sub _get_flanking_sequence {
 =cut
 
 sub get_flanking_sequence_for_feature {
-  my ($self, $clone, $start, $end, $is_zero_length, $min_flank_length, $no_unique_check) = @_;
+  my ($self, $clone, $start, $end, $is_zero_length, $min_flank_length, $no_unique_check, $short_end_flanks_allowed) = @_;
 
   if (abs($end - $start) != 1 or not $is_zero_length) {
     if ($start <= $end) {
@@ -617,7 +649,7 @@ sub get_flanking_sequence_for_feature {
     }
   }
 
-  return $self->_get_flanking_sequence($clone, $start, $end, $min_flank_length, $no_unique_check);
+  return $self->_get_flanking_sequence($clone, $start, $end, $min_flank_length, $no_unique_check, $short_end_flanks_allowed);
   
 }
 
