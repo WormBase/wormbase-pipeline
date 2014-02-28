@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2014-02-28 11:46:48 $      
+# Last updated on: $Date: 2014-02-28 14:31:09 $      
 
 # Changes required by Ant: 2008-02-19
 # 
@@ -5027,7 +5027,7 @@ UNMATCHED_TSL                elegans ovolvulus
 UNMATCHED_RST5               elegans
 UNMATCHED_TWINSCAN           elegans
 UNMATCHED_GENEFINDER         elegans
-GENBLASTG_DIFFERS_FROM_CDS            remanei briggsae japonica brenneri brugia ovolvulus
+GENBLASTG_DIFFERS_FROM_CDS            remanei briggsae japonica brenneri brugia
 JIGSAW_DIFFERS_FROM_CDS      elegans
 MODENCODE_DIFFERS_FROM_CDS      elegans
 MODENCODE_WITH_SIGNALP       elegans
