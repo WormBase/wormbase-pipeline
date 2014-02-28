@@ -4,8 +4,8 @@
 #
 # Overloads Variation lines with extra info (consequence etc)
 #
-# Last updated by: $Author: klh $     
-# Last updated on: $Date: 2013-12-19 08:52:10 $      
+# Last updated by: $Author: mh6 $     
+# Last updated on: $Date: 2014-02-28 13:40:39 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -167,7 +167,7 @@ while (<$gff_in_fh>) {
       if (grep { $_ =~ /Missense|Nonsense|Readthrough/ } @consequences){
         # 2.) the missense
         my @missense = $variation->at('Affects.Predicted_CDS[4]');
-        @missense = grep {/to/} @missense;
+        @missense = grep {/\sto\s/} @missense;
         #print NEW " ; AAChange \"$missense[0]\"";
         push @new_els, ['AAChange', $missense[0]];
       }
