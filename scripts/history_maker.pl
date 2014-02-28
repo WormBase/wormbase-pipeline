@@ -1374,7 +1374,7 @@ sub make_history
     my $cds = $form_cds;
     return unless $cds;
     my $output = $session_file.$cds;
-    open (HIS,">$output") or die "cant open $output\n";
+
     last if( $cds eq "end" );
 
     #$cds = &confirm_case($cds);
@@ -1414,6 +1414,8 @@ sub make_history
       return;	
     }
     
+    print "Found object $cds with biotype $biotype to make history.\n";
+
     my $species = $obj->Species->name;
     my $gene = $obj->Gene->name;
     my $lab = $obj->From_laboratory->name;
@@ -1439,8 +1441,11 @@ sub make_history
       $end = $CDS->right->right->name;
       last;
     }
+    print "Found $cds in $seq start $start end $end\n";
 
     #print ace format
+    open (HIS,">$output") or die "cant open $output\n";
+
     print HIS "Sequence : $seq\n";
     print HIS "$clone_tag \"$cds:${wormpep_prefix}$version\" $start $end\n";
 
