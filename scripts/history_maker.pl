@@ -1450,11 +1450,13 @@ sub make_history
     print HIS "$clone_tag \"$cds:${wormpep_prefix}$version\" $start $end\n";
 
     print HIS "\n$biotype : $cds:${wormpep_prefix}$version\n";
+    print "written $biotype : $cds\n";
 
     foreach ($obj->Source_exons) {
       my ($start,$end) = $_->row(0);
       print HIS "Source_exons ",$start->name," ",$end->name,"\n";
     }
+    print "written Source_exons\n";
 
     foreach ($obj->Remark) {
       my ($remark, $evidence, $evidence_value1, $evidence_value2) = $_->row(0);
@@ -1464,6 +1466,7 @@ sub make_history
       print HIS " \"", $evidence_value2->name,"\"" if ($evidence_value2);
       print HIS "\n";
     }
+    print "written Remark\n";
 
     print HIS "Sequence $seq\n";
     print HIS "From_laboratory $lab\n";
@@ -1473,6 +1476,7 @@ sub make_history
     print HIS "Evidence\n" if (!defined $person);
     print HIS "Method $new_method\n";
     print HIS "Brief_identification \"$brief_identification\"\n" if ($brief_identification);
+    print "written Sequence, From_laboratory, Gene_history etc.\n";
 
     print HIS "CDS\n" if ($biotype eq 'CDS');
     
@@ -1482,9 +1486,10 @@ sub make_history
     print HIS " \"",$transcript_type_value1->name,"\"" if ($transcript_type_value1);
     print HIS " \"",$transcript_type_value2->name,"\"" if ($transcript_type_value2);
     print HIS "\n" if ($transcript_type);
-
+    print "finished writing, about to close file\n";
 
     close HIS;
+    print "file $output closed. Size: ", (-s $output), "\n";
     my $return_status = system("xremote -remote 'parse $output'");
     if ( ( $return_status >> 8 ) != 0 ) {
       &error_warning("WARNING", "X11 connection appears to be lost");
