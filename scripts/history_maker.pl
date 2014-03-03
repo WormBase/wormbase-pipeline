@@ -93,8 +93,8 @@ if (!defined $species) {
 #################################
 
 
-# If using option -cleangene you need to specify a curationdb
-die "You need to specify a curation database with the -curationdb option\n" if ($cleangene and !(defined $cdatabase));
+# you need to specify a curationdb
+die "You need to specify a curation database with the -curationdb option\n" if (!defined $cdatabase);
 
 # If using blast option you need the blast file to exist
 die "$blast doesnt exist !\n" if ($blast and !(-e $blast));
@@ -170,7 +170,7 @@ my $clone_form_sug;             # cds variable for clone form
 my $anomaly_clone;		# clone variable from anomaly form
 
 
-my $tidy_dir = glob("~${user}/.history_maker");
+my $tidy_dir = glob("$cdatabase/.history_maker"); # changed from storing temp files under ~ to $cdatabase as Ele was having trouble making these files.
 mkdir $tidy_dir, 0777;
 system("rm -f $tidy_dir/*"); # clean out old files
 my $session_file = "$tidy_dir/history_session.$version";
@@ -213,7 +213,7 @@ $main_gui->configure(
 my $gui_width = 500;
 $gui_width += 300 if ($anomaly or $blesser or $clone);
 my $gui_height = 50; #modified 200
-$gui_height += 200 if $chromosome;
+$gui_height += 200 if ($chromosome or $anomaly);
 $gui_height += 200 if $blast;
 $gui_height += 110 if $blesser;
 $gui_height += 110 if $clone;
@@ -736,7 +736,7 @@ if ($clone) {
 # anomalies database locator frame
 if ( $anomaly ) {
 
-  if (! defined $chromosome || $chromosome eq "") {die "Must specify -chromosome with -anomaly\n";}
+#  if (! defined $chromosome || $chromosome eq "") {die "Must specify -chromosome with -anomaly\n";}
   if (! defined $user || $user eq "") {die "Must specify -user with -anomaly\n";}
 
   my $anomaly_detail_list;
@@ -1623,7 +1623,7 @@ sub populate_anomaly_window_list {
 #
 #  $query = qq{ SELECT a.window, SUM(a.thing_score), a.sense, a.clone FROM anomaly AS a INNER JOIN $view AS w ON a.type = w.type    WHERE a.chromosome = "$chromosome" AND a.centre = "$lab" AND a.active = 1 AND w.weight = 1 GROUP BY window, sense ORDER BY 2 DESC; };
 #
-    $query = qq{ SELECT a.window, SUM(a.thing_score * w.weight), a.sense, a.clone, a.chromosome FROM anomaly AS a INNER JOIN $view AS w ON a.type = w.type     WHERE $chromosome_in AND a.centre = "$lab" AND a.active = 1 GROUP BY window, sense ORDER BY 2 DESC; };
+    $query = qq{ SELECT a.window, SUM(a.thing_score * w.weight), a.sense, a.clone, a.chromosome FROM anomaly AS a INNER JOIN $view AS w ON a.type = w.type     WHERE $chromosome_in a.centre = "$lab" AND a.active = 1 GROUP BY window, sense ORDER BY 2 DESC; };
   }
 
   #print "\n";
@@ -1861,7 +1861,12 @@ sub goto_anomaly_window {
 
     # camace (and stlace) doesn't have the CHROMOSOME_* Sequence objects in them
     # so we now have to convert to clone coords
-    my @clone_coords = ${$coords_ref}->LocateSpan("CHROMOSOME_$chromosome", $window_start, $window_end );
+    if ($species eq 'elegans') {
+      $chromosome = "CHROMOSOME_$chromosome";
+    }
+
+    print "chromosome= >${chromosome}< $window_start, $window_end";
+    my @clone_coords = ${$coords_ref}->LocateSpan($chromosome, $window_start, $window_end );
     &goto_location($clone_coords[0], $clone_coords[1], $clone_coords[2], $sense, 0);
 
     # insert the text '[Seen in this session]' at the end of the current select line (if it is not already there)
