@@ -7,7 +7,7 @@
 # Script to find TSL sites from the unaligned short read data
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2014-03-03 10:02:06 $      
+# Last updated on: $Date: 2014-03-03 13:56:52 $      
 
 # TSL sequences from 
 # PLOS Genetics
@@ -18,10 +18,13 @@
 # Figure 4
 
 
-# To make the ace file to load into geneace, find the next free Feature number (e.g. WBsf123456) concatenate all of the SRA/*/TSL/TSL_new_features.ace files and run:
+# To make the ace file to load into geneace, find the next free Feature number (e.g. WBsf123456) 
+# concatenate all of the SRA/*/TSL/TSL_new_features.ace files 
 # acezip.pl -file concatenated_file.ace 
 # to make each feature definintion at a position unique in the file, then
-# cat concatenated_file.ace | perl -ne 'BEGIN{$FEATURE = 'WBsf123456'}{if (s/Feature : \"(\S+)\"/Feature : \"$FEATURE\"/){$FEATURE++}}' > file_to_load.ace
+# cat concatenated_file.ace | perl -ne 'BEGIN{$FEATURE = "WBsf919697" ; $count=0; %hash=()}{if (s/Feature\s+:\s+"(\S+)"/Feature : "$FEATURE"/){$hash{$1}=$FEATURE; $FEATURE++ ; $count++};if ($_=~/Feature_object\s+"(\S+)"/) {$o=$1;$r=$hash{$o};$o=~s/\+/\\\+/g;s/Feature_object\s+"$o"/Feature_object "$r"/}; print "$_"} END{print STDERR "Number of Features: $count\n"}' > ! file_to_load.ace
+
+
 
 use strict;
 use lib $ENV{'CVS_DIR'};
