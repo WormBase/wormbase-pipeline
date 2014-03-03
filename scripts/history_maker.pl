@@ -1490,6 +1490,7 @@ sub make_history
 
     close HIS;
     print "file $output closed. Size: ", (-s $output), "\n";
+    system("cat $output"); # debug statement to show contents of file
     my $return_status = system("xremote -remote 'parse $output'");
     if ( ( $return_status >> 8 ) != 0 ) {
       &error_warning("WARNING", "X11 connection appears to be lost");
