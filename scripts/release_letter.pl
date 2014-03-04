@@ -2,8 +2,8 @@
 #
 # release_letter.pl                            
 # 
-# Last updated by: $Author: gw3 $               
-# Last updated on: $Date: 2013-12-20 14:27:02 $
+# Last updated by: $Author: klh $               
+# Last updated on: $Date: 2014-03-04 10:25:37 $
 
 # Generates a release letter at the end of build.
 #
@@ -165,6 +165,7 @@ if( $opt_l) {
   printf $rlfh "     - G_SPECIES.BIOPROJECT.WS$ver.genomic_softmasked.fa.gz     - Soft-masked (repeats lower-cased) genomic DNA\n";
   printf $rlfh "     - G_SPECIES.BIOPROJECT.WS$ver.protein.fa.gz                - Current live protein set\n";
   printf $rlfh "     - G_SPECIES.BIOPROJECT.WS$ver.cds_transcripts.fa.gz        - Spliced cDNA sequence for the CDS portion of protein-coding transcripts\n";
+  printf $rlfh "     - G_SPECIES.BIOPROJECT.WS$ver.coding_transcripts.fa.gz     - Spliced cDNA sequence for the full-length (including UTRs) protein-coding transcripts\n";
   printf $rlfh "     - G_SPECIES.BIOPROJECT.WS$ver.ncrna_transcripts.fa.gz      - Spliced cDNA sequence for non-coding RNA transcripts\n";
   printf $rlfh "     - G_SPECIES.BIOPROJECT.WS$ver.intergenic_sequences.fa.gz   - DNA sequence between pairs of adjacent genes\n";
   printf $rlfh "     - G_SPECIES.BIOPROJECT.WS$ver.annotations.gff[2|3].gz      - Sequence features in either GFF2 or GFF3 format\n";
