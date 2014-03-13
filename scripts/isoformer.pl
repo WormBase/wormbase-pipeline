@@ -7,7 +7,7 @@
 # This does stuff with what is in the active zone
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2014-03-12 17:22:33 $      
+# Last updated on: $Date: 2014-03-13 12:10:10 $      
 
 
 
@@ -31,7 +31,7 @@ use Tk::FileDialog;
 ######################################
 
 my ($help, $debug, $test, $verbose, $store, $wormbase);
-my ($species, $database);
+my ($species, $database, $notsl);
 
 GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
@@ -40,6 +40,7 @@ GetOptions ("help"       => \$help,
 	    "store:s"    => \$store,
 	    "species:s"  => \$species,
 	    "database:s" => \$database, # database being curated
+	    "notsl"      => \$notsl, # don't try to make TSL isoforms - for debugging purposes
 	    );
 
 # always in debug mode
@@ -94,7 +95,6 @@ if (! defined $database) {
 # int - score
 # int array - list of possible child introns in the structure
 # int - pos (current position in list of child nodes)
-# (TSL start flag)?
 
 my $coords = Coords_converter->invoke($database, undef, $wormbase);
 
@@ -108,14 +108,19 @@ my $db = Ace->connect(-path => $database) || die "cannot connect to database at 
 &load_isoformer_method();
 
 # get all RNASeq splices starting and ending in the region
+# get all SL1, SL2 sites
 my %all_splices;
+my %all_TSL;
 print "Reading splice data\n";
 foreach my $chromosome ($wormbase->get_chromosome_names(-mito => 1, -prefix => 1)) {
   if (!exists $all_splices{$chromosome}) {
-    my $data = read_data($chromosome, $log);
-    $all_splices{$chromosome} = $data;
+    my ($splice_data, $TSL_data) = read_splice_and_TSL_data($chromosome, $log);
+    $all_splices{$chromosome} = $splice_data;
+    $all_TSL{$chromosome} = $TSL_data;
   }
 }
+
+if ($notsl) {%all_TSL=()} # don't use TSL data - for debugging purposes
 
 while (1) {
 
@@ -131,74 +136,114 @@ while (1) {
     ($chromosome, $region_start, $region_end, $sense, $biotype) = get_active_region($userinput);
   } while (! defined $chromosome);
 
-  my @splices = &get_splices_in_region($chromosome, $region_start, $region_end, $sense, $all_splices{$chromosome});
+  my @TSL = &get_TSL_in_region($chromosome, $region_start, $region_end, $sense, $all_TSL{$chromosome});
 
-  # prepend dummy head splice for all other splice structures to hang from
-  unshift @splices, {head => 1, seq => $chromosome, start => $region_start-1, end => $region_start-1}; # don't set a score
+  # add the $region_start/end to the TSL list as a dummy TSL site as it is one of the positions that enclose the regions to consider
+  if ($sense eq '+') {
+    push @TSL, {
+		seq => $chromosome,
+		start => $region_start,
+		end => $region_start,
+		sense => $sense,
+		tsl => '',
+	       }
+  } else {
+    push @TSL, {
+		seq => $chromosome,
+		start => $region_end,
+		end => $region_end,
+		sense => $sense,
+		tsl => '',
+	       }
+  }
 
-  # ignore overlapped introns with a score <10% of the other intron
-  foreach my $splice1 (@splices) {
-    if (exists $splice1->{ignore}) {next}
-    if (exists $splice1->{head}) {next}
-    foreach my $splice2 (@splices) {
-      if (exists $splice2->{ignore}) {next}
-      if (exists $splice2->{head}) {next}
-      #    if the two splices are the same then next
-      if ($splice1->{start} == $splice2->{start} && $splice1->{end} == $splice2->{end} && $splice1->{sense} eq $splice2->{sense}) {next}
-      # if the two splices overlap and splice1 is < 10% of score of splice2
-      if (($splice1->{start} >= $splice2->{start} && $splice1->{start} <= $splice2->{end}) ||
-	  ($splice1->{end} >= $splice2->{start} && $splice1->{end} <= $splice2->{end})) {
-	if ($splice1->{score} * 10 < $splice2->{score}) {
-	  $splice1->{ignore} = 1;
+  my $next_isoform = 1; # used in constructing the unique name of the object
+  my @confirmed;
+  my @created;
+
+  foreach my $TSL (@TSL) {
+    if ($sense eq '+') {
+      $region_start = $TSL->{start};
+    } else {
+      $region_end = $TSL->{start};
+    }
+
+    my @splices = &get_splices_in_region($chromosome, $region_start, $region_end, $sense, $all_splices{$chromosome});
+    
+    # prepend dummy head splice for all other splice structures to hang from
+    unshift @splices, {head => 1, seq => $chromosome, start => $region_start-1, end => $region_start-1}; # don't set a score
+    
+    # ignore overlapped introns with a score <10% of the other intron
+    foreach my $splice1 (@splices) {
+      if (exists $splice1->{ignore}) {next}
+      if (exists $splice1->{head}) {next}
+      foreach my $splice2 (@splices) {
+	if (exists $splice2->{ignore}) {next}
+	if (exists $splice2->{head}) {next}
+	#    if the two splices are the same then next
+	if ($splice1->{start} == $splice2->{start} && $splice1->{end} == $splice2->{end} && $splice1->{sense} eq $splice2->{sense}) {next}
+	# if the two splices overlap and splice1 is < 10% of score of splice2
+	if (($splice1->{start} >= $splice2->{start} && $splice1->{start} <= $splice2->{end}) ||
+	    ($splice1->{end} >= $splice2->{start} && $splice1->{end} <= $splice2->{end})) {
+	  if ($splice1->{score} * 10 < $splice2->{score}) {
+	    $splice1->{ignore} = 1;
+	  }
 	}
       }
     }
-  }
-  
-  # get average of active splices
-  my $average_score = 0;
-  my $count = 0;
-  foreach my $splice (@splices) {
-    if (exists $splice->{ignore}) {next}
-    if (exists $splice->{head}) {next}
-    $average_score += $splice->{score};
-    $count++;
-  }
-  if ($count == 0) {
-    $average_score = 0;
-  } else {
-    $average_score /= $count;
-  }
-  
-  # if splice1 < 10% of average of still active splices
-  #   mark splice1 as 'ignore'
-  # this removes low-scoring spurious introns inside exons that are not
-  # overlapped by other introns
-  foreach my $splice (@splices) {
-    if (exists $splice->{head}) {next}
-    if ($splice->{score} * 10 < $average_score) {$splice->{ignore} = 1}
-  }
-  
-  # discard splices marked as 'ignore'
-  my @splices2=();
-  foreach my $splice (@splices) {
-    if (!exists $splice->{ignore}) {push @splices2, $splice}
-  }
-  
-  # sort splices by start position
-  @splices = sort {$a->{start} <=> $b->{start}} @splices2;
-  
-  # reset all splice nodes lists and 'current position in list of child nodes' values to 0
-  foreach my $splice (@splices) {
-    $splice->{list} = [];
-    $splice->{pos} = 0;
-  }
+    
+    # get average of active splices
+    my $average_score = 0;
+    my $count = 0;
+    foreach my $splice (@splices) {
+      if (exists $splice->{ignore}) {next}
+      if (exists $splice->{head}) {next}
+      $average_score += $splice->{score};
+      $count++;
+    }
+    if ($count == 0) {
+      $average_score = 0;
+    } else {
+      $average_score /= $count;
+    }
+    
+    # if splice1 < 10% of average of still active splices
+    #   mark splice1 as 'ignore'
+    # this removes low-scoring spurious introns inside exons that are not
+    # overlapped by other introns
+    foreach my $splice (@splices) {
+      if (exists $splice->{head}) {next}
+      if ($splice->{score} * 10 < $average_score) {$splice->{ignore} = 1}
+    }
+    
+    # discard splices marked as 'ignore'
+    my @splices2=();
+    foreach my $splice (@splices) {
+      if (!exists $splice->{ignore}) {push @splices2, $splice}
+    }
+    
+    # sort splices by start position
+    @splices = sort {$a->{start} <=> $b->{start}} @splices2;
+    
+    # reset all splice nodes lists and 'current position in list of child nodes' values to 0
+    foreach my $splice (@splices) {
+      $splice->{list} = [];
+      $splice->{pos} = 0;
+    }
+    
+    # get the list of possible child introns of each intron
+    &determine_child_nodes(@splices);
+    
+    # iterate through the valid structures
+    my ($confirmed, $created) = &iterate_through_the_valid_structures(\$next_isoform, $TSL, $chromosome, $region_start, $region_end, $sense, @splices);
+    push @confirmed, @{$confirmed};
+    push @created, @{$created};
 
-  # get the list of possible child introns of each intron
-  &determine_child_nodes(@splices);
-  
-  # iterate through the valid structures
-  &iterate_through_the_valid_structures($chromosome, $region_start, $region_end, $sense, @splices);
+  } # foreach TSL
+
+  print "\n*** The following structures were confirmed: @confirmed\n\n";
+  print "\n*** The following novel structures were created: @created\n\n";
+
 }
 
 # close the ACE connection
@@ -335,28 +380,55 @@ sub get_active_region {
   return ($chromosome, $start, $end, $sense, $biotype);
 }
 ###############################################################################
-# read the RNASeq intron data from the GFF file
+# read the RNASeq intron data and TSL site data from the GFF file
 
-sub read_data {
+sub read_splice_and_TSL_data {
   my ($chromosome, $log) = @_;
-  my @data;
+  my @splice_data;
+  my @TSL_data;
   my %splice;
-  my $method = 'RNASeq_splice';
+  my $splice_method = 'RNASeq_splice';
+  my $SL1_method = 'SL1';
+  my $SL2_method = 'SL2';
   my $file = open_GFF_file($chromosome, $log);
 
   while (<$file>) {
     my @line = split;
-    if ($line[1] ne $method) {next}
-    push @data, {
-		 seq => $line[0],
-		 start => $line[3],
-		 end => $line[4],
-		 score => $line[5],
-		 sense => $line[6],
-		}
+    if ($line[1] eq $splice_method) {
+      push @splice_data, {
+			  seq => $line[0],
+			  start => $line[3],
+			  end => $line[4],
+			  score => $line[5],
+			  sense => $line[6],
+			 }
+    } elsif ($line[1] eq $SL1_method) {
+      my ($id) = ($line[8] =~ /Feature\s+\"(\S+)\"/); # Feature "WBsf161341"
+      push @TSL_data, {
+		       seq => $line[0],
+		       start => $line[3],
+		       end => $line[4],
+		       score => $line[5],
+		       sense => $line[6],
+		       tsl => 'SL1',
+		       id => $id,
+		      }
+
+    } elsif ($line[1] eq $SL2_method) {
+      my ($id) = ($line[8] =~ /Feature\s+\"(\S+)\"/); # Feature "WBsf161341"
+      push @TSL_data, {
+		       seq => $line[0],
+		       start => $line[3],
+		       end => $line[4],
+		       score => $line[5],
+		       sense => $line[6],
+		       tsl => 'SL2',
+		       id => $id,
+		      }
+    }
   }
 
-  return \@data;
+  return (\@splice_data, \@TSL_data);
 }
 
 ###############################################################################
@@ -400,6 +472,23 @@ sub get_splices_in_region {
   return @splices;
 }
 ###############################################################################
+# filter the list of TSLs and return those enclose by the specied region
+
+sub get_TSL_in_region {
+  my ($chromosome, $start, $end, $sense, $all_TSL) = @_;
+  my @TSL;
+
+  foreach my $TSL (@{$all_TSL}) {
+    if ($TSL->{start} < $start) {next}
+    if ($TSL->{end} > $end) {next}
+    if ($TSL->{sense} ne $sense) {next}
+    if ($TSL->{seq} ne $chromosome) {next}
+    push @TSL, $TSL;
+  }
+
+  return @TSL;
+}
+###############################################################################
 # get the list of possible child introns of each intron
 # a child intron is one which the current intron can reasonably be
 # followed by in a typical CDS structure
@@ -419,7 +508,7 @@ sub get_splices_in_region {
 sub determine_child_nodes {
   my (@splices) = @_; # list of introns sorted by start pos
 
-  my $min_exon_length=20; # we very rarely get intron less that 25, so this is a nice, safe min length
+  my $min_exon_length=1; # we very rarely get intron less that 25, so this is a nice, safe min length
   my $overlaps_all_other_child_nodes;
 
   # The splices are sorted by start position and so we know that all
@@ -466,11 +555,10 @@ sub determine_child_nodes {
 #   if no more levels up to increment then return
 
 sub iterate_through_the_valid_structures {
-  my ($chromosome, $region_start, $region_end, $sense, @splices) = @_;
+  my ($next_isoform, $TSL, $chromosome, $region_start, $region_end, $sense, @splices) = @_;
 
   my $finished=0; # set when we have no more levels to increment up
 
-  my $next_isoform = 1; # used in constructing the unique name of the object
   my @confirmed=();
   my @created=();
 
@@ -486,9 +574,9 @@ sub iterate_through_the_valid_structures {
       if ($confirmed) {
 	push @confirmed, $confirmed;
       } else {
-	&make_isoform('isoformer', $clone, $clone_aug, $clone_stop, $sense, $exons, $next_isoform);
-	push @created, "isoformer_$next_isoform";
-	$next_isoform++;
+	&make_isoform('isoformer', $TSL, $clone, $clone_aug, $clone_stop, $sense, $exons, $$next_isoform);
+	push @created, "isoformer_${$next_isoform}";
+	$$next_isoform++;
       }
     } elsif ($type eq 'INVALID') { # no START and STOP found in the first and last exons
       print "Found no good coding structure - should the region to look at be larger?\n";
@@ -497,9 +585,9 @@ sub iterate_through_the_valid_structures {
       if ($confirmed) {
 	push @confirmed, $confirmed;
       } else {
-	&make_isoform('non_coding_isoformer', $clone, $clone_aug, $clone_stop, $sense, $exons, $next_isoform);
-	push @created, "non_coding_isoformer_$next_isoform";
-	$next_isoform++;
+	&make_isoform('non_coding_isoformer', $TSL, $clone, $clone_aug, $clone_stop, $sense, $exons, $$next_isoform);
+	push @created, "non_coding_isoformer_${$next_isoform}";
+	$$next_isoform++;
       }
 
     } else {
@@ -510,9 +598,7 @@ sub iterate_through_the_valid_structures {
 
   } until ($finished);
 
-  print "\n*** The following structures were confirmed: @confirmed\n\n";
-  print "\n*** The following novel structures were created: @created\n\n";
-
+  return (\@confirmed, \@created);
 }
 
 ###############################################################################
@@ -651,7 +737,7 @@ sub convert_to_exons {
     $offset = $result + 1;
     $result = index($cds_seq, $aug, $offset);
   }
-  #print "best_aug: $best_aug best_stop: $best_stop best_orf_len: $best_orf_len cds length: ",length $cds_seq,"\n";
+  print "best_aug: $best_aug best_stop: $best_stop best_orf_len: $best_orf_len cds length: ",length $cds_seq,"\n";
 
   # convert splices chain to exons - this includes the UTRs still as
   # we haven't done anything yet with the AUG and STOP codon positions
@@ -660,6 +746,7 @@ sub convert_to_exons {
   # strip out the UTRs if we have START and STOP codons in the first and last exons
   # get the chromosomal positions of the START and STOP codons
   my ($chrom_aug, $chrom_stop, $valid_aug, $valid_stop, @new_exons) = add_aug_and_stop_to_structure($region_start, $region_end, $best_aug, $best_stop, \@exons, $sense);
+  print "valid_aug: $valid_aug valid_stop: $valid_stop\n";
 
   # is this a valid ORF?
   if ($valid_aug && $valid_stop) { # START and STOP codons in first and last introns
@@ -792,7 +879,7 @@ sub add_aug_and_stop_to_structure {
 
 ###############################################################################
 # check to see if the clone start-end region and exon start-end pairs
-# match those of a curated object in the database
+# match those of a 'curated' object or a 'isoformer' CDS object in the database
 
 sub check_not_already_curated {
   my ($biotype, $clone, $clone_aug, $clone_stop, $exons) = @_;
@@ -813,7 +900,11 @@ sub check_not_already_curated {
     $start = $CDS->right->name;
     $end = $CDS->right->right->name;
     if ($start != $clone_aug || $end != $clone_stop) {next}
-    if ($CDS->Method->name ne 'curated' && $CDS->Method->name ne 'Pseudogene') {next} # don't want to report a match to a history object or an ab-initio prediction etc.
+    if ($CDS->Method->name ne 'curated' && 
+	$CDS->Method->name ne 'Pseudogene' && 
+	$CDS->Method->name ne 'isoformer' &&
+	$CDS->Method->name ne 'non_coding_isoformer'
+       ) {next} # don't want to report a match to a history object or an ab-initio prediction etc.
     $name = $CDS->name;
     if (&check_exons_match($CDS, $exons)) {return $name}
   }
@@ -885,10 +976,12 @@ sub get_clone_coords {
 # make a temporary gene
 
 sub make_isoform {
-  my ($Method, $clone, $clone_aug, $clone_stop, $sense, $exons, $next_isoform) = @_;
+  my ($Method, $TSL, $clone, $clone_aug, $clone_stop, $sense, $exons, $next_isoform) = @_;
 
   my $name = "${Method}_${next_isoform}";
   my $output = "$database/tmp/isoformer_isoform$$";
+  my $id = $TSL->{id}; # undef if not using a TSL
+  my $TSL_type = $TSL->{tsl}; # empty string if not using a TSL
 
   my $biotype = 'CDS';
   my $clone_tag = 'CDS_child';
@@ -907,6 +1000,17 @@ sub make_isoform {
     $transcript_type = 'ncRNA';
   } else {
     die "The Method '$Method' is not recognised\n";
+  }
+
+  my $personid;
+  if ($USER eq 'gw3') {
+    $personid = 'WBPerson4025';
+  } elsif ($USER eq 'pad') {
+    $personid = 'WBPerson1983';
+  } elsif ($USER eq 'es9') {
+    $personid = 'WBPerson2062';
+  } else {
+    die "Unknown WBPerson id: $USER\n";
   }
 
   if (!-e "$database/tmp") {mkdir "$database/tmp", 0777};
@@ -934,7 +1038,16 @@ sub make_isoform {
     print HIS "Source_exons ", $exon->{start}, " ", $exon->{end},"\n";
     print "Source_exons ", $exon->{start}, " ", $exon->{end},"\n";
   }
-  print HIS "Remark \"[date $USER] Created this isoform based on the RNASeq data\"\n";
+  my $remark = "Remark \"[date $USER] Created this isoform based on the RNASeq data";
+  if ($TSL_type) {
+    $remark .=  " and the $TSL_type site"
+  }
+  $remark .= ".";
+  print HIS "$remark Curator_confirmed $personid\n";
+  print HIS "$remark From_analysis RNASeq_Hillier_elegans\n";
+  if ($TSL_type) {
+    print HIS "$remark Feature_evidence $id\n";
+  }
   print HIS "Sequence $clone\n";
   print HIS "From_laboratory $lab\n";
   print HIS "Gene $gene\n" if $gene;
