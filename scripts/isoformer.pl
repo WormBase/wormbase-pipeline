@@ -7,7 +7,7 @@
 # This does stuff with what is in the active zone
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2014-03-13 12:30:49 $      
+# Last updated on: $Date: 2014-03-13 12:40:19 $      
 
 
 
@@ -1013,6 +1013,10 @@ sub make_isoform {
     die "Unknown WBPerson id: $USER\n";
   }
 
+  my ($day, $mon, $yr)  = (localtime)[3,4,5];
+  my $date = sprintf("%02d%02d%02d",$yr-100, $mon+1, $day);
+
+
   if (!-e "$database/tmp") {mkdir "$database/tmp", 0777};
 
   #print ace format
@@ -1038,11 +1042,11 @@ sub make_isoform {
     print HIS "Source_exons ", $exon->{start}, " ", $exon->{end},"\n";
     print "Source_exons ", $exon->{start}, " ", $exon->{end},"\n";
   }
-  my $remark = "Remark \"[date $USER] Created this isoform based on the RNASeq data";
+  my $remark = "Remark \"[$date $USER] Created this isoform based on the RNASeq data";
   if ($TSL_type) {
     $remark .=  " and the $TSL_type site"
   }
-  $remark .= ".";
+  $remark .= ".\"";
   print HIS "$remark Curator_confirmed $personid\n";
   print HIS "$remark From_analysis RNASeq_Hillier_elegans\n";
   if ($TSL_type) {
