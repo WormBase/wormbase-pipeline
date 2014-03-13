@@ -14,12 +14,22 @@
 //
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: pad $
-// Last edited on: $Date: 2014-01-28 11:37:51 $
+// Last edited on: $Date: 2014-03-13 15:04:42 $
 //
 //
 // Additional things to consider. If classes are added or new data in the ?Gene class
 // Then we should consider the elegans_config (and possibly others) so the data makes
 // it into the build!
+//
+//
+// Notes:
+//
+// Add a CVS tag line at the end of the file when the models are fully prepared for a 
+// WB build to start, this allows for one final CVS commit and message.
+//
+// Tags that shouldn't be used:
+// -----------------------------------------------------------------------------
+//  "Name" this should always be implemented as Public_name or Similar
 //
 
 
@@ -217,6 +227,7 @@
 		Phenotype ?Text
 		Description ?Text // [krb 020614]
                 Designating_laboratory UNIQUE ?Laboratory XREF Gene_classes
+                Former_designating_laboratory DateType UNIQUE ?Laboratory XREF Former_gene_classes //This is a one way XREF to track responsibility for a class.
                 Variation ?Variation	XREF Gene_class
 		Genes ?Gene XREF Gene_class
 		Old_member ?Gene_name XREF Former_member_of
@@ -2008,6 +2019,7 @@
 
 
 ?Expr_pattern	Expression_of	Gene ?Gene XREF Expr_pattern #Evidence
+				Reflects_endogenous_expression_of ?Gene
 				CDS        ?CDS XREF Expr_pattern // for coding genes
 				Sequence   ?Sequence XREF Expr_pattern // for clones???
 				Pseudogene ?Pseudogene XREF Expr_pattern // [030801 krb]
@@ -2619,12 +2631,13 @@
 //
 //////////////////////////////////////////////
 
-?Operon SMap S_parent UNIQUE Canonical_parent UNIQUE ?Sequence XREF Operon
+?Operon Public_name UNIQUE ?Text //Used for storing a publically accepted name for an Operon, not populated by default.
+	SMap S_parent UNIQUE Canonical_parent UNIQUE ?Sequence XREF Operon
 	Species UNIQUE ?Species
 	Contains_gene ?Gene XREF Contained_in_operon #Trans_splice_leader
 	Associated_feature ?Feature XREF Associated_with_operon	#Evidence
 	Reference ?Paper XREF Operon
-	Description UNIQUE Text     #Evidence
+	Description UNIQUE ?Text     #Evidence
 	Method UNIQUE ?Method
 	History    Merged_into      UNIQUE ?Operon XREF Acquires_merge #Evidence
 		   Acquires_merge   ?Operon XREF Merged_into #Evidence
@@ -2644,7 +2657,7 @@
 /////////////////////////////////////////////////////////////////////
 
 ?Movie Description ?Text
-       Name UNIQUE Text
+       Public_name UNIQUE Text
        Reference ?Paper XREF Movie
        DB_info ?Database ?Database_field Text
        Pick_me_to_call Text Text
@@ -2776,6 +2789,7 @@
 		     Attribute_of Microarray_experiment ?Microarray_experiment  XREF Expression_cluster //Wen
 				  RNAseq ?Analysis XREF Expression_cluster_RNAseq
                                   Tiling_array ?Analysis XREF Expression_cluster_tiling_array
+                                  qPCR ?Analysis XREF Expression_cluster_qPCR //added by Wen for qPCR curation
 				  Expr_pattern ?Expr_pattern XREF Expression_cluster #Evidence          //Wen originally for Localizome
                      Regulation   Regulated_by_gene ?Gene		     //Wen WS228
                                   Regulated_by_treatment Text                //Wen WS228
@@ -3115,6 +3129,7 @@
                       Allele_designation UNIQUE Text
                       Alleles ?Variation
                       Gene_classes ?Gene_class XREF Designating_laboratory
+                      Former_gene_classes ?Gene_class
 	      Staff   Registered_lab_members ?Person XREF Laboratory   // for people with WormBase Person IDs
         	      Past_lab_members ?Person XREF Old_laboratory     // for anyone who has left the field, or the circle of life
 	      Remark ?Text #Evidence
@@ -3338,9 +3353,11 @@
                       False_discovery_rate UNIQUE Float // percentage
                       Mass_spec_peptide ?Mass_spec_peptide XREF Mass_spec_experiments     // the resulting peptide data
 
+//////////////////////////////////////////////////
 //
 // The Mass_spec_peptide class
 //
+//////////////////////////////////////////////////
 
 ?Mass_spec_peptide  Peptide UNIQUE Text                 // the deduced peptide sequence
                     Protein_seq UNIQUE ?Protein         // the protein object of this Mass_spec_peptide
@@ -3378,6 +3395,7 @@
 	     Sample ?Condition XREF Analysis
 	     Expression_cluster_RNAseq ?Expression_cluster XREF RNAseq
 	     Expression_cluster_tiling_array ?Expression_cluster XREF Tiling_array
+	     Expression_cluster_qPCR ?Expression_cluster XREF qPCR  //added by Wen for qPCR curation
              Gene_cluster ?Gene_cluster XREF Analysis 
              Species_in_analysis ?Species XREF In_analysis
              Reference ?Paper XREF Describes_analysis
@@ -3451,12 +3469,13 @@
 //
 //////////////////////////////////////////////////	
 
-?WBProcess      Name  ?Text
+?WBProcess      Name ?Text
                 Summary ?Text #Evidence
                 Process_term ?Text
 		Public_name UNIQUE ?Text
                 Other_name ?Text
-                Related_process ?WBProcess XREF Related_process
+                Related_topic Specialisation_of ?WBProcess XREF Generalisation_of
+                              Generalisation_of ?WBProcess XREF Specialisation_of
                 Taxon   NCBITaxonomyID ?Text
                 Involved_entity Gene ?Gene XREF WBProcess #Evidence  
                                 Expression_cluster ?Expression_cluster XREF WBProcess  #Evidence
@@ -3479,3 +3498,14 @@
 ////////////////////////
 //    END OF FILE     //
 ////////////////////////
+
+
+
+// CVS tagging lines
+// Add a line for the WS release the models file is going to be CVS tagged for
+// This give you a final shot at creating a nicely formatted CVS commit message 
+//
+// WS242
+// 
+// 
+// 
