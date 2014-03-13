@@ -8,7 +8,7 @@
 # existing gene 
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2013-02-11 10:45:21 $
+# Last edited on: $Date: 2014-03-13 13:53:05 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -231,7 +231,7 @@ sub process_gene{
 	  $new =~ s/^/CBG/;
 	}
 	print OUT "Species \"".$wormbase->full_name."\"\n";
-	print OUT "Positive_clone $p_clone Inferred_automatically \"From sequence, transcript, pseudogene data\"\n";
+	  print OUT "Positive_clone $p_clone Inferred_automatically \"From sequence, transcript, pseudogene data\"\n" if ($species eq 'elegans');
 	print OUT "History Version_change 1 now $person Event Split_from $old_gene\n";
 	print OUT "Split_from $old_gene\n";
 	print OUT "Method Gene\n\n";
