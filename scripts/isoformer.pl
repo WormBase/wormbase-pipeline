@@ -7,7 +7,7 @@
 # This does stuff with what is in the active zone
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2014-03-13 12:40:19 $      
+# Last updated on: $Date: 2014-03-13 14:12:27 $      
 
 
 
@@ -604,7 +604,7 @@ sub iterate_through_the_valid_structures {
 ###############################################################################
 
 # the array 'list' in the current splice object contains the alternate
-# splices that can be added after the current splice
+# splices that can be added after thec urrent splice
 
 # the integer 'pos' points to the next alternate splice in the 'list'
 # of alternate splices to be used
@@ -860,8 +860,8 @@ sub add_aug_and_stop_to_structure {
       $chrom_aug = $region_start + $best_aug - 1;
       $chrom_stop = $region_end - ($cumulative_len - $best_stop);
     } else {
-      $chrom_aug = $region_end - ($cumulative_len - $best_stop);
-      $chrom_stop = $region_start + $best_aug - 1;
+      $chrom_aug = $region_end - $best_aug + 1;
+      $chrom_stop = $region_start + ($cumulative_len - $best_stop);
     }
   } else {
     @new_exons = @{$exons}; # no good START/STOP codon found, so use original structure as a pseudogene/ncRNA Transcript
