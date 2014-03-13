@@ -7,7 +7,7 @@
 # This does stuff with what is in the active zone
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2014-03-13 12:10:10 $      
+# Last updated on: $Date: 2014-03-13 12:30:49 $      
 
 
 
@@ -393,7 +393,7 @@ sub read_splice_and_TSL_data {
   my $file = open_GFF_file($chromosome, $log);
 
   while (<$file>) {
-    my @line = split;
+    my @line = split /\t/, $_;
     if ($line[1] eq $splice_method) {
       push @splice_data, {
 			  seq => $line[0],
@@ -980,7 +980,7 @@ sub make_isoform {
 
   my $name = "${Method}_${next_isoform}";
   my $output = "$database/tmp/isoformer_isoform$$";
-  my $id = $TSL->{id}; # undef if not using a TSL
+  my $feature_id = $TSL->{id}; # undef if not using a TSL
   my $TSL_type = $TSL->{tsl}; # empty string if not using a TSL
 
   my $biotype = 'CDS';
@@ -1046,7 +1046,7 @@ sub make_isoform {
   print HIS "$remark Curator_confirmed $personid\n";
   print HIS "$remark From_analysis RNASeq_Hillier_elegans\n";
   if ($TSL_type) {
-    print HIS "$remark Feature_evidence $id\n";
+    print HIS "$remark Feature_evidence $feature_id\n";
   }
   print HIS "Sequence $clone\n";
   print HIS "From_laboratory $lab\n";
