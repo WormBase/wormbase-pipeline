@@ -7,7 +7,7 @@
 # Script to find TSL sites from the unaligned short read data
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2014-03-03 13:56:52 $      
+# Last updated on: $Date: 2014-03-14 11:53:31 $      
 
 # TSL sequences from 
 # PLOS Genetics
@@ -97,7 +97,7 @@ my @experiment_accessions = keys %{$data};
 if (defined $experiment_accession) {@experiment_accessions = ($experiment_accession)} # just do one experiment if it is specified
 
 foreach my $experiment_accession (@experiment_accessions) {
- 
+  print "Experiment: $experiment_accession\n";
 
   my $experiment = $data->{$experiment_accession};
     
@@ -226,6 +226,9 @@ foreach my $experiment_accession (@experiment_accessions) {
       if (!defined $pos) {print "undefined pos in ID $id\n";}
       if (!defined $sense) {print "undefined sense in ID $id\n";}
       if (!defined $tsl) {print "undefined tsl in ID $id\n";}
+
+      $chrom = $wormbase->chromosome_prefix . $chrom;
+
       $results{$chrom}{$pos}{$sense}{$tsl}++;
       $example{$chrom}{$pos}{$sense}{$tsl} = "$id $sense $cigar";
       #print "store: ${chrom} ${pos} ${sense} ${tsl} value: $results{$chrom}{$pos}{$sense}{$tsl} $seq\n";
@@ -287,6 +290,7 @@ foreach my $experiment_accession (@experiment_accessions) {
     # find all RNASeq evidence for TSL sites that do not have Features
     my $newaceout = "TSL_new_features.ace";
     
+    print "Start output\n";
     open (NEWACE, ">$newaceout") || $log->log_and_die("Can't open ace file $newaceout\n");
     $log->write_to("find all RNASeq evidence for TSL sites that do not have Features\n");
     foreach my $TSL_chrom (keys %results) {
@@ -294,6 +298,7 @@ foreach my $experiment_accession (@experiment_accessions) {
 	foreach my $sense (keys %{$results{$TSL_chrom}{$TSL_coord}}) {
 	  
 	  # get the flanking sequences and write the Feature_object coords for this new Feature
+	  #print "$TSL_chrom, $TSL_coord, $sense ";
 	  my ($feat_clone, $clone_start, $clone_end, $left_flank, $right_flank) = get_feature_flanking_sequences($TSL_chrom, $TSL_coord, $TSL_coord+1, $sense);
 	  if (defined $feat_clone) {
 	    if (substr($left_flank, -2) =~ /AG/i) { # ensure it looks like a splice site
@@ -333,6 +338,7 @@ foreach my $experiment_accession (@experiment_accessions) {
       }
     }
     close(NEWACE);
+    print "End output\n";
     
     # show all Feature objects that do not have evidence from this RNASeq data-set
     #  $log->write_to("show all Feature objects that do not have evidence from this RNASeq data-set\n");
