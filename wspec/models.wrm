@@ -14,7 +14,7 @@
 //
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: pad $
-// Last edited on: $Date: 2014-03-14 10:01:43 $
+// Last edited on: $Date: 2014-03-14 12:38:51 $
 //
 //
 // Additional things to consider. If classes are added or new data in the ?Gene class
@@ -3506,6 +3506,6 @@
 // This give you a final shot at creating a nicely formatted CVS commit message 
 //
 // WS242
-// 
+// WS243
 // 
 // 
