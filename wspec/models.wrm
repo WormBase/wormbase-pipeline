@@ -14,7 +14,7 @@
 //
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: pad $
-// Last edited on: $Date: 2014-03-13 15:04:42 $
+// Last edited on: $Date: 2014-03-14 10:01:43 $
 //
 //
 // Additional things to consider. If classes are added or new data in the ?Gene class
@@ -3129,7 +3129,7 @@
                       Allele_designation UNIQUE Text
                       Alleles ?Variation
                       Gene_classes ?Gene_class XREF Designating_laboratory
-                      Former_gene_classes ?Gene_class
+                      Former_gene_classes ?Gene_class XREF Former_designating_laboratory
 	      Staff   Registered_lab_members ?Person XREF Laboratory   // for people with WormBase Person IDs
         	      Past_lab_members ?Person XREF Old_laboratory     // for anyone who has left the field, or the circle of life
 	      Remark ?Text #Evidence
