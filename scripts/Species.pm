@@ -298,7 +298,7 @@ sub TSL {(
 	  'CRE_SL2g' => "GGTTTTAACCCCAGTAACCAAG",
 	  'CRE_SL2h' => "GTTTTTAACCCAGTTACTCAAG",
 	  'CRE_SL2i' => "GGTTTTAACCCAAGTTAACCAAG",
-	}
+	)}
 
 
 #######################################################
