@@ -282,6 +282,25 @@ sub assembly_type {'contig'};
 sub seq_db {my $self = shift;return $self->database('remanei');}
 sub upload_db_name {'remanei'};
 
+# The genes CRE33181 and CRE33245 defined the additional sequences
+# GGTTTTAACCGATTTAACGAAG and GGTTTATGCCCAGTTAGCCAAG, but these are not
+# seen in the short read data, so these genes are likely to be
+# pseudogenes.
+sub TSL {(
+	  'SL1'  => "GGTTTAATTACCCAAGTTTGAG",
+	  'CRE_SL2' => "GGTTTTAACCCAGTTACTCAAG",
+	  'CRE_SL2a' => "GGATTTATCCCAGTTAACCAAG",
+	  'CRE_SL2b' => "GGTTTTAACCCAGTTTAACCAAG",
+	  'CRE_SL2c' => "GGTTTTAACCCAGTTAACAAAG",
+	  'CRE_SL2d' => "GGTTTTTACCCAGTTAACCAAG",
+	  'CRE_SL2e' => "GGTTTTAACCCAGTTAACTAAG",
+	  'CRE_SL2f' => "GGTTTTAACCCAGTTAACCAAG",
+	  'CRE_SL2g' => "GGTTTTAACCCCAGTAACCAAG",
+	  'CRE_SL2h' => "GTTTTTAACCCAGTTACTCAAG",
+	  'CRE_SL2i' => "GGTTTTAACCCAAGTTAACCAAG",
+	}
+
+
 #######################################################
 package Brenneri;
 use Carp;
