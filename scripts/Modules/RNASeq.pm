@@ -7,7 +7,7 @@
 # Methods for running the RNAseq pipeline and other useful things like searching the ENA warehouse
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2014-03-18 09:36:56 $      
+# Last updated on: $Date: 2014-03-18 10:10:14 $      
 
 =pod
 
@@ -1477,7 +1477,6 @@ sub make_stranded_hits {
 	#      IV      4247931 4247972 SRR548309.15239765/2    255     -
 	
 	my ($bed_chrom, $bed_start, $bed_end, $bed_name, $bed_sense) = ($line =~ /^(\S+)\s+(\d+)\s+(\d+)\s+(\S+)\s+\d+\s+(\S+)/);
-	$bed_chrom = $self->{wormbase}->chromosome_prefix . $bed_chrom;
 
 	if ($library_layout eq 'PAIRED' && $library_type ne 'unknown') {
 	  my $mate='';
