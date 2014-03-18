@@ -8,6 +8,8 @@ use Net::FTP;
 
 use Getopt::Long;
 
+use lib $ENV{CVS_DIR};
+
 use Wormbase;
 
 
@@ -27,6 +29,8 @@ my ($provider_xml,
     $test,
     $debug,
     $store,
+    $authfile,
+    $wormbase,
     );
 
 &GetOptions("providerxml=s" => \$provider_xml,
@@ -37,6 +41,7 @@ my ($provider_xml,
             "test"          => \$test,
             "debug=s"       => \$debug,
             "store=s"       => \$store,
+            "authfile=s"    => \$authfile,
     );
 
 if ($store) { 
@@ -50,8 +55,17 @@ else {
 
 my $log = Log_files->make_build_log($wormbase);
 
-$tace = $wormbase->tace of not defined $tace;
+$tace = $wormbase->tace if not defined $tace;
 $database = $wormbase->autoace if not defined $database;
+$provider_xml = $wormbase->acefiles . "/Wormbase_provider.xml" if not defined $provider_xml;
+$links_xml = $wormbase->acefiles . "/Wormbase_links.xml" if not defined $links_xml;
+$authfile = $wormbase->wormpub . "/ebi_resources/EPMCFTP.s" if not defined $authfile;
+
+
+$log->write_to("Fetching data from WormBase...\n");
+my $papers = &paper_tm_query();
+
+$log->write_to("Building XML documents...\n");
 
 # Build the XML (it is very simple, so just substitute values into a string)
 my $provider_details_xml_string = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n<providers>\n";
@@ -60,8 +74,6 @@ $provider_details_xml_string .= "<description>$PROVIDER_DESC</description>\n<ema
 
 my $parser = XML::LibXML->new;
 my $provider_xml_obj = $parser->parse_string($provider_details_xml_string);
-
-my $papers = &paper_tm_query();
 
 # Create a blank XML DOM object and add the root element
 my $link_xml_obj = XML::LibXML::Document->new('1.0', 'UTF-8');
@@ -103,6 +115,7 @@ foreach my $paper (@$papers) {
   $root_element->addChild($link_element);	
 }
 
+$log->write_to("Validating and writing  XML documents...\n");
 my $schema = XML::LibXML::Schema->new(location => $SCHEMA_URL);
 
 foreach my $pair ([$provider_xml_obj, $provider_xml],
@@ -113,13 +126,43 @@ foreach my $pair ([$provider_xml_obj, $provider_xml],
     $schema->validate($xml_obj) 
   };
   if ($@) {
-    die "$xml_obj did not validate; exiting\n";
+    $log->log_and_die("$xml_obj did not validate; exiting\n");
   }
 
-  open(my $fh, ">$xml_file") or die "Cannot open $xml_file for writing\n";
+  open(my $fh, ">$xml_file") or $log->log_and_die("Cannot open $xml_file for writing\n");
   print $fh $xml_obj->toString(1);
   close($fh);
 }
+
+
+if ($upload) {
+  my ($ftp_host, $ftp_user, $ftp_pass, $ftp_dir);
+
+  open (my $authin, $authfile) or $log->log_and_die("Could not open $authfile for reading\n");
+  while(<$authin>) {
+    /^HOST:(\S+)$/ and $ftp_host = $1;
+    /^USER:(\S+)$/ and $ftp_user = $1;
+    /^PASS:(\S+)$/ and $ftp_pass = $1;
+    /^DIR:(\S+)$/  and $ftp_dir  = $1;
+  }
+  
+  $log->write_to("Connecting to FTP site...\n");
+
+  my $ftp = Net::FTP->new($ftp_host, Debug => 0) 
+      or $log->log_and_die("Cannot connect to $ftp_host: $@");
+  $ftp->login($ftp_user,"$ftp_pass\@")
+      or $log->log_and_die ("Cannot login to $ftp_host using WormBase credentials\n". $ftp->message);
+  $ftp->cwd($ftp_dir) 
+      or $log->log_and_die ("Cannot change into to_ena dir for upload of files\n". $ftp->message);
+
+  foreach my $file ($provider_xml, $links_xml) {
+    $log->write_to("Depositing $file on FTP site...\n");
+    $ftp->put($file) or $log->log_and_die ("FTP-put failed for $file: ".$ftp->message."\n");
+  }
+  $ftp->quit;
+}
+
+$log->mail();
 exit 0;
 
 ######################################################
@@ -168,7 +211,7 @@ Right_of 3
 Tag  HERE  
 EOF
 
-  open(my $fh, ">$tm_def") or die "Could not open $tm_def for writing\n";
+  open(my $fh, ">$tm_def") or $log->log_and_die("Could not open $tm_def for writing\n");
   print $fh $query;
   close($fh);
 
