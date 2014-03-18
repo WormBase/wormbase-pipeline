@@ -7,7 +7,7 @@
 # Methods for running the RNAseq pipeline and other useful things like searching the ENA warehouse
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2014-03-18 10:10:14 $      
+# Last updated on: $Date: 2014-03-18 15:57:10 $      
 
 =pod
 
@@ -134,42 +134,102 @@ sub read_accession {
 
   my %data;
 
-  my $fields = "run_accession,study_accession,secondary_study_accession,sample_accession,experiment_accession,submission_accession,project_accession,center_name,experiment_alias,experiment_title,fastq_ftp,instrument_model,instrument_platform,library_layout,library_name,library_selection,library_source,library_strategy,run_alias,scientific_name,study_alias,study_title,tax_id";
+  my @fields = (
+		"run_accession",
+		"study_accession",
+		"secondary_study_accession",
+		"sample_accession",
+		"experiment_accession",
+		"submission_accession",
+		"project_accession",
+		"center_name",
+		"experiment_alias",
+		"experiment_title",
+		"fastq_ftp",           # may contain two paired end filenames ;-delimited
+		"instrument_model",
+		"instrument_platform",
+		"library_layout",
+		"library_name",
+		"library_selection",
+		"library_source",
+		"library_strategy",
+		"run_alias",
+		"scientific_name",
+		"study_alias",
+		"study_title",
+		"tax_id",
+	       );
+
+  my $fields = join ',', @fields;
 
   my $query = "http://www.ebi.ac.uk/ena/data/warehouse/filereport?accession=$accession&result=read_run&fields=$fields";
     
-  open (DATA, "wget -q -O - '$query' |") || die("RNASeq: Can't get information on SRA entry $accession\n");
+  open (DATA, "wget -q -O - '$query' |") || die("RNASeq: Can't get information on SRA entry $accession in read_accession()\n");
 
-  my $count=0;
-  while(<DATA>) {
-    if (++$count == 1) {next;} # skip the title line
+  my $line_count=0;
+  while(my $line = <DATA>) {
+    if (++$line_count == 1) {next;} # skip the title line
+    chomp $line;
     
-    my @f = split /\t/;
+    my @f = split /\t/, $line;
 
-    # the primary key used is the Run_accession
-    
-    $data{$f[0]}{'study_accession'} = $f[1];
-    $data{$f[0]}{'secondary_study_accession'} = $f[2];
-    $data{$f[0]}{'sample_accession'} = $f[3];
-    $data{$f[0]}{'experiment_accession'} = $f[4];
-    $data{$f[0]}{'submission_accession'} = $f[5];
-    $data{$f[0]}{'project_accession'} = $f[6];
-    $data{$f[0]}{'center_name'} = $f[7];
-    $data{$f[0]}{'experiment_alias'} = $f[8];
-    $data{$f[0]}{'experiment_title'} = $f[9];
-    $data{$f[0]}{'fastq_ftp'} = $f[10];            # may contain two paired end filenames ;-delimited
-    $data{$f[0]}{'instrument_model'} = $f[11];
-    $data{$f[0]}{'instrument_platform'} = $f[12];
-    $data{$f[0]}{'library_layout'} = $f[13];
-    $data{$f[0]}{'library_name'} = $f[14];
-    $data{$f[0]}{'library_selection'} = $f[15];
-    $data{$f[0]}{'library_source'} = $f[16];
-    $data{$f[0]}{'library_strategy'} = $f[17];
-    $data{$f[0]}{'run_alias'} = $f[18];
-    $data{$f[0]}{'scientific_name'} = $f[19];
-    $data{$f[0]}{'study_alias'} = $f[20];
-    $data{$f[0]}{'study_title'} = $f[21];
-    $data{$f[0]}{'tax_id'} = $f[22];
+    # check the data if something goes wrong with the ENA warehouse
+    if ($#f != $#fields) {
+      my $log = $self->{log};
+      $log->write_to("RNASeq: problem found in read_accession() when querying accession: $accession\n");
+      if ($#f < $#fields) {
+	$log->write_to("RNASeq: Fewer fields written than expected:\n$line\n");
+      } else {
+	$log->write_to("RNASeq: More fields written than expected:\n$line\n");
+      }
+      # do the search again using the run accession and see which fields are not returned
+      $log->write_to("RNASeq: Checking each field ...\n");
+      my $run_accession = $f[0];
+      my @working_fields;
+      foreach my $test_field (@fields) {
+	my $test_query = "http://www.ebi.ac.uk/ena/data/warehouse/filereport?accession=$run_accession&result=read_run&fields=$test_field";    
+	open (TEST_DATA, "wget -q -O - '$test_query' |") || die("RNASeq: Can't get test_query information on SRA entry $accession in read_accession()\n");	
+	my $test_line_count=0;
+	my $field_ok = 1;
+	while(my $test_line = <TEST_DATA>) {
+	  if (++$test_line_count == 1) {next;} # skip the title line    
+	  chomp $test_line;
+	  my @test_f = split /\t/, $test_line;
+	  if ($#test_f != 0) {
+	    $log->write_to("RNASeq: Found: '$test_line' returned for field: $test_field\n");
+	    $field_ok = 0; # problem
+	  }
+	}
+	if ($field_ok) {
+	  push @working_fields, $test_field;
+	}
+      }
+      # now do the query again with the fields that worked
+      $fields = join ',', @working_fields;
+      $query = "http://www.ebi.ac.uk/ena/data/warehouse/filereport?accession=$run_accession&result=read_run&fields=$fields";
+      open (WORKING_DATA, "wget -q -O - '$query' |") || die("RNASeq: Can't get information on SRA entry $accession in read_accession()\n");
+      my $working_line_count=0;
+      while(my $working_line = <WORKING_DATA>) {
+	if (++$working_line_count == 1) {next;} # skip the title line
+	chomp $working_line;    
+	my @working_f = split /\t/, $working_line;
+	my $working_field_count = 0;
+	foreach my $working_field_name (@working_fields) {
+	  $data{$f[0]}{$working_field_name} = $f[$working_field_count];
+	  $working_field_count++;
+	}
+      }
+      $log->write_to("RNASeq: Problem with missing values now fixed.\n");
+
+    } else { # no problem with the number of fields returned
+
+      # the primary key used is the Run_accession
+      my $field_count = 0;
+      foreach my $field_name (@fields) {
+	$data{$f[0]}{$field_name} = $f[$field_count];
+	$field_count++;
+      }
+    }
   }
 
   return \%data;
