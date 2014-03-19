@@ -298,7 +298,7 @@ sub TSL {(
 	  'CRE_SL2g' => "GGTTTTAACCCCAGTAACCAAG",
 	  'CRE_SL2h' => "GGTTTTTAACCCAGTTACTCAAG",
 	  'CRE_SL2i' => "GGTTTTAACCCAAGTTAACCAAG",
-	)}
+	)};
 
 
 #######################################################
@@ -402,6 +402,25 @@ sub full_name {
 }
 
 sub upload_db_name {'japonica'};
+
+# The gene CJA48849 defines the additional sequence
+# GGTTTCAACCTAGTTAATCAAG, but this is not seen in the short read data,
+# so this gene is likely to be a pseudogene.
+sub TSL {
+  (
+    'SL1' => 'GGTTTAATTACCCAAGTTTGAG',
+    'CJA_SL2' => 'GGTTTTAACCCAGTTACTCAAG',
+    'CJA_SL2a' => 'GGTTTTAACCCAGAAACTAAAG',
+    'CJA_SL2b' => 'GGTTTTAACCCAGTAACTAAAG',
+    'CJA_SL2c' => 'GGTTTTAACCCAGTTACCCAAG',
+    'CJA_SL2d' => 'GGTTTTAACCCCAGTTAACCAAG',
+    'CJA_SL2e' => 'GGTTTTAACCCCAGTTAATCAAG',
+    'CJA_SL2f' => 'GGTTTTAACCCAGTTAACCAAG',
+    'CJA_SL2g' => 'GTTAATACCCCAGTTATCAAG',
+    'CJA_SL2h' => 'GTTTTAAACCCAGTTAACCAAG',
+    'CJA_SL2i' => 'GGTTTTAACCCAAGTTAACCAAG',
+  )};
+
 
 #######################################################
 
