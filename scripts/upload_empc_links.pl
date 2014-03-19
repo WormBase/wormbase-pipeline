@@ -15,7 +15,7 @@ use Wormbase;
 
 my $PROVIDER_ID = 1386;
 my $PROVIDER_NAME =  'WormBase';
-my $PROVIDER_DESC = 'WormBase Publication pages';
+my $PROVIDER_DESC = 'WormBase is an international consortium of biologists and computer scientists dedicated to providing the research community with accurate, current, accessible information concerning the genetics, genomics and biology of Caenorhabditis elegans and other nematodes.';
 my $PROVIDER_EMAIL = 'hinxton@wormbase.org';
 
 my $LINK_BASE_URL = 'http://www.wormbase.org/resources/paper';
@@ -134,6 +134,8 @@ foreach my $pair ([$provider_xml_obj, $provider_xml],
   close($fh);
 }
 
+$wormbase->run_command("gzip $provider_xml", $log);
+$wormbase->run_command("gzip $links_xml", $log);
 
 if ($upload) {
   my ($ftp_host, $ftp_user, $ftp_pass, $ftp_dir);
@@ -155,7 +157,7 @@ if ($upload) {
   $ftp->cwd($ftp_dir) 
       or $log->log_and_die ("Cannot change into to_ena dir for upload of files\n". $ftp->message);
 
-  foreach my $file ($provider_xml, $links_xml) {
+  foreach my $file ("${provider_xml}.gz", "${links_xml}.gz") {
     $log->write_to("Depositing $file on FTP site...\n");
     $ftp->put($file) or $log->log_and_die ("FTP-put failed for $file: ".$ftp->message."\n");
   }
