@@ -7,7 +7,7 @@
 # Methods for running the RNAseq pipeline and other useful things like searching the ENA warehouse
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2014-03-18 15:57:10 $      
+# Last updated on: $Date: 2014-03-19 10:44:32 $      
 
 =pod
 
@@ -141,7 +141,6 @@ sub read_accession {
 		"sample_accession",
 		"experiment_accession",
 		"submission_accession",
-		"project_accession",
 		"center_name",
 		"experiment_alias",
 		"experiment_title",
