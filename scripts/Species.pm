@@ -985,6 +985,41 @@ sub bioproject_description { 'Edinburgh University D.immitis genome project'};
 sub assembly_type {'contig'};
 
 ######################################################
+package Acey;
+use Carp;
+our @ISA = qw(Wormbase Species);
+
+sub _new {	
+    my $class = shift;
+    my %param = %{ shift(@_) };
+
+    my $self = $class->initialize( $class->flatten_params( \%param ) );
+
+    # add stuff post object creation goes here
+
+    bless $self, $class;
+}
+sub full_name {
+  my $self = shift;
+  my %param = @_ ;
+  if($param{'-short'}){
+    return 'A. ceylanicum';
+  } elsif($param{'-g_species'}){
+    return 'a_ceylanicum';
+  }
+  else { 
+    return'Ancylostoma ceylanicum';
+  }
+}
+sub chromosome_prefix {''}
+sub pep_prefix {'AC'}
+sub pepdir_prefix{'acey'};
+sub ncbi_tax_id {53326};
+sub ncbi_bioproject {'PRJNA231479'};
+sub bioproject_description { 'Cornell University, Genome and transcriptome of the zoonotic hookworm Ancylostoma ceylanicum'};
+sub assembly_type {'contig'};
+
+######################################################
 package Namericanus;
 use Carp;
 our @ISA = qw(Wormbase Species);
