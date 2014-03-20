@@ -7,7 +7,7 @@
 # This does stuff with what is in the active zone
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2014-03-13 14:12:27 $      
+# Last updated on: $Date: 2014-03-20 13:43:17 $      
 
 
 
@@ -113,6 +113,7 @@ my %all_splices;
 my %all_TSL;
 print "Reading splice data\n";
 foreach my $chromosome ($wormbase->get_chromosome_names(-mito => 1, -prefix => 1)) {
+#foreach my $chromosome ('CHROMOSOME_IV') {
   if (!exists $all_splices{$chromosome}) {
     my ($splice_data, $TSL_data) = read_splice_and_TSL_data($chromosome, $log);
     $all_splices{$chromosome} = $splice_data;
@@ -123,21 +124,21 @@ foreach my $chromosome ($wormbase->get_chromosome_names(-mito => 1, -prefix => 1
 if ($notsl) {%all_TSL=()} # don't use TSL data - for debugging purposes
 
 while (1) {
-
+  
   my ($chromosome, $region_start, $region_end, $sense, $biotype);
   do {
     print "Next region +-start +-end> ";
     my $userinput =  <STDIN>;
     chomp ($userinput);
     print "user input: $userinput\n";
-    if (!defined $userinput || $userinput eq '') {$userinput = 'F22E12.4a'} # for debugging
-
+    if (!defined $userinput || $userinput eq '') {next}
+    
     # get the region of interest from the CDS name or clone positions
     ($chromosome, $region_start, $region_end, $sense, $biotype) = get_active_region($userinput);
   } while (! defined $chromosome);
-
+  
   my @TSL = &get_TSL_in_region($chromosome, $region_start, $region_end, $sense, $all_TSL{$chromosome});
-
+  
   # add the $region_start/end to the TSL list as a dummy TSL site as it is one of the positions that enclose the regions to consider
   if ($sense eq '+') {
     push @TSL, {
@@ -158,8 +159,9 @@ while (1) {
   }
 
   my $next_isoform = 1; # used in constructing the unique name of the object
-  my @confirmed;
+  my %confirmed;
   my @created;
+  my @warnings;
 
   foreach my $TSL (@TSL) {
     if ($sense eq '+') {
@@ -235,15 +237,26 @@ while (1) {
     &determine_child_nodes(@splices);
     
     # iterate through the valid structures
-    my ($confirmed, $created) = &iterate_through_the_valid_structures(\$next_isoform, $TSL, $chromosome, $region_start, $region_end, $sense, @splices);
-    push @confirmed, @{$confirmed};
+    my ($created, $warnings) = &iterate_through_the_valid_structures(\%confirmed, \$next_isoform, $TSL, $chromosome, $region_start, $region_end, $sense, @splices);
     push @created, @{$created};
-
+    push @warnings, @{$warnings};
+    
   } # foreach TSL
-
-  print "\n*** The following structures were confirmed: @confirmed\n\n";
-  print "\n*** The following novel structures were created: @created\n\n";
-
+  
+  # print a summary
+  my @confirmed=();
+  my @not_confirmed=();
+  foreach my $confirmed_name (keys %confirmed) {
+    if ($confirmed{$confirmed_name} == 1) {
+      push @confirmed, $confirmed_name;
+    } else {
+      push @not_confirmed, $confirmed_name;
+    } 
+  }
+  if (@confirmed) {print "\n*** The following structures were confirmed: @confirmed\n";}
+  if (@not_confirmed) {print "\n*** THE FOLLOWING STRUCTURES WERE NOT CONFIRMED: @not_confirmed\n";}
+  if (@created) {print "\n*** The following novel structures were created: @created\n";}
+  if (@warnings) {print "\n@warnings\n\n";}
 }
 
 # close the ACE connection
@@ -555,12 +568,12 @@ sub determine_child_nodes {
 #   if no more levels up to increment then return
 
 sub iterate_through_the_valid_structures {
-  my ($next_isoform, $TSL, $chromosome, $region_start, $region_end, $sense, @splices) = @_;
+  my ($confirmed, $next_isoform, $TSL, $chromosome, $region_start, $region_end, $sense, @splices) = @_;
 
   my $finished=0; # set when we have no more levels to increment up
 
-  my @confirmed=();
-  my @created=();
+  my @created = ();
+  my @warnings = ();
 
   do {
 
@@ -568,12 +581,14 @@ sub iterate_through_the_valid_structures {
 
     my ($chrom_aug, $chrom_stop, $type, $exons) = &convert_to_exons($region_start, $region_end, $chain, $sense);
     
+    my $structure_warning = sanity_check($type, $chrom_aug, $chrom_stop, $exons);
+    if ($structure_warning) {push @warnings, $structure_warning}
+
     if ($type eq 'CDS') {
       my ($clone, $clone_aug, $clone_stop) = get_clone_coords($chromosome, $chrom_aug, $chrom_stop, $sense);
-      my $confirmed = &check_not_already_curated($type, $clone, $clone_aug, $clone_stop, $exons);
-      if ($confirmed) {
-	push @confirmed, $confirmed;
-      } else {
+      &get_structures_in_region($confirmed, $sense, $clone, $clone_aug, $clone_stop);
+      my $confirmed_ok = &check_not_already_curated($confirmed, $sense, $type, $clone, $clone_aug, $clone_stop, $exons);
+      if (!$confirmed_ok) {
 	&make_isoform('isoformer', $TSL, $clone, $clone_aug, $clone_stop, $sense, $exons, $$next_isoform);
 	push @created, "isoformer_${$next_isoform}";
 	$$next_isoform++;
@@ -581,10 +596,9 @@ sub iterate_through_the_valid_structures {
     } elsif ($type eq 'INVALID') { # no START and STOP found in the first and last exons
       print "Found no good coding structure - should the region to look at be larger?\n";
       my ($clone, $clone_aug, $clone_stop) = get_clone_coords($chromosome, $chrom_aug, $chrom_stop, $sense);
-      my $confirmed = &check_not_already_curated($type, $clone, $clone_aug, $clone_stop, $exons);
-      if ($confirmed) {
-	push @confirmed, $confirmed;
-      } else {
+      &get_structures_in_region($confirmed, $sense, $clone, $clone_aug, $clone_stop);
+      my $confirmed_ok = &check_not_already_curated($confirmed, $sense, $type, $clone, $clone_aug, $clone_stop, $exons);
+      if (!$confirmed_ok) {
 	&make_isoform('non_coding_isoformer', $TSL, $clone, $clone_aug, $clone_stop, $sense, $exons, $$next_isoform);
 	push @created, "non_coding_isoformer_${$next_isoform}";
 	$$next_isoform++;
@@ -598,11 +612,31 @@ sub iterate_through_the_valid_structures {
 
   } until ($finished);
 
-  return (\@confirmed, \@created);
+  return (\@created, \@warnings);
 }
 
 ###############################################################################
+  # sanity check that the structure is ok
 
+sub sanity_check {
+
+  my ($type, $chrom_aug, $chrom_stop, $exons) = @_;
+
+  my $warning = "";
+
+  my $length_in_sequence = abs($chrom_aug - $chrom_stop) + 1;
+  my $max_exon = 0;
+  foreach my $exon (@{$exons}) {
+    if ($exon->{end} > $max_exon) {$max_exon = $exon->{end}}
+  }
+  if ($length_in_sequence != $max_exon) {
+    $warning = "WARNING - $type sequence coords $chrom_aug-$chrom_stop have length: $length_in_sequence, but exons have length: $max_exon\n";
+  }
+ 
+  return $warning;
+}
+
+###############################################################################
 # the array 'list' in the current splice object contains the alternate
 # splices that can be added after thec urrent splice
 
@@ -843,7 +877,7 @@ sub add_aug_and_stop_to_structure {
     print "count: $count best_stop: $best_stop previous_cumulative_len: $previous_cumulative_len cumulative_len: $cumulative_len\n";
     if ($best_stop > $previous_cumulative_len && $best_stop <= $cumulative_len && $count == $#{$exons}) { # is STOP in last exon?
       $valid_stop = 1;
-      $end -=  ($cumulative_len - $best_stop);
+      $end -=  ($cumulative_len - $best_stop);# + ($best_aug - 1); # add the ($best_aug - 1) back on as it was removed earlier
     }
 
     push @new_exons, {
@@ -878,11 +912,38 @@ sub add_aug_and_stop_to_structure {
 }
 
 ###############################################################################
+# get all structures that are in the region so that we can confirm them later
+
+sub get_structures_in_region {
+  my ($confirmed, $sense, $clone, $clone_aug, $clone_stop) = @_;
+
+  # parent clone coords
+  my $clone_obj = $db->fetch(Sequence => "$clone");
+  my $start;
+  my $end;
+  my $obj;
+  foreach my $structure ( $clone_obj->CDS_child, $clone_obj->Pseudogene ) {
+    if ($structure->Method->name ne 'curated' && 
+	$structure->Method->name ne 'Pseudogene'
+       ) {next} # don't want to report a match to a history object or an ab-initio prediction etc.
+    $start = $structure->right->name;
+    $end = $structure->right->right->name;
+    if (($sense eq '+' && (($start >= $clone_aug && $start <= $clone_stop) || ($end >= $clone_aug && $end <= $clone_stop))) ||
+	($sense eq '-' && (($start <= $clone_aug && $start >= $clone_stop) || ($end <= $clone_aug && $end >= $clone_stop)))
+       ) { # is it in our region
+      my $name = $structure->name;
+      if (!exists $confirmed->{$name}) {$confirmed->{$name} = 0;}
+    }
+  }
+
+}
+
+###############################################################################
 # check to see if the clone start-end region and exon start-end pairs
 # match those of a 'curated' object or a 'isoformer' CDS object in the database
 
 sub check_not_already_curated {
-  my ($biotype, $clone, $clone_aug, $clone_stop, $exons) = @_;
+  my ($confirmed, $sense, $biotype, $clone, $clone_aug, $clone_stop, $exons) = @_;
   my $name = '';
 
   # parent clone coords
@@ -906,7 +967,10 @@ sub check_not_already_curated {
 	$CDS->Method->name ne 'non_coding_isoformer'
        ) {next} # don't want to report a match to a history object or an ab-initio prediction etc.
     $name = $CDS->name;
-    if (&check_exons_match($CDS, $exons)) {return $name}
+    if (&check_exons_match($CDS, $exons)) {
+      $confirmed->{$name} = 1;
+      return $name;
+    }
   }
 
   return '';
@@ -1036,7 +1100,7 @@ sub make_isoform {
   print HIS "\nSequence : $clone\n";
   print HIS "$clone_tag \"$name\" $clone_aug $clone_stop\n";
   print "$clone_tag \"$name\" $clone_aug $clone_stop\n";
-  
+
   print HIS "\n$biotype : \"$name\"\n";
   foreach my $exon (@{$exons}) {
     print HIS "Source_exons ", $exon->{start}, " ", $exon->{end},"\n";
