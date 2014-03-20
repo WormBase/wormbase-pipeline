@@ -7,7 +7,7 @@
 # This does stuff with what is in the active zone
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2014-03-20 15:04:13 $      
+# Last updated on: $Date: 2014-03-20 15:25:42 $      
 
 
 
@@ -133,7 +133,14 @@ while (1) {
     my $userinput =  <STDIN>;
     chomp ($userinput);
     print "user input: $userinput\n";
-    if (!defined $userinput || $userinput eq '') {next}   # 
+    if (!defined $userinput || $userinput eq '') {next}   # no input
+    if ($userinput eq '?' || $userinput eq 'h' || $userinput eq 'help') { # help
+      print "?, h, help         : this help\n";
+      print "q, quit            : quit\n";
+      print "cds_name           : search for structures in the region covered by the CDS\n";
+      print "cds_name -100      : use the region starting 100 bases before the CDS\n";
+      print "cds_name -100 +200 : use the region starting 100 bases before and 200 bases after the CDS\n";
+    }
     if ($userinput eq 'q' || $userinput eq 'quit') {last} # quit
     
     # get the region of interest from the CDS name or clone positions
