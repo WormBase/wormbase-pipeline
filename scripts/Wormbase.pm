@@ -1204,7 +1204,7 @@ sub cdna_dir     { my $self = shift; return $self->{'cdna_dir'};}
 sub cdna_acedir  { my $self = shift; return $self->{'cdna_acedir'};}
 sub maskedcdna   { my $self = shift; return $self->{'maskedcdna'} ;}
 sub seq_db	 { my $self = shift; return $self->database($self->{'species'});}
-sub ebi          { my $self = shift; return $self->{'ebi'} ;}
+#sub ebi          { my $self = shift; return $self->{'ebi'} ;}
 sub rnaseq       { my $self = shift; return $self->{'rnaseq'} ;}
 sub build_lsfout { my $self = shift; return $self->{'build_lsfout'} ;}
 sub genome_seq            { my $self = shift; return $self->{'genome_seq'}; }
@@ -1283,7 +1283,7 @@ sub establish_paths {
   my $self = shift;
 
   # are we runing on an EBI machine?
-  if ($ENV{'HOST'} =~ /ebi/) {$self->{'ebi'} = 1}
+#  if ($ENV{'HOST'} =~ /ebi/) {$self->{'ebi'} = 1}
 
   my ($basedir,
       $ftp_uploads,
