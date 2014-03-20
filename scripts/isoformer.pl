@@ -7,7 +7,7 @@
 # This does stuff with what is in the active zone
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2014-03-20 15:25:42 $      
+# Last updated on: $Date: 2014-03-20 15:34:33 $      
 
 
 
@@ -140,6 +140,7 @@ while (1) {
       print "cds_name           : search for structures in the region covered by the CDS\n";
       print "cds_name -100      : use the region starting 100 bases before the CDS\n";
       print "cds_name -100 +200 : use the region starting 100 bases before and 200 bases after the CDS\n";
+      next
     }
     if ($userinput eq 'q' || $userinput eq 'quit') {last} # quit
     
@@ -1127,7 +1128,7 @@ sub make_isoform {
   if ($TSL_type) {
     print HIS "$remark Feature_evidence $feature_id\n";
     print HIS "Isoform Feature_evidence $feature_id\n";
-    print HIS "Isoform Feature_evidence Curator_confirmed $personid\n";
+    print HIS "Isoform Curator_confirmed $personid\n";
   }
   print HIS "Sequence $clone\n";
   print HIS "From_laboratory $lab\n";
