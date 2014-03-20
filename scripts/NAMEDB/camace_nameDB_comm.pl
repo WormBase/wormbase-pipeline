@@ -113,8 +113,8 @@ my $query = "SELECT pi.object_public_id,
 
 print "$query\n";
 
-my $sth = $db->dbh->prepare($query);
-$sth->execute();
+my $sth = $db->dbh->prepare($query) || $log->log_and_die($db->dbh->errstr);
+$sth->execute()|| $log->log_and_die($sth->errstr);;
 					 
 while (my ( $gene, $live, $name ) = $sth->fetchrow_array){
   $server_genes{$gene}->{name} = $name;
