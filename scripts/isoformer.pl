@@ -7,7 +7,7 @@
 # This does stuff with what is in the active zone
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2014-03-20 13:43:17 $      
+# Last updated on: $Date: 2014-03-20 15:04:13 $      
 
 
 
@@ -123,6 +123,8 @@ foreach my $chromosome ($wormbase->get_chromosome_names(-mito => 1, -prefix => 1
 
 if ($notsl) {%all_TSL=()} # don't use TSL data - for debugging purposes
 
+my $gene;
+
 while (1) {
   
   my ($chromosome, $region_start, $region_end, $sense, $biotype);
@@ -131,10 +133,11 @@ while (1) {
     my $userinput =  <STDIN>;
     chomp ($userinput);
     print "user input: $userinput\n";
-    if (!defined $userinput || $userinput eq '') {next}
+    if (!defined $userinput || $userinput eq '') {next}   # 
+    if ($userinput eq 'q' || $userinput eq 'quit') {last} # quit
     
     # get the region of interest from the CDS name or clone positions
-    ($chromosome, $region_start, $region_end, $sense, $biotype) = get_active_region($userinput);
+    ($chromosome, $region_start, $region_end, $sense, $biotype, $gene) = get_active_region($userinput);
   } while (! defined $chromosome);
   
   my @TSL = &get_TSL_in_region($chromosome, $region_start, $region_end, $sense, $all_TSL{$chromosome});
@@ -237,7 +240,7 @@ while (1) {
     &determine_child_nodes(@splices);
     
     # iterate through the valid structures
-    my ($created, $warnings) = &iterate_through_the_valid_structures(\%confirmed, \$next_isoform, $TSL, $chromosome, $region_start, $region_end, $sense, @splices);
+    my ($created, $warnings) = &iterate_through_the_valid_structures($gene, \%confirmed, \$next_isoform, $TSL, $chromosome, $region_start, $region_end, $sense, @splices);
     push @created, @{$created};
     push @warnings, @{$warnings};
     
@@ -329,13 +332,14 @@ sub load_isoformer_method {
 
 sub get_active_region {
   my ($region) = @_;
-  my ($chromosome, $start, $end, $sense, $biotype);
+  my ($chromosome, $start, $end, $sense, $biotype, $gene);
   $sense = '+';
 
   my @region = split /[\s]+/, $region;
   if ($region[0]) { # CDS or Pseudogene
     my $obj = $db->fetch(CDS => "$region[0]");
     if (defined $obj) {
+      my $gene = $obj->Gene;
       my $clone_start;
       my $clone_end;
       my $clone = $obj->Sequence;
@@ -356,6 +360,7 @@ sub get_active_region {
 	print STDERR "Region: '$region' is an unknown way of specifying a region: not a CDS or a Pseudogene";
 	return undef;
       }
+      my $gene = $obj->Gene;
       my $clone_start;
       my $clone_end;
       my $clone = $obj->Sequence;
@@ -377,7 +382,7 @@ sub get_active_region {
     }
 
     if ($region[2]) {
-      $end = $start - $region[1] + $region[2];
+      $end = $end + $region[2];
     }
 
   } else {
@@ -390,7 +395,7 @@ sub get_active_region {
     $sense = '-';
   }
 
-  return ($chromosome, $start, $end, $sense, $biotype);
+  return ($chromosome, $start, $end, $sense, $biotype, $gene);
 }
 ###############################################################################
 # read the RNASeq intron data and TSL site data from the GFF file
@@ -568,7 +573,7 @@ sub determine_child_nodes {
 #   if no more levels up to increment then return
 
 sub iterate_through_the_valid_structures {
-  my ($confirmed, $next_isoform, $TSL, $chromosome, $region_start, $region_end, $sense, @splices) = @_;
+  my ($gene, $confirmed, $next_isoform, $TSL, $chromosome, $region_start, $region_end, $sense, @splices) = @_;
 
   my $finished=0; # set when we have no more levels to increment up
 
@@ -589,7 +594,7 @@ sub iterate_through_the_valid_structures {
       &get_structures_in_region($confirmed, $sense, $clone, $clone_aug, $clone_stop);
       my $confirmed_ok = &check_not_already_curated($confirmed, $sense, $type, $clone, $clone_aug, $clone_stop, $exons);
       if (!$confirmed_ok) {
-	&make_isoform('isoformer', $TSL, $clone, $clone_aug, $clone_stop, $sense, $exons, $$next_isoform);
+	&make_isoform('isoformer', $TSL, $clone, $clone_aug, $clone_stop, $sense, $exons, $$next_isoform, $gene);
 	push @created, "isoformer_${$next_isoform}";
 	$$next_isoform++;
       }
@@ -599,7 +604,7 @@ sub iterate_through_the_valid_structures {
       &get_structures_in_region($confirmed, $sense, $clone, $clone_aug, $clone_stop);
       my $confirmed_ok = &check_not_already_curated($confirmed, $sense, $type, $clone, $clone_aug, $clone_stop, $exons);
       if (!$confirmed_ok) {
-	&make_isoform('non_coding_isoformer', $TSL, $clone, $clone_aug, $clone_stop, $sense, $exons, $$next_isoform);
+	&make_isoform('non_coding_isoformer', $TSL, $clone, $clone_aug, $clone_stop, $sense, $exons, $$next_isoform, $gene);
 	push @created, "non_coding_isoformer_${$next_isoform}";
 	$$next_isoform++;
       }
@@ -1040,7 +1045,7 @@ sub get_clone_coords {
 # make a temporary gene
 
 sub make_isoform {
-  my ($Method, $TSL, $clone, $clone_aug, $clone_stop, $sense, $exons, $next_isoform) = @_;
+  my ($Method, $TSL, $clone, $clone_aug, $clone_stop, $sense, $exons, $next_isoform, $gene) = @_;
 
   my $name = "${Method}_${next_isoform}";
   my $output = "$database/tmp/isoformer_isoform$$";
@@ -1051,7 +1056,6 @@ sub make_isoform {
   my $clone_tag = 'CDS_child';
   my $lab = 'HX';
   my $g_species = $wormbase->full_name();
-  my $gene;
   my $pseudogene_type;
   my $transcript_type;
 
@@ -1115,12 +1119,14 @@ sub make_isoform {
   print HIS "$remark From_analysis RNASeq_Hillier_elegans\n";
   if ($TSL_type) {
     print HIS "$remark Feature_evidence $feature_id\n";
+    print HIS "Isoform Feature_evidence $feature_id\n";
+    print HIS "Isoform Feature_evidence Curator_confirmed $personid\n";
   }
   print HIS "Sequence $clone\n";
   print HIS "From_laboratory $lab\n";
-  print HIS "Gene $gene\n" if $gene;
   print HIS "Species \"$g_species\"\n";
   print HIS "Method $Method\n";
+  print HIS "Gene $gene\n" if ($gene);
   print HIS "CDS\n" if ($biotype eq 'CDS');
   print HIS "$pseudogene_type\n" if ($pseudogene_type);
   print HIS "Transcript $transcript_type\n" if ($transcript_type);
