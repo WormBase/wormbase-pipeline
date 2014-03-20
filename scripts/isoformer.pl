@@ -7,7 +7,7 @@
 # This does stuff with what is in the active zone
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2014-03-20 15:34:33 $      
+# Last updated on: $Date: 2014-03-20 15:58:13 $      
 
 
 
@@ -125,6 +125,7 @@ if ($notsl) {%all_TSL=()} # don't use TSL data - for debugging purposes
 
 my $gene;
 
+MAIN:
 while (1) {
   
   my ($chromosome, $region_start, $region_end, $sense, $biotype);
@@ -140,9 +141,10 @@ while (1) {
       print "cds_name           : search for structures in the region covered by the CDS\n";
       print "cds_name -100      : use the region starting 100 bases before the CDS\n";
       print "cds_name -100 +200 : use the region starting 100 bases before and 200 bases after the CDS\n";
+      print "\n";
       next
     }
-    if ($userinput eq 'q' || $userinput eq 'quit') {last} # quit
+    if ($userinput eq 'q' || $userinput eq 'quit') {last MAIN} # quit
     
     # get the region of interest from the CDS name or clone positions
     ($chromosome, $region_start, $region_end, $sense, $biotype, $gene) = get_active_region($userinput);
@@ -341,13 +343,17 @@ sub load_isoformer_method {
 sub get_active_region {
   my ($region) = @_;
   my ($chromosome, $start, $end, $sense, $biotype, $gene);
+  $gene = '';
   $sense = '+';
 
   my @region = split /[\s]+/, $region;
   if ($region[0]) { # CDS or Pseudogene
     my $obj = $db->fetch(CDS => "$region[0]");
     if (defined $obj) {
-      my $gene = $obj->Gene;
+      my $gene_obj = $obj->Gene;
+      if (defined $gene_obj) {
+	$gene = $obj->Gene->name;
+      }
       my $clone_start;
       my $clone_end;
       my $clone = $obj->Sequence;
@@ -368,7 +374,10 @@ sub get_active_region {
 	print STDERR "Region: '$region' is an unknown way of specifying a region: not a CDS or a Pseudogene";
 	return undef;
       }
-      my $gene = $obj->Gene;
+      my $gene_obj = $obj->Gene;
+      if (defined $gene_obj) {
+	$gene = $obj->Gene->name;
+      }
       my $clone_start;
       my $clone_end;
       my $clone = $obj->Sequence;
