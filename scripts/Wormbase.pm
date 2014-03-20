@@ -7,6 +7,9 @@
 package Wormbase;
 use strict;
 # use lib $ENV{'CVS_DIR'};
+
+$ENV{ACEDB_NO_BANNER}=1;
+
 use Carp;
 use Ace;
 use Log_files;
