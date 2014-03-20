@@ -63,8 +63,10 @@ my $TABLE = $wormbase->table_maker_query($acedb, $def);
 while( <$TABLE> ){
   next if (/>/ or /\/\// );
   s/\"//g;  # remove "
-  my($gene, $cds, $transcript, $pseudo) = split(/\s/);
+  my($gene, $cds, $transcript, $pseudo) = split(/\s/);  
+
   next unless ($cds or $transcript or $pseudo);
+  $log->write_to("WARNING: tablemaker returned $_") unless $gene=~/WBGene/;
   
   #$ace_genes{"$gene"}->{'cds'}->{"$cds"}        = 1 if $cds;
   my $seq_name = ($cds or $transcript or $pseudo);
