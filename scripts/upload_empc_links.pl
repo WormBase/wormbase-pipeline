@@ -134,8 +134,16 @@ foreach my $pair ([$provider_xml_obj, $provider_xml],
   close($fh);
 }
 
-$wormbase->run_command("gzip $provider_xml", $log);
-$wormbase->run_command("gzip $links_xml", $log);
+my $provider_xml_z = "${provider_xml}.gz";
+my $links_xml_z    = "${links_xml}.gz";
+
+unlink $provider_xml_z if -e $provider_xml_z;
+unlink $links_xml_z if -e $links_xml_z;
+
+$wormbase->run_command("gzip $provider_xml", $log) and 
+    $log->log_and_die("Failed to gzip $provider_xml");
+$wormbase->run_command("gzip $links_xml", $log) and
+    $log->log_and_die("Failed to gzip $links_xml");
 
 if ($upload) {
   my ($ftp_host, $ftp_user, $ftp_pass, $ftp_dir);
@@ -156,8 +164,9 @@ if ($upload) {
       or $log->log_and_die ("Cannot login to $ftp_host using WormBase credentials\n". $ftp->message);
   $ftp->cwd($ftp_dir) 
       or $log->log_and_die ("Cannot change into to_ena dir for upload of files\n". $ftp->message);
+  $ftp->binary();
 
-  foreach my $file ("${provider_xml}.gz", "${links_xml}.gz") {
+  foreach my $file ("$provider_xml_z", "$links_xml_z") {
     $log->write_to("Depositing $file on FTP site...\n");
     $ftp->put($file) or $log->log_and_die ("FTP-put failed for $file: ".$ftp->message."\n");
   }
