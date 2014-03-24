@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
 #
 # a script to batch request variation ids based on lists of public_names
-# Last change by $Author: mh6 $ on $Date: 2014-03-24 14:02:12 $
+# Last change by $Author: mh6 $ on $Date: 2014-03-24 14:14:24 $
 # usage: perl get_variation_ids.pl -species elegans -user me -pass me < file containing varId_pubId_per_line
 
 
@@ -111,7 +111,7 @@ sub _check_name {
   my $name = shift;
   my $var = $db->idGetByTypedName('Public_name'=>$name)->[0];
   if($var) {  
-    print STDERR "ERROR: $name already exists as $var";
+    print STDERR "ERROR: $name already exists as $var\n";
     return undef;
   }
   return 1;
