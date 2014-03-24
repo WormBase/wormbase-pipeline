@@ -7,7 +7,7 @@
 # This does stuff with what is in the active zone
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2014-03-24 09:36:36 $      
+# Last updated on: $Date: 2014-03-24 09:55:07 $      
 
 
 
@@ -1175,7 +1175,6 @@ sub make_isoform {
   } else {
     print "Made $name\n";
     #      &confirm_message("Made history","History $cds:${wormpep_prefix}$version has been created");
-    #      &clear;
   }
 
   #system("rm -f $output");
@@ -1203,20 +1202,25 @@ sub clear {
     shift @f;
     my %explicitly_delete;
     foreach my $param (@f) {
-      if ($param =~ /^${CDS_name}_\d+$/ || $param =~ /^${ncRNA_name}_\d+$/) {
+      if ($param =~ /^${CDS_name}_\d+$/) {
 	if (exists $todelete{$param}) {
 	  $explicitly_delete{$param} = $todelete{$param};
 	}
+      }
 
-      } elsif ($param =~ /^\d+$/) {
+      if ($param =~ /^${ncRNA_name}_\d+$/) {
+	if (exists $todelete{$param}) {
+	  $explicitly_delete{$param} = $todelete{$param};
+	}
+      }
+
+      if ($param =~ /^\d+$/) {
 	if (exists $todelete{"${CDS_name}_$param"}) {
 	  $explicitly_delete{"${CDS_name}_$param"} = $todelete{"${CDS_name}_$param"};
 	}
 	if (exists $todelete{"${ncRNA_name}_$param"}) {
 	  $explicitly_delete{"${ncRNA_name}_$param"} = $todelete{"${ncRNA_name}_$param"};
 	}
-      } else {
-	print "WARNING: Unrecognised object to clear: $param\n";
       }
     }
     %todelete = %explicitly_delete;
