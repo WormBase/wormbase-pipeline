@@ -7,7 +7,7 @@
 # This does stuff with what is in the active zone
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2014-03-24 09:55:07 $      
+# Last updated on: $Date: 2014-03-24 11:53:32 $      
 
 
 
@@ -98,11 +98,11 @@ if (! defined $database) {
 
 my $coords = Coords_converter->invoke($database, undef, $wormbase);
 
-mkdir "$database/CHROMOSOMES", 0777; # we may need to write a new set of chromosome files if they do not yet exist
-my $seq_obj = Sequence_extract->invoke($database, undef, $wormbase);
-
 #print "Connecting to Ace\n";
 my $db = Ace->connect(-path => $database) || die "cannot connect to database at $database\n";
+
+mkdir "$database/CHROMOSOMES", 0777; # we may need to write a new set of chromosome files if they do not yet exist
+my $seq_obj = Sequence_extract->invoke($database, undef, $wormbase);
 
 # name of the methjod and base-name of the objects
 my $CDS_name = "isoformer";
@@ -133,7 +133,12 @@ MAIN:
 while (1) {
   
   my ($chromosome, $region_start, $region_end, $sense, $biotype);
+
+  #print "Connecting to Ace\n";
+  $db = Ace->connect(-path => $database) || die "cannot connect to database at $database\n";
+
   do {
+
     print "Next region +-start +-end> ";
     my $userinput =  <STDIN>;
     chomp ($userinput);
@@ -152,7 +157,7 @@ while (1) {
       next
     }
     if ($userinput eq 'q' || $userinput eq 'quit') {last MAIN} # quit
-    if ($userinput =~ /^clear\s+/) {
+    if ($userinput =~ /^clear\b/) {
       &clear($userinput);
       next;
     }
@@ -182,9 +187,9 @@ while (1) {
   }
 
   my $next_isoform = 1; # used in constructing the unique name of the object
-  my %confirmed;
-  my @created;
-  my @warnings;
+  my %confirmed = ();
+  my @created = ();
+  my @warnings = ();
 
   foreach my $TSL (@TSL) {
     if ($sense eq '+') {
@@ -280,10 +285,11 @@ while (1) {
   if (@not_confirmed) {print "\n*** THE FOLLOWING STRUCTURES WERE NOT CONFIRMED: @not_confirmed\n";}
   if (@created) {print "\n*** The following novel structures were created: @created\n";}
   if (@warnings) {print "\n@warnings\n\n";}
+
+  # close the ACE connection
+  $db->close;
 }
 
-# close the ACE connection
-$db->close;
 
 $log->mail();
 print "Finished.\n" if ($verbose);
@@ -1114,7 +1120,7 @@ sub make_isoform {
 
   if (!-e "$database/tmp") {mkdir "$database/tmp", 0777};
 
-  # remove any existing object with this number
+  # force a removal of any existing object with this number
   &clear("clear $next_isoform");
 
   # make the object
@@ -1182,24 +1188,34 @@ sub make_isoform {
 }
 ###############################################################################
 # clear selected isoformer structures
+# this accepts two command words: 
+# clear - checks for existing structures to be deleted
+# delete - just deletes without checking a single numeric parameter
 sub clear {
   my ($userinput) = @_;
 
-  # get all the isoformer objects
-  my @CDS_objects = $db->fetch(CDS => "${CDS_name}_*");
-  my @ncRNA_objects = $db->fetch(Transcript => "${ncRNA_name}_*");
+  my @f = split /\s+/, $userinput;
   my %todelete;
 
-  foreach my $obj (@CDS_objects) {
-    $todelete{$obj->name} = 'CDS';
-  }
-  foreach my $obj (@ncRNA_objects) {
-    $todelete{$obj->name} = 'Transcript';
+  # get all the isoformer objects
+  if ($f[0] eq 'clear') {
+    my @CDS_objects = $db->fetch(CDS => "${CDS_name}_*");
+    my @ncRNA_objects = $db->fetch(Transcript => "${ncRNA_name}_*");
+    
+    foreach my $obj (@CDS_objects) {
+      $todelete{$obj->name} = 'CDS';
+    }
+    foreach my $obj (@ncRNA_objects) {
+      $todelete{$obj->name} = 'Transcript';
+    }
+  } elsif ($f[0] eq 'delete') {
+    $todelete{"${CDS_name}_$f[1]"} = 'CDS';
+    $todelete{"${ncRNA_name}_$f[1]"} = 'Transcript';
+    $f[1] = 'all';
   }
 
-  my @f = split /\s+/, $userinput;
-  if ($#f > 0 && $f[1] ne 'all') { # if nothing after 'clear' then delete everything
-    shift @f;
+  if ($f[0] eq 'clear' && $#f > 0 && $f[1] ne 'all') { # if nothing after 'clear' then delete everything
+    my $cmd = shift @f;
     my %explicitly_delete;
     foreach my $param (@f) {
       if ($param =~ /^${CDS_name}_\d+$/) {
@@ -1233,6 +1249,7 @@ sub clear {
   foreach my $delete (keys %todelete) {
     my $biotype = $todelete{$delete};
     print HIS "\n-D $biotype : \"$delete\"\n";
+    print "Clear $biotype : \"$delete\"\n";
   }
   close HIS;
   my $return_status = system("xremote -remote 'parse $output'");
