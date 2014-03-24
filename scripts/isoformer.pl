@@ -7,7 +7,7 @@
 # This does stuff with what is in the active zone
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2014-03-24 09:32:39 $      
+# Last updated on: $Date: 2014-03-24 09:36:36 $      
 
 
 
@@ -995,7 +995,7 @@ sub check_not_already_curated {
     if ($start != $clone_aug || $end != $clone_stop) {next}
     if ($CDS->Method->name ne 'curated' && 
 	$CDS->Method->name ne 'Pseudogene' && 
-	$CDS->Method->name ne $ncRNA_name &&
+	$CDS->Method->name ne $CDS_name &&
 	$CDS->Method->name ne $ncRNA_name
        ) {next} # don't want to report a match to a history object or an ab-initio prediction etc.
     $name = $CDS->name;
