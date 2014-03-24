@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
 #
 # a script to batch request variation ids based on lists of public_names
-# Last change by $Author: pad $ on $Date: 2013-02-12 10:42:46 $
+# Last change by $Author: mh6 $ on $Date: 2014-03-24 09:56:20 $
 # usage: perl get_variation_ids.pl -species elegans -user me -pass me -in one_public_id_per_line -out varId_pubId_per_line
 
 
@@ -19,7 +19,7 @@ use strict;
 my ($PASS,$USER, $DB); # mysql ones
 my $DOMAIN  = 'Variation'; # hardcoded to variation
 
-my ($wormbase, $debug, $test, $store, $species, $maria,$infile,$outfile,$nocheck, 
+my ($wormbase, $debug, $test, $store, $species,$infile,$outfile,$nocheck, 
     $ace_file_template, $input_is_public_names, $input_is_other_names);
 
 GetOptions (
@@ -29,7 +29,6 @@ GetOptions (
   "species:s"     => \$species, # elegans/briggsae/whateva .. needed for logging
   "user:s"	  => \$USER,    # mysql username
   "pass:s"	  => \$PASS,    # mysql password
-  'maria'         => \$maria,   # try the more experimantal MariaDB for testing
   'nocheck'       => \$nocheck, # don't check public_names
   'acetemplate=s' => \$ace_file_template,
     )||die(@!);
@@ -49,7 +48,6 @@ if ( $store ) {
 my $log = Log_files->make_build_log($wormbase);
 
 $DB = $wormbase->test ? 'test_wbgene_id;mcs12:3307' : 'wbgene_id;shap:3303';
-$DB ='namedb;wormbase2:3307' if $maria; # there exist only one namedb database on the mirror
 
 my $db = NameDB_handler->new($DB,$USER,$PASS,$wormbase->wormpub . '/DATABASES/NameDB');
 $db->setDomain($DOMAIN);
