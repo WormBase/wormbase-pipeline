@@ -1,8 +1,8 @@
 #!/usr/bin/env perl
 #
 # a script to batch request variation ids based on lists of public_names
-# Last change by $Author: mh6 $ on $Date: 2014-03-24 09:56:20 $
-# usage: perl get_variation_ids.pl -species elegans -user me -pass me -in one_public_id_per_line -out varId_pubId_per_line
+# Last change by $Author: mh6 $ on $Date: 2014-03-24 14:02:12 $
+# usage: perl get_variation_ids.pl -species elegans -user me -pass me < file containing varId_pubId_per_line
 
 
 use lib $ENV{CVS_DIR};
@@ -147,9 +147,9 @@ the submitter-supplied name is used to populate the Other_name tag.
 
 =head1 USAGE EXAMPLES
 
-get_variation_ids.pl -species briggsae input_id_file.txt > output_id_file.txt
+get_variation_ids.pl -species briggsae input_id_-user me -pass me file.txt > output_id_file.txt
 
-get_variation_ids.pl -species elegans -acetemplate wild_template.ace input_id_file.txt > output_file.ace
+get_variation_ids.pl -species elegans -user me -pass me -acetemplate wild_template.ace input_id_file.txt > output_file.ace
 
 =head1 OPTIONS
 
