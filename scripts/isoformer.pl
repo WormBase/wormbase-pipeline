@@ -6,8 +6,8 @@
 #
 # This does stuff with what is in the active zone
 #
-# Last updated by: $Author: pad $     
-# Last updated on: $Date: 2014-03-25 11:39:45 $      
+# Last updated by: $Author: gw3 $     
+# Last updated on: $Date: 2014-03-25 12:37:49 $      
 
 
 
@@ -144,14 +144,16 @@ while (1) {
     print "user input: $userinput\n";
     if (!defined $userinput || $userinput eq '') {next}   # no input
     if ($userinput eq '?' || $userinput eq 'h' || $userinput eq 'help') { # help
-      print "?, h, help          : this help\n";
-      print "q, quit             : quit\n";
-      print "cds_name            : search for structures in the region covered by the CDS\n";
-      print "cds_name -100       : use the region starting 100 bases before the CDS\n";
-      print "cds_name -100 +200  : use the region starting 100 bases before and 200 bases after the CDS\n";
-      print "clear, clear all    : clear all isoformer objects\n";
-      print "clear isoformer_8   : clear object isoformer_8\n";
-      print "clear 8 9 10        : clear object isoformer_8, isoformer_9 and isoformer_10\n";
+      print "?, h, help             : this help\n";
+      print "q, quit                : quit\n";
+      print "cds_name               : search for structures in the region covered by the CDS\n";
+      print "cds_name -100          : use the region starting 100 bases before the CDS\n";
+      print "cds_name -100 +200     : use the region starting 100 bases before and 200 bases after the CDS\n";
+      print "clear, clear all       : clear all isoformer objects\n";
+      print "clear isoformer_8      : clear object isoformer_8\n";
+      print "clear 8 9 10           : clear object isoformer_8, isoformer_9 and isoformer_10\n";
+      print "fix isoformer_1 AC3.3  : fix object isoformer_1 to existing CDS and make history\n";
+      print "fix isoformer_1 AC3.3c : fix object isoformer_1 to create non-existant novel CDS isoform\n";
       print "\n";
       next
     }
@@ -1255,20 +1257,22 @@ sub clear {
     %todelete = %explicitly_delete;
   }
 
-  my $output = "$database/tmp/isoformer_isoform$$";
-  open (HIS,">$output") or die "cant open $output\n";
-  
   # delete any existing instance of this temporary CDS
   foreach my $delete (keys %todelete) {
+    my $output = "$database/tmp/isoformer_isoform$$";
+    open (HIS,">$output") or die "cant open $output\n";
+  
     my $biotype = $todelete{$delete};
     print HIS "\n-D $biotype : \"$delete\"\n";
     print "Clear $biotype : \"$delete\"\n";
+
+    close HIS;
+    my $return_status = system("xremote -remote 'parse $output'");
+    if ( ( $return_status >> 8 ) != 0 ) {
+      print STDERR "WARNING - X11 connection appears to be lost\n";
+    }
   }
-  close HIS;
-  my $return_status = system("xremote -remote 'parse $output'");
-  if ( ( $return_status >> 8 ) != 0 ) {
-    print STDERR "WARNING - X11 connection appears to be lost\n";
-  }
+
 
 
 }
