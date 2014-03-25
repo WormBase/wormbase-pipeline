@@ -6,8 +6,8 @@
 #
 # This does stuff with what is in the active zone
 #
-# Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2014-03-25 10:04:14 $      
+# Last updated by: $Author: pad $     
+# Last updated on: $Date: 2014-03-25 10:12:30 $      
 
 
 
@@ -135,12 +135,10 @@ while (1) {
   my ($chromosome, $region_start, $region_end, $sense, $biotype);
 
   do {
-
+    print "Next region +-start +-end> ";
     #print "Connecting to Ace\n";
     $db->close;
     $db = Ace->connect(-path => $database) || die "cannot connect to database at $database\n";
-
-    print "Next region +-start +-end> ";
     my $userinput =  <STDIN>;
     chomp ($userinput);
     print "user input: $userinput\n";
@@ -1198,7 +1196,6 @@ sub make_isoform {
 # delete - just deletes without checking a single numeric parameter
 sub clear {
   my ($userinput) = @_;
-
   my @f = split /\s+/, $userinput;
   my %todelete;
 
