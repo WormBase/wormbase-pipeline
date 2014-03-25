@@ -7,7 +7,7 @@
 # This does stuff with what is in the active zone
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2014-03-24 11:53:32 $      
+# Last updated on: $Date: 2014-03-25 10:04:14 $      
 
 
 
@@ -134,10 +134,11 @@ while (1) {
   
   my ($chromosome, $region_start, $region_end, $sense, $biotype);
 
-  #print "Connecting to Ace\n";
-  $db = Ace->connect(-path => $database) || die "cannot connect to database at $database\n";
-
   do {
+
+    #print "Connecting to Ace\n";
+    $db->close;
+    $db = Ace->connect(-path => $database) || die "cannot connect to database at $database\n";
 
     print "Next region +-start +-end> ";
     my $userinput =  <STDIN>;
@@ -150,7 +151,7 @@ while (1) {
       print "cds_name            : search for structures in the region covered by the CDS\n";
       print "cds_name -100       : use the region starting 100 bases before the CDS\n";
       print "cds_name -100 +200  : use the region starting 100 bases before and 200 bases after the CDS\n";
-      print "clear all           : clear all isoformer objects\n";
+      print "clear, clear all    : clear all isoformer objects\n";
       print "clear isoformer_8   : clear object isoformer_8\n";
       print "clear 8 9 10        : clear object isoformer_8, isoformer_9 and isoformer_10\n";
       print "\n";
@@ -159,6 +160,10 @@ while (1) {
     if ($userinput eq 'q' || $userinput eq 'quit') {last MAIN} # quit
     if ($userinput =~ /^clear\b/) {
       &clear($userinput);
+      next;
+    }
+    if ($userinput =~ /^fix\b/) {
+      &fix($userinput);
       next;
     }
     # get the region of interest from the CDS name or clone positions
@@ -1121,7 +1126,7 @@ sub make_isoform {
   if (!-e "$database/tmp") {mkdir "$database/tmp", 0777};
 
   # force a removal of any existing object with this number
-  &clear("clear $next_isoform");
+  &clear("delete $next_isoform");
 
   # make the object
   open (HIS,">$output") or die "cant open $output\n";
@@ -1250,6 +1255,50 @@ sub clear {
     my $biotype = $todelete{$delete};
     print HIS "\n-D $biotype : \"$delete\"\n";
     print "Clear $biotype : \"$delete\"\n";
+  }
+  close HIS;
+  my $return_status = system("xremote -remote 'parse $output'");
+  if ( ( $return_status >> 8 ) != 0 ) {
+    print STDERR "WARNING - X11 connection appears to be lost\n";
+  }
+
+
+}
+###############################################################################
+# fix selected isoformer structures to a specified name
+# fix, fix all - fix all isoformer objects as new isoforms
+# fix isoformer_1 - fix specified object as a new isoform
+# fix isoformer_1 AC3.3 - fix specified object as an existing object and make history
+# fix isoformer_1 AC3.3b - fix specified object as a new isoform
+
+# check that the isoformer object exists
+# if there is no new object name specified, use the gene tag to find the sequence name and get the next unused isoform letter
+# check whether or not the new object name exists
+# if the existing object exists then make history
+# if the existing object is a different class, delete the existing structure
+# rename the isoformer object
+# check that the Gene tag is populated correctly
+
+sub fix {
+  my ($userinput) = @_;
+  my $new_name='';
+  my %tofix;
+
+  my @f = split /\s+/, $userinput;
+
+  if ($#f > 0 && $f[1] ne 'all') { # if nothing after 'fix' then fix everything
+    my $cmd = shift @f;
+
+  }
+
+  my $output = "$database/tmp/isoformer_isoform$$";
+  open (HIS,">$output") or die "cant open $output\n";
+  
+  # delete any existing instance of this temporary CDS
+  foreach my $fix (keys %tofix) {
+    my $biotype = $tofix{$fix};
+    print HIS "\n-R $biotype  \"$fix\" \"$new_name\"\n";
+    print "Fix $biotype  \"$fix\" to \"$new_name\"\n";
   }
   close HIS;
   my $return_status = system("xremote -remote 'parse $output'");
