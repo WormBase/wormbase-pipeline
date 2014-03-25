@@ -7,7 +7,7 @@
 # This does stuff with what is in the active zone
 #
 # Last updated by: $Author: pad $     
-# Last updated on: $Date: 2014-03-25 10:12:30 $      
+# Last updated on: $Date: 2014-03-25 11:39:45 $      
 
 
 
@@ -1198,7 +1198,18 @@ sub clear {
   my ($userinput) = @_;
   my @f = split /\s+/, $userinput;
   my %todelete;
-
+  if ($f[0] eq 'clear') {
+    print "Please save your database? and answer y>";
+    my $answer = <STDIN>;
+    chomp ($answer);
+    if ($answer ne "y") {
+      print "!!!!!!!!!!!!!!!!!!\n!!!!!!!!!!!!!!!!!!\n!!!!!!!!!!!!!!!!!!\nOh dear, you haven't been very cooparative I should die, but it's too much of a time sink for you to have to restart me :( !!!!!!!!!!!!!!!!!!\n!!!!!!!!!!!!!!!!!!\n\n";
+    }
+    else {
+      $db->close;
+      $db = Ace->connect(-path => $database) || die "cannot connect to database at $database\n";
+    }
+  }
   # get all the isoformer objects
   if ($f[0] eq 'clear') {
     my @CDS_objects = $db->fetch(CDS => "${CDS_name}_*");
