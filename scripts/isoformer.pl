@@ -7,7 +7,7 @@
 # This does stuff with what is in the active zone
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2014-03-26 13:52:26 $      
+# Last updated on: $Date: 2014-03-26 15:07:25 $      
 
 
 
@@ -137,11 +137,11 @@ while (1) {
   do {
     print "SAVE your session > ";
     #print "Connecting to Ace\n";
+    my $userinput =  <STDIN>;
     $db->close;
     $db = Ace->connect(-path => $database) || die "cannot connect to database at $database\n";
-    my $userinput =  <STDIN>;
     chomp ($userinput);
-    print "user input: $userinput\n";
+    #print "user input: $userinput\n";
     if (!defined $userinput || $userinput eq '') {next}   # no input
     if ($userinput eq '?' || $userinput eq 'h' || $userinput eq 'help') { # help
       print "?, h, help             : this help\n";
@@ -152,13 +152,22 @@ while (1) {
       print "clear, clear all       : clear all isoformer objects\n";
       print "clear isoformer_8      : clear object isoformer_8\n";
       print "clear 8 9 10           : clear object isoformer_8, isoformer_9 and isoformer_10\n";
+      print "what                   : reports the isoformer object that are in the database\n";
       print "fix isoformer_1 AC3.3c : fix isoformer_1 to CDS/Transcript, creating it if necessary\n";
       print "\n";
       next
     }
     if ($userinput eq 'q' || $userinput eq 'quit') {last MAIN} # quit
+
+    # the following commands access the database
+#    sleep 10; # allow time for NFS to realize that the database files have changed
+
     if ($userinput =~ /^clear\b/) {
       &clear($userinput);
+      next;
+    }
+    if ($userinput =~ /^what\b/) {
+      &what($userinput);
       next;
     }
     if ($userinput =~ /^fix\b/) {
@@ -1273,6 +1282,38 @@ sub clear {
 
 }
 ###############################################################################
+# what - report the isoformer objects in the database
+
+sub what {
+  my ($userinput) = @_;
+  my @f = split /\s+/, $userinput;
+
+  my @cds;
+  my @transcript;
+
+  # get all the isoformer objects
+  my @CDS_objects = $db->fetch(CDS => "${CDS_name}_*");
+  my @ncRNA_objects = $db->fetch(Transcript => "${ncRNA_name}_*");
+  
+  foreach my $obj (@CDS_objects) {
+    push @cds, $obj->name;
+  }
+  foreach my $obj (@ncRNA_objects) {
+    push @transcript, $obj->name;
+  }
+
+  if (@cds || @transcript) {
+    print "\n*** The following objects are in the database:\n";
+    print "@cds\n";
+    print "@transcript\n";
+  } else {
+    print "\n*** No isoformer objects in the database.\n";
+  }
+  print "\n";
+
+}
+
+###############################################################################
 # fix selected isoformer structures to a specified name
 # fix isoformer_1 AC3.3b - fix specified object to CDS/Transcript, creating it if necessary
 
@@ -1321,6 +1362,11 @@ sub fix {
     print "fix what?\n";
     return;
   }
+  
+  if (! defined $subject_obj) {
+    print "\n*** Can't find '$subject' - have you saved your session?\n";
+    return;
+  }
 
   # test to see if the Gene tag is set in the subject
   $gene_obj = $subject_obj->Gene;
@@ -1329,6 +1375,7 @@ sub fix {
   }
 
   # check if target exists
+  my $message;
   if ($biotype eq 'CDS') {
     $target_obj = $db->fetch(CDS => "$target");
   } else {
@@ -1337,7 +1384,7 @@ sub fix {
   if (! defined $target_obj) {
     open (TARGET, ">$output") or die "cant open $output\n";
     print TARGET "\n-R $biotype $subject $target\n";
-    print TARGET "\n$$biotype : subject\n";
+    print TARGET "\n$biotype : $target\n";
     if ($biotype eq 'CDS') {
       print TARGET "Method curated\n";
     } else {
@@ -1345,7 +1392,7 @@ sub fix {
     }
     close TARGET;
 
-    print "Fix: $biotype $target does not exist - creating it.\n";
+    $message = "\n*** Fix: $biotype $target does not exist - creating it.\n";
 
   } else {
     $target_exists = 1;
@@ -1421,7 +1468,7 @@ sub fix {
     print TARGET "\n\n";
     close TARGET;
 
-    print "Fix: structure updated for $target\n "
+    $message = "\n*** Fix: structure updated for $target\n "
   }
 
   print "NOT LOADED $output during testing\n";
@@ -1430,11 +1477,12 @@ sub fix {
 #    print STDERR "WARNING - X11 connection appears to be lost\n";
 #  }
 
-  if (!defined $gene_obj) {
-    print "Now set the Gene tag\n";
+  print $message;
+
+  if (!defined $gene_obj && !$target_exists) {
+    print "\n*** Now set the Gene tag\n";
   }
   if ($target_exists) {
-    print "Now make History for $biotype $target.\n";
+    print "\n*** Now make History for $biotype $target.\n";
   }
-  print "Now save your changes.\n";
 }
