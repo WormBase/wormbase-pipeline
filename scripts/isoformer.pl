@@ -7,7 +7,7 @@
 # This does stuff with what is in the active zone
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2014-03-25 12:37:49 $      
+# Last updated on: $Date: 2014-03-26 13:52:26 $      
 
 
 
@@ -135,7 +135,7 @@ while (1) {
   my ($chromosome, $region_start, $region_end, $sense, $biotype);
 
   do {
-    print "Next region +-start +-end> ";
+    print "SAVE your session > ";
     #print "Connecting to Ace\n";
     $db->close;
     $db = Ace->connect(-path => $database) || die "cannot connect to database at $database\n";
@@ -152,8 +152,7 @@ while (1) {
       print "clear, clear all       : clear all isoformer objects\n";
       print "clear isoformer_8      : clear object isoformer_8\n";
       print "clear 8 9 10           : clear object isoformer_8, isoformer_9 and isoformer_10\n";
-      print "fix isoformer_1 AC3.3  : fix object isoformer_1 to existing CDS and make history\n";
-      print "fix isoformer_1 AC3.3c : fix object isoformer_1 to create non-existant novel CDS isoform\n";
+      print "fix isoformer_1 AC3.3c : fix isoformer_1 to CDS/Transcript, creating it if necessary\n";
       print "\n";
       next
     }
@@ -1129,15 +1128,15 @@ sub make_isoform {
   &clear("delete $next_isoform");
 
   # make the object
-  open (HIS,">$output") or die "cant open $output\n";
+  open (ISOFORM,">$output") or die "cant open $output\n";
 
-  print HIS "\nSequence : $clone\n";
-  print HIS "$clone_tag \"$name\" $clone_aug $clone_stop\n";
+  print ISOFORM "\nSequence : $clone\n";
+  print ISOFORM "$clone_tag \"$name\" $clone_aug $clone_stop\n";
   print "$clone_tag \"$name\" $clone_aug $clone_stop\n";
 
-  print HIS "\n$biotype : \"$name\"\n";
+  print ISOFORM "\n$biotype : \"$name\"\n";
   foreach my $exon (@{$exons}) {
-    print HIS "Source_exons ", $exon->{start}, " ", $exon->{end},"\n";
+    print ISOFORM "Source_exons ", $exon->{start}, " ", $exon->{end},"\n";
     print "Source_exons ", $exon->{start}, " ", $exon->{end},"\n";
   }
 
@@ -1159,25 +1158,25 @@ sub make_isoform {
     }
   }
   $remark .= ".\"";
-  print HIS "$remark Curator_confirmed $personid\n";
-  print HIS "$remark From_analysis RNASeq_Hillier_elegans\n";
+  print ISOFORM "$remark Curator_confirmed $personid\n";
+  print ISOFORM "$remark From_analysis RNASeq_Hillier_elegans\n";
   if ($TSL_type) {
-    print HIS "$remark Feature_evidence $feature_id\n";
-    print HIS "Isoform Feature_evidence $feature_id\n";
-    print HIS "Isoform Curator_confirmed $personid\n";
+    print ISOFORM "$remark Feature_evidence $feature_id\n";
+    print ISOFORM "Isoform Feature_evidence $feature_id\n";
+    print ISOFORM "Isoform Curator_confirmed $personid\n";
   }
-  print HIS "$DB_remark\n" if $DB_remark;
-  print HIS "$Brief_identification\n" if $Brief_identification;
-  print HIS "Sequence $clone\n";
-  print HIS "From_laboratory $lab\n";
-  print HIS "Species \"$g_species\"\n";
-  print HIS "Method $Method\n";
-  print HIS "Gene $gene\n" if ($gene);
-  print HIS "CDS\n" if ($biotype eq 'CDS');
-  print HIS "$pseudogene_type\n" if ($pseudogene_type);
-  print HIS "Transcript $transcript_type\n" if ($transcript_type);
+  print ISOFORM "$DB_remark\n" if $DB_remark;
+  print ISOFORM "$Brief_identification\n" if $Brief_identification;
+  print ISOFORM "Sequence $clone\n";
+  print ISOFORM "From_laboratory $lab\n";
+  print ISOFORM "Species \"$g_species\"\n";
+  print ISOFORM "Method $Method\n";
+  print ISOFORM "Gene $gene\n" if ($gene);
+  print ISOFORM "CDS\n" if ($biotype eq 'CDS');
+  print ISOFORM "$pseudogene_type\n" if ($pseudogene_type);
+  print ISOFORM "Transcript $transcript_type\n" if ($transcript_type);
 
-  close HIS;
+  close ISOFORM;
 #  sleep(1); # allow time for NFS torealize there is a file there
   my $return_status = system("xremote -remote 'parse $output'");
   if ( ( $return_status >> 8 ) != 0 ) {
@@ -1200,18 +1199,14 @@ sub clear {
   my ($userinput) = @_;
   my @f = split /\s+/, $userinput;
   my %todelete;
-  if ($f[0] eq 'clear') {
-    print "Please save your database? and answer y>";
-    my $answer = <STDIN>;
-    chomp ($answer);
-    if ($answer ne "y") {
-      print "!!!!!!!!!!!!!!!!!!\n!!!!!!!!!!!!!!!!!!\n!!!!!!!!!!!!!!!!!!\nOh dear, you haven't been very cooparative I should die, but it's too much of a time sink for you to have to restart me :( !!!!!!!!!!!!!!!!!!\n!!!!!!!!!!!!!!!!!!\n\n";
-    }
-    else {
-      $db->close;
-      $db = Ace->connect(-path => $database) || die "cannot connect to database at $database\n";
-    }
-  }
+
+#  if ($f[0] eq 'clear') {
+#    print "Please save your database and hit RETURN>";
+#    my $answer = <STDIN>;
+#    $db->close;
+#    $db = Ace->connect(-path => $database) || die "cannot connect to database at $database\n";
+#  }
+
   # get all the isoformer objects
   if ($f[0] eq 'clear') {
     my @CDS_objects = $db->fetch(CDS => "${CDS_name}_*");
@@ -1260,13 +1255,14 @@ sub clear {
   # delete any existing instance of this temporary CDS
   foreach my $delete (keys %todelete) {
     my $output = "$database/tmp/isoformer_isoform$$";
-    open (HIS,">$output") or die "cant open $output\n";
   
+    open (CLEAR,">$output") or die "cant open $output\n";
     my $biotype = $todelete{$delete};
-    print HIS "\n-D $biotype : \"$delete\"\n";
+    print CLEAR "\n-D $biotype : \"$delete\"\n";
+    close CLEAR;
+
     print "Clear $biotype : \"$delete\"\n";
 
-    close HIS;
     my $return_status = system("xremote -remote 'parse $output'");
     if ( ( $return_status >> 8 ) != 0 ) {
       print STDERR "WARNING - X11 connection appears to be lost\n";
@@ -1278,45 +1274,167 @@ sub clear {
 }
 ###############################################################################
 # fix selected isoformer structures to a specified name
-# fix, fix all - fix all isoformer objects as new isoforms
-# fix isoformer_1 - fix specified object as a new isoform
-# fix isoformer_1 AC3.3 - fix specified object as an existing object and make history
-# fix isoformer_1 AC3.3b - fix specified object as a new isoform
+# fix isoformer_1 AC3.3b - fix specified object to CDS/Transcript, creating it if necessary
 
 # check that the isoformer object exists
-# if there is no new object name specified, use the gene tag to find the sequence name and get the next unused isoform letter
-# check whether or not the new object name exists
-# if the existing object exists then make history
-# if the existing object is a different class, delete the existing structure
-# rename the isoformer object
+# check whether or not the target object exists
+# check whether an existing target object is of the same class
+# rename the isoformer object if there is no existing target of the same class
+# else transfer location and tags to the existing object
+# if the target object name ends with a letter, set the Isoform tag
 # check that the Gene tag is populated correctly
+# warn the user if the Gene tag is not populated
+# warn the user if History should be made
+
 
 sub fix {
   my ($userinput) = @_;
   my $new_name='';
   my %tofix;
 
+  my $output = "$database/tmp/isoformer_isoform$$";
+  
   my @f = split /\s+/, $userinput;
 
-  if ($#f > 0 && $f[1] ne 'all') { # if nothing after 'fix' then fix everything
-    my $cmd = shift @f;
+  my $biotype;
+  my $subject = $f[1];
+  my $target = $f[2];
+  my $subject_obj;
+  my $target_obj;
+  my $target_exists = 0;
+  my $gene_obj;
+  my $gene;
 
+  if (!defined $subject || ! defined $target) {
+    print "fix what to what?\n";
+    return;
   }
 
-  my $output = "$database/tmp/isoformer_isoform$$";
-  open (HIS,">$output") or die "cant open $output\n";
-  
-  # delete any existing instance of this temporary CDS
-  foreach my $fix (keys %tofix) {
-    my $biotype = $tofix{$fix};
-    print HIS "\n-R $biotype  \"$fix\" \"$new_name\"\n";
-    print "Fix $biotype  \"$fix\" to \"$new_name\"\n";
-  }
-  close HIS;
-  my $return_status = system("xremote -remote 'parse $output'");
-  if ( ( $return_status >> 8 ) != 0 ) {
-    print STDERR "WARNING - X11 connection appears to be lost\n";
+  # check name looks OK and get biotype
+  if ($subject =~ /^${CDS_name}_\d+/) {
+    $biotype = 'CDS';
+    $subject_obj = $db->fetch(CDS => "$subject");
+  } elsif ($subject =~ /^${ncRNA_name}_\d+/) {
+    $biotype = 'Transcript';
+    $subject_obj = $db->fetch(Transcript => "$subject");
+  } else {
+    print "fix what?\n";
+    return;
   }
 
+  # test to see if the Gene tag is set in the subject
+  $gene_obj = $subject_obj->Gene;
+  if (defined $gene_obj) {
+    $gene = $gene_obj->name;
+  }
 
+  # check if target exists
+  if ($biotype eq 'CDS') {
+    $target_obj = $db->fetch(CDS => "$target");
+  } else {
+    $target_obj = $db->fetch(Transcript => "$target");
+  }
+  if (! defined $target_obj) {
+    open (TARGET, ">$output") or die "cant open $output\n";
+    print TARGET "\n-R $biotype $subject $target\n";
+    print TARGET "\n$$biotype : subject\n";
+    if ($biotype eq 'CDS') {
+      print TARGET "Method curated\n";
+    } else {
+      print TARGET "Method ncRNA\n";
+    }
+    close TARGET;
+
+    print "Fix: $biotype $target does not exist - creating it.\n";
+
+  } else {
+    $target_exists = 1;
+    open (TARGET, ">$output") or die "cant open $output\n";
+
+    # delete the target location
+    print TARGET "\n$biotype : $target\n";
+    print TARGET "-D Source_exons\n\n";
+
+    my $target_sequence_obj = $target_obj->Sequence;
+    my $target_sequence_name = $target_sequence_obj->name;
+    print TARGET "\nSequence : $target_sequence_name\n";
+    if ($biotype eq 'CDS') {
+      print TARGET "-D CDS_child $target\n\n";
+    } else {
+      print TARGET "-D Transcript $target\n\n";
+    }
+
+    # get the Sequence
+    my $subject_sequence_obj = $subject_obj->Sequence;
+    my $subject_sequence_name = $subject_sequence_obj->name;
+
+    # get the subject location
+    my @clone_locations;
+    my $subject_start;
+    my $subject_end;
+    if ($biotype eq 'CDS') {
+      @clone_locations = $subject_sequence_obj->CDS_child;
+    } else {
+      @clone_locations = $subject_sequence_obj->Transcript;
+    }    
+    foreach my $subject_location ( @clone_locations ) {
+      next unless ($subject_location->name eq $subject);
+      $subject_start = $subject_location->right->name;
+      $subject_end = $subject_location->right->right->name;
+      last;
+    }
+
+    # write the new target location
+    print TARGET "\nSequence : $subject_sequence_name\n";
+    if ($biotype eq 'CDS') {
+      print TARGET "CDS_child $target $subject_start $subject_end\n\n";
+    } else {
+      print TARGET "Transcript $target $subject_start $subject_end\n\n";
+    }
+
+    # write the new target exons
+    print TARGET "\n$biotype : $target\n";
+    foreach ($subject_obj->Source_exons) {
+      my ($start,$end) = $_->row(0);
+      print TARGET "Source_exons ",$start->name," ",$end->name,"\n";
+    }
+
+    # transfer Remarks, etc tags
+    foreach ($subject_obj->Remark) {
+      my ($remark, $evidence, $evidence_value1, $evidence_value2) = $_->row(0);
+      print TARGET "Remark \"", $remark->name ,"\"";
+      print TARGET " \"", $evidence->name,"\"" if ($evidence);
+      print TARGET " \"", $evidence_value1->name,"\"" if ($evidence_value1);
+      print TARGET " \"", $evidence_value2->name,"\"" if ($evidence_value2);
+      print TARGET "\n";
+    }
+    foreach ($subject_obj->Isoform) {
+      my ($isoform, $evidence, $evidence_value1, $evidence_value2) = $_->row(0);
+      print TARGET "Isoform \"", $isoform->name ,"\"";
+      print TARGET " \"", $evidence->name,"\"" if ($evidence);
+      print TARGET " \"", $evidence_value1->name,"\"" if ($evidence_value1);
+      print TARGET " \"", $evidence_value2->name,"\"" if ($evidence_value2);
+      print TARGET "\n";
+    }
+ 
+
+    print TARGET "\n\n";
+    close TARGET;
+
+    print "Fix: structure updated for $target\n "
+  }
+
+  print "NOT LOADED $output during testing\n";
+#  my $return_status = system("xremote -remote 'parse $output'");
+#  if ( ( $return_status >> 8 ) != 0 ) {
+#    print STDERR "WARNING - X11 connection appears to be lost\n";
+#  }
+
+  if (!defined $gene_obj) {
+    print "Now set the Gene tag\n";
+  }
+  if ($target_exists) {
+    print "Now make History for $biotype $target.\n";
+  }
+  print "Now save your changes.\n";
 }
