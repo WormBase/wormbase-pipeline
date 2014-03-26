@@ -7,7 +7,7 @@
 # This does stuff with what is in the active zone
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2014-03-26 15:07:25 $      
+# Last updated on: $Date: 2014-03-26 16:01:00 $      
 
 
 
@@ -158,9 +158,6 @@ while (1) {
       next
     }
     if ($userinput eq 'q' || $userinput eq 'quit') {last MAIN} # quit
-
-    # the following commands access the database
-#    sleep 10; # allow time for NFS to realize that the database files have changed
 
     if ($userinput =~ /^clear\b/) {
       &clear($userinput);
@@ -1388,7 +1385,7 @@ sub fix {
     if ($biotype eq 'CDS') {
       print TARGET "Method curated\n";
     } else {
-      print TARGET "Method ncRNA\n";
+      print TARGET "Method non_coding_transcript\n";
     }
     close TARGET;
 
@@ -1449,11 +1446,15 @@ sub fix {
     # transfer Remarks, etc tags
     foreach ($subject_obj->Remark) {
       my ($remark, $evidence, $evidence_value1, $evidence_value2) = $_->row(0);
-      print TARGET "Remark \"", $remark->name ,"\"";
-      print TARGET " \"", $evidence->name,"\"" if ($evidence);
-      print TARGET " \"", $evidence_value1->name,"\"" if ($evidence_value1);
-      print TARGET " \"", $evidence_value2->name,"\"" if ($evidence_value2);
-      print TARGET "\n";
+      my @evidence_type = $_->at('[1]');
+      my @evidence_value = $_->at('[2]');
+      foreach my $evidence_type (@evidence_type) {
+	my $value = shift @evidence_value;
+	print TARGET "Remark \"", $remark->name ,"\"";
+	print TARGET " \"", $evidence_type->name,"\"" if ($evidence_type);
+	print TARGET " \"", $value->name,"\"" if ($value);
+	print TARGET "\n";
+      }
     }
     foreach ($subject_obj->Isoform) {
       my ($isoform, $evidence, $evidence_value1, $evidence_value2) = $_->row(0);
@@ -1471,11 +1472,10 @@ sub fix {
     $message = "\n*** Fix: structure updated for $target\n "
   }
 
-  print "NOT LOADED $output during testing\n";
-#  my $return_status = system("xremote -remote 'parse $output'");
-#  if ( ( $return_status >> 8 ) != 0 ) {
-#    print STDERR "WARNING - X11 connection appears to be lost\n";
-#  }
+  my $return_status = system("xremote -remote 'parse $output'");
+  if ( ( $return_status >> 8 ) != 0 ) {
+    print STDERR "WARNING - X11 connection appears to be lost\n";
+  }
 
   print $message;
 
