@@ -36,6 +36,7 @@ my $cds_standard;
 my $brugia;
 my $cleangene;
 my $clone;
+my $v;
 
 GetOptions (
 	    "addevidence"       => \$addevidence,
@@ -44,6 +45,7 @@ GetOptions (
 	    "blast=s"           => \$blast,
 	    "blesser"           => \$blesser,
             "brugia:s"          => \$brugia, # stores version number of brugia beta database - hard defines useful options.
+	    "version:s"         => \$v, 
 	    "chromosome:s"      => \$chromosome,
             "cleangene"         => \$cleangene,
 	    "clone"             => \$clone,
@@ -108,7 +110,6 @@ if (! defined $lab || $lab eq "") {
 } 
 my $version;
 
-
 # pass path to latest version of wormbase and set up brugia specifics if selected
 if (defined $brugia) {
   $version = $brugia;
@@ -116,6 +117,9 @@ if (defined $brugia) {
   $addevidence = "1";
   $clone = "1";
   $cleangene = "1";
+}
+elsif (defined $v) {
+  $version = $v;
 }
 else {
   $version = &get_history_version($wormbase->database('current'));
