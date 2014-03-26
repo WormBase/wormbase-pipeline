@@ -120,6 +120,9 @@ if (defined $brugia) {
 }
 elsif (defined $v) {
   $version = $v;
+  my $cdbver = &get_history_version($wormbase->database('current'));
+  $cdbver++;
+  if ($v ne $cdbver) {print "\n\nWarning -version specified is not equal to $cdbver as expected is this correct?\n";}
 }
 else {
   $version = &get_history_version($wormbase->database('current'));
