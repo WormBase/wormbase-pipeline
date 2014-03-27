@@ -1475,6 +1475,7 @@ sub full_name {
   }
 }
 sub chromosome_prefix {''}
+sub pepdir_prefix{'tsuis'};
 sub ncbi_tax_id {'68888'};
 sub ncbi_bioproject {'PRJNA208415'};
 sub bioproject_description { 'University of Melboure T. suis (male) genome project'};
@@ -1506,6 +1507,7 @@ sub full_name {
   }
 }
 sub chromosome_prefix {''}
+sub pepdir_prefix{'tsuis'};
 sub ncbi_tax_id {'68888'};
 sub ncbi_bioproject {'PRJNA208416'};
 sub bioproject_description { 'University of Melboure T. suis (female) genome project'};
