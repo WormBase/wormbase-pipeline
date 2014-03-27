@@ -4,7 +4,7 @@
 #
 # by Keith Bradnam
 #
-# Last updated on: $Date: 2014-03-27 15:17:48 $
+# Last updated on: $Date: 2014-03-27 16:17:08 $
 # Last updated by: $Author: pad $
 #
 # see pod documentation at end of file for more information about this script
@@ -119,19 +119,22 @@ else {
       splice @bad_genes,0,0,@no_Sparent_genes;
       my @no_species = $db->fetch (-query => "FIND $qclass where !Species");
       splice @bad_genes,0,0,@no_species;
-      my @no_lab = $db->fetch (-query => "FIND $qclass where !From_laboratory");
-      splice @bad_genes,0,0,@no_lab;
+      #my @no_lab = $db->fetch (-query => "FIND $qclass where !From_laboratory");
+      #splice @bad_genes,0,0,@no_lab;
     }
 
-    $Bcount = @bad_genes;
+    my %h = map {($_,1)} @bad_genes;
+    my @bad_genesuniq = keys %h;
+
+    $Bcount = @bad_genesuniq;
     if ($Bcount ne '0') {
-      $log->write_to("Error: $Bcount models have no method, please check\n");
+      $log->write_to("Error: $Bcount models have a quicktest issue, please check\n");
       foreach $bad_genes(@bad_genes) {
-	$log->write_to("\nError: $bad_genes has no method\n");# if ($verbose);
+	$log->write_to("\nError: $bad_genes have a have a quicktest issue\n"); # if ($verbose);
       }
     }
     else {
-      $log->write_to("\nThat's ok, $Bcount models have no method :)\n\n");
+      $log->write_to("\nThat's ok, $Bcount models have quicktest issues :)\n\n");
     }
     print STDERR "Fetching all genes...\n" if $verbose;
     #@Predictions = $db->fetch (-query => 'FIND All_genes where method AND Species = "$speciesfn"');
