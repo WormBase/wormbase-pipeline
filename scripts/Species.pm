@@ -352,6 +352,60 @@ sub seq_name_regex{qr/^CBN\d{5}/};
 sub cds_regex_noend{qr/CBN\d{5}[a-z]*/}; # for getting the CDS part of a Transcript name
 sub upload_db_name {'brenneri'};
 
+# The following genes define some additional SL2 sequences but these
+# are seen seen in the short read data at low frequency, so these
+# genes are likely to be pseudogenes.
+# ggttttaacccagtgtaaccaag	CBN33679
+# ggttttaaccctattaccaag	CBN33735
+# agttttaacccagtaaccaag	CBN33753
+# ggttttaaccctgataaccaag	CBN33765
+# ggttttaaccctgataaccaag	CBN33767
+# ggtttcaacccattataaccaag	CBN33769
+# ggttttaacccttttaccaag	CBN33771
+# ggatttatcccagttacccaag	CBN33774
+# ggttttaaccctgataaccaag	CBN33798
+# ggtttttacccagtataaaccag	CBN33807
+# ggttttaaccctttaaccaag	CBN33816
+# ggtttttacccagtttaaccaaag	CBN33818
+# ggttttaaccctattaccaag		CBN33851
+# ggttttaaccctatatccaag		CBN33859
+# gatatcattgagatttaaccaag		CBN33918
+# ggttttggcccagtaaccaag		CBN33919
+# ggttcttgctactattgcgccccag	CBN33921
+# agtacaaccccaacgggtgaaacaaaag	CBN33924
+# ggccgtgaccctttaatcaaggttag	CBN33946
+# gatttcccgtataaactaaattttggaaccg	CBN34178
+# ggctttttaccctgtatagccttag	CBN34182
+
+sub TSL {(
+	  'SL1'  => "GGTTTAATTACCCAAGTTTGAG",
+	  'CBN_SL2' => "GGTTTTAACCCAGTTACTCAAG",
+	  'CBN_SL2a' => "GGATTTATCCCAGATAACCAAG",
+	  'CBN_SL2b' => "GGTTTTAACCCAGTTTAACCAAG",
+	  'CBN_SL2c' => "GGTTTTAACCCAGTTACCAAG",
+	  'CBN_SL2d' => "GGTTTTTACCCAGTTAACCAAG",
+	  'CBN_SL2e' => "GGATTTATCCCAGTTACTCAAG",
+	  'CBN_SL2f' => "GGTATTAACCCTGATAACCAAG",
+	  'CBN_SL2g' => "GGTTTCAACCCTGATAACCAAG",
+	  'CBN_SL2h' => "GGTTTTAACCCAGATAACCAAG",
+	  'CBN_SL2i' => "GGTTTTAACCCAAGTTAACCAAG",
+	  'CBN_SL2j' => "GGTTTTAACCCAGTAACCAAG",
+	  'CBN_SL2k' => "GGTTTTAACCCAGTATAACCAAG",
+	  'CBN_SL2l' => "GGTTTTAACCCAGTTACCCAAG",
+	  'CBN_SL2m' => "GGTTTTAACCCCAGTTACCAAG",
+	  'CBN_SL2n' => "GGTTTTAACCCTATAACAAAG",
+	  'CBN_SL2o' => "GGTTTTAACCCTATAACCAAG",
+	  'CBN_SL2p' => "GGTTTTAACCCTATAACCTATAACCAAG",
+	  'CBN_SL2q' => "GGTTTTTACCCAGTATAACCAAG",
+	  'CBN_SL2r' => "GGTTTTTACCCAGTTTAACAAAG",
+	  'CBN_SL2s' => "GGTTTTTACCCAGTTTAACCAAG",
+	  'CBN_SL2t' => "GGTTTTTACCCCAGTTAACCAAG",
+	  'CBN_SL2u' => "GGTTTTTACCCTAATTACCAAG",
+	  'CBN_SL2v' => "GGTTTTTACCCTAGTTAACCAAG",
+	  'CBN_SL2w' => "GGTTTTTACCCTGTTAACCAAG",
+	)};
+
+
 #######################################################
 
 package Japonica;
