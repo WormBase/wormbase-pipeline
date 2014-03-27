@@ -1357,6 +1357,69 @@ sub ncbi_bioproject {'PRJNA51225'};
 sub bioproject_description { 'California Institute of Technology C.angaria genome project' }
 sub assembly_type {'contig'};
 
+######################################################
+package Tsuis_male;
+use Carp;
+our @ISA = qw(Wormbase Species);
+
+sub _new {	
+    my $class = shift;
+    my %param = %{ shift(@_) };
+
+    my $self = $class->initialize( $class->flatten_params( \%param ) );
+
+    # add stuff post object creation goes here
+
+    bless $self, $class;
+}
+sub full_name {
+  my $self = shift;
+  my %param = @_ ;
+  if($param{'-short'}){
+    return 'T. suis';
+  } elsif($param{'-g_species'}){
+    return 't_suis';
+  }
+  else { 
+    return'Trichuris suis';
+  }
+}
+sub chromosome_prefix {''}
+sub ncbi_tax_id {'68888'};
+sub ncbi_bioproject {'PRJNA208415'};
+sub bioproject_description { 'University of Melboure T. suis (male) genome project'};
+sub assembly_type {'contig'};
+
+######################################################
+package Tsuis_female;
+use Carp;
+our @ISA = qw(Wormbase Species);
+
+sub _new {	
+  my $class = shift;
+  my %param = %{ shift(@_) };
+  
+  my $self = $class->initialize( $class->flatten_params( \%param ) );
+  
+  bless $self, $class;
+}
+sub full_name {
+  my $self = shift;
+  my %param = @_ ;
+  if($param{'-short'}){
+    return 'T. suis';
+  } elsif($param{'-g_species'}){
+    return 'T_suis';
+  }
+  else { 
+    return'Trichuris suis';
+  }
+}
+sub chromosome_prefix {''}
+sub ncbi_tax_id {'68888'};
+sub ncbi_bioproject {'PRJNA208416'};
+sub bioproject_description { 'University of Melboure T. suis (female) genome project'};
+sub assembly_type {'contig'};
 
 #######################################################
 #######################################################
