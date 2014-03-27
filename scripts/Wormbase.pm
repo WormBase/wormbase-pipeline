@@ -21,7 +21,7 @@ use Species;
 
 our @core_organisms=qw(Elegans Briggsae Remanei Brenneri Japonica Pristionchus Brugia Ovolvulus);
 our @tier3_organisms=qw(Mhapla Mincognita Heterorhabditis Hcontortus Hcontortus_gasser Cangaria Tspiralis Sratti Csp11 Asuum Bxylophilus Csp5 Loaloa Asuum_davis Panagrellus Dimmitis Namericanus);
-our @provisional_organisms = qw(acey tsuis_male tsuis_female pexspectatus);
+our @provisional_organisms = qw(Acey Tsuis_male Tsuis_female Pexspectatus);
 
 our @allowed_organisms=(@core_organisms, @tier3_organisms,@provisional_organisms); #class data
 
