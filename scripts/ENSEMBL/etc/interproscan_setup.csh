@@ -21,7 +21,7 @@ mysql --host=${WORM_DBHOST} --port=${WORM_DBPORT} --user=wormadmin --password=wo
 
 # setup the new pipelines
 
-init_pipeline.pl Bio::EnsEMBL::Hive::PipeConfig::InterProScan_conf -registry ${ENSEMBL_REGISTRY} -species $SPECIES -hive_host ${WORM_DBHOST} -hive_port ${WORM_DBPORT} -hive_user wormadmin -hive_password worms -hive_dbname ${HIVEDB} -pipeline_dir ${PIPELINE_DIR} -ensembl_cvs_root_dir ${EG_ENSEMBL_ROOT}
+init_pipeline.pl Bio::EnsEMBL::Hive::PipeConfig::InterProScanSeg_conf -registry ${ENSEMBL_REGISTRY} -species $SPECIES -hive_host ${WORM_DBHOST} -hive_port ${WORM_DBPORT} -hive_user wormadmin -hive_password worms -hive_dbname ${HIVEDB} -pipeline_dir ${PIPELINE_DIR} -ensembl_cvs_root_dir ${EG_ENSEMBL_ROOT} -script_dir ${EG_ENSEMBL_ROOT}/eg-proteinfeature/scripts
 
 
 
