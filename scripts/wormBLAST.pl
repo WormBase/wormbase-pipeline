@@ -4,8 +4,8 @@
 #
 # written by Anthony Rogers
 #
-# Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2013-12-02 16:56:11 $
+# Last edited by: $Author: klh $
+# Last edited on: $Date: 2014-03-27 17:02:05 $
 #
 # it depends on:
 #    wormpep + history
@@ -24,8 +24,6 @@ use FindBin qw($Bin);
 use lib "$Bin";
 use lib "$Bin/BLAST_scripts";
 use lib "$Bin/ENSEMBL/lib";
-
-use WormBase;
 
 use Wormbase;
 use Getopt::Long;
