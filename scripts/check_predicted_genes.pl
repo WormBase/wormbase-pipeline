@@ -4,7 +4,7 @@
 #
 # by Keith Bradnam
 #
-# Last updated on: $Date: 2014-02-25 16:25:10 $
+# Last updated on: $Date: 2014-03-27 15:17:48 $
 # Last updated by: $Author: pad $
 #
 # see pod documentation at end of file for more information about this script
@@ -105,20 +105,37 @@ else {
     }
   }
   else {
-    print STDERR "Fetching all genes...\n" if $verbose;
-    #@Predictions = $db->fetch (-query => 'FIND All_genes where method AND Species = "$speciesfn"');
-    @Predictions = $db->fetch (-query => 'Find All_genes where (Species = "'.$wormbase->full_name.'")');
-    @bad_genes = $db->fetch (-query => 'FIND All_genes where !method');
+
+    # Quick tests
+######################################################################################
+    my $qclass;
+    my @qclasses = ("CDS","Pseudogene","Transcript");
+    foreach $qclass (@qclasses) {
+      my @tmpbad_genes = $db->fetch (-query => "FIND $qclass where !method");
+      splice @bad_genes,0,0,@tmpbad_genes;
+      my @no_se = $db->fetch (-query => "FIND $qclass where !Source_exons");
+      splice @bad_genes,0,0,@no_se;
+      my @no_Sparent_genes = $db->fetch (-query => "FIND $qclass where !S_parent");
+      splice @bad_genes,0,0,@no_Sparent_genes;
+      my @no_species = $db->fetch (-query => "FIND $qclass where !Species");
+      splice @bad_genes,0,0,@no_species;
+      my @no_lab = $db->fetch (-query => "FIND $qclass where !From_laboratory");
+      splice @bad_genes,0,0,@no_lab;
+    }
+
     $Bcount = @bad_genes;
     if ($Bcount ne '0') {
       $log->write_to("Error: $Bcount models have no method, please check\n");
       foreach $bad_genes(@bad_genes) {
-	$log->write_to("\nError: $bad_genes has no method\n") if ($verbose);
+	$log->write_to("\nError: $bad_genes has no method\n");# if ($verbose);
       }
     }
     else {
       $log->write_to("\nThat's ok, $Bcount models have no method :)\n\n");
     }
+    print STDERR "Fetching all genes...\n" if $verbose;
+    #@Predictions = $db->fetch (-query => 'FIND All_genes where method AND Species = "$speciesfn"');
+    @Predictions = $db->fetch (-query => 'Find All_genes where (Species = "'.$wormbase->full_name.'")');
   }
 
   my $gene_model_count=@Predictions;
@@ -320,11 +337,14 @@ sub main_gene_checks {
 
     # check that 'Sequence' tag is present and if so then grab parent sequence details
     my $source;
+    my $source_type;
     if (defined($gene_model->Sequence)){
       $source = $gene_model->Sequence->name;
+      $source_type = "Sequence";
     }
     elsif (defined($gene_model->Transposon)){
       $source = $gene_model->Transposon->name;
+      $source_type = "Transposon";
     }
     else {
       push(@error1,"ERROR: $gene_model has no Parent, cannot check DNA\n");
@@ -611,75 +631,79 @@ sub test_gene_sequence_for_errors{
 	print "ERROR: $gene_model length ($gene_model_length bp) not divisible by 3, Start_not_found and/or End_not_found tag present\n" if $verbose;
       }
     }
-    unless (($gene_model->name =~ /MTCE/) || ($gene_model->Sequence->name =~ /MITO/)) {
-      # look for incorrect stop codons (CDS specific)
-      if (($stop_codon ne 'taa') && ($stop_codon ne 'tga') && ($stop_codon ne 'tag') && ($method_test eq 'curated')) {
-	if ($end_tag ne "present") {
-	  push(@error1, "ERROR: $gene_model '$stop_codon' is not a valid stop codon. End_not_found tag MISSING\n");
-	  print "ERROR: $gene_model '$stop_codon' is not a valid stop codon. End_not_found tag MISSING\n" if $verbose;
-	  #print "CDS : \"$gene_model\"\nEnd_not_found\n\n" if ($debug);
-	} 
-	else {
-	  push(@error2,"ERROR: $gene_model '$stop_codon' is not a valid stop codon. End_not_found tag present\n") unless ($incomplete);
-	  print "ERROR: $gene_model '$stop_codon' is not a valid stop codon. End_not_found tag present\n" if $verbose;
+    if (defined $gene_model->Sequence) {
+      unless (($gene_model->name =~ /MTCE/) || ($gene_model->Sequence->name =~ /MITO/)) {
+	# look for incorrect stop codons (CDS specific)
+	if (($stop_codon ne 'taa') && ($stop_codon ne 'tga') && ($stop_codon ne 'tag') && ($method_test eq 'curated')) {
+	  if ($end_tag ne "present") {
+	    push(@error1, "ERROR: $gene_model '$stop_codon' is not a valid stop codon. End_not_found tag MISSING\n");
+	    print "ERROR: $gene_model '$stop_codon' is not a valid stop codon. End_not_found tag MISSING\n" if $verbose;
+	    #print "CDS : \"$gene_model\"\nEnd_not_found\n\n" if ($debug);
+	  }
+	  else {
+	    push(@error2,"ERROR: $gene_model '$stop_codon' is not a valid stop codon. End_not_found tag present\n") unless ($incomplete);
+	    print "ERROR: $gene_model '$stop_codon' is not a valid stop codon. End_not_found tag present\n" if $verbose;
+	  }
 	}
-      }
-      
-      # look for incorrect start codons(CDS specific)
-      if (($start_codon ne 'atg') && ($method_test eq 'curated') && ($start_tag ne "present")) {
-	if (($start_tag ne "present")) {
-	  push(@error1,"ERROR: $gene_model '$start_codon' is not a valid start codon. Start_not_found tag MISSING\n");
-	  print "ERROR: $gene_model '$start_codon' is not a valid start codon. Start_not_found tag MISSING\n" if $verbose;
-	}  
-	else {
-	  push(@error2, "ERROR: $gene_model '$start_codon' is not a valid start codon. Start_not_found tag present\n") unless ($incomplete);
-	  print "ERROR: $gene_model '$start_codon' is not a valid start codon. Start_not_found tag present\n" if $verbose;
-	} 
-      }
-      
-      # check for internal stop codons (CDS specific)
-      my $i;
-      my $j;
-      if ($start_tag_val) {
-	print "start_tag_val final = $start_tag_val\n" if ($verbose);
-	if ($start_tag_val eq 3) {#if 3 +2
-	  $i = '2';
+	# look for incorrect start codons(CDS specific)
+	if (($start_codon ne 'atg') && ($method_test eq 'curated') && ($start_tag ne "present")) {
+	  if (($start_tag ne "present")) {
+	    push(@error1,"ERROR: $gene_model '$start_codon' is not a valid start codon. Start_not_found tag MISSING\n");
+	    print "ERROR: $gene_model '$start_codon' is not a valid start codon. Start_not_found tag MISSING\n" if $verbose;
+	  }  
+	  else {
+	    push(@error2, "ERROR: $gene_model '$start_codon' is not a valid start codon. Start_not_found tag present\n") unless ($incomplete);
+	    print "ERROR: $gene_model '$start_codon' is not a valid start codon. Start_not_found tag present\n" if $verbose;
+	  } 
 	}
-	elsif ($start_tag_val eq 2) {#if 2 +1
-	  $i = '1';
+	
+	# check for internal stop codons (CDS specific)
+	my $i;
+	my $j;
+	if ($start_tag_val) {
+	  print "start_tag_val final = $start_tag_val\n" if ($verbose);
+	  if ($start_tag_val eq 3) {#if 3 +2
+	    $i = '2';
+	  }
+	  elsif ($start_tag_val eq 2) {#if 2 +1
+	    $i = '1';
+	  }
+	  else {
+	    $i = '0';
+	  }
 	}
 	else {
 	  $i = '0';
 	}
-      }
-      else {
-	$i = '0';
-      }
-
-      for (;$i<$gene_model_length-3;$i+=3) {
-	# hold position of codon in $j
-	$j=$i+1;
-	my $codon =substr($dna,$i,3);
-	if (($codon eq "taa") || ($codon eq "tag") || ($codon eq "tga")) {      
-	  my $previous_sequence = substr($dna, $j-11,10);
-	  my $following_sequence = substr($dna, $j+2, 10);
-	  my $offending_codon = substr($dna, $j-1, 3);
-	  if (($method_test eq 'curated')) {
-	    push(@error1, "ERROR: $gene_model internal stop codon at position $j ...$previous_sequence $offending_codon $following_sequence...\n") unless ($genetic_code eq 'Selenocysteine');      
-	    print "ERROR: $gene_model internal stop codon at position $j ...$previous_sequence $offending_codon $following_sequence...\n" if (($verbose) && ($genetic_code ne 'Selenocysteine'));
+	
+	for (;$i<$gene_model_length-3;$i+=3) {
+	  # hold position of codon in $j
+	  $j=$i+1;
+	  my $codon =substr($dna,$i,3);
+	  if (($codon eq "taa") || ($codon eq "tag") || ($codon eq "tga")) {      
+	    my $previous_sequence = substr($dna, $j-11,10);
+	    my $following_sequence = substr($dna, $j+2, 10);
+	    my $offending_codon = substr($dna, $j-1, 3);
+	    if (($method_test eq 'curated')) {
+	      push(@error1, "ERROR: $gene_model internal stop codon at position $j ...$previous_sequence $offending_codon $following_sequence...\n") unless ($genetic_code eq 'Selenocysteine');      
+	      print "ERROR: $gene_model internal stop codon at position $j ...$previous_sequence $offending_codon $following_sequence...\n" if (($verbose) && ($genetic_code ne 'Selenocysteine'));
+	    }
 	  }
 	}
-      }
-      if ($species eq "elegans") {
-	# look for non-ACTG characters
-	if ($dna =~ /[^acgt]/i) {
-	  $dna =~ s/[acgt]//g;
-	  push(@error2, "ERROR: $gene_model DNA sequence contains the following non-ATCG characters: $dna\n"); 
-	  print "ERROR: $gene_model DNA sequence contains the following non-ATCG characters: $dna\n" if $verbose;
-	
+	if ($species eq "elegans") {
+	  # look for non-ACTG characters
+	  if ($dna =~ /[^acgt]/i) {
+	    $dna =~ s/[acgt]//g;
+	    push(@error2, "ERROR: $gene_model DNA sequence contains the following non-ATCG characters: $dna\n"); 
+	    print "ERROR: $gene_model DNA sequence contains the following non-ATCG characters: $dna\n" if $verbose;
+	    
+	  }
 	}
-      }
-    } ##MTCE exclusion loop
+      } ##MTCE exclusion loop
+    } ##Sequence_parent loop
+    else {
+      push(@error1, "$gene_model has no SParent Sequence connection.\n") unless (defined $gene_model->Transposon);
+    }
   }
 }
 
