@@ -28,6 +28,7 @@ use Bio::EnsEMBL::SimpleFeature;
 use Bio::EnsEMBL::DnaDnaAlignFeature;
 use Bio::EnsEMBL::DnaPepAlignFeature;
 use Bio::EnsEMBL::FeaturePair;
+use Bio::EnsEMBL::Analysis::Tools::FeatureFactory;
 
 #use Bio::EnsEMBL::Analysis::Tools::GeneBuildUtils::ExonUtils;
 
@@ -697,6 +698,70 @@ sub parse_dna_align_features_gff_fh {
 }
 
 
+sub parse_repeatfeatures_gff {
+  my ($self, $file, $analysis, $source, $type) = @_;
+
+  my $fh = $self->_open_file($file);
+  my $feats = $self->parse_repeatfeatures_gff_fh($fh, $analysis, $source, $type);
+
+  return $feats;
+}
+
+
+sub parse_repeatfeatures_gff_fh {
+  my ($self, $fh, $analysis, $source, $type ) = @_;
+
+  my $ff = Bio::EnsEMBL::Analysis::Tools::FeatureFactory->new();
+
+  my @rfs;
+
+  while(<$fh>){
+    /^\#/ and next;
+    
+    my @col = split(/\t/, $_);
+    
+    next if $col[1] ne $source or $col[2] ne $type;
+    
+    my $chr = $col[0];
+    
+    die "Could not find $chr in slice hash\n" if not exists $self->slices->{$chr};
+
+    my ($rep_name, $rep_start, $rep_end);
+
+    if ($col[8] =~ /Target\s+\"(.+)\"\s+(\d+)\s+(\d+)/) {
+      ($rep_name, $rep_start, $rep_end) = ($1, $2, $3);
+    } elsif ($col[8] =~ /Target=(\S+)\s+(\d+)\s+(\d+)/) {
+      ($rep_name, $rep_start, $rep_end) = ($1, $2, $3);
+    } else {
+      die "Could not get repeat details from GFF line ($col[8])\n";
+    }
+
+    $rep_name =~ s/Motif://; 
+    my $rep_class = "Unknown";
+
+    my $rc = $ff->create_repeat_consensus($rep_name, "Unknown");
+
+    my $rf = $ff->create_repeat_feature( $col[3],
+                                         $col[4],
+                                         $col[6] eq '-' ? -1 : 1,
+                                         $col[5],
+                                         $rep_start, 
+                                         $rep_end,
+                                         $rc,
+                                         $self->slices->{$chr}->seq_region_name,
+                                         $self->slices->{$chr},
+                                         $analysis,
+        );
+
+    push @rfs, $rf;
+    
+  }
+
+  return \@rfs;
+}
+
+###########################################################
+
 sub write_genes {
   my ($self, $genes, $exon_stable_ids ) = @_;
 
@@ -763,7 +828,7 @@ sub write_dna_align_features {
 }
 
 
-sub write_protein_align_feature {
+sub write_protein_align_features {
   my ($self, $feats) = @_;
   
   $self->verbose and print STDERR "Storing " . scalar(@$feats) . " DnaPepAlignFeatures\n";
@@ -774,6 +839,25 @@ sub write_protein_align_feature {
   
     eval {
       $self->database_handle->get_ProteinAlignFeatureAdaptor->store(@$feats);
+    };
+    if ($@) {
+      die "couldn't store features , problems: " . $@;
+    }
+  }
+  return 1;
+}
+
+sub write_repeat_features {
+  my ($self, $feats) = @_;
+  
+  $self->verbose and print STDERR "Storing " . scalar(@$feats) . " RepeatFeatures\n";
+
+  if (@$feats)  {
+    eval { print "\n check 1: " . $feats->[0]->display_label };
+    eval { print "\n check 2: " . $feats->[0]->start . " - " . $feats->[0]->end . "\n" };
+  
+    eval {
+      $self->database_handle->get_RepeatFeatureAdaptor->store(@$feats);
     };
     if ($@) {
       die "couldn't store features , problems: " . $@;

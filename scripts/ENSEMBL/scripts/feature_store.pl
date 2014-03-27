@@ -7,11 +7,6 @@ use FindBin qw($Bin);
 use lib "$Bin/../lib";
 
 use WormBase2Ensembl;
-#use WormFeature::Blat;
-#use WormFeature::WublastX;
-#use Clone2Acc;
-#use Bio::EnsEMBL::Pipeline::SeqFetcher::Pfetch;
-#use Bio::EnsEMBL::Pipeline::SeqFetcher::OBDAIndexSeqFetcher;
 use Bio::EnsEMBL::DBSQL::DBAdaptor;
 
 my %protein_blast_logics = (
@@ -33,7 +28,7 @@ my %protein_blast_logics = (
 
 my ($estori, $species, $debug, $verbose,
     $dbhost, $dbname, $dbuser, $dbpass, $dbport,
-    $gff_file, $seleno,
+    $gff_file, $seleno, 
     );
 
 &GetOptions('estorientations=s' => \$estori,
@@ -137,7 +132,15 @@ foreach my $analysis_logic_name (@analysis_logic_names) {
     my $hits = $wb2ens->parse_dna_align_features_gff($gff_file, $analysis, 'EMBL_nematode_cDNAs-BLAT', 'expressed_sequence_match', $estori);
     $wb2ens->write_dna_align_features($hits);
 
-  } elsif ($analysis_logic_name eq 'wormbase_non_coding') {
+  } 
+  # RepeatMask features
+  elsif ($analysis_logic_name eq 'repeatmask') {
+    my $rep_feats = $wb2ens->parse_repeatfeatures_gff( $gff_file, $analysis, 'RepeatMasker', 'similarity' );
+    $verbose and printf STDERR "Read %d repeat features from GFF\n", scalar(@$rep_feats);
+    $wb2ens->write_repeat_features($rep_feats);
+  }
+  # genes
+  elsif ($analysis_logic_name eq 'wormbase_non_coding') {
     my @nc_genes;
     
     ## tRNA genes ##
@@ -179,6 +182,16 @@ foreach my $analysis_logic_name (@analysis_logic_names) {
     my $lincRNAgenes = $wb2ens->parse_non_coding_genes_gff2( $gff_file, $analysis, 'lincRNA');
     $verbose and printf STDERR "Read %d lincRNA genes from GFF\n", scalar(@$lincRNAgenes);
       push @nc_genes, @$lincRNAgenes;
+        
+    ## asRNA-genes
+    my $asRNAgenes = $wb2ens->parse_non_coding_genes_gff2( $gff_file, $analysis, 'asRNA');
+    $verbose and printf STDERR "Read %d asRNA genes from GFF\n", scalar(@$asRNAgenes);
+    push @nc_genes, @$asRNAgenes;
+        
+    ## piRNA-genes
+    my $piRNAgenes = $wb2ens->parse_non_coding_genes_gff2( $gff_file, $analysis, 'piRNA');
+    $verbose and printf STDERR "Read %d piRNA genes from GFF\n", scalar(@$piRNAgenes);
+    push @nc_genes, @$piRNAgenes;
     
     $verbose and printf STDERR "Read %d ncRNA genes in all. Writing...\n", scalar(@nc_genes); 
     $wb2ens->write_genes( \@nc_genes, 1 );
@@ -208,7 +221,7 @@ foreach my $analysis_logic_name (@analysis_logic_names) {
     if (not $cod_ana or not $nc_ana or not $pseudo_ana) {
       die "Analyses 'wormbase', 'wormbase_non_coding' and 'wormbase_pseudogene' must be in the database to use this option\n";
     }
-    my $genes = $wb2ens->parse_genes_gff3( $gff_file, $cod_ana, $nc_ana, $pseudo_ana, { WormBase => 1 });
+    my $genes = $wb2ens->parse_genes_gff3( $gff_file, $cod_ana, $nc_ana, $pseudo_ana );
     $verbose and printf STDERR "Parsed %d genes from GFF3. Writing genes to database...\n", scalar(@$genes);      
     $wb2ens->write_genes( $genes, 1 );
     
