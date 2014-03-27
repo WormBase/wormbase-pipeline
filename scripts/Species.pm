@@ -1039,6 +1039,42 @@ sub bioproject_description { 'Cornell University, Genome and transcriptome of th
 sub assembly_type {'contig'};
 
 ######################################################
+package Exspectatus;
+use Carp;
+our @ISA = qw(Wormbase Species);
+
+sub _new {	
+    my $class = shift;
+    my %param = %{ shift(@_) };
+
+    my $self = $class->initialize( $class->flatten_params( \%param ) );
+
+    # add stuff post object creation goes here
+
+    bless $self, $class;
+}
+sub full_name {
+  my $self = shift;
+  my %param = @_ ;
+  if($param{'-short'}){
+    return 'P. exspectatus';
+  } elsif($param{'-g_species'}){
+    return 'p_exspectatus';
+  }
+  else { 
+    return'Pristionchus exspectatus';
+  }
+}
+sub chromosome_prefix {''}
+sub pep_prefix {'PE'}
+sub pepdir_prefix{'pexspectatus'};
+sub ncbi_tax_id {1195656};
+sub ncbi_bioproject {'NONE'};
+sub bioproject_description { 'Max Planck Institite for Developmental Genetics, Tuebingen Pristionchus sequencing project'};
+sub assembly_type {'contig'};
+
+
+######################################################
 package Namericanus;
 use Carp;
 our @ISA = qw(Wormbase Species);
