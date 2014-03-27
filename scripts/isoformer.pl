@@ -7,7 +7,7 @@
 # This does stuff with what is in the active zone
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2014-03-26 16:01:00 $      
+# Last updated on: $Date: 2014-03-27 14:10:41 $      
 
 
 
@@ -173,13 +173,14 @@ while (1) {
     }
     # get the region of interest from the CDS name or clone positions
     ($chromosome, $region_start, $region_end, $sense, $biotype, $gene) = get_active_region($userinput);
+#  print "********** in main region_end = $region_end\n";
   } while (! defined $chromosome);
   
   my @TSL = &get_TSL_in_region($chromosome, $region_start, $region_end, $sense, $all_TSL{$chromosome});
   
-  # add the $region_start/end to the TSL list as a dummy TSL site as it is one of the positions that enclose the regions to consider
+  # add the $region_start/end to the head of the TSL list as a dummy TSL site as it is one of the positions that enclose the regions to consider
   if ($sense eq '+') {
-    push @TSL, {
+    unshift @TSL, {
 		seq => $chromosome,
 		start => $region_start,
 		end => $region_start,
@@ -187,7 +188,7 @@ while (1) {
 		tsl => '',
 	       }
   } else {
-    push @TSL, {
+    unshift @TSL, {
 		seq => $chromosome,
 		start => $region_end,
 		end => $region_end,
@@ -207,6 +208,7 @@ while (1) {
     } else {
       $region_end = $TSL->{start};
     }
+#    print "********** in foreach TSL region_end = $region_end\n";
 
     my @splices = &get_splices_in_region($chromosome, $region_start, $region_end, $sense, $all_splices{$chromosome});
     
@@ -544,7 +546,21 @@ sub get_TSL_in_region {
     if ($TSL->{end} > $end) {next}
     if ($TSL->{sense} ne $sense) {next}
     if ($TSL->{seq} ne $chromosome) {next}
-    push @TSL, $TSL;
+
+    # now see if we have two TSLs at the same position
+    my $notfound = 1;
+    foreach my $found_tsl (@TSL) {
+      if ($found_tsl->{start} != $TSL->{start}) {next}
+      if ($found_tsl->{end} != $TSL->{end}) {next}
+      if ($found_tsl->{sense} ne $TSL->{sense}) {next}
+      if ($found_tsl->{seq} ne $TSL->{seq}) {next}
+      $notfound = 0;
+      $found_tsl->{tsl} .= (" ".$TSL->{tsl});
+      $found_tsl->{id}  .= (" ".$TSL->{id});
+    }
+    if ($notfound) {
+      push @TSL, $TSL;
+    }
   }
 
   return @TSL;
@@ -623,6 +639,12 @@ sub iterate_through_the_valid_structures {
   my @created = ();
   my @warnings = ();
 
+  # get the clone coords of the region start/end
+#  print "********** in iterate_through_the_valid_structures region_end = $region_end\n";
+  my ($region_clone, $region_clone_start, $region_clone_end) = get_clone_coords($chromosome, $region_start, $region_end, $sense);
+  # get any structures in this initial region
+  &get_structures_in_region($confirmed, $sense, $region_clone, $region_clone_start, $region_clone_end);
+
   do {
 
     my ($chain) = &get_next_chain_of_intron_nodes(@splices);
@@ -634,7 +656,12 @@ sub iterate_through_the_valid_structures {
 
     if ($type eq 'CDS') {
       my ($clone, $clone_aug, $clone_stop) = get_clone_coords($chromosome, $chrom_aug, $chrom_stop, $sense);
+
+      # get structures overlapping the isoformer structure - doing
+      # this again in case we are at a clone boundary and some
+      # structures are on the superlink and some on the clone
       &get_structures_in_region($confirmed, $sense, $clone, $clone_aug, $clone_stop);
+
       my $confirmed_ok = &check_not_already_curated($confirmed, $sense, $type, $clone, $clone_aug, $clone_stop, $exons);
       if (!$confirmed_ok) {
 	&make_isoform($CDS_name, $TSL, $clone, $clone_aug, $clone_stop, $sense, $exons, $$next_isoform, $gene);
@@ -644,7 +671,12 @@ sub iterate_through_the_valid_structures {
     } elsif ($type eq 'INVALID') { # no START and STOP found in the first and last exons
       print "Found no good coding structure - should the region to look at be larger?\n";
       my ($clone, $clone_aug, $clone_stop) = get_clone_coords($chromosome, $chrom_aug, $chrom_stop, $sense);
+
+      # get structures overlapping the isoformer structure - doing
+      # this again in case we are at a clone boundary and some
+      # structures are on the superlink and some on the clone
       &get_structures_in_region($confirmed, $sense, $clone, $clone_aug, $clone_stop);
+
       my $confirmed_ok = &check_not_already_curated($confirmed, $sense, $type, $clone, $clone_aug, $clone_stop, $exons);
       if (!$confirmed_ok) {
 	&make_isoform($ncRNA_name, $TSL, $clone, $clone_aug, $clone_stop, $sense, $exons, $$next_isoform, $gene);
@@ -963,7 +995,9 @@ sub add_aug_and_stop_to_structure {
 # get all structures that are in the region so that we can confirm them later
 
 sub get_structures_in_region {
-  my ($confirmed, $sense, $clone, $clone_aug, $clone_stop) = @_;
+  my ($confirmed, $sense, $clone, $clone_start, $clone_end) = @_;
+
+#  print "*** in get_structures_in_region clone_end = $clone_end\n";
 
   # parent clone coords
   my $clone_obj = $db->fetch(Sequence => "$clone");
@@ -976,10 +1010,12 @@ sub get_structures_in_region {
        ) {next} # don't want to report a match to a history object or an ab-initio prediction etc.
     $start = $structure->right->name;
     $end = $structure->right->right->name;
-    if (($sense eq '+' && (($start >= $clone_aug && $start <= $clone_stop) || ($end >= $clone_aug && $end <= $clone_stop))) ||
-	($sense eq '-' && (($start <= $clone_aug && $start >= $clone_stop) || ($end <= $clone_aug && $end >= $clone_stop)))
+
+    if (($sense eq '+' && (($start >= $clone_start && $start <= $clone_end) || ($end >= $clone_start && $end <= $clone_end))) ||
+	($sense eq '-' && (($start >= $clone_start && $start <= $clone_end) || ($end >= $clone_start && $end <= $clone_end)))
        ) { # is it in our region
       my $name = $structure->name;
+#      print "*** $name is in the region\n";
       if (!exists $confirmed->{$name}) {$confirmed->{$name} = 0;}
     }
   }
@@ -1167,8 +1203,11 @@ sub make_isoform {
   print ISOFORM "$remark Curator_confirmed $personid\n";
   print ISOFORM "$remark From_analysis RNASeq_Hillier_elegans\n";
   if ($TSL_type) {
-    print ISOFORM "$remark Feature_evidence $feature_id\n";
-    print ISOFORM "Isoform Feature_evidence $feature_id\n";
+    my @ids = split ' ', $feature_id;
+    foreach my $id (@ids) {
+      print ISOFORM "$remark Feature_evidence $feature_id\n";
+      print ISOFORM "Isoform Feature_evidence $feature_id\n";
+    }
     print ISOFORM "Isoform Curator_confirmed $personid\n";
   }
   print ISOFORM "$DB_remark\n" if $DB_remark;
