@@ -358,7 +358,7 @@ sub load_genes {
 
   } elsif (@gff3_files) {
     open(my $gff_fh, "cat @gff3_files |") or die "Could not create GFF stream\n";
-    @genes = @{$wb2ens->parse_genes_gff3_fh( $gff_fh, $cod_analysis, $nc_analysis, $pseudo_analysis, { "WormBase" => 1 })};
+    @genes = @{$wb2ens->parse_genes_gff3_fh( $gff_fh, $cod_analysis, $nc_analysis, $pseudo_analysis )};
   } else {
     die "No gff or gff3 files found - death\n";
   }
