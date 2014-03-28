@@ -7,7 +7,7 @@
 # This does stuff with what is in the active zone
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2014-03-27 14:10:41 $      
+# Last updated on: $Date: 2014-03-28 11:41:54 $      
 
 
 
@@ -147,12 +147,12 @@ while (1) {
       print "?, h, help             : this help\n";
       print "q, quit                : quit\n";
       print "cds_name               : search for structures in the region covered by the CDS\n";
-      print "cds_name -100          : use the region starting 100 bases before the CDS\n";
-      print "cds_name -100 +200     : use the region starting 100 bases before and 200 bases after the CDS\n";
+#      print "cds_name -100          : use the region starting 100 bases before the CDS\n";
+#      print "cds_name -100 +200     : use the region starting 100 bases before and 200 bases after the CDS\n";
       print "clear, clear all       : clear all isoformer objects\n";
       print "clear isoformer_8      : clear object isoformer_8\n";
       print "clear 8 9 10           : clear object isoformer_8, isoformer_9 and isoformer_10\n";
-      print "what                   : reports the isoformer object that are in the database\n";
+      print "what                   : reports the isoformer object that are saved in the database\n";
       print "fix isoformer_1 AC3.3c : fix isoformer_1 to CDS/Transcript, creating it if necessary\n";
       print "\n";
       next
@@ -1208,8 +1208,8 @@ sub make_isoform {
       print ISOFORM "$remark Feature_evidence $feature_id\n";
       print ISOFORM "Isoform Feature_evidence $feature_id\n";
     }
-    print ISOFORM "Isoform Curator_confirmed $personid\n";
   }
+  print ISOFORM "Isoform Curator_confirmed $personid\n";
   print ISOFORM "$DB_remark\n" if $DB_remark;
   print ISOFORM "$Brief_identification\n" if $Brief_identification;
   print ISOFORM "Sequence $clone\n";
