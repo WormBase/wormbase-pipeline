@@ -23,9 +23,9 @@ use Bio::EnsEMBL::DBSQL::DBAdaptor;
 use Getopt::Long;
 use IO::File;
 
-my $dbhost = "farmdb1";
+my $dbhost = "mysql-wormbase-pipelines";
 my $dbuser = "wormro";
-my $dbport = "3306";
+my $dbport = "4331";
 my $dbpass = "";
     
 my ($database,$dna,$transcript_only,$outfile);
