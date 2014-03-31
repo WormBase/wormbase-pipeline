@@ -6,8 +6,8 @@
 #
 # script for creating extra GFF lines to indicate those genes that are landmark genes
 #
-# Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2014-02-14 12:06:46 $
+# Last edited by: $Author: klh $
+# Last edited on: $Date: 2014-03-31 22:22:55 $
 use strict;
 use lib $ENV{'CVS_DIR'};
 use Wormbase;
@@ -107,7 +107,7 @@ foreach my $chromosome (@chromosomes) {
       my $lm = $landmarks{$gene};
       print $out_fh "$data[0]\tlandmark\tgene\t$data[3]\t$data[4]\t$data[5]\t$data[6]\t$data[7]\t";
       if ($gff3) {
-        print $out_fh "ID=landmark:$lm;Locus=$lm\n";
+        print $out_fh "ID=landmark:$lm;locus=$lm\n";
       } else {
         print $out_fh "Locus \"$lm\"\n";
       }
