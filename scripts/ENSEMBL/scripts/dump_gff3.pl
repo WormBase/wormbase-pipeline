@@ -97,7 +97,7 @@ while( my $slice = shift @slices) {
       end       => $gene->seq_region_end(),
       strand    => $gene->strand(),
       note      => ($gene->status()||'PREDICTED' ). " " . $gene->biotype(),
-      public_name => $gene->stable_id(),
+      alias       => $gene->stable_id(),
       display     => $gene->stable_id(), # wrong but fixes db's without xref_mapping
       gff_source  => (defined $gene->analysis->gff_source) ? $gene->analysis->gff_source : "WormBase",
         );
@@ -116,7 +116,7 @@ while( my $slice = shift @slices) {
         strand    => $transcript->strand(),
         note      => $transcript->biotype(),
         info      => get_info($transcript),
-        public_name => $transcript->stable_id(),
+        alias     => $transcript->stable_id(),
         display     => $transcript->stable_id(),
         gff_source  => (defined $transcript->analysis->gff_source) ?  $transcript->analysis->gff_source : "WormBase",
         gff_type    => (defined $transcript->analysis->gff_feature ) ? $transcript->analysis->gff_feature : $transcript->biotype . '_primary_transcript',
@@ -496,28 +496,35 @@ sub dump_gene {
   
   # Dump gene
   $output .= "# Gene " . $gene->{'stable_id'} . "\n";
-  $output .= gff_line(
-    $gene->{'name'}, $gene->{'gff_source'}, 'gene', $gene->{'start'}, $gene->{'end'},
-    $gene->{'strand'}, $gene->{'stable_id'},undef, $gene->{'display'}, $gene->{'note'},undef,$gene->{'public_name'}
-      );
+  $output .= gff_line($gene->{'name'}, 
+                      $gene->{'gff_source'}, 
+                      'gene', 
+                      $gene->{'start'}, 
+                      $gene->{'end'},
+                      $gene->{'strand'}, 
+                      $gene->{'stable_id'},
+                      undef, 
+                      $gene->{'display'}, 
+                      $gene->{'note'},
+                      undef,
+                      $gene->{'alias'});
   
   # Dump transcripts
   my $parent = $gene->{'stable_id'};
   my %exon_parent;
   foreach my $transcript (@{$gene->{'transcript'}}) {
-    $output .= gff_line(
-      $transcript->{'name'}, 
-      $transcript->{'gff_source'}, 
-      (exists $transcript->{cds}) ? 'mRNA' : $transcript->{gff_type}, 
-      $transcript->{'start'}, 
-      $transcript->{'end'},
-      $transcript->{'strand'}, 
-      $transcript->{'stable_id'}, 
-      undef,
-      ($transcript->{'display'} || undef), 
-      undef, 
-      ($transcript->{info}||undef),
-      $transcript->{'public_name'},$parent);
+    $output .= gff_line($transcript->{'name'}, 
+                        $transcript->{'gff_source'}, 
+                        (exists $transcript->{cds}) ? 'mRNA' : $transcript->{gff_type}, 
+                        $transcript->{'start'}, 
+                        $transcript->{'end'},
+                        $transcript->{'strand'}, 
+                        $transcript->{'stable_id'}, 
+                        undef,
+                        ($transcript->{'display'} || undef), 
+                        undef, 
+                        ($transcript->{info}||undef),
+                        $transcript->{'alias'},$parent);
     
     # Store the parent of this transcript's exons
     foreach my $exon (@{$transcript->{'exon'}}) {
@@ -531,9 +538,19 @@ sub dump_gene {
       next if !$exon_parent{$exon->{'stable_id'}}; # If there are no parents then we've already dumped this exon
       my @parents = keys %{$exon_parent{$exon->{'stable_id'}}};
       delete $exon_parent{$exon->{'stable_id'}};
-      $output .= gff_line(
-        $exon->{'name'}, $transcript->{'gff_source'}, 'exon', $exon->{'start'}, $exon->{'end'},
-        $exon->{'strand'}, $exon->{'stable_id'}, undef,undef, undef,undef,undef ,@parents);
+      $output .= gff_line($exon->{'name'}, 
+                          $transcript->{'gff_source'}, 
+                          'exon', 
+                          $exon->{'start'}, 
+                          $exon->{'end'},
+                          $exon->{'strand'}, 
+                          $exon->{'stable_id'}, 
+                          undef,
+                          undef,
+                          undef,
+                          undef,
+                          undef,
+                          @parents);
     }
   }
   
@@ -542,26 +559,53 @@ sub dump_gene {
     my $parent = $transcript->{'stable_id'};
     if (exists $transcript->{'utr5'}) {
       foreach my $utr_seg (@{$transcript->{'utr5'}}) {
-        $output .= gff_line(
-          $utr_seg->{'name'}, $transcript->{'gff_source'}, 'five_prime_UTR', $utr_seg->{'start'}, 
-          $utr_seg->{'end'}, $utr_seg->{'strand'}, undef, undef, undef, 
-          undef, undef, undef, $transcript->{'stable_id'});
+        $output .= gff_line($utr_seg->{'name'},
+                            $transcript->{'gff_source'}, 
+                            'five_prime_UTR', 
+                            $utr_seg->{'start'}, 
+                            $utr_seg->{'end'}, 
+                            $utr_seg->{'strand'}, 
+                            undef, 
+                            undef, 
+                            undef, 
+                            undef, 
+                            undef, 
+                            undef, 
+                            $transcript->{'stable_id'});
       }
     }
     if (exists $transcript->{'cds'}) {
       foreach my $cds (@{$transcript->{'cds'}}) {
-        $output .= gff_line(
-          $cds->{'name'}, $transcript->{'gff_source'}, 'CDS', $cds->{'start'}, $cds->{'end'},
-          $cds->{'strand'}, $cds->{'stable_id'}, $cds->{'phase'},undef, 
-          undef,undef ,undef, $transcript->{'stable_id'});
+        $output .= gff_line($cds->{'name'}, 
+                            $transcript->{'gff_source'}, 
+                            'CDS', 
+                            $cds->{'start'}, 
+                            $cds->{'end'},
+                            $cds->{'strand'}, 
+                            $cds->{'stable_id'}, 
+                            $cds->{'phase'},
+                            undef, 
+                            undef,
+                            undef,
+                            undef,
+                            $transcript->{'stable_id'});
       }
     }
     if (exists $transcript->{'utr3'}) {
       foreach my $utr_seg (@{$transcript->{'utr3'}}) {
-        $output .= gff_line(
-          $utr_seg->{'name'}, $transcript->{'gff_source'}, 'three_prime_UTR', $utr_seg->{'start'}, 
-          $utr_seg->{'end'}, $utr_seg->{'strand'}, undef, undef, undef, 
-          undef, undef, undef, $transcript->{'stable_id'});
+        $output .= gff_line($utr_seg->{'name'}, 
+                            $transcript->{'gff_source'}, 
+                            'three_prime_UTR', 
+                            $utr_seg->{'start'}, 
+                            $utr_seg->{'end'}, 
+                            $utr_seg->{'strand'}, 
+                            undef, 
+                            undef, 
+                            undef, 
+                            undef, 
+                            undef, 
+                            undef, 
+                            $transcript->{'stable_id'});
       }
     }
   }
@@ -573,7 +617,7 @@ sub dump_gene {
 
 # a template for a GFF line
 sub gff_line {
-  my ($seqid, $source, $type, $start, $end, $strand, $stable_id, $phase,$name, $note, $info,$public,@parents) = @_;
+  my ($seqid, $source, $type, $start, $end, $strand, $stable_id, $phase,$name, $note, $info,$alias,@parents) = @_;
   
   my $output = '';
   
@@ -590,7 +634,7 @@ sub gff_line {
   push @tags, "Name=$name" if defined $name;
   push @tags, "Note=$note" if defined $note;
   push @tags, "info=$info" if defined $info;
-  push @tags, "public_name=$public" if defined $public;
+  push @tags, "Alias=$alias" if defined $alias;
   $output .= join(';', @tags);
   $output .= "\n";
   
