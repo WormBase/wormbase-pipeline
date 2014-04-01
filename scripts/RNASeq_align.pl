@@ -6,7 +6,7 @@
 #
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2014-02-06 14:01:37 $      
+# Last updated on: $Date: 2014-04-01 16:26:00 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -305,7 +305,7 @@ sub make_fpkm {
 	if ($f[0] =~ /CUFF/) {$log->log_and_die("Cufflinks for $experiment_accession has failed to put the Gene IDs in the output file - problem with the GTF file?\n");}
 	my $gene_expr = $f[9];
 	if ($gene_expr == 0) {$gene_expr = 0.0000000001}
-	if ($f[12] eq "OK" || $f[12] eq "LOWDATA") {
+	if ($f[12] ne "FAIL") {
 	  if (!exists $Gene_SRX{$f[0]} || $Gene_SRX{$f[0]} < $gene_expr) { # if the gene is repeated, store the highest expression value
 	    $Gene_SRX{$f[0]} = $gene_expr;
 	  }
