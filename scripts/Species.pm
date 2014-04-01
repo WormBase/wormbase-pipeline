@@ -1121,7 +1121,7 @@ sub chromosome_prefix {''}
 sub pep_prefix {'PE'}
 sub pepdir_prefix{'pexspectatus'};
 sub ncbi_tax_id {1195656};
-sub ncbi_bioproject {'NONE'};
+sub ncbi_bioproject {'PRJEB6009'};
 sub bioproject_description { 'Max Planck Institite for Developmental Genetics, Tuebingen Pristionchus sequencing project'};
 sub assembly_type {'contig'};
 
