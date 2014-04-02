@@ -5,7 +5,7 @@
 # Dumps protein motifs from ensembl mysql (protein) database to an ace file
 #
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2014-04-02 08:52:41 $
+# Last updated on: $Date: 2014-04-02 08:56:32 $
 
 use lib $ENV{'CVS_DIR'};
 
@@ -126,6 +126,9 @@ foreach my $meth (@methods) {
   foreach my $aref (@$ref) {
     my ($_prot, $start, $end, $hid, $hstart, $hend, $score) = @$aref;
     my $prot=($cds2wormpep{$_prot}||$_prot);
+
+    $score||=0; # for NULL scores in some analysis, as else it will break Ace
+
     my $line;
     if ($meth eq "pfam") {
        if( $hid =~ /(\w+)\.\d+/ ) {
@@ -135,8 +138,7 @@ foreach my $meth (@methods) {
     }elsif($meth=~/hmmpanther|pfscan|pirsf|prints|scanprosite|smart|tigrfam|superfamily/){
        my $prefix = uc($meth);
        $line = "Motif_homol \"$prefix:$hid\" \"$meth\" $score $start $end $hstart $hend";
-    }else { #tmhmm seg signalp
-       if (!defined $score) {$score = 0} # for NULL scores in ncoils and tmhmm 
+    }else { #tmhmm seg signalp ncoils
        $line = "Feature \"$meth\" $start $end $score";
     }
     push (@{$motifs{$prot}} , $line) if $line;
