@@ -9,7 +9,7 @@ use lib $ENV{CVS_DIR};
 use Wormbase;
 use Log_files;
 
-use lib "$ENV{CVS_FIR}/ONTOLOGY";
+use lib "$ENV{CVS_DIR}/ONTOLOGY";
 use GAF;
 
 
@@ -85,8 +85,8 @@ while ( my $obj = $it->next ) {
                                $qual, 
                                $a, 
                                join("|", map { "WB_REF:$_" } @ref),
-                               "Expr_pattern", 
-                               $obj->name, 
+                               "IDA", 
+                               "WB:" . $obj->name, 
                                "A",  
                                $gene_info->{$g}->{sequence_name},
                                $taxid, 
