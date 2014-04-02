@@ -6,7 +6,7 @@
 #
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2014-04-01 16:26:00 $      
+# Last updated on: $Date: 2014-04-02 10:31:29 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -336,7 +336,7 @@ sub make_fpkm {
       my @f = split /\s+/, $line;
       if ($f[0] eq 'tracking_id') {next;}
       if ($f[0] =~ /CUFF/) {$log->log_and_die("Cufflinks for $experiment_accession has failed to put the Transcript IDs in the output file - problem with the GTF file?\n");}
-      if ($f[12] eq "OK" || $f[12] eq "LOWDATA") {
+      if ($f[12] ne "FAIL") {
 	if (defined $life_stage && $life_stage ne "") {
 	  my ($sequence_name) = ($f[0] =~ /(^\S+?\.\d+[a-z]?)/);
 	  if (!defined $sequence_name) {
