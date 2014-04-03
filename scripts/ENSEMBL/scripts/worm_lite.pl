@@ -307,12 +307,20 @@ sub load_genes {
   if ($config->{gff}) {
     @path_globs = split(/,/, $config->{gff});
     foreach my $fglob (@path_globs) {
-      push @gff2_files, glob($fglob);
+      my @files = glob($fglob);
+      if (grep { not -e $_ }  @files) {
+        die "GFF2 file '$fglob' could not be resolved to a real file name\n";
+      }
+      push @gff2_files, @files;
     }
   } elsif ($config->{gff3}) {
     @path_globs = split(/,/, $config->{gff3});
     foreach my $fglob (@path_globs) {
-      push @gff3_files, glob($fglob);
+      my @files = glob($fglob);
+      if (grep { not -e $_ }  @files) {
+        die "GFF3 file '$fglob' could not be resolved to a real file name\n";
+      }
+      push @gff3_files, @files;
     }
   } else {
     die "No gff or gff3 stanza in config - death\n";
