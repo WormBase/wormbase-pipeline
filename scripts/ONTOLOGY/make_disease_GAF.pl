@@ -53,6 +53,8 @@ $log->write_to( "Got name information for " . scalar(keys %$gene_info) . " genes
 
 open(my $out, ">$outfile") or $log->log_and_die("cannot open $outfile : $!\n");
 
+&print_wormbase_GAF_header($out);
+
 $it = $db->fetch_many(-query=>'find Gene Disease_info');
 
 while (my $obj=$it->next) {
@@ -69,16 +71,16 @@ while (my $obj=$it->next) {
       my $text = $meth->right->name;
       my ($with_from_list) = $text =~ /\((\S+)\)/;
       
-      my $with_from = join("|", split(/,/, $with_from_list));
+      my (@ens)  = grep { $_ =~ /ENSEMBL:/ } split(/,/, $with_from_list);
 
       &print_wormbase_GAF_line($out,  
                                $g, 
                                $gene_info->{$g}->{public_name}, 
                                "",  
                                $doterm,
-                               "",
+                               "PMID:19029536",  # this is the reference for Ensembl Compara
                                "IEA", 
-                               $with_from, 
+                               join("|", @ens),
                                "D",
                                $gene_info->{$g}->{sequence_name},
                                $taxid, 
@@ -95,19 +97,20 @@ while (my $obj=$it->next) {
         }
       }
     }
-    &print_wormbase_GAF_line($out,  
-                             $g, 
-                             $gene_info->{$g}->{public_name}, 
-                             "",  
-                             $doterm,
-                             join("|", map { "WB_REF:$_" } @papers), 
-                             "IMP", 
-                             "",
-                             "D",
-                             $gene_info->{$g}->{sequence_name},
-                             $taxid, 
-                             $date);
-
+    foreach my $paper (@papers) {
+      &print_wormbase_GAF_line($out,  
+                               $g, 
+                               $gene_info->{$g}->{public_name}, 
+                               "",  
+                               $doterm,
+                               "WB_REF:$paper",
+                               "IMP", 
+                               "",
+                               "D",
+                               $gene_info->{$g}->{sequence_name},
+                               $taxid, 
+                               $date);
+    }
   }
 }
 

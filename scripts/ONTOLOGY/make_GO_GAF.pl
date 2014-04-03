@@ -90,6 +90,8 @@ if ($skiplist) {
 $output = $wormbase->ontology."/gene_association.".$wormbase->get_wormbase_version_name.".wb" unless $output;
 open(my $out, ">$output") or $log->log_and_die("cannot open $output : $!\n");
 
+&print_wormbase_GAF_header($out);
+
 if ($gene) {   
   my $it=$db->fetch_many(-query=>'FIND Gene GO_term AND NOT Dead');
   
@@ -327,11 +329,19 @@ $db->close;
 my %coreSpecies = $wormbase->species_accessors;
 foreach my $species ($wormbase, values %coreSpecies){
   my $out_file = $output.".".$species->full_name(-g_species => 1);  
+  my $taxid = $species->ncbi_tax_id;
 
-  my $grep = "'taxon:${\$species->ncbi_tax_id}'";
+  open(my $full_out, $output) or $log->log_and_die("Could not open $output when trying to make per-species files\n");
+  open(my $spec_out, ">$out_file") or $log->log_and_die("Could not open $out_file for writing\n");
 
-  $wormbase->run_command("grep $grep $output > $out_file", $log);
-  #$wormbase->check_file($out_file,$log,minsize => 1500000,maxsize => 16000000,lines =>  ['^WB\tWBGene\d+\t\S+\t\tGO\:\d+']);
+  &print_wormbase_GAF_header($spec_out);
+  while(<$full_out>) {
+    next if /^\!/;
+
+    print $spec_out $_ if /\s+taxon:$taxid\s+/;
+  }
+
+  close($spec_out) or $log->log_and_die("Could not close $out_file after writing\n");
 }
 
 
