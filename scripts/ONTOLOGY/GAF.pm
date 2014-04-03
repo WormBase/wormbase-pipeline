@@ -5,7 +5,7 @@ use strict;
 use Exporter;
 
 our @ISA = qw(Exporter);
-our @EXPORT = qw(print_wormbase_GAF_line get_GAF_date get_gene_info);
+our @EXPORT = qw(print_wormbase_GAF_line print_wormbase_GAF_header get_GAF_date get_gene_info);
 
 ###################################
 sub print_wormbase_GAF_line {
@@ -29,6 +29,15 @@ sub print_wormbase_GAF_line {
          "WB",
          "",
          "");
+}
+
+####################################
+sub print_wormbase_GAF_header {
+  my ($fh) = @_;
+
+  print $fh '!gaf-version 2.0\n';
+  print $fh '!Project_name: WormBase\n';
+  print $fh '!Contact Email: help@wormbase.org\n';
 }
 
 ####################################
