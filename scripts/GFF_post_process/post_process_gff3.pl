@@ -7,8 +7,8 @@
 # - Correcting coordinates of between-base features for GFF3 conventions
 # - Strip the class name prefix from all of the Name attrbutes 
 #
-# Last updated by: $Author: pad $
-# Last updated on: $Date: 2014-01-23 15:45:59 $
+# Last updated by: $Author: klh $
+# Last updated on: $Date: 2014-04-04 14:58:59 $
 
 use strict;
 use lib $ENV{CVS_DIR};
@@ -124,11 +124,8 @@ while(<$gff_in_fh>) {
   # Correct location of between-base features
   #
   if (exists $between_base_feature_types{$l[2]}) {
-    if ($l[7] eq '+') {
-      $l[4]--;
-    } else {
-      $l[3]++;
-    }
+    # zero-length features are immediately to the right of start (=end), regardless of strand
+    $l[4] = $l[3];
   }
 
   #
