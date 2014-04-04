@@ -71,7 +71,8 @@ while (my $obj=$it->next) {
       my $text = $meth->right->name;
       my ($with_from_list) = $text =~ /\((\S+)\)/;
       
-      my (@ens)  = grep { $_ =~ /ENSEMBL:/ } split(/,/, $with_from_list);
+      my @ens  = grep { $_ =~ /ENSEMBL:/ } split(/,/, $with_from_list);
+      my @omim = grep { $_ =~ /OMIM:/ } split(/,/, $with_from_list);
 
       &print_wormbase_GAF_line($out,  
                                $g, 
@@ -80,7 +81,7 @@ while (my $obj=$it->next) {
                                $doterm,
                                "PMID:19029536",  # this is the reference for Ensembl Compara
                                "IEA", 
-                               join("|", @ens),
+                               join("|", @ens,@omim),
                                "D",
                                $gene_info->{$g}->{sequence_name},
                                $taxid, 

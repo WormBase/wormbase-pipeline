@@ -53,18 +53,17 @@ $log->write_to( "Got name information for " . scalar(keys %$gene_info) . " genes
 
 open(my $out, ">$outfile") or $log->log_and_die("cannot open $outfile : $!\n");
 
+&print_wormbase_GAF_header($out);
+
 $it = $db->fetch_many(-query=>'find Variation (Phenotype OR Phenotype_not_observed)');
+
+my %g2v_via_var;
 
 while (my $obj=$it->next) {
   next unless $obj->isObject();
   next unless $obj->Species;
   next unless $obj->Species->name eq $full_name;
 
-  $count++;
-  if ($count % 1000 == 0) {
-    warn "$count Variation objects processed\n";
-  }
-  
   my (@affected_genes, %pheno);
   
   my $var = $obj->name;
@@ -77,61 +76,78 @@ while (my $obj=$it->next) {
       my ($pheno) = $pobj->name =~ /(WBPhenotype:\d+)/;
       next unless $pheno;
 
-      $pheno{$pheno}->{$key} = {};
-
-      foreach my $thing ($pobj->right) {
+      foreach my $thing ($pobj->col) {
         if ($thing->name eq 'Paper_evidence') {
           my $paper = $thing->right->name;
-          
-          $pheno{$pheno}->{$key}->{$paper} = 1;
+          foreach my $g (@affected_genes) {
+            $g2v_via_var{$g}->{$key}->{$pheno}->{papers}->{$paper}->{$var} = 1;
+          }
+        } elsif ($thing->name eq 'Person_evidence') {
+          my $person = $thing->right->name;
+          foreach my $g (@affected_genes) {
+            $g2v_via_var{$g}->{$key}->{$pheno}->{persons}->{$var}->{$person} = 1;
+          }
         }
       }
     }
   }
-  
-  foreach my $g (@affected_genes) {
-    next if not exists $gene_info->{$g};
-    next if $gene_info->{$g}->{status} eq 'Dead';
+}
 
-    foreach my $pheno (keys %pheno) {
-      if (exists $pheno{$pheno}->{Phenotype}) {
-        my @papers = keys %{$pheno{$pheno}->{Phenotype}};
-        
-        &print_wormbase_GAF_line($out,  
-                                 $g, 
-                                 $gene_info->{$g}->{public_name}, 
-                                 "",  
-                                 $pheno, 
-                                 join("|", map { "WB_REF:$_" } @papers), 
-                                 "Variation", 
-                                 $var, 
-                                 "P",
-                                 $gene_info->{$g}->{sequence_name},
-                                 $taxid, 
-                                 $date);
-      }
-      
-      if (exists $pheno{$pheno}->{Phenotype_not_observed}) {
-        my @papers = keys %{$pheno{$pheno}->{Phenotype_not_observed}};
-        
-        &print_wormbase_GAF_line($out, 
-                                 $g, 
-                                 $gene_info->{$g}->{public_name}, 
-                                 "NOT", 
-                                 $pheno, 
-                                 join("|", map { "WB_REF:$_" } @papers), 
-                                 "Variation", 
-                                 $var, 
-                                 "P",
-                                 $gene_info->{$g}->{sequence_name},
-                                 $taxid, 
-                                 $date);
+foreach my $g (sort keys %g2v_via_var) {
+  next if not exists $gene_info->{$g};
+  next if $gene_info->{$g}->{status} eq 'Dead';
+  
+  foreach my $key (keys %{$g2v_via_var{$g}}) {
+    my $qual = ($key eq 'Phenotype_not_observed') ? "NOT" : "";
+
+    foreach my $phen (sort keys %{$g2v_via_var{$g}->{$key}}) {
+      my $href = $g2v_via_var{$g}->{$key}->{$phen};
+
+      if (exists $href->{papers}) {
+        foreach my $paper (sort keys %{$href->{papers}}) {
+          my @vars = sort keys %{$href->{papers}->{$paper}};
+          my $with_from = join("|", map { "WB:$_" } @vars);
+
+          &print_wormbase_GAF_line($out,  
+                                   $g, 
+                                   $gene_info->{$g}->{public_name}, 
+                                   $qual,  
+                                   $phen, 
+                                   "WB_REF:" . $paper,
+                                   "IMP", 
+                                   $with_from, 
+                                   "P",
+                                   $gene_info->{$g}->{sequence_name},
+                                   $taxid, 
+                                   $date);
+          $count++;
+        }
+      } elsif (exists $href->{persons}) {
+        # only person evidence for this association; we therefore create a line for each variation and link to that 
+        foreach my $var (sort keys %{$href->{persons}}) {
+          my @persons = sort keys %{$href->{persons}->{$var}};
+          my $with_from = join("|", map { "WB:$_" } @persons);
+                               
+          &print_wormbase_GAF_line($out, 
+                                   $g, 
+                                   $gene_info->{$g}->{public_name}, 
+                                   $qual, 
+                                   $phen, 
+                                   "WB:" . $var,
+                                   "IMP", 
+                                   $with_from, 
+                                   "P",
+                                   $gene_info->{$g}->{sequence_name},
+                                   $taxid, 
+                                   $date);
+          $count++;
+        }  
       }
     }      
   }
 }
 
-$log->write_to("Printed phenotype lines for $count Variation objects\n");
+$log->write_to("Printed $count phenotype lines for Variation objects\n");
 
 $it = $db->fetch_many(-query=>'find RNAi (Phenotype OR Phenotype_not_observed)');
 $count = 0;
@@ -139,11 +155,6 @@ while (my $obj = $it->next) {
   next unless $obj->isObject();
   next unless $obj->Species;
   next unless $obj->Species->name eq $full_name;
-
-  $count++;
-  if ($count % 10000 == 0) {
-    warn "$count RNAi objects processed\n";
-  }
   
   my (@affected_genes, %pheno);
 
@@ -156,8 +167,28 @@ while (my $obj = $it->next) {
     }
   }
 
-  my @ref = $obj->Reference;
-  
+  #
+  # For RNAi, there should always be at most one paper as the source.
+  # If more than one paper is attached, use the first one.
+  # If no papers are attached, use the WB RNAi id as the primary source,
+  # with the WBPerson id as the WITH/FROM
+  # 
+  my ($ref, $with_from);
+
+  my (@ref) = $obj->Reference;
+  if (@ref) {
+    $ref = "WB_REF:$ref[0]";
+    $with_from = "WB:" . $obj->name;
+  } else {
+    my $evi = $obj->Evidence->right;
+    if ($evi->name eq 'Person_evidence') {
+      $ref = "WB:" . $obj->name;
+      $with_from = "WB:" . $evi->right->name;
+    }
+  }
+
+  next if not defined $ref;
+
   foreach my $p ($obj->Phenotype) {
     foreach my $g (@affected_genes) {
       &print_wormbase_GAF_line($out, 
@@ -165,13 +196,14 @@ while (my $obj = $it->next) {
                                $gene_info->{$g}->{public_name}, 
                                "", 
                                $p, 
-                               join("|", map { "WB_REF:$_" } @ref),
-                               "RNAi", 
-                               $obj->name, 
+                               $ref,
+                               "IMP", 
+                               $with_from,
                                "P",  
                                $gene_info->{$g}->{sequence_name},
                                $taxid, 
                                $date );
+      $count++;
     }
   }
   foreach my $p ($obj->Phenotype_not_observed) {
@@ -181,18 +213,19 @@ while (my $obj = $it->next) {
                                $gene_info->{$g}->{public_name}, 
                                "NOT", 
                                $p, 
-                               join("|", map { "WB_REF:$_" } @ref), 
-                               "RNAi", 
-                               $obj->name, 
+                               $ref,
+                               "IMP", 
+                               $with_from,
                                "P",  
                                $gene_info->{$g}->{sequence_name},
                                $taxid, 
                                $date );
+      $count++;
     }
   }
 }
 
-$log->write_to("Printed phenotype line sfor $count RNAi objects\n");
+$log->write_to("Printed $count phenotype lines RNAi objects\n");
 
 $db->close;
 $log->mail;

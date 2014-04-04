@@ -58,8 +58,6 @@ $log->write_to( scalar(keys %$gene_info) . " genes read\n" ) if $verbose;
 $outfile ||= $wormbase->ontology . "/anatomy_association." . $wormbase->get_wormbase_version_name . ".wb";
 open(my $outfh, ">$outfile" ) or $log->log_and_die("cannot open $outfile : $!\n");
 
-&print_wormbase_GAF_header($outfh);
-
 $it = $db->fetch_many( -query => 'find Expr_pattern Anatomy_term' );
 while ( my $obj = $it->next ) {
   $count++;
@@ -76,6 +74,9 @@ while ( my $obj = $it->next ) {
     $at{$at->name} = ($qual) ? $qual : "";
   }
 
+  # take first reference only
+  my ($ref) = $obj->Reference;
+  
   foreach my $g ( keys %genes ) {
     foreach my $a ( keys %at ) {
       my $qual = $at{$a};
@@ -84,9 +85,9 @@ while ( my $obj = $it->next ) {
                                $gene_info->{$g}->{public_name}, 
                                $qual, 
                                $a, 
-                               "WB_EP:" . $obj->name,
-                               "IDA", 
-                               "",
+                               "WB_REF:$ref",
+                               "IEP", 
+                               "WB:" . $obj->name, 
                                "A",  
                                $gene_info->{$g}->{sequence_name},
                                $taxid, 
