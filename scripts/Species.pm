@@ -1091,7 +1091,7 @@ sub bioproject_description { 'Cornell University, Genome and transcriptome of th
 sub assembly_type {'contig'};
 
 ######################################################
-package Exspectatus;
+package Pexspectatus;
 use Carp;
 our @ISA = qw(Wormbase Species);
 
