@@ -4,8 +4,8 @@
 #
 # Overloads Variation lines with extra info (consequence etc)
 #
-# Last updated by: $Author: mh6 $     
-# Last updated on: $Date: 2014-02-28 13:40:39 $      
+# Last updated by: $Author: klh $     
+# Last updated on: $Date: 2014-04-08 16:22:34 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -98,7 +98,8 @@ while (<$gff_in_fh>) {
       push @new_els, ['RFLP'] if $tp =~ /RFLP/;
       if ($tp eq 'Natural_variant') {
         $natural_variant = 1;
-        if ($current_els[2] ne 'transposable_element_insertion_site') {
+        if ($current_els[2] ne 'transposable_element_insertion_site' and 
+            $current_els[1] ne 'Polymorphism') {
           $current_els[1] .= "_Polymorphism";
         }
         push @new_els, ['Polymorphism'];
