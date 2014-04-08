@@ -7,7 +7,7 @@
 # This does stuff with what is in the active zone
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2014-03-28 11:41:54 $      
+# Last updated on: $Date: 2014-04-08 09:44:39 $      
 
 
 
@@ -154,6 +154,7 @@ while (1) {
       print "clear 8 9 10           : clear object isoformer_8, isoformer_9 and isoformer_10\n";
       print "what                   : reports the isoformer object that are saved in the database\n";
       print "fix isoformer_1 AC3.3c : fix isoformer_1 to CDS/Transcript, creating it if necessary\n";
+      print "check AC3.3c           : check if the specified object's structure looks OK\n";
       print "\n";
       next
     }
@@ -169,6 +170,10 @@ while (1) {
     }
     if ($userinput =~ /^fix\b/) {
       &fix($userinput);
+      next;
+    }
+    if ($userinput =~ /^check\b/) {
+      &check($userinput);
       next;
     }
     # get the region of interest from the CDS name or clone positions
@@ -1524,4 +1529,104 @@ sub fix {
   if ($target_exists) {
     print "\n*** Now make History for $biotype $target.\n";
   }
+
 }
+
+###############################################################################
+# this checks a few basic things about the structure of the given sequence
+
+sub check {
+  my ($userinput) = @_;
+
+  my $status = 0;
+  my $message = '';
+
+  my @f = split /\s+/, $userinput;
+
+  my $target = $f[1];
+  if (! defined $target) {
+    print "check what?\n";
+    return $status;
+  }
+
+  # get the object
+  my $target_obj = $db->fetch(CDS => "$target");
+  if (! defined $target_obj) {
+    $target_obj = $db->fetch(Transcript => "$target");
+  }
+  if (! defined $target_obj) {
+    $message = "Can't find '$target' - did you save it?\n";
+    $status = 1;
+  } else {
+
+    # get the Method
+    my $method = $target_obj->Method;
+    if (!defined  $method) {
+      $message = "No Method found\n";
+      $status = 1;
+    } else {
+      $method = $method->name;
+      if ($method ne "curated" && $method ne "Pseudogene") {
+	$message = "Invalid Method: '$method'\n";
+	$status = 1;
+      } else {
+	# get the sorted exons
+	my @exon_coord1 = sort by_number ($target_obj->get('Source_exons',1));
+	my @exon_coord2 = sort by_number ($target_obj->get('Source_exons',2));
+	my $target_hash_key = join(':', @exon_coord1) . ',' . join(':', @exon_coord2);
+
+	# get the Sequence start-end span 
+	my $sequence_obj = $target_obj->Sequence;
+
+	my @clone_locations;
+	if ($method eq 'curated') {
+	  @clone_locations = $sequence_obj->CDS_child;
+	} else {
+	  @clone_locations = $sequence_obj->Transcript;
+	}    
+	my ($target_start, $target_end);
+	foreach my $target_location ( @clone_locations ) {
+	  next unless ($target_location->name eq $target);
+	  $target_start = $target_location->right->name;
+	  $target_end = $target_location->right->right->name;
+	  last;
+	}
+
+	# the exons should fit the Sequence span exactly
+	if ($exon_coord2[$#exon_coord2] - $exon_coord1[0] != abs($target_start - $target_end)) {
+	  $message = "The Source_exons do not fit in the span of this object on the Sequence (bogus extra exons?)\n";
+	  $status = 1;
+	} else {
+
+	  # get any other objects with the same start-end
+	  my ($test_start, $test_end);
+	  foreach my $test_location ( @clone_locations ) {
+	    $test_start = $test_location->right->name;
+	    $test_end = $test_location->right->right->name;
+	    if ($test_start == $target_start && $test_end == $target_end) {
+	      # there should not be any other objects with the same start-end and exon lengths
+	      my @test_exon_coord1 = sort by_number ($test_location->get('Source_exons',1));
+	      my @test_exon_coord2 = sort by_number ($test_location->get('Source_exons',2));
+	      my $test_hash_key = join(':', @test_exon_coord1) . ',' . join(':', @test_exon_coord2);
+	      if ($test_hash_key eq  $target_hash_key) {
+		my $test_name = $test_location->name;
+		$message = "\n*** WARNING: '$target' is the same as '$test_name'\n";
+		$status = 1;
+	      }
+	    }
+	  }	
+	}
+      }
+    }
+  }
+
+  if ($status == 0) {
+    $message = "'$target' looks OK\n";
+  }
+
+  print $message;
+  return $status;
+}
+###############################################################################
+sub by_number{ $a <=> $b;}
+###############################################################################
