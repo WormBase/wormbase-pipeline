@@ -7,7 +7,7 @@
 # This does stuff with what is in the active zone
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2014-04-08 09:44:39 $      
+# Last updated on: $Date: 2014-04-08 13:15:09 $      
 
 
 
@@ -1562,18 +1562,19 @@ sub check {
     # get the Method
     my $method = $target_obj->Method;
     if (!defined  $method) {
-      $message = "No Method found\n";
+      $message = "\n*** WARNING: No Method found\n";
       $status = 1;
     } else {
       $method = $method->name;
       if ($method ne "curated" && $method ne "Pseudogene") {
-	$message = "Invalid Method: '$method'\n";
+	$message = "\n*** WARNING: Invalid Method: '$method'\n";
 	$status = 1;
       } else {
 	# get the sorted exons
 	my @exon_coord1 = sort by_number ($target_obj->get('Source_exons',1));
 	my @exon_coord2 = sort by_number ($target_obj->get('Source_exons',2));
 	my $target_hash_key = join(':', @exon_coord1) . ',' . join(':', @exon_coord2);
+	print "$target exons: $target_hash_key\n";
 
 	# get the Sequence start-end span 
 	my $sequence_obj = $target_obj->Sequence;
@@ -1594,23 +1595,25 @@ sub check {
 
 	# the exons should fit the Sequence span exactly
 	if ($exon_coord2[$#exon_coord2] - $exon_coord1[0] != abs($target_start - $target_end)) {
-	  $message = "The Source_exons do not fit in the span of this object on the Sequence (bogus extra exons?)\n";
+	  $message = "\n*** WARNING: The Source_exons do not fit in the span of this object on the Sequence (bogus extra exons?)\n";
 	  $status = 1;
 	} else {
 
 	  # get any other objects with the same start-end
-	  my ($test_start, $test_end);
+	  my ($test_name, $test_start, $test_end);
 	  foreach my $test_location ( @clone_locations ) {
+	    $test_name = $test_location->name;
 	    $test_start = $test_location->right->name;
 	    $test_end = $test_location->right->right->name;
-	    if ($test_start == $target_start && $test_end == $target_end) {
+	    if ($test_start == $target_start && $test_end == $target_end && $test_name ne $target) {
 	      # there should not be any other objects with the same start-end and exon lengths
-	      my @test_exon_coord1 = sort by_number ($test_location->get('Source_exons',1));
-	      my @test_exon_coord2 = sort by_number ($test_location->get('Source_exons',2));
+	      my @test_exon_coord1 = sort by_number ($test_location->follow->get('Source_exons',1));
+	      my @test_exon_coord2 = sort by_number ($test_location->follow->get('Source_exons',2));
 	      my $test_hash_key = join(':', @test_exon_coord1) . ',' . join(':', @test_exon_coord2);
+	      my $test_name = $test_location->name;
+	      print "$test_name exons: $test_hash_key\n";
 	      if ($test_hash_key eq  $target_hash_key) {
-		my $test_name = $test_location->name;
-		$message = "\n*** WARNING: '$target' is the same as '$test_name'\n";
+		$message .= "\n*** WARNING: '$target' is the same structure as '$test_name'\n";
 		$status = 1;
 	      }
 	    }
