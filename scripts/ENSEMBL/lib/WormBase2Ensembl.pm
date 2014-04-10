@@ -62,7 +62,6 @@ sub new {
 }
 
 
-
 sub parse_protein_coding_gff2 {
   my ( $self, $file, $analysis ) = @_;
   
@@ -283,7 +282,7 @@ sub parse_genes_gff3_fh {
           }
           if (defined $matching_cds) {
             $exon->{cds_seg} = $matching_cds;
-          }
+          } 
         }
       }
 
@@ -649,13 +648,12 @@ sub parse_dna_align_features_gff_fh {
       # fake it; unimportant
       $hiten = $hitst + $length;
     }
-    
+
     if (defined $orimap and 
         exists $orimap->{$hitid} and
-        $self->{orimap}->{$hitid} eq '3') {
+        $orimap->{$hitid} eq '3') {
       $strand *= -1;
     }
-    
     my $fp = new Bio::EnsEMBL::FeaturePair;
     $fp->score($col[5]);
     $fp->percent_id(100);
