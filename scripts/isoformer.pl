@@ -7,7 +7,7 @@
 # This does stuff with what is in the active zone
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2014-04-08 13:15:09 $      
+# Last updated on: $Date: 2014-04-10 13:52:39 $      
 
 
 
@@ -1056,8 +1056,10 @@ sub check_not_already_curated {
 	$CDS->Method->name ne $ncRNA_name
        ) {next} # don't want to report a match to a history object or an ab-initio prediction etc.
     $name = $CDS->name;
+    print "checking exons against $name\n";
     if (&check_exons_match($CDS, $exons)) {
       $confirmed->{$name} = 1;
+      #print "Found all exons match\n";
       return $name;
     }
   }
@@ -1072,20 +1074,17 @@ sub check_exons_match {
   my ($obj, $exons) = @_;
 
   my $count = 0;
-  foreach ($obj->Source_exons) {
-    if ($#{$exons} < $count) {
-      return 0;
-    }
-    my ($start, $end) = $_->row(0);
-    if ($start != $exons->[$count]{start} || $end != $exons->[$count]{end}) {
+  my @exon_coord1 = sort by_number ($obj->follow->get('Source_exons',1));
+  my @exon_coord2 = sort by_number ($obj->follow->get('Source_exons',2));
+  if ($#{$exons} != $#exon_coord1) {return 0;}
+  foreach my $exon (@{$exons}) {
+    #print "$exon_coord1[$count] $exon_coord2[$count] ", $exon->{start}," ",$exon->{end},"\n";
+    if ($exon_coord1[$count] != $exon->{start} || $exon_coord2[$count] != $exon->{end}) {
       return 0;
     }
     $count++;
   }
-  if ($#{$exons} > $count-1) {
-    return 0;
-  }
-  
+
   return 1;
 }
 ###############################################################################
@@ -1210,8 +1209,8 @@ sub make_isoform {
   if ($TSL_type) {
     my @ids = split ' ', $feature_id;
     foreach my $id (@ids) {
-      print ISOFORM "$remark Feature_evidence $feature_id\n";
-      print ISOFORM "Isoform Feature_evidence $feature_id\n";
+      print ISOFORM "$remark Feature_evidence $id\n";
+      print ISOFORM "Isoform Feature_evidence $id\n";
     }
   }
   print ISOFORM "Isoform Curator_confirmed $personid\n";
