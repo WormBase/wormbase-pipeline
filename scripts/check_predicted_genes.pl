@@ -4,7 +4,7 @@
 #
 # by Keith Bradnam
 #
-# Last updated on: $Date: 2014-03-27 16:17:08 $
+# Last updated on: $Date: 2014-04-11 15:26:45 $
 # Last updated by: $Author: pad $
 #
 # see pod documentation at end of file for more information about this script
@@ -128,19 +128,22 @@ else {
 
     $Bcount = @bad_genesuniq;
     if ($Bcount ne '0') {
-      $log->write_to("Error: $Bcount models have a quicktest issue, please check\n");
-      foreach $bad_genes(@bad_genes) {
-	$log->write_to("\nError: $bad_genes have a have a quicktest issue\n"); # if ($verbose);
+      $log->write_to("Error: $Bcount models have a quicktest issue (No method/Source_exons/S_parent/Species), please check\n");
+      print "Error: $Bcount models have a quicktest issue (No method/Source_exons/S_parent/Species), please check\n" if ($debug);
+      foreach $bad_genes(@bad_genesuniq) {
+	$log->write_to("Error: $bad_genes has one of the above issues\n"); #if ($verbose);
+	print "Error: $bad_genes has one of the above issues\n" if ($debug);
       }
     }
     else {
-      $log->write_to("\nThat's ok, $Bcount models have quicktest issues :)\n\n");
+      $log->write_to("\nGreat $Bcount models have basic issues :)\n\n");
+      print "Great $Bcount models have basic issues :)\n" if ($debug);
     }
     print STDERR "Fetching all genes...\n" if $verbose;
     #@Predictions = $db->fetch (-query => 'FIND All_genes where method AND Species = "$speciesfn"');
     @Predictions = $db->fetch (-query => 'Find All_genes where (Species = "'.$wormbase->full_name.'")');
   }
-
+  
   my $gene_model_count=@Predictions;
   $log->write_to("Checking $gene_model_count Predictions in $db_path\n\n");
   print "\nChecking $gene_model_count Predictions...\n\n";
@@ -203,7 +206,6 @@ sub main_gene_checks {
     my $i;
     my $j;
 
-    if (!defined($method_test)) {next;} # ignore the xref objects from WASHU's side of the genome;
   
     # check for duplicated sequence names
     if (exists $sequence_names{$gene_model_name}) {
@@ -216,7 +218,7 @@ sub main_gene_checks {
 
     # check for duplicated sequence structures
     if ($method_test eq 'curated') {
-      my ($gene_name) = ($gene_model_name =~ /($cds_regex)/);
+      my ($gene_name) = ($gene_model_name =~ /($cds_regex_noend)/);
       # make a hash key out of the exon starts and ends
       my $hash_key = join(':', @exon_coord1) . ',' . join(':', @exon_coord2);
       if (exists $sequence_structures{$gene_name}{$hash_key}) {
@@ -227,6 +229,10 @@ sub main_gene_checks {
       }
       $sequence_structures{$gene_name}{$hash_key} = $gene_model->name;
     }
+
+    #Check that the source_exons and the the span and the same size.
+
+    
 
     unless (($method_test eq 'Transposon') || ($method_test eq 'history_transposon')) {
       if (!defined($exon_coord2[0])) {
