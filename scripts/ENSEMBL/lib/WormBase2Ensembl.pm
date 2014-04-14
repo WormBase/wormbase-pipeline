@@ -57,6 +57,9 @@ sub new {
   if (exists $args{"-slices"}) {
     $self->slices($args{"-slices"});
   }
+  if (exists $args{"-ignoregffphases"}) {
+    $self->ignore_gff_phases($args{"-ignoregffphases"});
+  }
 
   return $self;
 }
@@ -298,7 +301,12 @@ sub parse_genes_gff3_fh {
           if (($strand eq '+' and $exon->{start} == $exon->{cds_seg}->{start}) or
               ($strand eq '-' and $exon->{end} == $exon->{cds_seg}->{end})) {
             # convert the GFF phase to Ensembl phase
-            $exon->{phase} = (3 - $exon->{cds_seg}->{gff_phase}) % 3;
+            if ($self->ignore_gff_phases) {
+              # we have been told that the GFF phases are unreliable; therefore assume a start phase of 0
+              $exon->{phase} = 0;
+            } else {
+              $exon->{phase} = (3 - $exon->{cds_seg}->{gff_phase}) % 3;
+            }
           }
           
           if (($strand eq '+' and $exon->{end} == $exon->{cds_seg}->{end}) or
@@ -415,14 +423,15 @@ sub translation_check {
   my $pep = $t->translate->seq;
   if ( $pep =~ /\*/g ) {
     print STDERR "transcript " . $t->stable_id . " doesn't translate\n";
-    print STDERR "translation start " . $t->translation->start . " end " . $t->translation->end . "\n";
-    print STDERR "start exon coords " . $t->translation->start_Exon->start . " " . $t->translation->start_Exon->end . "\n";
-    print STDERR "end exon coords " . $t->translation->end_Exon->start . " " . $t->translation->end_Exon->end . "\n";
-    print STDERR "peptide " . $pep . "\n";
-    
-    $self->_display_exons( @{ $t->get_all_Exons } );
-    $self->_display_non_translate($t);
-
+    if ($self->verbose) {
+      print STDERR "translation start " . $t->translation->start . " end " . $t->translation->end . "\n";
+      print STDERR "start exon coords " . $t->translation->start_Exon->start . " " . $t->translation->start_Exon->end . "\n";
+      print STDERR "end exon coords " . $t->translation->end_Exon->start . " " . $t->translation->end_Exon->end . "\n";
+      print STDERR "peptide " . $pep . "\n";
+      
+      $self->_display_exons( @{ $t->get_all_Exons } );
+      $self->_display_non_translate($t);
+    }
     return 0;
   } else {
     return 1;
@@ -927,6 +936,21 @@ sub database_handle {
     return $self->{_dbh};
   }
 }
+
+#####################################
+sub ignore_gff_phases {
+  my ($self, $val) = @_;
+
+  if (defined $val) {
+    $self->{_ignore_gff_phases} = $val;
+  }
+  if (not exists $self->{_ignore_gff_phases}) {
+    return 0;
+  } else {
+    return $self->{_ignore_gff_phases};
+  }
+}
+
 
 #####################################
 sub slices {
