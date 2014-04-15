@@ -7,7 +7,7 @@
 # This does stuff with what is in the active zone
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2014-04-10 13:52:39 $      
+# Last updated on: $Date: 2014-04-15 10:12:19 $      
 
 
 
@@ -31,7 +31,7 @@ use Tk::FileDialog;
 ######################################
 
 my ($help, $debug, $test, $verbose, $store, $wormbase);
-my ($species, $database, $notsl);
+my ($species, $database, $gff, $notsl);
 
 GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
@@ -40,6 +40,7 @@ GetOptions ("help"       => \$help,
 	    "store:s"    => \$store,
 	    "species:s"  => \$species,
 	    "database:s" => \$database, # database being curated
+	    "gff:s"      => \$gff, # optional location of the GFF file if it is not in the normal place
 	    "notsl"      => \$notsl, # don't try to make TSL isoforms - for debugging purposes
 	    );
 
@@ -119,7 +120,7 @@ print "Reading splice data\n";
 foreach my $chromosome ($wormbase->get_chromosome_names(-mito => 1, -prefix => 1)) {
 #foreach my $chromosome ('CHROMOSOME_IV') {
   if (!exists $all_splices{$chromosome}) {
-    my ($splice_data, $TSL_data) = read_splice_and_TSL_data($chromosome, $log);
+    my ($splice_data, $TSL_data) = read_splice_and_TSL_data($gff, $chromosome, $log);
     $all_splices{$chromosome} = $splice_data;
     $all_TSL{$chromosome} = $TSL_data;
   }
@@ -451,14 +452,14 @@ sub get_active_region {
 # read the RNASeq intron data and TSL site data from the GFF file
 
 sub read_splice_and_TSL_data {
-  my ($chromosome, $log) = @_;
+  my ($gff, $chromosome, $log) = @_;
   my @splice_data;
   my @TSL_data;
   my %splice;
   my $splice_method = 'RNASeq_splice';
   my $SL1_method = 'SL1';
   my $SL2_method = 'SL2';
-  my $file = open_GFF_file($chromosome, $log);
+  my $file = open_GFF_file($gff, $chromosome, $log);
 
   while (<$file>) {
     my @line = split /\t/, $_;
@@ -503,21 +504,25 @@ sub read_splice_and_TSL_data {
 # get the GFF file handle
 
 sub open_GFF_file {
-  my ($chromosome, $log) = @_;
+  my ($gff, $chromosome, $log) = @_;
   my $file;
   my $fh;
 
-  if ($species eq 'elegans') {
-    $file = "/nfs/wormpub/DATABASES/current_DB/CHROMOSOMES/$chromosome.gff";
+  if (defined $gff) {
+    $file = $gff;
   } else {
-    if ($wormbase->assembly_type eq 'contig') {      
-      $file = $wormbase->sequences . "/" . $wormbase->species.".gff";
 
+    if ($species eq 'elegans') {
+      $file = "/nfs/wormpub/DATABASES/current_DB/CHROMOSOMES/$chromosome.gff";
     } else {
-      $file =  "/nfs/wormpub/BUILD/briggsae/CHROMOSOMES/$chromosome.gff";
+      if ($wormbase->assembly_type eq 'contig') {      
+	$file = $wormbase->sequences . "/" . $wormbase->species.".gff";
+	
+      } else {
+	$file =  "/nfs/wormpub/BUILD/briggsae/CHROMOSOMES/$chromosome.gff";
+      }
     }
   }
-
   open($fh, "cat $file | grep \"^$chromosome\\W\" |") or $log->log_and_die("Could not open seq-restricted stream to $file\n");
   return $fh;
 
@@ -1565,10 +1570,13 @@ sub check {
       $status = 1;
     } else {
       $method = $method->name;
-      if ($method ne "curated" && $method ne "Pseudogene") {
+      if ($method ne "curated" && $method ne "Pseudogene" && $method ne "isoformer") {
 	$message = "\n*** WARNING: Invalid Method: '$method'\n";
 	$status = 1;
       } else {
+	if ($method ne "isoformer") { # warn about a Method="isoformer", but carry on checking
+	  $message = "\n*** WARNING: Invalid Method: '$method'\n"
+	}
 	# get the sorted exons
 	my @exon_coord1 = sort by_number ($target_obj->get('Source_exons',1));
 	my @exon_coord2 = sort by_number ($target_obj->get('Source_exons',2));
@@ -1579,7 +1587,7 @@ sub check {
 	my $sequence_obj = $target_obj->Sequence;
 
 	my @clone_locations;
-	if ($method eq 'curated') {
+	if ($method eq 'curated' || $method eq 'isoformer') {
 	  @clone_locations = $sequence_obj->CDS_child;
 	} else {
 	  @clone_locations = $sequence_obj->Transcript;
