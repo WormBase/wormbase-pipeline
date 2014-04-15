@@ -4,8 +4,8 @@
 #
 # by Keith Bradnam
 #
-# Last updated on: $Date: 2014-04-11 15:26:45 $
-# Last updated by: $Author: pad $
+# Last updated on: $Date: 2014-04-15 12:04:44 $
+# Last updated by: $Author: gw3 $
 #
 # see pod documentation at end of file for more information about this script
 
@@ -268,6 +268,11 @@ sub main_gene_checks {
 	  push(@error1,"ERROR: $gene_model exon inconsistency, exons overlap\n") if ($method_test !~ /history/);
 	}
       }
+    }
+
+    if ($method_test eq 'curated' && check_sequence_span(\@exon_coord1, \@exon_coord2, $gene_model)) {
+      print "ERROR: $gene_model exon inconsistency, not the same span as the Sequence span\n" if $verbose;
+      push(@error1,"ERROR: $gene_model exon inconsistency, not the same span as the Sequence span\n");      
     }
 
     # check that 'Start_not_found' and 'End_not_found' tags present? (CDS specific.....extended to all genes :) )
@@ -715,8 +720,49 @@ sub test_gene_sequence_for_errors{
     }
   }
 }
+############################################################################################
+# check that the span of the exons is the same size as the span of the position in the Sequence
+sub check_sequence_span {
+  my ($exon_coord1, $exon_coord2, $gene_model) = @_;
 
+  my $result=0;
+
+  my $exon_start = $exon_coord1->[0];
+  my $exon_end = $exon_coord2->[$#{$exon_coord2}];
+  my $exon_span = $exon_end - $exon_start + 1;
+
+  # get the Sequence start-end span 
+  my $target = $gene_model->name;
+  my $sequence = $gene_model->Sequence;
+  if (!defined $sequence) {
+    push(@error1, "$gene_model has no SParent Sequence connection.\n");
+    return $result;
+  }
+  my @clone_locations = $sequence->CDS_child;
+  my ($target_start, $target_end);
+  foreach my $target_location ( @clone_locations ) {
+    next unless ($target_location->name eq $target);
+    $target_start = $target_location->right->name;
+    $target_end = $target_location->right->right->name;
+    last;
+  }
+  if (defined $target_start && defined $target_end) {
+    my $sequence_span = abs($target_start - $target_end) + 1;
+    if ($exon_span != $sequence_span) {
+      $result = 1;
+      return $result;
+    }
+  } else {
+    push(@error1, "$gene_model has a malformed SParent Sequence entry.\n");
+    return $result;    
+  }
+
+}
+
+
+############################################################################################
 sub by_number{ $a <=> $b;}
+############################################################################################
 
 __END__
 
