@@ -219,7 +219,7 @@ sub parse_genes_gff3_fh {
    
   my @all_ens_genes;
 
-  GENE: foreach my $gid (keys %genes) {
+  GENE: foreach my $gid (sort keys %genes) {
     my $sid = exists $gene_names{$gid} ? $gene_names{$gid} : $gid;
     my @tids = sort @{$genes{$gid}};
 
@@ -410,10 +410,9 @@ sub parse_genes_gff3_fh {
     push @all_ens_genes, $gene;
   }
 
+  $self->verbose and print STDERR "Returning ", scalar(@all_ens_genes),  " gene.\n";
+
   return \@all_ens_genes;
-  #
-  # should probably test that the genes translate etc here
-  # 
 }
 
 
@@ -772,6 +771,8 @@ sub parse_repeatfeatures_gff_fh {
 sub write_genes {
   my ($self, $genes, $exon_stable_ids ) = @_;
 
+  $self->verbose and print STDERR "Writing ", scalar(@$genes), " genes...\n";
+
   my $gene_adaptor = $self->database_handle->get_GeneAdaptor;
   foreach my $g (@$genes) {
     eval {
@@ -782,6 +783,8 @@ sub write_genes {
     }
   }
   
+  $self->verbose and print STDERR "Finished writing genes.\n";
+
   if ($exon_stable_ids) {
     my $sth = $self->database_handle->dbc->prepare("UPDATE exon set stable_id = ? WHERE exon_id = ?");
 
