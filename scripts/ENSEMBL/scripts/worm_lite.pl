@@ -269,6 +269,20 @@ sub load_assembly {
     system("$mysql -e '$sql'") and die "Could not add chromosome prefixes to chromosome names\n";
   }
 
+
+  my $dba = new Bio::EnsEMBL::DBSQL::DBAdaptor(
+    -host   => $db->{host},
+    -user   => $db->{user},
+    -dbname => $db->{dbname},
+    -pass   => $db->{password},
+    -port   => $db->{port},
+      );
+  
+  foreach my $k ("assembly.default", "assembly.name") {
+    $dba->dbc->do("DELETE FROM meta WHERE meta_key = \"$k\"");
+    $dba->dbc->do("INSERT INTO meta (meta_key,meta_value) VALUES (\"$k\",\"$coord_sys_ver\")");
+  }  
+
 }
 
 #############################################
@@ -329,6 +343,7 @@ sub load_genes {
   my $wb2ens = WormBase2Ensembl->new(-species => $species,
                                      -dbh     => $dba,
                                      -debug   => ($debug) ? 1 : 0,
+                                     -verbose => 1,
       );
 
   my @genes;
