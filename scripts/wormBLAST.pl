@@ -5,7 +5,7 @@
 # written by Anthony Rogers
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2014-03-27 17:02:05 $
+# Last edited on: $Date: 2014-04-22 09:24:40 $
 #
 # it depends on:
 #    wormpep + history
@@ -735,34 +735,7 @@ sub update_analysis {
       $raw_dbh->do('DELETE FROM input_id_analysis WHERE analysis_id IN (select analysis_id FROM analysis WHERE module LIKE "ProteinAnnotation%")')
 	|| die "$DBI::errstr";
     }
-  } else {
-    # clear out the interpro table and the protein_features for all interpro analysis_ids
-
-    $raw_dbh->do('DELETE FROM interpro') or die $raw_dbh->errstr;
-
-    # these are the current set of analysis logic_names for the InterPro hive system. Seg is currently not one of them.
-    my @interpro_logic_names = (
-			       'scanprosite', 
-			       'prints',
-			       'pfscan', 
-			       'blastprodom',
-			       'smart',
-			       'pfam',
-			       'tigrfam',
-			       'ncoils', 
-			       'tmhmm', 
-			       'signalp', 
-			       'pirsf',
-			       'superfamily',
-			       'gene3d',
-			       'hmmpanther',
-			       'hamap', 
-			      );
-    foreach my $logic_name (@interpro_logic_names ) {
-      $raw_dbh->do("DELETE FROM protein_feature WHERE analysis_id IN (select analysis_id FROM analysis WHERE logic_name = '${logic_name}')")
-	|| die "$DBI::errstr";
-    }
-  }
+  } 
   
   # update BLAT stuff
   my $db_options = sprintf('-user %s -password %s -host %s -port %i -dbname %s', 
