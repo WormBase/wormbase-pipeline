@@ -40,7 +40,7 @@ my $out = IO::File->new(">$acefile") or $log->log_and_die("Cannot write to $acef
 
 my $dsn = 'DBI:mysql:database=treefam_production_9_69;host=mysql-treefam-public.ebi.ac.uk;port=4418';
 $log->write_to("connecting to: $dsn\n");
-my $dbh = DBI->connect($dsn,'treefam_ro','treefam')||$log->log_and_die($@);
+my $dbh = DBI->connect($dsn,'treefam_ro')||$log->log_and_die($@);
 
 my $sth=$dbh->prepare('SELECT t.stable_id FROM member m JOIN gene_tree_member using(member_id) JOIN gene_tree_node USING(node_id) JOIN gene_tree_root t USING(root_id) WHERE source_name="ENSEMBLPEP" AND m.stable_id=? AND t.stable_id IS NOT NULL;')||$log->log_and_die($@);
 
