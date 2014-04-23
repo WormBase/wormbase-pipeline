@@ -17,10 +17,12 @@ use FindBin;
 use lib "$FindBin::Bin/../lib";
 use WormBase2Ensembl;
 
-my ( $debug, $species, $setup, $dna, $genes, $rules, $inputids, $pipeline_setup, $test, $yfile );
+my ( $debug, @species, @notspecies, $allspecies, $setup, $dna, $genes, $rules, $inputids, $pipeline_setup, $test, $yfile );
 
 GetOptions(
-  'species=s'     => \$species,
+  'species=s@'    => \@species,
+  'notspecies=s@' => \@notspecies,
+  'allspecies'    => \$allspecies,
   'setup'         => \$setup,
   'load_dna'      => \$dna,
   'load_genes'    => \$genes,
@@ -38,18 +40,8 @@ die "You must supply a valid YAML config file\n" if not defined $yfile or not -e
 
 my $global_config = YAML::LoadFile($yfile);
 my $generic_config = $global_config->{generics};
-my $config = $global_config->{$species};
-if (not $config) {
-  die "Could not find config entry for species $species\n";
-}
 
-if ($test) {
-  $config = $global_config->{"${species}_test"};
-}
-my $cvsDIR = $test
-  ? $global_config->{test}->{cvsdir}
-  : $generic_config->{cvsdir};
-
+my $cvsDIR = $generic_config->{cvsdir};
 
 my ($prod_db_host, $prod_db_port, $prod_db_name) = 
     ($generic_config->{ensprod_host},
@@ -61,19 +53,51 @@ my ($tax_db_host, $tax_db_port, $tax_db_name) =
      $generic_config->{taxonomy_port},
      $generic_config->{taxonomy_dbname});
 
+if ($allspecies) {
+  die "You cannot supply both -species and -allspecies!\n" if @species;
 
-&setupdb()            if $setup;
-&load_assembly()      if $dna;
-&load_genes()         if $genes;
-&load_rules()         if $rules or $pipeline_setup;
-&load_input_ids()     if $inputids or $pipeline_setup;
+  @species = sort grep { $_ ne 'generics' } keys %$global_config;
+  
+  if (@notspecies) {
+    my %not_species;
+    map { $not_species{$_} = 1 } @notspecies;
+
+    @species = grep { not exists $not_species{$_} } @species;
+
+  }
+} elsif (not @species) {
+  die "You must supply either -species or -allspecies\n";
+}
+
+#
+# check that all species are defined in the config
+#
+foreach my $species (@species) {
+  if (not exists $global_config->{$species}) {
+    die "Could not find config entry for species $species\n";
+  }
+
+  if ($test and $species !~ /_test/) {
+    die "In test mode, all species entries in config should have a _test suffix (safety net)\n";
+  }
+}
+foreach my $myspecies (@species) {
+  my $myconfig = $global_config->{$myspecies};
+
+  &setupdb($myspecies, $myconfig)        if $setup;
+  &load_assembly($myspecies, $myconfig)  if $dna;
+  &load_genes($myspecies, $myconfig)     if $genes;
+  &load_rules($myspecies, $myconfig)     if $rules or $pipeline_setup;
+  &load_input_ids($myspecies, $myconfig) if $inputids or $pipeline_setup;
+}  
 
 exit(0);
 
 
 #########################################
 sub setupdb {
-  
+  my ($species, $config) = @_;
+
   my $db = $config->{database};
 
   print ">>creating new database $db->{dbname} on $db->{host}\n";
@@ -163,7 +187,8 @@ sub setupdb {
 
 ##############################################
 sub load_assembly {
-  
+  my ($species, $config) = @_;
+
   my $db = $config->{database};
   
   my $seq_level_coord_sys = $config->{seqlevel};
@@ -287,6 +312,7 @@ sub load_assembly {
 
 #############################################
 sub load_genes {
+  my ($species, $config) = @_;
 
   my $db = $config->{database};
 
@@ -412,6 +438,8 @@ sub load_genes {
 
 #############################################
 sub load_rules {
+  my ($species, $config) = @_;
+  
   my $db = $config->{database};
 
   my @conf_files;
@@ -452,6 +480,8 @@ sub load_rules {
 
 #############################################
 sub load_input_ids {
+  my ($species, $config) = @_;
+  
   my $db = $config->{database};
 
   my $load_input_ids_base =  "perl $cvsDIR/ensembl-pipeline/scripts/make_input_ids "
