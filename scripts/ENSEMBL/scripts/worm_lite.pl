@@ -335,7 +335,7 @@ sub load_genes {
                                             -gff_source => "WormBase",
                                             -module     => "WormBase");
       $dba->get_AnalysisAdaptor->store($ana);
-      $ana_hash{logic} = $ana;
+      $ana_hash{$logic} = $ana;
     }
   }
   my $cod_analysis    = $ana_hash{wormbase};
