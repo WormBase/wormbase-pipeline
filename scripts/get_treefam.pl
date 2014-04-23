@@ -38,7 +38,7 @@ my $log = Log_files->make_build_log($wormbase);
 $acefile ||= $wormbase->acefiles."/treefam.ace";
 my $out = IO::File->new(">$acefile") or $log->log_and_die("Cannot write to $acefile\n");
 
-my $dsn = 'DBI:mysql:database=treefam_production_9_69;host=mysql-treefam-prod;port=4401';
+my $dsn = 'DBI:mysql:database=treefam_production_9_69;host=mysql-treefam-public.ebi.ac.uk;port=4418';
 $log->write_to("connecting to: $dsn\n");
 my $dbh = DBI->connect($dsn,'treefam_ro','treefam')||$log->log_and_die($@);
 
