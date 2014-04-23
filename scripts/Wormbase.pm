@@ -20,8 +20,8 @@ use Digest::MD5 qw(md5_hex);
 use Species;
 
 our @core_organisms=qw(Elegans Briggsae Remanei Brenneri Japonica Pristionchus Brugia Ovolvulus);
-our @tier3_organisms=qw(Mhapla Mincognita Heterorhabditis Hcontortus Hcontortus_gasser Cangaria Tspiralis Sratti Csp11 Asuum Bxylophilus Csp5 Loaloa Asuum_davis Panagrellus Dimmitis Namericanus Acey Tsuis_male Tsuis_female Pexspectatus);
-our @provisional_organisms = qw();
+our @tier3_organisms=qw(Mhapla Mincognita Heterorhabditis Hcontortus Hcontortus_gasser Cangaria Tspiralis Sratti Csp11 Asuum Bxylophilus Csp5 Loaloa Asuum_davis Panagrellus Dimmitis Namericanus);
+our @provisional_organisms = qw(Acey Tsuis_male Tsuis_female Pexspectatus);
 
 our @allowed_organisms=(@core_organisms, @tier3_organisms,@provisional_organisms); #class data
 
@@ -447,13 +447,15 @@ sub test_user_wormpub {
   my $self = shift;
   my $name = `whoami`;
   chomp $name;
-  if ( $name eq 'wormpub' or $name eq 'wormbase' or $name eq 'wormpipe' ) {
+  if ( $name eq "wormpub" or $name eq "wormbase" or $name eq "wormpipe") {
     print "running scripts as user $name . . . \n\n";
     return 1;
-  } elsif ($self->test) {
+  }
+  elsif ($self->test) {
     print "running in Test\n";
     return 1;
-  } else {
+  }
+  else {
     print "You are doing this as $name NOT wormpub ! \n\n If you are going to alter autoace in any way it will break.\nYou have 30 seconds in which to abort before this script will continue!\n";
     sleep 30;
     return 0;
@@ -1286,17 +1288,13 @@ sub establish_paths {
   # are we runing on an EBI machine?
 #  if ($ENV{'HOST'} =~ /ebi/) {$self->{'ebi'} = 1}
 
-  # Some farm code uses Wormbase.pm subs so to maintain this farm code needs to be OO Wormbase.pm compliant but we dont want 
-  # multiple paths of the build (main and farm) reading/writing the same wormbase.store file . Store the farm version in ~wormpipe
-  # and might as well use path retrieval routines as with main build.
-
   my ($basedir,
       $ftp_uploads,
       $ftp_site);
   
-  $self->{'wormpub'} = "/nfs/panda/ensemblgenomes/wormbase";
-  $self->{'scratch_area'} = '/nfs/nobackup2/ensemblgenomes/wormbase';
-
+  $self->{'wormpub'} = "/nfs/wormpub";
+  $self->{'scratch_area'} = '/nfs/wormpub/tmp/BUILD_scratch';
+  
   # if a specified non-build database is being used
   
   if ( $self->autoace ) {
@@ -1309,26 +1307,25 @@ sub establish_paths {
   }
   
   $self->{'basedir'}    = $basedir;
-
+  
   if ($self->test) {
     $self->{'ftp_upload'} = $self->wormpub . "/TEST/ftp_uploads/wormbase";
     $self->{'ftp_site'}   = $self->wormpub . "/TEST/FTP_site/pub/wormbase";
     $self->{'build_data'} = $self->wormpub . "/TEST/BUILD_DATA";
     $self->{'genome_diff'} = $self->wormpub . "/TEST/CHROMOSOME_DIFFERENCES";
   } else {
-    # NOTE: change the following to TEST for now
-    $self->{'ftp_upload'} = $self->wormpub . "/TEST/ftp_uploads";
-    $self->{'ftp_site'}   = $self->wormpub . "/TEST/FTP_site/pub/wormbase";
+    $self->{'ftp_upload'} = $self->wormpub . "/ftp_uploads";
+    $self->{'ftp_site'}   = "/nfs/disk69/ftp/pub/consortia/wormbase";
     $self->{'build_data'} = $self->wormpub . "/BUILD_DATA";
     $self->{'genome_diff'} = $self->wormpub . "/CHROMOSOME_DIFFERENCES";
-  }    
-
-  $self->{'submit_repos'}  = $self->wormpub . "/analysis/submissions/" . $self->{'species'};  
+  }
+  
   $self->{'peproot'}    = $basedir . "/WORMPEP";
   $self->{'rnaroot'}    = $basedir . "/WORMRNA/";
   $self->{'wormrna'}    = $basedir . "/WORMRNA/".$self->pepdir_prefix."rna" . $self->get_wormbase_version;
   $self->{'wormpep'}    = $basedir . "/WORMPEP/".$self->pepdir_prefix."pep" . $self->get_wormbase_version;
-
+  $self->{'submit_repos'}  = $basedir . "/analysis/submissions/" . $self->{'species'};
+  
   #species specific paths
   $self->{'logs'}        = $self->orgdb . "/logs";
   $self->{'common_data'} = $self->orgdb . "/COMMON_DATA";
@@ -1344,10 +1341,11 @@ sub establish_paths {
   $self->{'blat'}        = $self->orgdb . "/BLAT";
   $self->{'checks'}      = $self->autoace . "/CHECKS";
   $self->{'ontology'}    = $self->autoace . "/ONTOLOGY";
-  $self->{'tace'}   = '/nfs/panda/ensemblgenomes/wormbase/software/packages/acedb/4.9.54/tace';
-  $self->{'giface'} = '/nfs/panda/ensemblgenomes/wormbase/software/packages/acedb/4.9.54/giface';
-  $self->{'giface_server'} = '/nfs/panda/ensemblgenomes/wormbase/software/packages/acedb/4.9.54/sgifaceserver';
-  $self->{'giface_client'} = '/nfs/panda/ensemblgenomes/wormbase/software/packages/acedb/4.9.54/saceclient';
+  $self->{'tace'}   = '/software/worm/acedb/old_versions/tace.latest';
+  $self->{'giface'} = '/software/worm/acedb/4.9.60/bin/giface';
+  $self->{'giface_server'} = '/software/worm/acedb/4.9.60/bin/sgifaceserver';
+  $self->{'giface_client'} = '/software/worm/acedb/4.9.60/bin/saceclient';
+  
   $self->{'databases'}->{'geneace'} = $self->wormpub . "/DATABASES/geneace";
   $self->{'databases'}->{'camace'}  = $self->wormpub . "/DATABASES/camace";
   $self->{'databases'}->{'current'} = $self->wormpub . "/DATABASES/current_DB";
@@ -1374,9 +1372,10 @@ sub establish_paths {
   $self->{'cdna_acedir'} = $self->{'build_data'} . "/cDNAace/".$self->{'species'};
   $self->{'maskedcdna'}  = $basedir . "/cDNA/".$self->{'species'};
   
-  $self->{'farm_dump'}    = $self->scratch_area .'/dumps';
-  $self->{'rnaseq'}       = $self->scratch_area . '/RNASeq/'.$self->{species}.'/SRA';
-  $self->{'build_lsfout'} = $self->scratch_area . "/BUILD/LSF_OUT/" . $self->{species};
+  $self->{'farm_dump'}    = '/lustre/scratch109/ensembl/wormpipe/dumps';
+  $self->{'rnaseq'}       = '/lustre/scratch103/ensembl/wormpipe/RNASeq/'.$self->{'species'}.'/SRA';
+  $self->{'build_lsfout'} = $self->scratch_area 
+      . "/LSF_OUT/" . $self->{species} . '/' . $self->get_wormbase_version_name;
   
   $self->{'genome_seq'} = $self->sequences . "/" . $self->{species} . ".genome.fa";
   $self->{'masked_genome_seq'} = $self->sequences . "/" . $self->{species} . ".genome_masked.fa";
@@ -1457,7 +1456,7 @@ sub build_cmd_line {
   my $script = shift;
   my $store  = shift;
   
-  my $command = "perl $ENV{'CVS_DIR'}/$script -store $store";
+  my $command = "/software/bin/perl $ENV{'CVS_DIR'}/$script -store $store";
   print "$command\n" if $self->test;
   return $command;
 }
@@ -1561,6 +1560,7 @@ sub checkLSF {
     }
   }
 }
+
 
 ####################################
 sub table_maker_query {
